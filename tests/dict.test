@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: dict.test,v 1.6 2004/01/14 22:07:43 dkf Exp $
+# RCS: @(#) $Id: dict.test,v 1.7 2004/03/12 23:21:06 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -38,7 +38,7 @@ test dict-1.1 {dict command basic syntax} {
 } {1 {wrong # args: should be "dict subcommand ?arg ...?"}}
 test dict-1.2 {dict command basic syntax} {
     list [catch {dict ?} msg] $msg
-} {1 {bad subcommand "?": must be append, create, exists, filter, for, get, incr, info, keys, lappend, remove, replace, set, size, unset, or values}}
+} {1 {bad subcommand "?": must be append, create, exists, filter, for, get, incr, info, keys, lappend, merge, remove, replace, set, size, unset, or values}}
 
 test dict-2.1 {dict create command} {
     dict create
@@ -862,6 +862,37 @@ test dict-19.2 {dict: testing for leaks} -setup {
     rename getbytes {}
     rename stress {}
 } -result 0
+
+test dict-20.1 {dict merge command} {
+    dict merge
+} {}
+test dict-20.2 {dict merge command} {
+    getOrder [dict merge {a b c d e f}] a c e
+} {a b c d e f 3}
+test dict-20.3 {dict merge command} -body {
+    dict merge {a b c d e}
+} -result {missing value to go with key} -returnCodes 1
+test dict-20.4 {dict merge command} {
+    getOrder [dict merge {a b c d} {e f g h}] a c e g
+} {a b c d e f g h 4}
+test dict-20.5 {dict merge command} -body {
+    dict merge {a b c d e} {e f g h}
+} -result {missing value to go with key} -returnCodes 1
+test dict-20.6 {dict merge command} -body {
+    dict merge {a b c d} {e f g h i}
+} -result {missing value to go with key} -returnCodes 1
+test dict-20.7 {dict merge command} {
+    getOrder [dict merge {a b c d e f} {e x g h}] a c e g
+} {a b c d e x g h 4}
+test dict-20.8 {dict merge command} {
+    getOrder [dict merge {a b c d} {a x c y}] a c
+} {a x c y 2}
+test dict-20.9 {dict merge command} {
+    getOrder [dict merge {a b c d} {a x c y}] a c
+} {a x c y 2}
+test dict-20.10 {dict merge command} {
+    getOrder [dict merge {a b c d e f} {a x 1 2 3 4} {a - 1 -}] a c e 1 3
+} {a - c d e f 1 - 3 4 5}
 
 # cleanup
 ::tcltest::cleanupTests
