@@ -1,5 +1,8 @@
 2004-03-30  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
+	* generic/tclHash.c (HashStringKey): Cleaned up. This function is
+	not faster, but it is a little bit clearer.
+	* generic/tclLiteral.c (HashString): Applied logic from HashObjKey.
 	* generic/tclObj.c (HashObjKey): Rewrote to fix fault which hashed
 	every single-character object to the same hash bucket.  The new
 	code is shorter, simpler, clearer, and (happily) faster.
