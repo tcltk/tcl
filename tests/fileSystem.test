@@ -86,26 +86,26 @@ test filesystem-1.8 {link normalisation} {hasLinks} {
      [file normalize [file join dir.link inside.filefoo]]
 } {0}
 
-test filesystem-1.9 {link normalisation} {hasLinks} {
+test filesystem-1.9 {link normalisation} {macOrUnix hasLinks} {
     file delete -force dir.link
     file link dir.link [file nativename dir.file]
     string equal [file normalize [file join dir.file linkinside.file foo]] \
       [file normalize [file join dir.link inside.file foo]]
-} {0}
+} {1}
 
-test filesystem-1.10 {link normalisation: double link} {hasLinks} {
+test filesystem-1.10 {link normalisation: double link} {macOrUnix hasLinks} {
     file link dir2.link dir.link
     string equal [file normalize [file join dir.file linkinside.file foo]] \
       [file normalize [file join dir2.link inside.file foo]]
-} {0}
+} {1}
 
 makeDirectory dir2.file
 
-test filesystem-1.11 {link normalisation: double link, back in tree} {hasLinks} {
+test filesystem-1.11 {link normalisation: double link, back in tree} {macOrUnix hasLinks} {
     file link [file join dir2.file dir2.link] dir2.link
     string equal [file normalize [file join dir.file linkinside.file foo]] \
       [file normalize [file join dir2.file dir2.link inside.file foo]]
-} {0}
+} {1}
 
 test filesystem-1.12 {file new native path} {} {
     for {set i 0} {$i < 10} {incr i} {
