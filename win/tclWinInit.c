@@ -7,7 +7,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclWinInit.c,v 1.49 2004/06/17 19:28:26 dgp Exp $
+ * RCS: @(#) $Id: tclWinInit.c,v 1.50 2004/06/17 19:37:30 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -100,8 +100,10 @@ static int libraryPathEncodingFixed = 0;
 static void		AppendEnvironment(Tcl_Obj *listPtr, CONST char *lib);
 static void		AppendDllPath(Tcl_Obj *listPtr, HMODULE hModule,
 			    CONST char *lib);
+static void		FreeDefaultLibraryDir(ClientData);
+static void		FreeThreadDefaultLibraryDir(ClientData);
+static Tcl_Obj *	GetDefaultLibraryDir();
 static void		SetDefaultLibraryDir(Tcl_Obj *directory);
-static Tcl_Obj *	GetDefaultLibraryDir(Tcl_Obj *directory);
 static int		ToUtf(CONST WCHAR *wSrc, char *dst);
 
 /*
@@ -151,7 +153,6 @@ static void
 SetDefaultLibraryDir(directory)
     Tcl_Obj *directory;
 {
-    int numBytes;
     CONST char *bytes;
     Tcl_Obj **savedDirectoryPtr = (Tcl_Obj **)
 	    Tcl_GetThreadData(&defaultLibraryDirKey, (int)sizeof(Tcl_Obj *));
