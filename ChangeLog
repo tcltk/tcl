@@ -1,3 +1,8 @@
+2002-01-24  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* tests/platform.test (platform-2.1): Added test to make sure that
+	the meaning of tcl_platform(wordSize) is what I think it is.
+
 2001-12-02  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* tests/platform.test (platform-1.1): 
