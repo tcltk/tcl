@@ -1,16 +1,21 @@
+2003-10-12  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* unix/tclUnixTest.c (TestalarmCmd): don't bother checking return
+	value of alarm. [Bug #664755] (english)
+
 2003-10-09  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
 	* win/makefile.vc:  Applied patches for bug #801467 by Joe Mistachkin
 	* win/tclAppInit.c: to fix incompatible TCL_MEM_DEBUG handling in
 	* generic/tclObj.c: Win32 VC builds.
 
-2003-10-08  Don Porter  <dgp@users.sourceforge.net>
+2003-10-08  Don Porter	<dgp@users.sourceforge.net>
 
-        * generic/tclBasic.c:   Save and restore the iPtr->flag bits that
-        control the state of errorCode and errorInfo management when calling
-        "leave" execution traces, so that all error information of the traced
-        command is still available whether traced or not.  [Bug 760947]
-        Thanks to Yahalom Emet.
+	* generic/tclBasic.c:	Save and restore the iPtr->flag bits that
+	control the state of errorCode and errorInfo management when calling
+	"leave" execution traces, so that all error information of the traced
+	command is still available whether traced or not.  [Bug 760947]
+	Thanks to Yahalom Emet.
 
 2003-10-08  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
@@ -20,45 +25,45 @@
 	determining when the length parameter is negative; the terminator
 	is a zero byte, not (necessarily) a \u0000 character. [Bug 769812]
 
-2003-10-07  Don Porter  <dgp@users.sourceforge.net>
+2003-10-07  Don Porter	<dgp@users.sourceforge.net>
 
 	* tests/cmdAH.test:
-        * tests/exec.test:              Corrected temporary file management
-        * tests/fileSystem.test:        issues uncovered by -debug 1 test
-        * tests/io.test:                operations.  Also backported some
-        * tests/ioCmd.test:             other fixes from the HEAD.
+	* tests/exec.test:		Corrected temporary file management
+	* tests/fileSystem.test:	issues uncovered by -debug 1 test
+	* tests/io.test:		operations.  Also backported some
+	* tests/ioCmd.test:		other fixes from the HEAD.
 	* tests/main.test:
-        * tests/pid.test:               [Bugs 675605, 675655, 675659]
-        * tests/socket.test:
-        * tests/source.test:
+	* tests/pid.test:		[Bugs 675605, 675655, 675659]
+	* tests/socket.test:
+	* tests/source.test:
 
-        * tests/fCmd.test:      Run tests with the [temporaryDirectory] as
-        the current directory, so that tests can depend on ability to write
-        files.  [Bug 575837]
+	* tests/fCmd.test:	Run tests with the [temporaryDirectory] as
+	the current directory, so that tests can depend on ability to write
+	files.	[Bug 575837]
 
-        * doc/OpenFileChnl.3:   Updated Tcl_Tell and Tcl_Seek documentation
-        to reflect that they now return Tcl_WideInt (TIP 72) [Bug 787537]
+	* doc/OpenFileChnl.3:	Updated Tcl_Tell and Tcl_Seek documentation
+	to reflect that they now return Tcl_WideInt (TIP 72) [Bug 787537]
 
-        * tests/io.test:        Corrected several tests that failed when paths
-        * tests/ioCmd.test:     included regexp-special chars. [Bug 775394]
+	* tests/io.test:	Corrected several tests that failed when paths
+	* tests/ioCmd.test:	included regexp-special chars. [Bug 775394]
 
-2003-10-06  Jeff Hobbs  <jeffh@ActiveState.com>
+2003-10-06  Jeff Hobbs	<jeffh@ActiveState.com>
 
 	* win/configure:
 	* win/tcl.m4: removed incorrect checks for existence of
 	optimization.  TCL_CFG_OPTIMIZED is now defined whenever the user
 	does not build with --enable-symbols.
 
-2003-10-06  Don Porter  <dgp@users.sourceforge.net>
+2003-10-06  Don Porter	<dgp@users.sourceforge.net>
 
-        * tests/regexp.test:            Matched [makeFile] with [removeFile].
-        * tests/regexpComp.test:        [Bug 675652]
+	* tests/regexp.test:		Matched [makeFile] with [removeFile].
+	* tests/regexpComp.test:	[Bug 675652]
 
 	* tests/fCmd.test (fCmd-8.2):	Test only that tilde-substitution
 	happens, not for any particular result. [Bug 685991]
 
-        * unix/tcl.m4 (SC_PATH_TCLCONFIG):      Corrected search path so
-        that alpha and beta releases of Tcl are not favored. [Bug 608698]
+	* unix/tcl.m4 (SC_PATH_TCLCONFIG):	Corrected search path so
+	that alpha and beta releases of Tcl are not favored. [Bug 608698]
 
 	* tests/reg.test:	Corrected duplicate test names.
 	* tests/resource.test:	[Bugs 710370, 710358]
@@ -78,11 +83,11 @@
 	* tests/execute.test (execute-8.2): fix for [Bug 816641] - faulty
 	execution and catch stack management.
 
-2003-10-03  Don Porter  <dgp@users.sourceforge.net>
+2003-10-03  Don Porter	<dgp@users.sourceforge.net>
 
-        * generic/tclBasic.c:   Fixed error in ref count management of command
-        * generic/tclCmdMZ.c:   and execution traces that caused access to
-        freed memory in trace-32.1.  [Bug 811483].
+	* generic/tclBasic.c:	Fixed error in ref count management of command
+	* generic/tclCmdMZ.c:	and execution traces that caused access to
+	freed memory in trace-32.1.  [Bug 811483].
 
 2003-10-02  Don Porter  <dgp@users.sourceforge.net>
 
