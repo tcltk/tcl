@@ -1,3 +1,8 @@
+2004-11-25  Zoran Vasiljevic <vasiljevic@users.sf.net>
+
+	* doc/Notify.3: 
+	* doc/Thread.3: Added doc fixes and hints from Tcl Bug #1068077.
+
 2004-11-25  Reinhard Max  <max@suse.de>
 
 	* tests/tcltest.test: The order in which [glob] returns the file names
