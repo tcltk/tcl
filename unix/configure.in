@@ -2,7 +2,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 AC_INIT(../generic/tcl.h)
-# SCCS: %Z% $Id: configure.in,v 1.9 1998/07/22 13:39:13 escoffon Exp $ 
+# SCCS: %Z% $Id: configure.in,v 1.10 1998/07/24 15:04:12 welch Exp $ 
 
 TCL_VERSION=8.0
 TCL_MAJOR_VERSION=8
@@ -1201,6 +1201,7 @@ fi
 # tclConfig.sh needs a version of the _LIB_SUFFIX that has been eval'ed
 # so that the backslashes quoting the DBX braces are dropped.
 
+VERSION='${VERSION}'
 eval "CFG_TCL_SHARED_LIB_SUFFIX=${TCL_SHARED_LIB_SUFFIX}"
 eval "CFG_TCL_UNSHARED_LIB_SUFFIX=${TCL_UNSHARED_LIB_SUFFIX}"
 
@@ -1210,9 +1211,9 @@ eval "CFG_TCL_UNSHARED_LIB_SUFFIX=${TCL_UNSHARED_LIB_SUFFIX}"
 # up the Tcl library.
 
 if test "${TCL_LIB_VERSIONS_OK}" = "ok"; then
-    TCL_LIB_FLAG="-ltcl${VERSION}\${DBGX}"
+    TCL_LIB_FLAG="-ltcl${TCL_VERSION}\${DBGX}"
 else
-    TCL_LIB_FLAG="-ltcl`echo ${VERSION} | tr -d .`\${DBGX}"
+    TCL_LIB_FLAG="-ltcl`echo ${TCL_VERSION} | tr -d .`\${DBGX}"
 fi
 TCL_BUILD_LIB_SPEC="-L`pwd` \${TCL_LIB_FLAG}"
 TCL_LIB_SPEC="-L${exec_prefix}/lib \${TCL_LIB_FLAG}"

@@ -97,11 +97,6 @@ if {[info commands tclLog] == ""} {
     }
 }
 
-# The procs defined in this file that have a leading space
-# are 'hidden' from auto_mkindex because they are not
-# auto-loadable.
-
-
 # unknown --
 # This procedure is called when a Tcl command is invoked that doesn't
 # exist in the interpreter.  It takes the following steps to make the
@@ -124,7 +119,7 @@ if {[info commands tclLog] == ""} {
 # args -	A list whose elements are the words of the original
 #		command, including the command name.
 
- proc unknown args {
+proc unknown args {
     global auto_noexec auto_noload env unknown_pending tcl_interactive
     global errorCode errorInfo
 
@@ -251,8 +246,8 @@ if {[info commands tclLog] == ""} {
 #                       a canonical namespace as returned [namespace current]
 #                       for instance. If not given, namespace current is used.
 
- proc auto_load {cmd {namespace {}}} {
-    global auto_index auto_oldpath auto_path env errorInfo errorCode
+proc auto_load {cmd {namespace {}}} {
+    global auto_index auto_oldpath auto_path
 
     if {[string length $namespace] == 0} {
 	set namespace [uplevel {namespace current}]
@@ -270,6 +265,34 @@ if {[info commands tclLog] == ""} {
     if {![info exists auto_path]} {
 	return 0
     }
+
+    if {![auto_load_index]} {
+	return 0
+    }
+
+    foreach name $nameList {
+	if {[info exists auto_index($name)]} {
+	    uplevel #0 $auto_index($name)
+	    if {[info commands $name] != ""} {
+		return 1
+	    }
+	}
+    }
+    return 0
+}
+
+# auto_load_index --
+# Loads the contents of tclIndex files on the auto_path directory
+# list.  This is usually invoked within auto_load to load the index
+# of available commands.  Returns 1 if the index is loaded, and 0 if
+# the index is already loaded and up to date.
+#
+# Arguments: 
+# None.
+
+proc auto_load_index {} {
+    global auto_index auto_oldpath auto_path errorInfo errorCode
+
     if {[info exists auto_oldpath]} {
 	if {$auto_oldpath == $auto_path} {
 	    return 0
@@ -317,15 +340,7 @@ if {[info commands tclLog] == ""} {
 	    }
 	}
     }
-    foreach name $nameList {
-	if {[info exists auto_index($name)]} {
-	    uplevel #0 $auto_index($name)
-	    if {[info commands $name] != ""} {
-		return 1
-	    }
-	}
-    }
-    return 0
+    return 1
 }
 
 # auto_qualify --
@@ -342,7 +357,7 @@ if {[info commands tclLog] == ""} {
 #               a canonical namespace as returned by [namespace current]
 #               for instance.
 
- proc auto_qualify {cmd namespace} {
+proc auto_qualify {cmd namespace} {
 
     # count separators and clean them up
     # (making sure that foo:::::bar will be treated as foo::bar)
@@ -384,6 +399,33 @@ if {[info commands tclLog] == ""} {
 	    # ( foo::bar , ::sub ) -> ::sub::foo::bar ::foo::bar
 	    return [list ${namespace}::$cmd ::$cmd]
 	}
+    }
+}
+
+# auto_import --
+# invoked during "namespace import" to make see if the imported commands
+# reside in an autoloaded library.  If so, the commands are loaded so
+# that they will be available for the import links.  If not, then this
+# procedure does nothing.
+#
+# Arguments -
+# pattern	The pattern of commands being imported (like "foo::*")
+#               a canonical namespace as returned by [namespace current]
+
+proc auto_import {pattern} {
+    global auto_index
+
+    set ns [uplevel namespace current]
+    set patternList [auto_qualify $pattern $ns]
+
+    auto_load_index
+
+    foreach pattern $patternList {
+        foreach name [array names auto_index] {
+            if {[string match $pattern $name] && "" == [info commands $name]} {
+                uplevel #0 $auto_index($name)
+            }
+        }
     }
 }
 
@@ -523,21 +565,86 @@ proc auto_reset {} {
     catch {unset auto_oldpath}
 }
 
+# OPTIONAL SUPPORT PROCEDURES
+# In Tcl 8.1 all the code below here has been moved to other files to
+# reduce the size of init.tcl
+
+# ----------------------------------------------------------------------
+# auto_mkindex
+# ----------------------------------------------------------------------
+# The following procedures are used to generate the tclIndex file
+# from Tcl source files.  They use a special safe interpreter to
+# parse Tcl source files, writing out index entries as "proc"
+# commands are encountered.  This implementation won't work in a
+# safe interpreter, since a safe interpreter can't create the
+# special parser and mess with its commands.  If this is a safe
+# interpreter, we simply clip these procs out.
+
+if {[interp issafe]} {
+    proc auto_mkindex {dir args} {
+        error "can't generate index within safe interpreter"
+    }
+    proc tcl_nonsafe {args} {}
+} else {
+    proc tcl_nonsafe {args} {eval $args}
+}
+
 # auto_mkindex --
 # Regenerate a tclIndex file from Tcl source files.  Takes as argument
 # the name of the directory in which the tclIndex file is to be placed,
 # followed by any number of glob patterns to use in that directory to
-# locate all of the relevant files. It does not parse or source the file
-# so the generated index will not contain the appropriate namespace qualifiers
-# if you don't explicitly specify it.
+# locate all of the relevant files.
 #
 # Arguments: 
-# dir -			Name of the directory in which to create an index.
-# args -		Any number of additional arguments giving the
-#			names of files within dir.  If no additional
-#			are given auto_mkindex will look for *.tcl.
+# dir -		Name of the directory in which to create an index.
+# args -	Any number of additional arguments giving the
+#		names of files within dir.  If no additional
+#		are given auto_mkindex will look for *.tcl.
 
-proc auto_mkindex {dir args} {
+tcl_nonsafe proc auto_mkindex {dir args} {
+    global errorCode errorInfo
+
+    if {[interp issafe]} {
+        error "can't generate index within safe interpreter"
+    }
+
+    set oldDir [pwd]
+    cd $dir
+    set dir [pwd]
+
+    append index "# Tcl autoload index file, version 2.0\n"
+    append index "# This file is generated by the \"auto_mkindex\" command\n"
+    append index "# and sourced to set up indexing information for one or\n"
+    append index "# more commands.  Typically each line is a command that\n"
+    append index "# sets an element in the auto_index array, where the\n"
+    append index "# element name is the name of a command and the value is\n"
+    append index "# a script that loads the command.\n\n"
+    if {$args == ""} {
+	set args *.tcl
+    }
+    auto_mkindex_parser::init
+    foreach file [eval glob $args] {
+        if {[catch {auto_mkindex_parser::mkindex $file} msg] == 0} {
+            append index $msg
+        } else {
+            set code $errorCode
+            set info $errorInfo
+            cd $oldDir
+            error $msg $info $code
+        }
+    }
+    auto_mkindex_parser::cleanup
+
+    set fid [open "tclIndex" w]
+    puts $fid $index nonewline
+    close $fid
+    cd $oldDir
+}
+
+# Original version of auto_mkindex that just searches the source
+# code for "proc" at the beginning of the line.
+
+proc auto_mkindex_old {dir args} {
     global errorCode errorInfo
     set oldDir [pwd]
     cd $dir
@@ -588,6 +695,266 @@ proc auto_mkindex {dir args} {
 	error $msg $info $code
     }
 }
+
+# Create a safe interpreter that can be used to parse Tcl source files
+# generate a tclIndex file for autoloading.  This interp contains
+# commands for things that need index entries.  Each time a command
+# is executed, it writes an entry out to the index file.
+
+namespace eval auto_mkindex_parser {
+    variable parser ""          ;# parser used to build index
+    variable index ""           ;# maintains index as it is built
+    variable scriptFile ""      ;# name of file being processed
+    variable contextStack ""    ;# stack of namespace scopes
+    variable imports ""         ;# keeps track of all imported cmds
+    variable initCommands ""    ;# list of commands that create aliases
+    proc init {} {
+	variable parser
+	variable initCommands
+	if {![interp issafe]} {
+	    set parser [interp create -safe]
+	    $parser hide info
+	    $parser hide rename
+	    $parser hide proc
+	    $parser hide namespace
+	    $parser hide eval
+	    $parser hide puts
+	    $parser invokehidden namespace delete ::
+	    $parser invokehidden proc unknown {args} {}
+
+	    #
+	    # We'll need access to the "namespace" command within the
+	    # interp.  Put it back, but move it out of the way.
+	    #
+	    $parser expose namespace
+	    $parser invokehidden rename namespace _%@namespace
+	    $parser expose eval
+	    $parser invokehidden rename eval _%@eval
+
+	    # Install all the registered psuedo-command implementations
+
+	    foreach cmd $initCommands {
+		eval $cmd
+	    }
+	}
+    }
+    proc cleanup {} {
+	variable parser
+	interp delete $parser
+	unset parser
+    }
+}
+
+# auto_mkindex_parser::mkindex --
+# Used by the "auto_mkindex" command to create a "tclIndex" file for
+# the given Tcl source file.  Executes the commands in the file, and
+# handles things like the "proc" command by adding an entry for the
+# index file.  Returns a string that represents the index file.
+#
+# Arguments: 
+# file -		Name of Tcl source file to be indexed.
+
+tcl_nonsafe proc auto_mkindex_parser::mkindex {file} {
+    variable parser
+    variable index
+    variable scriptFile
+    variable contextStack
+    variable imports
+
+    set scriptFile $file
+
+    set fid [open $file]
+    set contents [read $fid]
+    close $fid
+
+    # There is one problem with sourcing files into the safe
+    # interpreter:  references like "$x" will fail since code is not
+    # really being executed and variables do not really exist.
+    # Be careful to escape all naked "$" before evaluating.
+
+    regsub -all {([^\$])\$([^\$])} $contents {\1\\$\2} contents
+
+    set index ""
+    set contextStack ""
+    set imports ""
+
+    $parser eval $contents
+
+    foreach name $imports {
+        catch {$parser eval [list _%@namespace forget $name]}
+    }
+    return $index
+}
+
+# auto_mkindex_parser::hook command
+# Registers a Tcl command to evaluate when initializing the
+# slave interpreter used by the mkindex parser.
+# The command is evaluated in the master interpreter, and can
+# use the variable auto_mkindex_parser::parser to get to the slave
+
+tcl_nonsafe proc auto_mkindex_parser::hook {cmd} {
+    variable initCommands
+
+    lappend initCommands $cmd
+}
+
+# auto_mkindex_parser::slavehook command
+# Registers a Tcl command to evaluate when initializing the
+# slave interpreter used by the mkindex parser.
+# The command is evaluated in the slave interpreter.
+
+tcl_nonsafe proc auto_mkindex_parser::slavehook {cmd} {
+    variable initCommands
+
+    lappend initCommands "\$parser eval [list $cmd]"
+}
+
+# auto_mkindex_parser::command --
+# Registers a new command with the "auto_mkindex_parser" interpreter
+# that parses Tcl files.  These commands are fake versions of things
+# like the "proc" command.  When you execute them, they simply write
+# out an entry to a "tclIndex" file for auto-loading.
+#
+# This procedure allows extensions to register their own commands
+# with the auto_mkindex facility.  For example, a package like
+# [incr Tcl] might register a "class" command so that class definitions
+# could be added to a "tclIndex" file for auto-loading.
+#
+# Arguments:
+# name -		Name of command recognized in Tcl files.
+# arglist -		Argument list for command.
+# body -		Implementation of command to handle indexing.
+
+tcl_nonsafe proc auto_mkindex_parser::command {name arglist body} {
+    hook [list auto_mkindex_parser::commandInit $name $arglist $body]
+}
+
+# auto_mkindex_parser::commandInit --
+# This does the actual work set up by auto_mkindex_parser::command
+# This is called when the interpreter used by the parser is created.
+
+tcl_nonsafe proc auto_mkindex_parser::commandInit {name arglist body} {
+    variable parser
+
+    set ns [namespace qualifiers $name]
+    set tail [namespace tail $name]
+    if {$ns == ""} {
+        set fakeName "[namespace current]::_%@fake_$tail"
+    } else {
+        set fakeName "_%@fake_$name"
+        regsub -all {::} $fakeName "_" fakeName
+        set fakeName "[namespace current]::$fakeName"
+    }
+    proc $fakeName $arglist $body
+
+    #
+    # YUK!  Tcl won't let us alias fully qualified command names,
+    # so we can't handle names like "::itcl::class".  Instead,
+    # we have to build procs with the fully qualified names, and
+    # have the procs point to the aliases.
+    #
+    if {[regexp {::} $name]} {
+        set exportCmd [list _%@namespace export [namespace tail $name]]
+        $parser eval [list _%@namespace eval $ns $exportCmd]
+        set alias [namespace tail $fakeName]
+        $parser invokehidden proc $name {args} "_%@eval $alias \$args"
+        $parser alias $alias $fakeName
+    } else {
+        $parser alias $name $fakeName
+    }
+    return
+}
+
+# auto_mkindex_parser::fullname --
+# Used by commands like "proc" within the auto_mkindex parser.
+# Returns the qualified namespace name for the "name" argument.
+# If the "name" does not start with "::", elements are added from
+# the current namespace stack to produce a qualified name.  Then,
+# the name is examined to see whether or not it should really be
+# qualified.  If the name has more than the leading "::", it is
+# returned as a fully qualified name.  Otherwise, it is returned
+# as a simple name.  That way, the Tcl autoloader will recognize
+# it properly.
+#
+# Arguments:
+# name -		Name that is being added to index.
+
+tcl_nonsafe proc auto_mkindex_parser::fullname {name} {
+    variable contextStack
+
+    if {![string match ::* $name]} {
+        foreach ns $contextStack {
+            set name "${ns}::$name"
+            if {[string match ::* $name]} {
+                break
+            }
+        }
+    }
+
+    if {[namespace qualifiers $name] == ""} {
+        return [namespace tail $name]
+    } elseif {![string match ::* $name]} {
+        return "::$name"
+    }
+    return $name
+}
+
+# Register all of the procedures for the auto_mkindex parser that
+# will build the "tclIndex" file.
+
+# AUTO MKINDEX:  proc name arglist body
+# Adds an entry to the auto index list for the given procedure name.
+
+tcl_nonsafe auto_mkindex_parser::command proc {name args} {
+    variable index
+    variable scriptFile
+    append index "set [list auto_index([fullname $name])]"
+    append index " \[list source \[file join \$dir [list $scriptFile]\]\]\n"
+}
+
+# AUTO MKINDEX:  namespace eval name command ?arg arg...?
+# Adds the namespace name onto the context stack and evaluates the
+# associated body of commands.
+#
+# AUTO MKINDEX:  namespace import ?-force? pattern ?pattern...?
+# Performs the "import" action in the parser interpreter.  This is
+# important for any commands contained in a namespace that affect
+# the index.  For example, a script may say "itcl::class ...",
+# or it may import "itcl::*" and then say "class ...".  This
+# procedure does the import operation, but keeps track of imported
+# patterns so we can remove the imports later.
+
+tcl_nonsafe auto_mkindex_parser::command namespace {op args} {
+    switch -- $op {
+        eval {
+            variable parser
+            variable contextStack
+
+            set name [lindex $args 0]
+            set args [lrange $args 1 end]
+
+            set contextStack [linsert $contextStack 0 $name]
+            if {[llength $args] == 1} {
+                $parser eval [lindex $args 0]
+            } else {
+                eval $parser eval $args
+            }
+            set contextStack [lrange $contextStack 1 end]
+        }
+        import {
+            variable parser
+            variable imports
+            foreach pattern $args {
+                if {$pattern != "-force"} {
+                    lappend imports $pattern
+                }
+            }
+            catch {$parser eval "_%@namespace import $args"}
+        }
+    }
+}
+
+rename tcl_nonsafe ""
 
 # pkg_mkIndex --
 # This procedure creates a package index in a given directory.  The

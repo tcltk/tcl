@@ -231,7 +231,12 @@ conlibsdll = $(libcdll) $(baselibs)
 ######################################################################
 
 !IF "$(NODEBUG)" == "1"
+!IF "$(MACHINE)" == "ALPHA"
+# MSVC on Alpha doesn't understand -Ot
+cdebug = -O2i -Gs -GD
+!ELSE
 cdebug = -Oti -Gs -GD
+!ENDIF
 !ELSE
 cdebug = -Z7 -Od -WX
 !ENDIF
