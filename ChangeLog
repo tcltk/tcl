@@ -1,5 +1,9 @@
 2004-11-30  Don Porter  <dgp@users.sourceforge.net>
 
+	* library/init.tcl ([unknown]):	Restored the save/restore of
+	the variables ::errorCode and ::errorInfo.  This is needed when
+	the [::bgerror] command is auto-loaded (as it is by Tk).
+
 	Patch 976520 reworks several of the details involved with
 	startup/initialization of the Tcl library, focused on the
 	activities of Tcl_FindExecutable().
