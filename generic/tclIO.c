@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.20.2.1 2000/06/02 03:01:37 hobbs Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.20.2.2 2000/06/02 05:20:09 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -2574,7 +2574,9 @@ CloseChannel(interp, chanPtr, errorCode)
 	 * of (unstack) the underlying channel into the TOP channel structure.
 	 */
 
-	Channel * chanDownPtr = chanPtr->supercedes;
+	ChannelHandler *chPtr, *chNext;	/* Iterate over channel handlers. */
+	NextChannelHandler *nhPtr;
+	Channel *chanDownPtr = chanPtr->supercedes;
 
 	/*
 	 * Insert ourselves upon back into the list of open channels,
@@ -2582,6 +2584,52 @@ CloseChannel(interp, chanPtr, errorCode)
 	 */
 	chanPtr->nextChanPtr = tsdPtr->firstChanPtr;
 	tsdPtr->firstChanPtr = chanPtr;
+
+	/*
+	 * Some initial bits taken from Tcl_Close, to be applied to our
+	 * underlying channel.
+	 */
+
+	/*
+	 * Remove any references to channel handlers for this channel that
+	 * may be about to be invoked.
+	 */
+
+	for (nhPtr = tsdPtr->nestedHandlerPtr;
+             nhPtr != (NextChannelHandler *) NULL;
+             nhPtr = nhPtr->nestedHandlerPtr) {
+	    if (nhPtr->nextHandlerPtr &&
+		    (nhPtr->nextHandlerPtr->chanPtr == chanDownPtr)) {
+		nhPtr->nextHandlerPtr = NULL;
+	    }
+	}
+
+	/*
+	 * Remove all the channel handler records attached to the channel
+	 * itself.
+	 */
+        
+	for (chPtr = chanDownPtr->chPtr; chPtr != NULL; chPtr = chNext) {
+	    chNext = chPtr->nextPtr;
+	    ckfree((char *) chPtr);
+	}
+	chanDownPtr->chPtr = (ChannelHandler *) NULL;
+
+	/*
+	 * Cancel any pending copy operation.
+	 */
+
+	StopCopy(chanDownPtr->csPtr);
+  
+	/*
+	 * Ensure that the last output buffer will be flushed.
+	 */
+    
+	if ((chanDownPtr->curOutPtr != (ChannelBuffer *) NULL) &&
+		(chanDownPtr->curOutPtr->nextAdded >
+			chanDownPtr->curOutPtr->nextRemoved)) {
+	    chanDownPtr->flags |= BUFFER_READY;
+	}
 
 	/*
 	 * Free timer associated with the TOP stacked channel, and
@@ -2599,10 +2647,13 @@ CloseChannel(interp, chanPtr, errorCode)
 	 * Bring the information from the NEXT channel into the TOP
 	 * channel, with some exceptions. This additionally
 	 * cuts the NEXT channel out of the chain and frees it.
+	 *
+	 * We may want to extract unreportedError as well (hobbs).
 	 */
 
 	chanPtr->channelName	= chanDownPtr->channelName;
-	chanPtr->flags		= chanDownPtr->flags;
+	chanPtr->flags		= chanDownPtr->flags | CHANNEL_CLOSED;
+	chanPtr->flags		&= (~(TCL_READABLE|TCL_WRITABLE));
 
 	Tcl_FreeEncoding(chanDownPtr->encoding);
 	chanDownPtr->encoding	= NULL;
@@ -2629,8 +2680,8 @@ CloseChannel(interp, chanPtr, errorCode)
 	 * that interest with underlying channels or the driver.
 	 */
 
-	if (chanPtr->interestMask) {
-	    int interest = chanPtr->interestMask;
+	if (chanDownPtr->interestMask) {
+	    int interest = chanDownPtr->interestMask;
 
 	    chanPtr->interestMask = 0;
 	    (chanPtr->typePtr->watchProc)(chanPtr->instanceData, interest);
@@ -6250,7 +6301,7 @@ Tcl_NotifyChannel(channel, mask)
 
 	    /* Walk down the stack.
 	     */
-	    chanPtr = chanPtr-> supercedes;
+	    chanPtr = chanPtr->supercedes;
 	} else {
 	    /* Stop walking the chain, the whole stack was destroyed!
 	     */
@@ -7017,7 +7068,7 @@ TclTestChannelCmd(clientData, interp, argc, argv)
         Tcl_AppendResult(interp, chanPtr->channelName, (char *) NULL);
         return TCL_OK;
     }
-    
+
     if ((cmdName[0] == 'o') && (strncmp(cmdName, "open", len) == 0)) {
         hTblPtr = (Tcl_HashTable *) Tcl_GetAssocData(interp, "tclIO", NULL);
         if (hTblPtr == (Tcl_HashTable *) NULL) {
@@ -7053,7 +7104,7 @@ TclTestChannelCmd(clientData, interp, argc, argv)
         Tcl_AppendResult(interp, buf, (char *) NULL);
         return TCL_OK;
     }
-        
+
     if ((cmdName[0] == 'q') &&
             (strncmp(cmdName, "queuedcr", len) == 0)) {
         if (argc != 3) {
@@ -7067,7 +7118,7 @@ TclTestChannelCmd(clientData, interp, argc, argv)
                 (char *) NULL);
         return TCL_OK;
     }
-    
+
     if ((cmdName[0] == 'r') && (strncmp(cmdName, "readable", len) == 0)) {
         hTblPtr = (Tcl_HashTable *) Tcl_GetAssocData(interp, "tclIO", NULL);
         if (hTblPtr == (Tcl_HashTable *) NULL) {
@@ -7095,7 +7146,7 @@ TclTestChannelCmd(clientData, interp, argc, argv)
         Tcl_AppendResult(interp, buf, (char *) NULL);
         return TCL_OK;
     }
-    
+
     if ((cmdName[0] == 't') && (strncmp(cmdName, "type", len) == 0)) {
         if (argc != 3) {
             Tcl_AppendResult(interp, "channel name required",
@@ -7105,7 +7156,7 @@ TclTestChannelCmd(clientData, interp, argc, argv)
         Tcl_AppendResult(interp, chanPtr->typePtr->typeName, (char *) NULL);
         return TCL_OK;
     }
-    
+
     if ((cmdName[0] == 'w') && (strncmp(cmdName, "writable", len) == 0)) {
         hTblPtr = (Tcl_HashTable *) Tcl_GetAssocData(interp, "tclIO", NULL);
         if (hTblPtr == (Tcl_HashTable *) NULL) {

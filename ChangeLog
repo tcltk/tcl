@@ -3,6 +3,12 @@
 	* generic/tclIO.c (CloseChannel): Rewrote CloseChannel code to
 	unstack a channel during the close process.  Fixed a refcount bug
 	in Tcl_UnstackChannel.  [Bug: 5623]
+	(CloseChannel): further extended CloseChannel in the stacked case
+	to effect certain operations on the next channel that would have
+	been done in Tcl_Close.  Also added CHANNEL_CLOSED and removed
+	(TCL_READABLE|TCL_WRITABLE) bits from chanPtr->flags.  Changed
+	final reset of the WatchProc to check the chanDownPtr's (next)
+	interestMask.
 
 2000-05-29  Sandeep Tamhankar <sandeep@scriptics.com>
 
