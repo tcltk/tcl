@@ -12,7 +12,7 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 # 
-# RCS: @(#) $Id: tcltest.tcl,v 1.8 1999/07/28 18:33:20 jenn Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.9 1999/07/30 01:35:27 jenn Exp $
 
 package provide tcltest 1.0
 
@@ -659,14 +659,14 @@ proc ::tcltest::processCmdLineArgs {} {
     if {([lsearch -exact $flagArray {-help}] != -1) || \
 	    ([lsearch -exact $flagArray {-h}] != -1)} {
 	::tcltest::PrintUsageInfo
-	exit
+	exit 1
     }
 
     if {[catch {array set flag $flagArray}]} {
 	::tcltest::PrintError "odd number of arguments specified on command line: \ 
 		$argv"
 	::tcltest::PrintUsageInfo
-	exit
+	exit 1
     }
 
     # -help is not listed since it has already been processed
@@ -728,7 +728,7 @@ proc ::tcltest::processCmdLineArgs {} {
 	if {![info exists flag(-constraints)]} {
 	    puts "You can only use the -limitconstraints flag with \
 		    -constraints"
-	    exit
+	    exit 1
 	}
 	set ::tcltest::limitConstraints $flag(-limitconstraints)
 	foreach elt [array names ::tcltest::testConstraints] {
@@ -763,15 +763,15 @@ proc ::tcltest::processCmdLineArgs {} {
 	if {![file isdir $::tcltest::temporaryDirectory]} { 
 	    ::tcltest::PrintError "$tmpDirError \"$::tcltest::temporaryDirectory\" \
 		    is not a directory"
-	    exit
+	    exit 1
 	} elseif {![file writable $::tcltest::temporaryDirectory]} {
 	    ::tcltest::PrintError "$tmpDirError \"$::tcltest::temporaryDirectory\" \
 		    is not writeable" 
-	    exit
+	    exit 1
 	} elseif {![file readable $::tcltest::temporaryDirectory]} {
 	    ::tcltest::PrintError "$tmpDirError \"$::tcltest::temporaryDirectory\" \
 		    is not readable" 
-	    exit
+	    exit 1
 	}
     } else {
 	file mkdir $::tcltest::temporaryDirectory
