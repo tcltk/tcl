@@ -1,3 +1,12 @@
+2004-05-19  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* tests/*.test: Many minor fixes, including ensuring that every
+	test is run (so constraints control whether the test is doing
+	anything) and making sure that constraints are always set using
+	the API instead of poking around inside tcltest's internal
+	datastructures.  Also got rid of all trailing whitespace lines
+	from the test suite!
+
 2004-05-19  Andreas Kupries  <andreask@activestate.com>
 
 	* tclIO.c: Fixed [SF Tcl Bug 943274]. This is the same problem as
