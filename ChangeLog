@@ -1,5 +1,7 @@
 2002-08-08  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	*** 8.4b2 TAGGED FOR RELEASE ***
+
 	* tests/fCmd.test:
 	* tests/unixFCmd.test: updated tests for new link copy behavior.
 	* generic/tclFCmd.c (CopyRenameOneFile): changed the behavior to
