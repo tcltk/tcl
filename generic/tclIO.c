@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.16 1999/08/19 17:39:17 hobbs Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.17 1999/12/01 02:45:02 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -1664,10 +1664,17 @@ Tcl_UnstackChannel (interp, chan)
 	 * structure.
 	 */
 
-	Tcl_DString ds; /* storage to copy option information */
-        Channel    top; /* Save area for current transformation */
-	Channel*   chanDownPtr = chanPtr->supercedes;
-	int interest;   /* interest mask of transformation before destruct. */
+	Tcl_DString       dsTrans; /* storage to save option information */
+	Tcl_DString       dsBuf;   /* storage to save option information */
+	Channel           top;     /* Save area for current transformation */
+	Channel*          chanDownPtr = chanPtr->supercedes;
+	int               interest;	/* interest mask of transformation
+					 * before destruct. */
+	int               saveInputEncodingFlags;  /* Save area for encoding */
+ 	int               saveOutputEncodingFlags; /* related information */
+	Tcl_EncodingState saveInputEncodingState;
+	Tcl_EncodingState saveOutputEncodingState;
+	Tcl_Encoding      saveEncoding;
 
 	/*
 	 * Event handling: Disallow the delivery of events from the
@@ -1680,22 +1687,29 @@ Tcl_UnstackChannel (interp, chan)
 	interest = chanPtr->interestMask;
         (chanPtr->typePtr->watchProc) (chanPtr->instanceData, 0);
 
-	/*
-	 * Save the transformation, then restore the old channel from the
-	 * first structure downstream. The overall effect is that
-	 * transformation and underlying channel swapped places, and the
-	 * transformation is cut loose from the stack. Without the latter
-	 * a Tcl_Close on the transformation would be impossible, as that
-	 * procedure will free the structure, making 'top' unusable.
+	/* 1. Swap the information in the top channel (the transformation)
+	 *    and the channel below, with some exceptions. This additionally
+	 *    cuts the top channel out of the chain. Without the latter
+	 *    a Tcl_Close on the transformation would be impossible, as that
+	 *    procedure will free the structure, making 'top' unusable.
 	 *
-	 * Beware, same information must not take part in the swap,
-	 * use correction code to ensure this.
+	 * chanPtr     -> top channel, transformation.
+	 * chanDownPtr -> channel immediately below the transformation.
 	 */
 
 	memcpy ((void*) &top,        (void*) chanPtr,     sizeof (Channel));
 	memcpy ((void*) chanPtr,     (void*) chanDownPtr, sizeof (Channel));
 	top.supercedes = (Channel*) NULL;
 	memcpy ((void*) chanDownPtr, (void*) &top,        sizeof (Channel));
+
+	/* Now:
+ 	 * chanPtr     -> channel immediately below the transformation, now top
+ 	 * chanDownPtr -> transformation, cut loose.
+ 	 *
+ 	 * Handle the exceptions mentioned above, i.e. move the information
+ 	 * from the transformation into the new top, and reinitialize it to
+ 	 * safe values in the transformation.
+ 	 */
 
 	chanPtr->refCount        = chanDownPtr->refCount;
 	chanPtr->closeCbPtr      = chanDownPtr->closeCbPtr;
@@ -1713,25 +1727,32 @@ Tcl_UnstackChannel (interp, chan)
 	chanDownPtr->timer           = (Tcl_TimerToken) NULL;
 	chanDownPtr->csPtr           = (CopyState*) NULL;
 
-	/*
-	 * Now it is possible to wind down the transformation (in 'top'),
-	 * especially to copy the current encoding and translation control
-	 * information down.
-	 */
-	
-	/*
-	 * Move the currently active encoding from the transformation
-	 * to the now uncovered channel. We assume here that this
-	 * channel uses 'encoding binary' (==> encoding == NULL, etc.
-	 * This allows us to simply copy the pointers without having to
-	 * think about refcounts and deallocation of the old encoding.
+	/* The now uncovered channel still has encoding and eol-translation
+	 * deactivated, i.e. switched to 'binary'. *Don't* touch this until
+	 * after the transformation is closed for good, as it may write
+	 * information into it during that (-> flushing of data waiting in
+	 * internal buffers!) and rely on these settings. Thanks to Matt
+	 * Newman <matt@sensus.org> for finding this goof.
+	 *
+	 * But we also have to protect the state of the encoding from removal
+	 * during the close. So we save it in some local variables.
+	 * Additionally the current value of the options is lost after we
+	 * close, we have to save them now.
 	 */
 
-	chanPtr->encoding            = chanDownPtr->encoding;
-	chanPtr->inputEncodingState  = chanDownPtr->inputEncodingState;
-	chanPtr->inputEncodingFlags  = chanDownPtr->inputEncodingFlags;
-	chanPtr->outputEncodingState = chanDownPtr->outputEncodingState;
-	chanPtr->outputEncodingFlags = chanDownPtr->outputEncodingFlags;
+ 	saveEncoding            = chanDownPtr->encoding;
+ 	saveInputEncodingState  = chanDownPtr->inputEncodingState;
+ 	saveInputEncodingFlags  = chanDownPtr->inputEncodingFlags;
+ 	saveOutputEncodingState = chanDownPtr->outputEncodingState;
+ 	saveOutputEncodingFlags = chanDownPtr->outputEncodingFlags;
+
+ 	Tcl_DStringInit (&dsTrans);
+ 	Tcl_GetChannelOption (interp, (Tcl_Channel) chanDownPtr,
+		"-translation", &dsTrans);
+
+ 	Tcl_DStringInit (&dsBuf);
+ 	Tcl_GetChannelOption (interp, (Tcl_Channel) chanDownPtr,
+		"-buffering", &dsBuf);
 
 	/*
 	 * Prevent the accidential removal of the encoding during
@@ -1745,29 +1766,7 @@ Tcl_UnstackChannel (interp, chan)
 	chanDownPtr->outputEncodingFlags = TCL_ENCODING_START;
 
 	/*
-	 * And don't forget to reenable the EOL-translation used by the
-	 * transformation. Using a DString to do this *is* a bit awkward,
-	 * but still the best way to handle the complexities here, like
-	 * flag manipulation and event system.
-	 */
-
-	Tcl_DStringInit (&ds);
-	Tcl_GetChannelOption (interp, (Tcl_Channel) chanDownPtr,
-            "-translation", &ds);
-	Tcl_SetChannelOption (interp, (Tcl_Channel) chanPtr,
-	    "-translation", ds.string);
-
-	Tcl_DStringSetLength (&ds, 0);
-
-	Tcl_GetChannelOption (interp, (Tcl_Channel) chanDownPtr,
-	    "-buffering", &ds);
-	Tcl_SetChannelOption (interp, (Tcl_Channel) chanPtr,
-	    "-buffering", ds.string);
-
-	Tcl_DStringFree (&ds);
-
-	/*
-	 * Now a little trick: Add the transformation structure to the
+	 * A little trick: Add the transformation structure to the
 	 * per-thread list of existing channels (which it never were
 	 * part of so far), or Tcl_Close/FlushChannel will panic
 	 * ("damaged channel list").
@@ -1783,6 +1782,40 @@ Tcl_UnstackChannel (interp, chan)
 	tsdPtr->firstChanPtr     = chanDownPtr;
 
 	Tcl_Close (interp, (Tcl_Channel)chanDownPtr);
+
+	/*
+	 * Now it is possible to wind down the transformation (in 'top'),
+	 * especially to copy the current encoding and translation control
+	 * information down.
+	 */
+	
+	/*
+	 * Move the currently active encoding from the save area
+	 * to the now uncovered channel. We assume here that this
+	 * channel uses 'encoding binary' (==> encoding == NULL, etc.
+	 * This allows us to simply copy the pointers without having to
+	 * think about refcounts and deallocation of the old encoding.
+	 *
+	 * And don't forget to reenable the EOL-translation used by the
+	 * transformation. Using a DString to do this *is* a bit awkward,
+	 * but still the best way to handle the complexities here, like
+	 * flag manipulation and event system.
+	 */
+
+	chanPtr->encoding            = saveEncoding;
+	chanPtr->inputEncodingState  = saveInputEncodingState;
+	chanPtr->inputEncodingFlags  = saveInputEncodingFlags;
+	chanPtr->outputEncodingState = saveOutputEncodingState;
+	chanPtr->outputEncodingFlags = saveOutputEncodingFlags;
+
+	Tcl_SetChannelOption (interp, (Tcl_Channel) chanPtr,
+		"-translation", dsTrans.string);
+
+	Tcl_SetChannelOption (interp, (Tcl_Channel) chanPtr,
+		"-buffering", dsBuf.string);
+
+	Tcl_DStringFree (&dsTrans);
+	Tcl_DStringFree (&dsBuf);
 
 	/*
 	 * Event handling: If the information from the now destroyed

@@ -1,5 +1,8 @@
 1999-11-30  Jeff Hobbs  <hobbs@scriptics.com>
 
+	* generic/tclIO.c: fix from Kupries for	Tcl_UnstackChannel that
+	correctly handles resetting translation and encoding.
+
 	* generic/tclLoad.c: #def'd out the unloading of DLLs at finalize
 	time for Unix in TclFinalizeLoad. [Bug: 2560 3373]  Should be
 	parametrized to allow for user to specify unload or not.
