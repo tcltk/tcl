@@ -109,6 +109,7 @@
 	* doc/file.n:
 	* doc/tclsh.1:  Several typo and formatting corrections discovered
 	during conversion to TMML.  Thanks to Joe English.  [Patch 490514]
+	* unix/mkLinks: 'make mklinks'
 
 2001-12-10  Miguel Sofer  <msofer@users.sourceforge.net>
 
