@@ -8,11 +8,12 @@
  *	that appears in tclHash.c.
  *
  * Copyright (c) 1997-1998 Sun Microsystems, Inc.
+ * Copyright (c) 2004 by Kevin B. Kenny.  All rights reserved.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLiteral.c,v 1.18 2004/07/15 18:31:34 kennykb Exp $
+ * RCS: @(#) $Id: tclLiteral.c,v 1.19 2004/07/21 00:42:39 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -74,6 +75,58 @@ TclInitLiteralTable(tablePtr)
     tablePtr->rebuildSize = TCL_SMALL_HASH_TABLE*REBUILD_MULTIPLIER;
     tablePtr->mask = 3;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclCleanupLiteralTable --
+ *
+ *	This procedure frees the internal representation of every
+ *	literal in a literal table.  It is called prior to deleting
+ *	an interp, so that variable refs will be cleaned up properly.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Each literal in the table has its internal representation freed.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclCleanupLiteralTable( interp, tablePtr )
+    Tcl_Interp* interp;		/* Interpreter containing literals to purge */
+    LiteralTable* tablePtr;	/* Points to the literal table being cleaned */
+{
+    int i;
+    LiteralEntry* entryPtr;
+    LiteralEntry* nextPtr;
+    Tcl_Obj* objPtr;
+    Tcl_ObjType* typePtr;
+
+#ifdef TCL_COMPILE_DEBUG
+    TclVerifyGlobalLiteralTable( (Interp*) interp );
+#endif /* TCL_COMPILE_DEBUG */
+
+    for ( i = 0; i < tablePtr->numBuckets; i++ ) {
+	entryPtr = tablePtr->buckets[i];
+	while ( entryPtr != NULL ) {
+	    objPtr = entryPtr->objPtr;
+	    nextPtr = entryPtr->nextPtr;
+	    typePtr = objPtr->typePtr;
+	    if ( ( typePtr != NULL ) && ( typePtr->freeIntRepProc != NULL ) ) {
+		if ( objPtr->bytes == NULL ) {
+		    Tcl_Panic( "literal without a string rep" );
+		}
+		objPtr->typePtr = NULL;
+		typePtr->freeIntRepProc( objPtr );
+	    }
+	    entryPtr = nextPtr;
+	}
+    }
+}
+	    
 
 /*
  *----------------------------------------------------------------------

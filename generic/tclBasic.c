@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.109 2004/07/12 01:56:12 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.110 2004/07/21 00:42:38 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -1002,6 +1002,7 @@ DeleteInterpProc(interp)
      * table, as it will be freed later in this function without further use.
      */
     
+    TclCleanupLiteralTable(interp, &(iPtr->literalTable));
     TclHandleFree(iPtr->handle);
     TclTeardownNamespace(iPtr->globalNsPtr);
 

@@ -1,3 +1,16 @@
+2004-07-21  Kevin Kenny  <kennykb@acm.org>
+
+	* generic/tclBasic.c (DeleteInterpProc):
+	* generic/tclLiteral.c (TclCleanupLiteralTable):
+	* generic/tclInt.h: added a TclCleanupLiteralTable function,
+	called from DeleteInterpProc, that frees internal representations
+	of shared literals early when an interpreter is being deleted.
+	This change corrects a number of memory mismanagement issues in
+	the cases where the internal representation of one literal
+	contains a reference to another, and avoids conditions such as
+	resolved variable names referring to procedure and namespace
+	contexts that no longer exist.  [Bug 994838]
+	
 2004-07-20  Daniel Steffen  <das@users.sourceforge.net>
 
 	* unix/Makefile.in:
