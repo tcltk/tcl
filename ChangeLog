@@ -1,3 +1,10 @@
+2003-02-26  Chengye Mao <chengye.geo@yahoo.com>
+
+        * win/tclWinInit.c: fixed a bug in TclpSetVariables by initializing
+        dwUserNameLen with the sizeof(szUserName) before calling GetUserName.
+        Don't know if this bug has been recorded: it caused crash in starting
+        Tcl or wish in Windows.
+   
 2003-02-26  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclCmdMZ.c (TraceCommandProc): Fix mem leak when
