@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclClock.c,v 1.9 2000/03/30 04:36:11 hobbs Exp $
+ * RCS: @(#) $Id: tclClock.c,v 1.8 2000/01/26 03:37:40 hobbs Exp $
  */
 
 #include "tcl.h"
@@ -282,13 +282,6 @@ FormatClock(interp, clockVal, useGMT, format)
     Tcl_MutexUnlock(&clockMutex);
 #endif
 
-    /*
-     * If the user gave us -format "", just return now
-     */
-    if (*format == '\0') {
-	return TCL_OK;
-    }
-
 #ifndef HAVE_TM_ZONE
     /*
      * This is a kludge for systems not having the timezone string in
@@ -347,14 +340,7 @@ FormatClock(interp, clockVal, useGMT, format)
         tzset();
     }
 #endif
-
-    if (result == 0) {
-	/*
-	 * A zero return is the error case (can also mean the strftime
-	 * didn't get enough space to write into).  We know it doesn't
-	 * mean that we wrote zero chars because the check for an empty
-	 * format string is above.
-	 */
+    if ((result == 0) && (*format != '\0')) {
 	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
 		"bad format string \"", format, "\"", (char *) NULL);
 	return TCL_ERROR;

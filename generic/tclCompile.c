@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.20 2000/03/30 04:36:11 hobbs Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.19 1999/12/12 02:26:41 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -553,26 +553,9 @@ TclCleanupByteCode(codePtr)
      * only need to 1) decrement the ref counts of the LiteralEntry's in
      * its literal array, 2) call the free procs for the auxiliary data
      * items, and 3) free the ByteCode structure's heap object.
-     *
-     * The case for TCL_BYTECODE_PRECOMPILED (precompiled ByteCodes,
-     * like those generated from tbcload) is special, as they doesn't
-     * make use of the global literal table.  They instead maintain
-     * private references to their literals which must be decremented.
      */
 
-    if (codePtr->flags & TCL_BYTECODE_PRECOMPILED) {
-	register Tcl_Obj *objPtr;
- 
-	objArrayPtr = codePtr->objArrayPtr;
-	for (i = 0;  i < numLitObjects;  i++) {
-	    objPtr = *objArrayPtr;
-	    if (objPtr) {
-		Tcl_DecrRefCount(objPtr);
-	    }
-	    objArrayPtr++;
-	}
-	codePtr->numLitObjects = 0;
-    } else if (interp != NULL) {
+    if (interp != NULL) {
 	/*
 	 * If the interp has already been freed, then Tcl will have already 
 	 * forcefully released all the literals used by ByteCodes compiled
