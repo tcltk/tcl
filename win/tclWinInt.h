@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinInt.h,v 1.1.2.2 1998/09/24 23:59:52 stanton Exp $
+ * RCS: @(#) $Id: tclWinInt.h,v 1.1.2.3 1998/12/24 00:14:01 rjohnson Exp $
  */
 
 #ifndef _TCLWININT
@@ -43,8 +43,6 @@
 #define VER_PLATFORM_WIN32_WINDOWS 1
 #endif
 
-EXTERN void		TclpAlertNotifier();
-EXTERN void		TclpInitNotifier();
 /*
  * The following structure keeps track of whether we are using the 
  * multi-byte or the wide-character interfaces to the operating system.

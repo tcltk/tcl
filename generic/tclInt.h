@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.1.2.9 1998/12/12 01:36:58 lfb Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.1.2.10 1998/12/24 00:13:59 rjohnson Exp $
  */
 
 #ifndef _TCLINT
@@ -1768,8 +1768,6 @@ EXTERN int		TclDoGlob _ANSI_ARGS_((Tcl_Interp *interp,
 			    char *separators, Tcl_DString *headPtr,
 			    char *tail));
 EXTERN void		TclDumpMemoryInfo _ANSI_ARGS_((FILE *outFile));
-EXTERN void		TclExpandParseValue _ANSI_ARGS_((ParseValue *pvPtr,
-			    int needed));
 EXTERN void		TclExpandTokenArray _ANSI_ARGS_((
 			    Tcl_Parse *parsePtr));
 EXTERN void		TclExprFloatError _ANSI_ARGS_((Tcl_Interp *interp,
@@ -1864,7 +1862,6 @@ EXTERN void		TclInitCompiledLocals _ANSI_ARGS_((
 EXTERN void		TclInitDbCkalloc _ANSI_ARGS_((void));
 EXTERN void		TclInitEncodingSubsystem _ANSI_ARGS_((void));
 EXTERN void		TclInitIOSubsystem _ANSI_ARGS_((void));
-EXTERN void		TclInitMemorySubsystem _ANSI_ARGS_((void));
 EXTERN void		TclInitNamespaceSubsystem _ANSI_ARGS_((void));
 EXTERN void		TclInitNotifier _ANSI_ARGS_((void));
 EXTERN void		TclInitObjSubsystem _ANSI_ARGS_((void));
@@ -1976,8 +1973,6 @@ EXTERN int              TclpRemoveDirectory _ANSI_ARGS_((CONST char *path,
 			    int recursive, Tcl_DString *errorPtr));
 EXTERN int              TclpRenameFile _ANSI_ARGS_((CONST char *source,
 			    CONST char *dest));
-EXTERN char *		TclpSetEnv _ANSI_ARGS_((CONST char *name,
-			    CONST char *value));
 EXTERN void		TclpSetInitialEncodings _ANSI_ARGS_((void));
 EXTERN void		TclpSetVariables _ANSI_ARGS_((Tcl_Interp *interp));
 EXTERN VOID * 		TclpSysAlloc _ANSI_ARGS_((long size, int isBin));
@@ -1985,14 +1980,6 @@ EXTERN void 		TclpSysFree _ANSI_ARGS_((VOID *ptr));
 EXTERN VOID * 		TclpSysRealloc _ANSI_ARGS_((VOID *cp,
 			    unsigned int size));
 EXTERN void		TclpUnloadFile _ANSI_ARGS_((ClientData clientData));
-EXTERN int		TclParseBraces _ANSI_ARGS_((Tcl_Interp *interp,
-			    char *string, char **termPtr, ParseValue *pvPtr));
-EXTERN int		TclParseNestedCmd _ANSI_ARGS_((Tcl_Interp *interp,
-			    char *string, int flags, char **termPtr,
-			    ParseValue *pvPtr));
-EXTERN int		TclParseQuotes _ANSI_ARGS_((Tcl_Interp *interp,
-			    char *string, int termChar, int flags,
-			    char **termPtr, ParseValue *pvPtr));
 EXTERN char *		TclPrecTraceProc _ANSI_ARGS_((ClientData clientData,
 			    Tcl_Interp *interp, char *name1, char *name2,
 			    int flags));
@@ -2147,8 +2134,6 @@ EXTERN int	Tcl_GlobalObjCmd _ANSI_ARGS_((ClientData clientData,
 		    Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]));
 EXTERN int	Tcl_GlobObjCmd _ANSI_ARGS_((ClientData clientData,
 		    Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]));
-EXTERN int	Tcl_HistoryCmd _ANSI_ARGS_((ClientData clientData,
-		    Tcl_Interp *interp, int argc, char **argv));
 EXTERN int	Tcl_IfObjCmd _ANSI_ARGS_((ClientData clientData,
 		    Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]));
 EXTERN int	Tcl_IncrObjCmd _ANSI_ARGS_((ClientData clientData,

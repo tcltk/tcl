@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinNotify.c,v 1.1.2.3 1998/12/12 01:37:05 lfb Exp $
+ * RCS: @(#) $Id: tclWinNotify.c,v 1.1.2.4 1998/12/24 00:14:01 rjohnson Exp $
  */
 
 #include "tclWinInt.h"
@@ -25,7 +25,7 @@ static int initialized = 0;
 #define INTERVAL_TIMER 1	/* Handle of interval timer. */
 
 #define WM_WAKEUP WM_USER	/* Message that is send by
-				 * TclpAlertNotifier. */
+				 * Tcl_AlertNotifier. */
 /*
  * The following static structure contains the state information for the
  * Windows implementation of the Tcl notifier.  One of these structures

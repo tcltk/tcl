@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.1.2.8 1998/12/12 01:36:53 lfb Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.1.2.9 1998/12/24 00:13:59 rjohnson Exp $
  */
 
 #ifndef _TCL
@@ -1531,7 +1531,6 @@ EXTERN Tcl_Encoding	Tcl_GetEncoding _ANSI_ARGS_((Tcl_Interp *interp,
 EXTERN char *		Tcl_GetEncodingName _ANSI_ARGS_((
 			    Tcl_Encoding encoding));
 EXTERN void		Tcl_GetEncodingNames _ANSI_ARGS_((Tcl_Interp *interp));
-EXTERN Tcl_Obj *	Tcl_GetEncodingPath _ANSI_ARGS_((void));
 EXTERN int		Tcl_GetErrno _ANSI_ARGS_((void));
 EXTERN char *		Tcl_GetHostName _ANSI_ARGS_((void));
 EXTERN int		Tcl_GetIndexFromObj _ANSI_ARGS_((Tcl_Interp *interp,
