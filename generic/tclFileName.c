@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.11 2000/02/01 11:49:24 hobbs Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.12 2000/03/03 02:57:48 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -40,7 +40,6 @@
 
 typedef struct ThreadSpecificData {
     int initialized;
-    Tcl_Obj *winRootPatternPtr;
     Tcl_Obj *macRootPatternPtr;
 } ThreadSpecificData;
 
@@ -69,7 +68,7 @@ TclPlatformType tclPlatform = TCL_PLATFORM_UNIX;
 static char *		DoTildeSubst _ANSI_ARGS_((Tcl_Interp *interp,
 			    CONST char *user, Tcl_DString *resultPtr));
 static CONST char *	ExtractWinRoot _ANSI_ARGS_((CONST char *path,
-			    Tcl_DString *resultPtr, int offset));
+			    Tcl_DString *resultPtr, int offset, Tcl_PathType *typePtr));
 static void		FileNameCleanup _ANSI_ARGS_((ClientData clientData));
 static void		FileNameInit _ANSI_ARGS_((void));
 static int		SkipToChar _ANSI_ARGS_((char **stringPtr,
@@ -103,7 +102,6 @@ FileNameInit()
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     if (!tsdPtr->initialized) {
 	tsdPtr->initialized = 1;
-	tsdPtr->winRootPatternPtr = Tcl_NewStringObj(WIN_ROOT_PATTERN, -1);
 	tsdPtr->macRootPatternPtr = Tcl_NewStringObj(MAC_ROOT_PATTERN, -1);
 	Tcl_CreateThreadExitHandler(FileNameCleanup, NULL);
     }
@@ -131,7 +129,6 @@ FileNameCleanup(clientData)
     ClientData clientData;	/* Not used. */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-    Tcl_DecrRefCount(tsdPtr->winRootPatternPtr);
     Tcl_DecrRefCount(tsdPtr->macRootPatternPtr);
     tsdPtr->initialized = 0;
 }
@@ -157,58 +154,86 @@ FileNameCleanup(clientData)
  */
 
 static CONST char *
-ExtractWinRoot(path, resultPtr, offset)
+ExtractWinRoot(path, resultPtr, offset, typePtr)
     CONST char *path;		/* Path to parse. */
     Tcl_DString *resultPtr;	/* Buffer to hold result. */
     int offset;			/* Offset in buffer where result should be
 				 * stored. */
+    Tcl_PathType *typePtr;	/* Where to store pathType result */
 {
-    int length;
-    Tcl_RegExp re;
-    char *dummy, *tail, *drive, *hostStart, *hostEnd, *shareStart,
-	*shareEnd, *lastSlash;
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-
-    /*
-     * Initialize the path name parser for Windows path names.
-     */
-
     FileNameInit();
 
-    re = Tcl_GetRegExpFromObj(NULL, tsdPtr->winRootPatternPtr, REG_ADVANCED);
 
-    /*
-     * Match the root portion of a Windows path name.
-     */
+    if (path[0] == '/' || path[0] == '\\') {
+	/* Might be a UNC or Vol-Relative path */
+	char *host, *share, *tail;
+	int hlen, slen;
+	if (path[1] != '/' && path[1] != '\\') {
+	    Tcl_DStringSetLength(resultPtr, offset);
+	    *typePtr = TCL_PATH_VOLUME_RELATIVE;
+	    Tcl_DStringAppend(resultPtr, "/", 1);
+	    return &path[1];
+    }
+	host = (char *)&path[2];
 
-    if (!Tcl_RegExpExec(NULL, re, path, path)) {
+	/* Skip seperators */
+	while (host[0] == '/' || host[0] == '\\') host++;
+
+	for (hlen = 0; host[hlen];hlen++) {
+	    if (host[hlen] == '/' || host[hlen] == '\\')
+		break;
+	}
+	if (host[hlen] == 0 || host[hlen+1] == 0) {
+	    *typePtr = TCL_PATH_VOLUME_RELATIVE;
+	    Tcl_DStringAppend(resultPtr, "/", 1);
+	    return &path[2];
+	}
+	Tcl_DStringSetLength(resultPtr, offset);
+	share = &host[hlen];
+
+	/* Skip seperators */
+	while (share[0] == '/' || share[0] == '\\') share++;
+
+	for (slen = 0; share[slen];slen++) {
+	    if (share[slen] == '/' || share[slen] == '\\')
+		break;
+	}
+	Tcl_DStringAppend(resultPtr, "//", 2);
+	Tcl_DStringAppend(resultPtr, host, hlen);
+	Tcl_DStringAppend(resultPtr, "/", 1);
+	Tcl_DStringAppend(resultPtr, share, slen);
+
+	tail = &share[slen];
+
+	/* Skip seperators */
+	while (tail[0] == '/' || tail[0] == '\\') tail++;
+
+	*typePtr = TCL_PATH_ABSOLUTE;
+	return tail;
+    } else if (path[1] == ':') {
+	/* Might be a drive sep */
+	Tcl_DStringSetLength(resultPtr, offset);
+
+	if (path[2] != '/' && path[2] != '\\') {
+	    *typePtr = TCL_PATH_VOLUME_RELATIVE;
+	    Tcl_DStringAppend(resultPtr, path, 2);
+	    return &path[2];
+    } else {
+	    char *tail = (char*)&path[3];
+
+	    /* Skip seperators */
+	    while (tail[0] == '/' || tail[0] == '\\') tail++;
+
+	    *typePtr = TCL_PATH_ABSOLUTE;
+	    Tcl_DStringAppend(resultPtr, path, 2);
+	Tcl_DStringAppend(resultPtr, "/", 1);
+
+    return tail;
+	}
+    } else {
+	*typePtr = TCL_PATH_RELATIVE;
 	return path;
     }
-
-    Tcl_DStringSetLength(resultPtr, offset);
-
-    Tcl_RegExpRange(re, 0, &dummy, &tail);
-    Tcl_RegExpRange(re, 2, &drive, &dummy);
-    Tcl_RegExpRange(re, 3, &hostStart, &hostEnd);
-    Tcl_RegExpRange(re, 4, &shareStart, &shareEnd);
-    Tcl_RegExpRange(re, 6, &lastSlash, &dummy);
-
-    if (drive != NULL) {
-	Tcl_DStringAppend(resultPtr, drive, 2);
-	if (lastSlash != NULL) {
-	    Tcl_DStringAppend(resultPtr, "/", 1);
-	}
-    } else if (shareStart != NULL) {
-	Tcl_DStringAppend(resultPtr, "//", 2);
-	length = hostEnd - hostStart;
-	Tcl_DStringAppend(resultPtr, hostStart, length);
-	Tcl_DStringAppend(resultPtr, "/", 1);
-	length = shareEnd - shareStart;
-	Tcl_DStringAppend(resultPtr, shareStart, length);
-    } else {
-	Tcl_DStringAppend(resultPtr, "/", 1);
-    }
-    return tail;
 }
 
 /*
@@ -278,30 +303,11 @@ Tcl_GetPathType(path)
 	
 	case TCL_PLATFORM_WINDOWS:
 	    if (path[0] != '~') {
-		tsdPtr = TCL_TSD_INIT(&dataKey);
+		Tcl_DString ds;
 
-		/*
-		 * Since we have eliminated the easy cases, check for
-		 * drive relative paths using the regular expression.
-		 */
-
-		FileNameInit();
-		re = Tcl_GetRegExpFromObj(NULL, tsdPtr->winRootPatternPtr,
-			REG_ADVANCED);
-
-		if (Tcl_RegExpExec(NULL, re, path, path)) {
-		    char *drive, *dummy, *unixRoot, *lastSlash;
-
-		    Tcl_RegExpRange(re, 2, &drive, &dummy);
-		    Tcl_RegExpRange(re, 5, &unixRoot, &dummy);
-		    Tcl_RegExpRange(re, 6, &lastSlash, &dummy);
-		    
-		    if (unixRoot || (drive && !lastSlash)) {
-			type = TCL_PATH_VOLUME_RELATIVE;
-		    }
-		} else {
-		    type = TCL_PATH_RELATIVE;
-		}
+		Tcl_DStringInit(&ds);
+		(VOID)ExtractWinRoot(path, &ds, 0, &type);
+		Tcl_DStringFree(&ds);
 	    }
 	    break;
     }
@@ -497,8 +503,9 @@ SplitWinPath(path, bufPtr)
 {
     int length;
     CONST char *p, *elementStart;
+    Tcl_PathType type = TCL_PATH_ABSOLUTE;
 
-    p = ExtractWinRoot(path, bufPtr, 0);
+    p = ExtractWinRoot(path, bufPtr, 0, &type);
 
     /*
      * Terminate the root portion, if we matched something.
@@ -747,6 +754,7 @@ Tcl_JoinPath(argc, argv, resultPtr)
     Tcl_DString buffer;
     char c, *dest;
     CONST char *p;
+    Tcl_PathType type = TCL_PATH_ABSOLUTE;
 
     Tcl_DStringInit(&buffer);
     oldLength = Tcl_DStringLength(resultPtr);
@@ -835,7 +843,7 @@ Tcl_JoinPath(argc, argv, resultPtr)
 	     */
 
 	    for (i = 0; i < argc; i++) {
-		p = ExtractWinRoot(argv[i], resultPtr, oldLength);
+		p = ExtractWinRoot(argv[i], resultPtr, oldLength, &type);
 		length = Tcl_DStringLength(resultPtr);
 		
 		/*
@@ -999,7 +1007,7 @@ Tcl_TranslateFileName(interp, name, bufferPtr)
 	char **argv;
 	Tcl_DString temp;
 
-	Tcl_SplitPath(name, &argc, &argv);
+	Tcl_SplitPath(name, &argc, (char ***) &argv);
 	
 	/*
 	 * Strip the trailing ':' off of a Mac path before passing the user
@@ -1019,12 +1027,12 @@ Tcl_TranslateFileName(interp, name, bufferPtr)
 	    return NULL;
 	}
 	Tcl_DStringInit(bufferPtr);
-	Tcl_JoinPath(argc, argv, bufferPtr);
+	Tcl_JoinPath(argc, (char **) argv, bufferPtr);
 	Tcl_DStringFree(&temp);
 	ckfree((char*)argv);
     } else {
 	Tcl_DStringInit(bufferPtr);
-	Tcl_JoinPath(1, &name, bufferPtr);
+	Tcl_JoinPath(1, (char **) &name, bufferPtr);
     }
 
     /*
