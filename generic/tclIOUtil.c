@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.104 2004/06/09 16:15:23 vasiljevic Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.105 2004/06/10 17:11:02 vasiljevic Exp $
  */
 
 #include "tclInt.h"
@@ -2642,7 +2642,21 @@ Tcl_FSChdir(pathPtr)
 	 * calculated above, and we must therefore cache that
 	 * information.
 	 */
-	if (retVal == 0) {
+
+	/*
+	 * The correct logic which performs the part below is
+	 * already part of the Tcl_FSGetCwd() call, so no need
+	 * to replicate it again. This will have a side effect
+	 * though. The private authoritative representation of
+	 * the current working directory stored in cwdPathPtr
+	 * in static memory will be out-of-sync with the real
+	 * OS-maintained value. The first call to Tcl_FSGetCwd
+	 * will however recalculate the private copy to match
+     * the OS-value so everything will work right.
+     * We leave the below as a reminder until it's proven ok.
+	 */
+
+	if (/* temporarily disabled */0 && retVal == 0) {
 	    /* 
 	     * Note that this normalized path may be different to what
 	     * we found above (or at least a different object), if the
