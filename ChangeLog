@@ -1,3 +1,36 @@
+2004-05-14  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tclInt.decls:      Promoted TclpLocaltime and TclpGmtime
+	* generic/tclIntDecls.h:     from Unix-specific stubs to the generic
+	* generic/tclIntPlatDecls.h: internal Stubs table.  Reran 'genstubs'
+	* generic/tclStubInit.c:
+	* unix/tclUnixPort.h:
+
+	* generic/tclClock.c: Changed a buggy 'GMT' timezone specification
+	                      to the correct 'GMT0'. [Bug #922848]
+	
+	* unix/tclUnixThrd.c: Moved TclpGmtime and TclpLocaltime to
+	                      unix/tclUnixTime.c where they belong.
+
+	* unix/tclUnixTime.c (TclpGmtime, TclpLocaltime, TclpGetTimeZone,
+	                      ThreadSafeGMTime [removed],
+	                      ThreadSafeLocalTime [removed],
+	                      SetTZIfNecessary, CleanupMemory):
+	    Restructured to make sure that the same mutex protects
+	    all calls to localtime, gmtime, and tzset.  Added a check
+	    in front of those calls to make sure that the TZ env var
+	    hasn't changed since the last call to tzset, and repeat
+	    tzset if necessary. [Bug #942078]  Removed a buggy test
+	    of the Daylight Saving Time information in 'gettimeofday'
+	    in favor of applying 'localtime' to a known value.
+	    [Bug #922848]
+
+	* tests/clock.test (clock-3.14): Added test to make sure that
+	    changes to $env(TZ) take effect immediately.
+	
+	* win/tclWinTime.c (TclpLocaltime, TclpGmtime):
+	    Added porting layer for 'localtime' and 'gmtime' calls.
+
 2004-05-10  David Gravereaux <davygrvy@pobox.com>
 
 	* win/tclWinPipe.c (BuildCommandLine): Append a space when the

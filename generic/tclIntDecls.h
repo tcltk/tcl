@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.49 2003/02/18 02:25:45 hobbs Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.49.2.1 2004/05/14 21:41:11 kennykb Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -503,6 +503,18 @@ EXTERN int		TclUniCharMatch _ANSI_ARGS_((
 				CONST Tcl_UniChar * string, int strLen, 
 				CONST Tcl_UniChar * pattern, int ptnLen, 
 				int nocase));
+/* Slot 174 is reserved */
+/* Slot 175 is reserved */
+/* Slot 176 is reserved */
+/* Slot 177 is reserved */
+/* Slot 178 is reserved */
+/* Slot 179 is reserved */
+/* Slot 180 is reserved */
+/* Slot 181 is reserved */
+/* 182 */
+EXTERN struct tm *	TclpLocaltime _ANSI_ARGS_((CONST time_t * clock));
+/* 183 */
+EXTERN struct tm *	TclpGmtime _ANSI_ARGS_((CONST time_t * clock));
 
 typedef struct TclIntStubs {
     int magic;
@@ -706,6 +718,16 @@ typedef struct TclIntStubs {
     int (*tclCheckExecutionTraces) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * command, int numChars, Command * cmdPtr, int result, int traceFlags, int objc, Tcl_Obj *CONST objv[])); /* 171 */
     int (*tclInThreadExit) _ANSI_ARGS_((void)); /* 172 */
     int (*tclUniCharMatch) _ANSI_ARGS_((CONST Tcl_UniChar * string, int strLen, CONST Tcl_UniChar * pattern, int ptnLen, int nocase)); /* 173 */
+    void *reserved174;
+    void *reserved175;
+    void *reserved176;
+    void *reserved177;
+    void *reserved178;
+    void *reserved179;
+    void *reserved180;
+    void *reserved181;
+    struct tm * (*tclpLocaltime) _ANSI_ARGS_((CONST time_t * clock)); /* 182 */
+    struct tm * (*tclpGmtime) _ANSI_ARGS_((CONST time_t * clock)); /* 183 */
 } TclIntStubs;
 
 #ifdef __cplusplus
@@ -1315,6 +1337,22 @@ extern TclIntStubs *tclIntStubsPtr;
 #ifndef TclUniCharMatch
 #define TclUniCharMatch \
 	(tclIntStubsPtr->tclUniCharMatch) /* 173 */
+#endif
+/* Slot 174 is reserved */
+/* Slot 175 is reserved */
+/* Slot 176 is reserved */
+/* Slot 177 is reserved */
+/* Slot 178 is reserved */
+/* Slot 179 is reserved */
+/* Slot 180 is reserved */
+/* Slot 181 is reserved */
+#ifndef TclpLocaltime
+#define TclpLocaltime \
+	(tclIntStubsPtr->tclpLocaltime) /* 182 */
+#endif
+#ifndef TclpGmtime
+#define TclpGmtime \
+	(tclIntStubsPtr->tclpGmtime) /* 183 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.79.2.2 2003/05/13 08:41:26 das Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.79.2.3 2004/05/14 21:41:11 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -268,6 +268,16 @@ TclIntStubs tclIntStubs = {
     TclCheckExecutionTraces, /* 171 */
     TclInThreadExit, /* 172 */
     TclUniCharMatch, /* 173 */
+    NULL, /* 174 */
+    NULL, /* 175 */
+    NULL, /* 176 */
+    NULL, /* 177 */
+    NULL, /* 178 */
+    NULL, /* 179 */
+    NULL, /* 180 */
+    NULL, /* 181 */
+    TclpLocaltime, /* 182 */
+    TclpGmtime, /* 183 */
 };
 
 TclIntPlatStubs tclIntPlatStubs = {
@@ -285,8 +295,8 @@ TclIntPlatStubs tclIntPlatStubs = {
     TclUnixWaitForFile, /* 8 */
     TclpCreateTempFile, /* 9 */
     TclpReaddir, /* 10 */
-    TclpLocaltime, /* 11 */
-    TclpGmtime, /* 12 */
+    TclpLocaltime_unix, /* 11 */
+    TclpGmtime_unix, /* 12 */
     TclpInetNtoa, /* 13 */
 #endif /* UNIX */
 #ifdef __WIN32__
