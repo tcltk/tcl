@@ -1,3 +1,11 @@
+2004-12-14  Don Porter  <dgp@users.sourceforge.net>
+
+	* unix/configure.in:	Added special processing to remove "$U"
+	from libraries in the LIBOBJS value.  This is an auto-make-ism
+	we need to avoid.  [Bug 1081541]
+
+	* unix/configure:	autoconf-2.57
+
 2004-12-13  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tcl.h:	Restored extern "C" guards so that C++ code
