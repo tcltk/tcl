@@ -9,8 +9,11 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPipe.c,v 1.33 2003/01/28 11:03:53 mdejong Exp $
+ * RCS: @(#) $Id: tclWinPipe.c,v 1.33.2.1 2003/03/12 19:19:32 dgp Exp $
  */
+
+#define PREFIX_IDENT ""
+#define DEBUG_IDENT TCL_DBGX
 
 #include "tclWinInt.h"
 
@@ -1208,9 +1211,9 @@ TclpCreateProcess(
 		char *start,*end;
 		Tcl_DString pipeDll;
 		Tcl_DStringInit(&pipeDll);
-		Tcl_DStringAppend(&pipeDll, TCL_PREFIX_IDENT "tclpip"
+		Tcl_DStringAppend(&pipeDll, PREFIX_IDENT "tclpip"
 		    STRINGIFY(TCL_MAJOR_VERSION) STRINGIFY(TCL_MINOR_VERSION)
-		    STRINGIFY(TCL_DEBUG_IDENT) ".dll ", -1);
+		    STRINGIFY(DEBUG_IDENT) ".dll ", -1);
 		tclExePtr = Tcl_NewStringObj(TclpFindExecutable(""), -1);
 		start = Tcl_GetStringFromObj(tclExePtr, &i);
 		for (end = start + (i-1); end > start; end--) {
