@@ -3,6 +3,7 @@
 	* tools/genStubs.tcl:
 	* unix/configure.in:
 	* unix/Makefile.in:
+	* win/makefile.vc:
 	* generic/tcl.h:
 	* generic/tclBasic.c:
 	* generic/tclDecls.h:
