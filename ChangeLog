@@ -1,3 +1,10 @@
+2003-02-28  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* win/configure:
+	* win/configure.in: check for 'g' for debug build type, not 'd'.
+	* win/rules.vc (DBGX): correct to use 'g' for nmake win makefile
+	to match the cygwin makefile for debug builds. [Bug #635107]
+
 2003-02-28  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* doc/file.n: subcommand is 'file volumes' not 'file volume'
