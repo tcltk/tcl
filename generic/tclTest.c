@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.84 2004/10/01 03:10:36 dgp Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.85 2004/10/07 22:01:18 dgp Exp $
  */
 
 #define TCL_TEST
@@ -3924,16 +3924,7 @@ TestsetobjerrorcodeCmd(dummy, interp, objc, objv)
     int objc;			/* Number of arguments. */
     Tcl_Obj *CONST objv[];	/* The argument objects. */
 {
-    Tcl_Obj *listObjPtr;
-
-    if (objc > 1) {
-	listObjPtr = Tcl_ConcatObj(objc - 1, objv + 1);
-    } else {
-	listObjPtr = Tcl_NewObj();
-    }
-    Tcl_IncrRefCount(listObjPtr);
-    Tcl_SetObjErrorCode(interp, listObjPtr);
-    Tcl_DecrRefCount(listObjPtr);
+    Tcl_SetObjErrorCode(interp, Tcl_ConcatObj(objc - 1, objv + 1));
     return TCL_ERROR;
 }
 
