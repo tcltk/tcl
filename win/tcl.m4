@@ -302,12 +302,7 @@ AC_DEFUN(SC_ENABLE_SYMBOLS, [
 	DBGX=""
 	AC_MSG_RESULT([no])
 
-	# Use result from SC_CONFIG_CFLAGS to determine if
-	# optimization is truly active.
-
-	if test "$OPTIMIZING" = "1" ; then
-	    AC_DEFINE(TCL_CFG_OPTIMIZED)
-	fi
+	AC_DEFINE(TCL_CFG_OPTIMIZED)
     else
 	CFLAGS_DEFAULT='$(CFLAGS_DEBUG)'
 	LDFLAGS_DEFAULT='$(LDFLAGS_DEBUG)'
@@ -608,25 +603,6 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	    CFLAGS_OPTIMIZE="-nologo -Oti -Gs -GD ${runtime}"
 	    STLIB_LD="lib -nologo"
 	    LINKBIN="link -link50compat"
-
-	    # TIP #59
-	    # A check borrowed from 'rules.vc' to determine if the
-	    # compiler actually supports optimization. If not we do
-	    # not try to use this feature.
-
-	    lines=`$(CC) -nologo -Ox -c -Zs -TC -Fdtemp nul 2>&1 | grep "D4002" | wc -l`
-
-	    for f in temp.idb temp.pdb ; do
-		if [ -f $f ]; then
-		     rm -f $f
-		fi
-	    done
-	    if [ $lines -gt 0 ]; then
-		OPTIMIZING=1
-	    else
-		OPTIMIZING=0
-		CFLAGS_OPTIMIZE="-nologo -Oti -Gs -GD ${runtime}"
-	    fi
 	fi
 
 	SHLIB_LD="${LINKBIN} -dll -nologo -incremental:no"
