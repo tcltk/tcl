@@ -7,7 +7,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclWinInit.c,v 1.62 2004/11/22 22:13:42 dgp Exp $
+ * RCS: @(#) $Id: tclWinInit.c,v 1.63 2004/11/24 21:12:20 kennykb Exp $
  */
 
 #include "tclWinInt.h"
@@ -334,8 +334,7 @@ TclpInitLibraryPath(path)
     Tcl_Obj *pathPtr, *objPtr, **objv;
     CONST char *str;
     Tcl_DString ds;
-    int objc, pathc;
-    CONST char **pathv;
+    int objc;
     char installLib[LIBRARY_SIZE];
 
     Tcl_DStringInit(&ds);

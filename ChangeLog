@@ -7,6 +7,9 @@
 	manage their masks using the FD_CLR, FD_ISSET, FD_SET, and
 	FD_ZERO macros rather than bit-whacking that failed under
 	Solaris-Sparc-64.  [Bug 1071807]
+	* win/tclWinInit.c (TclpInitLibraryPath): Removed unused
+	vars 'pathc' and 'pathv' that caused compilation problems
+	on VC++ with --enable-symbols.
 	
 2004-11-24  Don Porter  <dgp@users.sourceforge.net>
 
