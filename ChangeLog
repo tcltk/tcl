@@ -1,5 +1,9 @@
 2004-10-05  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclBasic.c (TclObjInvoke): More simplification of the
+	TclObjInvoke routine toward unification with the rest of the
+	evaluation stack.
+
 	* generic/tclBasic.c (Tcl_CreateInterp,Tcl_DeleteInterp,
 		TclEvalObjvInternal,Tcl_LogCommandInfo):
 	* generic/tclCmdAH.c (Tcl_CatchObjCmd):

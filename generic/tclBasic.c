@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.123 2004/10/05 18:14:27 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.124 2004/10/05 21:21:45 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -4234,9 +4234,8 @@ TclObjInvoke(interp, objc, objv, flags)
     register Interp *iPtr = (Interp *) interp;
     Tcl_HashTable *hTblPtr;	/* Table of hidden commands. */
     char *cmdName;		/* Name of the command from objv[0]. */
-    register Tcl_HashEntry *hPtr;
+    Tcl_HashEntry *hPtr = NULL;
     Command *cmdPtr;
-    Tcl_Obj **localObjv = NULL;	/* command is not found. */
     int result;
 
     if (interp == (Tcl_Interp *) NULL) {
@@ -4249,37 +4248,29 @@ TclObjInvoke(interp, objc, objv, flags)
         return TCL_ERROR;
     }
 
-    cmdName = Tcl_GetString(objv[0]);
-    if (flags & TCL_INVOKE_HIDDEN) {
-        /*
-         * We never invoke "unknown" for hidden commands.
-         */
-        
-	hPtr = NULL;
-        hTblPtr = ((Interp *) interp)->hiddenCmdTablePtr;
-        if (hTblPtr != NULL) {
-	    hPtr = Tcl_FindHashEntry(hTblPtr, cmdName);
-	}
-	if (hPtr == NULL) {
-	    Tcl_ResetResult(interp);
-	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		     "invalid hidden command name \"", cmdName, "\"",
-		     (char *) NULL);
-            return TCL_ERROR;
-        }
-	cmdPtr = (Command *) Tcl_GetHashValue(hPtr);
-    } else {
-	cmdPtr = NULL; /* Avoid warning */
+    if ((flags & TCL_INVOKE_HIDDEN) == 0) {
 	Tcl_Panic("TclObjInvoke: called without TCL_INVOKE_HIDDEN");
     }
 
-    /*
-     * Invoke the command procedure. First reset the interpreter's string
-     * and object results to their default empty values since they could
-     * have gotten changed by earlier invocations.
-     */
+    if (TclInterpReady(interp) == TCL_ERROR) {
+	return TCL_ERROR;
+    }
 
-    Tcl_ResetResult(interp);
+    cmdName = Tcl_GetString(objv[0]);
+    hTblPtr = iPtr->hiddenCmdTablePtr;
+    if (hTblPtr != NULL) {
+	hPtr = Tcl_FindHashEntry(hTblPtr, cmdName);
+    }
+    if (hPtr == NULL) {
+	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
+		"invalid hidden command name \"", cmdName, "\"",
+		(char *) NULL);
+	return TCL_ERROR;
+    }
+    cmdPtr = (Command *) Tcl_GetHashValue(hPtr);
+
+    /* Invoke the command procedure. */
+
     iPtr->cmdCount++;
     result = (*cmdPtr->objProc)(cmdPtr->objClientData, interp, objc, objv);
 
@@ -4292,32 +4283,11 @@ TclObjInvoke(interp, objc, objv, flags)
 	    && ((flags & TCL_INVOKE_NO_TRACEBACK) == 0)
 	    && ((iPtr->flags & ERR_ALREADY_LOGGED) == 0)) {
 	int length;
-	CONST char* cmdString;
-	Tcl_Obj *message, *command = Tcl_NewListObj(objc, objv);
+	Tcl_Obj *command = Tcl_NewListObj(objc, objv);
+	CONST char* cmdString = Tcl_GetStringFromObj(command, &length);
 
-        if (!(iPtr->flags & ERR_IN_PROGRESS)) {
-	    message = Tcl_NewStringObj("\n    while invoking\n\"", -1);
-        } else {
-	    message = Tcl_NewStringObj("\n    invoked from within\n\"", -1);
-        }
-	Tcl_IncrRefCount(message);
-	Tcl_IncrRefCount(command);
-	cmdString = Tcl_GetStringFromObj(command, &length);
-	TclAppendLimitedToObj(message, cmdString, length, 100, NULL);
-	Tcl_DecrRefCount(command);
-        Tcl_AppendToObj(message, "\"", -1);
-        TclAppendObjToErrorInfo(interp, message);
-	Tcl_DecrRefCount(message);
+	Tcl_LogCommandInfo(interp, cmdString, cmdString, length);
 	iPtr->flags &= ~ERR_ALREADY_LOGGED;
-    }
-
-    /*
-     * Free any locally allocated storage used to call "unknown".
-     */
-
-    if (localObjv != (Tcl_Obj **) NULL) {
-	Tcl_DecrRefCount(localObjv[0]);
-        ckfree((char *) localObjv);
     }
     return result;
 }
