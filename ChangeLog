@@ -1,3 +1,8 @@
+2003-05-05  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* generic/tclBasic.c (Tcl_HideCommand): Fixed error message
+	grammar and spelling.
+
 2003-04-29  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* generic/tclFileName.c: fix to bug reported privately by
