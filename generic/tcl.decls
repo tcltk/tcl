@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.60 2001/09/25 16:23:55 dgp Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.61 2001/09/27 00:19:57 dgp Exp $
 
 library tcl
 
@@ -605,7 +605,7 @@ declare 167 unix {
 # Obsolete.  Should now use Tcl_FSGetPathType which is objectified
 # and therefore usually faster.
 declare 168 generic {
-    Tcl_PathType Tcl_GetPathType(char *path)
+    Tcl_PathType Tcl_GetPathType(CONST char *path)
 }
 declare 169 generic {
     int Tcl_Gets(Tcl_Channel chan, Tcl_DString *dsPtr)
