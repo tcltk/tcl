@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.108 2004/07/08 18:46:04 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.109 2004/07/12 01:56:12 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -3591,6 +3591,7 @@ Tcl_EvalEx(interp, script, numBytes, flags)
 			Tcl_AppendToObj(msg, ")", -1);
 			TclAppendObjToErrorInfo(interp, msg);
 			Tcl_DecrRefCount(msg);
+			Tcl_DecrRefCount(objv[objectsUsed]);
 			goto error;
 		    }
 		    expandRequested = 1;
