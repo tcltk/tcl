@@ -6,6 +6,15 @@
 
 2003-07-18  Don Porter  <dgp@users.sourceforge.net>
 
+	* doc/tcltest.n:                Restored the [Eval] proc to replace
+	* library/tcltest/tcltest.tcl:  the [::puts] command when either the
+	-output or -error option for [test] is in use, in order to capture
+	data written to the output or error channels for comparison against
+	what is expected.  This is easier to document and agrees better with
+	most user expectations than the previous attempt to replace [puts]
+	only in the caller's namespace.  Documentation made more precise on
+	the subject.  [Bug 706359]
+
 	* doc/AddErrInfo.3:	Improved consistency of documentation
 	* doc/CrtTrace.3:      	by using "null" everywhere to refer to
 	* doc/Encoding.3:      	the character '\0', and using "NULL"
@@ -232,13 +241,13 @@
 2003-06-23  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* generic/tclFCmd.c: fix to bad error message when trying to
-        do 'file copy foo ""'. [Bug 756951]
-        * tests/fCmd.test: added two new tests for the bug.
+	do 'file copy foo ""'. [Bug 756951]
+	* tests/fCmd.test: added two new tests for the bug.
 
 	* win/tclWinFile.c:
 	* win/tclWin32Dll.c: recommitted some filesystem globbing 
-        speed-ups, but disabled some on the older Win 95/98/ME where
-        they don't seem to work.
+	speed-ups, but disabled some on the older Win 95/98/ME where
+	they don't seem to work.
 
 	* doc/FileSystem.3: documentation fix [Bug 720634]
 
@@ -250,12 +259,12 @@
 2003-06-17  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* win/makefile.vc:  fixes to check-in below so compilation now
-        works again on Windows.
+	works again on Windows.
 
 	* generic/tclCmdMZ.c:
 	* tests/regexp.test: fixing of bugs related to regexp and regsub
-        matching of empty strings.  Addition of a number of new tests.
-        [Bug 755335]
+	matching of empty strings.  Addition of a number of new tests.
+	[Bug 755335]
 
 2003-06-16  Andreas Kupries  <andreask@activestate.com>
 
@@ -314,11 +323,11 @@
 2003-06-02  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* win/tclWinFCmd.c:
-        * tests/fCmd.test: fix to [Bug #747575] in which a bad error
-        message is given when trying to rename a busy directory to
-        one with the same prefix, but not the same name.  Added three
-        new tests.
-        
+	* tests/fCmd.test: fix to [Bug #747575] in which a bad error
+	message is given when trying to rename a busy directory to
+	one with the same prefix, but not the same name.  Added three
+	new tests.
+	
 2003-05-23  D. Richard Hipp <drh@hwaci.com>
 
 	* win/tclWinTime.c: Add tests to detect and avoid a division by zero
