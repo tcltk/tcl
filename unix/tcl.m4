@@ -1635,7 +1635,7 @@ int main() {
 	return 0;
     }
     return 1;
-}], tcl_cv_api_serial=sgtty, tcl_cv_api_serial=none, tcl_cv_api_serial=none)
+}], tcl_cv_api_serial=sgtty, tcl_cv_api_serial=no, tcl_cv_api_serial=no)
     fi
     if test $tcl_cv_api_serial = no ; then
 	AC_TRY_RUN([
