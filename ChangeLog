@@ -1,3 +1,10 @@
+2001-09-10  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* generic/tclProc.c:
+	* tests/proc.test: made [proc] bytecompile a no-op for procs
+	defined with _args_ as single argument and an empty body.
+	[FQ 451441] 
+	
 2001-09-09  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* unix/Makefile.in:
