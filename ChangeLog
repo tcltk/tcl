@@ -1,8 +1,15 @@
 2003-02-11  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	* generic/tclIOUtil.c (Tcl_FSJoinPath, Tcl_FSGetNormalizedPath): 
+	(UpdateStringOfFsPath): revert the cwdLen == 0 check and instead
+	follow a different code path in Tcl_FSJoinPath.
+	(Tcl_FSConvertToPathType, Tcl_FSGetNormalizedPath):
+	(Tcl_FSGetFileSystemForPath): Update string rep path objects
+	before freeing the internal object. (darley)
+
 	* tests/fileSystem.test: added test 8.3
 	* generic/tclIOUtil.c (Tcl_FSGetNormalizedPath): 
-	(Tcl_FSMatchInDirectory): handle the cwdLen == 0 case 
+	(UpdateStringOfFsPath): handle the cwdLen == 0 case 
 
 	* unix/tclUnixFile.c (TclpMatchInDirectory): simplify the hidden
 	file match check.
