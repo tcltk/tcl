@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: open.n,v 1.7 1999/11/24 20:54:54 hobbs Exp $
+'\" RCS: @(#) $Id: open.n,v 1.8 1999/12/09 14:43:47 hobbs Exp $
 '\" 
 .so man.macros
 .TH open n 7.6 Tcl "Tcl Built-In Commands"
@@ -224,19 +224,6 @@ standard output.  If a command pipeline is opened for writing to a 16-bit DOS
 application, no data will be sent to the command pipeline's standard output
 until the pipe is actually closed.  This problem occurs because 16-bit DOS
 applications are run synchronously, as described above.  
-.TP
-\fBWindows 3.X\fR 
-.
-A command pipeline can execute 16-bit or 32-bit DOS or Windows
-applications, but the call to \fBopen\fR will not return until the last
-program in the pipeline has finished executing; command pipelines run
-synchronously.  If the pipeline is opened with write access (either just
-writing or both reading and writing) the first application in the
-pipeline will instead see an immediate end-of-file; any data the caller
-writes to the open pipe will instead be discarded.
-.sp
-Since Tcl cannot be run with a real console under Windows 3.X, there are
-no interactions between command pipelines and the console.
 .TP
 \fBMacintosh\fR
 .
