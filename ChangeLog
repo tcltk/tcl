@@ -1,3 +1,9 @@
+2002-10-11  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* generic/tcl.h: Need a different strategy through the maze of
+	#defines to let people building with Cygwin build correctly.  Also
+	made some comments less misleading...
+
 2002-10-10  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* README: fixed minor nits [Bug #607776] (virden)
