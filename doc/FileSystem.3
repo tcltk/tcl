@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: FileSystem.3,v 1.1 2001/07/31 19:15:24 vincentdarley Exp $
+'\" RCS: @(#) $Id: FileSystem.3,v 1.2 2001/08/07 02:59:14 hobbs Exp $
 '\" 
 .so man.macros
 .TH Tcl_FSCopyFile 3 8.4 Tcl "Tcl Library Procedures"
@@ -88,7 +88,7 @@ int
 \fBTcl_FSChdir\fR(\fIpathPtr\fR)
 .sp
 Tcl_Obj*
-\fBTcl_FSPathSeparator\fR(\fIfIpathPtr\fR\fR)
+\fBTcl_FSPathSeparator\fR(\fIpathPtr\fR)
 .sp
 Tcl_Obj*
 \fBTcl_FSJoinPath\fR(\fIlistObj, elements\fR)
@@ -623,7 +623,7 @@ identifies the type of the filesystem implemented, e.g.
 .SH "STRUCTURE LENGTH"
 .PP
 The \fIstructureLength\fR field is generally implemented as
-\fIsizeof(Tcl_Filesystem)\R, and is there to allow easier
+\fIsizeof(Tcl_Filesystem)\fR, and is there to allow easier
 binary backwards compatibility if the size of the structure
 changes in a future Tcl release.
 .PP
