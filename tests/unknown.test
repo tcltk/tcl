@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: unknown.test,v 1.6 2000/04/10 17:19:05 ericm Exp $
+# RCS: @(#) $Id: unknown.test,v 1.7 2004/05/19 13:05:37 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -65,15 +65,3 @@ catch {rename unknown {}}
 catch {rename unknown.old unknown}
 ::tcltest::cleanupTests
 return 
-
-
-
-
-
-
-
-
-
-
-
-
