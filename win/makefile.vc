@@ -373,6 +373,8 @@ clean:
 	-@del *.lib 
 	-@del *.dll 
 	-@del *.exe
+	-@del *.pdb
+	-@del *.pch
         -@del $(TMPDIR)\*.obj
         -@del $(TMPDIR)\*.res
         -@del $(TMPDIR)\*.def
