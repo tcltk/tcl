@@ -1,5 +1,5 @@
 @echo off
-rem RCS: @(#) $Id: mkd.bat,v 1.5 1999/12/22 00:00:16 hobbs Exp $
+rem RCS: @(#) $Id: mkd.bat,v 1.6 2001/09/08 22:30:15 mdejong Exp $
 
 if exist %1\. goto end
 
@@ -18,3 +18,4 @@ if errorlevel 1 goto end
 echo created directory %1
 
 :end
+
