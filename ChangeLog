@@ -1,3 +1,12 @@
+2003-08-05  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclexecute.c (INST_INVOKE, INST_EVAL, INST_PUSH_RESULT):
+	added a Tcl_ResetResult(interp) at each point where the interp's
+	result is pushed onto the stack, to avoid keeping an extra
+	reference that may cause costly Tcl_Obj duplication [Bug 781585]
+	Detected by Franco Violi, analyzed by Peter Spjuth and Donal
+	Fellows. 
+
 2003-07-28  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* doc/FileSystem.3:
