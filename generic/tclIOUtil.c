@@ -26,24 +26,22 @@
  * a linked list is defined.
  */
 
-typedef struct StatProc *StatProcPtr;
 typedef struct StatProc {
-    TclStatProc_ *proc;		/* Function to process a 'stat()' call */
-    StatProcPtr next; 		/* The next 'stat()' function to call */
+    TclStatProc_ *proc;		 /* Function to process a 'stat()' call */
+    struct StatProc *nextPtr;    /* The next 'stat()' function to call */
 } StatProc;
 
-typedef struct AccessProc *AccessProcPtr;
 typedef struct AccessProc {
-    TclAccessProc_ *proc;	/* Function to process a 'access()' call */
-    AccessProcPtr next; 	/* The next 'access()' function to call */
+    TclAccessProc_ *proc;	 /* Function to process a 'access()' call */
+    struct AccessProc *nextPtr;  /* The next 'access()' function to call */
 } AccessProc;
 
-typedef struct OpenFileChannelProc *OpenFileChannelProcPtr;
 typedef struct OpenFileChannelProc {
-    TclOpenFileChannelProc_ *proc; /* Function to process a
-				    * 'Tcl_OpenFileChannel()' call */
-    OpenFileChannelProcPtr next;   /* The next 'Tcl_OpenFileChannel()'
-				    * function to call */
+    TclOpenFileChannelProc_ *proc;  /* Function to process a
+				     * 'Tcl_OpenFileChannel()' call */
+    struct OpenFileChannelProc *nextPtr;
+				    /* The next 'Tcl_OpenFileChannel()'
+				     * function to call */
 } OpenFileChannelProc;
 
 /*
@@ -53,7 +51,7 @@ typedef struct OpenFileChannelProc {
  * to that node.
  * 
  * The "delete" functions (e.g. 'TclStatDeleteProc(...)') ensure that
- * these statically declared nodes cannot be inadvertently removed.
+ * these statically declared list entry cannot be inadvertently removed.
  *
  * This method avoids the need to call any sort of "initialization"
  * function
@@ -62,17 +60,17 @@ typedef struct OpenFileChannelProc {
 static StatProc defaultStatProc = {
     &TclpStat, NULL
 };
-static StatProcPtr statProcList = &defaultStatProc;
+static StatProc *statProcList = &defaultStatProc;
 
 static AccessProc defaultAccessProc = {
     &TclpAccess, NULL
 };
-static AccessProcPtr accessProcList = &defaultAccessProc;
+static AccessProc *accessProcList = &defaultAccessProc;
 
 static OpenFileChannelProc defaultOpenFileChannelProc = {
     &TclpOpenFileChannel, NULL
 };
-static OpenFileChannelProcPtr openFileChannelProcList =
+static OpenFileChannelProc *openFileChannelProcList =
 	&defaultOpenFileChannelProc;
 
 /*
@@ -452,6 +450,9 @@ Tcl_PosixError(interp)
  * TclStat --
  *
  *	This procedure replaces the library version of stat and lsat.
+ *	The chain of functions that have been "inserted" into the
+ *	'statProcList' will be called in succession until either
+ *	a value of zero is returned, or the entire list is visited.
  *
  * Results:
  *      See stat documentation.
@@ -467,7 +468,7 @@ TclStat(path, buf)
     CONST char *path;		/* Path of file to stat (in current CP). */
     TclStat_ *buf;		/* Filled with results of stat call. */
 {
-    StatProcPtr statProcPtr = statProcList;
+    StatProc *statProcPtr = statProcList;
     int retVal = -1;
 
     /*
@@ -477,7 +478,7 @@ TclStat(path, buf)
 
     while ((retVal == -1) && (statProcPtr != NULL)) {
 	retVal = (*statProcPtr->proc)(path, buf);
-	statProcPtr = statProcPtr->next;
+	statProcPtr = statProcPtr->nextPtr;
     }
 
     return (retVal);
@@ -489,6 +490,9 @@ TclStat(path, buf)
  * TclAccess --
  *
  *	This procedure replaces the library version of access.
+ *	The chain of functions that have been "inserted" into the
+ *	'accessProcList' will be called in succession until either
+ *	a value of zero is returned, or the entire list is visited.
  *
  * Results:
  *      See access documentation.
@@ -504,7 +508,7 @@ TclAccess(path, mode)
     CONST char *path;		/* Path of file to access (in current CP). */
     int mode;                   /* Permission setting. */
 {
-    AccessProcPtr accessProcPtr = accessProcList;
+    AccessProc *accessProcPtr = accessProcList;
     int retVal = -1;
 
     /*
@@ -514,7 +518,7 @@ TclAccess(path, mode)
 
     while ((retVal == -1) && (accessProcPtr != NULL)) {
 	retVal = (*accessProcPtr->proc)(path, mode);
-	accessProcPtr = accessProcPtr->next;
+	accessProcPtr = accessProcPtr->nextPtr;
     }
 
     return (retVal);
@@ -525,13 +529,17 @@ TclAccess(path, mode)
  *
  * Tcl_OpenFileChannel --
  *
- *      @@@
+ *	The chain of functions that have been "inserted" into the
+ *	'openFileChannelProcList' will be called in succession until
+ *	either a valid file channel is returned, or the entire list is
+ *	visited.
  *
  * Results:
- *      @@@
+ *	The new channel or NULL, if the named file could not be opened.
  *
  * Side effects:
- *      @@@
+ *	May open the channel and may cause creation of a file on the
+ *	file system.
  *
  *----------------------------------------------------------------------
  */
@@ -547,7 +555,7 @@ Tcl_OpenFileChannel(interp, fileName, modeString, permissions)
                                          * file, with what modes to create
                                          * it? */
 {
-    OpenFileChannelProcPtr openFileChannelProcPtr = openFileChannelProcList;
+    OpenFileChannelProc *openFileChannelProcPtr = openFileChannelProcList;
     Tcl_Channel retVal = NULL;
 
     /*
@@ -559,7 +567,7 @@ Tcl_OpenFileChannel(interp, fileName, modeString, permissions)
     while ((retVal == NULL) && (openFileChannelProcPtr != NULL)) {
 	retVal = (*openFileChannelProcPtr->proc)(interp, fileName,
 		modeString, permissions);
-	openFileChannelProcPtr = openFileChannelProcPtr->next;
+	openFileChannelProcPtr = openFileChannelProcPtr->nextPtr;
     }
 
     return (retVal);
@@ -570,13 +578,19 @@ Tcl_OpenFileChannel(interp, fileName, modeString, permissions)
  *
  * TclStatInsertProc --
  *
- *	@@@
+ *	Insert the passed procedure pointer at the head of the list of
+ *	functions which are used during a call to 'TclStat(...)'. The
+ *	passed function should be have exactly like 'TclStat' when called
+ *	during that time (see 'TclStat(...)' for more informatin).
+ *	The function will be added even if it already in the list.
  *
  * Results:
- *      @@@
+ *      Normally TCL_OK; TCL_ERROR if memory for a new node in the list
+ *	could not be allocated.
  *
  * Side effects:
- *      @@@
+ *      Memory allocataed and modifies the link list for 'TclStat'
+ *	functions.
  *
  *----------------------------------------------------------------------
  */
@@ -588,13 +602,13 @@ TclStatInsertProc (proc)
     int retVal = TCL_ERROR;
 
     if (proc != NULL) {
-	StatProcPtr newStatProcPtr;
+	StatProc *newStatProcPtr;
 
-	newStatProcPtr = (StatProcPtr)Tcl_Alloc(sizeof(StatProc));;
+	newStatProcPtr = (StatProc *)Tcl_Alloc(sizeof(StatProc));;
 
 	if (newStatProcPtr != NULL) {
 	    newStatProcPtr->proc = proc;
-	    newStatProcPtr->next = statProcList;
+	    newStatProcPtr->nextPtr = statProcList;
 	    statProcList = newStatProcPtr;
 
 	    retVal = TCL_OK;
@@ -609,13 +623,16 @@ TclStatInsertProc (proc)
  *
  * TclStatDeleteProc --
  *
- *	@@@
+ *	Removed the passed function pointer from the list of 'TclStat'
+ *	functions.  Ensures that the built-in stat function is not
+ *	removvable.
  *
  * Results:
- *      @@@
+ *      TCL_OK if the procedure pointer was successfully removed,
+ *	TCL_ERROR otherwise.
  *
  * Side effects:
- *      @@@
+ *      Memory is deallocated and the respective list updated.
  *
  *----------------------------------------------------------------------
  */
@@ -625,8 +642,8 @@ TclStatDeleteProc (proc)
     TclStatProc_ *proc;
 {
     int retVal = TCL_ERROR;
-    StatProcPtr tmpStatProcPtr = statProcList;
-    StatProcPtr prevStatProcPtr = NULL;
+    StatProc *tmpStatProcPtr = statProcList;
+    StatProc *prevStatProcPtr = NULL;
 
     /*
      * Traverse the 'statProcList' looking for the particular node
@@ -637,9 +654,9 @@ TclStatDeleteProc (proc)
     while ((retVal == TCL_ERROR) && (tmpStatProcPtr != &defaultStatProc)) {
 	if (tmpStatProcPtr->proc == proc) {
 	    if (prevStatProcPtr == NULL) {
-		statProcList = tmpStatProcPtr->next;
+		statProcList = tmpStatProcPtr->nextPtr;
 	    } else {
-		prevStatProcPtr->next = tmpStatProcPtr->next;
+		prevStatProcPtr->nextPtr = tmpStatProcPtr->nextPtr;
 	    }
 
 	    Tcl_Free((char *)tmpStatProcPtr);
@@ -647,7 +664,7 @@ TclStatDeleteProc (proc)
 	    retVal = TCL_OK;
 	} else {
 	    prevStatProcPtr = tmpStatProcPtr;
-	    tmpStatProcPtr = tmpStatProcPtr->next;
+	    tmpStatProcPtr = tmpStatProcPtr->nextPtr;
 	}
     }
 
@@ -659,13 +676,19 @@ TclStatDeleteProc (proc)
  *
  * TclAccessInsertProc --
  *
- *	@@@
+ *	Insert the passed procedure pointer at the head of the list of
+ *	functions which are used during a call to 'TclAccess(...)'. The
+ *	passed function should be have exactly like 'TclAccess' when
+ *	called during that time (see 'TclAccess(...)' for more informatin).
+ *	The function will be added even if it already in the list.
  *
  * Results:
- *      @@@
+ *      Normally TCL_OK; TCL_ERROR if memory for a new node in the list
+ *	could not be allocated.
  *
  * Side effects:
- *      @@@
+ *      Memory allocataed and modifies the link list for 'TclAccess'
+ *	functions.
  *
  *----------------------------------------------------------------------
  */
@@ -677,13 +700,13 @@ TclAccessInsertProc(proc)
     int retVal = TCL_ERROR;
 
     if (proc != NULL) {
-	AccessProcPtr newAccessProcPtr;
+	AccessProc *newAccessProcPtr;
 
-	newAccessProcPtr = (AccessProcPtr)Tcl_Alloc(sizeof(AccessProc));;
+	newAccessProcPtr = (AccessProc *)Tcl_Alloc(sizeof(AccessProc));;
 
 	if (newAccessProcPtr != NULL) {
 	    newAccessProcPtr->proc = proc;
-	    newAccessProcPtr->next = accessProcList;
+	    newAccessProcPtr->nextPtr = accessProcList;
 	    accessProcList = newAccessProcPtr;
 
 	    retVal = TCL_OK;
@@ -698,13 +721,16 @@ TclAccessInsertProc(proc)
  *
  * TclAccessDeleteProc --
  *
- *	@@@
+ *	Removed the passed function pointer from the list of 'TclAccess'
+ *	functions.  Ensures that the built-in access function is not
+ *	removvable.
  *
  * Results:
- *      @@@
+ *      TCL_OK if the procedure pointer was successfully removed,
+ *	TCL_ERROR otherwise.
  *
  * Side effects:
- *      @@@
+ *      Memory is deallocated and the respective list updated.
  *
  *----------------------------------------------------------------------
  */
@@ -714,8 +740,8 @@ TclAccessDeleteProc(proc)
     TclAccessProc_ *proc;
 {
     int retVal = TCL_ERROR;
-    AccessProcPtr tmpAccessProcPtr = accessProcList;
-    AccessProcPtr prevAccessProcPtr = NULL;
+    AccessProc *tmpAccessProcPtr = accessProcList;
+    AccessProc *prevAccessProcPtr = NULL;
 
     /*
      * Traverse the 'accessProcList' looking for the particular node
@@ -726,9 +752,9 @@ TclAccessDeleteProc(proc)
     while ((retVal == TCL_ERROR) && (tmpAccessProcPtr != &defaultAccessProc)) {
 	if (tmpAccessProcPtr->proc == proc) {
 	    if (prevAccessProcPtr == NULL) {
-		accessProcList = tmpAccessProcPtr->next;
+		accessProcList = tmpAccessProcPtr->nextPtr;
 	    } else {
-		prevAccessProcPtr->next = tmpAccessProcPtr->next;
+		prevAccessProcPtr->nextPtr = tmpAccessProcPtr->nextPtr;
 	    }
 
 	    Tcl_Free((char *)tmpAccessProcPtr);
@@ -736,7 +762,7 @@ TclAccessDeleteProc(proc)
 	    retVal = TCL_OK;
 	} else {
 	    prevAccessProcPtr = tmpAccessProcPtr;
-	    tmpAccessProcPtr = tmpAccessProcPtr->next;
+	    tmpAccessProcPtr = tmpAccessProcPtr->nextPtr;
 	}
     }
 
@@ -748,13 +774,20 @@ TclAccessDeleteProc(proc)
  *
  * TclOpenFileChannelInsertProc --
  *
- *	@@@
+ *	Insert the passed procedure pointer at the head of the list of
+ *	functions which are used during a call to
+ *	'Tcl_OpenFileChannel(...)'. The passed function should be have
+ *	exactly like 'Tcl_OpenFileChannel' when called during that time
+ *	(see 'Tcl_OpenFileChannel(...)' for more informatin). The
+ *	function will be added even if it already in the list.
  *
  * Results:
- *      @@@
+ *      Normally TCL_OK; TCL_ERROR if memory for a new node in the list
+ *	could not be allocated.
  *
  * Side effects:
- *      @@@
+ *      Memory allocataed and modifies the link list for
+ *	'Tcl_OpenFileChannel' functions.
  *
  *----------------------------------------------------------------------
  */
@@ -766,14 +799,14 @@ TclOpenFileChannelInsertProc(proc)
     int retVal = TCL_ERROR;
 
     if (proc != NULL) {
-	OpenFileChannelProcPtr newOpenFileChannelProcPtr;
+	OpenFileChannelProc *newOpenFileChannelProcPtr;
 
 	newOpenFileChannelProcPtr =
-		(OpenFileChannelProcPtr)Tcl_Alloc(sizeof(OpenFileChannelProc));;
+		(OpenFileChannelProc *)Tcl_Alloc(sizeof(OpenFileChannelProc));;
 
 	if (newOpenFileChannelProcPtr != NULL) {
 	    newOpenFileChannelProcPtr->proc = proc;
-	    newOpenFileChannelProcPtr->next = openFileChannelProcList;
+	    newOpenFileChannelProcPtr->nextPtr = openFileChannelProcList;
 	    openFileChannelProcList = newOpenFileChannelProcPtr;
 
 	    retVal = TCL_OK;
@@ -788,13 +821,16 @@ TclOpenFileChannelInsertProc(proc)
  *
  * TclOpenFileChannelDeleteProc --
  *
- *	@@@
+ *	Removed the passed function pointer from the list of
+ *	'Tcl_OpenFileChannel' functions.  Ensures that the built-in
+ *	open file channel function is not removvable.
  *
  * Results:
- *      @@@
+ *      TCL_OK if the procedure pointer was successfully removed,
+ *	TCL_ERROR otherwise.
  *
  * Side effects:
- *      @@@
+ *      Memory is deallocated and the respective list updated.
  *
  *----------------------------------------------------------------------
  */
@@ -804,8 +840,8 @@ TclOpenFileChannelDeleteProc(proc)
     TclOpenFileChannelProc_ *proc;
 {
     int retVal = TCL_ERROR;
-    OpenFileChannelProcPtr tmpOpenFileChannelProcPtr = openFileChannelProcList;
-    OpenFileChannelProcPtr prevOpenFileChannelProcPtr = NULL;
+    OpenFileChannelProc *tmpOpenFileChannelProcPtr = openFileChannelProcList;
+    OpenFileChannelProc *prevOpenFileChannelProcPtr = NULL;
 
     /*
      * Traverse the 'openFileChannelProcList' looking for the particular
@@ -817,9 +853,10 @@ TclOpenFileChannelDeleteProc(proc)
 	    (tmpOpenFileChannelProcPtr != &defaultOpenFileChannelProc)) {
 	if (tmpOpenFileChannelProcPtr->proc == proc) {
 	    if (prevOpenFileChannelProcPtr == NULL) {
-		openFileChannelProcList = tmpOpenFileChannelProcPtr->next;
+		openFileChannelProcList = tmpOpenFileChannelProcPtr->nextPtr;
 	    } else {
-		prevOpenFileChannelProcPtr->next = tmpOpenFileChannelProcPtr->next;
+		prevOpenFileChannelProcPtr->nextPtr =
+			tmpOpenFileChannelProcPtr->nextPtr;
 	    }
 
 	    Tcl_Free((char *)tmpOpenFileChannelProcPtr);
@@ -827,7 +864,7 @@ TclOpenFileChannelDeleteProc(proc)
 	    retVal = TCL_OK;
 	} else {
 	    prevOpenFileChannelProcPtr = tmpOpenFileChannelProcPtr;
-	    tmpOpenFileChannelProcPtr = tmpOpenFileChannelProcPtr->next;
+	    tmpOpenFileChannelProcPtr = tmpOpenFileChannelProcPtr->nextPtr;
 	}
     }
 
