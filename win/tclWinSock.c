@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinSock.c,v 1.36.2.1 2003/10/23 16:24:42 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclWinSock.c,v 1.36.2.2 2004/05/06 01:03:56 davygrvy Exp $
  */
 
 #include "tclWinInt.h"
@@ -627,13 +627,14 @@ SocketThreadExitHandler(clientData)
 	GetExitCodeThread(tsdPtr->socketThread, &exitCode);
 	if (exitCode == STILL_ACTIVE) {
 	    PostMessage(tsdPtr->hwnd, SOCKET_TERMINATE, 0, 0);
-
 	    /*
 	     * Wait for the thread to close.  This ensures that we are
-	     * completely cleaned up before we leave this function. 
+	     * completely cleaned up before we leave this function.
+	     * If Tcl_Finalize was called from DllMain, the thread
+	     * is in a paused state so we need to timeout and continue.
 	     */
 
-	    WaitForSingleObject(tsdPtr->socketThread, INFINITE);
+	    WaitForSingleObject(tsdPtr->socketThread, 100);
 	}
 	CloseHandle(tsdPtr->socketThread);
 	tsdPtr->socketThread = NULL;
@@ -900,6 +901,10 @@ SocketEventProc(evPtr, flags)
     }
     if (events & (FD_WRITE | FD_CONNECT)) {
 	mask |= TCL_WRITABLE;
+	if (events & FD_CONNECT && infoPtr->lastError != NO_ERROR) {
+	    /* connect errors should also fire the readable handler. */
+	    mask |= TCL_READABLE;
+	}
     }
 
     if (mask) {
