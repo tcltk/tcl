@@ -1,3 +1,9 @@
+2002-07-11  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* generic/tclCkalloc.c: ckalloc() and friends take the block size
+	as an unsigned, so we should use %ud when reporting it in fprintf()
+	and panic().
+
 2002-07-11  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* generic/tclCompile.c: now setting local vars undefined at
