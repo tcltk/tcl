@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.94 2004/04/06 22:25:55 dgp Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.95 2004/05/13 13:00:20 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -898,6 +898,21 @@ TclStubs tclStubs = {
     Tcl_GetCommandFullName, /* 517 */
     Tcl_FSEvalFileEx, /* 518 */
     Tcl_SetExitProc, /* 519 */
+    Tcl_LimitAddHandler, /* 520 */
+    Tcl_LimitRemoveHandler, /* 521 */
+    Tcl_LimitReady, /* 522 */
+    Tcl_LimitCheck, /* 523 */
+    Tcl_LimitExceeded, /* 524 */
+    Tcl_LimitSetCommands, /* 525 */
+    Tcl_LimitSetTime, /* 526 */
+    Tcl_LimitSetGranularity, /* 527 */
+    Tcl_LimitTypeEnabled, /* 528 */
+    Tcl_LimitTypeExceeded, /* 529 */
+    Tcl_LimitTypeSet, /* 530 */
+    Tcl_LimitTypeReset, /* 531 */
+    Tcl_LimitGetCommands, /* 532 */
+    Tcl_LimitGetTime, /* 533 */
+    Tcl_LimitGetGranularity, /* 534 */
 };
 
 /* !END!: Do not edit above this line. */
