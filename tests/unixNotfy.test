@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: unixNotfy.test,v 1.11 2003/02/01 21:07:28 kennykb Exp $
+# RCS: @(#) $Id: unixNotfy.test,v 1.11.2.1 2003/09/04 17:50:41 dgp Exp $
 
 # The tests should not be run if you have a notifier which is unable to
 # detect infinite vwaits, as the tests below will hang. The presence of
@@ -73,7 +73,7 @@ test unixNotfy-1.2 {Tcl_DeleteFileHandler} \
     }
 
 test unixNotfy-2.1 {Tcl_DeleteFileHandler} \
-    -constraints {unixOnly && testthread} \
+    -constraints {unixOnly testthread} \
     -body {
 	update
 	set f [open [makeFile "" foo] w]
@@ -93,7 +93,7 @@ test unixNotfy-2.1 {Tcl_DeleteFileHandler} \
     }
 
 test unixNotfy-2.2 {Tcl_DeleteFileHandler} \
-    -constraints {unixOnly && testthread} \
+    -constraints {unixOnly testthread} \
     -body {
 	update
 	set f1 [open [makeFile "" foo] w]
