@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.44 2001/09/13 11:56:19 msofer Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.45 2001/09/13 23:49:57 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -471,7 +471,7 @@ Tcl_RegsubObjCmd(dummy, interp, objc, objv)
     int start, end, subStart, subEnd, match;
     Tcl_RegExp regExpr;
     Tcl_RegExpInfo info;
-    Tcl_Obj *resultPtr, *varPtr, *objPtr;
+    Tcl_Obj *resultPtr, *subPtr, *objPtr;
     Tcl_UniChar ch, *wsrc, *wfirstChar, *wstring, *wsubspec, *wend;
 
     static char *options[] = {
@@ -553,20 +553,29 @@ Tcl_RegsubObjCmd(dummy, interp, objc, objv)
 
     objv += idx;
 
-    /*
-     * Get the length of the string that we are matching before
-     * getting the regexp to avoid shimmering problems.
-     */
-
-    objPtr	= objv[1];
-    wstring	= Tcl_GetUnicodeFromObj(objPtr, &wlen);
-    wsubspec	= Tcl_GetUnicodeFromObj(objv[2], &wsublen);
-    varPtr	= objv[3];
-
     regExpr = Tcl_GetRegExpFromObj(interp, objv[0], cflags);
     if (regExpr == NULL) {
 	return TCL_ERROR;
     }
+
+    /*
+     * Make sure to avoid problems where the objects are shared.  This
+     * can cause RegExpObj <> UnicodeObj shimmering that causes data
+     * corruption.  [Bug #461322]
+     */
+
+    if (objv[1] == objv[0]) {
+	objPtr = Tcl_DuplicateObj(objv[1]);
+    } else {
+	objPtr = objv[1];
+    }
+    wstring = Tcl_GetUnicodeFromObj(objPtr, &wlen);
+    if (objv[2] == objv[0]) {
+	subPtr = Tcl_DuplicateObj(objv[2]);
+    } else {
+	subPtr = objv[2];
+    }
+    wsubspec = Tcl_GetUnicodeFromObj(subPtr, &wsublen);
 
     result = TCL_OK;
     resultPtr = Tcl_NewUnicodeObj(wstring, 0);
@@ -598,7 +607,8 @@ Tcl_RegsubObjCmd(dummy, interp, objc, objv)
 	    break;
 	}
 	if ((numMatches == 0) && (offset > 0)) {
-	    /* Copy the initial portion of the string in if an offset
+	    /*
+	     * Copy the initial portion of the string in if an offset
 	     * was specified.
 	     */
 	    Tcl_AppendUnicodeToObj(resultPtr, wstring, offset);
@@ -695,9 +705,9 @@ Tcl_RegsubObjCmd(dummy, interp, objc, objv)
     } else if (offset < wlen) {
 	Tcl_AppendUnicodeToObj(resultPtr, wstring + offset, wlen - offset);
     }
-    if (Tcl_ObjSetVar2(interp, varPtr, NULL, resultPtr, 0) == NULL) {
+    if (Tcl_ObjSetVar2(interp, objv[3], NULL, resultPtr, 0) == NULL) {
 	Tcl_AppendResult(interp, "couldn't set variable \"",
-		Tcl_GetString(varPtr), "\"", (char *) NULL);
+		Tcl_GetString(objv[3]), "\"", (char *) NULL);
 	result = TCL_ERROR;
     } else {
 	/*
@@ -709,6 +719,8 @@ Tcl_RegsubObjCmd(dummy, interp, objc, objv)
     }
 
     done:
+    if (objv[1] == objv[0]) { Tcl_DecrRefCount(objPtr); }
+    if (objv[2] == objv[0]) { Tcl_DecrRefCount(subPtr); }
     Tcl_DecrRefCount(resultPtr);
     return result;
 }
