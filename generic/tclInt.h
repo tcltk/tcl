@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.132 2003/09/23 14:48:49 msofer Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.133 2003/09/29 14:37:14 dkf Exp $
  */
 
 #ifndef _TCLINT
@@ -119,6 +119,8 @@ typedef struct Tcl_ResolverInfo {
  *----------------------------------------------------------------
  */
 
+typedef struct Tcl_Ensemble Tcl_Ensemble;
+
 /*
  * The structure below defines a namespace.
  * Note: the first five fields must match exactly the fields in a
@@ -127,91 +129,99 @@ typedef struct Tcl_ResolverInfo {
  */
 
 typedef struct Namespace {
-    char *name;			 /* The namespace's simple (unqualified)
-				  * name. This contains no ::'s. The name of
-				  * the global namespace is "" although "::"
-				  * is an synonym. */
-    char *fullName;		 /* The namespace's fully qualified name.
-				  * This starts with ::. */
-    ClientData clientData;	 /* An arbitrary value associated with this
-				  * namespace. */
+    char *name;			/* The namespace's simple (unqualified)
+				 * name. This contains no ::'s. The name of
+				 * the global namespace is "" although "::"
+				 * is an synonym. */
+    char *fullName;		/* The namespace's fully qualified name.
+				 * This starts with ::. */
+    ClientData clientData;	/* An arbitrary value associated with this
+				 * namespace. */
     Tcl_NamespaceDeleteProc *deleteProc;
-				 /* Procedure invoked when deleting the
-				  * namespace to, e.g., free clientData. */
-    struct Namespace *parentPtr; /* Points to the namespace that contains
-				  * this one. NULL if this is the global
-				  * namespace. */
-    Tcl_HashTable childTable;	 /* Contains any child namespaces. Indexed
-				  * by strings; values have type
-				  * (Namespace *). */
-    long nsId;			 /* Unique id for the namespace. */
-    Tcl_Interp *interp;		 /* The interpreter containing this
-				  * namespace. */
-    int flags;			 /* OR-ed combination of the namespace
-				  * status flags NS_DYING and NS_DEAD
-				  * listed below. */
-    int activationCount;	 /* Number of "activations" or active call
-				  * frames for this namespace that are on
-				  * the Tcl call stack. The namespace won't
-				  * be freed until activationCount becomes
-				  * zero. */
-    int refCount;		 /* Count of references by namespaceName *
-				  * objects. The namespace can't be freed
-				  * until refCount becomes zero. */
-    Tcl_HashTable cmdTable;	 /* Contains all the commands currently
-				  * registered in the namespace. Indexed by
-				  * strings; values have type (Command *).
-				  * Commands imported by Tcl_Import have
-				  * Command structures that point (via an
-				  * ImportedCmdRef structure) to the
-				  * Command structure in the source
-				  * namespace's command table. */
-    Tcl_HashTable varTable;	 /* Contains all the (global) variables
-				  * currently in this namespace. Indexed
-				  * by strings; values have type (Var *). */
-    char **exportArrayPtr;	 /* Points to an array of string patterns
-				  * specifying which commands are exported.
-				  * A pattern may include "string match"
-				  * style wildcard characters to specify
-				  * multiple commands; however, no namespace
-				  * qualifiers are allowed. NULL if no
-				  * export patterns are registered. */
-    int numExportPatterns;	 /* Number of export patterns currently
-				  * registered using "namespace export". */
-    int maxExportPatterns;	 /* Mumber of export patterns for which
-				  * space is currently allocated. */
-    int cmdRefEpoch;		 /* Incremented if a newly added command
-				  * shadows a command for which this
-				  * namespace has already cached a Command *
-				  * pointer; this causes all its cached
-				  * Command* pointers to be invalidated. */
-    int resolverEpoch;		 /* Incremented whenever (a) the name resolution
-				  * rules change for this namespace or (b) a 
-				  * newly added command shadows a command that
-				  * is compiled to bytecodes.
-				  * This invalidates all byte codes compiled
-				  * in the namespace, causing the code to be
-				  * recompiled under the new rules.*/
+				/* Procedure invoked when deleting the
+				 * namespace to, e.g., free clientData. */
+    struct Namespace *parentPtr;/* Points to the namespace that contains
+				 * this one. NULL if this is the global
+				 * namespace. */
+    Tcl_HashTable childTable;	/* Contains any child namespaces. Indexed
+				 * by strings; values have type
+				 * (Namespace *). */
+    long nsId;			/* Unique id for the namespace. */
+    Tcl_Interp *interp;		/* The interpreter containing this
+				 * namespace. */
+    int flags;			/* OR-ed combination of the namespace
+				 * status flags NS_DYING and NS_DEAD
+				 * listed below. */
+    int activationCount;	/* Number of "activations" or active call
+				 * frames for this namespace that are on
+				 * the Tcl call stack. The namespace won't
+				 * be freed until activationCount becomes
+				 * zero. */
+    int refCount;		/* Count of references by namespaceName *
+				 * objects. The namespace can't be freed
+				 * until refCount becomes zero. */
+    Tcl_HashTable cmdTable;	/* Contains all the commands currently
+				 * registered in the namespace. Indexed by
+				 * strings; values have type (Command *).
+				 * Commands imported by Tcl_Import have
+				 * Command structures that point (via an
+				 * ImportedCmdRef structure) to the
+				 * Command structure in the source
+				 * namespace's command table. */
+    Tcl_HashTable varTable;	/* Contains all the (global) variables
+				 * currently in this namespace. Indexed
+				 * by strings; values have type (Var *). */
+    char **exportArrayPtr;	/* Points to an array of string patterns
+				 * specifying which commands are exported.
+				 * A pattern may include "string match"
+				 * style wildcard characters to specify
+				 * multiple commands; however, no namespace
+				 * qualifiers are allowed. NULL if no
+				 * export patterns are registered. */
+    int numExportPatterns;	/* Number of export patterns currently
+				 * registered using "namespace export". */
+    int maxExportPatterns;	/* Mumber of export patterns for which
+				 * space is currently allocated. */
+    int cmdRefEpoch;		/* Incremented if a newly added command
+				 * shadows a command for which this
+				 * namespace has already cached a Command *
+				 * pointer; this causes all its cached
+				 * Command* pointers to be invalidated. */
+    int resolverEpoch;		/* Incremented whenever (a) the name resolution
+				 * rules change for this namespace or (b) a 
+				 * newly added command shadows a command that
+				 * is compiled to bytecodes.
+				 * This invalidates all byte codes compiled
+				 * in the namespace, causing the code to be
+				 * recompiled under the new rules.*/
     Tcl_ResolveCmdProc *cmdResProc;
-				 /* If non-null, this procedure overrides
-				  * the usual command resolution mechanism
-				  * in Tcl.  This procedure is invoked
-				  * within Tcl_FindCommand to resolve all
-				  * command references within the namespace. */
+				/* If non-null, this procedure overrides
+				 * the usual command resolution mechanism
+				 * in Tcl.  This procedure is invoked
+				 * within Tcl_FindCommand to resolve all
+				 * command references within the namespace. */
     Tcl_ResolveVarProc *varResProc;
-				 /* If non-null, this procedure overrides
-				  * the usual variable resolution mechanism
-				  * in Tcl.  This procedure is invoked
-				  * within Tcl_FindNamespaceVar to resolve all
-				  * variable references within the namespace
-				  * at runtime. */
+				/* If non-null, this procedure overrides
+				 * the usual variable resolution mechanism
+				 * in Tcl.  This procedure is invoked
+				 * within Tcl_FindNamespaceVar to resolve all
+				 * variable references within the namespace
+				 * at runtime. */
     Tcl_ResolveCompiledVarProc *compiledVarResProc;
-				 /* If non-null, this procedure overrides
-				  * the usual variable resolution mechanism
-				  * in Tcl.  This procedure is invoked
-				  * within LookupCompiledLocal to resolve
-				  * variable references within the namespace
-				  * at compile time. */
+				/* If non-null, this procedure overrides
+				 * the usual variable resolution mechanism
+				 * in Tcl.  This procedure is invoked
+				 * within LookupCompiledLocal to resolve
+				 * variable references within the namespace
+				 * at compile time. */
+    int exportLookupEpoch;	/* Incremented whenever a command is added to
+				 * a namespace, removed from a namespace or
+				 * the exports of a namespace are changed.
+				 * Allows TIP#112-driven command lists to be
+				 * validated efficiently. */
+    Tcl_Ensemble *ensembles;	/* List of structures that contain the details
+				 * of the ensembles that are implemented on
+				 * top of this namespace. */
 } Namespace;
 
 /*
@@ -1570,6 +1580,7 @@ extern Tcl_ObjType	tclStringType;
 extern Tcl_ObjType	tclArraySearchType;
 extern Tcl_ObjType	tclIndexType;
 extern Tcl_ObjType	tclNsNameType;
+extern Tcl_ObjType	tclEnsembleCmdType;
 extern Tcl_ObjType	tclWideIntType;
 
 /*
@@ -2275,11 +2286,27 @@ extern Tcl_Mutex tclObjMutex;
  *         CONST Tcl_UniChar *ct, unsigned long n));
  *----------------------------------------------------------------
  */
+
 #ifdef WORDS_BIGENDIAN
 #   define TclUniCharNcmp(cs,ct,n) memcmp((cs),(ct),(n)*sizeof(Tcl_UniChar))
 #else /* !WORDS_BIGENDIAN */
 #   define TclUniCharNcmp Tcl_UniCharNcmp
 #endif /* WORDS_BIGENDIAN */
+
+/*
+ *----------------------------------------------------------------
+ * Macro used by the Tcl core to increment a namespace's export
+ * export epoch counter.
+ * The ANSI C "prototype" for this macro is:
+ *
+ * EXTERN void TclInvalidateNsCmdLookup _ANSI_ARGS_((Namespace *nsPtr));
+ *----------------------------------------------------------------
+ */
+
+#define TclInvalidateNsCmdLookup(nsPtr) \
+    if ((nsPtr)->numExportPatterns) { \
+	(nsPtr)->exportLookupEpoch++; \
+    }
 
 #include "tclIntDecls.h"
 
