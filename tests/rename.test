@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: rename.test,v 1.5 1999/06/26 20:55:11 rjohnson Exp $
+# RCS: @(#) $Id: rename.test,v 1.6 1999/06/30 00:17:36 jenn Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -167,9 +167,10 @@ test rename-6.1 {old code invalidated (epoch incremented) when cmd with compile 
     set msg
 } {called "incr" with too many arguments}
 
-# cleanup
-catch {rename incr {}}
-catch {rename incr.old incr}
+if {[info commands incr.old] != {}} {
+    catch {rename incr {}}
+    catch {rename incr.old incr}
+}
 ::tcltest::cleanupTests
 return
 
