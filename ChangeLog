@@ -1,6 +1,6 @@
 2004-10-26  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
-	* doc/[a-s]*.n: Backporting of documentation updates.
+	* doc/*.n: Backporting of documentation updates.
 
 2004-10-26  Don Porter  <dgp@users.sourceforge.net>
 
