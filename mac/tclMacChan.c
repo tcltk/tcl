@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacChan.c,v 1.10 2002/01/15 21:19:07 dgp Exp $
+ * RCS: @(#) $Id: tclMacChan.c,v 1.11 2002/01/18 03:22:36 das Exp $
  */
 
 #include "tclInt.h"
@@ -558,7 +558,7 @@ StdIOOutput(
     *errorCode = 0;
     errno = 0;
     fd = (int) ((FileState*)instanceData)->fileRef;
-    written = write(fd, buf, (size_t) toWrite);
+    written = write(fd, (void*)buf, (size_t) toWrite);
     if (written > -1) {
         return written;
     }
@@ -762,7 +762,7 @@ TclpOpenFileChannel(
 {
     Tcl_Channel chan;
     int mode;
-    char *native;
+    CONST char *native;
     int errorCode;
     
     mode = GetOpenMode(interp, modeString);
