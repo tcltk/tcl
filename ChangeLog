@@ -5,6 +5,10 @@
 	to check for deprecated functions in use, such as panic() and
 	Tcl_Ckalloc().  By request from DKF.
 
+	* win/makefile.vc:
+	* win/rules.vc:  Added -DTCL_NO_DEPRECATED usage to makefile.vc.
+	Called like this:   nmake -af makefile.vc CHECKS=nodep
+
 2004-01-09  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* generic/tclIOUtil.c: fix to infinite loop in 
