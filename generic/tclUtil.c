@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.18 2000/05/08 21:59:59 hobbs Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.18.6.1 2001/06/05 01:10:47 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -1450,10 +1450,12 @@ Tcl_DStringAppendElement(dsPtr, string)
     CONST char *string;		/* String to append.  Must be
 				 * null-terminated. */
 {
-    int newSize, flags;
+    int newSize, flags, strSize;
     char *dst;
 
-    newSize = Tcl_ScanElement(string, &flags) + dsPtr->length + 1;
+    strSize = ((string == NULL) ? 0 : strlen(string));
+    newSize = Tcl_ScanCountedElement(string, strSize, &flags)
+	+ dsPtr->length + 1;
 
     /*
      * Allocate a larger buffer for the string if the current one isn't
@@ -1490,7 +1492,7 @@ Tcl_DStringAppendElement(dsPtr, string)
 	dst++;
 	dsPtr->length++;
     }
-    dsPtr->length += Tcl_ConvertElement(string, dst, flags);
+    dsPtr->length += Tcl_ConvertCountedElement(string, strSize, dst, flags);
     return dsPtr->string;
 }
 
