@@ -1,3 +1,13 @@
+2001-08-23  Andreas Kupries <andreas_kupries@users.sourceforge.net>
+
+	* win/tclWinPipe.c (BuildCommandLine): Fixed tcl Bug
+	  [432499]. Part of the code used the non-absolute path to the
+	  executable to determine quoting. This failed if the absolute
+	  path contained spaces, but the application name itself not. This
+	  bug caused no trouble on Win NT 5, but does for other variants
+	  in the Win* family. Report and fix due to Ken Poole
+	  <kenpoole@users.sourceforge.net>.
+
 2001-08-23  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* unix/configure:
@@ -6,7 +16,7 @@
 2001-08-20  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* library/http/http.tcl (geturl): added port number to Host:
-	header to comply with HTTP/1.1 spec (RFC 2068).  [Bug #452217]
+	  header to comply with HTTP/1.1 spec (RFC 2068).  [Bug #452217]
 
 2001-08-08  Don Porter  <dgp@users.sourceforge.net>
 

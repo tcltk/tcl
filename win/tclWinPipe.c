@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPipe.c,v 1.11.2.3 2001/07/17 01:45:42 hobbs Exp $
+ * RCS: @(#) $Id: tclWinPipe.c,v 1.11.2.4 2001/08/23 21:19:34 andreas_kupries Exp $
  */
 
 #include "tclWinInt.h"
@@ -1522,10 +1522,10 @@ BuildCommandLine(
 	}
 
 	quote = 0;
-	if (argv[i][0] == '\0') {
+	if (arg[0] == '\0') {
 	    quote = 1;
 	} else {
-	    for (start = argv[i]; *start != '\0'; start++) {
+	    for (start = arg; *start != '\0'; start++) {
 		if (isspace(*start)) { /* INTL: ISO space. */
 		    quote = 1;
 		    break;
