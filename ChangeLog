@@ -1,3 +1,12 @@
+2004-04-28  Miguel Sofer <msofer@users.sf.net>
+
+	* doc/global.n:
+	* doc/upvar.n:
+	* generic/tclVar.c (ObjMakeUpvar):
+	* tests/upvar.test (upvar-8.11):
+	* tests/var.test (var-3.11): Avoid creation of unusable variables:
+	[Bug 600812] [TIP 184].
+
 2004-04-28  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* doc/lsearch.n: Fixed fault in documentation of -index option [943448]

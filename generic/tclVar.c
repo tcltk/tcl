@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.78 2004/04/06 22:25:56 dgp Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.79 2004/04/28 13:11:33 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -3321,6 +3321,7 @@ ObjMakeUpvar(interp, framePtr, otherP1Ptr, otherP2, otherFlags, myName, myFlags,
     Var *otherPtr, *varPtr, *arrayPtr;
     CallFrame *varFramePtr;
     CONST char *errMsg;
+    CONST char *p;
 
     /*
      * Find "other" in "framePtr". If not looking up other in just the
@@ -3366,6 +3367,29 @@ ObjMakeUpvar(interp, framePtr, otherP1Ptr, otherP2, otherFlags, myName, myFlags,
 	    return TCL_ERROR;
 	}
 	
+	/*
+	 * Do not permit the new variable to look like an array reference,
+	 * as it will not be reachable in that case [Bug 600812, TIP 184].
+	 * The "definition" of what "looks like an array reference" is 
+	 * consistent (and must remain consistent) with the code in 
+	 * TclObjLookupVar().
+	 */
+
+	p = strstr(myName, "(");
+	if (p != NULL) {
+	    p += strlen(p)-1;
+	    if (*p == ')') {
+	        /*
+		 * myName looks like an array reference.
+		 */
+		    
+		Tcl_AppendResult((Tcl_Interp *) iPtr, "bad variable name \"",
+		        myName, "\": upvar won't create a scalar variable that ",
+		    "looks like an array element", (char *) NULL);
+		return TCL_ERROR;
+	    }
+	}
+
 	/*
 	 * Lookup and eventually create the new variable. Set the flag bit
 	 * LOOKUP_FOR_UPVAR to indicate the special resolution rules for 
