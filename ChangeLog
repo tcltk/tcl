@@ -1,24 +1,20 @@
 2003-12-23  David Gravereaux <davygrvy@pobox.com>
 
-	* generic/tclAlloc.c:   All uses of 'panic' (the macro) changed
-	* generic/tclBasic.c:   to 'Tcl_Panic' (the function).  The
-	* generic/tclBinary.c
-:  #define of panic in tcl.h clearly states
-	* generic/tclCkalloc.c: it is deprecated in the comments.
-	* generic/tclCmdAH.c:   [Patch 865264]
+	* generic/tclAlloc.c:	All uses of 'panic' (the macro) changed
+	* generic/tclBasic.c:	to 'Tcl_Panic' (the function).  The
+	* generic/tclBinary.c:	#define of panic in tcl.h clearly states
+	* generic/tclCkalloc.c:	it is deprecated in the comments.
+	* generic/tclCmdAH.c:	[Patch 865264]
 	* generic/tclCmdIL.c:
-	* generic/tclCmdMZ.c
-:
+	* generic/tclCmdMZ.c:
 	* generic/tclCompCmds.c:
 	* generic/tclCompExpr.c:
 	* generic/tclCompile.c:
 	* generic/tclConfig.c:
-	* generic/tclDictObj.c
-:
+	* generic/tclDictObj.c:
 	* generic/tclEncoding.c:
 	* generic/tclEvent.c:
-	* generic/tclExecute.c
-:
+	* generic/tclExecute.c:
 	* generic/tclHash.c:
 	* generic/tclInterp.c:
 	* generic/tclIO.c:
@@ -27,8 +23,7 @@
 	* generic/tclListObj.c:
 	* generic/tclLiteral.c:
 	* generic/tclNamesp.c:
-	* generic/tclObj.c
-:
+	* generic/tclObj.c:
 	* generic/tclParse.c:
 	* generic/tclPathObj.c:
 	* generic/tclPkg.c:
@@ -56,7 +51,6 @@
 	* win/tclWinPipe.c:
 	* win/tclWinSock.c:
 	* win/tclWinThrd.c:
-
 
 	* generic/tclInt.h:  Deprecated use of Tcl_Ckalloc changed to
 	Tcl_Alloc in the TclAllocObjStorage macro.
