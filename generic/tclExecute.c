@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.62 2002/06/13 19:47:58 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.63 2002/06/13 21:07:26 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1199,7 +1199,6 @@ TclExecuteByteCode(interp, codePtr)
 	    {
 		int objc = opnd; /* The number of arguments. */
 		Tcl_Obj **objv;	 /* The array of argument objects. */
-		int newPcOffset; /* New inst offset for break, continue. */
 		Tcl_Obj **preservedStack;
 				 /* Reference to memory block containing
 				  * objv array (must be kept live throughout
@@ -1293,97 +1292,21 @@ TclExecuteByteCode(interp, codePtr)
 		    TclDecrRefCount(valuePtr);
 		}
 
-		/*
-		 * Process the result of the Tcl_ObjCmdProc call.
-		 */
-		
-		switch (result) {
-		case TCL_OK:
+		if (result == TCL_OK) {
 		    /*
 		     * Push the call's object result and continue execution
 		     * with the next instruction.
 		     */
+
 		    PUSH_OBJECT(Tcl_GetObjResult(interp));
 		    TRACE_WITH_OBJ(("%u => ...after \"%.20s\", result=",
 		            objc, cmdNameBuf), Tcl_GetObjResult(interp));
 		    ADJUST_PC(pcAdjustment);
-		    
-		case TCL_BREAK:
-		case TCL_CONTINUE:
-		    /*
-		     * The invoked command requested a break or continue.
-		     * Find the closest enclosing loop or catch exception
-		     * range, if any. If a loop is found, terminate its
-		     * execution or skip to its next iteration. If the
-		     * closest is a catch exception range, jump to its
-		     * catchOffset. If no enclosing range is found, stop
-		     * execution and return the TCL_BREAK or TCL_CONTINUE.
-		     */
-		    rangePtr = GetExceptRangeForPc(pc, /*catchOnly*/ 0,
-			    codePtr);
-		    if (rangePtr == NULL) {
-		        TRACE(("%u => ... after \"%.20s\", no encl. loop or catch, returning %s\n",
-		                objc, cmdNameBuf,
-			        StringForResultCode(result)));
-			goto abnormalReturn; /* no catch exists to check */
-		    }
-		    newPcOffset = 0;
-		    switch (rangePtr->type) {
-		    case LOOP_EXCEPTION_RANGE:
-			if (result == TCL_BREAK) {
-			    newPcOffset = rangePtr->breakOffset;
-			} else if (rangePtr->continueOffset == -1) {
-			    TRACE(("%u => ... after \"%.20s\", %s, loop w/o continue, checking for catch\n",
-				   objc, cmdNameBuf,
-				   StringForResultCode(result)));
-			    goto checkForCatch;
-			} else {
-			    newPcOffset = rangePtr->continueOffset;
-			}
-			TRACE(("%u => ... after \"%.20s\", %s, range at %d, new pc %d\n",
-			       objc, cmdNameBuf,
-			       StringForResultCode(result),
-			       rangePtr->codeOffset, newPcOffset));
-			break;
-		    case CATCH_EXCEPTION_RANGE:
-			TRACE(("%u => ... after \"%.20s\", %s...\n",
-			       objc, cmdNameBuf,
-			       StringForResultCode(result)));
-			goto processCatch; /* it will use rangePtr */
-		    default:
-			panic("TclExecuteByteCode: bad ExceptionRange type\n");
-		    }
-		    result = TCL_OK;
-		    pc = (codePtr->codeStart + newPcOffset);
-		    continue;	/* restart outer instruction loop at pc */
-		    
-		case TCL_ERROR:
-		    /*
-		     * The invoked command returned an error. Look for an
-		     * enclosing catch exception range, if any.
-		     */
-		    TRACE_WITH_OBJ(("%u => ... after \"%.20s\", TCL_ERROR ",
-		            objc, cmdNameBuf), Tcl_GetObjResult(interp));
-		    goto checkForCatch;
-
-		case TCL_RETURN:
-		    /*
-		     * The invoked command requested that the current
-		     * procedure stop execution and return. First check
-		     * for an enclosing catch exception range, if any.
-		     */
-		    TRACE(("%u => ... after \"%.20s\", TCL_RETURN\n",
-		            objc, cmdNameBuf));
-		    goto checkForCatch;
-
-		default:
-		    TRACE_WITH_OBJ(("%u => ... after \"%.20s\", OTHER RETURN CODE %d ",
-		            objc, cmdNameBuf, result),
-			    Tcl_GetObjResult(interp));
-		    goto checkForCatch;
+		} else {
+		    goto processExceptionReturn;
 		}
 	    }
-	    
+
 	case INST_EVAL_STK:
 	    /*
 	     * Note to maintainers: it is important that INST_EVAL_STK
@@ -1404,61 +1327,8 @@ TclExecuteByteCode(interp, codePtr)
 			Tcl_GetObjResult(interp));
 		TclDecrRefCount(objPtr);
 		ADJUST_PC(1);
-	    } else if ((result == TCL_BREAK) || (result == TCL_CONTINUE)) {
-		/*
-		 * Find the closest enclosing loop or catch exception range,
-		 * if any. If a loop is found, terminate its execution or
-		 * skip to its next iteration. If the closest is a catch
-		 * exception range, jump to its catchOffset. If no enclosing
-		 * range is found, stop execution and return that same
-		 * TCL_BREAK or TCL_CONTINUE.
-		 */
-
-		int newPcOffset = 0; /* Pc offset computed during break,
-				      * continue, error processing. Init.
-				      * to avoid compiler warning. */
-
-		rangePtr = GetExceptRangeForPc(pc, /*catchOnly*/ 0,
-			codePtr);
-		if (rangePtr == NULL) {
-		    TRACE(("\"%.30s\" => no encl. loop or catch, returning %s\n",
-			    O2S(objPtr), StringForResultCode(result)));
-		    TclDecrRefCount(objPtr);
-		    goto abnormalReturn;    /* no catch exists to check */
-		}
-		switch (rangePtr->type) {
-		case LOOP_EXCEPTION_RANGE:
-		    if (result == TCL_BREAK) {
-			newPcOffset = rangePtr->breakOffset;
-		    } else if (rangePtr->continueOffset == -1) {
-			TRACE(("\"%.30s\" => %s, loop w/o continue, checking for catch\n",
-			       O2S(objPtr), StringForResultCode(result)));
-			TclDecrRefCount(objPtr);
-			goto checkForCatch;
-		    } else {
-			newPcOffset = rangePtr->continueOffset;
-		    }
-		    result = TCL_OK;
-		    TRACE(("\"%.30s\" => %s, range at %d, new pc %d ",
-			    O2S(objPtr), StringForResultCode(result),
-			    rangePtr->codeOffset, newPcOffset));
-		    break;
-		case CATCH_EXCEPTION_RANGE:
-		    TRACE(("\"%.30s\" => %s ",
-			    O2S(objPtr), StringForResultCode(result)));
-		    TclDecrRefCount(objPtr);
-		    goto processCatch;  /* it will use rangePtr */
-		default:
-		    panic("TclExecuteByteCode: unrecognized ExceptionRange type %d\n", rangePtr->type);
-		}
-		TclDecrRefCount(objPtr);
-		pc = (codePtr->codeStart + newPcOffset);
-		continue;	/* restart outer instruction loop at pc */
-	    } else { /* eval returned TCL_ERROR, TCL_RETURN, unknown code */
-		TRACE_WITH_OBJ(("\"%.30s\" => ERROR: ", O2S(objPtr)),
-		        Tcl_GetObjResult(interp));
-		TclDecrRefCount(objPtr);
-		goto checkForCatch;
+	    } else {
+		goto processExceptionReturn;
 	    }
 
 	case INST_EXPR_STK:
@@ -3801,73 +3671,14 @@ TclExecuteByteCode(interp, codePtr)
 	    ADJUST_PC(1);
 
 	case INST_BREAK:
-	    /*
-	     * First reset the interpreter's result. Then find the closest
-	     * enclosing loop or catch exception range, if any. If a loop is
-	     * found, terminate its execution. If the closest is a catch
-	     * exception range, jump to its catchOffset. If no enclosing
-	     * range is found, stop execution and return TCL_BREAK.
-	     */
-
 	    Tcl_ResetResult(interp);
-	    rangePtr = GetExceptRangeForPc(pc, /*catchOnly*/ 0, codePtr);
-	    if (rangePtr == NULL) {
-		TRACE(("=> no encl. loop or catch, returning TCL_BREAK\n"));
-		result = TCL_BREAK;
-		goto abnormalReturn; /* no catch exists to check */
-	    }
-	    switch (rangePtr->type) {
-	    case LOOP_EXCEPTION_RANGE:
-		result = TCL_OK;
-		TRACE(("=> range at %d, new pc %d\n",
-		       rangePtr->codeOffset, rangePtr->breakOffset));
-		break;
-	    case CATCH_EXCEPTION_RANGE:
-		result = TCL_BREAK;
-		TRACE(("=> ...\n"));
-		goto processCatch; /* it will use rangePtr */
-	    default:
-		panic("TclExecuteByteCode: unrecognized ExceptionRange type %d\n", rangePtr->type);
-	    }
-	    pc = (codePtr->codeStart + rangePtr->breakOffset);
-	    continue;	/* restart outer instruction loop at pc */
+	    result = TCL_BREAK;
+	    goto processExceptionReturn;
 
 	case INST_CONTINUE:
-            /*
-	     * Find the closest enclosing loop or catch exception range,
-	     * if any. If a loop is found, skip to its next iteration.
-	     * If the closest is a catch exception range, jump to its
-	     * catchOffset. If no enclosing range is found, stop
-	     * execution and return TCL_CONTINUE.
-	     */
-
 	    Tcl_ResetResult(interp);
-	    rangePtr = GetExceptRangeForPc(pc, /*catchOnly*/ 0, codePtr);
-	    if (rangePtr == NULL) {
-		TRACE(("=> no encl. loop or catch, returning TCL_CONTINUE\n"));
-		result = TCL_CONTINUE;
-		goto abnormalReturn;
-	    }
-	    switch (rangePtr->type) {
-	    case LOOP_EXCEPTION_RANGE:
-		if (rangePtr->continueOffset == -1) {
-		    TRACE(("=> loop w/o continue, checking for catch\n"));
-		    goto checkForCatch;
-		} else {
-		    result = TCL_OK;
-		    TRACE(("=> range at %d, new pc %d\n",
-			   rangePtr->codeOffset, rangePtr->continueOffset));
-		}
-		break;
-	    case CATCH_EXCEPTION_RANGE:
-		result = TCL_CONTINUE;
-		TRACE(("=> ...\n"));
-		goto processCatch; /* it will use rangePtr */
-	    default:
-		panic("TclExecuteByteCode: unrecognized ExceptionRange type %d\n", rangePtr->type);
-	    }
-	    pc = (codePtr->codeStart + rangePtr->continueOffset);
-	    continue;	/* restart outer instruction loop at pc */
+	    result = TCL_CONTINUE;
+	    goto processExceptionReturn;
 
 	case INST_FOREACH_START4:
 	    opnd = TclGetUInt4AtPtr(pc+1);
@@ -4054,6 +3865,254 @@ TclExecuteByteCode(interp, codePtr)
 	Tcl_SetErrorCode(interp, "ARITH", "DIVZERO", "divide by zero",
 			 (char *) NULL);
 	result = TCL_ERROR;
+	goto checkForCatch;
+	
+	/*
+	 * An external evaluation (INST_INVOKE or INST_EVAL) returned 
+	 * something different from TCL_OK, or else INST_BREAK or 
+	 * INST_CONTINUE were called.
+	 */
+
+        processExceptionReturn:
+#ifndef TCL_COMPILE_DEBUG
+	if ((result == TCL_CONTINUE) || (result == TCL_BREAK)) {
+	    rangePtr = GetExceptRangeForPc(pc, /*catchOnly*/ 0, codePtr);
+	    if (rangePtr == NULL) {
+		goto checkForCatch;
+	    } 
+	    switch (rangePtr->type) {
+	        case CATCH_EXCEPTION_RANGE:
+		    goto processCatch;
+	        case LOOP_EXCEPTION_RANGE:
+		    if (result == TCL_BREAK) {
+			pc = (codePtr->codeStart + rangePtr->breakOffset);
+			result = TCL_OK;
+			continue;		
+		    } else {
+			if (rangePtr->continueOffset == -1) {
+			    goto checkForCatch;
+			} 
+			pc = (codePtr->codeStart + rangePtr->continueOffset);
+			result = TCL_OK;
+			continue;					    
+		    }
+	        default:
+		    panic("TclExecuteByteCode: bad ExceptionRange type\n");
+	    }
+	}
+	    
+#else /* TCL_COMPILE_DEBUG is set! */
+	/*
+	 * Error messages depend on the instruction.
+	 */
+
+	switch(*pc) {
+	    case INST_INVOKE_STK1:
+	    case INST_INVOKE_STK4:
+		/*
+		 * Process the result of the Tcl_ObjCmdProc call.
+		 */
+		
+		switch (result) {
+		case TCL_BREAK:
+		case TCL_CONTINUE:
+		    /*
+		     * The invoked command requested a break or continue.
+		     * Find the closest enclosing loop or catch exception
+		     * range, if any. If a loop is found, terminate its
+		     * execution or skip to its next iteration. If the
+		     * closest is a catch exception range, jump to its
+		     * catchOffset. If no enclosing range is found, stop
+		     * execution and return the TCL_BREAK or TCL_CONTINUE.
+		     */
+		    rangePtr = GetExceptRangeForPc(pc, /*catchOnly*/ 0,
+			    codePtr);
+		    if (rangePtr == NULL) {
+		        TRACE(("%u => ... after \"%.20s\", no encl. loop or catch, returning %s\n",
+		                objc, cmdNameBuf,
+			        StringForResultCode(result)));
+			goto abnormalReturn; /* no catch exists to check */
+		    }
+		    newPcOffset = 0;
+		    switch (rangePtr->type) {
+		    case LOOP_EXCEPTION_RANGE:
+			if (result == TCL_BREAK) {
+			    newPcOffset = rangePtr->breakOffset;
+			} else if (rangePtr->continueOffset == -1) {
+			    TRACE(("%u => ... after \"%.20s\", %s, loop w/o continue, checking for catch\n",
+				   objc, cmdNameBuf,
+				   StringForResultCode(result)));
+			    goto checkForCatch;
+			} else {
+			    newPcOffset = rangePtr->continueOffset;
+			}
+			TRACE(("%u => ... after \"%.20s\", %s, range at %d, new pc %d\n",
+			       objc, cmdNameBuf,
+			       StringForResultCode(result),
+			       rangePtr->codeOffset, newPcOffset));
+			break;
+		    case CATCH_EXCEPTION_RANGE:
+			TRACE(("%u => ... after \"%.20s\", %s...\n",
+			       objc, cmdNameBuf,
+			       StringForResultCode(result)));
+			goto processCatch; /* it will use rangePtr */
+		    default:
+			panic("TclExecuteByteCode: bad ExceptionRange type\n");
+		    }
+		    result = TCL_OK;
+		    pc = (codePtr->codeStart + newPcOffset);
+		    continue;	/* restart outer instruction loop at pc */
+		    
+		case TCL_ERROR:
+		    /*
+		     * The invoked command returned an error. Look for an
+		     * enclosing catch exception range, if any.
+		     */
+		    TRACE_WITH_OBJ(("%u => ... after \"%.20s\", TCL_ERROR ",
+		            objc, cmdNameBuf), Tcl_GetObjResult(interp));
+		    goto checkForCatch;
+
+		case TCL_RETURN:
+		    /*
+		     * The invoked command requested that the current
+		     * procedure stop execution and return. First check
+		     * for an enclosing catch exception range, if any.
+		     */
+		    TRACE(("%u => ... after \"%.20s\", TCL_RETURN\n",
+		            objc, cmdNameBuf));
+		    goto checkForCatch;
+
+		default:
+		    TRACE_WITH_OBJ(("%u => ... after \"%.20s\", OTHER RETURN CODE %d ",
+		            objc, cmdNameBuf, result),
+			    Tcl_GetObjResult(interp));
+		    goto checkForCatch;
+		}
+	    case INST_EVAL_STK:
+	    if ((result == TCL_BREAK) || (result == TCL_CONTINUE)) {
+		/*
+		 * Find the closest enclosing loop or catch exception range,
+		 * if any. If a loop is found, terminate its execution or
+		 * skip to its next iteration. If the closest is a catch
+		 * exception range, jump to its catchOffset. If no enclosing
+		 * range is found, stop execution and return that same
+		 * TCL_BREAK or TCL_CONTINUE.
+		 */
+
+		int newPcOffset = 0; /* Pc offset computed during break,
+				      * continue, error processing. Init.
+				      * to avoid compiler warning. */
+
+		rangePtr = GetExceptRangeForPc(pc, /*catchOnly*/ 0,
+			codePtr);
+		if (rangePtr == NULL) {
+		    TRACE(("\"%.30s\" => no encl. loop or catch, returning %s\n",
+			    O2S(objPtr), StringForResultCode(result)));
+		    TclDecrRefCount(objPtr);
+		    goto abnormalReturn;    /* no catch exists to check */
+		}
+		switch (rangePtr->type) {
+		case LOOP_EXCEPTION_RANGE:
+		    if (result == TCL_BREAK) {
+			newPcOffset = rangePtr->breakOffset;
+		    } else if (rangePtr->continueOffset == -1) {
+			TRACE(("\"%.30s\" => %s, loop w/o continue, checking for catch\n",
+			       O2S(objPtr), StringForResultCode(result)));
+			TclDecrRefCount(objPtr);
+			goto checkForCatch;
+		    } else {
+			newPcOffset = rangePtr->continueOffset;
+		    }
+		    result = TCL_OK;
+		    TRACE(("\"%.30s\" => %s, range at %d, new pc %d ",
+			    O2S(objPtr), StringForResultCode(result),
+			    rangePtr->codeOffset, newPcOffset));
+		    break;
+		case CATCH_EXCEPTION_RANGE:
+		    TRACE(("\"%.30s\" => %s ",
+			    O2S(objPtr), StringForResultCode(result)));
+		    TclDecrRefCount(objPtr);
+		    goto processCatch;  /* it will use rangePtr */
+		default:
+		    panic("TclExecuteByteCode: unrecognized ExceptionRange type %d\n", rangePtr->type);
+		}
+		TclDecrRefCount(objPtr);
+		pc = (codePtr->codeStart + newPcOffset);
+		continue;	/* restart outer instruction loop at pc */
+	    } else { /* eval returned TCL_ERROR, TCL_RETURN, unknown code */
+		TRACE_WITH_OBJ(("\"%.30s\" => ERROR: ", O2S(objPtr)),
+			       Tcl_GetObjResult(interp));
+		TclDecrRefCount(objPtr);
+		goto checkForCatch;
+	    }
+
+	    case INST_BREAK:
+		/*
+		 * First reset the interpreter's result. Then find the closest
+		 * enclosing loop or catch exception range, if any. If a loop is
+		 * found, terminate its execution. If the closest is a catch
+		 * exception range, jump to its catchOffset. If no enclosing
+		 * range is found, stop execution and return TCL_BREAK.
+		 */
+
+		rangePtr = GetExceptRangeForPc(pc, /*catchOnly*/ 0, codePtr);
+		if (rangePtr == NULL) {
+		    TRACE(("=> no encl. loop or catch, returning TCL_BREAK\n"));
+		    goto abnormalReturn; /* no catch exists to check */
+		}
+		switch (rangePtr->type) {
+		case LOOP_EXCEPTION_RANGE:
+		    result = TCL_OK;
+		    TRACE(("=> range at %d, new pc %d\n",
+		       rangePtr->codeOffset, rangePtr->breakOffset));
+		break;
+		case CATCH_EXCEPTION_RANGE:
+		    TRACE(("=> ...\n"));
+		    goto processCatch; /* it will use rangePtr */
+		default:
+		    panic("TclExecuteByteCode: unrecognized ExceptionRange type %d\n", rangePtr->type);
+		}
+		pc = (codePtr->codeStart + rangePtr->breakOffset);
+		continue;	/* restart outer instruction loop at pc */
+
+	    case INST_CONTINUE:
+		/*
+		 * Find the closest enclosing loop or catch exception range,
+		 * if any. If a loop is found, skip to its next iteration.
+		 * If the closest is a catch exception range, jump to its
+		 * catchOffset. If no enclosing range is found, stop
+		 * execution and return TCL_CONTINUE.
+		 */
+
+		Tcl_ResetResult(interp);
+		rangePtr = GetExceptRangeForPc(pc, /*catchOnly*/ 0, codePtr);
+		if (rangePtr == NULL) {
+		    TRACE(("=> no encl. loop or catch, returning TCL_CONTINUE\n"));
+		    result = TCL_CONTINUE;
+		    goto abnormalReturn;
+		}
+		switch (rangePtr->type) {
+		case LOOP_EXCEPTION_RANGE:
+		    if (rangePtr->continueOffset == -1) {
+			TRACE(("=> loop w/o continue, checking for catch\n"));
+			goto checkForCatch;
+		    } else {
+			result = TCL_OK;
+			TRACE(("=> range at %d, new pc %d\n",
+			       rangePtr->codeOffset, rangePtr->continueOffset));
+		    }
+		    break;
+		case CATCH_EXCEPTION_RANGE:
+		    result = TCL_CONTINUE;
+		    TRACE(("=> ...\n"));
+		    goto processCatch; /* it will use rangePtr */
+		default:
+		    panic("TclExecuteByteCode: unrecognized ExceptionRange type %d\n", rangePtr->type);
+		}
+		pc = (codePtr->codeStart + rangePtr->continueOffset);
+		continue;	/* restart outer instruction loop at pc */
+	}
+#endif /* TCL_COMPILE_DEBUG */
 	
 	/*
 	 * Execution has generated an "exception" such as TCL_ERROR. If the
