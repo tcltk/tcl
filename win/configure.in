@@ -3,7 +3,7 @@
 # generate the file "configure", which is run during Tcl installation
 # to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.44 2001/11/07 23:37:52 mdejong Exp $
+# RCS: @(#) $Id: configure.in,v 1.45 2001/11/08 03:07:21 mdejong Exp $
 
 AC_INIT(../generic/tcl.h)
 
@@ -157,6 +157,10 @@ eval "TCL_STUB_LIB_SPEC=\"-L${exec_prefix}/lib ${TCL_STUB_LIB_FLAG}\""
 eval "TCL_BUILD_STUB_LIB_PATH=\"`pwd`/${TCL_STUB_LIB_FILE}\""
 eval "TCL_STUB_LIB_PATH=\"${exec_prefix}/lib/${TCL_STUB_LIB_FILE}\""
 
+# Install time header dir can be set via --includedir
+eval "TCL_INCLUDE_SPEC=\"-I${includedir}\""
+
+
 eval "DLLSUFFIX=${DLLSUFFIX}"
 eval "LIBPREFIX=${LIBPREFIX}"
 eval "LIBSUFFIX=${LIBSUFFIX}"
@@ -199,6 +203,7 @@ AC_SUBST(TCL_STUB_LIB_FILE)
 AC_SUBST(TCL_STUB_LIB_FLAG)
 AC_SUBST(TCL_STUB_LIB_SPEC)
 AC_SUBST(TCL_STUB_LIB_PATH)
+AC_SUBST(TCL_INCLUDE_SPEC)
 AC_SUBST(TCL_BUILD_STUB_LIB_SPEC)
 AC_SUBST(TCL_BUILD_STUB_LIB_PATH)
 AC_SUBST(TCL_DLL_FILE)
