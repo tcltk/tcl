@@ -86,7 +86,7 @@ typedef struct WinCondition {
     struct ThreadSpecificData *lastPtr;
 } WinCondition;
 
-static void *FinalizeConditionEvent(ClientData data);
+static void FinalizeConditionEvent(ClientData data);
 
 
 /*
@@ -675,7 +675,8 @@ Tcl_ConditionWait(condPtr, mutexPtr, timePtr)
 	     * back into the Master Lock.
 	     */
 	    
-	    Tcl_CreateThreadExitHandler(FinalizeConditionEvent, tsdPtr);
+	    Tcl_CreateThreadExitHandler(FinalizeConditionEvent,
+		    (ClientData) tsdPtr);
 	}
     }
 
@@ -850,7 +851,7 @@ Tcl_ConditionNotify(condPtr)
  *----------------------------------------------------------------------
  */
 
-static void *
+static void
 FinalizeConditionEvent(data)
     ClientData data;
 {
