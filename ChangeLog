@@ -1,3 +1,8 @@
+2002-01-30  Vince Darley <vincentdarley@users.sourceforge.net>
+
+	* doc/FileSystem.3: added documentation for 3 public
+	functions which had been overlooked.  Fixes [Bug 507701].
+
 2002-01-29  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* tests/regexpComp.test:

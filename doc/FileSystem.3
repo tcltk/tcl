@@ -4,13 +4,13 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: FileSystem.3,v 1.17 2002/01/25 20:40:55 dgp Exp $
+'\" RCS: @(#) $Id: FileSystem.3,v 1.18 2002/01/30 17:33:48 vincentdarley Exp $
 '\" 
 .so man.macros
 .TH Filesystem 3 8.4 Tcl "Tcl Library Procedures"
 .BS
 .SH NAME
-Tcl_FSRegister, Tcl_FSUnregister, Tcl_FSData, Tcl_FSCopyFile, Tcl_FSCopyDirectory, Tcl_FSCreateDirectory, Tcl_FSDeleteFile, Tcl_FSRemoveDirectory, Tcl_FSRenameFile, Tcl_FSListVolumes, Tcl_FSEvalFile, Tcl_FSLoadFile, Tcl_FSMatchInDirectory, Tcl_FSLink, Tcl_FSLstat, Tcl_FSUtime, Tcl_FSFileAttrsGet, Tcl_FSFileAttrsSet, Tcl_FSFileAttrStrings, Tcl_FSStat, Tcl_FSAccess, Tcl_FSOpenFileChannel, Tcl_FSGetCwd, Tcl_FSChdir, Tcl_FSPathSeparator, Tcl_FSJoinPath, Tcl_FSSplitPath, Tcl_FSEqualPaths, Tcl_FSGetNormalizedPath, Tcl_FSJoinToPath, Tcl_FSConvertToPathType, Tcl_FSGetInternalRep, Tcl_FSGetTranslatedPath, Tcl_FSGetTranslatedStringPath, Tcl_FSNewNativePath, Tcl_FSGetNativePath, Tcl_FSFileSystemInfo \- procedures to interact with any filesystem
+Tcl_FSRegister, Tcl_FSUnregister, Tcl_FSData, Tcl_FSMountsChanged, Tcl_FSGetFileSystemForPath, Tcl_FSGetPathType, Tcl_FSCopyFile, Tcl_FSCopyDirectory, Tcl_FSCreateDirectory, Tcl_FSDeleteFile, Tcl_FSRemoveDirectory, Tcl_FSRenameFile, Tcl_FSListVolumes, Tcl_FSEvalFile, Tcl_FSLoadFile, Tcl_FSMatchInDirectory, Tcl_FSLink, Tcl_FSLstat, Tcl_FSUtime, Tcl_FSFileAttrsGet, Tcl_FSFileAttrsSet, Tcl_FSFileAttrStrings, Tcl_FSStat, Tcl_FSAccess, Tcl_FSOpenFileChannel, Tcl_FSGetCwd, Tcl_FSChdir, Tcl_FSPathSeparator, Tcl_FSJoinPath, Tcl_FSSplitPath, Tcl_FSEqualPaths, Tcl_FSGetNormalizedPath, Tcl_FSJoinToPath, Tcl_FSConvertToPathType, Tcl_FSGetInternalRep, Tcl_FSGetTranslatedPath, Tcl_FSGetTranslatedStringPath, Tcl_FSNewNativePath, Tcl_FSGetNativePath, Tcl_FSFileSystemInfo \- procedures to interact with any filesystem
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -23,6 +23,15 @@ int
 .sp
 ClientData
 \fBTcl_FSData\fR(\fIfsPtr\fR)
+.sp
+void
+\fBTcl_FSMountsChanged\fR(\fIfsPtr\fR)
+.sp
+Tcl_Filesystem*
+\fBTcl_FSGetFileSystemForPath\fR(\fIpathObjPtr\fR)
+.sp
+Tcl_PathType
+\fBTcl_FSGetPathType\fR(\fIpathObjPtr\fR)
 .sp
 int
 \fBTcl_FSCopyFile\fR(\fIsrcPathPtr, destPathPtr\fR)
@@ -543,6 +552,19 @@ further categorization of files.
 .PP
 A valid list object is returned, unless the path object is not
 recognized, when NULL will be returned.
+.PP
+\fBTcl_FSGetFileSystemForPath\fR returns the a pointer to the
+\fBTcl_Filesystem\fR which accepts this path as valid.
+.PP
+If no filesystem will accept the path, NULL is returned.
+.PP
+\fBTcl_FSGetPathType\fR determines whether the given path is relative 
+to the current directory, relative to the current volume, or
+absolute.
+.PP
+It returns one of TCL_PATH_ABSOLUTE, TCL_PATH_RELATIVE, or
+TCL_PATH_VOLUME_RELATIVE
+.PP
 .SH TCL_FILESYSTEM
 .PP
 A filesystem provides a \fBTcl_Filesystem\fR structure that contains
@@ -567,6 +589,11 @@ the filesystem is not currently registered, TCL_ERROR is returned.
 \fBTcl_FSData\fR will return the ClientData associated with the given 
 filesystem, if that filesystem is registered.  Otherwise it will
 return NULL.
+.PP
+\fBTcl_FSMountsChanged\fR is used to inform the Tcl's core that
+the set of mount points for the given (already registered) filesystem
+have changed, and that cached file representations may therefore no
+longer be correct.
 .PP
 The \fBTcl_Filesystem\fR structure contains the following fields:
 .CS
