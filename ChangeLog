@@ -1,3 +1,9 @@
+2001-12-19  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* unix/Makefile.in: Rename dltest to dlpkgs to
+	fix problem where lib files were not getting
+	built because dltest/ directory already existed.
+
 2001-12-19  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* win/tclWinSerial.c (SerialCheckProc): corrected time
