@@ -47,6 +47,10 @@ if test -r AddErrInfo.3; then
     rm -f Tcl_AddObjErrorInfo.3
     ln AddErrInfo.3 Tcl_AddObjErrorInfo.3
 fi
+if test -r AddErrInfo.3; then
+    rm -f Tcl_LogCommandInfo.3
+    ln AddErrInfo.3 Tcl_LogCommandInfo.3
+fi
 if test -r Alloc.3; then
     rm -f Tcl_Alloc.3
     ln Alloc.3 Tcl_Alloc.3
