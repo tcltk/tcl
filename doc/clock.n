@@ -10,7 +10,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: clock.n,v 1.11.2.5 2004/11/12 09:02:30 das Exp $
+'\" RCS: @(#) $Id: clock.n,v 1.11.2.6 2004/12/13 15:52:21 kennykb Exp $
 '\" 
 .so man.macros
 .TH clock n 8.4 Tcl "Tcl Built-In Commands"
@@ -238,7 +238,11 @@ an error may result if these years are used.
 \fIISO 8601 point-in-time\fR
 An ISO 8601 point-in-time specification, such as \fICCyymmddThhmmss\fR, where
 T is the literal T, \fICCyymmdd hhmmss\fR, or 
-\fICCyymmddThh:mm:ss\fR.
+\fICCyymmddThh:mm:ss\fR.  Note that only these three formats are accepted.
+The command does \fInot\fR accept the full range of point-in-time
+specifications specified in ISO8601.  Other formats can be recognized by
+using commands such as \fBregexp\fR to extract their fields and reorganize
+them into a form accepted by the \fBclock scan\fR command.
 .TP
 \fIrelative time\fR
 A specification relative to the current time.  The format is \fInumber
