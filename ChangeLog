@@ -1,3 +1,11 @@
+2000-03-04  Brent Welch  <welch@scriptics.com>
+
+	* {win,unix}/Makefile.in: added dependency of tclStubInit.c on tcl.decls
+	and tclInt.decls
+	* generic/tclThread.c: Tweak so this compiles w/out TCL_THREADS
+	* generic/{tcl.decls,tclStubInit.c}:  Just touched the tcl.decls and
+	regenerated the tclStubInit.c file
+
 2000-03-29  Sandeep Tamhankar <sandeep@scriptics.com>
 
 	* library/http2.1/http.tcl: For the -querychannel option,
