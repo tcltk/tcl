@@ -1,3 +1,16 @@
+2002-06-06  Don Porter  <dgp@users.sourceforge.net>
+
+	* tests/io.test: Fixed up namespace variable resolution issues
+	revealed by running test suite with "-singleproc 1".
+
+	* doc/tcltest.n:
+	* library/tcltest/tcltest.tcl:
+	* tests/tcltest.test: Several updates to tcltest.
+	  1) changed to lazy initialization of test constraints
+	  2) deprecated [initConstraintsHook]
+	  3) repaired badly broken [limitConstraints].
+	[Patch 512214, Bug 558742, Bug 461000]
+
 2002-06-06  Daniel Steffen  <das@users.sourceforge.net>
 
 	* unix/tclUnixThrd.c (TclpReaddir, TclpLocaltime, TclpGmtime):
@@ -49,7 +62,7 @@
 	users to add new legal values of the -match option to [test],
 	associating each with a Tcl command that does the matching of
 	expected results with actual results of tests.  Thanks to
-	Arjen Markus.  [Patch 521362]
+	Arjen Markus.  => tcltest 2.1 [Patch 521362]
 
 2002-06-03  Miguel Sofer  <msofer@users.sourceforge.net>
 
