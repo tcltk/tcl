@@ -791,6 +791,9 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 	    LD_SEARCH_FLAGS=""
 	    ;;
 	HP-UX-*.11.*)
+	    # Use updated header definitions where possible
+	    AC_DEFINE(_XOPEN_SOURCE_EXTENDED)
+
 	    SHLIB_SUFFIX=".sl"
 	    AC_CHECK_LIB(dld, shl_load, tcl_ok=yes, tcl_ok=no)
 	    if test "$tcl_ok" = yes; then
@@ -1447,6 +1450,7 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 # Results:
 #
 #	Defines only one of the following vars:
+#		HAVE_SYS_MODEM_H
 #		USE_TERMIOS
 #		USE_TERMIO
 #		USE_SGTTY
@@ -1454,6 +1458,7 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 #--------------------------------------------------------------------
 
 AC_DEFUN(SC_SERIAL_PORT, [
+    AC_CHECK_HEADERS(sys/modem.h)
     AC_MSG_CHECKING([termios vs. termio vs. sgtty])
     AC_CACHE_VAL(tcl_cv_api_serial, [
     AC_TRY_RUN([
@@ -1582,7 +1587,6 @@ int main() {
 #--------------------------------------------------------------------
 
 AC_DEFUN(SC_MISSING_POSIX_HEADERS, [
-
     AC_MSG_CHECKING(dirent.h)
     AC_TRY_LINK([#include <sys/types.h>
 #include <dirent.h>], [
