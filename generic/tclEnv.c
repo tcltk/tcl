@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEnv.c,v 1.18 2002/09/27 00:50:10 hobbs Exp $
+ * RCS: @(#) $Id: tclEnv.c,v 1.19 2002/10/14 22:25:10 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -326,7 +326,6 @@ Tcl_PutEnv(string)
 				 * form NAME=value. (native) */
 {
     Tcl_DString nameString;   
-    int nameLength;
     CONST char *name;
     char *value;
 
@@ -342,16 +341,12 @@ Tcl_PutEnv(string)
 
     name = Tcl_ExternalToUtfDString(NULL, string, -1, &nameString);
     value = strchr(name, '=');
-    if (value == NULL) {
-	return 0;
-    }
-    nameLength = value - name;
-    if (nameLength == 0) {
-	return 0;
+
+    if ((value != NULL) && (value != name)) {
+	value[0] = '\0';
+	TclSetEnv(name, value+1);
     }
 
-    value[0] = '\0';
-    TclSetEnv(name, value+1);
     Tcl_DStringFree(&nameString);
     return 0;
 }
