@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *SCCS: @(#) tclInt.h 1.293 97/08/12 17:07:02
+ * SCCS: %Z% $Id: tclInt.h,v 1.7 1998/07/06 14:37:29 escoffon Exp $ 
  */
 
 #ifndef _TCLINT
