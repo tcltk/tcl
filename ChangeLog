@@ -1,3 +1,15 @@
+2001-09-08 Vince Darley <vincentdarley@users.sourceforge.net>
+
+	* generic/tclInt.h: 
+	* generic/tclFCmd.c:
+	* doc/FileSystem.3:
+	* generic/tclIOUtil.c: removed Tcl_FSCopyFile fallback
+	to channel copying, since the channels will not have
+	access to interpreters and the channel copying currently
+	requires an interp.  Code which required cross-platform
+	copies always has interpreters, so that solves the problem.
+	Fixes bug in TclKit.
+	
 2001-09-07  David Gravereaux <davygrvy@pobox.com>
 
 	* win/tcl.m4: Added -link50compat option so a VC6 linker makes

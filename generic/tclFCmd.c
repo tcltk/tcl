@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFCmd.c,v 1.12 2001/09/04 18:06:34 vincentdarley Exp $
+ * RCS: @(#) $Id: tclFCmd.c,v 1.13 2001/09/08 14:05:09 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -599,6 +599,9 @@ CopyRenameOneFile(interp, source, target, copyFlag, force)
 	}
     } else {
 	result = Tcl_FSCopyFile(source, target);
+	if ((result != TCL_OK) && (errno == EXDEV)) {
+	    result = TclCrossFilesystemCopy(interp, source, target);
+	}
 	if (result != TCL_OK) {
 	    /* 
 	     * We could examine 'errno' to double-check if the problem
