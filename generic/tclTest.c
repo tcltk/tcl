@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.28 2001/08/30 08:53:15 vincentdarley Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.29 2001/09/04 18:06:34 vincentdarley Exp $
  */
 
 #define TCL_TEST
@@ -319,7 +319,6 @@ static Tcl_FSStatProc TestReportStat;
 static Tcl_FSAccessProc TestReportAccess;
 static Tcl_FSOpenFileChannelProc TestReportOpenFileChannel;
 static Tcl_FSMatchInDirectoryProc TestReportMatchInDirectory;
-static Tcl_FSGetCwdProc TestReportGetCwd;
 static Tcl_FSChdirProc TestReportChdir;
 static Tcl_FSLstatProc TestReportLstat;
 static Tcl_FSCopyFileProc TestReportCopyFile;
@@ -331,20 +330,22 @@ static Tcl_FSRemoveDirectoryProc TestReportRemoveDirectory;
 static Tcl_FSLoadFileProc TestReportLoadFile;
 static Tcl_FSUnloadFileProc TestReportUnloadFile;
 static Tcl_FSLinkProc TestReportLink;
-static Tcl_FSListVolumesProc TestReportListVolumes;
 static Tcl_FSFileAttrStringsProc TestReportFileAttrStrings;
 static Tcl_FSFileAttrsGetProc TestReportFileAttrsGet;
 static Tcl_FSFileAttrsSetProc TestReportFileAttrsSet;
 static Tcl_FSUtimeProc TestReportUtime;
 static Tcl_FSNormalizePathProc TestReportNormalizePath;
+static Tcl_FSPathInFilesystemProc TestReportInFilesystem;
+static Tcl_FSFreeInternalRepProc TestReportFreeInternalRep;
+static Tcl_FSDupInternalRepProc TestReportDupInternalRep;
 
 static Tcl_Filesystem testReportingFilesystem = {
     "reporting",
     sizeof(Tcl_Filesystem),
     TCL_FILESYSTEM_VERSION_1,
-    NULL, /* path in */
-    NULL, /* native dup */
-    NULL, /* native free */
+    &TestReportInFilesystem, /* path in */
+    &TestReportDupInternalRep,
+    &TestReportFreeInternalRep,
     NULL, /* native to norm */
     NULL, /* convert to native */
     &TestReportNormalizePath,
@@ -356,7 +357,7 @@ static Tcl_Filesystem testReportingFilesystem = {
     &TestReportMatchInDirectory,
     &TestReportUtime,
     &TestReportLink,
-    &TestReportListVolumes,
+    NULL /* list volumes */,
     &TestReportFileAttrStrings,
     &TestReportFileAttrsGet,
     &TestReportFileAttrsSet,
@@ -368,8 +369,7 @@ static Tcl_Filesystem testReportingFilesystem = {
     &TestReportRenameFile,
     &TestReportCopyDirectory, 
     &TestReportLoadFile,
-    &TestReportUnloadFile,
-    &TestReportGetCwd,
+    NULL /* cwd */,
     &TestReportChdir
 };
 
@@ -5257,10 +5257,62 @@ TestFilesystemObjCmd(dummy, interp, objc, objv)
     return res;
 }
 
+static int 
+TestReportInFilesystem(Tcl_Obj *pathPtr, ClientData *clientDataPtr) {
+    static Tcl_Obj* lastPathPtr = NULL;
+    
+    if (pathPtr == lastPathPtr) {
+	/* Reject all files second time around */
+        return -1;
+    } else {
+	Tcl_Obj * newPathPtr;
+	/* Try to claim all files first time around */
+
+	newPathPtr = Tcl_DuplicateObj(pathPtr);
+	lastPathPtr = newPathPtr;
+	Tcl_IncrRefCount(newPathPtr);
+	if (Tcl_FSGetFileSystemForPath(newPathPtr) == NULL) {
+	    /* Nothing claimed it.  Therefore we don't either */
+	    Tcl_DecrRefCount(newPathPtr);
+	    lastPathPtr = NULL;
+	    return -1;
+	} else {
+	    lastPathPtr = NULL;
+	    *clientDataPtr = (ClientData) newPathPtr;
+	    return TCL_OK;
+	}
+    }
+}
+
+/* 
+ * Simple helper function to extract the native vfs representation of a
+ * path object, or NULL if no such representation exists.
+ */
+Tcl_Obj* 
+TestReportGetNativePath(Tcl_Obj* pathObjPtr) {
+    return (Tcl_Obj*) Tcl_FSGetInternalRep(pathObjPtr, &testReportingFilesystem);
+}
+
+void 
+TestReportFreeInternalRep(ClientData clientData) {
+    Tcl_Obj *nativeRep = (Tcl_Obj*)clientData;
+    if (nativeRep != NULL) {
+	/* Free the path */
+	Tcl_DecrRefCount(nativeRep);
+    }
+}
+
+ClientData 
+TestReportDupInternalRep(ClientData clientData) {
+    Tcl_Obj *original = (Tcl_Obj*)clientData;
+    Tcl_IncrRefCount(original);
+    return clientData;
+}
+
 static void
-TestReport(cmd, arg1, arg2)
+TestReport(cmd, path, arg2)
     CONST char* cmd;
-    Tcl_Obj* arg1;
+    Tcl_Obj* path;
     Tcl_Obj* arg2;
 {
     Tcl_Interp* interp = (Tcl_Interp*) Tcl_FSData(&testReportingFilesystem);
@@ -5273,8 +5325,8 @@ TestReport(cmd, arg1, arg2)
 	Tcl_DStringAppend(&ds, "puts stderr ",-1);
 	Tcl_DStringStartSublist(&ds);
 	Tcl_DStringAppendElement(&ds, cmd);
-	if (arg1 != NULL) {
-	    Tcl_DStringAppendElement(&ds, Tcl_GetString(arg1));
+	if (path != NULL) {
+	    Tcl_DStringAppendElement(&ds, Tcl_GetString(path));
 	}
 	if (arg2 != NULL) {
 	    Tcl_DStringAppendElement(&ds, Tcl_GetString(arg2));
@@ -5292,7 +5344,7 @@ TestReportStat(path, buf)
     struct stat *buf;		/* Filled with results of stat call. */
 {
     TestReport("stat",path, NULL);
-    return -1;
+    return Tcl_FSStat(TestReportGetNativePath(path),buf);
 }
 static int
 TestReportLstat(path, buf)
@@ -5300,7 +5352,7 @@ TestReportLstat(path, buf)
     struct stat *buf;		/* Filled with results of stat call. */
 {
     TestReport("lstat",path, NULL);
-    return -1;
+    return Tcl_FSLstat(TestReportGetNativePath(path),buf);
 }
 static int
 TestReportAccess(path, mode)
@@ -5308,7 +5360,7 @@ TestReportAccess(path, mode)
     int mode;                   /* Permission setting. */
 {
     TestReport("access",path,NULL);
-    return -1;
+    return Tcl_FSAccess(TestReportGetNativePath(path),mode);
 }
 static Tcl_Channel
 TestReportOpenFileChannel(interp, fileName, modeString, permissions)
@@ -5322,7 +5374,8 @@ TestReportOpenFileChannel(interp, fileName, modeString, permissions)
 					 * it? */
 {
     TestReport("open",fileName, NULL);
-    return NULL;
+    return Tcl_FSOpenFileChannel(interp, TestReportGetNativePath(fileName),
+				 modeString, permissions);
 }
 
 static int
@@ -5335,24 +5388,20 @@ TestReportMatchInDirectory(interp, resultPtr, dirPtr, pattern, types)
 				 * May be NULL. */
 {
     TestReport("matchindirectory",dirPtr, NULL);
-    return -1;
-}
-static Tcl_Obj *
-TestReportGetCwd(interp)
-    Tcl_Interp *interp;
-{
-    TestReport("cwd",NULL,NULL);
-    return NULL;
+    return Tcl_FSMatchInDirectory(interp, resultPtr, 
+				  TestReportGetNativePath(dirPtr), pattern, 
+				  types);
 }
 static int
 TestReportChdir(dirName)
     Tcl_Obj *dirName;
 {
     TestReport("chdir",dirName,NULL);
-    return -1;
+    return Tcl_FSChdir(TestReportGetNativePath(dirName));
 }
 static int
-TestReportLoadFile(interp, fileName, sym1, sym2, proc1Ptr, proc2Ptr, clientDataPtr)
+TestReportLoadFile(interp, fileName, sym1, sym2, proc1Ptr, proc2Ptr, 
+		   clientDataPtr, unloadProcPtr)
     Tcl_Interp *interp;		/* Used for error reporting. */
     Tcl_Obj *fileName;		/* Name of the file containing the desired
 				 * code. */
@@ -5363,10 +5412,15 @@ TestReportLoadFile(interp, fileName, sym1, sym2, proc1Ptr, proc2Ptr, clientDataP
 				 * to sym1 and sym2. */
     ClientData *clientDataPtr;	/* Filled with token for dynamically loaded
 				 * file which will be passed back to 
-				 * TclpUnloadFile() to unload the file. */
+				 * (*unloadProcPtr)() to unload the file. */
+    Tcl_FSUnloadFileProc **unloadProcPtr;	
+				/* Filled with address of Tcl_FSUnloadFileProc
+				 * function which should be used for
+				 * this file. */
 {
     TestReport("loadfile",fileName,NULL);
-    return -1;
+    return Tcl_FSLoadFile(interp, TestReportGetNativePath(fileName), sym1, sym2,
+			  proc1Ptr, proc2Ptr, clientDataPtr, unloadProcPtr);
 }
 static void
 TestReportUnloadFile(clientData)
@@ -5383,13 +5437,7 @@ TestReportLink(path, to)
     Tcl_Obj *to;		/* Path of file to link to, or NULL */
 {
     TestReport("link",path,NULL);
-    return NULL;
-}
-static Tcl_Obj *
-TestReportListVolumes()
-{
-    TestReport("listvolumes",NULL,NULL);
-    return NULL;
+    return Tcl_FSLink(TestReportGetNativePath(path),NULL);
 }
 static int
 TestReportRenameFile(src, dst)
@@ -5399,7 +5447,8 @@ TestReportRenameFile(src, dst)
 				 * (UTF-8). */
 {
     TestReport("renamefile",src,dst);
-    return -1;
+    return Tcl_FSRenameFile(TestReportGetNativePath(src), 
+			    TestReportGetNativePath(dst));
 }
 static int 
 TestReportCopyFile(src, dst)
@@ -5407,33 +5456,34 @@ TestReportCopyFile(src, dst)
     Tcl_Obj *dst;		/* Pathname of file to copy to (UTF-8). */
 {
     TestReport("copyfile",src,dst);
-    return -1;
+    return Tcl_FSCopyFile(TestReportGetNativePath(src), 
+			    TestReportGetNativePath(dst));
 }
 static int
 TestReportDeleteFile(path)
     Tcl_Obj *path;		/* Pathname of file to be removed (UTF-8). */
 {
     TestReport("deletefile",path,NULL);
-    return -1;
+    return Tcl_FSDeleteFile(TestReportGetNativePath(path));
 }
 static int
 TestReportCreateDirectory(path)
     Tcl_Obj *path;		/* Pathname of directory to create (UTF-8). */
 {
     TestReport("createdirectory",path,NULL);
-    return -1;
+    return Tcl_FSCreateDirectory(TestReportGetNativePath(path));
 }
 static int
 TestReportCopyDirectory(src, dst, errorPtr)
     Tcl_Obj *src;		/* Pathname of directory to be copied
 				 * (UTF-8). */
     Tcl_Obj *dst;		/* Pathname of target directory (UTF-8). */
-    Tcl_Obj **errorPtr;	/* If non-NULL, uninitialized or free
-				 * DString filled with UTF-8 name of file
-				 * causing error. */
+    Tcl_Obj **errorPtr;	        /* If non-NULL, to be filled with UTF-8 name 
+                       	         * of file causing error. */
 {
     TestReport("copydirectory",src,dst);
-    return -1;
+    return Tcl_FSCopyDirectory(TestReportGetNativePath(src), 
+			    TestReportGetNativePath(dst), errorPtr);
 }
 static int
 TestReportRemoveDirectory(path, recursive, errorPtr)
@@ -5442,12 +5492,12 @@ TestReportRemoveDirectory(path, recursive, errorPtr)
     int recursive;		/* If non-zero, removes directories that
 				 * are nonempty.  Otherwise, will only remove
 				 * empty directories. */
-    Tcl_Obj **errorPtr;	/* If non-NULL, uninitialized or free
-				 * DString filled with UTF-8 name of file
-				 * causing error. */
+    Tcl_Obj **errorPtr;	        /* If non-NULL, to be filled with UTF-8 name 
+                       	         * of file causing error. */
 {
     TestReport("removedirectory",path,NULL);
-    return -1;
+    return Tcl_FSRemoveDirectory(TestReportGetNativePath(path), recursive, 
+				 errorPtr);
 }
 static char**
 TestReportFileAttrStrings(fileName, objPtrRef)
@@ -5455,7 +5505,7 @@ TestReportFileAttrStrings(fileName, objPtrRef)
     Tcl_Obj** objPtrRef;
 {
     TestReport("fileattributestrings",fileName,NULL);
-    return NULL;
+    return Tcl_FSFileAttrStrings(TestReportGetNativePath(fileName), objPtrRef);
 }
 static int
 TestReportFileAttrsGet(interp, index, fileName, objPtrRef)
@@ -5465,7 +5515,8 @@ TestReportFileAttrsGet(interp, index, fileName, objPtrRef)
     Tcl_Obj **objPtrRef;	/* for output. */
 {
     TestReport("fileattributesget",fileName,NULL);
-    return -1;
+    return Tcl_FSFileAttrsGet(interp, index, 
+			      TestReportGetNativePath(fileName), objPtrRef);
 }
 static int
 TestReportFileAttrsSet(interp, index, fileName, objPtr)
@@ -5475,7 +5526,8 @@ TestReportFileAttrsSet(interp, index, fileName, objPtr)
     Tcl_Obj *objPtr;		/* for input. */
 {
     TestReport("fileattributesset",fileName,objPtr);
-    return -1;
+    return Tcl_FSFileAttrsSet(interp, index, 
+			      TestReportGetNativePath(fileName), objPtr);
 }
 static int 
 TestReportUtime (fileName, tval)
@@ -5483,7 +5535,7 @@ TestReportUtime (fileName, tval)
     struct utimbuf *tval;
 {
     TestReport("utime",fileName,NULL);
-    return -1;
+    return Tcl_FSUtime(TestReportGetNativePath(fileName), tval);
 }
 static int
 TestReportNormalizePath(interp, pathPtr, nextCheckpoint)

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPipe.c,v 1.14 2001/08/07 00:42:45 hobbs Exp $
+ * RCS: @(#) $Id: tclUnixPipe.c,v 1.15 2001/09/04 18:06:35 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -238,19 +238,29 @@ TclpCreateTempFile(contents)
 Tcl_Obj* 
 TclpTempFileName()
 {
-    char fileName[L_tmpnam];
+    char fileName[L_tmpnam + 9];
+    Tcl_Obj *result = NULL;
+    int fd;
 
     /*
-     * tmpnam should not be used (see [Patch: #442636]), but mkstemp
-     * doesn't provide just the filename.  The use of this will have
-     * to reconcile that conflict.
+     * We should also check against making more then TMP_MAX of these.
      */
 
-    if (tmpnam(fileName) == NULL) {			/* INTL: Native. */
+    strcpy(fileName, P_tmpdir);		/* INTL: Native. */
+    if (fileName[strlen(fileName) - 1] != '/') {
+	strcat(fileName, "/");		/* INTL: Native. */
+    }
+    strcat(fileName, "tclXXXXXX");
+    fd = mkstemp(fileName);		/* INTL: Native. */
+    if (fd == -1) {
 	return NULL;
     }
+    fcntl(fd, F_SETFD, FD_CLOEXEC);
+    unlink(fileName);			/* INTL: Native. */
 
-    return TclpNativeToNormalized((ClientData) fileName);
+    result = TclpNativeToNormalized((ClientData) fileName);
+    close (fd);
+    return result;
 }
 
 /*

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.14 2001/08/23 17:37:07 vincentdarley Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.15 2001/09/04 18:06:34 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -878,48 +878,18 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    return TclFileDeleteCmd(interp, objc, objv);
 	}
     	case FILE_DIRNAME: {
-    	    int splitElements;
-	    Tcl_Obj *splitPtr;
-	    Tcl_Obj *splitResultPtr = NULL;
-
+	    Tcl_Obj *dirPtr;
 	    if (objc != 3) {
 		goto only3Args;
 	    }
-	    /* 
-	     * The behaviour we want here is slightly different to
-	     * the standard Tcl_FSSplitPath in the handling of home
-	     * directories; Tcl_FSSplitPath preserves the "~" while 
-	     * this code computes the actual full path name, if we
-	     * had just a single component.
-	     */	    
-	    splitPtr = Tcl_FSSplitPath(objv[2], &splitElements);
-	    if ((splitElements == 1) && (Tcl_GetString(objv[2])[0] == '~')) {
-		Tcl_DecrRefCount(splitPtr);
-		splitPtr = Tcl_FSGetNormalizedPath(interp, objv[2]);
-		if (splitPtr == NULL) {
-		    return TCL_ERROR;
-		}
-		splitPtr = Tcl_FSSplitPath(splitPtr, &splitElements);
-	    }
-
-	    /*
-	     * Return all but the last component.  If there is only one
-	     * component, return it if the path was non-relative, otherwise
-	     * return the current directory.
-	     */
-
-	    if (splitElements > 1) {
-		splitResultPtr = Tcl_FSJoinPath(splitPtr, splitElements - 1);
-	    } else if (splitElements == 0 || 
-		       (Tcl_FSGetPathType(objv[2], NULL, NULL) == TCL_PATH_RELATIVE)) {
-		splitResultPtr = Tcl_NewStringObj(
-			((tclPlatform == TCL_PLATFORM_MAC) ? ":" : "."), 1);
+	    dirPtr = TclFileDirname(interp, objv[2]);
+	    if (dirPtr == NULL) {
+	        return TCL_ERROR;
 	    } else {
-		Tcl_ListObjIndex(NULL, splitPtr, 0, &splitResultPtr);
+		Tcl_SetObjResult(interp, dirPtr);
+		Tcl_DecrRefCount(dirPtr);
+		return TCL_OK;
 	    }
-	    Tcl_SetObjResult(interp, splitResultPtr);
-	    Tcl_DecrRefCount(splitPtr);
-	    return TCL_OK;
 	}
 	case FILE_EXECUTABLE: {
 	    if (objc != 3) {
@@ -1099,7 +1069,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    if (objc != 3) {
 		goto only3Args;
 	    }
-	    switch (Tcl_FSGetPathType(objv[2], NULL, NULL)) {
+	    switch (Tcl_FSGetPathType(objv[2])) {
 	    	case TCL_PATH_ABSOLUTE:
 	    	    Tcl_SetStringObj(Tcl_GetObjResult(interp), "absolute", -1);
 		    break;
@@ -1272,7 +1242,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 
 	    if (splitElements > 0) {
 	    	if ((splitElements > 1)
-		  || (Tcl_FSGetPathType(objv[2], NULL, NULL) == TCL_PATH_RELATIVE)) {
+		  || (Tcl_FSGetPathType(objv[2]) == TCL_PATH_RELATIVE)) {
 		    
 		    Tcl_Obj *tail = NULL;
 		    Tcl_ListObjIndex(NULL, splitPtr, splitElements-1, &tail);
