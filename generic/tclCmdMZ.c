@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.38 2001/05/17 02:11:32 hobbs Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.39 2001/06/12 08:07:37 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -368,7 +368,11 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
 		int start, end;
 		Tcl_Obj *objs[2];
 
-		if (i <= info.nsubs) {
+		/*
+		 * Only adjust the match area if there was a match for
+		 * that area.  (Scriptics Bug 4391/SF Bug #219232)
+		 */
+		if (i <= info.nsubs && info.matches[i].start >= 0) {
 		    start = offset + info.matches[i].start;
 		    end   = offset + info.matches[i].end;
 
