@@ -12,7 +12,7 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 # 
-# RCS: @(#) $Id: tcltest.tcl,v 1.2 1999/06/29 20:14:15 jenn Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.3 1999/07/02 20:39:52 jenn Exp $
 
 package provide tcltest 1.0
 
@@ -183,6 +183,9 @@ namespace eval tcltest {
 
     # Set the location of the execuatble
     variable tcltest [info nameofexecutable]
+
+    # save the platform information so it can be restored later
+    variable tcl_platform [array get tcl_platform]
 }   
 
 # ::tcltest::AddToSkippedBecause --
@@ -548,7 +551,7 @@ proc ::tcltest::PrintUsageInfo {} {
 		\t                 the glob pattern given. \n\
                 -asidefromdir pattern\t Skip tests in directories that match \n\
 		\t                 the glob pattern given. \n\
-		-preservecore bool \t If true, save any core files produced \n\
+		-preservecore level \t If 2, save any core files produced \n\
 		\t                 during testing in the directory \n\
 		\t                 specified by -tmpdir. The default \n\
 		\t                 is $::tcltest::preserveCore. \n\
@@ -616,8 +619,8 @@ proc ::tcltest::processCmdLineArgs {} {
     # conflicts with the wish option -visual.
 
     # Process -help first
-    if {([lsearch -exact $flagArray {-help}] != -1) || \
-	    ([lsearch -exact $flagArray {-h}] != -1)} {
+    if {([lsearch -exact $flagArray{-help}] != -1) || \
+	    ([lsearch -exact $flagArray{-h}] != -1)} {
 	::tcltest::PrintUsageInfo
 	exit
     }
@@ -630,16 +633,17 @@ proc ::tcltest::processCmdLineArgs {} {
     }
 
     # -help is not listed since it has already been processed
-    lappend defaultFlags {-verbose -match -skip -constraints \
+    lappend defaultFlags -verbose -match -skip -constraints \
 	    -outfile -errfile -debug -tmpdir -file -notfile -relateddir \
-	    -asidefromdir -preservecore -limitconstraints}
-    lappend defaultFlags [ ::tcltest::processCmdLineArgsAddFlagsHook ]
+	    -asidefromdir -preservecore -limitconstraints
+    set defaultFlags [concat $defaultFlags \
+	    [ ::tcltest::processCmdLineArgsAddFlagsHook ]]
 
     foreach arg $defaultFlags {
 	set abbrev [string range $arg 0 1]
 	if {([info exists flag($abbrev)]) && \
-		([lsearch -exact $flagArray $arg] < \
-		[lsearch -exact $flagArray $abbrev])} {
+		([lsearch -exact $flagArray $arg] < [lsearch -exact \
+		$flagArray $abbrev])} { 
 	    set flag($arg) $flag($abbrev)
 	}
     }
@@ -1026,6 +1030,11 @@ proc ::tcltest::cleanupTestsHook {} {}
 proc ::tcltest::test {name description script expectedAnswer args} {
     incr ::tcltest::numTests(Total)
 
+#      if {[file exists [file join $::tcltest::workingDirectory core]]} {
+#  	set coreModificationTime [file mtime [file join \
+#  		$::tcltest::workingDirectory core]]
+#      }
+
     # skip the test if it's name matches an element of skip
 
     foreach pattern $::tcltest::skip {
@@ -1158,18 +1167,28 @@ proc ::tcltest::test {name description script expectedAnswer args} {
 	puts $::tcltest::outputChannel "---- Result should have been:\n$expectedAnswer"
 	puts $::tcltest::outputChannel "==== $name FAILED\n"
     }
-    if {[file exists [file join $::tcltest::workingDirectory core]]} {
-	if {$::tcltest::preserveCore} {
-	    file rename -force [file join $::tcltest::workingDirectory core] \
-		    [file join $::tcltest::temporaryDirectory core-$name]
+#      if {[file exists [file join $::tcltest::workingDirectory core]]} {
+#  	if {$::tcltest::preserveCore} {
+#  	    file rename -force [file join $::tcltest::workingDirectory core] \
+#  		    [file join $::tcltest::temporaryDirectory core-$name]
 	    
-	    puts $::tcltest::outputChannel "==== $name produced core file! \
-		    Moved file to: \
-		    [file join $::tcltest::temporaryDirectory core-$name]"
-	} else {
-	    puts $::tcltest::outputChannel "==== $name produced core file!"
-	}
-    }
+#  	    puts $::tcltest::outputChannel "==== $name produced core file! \
+#  		    Moved file to: \
+#  		    [file join $::tcltest::temporaryDirectory core-$name]"
+#  	} else {
+#  	    # Print a message if there is a core file and (1) there previously 
+#  	    # wasn't one or (2) the new one is different from the old one.
+
+#  	    if {[info exists coreModificationTime]} {
+#  		if {$coreModificationTime != [file mtime \
+#  			[file join $::tcltest::workingDirectory core]]} {
+#  		    puts $::tcltest::outputChannel "==== $name produced core file!"
+#  		}
+#  	    } else {
+#  		puts $::tcltest::outputChannel "==== $name produced core file!"
+#  	    } 
+#  	}
+#      }
 }
 
 # ::tcltest::getMatchingTestFiles
