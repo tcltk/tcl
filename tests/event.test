@@ -9,10 +9,10 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: event.test,v 1.17 2002/07/01 02:29:22 dgp Exp $
+# RCS: @(#) $Id: event.test,v 1.18 2002/07/02 19:10:57 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest 2.1
+    package require tcltest 2
     namespace import -force ::tcltest::*
 }
 
@@ -217,7 +217,8 @@ test event-6.1 {BgErrorDeleteProc procedure} {
     close $f
     removeFile err.out
     set result
-} {Unmodified}
+} {Unmodified
+}
 
 test event-7.1 {bgerror / regular} {
     set errRes {}
