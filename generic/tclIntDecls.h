@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.52 2003/08/25 21:05:15 dkf Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.53 2003/09/05 21:52:12 dgp Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -937,6 +937,18 @@ EXTERN void		TclVarErrMsg _ANSI_ARGS_((Tcl_Interp * interp,
 				CONST char * part1, CONST char * part2, 
 				CONST char * operation, CONST char * reason));
 #endif
+#ifndef Tcl_SetStartupScript_TCL_DECLARED
+#define Tcl_SetStartupScript_TCL_DECLARED
+/* 178 */
+EXTERN void		Tcl_SetStartupScript _ANSI_ARGS_((Tcl_Obj * pathPtr, 
+				CONST char* encodingName));
+#endif
+#ifndef Tcl_GetStartupScript_TCL_DECLARED
+#define Tcl_GetStartupScript_TCL_DECLARED
+/* 179 */
+EXTERN Tcl_Obj *	Tcl_GetStartupScript _ANSI_ARGS_((
+				CONST char ** encodingNamePtr));
+#endif
 
 typedef struct TclIntStubs {
     int magic;
@@ -1144,6 +1156,8 @@ typedef struct TclIntStubs {
     int (*tclCallVarTraces) _ANSI_ARGS_((Interp * iPtr, Var * arrayPtr, Var * varPtr, CONST char * part1, CONST char * part2, int flags, int leaveErrMsg)); /* 175 */
     void (*tclCleanupVar) _ANSI_ARGS_((Var * varPtr, Var * arrayPtr)); /* 176 */
     void (*tclVarErrMsg) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * part1, CONST char * part2, CONST char * operation, CONST char * reason)); /* 177 */
+    void (*tcl_SetStartupScript) _ANSI_ARGS_((Tcl_Obj * pathPtr, CONST char* encodingName)); /* 178 */
+    Tcl_Obj * (*tcl_GetStartupScript) _ANSI_ARGS_((CONST char ** encodingNamePtr)); /* 179 */
 } TclIntStubs;
 
 #ifdef __cplusplus
@@ -1769,6 +1783,14 @@ extern TclIntStubs *tclIntStubsPtr;
 #ifndef TclVarErrMsg
 #define TclVarErrMsg \
 	(tclIntStubsPtr->tclVarErrMsg) /* 177 */
+#endif
+#ifndef Tcl_SetStartupScript
+#define Tcl_SetStartupScript \
+	(tclIntStubsPtr->tcl_SetStartupScript) /* 178 */
+#endif
+#ifndef Tcl_GetStartupScript
+#define Tcl_GetStartupScript \
+	(tclIntStubsPtr->tcl_GetStartupScript) /* 179 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */
