@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEncoding.c,v 1.11 2002/03/04 22:00:39 hobbs Exp $
+ * RCS: @(#) $Id: tclEncoding.c,v 1.12 2002/03/11 20:43:07 mdejong Exp $
  */
 
 #include "tclInt.h"
@@ -835,7 +835,7 @@ Tcl_ExternalToUtfDString(encoding, src, srcLen, dstPtr)
  *
  * Tcl_ExternalToUtf --
  *
- *	Convert a source buffer from the specified encoding into UTF-8,
+ *	Convert a source buffer from the specified encoding into UTF-8.
  *
  * Results:
  *	The return value is one of TCL_OK, TCL_CONVERT_MULTIBYTE,

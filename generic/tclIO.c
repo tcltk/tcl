@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.53 2002/03/02 04:55:31 hobbs Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.54 2002/03/11 20:43:10 mdejong Exp $
  */
 
 #include "tclInt.h"
@@ -4380,7 +4380,7 @@ DoReadChars(chanPtr, objPtr, toRead, appendFlag)
 		RecycleBuffer(statePtr, bufPtr, 0);
 		statePtr->inQueueHead = nextPtr;
 		if (nextPtr == NULL) {
-		    statePtr->inQueueTail = nextPtr;
+		    statePtr->inQueueTail = NULL;
 		}
 	    }
 	}
@@ -4452,19 +4452,19 @@ DoReadChars(chanPtr, objPtr, toRead, appendFlag)
 static int
 ReadBytes(statePtr, objPtr, bytesToRead, offsetPtr)
     ChannelState *statePtr;	/* State of the channel to read. */
-    int bytesToRead;		/* Maximum number of characters to store,
-				 * or < 0 to get all available characters.
-				 * Characters are obtained from the first
-				 * buffer in the queue -- even if this number
-				 * is larger than the number of characters
-				 * available in the first buffer, only the
-				 * characters from the first buffer are
-				 * returned. */
     Tcl_Obj *objPtr;		/* Input data is appended to this ByteArray
 				 * object.  Its length is how much space
 				 * has been allocated to hold data, not how
 				 * many bytes of data have been stored in the
 				 * object. */
+    int bytesToRead;		/* Maximum number of bytes to store,
+				 * or < 0 to get all available bytes.
+				 * Bytes are obtained from the first
+				 * buffer in the queue -- even if this number
+				 * is larger than the number of bytes
+				 * available in the first buffer, only the
+				 * bytes from the first buffer are
+				 * returned. */
     int *offsetPtr;		/* On input, contains how many bytes of
 				 * objPtr have been used to hold data.  On
 				 * output, filled with how many bytes are now
@@ -4556,6 +4556,10 @@ ReadBytes(statePtr, objPtr, bytesToRead, offsetPtr)
 static int
 ReadChars(statePtr, objPtr, charsToRead, offsetPtr, factorPtr)
     ChannelState *statePtr;	/* State of channel to read. */
+    Tcl_Obj *objPtr;		/* Input data is appended to this object.
+				 * objPtr->length is how much space has been
+				 * allocated to hold data, not how many bytes
+				 * of data have been stored in the object. */
     int charsToRead;		/* Maximum number of characters to store,
 				 * or -1 to get all available characters.
 				 * Characters are obtained from the first
@@ -4564,10 +4568,6 @@ ReadChars(statePtr, objPtr, charsToRead, offsetPtr, factorPtr)
 				 * available in the first buffer, only the
 				 * characters from the first buffer are
 				 * returned. */
-    Tcl_Obj *objPtr;		/* Input data is appended to this object.
-				 * objPtr->length is how much space has been
-				 * allocated to hold data, not how many bytes
-				 * of data have been stored in the object. */
     int *offsetPtr;		/* On input, contains how many bytes of
 				 * objPtr have been used to hold data.  On
 				 * output, filled with how many bytes are now
@@ -4705,7 +4705,9 @@ ReadChars(statePtr, objPtr, charsToRead, offsetPtr, factorPtr)
     if (TranslateInputEOL(statePtr, dst, dst, &dstWrote, &dstRead) != 0) {
 	/*
 	 * Hit EOF char.  How many bytes of src correspond to where the
-	 * EOF was located in dst?
+	 * EOF was located in dst? Run the conversion again with an
+	 * output buffer just big enough to hold the data so we can
+	 * get the correct value for srcRead.
 	 */
 	 
 	if (dstWrote == 0) {
@@ -5196,7 +5198,7 @@ GetInput(chanPtr)
 
 	/*
 	 * Check the actual buffersize against the requested
-	 * buffersize. Buffers which are smaller than requested aare
+	 * buffersize. Buffers which are smaller than requested are
 	 * squashed. This is done to honor dynamic changes of the
 	 * buffersize made by the user.
 	 */
