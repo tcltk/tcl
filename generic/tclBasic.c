@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.73 2003/02/16 01:36:32 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.74 2003/02/18 02:22:33 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1947,7 +1947,8 @@ TclRenameCommand(interp, oldName, newName)
     
     if ((newName == NULL) || (*newName == '\0')) {
 	Tcl_DeleteCommandFromToken(interp, cmd);
-	return TCL_OK;
+	result = TCL_OK;
+	goto done;
     }
 
     /*
@@ -1964,13 +1965,16 @@ TclRenameCommand(interp, oldName, newName)
 	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
 		 "can't rename to \"", newName, "\": bad command name",
     	    	 (char *) NULL);
-        return TCL_ERROR;
+	Tcl_DecrRefCount( oldFullName );
+	result = TCL_ERROR;
+	goto done;
     }
     if (Tcl_FindHashEntry(&newNsPtr->cmdTable, newTail) != NULL) {
 	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
 		 "can't rename to \"", newName,
 		 "\": command already exists", (char *) NULL);
-        return TCL_ERROR;
+	result = TCL_ERROR;
+	goto done;
     }
 
     /*
@@ -2002,7 +2006,7 @@ TclRenameCommand(interp, oldName, newName)
         Tcl_DeleteHashEntry(cmdPtr->hPtr);
         cmdPtr->hPtr = oldHPtr;
         cmdPtr->nsPtr = cmdNsPtr;
-        return result;
+	goto done;
     }
 
     /*
@@ -2028,7 +2032,6 @@ TclRenameCommand(interp, oldName, newName)
 		       Tcl_GetString( oldFullName ),
 		       Tcl_DStringValue( &newFullName ),
 		       TCL_TRACE_RENAME);
-    Tcl_DecrRefCount( oldFullName );
     Tcl_DStringFree( &newFullName );
 
     /*
@@ -2056,8 +2059,11 @@ TclRenameCommand(interp, oldName, newName)
      * been deleted by invocation of rename traces.
      */
     TclCleanupCommand(cmdPtr);
+    result = TCL_OK;
 
-    return TCL_OK;
+    done:
+    TclDecrRefCount( oldFullName );
+    return result;
 }
 
 /*
