@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThreadStorage.c,v 1.3 2004/06/24 08:58:40 dkf Exp $
+ * RCS: @(#) $Id: tclThreadStorage.c,v 1.4 2004/06/24 09:05:46 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -618,16 +618,15 @@ TclThreadStorageDataKeyGet(keyPtr)
 				 * really (int **) */
 {
     int *indexPtr = *(int **)keyPtr;
-    void *result;
 
     if (indexPtr == NULL) {
 	return NULL;
     } else {
 	Tcl_HashTable *hashTablePtr =
-		TclThreadStorageGetHashTable(Tcl_GetCurrentThread(););
+		TclThreadStorageGetHashTable(Tcl_GetCurrentThread());
 	Tcl_HashEntry *hPtr;
 
-	if (hashTablePtr != NULL) {
+	if (hashTablePtr == NULL) {
 	    Tcl_Panic("TclThreadStorageGetHashTable failed from "
 		    "TclThreadStorageDataKeyGet!");
 	}
@@ -639,7 +638,6 @@ TclThreadStorageDataKeyGet(keyPtr)
 	}
 	return (void *)Tcl_GetHashValue(hPtr);
     }
-    return result;
 }
 
 /*
