@@ -8,7 +8,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: tcltest.n,v 1.31 2002/07/05 07:24:43 hobbs Exp $
+'\" RCS: @(#) $Id: tcltest.n,v 1.32 2002/07/08 20:43:49 dgp Exp $
 '\" 
 .so man.macros
 .TH "tcltest" n 2.1 tcltest "Tcl Bundled Packages"
@@ -173,8 +173,8 @@ The default value of \fIdirectory\fR is the directory
 as a convenient way to turn the contents of a file generated
 by a test into the result of that test for matching against
 an expected result.  The contents of the file are read using
-the binary encoding, so the exact byte for byte contents are
-returned, with the exception of the final newline, if any.
+the system encoding, so its usefulness is limited to text
+files.
 .TP
 \fBcleanupTests\fR
 Intended to clean up and summarize after several tests have been
