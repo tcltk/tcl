@@ -2,9 +2,10 @@
 
 	* tests/exec.test:		Corrected temporary file management
 	* tests/fileSystem.test:	issues uncovered by -debug 1 test
-	* tests/ioCmd.test:		operations.  Also backported some
-	* tests/pid.test:		other fixes from the HEAD.
-	* tests/socket.test:		[Bugs 675605, 675655]
+	* tests/io.test:		operations.  Also backported some
+	* tests/ioCmd.test:		other fixes from the HEAD.
+	* tests/pid.test:		[Bugs 675605, 675655, 675659]
+	* tests/socket.test:
 	* tests/source.test:	
 
 	* tests/fCmd.test:	Run tests with the [temporaryDirectory] as
