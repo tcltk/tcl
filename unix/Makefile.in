@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.26 1999/06/02 19:29:19 surles Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.27 1999/06/02 22:05:55 surles Exp $
 
 # Current Tcl version;  used in various names.
 
@@ -571,6 +571,7 @@ install-libraries: libraries
 	done;
 
 install-man: man
+	@chmod +x $(UNIX_DIR)/mkLinks
 	@for i in $(MAN_INSTALL_DIR) $(MAN1_INSTALL_DIR) $(MAN3_INSTALL_DIR) $(MANN_INSTALL_DIR) ; \
 	    do \
 	    if [ ! -d $$i ] ; then \
