@@ -1,3 +1,13 @@
+2002-10-25  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
+
+	* The changes below update the windows side to the extended
+	  --enable-symbols option as used by Tk 8.3.5 and Tcl/Tk 8.4.1.
+
+	* win/configure.in: Removed SC_ENABLE_MEMDEBUG.
+	* win/Makefile.in (CFLAGS):  Removed @MEM_DEBUG_FLAGS@.
+	* win/tcl.m4: Removed SC_ENABLE_MEMDEBUG. Using SC_ENABLE_SYMBOLS
+	  definition found in unix/tcl.m4 now.
+
 2002-10-18  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* unix/Makefile.in (dist): add any mac/tcl*.sea.hqx files
