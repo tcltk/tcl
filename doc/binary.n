@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: binary.n,v 1.12 2003/04/10 08:17:35 dkf Exp $
+'\" RCS: @(#) $Id: binary.n,v 1.13 2003/04/10 08:28:55 dkf Exp $
 '\" 
 .so man.macros
 .TH binary n 8.0 Tcl "Tcl Built-In Commands"
@@ -230,7 +230,7 @@ or more 64-bit integers in big-endian byte order in the output string.
 For example,
 .RS
 .CS
-\fBbinary format W 4785469626960341345\fR
+\fBbinary format Wc 4785469626960341345 110\fR
 .CE
 will return the string \fBBigEndian\fR
 .VE
