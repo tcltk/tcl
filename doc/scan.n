@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: scan.n,v 1.6 2000/09/07 14:27:51 poenitz Exp $
+'\" RCS: @(#) $Id: scan.n,v 1.7 2000/12/10 03:27:03 hobbs Exp $
 '\" 
 .so man.macros
 .TH scan n 8.3 Tcl "Tcl Built-In Commands"
@@ -48,9 +48,7 @@ When a \fB%\fR is encountered in \fIformat\fR, it indicates
 the start of a conversion specifier.
 A conversion specifier contains up to four fields after the \fB%\fR:
 a \fB*\fR, which indicates that the converted value is to be discarded 
-.VS 8.1
 instead of assigned to a variable; a XPG3 position specifier; a number
-.VE 8.1
 indicating a maximum field width; and a conversion character.
 All of these fields are optional except for the conversion character.
 The fields that are present must appear in the order given above.
@@ -61,7 +59,6 @@ specifier is \fB[\fR or \fBc\fR).
 Then it converts the next input characters according to the 
 conversion specifier and stores the result in the variable given
 by the next argument to \fBscan\fR.
-.VS 8.1
 .PP
 If the \fB%\fR is followed by a decimal number and a \fB$\fR, as in
 ``\fB%2$d\fR'', then the variable to use is not taken from the next
@@ -72,7 +69,6 @@ specifiers must be positional.  Every \fIvarName\fR on the argument
 list must correspond to exactly one conversion specifier or an error
 is generated, or in the inline case, any position can be specified
 at most once and the empty positions will be filled in with empty strings.
-.VE 8.1
 .PP
 The following conversion characters are supported:
 .TP 10
@@ -83,11 +79,20 @@ It is read in and the value is stored in the variable as a decimal string.
 \fBo\fR
 The input field must be an octal integer. It is read in and the 
 value is stored in the variable as a decimal string.
+.VS 8.4
+If the value exceeds MAX_INT (017777777777 on platforms using 32-bit
+integers), it will be truncated to a signed integer.  Hence, 037777777777
+will appear as -1 on a 32-bit machine.
+.VE 8.4
 .TP 10
 \fBx\fR
 The input field must be a hexadecimal integer. It is read in 
 and the value is stored in the variable as a decimal string.
-.VS 8.1
+.VS 8.4
+If the value exceeds MAX_INT (0x7FFFFFFF on platforms using 32-bit
+integers), it will be truncated to a signed integer.  Hence, 0xFFFFFFFF
+will appear as -1 on a 32-bit machine.
+.VE 8.4
 .TP 10
 \fBu\fR
 The input field must be a decimal integer.  The value is stored in the
@@ -97,7 +102,6 @@ variable as an unsigned decimal integer string.
 The input field must be an integer.  The base (i.e. decimal, octal, or
 hexadecimal) is determined in the same fashion as described in
 \fBexpr\fR.  The value is stored in the variable as a decimal string.
-.VE 8.1
 .TP 10
 \fBc\fR
 A single character is read in and its binary value is stored in 
@@ -127,13 +131,11 @@ The matching string is stored in the variable.
 If the first character between the brackets is a \fB]\fR then
 it is treated as part of \fIchars\fR rather than the closing
 bracket for the set.
-.VS 8.1
 If \fIchars\fR
 contains a sequence of the form \fIa\fB\-\fIb\fR then any
 character between \fIa\fR and \fIb\fR (inclusive) will match.
 If the first or last character between the brackets is a \fB\-\fR, then
 it is treated as part of \fIchars\fR rather than indicating a range.
-.VE 8.1
 .TP 10
 \fB[^\fIchars\fB]\fR
 The input field consists of any number of characters not in 
@@ -142,7 +144,6 @@ The matching string is stored in the variable.
 If the character immediately following the \fB^\fR is a \fB]\fR then it is 
 treated as part of the set rather than the closing bracket for 
 the set.
-.VS 8.1
 If \fIchars\fR
 contains a sequence of the form \fIa\fB\-\fIb\fR then any
 character between \fIa\fR and \fIb\fR (inclusive) will be excluded
@@ -153,7 +154,6 @@ it is treated as part of \fIchars\fR rather than indicating a range.
 \fBn\fR
 No input is consumed from the input string.  Instead, the total number
 of chacters scanned from the input string so far is stored in the variable.
-.VE 8.1
 .LP
 The number of characters read from the input for a conversion is the
 largest number that makes sense for that particular conversion (e.g.
@@ -169,10 +169,8 @@ then no variable is assigned and the next scan argument is not consumed.
 .PP
 The behavior of the \fBscan\fR command is the same as the behavior of
 the ANSI C \fBsscanf\fR procedure except for the following differences:
-.VS 8.1
 .IP [1]
 \fB%p\fR conversion specifier is not currently supported.
-.VE 8.1
 .IP [2]
 For \fB%c\fR conversions a single character value is
 converted to a decimal string, which is then assigned to the
@@ -184,8 +182,8 @@ values are always converted as if there were no modifier present
 and real values are always converted as if the \fBl\fR modifier
 were present (i.e. type \fBdouble\fR is used for the internal
 representation).
-.VS 8.3
 .IP [4]
+.VS 8.3
 If the end of the input string is reached before any conversions have been
 performed and no variables are given, and empty string is returned.
 .VE 8.3
