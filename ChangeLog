@@ -1,3 +1,8 @@
+2004-11-25  Zoran Vasiljevic <vasiljevic@users.sf.net>
+
+	* doc/Thread.3:
+	* doc/Notifier.3: Added changes from the core-8-4-branch
+
 2004-11-25  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* doc/dde.n: Synchronized the documentation of the commands with
