@@ -731,7 +731,7 @@ TclGetDefaultStdChannel(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_OpenFileChannel --
+ * TclpOpenFileChannel --
  *
  *	Open an File based channel on Unix systems.
  *
@@ -747,7 +747,7 @@ TclGetDefaultStdChannel(
  */
 
 Tcl_Channel
-Tcl_OpenFileChannel(
+TclpOpenFileChannel(
     Tcl_Interp *interp,			/* Interpreter for error reporting;
                                          * can be NULL. */
     char *fileName,			/* Name of file to open. */

@@ -826,7 +826,7 @@ ComGetOptionProc(instanceData, interp, optionName, dsPtr)
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_OpenFileChannel --
+ * TclpOpenFileChannel --
  *
  *	Open an File based channel on Unix systems.
  *
@@ -842,7 +842,7 @@ ComGetOptionProc(instanceData, interp, optionName, dsPtr)
  */
 
 Tcl_Channel
-Tcl_OpenFileChannel(interp, fileName, modeString, permissions)
+TclpOpenFileChannel(interp, fileName, modeString, permissions)
     Tcl_Interp *interp;			/* Interpreter for error reporting;
                                          * can be NULL. */
     char *fileName;			/* Name of file to open. */
@@ -889,7 +889,7 @@ Tcl_OpenFileChannel(interp, fileName, modeString, permissions)
 	    channelPermissions = (TCL_READABLE | TCL_WRITABLE);
 	    break;
 	default:
-	    panic("Tcl_OpenFileChannel: invalid mode value");
+	    panic("TclpOpenFileChannel: invalid mode value");
 	    break;
     }
 

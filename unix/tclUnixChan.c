@@ -1150,7 +1150,7 @@ TtyParseMode(interp, mode, speedPtr, parityPtr, dataPtr, stopPtr)
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_OpenFileChannel --
+ * TclpOpenFileChannel --
  *
  *	Open an file based channel on Unix systems.
  *
@@ -1167,7 +1167,7 @@ TtyParseMode(interp, mode, speedPtr, parityPtr, dataPtr, stopPtr)
  */
 
 Tcl_Channel
-Tcl_OpenFileChannel(interp, fileName, modeString, permissions)
+TclpOpenFileChannel(interp, fileName, modeString, permissions)
     Tcl_Interp *interp;			/* Interpreter for error reporting;
                                          * can be NULL. */
     char *fileName;			/* Name of file to open. */
@@ -1201,7 +1201,7 @@ Tcl_OpenFileChannel(interp, fileName, modeString, permissions)
             /*
              * This may occurr if modeString was "", for example.
              */
-	    panic("Tcl_OpenFileChannel: invalid mode value");
+	    panic("TclpOpenFileChannel: invalid mode value");
 	    return NULL;
     }
 
