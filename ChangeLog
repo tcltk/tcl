@@ -1,3 +1,14 @@
+2003-04-25  Andreas Kupries  <andreask@activestate.com>
+
+	* win/tclWinThrd.c: Applied SF patch #727271. This patch changes
+	  the code to catch any errors returned by the windows functions
+	  handling TLS ASAP instead of waiting to get some mysterious
+	  crash later on due to bogus pointers. Patch provided by Joe
+	  Mistachkin.
+
+	  This is a stop-gap measure to deal with the low number of ?TLS
+	  slots provided by some of the variants of Windows (60-80).
+
 2003-04-24  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* generic/tclFileName.c: fix to bug reported privately by
