@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.14 1999/08/10 17:35:18 redman Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.14.4.1 1999/09/22 04:12:48 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -8157,7 +8157,6 @@ SetBlockMode(interp, chanPtr, mode)
     }
     return TCL_OK;
 }
-
 
 /*
  *----------------------------------------------------------------------
@@ -8176,7 +8175,8 @@ SetBlockMode(interp, chanPtr, mode)
  */
 
 int
-Tcl_GetChannelNames(Tcl_Interp *interp)
+Tcl_GetChannelNames(interp)
+    Tcl_Interp *interp;		/* Interp for error reporting. */
 {
     Channel *chanPtr;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);

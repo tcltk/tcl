@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: format.test,v 1.5 1999/06/26 03:54:14 jenn Exp $
+# RCS: @(#) $Id: format.test,v 1.5.4.1 1999/09/22 04:12:57 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -466,6 +466,19 @@ test format-14.1 {testing MAX_FLOAT_SIZE for 0 and 1} {
 test format-14.2 {testing MAX_FLOAT_SIZE for 0 and 1} {
     format {%s} "a"
 } {a}
+
+test format-15.1 {testing %0..s 0 padding for chars/strings} {
+    format %05s a
+} {0000a}
+test format-15.2 {testing %0..s 0 padding for chars/strings} {
+    format "% 5s" a
+} {    a}
+test format-15.3 {testing %0..s 0 padding for chars/strings} {
+    format %5s a
+} {    a}
+test format-15.4 {testing %0..s 0 padding for chars/strings} {
+    format %05c 61
+} {0000=}
 
 set a "0123456789"
 set b ""

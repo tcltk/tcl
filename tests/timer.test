@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: timer.test,v 1.5 1999/06/26 20:55:15 rjohnson Exp $
+# RCS: @(#) $Id: timer.test,v 1.5.4.1 1999/09/22 04:12:58 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -412,7 +412,7 @@ test timer-6.29 {Tcl_AfterCmd procedure, info option, script with NULL} {
     }
     set x "hello world"
     set id junk
-    set id [after 1 set x ab\0cd]
+    set id [after 10 set x ab\0cd]
     update
     set y [string length [lindex [lindex [after info $id] 0] 2]]
     foreach i [after info] {

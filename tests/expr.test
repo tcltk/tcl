@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: expr.test,v 1.5 1999/06/30 00:17:06 jenn Exp $
+# RCS: @(#) $Id: expr.test,v 1.5.4.1 1999/09/22 04:12:57 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -703,6 +703,14 @@ test expr-20.3 {broken substitution of integer digits} {
     # fails with 8.0.x, but not 8.1b2
     list [set a 000; expr 0x1$a] [set a 1; expr ${a}000]
 } {4096 1000}
+test expr-20.4 {proper double evaluation compilation, error case} {
+    catch {unset a}; # make sure $a doesn't exist
+    list [catch {expr 1?{$a}:0} msg] $msg
+} {1 {can't read "a": no such variable}}
+test expr-20.5 {proper double evaluation compilation, working case} {
+    set a yellow
+    expr 1?{$a}:0
+} yellow
 
 # cleanup
 if {[info exists a]} {

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.19 1999/04/16 00:46:52 stanton Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.19.6.1 1999/09/22 04:12:50 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -135,6 +135,7 @@ Tcl_ProcObjCmd(dummy, interp, objc, objv)
     cmd = Tcl_CreateObjCommand(interp, Tcl_DStringValue(&ds),
 	    TclObjInterpProc, (ClientData) procPtr, TclProcDeleteProc);
 
+    Tcl_DStringFree(&ds);
     /*
      * Now initialize the new procedure's cmdPtr field. This will be used
      * later when the procedure is called to determine what namespace the
@@ -265,7 +266,7 @@ TclCreateProc(interp, nsPtr, procName, argsPtr, bodyPtr, procPtrPtr)
 
     if (precompiled) {
         if (numArgs > procPtr->numArgs) {
-            char buf[128];
+            char buf[64 + TCL_INTEGER_SPACE + TCL_INTEGER_SPACE];
             sprintf(buf, "\": arg list contains %d entries, precompiled header expects %d",
                     numArgs, procPtr->numArgs);
             Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
@@ -351,7 +352,7 @@ TclCreateProc(interp, nsPtr, procName, argsPtr, bodyPtr, procPtrPtr)
                             && (fieldCount == 2))
                     || ((localPtr->defValuePtr != NULL)
                             && (fieldCount != 2))) {
-                char buf[128];
+                char buf[80 + TCL_INTEGER_SPACE];
                 sprintf(buf, "\": formal parameter %d is inconsistent with precompiled body",
                         i);
                 Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
@@ -1087,7 +1088,6 @@ TclProcCompileProc(interp, procPtr, bodyPtr, nsPtr, description, procName)
  	}
     }
     if (bodyPtr->typePtr != &tclByteCodeType) {
- 	char buf[100];
  	int numChars;
  	char *ellipsis;
  	
@@ -1133,7 +1133,9 @@ TclProcCompileProc(interp, procPtr, bodyPtr, nsPtr, description, procName)
  	
  	if (result != TCL_OK) {
  	    if (result == TCL_ERROR) {
- 		numChars = strlen(procName);
+		char buf[100 + TCL_INTEGER_SPACE];
+
+		numChars = strlen(procName);
  		ellipsis = "";
  		if (numChars > 50) {
  		    numChars = 50;
@@ -1201,13 +1203,20 @@ ProcessProcResultCode(interp, procName, nameLen, returnCode)
     int returnCode;		/* The unexpected result code. */
 {
     Interp *iPtr = (Interp *) interp;
-    char msg[100 + TCL_INTEGER_SPACE];
-    
+
     if (returnCode == TCL_RETURN) {
 	returnCode = TclUpdateReturnInfo(iPtr);
     } else if (returnCode == TCL_ERROR) {
-	sprintf(msg, "\n    (procedure \"%.*s\" line %d)",
-		nameLen, procName, iPtr->errorLine);
+	char msg[100 + TCL_INTEGER_SPACE];
+	char *ellipsis = "";
+	int numChars = nameLen;
+
+	if (numChars > 60) {
+	    numChars = 60;
+	    ellipsis = "...";
+	}
+	sprintf(msg, "\n    (procedure \"%.*s%s\" line %d)",
+		numChars, procName, ellipsis, iPtr->errorLine);
 	Tcl_AddObjErrorInfo(interp, msg, -1);
     } else if (returnCode == TCL_BREAK) {
 	Tcl_ResetResult(interp);

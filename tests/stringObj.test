@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: stringObj.test,v 1.8 1999/06/26 20:55:14 rjohnson Exp $
+# RCS: @(#) $Id: stringObj.test,v 1.8.4.1 1999/09/22 04:12:58 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -299,6 +299,23 @@ test stringObj-9.10 {TclAppendObjToObj, integer src & mixed dest} {
     list [testobj objtype $x] [testobj objtype $y] [append x $y] \
 	    [set y] [testobj objtype $x] [testobj objtype $y]
 } {string int abcï¿®ghi9 9 string int}
+test stringObj-9.11 {TclAppendObjToObj, mixed src & 1-byte dest index check} {
+    # bug 2678, in <=8.2.0, the second obj (the one to append) in
+    # Tcl_AppendObjToObj was not correctly checked to see if it was
+    # all one byte chars, so a unicode string would be added as one
+    # byte chars.
+    set x abcdef
+    set len [string length $x]
+    set y aübåcï
+    set len [string length $y]
+    append x $y
+    string length $x
+    set q {}
+    for {set i 0} {$i < 12} {incr i} {
+	lappend q [string index $x $i]
+    }
+    set q
+} {a b c d e f a ü b å c ï}
 
 test stringObj-10.1 {Tcl_GetRange with all byte-size chars} {
     set x "abcdef"

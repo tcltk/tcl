@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclGetDate.y,v 1.4 1999/04/16 00:46:46 stanton Exp $
+ * RCS: @(#) $Id: tclGetDate.y,v 1.4.6.1 1999/09/22 04:12:47 hobbs Exp $
  */
 
 %{
@@ -250,11 +250,11 @@ date    : tUNUMBER '/' tUNUMBER {
             yyMonth = $2;
             yyDay = $1;
         }
-		  | tEPOCH {
-				yyMonth = 1;
-				yyDay = 1;
-				yyYear = EPOCH;
-		  }
+	| tEPOCH {
+	    yyMonth = 1;
+	    yyDay = 1;
+	    yyYear = EPOCH;
+	}
         | tUNUMBER tMONTH tUNUMBER {
             yyMonth = $2;
             yyDay = $1;
@@ -413,7 +413,8 @@ static TABLE    TimezoneTable[] = {
     { "gmt",    tZONE,     HOUR( 0) },      /* Greenwich Mean */
     { "ut",     tZONE,     HOUR( 0) },      /* Universal (Coordinated) */
     { "utc",    tZONE,     HOUR( 0) },
-    { "wet",    tZONE,     HOUR( 0) } ,     /* Western European */
+    { "uct",    tZONE,     HOUR( 0) },      /* Universal Coordinated Time */
+    { "wet",    tZONE,     HOUR( 0) },      /* Western European */
     { "bst",    tDAYZONE,  HOUR( 0) },      /* British Summer */
     { "wat",    tZONE,     HOUR( 1) },      /* West Africa */
     { "at",     tZONE,     HOUR( 2) },      /* Azores */
@@ -445,6 +446,7 @@ static TABLE    TimezoneTable[] = {
     { "nt",     tZONE,     HOUR(11) },      /* Nome */
     { "idlw",   tZONE,     HOUR(12) },      /* International Date Line West */
     { "cet",    tZONE,    -HOUR( 1) },      /* Central European */
+    { "cest",   tDAYZONE, -HOUR( 1) },      /* Central European Summer */
     { "met",    tZONE,    -HOUR( 1) },      /* Middle European */
     { "mewt",   tZONE,    -HOUR( 1) },      /* Middle European Winter */
     { "mest",   tDAYZONE, -HOUR( 1) },      /* Middle European Summer */
@@ -813,10 +815,10 @@ yylex()
             yyInput++;
 	}
 
-        if (isdigit(c = *yyInput) || c == '-' || c == '+') { /* INTL: digit */
+        if (isdigit(UCHAR(c = *yyInput)) || c == '-' || c == '+') { /* INTL: digit */
             if (c == '-' || c == '+') {
                 sign = c == '-' ? -1 : 1;
-                if (!isdigit(*++yyInput)) { /* INTL: digit */
+                if (!isdigit(UCHAR(*++yyInput))) { /* INTL: digit */
                     /*
 		     * skip the '-' sign
 		     */
@@ -826,7 +828,7 @@ yylex()
                 sign = 0;
 	    }
             for (yylval.Number = 0;
-		    isdigit(c = *yyInput++); ) { /* INTL: digit */
+		    isdigit(UCHAR(c = *yyInput++)); ) { /* INTL: digit */
                 yylval.Number = 10 * yylval.Number + c - '0';
 	    }
             yyInput--;
@@ -836,7 +838,7 @@ yylex()
             return sign ? tSNUMBER : tUNUMBER;
         }
         if (!(c & 0x80) && isalpha(UCHAR(c))) {	/* INTL: ISO only. */
-            for (p = buff; isalpha(c = *yyInput++) /* INTL: ISO only. */
+            for (p = buff; isalpha(UCHAR(c = *yyInput++)) /* INTL: ISO only. */
 		     || c == '.'; ) {
                 if (p < &buff[sizeof buff - 1]) {
                     *p++ = c;

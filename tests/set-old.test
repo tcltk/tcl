@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: set-old.test,v 1.6 1999/06/26 20:55:12 rjohnson Exp $
+# RCS: @(#) $Id: set-old.test,v 1.6.4.1 1999/09/22 04:12:57 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -501,6 +501,15 @@ test set-old-8.37.4 {array command, empty set with populated array} {
     array set aVaRnAmE [list e3 v3]
     list [lsort [array names aVaRnAmE]] [catch {set aVaRnAmE(e2)} msg] $msg
 } {{e1 e2 e3} 0 v2}
+test set-old-8.37.5 {array command, set with non-existent namespace} {
+    list [catch {array set bogusnamespace::var {}} msg] $msg
+} {1 {can't set "bogusnamespace::var": parent namespace doesn't exist}}
+test set-old-8.37.6 {array command, set with non-existent namespace} {
+    list [catch {array set bogusnamespace::var {a b}} msg] $msg
+} {1 {can't set "bogusnamespace::var(a)": parent namespace doesn't exist}}
+test set-old-8.37.7 {array command, set with non-existent namespace} {
+    list [catch {array set bogusnamespace::var(0) {a b}} msg] $msg
+} {1 {can't set "bogusnamespace::var(0)": variable isn't array}}
 test set-old-8.38 {array command, size option} {
     catch {unset a}
     array size a

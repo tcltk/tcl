@@ -1,7 +1,92 @@
+1999-09-21  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* tests/env.test:
+	* unix/Makefile.in: added support for AIX LIBPATH env var [Bug:	2793]
+	removed second definition of INCLUDE_INSTALL_DIR (the one that
+	referenced @includedir@) [Bug: 2805]
+	* unix/dltest/Makefile.in: added -lc to LIBS [Bug: 2794]
+
+	* tests/timer.test: changed after delay in timer test 6.29 from
+	1 to 10. [Bug: 2796]
+
+	* tests/pkg.test:
+	* generic/tclPkg.c: fixed package version check to disallow 1.2..3
+	[Bug: 2539]
+
+	* unix/Makefile.in: fixed gendate target - this never worked
+	since RCS was intro'd.
+	* generic/tclGetDate.y: updated to reflect previous changes
+	to tclDate.c (leap year calc) and added CEST and UCT time zone
+	recognition.  Fixed 4 missing UCHAR() casts. [Bug: 2717, 954,
+	1245, 1249]
+
+	* generic/tclCkalloc.c: changed Tcl_DumpActiveMemory to really
+	dump to stderr and close it [Bug: 725] and changed Tcl_Ckrealloc
+	and Tcl_Ckfree to not bomb when NULL was passed in [Bug: 1719]
+	and changed Tcl_Alloc, et al to not panic when a alloc request
+	for zero came through and NULL was returned (valid on AIX, Tru64)
+	[Bug: 2795, etc]
+
+	* generic/tclIOCmd.c: fixed potential core dump in conjunction
+	with stacked channels with result obj manipulation in
+	Tcl_ReadChars [Bug: 2623]
+
+	* tests/format.test:
+	* generic/tclCmdAH.c: fixed translation of %0#s in format [Bug: 2605]
+
+	* tests/set-old.test:
+	* generic/tclVar.c: Added fix in TclArraySet
+	to check when trying to set in a non-existent namespace. [Bug: 2613]
+
+	* tests/linsert.test:
+	* generic/tclCmdIL.c: fixed end-int interpretation of linsert
+	to correctly calculate value for end, added test and docs [Bug: 2693]
+
+	* doc/switch.n: added proper use of comments to example.
+	* generic/tclCmdMZ.c: changed switch to complain when an error
+	occurs that seems to be due to a misplaced comment.
+
+	* generic/tclCmdMZ.c: fixed illegal ref for \[0-9] substitutions
+	in regsub [Bug: 2723]
+
+	* generic/tclCmdMZ.c: changed [string equal] to return an Int
+	type object (was a Boolean)
+
+	* generic/tclParseExpr.c: changed '"' to '\"' to make FreeBSD
+	happy [Bug: 2625]
+
+	* generic/tclProc.c: moved static buf to better location and
+	changed static msg that would overflow in ProcessProcResultCode
+	[Bug: 2483] and added Tcl_DStringFree to Tcl_ProcObjCmd.
+	Also reworked size of static buffers.
+
+	* tests/stringObj.test: added test 9.11
+	* generic/tclStringObj.c: changed Tcl_AppendObjToObj to
+	properly handle the 1-byte dest and mixed src case where
+	both had had Unicode string len checks made on them.  [Bug: 2678]
+
+	* unix/aclocal.m4:
+	* unix/tcl.m4: added -bnoentry to the AIX-* case [Bug: 1909]
+	added fix for FreeBSD-[1-2] recognition
+	[Bug: 2070] and fix for IRIX SHLIB_LB_LIBS. [Bug: 2610]
+
+	* generic/tclPosixStr.c: fixed typo [Bug: 2592]
+
+	* win/README.binary: fixed version info and some typos [Bug: 2561]
+
+	* generic/tclIO.c: changed Tcl_GetChannelNames* to use style guide
+	headers (pleases HP cc)
+
+	* tests/expr.test:
+	* generic/tclCompile.c: add TCL_TOKEN_VARIABLE to the part types
+	that cause differed compilation for exprs, to correct the expr
+	double-evaluation problem for vars.  Added test cases.
+	Related to [Bug: 732]
+
 1999-08-05  Jim Ingham  <jingham@cygnus.com>
 
-        * mac/tclMacProjects.sea.hqx: Rearrange the projects so that the build 
-        directory is separate from the sources.  Much more convenient! 
+	* mac/tclMacProjects.sea.hqx: Rearrange the projects so that the build 
+	directory is separate from the sources.  Much more convenient! 
 
 1999-08-12  Scott Stanton  <stanton@scriptics.com>
 

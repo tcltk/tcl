@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.19 1999/07/22 21:50:54 redman Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.19.4.1 1999/09/22 04:12:46 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -485,11 +485,13 @@ Tcl_RegsubObjCmd(dummy, interp, objc, objv)
 	    if (firstChar != src) {
 		Tcl_AppendToObj(resultPtr, firstChar, src - firstChar);
 	    }
-	    subStart = info.matches[index].start;
-	    subEnd = info.matches[index].end;
-	    if ((subStart >= 0) && (subEnd >= 0)) {
-		Tcl_AppendUnicodeToObj(resultPtr, wstring + offset + subStart,
-			subEnd - subStart);
+	    if (index <= info.nsubs) {
+		subStart = info.matches[index].start;
+		subEnd = info.matches[index].end;
+		if ((subStart >= 0) && (subEnd >= 0)) {
+		    Tcl_AppendUnicodeToObj(resultPtr,
+			    wstring + offset + subStart, subEnd - subStart);
+		}
 	    }
 	    if (*src == '\\') {
 		src++;
@@ -949,7 +951,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	    }
 
 	    if ((enum options) index == STR_EQUAL) {
-		Tcl_SetBooleanObj(resultPtr, (match) ? 0 : 1);
+		Tcl_SetIntObj(resultPtr, (match) ? 0 : 1);
 	    } else {
 		Tcl_SetIntObj(resultPtr, ((match > 0) ? 1 :
 					  (match < 0) ? -1 : 0));
@@ -2136,7 +2138,7 @@ Tcl_SwitchObjCmd(dummy, interp, objc, objv)
     int objc;			/* Number of arguments. */
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
-    int i, j, index, mode, matched, result;
+    int i, j, index, mode, matched, result, splitObjs, seenComment;
     char *string, *pattern;
     Tcl_Obj *stringObj;
     static char *options[] = {
@@ -2179,6 +2181,7 @@ Tcl_SwitchObjCmd(dummy, interp, objc, objv)
      * argument, split them out again.
      */
 
+    splitObjs = 0;
     if (objc == 1) {
 	Tcl_Obj **listv;
 
@@ -2186,13 +2189,26 @@ Tcl_SwitchObjCmd(dummy, interp, objc, objv)
 	    return TCL_ERROR;
 	}
 	objv = listv;
+	splitObjs = 1;
     }
 
+    seenComment = 0;
     for (i = 0; i < objc; i += 2) {
 	if (i == objc - 1) {
 	    Tcl_ResetResult(interp);
 	    Tcl_AppendToObj(Tcl_GetObjResult(interp),
 	            "extra switch pattern with no body", -1);
+
+	    /*
+	     * Check if this can be due to a badly placed comment
+	     * in the switch block
+	     */
+
+	    if (splitObjs && seenComment) {
+		Tcl_AppendToObj(Tcl_GetObjResult(interp),
+			", this may be due to a comment incorrectly placed outside of a switch body - see the \"switch\" documentation", -1);
+	    }
+
 	    return TCL_ERROR;
 	}
 
@@ -2201,6 +2217,17 @@ Tcl_SwitchObjCmd(dummy, interp, objc, objv)
 	 */
 
 	pattern = Tcl_GetString(objv[i]);
+
+	/*
+	 * The following is an heuristic to detect the infamous
+	 * "comment in switch" error: just check if a pattern
+	 * begins with '#'.
+	 */
+
+	if (splitObjs && *pattern == '#') {
+	    seenComment = 1;
+	}
+
 	matched = 0;
 	if ((i == objc - 2) 
 		&& (*pattern == 'd') 

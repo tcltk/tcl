@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.15 1999/04/22 22:57:06 stanton Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.15.6.1 1999/09/22 04:12:46 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -1393,7 +1393,8 @@ TclCompileExprWords(interp, tokenPtr, numWords, envPtr)
 	    for (j = 0, partPtr = wordPtr+1;  j < wordPtr->numComponents;
 		    j++, partPtr++) {
 		if ((partPtr->type == TCL_TOKEN_BS)
-		        || (partPtr->type == TCL_TOKEN_COMMAND)) {
+		        || (partPtr->type == TCL_TOKEN_COMMAND)
+ 			|| (partPtr->type == TCL_TOKEN_VARIABLE)) {
 		    doExprInline = 0;
 		    break;
 		}

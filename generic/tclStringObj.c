@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.12 1999/06/16 00:47:56 hershey Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.12.4.1 1999/09/22 04:12:50 hobbs Exp $ */
 
 #include "tclInt.h"
 
@@ -334,7 +334,7 @@ Tcl_GetCharLength(objPtr)
  	if (stringPtr->numChars == objPtr->length) {
 
 	    /*
-	     * Since we've just calucalated the number of chars, and all
+	     * Since we've just calculated the number of chars, and all
 	     * UTF chars are 1-byte long, we don't need to store the
 	     * unicode string.
 	     */
@@ -916,17 +916,18 @@ Tcl_AppendObjToObj(objPtr, appendObjPtr)
      * number of characters in the final (appended-to) object.
      */
 
+    bytes = Tcl_GetStringFromObj(appendObjPtr, &length);
+
     allOneByteChars = 0;
     numChars = stringPtr->numChars;
     if ((numChars >= 0) && (appendObjPtr->typePtr == &tclStringType)) {
 	stringPtr = GET_STRING(appendObjPtr);
-	if (stringPtr->numChars >= 0) {
+	if ((stringPtr->numChars >= 0) && (stringPtr->numChars == length)) {
 	    numChars += stringPtr->numChars;
 	    allOneByteChars = 1;
 	}
     }
-    
-    bytes = Tcl_GetStringFromObj(appendObjPtr, &length);
+
     AppendUtfToUtfRep(objPtr, bytes, length);
 
     if (allOneByteChars) {

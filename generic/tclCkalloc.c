@@ -13,7 +13,7 @@
  *
  * This code contributed by Karl Lehenbauer and Mark Diekhans
  *
- * RCS: @(#) $Id: tclCkalloc.c,v 1.5 1999/08/10 02:42:12 welch Exp $
+ * RCS: @(#) $Id: tclCkalloc.c,v 1.5.4.1 1999/09/22 04:12:45 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -294,7 +294,7 @@ Tcl_DumpActiveMemory (fileName)
     char              *address;
 
     if (fileName == NULL) {
-	fileP = stdout;
+	fileP = stderr;
     } else {
 	fileP = fopen(fileName, "w");
 	if (fileP == NULL) {
@@ -445,10 +445,16 @@ Tcl_DbCkalloc(size, file, line)
 
 int
 Tcl_DbCkfree(ptr, file, line)
-    char *  ptr;
-    char     *file;
-    int       line;
+    char *ptr;
+    char *file;
+    int   line;
 {
+    struct mem_header *memp;
+
+    if (ptr == NULL) {
+ 	return;
+    }
+
     /*
      * The following cast is *very* tricky.  Must convert the pointer
      * to an integer before doing arithmetic on it, because otherwise
@@ -457,8 +463,7 @@ Tcl_DbCkfree(ptr, file, line)
      * even though BODY_OFFSET is in words on these machines).
      */
 
-    struct mem_header *memp = (struct mem_header *)
-	    (((unsigned long) ptr) - BODY_OFFSET);
+    memp = (struct mem_header *) (((unsigned long) ptr) - BODY_OFFSET);
 
     if (alloc_tracing)
         fprintf(stderr, "ckfree %lx %ld %s %d\n",
@@ -520,14 +525,18 @@ Tcl_DbCkrealloc(ptr, size, file, line)
 {
     char *new;
     unsigned int copySize;
+    struct mem_header *memp;
+
+    if (ptr == NULL) {
+ 	return Tcl_DbCkalloc(size, file, line);
+    }
 
     /*
      * See comment from Tcl_DbCkfree before you change the following
      * line.
      */
 
-    struct mem_header *memp = (struct mem_header *)
-	    (((unsigned long) ptr) - BODY_OFFSET);
+    memp = (struct mem_header *) (((unsigned long) ptr) - BODY_OFFSET);
 
     copySize = size;
     if (copySize > (unsigned int) memp->length) {
@@ -796,12 +805,22 @@ char *
 Tcl_Alloc (size)
     unsigned int size;
 {
-        char *result;
+    char *result;
 
-        result = TclpAlloc(size);
-        if (result == NULL) 
-                panic("unable to alloc %d bytes", size);
-        return result;
+    result = TclpAlloc(size);
+    /*
+     * Most systems will not alloc(0), instead bumping it to one so
+     * that NULL isn't returned.  Some systems (AIX, Tru64) will alloc(0)
+     * by returning NULL, so we have to check that the NULL we get is
+     * not in response to alloc(0).
+     *
+     * The ANSI spec actually says that systems either return NULL *or*
+     * a special pointer on failure, but we only check for NULL
+     */
+    if ((result == NULL) && size) {
+	panic("unable to alloc %d bytes", size);
+    }
+    return result;
 }
 
 char *
@@ -814,7 +833,7 @@ Tcl_DbCkalloc(size, file, line)
 
     result = (char *) TclpAlloc(size);
 
-    if (result == NULL) {
+    if ((result == NULL) && size) {
         fflush(stdout);
         panic("unable to alloc %d bytes, %s line %d", size, file, 
               line);
@@ -841,8 +860,10 @@ Tcl_Realloc(ptr, size)
     char *result;
 
     result = TclpRealloc(ptr, size);
-    if (result == NULL) 
+
+    if ((result == NULL) && size) {
 	panic("unable to realloc %d bytes", size);
+    }
     return result;
 }
 
@@ -857,10 +878,9 @@ Tcl_DbCkrealloc(ptr, size, file, line)
 
     result = (char *) TclpRealloc(ptr, size);
 
-    if (result == NULL) {
+    if ((result == NULL) && size) {
         fflush(stdout);
-        panic("unable to realloc %d bytes, %s line %d", size, file, 
-              line);
+        panic("unable to realloc %d bytes, %s line %d", size, file, line);
     }
     return result;
 }
@@ -880,14 +900,14 @@ void
 Tcl_Free (ptr)
     char *ptr;
 {
-        TclpFree(ptr);
+    TclpFree(ptr);
 }
 
 int
 Tcl_DbCkfree(ptr, file, line)
-    char *  ptr;
-    char     *file;
-    int       line;
+    char *ptr;
+    char *file;
+    int   line;
 {
     TclpFree(ptr);
     return 0;

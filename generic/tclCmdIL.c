@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.15 1999/08/10 17:35:18 redman Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.15.4.1 1999/09/22 04:12:46 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -1954,8 +1954,12 @@ Tcl_LinsertObjCmd(dummy, interp, objc, objv)
      * will invalidate the list's internal representation.
      */
 
-    result = TclGetIntForIndex(interp, objv[2], /*endValue*/ INT_MAX,
-	    &index);
+    result = Tcl_ListObjLength(interp, objv[1], &len);
+    if (result != TCL_OK) {
+	return result;
+    }
+
+    result = TclGetIntForIndex(interp, objv[2], /*endValue*/ len, &index);
     if (result != TCL_OK) {
 	return result;
     }
