@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclClock.c,v 1.32 2004/09/11 18:57:56 kennykb Exp $
+ * RCS: @(#) $Id: tclClock.c,v 1.33 2004/09/14 21:42:55 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -551,7 +551,7 @@ TclClockOldscanObjCmd( ClientData clientData, /* unused */
     Tcl_Obj *baseObjPtr = NULL;
     int useGMT = 0;
     unsigned long baseClock;
-    long clockVal;
+    unsigned long clockVal;
     long zone;
     Tcl_Obj *resultPtr;
     int dummy;
