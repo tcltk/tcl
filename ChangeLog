@@ -1,3 +1,8 @@
+2004-07-06  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* tools/man2html2.tcl (IPmacro, setTabs): Added support for the
+	more advanced *roff macros used in Tk's doc/bind.n
+
 2004-07-05  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclBasic.c (DeleteInterpProc): fix for [Bug 983660],
