@@ -1,3 +1,8 @@
+2001-12-19  Don Porter <dgp@users.sourceforge.net>
+
+	* unix/Makefile.in (dist): corrected use of eolFix.tcl on
+	working files.  It should operate on distributed files.  [Bug 495120]
+
 2001-12-19  David Gravereaux <davygrvy@pobox.com>
 
 	* tools/tcl.wse.in: Fix for #495120.  tcl.wse.in was
