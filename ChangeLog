@@ -1,3 +1,16 @@
+2001-11-07  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* win/README: Change minimum VC++ version to 5.X since
+	4.X is known not to work.
+	Indicate that Mingw is required and building with Cygwin
+	gcc is not supported. Include instructions that indicate
+	how to install Mingw and what URLs folks should use to
+	download the supported version of Mingw.
+	* win/configure: Regen.
+	* win/configure.in: Error out if user tries to compile the
+	Windows version of Tcl with Cygwin gcc. Users should compile
+	with Mingw gcc instead.
+
 2001-11-06  Andreas Kupries  <andreas_kupries@users.sourceforge.net> 
 
 	* generic/tclIO.c (ReadChars): Fixed bug #478856 reported by
