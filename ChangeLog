@@ -4,6 +4,7 @@
 	* generic/tclIOUtil.c: invalidate filesystem cache when the
 	user changes env(HOME).  Fixes [Bug #535621].  Also cleaned up
 	some of the documentation.
+	* tests/fileSystem.test: added test for bug just fixed.
 	
 2002-04-01  Kevin Kenny  <kennykb@acm.org>
 
