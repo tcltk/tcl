@@ -3,10 +3,13 @@
 # This file contains a collection of tests for one or more of the Tcl
 # built-in commands.  Sourcing this file into Tcl runs the tests and
 # generates output for errors.  No output means no errors were found.
+# (Don't panic if you are seeing this as part of the reg distribution
+# and aren't using Tcl -- reg's own regression tester also knows how
+# to read this file, ignoring the Tcl-isms.)
 #
 # Copyright (c) 1998, 1999 Henry Spencer.  All rights reserved.
 #
-# RCS: @(#) $Id: reg.test,v 1.10 1999/08/05 01:21:09 stanton Exp $
+# RCS: @(#) $Id: reg.test,v 1.10.4.1 1999/11/02 02:10:05 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -21,13 +24,18 @@ set ::tcltest::testConstraints(testregexp) \
 
 # This file uses some custom procedures, defined below, for regexp regression
 # testing.  The name of the procedure indicates the general nature of the
-# test:  e for compile error expected, f for match failure expected, m
-# for a successful match, and i for a successful match with -indices (used
-# in checking things like nonparticipating subexpressions).  There is also
-# a "doing" procedure which sets up title and major test number for each
-# block of tests, and an "xx" procedure which ignores its arguments and
-# arranges for the next invocation of "doing" to announce that some tests
-# were bypassed (which is better than just commenting them out).
+# test:
+#	e	compile error expected
+#	f	match failure expected
+#	m	successful match
+#	i	successful match with -indices (used in checking things like
+#		nonparticipating subexpressions)
+#	p	unsuccessful match with -indices (!!) (used in checking
+#		partial-match reporting)
+# There is also "doing" which sets up title and major test number for each
+# block of tests, and "xx" which ignores its arguments and arranges for the
+# next "doing" to announce that some tests were bypassed (which is better
+# than just commenting them out).
 
 # The first 3 arguments are constant:  a minor number (which often gets
 # a letter or two suffixed to it internally), some flags, and the RE itself.
@@ -36,10 +44,10 @@ set ::tcltest::testConstraints(testregexp) \
 # to try the match against.  Remaining arguments are the substring expected
 # to be matched, and any substrings expected to be matched by subexpressions.
 # (For f, these arguments are optional, and if present are ignored except
-# that they indicate how many subexpressions should be presents in the RE.)
+# that they indicate how many subexpressions should be present in the RE.)
 # It is an error for the number of subexpression arguments to be wrong.
 # Cases involving nonparticipating subexpressions, checking where empty
-# substrings are located, etc. should be done using i.
+# substrings are located, etc. should be done using i and p.
 
 # The flag characters are complex and a bit eclectic.  Generally speaking, 
 # lowercase letters are compile options, uppercase are expected re_info
@@ -51,11 +59,11 @@ set ::tcltest::testConstraints(testregexp) \
 # useful in this file.
 #
 #	-	no-op (placeholder)
-#	+	provide fake xy equivalence class
+#	+	provide fake xy equivalence class and ch collating element
 #	%	force small state-set cache in matcher (to test cache replace)
 #	^	beginning of string is not beginning of line
 #	$	end of string is not end of line
-#	?	report information on partial and limited matches
+#	*	test is Unicode-specific, needs big character set
 #
 #	&	test as both ARE and BRE
 #	b	BRE
@@ -69,6 +77,7 @@ set ::tcltest::testConstraints(testregexp) \
 #	w	newlines are half-magic, significant to ^ and $ only
 #	n	newlines are fully magic, both effects
 #	x	expanded RE syntax
+#	t	incomplete-match reporting
 #
 #	A	backslash-_a_lphanumeric seen
 #	B	ERE/ARE literal-_b_race heuristic used
@@ -82,6 +91,7 @@ set ::tcltest::testConstraints(testregexp) \
 #	Q	{} _q_uantifier seen
 #	R	back _r_eference seen
 #	S	POSIX-un_s_pecified syntax seen
+#	T	prefers shortest (_t_iny)
 #	U	saw original-POSIX botch:  unmatched right paren in ERE (_u_gh)
 
 # The one area we can't easily test is memory-allocation failures (which
@@ -109,8 +119,9 @@ set infonames(P) "REG_UNONPOSIX"
 set infonames(Q) "REG_UBOUNDS"
 set infonames(R) "REG_UBACKREF"
 set infonames(S) "REG_UUNSPEC"
+set infonames(T) "REG_USHORTEST"
 set infonames(U) "REG_UPBOTCH"
-set infonameorder "RHQBAUEPSMLNI"	;# must match bit order, lsb first
+set infonameorder "RHQBAUEPSMLNIT"	;# must match bit order, lsb first
 
 # set major test number and description
 proc doing {major desc} {
@@ -182,6 +193,12 @@ proc infoflags {fl} {
 proc e {testid flags re err} {
 	global prefix ask errorCode
 
+	# Tcl locale stuff doesn't do the ch/xy test fakery yet
+	if {[string first "+" $flags] >= 0} {
+		xx
+		return
+	}
+
 	# if &, test as both ARE and BRE
 	set amp [string first "&" $flags]
 	if {$amp >= 0} {
@@ -200,6 +217,12 @@ proc e {testid flags re err} {
 # match failure expected
 proc f {testid flags re target args} {
 	global prefix description ask
+
+	# Tcl locale stuff doesn't do the ch/xy test fakery yet
+	if {[string first "+" $flags] >= 0} {
+		xx
+		return
+	}
 
 	# if &, test as both ARE and BRE
 	set amp [string first "&" $flags]
@@ -240,6 +263,12 @@ proc f {testid flags re target args} {
 proc matchexpected {opts testid flags re target args} {
 	global prefix description ask
 
+	# Tcl locale stuff doesn't do the ch/xy test fakery yet
+	if {[string first "+" $flags] >= 0} {
+		xx
+		return
+	}
+
 	# if &, test as both BRE and ARE
 	set amp [string first "&" $flags]
 	if {$amp >= 0} {
@@ -270,10 +299,10 @@ proc matchexpected {opts testid flags re target args} {
 		append refs " \$$name"
 		set $name ""
 	}
-	if {[string first "o" $flags] >= 0} {	;# REG_NOSUB
+	if {[string first "o" $flags] >= 0} {	;# REG_NOSUB kludge
 		set nsub 0		;# unsigned value cannot be -1
 	}
-	if {[string first "?" $flags] >= 0} {	;# REG_EXPECT
+	if {[string first "t" $flags] >= 0} {	;# REG_EXPECT
 		incr nsub -1		;# the extra does not count
 	}
 	set ecmd [concat $ecmd $names]
@@ -431,11 +460,11 @@ m  7	bN	**		***	***
 e  8	&	a**		BADRPT
 e  9	&	a**b		BADRPT
 e 10	&	***		BADRPT
-e 11	*	a++		BADRPT
-e 12	*	a?+		BADRPT
-e 13	*	a?*		BADRPT
-e 14	*	a+*		BADRPT
-e 15	*	a*+		BADRPT
+e 11	-	a++		BADRPT
+e 12	-	a?+		BADRPT
+e 13	-	a?*		BADRPT
+e 14	-	a+*		BADRPT
+e 15	-	a*+		BADRPT
 
 
 
@@ -514,7 +543,7 @@ m 40	eE	{a[\\]b}	"a\\b"	"a\\b"
 m 41	bE	{a[\\]b}	"a\\b"	"a\\b"
 e 42	-	{a[\Z]b}	EESCAPE
 m 43	&	{a[[b]c}	"a\[c"	"a\[c"
-m 44	EMP	{a[\u00fe-\u0507][\u00ff-\u0300]b} \
+m 44	EMP*	{a[\u00fe-\u0507][\u00ff-\u0300]b} \
 			"a\u0102\u02ffb"	"a\u0102\u02ffb"
 
 
@@ -645,26 +674,26 @@ m 26	MP	"a\\010b"	"a\bb"	"a\bb"
 
 doing 14 "back references"
 # ugh
-m  1	{R[1P}	{a(b*)c\1}	abbcbb	abbcbb	bb
-m  2	{R[1P}	{a(b*)c\1}	ac	ac	""
-f  3	{R[1P}	{a(b*)c\1}	abbcb
-m  4	{R[1P}	{a(b*)\1}	abbcbb	abb	b
-m  5	{R[1P}	{a(b|bb)\1}	abbcbb	abb	b
-m  6	{R[1P}	{a([bc])\1}	abb	abb	b
-f  7	{R[1P}	{a([bc])\1}	abc
-m  8	{R[1P}	{a([bc])\1}	abcabb	abb	b
-f  9	{R[1P}	{a([bc])*\1}	abc
-f 10	{R[1P}	{a([bc])\1}	abB
-m 11	{iR[1P}	{a([bc])\1}	abB	abB	b
-m 12	{R[1P}	{a([bc])\1+}	abbb	abbb	b
-m 13	{QR[1P}	"a(\[bc])\\1{3,4}"	abbbb	abbbb	b
-f 14	{QR[1P}	"a(\[bc])\\1{3,4}"	abbb
-m 15	{R[1P}	{a([bc])\1*}	abbb	abbb	b
-m 16	{R[1P}	{a([bc])\1*}	ab	ab	b
-m 17	{R[2P}	{a([bc])(\1*)}	ab	ab	b	""
+m  1	RP	{a(b*)c\1}	abbcbb	abbcbb	bb
+m  2	RP	{a(b*)c\1}	ac	ac	""
+f  3	RP	{a(b*)c\1}	abbcb
+m  4	RP	{a(b*)\1}	abbcbb	abb	b
+m  5	RP	{a(b|bb)\1}	abbcbb	abb	b
+m  6	RP	{a([bc])\1}	abb	abb	b
+f  7	RP	{a([bc])\1}	abc
+m  8	RP	{a([bc])\1}	abcabb	abb	b
+f  9	RP	{a([bc])*\1}	abc
+f 10	RP	{a([bc])\1}	abB
+m 11	iRP	{a([bc])\1}	abB	abB	b
+m 12	RP	{a([bc])\1+}	abbb	abbb	b
+m 13	QRP	"a(\[bc])\\1{3,4}"	abbbb	abbbb	b
+f 14	QRP	"a(\[bc])\\1{3,4}"	abbb
+m 15	RP	{a([bc])\1*}	abbb	abbb	b
+m 16	RP	{a([bc])\1*}	ab	ab	b
+m 17	RP	{a([bc])(\1*)}	ab	ab	b	""
 e 18	-	{a((b)\1)}	ESUBREG
 e 19	-	{a(b)c\2}	ESUBREG
-m 20	{bR[1}	{a\(b*\)c\1}	abbcbb	abbcbb	bb
+m 20	bR	{a\(b*\)c\1}	abbcbb	abbcbb	bb
 
 
 
@@ -804,29 +833,28 @@ m 34	N	(a*)*		bc	""	""
 
 doing 22 "multicharacter collating elements"
 # again ugh
-# currently disabled because the fake MCCE we use for testing is unavailable
-xx m  1	&+L	{a[c]e}		ace	ace
-xx f  2	&+I	{a[c]h}		ach
-xx m  3	&+L	{a[[.ch.]]}	ach	ach
-xx f  4	&+L	{a[[.ch.]]}	ace
-xx m  5	&+L	{a[c[.ch.]]}	ac	ac
-xx m  6	&+L	{a[c[.ch.]]}	ace	ac
-xx m  7	&+L	{a[c[.ch.]]}	ache	ach
-xx f  8	&+L	{a[^c]e}	ace
-xx m  9	&+L	{a[^c]e}	abe	abe
-xx m 10	&+L	{a[^c]e}	ache	ache
-xx f 11	&+L	{a[^[.ch.]]}	ach
-xx m 12	&+L	{a[^[.ch.]]}	ace	ac
-xx m 13	&+L	{a[^[.ch.]]}	ac	ac
-xx m 14	&+L	{a[^[.ch.]]}	abe	ab
-xx f 15	&+L	{a[^c[.ch.]]}	ach
-xx f 16	&+L	{a[^c[.ch.]]}	ace
-xx f 17	&+L	{a[^c[.ch.]]}	ac
-xx m 18	&+L	{a[^c[.ch.]]}	abe	ab
-xx m 19	&+L	{a[^b]}		ac	ac
-xx m 20	&+L	{a[^b]}		ace	ac
-xx m 21	&+L	{a[^b]}		ach	ach
-xx f 22	&+L	{a[^b]}		abe
+m  1	&+L	{a[c]e}		ace	ace
+f  2	&+IL	{a[c]h}		ach
+m  3	&+L	{a[[.ch.]]}	ach	ach
+f  4	&+L	{a[[.ch.]]}	ace
+m  5	&+L	{a[c[.ch.]]}	ac	ac
+m  6	&+L	{a[c[.ch.]]}	ace	ac
+m  7	&+L	{a[c[.ch.]]}	ache	ach
+f  8	&+L	{a[^c]e}	ace
+m  9	&+L	{a[^c]e}	abe	abe
+m 10	&+L	{a[^c]e}	ache	ache
+f 11	&+L	{a[^[.ch.]]}	ach
+m 12	&+L	{a[^[.ch.]]}	ace	ac
+m 13	&+L	{a[^[.ch.]]}	ac	ac
+m 14	&+L	{a[^[.ch.]]}	abe	ab
+f 15	&+L	{a[^c[.ch.]]}	ach
+f 16	&+L	{a[^c[.ch.]]}	ace
+f 17	&+L	{a[^c[.ch.]]}	ac
+m 18	&+L	{a[^c[.ch.]]}	abe	ab
+m 19	&+L	{a[^b]}		ac	ac
+m 20	&+L	{a[^b]}		ace	ac
+m 21	&+L	{a[^b]}		ach	ach
+f 22	&+L	{a[^b]}		abe
 
 
 
@@ -843,27 +871,27 @@ f  8	HP	(?=b)b		a
 
 
 doing 24 "non-greedy quantifiers"
-m  1	P	ab+?		abb	ab
-m  2	P	ab+?c		abbc	abbc
-m  3	P	ab*?		abb	a
-m  4	P	ab*?c		abbc	abbc
-m  5	P	ab??		ab	a
-m  6	P	ab??c		abc	abc
-m  7	PQ	"ab{2,4}?"	abbbb	abb
-m  8	PQ	"ab{2,4}?c"	abbbbc	abbbbc
+m  1	PT	ab+?		abb	ab
+m  2	PT	ab+?c		abbc	abbc
+m  3	PT	ab*?		abb	a
+m  4	PT	ab*?c		abbc	abbc
+m  5	PT	ab??		ab	a
+m  6	PT	ab??c		abc	abc
+m  7	PQT	"ab{2,4}?"	abbbb	abb
+m  8	PQT	"ab{2,4}?c"	abbbbc	abbbbc
 m  9	-	3z*		123zzzz456	3zzzz
-m 10	P	3z*?		123zzzz456	3
+m 10	PT	3z*?		123zzzz456	3
 m 11	-	z*4		123zzzz456	zzzz4
-m 12	P	z*?4		123zzzz456	zzzz4
+m 12	PT	z*?4		123zzzz456	zzzz4
 
 
 
 doing 25 "mixed quantifiers"
+# this is very incomplete as yet
 # should include |
-m  1	PN	{^(.*?)(a*)$}	xyza	xyza	xyz	a
-m  2	PN	{^(.*?)(a*)$}	xyzaa	xyzaa	xyz	aa
-m  3	PN	{^(.*?)(a*)$}	xyz	xyz	xyz	""
-xx lots more to be done
+m  1	PNT	{^(.*?)(a*)$}	xyza	xyza	xyz	a
+m  2	PNT	{^(.*?)(a*)$}	xyzaa	xyzaa	xyz	aa
+m  3	PNT	{^(.*?)(a*)$}	xyz	xyz	xyz	""
 
 
 
@@ -913,22 +941,24 @@ i 12	%LP	{\w+(abcdefghijklmnopqrst)?}	xyzabcdefghijklmnopqrs \
 
 
 doing 29 "incomplete matches"
-p  1	?	def		abc	{3 2} ""
-p  2	?	bcd		abc	{1 2} ""
-p  3	?	abc		abab	{0 3} ""
-p  4	?	abc		abdab	{3 4} ""
-i  5	?	abc		abc	{0 2} {0 2}
-i  6	?	abc		xyabc	{2 4} {2 4}
-p  7	?	abc+		xyab	{2 3} ""
-i  8	?	abc+		xyabc	{2 4} {2 4}
-p  9	?P	abc+?		xyab	{2 3} ""
+p  1	t	def		abc	{3 2}	""
+p  2	t	bcd		abc	{1 2}	""
+p  3	t	abc		abab	{0 3}	""
+p  4	t	abc		abdab	{3 4}	""
+i  5	t	abc		abc	{0 2}	{0 2}
+i  6	t	abc		xyabc	{2 4}	{2 4}
+p  7	t	abc+		xyab	{2 3}	""
+i  8	t	abc+		xyabc	{2 4}	{2 4}
+xx i  9	t	abc+		xyabcd	{2 4}	{6 5}
+i  10	t	abc+		xyabcdd	{2 4}	{7 6}
+p  11	tPT	abc+?		xyab	{2 3}	""
 # the retain numbers in these two may look wrong, but they aren't
-i  10	?P	abc+?		xyabc	{2 4} {5 4}
-i  11	?P	abc+?		xyabcc	{2 4} {6 5}
-i  12	?P	abc+?		xyabcd	{2 4} {6 5}
-i  13	?	abcd|bc		xyabc	{3 4} {2 4}
-i  14	?	abc+		xyabcdd	{2 4} {7 6}
-
+i  12	tPT	abc+?		xyabc	{2 4}	{5 4}
+i  13	tPT	abc+?		xyabcc	{2 4}	{6 5}
+i  14	tPT	abc+?		xyabcd	{2 4}	{6 5}
+i  15	tPT	abc+?		xyabcdd	{2 4}	{7 6}
+i  16	t	abcd|bc		xyabc	{3 4}	{2 4}
+p  17	tn	.*k		"xx\nyyy"	{3 5}	""
 
 
 doing 30 "misc. oddities and old bugs"
@@ -936,8 +966,8 @@ e  1	&	***		BADRPT
 m  2	N	a?b*		abb	abb
 m  3	N	a?b*		bb	bb
 m  4	&	a*b		aab	aab
-m  5	&	^a*b		aaaab aaaab
-m  6	&M	 {[0-6][1-2][0-3][0-6][1-6][0-6]}	010010	010010
+m  5	&	^a*b		aaaab	aaaab
+m  6	&M	{[0-6][1-2][0-3][0-6][1-6][0-6]}	010010	010010
 # temporary REG_BOSONLY kludge
 m  7	s	abc		abcd	abc
 f  8	s	abc		xabcd
@@ -945,8 +975,8 @@ f  8	s	abc		xabcd
 m  9	HLP	{(?n)^(?![t#])\S+}	"tk\n\n#\n#\nit0"	it0
 
 
-
-doing 0 "flush"			;# to flush any leftover complaints
+# flush any leftover complaints
+doing 0 "flush"
 
 # cleanup
 ::tcltest::cleanupTests
