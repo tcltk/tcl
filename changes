@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.40 1999/02/02 23:01:41 stanton Exp $
+RCS: @(#) $Id: changes,v 1.41 1999/02/03 19:12:25 stanton Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -3704,3 +3704,39 @@ missing.  (stanton)
 
 2/2/99 (bug fix) Added support for HKEY_PERFORMANCE_DATA and
 HKEY_DYN_DATA keys in the "registry" command. (stanton)
+
+2/2/99 (bug fix) ENOTSUP and EOPNOTSUPP clashed on some Linux
+variants. (stanton)
+
+2/2/99 (enhancement) The "open" command has been changed to use the
+object interfaces. (stanton)
+
+2/2/99 (bug fix) In some cases Tcl would crash due to an overflow of
+the exception stack resulting from a missing byte code in some
+expressions. (stanton)
+
+2/2/99 (bug fix) Changed configure so Linux and IRIX shared libraries
+are linked with the system libraries. (stanton)
+
+2/2/99 (bug fix) Added support for BSDI 4.x (BSD/OS-4*) to the
+configure script. (stanton)
+
+2/2/99 (bug fix) Fixed bug where upvar could resurrect a namespace
+variable after the namespace had been deleted. (stanton)
+
+2/2/99 (bug fix) In some cases when creating variables, the
+interpreter result was being modified even if the TCL_LEAVE_ERR_MSG
+flag was set. (stanton)
+
+2/2/99 (bug fix & new feature) Changed the socket drivers to properly
+handle failures during an async socket connection.  Added a new
+fconfigure option "-error" to retrieve the failure message.  See the
+socket.n manual entry for details. (stanton)
+
+2/2/99 (bug fix) Deleting a renamed interp alias could result in a
+panic. (stanton)
+
+2/2/99 (feature change/bug fix) Changed the behavior of "file
+extension" so that it splits at the last period.  Now the extension of
+a file like "foo..o" is ".o" instead of "..o" as in previous versions. 
+*** POTENTIAL INCOMPATIBILITY ***

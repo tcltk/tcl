@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.3 1998/09/14 18:39:59 stanton Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.4 1999/02/03 19:12:26 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -1031,15 +1031,12 @@ TclGetExtension(name)
     }
 
     /*
-     * Back up to the first period in a series of contiguous dots.
-     * This is needed so foo..o will be split on the first dot.
+     * In earlier versions, we used to back up to the first period in a series
+     * so that "foo..o" would be split into "foo" and "..o".  This is a
+     * confusing and usually incorrect behavior, so now we split at the last
+     * period in the name.
      */
 
-    if (p != NULL) {
-	while ((p > name) && *(p-1) == '.') {
-	    p--;
-	}
-    }
     return p;
 }
 
