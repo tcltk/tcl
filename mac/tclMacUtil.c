@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacUtil.c,v 1.6 2002/04/19 14:18:55 das Exp $
+ * RCS: @(#) $Id: tclMacUtil.c,v 1.7 2003/03/03 20:22:44 das Exp $
  */
 
 #include "tcl.h"
@@ -322,7 +322,11 @@ FSpLocationFromPathAlias(
 	if (err != noErr) return err;
 	lastFileSpec=*fileSpecPtr;
 	err = ResolveAliasFile(fileSpecPtr, true, &isDirectory, &wasAlias);
-	if (err != noErr) return err;
+	if (err != noErr) {
+	    /* ignore alias resolve errors on last path component */
+	    if (pos < length) return err;
+	    else *fileSpecPtr=lastFileSpec;
+	}
 	FSpGetDirectoryID(fileSpecPtr, &dirID, &isDirectory);
 	vRefNum = fileSpecPtr->vRefNum;
 	cur = pos;

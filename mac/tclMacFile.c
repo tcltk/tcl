@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacFile.c,v 1.26 2003/01/09 10:38:29 vincentdarley Exp $
+ * RCS: @(#) $Id: tclMacFile.c,v 1.27 2003/03/03 20:22:43 das Exp $
  */
 
 /*
@@ -23,6 +23,8 @@
 #include "tclPort.h"
 #include "tclMacInt.h"
 #include <Aliases.h>
+#include <Resources.h>
+#include <Files.h>
 #include <Errors.h>
 #include <Processes.h>
 #include <Strings.h>
@@ -37,6 +39,8 @@ static OSErr FspLocationFromFsPath _ANSI_ARGS_((Tcl_Obj *pathPtr,
 						FSSpec* specPtr));
 static OSErr FspLLocationFromFsPath _ANSI_ARGS_((Tcl_Obj *pathPtr, 
 						FSSpec* specPtr));
+
+static OSErr CreateAliasFile _ANSI_ARGS_((FSSpec *theAliasFile, FSSpec *targetFile));
 
 static OSErr 
 FspLocationFromFsPath(pathPtr, specPtr)
@@ -1173,7 +1177,6 @@ TclpObjLink(pathPtr, toPtr, linkAction)
 	    FSSpec linkSpec;
 	    OSErr err;
 	    CONST char *path;
-	    AliasHandle alias;
 	    
 	    err = FspLocationFromFsPath(toPtr, &spec);
 	    if (err != noErr) {
@@ -1186,7 +1189,7 @@ TclpObjLink(pathPtr, toPtr, linkAction)
 	    if (err == noErr) {
 		err = dupFNErr;		/* EEXIST. */
 	    } else {
-		err = NewAlias(&spec, &linkSpec, &alias);
+		err = CreateAliasFile(&linkSpec, &spec);
 	    }
 	    if (err != noErr) {
 		errno = TclMacOSErrorToPosixError(err);
@@ -1265,7 +1268,78 @@ TclpUtime(pathPtr, tval)
     struct utimbuf local_tval;
     local_tval.actime=tval->actime+gmt_offset;
     local_tval.modtime=tval->modtime+gmt_offset;
-    return utime(Tcl_GetString(Tcl_FSGetNormalizedPath(NULL,pathPtr)),
+    return utime(Tcl_FSGetNativePath(Tcl_FSGetNormalizedPath(NULL,pathPtr)),
 		 &local_tval);
 }
-
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * CreateAliasFile --
+ *
+ *	Creates an alias file located at aliasDest referring to the targetFile.
+ *
+ * Results:
+ *	0 on success, OS error code on error.
+ *
+ * Side effects:
+ *	None.
+ *
+ *---------------------------------------------------------------------------
+ */
+static OSErr
+CreateAliasFile(FSSpec *theAliasFile, FSSpec *targetFile)
+{
+    CInfoPBRec cat;
+    FInfo fndrInfo;
+    AliasHandle theAlias;
+    short saveRef, rsrc = -1;
+    OSErr err;
+    
+    saveRef = CurResFile();
+    /* set up the Finder information record for the alias file */
+    cat.dirInfo.ioNamePtr = targetFile->name;
+    cat.dirInfo.ioVRefNum = targetFile->vRefNum;
+    cat.dirInfo.ioFDirIndex = 0;
+    cat.dirInfo.ioDrDirID = targetFile->parID;
+    err = PBGetCatInfoSync(&cat);
+    if (err != noErr) goto bail;
+    if ((cat.dirInfo.ioFlAttrib & 16) == 0) {
+        /* file alias */
+        switch (cat.hFileInfo.ioFlFndrInfo.fdType) {
+            case 'APPL': fndrInfo.fdType = kApplicationAliasType; break;
+            case 'APPC': fndrInfo.fdType = kApplicationCPAliasType; break;
+            case 'APPD': fndrInfo.fdType = kApplicationDAAliasType; break;
+            default: fndrInfo.fdType = cat.hFileInfo.ioFlFndrInfo.fdType; break;
+        }
+        fndrInfo.fdCreator = cat.hFileInfo.ioFlFndrInfo.fdCreator;
+    } else {
+        /* folder alias */
+        fndrInfo.fdType = kContainerFolderAliasType;
+        fndrInfo.fdCreator = 'MACS';
+    }
+    fndrInfo.fdFlags = kIsAlias;
+    fndrInfo.fdLocation.v = 0;
+    fndrInfo.fdLocation.h = 0;
+    fndrInfo.fdFldr = 0;
+    /* create new file and set the file information */
+    FSpCreateResFile( theAliasFile, fndrInfo.fdCreator, fndrInfo.fdType, smSystemScript);
+    if ((err = ResError()) != noErr) goto bail;
+    err = FSpSetFInfo( theAliasFile, &fndrInfo);
+    if (err != noErr) goto bail;
+    /* save the alias resource */
+    rsrc = FSpOpenResFile(theAliasFile, fsRdWrPerm);
+    if (rsrc == -1) { err = ResError(); goto bail; }
+    UseResFile(rsrc);
+    err = NewAlias(theAliasFile, targetFile, &theAlias);
+    if (err != noErr) goto bail;
+    AddResource((Handle) theAlias, rAliasType, 0, theAliasFile->name);
+    if ((err = ResError()) != noErr) goto bail;
+    CloseResFile(rsrc);
+    rsrc = -1;
+    /* done */
+ bail:
+    if (rsrc != -1) CloseResFile(rsrc);
+    UseResFile(saveRef);
+    return err;
+}

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacPort.h,v 1.16 2002/10/09 11:54:34 das Exp $
+ * RCS: @(#) $Id: tclMacPort.h,v 1.17 2003/03/03 20:22:44 das Exp $
  */
 
 
@@ -76,6 +76,10 @@
 #endif
 
 #endif	/* __MWERKS__ */
+
+#if defined(S_IFBLK) && !defined(S_ISLNK)
+#define S_ISLNK(m)	(((m)&(S_IFMT)) == (S_IFLNK))
+#endif
 
 /*
  * Many signals are not supported on the Mac and are thus not defined in
