@@ -10,12 +10,12 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: msgcat.tcl,v 1.19 2003/10/21 00:23:34 kennykb Exp $
+# RCS: @(#) $Id: msgcat.tcl,v 1.20 2004/03/31 02:03:02 dgp Exp $
 
-package require Tcl 8.2
+package require Tcl 8.5
 # When the version number changes, be sure to update the pkgIndex.tcl file,
 # and the installation directory in the Makefiles.
-package provide msgcat 1.4
+package provide msgcat 1.4.1
 
 namespace eval msgcat {
     namespace export mc mcload mclocale mcmax mcmset mcpreferences mcset \
@@ -28,12 +28,13 @@ namespace eval msgcat {
     variable Loclist {}
 
     # Records the mapping between source strings and translated strings.  The
-    # array key is of the form "<locale>,<namespace>,<src>" and the value is
+    # dict key is of the form "<locale> <namespace> <src>", where locale and
+    # namespace should be themselves dict values and the value is
     # the translated string.
-    array set Msgs {}
+    variable Msgs [dict create]
 
     # Map of language codes used in Windows registry to those of ISO-639
-    array set WinRegToISO639 {
+    variable WinRegToISO639 [dict create  {expand}{
         01 ar 0401 ar_SA 0801 ar_IQ 0c01 ar_EG 1001 ar_LY 1401 ar_DZ
               1801 ar_MA 1c01 ar_TN 2001 ar_OM 2401 ar_YE 2801 ar_SY
               2c01 ar_JO 3001 ar_LB 3401 ar_KW 3801 ar_AE 3c01 ar_BH
@@ -158,7 +159,7 @@ namespace eval msgcat {
         77 so 0477 so_SO
         78 sit 0478 sit_CN
         79 pap 0479 pap_AN
-    }
+    }]
 }
 
 # msgcat::mc --
@@ -174,7 +175,7 @@ namespace eval msgcat {
 #	args	Args to pass to the format command
 #
 # Results:
-#	Returns the translatd string.  Propagates errors thrown by the 
+#	Returns the translated string.  Propagates errors thrown by the 
 #	format command.
 
 proc msgcat::mc {src args} {
@@ -189,20 +190,20 @@ proc msgcat::mc {src args} {
     
     while {$ns != ""} {
 	foreach loc $Loclist {
-	    if {[info exists Msgs($loc,$ns,$src)]} {
+	    if {[dict exists $Msgs $loc $ns $src]} {
 		if {[llength $args] == 0} {
-		    return $Msgs($loc,$ns,$src)
+		    return [dict get $Msgs $loc $ns $src]
 		} else {
-		    return [uplevel 1 \
-			    [linsert $args 0 ::format $Msgs($loc,$ns,$src)]]
+		    return [uplevel 1 [list ::format \
+			    [dict get $Msgs $loc $ns $src] {expand}$args]]
 		}
 	    }
 	}
 	set ns [namespace parent $ns]
     }
     # we have not found the translation
-    return [uplevel 1 \
-	    [linsert $args 0 [::namespace origin mcunknown] $Locale $src]]
+    return [uplevel 1 [list [::namespace origin mcunknown] \
+	    $Locale $src {expand}$args]]
 }
 
 # msgcat::mclocale --
@@ -223,7 +224,8 @@ proc msgcat::mclocale {args} {
     set len [llength $args]
 
     if {$len > 1} {
-	error {wrong # args: should be "mclocale ?newLocale?"}
+	return -code error "wrong # args: should be\
+		\"[lindex [info level 0] 0] ?newLocale?\""
     }
 
     if {$len == 1} {
@@ -271,14 +273,11 @@ proc msgcat::mcload {langdir} {
     foreach p [mcpreferences] {
 	if { $p eq {} } {
 	    set p ROOT
-        }
+	}
 	set langfile [file join $langdir $p.msg]
 	if {[file exists $langfile]} {
 	    incr x
-	    set fid [open $langfile "r"]
-	    fconfigure $fid -encoding utf-8
-            uplevel 1 [read $fid]
-	    close $fid
+	    uplevel 1 [list ::source -encoding utf-8 $langfile]
 	}
     }
     return $x
@@ -299,13 +298,22 @@ proc msgcat::mcload {langdir} {
 
 proc msgcat::mcset {locale src {dest ""}} {
     variable Msgs
-    if {[string equal $dest ""]} {
+    if {[llength [info level 0]] == 3} { ;# dest not specified
 	set dest $src
     }
 
     set ns [uplevel 1 [list ::namespace current]]
-
-    set Msgs([string tolower $locale],$ns,$src) $dest
+    
+    set locale [string tolower $locale]
+    
+    # create nested dictionaries if they do not exist
+    if {![dict exists $Msgs $locale]} {
+        dict set Msgs $locale  [dict create] 
+    }
+    if {![dict exists $Msgs $locale $ns]} {
+        dict set Msgs $locale $ns [dict create]
+    }
+    dict set Msgs $locale $ns $src $dest
     return $dest
 }
 
@@ -325,16 +333,24 @@ proc msgcat::mcmset {locale pairs } {
 
     set length [llength $pairs]
     if {$length % 2} {
-	error {bad translation list: should be "mcmset locale {src dest ...}"}
+	return -code error "bad translation list:\
+		 should be \"[lindex [info level 0] 0] locale {src dest ...}\""
     }
     
     set locale [string tolower $locale]
     set ns [uplevel 1 [list ::namespace current]]
-    
-    foreach {src dest} $pairs {
-        set Msgs($locale,$ns,$src) $dest
+
+    # create nested dictionaries if they do not exist
+    if {![dict exists $Msgs $locale]} {
+        dict set Msgs $locale  [dict create] 
     }
-    
+    if {![dict exists $Msgs $locale $ns]} {
+        dict set Msgs $locale $ns [dict create]
+    }    
+    foreach {src dest} $pairs {
+        dict set Msgs $locale $ns $src $dest
+    }
+
     return $length
 }
 
@@ -357,7 +373,7 @@ proc msgcat::mcmset {locale pairs } {
 
 proc msgcat::mcunknown {locale src args} {
     if {[llength $args]} {
-	return [uplevel 1 [linsert $args 0 ::format $src]]
+	return [uplevel 1 [list ::format $src {expand}$args]]
     } else {
 	return $src
     }
@@ -365,7 +381,7 @@ proc msgcat::mcunknown {locale src args} {
 
 # msgcat::mcmax --
 #
-#	Calculates the maximun length of the translated strings of the given 
+#	Calculates the maximum length of the translated strings of the given 
 #	list.
 #
 # Arguments:
@@ -380,7 +396,7 @@ proc msgcat::mcmax {args} {
 	set translated [uplevel 1 [list [namespace origin mc] $string]]
         set len [string length $translated]
         if {$len>$max} {
-            set max $len
+	    set max $len
         }
     }
     return $max
@@ -419,8 +435,7 @@ proc msgcat::Init {} {
     # set default locale, try to get from environment
     #
     foreach varName {LC_ALL LC_MESSAGES LANG} {
-	if {[info exists ::env($varName)] 
-		&& ![string equal "" $::env($varName)]} {
+	if {[info exists ::env($varName)] && ("" ne $::env($varName))} {
             mclocale [ConvertLocale $::env($varName)]
 	    return
 	}
@@ -429,7 +444,7 @@ proc msgcat::Init {} {
     # The rest of this routine is special processing for Windows;
     # all other platforms, get out now.
     #
-    if { ![string equal $::tcl_platform(platform) windows] } {
+    if { $::tcl_platform(platform) ne "windows" } {
 	mclocale C
 	return
     }
@@ -455,7 +470,9 @@ proc msgcat::Init {} {
     variable WinRegToISO639
     set locale [string tolower $locale]
     while {[string length $locale]} {
-        if {![catch {mclocale [ConvertLocale $WinRegToISO639($locale)]}]} {
+	if {![catch {
+		mclocale [ConvertLocale [dict get $WinRegToISO639 $locale]]
+	}]} {
 	    return
 	}
 	set locale [string range $locale 1 end]
