@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.170 2004/07/21 01:45:44 hobbs Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.171 2004/08/02 20:55:37 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -247,15 +247,16 @@ typedef struct Namespace {
 #define NS_DEAD		0x02
 
 /*
- * Flag passed to TclGetNamespaceForQualName to have it create all namespace
- * components of a namespace-qualified name that cannot be found. The new
- * namespaces are created within their specified parent. Note that this
- * flag's value must not conflict with the values of the flags
- * TCL_GLOBAL_ONLY, TCL_NAMESPACE_ONLY, and FIND_ONLY_NS (defined in
- * tclNamesp.c).
+ * Flags passed to TclGetNamespaceForQualName:
+ *
+ * TCL_GLOBAL_ONLY		- (see tcl.h) Look only in the global ns. 
+ * TCL_NAMESPACE_ONLY		- (see tcl.h) Look only in the context ns.
+ * TCL_CREATE_NS_IF_UNKNOWN	- Create unknown namespaces.
+ * TCL_FIND_ONLY_NS		- The name sought is a namespace name.
  */
 
-#define CREATE_NS_IF_UNKNOWN 0x800
+#define TCL_CREATE_NS_IF_UNKNOWN	0x800
+#define TCL_FIND_ONLY_NS		0x1000
 
 /*
  *----------------------------------------------------------------
@@ -1797,6 +1798,9 @@ EXTERN int		TclMergeReturnOptions _ANSI_ARGS_((Tcl_Interp *interp,
 			    int objc, Tcl_Obj *CONST objv[],
 			    Tcl_Obj **optionsPtrPtr, int *codePtr,
 			    int *levelPtr));
+EXTERN int		TclObjInvokeNamespace _ANSI_ARGS_((Tcl_Interp *interp,
+			    int objc, Tcl_Obj *CONST objv[],
+			    Tcl_Namespace *nsPtr, int flags));
 EXTERN int              TclParseBackslash _ANSI_ARGS_((CONST char *src,
                             int numBytes, int *readPtr, char *dst));
 EXTERN int		TclParseHex _ANSI_ARGS_((CONST char *src, int numBytes,
