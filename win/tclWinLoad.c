@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinLoad.c,v 1.16 2003/09/08 20:03:13 davygrvy Exp $
+ * RCS: @(#) $Id: tclWinLoad.c,v 1.17 2003/09/08 20:12:07 davygrvy Exp $
  */
 
 #include "tclWinInt.h"
@@ -104,7 +104,9 @@ TclpDlopen(interp, pathPtr, loadHandle, unloadProcPtr)
 			(char *) NULL);
 		break;
 	    case ERROR_PROC_NOT_FOUND:
-		Tcl_AppendResult(interp, "A function specified in the import table could not be resolved by the system.  Windows is not telling which one, I'm sorry.",
+		Tcl_AppendResult(interp, "A function specified in the import",
+			" table could not be resolved by the system.  Windows",
+			" is not telling which one, I'm sorry.",
 			(char *) NULL);
 		break;
 	    case ERROR_INVALID_DLL:
