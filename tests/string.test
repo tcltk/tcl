@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: string.test,v 1.20 1999/08/10 05:09:20 hobbs Exp $
+# RCS: @(#) $Id: string.test,v 1.20.4.1 1999/10/30 11:07:54 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -243,6 +243,11 @@ test string-5.15 {string index, bytearray object} {
     set i1 [string index $b end-6]
     set i2 [string index $b 1]
     string compare $i1 $i2
+} 0
+test string-5.16 {string index, bytearray object with string obj shimmering} {
+    set str "0123456789\x00 abcdedfghi"
+    binary scan $str H* dump
+    string compare [string index $str 10] \x00
 } 0
 
 proc largest_int {} {

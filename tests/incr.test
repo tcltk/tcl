@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: incr.test,v 1.4 1999/06/26 03:54:14 jenn Exp $
+# RCS: @(#) $Id: incr.test,v 1.4.4.1 1999/10/30 11:07:53 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -239,6 +239,12 @@ test incr-1.29 {TclCompileIncrCmd: runtime error, bad variable value} {
     set x "  -  "
     list [catch {incr x 1} msg] $msg
 } {1 {expected integer but got "  -  "}}
+
+test incr-1.30 {TclCompileIncrCmd: array var, braced (no subs)} {
+    catch {unset array}
+    set array(\$foo) 4
+    incr {array($foo)}
+} 5
     
 # Check "incr" and computed command names.
 
