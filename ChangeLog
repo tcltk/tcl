@@ -1,5 +1,16 @@
 2002-03-04  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	*** 8.4a4 TAGGED FOR RELEASE ***
+
+	* README:
+	* mac/README:
+	* unix/Makefile.in:
+	* unix/README:
+	* win/README:
+	* win/README.binary: updated to use www.tcl.tk URL.
+
+	* unix/Makefile.in: added older ChangeLogs to dist target.
+
 	* tests/io.test:
 	* tests/encoding.test: corrected iso2022 encoding results.
 	added encoding-24.*
