@@ -23,7 +23,7 @@ AppleScript - Communicate with the AppleScript OSA component to run
 <BR>
 <B>AppleScript <A NAME="decompile">decompile</A></B> <I>scriptName</I>
 <BR>
-<B>AppleScript delete </B><I>scriptName</I>
+<B>AppleScript <A NAME="delete">delete</A> </B><I>what scriptName</I>
 <BR>
 <B>AppleScript <A NAME="execute">execute</A> </B><I>?flags value?</I> <I>scriptData1 
 	?scriptData2 ...?</I>
@@ -153,11 +153,25 @@ The possible sub-commands are:
 	and returns the source code. 
 	<P>
 	<DT>
-	<I>AppleScript</I> <B>delete </B><I>scriptName</I>
+	<I>AppleScript</I> <B><A NAME="delete">delete</A> </B><I>what scriptName</I>
 	<BR>
 	<DD>
-	This deletes the script data compiled into the script scriptName,
-	and frees up all the resources associated with it. 
+	This deletes contexts or script data.  The allowed values for "what" are:
+	<P>
+	<DL>
+	    <DT>
+		<P>
+	    <B>context</B>
+	    <DD>
+	    This deletes the context scriptName,
+	    and frees up all the resources associated with it. 
+	    <DT>
+		<P>
+	    <B>script</B>
+	    <DD>
+	    This deletes the script data compiled into the script scriptName,
+	    and frees up all the resources associated with it. 
+	</DL>
 	<P>
 	<DT>
 	<I>AppleScript</I> <B><A NAME="execute">execute</A> </B><I>?flags value?</I> <I>scriptData1 

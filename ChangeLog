@@ -1,3 +1,12 @@
+2002-10-10  Daniel Steffen  <das@users.sourceforge.net>
+
+	* mac/tclMacOSA.c: (8.4 backport) sprintf fixes, UH 3.4.x changes;
+	fix for missing autoname token from TclOSACompileCmd. (bdesgraupes)
+	* mac/AppleScript.html(AppleScript delete): doc fix. (bdesgraupes)
+
+	* mac/tcltkMacBuildSupport.sea.hqx: updated MoreFiles to 1.5.3, 
+	updated build instructions.
+
 2002-10-10  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* unix/Makefile.in: removed @MEM_DEBUG_FLAGS@ subst.

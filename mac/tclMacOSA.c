@@ -12,7 +12,7 @@
  * See the file "License Terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacOSA.c,v 1.6.2.2 2002/04/08 08:58:59 das Exp $
+ * RCS: @(#) $Id: tclMacOSA.c,v 1.6.2.3 2002/10/10 13:42:51 das Exp $
  */
 
 #define MAC_TCL
@@ -114,7 +114,7 @@ static int 		ASCIICompareProc _ANSI_ARGS_((const void *first,
 static int 		Tcl_OSACmd _ANSI_ARGS_((ClientData clientData,
 			    Tcl_Interp *interp, int argc, char **argv)); 
 static void 		tclOSAClose _ANSI_ARGS_((ClientData clientData));
-static void 		tclOSACloseAll _ANSI_ARGS_((ClientData clientData));
+/*static void 		tclOSACloseAll _ANSI_ARGS_((ClientData clientData));*/
 static tclOSAComponent *tclOSAMakeNewComponent _ANSI_ARGS_((Tcl_Interp *interp,
 			    char *cmdName, char *languageName,
 			    OSType scriptSubtype, long componentFlags));  
@@ -790,10 +790,8 @@ TclOSACompileCmd(
 	    makeNewContext = true;
 	} else if (tclOSAGetContextID(OSAComponent,
 		resultName, &resultID) == TCL_OK) {
-	    makeNewContext = false;
 	} else { 
 	    makeNewContext = true;
-	    resultID = kOSANullScript;
 	}
 		
 	/*
@@ -802,6 +800,8 @@ TclOSACompileCmd(
 	if (augment && !makeNewContext) {
 	    modeFlags |= kOSAModeAugmentContext;
 	}
+    } else if (resultName == NULL) {
+	resultName = autoName; /* Auto name the script */
     }
 	
     /*
@@ -876,7 +876,7 @@ TclOSACompileCmd(
 		Tcl_DStringValue(&scrptData));
 	tclError = TCL_ERROR;
     } else if (osaErr != noErr)  {
-	sprintf(buffer, "Error #%-6d compiling script", osaErr);
+	sprintf(buffer, "Error #%-6ld compiling script", osaErr);
 	Tcl_AppendResult(interp, buffer, (char *) NULL);
 	tclError = TCL_ERROR;		
     } 
@@ -1178,7 +1178,7 @@ tclOSAExecuteCmd(
 		Tcl_DStringValue(&scrptData));
 	tclError = TCL_ERROR;
     } else if (osaErr != noErr) {
-	sprintf(buffer, "Error #%-6d compiling script", osaErr);
+	sprintf(buffer, "Error #%-6ld compiling script", osaErr);
 	Tcl_AppendResult(interp, buffer, (char *) NULL);
 	tclError = TCL_ERROR;		
     } else  {
@@ -1741,7 +1741,7 @@ tclOSAMakeNewComponent(
     Tcl_InitHashTable(&newComponent->scriptTable, TCL_STRING_KEYS);
 		
     if (tclOSAMakeContext(newComponent, global, &globalContext) != TCL_OK) {
-	sprintf(buffer, "%-6.6d", globalContext);
+	sprintf(buffer, "%-6.6ld", globalContext);
 	Tcl_AppendResult(interp, "Error ", buffer, " making ", global,
 		" context.", (char *) NULL);
 	goto CleanUp;
@@ -1780,7 +1780,7 @@ tclOSAMakeNewComponent(
     	/* TODO -- clean up here... */
     }
 
-    myActiveProcUPP = NewOSAActiveProc(TclOSAActiveProc);
+    myActiveProcUPP = NewOSAActiveUPP(TclOSAActiveProc);
     OSASetActiveProc(newComponent->theComponent,
 	    myActiveProcUPP, (long) newComponent);
     return newComponent;
@@ -2565,7 +2565,7 @@ TclOSAActiveProc(
     tclOSAComponent *theComponent = (tclOSAComponent *) refCon;
 	
     Tcl_DoOneEvent(TCL_DONT_WAIT);
-    CallOSAActiveProc(theComponent->defActiveProc, theComponent->defRefCon);
+    InvokeOSAActiveUPP(theComponent->defRefCon, theComponent->defActiveProc);
 	
     return noErr;
 }
