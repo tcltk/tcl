@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: socket.n,v 1.9 2003/05/15 18:41:17 hobbs Exp $
+'\" RCS: @(#) $Id: socket.n,v 1.10 2004/04/16 12:58:52 dkf Exp $
 .so man.macros
 .TH socket n 8.0 Tcl "Tcl Built-In Commands"
 .BS
@@ -47,7 +47,7 @@ to connect to;  there must be a server accepting connections on
 this port.  \fIPort\fR is an integer port number
 (or service name, where supported and understood by the host operating
 system) and \fIhost\fR
-is either a domain-style name such as \fBwww.sunlabs.com\fR or
+is either a domain-style name such as \fBwww.tcl.tk\fR or
 a numerical IP address such as \fB127.0.0.1\fR.
 Use \fIlocalhost\fR to refer to the host on which the command is invoked.
 .PP
@@ -84,7 +84,9 @@ returns immediately and \fBfblocked\fR on the socket returns 1.
 If the \fB\-server\fR option is specified then the new socket
 will be a server for the port given by \fIport\fR (either an integer
 or a service name, where supported and understood by the host
-operating system).
+operating system; if \fIport\fR is zero, the operating system will
+allocate a free port to the server socket which may be discovered by
+using \fBfconfigure\fR to read the \fB\-sockname\fR option).
 Tcl will automatically accept connections to the given port.
 For each connection Tcl will create a new channel that may be used to
 communicate with the client.  Tcl then invokes \fIcommand\fR
@@ -143,6 +145,30 @@ address, the host name and the port to which the peer socket is connected
 or bound. If the host name cannot be computed, the second element of the
 list is identical to the address, its first element.
 .PP
+
+.SH "EXAMPLES"
+Here is a very simple time server:
+
+.CS
+proc Server {channel clientaddr clientport} {
+    puts "Connection from $clientaddr registered"
+    puts $channel [clock format [clock seconds]]
+    close $channel
+}
+
+socket -server Server 9900
+vwait forever
+.CE
+
+And here is the corresponding client to talk to the server:
+
+.CS
+set server localhost
+set sockChan [socket $server 9900]
+gets $sockChan line
+close $sockChan
+puts "The time on $server is $line"
+.CE
 
 .SH "SEE ALSO"
 fconfigure(n), flush(n), open(n), read(n)
