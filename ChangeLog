@@ -4,7 +4,7 @@
 	* generic/tclCompile.c:
 	* generic/tclCompile.h:
 	* generic/tclExecute.c:
-	* generic/tclProc.c: disbabled all compile and execution tracing
+	* generic/tclProc.c: disabled all compile and execution tracing
 	functionality in standard builds; TCL_COMPILE_DEBUG is now
 	necessary to enable it. [Bug 451858]
 
