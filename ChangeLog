@@ -1,5 +1,10 @@
 2001-04-09  Kevin B. Kenny    <kennykb@acm.org>
 
+	* unix/tclLoadShl.c: Added DYNAMIC_PATH to the load flags so that
+	the SHLIB_PATH will be searched for other libraries.  [Bug #219140]
+	
+2001-04-09  Kevin B. Kenny    <kennykb@acm.org>
+
 	* unix/tcl.m4: Added _REENTRANT to Solaris build so that thread
 	safe library routines are included.
 	* unix/configure: Re-ran 'autoconf' with changed tcl.m4
