@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: winPipe.test,v 1.17 2002/07/04 20:06:13 andreas_kupries Exp $
+# RCS: @(#) $Id: winPipe.test,v 1.18 2002/07/04 20:26:08 andreas_kupries Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -199,7 +199,8 @@ test winpipe-4.1 {Tcl_WaitPid} {nt stdio cat32} {
     list $result $x [contents $path(stderr)]
 } "{$big} 1 stderr32"
 
-close [open nothing w]
+set path(nothing) [makeFile {} nothing]
+close [open $path(nothing) w]
 
 catch {set env_tmp $env(TMP)}
 catch {set env_temp $env(TEMP)}
