@@ -1,3 +1,10 @@
+2004-11-29  Andreas Kupries <andreask@activestate.com>
+
+	* win/Makefile.in (install-libraries): Brought entry '2004-10-26
+	  Don Porter (Tcl Modules)' into the windows world, actually the
+	  win/configure buildsystem. The other windows buildsystems (.vc,
+	  .bc) still have to be updated as well.
+
 2004-11-26  Andreas Kupries <andreask@activestate.com>
 
 	* win/tclWinDde.c (ExecuteRemoteObject): Removed bogus semicolon
