@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: CrtChannel.3,v 1.21 2004/10/07 14:44:31 dkf Exp $
+'\" RCS: @(#) $Id: CrtChannel.3,v 1.22 2004/10/07 15:15:35 dkf Exp $
 .so man.macros
 .TH Tcl_CreateChannel 3 8.3 Tcl "Tcl Library Procedures"
 .BS
@@ -25,7 +25,7 @@ ClientData
 Tcl_ChannelType *
 \fBTcl_GetChannelType\fR(\fIchannel\fR)
 .sp
-CONST char *
+const char *
 \fBTcl_GetChannelName\fR(\fIchannel\fR)
 .sp
 int
@@ -69,7 +69,7 @@ void
 int
 \fBTcl_ChannelBuffered\fR(\fIchannel\fR)
 .sp
-CONST char *
+const char *
 \fBTcl_ChannelName\fR(\fItypePtr\fR)
 .sp
 Tcl_ChannelTypeVersion
@@ -121,7 +121,7 @@ Tcl_DriverHandlerProc *
 .AP Tcl_ChannelType *typePtr in
 Points to a structure containing the addresses of procedures that
 can be called to perform I/O and other functions on the channel.
-.AP "CONST char" *channelName in
+.AP "const char" *channelName in
 The name of this channel, such as \fBfile3\fR; must not be in use
 by any other channel. Can be NULL, in which case the channel is
 created without a name.
@@ -147,9 +147,9 @@ and \fBTCL_EXCEPTION\fR that indicates events that have occurred on
 this channel.
 .AP Tcl_Interp *interp in
 Current interpreter. (can be NULL)
-.AP "CONST char" *optionName in
+.AP "const char" *optionName in
 Name of the invalid option.
-.AP "CONST char" *optionList in
+.AP "const char" *optionList in
 Specific options list (space separated words, without "-") 
 to append to the standard generic options list.
 Can be NULL for generic options error message only.
@@ -515,7 +515,7 @@ generic layer to transfer data from an internal buffer to the output device.
 .CS
 typedef int Tcl_DriverOutputProc(
         ClientData \fIinstanceData\fR,
-        CONST char *\fIbuf\fR,
+        const char *\fIbuf\fR,
         int \fItoWrite\fR,
         int *\fIerrorCodePtr\fR);
 .CE
@@ -609,8 +609,8 @@ the generic layer to set a channel type specific option on a channel.
 typedef int Tcl_DriverSetOptionProc(
         ClientData \fIinstanceData\fR,
         Tcl_Interp *\fIinterp\fR,
-        CONST char *\fIoptionName\fR,
-        CONST char *\fInewValue\fR);
+        const char *\fIoptionName\fR,
+        const char *\fInewValue\fR);
 .CE
 .PP
 \fIoptionName\fR is the name of an option to set, and \fInewValue\fR is
@@ -650,7 +650,7 @@ channel. \fIgetOptionProc\fR must match the following prototype:
 typedef int Tcl_DriverGetOptionProc(
         ClientData \fIinstanceData\fR,
         Tcl_Interp *\fIinterp\fR,
-        CONST char *\fIoptionName\fR,
+        const char *\fIoptionName\fR,
         Tcl_DString *\fIoptionValue\fR);
 .CE
 .PP

@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: CmdCmplt.3,v 1.3 2002/08/05 03:24:39 dgp Exp $
+'\" RCS: @(#) $Id: CmdCmplt.3,v 1.4 2004/10/07 15:15:35 dkf Exp $
 '\" 
 .so man.macros
 .TH Tcl_CommandComplete 3 "" Tcl "Tcl Library Procedures"
@@ -19,8 +19,8 @@ Tcl_CommandComplete \- Check for unmatched braces in a Tcl command
 int
 \fBTcl_CommandComplete\fR(\fIcmd\fR)
 .SH ARGUMENTS
-.AS "CONST char" *cmd
-.AP "CONST char" *cmd in
+.AS "const char" *cmd
+.AP "const char" *cmd in
 Command string to test for completeness.
 .BE
 

@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: CrtObjCmd.3,v 1.10 2004/10/07 14:44:32 dkf Exp $
+'\" RCS: @(#) $Id: CrtObjCmd.3,v 1.11 2004/10/07 15:15:36 dkf Exp $
 '\" 
 .so man.macros
 .TH Tcl_CreateObjCommand 3 8.0 Tcl "Tcl Library Procedures"
@@ -39,7 +39,7 @@ int
 .VE
 .sp
 .VS 8.4
-CONST char *
+const char *
 .VE
 \fBTcl_GetCommandName\fR(\fIinterp, token\fR)
 .sp
@@ -100,7 +100,7 @@ typedef int Tcl_ObjCmdProc(
         Tcl_Interp *\fIinterp\fR,
         int \fIobjc\fR,
 .VS
-        Tcl_Obj *CONST \fIobjv\fR[]);
+        Tcl_Obj *const \fIobjv\fR[]);
 .CE
 When \fIproc\fR is invoked, the \fIclientData\fR and \fIinterp\fR parameters
 will be copies of the \fIclientData\fR and \fIinterp\fR arguments given to

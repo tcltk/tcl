@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: TraceVar.3,v 1.11 2004/10/07 14:52:43 dkf Exp $
+'\" RCS: @(#) $Id: TraceVar.3,v 1.12 2004/10/07 15:15:48 dkf Exp $
 '\" 
 .so man.macros
 .TH Tcl_TraceVar 3 7.4 Tcl "Tcl Library Procedures"
@@ -35,7 +35,7 @@ ClientData
 .AS Tcl_VarTraceProc prevClientData
 .AP Tcl_Interp *interp in
 Interpreter containing variable.
-.AP "CONST char" *varName in
+.AP "const char" *varName in
 Name of variable.  May refer to a scalar variable, to
 an array variable with no index, or to an array variable
 with a parenthesized index.
@@ -50,9 +50,9 @@ procedures.  See below for more information.
 Procedure to invoke whenever one of the traced operations occurs.
 .AP ClientData clientData in
 Arbitrary one-word value to pass to \fIproc\fR.
-.AP "CONST char" *name1 in
+.AP "const char" *name1 in
 Name of scalar or array variable (without array index).
-.AP "CONST char" *name2 in
+.AP "const char" *name2 in
 For a trace on an element of an array, gives the index of the
 element.  For traces on scalar variables or on whole arrays,
 is NULL.
