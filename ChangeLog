@@ -1,3 +1,9 @@
+2002-06-28  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* generic/tclCompile.h: modified the macro TclEmitPush to not
+	call its first argument repeatedly or pass it to other macros,
+	[Bug 575194] reported by Peter Spjuth.
+
 2002-06-28  Don Porter  <dgp@users.sourceforge.net>
 
 	* docs/tcltest.n:	Doc revisions in progress.
