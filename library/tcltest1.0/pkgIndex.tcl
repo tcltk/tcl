@@ -8,7 +8,8 @@
 # script is sourced, the variable $dir must contain the
 # full path name of this file's directory.
 
-package ifneeded tcltest 1.0 [list tclPkgSetup $dir tcltest 1.0 \
+if {![package vsatisfies [package provide Tcl] 8.2]} {return}
+package ifneeded tcltest 1.0.1 [list tclPkgSetup $dir tcltest 1.0.1 \
 	{{tcltest.tcl source {::tcltest::bytestring ::tcltest::cleanupTests \
         ::tcltest::makeDirectory ::tcltest::makeFile ::tcltest::normalizeMsg \
         ::tcltest::removeDirectory ::tcltest::removeFile \

@@ -1,3 +1,20 @@
+2001-08-98  Don Porter  <dgp@users.sourceforge.net>
+
+	* library/dde1.1/pkgIndex.tcl:
+	* library/reg1.0/pkgIndex.tcl:  Package dependencies. [Patch 448931]
+
+	* library/http/http.tcl:  
+	* library/http/pkgIndex.tcl:  Upgrade to http 2.3.2.
+
+	* library/msgcat/msgcat.tcl:  
+	* library/msgcat/pkgIndex.tcl:  Upgrade to msgcat 1.1.1.
+
+	* library/opt/optparse.tcl:  
+	* library/opt/pkgIndex.tcl:  Upgrade to opt 0.4.3.
+
+	* library/tcltest/tcltest.tcl:  
+	* library/tcltest/pkgIndex.tcl:  Upgrade to tcltest 1.0.1.
+
 2001-08-07  Miguel Sofer <msofer@users.sourceforge.net>
 
 	* generic/tclExecute.c: Avoid panic when there are extra items in
