@@ -1,5 +1,8 @@
 2001-09-24  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
+	* tools/encoding/cp1252.txt: File was missing part of the encoding
+	[euro, ZCaron and zcaron].
+
 	* doc/OpenFileChnl.3: Add docs for Tcl_OutputBuffered; remove some
 	old changebars.
 
