@@ -1,3 +1,9 @@
+2002-01-28  David Gravereaux <davygrvy@pobox.com>
+
+	* generic/tclPlatDecls.h:  Added preprocessor logic to force a
+	typedef of TCHAR when __STDC__ is defined when using the uncommon
+	-Za compiler switch with the microsoft compiler.
+
 2002-01-27  Don Porter <dgp@users.sourceforge.net>
 
 	* doc/package.n: Documented global namespace context for script
