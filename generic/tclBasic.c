@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.129 2004/10/19 21:54:06 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.130 2004/10/21 03:53:04 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -381,6 +381,9 @@ Tcl_CreateInterp()
 
     Tcl_CreateObjCommand( interp,	 "::tcl::clock::clicks",
 	    TclClockClicksObjCmd,	 (ClientData) NULL,
+	    (Tcl_CmdDeleteProc*) NULL );
+    Tcl_CreateObjCommand( interp,	 "::tcl::clock::getenv",
+	    TclClockGetenvObjCmd,	 (ClientData) NULL,
 	    (Tcl_CmdDeleteProc*) NULL );
     Tcl_CreateObjCommand( interp,	 "::tcl::clock::microseconds",
 	    TclClockMicrosecondsObjCmd,	 (ClientData) NULL,
