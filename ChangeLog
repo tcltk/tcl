@@ -1,5 +1,16 @@
 2001-12-11  Miguel Sofer  <msofer@users.sourceforge.net>
 
+	* generic/tclCompCmds.c:
+	* generic/tclCompile.c:
+	* generic/tclExecute.c: consistency patch, to make all
+	instructions that pop a variable number of Tcl_Obj's off the
+	execution stack take the number of popped objects as first
+	operand. Modified *only* the new instructions
+	INST_LIST_INDEX_MULTI and INST_LSET_FLAT, so this has no effect on
+	bytecodes generated up to tcl8.4a3 inclusive.
+
+2001-12-11  Miguel Sofer  <msofer@users.sourceforge.net>
+
 	* generic/tclExecute.c: fix debug messages in INST_LSET_LIST. 
 
 2001-12-11  Miguel Sofer  <msofer@users.sourceforge.net>

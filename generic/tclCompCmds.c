@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.18 2001/12/11 14:29:40 msofer Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.19 2001/12/11 19:45:52 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1808,18 +1808,10 @@ TclCompileLindexCmd(interp, parsePtr, envPtr)
     if ( numWords == 3 ) {
 	TclEmitOpcode( INST_LIST_INDEX, envPtr );
     } else {
-	/*
-	 * envPtr->currStackDepth has to be updated, as this instruction 
-	 * does not conform to the convention that its stack balance is
-	 * (1-opnd): it is actually one less (-opnd).
-	 */
-
- 	TclEmitInstInt4( INST_LIST_INDEX_MULTI, numWords-2, envPtr );
-	envPtr->currStackDepth--;
+ 	TclEmitInstInt4( INST_LIST_INDEX_MULTI, numWords-1, envPtr );
     }
 
     return TCL_OK;
-
 }
 
 /*
@@ -2123,7 +2115,7 @@ TclCompileLsetCmd( interp, parsePtr, envPtr )
     if ( parsePtr->numWords == 4 ) {
 	TclEmitOpcode( INST_LSET_LIST, envPtr );
     } else {
-	TclEmitInstInt4( INST_LSET_FLAT, (parsePtr->numWords - 3), envPtr );
+	TclEmitInstInt4( INST_LSET_FLAT, (parsePtr->numWords - 1), envPtr );
     }
 
     /*
