@@ -1,3 +1,8 @@
+2002-04-03  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* library/tcltest/tcltest.tcl: added getMatchingFiles back (alias
+	to GetMatchingFiles), which was a public function in tcltest 1.0.
+
 2002-04-01  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* generic/tclEnv.c:
