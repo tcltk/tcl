@@ -11,6 +11,10 @@
 
 2001-07-03  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	* tests/var.test:
+	* generic/tclVar.c (Tcl_VariableObjCmd): added patch to check for
+	number of args. [Patch #426038]
+
 	* generic/tclVar.c (Tcl_GetVar2Ex): added ability to recognize
 	TCL_TRACE_READS flags to cause creation of part1 in TclLookupVar
 	to make sure newly created array will get read traces triggered
