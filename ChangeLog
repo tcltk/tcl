@@ -11,6 +11,19 @@
 
 2004-06-10  Don Porter  <dgp@users.sourceforge.net>
 
+	* unix/tclUnixInit.c (TclpInitLibraryPath):	Disabled addition of
+	* win/tclWinInit.c (TclpInitLibraryPath):	relative-to-executable
+	directories to the library search path.  A first step in reform of
+	Tcl's startup process.
+
+	***POTENTIAL INCOMPATIBILITY***
+	Attempts to directly run ./tclsh or ./tcltest out of a build
+	directory will either fail, or will make use of an installed
+	script library in preference to the one in the source tree.
+	Use `make shell` or `make runtest` instead.
+
+	* tests/unixInit.test:  Modified tests to suit above changes.
+
 	* generic/tclPathObj.c:	Corrected [file tail] results when operating
 	on a path produced by TclNewFSPathObj(). [Bug 970529]
 
