@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.1 2003/05/22 19:12:03 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.2 2003/06/18 19:48:00 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -599,6 +599,14 @@ Tcl_CreateInterp()
 #endif
     Tcl_InitStubs(interp, TCL_VERSION, 1);
 
+    /*
+     * TIP #59: Make embedded configuration information
+     * available. This makes use of a public API call
+     * (Tcl_RegisterConfig) and thus requires that the global stub
+     * table is initialized.
+     */
+
+    TclInitEmbeddedConfigurationInformation (interp);
     return interp;
 }
 
@@ -2938,7 +2946,7 @@ TclInterpReady(interp)
      * it's probably because of an infinite loop somewhere.
      */
 
-    if (((iPtr->numLevels) >= iPtr->maxNestingDepth) 
+    if (((iPtr->numLevels) > iPtr->maxNestingDepth) 
 	    || (TclpCheckStackSpace() == 0)) {
 	Tcl_AppendToObj(Tcl_GetObjResult(interp),
 		"too many nested evaluations (infinite loop?)", -1); 
@@ -2954,7 +2962,8 @@ TclInterpReady(interp)
  * TclEvalObjvInternal --
  *
  *	This procedure evaluates a Tcl command that has already been
- *	parsed into words, with one Tcl_Obj holding each word. 
+ *	parsed into words, with one Tcl_Obj holding each word. The caller
+ *      is responsible for managing the iPtr->numLevels.
  *
  * Results:
  *	The return value is a standard Tcl completion code such as
@@ -2993,13 +3002,6 @@ TEOVI(interp, objc, objv, command, length, flags)
 {
     Interp *iPtr = (Interp *) interp;
     int code = TCL_OK;
-
-    if (TclInterpReady(interp) == TCL_ERROR) {
-	return TCL_ERROR;
-    }
-    if (objc == 0) {
-	return code;
-    }
 
     iPtr->numLevels++;
     code = TclEvalObjvInternal(interp, objc, objv, command, length, flags);
@@ -3072,6 +3074,13 @@ TclEvalObjvInternal(interp, objc, objv, command, length, flags)
     int traceCode = TCL_OK;
     int checkTraces = 1;
 
+    if (TclInterpReady(interp) == TCL_ERROR) {
+	return TCL_ERROR;
+    }
+
+    if (objc == 0) {
+	return TCL_OK;
+    }
 
     /*
      * If any execution traces rename or delete the current command,

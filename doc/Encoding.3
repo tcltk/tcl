@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Encoding.3,v 1.11 2002/07/01 18:24:39 jenglish Exp $
+'\" RCS: @(#) $Id: Encoding.3,v 1.11.4.1 2003/06/18 19:47:59 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_GetEncoding 3 "8.1" Tcl "Tcl Library Procedures"
@@ -342,7 +342,7 @@ typedef int Tcl_EncodingConvertProc(
 	CONST char *\fIsrc\fR, 
 	int \fIsrcLen\fR, 
 	int \fIflags\fR, 
-	Tcl_Encoding *\fIstatePtr\fR,
+	Tcl_EncodingState *\fIstatePtr\fR,
 	char *\fIdst\fR, 
 	int \fIdstLen\fR, 
 	int *\fIsrcReadPtr\fR,

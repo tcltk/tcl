@@ -3,7 +3,7 @@
 # generate the file "configure", which is run during Tcl installation
 # to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.74 2003/04/18 20:02:27 hobbs Exp $
+# RCS: @(#) $Id: configure.in,v 1.74.2.1 2003/06/18 19:48:04 dgp Exp $
 
 AC_INIT(../generic/tcl.h)
 AC_PREREQ(2.57)
@@ -299,6 +299,12 @@ AC_EXEEXT
 #--------------------------------------------------------------------
 
 SC_ENABLE_THREADS
+
+#------------------------------------------------------------------------
+# Embedded configuration information, encoding to use for the values, TIP #59
+#------------------------------------------------------------------------
+
+SC_TCL_CFG_ENCODING
 
 #--------------------------------------------------------------------
 # The statements below define a collection of symbols related to

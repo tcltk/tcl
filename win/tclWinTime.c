@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinTime.c,v 1.18 2003/05/18 19:48:27 kennykb Exp $
+ * RCS: @(#) $Id: tclWinTime.c,v 1.18.2.1 2003/06/18 19:48:04 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -348,7 +348,8 @@ Tcl_GetTime(timePtr)
 	TclpInitUnlock();
     }
 
-    if ( timeInfo.perfCounterAvailable ) {
+    if ( timeInfo.perfCounterAvailable 
+		&& timeInfo.curCounterFreq.QuadPart!=0 ) {
 	
 	/*
 	 * Query the performance counter and use it to calculate the
@@ -449,7 +450,6 @@ StopCalibration( ClientData unused )
  *
  * Results:
  *	Returns a pointer to a static string, or NULL on failure.
- *	Return value is in UTF-8 encoding
  *
  * Side effects:
  *	None.
@@ -785,7 +785,7 @@ CalibrationThread( LPVOID arg )
 
     /* Run the calibration once a second */
 
-    for ( ; ; ) {
+    while (timeInfo.perfCounterAvailable) {
 
 	/* If the exitEvent is set, break out of the loop. */
 
@@ -854,6 +854,22 @@ UpdateTimeEachSecond()
     curFileTime.HighPart = curSysTime.dwHighDateTime;
 
     EnterCriticalSection( &timeInfo.cs );
+
+    /*
+     * We devide by timeInfo.curCounterFreq.QuadPart in several places.
+     * That value should always be positive on a correctly functioning
+     * system.  But it is good to be defensive about such matters.
+     * So if something goes wrong and the value does goes to zero, we
+     * clear the timeInfo.perfCounterAvailable in order to cause the
+     * calibration thread to shut itself down, then return without additional
+     * processing.
+     */
+
+    if( timeInfo.curCounterFreq.QuadPart==0 ){
+	LeaveCriticalSection( &timeInfo.cs );
+	timeInfo.perfCounterAvailable = 0;
+	return;
+    }
 
     /*
      * Several things may have gone wrong here that have to

@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: string.test,v 1.37 2003/04/11 20:50:47 dgp Exp $
+# RCS: @(#) $Id: string.test,v 1.37.2.1 2003/06/18 19:48:02 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -213,6 +213,13 @@ test string-4.13 {string first, start index} {
 test string-4.14 {string first, negative start index} {
     string first b abc -1
 } 1
+test string-4.15 {string first, ability to two-byte encoded utf-8 chars} {
+    # Test for a bug in Tcl 8.3 where test for all-single-byte-encoded
+    # strings was incorrect, leading to an index returned by [string first] 
+    # which pointed past the end of the string.
+    set uchar \u057e    ;# character with two-byte encoding in utf-8
+    string first % %#$uchar$uchar#$uchar$uchar#% 3
+} 8
 
 test string-5.1 {string index} {
     list [catch {string index} msg] $msg

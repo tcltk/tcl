@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.71 2003/04/15 00:18:58 mdejong Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.71.2.1 2003/06/18 19:48:03 dgp Exp $
 
 VERSION = @TCL_VERSION@
 
@@ -218,6 +218,7 @@ GENERIC_OBJS = \
 	tclCompCmds.$(OBJEXT) \
 	tclCompExpr.$(OBJEXT) \
 	tclCompile.$(OBJEXT) \
+	tclConfig.$(OBJEXT) \
 	tclDate.$(OBJEXT) \
 	tclDictObj.$(OBJEXT) \
 	tclEncoding.$(OBJEXT) \
@@ -250,6 +251,7 @@ GENERIC_OBJS = \
 	tclPathObj.$(OBJEXT) \
 	tclPipe.$(OBJEXT) \
 	tclPkg.$(OBJEXT) \
+	tclPkgConfig.$(OBJEXT) \
 	tclPosixStr.$(OBJEXT) \
 	tclPreserve.$(OBJEXT) \
 	tclProc.$(OBJEXT) \
@@ -412,6 +414,31 @@ tclWinReg.${OBJEXT} : tclWinReg.c
 
 tclWinDde.${OBJEXT} : tclWinDde.c
 	$(CC) -c $(CC_SWITCHES) -DUSE_TCL_STUBS @DEPARG@ $(CC_OBJNAME)
+
+# TIP #59, embedding of configuration information into the binary library.
+#
+# Part of Tcl's configuration information are the paths where it was
+# installed and where it will look for its libraries (which can be
+# different). We derive this information from the variables which can
+# be overridden by the user. As every path can be configured
+# separately we do not remember one general prefix/exec_prefix but all
+# the different paths individually.
+
+tclPkgConfig.${OBJEXT}: tclPkgConfig.c
+	$(CC)	-c $(CC_SWITCHES)			\
+		-DCFG_INSTALL_LIBDIR=\"$(LIB_INSTALL_DIR)\" \
+		-DCFG_INSTALL_BINDIR=\"$(BIN_INSTALL_DIR)\" \
+		-DCFG_INSTALL_SCRDIR=\"$(SCRIPT_INSTALL_DIR)\" \
+		-DCFG_INSTALL_INCDIR=\"$(INCLUDE_INSTALL_DIR)\" \
+		-DCFG_INSTALL_DOCDIR=\"$(MAN_INSTALL_DIR)\" \
+		\
+		-DCFG_RUNTIME_LIBDIR=\"$(libdir)\" \
+		-DCFG_RUNTIME_BINDIR=\"$(bindir)\" \
+		-DCFG_RUNTIME_SCRDIR=\"$(TCL_LIBRARY)\" \
+		-DCFG_RUNTIME_INCDIR=\"$(includedir)\" \
+		-DCFG_RUNTIME_DOCDIR=\"$(mandir)\" \
+		\
+		-DUSE_TCL_STUBS @DEPARG@ $(CC_OBJNAME)
 
 # The following objects are part of the stub library and should not
 # be built as DLL objects but none of the symbols should be exported

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.84 2003/05/14 19:21:23 das Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.84.2.1 2003/06/18 19:48:01 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -944,6 +944,7 @@ TclStubs tclStubs = {
     Tcl_DictObjRemoveKeyList, /* 502 */
     Tcl_NewDictObj, /* 503 */
     Tcl_DbNewDictObj, /* 504 */
+    Tcl_RegisterConfig, /* 505 */
 };
 
 /* !END!: Do not edit above this line. */

@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.127 2003/05/16 17:00:30 kennykb Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.127.2.1 2003/06/18 19:48:02 dgp Exp $
 
 VERSION 		= @TCL_VERSION@
 MAJOR_VERSION		= @TCL_MAJOR_VERSION@
@@ -304,13 +304,13 @@ XTTEST_OBJS = xtTestInit.o tclTest.o tclTestObj.o tclTestProcBodyObj.o \
 GENERIC_OBJS = regcomp.o regexec.o regfree.o regerror.o tclAlloc.o \
 	tclAsync.o tclBasic.o tclBinary.o tclCkalloc.o tclClock.o \
 	tclCmdAH.o tclCmdIL.o tclCmdMZ.o tclCompCmds.o tclCompExpr.o \
-	tclCompile.o tclDate.o tclDictObj.o tclEncoding.o \
+	tclCompile.o tclConfig.o tclDate.o tclDictObj.o tclEncoding.o \
 	tclEnv.o tclEvent.o tclExecute.o tclFCmd.o tclFileName.o tclGet.o \
 	tclHash.o tclHistory.o tclIndexObj.o tclInterp.o tclIO.o tclIOCmd.o \
 	tclIOGT.o tclIOSock.o tclIOUtil.o tclLink.o tclListObj.o \
 	tclLiteral.o tclLoad.o tclMain.o tclNamesp.o tclNotify.o \
 	tclObj.o tclPanic.o tclParse.o tclParseExpr.o tclPathObj.o tclPipe.o \
-	tclPkg.o tclPosixStr.o tclPreserve.o tclProc.o tclRegexp.o \
+	tclPkg.o tclPkgConfig.o tclPosixStr.o tclPreserve.o tclProc.o tclRegexp.o \
 	tclResolve.o tclResult.o tclScan.o tclStringObj.o tclThread.o \
 	 tclThreadAlloc.o tclThreadJoin.o tclStubInit.o tclStubLib.o \
 	tclTimer.o tclUtf.o tclUtil.o tclVar.o
@@ -352,6 +352,7 @@ GENERIC_SRCS = \
 	$(GENERIC_DIR)/tclCompCmds.c \
 	$(GENERIC_DIR)/tclCompExpr.c \
 	$(GENERIC_DIR)/tclCompile.c \
+	$(GENERIC_DIR)/tclConfig.c \
 	$(GENERIC_DIR)/tclDate.c \
 	$(GENERIC_DIR)/tclDictObj.c \
 	$(GENERIC_DIR)/tclEncoding.c \
@@ -383,6 +384,7 @@ GENERIC_SRCS = \
 	$(GENERIC_DIR)/tclPathObj.c \
 	$(GENERIC_DIR)/tclPipe.c \
 	$(GENERIC_DIR)/tclPkg.c \
+	$(GENERIC_DIR)/tclPkgConfig.c \
 	$(GENERIC_DIR)/tclPosixStr.c \
 	$(GENERIC_DIR)/tclPreserve.c \
 	$(GENERIC_DIR)/tclProc.c \
@@ -838,6 +840,9 @@ tclCompExpr.o: $(GENERIC_DIR)/tclCompExpr.c
 tclCompile.o: $(GENERIC_DIR)/tclCompile.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclCompile.c
 
+tclConfig.o: $(GENERIC_DIR)/tclConfig.c
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclConfig.c
+
 tclDictObj.o: $(GENERIC_DIR)/tclDictObj.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclDictObj.c
 
@@ -957,6 +962,31 @@ tclPipe.o: $(GENERIC_DIR)/tclPipe.c
 
 tclPkg.o: $(GENERIC_DIR)/tclPkg.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclPkg.c
+
+# TIP #59, embedding of configuration information into the binary library.
+#
+# Part of Tcl's configuration information are the paths where it was
+# installed and where it will look for its libraries (which can be
+# different). We derive this information from the variables which can
+# be overridden by the user. As every path can be configured
+# separately we do not remember one general prefix/exec_prefix but all
+# the different paths individually.
+
+tclPkgConfig.o: $(GENERIC_DIR)/tclPkgConfig.c
+	$(CC)	-c $(CC_SWITCHES)					\
+		-DCFG_INSTALL_LIBDIR=\"$(LIB_INSTALL_DIR)\" \
+		-DCFG_INSTALL_BINDIR=\"$(BIN_INSTALL_DIR)\" \
+		-DCFG_INSTALL_SCRDIR=\"$(SCRIPT_INSTALL_DIR)\" \
+		-DCFG_INSTALL_INCDIR=\"$(INCLUDE_INSTALL_DIR)\" \
+		-DCFG_INSTALL_DOCDIR=\"$(MAN_INSTALL_DIR)\" \
+		\
+		-DCFG_RUNTIME_LIBDIR=\"$(libdir)\" \
+		-DCFG_RUNTIME_BINDIR=\"$(bindir)\" \
+		-DCFG_RUNTIME_SCRDIR=\"$(TCL_LIBRARY)\" \
+		-DCFG_RUNTIME_INCDIR=\"$(includedir)\" \
+		-DCFG_RUNTIME_DOCDIR=\"$(mandir)\" \
+		\
+		$(GENERIC_DIR)/tclPkgConfig.c
 
 tclPosixStr.o: $(GENERIC_DIR)/tclPosixStr.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclPosixStr.c

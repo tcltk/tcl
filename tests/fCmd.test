@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fCmd.test,v 1.27 2003/04/11 15:59:59 vincentdarley Exp $
+# RCS: @(#) $Id: fCmd.test,v 1.27.2.1 2003/06/18 19:48:02 dgp Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -861,6 +861,31 @@ test fCmd-9.14 {file rename: comprehensive: dir into self} {notRoot} {
     file mkdir td1
     list [glob td*] [list [catch {file rename td1 td1} msg] $msg]
 } [subst {td1 {1 {error renaming "td1" to "[file join td1 td1]": trying to rename a volume or move a directory into itself}}}]
+test fCmd-9.14.1 {file rename: comprehensive: dir into self} {notRoot} {
+    cleanup
+    file mkdir td1
+    file rename td1 td1x
+    file rename td1x td1
+    set msg "ok"
+} {ok}
+test fCmd-9.14.2 {file rename: comprehensive: dir into self} {notRoot} {
+    cleanup
+    file mkdir td1
+    set dir [pwd]
+    cd td1
+    set res [list [catch {file rename [file join .. td1] [file join .. td1x]} msg] $msg]
+    cd $dir
+    set res
+} [subst {1 {error renaming "[file join .. td1]" to "[file join .. td1x]": permission denied}}]
+test fCmd-9.14.3 {file rename: comprehensive: dir into self} {notRoot} {
+    cleanup
+    file mkdir td1
+    set dir [pwd]
+    cd td1
+    set res [list [catch {file rename [file join .. td1] [file join .. td1 foo]} msg] $msg]
+    cd $dir
+    set res
+} [subst {1 {error renaming "[file join .. td1]" to "[file join .. td1 foo]": trying to rename a volume or move a directory into itself}}]
 test fCmd-9.15 {file rename: comprehensive: source and target incompatible} \
 	{notRoot} {
     cleanup

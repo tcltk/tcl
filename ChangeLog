@@ -1,3 +1,102 @@
+2003-06-18  Miguel Sofer <msofer@users.sf.net>
+
+        * generic/tclNamesp.c (Tcl_Export): removed erroneous comments
+        [Bug 756744]
+
+2003-06-17  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* win/makefile.vc:  fixes to check-in below so compilation now
+        works again on Windows.
+
+	* generic/tclCmdMZ.c:
+	* tests/regexp.test: fixing of bugs related to regexp and regsub
+        matching of empty strings.  Addition of a number of new tests.
+
+2003-06-16  Andreas Kupries  <andreask@activestate.com>
+
+	* win/Makefile.in:  Haven't heard back from David for a week.
+	* win/configure:    Now committing the remaining changes.
+	* win/configure.in: Note: In active contact with Helmut Giese
+	* win/makefile.vc:  about the borland relatedchanges. This part
+	* win/rules.vc:     will see future updates.
+	* win/tcl.m4:       
+	* win/makefile.bc:
+
+2003-06-10  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclConfig.c (ASSOC_KEY): Changed the key to
+	  "tclPackageAboutDict" (tcl prefix) to make collisions with the
+	  keys of other packages more unlikely.
+
+2003-06-10  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclBasic.c:
+	* generic/tclExecute.c: let TclExecuteObjvInternal call
+	TclInterpReady instead of relying on its callers to do so; fix for
+	the part of [Bug 495830] that is new in 8.4. 
+	* tests/interp.test: Added tests 18.9 (knownbug) and 18.10
+
+2003-06-09  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tcl.decls:  Ported the changes from the
+	* generic/tcl.h:      'tip-59-implementation' branch into the CVS
+	* generic/tclBasic.c: head. Regenerated stub table. Regenerated
+	* generic/tclInt.h:   the configure's scripts, with help from Joe
+	* generic/tclDecls.h  English.
+	* generic/tclStubInit.c:
+	* generic/tclConfig.c:
+	* generic/tclPkgConfig.c:
+	* unix/Makefile.in:   
+	* unix/configure.in:  The changes in the windows section are not
+	* unix/tcl.m4:        yet committed, they await feedback from
+	* unix/mkLinks:       David Gravereaux.
+	* doc/RegConfig.3:
+	* mac/tclMacPkgConfig.c:
+	* tests/config.test:
+
+2003-06-09  Don Porter  <dgp@users.sourceforge.net>
+
+	* string.test (string-4.15): Added test for [string first] bug
+	reported in Tcl 8.3, where test for all-single-byte-encoded strings
+	was not reliable.
+
+2003-06-04  Joe Mistachkin  <joe@mistachkin.com>
+
+        * tools/man2help.tcl: Added duplicate help section checking
+        * tools/index.tcl:    and corrected a comment typo for the 
+        getTopics proc in index.tcl [Bug #748700].
+
+2003-06-02  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* win/tclWinFCmd.c:
+        * tests/fCmd.test: fix to [Bug #747575] in which a bad error
+        message is given when trying to rename a busy directory to
+        one with the same prefix, but not the same name.  Added three
+        new tests.
+        
+2003-05-23  D. Richard Hipp <drh@hwaci.com>
+
+	* win/tclWinTime.c: Add tests to detect and avoid a division by zero
+	in the windows precision timer calibration logic.
+
+2003-05-23  Don Porter  <dgp@users.sourceforge.net>
+
+        * generic/tclObj.c (tclCmdNameType):  Converted internal rep
+        management of the cmdName Tcl_ObjType the opposite way, to always
+        use the twoPtrValue instead of always using the otherValuePtr.
+        Previous fix on 2003-05-12 broke several extensions that wanted
+        to poke around with the twoPtrValue.ptr2 value of a cmdName
+        Tcl_Obj, like TclBlend and e4graph.  [Bug 726018]
+        Thanks to George Petasis for the bug report and Jacob Levy for
+        testing assistance.
+
+2003-05-23  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* unix/mkLinks: Set the var S to "" at the top
+	of the file to avoid error when user has set S
+	to something.
+	[Tk Bug #739833]
+
 2003-05-22  Daniel Steffen  <das@users.sourceforge.net>
 
 	* macosx/Tcl.pbproj/project.pbxproj: added missing references to
@@ -5123,6 +5222,13 @@
 	own realpath implementation, but this will at least quiet purify
 	for now.
 
+2002-04-05  Daniel Steffen <das@users.sourceforge.net>
+
+	* TIP 59 Merge ...
+
+	* mac/tclMacPkgConfig.c: Added Mac implementation of pkgconfig.
+	* tests/config.test: fixed failing tests.
+
 2002-04-05  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclCmdMZ.c (Tcl_SubstObj):
@@ -6031,6 +6137,31 @@
 	* tests/string.test: added 10.18 and 10.19 extra tests.
 
 	* generic/regc_locale.c (casecmp): slight performance improvement.
+
+2002-02-05  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
+
+	* TIP 59 Merge ...
+
+	* tests/config.test: Added a testsuite for pkgconfig.
+
+	* unix/mkLinks: Regenerated.
+	* doc/RegConfig.3: Added documentation for the new public API
+	  function.
+
+	* This commit addresses the following topics from the comments at
+	  SF item 507083:
+
+	  @ Reformatted to 72 columns per line (mostly). Some character
+	    strings (Panic messages) are still longer.
+
+	  @ Better panic messages.
+
+	  @ Allocation of wrapper uses sizeof(Tcl_Obj*) instead of sizeof
+	    (char*).
+
+	  @ Terminate array with either "" or NULL.
+
+	  @ Changed to use ckalloc/ckfree instead of Tcl_Alloc/Tcl_Free.
 
 2002-02-05  Don Porter <dgp@users.sourceforge.net>
 

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: interp.test,v 1.22 2003/05/12 22:44:24 dgp Exp $
+# RCS: @(#) $Id: interp.test,v 1.22.2.1 2003/06/18 19:48:02 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -759,6 +759,16 @@ if {[info commands testinterpdelete] == ""} {
 	list [catch {a eval foo} msg] $msg
     } {1 {attempt to call eval in deleted interpreter}}
 }
+test interp-18.9 {eval in deleted interp, bug 495830} {knownbug} {
+    interp create tst
+    interp alias tst suicide {} interp delete tst
+    list [catch {tst eval {suicide; set a 5}} msg] $msg
+} {1 {attempt to call eval in deleted interpreter}}     
+test interp-18.10 {eval in deleted interp, bug 495830} {
+    interp create tst
+    interp alias tst suicide {} interp delete tst
+    list [catch {tst eval {set set set; suicide; $set a 5}} msg] $msg
+} {1 {attempt to call eval in deleted interpreter}}     
 
 # Test alias deletion
 

@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.157 2003/04/16 23:33:43 dgp Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.157.2.1 2003/06/18 19:47:59 dgp Exp $
  */
 
 #ifndef _TCL
@@ -2195,6 +2195,16 @@ typedef struct Tcl_Parse {
  * also be reflected in regcustom.h.
  */
 typedef unsigned short Tcl_UniChar;
+
+/* TIP #59: The following structure is used in calls
+ * 'Tcl_RegisterConfig' to provide the system with the embedded
+ * configuration data.
+ */
+
+typedef struct Tcl_Config {
+    CONST char* key;   /* Configuration key to register. ASCII encoded, thus UTF-8 */
+    CONST char* value; /* The value associated with the key. System encoding */
+} Tcl_Config;
 
 
 /*

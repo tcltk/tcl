@@ -12,7 +12,7 @@
 # Copyright (c) 2001-2002 David Gravereaux.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.107 2003/04/30 09:23:30 davygrvy Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.107.2.1 2003/06/18 19:48:04 dgp Exp $
 #------------------------------------------------------------------------------
 
 !if "$(MSVCDIR)" == ""
@@ -109,6 +109,10 @@ the environment.  Jump to this line to read the new instructions.
 #
 #	TESTPAT=<file>
 #		Reads the tests requested to be run from this file.
+#
+#	CFG_ENCODING=encoding
+#		name of encoding for configuration information. Defaults
+#		to cp1252
 #
 # 5)  Examples:
 #
@@ -235,6 +239,7 @@ TCLOBJS = \
 	$(TMP_DIR)\tclCompCmds.obj \
 	$(TMP_DIR)\tclCompExpr.obj \
 	$(TMP_DIR)\tclCompile.obj \
+	$(TMP_DIR)\tclConfig.obj \
 	$(TMP_DIR)\tclDate.obj \
 	$(TMP_DIR)\tclDictObj.obj \
 	$(TMP_DIR)\tclEncoding.obj \
@@ -267,6 +272,7 @@ TCLOBJS = \
 	$(TMP_DIR)\tclPathObj.obj \
 	$(TMP_DIR)\tclPipe.obj \
 	$(TMP_DIR)\tclPkg.obj \
+	$(TMP_DIR)\tclPkgConfig.obj \
 	$(TMP_DIR)\tclPosixStr.obj \
 	$(TMP_DIR)\tclPreserve.obj \
 	$(TMP_DIR)\tclProc.obj \
@@ -426,6 +432,7 @@ test: setup $(TCLTEST) dlls $(CAT32)
 !if "$(OS)" == "Windows_NT"  || "$(MSVCDIR)" == "IDE"
 	$(TCLTEST) "$(ROOT)/tests/all.tcl" $(TESTFLAGS)
 !else
+	@echo Please wait while the tests are collected...
 	$(TCLTEST) "$(ROOT)/tests/all.tcl" $(TESTFLAGS) > tests.log
 	type tests.log | more
 !endif
@@ -469,8 +476,10 @@ $(TCLPIPEDLL): $(WINDIR)\stub16.c
 	$(link32) $(conlflags) -out:$@ $(TMP_DIR)\stub16.obj $(baselibs)
 
 !if $(STATIC_BUILD)
+!if !$(TCL_USE_STATIC_PACKAGES)
 $(TCLDDELIB): $(TMP_DIR)\tclWinDde.obj
 	$(lib32) -nologo -out:$@ $(TMP_DIR)\tclWinDde.obj
+!endif
 !else
 $(TCLDDELIB): $(TMP_DIR)\tclWinDde.obj $(TCLSTUBLIB)
 	$(link32) $(dlllflags) -base:@$(WINDIR)\coffbase.txt,tcldde -out:$@ \
@@ -480,8 +489,10 @@ $(TCLDDELIB): $(TMP_DIR)\tclWinDde.obj $(TCLSTUBLIB)
 !endif
 
 !if $(STATIC_BUILD)
+!if !$(TCL_USE_STATIC_PACKAGES)
 $(TCLREGLIB): $(TMP_DIR)\tclWinReg.obj
 	$(lib32) -nologo -out:$@ $(TMP_DIR)\tclWinReg.obj
+!endif
 !else
 $(TCLREGLIB): $(TMP_DIR)\tclWinReg.obj $(TCLSTUBLIB)
 	$(link32) $(dlllflags) -base:@$(WINDIR)\coffbase.txt,tclreg -out:$@ \
@@ -610,6 +621,20 @@ $(TMP_DIR)\tclTestObj.obj: $(GENERICDIR)\tclTestObj.c
 $(TMP_DIR)\tclWinTest.obj: $(WINDIR)\tclWinTest.c
 	$(cc32) $(TCL_CFLAGS) -Fo$@ $?
 
+$(TMP_DIR)\tclPkgConfig.obj: $(GENERICDIR)\tclPkgConfig.c
+	$(cc32) -DBUILD_tcl $(TCL_CFLAGS) \
+	-DCFG_INSTALL_LIBDIR="\"$(LIB_INSTALL_DIR:\=\\)\"" \
+	-DCFG_INSTALL_BINDIR="\"$(BIN_INSTALL_DIR:\=\\)\"" \
+	-DCFG_INSTALL_SCRDIR="\"$(SCRIPT_INSTALL_DIR:\=\\)\"" \
+	-DCFG_INSTALL_INCDIR="\"$(INCLUDE_INSTALL_DIR:\=\\)\"" \
+	-DCFG_INSTALL_DOCDIR="\"$(DOC_INSTALL_DIR:\=\\)\""	\
+	-DCFG_RUNTIME_LIBDIR="\"$(LIB_INSTALL_DIR:\=\\)\"" \
+	-DCFG_RUNTIME_BINDIR="\"$(BIN_INSTALL_DIR:\=\\)\"" \
+	-DCFG_RUNTIME_SCRDIR="\"$(SCRIPT_INSTALL_DIR:\=\\)\"" \
+	-DCFG_RUNTIME_INCDIR="\"$(INCLUDE_INSTALL_DIR:\=\\)\"" \
+	-DCFG_RUNTIME_DOCDIR="\"$(DOC_INSTALL_DIR:\=\\)\""     \
+	-Fo$@ $?
+
 $(TMP_DIR)\tclAppInit.obj: $(WINDIR)\tclAppInit.c
 !if $(TCL_USE_STATIC_PACKAGES)
 	$(cc32) $(TCL_CFLAGS) -DTCL_USE_STATIC_PACKAGES -Fo$@ $?
@@ -641,7 +666,7 @@ $(TMP_DIR)\tclWinDde.obj: $(WINDIR)\tclWinDde.c
 ### specific c-runtime.
 
 $(TMP_DIR)\tclStubLib.obj: $(GENERICDIR)\tclStubLib.c
-	$(cc32) $(cdebug) $(cflags) -Zl -DSTATIC_BUILD $(TCL_INCLUDES) -Fo$@ $?
+	$(cc32) $(cflags) $(cdebug) -Zl -DSTATIC_BUILD $(TCL_INCLUDES) -Fo$@ $?
 
 
 #---------------------------------------------------------------------

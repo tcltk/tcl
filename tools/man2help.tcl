@@ -6,7 +6,7 @@
 #
 # Copyright (c) 1996 by Sun Microsystems, Inc.
 #
-# RCS: @(#) $Id: man2help.tcl,v 1.13 2002/08/09 00:13:54 davygrvy Exp $
+# RCS: @(#) $Id: man2help.tcl,v 1.13.4.1 2003/06/18 19:48:02 dgp Exp $
 # 
 
 #
@@ -28,7 +28,13 @@ proc generateContents {basename version files} {
     puts $fd ":Base $basename$version.hlp"
     foreach package [getPackages] {
 	foreach section [getSections $package] {
+            if {![info exists lastSection]} {
+	        set lastSection {}
+            }
+            if {[string compare $lastSection $section]} {
 	    puts $fd "1 $section"
+            }
+            set lastSection $section
 	    set lastTopic {}
 	    foreach topic [getTopics $package $section] {
 		if {[string compare $lastTopic $topic]} {

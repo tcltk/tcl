@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.101.2.1 2003/05/22 19:12:04 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.101.2.2 2003/06/18 19:48:01 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -895,7 +895,9 @@ TclCompEvalObj(interp, objPtr,flags)
      * Check that the interpreter is ready to execute scripts
      */
 
+    iPtr->numLevels++;
     if (TclInterpReady(interp) == TCL_ERROR) {
+	iPtr->numLevels--;
 	return TCL_ERROR;
     }
 
@@ -917,6 +919,7 @@ TclCompEvalObj(interp, objPtr,flags)
 	iPtr->errorLine = 1; 
 	result = tclByteCodeType.setFromAnyProc(interp, objPtr);
 	if (result != TCL_OK) {
+	    iPtr->numLevels--;
 	    return result;
 	}
 	iPtr->evalFlags = 0;
@@ -985,9 +988,7 @@ PrintByteCodeInfo(codePtr);
 	    iPtr->returnOpts = iPtr->defaultReturnOpts;
 	    Tcl_IncrRefCount(iPtr->returnOpts);
 	}
-	iPtr->numLevels++;
 	result = TclExecuteByteCode(interp, codePtr);
-	iPtr->numLevels--;
 	codePtr->refCount--;
 	if (codePtr->refCount <= 0) {
 	    TclCleanupByteCode(codePtr);
@@ -995,6 +996,8 @@ PrintByteCodeInfo(codePtr);
     } else {
 	result = TCL_OK;
     }
+    iPtr->numLevels--;
+
 
     /*
      * If no commands at all were executed, check for asynchronous

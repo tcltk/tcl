@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.90 2003/05/10 23:54:37 hobbs Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.90.2.1 2003/06/18 19:48:00 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -368,7 +368,10 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
 
     while (1) {
 	match = Tcl_RegExpExecObj(interp, regExpr, objPtr,
-		offset /* offset */, numMatchesSaved, eflags);
+		offset /* offset */, numMatchesSaved, eflags 
+		| ((offset > 0 &&
+		   (Tcl_GetUniChar(objPtr,offset-1) != (Tcl_UniChar)'\n'))
+		   ? TCL_REG_NOTBOL : 0));
 
 	if (match < 0) {
 	    return TCL_ERROR;
@@ -719,11 +722,14 @@ Tcl_RegsubObjCmd(dummy, interp, objc, objv)
      * The following loop is to handle multiple matches within the
      * same source string;  each iteration handles one match and its
      * corresponding substitution.  If "-all" hasn't been specified
-     * then the loop body only gets executed once.
+     * then the loop body only gets executed once.  We must use
+     * 'offset <= wlen' in particular for the case where the regexp
+     * pattern can match the empty string - this is useful when
+     * doing, say, 'regsub -- ^ $str ...' when $str might be empty.
      */
 
     numMatches = 0;
-    for ( ; offset < wlen; ) {
+    for ( ; offset <= wlen; ) {
 
 	/*
 	 * The flags argument is set if string is part of a larger string,
@@ -731,7 +737,9 @@ Tcl_RegsubObjCmd(dummy, interp, objc, objv)
 	 */
 
 	match = Tcl_RegExpExecObj(interp, regExpr, objPtr, offset,
-		10 /* matches */, ((offset > 0) ? TCL_REG_NOTBOL : 0));
+		10 /* matches */, ((offset > 0 &&
+		   (Tcl_GetUniChar(objPtr,offset-1) != (Tcl_UniChar)'\n'))
+		   ? TCL_REG_NOTBOL : 0));
 
 	if (match < 0) {
 	    result = TCL_ERROR;
@@ -819,7 +827,9 @@ Tcl_RegsubObjCmd(dummy, interp, objc, objv)
 	     * in order to prevent infinite loops.
 	     */
 
-	    Tcl_AppendUnicodeToObj(resultPtr, wstring + offset, 1);
+	    if (offset < wlen) {
+		Tcl_AppendUnicodeToObj(resultPtr, wstring + offset, 1);
+	    }
 	    offset++;
 	} else {
 	    offset += end;

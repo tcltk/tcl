@@ -7,7 +7,17 @@
 #
 # Copyright (c) 1995-1996 Sun Microsystems, Inc.
 # Copyright (c) 1998-1999 by Scriptics Corporation.
+
+# TIP #59 information.
 #
+# This makefile does not set the following configuration cpp
+# defines. Behind the defines are the makefile variables listed to set
+# to -D... when that feature is enabled.
+#
+# - TCL_CFG_PROFILED		PROFDEFINES
+# - TCL_CFG_OPTIMIZED		OPTDEFINES
+# - TCL_CFG_DO64BIT		SIXFOURDEFINES
+
 # Have a look at the complete description on how to build and test Tcl with
 # the current Borland compilers at www.ratiosoft.com/tcl/borland.
 #
@@ -88,6 +98,13 @@ libpath32	= -L"$(TOOLS32)\lib"
 NODEBUG		= 1
 !endif
 
+#	CFG_ENCODING=encoding
+#		name of encoding for configuration information. Defaults
+#		to cp1252
+!if !defined(CFG_ENCODING)
+CFG_ENCODING	= \"cp1252\"
+!endif
+
 # The following defines can be used to control the amount of debugging
 # code that is added to the compilation.
 #
@@ -120,10 +137,12 @@ BINROOT		= ..
 !IF "$(NODEBUG)" == "1"
 TMPDIRNAME	= Release
 DBGX		=
+SYMDEFINES	=
 !ELSE
 TMPDIRNAME	= Debug
 #DBGX		= d
 DBGX		=
+SYMDEFINES	= -DTCL_CFG_DEBUG
 !ENDIF
 TMPDIR		= $(BINROOT)\$(TMPDIRNAME)
 OUTDIRNAME	= $(TMPDIRNAME)
@@ -189,6 +208,7 @@ TCLOBJS	= \
 	$(TMPDIR)\tclCompCmds.obj \
 	$(TMPDIR)\tclCompExpr.obj \
 	$(TMPDIR)\tclCompile.obj \
+	$(TMPDIR)\tclConfig.obj \
 	$(TMPDIR)\tclDate.obj \
 	$(TMPDIR)\tclDictObj.obj \
 	$(TMPDIR)\tclEncoding.obj \
@@ -220,6 +240,7 @@ TCLOBJS	= \
 	$(TMPDIR)\tclParseExpr.obj \
 	$(TMPDIR)\tclPipe.obj \
 	$(TMPDIR)\tclPkg.obj \
+	$(TMPDIR)\tclPkgConfig.obj \
 	$(TMPDIR)\tclPosixStr.obj \
 	$(TMPDIR)\tclPreserve.obj \
 	$(TMPDIR)\tclProc.obj \
@@ -258,7 +279,9 @@ WINDIR		= $(ROOT)\win
 GENERICDIR	= $(ROOT)\generic
 
 TCL_INCLUDES	= -I"$(WINDIR)" -I"$(GENERICDIR)"
-TCL_DEFINES	= $(DEBUGDEFINES) $(THREADDEFINES)
+TCL_DEFINES	= $(DEBUGDEFINES) $(THREADDEFINES) $(SYMDEFINES) \
+			$(PROFDEFINES) $(OPTDEFINES) $(SIXFOURDEFINES) \
+			-DTCL_CFGVAL_ENCODING=${CFG_ENCODING}
 
 ######################################################################
 # Compiler flags
@@ -490,6 +513,14 @@ $(TMPDIR)\tclTestObj.obj: $(GENERICDIR)\tclTestObj.c
 
 $(TMPDIR)\tclWinTest.obj: $(WINDIR)\tclWinTest.c
 	$(cc32) $(TCL_CFLAGS) -o$(TMPDIR)\$@ $?
+
+$(TMP_DIR)\tclPkgConfig.obj: $(GENERICDIR)\tclPkgConfig.c
+	$(cc32) $(TCL_CFLAGS) \
+		-DCFG_INSTALL_EXEC_PREFIX=\"$(INSTALL_EXEC_PREFIX)\"	\
+		-DCFG_INSTALL_PREFIX=\"$(INSTALL_PREFIX)\"		\
+		-DCFG_RUNTIME_EXEC_PREFIX=\"$(RUNTIME_EXEC_PREFIX)\"	\
+		-DCFG_RUNTIME_PREFIX=\"$(RUNTIME_PREFIX)\"		\
+	 -o$(TMPDIR)\$@ $?
 
 $(TMPDIR)\tclAppInit.obj : $(WINDIR)\tclAppInit.c
 	$(cc32) $(TCL_CFLAGS) -o$(TMPDIR)\$@ $?

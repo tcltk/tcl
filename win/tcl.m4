@@ -301,6 +301,13 @@ AC_DEFUN(SC_ENABLE_SYMBOLS, [
 	LDFLAGS_DEFAULT='$(LDFLAGS_OPTIMIZE)'
 	DBGX=""
 	AC_MSG_RESULT([no])
+
+	# Use result from SC_CONFIG_CFLAGS to determine if
+	# optimization is truly active.
+
+	if [ $OPTIMIZING -eq 1 ]; then
+	    AC_DEFINE(TCL_CFG_OPTIMIZED)
+	fi
     else
 	CFLAGS_DEFAULT='$(CFLAGS_DEBUG)'
 	LDFLAGS_DEFAULT='$(LDFLAGS_DEBUG)'
@@ -311,6 +318,7 @@ AC_DEFUN(SC_ENABLE_SYMBOLS, [
     fi
     AC_SUBST(CFLAGS_DEFAULT)
     AC_SUBST(LDFLAGS_DEFAULT)
+    AC_DEFINE(TCL_CFG_DEBUG)
 
     if test "$tcl_ok" = "mem" -o "$tcl_ok" = "all"; then
 	AC_DEFINE(TCL_MEM_DEBUG)
@@ -600,6 +608,25 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	    CFLAGS_OPTIMIZE="-nologo -Oti -Gs -GD ${runtime}"
 	    STLIB_LD="lib -nologo"
 	    LINKBIN="link -link50compat"
+
+	    # TIP #59
+	    # A check borrowed from 'rules.vc' to determine if the
+	    # compiler actually supports optimization. If not we do
+	    # not try to use this feature.
+
+	    lines=`$(CC) -nologo -Ox -c -Zs -TC -Fdtemp nul 2>&1 | grep "D4002" | wc -l`
+
+	    for f in temp.idb temp.pdb ; do
+		if [ -f $f ]; then
+		     rm -f $f
+		fi
+	    done
+	    if [ $lines -gt 0 ]; then
+		OPTIMIZING=1
+	    else
+		OPTIMIZING=0
+		CFLAGS_OPTIMIZE="-nologo -Oti -Gs -GD ${runtime}"
+	    fi
 	fi
 
 	SHLIB_LD="${LINKBIN} -dll -nologo -incremental:no"
@@ -628,6 +655,10 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	# built -- Console vs. Window.
 	LDFLAGS_CONSOLE="-link -subsystem:console ${lflags}"
 	LDFLAGS_WINDOW="-link -subsystem:windows ${lflags}"
+    fi
+
+    if test "$do64bit" = "yes" ; then
+	AC_DEFINE(TCL_CFG_DO64BIT)
     fi
 
     # DL_LIBS is empty, but then we match the Unix version
@@ -725,4 +756,32 @@ AC_DEFUN(SC_PROG_TCLSH, [
 	AC_MSG_ERROR(No tclsh found in PATH:  $search_path)
     fi
     AC_SUBST(TCLSH_PROG)
+])
+
+#--------------------------------------------------------------------
+# SC_TCL_CFG_ENCODING	TIP #59
+#
+#	Declare the encoding to use for embedded configuration information.
+#
+# Arguments:
+#	None.
+#
+# Results:
+#	Might append to the following vars:
+#		DEFS	(implicit)
+#
+#	Will define the following vars:
+#		TCL_CFGVAL_ENCODING
+#
+#--------------------------------------------------------------------
+
+AC_DEFUN(SC_TCL_CFG_ENCODING, [
+    AC_ARG_WITH(encoding, [  --with-encoding              encoding for configuration values], with_tcencoding=${withval})
+
+    if test x"${with_tcencoding}" != x ; then
+	AC_DEFINE_UNQUOTED(TCL_CFGVAL_ENCODING,"${with_tcencoding}")
+    else
+	# Default encoding on windows is not "iso8859-1"
+	AC_DEFINE(TCL_CFGVAL_ENCODING,"cp1252")
+    fi
 ])

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFCmd.c,v 1.35 2003/02/07 15:29:33 vincentdarley Exp $
+ * RCS: @(#) $Id: tclWinFCmd.c,v 1.35.4.1 2003/06/18 19:48:04 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -302,7 +302,15 @@ DoRenameFile(
 
 	    src = Tcl_WinTCharToUtf((TCHAR *) nativeSrcPath, -1, &srcString);
 	    dst = Tcl_WinTCharToUtf((TCHAR *) nativeDstPath, -1, &dstString);
-	    if (strncmp(src, dst, (size_t) Tcl_DStringLength(&srcString)) == 0) {
+	    /*
+	     * Check whether the destination path is actually inside the
+	     * source path.  This is true if the prefix matches, and the next
+	     * character is either end-of-string or a directory separator
+	     */
+	    if ((strncmp(src, dst, (size_t) Tcl_DStringLength(&srcString)) == 0) 
+		&& (dst[Tcl_DStringLength(&srcString)] == '\\'
+		    || dst[Tcl_DStringLength(&srcString)] == '/'
+		    || dst[Tcl_DStringLength(&srcString)] == '\0')) {
 		/*
 		 * Trying to move a directory into itself.
 		 */

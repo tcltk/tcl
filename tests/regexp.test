@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: regexp.test,v 1.22 2002/07/10 11:56:44 dgp Exp $
+# RCS: @(#) $Id: regexp.test,v 1.22.4.1 2003/06/18 19:48:02 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -571,6 +571,46 @@ test regexp-20.1 {regsub shared object shimmering} {
 test regexp-20.2 {regsub shared object shimmering with -about} {
     eval regexp -about abc
 } {0 {}}
+
+test regexp-21.1 {regsub works with empty string} {
+    regsub -- ^ {} foo
+} {foo}
+
+test regexp-21.2 {regsub works with empty string} {
+    regsub -- \$ {} foo
+} {foo}
+
+test regexp-21.3 {regsub works with empty string offset} {
+    regsub -start 0 -- ^ {} foo
+} {foo}
+
+test regexp-21.4 {regsub works with empty string offset} {
+    regsub -start 0 -- \$ {} foo
+} {foo}
+
+test regexp-21.5 {regsub works with empty string offset} {
+    regsub -start 3 -- \$ {123} foo
+} {123foo}
+
+test regexp-21.6 {regexp works with empty string} {
+    regexp -- ^ {}
+} {1}
+
+test regexp-21.7 {regexp works with empty string} {
+    regexp -start 0 -- ^ {}
+} {1}
+
+test regexp-21.8 {regexp works with empty string offset} {
+    regexp -start 3 -- ^ {123}
+} {0}
+
+test regexp-21.9 {regexp works with empty string offset} {
+    regexp -start 3 -- \$ {123}
+} {1}
+
+test regexp-21.10 {multiple matches handle newlines} {
+    regsub -all -lineanchor -- {^#[^\n]*\n} "#one\n#two\n#three\n" foo\n
+} "foo\nfoo\nfoo\n"
 
 # cleanup
 ::tcltest::cleanupTests

@@ -3,7 +3,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.109 2003/05/14 19:21:29 das Exp $
+# RCS: @(#) $Id: configure.in,v 1.109.2.1 2003/06/18 19:48:03 dgp Exp $
 
 AC_INIT(../generic/tcl.h)
 AC_PREREQ(2.57)
@@ -51,6 +51,12 @@ AC_HAVE_HEADERS(unistd.h limits.h)
 #------------------------------------------------------------------------
 
 SC_ENABLE_THREADS
+
+#------------------------------------------------------------------------
+# Embedded configuration information, encoding to use for the values, TIP #59
+#------------------------------------------------------------------------
+
+SC_TCL_CFG_ENCODING
 
 #------------------------------------------------------------------------
 # If we're using GCC, see if the compiler understands -pipe.  If so, use it.

@@ -15,6 +15,8 @@
 # The script takes one argument, which is the name of the directory
 # where the manual entries have been installed.
 
+S=""
+
 ZIP=true
 while true; do
     case $1 in
@@ -1087,6 +1089,10 @@ if test -r RecordEval.3; then
     $ZIP RecordEval.3
     rm -f Tcl_RecordAndEval.3 Tcl_RecordAndEval.3.* 
     ln $S RecordEval.3$Z Tcl_RecordAndEval.3$Z 
+fi
+if test -r RegConfig.3; then
+    rm -f Tcl_RegisterConfig.3
+    ln RegConfig.3 Tcl_RegisterConfig.3
 fi
 if test -r RegExp.3; then
     rm -f RegExp.3.*
