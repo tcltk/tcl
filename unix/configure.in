@@ -2,7 +2,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 AC_INIT(../generic/tcl.h)
-# RCS: @(#) $Id: configure.in,v 1.25 1999/01/29 00:32:01 rjohnson Exp $
+# RCS: @(#) $Id: configure.in,v 1.26 1999/02/02 22:29:16 stanton Exp $
 
 TCL_VERSION=8.0
 TCL_MAJOR_VERSION=8
@@ -708,7 +708,7 @@ case $system in
 	LD_SEARCH_FLAGS='-L${LIB_RUNTIME_DIR}'
 	TCL_SHARED_LIB_SUFFIX='${VERSION}\$\{DBGX\}.a'
 	;;
-    BSD/OS-2.1*|BSD/OS-3*)
+    BSD/OS-2.1*|BSD/OS-3*|BSD/OS-4*)
 	SHLIB_CFLAGS=""
 	SHLIB_LD="shlicc -r"
 	SHLIB_LD_LIBS='${LIBS}'
@@ -752,10 +752,10 @@ case $system in
 	LD_SEARCH_FLAGS='-L${LIB_RUNTIME_DIR}'
 	TCL_SHARED_LIB_SUFFIX='${VERSION}\$\{DBGX\}.a'
 	;;
-    IRIX-5.*|IRIX-6.*)
+    IRIX-5.*|IRIX-6.*|IRIX64-6.5*)
 	SHLIB_CFLAGS=""
 	SHLIB_LD="ld -n32 -shared -rdata_shared"
-	SHLIB_LD_LIBS=""
+	SHLIB_LD_LIBS='${LIBS}'
 	SHLIB_SUFFIX=".so"
 	DL_OBJS="tclLoadDl.o"
 	DL_LIBS=""
@@ -788,7 +788,7 @@ case $system in
 	;;
     Linux*)
 	SHLIB_CFLAGS="-fPIC"
-	SHLIB_LD_LIBS=""
+	SHLIB_LD_LIBS='${LIBS}'
 	SHLIB_SUFFIX=".so"
 	if test "$have_dl" = yes; then
 	    SHLIB_LD="${CC} -shared"
