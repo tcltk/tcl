@@ -1,5 +1,11 @@
 1999-07-29    <redman@scriptics.com>
 
+	* unix/mkLinks.tcl: Applied patch to avoid linking pack.n to
+	pack-old.n.  Patch from Don Porter. [Bug: 2469]
+
+	* doc/Encoding.n: Applied patch to fix typo in .SH NAME line.
+	Patch from Don Porter.  [Bug: 2451]
+	
 	* win/tclWinSock.c:  Free Win32 Event handles when destroying
 	the socket helper thread.
 

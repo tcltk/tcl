@@ -52,7 +52,7 @@ foreach file $argv {
 	    regsub {\\-.*} $line {} line
 	    foreach name [split $line ,] {
 		regsub -all { } $name "" name
-		if {[string compare $tail $name$ext] != 0} {
+		if {![string match $name*$ext $tail]} {
 		    puts "if test -r $tail; then"
 		    puts "    rm -f $name$ext"
 		    puts "    ln $tail $name$ext"
