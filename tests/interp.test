@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: interp.test,v 1.1.2.2 1998/09/24 23:59:27 stanton Exp $
+# RCS: @(#) $Id: interp.test,v 1.1.2.3 1998/10/05 18:47:26 stanton Exp $
 
 if {[string compare test [info procs test]] == 1} then {source defs}
 
@@ -186,6 +186,9 @@ test interp-4.7 {testing interp delete} {
     interp create c2
     list [catch {interp delete c1 c2 c3} msg] $msg
 } {1 {could not find interpreter "c3"}}
+test interp-4.8 {testing interp delete} {
+    list [catch {interp delete {}} msg] $msg
+} {1 {cannot delete the current interpreter}}
 
 foreach i [interp slaves] {
     interp delete $i
