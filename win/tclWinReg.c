@@ -21,12 +21,13 @@
 #undef WIN32_LEAN_AND_MEAN
 
 /*
- * EXPORT is set unconditionally to DLLEXPORT because the Registry_Init
- * declaration is in the source file itself, which is only accessed when
- * we are building a library
+ * TCL_STORAGE_CLASS is set unconditionally to DLLEXPORT because the
+ * Registry_Init declaration is in the source file itself, which is only
+ * accessed when we are building a library.
  */
-#undef EXPORT
-#define EXPORT DLLEXPORT
+
+#undef TCL_STORAGE_CLASS
+#define TCL_STORAGE_CLASS DLLEXPORT
 
 /*
  * VC++ has an alternate entry point called DllMain, so we need to rename

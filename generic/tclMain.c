@@ -15,8 +15,8 @@
 #include "tcl.h"
 #include "tclInt.h"
 
-# undef EXPORT
-# define EXPORT DLLEXPORT
+# undef TCL_STORAGE_CLASS
+# define TCL_STORAGE_CLASS DLLEXPORT
 
 /*
  * The following code ensures that tclLink.c is linked whenever
