@@ -4,7 +4,7 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
 # Copyright (c) 1995-1996 Sun Microsystems, Inc.
-# RCS: @(#) $Id: makefile.vc,v 1.19 1998/10/17 00:20:50 escoffon Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.20 1998/11/02 19:36:54 suresh Exp $
 
 # Does not depend on the presence of any environment variables in
 # order to compile tcl; all needed information is derived from 
@@ -399,26 +399,26 @@ install-binaries: $(TCLSH)
 	@copy $(TCLSH) $(BIN_INSTALL_DIR)
 
 install-libraries:
-	@mkd $(LIB_INSTALL_DIR)
-	@mkd $(INCLUDE_INSTALL_DIR)
-	@mkd $(SCRIPT_INSTALL_DIR)
-	@mkd $(SCRIPT_INSTALL_DIR)\http1.0
-	@copy $(ROOT)\library\http1.0\http.tcl $(SCRIPT_INSTALL_DIR)\http1.0
-	@copy $(ROOT)\library\http1.0\pkgIndex.tcl $(SCRIPT_INSTALL_DIR)\http1.0
-	@mkd $(SCRIPT_INSTALL_DIR)\http2.0
-	@copy $(ROOT)\library\http2.0\http.tcl $(SCRIPT_INSTALL_DIR)\http2.0
-	@copy $(ROOT)\library\http2.0\pkgIndex.tcl $(SCRIPT_INSTALL_DIR)\http2.0
-	@mkd $(SCRIPT_INSTALL_DIR)\opt0.1
-	@copy $(ROOT)\library\opt0.1\optparse.tcl $(SCRIPT_INSTALL_DIR)\opt0.1
-	@copy $(ROOT)\library\opt0.1\pkgIndex.tcl $(SCRIPT_INSTALL_DIR)\opt0.1
-	@copy $(GENERICDIR)\tcl.h $(INCLUDE_INSTALL_DIR)
-	@copy $(ROOT)\library\history.tcl $(SCRIPT_INSTALL_DIR)
-	@copy $(ROOT)\library\init.tcl $(SCRIPT_INSTALL_DIR)
-	@copy $(ROOT)\library\ldAout.tcl $(SCRIPT_INSTALL_DIR)
-	@copy $(ROOT)\library\parray.tcl $(SCRIPT_INSTALL_DIR)
-	@copy $(ROOT)\library\safe.tcl $(SCRIPT_INSTALL_DIR)
-	@copy $(ROOT)\library\tclIndex $(SCRIPT_INSTALL_DIR)
-	@copy $(ROOT)\library\word.tcl $(SCRIPT_INSTALL_DIR)
+	-@mkd $(LIB_INSTALL_DIR)
+	-@mkd $(INCLUDE_INSTALL_DIR)
+	-@mkd $(SCRIPT_INSTALL_DIR)
+	-@mkd $(SCRIPT_INSTALL_DIR)\http1.0
+	-@copy $(ROOT)\library\http1.0\http.tcl $(SCRIPT_INSTALL_DIR)\http1.0
+	-@copy $(ROOT)\library\http1.0\pkgIndex.tcl $(SCRIPT_INSTALL_DIR)\http1.0
+	-@mkd $(SCRIPT_INSTALL_DIR)\http2.0
+	-@copy $(ROOT)\library\http2.0\http.tcl $(SCRIPT_INSTALL_DIR)\http2.0
+	-@copy $(ROOT)\library\http2.0\pkgIndex.tcl $(SCRIPT_INSTALL_DIR)\http2.0
+	-@mkd $(SCRIPT_INSTALL_DIR)\opt0.1
+	-@copy $(ROOT)\library\opt0.1\optparse.tcl $(SCRIPT_INSTALL_DIR)\opt0.1
+	-@copy $(ROOT)\library\opt0.1\pkgIndex.tcl $(SCRIPT_INSTALL_DIR)\opt0.1
+	-@copy $(GENERICDIR)\tcl.h $(INCLUDE_INSTALL_DIR)
+	-@copy $(ROOT)\library\history.tcl $(SCRIPT_INSTALL_DIR)
+	-@copy $(ROOT)\library\init.tcl $(SCRIPT_INSTALL_DIR)
+	-@copy $(ROOT)\library\ldAout.tcl $(SCRIPT_INSTALL_DIR)
+	-@copy $(ROOT)\library\parray.tcl $(SCRIPT_INSTALL_DIR)
+	-@copy $(ROOT)\library\safe.tcl $(SCRIPT_INSTALL_DIR)
+	-@copy $(ROOT)\library\tclIndex $(SCRIPT_INSTALL_DIR)
+	-@copy $(ROOT)\library\word.tcl $(SCRIPT_INSTALL_DIR)
 
 #
 # Special case object file targets
