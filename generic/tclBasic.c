@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.33 2001/05/30 08:57:06 dkf Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.34 2001/08/14 13:45:57 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -314,7 +314,7 @@ Tcl_CreateInterp()
     Tcl_InitHashTable(&iPtr->mathFuncTable, TCL_STRING_KEYS);
 
     iPtr->numLevels = 0;
-    iPtr->maxNestingDepth = 1000;
+    iPtr->maxNestingDepth = MAX_NESTING_DEPTH;
     iPtr->framePtr = NULL;
     iPtr->varFramePtr = NULL;
     iPtr->activeTracePtr = NULL;
