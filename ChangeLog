@@ -1,5 +1,10 @@
 2004-11-22  Don Porter  <dgp@users.sourceforge.net>
 
+	* unix/tclUnixInit.c (TclpInitLibraryPath):	Purged dead code that
+	* win/tclWinInit.c (TclpInitLibraryPath):	used to extend the
+	"library path".  Search path construction for init.tcl is now done
+	within the [tclInit] proc.
+
 	* generic/tclInterp.c:	Restored several directories to the search
 	* tests/unixInit.test:	path used to locate init.tcl within [tclInit].
 	This change does not restore any directories to the encoding search
