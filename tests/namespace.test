@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: namespace.test,v 1.21.2.4 2004/10/26 20:14:36 dgp Exp $
+# RCS: @(#) $Id: namespace.test,v 1.21.2.5 2004/10/28 00:01:11 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -432,7 +432,7 @@ test namespace-10.8 {Tcl_ForgetImport: Bug 560297} -setup {
     namespace delete origin link link2 my
 }
 
-test namespace-10.8 {Tcl_ForgetImport: Bug 560297} -setup {
+test namespace-10.9 {Tcl_ForgetImport: Bug 560297} -setup {
     namespace eval origin {
 	namespace export cmd
 	proc cmd {} {}

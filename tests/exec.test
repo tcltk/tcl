@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: exec.test,v 1.16.2.3 2004/07/02 23:37:31 hobbs Exp $
+# RCS: @(#) $Id: exec.test,v 1.16.2.4 2004/10/28 00:01:06 dgp Exp $
 
 package require tcltest 2
 namespace import -force ::tcltest::*
@@ -19,7 +19,7 @@ namespace import -force ::tcltest::*
 # All tests require the "exec" command.
 # Skip them if exec is not defined.
 testConstraint exec [llength [info commands exec]]
-catch {unset path}
+unset -nocomplain path
 set path(echo) [makeFile {
     puts -nonewline [lindex $argv 0]
     foreach str [lrange $argv 1 end] {
@@ -605,6 +605,7 @@ test exec-18.1 { exec cat deals with weird file names} {exec tempNotWin} {
 foreach file {script gorp.file gorp.file2 echo cat wc sh sleep exit err} {
     removeFile $file
 }
+unset -nocomplain path
 
 ::tcltest::cleanupTests
 return
