@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.170 2005/02/01 17:27:27 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.171 2005/03/07 20:29:12 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1342,9 +1342,22 @@ TclExecuteByteCode(interp, codePtr)
 	goto checkForCatch;
 	
     case INST_PUSH1:
-	objResultPtr = codePtr->objArrayPtr[TclGetUInt1AtPtr(pc+1)];
-	TRACE_WITH_OBJ(("%u => ", TclGetInt1AtPtr(pc+1)), objResultPtr);
-	NEXT_INST_F(2, 0, 1);
+#if !TCL_COMPILE_DEBUG
+	instPush1Peephole:
+#endif
+	PUSH_OBJECT(codePtr->objArrayPtr[TclGetUInt1AtPtr(pc+1)]);
+	TRACE_WITH_OBJ(("%u => ", TclGetInt1AtPtr(pc+1)), *(tosPtr-1));
+	pc += 2;
+#if !TCL_COMPILE_DEBUG
+	/*
+	 * Runtime peephole optimisation: check if we are pushing again. 
+	 */
+	
+	if (*pc == INST_PUSH1) {
+	    goto instPush1Peephole;
+	}
+#endif
+	NEXT_INST_F(0, 0, 0);
 
     case INST_PUSH4:
 	objResultPtr = codePtr->objArrayPtr[TclGetUInt4AtPtr(pc+1)];
@@ -1365,12 +1378,20 @@ TclExecuteByteCode(interp, codePtr)
 	 * at the end of most commands. If the next instruction is an
 	 * INST_START_CMD, fall through to it.
 	 */
+
 	pc++;
-	if (*pc != INST_START_CMD) {	
-	    NEXT_INST_F(0, 0, 0);
+#if !TCL_COMPILE_DEBUG	
+	if (*pc == INST_START_CMD) {	
+	    goto instStartCmdPeephole;
 	}
+#endif
+	NEXT_INST_F(0, 0, 0);
+
 	
     case INST_START_CMD:
+#if !TCL_COMPILE_DEBUG	
+	instStartCmdPeephole:
+#endif
 	/*
 	 * Remark that if the interpreter is marked for deletion
 	 * its compileEpoch is modified, so that the epoch
