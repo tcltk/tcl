@@ -9,7 +9,7 @@
 	* macosx/Tcl.pbproj/project.pbxproj:
 	* macosx/Makefile: reworked embedded build to no longer require
 	relinking but to use install_name_tool instead to change the
-	install_names for embedded frameworks.
+	install_names for embedded frameworks. [Bug #644510]
 
 	* macosx/Tcl.pbproj/project.pbxproj: preserve mod dates when
 	running 'make install' to build framework (avoids bogus rebuilds
