@@ -13,7 +13,7 @@
  *
  * This code contributed by Karl Lehenbauer and Mark Diekhans
  *
- * RCS: @(#) $Id: tclCkalloc.c,v 1.18 2002/08/20 18:33:14 dgp Exp $
+ * RCS: @(#) $Id: tclCkalloc.c,v 1.19 2003/01/19 07:21:18 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -378,7 +378,7 @@ Tcl_DbCkalloc(size, file, line)
     if (result == NULL) {
         fflush(stdout);
         TclDumpMemoryInfo(stderr);
-        panic("unable to alloc %ud bytes, %s line %d", size, file, line);
+        panic("unable to alloc %u bytes, %s line %d", size, file, line);
     }
 
     /*
@@ -422,7 +422,7 @@ Tcl_DbCkalloc(size, file, line)
     }
 
     if (alloc_tracing)
-        fprintf(stderr,"ckalloc %lx %ud %s %d\n",
+        fprintf(stderr,"ckalloc %lx %u %s %d\n",
 		(long unsigned int) result->body, size, file, line);
 
     if (break_on_malloc && (total_mallocs >= break_on_malloc)) {
@@ -507,7 +507,7 @@ Tcl_AttemptDbCkalloc(size, file, line)
     }
 
     if (alloc_tracing)
-        fprintf(stderr,"ckalloc %lx %ud %s %d\n",
+        fprintf(stderr,"ckalloc %lx %u %s %d\n",
 		(long unsigned int) result->body, size, file, line);
 
     if (break_on_malloc && (total_mallocs >= break_on_malloc)) {
@@ -1010,7 +1010,7 @@ Tcl_Alloc (size)
      * a special pointer on failure, but we only check for NULL
      */
     if ((result == NULL) && size) {
-	panic("unable to alloc %ud bytes", size);
+	panic("unable to alloc %u bytes", size);
     }
     return result;
 }
@@ -1027,7 +1027,7 @@ Tcl_DbCkalloc(size, file, line)
 
     if ((result == NULL) && size) {
         fflush(stdout);
-        panic("unable to alloc %ud bytes, %s line %d", size, file, line);
+        panic("unable to alloc %u bytes, %s line %d", size, file, line);
     }
     return result;
 }
@@ -1085,7 +1085,7 @@ Tcl_Realloc(ptr, size)
     result = TclpRealloc(ptr, size);
 
     if ((result == NULL) && size) {
-	panic("unable to realloc %ud bytes", size);
+	panic("unable to realloc %u bytes", size);
     }
     return result;
 }
@@ -1103,7 +1103,7 @@ Tcl_DbCkrealloc(ptr, size, file, line)
 
     if ((result == NULL) && size) {
         fflush(stdout);
-        panic("unable to realloc %ud bytes, %s line %d", size, file, line);
+        panic("unable to realloc %u bytes, %s line %d", size, file, line);
     }
     return result;
 }
