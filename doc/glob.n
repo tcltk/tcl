@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: glob.n,v 1.14 2004/03/17 18:14:12 das Exp $
+'\" RCS: @(#) $Id: glob.n,v 1.15 2004/04/30 22:45:56 dkf Exp $
 '\" 
 .so man.macros
 .TH glob n 8.3 Tcl "Tcl Built-In Commands"
@@ -26,7 +26,6 @@ of the \fIpattern\fR arguments.
 If the initial arguments to \fBglob\fR start with \fB\-\fR then
 they are treated as switches.  The following switches are
 currently supported:
-.VS 8.3
 .TP
 \fB\-directory\fR \fIdirectory\fR
 Search for files which match the given patterns starting in the given
@@ -39,12 +38,10 @@ whose names may contain glob-sensitive characters.
 \fB\-join\fR
 The remaining pattern arguments are treated as a single pattern
 obtained by joining the arguments with directory separators.
-.VE 8.3
 .TP
 \fB\-nocomplain\fR
 Allows an empty list to be returned without error;  without this
 switch an error is returned if the result list would be empty.
-.VS 8.3
 .TP
 \fB\-path\fR \fIpathPrefix\fR
 Search for files with the given \fIpathPrefix\fR where the rest of the name
@@ -102,7 +99,6 @@ The following are equivalent:
 except that the first case doesn't return the trailing ``/'' and
 is more platform independent.
 .RE
-.VE 8.3
 .TP
 \fB\-\|\-\fR
 Marks the end of switches.  The argument following this one will
@@ -156,7 +152,6 @@ start with a tilde ``~'' (for example through \fBglob *\fR or
 ``./''.  This means care must be taken if those names are later to
 be used with \fBfile join\fR, to avoid them being interpreted as
 absolute paths pointing to a given user's home directory.
-
 .SH "PORTABILITY ISSUES"
 .PP
 Unlike other Tcl commands that will accept both network and native
@@ -184,6 +179,27 @@ interpreted as a wildcard character. One solution to this problem is
 to use the Unix style forward slash as a path separator. Windows style 
 paths can be converted to Unix style paths with the command \fBfile
 join $path\fR (or \fBfile normalize $path\fR in Tcl 8.4). 
+.SH EXAMPLES
+Find all the Tcl files in the current directory:
+.CS
+glob *.tcl
+.CE
+
+Find all the Tcl files in the user's home directory, irrespective of
+what the current directory is:
+.CS
+glob \-directory ~ *.tcl
+.CE
+
+Find all subdirectories of the current directory:
+.CS
+glob \-type d *
+.CE
+
+Find all files whose name contains an "a", a "b" or the sequence "cde":
+.CS
+glob \-type f *{a,b,cde}*
+.CE
 
 .SH "SEE ALSO"
 file(n)
