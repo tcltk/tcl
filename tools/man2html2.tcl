@@ -5,7 +5,7 @@
 #
 # Copyright (c) 1996 by Sun Microsystems, Inc.
 #
-# $Id: man2html2.tcl,v 1.4 2004/07/06 09:21:30 dkf Exp $
+# $Id: man2html2.tcl,v 1.5 2004/07/06 09:25:48 dkf Exp $
 #
 
 # Global variables used by these scripts:
@@ -126,7 +126,7 @@ proc text string {
     regsub -all {&} $string {\&amp;}  string
     regsub -all {<} $string {\&lt;}  string
     regsub -all {>} $string {\&gt;}  string
-    regsub -all {"} $string {\&quot;}  string
+    regsub -all \"  $string {\&quot;}  string
     switch $textState {
 	REF { 
 	    if {$inDT == {}} {
