@@ -1,3 +1,9 @@
+2003-03-12  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclInterp.c (Tcl_InterpObjCmd):  Corrected option
+	parsing beyond objc for [interp create --].  Thanks to
+	Marco Maggi.  [Bug 702383]
+
 2003-03-11  Kevin Kenny  <kennykb@users.sourceforge.net>
 
 	* win/makefile.vc: Added two missing uses of $(DBGX) so that
