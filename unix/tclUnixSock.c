@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixSock.c,v 1.5 2002/01/23 20:46:01 dgp Exp $
+ * RCS: @(#) $Id: tclUnixSock.c,v 1.6 2002/02/27 01:16:43 hobbs Exp $
  */
 
 #include "tcl.h"
@@ -84,6 +84,21 @@ Tcl_GetHostName()
     (VOID *) memset((VOID *) &u, (int) 0, sizeof(struct utsname));
     if (uname(&u) > -1) {				/* INTL: Native. */
         hp = gethostbyname(u.nodename);			/* INTL: Native. */
+	if (hp == NULL) {
+	    /*
+	     * Sometimes the nodename is fully qualified, but gets truncated
+	     * as it exceeds SYS_NMLN.  See if we can just get the immediate
+	     * nodename and get a proper answer that way.
+	     */
+	    char *dot = strchr(u.nodename, '.');
+	    if (dot != NULL) {
+		char *node = ckalloc((unsigned) (dot - u.nodename + 1));
+		memcpy(node, u.nodename, (size_t) (dot - u.nodename));
+		node[dot - u.nodename] = '\0';
+		hp = gethostbyname(node);
+		ckfree(node);
+	    }
+	}
         if (hp != NULL) {
 	    native = hp->h_name;
         } else {
