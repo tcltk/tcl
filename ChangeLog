@@ -1,6 +1,12 @@
 2000-04-27  Kevin Kenny	<kennykb@crd.ge.com>
 
-	* generic/tclCmdIL.c: Added another four missing CONSTs.
+	* generic/tclInt.decls:
+	* generic/tclInt.h:
+	* generic/tclCmdIL.c:
+	* generic/tclProc.c:
+	* generic/tclVar.c: Added another collection of missing CONSTs
+	related to TclGetNamespaceForQualName.
+	* generic/tclIntDecls.h: Regenerated.
 	
 2000-04-25  Mo DeJong  <mdejong@redhat.com>
 
