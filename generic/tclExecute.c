@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.111 2003/10/14 15:44:52 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.112 2003/10/21 20:42:04 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -4431,7 +4431,6 @@ ValidatePcAndStackTop(codePtr, pc, stackTop, stackLowerBound)
     if ((stackTop < stackLowerBound) || (stackTop > stackUpperBound)) {
 	int numChars;
 	char *cmd = GetSrcInfoForPc(pc, codePtr, &numChars);
-	char *ellipsis = "";
 	
 	fprintf(stderr, "\nBad stack top %d at pc %u in TclExecuteByteCode (min %i, max %i)",
 		stackTop, relativePc, stackLowerBound, stackUpperBound);
