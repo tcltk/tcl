@@ -73,7 +73,7 @@ AC_DEFUN(SC_PATH_TKCONFIG, [
 	AC_MSG_ERROR(There is no tkConfig.sh in $TK_BIN_DIR:  perhaps you did not specify the Tk *build* directory (not the toplevel Tk directory) or you forgot to configure Tk?)
     fi
 
-    AC_MSG_RESULT($TK_BIN_DIR/tkConfig.sh)
+    AC_MSG_RESULT([$TK_BIN_DIR/tkConfig.sh])
 ])
 
 #------------------------------------------------------------------------
@@ -276,7 +276,7 @@ AC_DEFUN(SC_ENABLE_THREADS, [
 	AC_DEFINE(TCL_THREADS)
     else
 	TCL_THREADS=0
-	AC_MSG_RESULT(no (default))
+	AC_MSG_RESULT([no (default)])
     fi
 ])
 

@@ -1,3 +1,11 @@
+2000-07-18  Mo DeJong  <mdejong@redhat.com>
+
+	* unix/configure.in:
+	* unix/tcl.m4:
+	* win/tcl.m4: Properly quote arguments to m4
+	macros. This allows Tcl to work with the new
+	version of autoconf.
+
 2000-07-18  Eric Melski  <ericm@ajubasolutions.com>
 
 	* tests/opt.test: Removed references to Lfirst, Lrest functions.

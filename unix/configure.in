@@ -3,7 +3,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 AC_INIT(../generic/tcl.h)
-# RCS: @(#) $Id: configure.in,v 1.58 2000/05/03 00:15:10 hobbs Exp $
+# RCS: @(#) $Id: configure.in,v 1.59 2000/07/19 01:17:41 mo Exp $
 
 TCL_VERSION=8.4
 TCL_MAJOR_VERSION=8
@@ -60,18 +60,18 @@ fi
 #--------------------------------------------------------------------
 
 # Check if Posix compliant getcwd exists, if not we'll use getwd.
-AC_CHECK_FUNCS(getcwd, , AC_DEFINE(USEGETWD))
+AC_CHECK_FUNCS(getcwd, , [AC_DEFINE(USEGETWD)])
 # Nb: if getcwd uses popen and pwd(1) (like SunOS 4) we should really
 # define USEGETWD even if the posix getcwd exists. Add a test ?
 
 AC_REPLACE_FUNCS(opendir strstr)
 
 AC_REPLACE_FUNCS(strtol tmpnam waitpid)
-AC_CHECK_FUNC(strerror, , AC_DEFINE(NO_STRERROR))
-AC_CHECK_FUNC(getwd, , AC_DEFINE(NO_GETWD))
-AC_CHECK_FUNC(wait3, , AC_DEFINE(NO_WAIT3))
-AC_CHECK_FUNC(uname, , AC_DEFINE(NO_UNAME))
-AC_CHECK_FUNC(realpath, , AC_DEFINE(NO_REALPATH))
+AC_CHECK_FUNC(strerror, , [AC_DEFINE(NO_STRERROR)])
+AC_CHECK_FUNC(getwd, , [AC_DEFINE(NO_GETWD)])
+AC_CHECK_FUNC(wait3, , [AC_DEFINE(NO_WAIT3)])
+AC_CHECK_FUNC(uname, , [AC_DEFINE(NO_UNAME)])
+AC_CHECK_FUNC(realpath, , [AC_DEFINE(NO_REALPATH)])
 
 #--------------------------------------------------------------------
 #	On a few very rare systems, all of the libm.a stuff is
@@ -152,7 +152,7 @@ SC_TIME_HANDLER
 #	in struct stat.  But we might be able to use fstatfs instead.
 #--------------------------------------------------------------------
 AC_STRUCT_ST_BLKSIZE
-AC_CHECK_FUNC(fstatfs, , AC_DEFINE(NO_FSTATFS))
+AC_CHECK_FUNC(fstatfs, , [AC_DEFINE(NO_FSTATFS)])
 
 #--------------------------------------------------------------------
 #       Some system have no memcmp or it does not work with 8 bit
@@ -165,7 +165,7 @@ AC_FUNC_MEMCMP
 #       have no memmove (we assume they have bcopy instead).
 #       {The replacement define is in compat/string.h}
 #--------------------------------------------------------------------
-AC_CHECK_FUNC(memmove, , AC_DEFINE(NO_MEMMOVE) AC_DEFINE(NO_STRING_H))
+AC_CHECK_FUNC(memmove, , [AC_DEFINE(NO_MEMMOVE) AC_DEFINE(NO_STRING_H)])
 
 #--------------------------------------------------------------------
 #	On some systems strstr is broken: it returns a pointer even
@@ -262,7 +262,7 @@ AC_TYPE_UID_T
 #	provided.  This version only works with V7-style directories.
 #--------------------------------------------------------------------
 
-AC_CHECK_FUNC(opendir, , AC_DEFINE(USE_DIRENT2_H))
+AC_CHECK_FUNC(opendir, , [AC_DEFINE(USE_DIRENT2_H)])
 
 #--------------------------------------------------------------------
 #	The check below checks whether <sys/wait.h> defines the type
@@ -328,8 +328,10 @@ fi
 #	   declare it.
 #--------------------------------------------------------------------
 
-AC_CHECK_FUNC(BSDgettimeofday, AC_DEFINE(HAVE_BSDGETTIMEOFDAY),
-	AC_CHECK_FUNC(gettimeofday, , AC_DEFINE(NO_GETTOD)))
+AC_CHECK_FUNC(BSDgettimeofday,
+    [AC_DEFINE(HAVE_BSDGETTIMEOFDAY)], [
+    AC_CHECK_FUNC(gettimeofday, , [AC_DEFINE(NO_GETTOD)])
+])
 AC_MSG_CHECKING([for gettimeofday declaration])
 AC_EGREP_HEADER(gettimeofday, sys/time.h, AC_MSG_RESULT(present), [
     AC_MSG_RESULT(missing)
@@ -389,7 +391,7 @@ fi
 #    LIBS="$LIBS -lsocket -lnsl"
 #    AC_CHECK_FUNC(accept, tcl_checkNsl=0, [LIBS=$tk_oldLibs])
 #fi
-#AC_CHECK_FUNC(gethostbyname, , AC_CHECK_LIB(nsl, main, [LIBS="$LIBS -lnsl"]))
+#AC_CHECK_FUNC(gethostbyname, , [AC_CHECK_LIB(nsl, main, [LIBS="$LIBS -lnsl"])])
 
 #--------------------------------------------------------------------
 # Look for libraries that we will need when compiling the Tcl shell

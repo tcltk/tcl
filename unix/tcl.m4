@@ -223,6 +223,27 @@ AC_DEFUN(SC_LOAD_TCLCONFIG, [
     AC_SUBST(TCL_BIN_DIR)
     AC_SUBST(TCL_SRC_DIR)
     AC_SUBST(TCL_LIB_FILE)
+
+
+    # We need to find out if Tcl was compiled with thread
+    # support. We can not build an extension with thread
+    # support if Tcl is not built with thread support.
+
+    AC_MSG_CHECKING([to see if Tcl was compiled with thread support])
+
+    if test "$TCL_THREADS" = "1"; then
+        # Define the following option so that they will
+        # be passed in the CFLAGS variable. We do not
+        # need to worry about THREADS_LIBS because that
+        # gets added to the LIBS variable.
+
+        AC_MSG_RESULT([yes])
+        AC_DEFINE(TCL_THREADS)
+        AC_DEFINE(_REENTRANT)
+        AC_DEFINE(_THREAD_SAFE)
+    else
+        AC_MSG_RESULT([no])
+    fi
 ])
 
 #------------------------------------------------------------------------
@@ -333,7 +354,10 @@ AC_DEFUN(SC_ENABLE_SHARED, [
 #------------------------------------------------------------------------
 # SC_ENABLE_THREADS --
 #
-#	Specify if thread support should be enabled
+#	Specify if thread support should be enabled for Tcl. This
+#	macro can not be called from an extension's configure.in
+#	because it is not possible to build an extension with thread
+#	support if Tcl itself is not compiled with thread support.
 #
 # Arguments:
 #	none
@@ -349,6 +373,7 @@ AC_DEFUN(SC_ENABLE_SHARED, [
 #	Defines the following vars:
 #		TCL_THREADS
 #		_REENTRANT
+#		_THREAD_SAFE
 #
 #------------------------------------------------------------------------
 
@@ -356,6 +381,13 @@ AC_DEFUN(SC_ENABLE_THREADS, [
     AC_MSG_CHECKING(for building with threads)
     AC_ARG_ENABLE(threads, [  --enable-threads        build with threads],
 	[tcl_ok=$enableval], [tcl_ok=no])
+
+    # Make sure this macro is not getting include in an extensions
+    # configure.in by checking for the tcl.h include file.
+
+    if test ! -f ${TCL_SRC_DIR}/generic/tcl.h ; then
+        AC_MSG_ERROR([The --enable-threads macro can only be used in Tcl's configure.in])
+    fi
 
     if test "$tcl_ok" = "yes"; then
 	AC_MSG_RESULT(yes)
@@ -396,7 +428,7 @@ AC_DEFUN(SC_ENABLE_THREADS, [
 	AC_CHECK_FUNCS(pthread_attr_setstacksize)
     else
 	TCL_THREADS=0
-	AC_MSG_RESULT(no (default))
+	AC_MSG_RESULT([no (default)])
     fi
 ])
 
@@ -1333,10 +1365,10 @@ closedir(d);
     fi
 
     AC_MSG_RESULT($tcl_ok)
-    AC_CHECK_HEADER(errno.h, , AC_DEFINE(NO_ERRNO_H))
-    AC_CHECK_HEADER(float.h, , AC_DEFINE(NO_FLOAT_H))
-    AC_CHECK_HEADER(values.h, , AC_DEFINE(NO_VALUES_H))
-    AC_CHECK_HEADER(limits.h, , AC_DEFINE(NO_LIMITS_H))
+    AC_CHECK_HEADER(errno.h, , [AC_DEFINE(NO_ERRNO_H)])
+    AC_CHECK_HEADER(float.h, , [AC_DEFINE(NO_FLOAT_H)])
+    AC_CHECK_HEADER(values.h, , [AC_DEFINE(NO_VALUES_H)])
+    AC_CHECK_HEADER(limits.h, , [AC_DEFINE(NO_LIMITS_H)])
     AC_CHECK_HEADER(stdlib.h, tcl_ok=1, tcl_ok=0)
     AC_EGREP_HEADER(strtol, stdlib.h, , tcl_ok=0)
     AC_EGREP_HEADER(strtoul, stdlib.h, , tcl_ok=0)
@@ -1355,8 +1387,8 @@ closedir(d);
 	AC_DEFINE(NO_STRING_H)
     fi
 
-    AC_CHECK_HEADER(sys/wait.h, , AC_DEFINE(NO_SYS_WAIT_H))
-    AC_CHECK_HEADER(dlfcn.h, , AC_DEFINE(NO_DLFCN_H))
+    AC_CHECK_HEADER(sys/wait.h, , [AC_DEFINE(NO_SYS_WAIT_H)])
+    AC_CHECK_HEADER(dlfcn.h, , [AC_DEFINE(NO_DLFCN_H)])
 
     # OS/390 lacks sys/param.h (and doesn't need it, by chance).
 
@@ -1709,7 +1741,7 @@ AC_DEFUN(SC_TCL_LINK_LIBS, [
     #--------------------------------------------------------------------
 
     AC_CHECK_LIB(inet, main, [LIBS="$LIBS -linet"])
-    AC_CHECK_HEADER(net/errno.h, AC_DEFINE(HAVE_NET_ERRNO_H))
+    AC_CHECK_HEADER(net/errno.h, [AC_DEFINE(HAVE_NET_ERRNO_H)])
 
     #--------------------------------------------------------------------
     #	Check for the existence of the -lsocket and -lnsl libraries.
@@ -1732,16 +1764,16 @@ AC_DEFUN(SC_TCL_LINK_LIBS, [
     tcl_checkBoth=0
     AC_CHECK_FUNC(connect, tcl_checkSocket=0, tcl_checkSocket=1)
     if test "$tcl_checkSocket" = 1; then
-	AC_CHECK_FUNC(setsockopt, , AC_CHECK_LIB(socket, setsockopt,
-	    LIBS="$LIBS -lsocket", tcl_checkBoth=1))
+	AC_CHECK_FUNC(setsockopt, , [AC_CHECK_LIB(socket, setsockopt,
+	    LIBS="$LIBS -lsocket", tcl_checkBoth=1)])
     fi
     if test "$tcl_checkBoth" = 1; then
 	tk_oldLibs=$LIBS
 	LIBS="$LIBS -lsocket -lnsl"
 	AC_CHECK_FUNC(accept, tcl_checkNsl=0, [LIBS=$tk_oldLibs])
     fi
-    AC_CHECK_FUNC(gethostbyname, , AC_CHECK_LIB(nsl, gethostbyname,
-	    [LIBS="$LIBS -lnsl"]))
+    AC_CHECK_FUNC(gethostbyname, , [AC_CHECK_LIB(nsl, gethostbyname,
+	    [LIBS="$LIBS -lnsl"])])
     
     # Don't perform the eval of the libraries here because DL_LIBS
     # won't be set until we call SC_CONFIG_CFLAGS
