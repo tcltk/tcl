@@ -1,3 +1,9 @@
+2003-05-14  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* generic/tclCmdAH.c (Tcl_FormatObjCmd): Values which can't be
+	anything but wide shouldn't be demoted to long.  [consequence of
+	HEAD fixes for Bug 699060]
+
 2003-05-14  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* library/encoding/gb2312.enc: copy euc-cn.enc over original

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: format.test,v 1.11.2.3 2003/03/27 13:11:11 dkf Exp $
+# RCS: @(#) $Id: format.test,v 1.11.2.4 2003/05/14 23:01:56 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -511,6 +511,29 @@ test format-17.5 {type conversions with wides} {
     format %x $a
     lappend result [expr {$a == $b}]
 } {1 1}
+
+test format-18.1 {do not demote existing numeric values} {
+    set a 0xaaaaaaaa
+    # Ensure $a and $b are separate objects
+    set b 0xaaaa
+    append b aaaa
+
+    set result [expr {$a == $b}]
+    format %08lx $b
+    lappend result [expr {$a == $b}]
+
+    set b 0xaaaa
+    append b aaaa
+
+    lappend result [expr {$a == $b}]
+    format %08x $b
+    lappend result [expr {$a == $b}]
+} {1 1 1 1}
+test format-18.2 {do not demote existing numeric values} {wideIntExpressions} {
+    set a [expr {0xaaaaaaaaaa + 1}]
+    set b 0xaaaaaaaaab
+    list [catch {format %08x $a} msg] $msg [expr {$a == $b}]
+} {1 {integer value too large to represent} 1}
 
 # cleanup
 catch {unset a}
