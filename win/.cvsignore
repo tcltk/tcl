@@ -1,0 +1,11 @@
+.cvsignore
+Debug
+Release
+*.opt
+*.ncb
+*.plg
+Makefile
+configure
+tcl.hpj
+tclConfig.sh
+.#*
