@@ -1,3 +1,8 @@
+2002-06-12  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* tclBasic.c (Tcl_DeleteTrace): fixed [Bug 568123] (thanks to
+	Hemang Lavana)
+	
 2002-06-12  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* win/tclWinFile.c: corrected the symbolic link handling code to
