@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParseExpr.c,v 1.4 1999/04/21 21:50:28 rjohnson Exp $
+ * RCS: @(#) $Id: tclParseExpr.c,v 1.5 1999/09/02 16:26:33 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -1589,7 +1589,7 @@ GetLexeme(infoPtr)
 	    infoPtr->lexeme = DOLLAR;
 	    return TCL_OK;
 
-	case '"':
+	case '\"':
 	    infoPtr->lexeme = QUOTE;
 	    return TCL_OK;
 
