@@ -1,5 +1,12 @@
 2002-09-29  David Gravereaux <davygrvy@pobox.com>
 
+	* win/tclAppInit.c: Added proper exiting conditions using Win32
+	console signals.  This handles the existing lack of a Ctrl+C exit
+	to call exit handlers when built for thread support.  Also, properly
+	handles exits from other conditions such as CTRL_CLOSE_EVENT,
+	CTRL_LOGOFF_EVENT, and CTRL_SHUTDOWN_EVENT signals.  In all cases,
+	exit handlers will be called.  [Bug 219355]
+
 	* win/makefile.vc: Added missing tclThreadAlloc.c to the build
 	rules and defines USE_THREAD_ALLOC when TCL_THREADS is defined
 	to get the new behavior by default.
