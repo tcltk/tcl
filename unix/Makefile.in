@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.121.2.2 2003/07/15 01:15:51 das Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.121.2.3 2003/07/23 05:53:58 das Exp $
 
 VERSION 		= @TCL_VERSION@
 MAJOR_VERSION		= @TCL_MAJOR_VERSION@
@@ -1294,6 +1294,7 @@ dist: mklinks
 		$(DISTDIR)/macosx
 	mkdir $(DISTDIR)/macosx/Tcl.pbproj
 	cp -p $(TOP_DIR)/macosx/Tcl.pbproj/*.pbx* $(DISTDIR)/macosx/Tcl.pbproj
+	cp -p $(TOP_DIR)/macosx/README $(DISTDIR)/macosx
 	mkdir $(DISTDIR)/unix/dltest
 	cp -p $(UNIX_DIR)/dltest/*.c $(UNIX_DIR)/dltest/Makefile.in \
 		$(UNIX_DIR)/dltest/README \
