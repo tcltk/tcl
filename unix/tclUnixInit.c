@@ -7,7 +7,7 @@
  * Copyright (c) 1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclUnixInit.c,v 1.53 2004/11/30 19:34:51 dgp Exp $
+ * RCS: @(#) $Id: tclUnixInit.c,v 1.54 2004/12/04 21:19:19 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -581,6 +581,12 @@ TclpSetInitialEncodings()
     Tcl_SetSystemEncoding(NULL,
 	    TclpGetEncodingNameFromEnvironment(&encodingName));
     Tcl_DStringFree(&encodingName);
+}
+
+void
+TclpSetInterfaces()
+{
+	/* do nothing */
 }
 
 CONST char *

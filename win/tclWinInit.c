@@ -7,7 +7,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclWinInit.c,v 1.64 2004/11/30 19:34:52 dgp Exp $
+ * RCS: @(#) $Id: tclWinInit.c,v 1.65 2004/12/04 21:19:19 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -441,17 +441,22 @@ TclWinEncodingsCleanup()
 void
 TclpSetInitialEncodings()
 {
-    int platformId, useWide;
     Tcl_DString encodingName;
+    
+    TclpSetInterfaces();
+    Tcl_SetSystemEncoding(NULL,
+	    TclpGetEncodingNameFromEnvironment(&encodingName));
+    Tcl_DStringFree(&encodingName);
+}
 
+void
+TclpSetInterfaces()
+{
+    int platformId, useWide;
     platformId = TclWinGetPlatformId();
     useWide = ((platformId == VER_PLATFORM_WIN32_NT)
 	    || (platformId == VER_PLATFORM_WIN32_CE));
     TclWinSetInterfaces(useWide);
-
-    Tcl_SetSystemEncoding(NULL,
-	    TclpGetEncodingNameFromEnvironment(&encodingName));
-    Tcl_DStringFree(&encodingName);
 }
 
 CONST char *

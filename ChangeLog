@@ -1,3 +1,13 @@
+2004-12-04  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclEncoding.c:	Different fix for [Bug 1077005].
+	* generic/tclEvent.c:	Broke apart TclpSetInitialEncodings() on
+	* generic/tclInt.h:	Windows into TclpSetInterfaces(), that is
+	* unix/tclUnixInit.c:	fundamentally essential, and the initialization
+	* win/tclWinInit.c:	of the system encoding, which is not.  Made
+	the TclpSetInterfaces call part of TclInitSubsystems so it cannot be
+	overlooked.
+
 2004-12-03  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* changes: updated for 8.5a2 release
