@@ -10,7 +10,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: clock.n,v 1.12 2003/04/12 19:08:54 kennykb Exp $
+'\" RCS: @(#) $Id: clock.n,v 1.13 2004/02/06 16:48:54 dgp Exp $
 '\" 
 .so man.macros
 .TH clock n 8.4 Tcl "Tcl Built-In Commands"
@@ -62,8 +62,8 @@ phenomena as leap seconds.
 .TP
 \fBclock format \fIclockValue\fR ?\fB\-format \fIstring\fR? ?\fB\-gmt \fIboolean\fR?
 Converts an integer time value, typically returned by
-\fBclock seconds\fR, \fBclock scan\fR, or the \fBatime\fR, \fBmtime\fR,
-or \fBctime\fR options of the \fBfile\fR command, to human-readable
+\fBclock seconds\fR, \fBclock scan\fR, or the \fBatime\fR or \fBmtime\fR
+options of the \fBfile\fR command, to human-readable
 form.  If the \fB\-format\fR argument is present the next argument is a
 string that describes how the date and time are to be formatted.
 Field descriptors consist of a \fB%\fR followed by a field
