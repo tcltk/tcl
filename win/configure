@@ -1140,6 +1140,7 @@ echo "configure:1122: checking compiler flags" >&5
 	RC_OUT=-o
 	RC_TYPE=
 	RC_INCLUDE=--include
+	RC_DEFINE=--define
 	RES=res.o
 	MAKE_LIB="\${AR} crv \$@"
 	POST_MAKE_LIB="\${RANLIB} \$@"
@@ -1223,6 +1224,7 @@ echo "configure:1122: checking compiler flags" >&5
 	RC_OUT=-fo
 	RC_TYPE=-r
 	RC_INCLUDE=-i
+	RC_DEFINE=-d
 	RES=res
 	MAKE_LIB="\${AR} -out:\$@"
 	POST_MAKE_LIB=
@@ -1281,7 +1283,7 @@ echo "configure:1122: checking compiler flags" >&5
 
 
     echo $ac_n "checking for build with symbols""... $ac_c" 1>&6
-echo "configure:1285: checking for build with symbols" >&5
+echo "configure:1287: checking for build with symbols" >&5
     # Check whether --enable-symbols or --disable-symbols was given.
 if test "${enable_symbols+set}" = set; then
   enableval="$enable_symbols"
@@ -1311,7 +1313,7 @@ TCL_DBGX=${DBGX}
 #--------------------------------------------------------------------
 
 echo $ac_n "checking how to run the C preprocessor""... $ac_c" 1>&6
-echo "configure:1315: checking how to run the C preprocessor" >&5
+echo "configure:1317: checking how to run the C preprocessor" >&5
 # On Suns, sometimes $CPP names a directory.
 if test -n "$CPP" && test -d "$CPP"; then
   CPP=
@@ -1326,13 +1328,13 @@ else
   # On the NeXT, cc -E runs the code through the compiler's parser,
   # not just through cpp.
   cat > conftest.$ac_ext <<EOF
-#line 1330 "configure"
+#line 1332 "configure"
 #include "confdefs.h"
 #include <assert.h>
 Syntax Error
 EOF
 ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
-{ (eval echo configure:1336: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
+{ (eval echo configure:1338: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
 ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
 if test -z "$ac_err"; then
   :
@@ -1343,13 +1345,13 @@ else
   rm -rf conftest*
   CPP="${CC-cc} -E -traditional-cpp"
   cat > conftest.$ac_ext <<EOF
-#line 1347 "configure"
+#line 1349 "configure"
 #include "confdefs.h"
 #include <assert.h>
 Syntax Error
 EOF
 ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
-{ (eval echo configure:1353: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
+{ (eval echo configure:1355: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
 ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
 if test -z "$ac_err"; then
   :
@@ -1360,13 +1362,13 @@ else
   rm -rf conftest*
   CPP="${CC-cc} -nologo -E"
   cat > conftest.$ac_ext <<EOF
-#line 1364 "configure"
+#line 1366 "configure"
 #include "confdefs.h"
 #include <assert.h>
 Syntax Error
 EOF
 ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
-{ (eval echo configure:1370: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
+{ (eval echo configure:1372: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
 ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
 if test -z "$ac_err"; then
   :
@@ -1392,17 +1394,17 @@ echo "$ac_t""$CPP" 1>&6
 
 ac_safe=`echo "errno.h" | sed 'y%./+-%__p_%'`
 echo $ac_n "checking for errno.h""... $ac_c" 1>&6
-echo "configure:1396: checking for errno.h" >&5
+echo "configure:1398: checking for errno.h" >&5
 if eval "test \"`echo '$''{'ac_cv_header_$ac_safe'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   cat > conftest.$ac_ext <<EOF
-#line 1401 "configure"
+#line 1403 "configure"
 #include "confdefs.h"
 #include <errno.h>
 EOF
 ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
-{ (eval echo configure:1406: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
+{ (eval echo configure:1408: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
 ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
 if test -z "$ac_err"; then
   rm -rf conftest*
@@ -1471,25 +1473,20 @@ CFG_TCL_EXPORT_FILE_SUFFIX=${TCL_EXPORT_FILE_SUFFIX}
 # on symbols and static vs. shared.
 #--------------------------------------------------------------------
 
-if test "${GCC}" = "yes" ; then
-    RC_DEFINE_FLAG=--define
-else
-    RC_DEFINE_FLAG=-d
-fi
-
 if test ${SHARED_BUILD} = 0 ; then
     if test "${DBGX}" = "d"; then
-        RC_DEFINES="${RC_DEFINE_FLAG} STATIC_BUILD ${RC_DEFINE_FLAG} DEBUG"
+        RC_DEFINES="${RC_DEFINE} STATIC_BUILD ${RC_DEFINE} DEBUG"
     else
-        RC_DEFINES="${RC_DEFINE_FLAG} STATIC_BUILD"
+        RC_DEFINES="${RC_DEFINE} STATIC_BUILD"
     fi
 else
     if test "${DBGX}" = "d"; then
-        RC_DEFINES="${RC_DEFINE_FLAG} DEBUG"
+        RC_DEFINES="${RC_DEFINE} DEBUG"
     else
         RC_DEFINES=""
     fi
 fi
+
 
 
 
@@ -1751,6 +1748,7 @@ s%@LDFLAGS_WINDOW@%$LDFLAGS_WINDOW%g
 s%@RC_OUT@%$RC_OUT%g
 s%@RC_TYPE@%$RC_TYPE%g
 s%@RC_INCLUDE@%$RC_INCLUDE%g
+s%@RC_DEFINE@%$RC_DEFINE%g
 s%@RC_DEFINES@%$RC_DEFINES%g
 s%@RES@%$RES%g
 s%@LIBS_GUI@%$LIBS_GUI%g
