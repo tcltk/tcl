@@ -10,7 +10,7 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.test,v 1.3 1999/07/28 18:33:23 jenn Exp $
+# RCS: @(#) $Id: tcltest.test,v 1.4 1999/07/30 19:10:47 jenn Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -36,15 +36,15 @@ makeFile {
 test tcltest-1.1 {tcltest -help} {
     set result [catch {exec $::tcltest::tcltest test.tcl -help} msg]
     list $result [regexp Usage $msg]
-} {0 1} 
+} {1 1} 
 test tcltest-1.2 {tcltest -help -something} {
     set result [catch {exec $::tcltest::tcltest test.tcl -help -something} msg]
     list $result [regexp Usage $msg]
-} {0 1}
+} {1 1}
 test tcltest-1.3 {tcltest -h} {
     set result [catch {exec $::tcltest::tcltest test.tcl -h} msg]
     list $result [regexp Usage $msg]
-} {0 1} 
+} {1 1} 
 
 # -verbose
 test tcltest-2.0 {tcltest (verbose default - 'b')} {
