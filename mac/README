@@ -8,7 +8,7 @@ Jim Ingham
 Cygnus Solutions
 jingham@cygnus.com
 
-RCS: @(#) $Id: README,v 1.4.2.1 1999/03/22 05:42:10 jingham Exp $
+RCS: @(#) $Id: README,v 1.4.2.2 1999/03/24 05:21:07 jingham Exp $
 
 1. Introduction
 ---------------
@@ -49,14 +49,6 @@ useful Tcl code. We will eventually provide Tcl libraries for
 accessing the most common resources.
 
 See the main Tcl README for other features new to Tcl 8.0.
-
-New in 8.0.5:
-  There is support for reading and writing to the serial port on the
-  Mac.  The code was contributed by Sean Woods, (yoda@drexel.edu).  It
-  supports setting baud rate, stop bits, blocking & non-blocking modes.  It 
-  does not support various flow control mechanisms yet. You can get to 
-  it through the "open" command, using the special cookies: MODEM:,
-  PRINTER:, COM1: and COM2: for the file name.
 
 3. Mac specific features
 ------------------------
@@ -152,9 +144,9 @@ available (see below).
 In order to compile Macintosh Tcl you must have the 
 following items:
 
-	CodeWarrior Pro 2 or 3
+	CodeWarrior Pro 2 through 4
 	Mac Tcl 8.0 (source)
-	More Files 1.4.3
+	More Files 1.4.3, or 1.4.9
 
 There are two sets of project files included with the package. The ones
 we use for the release are for CodeWarrior Pro 3, and are not compatible

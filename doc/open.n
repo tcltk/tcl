@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: open.n,v 1.2.2.1 1999/03/22 05:42:10 jingham Exp $
+'\" RCS: @(#) $Id: open.n,v 1.2.2.2 1999/03/24 05:21:07 jingham Exp $
 '\" 
 .so man.macros
 .TH open n 7.6 Tcl "Tcl Built-In Commands"
@@ -217,13 +217,9 @@ no interactions between command pipelines and the console.
 .TP
 \fBMacintosh\fR
 .
-Opening a serial port was added in Tcl8.0.5 for the Macintosh.  Acceptable
-forms for the \fIfilename\fR argument on the Macintosh are: \fBMODEM:\fR,
-\fBPRINTER:\fR, \fBCOM1:\fR, and \fBCOM2:\fR.  The serial port accepts the 
-following additional \fIfconfigure\fR arguments: \fB-baud\fR, \fB-databits\fR,
-\fB-parity\fR, and \fB-stopbits\fR.  Currently, it does not support setting the
-flow control method.  If the serial port does not exist, or is already opened 
-by another application, the open command will fail.
+Access to the serial port is not accomplished through magic cookies passed
+to the \fIopen\fR command on the Macintosh.  Instead, you can use Sean Wood's 
+(yoda@drexel.edu) \fIDevice\fR extension for the same purpose.
 .sp
 Opening a command pipeline is not supported under Macintosh, since 
 applications do not support the concept of standard input or output.
