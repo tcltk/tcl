@@ -1,3 +1,15 @@
+2002-07-29  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* generic/tcl.h: 
+	* generic/tclBasic.c: 
+	* generic/tclInterp.c: added the new flag TCL_EVAL_INVOKE to
+	the interface of the Tcl_Eval* functions, removing the
+	TCL_EVAL_NO_TRACEBACK added yesterday: alias invocations not only 
+	require no tracebacks, but also look up the command name in the
+	global scope - see new test interp-9.4
+	* tests/interp.test: added 9.3 to test for safety of aliases to
+	hidden commands, 9.4 to test for correct command lookup scope.
+
 2002-07-29  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* generic/regc_locale.c (cclass): [[:xdigit:]] is only a defined

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.33 2002/04/26 08:34:35 dkf Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.34 2002/07/29 15:56:54 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -2852,9 +2852,8 @@ Tcl_GetCommandFromObj(interp, objPtr)
     register Tcl_Obj *objPtr;	/* The object containing the command's
 				 * name. If the name starts with "::", will
 				 * be looked up in global namespace. Else,
-				 * looked up first in the current namespace
-				 * if contextNsPtr is NULL, then in global
-				 * namespace. */
+				 * looked up first in the current namespace,
+				 * then in global namespace. */
 {
     Interp *iPtr = (Interp *) interp;
     register ResolvedCmdName *resPtr;
