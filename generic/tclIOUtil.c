@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.75 2003/02/11 11:07:04 hobbs Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.76 2003/02/27 23:47:16 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -4062,11 +4062,7 @@ MakeFsPathFromRelative(interp, objPtr, cwdPtr)
     Tcl_Obj *cwdPtr;		/* The object to convert. */
 {
     FsPath *fsPathPtr;
-    
-    if (objPtr->typePtr == &tclFsPathType) {
-	return TCL_OK;
-    }
-    
+
     /* Free old representation */
     if (objPtr->typePtr != NULL) {
 	if (objPtr->bytes == NULL) {
