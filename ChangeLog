@@ -1,10 +1,15 @@
+2003-05-13  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* generic/tclEvent.c (Tcl_Finalize): Removed unused variable to
+	reduce compiler warnings.  [Bug 664745]
+
 2003-05-13  Joe Mistachkin  <joe@mistachkin.com>
 
-        * generic/tcl.decls:  Changed Tcl_JoinThread parameter name from      
-        * generic/tclDecls.h: "id" to "threadId". [Bug 732477]
-        * unix/tclUnixThrd.c:
-        * win/tclWinThrd.c: 
-        * mac/tclMacThrd.c:
+	* generic/tcl.decls:  Changed Tcl_JoinThread parameter name from      
+	* generic/tclDecls.h: "id" to "threadId". [Bug 732477]
+	* unix/tclUnixThrd.c:
+	* win/tclWinThrd.c: 
+	* mac/tclMacThrd.c:
 
 2003-05-13  Daniel Steffen  <das@users.sourceforge.net>
 
@@ -69,17 +74,17 @@
 2003-05-09  Joe Mistachkin <joe@mistachkin.com>
 
 	* generic/tclThreadAlloc.c (TclFreeAllocCache): Fixed memory leak
-        caused by treating cachePtr as a TLS index [Bug 731754].
+	caused by treating cachePtr as a TLS index [Bug 731754].
 
 	* win/tclAppInit.c (Tcl_AppInit): Fixed memory leaks caused by not
-        freeing the memory allocated by setargv and the async handler created
-        by Tcl_AppInit. An exit handler has been created that takes care of
-        both leaks. In addition, Tcl_AppInit now uses ckalloc instead of
-        Tcl_Alloc to allow for easier leak tracking and to be more consistent
-        with the rest of the Tcl core [Bugs 733156, 733221].
+	freeing the memory allocated by setargv and the async handler created
+	by Tcl_AppInit. An exit handler has been created that takes care of
+	both leaks. In addition, Tcl_AppInit now uses ckalloc instead of
+	Tcl_Alloc to allow for easier leak tracking and to be more consistent
+	with the rest of the Tcl core [Bugs 733156, 733221].
 
 	* tools/encoding/txt2enc.c (main): Fixed memory leak caused by failing
-        to free the memory used by the toUnicode array of strings [Bug 733221].
+	to free the memory used by the toUnicode array of strings [Bug 733221].
 
 2003-05-09  Miguel Sofer <msofer@users.sf.net>
 
@@ -119,8 +124,8 @@
 	* tests/error.test:
 	* tests/proc-old.test:
 
-        * library/tcltest/tcltest.tcl: The -returnCodes option to [test]
-        failed to recognize the symbolic name "ok" for return code 0.
+	* library/tcltest/tcltest.tcl: The -returnCodes option to [test]
+	failed to recognize the symbolic name "ok" for return code 0.
 
 2003-05-05  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
@@ -202,10 +207,10 @@
 
 2003-04-21  Don Porter  <dgp@users.sourceforge.net>
 
-        * library/tcltest/tcltest.tcl:  When the return code of a test does
-        not meet expectations, report that as the reason for test failure,
-        and do not attempt to check the test result for correctness.
-        [Bug 725253]
+	* library/tcltest/tcltest.tcl:  When the return code of a test does
+	not meet expectations, report that as the reason for test failure,
+	and do not attempt to check the test result for correctness.
+	[Bug 725253]
 
 2003-04-18  Jeff Hobbs  <jeffh@ActiveState.com>
 
@@ -1320,7 +1325,7 @@
 	does not build and people are filing bug reports
 	under the mistaken impression that someone is
 	actually maintaining the Cygwin port. A post to
- 	comp.lang.tcl asking someone to volunteer as an
+	comp.lang.tcl asking someone to volunteer as an
 	area maintainer has generated no results.
 	Closing bugs 680840, 630199, and 634772 and
 	marking as "Won't fix".
@@ -1525,7 +1530,7 @@
 	mysterious error that would show up when
 	exec'ing a 16 bit application under Win95
 	or Win98 when Tcl was compiled with symbols.
- 	The error seemed to indicate that the executable
+	The error seemed to indicate that the executable
 	could not be found, but it was actually the
 	Tcl pipe dll that could not be found.
 
@@ -1612,7 +1617,7 @@
 	* generic/tclIO.c: Add 'Tcl_GetString()' to ensure the object has
 	a valid 'objPtr->bytes' field before manipulating it directly.
 	
-        This fixes [Bug 635200] and [Bug 671138], but may reduce performance
+	This fixes [Bug 635200] and [Bug 671138], but may reduce performance
 	of Unicode string handling in some cases. A further patch will
 	be applied to address this, once the code is known to be correct.
 
@@ -3114,14 +3119,14 @@
 2002-07-29  Reinhard Max  <max@suse.de>
 
 	* unix/tcl.m4 (SC_SERIAL_PORT): Fixed detection for cases when
-                                        configure's stdin is not a tty.
+					configure's stdin is not a tty.
 	
 	* unix/tclUnixPort.h: 
-	* generic/tclIOSock.c:          Changed size_t to socklen_t in
-                                        socket-related function calls.
+	* generic/tclIOSock.c:		Changed size_t to socklen_t in
+					socket-related function calls.
 
-	* unix/configure.in:            Added test and fallback definition
-                                        for socklen_t.
+	* unix/configure.in:		Added test and fallback definition
+					for socklen_t.
 	
 	* unix/configure:               generated.
 
