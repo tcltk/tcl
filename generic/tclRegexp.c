@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclRegexp.c,v 1.15 2004/04/06 22:25:54 dgp Exp $
+ * RCS: @(#) $Id: tclRegexp.c,v 1.16 2004/09/29 22:17:30 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -565,10 +565,13 @@ Tcl_GetRegExpFromObj(interp, objPtr, flags)
     TclRegexp *regexpPtr;
     char *pattern;
 
-    typePtr = objPtr->typePtr;
+    /*
+     * This is OK because we only actually interpret this value
+     * properly as a TclRegexp* when the type is tclRegexpType.
+     */
     regexpPtr = (TclRegexp *) objPtr->internalRep.otherValuePtr;
 
-    if ((typePtr != &tclRegexpType) || (regexpPtr->flags != flags)) {
+    if ((objPtr->typePtr != &tclRegexpType) || (regexpPtr->flags != flags)) {
 	pattern = Tcl_GetStringFromObj(objPtr, &length);
 
 	regexpPtr = CompileRegexp(interp, pattern, length, flags);
@@ -588,9 +591,7 @@ Tcl_GetRegExpFromObj(interp, objPtr, flags)
 	 * Free the old representation and set our type.
 	 */
 
-	if ((typePtr != NULL) && (typePtr->freeIntRepProc != NULL)) {
-	    (*typePtr->freeIntRepProc)(objPtr);
-	}
+	TclFreeIntRep(objPtr);
 	objPtr->internalRep.otherValuePtr = (VOID *) regexpPtr;
 	objPtr->typePtr = &tclRegexpType;
     }
