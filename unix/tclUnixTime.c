@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixTime.c,v 1.15.2.2 2004/05/17 14:26:50 kennykb Exp $
+ * RCS: @(#) $Id: tclUnixTime.c,v 1.15.2.3 2004/10/28 16:06:50 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -344,7 +344,7 @@ TclpStrftime(s, maxsize, format, t, useGMT)
 
 struct tm *
 TclpGmtime( tt )
-    TclpTime_t tt;
+    CONST TclpTime_t tt;
 {
     CONST time_t *timePtr = (CONST time_t *) tt;
 				/* Pointer to the number of seconds
@@ -371,7 +371,7 @@ TclpGmtime( tt )
  */
 struct tm*
 TclpGmtime_unix( timePtr )
-    TclpTime_t timePtr;
+    CONST TclpTime_t timePtr;
 {
     return TclpGmtime( timePtr );
 }
@@ -395,7 +395,7 @@ TclpGmtime_unix( timePtr )
 
 struct tm *
 TclpLocaltime( tt )
-    TclpTime_t tt;
+    CONST TclpTime_t tt;
 {
     CONST time_t *timePtr = (CONST time_t *) tt;
 				/* Pointer to the number of seconds
@@ -422,7 +422,7 @@ TclpLocaltime( tt )
  */
 struct tm*
 TclpLocaltime_unix( timePtr )
-    TclpTime_t timePtr;
+    CONST TclpTime_t timePtr;
 {
     return TclpLocaltime( timePtr );
 }
