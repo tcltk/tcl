@@ -1,3 +1,7 @@
+2001-02-23  msofer  <msofer@users.sourceforge.net>
+	* no changes; fixing up the missing comment in the previous one.
+	Sorry.
+
 2001-02-23  msofer  <msofer@ant.utdt>
 
 	* /cvsroot/tcl/tcl/tests/execute.test:
