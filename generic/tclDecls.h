@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.66 2001/11/21 02:36:20 hobbs Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.67 2001/12/18 15:21:20 dkf Exp $
  */
 
 #ifndef _TCLDECLS
@@ -1345,13 +1345,14 @@ EXTERN void		Tcl_UntraceCommand _ANSI_ARGS_((Tcl_Interp * interp,
 EXTERN char *		Tcl_AttemptAlloc _ANSI_ARGS_((unsigned int size));
 /* 429 */
 EXTERN char *		Tcl_AttemptDbCkalloc _ANSI_ARGS_((unsigned int size, 
-				char * file, int line));
+				CONST char * file, int line));
 /* 430 */
 EXTERN char *		Tcl_AttemptRealloc _ANSI_ARGS_((char * ptr, 
 				unsigned int size));
 /* 431 */
 EXTERN char *		Tcl_AttemptDbCkrealloc _ANSI_ARGS_((char * ptr, 
-				unsigned int size, char * file, int line));
+				unsigned int size, CONST char * file, 
+				int line));
 /* 432 */
 EXTERN int		Tcl_AttemptSetObjLength _ANSI_ARGS_((
 				Tcl_Obj * objPtr, int length));
@@ -1997,9 +1998,9 @@ typedef struct TclStubs {
     int (*tcl_TraceCommand) _ANSI_ARGS_((Tcl_Interp * interp, char * varName, int flags, Tcl_CommandTraceProc * proc, ClientData clientData)); /* 426 */
     void (*tcl_UntraceCommand) _ANSI_ARGS_((Tcl_Interp * interp, char * varName, int flags, Tcl_CommandTraceProc * proc, ClientData clientData)); /* 427 */
     char * (*tcl_AttemptAlloc) _ANSI_ARGS_((unsigned int size)); /* 428 */
-    char * (*tcl_AttemptDbCkalloc) _ANSI_ARGS_((unsigned int size, char * file, int line)); /* 429 */
+    char * (*tcl_AttemptDbCkalloc) _ANSI_ARGS_((unsigned int size, CONST char * file, int line)); /* 429 */
     char * (*tcl_AttemptRealloc) _ANSI_ARGS_((char * ptr, unsigned int size)); /* 430 */
-    char * (*tcl_AttemptDbCkrealloc) _ANSI_ARGS_((char * ptr, unsigned int size, char * file, int line)); /* 431 */
+    char * (*tcl_AttemptDbCkrealloc) _ANSI_ARGS_((char * ptr, unsigned int size, CONST char * file, int line)); /* 431 */
     int (*tcl_AttemptSetObjLength) _ANSI_ARGS_((Tcl_Obj * objPtr, int length)); /* 432 */
     Tcl_ThreadId (*tcl_GetChannelThread) _ANSI_ARGS_((Tcl_Channel channel)); /* 433 */
     Tcl_UniChar * (*tcl_GetUnicodeFromObj) _ANSI_ARGS_((Tcl_Obj * objPtr, int * lengthPtr)); /* 434 */

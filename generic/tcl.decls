@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.66 2001/11/21 02:36:20 hobbs Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.67 2001/12/18 15:21:20 dkf Exp $
 
 library tcl
 
@@ -1508,14 +1508,14 @@ declare 428 generic {
     char * Tcl_AttemptAlloc(unsigned int size)
 }
 declare 429 generic {
-    char * Tcl_AttemptDbCkalloc(unsigned int size, char *file, int line)
+    char * Tcl_AttemptDbCkalloc(unsigned int size, CONST char *file, int line)
 }
 declare 430 generic {
     char * Tcl_AttemptRealloc(char *ptr, unsigned int size)
 }
 declare 431 generic {
-    char * Tcl_AttemptDbCkrealloc(char *ptr, unsigned int size, char *file, 
-	int line)
+    char * Tcl_AttemptDbCkrealloc(char *ptr, unsigned int size,
+	CONST char *file, int line)
 }
 declare 432 generic {
     int Tcl_AttemptSetObjLength(Tcl_Obj *objPtr, int length)
