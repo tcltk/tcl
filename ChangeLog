@@ -1,3 +1,8 @@
+2000-07-27  Mo DeJong  <mdejong@redhat.com>
+
+	* win/configure.in: TCL_STUB_LIB_FLAG should not
+	include ${TCL_DBGX} in win/tclConfig.sh, fix that.
+
 2000-07-25  David Gravereaux  <davygrvy@ajubasolutions.com>
 
 	* doc/Async.3:
