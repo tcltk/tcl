@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.1.2.8 1999/02/10 23:31:16 stanton Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.1.2.9 1999/03/30 03:45:34 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -740,7 +740,7 @@ SplitMacPath(path, bufPtr)
 char *
 Tcl_JoinPath(argc, argv, resultPtr)
     int argc;
-    char **argv;
+    CONST char **argv;
     Tcl_DString *resultPtr;	/* Pointer to previously initialized DString. */
 {
     int oldLength, length, i, needsSep;
@@ -969,7 +969,7 @@ char *
 Tcl_TranslateFileName(interp, name, bufferPtr)
     Tcl_Interp *interp;		/* Interpreter in which to store error
 				 * message (if necessary). */
-    char *name;			/* File name, which may begin with "~" (to
+    CONST char *name;		/* File name, which may begin with "~" (to
 				 * indicate current user's home directory) or
 				 * "~<user>" (to indicate any user's home
 				 * directory). */

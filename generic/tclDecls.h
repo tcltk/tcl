@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.3.2.10 1999/03/30 01:55:51 redman Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.3.2.11 1999/03/30 03:45:33 stanton Exp $
  */
 
 #ifndef _TCLDECLS
@@ -583,8 +583,8 @@ EXTERN int		Tcl_InterpDeleted _ANSI_ARGS_((Tcl_Interp * interp));
 /* 185 */
 EXTERN int		Tcl_IsSafe _ANSI_ARGS_((Tcl_Interp * interp));
 /* 186 */
-EXTERN char *		Tcl_JoinPath _ANSI_ARGS_((int argc, char ** argv, 
-				Tcl_DString * resultPtr));
+EXTERN char *		Tcl_JoinPath _ANSI_ARGS_((int argc, 
+				CONST char ** argv, Tcl_DString * resultPtr));
 /* 187 */
 EXTERN int		Tcl_LinkVar _ANSI_ARGS_((Tcl_Interp * interp, 
 				char * varName, char * addr, int type));
@@ -772,7 +772,7 @@ EXTERN int		Tcl_TraceVar2 _ANSI_ARGS_((Tcl_Interp * interp,
 				ClientData clientData));
 /* 249 */
 EXTERN char *		Tcl_TranslateFileName _ANSI_ARGS_((
-				Tcl_Interp * interp, char * name, 
+				Tcl_Interp * interp, CONST char * name, 
 				Tcl_DString * bufferPtr));
 /* 250 */
 EXTERN int		Tcl_Ungets _ANSI_ARGS_((Tcl_Channel chan, char * str, 
@@ -1272,7 +1272,7 @@ typedef struct TclStubs {
     int (*tcl_InputBuffered) _ANSI_ARGS_((Tcl_Channel chan)); /* 183 */
     int (*tcl_InterpDeleted) _ANSI_ARGS_((Tcl_Interp * interp)); /* 184 */
     int (*tcl_IsSafe) _ANSI_ARGS_((Tcl_Interp * interp)); /* 185 */
-    char * (*tcl_JoinPath) _ANSI_ARGS_((int argc, char ** argv, Tcl_DString * resultPtr)); /* 186 */
+    char * (*tcl_JoinPath) _ANSI_ARGS_((int argc, CONST char ** argv, Tcl_DString * resultPtr)); /* 186 */
     int (*tcl_LinkVar) _ANSI_ARGS_((Tcl_Interp * interp, char * varName, char * addr, int type)); /* 187 */
     void *reserved188;
     Tcl_Channel (*tcl_MakeFileChannel) _ANSI_ARGS_((ClientData handle, int mode)); /* 189 */
@@ -1335,7 +1335,7 @@ typedef struct TclStubs {
     int (*tcl_Tell) _ANSI_ARGS_((Tcl_Channel chan)); /* 246 */
     int (*tcl_TraceVar) _ANSI_ARGS_((Tcl_Interp * interp, char * varName, int flags, Tcl_VarTraceProc * proc, ClientData clientData)); /* 247 */
     int (*tcl_TraceVar2) _ANSI_ARGS_((Tcl_Interp * interp, char * part1, char * part2, int flags, Tcl_VarTraceProc * proc, ClientData clientData)); /* 248 */
-    char * (*tcl_TranslateFileName) _ANSI_ARGS_((Tcl_Interp * interp, char * name, Tcl_DString * bufferPtr)); /* 249 */
+    char * (*tcl_TranslateFileName) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * name, Tcl_DString * bufferPtr)); /* 249 */
     int (*tcl_Ungets) _ANSI_ARGS_((Tcl_Channel chan, char * str, int len, int atHead)); /* 250 */
     void (*tcl_UnlinkVar) _ANSI_ARGS_((Tcl_Interp * interp, char * varName)); /* 251 */
     int (*tcl_UnregisterChannel) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Channel chan)); /* 252 */
