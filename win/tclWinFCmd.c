@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFCmd.c,v 1.38 2003/12/17 17:47:28 vincentdarley Exp $
+ * RCS: @(#) $Id: tclWinFCmd.c,v 1.39 2003/12/24 04:18:22 davygrvy Exp $
  */
 
 #include "tclWinInt.h"
@@ -238,11 +238,11 @@ DoRenameFile(
               "=r"(RESTORED_HANDLER) );
 
     if (INITIAL_ESP != RESTORED_ESP)
-        panic("ESP restored incorrectly");
+        Tcl_Panic("ESP restored incorrectly");
     if (INITIAL_EBP != RESTORED_EBP)
-        panic("EBP restored incorrectly");
+        Tcl_Panic("EBP restored incorrectly");
     if (INITIAL_HANDLER != RESTORED_HANDLER)
-        panic("HANDLER restored incorrectly");
+        Tcl_Panic("HANDLER restored incorrectly");
 # endif /* TCL_MEM_DEBUG */
 #else
     } __except (EXCEPTION_EXECUTE_HANDLER) {}
@@ -600,11 +600,11 @@ DoCopyFile(
               "=r"(RESTORED_HANDLER) );
 
     if (INITIAL_ESP != RESTORED_ESP)
-        panic("ESP restored incorrectly");
+        Tcl_Panic("ESP restored incorrectly");
     if (INITIAL_EBP != RESTORED_EBP)
-        panic("EBP restored incorrectly");
+        Tcl_Panic("EBP restored incorrectly");
     if (INITIAL_HANDLER != RESTORED_HANDLER)
-        panic("HANDLER restored incorrectly");
+        Tcl_Panic("HANDLER restored incorrectly");
 # endif /* TCL_MEM_DEBUG */
 #else
     } __except (EXCEPTION_EXECUTE_HANDLER) {}

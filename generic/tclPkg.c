@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPkg.c,v 1.9 2002/02/22 22:36:09 dgp Exp $
+ * RCS: @(#) $Id: tclPkg.c,v 1.10 2003/12/24 04:18:20 davygrvy Exp $
  */
 
 #include "tclInt.h"
@@ -794,7 +794,7 @@ Tcl_PackageObjCmd(dummy, interp, objc, objv)
 	    break;
 	}
 	default: {
-	    panic("Tcl_PackageObjCmd: bad option index to pkgOptions");
+	    Tcl_Panic("Tcl_PackageObjCmd: bad option index to pkgOptions");
 	}
     }
     return TCL_OK;

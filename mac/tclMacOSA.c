@@ -12,7 +12,7 @@
  * See the file "License Terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacOSA.c,v 1.10 2002/10/09 11:54:30 das Exp $
+ * RCS: @(#) $Id: tclMacOSA.c,v 1.11 2003/12/24 04:18:21 davygrvy Exp $
  */
 
 #define MAC_TCL
@@ -222,7 +222,7 @@ Tclapplescript_Init(
     LanguagesTable = (Tcl_HashTable *) ckalloc(sizeof(Tcl_HashTable));
 	
     if (LanguagesTable == NULL) {
-	panic("Memory Error Allocating Languages Hash Table");
+	Tcl_Panic("Memory Error Allocating Languages Hash Table");
     }
 	
     Tcl_SetAssocData(interp, "OSAScript_LangTable", NULL, LanguagesTable);
@@ -300,7 +300,7 @@ Tclapplescript_Init(
     ComponentTable = (Tcl_HashTable *) ckalloc(sizeof(Tcl_HashTable));
 	
     if (ComponentTable == NULL) {
-	panic("Memory Error Allocating Hash Table");
+	Tcl_Panic("Memory Error Allocating Hash Table");
     }
 	
     Tcl_SetAssocData(interp, "OSAScript_CompTable", NULL, ComponentTable);
@@ -1860,7 +1860,7 @@ tclOSAClose(
 		"OSAScript_CompTable", (Tcl_InterpDeleteProc **) NULL);
 	
     if (ComponentTable == NULL) {
-	panic("Error, could not get the Component Table from the Associated data.");
+	Tcl_Panic("Error, could not get the Component Table from the Associated data.");
     }
 	
     hashEntry = Tcl_FindHashEntry(ComponentTable, theComponent->theName);

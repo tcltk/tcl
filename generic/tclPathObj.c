@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPathObj.c,v 1.18 2003/12/17 09:55:11 vincentdarley Exp $
+ * RCS: @(#) $Id: tclPathObj.c,v 1.19 2003/12/24 04:18:20 davygrvy Exp $
  */
 
 #include "tclInt.h"
@@ -2013,7 +2013,7 @@ UpdateStringOfFsPath(objPtr)
     Tcl_Obj *copy;
     
     if (PATHFLAGS(objPtr) == 0 || fsPathPtr->cwdPtr == NULL) {
-	panic("Called UpdateStringOfFsPath with invalid object");
+	Tcl_Panic("Called UpdateStringOfFsPath with invalid object");
     }
     
     copy = Tcl_DuplicateObj(fsPathPtr->cwdPtr);

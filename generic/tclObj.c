@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.52 2003/10/14 15:44:53 dgp Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.53 2003/12/24 04:18:20 davygrvy Exp $
  */
 
 #include "tclInt.h"
@@ -539,7 +539,7 @@ void TclDbInitNewObj(objPtr)
         tablePtr = tsdPtr->objThreadMap;
         hPtr = Tcl_CreateHashEntry(tablePtr, (char *) objPtr, &new);
         if (!new) {
-            panic("expected to create new entry for object map");
+            Tcl_Panic("expected to create new entry for object map");
         }
         Tcl_SetHashValue(hPtr, NULL);
     }
@@ -743,7 +743,7 @@ TclFreeObj(objPtr)
     
 #ifdef TCL_MEM_DEBUG
     if ((objPtr)->refCount < -1) {
-	panic("Reference count for %lx was negative", objPtr);
+	Tcl_Panic("Reference count for %lx was negative", objPtr);
     }
 #endif /* TCL_MEM_DEBUG */
 
@@ -862,7 +862,7 @@ Tcl_GetString(objPtr)
     }
 
     if (objPtr->typePtr->updateStringProc == NULL) {
-	panic("UpdateStringProc should not be invoked for type %s",
+	Tcl_Panic("UpdateStringProc should not be invoked for type %s",
 		objPtr->typePtr->name);
     }
     (*objPtr->typePtr->updateStringProc)(objPtr);
@@ -902,7 +902,7 @@ Tcl_GetStringFromObj(objPtr, lengthPtr)
 {
     if (objPtr->bytes == NULL) {
 	if (objPtr->typePtr->updateStringProc == NULL) {
-	    panic("UpdateStringProc should not be invoked for type %s",
+	    Tcl_Panic("UpdateStringProc should not be invoked for type %s",
 		    objPtr->typePtr->name);
 	}
 	(*objPtr->typePtr->updateStringProc)(objPtr);
@@ -1081,7 +1081,7 @@ Tcl_SetBooleanObj(objPtr, boolValue)
     register Tcl_ObjType *oldTypePtr = objPtr->typePtr;
 
     if (Tcl_IsShared(objPtr)) {
-	panic("Tcl_SetBooleanObj called with shared object");
+	Tcl_Panic("Tcl_SetBooleanObj called with shared object");
     }
     
     if ((oldTypePtr != NULL) && (oldTypePtr->freeIntRepProc != NULL)) {
@@ -1497,7 +1497,7 @@ Tcl_SetDoubleObj(objPtr, dblValue)
     register Tcl_ObjType *oldTypePtr = objPtr->typePtr;
 
     if (Tcl_IsShared(objPtr)) {
-	panic("Tcl_SetDoubleObj called with shared object");
+	Tcl_Panic("Tcl_SetDoubleObj called with shared object");
     }
 
     if ((oldTypePtr != NULL) && (oldTypePtr->freeIntRepProc != NULL)) {
@@ -1760,7 +1760,7 @@ Tcl_SetIntObj(objPtr, intValue)
     register Tcl_ObjType *oldTypePtr = objPtr->typePtr;
 
     if (Tcl_IsShared(objPtr)) {
-	panic("Tcl_SetIntObj called with shared object");
+	Tcl_Panic("Tcl_SetIntObj called with shared object");
     }
     
     if ((oldTypePtr != NULL) && (oldTypePtr->freeIntRepProc != NULL)) {
@@ -2124,7 +2124,7 @@ Tcl_SetLongObj(objPtr, longValue)
     register Tcl_ObjType *oldTypePtr = objPtr->typePtr;
 
     if (Tcl_IsShared(objPtr)) {
-	panic("Tcl_SetLongObj called with shared object");
+	Tcl_Panic("Tcl_SetLongObj called with shared object");
     }
 
     if ((oldTypePtr != NULL) && (oldTypePtr->freeIntRepProc != NULL)) {
@@ -2487,7 +2487,7 @@ Tcl_SetWideIntObj(objPtr, wideValue)
     register Tcl_ObjType *oldTypePtr = objPtr->typePtr;
 
     if (Tcl_IsShared(objPtr)) {
-	panic("Tcl_SetWideIntObj called with shared object");
+	Tcl_Panic("Tcl_SetWideIntObj called with shared object");
     }
 
     if ((oldTypePtr != NULL) && (oldTypePtr->freeIntRepProc != NULL)) {
@@ -2573,7 +2573,7 @@ Tcl_DbIncrRefCount(objPtr, file, line)
     if (objPtr->refCount == 0x61616161) {
 	fprintf(stderr, "file = %s, line = %d\n", file, line);
 	fflush(stderr);
-	panic("Trying to increment refCount of previously disposed object.");
+	Tcl_Panic("Trying to increment refCount of previously disposed object.");
     }
 # ifdef TCL_THREADS
     /*
@@ -2589,11 +2589,11 @@ Tcl_DbIncrRefCount(objPtr, file, line)
         ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
         tablePtr = tsdPtr->objThreadMap;
         if (!tablePtr) {
-            panic("object table not initialized");
+            Tcl_Panic("object table not initialized");
         }
         hPtr = Tcl_FindHashEntry(tablePtr, (char *) objPtr);
         if (!hPtr) {
-            panic("%s%s",
+            Tcl_Panic("%s%s",
                     "Trying to incr ref count of",
                     "Tcl_Obj allocated in another thread");
         }
@@ -2637,7 +2637,7 @@ Tcl_DbDecrRefCount(objPtr, file, line)
     if (objPtr->refCount == 0x61616161) {
 	fprintf(stderr, "file = %s, line = %d\n", file, line);
 	fflush(stderr);
-	panic("Trying to decrement refCount of previously disposed object.");
+	Tcl_Panic("Trying to decrement refCount of previously disposed object.");
     }
 # ifdef TCL_THREADS
     /*
@@ -2653,11 +2653,11 @@ Tcl_DbDecrRefCount(objPtr, file, line)
         ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
         tablePtr = tsdPtr->objThreadMap;
         if (!tablePtr) {
-            panic("object table not initialized");
+            Tcl_Panic("object table not initialized");
         }
         hPtr = Tcl_FindHashEntry(tablePtr, (char *) objPtr);
         if (!hPtr) {
-            panic("%s%s",
+            Tcl_Panic("%s%s",
                     "Trying to decr ref count of",
                     "Tcl_Obj allocated in another thread");
         }
@@ -2707,7 +2707,7 @@ Tcl_DbIsShared(objPtr, file, line)
     if (objPtr->refCount == 0x61616161) {
 	fprintf(stderr, "file = %s, line = %d\n", file, line);
 	fflush(stderr);
-	panic("Trying to check whether previously disposed object is shared.");
+	Tcl_Panic("Trying to check whether previously disposed object is shared.");
     }
 # ifdef TCL_THREADS
     /*
@@ -2723,11 +2723,11 @@ Tcl_DbIsShared(objPtr, file, line)
         ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
         tablePtr = tsdPtr->objThreadMap;
         if (!tablePtr) {
-            panic("object table not initialized");
+            Tcl_Panic("object table not initialized");
         }
         hPtr = Tcl_FindHashEntry(tablePtr, (char *) objPtr);
         if (!hPtr) {
-            panic("%s%s",
+            Tcl_Panic("%s%s",
                     "Trying to check shared status of",
                     "Tcl_Obj allocated in another thread");
         }

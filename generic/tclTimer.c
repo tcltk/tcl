@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTimer.c,v 1.6 2002/03/01 06:22:31 hobbs Exp $
+ * RCS: @(#) $Id: tclTimer.c,v 1.7 2003/12/24 04:18:20 davygrvy Exp $
  */
 
 #include "tclInt.h"
@@ -936,7 +936,7 @@ processInteger:
 	    break;
 	}
 	default: {
-	    panic("Tcl_AfterObjCmd: bad subcommand index to afterSubCmds");
+	    Tcl_Panic("Tcl_AfterObjCmd: bad subcommand index to afterSubCmds");
 	}
     }
     return TCL_OK;

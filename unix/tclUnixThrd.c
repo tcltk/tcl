@@ -916,7 +916,7 @@ TclpNewAllocMutex(void)
 
     lockPtr = malloc(sizeof(struct lock));
     if (lockPtr == NULL) {
-	panic("could not allocate lock");
+	Tcl_Panic("could not allocate lock");
     }
     lockPtr->tlock = (Tcl_Mutex) &lockPtr->plock;
     pthread_mutex_init(&lockPtr->plock, NULL);

@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.73 2003/11/16 00:49:20 dkf Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.74 2003/12/24 04:18:20 davygrvy Exp $
  */
 
 #define TCL_TEST
@@ -4010,7 +4010,7 @@ TestpanicCmd(dummy, interp, argc, argv)
      */
 
     argString = Tcl_Merge(argc-1, argv+1);
-    panic(argString);
+    Tcl_Panic(argString);
     ckfree((char *)argString);
  
     return TCL_OK;
@@ -5767,7 +5767,7 @@ TestChannelEventCmd(dummy, interp, argc, argv)
                 /* Empty loop body. */
             }
             if (prevEsPtr == (EventScriptRecord *) NULL) {
-                panic("TestChannelEventCmd: damaged event script list");
+                Tcl_Panic("TestChannelEventCmd: damaged event script list");
             }
             prevEsPtr->nextPtr = esPtr->nextPtr;
         }

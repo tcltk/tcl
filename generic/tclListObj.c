@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclListObj.c,v 1.17 2003/11/01 01:28:04 dkf Exp $
+ * RCS: @(#) $Id: tclListObj.c,v 1.18 2003/12/24 04:18:20 davygrvy Exp $
  */
 
 #include "tclInt.h"
@@ -355,7 +355,7 @@ Tcl_SetListObj(objPtr, objc, objv)
     int i;
 
     if (Tcl_IsShared(objPtr)) {
-	panic("Tcl_SetListObj called with shared object");
+	Tcl_Panic("Tcl_SetListObj called with shared object");
     }
 
     /*
@@ -487,7 +487,7 @@ Tcl_ListObjAppendList(interp, listPtr, elemListPtr)
     Tcl_Obj **objv;
 
     if (Tcl_IsShared(listPtr)) {
-	panic("Tcl_ListObjAppendList called with shared object");
+	Tcl_Panic("Tcl_ListObjAppendList called with shared object");
     }
     if (listPtr->typePtr != &tclListType) {
 	result = SetListFromAny(interp, listPtr);
@@ -549,7 +549,7 @@ Tcl_ListObjAppendElement(interp, listPtr, objPtr)
     int numElems, numRequired;
 
     if (Tcl_IsShared(listPtr)) {
-	panic("Tcl_ListObjAppendElement called with shared object");
+	Tcl_Panic("Tcl_ListObjAppendElement called with shared object");
     }
     if (listPtr->typePtr != &tclListType) {
 	int result = SetListFromAny(interp, listPtr);
@@ -749,7 +749,7 @@ Tcl_ListObjReplace(interp, listPtr, first, count, objc, objv)
     int start, shift, newMax, i, j, result;
 
     if (Tcl_IsShared(listPtr)) {
-	panic("Tcl_ListObjReplace called with shared object");
+	Tcl_Panic("Tcl_ListObjReplace called with shared object");
     }
     if (listPtr->typePtr != &tclListType) {
 	result = SetListFromAny(interp, listPtr);
@@ -1368,10 +1368,10 @@ TclLsetFlat(interp, listPtr, indexCount, indexArray, valuePtr)
  *
  * Side effects:
  *
- *	Panics if listPtr designates a shared object.  Otherwise, attempts
- *	to convert it to a list.  Decrements the ref count of the object
- *	at the specified index within the list, replaces with the
- *	object designated by valuePtr, and increments the ref count
+ *	Tcl_Panic if listPtr designates a shared object.  Otherwise,
+ *	attempts to convert it to a list.  Decrements the ref count of
+ *	the object at the specified index within the list, replaces with
+ *	the object designated by valuePtr, and increments the ref count
  *	of the replacement object.  
  *
  * It is the caller's responsibility to invalidate the string
@@ -1399,7 +1399,7 @@ TclListObjSetElement(interp, listPtr, index, valuePtr)
     /* Ensure that the listPtr parameter designates an unshared list */
 
     if (Tcl_IsShared(listPtr)) {
-	panic("Tcl_ListObjSetElement called with shared object");
+	Tcl_Panic("Tcl_ListObjSetElement called with shared object");
     }
     if (listPtr->typePtr != &tclListType) {
 	result = SetListFromAny(interp, listPtr);
@@ -1618,7 +1618,7 @@ SetListFromAny(interp, objPtr)
 	    break;
 	}
 	if (i > estCount) {
-	    panic("SetListFromAny: bad size estimate for list");
+	    Tcl_Panic("SetListFromAny: bad size estimate for list");
 	}
 
 	/*
