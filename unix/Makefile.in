@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.121.2.8 2004/11/18 02:07:09 rmax Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.121.2.9 2004/11/18 10:21:55 rmax Exp $
 
 VERSION 		= @TCL_VERSION@
 MAJOR_VERSION		= @TCL_MAJOR_VERSION@
@@ -695,17 +695,17 @@ install-doc: doc
 		fi; \
 	    done;
 	@echo "Installing and cross-linking top-level (.1) docs";
-	@cd $(TOP_DIR)/doc; for i in *.1; do \
+	@for i in $(TOP_DIR)/doc/*.1; do \
 	    $(UNIX_DIR)/installManPage $(MAN_FLAGS) $$i $(MAN1_INSTALL_DIR); \
 	done
 
 	@echo "Installing and cross-linking C API (.3) docs";
-	@cd $(TOP_DIR)/doc; for i in *.3; do \
+	@for i in $(TOP_DIR)/doc/*.3; do \
 	    $(UNIX_DIR)/installManPage $(MAN_FLAGS) $$i $(MAN3_INSTALL_DIR); \
 	done
 
 	@echo "Installing and cross-linking command (.n) docs";
-	@cd $(TOP_DIR)/doc; for i in *.n; do \
+	@for i in $(TOP_DIR)/doc/*.n; do \
 	    $(UNIX_DIR)/installManPage $(MAN_FLAGS) $$i $(MANN_INSTALL_DIR); \
 	done
 
