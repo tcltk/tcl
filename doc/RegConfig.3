@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: RegConfig.3,v 1.4 2004/09/06 09:44:57 dkf Exp $
+'\" RCS: @(#) $Id: RegConfig.3,v 1.5 2004/10/07 14:44:33 dkf Exp $
 .so man.macros
 .TH Tcl_RegisterConfig 3 8.4 Tcl "Tcl Library Procedures"
 .BS
@@ -19,7 +19,7 @@ void
 \fBTcl_RegisterConfig\fR(\fIinterp, pkgName, configuration, valEncoding\fR)
 .sp
 .SH ARGUMENTS
-.AS Tcl_Interp *interp
+.AS Tcl_Interp *configuration
 .AP Tcl_Interp *interp in
 Refers to the interpreter the embedded configuration information is
 registered for. Must not be NULL.

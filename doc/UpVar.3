@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: UpVar.3,v 1.8 2004/09/18 17:01:06 dkf Exp $
+'\" RCS: @(#) $Id: UpVar.3,v 1.9 2004/10/07 14:44:35 dkf Exp $
 '\" 
 .so man.macros
 .TH Tcl_UpVar 3 7.4 Tcl "Tcl Library Procedures"
@@ -22,7 +22,7 @@ int
 int
 \fBTcl_UpVar2(\fIinterp, frameName, name1, name2, destName, flags\fB)\fR
 .SH ARGUMENTS
-.AS Tcl_VarTraceProc prevClientData
+.AS "CONST char" *sourceName
 .AP Tcl_Interp *interp in
 Interpreter containing variables;  also used for error reporting.
 .AP "CONST char" *frameName in

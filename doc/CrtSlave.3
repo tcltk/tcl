@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: CrtSlave.3,v 1.11 2004/09/06 09:44:56 dkf Exp $
+'\" RCS: @(#) $Id: CrtSlave.3,v 1.12 2004/10/07 14:44:32 dkf Exp $
 '\" 
 .so man.macros
 .TH Tcl_CreateSlave 3 7.6 Tcl "Tcl Library Procedures"
@@ -33,20 +33,21 @@ Tcl_Interp *
 int
 \fBTcl_GetInterpPath\fR(\fIaskingInterp, slaveInterp\fR)
 .sp
-.VS
 int
-\fBTcl_CreateAlias\fR(\fIslaveInterp, slaveCmd, targetInterp, targetCmd, argc, argv\fR)
+\fBTcl_CreateAlias\fR(\fIslaveInterp, slaveCmd, targetInterp, targetCmd,
+                argc, argv\fR)
 .sp
 int
-\fBTcl_CreateAliasObj\fR(\fIslaveInterp, slaveCmd, targetInterp, targetCmd, objc, objv\fR)
-.VE
+\fBTcl_CreateAliasObj\fR(\fIslaveInterp, slaveCmd, targetInterp, targetCmd,
+                   objc, objv\fR)
 .sp
 int
-\fBTcl_GetAlias\fR(\fIinterp, slaveCmd, targetInterpPtr, targetCmdPtr, argcPtr, argvPtr\fR)
+\fBTcl_GetAlias\fR(\fIinterp, slaveCmd, targetInterpPtr, targetCmdPtr,
+             argcPtr, argvPtr\fR)
 .sp
-.VS
 int
-\fBTcl_GetAliasObj\fR(\fIinterp, slaveCmd, targetInterpPtr, targetCmdPtr, objcPtr, objvPtr\fR)
+\fBTcl_GetAliasObj\fR(\fIinterp, slaveCmd, targetInterpPtr, targetCmdPtr,
+                objcPtr, objvPtr\fR)
 .sp
 int
 \fBTcl_ExposeCommand\fR(\fIinterp, hiddenCmdName, cmdName\fR)
@@ -54,7 +55,7 @@ int
 int
 \fBTcl_HideCommand\fR(\fIinterp, cmdName, hiddenCmdName\fR)
 .SH ARGUMENTS
-.AS Tcl_InterpDeleteProc **hiddenCmdName
+.AS Tcl_InterpDeleteProc **targetInterpPtr out
 .AP Tcl_Interp *interp in
 Interpreter in which to execute the specified command.
 .AP "CONST char" *slaveName in
@@ -103,17 +104,11 @@ Pointer to location to store a vector of Tcl_Obj structures, the additional
 arguments to pass to an object alias command. The location is in storage
 owned by the caller, the vector of Tcl_Obj structures is owned by the
 called function.
-.VS
-.VS 8.4
 .AP "CONST char" *cmdName in
-.VE
 Name of an exposed command to hide or create.
-.VS 8.4
 .AP "CONST char" *hiddenCmdName in
-.VE
 Name under which a hidden command is stored and with which it can be
 exposed or invoked.
-.VE
 .BE
 
 .SH DESCRIPTION
@@ -165,7 +160,6 @@ of the relative path succeeds, \fBTCL_OK\fR is returned, else
 \fBTCL_ERROR\fR is returned and the \fIresult\fR field in
 \fIaskingInterp\fR contains the error message.
 .PP
-.VS
 \fBTcl_CreateAlias\fR creates an object command named \fIslaveCmd\fR in
 \fIslaveInterp\fR that when invoked, will cause the command \fItargetCmd\fR
 to be invoked in \fItargetInterp\fR. The arguments specified by the strings
@@ -182,7 +176,6 @@ restrictions on how they are related.
 \fBTcl_CreateAliasObj\fR is similar to \fBTcl_CreateAlias\fR except 
 that it takes a vector of objects to pass as additional arguments instead
 of a vector of strings.
-.VE
 .PP
 \fBTcl_GetAlias\fR returns information about an alias \fIaliasName\fR
 in \fIinterp\fR. Any of the result fields can be \fBNULL\fR, in
@@ -190,7 +183,6 @@ which case the corresponding datum is not returned. If a result field is
 non\-\fBNULL\fR, the address indicated is set to the corresponding datum.
 For example, if \fItargetNamePtr\fR is non\-\fBNULL\fR it is set to a
 pointer to the string containing the name of the target command.
-.VS
 .PP
 \fBTcl_GetAliasObj\fR is similar to \fBTcl_GetAlias\fR except that it
 returns a pointer to a vector of Tcl_Obj structures instead of a vector of
