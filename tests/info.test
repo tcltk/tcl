@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: info.test,v 1.22 2002/06/11 13:47:49 dkf Exp $
+# RCS: @(#) $Id: info.test,v 1.23 2002/06/11 13:56:20 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -522,10 +522,10 @@ test info-16.2 {info script option} {
     file tail [info sc]
 } "info.test"
 removeFile gorp.info
-makeFile "info script\n" gorp.info
+set gorpfile [makeFile "info script\n" gorp.info]
 test info-16.3 {info script option} {
-    list [source gorp.info] [file tail [info script]]
-} [list gorp.info info.test]
+    list [source $gorpfile] [file tail [info script]]
+} [list $gorpfile info.test]
 test info-16.4 {resetting "info script" after errors} {
     catch {source ~_nobody_/foo}
     file tail [info script]
@@ -543,14 +543,14 @@ test info-16.6 {info script option} {
 test info-16.7 {info script option} {
     set script [info script]
     info script newname.txt
-    list [source gorp.info] [file tail [info script]] \
+    list [source $gorpfile] [file tail [info script]] \
 	    [file tail [info script $script]]
-} [list gorp.info newname.txt info.test]
+} [list $gorpfile newname.txt info.test]
 removeFile gorp.info
-makeFile {list [info script] [info script foo.bar]} gorp.info
+set gorpfile [makeFile {list [info script] [info script foo.bar]} gorp.info]
 test info-16.8 {info script option} {
-    list [source gorp.info] [file tail [info script]]
-} [list [list gorp.info foo.bar] info.test]
+    list [source $gorpfile] [file tail [info script]]
+} [list [list $gorpfile foo.bar] info.test]
 removeFile gorp.info
 
 test info-17.1 {info sharedlibextension option} {
