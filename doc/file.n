@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: file.n,v 1.36 2004/08/31 15:19:36 dkf Exp $
+'\" RCS: @(#) $Id: file.n,v 1.37 2004/10/27 12:53:22 dkf Exp $
 '\" 
 .so man.macros
 .TH file n 8.3 Tcl "Tcl Built-In Commands"
@@ -447,8 +447,8 @@ proc findMatchingCFiles {dir} {
         }
     }
     foreach file [glob -nocomplain -directory $dir *.c] {
-        set objectFile [file tail [file rootname $file]]$ext
-        if {[file exists $objectFile]} {
+        set objectFile [\fBfile\fR tail [\fBfile\fR rootname $file]]$ext
+        if {[\fBfile\fR exists $objectFile]} {
             lappend files $file
         }
     }
@@ -462,11 +462,11 @@ to the new place:
 set oldName foobar.txt
 set newName foo/bar.txt
 # Make sure that where we're going to move to exists...
-if {![file isdirectory [file dirname $newName]]} {
-    file mkdir [file dirname $newName]
+if {![\fBfile\fR isdirectory [\fBfile\fR dirname $newName]]} {
+    \fBfile\fR mkdir [\fBfile\fR dirname $newName]
 }
-file rename $oldName $newName
-file link -symbolic $oldName $newName
+\fBfile\fR rename $oldName $newName
+\fBfile\fR link -symbolic $oldName $newName
 .CE
 
 .SH "SEE ALSO"
