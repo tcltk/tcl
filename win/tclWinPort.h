@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPort.h,v 1.11 1999/10/29 03:05:13 hobbs Exp $
+ * RCS: @(#) $Id: tclWinPort.h,v 1.12 2000/03/31 08:52:31 hobbs Exp $
  */
 
 #ifndef _TCLWINPORT
@@ -335,12 +335,15 @@ typedef float *TCHAR;
  * EDEADLK as the same value, which confuses Tcl_ErrnoId().
  */
 
-#ifdef _MSC_VER
+#if defined(_MSC_VER) || defined(__MINGW32__)
 #    define environ _environ
 #    define hypot _hypot
 #    define exception _exception
 #    undef EDEADLOCK
-#endif /* _MSC_VER */
+#    if defined(__MINGW32__) && !defined(__MSVCRT__)
+#	define timezone _timezone
+#    endif
+#endif /* _MSC_VER || __MINGW32__ */
 
 /*
  *---------------------------------------------------------------------------

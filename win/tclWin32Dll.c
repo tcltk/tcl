@@ -1,15 +1,15 @@
 /* 
  * tclWin32Dll.c --
  *
- *	This file contains the DLL entry point which sets up the 32-to-16-bit
- *	thunking code for SynchSpawn if the library is running under Win32s.
+ *	This file contains the DLL entry point.
  *
  * Copyright (c) 1995-1996 Sun Microsystems, Inc.
+ * Copyright (c) 1998-2000 Scriptics Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWin32Dll.c,v 1.8 1999/12/09 14:44:10 hobbs Exp $
+ * RCS: @(#) $Id: tclWin32Dll.c,v 1.9 2000/03/31 08:52:30 hobbs Exp $
  */
 
 #include "tclWinInt.h"
@@ -35,7 +35,7 @@ typedef VOID (WINAPI UTUNREGISTER)(HANDLE hModule);
  */
 
 static HINSTANCE hInstance;	/* HINSTANCE of this DLL. */
-static int platformId;		/* Running under NT, 95, or Win32s? */
+static int platformId;		/* Running under NT, or 95/98? */
 
 /*
  * The following function tables are used to dispatch to either the
@@ -203,86 +203,6 @@ DllMain(hInst, reason, reserved)
 /*
  *----------------------------------------------------------------------
  *
- * TclWinSynchSpawn --
- *
- *	32-bit entry point to the 16-bit SynchSpawn code.
- *
- * Results:
- *	1 on success, 0 on failure.
- *
- * Side effects:
- *	Spawns a command and waits for it to complete.
- *
- *----------------------------------------------------------------------
- */
-int 
-TclWinSynchSpawn(void *args, int type, void **trans, Tcl_Pid *pidPtr)
-{
-    HINSTANCE hKernel;
-    UTREGISTER *utRegisterProc;
-    UTUNREGISTER *utUnRegisterProc;
-    UT32PROC *ut32Proc;
-    char buffer[] = "TCL16xx.DLL";
-    int result;
-
-    hKernel = LoadLibraryA("kernel32.dll");
-    if (hKernel == NULL) {
-	return 0;
-    }
-
-    /*
-     * Load the Universal Thunking routines from kernel32.dll.
-     */
-
-    utRegisterProc = (UTREGISTER *) GetProcAddress(hKernel, "UTRegister");
-    utUnRegisterProc = (UTUNREGISTER *) GetProcAddress(hKernel, "UTUnRegister");
-    if ((utRegisterProc == NULL) || (utUnRegisterProc == NULL)) {
-	result = 0;
-	goto done;
-    }
-
-    /*
-     * Construct the complete name of tcl16xx.dll.
-     */
-
-    buffer[5] = '0' + TCL_MAJOR_VERSION;
-    buffer[6] = '0' + TCL_MINOR_VERSION;
-
-    /*
-     * Register the Tcl thunk.
-     */
-
-    if ((*utRegisterProc)(hInstance, buffer, NULL, "UTProc", &ut32Proc, 
-	    NULL, NULL) == FALSE) {
-	result = 0;
-	goto done;
-    }
-    if (ut32Proc != NULL) {
-	/*
-	 * Invoke the thunk.
-	 */
-
-	*pidPtr = 0;
-	(*ut32Proc)(args, type, trans);
-	result = 1;
-    } else {
-	/*
-	 * The 16-bit thunking DLL wasn't found.  Return error code that
-	 * indicates this problem.
-	 */
-
-	result = 0;
-    }
-    (*utUnRegisterProc)(hInstance);
-
-    done:
-    FreeLibrary(hKernel);
-    return result;
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * TclWinGetTclInstance --
  *
  *	Retrieves the global library instance handle.
@@ -313,8 +233,7 @@ TclWinGetTclInstance()
  *	None.
  *
  * Side effects:
- *	Initializes the 16-bit thunking library, and the tclPlatformId
- *	variable.
+ *	Initializes the tclPlatformId variable.
  *
  *----------------------------------------------------------------------
  */
@@ -326,7 +245,7 @@ TclWinInit(hInst)
     OSVERSIONINFO os;
 
     hInstance = hInst;
-    os.dwOSVersionInfoSize = sizeof(os);
+    os.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
     GetVersionEx(&os);
     platformId = os.dwPlatformId;
 

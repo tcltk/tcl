@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.28 2000/03/07 02:21:58 wart Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.29 2000/03/31 08:52:25 hobbs Exp $
 
 VERSION = @TCL_VERSION@
 
@@ -105,11 +105,16 @@ GENERIC_DIR		= @srcdir@/../generic
 WIN_DIR			= @srcdir@
 COMPAT_DIR		= @srcdir@/../compat
 
+# This is a switch passed to a Cygwin script that generates file
+# names based on the platform.
 PATHTYPE		= @PATHTYPE@
 
-GENERIC_DIR_NATIVE 	= $(shell cygpath $(PATHTYPE) '$(GENERIC_DIR)')
-WIN_DIR_NATIVE	   	= $(shell cygpath $(PATHTYPE) '$(WIN_DIR)')
-ROOT_DIR_NATIVE	   	= $(shell cygpath $(PATHTYPE) '$(ROOT_DIR)')
+# This program converts between Windows native and Cygwin POSIX pathnames.
+CYGPATH			= @CYGPATH@
+
+GENERIC_DIR_NATIVE	= $(shell $(CYGPATH) $(PATHTYPE) '$(GENERIC_DIR)')
+WIN_DIR_NATIVE		= $(shell $(CYGPATH) $(PATHTYPE) '$(WIN_DIR)')
+ROOT_DIR_NATIVE		= $(shell $(CYGPATH) $(PATHTYPE) '$(ROOT_DIR)')
 
 LIBRARY_DIR   = $(shell echo '$(ROOT_DIR_NATIVE)/library' | sed 's/\\/\//g' )
 
@@ -140,13 +145,14 @@ MAN2TCL			= man2tcl$(EXEEXT)
 # Macro that expands to the first dependency argument with the appropriate
 # path type already resolved.
 
-DEPARG = "$(shell cygpath $(PATHTYPE) $<)"
+DEPARG = "$(shell $(CYGPATH) $(PATHTYPE) $<)"
 
 # Setting the VPATH variable to a list of paths will cause the 
 # makefile to look into these paths when resolving .c to .obj
-# dependencies.
+# dependencies. Note the ':' to avoid autoconf's habit of deleting
+# all VPATH lines without an explicit ':' in it. 
 
-VPATH = $(GENERIC_DIR);$(WIN_DIR);$(COMPAT_DIR)
+VPATH = $(GENERIC_DIR)@VPSEP@$(WIN_DIR)@VPSEP@$(COMPAT_DIR) # : 
 
 AR		= @AR@
 CC		= @CC@
@@ -310,10 +316,10 @@ $(TCLSH): $(TCL_LIB_FILE) $(TCLSH_OBJS)
 $(TCLTEST): $(TCL_LIB_FILE) $(TCLTEST_OBJS) $(CAT32)
 	$(CC) $(CFLAGS) $(TCLTEST_OBJS) $(TCL_LIB_FILE) $(LIBS) $(CC_EXENAME) 
 
-cat32.obj: cat.c
+cat32.${OBJEXT}: cat.c
 	$(CC) -c $(CC_SWITCHES) $(DEPARG) $(CC_OBJNAME)
 
-$(CAT32): cat32.obj
+$(CAT32): cat32.${OBJEXT}
 	$(CC) $(CFLAGS) cat32.obj $(CC_EXENAME) -link $(LDFLAGS_CONSOLE)
 
 # The following targets are configured by autoconf to generate either
@@ -353,30 +359,30 @@ ${PIPE_DLL_FILE}: ${PIPE_OBJS}
 
 # Special case object targets
 
-tclWinInit.obj: tclWinInit.c
+tclWinInit.${OBJEXT}: tclWinInit.c
 	$(CC) -c $(CC_SWITCHES) -DBUILD_tcl $(EXTFLAGS) $(DEPARG) $(CC_OBJNAME)
 
-testMain.obj: tclAppInit.c
+testMain.${OBJEXT}: tclAppInit.c
 	$(CC) -c $(CC_SWITCHES) -DTCL_TEST $(DEPARG) $(CC_OBJNAME)
 
-tclTest.obj: tclTest.c
+tclTest.${OBJEXT}: tclTest.c
 	$(CC) -c $(CC_SWITCHES) $(DEPARG) $(CC_OBJNAME)
 
-tclTestObj.obj: tclTestObj.c
+tclTestObj.${OBJEXT}: tclTestObj.c
 	$(CC) -c $(CC_SWITCHES) $(DEPARG) $(CC_OBJNAME)
 
-tclWinTest.obj: tclWinTest.c
+tclWinTest.${OBJEXT}: tclWinTest.c
 	$(CC) -c $(CC_SWITCHES) $(DEPARG) $(CC_OBJNAME)
 
-tclAppInit.obj : tclAppInit.c
+tclAppInit.${OBJEXT} : tclAppInit.c
 	$(CC) -c $(CC_SWITCHES) $(DEPARG) $(CC_OBJNAME)
 
 # The following objects should be built using the stub interfaces
 
-tclWinReg.obj : tclWinReg.c
+tclWinReg.${OBJEXT} : tclWinReg.c
 	$(CC) -c $(CC_SWITCHES) -DUSE_TCL_STUBS $(DEPARG) $(CC_OBJNAME)
 
-tclWinDde.obj : tclWinDde.c
+tclWinDde.${OBJEXT} : tclWinDde.c
 	$(CC) -c $(CC_SWITCHES) -DUSE_TCL_STUBS $(DEPARG) $(CC_OBJNAME)
 
 # The following objects are part of the stub library and should not

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinReg.c,v 1.10 1999/10/05 22:47:05 hobbs Exp $
+ * RCS: @(#) $Id: tclWinReg.c,v 1.11 2000/03/31 08:52:32 hobbs Exp $
  */
 
 #include <tclPort.h>
@@ -213,8 +213,6 @@ int
 Registry_Init(
     Tcl_Interp *interp)
 {
-    OSVERSIONINFO os;
-
     if (!Tcl_InitStubs(interp, "8.0", 0)) {
 	return TCL_ERROR;
     }
@@ -224,10 +222,7 @@ Registry_Init(
      * appropriate registry function table.
      */
 
-    os.dwOSVersionInfoSize = sizeof(os);
-    GetVersionEx(&os);
-
-    if (os.dwPlatformId == VER_PLATFORM_WIN32_NT) {
+    if (TclWinGetPlatformId() == VER_PLATFORM_WIN32_NT) {
 	regWinProcs = &unicodeProcs;
     } else {
 	regWinProcs = &asciiProcs;

@@ -174,7 +174,10 @@ AC_DEFUN(SC_ENABLE_GCC, [
 	CC=gcc
 	AC_PROG_CC
     else
-	CC=cl
+	# Allow user to override
+	if test -z "$CC"; then
+	    CC=cl
+	fi
     fi
 ])
 
@@ -320,9 +323,13 @@ AC_DEFUN(SC_ENABLE_SYMBOLS, [
 #    		CFLAGS_WARNING
 #    		LDFLAGS_DEBUG
 #    		LDFLAGS_OPTIMIZE
-#    		PATHTYPE
+#    		LDFLAGS_CONSOLE
+#    		LDFLAGS_WINDOW
 #    		CC_OBJNAME
 #    		CC_EXENAME
+#    		PATHTYPE
+#    		VPSEP
+#    		CYGPATH
 #
 #	Defines the following vars for non-gcc compilers
 #    		SHLIB_LD
@@ -334,6 +341,7 @@ AC_DEFUN(SC_ENABLE_SYMBOLS, [
 #    		MAKE_DLL
 #
 #    		LIBSUFFIX
+#    		LIBPREFIX
 #    		LIBRARIES
 #    		EXESUFFIX
 #    		DLLSUFFIX
@@ -342,30 +350,123 @@ AC_DEFUN(SC_ENABLE_SYMBOLS, [
 
 AC_DEFUN(SC_CONFIG_CFLAGS, [
     AC_MSG_CHECKING([compiler flags])
+
+    # Set some defaults (may get changed below)
     EXTRA_CFLAGS=""
+    PATHTYPE='-w'
+    CYGPATH='cygpath'
+    VPSEP=';'
+
     # set various compiler flags depending on whether we are using gcc or cl
     
     if test "${GCC}" = "yes" ; then
+	SHLIB_LD=""
+	SHLIB_LD_LIBS=""
+	LIBS=""
+	LIBS_GUI="-lgdi32 -lcomdlg32"
+	AR="${AR-ar}"
+	STLIB_LD="${AR-ar}"
+	RC="${WINDRES-windres}"
+	MAKE_LIB="\${AR} crv \[$]@"
+	MAKE_EXE="\${CC} -o \[$]@"
+	LIBPREFIX="lib"
+
+	if "$CC" -v 2>&1 | egrep '\/gcc-lib\/i[[3-6]]86[[^\/]]*-cygwin' >/dev/null; then
+	    mno_cygwin="yes"
+	    extra_cflags="-mno-cygwin"
+	    extra_ldflags="-mno-cygwin"
+	else
+	    mno_cygwin="no"
+	    extra_cflags=""
+	    extra_ldflags=""
+	fi
+
+	if test "$cross_compiling" = "yes" -o "$mno_cygwin" = "yes"; then
+	    PATHTYPE=''
+	    CYGPATH='echo '
+	    VPSEP=':'
+	fi
+
+	if test "${SHARED_BUILD}" = "0" ; then
+	    # static
+            AC_MSG_RESULT([using static flags])
+	    runtime=
+	    MAKE_DLL="echo "
+	    LIBSUFFIX="s\${DBGX}.a"
+	    LIBRARIES="\${STATIC_LIBRARIES}"
+	    EXESUFFIX="s\${DBGX}.exe"
+	    DLLSUFFIX=""
+	else
+	    # dynamic
+            AC_MSG_RESULT([using shared flags])
+
+	    # check to see if ld supports --shared. Libtool does a much
+	    # more extensive test, but not really needed in this case.
+	    if test -z "$LD"; then
+		ld_prog="`(${CC} -print-prog-name=ld) 2>/dev/null`"
+		if test -z "$ld_prog"; then
+		  ld_prog=ld
+		else
+		  # get rid of the potential '\r' from ld_prog.
+		  ld_prog="`(echo $ld_prog | tr -d '\015' | sed 's,\\\\,\\/,g')`"
+		fi
+		LD="$ld_prog"
+	    fi
+
+	    AC_MSG_CHECKING([whether $ld_prog supports -shared option])
+
+	    # now the ad-hoc check to see if GNU ld supports --shared.
+	    if "$LD" --shared 2>&1 | egrep ': -shared not supported' >/dev/null; then
+		ld_supports_shared="no"
+		SHLIB_LD="${DLLWRAP-dllwrap}"
+	    else
+		ld_supports_shared="yes"
+		SHLIB_LD="${CC} -shared"
+	    fi
+	    AC_MSG_RESULT([$ld_supports_shared])
+
+	    runtime=
+	    # Add SHLIB_LD_LIBS to the Make rule, not here.
+	    MAKE_DLL="\${SHLIB_LD} \$(LDFLAGS) -o \[$]@ ${extra_ldflags}"
+	    if test "${ld_supports_shared}" = "yes"; then
+	        MAKE_DLL="${MAKE_DLL} -Wl,--out-implib,\$(patsubst %.dll,lib%.a,\[$]@)"
+	    else
+	        MAKE_DLL="${MAKE_DLL} --output-lib \$(patsubst %.dll,lib%.a,\[$]@)"
+	    fi
+	    LIBSUFFIX="\${DBGX}.a"
+	    DLLSUFFIX="\${DBGX}.dll"
+	    EXESUFFIX="\${DBGX}.exe"
+	    LIBRARIES="\${SHARED_LIBRARIES}"
+	fi
+
+	EXTRA_CFLAGS="${extra_cflags}"
+
 	CFLAGS_DEBUG=-g
 	CFLAGS_OPTIMIZE=-O
 	CFLAGS_WARNING="-Wall -Wconversion"
 	LDFLAGS_DEBUG=-g
 	LDFLAGS_OPTIMIZE=-O
-	PATHTYPE=-u
-	
+
 	# Specify the CC output file names based on the target name
 	CC_OBJNAME="-o \[$]@"
 	CC_EXENAME="-o \[$]@"
+
+	# Specify linker flags depending on the type of app being 
+	# built -- Console vs. Window.
+	LDFLAGS_CONSOLE="-mconsole ${extra_ldflags}"
+	LDFLAGS_WINDOW="-mwindows ${extra_ldflags}"
     else
 	SHLIB_LD="link -dll -nologo"
 	SHLIB_LD_LIBS="user32.lib advapi32.lib"
 	LIBS="user32.lib advapi32.lib"
+	LIBS_GUI="gdi32.lib comdlg32.lib"
 	AR="lib -nologo"
 	STLIB_LD="lib -nologo"
 	RC="rc"
 	MAKE_LIB="\${AR} -out:\[$]@"
 	MAKE_EXE="\${CC} -Fe\[$]@"
-	
+	LIBPREFIX=""
+
 	if test "${SHARED_BUILD}" = "0" ; then
 	    # static
             AC_MSG_RESULT([using static flags])
@@ -393,11 +494,10 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	CFLAGS_WARNING="-W3"
 	LDFLAGS_DEBUG="-debug:full -debugtype:cv"
 	LDFLAGS_OPTIMIZE="-release"
-	PATHTYPE=-w
 	
 	# Specify the CC output file names based on the target name
 	CC_OBJNAME="-Fo\[$]@"
-	CC_EXENAME="-Fe\"\$(shell cygpath \$(PATHTYPE) '\[$]@')\""
+	CC_EXENAME="-Fe\"\$(shell \$(CYGPATH) \$(PATHTYPE) '\[$]@')\""
 
 	# Specify linker flags depending on the type of app being 
 	# built -- Console vs. Window.

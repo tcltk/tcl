@@ -7,7 +7,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclWinInit.c,v 1.21 1999/12/09 14:44:11 hobbs Exp $
+ * RCS: @(#) $Id: tclWinInit.c,v 1.22 2000/03/31 08:52:31 hobbs Exp $
  */
 
 #include "tclWinInt.h"
@@ -549,7 +549,7 @@ TclpSetVariables(interp)
     OSVERSIONINFOA osInfo;
     Tcl_DString ds;
 
-    osInfo.dwOSVersionInfoSize = sizeof(osInfo);
+    osInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFOA);
     GetVersionExA(&osInfo);
 
     oemId = (OemId *) &sysInfo;
