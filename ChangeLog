@@ -1,5 +1,7 @@
 2001-11-21  Don Porter	<dgp@users.sourceforge.net>
 
+	* tests/trace.test (trace-8.8): Corrected test for Bug 219393.
+
 	* generic/tclBasic.c (Tcl_DeleteCommandFromToken,CallCommandTraces):
 	* generic/tclCmdMZ>c (Tcl_UntraceCommand):  Added Tcl_Preserve and
 	Tcl_Release calls to prevent deletion of CommandTrace structures
