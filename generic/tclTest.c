@@ -184,6 +184,14 @@ static int		TestsetrecursionlimitCmd _ANSI_ARGS_((
 			    int objc, Tcl_Obj *CONST objv[]));
 static int		TeststaticpkgCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Interp *interp, int argc, char **argv));
+static int		TestTclStatProc1 _ANSI_ARGS_((CONST char *path,
+			    TclStat_ *buf));
+static int		TestTclStatProc2 _ANSI_ARGS_((CONST char *path,
+			    TclStat_ *buf));
+static int		TestTclStatProc3 _ANSI_ARGS_((CONST char *path,
+			    TclStat_ *buf));
+static int		TestTclStatCmd _ANSI_ARGS_((ClientData dummy,
+			    Tcl_Interp *interp, int argc, char **argv));
 static int		TesttranslatefilenameCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Interp *interp, int argc, char **argv));
 static int		TestupvarCmd _ANSI_ARGS_((ClientData dummy,
@@ -311,6 +319,8 @@ Tcltest_Init(interp)
 	    (ClientData) 123);
     Tcl_CreateMathFunc(interp, "T2", 0, (Tcl_ValueType *) NULL, TestMathFunc,
 	    (ClientData) 345);
+    Tcl_CreateCommand(interp, "testTclStat", TestTclStatCmd, (ClientData) 0,
+	    (Tcl_CmdDeleteProc *) NULL);
     t3ArgTypes[0] = TCL_EITHER;
     t3ArgTypes[1] = TCL_EITHER;
     Tcl_CreateMathFunc(interp, "T3", 2, t3ArgTypes, TestMathFunc2,
@@ -2718,4 +2728,107 @@ TestsetnoerrCmd(dummy, interp, argc, argv)
 	return TCL_ERROR;
     }
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TestTclStatCmd  --
+ *
+ *	Implements the "testTclStatProc" cmd that is used to test the
+ *	'TclStatInsertProc' C Api.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
 
+static int
+TestTclStatCmd (dummy, interp, argc, argv)
+    ClientData dummy;			/* Not used. */
+    register Tcl_Interp *interp;	/* Current interpreter. */
+    int argc;				/* Number of arguments. */
+    char **argv;			/* Argument strings. */
+{
+    TclStatProc_ *proc;
+    int retVal;
+
+    if (argc != 3) {
+	Tcl_AppendResult(interp, "wrong # args: should be \"",
+		argv[0], " option arg\"", (char *) NULL);
+	return TCL_ERROR;
+    }
+
+    if (strcmp(argv[2], "TclpStat") == 0) {
+	proc = TclpStat;
+    } else if (strcmp(argv[2], "TestTclStatProc1") == 0) {
+	proc = TestTclStatProc1;
+    } else if (strcmp(argv[2], "TestTclStatProc2") == 0) {
+	proc = TestTclStatProc2;
+    } else if (strcmp(argv[2], "TestTclStatProc3") == 0) {
+	proc = TestTclStatProc3;
+    } else {
+	Tcl_AppendResult(interp, "bad arg \"", argv[1], "\": ",
+		"must be TclpStat, ",
+		"TestTclStatProc1, TestTclStatProc2, or TestTclStatProc3",
+		(char *) NULL);
+	return TCL_ERROR;
+    }
+
+    if (strcmp(argv[1], "insert") == 0) {
+	if (proc == TclpStat) {
+	    Tcl_AppendResult(interp, "bad arg \"", argv[1], "\": ",
+		   "must be ",
+		   "TestTclStatProc1, TestTclStatProc2, or TestTclStatProc3",
+		   (char *) NULL);
+	    return TCL_ERROR;
+	}
+	retVal = TclStatInsertProc(proc);
+    } else if (strcmp(argv[1], "delete") == 0) {
+	retVal = TclStatDeleteProc(proc);
+    } else {
+	Tcl_AppendResult(interp, "bad option \"", argv[1], "\": ",
+		"must be insert or delete", (char *) NULL);
+	return TCL_ERROR;
+    }
+
+    if (retVal == TCL_ERROR) {
+	Tcl_AppendResult(interp, "\"", argv[2], "\": ",
+		"could not be ", argv[1], "ed", (char *) NULL);
+    }
+
+    return retVal;
+}
+
+
+static int
+TestTclStatProc1(path, buf)
+    CONST char *path;
+    TclStat_ *buf;
+{
+    buf->st_size = 1234;
+    return (strcmp("testTclStat1%.fil", path) ? -1 : 0);
+}
+
+
+static int
+TestTclStatProc2(path, buf)
+    CONST char *path;
+    TclStat_ *buf;
+{
+    buf->st_size = 2345;
+    return (strcmp("testTclStat2%.fil", path) ? -1 : 0);
+}
+
+
+static int
+TestTclStatProc3(path, buf)
+    CONST char *path;
+    TclStat_ *buf;
+{
+    buf->st_size = 3456;
+    return (strcmp("testTclStat3%.fil", path) ? -1 : 0);
+}
