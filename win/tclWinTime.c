@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinTime.c,v 1.18.2.5 2004/04/09 20:58:20 dgp Exp $
+ * RCS: @(#) $Id: tclWinTime.c,v 1.18.2.6 2004/05/04 17:44:21 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -434,7 +434,11 @@ StopCalibration( ClientData unused )
 				/* Client data is unused */
 {
     SetEvent( timeInfo.exitEvent );
-    WaitForSingleObject( timeInfo.calibrationThread, INFINITE );
+    /*
+     * If Tcl_Finalize was called from DllMain, the calibration thread
+     * is in a paused state so we need to timeout and continue.
+     */
+    WaitForSingleObject( timeInfo.calibrationThread, 100 );
     CloseHandle( timeInfo.exitEvent );
     CloseHandle( timeInfo.calibrationThread );
 }

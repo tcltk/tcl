@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.127.2.6 2004/03/26 22:28:29 dgp Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.127.2.7 2004/05/04 17:44:20 dgp Exp $
 
 VERSION 		= @TCL_VERSION@
 MAJOR_VERSION		= @TCL_MAJOR_VERSION@
@@ -277,7 +277,7 @@ DDD			= ddd
 
 
 CC_SWITCHES = ${CFLAGS} ${CFLAGS_WARNING} ${SHLIB_CFLAGS} \
--I${GENERIC_DIR} -I${SRC_DIR} \
+-I${GENERIC_DIR} -I${UNIX_DIR} -I${SRC_DIR} \
 ${AC_FLAGS} ${MATH_FLAGS} ${GENERIC_FLAGS} ${PROTO_FLAGS} ${MEM_DEBUG_FLAGS} \
 ${COMPILE_DEBUG_FLAGS} ${NO_DEPRECATED_FLAGS} ${ENV_FLAGS} \
 -DTCL_SHLIB_EXT=\"${SHLIB_SUFFIX}\"

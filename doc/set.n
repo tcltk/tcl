@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: set.n,v 1.3 2000/09/07 14:27:51 poenitz Exp $
+'\" RCS: @(#) $Id: set.n,v 1.3.20.1 2004/05/04 17:44:16 dgp Exp $
 '\" 
 .so man.macros
 .TH set n "" Tcl "Tcl Built-In Commands"
@@ -43,6 +43,32 @@ or local variable of the procedure unless the \fBglobal\fR command
 was invoked to declare \fIvarName\fR to be global,
 or unless a \fBvariable\fR command
 was invoked to declare \fIvarName\fR to be a namespace variable.
+.SH EXAMPLES
+Store a random number in the variable \fIr\fR:
+.CS
+set r [expr rand()]
+.CE
+
+Store a short message in an array element:
+.CS
+set anAry(msg) "Hello, World!"
+.CE
+
+Store a short message in an array element specified by a variable:
+.CS
+set elemName "msg"
+set anAry($elemName) "Hello, World!"
+.CE
+
+Copy a value into the variable \fIout\fR from a variable whose name is
+stored in the \fIvbl\fR (note that it is often easier to use arrays in
+practice instead of doing double-dereferencing):
+.CS
+set in0 "small random"
+set in1 "large random"
+set vbl in[expr {rand() >= 0.5}]
+set out [set $vbl]
+.CE
 
 .SH "SEE ALSO"
 expr(n), proc(n), trace(n), unset(n)

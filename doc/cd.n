@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: cd.n,v 1.3 2000/09/07 14:27:46 poenitz Exp $
+'\" RCS: @(#) $Id: cd.n,v 1.3.20.1 2004/05/04 17:44:16 dgp Exp $
 '\" 
 .so man.macros
 .TH cd n "" Tcl "Tcl Built-In Commands"
@@ -23,6 +23,9 @@ Change the current working directory to \fIdirName\fR, or to the
 home directory (as specified in the HOME environment variable) if
 \fIdirName\fR is not given.
 Returns an empty string.
+Note that the current working directory is a per-process resource; the
+\fBcd\fR command changes the working directory for all interpreters
+and (in a threaded environment) all threads.
 
 .SH "SEE ALSO"
 filename(n), glob(n), pwd(n)

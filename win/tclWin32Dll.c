@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWin32Dll.c,v 1.25.2.3 2004/02/07 05:48:12 dgp Exp $
+ * RCS: @(#) $Id: tclWin32Dll.c,v 1.25.2.4 2004/05/04 17:44:21 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -246,6 +246,7 @@ DllMain(hInst, reason, reserved)
 {
     switch (reason) {
     case DLL_PROCESS_ATTACH:
+	DisableThreadLibraryCalls(hInst);
 	TclWinInit(hInst);
 	return TRUE;
 

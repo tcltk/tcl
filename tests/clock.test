@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.test,v 1.23.2.1 2004/03/26 22:28:28 dgp Exp $
+# RCS: @(#) $Id: clock.test,v 1.23.2.2 2004/05/04 17:44:19 dgp Exp $
 
 set env(LC_TIME) POSIX
 
@@ -98,6 +98,9 @@ test clock-2.11 {clock clicks test, millis align with micros} {
     expr { $t2 / 1000 == $t3 }
 } {1}
 
+test clock-2.12 {clock clicks test, wrong num args} {
+    list [catch {clock clicks foo bar} msg] $msg
+} {1 {wrong # args: should be "clock clicks ?option?"}}
 
 # clock format
 test clock-3.1 {clock format tests} {unixOnly} {

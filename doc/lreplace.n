@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: lreplace.n,v 1.8 2001/11/14 23:38:39 hobbs Exp $
+'\" RCS: @(#) $Id: lreplace.n,v 1.8.6.1 2004/05/04 17:44:16 dgp Exp $
 '\" 
 .so man.macros
 .TH lreplace n 7.4 Tcl "Tcl Built-In Commands"
@@ -43,6 +43,27 @@ Each \fIelement\fR argument will become a separate element of
 the list.  If no \fIelement\fR arguments are specified, then the elements
 between \fIfirst\fR and \fIlast\fR are simply deleted.  If \fIlist\fR
 is empty, any \fIelement\fR arguments are added to the end of the list.
+
+.SH EXAMPLES
+Replacing an element of a list with another:
+.CS
+% lreplace {a b c d e} 1 1 foo
+a foo c d e
+.CE
+
+Replacing two elements of a list with three:
+.CS
+% lreplace {a b c d e} 1 2 three more elements
+a three more elements d e
+.CE
+
+Deleting the last element from a list in a variable:
+.CS
+% set var {a b c d e}
+a b c d e
+% set var [lreplace $var end end]
+a b c d
+.CE
 
 .SH "SEE ALSO"
 .VS 8.4

@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: rename.n,v 1.3 2000/09/07 14:27:51 poenitz Exp $
+'\" RCS: @(#) $Id: rename.n,v 1.3.20.1 2004/05/04 17:44:16 dgp Exp $
 '\" 
 .so man.macros
 .TH rename n "" Tcl "Tcl Built-In Commands"
@@ -27,6 +27,20 @@ If \fInewName\fR is an empty string then \fIoldName\fR is deleted.
 If a command is renamed into a different namespace,
 future invocations of it will execute in the new namespace.
 The \fBrename\fR command returns an empty string as result.
+.SH EXAMPLE
+The \fBrename\fR command can be used to wrap the standard Tcl commands
+with your own monitoring machinery.  For example, you might wish to
+count how often the \fBsource\fR command is called:
+
+.CS
+rename ::source ::theRealSource
+set sourceCount 0
+proc ::source args {
+    global sourceCount
+    puts "called source for the [incr sourceCount]'th time"
+    uplevel 1 ::theRealSource $args
+}
+.CE
 
 .SH "SEE ALSO"
 namespace(n), proc(n)

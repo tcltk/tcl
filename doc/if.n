@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: if.n,v 1.3 2000/09/07 14:27:48 poenitz Exp $
+'\" RCS: @(#) $Id: if.n,v 1.3.20.1 2004/05/04 17:44:16 dgp Exp $
 '\" 
 .so man.macros
 .TH if n "" Tcl "Tcl Built-In Commands"
@@ -38,6 +38,41 @@ There may be any number of \fBelseif\fR clauses, including zero.
 The return value from the command is the result of the body script
 that was executed, or an empty string
 if none of the expressions was non-zero and there was no \fIbodyN\fR.
+.SH EXAMPLES
+A simple conditional:
+.CS
+if {$vbl == 1} { puts "vbl is one" }
+.CE
+
+With an \fBelse\fR-clause:
+.CS
+if {$vbl == 1} {
+   puts "vbl is one"
+} else {
+   puts "vbl is not one"
+}
+.CE
+
+With an \fBelseif\fR-clause too:
+.CS
+if {$vbl == 1} {
+   puts "vbl is one"
+} elseif {$vbl == 2} {
+   puts "vbl is two"
+} else {
+   puts "vbl is not one or two"
+}
+.CE
+
+Remember, expressions can be multi-line, but in that case it can be a
+good idea to use the optional \fBthen\fR keyword for clarity:
+.CS
+if {
+   $vbl == 1 || $vbl == 2 || $vbl == 3
+} then {
+   puts "vbl is one, two or three"
+}
+.CE
 
 .SH "SEE ALSO"
 expr(n), for(n), foreach(n)

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.127.2.10 2004/04/09 20:58:15 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.127.2.11 2004/05/04 17:44:17 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -1410,6 +1410,24 @@ typedef struct Interp {
 
 #define UCHAR(c) ((unsigned char) (c))
 
+/*
+ * This macro is used to determine the offset needed to safely allocate any
+ * data structure in memory. Given a starting offset or size, it "rounds up"
+ * or "aligns" the offset to the next 8-byte boundary so that any data
+ * structure can be placed at the resulting offset without fear of an
+ * alignment error.
+ *
+ * WARNING!! DO NOT USE THIS MACRO TO ALIGN POINTERS: it will produce
+ * the wrong result on platforms that allocate addresses that are divisible
+ * by 4 or 2. Only use it for offsets or sizes.
+ *
+ * This macro is only used by tclCompile.c in the core (Bug 926445). It
+ * however not be made file static, as extensions that touch bytecodes
+ * (notably tbcload) require it.
+ */
+
+#define TCL_ALIGN(x) (((int)(x) + 7) & ~7)
+
 
 /*
  * The following enum values are used to specify the runtime platform
@@ -1599,7 +1617,6 @@ typedef Tcl_ObjCmdProc *TclObjCmdProcType;
 extern char *			tclExecutableName;
 extern char *			tclNativeExecutableName;
 extern char *			tclDefaultEncodingDir;
-extern Tcl_ChannelType		tclFileChannelType;
 extern char *			tclMemDumpFileName;
 extern TclPlatformType		tclPlatform;
 extern Tcl_NotifierProcs	tclOriginalNotifier;
@@ -1739,6 +1756,7 @@ EXTERN void		TclFinalizeMemorySubsystem _ANSI_ARGS_((void));
 EXTERN void		TclFinalizeNotifier _ANSI_ARGS_((void));
 EXTERN void		TclFinalizeAsync _ANSI_ARGS_((void));
 EXTERN void		TclFinalizeSynchronization _ANSI_ARGS_((void));
+EXTERN void		TclFinalizeLock _ANSI_ARGS_((void));
 EXTERN void		TclFinalizeThreadData _ANSI_ARGS_((void));
 EXTERN Tcl_Token *	TclGetTokensFromObj _ANSI_ARGS_((Tcl_Obj *objPtr,
 			    Tcl_Token **lastTokenPtrPtr));
@@ -2264,6 +2282,9 @@ EXTERN void	TclDbInitNewObj _ANSI_ARGS_((Tcl_Obj *objPtr));
 
 EXTERN Tcl_Obj *TclThreadAllocObj _ANSI_ARGS_((void));
 EXTERN void TclThreadFreeObj _ANSI_ARGS_((Tcl_Obj *));
+EXTERN Tcl_Mutex *TclpNewAllocMutex _ANSI_ARGS_((void));
+EXTERN void *TclpGetAllocCache _ANSI_ARGS_((void));
+EXTERN void TclpSetAllocCache _ANSI_ARGS_((void *));
 
 #  define TclAllocObjStorage(objPtr) \
        (objPtr) = TclThreadAllocObj()

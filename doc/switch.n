@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: switch.n,v 1.5.20.1 2004/02/07 05:47:59 dgp Exp $
+'\" RCS: @(#) $Id: switch.n,v 1.5.20.2 2004/05/04 17:44:16 dgp Exp $
 '\" 
 .so man.macros
 .TH switch n 7.0 Tcl "Tcl Built-In Commands"
@@ -109,37 +109,60 @@ several patterns.
 Beware of how you place comments in \fBswitch\fR commands.  Comments
 should only be placed \fBinside\fR the execution body of one of the
 patterns, and not intermingled with the patterns.
-.PP
-Below are some examples of \fBswitch\fR commands:
+
+.SH "EXAMPLES"
+The \fBswitch\fR command can match against variables and not just
+literals, as shown here (the result is \fI2\fR):
 .CS
-\fBswitch\0abc\0a\0\-\0b\0{format 1}\0abc\0{format 2}\0default\0{format 3}\fR
+set foo "abc"
+switch abc a \- b {expr 1} $foo {expr 2} default {expr 3}
 .CE
-will return \fB2\fR, 
+
+Using glob matching and the fall-through body is an alternative to
+writing regular expressions with alternations, as can be seen here
+(this returns \fI1\fR):
 .CS
-\fBswitch\0\-regexp\0aaab {
-	^a.*b$\0\-
-	b\0{format 1}
-	a*\0{format 2}
-	default\0{format 3}
-}\fR
+switch \-glob aaab {
+   a*b     \-
+   b       {expr 1}
+   a*      {expr 2}
+   default {expr 3}
+}
 .CE
-will return \fB1\fR, and
+
+Whenever nothing matches, the \fBdefault\fR clause (which must be
+last) is taken.  This example has a result of \fI3\fR:
 .CS
-\fBswitch\0xyz {
-	a
-		\-
-	b
-		{
-		# Correct Comment Placement
-		format 1
-	}
-	a*
-		{format 2}
-	default
-		{format 3}
-}\fR
+switch xyz {
+   a  \-
+   b {
+      # Correct Comment Placement
+      expr 1
+   }
+   c {
+      expr 2
+   }
+   default {
+      expr 3
+   }
+}
 .CE
-will return \fB3\fR.
+
+.VS 8.5
+When matching against regular expressions, information about what
+exactly matched is easily obtained using the \fB\-matchvar\fR option:
+.CS
+switch -regexp -matchvar foo -- $bar {
+   a(b*)c {
+      puts "Found [string length [lindex $foo 1]] 'b's"
+   }
+   d(e*)f(g*)h {
+      puts "Found [string length [lindex $foo 1]] 'e's and\\
+            [string length [lindex $foo 2]] 'g's"
+   }
+}
+.CE
+.VE 8.5
 
 .SH "SEE ALSO"
 for(n), if(n), regexp(n)

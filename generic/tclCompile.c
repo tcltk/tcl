@@ -11,26 +11,11 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.49.2.7 2004/04/09 20:58:11 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.49.2.8 2004/05/04 17:44:16 dgp Exp $
  */
 
 #include "tclInt.h"
 #include "tclCompile.h"
-
-/*
- * This macro is used to determine the offset needed to safely allocate any
- * data structure in memory. Given a starting offset or size, it "rounds up"
- * or "aligns" the offset to the next 8-byte boundary so that any data
- * structure can be placed at the resulting offset without fear of an
- * alignment error.
- *
- * WARNING!! DO NOT USE THIS MACRO TO ALIGN POINTERS: it will produce
- * the wrong result on platforms that allocate addresses that are divisible
- * by 4 or 2. Only use it for offsets or sizes.
- */
-
-#define ALIGN(x) (((int)(x) + 7) & ~7)
-
 
 /*
  * Table of all AuxData types.
@@ -1643,9 +1628,9 @@ TclInitByteCodeObj(objPtr, envPtr)
      */
 
     structureSize = sizeof(ByteCode);
-    structureSize += ALIGN(codeBytes);        /* align object array */
-    structureSize += ALIGN(objArrayBytes);    /* align exc range arr */
-    structureSize += ALIGN(exceptArrayBytes); /* align AuxData array */
+    structureSize += TCL_ALIGN(codeBytes);        /* align object array */
+    structureSize += TCL_ALIGN(objArrayBytes);    /* align exc range arr */
+    structureSize += TCL_ALIGN(exceptArrayBytes); /* align AuxData array */
     structureSize += auxDataArrayBytes;
     structureSize += cmdLocBytes;
 
@@ -1680,13 +1665,13 @@ TclInitByteCodeObj(objPtr, envPtr)
     codePtr->codeStart = p;
     memcpy((VOID *) p, (VOID *) envPtr->codeStart, (size_t) codeBytes);
     
-    p += ALIGN(codeBytes);	      /* align object array */
+    p += TCL_ALIGN(codeBytes);	      /* align object array */
     codePtr->objArrayPtr = (Tcl_Obj **) p;
     for (i = 0;  i < numLitObjects;  i++) {
 	codePtr->objArrayPtr[i] = envPtr->literalArrayPtr[i].objPtr;
     }
 
-    p += ALIGN(objArrayBytes);    /* align exception range array */
+    p += TCL_ALIGN(objArrayBytes);    /* align exception range array */
     if (exceptArrayBytes > 0) {
 	codePtr->exceptArrayPtr = (ExceptionRange *) p;
 	memcpy((VOID *) p, (VOID *) envPtr->exceptArrayPtr,
@@ -1695,7 +1680,7 @@ TclInitByteCodeObj(objPtr, envPtr)
 	codePtr->exceptArrayPtr = NULL;
     }
     
-    p += ALIGN(exceptArrayBytes); /* align AuxData array */
+    p += TCL_ALIGN(exceptArrayBytes); /* align AuxData array */
     if (auxDataArrayBytes > 0) {
 	codePtr->auxDataArrayPtr = (AuxData *) p;
 	memcpy((VOID *) p, (VOID *) envPtr->auxDataArrayPtr,

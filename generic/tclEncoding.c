@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEncoding.c,v 1.16.4.2 2004/04/09 20:58:12 dgp Exp $
+ * RCS: @(#) $Id: tclEncoding.c,v 1.16.4.3 2004/05/04 17:44:16 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -324,6 +324,7 @@ TclFinalizeEncodingSubsystem()
 	FreeEncoding((Tcl_Encoding) Tcl_GetHashValue(hPtr));
 	hPtr = Tcl_FirstHashEntry(&encodingTable, &search);
     }
+    FreeEncoding(systemEncoding);
     Tcl_DeleteHashTable(&encodingTable);
     Tcl_MutexUnlock(&encodingMutex);
 }

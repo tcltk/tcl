@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinThrd.c,v 1.26.2.1 2004/02/07 05:48:12 dgp Exp $
+ * RCS: @(#) $Id: tclWinThrd.c,v 1.26.2.2 2004/05/04 17:44:21 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -44,6 +44,7 @@ static CRITICAL_SECTION initLock;
 
 static CRITICAL_SECTION allocLock;
 static Tcl_Mutex allocLockPtr = (Tcl_Mutex) &allocLock;
+static int allocOnce = 0;
 
 #endif /* TCL_THREADS */
 
@@ -393,18 +394,50 @@ Tcl_Mutex *
 Tcl_GetAllocMutex()
 {
 #ifdef TCL_THREADS
-    static int once = 0;
-
-    if (!once) {
+    if (!allocOnce) {
 	InitializeCriticalSection(&allocLock);
-	once = 1;
+	allocOnce = 1;
     }
     return &allocLockPtr;
 #else
     return NULL;
 #endif
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpFinalizeLock
+ *
+ *	This procedure is used to destroy all private resources used in
+ *	this file.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Destroys everything private.  TclpInitLock must be held
+ *	entering this function.
+ *
+ *----------------------------------------------------------------------
+ */
 
+void
+TclFinalizeLock ()
+{
+    MASTER_LOCK;
+    DeleteCriticalSection(&joinLock);
+    DeleteCriticalSection(&masterLock);
+    init = 0;
+#ifdef TCL_THREADS
+    if (allocOnce) {
+	DeleteCriticalSection(&allocLock);
+	allocOnce = 0;
+    }
+#endif
+    /* Destroy the critical section that we are holding. */
+    DeleteCriticalSection(&initLock);
+}
 
 #ifdef TCL_THREADS
 

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPathObj.c,v 1.3.2.7 2004/04/09 20:58:16 dgp Exp $
+ * RCS: @(#) $Id: tclPathObj.c,v 1.3.2.8 2004/05/04 17:44:18 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -672,7 +672,12 @@ GetExtension(pathPtr)
  * Results:
  *      Returns object with refCount of zero, (or if non-zero, it has
  *      references elsewhere in Tcl).  Either way, the caller must
- *      increment its refCount before use.
+ *      increment its refCount before use.  Note that in the case where
+ *      the caller has asked to join zero elements of the list, the
+ *      return value will be an empty-string Tcl_Obj.
+ *      
+ *      If the given listObj was invalid, then the calling routine has
+ *      a bug, and this function will just return NULL.
  *
  * Side effects:
  *	None.
@@ -917,6 +922,9 @@ Tcl_FSJoinPath(listObj, elements)
 	    length = ptr - Tcl_GetString(res);
 	    Tcl_SetObjLength(res, length);
 	}
+    }
+    if (res == NULL) {
+        res = Tcl_NewObj();
     }
     return res;
 }

@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: linsert.n,v 1.7 2001/11/14 23:38:39 hobbs Exp $
+'\" RCS: @(#) $Id: linsert.n,v 1.7.6.1 2004/05/04 17:44:16 dgp Exp $
 '\" 
 .so man.macros
 .TH linsert n 8.2 Tcl "Tcl Built-In Commands"
@@ -30,6 +30,17 @@ elements in the list, then the new elements are appended to the list.
 \fBend\-\fIinteger\fR refers to the last element in the list minus the
 specified integer offset.
 
+.SH EXAMPLE
+Putting some values into a list, first indexing from the start and
+then indexing from the end, and then chaining them together:
+
+.CS
+set oldList {the fox jumps over the dog}
+set midList [linsert $oldList 1 quick]
+set newList [linsert $midList end-1 lazy]
+# The old lists still exist though...
+set newerList [linsert [linsert $oldList end-1 quick] 1 lazy]
+.CE
 
 .SH "SEE ALSO"
 .VS 8.4

@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.81.2.8 2004/04/09 20:58:15 dgp Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.81.2.9 2004/05/04 17:44:17 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3358,7 +3358,9 @@ Tcl_FSSplitPath(pathPtr, lenPtr)
     if (fsPtr->filesystemSeparatorProc != NULL) {
 	Tcl_Obj *sep = (*fsPtr->filesystemSeparatorProc)(pathPtr);
 	if (sep != NULL) {
+	    Tcl_IncrRefCount(sep);
 	    separator = Tcl_GetString(sep)[0];
+	    Tcl_DecrRefCount(sep);
 	}
     }
     
@@ -4262,7 +4264,8 @@ Tcl_FSFileSystemInfo(pathPtr)
  * Results:
  *      A Tcl object, with a refCount of zero.  If the caller
  *      needs to retain a reference to the object, it should
- *      call Tcl_IncrRefCount.
+ *      call Tcl_IncrRefCount, and should otherwise free the
+ *      object.
  *
  * Side effects:
  *	The path object may be converted to a path type.
@@ -4280,9 +4283,13 @@ Tcl_FSPathSeparator(pathPtr)
     }
     if (fsPtr->filesystemSeparatorProc != NULL) {
 	return (*fsPtr->filesystemSeparatorProc)(pathPtr);
+    } else {
+	/* 
+	 * Allow filesystems not to provide a filesystemSeparatorProc
+	 * if they wish to use the standard forward slash.
+	 */
+	return Tcl_NewStringObj("/", 1);
     }
-    
-    return NULL;
 }
 
 /*

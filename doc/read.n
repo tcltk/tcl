@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: read.n,v 1.7 2001/09/14 19:20:40 andreas_kupries Exp $
+'\" RCS: @(#) $Id: read.n,v 1.7.10.1 2004/05/04 17:44:16 dgp Exp $
 '\" 
 .so man.macros
 .TH read n 8.1 Tcl "Tcl Built-In Commands"
@@ -74,6 +74,16 @@ character, see \fBfconfigure -eofchar\fR. If there no end-of-file
 character has been configured for the channel, then \fBread\fR will
 block forever.
 
+.SH "EXAMPLE"
+This example code reads a file all at once, and splits it into a list,
+with each line in the file corresponding to an element in the list:
+
+.CS
+set fl [open /proc/meminfo]
+set data [read $fl]
+close $fl
+set lines [split $data \\n]
+.CE
 
 .SH "SEE ALSO"
 file(n), eof(n), fblocked(n), fconfigure(n), Tcl_StandardChannels(3)

@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: llength.n,v 1.6 2001/11/14 23:38:39 hobbs Exp $
+'\" RCS: @(#) $Id: llength.n,v 1.6.6.1 2004/05/04 17:44:16 dgp Exp $
 '\" 
 .so man.macros
 .TH llength n "" Tcl "Tcl Built-In Commands"
@@ -22,6 +22,32 @@ llength \- Count the number of elements in a list
 .PP
 Treats \fIlist\fR as a list and returns a decimal string giving
 the number of elements in it.
+
+.SH EXAMPLES
+The result is the number of elements:
+.CS
+% llength {a b c d e}
+5
+% llength {a b c}
+3
+% llength {}
+0
+.CE
+
+Elements are not guaranteed to be exactly words in a dictionary sense
+of course, especially when quoting is used:
+.CS
+% llength {a b {c d} e}
+4
+% llength {a b { } c d e}
+6
+.CE
+
+An empty list is not necessarily an empty string:
+.CS
+% set var { }; puts "[string length $var],[llength $var]"
+1,0
+.CE
 
 .SH "SEE ALSO"
 .VS 8.4

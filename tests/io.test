@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: io.test,v 1.45.2.4 2004/03/26 22:28:29 dgp Exp $
+# RCS: @(#) $Id: io.test,v 1.45.2.5 2004/05/04 17:44:19 dgp Exp $
 
 if {[catch {package require tcltest 2}]} {
     puts stderr "Skipping tests in [info script].  tcltest 2 required."
@@ -7098,7 +7098,22 @@ test io-60.1 {writing illegal utf sequences} {openpipe fileevent} {
     list $x $result
 } {1 {gets {} catch {error writing "stdout": invalid argument}}}
 
+set datafile [file join $::tcltest::testsDirectory eofchar.data]
 
+test io-61.1 {Reset eof state after changing the eof char} {
+    set f [open $datafile r]
+    fconfigure $f -eofchar =
+    lappend res [read $f; tell $f]
+    fconfigure $f -eofchar {}
+    lappend res [read $f 1]
+    lappend res [read $f; tell $f]
+    # Any seek zaps the internals into a good state.
+    #seek $f 0 start
+    #seek $f 0 current
+    #lappend res [read $f; tell $f]
+    close $f
+    set res
+} {77 = 23431}
 
 
 # cleanup

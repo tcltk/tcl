@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.42.4.4 2004/04/09 20:58:18 dgp Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.42.4.5 2004/05/04 17:44:20 dgp Exp $
  */
 
 #include "tclInt.h"	/* Internal definitions for Tcl. */
@@ -968,9 +968,11 @@ TtySetOptionProc(instanceData, interp, optionName, value)
 		    "bad value for -xchar: should be a list of two elements",
 		    (char *) NULL);
 	    }
+	    ckfree((char *) argv);
 	    return TCL_ERROR;
 	}
 	SETIOSTATE(fsPtr->fd, &iostate);
+	ckfree((char *) argv);
 	return TCL_OK;
     }
 
@@ -1003,12 +1005,14 @@ TtySetOptionProc(instanceData, interp, optionName, value)
 			"bad value for -ttycontrol: should be a list of",
 			"signal,value pairs", (char *) NULL);
 	    }
+	    ckfree((char *) argv);
 	    return TCL_ERROR;
 	}
 
 	GETCONTROL(fsPtr->fd, &control);
 	while (argc > 1) {
 	    if (Tcl_GetBoolean(interp, argv[1], &flag) == TCL_ERROR) {
+		ckfree((char *) argv);
 		return TCL_ERROR;
 	    }
 	    if (strncasecmp(argv[0], "DTR", strlen(argv[0])) == 0) {
@@ -1020,6 +1024,7 @@ TtySetOptionProc(instanceData, interp, optionName, value)
 		}
 #else /* !TIOCM_DTR */
 		UNSUPPORTED_OPTION("-ttycontrol DTR");
+		ckfree((char *) argv);
 		return TCL_ERROR;
 #endif /* TIOCM_DTR */
 	    } else if (strncasecmp(argv[0], "RTS", strlen(argv[0])) == 0) {
@@ -1031,6 +1036,7 @@ TtySetOptionProc(instanceData, interp, optionName, value)
 		}
 #else /* !TIOCM_RTS*/
 		UNSUPPORTED_OPTION("-ttycontrol RTS");
+		ckfree((char *) argv);
 		return TCL_ERROR;
 #endif /* TIOCM_RTS*/
 	    } else if (strncasecmp(argv[0], "BREAK", strlen(argv[0])) == 0) {
@@ -1038,6 +1044,7 @@ TtySetOptionProc(instanceData, interp, optionName, value)
 		SETBREAK(fsPtr->fd, flag);
 #else /* !SETBREAK */
 		UNSUPPORTED_OPTION("-ttycontrol BREAK");
+		ckfree((char *) argv);
 		return TCL_ERROR;
 #endif /* SETBREAK */
 	    } else {
@@ -1046,12 +1053,14 @@ TtySetOptionProc(instanceData, interp, optionName, value)
 			    "bad signal for -ttycontrol: must be ",
 			    "DTR, RTS or BREAK", (char *) NULL);
 		}
+		ckfree((char *) argv);
 		return TCL_ERROR;
 	    }
 	    argc -= 2, argv += 2;
 	} /* while (argc > 1) */
 
 	SETCONTROL(fsPtr->fd, &control);
+	ckfree((char *) argv);
 	return TCL_OK;
     }
 

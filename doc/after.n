@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: after.n,v 1.3 2000/09/07 14:27:45 poenitz Exp $
+'\" RCS: @(#) $Id: after.n,v 1.3.20.1 2004/05/04 17:44:16 dgp Exp $
 '\" 
 .so man.macros
 .TH after n 7.5 Tcl "Tcl Built-In Commands"
@@ -101,6 +101,43 @@ will not be executed unless the application enters the event loop.
 In applications that are not normally event-driven, such as
 \fBtclsh\fR, the event loop can be entered with the \fBvwait\fR
 and \fBupdate\fR commands.
+
+.SH "EXAMPLES"
+This defines a command to make Tcl do nothing at all for \fIN\fR
+seconds:
+
+.CS
+proc sleep {N} {
+    after [expr {int($N * 1000)}]
+}
+.CE
+
+This arranges for the command \fIwake_up\fR to be run in eight hours
+(providing the event loop is active at that time):
+
+.CS
+after [expr {1000 * 60 * 60 * 8}] wake_up
+.CE
+
+The following command can be used to do long-running calculations (as
+represented here by \fI::my_calc::one_step\fR, which is assumed to
+return a boolean indicating whether another step should be performed)
+in a step-by-step fashion, though the calculation itself needs to be
+arranged so it can work step-wise.  This technique is extra careful to
+ensure that the event loop is not starved by the rescheduling of
+processing steps (arranging for the next step to be done using an
+already-triggered timer event only when the event queue has been
+drained) and is useful when you want to ensure that a Tk GUI remains
+responsive during a slow task.
+
+.CS
+proc doOneStep {} {
+    if {[::my_calc::one_step]} {
+        after idle [list after 0 doOneStep]
+    }
+}
+doOneStep
+.CE
 
 .SH "SEE ALSO"
 bgerror(n), concat(n), update(n), vwait(n)

@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: proc.test,v 1.11.4.2 2004/03/31 01:36:18 dgp Exp $
+# RCS: @(#) $Id: proc.test,v 1.11.4.3 2004/05/04 17:44:20 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -166,9 +166,15 @@ test proc-3.5 {TclObjInterpProc, any old result is reset before appending error 
     list [catch {p} msg] $msg
 } {1 {wrong # args: should be "p x"}}
 
+test proc-3.6 {TclObjInterpProc, proper quoting of proc name, Bug 942757} {
+    proc {a b  c} {x} {info commands 3m}
+    list [catch {{a b  c}} msg] $msg
+} {1 {wrong # args: should be "{a b  c} x"}}
+
 catch {namespace delete {expand}[namespace children :: test_ns_*]}
 catch {rename p ""}
 catch {rename {} ""}
+catch {rename {a b  c} {}}
 catch {unset msg}
 
 if {[catch {package require procbodytest}]} {

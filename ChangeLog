@@ -1,3 +1,231 @@
+2004-05-04  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclEvent.c (TclSetLibraryPath): Suppress a warning.
+
+2004-05-03  Andreas Kupries  <andreask@activestate.com>
+
+	* Applied [SF Tcl Patch 868853], fixing a mem leak in
+	  TtySetOptionProc. Report and Patch provided by Stuart
+	  Cassoff <stwo@users.sf.net>.
+
+2004-05-03  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclProc.c (TclCreateProc): comments corrected.
+	
+2004-05-03  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclCompile.c (TclCompileScript): setting the compilation
+	namespace outside of the loop.
+
+2004-05-03  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclCompile.c:
+	* generic/tclInt.h: reverted fix for [Bug 926445] of 2004-04-02,
+	restoring TCL_ALIGN to the header file. Todd Helfter reported that
+	the macro is required by tbcload.
+
+2004-05-03  Kevin Kenny  <kennykb@acm.org>
+
+	* win/tclWin32Dll.c (TclpCheckStackSpace):
+	* tests/stack.test (stack-3.1): Fix for undetected stack
+	overflow in TclReExec on Windows. [Bug 947070]
+	
+2004-05-03  Don Porter  <dgp@users.sourceforge.net>
+
+	* library/init.tcl:	Corrected unique prefix matching of
+	interactive command completion in [unknown].  [Bug 946952]
+
+2004-05-02  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclProc.c (TclObjInvokeProc):
+	* tests/proc.test (proc-3.6): fix for bad quoting of multi-word
+	proc names in error messages [Bug 942757]
+
+2004-04-30  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* doc/glob.n, doc/incr.n, doc/set.n:	More examples.
+	* doc/if.n, doc/rename.n, doc/time.n:
+
+2004-04-30  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclInt.h:		Replaced Kevin Kenny's temporary
+	* generic/tclThreadAlloc.c:	fix for Bug 945447 with a cleaner,
+	more permanent replacement.  
+
+2004-04-30  Kevin B. Kenny   <kennykb@acm.org>
+
+	* generic/tclThreadAlloc.c: Added a temporary (or so I hope!)
+	inclusion of "tclWinInt.h" to avoid problems when compiling
+	on Win32-VC++ with --enable-threads.  [Bug 945447]
+	
+2004-04-30  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* doc/puts.n: Added a few examples.
+
+2004-04-29  Don Porter  <dgp@users.sourceforge.net>
+
+	* tests/execute.test (execute-8.2):	Avoid crashes when there
+	is limited system stack space (threads-enabled).
+
+2004-04-28  Miguel Sofer <msofer@users.sf.net>
+
+	* doc/global.n:
+	* doc/upvar.n:
+	* generic/tclVar.c (ObjMakeUpvar):
+	* tests/upvar.test (upvar-8.11):
+	* tests/var.test (var-3.11): Avoid creation of unusable variables:
+	[Bug 600812] [TIP 184].
+
+2004-04-28  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* doc/lsearch.n: Fixed fault in documentation of -index option [943448]
+
+2004-04-26  Don Porter  <dgp@users.sourceforge.net>
+
+	* unix/tclUnixFCmd.c (TclpObjNormalizePath):  Corrected improper
+	positioning of returned checkpoint.  [Bug 941108]
+
+2004-04-26  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* doc/open.n, doc/close.n: Updated (thanks to David Welton) to be
+	clearer about pipeline errors and added example to open(n) that shows
+	simple pipeline use.  [Patches 941377,941380]
+
+	* doc/DictObj.3: Added warning about the use of Tcl_DictObjDone and an
+	example of use of iteration. [Bug 940843]
+
+	* doc/Thread.3: Reworked to remove references to testing interfaces
+	and instead promote the use of the Thread package. [Patch 932527]
+	Also reworked and reordered the page for better readability.
+
+2004-04-25  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tcl.h:	Removed obsolete declarations and #include's.
+	* generic/tclInt.h:	[Bugs 926459, 926486]
+
+2004-04-24  David Gravereaux <davygrvy@pobox.com>
+
+	* win/tclWin32Dll.c (DllMain): Added DisableThreadLibraryCalls()
+	for the DLL_PROCESS_ATTACH case.  We're not interested in knowing
+	about DLL_THREAD_ATTACH, so disable the notices.
+
+2004-04-24  Daniel Steffen  <das@users.sourceforge.net>
+
+	* generic/tclPort.h:
+	* macosx/Makefile:
+	* unix/Makefile.in: followup on tcl header reform [FR 922727]:
+	removed use of relative #include paths in tclPort.h to allow
+	installation of private headers outside of tcl source tree; added
+	'unix' dir to compiler header search path; add newly required
+	tcl private headers to Tcl.framework on Mac OSX.
+
+2004-04-23  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclIO.c (Tcl_SetChannelOption): Fixed [SF Tcl Bug
+	  930851]. When changing the eofchar we have to zap the related
+	  flags to prevent them from prematurely aborting the next read.
+
+2004-04-25  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* generic/tclPathObj.c: fix to [Bug 940281].  Tcl_FSJoinPath
+	will now always return a valid Tcl_Obj when the input is valid.
+	* generic/tclIOUtil.c: fix to [Bug 931823] for a more consistent
+	Tcl_FSPathSeparator() implementation which allows filesystems
+	not to implement their Tcl_FSFilesystemSeparatorProc if they
+	wish to use the default '/'.  Also fixed associated memory leak
+	seen with, e.g., tclvfs package.
+	* doc/FileSystem.3: documented Tcl_FSJoinPath return values
+	more clearly, and Tcl_FSFilesystemSeparatorProc requirements.
+
+2004-04-23  David Gravereaux <davygrvy@pobox.com>
+
+	* win/tclWin32Dll.c:  Removed my mistake from 4/19 of adding an
+	exit handler to TclWinInit.  TclWinEncodingsCleanup called from
+	TclFinalizeFilesystem does the Tcl_FreeEncoding for us.
+
+	* win/tclWinChan.c (Tcl_MakeFileChannel) : Case for CloseHandle
+	returning zero and not throwing a
+	RaiseException(EXCEPTION_INVALID_HANDLE) now being done.
+
+2004-04-22  David Gravereaux <davygrvy@pobox.com>
+
+	* generic/tclEvent.c: TclSetLibraryPath's use of caching the
+	stringrep of the pathPtr object to TclGetLibraryPath called from
+	another thread was ineffective if the original's stringrep had
+	been invalidated as what happens when it gets muted to a list.
+
+	* win/tclWinTime.c:  If the Tcl_ExitProc (StopCalibration) is
+	called from the stack frame of DllMain's PROCESS_DETACH, the
+	wait operation should timeout and continue.
+
+	* generic/tclInt.h:
+	* generic/tclThread.c:
+	* generic/tclEvent.c:
+	* unix/tclUnixThrd.c:
+	* win/tclWinThrd.c:  Provisions made so masterLock, initLock,
+	allocLock and joinLock mutexes can be recovered during
+	Tcl_Finalize.
+
+2004-04-22  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* doc/switch.n: Reworked the examples to be more systematically
+	named and to cover some TIP#75 capabilities.
+
+	* doc/cd.n: Documentation clarification from David Welton.
+
+	* doc/exec.n: Added some examples, Windows ones from Arjen Markus
+	and Unix ones by myself.
+
+2004-04-21  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* doc/Hash.3: Added note to Tcl_{First,Next}HashEntry docs that
+	deleting the element they return is supported (and is in fact the
+	only safe update you can do to the structure of a hashtable while
+	an iteration is going over it.)
+
+	* doc/bgerror.n: Added example from David Welton. [Patch 939473]
+
+	* doc/after.n: Added examples from David Welton. [Patch 938820]
+
+2004-04-19  David Gravereaux <davygrvy@pobox.com>
+
+	* win/tclWin32Dll.c: Added an exit handler in TclWinInit() so
+	tclWinTCharEncoding could be freed during Tcl_Finalize().
+
+	* generic/tclEncoding.c: Added FreeEncoding(systemEncoding) in
+	TclFinalizeEncodingSubsystem because its ref count was incremented
+	in TclInitEncodingSubsystem.
+
+2004-04-19  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* doc/read.n: Added example from David Welton. [Patch 938056]
+
+2004-04-19  Kevin B. Kenny   <kennykb@acm.org>
+
+	* generic/tclObj.c (Tcl_GetDoubleFromObj) Corrected
+	"short circuit" conversion of int to double. Reported by
+	Jeff Hobbs on the Tcl'ers Chat.
+	
+2004-04-16  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* doc/lreplace.n, doc/lrange.n, doc/llength.n:	More examples for
+	* doc/linsert.n, doc/lappend.n:			the documentation.
+
+2004-04-16  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* doc/FileSystem.3: Corrected documentation of Tcl_FSUtime, and
+	the corresponding filesystem driver Tcl_FSUtimeProc. [Bug 935838]
+
+2004-04-16  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* doc/socket.n: Added example from [Patch 936245].
+	* doc/gets.n: Added example based on [Patch 935911].
+
+2004-04-15  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclClock.c (Tcl_ClockObjCmd): Minor fault in a [clock
+	clicks] error message.
+
 2004-04-07  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* win/tclWinInit.c (TclpSetInitialEncodings): note that WIN32_CE

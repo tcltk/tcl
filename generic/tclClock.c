@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclClock.c,v 1.23.2.3 2004/04/09 20:58:09 dgp Exp $
+ * RCS: @(#) $Id: tclClock.c,v 1.23.2.4 2004/05/04 17:44:16 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -101,7 +101,7 @@ Tcl_ClockObjCmd (client, interp, objc, objv)
 		    return TCL_ERROR;
 		}
 	    } else if (objc != 2) {
-		Tcl_WrongNumArgs(interp, 2, objv, "?-milliseconds?");
+		Tcl_WrongNumArgs(interp, 2, objv, "?option?");
 		return TCL_ERROR;
 	    }
 	    switch (clickType) {
