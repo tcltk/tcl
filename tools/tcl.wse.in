@@ -1443,12 +1443,12 @@ item: Install File
 end
 item: Install File
   Source=${__TCLBASEDIR__}\library\http\pkgIndex.tcl
-  Destination=%MAINDIR%\lib\tcl%VER%\http2.3\pkgIndex.tcl
+  Destination=%MAINDIR%\lib\tcl%VER%\http2.4\pkgIndex.tcl
   Flags=0000000000000010
 end
 item: Install File
   Source=${__TCLBASEDIR__}\library\http\http.tcl
-  Destination=%MAINDIR%\lib\tcl%VER%\http2.3\http.tcl
+  Destination=%MAINDIR%\lib\tcl%VER%\http2.4\http.tcl
   Flags=0000000000000010
 end
 item: Install File
