@@ -1,3 +1,7 @@
+2003-04-12  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* win/Makefile.in (GENERIC_OBJS): add missing tclPathObj.c
+
 2003-04-12  Kevin Kenny  <kennykb@acm.org>
 
 	* doc/clock.n:
