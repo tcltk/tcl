@@ -9,10 +9,10 @@
 # Copyright (c) 1995-1996 Sun Microsystems, Inc.
 # Copyright (c) 1998-2000 Ajuba Solutions.
 # Copyright (c) 2001 ActiveState Corporation.
-# Copyright (c) 2001-2002 David Gravereaux.
+# Copyright (c) 2001-2004 David Gravereaux.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.118 2004/01/15 23:23:13 davygrvy Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.119 2004/01/16 02:42:45 davygrvy Exp $
 #------------------------------------------------------------------------------
 
 !if "$(MSVCDIR)" == ""
@@ -638,11 +638,9 @@ install-docs:
 #---------------------------------------------------------------------
 
 $(TMP_DIR)\testMain.obj: $(WINDIR)\tclAppInit.c
-!if $(TCL_USE_STATIC_PACKAGES)
-	$(cc32) $(TCL_CFLAGS) -DTCL_TEST -DTCL_USE_STATIC_PACKAGES -Fo$@ $?
-!else
-	$(cc32) $(TCL_CFLAGS) -DTCL_TEST -Fo$@ $?
-!endif
+	$(cc32) $(TCL_CFLAGS) -DTCL_TEST \
+	    -DTCL_USE_STATIC_PACKAGES=$(TCL_USE_STATIC_PACKAGES) \
+	    -Fo$@ $?
 
 $(TMP_DIR)\tclTest.obj: $(GENERICDIR)\tclTest.c
 	$(cc32) $(TCL_CFLAGS) -Fo$@ $?
@@ -668,11 +666,9 @@ $(TMP_DIR)\tclPkgConfig.obj: $(GENERICDIR)\tclPkgConfig.c
 	-Fo$@ $?
 
 $(TMP_DIR)\tclAppInit.obj: $(WINDIR)\tclAppInit.c
-!if $(TCL_USE_STATIC_PACKAGES)
-	$(cc32) $(TCL_CFLAGS) -DTCL_USE_STATIC_PACKAGES -Fo$@ $?
-!else
-	$(cc32) $(TCL_CFLAGS) -Fo$@ $?
-!endif
+	$(cc32) $(TCL_CFLAGS) \
+	    -DTCL_USE_STATIC_PACKAGES=$(TCL_USE_STATIC_PACKAGES) \
+	    -Fo$@ $?
 
 ### The following objects should be built using the stub interfaces
 ### *ALL* extensions need to built with -DTCL_THREADS=1
@@ -755,17 +751,10 @@ $<
 <<
 
 {$(WINDIR)}.rc{$(TMP_DIR)}.res:
-	$(rc32) -fo $@ -r -i "$(GENERICDIR)" -D__WIN32__ \
-!if $(DEBUG)
-	-d DEBUG \
-!endif
-!if $(TCL_THREADS)
-	-d TCL_THREADS \
-!endif
-!if $(STATIC_BUILD)
-	-d STATIC_BUILD \
-!endif
-	$<
+	$(rc32) -fo $@ -r -i "$(GENERICDIR)" \
+	    -d DEBUG=$(DEBUG) -d TCL_THREADS=$(TCL_THREADS) \
+	    -d STATIC_BUILD=$(STATIC_BUILD) \
+	    $<
 
 .SUFFIXES:
 .SUFFIXES:.c .rc
@@ -848,8 +837,12 @@ install-libraries:
 #---------------------------------------------------------------------
 
 tidy:
+!if "$(TCLLIB)" != "$(TCLIMPLIB)"
 	@echo Removing $(TCLLIB) ...
 	@if exist $(TCLLIB) del $(TCLLIB)
+!endif
+	@echo Removing $(TCLIMPLIB) ...
+	@if exist $(TCLIMPLIB) del $(TCLIMPLIB)
 	@echo Removing $(TCLSH) ...
 	@if exist $(TCLSH) del $(TCLSH)
 	@echo Removing $(TCLTEST) ...
