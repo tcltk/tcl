@@ -1,3 +1,7 @@
+2004-05-04  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclEvent.c (TclSetLibraryPath): Suppress a warning.
+
 2004-05-03  Andreas Kupries  <andreask@activestate.com>
 
 	* Applied [SF Tcl Patch 868853], fixing a mem leak in
