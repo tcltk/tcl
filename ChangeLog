@@ -1,3 +1,8 @@
+2001-06-03  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclUtil.c (Tcl_DStringAppendElement): patch to save an
+	extra strlen call.  [Bug #428572]
+
 2001-05-30  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* generic/tclExecute.c (TclExecuteByteCode): Added two casts to
