@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacLoad.c,v 1.7 2001/09/28 01:21:53 dgp Exp $
+ * RCS: @(#) $Id: tclMacLoad.c,v 1.8 2001/11/23 01:27:45 das Exp $
  */
 
 #include <CodeFragments.h>
@@ -108,7 +108,7 @@ TclpLoadFile(
     Tcl_PackageInitProc **proc2Ptr,
 				/* Where to return the addresses corresponding
 				 * to sym1 and sym2. */
-    ClientData *clientDataPtr;	/* Filled with token for dynamically loaded
+    ClientData *clientDataPtr,	/* Filled with token for dynamically loaded
 				 * file which will be passed back to 
 				 * (*unloadProcPtr)() to unload the file. */
     Tcl_FSUnloadFileProc **unloadProcPtr)
@@ -125,18 +125,10 @@ TclpLoadFile(
     Handle fragResource;
     UInt32 offset = 0;
     UInt32 length = kCFragGoesToEOF;
-    char packageName[255];
+    StringPtr fragName=NULL;
     Str255 errName;
+    Tcl_DString ds;
     char *native;
-    
-    /*
-     * First thing we must do is infer the package name from the sym1
-     * variable.  This is kind of dumb since the caller actually knows
-     * this value, it just doesn't give it to us.
-     */
-    strcpy(packageName, sym1);
-    Tcl_UtfToLower(packageName);
-    *(Tcl_UtfAtIndex(packageName, Tcl_NumUtfChars(packageName, -1) - 5)) = 0;
     
     native = Tcl_FSGetNativePath(pathPtr);
     err = FSpLocationFromPath(strlen(native), native, &fileSpec);
@@ -145,6 +137,14 @@ TclpLoadFile(
 	Tcl_SetResult(interp, "could not locate shared library", TCL_STATIC);
 	return TCL_ERROR;
     }
+    
+    /*
+     * First thing we must do is infer the package name from the sym1
+     * variable.  This is kind of dumb since the caller actually knows
+     * this value, it just doesn't give it to us.
+     */
+    native = Tcl_UtfToExternalDString(NULL, sym1, -1, &ds);
+    native[strlen(native) - 5] = 0;
     
     /*
      * See if this fragment has a 'cfrg' resource.  It will tell us where
@@ -173,10 +173,11 @@ TclpLoadFile(
 		 index++, itemStart += srcItem->itemSize) {
 		srcItem = (CfrgItem*)itemStart;
 		if (srcItem->archType != OUR_ARCH_TYPE) continue;
-		if (!strncasecmp(packageName, (char *) srcItem->name + 1,
-			srcItem->name[0])) {
+		if (!strncasecmp(native, (char *) srcItem->name + 1,
+			strlen(native))) {
 		    offset = srcItem->codeOffset;
 		    length = srcItem->codeLength;
+		    fragName=srcItem->name;
 		}
 	    }
 	}
@@ -190,6 +191,7 @@ TclpLoadFile(
 	CloseResFile(fragFileRef);
 	UseResFile(saveFileRef);
     }
+    Tcl_DStringFree(&ds);
 
     /*
      * Now we can attempt to load the fragement using the offset & length
@@ -197,9 +199,11 @@ TclpLoadFile(
      * as we are going to search for specific entry points passed to us.
      */
     
-    c2pstr(packageName);
-    err = GetDiskFragment(&fileSpec, offset, length, (StringPtr) packageName,
+    err = GetDiskFragment(&fileSpec, offset, length, fragName,
 	    kLoadCFrag, &connID, &dummy, errName);
+
+    *clientDataPtr = (ClientData) connID;
+
     if (err != fragNoErr) {
 	p2cstr(errName);
 	Tcl_AppendResult(interp, "couldn't load file \"", 
@@ -208,9 +212,12 @@ TclpLoadFile(
 	return TCL_ERROR;
     }
     
-    c2pstr(sym1);
-    err = FindSymbol(connID, (StringPtr) sym1, (Ptr *) proc1Ptr, &symClass);
-    p2cstr((StringPtr) sym1);
+    *unloadProcPtr = &TclpUnloadFile;
+   
+    native = Tcl_UtfToExternalDString(NULL, sym1, -1, &ds);
+    c2pstr(native);
+    err = FindSymbol(connID, (StringPtr) native, (Ptr *) proc1Ptr, &symClass);
+    Tcl_DStringFree(&ds);
     if (err != fragNoErr || symClass == kDataCFragSymbol) {
 	Tcl_SetResult(interp,
 		"could not find Initialization routine in library",
@@ -218,15 +225,13 @@ TclpLoadFile(
 	return TCL_ERROR;
     }
 
-    c2pstr(sym2);
-    err = FindSymbol(connID, (StringPtr) sym2, (Ptr *) proc2Ptr, &symClass);
-    p2cstr((StringPtr) sym2);
+    native = Tcl_UtfToExternalDString(NULL, sym2, -1, &ds);
+    c2pstr(native);
+    err = FindSymbol(connID, (StringPtr) native, (Ptr *) proc2Ptr, &symClass);
+    Tcl_DStringFree(&ds);
     if (err != fragNoErr || symClass == kDataCFragSymbol) {
 	*proc2Ptr = NULL;
     }
-    
-    *clientDataPtr = (ClientData) connID;
-    *unloadProcPtr = &TclpUnloadFile;
     
     return TCL_OK;
 }
@@ -256,6 +261,7 @@ TclpUnloadFile(clientData)
 				 * a token that represents the loaded 
 				 * file. */
 {
+    CloseConnection((CFragConnectionID*) &clientData);
 }
 
 /*

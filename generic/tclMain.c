@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMain.c,v 1.13 2001/09/24 21:10:32 dgp Exp $
+ * RCS: @(#) $Id: tclMain.c,v 1.14 2001/11/23 01:28:53 das Exp $
  */
 
 #include "tcl.h"
@@ -38,7 +38,11 @@ int (*tclDummyLinkVarPtr)() = Tcl_LinkVar;
  * on some systems, so it's better just to leave it out.
  */
 
+#if !defined(MAC_TCL)
 extern int		isatty _ANSI_ARGS_((int fd));
+#else
+#include <unistd.h>
+#endif
 extern char *		strcpy _ANSI_ARGS_((char *dst, CONST char *src));
 
 static char *tclStartupScriptFileName = NULL;
