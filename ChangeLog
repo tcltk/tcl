@@ -1,3 +1,8 @@
+2005-01-04  Don Porter  <dgp@users.sourceforge.net>
+
+	* tests/fCmd.test (fCmd-18.10):	Added notNetworkFilesystem constraint.
+	[Bug 456665]
+
 2004-12-29  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* win/tcl.m4, win/configure: update MSVC CFLAGS_OPT to -O2, remove
