@@ -1,3 +1,9 @@
+2001-07-21  Don Porter  <dgp@users.sourceforge.net>
+
+	* doc/pkgMkindex.n:
+	* library/package.tcl:  Corrected documentation and usage
+	message of [pkg_mkIndex].
+
 2001-07-18  Mo DeJong  <mdejong@redhat.com>
 
 	* generic/tclPlatDecls.h: Define TCHAR by including
