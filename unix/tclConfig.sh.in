@@ -9,7 +9,7 @@
 #
 # The information in this file is specific to a single platform.
 #
-# RCS: @(#) $Id: tclConfig.sh.in,v 1.11 1999/06/16 22:36:24 surles Exp $
+# RCS: @(#) $Id: tclConfig.sh.in,v 1.12 1999/07/28 18:51:29 wart Exp $
 
 # Tcl's version number.
 TCL_VERSION='@TCL_VERSION@'
@@ -30,6 +30,10 @@ TCL_DBGX=@TCL_DBGX@
 # Default flags used in an optimized and debuggable build, respectively.
 TCL_CFLAGS_DEBUG='@CFLAGS_DEBUG@'
 TCL_CFLAGS_OPTIMIZE='@CFLAGS_OPTIMIZE@'
+
+# Default flags used in an optimized and debuggable build, respectively.
+TCL_LDFLAGS_DEBUG='@LDFLAGS_DEBUG@'
+TCL_LDFLAGS_OPTIMIZE='@LDFLAGS_OPTIMIZE@'
 
 # Flag, 1: we built a shared lib, 0 we didn't
 TCL_SHARED_BUILD=@TCL_SHARED_BUILD@
