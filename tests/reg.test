@@ -9,7 +9,7 @@
 #
 # Copyright (c) 1998, 1999 Henry Spencer.  All rights reserved.
 #
-# RCS: @(#) $Id: reg.test,v 1.19 2003/11/14 20:44:47 dgp Exp $
+# RCS: @(#) $Id: reg.test,v 1.20 2003/11/17 17:48:17 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -1082,6 +1082,53 @@ test reg-32.9 {canmatch functionality -- more complex case} {knownBug} {
     set res [testregexp -xflags -- c $pat $line resvar]
     lappend res $resvar
 } {0 6}
+
+# Tests reg-33.*: Checks for bug fixes
+
+test reg-33.1 {Bug 230589} {
+    regexp {[ ]*(^|[^%])%V} "*%V2" m s
+} 1
+
+test reg-33.2 {Bug 504785} {
+    regexp -inline {([^_.]*)([^.]*)\.(..)(.).*} bbcos_001_c01.q1la
+} {bbcos_001_c01.q1la bbcos _001_c01 q1 l}
+
+test reg-33.3 {Bug 505048} {
+    regexp {\A\s*[^<]*\s*<([^>]+)>} a<a>
+} 1
+
+test reg-33.4 {Bug 505048} {
+    regexp {\A\s*([^b]*)b} ab
+} 1
+
+test reg-33.5 {Bug 505048} {
+    regexp {\A\s*[^b]*(b)} ab
+} 1
+
+test reg-33.6 {Bug 505048} {
+    regexp {\A(\s*)[^b]*(b)} ab
+} 1
+
+test reg-33.7 {Bug 505048} {
+    regexp {\A\s*[^b]*b} ab
+} 1
+
+test reg-33.8 {Bug 505048} {
+    regexp -inline {\A\s*[^b]*b} ab
+} ab
+
+test reg-33.9 {Bug 505048} {
+    regexp -indices -inline {\A\s*[^b]*b} ab
+} {{0 1}}
+
+test reg-33.10 {Bug 840258} {
+    regsub {(^|\n)+\.*b} \n.b {} tmp
+} 1
+
+test reg-33.11 {Bug 840258} {
+    regsub {(^|[\n\r]+)\.*\?<.*?(\n|\r)+} \
+	    "TQ\r\n.?<5000267>Test already stopped\r\n" {} tmp
+} 1
 
 # cleanup
 ::tcltest::cleanupTests
