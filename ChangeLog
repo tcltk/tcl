@@ -4,6 +4,8 @@
 	* generic/tclIOUtil.c: improved and sped up handling of
 	native paths (duplication and conversion to normalized paths),
 	particularly on Windows.
+	* modified part of above commit, due to problems on Linux. 
+	Will re-examine bug report and evaluate more closely.
 
 2002-06-07  Don Porter  <dgp@users.sourceforge.net>
 
