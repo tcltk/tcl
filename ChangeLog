@@ -4,6 +4,9 @@
 	loop rather than just calling [update] periodically, avoiding
 	intermittent failures (usually in io-29.32) that stemmed from 
 	unreaped processes on Windows.
+	* tests/winPipe.test (winpipe-1.11): Fixed a bug that caused
+	test to fail if the path name of the working directory contained
+	whitespace [Bug 678430]
 	
 2004-07-01  Vince Darley  <vincentdarley@users.sourceforge.net>
 
