@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.148 2004/09/18 18:04:04 dkf Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.149 2004/09/18 19:24:53 dkf Exp $
  */
 
 #ifdef STDC_HEADERS
@@ -3653,6 +3653,8 @@ TclExecuteByteCode(interp, codePtr)
 #endif /* TCL_COMPILE_DEBUG */
 		if (w < 0) {
 		    wResult = ~w;
+		} else {
+		    wResult = w;
 		}
 		/*
 		 * Shift in steps when the shift gets large to prevent
@@ -3661,14 +3663,14 @@ TclExecuteByteCode(interp, codePtr)
 		if (i2 >= 64) {
 		    wResult = Tcl_LongAsWide(0);
 		} else if (i2 > 60) {
-		    wResult <<= 30;
-		    wResult <<= 30;
-		    wResult <<= i2-60;
+		    wResult >>= 30;
+		    wResult >>= 30;
+		    wResult >>= i2-60;
 		} else if (i2 > 30) {
-		    wResult <<= 30;
-		    wResult <<= i2-30;
+		    wResult >>= 30;
+		    wResult >>= i2-30;
 		} else {
-		    wResult <<= i2;
+		    wResult >>= i2;
 		}
 		if (w < 0) {
 		    wResult = ~wResult;
@@ -3678,6 +3680,8 @@ TclExecuteByteCode(interp, codePtr)
 	    }
 	    if (i < 0) {
 		iResult = ~i;
+	    } else {
+		iResult = i;
 	    }
 	    /*
 	     * Shift in steps when the shift gets large to prevent
@@ -3686,14 +3690,14 @@ TclExecuteByteCode(interp, codePtr)
 	    if (i2 >= 64) {
 		iResult = 0;
 	    } else if (i2 > 60) {
-		iResult <<= 30;
-		iResult <<= 30;
-		iResult <<= i2-60;
+		iResult >>= 30;
+		iResult >>= 30;
+		iResult >>= i2-60;
 	    } else if (i2 > 30) {
-		iResult <<= 30;
-		iResult <<= i2-30;
+		iResult >>= 30;
+		iResult >>= i2-30;
 	    } else {
-		iResult <<= i2;
+		iResult >>= i2;
 	    }
 	    if (i < 0) {
 		iResult = ~iResult;
