@@ -1,5 +1,7 @@
 2002-04-26  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
+	* tests/obj.test (obj-11.[56]): Test conversion to boolean more
+	thoroughly.
 	* generic/tclObj.c (SetBooleanFromAny): Could not interpret
 	integers that did not look like doubles as booleans [Bug 548686]
 
