@@ -1,3 +1,12 @@
+2001-09-12  Don Porter <msofer@users.sourceforge.net>
+
+	* tests/appendComp.test:
+	* tests/lsearch.test:
+	* tests/namespace.test:
+	* tests/rename.test:
+	* tests/split.test:  Corrected tests to better isolate tests in
+	one file from influencing tests in other files.  [Bug 460591]
+
 2001-09-12  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* generic/tcl.decls: reserved stub #481 for the implementation of
