@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: util.test,v 1.8 2001/07/03 03:33:42 hobbs Exp $
+# RCS: @(#) $Id: util.test,v 1.9 2001/09/19 08:52:46 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -294,18 +294,16 @@ test util-7.4 {TclPrecTraceProc - write traces, bogus values} {
 
 set tcl_precision 12
 
+# This test always succeeded in the C locale anyway...
+test util-8.1 {TclNeedSpace - correct UTF8 handling} {
+    interp create \u5420
+    interp create [list \u5420 foo]
+    interp alias {} fooset [list \u5420 foo] set
+    set result [interp target {} fooset]
+    interp delete \u5420
+    set result
+} "\u5420 foo"
+
 # cleanup
 ::tcltest::cleanupTests
 return
-
-
-
-
-
-
-
-
-
-
-
-
