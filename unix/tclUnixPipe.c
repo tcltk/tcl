@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPipe.c,v 1.3.6.1 1999/10/30 11:09:45 hobbs Exp $
+ * RCS: @(#) $Id: tclUnixPipe.c,v 1.3.6.2 1999/11/30 08:43:03 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -817,6 +817,8 @@ PipeBlockModeProc(instanceData, mode)
     }
 #endif	/* USE_FIONBIO */
     
+    psPtr->isNonBlocking = (mode == TCL_MODE_NONBLOCKING);
+
     return 0;
 }
 
