@@ -36,13 +36,13 @@ item: Install File
   Flags=0000000000000010
 end
 item: Install File
-  Source=n:\dist\tcl8.0\library\http2.0\pkgIndex.tcl
-  Destination=%MAINDIR%\lib\tcl%VER%\http2.0\pkgIndex.tcl
+  Source=n:\dist\tcl8.0\library\http2.1\pkgIndex.tcl
+  Destination=%MAINDIR%\lib\tcl%VER%\http2.1\pkgIndex.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=n:\dist\tcl8.0\library\http2.0\http.tcl
-  Destination=%MAINDIR%\lib\tcl%VER%\http2.0\http.tcl
+  Source=n:\dist\tcl8.0\library\http2.1\http.tcl
+  Destination=%MAINDIR%\lib\tcl%VER%\http2.1\http.tcl
   Flags=0000000000000010
 end
 item: Install File

@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.15 1999/07/13 22:23:44 redman Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.16 1999/07/20 00:11:56 hershey Exp $
 
 VERSION = @TCL_VERSION@
 
@@ -409,7 +409,7 @@ install-libraries:
 		else true; \
 		fi; \
 	    done;
-	@for i in http1.0 http2.0 opt0.4 encoding msgcat1.0 tcltest1.0; \
+	@for i in http1.0 http2.1 opt0.4 encoding msgcat1.0 tcltest1.0; \
 	    do \
 	    if [ ! -d $(SCRIPT_INSTALL_DIR)/$$i ] ; then \
 		echo "Making directory $(SCRIPT_INSTALL_DIR)/$$i"; \
@@ -427,7 +427,7 @@ install-libraries:
 	    echo "Installing $$i"; \
 	    $(COPY) "$$i" "$(SCRIPT_INSTALL_DIR)"; \
 	    done;
-	@for i in http2.0 http1.0 opt0.4 msgcat1.0 tcltest1.0; \
+	@for i in http2.1 http1.0 opt0.4 msgcat1.0 tcltest1.0; \
 	    do \
 	    for j in $(ROOT_DIR)/library/$$i/*.tcl; \
 		do \

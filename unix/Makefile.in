@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.39 1999/07/13 22:23:06 redman Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.40 1999/07/20 00:11:55 hershey Exp $
 
 VERSION 		= @TCL_VERSION@
 
@@ -530,7 +530,7 @@ install-libraries:
 		else true; \
 		fi; \
 	    done;
-	@for i in http2.0 http1.0 opt0.4 encoding msgcat1.0 tcltest1.0; \
+	@for i in http2.1 http1.0 opt0.4 encoding msgcat1.0 tcltest1.0; \
 	    do \
 	    if [ ! -d $(SCRIPT_INSTALL_DIR)/$$i ] ; then \
 		echo "Making directory $(SCRIPT_INSTALL_DIR)/$$i"; \
@@ -549,7 +549,7 @@ install-libraries:
 	    echo "Installing $$i"; \
 	    $(INSTALL_DATA) $$i $(SCRIPT_INSTALL_DIR); \
 	    done;
-	@for i in http2.0 http1.0 opt0.4 msgcat1.0 tcltest1.0; \
+	@for i in http2.1 http1.0 opt0.4 msgcat1.0 tcltest1.0; \
 	    do \
 	    for j in $(TOP_DIR)/library/$$i/*.tcl ; \
 		do \
@@ -1065,7 +1065,7 @@ dist: $(UNIX_DIR)/configure
 	mkdir $(DISTDIR)/library
 	cp -p $(TOP_DIR)/license.terms $(TOP_DIR)/library/*.tcl \
 		$(TOP_DIR)/library/tclIndex $(DISTDIR)/library
-	for i in http2.0 http1.0 opt0.4 msgcat1.0 reg1.0 dde1.1 tcltest1.0; \
+	for i in http2.1 http1.0 opt0.4 msgcat1.0 reg1.0 dde1.1 tcltest1.0; \
 	    do \
 		mkdir $(DISTDIR)/library/$$i ;\
 		cp -p $(TOP_DIR)/library/$$i/*.tcl $(DISTDIR)/library/$$i; \

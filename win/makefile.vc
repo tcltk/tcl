@@ -6,7 +6,7 @@
 # Copyright (c) 1995-1996 Sun Microsystems, Inc.
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 #
-# RCS: @(#) $Id: makefile.vc,v 1.38 1999/07/13 22:23:45 redman Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.39 1999/07/20 00:11:57 hershey Exp $
 
 # Does not depend on the presence of any environment variables in
 # order to compile tcl; all needed information is derived from 
@@ -451,10 +451,10 @@ install-libraries:
 	-@$(MKDIR) "$(SCRIPT_INSTALL_DIR)\http1.0"
 	-@copy "$(ROOT)\library\http1.0\http.tcl"     "$(SCRIPT_INSTALL_DIR)\http1.0"
 	-@copy "$(ROOT)\library\http1.0\pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)\http1.0"
-	@echo installing http2.0
-	-@$(MKDIR) "$(SCRIPT_INSTALL_DIR)\http2.0"
-	-@copy "$(ROOT)\library\http2.0\http.tcl"     "$(SCRIPT_INSTALL_DIR)\http2.0"
-	-@copy "$(ROOT)\library\http2.0\pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)\http2.0"
+	@echo installing http2.1
+	-@$(MKDIR) "$(SCRIPT_INSTALL_DIR)\http2.1"
+	-@copy "$(ROOT)\library\http2.1\http.tcl"     "$(SCRIPT_INSTALL_DIR)\http2.1"
+	-@copy "$(ROOT)\library\http2.1\pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)\http2.1"
 	@echo installing opt0.4
 	-@$(MKDIR) "$(SCRIPT_INSTALL_DIR)\opt0.4"
 	-@copy "$(ROOT)\library\opt0.4\optparse.tcl" "$(SCRIPT_INSTALL_DIR)\opt0.4"
