@@ -12,7 +12,7 @@
 # Copyright (c) 2001-2002 David Gravereaux.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.92 2002/08/20 15:33:34 dgp Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.93 2002/09/29 20:41:16 davygrvy Exp $
 #------------------------------------------------------------------------------
 
 !if "$(MSVCDIR)" == ""
@@ -217,9 +217,9 @@ TCLTESTOBJS = \
 
 TCLOBJS = \
 	$(TMP_DIR)\regcomp.obj \
+	$(TMP_DIR)\regerror.obj \
 	$(TMP_DIR)\regexec.obj \
 	$(TMP_DIR)\regfree.obj \
-	$(TMP_DIR)\regerror.obj \
 	$(TMP_DIR)\strftime.obj \
 	$(TMP_DIR)\strtoll.obj \
 	$(TMP_DIR)\strtoull.obj \
@@ -253,8 +253,8 @@ TCLOBJS = \
 	$(TMP_DIR)\tclIOSock.obj \
 	$(TMP_DIR)\tclIOUtil.obj \
 	$(TMP_DIR)\tclLink.obj \
-	$(TMP_DIR)\tclLiteral.obj \
 	$(TMP_DIR)\tclListObj.obj \
+	$(TMP_DIR)\tclLiteral.obj \
 	$(TMP_DIR)\tclLoad.obj \
 	$(TMP_DIR)\tclMain.obj \
 	$(TMP_DIR)\tclNamesp.obj \
@@ -276,6 +276,7 @@ TCLOBJS = \
 	$(TMP_DIR)\tclStubInit.obj \
 	$(TMP_DIR)\tclStubLib.obj \
 	$(TMP_DIR)\tclThread.obj \
+	$(TMP_DIR)\tclThreadAlloc.obj \
 	$(TMP_DIR)\tclThreadJoin.obj \
 	$(TMP_DIR)\tclTimer.obj \
 	$(TMP_DIR)\tclUtf.obj \
@@ -337,6 +338,11 @@ cflags = $(cflags) -QI0f
 
 !if $(ITAN_B_ERRATA)
 cflags = $(cflags) -QIA64_Bx
+!endif
+
+### Turn on the thread allocator, too.
+!if $(TCL_THREADS)
+cflags = $(cflags) -DUSE_THREAD_ALLOC=1
 !endif
 
 !if $(MSVCRT)
