@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.30 2002/08/05 03:24:40 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.31 2002/08/07 15:50:29 msofer Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -29,14 +29,6 @@
  * tclExecute.c, tclBasic.c, and their clients.
  *------------------------------------------------------------------------
  */
-
-/*
- * Variable that denotes the command name Tcl object type. Objects of this
- * type cache the Command pointer that results from looking up command names
- * in the command hashtable.
- */
-
-extern Tcl_ObjType	tclCmdNameType;
 
 #ifdef TCL_COMPILE_DEBUG
 /*
