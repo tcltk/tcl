@@ -1,5 +1,9 @@
 2002-01-15  Don Porter <dgp@users.sourceforge.net>
 
+	* doc/SetErrno.3 (Tcl_ErrnoMsg): Corrected documentation for
+	Tcl_ErrnoMsg; it takes an integer argument.  Thanks to Georgios
+	Petasis.  [Bug 468183]
+
         * doc/AddErrInfo.3 (Tcl_PosixError):
         * doc/Eval.3 (Tcl_EvalFile):
         * doc/FileSystem.c (Tcl_FSOpenFileChannel,Tcl_FSOpenFileChannelProc):
