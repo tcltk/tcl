@@ -1,5 +1,10 @@
 2002-09-10  Daniel Steffen  <das@users.sourceforge.net>
 
+	* macosx/Tcl.pbproj/project.pbxproj: disabled building html
+	documentation during embedded build.
+
+2002-09-10  Daniel Steffen  <das@users.sourceforge.net>
+
 	* unix/Makefile.in: added DYLIB_INSTALL_DIR variable for macosx
 	and set it to default value ${LIB_RUNTIME_DIR}
 	* unix/tcl.m4 (Darwin): use DYLIB_INSTALL_DIR instead of
