@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMain.c,v 1.18 2002/02/28 00:53:32 dgp Exp $
+ * RCS: @(#) $Id: tclMain.c,v 1.19 2002/04/20 01:29:15 dgp Exp $
  */
 
 #include "tcl.h"
@@ -46,7 +46,7 @@ static Tcl_Obj *tclStartupScriptPath = NULL;
 static Tcl_MainLoopProc *mainLoopProc = NULL;
 
 /* 
- * Structure defintiion for information used to keep the state of
+ * Structure definition for information used to keep the state of
  * an interactive command processor that reads lines from standard
  * input and writes prompts and results to standard output.
  */
@@ -520,6 +520,7 @@ Tcl_Main(argc, argv, appInitProc)
             Tcl_DeleteInterp(interp);
         }
     }
+    TclSetStartupScriptPath(NULL);
 
     /*
      * If we get here, the master interp has been deleted.  Allow
