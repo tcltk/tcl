@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.69 2004/09/29 22:17:30 dkf Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.70 2004/09/29 22:22:50 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -3467,7 +3467,7 @@ SetCmdNameFromAny(interp, objPtr)
      * structure was found, leave NULL as the cached value.
      */
 
-    TclFreeIntRep)(objPtr);
+    TclFreeIntRep(objPtr);
     objPtr->internalRep.twoPtrValue.ptr1 = (VOID *) resPtr;
     objPtr->internalRep.twoPtrValue.ptr2 = NULL;
     objPtr->typePtr = &tclCmdNameType;
