@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.69 2002/06/16 17:59:12 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.70 2002/06/17 22:52:51 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -1240,7 +1240,8 @@ TclExecuteByteCode(interp, codePtr)
 		    for (tracePtr = iPtr->tracePtr;  tracePtr != NULL;
 		            tracePtr = nextTracePtr) {
 			nextTracePtr = tracePtr->nextPtr;
-			if (iPtr->numLevels <= tracePtr->level) {
+			if (tracePtr->level == 0 ||
+                            iPtr->numLevels <= tracePtr->level) {
 			    /*
 			     * Traces will be called: get command string
 			     */
@@ -1249,7 +1250,13 @@ TclExecuteByteCode(interp, codePtr)
 			    break;
 			}
 		    }
-		}		
+		} else {		
+                    Command *cmdPtr;
+                    cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, objv[0]);
+                    if (cmdPtr != NULL && cmdPtr->flags & CMD_HAS_EXEC_TRACES) {
+		        bytes = GetSrcInfoForPc(pc, codePtr, &length);
+		    }
+		}
 
 		/*
 		 * A reference to part of the stack vector itself

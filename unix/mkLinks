@@ -270,6 +270,8 @@ if test -r CrtObjCmd.3; then
     rm -f Tcl_SetCommandInfo.3
     rm -f Tcl_SetCommandInfoFromToken.3
     rm -f Tcl_GetCommandName.3
+    rm -f Tcl_GetCommandFullName.3
+    rm -f Tcl_GetCommandFromObj.3
     ln CrtObjCmd.3 Tcl_CreateObjCommand.3
     ln CrtObjCmd.3 Tcl_DeleteCommand.3
     ln CrtObjCmd.3 Tcl_DeleteCommandFromToken.3
@@ -278,6 +280,8 @@ if test -r CrtObjCmd.3; then
     ln CrtObjCmd.3 Tcl_SetCommandInfo.3
     ln CrtObjCmd.3 Tcl_SetCommandInfoFromToken.3
     ln CrtObjCmd.3 Tcl_GetCommandName.3
+    ln CrtObjCmd.3 Tcl_GetCommandFullName.3
+    ln CrtObjCmd.3 Tcl_GetCommandFromObj.3
 fi
 if test -r CrtSlave.3; then
     rm -f Tcl_IsSafe.3

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.36 2002/06/17 00:09:19 msofer Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.37 2002/06/17 22:52:51 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -946,6 +946,7 @@ TclCompileScript(interp, script, numBytes, nested, envPtr)
 
 			if ((cmdPtr != NULL)
 			        && (cmdPtr->compileProc != NULL)
+			        && !(cmdPtr->flags & CMD_HAS_EXEC_TRACES)
 			        && !(iPtr->flags & DONT_COMPILE_CMDS_INLINE)) {
 			    code = (*(cmdPtr->compileProc))(interp, &parse,
 			            envPtr);
