@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.86 2002/07/31 09:57:34 dkf Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.87 2002/08/01 20:02:11 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -513,11 +513,22 @@ TclCreateExecEnv(interp)
 				 * environment is being created. */
 {
     ExecEnv *eePtr = (ExecEnv *) ckalloc(sizeof(ExecEnv));
+    Tcl_Obj **stackPtr;
 
-    eePtr->stackPtr = (Tcl_Obj **)
-	ckalloc((unsigned) (TCL_STACK_INITIAL_SIZE * sizeof(Tcl_Obj *)));
+    stackPtr = (Tcl_Obj **)
+	ckalloc((size_t) (TCL_STACK_INITIAL_SIZE * sizeof(Tcl_Obj *)));
+
+    /*
+     * Use the bottom pointer to keep a reference count; the 
+     * execution environment holds a reference.
+     */
+
+    stackPtr++;
+    eePtr->stackPtr = stackPtr;
+    stackPtr[-1] = (Tcl_Obj *) ((char *) 1);
+
     eePtr->stackTop = -1;
-    eePtr->stackEnd = (TCL_STACK_INITIAL_SIZE - 1);
+    eePtr->stackEnd = (TCL_STACK_INITIAL_SIZE - 2);
 
     eePtr->errorInfo = Tcl_NewStringObj("::errorInfo", -1);
     Tcl_IncrRefCount(eePtr->errorInfo);
@@ -558,7 +569,11 @@ void
 TclDeleteExecEnv(eePtr)
     ExecEnv *eePtr;		/* Execution environment to free. */
 {
-    Tcl_EventuallyFree((ClientData)eePtr->stackPtr, TCL_DYNAMIC);
+    if (eePtr->stackPtr[-1] == (Tcl_Obj *) ((char *) 1)) {
+	ckfree((char *) (eePtr->stackPtr-1));
+    } else {
+	panic("ERROR: freeing an execEnv whose stack is still in use.\n");
+    }
     TclDecrRefCount(eePtr->errorInfo);
     TclDecrRefCount(eePtr->errorCode);
     ckfree((char *) eePtr);
@@ -621,18 +636,44 @@ GrowEvaluationStack(eePtr)
     int newElems  = 2*currElems;
     int currBytes = currElems * sizeof(Tcl_Obj *);
     int newBytes  = 2*currBytes;
-    Tcl_Obj **newStackPtr = (Tcl_Obj **) ckalloc((unsigned) newBytes);
+    Tcl_Obj **newStackPtr;
+    Tcl_Obj **oldStackPtr = eePtr->stackPtr;
 
     /*
-     * Copy the existing stack items to the new stack space, free the old
-     * storage if appropriate, and mark new space as malloc'ed.
+     * We keep the stack reference count as a (char *), as that
+     * works nicely as a portable pointer-sized counter.
+     */
+
+    char *refCount = (char *) oldStackPtr[-1];
+
+    /*
+     * Realloc the stack: copy existing stack items to the new stack 
+     * space, free the old storage if appropriate.
      */
  
-    memcpy((VOID *) newStackPtr, (VOID *) eePtr->stackPtr,
-	   (size_t) currBytes);
-    Tcl_EventuallyFree((ClientData)eePtr->stackPtr, TCL_DYNAMIC);
+    newStackPtr = (Tcl_Obj **) ckrealloc((VOID *) (oldStackPtr-1), 
+            (unsigned) newBytes);
+    newStackPtr++;
     eePtr->stackPtr = newStackPtr;
-    eePtr->stackEnd = (newElems - 1); /* i.e. index of last usable item */
+    eePtr->stackEnd = (newElems - 2); /* index of last usable item */
+
+    if (newStackPtr != oldStackPtr) {
+	/*
+	 * The stack was moved; update the refCounts.
+	 */
+
+	newStackPtr[-1] = (Tcl_Obj *) ((char *) 1);	
+	if (refCount == (char *) 1) {
+	    ckfree((VOID *) (oldStackPtr-1));
+	} else {
+	    /*
+	     * Remove the reference corresponding to the
+	     * environment pointer.
+	     */
+
+	    oldStackPtr[-1] = (Tcl_Obj *) (refCount-1);
+	}
+    }
 }
 
 /*
@@ -1304,10 +1345,20 @@ TclExecuteByteCode(interp, codePtr)
 	{
 	    int objc = opnd; /* The number of arguments. */
 	    Tcl_Obj **objv;	 /* The array of argument objects. */
-	    Tcl_Obj **preservedStack;
-	    /* Reference to memory block containing
+
+	    /*
+	     * We keep the stack reference count as a (char *), as that
+	     * works nicely as a portable pointer-sized counter.
+	     */
+
+	    char **preservedStackRefCountPtr;
+	    
+	    /* 
+	     * Reference to memory block containing
 	     * objv array (must be kept live throughout
-	     * trace and command invokations.) */
+	     * trace and command invokations.) 
+	     */
+
 	    objv = &(stackPtr[stackTop - (objc-1)]);
 
 #ifdef TCL_COMPILE_DEBUG
@@ -1364,15 +1415,15 @@ TclExecuteByteCode(interp, codePtr)
 
 	    /*
 	     * A reference to part of the stack vector itself
-	     * escapes our control, so must use preserve/release
+	     * escapes our control: increase its refCount
 	     * to stop it from being deallocated by a recursive
 	     * call to ourselves.  The extra variable is needed
 	     * because all others are liable to change due to the
 	     * trace procedures.
 	     */
 
-	    Tcl_Preserve((ClientData)stackPtr);
-	    preservedStack = stackPtr;
+	    preservedStackRefCountPtr = (char **) (stackPtr-1);
+	    ++*preservedStackRefCountPtr;
 
 	    /*
 	     * Finally, let TclEvalObjvInternal handle the command. 
@@ -1389,7 +1440,10 @@ TclExecuteByteCode(interp, codePtr)
 	     * going to be used from now on.
 	     */
 
-	    Tcl_Release((ClientData) preservedStack);
+	    --*preservedStackRefCountPtr;
+	    if (*preservedStackRefCountPtr == (char *) 0) {
+		ckfree((VOID *) preservedStackRefCountPtr);
+	    }	    
 
 	    if (result == TCL_OK) {
 		/*
