@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.24 2000/11/01 21:48:45 hobbs Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.25 2000/11/15 14:09:01 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -262,13 +262,13 @@ TclLookupVar(interp, part1, part2, flags, msg, createPart1, createPart2,
 
 		if (varNsPtr == NULL) {
 		    if (flags & TCL_LEAVE_ERR_MSG) {
-			VarErrMsg(interp, part1, part2, msg, badNamespace);
+			VarErrMsg(interp, part1, elName, msg, badNamespace);
 		    }
 		    goto done;
 		}
 		if (tail == NULL) {
 		    if (flags & TCL_LEAVE_ERR_MSG) {
-			VarErrMsg(interp, part1, part2, msg, missingName);
+			VarErrMsg(interp, part1, elName, msg, missingName);
 		    }
 		    goto done;
 		}
@@ -279,7 +279,7 @@ TclLookupVar(interp, part1, part2, flags, msg, createPart1, createPart2,
 		varPtr->nsPtr = varNsPtr;
 	    } else {		/* var wasn't found and not to create it */
 		if (flags & TCL_LEAVE_ERR_MSG) {
-		    VarErrMsg(interp, part1, part2, msg, noSuchVar);
+		    VarErrMsg(interp, part1, elName, msg, noSuchVar);
 		}
 		goto done;
 	    }
@@ -329,7 +329,7 @@ TclLookupVar(interp, part1, part2, flags, msg, createPart1, createPart2,
 		}
 		if (hPtr == NULL) {
 		    if (flags & TCL_LEAVE_ERR_MSG) {
-			VarErrMsg(interp, part1, part2, msg, noSuchVar);
+			VarErrMsg(interp, part1, elName, msg, noSuchVar);
 		    }
 		    goto done;
 		}
@@ -370,7 +370,7 @@ TclLookupVar(interp, part1, part2, flags, msg, createPart1, createPart2,
     if (TclIsVarUndefined(varPtr) && !TclIsVarArrayElement(varPtr)) {
 	if (!createPart1) {
 	    if (flags & TCL_LEAVE_ERR_MSG) {
-		VarErrMsg(interp, part1, part2, msg, noSuchVar);
+		VarErrMsg(interp, part1, elName, msg, noSuchVar);
 	    }
 	    varPtr = NULL;
 	    goto done;
@@ -382,7 +382,7 @@ TclLookupVar(interp, part1, part2, flags, msg, createPart1, createPart2,
 	 */
 	if ((varPtr->flags & VAR_IN_HASHTABLE) && (varPtr->hPtr == NULL)) {
 	    if (flags & TCL_LEAVE_ERR_MSG) {
-		VarErrMsg(interp, part1, part2, msg, danglingVar);
+		VarErrMsg(interp, part1, elName, msg, danglingVar);
 	    }
 	    varPtr = NULL;
 	    goto done;
@@ -395,7 +395,7 @@ TclLookupVar(interp, part1, part2, flags, msg, createPart1, createPart2,
 	Tcl_InitHashTable(varPtr->value.tablePtr, TCL_STRING_KEYS);
     } else if (!TclIsVarArray(varPtr)) {
 	if (flags & TCL_LEAVE_ERR_MSG) {
-	    VarErrMsg(interp, part1, part2, msg, needArray);
+	    VarErrMsg(interp, part1, elName, msg, needArray);
 	}
 	varPtr = NULL;
 	goto done;
@@ -426,7 +426,7 @@ TclLookupVar(interp, part1, part2, flags, msg, createPart1, createPart2,
 	}
 	if (hPtr == NULL) {
 	    if (flags & TCL_LEAVE_ERR_MSG) {
-		VarErrMsg(interp, part1, part2, msg, noSuchElement);
+		VarErrMsg(interp, part1, elName, msg, noSuchElement);
 	    }
 	    varPtr = NULL;
 	    goto done;
