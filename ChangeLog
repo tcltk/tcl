@@ -1,3 +1,9 @@
+2003-12-14  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* generic/tclPathObj.c: complete rewrite of generic file 
+	normalization code to cope with links followed by '..'.
+	[Bug 849514], and parts of [859251]
+
 2003-12-12  David Gravereaux <davygrvy@pobox.com>
 
 	* win/tclWinChan.c: Win32's SetFilePointer() takes LONGs not
