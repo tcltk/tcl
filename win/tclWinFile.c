@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.36 2002/07/15 09:01:51 vincentdarley Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.37 2002/07/15 09:53:21 vincentdarley Exp $
  */
 
 //#define _WIN32_WINNT  0x0500
@@ -21,10 +21,6 @@
 #include <sys/stat.h>
 #include <shlobj.h>
 #include <lmaccess.h>		/* For TclpGetUserHome(). */
-
-extern  int  ConvertFileNameFormat(Tcl_Interp *interp, 
-    int objIndex, Tcl_Obj *fileName, int longShort, 
-    Tcl_Obj **attributePtrPtr);
 
 /*
  * Declarations for 'link' related information.  This information

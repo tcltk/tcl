@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFCmd.c,v 1.30 2002/06/12 09:28:58 vincentdarley Exp $
+ * RCS: @(#) $Id: tclWinFCmd.c,v 1.31 2002/07/15 09:53:21 vincentdarley Exp $
  */
 
 #include "tclWinInt.h"
@@ -90,7 +90,7 @@ typedef int (TraversalProc)(CONST TCHAR *srcPtr, CONST TCHAR *dstPtr,
  */
 
 static void		StatError(Tcl_Interp *interp, Tcl_Obj *fileName);
-int			ConvertFileNameFormat(Tcl_Interp *interp, 
+static int		ConvertFileNameFormat(Tcl_Interp *interp, 
 			    int objIndex, Tcl_Obj *fileName, int longShort,
 			    Tcl_Obj **attributePtrPtr);
 static int		DoCopyFile(CONST TCHAR *srcPtr, CONST TCHAR *dstPtr);
@@ -1466,7 +1466,7 @@ GetWinFileAttributes(
  *----------------------------------------------------------------------
  */
 
-int
+static int
 ConvertFileNameFormat(
     Tcl_Interp *interp,		/* The interp we are using for errors. */
     int objIndex,		/* The index of the attribute. */
