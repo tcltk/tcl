@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOCmd.c,v 1.5 1999/04/16 00:46:47 stanton Exp $
+ * RCS: @(#) $Id: tclIOCmd.c,v 1.6 1999/05/05 01:19:43 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -298,7 +298,7 @@ Tcl_ReadObjCmd(dummy, interp, objc, objv)
 
     if ((objc != 2) && (objc != 3)) {
 	argerror:
-	Tcl_WrongNumArgs(interp, 1, objv, "channelId ?numBytes?");
+	Tcl_WrongNumArgs(interp, 1, objv, "channelId ?numChars?");
 	Tcl_AppendResult(interp, " or \"", Tcl_GetString(objv[0]),
 		" ?-nonewline? channelId\"", (char *) NULL);
 	return TCL_ERROR;

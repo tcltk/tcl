@@ -5,10 +5,10 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: read.n,v 1.3 1999/04/16 00:46:35 stanton Exp $
+'\" RCS: @(#) $Id: read.n,v 1.4 1999/05/05 01:19:42 stanton Exp $
 '\" 
 .so man.macros
-.TH read n 7.5 Tcl "Tcl Built-In Commands"
+.TH read n 8.1 Tcl "Tcl Built-In Commands"
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
@@ -16,7 +16,7 @@ read \- Read from a channel
 .SH SYNOPSIS
 \fBread \fR?\fB\-nonewline\fR? \fIchannelId\fR
 .sp
-\fBread \fIchannelId numBytes\fR
+\fBread \fIchannelId numChars\fR
 .BE
 
 .SH DESCRIPTION
@@ -25,15 +25,23 @@ In the first form, the \fBread\fR command reads all of the data from
 \fIchannelId\fR up to the end of the file.
 If the \fB\-nonewline\fR switch is specified then the last character
 of the file is discarded if it is a newline.
-In the second form, the extra argument specifies how many bytes to
-read.  Exactly that many bytes will be read and returned, unless
-there are fewer than \fInumBytes\fR left in the file;  in this case
-all the remaining bytes are returned.
+.VS 8.1
+In the second form, the extra argument specifies how many characters to
+read.  Exactly that many characters will be read and returned, unless
+there are fewer than \fInumChars\fR left in the file;  in this case
+all the remaining characters are returned.  If the channel is
+configured to use a multi-byte encoding, then the number of characters
+read may not be the same as the number of bytes read.
 .PP
-If \fIchannelId\fR is in nonblocking mode, the command may not read
-as many bytes as requested:  once all available input has been read,
-the command will return the data that is available rather than blocking
-for more input.
+If \fIchannelId\fR is in nonblocking mode, the command may not read as
+many characters as requested: once all available input has been read,
+the command will return the data that is available rather than
+blocking for more input.  If the channel is configured to use a
+multi-byte encoding, then there may actually be some bytes remaining
+in the internal buffers that do not form a complete character.  These
+bytes will not be returned until a complete character is available or
+end-of-file is reached.  
+.VE 8.1
 The \fB\-nonewline\fR switch is ignored if the command returns
 before reaching the end of the file.
 .PP
@@ -47,4 +55,4 @@ which \fBfconfigure\fR will alter input.
 eof(n), fblocked(n), fconfigure(n)
 
 .SH KEYWORDS
-blocking, channel, end of line, end of file, nonblocking, read, translation
+blocking, channel, end of line, end of file, nonblocking, read, translation, encoding

@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: string.n,v 1.5 1999/05/04 02:57:54 stanton Exp $
+'\" RCS: @(#) $Id: string.n,v 1.6 1999/05/05 01:19:43 stanton Exp $
 '\" 
 .so man.macros
 .TH string n 8.1 Tcl "Tcl Built-In Commands"
@@ -24,8 +24,13 @@ The legal \fIoption\fRs (which may be abbreviated) are:
 .VS 8.1
 .TP
 \fBstring bytelength \fIstring\fR
-Returns a decimal string giving the number of bytes in the
-\fIstring\fR when represented as UTF-8.
+Returns a decimal string giving the number of bytes used to represent
+\fIstring\fR in memory.  Because UTF-8 uses one to three bytes to
+represent Unicode characters, the byte length will not be the same as
+the character length in general.  The cases where a script cares about
+the byte length are rare.  In almost all cases, you should use the
+\fBstring length\fB operation.  Refer to the \fBTcl_NumUtfChars\fR
+manual entry for more details on the UTF-8 representation.
 .TP
 \fBstring compare \fIstring1 string2\fR ?\fIlength\fR?
 .VE 8.1
@@ -79,11 +84,12 @@ A Tcl expression that returns a number.
 .IP \fBend[+-]\fIexpression\fR 10
 The last char of the string plus or minus the number specified
 in the expression (e.g. \fBend-1\fR).
-.RE
+.PP
 .VE 8.1
 If \fIcharIndex\fR is less than 0 or greater than
 or equal to the length of the string then an empty string is
 returned.
+.RE
 .TP
 \fBstring last \fIstring1 string2\fR
 Search \fIstring2\fR for a sequence of characters that exactly match
@@ -92,7 +98,9 @@ first character in the last such match within \fIstring2\fR.  If there
 is no match, then return \-1.
 .TP
 \fBstring length \fIstring\fR
-Returns a decimal string giving the number of characters in \fIstring\fR.
+Returns a decimal string giving the number of characters in
+\fIstring\fR.  Note that this is not necessarily the same as the
+number of bytes used to store the string.
 .VS 8.1
 .TP
 \fBstring map ?\fIoptions\fR? \fIcharMap string\fR
