@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: TraceVar.3,v 1.4 2000/04/14 23:01:54 hobbs Exp $
+'\" RCS: @(#) $Id: TraceVar.3,v 1.4.18.1 2002/02/05 02:21:58 wolfsuit Exp $
 '\" 
 .so man.macros
 .TH Tcl_TraceVar 3 7.4 Tcl "Tcl Library Procedures"
@@ -43,8 +43,9 @@ If the name references an element of an array, then it
 must be in writable memory:  Tcl will make temporary modifications 
 to it while looking up the name.
 .AP int flags in
-OR-ed combination of the values TCL_TRACE_READS, TCL_TRACE_WRITES, and
-TCL_TRACE_UNSETS, TCL_TRACE_ARRAY, and TCL_GLOBAL_ONLY.  
+OR-ed combination of the values TCL_TRACE_READS, TCL_TRACE_WRITES, 
+TCL_TRACE_UNSETS, TCL_TRACE_ARRAY, TCL_GLOBAL_ONLY, TCL_NAMESPACE_ONLY,
+TCL_TRACE_RESULT_DYNAMIC and TCL_TRACE_RESULT_OBJECT.  
 Not all flags are used by all
 procedures.  See below for more information.
 .AP Tcl_VarTraceProc *proc in
@@ -84,6 +85,11 @@ Normally, the variable will be looked up at the current level of
 procedure call;  if this bit is set then the variable will be looked
 up at global level, ignoring any active procedures.
 .TP
+\fBTCL_NAMESPACE_ONLY\fR
+Normally, the variable will be looked up at the current level of
+procedure call;  if this bit is set then the variable will be looked
+up in the current namespace, ignoring any active procedures.
+.TP
 \fBTCL_TRACE_READS\fR
 Invoke \fIproc\fR whenever an attempt is made to read the variable.
 .TP
@@ -102,6 +108,21 @@ Invoke \fIproc\fR whenever the array command is invoked.
 This gives the trace procedure a chance to update the array before
 array names or array get is called.  Note that this is called
 before an array set, but that will trigger write traces.
+.VS 8.4
+.TP
+\fBTCL_TRACE_RESULT_DYNAMIC\fR
+The result of invoking the \fIproc\fR is a dynamically allocated
+string that will be released by the Tcl library via a call to
+\fBckfree\fR.  Must not be specified at the same time as
+TCL_TRACE_RESULT_OBJECT.
+.TP
+\fBTCL_TRACE_RESULT_OBJECT\fR
+The result of invoking the \fIproc\fR is a Tcl_Obj* (cast to a char*)
+with a reference count of at least one.  The ownership of that
+reference will be transferred to the Tcl core for release (when the
+core has finished with it) via a call to \fBTcl_DecrRefCount\fR.  Must
+not be specified at the same time as TCL_TRACE_RESULT_DYNAMIC.
+.VE 8.4
 .PP
 Whenever one of the specified operations occurs on the variable,
 \fIproc\fR will be invoked.
@@ -135,6 +156,11 @@ accessed is a global one not accessible from the current level of
 procedure call:  the trace procedure will need to pass this flag
 back to variable-related procedures like \fBTcl_GetVar\fR if it
 attempts to access the variable.
+The bit TCL_NAMESPACE_ONLY will be set whenever the variable being
+accessed is a namespace one not accessible from the current level of
+procedure call:  the trace procedure will need to pass this flag
+back to variable-related procedures like \fBTcl_GetVar\fR if it
+attempts to access the variable.
 The bit TCL_TRACE_DESTROYED will be set in \fIflags\fR if the trace is
 about to be destroyed;  this information may be useful to \fIproc\fR
 so that it can clean up its own internal data structures (see
@@ -159,9 +185,10 @@ traces set on a given variable.
 The return value from \fBTcl_VarTraceInfo\fR is the \fIclientData\fR
 associated with a particular trace.
 The trace must be on the variable specified by the \fIinterp\fR,
-\fIvarName\fR, and \fIflags\fR arguments (only the TCL_GLOBAL_ONLY
-bit from \fIflags\fR is used;  other bits are ignored) and its trace procedure
-must the same as the \fIproc\fR argument.
+\fIvarName\fR, and \fIflags\fR arguments (only the TCL_GLOBAL_ONLY and
+TCL_NAMESPACE_ONLY bits from \fIflags\fR is used;  other bits are
+ignored) and its trace procedure must the same as the \fIproc\fR
+argument.
 If the \fIprevClientData\fR argument is NULL then the return
 value corresponds to the first (most recently created) matching
 trace, or NULL if there are no matching traces.
@@ -297,7 +324,14 @@ successful completion.
 If \fIproc\fR returns a non-NULL value it signifies that an
 error occurred.
 The return value must be a pointer to a static character string
-containing an error message.
+containing an error message,
+.VS 8.4
+unless (\fIexactly\fR one of) the TCL_TRACE_RESULT_DYNAMIC and
+TCL_TRACE_RESULT_OBJECT flags is set, which specify that the result is
+either a dynamic string (to be released with \fBckfree\fR) or a
+Tcl_Obj* (cast to char* and to be released with
+\fBTcl_DecrRefCount\fR) containing the error message.
+.VE 8.4
 If a trace procedure returns an error, no further traces are
 invoked for the access and the traced access aborts with the
 given message.

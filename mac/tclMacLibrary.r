@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacLibrary.r,v 1.4 1999/08/16 00:09:22 jingham Exp $
+ * RCS: @(#) $Id: tclMacLibrary.r,v 1.4.18.1 2002/02/05 02:22:02 wolfsuit Exp $
  */
 
 #include <Types.r>
@@ -34,22 +34,24 @@
 
 #if (TCL_RELEASE_LEVEL == 2)
 #   define MINOR_VERSION (TCL_MINOR_VERSION * 16) + TCL_RELEASE_SERIAL
+#   define RELEASE_CODE 0x00
 #else
 #   define MINOR_VERSION TCL_MINOR_VERSION * 16
+#   define RELEASE_CODE TCL_RELEASE_SERIAL
 #endif
 
 resource 'vers' (1) {
 	TCL_MAJOR_VERSION, MINOR_VERSION,
-	RELEASE_LEVEL, 0x00, verUS,
+	RELEASE_LEVEL, RELEASE_CODE, verUS,
 	TCL_PATCH_LEVEL,
-	TCL_PATCH_LEVEL ", by Ray Johnson & Jim Ingham © Scriptics Inc."
+	TCL_PATCH_LEVEL ", by Ray Johnson & Jim Ingham" "\n" "© 2001 Tcl Core Team"
 };
 
 resource 'vers' (2) {
 	TCL_MAJOR_VERSION, MINOR_VERSION,
-	RELEASE_LEVEL, 0x00, verUS,
+	RELEASE_LEVEL, RELEASE_CODE, verUS,
 	TCL_PATCH_LEVEL,
-	"Tcl Library " TCL_PATCH_LEVEL " © 1996-1997 Sun Microsystems, 1998-1999 Scriptics Inc."
+	"Tcl Library " TCL_PATCH_LEVEL " © 1993-2001"
 };
 
 /*
@@ -96,7 +98,7 @@ resource 'FREF' (TCL_LIBRARY_RESOURCES, purgeable)
 
 type TCL_CREATOR as 'STR ';
 resource TCL_CREATOR (0, purgeable) {
-	"Tcl Library " TCL_PATCH_LEVEL " © 1996-1999"
+	"Tcl Library " TCL_PATCH_LEVEL " © 1993-2001"
 };
 
 /*
@@ -125,23 +127,9 @@ resource 'kind' (TCL_LIBRARY_RESOURCES, "Tcl kind", purgeable) {
 resource 'STR ' (-16397, purgeable) {
 	"Tcl Library\n\n"
 	"This is the core library needed to run Tool Command Language programs. "
-	"To work properly, it should be placed in the ÔTool Command LanguageÕ folder "
+	"To work properly, it should be placed in the ŒTool Command Language¹ folder "
 	"within the Extensions folder."
 };
-
-/* 
- * The mechanisim below loads Tcl source into the resource fork of the
- * application.  The example below creates a TEXT resource named
- * "Init" from the file "init.tcl".  This allows applications to use
- * Tcl to define the behavior of the application without having to
- * require some predetermined file structure - all needed Tcl "files"
- * are located within the application.  To source a file for the
- * resource fork the source command has been modified to support
- * sourcing from resources.  In the below case "source -rsrc {Init}"
- * will load the TEXT resource named "Init".
- */
-
-#include "tclMacTclCode.r"
 
 /*
  * The following are icons for the shared library.

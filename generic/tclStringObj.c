@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.21 2001/05/15 21:30:46 hobbs Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.21.10.1 2002/02/05 02:22:00 wolfsuit Exp $ */
 
 #include "tclInt.h"
 
@@ -219,9 +219,9 @@ Tcl_NewStringObj(bytes, length)
  *	TCL_MEM_DEBUG is defined. It creates new string objects. It is the
  *	same as the Tcl_NewStringObj procedure above except that it calls
  *	Tcl_DbCkalloc directly with the file name and line number from its
- *	caller. This simplifies debugging since then the checkmem command
- *	will report the correct file name and line number when reporting
- *	objects that haven't been freed.
+ *	caller. This simplifies debugging since then the [memory active]
+ *	command	will report the correct file name and line number when
+ *	reporting objects that haven't been freed.
  *
  *	When TCL_MEM_DEBUG is not defined, this procedure just returns the
  *	result of calling Tcl_NewStringObj.
@@ -287,7 +287,7 @@ Tcl_DbNewStringObj(bytes, length, file, line)
 /*
  *---------------------------------------------------------------------------
  *
- * TclNewUnicodeObj --
+ * Tcl_NewUnicodeObj --
  *
  *	This procedure is creates a new String object and initializes
  *	it from the given Unicode String.  If the Utf String is the same size
@@ -595,8 +595,7 @@ Tcl_GetUnicodeFromObj(objPtr, lengthPtr)
 
 Tcl_Obj *
 Tcl_GetRange(objPtr, first, last)
-   
- Tcl_Obj *objPtr;		/* The Tcl object to find the range of. */
+    Tcl_Obj *objPtr;		/* The Tcl object to find the range of. */
     int first;			/* First index of the range. */
     int last;			/* Last index of the range. */
 {
@@ -1222,7 +1221,7 @@ AppendUnicodeToUtfRep(objPtr, unicode, numChars)
     int numChars;	        /* Number of chars of "unicode" to convert. */
 {
     Tcl_DString dsPtr;
-    char *bytes;
+    CONST char *bytes;
     
     if (numChars < 0) {
 	numChars = 0;
@@ -1235,7 +1234,7 @@ AppendUnicodeToUtfRep(objPtr, unicode, numChars)
     }
 
     Tcl_DStringInit(&dsPtr);
-    bytes = (char *)Tcl_UniCharToUtfDString(unicode, numChars, &dsPtr);
+    bytes = Tcl_UniCharToUtfDString(unicode, numChars, &dsPtr);
     AppendUtfToUtfRep(objPtr, bytes, Tcl_DStringLength(&dsPtr));
     Tcl_DStringFree(&dsPtr);
 }

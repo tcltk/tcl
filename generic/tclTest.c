@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.32 2001/09/28 01:21:53 dgp Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.32.2.1 2002/02/05 02:22:00 wolfsuit Exp $
  */
 
 #define TCL_TEST
@@ -107,6 +107,12 @@ typedef struct TclEncoding {
 static int freeCount;
 
 /*
+ * Boolean flag used by the "testsetmainloop" and "testexitmainloop"
+ * commands.
+ */
+static int exitMainLoop = 0;
+
+/*
  * Forward declarations for procedures defined later in this file:
  */
 
@@ -156,6 +162,7 @@ static void		ExitProcEven _ANSI_ARGS_((ClientData clientData));
 static void		ExitProcOdd _ANSI_ARGS_((ClientData clientData));
 static int              GetTimesCmd _ANSI_ARGS_((ClientData clientData,
                             Tcl_Interp *interp, int argc, char **argv));
+static void		MainLoop _ANSI_ARGS_((void));
 static int              NoopCmd _ANSI_ARGS_((ClientData clientData,
                             Tcl_Interp *interp, int argc, char **argv));
 static int              NoopObjCmd _ANSI_ARGS_((ClientData clientData,
@@ -239,14 +246,22 @@ static int		TestMathFunc2 _ANSI_ARGS_((ClientData clientData,
 			    Tcl_Value *resultPtr));
 static int		TestmainthreadCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Interp *interp, int argc, char **argv));
-static Tcl_Channel	PretendTclpOpenFileChannel _ANSI_ARGS_((Tcl_Interp *interp,
-			    char *filename, char *modeString, int permissions));
-static Tcl_Channel	TestOpenFileChannelProc1 _ANSI_ARGS_((Tcl_Interp *interp,
-			    char *filename, char *modeString, int permissions));
-static Tcl_Channel	TestOpenFileChannelProc2 _ANSI_ARGS_((Tcl_Interp *interp,
-			    char *filename, char *modeString, int permissions));
-static Tcl_Channel	TestOpenFileChannelProc3 _ANSI_ARGS_((Tcl_Interp *interp,
-			    char *filename, char *modeString, int permissions));
+static int		TestsetmainloopCmd _ANSI_ARGS_((ClientData dummy,
+			    Tcl_Interp *interp, int argc, char **argv));
+static int		TestexitmainloopCmd _ANSI_ARGS_((ClientData dummy,
+			    Tcl_Interp *interp, int argc, char **argv));
+static Tcl_Channel	PretendTclpOpenFileChannel _ANSI_ARGS_((
+			    Tcl_Interp *interp, CONST char *fileName,
+			    CONST char *modeString, int permissions));
+static Tcl_Channel	TestOpenFileChannelProc1 _ANSI_ARGS_((
+			    Tcl_Interp *interp, CONST char *fileName,
+			    CONST char *modeString, int permissions));
+static Tcl_Channel	TestOpenFileChannelProc2 _ANSI_ARGS_((
+			    Tcl_Interp *interp, CONST char *fileName,
+			    CONST char *modeString, int permissions));
+static Tcl_Channel	TestOpenFileChannelProc3 _ANSI_ARGS_((
+			    Tcl_Interp *interp, CONST char *fileName,
+			    CONST char *modeString, int permissions));
 static int		TestpanicCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Interp *interp, int argc, char **argv));
 static int		TestparserObjCmd _ANSI_ARGS_((ClientData dummy,
@@ -315,28 +330,54 @@ static int		TestFilesystemObjCmd _ANSI_ARGS_((ClientData dummy,
 
 static void TestReport _ANSI_ARGS_((CONST char* cmd, Tcl_Obj* arg1, Tcl_Obj* arg2));
 
-static Tcl_FSStatProc TestReportStat;
-static Tcl_FSAccessProc TestReportAccess;
-static Tcl_FSOpenFileChannelProc TestReportOpenFileChannel;
-static Tcl_FSMatchInDirectoryProc TestReportMatchInDirectory;
-static Tcl_FSChdirProc TestReportChdir;
-static Tcl_FSLstatProc TestReportLstat;
-static Tcl_FSCopyFileProc TestReportCopyFile;
-static Tcl_FSDeleteFileProc TestReportDeleteFile;
-static Tcl_FSRenameFileProc TestReportRenameFile;
-static Tcl_FSCreateDirectoryProc TestReportCreateDirectory;
-static Tcl_FSCopyDirectoryProc TestReportCopyDirectory; 
-static Tcl_FSRemoveDirectoryProc TestReportRemoveDirectory; 
-static Tcl_FSLoadFileProc TestReportLoadFile;
-static Tcl_FSLinkProc TestReportLink;
-static Tcl_FSFileAttrStringsProc TestReportFileAttrStrings;
-static Tcl_FSFileAttrsGetProc TestReportFileAttrsGet;
-static Tcl_FSFileAttrsSetProc TestReportFileAttrsSet;
-static Tcl_FSUtimeProc TestReportUtime;
-static Tcl_FSNormalizePathProc TestReportNormalizePath;
-static Tcl_FSPathInFilesystemProc TestReportInFilesystem;
-static Tcl_FSFreeInternalRepProc TestReportFreeInternalRep;
-static Tcl_FSDupInternalRepProc TestReportDupInternalRep;
+static Tcl_Obj *TestReportGetNativePath(Tcl_Obj* pathObjPtr);
+
+static int		TestReportStat _ANSI_ARGS_ ((Tcl_Obj *path,
+			    struct stat *buf));
+static int		TestReportAccess _ANSI_ARGS_ ((Tcl_Obj *path,
+			    int mode));
+static Tcl_Channel	TestReportOpenFileChannel _ANSI_ARGS_ ((
+			    Tcl_Interp *interp, Tcl_Obj *fileName,
+			    CONST char *modeString, int permissions));
+static int		TestReportMatchInDirectory _ANSI_ARGS_ ((
+			    Tcl_Interp *interp, Tcl_Obj *resultPtr,
+			    Tcl_Obj *dirPtr, CONST char *pattern,
+			    Tcl_GlobTypeData *types));
+static int		TestReportChdir _ANSI_ARGS_ ((Tcl_Obj *dirName));
+static int		TestReportLstat _ANSI_ARGS_ ((Tcl_Obj *path,
+			    struct stat *buf));
+static int		TestReportCopyFile _ANSI_ARGS_ ((Tcl_Obj *src,
+			    Tcl_Obj *dst));
+static int		TestReportDeleteFile _ANSI_ARGS_ ((Tcl_Obj *path));
+static int		TestReportRenameFile _ANSI_ARGS_ ((Tcl_Obj *src,
+			    Tcl_Obj *dst));
+static int		TestReportCreateDirectory _ANSI_ARGS_ ((Tcl_Obj *path));
+static int		TestReportCopyDirectory _ANSI_ARGS_ ((Tcl_Obj *src,
+			    Tcl_Obj *dst, Tcl_Obj **errorPtr));
+static int		TestReportRemoveDirectory _ANSI_ARGS_ ((Tcl_Obj *path,
+			    int recursive, Tcl_Obj **errorPtr));
+static int		TestReportLoadFile _ANSI_ARGS_ ((Tcl_Interp *interp,
+			    Tcl_Obj *fileName, CONST char *sym1,
+			    CONST char *sym2, Tcl_PackageInitProc **proc1Ptr,
+			    Tcl_PackageInitProc **proc2Ptr,
+			    ClientData *clientDataPtr,
+			    Tcl_FSUnloadFileProc **unloadProcPtr));
+static Tcl_Obj *	TestReportLink _ANSI_ARGS_ ((Tcl_Obj *path,
+			    Tcl_Obj *to));
+static CONST char**	TestReportFileAttrStrings _ANSI_ARGS_ ((
+			    Tcl_Obj *fileName, Tcl_Obj **objPtrRef));
+static int		TestReportFileAttrsGet _ANSI_ARGS_ ((Tcl_Interp *interp,
+			    int index, Tcl_Obj *fileName, Tcl_Obj **objPtrRef));
+static int		TestReportFileAttrsSet _ANSI_ARGS_ ((Tcl_Interp *interp,
+			    int index, Tcl_Obj *fileName, Tcl_Obj *objPtr));
+static int		TestReportUtime _ANSI_ARGS_ ((Tcl_Obj *fileName,
+			    struct utimbuf *tval));
+static int		TestReportNormalizePath _ANSI_ARGS_ ((
+			    Tcl_Interp *interp, Tcl_Obj *pathPtr,
+			    int nextCheckpoint));
+static int		TestReportInFilesystem _ANSI_ARGS_ ((Tcl_Obj *pathPtr, ClientData *clientDataPtr));
+static void		TestReportFreeInternalRep _ANSI_ARGS_ ((ClientData clientData));
+static ClientData	TestReportDupInternalRep _ANSI_ARGS_ ((ClientData clientData));
 
 static Tcl_Filesystem testReportingFilesystem = {
     "reporting",
@@ -406,7 +447,15 @@ Tcltest_Init(interp)
     Tcl_Interp *interp;		/* Interpreter for application. */
 {
     Tcl_ValueType t3ArgTypes[2];
-	
+
+    Tcl_Obj *listPtr;
+    Tcl_Obj **objv;
+    int objc, index;
+    static CONST char *specialOptions[] = {
+	"-appinitprocerror", "-appinitprocdeleteinterp",
+	"-appinitprocclosestderr", "-appinitprocsetrcfile", (char *) NULL
+    };
+
     if (Tcl_PkgProvide(interp, "Tcltest", TCL_VERSION) == TCL_ERROR) {
         return TCL_ERROR;
     }
@@ -530,6 +579,10 @@ Tcltest_Init(interp)
 	    (Tcl_CmdDeleteProc *) NULL);
     Tcl_CreateCommand(interp, "testmainthread", TestmainthreadCmd, (ClientData) 0,
 	    (Tcl_CmdDeleteProc *) NULL);
+    Tcl_CreateCommand(interp, "testsetmainloop", TestsetmainloopCmd,
+	    (ClientData) NULL, (Tcl_CmdDeleteProc *) NULL);
+    Tcl_CreateCommand(interp, "testexitmainloop", TestexitmainloopCmd,
+	    (ClientData) NULL, (Tcl_CmdDeleteProc *) NULL);
     t3ArgTypes[0] = TCL_EITHER;
     t3ArgTypes[1] = TCL_EITHER;
     Tcl_CreateMathFunc(interp, "T3", 2, t3ArgTypes, TestMathFunc2,
@@ -541,6 +594,42 @@ Tcltest_Init(interp)
     }
 #endif
 
+    /*
+     * Check for special options used in ../tests/main.test
+     */
+
+    listPtr = Tcl_GetVar2Ex(interp, "argv", NULL, TCL_GLOBAL_ONLY);
+    if (listPtr != NULL) {
+        if (Tcl_ListObjGetElements(interp, listPtr, &objc, &objv) != TCL_OK) {
+	    return TCL_ERROR;
+        }
+        if (objc && (Tcl_GetIndexFromObj(NULL, objv[0], specialOptions, NULL,
+		TCL_EXACT, &index) == TCL_OK)) {
+	    switch (index) {
+	        case 0: {
+		    return TCL_ERROR;
+	        }
+	        case 1: {
+		    Tcl_DeleteInterp(interp);
+		    return TCL_ERROR;
+	        }
+	        case 2: {
+		    int mode;
+		    Tcl_UnregisterChannel(interp, 
+			    Tcl_GetChannel(interp, "stderr", &mode));
+		    return TCL_ERROR;
+	        }
+	        case 3: {
+		    if (objc-1) {
+		        Tcl_SetVar2Ex(interp, "tcl_rcFileName", NULL,
+			       objv[1], TCL_GLOBAL_ONLY);
+		    }
+		    return TCL_ERROR;
+	        }
+	    }
+        }
+    }
+	
     /*
      * And finally add any platform specific test commands.
      */
@@ -664,12 +753,12 @@ AsyncHandlerProc(clientData, interp, code)
     int code;			/* Current return code from command. */
 {
     TestAsyncHandler *asyncPtr = (TestAsyncHandler *) clientData;
-    char *listArgv[4];
+    CONST char *listArgv[4];
     char string[TCL_INTEGER_SPACE], *cmd;
 
     TclFormatInt(string, code);
     listArgv[0] = asyncPtr->command;
-    listArgv[1] = Tcl_GetStringResult(interp);
+    listArgv[1] = Tcl_GetString(Tcl_GetObjResult(interp));
     listArgv[2] = string;
     listArgv[3] = NULL;
     cmd = Tcl_Merge(3, listArgv);
@@ -1431,7 +1520,7 @@ TestencodingObjCmd(dummy, interp, objc, objv)
     int index, length;
     char *string;
     TclEncoding *encodingPtr;
-    static char *optionStrings[] = {
+    static CONST char *optionStrings[] = {
 	"create",	"delete",	"path",
 	NULL
     };
@@ -1880,7 +1969,7 @@ TestgetplatformCmd(clientData, interp, argc, argv)
     int argc;				/* Number of arguments. */
     char **argv;			/* Argument strings. */
 {
-    static char *platformStrings[] = { "unix", "mac", "windows" };
+    static CONST char *platformStrings[] = { "unix", "mac", "windows" };
     TclPlatformType *platform;
 
 #ifdef __WIN32__
@@ -1930,11 +2019,6 @@ TestinterpdeleteCmd(dummy, interp, argc, argv)
     if (argc != 2) {
         Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
                 " path\"", (char *) NULL);
-        return TCL_ERROR;
-    }
-    if (argv[1][0] == '\0') {
-        Tcl_AppendResult(interp, "cannot delete current interpreter",
-                (char *) NULL);
         return TCL_ERROR;
     }
     slaveToDelete = Tcl_GetSlave(interp, argv[1]);
@@ -2144,7 +2228,7 @@ TestlocaleCmd(clientData, interp, objc, objv)
     int index;
     char *locale;
 
-    static char *optionStrings[] = {
+    static CONST char *optionStrings[] = {
     	"ctype", "numeric", "time", "collate", "monetary", 
 	"all",	NULL
     };
@@ -2530,7 +2614,8 @@ TestparsevarObjCmd(clientData, interp, objc, objv)
     int objc;			/* Number of arguments. */
     Tcl_Obj *CONST objv[];	/* The argument objects. */
 {
-    char *name, *value, *termPtr;
+    CONST char *value;
+    char *name, *termPtr;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "varName");
@@ -2642,7 +2727,7 @@ TestregexpObjCmd(dummy, interp, objc, objv)
     char *string;
     Tcl_Obj *objPtr;
     Tcl_RegExpInfo info;
-    static char *options[] = {
+    static CONST char *options[] = {
 	"-indices",	"-nocase",	"-about",	"-expanded",
 	"-line",	"-linestop",	"-lineanchor",
 	"-xflags",
@@ -2756,7 +2841,8 @@ TestregexpObjCmd(dummy, interp, objc, objv)
 	
 	Tcl_SetIntObj(Tcl_GetObjResult(interp), 0);
 	if (objc > 2 && (cflags&REG_EXPECT) && indices) {
-	    char *varName, *value;
+	    char *varName;
+	    CONST char *value;
 	    int start, end;
 	    char info[TCL_INTEGER_SPACE * 2];
 
@@ -3169,7 +3255,7 @@ TesttranslatefilenameCmd(dummy, interp, argc, argv)
     char **argv;			/* Argument strings. */
 {
     Tcl_DString buffer;
-    char *result;
+    CONST char *result;
 
     if (argc != 2) {
 	Tcl_AppendResult(interp, "wrong # arguments: should be \"",
@@ -3381,7 +3467,7 @@ TestpanicCmd(dummy, interp, argc, argv)
      *  Append all of the arguments together separated by spaces
      */
 
-    argString = Tcl_Merge(argc-1, argv+1);
+    argString = Tcl_Merge(argc-1, (CONST char **) argv+1);
     panic(argString);
     ckfree(argString);
  
@@ -3431,13 +3517,14 @@ TestchmodCmd(dummy, interp, argc, argv)
 
     for (i = 2; i < argc; i++) {
         Tcl_DString buffer;
+	CONST char *translated;
         
-        argv[i] = Tcl_TranslateFileName(interp, argv[i], &buffer);
-        if (argv[i] == NULL) {
+        translated = Tcl_TranslateFileName(interp, argv[i], &buffer);
+        if (translated == NULL) {
             return TCL_ERROR;
         }
-	if (chmod(argv[i], (unsigned) mode) != 0) {
-	    Tcl_AppendResult(interp, argv[i], ": ", Tcl_PosixError(interp),
+	if (chmod(translated, (unsigned) mode) != 0) {
+	    Tcl_AppendResult(interp, translated, ": ", Tcl_PosixError(interp),
 		    (char *) NULL);
 	    return TCL_ERROR;
 	}
@@ -3622,59 +3709,59 @@ GetTimesCmd(unused, interp, argc, argv)
     Tcl_Time start, stop;
     Tcl_Obj *objPtr;
     Tcl_Obj **objv;
-    char *s;
+    CONST char *s;
     char newString[TCL_INTEGER_SPACE];
 
     /* alloc & free 100000 times */
     fprintf(stderr, "alloc & free 100000 6 word items\n");
-    TclpGetTime(&start);
+    Tcl_GetTime(&start);
     for (i = 0;  i < 100000;  i++) {
 	objPtr = (Tcl_Obj *) ckalloc(sizeof(Tcl_Obj));
 	ckfree((char *) objPtr);
     }
-    TclpGetTime(&stop);
+    Tcl_GetTime(&stop);
     timePer = (stop.sec - start.sec)*1000000 + (stop.usec - start.usec);
     fprintf(stderr, "   %.3f usec per alloc+free\n", timePer/100000);
     
     /* alloc 5000 times */
     fprintf(stderr, "alloc 5000 6 word items\n");
     objv = (Tcl_Obj **) ckalloc(5000 * sizeof(Tcl_Obj *));
-    TclpGetTime(&start);
+    Tcl_GetTime(&start);
     for (i = 0;  i < 5000;  i++) {
 	objv[i] = (Tcl_Obj *) ckalloc(sizeof(Tcl_Obj));
     }
-    TclpGetTime(&stop);
+    Tcl_GetTime(&stop);
     timePer = (stop.sec - start.sec)*1000000 + (stop.usec - start.usec);
     fprintf(stderr, "   %.3f usec per alloc\n", timePer/5000);
     
     /* free 5000 times */
     fprintf(stderr, "free 5000 6 word items\n");
-    TclpGetTime(&start);
+    Tcl_GetTime(&start);
     for (i = 0;  i < 5000;  i++) {
 	ckfree((char *) objv[i]);
     }
-    TclpGetTime(&stop);
+    Tcl_GetTime(&stop);
     timePer = (stop.sec - start.sec)*1000000 + (stop.usec - start.usec);
     fprintf(stderr, "   %.3f usec per free\n", timePer/5000);
 
     /* Tcl_NewObj 5000 times */
     fprintf(stderr, "Tcl_NewObj 5000 times\n");
-    TclpGetTime(&start);
+    Tcl_GetTime(&start);
     for (i = 0;  i < 5000;  i++) {
 	objv[i] = Tcl_NewObj();
     }
-    TclpGetTime(&stop);
+    Tcl_GetTime(&stop);
     timePer = (stop.sec - start.sec)*1000000 + (stop.usec - start.usec);
     fprintf(stderr, "   %.3f usec per Tcl_NewObj\n", timePer/5000);
     
     /* Tcl_DecrRefCount 5000 times */
     fprintf(stderr, "Tcl_DecrRefCount 5000 times\n");
-    TclpGetTime(&start);
+    Tcl_GetTime(&start);
     for (i = 0;  i < 5000;  i++) {
 	objPtr = objv[i];
 	Tcl_DecrRefCount(objPtr);
     }
-    TclpGetTime(&stop);
+    Tcl_GetTime(&stop);
     timePer = (stop.sec - start.sec)*1000000 + (stop.usec - start.usec);
     fprintf(stderr, "   %.3f usec per Tcl_DecrRefCount\n", timePer/5000);
     ckfree((char *) objv);
@@ -3682,24 +3769,24 @@ GetTimesCmd(unused, interp, argc, argv)
     /* TclGetString 100000 times */
     fprintf(stderr, "TclGetStringFromObj of \"12345\" 100000 times\n");
     objPtr = Tcl_NewStringObj("12345", -1);
-    TclpGetTime(&start);
+    Tcl_GetTime(&start);
     for (i = 0;  i < 100000;  i++) {
 	(void) TclGetString(objPtr);
     }
-    TclpGetTime(&stop);
+    Tcl_GetTime(&stop);
     timePer = (stop.sec - start.sec)*1000000 + (stop.usec - start.usec);
     fprintf(stderr, "   %.3f usec per TclGetStringFromObj of \"12345\"\n",
 	    timePer/100000);
 
     /* Tcl_GetIntFromObj 100000 times */
     fprintf(stderr, "Tcl_GetIntFromObj of \"12345\" 100000 times\n");
-    TclpGetTime(&start);
+    Tcl_GetTime(&start);
     for (i = 0;  i < 100000;  i++) {
 	if (Tcl_GetIntFromObj(interp, objPtr, &n) != TCL_OK) {
 	    return TCL_ERROR;
 	}
     }
-    TclpGetTime(&stop);
+    Tcl_GetTime(&stop);
     timePer = (stop.sec - start.sec)*1000000 + (stop.usec - start.usec);
     fprintf(stderr, "   %.3f usec per Tcl_GetIntFromObj of \"12345\"\n",
 	    timePer/100000);
@@ -3707,63 +3794,63 @@ GetTimesCmd(unused, interp, argc, argv)
     
     /* Tcl_GetInt 100000 times */
     fprintf(stderr, "Tcl_GetInt of \"12345\" 100000 times\n");
-    TclpGetTime(&start);
+    Tcl_GetTime(&start);
     for (i = 0;  i < 100000;  i++) {
 	if (Tcl_GetInt(interp, "12345", &n) != TCL_OK) {
 	    return TCL_ERROR;
 	}
     }
-    TclpGetTime(&stop);
+    Tcl_GetTime(&stop);
     timePer = (stop.sec - start.sec)*1000000 + (stop.usec - start.usec);
     fprintf(stderr, "   %.3f usec per Tcl_GetInt of \"12345\"\n",
 	    timePer/100000);
 
     /* sprintf 100000 times */
     fprintf(stderr, "sprintf of 12345 100000 times\n");
-    TclpGetTime(&start);
+    Tcl_GetTime(&start);
     for (i = 0;  i < 100000;  i++) {
 	sprintf(newString, "%d", 12345);
     }
-    TclpGetTime(&stop);
+    Tcl_GetTime(&stop);
     timePer = (stop.sec - start.sec)*1000000 + (stop.usec - start.usec);
     fprintf(stderr, "   %.3f usec per sprintf of 12345\n",
 	    timePer/100000);
 
     /* hashtable lookup 100000 times */
     fprintf(stderr, "hashtable lookup of \"gettimes\" 100000 times\n");
-    TclpGetTime(&start);
+    Tcl_GetTime(&start);
     for (i = 0;  i < 100000;  i++) {
 	(void) Tcl_FindHashEntry(&iPtr->globalNsPtr->cmdTable, "gettimes");
     }
-    TclpGetTime(&stop);
+    Tcl_GetTime(&stop);
     timePer = (stop.sec - start.sec)*1000000 + (stop.usec - start.usec);
     fprintf(stderr, "   %.3f usec per hashtable lookup of \"gettimes\"\n",
 	    timePer/100000);
 
     /* Tcl_SetVar 100000 times */
     fprintf(stderr, "Tcl_SetVar of \"12345\" 100000 times\n");
-    TclpGetTime(&start);
+    Tcl_GetTime(&start);
     for (i = 0;  i < 100000;  i++) {
 	s = Tcl_SetVar(interp, "a", "12345", TCL_LEAVE_ERR_MSG);
 	if (s == NULL) {
 	    return TCL_ERROR;
 	}
     }
-    TclpGetTime(&stop);
+    Tcl_GetTime(&stop);
     timePer = (stop.sec - start.sec)*1000000 + (stop.usec - start.usec);
     fprintf(stderr, "   %.3f usec per Tcl_SetVar of a to \"12345\"\n",
 	    timePer/100000);
 
     /* Tcl_GetVar 100000 times */
     fprintf(stderr, "Tcl_GetVar of a==\"12345\" 100000 times\n");
-    TclpGetTime(&start);
+    Tcl_GetTime(&start);
     for (i = 0;  i < 100000;  i++) {
 	s = Tcl_GetVar(interp, "a", TCL_LEAVE_ERR_MSG);
 	if (s == NULL) {
 	    return TCL_ERROR;
 	}
     }
-    TclpGetTime(&stop);
+    Tcl_GetTime(&stop);
     timePer = (stop.sec - start.sec)*1000000 + (stop.usec - start.usec);
     fprintf(stderr, "   %.3f usec per Tcl_GetVar of a==\"12345\"\n",
 	    timePer/100000);
@@ -3852,7 +3939,7 @@ TestsetCmd(data, interp, argc, argv)
     char **argv;			/* Argument strings. */
 {
     int flags = (int) data;
-    char *value;
+    CONST char *value;
 
     if (argc == 2) {
         Tcl_SetResult(interp, "before get", TCL_STATIC);
@@ -3906,7 +3993,7 @@ TestsaveresultCmd(dummy, interp, objc, objv)
     int discard, result, index;
     Tcl_SavedResult state;
     Tcl_Obj *objPtr;
-    static char *optionStrings[] = {
+    static CONST char *optionStrings[] = {
 	"append", "dynamic", "free", "object", "small", NULL
     };
     enum options {
@@ -4162,6 +4249,89 @@ TestmainthreadCmd (dummy, interp, argc, argv)
       return TCL_ERROR;
   }
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * MainLoop --
+ *
+ *	A main loop set by TestsetmainloopCmd below.
+ *
+ * Results:
+ * 	None.
+ *
+ * Side effects:
+ *	Event handlers could do anything.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+MainLoop(void)
+{
+    while (!exitMainLoop) {
+	Tcl_DoOneEvent(0);
+    }
+    fprintf(stdout,"Exit MainLoop\n");
+    fflush(stdout);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TestsetmainloopCmd  --
+ *
+ *	Implements the "testsetmainloop" cmd that is used to test the
+ *	'Tcl_SetMainLoop' API.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TestsetmainloopCmd (dummy, interp, argc, argv)
+    ClientData dummy;			/* Not used. */
+    register Tcl_Interp *interp;	/* Current interpreter. */
+    int argc;				/* Number of arguments. */
+    char **argv;			/* Argument strings. */
+{
+  exitMainLoop = 0;
+  Tcl_SetMainLoop(MainLoop);
+  return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TestexitmainloopCmd  --
+ *
+ *	Implements the "testexitmainloop" cmd that is used to test the
+ *	'Tcl_SetMainLoop' API.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TestexitmainloopCmd (dummy, interp, argc, argv)
+    ClientData dummy;			/* Not used. */
+    register Tcl_Interp *interp;	/* Current interpreter. */
+    int argc;				/* Number of arguments. */
+    char **argv;			/* Argument strings. */
+{
+  exitMainLoop = 1;
+  return TCL_OK;
+}
 
 /*
  *----------------------------------------------------------------------
@@ -4355,8 +4525,8 @@ static Tcl_Channel
 PretendTclpOpenFileChannel(interp, fileName, modeString, permissions)
     Tcl_Interp *interp;                 /* Interpreter for error reporting;
 					 * can be NULL. */
-    char *fileName;                     /* Name of file to open. */
-    char *modeString;                   /* A list of POSIX open modes or
+    CONST char *fileName;               /* Name of file to open. */
+    CONST char *modeString;             /* A list of POSIX open modes or
 					 * a string such as "rw". */
     int permissions;                    /* If the open involves creating a
 					 * file, with what modes to create
@@ -4374,14 +4544,14 @@ static Tcl_Channel
 TestOpenFileChannelProc1(interp, fileName, modeString, permissions)
     Tcl_Interp *interp;                 /* Interpreter for error reporting;
                                          * can be NULL. */
-    char *fileName;                     /* Name of file to open. */
-    char *modeString;                   /* A list of POSIX open modes or
+    CONST char *fileName;               /* Name of file to open. */
+    CONST char *modeString;             /* A list of POSIX open modes or
                                          * a string such as "rw". */
     int permissions;                    /* If the open involves creating a
                                          * file, with what modes to create
                                          * it? */
 {
-    char *expectname="testOpenFileChannel1%.fil";
+    CONST char *expectname="testOpenFileChannel1%.fil";
     Tcl_DString ds;
     
     Tcl_DStringInit(&ds);
@@ -4402,14 +4572,14 @@ static Tcl_Channel
 TestOpenFileChannelProc2(interp, fileName, modeString, permissions)
     Tcl_Interp *interp;                 /* Interpreter for error reporting;
                                          * can be NULL. */
-    char *fileName;                     /* Name of file to open. */
-    char *modeString;                   /* A list of POSIX open modes or
+    CONST char *fileName;               /* Name of file to open. */
+    CONST char *modeString;             /* A list of POSIX open modes or
                                          * a string such as "rw". */
     int permissions;                    /* If the open involves creating a
                                          * file, with what modes to create
                                          * it? */
 {
-    char *expectname="testOpenFileChannel2%.fil";
+    CONST char *expectname="testOpenFileChannel2%.fil";
     Tcl_DString ds;
     
     Tcl_DStringInit(&ds);
@@ -4430,14 +4600,14 @@ static Tcl_Channel
 TestOpenFileChannelProc3(interp, fileName, modeString, permissions)
     Tcl_Interp *interp;                 /* Interpreter for error reporting;
                                          * can be NULL. */
-    char *fileName;                     /* Name of file to open. */
-    char *modeString;                   /* A list of POSIX open modes or
+    CONST char *fileName;               /* Name of file to open. */
+    CONST char *modeString;             /* A list of POSIX open modes or
                                          * a string such as "rw". */
     int permissions;                    /* If the open involves creating a
                                          * file, with what modes to create
                                          * it? */
 {
-    char *expectname="testOpenFileChannel3%.fil";
+    CONST char *expectname="testOpenFileChannel3%.fil";
     Tcl_DString ds;
     
     Tcl_DStringInit(&ds);
@@ -5174,7 +5344,9 @@ TestGetIndexFromObjStructObjCmd(dummy, interp, objc, objv)
     int objc;				/* Number of arguments. */
     Tcl_Obj *CONST objv[];		/* Argument objects. */
 {
-    char *ary[] = { "a", "b", "c", "d", "e", "f", (char *)NULL,(char *)NULL };
+    CONST char *ary[] = {
+	"a", "b", "c", "d", "e", "f", (char *)NULL,(char *)NULL
+    };
     int idx,target;
 
     if (objc != 3) {
@@ -5287,12 +5459,12 @@ TestReportInFilesystem(Tcl_Obj *pathPtr, ClientData *clientDataPtr) {
  * Simple helper function to extract the native vfs representation of a
  * path object, or NULL if no such representation exists.
  */
-Tcl_Obj* 
+static Tcl_Obj* 
 TestReportGetNativePath(Tcl_Obj* pathObjPtr) {
     return (Tcl_Obj*) Tcl_FSGetInternalRep(pathObjPtr, &testReportingFilesystem);
 }
 
-void 
+static void 
 TestReportFreeInternalRep(ClientData clientData) {
     Tcl_Obj *nativeRep = (Tcl_Obj*)clientData;
     if (nativeRep != NULL) {
@@ -5301,7 +5473,7 @@ TestReportFreeInternalRep(ClientData clientData) {
     }
 }
 
-ClientData 
+static ClientData 
 TestReportDupInternalRep(ClientData clientData) {
     Tcl_Obj *original = (Tcl_Obj*)clientData;
     Tcl_IncrRefCount(original);
@@ -5365,8 +5537,8 @@ static Tcl_Channel
 TestReportOpenFileChannel(interp, fileName, modeString, permissions)
     Tcl_Interp *interp;                 /* Interpreter for error reporting;
 					 * can be NULL. */
-    Tcl_Obj *fileName;                     /* Name of file to open. */
-    char *modeString;                   /* A list of POSIX open modes or
+    Tcl_Obj *fileName;                  /* Name of file to open. */
+    CONST char *modeString;             /* A list of POSIX open modes or
 					 * a string such as "rw". */
     int permissions;                    /* If the open involves creating a
 					 * file, with what modes to create
@@ -5382,7 +5554,7 @@ TestReportMatchInDirectory(interp, resultPtr, dirPtr, pattern, types)
     Tcl_Interp *interp;		/* Interpreter to receive results. */
     Tcl_Obj *resultPtr;		/* Directory separators to pass to TclDoGlob. */
     Tcl_Obj *dirPtr;	        /* Contains path to directory to search. */
-    char *pattern;		/* Pattern to match against. */
+    CONST char *pattern;	/* Pattern to match against. */
     Tcl_GlobTypeData *types;	/* Object containing list of acceptable types.
 				 * May be NULL. */
 {
@@ -5489,7 +5661,7 @@ TestReportRemoveDirectory(path, recursive, errorPtr)
     return Tcl_FSRemoveDirectory(TestReportGetNativePath(path), recursive, 
 				 errorPtr);
 }
-static char**
+static CONST char**
 TestReportFileAttrStrings(fileName, objPtrRef)
     Tcl_Obj* fileName;
     Tcl_Obj** objPtrRef;

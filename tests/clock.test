@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.test,v 1.16 2001/07/03 20:48:38 mdejong Exp $
+# RCS: @(#) $Id: clock.test,v 1.16.8.1 2002/02/05 02:22:03 wolfsuit Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -418,7 +418,16 @@ test clock-7.3 {clock scan next monthname} {
 	    -format %m.%Y
 } "05.2001"
 
+# We use 5am PST, 31-12-1999 as the base for these scans because irrespective
+# of your local timezone it should always give us times on December 31
+set 5amPST 946645200
+test clock-8.1 {clock scan midnight/gmt range bug 413397} {
+    set fmt "%m/%d"
+    list [clock format [clock scan year -base $5amPST -gmt 0] -format $fmt] \
+	    [clock format [clock scan year -base $5amPST -gmt 1] -format $fmt]
+} {12/31 12/31}
+
+
 # cleanup
 ::tcltest::cleanupTests
 return
-

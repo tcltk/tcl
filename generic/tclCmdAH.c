@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.16 2001/09/20 01:03:08 hobbs Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.16.4.1 2002/02/05 02:21:58 wolfsuit Exp $
  */
 
 #include "tclInt.h"
@@ -131,7 +131,7 @@ Tcl_CaseObjCmd(dummy, interp, objc, objv)
 
     for (i = 0;  i < caseObjc;  i += 2) {
 	int patObjc, j;
-	char **patObjv;
+	CONST char **patObjv;
 	char *pat;
 	unsigned char *p;
 
@@ -427,7 +427,7 @@ Tcl_EncodingObjCmd(dummy, interp, objc, objv)
     Tcl_DString ds;
     Tcl_Obj *resultPtr;
 
-    static char *optionStrings[] = {
+    static CONST char *optionStrings[] = {
 	"convertfrom", "convertto", "names", "system",
 	NULL
     };
@@ -512,7 +512,8 @@ Tcl_EncodingObjCmd(dummy, interp, objc, objv)
 		return TCL_ERROR;
 	    }
 	    if (objc == 2) {
-	        Tcl_SetResult(interp, Tcl_GetEncodingName(NULL), TCL_STATIC);
+		Tcl_SetStringObj(Tcl_GetObjResult(interp),
+			Tcl_GetEncodingName(NULL), -1);
 	    } else {
 	        return Tcl_SetSystemEncoding(interp,
 			Tcl_GetStringFromObj(objv[2], NULL));
@@ -786,7 +787,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
  * This list of constants should match the fileOption string array below.
  */
 
-    static char *fileOptions[] = {
+    static CONST char *fileOptions[] = {
 	"atime",	"attributes",	"channels",	"copy",
 	"delete",
 	"dirname",	"executable",	"exists",	"extension",
@@ -1014,7 +1015,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    return TclFileMakeDirsCmd(interp, objc, objv);
 	}
 	case FILE_NATIVENAME: {
-	    char *fileName;
+	    CONST char *fileName;
 	    Tcl_DString ds;
 
 	    if (objc != 3) {
@@ -1730,24 +1731,23 @@ Tcl_ForeachObjCmd(dummy, interp, objc, objv)
     for (j = 0;  j < maxj;  j++) {
 	for (i = 0;  i < numLists;  i++) {
 	    /*
-	     * If a variable or value list object has been converted to
-	     * another kind of Tcl object, convert it back to a list object
-	     * and refetch the pointer to its element array.
+	     * Refetch the list members; we assume that the sizes are
+	     * the same, but the array of elements might be different
+	     * if the internal rep of the objects has been lost and
+	     * recreated (it is too difficult to accurately tell when
+	     * this happens, which can lead to some wierd crashes,
+	     * like Bug #494348...)
 	     */
 
-	    if (argObjv[1+i*2]->typePtr != &tclListType) {
-		result = Tcl_ListObjGetElements(interp, argObjv[1+i*2],
-		        &varcList[i], &varvList[i]);
-		if (result != TCL_OK) {
-		    panic("Tcl_ForeachObjCmd: could not reconvert variable list %d to a list object\n", i);
-		}
+	    result = Tcl_ListObjGetElements(interp, argObjv[1+i*2],
+		    &varcList[i], &varvList[i]);
+	    if (result != TCL_OK) {
+		panic("Tcl_ForeachObjCmd: could not reconvert variable list %d to a list object\n", i);
 	    }
-	    if (argObjv[2+i*2]->typePtr != &tclListType) {
-		result = Tcl_ListObjGetElements(interp, argObjv[2+i*2],
-	                &argcList[i], &argvList[i]);
-		if (result != TCL_OK) {
-		    panic("Tcl_ForeachObjCmd: could not reconvert value list %d to a list object\n", i);
-		}
+	    result = Tcl_ListObjGetElements(interp, argObjv[2+i*2],
+		    &argcList[i], &argvList[i]);
+	    if (result != TCL_OK) {
+		panic("Tcl_ForeachObjCmd: could not reconvert value list %d to a list object\n", i);
 	    }
 	    
 	    for (v = 0;  v < varcList[i];  v++) {
@@ -1916,7 +1916,7 @@ Tcl_FormatObjCmd(dummy, interp, objc, objv)
 	return TCL_ERROR;
     }
 
-    format = (char *) Tcl_GetStringFromObj(objv[1], &formatLen);
+    format = Tcl_GetStringFromObj(objv[1], &formatLen);
     endPtr = format + formatLen;
     resultPtr = Tcl_NewObj();
     objIndex = 2;

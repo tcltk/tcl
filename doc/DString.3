@@ -5,13 +5,13 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: DString.3,v 1.6 2001/09/24 21:10:32 dgp Exp $
+'\" RCS: @(#) $Id: DString.3,v 1.6.2.1 2002/02/05 02:21:57 wolfsuit Exp $
 '\" 
 .so man.macros
 .TH Tcl_DString 3 7.4 Tcl "Tcl Library Procedures"
 .BS
 .SH NAME
-Tcl_DStringInit, Tcl_DStringAppend, Tcl_DStringAppendElement, Tcl_DStringStartSublist, Tcl_DStringEndSublist, Tcl_DStringLength, Tcl_DStringValue, Tcl_DStringSetLength, Tcl_DStringFree, Tcl_DStringResult, Tcl_DStringGetResult \- manipulate dynamic strings
+Tcl_DStringInit, Tcl_DStringAppend, Tcl_DStringAppendElement, Tcl_DStringStartSublist, Tcl_DStringEndSublist, Tcl_DStringLength, Tcl_DStringValue, Tcl_DStringSetLength, Tcl_DStringTrunc, Tcl_DStringFree, Tcl_DStringResult, Tcl_DStringGetResult \- manipulate dynamic strings
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -47,7 +47,7 @@ char *
 .AS Tcl_DString newLength
 .AP Tcl_DString *dsPtr in/out
 Pointer to structure that is used to manage a dynamic string.
-.AP char *string in
+.AP "CONST char" *string in
 Pointer to characters to add to dynamic string.
 .AP int length in
 Number of characters from string to add to dynamic string.  If -1,

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacSock.c,v 1.8 2001/04/04 14:49:35 dgp Exp $
+ * RCS: @(#) $Id: tclMacSock.c,v 1.8.14.1 2002/02/05 02:22:03 wolfsuit Exp $
  */
 
 #include "tclInt.h"
@@ -138,14 +138,14 @@ static pascal void	CleanUpExitProc _ANSI_ARGS_((void));
 static void		ClearZombieSockets _ANSI_ARGS_((void));
 static void		CloseCompletionRoutine _ANSI_ARGS_((TCPiopb *pb));
 static TcpState *	CreateSocket _ANSI_ARGS_((Tcl_Interp *interp,
-			    int port, char *host, char *myAddr,  int myPort,
-			    int server, int async));
+			    int port, CONST char *host, CONST char *myAddr,
+			    int myPort, int server, int async));
 static pascal void	DNRCompletionRoutine _ANSI_ARGS_((
 			    struct hostInfo *hostinfoPtr,
 			    DNRState *dnrStatePtr));
 static void		FreeSocketInfo _ANSI_ARGS_((TcpState *statePtr));
 static long		GetBufferSize _ANSI_ARGS_((void));
-static OSErr		GetHostFromString _ANSI_ARGS_((char *name,
+static OSErr		GetHostFromString _ANSI_ARGS_((CONST char *name,
 			    ip_addr *address));
 static OSErr		GetLocalAddress _ANSI_ARGS_((unsigned long *addr));
 static void		IOCompletionRoutine _ANSI_ARGS_((TCPiopb *pb));
@@ -171,12 +171,12 @@ static int		TcpClose _ANSI_ARGS_((ClientData instanceData,
 static int		TcpGetHandle _ANSI_ARGS_((ClientData instanceData,
 		            int direction, ClientData *handlePtr));
 static int		TcpGetOptionProc _ANSI_ARGS_((ClientData instanceData,
-                            Tcl_Interp *interp, char *optionName,
+                            Tcl_Interp *interp, CONST char *optionName,
 			    Tcl_DString *dsPtr));
 static int		TcpInput _ANSI_ARGS_((ClientData instanceData,
 			    char *buf, int toRead, int *errorCodePtr));
 static int		TcpOutput _ANSI_ARGS_((ClientData instanceData,
-			    char *buf, int toWrite, int *errorCodePtr));
+			    CONST char *buf, int toWrite, int *errorCodePtr));
 static void		TcpWatch _ANSI_ARGS_((ClientData instanceData,
 		            int mask));
 static int		WaitForSocketEvent _ANSI_ARGS_((TcpState *infoPtr,
@@ -196,7 +196,7 @@ pascal void NotifyRoutine (
 
 static Tcl_ChannelType tcpChannelType = {
     "tcp",			/* Type name. */
-    TcpBlockMode,		/* Set blocking or
+    (Tcl_ChannelTypeVersion)TcpBlockMode,		/* Set blocking or
                                  * non-blocking mode.*/
     TcpClose,			/* Close proc. */
     TcpInput,			/* Input proc. */
@@ -1201,7 +1201,7 @@ TcpGetHandle(
 static int
 TcpOutput(
     ClientData instanceData, 		/* Channel state. */
-    char *buf, 				/* The data buffer. */
+    CONST char *buf,			/* The data buffer. */
     int toWrite, 			/* How many bytes to write? */
     int *errorCodePtr)			/* Where to store error code. */
 {
@@ -1346,7 +1346,7 @@ static int
 TcpGetOptionProc(
     ClientData instanceData, 		/* Socket state. */
     Tcl_Interp *interp,                 /* For error reporting - can be NULL.*/
-    char *optionName, 			/* Name of the option to
+    CONST char *optionName, 		/* Name of the option to
                                          * retrieve the value for, or
                                          * NULL to get all options and
                                          * their values. */
@@ -1385,7 +1385,7 @@ TcpGetOptionProc(
      * if optionName is NULL.
      */
 
-    if (optionName == (char *) NULL || optionName[0] == '\0') {
+    if (optionName == (CONST char *) NULL || optionName[0] == '\0') {
         doAll = true;
     } else {
 	if (!strcmp(optionName, "-peername")) {
@@ -1654,8 +1654,8 @@ static TcpState *
 CreateSocket(
     Tcl_Interp *interp,		/* For error reporting; can be NULL. */
     int port,			/* Port number to open. */
-    char *host,			/* Name of host on which to open port. */
-    char *myaddr,		/* Optional client-side address */
+    CONST char *host,		/* Name of host on which to open port. */
+    CONST char *myaddr,		/* Optional client-side address */
     int myport,			/* Optional client-side port */
     int server,			/* 1 if socket should be a server socket,
 				 * else 0 for a client socket. */
@@ -1844,8 +1844,8 @@ Tcl_Channel
 Tcl_OpenTcpClient(
     Tcl_Interp *interp, 		/* For error reporting; can be NULL. */
     int port, 				/* Port number to open. */
-    char *host, 			/* Host on which to open port. */
-    char *myaddr, 			/* Client-side address */
+    CONST char *host, 			/* Host on which to open port. */
+    CONST char *myaddr,			/* Client-side address */
     int myport, 			/* Client-side port */
     int async)				/* If nonzero, attempt to do an
                                          * asynchronous connect. Otherwise
@@ -1898,7 +1898,7 @@ Tcl_OpenTcpServer(
     Tcl_Interp *interp,			/* For error reporting - may be
                                          * NULL. */
     int port,				/* Port number to open. */
-    char *host,				/* Name of local host. */
+    CONST char *host,			/* Name of local host. */
     Tcl_TcpAcceptProc *acceptProc,	/* Callback for accepting connections
                                          * from new clients. */
     ClientData acceptProcData)		/* Data for the callback. */
@@ -2225,7 +2225,7 @@ TcpAccept(
  *----------------------------------------------------------------------
  */
 
-char *
+CONST char *
 Tcl_GetHostName()
 {
     static int  hostnameInited = 0;
@@ -2426,7 +2426,7 @@ CleanUpExitProc()
 
 static OSErr
 GetHostFromString(
-    char *name, 		/* Host in string form. */
+    CONST char *name, 		/* Host in string form. */
     ip_addr *address)		/* Returned IP address. */
 {
     OSErr err;
@@ -2449,7 +2449,7 @@ GetHostFromString(
     }
     dnrState.done = 0;
     GetCurrentProcess(&(dnrState.psn));
-    err = StrToAddr(name, &dnrState.hostInfo, resultUPP, (Ptr) &dnrState);
+    err = StrToAddr((char*)name, &dnrState.hostInfo, resultUPP, (Ptr) &dnrState);
     if (err == cacheFault) {
 	while (!dnrState.done) {
 	    WaitNextEvent(0, &dummy, 1, NULL);
@@ -2464,7 +2464,7 @@ GetHostFromString(
 
     if (dnrState.hostInfo.rtnCode == cacheFault) {
 	dnrState.done = 0;
-	err = StrToAddr(name, &dnrState.hostInfo, resultUPP, (Ptr) &dnrState);
+	err = StrToAddr((char*)name, &dnrState.hostInfo, resultUPP, (Ptr) &dnrState);
 	if (err == cacheFault) {
 	    while (!dnrState.done) {
 		WaitNextEvent(0, &dummy, 1, NULL);

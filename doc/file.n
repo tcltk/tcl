@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: file.n,v 1.8 2001/09/04 18:06:34 vincentdarley Exp $
+'\" RCS: @(#) $Id: file.n,v 1.8.8.1 2002/02/05 02:21:58 wolfsuit Exp $
 '\" 
 .so man.macros
 .TH file n 8.3 Tcl "Tcl Built-In Commands"
@@ -92,18 +92,20 @@ is determined using the same rules as for \fBstring match\fR.
 \fBfile copy \fR?\fB\-force\fR? ?\fB\-\|\-\fR? \fIsource\fR ?\fIsource\fR ...? \fItargetDir\fR
 .RS
 The first form makes a copy of the file or directory \fIsource\fR under
-the pathname \fItarget\fR.  If \fItarget\fR is an existing directory,
+the pathname \fItarget\fR. If \fItarget\fR is an existing directory,
 then the second form is used.  The second form makes a copy inside
 \fItargetDir\fR of each \fIsource\fR file listed.  If a directory is
 specified as a \fIsource\fR, then the contents of the directory will be
-recursively copied into \fItargetDir\fR.  Existing files will not be
-overwritten unless the \fB\-force\fR option is specified.  Trying to
-overwrite a non-empty directory, overwrite a directory with a file, or a
-file with a directory will all result in errors even if \fI\-force\fR was
-specified.  Arguments are processed in the order specified, halting at the
-first error, if any.  A \fB\-\|\-\fR marks the end of switches; the argument
-following the \fB\-\|\-\fR will be treated as a \fIsource\fR even if it
-starts with a \fB\-\fR.
+recursively copied into \fItargetDir\fR. Existing files will not be
+overwritten unless the \fB\-force\fR option is specified.  When copying
+within a single filesystem, \fIfile copy\fR will copy soft links (i.e.
+the links themselves are copied, not the things they point to).  Trying
+to overwrite a non-empty directory, overwrite a directory with a file,
+or a file with a directory will all result in errors even if
+\fI\-force\fR was specified.  Arguments are processed in the order
+specified, halting at the first error, if any.  A \fB\-\|\-\fR marks
+the end of switches; the argument following the \fB\-\|\-\fR will be
+treated as a \fIsource\fR even if it starts with a \fB\-\fR.
 .RE
 .TP
 \fBfile delete \fR?\fB\-force\fR? ?\fB\-\|\-\fR? \fIpathname\fR ?\fIpathname\fR ... ?
@@ -221,13 +223,15 @@ under Windows or AppleScript on the Macintosh.
 .TP
 \fBfile normalize \fIname\fR
 .
-Returns a unique normalised path representation for the file, whose string
-value can be used as a unique identifier for the it.  A normalized path is
-one which has all '../', './' removed.  Also it is one which is in the
-'standard' format for the native platform.  On MacOS, Unix, this means the
-path must be free of symbolic links/aliases, and on Windows it means we want
-the long form, with the long form's case-dependence (which gives us a
-unique, case-dependent path).
+Returns a unique normalised path representation for the file, whose
+string value can be used as a unique identifier for the it.  A
+normalized path is one which has all '../', './' removed.  Also it is
+one which is in the ``standard'' format for the native platform.  On
+MacOS, Unix, this means the path must be free of symbolic
+links/aliases, and on Windows it also means means we want the long form
+(when running Win NT/2000/XP) or the short form (when running Win
+95/98) with that form's case-dependence (which gives us a unique,
+case-dependent path).
 .TP
 \fBfile owned \fIname\fR 
 .
@@ -255,9 +259,9 @@ Returns the value of the symbolic link given by \fIname\fR (i.e. the name
 of the file it points to).  If \fIname\fR isn't a symbolic link or its
 value cannot be read, then an error is returned.  On systems that don't
 support symbolic links this option is undefined.
-.PP
+.TP
 \fBfile rename \fR?\fB\-force\fR? ?\fB\-\|\-\fR? \fIsource\fR \fItarget\fR
-.br
+.TP
 \fBfile rename \fR?\fB\-force\fR? ?\fB\-\|\-\fR? \fIsource\fR ?\fIsource\fR ...? \fItargetDir\fR
 .RS
 The first form takes the file or directory specified by pathname

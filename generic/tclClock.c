@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclClock.c,v 1.11 2000/08/18 18:02:16 ericm Exp $
+ * RCS: @(#) $Id: tclClock.c,v 1.11.14.1 2002/02/05 02:21:58 wolfsuit Exp $
  */
 
 #include "tcl.h"
@@ -67,13 +67,13 @@ Tcl_ClockObjCmd (client, interp, objc, objv)
     Tcl_Obj *baseObjPtr = NULL;
     char *scanStr;
     
-    static char *switches[] =
+    static CONST char *switches[] =
 	{"clicks", "format", "scan", "seconds", (char *) NULL};
     enum command { COMMAND_CLICKS, COMMAND_FORMAT, COMMAND_SCAN,
 		       COMMAND_SECONDS
     };
-    static char *formatSwitches[] = {"-format", "-gmt", (char *) NULL};
-    static char *scanSwitches[] = {"-base", "-gmt", (char *) NULL};
+    static CONST char *formatSwitches[] = {"-format", "-gmt", (char *) NULL};
+    static CONST char *scanSwitches[] = {"-base", "-gmt", (char *) NULL};
 
     resultPtr = Tcl_GetObjResult(interp);
     if (objc < 2) {
@@ -109,7 +109,7 @@ Tcl_ClockObjCmd (client, interp, objc, objv)
 		 * We can enforce at least millisecond granularity
 		 */
 		Tcl_Time time;
-		TclpGetTime(&time);
+		Tcl_GetTime(&time);
 		Tcl_SetLongObj(resultPtr,
 			(long) (time.sec*1000 + time.usec/1000));
 	    } else {
@@ -297,7 +297,7 @@ FormatClock(interp, clockVal, useGMT, format)
      */
 
     if (useGMT) {
-        char *varValue;
+        CONST char *varValue;
 
         varValue = Tcl_GetVar2(interp, "env", "TZ", TCL_GLOBAL_ONLY);
         if (varValue != NULL) {

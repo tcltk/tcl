@@ -7,11 +7,12 @@
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994 Sun Microsystems, Inc.
 # Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright (c) 2001 by Kevin B. Kenny.  All rights reserved.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: string.test,v 1.29 2001/05/14 08:57:26 dkf Exp $
+# RCS: @(#) $Id: string.test,v 1.29.10.1 2002/02/05 02:22:04 wolfsuit Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -259,7 +260,7 @@ test string-5.17 {string index, bad integer} {
 } {1 {bad index "08": must be integer or end?-integer? (looks like invalid octal number)}}
 test string-5.18 {string index, bad integer} {
     list [catch {string index "abc" end-00289} msg] $msg
-} {1 {expected integer but got "-00289" (looks like invalid octal number)}}
+} {1 {bad index "end-00289": must be integer or end?-integer? (looks like invalid octal number)}}
 test string-5.19 {string index, bytearray object out of bounds} {
     string index [binary format I* {0x50515253 0x52}] -1
 } {}
@@ -854,6 +855,10 @@ test string-11.49 {string match, *special case} {
 test string-11.50 {string match, *special case} {
     string match "\\" "\\"
 } 0
+test string-11.51 {string match; *, -nocase and UTF-8} {
+    string match -nocase [binary format I 717316707] \
+	    [binary format I 2028036707]
+} 1
 
 
 test string-12.1 {string range} {

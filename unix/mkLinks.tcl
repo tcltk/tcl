@@ -30,11 +30,19 @@ fi
 cd $1
 echo foo > xyzzyTestingAVeryLongFileName.foo
 x=`echo xyzzyTe*`
+echo foo > xyzzyTestingaverylongfilename.foo
+y=`echo xyzzyTestingav*`
 rm xyzzyTe*
 if test "$x" != "xyzzyTestingAVeryLongFileName.foo"; then
     exit
 fi
+if test "$y" != "xyzzyTestingaverylongfilename.foo"; then
+    CASEINSENSITIVEFS=1
+fi
 }
+
+set case_insensitive_test { if test "${CASEINSENSITIVEFS:-}" != "1"; then} 
+set case_insensitive_test_fi {; fi} 
 
 foreach file $argv {
     set in [open $file]
@@ -56,9 +64,16 @@ foreach file $argv {
 		foreach name [split $line ,] {
 		    regsub -all {(\\)? } $name "" name
 		    if {![string match $name*$ext $tail]} {
+		    	if {[string match -nocase $name*$ext $tail]} {
+			   set tst $case_insensitive_test 
+			   set tstfi $case_insensitive_test_fi 
+		    	} else {
+			   set tst ""
+			   set tstfi ""
+		    	}
 			lappend namelist $name$ext
-			append rmOutput "    rm -f $name$ext\n"
-			append lnOutput "    ln $tail $name$ext\n"
+			append rmOutput "   $tst rm -f $name$ext$tstfi\n"
+			append lnOutput "   $tst ln $tail $name$ext$tstfi\n"
 		    }
 		}
 		if { [llength $namelist] } {

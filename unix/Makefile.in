@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.83.6.2 2001/12/02 01:03:46 wolfsuit Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.83.6.3 2002/02/05 02:22:04 wolfsuit Exp $
 
 VERSION 		= @TCL_VERSION@
 
@@ -166,15 +166,19 @@ SHELL			= /bin/sh
 # "install" around;  better to use the install-sh script that comes
 # with the distribution, which is slower but guaranteed to work.
 
+INSTALL_STRIP_PROGRAM   = -s
+INSTALL_STRIP_LIBRARY  = -S -S
+
 INSTALL			= @srcdir@/install-sh -c
 INSTALL_PROGRAM		= ${INSTALL}
+INSTALL_LIBRARY		= ${INSTALL}
 INSTALL_DATA		= ${INSTALL} -m 644
 
-# The following specifies which Tcl executable to use for make targets
-# below.  This can generally be 'tclsh', meaning all targets will work
-# once we have created the initial executable, but in some cases you
-# may want to use a target without having made tclsh on these sources
-# (like for make genstubs)
+# TCL_EXE is the name of a tclsh executable that is available *BEFORE*
+# running make for the first time. Certain build targets (make genstubs)
+# need it to be available on the PATH. This executable should *NOT* be
+# required just to do a normal build although it can be required to run
+# make dist.
 TCL_EXE			= tclsh
 
 # The symbols below provide support for dynamic loading and shared
@@ -190,7 +194,7 @@ SHLIB_CFLAGS		= @SHLIB_CFLAGS@
 SHLIB_SUFFIX		= @SHLIB_SUFFIX@
 #SHLIB_SUFFIX		=
 
-DLTEST_TARGETS		= dltest/pkg5${SHLIB_SUFFIX} dltest/Makefile
+DLTEST_TARGETS		= dlpkgs
 
 # The following symbol is defined to "$(DLTEST_TARGETS)" if dynamic
 # loading is available;  this causes everything in the "dltest"
@@ -254,7 +258,7 @@ STUB_CC_SWITCHES = ${CFLAGS} ${CFLAGS_WARNING} ${SHLIB_CFLAGS} \
 ${AC_FLAGS} ${MATH_FLAGS} ${GENERIC_FLAGS} ${PROTO_FLAGS} ${MEM_DEBUG_FLAGS} \
 ${COMPILE_DEBUG_FLAGS} ${ENV_FLAGS} -DTCL_SHLIB_EXT=\"${SHLIB_SUFFIX}\"
 
-LIBS		= @DL_LIBS@ @LIBS@ $(MATH_LIBS) -lc
+LIBS		= @DL_LIBS@ @LIBS@ $(MATH_LIBS)
 
 DEPEND_SWITCHES	= ${CFLAGS} -I${GENERIC_DIR} -I${SRC_DIR} \
 ${AC_FLAGS} ${MATH_FLAGS} \
@@ -421,7 +425,9 @@ doc:
 ${TCL_LIB_FILE}: ${OBJS} ${STUB_LIB_FILE}
 	rm -f ${TCL_LIB_FILE}
 	@MAKE_LIB@
-	$(RANLIB) ${TCL_LIB_FILE}
+	if test "x@DL_OBJS@" = "xtclLoadAout.o"; then \
+		$(RANLIB) ${TCL_LIB_FILE}; \
+	fi
 
 ${STUB_LIB_FILE}: ${STUB_LIB_OBJS}
 	rm -f ${STUB_LIB_FILE}
@@ -444,10 +450,17 @@ tclsh: ${TCLSH_OBJS} ${TCL_LIB_FILE}
 	${CC} ${LDFLAGS} ${TCLSH_OBJS} @TCL_BUILD_LIB_SPEC@ ${LIBS} \
 		@TCL_LD_SEARCH_FLAGS@ -o tclsh
 
+# Resetting the LIB_RUNTIME_DIR below is required so that
+# the generated tcltest executable gets the build directory
+# burned into its ld search path. This keeps tcltest from
+# picking up an already installed version of the Tcl library.
+
 tcltest: ${TCLTEST_OBJS} ${TCL_LIB_FILE} ${BUILD_DLTEST}
+	$(MAKE) tcltest-real LIB_RUNTIME_DIR=`pwd`
+
+tcltest-real:
 	${CC} ${LDFLAGS} ${TCLTEST_OBJS} @TCL_BUILD_LIB_SPEC@ ${LIBS} \
 		@TCL_LD_SEARCH_FLAGS@ -o tcltest
-
 
 # Note, in the target below TCL_LIBRARY needs to be set or else
 # "make test" won't work in the case where the compilation directory
@@ -480,6 +493,15 @@ shell: tclsh
 	TCL_LIBRARY="${TCL_BUILDTIME_LIBRARY}"; export TCL_LIBRARY; \
 	./tclsh $(SCRIPT)
 
+# This target can be used to run tclsh inside either gdb or insight
+gdb: tclsh
+	@echo "set env LD_LIBRARY_PATH=`pwd`:${LD_LIBRARY_PATH}" > gdb.run
+	@echo "set env LIBPATH=`pwd`:${LIBPATH}" >> gdb.run
+	@echo "set env SHLIB_PATH=`pwd`:${SHLIB_PATH}" >> gdb.run
+	@echo "set env TCL_LIBRARY=${TCL_BUILDTIME_LIBRARY}" >> gdb.run
+	gdb ./tclsh --command=gdb.run
+	rm gdb.run
+
 # The following target outputs the name of the top-level source directory
 # for Tcl (it is used by Tk's configure script, for example).  The
 # .NO_PARALLEL line is needed to avoid problems under Sun's "pmake".
@@ -506,28 +528,20 @@ gendate:
 	    <y.tab.c >$(GENERIC_DIR)/tclDate.c
 	rm y.tab.c
 
-# The following targets generate the shared libraries in dltest that
+# The following targets generate the shared libraries in dltest/ that
 # are used for testing;  they are included as part of the "tcltest"
 # target (via the BUILD_DLTEST variable) if dynamic loading is supported
-# on this platform. The ".." environment variable stuff is needed
-# because on some platforms tclsh scripts will be executed as part of
-# building the shared libraries, and they need to be able to use the
-# uninstalled tclsh that is present in this directory.  The "make tclsh"
-# command is needed for the same reason (must make sure that it exists).
+# on this platform.
 
-dltest/pkg5${SHLIB_SUFFIX}: dltest/Makefile
-	if test ! -f tclsh; then $(MAKE) tclsh; else true; fi
-	cd dltest; PATH=..:${PATH} TCL_LIBRARY=../../library $(MAKE)
-
-dltest/Makefile: $(DLTEST_DIR)/configure $(DLTEST_DIR)/Makefile.in tclConfig.sh
-	if test ! -d dltest; then mkdir dltest; else true; fi
-	cd dltest; if test -f configure; then ./configure; else \
-	    $(DLTEST_DIR)/configure; fi
+dlpkgs:
+	cd dltest ; $(MAKE)
 
 install: install-binaries install-libraries install-doc
 
 install-strip:
-	$(MAKE) install INSTALL_PROGRAM="$(INSTALL_PROGRAM) -s"
+	$(MAKE) install \
+		INSTALL_PROGRAM="$(INSTALL_PROGRAM) ${INSTALL_STRIP_PROGRAM}" \
+		INSTALL_LIBRARY="$(INSTALL_LIBRARY) ${INSTALL_STRIP_LIBRARY}"
 
 # Note: before running ranlib below, must cd to target directory because
 # some ranlibs write to current directory, and this might not always be
@@ -547,8 +561,10 @@ install-binaries: binaries
 	    chmod +x $(SRC_DIR)/install-sh; \
 	    fi
 	@echo "Installing $(TCL_LIB_FILE) to $(LIB_INSTALL_DIR)/"
-	@$(INSTALL_DATA) $(TCL_LIB_FILE) $(LIB_INSTALL_DIR)/$(TCL_LIB_FILE)
-	@(cd $(LIB_INSTALL_DIR); $(RANLIB) $(TCL_LIB_FILE))
+	@$(INSTALL_LIBRARY) $(TCL_LIB_FILE) $(LIB_INSTALL_DIR)/$(TCL_LIB_FILE)
+	@if test "x@DL_OBJS@" = "xtclLoadAout.o"; then \
+	    (cd $(LIB_INSTALL_DIR); $(RANLIB) $(TCL_LIB_FILE)); \
+	    fi
 	@chmod 555 $(LIB_INSTALL_DIR)/$(TCL_LIB_FILE)
 	@if test "$(TCL_BUILD_EXP_FILE)" != ""; then \
 	    echo "Installing $(TCL_EXP_FILE) to $(LIB_INSTALL_DIR)/"; \
@@ -561,7 +577,7 @@ install-binaries: binaries
 	@$(INSTALL_DATA) tclConfig.sh $(LIB_INSTALL_DIR)/tclConfig.sh
 	@if test "$(TCL_STUB_LIB_FILE)" != "" ; then \
 	    echo "Installing $(TCL_STUB_LIB_FILE) to $(LIB_INSTALL_DIR)/"; \
-	    $(INSTALL_DATA) $(STUB_LIB_FILE) \
+	    $(INSTALL_LIBRARY) $(STUB_LIB_FILE) \
 			 $(LIB_INSTALL_DIR)/$(TCL_STUB_LIB_FILE); \
 	    fi
 
@@ -672,18 +688,18 @@ install-doc: doc
 	@echo "Cross-linking command (.n) docs";
 	@$(UNIX_DIR)/mkLinks $(MANN_INSTALL_DIR)
 
-Makefile: $(UNIX_DIR)/Makefile.in
+Makefile: $(UNIX_DIR)/Makefile.in $(DLTEST_DIR)/Makefile.in
 	$(SHELL) config.status
 
 clean:
 	rm -f *.a *.o libtcl* core errs *~ \#* TAGS *.E a.out \
 		errors tclsh tcltest lib.exp
-	if test -f dltest/Makefile; then cd dltest; $(MAKE) clean; fi
+	cd dltest ; $(MAKE) clean
 
 distclean: clean
 	rm -rf Makefile config.status config.cache config.log tclConfig.sh \
 		$(PACKAGE).* prototype
-	if test -f dltest/Makefile; then cd dltest; $(MAKE) distclean; fi
+	cd dltest ; $(MAKE) distclean
 
 depend:
 	makedepend -- $(DEPEND_SWITCHES) -- $(SRCS)
@@ -1066,8 +1082,7 @@ tclStubLib.o: $(GENERIC_DIR)/tclStubLib.c
 
 $(GENERIC_DIR)/tclStubInit.c: $(GENERIC_DIR)/tcl.decls \
 		$(GENERIC_DIR)/tclInt.decls
-	$(TCL_EXE) $(TOOL_DIR)/genStubs.tcl $(GENERIC_DIR) \
-		$(GENERIC_DIR)/tcl.decls $(GENERIC_DIR)/tclInt.decls
+	@echo "Warning: run \"make genstubs\" to regenerate tclStubInit.c"
 
 genstubs:
 	$(TCL_EXE) $(TOOL_DIR)/genStubs.tcl $(GENERIC_DIR) \
@@ -1213,8 +1228,10 @@ dist: $(UNIX_DIR)/configure mklinks
 		$(TOP_DIR)/win/*.ico $(TOP_DIR)/win/*.rc \
 		$(DISTDIR)/win
 	cp -p $(TOP_DIR)/win/*.bat $(DISTDIR)/win
+	$(TCL_EXE) $(TOOL_DIR)/eolFix.tcl -crlf $(DISTDIR)/win/*.bat
 	cp -p $(TOP_DIR)/win/makefile.* $(DISTDIR)/win
 	cp -p $(TOP_DIR)/win/tcl.hpj.in $(DISTDIR)/win
+	$(TCL_EXE) $(TOOL_DIR)/eolFix.tcl -crlf $(DISTDIR)/win/tcl.hpj.in
 	cp -p $(TOP_DIR)/win/README $(DISTDIR)/win
 	cp -p $(TOP_DIR)/license.terms $(DISTDIR)/win
 	mkdir $(DISTDIR)/mac
@@ -1222,14 +1239,13 @@ dist: $(UNIX_DIR)/configure mklinks
 		$(TOP_DIR)/mac/*.c $(TOP_DIR)/mac/*.h $(TOP_DIR)/mac/*.r \
 		$(DISTDIR)/mac
 	cp -p $(TOP_DIR)/mac/porting.notes $(TOP_DIR)/mac/README $(DISTDIR)/mac
-	cp -p $(TOP_DIR)/mac/*.exp $(TOP_DIR)/mac/*.pch $(DISTDIR)/mac
+	cp -p $(TOP_DIR)/mac/*.pch $(DISTDIR)/mac
 	cp -p $(TOP_DIR)/mac/*.doc $(TOP_DIR)/mac/*.html $(DISTDIR)/mac
 	cp -p $(TOP_DIR)/license.terms $(DISTDIR)/mac
 	mkdir $(DISTDIR)/unix/dltest
 	cp -p $(UNIX_DIR)/dltest/*.c $(UNIX_DIR)/dltest/Makefile.in \
+		$(UNIX_DIR)/dltest/README \
 		$(DISTDIR)/unix/dltest
-	cp -p $(UNIX_DIR)/dltest/configure.in $(UNIX_DIR)/dltest/configure \
-		$(UNIX_DIR)/dltest/README $(DISTDIR)/unix/dltest
 	mkdir $(DISTDIR)/tools
 	cp -p $(TOP_DIR)/tools/Makefile.in $(TOP_DIR)/tools/README \
 		$(TOP_DIR)/tools/configure $(TOP_DIR)/tools/configure.in \
@@ -1237,6 +1253,8 @@ dist: $(UNIX_DIR)/configure mklinks
 		$(TOP_DIR)/tools/tcl.wse.in $(TOP_DIR)/tools/*.bmp \
 		$(TOP_DIR)/tools/tcl.hpj.in \
 		$(DISTDIR)/tools
+	$(TCL_EXE) $(TOOL_DIR)/eolFix.tcl -crlf $(DISTDIR)/tools/tcl.hpj.in \
+		$(DISTDIR)/tools/tcl.wse.in
 
 #
 # The following target can only be used for non-patch releases.  Use

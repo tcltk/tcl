@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEncoding.c,v 1.8 2001/09/24 21:10:32 dgp Exp $
+ * RCS: @(#) $Id: tclEncoding.c,v 1.8.2.1 2002/02/05 02:21:59 wolfsuit Exp $
  */
 
 #include "tclInt.h"
@@ -341,7 +341,7 @@ TclFinalizeEncodingSubsystem()
  *-------------------------------------------------------------------------
  */
 
-char *
+CONST char *
 Tcl_GetDefaultEncodingDir()
 {
     return tclDefaultEncodingDir;
@@ -362,7 +362,7 @@ Tcl_GetDefaultEncodingDir()
 
 void
 Tcl_SetDefaultEncodingDir(path)
-    char *path;
+    CONST char *path;
 {
     tclDefaultEncodingDir = (char *)ckalloc((unsigned) strlen(path) + 1);
     strcpy(tclDefaultEncodingDir, path);
@@ -505,7 +505,7 @@ FreeEncoding(encoding)
  *---------------------------------------------------------------------------
  */
 
-char *
+CONST char *
 Tcl_GetEncodingName(encoding)
     Tcl_Encoding encoding;	/* The encoding whose name to fetch. */
 {
@@ -781,7 +781,7 @@ Tcl_CreateEncoding(typePtr)
  *-------------------------------------------------------------------------
  */
 
-char * 
+CONST char * 
 Tcl_ExternalToUtfDString(encoding, src, srcLen, dstPtr)
     Tcl_Encoding encoding;	/* The encoding for the source string, or
 				 * NULL for the default system encoding. */
@@ -944,7 +944,7 @@ Tcl_ExternalToUtf(interp, encoding, src, srcLen, flags, statePtr, dst,
  *-------------------------------------------------------------------------
  */
 
-char *
+CONST char *
 Tcl_UtfToExternalDString(encoding, src, srcLen, dstPtr)
     Tcl_Encoding encoding;	/* The encoding for the converted string,
 				 * or NULL for the default system encoding. */
@@ -1280,15 +1280,15 @@ OpenEncodingFile(dir, name)
     CONST char *name;
 
 {
-    char *argv[3];
+    CONST char *argv[3];
     Tcl_DString pathString;
     CONST char *path;
     Tcl_Channel chan;
     Tcl_Obj *pathPtr;
     
-    argv[0] = (char *) dir;
+    argv[0] = dir;
     argv[1] = "encoding";
-    argv[2] = (char *) name;
+    argv[2] = name;
 
     Tcl_DStringInit(&pathString);
     Tcl_JoinPath(3, argv, &pathString);
@@ -1584,7 +1584,7 @@ LoadEscapeEncoding(name, chan)
 
     while (1) {
 	int argc;
-	char **argv;
+	CONST char **argv;
 	char *line;
 	Tcl_DString lineString;
 	

@@ -7,19 +7,19 @@
 			00E2F84C016E8B780ACA28DC,
 		);
 		breakpoints = (
-			F52175A5019EEC7801DC9062,
 		);
-		intermediatesDirectory = /Volumes/CodeBits/jingham/Build;
+		intermediatesDirectory = /Volumes/CodeBits/jingham/Tcl/Build;
 		perUserDictionary = {
 			PBXWorkspaceConfiguration = {
 				ContentSize = "{876, 673}";
 				LeftSlideOut = {
-					ActiveTab = 3;
+					ActiveTab = 0;
 					Frame = "{{0, 23}, {876, 650}}";
 					Split0 = {
-						Frame = "{{224, 0}, {652, 650}}";
+						ActiveTab = 3;
+						Frame = "{{243, 0}, {633, 650}}";
 						Split0 = {
-							Frame = "{{0, 24}, {652, 626}}";
+							Frame = "{{0, 319}, {633, 331}}";
 						};
 						SplitCount = 1;
 						Tab0 = {
@@ -55,12 +55,12 @@
 							};
 						};
 						Tab2 = {
-							BuildMessageFrame = "{{0, 0}, {634, 132}}";
-							BuildTranscriptFrame = "{{0, 141}, {634, 128}}";
-							Frame = "{{0, 0}, {632, 267}}";
+							BuildMessageFrame = "{{0, 0}, {635, 0}}";
+							BuildTranscriptFrame = "{{0, 9}, {635, 260}}";
+							Frame = "{{0, 0}, {633, 267}}";
 						};
 						Tab3 = {
-							Frame = "{{0, 0}, {632, 295}}";
+							Frame = "{{0, 0}, {633, 295}}";
 						};
 						TabCount = 4;
 					};
@@ -94,7 +94,7 @@
 				};
 			};
 		};
-		productDirectory = /Volumes/CodeBits/jingham/Products;
+		productDirectory = /Volumes/CodeBits/jingham/Tcl/Products;
 		wantsIndex = 1;
 		wantsSCM = 1;
 	};
@@ -117,11 +117,5 @@
 		activeExec = 0;
 		customExecs = {
 		};
-	};
-	F52175A5019EEC7801DC9062 = {
-		fileReference = F5F24FAA016ECAFC01DC9062;
-		isa = PBXFileBreakpoint;
-		lineNumber = 346;
-		state = 1;
 	};
 }

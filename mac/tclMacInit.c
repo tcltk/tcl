@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacInit.c,v 1.5 2001/07/31 19:12:07 vincentdarley Exp $
+ * RCS: @(#) $Id: tclMacInit.c,v 1.5.8.1 2002/02/05 02:22:02 wolfsuit Exp $
  */
 
 #include <AppleEvents.h>
@@ -25,6 +25,7 @@
 #include "tclInt.h"
 #include "tclMacInt.h"
 #include "tclPort.h"
+#include "tclInitScript.h"
 
 /*
  * The following string is the startup script executed in new
@@ -33,9 +34,10 @@
  * init.tcl script does all of the real work of initialization.
  */
  
-static char initCmd[] = "\
+static char initCmd[] = "if {[info proc tclInit]==\"\"} {\n\
+proc tclInit {} {\n\
+global tcl_pkgPath env\n\
 proc sourcePath {file} {\n\
-  set dirs {}\n\
   foreach i $::auto_path {\n\
     set init [file join $i $file.tcl]\n\
     if {[catch {uplevel #0 [list source $init]}] == 0} {\n\
@@ -46,25 +48,28 @@ proc sourcePath {file} {\n\
     return\n\
   }\n\
   rename sourcePath {}\n\
-  set msg \"can't find $file resource or a usable $file.tcl file\n\"\n\
-  append msg \"in the following directories:\n\"\n\
-  append msg \"    $::auto_path\n\"\n\
-  append msg \" perhaps you need to install Tcl or set your \n\"\n\
-  append msg \"TCL_LIBRARY environment variable?\"\n\
+  set msg \"Can't find $file resource or a usable $file.tcl file\"\n\
+  append msg \" in the following directories:\"\n\
+  append msg \" $::auto_path\"\n\
+  append msg \" perhaps you need to install Tcl or set your\"\n\
+  append msg \" TCL_LIBRARY environment variable?\"\n\
   error $msg\n\
 }\n\
 if {[info exists env(EXT_FOLDER)]} {\n\
-  lappend tcl_pkgPath [file join $env(EXT_FOLDER) {:Tool Command Language}]\n\
+  lappend tcl_pkgPath [file join $env(EXT_FOLDER) {Tool Command Language}]\n\
 }\n\
 if {[info exists tcl_pkgPath] == 0} {\n\
   set tcl_pkgPath {no extension folder}\n\
 }\n\
-sourcePath Init\n\
-sourcePath Auto\n\
-sourcePath Package\n\
-sourcePath History\n\
-sourcePath Word\n\
-rename sourcePath {}";
+sourcePath init\n\
+sourcePath auto\n\
+sourcePath package\n\
+sourcePath history\n\
+sourcePath word\n\
+sourcePath parray\n\
+rename sourcePath {}\n\
+} }\n\
+tclInit";
 
 /*
  * The following structures are used to map the script/language codes of a 
@@ -349,20 +354,30 @@ TclpInitLibraryPath(argv0)
 				 * by querying the module handle. */
 {
     Tcl_Obj *objPtr, *pathPtr;
-    char *str;
+    CONST char *str;
     Tcl_DString ds;
     
     TclMacCreateEnv();
 
     pathPtr = Tcl_NewObj();
     
+    /*
+     * Look for the library relative to default encoding dir.
+     */
+
+    str = Tcl_GetDefaultEncodingDir();
+    if ((str != NULL) && (str[0] != '\0')) {
+	objPtr = Tcl_NewStringObj(str, -1);
+	Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
+    }
+
     str = TclGetEnv("TCL_LIBRARY", &ds);
     if ((str != NULL) && (str[0] != '\0')) {
 	/*
 	 * If TCL_LIBRARY is set, search there.
 	 */
 	 
-	objPtr = Tcl_NewStringObj(str, -1);
+	objPtr = Tcl_NewStringObj(str, Tcl_DStringLength(&ds));
 	Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
 	Tcl_DStringFree(&ds);
     }
@@ -374,18 +389,27 @@ TclpInitLibraryPath(argv0)
     
     /*
      * lappend path [file join $env(EXT_FOLDER) \
-     *      ":Tool Command Language:tcl[info version]"
+     *      "Tool Command Language" "tcl[info version]"
      */
 
     str = TclGetEnv("EXT_FOLDER", &ds);
     if ((str != NULL) && (str[0] != '\0')) {
-        objPtr = Tcl_NewStringObj(str, -1);
-        if (str[strlen(str) - 1] != ':') {
-            Tcl_AppendToObj(objPtr, ":", 1);
-        }
-        Tcl_AppendToObj(objPtr, "Tool Command Language:tcl" TCL_VERSION, -1);
-	Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
-	Tcl_DStringFree(&ds);
+	    Tcl_DString libPath, path;
+	    CONST char *argv[3];
+	    
+	    argv[0] = str;
+	    argv[1] = "Tool Command Language";	    
+	    Tcl_DStringInit(&libPath);
+	    Tcl_DStringAppend(&libPath, "tcl", -1);
+	    Tcl_DStringAppend(&libPath, TCL_VERSION, -1);
+	    argv[2] = Tcl_DStringValue(&libPath);
+	    Tcl_DStringInit(&path);
+	    str = Tcl_JoinPath(3, argv, &path);
+        objPtr = Tcl_NewStringObj(str, Tcl_DStringLength(&path));
+	    Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
+	    Tcl_DStringFree(&ds);
+	    Tcl_DStringFree(&libPath);
+	    Tcl_DStringFree(&path);
     }    
     TclSetLibraryPath(pathPtr);
 }
@@ -419,7 +443,7 @@ TclpSetInitialEncodings()
 {
     CONST char *encoding;
     Tcl_Obj *pathPtr;
-    int fontId;
+    int fontId, err;
     
     fontId = 0;
     GetFinderFont(&fontId);
@@ -428,9 +452,9 @@ TclpSetInitialEncodings()
         encoding = "macRoman";
     }
     
-    Tcl_SetSystemEncoding(NULL, encoding);
+    err = Tcl_SetSystemEncoding(NULL, encoding);
 
-    if (libraryPathEncodingFixed == 0) {
+    if (err == TCL_OK && libraryPathEncodingFixed == 0) {
 	
     /*
      * Until the system encoding was actually set, the library path was
@@ -472,6 +496,7 @@ TclpSetInitialEncodings()
 		    Tcl_DStringLength(&ds));
 	    Tcl_DStringFree(&ds);
 	}
+	Tcl_InvalidateStringRep(pathPtr);
     }
 	libraryPathEncodingFixed = 1;
     }
@@ -512,7 +537,7 @@ TclpSetVariables(interp)
     int minor, major, objc;
     Tcl_Obj **objv;
     char versStr[2 * TCL_INTEGER_SPACE];
-    char *str;
+    CONST char *str;
     Tcl_Obj *pathPtr;
     Tcl_DString ds;
 
@@ -669,6 +694,12 @@ Tcl_Init(
 {
     Tcl_Obj *pathPtr;
 
+    if (tclPreInitScript != NULL) {
+    if (Tcl_Eval(interp, tclPreInitScript) == TCL_ERROR) {
+        return (TCL_ERROR);
+    };
+    }
+
     /*
      * For Macintosh applications the Init function may be contained in
      * the application resources.  If it exists we use it - otherwise we
@@ -708,7 +739,7 @@ Tcl_SourceRCFile(
     Tcl_Interp *interp)		/* Interpreter to source rc file into. */
 {
     Tcl_DString temp;
-    char *fileName;
+    CONST char *fileName;
     Tcl_Channel errChannel;
     Handle h;
 
@@ -716,7 +747,7 @@ Tcl_SourceRCFile(
 
     if (fileName != NULL) {
         Tcl_Channel c;
-	char *fullName;
+	CONST char *fullName;
 
         Tcl_DStringInit(&temp);
 	fullName = Tcl_TranslateFileName(interp, fileName, &temp);
@@ -750,9 +781,13 @@ Tcl_SourceRCFile(
     fileName = Tcl_GetVar(interp, "tcl_rcRsrcName", TCL_GLOBAL_ONLY);
 
     if (fileName != NULL) {
-	c2pstr(fileName);
-	h = GetNamedResource('TEXT', (StringPtr) fileName);
-	p2cstr((StringPtr) fileName);
+	Str255 rezName;
+	Tcl_DString ds;
+	Tcl_UtfToExternalDString(NULL, fileName, -1, &ds);
+	strcpy((char *) rezName + 1, Tcl_DStringValue(&ds));
+	rezName[0] = (unsigned) Tcl_DStringLength(&ds);
+	h = GetNamedResource('TEXT', rezName);
+	Tcl_DStringFree(&ds);
 	if (h != NULL) {
 	    if (Tcl_MacEvalResource(interp, fileName, 0, NULL) != TCL_OK) {
 		errChannel = Tcl_GetStdChannel(TCL_STDERR);

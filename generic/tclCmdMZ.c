@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.46 2001/10/01 15:31:51 msofer Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.46.2.1 2002/02/05 02:21:58 wolfsuit Exp $
  */
 
 #include "tclInt.h"
@@ -27,8 +27,6 @@
 typedef struct {
     int flags;			/* Operations for which Tcl command is
 				 * to be invoked. */
-    char *errMsg;		/* Error message returned from Tcl command,
-				 * or NULL.  Malloc'ed. */
     size_t length;		/* Number of non-NULL chars. in command. */
     char command[4];		/* Space for Tcl command to invoke.  Actual
 				 * size will be as large as necessary to
@@ -60,7 +58,7 @@ Tcl_TraceTypeObjCmd TclTraceCommandObjCmd;
  * In the future we may provide an API to add to the list of
  * supported trace types.
  */
-static char *traceTypeOptions[] = {
+static CONST char *traceTypeOptions[] = {
     "command", "variable", (char*) NULL
 };
 static Tcl_TraceTypeObjCmd* traceSubCmds[] = {
@@ -147,7 +145,7 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
     Tcl_RegExp regExpr;
     Tcl_Obj *objPtr, *resultPtr;
     Tcl_RegExpInfo info;
-    static char *options[] = {
+    static CONST char *options[] = {
 	"-all",		"-about",	"-indices",	"-inline",
 	"-expanded",	"-line",	"-linestop",	"-lineanchor",
 	"-nocase",	"-start",	"--",		(char *) NULL
@@ -252,6 +250,17 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
     }
 
     /*
+     * Handle the odd about case separately.
+     */
+    if (about) {
+	regExpr = Tcl_GetRegExpFromObj(interp, objv[0], cflags);
+	if ((regExpr == NULL) || (TclRegAbout(interp, regExpr) < 0)) {
+	    return TCL_ERROR;
+	}
+	return TCL_OK;
+    }
+
+    /*
      * Get the length of the string that we are matching against so
      * we can do the termination test for -all matches.  Do this before
      * getting the regexp to avoid shimmering problems.
@@ -262,13 +271,6 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
     regExpr = Tcl_GetRegExpFromObj(interp, objv[0], cflags);
     if (regExpr == NULL) {
 	return TCL_ERROR;
-    }
-
-    if (about) {
-	if (TclRegAbout(interp, regExpr) < 0) {
-	    return TCL_ERROR;
-	}
-	return TCL_OK;
     }
 
     if (offset > 0) {
@@ -473,7 +475,7 @@ Tcl_RegsubObjCmd(dummy, interp, objc, objv)
     Tcl_Obj *resultPtr, *subPtr, *objPtr;
     Tcl_UniChar ch, *wsrc, *wfirstChar, *wstring, *wsubspec, *wend;
 
-    static char *options[] = {
+    static CONST char *options[] = {
 	"-all",		"-nocase",	"-expanded",
 	"-line",	"-linestop",	"-lineanchor",	"-start",
 	"--",		NULL
@@ -1029,7 +1031,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
     Tcl_Obj *resultPtr;
     char *string1, *string2;
     int length1, length2;
-    static char *options[] = {
+    static CONST char *options[] = {
 	"bytelength",	"compare",	"equal",	"first",
 	"index",	"is",		"last",		"length",
 	"map",		"match",	"range",	"repeat",
@@ -1363,7 +1365,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	    int i, failat = 0, result = 1, strict = 0;
 	    Tcl_Obj *objPtr, *failVarObj = NULL;
 
-	    static char *isOptions[] = {
+	    static CONST char *isOptions[] = {
 		"alnum",	"alpha",	"ascii",	"control",
 		"boolean",	"digit",	"double",	"false",
 		"graph",	"integer",	"lower",	"print",
@@ -2029,7 +2031,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		Tcl_SetObjLength(resultPtr, length1);
 	    } else {
 		int first, last;
-		char *start, *end;
+		CONST char *start, *end;
 
 		length1 = Tcl_NumUtfChars(string1, length1) - 1;
 		if (TclGetIntForIndex(interp, objv[3], length1,
@@ -2073,7 +2075,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 
 	case STR_TRIM: {
 	    Tcl_UniChar ch, trim;
-	    register char *p, *end;
+	    register CONST char *p, *end;
 	    char *check, *checkEnd;
 	    int offset;
 
@@ -2162,7 +2164,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	case STR_WORDEND: {
 	    int cur;
 	    Tcl_UniChar ch;
-	    char *p, *end;
+	    CONST char *p, *end;
 	    int numChars;
 	    
 	    if (objc != 4) {
@@ -2200,7 +2202,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	case STR_WORDSTART: {
 	    int cur;
 	    Tcl_UniChar ch;
-	    char *p;
+	    CONST char *p;
 	    int numChars;
 	    
 	    if (objc != 4) {
@@ -2264,7 +2266,7 @@ Tcl_SubstObjCmd(dummy, interp, objc, objv)
     int objc;				/* Number of arguments. */
     Tcl_Obj *CONST objv[];       	/* Argument objects. */
 {
-    static char *substOptions[] = {
+    static CONST char *substOptions[] = {
 	"-nobackslashes", "-nocommands", "-novariables", (char *) NULL
     };
     enum substOptions {
@@ -2323,9 +2325,9 @@ Tcl_SubstObjCmd(dummy, interp, objc, objv)
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_SubstObjCmd --
+ * Tcl_SubstObj --
  *
- *	This function performs the substitutions specificed on the
+ *	This function performs the substitutions specified on the
  *	given string as described in the user documentation for the
  *	"subst" Tcl command.  This code is heavily based on an
  *	implementation by Andrew Payne.  Note that if a command
@@ -2484,10 +2486,11 @@ Tcl_SwitchObjCmd(dummy, interp, objc, objv)
     int objc;			/* Number of arguments. */
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
-    int i, j, index, mode, matched, result, splitObjs, seenComment;
+    int i, j, index, mode, matched, result, splitObjs;
     char *string, *pattern;
     Tcl_Obj *stringObj;
-    static char *options[] = {
+    Tcl_Obj *CONST *savedObjv = objv;
+    static CONST char *options[] = {
 	"-exact",	"-glob",	"-regexp",	"--", 
 	NULL
     };
@@ -2534,45 +2537,71 @@ Tcl_SwitchObjCmd(dummy, interp, objc, objv)
 	if (Tcl_ListObjGetElements(interp, objv[0], &objc, &listv) != TCL_OK) {
 	    return TCL_ERROR;
 	}
+
+	/*
+	 * Ensure that the list is non-empty.
+	 */
+
+	if (objc < 1) {
+	    Tcl_WrongNumArgs(interp, 1, savedObjv,
+		    "?switches? string {pattern body ... ?default body?}");
+	    return TCL_ERROR;
+	}
 	objv = listv;
 	splitObjs = 1;
     }
 
-    seenComment = 0;
-    for (i = 0; i < objc; i += 2) {
-	if (i == objc - 1) {
-	    Tcl_ResetResult(interp);
-	    Tcl_AppendToObj(Tcl_GetObjResult(interp),
-	            "extra switch pattern with no body", -1);
+    /*
+     * Complain if there is an odd number of words in the list of
+     * patterns and bodies.
+     */
 
-	    /*
-	     * Check if this can be due to a badly placed comment
-	     * in the switch block
-	     */
-
-	    if (splitObjs && seenComment) {
-		Tcl_AppendToObj(Tcl_GetObjResult(interp),
-			", this may be due to a comment incorrectly placed outside of a switch body - see the \"switch\" documentation", -1);
-	    }
-
-	    return TCL_ERROR;
-	}
+    if (objc % 2) {
+	Tcl_ResetResult(interp);
+	Tcl_AppendResult(interp, "extra switch pattern with no body", NULL);
 
 	/*
-	 * See if the pattern matches the string.
-	 */
-
-	pattern = Tcl_GetString(objv[i]);
-
-	/*
+	 * Check if this can be due to a badly placed comment
+	 * in the switch block.
+	 *
 	 * The following is an heuristic to detect the infamous
 	 * "comment in switch" error: just check if a pattern
 	 * begins with '#'.
 	 */
 
-	if (splitObjs && *pattern == '#') {
-	    seenComment = 1;
+	if (splitObjs) {
+	    for (i=0 ; i<objc ; i+=2) {
+		if (Tcl_GetString(objv[i])[0] == '#') {
+		    Tcl_AppendResult(interp, ", this may be due to a ",
+			    "comment incorrectly placed outside of a ",
+			    "switch body - see the \"switch\" ",
+			    "documentation", NULL);
+		    break;
+		}
+	    }
 	}
+
+	return TCL_ERROR;
+    }
+
+    /*
+     * Complain if the last body is a continuation.  Note that this
+     * check assumes that the list is non-empty!
+     */
+
+    if (strcmp(Tcl_GetString(objv[objc-1]), "-") == 0) {
+	Tcl_ResetResult(interp);
+	Tcl_AppendResult(interp, "no body specified for pattern \"",
+		Tcl_GetString(objv[objc-2]), "\"", NULL);
+	return TCL_ERROR;
+    }
+
+    for (i = 0; i < objc; i += 2) {
+	/*
+	 * See if the pattern matches the string.
+	 */
+
+	pattern = Tcl_GetString(objv[i]);
 
 	matched = 0;
 	if ((i == objc - 2) 
@@ -2607,10 +2636,11 @@ Tcl_SwitchObjCmd(dummy, interp, objc, objv)
 
 	for (j = i + 1; ; j += 2) {
 	    if (j >= objc) {
-		Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-			"no body specified for pattern \"", pattern,
-			"\"", (char *) NULL);
-		return TCL_ERROR;
+		/*
+		 * This shouldn't happen since we've checked that the
+		 * last body is not a continuation...
+		 */
+		panic("fall-out when searching for body to match pattern");
 	    }
 	    if (strcmp(Tcl_GetString(objv[j]), "-") != 0) {
 		break;
@@ -2675,17 +2705,17 @@ Tcl_TimeObjCmd(dummy, interp, objc, objv)
     
     objPtr = objv[1];
     i = count;
-    TclpGetTime(&start);
+    Tcl_GetTime(&start);
     while (i-- > 0) {
 	result = Tcl_EvalObjEx(interp, objPtr, 0);
 	if (result != TCL_OK) {
 	    return result;
 	}
     }
-    TclpGetTime(&stop);
+    Tcl_GetTime(&stop);
     
-    totalMicroSec =
-	(stop.sec - start.sec)*1000000 + (stop.usec - start.usec);
+    totalMicroSec = ( ( (double) ( stop.sec - start.sec ) ) * 1.0e6
+		      + ( stop.usec - start.usec ) );
     sprintf(buf, "%.0f microseconds per iteration",
 	((count <= 0) ? 0 : totalMicroSec/count));
     Tcl_ResetResult(interp);
@@ -2726,7 +2756,7 @@ Tcl_TraceObjCmd(dummy, interp, objc, objv)
     char *name, *flagOps, *command, *p;
     size_t length;
     /* Main sub commands to 'trace' */
-    static char *traceOptions[] = {
+    static CONST char *traceOptions[] = {
 	"add", "list", "remove", 
 #ifndef TCL_REMOVE_OBSOLETE_TRACES
 	"variable", "vdelete", "vinfo", 
@@ -2806,9 +2836,8 @@ Tcl_TraceObjCmd(dummy, interp, objc, objv)
 		    (sizeof(TraceVarInfo) - sizeof(tvarPtr->command)
 			    + length + 1));
 	    tvarPtr->flags = flags;
-	    tvarPtr->errMsg = NULL;
 	    tvarPtr->length = length;
-	    flags |= TCL_TRACE_UNSETS;
+	    flags |= TCL_TRACE_UNSETS | TCL_TRACE_RESULT_OBJECT;
 	    strcpy(tvarPtr->command, command);
 	    name = Tcl_GetString(objv[2]);
 	    if (Tcl_TraceVar(interp, name, flags, TraceVarProc,
@@ -2864,11 +2893,9 @@ Tcl_TraceObjCmd(dummy, interp, objc, objv)
 		if ((tvarPtr->length == length) && (tvarPtr->flags == flags)
 			&& (strncmp(command, tvarPtr->command,
 				(size_t) length) == 0)) {
-		    Tcl_UntraceVar(interp, name, flags | TCL_TRACE_UNSETS,
+		    Tcl_UntraceVar(interp, name,
+			    flags | TCL_TRACE_UNSETS | TCL_TRACE_RESULT_OBJECT,
 			    TraceVarProc, clientData);
-		    if (tvarPtr->errMsg != NULL) {
-			ckfree(tvarPtr->errMsg);
-		    }
 		    ckfree((char *) tvarPtr);
 		    break;
 		}
@@ -2969,7 +2996,7 @@ TclTraceCommandObjCmd(interp, optionIndex, objc, objv)
     char *name, *command;
     size_t length;
     enum traceOptions { TRACE_ADD, TRACE_LIST, TRACE_REMOVE };
-    static char *opStrings[] = { "delete", "rename", (char *) NULL };
+    static CONST char *opStrings[] = { "delete", "rename", (char *) NULL };
     enum operations { TRACE_CMD_DELETE, TRACE_CMD_RENAME };
     
     switch ((enum traceOptions) optionIndex) {
@@ -3019,7 +3046,6 @@ TclTraceCommandObjCmd(interp, optionIndex, objc, objv)
 			(sizeof(TraceCommandInfo) - sizeof(tcmdPtr->command)
 				+ length + 1));
 		tcmdPtr->flags = flags;
-		tcmdPtr->errMsg = NULL;
 		tcmdPtr->length = length;
 		flags |= TCL_TRACE_DELETE;
 		strcpy(tcmdPtr->command, command);
@@ -3050,9 +3076,6 @@ TclTraceCommandObjCmd(interp, optionIndex, objc, objv)
 			Tcl_UntraceCommand(interp, name,
 				flags | TCL_TRACE_DELETE,
 				TraceCommandProc, clientData);
-			if (tcmdPtr->errMsg != NULL) {
-			    ckfree(tcmdPtr->errMsg);
-			}
 			ckfree((char *) tcmdPtr);
 			break;
 		    }
@@ -3139,7 +3162,7 @@ TclTraceVariableObjCmd(interp, optionIndex, objc, objv)
     char *name, *command;
     size_t length;
     enum traceOptions { TRACE_ADD, TRACE_LIST, TRACE_REMOVE };
-    static char *opStrings[] = { "array", "read", "unset", "write",
+    static CONST char *opStrings[] = { "array", "read", "unset", "write",
 				     (char *) NULL };
     enum operations { TRACE_VAR_ARRAY, TRACE_VAR_READ, TRACE_VAR_UNSET,
 			  TRACE_VAR_WRITE };
@@ -3198,9 +3221,8 @@ TclTraceVariableObjCmd(interp, optionIndex, objc, objv)
 			(sizeof(TraceVarInfo) - sizeof(tvarPtr->command)
 				+ length + 1));
 		tvarPtr->flags = flags;
-		tvarPtr->errMsg = NULL;
 		tvarPtr->length = length;
-		flags |= TCL_TRACE_UNSETS;
+		flags |= TCL_TRACE_UNSETS | TCL_TRACE_RESULT_OBJECT;
 		strcpy(tvarPtr->command, command);
 		name = Tcl_GetString(objv[3]);
 		if (Tcl_TraceVar(interp, name, flags, TraceVarProc,
@@ -3225,11 +3247,9 @@ TclTraceVariableObjCmd(interp, optionIndex, objc, objv)
 			    && (tvarPtr->flags == flags)
 			    && (strncmp(command, tvarPtr->command,
 				    (size_t) length) == 0)) {
-			Tcl_UntraceVar(interp, name, flags | TCL_TRACE_UNSETS,
+			Tcl_UntraceVar(interp, name,
+				flags | TCL_TRACE_UNSETS | TCL_TRACE_RESULT_OBJECT,
 				TraceVarProc, clientData);
-			if (tvarPtr->errMsg != NULL) {
-			    ckfree(tvarPtr->errMsg);
-			}
 			ckfree((char *) tvarPtr);
 			break;
 		    }
@@ -3322,7 +3342,7 @@ TclTraceVariableObjCmd(interp, optionIndex, objc, objv)
 ClientData
 Tcl_CommandTraceInfo(interp, cmdName, flags, proc, prevClientData)
     Tcl_Interp *interp;		/* Interpreter containing command. */
-    char *cmdName;		/* Name of command. */
+    CONST char *cmdName;	/* Name of command. */
     int flags;			/* OR-ed combo or TCL_GLOBAL_ONLY,
 				 * TCL_NAMESPACE_ONLY (can be 0). */
     Tcl_CommandTraceProc *proc;	/* Procedure assocated with trace. */
@@ -3387,7 +3407,7 @@ int
 Tcl_TraceCommand(interp, cmdName, flags, proc, clientData)
     Tcl_Interp *interp;		/* Interpreter in which command is
 				 * to be traced. */
-    char *cmdName;		/* Name of command. */
+    CONST char *cmdName;	/* Name of command. */
     int flags;			/* OR-ed collection of bits, including any
 				 * of TCL_TRACE_RENAME, TCL_TRACE_DELETE. */
     Tcl_CommandTraceProc *proc;	/* Procedure to call when specified ops are
@@ -3437,7 +3457,7 @@ Tcl_TraceCommand(interp, cmdName, flags, proc, clientData)
 void
 Tcl_UntraceCommand(interp, cmdName, flags, proc, clientData)
     Tcl_Interp *interp;		/* Interpreter containing command. */
-    char *cmdName;		/* Name of command. */
+    CONST char *cmdName;	/* Name of command. */
     int flags;			/* OR-ed collection of bits, including any
 				 * of TCL_TRACE_RENAME, TCL_TRACE_DELETE. */
     Tcl_CommandTraceProc *proc;	/* Procedure assocated with trace. */
@@ -3484,7 +3504,7 @@ Tcl_UntraceCommand(interp, cmdName, flags, proc, clientData)
     } else {
 	prevPtr->nextPtr = tracePtr->nextPtr;
     }
-    ckfree((char *) tracePtr);
+    Tcl_EventuallyFree((ClientData) tracePtr, TCL_DYNAMIC);
 }
 
 /*
@@ -3521,10 +3541,6 @@ TraceCommandProc(clientData, interp, oldName, newName, flags)
     int code;
     Tcl_DString cmd;
 
-    if (tcmdPtr->errMsg != NULL) {
-	ckfree(tcmdPtr->errMsg);
-	tcmdPtr->errMsg = NULL;
-    }
     if ((tcmdPtr->flags & flags) && !(flags & TCL_INTERP_DESTROYED)) {
 	/*
 	 * Generate a command to execute by appending list elements
@@ -3561,9 +3577,6 @@ TraceCommandProc(clientData, interp, oldName, newName, flags)
 	Tcl_DStringFree(&cmd);
     }
     if (flags & TCL_TRACE_DESTROYED) {
-	if (tcmdPtr->errMsg != NULL) {
-	    ckfree(tcmdPtr->errMsg);
-	}
 	ckfree((char *) tcmdPtr);
     }
     return;
@@ -3605,10 +3618,6 @@ TraceVarProc(clientData, interp, name1, name2, flags)
     Tcl_DString cmd;
 
     result = NULL;
-    if (tvarPtr->errMsg != NULL) {
-	ckfree(tvarPtr->errMsg);
-	tvarPtr->errMsg = NULL;
-    }
     if ((tvarPtr->flags & flags) && !(flags & TCL_INTERP_DESTROYED)) {
 	if (tvarPtr->length != (size_t) 0) {
 	    /*
@@ -3658,13 +3667,9 @@ TraceVarProc(clientData, interp, name1, name2, flags)
 
 	    code = Tcl_Eval(interp, Tcl_DStringValue(&cmd));
 	    if (code != TCL_OK) {	     /* copy error msg to result */
-		char *string;
-		int length;
-		
-		string = Tcl_GetStringFromObj(Tcl_GetObjResult(interp), &length);
-		tvarPtr->errMsg = (char *) ckalloc((unsigned) (length + 1));
-		memcpy(tvarPtr->errMsg, string, (size_t) (length + 1));
-		result = tvarPtr->errMsg;
+		register Tcl_Obj *errMsgObj = Tcl_GetObjResult(interp);
+		Tcl_IncrRefCount(errMsgObj);
+		result = (char *) errMsgObj;
 	    }
 
 	    Tcl_RestoreResult(interp, &state);
@@ -3673,9 +3678,11 @@ TraceVarProc(clientData, interp, name1, name2, flags)
 	}
     }
     if (flags & TCL_TRACE_DESTROYED) {
-	result = NULL;
-	if (tvarPtr->errMsg != NULL) {
-	    ckfree(tvarPtr->errMsg);
+	if (result != NULL) {
+	    register Tcl_Obj *errMsgObj = (Tcl_Obj *) result;
+
+	    Tcl_DecrRefCount(errMsgObj);
+	    result = NULL;
 	}
 	ckfree((char *) tvarPtr);
     }

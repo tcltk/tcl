@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: util.test,v 1.9 2001/09/19 08:52:46 dkf Exp $
+# RCS: @(#) $Id: util.test,v 1.9.4.1 2002/02/05 02:22:04 wolfsuit Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -67,180 +67,184 @@ test util-4.6 {Tcl_ConcatObj - utf-8 sequence with "whitespace" char} {
     concat \xe0
 } \xe0
 
+proc Wrapper_Tcl_StringMatch {pattern string} {
+    # Forces use of Tcl_StringMatch, not Tcl_UniCharCaseMatch
+    switch -glob -- $string $pattern {return 1} default {return 0}
+}
 test util-5.1 {Tcl_StringMatch} {
-    string match ab*c abc
+    Wrapper_Tcl_StringMatch ab*c abc
 } 1
 test util-5.2 {Tcl_StringMatch} {
-    string match ab**c abc
+    Wrapper_Tcl_StringMatch ab**c abc
 } 1
 test util-5.3 {Tcl_StringMatch} {
-    string match ab* abcdef
+    Wrapper_Tcl_StringMatch ab* abcdef
 } 1
 test util-5.4 {Tcl_StringMatch} {
-    string match *c abc
+    Wrapper_Tcl_StringMatch *c abc
 } 1
 test util-5.5 {Tcl_StringMatch} {
-    string match *3*6*9 0123456789
+    Wrapper_Tcl_StringMatch *3*6*9 0123456789
 } 1
 test util-5.6 {Tcl_StringMatch} {
-    string match *3*6*9 01234567890
+    Wrapper_Tcl_StringMatch *3*6*9 01234567890
 } 0
 test util-5.7 {Tcl_StringMatch: UTF-8} {
-    string match *u \u4e4fu
+    Wrapper_Tcl_StringMatch *u \u4e4fu
 } 1
 test util-5.8 {Tcl_StringMatch} {
-    string match a?c abc
+    Wrapper_Tcl_StringMatch a?c abc
 } 1
 test util-5.9 {Tcl_StringMatch: UTF-8} {
     # skip one character in string
 
-    string match a?c a\u4e4fc
+    Wrapper_Tcl_StringMatch a?c a\u4e4fc
 } 1
 test util-5.10 {Tcl_StringMatch} {
-    string match a??c abc
+    Wrapper_Tcl_StringMatch a??c abc
 } 0
 test util-5.11 {Tcl_StringMatch} {
-    string match ?1??4???8? 0123456789
+    Wrapper_Tcl_StringMatch ?1??4???8? 0123456789
 } 1
 test util-5.12 {Tcl_StringMatch} {
-    string match {[abc]bc} abc
+    Wrapper_Tcl_StringMatch {[abc]bc} abc
 } 1
 test util-5.13 {Tcl_StringMatch: UTF-8} {
     # string += Tcl_UtfToUniChar(string, &ch);
 
-    string match "\[\u4e4fxy\]bc" "\u4e4fbc"
+    Wrapper_Tcl_StringMatch "\[\u4e4fxy\]bc" "\u4e4fbc"
 } 1
 test util-5.14 {Tcl_StringMatch} {
     # if ((*pattern == ']') || (*pattern == '\0'))
     # badly formed pattern
 
-    string match {[]} {[]}
+    Wrapper_Tcl_StringMatch {[]} {[]}
 } 0
 test util-5.15 {Tcl_StringMatch} {
     # if ((*pattern == ']') || (*pattern == '\0'))
     # badly formed pattern
 
-    string match {[} {[}
+    Wrapper_Tcl_StringMatch {[} {[}
 } 0
 test util-5.16 {Tcl_StringMatch} {
-    string match {a[abc]c} abc
+    Wrapper_Tcl_StringMatch {a[abc]c} abc
 } 1
 test util-5.17 {Tcl_StringMatch: UTF-8} {
     # pattern += Tcl_UtfToUniChar(pattern, &endChar);
     # get 1 UTF-8 character
 
-    string match "a\[a\u4e4fc]c" "a\u4e4fc"
+    Wrapper_Tcl_StringMatch "a\[a\u4e4fc]c" "a\u4e4fc"
 } 1
 test util-5.18 {Tcl_StringMatch: UTF-8} {
     # pattern += Tcl_UtfToUniChar(pattern, &endChar);
     # proper advance: wrong answer would match on UTF trail byte of \u4e4f
 
-    string match {a[a\u4e4fc]c} [bytestring a\u008fc]
+    Wrapper_Tcl_StringMatch {a[a\u4e4fc]c} [bytestring a\u008fc]
 } 0
 test util-5.19 {Tcl_StringMatch: UTF-8} {
     # pattern += Tcl_UtfToUniChar(pattern, &endChar);
     # proper advance.
 
-    string match {a[a\u4e4fc]c} "acc"
+    Wrapper_Tcl_StringMatch {a[a\u4e4fc]c} "acc"
 } 1
 test util-5.20 {Tcl_StringMatch} {
-    string match {a[xyz]c} abc
+    Wrapper_Tcl_StringMatch {a[xyz]c} abc
 } 0
 test util-5.21 {Tcl_StringMatch} {
-    string match {12[2-7]45} 12345
+    Wrapper_Tcl_StringMatch {12[2-7]45} 12345
 } 1
 test util-5.22 {Tcl_StringMatch: UTF-8 range} {
-    string match "\[\u4e00-\u4e4f]" "0"
+    Wrapper_Tcl_StringMatch "\[\u4e00-\u4e4f]" "0"
 } 0
 test util-5.23 {Tcl_StringMatch: UTF-8 range} {
-    string match "\[\u4e00-\u4e4f]" "\u4e33"
+    Wrapper_Tcl_StringMatch "\[\u4e00-\u4e4f]" "\u4e33"
 } 1
 test util-5.24 {Tcl_StringMatch: UTF-8 range} {
-    string match "\[\u4e00-\u4e4f]" "\uff08"
+    Wrapper_Tcl_StringMatch "\[\u4e00-\u4e4f]" "\uff08"
 } 0
 test util-5.25 {Tcl_StringMatch} {
-    string match {12[ab2-4cd]45} 12345
+    Wrapper_Tcl_StringMatch {12[ab2-4cd]45} 12345
 } 1
 test util-5.26 {Tcl_StringMatch} {
-    string match {12[ab2-4cd]45} 12b45
+    Wrapper_Tcl_StringMatch {12[ab2-4cd]45} 12b45
 } 1
 test util-5.27 {Tcl_StringMatch} {
-    string match {12[ab2-4cd]45} 12d45
+    Wrapper_Tcl_StringMatch {12[ab2-4cd]45} 12d45
 } 1
 test util-5.28 {Tcl_StringMatch} {
-    string match {12[ab2-4cd]45} 12145
+    Wrapper_Tcl_StringMatch {12[ab2-4cd]45} 12145
 } 0
 test util-5.29 {Tcl_StringMatch} {
-    string match {12[ab2-4cd]45} 12545
+    Wrapper_Tcl_StringMatch {12[ab2-4cd]45} 12545
 } 0
 test util-5.30 {Tcl_StringMatch: forwards range} {
-    string match {[k-w]} "z"
+    Wrapper_Tcl_StringMatch {[k-w]} "z"
 } 0
 test util-5.31 {Tcl_StringMatch: forwards range} {
-    string match {[k-w]} "w"
+    Wrapper_Tcl_StringMatch {[k-w]} "w"
 } 1
 test util-5.32 {Tcl_StringMatch: forwards range} {
-    string match {[k-w]} "r"
+    Wrapper_Tcl_StringMatch {[k-w]} "r"
 } 1
 test util-5.33 {Tcl_StringMatch: forwards range} {
-    string match {[k-w]} "k"
+    Wrapper_Tcl_StringMatch {[k-w]} "k"
 } 1
 test util-5.34 {Tcl_StringMatch: forwards range} {
-    string match {[k-w]} "a"
+    Wrapper_Tcl_StringMatch {[k-w]} "a"
 } 0
 test util-5.35 {Tcl_StringMatch: reverse range} {
-    string match {[w-k]} "z"
+    Wrapper_Tcl_StringMatch {[w-k]} "z"
 } 0
 test util-5.36 {Tcl_StringMatch: reverse range} {
-    string match {[w-k]} "w"
+    Wrapper_Tcl_StringMatch {[w-k]} "w"
 } 1
 test util-5.37 {Tcl_StringMatch: reverse range} {
-    string match {[w-k]} "r"
+    Wrapper_Tcl_StringMatch {[w-k]} "r"
 } 1
 test util-5.38 {Tcl_StringMatch: reverse range} {
-    string match {[w-k]} "k"
+    Wrapper_Tcl_StringMatch {[w-k]} "k"
 } 1
 test util-5.39 {Tcl_StringMatch: reverse range} {
-    string match {[w-k]} "a"
+    Wrapper_Tcl_StringMatch {[w-k]} "a"
 } 0
 test util-5.40 {Tcl_StringMatch: skip correct number of ']'} {
-    string match {[A-]x} Ax
+    Wrapper_Tcl_StringMatch {[A-]x} Ax
 } 0
 test util-5.41 {Tcl_StringMatch: skip correct number of ']'} {
-    string match {[A-]]x} Ax
+    Wrapper_Tcl_StringMatch {[A-]]x} Ax
 } 1
 test util-5.42 {Tcl_StringMatch: skip correct number of ']'} {
-    string match {[A-]]x} \ue1x
+    Wrapper_Tcl_StringMatch {[A-]]x} \ue1x
 } 0
 test util-5.43 {Tcl_StringMatch: skip correct number of ']'} {
-    string match \[A-]\ue1]x \ue1x
+    Wrapper_Tcl_StringMatch \[A-]\ue1]x \ue1x
 } 1
 test util-5.44 {Tcl_StringMatch: skip correct number of ']'} {
-    string match {[A-]h]x} hx
+    Wrapper_Tcl_StringMatch {[A-]h]x} hx
 } 1
 test util-5.45 {Tcl_StringMatch} {
     # if (*pattern == '\0')
     # badly formed pattern, still treats as a set
 
-    string match {[a} a
+    Wrapper_Tcl_StringMatch {[a} a
 } 1
 test util-5.46 {Tcl_StringMatch} {
-    string match {a\*b} a*b
+    Wrapper_Tcl_StringMatch {a\*b} a*b
 } 1
 test util-5.47 {Tcl_StringMatch} {
-    string match {a\*b} ab
+    Wrapper_Tcl_StringMatch {a\*b} ab
 } 0
 test util-5.48 {Tcl_StringMatch} {
-    string match {a\*\?\[\]\\\x} "a*?\[\]\\x"
+    Wrapper_Tcl_StringMatch {a\*\?\[\]\\\x} "a*?\[\]\\x"
 } 1
 test util-5.49 {Tcl_StringMatch} {
-    string match ** ""
+    Wrapper_Tcl_StringMatch ** ""
 } 1
 test util-5.50 {Tcl_StringMatch} {
-    string match *. ""
+    Wrapper_Tcl_StringMatch *. ""
 } 0
 test util-5.51 {Tcl_StringMatch} {
-    string match "" ""
+    Wrapper_Tcl_StringMatch "" ""
 } 1
 
 test util-6.1 {Tcl_PrintDouble - using tcl_precision} {

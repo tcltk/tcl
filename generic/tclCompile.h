@@ -3,11 +3,12 @@
  *
  * Copyright (c) 1996-1998 Sun Microsystems, Inc.
  * Copyright (c) 1998-2000 by Scriptics Corporation.
+ * Copyright (c) 2001 by Kevin B. Kenny.  All rights reserved.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.16 2001/09/17 11:51:58 msofer Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.16.4.1 2002/02/05 02:21:59 wolfsuit Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -216,6 +217,7 @@ typedef struct CompileEnv {
     int maxStackDepth;		/* Maximum number of stack elements needed
 				 * to execute the code. Set by compilation
 				 * procedures before returning. */
+    int currStackDepth;         /* Current stack depth. */
     LiteralTable localLitTable;	/* Contains LiteralEntry's describing
 				 * all Tcl objects referenced by this
 				 * compiled code. Indexed by the string
@@ -525,8 +527,21 @@ typedef struct ByteCode {
 #define INST_LAPPEND_ARRAY_STK		92
 #define INST_LAPPEND_STK		93
 
+/* TIP #22 - LINDEX operator with flat arg list */
+
+#define INST_LIST_INDEX_MULTI		94
+
+/*
+ * TIP #33 - 'lset' command.  Code gen also required a Forth-like
+ *           OVER operation.
+ */
+
+#define INST_OVER                       95
+#define INST_LSET_LIST			96
+#define INST_LSET_FLAT                  97
+
 /* The last opcode */
-#define LAST_INST_OPCODE        	93
+#define LAST_INST_OPCODE        	97
 
 /*
  * Table describing the Tcl bytecode instructions: their name (for
@@ -550,6 +565,12 @@ typedef enum InstOperandType {
 typedef struct InstructionDesc {
     char *name;			/* Name of instruction. */
     int numBytes;		/* Total number of bytes for instruction. */
+    int stackEffect;            /* The worst-case balance stack effect of the 
+				 * instruction, used for stack requirements 
+				 * computations. The value INT_MIN signals
+				 * that the instruction's worst case effect
+				 * is (1-opnd1).
+				 */
     int numOperands;		/* Number of operands. */
     InstOperandType opTypes[MAX_INSTRUCTION_OPERANDS];
 				/* The type of each operand. */
@@ -704,40 +725,27 @@ typedef struct ForeachInfo {
 
 extern AuxDataType		tclForeachInfoType;
 
+
 /*
- * Structure containing a cached pointer to a command that is the result
- * of resolving the command's name in some namespace. It is the internal
- * representation for a cmdName object. It contains the pointer along
- * with some information that is used to check the pointer's validity.
+ *----------------------------------------------------------------
+ * Procedures exported by tclBasic.c to be used within the engine.
+ *----------------------------------------------------------------
  */
 
-typedef struct ResolvedCmdName {
-    Command *cmdPtr;		/* A cached Command pointer. */
-    Namespace *refNsPtr;	/* Points to the namespace containing the
-				 * reference (not the namespace that
-				 * contains the referenced command). */
-    long refNsId;		/* refNsPtr's unique namespace id. Used to
-				 * verify that refNsPtr is still valid
-				 * (e.g., it's possible that the cmd's
-				 * containing namespace was deleted and a
-				 * new one created at the same address). */
-    int refNsCmdEpoch;		/* Value of the referencing namespace's
-				 * cmdRefEpoch when the pointer was cached.
-				 * Before using the cached pointer, we check
-				 * if the namespace's epoch was incremented;
-				 * if so, this cached pointer is invalid. */
-    int cmdEpoch;		/* Value of the command's cmdEpoch when this
-				 * pointer was cached. Before using the
-				 * cached pointer, we check if the cmd's
-				 * epoch was incremented; if so, the cmd was
-				 * renamed, deleted, hidden, or exposed, and
-				 * so the pointer is invalid. */
-    int refCount;		/* Reference count: 1 for each cmdName
-				 * object that has a pointer to this
-				 * ResolvedCmdName structure as its internal
-				 * rep. This structure can be freed when
-				 * refCount becomes zero. */
-} ResolvedCmdName;
+EXTERN int		TclEvalObjvInternal _ANSI_ARGS_((Tcl_Interp *interp, int objc,
+			    Tcl_Obj *CONST objv[], char *command, int length,
+			    int flags));
+EXTERN int              TclInterpReady _ANSI_ARGS_((Tcl_Interp *interp));
+
+
+/*
+ *----------------------------------------------------------------
+ * Procedures exported by the engine to be used by tclBasic.c
+ *----------------------------------------------------------------
+ */
+
+EXTERN int		TclCompEvalObj _ANSI_ARGS_((Tcl_Interp *interp,
+			    Tcl_Obj *objPtr, int engineCall));
 
 /*
  *----------------------------------------------------------------
@@ -775,15 +783,10 @@ EXTERN void		TclEmitForwardJump _ANSI_ARGS_((CompileEnv *envPtr,
 EXTERN ExceptionRange *	TclGetExceptionRangeForPc _ANSI_ARGS_((
 			    unsigned char *pc, int catchOnly,
 			    ByteCode* codePtr));
-EXTERN InstructionDesc * TclGetInstructionTable _ANSI_ARGS_(());
-EXTERN int		TclExecuteByteCode _ANSI_ARGS_((Tcl_Interp *interp,
-			    ByteCode *codePtr));
-EXTERN void		TclExpandCodeArray _ANSI_ARGS_((
-			    CompileEnv *envPtr));
 EXTERN void		TclExpandJumpFixupArray _ANSI_ARGS_((
                             JumpFixupArray *fixupArrayPtr));
 EXTERN void		TclFinalizeAuxDataTypeTable _ANSI_ARGS_((void));
-EXTERN int		TclFindCompiledLocal _ANSI_ARGS_((char *name, 
+EXTERN int		TclFindCompiledLocal _ANSI_ARGS_((CONST char *name, 
         		    int nameChars, int create, int flags,
 			    Proc *procPtr));
 EXTERN LiteralEntry *	TclLookupLiteralEntry _ANSI_ARGS_((
@@ -842,6 +845,31 @@ EXTERN void		TclVerifyLocalLiteralTable _ANSI_ARGS_((
  */
 
 /*
+ * Macro used to update the stack requirements.
+ * It is called by the macros TclEmitOpCode, TclEmitInst1 and
+ * TclEmitInst4.
+ * Remark that the very last instruction of a bytecode always
+ * reduces the stack level: INST_DONE or INST_POP, so that the 
+ * maxStackdepth is always updated.
+ */
+
+#define TclUpdateStackReqs(op, i, envPtr) \
+    {\
+	int delta = instructionTable[(op)].stackEffect;\
+	if (delta) {\
+	    if (delta < 0) {\
+		if((envPtr)->maxStackDepth < (envPtr)->currStackDepth) {\
+		    (envPtr)->maxStackDepth = (envPtr)->currStackDepth;\
+		}\
+		if (delta == INT_MIN) {\
+		    delta = 1 - (i);\
+		}\
+	    }\
+	    (envPtr)->currStackDepth += delta;\
+	}\
+    }
+
+/*
  * Macro to emit an opcode byte into a CompileEnv's code array.
  * The ANSI C "prototype" for this macro is:
  *
@@ -852,7 +880,8 @@ EXTERN void		TclVerifyLocalLiteralTable _ANSI_ARGS_((
 #define TclEmitOpcode(op, envPtr) \
     if ((envPtr)->codeNext == (envPtr)->codeEnd) \
         TclExpandCodeArray(envPtr); \
-    *(envPtr)->codeNext++ = (unsigned char) (op)
+    *(envPtr)->codeNext++ = (unsigned char) (op);\
+    TclUpdateStackReqs(op, 0, envPtr)
 
 /*
  * Macro to emit an integer operand.
@@ -878,12 +907,14 @@ EXTERN void		TclVerifyLocalLiteralTable _ANSI_ARGS_((
  *		    CompileEnv *envPtr));
  */
 
+
 #define TclEmitInstInt1(op, i, envPtr) \
     if (((envPtr)->codeNext + 2) > (envPtr)->codeEnd) { \
         TclExpandCodeArray(envPtr); \
     } \
     *(envPtr)->codeNext++ = (unsigned char) (op); \
-    *(envPtr)->codeNext++ = (unsigned char) ((unsigned int) (i))
+    *(envPtr)->codeNext++ = (unsigned char) ((unsigned int) (i));\
+    TclUpdateStackReqs(op, i, envPtr)
 
 #define TclEmitInstInt4(op, i, envPtr) \
     if (((envPtr)->codeNext + 5) > (envPtr)->codeEnd) { \
@@ -897,7 +928,8 @@ EXTERN void		TclVerifyLocalLiteralTable _ANSI_ARGS_((
     *(envPtr)->codeNext++ = \
         (unsigned char) ((unsigned int) (i) >>  8); \
     *(envPtr)->codeNext++ = \
-        (unsigned char) ((unsigned int) (i)      )
+        (unsigned char) ((unsigned int) (i)      );\
+    TclUpdateStackReqs(op, i, envPtr)
     
 /*
  * Macro to push a Tcl object onto the Tcl evaluation stack. It emits the
@@ -1010,3 +1042,8 @@ EXTERN void		TclVerifyLocalLiteralTable _ANSI_ARGS_((
 # define TCL_STORAGE_CLASS DLLIMPORT
 
 #endif /* _TCLCOMPILATION */
+
+
+
+
+

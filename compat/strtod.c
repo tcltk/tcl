@@ -9,10 +9,11 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: strtod.c,v 1.3 2001/09/04 23:16:18 dgp Exp $
+ * RCS: @(#) $Id: strtod.c,v 1.3.8.1 2002/02/05 02:21:57 wolfsuit Exp $
  */
 
 #include "tcl.h"
+#include "tclPort.h"
 #ifdef NO_STDLIB_H
 #   include "../compat/stdlib.h"
 #else

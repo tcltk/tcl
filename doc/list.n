@@ -1,11 +1,12 @@
 '\"
 '\" Copyright (c) 1993 The Regents of the University of California.
 '\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\" Copyright (c) 2001 Kevin B. Kenny.  All rights reserved.
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: list.n,v 1.4 2000/09/07 14:27:49 poenitz Exp $
+'\" RCS: @(#) $Id: list.n,v 1.4.14.1 2002/02/05 02:21:58 wolfsuit Exp $
 '\" 
 .so man.macros
 .TH list n "" Tcl "Tcl Built-In Commands"
@@ -21,7 +22,7 @@ list \- Create a list
 .PP
 This command returns a list comprised of all the \fIarg\fRs,
 or an empty string if no \fIarg\fRs are specified.
-Braces and backslashes get added as necessary, so that the \fBindex\fR command
+Braces and backslashes get added as necessary, so that the \fBlindex\fR command
 may be used on the result to re-extract the original arguments, and also
 so that \fBeval\fR may be used to execute the resulting list, with
 \fIarg1\fR comprising the command's name and the other \fIarg\fRs comprising
@@ -42,7 +43,11 @@ while \fBconcat\fR with the same arguments will return
 .CE
 
 .SH "SEE ALSO"
-lappend(n), lindex(n), linsert(n), llength(n), lsearch(n), lsort(n),
+lappend(n), lindex(n), linsert(n), llength(n), lsearch(n), 
+.VS 8.4
+lset(n),
+.VE
+lsort(n),
 lrange(n), lreplace(n)
 
 .SH KEYWORDS

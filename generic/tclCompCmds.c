@@ -5,11 +5,12 @@
  *	Tcl commands into a sequence of instructions ("bytecodes"). 
  *
  * Copyright (c) 1997-1998 Sun Microsystems, Inc.
+ * Copyright (c) 2001 by Kevin B. Kenny.  All rights reserved.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.14 2001/09/19 18:17:54 hobbs Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.14.4.1 2002/02/05 02:21:58 wolfsuit Exp $
  */
 
 #include "tclInt.h"
@@ -23,8 +24,7 @@ static ClientData	DupForeachInfo _ANSI_ARGS_((ClientData clientData));
 static void		FreeForeachInfo _ANSI_ARGS_((ClientData clientData));
 static int		TclPushVarName _ANSI_ARGS_((Tcl_Interp *interp,
 	Tcl_Token *varTokenPtr, CompileEnv *envPtr, int flags,
-	int *localIndexPtr, int *maxDepthPtr, int *simpleVarNamePtr,
-	int *isScalarPtr));
+	int *localIndexPtr, int *simpleVarNamePtr, int *isScalarPtr));
 
 /*
  * Flags bits used by TclPushVarName.
@@ -59,9 +59,6 @@ AuxDataType tclForeachInfoType = {
  *	command should be compiled "out of line" by emitting code to
  *	invoke its command procedure (Tcl_AppendObjCmd) at runtime.
  *
- *	envPtr->maxStackDepth is updated with the maximum number of stack
- *	elements needed to execute the incr command.
- *
  * Side effects:
  *	Instructions are added to envPtr to execute the "append" command
  *	at runtime.
@@ -78,10 +75,8 @@ TclCompileAppendCmd(interp, parsePtr, envPtr)
 {
     Tcl_Token *varTokenPtr, *valueTokenPtr;
     int simpleVarName, isScalar, localIndex, numWords;
-    int maxDepth = 0;
     int code = TCL_OK;
 
-    envPtr->maxStackDepth = 0;
     numWords = parsePtr->numWords;
     if (numWords == 1) {
 	Tcl_ResetResult(interp);
@@ -112,9 +107,8 @@ TclCompileAppendCmd(interp, parsePtr, envPtr)
     varTokenPtr = parsePtr->tokenPtr
 	    + (parsePtr->tokenPtr->numComponents + 1);
 
-    code = TclPushVarName(interp, varTokenPtr, envPtr,
-	    ((numWords > 2) ? TCL_CREATE_VAR : 0),
-	    &localIndex, &maxDepth, &simpleVarName, &isScalar);
+    code = TclPushVarName(interp, varTokenPtr, envPtr, TCL_CREATE_VAR,
+	    &localIndex, &simpleVarName, &isScalar);
     if (code != TCL_OK) {
 	goto done;
     }
@@ -130,14 +124,12 @@ TclCompileAppendCmd(interp, parsePtr, envPtr)
 	if (valueTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
 	    TclEmitPush(TclRegisterLiteral(envPtr, valueTokenPtr[1].start,
 		    valueTokenPtr[1].size, /*onHeap*/ 0), envPtr);
-	    maxDepth += 1;
 	} else {
 	    code = TclCompileTokens(interp, valueTokenPtr+1,
 	            valueTokenPtr->numComponents, envPtr);
 	    if (code != TCL_OK) {
 		goto done;
 	    }
-	    maxDepth += envPtr->maxStackDepth;
 	}
     }
 
@@ -172,7 +164,6 @@ TclCompileAppendCmd(interp, parsePtr, envPtr)
     }
 
     done:
-    envPtr->maxStackDepth = maxDepth;
     return code;
 }
 
@@ -187,9 +178,6 @@ TclCompileAppendCmd(interp, parsePtr, envPtr)
  *	The return value is a standard Tcl result, which is TCL_OK unless
  *	there was an error during compilation. If an error occurs then
  *	the interpreter's result contains a standard error message.
- *
- *	envPtr->maxStackDepth is updated with the maximum number of stack
- *	elements needed to execute the command.
  *
  * Side effects:
  *	Instructions are added to envPtr to execute the "break" command
@@ -209,7 +197,6 @@ TclCompileBreakCmd(interp, parsePtr, envPtr)
 	Tcl_ResetResult(interp);
 	Tcl_AppendToObj(Tcl_GetObjResult(interp),
 	        "wrong # args: should be \"break\"", -1);
-	envPtr->maxStackDepth = 0;
 	return TCL_ERROR;
     }
 
@@ -218,7 +205,6 @@ TclCompileBreakCmd(interp, parsePtr, envPtr)
      */
 
     TclEmitOpcode(INST_BREAK, envPtr);
-    envPtr->maxStackDepth = 0;
     return TCL_OK;
 }
 
@@ -238,9 +224,6 @@ TclCompileBreakCmd(interp, parsePtr, envPtr)
  *	should be compiled "out of line" by emitting code to invoke its
  *	command procedure at runtime.
  *
- *	envPtr->maxStackDepth is updated with the maximum number of stack
- *	elements needed to execute the command.
- *
  * Side effects:
  *	Instructions are added to envPtr to execute the "catch" command
  *	at runtime.
@@ -258,11 +241,11 @@ TclCompileCatchCmd(interp, parsePtr, envPtr)
     JumpFixup jumpFixup;
     Tcl_Token *cmdTokenPtr, *nameTokenPtr;
     char *name;
-    int localIndex, nameChars, range, maxDepth, startOffset, jumpDist;
+    int localIndex, nameChars, range, startOffset, jumpDist;
     int code;
     char buffer[32 + TCL_INTEGER_SPACE];
+    int savedStackDepth = envPtr->currStackDepth;
 
-    envPtr->maxStackDepth = 0;
     if ((parsePtr->numWords != 2) && (parsePtr->numWords != 3)) {
 	Tcl_ResetResult(interp);
 	Tcl_AppendToObj(Tcl_GetObjResult(interp),
@@ -308,8 +291,6 @@ TclCompileCatchCmd(interp, parsePtr, envPtr)
      * We will compile the catch command. Emit a beginCatch instruction at
      * the start of the catch body: the subcommand it controls.
      */
-
-    maxDepth = 0;
     
     envPtr->exceptDepth++;
     envPtr->maxExceptDepth =
@@ -346,7 +327,6 @@ TclCompileCatchCmd(interp, parsePtr, envPtr)
         }
 	goto done;
     }
-    maxDepth = envPtr->maxStackDepth;
     envPtr->exceptArrayPtr[range].numCodeBytes =
 	    (envPtr->codeNext - envPtr->codeStart) - startOffset;
 		    
@@ -366,9 +346,6 @@ TclCompileCatchCmd(interp, parsePtr, envPtr)
     TclEmitOpcode(INST_POP, envPtr);
     TclEmitPush(TclRegisterLiteral(envPtr, "0", 1, /*onHeap*/ 0),
 	    envPtr);
-    if (maxDepth == 0) {
-	maxDepth = 1;
-    }
     TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, &jumpFixup);
 
     /*
@@ -377,6 +354,7 @@ TclCompileCatchCmd(interp, parsePtr, envPtr)
      * the catch's error target.
      */
 
+    envPtr->currStackDepth = savedStackDepth;
     envPtr->exceptArrayPtr[range].catchOffset =
 	    (envPtr->codeNext - envPtr->codeStart);
     if (localIndex != -1) {
@@ -389,6 +367,7 @@ TclCompileCatchCmd(interp, parsePtr, envPtr)
 	TclEmitOpcode(INST_POP, envPtr);
     }
     TclEmitOpcode(INST_PUSH_RETURN_CODE, envPtr);
+
 
     /*
      * Update the target of the jump after the "no errors" code, then emit
@@ -403,8 +382,8 @@ TclCompileCatchCmd(interp, parsePtr, envPtr)
     TclEmitOpcode(INST_END_CATCH, envPtr);
 
     done:
+    envPtr->currStackDepth = savedStackDepth + 1;
     envPtr->exceptDepth--;
-    envPtr->maxStackDepth = maxDepth;
     return code;
 }
 
@@ -419,9 +398,6 @@ TclCompileCatchCmd(interp, parsePtr, envPtr)
  *	The return value is a standard Tcl result, which is TCL_OK unless
  *	there was an error while parsing string. If an error occurs then
  *	the interpreter's result contains a standard error message.
- *
- *	envPtr->maxStackDepth is updated with the maximum number of stack
- *	elements needed to execute the command.
  *
  * Side effects:
  *	Instructions are added to envPtr to execute the "continue" command
@@ -445,7 +421,6 @@ TclCompileContinueCmd(interp, parsePtr, envPtr)
 	Tcl_ResetResult(interp);
 	Tcl_AppendToObj(Tcl_GetObjResult(interp),
 	        "wrong # args: should be \"continue\"", -1);
-	envPtr->maxStackDepth = 0;
 	return TCL_ERROR;
     }
 
@@ -454,7 +429,6 @@ TclCompileContinueCmd(interp, parsePtr, envPtr)
      */
 
     TclEmitOpcode(INST_CONTINUE, envPtr);
-    envPtr->maxStackDepth = 0;
     return TCL_OK;
 }
 
@@ -469,9 +443,6 @@ TclCompileContinueCmd(interp, parsePtr, envPtr)
  *	The return value is a standard Tcl result, which is TCL_OK
  *	unless there was an error while parsing string. If an error occurs
  *	then the interpreter's result contains a standard error message.
- *
- *	envPtr->maxStackDepth is updated with the maximum number of stack
- *	elements needed to execute the "expr" command.
  *
  * Side effects:
  *	Instructions are added to envPtr to execute the "expr" command
@@ -489,7 +460,6 @@ TclCompileExprCmd(interp, parsePtr, envPtr)
 {
     Tcl_Token *firstWordPtr;
 
-    envPtr->maxStackDepth = 0;
     if (parsePtr->numWords == 1) {
 	Tcl_ResetResult(interp);
 	Tcl_AppendToObj(Tcl_GetObjResult(interp),
@@ -515,9 +485,6 @@ TclCompileExprCmd(interp, parsePtr, envPtr)
  *	there was an error while parsing string. If an error occurs then
  *	the interpreter's result contains a standard error message.
  *
- *	envPtr->maxStackDepth is updated with the maximum number of stack
- *	elements needed to execute the command.
- *
  * Side effects:
  *	Instructions are added to envPtr to execute the "for" command
  *	at runtime.
@@ -534,12 +501,12 @@ TclCompileForCmd(interp, parsePtr, envPtr)
 {
     Tcl_Token *startTokenPtr, *testTokenPtr, *nextTokenPtr, *bodyTokenPtr;
     JumpFixup jumpFalseFixup;
-    int maxDepth, jumpBackDist, jumpBackOffset, testCodeOffset, jumpDist;
+    int jumpBackDist, jumpBackOffset, testCodeOffset, jumpDist;
     int bodyRange, nextRange, code;
     unsigned char *jumpPc;
     char buffer[32 + TCL_INTEGER_SPACE];
+    int savedStackDepth = envPtr->currStackDepth;
 
-    envPtr->maxStackDepth = 0;
     if (parsePtr->numWords != 5) {
 	Tcl_ResetResult(interp);
 	Tcl_AppendToObj(Tcl_GetObjResult(interp),
@@ -588,7 +555,6 @@ TclCompileForCmd(interp, parsePtr, envPtr)
      * Inline compile the initial command.
      */
 
-    maxDepth = 0;
     code = TclCompileCmdWord(interp, startTokenPtr+1,
 	    startTokenPtr->numComponents, envPtr);
     if (code != TCL_OK) {
@@ -598,15 +564,16 @@ TclCompileForCmd(interp, parsePtr, envPtr)
         }
 	goto done;
     }
-    maxDepth = envPtr->maxStackDepth;
     TclEmitOpcode(INST_POP, envPtr);
     
     /*
      * Compile the test then emit the conditional jump that exits the for.
      */
 
+    envPtr->currStackDepth = savedStackDepth;
     testCodeOffset = (envPtr->codeNext - envPtr->codeStart);
     code = TclCompileExprWords(interp, testTokenPtr, 1, envPtr);
+    envPtr->currStackDepth = savedStackDepth + 1;
     if (code != TCL_OK) {
 	if (code == TCL_ERROR) {
             Tcl_AddObjErrorInfo(interp,
@@ -614,13 +581,13 @@ TclCompileForCmd(interp, parsePtr, envPtr)
         }
 	goto done;
     }
-    maxDepth = TclMax(envPtr->maxStackDepth, maxDepth);
     TclEmitForwardJump(envPtr, TCL_FALSE_JUMP, &jumpFalseFixup);
 
     /*
      * Compile the loop body.
      */
 
+    envPtr->currStackDepth = savedStackDepth;
     envPtr->exceptArrayPtr[bodyRange].codeOffset =
 	    (envPtr->codeNext - envPtr->codeStart);
     code = TclCompileCmdWord(interp, bodyTokenPtr+1,
@@ -633,7 +600,6 @@ TclCompileForCmd(interp, parsePtr, envPtr)
         }
 	goto done;
     }
-    maxDepth = TclMax(envPtr->maxStackDepth, maxDepth);
     envPtr->exceptArrayPtr[bodyRange].numCodeBytes =
 	    (envPtr->codeNext - envPtr->codeStart)
 	    - envPtr->exceptArrayPtr[bodyRange].codeOffset;
@@ -643,12 +609,14 @@ TclCompileForCmd(interp, parsePtr, envPtr)
      * Compile the "next" subcommand.
      */
 
+    envPtr->currStackDepth = savedStackDepth;
     envPtr->exceptArrayPtr[bodyRange].continueOffset =
 	    (envPtr->codeNext - envPtr->codeStart);
     envPtr->exceptArrayPtr[nextRange].codeOffset =
 	    (envPtr->codeNext - envPtr->codeStart);
     code = TclCompileCmdWord(interp, nextTokenPtr+1,
 	    nextTokenPtr->numComponents, envPtr);
+    envPtr->currStackDepth = savedStackDepth + 1;
     if (code != TCL_OK) {
 	if (code == TCL_ERROR) {
 	    Tcl_AddObjErrorInfo(interp,
@@ -656,11 +624,11 @@ TclCompileForCmd(interp, parsePtr, envPtr)
 	}
 	goto done;
     }
-    maxDepth = TclMax(envPtr->maxStackDepth, maxDepth);
     envPtr->exceptArrayPtr[nextRange].numCodeBytes =
 	    (envPtr->codeNext - envPtr->codeStart)
 	    - envPtr->exceptArrayPtr[nextRange].codeOffset;
     TclEmitOpcode(INST_POP, envPtr);
+    envPtr->currStackDepth = savedStackDepth;
 	
     /*
      * Jump back to the test at the top of the loop. Generate a 4 byte jump
@@ -721,13 +689,9 @@ TclCompileForCmd(interp, parsePtr, envPtr)
      */
 
     TclEmitPush(TclRegisterLiteral(envPtr, "", 0, /*onHeap*/ 0), envPtr);
-    if (maxDepth == 0) {
-	maxDepth = 1;
-    }
     code = TCL_OK;
 
     done:
-    envPtr->maxStackDepth = maxDepth;
     envPtr->exceptDepth--;
     return code;
 }
@@ -747,9 +711,6 @@ TclCompileForCmd(interp, parsePtr, envPtr)
  *	TCL_OUT_LINE_COMPILE is returned indicating that the foreach command
  *	should be compiled "out of line" by emitting code to invoke its
  *	command procedure at runtime.
- *
- *	envPtr->maxStackDepth is updated with the maximum number of stack
- *	elements needed to execute the "while" command.
  *
  * Side effects:
  *	Instructions are added to envPtr to execute the "foreach" command
@@ -777,10 +738,12 @@ TclCompileForeachCmd(interp, parsePtr, envPtr)
     char *varList;
     unsigned char *jumpPc;
     JumpFixup jumpFalseFixup;
-    int jumpDist, jumpBackDist, jumpBackOffset, maxDepth, infoIndex, range;
+    int jumpDist, jumpBackDist, jumpBackOffset, infoIndex, range;
     int numWords, numLists, numVars, loopIndex, tempVar, i, j, code;
     char savedChar;
     char buffer[32 + TCL_INTEGER_SPACE];
+    int savedStackDepth = envPtr->currStackDepth;
+
 
     /*
      * We parse the variable list argument words and create two arrays:
@@ -790,22 +753,19 @@ TclCompileForeachCmd(interp, parsePtr, envPtr)
 
 #define STATIC_VAR_LIST_SIZE 5
     int varcListStaticSpace[STATIC_VAR_LIST_SIZE];
-    char **varvListStaticSpace[STATIC_VAR_LIST_SIZE];
+    CONST char **varvListStaticSpace[STATIC_VAR_LIST_SIZE];
     int *varcList = varcListStaticSpace;
-    char ***varvList = varvListStaticSpace;
+    CONST char ***varvList = varvListStaticSpace;
 
     /*
      * If the foreach command isn't in a procedure, don't compile it inline:
      * the payoff is too small.
      */
 
-    envPtr->maxStackDepth = 0;
     if (procPtr == NULL) {
 	return TCL_OUT_LINE_COMPILE;
     }
 
-    maxDepth = 0;
-    
     numWords = parsePtr->numWords;
     if ((numWords < 4) || (numWords%2 != 0)) {
 	Tcl_ResetResult(interp);
@@ -834,11 +794,11 @@ TclCompileForeachCmd(interp, parsePtr, envPtr)
     numLists = (numWords - 2)/2;
     if (numLists > STATIC_VAR_LIST_SIZE) {
         varcList = (int *) ckalloc(numLists * sizeof(int));
-        varvList = (char ***) ckalloc(numLists * sizeof(char **));
+        varvList = (CONST char ***) ckalloc(numLists * sizeof(char **));
     }
     for (loopIndex = 0;  loopIndex < numLists;  loopIndex++) {
         varcList[loopIndex] = 0;
-        varvList[loopIndex] = (char **) NULL;
+        varvList[loopIndex] = NULL;
     }
     
     /*
@@ -884,7 +844,7 @@ TclCompileForeachCmd(interp, parsePtr, envPtr)
 
 	    numVars = varcList[loopIndex];
 	    for (j = 0;  j < numVars;  j++) {
-		char *varName = varvList[loopIndex][j];
+		CONST char *varName = varvList[loopIndex][j];
 		if (!TclIsLocalScalar(varName, (int) strlen(varName))) {
 		    code = TCL_OUT_LINE_COMPILE;
 		    goto done;
@@ -932,7 +892,7 @@ TclCompileForeachCmd(interp, parsePtr, envPtr)
 	        sizeof(ForeachVarList) + (numVars * sizeof(int)));
 	varListPtr->numVars = numVars;
 	for (j = 0;  j < numVars;  j++) {
-	    char *varName = varvList[loopIndex][j];
+	    CONST char *varName = varvList[loopIndex][j];
 	    int nameChars = strlen(varName);
 	    varListPtr->varIndexes[j] = TclFindCompiledLocal(varName,
 		    nameChars, /*create*/ 1, /*flags*/ VAR_SCALAR, procPtr);
@@ -957,7 +917,6 @@ TclCompileForeachCmd(interp, parsePtr, envPtr)
 	    if (code != TCL_OK) {
 		goto done;
 	    }
-	    maxDepth = TclMax(envPtr->maxStackDepth, maxDepth);
 
 	    tempVar = (firstValueTemp + loopIndex);
 	    if (tempVar <= 255) {
@@ -994,6 +953,7 @@ TclCompileForeachCmd(interp, parsePtr, envPtr)
 	    (envPtr->codeNext - envPtr->codeStart);
     code = TclCompileCmdWord(interp, bodyTokenPtr+1,
 	    bodyTokenPtr->numComponents, envPtr);
+    envPtr->currStackDepth = savedStackDepth + 1;
     if (code != TCL_OK) {
 	if (code == TCL_ERROR) {
 	    sprintf(buffer, "\n    (\"foreach\" body line %d)",
@@ -1002,7 +962,6 @@ TclCompileForeachCmd(interp, parsePtr, envPtr)
         }
 	goto done;
     }
-    maxDepth = TclMax(envPtr->maxStackDepth, maxDepth);
     envPtr->exceptArrayPtr[range].numCodeBytes =
 	    (envPtr->codeNext - envPtr->codeStart)
 	    - envPtr->exceptArrayPtr[range].codeOffset;
@@ -1063,14 +1022,13 @@ TclCompileForeachCmd(interp, parsePtr, envPtr)
      * The foreach command's result is an empty string.
      */
 
+    envPtr->currStackDepth = savedStackDepth;
     TclEmitPush(TclRegisterLiteral(envPtr, "", 0, /*onHeap*/ 0), envPtr);
-    if (maxDepth == 0) {
-	maxDepth = 1;
-    }
+    envPtr->currStackDepth = savedStackDepth + 1;
 
     done:
     for (loopIndex = 0;  loopIndex < numLists;  loopIndex++) {
-        if (varvList[loopIndex] != (char **) NULL) {
+        if (varvList[loopIndex] != NULL) {
             ckfree((char *) varvList[loopIndex]);
         }
     }
@@ -1078,7 +1036,6 @@ TclCompileForeachCmd(interp, parsePtr, envPtr)
 	ckfree((char *) varcList);
         ckfree((char *) varvList);
     }
-    envPtr->maxStackDepth = maxDepth;
     envPtr->exceptDepth--;
     return code;
 }
@@ -1187,9 +1144,6 @@ FreeForeachInfo(clientData)
  *	should be compiled "out of line" by emitting code to invoke its
  *	command procedure at runtime.
  *
- *	envPtr->maxStackDepth is updated with the maximum number of stack
- *	elements needed to execute the command.
- *
  * Side effects:
  *	Instructions are added to envPtr to execute the "if" command
  *	at runtime.
@@ -1213,9 +1167,13 @@ TclCompileIfCmd(interp, parsePtr, envPtr)
 				 * is determined. */
     Tcl_Token *tokenPtr, *testTokenPtr;
     int jumpDist, jumpFalseDist, jumpIndex;
-    int numWords, wordIdx, numBytes, maxDepth, j, code;
+    int numWords, wordIdx, numBytes, j, code;
     char *word;
     char buffer[100];
+    int savedStackDepth = envPtr->currStackDepth;
+                                /* Saved stack depth at the start of the first
+				 * test; the envPtr current depth is restored
+				 * to this value at the start of each test. */
 
     /*
      * Only compile the "if" command if all arguments are simple
@@ -1236,7 +1194,6 @@ TclCompileIfCmd(interp, parsePtr, envPtr)
 
     TclInitJumpFixupArray(&jumpFalseFixupArray);
     TclInitJumpFixupArray(&jumpEndFixupArray);
-    maxDepth = 0;
     code = TCL_OK;
 
     /*
@@ -1279,6 +1236,7 @@ TclCompileIfCmd(interp, parsePtr, envPtr)
 	 * we back off and compile the if command out-of-line.
 	 */
 	
+	envPtr->currStackDepth = savedStackDepth;
 	testTokenPtr = tokenPtr;
 	code = TclCompileExprWords(interp, testTokenPtr, 1, envPtr);
 	if (code != TCL_OK) {
@@ -1288,7 +1246,6 @@ TclCompileIfCmd(interp, parsePtr, envPtr)
 	    }
 	    goto done;
 	}
-	maxDepth = TclMax(envPtr->maxStackDepth, maxDepth);
 	if (jumpFalseFixupArray.next >= jumpFalseFixupArray.end) {
 	    TclExpandJumpFixupArray(&jumpFalseFixupArray);
 	}
@@ -1330,6 +1287,7 @@ TclCompileIfCmd(interp, parsePtr, envPtr)
 	 * Compile the "then" command body.
 	 */
 
+	envPtr->currStackDepth = savedStackDepth;
 	code = TclCompileCmdWord(interp, tokenPtr+1,
 		tokenPtr->numComponents, envPtr);
 	if (code != TCL_OK) {
@@ -1340,7 +1298,6 @@ TclCompileIfCmd(interp, parsePtr, envPtr)
 	    }
 	    goto done;
 	}
-	maxDepth = TclMax(envPtr->maxStackDepth, maxDepth);
 
 	/*
 	 * Jump to the end of the "if" command. Both jumpFalseFixupArray and
@@ -1379,6 +1336,13 @@ TclCompileIfCmd(interp, parsePtr, envPtr)
     }
 
     /*
+     * Restore the current stack depth in the environment; the 
+     * "else" clause (or its default) will add 1 to this.
+     */
+
+    envPtr->currStackDepth = savedStackDepth;
+
+    /*
      * Check for the optional else clause.
      */
 
@@ -1387,7 +1351,7 @@ TclCompileIfCmd(interp, parsePtr, envPtr)
 	/*
 	 * There is an else clause. Skip over the optional "else" word.
 	 */
-	
+
 	word = tokenPtr[1].start;
 	numBytes = tokenPtr[1].size;
 	if ((numBytes == 4) && (strncmp(word, "else", 4) == 0)) {
@@ -1416,7 +1380,6 @@ TclCompileIfCmd(interp, parsePtr, envPtr)
 	    }
 	    goto done;
 	}
-	maxDepth = TclMax(envPtr->maxStackDepth, maxDepth);
 
 	/*
 	 * Make sure there are no words after the else clause.
@@ -1436,7 +1399,6 @@ TclCompileIfCmd(interp, parsePtr, envPtr)
 	 */
 
 	TclEmitPush(TclRegisterLiteral(envPtr, "", 0,/*onHeap*/ 0), envPtr);
-	maxDepth = TclMax(1, maxDepth);
     }
 
     /*
@@ -1476,9 +1438,9 @@ TclCompileIfCmd(interp, parsePtr, envPtr)
      */
 
     done:
+    envPtr->currStackDepth = savedStackDepth + 1;
     TclFreeJumpFixupArray(&jumpFalseFixupArray);
     TclFreeJumpFixupArray(&jumpEndFixupArray);
-    envPtr->maxStackDepth = maxDepth;
     return code;
 }
 
@@ -1498,9 +1460,6 @@ TclCompileIfCmd(interp, parsePtr, envPtr)
  *	should be compiled "out of line" by emitting code to invoke its
  *	command procedure at runtime.
  *
- *	envPtr->maxStackDepth is updated with the maximum number of stack
- *	elements needed to execute the "incr" command.
- *
  * Side effects:
  *	Instructions are added to envPtr to execute the "incr" command
  *	at runtime.
@@ -1517,10 +1476,8 @@ TclCompileIncrCmd(interp, parsePtr, envPtr)
 {
     Tcl_Token *varTokenPtr, *incrTokenPtr;
     int simpleVarName, isScalar, localIndex, haveImmValue, immValue;
-    int maxDepth = 0;
     int code = TCL_OK;
 
-    envPtr->maxStackDepth = 0;
     if ((parsePtr->numWords != 2) && (parsePtr->numWords != 3)) {
 	Tcl_ResetResult(interp);
 	Tcl_AppendToObj(Tcl_GetObjResult(interp),
@@ -1532,7 +1489,7 @@ TclCompileIncrCmd(interp, parsePtr, envPtr)
 	    + (parsePtr->tokenPtr->numComponents + 1);
 
     code = TclPushVarName(interp, varTokenPtr, envPtr, TCL_NO_LARGE_INDEX,
-	    &localIndex, &maxDepth, &simpleVarName, &isScalar);
+	    &localIndex, &simpleVarName, &isScalar);
     if (code != TCL_OK) {
 	goto done;
     }
@@ -1571,7 +1528,6 @@ TclCompileIncrCmd(interp, parsePtr, envPtr)
 	    if (!haveImmValue) {
 		TclEmitPush(TclRegisterLiteral(envPtr, word, numBytes,
 	               /*onHeap*/ 0), envPtr);
-		maxDepth += 1;
 	    }
 	} else {
 	    code = TclCompileTokens(interp, incrTokenPtr+1, 
@@ -1583,7 +1539,6 @@ TclCompileIncrCmd(interp, parsePtr, envPtr)
 		}
 		goto done;
 	    }
-	    maxDepth += envPtr->maxStackDepth;
 	}
     } else {			/* no incr amount given so use 1 */
 	haveImmValue = 1;
@@ -1635,7 +1590,6 @@ TclCompileIncrCmd(interp, parsePtr, envPtr)
     }
 	
     done:
-    envPtr->maxStackDepth = maxDepth;
     return code;
 }
 
@@ -1655,9 +1609,6 @@ TclCompileIncrCmd(interp, parsePtr, envPtr)
  *	command should be compiled "out of line" by emitting code to
  *	invoke its command procedure (Tcl_LappendObjCmd) at runtime.
  *
- *	envPtr->maxStackDepth is updated with the maximum number of stack
- *	elements needed to execute the incr command.
- *
  * Side effects:
  *	Instructions are added to envPtr to execute the "lappend" command
  *	at runtime.
@@ -1674,7 +1625,6 @@ TclCompileLappendCmd(interp, parsePtr, envPtr)
 {
     Tcl_Token *varTokenPtr, *valueTokenPtr;
     int numValues, simpleVarName, isScalar, localIndex, numWords;
-    int maxDepth = 0;
     int code = TCL_OK;
 
     /*
@@ -1684,7 +1634,6 @@ TclCompileLappendCmd(interp, parsePtr, envPtr)
 	return TCL_OUT_LINE_COMPILE;
     }
 
-    envPtr->maxStackDepth = 0;
     numWords = parsePtr->numWords;
     if (numWords == 1) {
 	Tcl_ResetResult(interp);
@@ -1712,7 +1661,7 @@ TclCompileLappendCmd(interp, parsePtr, envPtr)
 	    + (parsePtr->tokenPtr->numComponents + 1);
 
     code = TclPushVarName(interp, varTokenPtr, envPtr, TCL_CREATE_VAR,
-	    &localIndex, &maxDepth, &simpleVarName, &isScalar);
+	    &localIndex, &simpleVarName, &isScalar);
     if (code != TCL_OK) {
 	goto done;
     }
@@ -1727,14 +1676,12 @@ TclCompileLappendCmd(interp, parsePtr, envPtr)
 	if (valueTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
 	    TclEmitPush(TclRegisterLiteral(envPtr, valueTokenPtr[1].start,
 		    valueTokenPtr[1].size, /*onHeap*/ 0), envPtr);
-	    maxDepth += 1;
 	} else {
 	    code = TclCompileTokens(interp, valueTokenPtr+1,
 	            valueTokenPtr->numComponents, envPtr);
 	    if (code != TCL_OK) {
 		goto done;
 	    }
-	    maxDepth += envPtr->maxStackDepth;
 	}
 #if 0
     } else {
@@ -1744,7 +1691,6 @@ TclCompileLappendCmd(interp, parsePtr, envPtr)
 	 */
 
 	TclEmitPush(TclRegisterLiteral(envPtr, "", 0, /*onHeap*/ 0), envPtr);
-	maxDepth += 1;
 	numValues = 1;
 #endif
     }
@@ -1784,7 +1730,6 @@ TclCompileLappendCmd(interp, parsePtr, envPtr)
     }
 
     done:
-    envPtr->maxStackDepth = maxDepth;
     return code;
 }
 
@@ -1802,9 +1747,6 @@ TclCompileLappendCmd(interp, parsePtr, envPtr)
  *	interpreter's result contains an error message, and TCL_ERROR is
  *	returned.
  *
- *	envPtr->maxStackDepth is updated with the maximum number of stack
- *	elements needed to execute the command.
- *
  * Side effects:
  *	Instructions are added to envPtr to execute the "lindex" command
  *	at runtime.
@@ -1820,41 +1762,54 @@ TclCompileLindexCmd(interp, parsePtr, envPtr)
     CompileEnv *envPtr;		/* Holds resulting instructions. */
 {
     Tcl_Token *varTokenPtr;
-    int code, depth, i;
+    int code, i;
 
-    if (parsePtr->numWords != 3) {
-	Tcl_SetResult(interp, "wrong # args: should be \"lindex list index\"",
-		TCL_STATIC);
-	return TCL_ERROR;
-    }
-    varTokenPtr = parsePtr->tokenPtr
-	+ (parsePtr->tokenPtr->numComponents + 1);
-
-    depth = 0;
+    int numWords;
+    numWords = parsePtr->numWords;
 
     /*
-     * Push the two operands onto the stack.
+     * Quit if too few args
      */
 
-    for (i = 0; i < 2; i++) {
+    if ( numWords <= 1 ) {
+	return TCL_OUT_LINE_COMPILE;
+    }
+
+    varTokenPtr = parsePtr->tokenPtr
+	+ (parsePtr->tokenPtr->numComponents + 1);
+    
+    /*
+     * Push the operands onto the stack.
+     */
+	
+    for ( i = 1 ; i < numWords ; i++ ) {
 	if (varTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
-	    TclEmitPush(TclRegisterLiteral(envPtr,
-		    varTokenPtr[1].start, varTokenPtr[1].size,
-		    0), envPtr);
-	    depth++;
+	    TclEmitPush( TclRegisterLiteral( envPtr,
+					     varTokenPtr[1].start,
+					     varTokenPtr[1].size,
+					     0),
+			 envPtr);
 	} else {
 	    code = TclCompileTokens(interp, varTokenPtr+1,
-		    varTokenPtr->numComponents, envPtr);
+				    varTokenPtr->numComponents, envPtr);
 	    if (code != TCL_OK) {
 		return code;
 	    }
-	    depth += envPtr->maxStackDepth;
 	}
 	varTokenPtr = varTokenPtr + (varTokenPtr->numComponents + 1);
     }
+	
+    /*
+     * Emit INST_LIST_INDEX if objc==3, or INST_LIST_INDEX_MULTI
+     * if there are multiple index args.
+     */
 
-    envPtr->maxStackDepth = depth;
-    TclEmitOpcode(INST_LIST_INDEX, envPtr);
+    if ( numWords == 3 ) {
+	TclEmitOpcode( INST_LIST_INDEX, envPtr );
+    } else {
+ 	TclEmitInstInt4( INST_LIST_INDEX_MULTI, numWords-1, envPtr );
+    }
+
     return TCL_OK;
 }
 
@@ -1873,9 +1828,6 @@ TclCompileLindexCmd(interp, parsePtr, envPtr)
  *	substitutions, TCL_OUT_LINE_COMPILE is returned indicating that the
  *	command should be compiled "out of line" by emitting code to
  *	invoke its command procedure (Tcl_ListObjCmd) at runtime.
- *
- *	envPtr->maxStackDepth is updated with the maximum number of stack
- *	elements needed to execute the incr command.
  *
  * Side effects:
  *	Instructions are added to envPtr to execute the "list" command
@@ -1898,20 +1850,18 @@ TclCompileListCmd(interp, parsePtr, envPtr)
 	return TCL_OUT_LINE_COMPILE;
     }
 
-    envPtr->maxStackDepth = 0;
     if (parsePtr->numWords == 1) {
 	/*
 	 * Empty args case
 	 */
 
 	TclEmitPush(TclRegisterLiteral(envPtr, "", 0, 0), envPtr);
-	envPtr->maxStackDepth = 1;
     } else {
 	/*
 	 * Push the all values onto the stack.
 	 */
 	Tcl_Token *valueTokenPtr;
-	int i, code, numWords, depth = 0;
+	int i, code, numWords;
 
 	numWords = parsePtr->numWords;
 
@@ -1922,15 +1872,12 @@ TclCompileListCmd(interp, parsePtr, envPtr)
 		TclEmitPush(TclRegisterLiteral(envPtr,
 			valueTokenPtr[1].start, valueTokenPtr[1].size,
 			/*onHeap*/ 0), envPtr);
-		depth++;
 	    } else {
 		code = TclCompileTokens(interp, valueTokenPtr+1,
 			valueTokenPtr->numComponents, envPtr);
 		if (code != TCL_OK) {
-		    envPtr->maxStackDepth = depth;
 		    return code;
 		}
-		depth += envPtr->maxStackDepth;
 	    }
 	    valueTokenPtr = valueTokenPtr + (valueTokenPtr->numComponents + 1);
 	}
@@ -1953,9 +1900,6 @@ TclCompileListCmd(interp, parsePtr, envPtr)
  *	TCL_OUT_LINE_COMPILE is returned.  If an error occurs then the
  *	interpreter's result contains an error message, and TCL_ERROR is
  *	returned.
- *
- *	envPtr->maxStackDepth is updated with the maximum number of stack
- *	elements needed to execute the command.
  *
  * Side effects:
  *	Instructions are added to envPtr to execute the "llength" command
@@ -1989,7 +1933,6 @@ TclCompileLlengthCmd(interp, parsePtr, envPtr)
 	 */
 	TclEmitPush(TclRegisterLiteral(envPtr, varTokenPtr[1].start,
 		varTokenPtr[1].size, 0), envPtr);
-	envPtr->maxStackDepth = 1;
     } else {
 	code = TclCompileTokens(interp, varTokenPtr+1,
 		varTokenPtr->numComponents, envPtr);
@@ -1998,6 +1941,361 @@ TclCompileLlengthCmd(interp, parsePtr, envPtr)
 	}
     }
     TclEmitOpcode(INST_LIST_LENGTH, envPtr);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclCompileLsetCmd --
+ *
+ *	Procedure called to compile the "lset" command.
+ *
+ * Results:
+ *	The return value is a standard Tcl result, which is TCL_OK if
+ *	the compilation was successful.  If the "lset" command is too
+ *	complex for this function, then TCL_OUT_LINE_COMPILE is returned,
+ *	indicating that the command should be compiled "out of line"
+ *	(that is, not byte-compiled).  If an error occurs, TCL_ERROR is
+ *	returned, and the interpreter result contains an error message.
+ *
+ * Side effects:
+ *	Instructions are added to envPtr to execute the "lset" command
+ *	at runtime.
+ *
+ * The general template for execution of the "lset" command is:
+ *	(1) Instructions to push the variable name, unless the
+ *	    variable is local to the stack frame.
+ *	(2) If the variable is an array element, instructions
+ *	    to push the array element name.
+ *	(3) Instructions to push each of zero or more "index" arguments
+ *	    to the stack, followed with the "newValue" element.
+ *	(4) Instructions to duplicate the variable name and/or array
+ *	    element name onto the top of the stack, if either was
+ *	    pushed at steps (1) and (2).
+ *	(5) The appropriate INST_LOAD_* instruction to place the
+ *	    original value of the list variable at top of stack.
+ *	(6) At this point, the stack contains:
+ *	     varName? arrayElementName? index1 index2 ... newValue oldList
+ *	    The compiler emits one of INST_LSET_FLAT or INST_LSET_LIST
+ *	    according as whether there is exactly one index element (LIST)
+ *	    or either zero or else two or more (FLAT).  This instruction
+ *	    removes everything from the stack except for the two names
+ *	    and pushes the new value of the variable.
+ *	(7) Finally, INST_STORE_* stores the new value in the variable
+ *	    and cleans up the stack.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclCompileLsetCmd( interp, parsePtr, envPtr )
+    Tcl_Interp* interp;		/* Tcl interpreter for error reporting */
+    Tcl_Parse* parsePtr;	/* Points to a parse structure for
+				 * the command */
+    CompileEnv* envPtr;		/* Holds the resulting instructions */
+{
+
+    int tempDepth;		/* Depth used for emitting one part
+				 * of the code burst. */
+    Tcl_Token* varTokenPtr;	/* Pointer to the Tcl_Token representing
+				 * the parse of the variable name */
+
+    int result;			/* Status return from library calls */
+
+    int localIndex;		/* Index of var in local var table */
+    int simpleVarName;		/* Flag == 1 if var name is simple */
+    int isScalar;		/* Flag == 1 if scalar, 0 if array */
+
+    int i;
+
+    /* Check argument count */
+
+    if ( parsePtr->numWords < 3 ) {
+	/* Fail at run time, not in compilation */
+	return TCL_OUT_LINE_COMPILE;
+    }
+
+    /*
+     * Decide if we can use a frame slot for the var/array name or if we
+     * need to emit code to compute and push the name at runtime. We use a
+     * frame slot (entry in the array of local vars) if we are compiling a
+     * procedure body and if the name is simple text that does not include
+     * namespace qualifiers. 
+     */
+
+    varTokenPtr = parsePtr->tokenPtr
+	    + (parsePtr->tokenPtr->numComponents + 1);
+    result = TclPushVarName( interp, varTokenPtr, envPtr, 0,
+			     &localIndex, &simpleVarName, &isScalar );
+    if (result != TCL_OK) {
+	return result;
+    }
+
+    /* Push the "index" args and the new element value. */
+
+    for ( i = 2; i < parsePtr->numWords; ++i ) {
+
+	/* Advance to next arg */
+
+	varTokenPtr = varTokenPtr + (varTokenPtr->numComponents + 1);
+
+	/* Push an arg */
+
+	if (varTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
+	    TclEmitPush( TclRegisterLiteral( envPtr,
+					     varTokenPtr[1].start,
+					     varTokenPtr[1].size,
+					     0),
+			 envPtr);
+	} else {
+	    result = TclCompileTokens(interp, varTokenPtr+1,
+				      varTokenPtr->numComponents, envPtr);
+	    if ( result != TCL_OK ) {
+		return result;
+	    }
+	}
+    }
+
+    /*
+     * Duplicate the variable name if it's been pushed.  
+     */
+
+    if ( !simpleVarName || localIndex < 0 ) {
+	if ( !simpleVarName || isScalar ) {
+	    tempDepth = parsePtr->numWords - 2;
+	} else {
+	    tempDepth = parsePtr->numWords - 1;
+	}
+	TclEmitInstInt4( INST_OVER, tempDepth, envPtr );
+    }
+
+    /*
+     * Duplicate an array index if one's been pushed
+     */
+
+    if ( simpleVarName && !isScalar ) {
+	if ( localIndex < 0 ) {
+	    tempDepth = parsePtr->numWords - 1;
+	} else {
+	    tempDepth = parsePtr->numWords - 2;
+	}
+	TclEmitInstInt4( INST_OVER, tempDepth, envPtr );
+    }
+
+    /*
+     * Emit code to load the variable's value.
+     */
+
+    if ( !simpleVarName ) {
+	TclEmitOpcode( INST_LOAD_STK, envPtr );
+    } else if ( isScalar ) {
+	if ( localIndex < 0 ) {
+	    TclEmitOpcode( INST_LOAD_SCALAR_STK, envPtr );
+	} else if ( localIndex < 0x100 ) {
+	    TclEmitInstInt1( INST_LOAD_SCALAR1, localIndex, envPtr );
+	} else {
+	    TclEmitInstInt4( INST_LOAD_SCALAR4, localIndex, envPtr );
+	}
+    } else {
+	if ( localIndex < 0 ) {
+	    TclEmitOpcode( INST_LOAD_ARRAY_STK, envPtr );
+	} else if ( localIndex < 0x100 ) {
+	    TclEmitInstInt1( INST_LOAD_ARRAY1, localIndex, envPtr );
+	} else {
+	    TclEmitInstInt4( INST_LOAD_ARRAY4, localIndex, envPtr );
+	}
+    }
+
+    /*
+     * Emit the correct variety of 'lset' instruction
+     */
+
+    if ( parsePtr->numWords == 4 ) {
+	TclEmitOpcode( INST_LSET_LIST, envPtr );
+    } else {
+	TclEmitInstInt4( INST_LSET_FLAT, (parsePtr->numWords - 1), envPtr );
+    }
+
+    /*
+     * Emit code to put the value back in the variable
+     */
+
+    if ( !simpleVarName ) {
+	TclEmitOpcode( INST_STORE_STK, envPtr );
+    } else if ( isScalar ) {
+	if ( localIndex < 0 ) {
+	    TclEmitOpcode( INST_STORE_SCALAR_STK, envPtr );
+	} else if ( localIndex < 0x100 ) {
+	    TclEmitInstInt1( INST_STORE_SCALAR1, localIndex, envPtr );
+	} else {
+	    TclEmitInstInt4( INST_STORE_SCALAR4, localIndex, envPtr );
+	}
+    } else {
+	if ( localIndex < 0 ) {
+	    TclEmitOpcode( INST_STORE_ARRAY_STK, envPtr );
+	} else if ( localIndex < 0x100 ) {
+	    TclEmitInstInt1( INST_STORE_ARRAY1, localIndex, envPtr );
+	} else {
+	    TclEmitInstInt4( INST_STORE_ARRAY4, localIndex, envPtr );
+	}
+    }
+    
+    return TCL_OK;
+
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclCompileRegexpCmd --
+ *
+ *	Procedure called to compile the "regexp" command.
+ *
+ * Results:
+ *	The return value is a standard Tcl result, which is TCL_OK if
+ *	the compilation was successful.  If the "regexp" command is too
+ *	complex for this function, then TCL_OUT_LINE_COMPILE is returned,
+ *	indicating that the command should be compiled "out of line"
+ *	(that is, not byte-compiled).  If an error occurs, TCL_ERROR is
+ *	returned, and the interpreter result contains an error message.
+ *
+ * Side effects:
+ *	Instructions are added to envPtr to execute the "regexp" command
+ *	at runtime.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclCompileRegexpCmd(interp, parsePtr, envPtr)
+    Tcl_Interp* interp;		/* Tcl interpreter for error reporting */
+    Tcl_Parse* parsePtr;	/* Points to a parse structure for
+				 * the command */
+    CompileEnv* envPtr;		/* Holds the resulting instructions */
+{
+    Tcl_Token *varTokenPtr;	/* Pointer to the Tcl_Token representing
+				 * the parse of the RE or string */
+    int i, len, code, exactMatch, nocase;
+    char c, *str;
+
+    /*
+     * We are only interested in compiling simple regexp cases.
+     * Currently supported compile cases are:
+     *   regexp ?-nocase? ?--? staticString $var
+     *   regexp ?-nocase? ?--? {^staticString$} $var
+     */
+    if (parsePtr->numWords < 3) {
+	return TCL_OUT_LINE_COMPILE;
+    }
+
+    nocase = 0;
+    varTokenPtr = parsePtr->tokenPtr;
+
+    /*
+     * We only look for -nocase and -- as options.  Everything else
+     * gets pushed to runtime execution.  This is different than regexp's
+     * runtime option handling, but satisfies our stricter needs.
+     */
+    for (i = 1; i < parsePtr->numWords - 2; i++) {
+	varTokenPtr = varTokenPtr + (varTokenPtr->numComponents + 1);
+	if (varTokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
+	    /* Not a simple string - punt to runtime. */
+	    return TCL_OUT_LINE_COMPILE;
+	}
+	str = varTokenPtr[1].start;
+	len = varTokenPtr[1].size;
+	if ((len == 2) && (str[0] == '-') && (str[1] == '-')) {
+	    i++;
+	    break;
+	} else if ((len > 1)
+		&& (strncmp(str, "-nocase", (unsigned) len) == 0)) {
+	    nocase = 1;
+	} else {
+	    /* Not an option we recognize. */
+	    return TCL_OUT_LINE_COMPILE;
+	}
+    }
+
+    if ((parsePtr->numWords - i) != 2) {
+	/* We don't support capturing to variables */
+	return TCL_OUT_LINE_COMPILE;
+    }
+
+    /*
+     * Get the regexp string.  If it is not a simple string, punt to runtime.
+     * If it has a '-', it could be an incorrectly formed regexp command.
+     */
+    varTokenPtr = varTokenPtr + (varTokenPtr->numComponents + 1);
+    if ((varTokenPtr->type != TCL_TOKEN_SIMPLE_WORD)
+	    || (*(varTokenPtr[1].start) == '-')) {
+	return TCL_OUT_LINE_COMPILE;
+    }
+    str = varTokenPtr[1].start;
+    len = varTokenPtr[1].size;
+
+    /*
+     * On the first (pattern) arg, check to see if any RE special characters
+     * are in the word.  If not, this is the same as 'string equal'.
+     * We can use strchr here because the glob chars are all in the ascii-7
+     * range.  If -nocase was specified, we can't do this because INST_STR_EQ
+     * has no support for nocase.
+     */
+    if ((len > 1) && (str[0] == '^') && (str[len-1] == '$')) {
+	/*
+	 * It appears and exact search was requested (ie ^foo$), so strip
+	 * off the special chars and signal exactMatch.
+	 */
+	str++; len -= 2;
+	exactMatch = 1;
+    } else {
+	exactMatch = 0;
+    }
+    c = str[len];
+    str[len] = '\0';
+    if (strpbrk(str, "*+?{}()[].\\|^$") != NULL) {
+	str[len] = c;
+	/* We don't do anything with REs with special chars yet. */
+	return TCL_OUT_LINE_COMPILE;
+    }
+    str[len] = c;
+    if (exactMatch) {
+	TclEmitPush(TclRegisterLiteral(envPtr, str, len, 0), envPtr);
+    } else {
+	/*
+	 * This needs to find the substring anywhere in the string, so
+	 * use string match and *foo*.
+	 */
+	char *newStr  = ckalloc((unsigned) len + 3);
+	newStr[0]     = '*';
+	strncpy(newStr + 1, str, (size_t) len);
+	newStr[len+1] = '*';
+	newStr[len+2] = '\0';
+	TclEmitPush(TclRegisterLiteral(envPtr, newStr, len+2, 0), envPtr);
+	ckfree((char *) newStr);
+    }
+
+    /*
+     * Push the string arg
+     */
+    varTokenPtr = varTokenPtr + (varTokenPtr->numComponents + 1);
+    if (varTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
+	TclEmitPush(TclRegisterLiteral(envPtr,
+		varTokenPtr[1].start, varTokenPtr[1].size, 0), envPtr);
+    } else {
+	code = TclCompileTokens(interp, varTokenPtr+1,
+		varTokenPtr->numComponents, envPtr);
+	if (code != TCL_OK) {
+	    return code;
+	}
+    }
+
+    if (exactMatch && !nocase) {
+	TclEmitOpcode(INST_STR_EQ, envPtr);
+    } else {
+	TclEmitInstInt1(INST_STR_MATCH, nocase, envPtr);
+    }
+
     return TCL_OK;
 }
 
@@ -2016,9 +2314,6 @@ TclCompileLlengthCmd(interp, parsePtr, envPtr)
  *	the command should be compiled "out of line" (eg, not byte compiled).
  *	If an error occurs then the interpreter's result contains a standard
  *	error message.
- *
- *	envPtr->maxStackDepth is updated with the maximum number of stack
- *	elements needed to execute the command.
  *
  * Side effects:
  *	Instructions are added to envPtr to execute the "return" command
@@ -2052,7 +2347,6 @@ TclCompileReturnCmd(interp, parsePtr, envPtr)
 	     * Just push the literal string "".
 	     */
 	    TclEmitPush(TclRegisterLiteral(envPtr, "", 0, 0), envPtr);
-	    envPtr->maxStackDepth = 1;
 	    break;
 	}
 	case 2: {
@@ -2071,7 +2365,6 @@ TclCompileReturnCmd(interp, parsePtr, envPtr)
 		 */
 		TclEmitPush(TclRegisterLiteral(envPtr, varTokenPtr[1].start,
 			varTokenPtr[1].size, /*onHeap*/ 0), envPtr);
-		envPtr->maxStackDepth = 1;
 	    } else {
 		/*
 		 * Parse token is more complex, so compile it; this handles the
@@ -2122,9 +2415,6 @@ TclCompileReturnCmd(interp, parsePtr, envPtr)
  *	set command should be compiled "out of line" by emitting code to
  *	invoke its command procedure (Tcl_SetCmd) at runtime.
  *
- *	envPtr->maxStackDepth is updated with the maximum number of stack
- *	elements needed to execute the incr command.
- *
  * Side effects:
  *	Instructions are added to envPtr to execute the "set" command
  *	at runtime.
@@ -2141,10 +2431,8 @@ TclCompileSetCmd(interp, parsePtr, envPtr)
 {
     Tcl_Token *varTokenPtr, *valueTokenPtr;
     int isAssignment, isScalar, simpleVarName, localIndex, numWords;
-    int maxDepth = 0;
     int code = TCL_OK;
 
-    envPtr->maxStackDepth = 0;
     numWords = parsePtr->numWords;
     if ((numWords != 2) && (numWords != 3)) {
 	Tcl_ResetResult(interp);
@@ -2167,7 +2455,7 @@ TclCompileSetCmd(interp, parsePtr, envPtr)
 
     code = TclPushVarName(interp, varTokenPtr, envPtr,
 	    (isAssignment ? TCL_CREATE_VAR : 0),
-	    &localIndex, &maxDepth, &simpleVarName, &isScalar);
+	    &localIndex, &simpleVarName, &isScalar);
     if (code != TCL_OK) {
 	goto done;
     }
@@ -2181,14 +2469,12 @@ TclCompileSetCmd(interp, parsePtr, envPtr)
 	if (valueTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
 	    TclEmitPush(TclRegisterLiteral(envPtr, valueTokenPtr[1].start,
 		    valueTokenPtr[1].size, /*onHeap*/ 0), envPtr);
-	    maxDepth += 1;
 	} else {
 	    code = TclCompileTokens(interp, valueTokenPtr+1,
 	            valueTokenPtr->numComponents, envPtr);
 	    if (code != TCL_OK) {
 		goto done;
 	    }
-	    maxDepth += envPtr->maxStackDepth;
 	}
     }
 
@@ -2233,7 +2519,6 @@ TclCompileSetCmd(interp, parsePtr, envPtr)
     }
 	
     done:
-    envPtr->maxStackDepth = maxDepth;
     return code;
 }
 
@@ -2250,9 +2535,6 @@ TclCompileSetCmd(interp, parsePtr, envPtr)
  *	TCL_OUT_LINE_COMPILE is returned.  If an error occurs then the
  *	interpreter's result contains an error message, and TCL_ERROR is
  *	returned.
- *
- *	envPtr->maxStackDepth is updated with the maximum number of stack
- *	elements needed to execute the command.
  *
  * Side effects:
  *	Instructions are added to envPtr to execute the "string" command
@@ -2273,7 +2555,7 @@ TclCompileStringCmd(interp, parsePtr, envPtr)
     int index;
     int code;
     
-    static char *options[] = {
+    static CONST char *options[] = {
 	"bytelength",	"compare",	"equal",	"first",
 	"index",	"is",		"last",		"length",
 	"map",		"match",	"range",	"repeat",
@@ -2291,9 +2573,8 @@ TclCompileStringCmd(interp, parsePtr, envPtr)
     };	  
 
     if (parsePtr->numWords < 2) {
-	Tcl_SetResult(interp, "wrong # args: should be \"string option "
-		"arg ?arg ...?\"", TCL_STATIC);
-	return TCL_ERROR;
+	/* Fail at run time, not in compilation */
+	return TCL_OUT_LINE_COMPILE;
     }
     opTokenPtr = parsePtr->tokenPtr
 	+ (parsePtr->tokenPtr->numComponents + 1);
@@ -2308,7 +2589,7 @@ TclCompileStringCmd(interp, parsePtr, envPtr)
     Tcl_DecrRefCount(opObj);
 
     varTokenPtr = opTokenPtr + (opTokenPtr->numComponents + 1);
-    
+
     switch ((enum options) index) {
 	case STR_BYTELENGTH:
 	case STR_FIRST:
@@ -2333,7 +2614,7 @@ TclCompileStringCmd(interp, parsePtr, envPtr)
 
 	case STR_COMPARE: 
 	case STR_EQUAL: {
-	    int i, depth;
+	    int i;
 	    /*
 	     * If there are any flags to the command, we can't byte compile it
 	     * because the INST_STR_EQ bytecode doesn't support flags.
@@ -2343,8 +2624,6 @@ TclCompileStringCmd(interp, parsePtr, envPtr)
 		return TCL_OUT_LINE_COMPILE;
 	    }
 
-	    depth = 0;
-
 	    /*
 	     * Push the two operands onto the stack.
 	     */
@@ -2354,33 +2633,27 @@ TclCompileStringCmd(interp, parsePtr, envPtr)
 		    TclEmitPush(TclRegisterLiteral(envPtr,
 			    varTokenPtr[1].start, varTokenPtr[1].size,
 			    0), envPtr);
-		    depth++;
 		} else {
 		    code = TclCompileTokens(interp, varTokenPtr+1,
 			    varTokenPtr->numComponents, envPtr);
 		    if (code != TCL_OK) {
 			return code;
 		    }
-		    depth += envPtr->maxStackDepth;
 		}
 		varTokenPtr = varTokenPtr + (varTokenPtr->numComponents + 1);
 	    }
 
-	    envPtr->maxStackDepth = depth;
 	    TclEmitOpcode(((((enum options) index) == STR_COMPARE) ?
 		    INST_STR_CMP : INST_STR_EQ), envPtr);
 	    return TCL_OK;
 	}
 	case STR_INDEX: {
-	    int i, depth;
+	    int i;
 
 	    if (parsePtr->numWords != 4) {
-		Tcl_SetResult(interp, "wrong # args: should be "
-			"\"string index string charIndex\"", TCL_STATIC);
-		return TCL_ERROR;
+		/* Fail at run time, not in compilation */
+		return TCL_OUT_LINE_COMPILE;
 	    }
-
-	    depth = 0;
 
 	    /*
 	     * Push the two operands onto the stack.
@@ -2391,27 +2664,23 @@ TclCompileStringCmd(interp, parsePtr, envPtr)
 		    TclEmitPush(TclRegisterLiteral(envPtr,
 			    varTokenPtr[1].start, varTokenPtr[1].size,
 			    0), envPtr);
-		    depth++;
 		} else {
 		    code = TclCompileTokens(interp, varTokenPtr+1,
 			    varTokenPtr->numComponents, envPtr);
 		    if (code != TCL_OK) {
 			return code;
 		    }
-		    depth += envPtr->maxStackDepth;
 		}
 		varTokenPtr = varTokenPtr + (varTokenPtr->numComponents + 1);
 	    }
 
-	    envPtr->maxStackDepth = depth;
 	    TclEmitOpcode(INST_STR_INDEX, envPtr);
 	    return TCL_OK;
 	}
 	case STR_LENGTH: {
 	    if (parsePtr->numWords != 3) {
-		Tcl_SetResult(interp, "wrong # args: should be "
-			"\"string length string\"", TCL_STATIC);
-		return TCL_ERROR;
+		/* Fail at run time, not in compilation */
+		return TCL_OUT_LINE_COMPILE;
 	    }
 
 	    if (varTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
@@ -2436,14 +2705,12 @@ TclCompileStringCmd(interp, parsePtr, envPtr)
 	    return TCL_OK;
 	}
 	case STR_MATCH: {
-	    int i, length, exactMatch = 0, nocase = 0, depth = 0;
+	    int i, length, exactMatch = 0, nocase = 0;
 	    char c, *str;
 
 	    if (parsePtr->numWords < 4 || parsePtr->numWords > 5) {
-		Tcl_SetResult(interp, "wrong # args: should be "
-			"\"string match ?-nocase? pattern string\"",
-			TCL_STATIC);
-		return TCL_ERROR;
+		/* Fail at run time, not in compilation */
+		return TCL_OUT_LINE_COMPILE;
 	    }
 
 	    if (parsePtr->numWords == 5) {
@@ -2462,7 +2729,8 @@ TclCompileStringCmd(interp, parsePtr, envPtr)
 			    "bad option \"", str, "\": must be -nocase",
 			    (char *) NULL);
 		    str[length] = c;
-		    return TCL_ERROR;
+		    /* Fail at run time, not in compilation */
+		    return TCL_OUT_LINE_COMPILE;
 		}
 		varTokenPtr = varTokenPtr + (varTokenPtr->numComponents + 1);
 	    }
@@ -2488,14 +2756,12 @@ TclCompileStringCmd(interp, parsePtr, envPtr)
 		    }
 		    TclEmitPush(TclRegisterLiteral(envPtr, str, length,
 			    0), envPtr);
-		    depth++;
 		} else {
 		    code = TclCompileTokens(interp, varTokenPtr+1,
 			    varTokenPtr->numComponents, envPtr);
 		    if (code != TCL_OK) {
 			return code;
 		    }
-		    depth += envPtr->maxStackDepth;
 		}
 		varTokenPtr = varTokenPtr + (varTokenPtr->numComponents + 1);
 	    }
@@ -2505,7 +2771,6 @@ TclCompileStringCmd(interp, parsePtr, envPtr)
 	    } else {
 		TclEmitInstInt1(INST_STR_MATCH, nocase, envPtr);
 	    }
-	    envPtr->maxStackDepth = depth;
 	    return TCL_OK;
 	}
     }
@@ -2529,9 +2794,6 @@ TclCompileStringCmd(interp, parsePtr, envPtr)
  *	indicating that the while command should be compiled "out of line"
  *	by emitting code to invoke its command procedure at runtime.
  *
- *	envPtr->maxStackDepth is updated with the maximum number of stack
- *	elements needed to execute the "while" command.
- *
  * Side effects:
  *	Instructions are added to envPtr to execute the "while" command
  *	at runtime.
@@ -2550,11 +2812,10 @@ TclCompileWhileCmd(interp, parsePtr, envPtr)
     JumpFixup jumpFalseFixup;
     unsigned char *jumpPc;
     int testCodeOffset, jumpDist, jumpBackDist, jumpBackOffset;
-    int range, maxDepth, code;
+    int range, code;
     char buffer[32 + TCL_INTEGER_SPACE];
+    int savedStackDepth = envPtr->currStackDepth;
 
-    envPtr->maxStackDepth = 0;
-    maxDepth = 0;
     if (parsePtr->numWords != 3) {
 	Tcl_ResetResult(interp);
 	Tcl_AppendToObj(Tcl_GetObjResult(interp),
@@ -2606,18 +2867,19 @@ TclCompileWhileCmd(interp, parsePtr, envPtr)
         }
 	goto error;
     }
-    maxDepth = envPtr->maxStackDepth;
     TclEmitForwardJump(envPtr, TCL_FALSE_JUMP, &jumpFalseFixup);
     
     /*
      * Compile the loop body.
      */
 
+    envPtr->currStackDepth = savedStackDepth;
     bodyTokenPtr = testTokenPtr + (testTokenPtr->numComponents + 1);
     envPtr->exceptArrayPtr[range].codeOffset =
 	    (envPtr->codeNext - envPtr->codeStart);
     code = TclCompileCmdWord(interp, bodyTokenPtr+1,
 	    bodyTokenPtr->numComponents, envPtr);
+    envPtr->currStackDepth = savedStackDepth + 1;
     if (code != TCL_OK) {
 	if (code == TCL_ERROR) {
 	    sprintf(buffer, "\n    (\"while\" body line %d)",
@@ -2626,7 +2888,6 @@ TclCompileWhileCmd(interp, parsePtr, envPtr)
         }
 	goto error;
     }
-    maxDepth = TclMax(envPtr->maxStackDepth, maxDepth);
     envPtr->exceptArrayPtr[range].numCodeBytes =
 	    (envPtr->codeNext - envPtr->codeStart)
 	    - envPtr->exceptArrayPtr[range].codeOffset;
@@ -2686,16 +2947,12 @@ TclCompileWhileCmd(interp, parsePtr, envPtr)
      * The while command's result is an empty string.
      */
 
+    envPtr->currStackDepth = savedStackDepth;
     TclEmitPush(TclRegisterLiteral(envPtr, "", 0, /*onHeap*/ 0), envPtr);
-    if (maxDepth == 0) {
-	maxDepth = 1;
-    }
-    envPtr->maxStackDepth = maxDepth;
     envPtr->exceptDepth--;
     return TCL_OK;
 
     error:
-    envPtr->maxStackDepth = maxDepth;
     envPtr->exceptDepth--;
     return code;
 }
@@ -2713,9 +2970,6 @@ TclCompileWhileCmd(interp, parsePtr, envPtr)
  *	unless there was an error while parsing string. If an error occurs
  *	then the interpreter's result contains a standard error message.
  *
- *	envPtr->maxStackDepth is updated with the maximum number of stack
- *	elements needed to execute the incr command.
- *
  * Side effects:
  *	Instructions are added to envPtr to execute the "set" command
  *	at runtime.
@@ -2725,15 +2979,13 @@ TclCompileWhileCmd(interp, parsePtr, envPtr)
 
 static int
 TclPushVarName(interp, varTokenPtr, envPtr, flags, localIndexPtr,
-	maxDepthPtr, simpleVarNamePtr, isScalarPtr)
+	simpleVarNamePtr, isScalarPtr)
     Tcl_Interp *interp;		/* Used for error reporting. */
     Tcl_Token *varTokenPtr;	/* Points to a variable token. */
     CompileEnv *envPtr;		/* Holds resulting instructions. */
     int flags;			/* takes TCL_CREATE_VAR or
 				 * TCL_LARGE_INDEX_OK */
     int *localIndexPtr;		/* must not be NULL */
-    int *maxDepthPtr;		/* must not be NULL, should already have a
-				 * value set in the parent. */
     int *simpleVarNamePtr;	/* must not be NULL */
     int *isScalarPtr;		/* must not be NULL */
 {
@@ -2743,7 +2995,6 @@ TclPushVarName(interp, varTokenPtr, envPtr, flags, localIndexPtr,
     char *name, *elName;
     register int i, n;
     int nameChars, elNameChars, simpleVarName, localIndex;
-    int maxDepth = 0;
     int code = TCL_OK;
 
     /*
@@ -2870,7 +3121,6 @@ TclPushVarName(interp, varTokenPtr, envPtr, flags, localIndexPtr,
 	if (localIndex < 0) {
 	    TclEmitPush(TclRegisterLiteral(envPtr, name, nameChars,
 		    /*onHeap*/ 0), envPtr);
-	    maxDepth = 1;
 	}
 
 	/*
@@ -2902,11 +3152,9 @@ TclPushVarName(interp, varTokenPtr, envPtr, flags, localIndexPtr,
 		if (code != TCL_OK) {
 		    goto done;
 		}
-		maxDepth += envPtr->maxStackDepth;
 	    } else {
 		TclEmitPush(TclRegisterLiteral(envPtr, "", 0,
                         /*alreadyAlloced*/ 0), envPtr);
-		maxDepth += 1;
 	    }
 	}
     } else {
@@ -2919,7 +3167,6 @@ TclPushVarName(interp, varTokenPtr, envPtr, flags, localIndexPtr,
 	if (code != TCL_OK) {
 	    goto done;
 	}
-	maxDepth += envPtr->maxStackDepth;
     }
 
     done:
@@ -2927,7 +3174,6 @@ TclPushVarName(interp, varTokenPtr, envPtr, flags, localIndexPtr,
         Tcl_FreeParse(&elemParse);
     }
     *localIndexPtr	= localIndex;
-    *maxDepthPtr	+= maxDepth;
     *simpleVarNamePtr	= simpleVarName;
     *isScalarPtr	= (elName == NULL);
     return code;

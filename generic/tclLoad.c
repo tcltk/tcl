@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoad.c,v 1.6 2001/08/23 17:37:08 vincentdarley Exp $
+ * RCS: @(#) $Id: tclLoad.c,v 1.6.8.1 2002/02/05 02:22:00 wolfsuit Exp $
  */
 
 #include "tclInt.h"
@@ -451,7 +451,7 @@ Tcl_StaticPackage(interp, pkgName, initProc, safeInitProc)
 					 * package has already been loaded
 					 * into the given interpreter by
 					 * calling the appropriate init proc. */
-    char *pkgName;			/* Name of package (must be properly
+    CONST char *pkgName;		/* Name of package (must be properly
 					 * capitalized: first letter upper
 					 * case, others lower case). */
     Tcl_PackageInitProc *initProc;	/* Procedure to call to incorporate

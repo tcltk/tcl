@@ -7,7 +7,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclWinInit.c,v 1.31 2001/10/01 20:58:52 hobbs Exp $
+ * RCS: @(#) $Id: tclWinInit.c,v 1.31.2.1 2002/02/05 02:22:05 wolfsuit Exp $
  */
 
 #include "tclWinInt.h"
@@ -172,10 +172,10 @@ TclpInitLibraryPath(path)
 {
 #define LIBRARY_SIZE	    32
     Tcl_Obj *pathPtr, *objPtr;
-    char *str;
+    CONST char *str;
     Tcl_DString ds;
     int pathc;
-    char **pathv;
+    CONST char **pathv;
     char installLib[LIBRARY_SIZE], developLib[LIBRARY_SIZE];
 
     Tcl_DStringInit(&ds);
@@ -333,9 +333,8 @@ AppendEnvironment(
     WCHAR wBuf[MAX_PATH];
     char buf[MAX_PATH * TCL_UTF_MAX];
     Tcl_Obj *objPtr;
-    char *str;
     Tcl_DString ds;
-    char **pathv;
+    CONST char **pathv;
 
     /*
      * The "L" preceeding the TCL_LIBRARY string is used to tell VC++
@@ -362,6 +361,7 @@ AppendEnvironment(
 	 */
 
 	if ((pathc > 0) && (lstrcmpiA(lib + 4, pathv[pathc - 1]) != 0)) {
+	    CONST char *str;
 	    /*
 	     * TCL_LIBRARY is set but refers to a different tcl
 	     * installation than the current version.  Try fiddling with the
@@ -370,7 +370,7 @@ AppendEnvironment(
 	     * version string.
 	     */
 	    
-	    pathv[pathc - 1] = (char *) (lib + 4);
+	    pathv[pathc - 1] = (lib + 4);
 	    Tcl_DStringInit(&ds);
 	    str = Tcl_JoinPath(pathc, pathv, &ds);
 	    objPtr = Tcl_NewStringObj(str, Tcl_DStringLength(&ds));
@@ -562,7 +562,7 @@ void
 TclpSetVariables(interp)
     Tcl_Interp *interp;		/* Interp to initialize. */	
 {	    
-    char *ptr;
+    CONST char *ptr;
     char buffer[TCL_INTEGER_SPACE * 2];
     SYSTEM_INFO sysInfo;
     OemId *oemId;
@@ -698,7 +698,8 @@ TclpFindVariable(name, lengthPtr)
 	 * all the characters after the equal sign.
 	 */
 	
-	envUpper = Tcl_ExternalToUtfDString(NULL, env, -1, &envString);
+	Tcl_ExternalToUtfDString(NULL, env, -1, &envString);
+	envUpper = Tcl_DStringValue(&envString);
 	p1 = strchr(envUpper, '=');
 	if (p1 == NULL) {
 	    continue;
@@ -791,14 +792,14 @@ Tcl_SourceRCFile(interp)
     Tcl_Interp *interp;		/* Interpreter to source rc file into. */
 {
     Tcl_DString temp;
-    char *fileName;
+    CONST char *fileName;
     Tcl_Channel errChannel;
 
     fileName = Tcl_GetVar(interp, "tcl_rcFileName", TCL_GLOBAL_ONLY);
 
     if (fileName != NULL) {
         Tcl_Channel c;
-	char *fullName;
+	CONST char *fullName;
 
         Tcl_DStringInit(&temp);
 	fullName = Tcl_TranslateFileName(interp, fileName, &temp);

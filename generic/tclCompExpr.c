@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.6 2000/05/26 08:53:40 hobbs Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.6.14.1 2002/02/05 02:21:58 wolfsuit Exp $
  */
 
 #include "tclInt.h"
@@ -206,9 +206,6 @@ static void		LogSyntaxError _ANSI_ARGS_((ExprInfo *infoPtr));
  *	on failure. If TCL_ERROR is returned, then the interpreter's result
  *	contains an error message.
  *
- *	envPtr->maxStackDepth is updated with the maximum number of stack
- *	elements needed to execute the expression.
- *
  *	envPtr->exprIsJustVarRef is set 1 if the expression consisted of
  *	a single variable reference as in the expression of "if $b then...".
  *	Otherwise it is set 0. This is used to implement Tcl's two level
@@ -237,7 +234,7 @@ TclCompileExpr(interp, script, numBytes, envPtr)
     ExprInfo info;
     Tcl_Parse parse;
     Tcl_HashEntry *hPtr;
-    int maxDepth, new, i, code;
+    int new, i, code;
 
     /*
      * If this is the first time we've been called, initialize the table
@@ -280,7 +277,6 @@ TclCompileExpr(interp, script, numBytes, envPtr)
      * Parse the expression then compile it.
      */
 
-    maxDepth = 0;
     code = Tcl_ParseExpr(interp, script, numBytes, &parse);
     if (code != TCL_OK) {
 	goto done;
@@ -291,7 +287,6 @@ TclCompileExpr(interp, script, numBytes, envPtr)
 	Tcl_FreeParse(&parse);
 	goto done;
     }
-    maxDepth = envPtr->maxStackDepth;
     
     if (!info.hasOperators) {
 	/*
@@ -306,7 +301,6 @@ TclCompileExpr(interp, script, numBytes, envPtr)
     Tcl_FreeParse(&parse);
 
     done:
-    envPtr->maxStackDepth = maxDepth;
     envPtr->exprIsJustVarRef = info.exprIsJustVarRef;
     envPtr->exprIsComparison = info.exprIsComparison;
     return code;
@@ -357,9 +351,6 @@ TclFinalizeCompilation()
  *	on failure. If TCL_ERROR is returned, then the interpreter's result
  *	contains an error message.
  *
- *	envPtr->maxStackDepth is updated with the maximum number of stack
- *	elements needed to execute the subexpression.
- *
  *	envPtr->exprIsJustVarRef is set 1 if the subexpression consisted of
  *	a single variable reference as in the expression of "if $b then...".
  *	Otherwise it is set 0. This is used to implement Tcl's two level
@@ -390,14 +381,13 @@ CompileSubExpr(exprTokenPtr, infoPtr, envPtr)
     Tcl_HashEntry *hPtr;
     char *operator;
     char savedChar;
-    int maxDepth, objIndex, opIndex, length, code;
+    int objIndex, opIndex, length, code;
     char buffer[TCL_UTF_MAX];
 
     if (exprTokenPtr->type != TCL_TOKEN_SUB_EXPR) {
 	panic("CompileSubExpr: token type %d not TCL_TOKEN_SUB_EXPR\n",
 	        exprTokenPtr->type);
     }
-    maxDepth = 0;
     code = TCL_OK;
 
     /*
@@ -416,7 +406,6 @@ CompileSubExpr(exprTokenPtr, infoPtr, envPtr)
 	    if (code != TCL_OK) {
 		goto done;
 	    }
-	    maxDepth = envPtr->maxStackDepth;
 	    tokenPtr += (tokenPtr->numComponents + 1);
 	    infoPtr->exprIsJustVarRef = 0;
 	    break;
@@ -429,7 +418,6 @@ CompileSubExpr(exprTokenPtr, infoPtr, envPtr)
 		objIndex = TclRegisterLiteral(envPtr, "", 0, /*onHeap*/ 0);
 	    }
 	    TclEmitPush(objIndex, envPtr);
-	    maxDepth = 1;
 	    tokenPtr += 1;
 	    infoPtr->exprIsJustVarRef = 0;
 	    break;
@@ -444,7 +432,6 @@ CompileSubExpr(exprTokenPtr, infoPtr, envPtr)
 		objIndex = TclRegisterLiteral(envPtr, "", 0, /*onHeap*/ 0);
 	    }
 	    TclEmitPush(objIndex, envPtr);
-	    maxDepth = 1;
 	    tokenPtr += 1;
 	    infoPtr->exprIsJustVarRef = 0;
 	    break;
@@ -455,7 +442,6 @@ CompileSubExpr(exprTokenPtr, infoPtr, envPtr)
 	    if (code != TCL_OK) {
 		goto done;
 	    }
-	    maxDepth = envPtr->maxStackDepth;
 	    tokenPtr += 1;
 	    infoPtr->exprIsJustVarRef = 0;
 	    break;
@@ -465,7 +451,6 @@ CompileSubExpr(exprTokenPtr, infoPtr, envPtr)
 	    if (code != TCL_OK) {
 		goto done;
 	    }
-	    maxDepth = envPtr->maxStackDepth;
 	    tokenPtr += (tokenPtr->numComponents + 1);
 	    break;
 	    
@@ -475,7 +460,6 @@ CompileSubExpr(exprTokenPtr, infoPtr, envPtr)
 	    if (code != TCL_OK) {
 		goto done;
 	    }
-	    maxDepth = envPtr->maxStackDepth;
 	    tokenPtr += (tokenPtr->numComponents + 1);
 	    break;
 	    
@@ -504,7 +488,6 @@ CompileSubExpr(exprTokenPtr, infoPtr, envPtr)
 		if (code != TCL_OK) {
 		    goto done;
 		}
-		maxDepth = envPtr->maxStackDepth;
 		tokenPtr = endPtr;
 		infoPtr->exprIsJustVarRef = 0;
 		infoPtr->exprIsComparison = 0;
@@ -525,7 +508,6 @@ CompileSubExpr(exprTokenPtr, infoPtr, envPtr)
 		if (code != TCL_OK) {
 		    goto done;
 		}
-		maxDepth = envPtr->maxStackDepth;
 		tokenPtr += (tokenPtr->numComponents + 1);
 
 		if (opDescPtr->numOperands == 2) {
@@ -533,8 +515,6 @@ CompileSubExpr(exprTokenPtr, infoPtr, envPtr)
 		    if (code != TCL_OK) {
 			goto done;
 		    }
-		    maxDepth = TclMax((envPtr->maxStackDepth + 1),
-		            maxDepth);
 		    tokenPtr += (tokenPtr->numComponents + 1);
 		}
 		TclEmitOpcode(opDescPtr->instruction, envPtr);
@@ -559,7 +539,6 @@ CompileSubExpr(exprTokenPtr, infoPtr, envPtr)
 		    if (code != TCL_OK) {
 			goto done;
 		    }
-		    maxDepth = envPtr->maxStackDepth;
 		    tokenPtr += (tokenPtr->numComponents + 1);
 		    
 		    /*
@@ -583,8 +562,6 @@ CompileSubExpr(exprTokenPtr, infoPtr, envPtr)
 		    if (code != TCL_OK) {
 			goto done;
 		    }
-		    maxDepth = TclMax((envPtr->maxStackDepth + 1),
-			    maxDepth);
 		    tokenPtr += (tokenPtr->numComponents + 1);
 		    TclEmitOpcode(((opIndex==OP_PLUS)? INST_ADD : INST_SUB),
 			    envPtr);
@@ -597,7 +574,6 @@ CompileSubExpr(exprTokenPtr, infoPtr, envPtr)
 		    if (code != TCL_OK) {
 			goto done;
 		    }
-		    maxDepth = envPtr->maxStackDepth;
 		    tokenPtr = endPtr;
 		    break;
 			
@@ -607,7 +583,6 @@ CompileSubExpr(exprTokenPtr, infoPtr, envPtr)
 		    if (code != TCL_OK) {
 			goto done;
 		    }
-		    maxDepth = envPtr->maxStackDepth;
 		    tokenPtr = endPtr;
 		    break;
 		    
@@ -638,7 +613,6 @@ CompileSubExpr(exprTokenPtr, infoPtr, envPtr)
     }
     
     done:
-    envPtr->maxStackDepth = maxDepth;
     return code;
 }
 
@@ -656,9 +630,6 @@ CompileSubExpr(exprTokenPtr, infoPtr, envPtr)
  *	the last one in the subexpression is stored at the address in
  *	endPtrPtr. If TCL_ERROR is returned, then the interpreter's result
  *	contains an error message.
- *
- *	envPtr->maxStackDepth is updated with the maximum number of stack
- *	elements needed to execute the expression.
  *
  * Side effects:
  *	Adds instructions to envPtr to evaluate the expression at runtime.
@@ -685,19 +656,18 @@ CompileLandOrLorExpr(exprTokenPtr, opIndex, infoPtr, envPtr, endPtrPtr)
     				 /* Used to fix up jumps used to convert the
 				  * first operand to 0 or 1. */
     Tcl_Token *tokenPtr;
-    int dist, maxDepth, code;
+    int dist, code;
+    int savedStackDepth = envPtr->currStackDepth;
 
     /*
      * Emit code for the first operand.
      */
 
-    maxDepth = 0;
     tokenPtr = exprTokenPtr+2;
     code = CompileSubExpr(tokenPtr, infoPtr, envPtr);
     if (code != TCL_OK) {
 	goto done;
     }
-    maxDepth = envPtr->maxStackDepth;
     tokenPtr += (tokenPtr->numComponents + 1);
 
     /*
@@ -713,6 +683,7 @@ CompileLandOrLorExpr(exprTokenPtr, opIndex, infoPtr, envPtr, endPtrPtr)
         badDist:
 	panic("CompileLandOrLorExpr: bad jump distance %d\n", dist);
     }
+    envPtr->currStackDepth = savedStackDepth;
     TclEmitPush(TclRegisterLiteral(envPtr, "1", 1, /*onHeap*/ 0), envPtr);
     dist = (envPtr->codeNext - envPtr->codeStart) - lhsEndFixup.codeOffset;
     if (TclFixupForwardJump(envPtr, &lhsEndFixup, dist, 127)) {
@@ -738,7 +709,6 @@ CompileLandOrLorExpr(exprTokenPtr, opIndex, infoPtr, envPtr, endPtrPtr)
     if (code != TCL_OK) {
 	goto done;
     }
-    maxDepth = TclMax((envPtr->maxStackDepth + 1), maxDepth);
     tokenPtr += (tokenPtr->numComponents + 1);
 
     /*
@@ -760,7 +730,7 @@ CompileLandOrLorExpr(exprTokenPtr, opIndex, infoPtr, envPtr, endPtrPtr)
     *endPtrPtr = tokenPtr;
 
     done:
-    envPtr->maxStackDepth = maxDepth;
+    envPtr->currStackDepth = savedStackDepth + 1;
     return code;
 }
 
@@ -778,9 +748,6 @@ CompileLandOrLorExpr(exprTokenPtr, opIndex, infoPtr, envPtr, endPtrPtr)
  *	the last one in the subexpression is stored at the address in
  *	endPtrPtr. If TCL_ERROR is returned, then the interpreter's result
  *	contains an error message.
- *
- *	envPtr->maxStackDepth is updated with the maximum number of stack
- *	elements needed to execute the expression.
  *
  * Side effects:
  *	Adds instructions to envPtr to evaluate the expression at runtime.
@@ -804,19 +771,18 @@ CompileCondExpr(exprTokenPtr, infoPtr, envPtr, endPtrPtr)
 				 * around the then and else expressions when
 				 * their target PCs are determined. */
     Tcl_Token *tokenPtr;
-    int elseCodeOffset, dist, maxDepth, code;
+    int elseCodeOffset, dist, code;
+    int savedStackDepth = envPtr->currStackDepth;
 
     /*
      * Emit code for the test.
      */
 
-    maxDepth = 0;
     tokenPtr = exprTokenPtr+2;
     code = CompileSubExpr(tokenPtr, infoPtr, envPtr);
     if (code != TCL_OK) {
 	goto done;
     }
-    maxDepth = envPtr->maxStackDepth;
     tokenPtr += (tokenPtr->numComponents + 1);
     
     /*
@@ -837,7 +803,6 @@ CompileCondExpr(exprTokenPtr, infoPtr, envPtr, endPtrPtr)
     if (code != TCL_OK) {
 	goto done;
     }
-    maxDepth = TclMax(envPtr->maxStackDepth, maxDepth);
     tokenPtr += (tokenPtr->numComponents + 1);
     if (!infoPtr->hasOperators) {
 	TclEmitOpcode(INST_TRY_CVT_TO_NUMERIC, envPtr);
@@ -854,13 +819,13 @@ CompileCondExpr(exprTokenPtr, infoPtr, envPtr, endPtrPtr)
      * Compile the "else" expression.
      */
 
+    envPtr->currStackDepth = savedStackDepth;
     elseCodeOffset = (envPtr->codeNext - envPtr->codeStart);
     infoPtr->hasOperators = 0;
     code = CompileSubExpr(tokenPtr, infoPtr, envPtr);
     if (code != TCL_OK) {
 	goto done;
     }
-    maxDepth = TclMax(envPtr->maxStackDepth, maxDepth);
     tokenPtr += (tokenPtr->numComponents + 1);
     if (!infoPtr->hasOperators) {
 	TclEmitOpcode(INST_TRY_CVT_TO_NUMERIC, envPtr);
@@ -890,7 +855,7 @@ CompileCondExpr(exprTokenPtr, infoPtr, envPtr, endPtrPtr)
     *endPtrPtr = tokenPtr;
 
     done:
-    envPtr->maxStackDepth = maxDepth;
+    envPtr->currStackDepth = savedStackDepth + 1;
     return code;
 }
 
@@ -908,9 +873,6 @@ CompileCondExpr(exprTokenPtr, infoPtr, envPtr, endPtrPtr)
  *	the last one in the subexpression is stored at the address in
  *	endPtrPtr. If TCL_ERROR is returned, then the interpreter's result
  *	contains an error message.
- *
- *	envPtr->maxStackDepth is updated with the maximum number of stack
- *	elements needed to execute the function.
  *
  * Side effects:
  *	Adds instructions to envPtr to evaluate the math function at
@@ -936,14 +898,13 @@ CompileMathFuncCall(exprTokenPtr, funcName, infoPtr, envPtr, endPtrPtr)
     MathFunc *mathFuncPtr;
     Tcl_HashEntry *hPtr;
     Tcl_Token *tokenPtr, *afterSubexprPtr;
-    int maxDepth, code, i;
+    int code, i;
 
     /*
      * Look up the MathFunc record for the function.
      */
 
     code = TCL_OK;
-    maxDepth = 0;
     hPtr = Tcl_FindHashEntry(&iPtr->mathFuncTable, funcName);
     if (hPtr == NULL) {
 	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
@@ -960,7 +921,6 @@ CompileMathFuncCall(exprTokenPtr, funcName, infoPtr, envPtr, endPtrPtr)
     if (mathFuncPtr->builtinFuncIndex < 0) {
 	TclEmitPush(TclRegisterLiteral(envPtr, funcName, -1, /*onHeap*/ 0),
 	        envPtr);
-	maxDepth = 1;
     }
 
     /*
@@ -984,7 +944,6 @@ CompileMathFuncCall(exprTokenPtr, funcName, infoPtr, envPtr, endPtrPtr)
 		goto done;
 	    }
 	    tokenPtr += (tokenPtr->numComponents + 1);
-	    maxDepth++;
 	}
 	if (tokenPtr != afterSubexprPtr) {
 	    Tcl_ResetResult(interp);
@@ -1008,15 +967,25 @@ CompileMathFuncCall(exprTokenPtr, funcName, infoPtr, envPtr, endPtrPtr)
      */
 
     if (mathFuncPtr->builtinFuncIndex >= 0) { /* a builtin function */
-	TclEmitInstInt1(INST_CALL_BUILTIN_FUNC1, 
+	/*
+	 * Adjust the current stack depth by the number of arguments
+	 * of the builtin function. This cannot be handled by the 
+	 * TclEmitInstInt1 macro as the number of arguments is not
+	 * passed as an operand.
+	 */
+
+	if (envPtr->maxStackDepth < envPtr->currStackDepth) {
+	    envPtr->maxStackDepth = envPtr->currStackDepth;
+	}
+	TclEmitInstInt1(INST_CALL_BUILTIN_FUNC1,
 	        mathFuncPtr->builtinFuncIndex, envPtr);
+	envPtr->currStackDepth -= mathFuncPtr->numArgs;
     } else {
 	TclEmitInstInt1(INST_CALL_FUNC1, (mathFuncPtr->numArgs+1), envPtr);
     }
     *endPtrPtr = afterSubexprPtr;
 
     done:
-    envPtr->maxStackDepth = maxDepth;
     return code;
 }
 

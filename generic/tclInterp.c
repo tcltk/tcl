@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.7 2001/09/11 00:46:35 hobbs Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.7.6.1 2002/02/05 02:22:00 wolfsuit Exp $
  */
 
 #include <stdio.h>
@@ -347,7 +347,7 @@ Tcl_InterpObjCmd(clientData, interp, objc, objv)
     Tcl_Obj *CONST objv[];		/* Argument objects. */
 {
     int index;
-    static char *options[] = {
+    static CONST char *options[] = {
         "alias",	"aliases",	"create",	"delete", 
 	"eval",		"exists",	"expose",	"hide", 
 	"hidden",	"issafe",	"invokehidden",	"marktrusted", 
@@ -419,7 +419,7 @@ Tcl_InterpObjCmd(clientData, interp, objc, objv)
 	    int i, last, safe;
 	    Tcl_Obj *slavePtr;
 	    char buf[16 + TCL_INTEGER_SPACE];
-	    static char *options[] = {
+	    static CONST char *options[] = {
 		"-safe",	"--",		NULL
 	    };
 	    enum option {
@@ -582,7 +582,7 @@ Tcl_InterpObjCmd(clientData, interp, objc, objv)
 	case OPT_INVOKEHID: {
 	    int i, index, global;
 	    Tcl_Interp *slaveInterp;
-	    static char *hiddenOptions[] = {
+	    static CONST char *hiddenOptions[] = {
 		"-global",	"--",		NULL
 	    };
 	    enum hiddenOption {
@@ -808,11 +808,11 @@ GetInterp2(interp, objc, objv)
 int
 Tcl_CreateAlias(slaveInterp, slaveCmd, targetInterp, targetCmd, argc, argv)
     Tcl_Interp *slaveInterp;	/* Interpreter for source command. */
-    char *slaveCmd;		/* Command to install in slave. */
+    CONST char *slaveCmd;	/* Command to install in slave. */
     Tcl_Interp *targetInterp;	/* Interpreter for target command. */
-    char *targetCmd;		/* Name of target command. */
+    CONST char *targetCmd;	/* Name of target command. */
     int argc;			/* How many additional arguments? */
-    char **argv;		/* These are the additional args. */
+    char * CONST *argv;		/* These are the additional args. */
 {
     Tcl_Obj *slaveObjPtr, *targetObjPtr;
     Tcl_Obj **objv;
@@ -863,9 +863,9 @@ Tcl_CreateAlias(slaveInterp, slaveCmd, targetInterp, targetCmd, argc, argv)
 int
 Tcl_CreateAliasObj(slaveInterp, slaveCmd, targetInterp, targetCmd, objc, objv)
     Tcl_Interp *slaveInterp;	/* Interpreter for source command. */
-    char *slaveCmd;		/* Command to install in slave. */
+    CONST char *slaveCmd;	/* Command to install in slave. */
     Tcl_Interp *targetInterp;	/* Interpreter for target command. */
-    char *targetCmd;		/* Name of target command. */
+    CONST char *targetCmd;	/* Name of target command. */
     int objc;			/* How many additional arguments? */
     Tcl_Obj *CONST objv[];	/* Argument vector. */
 {
@@ -906,9 +906,9 @@ int
 Tcl_GetAlias(interp, aliasName, targetInterpPtr, targetNamePtr, argcPtr,
         argvPtr)
     Tcl_Interp *interp;			/* Interp to start search from. */
-    char *aliasName;			/* Name of alias to find. */
+    CONST char *aliasName;			/* Name of alias to find. */
     Tcl_Interp **targetInterpPtr;	/* (Return) target interpreter. */
-    char **targetNamePtr;		/* (Return) name of target command. */
+    CONST char **targetNamePtr;		/* (Return) name of target command. */
     int *argcPtr;			/* (Return) count of addnl args. */
     char ***argvPtr;			/* (Return) additional arguments. */
 {
@@ -966,9 +966,9 @@ int
 Tcl_GetAliasObj(interp, aliasName, targetInterpPtr, targetNamePtr, objcPtr,
         objvPtr)
     Tcl_Interp *interp;			/* Interp to start search from. */
-    char *aliasName;			/* Name of alias to find. */
+    CONST char *aliasName;		/* Name of alias to find. */
     Tcl_Interp **targetInterpPtr;	/* (Return) target interpreter. */
-    char **targetNamePtr;		/* (Return) name of target command. */
+    CONST char **targetNamePtr;		/* (Return) name of target command. */
     int *objcPtr;			/* (Return) count of addnl args. */
     Tcl_Obj ***objvPtr;			/* (Return) additional args. */
 {
@@ -991,7 +991,7 @@ Tcl_GetAliasObj(interp, aliasName, targetInterpPtr, targetNamePtr, objcPtr,
     if (targetInterpPtr != (Tcl_Interp **) NULL) {
         *targetInterpPtr = aliasPtr->targetInterp;
     }
-    if (targetNamePtr != (char **) NULL) {
+    if (targetNamePtr != (CONST char **) NULL) {
         *targetNamePtr = Tcl_GetString(objv[0]);
     }
     if (objcPtr != (int *) NULL) {
@@ -1525,7 +1525,7 @@ AliasObjCmdDeleteProc(clientData)
 Tcl_Interp *
 Tcl_CreateSlave(interp, slavePath, isSafe)
     Tcl_Interp *interp;		/* Interpreter to start search at. */
-    char *slavePath;		/* Name of slave to create. */
+    CONST char *slavePath;	/* Name of slave to create. */
     int isSafe;			/* Should new slave be "safe" ? */
 {
     Tcl_Obj *pathPtr;
@@ -1558,7 +1558,7 @@ Tcl_CreateSlave(interp, slavePath, isSafe)
 Tcl_Interp *
 Tcl_GetSlave(interp, slavePath)
     Tcl_Interp *interp;		/* Interpreter to start search from. */
-    char *slavePath;		/* Path of slave to find. */
+    CONST char *slavePath;	/* Path of slave to find. */
 {
     Tcl_Obj *pathPtr;
     Tcl_Interp *slaveInterp;
@@ -1829,7 +1829,7 @@ SlaveObjCmd(clientData, interp, objc, objv)
 {
     Tcl_Interp *slaveInterp;
     int index;
-    static char *options[] = {
+    static CONST char *options[] = {
         "alias",	"aliases",	"eval",		"expose",
         "hide",		"hidden",	"issafe",	"invokehidden",
         "marktrusted",	NULL
@@ -1856,22 +1856,28 @@ SlaveObjCmd(clientData, interp, objc, objv)
 
     switch ((enum options) index) {
 	case OPT_ALIAS: {
-	    if (objc == 3) {
-		return AliasDescribe(interp, slaveInterp, objv[2]);
-	    }
-	    if (Tcl_GetString(objv[3])[0] == '\0') {
-		if (objc == 4) {
-		    return AliasDelete(interp, slaveInterp, objv[2]);
+	    if (objc > 2) {
+		if (objc == 3) {
+		    return AliasDescribe(interp, slaveInterp, objv[2]);
 		}
-	    } else {
-		return AliasCreate(interp, slaveInterp, interp, objv[2],
-			objv[3], objc - 4, objv + 4);
+		if (Tcl_GetString(objv[3])[0] == '\0') {
+		    if (objc == 4) {
+			return AliasDelete(interp, slaveInterp, objv[2]);
+		    }
+		} else {
+		    return AliasCreate(interp, slaveInterp, interp, objv[2],
+			    objv[3], objc - 4, objv + 4);
+		}
 	    }
 	    Tcl_WrongNumArgs(interp, 2, objv,
 		    "aliasName ?targetName? ?args..?");
             return TCL_ERROR;
 	}
 	case OPT_ALIASES: {
+	    if (objc != 2) {
+		Tcl_WrongNumArgs(interp, 2, objv, (char *) NULL);
+		return TCL_ERROR;
+	    }
 	    return AliasList(interp, slaveInterp);
 	}
 	case OPT_EVAL: {
@@ -1903,12 +1909,16 @@ SlaveObjCmd(clientData, interp, objc, objv)
             return SlaveHidden(interp, slaveInterp);
 	}
         case OPT_ISSAFE: {
+	    if (objc != 2) {
+		Tcl_WrongNumArgs(interp, 2, objv, (char *) NULL);
+		return TCL_ERROR;
+	    }
 	    Tcl_SetIntObj(Tcl_GetObjResult(interp), Tcl_IsSafe(slaveInterp));
 	    return TCL_OK;
 	}
         case OPT_INVOKEHIDDEN: {
 	    int global, i, index;
-	    static char *hiddenOptions[] = {
+	    static CONST char *hiddenOptions[] = {
 		"-global",	"--",		NULL
 	    };
 	    enum hiddenOption {

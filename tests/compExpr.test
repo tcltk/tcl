@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: compExpr.test,v 1.4 2000/04/10 17:18:58 ericm Exp $
+# RCS: @(#) $Id: compExpr.test,v 1.4.18.1 2002/02/05 02:22:03 wolfsuit Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -30,7 +30,7 @@ test compExpr-1.1 {TclCompileExpr procedure, successful expr parse and compile} 
 } 3
 test compExpr-1.2 {TclCompileExpr procedure, error parsing expr} {
     list [catch {expr 1+2+} msg] $msg
-} {1 {syntax error in expression "1+2+"}}
+} {1 {syntax error in expression "1+2+": premature end of expression}}
 test compExpr-1.3 {TclCompileExpr procedure, error compiling expr} {
     list [catch {expr "foo(123)"} msg] $msg
 } {1 {unknown math function "foo"}}
@@ -46,7 +46,7 @@ test compExpr-2.1 {CompileSubExpr procedure, TCL_TOKEN_WORD parse token} {
 } 0
 test compExpr-2.2 {CompileSubExpr procedure, error compiling TCL_TOKEN_WORD parse token} {
     list [catch {expr {"00[expr 1+]" + 17}} msg] $msg
-} {1 {syntax error in expression "1+"}}
+} {1 {syntax error in expression "1+": premature end of expression}}
 test compExpr-2.3 {CompileSubExpr procedure, TCL_TOKEN_TEXT parse token} {
     expr {{12345}}
 } 12345
@@ -89,7 +89,7 @@ test compExpr-2.13 {CompileSubExpr procedure, error in TCL_TOKEN_SUB_EXPR parse 
     catch {unset a}
     set a 15
     list [catch {expr {27 || "$a[expr 1+]00"}} msg] $msg
-} {1 {syntax error in expression "1+"}}
+} {1 {syntax error in expression "1+": premature end of expression}}
 test compExpr-2.14 {CompileSubExpr procedure, TCL_TOKEN_OPERATOR token, op found} {
     expr {5*6}
 } 30
@@ -157,16 +157,16 @@ test compExpr-2.34 {CompileSubExpr procedure, TCL_TOKEN_OPERATOR token, special 
 } 2
 test compExpr-2.35 {CompileSubExpr procedure, TCL_TOKEN_OPERATOR token, error in special operator} {
     list [catch {expr {+[expr 1+]}} msg] $msg
-} {1 {syntax error in expression "1+"}}
+} {1 {syntax error in expression "1+": premature end of expression}}
 test compExpr-2.36 {CompileSubExpr procedure, TCL_TOKEN_OPERATOR token, special operator} {
     expr {4+2}
 } 6
 test compExpr-2.37 {CompileSubExpr procedure, TCL_TOKEN_OPERATOR token, error in special operator} {
     list [catch {expr {[expr 1+]+5}} msg] $msg
-} {1 {syntax error in expression "1+"}}
+} {1 {syntax error in expression "1+": premature end of expression}}
 test compExpr-2.38 {CompileSubExpr procedure, TCL_TOKEN_OPERATOR token, error in special operator} {
     list [catch {expr {5+[expr 1+]}} msg] $msg
-} {1 {syntax error in expression "1+"}}
+} {1 {syntax error in expression "1+": premature end of expression}}
 test compExpr-2.39 {CompileSubExpr procedure, TCL_TOKEN_OPERATOR token, special operator} {
     expr {-2}
 } -2
@@ -182,7 +182,7 @@ test compExpr-2.42 {CompileSubExpr procedure, error in TCL_TOKEN_SUB_EXPR parse 
     catch {unset a}
     set a 15
     list [catch {expr {27 || "$a[expr 1+]00"}} msg] $msg
-} {1 {syntax error in expression "1+"}}
+} {1 {syntax error in expression "1+": premature end of expression}}
 test compExpr-2.43 {CompileSubExpr procedure, TCL_TOKEN_OPERATOR token, special operator} {
     catch {unset a}
     set a false
@@ -197,7 +197,7 @@ test compExpr-2.45 {CompileSubExpr procedure, error in TCL_TOKEN_SUB_EXPR parse 
     catch {unset a}
     set a 15
     list [catch {expr {1? 54 : "$a[expr 1+]00"}} msg] $msg
-} {1 {syntax error in expression "1+"}}
+} {1 {syntax error in expression "1+": premature end of expression}}
 
 test compExpr-3.1 {CompileLandOrLorExpr procedure, numeric 1st operand} {
     catch {unset a}
@@ -211,7 +211,7 @@ test compExpr-3.2 {CompileLandOrLorExpr procedure, nonnumeric 1st operand} {
 } 0
 test compExpr-3.3 {CompileSubExpr procedure, error in 1st operand} {
     list [catch {expr {[expr *2]||0}} msg] $msg
-} {1 {syntax error in expression "*2"}}
+} {1 {syntax error in expression "*2": unexpected operator *}}
 test compExpr-3.4 {CompileLandOrLorExpr procedure, result is 1 or 0} {
     catch {unset a}
     catch {unset b}
@@ -241,7 +241,7 @@ test compExpr-3.8 {CompileLandOrLorExpr procedure, nonnumeric 2nd operand} {
 } 0
 test compExpr-3.9 {CompileLandOrLorExpr procedure, error in 2nd operand} {
     list [catch {expr {0||[expr %2]}} msg] $msg
-} {1 {syntax error in expression "%2"}}
+} {1 {syntax error in expression "%2": unexpected operator %}}
 test compExpr-3.10 {CompileLandOrLorExpr procedure, long lor/land arm} {
     set a "abcdefghijkl"
     set i 7
@@ -260,7 +260,7 @@ test compExpr-4.2 {CompileCondExpr procedure, complex test, convert to numeric} 
 } -54
 test compExpr-4.3 {CompileCondExpr procedure, error in test} {
     list [catch {expr {[expr *2]? +1 : -1}} msg] $msg
-} {1 {syntax error in expression "*2"}}
+} {1 {syntax error in expression "*2": unexpected operator *}}
 test compExpr-4.4 {CompileCondExpr procedure, simple "true" clause} {
     catch {unset a}
     set a no
@@ -273,7 +273,7 @@ test compExpr-4.5 {CompileCondExpr procedure, convert "true" clause to numeric} 
 } no
 test compExpr-4.6 {CompileCondExpr procedure, error in "true" clause} {
     list [catch {expr {1? [expr *2] : -127}} msg] $msg
-} {1 {syntax error in expression "*2"}}
+} {1 {syntax error in expression "*2": unexpected operator *}}
 test compExpr-4.7 {CompileCondExpr procedure, simple "false" clause} {
     catch {unset a}
     set a no
@@ -286,7 +286,7 @@ test compExpr-4.8 {CompileCondExpr procedure, convert "false" clause to numeric}
 } 83
 test compExpr-4.9 {CompileCondExpr procedure, error in "false" clause} {
     list [catch {expr {1? 15 : [expr *2]}} msg] $msg
-} {1 {syntax error in expression "*2"}}
+} {1 {syntax error in expression "*2": unexpected operator *}}
 
 test compExpr-5.1 {CompileMathFuncCall procedure, math function found} {
     format %.6g [expr atan2(1.0, 2.0)]
@@ -310,7 +310,7 @@ test compExpr-5.6 {CompileMathFuncCall procedure, complex argument} {
 } 9.97424
 test compExpr-5.7 {CompileMathFuncCall procedure, error in argument} {
     list [catch {expr {sinh(2.*)}} msg] $msg
-} {1 {syntax error in expression "sinh(2.*)"}}
+} {1 {syntax error in expression "sinh(2.*)": unexpected close parenthesis}}
 test compExpr-5.8 {CompileMathFuncCall procedure, too many arguments} {
     list [catch {expr {sinh(2.0, 3.0)}} msg] $msg
 } {1 {too many arguments for math function}}
@@ -320,22 +320,10 @@ test compExpr-5.9 {CompileMathFuncCall procedure, too many arguments} {
 
 test compExpr-6.1 {LogSyntaxError procedure, error in expr longer than 60 chars} {
     list [catch {expr {(+0123456)*(+0123456)*(+0123456)*(+0123456)*(+0123456)*(+0123456)*(+0123456)/} -1 foo 3} msg] $msg
-} {1 {syntax error in expression "(+0123456)*(+0123456)*(+0123456)*(+0123456)*(+0123456)*(+012"}}
+} {1 {syntax error in expression "(+0123456)*(+0123456)*(+0123456)*(+0123456)*(+0123456)*(+012...": extra tokens at end of expression}}
 
 # cleanup
 catch {unset a}
 catch {unset b}
 ::tcltest::cleanupTests
 return
-
-
-
-
-
-
-
-
-
-
-
-

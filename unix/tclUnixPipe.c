@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPipe.c,v 1.15 2001/09/04 18:06:35 vincentdarley Exp $
+ * RCS: @(#) $Id: tclUnixPipe.c,v 1.15.8.1 2002/02/05 02:22:05 wolfsuit Exp $
  */
 
 #include "tclInt.h"
@@ -55,7 +55,7 @@ static int	PipeGetHandleProc _ANSI_ARGS_((ClientData instanceData,
 static int	PipeInputProc _ANSI_ARGS_((ClientData instanceData,
 		    char *buf, int toRead, int *errorCode));
 static int	PipeOutputProc _ANSI_ARGS_((
-		    ClientData instanceData, char *buf, int toWrite,
+		    ClientData instanceData, CONST char *buf, int toWrite,
 		    int *errorCode));
 static void	PipeWatchProc _ANSI_ARGS_((ClientData instanceData, int mask));
 static void	RestoreSignals _ANSI_ARGS_((void));
@@ -136,7 +136,7 @@ TclpOpenFile(fname, mode)
     int mode;			/* In what mode to open the file? */
 {
     int fd;
-    char *native;
+    CONST char *native;
     Tcl_DString ds;
 
     native = Tcl_UtfToExternalDString(NULL, fname, -1, &ds);
@@ -186,7 +186,8 @@ TclFile
 TclpCreateTempFile(contents)
     CONST char *contents;	/* String to write into temp file, or NULL. */
 {
-    char fileName[L_tmpnam + 9], *native;
+    char fileName[L_tmpnam + 9];
+    CONST char *native;
     Tcl_DString dstring;
     int fd;
 
@@ -367,7 +368,7 @@ TclpCreateProcess(interp, argc, argv, inputFile, outputFile, errorFile,
 				 * Error messages from the child process
 				 * itself are sent to errorFile. */
     int argc;			/* Number of arguments in following array. */
-    char **argv;		/* Array of argument strings in UTF-8.
+    CONST char **argv;		/* Array of argument strings in UTF-8.
 				 * argv[0] contains the name of the executable
 				 * translated using Tcl_TranslateFileName
 				 * call).  Additional arguments have not been
@@ -420,10 +421,11 @@ TclpCreateProcess(interp, argc, argv, inputFile, outputFile, errorFile,
     newArgv = (char **) ckalloc((argc+1) * sizeof(char *));
     newArgv[argc] = NULL;
     for (i = 0; i < argc; i++) {
-	newArgv[i] = Tcl_UtfToExternalDString(NULL, argv[i], -1, &dsArray[i]);
+	Tcl_UtfToExternalDString(NULL, argv[i], -1, &dsArray[i]);
+	newArgv[i] = Tcl_DStringValue(&dsArray[i]);
     }
 
-    joinThisError = (errorFile == outputFile);
+    joinThisError = errorFile && (errorFile == outputFile);
     pid = fork();
     if (pid == 0) {
 	fd = GetFd(errPipeOut);
@@ -1003,14 +1005,20 @@ PipeInputProc(instanceData, buf, toRead, errorCodePtr)
      * appropriately, and read will unblock as soon as a short read is
      * possible, if the channel is in blocking mode. If the channel is
      * nonblocking, the read will never block.
+     * Some OSes can throw an interrupt error, for which we should
+     * immediately retry. [Bug #415131]
      */
 
-    bytesRead = read(GetFd(psPtr->inFile), buf, (size_t) toRead);
-    if (bytesRead > -1) {
-        return bytesRead;
+    do {
+	bytesRead = read (GetFd(psPtr->inFile), buf, (size_t) toRead);
+    } while ((bytesRead < 0) && (errno == EINTR));
+
+    if (bytesRead < 0) {
+	*errorCodePtr = errno;
+	return -1;
+    } else {
+	return bytesRead;
     }
-    *errorCodePtr = errno;
-    return -1;
 }
 
 /*
@@ -1035,7 +1043,7 @@ PipeInputProc(instanceData, buf, toRead, errorCodePtr)
 static int
 PipeOutputProc(instanceData, buf, toWrite, errorCodePtr)
     ClientData instanceData;		/* Pipe state. */
-    char *buf;				/* The data buffer. */
+    CONST char *buf;			/* The data buffer. */
     int toWrite;			/* How many bytes to write? */
     int *errorCodePtr;			/* Where to store error code. */
 {
@@ -1043,12 +1051,22 @@ PipeOutputProc(instanceData, buf, toWrite, errorCodePtr)
     int written;
 
     *errorCodePtr = 0;
-    written = write(GetFd(psPtr->outFile), buf, (size_t) toWrite);
-    if (written > -1) {
-        return written;
+
+    /*
+     * Some OSes can throw an interrupt error, for which we should
+     * immediately retry. [Bug #415131]
+     */
+
+    do {
+	written = write(GetFd(psPtr->outFile), buf, (size_t) toWrite);
+    } while ((written < 0) && (errno == EINTR));
+
+    if (written < 0) {
+	*errorCodePtr = errno;
+	return -1;
+    } else {
+	return written;
     }
-    *errorCodePtr = errno;
-    return -1;
 }
 
 /*

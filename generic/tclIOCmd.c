@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOCmd.c,v 1.10 2001/09/19 00:50:23 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclIOCmd.c,v 1.10.4.1 2002/02/05 02:21:59 wolfsuit Exp $
  */
 
 #include "tclInt.h"
@@ -245,16 +245,7 @@ Tcl_GetsObjCmd(dummy, interp, objc, objv)
         return TCL_ERROR;
     }
 
-    if (objc == 3) {
-	/*
-	 * Variable gets line, interp get bytecount.
-	 */
-
-	linePtr = Tcl_NewObj();
-    }
-    else {
-	linePtr = Tcl_GetObjResult(interp);
-    }
+    linePtr = Tcl_NewObj();
 
     lineLen = Tcl_GetsObj(chan, linePtr);
     if (lineLen < 0) {
@@ -278,6 +269,8 @@ Tcl_GetsObjCmd(dummy, interp, objc, objv)
 	resultPtr = Tcl_GetObjResult(interp);
 	Tcl_SetIntObj(resultPtr, lineLen);
         return TCL_OK;
+    } else {
+	Tcl_SetObjResult(interp, linePtr);
     }
     return TCL_OK;
 }
@@ -429,7 +422,9 @@ Tcl_SeekObjCmd(clientData, interp, objc, objv)
     int result;				/* Of calling Tcl_Seek. */
     char *chanName;
     int optionIndex;
-    static char *originOptions[] = {"start", "current", "end", (char *) NULL};
+    static CONST char *originOptions[] = {
+	"start", "current", "end", (char *) NULL
+    };
     static int modeArray[] = {SEEK_SET, SEEK_CUR, SEEK_END};
 
     if ((objc != 3) && (objc != 4)) {
@@ -731,12 +726,12 @@ Tcl_ExecObjCmd(dummy, interp, objc, objv)
 
 #define NUM_ARGS 20
     Tcl_Obj *resultPtr;
-    char **argv;
+    CONST char **argv;
     char *string;
     Tcl_Channel chan;
-    char *argStorage[NUM_ARGS];
+    CONST char *argStorage[NUM_ARGS];
     int argc, background, i, index, keepNewline, result, skip, length;
-    static char *options[] = {
+    static CONST char *options[] = {
 	"-keepnewline",	"--",		NULL
     };
     enum options {
@@ -789,7 +784,7 @@ Tcl_ExecObjCmd(dummy, interp, objc, objv)
     argv = argStorage;
     argc = objc - skip;
     if ((argc + 1) > sizeof(argv) / sizeof(argv[0])) {
-	argv = (char **) ckalloc((unsigned)(argc + 1) * sizeof(char *));
+	argv = (CONST char **) ckalloc((unsigned)(argc + 1) * sizeof(char *));
     }
 
     /*
@@ -981,7 +976,7 @@ Tcl_OpenObjCmd(notUsed, interp, objc, objv)
 	return TCL_ERROR;
 #else
 	int mode, seekFlag, cmdObjc;
-	char **cmdArgv;
+	CONST char **cmdArgv;
 
         if (Tcl_SplitList(interp, what+1, &cmdObjc, &cmdArgv) != TCL_OK) {
             return TCL_ERROR;
@@ -1305,7 +1300,7 @@ Tcl_SocketObjCmd(notUsed, interp, objc, objv)
     int objc;				/* Number of arguments. */
     Tcl_Obj *CONST objv[];		/* Argument objects. */
 {
-    static char *socketOptions[] = {
+    static CONST char *socketOptions[] = {
 	"-async", "-myaddr", "-myport","-server", (char *) NULL
     };
     enum socketOptions {
@@ -1500,7 +1495,7 @@ Tcl_FcopyObjCmd(dummy, interp, objc, objv)
     int mode, i;
     int toRead, index;
     Tcl_Obj *cmdPtr;
-    static char* switches[] = { "-size", "-command", NULL };
+    static CONST char* switches[] = { "-size", "-command", NULL };
     enum { FcopySize, FcopyCommand };
 
     if ((objc < 3) || (objc > 7) || (objc == 4) || (objc == 6)) {

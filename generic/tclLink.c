@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLink.c,v 1.3 1999/04/16 00:46:49 stanton Exp $
+ * RCS: @(#) $Id: tclLink.c,v 1.3.28.1 2002/02/05 02:22:00 wolfsuit Exp $
  */
 
 #include "tclInt.h"
@@ -235,7 +235,8 @@ LinkTraceProc(clientData, interp, name1, name2, flags)
     Link *linkPtr = (Link *) clientData;
     int changed;
     char buffer[TCL_DOUBLE_SPACE];
-    char *value, **pp, *result;
+    CONST char *value;
+    char **pp, *result;
     Tcl_Obj *objPtr;
 
     /*
@@ -364,7 +365,7 @@ LinkTraceProc(clientData, interp, name1, name2, flags)
 	    strcpy(*pp, value);
 	    break;
 	default:
-	    return "internal error: bad linked variable type";
+	    result = "internal error: bad linked variable type";
     }
     end:
     Tcl_DecrRefCount(objPtr);

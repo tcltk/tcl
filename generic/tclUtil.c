@@ -6,11 +6,12 @@
  *
  * Copyright (c) 1987-1993 The Regents of the University of California.
  * Copyright (c) 1994-1998 Sun Microsystems, Inc.
+ * Copyright (c) 2001 by Kevin B. Kenny.  All rights reserved.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.24 2001/09/24 21:10:32 dgp Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.24.2.1 2002/02/05 02:22:00 wolfsuit Exp $
  */
 
 #include "tclInt.h"
@@ -61,6 +62,30 @@ static char precisionFormat[10] = "%.12g";
 				/* The format string actually used in calls
 				 * to sprintf. */
 TCL_DECLARE_MUTEX(precisionMutex)
+
+/*
+ * Prototypes for procedures defined later in this file.
+ */
+
+static void UpdateStringOfEndOffset _ANSI_ARGS_(( Tcl_Obj* objPtr ));
+static int SetEndOffsetFromAny _ANSI_ARGS_(( Tcl_Interp* interp,
+					     Tcl_Obj* objPtr ));
+
+/*
+ * The following is the Tcl object type definition for an object
+ * that represents a list index in the form, "end-offset".  It is
+ * used as a performance optimization in TclGetIntForIndex.  The
+ * internal rep is an integer, so no memory management is required
+ * for it.
+ */
+
+Tcl_ObjType tclEndOffsetType = {
+    "end-offset",			/* name */
+    (Tcl_FreeInternalRepProc*) NULL,    /* freeIntRepProc */
+    (Tcl_DupInternalRepProc*) NULL,     /* dupIntRepProc */
+    UpdateStringOfEndOffset,		/* updateStringProc */
+    SetEndOffsetFromAny    
+};
 
 
 /*
@@ -395,10 +420,10 @@ Tcl_SplitList(interp, list, argcPtr, argvPtr)
     CONST char *list;		/* Pointer to string with list structure. */
     int *argcPtr;		/* Pointer to location to fill in with
 				 * the number of elements in the list. */
-    char ***argvPtr;		/* Pointer to place to store pointer to
+    CONST char ***argvPtr;	/* Pointer to place to store pointer to
 				 * array of pointers to list elements. */
 {
-    char **argv;
+    CONST char **argv;
     CONST char *l;
     char *p;
     int length, size, i, result, elSize, brace;
@@ -417,7 +442,7 @@ Tcl_SplitList(interp, list, argcPtr, argvPtr)
 	}
     }
     size++;			/* Leave space for final NULL pointer. */
-    argv = (char **) ckalloc((unsigned)
+    argv = (CONST char **) ckalloc((unsigned)
 	    ((size * sizeof(char *)) + (l - list) + 1));
     length = strlen(list);
     for (i = 0, p = ((char *) argv) + size*sizeof(char *);
@@ -822,7 +847,7 @@ Tcl_ConvertCountedElement(src, length, dst, flags)
 char *
 Tcl_Merge(argc, argv)
     int argc;			/* How many strings to merge. */
-    char * CONST *argv;		/* Array of string values. */
+    CONST char * CONST *argv;	/* Array of string values. */
 {
 #   define LOCAL_SIZE 20
     int localFlags[LOCAL_SIZE], *flagPtr;
@@ -925,7 +950,7 @@ Tcl_Backslash(src, readPtr)
 char *
 Tcl_Concat(argc, argv)
     int argc;			/* Number of strings to concatenate. */
-    char * CONST *argv;		/* Array of strings to concatenate. */
+    CONST char * CONST *argv;	/* Array of strings to concatenate. */
 {
     int totalSize, i;
     char *p;
@@ -1202,6 +1227,10 @@ Tcl_StringCaseMatch(string, pattern, nocase)
 	    if (p == '\0') {
 		return 1;
 	    }
+	    Tcl_UtfToUniChar(pattern, &ch2);
+	    if (nocase) {
+		ch2 = Tcl_UniCharToLower(ch2);
+	    }
 	    while (1) {
 		/*
 		 * Optimization for matching - cruise through the string
@@ -1210,16 +1239,25 @@ Tcl_StringCaseMatch(string, pattern, nocase)
 		 */
 		if ((p != '[') && (p != '?') && (p != '\\')) {
 		    if (nocase) {
-			while (*string && (p != *string)) {
-			    ch2 = Tcl_UtfToUniChar(string, &ch1);
-			    if (p == Tcl_UniCharToLower(ch1)) {
+			while (*string) {
+			    int charLen = Tcl_UtfToUniChar(string, &ch1);
+			    if (ch2==ch1 || ch2==Tcl_UniCharToLower(ch1)) {
 				break;
 			    }
-			    string += ch2;
+			    string += charLen;
 			}
 		    } else {
-			while (*string && (p != *string)) {
-			    string += Tcl_UtfToUniChar(string, &ch1);
+			/*
+			 * There's no point in trying to make this code
+			 * shorter, as the number of bytes you want to
+			 * compare each time is non-constant.
+			 */
+			while (*string) {
+			    int charLen = Tcl_UtfToUniChar(string, &ch1);
+			    if (ch2 == ch1) {
+				break;
+			    }
+			    string += charLen;
 			}
 		    }
 		}
@@ -1844,7 +1882,8 @@ TclPrecTraceProc(clientData, interp, name1, name2, flags)
     char *name2;		/* Second part of variable name. */
     int flags;			/* Information about what happened. */
 {
-    char *value, *end;
+    CONST char *value;
+    char *end;
     int prec;
 
     /*
@@ -2160,45 +2199,187 @@ TclGetIntForIndex(interp, objPtr, endValue, indexPtr)
     char *bytes;
     int length, offset;
 
+    /* If the object is already an integer, use it. */
+
     if (objPtr->typePtr == &tclIntType) {
 	*indexPtr = (int)objPtr->internalRep.longValue;
 	return TCL_OK;
     }
 
-    bytes = Tcl_GetStringFromObj(objPtr, &length);
+    if ( SetEndOffsetFromAny( NULL, objPtr ) == TCL_OK ) {
 
-    if ((*bytes != 'e') || (strncmp(bytes, "end",
-	    (size_t)((length > 3) ? 3 : length)) != 0)) {
-	if (Tcl_GetIntFromObj(NULL, objPtr, &offset) != TCL_OK) {
-	    goto intforindex_error;
-	}
+	/*
+	 * If the object is already an offset from the end of the list, or
+	 * can be converted to one, use it.
+	 */
+
+	*indexPtr = endValue + objPtr->internalRep.longValue;
+
+    } else if ( Tcl_GetIntFromObj( NULL, objPtr, &offset ) == TCL_OK ) {
+
+	/*
+	 * If the object can be converted to an integer, use that.
+	 */
+
 	*indexPtr = offset;
+
+    } else {
+
+	/*
+	 * Report a parse error.
+	 */
+
+	if ((Interp *)interp != NULL) {
+	    bytes = Tcl_GetStringFromObj( objPtr, &length );
+	    Tcl_AppendStringsToObj( Tcl_GetObjResult(interp),
+				    "bad index \"", bytes,
+				    "\": must be integer or end?-integer?",
+				    (char *) NULL);
+	    if ( !strncmp ( bytes, "end-", 3 ) ) {
+		bytes += 3;
+	    }
+	    TclCheckBadOctal(interp, bytes);
+	}
+
+	return TCL_ERROR;
+    }
+	    
+    return TCL_OK;
+
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * UpdateStringOfEndOffset --
+ *
+ *	Update the string rep of a Tcl object holding an "end-offset"
+ *	expression.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Stores a valid string in the object's string rep.
+ *
+ * This procedure does NOT free any earlier string rep.  If it is
+ * called on an object that already has a valid string rep, it will
+ * leak memory.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+UpdateStringOfEndOffset( objPtr )
+    register Tcl_Obj* objPtr;
+{
+    char buffer[ TCL_INTEGER_SPACE + sizeof("end") + 1 ];
+    register int len;
+
+    strcpy( buffer, "end" );
+    len = sizeof( "end" ) - 1;
+    if ( objPtr->internalRep.longValue != 0 ) {
+	buffer[len++] = '-';
+	len += TclFormatInt( buffer + len,
+			     -( objPtr->internalRep.longValue ) );
+    }
+    objPtr->bytes = ckalloc( (unsigned) ( len + 1 ) );
+    strcpy( objPtr->bytes, buffer );
+    objPtr->length = len;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SetEndOffsetFromAny --
+ *
+ *	Look for a string of the form "end-offset" and convert it
+ *	to an internal representation holding the offset.
+ *
+ * Results:
+ *	Returns TCL_OK if ok, TCL_ERROR if the string was badly formed.
+ *
+ * Side effects:
+ *	If interp is not NULL, stores an error message in the
+ *	interpreter result.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+SetEndOffsetFromAny( Tcl_Interp* interp,
+				/* Tcl interpreter or NULL */
+		     Tcl_Obj* objPtr )
+				/* Pointer to the object to parse */
+{
+    int offset;			/* Offset in the "end-offset" expression */
+    Tcl_ObjType* oldTypePtr = objPtr->typePtr;
+				/* Old internal rep type of the object */
+    register char* bytes;	/* String rep of the object */
+    int length;			/* Length of the object's string rep */
+
+    /* If it's already the right type, we're fine. */
+
+    if ( objPtr->typePtr == &tclEndOffsetType ) {
 	return TCL_OK;
     }
 
+    /* Check for a string rep of the right form. */
+
+    bytes = Tcl_GetStringFromObj(objPtr, &length);
+    if ((*bytes != 'e') || (strncmp(bytes, "end",
+	    (size_t)((length > 3) ? 3 : length)) != 0)) {
+	if ( interp != NULL ) {
+	    Tcl_AppendStringsToObj( Tcl_GetObjResult( interp ),
+				    "bad index \"", bytes,
+				    "\": must be end?-integer?",
+				    (char*) NULL );
+	}
+	return TCL_ERROR;
+    }
+
+    /* Convert the string rep */
+
     if (length <= 3) {
-	*indexPtr = endValue;
+	offset = 0;
     } else if (bytes[3] == '-') {
+
 	/*
 	 * This is our limited string expression evaluator
 	 */
 	if (Tcl_GetInt(interp, bytes+3, &offset) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	*indexPtr = endValue + offset;
+
     } else {
-	intforindex_error:
-	if ((Interp *)interp != NULL) {
-	    Tcl_ResetResult(interp);
+
+	/* Conversion failed.  Report the error. */
+
+
+	if ( interp != NULL ) {
 	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		    "bad index \"", bytes,
-		    "\": must be integer or end?-integer?", (char *) NULL);
-	    TclCheckBadOctal(interp, bytes);
+				   "bad index \"", bytes,
+				   "\": must be integer or end?-integer?",
+				   (char *) NULL);
 	}
 	return TCL_ERROR;
+
     }
+
+    /*
+     * The conversion succeeded. Free the old internal rep and set
+     * the new one.
+     */
+
+    if ((oldTypePtr != NULL) && (oldTypePtr->freeIntRepProc != NULL)) {
+	oldTypePtr->freeIntRepProc(objPtr);
+    }
+    
+    objPtr->internalRep.longValue = offset;
+    objPtr->typePtr = &tclEndOffsetType;
+
     return TCL_OK;
-}
+}    
 
 /*
  *----------------------------------------------------------------------
@@ -2285,4 +2466,30 @@ CONST char *
 Tcl_GetNameOfExecutable()
 {
     return (tclExecutableName);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpGetTime --
+ *
+ *	Deprecated synonym for Tcl_GetTime.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Stores current time in the buffer designated by "timePtr"
+ *
+ * This procedure is provided for the benefit of extensions written
+ * before Tcl_GetTime was exported from the library.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclpGetTime( timePtr )
+    Tcl_Time* timePtr;
+{
+    Tcl_GetTime( timePtr );
 }

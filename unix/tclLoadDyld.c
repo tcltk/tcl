@@ -2,17 +2,16 @@
  * tclLoadDyld.c --
  *
  *     This procedure provides a version of the TclLoadFile that
- *     works with NeXT/Apple's dyld dynamic loading.  This file
+ *     works with Apple's dyld dynamic loading.  This file
  *     provided by Wilfredo Sanchez (wsanchez@apple.com).
- *     The works on Mac OS X and Mac OS X Server.
- *     It should work with OpenStep, but it's not been tried.
+ *     This works on Mac OS X.
  *
  * Copyright (c) 1995 Apple Computer, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoadDyld.c,v 1.5.2.1 2001/10/15 09:13:49 wolfsuit Exp $
+ * RCS: @(#) $Id: tclLoadDyld.c,v 1.5.2.2 2002/02/05 02:22:05 wolfsuit Exp $
  */
 
 #include "tclInt.h"
@@ -60,33 +59,53 @@ TclpLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr,
 {
     NSSymbol symbol;
     enum DYLD_BOOL dyld_return;
-    CONST char *native;
-    char *name;
+    Tcl_DString newName, ds;
+    char *native;
 
     native = Tcl_FSGetNativePath(pathPtr);
-
     dyld_return = NSAddLibrary(native);
     
     if (dyld_return !=  TRUE) {
-      Tcl_SetResult (interp, "dyld: Couldn't add library", TCL_STATIC);
-      return TCL_ERROR;
+	Tcl_AppendResult(interp, "dyld: couldn't add library \"",
+		Tcl_GetString(pathPtr),
+		"\": ", Tcl_PosixError(interp), (char *) NULL);
+	return TCL_ERROR;
     }
 
-    name = (char*)malloc(sizeof(char)*(strlen(sym1)+2));
-    sprintf(name, "_%s", sym1);
-    symbol = NSLookupAndBindSymbol(name);
-    free(name);
-    *proc1Ptr = NSAddressOfSymbol(symbol);
-
-    name = (char*)malloc(sizeof(char)*(strlen(sym2)+2));
-    sprintf(name, "_%s", sym2);
-    symbol = NSLookupAndBindSymbol(name);
-    free(name);
-    *proc2Ptr = NSAddressOfSymbol(symbol);
-
-    *clientDataPtr = NULL;
     *unloadProcPtr = &TclpUnloadFile;
-    
+
+    /* 
+     * dyld adds an underscore to the beginning of symbol names.
+     */
+
+    native = Tcl_UtfToExternalDString(NULL, sym1, -1, &ds);
+    Tcl_DStringInit(&newName);
+    Tcl_DStringAppend(&newName, "_", 1);
+    native = Tcl_DStringAppend(&newName, native, -1);
+    if(NSIsSymbolNameDefined(native)) {
+        symbol = NSLookupAndBindSymbol(native);
+        *proc1Ptr = NSAddressOfSymbol(symbol);
+        *clientDataPtr = NSModuleForSymbol(symbol);
+    } else {
+        *proc1Ptr=NULL;
+        *clientDataPtr=NULL;
+    }
+    Tcl_DStringFree(&newName);
+    Tcl_DStringFree(&ds);
+
+    native = Tcl_UtfToExternalDString(NULL, sym2, -1, &ds);
+    Tcl_DStringInit(&newName);
+    Tcl_DStringAppend(&newName, "_", 1);
+    native = Tcl_DStringAppend(&newName, native, -1);
+    if(NSIsSymbolNameDefined(native)) {
+        symbol = NSLookupAndBindSymbol(native);
+        *proc2Ptr = NSAddressOfSymbol(symbol);
+    } else {
+        *proc2Ptr=NULL;
+    }
+    Tcl_DStringFree(&newName);
+    Tcl_DStringFree(&ds);
+
     return TCL_OK;
 }
 
@@ -141,7 +160,7 @@ TclpUnloadFile(clientData)
 
 int
 TclGuessPackageName(fileName, bufPtr)
-    char *fileName;	       /* Name of file containing package (already
+    CONST char *fileName;      /* Name of file containing package (already
 				* translated to local form if needed). */
     Tcl_DString *bufPtr;       /* Initialized empty dstring.  Append
 				* package name to this if possible. */

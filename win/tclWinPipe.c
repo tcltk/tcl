@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPipe.c,v 1.20 2001/09/06 01:38:02 davygrvy Exp $
+ * RCS: @(#) $Id: tclWinPipe.c,v 1.20.8.1 2002/02/05 02:22:05 wolfsuit Exp $
  */
 
 #include "tclWinInt.h"
@@ -180,7 +180,7 @@ typedef struct PipeEvent {
 static int		ApplicationType(Tcl_Interp *interp,
 			    const char *fileName, char *fullName);
 static void		BuildCommandLine(const char *executable, int argc, 
-			    char **argv, Tcl_DString *linePtr);
+			    CONST char **argv, Tcl_DString *linePtr);
 static BOOL		HasConsole(void);
 static int		PipeBlockModeProc(ClientData instanceData, int mode);
 static void		PipeCheckProc(ClientData clientData, int flags);
@@ -193,8 +193,8 @@ static int		PipeGetHandleProc(ClientData instanceData,
 static void		PipeInit(void);
 static int		PipeInputProc(ClientData instanceData, char *buf,
 			    int toRead, int *errorCode);
-static int		PipeOutputProc(ClientData instanceData, char *buf,
-			    int toWrite, int *errorCode);
+static int		PipeOutputProc(ClientData instanceData,
+			    CONST char *buf, int toWrite, int *errorCode);
 static DWORD WINAPI	PipeReaderThread(LPVOID arg);
 static void		PipeSetupProc(ClientData clientData, int flags);
 static void		PipeWatchProc(ClientData instanceData, int mask);
@@ -578,7 +578,7 @@ TclpOpenFile(path, mode)
     HANDLE handle;
     DWORD accessMode, createMode, shareMode, flags;
     Tcl_DString ds;
-    TCHAR *nativePath;
+    CONST TCHAR *nativePath;
     
     /*
      * Map the access bits to the NT access mode.
@@ -949,7 +949,7 @@ TclpCreateProcess(
 				 * Error messages from the child process
 				 * itself are sent to errorFile. */
     int argc,			/* Number of arguments in following array. */
-    char **argv,		/* Array of argument strings.  argv[0]
+    CONST char **argv,		/* Array of argument strings.  argv[0]
 				 * contains the name of the executable
 				 * converted to native format (using the
 				 * Tcl_TranslateFileName call).  Additional
@@ -1360,7 +1360,7 @@ ApplicationType(interp, originalName, fullName)
     DWORD attr, read;
     IMAGE_DOS_HEADER header;
     Tcl_DString nameBuf, ds;
-    TCHAR *nativeName;
+    CONST TCHAR *nativeName;
     WCHAR nativeFullPath[MAX_PATH];
     static char extensions[][5] = {"", ".com", ".exe", ".bat"};
 
@@ -1524,7 +1524,7 @@ BuildCommandLine(
     CONST char *executable,	/* Full path of executable (including 
 				 * extension).  Replacement for argv[0]. */
     int argc,			/* Number of arguments. */
-    char **argv,		/* Argument strings in UTF. */
+    CONST char **argv,		/* Argument strings in UTF. */
     Tcl_DString *linePtr)	/* Initialized Tcl_DString that receives the
 				 * command line (TCHAR). */
 {
@@ -2133,7 +2133,7 @@ PipeInputProc(
 static int
 PipeOutputProc(
     ClientData instanceData,		/* Pipe state. */
-    char *buf,				/* The data buffer. */
+    CONST char *buf,			/* The data buffer. */
     int toWrite,			/* How many bytes to write? */
     int *errorCode)			/* Where to store error code. */
 {

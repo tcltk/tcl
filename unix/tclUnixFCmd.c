@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFCmd.c,v 1.13 2001/09/28 11:10:56 vincentdarley Exp $
+ * RCS: @(#) $Id: tclUnixFCmd.c,v 1.13.2.1 2002/02/05 02:22:05 wolfsuit Exp $
  *
  * Portions of this code were derived from NetBSD source code which has
  * the following copyright notice:
@@ -110,7 +110,7 @@ enum {
     UNIX_PERMISSIONS_ATTRIBUTE
 };
 
-char *tclpFileAttrStrings[] = {
+CONST char *tclpFileAttrStrings[] = {
     "-group",
     "-owner",
     "-permissions",
@@ -1647,7 +1647,7 @@ TclpObjNormalizePath(interp, pathPtr, nextCheckpoint)
 	if ((cur == '/' || cur == 0) && (path != currentPathEndPosition)) {
 	    /* Reached directory separator, or end of string */
 	    Tcl_DString ds;
-	    char *nativePath;
+	    CONST char *nativePath;
 	    int accessOk;
 
 	    nativePath = Tcl_UtfToExternalDString(NULL, path, 

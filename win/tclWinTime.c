@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinTime.c,v 1.8 2001/09/06 11:48:44 davygrvy Exp $
+ * RCS: @(#) $Id: tclWinTime.c,v 1.8.8.1 2002/02/05 02:22:05 wolfsuit Exp $
  */
 
 #include "tclWinInt.h"
@@ -131,7 +131,7 @@ unsigned long
 TclpGetSeconds()
 {
     Tcl_Time t;
-    TclpGetTime( &t );
+    Tcl_GetTime( &t );
     return t.sec;
 }
 
@@ -159,14 +159,14 @@ unsigned long
 TclpGetClicks()
 {
     /*
-     * Use the TclpGetTime abstraction to get the time in microseconds,
+     * Use the Tcl_GetTime abstraction to get the time in microseconds,
      * as nearly as we can, and return it.
      */
 
     Tcl_Time now;		/* Current Tcl time */
     unsigned long retval;	/* Value to return */
 
-    TclpGetTime( &now );
+    Tcl_GetTime( &now );
     retval = ( now.sec * 1000000 ) + now.usec;
     return retval;
 
@@ -205,7 +205,7 @@ TclpGetTimeZone (currentTime)
 /*
  *----------------------------------------------------------------------
  *
- * TclpGetTime --
+ * Tcl_GetTime --
  *
  *	Gets the current system time in seconds and microseconds
  *	since the beginning of the epoch: 00:00 UCT, January 1, 1970.
@@ -226,7 +226,7 @@ TclpGetTimeZone (currentTime)
  */
 
 void
-TclpGetTime(timePtr)
+Tcl_GetTime(timePtr)
     Tcl_Time *timePtr;		/* Location to store time information. */
 {
 	

@@ -8,23 +8,21 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacInt.h,v 1.6 1999/08/16 00:09:18 jingham Exp $
+ * RCS: @(#) $Id: tclMacInt.h,v 1.6.18.1 2002/02/05 02:22:02 wolfsuit Exp $
  */
 
 #ifndef _TCLMACINT
 #define _TCLMACINT
 
-#ifndef _TCL
-#   include "tcl.h"
+#ifndef _TCLINT
+#include "tclInt.h"
 #endif
-#ifndef _TCLMAC
-#   include "tclMac.h"
+#ifndef _TCLPORT
+#include "tclPort.h"
 #endif
 
 #include <Events.h>
 #include <Files.h>
-
-#pragma export on
 
 /*
  * Defines to control stack behavior.
@@ -46,6 +44,11 @@
 
 #define TCL_MAC_STACK_THRESHOLD 16384
 
+#ifdef BUILD_tcl
+# undef TCL_STORAGE_CLASS
+# define TCL_STORAGE_CLASS DLLEXPORT
+#endif
+
 /*
  * This flag is passed to TclMacRegisterResourceFork
  * by a file (usually a library) whose resource fork
@@ -63,12 +66,12 @@
  */
 
 EXTERN char *	TclMacGetFontEncoding _ANSI_ARGS_((int fontId));
-EXTERN int	TclMacHaveThreads(void);
+EXTERN int		TclMacHaveThreads _ANSI_ARGS_((void));
+EXTERN long		TclpGetGMTOffset _ANSI_ARGS_((void));
 
-#include "tclPort.h"
-#include "tclPlatDecls.h"
+# undef TCL_STORAGE_CLASS
+# define TCL_STORAGE_CLASS DLLIMPORT
+
 #include "tclIntPlatDecls.h"
     
-#pragma export reset
-
 #endif /* _TCLMACINT */

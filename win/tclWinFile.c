@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.17 2001/09/27 00:36:16 dgp Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.17.2.1 2002/02/05 02:22:05 wolfsuit Exp $
  */
 
 #include "tclWinInt.h"
@@ -30,9 +30,9 @@ typedef NET_API_STATUS NET_API_FUNCTION NETAPIBUFFERFREEPROC
 typedef NET_API_STATUS NET_API_FUNCTION NETGETDCNAMEPROC
 	(LPWSTR servername, LPWSTR domainname, LPBYTE *bufptr);
 
-static int NativeAccess(TCHAR *path, int mode);
-static int NativeStat(TCHAR *path, struct stat *statPtr);
-static int NativeIsExec(TCHAR *path);
+static int NativeAccess(CONST TCHAR *path, int mode);
+static int NativeStat(CONST TCHAR *path, struct stat *statPtr);
+static int NativeIsExec(CONST TCHAR *path);
 
 
 /*
@@ -80,7 +80,7 @@ TclpFindExecutable(argv0)
      */
 
     (*tclWinProcs->getModuleFileNameProc)(NULL, wName, MAX_PATH);
-    Tcl_WinTCharToUtf((TCHAR *) wName, -1, &ds);
+    Tcl_WinTCharToUtf((CONST TCHAR *) wName, -1, &ds);
 
     tclNativeExecutableName = ckalloc((unsigned) (Tcl_DStringLength(&ds) + 1));
     strcpy(tclNativeExecutableName, Tcl_DStringValue(&ds));
@@ -114,7 +114,7 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
     Tcl_Interp *interp;		/* Interpreter to receive errors. */
     Tcl_Obj *resultPtr;		/* List object to lappend results. */
     Tcl_Obj *pathPtr;	        /* Contains path to directory to search. */
-    char *pattern;		/* Pattern to match against. */
+    CONST char *pattern;	/* Pattern to match against. */
     Tcl_GlobTypeData *types;	/* Object containing list of acceptable types.
 				 * May be NULL. In particular the directory
 				 * flag is very important. */
@@ -132,7 +132,7 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
     Tcl_DString ds;
     Tcl_DString dsOrig;
     Tcl_Obj *fileNamePtr;
-    TCHAR *nativeName;
+    CONST TCHAR *nativeName;
     int matchSpecialDots;
     
     /*
@@ -269,15 +269,15 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 
     for (found = 1; found != 0; 
 	    found = (*tclWinProcs->findNextFileProc)(handle, &data)) {
-	TCHAR *nativeMatchResult;
-	char *name, *fname;
+	CONST TCHAR *nativeMatchResult;
+	CONST char *name, *fname;
 	
 	int typeOk = 1;
 	
 	if (tclWinProcs->useWide) {
-	    nativeName = (TCHAR *) data.w.cFileName;
+	    nativeName = (CONST TCHAR *) data.w.cFileName;
 	} else {
-	    nativeName = (TCHAR *) data.a.cFileName;
+	    nativeName = (CONST TCHAR *) data.a.cFileName;
 	}
 	name = Tcl_WinTCharToUtf(nativeName, -1, &ds);
 
@@ -339,8 +339,6 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 		typeOk = 0;
 	    }
 	} else {
-	    struct stat buf;
-	    
 	    if (attr & FILE_ATTRIBUTE_HIDDEN) {
 		/* If invisible */
 		if ((types->perm == 0) || 
@@ -369,12 +367,16 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 		}
 	    }
 	    if (typeOk && types->type != 0) {
-		if (types->perm == 0) {
-		    /* We haven't yet done a stat on the file */
-		    if (NativeStat(nativeName, &buf) != 0) {
-			/* Posix error occurred */
-			typeOk = 0;
-		    }
+		struct stat buf;
+		
+		if (NativeStat(nativeName, &buf) != 0) {
+		    /* 
+		     * Posix error occurred, either the file
+		     * has disappeared, or there is some other
+		     * strange error.  In any case we don't
+		     * return this file.
+		     */
+		    typeOk = 0;
 		}
 		if (typeOk) {
 		    /*
@@ -497,7 +499,7 @@ TclpGetUserHome(name, bufferPtr)
 	    Tcl_DString ds;
 	    int nameLen, badDomain;
 	    char *domain;
-	    WCHAR *wName, *wHomeDir, *wDomain;
+	    WCHAR *wHomeDir, *wDomain;
 	    WCHAR buf[MAX_PATH];
 
 	    badDomain = 0;
@@ -506,16 +508,18 @@ TclpGetUserHome(name, bufferPtr)
 	    domain = strchr(name, '@');
 	    if (domain != NULL) {
 		Tcl_DStringInit(&ds);
-		wName = Tcl_UtfToUniCharDString(domain + 1, -1, &ds);
-		badDomain = (*netGetDCNameProc)(NULL, wName,
+		Tcl_UtfToUniCharDString(domain + 1, -1, &ds);
+		badDomain = (*netGetDCNameProc)(NULL,
+			(LPWSTR) Tcl_DStringValue(&ds),
 			(LPBYTE *) &wDomain);
 		Tcl_DStringFree(&ds);
 		nameLen = domain - name;
 	    }
 	    if (badDomain == 0) {
 		Tcl_DStringInit(&ds);
-		wName = Tcl_UtfToUniCharDString(name, nameLen, &ds);
-		if ((*netUserGetInfoProc)(wDomain, wName, 1, 
+		Tcl_UtfToUniCharDString(name, nameLen, &ds);
+		if ((*netUserGetInfoProc)(wDomain, 
+			(LPWSTR) Tcl_DStringValue(&ds), 1, 
 			(LPBYTE *) &uiPtr) == 0) {
 		    wHomeDir = uiPtr->usri1_home_dir;
 		    if ((wHomeDir != NULL) && (wHomeDir[0] != L'\0')) {
@@ -592,7 +596,7 @@ TclpGetUserHome(name, bufferPtr)
 
 static int
 NativeAccess(
-    TCHAR *nativePath,		/* Path of file to access (UTF-8). */
+    CONST TCHAR *nativePath,	/* Path of file to access (UTF-8). */
     int mode)			/* Permission setting. */
 {
     DWORD attr;
@@ -637,10 +641,9 @@ NativeAccess(
 
 static int
 NativeIsExec(nativePath)
-    TCHAR *nativePath;
+    CONST TCHAR *nativePath;
 {
-    CONST char *p;
-    char *path;
+    CONST char *p, *path;
     Tcl_DString ds;
     
     /* 
@@ -693,9 +696,9 @@ TclpObjChdir(pathPtr)
     Tcl_Obj *pathPtr; 	/* Path to new working directory. */
 {
     int result;
-    TCHAR *nativePath;
+    CONST TCHAR *nativePath;
 
-    nativePath = (TCHAR *) Tcl_FSGetNativePath(pathPtr);
+    nativePath = (CONST TCHAR *) Tcl_FSGetNativePath(pathPtr);
     result = (*tclWinProcs->setCurrentDirectoryProc)(nativePath);
 
     if (result == 0) {
@@ -771,7 +774,7 @@ TclpReadlink(path, linkPtr)
  *----------------------------------------------------------------------
  */
 
-char *
+CONST char *
 TclpGetCwd(interp, bufferPtr)
     Tcl_Interp *interp;		/* If non-NULL, used for error reporting. */
     Tcl_DString *bufferPtr;	/* Uninitialized or free DString filled
@@ -791,7 +794,7 @@ TclpGetCwd(interp, bufferPtr)
     }
 
     /*
-     * Watch for the wierd Windows c:\\UNC syntax.
+     * Watch for the weird Windows c:\\UNC syntax.
      */
 
     if (tclWinProcs->useWide) {
@@ -831,6 +834,7 @@ TclpObjStat(pathPtr, statPtr)
     Tcl_Obj *pathPtr;          /* Path of file to stat */
     struct stat *statPtr;      /* Filled with results of stat call. */
 {
+#ifdef OLD_API
     Tcl_Obj *transPtr;
     /*
      * Eliminate file names containing wildcard characters, or subsequent 
@@ -842,7 +846,8 @@ TclpObjStat(pathPtr, statPtr)
 	Tcl_SetErrno(ENOENT);
 	return -1;
     }
-
+#endif
+    
     /*
      * Ensure correct file sizes by forcing the OS to write any
      * pending data to disk. This is done only for channels which are
@@ -851,7 +856,7 @@ TclpObjStat(pathPtr, statPtr)
 
     TclWinFlushDirtyChannels ();
 
-    return NativeStat((TCHAR*) Tcl_FSGetNativePath(pathPtr), statPtr);
+    return NativeStat((CONST TCHAR*) Tcl_FSGetNativePath(pathPtr), statPtr);
 }
 
 /*
@@ -879,87 +884,161 @@ TclpObjStat(pathPtr, statPtr)
 
 static int 
 NativeStat(nativePath, statPtr)
-    TCHAR *nativePath;          /* Path of file to stat */
+    CONST TCHAR *nativePath;   /* Path of file to stat */
     struct stat *statPtr;      /* Filled with results of stat call. */
 {
     Tcl_DString ds;
-    WIN32_FIND_DATAT data;
-    HANDLE handle;
     DWORD attr;
     WCHAR nativeFullPath[MAX_PATH];
     TCHAR *nativePart;
     CONST char *fullPath;
     int dev, mode;
+    
+    if (tclWinProcs->getFileAttributesExProc == NULL) {
+        /* 
+         * We don't have the faster attributes proc, so we're
+         * probably running on Win95
+         */
+	WIN32_FIND_DATAT data;
+	HANDLE handle;
 
-    handle = (*tclWinProcs->findFirstFileProc)(nativePath, &data);
-    if (handle == INVALID_HANDLE_VALUE) {
-	/* 
-	 * FindFirstFile() doesn't work on root directories, so call
-	 * GetFileAttributes() to see if the specified file exists.
-	 */
+	handle = (*tclWinProcs->findFirstFileProc)(nativePath, &data);
+	if (handle == INVALID_HANDLE_VALUE) {
+	    /* 
+	     * FindFirstFile() doesn't work on root directories, so call
+	     * GetFileAttributes() to see if the specified file exists.
+	     */
 
-	attr = (*tclWinProcs->getFileAttributesProc)(nativePath);
-	if (attr == 0xffffffff) {
+	    attr = (*tclWinProcs->getFileAttributesProc)(nativePath);
+	    if (attr == 0xffffffff) {
+		Tcl_SetErrno(ENOENT);
+		return -1;
+	    }
+
+	    /* 
+	     * Make up some fake information for this file.  It has the 
+	     * correct file attributes and a time of 0.
+	     */
+
+	    memset(&data, 0, sizeof(data));
+	    data.a.dwFileAttributes = attr;
+	} else {
+	    FindClose(handle);
+	}
+
+    
+	(*tclWinProcs->getFullPathNameProc)(nativePath, MAX_PATH, nativeFullPath,
+		&nativePart);
+
+	fullPath = Tcl_WinTCharToUtf((TCHAR *) nativeFullPath, -1, &ds);
+
+	dev = -1;
+	if ((fullPath[0] == '\\') && (fullPath[1] == '\\')) {
+	    CONST char *p;
+	    DWORD dw;
+	    CONST TCHAR *nativeVol;
+	    Tcl_DString volString;
+
+	    p = strchr(fullPath + 2, '\\');
+	    p = strchr(p + 1, '\\');
+	    if (p == NULL) {
+		/*
+		 * Add terminating backslash to fullpath or 
+		 * GetVolumeInformation() won't work.
+		 */
+
+		fullPath = Tcl_DStringAppend(&ds, "\\", 1);
+		p = fullPath + Tcl_DStringLength(&ds);
+	    } else {
+		p++;
+	    }
+	    nativeVol = Tcl_WinUtfToTChar(fullPath, p - fullPath, &volString);
+	    dw = (DWORD) -1;
+	    (*tclWinProcs->getVolumeInformationProc)(nativeVol, NULL, 0, &dw,
+		    NULL, NULL, NULL, 0);
+	    /*
+	     * GetFullPathName() turns special devices like "NUL" into "\\.\NUL", 
+	     * but GetVolumeInformation() returns failure for "\\.\NUL".  This 
+	     * will cause "NUL" to get a drive number of -1, which makes about 
+	     * as much sense as anything since the special devices don't live on 
+	     * any drive.
+	     */
+
+	    dev = dw;
+	    Tcl_DStringFree(&volString);
+	} else if ((fullPath[0] != '\0') && (fullPath[1] == ':')) {
+	    dev = Tcl_UniCharToLower(fullPath[0]) - 'a';
+	}
+	Tcl_DStringFree(&ds);
+	
+	attr = data.a.dwFileAttributes;
+
+	statPtr->st_size	= data.a.nFileSizeLow;
+	statPtr->st_atime	= ToCTime(data.a.ftLastAccessTime);
+	statPtr->st_mtime	= ToCTime(data.a.ftLastWriteTime);
+	statPtr->st_ctime	= ToCTime(data.a.ftCreationTime);
+    } else {
+	WIN32_FILE_ATTRIBUTE_DATA data;
+	if((*tclWinProcs->getFileAttributesExProc)(nativePath,
+						   GetFileExInfoStandard,
+						   &data) != TRUE) {
 	    Tcl_SetErrno(ENOENT);
 	    return -1;
 	}
 
-	/* 
-	 * Make up some fake information for this file.  It has the 
-	 * correct file attributes and a time of 0.
-	 */
+    
+	(*tclWinProcs->getFullPathNameProc)(nativePath, MAX_PATH, nativeFullPath,
+		&nativePart);
 
-	memset(&data, 0, sizeof(data));
-	data.a.dwFileAttributes = attr;
-    } else {
-	FindClose(handle);
-    }
+	fullPath = Tcl_WinTCharToUtf((TCHAR *) nativeFullPath, -1, &ds);
 
-    (*tclWinProcs->getFullPathNameProc)(nativePath, MAX_PATH, nativeFullPath,
-	    &nativePart);
+	dev = -1;
+	if ((fullPath[0] == '\\') && (fullPath[1] == '\\')) {
+	    CONST char *p;
+	    DWORD dw;
+	    CONST TCHAR *nativeVol;
+	    Tcl_DString volString;
 
-    fullPath = Tcl_WinTCharToUtf((TCHAR *) nativeFullPath, -1, &ds);
+	    p = strchr(fullPath + 2, '\\');
+	    p = strchr(p + 1, '\\');
+	    if (p == NULL) {
+		/*
+		 * Add terminating backslash to fullpath or 
+		 * GetVolumeInformation() won't work.
+		 */
 
-    dev = -1;
-    if ((fullPath[0] == '\\') && (fullPath[1] == '\\')) {
-	CONST char *p;
-	DWORD dw;
-	TCHAR *nativeVol;
-	Tcl_DString volString;
-
-	p = strchr(fullPath + 2, '\\');
-	p = strchr(p + 1, '\\');
-	if (p == NULL) {
+		fullPath = Tcl_DStringAppend(&ds, "\\", 1);
+		p = fullPath + Tcl_DStringLength(&ds);
+	    } else {
+		p++;
+	    }
+	    nativeVol = Tcl_WinUtfToTChar(fullPath, p - fullPath, &volString);
+	    dw = (DWORD) -1;
+	    (*tclWinProcs->getVolumeInformationProc)(nativeVol, NULL, 0, &dw,
+		    NULL, NULL, NULL, 0);
 	    /*
-	     * Add terminating backslash to fullpath or 
-	     * GetVolumeInformation() won't work.
+	     * GetFullPathName() turns special devices like "NUL" into "\\.\NUL", 
+	     * but GetVolumeInformation() returns failure for "\\.\NUL".  This 
+	     * will cause "NUL" to get a drive number of -1, which makes about 
+	     * as much sense as anything since the special devices don't live on 
+	     * any drive.
 	     */
 
-	    fullPath = Tcl_DStringAppend(&ds, "\\", 1);
-	    p = fullPath + Tcl_DStringLength(&ds);
-	} else {
-	    p++;
+	    dev = dw;
+	    Tcl_DStringFree(&volString);
+	} else if ((fullPath[0] != '\0') && (fullPath[1] == ':')) {
+	    dev = Tcl_UniCharToLower(fullPath[0]) - 'a';
 	}
-	nativeVol = Tcl_WinUtfToTChar(fullPath, p - fullPath, &volString);
-	dw = (DWORD) -1;
-	(*tclWinProcs->getVolumeInformationProc)(nativeVol, NULL, 0, &dw,
-		NULL, NULL, NULL, 0);
-	/*
-	 * GetFullPathName() turns special devices like "NUL" into "\\.\NUL", 
-	 * but GetVolumeInformation() returns failure for "\\.\NUL".  This 
-	 * will cause "NUL" to get a drive number of -1, which makes about 
-	 * as much sense as anything since the special devices don't live on 
-	 * any drive.
-	 */
-
-	dev = dw;
-	Tcl_DStringFree(&volString);
-    } else if ((fullPath[0] != '\0') && (fullPath[1] == ':')) {
-	dev = Tcl_UniCharToLower(fullPath[0]) - 'a';
+	Tcl_DStringFree(&ds);
+	
+	attr = data.dwFileAttributes;
+	
+	statPtr->st_size	= data.nFileSizeLow;
+	statPtr->st_atime	= ToCTime(data.ftLastAccessTime);
+	statPtr->st_mtime	= ToCTime(data.ftLastWriteTime);
+	statPtr->st_ctime	= ToCTime(data.ftCreationTime);
     }
-    Tcl_DStringFree(&ds);
 
-    attr = data.a.dwFileAttributes;
     mode  = (attr & FILE_ATTRIBUTE_DIRECTORY) ? S_IFDIR | S_IEXEC : S_IFREG;
     mode |= (attr & FILE_ATTRIBUTE_READONLY) ? S_IREAD : S_IREAD | S_IWRITE;
     if (NativeIsExec(nativePath)) {
@@ -981,10 +1060,6 @@ NativeStat(nativePath, statPtr)
     statPtr->st_uid	= 0;
     statPtr->st_gid	= 0;
     statPtr->st_rdev	= (dev_t) dev;
-    statPtr->st_size	= data.a.nFileSizeLow;
-    statPtr->st_atime	= ToCTime(data.a.ftLastAccessTime);
-    statPtr->st_mtime	= ToCTime(data.a.ftLastWriteTime);
-    statPtr->st_ctime	= ToCTime(data.a.ftCreationTime);
     return 0;
 }
 
@@ -1138,7 +1213,7 @@ TclpObjAccess(pathPtr, mode)
     Tcl_Obj *pathPtr;
     int mode;
 {
-    return NativeAccess((TCHAR*) Tcl_FSGetNativePath(pathPtr), mode);
+    return NativeAccess((CONST TCHAR*) Tcl_FSGetNativePath(pathPtr), mode);
 }
 
 int 

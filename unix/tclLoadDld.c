@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoadDld.c,v 1.6 2001/09/28 01:21:53 dgp Exp $
+ * RCS: @(#) $Id: tclLoadDld.c,v 1.6.2.1 2002/02/05 02:22:05 wolfsuit Exp $
  */
 
 #include "tclInt.h"
@@ -93,7 +93,7 @@ TclpLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr,
 	firstTime = 0;
     }
 
-    if ((returnCode = dld_link(Tcl_GetString(pathPtr)) != 0) {
+    if ((returnCode = dld_link(Tcl_GetString(pathPtr))) != 0) {
 	Tcl_AppendResult(interp, "couldn't load file \"", 
 			 Tcl_GetString(pathPtr),
 			 "\": ", dld_strerror(returnCode), (char *) NULL);
@@ -161,7 +161,7 @@ TclpUnloadFile(clientData)
 
 int
 TclGuessPackageName(fileName, bufPtr)
-    char *fileName;		/* Name of file containing package (already
+    CONST char *fileName;	/* Name of file containing package (already
 				 * translated to local form if needed). */
     Tcl_DString *bufPtr;	/* Initialized empty dstring.  Append
 				 * package name to this if possible. */

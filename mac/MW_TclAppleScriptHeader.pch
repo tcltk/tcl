@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: MW_TclAppleScriptHeader.pch,v 1.4 1999/05/11 07:11:46 jingham Exp $
+ * RCS: @(#) $Id: MW_TclAppleScriptHeader.pch,v 1.4.28.1 2002/02/05 02:22:01 wolfsuit Exp $
  */
 
 /*
@@ -33,15 +33,4 @@
 
 #include "tclMacCommonPch.h"
 
-/* #define TCL_REGISTER_LIBRARY 1 */
 #define USE_TCL_STUBS
-
-/*
- * Place any includes below that will are needed by the majority of the
- * and is OK to be in any file in the system.  The pragma's are used
- * to control what functions are exported in the Tcl shared library.
- */
-
-#pragma export on
-#pragma export off
-

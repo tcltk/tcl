@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Macintosh.3,v 1.3 2001/05/03 23:57:10 hobbs Exp $
+'\" RCS: @(#) $Id: Macintosh.3,v 1.3.12.1 2002/02/05 02:21:57 wolfsuit Exp $
 '\" 
 .so man.macros
 .TH Tcl_MacSetEventProc 3 "8.1" Tcl "Tcl Library Procedures"
@@ -39,17 +39,17 @@ void
 .AP Tcl_Interp *interp in
 Interpreter to use for error reporting, or NULL if no error reporting is
 desired.
-.AP char *resourceName in
+.AP "CONST char" *resourceName in
 Name of TEXT resource to source, NULL if number should be used.
 .AP int resourceNumber in
 Resource id of source.
-.AP char *fileName in
+.AP "CONST char" *fileName in
 Name of file to process. NULL if application resource.
 .AP Handle resource in
 Handle to TEXT resource.
 .AP long resourceType in
 Type of resource to load.
-.AP char *resFileRef in
+.AP "CONST char" *resFileRef in
 Registered resource file reference, NULL if searching all open resource files.
 .AP int *releaseIt out
 Should we release this resource when done.

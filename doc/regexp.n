@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: regexp.n,v 1.10 2000/09/07 14:27:50 poenitz Exp $
+'\" RCS: @(#) $Id: regexp.n,v 1.10.14.1 2002/02/05 02:21:58 wolfsuit Exp $
 '\" 
 .so man.macros
 .TH regexp n 8.3 Tcl "Tcl Built-In Commands"
@@ -49,7 +49,7 @@ expression. This switch is primarily intended for debugging purposes.
 \fB\-expanded\fR
 Enables use of the expanded regular expression syntax where
 whitespace and comments are ignored.  This is the same as specifying
-the \fB(?x)\fR embedded option (see METASYNTAX, below).
+the \fB(?x)\fR embedded option (see the \fBre_syntax\fR manual page).
 .TP 15
 \fB\-indices\fR
 Changes what is stored in the \fIsubMatchVar\fRs. 
@@ -67,17 +67,18 @@ matches an empty string after any newline in addition to its normal
 function, and `$' matches an empty string before any newline in
 addition to its normal function.  This flag is equivalent to
 specifying both \fB\-linestop\fR and \fB\-lineanchor\fR, or the
-\fB(?n)\fR embedded option (see METASYNTAX, below).
+\fB(?n)\fR embedded option (see the \fBre_syntax\fR manual page).
 .TP 15
 \fB\-linestop\fR
 Changes the behavior of `[^' bracket expressions and `.' so that they
 stop at newlines.  This is the same as specifying the \fB(?p)\fR
-embedded option (see METASYNTAX, below).
+embedded option (see the \fBre_syntax\fR manual page).
 .TP 15
 \fB\-lineanchor\fR
 Changes the behavior of `^' and `$' (the ``anchors'') so they match the
 beginning and end of a line respectively.  This is the same as
-specifying the \fB(?w)\fR embedded option (see METASYNTAX, below).
+specifying the \fB(?w)\fR embedded option (see the \fBre_syntax\fR
+manual page).
 .TP 15
 \fB\-nocase\fR
 Causes upper-case characters in \fIstring\fR to be treated as

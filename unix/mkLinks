@@ -23,9 +23,14 @@ fi
 cd $1
 echo foo > xyzzyTestingAVeryLongFileName.foo
 x=`echo xyzzyTe*`
+echo foo > xyzzyTestingaverylongfilename.foo
+y=`echo xyzzyTestingav*`
 rm xyzzyTe*
 if test "$x" != "xyzzyTestingAVeryLongFileName.foo"; then
     exit
+fi
+if test "$y" != "xyzzyTestingaverylongfilename.foo"; then
+    CASEINSENSITIVEFS=1
 fi
 
 if test -r Access.3; then
@@ -126,9 +131,11 @@ if test -r ChnlStack.3; then
     rm -f Tcl_StackChannel.3
     rm -f Tcl_UnstackChannel.3
     rm -f Tcl_GetStackedChannel.3
+    rm -f Tcl_GetTopChannel.3
     ln ChnlStack.3 Tcl_StackChannel.3
     ln ChnlStack.3 Tcl_UnstackChannel.3
     ln ChnlStack.3 Tcl_GetStackedChannel.3
+    ln ChnlStack.3 Tcl_GetTopChannel.3
 fi
 if test -r CmdCmplt.3; then
     rm -f Tcl_CommandComplete.3
@@ -171,7 +178,6 @@ if test -r CrtChannel.3; then
     rm -f Tcl_ClearChannelHandlers.3
     rm -f Tcl_GetChannelThread.3
     rm -f Tcl_ChannelBuffered.3
-    rm -f Tcl_GetTopChannel.3
     ln CrtChannel.3 Tcl_CreateChannel.3
     ln CrtChannel.3 Tcl_GetChannelInstanceData.3
     ln CrtChannel.3 Tcl_GetChannelType.3
@@ -204,7 +210,6 @@ if test -r CrtChannel.3; then
     ln CrtChannel.3 Tcl_ClearChannelHandlers.3
     ln CrtChannel.3 Tcl_GetChannelThread.3
     ln CrtChannel.3 Tcl_ChannelBuffered.3
-    ln CrtChannel.3 Tcl_GetTopChannel.3
 fi
 if test -r CrtChnlHdlr.3; then
     rm -f Tcl_CreateChannelHandler.3
@@ -305,6 +310,7 @@ if test -r DString.3; then
     rm -f Tcl_DStringLength.3
     rm -f Tcl_DStringValue.3
     rm -f Tcl_DStringSetLength.3
+    rm -f Tcl_DStringTrunc.3
     rm -f Tcl_DStringFree.3
     rm -f Tcl_DStringResult.3
     rm -f Tcl_DStringGetResult.3
@@ -316,6 +322,7 @@ if test -r DString.3; then
     ln DString.3 Tcl_DStringLength.3
     ln DString.3 Tcl_DStringValue.3
     ln DString.3 Tcl_DStringSetLength.3
+    ln DString.3 Tcl_DStringTrunc.3
     ln DString.3 Tcl_DStringFree.3
     ln DString.3 Tcl_DStringResult.3
     ln DString.3 Tcl_DStringGetResult.3
@@ -450,6 +457,9 @@ if test -r FileSystem.3; then
     rm -f Tcl_FSRegister.3
     rm -f Tcl_FSUnregister.3
     rm -f Tcl_FSData.3
+    rm -f Tcl_FSMountsChanged.3
+    rm -f Tcl_FSGetFileSystemForPath.3
+    rm -f Tcl_FSGetPathType.3
     rm -f Tcl_FSCopyFile.3
     rm -f Tcl_FSCopyDirectory.3
     rm -f Tcl_FSCreateDirectory.3
@@ -487,6 +497,9 @@ if test -r FileSystem.3; then
     ln FileSystem.3 Tcl_FSRegister.3
     ln FileSystem.3 Tcl_FSUnregister.3
     ln FileSystem.3 Tcl_FSData.3
+    ln FileSystem.3 Tcl_FSMountsChanged.3
+    ln FileSystem.3 Tcl_FSGetFileSystemForPath.3
+    ln FileSystem.3 Tcl_FSGetPathType.3
     ln FileSystem.3 Tcl_FSCopyFile.3
     ln FileSystem.3 Tcl_FSCopyDirectory.3
     ln FileSystem.3 Tcl_FSCreateDirectory.3
@@ -561,6 +574,10 @@ if test -r GetStdChan.3; then
     rm -f Tcl_SetStdChannel.3
     ln GetStdChan.3 Tcl_GetStdChannel.3
     ln GetStdChan.3 Tcl_SetStdChannel.3
+fi
+if test -r GetTime.3; then
+    rm -f Tcl_GetTime.3
+    ln GetTime.3 Tcl_GetTime.3
 fi
 if test -r GetVersion.3; then
     rm -f Tcl_GetVersion.3
@@ -796,12 +813,12 @@ if test -r Panic.3; then
     rm -f Tcl_Panic.3
     rm -f Tcl_PanicVA.3
     rm -f Tcl_SetPanicProc.3
-    rm -f panic.3
+    if test "${CASEINSENSITIVEFS:-}" != "1"; then rm -f panic.3; fi
     rm -f panicVA.3
     ln Panic.3 Tcl_Panic.3
     ln Panic.3 Tcl_PanicVA.3
     ln Panic.3 Tcl_SetPanicProc.3
-    ln Panic.3 panic.3
+    if test "${CASEINSENSITIVEFS:-}" != "1"; then ln Panic.3 panic.3; fi
     ln Panic.3 panicVA.3
 fi
 if test -r ParseCmd.3; then
@@ -1161,8 +1178,8 @@ if test -r WrongNumArgs.3; then
     ln WrongNumArgs.3 Tcl_WrongNumArgs.3
 fi
 if test -r http.n; then
-    rm -f Http.n
-    ln http.n Http.n
+    if test "${CASEINSENSITIVEFS:-}" != "1"; then rm -f Http.n; fi
+    if test "${CASEINSENSITIVEFS:-}" != "1"; then ln http.n Http.n; fi
 fi
 if test -r library.n; then
     rm -f auto_execok.n

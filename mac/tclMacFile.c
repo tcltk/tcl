@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacFile.c,v 1.12 2001/08/30 08:53:15 vincentdarley Exp $
+ * RCS: @(#) $Id: tclMacFile.c,v 1.12.8.1 2002/02/05 02:22:02 wolfsuit Exp $
  */
 
 /*
@@ -39,7 +39,7 @@ FspLocationFromFsPath(pathPtr, specPtr)
     Tcl_Obj *pathPtr;
     FSSpec* specPtr;
 {
-    char *native = Tcl_FSGetNativePath(pathPtr);
+    CONST char *native = Tcl_FSGetNativePath(pathPtr);
     return FSpLocationFromPath(strlen(native), native, specPtr);
 }
 
@@ -128,7 +128,7 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
     Tcl_Interp *interp;		/* Interpreter to receive errors. */
     Tcl_Obj *resultPtr;		/* List object to lappend results. */
     Tcl_Obj *pathPtr;	        /* Contains path to directory to search. */
-    char *pattern;		/* Pattern to match against. */
+    CONST char *pattern;	/* Pattern to match against. */
     Tcl_GlobTypeData *types;	/* Object containing list of acceptable types.
 				 * May be NULL. In particular the directory
 				 * flag is very important. */
@@ -177,7 +177,7 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
      */
     Tcl_DStringFree(&dsOrig);
     Tcl_DStringAppend(&dsOrig, ":", 1);
-    Tcl_DStringAppend(&dsOrig, fileName2, -1);
+    Tcl_DStringAppend(&dsOrig, Tcl_GetString(fileNamePtr), -1);
     baseLength = Tcl_DStringLength(&dsOrig);
 
     Tcl_UtfToExternalDString(NULL, Tcl_DStringValue(&dsOrig),
@@ -234,9 +234,9 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 		&fileString);
 	if (Tcl_StringMatch(Tcl_DStringValue(&fileString), pattern)) {
 	    int typeOk = 1;
+	    Tcl_Obj *tempName;
 	    Tcl_DStringSetLength(&dsOrig, baseLength);
 	    Tcl_DStringAppend(&dsOrig, Tcl_DStringValue(&fileString), -1);
-	    Tcl_Obj *tempName;
 	    fname = Tcl_DStringValue(&dsOrig);
 	    fnameLen = Tcl_DStringLength(&dsOrig);
 	    
@@ -282,13 +282,10 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 		    }
 		}
 		if (typeOk == 1 && types->type != 0) {
-		    if (types->perm == 0) {
-			/* We haven't yet done a stat on the file */
 			if (TclpObjStat(tempName, &buf) != 0) {
 			    /* Posix error occurred */
 			    typeOk = 0;
 			}
-		    }
 		    if (typeOk) {
 			/*
 			 * In order bcdpfls as in 'find -t'
@@ -544,7 +541,7 @@ TclpObjGetCwd(interp)
     }
 }
 
-char *
+CONST char *
 TclpGetCwd(
     Tcl_Interp *interp,		/* If non-NULL, used for error reporting. */
     Tcl_DString *bufferPtr)	/* Uninitialized or free DString filled
@@ -613,25 +610,23 @@ TclpReadlink(
     Handle theString = NULL;
     int pathSize;
     Tcl_DString ds;
-    char *native;
     
-    native = Tcl_UtfToExternalDString(NULL, path, -1, &ds);
+    Tcl_UtfToExternalDString(NULL, path, -1, &ds);
 
     /*
      * Remove ending colons if they exist.
      */
      
-    while ((strlen(native) != 0) && (path[strlen(native) - 1] == ':')) {
-	native[strlen(native) - 1] = NULL;
+    while ((Tcl_DStringLength(&ds) != 0) && (Tcl_DStringValue(&ds)[Tcl_DStringLength(&ds) - 1] == ':')) {
+	Tcl_DStringSetLength(&ds, Tcl_DStringLength(&ds) - 1);
     }
 
-    if (strchr(native, ':') == NULL) {
-	strcpy(fileName + 1, native);
-	native = NULL;
+    end = strrchr(Tcl_DStringValue(&ds), ':');
+    if (end == NULL ) {
+	strcpy(fileName + 1, Tcl_DStringValue(&ds));
     } else {
-	end = strrchr(native, ':') + 1;
-	strcpy(fileName + 1, end);
-	*end = NULL;
+	strcpy(fileName + 1, end + 1);
+	Tcl_DStringSetLength(&ds, end + 1 - Tcl_DStringValue(&ds));
     }
     fileName[0] = (char) strlen(fileName + 1);
     
@@ -640,8 +635,8 @@ TclpReadlink(
      * we want to look at.
      */
 
-    if (native != NULL) {
-	err = FSpLocationFromPath(strlen(native), native, &fileSpec);
+    if (end != NULL) {
+	err = FSpLocationFromPath(Tcl_DStringLength(&ds), Tcl_DStringValue(&ds), &fileSpec);
 	if (err != noErr) {
 	    Tcl_DStringFree(&ds);
 	    errno = EINVAL;
@@ -907,7 +902,7 @@ TclMacFOpenHack(
     int size;
     FILE * f;
     
-    err = FSpLocationFromPath(strlen(path), (char *) path, &fileSpec);
+    err = FSpLocationFromPath(strlen(path), path, &fileSpec);
     if ((err != noErr) && (err != fnfErr)) {
 	return NULL;
     }
@@ -1010,14 +1005,15 @@ TclMacOSErrorToPosixError(
 
 int
 TclMacChmod(
-    char *path, 
+    CONST char *path, 
     int mode)
 {
     HParamBlockRec hpb;
     OSErr err;
-    
-    c2pstr(path);
-    hpb.fileParam.ioNamePtr = (unsigned char *) path;
+    Str255 pathName;
+    strcpy((char *) pathName + 1, path);
+    pathName[0] = strlen(path);
+    hpb.fileParam.ioNamePtr = pathName;
     hpb.fileParam.ioVRefNum = 0;
     hpb.fileParam.ioDirID = 0;
     
@@ -1026,7 +1022,6 @@ TclMacChmod(
     } else {
         err = PBHSetFLockSync(&hpb);
     }
-    p2cstr((unsigned char *) path);
     
     if (err != noErr) {
         errno = TclMacOSErrorToPosixError(err);

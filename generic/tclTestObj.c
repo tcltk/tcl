@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTestObj.c,v 1.7 2000/11/24 11:27:37 dkf Exp $
+ * RCS: @(#) $Id: tclTestObj.c,v 1.7.14.1 2002/02/05 02:22:00 wolfsuit Exp $
  */
 
 #include "tclInt.h"
@@ -404,8 +404,8 @@ TestindexobjCmd(clientData, interp, objc, objv)
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
     int allowAbbrev, index, index2, setError, i, result;
-    char **argv;
-    static char *tablePtr[] = {"a", "b", "check", (char *) NULL};
+    CONST char **argv;
+    static CONST char *tablePtr[] = {"a", "b", "check", (char *) NULL};
 
     if ((objc == 3) && (strcmp(Tcl_GetString(objv[1]),
 	    "check") == 0)) {
@@ -442,7 +442,7 @@ TestindexobjCmd(clientData, interp, objc, objv)
 	return TCL_ERROR;
     }
 
-    argv = (char **) ckalloc((unsigned) ((objc-3) * sizeof(char *)));
+    argv = (CONST char **) ckalloc((unsigned) ((objc-3) * sizeof(char *)));
     for (i = 4; i < objc; i++) {
 	argv[i-4] = Tcl_GetString(objv[i]);
     }
@@ -774,6 +774,19 @@ TestobjCmd(clientData, interp, objc, objv)
                 varPtr[i] = NULL;
             }
         }
+    } else if ( strcmp ( subCmd, "invalidateStringRep" ) == 0 ) {
+	if ( objc != 3 ) {
+	    goto wrongNumArgs;
+	}
+	index = Tcl_GetString( objv[2] );
+	if ( GetVariableIndex( interp, index, &varIndex ) != TCL_OK ) {
+	    return TCL_ERROR;
+	}
+        if (CheckIfVarUnset(interp, varIndex)) {
+	    return TCL_ERROR;
+	}
+	Tcl_InvalidateStringRep( varPtr[varIndex] );
+	Tcl_SetObjResult( interp, varPtr[varIndex] );
     } else if (strcmp(subCmd, "newobj") == 0) {
         if (objc != 3) {
             goto wrongNumArgs;
@@ -882,7 +895,7 @@ TeststringobjCmd(clientData, interp, objc, objv)
 #define MAX_STRINGS 11
     char *index, *string, *strings[MAX_STRINGS+1];
     TestString *strPtr;
-    static char *options[] = {
+    static CONST char *options[] = {
 	"append", "appendstrings", "get", "get2", "length", "length2",
 	"set", "set2", "setlength", "ualloc", (char *) NULL
     };

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMain.c,v 1.13.2.1 2001/10/15 09:13:49 wolfsuit Exp $
+ * RCS: @(#) $Id: tclMain.c,v 1.13.2.2 2002/02/05 02:22:00 wolfsuit Exp $
  */
 
 #include "tcl.h"
@@ -33,39 +33,105 @@ int (*tclDummyLinkVarPtr)() = Tcl_LinkVar;
  * Declarations for various library procedures and variables (don't want
  * to include tclPort.h here, because people might copy this file out of
  * the Tcl source directory to make their own modified versions).
- * Note:  "exit" should really be declared here, but there's no way to
- * declare it without causing conflicts with other definitions elsewher
- * on some systems, so it's better just to leave it out.
  */
 
+#if !defined(MAC_TCL)
 extern int		isatty _ANSI_ARGS_((int fd));
-extern char *		strcpy _ANSI_ARGS_((char *dst, CONST char *src));
+#else
+#include <unistd.h>
+#endif
 
-static char *tclStartupScriptFileName = NULL;
+static Tcl_Obj *tclStartupScriptPath = NULL;
 
 static Tcl_MainLoopProc *mainLoopProc = NULL;
 
-typedef struct ThreadSpecificData {
-    Tcl_Interp *interp;         /* Interpreter for this thread. */
-    Tcl_DString command;        /* Used to assemble lines of terminal input
-				 * into Tcl commands. */
-    Tcl_DString line;           /* Used to read the next line from the
-				 * terminal input. */
+/* 
+ * Structure defintiion for information used to keep the state of
+ * an interactive command processor that reads lines from standard
+ * input and writes prompts and results to standard output.
+ */
+
+typedef enum {
+    PROMPT_NONE,	/* Print no prompt */
+    PROMPT_START,	/* Print prompt for command start */
+    PROMPT_CONTINUE	/* Print prompt for command continuation */
+} PromptType;
+
+typedef struct InteractiveState {
+    Tcl_Channel input;		/* The standard input channel from which
+				 * lines are read. */
     int tty;                    /* Non-zero means standard input is a 
 				 * terminal-like device.  Zero means it's
 				 * a file. */
-} ThreadSpecificData;
-static Tcl_ThreadDataKey dataKey;
+    Tcl_Obj *commandPtr;	/* Used to assemble lines of input into
+				 * Tcl commands. */
+    PromptType prompt;		/* Next prompt to print */
+    Tcl_Interp *interp;		/* Interpreter that evaluates interactive
+				 * commands. */
+} InteractiveState;
 
 /*
  * Forward declarations for procedures defined later in this file.
  */
 
-static void		Prompt _ANSI_ARGS_((Tcl_Interp *interp, int partial));
+static void		Prompt _ANSI_ARGS_((Tcl_Interp *interp,
+			    PromptType *promptPtr));
 static void		StdinProc _ANSI_ARGS_((ClientData clientData,
 			    int mask));
 
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclSetStartupScriptPath --
+ *
+ *	Primes the startup script VFS path, used to override the
+ *      command line processing.
+ *
+ * Results:
+ *	None. 
+ *
+ * Side effects:
+ *	This procedure initializes the VFS path of the Tcl script to
+ *      run at startup.
+ *
+ *----------------------------------------------------------------------
+ */
+void TclSetStartupScriptPath(pathPtr)
+    Tcl_Obj *pathPtr;
+{
+    if (tclStartupScriptPath != NULL) {
+	Tcl_DecrRefCount(tclStartupScriptPath);
+    }
+    tclStartupScriptPath = pathPtr;
+    if (tclStartupScriptPath != NULL) {
+	Tcl_IncrRefCount(tclStartupScriptPath);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclGetStartupScriptPath --
+ *
+ *	Gets the startup script VFS path, used to override the
+ *      command line processing.
+ *
+ * Results:
+ *	The startup script VFS path, NULL if none has been set.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+Tcl_Obj *TclGetStartupScriptPath()
+{
+    return tclStartupScriptPath;
+}
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -84,9 +150,10 @@ static void		StdinProc _ANSI_ARGS_((ClientData clientData,
  *----------------------------------------------------------------------
  */
 void TclSetStartupScriptFileName(fileName)
-    char *fileName;
+    CONST char *fileName;
 {
-    tclStartupScriptFileName = fileName;
+    Tcl_Obj *pathPtr = Tcl_NewStringObj(fileName,-1);
+    TclSetStartupScriptPath(pathPtr);
 }
 
 
@@ -106,9 +173,14 @@ void TclSetStartupScriptFileName(fileName)
  *
  *----------------------------------------------------------------------
  */
-char *TclGetStartupScriptFileName()
+CONST char *TclGetStartupScriptFileName()
 {
-    return tclStartupScriptFileName;
+    Tcl_Obj *pathPtr = TclGetStartupScriptPath();
+
+    if (pathPtr == NULL) {
+	return NULL;
+    }
+    return Tcl_GetString(pathPtr);
 }
 
 
@@ -144,22 +216,18 @@ Tcl_Main(argc, argv, appInitProc)
 {
     Tcl_Obj *resultPtr;
     Tcl_Obj *commandPtr = NULL;
-    char buffer[1000], *args;
-    int code, gotPartial, length;
+    char buffer[TCL_INTEGER_SPACE + 5], *args;
+    PromptType prompt = PROMPT_START;
+    int code, length, tty;
     int exitCode = 0;
     Tcl_Channel inChannel, outChannel, errChannel;
     Tcl_Interp *interp;
     Tcl_DString argString;
-    ThreadSpecificData *tsdPtr;
 
     Tcl_FindExecutable(argv[0]);
 
-    tsdPtr = (ThreadSpecificData *) 
-	Tcl_GetThreadData(&dataKey, sizeof(ThreadSpecificData));
-    tsdPtr->interp = interp = Tcl_CreateInterp();
-#ifdef TCL_MEM_DEBUG
+    interp = Tcl_CreateInterp();
     Tcl_InitMemory(interp);
-#endif
 
     /*
      * Make command-line arguments available in the Tcl variables "argc"
@@ -167,27 +235,34 @@ Tcl_Main(argc, argv, appInitProc)
      * strip it off and use it as the name of a script file to process.
      */
 
-    if (tclStartupScriptFileName == NULL) {
+    if (TclGetStartupScriptPath() == NULL) {
 	if ((argc > 1) && (argv[1][0] != '-')) {
-	    tclStartupScriptFileName = argv[1];
+	    TclSetStartupScriptFileName(argv[1]);
 	    argc--;
 	    argv++;
 	}
     }
-    args = Tcl_Merge(argc-1, argv+1);
+
+    /*
+     * The CONST casting is safe, and better we do it here than force
+     * all callers of Tcl_Main to do it.  (Those callers are likely
+     * in a main() that can't easily change its signature.)
+     */
+    
+    args = Tcl_Merge(argc-1, (CONST char **)argv+1);
     Tcl_ExternalToUtfDString(NULL, args, -1, &argString);
     Tcl_SetVar(interp, "argv", Tcl_DStringValue(&argString), TCL_GLOBAL_ONLY);
     Tcl_DStringFree(&argString);
     ckfree(args);
 
-    if (tclStartupScriptFileName == NULL) {
+    if (TclGetStartupScriptPath() == NULL) {
 	Tcl_ExternalToUtfDString(NULL, argv[0], -1, &argString);
     } else {
-	tclStartupScriptFileName = Tcl_ExternalToUtfDString(NULL,
-		tclStartupScriptFileName, -1, &argString);
+	TclSetStartupScriptFileName(Tcl_ExternalToUtfDString(NULL,
+		TclGetStartupScriptFileName(), -1, &argString));
     }
 
-    TclFormatInt(buffer, argc-1);
+    TclFormatInt(buffer, (long) argc-1);
     Tcl_SetVar(interp, "argc", buffer, TCL_GLOBAL_ONLY);
     Tcl_SetVar(interp, "argv0", Tcl_DStringValue(&argString), TCL_GLOBAL_ONLY);
 
@@ -195,15 +270,16 @@ Tcl_Main(argc, argv, appInitProc)
      * Set the "tcl_interactive" variable.
      */
 
-    tsdPtr->tty = isatty(0);
+    tty = isatty(0);
     Tcl_SetVar(interp, "tcl_interactive",
-	    ((tclStartupScriptFileName == NULL) && tsdPtr->tty) ? "1" : "0",
+	    ((TclGetStartupScriptPath() == NULL) && tty) ? "1" : "0",
 	    TCL_GLOBAL_ONLY);
     
     /*
      * Invoke application-specific initialization.
      */
 
+    Tcl_Preserve((ClientData) interp);
     if ((*appInitProc)(interp) != TCL_OK) {
 	errChannel = Tcl_GetStdChannel(TCL_STDERR);
 	if (errChannel) {
@@ -213,17 +289,21 @@ Tcl_Main(argc, argv, appInitProc)
 	    Tcl_WriteChars(errChannel, "\n", 1);
 	}
     }
+    if (Tcl_InterpDeleted(interp)) {
+	goto done;
+    }
 
     /*
      * If a script file was specified then just source that file
      * and quit.
      */
 
-    if (tclStartupScriptFileName != NULL) {
-	code = Tcl_EvalFile(interp, tclStartupScriptFileName);
+    if (TclGetStartupScriptPath() != NULL) {
+	code = Tcl_FSEvalFile(interp, TclGetStartupScriptPath());
 	if (code != TCL_OK) {
 	    errChannel = Tcl_GetStdChannel(TCL_STDERR);
 	    if (errChannel) {
+
 		/*
 		 * The following statement guarantees that the errorInfo
 		 * variable is set properly.
@@ -256,49 +336,44 @@ Tcl_Main(argc, argv, appInitProc)
     commandPtr = Tcl_NewObj();
     Tcl_IncrRefCount(commandPtr);
 
+    /*
+     * Get a new value for tty if anyone writes to ::tcl_interactive
+     */
+    Tcl_LinkVar(interp, "tcl_interactive", (char *) &tty, TCL_LINK_BOOLEAN);
     inChannel = Tcl_GetStdChannel(TCL_STDIN);
     outChannel = Tcl_GetStdChannel(TCL_STDOUT);
-    gotPartial = 0;
-    while (1) {
-	if (tsdPtr->tty) {
-	    Tcl_Obj *promptCmdPtr;
-
-	    promptCmdPtr = Tcl_GetVar2Ex(interp,
-		    (gotPartial ? "tcl_prompt2" : "tcl_prompt1"),
-		    NULL, TCL_GLOBAL_ONLY);
-	    if (promptCmdPtr == NULL) {
-                defaultPrompt:
-		if (!gotPartial && outChannel) {
-		    Tcl_WriteChars(outChannel, "% ", 2);
-		}
-	    } else {
-		code = Tcl_EvalObjEx(interp, promptCmdPtr, 0);
-		inChannel = Tcl_GetStdChannel(TCL_STDIN);
-		outChannel = Tcl_GetStdChannel(TCL_STDOUT);
-		errChannel = Tcl_GetStdChannel(TCL_STDERR);
-		if (code != TCL_OK) {
-		    if (errChannel) {
-			Tcl_WriteObj(errChannel, Tcl_GetObjResult(interp));
-			Tcl_WriteChars(errChannel, "\n", 1);
-		    }
-		    Tcl_AddErrorInfo(interp,
-			    "\n    (script that generates prompt)");
-		    goto defaultPrompt;
-		}
+    while ((inChannel != (Tcl_Channel) NULL) && !Tcl_InterpDeleted(interp)) {
+	if (tty) {
+	    Prompt(interp, &prompt);
+	    if (Tcl_InterpDeleted(interp)) {
+		break;
 	    }
-	    if (outChannel) {
-		Tcl_Flush(outChannel);
+	    inChannel = Tcl_GetStdChannel(TCL_STDIN);
+	    if (inChannel == (Tcl_Channel) NULL) {
+	        break;
 	    }
-	}
-	if (!inChannel) {
-	    goto done;
 	}
         length = Tcl_GetsObj(inChannel, commandPtr);
 	if (length < 0) {
-	    goto done;
-	}
-	if ((length == 0) && Tcl_Eof(inChannel) && (!gotPartial)) {
-	    goto done;
+	    if (Tcl_InputBlocked(inChannel)) {
+
+		/*
+		 * This can only happen if stdin has been set to
+		 * non-blocking.  In that case cycle back and try
+		 * again.  This sets up a tight polling loop (since
+		 * we have no event loop running).  If this causes
+		 * bad CPU hogging, we might try toggling the blocking
+		 * on stdin instead.
+		 */
+
+		continue;
+	    }
+
+	    /* 
+	     * Either EOF, or an error on stdin; we're done
+	     */
+
+	    break;
 	}
 
         /*
@@ -307,12 +382,12 @@ Tcl_Main(argc, argv, appInitProc)
 
 	Tcl_AppendToObj(commandPtr, "\n", 1);
 	if (!TclObjCommandComplete(commandPtr)) {
-	    gotPartial = 1;
+	    prompt = PROMPT_CONTINUE;
 	    continue;
 	}
 
-	gotPartial = 0;
-	code = Tcl_RecordAndEvalObj(interp, commandPtr, 0);
+	prompt = PROMPT_START;
+	code = Tcl_RecordAndEvalObj(interp, commandPtr, TCL_EVAL_GLOBAL);
 	inChannel = Tcl_GetStdChannel(TCL_STDIN);
 	outChannel = Tcl_GetStdChannel(TCL_STDOUT);
 	errChannel = Tcl_GetStdChannel(TCL_STDERR);
@@ -324,7 +399,7 @@ Tcl_Main(argc, argv, appInitProc)
 		Tcl_WriteObj(errChannel, Tcl_GetObjResult(interp));
 		Tcl_WriteChars(errChannel, "\n", 1);
 	    }
-	} else if (tsdPtr->tty) {
+	} else if (tty) {
 	    resultPtr = Tcl_GetObjResult(interp);
 	    Tcl_GetStringFromObj(resultPtr, &length);
 	    if ((length > 0) && outChannel) {
@@ -333,43 +408,71 @@ Tcl_Main(argc, argv, appInitProc)
 	    }
 	}
 	if (mainLoopProc != NULL) {
+
 	    /*
 	     * If a main loop has been defined while running interactively,
 	     * we want to start a fileevent based prompt by establishing a
 	     * channel handler for stdin.
 	     */
 
+	    InteractiveState *isPtr = NULL;
+
 	    if (inChannel) {
+	        if (tty) {
+		    Prompt(interp, &prompt);
+	        }
+		isPtr = (InteractiveState *) 
+			ckalloc((int) sizeof(InteractiveState));
+		isPtr->input = inChannel;
+		isPtr->tty = tty;
+		isPtr->commandPtr = commandPtr;
+		isPtr->prompt = prompt;
+		isPtr->interp = interp;
+
+		Tcl_UnlinkVar(interp, "tcl_interactive");
+		Tcl_LinkVar(interp, "tcl_interactive", (char *) &(isPtr->tty),
+			TCL_LINK_BOOLEAN);
+
 		Tcl_CreateChannelHandler(inChannel, TCL_READABLE, StdinProc,
-			(ClientData) inChannel);
+			(ClientData) isPtr);
 	    }
-	    if (tsdPtr->tty) {
-		Prompt(interp, 0);
-	    }
-	    Tcl_DStringInit(&tsdPtr->command);
-	    Tcl_DStringInit(&tsdPtr->line);
 
 	    (*mainLoopProc)();
 	    mainLoopProc = NULL;
-	    break;
+
+	    if (inChannel) {
+		tty = isPtr->tty;
+		Tcl_UnlinkVar(interp, "tcl_interactive");
+		Tcl_LinkVar(interp, "tcl_interactive", (char *) &tty,
+			TCL_LINK_BOOLEAN);
+		prompt = isPtr->prompt;
+		if (isPtr->input != (Tcl_Channel) NULL) {
+		    Tcl_DeleteChannelHandler(isPtr->input, StdinProc,
+			    (ClientData) isPtr);
+		}
+		ckfree((char *)isPtr);
+	    }
+	    inChannel = Tcl_GetStdChannel(TCL_STDIN);
+	    outChannel = Tcl_GetStdChannel(TCL_STDOUT);
+	    errChannel = Tcl_GetStdChannel(TCL_STDERR);
 	}
 #ifdef TCL_MEM_DEBUG
+
+	/*
+	 * This code here only for the (unsupported and deprecated)
+	 * [checkmem] command.
+	 */
+
 	if (tclMemDumpFileName != NULL) {
-	    Tcl_DecrRefCount(commandPtr);
+	    mainLoopProc = NULL;
 	    Tcl_DeleteInterp(interp);
-	    Tcl_Exit(0);
 	}
 #endif
     }
 
-    /*
-     * Rather than calling exit, invoke the "exit" command so that
-     * users can replace "exit" with some other command to do additional
-     * cleanup on exit.  The Tcl_Eval call should never return.
-     */
-
     done:
     if ((exitCode == 0) && (mainLoopProc != NULL)) {
+
 	/*
 	 * If everything has gone OK so far, call the main loop proc,
 	 * if it exists.  Packages (like Tk) can set it to start processing
@@ -382,8 +485,36 @@ Tcl_Main(argc, argv, appInitProc)
     if (commandPtr != NULL) {
 	Tcl_DecrRefCount(commandPtr);
     }
-    sprintf(buffer, "exit %d", exitCode);
-    Tcl_Eval(interp, buffer);
+
+    /*
+     * Rather than calling exit, invoke the "exit" command so that
+     * users can replace "exit" with some other command to do additional
+     * cleanup on exit.  The Tcl_Eval call should never return.
+     */
+
+    if (!Tcl_InterpDeleted(interp)) {
+        sprintf(buffer, "exit %d", exitCode);
+        Tcl_Eval(interp, buffer);
+
+        /*
+         * If Tcl_Eval returns, trying to eval [exit], something
+         * unusual is happening.  Maybe interp has been deleted;
+         * maybe [exit] was redefined.  We still want to cleanup
+         * and exit.
+         */
+
+        if (!Tcl_InterpDeleted(interp)) {
+            Tcl_DeleteInterp(interp);
+        }
+    }
+
+    /*
+     * If we get here, the master interp has been deleted.  Allow
+     * its destruction with the last matching Tcl_Release.
+     */
+
+    Tcl_Release((ClientData) interp);
+    Tcl_Exit(exitCode);
 }
 
 /*
@@ -433,40 +564,38 @@ Tcl_SetMainLoop(proc)
     /* ARGSUSED */
 static void
 StdinProc(clientData, mask)
-    ClientData clientData;		/* Not used. */
+    ClientData clientData;		/* The state of interactive cmd line */
     int mask;				/* Not used. */
 {
-    static int gotPartial = 0;
-    char *cmd;
-    int code, count;
-    Tcl_Channel chan = (Tcl_Channel) clientData;
-    ThreadSpecificData *tsdPtr = (ThreadSpecificData *) 
-            Tcl_GetThreadData(&dataKey, sizeof(ThreadSpecificData));
-    Tcl_Interp *interp = tsdPtr->interp;
+    InteractiveState *isPtr = (InteractiveState *) clientData;
+    Tcl_Channel chan = isPtr->input;
+    Tcl_Obj *commandPtr = isPtr->commandPtr;
+    Tcl_Interp *interp = isPtr->interp;
+    int code, length;
 
-    count = Tcl_Gets(chan, &tsdPtr->line);
-
-    if (count < 0) {
-	if (!gotPartial) {
-	    if (tsdPtr->tty) {
-		Tcl_Exit(0);
-	    } else {
-		Tcl_DeleteChannelHandler(chan, StdinProc, (ClientData) chan);
-	    }
+    length = Tcl_GetsObj(chan, commandPtr);
+    if (length < 0) {
+	if (Tcl_InputBlocked(chan)) {
 	    return;
-	} 
+	}
+	if (isPtr->tty) {
+	    /*
+	     * Would be better to find a way to exit the mainLoop?
+	     * Or perhaps evaluate [exit]?  Leaving as is for now due
+	     * to compatibility concerns.
+	     */
+	    Tcl_Exit(0);
+	}
+	Tcl_DeleteChannelHandler(chan, StdinProc, (ClientData) isPtr);
+	return;
     }
 
-    (void) Tcl_DStringAppend(&tsdPtr->command, Tcl_DStringValue(
-            &tsdPtr->line), -1);
-    Tcl_DStringAppend(&tsdPtr->command, "\n", -1);
-    cmd = Tcl_DStringValue(&tsdPtr->command);
-    Tcl_DStringFree(&tsdPtr->line);
-    if (!Tcl_CommandComplete(cmd)) {
-        gotPartial = 1;
+    Tcl_AppendToObj(commandPtr, "\n", 1);
+    if (!TclObjCommandComplete(commandPtr)) {
+        isPtr->prompt = PROMPT_CONTINUE;
         goto prompt;
     }
-    gotPartial = 0;
+    isPtr->prompt = PROMPT_START;
 
     /*
      * Disable the stdin channel handler while evaluating the command;
@@ -476,34 +605,41 @@ StdinProc(clientData, mask)
      * command being evaluated.
      */
 
-    Tcl_CreateChannelHandler(chan, 0, StdinProc, (ClientData) chan);
-    code = Tcl_RecordAndEval(interp, cmd, TCL_EVAL_GLOBAL);
-    
-    chan = Tcl_GetStdChannel(TCL_STDIN);
-    if (chan) {
+    Tcl_CreateChannelHandler(chan, 0, StdinProc, (ClientData) isPtr);
+    code = Tcl_RecordAndEvalObj(interp, commandPtr, TCL_EVAL_GLOBAL);
+    isPtr->input = chan = Tcl_GetStdChannel(TCL_STDIN);
+    Tcl_DecrRefCount(commandPtr);
+    isPtr->commandPtr = commandPtr = Tcl_NewObj();
+    Tcl_IncrRefCount(commandPtr);
+    if (chan != (Tcl_Channel) NULL) {
 	Tcl_CreateChannelHandler(chan, TCL_READABLE, StdinProc,
-		(ClientData) chan);
+		(ClientData) isPtr);
     }
-    Tcl_DStringFree(&tsdPtr->command);
-    if (Tcl_GetStringResult(interp)[0] != '\0') {
-	if ((code != TCL_OK) || (tsdPtr->tty)) {
-	    chan = Tcl_GetStdChannel(TCL_STDOUT);
-	    if (chan) {
-		Tcl_WriteObj(chan, Tcl_GetObjResult(interp));
-		Tcl_WriteChars(chan, "\n", 1);
-	    }
+    if (code != TCL_OK) {
+	Tcl_Channel errChannel = Tcl_GetStdChannel(TCL_STDERR);
+	if (errChannel != (Tcl_Channel) NULL) {
+	    Tcl_WriteObj(errChannel, Tcl_GetObjResult(interp));
+	    Tcl_WriteChars(errChannel, "\n", 1);
+	}
+    } else if (isPtr->tty) {
+	Tcl_Obj *resultPtr = Tcl_GetObjResult(interp);
+	Tcl_Channel outChannel = Tcl_GetStdChannel(TCL_STDOUT);
+	Tcl_GetStringFromObj(resultPtr, &length);
+	if ((length >0) && (outChannel != (Tcl_Channel) NULL)) {
+	    Tcl_WriteObj(outChannel, resultPtr);
+	    Tcl_WriteChars(outChannel, "\n", 1);
 	}
     }
 
     /*
-     * Output a prompt.
+     * If a tty stdin is still around, output a prompt.
      */
 
     prompt:
-    if (tsdPtr->tty) {
-	Prompt(interp, gotPartial);
+    if (isPtr->tty && (isPtr->input != (Tcl_Channel) NULL)) {
+	Prompt(interp, &(isPtr->prompt));
+	isPtr->input = Tcl_GetStdChannel(TCL_STDIN);
     }
-    Tcl_ResetResult(interp);
 }
 
 /*
@@ -525,45 +661,39 @@ StdinProc(clientData, mask)
  */
 
 static void
-Prompt(interp, partial)
+Prompt(interp, promptPtr)
     Tcl_Interp *interp;			/* Interpreter to use for prompting. */
-    int partial;			/* Non-zero means there already
-					 * exists a partial command, so use
-					 * the secondary prompt. */
+    PromptType *promptPtr;		/* Points to type of prompt to print.
+					 * Filled with PROMPT_NONE after a
+					 * prompt is printed. */
 {
-    char *promptCmd;
+    Tcl_Obj *promptCmdPtr;
     int code;
     Tcl_Channel outChannel, errChannel;
 
-    promptCmd = Tcl_GetVar(interp,
-	partial ? "tcl_prompt2" : "tcl_prompt1", TCL_GLOBAL_ONLY);
-    if (promptCmd == NULL) {
-defaultPrompt:
-	if (!partial) {
+    if (*promptPtr == PROMPT_NONE) {
+	return;
+    }
 
-            /*
-             * We must check that outChannel is a real channel - it
-             * is possible that someone has transferred stdout out of
-             * this interpreter with "interp transfer".
-             */
-
-	    outChannel = Tcl_GetChannel(interp, "stdout", NULL);
-            if (outChannel != (Tcl_Channel) NULL) {
-                Tcl_WriteChars(outChannel, "% ", 2);
-            }
+    promptCmdPtr = Tcl_GetVar2Ex(interp,
+	    ((*promptPtr == PROMPT_CONTINUE) ? "tcl_prompt2" : "tcl_prompt1"),
+	    NULL, TCL_GLOBAL_ONLY);
+    if (Tcl_InterpDeleted(interp)) {
+	return;
+    }
+    if (promptCmdPtr == NULL) {
+	defaultPrompt:
+	outChannel = Tcl_GetStdChannel(TCL_STDOUT);
+	if ((*promptPtr == PROMPT_START)
+		&& (outChannel != (Tcl_Channel) NULL)) {
+	    Tcl_WriteChars(outChannel, "% ", 2);
 	}
     } else {
-	code = Tcl_Eval(interp, promptCmd);
+	code = Tcl_EvalObjEx(interp, promptCmdPtr, TCL_EVAL_GLOBAL);
 	if (code != TCL_OK) {
 	    Tcl_AddErrorInfo(interp,
 		    "\n    (script that generates prompt)");
-            /*
-             * We must check that errChannel is a real channel - it
-             * is possible that someone has transferred stderr out of
-             * this interpreter with "interp transfer".
-             */
-            
-	    errChannel = Tcl_GetChannel(interp, "stderr", NULL);
+	    errChannel = Tcl_GetStdChannel(TCL_STDERR);
             if (errChannel != (Tcl_Channel) NULL) {
                 Tcl_WriteObj(errChannel, Tcl_GetObjResult(interp));
                 Tcl_WriteChars(errChannel, "\n", 1);
@@ -571,8 +701,9 @@ defaultPrompt:
 	    goto defaultPrompt;
 	}
     }
-    outChannel = Tcl_GetChannel(interp, "stdout", NULL);
+    outChannel = Tcl_GetStdChannel(TCL_STDOUT);
     if (outChannel != (Tcl_Channel) NULL) {
 	Tcl_Flush(outChannel);
     }
+    *promptPtr = PROMPT_NONE;
 }

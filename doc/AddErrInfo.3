@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: AddErrInfo.3,v 1.5 2000/07/24 00:03:01 jenglish Exp $
+'\" RCS: @(#) $Id: AddErrInfo.3,v 1.5.14.1 2002/02/05 02:21:57 wolfsuit Exp $
 '\" 
 .so man.macros
 .TH Tcl_AddErrorInfo 3 8.0 Tcl "Tcl Library Procedures"
@@ -26,7 +26,7 @@ Tcl_AddObjErrorInfo, Tcl_AddErrorInfo, Tcl_SetObjErrorCode, Tcl_SetErrorCode, Tc
 .sp
 \fBTcl_SetErrorCodeVA\fR(\fIinterp, argList\fR)
 .sp
-char *
+CONST char *
 \fBTcl_PosixError\fR(\fIinterp\fR)
 .sp
 void
@@ -55,9 +55,9 @@ Last \fIelement\fR argument must be NULL.
 .AP va_list argList in
 An argument list which must have been initialised using
 \fBTCL_VARARGS_START\fR, and cleared using \fBva_end\fR.
-.AP char *script in
+.AP "CONST char" *script in
 Pointer to first character in script containing command (must be <= command)
-.AP char *command in
+.AP "CONST char" *command in
 Pointer to first character in command that generated the error
 .AP int commandLength in
 Number of bytes in command; -1 means use all bytes up to first NULL byte

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: interp.test,v 1.12 2001/03/29 23:24:32 mdejong Exp $
+# RCS: @(#) $Id: interp.test,v 1.12.14.1 2002/02/05 02:22:03 wolfsuit Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -259,6 +259,9 @@ test interp-7.4 {testing basic alias creation} {
 test interp-7.5 {testing basic alias creation} {
     a aliases
 } {foo bar}
+test interp-7.6 {testing basic aliases arg checking} {
+    list [catch {a aliases too many args} msg] $msg
+} {1 {wrong # args: should be "a aliases"}}
 
 # Part 7: testing basic alias invocation
 test interp-8.1 {testing basic alias invocation} {
@@ -271,6 +274,10 @@ test interp-8.2 {testing basic alias invocation} {
     a alias bar in_master a1 a2 a3
     a eval bar s1 s2 s3
 } {seen in master: {a1 a2 a3 s1 s2 s3}}
+test interp-8.3 {testing basic alias invocation} {
+   catch {interp create a}
+   list [catch {a alias} msg] $msg
+} {1 {wrong # args: should be "a alias aliasName ?targetName? ?args..?"}}
 
 # Part 8: Testing aliases for non-existent targets
 test interp-9.1 {testing aliases for non-existent targets} {
@@ -441,6 +448,10 @@ test interp-13.3 {testing foo issafe} {
     interp create {a x3 foo}
     a eval x3 eval foo issafe
 } 1
+test interp-7.6 {testing issafe arg checking} {
+    catch {interp create a}
+    list [catch {a issafe too many args} msg] $msg
+} {1 {wrong # args: should be "a issafe"}}
 
 # part 14: testing interp aliases
 test interp-14.1 {testing interp aliases} {

@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: trace.test,v 1.11 2001/08/13 12:40:15 msofer Exp $
+# RCS: @(#) $Id: trace.test,v 1.11.8.1 2002/02/05 02:22:04 wolfsuit Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -56,6 +56,18 @@ proc traceCommand {oldName newName op} {
     global info
     set info [list $oldName $newName $op]
 }
+
+test trace-0.0 {memory corruption in trace (Tcl Bug 484339)} {
+    # You may need Purify or Electric Fence to reliably
+    # see this one fail.
+    catch {unset z}
+    trace add variable z array {set z(foo) 1 ;#}
+    set res "names: [array names z]"
+    catch {unset ::z}
+    trace variable ::z w {unset ::z; error "memory corruption";#}
+    list [catch {set ::z 1} msg] $msg
+} {1 {can't set "::z": memory corruption}}
+
 # Read-tracing on variables
 
 test trace-1.1 {trace variable reads} {
@@ -140,6 +152,34 @@ test trace-1.10 {trace variable reads} {
     unset x
     set info
 } {}
+test trace-1.11 {read traces that modify the array structure} {
+    catch {unset x}
+    set x(bar) 0 
+    trace variable x r {set x(foo) 1 ;#} 
+    trace variable x r {unset -nocomplain x(bar) ;#} 
+    array get x
+} {}
+test trace-1.12 {read traces that modify the array structure} {
+    catch {unset x}
+    set x(bar) 0 
+    trace variable x r {unset -nocomplain x(bar) ;#} 
+    trace variable x r {set x(foo) 1 ;#} 
+    array get x
+} {}
+test trace-1.13 {read traces that modify the array structure} {
+    catch {unset x}
+    set x(bar) 0 
+    trace variable x r {set x(foo) 1 ;#} 
+    trace variable x r {unset -nocomplain x;#} 
+    list [catch {array get x} res] $res
+} {1 {can't read "x(bar)": no such variable}}
+test trace-1.14 {read traces that modify the array structure} {
+    catch {unset x}
+    set x(bar) 0 
+    trace variable x r {unset -nocomplain x;#} 
+    trace variable x r {set x(foo) 1 ;#} 
+    list [catch {array get x} res] $res
+} {1 {can't read "x(bar)": no such variable}}
 
 # Basic write-tracing on variables
 
@@ -476,6 +516,28 @@ test trace-8.7 {error returns from traces} {
     catch {set x}
     catch {set x}
     trace remove variable x read traceError
+} {}
+test trace-8.8 {error returns from traces} {
+    # Yet more elaborate memory corruption testing that checks nothing
+    # bad happens when the trace deletes itself and installs something
+    # new.  Alas, there is no neat way to guarantee that this test will
+    # fail if there is a problem, but that's life and with the new code
+    # it should *never* fail.
+    #
+    # Adapted from Bug #219393 reported by Don Porter.
+    catch {rename ::foo {}}
+    proc foo {old args} {
+	trace remove variable ::x write [list foo $old]
+	trace add    variable ::x write [list foo $::x]
+	error "foo"
+    }
+    catch {unset ::x ::y}
+    set x junk
+    trace add variable ::x write [list foo $x]
+    for {set y 0} {$y<100} {incr y} {
+	catch {set x junk}
+    }
+    unset x
 } {}
 
 # Check to see that variables are expunged before trace
@@ -863,7 +925,7 @@ test trace-15.3 {special list-handling in trace commands} {
     trace add variable "x y z(a\n\{)" write traceProc
     set "x y z(a\n\{)" 33
     set info
-} "{x y z} a\\n\\{ write"
+} "{x y z} a\\n\\\{ write"
 
 # Check for proper handling of unsets during traces.
 

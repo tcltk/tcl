@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: man2help2.tcl,v 1.6 2000/04/04 08:05:32 hobbs Exp $
+# RCS: @(#) $Id: man2help2.tcl,v 1.6.18.1 2002/02/05 02:22:04 wolfsuit Exp $
 # 
 
 # Global variables used by these scripts:
@@ -271,7 +271,9 @@ proc macro {name args} {
 	    }
 	    tab
 	}
-	AS {}				;# next page and previous page
+	AS {
+	    # next page and previous page
+	}
 	br {
 	    lineBreak	
 	}
@@ -283,7 +285,8 @@ proc macro {name args} {
 	    set state(breakPending) 0
 	    newPara 0i
 	}
-	CS {				;# code section
+	CS {
+	    # code section
 	    incrNestingLevel
 	    set state(noFill) 1
 	    newPara 0i
@@ -510,7 +513,7 @@ proc formattedText {text} {
 	    }
 	    o {
 		text "\\'"
-		regexp "'([^']*)'(.*)" $text all ch text
+		regexp {'([^']*)'(.*)} $text all ch text
 		text $chars($ch)
 	    }
 	    default {
@@ -705,7 +708,7 @@ proc SHmacro {argList} {
 
     set args [join $argList " "]
     if {[llength $argList] < 1} {
-	puts stderr "Bad .SH macro: .$name $args"
+	puts stderr "Bad .SH macro: .SH $args"
     }
 
     # control what the text proc does with text
@@ -827,7 +830,7 @@ proc THmacro {argList} {
 
     if {[llength $argList] != 5} {
 	set args [join $argList " "]
-	puts stderr "Bad .TH macro: .$name $args"
+	puts stderr "Bad .TH macro: .TH $args"
     }
     incr curID
     set name	[lindex $argList 0]		;# Tcl_UpVar

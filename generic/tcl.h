@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.103.2.1 2001/10/15 09:13:49 wolfsuit Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.103.2.2 2002/02/05 02:21:58 wolfsuit Exp $
  */
 
 #ifndef _TCL
@@ -80,9 +80,11 @@ extern "C" {
  */
 
 #ifndef __WIN32__
-#   if defined(_WIN32) || defined(WIN32) || \
-       defined(__CYGWIN__) || defined(__MINGW32__) || defined(__BORLANDC__)
+#   if defined(_WIN32) || defined(WIN32) || defined(__CYGWIN__) || defined(__MINGW32__) || defined(__BORLANDC__)
 #	define __WIN32__
+#	ifndef WIN32
+#	    define WIN32
+#	endif
 #   endif
 #endif
 
@@ -108,6 +110,7 @@ extern "C" {
  */
 
 #ifdef MAC_TCL
+#include <ConditionalMacros.h>
 #   ifndef HAS_STDARG
 #	define HAS_STDARG 1
 #   endif
@@ -219,7 +222,7 @@ extern "C" {
 #   define DLLIMPORT
 #   define DLLEXPORT
 #else
-#   if defined(__WIN32__) && (defined(_MSC_VER) || (__BORLANDC__ >= 0x0550) || (defined(__GNUC__) && defined(__declspec)))
+#   if (defined(__WIN32__) && (defined(_MSC_VER) || (__BORLANDC__ >= 0x0550) || (defined(__GNUC__) && defined(__declspec)))) || (defined(MAC_TCL) && FUNCTION_DECLSPEC)
 #	define DLLIMPORT __declspec(dllimport)
 #	define DLLEXPORT __declspec(dllexport)
 #   else
@@ -241,7 +244,7 @@ extern "C" {
  * name of a library we are building, is set on the compile line for sources
  * that are to be placed in the library.  When this macro is set, the
  * storage class will be set to DLLEXPORT.  At the end of the header file, the
- * storage class will be reset to DLLIMPORt.
+ * storage class will be reset to DLLIMPORT.
  */
 
 #undef TCL_STORAGE_CLASS
@@ -273,6 +276,12 @@ extern "C" {
 #else
 #   define _ANSI_ARGS_(x)	()
 #   define CONST
+#endif
+
+#ifdef USE_NON_CONST
+#   define CONST84
+#else
+#   define CONST84 CONST
 #endif
 
 /*
@@ -943,6 +952,9 @@ typedef struct Tcl_DString {
 /* Required to support old variable/vdelete/vinfo traces */
 #define TCL_TRACE_OLD_STYLE	 0x1000
 #endif
+/* Indicate the semantics of the result of a trace */
+#define TCL_TRACE_RESULT_DYNAMIC 0x8000
+#define TCL_TRACE_RESULT_OBJECT  0x10000
 
 /*
  * Flag values passed to command-related procedures.
@@ -1335,15 +1347,15 @@ typedef int	(Tcl_DriverClose2Proc) _ANSI_ARGS_((ClientData instanceData,
 typedef int	(Tcl_DriverInputProc) _ANSI_ARGS_((ClientData instanceData,
 		    char *buf, int toRead, int *errorCodePtr));
 typedef int	(Tcl_DriverOutputProc) _ANSI_ARGS_((ClientData instanceData,
-		    char *buf, int toWrite, int *errorCodePtr));
+		    CONST84 char *buf, int toWrite, int *errorCodePtr));
 typedef int	(Tcl_DriverSeekProc) _ANSI_ARGS_((ClientData instanceData,
 		    long offset, int mode, int *errorCodePtr));
 typedef int	(Tcl_DriverSetOptionProc) _ANSI_ARGS_((
 		    ClientData instanceData, Tcl_Interp *interp,
-	            char *optionName, char *value));
+	            CONST char *optionName, CONST char *value));
 typedef int	(Tcl_DriverGetOptionProc) _ANSI_ARGS_((
 		    ClientData instanceData, Tcl_Interp *interp,
-		    char *optionName, Tcl_DString *dsPtr));
+		    CONST84 char *optionName, Tcl_DString *dsPtr));
 typedef void	(Tcl_DriverWatchProc) _ANSI_ARGS_((
 		    ClientData instanceData, int mask));
 typedef int	(Tcl_DriverGetHandleProc) _ANSI_ARGS_((
@@ -1386,17 +1398,6 @@ typedef int	(Tcl_DriverHandlerProc) _ANSI_ARGS_((
 #   define Tcl_ValidateAllMemory(x,y)
 
 #endif /* !TCL_MEM_DEBUG */
-
-/*
- * Enum for different end of line translation and recognition modes.
- */
-
-typedef enum Tcl_EolTranslation {
-    TCL_TRANSLATE_AUTO,			/* Eol == \r, \n and \r\n. */
-    TCL_TRANSLATE_CR,			/* Eol == \r. */
-    TCL_TRANSLATE_LF,			/* Eol == \n. */
-    TCL_TRANSLATE_CRLF			/* Eol == \r\n. */
-} Tcl_EolTranslation;
 
 /*
  * struct Tcl_ChannelType:
@@ -1510,9 +1511,9 @@ typedef int (Tcl_FSStatProc) _ANSI_ARGS_((Tcl_Obj *pathPtr, struct stat *buf));
 typedef int (Tcl_FSAccessProc) _ANSI_ARGS_((Tcl_Obj *pathPtr, int mode));
 typedef Tcl_Channel (Tcl_FSOpenFileChannelProc) 
 	_ANSI_ARGS_((Tcl_Interp *interp, Tcl_Obj *pathPtr, 
-	char *modeString, int permissions));
+	CONST84 char *modeString, int permissions));
 typedef int (Tcl_FSMatchInDirectoryProc) _ANSI_ARGS_((Tcl_Interp* interp, 
-	Tcl_Obj *result, Tcl_Obj *pathPtr, char *pattern, 
+	Tcl_Obj *result, Tcl_Obj *pathPtr, CONST84 char *pattern, 
 	Tcl_GlobTypeData * types));
 typedef Tcl_Obj* (Tcl_FSGetCwdProc) _ANSI_ARGS_((Tcl_Interp *interp));
 typedef int (Tcl_FSChdirProc) _ANSI_ARGS_((Tcl_Obj *pathPtr));
@@ -1539,7 +1540,7 @@ typedef int (Tcl_FSNormalizePathProc) _ANSI_ARGS_((Tcl_Interp *interp,
 typedef int (Tcl_FSFileAttrsGetProc) _ANSI_ARGS_((Tcl_Interp *interp,
 			    int index, Tcl_Obj *pathPtr,
 			    Tcl_Obj **objPtrRef));
-typedef char** (Tcl_FSFileAttrStringsProc) _ANSI_ARGS_((Tcl_Obj *pathPtr, 
+typedef CONST84 char** (Tcl_FSFileAttrStringsProc) _ANSI_ARGS_((Tcl_Obj *pathPtr, 
 			    Tcl_Obj** objPtrRef));
 typedef int (Tcl_FSFileAttrsSetProc) _ANSI_ARGS_((Tcl_Interp *interp,
 			    int index, Tcl_Obj *pathPtr,
@@ -2114,7 +2115,7 @@ typedef unsigned short Tcl_UniChar;
  * value since the stubs tables don't match.
  */
 
-#define TCL_STUB_MAGIC 0xFCA3BACF
+#define TCL_STUB_MAGIC ((int)0xFCA3BACF)
 
 /*
  * The following function is required to be defined in all stubs aware
@@ -2151,7 +2152,20 @@ EXTERN CONST char *	Tcl_InitStubs _ANSI_ARGS_((Tcl_Interp *interp,
  * accessible via the stubs table.
  */
 
+/*
+ * tclPlatDecls.h can't be included here on the Mac, as we need
+ * Mac specific headers to define the Mac types used in this file,
+ * but these Mac haders conflict with a number of tk types
+ * and thus can't be included in the globally read tcl.h
+ * This header was originally added here as a fix for bug 5241
+ * (stub link error for symbols in TclPlatStubs table), as a work-
+ * around for the bug on the mac, tclMac.h is included immediately 
+ * after tcl.h in the tcl precompiled header (with DLLEXPORT set).
+ */
+
+#if !defined(MAC_TCL)
 #include "tclPlatDecls.h"
+#endif
 
 /*
  * Public functions that are not accessible via the stubs table.

@@ -2,8 +2,10 @@
 dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
+#
+# RCS: @(#) $Id: configure.in,v 1.72.8.4 2002/02/05 02:22:04 wolfsuit Exp $
+
 AC_INIT(../generic/tcl.h)
-# RCS: @(#) $Id: configure.in,v 1.72.8.3 2001/12/02 01:03:46 wolfsuit Exp $
 
 TCL_VERSION=8.4
 TCL_MAJOR_VERSION=8
@@ -21,6 +23,8 @@ fi
 if test "${exec_prefix}" = "NONE"; then
     exec_prefix=$prefix
 fi
+# libdir must be a fully qualified path and (not ${exec_prefix}/lib)
+eval libdir="$libdir"
 TCL_SRC_DIR=`cd $srcdir/..; pwd`
 
 #------------------------------------------------------------------------
@@ -337,6 +341,12 @@ if test $tcl_ok = yes; then
 fi
 
 #--------------------------------------------------------------------
+# Check for support of nl_langinfo function
+#--------------------------------------------------------------------
+
+SC_ENABLE_LANGINFO
+
+#--------------------------------------------------------------------
 # Look for libraries that we will need when compiling the Tcl shell
 #--------------------------------------------------------------------
 
@@ -378,15 +388,14 @@ TCL_SHARED_LIB_SUFFIX=${SHARED_LIB_SUFFIX}
 SC_ENABLE_SHARED
 SC_ENABLE_FRAMEWORK
 
+TCL_LD_SEARCH_FLAGS="${LD_SEARCH_FLAGS}"
 if test "${SHARED_BUILD}" = "1" -a "${SHLIB_SUFFIX}" != "" ; then
     TCL_SHLIB_CFLAGS="${SHLIB_CFLAGS}"
-    TCL_LD_SEARCH_FLAGS="${LD_SEARCH_FLAGS}"
     eval "TCL_LIB_FILE=libtcl${TCL_SHARED_LIB_SUFFIX}"
     if test "x$DL_OBJS" = "xtclLoadAout.o"; then
 	MAKE_LIB="\${STLIB_LD} \[$]@ \${OBJS}"
     else
 	MAKE_LIB="\${SHLIB_LD} ${TCL_SHLIB_LD_EXTRAS} -o \[$]@ \${OBJS} ${SHLIB_LD_LIBS}"
-	RANLIB=":"
     fi
 else
     case $system in
@@ -401,7 +410,6 @@ else
 	    ;;
     esac
     TCL_SHLIB_CFLAGS=""
-    TCL_LD_SEARCH_FLAGS="${LD_SEARCH_FLAGS}"
     eval "TCL_LIB_FILE=libtcl${TCL_UNSHARED_LIB_SUFFIX}"
     MAKE_LIB="\${STLIB_LD} \[$]@ \${OBJS}"
 fi
@@ -422,30 +430,27 @@ if test "$FRAMEWORK_BUILD" = "1" ; then
     TCL_BUILD_LIB_SPEC="-F`pwd` -framework Tcl"
     TCL_LIB_SPEC="-framework Tcl"
     TCL_LIB_FILE="Tcl"
-else
-    if test "$SHARED_BUILD" = "0" -o $TCL_NEEDS_EXP_FILE = 0; then
-	if test "${TCL_LIB_VERSIONS_OK}" = "ok"; then
-	    TCL_LIB_FLAG="-ltcl${TCL_VERSION}\${TCL_DBGX}"
-	else
-	    TCL_LIB_FLAG="-ltcl`echo ${TCL_VERSION} | tr -d .`\${TCL_DBGX}"
-	fi
-	
-	TCL_BUILD_LIB_SPEC="-L`pwd` ${TCL_LIB_FLAG}"
-	TCL_LIB_SPEC="-L${exec_prefix}/lib ${TCL_LIB_FLAG}"
+elif test "$SHARED_BUILD" = "0" -o $TCL_NEEDS_EXP_FILE = 0; then
+    if test "${TCL_LIB_VERSIONS_OK}" = "ok"; then
+        TCL_LIB_FLAG="-ltcl${TCL_VERSION}\${TCL_DBGX}"
     else
-	TCL_BUILD_EXP_FILE="lib.exp"
-	eval "TCL_EXP_FILE=libtcl${TCL_EXPORT_FILE_SUFFIX}"
-	
-	# Replace DBGX with TCL_DBGX
-	eval "TCL_EXP_FILE=\"${TCL_EXP_FILE}\""
-	
-	if test "$GCC" = "yes" ; then
-	    TCL_BUILD_LIB_SPEC="-Wl,-bI:`pwd`/${TCL_BUILD_EXP_FILE} -L`pwd`"
-	    TCL_LIB_SPEC="-Wl,-bI:${exec_prefix}/lib/${TCL_EXP_FILE} -L`pwd`"    
-	else
-	    TCL_BUILD_LIB_SPEC="-bI:`pwd`/${TCL_BUILD_EXP_FILE}"
-	    TCL_LIB_SPEC="-bI:${exec_prefix}/lib/${TCL_EXP_FILE}"    
-	fi
+        TCL_LIB_FLAG="-ltcl`echo ${TCL_VERSION} | tr -d .`\${TCL_DBGX}"
+    fi
+    TCL_BUILD_LIB_SPEC="-L`pwd` ${TCL_LIB_FLAG}"
+    TCL_LIB_SPEC="-L${libdir} ${TCL_LIB_FLAG}"
+else
+    TCL_BUILD_EXP_FILE="lib.exp"
+    eval "TCL_EXP_FILE=libtcl${TCL_EXPORT_FILE_SUFFIX}"
+
+    # Replace DBGX with TCL_DBGX
+    eval "TCL_EXP_FILE=\"${TCL_EXP_FILE}\""
+    
+    if test "$GCC" = "yes" ; then
+	TCL_BUILD_LIB_SPEC="-Wl,-bI:`pwd`/${TCL_BUILD_EXP_FILE} -L`pwd`"
+	TCL_LIB_SPEC="-Wl,-bI:${libdir}/${TCL_EXP_FILE} -L`pwd`"    
+    else
+	TCL_BUILD_LIB_SPEC="-bI:`pwd`/${TCL_BUILD_EXP_FILE}"
+	TCL_LIB_SPEC="-bI:${libdir}/${TCL_EXP_FILE}"    
     fi
 fi
 VERSION='${VERSION}'
@@ -463,6 +468,8 @@ VERSION=${TCL_VERSION}
 
 if test "$FRAMEWORK_BUILD" = "1" ; then
     TCL_PACKAGE_PATH="${prefix}/Tcl.framework/Versions/${TCL_VERSION}/Resources/Scripts"
+elif test "$prefix" != "$exec_prefix"; then
+    TCL_PACKAGE_PATH="${libdir} ${prefix}/lib"
 else
     if test "$prefix" != "$exec_prefix"; then
         TCL_PACKAGE_PATH="${exec_prefix}/lib ${prefix}/lib"
@@ -494,10 +501,15 @@ if test "$FRAMEWORK_BUILD" = "1" ; then
     TCL_STUB_LIB_SPEC="-L${exec_prefix}/Tcl.framework/Versions/${TCL_VERSION} ${TCL_STUB_LIB_FLAG}"
     TCL_STUB_LIB_PATH="${exec_prefix}/Tcl.framework/Versions/${TCL_VERSION}/${TCL_STUB_LIB_FILE}"
 else
-    TCL_STUB_LIB_SPEC="-L${exec_prefix}/lib ${TCL_STUB_LIB_FLAG}"
-    TCL_STUB_LIB_PATH="${exec_prefix}/lib/${TCL_STUB_LIB_FILE}"
+    TCL_STUB_LIB_SPEC="-L${libdir} ${TCL_STUB_LIB_FLAG}"
+    TCL_STUB_LIB_PATH="${libdir}/${TCL_STUB_LIB_FILE}"
+
 fi
+
 TCL_BUILD_STUB_LIB_PATH="`pwd`/${TCL_STUB_LIB_FILE}"
+
+# Install time header dir can be set via --includedir
+eval "TCL_INCLUDE_SPEC=\"-I${includedir}\""
 
 #------------------------------------------------------------------------
 # tclConfig.sh refers to this by a different name
@@ -505,39 +517,51 @@ TCL_BUILD_STUB_LIB_PATH="`pwd`/${TCL_STUB_LIB_FILE}"
 
 TCL_SHARED_BUILD=${SHARED_BUILD}
 
+AC_SUBST(TCL_VERSION)
+AC_SUBST(TCL_MAJOR_VERSION)
+AC_SUBST(TCL_MINOR_VERSION)
+AC_SUBST(TCL_PATCH_LEVEL)
+
+AC_SUBST(TCL_LIB_FILE)
+AC_SUBST(TCL_LIB_FLAG)
+AC_SUBST(TCL_LIB_SPEC)
 AC_SUBST(TCL_STUB_LIB_FILE)
 AC_SUBST(TCL_STUB_LIB_FLAG)
-AC_SUBST(TCL_BUILD_STUB_LIB_SPEC)
 AC_SUBST(TCL_STUB_LIB_SPEC)
-AC_SUBST(TCL_BUILD_STUB_LIB_PATH)
 AC_SUBST(TCL_STUB_LIB_PATH)
-AC_SUBST(MAKE_STUB_LIB)
+AC_SUBST(TCL_INCLUDE_SPEC)
+AC_SUBST(TCL_BUILD_STUB_LIB_SPEC)
+AC_SUBST(TCL_BUILD_STUB_LIB_PATH)
 
-AC_SUBST(BUILD_DLTEST)
-AC_SUBST(CFLAGS)
-AC_SUBST(CFLAGS_DEFAULT)
+AC_SUBST(TCL_SRC_DIR)
+AC_SUBST(TCL_BIN_DIR)
+AC_SUBST(TCL_DBGX)
 AC_SUBST(CFG_TCL_SHARED_LIB_SUFFIX)
 AC_SUBST(CFG_TCL_UNSHARED_LIB_SUFFIX)
 AC_SUBST(CFG_TCL_EXPORT_FILE_SUFFIX)
 AC_SUBST(TCL_DBGX)
 AC_SUBST(DL_OBJS)
 AC_SUBST(PLAT_OBJS)
+
+AC_SUBST(CFLAGS)
+AC_SUBST(CFLAGS_DEFAULT)
 AC_SUBST(EXTRA_CFLAGS)
 AC_SUBST(LD_LIBRARY_PATH_VAR)
+
 AC_SUBST(LDFLAGS)
 AC_SUBST(LDFLAGS_DEFAULT)
-# FIXME: Should this be TCL_LDFLAGS_DEBUG ?
 AC_SUBST(LDFLAGS_DEBUG)
 AC_SUBST(LDFLAGS_OPTIMIZE)
 AC_SUBST(AR)
 AC_SUBST(RANLIB)
-AC_SUBST(MAKE_LIB)
-AC_SUBST(TCL_SHARED_BUILD)
-AC_SUBST(SHLIB_CFLAGS)
-AC_SUBST(SHLIB_LD)
+
 AC_SUBST(STLIB_LD)
+AC_SUBST(SHLIB_LD)
 AC_SUBST(SHLIB_LD_LIBS)
+AC_SUBST(SHLIB_CFLAGS)
 AC_SUBST(SHLIB_SUFFIX)
+AC_SUBST(TCL_SHARED_BUILD)
+
 AC_SUBST(TCL_BUILD_LIB_SPEC)
 AC_SUBST(TCL_LD_SEARCH_FLAGS)
 AC_SUBST(LDFLAGS_DEBUG)
@@ -547,17 +571,15 @@ AC_SUBST(TCL_LIB_FLAG)
 AC_SUBST(TCL_NEEDS_EXP_FILE)
 AC_SUBST(TCL_BUILD_EXP_FILE)
 AC_SUBST(TCL_EXP_FILE)
-AC_SUBST(TCL_LIB_SPEC)
+
 AC_SUBST(TCL_LIB_VERSIONS_OK)
-AC_SUBST(TCL_MAJOR_VERSION)
-AC_SUBST(TCL_MINOR_VERSION)
-AC_SUBST(TCL_PACKAGE_PATH)
-AC_SUBST(TCL_PATCH_LEVEL)
 AC_SUBST(TCL_SHARED_LIB_SUFFIX)
 AC_SUBST(TCL_SHLIB_CFLAGS)
-AC_SUBST(TCL_SRC_DIR)
-AC_SUBST(TCL_BIN_DIR)
 AC_SUBST(TCL_UNSHARED_LIB_SUFFIX)
-AC_SUBST(TCL_VERSION)
 
-AC_OUTPUT(Makefile tclConfig.sh)
+AC_SUBST(MAKE_LIB)
+AC_SUBST(MAKE_STUB_LIB)
+AC_SUBST(BUILD_DLTEST)
+AC_SUBST(TCL_PACKAGE_PATH)
+
+AC_OUTPUT(Makefile dltest/Makefile tclConfig.sh)

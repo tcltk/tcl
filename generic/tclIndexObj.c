@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIndexObj.c,v 1.10 2001/08/30 19:02:43 hobbs Exp $
+ * RCS: @(#) $Id: tclIndexObj.c,v 1.10.8.1 2002/02/05 02:22:00 wolfsuit Exp $
  */
 
 #include "tclInt.h"
@@ -76,10 +76,10 @@ int
 Tcl_GetIndexFromObj(interp, objPtr, tablePtr, msg, flags, indexPtr)
     Tcl_Interp *interp; 	/* Used for error reporting if not NULL. */
     Tcl_Obj *objPtr;		/* Object containing the string to lookup. */
-    char **tablePtr;		/* Array of strings to compare against the
+    CONST char **tablePtr;	/* Array of strings to compare against the
 				 * value of objPtr; last entry must be NULL
 				 * and there must not be duplicate entries. */
-    char *msg;			/* Identifying word to use in error messages. */
+    CONST char *msg;		/* Identifying word to use in error messages. */
     int flags;			/* 0 or TCL_EXACT */
     int *indexPtr;		/* Place to store resulting integer index. */
 {
@@ -135,18 +135,20 @@ Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr, offset, msg, flags,
 	indexPtr)
     Tcl_Interp *interp; 	/* Used for error reporting if not NULL. */
     Tcl_Obj *objPtr;		/* Object containing the string to lookup. */
-    char **tablePtr;		/* The first string in the table. The second
+    CONST char **tablePtr;	/* The first string in the table. The second
 				 * string will be at this address plus the
 				 * offset, the third plus the offset again,
 				 * etc. The last entry must be NULL
 				 * and there must not be duplicate entries. */
     int offset;			/* The number of bytes between entries */
-    char *msg;			/* Identifying word to use in error messages. */
+    CONST char *msg;		/* Identifying word to use in error messages. */
     int flags;			/* 0 or TCL_EXACT */
     int *indexPtr;		/* Place to store resulting integer index. */
 {
     int index, length, i, numAbbrev;
-    char *key, *p1, *p2, **entryPtr;
+    char *key, *p1;
+    CONST char *p2;
+    CONST char * CONST *entryPtr;
     Tcl_Obj *resultPtr;
 
     /*
@@ -177,7 +179,7 @@ Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr, offset, msg, flags,
     }
     
     for (entryPtr = tablePtr, i = 0; *entryPtr != NULL; 
-	    entryPtr = (char **) ((char *) entryPtr + offset), i++) {
+	    entryPtr = (CONST char **) ((char *)entryPtr + offset), i++) {
 	for (p1 = key, p2 = *entryPtr; *p1 == *p2; p1++, p2++) {
 	    if (*p1 == 0) {
 		index = i;
@@ -222,9 +224,10 @@ Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr, offset, msg, flags,
 	Tcl_AppendStringsToObj(resultPtr,
 		(numAbbrev > 1) ? "ambiguous " : "bad ", msg, " \"",
 		key, "\": must be ", *tablePtr, (char *) NULL);
-	for (entryPtr = (char **) ((char *) tablePtr + offset), count = 0;
+	for (entryPtr = (CONST char **)((char *)tablePtr + offset), count = 0;
 		*entryPtr != NULL;
-		entryPtr = (char **) ((char *) entryPtr + offset), count++) {
+		entryPtr = (CONST char **)((char *)entryPtr + offset),
+		count++) {
 	    if ((*((char **) ((char *) entryPtr + offset))) == NULL) {
 		Tcl_AppendStringsToObj(resultPtr,
 			(count > 0) ? ", or " : " or ", *entryPtr,
@@ -301,7 +304,7 @@ Tcl_WrongNumArgs(interp, objc, objv, message)
     Tcl_Obj *CONST objv[];		/* Initial argument objects, which
 					 * should be included in the error
 					 * message. */
-    char *message;			/* Error message to print after the
+    CONST char *message;		/* Error message to print after the
 					 * leading objects in objv. The
 					 * message may be NULL. */
 {

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.61.4.2 2001/11/11 17:57:09 wolfsuit Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.61.4.3 2002/02/05 02:22:00 wolfsuit Exp $
  */
 
 #include "tclInt.h"
@@ -242,7 +242,12 @@ TclIntStubs tclIntStubs = {
     NULL, /* 160 */
     TclChannelTransform, /* 161 */
     TclChannelEventScriptInvoker, /* 162 */
-    TclpSetInitialEncodings, /* 163 */
+    TclGetInstructionTable, /* 163 */
+    TclExpandCodeArray, /* 164 */
+    TclpSetInitialEncodings, /* 165 */
+    TclListObjSetElement, /* 166 */
+    TclSetStartupScriptPath, /* 167 */
+    TclGetStartupScriptPath, /* 168 */
 };
 
 TclIntPlatStubs tclIntPlatStubs = {
@@ -298,10 +303,10 @@ TclIntPlatStubs tclIntPlatStubs = {
     FSpGetDefaultDir, /* 4 */
     FSpSetDefaultDir, /* 5 */
     FSpFindFolder, /* 6 */
-    GetGlobalMouse, /* 7 */
-    FSpGetDirectoryID, /* 8 */
-    FSpOpenResFileCompat, /* 9 */
-    FSpCreateResFileCompat, /* 10 */
+    GetGlobalMouseTcl, /* 7 */
+    FSpGetDirectoryIDTcl, /* 8 */
+    FSpOpenResFileCompatTcl, /* 9 */
+    FSpCreateResFileCompatTcl, /* 10 */
     FSpLocationFromPath, /* 11 */
     FSpPathFromLocation, /* 12 */
     TclMacExitHandler, /* 13 */
@@ -315,7 +320,7 @@ TclIntPlatStubs tclIntPlatStubs = {
     TclMacUnRegisterResourceFork, /* 21 */
     TclMacCreateEnv, /* 22 */
     TclMacFOpenHack, /* 23 */
-    NULL, /* 24 */
+    TclpGetTZName, /* 24 */
     TclMacChmod, /* 25 */
 #endif /* MAC_TCL */
 };
@@ -883,6 +888,7 @@ TclStubs tclStubs = {
     Tcl_OutputBuffered, /* 479 */
     Tcl_FSMountsChanged, /* 480 */
     Tcl_EvalTokensStandard, /* 481 */
+    Tcl_GetTime, /* 482 */
 };
 
 /* !END!: Do not edit above this line. */

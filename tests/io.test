@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: io.test,v 1.21 2001/09/11 17:30:44 andreas_kupries Exp $
+# RCS: @(#) $Id: io.test,v 1.21.4.1 2002/02/05 02:22:03 wolfsuit Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -85,6 +85,19 @@ test io-1.7 {Tcl_WriteChars: WriteChars} {
     close $f
     contents test1
 } "a\x93\xe1\x00"
+test io-1.8 {Tcl_WriteChars: WriteChars} {
+    # This test written for SF bug #506297.
+    #
+    # Executing this test without the fix for the referenced bug
+    # applied to tcl will cause tcl, more specifically WriteChars, to
+    # go into an infinite loop.
+
+    set f [open test2 w] 
+    fconfigure      $f -encoding iso2022-jp 
+    puts -nonewline $f [format %s%c [string repeat " " 4] 12399] 
+    close           $f 
+    contents test2
+} "\x1b(B    \x1b\$@\$O"
 
 test io-2.1 {WriteBytes} {
     # loop until all bytes are written
@@ -5016,6 +5029,51 @@ test io-39.21 {Tcl_SetChannelOption, setting read mode independently} \
     set modes
 } {auto crlf}
 
+test io-39.22 {Tcl_SetChannelOption, invariance} {unixOnly} {
+    removeFile test1
+    set f1 [open test1 w+]
+    set l ""
+    lappend l [fconfigure $f1 -eofchar]
+    fconfigure $f1 -eofchar {ON GO}
+    lappend l [fconfigure $f1 -eofchar]
+    fconfigure $f1 -eofchar D
+    lappend l [fconfigure $f1 -eofchar]
+    close $f1
+    set l
+} {{{} {}} {O G} {D D}}
+
+test io-39.22a {Tcl_SetChannelOption, invariance} {
+    removeFile test1
+    set f1 [open test1 w+]
+    set l [list]
+    fconfigure $f1 -eofchar {ON GO}
+    lappend l [fconfigure $f1 -eofchar]
+    fconfigure $f1 -eofchar D
+    lappend l [fconfigure $f1 -eofchar]
+    lappend l [list [catch {fconfigure $f1 -eofchar {1 2 3}} msg] $msg]
+    close $f1
+    set l
+} {{O G} {D D} {1 {bad value for -eofchar: should be a list of zero, one, or two elements}}}
+
+
+test io-39.23 {Tcl_GetChannelOption, server socket is not readable or
+        writeable, it should still have valid -eofchar and -translation options } {
+    set l [list]
+    set sock [socket -server accept 0]
+    lappend l [fconfigure $sock -eofchar] [fconfigure $sock -translation]
+    close $sock
+    set l
+} {{{}} auto}
+test io-39.24 {Tcl_SetChannelOption, server socket is not readable or
+        writable so we can't change -eofchar or -translation } {
+    set l [list]
+    set sock [socket -server accept 0]
+    fconfigure $sock -eofchar D -translation lf
+    lappend l [fconfigure $sock -eofchar] [fconfigure $sock -translation]
+    close $sock
+    set l
+} {{{}} auto}
+
 test io-40.1 {POSIX open access modes: RDWR} {
     removeFile test3
     set f [open test3 w]
@@ -6609,6 +6667,55 @@ test io-53.6 {CopyData: error during fcopy} {stdio} {
     close $out
     set fcopyTestDone	;# 0 for plain end of file
 } {0}
+
+proc doFcopy {in out {bytes 0} {error {}}} {
+    global fcopyTestDone fcopyTestCount
+    incr fcopyTestCount $bytes
+    if {[string length $error]} {
+	    set fcopyTestDone 1
+    } elseif {[eof $in]} {
+	    set fcopyTestDone 0
+    } else {
+        # Delay next fcopy to wait for size>0 input bytes
+        after 100 [list 
+            fcopy $in $out -size 1000 -command [list doFcopy $in $out]
+        ]
+    }
+}
+
+test io-53.7 {CopyData: Flooding fcopy from pipe} {stdio} {
+    removeFile pipe
+    removeFile test1
+    catch {unset fcopyTestDone}
+    set fcopyTestCount 0
+    set f1 [open pipe w]
+    puts $f1 {
+	# Write  10 bytes / 10 msec
+	proc Write {count} {
+	    puts -nonewline "1234567890"
+	    if {[incr count -1]} {
+	        after 10 [list Write $count]
+	    } else {
+	        set ::ready 1
+	    }
+	}
+	fconfigure stdout -buffering none
+	Write 345 ;# 3450 bytes ~3.45 sec
+	vwait ready
+	exit 0
+    }
+    close $f1
+    set in [open "|[list $::tcltest::tcltest pipe &]" r+]
+    set out [open test1 w]
+    doFcopy $in $out
+    if ![info exists fcopyTestDone] {
+	vwait fcopyTestDone
+    }
+    catch {close $in}
+    close $out
+    # -1=error 0=script error N=number of bytes
+    expr ($fcopyTestDone == 0) ? $fcopyTestCount : -1
+} {3450}
 
 test io-54.1 {Recursive channel events} {socket} {
     # This test checks to see if file events are delivered during recursive

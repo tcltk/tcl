@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclRegexp.c,v 1.11 2001/05/21 22:32:01 hobbs Exp $
+ * RCS: @(#) $Id: tclRegexp.c,v 1.11.10.1 2002/02/05 02:22:00 wolfsuit Exp $
  */
 
 #include "tclInt.h"
@@ -88,7 +88,7 @@ static Tcl_ThreadDataKey dataKey;
  */
 
 static TclRegexp *	CompileRegexp _ANSI_ARGS_((Tcl_Interp *interp,
-			    char *pattern, int length, int flags));
+			    CONST char *pattern, int length, int flags));
 static void		DupRegexpInternalRep _ANSI_ARGS_((Tcl_Obj *srcPtr,
 			    Tcl_Obj *copyPtr));
 static void		FinalizeRegexp _ANSI_ARGS_((ClientData clientData));
@@ -141,7 +141,7 @@ Tcl_RegExp
 Tcl_RegExpCompile(interp, string)
     Tcl_Interp *interp;		/* For use in error reporting and
 				 * to access the interp regexp cache. */
-    char *string;		/* String for which to produce
+    CONST char *string;		/* String for which to produce
 				 * compiled regular expression. */
 {
     return (Tcl_RegExp) CompileRegexp(interp, string, (int) strlen(string),
@@ -183,7 +183,7 @@ Tcl_RegExpExec(interp, re, string, start)
     int flags, result, numChars;
     TclRegexp *regexp = (TclRegexp *)re;
     Tcl_DString ds;
-    Tcl_UniChar *ustr;
+    CONST Tcl_UniChar *ustr;
 
     /*
      * If the starting point is offset from the beginning of the buffer,
@@ -243,9 +243,9 @@ Tcl_RegExpRange(re, index, startPtr, endPtr)
     int index;			/* 0 means give the range of the entire
 				 * match, > 0 means give the range of
 				 * a matching subrange. */
-    char **startPtr;		/* Store address of first character in
+    CONST char **startPtr;	/* Store address of first character in
 				 * (sub-) range here. */
-    char **endPtr;		/* Store address of character just after last
+    CONST char **endPtr;	/* Store address of character just after last
 				 * in (sub-) range here. */
 {
     TclRegexp *regexpPtr = (TclRegexp *) re;
@@ -398,8 +398,8 @@ TclRegExpRangeUniChar(re, index, startPtr, endPtr)
 int
 Tcl_RegExpMatch(interp, string, pattern)
     Tcl_Interp *interp;		/* Used for error reporting. May be NULL. */
-    char *string;		/* String. */
-    char *pattern;		/* Regular expression to match against
+    CONST char *string;		/* String. */
+    CONST char *pattern;	/* Regular expression to match against
 				 * string. */
 {
     Tcl_RegExp re;
@@ -696,7 +696,7 @@ TclRegAbout(interp, re)
 void
 TclRegError(interp, msg, status)
     Tcl_Interp *interp;		/* Interpreter for error reporting. */
-    char *msg;			/* Message to prepend to error. */
+    CONST char *msg;		/* Message to prepend to error. */
     int status;			/* Status code to report. */
 {
     char buf[100];		/* ample in practice */
@@ -831,12 +831,12 @@ SetRegexpFromAny(interp, objPtr)
 static TclRegexp *
 CompileRegexp(interp, string, length, flags)
     Tcl_Interp *interp;		/* Used for error reporting if not NULL. */
-    char *string;		/* The regexp to compile (UTF-8). */
+    CONST char *string;		/* The regexp to compile (UTF-8). */
     int length;			/* The length of the string in bytes. */
     int flags;			/* Compilation flags. */
 {
     TclRegexp *regexpPtr;
-    Tcl_UniChar *uniString;
+    CONST Tcl_UniChar *uniString;
     int numChars;
     Tcl_DString stringBuf;
     int status, i;

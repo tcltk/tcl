@@ -1,12 +1,12 @@
 '\"
 '\" Copyright (c) 1994 The Regents of the University of California.
 '\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
-'\" Copyright (c) 1998-1999 Scriptics Corportation
+'\" Copyright (c) 1998-1999 Scriptics Corporation
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: RegExp.3,v 1.9 2001/10/14 16:21:45 dgp Exp $
+'\" RCS: @(#) $Id: RegExp.3,v 1.9.2.1 2002/02/05 02:21:58 wolfsuit Exp $
 '\" 
 .so man.macros
 .TH Tcl_RegExpMatch 3 8.1 Tcl "Tcl Library Procedures"
@@ -57,7 +57,7 @@ compiled regular expression is cached in the object.
 .VE 8.1
 .AP char *string in
 String to check for a match with a regular expression.
-.AP char *pattern in
+.AP "CONST char" *pattern in
 String in the form of a regular expression pattern.
 .AP Tcl_RegExp regexp in
 Compiled regular expression.  Must have been returned previously
@@ -71,12 +71,14 @@ will be allowed.
 Specifies which range is desired:  0 means the range of the entire
 match, 1 or greater means the range that matched a parenthesized
 sub-expression.
-.AP char **startPtr out
+.VS 8.4
+.AP "CONST char" **startPtr out
 The address of the first character in the range is stored here, or
 NULL if there is no such range.
-.AP char **endPtr out
+.AP "CONST char" **endPtr out
 The address of the character just after the last one in the range
 is stored here, or NULL if there is no such range.
+.VE 8.4
 .VS 8.1
 .AP int cflags in
 OR-ed combination of compilation flags. See below for more information.

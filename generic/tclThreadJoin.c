@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThreadJoin.c,v 1.2 2000/05/06 19:51:05 kupries Exp $
+ * RCS: @(#) $Id: tclThreadJoin.c,v 1.2.14.1 2002/02/05 02:22:00 wolfsuit Exp $
  */
 
 #include "tclInt.h"
@@ -199,7 +199,7 @@ TclJoinThread(id, result)
 
     Tcl_ConditionFinalize (&threadPtr->cond);
     Tcl_MutexFinalize (&threadPtr->threadMutex);
-    Tcl_Free ((VOID*) threadPtr);
+    ckfree ((VOID*) threadPtr);
 
     return TCL_OK;
 }
@@ -230,7 +230,7 @@ TclRememberJoinableThread(id)
 {
     JoinableThread* threadPtr;
 
-    threadPtr = (JoinableThread*) Tcl_Alloc (sizeof (JoinableThread));
+    threadPtr = (JoinableThread*) ckalloc (sizeof (JoinableThread));
     threadPtr->id          = id;
     threadPtr->done        = 0;
     threadPtr->waitedUpon  = 0;

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEvent.c,v 1.15 2001/10/03 18:28:05 hobbs Exp $
+ * RCS: @(#) $Id: tclEvent.c,v 1.15.2.1 2002/02/05 02:21:59 wolfsuit Exp $
  */
 
 #include "tclInt.h"
@@ -140,7 +140,7 @@ Tcl_BackgroundError(interp)
 				 * occurred. */
 {
     BgError *errPtr;
-    char *errResult, *varValue;
+    CONST char *errResult, *varValue;
     ErrAssocData *assocPtr;
     int length;
 
@@ -290,7 +290,7 @@ HandleBgErrors(clientData)
 		int len;
 
 		string = Tcl_GetStringFromObj(Tcl_GetObjResult(interp), &len);
-                if (strcmp(string, "\"bgerror\" is an invalid command name or ambiguous abbreviation") == 0) {
+		if (Tcl_FindCommand(interp, "bgerror", NULL, TCL_GLOBAL_ONLY) == NULL) {
                     Tcl_WriteChars(errChannel, assocPtr->firstBgPtr->errorInfo, -1);
                     Tcl_WriteChars(errChannel, "\n", -1);
                 } else {
@@ -938,7 +938,8 @@ Tcl_FinalizeThread()
 int
 TclInExit()
 {
-    ThreadSpecificData *tsdPtr = TclThreadDataKeyGet(&dataKey);
+    ThreadSpecificData *tsdPtr = (ThreadSpecificData *)
+	    TclThreadDataKeyGet(&dataKey);
     if (tsdPtr == NULL) {
 	return inFinalize;
     } else {
@@ -1049,7 +1050,7 @@ Tcl_UpdateObjCmd(clientData, interp, objc, objv)
 {
     int optionIndex;
     int flags = 0;		/* Initialized to avoid compiler warning. */
-    static char *updateOptions[] = {"idletasks", (char *) NULL};
+    static CONST char *updateOptions[] = {"idletasks", (char *) NULL};
     enum updateOptions {REGEXP_IDLETASKS};
 
     if (objc == 1) {

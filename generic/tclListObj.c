@@ -6,11 +6,12 @@
  *
  * Copyright (c) 1995-1997 Sun Microsystems, Inc.
  * Copyright (c) 1998 by Scriptics Corporation.
+ * Copyright (c) 2001 by Kevin B. Kenny.  All rights reserved.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclListObj.c,v 1.9 2001/04/04 16:07:21 kennykb Exp $
+ * RCS: @(#) $Id: tclListObj.c,v 1.9.14.1 2002/02/05 02:22:00 wolfsuit Exp $
  */
 
 #include "tclInt.h"
@@ -29,6 +30,15 @@ static void		UpdateStringOfList _ANSI_ARGS_((Tcl_Obj *listPtr));
 /*
  * The structure below defines the list Tcl object type by means of
  * procedures that can be invoked by generic object code.
+ *
+ * The internal representation of a list object is a two-pointer
+ * representation.  The first pointer designates a List structure that
+ * contains an array of pointers to the element objects, together with
+ * integers that represent the current element count and the allocated
+ * size of the array.  The second pointer is normally NULL; during
+ * execution of functions in this file that operate on nested sublists,
+ * it is occasionally used as working storage to avoid an auxiliary
+ * stack.
  */
 
 Tcl_ObjType tclListType = {
@@ -105,7 +115,8 @@ Tcl_NewListObj(objc, objv)
 	listRepPtr->elemCount    = objc;
 	listRepPtr->elements     = elemPtrs;
 	
-	listPtr->internalRep.otherValuePtr = (VOID *) listRepPtr;
+	listPtr->internalRep.twoPtrValue.ptr1 = (VOID *) listRepPtr;
+	listPtr->internalRep.twoPtrValue.ptr2 = NULL;
 	listPtr->typePtr = &tclListType;
     }
     return listPtr;
@@ -121,9 +132,9 @@ Tcl_NewListObj(objc, objv)
  *	TCL_MEM_DEBUG is defined. It creates new list objects. It is the
  *	same as the Tcl_NewListObj procedure above except that it calls
  *	Tcl_DbCkalloc directly with the file name and line number from its
- *	caller. This simplifies debugging since then the checkmem command
- *	will report the correct file name and line number when reporting
- *	objects that haven't been freed.
+ *	caller. This simplifies debugging since then the [memory active]
+ *	command	will report the correct file name and line number when
+ *	reporting objects that haven't been freed.
  *
  *	When TCL_MEM_DEBUG is not defined, this procedure just returns the
  *	result of calling Tcl_NewListObj.
@@ -174,7 +185,8 @@ Tcl_DbNewListObj(objc, objv, file, line)
 	listRepPtr->elemCount    = objc;
 	listRepPtr->elements     = elemPtrs;
 	
-	listPtr->internalRep.otherValuePtr = (VOID *) listRepPtr;
+	listPtr->internalRep.twoPtrValue.ptr1 = (VOID *) listRepPtr;
+	listPtr->internalRep.twoPtrValue.ptr2 = NULL;
 	listPtr->typePtr = &tclListType;
     }
     return listPtr;
@@ -261,7 +273,8 @@ Tcl_SetListObj(objPtr, objc, objv)
 	listRepPtr->elemCount    = objc;
 	listRepPtr->elements     = elemPtrs;
 	
-	objPtr->internalRep.otherValuePtr = (VOID *) listRepPtr;
+	objPtr->internalRep.twoPtrValue.ptr1 = (VOID *) listRepPtr;
+	objPtr->internalRep.twoPtrValue.ptr2 = NULL;
 	objPtr->typePtr = &tclListType;
     } else {
 	objPtr->bytes = tclEmptyStringRep;
@@ -317,7 +330,7 @@ Tcl_ListObjGetElements(interp, listPtr, objcPtr, objvPtr)
 	    return result;
 	}
     }
-    listRepPtr = (List *) listPtr->internalRep.otherValuePtr;
+    listRepPtr = (List *) listPtr->internalRep.twoPtrValue.ptr1;
     *objcPtr = listRepPtr->elemCount;
     *objvPtr = listRepPtr->elements;
     return TCL_OK;
@@ -368,7 +381,7 @@ Tcl_ListObjAppendList(interp, listPtr, elemListPtr)
 	    return result;
 	}
     }
-    listRepPtr = (List *) listPtr->internalRep.otherValuePtr;
+    listRepPtr = (List *) listPtr->internalRep.twoPtrValue.ptr1;
     listLen = listRepPtr->elemCount;
 
     result = Tcl_ListObjGetElements(interp, elemListPtr, &objc, &objv);
@@ -431,7 +444,7 @@ Tcl_ListObjAppendElement(interp, listPtr, objPtr)
 	}
     }
 
-    listRepPtr = (List *) listPtr->internalRep.otherValuePtr;
+    listRepPtr = (List *) listPtr->internalRep.twoPtrValue.ptr1;
     elemPtrs = listRepPtr->elements;
     numElems = listRepPtr->elemCount;
     numRequired = numElems + 1 ;
@@ -515,7 +528,7 @@ Tcl_ListObjIndex(interp, listPtr, index, objPtrPtr)
 	}
     }
 
-    listRepPtr = (List *) listPtr->internalRep.otherValuePtr;
+    listRepPtr = (List *) listPtr->internalRep.twoPtrValue.ptr1;
     if ((index < 0) || (index >= listRepPtr->elemCount)) {
 	*objPtrPtr = NULL;
     } else {
@@ -562,7 +575,7 @@ Tcl_ListObjLength(interp, listPtr, intPtr)
 	}
     }
 
-    listRepPtr = (List *) listPtr->internalRep.otherValuePtr;
+    listRepPtr = (List *) listPtr->internalRep.twoPtrValue.ptr1;
     *intPtr = listRepPtr->elemCount;
     return TCL_OK;
 }
@@ -630,7 +643,7 @@ Tcl_ListObjReplace(interp, listPtr, first, count, objc, objv)
 	    return result;
 	}
     }
-    listRepPtr = (List *) listPtr->internalRep.otherValuePtr;
+    listRepPtr = (List *) listPtr->internalRep.twoPtrValue.ptr1;
     elemPtrs = listRepPtr->elements;
     numElems = listRepPtr->elemCount;
 
@@ -763,6 +776,586 @@ Tcl_ListObjReplace(interp, listPtr, first, count, objc, objv)
 /*
  *----------------------------------------------------------------------
  *
+ * TclLsetList --
+ *	
+ *	Core of the 'lset' command when objc == 4.  Objv[2] may be
+ *	either a scalar index or a list of indices.
+ *
+ * Results:
+ *	Returns the new value of the list variable, or NULL if an
+ *	error occurs.
+ *
+ * Side effects:
+ *	Surgery is performed on the list value to produce the
+ *	result.
+ *
+ * On entry, the reference count of the variable value does not reflect
+ * any references held on the stack.  The first action of this function
+ * is to determine whether the object is shared, and to duplicate it if
+ * it is.  The reference count of the duplicate is incremented.
+ * At this point, the reference count will be 1 for either case, so that
+ * the object will appear to be unshared.
+ *
+ * If an error occurs, and the object has been duplicated, the reference
+ * count on the duplicate is decremented so that it is now 0: this dismisses
+ * any memory that was allocated by this procedure.
+ *
+ * If no error occurs, the reference count of the original object is
+ * incremented if the object has not been duplicated, and nothing is
+ * done to a reference count of the duplicate.  Now the reference count
+ * of an unduplicated object is 2 (the returned pointer, plus the one
+ * stored in the variable).  The reference count of a duplicate object
+ * is 1, reflecting that the returned pointer is the only active
+ * reference.  The caller is expected to store the returned value back
+ * in the variable and decrement its reference count.  (INST_STORE_*
+ * does exactly this.)
+ *
+ * Tcl_LsetFlat and related functions maintain a linked list of
+ * Tcl_Obj's whose string representations must be spoilt by threading
+ * via 'ptr2' of the two-pointer internal representation.  On entry
+ * to Tcl_LsetList, the values of 'ptr2' are immaterial; on exit,
+ * the 'ptr2' field of any Tcl_Obj that has been modified is set to
+ * NULL.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Obj*
+TclLsetList( interp, listPtr, indexArgPtr, valuePtr )
+    Tcl_Interp* interp;		/* Tcl interpreter */
+    Tcl_Obj* listPtr;		/* Pointer to the list being modified */
+    Tcl_Obj* indexArgPtr;	/* Index or index-list arg to 'lset' */
+    Tcl_Obj* valuePtr;		/* Value arg to 'lset' */
+{
+    int indexCount;		/* Number of indices in the index list */
+    Tcl_Obj** indices;		/* Vector of indices in the index list*/
+
+    int duplicated;		/* Flag == 1 if the obj has been
+				 * duplicated, 0 otherwise */
+    Tcl_Obj* retValuePtr;	/* Pointer to the list to be returned */
+    int index;			/* Current index in the list - discarded */
+    int result;			/* Status return from library calls */
+    Tcl_Obj* subListPtr;	/* Pointer to the current sublist */
+    int elemCount;		/* Count of elements in the current sublist */
+    Tcl_Obj** elemPtrs;		/* Pointers to elements of current sublist  */
+    Tcl_Obj* chainPtr;		/* Pointer to the enclosing sublist
+				 * of the current sublist */
+    int i;
+
+
+    /*
+     * Determine whether the index arg designates a list or a single
+     * index.  We have to be careful about the order of the checks to
+     * avoid repeated shimmering; see TIP #22 and #23 for details.
+     */
+
+    if ( indexArgPtr->typePtr != &tclListType
+	 && TclGetIntForIndex( NULL, indexArgPtr, 0, &index ) == TCL_OK ) {
+
+	/*
+	 * indexArgPtr designates a single index.
+	 */
+
+	return TclLsetFlat( interp, listPtr, 1, &indexArgPtr, valuePtr );
+
+    } else if ( Tcl_ListObjGetElements( NULL, indexArgPtr,
+					&indexCount, &indices ) != TCL_OK ) {
+
+	/*
+	 * indexArgPtr designates something that is neither an index nor a
+	 * well formed list.  Report the error via TclLsetFlat.
+	 */
+
+	return TclLsetFlat( interp, listPtr, 1, &indexArgPtr, valuePtr );
+
+    }
+
+    /*
+     * At this point, we know that argPtr designates a well formed list,
+     * and the 'else if' above has parsed it into indexCount and indices.
+     * If there are no indices, simply return 'valuePtr', counting the
+     * returned pointer as a reference.
+     */
+
+    if ( indexCount == 0 ) {
+	Tcl_IncrRefCount( valuePtr );
+	return valuePtr;
+    }
+
+    /*
+     * Duplicate the list arg if necessary.
+     */
+
+    if ( Tcl_IsShared( listPtr ) ) {
+	duplicated = 1;
+	listPtr = Tcl_DuplicateObj( listPtr );
+	Tcl_IncrRefCount( listPtr );
+    } else {
+	duplicated = 0;
+    }
+
+    /*
+     * It would be tempting simply to go off to TclLsetFlat to finish the
+     * processing.  Alas, it is also incorrect!  The problem is that
+     * 'indexArgPtr' may designate a sublist of 'listPtr' whose value
+     * is to be manipulated.  The fact that 'listPtr' is itself unshared
+     * does not guarantee that no sublist is.  Therefore, it's necessary
+     * to replicate all the work here, expanding the index list on each
+     * trip through the loop.
+     */
+
+    /*
+     * Anchor the linked list of Tcl_Obj's whose string reps must be
+     * invalidated if the operation succeeds.
+     */
+
+    retValuePtr = listPtr;
+    chainPtr = NULL;
+
+    /*
+     * Handle each index arg by diving into the appropriate sublist
+     */
+
+    for ( i = 0; ; ++i ) {
+
+	/*
+	 * Take the sublist apart.
+	 */
+
+	result = Tcl_ListObjGetElements( interp, listPtr,
+					 &elemCount, &elemPtrs );
+	if ( result != TCL_OK ) {
+	    break;
+	}
+	listPtr->internalRep.twoPtrValue.ptr2 = (VOID *) chainPtr;
+
+	/*
+	 * Reconstitute the index array
+	 */
+
+	result = Tcl_ListObjGetElements( interp, indexArgPtr,
+					 &indexCount, &indices );
+	if ( result != TCL_OK ) {
+	    /* 
+	     * Shouldn't be able to get here, because we already
+	     * parsed the thing successfully once.
+	     */
+	    break;
+	}
+
+	/*
+	 * Determine the index of the requested element.
+	 */
+
+	result = TclGetIntForIndex( interp, indices[ i ],
+				    (elemCount - 1), &index );
+	if ( result != TCL_OK ) {
+	    break;
+	}
+	
+	/*
+	 * Check that the index is in range.
+	 */
+
+	if ( ( index < 0 ) || ( index >= elemCount ) ) {
+	    Tcl_SetObjResult( interp,
+			      Tcl_NewStringObj( "list index out of range",
+						-1 ) );
+	    result = TCL_ERROR;
+	    break;
+	}
+
+	/*
+	 * Break the loop after extracting the innermost sublist
+	 */
+
+	if ( i >= indexCount-1 ) {
+	    result = TCL_OK;
+	    break;
+	}
+	
+	/*
+	 * Extract the appropriate sublist, and make sure that it is unshared.
+	 */
+
+	subListPtr = elemPtrs[ index ];
+	if ( Tcl_IsShared( subListPtr ) ) {
+	    subListPtr = Tcl_DuplicateObj( subListPtr );
+	    result = TclListObjSetElement( interp, listPtr, index,
+					    subListPtr );
+	    if ( result != TCL_OK ) {
+		/* 
+		 * We actually shouldn't be able to get here, because
+		 * we've already checked everything that TclListObjSetElement
+		 * checks. If we were to get here, it would result in leaking
+		 * subListPtr.
+		 */
+		break;
+	    }
+	}
+
+	/* 
+	 * Chain the current sublist onto the linked list of Tcl_Obj's
+	 * whose string reps must be spoilt.
+	 */
+
+	chainPtr = listPtr;
+	listPtr = subListPtr;
+
+    }
+
+    /*
+     * Store the new element into the correct slot in the innermost sublist.
+     */
+
+    if ( result == TCL_OK ) {
+	result = TclListObjSetElement( interp, listPtr, index, valuePtr );
+    }
+
+    if ( result == TCL_OK ) {
+
+	listPtr->internalRep.twoPtrValue.ptr2 = (VOID *) chainPtr;
+
+	/* Spoil all the string reps */
+	
+	while ( listPtr != NULL ) {
+	    subListPtr = (Tcl_Obj *) listPtr->internalRep.twoPtrValue.ptr2;
+	    Tcl_InvalidateStringRep( listPtr );
+	    listPtr->internalRep.twoPtrValue.ptr2 = NULL;
+	    listPtr = subListPtr;
+	}
+
+	/* Return the new list if everything worked. */
+	
+	if ( !duplicated ) {
+	    Tcl_IncrRefCount( retValuePtr );
+	}
+	return retValuePtr;
+    }
+
+    /* Clean up the one dangling reference otherwise */
+
+    if ( duplicated ) {
+	Tcl_DecrRefCount( retValuePtr );
+    }
+    return NULL;
+
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclLsetFlat --
+ *
+ *	Core of the 'lset' command when objc>=5.  Objv[2], ... ,
+ *	objv[objc-2] contain scalar indices.
+ *
+ * Results:
+ *	Returns the new value of the list variable, or NULL if an
+ *	error occurs.
+ *
+ * Side effects:
+ *	Surgery is performed on the list value to produce the
+ *	result.
+ *
+ * On entry, the reference count of the variable value does not reflect
+ * any references held on the stack.  The first action of this function
+ * is to determine whether the object is shared, and to duplicate it if
+ * it is.  The reference count of the duplicate is incremented.
+ * At this point, the reference count will be 1 for either case, so that
+ * the object will appear to be unshared.
+ *
+ * If an error occurs, and the object has been duplicated, the reference
+ * count on the duplicate is decremented so that it is now 0: this dismisses
+ * any memory that was allocated by this procedure.
+ *
+ * If no error occurs, the reference count of the original object is
+ * incremented if the object has not been duplicated, and nothing is
+ * done to a reference count of the duplicate.  Now the reference count
+ * of an unduplicated object is 2 (the returned pointer, plus the one
+ * stored in the variable).  The reference count of a duplicate object
+ * is 1, reflecting that the returned pointer is the only active
+ * reference.  The caller is expected to store the returned value back
+ * in the variable and decrement its reference count.  (INST_STORE_*
+ * does exactly this.)
+ *
+ * Tcl_LsetList and related functions maintain a linked list of
+ * Tcl_Obj's whose string representations must be spoilt by threading
+ * via 'ptr2' of the two-pointer internal representation.  On entry
+ * to Tcl_LsetList, the values of 'ptr2' are immaterial; on exit,
+ * the 'ptr2' field of any Tcl_Obj that has been modified is set to
+ * NULL.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Obj*
+TclLsetFlat( interp, listPtr, indexCount, indexArray, valuePtr )
+    Tcl_Interp* interp;		/* Tcl interpreter */
+    Tcl_Obj* listPtr;		/* Pointer to the list being modified */
+    int indexCount;		/* Number of index args */
+    Tcl_Obj *CONST indexArray[];
+				/* Index args */
+    Tcl_Obj* valuePtr;		/* Value arg to 'lset' */
+{
+
+    int duplicated;		/* Flag == 1 if the obj has been
+				 * duplicated, 0 otherwise */
+    Tcl_Obj* retValuePtr;	/* Pointer to the list to be returned */
+
+    int elemCount;		/* Length of one sublist being changed */
+    Tcl_Obj** elemPtrs;		/* Pointers to the elements of a sublist */
+
+    Tcl_Obj* subListPtr;	/* Pointer to the current sublist */
+
+    int index;			/* Index of the element to replace in the
+				 * current sublist */
+    Tcl_Obj* chainPtr;		/* Pointer to the enclosing list of
+				 * the current sublist. */
+
+    int result;			/* Status return from library calls */
+
+
+
+    int i;
+
+    /*
+     * If there are no indices, then simply return the new value,
+     * counting the returned pointer as a reference
+     */
+
+    if ( indexCount == 0 ) {
+	Tcl_IncrRefCount( valuePtr );
+	return valuePtr;
+    }
+
+    /*
+     * If the list is shared, make a private copy.
+     */
+
+    if ( Tcl_IsShared( listPtr ) ) {
+	duplicated = 1;
+	listPtr = Tcl_DuplicateObj( listPtr );
+	Tcl_IncrRefCount( listPtr );
+    } else {
+	duplicated = 0;
+    }
+
+    /*
+     * Anchor the linked list of Tcl_Obj's whose string reps must be
+     * invalidated if the operation succeeds.
+     */
+
+    retValuePtr = listPtr;
+    chainPtr = NULL;
+
+    /*
+     * Handle each index arg by diving into the appropriate sublist
+     */
+
+    for ( i = 0; ; ++i ) {
+
+	/*
+	 * Take the sublist apart.
+	 */
+
+	result = Tcl_ListObjGetElements( interp, listPtr,
+					 &elemCount, &elemPtrs );
+	if ( result != TCL_OK ) {
+	    break;
+	}
+	listPtr->internalRep.twoPtrValue.ptr2 = (VOID *) chainPtr;
+
+	/*
+	 * Determine the index of the requested element.
+	 */
+
+	result = TclGetIntForIndex( interp, indexArray[ i ],
+				    (elemCount - 1), &index );
+	if ( result != TCL_OK ) {
+	    break;
+	}
+	
+	/*
+	 * Check that the index is in range.
+	 */
+
+	if ( ( index < 0 ) || ( index >= elemCount ) ) {
+	    Tcl_SetObjResult( interp,
+			      Tcl_NewStringObj( "list index out of range",
+						-1 ) );
+	    result = TCL_ERROR;
+	    break;
+	}
+
+	/*
+	 * Break the loop after extracting the innermost sublist
+	 */
+
+	if ( i >= indexCount-1 ) {
+	    result = TCL_OK;
+	    break;
+	}
+	
+	/*
+	 * Extract the appropriate sublist, and make sure that it is unshared.
+	 */
+
+	subListPtr = elemPtrs[ index ];
+	if ( Tcl_IsShared( subListPtr ) ) {
+	    subListPtr = Tcl_DuplicateObj( subListPtr );
+	    result = TclListObjSetElement( interp, listPtr, index,
+					    subListPtr );
+	    if ( result != TCL_OK ) {
+		/* 
+		 * We actually shouldn't be able to get here.
+		 * If we do, it would result in leaking subListPtr,
+		 * but everything's been validated already; the error
+		 * exit from TclListObjSetElement should never happen.
+		 */
+		break;
+	    }
+	}
+
+	/* 
+	 * Chain the current sublist onto the linked list of Tcl_Obj's
+	 * whose string reps must be spoilt.
+	 */
+
+	chainPtr = listPtr;
+	listPtr = subListPtr;
+
+    }
+
+    /* Store the result in the list element */
+
+    if ( result == TCL_OK ) {
+	result = TclListObjSetElement( interp, listPtr, index, valuePtr );
+    }
+
+    if ( result == TCL_OK ) {
+
+	listPtr->internalRep.twoPtrValue.ptr2 = (VOID *) chainPtr;
+
+	/* Spoil all the string reps */
+	
+	while ( listPtr != NULL ) {
+	    subListPtr = (Tcl_Obj *) listPtr->internalRep.twoPtrValue.ptr2;
+	    Tcl_InvalidateStringRep( listPtr );
+	    listPtr->internalRep.twoPtrValue.ptr2 = NULL;
+	    listPtr = subListPtr;
+	}
+
+	/* Return the new list if everything worked. */
+	
+	if ( !duplicated ) {
+	    Tcl_IncrRefCount( retValuePtr );
+	}
+	return retValuePtr;
+    }
+
+    /* Clean up the one dangling reference otherwise */
+
+    if ( duplicated ) {
+	Tcl_DecrRefCount( retValuePtr );
+    }
+    return NULL;
+
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclListObjSetElement --
+ *
+ *	Set a single element of a list to a specified value
+ *
+ * Results:
+ *
+ *	The return value is normally TCL_OK.  If listPtr does not
+ *	refer to a list object and cannot be converted to one, TCL_ERROR
+ *	is returned and an error message will be left in the interpreter
+ *	result if interp is not NULL.  Similarly, if index designates
+ *	an element outside the range [0..listLength-1], where
+ *	listLength is the count of elements in the list object designated
+ *	by listPtr, TCL_ERROR is returned and an error message is left
+ *	in the interpreter result.
+ *
+ * Side effects:
+ *
+ *	Panics if listPtr designates a shared object.  Otherwise, attempts
+ *	to convert it to a list.  Decrements the ref count of the object
+ *	at the specified index within the list, replaces with the
+ *	object designated by valuePtr, and increments the ref count
+ *	of the replacement object.  
+ *
+ * It is the caller's responsibility to invalidate the string
+ * representation of the object.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclListObjSetElement( interp, listPtr, index, valuePtr )
+    Tcl_Interp* interp;		/* Tcl interpreter; used for error reporting
+				 * if not NULL */
+    Tcl_Obj* listPtr;		/* List object in which element should be
+				 * stored */
+    int index;			/* Index of element to store */
+    Tcl_Obj* valuePtr;		/* Tcl object to store in the designated
+				 * list element */
+{
+    int result;			/* Return value from this function */
+    List* listRepPtr;		/* Internal representation of the list
+				 * being modified */
+    Tcl_Obj** elemPtrs;		/* Pointers to elements of the list */
+    int elemCount;		/* Number of elements in the list */
+
+    /* Ensure that the listPtr parameter designates an unshared list */
+
+    if ( Tcl_IsShared( listPtr ) ) {
+	panic( "Tcl_ListObjSetElement called with shared object" );
+    }
+    if ( listPtr->typePtr != &tclListType ) {
+	result = SetListFromAny( interp, listPtr );
+	if ( result != TCL_OK ) {
+	    return result;
+	}
+    }
+    listRepPtr = (List*) listPtr->internalRep.twoPtrValue.ptr1;
+    elemPtrs = listRepPtr->elements;
+    elemCount = listRepPtr->elemCount;
+
+    /* Ensure that the index is in bounds */
+
+    if ( index < 0 || index >= elemCount ) {
+	if ( interp != NULL ) {
+	    Tcl_SetObjResult( interp,
+			      Tcl_NewStringObj( "list index out of range",
+						-1 ) );
+	    return TCL_ERROR;
+	}
+    }
+
+    /* Add a reference to the new list element */
+
+    Tcl_IncrRefCount( valuePtr );
+
+    /* Remove a reference from the old list element */
+
+    Tcl_DecrRefCount( elemPtrs[ index ] );
+
+    /* Stash the new object in the list */
+
+    elemPtrs[ index ] = valuePtr;
+
+    return TCL_OK;
+    
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * FreeListInternalRep --
  *
  *	Deallocate the storage associated with a list object's internal
@@ -773,7 +1366,7 @@ Tcl_ListObjReplace(interp, listPtr, first, count, objc, objv)
  *
  * Side effects:
  *	Frees listPtr's List* internal representation and sets listPtr's
- *	internalRep.otherValuePtr to NULL. Decrements the ref counts
+ *	internalRep.twoPtrValue.ptr1 to NULL. Decrements the ref counts
  *	of all element objects, which may free them.
  *
  *----------------------------------------------------------------------
@@ -783,7 +1376,7 @@ static void
 FreeListInternalRep(listPtr)
     Tcl_Obj *listPtr;		/* List object with internal rep to free. */
 {
-    register List *listRepPtr = (List *) listPtr->internalRep.otherValuePtr;
+    register List *listRepPtr = (List *) listPtr->internalRep.twoPtrValue.ptr1;
     register Tcl_Obj **elemPtrs = listRepPtr->elements;
     register Tcl_Obj *objPtr;
     int numElems = listRepPtr->elemCount;
@@ -795,6 +1388,9 @@ FreeListInternalRep(listPtr)
     }
     ckfree((char *) elemPtrs);
     ckfree((char *) listRepPtr);
+
+    listPtr->internalRep.twoPtrValue.ptr1 = NULL;
+    listPtr->internalRep.twoPtrValue.ptr2 = NULL;
 }
 
 /*
@@ -824,7 +1420,7 @@ DupListInternalRep(srcPtr, copyPtr)
     Tcl_Obj *srcPtr;		/* Object with internal rep to copy. */
     Tcl_Obj *copyPtr;		/* Object with internal rep to set. */
 {
-    List *srcListRepPtr = (List *) srcPtr->internalRep.otherValuePtr;
+    List *srcListRepPtr = (List *) srcPtr->internalRep.twoPtrValue.ptr1;
     int numElems = srcListRepPtr->elemCount;
     int maxElems = srcListRepPtr->maxElemCount;
     register Tcl_Obj **srcElemPtrs = srcListRepPtr->elements;
@@ -850,7 +1446,8 @@ DupListInternalRep(srcPtr, copyPtr)
     copyListRepPtr->elemCount    = numElems;
     copyListRepPtr->elements     = copyElemPtrs;
     
-    copyPtr->internalRep.otherValuePtr = (VOID *) copyListRepPtr;
+    copyPtr->internalRep.twoPtrValue.ptr1 = (VOID *) copyListRepPtr;
+    copyPtr->internalRep.twoPtrValue.ptr2 = NULL;
     copyPtr->typePtr = &tclListType;
 }
 
@@ -976,7 +1573,8 @@ SetListFromAny(interp, objPtr)
 	oldTypePtr->freeIntRepProc(objPtr);
     }
 
-    objPtr->internalRep.otherValuePtr = (VOID *) listRepPtr;
+    objPtr->internalRep.twoPtrValue.ptr1 = (VOID *) listRepPtr;
+    objPtr->internalRep.twoPtrValue.ptr2 = NULL;
     objPtr->typePtr = &tclListType;
     return TCL_OK;
 }
@@ -1008,7 +1606,7 @@ UpdateStringOfList(listPtr)
 {
 #   define LOCAL_SIZE 20
     int localFlags[LOCAL_SIZE], *flagPtr;
-    List *listRepPtr = (List *) listPtr->internalRep.otherValuePtr;
+    List *listRepPtr = (List *) listPtr->internalRep.twoPtrValue.ptr1;
     int numElems = listRepPtr->elemCount;
     register int i;
     char *elem, *dst;

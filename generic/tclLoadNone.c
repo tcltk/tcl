@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoadNone.c,v 1.6 2001/09/28 01:21:53 dgp Exp $
+ * RCS: @(#) $Id: tclLoadNone.c,v 1.6.2.1 2002/02/05 02:22:00 wolfsuit Exp $
  */
 
 #include "tclInt.h"
@@ -35,7 +35,7 @@
  */
 
 int
-TclpLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr, clientDataPtr)
+TclpLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr, clientDataPtr, unloadProcPtr)
     Tcl_Interp *interp;		/* Used for error reporting. */
     Tcl_Obj *pathPtr;		/* Name of the file containing the desired
 				 * code. */
@@ -47,6 +47,7 @@ TclpLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr, clientDataPtr)
     ClientData *clientDataPtr;	/* Filled with token for dynamically loaded
 				 * file which will be passed back to 
 				 * TclpUnloadFile() to unload the file. */
+    Tcl_FSUnloadFileProc **unloadProcPtr;
 {
     Tcl_SetResult(interp,
 	    "dynamic loading is not currently available on this system",
@@ -76,7 +77,7 @@ TclpLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr, clientDataPtr)
 
 int
 TclGuessPackageName(fileName, bufPtr)
-    char *fileName;		/* Name of file containing package (already
+    CONST char *fileName;	/* Name of file containing package (already
 				 * translated to local form if needed). */
     Tcl_DString *bufPtr;	/* Initialized empty dstring.  Append
 				 * package name to this if possible. */

@@ -9,17 +9,18 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacTime.c,v 1.4 2001/07/31 19:12:07 vincentdarley Exp $
+ * RCS: @(#) $Id: tclMacTime.c,v 1.4.8.1 2002/02/05 02:22:03 wolfsuit Exp $
  */
 
 #include "tclInt.h"
 #include "tclPort.h"
+#include "tclMacInt.h"
 #include <OSUtils.h>
 #include <Timer.h>
 #include <time.h>
 
 /*
- * Static variables used by the TclpGetTime function.
+ * Static variables used by the Tcl_GetTime function.
  */
  
 static int initalized = false;
@@ -32,6 +33,83 @@ static int gmt_isdst;
 TCL_DECLARE_MUTEX(gmtMutex)
 
 static int gmt_lastGetDateUseGMT = 0;
+
+typedef struct _TABLE {
+    char        *name;
+    int         type;
+    time_t      value;
+} TABLE;
+
+
+#define HOUR(x)         ((time_t) (3600 * x))
+
+#define tZONE 0
+#define tDAYZONE 1
+
+
+/*
+ * inverse timezone table, adapted from tclDate.c by removing duplicates and
+ * adding some made up names for unusual daylight savings
+ */
+static TABLE    invTimezoneTable[] = {
+    { "Z",    -1,     HOUR( 36) },      /* Unknown */
+    { "GMT",    tZONE,     HOUR( 0) },      /* Greenwich Mean */
+    { "BST",    tDAYZONE,  HOUR( 0) },      /* British Summer */
+    { "WAT",    tZONE,     HOUR( 1) },      /* West Africa */
+    { "WADST",  tDAYZONE,  HOUR( 1) },      /* West Africa Daylight*/
+    { "AT",     tZONE,     HOUR( 2) },      /* Azores Daylight*/
+    { "ADST",   tDAYZONE,  HOUR( 2) },      /* Azores */
+    { "NFT",    tZONE,     HOUR( 7/2) },    /* Newfoundland */
+    { "NDT",    tDAYZONE,  HOUR( 7/2) },    /* Newfoundland Daylight */
+    { "AST",    tZONE,     HOUR( 4) },      /* Atlantic Standard */
+    { "ADT",    tDAYZONE,  HOUR( 4) },      /* Atlantic Daylight */
+    { "EST",    tZONE,     HOUR( 5) },      /* Eastern Standard */
+    { "EDT",    tDAYZONE,  HOUR( 5) },      /* Eastern Daylight */
+    { "CST",    tZONE,     HOUR( 6) },      /* Central Standard */
+    { "CDT",    tDAYZONE,  HOUR( 6) },      /* Central Daylight */
+    { "MST",    tZONE,     HOUR( 7) },      /* Mountain Standard */
+    { "MDT",    tDAYZONE,  HOUR( 7) },      /* Mountain Daylight */
+    { "PST",    tZONE,     HOUR( 8) },      /* Pacific Standard */
+    { "PDT",    tDAYZONE,  HOUR( 8) },      /* Pacific Daylight */
+    { "YST",    tZONE,     HOUR( 9) },      /* Yukon Standard */
+    { "YDT",    tDAYZONE,  HOUR( 9) },      /* Yukon Daylight */
+    { "HST",    tZONE,     HOUR(10) },      /* Hawaii Standard */
+    { "HDT",    tDAYZONE,  HOUR(10) },      /* Hawaii Daylight */
+    { "NT",     tZONE,     HOUR(11) },      /* Nome */
+    { "NST",    tDAYZONE,  HOUR(11) },      /* Nome Daylight*/
+    { "IDLW",   tZONE,     HOUR(12) },      /* International Date Line West */
+    { "CET",    tZONE,    -HOUR( 1) },      /* Central European */
+    { "CEST",   tDAYZONE, -HOUR( 1) },      /* Central European Summer */
+    { "EET",    tZONE,    -HOUR( 2) },      /* Eastern Europe, USSR Zone 1 */
+    { "EEST",   tDAYZONE, -HOUR( 2) },      /* Eastern Europe, USSR Zone 1 Daylight*/
+    { "BT",     tZONE,    -HOUR( 3) },      /* Baghdad, USSR Zone 2 */
+    { "BDST",   tDAYZONE, -HOUR( 3) },      /* Baghdad, USSR Zone 2 Daylight*/
+    { "IT",     tZONE,    -HOUR( 7/2) },    /* Iran */
+    { "IDST",   tDAYZONE, -HOUR( 7/2) },    /* Iran Daylight*/
+    { "ZP4",    tZONE,    -HOUR( 4) },      /* USSR Zone 3 */
+    { "ZP4S",   tDAYZONE, -HOUR( 4) },      /* USSR Zone 3 */
+    { "ZP5",    tZONE,    -HOUR( 5) },      /* USSR Zone 4 */
+    { "ZP5S",   tDAYZONE, -HOUR( 5) },      /* USSR Zone 4 */
+    { "IST",    tZONE,    -HOUR(11/2) },    /* Indian Standard */
+    { "ISDST",  tDAYZONE, -HOUR(11/2) },    /* Indian Standard */
+    { "ZP6",    tZONE,    -HOUR( 6) },      /* USSR Zone 5 */
+    { "ZP6S",   tDAYZONE, -HOUR( 6) },      /* USSR Zone 5 */
+    { "WAST",   tZONE,    -HOUR( 7) },      /* West Australian Standard */
+    { "WADT",   tDAYZONE, -HOUR( 7) },      /* West Australian Daylight */
+    { "JT",     tZONE,    -HOUR(15/2) },    /* Java (3pm in Cronusland!) */
+    { "JDST",   tDAYZONE, -HOUR(15/2) },    /* Java (3pm in Cronusland!) */
+    { "CCT",    tZONE,    -HOUR( 8) },      /* China Coast, USSR Zone 7 */
+    { "CCST",   tDAYZONE, -HOUR( 8) },      /* China Coast, USSR Zone 7 */
+    { "JST",    tZONE,    -HOUR( 9) },      /* Japan Standard, USSR Zone 8 */
+    { "JSDST",  tDAYZONE, -HOUR( 9) },      /* Japan Standard, USSR Zone 8 */
+    { "CAST",   tZONE,    -HOUR(19/2) },    /* Central Australian Standard */
+    { "CADT",   tDAYZONE, -HOUR(19/2) },    /* Central Australian Daylight */
+    { "EAST",   tZONE,    -HOUR(10) },      /* Eastern Australian Standard */
+    { "EADT",   tDAYZONE, -HOUR(10) },      /* Eastern Australian Daylight */
+    { "NZT",    tZONE,    -HOUR(12) },      /* New Zealand */
+    { "NZDT",   tDAYZONE, -HOUR(12) },      /* New Zealand Daylight */
+    {  NULL  }
+};
 
 /*
  * Prototypes for procedures that are private to this file:
@@ -173,7 +251,7 @@ TclpGetTimeZone (
 /*
  *----------------------------------------------------------------------
  *
- * TclpGetTime --
+ * Tcl_GetTime --
  *
  *	Gets the current system time in seconds and microseconds
  *	since the beginning of the epoch: 00:00 UCT, January 1, 1970.
@@ -188,7 +266,7 @@ TclpGetTimeZone (
  */
 
 void
-TclpGetTime(
+Tcl_GetTime(
     Tcl_Time *timePtr)		/* Location to store time information. */
 {
     UnsignedWide micro;
@@ -286,6 +364,43 @@ TclpGetDate(
     	statictime.tm_isdst = gmt_isdst;
     gmt_lastGetDateUseGMT=useGMT; /* hack to make TclpGetTZName below work */
     return(&statictime);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpGetTZName --
+ *
+ *	Gets the current timezone string.
+ *
+ * Results:
+ *	Returns a pointer to a static string, or NULL on failure.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+char *
+TclpGetTZName(int dst)
+{
+    register TABLE *tp;
+	long zonevalue=-TclpGetGMTOffset();
+		
+    if (gmt_isdst)
+        zonevalue += HOUR(1);
+
+	if(gmt_lastGetDateUseGMT) /* hack: if last TclpGetDate was called */
+		zonevalue=0;          /* with useGMT==1 then we're using GMT  */
+
+    for (tp = invTimezoneTable; tp->name; tp++) {
+        if ((tp->value == zonevalue) && (tp->type == dst)) break;
+    }
+	if(!tp->name)
+		tp = invTimezoneTable; /* default to unknown */
+
+    return tp->name;
 }
 
 #ifdef NO_LONG_LONG

@@ -7,7 +7,7 @@
  * Copyright (c) 1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclUnixInit.c,v 1.24.8.2 2001/12/02 01:03:46 wolfsuit Exp $
+ * RCS: @(#) $Id: tclUnixInit.c,v 1.24.8.3 2002/02/05 02:22:05 wolfsuit Exp $
  */
 
 #if defined(HAVE_CFBUNDLE)
@@ -16,6 +16,9 @@
 #include "tclInt.h"
 #include "tclPort.h"
 #include <locale.h>
+#ifdef HAVE_LANGINFO
+#include <langinfo.h>
+#endif
 #if defined(__FreeBSD__)
 #   include <floatingpoint.h>
 #endif
@@ -38,6 +41,16 @@ static Tcl_Encoding binaryEncoding = NULL;
 static int libraryPathEncodingFixed = 0;
 
 /*
+ * Tcl tries to use standard and homebrew methods to guess the right
+ * encoding on the platform.  However, there is always a final fallback,
+ * and this value is it.  Make sure it is a real Tcl encoding.
+ */
+
+#ifndef TCL_DEFAULT_ENCODING
+#define TCL_DEFAULT_ENCODING "iso8859-1"
+#endif
+
+/*
  * Default directory in which to look for Tcl library scripts.  The
  * symbol is defined by Makefile.
  */
@@ -54,7 +67,10 @@ static char pkgPath[sizeof(TCL_PACKAGE_PATH)+200] = TCL_PACKAGE_PATH;
 
 /*
  * The following table is used to map from Unix locale strings to
- * encoding files.
+ * encoding files.  If HAVE_LANGINFO is defined, then this is a fallback
+ * table when the result from nl_langinfo isn't a recognized encoding.
+ * Otherwise this is the first list checked for a mapping from env
+ * encoding to Tcl encoding name.
  */
 
 typedef struct LocaleTable {
@@ -63,6 +79,29 @@ typedef struct LocaleTable {
 } LocaleTable;
 
 static CONST LocaleTable localeTable[] = {
+#ifdef HAVE_LANGINFO
+    {"gb2312-1980",	"gb2312"},
+#ifdef __hpux
+    {"SJIS",		"shiftjis"},
+    {"eucjp",		"euc-jp"},
+    {"euckr",		"euc-kr"},
+    {"euctw",		"euc-cn"},
+    {"greek8",		"cp869"},
+    {"iso88591",	"iso8859-1"},
+    {"iso88592",	"iso8859-2"},
+    {"iso88595",	"iso8859-5"},
+    {"iso88596",	"iso8859-6"},
+    {"iso88597",	"iso8859-7"},
+    {"iso88598",	"iso8859-8"},
+    {"iso88599",	"iso8859-9"},
+    {"iso885915",	"iso8859-15"},
+    {"roman8",		"iso8859-1"},
+    {"tis620",		"tis-620"},
+    {"turkish8",	"cp857"},
+    {"utf8",		"utf-8"},
+#endif /* __hpux */
+#endif /* HAVE_LANGINFO */
+
     {"ja_JP.SJIS",	"shiftjis"},
     {"ja_JP.EUC",	"euc-jp"},
     {"ja_JP.eucJP",     "euc-jp"},
@@ -200,10 +239,10 @@ CONST char *path;		/* Path to the executable in native
 {
 #define LIBRARY_SIZE	    32
     Tcl_Obj *pathPtr, *objPtr;
-    char *str;
+    CONST char *str;
     Tcl_DString buffer, ds;
     int pathc;
-    char **pathv;
+    CONST char **pathv;
     char installLib[LIBRARY_SIZE], developLib[LIBRARY_SIZE];
 
     Tcl_DStringInit(&ds);
@@ -396,83 +435,161 @@ void
 TclpSetInitialEncodings()
 {
     if (libraryPathEncodingFixed == 0) {
-	CONST char *encoding;
-	int i;
+	CONST char *encoding = NULL;
+	int i, setSysEncCode = TCL_ERROR;
 	Tcl_Obj *pathPtr;
-	char *langEnv;
 
 	/*
 	 * Determine the current encoding from the LC_* or LANG environment
 	 * variables.  We previously used setlocale() to determine the locale,
 	 * but this does not work on some systems (e.g. Linux/i386 RH 5.0).
 	 */
+#ifdef HAVE_LANGINFO
+	if (setlocale(LC_CTYPE, "") != NULL) {
+	    Tcl_DString ds;
 
-	langEnv = getenv("LC_ALL");
-
-	if (langEnv == NULL || langEnv[0] == '\0') {
-	    langEnv = getenv("LC_CTYPE");
-	}
-	if (langEnv == NULL || langEnv[0] == '\0') {
-	    langEnv = getenv("LANG");
-	}
-	if (langEnv == NULL || langEnv[0] == '\0') {
-	    langEnv = NULL;
-	}
-
-	encoding = NULL;
-	if (langEnv != NULL) {
-	    for (i = 0; localeTable[i].lang != NULL; i++) {
-		if (strcmp(localeTable[i].lang, langEnv) == 0) {
-		    encoding = localeTable[i].encoding;
-		    break;
-		}
-	    }
 	    /*
-	     * There was no mapping in the locale table.  If there is an
-	     * encoding subfield, we can try to guess from that.
+	     * Use a DString so we can overwrite it in name compatability
+	     * checks below.
 	     */
 
-	    if (encoding == NULL) {
-		char *p;
-		for (p = langEnv; *p != '\0'; p++) {
-		    if (*p == '.') {
-			p++;
+	    Tcl_DStringInit(&ds);
+	    Tcl_DStringAppend(&ds, nl_langinfo(CODESET), -1);
+	    encoding = Tcl_DStringValue(&ds);
+
+	    Tcl_UtfToLower(Tcl_DStringValue(&ds));
+#ifdef HAVE_LANGINFO_DEBUG
+	    fprintf(stderr, "encoding '%s'", encoding);
+#endif
+	    if (encoding[0] == 'i' && encoding[1] == 's' && encoding[2] == 'o'
+		    && encoding[3] == '-') {
+		char *p, *q;
+		/* need to strip '-' from iso-* encoding */
+		for(p = Tcl_DStringValue(&ds)+3, q = Tcl_DStringValue(&ds)+4;
+		    *p; *p++ = *q++);
+	    } else if (encoding[0] == 'i' && encoding[1] == 'b'
+		    && encoding[2] == 'm' && encoding[3] >= '0'
+		    && encoding[3] <= '9') {
+		char *p, *q;
+		/* if langinfo reports "ibm*" we should use "cp*" */
+		p = Tcl_DStringValue(&ds);
+		*p++ = 'c'; *p++ = 'p';
+		for(q = p+1; *p ; *p++ = *q++);
+	    } else if ((*encoding == '\0')
+		    || !strcmp(encoding, "ansi_x3.4-1968")) {
+		/* Use iso8859-1 for empty or 'ansi_x3.4-1968' encoding */
+		encoding = "iso8859-1";
+	    }
+#ifdef HAVE_LANGINFO_DEBUG
+	    fprintf(stderr, " ?%s?", encoding);
+#endif
+	    setSysEncCode = Tcl_SetSystemEncoding(NULL, encoding);
+	    if (setSysEncCode != TCL_OK) {
+		/*
+		 * If this doesn't return TCL_OK, the encoding returned by
+		 * nl_langinfo or as we translated it wasn't accepted.  Do
+		 * this fallback check.  If this fails, we will enter the
+		 * old fallback below.
+		 */
+
+		for (i = 0; localeTable[i].lang != NULL; i++) {
+		    if (strcmp(localeTable[i].lang, encoding) == 0) {
+			setSysEncCode = Tcl_SetSystemEncoding(NULL,
+				localeTable[i].encoding);
 			break;
 		    }
 		}
-		if (*p != '\0') {
-		    Tcl_DString ds;
-		    Tcl_DStringInit(&ds);
-		    Tcl_DStringAppend(&ds, p, -1);
-
-		    encoding = Tcl_DStringValue(&ds);
-		    Tcl_UtfToLower(Tcl_DStringValue(&ds));
-		    if (Tcl_SetSystemEncoding(NULL, encoding) == TCL_OK) {
-			Tcl_DStringFree(&ds);
-			goto resetPath;
-		    }
-		    Tcl_DStringFree(&ds);
-		    encoding = NULL;
-		}
 	    }
+#ifdef HAVE_LANGINFO_DEBUG
+	    fprintf(stderr, " => '%s'\n", encoding);
+#endif
+	    Tcl_DStringFree(&ds);
 	}
-	if (encoding == NULL) {
-	    encoding = "iso8859-1";
+#ifdef HAVE_LANGINFO_DEBUG
+	else {
+	    fprintf(stderr, "setlocale returned NULL\n");
 	}
+#endif
+#endif /* HAVE_LANGINFO */
 
-	Tcl_SetSystemEncoding(NULL, encoding);
+	if (setSysEncCode != TCL_OK) {
+	    /*
+	     * Classic fallback check.  This tries a homebrew algorithm to
+	     * determine what encoding should be used based on env vars.
+	     */
+	    char *langEnv = getenv("LC_ALL");
+	    encoding = NULL;
 
-	resetPath:
-	/*
-	 * Initialize the C library's locale subsystem.  This is required
-	 * for input methods to work properly on X11.  We only do this for
-	 * LC_CTYPE because that's the necessary one, and we don't want to
-	 * affect LC_TIME here.  The side effect of setting the default locale
-	 * should be to load any locale specific modules that are needed by X.
-	 * [BUG: 5422 3345 4236 2522 2521].
-	 */
+	    if (langEnv == NULL || langEnv[0] == '\0') {
+		langEnv = getenv("LC_CTYPE");
+	    }
+	    if (langEnv == NULL || langEnv[0] == '\0') {
+		langEnv = getenv("LANG");
+	    }
+	    if (langEnv == NULL || langEnv[0] == '\0') {
+		langEnv = NULL;
+	    }
 
-	setlocale(LC_CTYPE, "");
+	    if (langEnv != NULL) {
+		for (i = 0; localeTable[i].lang != NULL; i++) {
+		    if (strcmp(localeTable[i].lang, langEnv) == 0) {
+			encoding = localeTable[i].encoding;
+			break;
+		    }
+		}
+		/*
+		 * There was no mapping in the locale table.  If there is an
+		 * encoding subfield, we can try to guess from that.
+		 */
+
+		if (encoding == NULL) {
+		    char *p;
+		    for (p = langEnv; *p != '\0'; p++) {
+			if (*p == '.') {
+			    p++;
+			    break;
+			}
+		    }
+		    if (*p != '\0') {
+			Tcl_DString ds;
+			Tcl_DStringInit(&ds);
+			Tcl_DStringAppend(&ds, p, -1);
+
+			encoding = Tcl_DStringValue(&ds);
+			Tcl_UtfToLower(Tcl_DStringValue(&ds));
+			setSysEncCode = Tcl_SetSystemEncoding(NULL, encoding);
+			if (setSysEncCode != TCL_OK) {
+			    encoding = NULL;
+			}
+			Tcl_DStringFree(&ds);
+		    }
+		}
+#ifdef HAVE_LANGINFO_DEBUG
+		fprintf(stderr, "encoding fallback check '%s' => '%s'\n",
+			langEnv, encoding);
+#endif
+	    }
+	    if (setSysEncCode != TCL_OK) {
+		if (encoding == NULL) {
+		    encoding = TCL_DEFAULT_ENCODING;
+		}
+
+		Tcl_SetSystemEncoding(NULL, encoding);
+	    }
+
+	    /*
+	     * Initialize the C library's locale subsystem.  This is required
+	     * for input methods to work properly on X11.  We only do this for
+	     * LC_CTYPE because that's the necessary one, and we don't want to
+	     * affect LC_TIME here.  The side effect of setting the default
+	     * locale should be to load any locale specific modules that are
+	     * needed by X.  [BUG: 5422 3345 4236 2522 2521].
+	     * In HAVE_LANGINFO, this call is already done above.
+	     */
+#ifndef HAVE_LANGINFO
+	    setlocale(LC_CTYPE, "");
+#endif
+	}
 
 	/*
 	 * In case the initial locale is not "C", ensure that the numeric
@@ -565,7 +682,7 @@ TclpSetVariables(interp)
     struct utsname name;
 #endif
     int unameOK;
-    char *user;
+    CONST char *user;
     Tcl_DString ds;
 
 #ifdef HAVE_CFBUNDLE
@@ -604,7 +721,7 @@ TclpSetVariables(interp)
     unameOK = 0;
 #ifndef NO_UNAME
     if (uname(&name) >= 0) {
-	char *native;
+	CONST char *native;
 	
 	unameOK = 1;
 
@@ -779,14 +896,14 @@ Tcl_SourceRCFile(interp)
     Tcl_Interp *interp;		/* Interpreter to source rc file into. */
 {
     Tcl_DString temp;
-    char *fileName;
+    CONST char *fileName;
     Tcl_Channel errChannel;
 
     fileName = Tcl_GetVar(interp, "tcl_rcFileName", TCL_GLOBAL_ONLY);
 
     if (fileName != NULL) {
         Tcl_Channel c;
-	char *fullName;
+	CONST char *fullName;
 
         Tcl_DStringInit(&temp);
 	fullName = Tcl_TranslateFileName(interp, fileName, &temp);

@@ -5,10 +5,10 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: open.n,v 1.12 2000/12/08 11:22:54 dkf Exp $
+'\" RCS: @(#) $Id: open.n,v 1.12.14.1 2002/02/05 02:21:58 wolfsuit Exp $
 '\" 
 .so man.macros
-.TH open n 7.6 Tcl "Tcl Built-In Commands"
+.TH open n 8.3 Tcl "Tcl Built-In Commands"
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
@@ -24,9 +24,7 @@ open \- Open a file-based or command pipeline channel
 
 .SH DESCRIPTION
 .PP
-.VS
 This command opens a file, serial port, or command pipeline and returns a
-.VE
 channel identifier that may be used in future invocations of commands like
 \fBread\fR, \fBputs\fR, and \fBclose\fR.
 If the first character of \fIfileName\fR is not \fB|\fR then
@@ -109,9 +107,6 @@ If a new file is created as part of opening it, \fIpermissions\fR
 conjunction with the process's file mode creation mask.
 \fIPermissions\fR defaults to 0666.
 .PP
-'\" Not versioned as advice applies to all recent versions of Tcl.
-'\" Prior to that, Tcl didn't really support binary files anyway...
-.VS
 Note that if you are going to be reading or writing binary data from
 the channel created by this command, you should use the
 \fBfconfigure\fR command to change the \fB-translation\fR option of
@@ -119,7 +114,7 @@ the channel to \fBbinary\fR before transferring any binary data.  This
 is in contrast to the ``b'' character passed as part of the equivalent
 of the \fIaccess\fR parameter to some versions of the C library
 \fIfopen()\fR function.
-.VE
+
 .SH "COMMAND PIPELINES"
 .PP
 If the first character of \fIfileName\fR is ``|'' then the
@@ -135,48 +130,21 @@ output unless overridden by the command.
 If read-only access is used (e.g. \fIaccess\fR is \fBr\fR),
 standard input for the pipeline is taken from the current standard
 input unless overridden by the command.
+The id of the spawned process is accessible through the \fBpid\fR
+command, using the channel id returned by \fBopen\fR as argument.
+
+.VS 8.4
 .SH "SERIAL COMMUNICATIONS"
-.VS
 .PP
 If \fIfileName\fR refers to a serial port, then the specified serial port
 is opened and initialized in a platform-dependent manner.  Acceptable
 values for the \fIfileName\fR to use to open a serial port are described in
 the PORTABILITY ISSUES section.
-
-.SH "CONFIGURATION OPTIONS"
-The \fBfconfigure\fR command can be used to query and set the following
-configuration option for open serial ports:
-.TP
-\fB\-mode \fIbaud\fB,\fIparity\fB,\fIdata\fB,\fIstop\fR
-.
-This option is a set of 4 comma-separated values: the baud rate, parity,
-number of data bits, and number of stop bits for this serial port.  The
-\fIbaud\fR rate is a simple integer that specifies the connection speed.
-\fIParity\fR is one of the following letters: \fBn\fR, \fBo\fR, \fBe\fR,
-\fBm\fR, \fBs\fR; respectively signifying the parity options of ``none'',
-``odd'', ``even'', ``mark'', or ``space''.  \fIData\fR is the number of
-data bits and should be an integer from 5 to 8, while \fIstop\fR is the
-number of stop bits and should be the integer 1 or 2.
-.TP
-\fB\-pollinterval \fImsec\fR
-.
-This option, available only on Windows for serial ports, is used to
-set the maximum time between polling for fileevents.  This affects the
-time interval between checking for events throughout the Tcl
-interpreter (the smallest value always wins).  Use this option only if
-you want to poll the serial port more often than 10 msec (the default).
-.TP
-\fB\-lasterror\fR
-.
-This option is available only on Windows for serial ports, and is
-query only (will only be reported when directly requested).
-In case of a serial communication error, \fBread\fR or \fBputs\fR
-returns a general Tcl file I/O error.
-\fBfconfigure -lasterror\fR can be called to get a list 
-of error details (e.g. FRAME RXOVER).
+.PP
+The \fBfconfigure\fR command can be used to query and set additional
+configuration options specific to serial ports.
 .VE
 
-.VS
 .SH "PORTABILITY ISSUES"
 .sp
 .TP
@@ -266,7 +234,7 @@ applications on the various platforms
 
 .SH "SEE ALSO"
 file(n), close(n), filename(n), fconfigure(n), gets(n), read(n),
-puts(n), exec(n), fopen(1)
+puts(n), exec(n), pid(n), fopen(1)
 
 .SH KEYWORDS
 access mode, append, create, file, non-blocking, open, permissions,

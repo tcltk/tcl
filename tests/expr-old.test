@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: expr-old.test,v 1.11 2001/04/09 09:45:01 dkf Exp $
+# RCS: @(#) $Id: expr-old.test,v 1.11.12.1 2002/02/05 02:22:03 wolfsuit Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -440,10 +440,10 @@ test expr-old-26.1 {error conditions} {
 } {1 {can't use non-numeric string as operand of "+"}}
 test expr-old-26.2 {error conditions} {
     list [catch {expr 2+4*} msg] $msg
-} {1 {syntax error in expression "2+4*"}}
+} {1 {syntax error in expression "2+4*": premature end of expression}}
 test expr-old-26.3 {error conditions} {
     list [catch {expr 2+4*(} msg] $msg
-} {1 {syntax error in expression "2+4*("}}
+} {1 {syntax error in expression "2+4*(": premature end of expression}}
 catch {unset _non_existent_}
 test expr-old-26.4 {error conditions} {
     list [catch {expr 2+$_non_existent_} msg] $msg
@@ -457,7 +457,7 @@ test expr-old-26.6 {error conditions} {
 } {1 {can't use non-numeric string as operand of "+"}}
 test expr-old-26.7 {error conditions} {
     list [catch {expr {2+(4}} msg] $msg
-} {1 {syntax error in expression "2+(4"}}
+} {1 {syntax error in expression "2+(4": looking for close parenthesis}}
 test expr-old-26.8 {error conditions} {
     list [catch {expr 2/0} msg] $msg $errorCode
 } {1 {divide by zero} {ARITH DIVZERO {divide by zero}}}
@@ -469,31 +469,31 @@ test expr-old-26.10 {error conditions} {
 } {1 {divide by zero} {ARITH DIVZERO {divide by zero}}}
 test expr-old-26.11 {error conditions} {
     list [catch {expr 2#} msg] $msg
-} {1 {syntax error in expression "2#"}}
+} {1 {syntax error in expression "2#": extra tokens at end of expression}}
 test expr-old-26.12 {error conditions} {
     list [catch {expr a.b} msg] $msg
-} {1 {syntax error in expression "a.b"}}
+} {1 {syntax error in expression "a.b": variable references require preceding $}}
 test expr-old-26.13 {error conditions} {
     list [catch {expr {"a"/"b"}} msg] $msg
 } {1 {can't use non-numeric string as operand of "/"}}
 test expr-old-26.14 {error conditions} {
     list [catch {expr 2:3} msg] $msg
-} {1 {syntax error in expression "2:3"}}
+} {1 {syntax error in expression "2:3": extra tokens at end of expression}}
 test expr-old-26.15 {error conditions} {
     list [catch {expr a@b} msg] $msg
-} {1 {syntax error in expression "a@b"}}
+} {1 {syntax error in expression "a@b": variable references require preceding $}}
 test expr-old-26.16 {error conditions} {
     list [catch {expr a[b} msg] $msg
 } {1 {missing close-bracket}}
 test expr-old-26.17 {error conditions} {
     list [catch {expr a`b} msg] $msg
-} {1 {syntax error in expression "a`b"}}
+} {1 {syntax error in expression "a`b": variable references require preceding $}}
 test expr-old-26.18 {error conditions} {
     list [catch {expr \"a\"\{b} msg] $msg
-} {1 syntax\ error\ in\ expression\ \"\"a\"\{b\"}
+} {1 syntax\ error\ in\ expression\ \"\"a\"\{b\":\ extra\ tokens\ at\ end\ of\ expression}
 test expr-old-26.19 {error conditions} {
     list [catch {expr a} msg] $msg
-} {1 {syntax error in expression "a"}}
+} {1 {syntax error in expression "a": variable references require preceding $}}
 test expr-old-26.20 {error conditions} {
     list [catch expr msg] $msg
 } {1 {wrong # args: should be "expr arg ?arg ...?"}}
@@ -543,10 +543,10 @@ test expr-old-27.10 {cancelled evaluation} {
 } {0 0}
 test expr-old-27.11 {cancelled evaluation} {
     list [catch {expr {0 && foo}} msg] $msg
-} {1 {syntax error in expression "0 && foo"}}
+} {1 {syntax error in expression "0 && foo": variable references require preceding $}}
 test expr-old-27.12 {cancelled evaluation} {
     list [catch {expr {0 ? 1 : foo}} msg] $msg
-} {1 {syntax error in expression "0 ? 1 : foo"}}
+} {1 {syntax error in expression "0 ? 1 : foo": variable references require preceding $}}
 
 # Tcl_ExprBool as used in "if" statements
 
@@ -646,13 +646,13 @@ test expr-old-31.1 {multiple arguments to expr command} {
 } 73
 test expr-old-31.2 {multiple arguments to expr command} {
     list [catch {expr 2 + (3 + 4} msg] $msg
-} {1 {syntax error in expression "2 + (3 + 4"}}
+} {1 {syntax error in expression "2 + (3 + 4": looking for close parenthesis}}
 test expr-old-31.3 {multiple arguments to expr command} {
     list [catch {expr 2 + 3 +} msg] $msg
-} {1 {syntax error in expression "2 + 3 +"}}
+} {1 {syntax error in expression "2 + 3 +": premature end of expression}}
 test expr-old-31.4 {multiple arguments to expr command} {
     list [catch {expr 2 + 3 )} msg] $msg
-} {1 {syntax error in expression "2 + 3 )"}}
+} {1 {syntax error in expression "2 + 3 )": extra tokens at end of expression}}
 
 # Math functions
 
@@ -850,19 +850,19 @@ test expr-old-34.1 {errors in math functions} {
 } {1 {unknown math function "func_2"}}
 test expr-old-34.2 {errors in math functions} {
     list [catch {expr func|(1.0)} msg] $msg
-} {1 {syntax error in expression "func|(1.0)"}}
+} {1 {syntax error in expression "func|(1.0)": variable references require preceding $}}
 test expr-old-34.3 {errors in math functions} {
     list [catch {expr {hypot("a b", 2.0)}} msg] $msg
 } {1 {argument to math function didn't have numeric value}}
 test expr-old-34.4 {errors in math functions} {
     list [catch {expr hypot(1.0 2.0)} msg] $msg
-} {1 {syntax error in expression "hypot(1.0 2.0)"}}
+} {1 {syntax error in expression "hypot(1.0 2.0)": missing close parenthesis at end of function call}}
 test expr-old-34.5 {errors in math functions} {
     list [catch {expr hypot(1.0, 2.0} msg] $msg
-} {1 {syntax error in expression "hypot(1.0, 2.0"}}
+} {1 {syntax error in expression "hypot(1.0, 2.0": missing close parenthesis at end of function call}}
 test expr-old-34.6 {errors in math functions} {
     list [catch {expr hypot(1.0 ,} msg] $msg
-} {1 {syntax error in expression "hypot(1.0 ,"}}
+} {1 {syntax error in expression "hypot(1.0 ,": premature end of expression}}
 test expr-old-34.7 {errors in math functions} {
     list [catch {expr hypot(1.0)} msg] $msg
 } {1 {too few arguments for math function}}
@@ -950,7 +950,7 @@ if {[info commands testexprstring] == {}} {
 test expr-old-38.1 {Verify Tcl_ExprString's basic operation} {
     list [testexprstring "1+4"] [testexprstring "2*3+4.2"] \
         [catch {testexprstring "1+"} msg] $msg
-} {5 10.2 1 {syntax error in expression "1+"}}
+} {5 10.2 1 {syntax error in expression "1+": premature end of expression}}
 }
 
 # Special test for Pentium arithmetic bug of 1994:
@@ -965,15 +965,3 @@ if {(4195835.0 - (4195835.0/3145727.0)*3145727.0) == 256.0} {
 # cleanup
 ::tcltest::cleanupTests
 return
-
-
-
-
-
-
-
-
-
-
-
-

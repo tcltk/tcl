@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacBOAMain.c,v 1.3 1999/04/16 00:47:19 stanton Exp $
+ * RCS: @(#) $Id: tclMacBOAMain.c,v 1.3.28.1 2002/02/05 02:22:02 wolfsuit Exp $
  */
 
 #include "tcl.h"
@@ -49,22 +49,10 @@ extern char *		strcpy _ANSI_ARGS_((char *dst, CONST char *src));
 
 static Tcl_Interp *interp;	/* Interpreter for application. */
 
-#ifdef TCL_MEM_DEBUG
-static char dumpFile[100];	/* Records where to dump memory allocation
-				 * information. */
-static int quitFlag = 0;	/* 1 means "checkmem" command was called,
-				 * so the application should quit and dump
-				 * memory allocation information. */
-#endif
-
 /*
  * Forward references for procedures defined later in this file:
  */
 
-#ifdef TCL_MEM_DEBUG
-static int		CheckmemCmd _ANSI_ARGS_((ClientData clientData,
-			    Tcl_Interp *interp, int argc, char *argv[]));
-#endif
 void TclMacDoNotification(char *mssg);
 void TclMacNotificationResponse(NMRecPtr nmRec); 
 int Tcl_MacBGNotifyObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const *objv);
@@ -108,11 +96,7 @@ Tcl_Main(argc, argv, appInitProc)
 
     Tcl_FindExecutable(argv[0]);
     interp = Tcl_CreateInterp();
-#ifdef TCL_MEM_DEBUG
     Tcl_InitMemory(interp);
-    Tcl_CreateCommand(interp, "checkmem", CheckmemCmd, (ClientData) 0,
-	    (Tcl_CmdDeleteProc *) NULL);
-#endif
 
     /*
      * Make command-line arguments available in the Tcl variables "argc"
@@ -318,44 +302,3 @@ Tcl_MacBGNotifyObjCmd(clientData, interp, objc, objv)
            
 }
 
-
-/*
- *----------------------------------------------------------------------
- *
- * CheckmemCmd --
- *
- *	This is the command procedure for the "checkmem" command, which
- *	causes the application to exit after printing information about
- *	memory usage to the file passed to this command as its first
- *	argument.
- *
- * Results:
- *	Returns a standard Tcl completion code.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-#ifdef TCL_MEM_DEBUG
-
-	/* ARGSUSED */
-static int
-CheckmemCmd(clientData, interp, argc, argv)
-    ClientData clientData;		/* Not used. */
-    Tcl_Interp *interp;			/* Interpreter for evaluation. */
-    int argc;				/* Number of arguments. */
-    char *argv[];			/* String values of arguments. */
-{
-    extern char *tclMemDumpFileName;
-    if (argc != 2) {
-	Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-		" fileName\"", (char *) NULL);
-	return TCL_ERROR;
-    }
-    strcpy(dumpFile, argv[1]);
-    tclMemDumpFileName = dumpFile;
-    quitFlag = 1;
-    return TCL_OK;
-}
-#endif

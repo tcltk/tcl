@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEnv.c,v 1.9 2000/08/11 17:42:41 ericm Exp $
+ * RCS: @(#) $Id: tclEnv.c,v 1.9.14.1 2002/02/05 02:21:59 wolfsuit Exp $
  */
 
 #include "tclInt.h"
@@ -84,7 +84,8 @@ TclSetupEnv(interp)
 				 * managed. */
 {
     Tcl_DString envString;
-    char *p1, *p2;
+    CONST char *p1;
+    char *p2;
     int i;
 
     /*
@@ -133,7 +134,8 @@ TclSetupEnv(interp)
 	    }
 	    p2++;
 	    p2[-1] = '\0';
-	    Tcl_SetVar2(interp, "env", p1, p2, TCL_GLOBAL_ONLY);	
+	    Tcl_SetVar2(interp, "env", Tcl_DStringValue(&envString), p2,
+		   TCL_GLOBAL_ONLY);	
 	    Tcl_DStringFree(&envString);
 	}
 	Tcl_MutexUnlock(&envMutex);
@@ -174,7 +176,8 @@ TclSetEnv(name, value)
 {
     Tcl_DString envString;
     int index, length, nameLength;
-    char *p, *p2, *oldValue;
+    char *p, *oldValue;
+    CONST char *p2;
 
     /*
      * Figure out where the entry is going to go.  If the name doesn't
@@ -206,7 +209,7 @@ TclSetEnv(name, value)
 	oldValue = NULL;
 	nameLength = strlen(name);
     } else {
-	char *env;
+	CONST char *env;
 
 	/*
 	 * Compare the new value to the existing value.  If they're
@@ -303,7 +306,8 @@ Tcl_PutEnv(string)
 {
     Tcl_DString nameString;   
     int nameLength;
-    char *name, *value;
+    CONST char *name;
+    char *value;
 
     if (string == NULL) {
 	return 0;
@@ -443,7 +447,7 @@ TclUnsetEnv(name)
  *----------------------------------------------------------------------
  */
 
-char *
+CONST char *
 TclGetEnv(name, valuePtr)
     CONST char *name;		/* Name of environment variable to find
 				 * (UTF-8). */
@@ -452,7 +456,7 @@ TclGetEnv(name, valuePtr)
 				 * stored. */
 {
     int length, index;
-    char *result;
+    CONST char *result;
 
     Tcl_MutexLock(&envMutex);
     index = TclpFindVariable(name, &length);
@@ -530,7 +534,7 @@ EnvTraceProc(clientData, interp, name1, name2, flags)
      */
 
     if (flags & TCL_TRACE_WRITES) {
-	char *value;
+	CONST char *value;
 	
 	value = Tcl_GetVar2(interp, "env", name2, TCL_GLOBAL_ONLY);
 	TclSetEnv(name2, value);
@@ -542,7 +546,7 @@ EnvTraceProc(clientData, interp, name1, name2, flags)
 
     if (flags & TCL_TRACE_READS) {
 	Tcl_DString valueString;
-	char *value;
+	CONST char *value;
 
 	value = TclGetEnv(name2, &valueString);
 	if (value == NULL) {
@@ -633,7 +637,7 @@ ReplaceString(oldStr, newStr)
 	    ckfree((char *) environCache);
 	}
 	environCache = newCache;
-	environCache[cacheSize] = (char *) newStr;
+	environCache[cacheSize] = newStr;
 	environCache[cacheSize+1] = NULL;
 	cacheSize += 5;
     }

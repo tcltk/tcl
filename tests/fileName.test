@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fileName.test,v 1.14 2001/09/04 18:06:34 vincentdarley Exp $
+# RCS: @(#) $Id: fileName.test,v 1.14.8.1 2002/02/05 02:22:03 wolfsuit Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -304,6 +304,11 @@ test filename-4.18 {Tcl_SplitPath: unix} {testsetplatform} {
     testsetplatform unix
     file split foo/bar~/baz
 } {foo bar~ baz}
+
+if {[tcltest::testConstraint testsetplatform]} {
+    testsetplatform $platform
+}
+
 test filename-4.19 {Tcl_SplitPath} {
     set oldDir [pwd]
     set res [catch {
@@ -317,6 +322,7 @@ test filename-4.19 {Tcl_SplitPath} {
 	set idx [string first tildetmp $norm]
 	set norm [string range $norm $idx end]
 	# fix path away so all platforms are the same
+	regsub {(.*):$} $norm {\1} norm
 	regsub -all ":" $norm "/" norm
 	# make sure we can delete the directory we created
 	cd $oldDir
@@ -1327,6 +1333,16 @@ test filename-11.25 {Tcl_GlobCmd} {
 } [list 0 [lsort [list [file join $globname a1]\
 	[file join $globname a2]\
 	[file join $globname a3]]]]
+test filename-11.25.1 {Tcl_GlobCmd} {
+    list [catch {lsort [glob -type {d r} -dir $globname *]} msg] $msg
+} [list 0 [lsort [list [file join $globname a1]\
+  [file join $globname a2]\
+  [file join $globname a3]]]]
+test filename-11.25.2 {Tcl_GlobCmd} {
+    list [catch {lsort [glob -type {d r w} -dir $globname *]} msg] $msg
+} [list 0 [lsort [list [file join $globname a1]\
+  [file join $globname a2]\
+  [file join $globname a3]]]]
 test filename-11.26 {Tcl_GlobCmd} {
     list [catch {glob -type d -path $globname *} msg] $msg
 } [list 0 [list $globname]]
@@ -1707,7 +1723,7 @@ test filename-16.13 {windows specific globbing} {pcOnly sharedCdrive} {
 } //[info hostname]/c/globTest
 
 # cleanup
-file delete -force C:/globTest
+catch {file delete -force C:/globTest}
 cd $oldDir
 file delete -force globTest
 set env(HOME) $oldhome

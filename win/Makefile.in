@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.55 2001/10/01 20:58:51 hobbs Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.55.2.1 2002/02/05 02:22:05 wolfsuit Exp $
 
 VERSION = @TCL_VERSION@
 
@@ -127,6 +127,13 @@ PIPE_DLL_FILE		= tclpip$(VER)${DLLSUFFIX}
 SHARED_LIBRARIES 	= $(TCL_DLL_FILE) $(TCL_STUB_LIB_FILE) \
 			  $(DDE_DLL_FILE) $(REG_DLL_FILE) $(PIPE_DLL_FILE)
 STATIC_LIBRARIES	= $(TCL_LIB_FILE) $(REG_LIB_FILE) $(DDE_LIB_FILE)
+
+# TCL_EXE is the name of a tclsh executable that is available *BEFORE*
+# running make for the first time. Certain build targets (make genstubs)
+# need it to be available on the PATH. This executable should *NOT* be
+# required just to do a normal build although it can be required to run
+# make dist.
+TCL_EXE			= tclsh
 
 TCLSH			= tclsh$(VER)${EXESUFFIX}
 TCLTEST			= tcltest${EXEEXT}
@@ -549,6 +556,12 @@ shell: $(TCLSH)
 	@TCL_LIBRARY="$(LIBRARY_DIR)"; export TCL_LIBRARY; \
 	    ./$(TCLSH) $(SCRIPT)
 
+# This target can be used to run tclsh inside either gdb or insight
+gdb: $(TCLSH)
+	@echo "set env TCL_LIBRARY=$(LIBRARY_DIR)" > gdb.run
+	gdb ./tclsh --command=gdb.run
+	rm gdb.run
+
 depend:
 
 Makefile: $(SRC_DIR)/Makefile.in
@@ -572,15 +585,10 @@ distclean: clean
 
 $(GENERIC_DIR)/tclStubInit.c: $(GENERIC_DIR)/tcl.decls \
 		$(GENERIC_DIR)/tclInt.decls
-	@TCL_LIBRARY="$(ROOT_DIR_NATIVE)/library"; export TCL_LIBRARY; \
-	$(TCLSH) "$(ROOT_DIR_NATIVE)\tools\genStubs.tcl" \
-	    "$(GENERIC_DIR_NATIVE)" \
-	    "$(GENERIC_DIR_NATIVE)\tcl.decls" \
-            "$(GENERIC_DIR_NATIVE)\tclInt.decls"
+	@echo "Warning: run \"make genstubs\" to regenerate tclStubInit.c"
 
 genstubs:
-	@TCL_LIBRARY="$(ROOT_DIR_NATIVE)/library"; export TCL_LIBRARY; \
-	$(TCLSH) "$(ROOT_DIR_NATIVE)\tools\genStubs.tcl" \
+	$(TCL_EXE) "$(ROOT_DIR_NATIVE)\tools\genStubs.tcl" \
 	    "$(GENERIC_DIR_NATIVE)" \
 	    "$(GENERIC_DIR_NATIVE)\tcl.decls" \
             "$(GENERIC_DIR_NATIVE)\tclInt.decls"

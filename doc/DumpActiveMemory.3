@@ -3,7 +3,7 @@
 '\" Copyright (c) 2000 by Scriptics Corporation.
 '\" All rights reserved.
 '\" 
-'\" RCS: @(#) $Id: DumpActiveMemory.3,v 1.4 2001/05/03 23:52:56 hobbs Exp $
+'\" RCS: @(#) $Id: DumpActiveMemory.3,v 1.4.12.1 2002/02/05 02:21:57 wolfsuit Exp $
 '\" 
 .so man.macros
 .TH "Tcl_DumpActiveMemory" 3 8.1 Tcl "Tcl Library Procedures"
@@ -37,8 +37,9 @@ Line number at which the call to \fBTcl_ValidateAllMemory\fR is made
 
 .SH DESCRIPTION
 These functions provide access to Tcl memory debugging information.
-They are only available when Tcl has been compiled with
-\fBTCL_MEM_DEBUG\fR defined at compile-time.
+They are only functional when Tcl has been compiled with
+\fBTCL_MEM_DEBUG\fR defined at compile-time.  When \fBTCL_MEM_DEBUG\fR
+is not defined, these functions are all no-ops.
 .PP 
 \fBTcl_DumpActiveMemory\fR will output a list of all currently
 allocated memory to the specified file.  The information output for
@@ -49,8 +50,8 @@ especially useful to call \fBTcl_DumpActiveMemory\fR after the Tcl
 interpreter has been deleted.
 .PP
 \fBTcl_InitMemory\fR adds the Tcl \fBmemory\fR command to the
-interpreter given by \fIinterp\fR.  It is called by \fBTcl_Main\fR
-when Tcl has been compiled with \fBTCL_MEM_DEBUG\fR defined.
+interpreter given by \fIinterp\fR.  \fBTcl_InitMemory\fR is called
+by \fBTcl_Main\fR.
 .PP
 \fBTcl_ValidateAllMemory\fR forces a validation of the guard zones of
 all currently allocated blocks of memory.  Normally validation of a

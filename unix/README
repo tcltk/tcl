@@ -1,7 +1,7 @@
 Tcl UNIX README
 ---------------
 
-RCS: @(#) $Id: README,v 1.17 2001/08/07 02:44:40 hobbs Exp $
+RCS: @(#) $Id: README,v 1.17.8.1 2002/02/05 02:22:04 wolfsuit Exp $
 
 This is the directory where you configure, compile, test, and install
 UNIX versions of Tcl.  This directory also contains source files for Tcl
@@ -34,15 +34,13 @@ How To Compile And Install Tcl:
     platform, or if you have applied patches, type "make distclean" to
     discard all the configuration information computed previously.
 
-(c) If there is no "configure" script in this directory it is because you
-    are working out of the source repository (i.e., CVS) instead of working
-    from a source distribution.  In this case you need to use "autoconf"
-    to generate the configure script.  It runs with no arguments.
-    Remember to run it here and down in the dltest directory.
+(c) If you need to reconfigure because you changed any of the .in or
+    .m4 files, you will need to run autoconf to create a new
+    ./configure script. Most users will NOT need to do this since
+    a configure script is already provided.
 
     (in the tcl/unix directory)
     autoconf
-    cd dltest ; autoconf ; cd ..
 
 (d) Type "./configure".  This runs a configuration script created by GNU
     autoconf, which configures Tcl for your system and creates a
@@ -102,14 +100,8 @@ How To Compile And Install Tcl:
     can override these choices by modifying the "prefix" and
     "exec_prefix" variables in the Makefile.
 
-(h) At this point you can play with Tcl by invoking the "tclsh"
-    program and typing Tcl commands.  However, if you haven't installed
-    Tcl then you'll first need to set your TCL_LIBRARY variable to
-    hold the full path name of the "library" subdirectory.  Note that
-    the installed versions of tclsh, libtcl.a, and libtcl.so have a
-    version number in their names, such as "tclsh8.4" or "libtcl8.4.so";
-    to use the installed versions, either specify the version number
-    or create a symbolic link (e.g. from "tclsh" to "tclsh8.4").
+(h) At this point you can play with Tcl by running "make shell"
+    and typing Tcl commands at the prompt.
 
 If you have trouble compiling Tcl, see the URL noted above about working
 platforms.  It contains information that people have provided about changes

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinLoad.c,v 1.9 2001/09/28 01:21:53 dgp Exp $
+ * RCS: @(#) $Id: tclWinLoad.c,v 1.9.2.1 2002/02/05 02:22:05 wolfsuit Exp $
  */
 
 #include "tclWinInt.h"
@@ -55,7 +55,7 @@ TclpLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr,
 				 * this file. */
 {
     HINSTANCE handle;
-    TCHAR *nativeName;
+    CONST TCHAR *nativeName;
     Tcl_DString ds;
 
     char *fileName = Tcl_GetString(pathPtr);
@@ -193,7 +193,7 @@ TclpUnloadFile(clientData)
 
 int
 TclGuessPackageName(fileName, bufPtr)
-    char *fileName;		/* Name of file containing package (already
+    CONST char *fileName;	/* Name of file containing package (already
 				 * translated to local form if needed). */
     Tcl_DString *bufPtr;	/* Initialized empty dstring.  Append
 				 * package name to this if possible. */

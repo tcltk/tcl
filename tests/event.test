@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: event.test,v 1.13 2001/07/31 19:12:07 vincentdarley Exp $
+# RCS: @(#) $Id: event.test,v 1.13.8.1 2002/02/05 02:22:03 wolfsuit Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -275,6 +275,22 @@ test event-7.4 {tkerror is nothing special anymore to tcl} {
     rename tkerror {}
     set errRes
 } bg:err1
+
+testConstraint exec [llength [info commands exec]]
+
+test event-7.5 {correct behaviour when there is no bgerror [Bug 219142]} {exec} {
+    set script {
+	after 1000 error hello
+	after 2000 set a 0
+	vwait a
+    }
+
+    list [catch {exec [info nameofexecutable] << $script} errMsg] $errMsg
+} {1 {hello
+    while executing
+"error hello"
+    ("after" script)}}
+
 
 # someday : add a test checking that 
 # when there is no bgerror, an error msg goes to stderr

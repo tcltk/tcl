@@ -14,13 +14,18 @@
  * and Design Engineering (MADE) Initiative through ARPA contract
  * F33615-94-C-4400.
  *
- * RCS: @(#) $Id: tclLoadAout.c,v 1.7 2001/09/28 01:21:53 dgp Exp $
+ * RCS: @(#) $Id: tclLoadAout.c,v 1.7.2.1 2002/02/05 02:22:05 wolfsuit Exp $
  */
 
 #include "tclInt.h"
 #include <fcntl.h>
 #ifdef HAVE_EXEC_AOUT_H
 #   include <sys/exec_aout.h>
+#endif
+#ifdef HAVE_UNISTD_H
+#   include <unistd.h>
+#else
+#   include "../compat/unistd.h"
 #endif
 
 /*
@@ -336,7 +341,7 @@ FindLibraries (interp, fileName, buf)
      Tcl_DString * buf;		/* Buffer where the -l an -L flags */
 {
   FILE * f;			/* The load module */
-  int c;			/* Byte from the load module */
+  int c = 0;			/* Byte from the load module */
   char * p;
   Tcl_DString ds;
   CONST char *native;
@@ -469,15 +474,15 @@ TclpUnloadFile(clientData)
 
 int
 TclGuessPackageName(fileName, bufPtr)
-    char *fileName;		/* Name of file containing package (already
+    CONST char *fileName;	/* Name of file containing package (already
 				 * translated to local form if needed). */
     Tcl_DString *bufPtr;	/* Initialized empty dstring.  Append
 				 * package name to this if possible. */
 {
-    char *p, *q, *r;
-    int srcOff, dstOff;
+    CONST char *p, *q;
+    char *r;
 
-    if (q = strrchr(fileName,'/')) {
+    if ((q = strrchr(fileName,'/'))) {
 	q++;
     } else {
 	q = fileName;

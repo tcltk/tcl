@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: macFCmd.test,v 1.7 2000/04/10 17:19:02 ericm Exp $
+# RCS: @(#) $Id: macFCmd.test,v 1.7.18.1 2002/02/05 02:22:04 wolfsuit Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -32,7 +32,7 @@ file delete -force foo.dir
 test macFCmd-1.1 {GetFileFinderAttributes - no file} {macOnly} {
     catch {file delete -force foo.file}
     list [catch {file attributes foo.file -creator} msg] $msg
-} {1 {could not read ":foo.file": no such file or directory}}
+} {1 {could not read "foo.file": no such file or directory}}
 test macFCmd-1.2 {GetFileFinderAttributes - creator} {macOnly} {
     catch {file delete -force foo.file}
     catch {close [open foo.file w]}
@@ -80,7 +80,7 @@ test macFCmd-1.8 {GetFileFinderAttributes - folder hidden} {macOnly} {
 test macFCmd-2.1 {GetFileReadOnly - bad file} {macOnly} {
     catch {file delete -force foo.file}
     list [catch {file attributes foo.file -readonly} msg] $msg
-} {1 {could not read ":foo.file": no such file or directory}}
+} {1 {could not read "foo.file": no such file or directory}}
 test macFCmd-2.2 {GetFileReadOnly - file not read only} {macOnly} {
     catch {file delete -force foo.file}
     close [open foo.file w]
@@ -111,7 +111,7 @@ test macFCmd-2.5 {GetFileReadOnly - directory read only} {macOnly fileSharing} {
 test macFCmd-3.1 {SetFileFinderAttributes - bad file} {macOnly} {
     catch {file delete -force foo.file}
     list [catch {file attributes foo.file -creator FOOO} msg] $msg
-} {1 {could not read ":foo.file": no such file or directory}}
+} {1 {could not read "foo.file": no such file or directory}}
 test macFCmd-3.2 {SetFileFinderAttributes - creator} {macOnly} {
     catch {file delete -force foo.file}
     close [open foo.file w]
@@ -147,12 +147,12 @@ test macFCmd-3.7 {SetFileFinderAttributes - directory} {macOnly} {
     file mkdir foo.dir
     list [catch {file attributes foo.dir -creator FOOO} msg] \
 	    $msg [file delete -force foo.dir]
-} {1 {cannot set -creator: ":foo.dir" is a directory} {}}
+} {1 {cannot set -creator: "foo.dir" is a directory} {}}
 
 test macFCmd-4.1 {SetFileReadOnly - bad file} {macOnly} {
     catch {file delete -force foo.file}
     list [catch {file attributes foo.file -readonly 1} msg] $msg
-} {1 {could not read ":foo.file": no such file or directory}}
+} {1 {could not read "foo.file": no such file or directory}}
 test macFCmd-4.2 {SetFileReadOnly - file not readonly} {macOnly} {
     catch {file delete -force foo.file}
     close [open foo.file w]

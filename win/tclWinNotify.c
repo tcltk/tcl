@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinNotify.c,v 1.8 2001/09/20 18:34:22 hobbs Exp $
+ * RCS: @(#) $Id: tclWinNotify.c,v 1.8.4.1 2002/02/05 02:22:05 wolfsuit Exp $
  */
 
 #include "tclWinInt.h"
@@ -146,6 +146,20 @@ Tcl_FinalizeNotifier(clientData)
     ClientData clientData;	/* Pointer to notifier data. */
 {
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *) clientData;
+
+    /*
+     * Only finalize the notifier if a notifier was installed in the
+     * current thread; there is a route in which this is not
+     * guaranteed to be true (when tclWin32Dll.c:DllMain() is called
+     * with the flag DLL_PROCESS_DETACH by the OS, which could be
+     * doing so from a thread that's never previously been involved
+     * with Tcl, e.g. the task manager) so this check is important.
+     *
+     * Fixes Bug #217982 reported by Hugh Vu and Gene Leache.
+     */
+    if (tsdPtr == NULL) {
+	return;
+    }
 
     DeleteCriticalSection(&tsdPtr->crit);
     CloseHandle(tsdPtr->event);
@@ -521,7 +535,7 @@ Tcl_Sleep(ms)
     Tcl_Time desired;		/* Desired wakeup time */
     int sleepTime = ms;		/* Time to sleep */
 
-    TclpGetTime( &now );
+    Tcl_GetTime( &now );
     desired.sec = now.sec + ( ms / 1000 );
     desired.usec = now.usec + 1000 * ( ms % 1000 );
     if ( desired.usec > 1000000 ) {
@@ -531,7 +545,7 @@ Tcl_Sleep(ms)
 	
     for ( ; ; ) {
 	Sleep( sleepTime );
-	TclpGetTime( &now );
+	Tcl_GetTime( &now );
 	if ( now.sec > desired.sec ) {
 	    break;
 	} else if ( ( now.sec == desired.sec )

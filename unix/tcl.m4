@@ -58,7 +58,7 @@ AC_DEFUN(SC_PATH_TCLCONFIG, [
 
 	    # check in a few common install locations
 	    if test x"${ac_cv_c_tclconfig}" = x ; then
-		for i in `ls -d ${prefix}/lib 2>/dev/null` \
+		for i in `ls -d ${exec_prefix}/lib 2>/dev/null` \
 			`ls -d /usr/local/lib 2>/dev/null` \
 			`ls -d /usr/contrib/lib 2>/dev/null` \
 			`ls -d /usr/lib 2>/dev/null` \
@@ -153,7 +153,7 @@ AC_DEFUN(SC_PATH_TKCONFIG, [
 	    fi
 	    # check in a few common install locations
 	    if test x"${ac_cv_c_tkconfig}" = x ; then
-		for i in `ls -d ${prefix}/lib 2>/dev/null` \
+		for i in `ls -d ${exec_prefix}/lib 2>/dev/null` \
 			`ls -d /usr/local/lib 2>/dev/null` \
 			`ls -d /usr/contrib/lib 2>/dev/null` \
 			`ls -d /usr/lib 2>/dev/null` \
@@ -219,16 +219,43 @@ AC_DEFUN(SC_LOAD_TCLCONFIG, [
     fi
 
     #
-    # The eval is required to do the TCL_DBGX substitution in the
-    # TCL_LIB_FILE variable
+    # If the TCL_BIN_DIR is the build directory (not the install directory),
+    # then set the common variable name to the value of the build variables.
+    # For example, the variable TCL_LIB_SPEC will be set to the value
+    # of TCL_BUILD_LIB_SPEC. An extension should make use of TCL_LIB_SPEC
+    # instead of TCL_BUILD_LIB_SPEC since it will work with both an
+    # installed and uninstalled version of Tcl.
     #
 
-    eval TCL_LIB_FILE=${TCL_LIB_FILE}
-    eval TCL_LIB_FLAG=${TCL_LIB_FLAG}
+    if test -f $TCL_BIN_DIR/Makefile ; then
+        TCL_LIB_SPEC=${TCL_BUILD_LIB_SPEC}
+        TCL_STUB_LIB_SPEC=${TCL_BUILD_STUB_LIB_SPEC}
+        TCL_STUB_LIB_PATH=${TCL_BUILD_STUB_LIB_PATH}
+    fi
 
+    #
+    # eval is required to do the TCL_DBGX substitution
+    #
+
+    eval "TCL_LIB_FILE=\"${TCL_LIB_FILE}\""
+    eval "TCL_LIB_FLAG=\"${TCL_LIB_FLAG}\""
+    eval "TCL_LIB_SPEC=\"${TCL_LIB_SPEC}\""
+
+    eval "TCL_STUB_LIB_FILE=\"${TCL_STUB_LIB_FILE}\""
+    eval "TCL_STUB_LIB_FLAG=\"${TCL_STUB_LIB_FLAG}\""
+    eval "TCL_STUB_LIB_SPEC=\"${TCL_STUB_LIB_SPEC}\""
+
+    AC_SUBST(TCL_VERSION)
     AC_SUBST(TCL_BIN_DIR)
     AC_SUBST(TCL_SRC_DIR)
+
     AC_SUBST(TCL_LIB_FILE)
+    AC_SUBST(TCL_LIB_FLAG)
+    AC_SUBST(TCL_LIB_SPEC)
+
+    AC_SUBST(TCL_STUB_LIB_FILE)
+    AC_SUBST(TCL_STUB_LIB_FLAG)
+    AC_SUBST(TCL_STUB_LIB_SPEC)
 ])
 
 #------------------------------------------------------------------------
@@ -403,8 +430,14 @@ AC_DEFUN(SC_ENABLE_THREADS, [
 	    else
 		AC_CHECK_LIB(c,pthread_mutex_init,tcl_ok=yes,tcl_ok=no)
 	    	if test "$tcl_ok" = "no"; then
-	    	    TCL_THREADS=0
-		    AC_MSG_WARN("Don t know how to find pthread lib on your system - you must disable thread support or edit the LIBS in the Makefile...")
+		    AC_CHECK_LIB(c_r,pthread_mutex_init,tcl_ok=yes,tcl_ok=no)
+		    if test "$tcl_ok" = "yes"; then
+			# The space is needed
+			THREADS_LIBS=" -pthread"
+		    else
+			TCL_THREADS=0
+			AC_MSG_WARN("Don t know how to find pthread lib on your system - you must disable thread support or edit the LIBS in the Makefile...")
+		    fi
 	    	fi
 	    fi
 	fi
@@ -463,6 +496,51 @@ AC_DEFUN(SC_ENABLE_SYMBOLS, [
 	DBGX=""
 	AC_MSG_RESULT([no])
     fi
+])
+
+#------------------------------------------------------------------------
+# SC_ENABLE_LANGINFO --
+#
+#	Allows use of modern nl_langinfo check for better l10n.
+#	This is only relevant for Unix.
+#
+# Arguments:
+#	none
+#	
+# Results:
+#
+#	Adds the following arguments to configure:
+#		--enable-langinfo=yes|no (default is yes)
+#
+#	Defines the following vars:
+#		HAVE_LANGINFO	Triggers use of nl_langinfo if defined.
+#
+#------------------------------------------------------------------------
+
+AC_DEFUN(SC_ENABLE_LANGINFO, [
+    AC_ARG_ENABLE(langinfo,
+	[  --enable-langinfo	  use nl_langinfo if possible to determine
+			  encoding at startup, otherwise use old heuristic],
+	[langinfo_ok=$enableval], [langinfo_ok=yes])
+
+    HAVE_LANGINFO=0
+    if test "$langinfo_ok" = "yes"; then
+	if test "$langinfo_ok" = "yes"; then
+	    AC_CHECK_HEADER(langinfo.h,[langinfo_ok=yes],[langinfo_ok=no])
+	fi
+    fi
+    AC_MSG_CHECKING([whether to use nl_langinfo])
+    if test "$langinfo_ok" = "yes"; then
+	AC_TRY_COMPILE([#include <langinfo.h>],
+		[nl_langinfo(CODESET);],[langinfo_ok=yes],[langinfo_ok=no])
+	if test "$langinfo_ok" = "no"; then
+	    langinfo_ok="no (could not compile with nl_langinfo)";
+	fi
+	if test "$langinfo_ok" = "yes"; then
+	    AC_DEFINE(HAVE_LANGINFO)
+	fi
+    fi
+    AC_MSG_RESULT([$langinfo_ok])
 ])
 
 #--------------------------------------------------------------------
@@ -617,7 +695,6 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
     # Step 3: set configuration options based on system name and version.
 
     do64bit_ok=no
-    fullSrcDir=`cd $srcdir; pwd`
     EXTRA_CFLAGS=""
     TCL_EXPORT_FILE_SUFFIX=""
     UNSHARED_LIB_SUFFIX=""
@@ -649,6 +726,7 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 		fi
 		AC_MSG_RESULT(Using $CC for compiling with threads)
 	    fi
+	    LIBS="$LIBS -lc"
 	    # AIX-5 uses ELF style dynamic libraries
 	    SHLIB_CFLAGS=""
 	    SHLIB_LD="/usr/ccs/bin/ld -G -z text"
@@ -686,8 +764,9 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 		fi
 		AC_MSG_RESULT(Using $CC for compiling with threads)
 	    fi
+	    LIBS="$LIBS -lc"
 	    SHLIB_CFLAGS=""
-	    SHLIB_LD="$fullSrcDir/ldAix /bin/ld -bhalt:4 -bM:SRE -bE:lib.exp -H512 -T512 -bnoentry"
+	    SHLIB_LD="${TCL_SRC_DIR}/unix/ldAix /bin/ld -bhalt:4 -bM:SRE -bE:lib.exp -H512 -T512 -bnoentry"
 	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
@@ -970,7 +1049,7 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 	    # FreeBSD 3.* and greater have ELF.
 	    SHLIB_CFLAGS="-fPIC"
 	    SHLIB_LD="ld -Bshareable -x"
-	    SHLIB_LD_LIBS=""
+	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS=""
@@ -1053,9 +1132,10 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 	    fi
 	    # see pthread_intro(3) for pthread support on osf1, k.furukawa
 	    if test "${TCL_THREADS}" = "1" ; then
+		EXTRA_CFLAGS="${EXTRA_CFLAGS} -DHAVE_PTHREAD_ATTR_SETSTACKSIZE"
 		EXTRA_CFLAGS="${EXTRA_CFLAGS} -DTCL_THREAD_STACK_MIN=PTHREAD_STACK_MIN*64"
+		LIBS=`echo $LIBS | sed s/-lpthreads//`
 		if test "$GCC" = "yes" ; then
-		    LIBS=`echo $LIBS | sed s/-lpthreads//`
 		    LIBS="$LIBS -lpthread -lmach -lexc"
 		else
 		    EXTRA_CFLAGS="${EXTRA_CFLAGS} -pthread"
@@ -1152,7 +1232,11 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS="-ldl"
 	    LDFLAGS=""
-	    LD_SEARCH_FLAGS='-Wl,-R,${LIB_RUNTIME_DIR}'
+	    if test "$GCC" = "yes" ; then
+		LD_SEARCH_FLAGS='-Wl,-R,${LIB_RUNTIME_DIR}'
+	    else
+		LD_SEARCH_FLAGS='-R ${LIB_RUNTIME_DIR}'
+	    fi
 	    ;;
 	SunOS-5*)
 

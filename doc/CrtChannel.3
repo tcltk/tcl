@@ -5,13 +5,13 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: CrtChannel.3,v 1.11 2001/09/11 18:29:56 andreas_kupries Exp $
+'\" RCS: @(#) $Id: CrtChannel.3,v 1.11.4.1 2002/02/05 02:21:57 wolfsuit Exp $
 .so man.macros
 .TH Tcl_CreateChannel 3 8.3 Tcl "Tcl Library Procedures"
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
-Tcl_CreateChannel, Tcl_GetChannelInstanceData, Tcl_GetChannelType, Tcl_GetChannelName, Tcl_GetChannelHandle, Tcl_GetChannelMode, Tcl_GetChannelBufferSize, Tcl_SetChannelBufferSize, Tcl_NotifyChannel, Tcl_BadChannelOption, Tcl_ChannelName, Tcl_ChannelVersion, Tcl_ChannelBlockModeProc, Tcl_ChannelCloseProc, Tcl_ChannelClose2Proc, Tcl_ChannelInputProc, Tcl_ChannelOutputProc, Tcl_ChannelSeekProc, Tcl_ChannelSetOptionProc, Tcl_ChannelGetOptionProc, Tcl_ChannelWatchProc, Tcl_ChannelGetHandleProc, Tcl_ChannelFlushProc, Tcl_ChannelHandlerProc, Tcl_IsChannelShared, Tcl_IsChannelRegistered, Tcl_CutChannel, Tcl_SpliceChannel, Tcl_IsChannelExisting, Tcl_ClearChannelHandlers, Tcl_GetChannelThread, Tcl_ChannelBuffered, Tcl_GetTopChannel \- procedures for creating and manipulating channels
+Tcl_CreateChannel, Tcl_GetChannelInstanceData, Tcl_GetChannelType, Tcl_GetChannelName, Tcl_GetChannelHandle, Tcl_GetChannelMode, Tcl_GetChannelBufferSize, Tcl_SetChannelBufferSize, Tcl_NotifyChannel, Tcl_BadChannelOption, Tcl_ChannelName, Tcl_ChannelVersion, Tcl_ChannelBlockModeProc, Tcl_ChannelCloseProc, Tcl_ChannelClose2Proc, Tcl_ChannelInputProc, Tcl_ChannelOutputProc, Tcl_ChannelSeekProc, Tcl_ChannelSetOptionProc, Tcl_ChannelGetOptionProc, Tcl_ChannelWatchProc, Tcl_ChannelGetHandleProc, Tcl_ChannelFlushProc, Tcl_ChannelHandlerProc, Tcl_IsChannelShared, Tcl_IsChannelRegistered, Tcl_CutChannel, Tcl_SpliceChannel, Tcl_IsChannelExisting, Tcl_ClearChannelHandlers, Tcl_GetChannelThread, Tcl_ChannelBuffered \- procedures for creating and manipulating channels
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -25,7 +25,7 @@ ClientData
 Tcl_ChannelType *
 \fBTcl_GetChannelType\fR(\fIchannel\fR)
 .sp
-char *
+CONST char *
 \fBTcl_GetChannelName\fR(\fIchannel\fR)
 .sp
 int
@@ -70,10 +70,7 @@ void
 int
 \fBTcl_ChannelBuffered\fR(\fIchannel\fR)
 .sp
-Tcl_Channel
-\fBTcl_GetTopChannel\fR(\fIchannel\fR)
-.sp
-char *
+CONST char *
 \fBTcl_ChannelName\fR(\fItypePtr\fR)
 .sp
 Tcl_ChannelTypeVersion
@@ -117,11 +114,11 @@ Tcl_DriverHandlerProc *
 .VE
 .sp
 .SH ARGUMENTS
-.AS Tcl_EolTranslation *channelName in
+.AS Tcl_ChannelType *channelName in
 .AP Tcl_ChannelType *typePtr in
 Points to a structure containing the addresses of procedures that
 can be called to perform I/O and other functions on the channel.
-.AP char *channelName in
+.AP "CONST char" *channelName in
 The name of this channel, such as \fBfile3\fR; must not be in use
 by any other channel. Can be NULL, in which case the channel is
 created without a name.
@@ -139,9 +136,6 @@ means the output handle is wanted.
 .AP ClientData *handlePtr out
 Points to the location where the desired OS-specific handle should be
 stored.
-.AP Tcl_EolTranslation transMode in
-The translation mode; one of the constants \fBTCL_TRANSLATE_AUTO\fR,
-\fBTCL_TRANSLATE_CR\fR, \fBTCL_TRANSLATE_LF\fR and \fBTCL_TRANSLATE_CRLF\fR.
 .AP int size in
 The size, in bytes, of buffers to allocate in this channel.
 .AP int mask in
@@ -150,9 +144,9 @@ and \fBTCL_EXCEPTION\fR that indicates events that have occurred on
 this channel.
 .AP Tcl_Interp *interp in
 Current interpreter. (can be NULL)
-.AP char *optionName in
+.AP "CONST char" *optionName in
 Name of the invalid option.
-.AP char *optionList in
+.AP "CONST char" *optionList in
 Specific options list (space separated words, without "-") 
 to append to the standard generic options list.
 Can be NULL for generic options error message only.
@@ -211,7 +205,7 @@ channels. Once a standard channel was initialized either through a
 call to \fBTcl_GetStdChannel\fR or a call to \fBTcl_SetStdChannel\fR
 closing this standard channel will cause the next call to
 \fBTcl_CreateChannel\fR to make the new channel the new standard
-channel too. See \fBTcl_StandardChannel\fR for a general treatise
+channel too. See \fBTcl_StandardChannels\fR for a general treatise
 about standard channels and the behaviour of the Tcl library with
 regard to them.
 .PP
@@ -247,7 +241,7 @@ and \fBTCL_WRITABLE\fR, indicating whether the channel is open for input
 and output.
 .PP
 \fBTcl_GetChannelBufferSize\fR returns the size, in bytes, of buffers
-allocated to store input or output in \fIchan\fR. If the value was not set
+allocated to store input or output in \fIchannel\fR. If the value was not set
 by a previous call to \fBTcl_SetChannelBufferSize\fR, described below, then
 the default value of 4096 is returned.
 .PP
@@ -269,9 +263,6 @@ procs to generate a complete error message.
 .VE
 .PP
 .VS 8.3.2
-\fBTcl_GetTopChannel\fR returns the top channel in the stack of
-channels the supplied channel is part of.
-.PP
 \fBTcl_ChannelBuffered\fR returns the number of bytes of input
 currently buffered in the internal buffer (push back area) of the
 channel itself. It does not report about the data in the overall
@@ -301,7 +292,7 @@ is not allowed.
 Application to a channel registered in some interpreter is not allowed.
 .PP
 \fBTcl_ClearChannelHandlers\fR removes all channelhandlers and event
-scripts associated with the specified \fIchannels\fR, thus shutting
+scripts associated with the specified \fIchannel\fR, thus shutting
 down all event processing for this channel.
 .VE
 
@@ -528,7 +519,7 @@ generic layer to transfer data from an internal buffer to the output device.
 .CS
 typedef int Tcl_DriverOutputProc(
 	ClientData \fIinstanceData\fR,
-	char *\fIbuf\fR,
+	CONST char *\fIbuf\fR,
 	int \fItoWrite\fR,
 	int *\fIerrorCodePtr\fR);
 .CE
@@ -604,11 +595,11 @@ the generic layer to set a channel type specific option on a channel.
 typedef int Tcl_DriverSetOptionProc(
 	ClientData \fIinstanceData\fR,
 	Tcl_Interp *\fIinterp\fR,
-	char *\fIoptionName\fR,
-	char *\fIoptionValue\fR);
+	CONST char *\fIoptionName\fR,
+	CONST char *\fInewValue\fR);
 .CE
 .PP
-\fIoptionName\fR is the name of an option to set, and \fIoptionValue\fR is
+\fIoptionName\fR is the name of an option to set, and \fInewValue\fR is
 the new value for that option, as a string. The \fIinstanceData\fR is the
 same as the value given to \fBTcl_CreateChannel\fR when this channel was
 created. The function should do whatever channel type specific action is
@@ -626,7 +617,7 @@ returns \fBTCL_OK\fR.
 It should call \fBTcl_BadChannelOption\fR which itself returns
 \fBTCL_ERROR\fR if the \fIoptionName\fR is
 unrecognized. 
-If \fIoptionValue\fR specifies a value for the option that
+If \fInewValue\fR specifies a value for the option that
 is not supported or if a system call error occurs,
 the function should leave an error message in the
 \fIresult\fR field of \fIinterp\fR if \fIinterp\fR is not NULL. The
@@ -648,21 +639,21 @@ channel. \fIgetOptionProc\fR must match the following prototype:
 typedef int Tcl_DriverGetOptionProc(
 	ClientData \fIinstanceData\fR,
 	Tcl_Interp *\fIinterp\fR,
-	char *\fIoptionName\fR,
-	Tcl_DString *\fIdsPtr\fR);
+	CONST char *\fIoptionName\fR,
+	Tcl_DString *\fIoptionValue\fR);
 .CE
 .PP
 \fIOptionName\fR is the name of an option supported by this type of
 channel. If the option name is not NULL, the function stores its current
-value, as a string, in the Tcl dynamic string \fIdsPtr\fR.
-If \fIoptionName\fR is NULL, the function stores in \fIdsPtr\fR an
+value, as a string, in the Tcl dynamic string \fIoptionValue\fR.
+If \fIoptionName\fR is NULL, the function stores in \fIoptionValue\fR an
 alternating list of all supported options and their current values.
 On success, the function returns \fBTCL_OK\fR. 
 It should call \fBTcl_BadChannelOption\fR which itself returns
 \fBTCL_ERROR\fR if the \fIoptionName\fR is
 unrecognized. If a system call error occurs,
 the function should leave an error message in the
-\fIresult\fR field of \fIinterp\fR if \fIinterp\fR is not NULL. The
+result of \fIinterp\fR if \fIinterp\fR is not NULL. The
 function should also call \fBTcl_SetErrno\fR to store an appropriate POSIX
 error code.
 .PP
@@ -793,7 +784,7 @@ the generic options error message string.
 .PP
 It always return \fBTCL_ERROR\fR
 .PP
-An error message is generated in interp's result object to
+An error message is generated in \fIinterp\fR's result object to
 indicate that a command was invoked with the a bad option
 The message has the form
 .CS
@@ -803,9 +794,9 @@ so you get for instance:
     bad option "-blah": should be one of -blocking,
     -buffering, -buffersize, -eofchar, -translation,
     -peername, or -sockname
-when called with optionList="peername sockname"
+when called with \fIoptionList\fR="peername sockname"
 .CE
-``blah'' is the optionName argument and ``<specific options>''
+``blah'' is the \fIoptionName\fR argument and ``<specific options>''
 is a space separated list of specific option words.
 The function takes good care of inserting minus signs before
 each option, commas after, and an ``or'' before the last option.

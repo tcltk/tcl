@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: switch.test,v 1.6 2000/04/10 17:19:05 ericm Exp $
+# RCS: @(#) $Id: switch.test,v 1.6.18.1 2002/02/05 02:22:04 wolfsuit Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -162,7 +162,7 @@ test switch-7.2 {"-" bodies} {
 	    c -
 	}
     } msg] $msg
-} {1 {no body specified for pattern "a"}}
+} {1 {no body specified for pattern "c"}}
 test switch-7.3 {"-" bodies} {
     list [catch {
 	switch a {
@@ -171,7 +171,7 @@ test switch-7.3 {"-" bodies} {
 	    c -
 	}
     } msg] $msg
-} {1 {invalid command name "-foo"}}
+} {1 {no body specified for pattern "c"}}
 
 test switch-8.1 {empty body} {
     set msg {}
@@ -182,18 +182,37 @@ test switch-8.1 {empty body} {
     }
 } {}
 
+test switch-9.1 {empty pattern/body list} {
+    list [catch {switch x} msg] $msg
+} {1 {wrong # args: should be "switch ?switches? string pattern body ... ?default body?"}}
+test switch-9.2 {empty pattern/body list} {
+    list [catch {switch -- x} msg] $msg
+} {1 {wrong # args: should be "switch ?switches? string pattern body ... ?default body?"}}
+test switch-9.3 {empty pattern/body list} {
+    list [catch {switch x {}} msg] $msg
+} {1 {wrong # args: should be "switch ?switches? string {pattern body ... ?default body?}"}}
+test switch-9.4 {empty pattern/body list} {
+    list [catch {switch -- x {}} msg] $msg
+} {1 {wrong # args: should be "switch ?switches? string {pattern body ... ?default body?}"}}
+test switch-9.5 {unpaired pattern} {
+    list [catch {switch x a {} b} msg] $msg
+} {1 {extra switch pattern with no body}}
+test switch-9.6 {unpaired pattern} {
+    list [catch {switch x {a {} b}} msg] $msg
+} {1 {extra switch pattern with no body}}
+test switch-9.7 {unpaired pattern} {
+    list [catch {switch x a {} # comment b} msg] $msg
+} {1 {extra switch pattern with no body}}
+test switch-9.8 {unpaired pattern} {
+    list [catch {switch x {a {} # comment b}} msg] $msg
+} {1 {extra switch pattern with no body, this may be due to a comment incorrectly placed outside of a switch body - see the "switch" documentation}}
+test switch-9.9 {unpaired pattern} {
+    list [catch {switch x a {} x {} # comment b} msg] $msg
+} {1 {extra switch pattern with no body}}
+test switch-9.10 {unpaired pattern} {
+    list [catch {switch x {a {} x {} # comment b}} msg] $msg
+} {1 {extra switch pattern with no body, this may be due to a comment incorrectly placed outside of a switch body - see the "switch" documentation}}
+
 # cleanup
 ::tcltest::cleanupTests
 return
-
-
-
-
-
-
-
-
-
-
-
-

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParseExpr.c,v 1.9 2001/10/01 15:31:51 msofer Exp $
+ * RCS: @(#) $Id: tclParseExpr.c,v 1.9.2.1 2002/02/05 02:22:00 wolfsuit Exp $
  */
 
 #include "tclInt.h"
@@ -71,6 +71,8 @@ typedef struct ParseInfo {
  * Definitions of the different lexemes that appear in expressions. The
  * order of these must match the corresponding entries in the
  * operatorStrings array below.
+ *
+ * Basic lexemes:
  */
 
 #define LITERAL		0
@@ -84,65 +86,69 @@ typedef struct ParseInfo {
 #define COMMA		8
 #define END		9
 #define UNKNOWN		10
+#define UNKNOWN_CHAR	11
 
 /*
- * Binary operators:
+ * Binary numeric operators:
  */
 
-#define MULT		11
-#define DIVIDE		12
-#define MOD		13
-#define PLUS		14
-#define MINUS		15
-#define LEFT_SHIFT	16
-#define RIGHT_SHIFT	17
-#define LESS		18
-#define GREATER		19
-#define LEQ		20
-#define GEQ		21
-#define EQUAL		22
-#define NEQ		23
-#define BIT_AND		24
-#define BIT_XOR		25
-#define BIT_OR		26
-#define AND		27
-#define OR		28
-#define QUESTY		29
-#define COLON		30
+#define MULT		12
+#define DIVIDE		13
+#define MOD		14
+#define PLUS		15
+#define MINUS		16
+#define LEFT_SHIFT	17
+#define RIGHT_SHIFT	18
+#define LESS		19
+#define GREATER		20
+#define LEQ		21
+#define GEQ		22
+#define EQUAL		23
+#define NEQ		24
+#define BIT_AND		25
+#define BIT_XOR		26
+#define BIT_OR		27
+#define AND		28
+#define OR		29
+#define QUESTY		30
+#define COLON		31
 
 /*
  * Unary operators. Unary minus and plus are represented by the (binary)
  * lexemes MINUS and PLUS.
  */
 
-#define NOT		31
-#define BIT_NOT		32
+#define NOT		32
+#define BIT_NOT		33
 
-#define STREQ		33
-#define STRNEQ		34
+/*
+ * Binary string operators:
+ */
+
+#define STREQ		34
+#define STRNEQ		35
 
 /*
  * Mapping from lexemes to strings; used for debugging messages. These
  * entries must match the order and number of the lexeme definitions above.
  */
 
-#ifdef TCL_COMPILE_DEBUG
 static char *lexemeStrings[] = {
     "LITERAL", "FUNCNAME",
-    "[", "{", "(", ")", "$", "\"", ",", "END", "UNKNOWN",
+    "[", "{", "(", ")", "$", "\"", ",", "END", "UNKNOWN", "UNKNOWN_CHAR",
     "*", "/", "%", "+", "-",
     "<<", ">>", "<", ">", "<=", ">=", "==", "!=",
     "&", "^", "|", "&&", "||", "?", ":",
     "!", "~", "eq", "ne",
 };
-#endif /* TCL_COMPILE_DEBUG */
 
 /*
  * Declarations for local procedures to this file:
  */
 
 static int		GetLexeme _ANSI_ARGS_((ParseInfo *infoPtr));
-static void		LogSyntaxError _ANSI_ARGS_((ParseInfo *infoPtr));
+static void		LogSyntaxError _ANSI_ARGS_((ParseInfo *infoPtr,
+				char *extraInfo));
 static int		ParseAddExpr _ANSI_ARGS_((ParseInfo *infoPtr));
 static int		ParseBitAndExpr _ANSI_ARGS_((ParseInfo *infoPtr));
 static int		ParseBitOrExpr _ANSI_ARGS_((ParseInfo *infoPtr));
@@ -157,8 +163,8 @@ static int		ParseRelationalExpr _ANSI_ARGS_((ParseInfo *infoPtr));
 static int		ParseShiftExpr _ANSI_ARGS_((ParseInfo *infoPtr));
 static int		ParseUnaryExpr _ANSI_ARGS_((ParseInfo *infoPtr));
 static void		PrependSubExprTokens _ANSI_ARGS_((char *op,
-			    int opBytes, char *src, int srcBytes,
-			    int firstIndex, ParseInfo *infoPtr));
+				int opBytes, char *src, int srcBytes,
+				int firstIndex, ParseInfo *infoPtr));
 
 /*
  * Macro used to debug the execution of the recursive descent parser used
@@ -281,7 +287,7 @@ Tcl_ParseExpr(interp, string, numBytes, parsePtr)
 	goto error;
     }
     if (info.lexeme != END) {
-	LogSyntaxError(&info);
+	LogSyntaxError(&info, "extra tokens at end of expression");
 	goto error;
     }
     string[numBytes] = (char) savedChar;
@@ -387,7 +393,7 @@ ParseCondExpr(infoPtr)
 	    return code;
 	}
 	if (infoPtr->lexeme != COLON) {
-	    LogSyntaxError(infoPtr);
+	    LogSyntaxError(infoPtr, "missing colon from ternary conditional");
 	    return TCL_ERROR;
 	}
 	code = GetLexeme(infoPtr); /* skip over the ':' */
@@ -1148,7 +1154,8 @@ ParsePrimaryExpr(infoPtr)
 	    return code;
 	}
 	if (infoPtr->lexeme != CLOSE_PAREN) {
-	    goto syntaxError;
+	    LogSyntaxError(infoPtr, "looking for close parenthesis");
+	    return TCL_ERROR;
 	}
 	code = GetLexeme(infoPtr); /* skip over the ')' */
 	if (code != TCL_OK) {
@@ -1378,7 +1385,40 @@ ParsePrimaryExpr(infoPtr)
 	    return code;
 	}
 	if (infoPtr->lexeme != OPEN_PAREN) {
-	    goto syntaxError;
+	    /*
+	     * Guess what kind of error we have by trying to tell
+	     * whether we have a function or variable name here.
+	     * Alas, this makes the parser more tightly bound with the
+	     * rest of the interpreter, but that is the only way to
+	     * give a sensible message here.  Still, it is not too
+	     * serious as this is only done when generating an error.
+	     */
+	    Interp *iPtr = (Interp *) infoPtr->parsePtr->interp;
+	    char savedChar;
+	    Tcl_HashEntry *hPtr;
+
+	    /*
+	     * Look up the name as a function name; note that this
+	     * requires the expression to be in writable memory.
+	     */
+	    savedChar = tokenPtr->start[tokenPtr->size];
+	    tokenPtr->start[tokenPtr->size] = '\0';
+	    hPtr = Tcl_FindHashEntry(&iPtr->mathFuncTable, tokenPtr->start);
+	    tokenPtr->start[tokenPtr->size] = savedChar;
+
+	    /*
+	     * Assume that we have an attempted variable reference
+	     * unless we've got a function name, as the set of
+	     * potential function names is typically much smaller.
+	     */
+	    if (hPtr != NULL) {
+		LogSyntaxError(infoPtr,
+			"expected parenthesis enclosing function arguments");
+	    } else {
+		LogSyntaxError(infoPtr,
+			"variable references require preceding $");
+	    }
+	    return TCL_ERROR;
 	}
 	code = GetLexeme(infoPtr); /* skip over '(' */
 	if (code != TCL_OK) {
@@ -1397,7 +1437,9 @@ ParsePrimaryExpr(infoPtr)
 		    return code;
 		}
 	    } else if (infoPtr->lexeme != CLOSE_PAREN) {
-		goto syntaxError;
+		LogSyntaxError(infoPtr,
+			"missing close parenthesis at end of function call");
+		return TCL_ERROR;
 	    }
 	}
 
@@ -1406,8 +1448,36 @@ ParsePrimaryExpr(infoPtr)
 	exprTokenPtr->numComponents = parsePtr->numTokens - firstIndex;
 	break;
 
-    default:
-	goto syntaxError;
+    case COMMA:
+	LogSyntaxError(infoPtr,
+		"commas can only separate function arguments");
+	return TCL_ERROR;
+    case END:
+	LogSyntaxError(infoPtr, "premature end of expression");
+	return TCL_ERROR;
+    case UNKNOWN:
+	LogSyntaxError(infoPtr, "single equality character not legal in expressions");
+	return TCL_ERROR;
+    case UNKNOWN_CHAR:
+	LogSyntaxError(infoPtr, "character not legal in expressions");
+	return TCL_ERROR;
+    case QUESTY:
+	LogSyntaxError(infoPtr, "unexpected ternary 'then' separator");
+	return TCL_ERROR;
+    case COLON:
+	LogSyntaxError(infoPtr, "unexpected ternary 'else' separator");
+	return TCL_ERROR;
+    case CLOSE_PAREN:
+	LogSyntaxError(infoPtr, "unexpected close parenthesis");
+	return TCL_ERROR;
+
+    default: {
+	char buf[64];
+
+	sprintf(buf, "unexpected operator %s", lexemeStrings[lexeme]);
+	LogSyntaxError(infoPtr, buf);
+	return TCL_ERROR;
+	}
     }
 
     /*
@@ -1420,10 +1490,6 @@ ParsePrimaryExpr(infoPtr)
     }
     parsePtr->term = infoPtr->next;
     return TCL_OK;
-
-    syntaxError:
-    LogSyntaxError(infoPtr);
-    return TCL_ERROR;
 }
 
 /*
@@ -1823,7 +1889,7 @@ GetLexeme(infoPtr)
 		}
 		return TCL_OK;
 	    }
-	    infoPtr->lexeme = UNKNOWN;
+	    infoPtr->lexeme = UNKNOWN_CHAR;
 	    return TCL_OK;
     }
 }
@@ -1903,23 +1969,31 @@ PrependSubExprTokens(op, opBytes, src, srcBytes, firstIndex, infoPtr)
  *
  * Side effects:
  *	Sets the interpreter result to an error message describing the
- *	expression that was being parsed when the error occurred.
+ *	expression that was being parsed when the error occurred, and why
+ *	the parser considers that to be a syntax error at all.
  *
  *----------------------------------------------------------------------
  */
 
 static void
-LogSyntaxError(infoPtr)
+LogSyntaxError(infoPtr, extraInfo)
     ParseInfo *infoPtr;		/* Holds the parse state for the
 				 * expression being parsed. */
+    char *extraInfo;		/* String to provide extra information
+				 * about the syntax error. */
 {
     int numBytes = (infoPtr->lastChar - infoPtr->originalExpr);
     char buffer[100];
 
-    sprintf(buffer, "syntax error in expression \"%.*s\"",
-	    ((numBytes > 60)? 60 : numBytes), infoPtr->originalExpr);
+    if (numBytes > 60) {
+	sprintf(buffer, "syntax error in expression \"%.60s...\"",
+		infoPtr->originalExpr);
+    } else {
+	sprintf(buffer, "syntax error in expression \"%s\"",
+		infoPtr->originalExpr);
+    }
     Tcl_AppendStringsToObj(Tcl_GetObjResult(infoPtr->parsePtr->interp),
-	    buffer, (char *) NULL);
+	    buffer, ": ", extraInfo, (char *) NULL);
     infoPtr->parsePtr->errorType = TCL_PARSE_SYNTAX;
     infoPtr->parsePtr->term = infoPtr->start;
 }

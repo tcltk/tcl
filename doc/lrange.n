@@ -1,11 +1,12 @@
 '\"
 '\" Copyright (c) 1993 The Regents of the University of California.
 '\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\" Copyright (c) 2001 Kevin B. Kenny.  All rights reserved.
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: lrange.n,v 1.4 2000/09/07 14:27:49 poenitz Exp $
+'\" RCS: @(#) $Id: lrange.n,v 1.4.14.1 2002/02/05 02:21:58 wolfsuit Exp $
 '\" 
 .so man.macros
 .TH lrange n 7.4 Tcl "Tcl Built-In Commands"
@@ -36,7 +37,10 @@ for simple fields that aren't enclosed in braces); it does, however,
 produce exactly the same results as ``\fBlist [lindex \fIlist first\fB]\fR''
 
 .SH "SEE ALSO"
-lappend(n), lindex(n), linsert(n), list(n), llength(n), lreplace(n)
+.VS 8.4
+list(n), lappend(n), lindex(n), linsert(n), llength(n), lsearch(n), 
+lset(n), lreplace(n), lsort(n)
+.VE
 
 .SH KEYWORDS
 element, list, range, sublist

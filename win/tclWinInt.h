@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinInt.h,v 1.11 2001/09/10 17:17:42 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclWinInt.h,v 1.11.6.1 2002/02/05 02:22:05 wolfsuit Exp $
  */
 
 #ifndef _TCLWININT
@@ -89,6 +89,9 @@ typedef struct TclWinProcs {
 	    CONST TCHAR *, DWORD, WCHAR *, TCHAR **);
     BOOL (WINAPI *setCurrentDirectoryProc)(CONST TCHAR *);
     BOOL (WINAPI *setFileAttributesProc)(CONST TCHAR *, DWORD);
+    BOOL (WINAPI *getFileAttributesExProc)(CONST TCHAR *, 
+	    GET_FILEEX_INFO_LEVELS, LPVOID);
+
 } TclWinProcs;
 
 EXTERN TclWinProcs *tclWinProcs;

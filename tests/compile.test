@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: compile.test,v 1.13 2001/10/12 21:04:15 msofer Exp $
+# RCS: @(#) $Id: compile.test,v 1.13.2.1 2002/02/05 02:22:03 wolfsuit Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -230,11 +230,11 @@ test compile-11.6 {Tcl_Append*: ensure Tcl_ResetResult is used properly} {
 test compile-11.7 {Tcl_Append*: ensure Tcl_ResetResult is used properly} {
     proc p {} { set r [list foobar] ; expr !a }
     list [catch {p} msg] $msg
-} {1 {syntax error in expression "!a"}}
+} {1 {syntax error in expression "!a": variable references require preceding $}}
 test compile-11.8 {Tcl_Append*: ensure Tcl_ResetResult is used properly} {
     proc p {} { set r [list foobar] ; expr {!a} }
     list [catch {p} msg] $msg
-} {1 {syntax error in expression "!a"}}
+} {1 {syntax error in expression "!a": variable references require preceding $}}
 test compile-11.9 {Tcl_Append*: ensure Tcl_ResetResult is used properly} {
     proc p {} { set r [list foobar] ; llength "\{" }
     list [catch {p} msg] $msg
@@ -285,6 +285,19 @@ test compile-12.2 {testing error on literal deletion} {memDebug execCommandExist
     catch {::tcltest::removeFile source.file}
     set res
 } 0
+
+# Special test for underestimating the maxStackSize required for a
+# compiled command. A failure will cause a segfault in the child 
+# process.
+test compile-13.1 {testing underestimate of maxStackSize in list cmd} {execCommandExists} {
+    set body {set x [list}
+    for {set i 0} {$i < 3000} {incr i} {
+	append body " $i"
+    }
+    append body {]; puts OK}
+    regsub BODY {proc crash {} {BODY}; crash} $body script
+    list [catch {exec [info nameofexecutable] << $script} msg] $msg
+} {0 OK}
 
 # cleanup
 catch {rename p ""}

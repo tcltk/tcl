@@ -154,6 +154,7 @@
 				00E2F84F016E92110ACA28DC,
 				00530A0D0173C8270ACA28DC,
 				00530A0E0173CC960ACA28DC,
+				F5C1D51801B8730B01DC9062,
 				F5F2500E016ED0E001DC9062,
 				F56570CE0172204201DC9062,
 				F59AE5E3017AC67A01DC9062,
@@ -508,6 +509,19 @@
 			isa = PBXFileReference;
 			path = tclMacOSXBundle.c;
 			refType = 4;
+		};
+		F5C1D51801B8730B01DC9062 = {
+			buildActionMask = 2147483647;
+			files = (
+			);
+			generatedFileNames = (
+			);
+			isa = PBXShellScriptBuildPhase;
+			name = "Shell Script";
+			neededFileNames = (
+			);
+			shellPath = /bin/sh;
+			shellScript = "cp \"${OBJROOT}/libtclstub${FRAMEWORK_VERSION}.a\" \"${SYMROOT}/${PRODUCT_NAME}.${WRAPPER_EXTENSION}/Versions/${FRAMEWORK_VERSION}\"";
 		};
 		F5C88655017D604601DC9062 = {
 			children = (
@@ -1236,7 +1250,7 @@
 		F5F24FDE016ECC0F01DC9062 = {
 			isa = PBXFileReference;
 			name = tclUnixFile.c;
-			path = ../../../../../../CodeBits/jingham/devel_tk/source/tcl/unix/tclUnixFile.c;
+			path = ../unix/tclUnixFile.c;
 			refType = 2;
 		};
 		F5F24FDF016ECC0F01DC9062 = {
@@ -1248,13 +1262,13 @@
 		F5F24FE0016ECC0F01DC9062 = {
 			isa = PBXFileReference;
 			name = tclUnixNotfy.c;
-			path = ../../../../../../CodeBits/jingham/devel_tk/source/tcl/unix/tclUnixNotfy.c;
+			path = ../unix/tclUnixNotfy.c;
 			refType = 2;
 		};
 		F5F24FE1016ECC0F01DC9062 = {
 			isa = PBXFileReference;
 			name = tclUnixPipe.c;
-			path = ../../../../../../CodeBits/jingham/devel_tk/source/tcl/unix/tclUnixPipe.c;
+			path = ../unix/tclUnixPipe.c;
 			refType = 2;
 		};
 		F5F24FE2016ECC0F01DC9062 = {
@@ -1266,31 +1280,31 @@
 		F5F24FE3016ECC0F01DC9062 = {
 			isa = PBXFileReference;
 			name = tclUnixTest.c;
-			path = ../../../../../../CodeBits/jingham/devel_tk/source/tcl/unix/tclUnixTest.c;
+			path = ../unix/tclUnixTest.c;
 			refType = 2;
 		};
 		F5F24FE4016ECC0F01DC9062 = {
 			isa = PBXFileReference;
 			name = tclUnixThrd.c;
-			path = ../../../../../../CodeBits/jingham/devel_tk/source/tcl/unix/tclUnixThrd.c;
+			path = ../unix/tclUnixThrd.c;
 			refType = 2;
 		};
 		F5F24FE5016ECC0F01DC9062 = {
 			isa = PBXFileReference;
 			name = tclUnixTime.c;
-			path = ../../../../../../CodeBits/jingham/devel_tk/source/tcl/unix/tclUnixTime.c;
+			path = ../unix/tclUnixTime.c;
 			refType = 2;
 		};
 		F5F24FE6016ECC0F01DC9062 = {
 			isa = PBXFileReference;
 			name = tclXtNotify.c;
-			path = ../../../../../../CodeBits/jingham/devel_tk/source/tcl/unix/tclXtNotify.c;
+			path = ../unix/tclXtNotify.c;
 			refType = 2;
 		};
 		F5F24FE7016ECC0F01DC9062 = {
 			isa = PBXFileReference;
 			name = tclXtTest.c;
-			path = ../../../../../../CodeBits/jingham/devel_tk/source/tcl/unix/tclXtTest.c;
+			path = ../unix/tclXtTest.c;
 			refType = 2;
 		};
 		F5F24FEE016ED0DF01DC9062 = {

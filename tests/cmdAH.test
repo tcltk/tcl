@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: cmdAH.test,v 1.15 2001/09/09 17:32:16 mdejong Exp $
+# RCS: @(#) $Id: cmdAH.test,v 1.15.6.1 2002/02/05 02:22:03 wolfsuit Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -1178,7 +1178,7 @@ test cmdAH-20.3 {Tcl_FileObjCmd: atime} {
 test cmdAH-20.4 {Tcl_FileObjCmd: atime} {
     list [catch {file atime $file notint} msg] $msg
 } {1 {expected integer but got "notint"}}
-test cmdAH-20.5 {Tcl_FileObjCmd: atime touch} {
+test cmdAH-20.5 {Tcl_FileObjCmd: atime touch} {unixOrPc} {
     if {[string equal $tcl_platform(platform) "windows"]} {
 	set old [pwd]
 	cd $::tcltest::temporaryDirectory
@@ -1288,14 +1288,29 @@ set file [makeFile "data" touch.me]
 test cmdAH-24.1 {Tcl_FileObjCmd: mtime} {
     list [catch {file mtime a b c} msg] $msg
 } {1 {wrong # args: should be "file mtime name ?time?"}}
+# Check (allowing for clock-skew and OS interrupts as best we can)
+# that the change in mtime on a file being written is the time elapsed
+# between writes.  Note that this can still fail on very busy systems
+# if there are long preemptions between the writes and the reading of
+# the clock, but there's not much you can do about that other than the
+# completely horrible "keep on trying to write until you managed to do
+# it all in less than a second."  - DKF
 test cmdAH-24.2 {Tcl_FileObjCmd: mtime} {
+    set f [open gorp.file w]
+    puts $f "More text"
+    set localOld [clock seconds]
+    close $f
     set old [file mtime gorp.file]
     after 2000
     set f [open gorp.file w]
     puts $f "More text"
+    set localNew [clock seconds]
     close $f
     set new [file mtime gorp.file]
-    expr {($new > $old) && ($new <= ($old+5))}
+    expr {
+	($new > $old) && ($localNew > $localOld) &&
+	(abs(($new-$old) - ($localNew-$localOld)) <= 1)
+    }
 } {1}
 test cmdAH-24.3 {Tcl_FileObjCmd: mtime} {
     catch {unset stat}
@@ -1618,16 +1633,3 @@ cd $cmdAHwd
 
 ::tcltest::cleanupTests
 return
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacAppInit.c,v 1.8 2001/06/17 03:48:19 dgp Exp $
+ * RCS: @(#) $Id: tclMacAppInit.c,v 1.8.8.1 2002/02/05 02:22:02 wolfsuit Exp $
  */
 
 #include "tcl.h"
@@ -22,7 +22,7 @@
 #   include <console.h>
 #elif defined(__MWERKS__)
 #   include <SIOUX.h>
-short InstallConsole _ANSI_ARGS_((short fd));
+EXTERN short InstallConsole _ANSI_ARGS_((short fd));
 #endif
 
 #ifdef TCL_TEST
@@ -189,6 +189,7 @@ MacintoshInit()
     SIOUXSettings.autocloseonquit = true;
     SIOUXSettings.showstatusline = true;
     SIOUXSettings.asktosaveonclose = false;
+    SIOUXSettings.wasteusetempmemory = true;    
     InstallConsole(0);
     SIOUXSetTitle("\pTcl Interpreter");
 		

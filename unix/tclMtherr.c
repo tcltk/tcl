@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMtherr.c,v 1.3 1999/04/16 00:48:04 stanton Exp $
+ * RCS: @(#) $Id: tclMtherr.c,v 1.3.28.1 2002/02/05 02:22:05 wolfsuit Exp $
  */
 
 #include "tclInt.h"
@@ -61,6 +61,9 @@ struct exception {
  *----------------------------------------------------------------------
  */
 
+#ifdef __APPLE_CC__
+__private_extern__
+#endif
 int
 matherr(xPtr)
     struct exception *xPtr;	/* Describes error that occurred. */

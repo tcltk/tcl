@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFile.c,v 1.12 2001/08/30 08:53:15 vincentdarley Exp $
+ * RCS: @(#) $Id: tclUnixFile.c,v 1.12.8.1 2002/02/05 02:22:05 wolfsuit Exp $
  */
 
 #include "tclInt.h"
@@ -196,12 +196,12 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
     Tcl_Interp *interp;		/* Interpreter to receive errors. */
     Tcl_Obj *resultPtr;		/* List object to lappend results. */
     Tcl_Obj *pathPtr;	        /* Contains path to directory to search. */
-    char *pattern;		/* Pattern to match against. */
+    CONST char *pattern;	/* Pattern to match against. */
     Tcl_GlobTypeData *types;	/* Object containing list of acceptable types.
 				 * May be NULL. In particular the directory
 				 * flag is very important. */
 {
-    char *native, *fname, *dirName;
+    CONST char *native, *fname, *dirName;
     DIR *d;
     Tcl_DString ds;
     struct stat statBuf;
@@ -294,14 +294,13 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 
     while (1) {
         Tcl_DString utfDs;
-	char *utf;
+	CONST char *utf;
 	struct dirent *entryPtr;
 	
 	entryPtr = readdir(d);				/* INTL: Native. */
 	if (entryPtr == NULL) {
 	    break;
 	}
-
 	if (types != NULL && (types->perm & TCL_GLOB_PERM_HIDDEN)) {
 	    /* 
 	     * We explicitly asked for hidden files, so turn around
@@ -365,11 +364,11 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 			((types->perm & TCL_GLOB_PERM_RONLY) &&
 				(buf.st_mode & (S_IWOTH|S_IWGRP|S_IWUSR))) ||
 			((types->perm & TCL_GLOB_PERM_R) &&
-				(access(entryPtr->d_name, R_OK) != 0)) ||
+				(access(nativeEntry, R_OK) != 0)) ||
 			((types->perm & TCL_GLOB_PERM_W) &&
-				(access(entryPtr->d_name, W_OK) != 0)) ||
+				(access(nativeEntry, W_OK) != 0)) ||
 			((types->perm & TCL_GLOB_PERM_X) &&
-				(access(entryPtr->d_name, X_OK) != 0))
+				(access(nativeEntry, X_OK) != 0))
 			)) {
 			typeOk = 0;
 		    }
@@ -461,7 +460,7 @@ TclpGetUserHome(name, bufferPtr)
 {
     struct passwd *pwPtr;
     Tcl_DString ds;
-    char *native;
+    CONST char *native;
 
     native = Tcl_UtfToExternalDString(NULL, name, -1, &ds);
     pwPtr = getpwnam(native);				/* INTL: Native. */
@@ -497,7 +496,7 @@ TclpObjAccess(pathPtr, mode)
     Tcl_Obj *pathPtr;        /* Path of file to access */
     int mode;                /* Permission setting. */
 {
-    char *path = Tcl_FSGetNativePath(pathPtr);
+    CONST char *path = Tcl_FSGetNativePath(pathPtr);
     if (path == NULL) {
 	return -1;
     } else {
@@ -525,7 +524,7 @@ int
 TclpObjChdir(pathPtr)
     Tcl_Obj *pathPtr;          /* Path to new working directory */
 {
-    char *path = Tcl_FSGetNativePath(pathPtr);
+    CONST char *path = Tcl_FSGetNativePath(pathPtr);
     if (path == NULL) {
 	return -1;
     } else {
@@ -554,7 +553,7 @@ TclpObjLstat(pathPtr, bufPtr)
     Tcl_Obj *pathPtr;		/* Path of file to stat */
     struct stat *bufPtr;	/* Filled with results of stat call. */
 {
-    char *path = Tcl_FSGetNativePath(pathPtr);
+    CONST char *path = Tcl_FSGetNativePath(pathPtr);
     if (path == NULL) {
 	return -1;
     } else {
@@ -599,7 +598,7 @@ TclpObjGetCwd(interp)
 }
 
 /* Older string based version */
-char *
+CONST char *
 TclpGetCwd(interp, bufferPtr)
     Tcl_Interp *interp;		/* If non-NULL, used for error reporting. */
     Tcl_DString *bufferPtr;	/* Uninitialized or free DString filled
@@ -650,7 +649,7 @@ TclpReadlink(path, linkPtr)
 {
     char link[MAXPATHLEN];
     int length;
-    char *native;
+    CONST char *native;
     Tcl_DString ds;
 
     native = Tcl_UtfToExternalDString(NULL, path, -1, &ds);
@@ -686,7 +685,7 @@ TclpObjStat(pathPtr, bufPtr)
     Tcl_Obj *pathPtr;		/* Path of file to stat */
     struct stat *bufPtr;	/* Filled with results of stat call. */
 {
-    char *path = Tcl_FSGetNativePath(pathPtr);
+    CONST char *path = Tcl_FSGetNativePath(pathPtr);
     if (path == NULL) {
 	return -1;
     } else {

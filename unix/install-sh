@@ -62,6 +62,11 @@ while [ x"$1" != x ]; do
 	    shift
 	    continue;;
 
+	-S) stripcmd="$stripprog $2"
+	    shift
+	    shift
+	    continue;;
+
 	*)  if [ x"$src" = x ]
 	    then
 		src=$1

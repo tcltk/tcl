@@ -1,11 +1,12 @@
 '\"
 '\" Copyright (c) 1993 The Regents of the University of California.
 '\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\" Copyright (c) 2001 Kevin B. Kenny.  All rights reserved.
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: llength.n,v 1.4 2000/09/07 14:27:49 poenitz Exp $
+'\" RCS: @(#) $Id: llength.n,v 1.4.14.1 2002/02/05 02:21:58 wolfsuit Exp $
 '\" 
 .so man.macros
 .TH llength n "" Tcl "Tcl Built-In Commands"
@@ -23,7 +24,10 @@ Treats \fIlist\fR as a list and returns a decimal string giving
 the number of elements in it.
 
 .SH "SEE ALSO"
-list(n), lindex(n), lrange(n)
+.VS 8.4
+list(n), lappend(n), lindex(n), linsert(n), lsearch(n), 
+lset(n), lsort(n), lrange(n), lreplace(n)
+.VE
 
 .SH KEYWORDS
 element, list, length

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.63.2.1 2001/11/11 17:57:09 wolfsuit Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.63.2.2 2002/02/05 02:21:58 wolfsuit Exp $
 
 library tcl
 
@@ -154,7 +154,7 @@ declare 35 generic {
 }
 declare 36 generic {
     int Tcl_GetIndexFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, \
-	    char **tablePtr, char *msg, int flags, int *indexPtr)
+	    CONST84 char **tablePtr, CONST char *msg, int flags, int *indexPtr)
 }
 declare 37 generic {
     int Tcl_GetInt(Tcl_Interp *interp, CONST char *str, int *intPtr)
@@ -166,7 +166,7 @@ declare 39 generic {
     int Tcl_GetLongFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, long *longPtr)
 }
 declare 40 generic {
-    Tcl_ObjType * Tcl_GetObjType(char *typeName)
+    Tcl_ObjType * Tcl_GetObjType(CONST char *typeName)
 }
 declare 41 generic {
     char * Tcl_GetStringFromObj(Tcl_Obj *objPtr, int *lengthPtr)
@@ -289,8 +289,8 @@ declare 77 generic {
     char Tcl_Backslash(CONST char *src, int *readPtr)
 }
 declare 78 generic {
-    int Tcl_BadChannelOption(Tcl_Interp *interp, char *optionName, \
-	    char *optionList)
+    int Tcl_BadChannelOption(Tcl_Interp *interp, CONST char *optionName, \
+	    CONST char *optionList)
 }
 declare 79 generic {
     void Tcl_CallWhenDeleted(Tcl_Interp *interp, Tcl_InterpDeleteProc *proc, \
@@ -306,7 +306,7 @@ declare 82 generic {
     int Tcl_CommandComplete(char *cmd)
 }
 declare 83 generic {
-    char * Tcl_Concat(int argc, char * CONST *argv)
+    char * Tcl_Concat(int argc, CONST84 char * CONST *argv)
 }
 declare 84 generic {
     int Tcl_ConvertElement(CONST char *src, char *dst, int flags)
@@ -316,17 +316,18 @@ declare 85 generic {
 	    int flags)
 }
 declare 86 generic {
-    int Tcl_CreateAlias(Tcl_Interp *slave, char *slaveCmd, \
-	    Tcl_Interp *target, char *targetCmd, int argc, char **argv)
+    int Tcl_CreateAlias(Tcl_Interp *slave, CONST char *slaveCmd, \
+	    Tcl_Interp *target, CONST char *targetCmd, int argc, \
+	    char * CONST *argv)
 }
 declare 87 generic {
-    int Tcl_CreateAliasObj(Tcl_Interp *slave, char *slaveCmd, \
-	    Tcl_Interp *target, char *targetCmd, int objc, \
+    int Tcl_CreateAliasObj(Tcl_Interp *slave, CONST char *slaveCmd, \
+	    Tcl_Interp *target, CONST char *targetCmd, int objc, \
 	    Tcl_Obj *CONST objv[])
 }
 declare 88 generic {
-    Tcl_Channel Tcl_CreateChannel(Tcl_ChannelType *typePtr, char *chanName, \
-	    ClientData instanceData, int mask)
+    Tcl_Channel Tcl_CreateChannel(Tcl_ChannelType *typePtr,
+	    CONST char *chanName, ClientData instanceData, int mask)
 }
 declare 89 generic {
     void Tcl_CreateChannelHandler(Tcl_Channel chan, int mask, \
@@ -363,7 +364,7 @@ declare 96 generic {
 	    Tcl_CmdDeleteProc *deleteProc)
 }
 declare 97 generic {
-    Tcl_Interp * Tcl_CreateSlave(Tcl_Interp *interp, char *slaveName, \
+    Tcl_Interp * Tcl_CreateSlave(Tcl_Interp *interp, CONST char *slaveName, \
 	    int isSafe)
 }
 declare 98 generic {
@@ -462,17 +463,17 @@ declare 126 generic {
     int Tcl_Eof(Tcl_Channel chan)
 }
 declare 127 generic {
-    char * Tcl_ErrnoId(void)
+    CONST char * Tcl_ErrnoId(void)
 }
 declare 128 generic {
-    char * Tcl_ErrnoMsg(int err)
+    CONST char * Tcl_ErrnoMsg(int err)
 }
 declare 129 generic {
     int Tcl_Eval(Tcl_Interp *interp, char *string)
 }
 # This is obsolete, use Tcl_FSEvalFile
 declare 130 generic {
-    int Tcl_EvalFile(Tcl_Interp *interp, char *fileName)
+    int Tcl_EvalFile(Tcl_Interp *interp, CONST char *fileName)
 }
 declare 131 generic {
     int Tcl_EvalObj(Tcl_Interp *interp, Tcl_Obj *objPtr)
@@ -529,21 +530,21 @@ declare 147 generic {
     void Tcl_FreeResult(Tcl_Interp *interp)
 }
 declare 148 generic {
-    int Tcl_GetAlias(Tcl_Interp *interp, char *slaveCmd, \
-	    Tcl_Interp **targetInterpPtr, char **targetCmdPtr, int *argcPtr, \
-	    char ***argvPtr)
+    int Tcl_GetAlias(Tcl_Interp *interp, CONST char *slaveCmd, \
+	    Tcl_Interp **targetInterpPtr, CONST84 char **targetCmdPtr, \
+	    int *argcPtr, char ***argvPtr)
 }
 declare 149 generic {
-    int Tcl_GetAliasObj(Tcl_Interp *interp, char *slaveCmd, \
-	    Tcl_Interp **targetInterpPtr, char **targetCmdPtr, int *objcPtr, \
-	    Tcl_Obj ***objv)
+    int Tcl_GetAliasObj(Tcl_Interp *interp, CONST char *slaveCmd, \
+	    Tcl_Interp **targetInterpPtr, CONST84 char **targetCmdPtr, \
+	    int *objcPtr, Tcl_Obj ***objv)
 }
 declare 150 generic {
     ClientData Tcl_GetAssocData(Tcl_Interp *interp, CONST char *name, \
 	    Tcl_InterpDeleteProc **procPtr)
 }
 declare 151 generic {
-    Tcl_Channel Tcl_GetChannel(Tcl_Interp *interp, char *chanName, \
+    Tcl_Channel Tcl_GetChannel(Tcl_Interp *interp, CONST char *chanName, \
 	    int *modePtr)
 }
 declare 152 generic {
@@ -560,11 +561,11 @@ declare 155 generic {
     int Tcl_GetChannelMode(Tcl_Channel chan)
 }
 declare 156 generic {
-    char * Tcl_GetChannelName(Tcl_Channel chan)
+    CONST char * Tcl_GetChannelName(Tcl_Channel chan)
 }
 declare 157 generic {
     int Tcl_GetChannelOption(Tcl_Interp *interp, Tcl_Channel chan, \
-	    char *optionName, Tcl_DString *dsPtr)
+	    CONST char *optionName, Tcl_DString *dsPtr)
 }
 declare 158 generic {
     Tcl_ChannelType * Tcl_GetChannelType(Tcl_Channel chan)
@@ -580,7 +581,7 @@ declare 161 generic {
     int Tcl_GetErrno(void)
 }
 declare 162 generic {
-    char * Tcl_GetHostName(void)
+    CONST char * Tcl_GetHostName(void)
 }
 declare 163 generic {
     int Tcl_GetInterpPath(Tcl_Interp *askInterp, Tcl_Interp *slaveInterp)
@@ -599,7 +600,7 @@ declare 166 generic {
 # generic interface, so we inlcude it here for compatibility reasons.
 
 declare 167 unix {
-    int Tcl_GetOpenFile(Tcl_Interp *interp, char *str, int forWriting, \
+    int Tcl_GetOpenFile(Tcl_Interp *interp, CONST char *str, int forWriting, \
 	    int checkUsage, ClientData *filePtr)
 }
 # Obsolete.  Should now use Tcl_FSGetPathType which is objectified
@@ -617,19 +618,20 @@ declare 171 generic {
     int Tcl_GetServiceMode(void)
 }
 declare 172 generic {
-    Tcl_Interp * Tcl_GetSlave(Tcl_Interp *interp, char *slaveName)
+    Tcl_Interp * Tcl_GetSlave(Tcl_Interp *interp, CONST char *slaveName)
 }
 declare 173 generic {
     Tcl_Channel Tcl_GetStdChannel(int type)
 }
 declare 174 generic {
-    char * Tcl_GetStringResult(Tcl_Interp *interp)
+    CONST char * Tcl_GetStringResult(Tcl_Interp *interp)
 }
 declare 175 generic {
-    char * Tcl_GetVar(Tcl_Interp *interp, char *varName, int flags)
+    CONST char * Tcl_GetVar(Tcl_Interp *interp, char *varName, int flags)
 }
 declare 176 generic {
-    char * Tcl_GetVar2(Tcl_Interp *interp, char *part1, char *part2, int flags)
+    CONST char * Tcl_GetVar2(Tcl_Interp *interp, char *part1, char *part2, \
+	    int flags)
 }
 declare 177 generic {
     int Tcl_GlobalEval(Tcl_Interp *interp, char *command)
@@ -661,7 +663,8 @@ declare 185 generic {
 }
 # Obsolete, use Tcl_FSJoinPath
 declare 186 generic {
-    char * Tcl_JoinPath(int argc, char **argv, Tcl_DString *resultPtr)
+    CONST char * Tcl_JoinPath(int argc, CONST84 char * CONST *argv,
+	    Tcl_DString *resultPtr)
 }
 declare 187 generic {
     int Tcl_LinkVar(Tcl_Interp *interp, char *varName, char *addr, int type)
@@ -682,7 +685,7 @@ declare 191 generic {
     Tcl_Channel Tcl_MakeTcpClientChannel(ClientData tcpSocket)
 }
 declare 192 generic {
-    char * Tcl_Merge(int argc, char * CONST *argv)
+    char * Tcl_Merge(int argc, CONST84 char * CONST *argv)
 }
 declare 193 generic {
     Tcl_HashEntry * Tcl_NextHashEntry(Tcl_HashSearch *searchPtr)
@@ -700,20 +703,21 @@ declare 196 generic {
 }
 declare 197 {unix win} {
     Tcl_Channel Tcl_OpenCommandChannel(Tcl_Interp *interp, int argc, \
-	    char **argv, int flags)
+	    CONST84 char **argv, int flags)
 }
 # This is obsolete, use Tcl_FSOpenFileChannel
 declare 198 generic {
-    Tcl_Channel Tcl_OpenFileChannel(Tcl_Interp *interp, char *fileName, \
-	    char *modeString, int permissions)
+    Tcl_Channel Tcl_OpenFileChannel(Tcl_Interp *interp, CONST char *fileName, \
+	    CONST char *modeString, int permissions)
 }
 declare 199 generic {
     Tcl_Channel Tcl_OpenTcpClient(Tcl_Interp *interp, int port, \
-	    char *address, char *myaddr, int myport, int async)
+	    CONST char *address, CONST char *myaddr, int myport, int async)
 }
 declare 200 generic {
-    Tcl_Channel Tcl_OpenTcpServer(Tcl_Interp *interp, int port, char *host, \
-	    Tcl_TcpAcceptProc *acceptProc, ClientData callbackData)
+    Tcl_Channel Tcl_OpenTcpServer(Tcl_Interp *interp, int port, \
+	    CONST char *host, Tcl_TcpAcceptProc *acceptProc, \
+	    ClientData callbackData)
 }
 declare 201 generic {
     void Tcl_Preserve(ClientData data)
@@ -725,7 +729,7 @@ declare 203 generic {
     int Tcl_PutEnv(CONST char *string)
 }
 declare 204 generic {
-    char * Tcl_PosixError(Tcl_Interp *interp)
+    CONST char * Tcl_PosixError(Tcl_Interp *interp)
 }
 declare 205 generic {
     void Tcl_QueueEvent(Tcl_Event *evPtr, Tcl_QueuePosition position)
@@ -737,7 +741,7 @@ declare 207 {unix win} {
     void Tcl_ReapDetachedProcs(void)
 }
 declare 208 generic {
-    int Tcl_RecordAndEval(Tcl_Interp *interp, char *cmd, int flags)
+    int Tcl_RecordAndEval(Tcl_Interp *interp, CONST char *cmd, int flags)
 }
 declare 209 generic {
     int Tcl_RecordAndEvalObj(Tcl_Interp *interp, Tcl_Obj *cmdPtr, int flags)
@@ -749,18 +753,19 @@ declare 211 generic {
     void Tcl_RegisterObjType(Tcl_ObjType *typePtr)
 }
 declare 212 generic {
-    Tcl_RegExp Tcl_RegExpCompile(Tcl_Interp *interp, char *string)
+    Tcl_RegExp Tcl_RegExpCompile(Tcl_Interp *interp, CONST char *string)
 }
 declare 213 generic {
     int Tcl_RegExpExec(Tcl_Interp *interp, Tcl_RegExp regexp, \
 	    CONST char *str, CONST char *start)
 }
 declare 214 generic {
-    int Tcl_RegExpMatch(Tcl_Interp *interp, char *str, char *pattern)
+    int Tcl_RegExpMatch(Tcl_Interp *interp, CONST char *str, \
+	    CONST char *pattern)
 }
 declare 215 generic {
-    void Tcl_RegExpRange(Tcl_RegExp regexp, int index, char **startPtr, \
-	    char **endPtr)
+    void Tcl_RegExpRange(Tcl_RegExp regexp, int index, \
+	    CONST char **startPtr, CONST char **endPtr)
 }
 declare 216 generic {
     void Tcl_Release(ClientData clientData)
@@ -792,7 +797,7 @@ declare 224 generic {
 }
 declare 225 generic {
     int Tcl_SetChannelOption(Tcl_Interp *interp, Tcl_Channel chan, \
-	    char *optionName, char *newValue)
+	    CONST char *optionName, CONST char *newValue)
 }
 declare 226 generic {
     int Tcl_SetCommandInfo(Tcl_Interp *interp, CONST char *cmdName, \
@@ -830,32 +835,32 @@ declare 236 generic {
     void Tcl_SetStdChannel(Tcl_Channel channel, int type)
 }
 declare 237 generic {
-    char * Tcl_SetVar(Tcl_Interp *interp, char *varName, char *newValue, \
-	    int flags)
+    CONST char * Tcl_SetVar(Tcl_Interp *interp, char *varName, \
+	    CONST char *newValue, int flags)
 }
 declare 238 generic {
-    char * Tcl_SetVar2(Tcl_Interp *interp, char *part1, char *part2, \
-	    char *newValue, int flags)
+    CONST char * Tcl_SetVar2(Tcl_Interp *interp, char *part1, char *part2, \
+	    CONST char *newValue, int flags)
 }
 declare 239 generic {
-    char * Tcl_SignalId(int sig)
+    CONST char * Tcl_SignalId(int sig)
 }
 declare 240 generic {
-    char * Tcl_SignalMsg(int sig)
+    CONST char * Tcl_SignalMsg(int sig)
 }
 declare 241 generic {
     void Tcl_SourceRCFile(Tcl_Interp *interp)
 }
 declare 242 generic {
     int Tcl_SplitList(Tcl_Interp *interp, CONST char *listStr, int *argcPtr, \
-	    char ***argvPtr)
+	    CONST84 char ***argvPtr)
 }
 # Obsolete, use Tcl_FSSplitPath
 declare 243 generic {
-    void Tcl_SplitPath(CONST char *path, int *argcPtr, char ***argvPtr)
+    void Tcl_SplitPath(CONST char *path, int *argcPtr, CONST84 char ***argvPtr)
 }
 declare 244 generic {
-    void Tcl_StaticPackage(Tcl_Interp *interp, char *pkgName, \
+    void Tcl_StaticPackage(Tcl_Interp *interp, CONST char *pkgName, \
 	    Tcl_PackageInitProc *initProc, Tcl_PackageInitProc *safeInitProc)
 }
 declare 245 generic {
@@ -873,11 +878,11 @@ declare 248 generic {
 	    int flags, Tcl_VarTraceProc *proc, ClientData clientData)
 }
 declare 249 generic {
-    char * Tcl_TranslateFileName(Tcl_Interp *interp, char *name, \
+    CONST char * Tcl_TranslateFileName(Tcl_Interp *interp, CONST char *name, \
 	    Tcl_DString *bufferPtr)
 }
 declare 250 generic {
-    int Tcl_Ungets(Tcl_Channel chan, char *str, int len, int atHead)
+    int Tcl_Ungets(Tcl_Channel chan, CONST char *str, int len, int atHead)
 }
 declare 251 generic {
     void Tcl_UnlinkVar(Tcl_Interp *interp, char *varName)
@@ -923,11 +928,11 @@ declare 262 generic {
 	    ClientData prevClientData)
 }
 declare 263 generic {
-    int Tcl_Write(Tcl_Channel chan, char *s, int slen)
+    int Tcl_Write(Tcl_Channel chan, CONST char *s, int slen)
 }
 declare 264 generic {
     void Tcl_WrongNumArgs(Tcl_Interp *interp, int objc, \
-	    Tcl_Obj *CONST objv[], char *message)
+	    Tcl_Obj *CONST objv[], CONST char *message)
 }
 declare 265 generic {
     int Tcl_DumpActiveMemory( CONST char *fileName )
@@ -943,10 +948,10 @@ declare 268 generic {
     void Tcl_AppendStringsToObjVA(Tcl_Obj *objPtr, va_list argList)
 }
 declare 269 generic {
-    char * Tcl_HashStats(Tcl_HashTable *tablePtr)
+    CONST char * Tcl_HashStats(Tcl_HashTable *tablePtr)
 }
 declare 270 generic {
-    char * Tcl_ParseVar(Tcl_Interp *interp, char *str, char **termPtr)
+    CONST char * Tcl_ParseVar(Tcl_Interp *interp, char *str, char **termPtr)
 }
 declare 271 generic {
     CONST char * Tcl_PkgPresent(Tcl_Interp *interp, CONST char *name,
@@ -1057,8 +1062,8 @@ declare 295 generic {
 	    int *srcReadPtr, int *dstWrotePtr, int *dstCharsPtr)
 }
 declare 296 generic {
-    char * Tcl_ExternalToUtfDString(Tcl_Encoding encoding, CONST char *src, \
-	    int srcLen, Tcl_DString *dsPtr)
+    CONST char * Tcl_ExternalToUtfDString(Tcl_Encoding encoding, \
+	    CONST char *src, int srcLen, Tcl_DString *dsPtr)
 }
 declare 297 generic {
     void Tcl_FinalizeThread(void)
@@ -1076,14 +1081,15 @@ declare 301 generic {
     Tcl_Encoding Tcl_GetEncoding(Tcl_Interp *interp, CONST char *name)
 }
 declare 302 generic {
-    char * Tcl_GetEncodingName(Tcl_Encoding encoding)
+    CONST char * Tcl_GetEncodingName(Tcl_Encoding encoding)
 }
 declare 303 generic {
     void Tcl_GetEncodingNames(Tcl_Interp *interp)
 }
 declare 304 generic {
     int Tcl_GetIndexFromObjStruct(Tcl_Interp *interp, Tcl_Obj *objPtr, \
-	    char **tablePtr, int offset, char *msg, int flags, int *indexPtr)
+	    CONST char **tablePtr, int offset, CONST char *msg, int flags, \
+	    int *indexPtr)
 }
 declare 305 generic {
     VOID * Tcl_GetThreadData(Tcl_ThreadDataKey *keyPtr, int size)
@@ -1151,7 +1157,7 @@ declare 324 generic {
     int Tcl_UniCharToUtf(int ch, char *buf)
 }
 declare 325 generic {
-    char * Tcl_UtfAtIndex(CONST char *src, int index)
+    CONST char * Tcl_UtfAtIndex(CONST char *src, int index)
 }
 declare 326 generic {
     int Tcl_UtfCharComplete(CONST char *src, int len)
@@ -1160,16 +1166,16 @@ declare 327 generic {
     int Tcl_UtfBackslash(CONST char *src, int *readPtr, char *dst)
 }
 declare 328 generic {
-    char * Tcl_UtfFindFirst(CONST char *src, int ch)
+    CONST char * Tcl_UtfFindFirst(CONST char *src, int ch)
 }
 declare 329 generic {
-    char * Tcl_UtfFindLast(CONST char *src, int ch)
+    CONST char * Tcl_UtfFindLast(CONST char *src, int ch)
 }
 declare 330 generic {
-    char * Tcl_UtfNext(CONST char *src)
+    CONST char * Tcl_UtfNext(CONST char *src)
 }
 declare 331 generic {
-    char * Tcl_UtfPrev(CONST char *src, CONST char *start)
+    CONST char * Tcl_UtfPrev(CONST char *src, CONST char *start)
 }
 declare 332 generic {
     int Tcl_UtfToExternal(Tcl_Interp *interp, Tcl_Encoding encoding, \
@@ -1178,8 +1184,8 @@ declare 332 generic {
 	    int *srcReadPtr, int *dstWrotePtr, int *dstCharsPtr)
 }
 declare 333 generic {
-    char * Tcl_UtfToExternalDString(Tcl_Encoding encoding, CONST char *src, \
-	    int srcLen, Tcl_DString *dsPtr)
+    CONST char * Tcl_UtfToExternalDString(Tcl_Encoding encoding, \
+	    CONST char *src, int srcLen, Tcl_DString *dsPtr)
 }
 declare 334 generic {
     int Tcl_UtfToLower(char *src)
@@ -1203,10 +1209,10 @@ declare 340 generic {
     char * Tcl_GetString(Tcl_Obj *objPtr)
 }
 declare 341 generic {
-    char * Tcl_GetDefaultEncodingDir(void)
+    CONST char * Tcl_GetDefaultEncodingDir(void)
 }
 declare 342 generic {
-    void Tcl_SetDefaultEncodingDir(char *path)
+    void Tcl_SetDefaultEncodingDir(CONST char *path)
 }
 declare 343 generic {
     void Tcl_AlertNotifier(ClientData clientData)
@@ -1236,19 +1242,19 @@ declare 351 generic {
     int Tcl_UniCharIsWordChar(int ch)
 }
 declare 352 generic {
-    int Tcl_UniCharLen(Tcl_UniChar *str)
+    int Tcl_UniCharLen(CONST Tcl_UniChar *str)
 }
 declare 353 generic {
     int Tcl_UniCharNcmp(CONST Tcl_UniChar *cs, CONST Tcl_UniChar *ct,\
     unsigned long n)
 }
 declare 354 generic {
-    char * Tcl_UniCharToUtfDString(CONST Tcl_UniChar *string, int numChars, \
- 	    Tcl_DString *dsPtr)
+    CONST char * Tcl_UniCharToUtfDString(CONST Tcl_UniChar *string, \
+	    int numChars, Tcl_DString *dsPtr)
 }
 declare 355 generic {
-    Tcl_UniChar * Tcl_UtfToUniCharDString(CONST char *string, int length, \
-	    Tcl_DString *dsPtr)
+    CONST Tcl_UniChar * Tcl_UtfToUniCharDString(CONST char *string, \
+	    int length, Tcl_DString *dsPtr)
 }
 declare 356 generic {
     Tcl_RegExp	Tcl_GetRegExpFromObj(Tcl_Interp *interp, Tcl_Obj *patObj, int flags)
@@ -1262,12 +1268,12 @@ declare 358 generic {
     void Tcl_FreeParse (Tcl_Parse *parsePtr)
 }
 declare 359 generic {
-    void Tcl_LogCommandInfo (Tcl_Interp *interp, char *script, \
-	    char *command, int length)
+    void Tcl_LogCommandInfo (Tcl_Interp *interp, CONST char *script, \
+	    CONST char *command, int length)
 }
 declare 360 generic {
     int Tcl_ParseBraces (Tcl_Interp *interp, char *string, \
-	    int numBytes, Tcl_Parse *parsePtr,int append, char **termPtr)
+	    int numBytes, Tcl_Parse *parsePtr, int append, char **termPtr)
 }
 declare 361 generic {
     int Tcl_ParseCommand (Tcl_Interp *interp, char *string, int numBytes, \
@@ -1288,7 +1294,7 @@ declare 364 generic {
 # These 4 functions are obsolete, use Tcl_FSGetCwd, Tcl_FSChdir,
 # Tcl_FSAccess and Tcl_FSStat
 declare 365 generic {
-    char *Tcl_GetCwd(Tcl_Interp *interp, Tcl_DString *cwdPtr)
+    CONST char *Tcl_GetCwd(Tcl_Interp *interp, Tcl_DString *cwdPtr)
 }
 declare 366 generic {
    int Tcl_Chdir(CONST char *dirName)
@@ -1364,7 +1370,7 @@ declare 388 generic {
     int Tcl_GetChannelNames(Tcl_Interp *interp)
 }
 declare 389 generic {
-    int Tcl_GetChannelNamesEx(Tcl_Interp *interp, char *pattern)
+    int Tcl_GetChannelNamesEx(Tcl_Interp *interp, CONST char *pattern)
 }
 declare 390 generic {
     int Tcl_ProcObjCmd(ClientData clientData, Tcl_Interp *interp, \
@@ -1386,7 +1392,7 @@ declare 394 generic {
     int Tcl_ReadRaw (Tcl_Channel chan, char *dst, int bytesToRead)
 }
 declare 395 generic {
-    int Tcl_WriteRaw (Tcl_Channel chan, char *src, int srcLen)
+    int Tcl_WriteRaw (Tcl_Channel chan, CONST char *src, int srcLen)
 }
 declare 396 generic {
     Tcl_Channel Tcl_GetTopChannel (Tcl_Channel chan)
@@ -1395,7 +1401,7 @@ declare 397 generic {
     int Tcl_ChannelBuffered (Tcl_Channel chan)
 }
 declare 398 generic {
-    char * Tcl_ChannelName(Tcl_ChannelType *chanTypePtr)
+    CONST char * Tcl_ChannelName(Tcl_ChannelType *chanTypePtr)
 }
 declare 399 generic {
     Tcl_ChannelTypeVersion Tcl_ChannelVersion(Tcl_ChannelType *chanTypePtr)
@@ -1493,29 +1499,29 @@ declare 424 generic {
     void Tcl_InitObjHashTable(Tcl_HashTable *tablePtr)
 }
 declare 425 generic {
-    ClientData Tcl_CommandTraceInfo(Tcl_Interp *interp, char *varName, \
+    ClientData Tcl_CommandTraceInfo(Tcl_Interp *interp, CONST char *varName, \
 	    int flags, Tcl_CommandTraceProc *procPtr, ClientData prevClientData)
 }
 declare 426 generic {
-    int Tcl_TraceCommand(Tcl_Interp *interp, char *varName, int flags, \
-		Tcl_CommandTraceProc *proc, ClientData clientData)
+    int Tcl_TraceCommand(Tcl_Interp *interp, CONST char *varName, int flags, \
+	    Tcl_CommandTraceProc *proc, ClientData clientData)
 }
 declare 427 generic {
-    void Tcl_UntraceCommand(Tcl_Interp *interp, char *varName, int flags, \
-		Tcl_CommandTraceProc *proc, ClientData clientData)
+    void Tcl_UntraceCommand(Tcl_Interp *interp, CONST char *varName, \
+	    int flags, Tcl_CommandTraceProc *proc, ClientData clientData)
 }
 declare 428 generic {
     char * Tcl_AttemptAlloc(unsigned int size)
 }
 declare 429 generic {
-    char * Tcl_AttemptDbCkalloc(unsigned int size, char *file, int line)
+    char * Tcl_AttemptDbCkalloc(unsigned int size, CONST char *file, int line)
 }
 declare 430 generic {
     char * Tcl_AttemptRealloc(char *ptr, unsigned int size)
 }
 declare 431 generic {
-    char * Tcl_AttemptDbCkrealloc(char *ptr, unsigned int size, char *file, 
-	int line)
+    char * Tcl_AttemptDbCkrealloc(char *ptr, unsigned int size,
+	    CONST char *file, int line)
 }
 declare 432 generic {
     int Tcl_AttemptSetObjLength(Tcl_Obj *objPtr, int length)
@@ -1528,8 +1534,8 @@ declare 434 generic {
     Tcl_UniChar * Tcl_GetUnicodeFromObj (Tcl_Obj *objPtr, int *lengthPtr)
 }
 declare 435 generic {
-    int Tcl_GetMathFuncInfo(Tcl_Interp *interp, CONST char *name,
-	int *numArgsPtr, Tcl_ValueType **argTypesPtr,
+    int Tcl_GetMathFuncInfo(Tcl_Interp *interp, CONST char *name, \
+	int *numArgsPtr, Tcl_ValueType **argTypesPtr, \
 	Tcl_MathProc **procPtr, ClientData *clientDataPtr)
 }
 declare 436 generic {
@@ -1569,7 +1575,7 @@ declare 444 generic {
 declare 445 generic {
     int	Tcl_FSMatchInDirectory(Tcl_Interp *interp, Tcl_Obj * result, \
 		    Tcl_Obj *pathPtr, \
-		    char * pattern, Tcl_GlobTypeData * types)
+		    CONST char * pattern, Tcl_GlobTypeData * types)
 }
 declare 446 generic {
     Tcl_Obj*	Tcl_FSLink(Tcl_Obj *pathPtr, Tcl_Obj *toPtr)
@@ -1598,7 +1604,7 @@ declare 452 generic {
 			    Tcl_Obj *objPtr)
 }
 declare 453 generic {
-    char** Tcl_FSFileAttrStrings(Tcl_Obj *pathPtr, Tcl_Obj **objPtrRef)
+    CONST char ** Tcl_FSFileAttrStrings(Tcl_Obj *pathPtr, Tcl_Obj **objPtrRef)
 }
 declare 454 generic {
     int Tcl_FSStat(Tcl_Obj *pathPtr, struct stat *buf)
@@ -1608,7 +1614,7 @@ declare 455 generic {
 }
 declare 456 generic {
     Tcl_Channel Tcl_FSOpenFileChannel(Tcl_Interp *interp, Tcl_Obj *pathPtr, \
-	    char *modeString, int permissions)
+	    CONST char *modeString, int permissions)
 }
 declare 457 generic {
     Tcl_Obj*  Tcl_FSGetCwd(Tcl_Interp *interp)
@@ -1647,7 +1653,7 @@ declare 468 generic {
     Tcl_Obj* Tcl_FSNewNativePath(Tcl_Obj* fromFilesystem, ClientData clientData)
 }
 declare 469 generic {
-    char* Tcl_FSGetNativePath(Tcl_Obj* pathObjPtr)
+    CONST char* Tcl_FSGetNativePath(Tcl_Obj* pathObjPtr)
 }
 declare 470 generic {
     Tcl_Obj* Tcl_FSFileSystemInfo(Tcl_Obj* pathObjPtr)
@@ -1668,7 +1674,8 @@ declare 475 generic {
     ClientData Tcl_FSData(Tcl_Filesystem *fsPtr)
 }
 declare 476 generic {
-    char* Tcl_FSGetTranslatedStringPath(Tcl_Interp *interp, Tcl_Obj* pathPtr)
+    CONST char* Tcl_FSGetTranslatedStringPath(Tcl_Interp *interp, \
+	    Tcl_Obj* pathPtr)
 }
 declare 477 generic {
     Tcl_Filesystem* Tcl_FSGetFileSystemForPath(Tcl_Obj* pathObjPtr)
@@ -1687,7 +1694,12 @@ declare 480 generic {
 declare 481 generic {
     int Tcl_EvalTokensStandard(Tcl_Interp *interp, Tcl_Token *tokenPtr, int count)
 }
- 
+
+# New export due to TIP#73 
+declare 482 generic {
+    void Tcl_GetTime( Tcl_Time* timeBuf )
+}
+
 ##############################################################################
 
 # Define the platform specific public Tcl interface.  These functions are
@@ -1701,10 +1713,12 @@ interface tclPlat
 # Added in Tcl 8.1
 
 declare 0 win {
-    TCHAR * Tcl_WinUtfToTChar(CONST char *str, int len, Tcl_DString *dsPtr)
+    CONST TCHAR * Tcl_WinUtfToTChar(CONST char *str, int len, \
+	    Tcl_DString *dsPtr)
 }
 declare 1 win {
-    char * Tcl_WinTCharToUtf(CONST TCHAR *str, int len, Tcl_DString *dsPtr)
+    CONST char * Tcl_WinTCharToUtf(CONST TCHAR *str, int len, \
+	    Tcl_DString *dsPtr)
 }
 
 ##################
@@ -1723,13 +1737,13 @@ declare 1 mac {
     char * Tcl_MacConvertTextResource(Handle resource)
 }
 declare 2 mac {
-    int Tcl_MacEvalResource(Tcl_Interp *interp, char *resourceName, \
-	    int resourceNumber, char *fileName)
+    int Tcl_MacEvalResource(Tcl_Interp *interp, CONST char *resourceName, \
+	    int resourceNumber, CONST char *fileName)
 }
 declare 3 mac {
     Handle Tcl_MacFindResource(Tcl_Interp *interp, long resourceType, \
-	    char *resourceName, int resourceNumber, char *resFileRef, \
-	    int * releaseIt)
+	    CONST char *resourceName, int resourceNumber, \
+	    CONST char *resFileRef, int * releaseIt)
 }
 
 # These routines support the new OSType object type (i.e. the packed 4

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.29 2001/09/27 20:32:35 dgp Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.29.2.1 2002/02/05 02:22:00 wolfsuit Exp $
  */
 
 #include "tclInt.h"
@@ -70,7 +70,7 @@ Tcl_ProcObjCmd(dummy, interp, objc, objv)
     register Interp *iPtr = (Interp *) interp;
     Proc *procPtr;
     char *fullName;
-    CONST char *procName;
+    CONST char *procName, *procArgs, *procBody;
     Namespace *nsPtr, *altNsPtr, *cxtNsPtr;
     Tcl_Command cmd;
     Tcl_DString ds;
@@ -164,39 +164,38 @@ Tcl_ProcObjCmd(dummy, interp, objc, objv)
      *     compilation of all procs whose argument list is just _args_ 
      */
     
-    {
-	char *txt;
-	txt = Tcl_GetString(objv[2]);
-	
-	while(*txt == ' ') txt++;
-	
-	if ((txt[0] == 'a') && (memcmp(txt, "args", 4) == 0)) {
-	    txt +=4;
-	    while(*txt != '\0') {
-		if (*txt != ' ') {
-		    goto done;
-		}
-		txt++;
-	    }	
+    procArgs = Tcl_GetString(objv[2]);
     
-	    /* 
-	     * The argument list is just "args"; check the body
-	     */
-
-	    txt = Tcl_GetString(objv[3]);
-	    while(*txt != '\0') {
-		if (!isspace(*txt)) {
-		    goto done;
-		}
-		txt++;
-	    }	
+    while(*procArgs == ' ') {
+	procArgs++;
+    }
     
-	    /* 
-	     * The body is just spaces: link the compileProc
-	     */
-
-	    ((Command *) cmd)->compileProc = TclCompileNoOp;
-	}
+    if ((procArgs[0] == 'a') && (strncmp(procArgs, "args", 4) == 0)) {
+	procArgs +=4;
+	while(*procArgs != '\0') {
+	    if (*procArgs != ' ') {
+		goto done;
+	    }
+	    procArgs++;
+	}	
+	
+	/* 
+	 * The argument list is just "args"; check the body
+	 */
+	
+	procBody = Tcl_GetString(objv[3]);
+	while(*procBody != '\0') {
+	    if (!isspace(UCHAR(*procBody))) {
+		goto done;
+	    }
+	    procBody++;
+	}	
+	
+	/* 
+	 * The body is just spaces: link the compileProc
+	 */
+	
+	((Command *) cmd)->compileProc = TclCompileNoOp;
     }
 
  done:
@@ -236,11 +235,11 @@ TclCreateProc(interp, nsPtr, procName, argsPtr, bodyPtr, procPtrPtr)
     Proc **procPtrPtr;          /* returns:  pointer to proc data */
 {
     Interp *iPtr = (Interp*)interp;
-    char **argArray = NULL;
+    CONST char **argArray = NULL;
 
     register Proc *procPtr;
     int i, length, result, numArgs;
-    char *args, *bytes, *p;
+    CONST char *args, *bytes, *p;
     register CompiledLocal *localPtr = NULL;
     Tcl_Obj *defPtr;
     int precompiled = 0;
@@ -336,7 +335,7 @@ TclCreateProc(interp, nsPtr, procName, argsPtr, bodyPtr, procPtrPtr)
     }
     for (i = 0;  i < numArgs;  i++) {
         int fieldCount, nameLength, valueLength;
-        char **fieldValues;
+        CONST char **fieldValues;
 
         /*
          * Now divide the specifier up into name and default.
@@ -376,7 +375,7 @@ TclCreateProc(interp, nsPtr, procName, argsPtr, bodyPtr, procPtrPtr)
         p = fieldValues[0];
         while (*p != '\0') {
             if (*p == '(') {
-                char *q = p;
+                CONST char *q = p;
                 do {
 		    q++;
 		} while (*q != '\0');
@@ -1657,9 +1656,6 @@ ProcBodyUpdateString(objPtr)
  * Results:
  *	The return value is TCL_OK, indicating successful compilation.
  *
- *	envPtr->maxStackDepth is updated with the maximum number of stack
- *	elements needed to execute the command.
- *
  * Side effects:
  *	Instructions are added to envPtr to execute a noOp at runtime.
  *
@@ -1675,11 +1671,13 @@ TclCompileNoOp(interp, parsePtr, envPtr)
 {
     Tcl_Token *tokenPtr;
     int i, code;
+    int savedStackDepth = envPtr->currStackDepth;
 
-    envPtr->maxStackDepth = 1;
     tokenPtr = parsePtr->tokenPtr;
     for(i = 1; i < parsePtr->numWords; i++) {
 	tokenPtr = tokenPtr + tokenPtr->numComponents + 1;
+	envPtr->currStackDepth = savedStackDepth;
+
 	if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) { 
 	    code = TclCompileTokens(interp, tokenPtr+1,
 	            tokenPtr->numComponents, envPtr);
@@ -1689,6 +1687,7 @@ TclCompileNoOp(interp, parsePtr, envPtr)
 	    TclEmitOpcode(INST_POP, envPtr);
 	} 
     }
+    envPtr->currStackDepth = savedStackDepth;
     TclEmitPush(TclRegisterLiteral(envPtr, "", 0, /*onHeap*/ 0), envPtr);
     return TCL_OK;
 }

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFCmd.c,v 1.13 2001/09/08 14:05:09 vincentdarley Exp $
+ * RCS: @(#) $Id: tclFCmd.c,v 1.13.8.1 2002/02/05 02:21:59 wolfsuit Exp $
  */
 
 #include "tclInt.h"
@@ -406,11 +406,11 @@ TclFileDeleteCmd(interp, objc, objv)
 		    Tcl_GetString(errfile), "\": ", 
 		    Tcl_PosixError(interp), (char *) NULL);
 	}
-	if (errorBuffer != NULL) {
-	    Tcl_DecrRefCount(errorBuffer);
-	}
     } 
     done:
+    if (errorBuffer != NULL) {
+	Tcl_DecrRefCount(errorBuffer);
+    }
     return result;
 }
 
@@ -810,7 +810,7 @@ TclFileAttrsCmd(interp, objc, objv)
     Tcl_Obj *CONST objv[];	/* The command line objects. */
 {
     int result;
-    char ** attributeStrings;
+    CONST char ** attributeStrings;
     Tcl_Obj* objStrings = NULL;
     int numObjStrings = -1;
     Tcl_Obj *filePtr;
@@ -842,7 +842,8 @@ TclFileAttrsCmd(interp, objc, objv)
 	if (Tcl_ListObjLength(interp, objStrings, &numObjStrings) != TCL_OK) {
 	    goto end;
 	}
-	attributeStrings = (char**)ckalloc((1+numObjStrings)*sizeof(char*));
+	attributeStrings = (CONST char **)
+		ckalloc ((1+numObjStrings) * sizeof(char*));
 	for (index = 0; index < numObjStrings; index++) {
 	    Tcl_ListObjIndex(interp, objStrings, index, &objPtr);
 	    attributeStrings[index] = Tcl_GetString(objPtr);

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: while.test,v 1.7 2001/09/19 18:17:54 hobbs Exp $
+# RCS: @(#) $Id: while.test,v 1.7.4.1 2002/02/05 02:22:04 wolfsuit Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -30,7 +30,7 @@ test while-1.2 {TclCompileWhileCmd: error in test expression} {
     set i 0
     catch {while {$i<} break} msg
     set errorInfo
-} {syntax error in expression "$i<"
+} {syntax error in expression "$i<": premature end of expression
     ("while" test expression)
     while compiling
 "while {$i<} break"}
@@ -310,7 +310,7 @@ test while-4.3 {while (not compiled): error in test expression} {
     set z while
     catch {$z {$i<} {set x 1}} msg
     set errorInfo
-} {syntax error in expression "$i<"
+} {syntax error in expression "$i<": premature end of expression
     while executing
 "$z {$i<} {set x 1}"}
 test while-4.4 {while (not compiled): error in test expression} {
@@ -627,15 +627,3 @@ test while-7.1 {delayed substitution of body} {
 # cleanup
 ::tcltest::cleanupTests
 return
-
-
-
-
-
-
-
-
-
-
-
-

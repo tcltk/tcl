@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.21 2001/08/30 08:53:15 vincentdarley Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.21.8.1 2002/02/05 02:22:05 wolfsuit Exp $
  */
 
 #include	"tclInt.h"	/* Internal definitions for Tcl. */
@@ -92,6 +92,8 @@ typedef struct FileState {
 typedef struct TtyState {
     FileState fs;		/* Per-instance state of the file
 				 * descriptor.  Must be the first field. */
+    int stateUpdated;		/* Flag to say if the state has been
+				 * modified and needs resetting. */
     IOSTATE savedState;		/* Initial state of device.  Used to reset
 				 * state when device closed. */
 } TtyState;
@@ -173,11 +175,11 @@ typedef struct TcpState {
  */
 
 static TcpState *	CreateSocket _ANSI_ARGS_((Tcl_Interp *interp,
-			    int port, char *host, int server,
-			    char *myaddr, int myport, int async));
+			    int port, CONST char *host, int server,
+			    CONST char *myaddr, int myport, int async));
 static int		CreateSocketAddress _ANSI_ARGS_(
 			    (struct sockaddr_in *sockaddrPtr,
-			    char *host, int port));
+			    CONST char *host, int port));
 static int		FileBlockModeProc _ANSI_ARGS_((
     			    ClientData instanceData, int mode));
 static int		FileCloseProc _ANSI_ARGS_((ClientData instanceData,
@@ -187,8 +189,8 @@ static int		FileGetHandleProc _ANSI_ARGS_((ClientData instanceData,
 static int		FileInputProc _ANSI_ARGS_((ClientData instanceData,
 		            char *buf, int toRead, int *errorCode));
 static int		FileOutputProc _ANSI_ARGS_((
-			    ClientData instanceData, char *buf, int toWrite,
-                            int *errorCode));
+			    ClientData instanceData, CONST char *buf,
+			    int toWrite, int *errorCode));
 static int		FileSeekProc _ANSI_ARGS_((ClientData instanceData,
 			    long offset, int mode, int *errorCode));
 static void		FileWatchProc _ANSI_ARGS_((ClientData instanceData,
@@ -201,12 +203,12 @@ static int		TcpCloseProc _ANSI_ARGS_((ClientData instanceData,
 static int		TcpGetHandleProc _ANSI_ARGS_((ClientData instanceData,
 		            int direction, ClientData *handlePtr));
 static int		TcpGetOptionProc _ANSI_ARGS_((ClientData instanceData,
-			    Tcl_Interp *interp, char *optionName,
+			    Tcl_Interp *interp, CONST char *optionName,
 			    Tcl_DString *dsPtr));
 static int		TcpInputProc _ANSI_ARGS_((ClientData instanceData,
 		            char *buf, int toRead,  int *errorCode));
 static int		TcpOutputProc _ANSI_ARGS_((ClientData instanceData,
-		            char *buf, int toWrite, int *errorCode));
+		            CONST char *buf, int toWrite, int *errorCode));
 static void		TcpWatchProc _ANSI_ARGS_((ClientData instanceData,
 		            int mask));
 #ifdef SUPPORTS_TTY
@@ -215,7 +217,7 @@ static int		TtyCloseProc _ANSI_ARGS_((ClientData instanceData,
 static void		TtyGetAttributes _ANSI_ARGS_((int fd,
 			    TtyAttrs *ttyPtr));
 static int		TtyGetOptionProc _ANSI_ARGS_((ClientData instanceData,
-			    Tcl_Interp *interp, char *optionName,
+			    Tcl_Interp *interp, CONST char *optionName,
 			    Tcl_DString *dsPtr));
 static FileState *	TtyInit _ANSI_ARGS_((int fd, int initialize));
 static int		TtyParseMode _ANSI_ARGS_((Tcl_Interp *interp,
@@ -224,8 +226,8 @@ static int		TtyParseMode _ANSI_ARGS_((Tcl_Interp *interp,
 static void		TtySetAttributes _ANSI_ARGS_((int fd,
 			    TtyAttrs *ttyPtr));
 static int		TtySetOptionProc _ANSI_ARGS_((ClientData instanceData,
-			    Tcl_Interp *interp, char *optionName, 
-			    char *value));
+			    Tcl_Interp *interp, CONST char *optionName, 
+			    CONST char *value));
 #endif	/* SUPPORTS_TTY */
 static int		WaitForConnect _ANSI_ARGS_((TcpState *statePtr,
 		            int *errorCodePtr));
@@ -419,7 +421,7 @@ FileInputProc(instanceData, buf, toRead, errorCodePtr)
 static int
 FileOutputProc(instanceData, buf, toWrite, errorCodePtr)
     ClientData instanceData;		/* File state. */
-    char *buf;				/* The data buffer. */
+    CONST char *buf;			/* The data buffer. */
     int toWrite;			/* How many bytes to write? */
     int *errorCodePtr;			/* Where to store error code. */
 {
@@ -632,7 +634,9 @@ TtyCloseProc(instanceData, interp)
     TtyState *ttyPtr;
 
     ttyPtr = (TtyState *) instanceData;
-    SETIOSTATE(ttyPtr->fs.fd, &ttyPtr->savedState);
+    if (ttyPtr->stateUpdated) {
+	SETIOSTATE(ttyPtr->fs.fd, &ttyPtr->savedState);
+    }
     return FileCloseProc(instanceData, interp);
 }
 
@@ -658,8 +662,8 @@ static int
 TtySetOptionProc(instanceData, interp, optionName, value)
     ClientData instanceData;	/* File state. */
     Tcl_Interp *interp;		/* For error reporting - can be NULL. */
-    char *optionName;		/* Which option to set? */
-    char *value;		/* New value for option. */
+    CONST char *optionName;	/* Which option to set? */
+    CONST char *value;		/* New value for option. */
 {
     FileState *fsPtr = (FileState *) instanceData;
     unsigned int len;
@@ -676,6 +680,7 @@ TtySetOptionProc(instanceData, interp, optionName, value)
 	 */
 
 	TtySetAttributes(fsPtr->fd, &tty);
+	((TtyState *) fsPtr)->stateUpdated = 1;
 	return TCL_OK;
     } else {
 	return Tcl_BadChannelOption(interp, optionName, "mode");
@@ -708,7 +713,7 @@ static int
 TtyGetOptionProc(instanceData, interp, optionName, dsPtr)
     ClientData instanceData;	/* File state. */
     Tcl_Interp *interp;		/* For error reporting - can be NULL. */
-    char *optionName;		/* Option to get. */
+    CONST char *optionName;	/* Option to get. */
     Tcl_DString *dsPtr;		/* Where to store value(s). */
 {
     FileState *fsPtr = (FileState *) instanceData;
@@ -1227,34 +1232,43 @@ TtyInit(fd, initialize)
 
     ttyPtr = (TtyState *) ckalloc((unsigned) sizeof(TtyState));
     GETIOSTATE(fd, &ttyPtr->savedState);
-
+    ttyPtr->stateUpdated = 0;
     if (initialize) {
 	IOSTATE iostate = ttyPtr->savedState;
 
-#ifdef USE_TERMIOS
+#if defined(USE_TERMIOS) || defined(USE_TERMIO)
+	if (iostate.c_iflag != IGNBRK ||
+	    iostate.c_oflag != 0 ||
+	    iostate.c_lflag != 0 ||
+	    iostate.c_cflag & CREAD ||
+	    iostate.c_cc[VMIN] != 1 ||
+	    iostate.c_cc[VTIME] != 0) {
+	    ttyPtr->stateUpdated = 1;
+	}
 	iostate.c_iflag = IGNBRK;
 	iostate.c_oflag = 0;
 	iostate.c_lflag = 0;
 	iostate.c_cflag |= CREAD;
 	iostate.c_cc[VMIN] = 1;
 	iostate.c_cc[VTIME] = 0;
-#endif	/* USE_TERMIOS */
-
-#ifdef USE_TERMIO
-	iostate.c_iflag = IGNBRK;
-	iostate.c_oflag = 0;
-	iostate.c_lflag = 0;
-	iostate.c_cflag |= CREAD;
-	iostate.c_cc[VMIN] = 1;
-	iostate.c_cc[VTIME] = 0;
-#endif	/* USE_TERMIO */
+#endif	/* USE_TERMIOS|USE_TERMIO */
 
 #ifdef USE_SGTTY
+	if ((iostate.sg_flags & (EVENP | ODDP)) ||
+	    !(iostate.sg_flags & RAW)) {
+	    ttyPtr->stateUpdated = 1;
+	}
 	iostate.sg_flags &= (EVENP | ODDP);
 	iostate.sg_flags |= RAW;
 #endif	/* USE_SGTTY */
 
-	SETIOSTATE(fd, &iostate);
+	/*
+	 * Only update if we're changing anything to avoid possible
+	 * blocking.
+	 */
+	if (ttyPtr->stateUpdated) {
+	    SETIOSTATE(fd, &iostate);
+	}
     }
 
     return &ttyPtr->fs;
@@ -1285,7 +1299,7 @@ TclpOpenFileChannel(interp, pathPtr, modeString, permissions)
     Tcl_Interp *interp;			/* Interpreter for error reporting;
                                          * can be NULL. */
     Tcl_Obj *pathPtr;			/* Name of file to open. */
-    char *modeString;			/* A list of POSIX open modes or
+    CONST char *modeString;		/* A list of POSIX open modes or
                                          * a string such as "rw". */
     int permissions;			/* If the open involves creating a
                                          * file, with what modes to create
@@ -1293,7 +1307,7 @@ TclpOpenFileChannel(interp, pathPtr, modeString, permissions)
 {
     int fd, seekFlag, mode, channelPermissions;
     FileState *fsPtr;
-    char *native, *translation;
+    CONST char *native, *translation;
     char channelName[16 + TCL_INTEGER_SPACE];
     Tcl_ChannelType *channelTypePtr;
 #ifdef DEPRECATED
@@ -1694,7 +1708,7 @@ TcpInputProc(instanceData, buf, bufSize, errorCodePtr)
 static int
 TcpOutputProc(instanceData, buf, toWrite, errorCodePtr)
     ClientData instanceData;		/* Socket state. */
-    char *buf;				/* The data buffer. */
+    CONST char *buf;			/* The data buffer. */
     int toWrite;			/* How many bytes to write? */
     int *errorCodePtr;			/* Where to store error code. */
 {
@@ -1786,7 +1800,7 @@ static int
 TcpGetOptionProc(instanceData, interp, optionName, dsPtr)
     ClientData instanceData;     /* Socket state. */
     Tcl_Interp *interp;          /* For error reporting - can be NULL. */
-    char *optionName;	         /* Name of the option to
+    CONST char *optionName;	 /* Name of the option to
 				  * retrieve the value for, or
 				  * NULL to get all options and
 				  * their values. */
@@ -2010,11 +2024,11 @@ static TcpState *
 CreateSocket(interp, port, host, server, myaddr, myport, async)
     Tcl_Interp *interp;		/* For error reporting; can be NULL. */
     int port;			/* Port number to open. */
-    char *host;			/* Name of host on which to open port.
+    CONST char *host;		/* Name of host on which to open port.
 				 * NULL implies INADDR_ANY */
     int server;			/* 1 if socket should be a server socket,
 				 * else 0 for a client socket. */
-    char *myaddr;		/* Optional client-side address */
+    CONST char *myaddr;		/* Optional client-side address */
     int myport;			/* Optional client-side port */
     int async;			/* If nonzero and creating a client socket,
                                  * attempt to do an async connect. Otherwise
@@ -2191,7 +2205,7 @@ addressError:
 static int
 CreateSocketAddress(sockaddrPtr, host, port)
     struct sockaddr_in *sockaddrPtr;	/* Socket address */
-    char *host;				/* Host.  NULL implies INADDR_ANY */
+    CONST char *host;			/* Host.  NULL implies INADDR_ANY */
     int port;				/* Port number */
 {
     struct hostent *hostent;		/* Host database entry */
@@ -2273,8 +2287,8 @@ Tcl_Channel
 Tcl_OpenTcpClient(interp, port, host, myaddr, myport, async)
     Tcl_Interp *interp;			/* For error reporting; can be NULL. */
     int port;				/* Port number to open. */
-    char *host;				/* Host on which to open port. */
-    char *myaddr;			/* Client-side address */
+    CONST char *host;			/* Host on which to open port. */
+    CONST char *myaddr;			/* Client-side address */
     int myport;				/* Client-side port */
     int async;				/* If nonzero, attempt to do an
                                          * asynchronous connect. Otherwise
@@ -2370,7 +2384,7 @@ Tcl_OpenTcpServer(interp, port, myHost, acceptProc, acceptProcData)
     Tcl_Interp *interp;			/* For error reporting - may be
                                          * NULL. */
     int port;				/* Port number to open. */
-    char *myHost;			/* Name of local host. */
+    CONST char *myHost;			/* Name of local host. */
     Tcl_TcpAcceptProc *acceptProc;	/* Callback for accepting connections
                                          * from new clients. */
     ClientData acceptProcData;		/* Data for the callback. */
@@ -2571,7 +2585,7 @@ TclpGetDefaultStdChannel(type)
 int
 Tcl_GetOpenFile(interp, string, forWriting, checkUsage, filePtr)
     Tcl_Interp *interp;		/* Interpreter in which to find file. */
-    char *string;		/* String that identifies file. */
+    CONST char *string;		/* String that identifies file. */
     int forWriting;		/* 1 means the file is going to be used
 				 * for writing, 0 means for reading. */
     int checkUsage;		/* 1 means verify that the file was opened
@@ -2692,7 +2706,7 @@ TclUnixWaitForFile(fd, mask, timeout)
      */
 
     if (timeout > 0) {
-	TclpGetTime(&now);
+	Tcl_GetTime(&now);
 	abortTime.sec = now.sec + timeout/1000;
 	abortTime.usec = now.usec + (timeout%1000)*1000;
 	if (abortTime.usec >= 1000000) {
@@ -2782,7 +2796,7 @@ TclUnixWaitForFile(fd, mask, timeout)
 	 * The select returned early, so we need to recompute the timeout.
 	 */
 
-	TclpGetTime(&now);
+	Tcl_GetTime(&now);
 	if ((abortTime.sec < now.sec)
 		|| ((abortTime.sec == now.sec)
 		&& (abortTime.usec <= now.usec))) {

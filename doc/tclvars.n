@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: tclvars.n,v 1.9 2001/09/17 11:51:58 msofer Exp $
+'\" RCS: @(#) $Id: tclvars.n,v 1.9.4.1 2002/02/05 02:21:58 wolfsuit Exp $
 '\" 
 .so man.macros
 .TH tclvars n 8.0 Tcl "Tcl Built-In Commands"
@@ -87,7 +87,7 @@ The path to the trash directory.
 \fBSTART_UP_FOLDER\fR
 The path to the start up directory.
 .TP
-\fBPWD\fR
+\fBHOME\fR
 The path to the application's default directory.
 .PP
 You can also create your own environment variables for the Macintosh.

@@ -15,7 +15,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: basic.test,v 1.12 2001/09/20 01:02:20 hobbs Exp $
+# RCS: @(#) $Id: basic.test,v 1.12.4.1 2002/02/05 02:22:03 wolfsuit Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -495,7 +495,19 @@ test basic-39.2 {Tcl_CreateTrace, correct command and argc/argv arguments of tra
 test basic-39.3 {Tcl_CreateTrace, correct command and argc/argv arguments of trace proc} {testcmdtrace} {
     testcmdtrace deletetest {set stuff [info tclversion]}
 } $tclvers
-
+test basic-39.4 {Tcl_CreateTrace, check that tracing doesn't cause memory faults} {testcmdtrace} {
+    # Note that the proc call is the same as the variable name, and that
+    # the call can be direct or indirect by way of another procedure
+    proc tracer {args} {}
+    proc tracedLoop {level} {
+	incr level
+	tracer
+	foreach tracer [expr {$level==1 ? {1 2} : {}}] {tracedLoop $level}
+    }
+    testcmdtrace tracetest {tracedLoop 0}
+} {{tracedLoop 0} {tracedLoop 0} {incr level} {incr level} tracer {tracer} {expr {$level==1 ? {1 2} : {}}} {expr {$level==1 ? {1 2} : {}}} {foreach tracer [expr {$level==1 ? {1 2} : {}}] {tracedLoop $level}} {foreach tracer {1 2} {tracedLoop $level}} {tracedLoop $level} {tracedLoop 1} {incr level} {incr level} tracer {tracer} {expr {$level==1 ? {1 2} : {}}} {expr {$level==1 ? {1 2} : {}}} {foreach tracer [expr {$level==1 ? {1 2} : {}}] {tracedLoop $level}} {foreach tracer {} {tracedLoop $level}} {tracedLoop $level} {tracedLoop 1} {incr level} {incr level} tracer {tracer} {expr {$level==1 ? {1 2} : {}}} {expr {$level==1 ? {1 2} : {}}} {foreach tracer [expr {$level==1 ? {1 2} : {}}] {tracedLoop $level}} {foreach tracer {} {tracedLoop $level}}}
+catch {rename tracer {}}
+catch {rename tracedLoop {}}
 
 test basic-40.1 {Tcl_DeleteTrace} {emptyTest} {
 } {}

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacChan.c,v 1.7 2001/08/30 08:53:15 vincentdarley Exp $
+ * RCS: @(#) $Id: tclMacChan.c,v 1.7.8.1 2002/02/05 02:22:02 wolfsuit Exp $
  */
 
 #include "tclInt.h"
@@ -108,7 +108,7 @@ static ThreadSpecificData *FileInit _ANSI_ARGS_((void));
 static int		FileInput _ANSI_ARGS_((ClientData instanceData,
 			    char *buf, int toRead, int *errorCode));
 static int		FileOutput _ANSI_ARGS_((ClientData instanceData,
-			    char *buf, int toWrite, int *errorCode));
+			    CONST char *buf, int toWrite, int *errorCode));
 static int		FileSeek _ANSI_ARGS_((ClientData instanceData,
 			    long offset, int mode, int *errorCode));
 static void		FileSetupProc _ANSI_ARGS_((ClientData clientData,
@@ -124,7 +124,7 @@ static int		StdIOClose _ANSI_ARGS_((ClientData instanceData,
 static int		StdIOInput _ANSI_ARGS_((ClientData instanceData,
 			    char *buf, int toRead, int *errorCode));
 static int		StdIOOutput _ANSI_ARGS_((ClientData instanceData,
-			    char *buf, int toWrite, int *errorCode));
+			    CONST char *buf, int toWrite, int *errorCode));
 static int		StdIOSeek _ANSI_ARGS_((ClientData instanceData,
 			    long offset, int mode, int *errorCode));
 static int		StdReady _ANSI_ARGS_((ClientData instanceData,
@@ -136,7 +136,7 @@ static int		StdReady _ANSI_ARGS_((ClientData instanceData,
 
 static Tcl_ChannelType consoleChannelType = {
     "file",			/* Type name. */
-    StdIOBlockMode,		/* Set blocking/nonblocking mode.*/
+    (Tcl_ChannelTypeVersion)StdIOBlockMode,		/* Set blocking/nonblocking mode.*/
     StdIOClose,			/* Close proc. */
     StdIOInput,			/* Input proc. */
     StdIOOutput,		/* Output proc. */
@@ -153,7 +153,7 @@ static Tcl_ChannelType consoleChannelType = {
 
 static Tcl_ChannelType fileChannelType = {
     "file",			/* Type name. */
-    FileBlockMode,		/* Set blocking or
+    (Tcl_ChannelTypeVersion)FileBlockMode,		/* Set blocking or
                                  * non-blocking mode.*/
     FileClose,			/* Close proc. */
     FileInput,			/* Input proc. */
@@ -548,7 +548,7 @@ StdIOInput(
 static int
 StdIOOutput(
     ClientData instanceData,		/* Unused. */
-    char *buf,				/* The data buffer. */
+    CONST char *buf,			/* The data buffer. */
     int toWrite,			/* How many bytes to write? */
     int *errorCode)			/* Where to store error code. */
 {
@@ -558,7 +558,7 @@ StdIOOutput(
     *errorCode = 0;
     errno = 0;
     fd = (int) ((FileState*)instanceData)->fileRef;
-    written = write(fd, buf, (size_t) toWrite);
+    written = write(fd, (void*)buf, (size_t) toWrite);
     if (written > -1) {
         return written;
     }
@@ -754,7 +754,7 @@ TclpOpenFileChannel(
     Tcl_Interp *interp,			/* Interpreter for error reporting;
                                          * can be NULL. */
     Tcl_Obj *pathPtr,			/* Name of file to open. */
-    char *modeString,			/* A list of POSIX open modes or
+    CONST char *modeString,		/* A list of POSIX open modes or
                                          * a string such as "rw". */
     int permissions)			/* If the open involves creating a
                                          * file, with what modes to create
@@ -762,7 +762,7 @@ TclpOpenFileChannel(
 {
     Tcl_Channel chan;
     int mode;
-    char *native;
+    CONST char *native;
     int errorCode;
     
     mode = GetOpenMode(interp, modeString);
@@ -1082,7 +1082,7 @@ FileInput(
 static int
 FileOutput(
     ClientData instanceData,		/* Unused. */
-    char *buffer,			/* The data buffer. */
+    CONST char *buffer,			/* The data buffer. */
     int toWrite,			/* How many bytes to write? */
     int *errorCodePtr)			/* Where to store error code. */
 {
@@ -1282,7 +1282,7 @@ GetOpenMode(
 					 * "RDONLY CREAT". */
 {
     int mode, modeArgc, c, i, gotRW;
-    char **modeArgv, *flag;
+    CONST char **modeArgv, *flag;
 
     /*
      * Check for the simpler fopen-like access modes (e.g. "r").  They

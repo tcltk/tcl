@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: obj.test,v 1.5 2000/04/10 17:19:02 ericm Exp $
+# RCS: @(#) $Id: obj.test,v 1.5.18.1 2002/02/05 02:22:04 wolfsuit Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -27,7 +27,20 @@ if {[info commands testobj] == {}} {
 
 test obj-1.1 {Tcl_AppendAllObjTypes, and InitTypeTable, Tcl_RegisterObjType} {
     set r 1
-    foreach {t} {list boolean cmdName bytecode string int double} {
+    foreach {t} {
+	{array search} 
+	boolean
+	bytearray
+	bytecode
+	double
+	end-offset
+	index
+	int
+	list
+	nsName
+	procbody
+	string
+    } {
         set first [string first $t [testobj types]]
         set r [expr {$r && ($first != -1)}]
     }
@@ -528,20 +541,52 @@ test obj-30.1 {Ref counting and object deletion, simple types} {
     lappend result [testobj refcount 2]
 } {{} 1024 1024 int 4 4 0 boolean 3 2}
 
+
+test obj-31.1 {regenerate string rep of "end"} {
+    testobj freeallvars
+    teststringobj set 1 end
+    testobj convert 1 end-offset
+    testobj invalidateStringRep 1
+} end
+
+test obj-31.2 {regenerate string rep of "end-1"} {
+    testobj freeallvars
+    teststringobj set 1 end-0x1
+    testobj convert 1 end-offset
+    testobj invalidateStringRep 1
+} end-1
+
+test obj-31.3 {regenerate string rep of "end--1"} {
+    testobj freeallvars
+    teststringobj set 1 end--0x1
+    testobj convert 1 end-offset
+    testobj invalidateStringRep 1
+} end--1
+
+test obj-31.4 {regenerate string rep of "end-bigInteger"} {
+    testobj freeallvars
+    teststringobj set 1 end-0x7fffffff
+    testobj convert 1 end-offset
+    testobj invalidateStringRep 1
+} end-2147483647
+
+test obj-31.5 {regenerate string rep of "end--bigInteger"} {
+    testobj freeallvars
+    teststringobj set 1 end--0x7fffffff
+    testobj convert 1 end-offset
+    testobj invalidateStringRep 1
+} end--2147483647
+    
+
+test obj-31.6 {regenerate string rep of "end--bigInteger"} {nonPortable} {
+    testobj freeallvars
+    teststringobj set 1 end--0x80000000
+    testobj convert 1 end-offset
+    testobj invalidateStringRep 1
+} end--2147483648
+
 testobj freeallvars
 
 # cleanup
 ::tcltest::cleanupTests
 return
-
-
-
-
-
-
-
-
-
-
-
-

@@ -9,7 +9,7 @@
 #
 # The information in this file is specific to a single platform.
 #
-# RCS: @(#) $Id: tclConfig.sh.in,v 1.15 2001/04/25 22:01:24 mdejong Exp $
+# RCS: @(#) $Id: tclConfig.sh.in,v 1.15.12.1 2002/02/05 02:22:05 wolfsuit Exp $
 
 # Tcl's version number.
 TCL_VERSION='@TCL_VERSION@'
@@ -115,6 +115,10 @@ TCL_BUILD_LIB_SPEC='@TCL_BUILD_LIB_SPEC@'
 # String to pass to linker to pick up the Tcl library from its
 # installed directory.
 TCL_LIB_SPEC='@TCL_LIB_SPEC@'
+
+# String to pass to the compiler so that an extension can
+# find installed Tcl headers.
+TCL_INCLUDE_SPEC='@TCL_INCLUDE_SPEC@'
 
 # Indicates whether a version numbers should be used in -l switches
 # ("ok" means it's safe to use switches like -ltcl7.5;  "nodots" means

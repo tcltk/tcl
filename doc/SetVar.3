@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: SetVar.3,v 1.3 1999/04/16 00:46:33 stanton Exp $
+'\" RCS: @(#) $Id: SetVar.3,v 1.3.28.1 2002/02/05 02:21:58 wolfsuit Exp $
 '\" 
 .so man.macros
 .TH Tcl_SetVar 3 8.1 Tcl "Tcl Library Procedures"
@@ -21,10 +21,10 @@ Tcl_Obj *
 \fBTcl_SetVar2Ex\fR(\fIinterp, name1, name2, newValuePtr, flags\fR)
 .VE
 .sp
-char *
+CONST char *
 \fBTcl_SetVar\fR(\fIinterp, varName, newValue, flags\fR)
 .sp
-char *
+CONST char *
 \fBTcl_SetVar2\fR(\fIinterp, name1, name2, newValue, flags\fR)
 .sp
 Tcl_Obj *
@@ -35,10 +35,10 @@ Tcl_Obj *
 \fBTcl_GetVar2Ex\fR(\fIinterp, name1, name2, flags\fR)
 .VE
 .sp
-char *
+CONST char *
 \fBTcl_GetVar\fR(\fIinterp, varName, flags\fR)
 .sp
-char *
+CONST char *
 \fBTcl_GetVar2\fR(\fIinterp, name1, name2, flags\fR)
 .sp
 Tcl_Obj *
@@ -78,7 +78,7 @@ an array.
 If the name references an element of an array, then the name
 must be in writable memory:  Tcl will make temporary modifications 
 to it while looking up the name.
-.AP char *newValue in
+.AP "CONST char" *newValue in
 New value for variable, specified as a NULL-terminated string.
 A copy of this value is stored in the variable.
 .AP Tcl_Obj *part1Ptr in

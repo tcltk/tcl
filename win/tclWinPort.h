@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPort.h,v 1.23 2001/10/10 22:36:26 davygrvy Exp $
+ * RCS: @(#) $Id: tclWinPort.h,v 1.23.2.1 2002/02/05 02:22:05 wolfsuit Exp $
  */
 
 #ifndef _TCLWINPORT
@@ -68,7 +68,7 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #undef WIN32_LEAN_AND_MEAN
-#define WIN32   /* BUGFIX: winsock2.h seems to need this */
+
 #include <winsock2.h>
 
 #ifdef BUILD_tcl
@@ -434,6 +434,9 @@
 /*
  * Declarations for Windows-only functions.
  */
+
+EXTERN HANDLE	    TclWinSerialReopen _ANSI_ARGS_(( HANDLE handle,
+			CONST TCHAR *name, DWORD access));
 
 EXTERN Tcl_Channel  TclWinOpenSerialChannel _ANSI_ARGS_((HANDLE handle,
                         char *channelName, int permissions));

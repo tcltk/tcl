@@ -1,8 +1,9 @@
+#! /bin/bash -norc
 # This file is an input file used by the GNU "autoconf" program to
 # generate the file "configure", which is run during Tcl installation
 # to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.41 2001/09/14 01:00:59 andreas_kupries Exp $
+# RCS: @(#) $Id: configure.in,v 1.41.4.1 2002/02/05 02:22:05 wolfsuit Exp $
 
 AC_INIT(../generic/tcl.h)
 
@@ -24,12 +25,18 @@ TCL_REG_MINOR_VERSION=0
 TCL_REG_PATCH_LEVEL=""
 REGVER=$TCL_REG_MAJOR_VERSION$TCL_REG_MINOR_VERSION
 
+#------------------------------------------------------------------------
+# Handle the --prefix=... option
+#------------------------------------------------------------------------
+
 if test "${prefix}" = "NONE"; then
     prefix=/usr/local
 fi
 if test "${exec_prefix}" = "NONE"; then
     exec_prefix=$prefix
 fi
+# libdir must be a fully qualified path (not ${exec_prefix}/lib)
+eval libdir="$libdir"
 
 #------------------------------------------------------------------------
 # Standard compiler checks
@@ -66,10 +73,15 @@ fi
 AC_PROG_MAKE_SET
 
 #--------------------------------------------------------------------
-# These two macros perform additinal compiler test.
+# Perform additinal compiler tests.
 #--------------------------------------------------------------------
 
 AC_CYGWIN
+
+if test "$ac_cv_cygwin" = "yes" ; then
+    AC_MSG_ERROR([Compiling with the Cygwin version of gcc is not supported.
+    Use the Mingw version of gcc from www.mingw.org instead.])
+fi
 
 #--------------------------------------------------------------------
 # Determines the correct binary file extension (.o, .obj, .exe etc.)
@@ -143,9 +155,13 @@ eval "TCL_LIB_FILE=${LIBPREFIX}tcl$VER${LIBSUFFIX}"
 eval "TCL_STUB_LIB_FILE=\"${LIBPREFIX}tclstub${VER}${LIBSUFFIX}\""
 eval "TCL_STUB_LIB_FLAG=\"-ltclstub${VER}${TCL_DBGX}\""
 eval "TCL_BUILD_STUB_LIB_SPEC=\"-L`pwd` ${TCL_STUB_LIB_FLAG}\""
-eval "TCL_STUB_LIB_SPEC=\"-L${exec_prefix}/lib ${TCL_STUB_LIB_FLAG}\""
+eval "TCL_STUB_LIB_SPEC=\"-L${libdir} ${TCL_STUB_LIB_FLAG}\""
 eval "TCL_BUILD_STUB_LIB_PATH=\"`pwd`/${TCL_STUB_LIB_FILE}\""
-eval "TCL_STUB_LIB_PATH=\"${exec_prefix}/lib/${TCL_STUB_LIB_FILE}\""
+eval "TCL_STUB_LIB_PATH=\"${libdir}/${TCL_STUB_LIB_FILE}\""
+
+# Install time header dir can be set via --includedir
+eval "TCL_INCLUDE_SPEC=\"-I${includedir}\""
+
 
 eval "DLLSUFFIX=${DLLSUFFIX}"
 eval "LIBPREFIX=${LIBPREFIX}"
@@ -180,23 +196,19 @@ AC_SUBST(TCL_VERSION)
 AC_SUBST(TCL_MAJOR_VERSION)
 AC_SUBST(TCL_MINOR_VERSION)
 AC_SUBST(TCL_PATCH_LEVEL)
-AC_SUBST(TCL_DDE_VERSION)
-AC_SUBST(TCL_DDE_MAJOR_VERSION)
-AC_SUBST(TCL_DDE_MINOR_VERSION)
-AC_SUBST(TCL_DDE_PATCH_LEVEL)
-AC_SUBST(TCL_REG_VERSION)
-AC_SUBST(TCL_REG_MAJOR_VERSION)
-AC_SUBST(TCL_REG_MINOR_VERSION)
-AC_SUBST(TCL_REG_PATCH_LEVEL)
+
 AC_SUBST(TCL_LIB_FILE)
 AC_SUBST(TCL_LIB_FLAG)
-AC_SUBST(TCL_DLL_FILE)
+# empty on win
+AC_SUBST(TCL_LIB_SPEC)
 AC_SUBST(TCL_STUB_LIB_FILE)
 AC_SUBST(TCL_STUB_LIB_FLAG)
-AC_SUBST(TCL_BUILD_STUB_LIB_SPEC)
 AC_SUBST(TCL_STUB_LIB_SPEC)
-AC_SUBST(TCL_BUILD_STUB_LIB_PATH)
 AC_SUBST(TCL_STUB_LIB_PATH)
+AC_SUBST(TCL_INCLUDE_SPEC)
+AC_SUBST(TCL_BUILD_STUB_LIB_SPEC)
+AC_SUBST(TCL_BUILD_STUB_LIB_PATH)
+AC_SUBST(TCL_DLL_FILE)
 
 AC_SUBST(TCL_SRC_DIR)
 AC_SUBST(TCL_BIN_DIR)
@@ -204,22 +216,16 @@ AC_SUBST(TCL_DBGX)
 AC_SUBST(CFG_TCL_SHARED_LIB_SUFFIX)
 AC_SUBST(CFG_TCL_UNSHARED_LIB_SUFFIX)
 AC_SUBST(CFG_TCL_EXPORT_FILE_SUFFIX)
-AC_SUBST(TCL_SHARED_BUILD)
 
+# win/tcl.m4 doesn't set (CFLAGS)
+AC_SUBST(CFLAGS_DEFAULT)
+AC_SUBST(EXTRA_CFLAGS)
 AC_SUBST(CYGPATH)
 AC_SUBST(DEPARG)
-AC_SUBST(CFLAGS_DEFAULT)
-AC_SUBST(CFLAGS_DEBUG)
-AC_SUBST(CFLAGS_OPTIMIZE)
-AC_SUBST(CFLAGS_WARNING)
-AC_SUBST(EXTRA_CFLAGS)
-AC_SUBST(STLIB_LD)
-AC_SUBST(SHLIB_LD)
-AC_SUBST(SHLIB_LD_LIBS)
-AC_SUBST(SHLIB_CFLAGS)
-AC_SUBST(SHLIB_SUFFIX)
 AC_SUBST(CC_OBJNAME)
 AC_SUBST(CC_EXENAME)
+
+# win/tcl.m4 doesn't set (LDFLAGS)
 AC_SUBST(LDFLAGS_DEFAULT)
 AC_SUBST(LDFLAGS_DEBUG)
 AC_SUBST(LDFLAGS_OPTIMIZE)
@@ -227,13 +233,14 @@ AC_SUBST(LDFLAGS_CONSOLE)
 AC_SUBST(LDFLAGS_WINDOW)
 AC_SUBST(AR)
 AC_SUBST(RANLIB)
-AC_SUBST(RC)
-AC_SUBST(RC_OUT)
-AC_SUBST(RC_TYPE)
-AC_SUBST(RC_INCLUDE)
-AC_SUBST(RC_DEFINE)
-AC_SUBST(RC_DEFINES)
-AC_SUBST(RES)
+
+AC_SUBST(STLIB_LD)
+AC_SUBST(SHLIB_LD)
+AC_SUBST(SHLIB_LD_LIBS)
+AC_SUBST(SHLIB_CFLAGS)
+AC_SUBST(SHLIB_SUFFIX)
+AC_SUBST(TCL_SHARED_BUILD)
+
 AC_SUBST(LIBS)
 AC_SUBST(LIBS_GUI)
 AC_SUBST(DLLSUFFIX)
@@ -245,5 +252,34 @@ AC_SUBST(MAKE_LIB)
 AC_SUBST(POST_MAKE_LIB)
 AC_SUBST(MAKE_DLL)
 AC_SUBST(MAKE_EXE)
+
+# empty on win, but needs sub'ing
+AC_SUBST(TCL_BUILD_LIB_SPEC)
+AC_SUBST(TCL_LD_SEARCH_FLAGS)
+AC_SUBST(TCL_NEEDS_EXP_FILE)
+AC_SUBST(TCL_BUILD_EXP_FILE)
+AC_SUBST(TCL_EXP_FILE)
+AC_SUBST(DL_LIBS)
+AC_SUBST(LIBOBJS)
+AC_SUBST(TCL_LIB_VERSIONS_OK)
+AC_SUBST(TCL_PACKAGE_PATH)
+
+# win only
+AC_SUBST(TCL_DDE_VERSION)
+AC_SUBST(TCL_DDE_MAJOR_VERSION)
+AC_SUBST(TCL_DDE_MINOR_VERSION)
+AC_SUBST(TCL_DDE_PATCH_LEVEL)
+AC_SUBST(TCL_REG_VERSION)
+AC_SUBST(TCL_REG_MAJOR_VERSION)
+AC_SUBST(TCL_REG_MINOR_VERSION)
+AC_SUBST(TCL_REG_PATCH_LEVEL)
+
+AC_SUBST(RC)
+AC_SUBST(RC_OUT)
+AC_SUBST(RC_TYPE)
+AC_SUBST(RC_INCLUDE)
+AC_SUBST(RC_DEFINE)
+AC_SUBST(RC_DEFINES)
+AC_SUBST(RES)
 
 AC_OUTPUT(Makefile tclConfig.sh tcl.hpj)

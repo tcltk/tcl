@@ -2,11 +2,12 @@
 '\" Copyright (c) 1993 The Regents of the University of California.
 '\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
 '\" Copyright (c) 1999 Scriptics Corporation
+'\" Copyright (c) 2001 Kevin B. Kenny.  All rights reserved.
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: lsort.n,v 1.10 2001/09/28 15:32:17 dkf Exp $
+'\" RCS: @(#) $Id: lsort.n,v 1.10.2.1 2002/02/05 02:21:58 wolfsuit Exp $
 '\" 
 .so man.macros
 .TH lsort n 8.3 Tcl "Tcl Built-In Commands"
@@ -184,8 +185,10 @@ More complex sorting using a comparison function:
 .CE
 
 .SH "SEE ALSO"
-lappend(n), lindex(n), linsert(n), list(n), llength(n), lrange(n),
-lreplace(n), lsearch(n)
+.VS 8.4
+list(n), lappend(n), lindex(n), linsert(n), llength(n), lsearch(n), 
+lset(n), lrange(n), lreplace(n)
+.VE
 
 .SH KEYWORDS
 element, list, order, sort

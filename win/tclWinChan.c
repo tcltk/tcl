@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinChan.c,v 1.15 2001/09/07 17:08:50 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclWinChan.c,v 1.15.8.1 2002/02/05 02:22:05 wolfsuit Exp $
  */
 
 #include "tclWinInt.h"
@@ -88,7 +88,7 @@ static ThreadSpecificData *FileInit _ANSI_ARGS_((void));
 static int		FileInputProc _ANSI_ARGS_((ClientData instanceData,
 	            	    char *buf, int toRead, int *errorCode));
 static int		FileOutputProc _ANSI_ARGS_((ClientData instanceData,
-			    char *buf, int toWrite, int *errorCode));
+			    CONST char *buf, int toWrite, int *errorCode));
 static int		FileSeekProc _ANSI_ARGS_((ClientData instanceData,
 			    long offset, int mode, int *errorCode));
 static void		FileSetupProc _ANSI_ARGS_((ClientData clientData,
@@ -535,7 +535,7 @@ FileInputProc(instanceData, buf, bufSize, errorCode)
 static int
 FileOutputProc(instanceData, buf, toWrite, errorCode)
     ClientData instanceData;		/* File state. */
-    char *buf;				/* The data buffer. */
+    CONST char *buf;			/* The data buffer. */
     int toWrite;			/* How many bytes to write? */
     int *errorCode;			/* Where to store error code. */
 {
@@ -659,7 +659,7 @@ TclpOpenFileChannel(interp, pathPtr, modeString, permissions)
     Tcl_Interp *interp;			/* Interpreter for error reporting;
                                          * can be NULL. */
     Tcl_Obj *pathPtr;			/* Name of file to open. */
-    char *modeString;			/* A list of POSIX open modes or
+    CONST char *modeString;		/* A list of POSIX open modes or
                                          * a string such as "rw". */
     int permissions;			/* If the open involves creating a
                                          * file, with what modes to create
@@ -668,7 +668,7 @@ TclpOpenFileChannel(interp, pathPtr, modeString, permissions)
     Tcl_Channel channel = 0;
     int seekFlag, mode, channelPermissions;
     DWORD accessMode, createMode, shareMode, flags, consoleParams, type;
-    TCHAR *nativeName;
+    CONST TCHAR *nativeName;
     DCB dcb;
     HANDLE handle;
     char channelName[16 + TCL_INTEGER_SPACE];
@@ -797,6 +797,20 @@ TclpOpenFileChannel(interp, pathPtr, modeString, permissions)
 
     switch (type) {
     case FILE_TYPE_SERIAL:
+	/*
+	 * Reopen channel for OVERLAPPED operation
+	 * Normally this shouldn't fail, because the channel exists
+	 */
+	handle = TclWinSerialReopen(handle, nativeName, accessMode);
+	if (handle == INVALID_HANDLE_VALUE) {
+	    TclWinConvertError(GetLastError());
+	    if (interp != (Tcl_Interp *) NULL) {
+		Tcl_AppendResult(interp, "couldn't reopen serial \"",
+			Tcl_GetString(pathPtr), "\": ",
+			Tcl_PosixError(interp), (char *) NULL);
+	    }
+	    return NULL;
+	}
 	channel = TclWinOpenSerialChannel(handle, channelName,
 	        channelPermissions);
 	break;
