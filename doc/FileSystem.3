@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: FileSystem.3,v 1.42 2004/04/23 12:09:37 vincentdarley Exp $
+'\" RCS: @(#) $Id: FileSystem.3,v 1.43 2004/05/19 16:56:39 vincentdarley Exp $
 '\" 
 .so man.macros
 .TH Filesystem 3 8.4 Tcl "Tcl Library Procedures"
@@ -503,7 +503,14 @@ The separator is returned as a Tcl_Obj containing a string of length
 \fBTcl_FSJoinPath\fR takes the given Tcl_Obj, which must be a valid
 list (which is allowed to have a refCount of zero), and returns the path
 object given by considering the first 'elements' elements as valid path
-segments.  If elements < 0, we use the entire list.
+segments (each path segment may be a complete path, a partial path or
+just a single possible directory or file name).  If any path segment is
+actually an absolute path, then all prior path segments are discarded.
+If elements < 0, we use the entire list.
+.PP
+It is possible that the returned object is actually an element
+of the given list, so the caller should be careful to store a
+refCount to it before freeing the list.
 .PP
 Returns object, typically with refCount of zero (but it could be shared
 under some conditions) , containing the joined path.  The caller must
@@ -1118,11 +1125,13 @@ typedef Tcl_Obj* Tcl_FSLinkProc(
 If \fItoPtr\fR is NULL, the function is being asked to read the
 contents of a link.  The result is a Tcl_Obj specifying the contents of
 the link given by \fIlinkNamePtr\fR, or NULL if the link could
-not be read.  The result is owned by the caller, which should call
-Tcl_DecrRefCount when the result is no longer needed.  If \fItoPtr\fR 
-is not NULL, the function should attempt to create a link.  The result
-in this case should be \fItoPtr\fR if the link was successful and NULL
-otherwise.  In this case the result is not owned by the caller. See
+not be read.  The result is owned by the caller (and should therefore
+have its ref count incremented before being returned).  Any callers
+should call Tcl_DecrRefCount on this result when it is no longer needed.  
+If \fItoPtr\fR is not NULL, the function should attempt to create a link.  
+The result in this case should be \fItoPtr\fR if the link was successful 
+and NULL otherwise.  In this case the result is not owned by the caller
+(i.e. no ref count manipulation on either end is needed). See
 the documentation for \fBTcl_FSLink\fR for the correct interpretation
 of the \fIlinkAction\fR flags.
 .SH LISTVOLUMESPROC	    
