@@ -1593,12 +1593,12 @@ item: Install File
 end
 item: Install File
   Source=${__TCLBASEDIR__}\library\dde\pkgIndex.tcl
-  Destination=%MAINDIR%\lib\tcl%VER%\dde1.1\pkgIndex.tcl
+  Destination=%MAINDIR%\lib\tcl%VER%\dde1.2\pkgIndex.tcl
   Flags=0000000000000010
 end
 item: Install File
   Source=${__TCLBASEDIR__}\win\release\tcldde84.dll
-  Destination=%MAINDIR%\lib\tcl%VER%\dde1.1\tcldde84.dll
+  Destination=%MAINDIR%\lib\tcl%VER%\dde1.2\tcldde84.dll
   Flags=0000000000000010
 end
 item: Install File
