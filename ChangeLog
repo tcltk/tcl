@@ -1,5 +1,12 @@
 2002-06-13  Miguel Sofer  <msofer@users.sourceforge.net>
 
+	* generic/tclExecute.c (TclExecuteByteCode): consolidated the
+	handling of exception returns to INST_INVOKE and INST_EVAL, as
+	well as most of the code for INST_CONTINUE and INST_BREAK, in the
+	new jump target "processExceptionReturn".
+
+2002-06-13  Miguel Sofer  <msofer@users.sourceforge.net>
+
 	* generic/tclExecute.c (TclExecuteByteCode): consolidated variable
 	handling opcodes, replaced redundant code with some 'goto'. All
 	store/append/lappend opcodes on the same data type now share the
