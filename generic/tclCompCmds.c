@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.41 2003/03/06 23:17:09 kennykb Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.42 2003/03/13 02:48:52 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3140,7 +3140,7 @@ TclCompileSwitchCmd(interp, parsePtr, envPtr)
 	TclEmitOpcode(INST_POP, envPtr);
 	envPtr->currStackDepth = savedStackDepth + 1;
 	code = TclCompileScript(interp, bodyTokenArray[i+1].start,
-		bodyTokenArray[i+1].size, /*nested*/ 0, envPtr);
+		bodyTokenArray[i+1].size, envPtr);
 	if (code != TCL_OK) {
 	    ckfree((char *)argv);
 	    ckfree((char *)bodyTokenArray);
