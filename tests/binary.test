@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: binary.test,v 1.18.2.1 2005/03/02 21:25:25 kennykb Exp $
+# RCS: @(#) $Id: binary.test,v 1.18.2.2 2005/03/02 22:36:26 kennykb Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -1434,7 +1434,7 @@ test binary-41.4 {ScanNumber: word alignment} {
 test binary-41.5 {ScanNumber: word alignment} bigEndian {
     catch {unset arg1; unset arg2}
     list [binary scan \x01\x3f\xcc\xcc\xcd c1f1 arg1 arg2] $arg1 $arg2
-} {2 1 1.60000002384}
+} {2 1 1.600000023841858}
 test binary-41.6 {ScanNumber: word alignment} littleEndian {
     catch {unset arg1; unset arg2}
     list [binary scan \x01\xcd\xcc\xcc\x3f c1f1 arg1 arg2] $arg1 $arg2
@@ -2037,7 +2037,7 @@ test binary-59.1 {Tcl_BinaryObjCmd: scan} {
 test binary-59.2 {Tcl_BinaryObjCmd: scan} bigEndian {
     catch {unset arg1}
     list [binary scan \x3f\xcc\xcc\xcd\x40\x59\x99\x9a R* arg1] $arg1
-} {1 {1.60000002384 3.40000009537}}
+} {1 {1.600000023841858 3.4000000953674316}}
 test binary-59.3 {Tcl_BinaryObjCmd: scan} littleEndian {
     catch {unset arg1}
     list [binary scan \xcd\xcc\xcc\x3f\x9a\x99\x59\x40 r* arg1] $arg1
