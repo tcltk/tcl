@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.89 2001/11/25 05:22:19 mdejong Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.90 2001/12/19 11:03:20 mdejong Exp $
 
 VERSION 		= @TCL_VERSION@
 
@@ -194,7 +194,7 @@ SHLIB_CFLAGS		= @SHLIB_CFLAGS@
 SHLIB_SUFFIX		= @SHLIB_SUFFIX@
 #SHLIB_SUFFIX		=
 
-DLTEST_TARGETS		= dltest/pkg5${SHLIB_SUFFIX} dltest/Makefile
+DLTEST_TARGETS		= dltest
 
 # The following symbol is defined to "$(DLTEST_TARGETS)" if dynamic
 # loading is available;  this causes everything in the "dltest"
@@ -515,23 +515,13 @@ gendate:
 	    <y.tab.c >$(GENERIC_DIR)/tclDate.c
 	rm y.tab.c
 
-# The following targets generate the shared libraries in dltest that
+# The following targets generate the shared libraries in dltest/ that
 # are used for testing;  they are included as part of the "tcltest"
 # target (via the BUILD_DLTEST variable) if dynamic loading is supported
-# on this platform. The ".." environment variable stuff is needed
-# because on some platforms tclsh scripts will be executed as part of
-# building the shared libraries, and they need to be able to use the
-# uninstalled tclsh that is present in this directory.  The "make tclsh"
-# command is needed for the same reason (must make sure that it exists).
+# on this platform.
 
-dltest/pkg5${SHLIB_SUFFIX}: dltest/Makefile
-	if test ! -f tclsh; then $(MAKE) tclsh; else true; fi
-	cd dltest; PATH=..:${PATH} TCL_LIBRARY=../../library $(MAKE)
-
-dltest/Makefile: $(DLTEST_DIR)/configure $(DLTEST_DIR)/Makefile.in tclConfig.sh
-	if test ! -d dltest; then mkdir dltest; else true; fi
-	cd dltest; if test -f configure; then ./configure; else \
-	    $(DLTEST_DIR)/configure; fi
+dltest:
+	cd dltest ; $(MAKE)
 
 install: install-binaries install-libraries install-doc
 
@@ -685,18 +675,18 @@ install-doc: doc
 	@echo "Cross-linking command (.n) docs";
 	@$(UNIX_DIR)/mkLinks $(MANN_INSTALL_DIR)
 
-Makefile: $(UNIX_DIR)/Makefile.in
+Makefile: $(UNIX_DIR)/Makefile.in $(DLTEST_DIR)/Makefile.in
 	$(SHELL) config.status
 
 clean:
 	rm -f *.a *.o libtcl* core errs *~ \#* TAGS *.E a.out \
 		errors tclsh tcltest lib.exp
-	if test -f dltest/Makefile; then cd dltest; $(MAKE) clean; fi
+	cd dltest ; $(MAKE) clean
 
 distclean: clean
 	rm -rf Makefile config.status config.cache config.log tclConfig.sh \
 		$(PACKAGE).* prototype
-	if test -f dltest/Makefile; then cd dltest; $(MAKE) distclean; fi
+	cd dltest ; $(MAKE) distclean
 
 depend:
 	makedepend -- $(DEPEND_SWITCHES) -- $(SRCS)
@@ -1237,9 +1227,8 @@ dist: $(UNIX_DIR)/configure mklinks
 	cp -p $(TOP_DIR)/license.terms $(DISTDIR)/mac
 	mkdir $(DISTDIR)/unix/dltest
 	cp -p $(UNIX_DIR)/dltest/*.c $(UNIX_DIR)/dltest/Makefile.in \
+		$(UNIX_DIR)/dltest/README \
 		$(DISTDIR)/unix/dltest
-	cp -p $(UNIX_DIR)/dltest/configure.in $(UNIX_DIR)/dltest/configure \
-		$(UNIX_DIR)/dltest/README $(DISTDIR)/unix/dltest
 	mkdir $(DISTDIR)/tools
 	cp -p $(TOP_DIR)/tools/Makefile.in $(TOP_DIR)/tools/README \
 		$(TOP_DIR)/tools/configure $(TOP_DIR)/tools/configure.in \
