@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.112 2002/10/23 09:55:14 dkf Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.113 2002/11/12 02:25:05 hobbs Exp $
  */
 
 #ifndef _TCLINT
@@ -2226,6 +2226,25 @@ extern Tcl_Mutex tclObjMutex;
 
 #define TclGetString(objPtr) \
     ((objPtr)->bytes? (objPtr)->bytes : Tcl_GetString((objPtr)))
+
+/*
+ *----------------------------------------------------------------
+ * Macro used by the Tcl core get a unicode char from a utf string.
+ * It checks to see if we have a one-byte utf char before calling
+ * the real Tcl_UtfToUniChar, as this will save a lot of time for
+ * primarily ascii string handling. The macro's expression result
+ * is 1 for the 1-byte case or the result of Tcl_UtfToUniChar.
+ * The ANSI C "prototype" for this macro is:
+ *
+ * EXTERN int TclUtfToUniChar _ANSI_ARGS_((CONST char *string,
+ *					   Tcl_UniChar *ch));
+ *----------------------------------------------------------------
+ */
+
+#define TclUtfToUniChar(str, chPtr) \
+	((((unsigned char) *(str)) < 0xC0) ? \
+	    ((*(chPtr) = (Tcl_UniChar) *(str)), 1) \
+	    : Tcl_UtfToUniChar(str, chPtr))
 
 /*
  *----------------------------------------------------------------
