@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.49 2004/09/27 19:59:36 kennykb Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.50 2004/09/30 23:06:47 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -623,8 +623,10 @@ Tcl_ErrorObjCmd(dummy, interp, objc, objv)
     
     if (objc == 4) {
 	Tcl_SetObjErrorCode(interp, objv[3]);
+    } else {
+	Tcl_SetErrorCode(interp, "NONE", NULL);
     }
-    
+
     Tcl_SetObjResult(interp, objv[1]);
     return TCL_ERROR;
 }

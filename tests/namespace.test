@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: namespace.test,v 1.38 2004/09/24 01:14:43 dgp Exp $
+# RCS: @(#) $Id: namespace.test,v 1.39 2004/09/30 23:06:49 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -193,6 +193,24 @@ test namespace-8.4 {TclTeardownNamespace, cmds imported from deleted ns go away}
          [namespace delete test_ns_export] \
          [info commands test_ns_import::*]
 } [list [lsort {::test_ns_import::p ::test_ns_import::cmd1 ::test_ns_import::cmd2}] {} ::test_ns_import::p]
+test namespace-8.5 {TclTeardownNamespace: preserve errorInfo; errorCode values} {
+    interp create slave
+    slave eval {trace add execution error leave {namespace delete :: ;#}}
+    catch {slave eval error foo bar baz}
+    interp delete slave
+    set ::errorInfo
+} {bar
+    invoked from within
+"slave eval error foo bar baz"}
+test namespace-8.6 {TclTeardownNamespace: preserve errorInfo; errorCode values} {
+    interp create slave 
+    slave eval {trace add variable errorCode write {namespace delete :: ;#}}
+    catch {slave eval error foo bar baz}
+    interp delete slave
+    set ::errorInfo
+} {bar
+    invoked from within
+"slave eval error foo bar baz"}
 
 test namespace-9.1 {Tcl_Import, empty import pattern} {
     catch {namespace delete {expand}[namespace children :: test_ns_*]}

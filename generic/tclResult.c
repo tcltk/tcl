@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclResult.c,v 1.10 2004/09/29 22:17:30 dkf Exp $
+ * RCS: @(#) $Id: tclResult.c,v 1.11 2004/09/30 23:06:48 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1027,13 +1027,17 @@ TclTransferResult(sourceInterp, result, targetInterp)
         
 	objPtr = Tcl_GetVar2Ex(sourceInterp, "errorInfo", NULL,
 		TCL_GLOBAL_ONLY);
-	Tcl_SetVar2Ex(targetInterp, "errorInfo", NULL, objPtr,
-		TCL_GLOBAL_ONLY);
-	((Interp *) targetInterp)->flags |= ERR_IN_PROGRESS;
+	if (objPtr) {
+	    Tcl_SetVar2Ex(targetInterp, "errorInfo", NULL, objPtr,
+		    TCL_GLOBAL_ONLY);
+	    ((Interp *) targetInterp)->flags |= ERR_IN_PROGRESS;
+	}
 
 	objPtr = Tcl_GetVar2Ex(sourceInterp, "errorCode", NULL,
 		TCL_GLOBAL_ONLY);
-	Tcl_SetObjErrorCode(targetInterp, objPtr);
+	if (objPtr) {
+	    Tcl_SetObjErrorCode(targetInterp, objPtr);
+	}
     }
 
     /* This may need examination for safety */

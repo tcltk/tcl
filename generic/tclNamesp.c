@@ -21,7 +21,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.56 2004/09/29 22:17:30 dkf Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.57 2004/09/30 23:06:48 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -860,45 +860,37 @@ TclTeardownNamespace(nsPtr)
 
     if (nsPtr == globalNsPtr) {
 	/*
-	 * This is the global namespace, so be careful to preserve the
-	 * "errorInfo" and "errorCode" variables. These might be needed
-	 * later on if errors occur while deleting commands. We are careful
-	 * to destroy and recreate the "errorInfo" and "errorCode"
-	 * variables, in case they had any traces on them.
+	 * This is the global namespace.  Tearing it down will destroy the
+	 * ::errorInfo and ::errorCode variables.  We save and restore them
+	 * in case there are any errors in progress, so the error details
+	 * they contain will not be lost.  See test namespace-8.5
 	 */
 
-        CONST char *str;
-        char *errorInfoStr, *errorCodeStr;
+	Tcl_Obj *errorInfo = Tcl_GetVar2Ex(nsPtr->interp, "errorInfo",
+		NULL, TCL_GLOBAL_ONLY);
+	Tcl_Obj *errorCode = Tcl_GetVar2Ex(nsPtr->interp, "errorCode",
+		NULL, TCL_GLOBAL_ONLY);
+			                
+	if (errorInfo) {
+	    Tcl_IncrRefCount(errorInfo);
+	}   
+	if (errorCode) {
+	    Tcl_IncrRefCount(errorCode);
+	}
 
-        str = Tcl_GetVar((Tcl_Interp *) iPtr, "errorInfo", TCL_GLOBAL_ONLY);
-        if (str != NULL) {
-            errorInfoStr = ckalloc((unsigned) (strlen(str)+1));
-            strcpy(errorInfoStr, str);
-        } else {
-            errorInfoStr = NULL;
-        }
+	TclDeleteVars(iPtr, &nsPtr->varTable);
+	Tcl_InitHashTable(&nsPtr->varTable, TCL_STRING_KEYS);
 
-        str = Tcl_GetVar((Tcl_Interp *) iPtr, "errorCode", TCL_GLOBAL_ONLY);
-        if (str != NULL) {
-            errorCodeStr = ckalloc((unsigned) (strlen(str)+1));
-            strcpy(errorCodeStr, str);
-        } else {
-            errorCodeStr = NULL;
-        }
-
-        TclDeleteVars(iPtr, &nsPtr->varTable);
-        Tcl_InitHashTable(&nsPtr->varTable, TCL_STRING_KEYS);
-
-        if (errorInfoStr != NULL) {
-            Tcl_SetVar((Tcl_Interp *) iPtr, "errorInfo", errorInfoStr,
-                TCL_GLOBAL_ONLY);
-            ckfree(errorInfoStr);
-        }
-        if (errorCodeStr != NULL) {
-            Tcl_SetVar((Tcl_Interp *) iPtr, "errorCode", errorCodeStr,
-                TCL_GLOBAL_ONLY);
-            ckfree(errorCodeStr);
-        }
+	if (errorInfo) {
+	    Tcl_SetVar2Ex(nsPtr->interp, "errorInfo", NULL,
+		    errorInfo, TCL_GLOBAL_ONLY);
+	    Tcl_DecrRefCount(errorInfo);
+	}   
+	if (errorCode) {
+	    Tcl_SetVar2Ex(nsPtr->interp, "errorCode", NULL,
+		    errorCode, TCL_GLOBAL_ONLY);
+	    Tcl_DecrRefCount(errorCode);
+	}
     } else {
 	/*
 	 * Variable table should be cleared but not freed! TclDeleteVars

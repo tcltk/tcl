@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.119 2004/09/27 22:39:20 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.120 2004/09/30 23:06:47 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -4528,20 +4528,6 @@ Tcl_AddObjErrorInfo(interp, message, length)
 	} else {		/* use the string result */
 	    Tcl_ObjSetVar2(interp, iPtr->execEnvPtr->errorInfo, NULL, 
 	            Tcl_NewStringObj(interp->result, -1), TCL_GLOBAL_ONLY);
-	}
-
-	/*
-	 * If the errorCode variable wasn't set by the code that generated
-	 * the error, set it to "NONE".
-	 *
-	 * NOTE: The main check for setting the default value of
-	 * errorCode to NONE is in Tcl_LogCommandInfo.  This one
-	 * should go away, but currently it's taking care of setting
-	 * up errorCode after compile errors.
-	 */
-
-	if (!(iPtr->flags & ERROR_CODE_SET)) {
-	    Tcl_SetErrorCode(interp, "NONE", NULL);
 	}
     }
 
