@@ -1,3 +1,13 @@
+2002-02-22  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* compat/strtoll.c (strtoll): 
+	* compat/strtoull.c (strtoull): 
+	* unix/tclUnixPort.h:
+	* win/tclWinPort.h: Const-ing 64-bit compatability declarations.
+	Note that the return pointer is non-const because it is entirely
+	legal for the functions to be called from somewhere that owns the
+	string being passed.  Fixes problem reported by Larry Virden.
+
 2002-02-21  David Gravereaux <davygrvy@pobox.com>
 
 	* win/mkd.bat (removed):
