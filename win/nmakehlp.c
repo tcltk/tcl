@@ -9,17 +9,19 @@
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
  * ----------------------------------------------------------------------------
- * RCS: @(#) $Id: nmakehlp.c,v 1.1 2002/03/27 21:15:43 davygrvy Exp $
+ * RCS: @(#) $Id: nmakehlp.c,v 1.2 2003/12/23 02:19:13 davygrvy Exp $
  * ----------------------------------------------------------------------------
  */
 #include <windows.h>
 #pragma comment (lib, "user32.lib")
 #pragma comment (lib, "kernel32.lib")
+#include <stdio.h>
 
 /* protos */
 int CheckForCompilerFeature (const char *option);
 int CheckForLinkerFeature (const char *option);
 int IsIn (const char *string, const char *substring);
+int GrepForDefine (const char *file, const char *string);
 DWORD WINAPI ReadFromPipe (LPVOID args);
 
 /* globals */
@@ -74,6 +76,15 @@ main (int argc, char *argv[])
 	    } else {
 		return IsIn(argv[2], argv[3]);
 	    }
+	case 'g':
+	    if (argc == 2) {
+		chars = wsprintf(msg, "usage: %s -g <file> <string>\n"
+		    "grep for a #define\n"
+		    "exitcodes: integer of the found string (no decimals)\n", argv[0]);
+		WriteFile(GetStdHandle(STD_ERROR_HANDLE), msg, chars, &dwWritten, NULL);
+		return 2;
+	    }
+	    return GrepForDefine(argv[2], argv[3]);
 	}
     }
     chars = wsprintf(msg, "usage: %s -c|-l|-f ...\n"
@@ -294,4 +305,44 @@ int
 IsIn (const char *string, const char *substring)
 {
     return (strstr(string, substring) != NULL);
+}
+
+/*
+ *  Find a specified #define by name.
+ *
+ *  If the line is '#define TCL_VERSION "8.5"', it returns
+ *  85 as the result.
+ */
+
+int
+GrepForDefine (const char *file, const char *string)
+{
+    FILE *f;
+    char s1[50], s2[50], s3[50];
+    int r = 0;
+    double d1;
+
+    f = fopen(file, "rt");
+    if (f == NULL) {
+	return 0;
+    }
+
+    do {
+	r = fscanf(f, "%s", s1);
+	if (r == 1 && !strcmp(s1, "#define")) {
+	    /* get next two words */
+	    r = fscanf(f, "%s %s", s2, s3);
+	    if (r != 2) continue;
+	    /* is the first word what we're looking for? */
+	    if (!strcmp(s2, string)) {
+		fclose(f);
+		/* add 1 past double quote char.     "8.5" */
+		d1 = atof(s3 + 1);		  /*  8.5  */
+		return ((int) (d1 * 10) & 0xFF);  /*  85   */
+	    }
+	}
+    } while (!feof(f));
+
+    fclose(f);
+    return 0;
 }
