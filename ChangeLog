@@ -1,7 +1,38 @@
+2003-06-24  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* unix/tclUnixPort.h: #undef inet_ntoa before
+	#define to avoid compiler warning under freebsd.
+	[Bug 745844]
+
+2003-06-23  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* doc/dde.n:                 Committed TIP #135 which changes the
+	* win/tclWinDde.c:           -exact option to -force. Also cleaned
+	* tests/winDde.test:         a bug in the tests.
+	* library/dde/pkgIndex.tcl:  Incremented version to 1.2.5
+
+	* doc/dde.n:                 Committed TIP #120 which provides the
+	* win/tclWinDde.c:           dde package for safe interpreters.
+	* tests/winDde.test:         Incremented package version to 1.2.4
+	* library/dde/pkgIndex.tcl:
+
+2003-06-23  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* generic/tclFCmd.c: fix to bad error message when trying to
+        do 'file copy foo ""'. [Bug 756951]
+        * tests/fCmd.test: added two new tests for the bug.
+
+	* win/tclWinFile.c:
+	* win/tclWin32Dll.c: recommitted some filesystem globbing 
+        speed-ups, but disabled some on the older Win 95/98/ME where
+        they don't seem to work.
+
+	* doc/FileSystem.3: documentation fix [Bug 720634]
+
 2003-06-18  Miguel Sofer <msofer@users.sf.net>
 
-        * generic/tclNamesp.c (Tcl_Export): removed erroneous comments
-        [Bug 756744]
+	* generic/tclNamesp.c (Tcl_Export): removed erroneous comments
+	[Bug 756744]
 
 2003-06-17  Vince Darley  <vincentdarley@users.sourceforge.net>
 
@@ -11,6 +42,7 @@
 	* generic/tclCmdMZ.c:
 	* tests/regexp.test: fixing of bugs related to regexp and regsub
         matching of empty strings.  Addition of a number of new tests.
+        [Bug 755335]
 
 2003-06-16  Andreas Kupries  <andreask@activestate.com>
 

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.50 2003/05/16 01:48:43 hobbs Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.50.2.1 2003/06/24 17:27:42 dgp Exp $
  */
 
 //#define _WIN32_WINNT  0x0500
@@ -777,77 +777,97 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 	DWORD attr;
 	HANDLE handle;
 	WIN32_FIND_DATAT data;
-	CONST char *dirName;
+	CONST char *dirName;   /* utf-8 dir name, later 
+	                        * with pattern appended */
 	int dirLength;
 	int matchSpecialDots;
-	Tcl_DString ds;        /* native encoding of dir */
+	Tcl_DString ds;        /* native encoding of dir, also used
+	                        * temporarily for other things. */
 	Tcl_DString dsOrig;    /* utf-8 encoding of dir */
-	Tcl_DString dirString; /* utf-8 encoding of dir with \'s */
 	Tcl_Obj *fileNamePtr;
+	char lastChar;
 
 	/*
-	 * Convert the path to normalized form since some interfaces only
-	 * accept backslashes.  Also, ensure that the directory ends with a
-	 * separator character.
+	 * Get the normalized path representation 
+	 * (the main thing is we dont want any '~' sequences).
 	 */
 
-	fileNamePtr = Tcl_FSGetTranslatedPath(interp, pathPtr);
+	fileNamePtr = Tcl_FSGetNormalizedPath(interp, pathPtr);
 	if (fileNamePtr == NULL) {
 	    return TCL_ERROR;
 	}
+
+	/*
+	 * Verify that the specified path exists and 
+	 * is actually a directory.
+	 */
+	native = Tcl_FSGetNativePath(pathPtr);
+	if (native == NULL) {
+	    return TCL_OK;
+	}
+	attr = (*tclWinProcs->getFileAttributesProc)(native);
+
+	if ((attr == 0xffffffff) || ((attr & FILE_ATTRIBUTE_DIRECTORY) == 0)) {
+	    return TCL_OK;
+	}
+
+	/* 
+	 * Build up the directory name for searching, including
+	 * a trailing directory separator.
+	 */
+
 	Tcl_DStringInit(&dsOrig);
 	dirName = Tcl_GetStringFromObj(fileNamePtr, &dirLength);
 	Tcl_DStringAppend(&dsOrig, dirName, dirLength);
 	
-	Tcl_DStringInit(&dirString);
-	if (dirLength == 0) {
-	    Tcl_DStringAppend(&dirString, ".\\", 2);
+	lastChar = dirName[dirLength -1];
+	if ((lastChar != '\\') && (lastChar != '/') && (lastChar != ':')) {
+	    Tcl_DStringAppend(&dsOrig, "/", 1);
+	    dirLength++;
+	}
+	dirName = Tcl_DStringValue(&dsOrig);
+
+	/*
+	 * We need to check all files in the directory, so we append
+	 * '*.*' to the path, unless the pattern we've been given is
+	 * rather simple, when we can use that instead.
+	 */
+
+	if (strpbrk(pattern, "[]\\") == NULL) {
+	    /* 
+	     * The pattern is a simple one containing just '*' and/or '?'.
+	     * This means we can get the OS to help us, by passing
+	     * it the pattern.
+	     */
+	    dirName = Tcl_DStringAppend(&dsOrig, pattern, -1);
 	} else {
-	    char *p;
-
-	    Tcl_DStringAppend(&dirString, dirName, dirLength);
-	    for (p = Tcl_DStringValue(&dirString); *p != '\0'; p++) {
-		if (*p == '/') {
-		    *p = '\\';
-		}
-	    }
-	    p--;
-	    /* Make sure we have a trailing directory delimiter */
-	    if ((*p != '\\') && (*p != ':')) {
-		Tcl_DStringAppend(&dirString, "\\", 1);
-		Tcl_DStringAppend(&dsOrig, "/", 1);
-		dirLength++;
-	    }
+	    dirName = Tcl_DStringAppend(&dsOrig, "*.*", 3);
 	}
-	dirName = Tcl_DStringValue(&dirString);
-
-	/*
-	 * First verify that the specified path is actually a directory.
-	 */
-
-	native = Tcl_WinUtfToTChar(dirName, Tcl_DStringLength(&dirString),
-		&ds);
-	attr = (*tclWinProcs->getFileAttributesProc)(native);
-	Tcl_DStringFree(&ds);
-
-	if ((attr == 0xffffffff) || ((attr & FILE_ATTRIBUTE_DIRECTORY) == 0)) {
-	    Tcl_DStringFree(&dirString);
-	    return TCL_OK;
-	}
-
-	/*
-	 * We need to check all files in the directory, so append a *.*
-	 * to the path. 
-	 */
-
-	dirName = Tcl_DStringAppend(&dirString, "*.*", 3);
 	native = Tcl_WinUtfToTChar(dirName, -1, &ds);
-	handle = (*tclWinProcs->findFirstFileProc)(native, &data);
+	if (tclWinProcs->findFirstFileExProc == NULL 
+	    || (types == NULL)
+	    || (types->type != TCL_GLOB_TYPE_DIR)) {
+	    handle = (*tclWinProcs->findFirstFileProc)(native, &data);
+	} else {
+	    /* We can be more efficient, for pure directory requests */
+	    handle = (*tclWinProcs->findFirstFileExProc)(native, 
+			FindExInfoStandard, &data, 
+			FindExSearchLimitToDirectories, NULL, 0);
+	}
 	Tcl_DStringFree(&ds);
 
 	if (handle == INVALID_HANDLE_VALUE) {
-	    Tcl_DStringFree(&dirString);
-	    TclWinConvertError(GetLastError());
+	    DWORD err = GetLastError();
+	    if (err == ERROR_FILE_NOT_FOUND) {
+	        /* 
+	         * We used our 'pattern' above, and matched nothing
+	         * This means we just return TCL_OK, indicating
+	         * no results found.
+	         */
+		Tcl_DStringFree(&dsOrig);
+		return TCL_OK;
+	    }
+	    TclWinConvertError(err);
 	    Tcl_ResetResult(interp);
 	    Tcl_AppendResult(interp, "couldn't read directory \"",
 		    Tcl_DStringValue(&dsOrig), "\": ", 
@@ -855,6 +875,12 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 	    Tcl_DStringFree(&dsOrig);
 	    return TCL_ERROR;
 	}
+
+	/* 
+	 * We may use this later, so we must restore it to its
+	 * length including the directory delimiter
+	 */
+	Tcl_DStringSetLength(&dsOrig, dirLength);
 
 	/*
 	 * Check to see if the pattern should match the special
@@ -949,7 +975,6 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 	} while ((*tclWinProcs->findNextFileProc)(handle, &data) == TRUE);
 
 	FindClose(handle);
-	Tcl_DStringFree(&dirString);
 	Tcl_DStringFree(&dsOrig);
 	return TCL_OK;
     }

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWin32Dll.c,v 1.25 2003/04/11 16:00:08 vincentdarley Exp $
+ * RCS: @(#) $Id: tclWin32Dll.c,v 1.25.2.1 2003/06/24 17:27:41 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -327,8 +327,8 @@ TclWinInit(hInst)
  * Results:
  *	The return value is one of:
  *	    VER_PLATFORM_WIN32s		Win32s on Windows 3.1. (not supported)
- *	    VER_PLATFORM_WIN32_WINDOWS	Win32 on Windows 95.
- *	    VER_PLATFORM_WIN32_NT	Win32 on Windows NT
+ *	    VER_PLATFORM_WIN32_WINDOWS	Win32 on Windows 95, 98, ME.
+ *	    VER_PLATFORM_WIN32_NT	Win32 on Windows NT, 2000, XP
  *
  * Side effects:
  *	None.
@@ -581,10 +581,18 @@ TclWinSetInterfaces(
 		  (BOOL (WINAPI *)(CONST TCHAR *, CONST TCHAR*, 
 		  LPSECURITY_ATTRIBUTES)) GetProcAddress(hInstance, 
 		  "CreateHardLinkA");
-		tclWinProcs->findFirstFileExProc = 
-		  (HANDLE (WINAPI *)(CONST TCHAR*, UINT,
-		  LPVOID, UINT, LPVOID, DWORD)) GetProcAddress(hInstance, 
-		  "FindFirstFileExA");
+		tclWinProcs->findFirstFileExProc = NULL;
+		/*
+		 * The 'findFirstFileExProc' function exists on some
+		 * of 95/98/ME, but it seems not to work as anticipated.
+		 * Therefore we don't set this function pointer.  The
+		 * relevant code will fall back on a slower approach
+		 * using the normal findFirstFileProc.
+		 * 
+		 * (HANDLE (WINAPI *)(CONST TCHAR*, UINT,
+		 * LPVOID, UINT, LPVOID, DWORD)) GetProcAddress(hInstance, 
+		 * "FindFirstFileExA");
+		 */
 		tclWinProcs->getVolumeNameForVMPProc = 
 		  (BOOL (WINAPI *)(CONST TCHAR*, TCHAR*, 
 		  DWORD)) GetProcAddress(hInstance, 

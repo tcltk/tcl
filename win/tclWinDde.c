@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinDde.c,v 1.15 2003/05/16 17:29:49 patthoyts Exp $
+ * RCS: @(#) $Id: tclWinDde.c,v 1.15.2.1 2003/06/24 17:27:42 dgp Exp $
  */
 
 #include "tclPort.h"
@@ -36,6 +36,7 @@ typedef struct RegisteredInterp {
 				/* The next interp this application knows
 				 * about. */
     char *name;			/* Interpreter's name (malloc-ed). */
+    Tcl_Obj *handlerPtr;	/* The server handler command */
     Tcl_Interp *interp;		/* The interpreter attached to this name. */
 } RegisteredInterp;
 
@@ -70,7 +71,7 @@ static DWORD ddeInstance;       /* The application instance handle given
 				 * to us by DdeInitialize. */
 static int ddeIsServer = 0;
 
-#define TCL_DDE_VERSION "1.2.3"
+#define TCL_DDE_VERSION "1.2.5"
 #define TCL_DDE_PACKAGE_NAME "dde"
 #define TCL_DDE_SERVICE_NAME "TclEval"
 
@@ -102,6 +103,7 @@ int Tcl_DdeObjCmd(ClientData clientData,	/* Used only for deletion */
 	Tcl_Obj *CONST objv[]);	/* The arguments */
 
 EXTERN int Dde_Init(Tcl_Interp *interp);
+EXTERN int Dde_SafeInit(Tcl_Interp *interp);
 
 /*
  *----------------------------------------------------------------------
@@ -136,6 +138,33 @@ Dde_Init(
     Tcl_CreateExitHandler(DdeExitProc, NULL);
 
     return Tcl_PkgProvide(interp, TCL_DDE_PACKAGE_NAME, TCL_DDE_VERSION);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Dde_SafeInit --
+ *
+ *	This procedure initializes the dde command within a safe interp
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Dde_SafeInit(
+    Tcl_Interp *interp)
+{
+    int result = Dde_Init(interp);
+    if (result == TCL_OK) {
+	Tcl_HideCommand(interp, "dde", "dde");
+    }
+    return result;
 }
 
 /*
@@ -235,7 +264,9 @@ DdeSetServerName(
 				 * refer to the interpreter in later
 				 * "send" commands.  Must be globally
 				 * unique. */
-    int exactName		/* Should we make a unique name? 0 = unique */
+    int exactName,		/* Should we make a unique name? 0 = unique */
+    Tcl_Obj *handlerPtr		/* Name of the optional proc/command to handle
+				 * incoming Dde eval's */
     )
 {
     int suffix, offset;
@@ -348,8 +379,15 @@ DdeSetServerName(
     riPtr->interp = interp;
     riPtr->name = ckalloc(strlen(actualName) + 1);
     riPtr->nextPtr = tsdPtr->interpListPtr;
+    riPtr->handlerPtr = handlerPtr;
+    if (riPtr->handlerPtr != NULL)
+	Tcl_IncrRefCount(riPtr->handlerPtr);
     tsdPtr->interpListPtr = riPtr;
     strcpy(riPtr->name, actualName);
+
+    if (Tcl_IsSafe(interp)) {
+	Tcl_ExposeCommand(interp, "dde", "dde");
+    }
 
     Tcl_CreateObjCommand(interp, "dde", Tcl_DdeObjCmd,
 	    (ClientData) riPtr, DeleteProc);
@@ -364,6 +402,39 @@ DdeSetServerName(
     Initialize();
     
     return riPtr->name;
+}
+
+/*
+ *--------------------------------------------------------------
+ *
+ * DdeGetRegistrationPtr
+ *
+ *	Retrieve the registration info for an interpreter.
+ *
+ * Results:
+ *	Returns a pointer to the registration structure or NULL
+ *
+ * Side effects:
+ *	None
+ *
+ *--------------------------------------------------------------
+ */
+
+static RegisteredInterp *
+DdeGetRegistrationPtr(
+    Tcl_Interp *interp
+    )
+{
+    RegisteredInterp *riPtr;
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+
+    for (riPtr = tsdPtr->interpListPtr; riPtr != NULL; 
+	    riPtr = riPtr->nextPtr) {
+	if (riPtr->interp == interp) {
+	    break;
+	}
+    }
+    return riPtr;
 }
 
 /*
@@ -407,6 +478,8 @@ DeleteProc(clientData)
 	}
     }
     ckfree(riPtr->name);
+    if (riPtr->handlerPtr)
+	Tcl_DecrRefCount(riPtr->handlerPtr);
     Tcl_EventuallyFree(clientData, TCL_DYNAMIC);
 }
 
@@ -441,9 +514,27 @@ ExecuteRemoteObject(
 {
     Tcl_Obj *errorObjPtr;
     Tcl_Obj *returnPackagePtr;
-    int result;
+    int result = TCL_OK;
 
-    result = Tcl_EvalObjEx(riPtr->interp, ddeObjectPtr, TCL_EVAL_GLOBAL);
+    if (riPtr->handlerPtr == NULL && Tcl_IsSafe(riPtr->interp)) {
+	Tcl_SetObjResult(riPtr->interp, Tcl_NewStringObj("permission denied:"
+		" a handler procedure must be defined for use in a safe interp", -1));
+	result = TCL_ERROR;
+    }
+
+    if (riPtr->handlerPtr != NULL) {
+	/* add the dde request data to the handler proc list */
+	Tcl_Obj *cmdPtr = Tcl_DuplicateObj(riPtr->handlerPtr);
+	result = Tcl_ListObjAppendElement(riPtr->interp, cmdPtr, ddeObjectPtr);
+	if (result == TCL_OK) {
+	    ddeObjectPtr = cmdPtr;
+	}
+    }
+
+    if (result == TCL_OK) {
+	result = Tcl_EvalObjEx(riPtr->interp, ddeObjectPtr, TCL_EVAL_GLOBAL);
+    }
+
     returnPackagePtr = Tcl_NewListObj(0, (Tcl_Obj **) NULL);
     Tcl_ListObjAppendElement(NULL, returnPackagePtr,
 	    Tcl_NewIntObj(result));
@@ -452,10 +543,12 @@ ExecuteRemoteObject(
     if (result == TCL_ERROR) {
 	errorObjPtr = Tcl_GetVar2Ex(riPtr->interp, "errorCode", NULL,
 		TCL_GLOBAL_ONLY);
-	Tcl_ListObjAppendElement(NULL, returnPackagePtr, errorObjPtr);
+	if (errorObjPtr)
+	    Tcl_ListObjAppendElement(NULL, returnPackagePtr, errorObjPtr);
 	errorObjPtr = Tcl_GetVar2Ex(riPtr->interp, "errorInfo", NULL,
 		TCL_GLOBAL_ONLY);
-        Tcl_ListObjAppendElement(NULL, returnPackagePtr, errorObjPtr);
+	if (errorObjPtr)
+	    Tcl_ListObjAppendElement(NULL, returnPackagePtr, errorObjPtr);
     }
 
     return returnPackagePtr;
@@ -625,17 +718,21 @@ DdeServerProc (
 			    returnString, (DWORD) len+1, 0, ddeItem, CF_TEXT,
 			    0);
 		} else {
-		    Tcl_Obj *variableObjPtr = Tcl_GetVar2Ex(
-			    convPtr->riPtr->interp, utilString, NULL, 
-			    TCL_GLOBAL_ONLY);
-		    if (variableObjPtr != NULL) {
-			returnString = Tcl_GetStringFromObj(variableObjPtr,
-				&len);
-			ddeReturn = DdeCreateDataHandle(ddeInstance,
-				returnString, (DWORD) len+1, 0, ddeItem,
-				CF_TEXT, 0);
-		    } else {
+		    if (Tcl_IsSafe(convPtr->riPtr->interp)) {
 			ddeReturn = NULL;
+		    } else {
+			Tcl_Obj *variableObjPtr = Tcl_GetVar2Ex(
+				convPtr->riPtr->interp, utilString, NULL, 
+				TCL_GLOBAL_ONLY);
+			if (variableObjPtr != NULL) {
+			    returnString = Tcl_GetStringFromObj(variableObjPtr,
+				    &len);
+			    ddeReturn = DdeCreateDataHandle(ddeInstance,
+				    returnString, (DWORD) len+1, 0, ddeItem, 
+				    CF_TEXT, 0);
+			} else {
+			    ddeReturn = NULL;
+			}
 		    }
 		}
 		Tcl_DStringFree(&dString);
@@ -1041,6 +1138,7 @@ Tcl_DdeObjCmd(
 
     enum {
 	DDE_SERVERNAME_EXACT,
+	DDE_SERVERNAME_HANDLER,
 	DDE_SERVERNAME_LAST,
     };
 
@@ -1049,7 +1147,7 @@ Tcl_DdeObjCmd(
 	  (char *) NULL};
     static CONST char *ddeOptions[] = {"-async", (char *) NULL};
     static CONST char *ddeReqOptions[] = {"-binary", (char *) NULL};
-    static CONST char *ddeSrvOptions[] = {"-exact", "--", (char *) NULL};
+    static CONST char *ddeSrvOptions[] = {"-force", "-handler", "--", (char *) NULL};
     int index, argIndex, i;
     int async = 0, binary = 0, exact = 0;
     int result = TCL_OK;
@@ -1067,7 +1165,7 @@ Tcl_DdeObjCmd(
     HDDEDATA ddeReturn;
     RegisteredInterp *riPtr;
     Tcl_Interp *sendInterp;
-    Tcl_Obj *objPtr;
+    Tcl_Obj *objPtr, *handlerPtr = NULL;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     /*
@@ -1093,6 +1191,17 @@ Tcl_DdeObjCmd(
 		    break;
 		} else if (argIndex == DDE_SERVERNAME_EXACT) {
 		    exact = 1;
+		} else if (argIndex == DDE_SERVERNAME_HANDLER) {
+		    if ((objc - i) == 1) { /* return current handler */
+			RegisteredInterp *riPtr = DdeGetRegistrationPtr(interp);
+			if (riPtr && riPtr->handlerPtr) {
+			    Tcl_SetObjResult(interp, riPtr->handlerPtr);
+			} else {
+			    Tcl_ResetResult(interp);
+			}
+			return TCL_OK;
+		    }
+		    handlerPtr = objv[++i];
 		} else if (argIndex == DDE_SERVERNAME_LAST) {
 		    i++;
 		    break;
@@ -1100,7 +1209,7 @@ Tcl_DdeObjCmd(
 		    Tcl_ResetResult(interp);
 		    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
 			    "bad option \"", Tcl_GetString(objv[i]),
-			    "\": must be -exact, or --",
+			    "\": must be -force, -handler or --",
 			    (char*)NULL);
 		    return TCL_ERROR;
 		}
@@ -1109,7 +1218,7 @@ Tcl_DdeObjCmd(
 	    if ((objc - i) > 1) {
 		Tcl_ResetResult(interp);
 		Tcl_WrongNumArgs(interp, 1, objv,
-			"servername ?-exact? ?--?"
+			"servername ?-force? ?-handler proc? ?--?"
 			" ?serverName?");
 		return TCL_ERROR;
 	    }
@@ -1236,7 +1345,8 @@ Tcl_DdeObjCmd(
 
     switch (index) {
 	case DDE_SERVERNAME: {
-	    serviceName = DdeSetServerName(interp, serviceName, exact);
+	    serviceName = DdeSetServerName(interp, serviceName,
+		   exact, handlerPtr);
 	    if (serviceName != NULL) {
 		Tcl_SetStringObj(Tcl_GetObjResult(interp),
 			serviceName, -1);
@@ -1415,14 +1525,31 @@ Tcl_DdeObjCmd(
 		 * be referring to deallocated objects.
 		 */
 
-		if (objc == 1) {
-		    result = Tcl_EvalObjEx(sendInterp, objv[0],
-			    TCL_EVAL_GLOBAL);
-		} else {
-		    objPtr = Tcl_ConcatObj(objc, objv);
+		if (Tcl_IsSafe(riPtr->interp) && riPtr->handlerPtr == NULL) {
+		    Tcl_SetResult(riPtr->interp, "permission denied: "
+			    "a handler procedure must be defined for use in a safe interp", TCL_STATIC);
+		    result = TCL_ERROR;
+		}
+
+		if (result == TCL_OK) {
+		    if (objc == 1)
+			objPtr = objv[0];
+		    else {
+			objPtr = Tcl_ConcatObj(objc, objv);
+		    }
+		    if (riPtr->handlerPtr != NULL) {
+			/* add the dde request data to the handler proc list */			
+			/*result = Tcl_ListObjReplace(sendInterp, objPtr, 0, 0, 1, &(riPtr->handlerPtr));*/
+			Tcl_Obj *cmdPtr = Tcl_DuplicateObj(riPtr->handlerPtr);
+			result = Tcl_ListObjAppendElement(sendInterp, cmdPtr, objPtr);
+			if (result == TCL_OK) {
+			    objPtr = cmdPtr;
+			}
+		    }
+		}
+		if (result == TCL_OK) {
 		    Tcl_IncrRefCount(objPtr);
-		    result = Tcl_EvalObjEx(sendInterp, objPtr,
-			    TCL_EVAL_GLOBAL);
+		    result = Tcl_EvalObjEx(sendInterp, objPtr, TCL_EVAL_GLOBAL);
 		    Tcl_DecrRefCount(objPtr);
 		}
 		if (interp != sendInterp) {
@@ -1436,12 +1563,15 @@ Tcl_DdeObjCmd(
 			Tcl_ResetResult(interp);
 			objPtr = Tcl_GetVar2Ex(sendInterp, "errorInfo", NULL, 
 				TCL_GLOBAL_ONLY);
-			string = Tcl_GetStringFromObj(objPtr, &length);
-			Tcl_AddObjErrorInfo(interp, string, length);
+			if (objPtr) {
+			    string = Tcl_GetStringFromObj(objPtr, &length);
+			    Tcl_AddObjErrorInfo(interp, string, length);
+			}
 			
 			objPtr = Tcl_GetVar2Ex(sendInterp, "errorCode", NULL,
 				TCL_GLOBAL_ONLY);
-			Tcl_SetObjErrorCode(interp, objPtr);
+			if (objPtr)
+			    Tcl_SetObjErrorCode(interp, objPtr);
 		    }
 		    Tcl_SetObjResult(interp, Tcl_GetObjResult(sendInterp));
 		}
@@ -1580,3 +1710,11 @@ Tcl_DdeObjCmd(
     }
     return TCL_ERROR;
 }
+
+/*
+ * Local variables:
+ *  mode: c
+ *  indent-tabs-mode: t
+ *  tab-width: 8
+ * End:
+ */

@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: dde.n,v 1.9 2003/05/16 22:00:47 patthoyts Exp $
+'\" RCS: @(#) $Id: dde.n,v 1.9.2.1 2003/06/24 17:27:41 dgp Exp $
 '\" 
 .so man.macros
 .TH dde n 1.2 dde "Tcl Bundled Packages"
@@ -17,7 +17,7 @@ dde \- Execute a Dynamic Data Exchange command
 .sp
 \fBpackage require dde 1.2\fR
 .sp
-\fBdde \fIservername\fR ?\fI-exact\fR? ?\fI--\fR? ?\fItopic\fR?
+\fBdde \fIservername\fR ?\fI-force\fR? ?\fI-handler proc\fR? ?\fI--\fR? ?\fItopic\fR?
 .sp
 \fBdde \fIexecute\fR ?\fI\-async\fR? \fIservice topic \fR?\fIdata\fR?
 .sp
@@ -50,7 +50,7 @@ The \fBeval\fR and \fBexecute\fR commands accept the option \fB\-async\fR:
 The following commands are a subset of the full Dynamic Data Exchange
 set of commands.
 .TP
-\fBdde servername \fR?\fI-exact\fR? ?\fI--\fR? ?\fItopic\fR?
+\fBdde servername \fR?\fI-force\fR? ?\fI-handler proc\fR? ?\fI--\fR? ?\fItopic\fR?
 \fBdde servername\fR registers the interpreter as a DDE server with
 the service name \fBTclEval\fR and the topic name specified by \fItopic\fR.
 If no \fItopic\fR is given, \fBdde servername\fR returns the name
@@ -58,8 +58,14 @@ of the current topic or the empty string if it is not registered as a
 service. If the given \fItopic\fR name is already in use, then a
 suffix of the form ' #2' or ' #3' is appended to the name to make it
 unique. The command's result will be the name actually used. The
-\fI-exact\fR option is used to force registration of precisely the
+\fI-force\fR option is used to force registration of precisely the
 given \fItopic\fR name.
+.IP
+The \fI-handler\fR option specifies a tcl procedure that will be called to
+process calls to the dde server. If the package has been loaded into a
+safe interpreter then a \fI-handler\fR procedure must be defined. The
+procedure is called with all the arguments provided by the remote
+call.
 .TP
 \fBdde execute\fR ?\fI\-async\fR? \fIservice topic data\fR
 \fBdde execute\fR takes the \fIdata\fR and sends it to the server indicated
