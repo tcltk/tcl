@@ -7,6 +7,13 @@
 
 2004-09-23  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclBasic.c:	Corrections to the 2004-09-21 commit
+	* generic/tclExecute.c:	regarding ERR_ALREADY_LOGGED.  That commit
+	* generic/tclNamesp.c:	caused Tk test send-10.7 to fail.  Added
+	* tests/namespace.test (25.7,8):	tests in the Tcl test suite
+	* tests/pkg.test (2.25,26):	to catch this error without the
+	aid of Tk in the future.
+
 	* generic/tclCmdAH.c (Tcl_ExprObjCmd):	Simplified the TclObjCmdProc
 	of [expr] with a call to Tcl_ConcatObj.
 
