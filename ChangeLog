@@ -1,3 +1,18 @@
+2004-10-26  Don Porter  <dgp@users.sourceforge.net>
+
+	* tests/compile.test (compile-12.4):	Backport test for Bug 1001997.
+	* tests/timer.test (timer-10.1):	Backport test for Bug 1016167.
+	* tests/tcltest.test (tcltest-12.3,4):	Backport setup corrections.
+	* tests/error.test (error-6.3,4,7,9):	Backport of some tests.
+	* tests/basic.test (basic-49.*):
+	* tests/namespace.test (namespace-8.7):
+        * tests/init.test (init-2.8):   Updated to not rely on http package.
+
+        * generic/tclThreadTest.c (ThreadEventProc):    Corrected subtle
+        bug where the returned (char *) from Tcl_GetStringResult(interp)
+        continued to be used without copying or refcounting, while
+        activity on the interp continued.
+
 2004-10-14  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclUtil.c (TclMatchIsTrivial): Detect degenerate cases
