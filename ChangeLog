@@ -1,3 +1,7 @@
+1999-04-29    <stanton@scriptics.com>
+
+	* generic/tclParse.c: Fixed memory leak in CommandComplete.
+
 1999-04-27    <stanton@scriptics.com>
 
 	* generic/tclPlatDecls.h: 
