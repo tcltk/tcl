@@ -7,7 +7,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclWinInit.c,v 1.24 2000/07/26 01:27:58 davidg Exp $
+ * RCS: @(#) $Id: tclWinInit.c,v 1.25 2001/01/04 21:30:49 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -229,44 +229,49 @@ TclpInitLibraryPath(path)
      *		(e.g. /usr/src/tcl8.2/unix/solaris-sparc/../../../tcl8.2/library)
      */
      
+    /*
+     * The variable path holds an absolute path.  Take care not to
+     * overwrite pathv[0] since that might produce a relative path.
+     */
+
     if (path != NULL) {
 	Tcl_SplitPath(path, &pathc, &pathv);
-	if (pathc > 1) {
+	if (pathc > 2) {
 	    pathv[pathc - 2] = installLib;
 	    path = Tcl_JoinPath(pathc - 1, pathv, &ds);
 	    objPtr = Tcl_NewStringObj(path, Tcl_DStringLength(&ds));
 	    Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
 	    Tcl_DStringFree(&ds);
 	}
-	if (pathc > 2) {
+	if (pathc > 3) {
 	    pathv[pathc - 3] = installLib;
 	    path = Tcl_JoinPath(pathc - 2, pathv, &ds);
 	    objPtr = Tcl_NewStringObj(path, Tcl_DStringLength(&ds));
 	    Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
 	    Tcl_DStringFree(&ds);
 	}
-	if (pathc > 1) {
+	if (pathc > 2) {
 	    pathv[pathc - 2] = "library";
 	    path = Tcl_JoinPath(pathc - 1, pathv, &ds);
 	    objPtr = Tcl_NewStringObj(path, Tcl_DStringLength(&ds));
 	    Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
 	    Tcl_DStringFree(&ds);
 	}
-	if (pathc > 2) {
+	if (pathc > 3) {
 	    pathv[pathc - 3] = "library";
 	    path = Tcl_JoinPath(pathc - 2, pathv, &ds);
 	    objPtr = Tcl_NewStringObj(path, Tcl_DStringLength(&ds));
 	    Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
 	    Tcl_DStringFree(&ds);
 	}
-	if (pathc > 1) {
+	if (pathc > 3) {
 	    pathv[pathc - 3] = developLib;
 	    path = Tcl_JoinPath(pathc - 2, pathv, &ds);
 	    objPtr = Tcl_NewStringObj(path, Tcl_DStringLength(&ds));
 	    Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
 	    Tcl_DStringFree(&ds);
 	}
-	if (pathc > 3) {
+	if (pathc > 4) {
 	    pathv[pathc - 4] = developLib;
 	    path = Tcl_JoinPath(pathc - 3, pathv, &ds);
 	    objPtr = Tcl_NewStringObj(path, Tcl_DStringLength(&ds));

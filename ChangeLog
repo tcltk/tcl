@@ -1,5 +1,15 @@
-2000-12-14  Don Porter  <dgp@users.sourceforge.net>
+2001-01-04  Don Porter  <dgp@users.sourceforge.net>
+	* tests/unixInit.test:
+	* unix/tclUnixInit.c (TclpInitLibraryPath):
+	* win/tclWinInit.c (TclpInitLibraryPath):  Several entries in
+	the library path ($tcl_libPath) are determined relative to the
+	absolute path of the executable.  When the executable is
+	installed in or near the root directory of the file system,
+	relative pathnames were being incorrectly generated, and in
+	the worst case, memory access violations were crashing the program.
+	[Bug 119416, Patch 102972]
 
+2000-12-14  Don Porter  <dgp@users.sourceforge.net>
 	* generic/tclExecute.c:
 	* tests/expr-old.test:  Re-wrote Tcl's [expr rand()] and
 	[expr srand($seed)] implementations, fixing a range error
