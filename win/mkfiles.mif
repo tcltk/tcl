@@ -1,0 +1,192 @@
+#==============================================================================
+#
+#   Files of the build are defined here.
+#
+#   Tool specific syntax is NOT allowed in this file.
+#
+#==============================================================================
+# RCS: @(#) $Id: mkfiles.mif,v 1.1.2.1 2001/09/16 07:00:34 davygrvy Exp $
+#==============================================================================
+
+!ifndef _MKFILES_MIF
+_MKFILES_MIF = 1
+
+#==============================================
+#  Derived Target names and locations.
+#==============================================
+
+ROOT		= ..
+COMPATDIR	= $(ROOT)\compat
+DOCDIR		= $(ROOT)\docs
+GENERICDIR	= $(ROOT)\generic
+MACSDIR		= $(ROOT)\mac
+TOOLSDIR	= $(ROOT)\tools
+UNIXDIR		= $(ROOT)\unix
+WINDIR		= $(ROOT)\win
+
+VERSION		= 84
+DOTVERSION	= 8.4
+NAMEPREFIX	= tcl
+STUBPREFIX	= $(NAMEPREFIX)stub
+TCLLIB		= $(OUT_DIR)\$(NAMEPREFIX)$(VERSION)$(DBGX).lib
+TCLDLLNAME	= $(NAMEPREFIX)$(VERSION)$(DBGX).dll
+TCLDLL		= $(OUT_DIR)\$(TCLDLLNAME)
+TCLSTUBLIBNAME	= $(STUBPREFIX)$(VERSION)$(DBGX).lib
+TCLSTUBLIB	= $(OUT_DIR)\$(TCLSTUBLIBNAME)
+TCLSH		= $(OUT_DIR)\$(NAMEPREFIX)sh$(VERSION)$(DBGX).exe
+
+TCLPIPEDLLNAME	= $(NAMEPREFIX)pip$(VERSION)$(DBGX).dll
+TCLPIPEDLL	= $(OUT_DIR)\$(TCLPIPEDLLNAME)
+
+REGVERSION	= 10
+REGDOTVERSION	= 1.0
+TCLREGDLLNAME	= $(NAMEPREFIX)reg$(REGVERSION)$(DBGX).dll
+TCLREGDLL	= $(OUT_DIR)\$(TCLREGDLLNAME)
+
+DDEVERSION	= 12
+DDEDOTVERSION	= 1.2
+TCLDDEDLLNAME	= $(NAMEPREFIX)dde$(DDEVERSION)$(DBGX).dll
+TCLDDEDLL	= $(OUT_DIR)\$(TCLDDEDLLNAME)
+
+TCLTEST		= $(OUT_DIR)\$(NAMEPREFIX)test.exe
+
+
+
+TMP_DIR = $(WINDIR)\Release$(SFX)
+OUT_DIR = $(TMP_DIR)
+
+#==============================================
+#  Object targets.
+#==============================================
+
+TCLSHOBJs = \
+	$(TMP_DIR)\tclAppInit.obj
+
+TCLTESTOBJs = \
+	$(TMP_DIR)\tclTest.obj \
+	$(TMP_DIR)\tclTestObj.obj \
+	$(TMP_DIR)\tclTestProcBodyObj.obj \
+	$(TMP_DIR)\tclThreadTest.obj \
+	$(TMP_DIR)\tclWinTest.obj \
+	$(TMP_DIR)\testMain.obj
+
+TCLOBJs = \
+	$(TMP_DIR)\regcomp.obj \
+	$(TMP_DIR)\regexec.obj \
+	$(TMP_DIR)\regfree.obj \
+	$(TMP_DIR)\regerror.obj \
+	$(TMP_DIR)\strftime.obj \
+	$(TMP_DIR)\tclAlloc.obj \
+	$(TMP_DIR)\tclAsync.obj \
+	$(TMP_DIR)\tclBasic.obj \
+	$(TMP_DIR)\tclBinary.obj \
+	$(TMP_DIR)\tclCkalloc.obj \
+	$(TMP_DIR)\tclClock.obj \
+	$(TMP_DIR)\tclCmdAH.obj \
+	$(TMP_DIR)\tclCmdIL.obj \
+	$(TMP_DIR)\tclCmdMZ.obj \
+	$(TMP_DIR)\tclCompCmds.obj \
+	$(TMP_DIR)\tclCompExpr.obj \
+	$(TMP_DIR)\tclCompile.obj \
+	$(TMP_DIR)\tclDate.obj \
+	$(TMP_DIR)\tclEncoding.obj \
+	$(TMP_DIR)\tclEnv.obj \
+	$(TMP_DIR)\tclEvent.obj \
+	$(TMP_DIR)\tclExecute.obj \
+	$(TMP_DIR)\tclFCmd.obj \
+	$(TMP_DIR)\tclFileName.obj \
+	$(TMP_DIR)\tclGet.obj \
+	$(TMP_DIR)\tclHash.obj \
+	$(TMP_DIR)\tclHistory.obj \
+	$(TMP_DIR)\tclIndexObj.obj \
+	$(TMP_DIR)\tclInterp.obj \
+	$(TMP_DIR)\tclIO.obj \
+	$(TMP_DIR)\tclIOCmd.obj \
+	$(TMP_DIR)\tclIOGT.obj \
+	$(TMP_DIR)\tclIOSock.obj \
+	$(TMP_DIR)\tclIOUtil.obj \
+	$(TMP_DIR)\tclLink.obj \
+	$(TMP_DIR)\tclLiteral.obj \
+	$(TMP_DIR)\tclListObj.obj \
+	$(TMP_DIR)\tclLoad.obj \
+	$(TMP_DIR)\tclMain.obj \
+	$(TMP_DIR)\tclNamesp.obj \
+	$(TMP_DIR)\tclNotify.obj \
+	$(TMP_DIR)\tclObj.obj \
+	$(TMP_DIR)\tclPanic.obj \
+	$(TMP_DIR)\tclParse.obj \
+	$(TMP_DIR)\tclParseExpr.obj \
+	$(TMP_DIR)\tclPipe.obj \
+	$(TMP_DIR)\tclPkg.obj \
+	$(TMP_DIR)\tclPosixStr.obj \
+	$(TMP_DIR)\tclPreserve.obj \
+	$(TMP_DIR)\tclProc.obj \
+	$(TMP_DIR)\tclRegexp.obj \
+	$(TMP_DIR)\tclResolve.obj \
+	$(TMP_DIR)\tclResult.obj \
+	$(TMP_DIR)\tclScan.obj \
+	$(TMP_DIR)\tclStringObj.obj \
+	$(TMP_DIR)\tclStubInit.obj \
+	$(TMP_DIR)\tclStubLib.obj \
+	$(TMP_DIR)\tclThread.obj \
+	$(TMP_DIR)\tclThreadJoin.obj \
+	$(TMP_DIR)\tclTimer.obj \
+	$(TMP_DIR)\tclUtf.obj \
+	$(TMP_DIR)\tclUtil.obj \
+	$(TMP_DIR)\tclVar.obj \
+	$(TMP_DIR)\tclWin32Dll.obj \
+	$(TMP_DIR)\tclWinChan.obj \
+	$(TMP_DIR)\tclWinConsole.obj \
+	$(TMP_DIR)\tclWinSerial.obj \
+	$(TMP_DIR)\tclWinError.obj \
+	$(TMP_DIR)\tclWinFCmd.obj \
+	$(TMP_DIR)\tclWinFile.obj \
+	$(TMP_DIR)\tclWinInit.obj \
+	$(TMP_DIR)\tclWinLoad.obj \
+	$(TMP_DIR)\tclWinMtherr.obj \
+	$(TMP_DIR)\tclWinNotify.obj \
+	$(TMP_DIR)\tclWinPipe.obj \
+	$(TMP_DIR)\tclWinSock.obj \
+	$(TMP_DIR)\tclWinThrd.obj \
+	$(TMP_DIR)\tclWinTime.obj
+
+#!ifndef STATIC_BUILD
+#	$(TMP_DIR)\tclWinRc.obj \
+#!endif
+
+
+TCLSTUBOBJs = $(TMP_DIR)\tclStubLib.obj
+
+TCLDDEOBJs  = $(TMP_DIR)\tclWinDde.obj
+
+TCLREGOBJs  = $(TMP_DIR)\tclWinReg.obj
+
+WIN32LIBs   = msvcrt$(DBGX).lib kernel32.lib advapi32.lib user32.lib gdi32.lib comdlg32.lib
+
+#==============================================
+#  Dependency Rules.
+#==============================================
+
+$(GENERICDIR)\regcomp.c: \
+	$(GENERICDIR)\regguts.h \
+	$(GENERICDIR)\regc_lex.c \
+	$(GENERICDIR)\regc_color.c \
+	$(GENERICDIR)\regc_nfa.c \
+	$(GENERICDIR)\regc_cvec.c \
+	$(GENERICDIR)\regc_locale.c
+
+$(GENERICDIR)\regcustom.h: \
+	$(GENERICDIR)\tclInt.h \
+	$(GENERICDIR)\tclPort.h \
+	$(GENERICDIR)\regex.h
+
+$(GENERICDIR)\regexec.c: \
+	$(GENERICDIR)\rege_dfa.c \
+	$(GENERICDIR)\regguts.h
+
+$(GENERICDIR)\regerror.c: $(GENERICDIR)\regguts.h
+$(GENERICDIR)\regfree.c: $(GENERICDIR)\regguts.h
+$(GENERICDIR)\regfronts.c: $(GENERICDIR)\regguts.h
+$(GENERICDIR)\regguts.h: $(GENERICDIR)\regcustom.h
+
+!endif  # _MKFILES_MIF

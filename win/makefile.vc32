@@ -1,0 +1,27 @@
+!include "mkfiles.mif"
+
+core : $(TCLOBJs)
+!if defined(STATIC_BUILD)
+	lib -nologo -out:$(OUT_DIR)\tcl84s.lib @<<
+!else
+	link -nologo -out:$(TCLDLL) -dll -subsystem:windows -release $(WIN32LIBs) @<<
+!endif
+$(TCLOBJs)
+<<
+
+{$(COMPATDIR)}.c{$(TMP_DIR)}.obj ::
+    cl -nologo -c -MD -Zm600 -Ox -DBUILD_tcl -I$(GENERICDIR) -Fo$(TMP_DIR)\ @<<
+$<
+<<
+
+{$(GENERICDIR)}.c{$(TMP_DIR)}.obj ::
+    cl -nologo -c -MD -Zm600 -Ox -DBUILD_tcl -I$(GENERICDIR) -Fo$(TMP_DIR)\ @<<
+$<
+<<
+
+{$(WINDIR)}.c{$(TMP_DIR)}.obj ::
+    cl -nologo -c -MD -Zm600 -Ox -DBUILD_tcl -I$(GENERICDIR) -Fo$(TMP_DIR)\ @<<
+$<
+<<
+
+.SUFFIXES: .c

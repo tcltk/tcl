@@ -9,10 +9,10 @@
 #   Tool specific syntax is NOT allowed in this file.
 #
 #==============================================================================
-# RCS: @(#) $Id: makefile.win,v 1.1.2.5 2001/09/15 14:09:51 davygrvy Exp $
+# RCS: @(#) $Id: makefile.win,v 1.1.2.6 2001/09/16 07:00:34 davygrvy Exp $
 #==============================================================================
 
-### Remove all '!' for MinGW..  Sorry, could find another way to do this.
+### Remove all '!' for MinGW..  Sorry, couldn't find another way to do this.
 
 #==============================================
 # Load the user info.

@@ -6,7 +6,7 @@
 #   NMAKE specific syntax is allowed in this file.
 #
 #==============================================================================
-# RCS: @(#) $Id: mkvc32.mif,v 1.1.2.4 2001/09/15 14:09:51 davygrvy Exp $
+# RCS: @(#) $Id: mkvc32.mif,v 1.1.2.5 2001/09/16 07:00:34 davygrvy Exp $
 #==============================================================================
 
 !ifndef _MKVC32_MIF
@@ -64,7 +64,8 @@ vcvars	    = "$(TOOLSETvc32)\vc98\bin\vcvars32.bat"
 !message +++    $(vcvars) will be used.
 
 
-### We now need to recurse back into ourseLves, then baiL.
+### We now need to recurse back into ourselves to fix the environment,
+### then bail on this run.
 !if [ $(vcvars) & nmake -nologo /$(MAKEFLAGS) -f makefile.win ] != 0
 !endif
 
