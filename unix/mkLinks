@@ -311,8 +311,10 @@ fi
 if test -r DetachPids.3; then
     rm -f Tcl_DetachPids.3
     rm -f Tcl_ReapDetachedProcs.3
+    rm -f Tcl_WaitPid.3
     ln DetachPids.3 Tcl_DetachPids.3
     ln DetachPids.3 Tcl_ReapDetachedProcs.3
+    ln DetachPids.3 Tcl_WaitPid.3
 fi
 if test -r DoOneEvent.3; then
     rm -f Tcl_DoOneEvent.3
@@ -759,6 +761,12 @@ if test -r SetErrno.3; then
     ln SetErrno.3 Tcl_GetErrno.3
     ln SetErrno.3 Tcl_ErrnoId.3
     ln SetErrno.3 Tcl_ErrnoMsg.3
+fi
+if test -r Signal.3; then
+    rm -f Tcl_SignalId.3
+    rm -f Tcl_SignalMsg.3
+    ln Signal.3 Tcl_SignalId.3
+    ln Signal.3 Tcl_SignalMsg.3
 fi
 if test -r SetRecLmt.3; then
     rm -f Tcl_SetRecursionLimit.3

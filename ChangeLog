@@ -1,3 +1,12 @@
+2001-04-03  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
+
+	* unix/mkLinks: Added 'Signal.3', 'Tcl_WaitPid'.
+
+	* doc/DetachPids.3: Added description of 'Tcl_WaitPid' [Bug #219173].
+
+	* doc/Signal.3: New man page describing the public API procedures
+	  'Tcl_SignalId' and 'Tcl_SignalMsg' [Bug #219172].
+
 2001-04-02  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* README:
