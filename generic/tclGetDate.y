@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclGetDate.y,v 1.12 2000/01/12 23:35:52 ericm Exp $
+ * RCS: @(#) $Id: tclGetDate.y,v 1.13 2000/01/14 22:15:51 ericm Exp $
  */
 
 %{
@@ -54,7 +54,7 @@
 
 #define HOUR(x)         ((int) (60 * x))
 #define SECSPERDAY      (24L * 60L * 60L)
-
+#define IsLeapYear(x)   ((x % 4 == 0) && (x % 100 != 0 || x % 400 == 0))
 
 /*
  *  An entry in the lexical lookup table.
@@ -138,11 +138,12 @@ yyparse _ANSI_ARGS_((void));
 }
 
 %token  tAGO tDAY tDAYZONE tID tMERIDIAN tMINUTE_UNIT tMONTH tMONTH_UNIT
-%token  tSEC_UNIT tSNUMBER tUNUMBER tZONE tEPOCH tDST tISOBASE tDAY_UNIT tNEXT
+%token  tSTARDATE tSEC_UNIT tSNUMBER tUNUMBER tZONE tEPOCH tDST tISOBASE
+%token  tDAY_UNIT tNEXT
 
 %type   <Number>        tDAY tDAYZONE tMINUTE_UNIT tMONTH tMONTH_UNIT tDST
 %type   <Number>        tSEC_UNIT tSNUMBER tUNUMBER tZONE tISOBASE tDAY_UNIT
-%type   <Number>        unit ago sign tNEXT
+%type   <Number>        unit ago sign tNEXT tSTARDATE
 %type   <Meridian>      tMERIDIAN o_merid
 
 %%
@@ -170,6 +171,11 @@ item    : time {
 	    yyHaveTime++;
 	    yyHaveDate++;
 	}
+        | trek {
+	    yyHaveTime++;
+	    yyHaveDate++;
+	    yyHaveRel++;
+        }
         | number
         ;
 
@@ -321,6 +327,19 @@ iso     : tISOBASE tZONE tISOBASE {
         }
         ;
 
+trek    : tSTARDATE tUNUMBER '.' tUNUMBER {
+            /*
+	     * Offset computed year by -377 so that the returned years will
+	     * be in a range accessible with a 32 bit clock seconds value
+	     */
+            yyYear = $2/1000 + 2323 - 377;
+            yyDay  = 1;
+	    yyMonth = 1;
+	    yyRelDay += (($2%1000)*(365 + IsLeapYear(yyYear)))/1000;
+	    yyRelSeconds += $4 * 144 * 60;
+        }
+        ;
+
 relspec : sign tUNUMBER unit ago { *yyRelPointer += $1 * $2 * $3 * $4; }
         | tUNUMBER unit ago      { *yyRelPointer += $1 * $2 * $3; }
         | tNEXT unit             { *yyRelPointer += $2; }
@@ -442,6 +461,7 @@ static TABLE    OtherTable[] = {
 #endif
     { "ago",            tAGO,   1 },
     { "epoch",          tEPOCH,   0 },
+    { "stardate",       tSTARDATE, 0},
     { NULL }
 };
 
@@ -636,8 +656,7 @@ Convert(Month, Day, Year, Hours, Minutes, Seconds, Meridian, DSTmode, TimePtr)
      * But, every year divisible by 100 is not a leap year.
      * But, every year divisible by 400 is a leap year after all.
      */
-    DaysInMonth[1] = (Year % 4 == 0) && (Year % 100 != 0 || Year % 400 == 0)
-                    ? 29 : 28;
+    DaysInMonth[1] = IsLeapYear(Year) ? 29 : 28;
 
     /* Check the inputs for validity */
     if (Month < 1 || Month > 12
@@ -652,12 +671,10 @@ Convert(Month, Day, Year, Hours, Minutes, Seconds, Meridian, DSTmode, TimePtr)
         Julian += DaysInMonth[i];
     if (Year >= EPOCH) {
         for (i = EPOCH; i < Year; i++)
-            Julian += 365 + (((i % 4) == 0) &&
-	            (((i % 100) != 0) || ((i % 400) == 0)));
+            Julian += 365 + IsLeapYear(i);
     } else {
         for (i = Year; i < EPOCH; i++)
-            Julian -= 365 + (((i % 4) == 0) &&
-	            (((i % 100) != 0) || ((i % 400) == 0)));
+            Julian -= 365 + IsLeapYear(i);
     }
     Julian *= SECSPERDAY;
 

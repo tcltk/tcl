@@ -8,7 +8,7 @@
  * source.  See the copyright notice below for details on redistribution
  * restrictions.  The "license.terms" file does not apply to this file.
  *
- * RCS: @(#) $Id: strftime.c,v 1.5 1999/07/22 01:26:18 redman Exp $
+ * RCS: @(#) $Id: strftime.c,v 1.6 2000/01/14 22:15:51 ericm Exp $
  */
 
 /*
@@ -45,7 +45,7 @@
  */
 
 #if defined(LIBC_SCCS)
-static char *rcsid = "$Id: strftime.c,v 1.5 1999/07/22 01:26:18 redman Exp $";
+static char *rcsid = "$Id: strftime.c,v 1.6 2000/01/14 22:15:51 ericm Exp $";
 #endif /* LIBC_SCCS */
 
 #include <time.h>
@@ -111,6 +111,16 @@ TclpStrftime(s, maxsize, format, t)
     const char *format;
     const struct tm *t;
 {
+    if (format[0] == '%' && format[1] == 'Q') {
+	/* Format as a stardate */
+	sprintf(s, "Stardate %2d%03d.%01d",
+		(((t->tm_year + TM_YEAR_BASE) + 377) - 2323),
+		(((t->tm_yday + 1) * 1000) /
+			(365 + IsLeapYear((t->tm_year + TM_YEAR_BASE)))),
+		(((t->tm_hour * 60) + t->tm_min)/144));
+	return(strlen(s));
+    }
+
     tzset();
 
     pt = s;

@@ -9,11 +9,13 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixTime.c,v 1.6 1999/07/22 01:26:19 redman Exp $
+ * RCS: @(#) $Id: tclUnixTime.c,v 1.7 2000/01/14 22:15:52 ericm Exp $
  */
 
 #include "tclInt.h"
 #include "tclPort.h"
+#define TM_YEAR_BASE 1900
+#define IsLeapYear(x)   ((x % 4 == 0) && (x % 100 != 0 || x % 400 == 0))
 
 /*
  *-----------------------------------------------------------------------------
@@ -295,5 +297,14 @@ TclpStrftime(s, maxsize, format, t)
     CONST char *format;
     CONST struct tm *t;
 {
+    if (format[0] == '%' && format[1] == 'Q') {
+	/* Format as a stardate */
+	sprintf(s, "Stardate %2d%03d.%01d",
+		(((t->tm_year + TM_YEAR_BASE) + 377) - 2323),
+		(((t->tm_yday + 1) * 1000) /
+			(365 + IsLeapYear((t->tm_year + TM_YEAR_BASE)))),
+		(((t->tm_hour * 60) + t->tm_min)/144));
+	return(strlen(s));
+    }
     return strftime(s, maxsize, format, t);
 }
