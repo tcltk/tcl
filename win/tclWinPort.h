@@ -37,8 +37,8 @@
 #undef WIN32_LEAN_AND_MEAN
 
 #ifdef BUILD_tcl
-# undef EXPORT
-# define EXPORT DLLEXPORT
+# undef TCL_STORAGE_CLASS
+# define TCL_STORAGE_CLASS DLLEXPORT
 #endif
 
 /*
@@ -400,7 +400,7 @@ EXTERN u_short PASCAL FAR
 EXTERN int PASCAL FAR	TclWinSetSockOpt _ANSI_ARGS_((SOCKET s, int level,
 		            int optname, const char FAR * optval, int optlen));
 
-#undef EXPORT
-#define EXPORT DLLIMPORT
+# undef TCL_STORAGE_CLASS
+# define TCL_STORAGE_CLASS DLLIMPORT
 
 #endif /* _TCLWINPORT */

@@ -25,8 +25,8 @@
 #include "tcl.h"
 #undef panic
 
-# undef EXPORT
-# define EXPORT DLLEXPORT
+# undef TCL_STORAGE_CLASS
+# define TCL_STORAGE_CLASS DLLEXPORT
 
 EXTERN void		panic _ANSI_ARGS_((char *format, char *arg1,
 			    char *arg2, char *arg3, char *arg4, char *arg5,

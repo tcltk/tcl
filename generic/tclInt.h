@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: %Z% $Id: tclInt.h,v 1.13 1998/07/29 13:26:06 escoffon Exp $ 
+ * SCCS: %Z% $Id: tclInt.h,v 1.14 1998/08/04 11:53:33 escoffon Exp $ 
  */
 
 #ifndef _TCLINT
@@ -58,8 +58,8 @@
 #endif
 
 #ifdef BUILD_tcl
-# undef EXPORT
-# define EXPORT DLLEXPORT
+# undef TCL_STORAGE_CLASS
+# define TCL_STORAGE_CLASS DLLEXPORT
 #endif
 
 /*
@@ -2097,8 +2097,8 @@ EXTERN void		Tcl_SetNamespaceResolvers _ANSI_ARGS_((
 			    Tcl_ResolveVarProc *varProc,
 			    Tcl_ResolveCompiledVarProc *compiledVarProc));
 
-#undef EXPORT
-#define EXPORT DLLIMPORT
+# undef TCL_STORAGE_CLASS
+# define TCL_STORAGE_CLASS DLLIMPORT
 
 #endif /* _TCLINT */
 
