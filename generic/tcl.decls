@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.58.2.5 2001/09/27 15:00:32 dkf Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.58.2.6 2001/11/05 14:23:15 dkf Exp $
 
 library tcl
 
@@ -770,8 +770,9 @@ declare 218 generic {
 declare 219 generic {
     int Tcl_ScanCountedElement(CONST char *str, int length, int *flagPtr)
 }
+# Obsolete
 declare 220 generic {
-    Tcl_WideInt Tcl_Seek(Tcl_Channel chan, Tcl_WideInt offset, int mode)
+    int Tcl_SeekOld(Tcl_Channel chan, int offset, int mode)
 }
 declare 221 generic {
     int Tcl_ServiceAll(void)
@@ -857,8 +858,9 @@ declare 244 generic {
 declare 245 generic {
     int Tcl_StringMatch(CONST char *str, CONST char *pattern)
 }
+# Obsolete
 declare 246 generic {
-    Tcl_WideInt Tcl_Tell(Tcl_Channel chan)
+    int Tcl_TellOld(Tcl_Channel chan)
 }
 declare 247 generic {
     int Tcl_TraceVar(Tcl_Interp *interp, char *varName, int flags,
@@ -1698,6 +1700,12 @@ declare 485 generic {
 }
 declare 486 generic {
     Tcl_StatBuf * Tcl_AllocStatBuf(void)
+}
+declare 487 generic {
+    Tcl_WideInt Tcl_Seek(Tcl_Channel chan, Tcl_WideInt offset, int mode)
+}
+declare 488 generic {
+    Tcl_WideInt Tcl_Tell(Tcl_Channel chan)
 }
 
 ##############################################################################

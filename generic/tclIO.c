@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.35.6.4 2001/09/28 14:29:23 dkf Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.35.6.5 2001/11/05 14:23:16 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -5473,6 +5473,46 @@ Tcl_Tell(chan)
         return (curPos - inputBuffered);
     }
     return (curPos + outputBuffered);
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * Tcl_SeekOld, Tcl_TellOld --
+ *
+ *	Backward-compatability versions of the seek/tell interface that
+ *	do not support 64-bit offsets.
+ *
+ * Results:
+ *	As for Tcl_Seek and Tcl_Tell respectively.
+ *
+ * Side effects:
+ *	As for Tcl_Seek and Tcl_Tell respectively.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+int
+Tcl_SeekOld(chan, offset, mode)
+    Tcl_Channel chan;		/* The channel on which to seek. */
+    int offset;			/* Offset to seek to. */
+    int mode;			/* Relative to which location to seek? */
+{
+    Tcl_WideInt wOffset, wResult;
+
+    wOffset = Tcl_LongAsWide((long)offset);
+    wResult = Tcl_Seek(chan, wOffset, mode);
+    return (int)Tcl_WideAsLong(wResult);
+}
+
+int
+Tcl_TellOld(chan)
+    Tcl_Channel chan;		/* The channel to return pos for. */
+{
+    Tcl_WideInt wResult;
+
+    wResult = Tcl_Tell(chan);
+    return (int)Tcl_WideAsLong(wResult);
 }
 
 /*

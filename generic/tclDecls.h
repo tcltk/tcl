@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.58.2.3 2001/09/27 15:00:32 dkf Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.58.2.4 2001/11/05 14:23:16 dkf Exp $
  */
 
 #ifndef _TCLDECLS
@@ -711,8 +711,8 @@ EXTERN int		Tcl_ScanElement _ANSI_ARGS_((CONST char * str,
 EXTERN int		Tcl_ScanCountedElement _ANSI_ARGS_((CONST char * str, 
 				int length, int * flagPtr));
 /* 220 */
-EXTERN Tcl_WideInt	Tcl_Seek _ANSI_ARGS_((Tcl_Channel chan, 
-				Tcl_WideInt offset, int mode));
+EXTERN int		Tcl_SeekOld _ANSI_ARGS_((Tcl_Channel chan, 
+				int offset, int mode));
 /* 221 */
 EXTERN int		Tcl_ServiceAll _ANSI_ARGS_((void));
 /* 222 */
@@ -787,7 +787,7 @@ EXTERN void		Tcl_StaticPackage _ANSI_ARGS_((Tcl_Interp * interp,
 EXTERN int		Tcl_StringMatch _ANSI_ARGS_((CONST char * str, 
 				CONST char * pattern));
 /* 246 */
-EXTERN Tcl_WideInt	Tcl_Tell _ANSI_ARGS_((Tcl_Channel chan));
+EXTERN int		Tcl_TellOld _ANSI_ARGS_((Tcl_Channel chan));
 /* 247 */
 EXTERN int		Tcl_TraceVar _ANSI_ARGS_((Tcl_Interp * interp, 
 				char * varName, int flags, 
@@ -1520,6 +1520,11 @@ EXTERN void		Tcl_SetWideIntObj _ANSI_ARGS_((Tcl_Obj * objPtr,
 				Tcl_WideInt wideValue));
 /* 486 */
 EXTERN Tcl_StatBuf *	Tcl_AllocStatBuf _ANSI_ARGS_((void));
+/* 487 */
+EXTERN Tcl_WideInt	Tcl_Seek _ANSI_ARGS_((Tcl_Channel chan, 
+				Tcl_WideInt offset, int mode));
+/* 488 */
+EXTERN Tcl_WideInt	Tcl_Tell _ANSI_ARGS_((Tcl_Channel chan));
 
 typedef struct TclStubHooks {
     struct TclPlatStubs *tclPlatStubs;
@@ -1799,7 +1804,7 @@ typedef struct TclStubs {
     void (*tcl_ResetResult) _ANSI_ARGS_((Tcl_Interp * interp)); /* 217 */
     int (*tcl_ScanElement) _ANSI_ARGS_((CONST char * str, int * flagPtr)); /* 218 */
     int (*tcl_ScanCountedElement) _ANSI_ARGS_((CONST char * str, int length, int * flagPtr)); /* 219 */
-    Tcl_WideInt (*tcl_Seek) _ANSI_ARGS_((Tcl_Channel chan, Tcl_WideInt offset, int mode)); /* 220 */
+    int (*tcl_SeekOld) _ANSI_ARGS_((Tcl_Channel chan, int offset, int mode)); /* 220 */
     int (*tcl_ServiceAll) _ANSI_ARGS_((void)); /* 221 */
     int (*tcl_ServiceEvent) _ANSI_ARGS_((int flags)); /* 222 */
     void (*tcl_SetAssocData) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * name, Tcl_InterpDeleteProc * proc, ClientData clientData)); /* 223 */
@@ -1825,7 +1830,7 @@ typedef struct TclStubs {
     void (*tcl_SplitPath) _ANSI_ARGS_((CONST char * path, int * argcPtr, char *** argvPtr)); /* 243 */
     void (*tcl_StaticPackage) _ANSI_ARGS_((Tcl_Interp * interp, char * pkgName, Tcl_PackageInitProc * initProc, Tcl_PackageInitProc * safeInitProc)); /* 244 */
     int (*tcl_StringMatch) _ANSI_ARGS_((CONST char * str, CONST char * pattern)); /* 245 */
-    Tcl_WideInt (*tcl_Tell) _ANSI_ARGS_((Tcl_Channel chan)); /* 246 */
+    int (*tcl_TellOld) _ANSI_ARGS_((Tcl_Channel chan)); /* 246 */
     int (*tcl_TraceVar) _ANSI_ARGS_((Tcl_Interp * interp, char * varName, int flags, Tcl_VarTraceProc * proc, ClientData clientData)); /* 247 */
     int (*tcl_TraceVar2) _ANSI_ARGS_((Tcl_Interp * interp, char * part1, char * part2, int flags, Tcl_VarTraceProc * proc, ClientData clientData)); /* 248 */
     char * (*tcl_TranslateFileName) _ANSI_ARGS_((Tcl_Interp * interp, char * name, Tcl_DString * bufferPtr)); /* 249 */
@@ -2066,6 +2071,8 @@ typedef struct TclStubs {
     Tcl_Obj * (*tcl_NewWideIntObj) _ANSI_ARGS_((Tcl_WideInt wideValue)); /* 484 */
     void (*tcl_SetWideIntObj) _ANSI_ARGS_((Tcl_Obj * objPtr, Tcl_WideInt wideValue)); /* 485 */
     Tcl_StatBuf * (*tcl_AllocStatBuf) _ANSI_ARGS_((void)); /* 486 */
+    Tcl_WideInt (*tcl_Seek) _ANSI_ARGS_((Tcl_Channel chan, Tcl_WideInt offset, int mode)); /* 487 */
+    Tcl_WideInt (*tcl_Tell) _ANSI_ARGS_((Tcl_Channel chan)); /* 488 */
 } TclStubs;
 
 #ifdef __cplusplus
@@ -2989,9 +2996,9 @@ extern TclStubs *tclStubsPtr;
 #define Tcl_ScanCountedElement \
 	(tclStubsPtr->tcl_ScanCountedElement) /* 219 */
 #endif
-#ifndef Tcl_Seek
-#define Tcl_Seek \
-	(tclStubsPtr->tcl_Seek) /* 220 */
+#ifndef Tcl_SeekOld
+#define Tcl_SeekOld \
+	(tclStubsPtr->tcl_SeekOld) /* 220 */
 #endif
 #ifndef Tcl_ServiceAll
 #define Tcl_ServiceAll \
@@ -3093,9 +3100,9 @@ extern TclStubs *tclStubsPtr;
 #define Tcl_StringMatch \
 	(tclStubsPtr->tcl_StringMatch) /* 245 */
 #endif
-#ifndef Tcl_Tell
-#define Tcl_Tell \
-	(tclStubsPtr->tcl_Tell) /* 246 */
+#ifndef Tcl_TellOld
+#define Tcl_TellOld \
+	(tclStubsPtr->tcl_TellOld) /* 246 */
 #endif
 #ifndef Tcl_TraceVar
 #define Tcl_TraceVar \
@@ -4053,6 +4060,14 @@ extern TclStubs *tclStubsPtr;
 #ifndef Tcl_AllocStatBuf
 #define Tcl_AllocStatBuf \
 	(tclStubsPtr->tcl_AllocStatBuf) /* 486 */
+#endif
+#ifndef Tcl_Seek
+#define Tcl_Seek \
+	(tclStubsPtr->tcl_Seek) /* 487 */
+#endif
+#ifndef Tcl_Tell
+#define Tcl_Tell \
+	(tclStubsPtr->tcl_Tell) /* 488 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */
