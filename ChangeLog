@@ -1,7 +1,7 @@
 2004-10-27  David Gravereaux <davygrvy@pobox.com>
 
 	* generic/tclInt.decls:	  The following 9 functions were moved from
-	* generic/tclInt.h:	  tclInt.h to the internal Stubs table for
+	* generic/tclInt.h:	  tclInt.h to the private/int Stubs table for
 	* generic/tclIntDecls.h:  use by the test suite.  As tclTest.obj is
 	* generic/tclStubInit.c:  linked to the shell, these functions need
 	"blessed" status so as to always be exported from the library. Being
