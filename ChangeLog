@@ -1,3 +1,8 @@
+1998-12-09    <stanton@GASPODE>
+
+	* generic/regcomp.c (makescan): Fixed bug in longest match case
+	that caused anchored patterns to fail. [Bug: 897]
+
 1998-12-08    <stanton@GASPODE>
 
 	* library/msgcat1.0/msgcat.tcl: changed mc to invoke mcunknown in
