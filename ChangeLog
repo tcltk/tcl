@@ -1,3 +1,26 @@
+1999-10-20  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* unix/tclUnixNotfy.c: fixed event/io threading problems by
+	making triggerPipe non-blocking
+
+	* library/tcltest1.0/tcltest.tcl:
+	* generic/tclThreadTest.c: fixed mem leaks in threads
+
+	* generic/tclResult.c: fixed Tcl_AppendResultVA so it only
+	iterates once over the va_list (avoiding a memcpy of it,
+	which is not portable).
+
+	* generic/regc_color.c: fixed mem leak and assertion, from HS
+
+	* generic/tclCompile.c: removed savedChar trick that appeared to
+	be causing a segv when the literal table was released
+
+	* tests/string.test:
+	* generic/tclCmdMZ.c: fixed [string index] to return ByteArrayObj
+	when indexing into one (test case string-5.16) [Bug: 2871]
+
+	* library/http2.1/http.tcl: protected gets with catch [Bug: 2665]
+
 1999-10-19  Jennifer Hom  <jenn@scriptics.com>
 
 	* tests/tcltest.test:
@@ -30,9 +53,9 @@
 	
 1999-10-12  Jim Ingham  <jingham@scriptics.com>
 
-        * mac/tclMacLoad.c: Stupid bug - we converted the filename to
-        external, but used the unconverted version.
-        * mac/tclMacFCmd.c: Fix a merge error in the bug fix for [Bug: 2869]
+	* mac/tclMacLoad.c: Stupid bug - we converted the filename to
+	external, but used the unconverted version.
+	* mac/tclMacFCmd.c: Fix a merge error in the bug fix for [Bug: 2869]
 
 1999-10-12  Jeff Hobbs  <hobbs@scriptics.com>
 
