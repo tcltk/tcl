@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.7 2001/12/10 15:44:34 msofer Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.8 2001/12/11 14:29:40 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -967,8 +967,19 @@ CompileMathFuncCall(exprTokenPtr, funcName, infoPtr, envPtr, endPtrPtr)
      */
 
     if (mathFuncPtr->builtinFuncIndex >= 0) { /* a builtin function */
-	TclEmitInstInt1(INST_CALL_BUILTIN_FUNC1, 
+	/*
+	 * Adjust the current stack depth by the number of arguments
+	 * of the builtin function. This cannot be handled by the 
+	 * TclEmitInstInt1 macro as the number of arguments is not
+	 * passed as an operand.
+	 */
+
+	if (envPtr->maxStackDepth < envPtr->currStackDepth) {
+	    envPtr->maxStackDepth = envPtr->currStackDepth;
+	}
+	TclEmitInstInt1(INST_CALL_BUILTIN_FUNC1,
 	        mathFuncPtr->builtinFuncIndex, envPtr);
+	envPtr->currStackDepth -= mathFuncPtr->numArgs;
     } else {
 	TclEmitInstInt1(INST_CALL_FUNC1, (mathFuncPtr->numArgs+1), envPtr);
     }
