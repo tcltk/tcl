@@ -1,3 +1,7 @@
+2000-07-18 Brent Welch	<welch@ajubasolutions.com>
+
+	* win/Makefile.in: Added rules for static tcldde and tclreg libraries.
+
 2000-07-17  Jeff Hobbs  <hobbs@scriptics.com>
 
 	* README:
@@ -45,6 +49,10 @@
 	* win/tclWinPipe.c: updated pipeChannelType to v2 channel struct
 	* win/tclWinSerial.c: updated serialChannelType to v2 channel struct
 	* win/tclWinSock.c: updated tcpChannelType to v2 channel struct
+
+2000-07-11  Brent Welch	<welch@ajubasolutions.com>
+
+	* win/tclConfig.sh.in: Cleaned up unix-specific autoconf variables.
 
 2000-07-11  Jeff Hobbs  <hobbs@scriptics.com>
 
