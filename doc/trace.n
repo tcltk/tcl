@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: trace.n,v 1.15 2003/10/08 17:50:32 dgp Exp $
+'\" RCS: @(#) $Id: trace.n,v 1.16 2004/05/28 00:05:02 dkf Exp $
 '\" 
 .so man.macros
 .TH trace n "8.4" Tcl "Tcl Built-In Commands"
@@ -354,6 +354,29 @@ future version of Tcl.  They use an older syntax in which \fBarray\fR,
 \fBw\fR and \fBu\fR respectively, and the \fIops\fR argument is not a
 list, but simply a string concatenation of the operations, such as
 \fBrwua\fR.
+.SH EXAMPLES
+Print a message whenever either of the global variables \fBfoo\fR and
+\fBbar\fR are updated, even if they have a different local name at the
+time (which can be done with the \fBupvar\fR command):
+.CS
+proc tracer {varname args} {
+    upvar #0 $varname var
+    puts "$varname was updated to be \e"$var\e""
+}
+trace add variable foo write "tracer foo"
+trace add variable bar write "tracer bar"
+.CE
+.PP
+Ensure that the global variable \fBfoobar\fR always contains the
+product of the global variables \fBfoo\fR and \fBbar\fR:
+.CS
+proc doMult args {
+    global foo bar foobar
+    set foobar [expr {$foo * $bar}]
+}
+trace add variable foo write doMult
+trace add variable bar write doMult
+.CE
 
 .SH "SEE ALSO"
 set(n), unset(n)
