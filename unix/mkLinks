@@ -223,6 +223,10 @@ if test -r CrtTrace.3; then
     rm -f Tcl_CreateTrace.3
     ln CrtTrace.3 Tcl_CreateTrace.3
 fi
+if test -r CrtVersion.3; then
+    rm -f Tcl_GetVersion.3
+    ln CrtVersion.3 Tcl_GetVersion.3
+fi
 if test -r DString.3; then
     rm -f Tcl_DStringAppend.3
     ln DString.3 Tcl_DStringAppend.3
