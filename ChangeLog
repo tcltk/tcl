@@ -38,7 +38,10 @@
 	shared libraries properly. [Bug: 1730]
 	
 1999-04-05    <redman@scriptics.com>
-         
+
+	* win/tclWinDde.c: decrease timeout value for DDE calls to 30k
+	[Bug: 1639]
+
 	* generic/tcl.decls:
 	* generic/tcl.h:
 	* generic/tclDecls.h:
