@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.17 1999/07/02 19:59:38 welch Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.18 1999/07/09 02:11:56 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -1648,8 +1648,8 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		if (first < 0) {
 		    first = 0;
 		}
-		if (last >= length1 - 1) {
-		    last = length1 - 1;
+		if (last >= length2) {
+		    last = length2;
 		}
 		if (last >= first) {
 		    resultPtr = Tcl_GetRange(objv[2], first, last);
