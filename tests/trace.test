@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: trace.test,v 1.36 2004/11/03 21:49:14 dgp Exp $
+# RCS: @(#) $Id: trace.test,v 1.37 2004/11/15 21:47:23 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -2197,7 +2197,14 @@ test trace-32.1 {
     set result
 } [list [list delete foo]]
 
-test trace-33.1 {527164: Keep -errorinfo of traces} -setup {
+test trace-33.1 {variable match with remove variable} {
+    unset -nocomplain x
+    trace variable x w foo
+    trace remove variable x write foo
+    llength [trace info variable x]
+} 0
+
+test trace-34.1 {527164: Keep -errorinfo of traces} -setup {
     unset -nocomplain x y
 } -body {
     trace add variable x write {error foo;#}
@@ -2214,6 +2221,7 @@ test trace-33.1 {527164: Keep -errorinfo of traces} -setup {
     (write trace on "y")
     invoked from within
 "set y 1"}}
+
 
 # Delete procedures when done, so we don't clash with other tests
 # (e.g. foobar will clash with 'unknown' tests).
