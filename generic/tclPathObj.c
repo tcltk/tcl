@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPathObj.c,v 1.31 2004/05/19 16:56:39 vincentdarley Exp $
+ * RCS: @(#) $Id: tclPathObj.c,v 1.32 2004/06/08 19:18:39 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -578,9 +578,10 @@ TclPathPart(interp, pathPtr, portion)
     } else {
 	int splitElements;
 	Tcl_Obj *splitPtr;
-	Tcl_Obj *resultPtr = NULL;
+	Tcl_Obj *resultPtr;
       standardPath:
 
+       	resultPtr = NULL;
         if (portion == TCL_PATH_EXTENSION) {
 	    return GetExtension(pathPtr);
         } else if (portion == TCL_PATH_ROOT) {
