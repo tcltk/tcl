@@ -3,7 +3,7 @@
 # utility procs formerly in init.tcl dealing with auto execution
 # of commands and can be auto loaded themselves.
 #
-# RCS: @(#) $Id: auto.tcl,v 1.8 2001/08/27 02:14:08 dgp Exp $
+# RCS: @(#) $Id: auto.tcl,v 1.9 2002/07/03 19:40:31 dgp Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1998 Sun Microsystems, Inc.
@@ -60,7 +60,8 @@ proc tcl_findLibrary {basename version patch initScript enVarName varName} {
 
     # The C application may have hardwired a path, which we honor
     
-    if {[info exists the_library] && [string compare $the_library {}]} {
+    set variableSet [info exists the_library]
+    if {$variableSet && [string compare $the_library {}]} {
 	lappend dirs $the_library
     } else {
 
@@ -111,6 +112,9 @@ proc tcl_findLibrary {basename version patch initScript enVarName varName} {
                 append errors "$file: $msg\n$errorInfo\n"
             }
         }
+    }
+    if {!$variableSet} {
+	unset the_library
     }
     set msg "Can't find a usable $initScript in the following directories: \n"
     append msg "    $dirs\n\n"
