@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: expr.test,v 1.11 2000/11/24 15:14:01 dkf Exp $
+# RCS: @(#) $Id: expr.test,v 1.11.2.1 2001/05/19 16:12:19 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -752,6 +752,20 @@ test expr-20.6 {handling of compile error in trial compile} {
 test expr-20.7 {handling of compile error in runtime case} {
     list [catch {expr + {[error foo]}} msg] $msg
 } {1 foo}
+
+# Test for non-numeric boolean literal handling
+test expr-21.1 	{non-numeric boolean literals} {expr false } false
+test expr-21.2 	{non-numeric boolean literals} {expr true  } true
+test expr-21.3 	{non-numeric boolean literals} {expr off   } off
+test expr-21.4 	{non-numeric boolean literals} {expr on    } on
+test expr-21.5 	{non-numeric boolean literals} {expr no    } no
+test expr-21.6 	{non-numeric boolean literals} {expr yes   } yes
+test expr-21.7 	{non-numeric boolean literals} {expr !false} 1
+test expr-21.8 	{non-numeric boolean literals} {expr !true } 0
+test expr-21.9 	{non-numeric boolean literals} {expr !off  } 1
+test expr-21.10 {non-numeric boolean literals} {expr !on   } 0
+test expr-21.11 {non-numeric boolean literals} {expr !no   } 1
+test expr-21.12 {non-numeric boolean literals} {expr !yes  } 0
 
 # cleanup
 if {[info exists a]} {

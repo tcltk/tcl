@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.20 2001/04/04 16:07:21 kennykb Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.20.2.1 2001/05/19 16:12:18 msofer Exp $ */
 
 #include "tclInt.h"
 
@@ -513,6 +513,63 @@ Tcl_GetUnicode(objPtr)
 	 */
 	
 	stringPtr = GET_STRING(objPtr);
+    }
+    return stringPtr->unicode;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_GetUnicodeFromObj --
+ *
+ *	Get the Unicode form of the String object with length.  If
+ *	the object is not already a String object, it will be converted
+ *	to one.  If the String object does not have a Unicode rep, then
+ *	one is create from the UTF string format.
+ *
+ * Results:
+ *	Returns a pointer to the object's internal Unicode string.
+ *
+ * Side effects:
+ *	Converts the object to have the String internal rep.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_UniChar *
+Tcl_GetUnicodeFromObj(objPtr, lengthPtr)
+    Tcl_Obj *objPtr;	/* The object to find the unicode string for. */
+    int *lengthPtr;	/* If non-NULL, the location where the
+			 * string rep's unichar length should be
+			 * stored. If NULL, no length is stored. */
+{
+    String *stringPtr;
+    
+    SetStringFromAny(NULL, objPtr);
+    stringPtr = GET_STRING(objPtr);
+    
+    if ((stringPtr->numChars == -1) || (stringPtr->uallocated == 0)) {
+
+	/*
+	 * We haven't yet calculated the length, or all of the characters
+	 * in the Utf string are 1 byte chars (so we didn't store the
+	 * unicode str).  Since this function must return a unicode string,
+	 * and one has not yet been stored, force the Unicode to be
+	 * calculated and stored now.
+	 */
+
+	FillUnicodeRep(objPtr);
+
+	/*
+	 * We need to fetch the pointer again because we have just
+	 * reallocated the structure to make room for the Unicode data.
+	 */
+	
+	stringPtr = GET_STRING(objPtr);
+    }
+
+    if (lengthPtr != NULL) {
+	*lengthPtr = stringPtr->numChars;
     }
     return stringPtr->unicode;
 }

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.45 2001/04/04 16:07:20 kennykb Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.45.2.1 2001/05/19 16:11:56 msofer Exp $
 
 library tcl
 
@@ -337,7 +337,7 @@ declare 90 generic {
 	    ClientData clientData)
 }
 declare 91 generic {
-    Tcl_Command Tcl_CreateCommand(Tcl_Interp *interp, char *cmdName, \
+    Tcl_Command Tcl_CreateCommand(Tcl_Interp *interp, CONST char *cmdName, \
 	    Tcl_CmdProc *proc, ClientData clientData, \
 	    Tcl_CmdDeleteProc *deleteProc)
 }
@@ -352,11 +352,13 @@ declare 94 generic {
     Tcl_Interp * Tcl_CreateInterp(void)
 }
 declare 95 generic {
-    void Tcl_CreateMathFunc(Tcl_Interp *interp, char *name, int numArgs, \
-	    Tcl_ValueType *argTypes, Tcl_MathProc *proc, ClientData clientData)
+    void Tcl_CreateMathFunc(Tcl_Interp *interp, CONST char *name, \
+                            int numArgs, Tcl_ValueType *argTypes, 
+                            Tcl_MathProc *proc, ClientData clientData)
 }
 declare 96 generic {
-    Tcl_Command Tcl_CreateObjCommand(Tcl_Interp *interp, char *cmdName, \
+    Tcl_Command Tcl_CreateObjCommand(Tcl_Interp *interp, \
+	    CONST char *cmdName, \
 	    Tcl_ObjCmdProc *proc, ClientData clientData, \
 	    Tcl_CmdDeleteProc *deleteProc)
 }
@@ -373,7 +375,7 @@ declare 99 generic {
 	    Tcl_CmdTraceProc *proc, ClientData clientData)
 }
 declare 100 generic {
-    void Tcl_DeleteAssocData(Tcl_Interp *interp, char *name)
+    void Tcl_DeleteAssocData(Tcl_Interp *interp, CONST char *name)
 }
 declare 101 generic {
     void Tcl_DeleteChannelHandler(Tcl_Channel chan, Tcl_ChannelProc *proc, \
@@ -384,7 +386,7 @@ declare 102 generic {
 	    ClientData clientData)
 }
 declare 103 generic {
-    int Tcl_DeleteCommand(Tcl_Interp *interp, char *cmdName)
+    int Tcl_DeleteCommand(Tcl_Interp *interp, CONST char *cmdName)
 }
 declare 104 generic {
     int Tcl_DeleteCommandFromToken(Tcl_Interp *interp, Tcl_Command command)
@@ -479,23 +481,23 @@ declare 133 generic {
     void Tcl_Exit(int status)
 }
 declare 134 generic {
-    int Tcl_ExposeCommand(Tcl_Interp *interp, char *hiddenCmdToken, \
-	    char *cmdName)
+    int Tcl_ExposeCommand(Tcl_Interp *interp, CONST char *hiddenCmdToken, \
+	    CONST char *cmdName)
 }
 declare 135 generic {
-    int Tcl_ExprBoolean(Tcl_Interp *interp, char *str, int *ptr)
+    int Tcl_ExprBoolean(Tcl_Interp *interp, CONST char *str, int *ptr)
 }
 declare 136 generic {
     int Tcl_ExprBooleanObj(Tcl_Interp *interp, Tcl_Obj *objPtr, int *ptr)
 }
 declare 137 generic {
-    int Tcl_ExprDouble(Tcl_Interp *interp, char *str, double *ptr)
+    int Tcl_ExprDouble(Tcl_Interp *interp, CONST char *str, double *ptr)
 }
 declare 138 generic {
     int Tcl_ExprDoubleObj(Tcl_Interp *interp, Tcl_Obj *objPtr, double *ptr)
 }
 declare 139 generic {
-    int Tcl_ExprLong(Tcl_Interp *interp, char *str, long *ptr)
+    int Tcl_ExprLong(Tcl_Interp *interp, CONST char *str, long *ptr)
 }
 declare 140 generic {
     int Tcl_ExprLongObj(Tcl_Interp *interp, Tcl_Obj *objPtr, long *ptr)
@@ -505,7 +507,7 @@ declare 141 generic {
 	    Tcl_Obj **resultPtrPtr)
 }
 declare 142 generic {
-    int Tcl_ExprString(Tcl_Interp *interp, char *string)
+    int Tcl_ExprString(Tcl_Interp *interp, CONST char *string)
 }
 declare 143 generic {
     void Tcl_Finalize(void)
@@ -534,7 +536,7 @@ declare 149 generic {
 	    Tcl_Obj ***objv)
 }
 declare 150 generic {
-    ClientData Tcl_GetAssocData(Tcl_Interp *interp, char *name, \
+    ClientData Tcl_GetAssocData(Tcl_Interp *interp, CONST char *name, \
 	    Tcl_InterpDeleteProc **procPtr)
 }
 declare 151 generic {
@@ -565,11 +567,11 @@ declare 158 generic {
     Tcl_ChannelType * Tcl_GetChannelType(Tcl_Channel chan)
 }
 declare 159 generic {
-    int Tcl_GetCommandInfo(Tcl_Interp *interp, char *cmdName, \
+    int Tcl_GetCommandInfo(Tcl_Interp *interp, CONST char *cmdName, \
 	    Tcl_CmdInfo *infoPtr)
 }
 declare 160 generic {
-    char * Tcl_GetCommandName(Tcl_Interp *interp, Tcl_Command command)
+    CONST char * Tcl_GetCommandName(Tcl_Interp *interp, Tcl_Command command)
 }
 declare 161 generic {
     int Tcl_GetErrno(void)
@@ -632,8 +634,8 @@ declare 178 generic {
     int Tcl_GlobalEvalObj(Tcl_Interp *interp, Tcl_Obj *objPtr)
 }
 declare 179 generic {
-    int Tcl_HideCommand(Tcl_Interp *interp, char *cmdName, \
-	    char *hiddenCmdToken)
+    int Tcl_HideCommand(Tcl_Interp *interp, CONST char *cmdName, \
+	    CONST char *hiddenCmdToken)
 }
 declare 180 generic {
     int Tcl_Init(Tcl_Interp *interp)
@@ -776,7 +778,7 @@ declare 222 generic {
     int Tcl_ServiceEvent(int flags)
 }
 declare 223 generic {
-    void Tcl_SetAssocData(Tcl_Interp *interp, char *name, \
+    void Tcl_SetAssocData(Tcl_Interp *interp, CONST char *name, \
 	    Tcl_InterpDeleteProc *proc, ClientData clientData)
 }
 declare 224 generic {
@@ -787,7 +789,7 @@ declare 225 generic {
 	    char *optionName, char *newValue)
 }
 declare 226 generic {
-    int Tcl_SetCommandInfo(Tcl_Interp *interp, char *cmdName, \
+    int Tcl_SetCommandInfo(Tcl_Interp *interp, CONST char *cmdName, \
 	    Tcl_CmdInfo *infoPtr)
 }
 declare 227 generic {
@@ -1512,6 +1514,12 @@ declare 432 generic {
 declare 433 generic {
     Tcl_ThreadId Tcl_GetChannelThread(Tcl_Channel channel)
 }
+
+# introduced in 8.4a3
+declare 434 generic {
+    Tcl_UniChar * Tcl_GetUnicodeFromObj (Tcl_Obj *objPtr, int *lengthPtr)
+}
+
 
 ##############################################################################
 

@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.35 2001/04/06 10:50:00 dkf Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.35.2.1 2001/05/19 16:12:18 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -89,8 +89,8 @@ static char *		TraceVarProc _ANSI_ARGS_((ClientData clientData,
 			    Tcl_Interp *interp, char *name1, char *name2,
 			    int flags));
 static void		TraceCommandProc _ANSI_ARGS_((ClientData clientData,
-			    Tcl_Interp *interp, char *oldName, char *newName,
-			    int flags));
+			    Tcl_Interp *interp, CONST char *oldName,
+                            CONST char *newName, int flags));
 
 
 /*
@@ -568,10 +568,8 @@ Tcl_RegsubObjCmd(dummy, interp, objc, objv)
     }
 
     objPtr	= objv[1];
-    wstring	= Tcl_GetUnicode(objPtr);
-    wlen	= Tcl_GetCharLength(objPtr);
-    wsubspec	= Tcl_GetUnicode(objv[2]);
-    wsublen	= Tcl_GetCharLength(objv[2]);
+    wstring	= Tcl_GetUnicodeFromObj(objPtr, &wlen);
+    wsubspec	= Tcl_GetUnicodeFromObj(objv[2], &wsublen);
     varPtr	= objv[3];
 
     result = TCL_OK;
@@ -1060,6 +1058,12 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
     switch ((enum options) index) {
 	case STR_EQUAL:
 	case STR_COMPARE: {
+	    /*
+	     * Remember to keep code here in some sync with the
+	     * byte-compiled versions in tclExecute.c (INST_STR_EQ,
+	     * INST_STR_NEQ and INST_STR_CMP as well as the expr string
+	     * comparison in INST_EQ/INST_NEQ/INST_LT/...).
+	     */
 	    int i, match, length, nocase = 0, reqlength = -1;
 
 	    if (objc < 4 || objc > 7) {
@@ -1107,60 +1111,14 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	    objv += objc-2;
 
 	    /*
-	     * Use UNICODE versions of string comparisons since that
-	     * won't cause undue type conversions and we can work with
-	     * characters all of a fixed size (much faster.)  Also use
-	     * this code for untyped objects, since like that we'll
-	     * pick up many things that are used for comparison in
-	     * scripts and convert them (efficiently) to UNICODE
-	     * strings for comparison, but exclude case where both are
-	     * untyped as that is a little bit aggressive.
-	     */
-	    if ((objv[0]->typePtr == &tclStringType ||
-		 objv[0]->typePtr == NULL) &&
-		(objv[1]->typePtr == &tclStringType ||
-		 objv[1]->typePtr == NULL) &&
-		!(objv[0]->typePtr == NULL && objv[1]->typePtr == NULL)) {
-		Tcl_UniChar *uni1, *uni2;
-
-		length1 = Tcl_GetCharLength(objv[0]);
-		length2 = Tcl_GetCharLength(objv[1]);
-		length = (length1 < length2) ? length1 : length2;
-		uni1 = Tcl_GetUnicode(objv[0]);
-		uni2 = Tcl_GetUnicode(objv[1]);
-
-		if (reqlength > 0 && reqlength < length) {
-		    length = reqlength;
-		} else if (reqlength < 0) {
-		    /*
-		     * The requested length is negative, so we ignore it by
-		     * setting it to the longer of the two lengths.
-		     */
-
-		    reqlength = (length1 < length2) ? length2 : length1;
-		}
-
-		if (nocase) {
-		    match = Tcl_UniCharNcasecmp(uni1, uni2, (unsigned)length);
-		} else {
-		    match = Tcl_UniCharNcmp(uni1, uni2, (unsigned)length);
-		}
-
-		if ((match == 0) && (reqlength > length)) {
-		    match = length1 - length2;
-		}
-		goto stringComparisonDone;
-	    }
-
-	    /*
 	     * Use binary versions of comparisons since that won't
 	     * cause undue type conversions and it is much faster.
 	     * Only do this if we're case-sensitive (which is all
 	     * that really makes sense with byte arrays anyway, and
 	     * we have no memcasecmp() for some reason... :^)
 	     */
-	    if (objv[0]->typePtr == &tclByteArrayType &&
-		objv[1]->typePtr == &tclByteArrayType && !nocase) {
+	    if (!nocase && objv[0]->typePtr == &tclByteArrayType &&
+		    objv[1]->typePtr == &tclByteArrayType) {
 		unsigned char *bytes1, *bytes2;
 
 		bytes1 = Tcl_GetByteArrayFromObj(objv[0], &length1);
@@ -1179,6 +1137,50 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		}
 
 		match = memcmp(bytes1, bytes2, (unsigned)length);
+		if ((match == 0) && (reqlength > length)) {
+		    match = length1 - length2;
+		}
+		goto stringComparisonDone;
+	    }
+
+	    /*
+	     * Use UNICODE versions of string comparisons since that
+	     * won't cause undue type conversions and we can work with
+	     * characters all of a fixed size (much faster.)  Also use
+	     * this code for untyped objects, since like that we'll
+	     * pick up many things that are used for comparison in
+	     * scripts and convert them (efficiently) to UNICODE
+	     * strings for comparison, but exclude case where both are
+	     * untyped as that is a little bit aggressive.
+	     */
+	    if ((objv[0]->typePtr == &tclStringType ||
+		    objv[0]->typePtr == NULL) &&
+		    (objv[1]->typePtr == &tclStringType ||
+			    objv[1]->typePtr == NULL) &&
+		    !(objv[0]->typePtr == NULL && objv[1]->typePtr == NULL)) {
+		Tcl_UniChar *uni1, *uni2;
+
+		uni1 = Tcl_GetUnicodeFromObj(objv[0], &length1);
+		uni2 = Tcl_GetUnicodeFromObj(objv[1], &length2);
+		length = (length1 < length2) ? length1 : length2;
+
+		if (reqlength > 0 && reqlength < length) {
+		    length = reqlength;
+		} else if (reqlength < 0) {
+		    /*
+		     * The requested length is negative, so we ignore it by
+		     * setting it to the longer of the two lengths.
+		     */
+
+		    reqlength = (length1 < length2) ? length2 : length1;
+		}
+
+		if (nocase) {
+		    match = Tcl_UniCharNcasecmp(uni1, uni2, (unsigned)length);
+		} else {
+		    match = Tcl_UniCharNcmp(uni1, uni2, (unsigned)length);
+		}
+
 		if ((match == 0) && (reqlength > length)) {
 		    match = length1 - length2;
 		}
@@ -1247,10 +1249,8 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	    start = 0;
 	    length2 = -1;
 
-	    ustring1 = Tcl_GetUnicode(objv[2]);
-	    length1  = Tcl_GetCharLength(objv[2]);
-	    ustring2 = Tcl_GetUnicode(objv[3]);
-	    length2  = Tcl_GetCharLength(objv[3]);
+	    ustring1 = Tcl_GetUnicodeFromObj(objv[2], &length1);
+	    ustring2 = Tcl_GetUnicodeFromObj(objv[3], &length2);
 
 	    if (objc == 5) {
 		/*
@@ -1267,6 +1267,12 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		} else if (start > 0) {
 		    ustring2 += start;
 		    length2  -= start;
+		} else if (start < 0) {
+		    /*
+		     * Invalid start index mapped to string start;
+		     * Bug #423581
+		     */
+		    start = 0;
 		}
 	    }
 
@@ -1637,10 +1643,8 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	    start = 0;
 	    length2 = -1;
 
-	    ustring1 = Tcl_GetUnicode(objv[2]);
-	    length1  = Tcl_GetCharLength(objv[2]);
-	    ustring2 = Tcl_GetUnicode(objv[3]);
-	    length2  = Tcl_GetCharLength(objv[3]);
+	    ustring1 = Tcl_GetUnicodeFromObj(objv[2], &length1);
+	    ustring2 = Tcl_GetUnicodeFromObj(objv[3], &length2);
 
 	    if (objc == 5) {
 		/*
@@ -1750,8 +1754,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	    }
 	    objc--;
 
-	    ustring1 = Tcl_GetUnicode(objv[objc]);
-	    length1  = Tcl_GetCharLength(objv[objc]);
+	    ustring1 = Tcl_GetUnicodeFromObj(objv[objc], &length1);
 	    if (length1 == 0) {
 		/*
 		 * Empty input string, just stop now
@@ -1774,10 +1777,11 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		 * algorithm is otherwise identical to the multi-pair case.
 		 * This will be >30% faster on larger strings.
 		 */
-		Tcl_UniChar *mapString = Tcl_GetUnicode(mapElemv[1]);
-		int mapLen = Tcl_GetCharLength(mapElemv[1]);
-		ustring2 = Tcl_GetUnicode(mapElemv[0]);
-		length2  = Tcl_GetCharLength(mapElemv[0]);
+		int mapLen;
+		Tcl_UniChar *mapString;
+
+		ustring2 = Tcl_GetUnicodeFromObj(mapElemv[0], &length2);
+		mapString = Tcl_GetUnicodeFromObj(mapElemv[1], &mapLen);
 		for (p = ustring1; ustring1 < end; ustring1++) {
 		    if ((length2 > 0) &&
 			    (nocase || (*ustring1 == *ustring2)) &&
@@ -1807,8 +1811,8 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		 * significantly speeding up the algorithm.
 		 */
 		for (index = 0; index < mapElemc; index++) {
-		    mapStrings[index] = Tcl_GetUnicode(mapElemv[index]);
-		    mapLens[index]    = Tcl_GetCharLength(mapElemv[index]);
+		    mapStrings[index] = Tcl_GetUnicodeFromObj(mapElemv[index],
+			    &(mapLens[index]));
 		}
 		for (p = ustring1; ustring1 < end; ustring1++) {
 		    for (index = 0; index < mapElemc; index += 2) {
@@ -1967,8 +1971,8 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		return TCL_ERROR;
 	    }
 
-	    ustring1 = Tcl_GetUnicode(objv[2]);
-	    length1  = Tcl_GetCharLength(objv[2]) - 1;
+	    ustring1 = Tcl_GetUnicodeFromObj(objv[2], &length1);
+	    length1--;
 
 	    if ((TclGetIntForIndex(interp, objv[3], length1, &first) != TCL_OK)
 		    || (TclGetIntForIndex(interp, objv[4], length1,
@@ -3432,8 +3436,8 @@ static void
 TraceCommandProc(clientData, interp, oldName, newName, flags)
     ClientData clientData;	/* Information about the command trace. */
     Tcl_Interp *interp;		/* Interpreter containing command. */
-    char *oldName;		/* Name of command being changed. */
-    char *newName;		/* New name of command.  Empty string
+    CONST char *oldName;	/* Name of command being changed. */
+    CONST char *newName;	/* New name of command.  Empty string
                   		 * or NULL means command is being deleted
                   		 * (renamed to ""). */
     int flags;			/* OR-ed bits giving operation and other

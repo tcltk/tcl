@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.50.2.1 2001/04/11 12:31:57 msofer Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.50.2.2 2001/05/19 16:12:18 msofer Exp $
  */
 
 #ifndef _TCLINT
@@ -98,7 +98,7 @@ typedef int (Tcl_ResolveVarProc) _ANSI_ARGS_((
     int flags, Tcl_Var *rPtr));
 
 typedef int (Tcl_ResolveCmdProc) _ANSI_ARGS_((Tcl_Interp* interp,
-    char* name, Tcl_Namespace *context, int flags,
+    CONST char* name, Tcl_Namespace *context, int flags,
     Tcl_Command *rPtr));
  
 typedef struct Tcl_ResolverInfo {
@@ -184,11 +184,13 @@ typedef struct Namespace {
 				  * namespace has already cached a Command *
 				  * pointer; this causes all its cached
 				  * Command* pointers to be invalidated. */
-    int resolverEpoch;		 /* Incremented whenever the name resolution
-				  * rules change for this namespace; this
-				  * invalidates all byte codes compiled in
-				  * the namespace, causing the code to be
-				  * recompiled under the new rules. */
+    int resolverEpoch;		 /* Incremented whenever (a) the name resolution
+				  * rules change for this namespace or (b) a 
+				  * newly added command shadows a command that
+				  * is compiled to bytecodes.
+				  * This invalidates all byte codes compiled
+				  * in the namespace, causing the code to be
+				  * recompiled under the new rules.*/
     Tcl_ResolveCmdProc *cmdResProc;
 				 /* If non-null, this procedure overrides
 				  * the usual command resolution mechanism
@@ -506,7 +508,7 @@ typedef struct Var {
 
 /* A slighly faster combination for (SetVarScalar/ClearVarUndefined) */
 #define TclSetVarScalarDefined(varPtr) \
-        ((varPtr)->flags = ((varPtr)->flags & ~(VAR_ARRAY|VAR_LINK|VAR_UNDEFINED)) | VAR_SCALAR)
+       ((varPtr)->flags = ((varPtr)->flags & ~(VAR_ARRAY|VAR_LINK|VAR_UNDEFINED)) | VAR_SCALAR)
 
 /*
  * Macros to read various flag bits of variables.
@@ -547,19 +549,18 @@ typedef struct Var {
     ((varPtr)->flags & VAR_RESOLVED)
 
 /* A slighly faster combination for 
- * (TclIsVarScalar(varPtr) && !TclIsVarUndefined(varPtr)) 
- *  (1) XOR (^) reverses the VAR_UNDEFINED bit
- *  (2) AND (&) keeps both bits and zeroes everything else
- *  (3) == looks if both bits are set
- * This is 3 ops instead of 4, single register instead of two
- */
+* (TclIsVarScalar(varPtr) && !TclIsVarUndefined(varPtr)) 
+*  (1) XOR (^) reverses the VAR_UNDEFINED bit
+*  (2) AND (&) keeps both bits and zeroes everything else
+*  (3) == looks if both bits are set
+* This is 3 ops instead of 4, single register instead of two
+*/
 #define _CONTAINS_(A,B) (((A) & (B)) == (B))
 #define TclIsVarScalarDefined(varPtr) \
       _CONTAINS_(((varPtr)->flags ^ VAR_UNDEFINED), (VAR_UNDEFINED | VAR_SCALAR)) 
 #define TclIsVarArrayDefined(varPtr) \
       _CONTAINS_(((varPtr)->flags ^ VAR_UNDEFINED), (VAR_UNDEFINED | VAR_ARRAY)) 
-
-
+ 
 /*
  *----------------------------------------------------------------
  * Data structures related to procedures.  These are used primarily
@@ -1671,7 +1672,7 @@ EXTERN int		TclCreatePipeline _ANSI_ARGS_((Tcl_Interp *interp,
 			    TclFile *inPipePtr, TclFile *outPipePtr,
 			    TclFile *errFilePtr));
 EXTERN int		TclCreateProc _ANSI_ARGS_((Tcl_Interp *interp,
-			    Namespace *nsPtr, char *procName,
+			    Namespace *nsPtr, CONST char *procName,
 			    Tcl_Obj *argsPtr, Tcl_Obj *bodyPtr,
 			    Proc **procPtrPtr));
 EXTERN void		TclDeleteCompiledLocalVars _ANSI_ARGS_((
@@ -1718,7 +1719,7 @@ EXTERN int		TclGetDate _ANSI_ARGS_((char *p,
 			    unsigned long *timePtr));
 EXTERN Tcl_Obj *	TclGetElementOfIndexedArray _ANSI_ARGS_((
 			    Tcl_Interp *interp, int localIndex,
-			    Tcl_Obj *elemPtr, int leaveErrorMsg));
+			    Tcl_Obj *elemPtr, int flags));
 EXTERN char *		TclGetExtension _ANSI_ARGS_((char *name));
 EXTERN int		TclGetFrame _ANSI_ARGS_((Tcl_Interp *interp,
 			    char *string, CallFrame **framePtrPtr));
@@ -1726,17 +1727,17 @@ EXTERN TclCmdProcType	TclGetInterpProc _ANSI_ARGS_((void));
 EXTERN int		TclGetIntForIndex _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *objPtr, int endValue, int *indexPtr));
 EXTERN Tcl_Obj *	TclGetIndexedScalar _ANSI_ARGS_((Tcl_Interp *interp,
-			    int localIndex, int leaveErrorMsg));
+			    int localIndex, int flags));
 EXTERN int		TclGetLong _ANSI_ARGS_((Tcl_Interp *interp,
 			    char *string, long *longPtr));
 EXTERN int		TclGetLoadedPackages _ANSI_ARGS_((
 			    Tcl_Interp *interp, char *targetName));
 EXTERN int		TclGetNamespaceForQualName _ANSI_ARGS_((
-			    Tcl_Interp *interp, char *qualName,
+			    Tcl_Interp *interp, CONST char *qualName,
 			    Namespace *cxtNsPtr, int flags,
 			    Namespace **nsPtrPtr, Namespace **altNsPtrPtr,
 			    Namespace **actualCxtPtrPtr,
-			    char **simpleNamePtr));
+			    CONST char **simpleNamePtr));
 EXTERN TclObjCmdProcType TclGetObjInterpProc _ANSI_ARGS_((void));
 EXTERN int		TclGetOpenMode _ANSI_ARGS_((Tcl_Interp *interp,
 			    char *string, int *seekFlagPtr));
@@ -1894,11 +1895,9 @@ EXTERN void		TclResetShadowedCmdRefs _ANSI_ARGS_((
 EXTERN int		TclServiceIdle _ANSI_ARGS_((void));
 EXTERN Tcl_Obj *	TclSetElementOfIndexedArray _ANSI_ARGS_((
 			    Tcl_Interp *interp, int localIndex,
-			    Tcl_Obj *elemPtr, Tcl_Obj *objPtr,
-			    int leaveErrorMsg));
+			    Tcl_Obj *elemPtr, Tcl_Obj *objPtr, int flags));
 EXTERN Tcl_Obj *	TclSetIndexedScalar _ANSI_ARGS_((Tcl_Interp *interp,
-			    int localIndex, Tcl_Obj *objPtr,
-			    int leaveErrorMsg));
+			    int localIndex, Tcl_Obj *objPtr, int flags));
 EXTERN char *		TclSetPreInitScript _ANSI_ARGS_((char *string));
 EXTERN void		TclSetupEnv _ANSI_ARGS_((Tcl_Interp *interp));
 EXTERN VOID             TclSignalExitThread _ANSI_ARGS_((Tcl_ThreadId id,
@@ -2100,6 +2099,8 @@ EXTERN int	Tcl_ResourceObjCmd _ANSI_ARGS_((ClientData clientData,
  *----------------------------------------------------------------
  */
 
+EXTERN int	TclCompileAppendCmd _ANSI_ARGS_((Tcl_Interp *interp,
+		    Tcl_Parse *parsePtr, struct CompileEnv *envPtr));
 EXTERN int	TclCompileBreakCmd _ANSI_ARGS_((Tcl_Interp *interp,
 		    Tcl_Parse *parsePtr, struct CompileEnv *envPtr));
 EXTERN int	TclCompileCatchCmd _ANSI_ARGS_((Tcl_Interp *interp,
@@ -2115,6 +2116,12 @@ EXTERN int	TclCompileForeachCmd _ANSI_ARGS_((Tcl_Interp *interp,
 EXTERN int	TclCompileIfCmd _ANSI_ARGS_((Tcl_Interp *interp,
 		    Tcl_Parse *parsePtr, struct CompileEnv *envPtr));
 EXTERN int	TclCompileIncrCmd _ANSI_ARGS_((Tcl_Interp *interp,
+		    Tcl_Parse *parsePtr, struct CompileEnv *envPtr));
+EXTERN int	TclCompileLappendCmd _ANSI_ARGS_((Tcl_Interp *interp,
+		    Tcl_Parse *parsePtr, struct CompileEnv *envPtr));
+EXTERN int	TclCompileLindexCmd _ANSI_ARGS_((Tcl_Interp *interp,
+		    Tcl_Parse *parsePtr, struct CompileEnv *envPtr));
+EXTERN int	TclCompileLlengthCmd _ANSI_ARGS_((Tcl_Interp *interp,
 		    Tcl_Parse *parsePtr, struct CompileEnv *envPtr));
 EXTERN int	TclCompileReturnCmd _ANSI_ARGS_((Tcl_Interp *interp,
 		    Tcl_Parse *parsePtr, struct CompileEnv *envPtr));

@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: ExprLong.3,v 1.3 2000/04/14 23:01:50 hobbs Exp $
+'\" RCS: @(#) $Id: ExprLong.3,v 1.3.6.1 2001/05/19 16:11:56 msofer Exp $
 '\" 
 .so man.macros
 .TH Tcl_ExprLong 3 7.0 Tcl "Tcl Library Procedures"
@@ -31,7 +31,9 @@ int
 .AS Tcl_Interp *booleanPtr
 .AP Tcl_Interp *interp in
 Interpreter in whose context to evaluate \fIstring\fR or \fIobjPtr\fR.
-.AP char *string in
+.VS 8.4
+.AP "CONST char" *string in
+.VE
 Expression to be evaluated.  Must be in writable memory (the expression
 parser makes temporary modifications to the string during parsing, which
 it undoes before returning).

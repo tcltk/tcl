@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: lindex.test,v 1.7 2000/04/10 17:19:01 ericm Exp $
+# RCS: @(#) $Id: lindex.test,v 1.7.6.1 2001/05/19 16:12:19 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -44,6 +44,9 @@ test lindex-1.9 {basic tests} {
 test lindex-1.10 {basic tests} {
     lindex {a b c d} 3
 } d
+test lindex-1.11 {Nested list with a backslashed brace} {
+    lindex {{a \{}} 0
+} {a \{}
 
 test lindex-2.1 {error conditions} {
     list [catch {lindex msg} msg] $msg

@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.20 2001/04/07 02:09:18 msofer Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.20.2.1 2001/05/19 16:12:18 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -430,7 +430,7 @@ Tcl_CreateNamespace(interp, name, clientData, deleteProc)
     Tcl_Interp *interp;             /* Interpreter in which a new namespace
 				     * is being created. Also used for
 				     * error reporting. */
-    char *name;                     /* Name for the new namespace. May be a
+    CONST char *name;               /* Name for the new namespace. May be a
 				     * qualified name with names of ancestor
 				     * namespaces separated by "::"s. */
     ClientData clientData;	    /* One-word value to store with
@@ -445,7 +445,7 @@ Tcl_CreateNamespace(interp, name, clientData, deleteProc)
     register Namespace *nsPtr, *ancestorPtr;
     Namespace *parentPtr, *dummy1Ptr, *dummy2Ptr;
     Namespace *globalNsPtr = iPtr->globalNsPtr;
-    char *simpleName;
+    CONST char *simpleName;
     Tcl_HashEntry *entryPtr;
     Tcl_DString buffer1, buffer2;
     int newEntry;
@@ -912,7 +912,8 @@ Tcl_Export(interp, namespacePtr, pattern, resetListFirst)
 #define INIT_EXPORT_PATTERNS 5    
     Namespace *nsPtr, *exportNsPtr, *dummyPtr;
     Namespace *currNsPtr = (Namespace *) Tcl_GetCurrentNamespace(interp);
-    char *simplePattern, *patternCpy;
+    CONST char *simplePattern;
+    char *patternCpy;
     int neededElems, len, i;
 
     /*
@@ -1111,7 +1112,8 @@ Tcl_Import(interp, namespacePtr, pattern, allowOverwrite)
     Interp *iPtr = (Interp *) interp;
     Namespace *nsPtr, *importNsPtr, *dummyPtr;
     Namespace *currNsPtr = (Namespace *) Tcl_GetCurrentNamespace(interp);
-    char *simplePattern, *cmdName;
+    CONST char *simplePattern;
+    char *cmdName;
     register Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
     Command *cmdPtr, *realCmdPtr;
@@ -1340,7 +1342,8 @@ Tcl_ForgetImport(interp, namespacePtr, pattern)
 				  * imported. */
 {
     Namespace *nsPtr, *importNsPtr, *dummyPtr, *actualCtxPtr;
-    char *simplePattern, *cmdName;
+    CONST char *simplePattern;
+    char *cmdName;
     register Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
     Command *cmdPtr;
@@ -1610,7 +1613,7 @@ TclGetNamespaceForQualName(interp, qualName, cxtNsPtr, flags,
 	nsPtrPtr, altNsPtrPtr, actualCxtPtrPtr, simpleNamePtr)
     Tcl_Interp *interp;		 /* Interpreter in which to find the
 				  * namespace containing qualName. */
-    register char *qualName;	 /* A namespace-qualified name of an
+    CONST char *qualName;	 /* A namespace-qualified name of an
 				  * command, variable, or namespace. */
     Namespace *cxtNsPtr;	 /* The namespace in which to start the
 				  * search for qualName's namespace. If NULL
@@ -1642,7 +1645,7 @@ TclGetNamespaceForQualName(interp, qualName, cxtNsPtr, flags,
 				  * the :: namespace if TCL_GLOBAL_ONLY was
 				  * specified, or the current namespace if
 				  * cxtNsPtr was NULL. */
-    char **simpleNamePtr;	 /* Address where procedure stores the
+    CONST char **simpleNamePtr;	 /* Address where procedure stores the
 				  * simple name at end of the qualName, or
 				  * NULL if qualName is "::" or the flag
 				  * FIND_ONLY_NS was specified. */
@@ -1651,8 +1654,8 @@ TclGetNamespaceForQualName(interp, qualName, cxtNsPtr, flags,
     Namespace *nsPtr = cxtNsPtr;
     Namespace *altNsPtr;
     Namespace *globalNsPtr = iPtr->globalNsPtr;
-    register char *start, *end;
-    char *nsName;
+    CONST char *start, *end;
+    CONST char *nsName;
     Tcl_HashEntry *entryPtr;
     Tcl_DString buffer;
     int len;
@@ -1890,7 +1893,7 @@ Tcl_FindNamespace(interp, name, contextNsPtr, flags)
 				  * TCL_LEAVE_ERR_MSG flags. */
 {
     Namespace *nsPtr, *dummy1Ptr, *dummy2Ptr;
-    char *dummy;
+    CONST char *dummy;
 
     /*
      * Find the namespace(s) that contain the specified namespace name.
@@ -1934,7 +1937,7 @@ Tcl_Command
 Tcl_FindCommand(interp, name, contextNsPtr, flags)
     Tcl_Interp *interp;         /* The interpreter in which to find the
 				  * command and to report errors. */
-    char *name;		         /* Command's name. If it starts with "::",
+    CONST char *name;	         /* Command's name. If it starts with "::",
 				  * will be looked up in global namespace.
 				  * Else, looked up first in contextNsPtr
 				  * (current namespace if contextNsPtr is
@@ -1957,7 +1960,7 @@ Tcl_FindCommand(interp, name, contextNsPtr, flags)
 
     ResolverScheme *resPtr;
     Namespace *nsPtr[2], *cxtNsPtr;
-    char *simpleName;
+    CONST char *simpleName;
     register Tcl_HashEntry *entryPtr;
     register Command *cmdPtr;
     register int search;
@@ -2088,7 +2091,7 @@ Tcl_FindNamespaceVar(interp, name, contextNsPtr, flags)
     Interp *iPtr = (Interp*)interp;
     ResolverScheme *resPtr;
     Namespace *nsPtr[2], *cxtNsPtr;
-    char *simpleName;
+    CONST char *simpleName;
     Tcl_HashEntry *entryPtr;
     Var *varPtr;
     register int search;
@@ -2280,6 +2283,17 @@ TclResetShadowedCmdRefs(interp, newCmdPtr)
             hPtr = Tcl_FindHashEntry(&shadowNsPtr->cmdTable, cmdName);
             if (hPtr != NULL) {
                 nsPtr->cmdRefEpoch++;
+
+		/* 
+		 * If the shadowed command was compiled to bytecodes, we
+		 * invalidate all the bytecodes in nsPtr, to force a new
+		 * compilation. We use the resolverEpoch to signal the need
+		 * for a fresh compilation of every bytecode.
+		 */
+
+		if ((((Command *) hPtr)->compileProc) != NULL) {
+		    nsPtr->resolverEpoch++;
+		}
             }
         }
 
@@ -3829,7 +3843,8 @@ SetNsNameFromAny(interp, objPtr)
     register Tcl_Obj *objPtr;	/* The object to convert. */
 {
     register Tcl_ObjType *oldTypePtr = objPtr->typePtr;
-    char *name, *dummy;
+    char *name;
+    CONST char *dummy;
     Namespace *nsPtr, *dummy1Ptr, *dummy2Ptr;
     register ResolvedNsName *resNamePtr;
 

@@ -7,7 +7,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.h,v 1.1.2.6 2001/04/30 22:10:29 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.h,v 1.1.2.7 2001/05/19 16:12:18 msofer Exp $
  */
 
 
@@ -196,7 +196,22 @@
    &&_CASE(INST_STR_CMP),\
    &&_CASE(INST_STR_LEN),\
    &&_CASE(INST_STR_INDEX),\
-   &&_CASE(INST_STR_MATCH)\
+   &&_CASE(INST_STR_MATCH),\
+   &&_CASE(INST_LIST),\
+   &&_CASE(INST_LIST_INDEX),\
+   &&_CASE(INST_LIST_LENGTH),\
+   &&_CASE(INST_APPEND_SCALAR1),\
+   &&_CASE(INST_APPEND_SCALAR4),\
+   &&_CASE(INST_APPEND_ARRAY1),\
+   &&_CASE(INST_APPEND_ARRAY4),\
+   &&_CASE(INST_APPEND_ARRAY_STK),\
+   &&_CASE(INST_APPEND_STK),\
+   &&_CASE(INST_LAPPEND_SCALAR1),\
+   &&_CASE(INST_LAPPEND_SCALAR4),\
+   &&_CASE(INST_LAPPEND_ARRAY1),\
+   &&_CASE(INST_LAPPEND_ARRAY4),\
+   &&_CASE(INST_LAPPEND_ARRAY_STK),\
+   &&_CASE(INST_LAPPEND_STK)\
  }
 #endif /* GCC methods */
 /* End of method definitions */

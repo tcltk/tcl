@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.72 2001/04/04 07:13:52 hobbs Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.72.2.1 2001/05/19 16:12:19 msofer Exp $
 
 VERSION 		= @TCL_VERSION@
 
@@ -89,6 +89,9 @@ CFLAGS_OPTIMIZE		= @CFLAGS_OPTIMIZE@
 #CFLAGS			= $(CFLAGS_DEBUG) $(CFLAGS_OPTIMIZE)
 CFLAGS			= @CFLAGS@
 
+# Flags to pass to the linker
+LDFLAGS			= @LDFLAGS@
+
 # To disable ANSI-C procedure prototypes reverse the comment characters
 # on the following lines:
 PROTO_FLAGS		=
@@ -133,7 +136,7 @@ MEM_DEBUG_FLAGS		=
 #MEM_DEBUG_FLAGS	= -DTCL_MEM_DEBUG
 
 # To enable support for stubs in Tcl.
-STUB_LIB_FILE		= @STUB_LIB_FILE@
+STUB_LIB_FILE		= @TCL_STUB_LIB_FILE@
 
 TCL_STUB_LIB_FILE	= @TCL_STUB_LIB_FILE@
 #TCL_STUB_LIB_FILE	= libtclstub.a
@@ -429,11 +432,11 @@ objs: ${OBJS}
 
 
 tclsh: ${TCLSH_OBJS} ${TCL_LIB_FILE}
-	${CC} @LDFLAGS@ ${TCLSH_OBJS} @TCL_BUILD_LIB_SPEC@ ${LIBS} \
+	${CC} ${LDFLAGS} ${TCLSH_OBJS} @TCL_BUILD_LIB_SPEC@ ${LIBS} \
 		@TCL_LD_SEARCH_FLAGS@ -o tclsh
 
 tcltest: ${TCLTEST_OBJS} ${TCL_LIB_FILE} ${BUILD_DLTEST}
-	${CC} @LDFLAGS@ ${TCLTEST_OBJS} @TCL_BUILD_LIB_SPEC@ ${LIBS} \
+	${CC} ${LDFLAGS} ${TCLTEST_OBJS} @TCL_BUILD_LIB_SPEC@ ${LIBS} \
 		@TCL_LD_SEARCH_FLAGS@ -o tcltest
 
 
@@ -1062,6 +1065,24 @@ checkstubs:
 		match=0; \
 		for j in $(TCL_DECLS); do \
 		    if [ `grep -c $$i $$j` -gt 0 ]; then \
+			match=1; \
+		    fi; \
+		done; \
+		if [ $$match -eq 0 ]; then echo $$i; fi \
+	done
+
+#
+# Target to check that all public APIs which are not command
+# implementations have an entry in section three of the distributed
+# manpages.
+#
+
+checkdoc:
+	-@for i in `nm -p $(TCL_LIB_FILE) | awk '$$3 ~ /Tcl_/ { print $$3 }' \
+		| grep -v 'Cmd$$' | sort -n`; do \
+		match=0; \
+		for j in $(TOP_DIR)/doc/*.3; do \
+		    if [ `grep '\-' $$j | grep -c $$i` -gt 0 ]; then \
 			match=1; \
 		    fi; \
 		done; \

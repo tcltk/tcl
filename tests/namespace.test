@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: namespace.test,v 1.14.2.1 2001/05/03 22:41:47 msofer Exp $
+# RCS: @(#) $Id: namespace.test,v 1.14.2.2 2001/05/19 16:12:19 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -1135,6 +1135,20 @@ test namespace-40.1 {Ignoring namespace proc "unknown"} {
     namespace delete ns
     set l
 } {global global}
+
+test namespace-41.1 {Shadowing byte-compiled commands} {
+    namespace eval ns {
+	proc test {} {
+	    set ::g 0
+	}  
+	lappend ::res [test]
+	proc set {a b} {
+	    ::set a [incr b]
+	}
+	lappend ::res [test]
+    }
+    set res
+} {0 1}
 
 # cleanup
 catch {rename cmd1 {}}

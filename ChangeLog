@@ -1,3 +1,132 @@
+2001-05-16  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* library/history.tcl (tcl::HistAdd): prevent empty calls from
+	being added to the history (arndt)
+
+	* tests/error.test: updated error-1.3 message to account for
+	string index being compiled at toplevel.
+	* tests/appendComp.test:
+	* tests/stringComp.test: new files for extended bytecode testing
+
+	* generic/tclBasic.c: added new CompileProc invocations to basic
+	command initialization.
+	* generic/tclCompCmds.c: added new compile commands for append,
+	lappend, lindex and llength.  Refactored set and incr compile
+	commands to use new TclPushVarName function for handling the
+	varname component during compilation (also used by append and
+	lappend).  Changed string compile command to compile toplevel code
+	as well (when possible).
+	* generic/tclCompile.c: added new instruction enums
+	* generic/tclCompile.h: added debug info for new instructions
+	* generic/tclExecute.c (TclExecuteByteCode): moved elemPtr to
+	toplevel var (oft-used).  Added definitions for new bytecode
+	instructions INST_LIST_INDEX, INST_LIST_LENGTH, INST_APPEND_SCALAR1,
+	INST_APPEND_SCALAR4, INST_APPEND_ARRAY1, INST_APPEND_ARRAY4,
+	INST_APPEND_ARRAY_STK, INST_APPEND_STK, INST_LAPPEND_SCALAR1,
+	INST_LAPPEND_SCALAR4, INST_LAPPEND_ARRAY1, INST_LAPPEND_ARRAY4,
+	INST_LAPPEND_ARRAY_STK, INST_LAPPEND_STK.
+	Refactored repititious code for reuse with INST_LOAD_STK (same as
+	INST_LOAD_SCALAR_STK), INST_STORE_STK (same as
+	INST_STORE_SCALAR_STK).
+	Updated INST_STR_CMP with style of fix of 2001-04-06 Fellows
+	[Bug #219201] as that fix only affected the runtime eval'ed
+	"string" (string compare is normally byte-compiled now).  We
+	may want to back these out for speed in the future, noting the
+	problems with \x00 comparisons in the docs.
+	* generic/tclInt.h: declarations for new compile commands.
+	* generic/tclVar.c: change TclGetIndexedScalar,
+	TclGetElementOfIndexedArray, TclSetElementOfIndexedArray and
+	TclSetIndexedScalar to use flags.  The Set functions now support
+	TCL_APPEND_ELEMENT and TCL_LIST_ELEMENT as well.
+	* generic/tclInt.decls:
+	* generic/tclIntDecls.h: minor signature changes for above.
+
+	* generic/tclCmdMZ.c: made use of new Tcl_GetUnicodeFromObj.
+
+2001-05-16  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* doc/console.n: Deleted.  Put it in the wrong source tree!  D'oh!
+
+2001-05-15  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tcl.decls:
+	* generic/tclDecls.h:
+	* generic/tclStubInit.c:
+	* generic/tclStringObj.c (Tcl_GetUnicodeFromObj): new function to
+	parallel Tcl_GetStringFromObj (fix of an API oversight).
+
+	* unix/tclUnixPipe.c: updated pipeChannelType to
+	TCL_CHANNEL_VERSION_2 type specification.
+
+	* tests/fileName.test: corrected tests not to fail on win when a
+	C:/test dir exists.
+
+	* generic/tclFileName.c (ExtractWinRoot): corrected ABR error
+
+2001-05-15  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* tests/lindex.test: added test for nested braces [Patch: 423617]
+
+2001-05-15  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* generic/tclInt.h
+	* generic/tclNamesp.c: invalidate all bytecodes in a namespace if
+	a new command shadows a bytecoded command.
+	* tests/namespace.test
+	Patched from [Bug: 231259] 
+
+2001-05-15  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* doc/console.n: Created.  It seems very odd to me that the
+	console implementation is part of the Tcl distribution and not
+	part of Tk, but given the location of the source, the
+	documentation must obviously match up...
+
+2001-05-14  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* generic/tclCmdMZ.c (Tcl_StringObjCmd): 
+	* tests/string.test (string-4.14): Negative string indices should
+	not be added as offsets to the result of [string first] but
+	instead be treated as referring to the start of the string.
+	[Bug: 423581]
+
+2001-05-11  Mo DeJong  <mdejong@redhat.com>
+
+	* unix/Makefile.in: Add a LDFLAGS variable to the
+	Makefile instead of directly substing @LDFLAGS@.
+	* unix/configure: Regen.
+	* unix/tcl.m4: Fix CFLAGS_DEFAULT so that the name
+	of a Makefile variable is passed as @CFLAGS@.
+	* win/Makefile.in: Move the setting of CFLAGS
+	higher up in the Makefile.
+	* win/configure: Regen.
+	* win/configure.in: Use dnl to comment out macros
+	so that they are not accidently expanded.
+	* win/tcl.m4: Fix CFLAGS_DEFAULT so that the name
+	of a Makefile variable is passed as @CFLAGS@.
+
+2001-05-07  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* generic/tclExecute.c: insure different rand() seeds in different
+	threads [Bug 416643]
+
+2001-05-03  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* tests/tcltest.test: removed extraneous 'c' (doh!) [Bug: 414031]
+
+	* tools/tcltk-man2html.tcl: removed use of 'exec' for portability
+	and fixed up code.
+
+2001-05-03  Don Porter  <dgp@users.sourceforge.net>
+
+	* doc/library.n:
+	* library/init.tcl:
+	* tests/autoMkindex.test: Modified [auto_import] to apply
+	pattern matching in the [namespace import] style.  [Bug 420186]
+	***POTENTIAL INCOMPATIBILITY*** for any callers of [auto_import]
+	from outside Tcl that expect the pattern matching to be like that
+	of [string match].
+
 2001-05-03  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* generic/tclParse.c: 
@@ -6,29 +135,112 @@
 	processed by [::unknown], ignoring any namespace proc which
 	happens to be called "unknown" [Patch #421166, Bug #420507]
 
-2001-04-30  Miguel Sofer <msofer@users.sourceforge.net>
+2001-05-02  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclExecute.c: better comments
-	* generic/tclExecute.h: better comments
+	* tools/genStubs.tcl: Add a package require of Tcl 8
+	at the beginning of the script so that the script
+	will print a descriptive error message when run
+	in an old Tcl 7 shell.
 
-2001-04-30  Miguel Sofer <msofer@users.sourceforge.net>
+2000-04-27  Kevin Kenny	<kennykb@crd.ge.com>
 
-	* generic/tclExecute.h: cleanup, modif of MSVC code
+	* generic/tclInt.decls:
+	* generic/tclInt.h:
+	* generic/tclCmdIL.c:
+	* generic/tclProc.c:
+	* generic/tclVar.c: Added another collection of missing CONSTs
+	related to TclGetNamespaceForQualName.
+	* generic/tclIntDecls.h: Regenerated.
+	
+2000-04-25  Mo DeJong  <mdejong@redhat.com>
 
-2001-04-27  Miguel Sofer <msofer@users.sourceforge.net>
+	* unix/configure: Regen.
+	* unix/tcl.m4: Subst TCL_THREADS into tclConfig.sh.
+	* unix/tclConfig.sh.in: Add TCL_THREADS variable.
+	* win/configure: Regen.
+	* win/tcl.m4: Subst TCL_THREADS into tclConfig.sh.
+	* win/tclConfig.sh.in: Add TCL_THREADS variable.
 
-	* generic/tclExecute.c: small bugfix
-	* generic/tclExecute.h: small bugfix in MSVC code
+2000-04-25  Mo DeJong  <mdejong@redhat.com>
 
-2001-04-11  Miguel Sofer <msofer@users.sourceforge.net>
+	* unix/configure: Regen.
+	* unix/configure.in: Use $@ in MAKE_LIB and MAKE_STUB_LIB
+	commands instead of using a delayed subst variable. Replace
+	instances of STUB_LIB_FILE with TCL_STUB_LIB_FILE.
 
-	** First CVS version of the S4 engine **
-	* generic/tclCompile.h: Added compilation flag
-	  TCL_BYTECODE_OPCODES_OK  
-	* generic/tclExecute.c: First CVS version of the engine
-	* generic/tclExecute.h: Compiler dependent macros (new file)
-	* generic/tclInt.h: slight modifs, mainly for the new addressing
-	  mode for the tcl stack
+2000-04-25  Mo DeJong  <mdejong@redhat.com>
+
+	* unix/Makefile.in: Use TCL_STUB_LIB_FILE instead of STUB_LIB_FILE.
+	* unix/configure: Regen.
+	* unix/configure.in: Don't subst STUB_LIB_FILE, use TCL_STUB_LIB_FILE
+	instead.
+
+2001-04-25  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* tools/encoding/iso8859-15.txt:
+	* library/encoding/iso8859-15.enc: Oops! Got the full encoding
+	wrong.  Should be fixed now...
+
+	* tools/encoding/iso8859-15.txt:
+	* library/encoding/iso8859-15.enc:
+	* tools/tcl.wse.in: Added ISO 8859-15 (a.k.a. Latin-1 + Euro
+	currency symbol) support.
+
+	* generic/tclNamesp.c:
+	* generic/tclBasic.c (TclRenameCommand): Missing CONST from
+	several declarations relating to use of TclGetNamespaceForQualName
+
+2001-04-24  Kevin B. Kenny    <kennykb@acm.org>
+	* doc/AssocData.3:
+	* doc/CrtCommand.3:
+	* doc/CrtMathFnc.3:
+	* doc/CrtObjCmd.3:
+	* doc/ExprLong.3:
+	* generic/tclBasic.c:
+	* generic/tclCmdMZ.c:
+	* doc/CrtSlave.3:
+	* generic/tclNamesp.c:
+	* generic/tcl.decls:
+	* generic/tcl.h:
+	* generic/tclInt.decls:
+	* generic/tclInt.h: (TIP #27) Another round of CONST changes, this
+	time adding CONST to the API's exported from tclBasic.c.
+	[Patch #415179]
+	***POTENTIAL INCOMPATIBILITY*** from 8.4a2, in which Vince
+	Darley's changes to command tracing were added.  A const has been
+	added to the type signature of one of the parameters to
+	Tcl_CommandTraceProc.
+	
+2001-04-10  Kevin B. Kenny    <kennykb@acm.org>
+	* unix/tclUnixTime.c: Altered code to use memcpy instead of
+	structure assigments in an effort to achieve better K&R
+	compatibility.
+	
+2001-04-10  Kevin B. Kenny    <kennykb@acm.org>
+
+	* unix/tclUnixTime.c: Fixed silly typo in calls to 'gmtime' and
+	'localtime' that broke the Linux build.
+	
+2001-04-09  Kevin B. Kenny    <kennykb@acm.org>
+
+	* unix/tclLoadShl.c: Added DYNAMIC_PATH to the load flags so that
+	the SHLIB_PATH will be searched for other libraries.  [Bug #219140]
+	
+2001-04-09  Kevin B. Kenny    <kennykb@acm.org>
+
+	* unix/tcl.m4: Added _REENTRANT to Solaris build so that thread
+	safe library routines are included.
+	* unix/configure: Re-ran 'autoconf' with changed tcl.m4
+	* tclUnixTime.c: Modified for thread safety of 'gmtime' and
+	'localtime' system calls [Bugs #219136 and #232558]
+	
+2001-04-09  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* tests/expr.test (expr-21.*): Tests to check below fix.
+	* generic/tclParseExpr.c (GetLexeme): Now recognises the
+	non-numeric boolean literals for what they are. It no longer makes
+	sense for anyone to create functions with the same name as one of
+	them, but this was true in 7.* as well [Bug #217777; finally!]
 
 2001-04-07  Miguel Sofer <msofer@users.sourceforge.net>
 
@@ -40,7 +252,7 @@
 
 	* doc/namespace.n: document correct functionality
 	* generic/tclNamesp.c: corrected behaviour of [namespace code]
-	  (Bug #219385, Patch #403530)
+	(Bug #219385, Patch #403530)
 	* library/init.tcl:
 	* tests/namespace-old.test: test correct functionality
 	* tests/namespace.test: test correct functionality
@@ -3011,7 +3223,6 @@
 	Fixed "clock scan <number>" to scan the number as an hour for the
 	current day, rather than a minute after 00:00 for the current day
 	(bug #2732).
-	
 
 2000-01-07  Eric Melski  <ericm@scriptics.com>
 

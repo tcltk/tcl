@@ -6,7 +6,7 @@
 # Copyright (c) 2000 by Ajuba Solutions
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.test,v 1.12 2000/10/24 22:30:35 jenn Exp $
+# RCS: @(#) $Id: tcltest.test,v 1.12.2.1 2001/05/19 16:12:19 msofer Exp $
 
 set tcltestVersion [package require tcltest]
 namespace import -force ::tcltest::*
@@ -982,7 +982,7 @@ test tcltest-19.1 {TCLTEST_OPTIONS default} {
 	if {[info exists ::env(TCLTEST_OPTIONS)]} {
 	    set oldoptions $::env(TCLTEST_OPTIONS)
 	    unset ::env(TCLTEST_OPTIONS)
-c	} else {
+	} else {
 	    set oldoptions none
 	}
 	set ::env(TCLTEST_OPTIONS) {}

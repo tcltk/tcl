@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: CrtObjCmd.3,v 1.4 2000/07/24 00:03:02 jenglish Exp $
+'\" RCS: @(#) $Id: CrtObjCmd.3,v 1.4.2.1 2001/05/19 16:11:56 msofer Exp $
 '\" 
 .so man.macros
 .TH Tcl_CreateObjCommand 3 8.0 Tcl "Tcl Library Procedures"
@@ -30,13 +30,17 @@ int
 int
 \fBTcl_SetCommandInfo\fR(\fIinterp, cmdName, infoPtr\fR)
 .sp
-char *
+.VS 8.4
+CONST char *
+.VE
 \fBTcl_GetCommandName\fR(\fIinterp, token\fR)
 .SH ARGUMENTS
 .AS Tcl_ObjCmdProc *deleteProc in/out
 .AP Tcl_Interp *interp in
 Interpreter in which to create a new command or that contains a command.
+.VS 8.4
 .AP char *cmdName in
+.VE
 Name of command.
 .AP Tcl_ObjCmdProc *proc in
 Implementation of the new command: \fIproc\fR will be called whenever

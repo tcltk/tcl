@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.23 2000/09/28 06:38:21 hobbs Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.23.2.1 2001/05/19 16:12:18 msofer Exp $
 
 library tcl
 
@@ -62,7 +62,8 @@ declare 9 {unix win} {
 	    TclFile *errFilePtr)
 }
 declare 10 generic {
-    int TclCreateProc(Tcl_Interp *interp, Namespace *nsPtr, char *procName, \
+    int TclCreateProc(Tcl_Interp *interp, Namespace *nsPtr, 
+            CONST char *procName,
 	    Tcl_Obj *argsPtr, Tcl_Obj *bodyPtr, Proc **procPtrPtr)
 }
 declare 11 generic {
@@ -127,7 +128,7 @@ declare 28 generic {
 }
 declare 29 generic {
     Tcl_Obj * TclGetElementOfIndexedArray(Tcl_Interp *interp, \
-	    int localIndex, Tcl_Obj *elemPtr, int leaveErrorMsg)
+	    int localIndex, Tcl_Obj *elemPtr, int flags)
 }
 # Replaced by char * TclGetEnv(CONST char *name, Tcl_DString *valuePtr) in 8.1:
 #  declare 30 generic {
@@ -148,7 +149,7 @@ declare 34 generic {
 }
 declare 35 generic {
     Tcl_Obj * TclGetIndexedScalar(Tcl_Interp *interp, int localIndex, \
-	    int leaveErrorMsg)
+	    int flags)
 }
 declare 36 generic {
     int TclGetLong(Tcl_Interp *interp, char *str, long *longPtr)
@@ -157,10 +158,10 @@ declare 37 generic {
     int TclGetLoadedPackages(Tcl_Interp *interp, char *targetName)
 }
 declare 38 generic {
-    int TclGetNamespaceForQualName(Tcl_Interp *interp, char *qualName, \
+    int TclGetNamespaceForQualName(Tcl_Interp *interp, CONST char *qualName, \
 	    Namespace *cxtNsPtr, int flags, Namespace **nsPtrPtr, \
 	    Namespace **altNsPtrPtr, Namespace **actualCxtPtrPtr, \
-	    char **simpleNamePtr)
+	    CONST char **simpleNamePtr)
 }
 declare 39 generic {
     TclObjCmdProcType TclGetObjInterpProc(void)
@@ -373,11 +374,11 @@ declare 98 generic {
 }
 declare 99 generic {
     Tcl_Obj * TclSetElementOfIndexedArray(Tcl_Interp *interp, \
-	    int localIndex, Tcl_Obj *elemPtr, Tcl_Obj *objPtr, int leaveErrorMsg)
+	    int localIndex, Tcl_Obj *elemPtr, Tcl_Obj *objPtr, int flags)
 }
 declare 100 generic {
     Tcl_Obj * TclSetIndexedScalar(Tcl_Interp *interp, int localIndex, \
-	    Tcl_Obj *objPtr, int leaveErrorMsg)
+	    Tcl_Obj *objPtr, int flags)
 }
 declare 101 {unix win} {
     char * TclSetPreInitScript(char *string)
@@ -425,7 +426,7 @@ declare 112 generic {
 	    Tcl_Obj *objPtr)
 }
 declare 113 generic {
-    Tcl_Namespace * Tcl_CreateNamespace(Tcl_Interp *interp, char *name, \
+    Tcl_Namespace * Tcl_CreateNamespace(Tcl_Interp *interp, CONST char *name, \
 	    ClientData clientData, Tcl_NamespaceDeleteProc *deleteProc)
 }
 declare 114 generic {
@@ -436,7 +437,7 @@ declare 115 generic {
 	    int resetListFirst)
 }
 declare 116 generic {
-    Tcl_Command Tcl_FindCommand(Tcl_Interp *interp, char *name, \
+    Tcl_Command Tcl_FindCommand(Tcl_Interp *interp, CONST char *name, \
 	    Tcl_Namespace *contextNsPtr, int flags)
 }
 declare 117 generic {

@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: append.test,v 1.5.6.1 2001/05/19 16:12:19 msofer Exp $
+# RCS: @(#) $Id: appendComp.test,v 1.2.2.1 2001/05/19 16:12:19 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -21,48 +21,72 @@ catch {unset x}
 
 test append-1.1 {append command} {
     catch {unset x}
-    list [append x 1 2 abc "long string"] $x
+    proc foo {} {append ::x 1 2 abc "long string"}
+    list [foo] $x
 } {{12abclong string} {12abclong string}}
 test append-1.2 {append command} {
-    set x ""
-    list [append x first] [append x second] [append x third] $x
+    proc foo {} {
+	set x ""
+	list [append x first] [append x second] [append x third] $x
+    }
+    foo
 } {first firstsecond firstsecondthird firstsecondthird}
 test append-1.3 {append command} {
-    set x "abcd"
-    append x
+    proc foo {} {
+	set x "abcd"
+	append x
+    }
+    foo
 } abcd
 
 test append-2.1 {long appends} {
-    set x ""
-    for {set i 0} {$i < 1000} {set i [expr $i+1]} {
-	append x "foobar "
+    proc foo {} {
+	set x ""
+	for {set i 0} {$i < 1000} {set i [expr $i+1]} {
+	    append x "foobar "
+	}
+	set y "foobar"
+	set y "$y $y $y $y $y $y $y $y $y $y"
+	set y "$y $y $y $y $y $y $y $y $y $y"
+	set y "$y $y $y $y $y $y $y $y $y $y "
+	expr {$x == $y}
     }
-    set y "foobar"
-    set y "$y $y $y $y $y $y $y $y $y $y"
-    set y "$y $y $y $y $y $y $y $y $y $y"
-    set y "$y $y $y $y $y $y $y $y $y $y "
-    expr {$x == $y}
+    foo
 } 1
 
 test append-3.1 {append errors} {
-    list [catch {append} msg] $msg
+    proc foo {} {append}
+    list [catch {foo} msg] $msg
 } {1 {wrong # args: should be "append varName ?value value ...?"}}
 test append-3.2 {append errors} {
-    set x ""
-    list [catch {append x(0) 44} msg] $msg
+    proc foo {} {
+	set x ""
+	append x(0) 44
+    }
+    list [catch {foo} msg] $msg
 } {1 {can't set "x(0)": variable isn't array}}
 test append-3.3 {append errors} {
-    catch {unset x}
-    list [catch {append x} msg] $msg
+    proc foo {} {
+	catch {unset x}
+	append x
+    }
+    list [catch {foo} msg] $msg
 } {1 {can't read "x": no such variable}}
 
 test append-4.1 {lappend command} {
-    catch {unset x}
-    list [lappend x 1 2 abc "long string"] $x
+    proc foo {} {
+	global x
+	catch {unset x}
+	lappend x 1 2 abc "long string"
+    }
+    list [foo] $x
 } {{1 2 abc {long string}} {1 2 abc {long string}}}
 test append-4.2 {lappend command} {
-    set x ""
-    list [lappend x first] [lappend x second] [lappend x third] $x
+    proc foo {} {
+	set x ""
+	list [lappend x first] [lappend x second] [lappend x third] $x
+    }
+    foo
 } {first {first second} {first second third} {first second third}}
 test append-4.3 {lappend command} {
     proc foo {} {
@@ -76,61 +100,104 @@ test append-4.3 {lappend command} {
     set result
 } {new}
 test append-4.4 {lappend command} {
-    set x {}
-    lappend x \{\  abc
+    proc foo {} {
+	set x {}
+	lappend x \{\  abc
+    }
+    foo
 } {\{\  abc}
 test append-4.5 {lappend command} {
-    set x {}
-    lappend x \{ abc
+    proc foo {} {
+	set x {}
+	lappend x \{ abc
+    }
+    foo
 } {\{ abc}
 test append-4.6 {lappend command} {
-    set x {1 2 3}
-    lappend x
+    proc foo {} {
+	set x {1 2 3}
+	lappend x
+    }
+    foo
 } {1 2 3}
 test append-4.7 {lappend command} {
-    set x "a\{"
-    lappend x abc
+    proc foo {} {
+	set x "a\{"
+	lappend x abc
+    }
+    foo
 } "a\\\{ abc"
 test append-4.8 {lappend command} {
-    set x "\\\{"
-    lappend x abc
+    proc foo {} {
+	set x "\\\{"
+	lappend x abc
+    }
+    foo
 } "\\{ abc"
 test append-4.9 {lappend command} {
-    set x " \{"
-    list [catch {lappend x abc} msg] $msg
+    proc foo {} {
+	set x " \{"
+	list [catch {lappend x abc} msg] $msg
+    }
+    foo
 } {1 {unmatched open brace in list}}
 test append-4.10 {lappend command} {
-    set x "	\{"
-    list [catch {lappend x abc} msg] $msg
+    proc foo {} {
+	set x "	\{"
+	list [catch {lappend x abc} msg] $msg
+    }
+    foo
 } {1 {unmatched open brace in list}}
 test append-4.11 {lappend command} {
-    set x "\{\{\{"
-    list [catch {lappend x abc} msg] $msg
+    proc foo {} {
+	set x "\{\{\{"
+	list [catch {lappend x abc} msg] $msg
+    }
+    foo
 } {1 {unmatched open brace in list}}
 test append-4.12 {lappend command} {
-    set x "x \{\{\{"
-    list [catch {lappend x abc} msg] $msg
+    proc foo {} {
+	set x "x \{\{\{"
+	list [catch {lappend x abc} msg] $msg
+    }
+    foo
 } {1 {unmatched open brace in list}}
 test append-4.13 {lappend command} {
-    set x "x\{\{\{"
-    lappend x abc
+    proc foo {} {
+	set x "x\{\{\{"
+	lappend x abc
+    }
+    foo
 } "x\\\{\\\{\\\{ abc"
 test append-4.14 {lappend command} {
-    set x " "
-    lappend x abc
+    proc foo {} {
+	set x " "
+	lappend x abc
+    }
+    foo
 } "abc"
 test append-4.15 {lappend command} {
-    set x "\\ "
-    lappend x abc
+    proc foo {} {
+	set x "\\ "
+	lappend x abc
+    }
+    foo
 } "{ } abc"
 test append-4.16 {lappend command} {
-    set x "x "
-    lappend x abc
+    proc foo {} {
+	set x "x "
+	lappend x abc
+    }
+    foo
 } "x abc"
 test append-4.17 {lappend command} {
-    catch {unset x}
-    lappend x
+    proc foo {} { lappend x }
+    foo
 } {}
+test append-4.18 {lappend command} {
+    proc foo {} { lappend x {} }
+    foo
+} {{}}
 
 proc check {var size} {
     set l [llength $var]
@@ -154,24 +221,32 @@ test append-5.1 {long lappends} {
 } ok
 
 test append-6.1 {lappend errors} {
-    list [catch {lappend} msg] $msg
+    proc foo {} {lappend}
+    list [catch {foo} msg] $msg
 } {1 {wrong # args: should be "lappend varName ?value value ...?"}}
 test append-6.2 {lappend errors} {
-    set x ""
-    list [catch {lappend x(0) 44} msg] $msg
+    proc foo {} {
+	set x ""
+	lappend x(0) 44
+    }
+    list [catch {foo} msg] $msg
 } {1 {can't set "x(0)": variable isn't array}}
 
 test append-7.1 {lappend-created var and error in trace on that var} {
-    catch {rename foo ""}
-    catch {unset x}
-    trace variable x w foo
-    proc foo {} {global x; unset x}
-    catch {lappend x 1}
-    proc foo {args} {global x; unset x}
-    info exists x
-    set x
-    lappend x 1
-    list [info exists x] [catch {set x} msg] $msg
+    proc bar {} {
+	global x
+	catch {rename foo ""}
+	catch {unset x}
+	trace variable x w foo
+	proc foo {} {global x; unset x}
+	catch {lappend x 1}
+	proc foo {args} {global x; unset x}
+	info exists x
+	set x
+	lappend x 1
+	list [info exists x] [catch {set x} msg] $msg
+    }
+    bar
 } {0 1 {can't read "x": no such variable}}
 
 catch {unset i x result y}
