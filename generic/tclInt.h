@@ -1183,6 +1183,20 @@ typedef struct TclFile_ *TclFile;
     
 /*
  *----------------------------------------------------------------
+ * Data structures related to hooking 'TclStat(...)' and
+ * 'TclAccess(...)'.
+ *----------------------------------------------------------------
+ */
+
+typedef struct stat TclStat_;
+typedef int (TclStatProc_) _ANSI_ARGS_((CONST char *path, TclStat_ *buf));
+typedef int (TclAccessProc_) _ANSI_ARGS_((CONST char *path, int mode));
+typedef Tcl_Channel (TclOpenFileChannelProc_) _ANSI_ARGS_((Tcl_Interp *interp,
+	char *fileName, char *modeString,
+	int permissions));
+
+/*
+ *----------------------------------------------------------------
  * Variables shared among Tcl modules but not used by the outside world.
  *----------------------------------------------------------------
  */
@@ -1235,6 +1249,10 @@ extern char *		tclEmptyStringRep;
  */
 
 EXTERN void		panic _ANSI_ARGS_(TCL_VARARGS(char *,format));
+EXTERN int		TclAccess _ANSI_ARGS_((CONST char *path,
+			    int mode));
+EXTERN int		TclAccessDeleteProc _ANSI_ARGS_((TclAccessProc_ *proc));
+EXTERN int		TclAccessInsertProc _ANSI_ARGS_((TclAccessProc_ *proc));
 EXTERN void		TclAllocateFreeObjects _ANSI_ARGS_((void));
 EXTERN int		TclChdir _ANSI_ARGS_((Tcl_Interp *interp,
 			    char *dirName));
@@ -1382,6 +1400,10 @@ EXTERN int		TclObjInvoke _ANSI_ARGS_((Tcl_Interp *interp,
 		            int objc, Tcl_Obj *CONST objv[], int flags));
 EXTERN int		TclObjInvokeGlobal _ANSI_ARGS_((Tcl_Interp *interp,
 		            int objc, Tcl_Obj *CONST objv[], int flags));
+EXTERN int		TclOpenFileChannelDeleteProc _ANSI_ARGS_((
+			    TclOpenFileChannelProc_ *proc));
+EXTERN int		TclOpenFileChannelInsertProc _ANSI_ARGS_((
+			    TclOpenFileChannelProc_ *proc));
 EXTERN char *		TclpAlloc _ANSI_ARGS_((unsigned int size));
 
 /*
@@ -1422,6 +1444,9 @@ EXTERN int		TclpListVolumes _ANSI_ARGS_((Tcl_Interp *interp));
 EXTERN TclFile		TclpMakeFile _ANSI_ARGS_((Tcl_Channel channel,
 			    int direction));
 EXTERN TclFile		TclpOpenFile _ANSI_ARGS_((char *fname, int mode));
+EXTERN Tcl_Channel	TclpOpenFileChannel _ANSI_ARGS_((Tcl_Interp *interp,
+			    char *fileName, char *modeString,
+			    int permissions));
 EXTERN char *		TclpRealloc _ANSI_ARGS_((char *ptr,
 			    unsigned int size));
 EXTERN int              TclpRemoveDirectory _ANSI_ARGS_((char *path,
@@ -1473,6 +1498,10 @@ EXTERN int		TclSockGetPort _ANSI_ARGS_((Tcl_Interp *interp,
 		            char *string, char *proto, int *portPtr));
 EXTERN int		TclSockMinimumBuffers _ANSI_ARGS_((int sock,
         		    int size));
+EXTERN int		TclStat _ANSI_ARGS_((CONST char *path,
+			    TclStat_ *buf));
+EXTERN int		TclStatDeleteProc _ANSI_ARGS_((TclStatProc_ *proc));
+EXTERN int		TclStatInsertProc _ANSI_ARGS_((TclStatProc_ *proc));
 EXTERN void		TclTeardownNamespace _ANSI_ARGS_((Namespace *nsPtr));
 EXTERN int		TclTestChannelCmd _ANSI_ARGS_((ClientData clientData,
 			    Tcl_Interp *interp, int argc, char **argv));
