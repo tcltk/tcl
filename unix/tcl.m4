@@ -421,8 +421,12 @@ AC_DEFUN(SC_ENABLE_THREADS, [
     AC_ARG_ENABLE(threads, [  --enable-threads        build with threads],
 	[tcl_ok=$enableval], [tcl_ok=no])
 
-    if test "$tcl_ok" = "yes"; then
-	AC_MSG_RESULT(yes)
+    if test "$tcl_ok" = "yes" -o "${TCL_THREADS}" = 1; then
+	if test "${TCL_THREADS}" = 1; then
+	    AC_MSG_RESULT([yes (threaded core)])
+	else
+	    AC_MSG_RESULT([yes])
+	fi
 	TCL_THREADS=1
 	AC_DEFINE(TCL_THREADS)
 	# USE_THREAD_ALLOC tells us to try the special thread-based
@@ -822,7 +826,7 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
     CFLAGS_DEBUG=-g
     CFLAGS_OPTIMIZE=-O
     if test "$GCC" = "yes" ; then
-	CFLAGS_WARNING="-Wall -Wconversion -Wno-implicit-int"
+	CFLAGS_WARNING="-Wall -Wno-implicit-int"
     else
 	CFLAGS_WARNING=""
     fi
@@ -1960,12 +1964,11 @@ int main() {
 #		NO_DIRENT_H
 #		NO_ERRNO_H
 #		NO_VALUES_H
-#		NO_LIMITS_H
+#		HAVE_LIMITS_H or NO_LIMITS_H
 #		NO_STDLIB_H
 #		NO_STRING_H
 #		NO_SYS_WAIT_H
 #		NO_DLFCN_H
-#		HAVE_UNISTD_H
 #		HAVE_SYS_PARAM_H
 #
 #		HAVE_STRING_H ?
@@ -2003,7 +2006,8 @@ closedir(d);
     AC_CHECK_HEADER(errno.h, , [AC_DEFINE(NO_ERRNO_H)])
     AC_CHECK_HEADER(float.h, , [AC_DEFINE(NO_FLOAT_H)])
     AC_CHECK_HEADER(values.h, , [AC_DEFINE(NO_VALUES_H)])
-    AC_CHECK_HEADER(limits.h, , [AC_DEFINE(NO_LIMITS_H)])
+    AC_CHECK_HEADER(limits.h,
+	[AC_DEFINE(HAVE_LIMITS_H)], [AC_DEFINE(NO_LIMITS_H)])
     AC_CHECK_HEADER(stdlib.h, tcl_ok=1, tcl_ok=0)
     AC_EGREP_HEADER(strtol, stdlib.h, , tcl_ok=0)
     AC_EGREP_HEADER(strtoul, stdlib.h, , tcl_ok=0)
@@ -2026,9 +2030,7 @@ closedir(d);
     AC_CHECK_HEADER(dlfcn.h, , [AC_DEFINE(NO_DLFCN_H)])
 
     # OS/390 lacks sys/param.h (and doesn't need it, by chance).
-
-    AC_HAVE_HEADERS(unistd.h sys/param.h)
-
+    AC_HAVE_HEADERS(sys/param.h)
 ])
 
 #--------------------------------------------------------------------
