@@ -1,5 +1,12 @@
 2002-04-15  Miguel Sofer  <msofer@users.sourceforge.net>
 
+	* generic/tclProc.c:
+	* tests/proc-old.test: Improved stack trace for TCL_BREAK and
+	TCL_CONTINUE returns from procs. Patch by Don Porter
+	[Bug 536955]. 
+	
+2002-04-15  Miguel Sofer  <msofer@users.sourceforge.net>
+
 	* generic/tclExecute.c:
 	* tests/compile.test: made bytecodes check for a catch before
 	returning; the compiled [return] is otherwise non-catchable. 
