@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.23.6.7 2001/10/05 08:14:56 dkf Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.23.6.8 2001/10/09 15:31:32 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2075,7 +2075,7 @@ SetWideIntFromAny(interp, objPtr)
 	     */
 	    
 	    char buf[100];
-	    sprintf(buf, "expected wide integer but got \"%.50s\"", string);
+	    sprintf(buf, "expected integer but got \"%.50s\"", string);
 	    Tcl_ResetResult(interp);
 	    Tcl_AppendToObj(Tcl_GetObjResult(interp), buf, -1);
 	    TclCheckBadOctal(interp, string);
