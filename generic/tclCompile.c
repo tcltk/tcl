@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.20 2000/03/30 04:36:11 hobbs Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.20.2.1 2001/10/15 20:27:23 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -1895,10 +1895,12 @@ TclInitCompiledLocals(interp, framePtr, nsPtr)
  */
 
 void
-TclExpandCodeArray(envPtr)
-    CompileEnv *envPtr;		/* Points to the CompileEnv whose code array
+TclExpandCodeArray(envArgPtr)
+    void *envArgPtr;		/* Points to the CompileEnv whose code array
 				 * must be enlarged. */
 {
+    CompileEnv *envPtr = (CompileEnv*) envArgPtr;	/* Points to the CompileEnv whose code array
+							 * must be enlarged. */
     /*
      * envPtr->codeNext is equal to envPtr->codeEnd. The currently defined
      * code bytes are stored between envPtr->codeStart and
@@ -2497,7 +2499,7 @@ TclFixupForwardJump(envPtr, jumpFixupPtr, jumpDist, distThreshold)
  *----------------------------------------------------------------------
  */
 
-InstructionDesc *
+void * /* == InstructionDesc* == */
 TclGetInstructionTable()
 {
     return &instructionTable[0];
