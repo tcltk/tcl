@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.56.2.2 2001/04/04 23:00:59 hobbs Exp $
+RCS: @(#) $Id: changes,v 1.56.2.3 2001/04/04 23:05:06 hobbs Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -4928,39 +4928,45 @@ tmp filename creation on Unix. (max)
 Fixed handling of timeout for threads (corrects excessive CPU usage issue
 for Tk on Unix in threaded Tcl environment). (ruppert)
 
-2001-03-13 Correctly possible memory corruption in string map {} $str
+2001-03-13 (bug fix) Correctly possible memory corruption in string map {}
+$str (fellows)
+
+2001-02-15 (feature enhancement) improved efficiency of [string split]
 (fellows)
 
-2001-02-15 improved efficiency of [string split] (fellows)
+2001-01-30 (bug fix) Fixed possible hangs in fcopy. (porter)
 
-2001-01-30 Fixed possible hangs in fcopy. (porter)
+2001-01-04 (bug fix) corrected parsing of $tcl_libPath at startup on
+Windows (porter)
 
-2001-01-04 corrected parsing of $tcl_libPath at startup on Windows (porter)
+2000-12-14 (feature enhancement) improved (s)rand for 64-bit platforms
+(porter)
 
-2000-12-14 improved (s)rand for 64-bit platforms (porter)
-
-2000-12-09 changed %o and %x to use strtoul instead of strtol to correctly
-preserve scan<>format conversion of large integers (hobbs)
+2000-12-09 (feature enhancement) changed %o and %x to use strtoul instead
+of strtol to correctly preserve scan<>format conversion of large integers
+(hobbs)
 Fixed handling of {!<boolean>} in expressions (hobbs, fellows)
 
-2000-11-23 fixed potential memory leak in error case of lsort (fellows)
+2000-11-23 (mem leak) fixed potential memory leak in error case of lsort
+(fellows)
 
-2000-11-02 Corrected sharing of tclLibraryPath in threaded environment
-(gravereaux)
+2000-11-02 (bug fix) Corrected sharing of tclLibraryPath in threaded
+environment (gravereaux)
 
-2000-11-01 Corrected excessive mem use of info exists on a non-existent
-array element (hobbs)
+2000-11-01 (mem leak) Corrected excessive mem use of info exists on a
+non-existent array element (hobbs)
 
-2000-10-20 call stat only when necessary in 'glob' to speed up command
-significantly in base cases (hobbs)
+2000-10-20 (feature enhancement) call stat only when necessary in 'glob' to
+speed up command significantly in base cases (hobbs)
 
-2000-10-06 corrected [file channels] to only return channels in the current
-interpreter (hobbs)
+2000-10-06 (bug fix) corrected [file channels] to only return channels in
+the current interpreter (hobbs)
 
-2000-09-29 corrected reporting of space parity on Windows (Eason)
+2000-09-29 (bug fix) corrected reporting of space parity on Windows (Eason)
 
-2000-09-27 fixed a bug introduced by a partial fix in 8.3.2 that didn't set
-nonBlocking correctly when resetting the flags for the write side (hobbs).
-Correct mem leak in channels when statePtr was released.
+2000-09-27 (bug fix) fixed a bug introduced by a partial fix in 8.3.2 that
+didn't set nonBlocking correctly when resetting the flags for the write
+side (mem leak) Correct mem leak in channels when statePtr was released
+(hobbs)
 
 --- Released 8.3.3, April 6, 2001 --- See ChangeLog for details ---
