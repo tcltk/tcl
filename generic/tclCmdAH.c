@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.45 2004/05/13 12:59:21 dkf Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.46 2004/09/17 22:59:14 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -295,16 +295,6 @@ Tcl_CatchObjCmd(dummy, interp, objc, objv)
 	    if (NULL == value) {
 		Tcl_DictObjPut(NULL, options, iPtr->returnErrorinfoKey,
 			Tcl_ObjGetVar2(interp, iPtr->execEnvPtr->errorInfo,
-			NULL, TCL_GLOBAL_ONLY));
-	    }
-	}
-
-	if (iPtr->flags & ERROR_CODE_SET) {
-	    value = NULL;
-	    Tcl_DictObjGet(NULL, options, iPtr->returnErrorcodeKey, &value);
-	    if (NULL == value) {
-		Tcl_DictObjPut(NULL, options, iPtr->returnErrorcodeKey,
-			Tcl_ObjGetVar2(interp, iPtr->execEnvPtr->errorCode,
 			NULL, TCL_GLOBAL_ONLY));
 	    }
 	}
@@ -638,8 +628,7 @@ Tcl_ErrorObjCmd(dummy, interp, objc, objv)
     }
     
     if (objc == 4) {
-	Tcl_SetVar2Ex(interp, "errorCode", NULL, objv[3], TCL_GLOBAL_ONLY);
-	iPtr->flags |= ERROR_CODE_SET;
+	Tcl_SetObjErrorCode(interp, objv[3]);
     }
     
     Tcl_SetObjResult(interp, objv[1]);

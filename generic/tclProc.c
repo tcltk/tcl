@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.54 2004/08/25 01:11:20 dgp Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.55 2004/09/17 22:59:15 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1360,14 +1360,9 @@ TclUpdateReturnInfo(iPtr)
     if (code == TCL_ERROR) {
 	Tcl_DictObjGet(NULL, iPtr->returnOpts,
 		iPtr->returnErrorcodeKey, &valuePtr);
-	if (valuePtr == NULL) {
-	    Tcl_ObjSetVar2((Tcl_Interp *) iPtr, iPtr->execEnvPtr->errorCode,
-	            NULL, Tcl_NewStringObj("NONE", -1), TCL_GLOBAL_ONLY);
-	} else {
-	    Tcl_ObjSetVar2((Tcl_Interp *) iPtr, iPtr->execEnvPtr->errorCode,
-	            NULL, valuePtr, TCL_GLOBAL_ONLY);
+	if (valuePtr != NULL) {
+	    Tcl_SetObjErrorCode((Tcl_Interp *)iPtr, valuePtr);
 	}
-	iPtr->flags |= ERROR_CODE_SET;
 
 	Tcl_DictObjGet(NULL, iPtr->returnOpts,
 		iPtr->returnErrorinfoKey, &valuePtr);
