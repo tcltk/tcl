@@ -1,4 +1,5 @@
 @echo off
+rem SCCS: %Z% $Id: mkd.bat,v 1.2 1998/07/01 18:08:46 escoffon Exp $ 
 
 if exist %1 goto end
 
