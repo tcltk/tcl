@@ -7,6 +7,11 @@
 
 2002-07-10  Don Porter  <dgp@users.sourceforge.net>
 
+	* tests/tcltest.test:  Greatly reduced the number of [exec]s, using
+	slave interps instead.
+	* library/tcltest/tcltest.tcl:  Fixed bug uncovered in the conversion
+	where a message was written to stdout instead of [outputChannel].
+
 	* tests/basic.test:	Cleaned up, constrained, and reduced the
 	* tests/compile.test:	amount of [exec] usage in the test suite.
 	* tests/encoding.test:
