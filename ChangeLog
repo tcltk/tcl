@@ -1,5 +1,11 @@
 2002-08-26  Miguel Sofer  <msofer@users.sourceforge.net>
 
+	* generic/tclCompCmds.c: fix for [Bug 599788] (error in element
+	name causing segfault), reported by Tom Wilkason. Fixed by copying
+	the tokens instead of the source string.
+
+2002-08-26  Miguel Sofer  <msofer@users.sourceforge.net>
+
 	* generic/tclThreadAlloc.c: small optimisation, reducing the
 	new allocator's overhead.
 	
