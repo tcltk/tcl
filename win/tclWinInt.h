@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinInt.h,v 1.5 1998/09/14 18:40:20 stanton Exp $
+ * RCS: @(#) $Id: tclWinInt.h,v 1.5.4.1 1999/03/04 00:59:04 stanton Exp $
  */
 
 #ifndef _TCLWININT
@@ -25,6 +25,14 @@
 # undef TCL_STORAGE_CLASS
 # define TCL_STORAGE_CLASS DLLEXPORT
 #endif
+
+/*
+ * The following specifies how much stack space TclpCheckStackSpace()
+ * ensures is available.  TclpCheckStackSpace() is called by Tcl_EvalObj()
+ * to help avoid overflowing the stack in the case of infinite recursion.
+ */
+
+#define TCL_WIN_STACK_THRESHOLD 0x2000
 
 /*
  * Some versions of Borland C have a define for the OSVERSIONINFO for
