@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEvent.c,v 1.46 2004/09/27 16:24:24 dgp Exp $
+ * RCS: @(#) $Id: tclEvent.c,v 1.47 2004/10/05 18:14:27 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -33,7 +33,7 @@ typedef struct BgError {
 				 * Malloc-ed. */
     char *errorInfo;		/* Value of the errorInfo variable
 				 * (malloc-ed). */
-    char *errorCode;		/* Value of the errorCode variable
+    Tcl_Obj *errorCode;		/* Value of the errorCode variable
 				 * (malloc-ed). */
     struct BgError *nextPtr;	/* Next in list of all pending error
 				 * reports for this interpreter, or NULL
@@ -163,6 +163,7 @@ Tcl_BackgroundError(interp)
     CONST char *errResult, *varValue;
     ErrAssocData *assocPtr;
     int length;
+    Interp *iPtr = (Interp *) interp;
 
     /*
      * The Tcl_AddErrorInfo call below (with an empty string) ensures that
@@ -186,12 +187,15 @@ Tcl_BackgroundError(interp)
     }
     errPtr->errorInfo = (char *) ckalloc((unsigned) (strlen(varValue) + 1));
     strcpy(errPtr->errorInfo, varValue);
-    varValue = Tcl_GetVar(interp, "errorCode", TCL_GLOBAL_ONLY);
-    if (varValue == NULL) {
-	varValue = "";
+
+    if (iPtr->errorCode) {
+	errPtr->errorCode = iPtr->errorCode;
+    } else {
+	/* Does this ever happen ? */
+	errPtr->errorCode = Tcl_NewObj();
     }
-    errPtr->errorCode = (char *) ckalloc((unsigned) (strlen(varValue) + 1));
-    strcpy(errPtr->errorCode, varValue);
+    Tcl_IncrRefCount(errPtr->errorCode);
+
     errPtr->nextPtr = NULL;
 
     assocPtr = (ErrAssocData *) Tcl_GetAssocData(interp, "tclBgError",
@@ -266,8 +270,8 @@ HandleBgErrors(clientData)
 
 	Tcl_SetVar(interp, "errorInfo", assocPtr->firstBgPtr->errorInfo,
 		TCL_GLOBAL_ONLY);
-	Tcl_SetVar(interp, "errorCode", assocPtr->firstBgPtr->errorCode,
-		TCL_GLOBAL_ONLY);
+	Tcl_SetVar2Ex(interp, "errorCode", NULL,
+		assocPtr->firstBgPtr->errorCode, TCL_GLOBAL_ONLY);
 
 	/*
 	 * Create and invoke the bgerror command.
@@ -358,7 +362,7 @@ doneWithInterp:
 	if (assocPtr->firstBgPtr) {
 	    ckfree(assocPtr->firstBgPtr->errorMsg);
 	    ckfree(assocPtr->firstBgPtr->errorInfo);
-	    ckfree(assocPtr->firstBgPtr->errorCode);
+	    Tcl_DecrRefCount(assocPtr->firstBgPtr->errorCode);
 	    errPtr = assocPtr->firstBgPtr->nextPtr;
 	    ckfree((char *) assocPtr->firstBgPtr);
 	    assocPtr->firstBgPtr = errPtr;
@@ -407,7 +411,7 @@ BgErrorDeleteProc(clientData, interp)
 	assocPtr->firstBgPtr = errPtr->nextPtr;
 	ckfree(errPtr->errorMsg);
 	ckfree(errPtr->errorInfo);
-	ckfree(errPtr->errorCode);
+	Tcl_DecrRefCount(errPtr->errorCode);
 	ckfree((char *) errPtr);
     }
     Tcl_CancelIdleCall(HandleBgErrors, (ClientData) assocPtr);

@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.122 2004/10/01 03:19:56 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.123 2004/10/05 18:14:27 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -241,6 +241,7 @@ Tcl_CreateInterp()
     Tcl_IncrRefCount(iPtr->defaultReturnOpts);
     iPtr->returnOpts = iPtr->defaultReturnOpts;
     Tcl_IncrRefCount(iPtr->returnOpts);
+    iPtr->errorCode = NULL;
 
     iPtr->appendResult = NULL;
     iPtr->appendAvl = 0;
@@ -425,30 +426,6 @@ Tcl_CreateInterp()
      */
 
     TclInterpInit(interp);
-
-    /*
-     * We used to create the "errorInfo" and "errorCode" global vars at this
-     * point because so much of the Tcl implementation assumes they already
-     * exist. This is not quite enough, however, since they can be unset
-     * at any time.
-     *
-     * There are 2 choices:
-     *    + Check every place where a GetVar of those is used 
-     *      and the NULL result is not checked (like in tclLoad.c)
-     *    + Make SetVar,... NULL friendly
-     * We choose the second option because :
-     *    + It is easy and low cost to check for NULL pointer before
-     *      calling strlen()
-     *    + It can be helpfull to other people using those API
-     *    + Passing a NULL value to those closest 'meaning' is empty string
-     *      (specially with the new objects where 0 bytes strings are ok)
-     * So the following init is commented out:              -- dl
-     *
-     * (void) Tcl_SetVar2((Tcl_Interp *)iPtr, "errorInfo", (char *) NULL,
-     *       "", TCL_GLOBAL_ONLY);
-     * (void) Tcl_SetVar2((Tcl_Interp *)iPtr, "errorCode", (char *) NULL,
-     *       "NONE", TCL_GLOBAL_ONLY);
-     */
 
 #ifndef TCL_GENERIC_ONLY
     TclSetupEnv(interp);
@@ -1005,6 +982,10 @@ DeleteInterpProc(interp)
     interp->result = NULL;
     Tcl_DecrRefCount(iPtr->objResultPtr);
     iPtr->objResultPtr = NULL;
+    if (iPtr->errorCode) {
+	Tcl_DecrRefCount(iPtr->errorCode);
+	iPtr->errorCode = NULL;
+    }
     Tcl_DecrRefCount(iPtr->returnOpts);
     Tcl_DecrRefCount(iPtr->defaultReturnOpts);
     Tcl_DecrRefCount(iPtr->returnCodeKey);
@@ -3088,8 +3069,12 @@ TclEvalObjvInternal(interp, objc, objv, command, length, flags)
      */
     if (!(cmdPtr->flags & CMD_IS_DELETED)) {
 	int saveErrFlags = iPtr->flags
-		& (ERR_IN_PROGRESS | ERR_ALREADY_LOGGED | ERROR_CODE_SET);
+		& (ERR_IN_PROGRESS | ERR_ALREADY_LOGGED);
 	Tcl_Obj *saveOptions = iPtr->returnOpts;
+	Tcl_Obj *saveErrCode = iPtr->errorCode;
+	if (saveErrCode) {
+	    Tcl_IncrRefCount(saveErrCode);
+	}
 	Tcl_IncrRefCount(saveOptions);
         if ((cmdPtr->flags & CMD_HAS_EXEC_TRACES) && (traceCode == TCL_OK)) {
             traceCode = TclCheckExecutionTraces(interp, command, length,
@@ -3104,6 +3089,12 @@ TclEvalObjvInternal(interp, objc, objv, command, length, flags)
 	    iPtr->returnOpts = saveOptions;
 	    Tcl_IncrRefCount(iPtr->returnOpts);
 	    iPtr->flags |= saveErrFlags;
+	    if (iPtr->errorCode) {
+		Tcl_DecrRefCount(iPtr->errorCode);
+	    }
+	    iPtr->errorCode = saveErrCode;
+	} else if (saveErrCode) {
+	    Tcl_DecrRefCount(saveErrCode);
 	}
 	Tcl_DecrRefCount(saveOptions);
     }
@@ -3307,7 +3298,7 @@ Tcl_LogCommandInfo(interp, script, command, length)
     Tcl_AppendToObj(message, "\"", -1);
     TclAppendObjToErrorInfo(interp, message);
     Tcl_DecrRefCount(message);
-    if (!(iPtr->flags & ERROR_CODE_SET)) {
+    if (!iPtr->errorCode) {
 	Tcl_SetErrorCode(interp, "NONE", NULL);
     }
 }
