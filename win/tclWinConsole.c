@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinConsole.c,v 1.10 2002/11/26 22:35:20 davygrvy Exp $
+ * RCS: @(#) $Id: tclWinConsole.c,v 1.11 2002/11/26 22:41:58 davygrvy Exp $
  */
 
 #include "tclWinInt.h"
@@ -569,6 +569,8 @@ ConsoleCloseProc(
 		 */
 
 		Tcl_MutexLock(&consoleMutex);
+
+		/* BUG: this leaks memory. */
 		TerminateThread(consolePtr->writeThread, 0);
 		Tcl_MutexUnlock(&consoleMutex);
 	    }
