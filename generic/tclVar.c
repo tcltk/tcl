@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.9 1999/06/08 02:59:27 hershey Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.10 1999/06/17 00:20:55 hershey Exp $
  */
 
 #include "tclInt.h"
@@ -3824,8 +3824,8 @@ Tcl_VariableObjCmd(dummy, interp, objc, objv)
 
 	    for (tail = cp = varName;  *cp != '\0'; ) {
 		if (*cp++ == ':') {
-		    while (*cp++ == ':') {
-			tail = cp;
+		    while (*cp == ':') {
+			tail = ++cp;
 		    }
 		}
 	    }
