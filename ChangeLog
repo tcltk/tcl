@@ -1,3 +1,17 @@
+2003-09-13  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	TIP#123 IMPLEMENTATION BASED ON WORK BY ARJEN MARKUS
+
+	* generic/tclCompile.h (INST_EXPON):		Implementation of
+	* generic/tclCompile.c (tclInstructionTable):	exponential operator.
+	* generic/tclCompExpr.c (operatorTable): 
+	* generic/tclParseExpr.c (ParseExponentialExpr, GetLexeme): 
+	* generic/tclExecute.c (TclExecuteByteCode, ExponWide, ExponLong): 
+	(IllegalExprOperandType): 
+	* tests/expr.test: 
+	* tests/compExpr-old.test: 
+	* doc/expr.n: 
+
 2003-09-10  Don Porter  <dgp@users.sourceforge.net>
 
 	* library/opt/optparse.tcl:	Latest revisions caused [OptGuessType]
