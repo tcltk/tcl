@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: io.test,v 1.7 1999/04/16 00:47:29 stanton Exp $
+# RCS: @(#) $Id: io.test,v 1.8 1999/06/09 17:06:00 hershey Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     source [file join [pwd] [file dirname [info script]] defs.tcl]
@@ -28,6 +28,8 @@ if {"[info commands testchannel]" != "testchannel"} {
 
 removeFile test1
 removeFile pipe
+
+catch {unset u}
 
 # set up a long data file for some of the following tests
 
