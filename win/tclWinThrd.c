@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinThrd.c,v 1.25 2003/04/25 20:03:24 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclWinThrd.c,v 1.26 2003/05/13 10:16:17 mistachkin Exp $
  */
 
 #include "tclWinInt.h"
@@ -187,13 +187,13 @@ Tcl_CreateThread(idPtr, proc, clientData, stackSize, flags)
  */
 
 int
-Tcl_JoinThread(id, result)
-    Tcl_ThreadId id;	/* Id of the thread to wait upon */
-    int*     result;	/* Reference to the storage the result
-			 * of the thread we wait upon will be
-			 * written into. */
+Tcl_JoinThread(threadId, result)
+    Tcl_ThreadId threadId; /* Id of the thread to wait upon */
+    int*     result;       /* Reference to the storage the result
+			    * of the thread we wait upon will be
+			    * written into. */
 {
-    return TclJoinThread (id, result);
+    return TclJoinThread (threadId, result);
 }
 
 /*
