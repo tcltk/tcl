@@ -11,15 +11,16 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: cmdMZ.test,v 1.19 2003/11/12 17:27:13 hobbs Exp $
+# RCS: @(#) $Id: cmdMZ.test,v 1.20 2004/02/25 23:56:59 dgp Exp $
 
-if {[catch {package require tcltest 2.0.2}]} {
-    puts stderr "Skipping tests in [info script]. tcltest 2.0.2 required."
+if {[catch {package require tcltest 2.1}]} {
+    puts stderr "Skipping tests in [info script]. tcltest 2.1 required."
     return
 }
 
 namespace eval ::tcl::test::cmdMZ {
     namespace import ::tcltest::cleanupTests
+    namespace import ::tcltest::customMatch
     namespace import ::tcltest::makeFile
     namespace import ::tcltest::removeFile
     namespace import ::tcltest::temporaryDirectory
@@ -202,6 +203,20 @@ test cmdMZ-3.4 {Tcl_SourceObjCmd: error conditions} -constraints {
 } -body {
     list [catch {source a b} msg] $msg
 } -match glob -result {1 {wrong # args: should be "source*fileName"}}
+
+proc ListGlobMatch {expected actual} {
+    if {[llength $expected] != [llength $actual]} {
+        return 0
+    }
+    foreach e $expected a $actual {
+        if {![string match $e $a]} {
+            return 0
+        }
+    }
+    return 1
+}
+customMatch listGlob [namespace which ListGlobMatch]
+
 test cmdMZ-3.5 {Tcl_SourceObjCmd: error in script} -body {
     set file [makeFile {
 	set x 146
@@ -211,7 +226,7 @@ test cmdMZ-3.5 {Tcl_SourceObjCmd: error in script} -body {
     set result [list [catch {source $file} msg] $msg $errorInfo]
     removeFile source.file
     set result
-} -match glob -result {1 {error in sourced file} {error in sourced file
+} -match listGlob -result {1 {error in sourced file} {error in sourced file
     while executing
 "error "error in sourced file""
     (file "*" line 3)
