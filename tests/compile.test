@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: compile.test,v 1.34 2004/12/02 11:10:49 dkf Exp $
+# RCS: @(#) $Id: compile.test,v 1.35 2005/01/14 15:18:16 dkf Exp $
 
 package require tcltest 2
 namespace import -force ::tcltest::*
@@ -586,6 +586,22 @@ test compile-16.23.$noComp {
 } -returnCodes ok -result {syntax {}{}}
 
 }	;# End of noComp loop
+
+# This test is messy because it wrecks the interpreter it runs in!
+test compile-17.1 {Command interpretation binding for compiled code} -constraints knownBug -setup {
+    set i [interp create]
+} -body {
+    $i eval {
+	if 1 {
+	    expr [
+		proc expr args {return substituted}
+		format {[subst compiled]}
+	    ]
+	}
+    }
+} -cleanup {
+    interp delete $i
+} -result substituted
 
 # cleanup
 catch {rename p ""}

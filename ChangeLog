@@ -1,5 +1,8 @@
 2005-01-14  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
+	* tests/compile.test (compile-17.1): Document known issue with
+	binding time of compiled command interpretations in [expr].
+
 	* generic/tclIOUtil.c (TclFSFileAttrIndex): New helper function so
 	that we don't need to hard-code attribute indexes. [Bug 1100671]
 
