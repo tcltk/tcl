@@ -1,3 +1,40 @@
+2003-10-13  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* generic/tcl.h: 
+	* generic/tclFileName.c:
+	* generic/tclIOUtil.c:
+	* generic/tclPathObj.c:
+	* generic/tclTest.c:
+	* mac/tclMacFile.c:
+	* tests/fileName.test: better tests for [Bug 813273]
+	* unix/tclUnixFCmd.c:
+	* unix/tclUnixFile.c:
+	* win/tclWin32Dll.c:
+	* win/tclWinFCmd.c:
+	* win/tclWinFile.c:
+	* win/tclFileInt.h: 
+
+	Fixed [Bug 800106] in which 'glob' was incapable of merging the
+	results of a directory listing (real or virtual) and any virtual
+	filesystem mountpoints in that directory (the latter were
+	ignored).  This meant boundaries between different filesystems
+	were not seamless (e.g. 'glob */*' across a filesystem boundary
+	was wrong).  Added new entry to Tcl_GlobTypeData in a totally
+	backwards compatible way.  To allow listing of mounts, registered
+	filesystems must support the 'TCL_GLOB_TYPE_MOUNT' flag.  If this
+	is not supported (e.g. in tclvfs 1.2) then mounts will simply not
+	be listed for that filesystem.
+	
+	Fixed [Bug 749876] 'file writable/readable/etc' (NativeAccess)
+	using correct permission checking code for Windows NT/2000/XP
+	where more complex user-based security/access priveleges are
+	available, particularly on shared volumes.  The performance
+	impact of this extra checking will need further investigation.
+	Note: Win 95,98,ME have no support for this.
+
+	Also made better use of normalized rather than translated paths 
+	in the platform specific code.
+
 2003-10-12  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* unix/tclUnixTest.c (TestalarmCmd): don't bother checking return

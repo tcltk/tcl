@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWin32Dll.c,v 1.27 2003/09/29 22:38:21 dkf Exp $
+ * RCS: @(#) $Id: tclWin32Dll.c,v 1.28 2003/10/13 16:48:07 vincentdarley Exp $
  */
 
 #include "tclWinInt.h"
@@ -99,6 +99,8 @@ static TclWinProcs asciiProcs = {
     (int (__cdecl*)(CONST TCHAR *, struct _utimbuf *)) _utime,
     NULL,
     NULL,
+    /* Security SDK - not available on 95,98,ME */
+    NULL, NULL, NULL, NULL, NULL, NULL
 };
 
 static TclWinProcs unicodeProcs = {
@@ -148,6 +150,8 @@ static TclWinProcs unicodeProcs = {
     (int (__cdecl*)(CONST TCHAR *, struct _utimbuf *)) _wutime,
     NULL,
     NULL,
+    /* Security SDK - will be filled in on NT,XP,2000,2003 */
+    NULL, NULL, NULL, NULL, NULL, NULL
 };
 
 TclWinProcs *tclWinProcs;
@@ -565,6 +569,37 @@ TclWinSetInterfaces(
 		  (BOOL (WINAPI *)(CONST TCHAR*, TCHAR*, 
 		  DWORD)) GetProcAddress(hInstance, 
 		  "GetVolumeNameForVolumeMountPointW");
+		FreeLibrary(hInstance);
+	    }
+	    hInstance = LoadLibraryA("advapi32");
+	    if (hInstance != NULL) {
+		tclWinProcs->getFileSecurityProc = (BOOL (WINAPI *)(
+		  LPCTSTR lpFileName, 
+		  SECURITY_INFORMATION RequestedInformation,
+		  PSECURITY_DESCRIPTOR pSecurityDescriptor, DWORD nLength, 
+		  LPDWORD lpnLengthNeeded)) GetProcAddress(hInstance, 
+							   "GetFileSecurityW"); 
+		tclWinProcs->impersonateSelfProc = (BOOL (WINAPI *) (
+		  SECURITY_IMPERSONATION_LEVEL ImpersonationLevel)) 
+		  GetProcAddress(hInstance, "ImpersonateSelf");
+		tclWinProcs->openThreadTokenProc = (BOOL (WINAPI *) (
+		  HANDLE ThreadHandle, DWORD DesiredAccess, BOOL OpenAsSelf,
+		  PHANDLE TokenHandle)) GetProcAddress(hInstance, 
+						       "OpenThreadToken");
+		tclWinProcs->revertToSelfProc = (BOOL (WINAPI *) (void)) 
+		  GetProcAddress(hInstance, "RevertToSelf");
+		tclWinProcs->mapGenericMaskProc = (VOID (WINAPI *) (
+		  PDWORD AccessMask, PGENERIC_MAPPING GenericMapping)) 
+		  GetProcAddress(hInstance, "MapGenericMask");
+		tclWinProcs->accessCheckProc = (BOOL (WINAPI *)(
+		  PSECURITY_DESCRIPTOR pSecurityDescriptor, 
+	          HANDLE ClientToken, DWORD DesiredAccess,
+	          PGENERIC_MAPPING GenericMapping,
+		  PPRIVILEGE_SET PrivilegeSet,
+		  LPDWORD PrivilegeSetLength,
+		  LPDWORD GrantedAccess,
+		  LPBOOL AccessStatus)) GetProcAddress(hInstance, 
+		  "AccessCheck");
 		FreeLibrary(hInstance);
 	    }
 	}
