@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.25 1999/08/02 17:45:38 redman Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.26 1999/08/02 18:33:44 redman Exp $
  */
 
 #include "tclInt.h"
@@ -780,7 +780,6 @@ TclStubs tclStubs = {
     Tcl_AppendUnicodeToObj, /* 384 */
     Tcl_RegExpMatchObj, /* 385 */
     Tcl_SetNotifier, /* 386 */
-    Tcl_RegExpMatchObj, /* 387 */
 };
 
 /* !END!: Do not edit above this line. */

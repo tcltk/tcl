@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.23 1999/08/02 17:45:36 redman Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.24 1999/08/02 18:33:43 redman Exp $
 
 library tcl
 
@@ -1333,11 +1333,6 @@ declare 385 generic {
 }
 declare 386 generic {
     void Tcl_SetNotifier(Tcl_NotifierProcs *notifierProcPtr)
-}
-
-declare 387 generic {
-    int Tcl_RegExpMatchObj (Tcl_Interp *interp, \
-	    char *string, Tcl_Obj *patObj)
 }
 
 ##############################################################################
