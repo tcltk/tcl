@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclGetDate.y,v 1.18 2001/10/18 20:20:28 hobbs Exp $
+ * RCS: @(#) $Id: tclGetDate.y,v 1.18.4.1 2005/03/15 16:29:53 kennykb Exp $
  */
 
 %{
@@ -1051,9 +1051,9 @@ yylex()
 int
 TclGetDate(p, now, zone, timePtr)
     char *p;
-    unsigned long now;
+    Tcl_WideInt now;
     long zone;
-    unsigned long *timePtr;
+    Tcl_WideInt *timePtr;
 {
     struct tm *tm;
     time_t Start;
@@ -1063,8 +1063,8 @@ TclGetDate(p, now, zone, timePtr)
 
     yyInput = p;
     /* now has to be cast to a time_t for 64bit compliance */
-    Start = now;
-    tm = TclpGetDate((TclpTime_t) &Start, 0);
+    Start = (time_t) now;
+    tm = TclpGetDate((TclpTime_t) &Start, (zone == -50000));
     thisyear = tm->tm_year + TM_YEAR_BASE;
     yyYear = thisyear;
     yyMonth = tm->tm_mon + 1;
@@ -1123,7 +1123,7 @@ TclGetDate(p, now, zone, timePtr)
             return -1;
 	}
     } else {
-        Start = now;
+        Start = (time_t) now;
         if (!yyHaveRel) {
             Start -= ((tm->tm_hour * 60L * 60L) +
 		    tm->tm_min * 60L) +	tm->tm_sec;

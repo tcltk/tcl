@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclClock.c,v 1.20.2.1 2004/05/14 21:41:11 kennykb Exp $
+ * RCS: @(#) $Id: tclClock.c,v 1.20.2.2 2005/03/15 16:29:53 kennykb Exp $
  */
 
 #include "tcl.h"
@@ -29,7 +29,7 @@ TCL_DECLARE_MUTEX(clockMutex)
  */
 
 static int		FormatClock _ANSI_ARGS_((Tcl_Interp *interp,
-			    unsigned long clockVal, int useGMT,
+			    Tcl_WideInt clockVal, int useGMT,
 			    char *format));
 
 /*
@@ -62,7 +62,7 @@ Tcl_ClockObjCmd (client, interp, objc, objv)
     int useGMT = 0;
     char *format = "%a %b %d %X %Z %Y";
     int dummy;
-    unsigned long baseClock, clockVal;
+    Tcl_WideInt baseClock, clockVal;
     long zone;
     Tcl_Obj *baseObjPtr = NULL;
     char *scanStr;
@@ -128,7 +128,7 @@ Tcl_ClockObjCmd (client, interp, objc, objv)
 		return TCL_ERROR;
 	    }
 
-	    if (Tcl_GetLongFromObj(interp, objv[2], (long*) &clockVal)
+	    if (Tcl_GetWideIntFromObj(interp, objv[2], &clockVal)
 		    != TCL_OK) {
 		return TCL_ERROR;
 	    }
@@ -157,7 +157,7 @@ Tcl_ClockObjCmd (client, interp, objc, objv)
 	    if (objc != 0) {
 		goto wrongFmtArgs;
 	    }
-	    return FormatClock(interp, (unsigned long) clockVal, useGMT,
+	    return FormatClock(interp, clockVal, useGMT,
 		    format);
 
 	case COMMAND_SCAN:			/* scan */
@@ -194,8 +194,8 @@ Tcl_ClockObjCmd (client, interp, objc, objv)
 	    }
 
 	    if (baseObjPtr != NULL) {
-		if (Tcl_GetLongFromObj(interp, baseObjPtr,
-			(long*) &baseClock) != TCL_OK) {
+		if (Tcl_GetWideIntFromObj(interp, baseObjPtr,
+					  &baseClock) != TCL_OK) {
 		    return TCL_ERROR;
 		}
 	    } else {
@@ -205,13 +205,13 @@ Tcl_ClockObjCmd (client, interp, objc, objv)
 	    if (useGMT) {
 		zone = -50000; /* Force GMT */
 	    } else {
-		zone = TclpGetTimeZone((unsigned long) baseClock);
+		zone = TclpGetTimeZone(baseClock);
 	    }
 
 	    scanStr = Tcl_GetStringFromObj(objv[2], &dummy);
 	    Tcl_MutexLock(&clockMutex);
-	    if (TclGetDate(scanStr, (unsigned long) baseClock, zone,
-		    (unsigned long *) &clockVal) < 0) {
+	    if (TclGetDate(scanStr, baseClock, zone,
+		    &clockVal) < 0) {
 		Tcl_MutexUnlock(&clockMutex);
 		Tcl_AppendStringsToObj(resultPtr,
 			"unable to convert date-time string \"",
@@ -220,7 +220,7 @@ Tcl_ClockObjCmd (client, interp, objc, objv)
 	    }
 	    Tcl_MutexUnlock(&clockMutex);
 
-	    Tcl_SetLongObj(resultPtr, (long) clockVal);
+	    Tcl_SetWideIntObj(resultPtr, clockVal);
 	    return TCL_OK;
 
 	case COMMAND_SECONDS:			/* seconds */
@@ -255,7 +255,7 @@ Tcl_ClockObjCmd (client, interp, objc, objv)
 static int
 FormatClock(interp, clockVal, useGMT, format)
     Tcl_Interp *interp;			/* Current interpreter. */
-    unsigned long clockVal;	       	/* Time in seconds. */
+    Tcl_WideInt clockVal;	       	/* Time in seconds. */
     int useGMT;				/* Boolean */
     char *format;			/* Format string */
 {
@@ -317,7 +317,7 @@ FormatClock(interp, clockVal, useGMT, format)
     }
 #endif
 
-    tclockVal = clockVal;
+    tclockVal = (time_t) clockVal;
     timeDataPtr = TclpGetDate((TclpTime_t) &tclockVal, useGMT);
     
     /*
