@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinThrd.c,v 1.17 2001/09/05 00:32:31 davygrvy Exp $
+ * RCS: @(#) $Id: tclWinThrd.c,v 1.18 2001/09/07 18:57:20 mdejong Exp $
  */
 
 #include "tclWinInt.h"
@@ -213,7 +213,7 @@ TclpThreadExit(status)
     LeaveCriticalSection(&joinLock);
 
 #if defined(__MSVCRT__) || defined(__BORLANDC__)
-    _endthreadex((DWORD)status);
+    _endthreadex((unsigned) status);
 #else
     ExitThread((DWORD) status);
 #endif
