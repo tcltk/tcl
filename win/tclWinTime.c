@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinTime.c,v 1.6 2000/11/21 21:33:43 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclWinTime.c,v 1.7 2000/12/10 03:25:38 hobbs Exp $
  */
 
 #include "tclWinInt.h"
@@ -685,11 +685,12 @@ CalibrationThread( LPVOID arg )
     /* Run the calibration once a second */
 
     for ( ; ; ) {
-
 	Sleep( 1000 );
 	UpdateTimeEachSecond();
-	
     }
+
+    /* lint */
+    return (DWORD) 0;
 }
 
 /*
