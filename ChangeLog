@@ -12,6 +12,9 @@
 	where the 'system' locale tests fail on a non-English Windows
 	machine. [Bug 1023761].  Added a test to make sure that alias
 	time zones load correctly. [Bug 1023779].
+	* tests/timer.test (timer-1.1, timer-2.1): Changed to (one hopes!)
+	be more resilient on an overloaded system, if [after 200] sleeps
+	for 300 ms or longer.
 	* tools/tclZIC.tcl (writeLinks): Corrected a problem where
 	alias time zone names were written incorrectly, causing them
 	to fail to load at run time. [Bug 1023779].
