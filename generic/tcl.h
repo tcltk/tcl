@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.102.2.3 2001/09/25 16:49:55 dkf Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.102.2.4 2001/09/27 15:11:41 dkf Exp $
  */
 
 #ifndef _TCL
@@ -344,7 +344,6 @@ typedef long LONG;
  * Type of 64-bit values on 32-bit systems.  FIXME - DKF
  */
 typedef long long	Tcl_WideInt;
-typedef unsigned int	Tcl_Length;
 typedef struct stat64	Tcl_StatBuf;
 
 /*
@@ -591,10 +590,9 @@ typedef void (Tcl_CmdTraceProc) _ANSI_ARGS_((ClientData clientData,
 typedef void (Tcl_DupInternalRepProc) _ANSI_ARGS_((struct Tcl_Obj *srcPtr, 
         struct Tcl_Obj *dupPtr));
 typedef int (Tcl_EncodingConvertProc)_ANSI_ARGS_((ClientData clientData,
-	CONST char *src, Tcl_Length srcLen, int flags,
-	Tcl_EncodingState *statePtr, char *dst, Tcl_Length dstLen,
-	Tcl_Length *srcReadPtr, Tcl_Length *dstWrotePtr,
-	Tcl_Length *dstCharsPtr));
+	CONST char *src, int srcLen, int flags, Tcl_EncodingState *statePtr,
+	char *dst, int dstLen, int *srcReadPtr, int *dstWrotePtr,
+	int *dstCharsPtr));
 typedef void (Tcl_EncodingFreeProc)_ANSI_ARGS_((ClientData clientData));
 typedef int (Tcl_EventProc) _ANSI_ARGS_((Tcl_Event *evPtr, int flags));
 typedef void (Tcl_EventCheckProc) _ANSI_ARGS_((ClientData clientData,
@@ -678,7 +676,7 @@ typedef struct Tcl_Obj {
 				 * Clients should use Tcl_GetStringFromObj
 				 * or Tcl_GetString to get a pointer to the
 				 * byte array as a readonly value. */
-    Tcl_Length length;		/* The number of bytes at *bytes, not
+    int length;			/* The number of bytes at *bytes, not
 				 * including the terminating null. */
     Tcl_ObjType *typePtr;	/* Denotes the object's type. Always
 				 * corresponds to the type of the object's
@@ -765,8 +763,8 @@ typedef struct Tcl_SavedResult {
     Tcl_FreeProc *freeProc;
     Tcl_Obj *objResultPtr;
     char *appendResult;
-    int appendAvl;			/* FIXME? Tcl_Length */
-    int appendUsed;			/* FIXME? Tcl_Length */
+    int appendAvl;
+    int appendUsed;
     char resultSpace[TCL_RESULT_SIZE+1];
 } Tcl_SavedResult;
 
@@ -877,9 +875,9 @@ typedef struct Tcl_CmdInfo {
 typedef struct Tcl_DString {
     char *string;		/* Points to beginning of string:  either
 				 * staticSpace below or a malloced array. */
-    Tcl_Length length;		/* Number of non-NULL characters in the
+    int length;			/* Number of non-NULL characters in the
 				 * string. */
-    Tcl_Length spaceAvl;	/* Total number of bytes available for the
+    int spaceAvl;		/* Total number of bytes available for the
 				 * string and its terminating NULL char. */
     char staticSpace[TCL_DSTRING_STATIC_SIZE];
 				/* Space to use in common case where string
@@ -1350,9 +1348,9 @@ typedef int	(Tcl_DriverCloseProc) _ANSI_ARGS_((ClientData instanceData,
 typedef int	(Tcl_DriverClose2Proc) _ANSI_ARGS_((ClientData instanceData,
 		    Tcl_Interp *interp, int flags));
 typedef int	(Tcl_DriverInputProc) _ANSI_ARGS_((ClientData instanceData,
-		    char *buf, Tcl_Length toRead, int *errorCodePtr));
+		    char *buf, int toRead, int *errorCodePtr));
 typedef int	(Tcl_DriverOutputProc) _ANSI_ARGS_((ClientData instanceData,
-		    char *buf, Tcl_Length toWrite, int *errorCodePtr));
+		    char *buf, int toWrite, int *errorCodePtr));
 typedef Tcl_WideInt (Tcl_DriverSeekProc) _ANSI_ARGS_((ClientData instanceData,
 		    Tcl_WideInt offset, int mode, int *errorCodePtr));
 typedef int	(Tcl_DriverSetOptionProc) _ANSI_ARGS_((
@@ -1873,7 +1871,7 @@ typedef struct Tcl_Token {
     int type;			/* Type of token, such as TCL_TOKEN_WORD;
 				 * see below for valid types. */
     char *start;		/* First character in token. */
-    Tcl_Length size;		/* Number of bytes in token. */
+    int size;			/* Number of bytes in token. */
     int numComponents;		/* If this token is composed of other
 				 * tokens, this field tells how many of
 				 * them there are (including components of
@@ -1992,12 +1990,12 @@ typedef struct Tcl_Parse {
     char *commentStart;		/* Pointer to # that begins the first of
 				 * one or more comments preceding the
 				 * command. */
-    Tcl_Length commentSize;	/* Number of bytes in comments (up through
+    int commentSize;		/* Number of bytes in comments (up through
 				 * newline character that terminates the
 				 * last comment).  If there were no
 				 * comments, this field is 0. */
     char *commandStart;		/* First character in first word of command. */
-    Tcl_Length commandSize;	/* Number of bytes in command, including
+    int commandSize;		/* Number of bytes in command, including
 				 * first character of first word, up
 				 * through the terminating newline,
 				 * close bracket, or semicolon. */

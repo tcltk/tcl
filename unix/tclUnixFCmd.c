@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFCmd.c,v 1.12.6.4 2001/09/27 10:21:32 dkf Exp $
+ * RCS: @(#) $Id: tclUnixFCmd.c,v 1.12.6.5 2001/09/27 15:18:52 dkf Exp $
  *
  * Portions of this code were derived from NetBSD source code which has
  * the following copyright notice:
@@ -97,7 +97,7 @@ static int		GetModeFromPermString _ANSI_ARGS_((
  */
 
 typedef int (TraversalProc) _ANSI_ARGS_((Tcl_DString *srcPtr,
-	Tcl_DString *dstPtr, CONST Tcl_StatBuf *statBufPtr, int type,
+	Tcl_DString *dstPtr, CONST struct stat *statBufPtr, int type,
 	Tcl_DString *errorPtr));
 
 /*
@@ -128,9 +128,9 @@ CONST TclFileAttrProcs tclpFileAttrProcs[] = {
  */
 
 static int		CopyFile _ANSI_ARGS_((CONST char *src,
-			    CONST char *dst, CONST Tcl_StatBuf *statBufPtr));
+			    CONST char *dst, CONST struct stat *statBufPtr));
 static int		CopyFileAtts _ANSI_ARGS_((CONST char *src,
-			    CONST char *dst, CONST Tcl_StatBuf *statBufPtr));
+			    CONST char *dst, CONST struct stat *statBufPtr));
 static int		DoCopyFile _ANSI_ARGS_((CONST char *srcPtr,
 			    CONST char *dstPtr));
 static int		DoCreateDirectory _ANSI_ARGS_((CONST char *pathPtr));
@@ -140,10 +140,10 @@ static int		DoRemoveDirectory _ANSI_ARGS_((Tcl_DString *pathPtr,
 static int		DoRenameFile _ANSI_ARGS_((CONST char *src,
 			    CONST char *dst));
 static int		TraversalCopy _ANSI_ARGS_((Tcl_DString *srcPtr,
-			    Tcl_DString *dstPtr, CONST Tcl_StatBuf *statBufPtr,
+			    Tcl_DString *dstPtr, CONST struct stat *statBufPtr,
 			    int type, Tcl_DString *errorPtr));
 static int		TraversalDelete _ANSI_ARGS_((Tcl_DString *srcPtr,
-			    Tcl_DString *dstPtr, CONST Tcl_StatBuf *statBufPtr,
+			    Tcl_DString *dstPtr, CONST struct stat *statBufPtr,
 			    int type, Tcl_DString *errorPtr));
 static int		TraverseUnixTree _ANSI_ARGS_((
 			    TraversalProc *traversalProc,
@@ -230,7 +230,7 @@ DoRenameFile(src, dst)
     if (errno == EINVAL) {
 	char srcPath[MAXPATHLEN], dstPath[MAXPATHLEN];
 	DIR *dirPtr;
-	struct dirent *dirEntPtr;			/* Not 64-bit aware */
+	struct dirent *dirEntPtr;
 
 	if ((realpath((char *) src, srcPath) != NULL)	/* INTL: Native. */
 		&& (realpath((char *) dst, dstPath) != NULL) /* INTL: Native. */
@@ -317,13 +317,13 @@ DoCopyFile(src, dst)
     CONST char *src;	/* Pathname of file to be copied (native). */
     CONST char *dst;	/* Pathname of file to copy to (native). */
 {
-    Tcl_StatBuf srcStatBuf, dstStatBuf;
+    struct stat srcStatBuf, dstStatBuf;
 
     /*
      * Have to do a stat() to determine the filetype.
      */
     
-    if (lstat64(src, &srcStatBuf) != 0) {		/* INTL: Native. */
+    if (lstat(src, &srcStatBuf) != 0) {			/* INTL: Native. */
 	return TCL_ERROR;
     }
     if (S_ISDIR(srcStatBuf.st_mode)) {
@@ -336,7 +336,7 @@ DoCopyFile(src, dst)
      * exists, so we remove it first
      */
     
-    if (lstat64(dst, &dstStatBuf) == 0) {		/* INTL: Native. */
+    if (lstat(dst, &dstStatBuf) == 0) {			/* INTL: Native. */
 	if (S_ISDIR(dstStatBuf.st_mode)) {
 	    errno = EISDIR;
 	    return TCL_ERROR;
@@ -406,7 +406,7 @@ CopyFile(src, dst, statBufPtr)
     CONST char *src;		/* Pathname of file to copy (native). */
     CONST char *dst;		/* Pathname of file to create/overwrite
 				 * (native). */
-    CONST Tcl_StatBuf *statBufPtr;
+    CONST struct stat *statBufPtr;
 				/* Used to determine mode and blocksize. */
 {
     int srcFd;
@@ -431,13 +431,6 @@ CopyFile(src, dst, statBufPtr)
 #else
 #ifndef NO_FSTATFS
     {
-	/*
-	 * *=*=* WARNING: SOLARIS HEADERS SAY statfs IS OBSOLETE! *=*=*
-	 *
-	 * This would not be a problem if it wasn't for the fact that
-	 * its replacement - statvfs - requires attention when working
-	 * with largefile support. - DKF
-	 */
 	struct statfs fs;
 	if (fstatfs(srcFd, &fs, sizeof(fs), 0) == 0) {
 	    blockSize = fs.f_bsize;
@@ -699,10 +692,10 @@ DoRemoveDirectory(pathPtr, recursive, errorPtr)
     
     if (recursive != 0) {
 	/* We should try to change permissions so this can be deleted */
-	Tcl_StatBuf statBuf;
+	struct stat statBuf;
 	int newPerm;
 
-	if (stat64(path, &statBuf) == 0) {
+	if (stat(path, &statBuf) == 0) {
 	    oldPerm = (mode_t) (statBuf.st_mode & 0x00007FFF);
 	}
 	
@@ -775,11 +768,11 @@ TraverseUnixTree(traverseProc, sourcePtr, targetPtr, errorPtr)
 				 * DString filled with UTF-8 name of file
 				 * causing error. */
 {
-    Tcl_StatBuf statBuf;
+    struct stat statBuf;
     CONST char *source, *errfile;
-    int result;
-    Tcl_Length sourceLen, targetLen;
-    struct dirent *dirEntPtr;				/* Not 64-bit aware */
+    int result, sourceLen;
+    int targetLen;
+    struct dirent *dirEntPtr;
     DIR *dirPtr;
 
     errfile = NULL;
@@ -787,7 +780,7 @@ TraverseUnixTree(traverseProc, sourcePtr, targetPtr, errorPtr)
     targetLen = 0;		/* lint. */
 
     source = Tcl_DStringValue(sourcePtr);
-    if (lstat64(source, &statBuf) != 0) {		/* INTL: Native. */
+    if (lstat(source, &statBuf) != 0) {			/* INTL: Native. */
 	errfile = source;
 	goto end;
     }
@@ -905,7 +898,7 @@ static int
 TraversalCopy(srcPtr, dstPtr, statBufPtr, type, errorPtr) 
     Tcl_DString *srcPtr;	/* Source pathname to copy (native). */
     Tcl_DString *dstPtr;	/* Destination pathname of copy (native). */
-    CONST Tcl_StatBuf *statBufPtr;
+    CONST struct stat *statBufPtr;
 				/* Stat info for file specified by srcPtr. */
     int type;                   /* Reason for call - see TraverseUnixTree(). */
     Tcl_DString *errorPtr;	/* If non-NULL, uninitialized or free
@@ -942,7 +935,7 @@ TraversalCopy(srcPtr, dstPtr, statBufPtr, type, errorPtr)
 
     if (errorPtr != NULL) {
 	Tcl_ExternalToUtfDString(NULL, Tcl_DStringValue(dstPtr),
-		(int)Tcl_DStringLength(dstPtr), errorPtr);
+		Tcl_DStringLength(dstPtr), errorPtr);
     }
     return TCL_ERROR;
 }
@@ -970,7 +963,7 @@ static int
 TraversalDelete(srcPtr, ignore, statBufPtr, type, errorPtr) 
     Tcl_DString *srcPtr;	/* Source pathname (native). */
     Tcl_DString *ignore;	/* Destination pathname (not used). */
-    CONST Tcl_StatBuf *statBufPtr;
+    CONST struct stat *statBufPtr;
 				/* Stat info for file specified by srcPtr. */
     int type;                   /* Reason for call - see TraverseUnixTree(). */
     Tcl_DString *errorPtr;	/* If non-NULL, uninitialized or free
@@ -996,7 +989,7 @@ TraversalDelete(srcPtr, ignore, statBufPtr, type, errorPtr)
     }
     if (errorPtr != NULL) {
 	Tcl_ExternalToUtfDString(NULL, Tcl_DStringValue(srcPtr),
-		(int)Tcl_DStringLength(srcPtr), errorPtr);
+		Tcl_DStringLength(srcPtr), errorPtr);
     }
     return TCL_ERROR;
 }
@@ -1024,7 +1017,7 @@ static int
 CopyFileAtts(src, dst, statBufPtr) 
     CONST char *src;		/* Path name of source file (native). */
     CONST char *dst;		/* Path name of target file (native). */
-    CONST Tcl_StatBuf *statBufPtr;
+    CONST struct stat *statBufPtr;
 				/* Stat info for source file */
 {
     struct utimbuf tval;
@@ -1156,7 +1149,7 @@ GetOwnerAttribute(interp, objIndex, fileName, attributePtrPtr)
 	CONST char *utf;
 
 	utf = Tcl_ExternalToUtfDString(NULL, pwPtr->pw_name, -1, &ds); 
-	*attributePtrPtr = Tcl_NewStringObj(utf, (int)Tcl_DStringLength(&ds));
+	*attributePtrPtr = Tcl_NewStringObj(utf, Tcl_DStringLength(&ds));
 	Tcl_DStringFree(&ds);
     }
     endpwent();
@@ -1238,11 +1231,11 @@ SetGroupAttribute(interp, objIndex, fileName, attributePtr)
 	Tcl_DString ds;
 	struct group *groupPtr;
 	CONST char *string;
-	Tcl_Length length;
+	int length;
 
 	string = Tcl_GetStringFromObj(attributePtr, &length);
 
-	native = Tcl_UtfToExternalDString(NULL, string, (int)length, &ds);
+	native = Tcl_UtfToExternalDString(NULL, string, length, &ds);
 	groupPtr = getgrnam(native);			/* INTL: Native. */
 	Tcl_DStringFree(&ds);
 
@@ -1301,11 +1294,11 @@ SetOwnerAttribute(interp, objIndex, fileName, attributePtr)
 	Tcl_DString ds;
 	struct passwd *pwPtr;
 	CONST char *string;
-	Tcl_Length length;
+	int length;
 
 	string = Tcl_GetStringFromObj(attributePtr, &length);
 
-	native = Tcl_UtfToExternalDString(NULL, string, (int)length, &ds);
+	native = Tcl_UtfToExternalDString(NULL, string, length, &ds);
 	pwPtr = getpwnam(native);			/* INTL: Native. */
 	Tcl_DStringFree(&ds);
 

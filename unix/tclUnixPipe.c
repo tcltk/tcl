@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPipe.c,v 1.15.6.2 2001/09/27 10:21:32 dkf Exp $
+ * RCS: @(#) $Id: tclUnixPipe.c,v 1.15.6.3 2001/09/27 15:18:53 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -53,9 +53,9 @@ static int	PipeCloseProc _ANSI_ARGS_((ClientData instanceData,
 static int	PipeGetHandleProc _ANSI_ARGS_((ClientData instanceData,
 		    int direction, ClientData *handlePtr));
 static int	PipeInputProc _ANSI_ARGS_((ClientData instanceData,
-		    char *buf, Tcl_Length toRead, int *errorCode));
+		    char *buf, int toRead, int *errorCode));
 static int	PipeOutputProc _ANSI_ARGS_((
-		    ClientData instanceData, char *buf, Tcl_Length toWrite,
+		    ClientData instanceData, char *buf, int toWrite,
 		    int *errorCode));
 static void	PipeWatchProc _ANSI_ARGS_((ClientData instanceData, int mask));
 static void	RestoreSignals _ANSI_ARGS_((void));
@@ -151,7 +151,7 @@ TclpOpenFile(fname, mode)
 	 */
 
 	if (mode & O_WRONLY) {
-	    lseek64(fd, (off64_t) 0, SEEK_END);
+	    lseek(fd, (off_t) 0, SEEK_END);
 	}
 
 	/*
@@ -214,7 +214,7 @@ TclpCreateTempFile(contents)
 	    return NULL;
 	}
 	Tcl_DStringFree(&dstring);
-	lseek64(fd, (off64_t) 0, SEEK_SET);
+	lseek(fd, (off_t) 0, SEEK_SET);
     }
     return MakeFile(fd);
 }
@@ -988,7 +988,7 @@ static int
 PipeInputProc(instanceData, buf, toRead, errorCodePtr)
     ClientData instanceData;		/* Pipe state. */
     char *buf;				/* Where to store data read. */
-    Tcl_Length toRead;			/* How much space is available
+    int toRead;				/* How much space is available
                                          * in the buffer? */
     int *errorCodePtr;			/* Where to store error code. */
 {
@@ -1036,7 +1036,7 @@ static int
 PipeOutputProc(instanceData, buf, toWrite, errorCodePtr)
     ClientData instanceData;		/* Pipe state. */
     char *buf;				/* The data buffer. */
-    Tcl_Length toWrite;			/* How many bytes to write? */
+    int toWrite;			/* How many bytes to write? */
     int *errorCodePtr;			/* Where to store error code. */
 {
     PipeState *psPtr = (PipeState *) instanceData;
