@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclBasic.c 1.305 97/08/13 10:34:43
+ * SCCS: %Z% $Id: tclBasic.c,v 1.3 1998/06/10 12:06:58 escoffon Exp $ 
  */
 
 #include "tclInt.h"
