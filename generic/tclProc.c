@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: %Z% $Id: tclProc.c,v 1.10 1998/07/24 13:49:29 surles Exp $ 
+ * SCCS: %Z% $Id: tclProc.c,v 1.11 1998/07/24 18:47:37 escoffon Exp $ 
  */
 
 #include "tclInt.h"
@@ -973,16 +973,16 @@ TclObjInterpProc(clientData, interp, objc, objv)
  *	"byte code" or if the compile conditions have changed
  *	(namespace context, epoch counters, etc.) then the body
  *	is recompiled.  Otherwise, this procedure does nothing.
-  *
-  * Results:
-  *	None.
-  *
-  * Side effects:
-  *	May change the internal representation of the body object
-  *	to compiled code.
-  *
-  *----------------------------------------------------------------------
-  */
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	May change the internal representation of the body object
+ *	to compiled code.
+ *
+ *----------------------------------------------------------------------
+ */
  
 int
 TclProcCompileProc(interp, procPtr, bodyPtr, nsPtr, description, procName)
@@ -1009,6 +1009,9 @@ TclProcCompileProc(interp, procPtr, bodyPtr, nsPtr, description, procName)
      * different interpreter, we recompile it. Note that compiling the body
      * might increase procPtr->numCompiledLocals if new local variables are
      * found while compiling.
+     *
+     * Precompiled procedure bodies, however, are immutable and therefore
+     * they are not recompiled, even if things have changed.
      */
  
     if (bodyPtr->typePtr == &tclByteCodeType) {
@@ -1018,8 +1021,17 @@ TclProcCompileProc(interp, procPtr, bodyPtr, nsPtr, description, procName)
  	        || (codePtr->compileEpoch != iPtr->compileEpoch)
  	        || (codePtr->nsPtr != nsPtr)
  	        || (codePtr->nsEpoch != nsPtr->resolverEpoch)) {
- 	    tclByteCodeType.freeIntRepProc(bodyPtr);
- 	    bodyPtr->typePtr = (Tcl_ObjType *) NULL;
+            if (codePtr->flags & TCL_BYTECODE_PRECOMPILED) {
+                if (codePtr->iPtr != iPtr) {
+                    panic("TclProcCompileProc: compiled body jumped interps");
+                }
+	        codePtr->compileEpoch = iPtr->compileEpoch;
+ 	        codePtr->nsEpoch = nsPtr->resolverEpoch;
+                codePtr->nsPtr = nsPtr;
+            } else {
+                tclByteCodeType.freeIntRepProc(bodyPtr);
+                bodyPtr->typePtr = (Tcl_ObjType *) NULL;
+            }
  	}
     }
     if (bodyPtr->typePtr != &tclByteCodeType) {
