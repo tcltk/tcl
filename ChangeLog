@@ -1,3 +1,10 @@
+2001-09-28  Andreas Kupries  <andreas_kupries@users.sourceforge.net> 
+
+	* generic/tclIO.c: added (on behalf of Kevin Kenny
+	  <kennykb@users.sourceforge.net>) two more '(ClientData)' casts
+	  on calls to Tcl_Preserve and Tcl_Release -- ones that Vince
+	  apparently missed.
+	
 2001-09-27  Don Porter  <dgp@users.sourceforge.net>
 
         * generic/tclIO.c (ChannelTimerProc):  Added Tcl_Preserve()

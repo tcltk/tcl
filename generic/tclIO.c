@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.20.2.10 2001/09/28 02:26:35 dgp Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.20.2.11 2001/09/28 16:30:12 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -6311,11 +6311,11 @@ ChannelTimerProc(clientData)
 	    (Tcl_ChannelBlockModeProc(chanPtr->typePtr) == NULL)) {
 	    statePtr->flags |= CHANNEL_TIMER_FEV;
 	}
-	Tcl_Preserve(statePtr);
+	Tcl_Preserve((ClientData) statePtr);
 	Tcl_NotifyChannel((Tcl_Channel)chanPtr, TCL_READABLE);
 
 	statePtr->flags &= ~CHANNEL_TIMER_FEV; 
-	Tcl_Release(statePtr);
+	Tcl_Release((ClientData) statePtr);
     } else {
 	statePtr->timer = NULL;
 	UpdateInterest(chanPtr);
