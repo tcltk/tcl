@@ -1,5 +1,12 @@
 2001-06-25  Mo DeJong  <mdejong@redhat.com>
 
+	* win/configure: Regen.
+	* win/configure.in: Use RC_DEFINE flag from tcl.m4.
+	* win/tcl.m4 (SC_CONFIG_CFLAGS): Set RC_DEFINE
+	flag based on the compiler in use.
+	
+2001-06-25  Mo DeJong  <mdejong@redhat.com>
+
 	* win/tcl.m4 (SC_CONFIG_CFLAGS): Link to the
 	imm32 library when building with mingw gcc.
 
