@@ -1,3 +1,8 @@
+2002-10-31  Andreas Kupries  <andreask@activestate.com>
+
+	* library/word.tcl: Changed $tcl_platform to $::tcl_platform to
+	  avoid possible scope trouble.
+
 2002-10-29  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* win/tclWinInt.h:
