@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.38 2002/08/07 17:13:56 msofer Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.39 2002/08/14 17:31:43 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -516,30 +516,11 @@ Tcl_NewObj()
     register Tcl_Obj *objPtr;
 
     /*
-     * Allocate the object using the list of free Tcl_Obj structs
-     * we maintain.
+     * Use the macro defined in tclInt.h - it will use the
+     * correct allocator.
      */
 
-    Tcl_MutexLock(&tclObjMutex);
-#ifdef PURIFY
-    objPtr = (Tcl_Obj *) Tcl_Ckalloc(sizeof(Tcl_Obj));
-#elif defined(TCL_THREADS) && defined(USE_THREAD_ALLOC)
-    objPtr = TclThreadAllocObj(); 
-#else
-    if (tclFreeObjList == NULL) {
-	TclAllocateFreeObjects();
-    }
-    objPtr = tclFreeObjList;
-    tclFreeObjList = (Tcl_Obj *) tclFreeObjList->internalRep.otherValuePtr;
-#endif
-    objPtr->refCount = 0;
-    objPtr->bytes    = tclEmptyStringRep;
-    objPtr->length   = 0;
-    objPtr->typePtr  = NULL;
-#ifdef TCL_COMPILE_STATS
-    tclObjsAlloced++;
-#endif /* TCL_COMPILE_STATS */
-    Tcl_MutexUnlock(&tclObjMutex);
+    TclNewObj(objPtr);
     return objPtr;
 }
 #endif /* TCL_MEM_DEBUG */
@@ -583,24 +564,13 @@ Tcl_DbNewObj(file, line)
     register Tcl_Obj *objPtr;
 
     /*
-     * If debugging Tcl's memory usage, allocate the object using ckalloc.
-     * Otherwise, allocate it using the list of free Tcl_Obj structs we
-     * maintain.
+     * Use the macro defined in tclInt.h - it will use the
+     * correct allocator.
      */
 
-    objPtr = (Tcl_Obj *) Tcl_DbCkalloc(sizeof(Tcl_Obj), file, line);
-    objPtr->refCount = 0;
-    objPtr->bytes    = tclEmptyStringRep;
-    objPtr->length   = 0;
-    objPtr->typePtr  = NULL;
-#ifdef TCL_COMPILE_STATS
-    Tcl_MutexLock(&tclObjMutex);
-    tclObjsAlloced++;
-    Tcl_MutexUnlock(&tclObjMutex);
-#endif /* TCL_COMPILE_STATS */
+    TclDbNewObj(objPtr, file, line);
     return objPtr;
 }
-
 #else /* if not TCL_MEM_DEBUG */
 
 Tcl_Obj *
