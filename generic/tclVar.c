@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.59 2002/07/17 20:27:34 msofer Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.60 2002/07/17 20:42:27 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -5075,14 +5075,15 @@ DupParsedVarName(srcPtr, dupPtr)
 
     if (arrayPtr != NULL) {
 	Tcl_IncrRefCount(arrayPtr);
+	elemLen = strlen(elem);
+	elemCopy = ckalloc(elemLen+1);
+	memcpy(elemCopy, elem, elemLen);
+	*(elemCopy + elemLen) = '\0';
+	elem = elemCopy;
     }
-    elemLen = strlen(elem);
-    elemCopy = ckalloc(elemLen+1);
-    memcpy(elemCopy, elem, elemLen);
-    *(elemCopy + elemLen) = '\0';
 
     dupPtr->internalRep.twoPtrValue.ptr1 = (VOID *) arrayPtr;
-    dupPtr->internalRep.twoPtrValue.ptr2 = (VOID *) elemCopy;
+    dupPtr->internalRep.twoPtrValue.ptr2 = (VOID *) elem;
     dupPtr->typePtr = &tclParsedVarNameType;
 }
 
