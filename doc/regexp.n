@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: regexp.n,v 1.8 2000/02/02 22:32:09 hobbs Exp $
+'\" RCS: @(#) $Id: regexp.n,v 1.9 2000/04/14 06:42:32 hobbs Exp $
 '\" 
 .so man.macros
 .TH regexp n 8.3 Tcl "Tcl Built-In Commands"
@@ -91,8 +91,8 @@ is specified with match variables, they will continue information for
 the last match only.
 .TP 15
 \fB\-inline\fR
-Causes the command to return the data that would otherwise be placed
-in match variables to be returned as a list.  When using \fB-inline\fR,
+Causes the command to return, as a list, the data that would otherwise
+be placed in match variables.  When using \fB-inline\fR,
 match variables may not be specified.  If used with \fB-all\fR, the
 list will be concatenated at each iteration, such that a flat list is
 always returned.  For each match iteration, the command will append the
