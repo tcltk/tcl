@@ -1,3 +1,11 @@
+2003-04-11  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclIO.c (UpdateInterest): When dropping interest in
+	  TCL_READABLE now dropping interest in TCL_EXCEPTION too. This
+	  fixes a bug where Expect detects eof on a file prematurely on
+	  solaris 2.6 and higher. A much more complete explanation is in
+	  the code itself (40 lines of comments for a one-line change :)
+
 2003-04-11  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* tests/cmdAH.test: fix test suite problem if /home is a symlink
