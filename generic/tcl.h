@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.102.2.14 2001/10/15 13:57:17 dkf Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.102.2.15 2001/10/15 14:58:54 dkf Exp $
  */
 
 #ifndef _TCL
@@ -377,22 +377,28 @@ typedef int *ClientData;
  * Naturally, support for [format]ting of wide values is dependent on
  * TCL_PRINTF_SUPPORTS_LL
  */
-#if defined(_LP64) || defined (__ALPHA) || defined(__alpha) || defined(_AIX)
+#ifdef TCL_WIDE_INT_TYPE
+typedef TCL_WIDE_INT_TYPE Tcl_WideInt;
+#else
+#   ifndef TCL_WIDE_INT_IS_LONG
+#      if defined(_LP64)||defined(__ALPHA)||defined(__alpha)||defined(_AIX)
 /*
  * Longs are 64-bit (or the compiler doesn't know how to do anything
  * else) so use them in all appropriate spots.
  */
-typedef long		Tcl_WideInt;
-#   define TCL_WIDE_INT_IS_LONG
-#else
-#   ifdef __WIN32__
+#         define TCL_WIDE_INT_IS_LONG
+#      else
+#         ifdef __WIN32__
 typedef __int64		Tcl_WideInt;
-#   else
+#         else
 typedef long long	Tcl_WideInt;
-#   endif
-#endif  /* _LP64 | __ALPHA | __alpha | _AIX */
+#         endif /* __WIN32__ */
+#      endif  /* _LP64 | __ALPHA | __alpha | _AIX */
+#   endif /* !TCL_WIDE_INT_IS_LONG */
+#endif /* TCL_WIDE_INT_TYPE */
 
 #ifdef TCL_WIDE_INT_IS_LONG
+typedef long		Tcl_WideInt;
 typedef off_t		Tcl_SeekOffset;
 typedef struct stat	Tcl_StatBuf;
 typedef struct dirent	Tcl_DirEntry;

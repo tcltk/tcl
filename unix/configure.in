@@ -3,7 +3,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 AC_INIT(../generic/tcl.h)
-# RCS: @(#) $Id: configure.in,v 1.72 2001/08/12 21:17:43 mdejong Exp $
+# RCS: @(#) $Id: configure.in,v 1.72.6.1 2001/10/15 14:58:55 dkf Exp $
 
 TCL_VERSION=8.4
 TCL_MAJOR_VERSION=8
@@ -60,6 +60,27 @@ if test -n "$GCC"; then
 fi  
 fi
 
+AC_C_CROSS
+AC_MSG_CHECKING([for 64-bit integer type])
+AC_CACHE_VAL(tcl_cv_type_64bit,[
+    AC_TRY_COMPILE(,[__int64 value = (__int64) 0;],
+        tcl_cv_type_64bit=__int64,
+        AC_TRY_RUN([
+#include <unistd.h>
+int main() {
+    exit(!(sizeof(long long) > sizeof(long)));
+}
+],
+	    tcl_cv_type_64bit="long long",
+	    tcl_cv_type_64bit=none, tcl_cv_type_64bit=none))])
+if test "${tcl_cv_type_64bit}" = none ; then
+    AC_DEFINE(TCL_WIDE_INT_IS_LONG)
+    AC_MSG_RESULT(using long)
+else
+    AC_DEFINE_UNQUOTED(TCL_WIDE_INT_TYPE,${tcl_cv_type_64bit})
+    AC_MSG_RESULT(${tcl_cv_type_64bit})
+fi
+
 #--------------------------------------------------------------------
 #	Supply substitutes for missing POSIX library procedures, or
 #	set flags so Tcl uses alternate procedures.
@@ -72,7 +93,7 @@ AC_CHECK_FUNCS(getcwd, , [AC_DEFINE(USEGETWD)])
 
 AC_REPLACE_FUNCS(opendir strstr)
 
-AC_REPLACE_FUNCS(strtol tmpnam waitpid)
+AC_REPLACE_FUNCS(strtol tmpnam waitpid strtoll strtoull)
 AC_CHECK_FUNC(strerror, , [AC_DEFINE(NO_STRERROR)])
 AC_CHECK_FUNC(getwd, , [AC_DEFINE(NO_GETWD)])
 AC_CHECK_FUNC(wait3, , [AC_DEFINE(NO_WAIT3)])
@@ -540,5 +561,7 @@ AC_SUBST(TCL_SRC_DIR)
 AC_SUBST(TCL_BIN_DIR)
 AC_SUBST(TCL_UNSHARED_LIB_SUFFIX)
 AC_SUBST(TCL_VERSION)
+
+AC_SUBST(TCL_HAS_LONGLONG)
 
 AC_OUTPUT(Makefile tclConfig.sh)
