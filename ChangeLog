@@ -1,3 +1,10 @@
+2005-01-09  Joe English  <jenglish@users.sourceforge.net>
+
+	* unix/tclUnixThrd.c, unix/tclUnixPort.h: Remove readdir_r()
+	and related #ifdeffery (see #1095909).
+	* unix/tcl.m4, unix/tclConfig.h.in: Don't check for HAVE_READDIR_R.
+	* unix/configure: Regenerated.
+
 2005-01-06  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* library/http/http.tcl (http::mapReply): Significant performance
