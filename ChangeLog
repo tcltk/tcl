@@ -1,3 +1,9 @@
+2004-07-13  Zoran Vasiljevic <vasiljevic@users.sf.net>
+
+        * generic/tclEvent.c (NewThreadProc): Fixed broken build on
+        Windows caused by missing TCL_THREAD_CREATE_RETURN. This is
+	backported from head. Thnx to Kevin Kenny for spotting this. 
+
 2004-07-03  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclExecute.c (ExprRoundFunc):
