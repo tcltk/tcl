@@ -6,7 +6,7 @@
 # Copyright (c) 1995-1996 Sun Microsystems, Inc.
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 #
-# RCS: @(#) $Id: makefile.vc,v 1.1.2.20 1999/03/19 04:01:26 stanton Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.1.2.21 1999/03/30 02:29:55 redman Exp $
 
 # Does not depend on the presence of any environment variables in
 # order to compile tcl; all needed information is derived from 
@@ -202,12 +202,7 @@ TCLOBJS = \
 	$(TMPDIR)\tclWinThrd.obj \
 	$(TMPDIR)\tclWinTime.obj 
 
-TCLSTUBOBJS = \
-	$(TMPDIR)\tclStubLib.obj \
-	$(TMPDIR)\tclStubs.obj \
-	$(TMPDIR)\tclPlatStubs.obj \
-	$(TMPDIR)\tclIntStubs.obj \
-	$(TMPDIR)\tclIntPlatStubs.obj
+TCLSTUBOBJS = $(TMPDIR)\tclStubLib.obj \
 
 cc32		= "$(TOOLS32)\bin\cl.exe"
 link32		= "$(TOOLS32)\bin\link.exe"
@@ -510,17 +505,9 @@ $(TMPDIR)\tclWinReg.obj : $(WINDIR)\tclWinReg.c
 # The following objects are part of the stub library and should not
 # be built as DLL objects but none of the symbols should be exported
 
-$(TMPDIR)\tclStubs.obj : $(GENERICDIR)\tclStubs.c
+$(TMPDIR)\tclStubLib.obj : $(GENERICDIR)\tclStubLib.c
 	$(cc32) $(TCL_CFLAGS) -DSTATIC_BUILD -Fo$@ $?
 
-$(TMPDIR)\tclPlatStubs.obj : $(GENERICDIR)\tclPlatStubs.c
-	$(cc32) $(TCL_CFLAGS) -DSTATIC_BUILD -Fo$@ $?
-
-$(TMPDIR)\tclIntStubs.obj : $(GENERICDIR)\tclIntStubs.c
-	$(cc32) $(TCL_CFLAGS) -DSTATIC_BUILD -Fo$@ $?
-
-$(TMPDIR)\tclPlatIntStubs.obj : $(GENERICDIR)\tclPlatIntStubs.c
-	$(cc32) $(TCL_CFLAGS) -DSTATIC_BUILD -Fo$@ $?
 
 # Dedependency rules
 
