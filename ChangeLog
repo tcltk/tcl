@@ -1,3 +1,10 @@
+2005-03-15  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCompile.h:	Corrected mistaken casts to (int) of
+	TclPSizedInt values into TclPSizedInt variables within the
+	TclEmitInst1 macro.  Casting through the (int) type loses bits on
+	LP64 systems, where sizeof(int) < sizeof(void *).
+
 2005-03-15 Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclCompile.c:

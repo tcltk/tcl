@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.53.2.9 2005/03/15 19:48:50 msofer Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.53.2.10 2005/03/15 23:57:04 dgp Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -968,8 +968,8 @@ MODULE_SCOPE int	TclWordKnownAtCompileTime _ANSI_ARGS_((
     if (((envPtr)->codeNext + 2) > (envPtr)->codeEnd) { \
 	TclExpandCodeArray(envPtr); \
     } \
-    (*(envPtr)->codeNext++).i = (unsigned int) (op);\
-    (*(envPtr)->codeNext++).i = (int) (n); \
+    (*(envPtr)->codeNext++).i = (TclPSizedInt) (op);\
+    (*(envPtr)->codeNext++).i = (TclPSizedInt) (n); \
     TclUpdateStackReqs((op), (n), envPtr)
 
 #define TclEmitInst2(op, n, u, envPtr)\
