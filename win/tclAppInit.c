@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclAppInit.c,v 1.19 2004/06/11 19:41:23 kennykb Exp $
+ * RCS: @(#) $Id: tclAppInit.c,v 1.20 2004/09/18 22:01:36 davygrvy Exp $
  */
 
 #include "tcl.h"
@@ -176,6 +176,7 @@ Tcl_AppInit(interp)
     {
 	extern Tcl_PackageInitProc Registry_Init;
 	extern Tcl_PackageInitProc Dde_Init;
+	extern Tcl_PackageInitProc Dde_SafeInit;
 
 	if (Registry_Init(interp) == TCL_ERROR) {
 	    return TCL_ERROR;
@@ -185,7 +186,7 @@ Tcl_AppInit(interp)
 	if (Dde_Init(interp) == TCL_ERROR) {
 	    return TCL_ERROR;
 	}
-	Tcl_StaticPackage(interp, "dde", Dde_Init, NULL);
+	Tcl_StaticPackage(interp, "dde", Dde_Init, Dde_SafeInit);
    }
 #endif
 
