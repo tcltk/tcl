@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFCmd.c,v 1.29 2003/05/14 19:21:30 das Exp $
+ * RCS: @(#) $Id: tclUnixFCmd.c,v 1.30 2003/07/16 15:29:09 dgp Exp $
  *
  * Portions of this code were derived from NetBSD source code which has
  * the following copyright notice:
@@ -1624,7 +1624,6 @@ GetModeFromPermString(interp, modeStringPtr, modePtr)
 			continue;
 		    default  :
 			return TCL_ERROR;
-			break;
 		}
 	    }
 	    /* what */
@@ -1648,7 +1647,6 @@ GetModeFromPermString(interp, modeStringPtr, modePtr)
 		    break;
 		default  :
 		    return TCL_ERROR;
-		    break;
 	    }
 	    if (*(modeStringPtr+n+i) == ',') {
 		i++;

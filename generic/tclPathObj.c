@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPathObj.c,v 1.3 2003/04/16 08:16:23 vincentdarley Exp $
+ * RCS: @(#) $Id: tclPathObj.c,v 1.4 2003/07/16 15:29:09 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -528,6 +528,7 @@ Tcl_FSConvertToPathType(interp, objPtr)
 	 * This code is intentionally never reached.  Once fs-optimisation
 	 * is complete, it will be removed/replaced
 	 */
+#if 0
 	if (fsPathPtr->cwdPtr == NULL) {
 	    return TCL_OK;
 	} else {
@@ -542,6 +543,7 @@ Tcl_FSConvertToPathType(interp, objPtr)
 		return Tcl_ConvertToType(interp, objPtr, &tclFsPathType);
 	    }
 	}
+#endif
     } else {
 	return Tcl_ConvertToType(interp, objPtr, &tclFsPathType);
     }
