@@ -5,6 +5,8 @@
 	in framework toplevel; fixed stub library symbolic links to be
 	tcl version specific.
 
+	* unix/tclUnixTime.c: fixed typo.
+
 2003-05-18  Kevin Kenny  <kennykb@acm.org>
 
 	* compat/strftime.c:  Modified TclpStrftime to return its
