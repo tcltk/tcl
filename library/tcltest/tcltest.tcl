@@ -16,7 +16,7 @@
 # Contributions from Don Porter, NIST, 2002.  (not subject to US copyright)
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.tcl,v 1.85 2004/02/03 18:51:10 dgp Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.86 2004/02/04 06:15:18 dgp Exp $
 
 package require Tcl 8.3		;# uses [glob -directory]
 namespace eval tcltest {
@@ -2479,10 +2479,10 @@ proc tcltest::cleanupTests {{calledFromAllFile 0}} {
 		puts "rename core file (> 1)"
 		puts [outputChannel] "produced core file! \
 			Moving file to: \
-			[file join [temporaryDirectory] core-$name]"
+			[file join [temporaryDirectory] core-$testFileName]"
 		catch {file rename -force \
 			[file join [workingDirectory] core] \
-			[file join [temporaryDirectory] core-$name]
+			[file join [temporaryDirectory] core-$testFileName]
 		} msg
 		if {[string length $msg] > 0} {
 		    PrintError "Problem renaming file: $msg"
