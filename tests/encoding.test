@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: encoding.test,v 1.16 2003/02/21 02:40:58 hobbs Exp $
+# RCS: @(#) $Id: encoding.test,v 1.16.2.1 2003/03/27 21:46:32 msofer Exp $
 
 package require tcltest 2
 namespace import -force ::tcltest::*
@@ -332,7 +332,7 @@ fconfigure $fid -encoding binary
 puts -nonewline $fid $::iso2022encData
 close $fid
 
-test encoding-23.2 {iso2022-jp escape encoding test} {
+test encoding-23.1 {iso2022-jp escape encoding test} {
     string equal $::iso2022uniData $::iso2022uniData2
 } 1
 test encoding-23.2 {iso2022-jp escape encoding test} {
