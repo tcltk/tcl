@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.63 2001/11/14 23:17:04 hobbs Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.64 2001/11/21 02:36:20 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -882,6 +882,7 @@ TclStubs tclStubs = {
     Tcl_OutputBuffered, /* 479 */
     Tcl_FSMountsChanged, /* 480 */
     Tcl_EvalTokensStandard, /* 481 */
+    Tcl_GetTime, /* 482 */
 };
 
 /* !END!: Do not edit above this line. */

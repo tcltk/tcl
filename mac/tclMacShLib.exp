@@ -510,6 +510,7 @@ Tcl_GetSlave
 Tcl_GetStdChannel
 Tcl_GetStringFromObj
 Tcl_GetStringResult
+Tcl_GetTime
 Tcl_GetVar
 Tcl_GetVar2
 Tcl_GetVariableFullName

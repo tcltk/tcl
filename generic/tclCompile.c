@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.27 2001/11/14 23:17:03 hobbs Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.28 2001/11/21 02:36:20 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -592,7 +592,7 @@ TclCleanupByteCode(codePtr)
 		(double) (codePtr->numAuxDataItems * sizeof(AuxData));
 	statsPtr->currentCmdMapBytes -= (double) codePtr->numCmdLocBytes;
 
-	TclpGetTime(&destroyTime);
+	Tcl_GetTime(&destroyTime);
 	lifetimeSec = destroyTime.sec - codePtr->createTime.sec;
 	if (lifetimeSec > 2000) {	/* avoid overflow */
 	    lifetimeSec = 2000;
@@ -1630,7 +1630,7 @@ TclInitByteCodeObj(objPtr, envPtr)
 #ifdef TCL_COMPILE_STATS
     codePtr->structureSize = structureSize
 	    - (sizeof(size_t) + sizeof(Tcl_Time));
-    TclpGetTime(&(codePtr->createTime));
+    Tcl_GetTime(&(codePtr->createTime));
     
     RecordByteCodeStats(codePtr);
 #endif /* TCL_COMPILE_STATS */

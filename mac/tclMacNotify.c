@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacNotify.c,v 1.6 1999/08/10 04:21:40 jingham Exp $
+ * RCS: @(#) $Id: tclMacNotify.c,v 1.7 2001/11/21 02:36:21 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -351,7 +351,7 @@ Tcl_SetTimer(
 	 * Compute when the timer should fire.
 	 */
 	
-	TclpGetTime(&notifier.timer);
+	Tcl_GetTime(&notifier.timer);
 	notifier.timer.sec += timePtr->sec;
 	notifier.timer.usec += timePtr->usec;
 	if (notifier.timer.usec >= 1000000) {

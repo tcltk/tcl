@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.25 2001/11/14 23:17:04 hobbs Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.26 2001/11/21 02:36:21 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -2255,7 +2255,7 @@ TclGetIntForIndex(interp, objPtr, endValue, indexPtr)
  *----------------------------------------------------------------------
  */
 
-void
+static void
 UpdateStringOfEndOffset( objPtr )
     register Tcl_Obj* objPtr;
 {
@@ -2452,4 +2452,30 @@ CONST char *
 Tcl_GetNameOfExecutable()
 {
     return (tclExecutableName);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpGetTime --
+ *
+ *	Deprecated synonym for Tcl_GetTime.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Stores current time in the buffer designated by "timePtr"
+ *
+ * This procedure is provided for the benefit of extensions written
+ * before Tcl_GetTime was exported from the library.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclpGetTime( timePtr )
+    Tcl_Time* timePtr;
+{
+    Tcl_GetTime( timePtr );
 }
