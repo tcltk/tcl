@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.43 2001/08/07 00:56:15 hobbs Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.44 2001/09/13 11:56:19 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -2371,7 +2371,7 @@ Tcl_SubstObj(interp, objPtr, flags)
 	case '$':
 	    if (flags & TCL_SUBST_VARIABLES) {
 		Tcl_Parse parse;
-		Tcl_Obj *tempObj;
+		int code;
 
 		/*
 		 * Code is simpler overall if we (effectively) inline
@@ -2398,13 +2398,13 @@ Tcl_SubstObj(interp, objPtr, flags)
 		    Tcl_AppendToObj(resultObj, old, p-old);
 		}
 		p += parse.tokenPtr->size;
-		tempObj = Tcl_EvalTokens(interp, parse.tokenPtr,
-					 parse.numTokens);
-		if (tempObj == NULL) {
+		code = Tcl_EvalTokensStandard(interp, parse.tokenPtr,
+		        parse.numTokens);
+		if (code != TCL_OK) {
 		    goto errorResult;
 		}
-		Tcl_AppendObjToObj(resultObj, tempObj);
-		Tcl_DecrRefCount(tempObj);
+		Tcl_AppendObjToObj(resultObj, Tcl_GetObjResult(interp));
+		Tcl_ResetResult(interp);
 		old = p;
 	    } else {
 		p++;

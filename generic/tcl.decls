@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.57 2001/09/12 16:32:21 msofer Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.58 2001/09/13 11:56:19 msofer Exp $
 
 library tcl
 
@@ -1682,9 +1682,9 @@ declare 480 generic {
     void Tcl_FSMountsChanged(Tcl_Filesystem *fsPtr)
 }	  
 # New function due to TIP#56
-#declare 481 generic {
-#    int Tcl_EvalTokensStandard(Tcl_Interp *interp, Tcl_Token *tokenPtr, int count)
-#}
+declare 481 generic {
+    int Tcl_EvalTokensStandard(Tcl_Interp *interp, Tcl_Token *tokenPtr, int count)
+}
  
 ##############################################################################
 

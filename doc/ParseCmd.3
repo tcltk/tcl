@@ -4,13 +4,15 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: ParseCmd.3,v 1.4 2000/04/24 23:53:03 ericm Exp $
+'\" RCS: @(#) $Id: ParseCmd.3,v 1.5 2001/09/13 11:56:19 msofer Exp $
 '\" 
 .so man.macros
 .TH Tcl_ParseCommand 3 8.3 Tcl "Tcl Library Procedures"
 .BS
 .SH NAME
-Tcl_ParseCommand, Tcl_ParseExpr, Tcl_ParseBraces, Tcl_ParseQuotedString, Tcl_ParseVarName, Tcl_ParseVar, Tcl_FreeParse, Tcl_EvalTokens \- parse Tcl scripts and expressions
+Tcl_ParseCommand, Tcl_ParseExpr, Tcl_ParseBraces,
+Tcl_ParseQuotedString, Tcl_ParseVarName, Tcl_ParseVar, Tcl_FreeParse,
+Tcl_EvalTokens, BTcl_EvalTokensStandard \- parse Tcl scripts and expressions
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -37,13 +39,17 @@ char *
 .sp
 Tcl_Obj *
 \fBTcl_EvalTokens\fR(\fIinterp, tokenPtr, numTokens\fR)
+.sp
+Tcl_Obj *
+\fBTcl_EvalTokensStandard\fR(\fIinterp, tokenPtr, numTokens\fR)
 .SH ARGUMENTS
 .AS Tcl_Interp *usedParsePtr
 .AP Tcl_Interp *interp out
-For procedures other than \fBTcl_FreeParse\fR and \fBTcl_EvalTokens\fR,
-used only for error reporting;
+For procedures other than \fBTcl_FreeParse\fR, \fBTcl_EvalTokens\fR
+and \fBTcl_EvalTokensStandard\fR, used only for error reporting;
 if NULL, then no error messages are left after errors.
-For \fBTcl_EvalTokens\fR, determines the context for evaluating the
+For \fBTcl_EvalTokens\fR and \fBTcl_EvalTokensStandard\fR,
+determines the context for evaluating the
 script and also is used for error reporting; must not be NULL.
 .AP char *string in
 Pointer to first character in string to parse.
@@ -178,18 +184,27 @@ These procedures ignore any existing information in
 so if repeated calls are being made to any of them
 then \fBTcl_FreeParse\fR must be invoked once after each call.
 .PP
-\fBTcl_EvalTokens\fR evaluates a sequence of parse tokens from a Tcl_Parse
-structure.  The tokens typically consist
+\fBTcl_EvalTokensStandard\fR evaluates a sequence of parse tokens from
+a Tcl_Parse structure.  The tokens typically consist
 of all the tokens in a word or all the tokens that make up the index for
-a reference to an array variable.  \fBTcl_EvalTokens\fR performs the
-substitutions requested by the tokens, concatenates the
-resulting values, and returns the result in a new Tcl_Obj.  The
-reference count of the object returned as result has been
+a reference to an array variable.  \fBTcl_EvalTokensStandard\fR performs the
+substitutions requested by the tokens and concatenates the
+resulting values. 
+The return value from \fBTcl_EvalTokensStandard\fR is a Tcl completion
+code with one of the values \fBTCL_OK\fR, \fBTCL_ERROR\fR,
+\fBTCL_RETURN\fR, \fBTCL_BREAK\fR, or \fBTCL_CONTINUE\fR.
+In addition, a result value or error message is left in \fIinterp\fR's
+result; it can be retrieved using \fBTcl_GetObjResult\fR.
+.PP
+\fBTcl_EvalTokens\fR differs from \fBTcl_EvalTokensStandard\fR only in
+the return convention used: it returns the result in a new Tcl_Obj.
+The reference count of the object returned as result has been
 incremented, so the caller must
 invoke \fBTcl_DecrRefCount\fR when it is finished with the object.
-If an error occurs while evaluating the tokens (such as a reference to
-a non-existent variable) then the return value is NULL and an error
-message is left in \fIinterp\fR's result.
+If an error or other exception occurs while evaluating the tokens
+(such as a reference to a non-existent variable) then the return value
+is NULL and an error message is left in \fIinterp\fR's result. The use
+of \fBTcl_EvalTokens\fR is deprecated.
 
 .SH "TCL_PARSE STRUCTURE"
 .PP

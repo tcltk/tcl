@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.15 2001/05/03 21:14:57 msofer Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.16 2001/09/13 11:56:20 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1117,28 +1117,26 @@ Tcl_LogCommandInfo(interp, script, command, length)
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_EvalTokens --
+ * Tcl_EvalTokensStandard --
  *
  *	Given an array of tokens parsed from a Tcl command (e.g., the
  *	tokens that make up a word or the index for an array variable)
  *	this procedure evaluates the tokens and concatenates their
  *	values to form a single result value.
- *
+ * 
  * Results:
- *	The return value is a pointer to a newly allocated Tcl_Obj
- *	containing the value of the array of tokens.  The reference
- *	count of the returned object has been incremented.  If an error
- *	occurs in evaluating the tokens then a NULL value is returned
- *	and an error message is left in interp's result.
+ *	The return value is a standard Tcl completion code such as
+ *	TCL_OK or TCL_ERROR.  A result or error message is left in
+ *	interp's result.
  *
  * Side effects:
- *	A new object is allocated to hold the result.
- *
+ *	Depends on the array of tokens being evaled.
+  *
  *----------------------------------------------------------------------
  */
 
-Tcl_Obj *
-Tcl_EvalTokens(interp, tokenPtr, count)
+int
+Tcl_EvalTokensStandard(interp, tokenPtr, count)
     Tcl_Interp *interp;		/* Interpreter in which to lookup
 				 * variables, execute nested commands,
 				 * and report errors. */
@@ -1166,7 +1164,9 @@ Tcl_EvalTokens(interp, tokenPtr, count)
      * command's result object directly.
      */
 
+    code = TCL_OK;
     resultPtr = NULL;
+    Tcl_ResetResult(interp);
     for ( ; count > 0; count--, tokenPtr++) {
 	valuePtr = NULL;
 
@@ -1192,7 +1192,7 @@ Tcl_EvalTokens(interp, tokenPtr, count)
 		code = Tcl_EvalEx(interp, tokenPtr->start+1, tokenPtr->size-2,
 			0);
 		if (code != TCL_OK) {
-		    goto error;
+		    goto done;
 		}
 		valuePtr = Tcl_GetObjResult(interp);
 		break;
@@ -1200,12 +1200,16 @@ Tcl_EvalTokens(interp, tokenPtr, count)
 	    case TCL_TOKEN_VARIABLE:
 		if (tokenPtr->numComponents == 1) {
 		    indexPtr = NULL;
+		    index = NULL;
 		} else {
-		    indexPtr = Tcl_EvalTokens(interp, tokenPtr+2,
+		    code = Tcl_EvalTokensStandard(interp, tokenPtr+2,
 			    tokenPtr->numComponents - 1);
-		    if (indexPtr == NULL) {
-			goto error;
+		    if (code != TCL_OK) {
+			goto done;
 		    }
+		    indexPtr = Tcl_GetObjResult(interp);
+		    Tcl_IncrRefCount(indexPtr);
+		    index = Tcl_GetString(indexPtr);
 		}
 
 		/*
@@ -1223,11 +1227,6 @@ Tcl_EvalTokens(interp, tokenPtr, count)
 		}
 		strncpy(varName, tokenPtr[1].start, (size_t) tokenPtr[1].size);
 		varName[tokenPtr[1].size] = 0;
-		if (indexPtr != NULL) {
-		    index = TclGetString(indexPtr);
-		} else {
-		    index = NULL;
-		}
 		valuePtr = Tcl_GetVar2Ex(interp, varName, index,
 			TCL_LEAVE_ERR_MSG);
 		if (varName != nameBuffer) {
@@ -1237,14 +1236,15 @@ Tcl_EvalTokens(interp, tokenPtr, count)
 		    Tcl_DecrRefCount(indexPtr);
 		}
 		if (valuePtr == NULL) {
-		    goto error;
+		    code = TCL_ERROR;
+		    goto done;
 		}
 		count -= tokenPtr->numComponents;
 		tokenPtr += tokenPtr->numComponents;
 		break;
 
 	    default:
-		panic("unexpected token type in Tcl_EvalTokens");
+		panic("unexpected token type in Tcl_EvalTokensStandard");
 	}
 
 	/*
@@ -1272,14 +1272,69 @@ Tcl_EvalTokens(interp, tokenPtr, count)
 	    Tcl_AppendToObj(resultPtr, p, length);
 	}
     }
-    return resultPtr;
-
-    error:
     if (resultPtr != NULL) {
+	Tcl_SetObjResult(interp, resultPtr);
 	Tcl_DecrRefCount(resultPtr);
+    } else {
+	code = TCL_ERROR;
     }
-    return NULL;
+
+    done:
+    return code;
 }
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_EvalTokens --
+ *
+ *	Given an array of tokens parsed from a Tcl command (e.g., the
+ *	tokens that make up a word or the index for an array variable)
+ *	this procedure evaluates the tokens and concatenates their
+ *	values to form a single result value.
+ *
+ * Results:
+ *	The return value is a pointer to a newly allocated Tcl_Obj
+ *	containing the value of the array of tokens.  The reference
+ *	count of the returned object has been incremented.  If an error
+ *	occurs in evaluating the tokens then a NULL value is returned
+ *	and an error message is left in interp's result.
+ *
+ * Side effects:
+ *	A new object is allocated to hold the result.
+ *
+ *----------------------------------------------------------------------
+ *
+ * This uses a non-standard return convention; its use is now deprecated.
+ * It is a wrapper for the new function Tcl_EvalTokensStandard, and is not 
+ * used in the core any longer. It is only kept for backward compatibility.
+ */
+
+Tcl_Obj *
+Tcl_EvalTokens(interp, tokenPtr, count)
+    Tcl_Interp *interp;		/* Interpreter in which to lookup
+				 * variables, execute nested commands,
+				 * and report errors. */
+    Tcl_Token *tokenPtr;	/* Pointer to first in an array of tokens
+				 * to evaluate and concatenate. */
+    int count;			/* Number of tokens to consider at tokenPtr.
+				 * Must be at least 1. */
+{
+    int code;
+    Tcl_Obj *resPtr;
+    
+    code = Tcl_EvalTokensStandard(interp, tokenPtr, count);
+    if (code == TCL_OK) {
+	resPtr = Tcl_GetObjResult(interp);
+	Tcl_IncrRefCount(resPtr);
+	Tcl_ResetResult(interp);
+	return resPtr;
+    } else {
+	return NULL;
+    }
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -1378,10 +1433,12 @@ Tcl_EvalEx(interp, script, numBytes, flags)
 	    for (objectsUsed = 0, tokenPtr = parse.tokenPtr;
 		    objectsUsed < parse.numWords;
 		    objectsUsed++, tokenPtr += (tokenPtr->numComponents + 1)) {
-		objv[objectsUsed] = Tcl_EvalTokens(interp, tokenPtr+1,
-			tokenPtr->numComponents);
-		if (objv[objectsUsed] == NULL) {
-		    code = TCL_ERROR;
+		code = Tcl_EvalTokensStandard(interp, tokenPtr+1, 
+		            tokenPtr->numComponents);
+		if (code == TCL_OK) {
+		    objv[objectsUsed] = Tcl_GetObjResult(interp);
+		    Tcl_IncrRefCount(objv[objectsUsed]);
+		} else {
 		    goto error;
 		}
 	    }
@@ -1841,6 +1898,7 @@ Tcl_ParseVar(interp, string, termPtr)
 {
     Tcl_Parse parse;
     register Tcl_Obj *objPtr;
+    int code;
 
     if (Tcl_ParseVarName(interp, string, -1, &parse, 0) != TCL_OK) {
 	return NULL;
@@ -1857,22 +1915,19 @@ Tcl_ParseVar(interp, string, termPtr)
 	return "$";
     }
 
-    objPtr = Tcl_EvalTokens(interp, parse.tokenPtr, parse.numTokens);
-    if (objPtr == NULL) {
+    code = Tcl_EvalTokensStandard(interp, parse.tokenPtr, parse.numTokens);
+    if (code != TCL_OK) {
 	return NULL;
     }
+    objPtr = Tcl_GetObjResult(interp);
 
     /*
      * At this point we should have an object containing the value of
      * a variable.  Just return the string from that object.
      */
 
-#ifdef TCL_COMPILE_DEBUG
-    if (objPtr->refCount < 2) {
-	panic("Tcl_ParseVar got temporary object from Tcl_EvalTokens");
-    }
-#endif /*TCL_COMPILE_DEBUG*/    
-    TclDecrRefCount(objPtr);
+    Tcl_IncrRefCount(objPtr);
+    Tcl_ResetResult(interp);
     return TclGetString(objPtr);
 }
 
