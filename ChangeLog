@@ -1,3 +1,9 @@
+2002-01-29  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* tests/regexpComp.test:
+	* generic/tclCompCmds.c (TclCompileRegexpCmd): enhanced to support
+	-nocase and -- options.
+
 2002-01-28  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* unix/tcl.m4 (SC_LOAD_TCLCONFIG):
