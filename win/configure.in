@@ -2,7 +2,7 @@
 # generate the file "configure", which is run during Tcl installation
 # to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.22 2000/05/18 22:19:17 hobbs Exp $
+# RCS: @(#) $Id: configure.in,v 1.23 2000/06/13 21:01:06 ericm Exp $
 
 AC_INIT(../generic/tcl.h)
 
@@ -79,6 +79,12 @@ TCL_DBGX=${DBGX}
 AC_CHECK_HEADER(errno.h, , MAN2TCLFLAGS="-DNO_ERRNO_H")
 AC_SUBST(MAN2TCLFLAGS)
 
+#------------------------------------------------------------------------
+# tclConfig.sh refers to this by a different name
+#------------------------------------------------------------------------
+
+TCL_SHARED_BUILD=${SHARED_BUILD}
+
 #--------------------------------------------------------------------
 # Perform final evaluations of variables with possible substitutions.
 #--------------------------------------------------------------------
@@ -91,6 +97,7 @@ eval "TCL_SRC_DIR=`cd $srcdir; pwd`"
 eval "TCL_STUB_LIB_FILE=${LIBPREFIX}tclstub$VER${LIBSUFFIX}"
 eval "TCL_DLL_FILE=tcl$VER${DLLSUFFIX}"
 eval "TCL_LIB_FILE=${LIBPREFIX}tcl$VER${LIBSUFFIX}"
+
 eval "DLLSUFFIX=${DLLSUFFIX}"
 eval "LIBPREFIX=${LIBPREFIX}"
 eval "LIBSUFFIX=${LIBSUFFIX}"
@@ -113,6 +120,7 @@ AC_SUBST(TCL_DBGX)
 AC_SUBST(CFG_TCL_SHARED_LIB_SUFFIX)
 AC_SUBST(CFG_TCL_UNSHARED_LIB_SUFFIX)
 AC_SUBST(CFG_TCL_EXPORT_FILE_SUFFIX)
+AC_SUBST(TCL_SHARED_BUILD)
 
 AC_SUBST(PATHTYPE)
 AC_SUBST(CYGPATH)
@@ -140,6 +148,8 @@ AC_SUBST(RC_OUT)
 AC_SUBST(RC_TYPE)
 AC_SUBST(RC_INCLUDE)
 AC_SUBST(RES)
+AC_SUBST(LIBS)
+AC_SUBST(LIBS_GUI)
 AC_SUBST(DLLSUFFIX)
 AC_SUBST(LIBPREFIX)
 AC_SUBST(LIBSUFFIX)

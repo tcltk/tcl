@@ -1,11 +1,17 @@
 2000-06-13  Eric Melski  <ericm@scriptics.com>
 
+	* win/tcl.m4:
+	* win/configure.in:
+	* win/Makefile.in: Applied patch from [RFE: 5844], to extend
+	support for mingw compile environment on Windows.
+
 	* win/tclWinDde.c:
 	* win/tclWinInit.c:
 	* win/tclWinNotify.c:
 	* win/tclWinPipe.c:
 	* win/tclWinReg.c:
-	* win/tclWinThrd.c: Applied patch from [Bug 5794].
+	* win/tclWinThrd.c: Applied patch from [Bug: 5794], to fix
+	compiler warnings when using mingw on Windows.
 
 2000-05-31  Jeff Hobbs  <hobbs@scriptics.com>
 
