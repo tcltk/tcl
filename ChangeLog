@@ -1,6 +1,17 @@
+2003-02-11  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* tests/stringObj.test:
+	* generic/tclStringObj.c (Tcl_GetCharLength): correct ascii char
+	opt of 2002-11-11 to not stop early on \x00. [Bug #684699]
+
+	* tests.parse.test: remove excess EOF whitespace
+
+	* generic/tclParse.c (CommandComplete): more paranoid check to
+	break on (p >= end) instead of just (p == end).
+
 2003-02-11  Miguel Sofer <msofer@users.sf.net>
 
-	* generic/tclParse.c
+	* generic/tclParse.c (CommandComplete): 
 	* tests/parse.test: fix for [Bug 684744], by Don Porter.
 
 2003-02-11  Jeff Hobbs  <jeffh@ActiveState.com>
@@ -9,7 +20,7 @@
 	(UpdateStringOfFsPath): revert the cwdLen == 0 check and instead
 	follow a different code path in Tcl_FSJoinPath.
 	(Tcl_FSConvertToPathType, Tcl_FSGetNormalizedPath):
-	(Tcl_FSGetFileSystemForPath): Update string rep path objects
+	(Tcl_FSGetFileSystemForPath): Update string rep of path objects
 	before freeing the internal object. (darley)
 
 	* tests/fileSystem.test: added test 8.3
@@ -45,20 +56,17 @@
 	* unix/tclUnixFCmd.c:
 	* unix/tclUnixFile.c:
 	* win/tclWinFile.c: further filesystem optimization, applying
-	[Patch 682500].  In particular, these code examples are
+	[Patch 682500].	 In particular, these code examples are
 	faster now:
-	
-        foreach f $flist { if {[file exists $f]} {file stat $f arr;...}}
-            
-        foreach f [glob -dir $dir *] { # action and/or recursion on $f }
-
-        cd $dir
+	foreach f $flist { if {[file exists $f]} {file stat $f arr;...}}
+	foreach f [glob -dir $dir *] { # action and/or recursion on $f }
+	cd $dir
 	foreach f [glob *] { # action and/or recursion on $f }
 	cd ..
 
-        * generic/tclTest.c: Fix for [Bug 683181] where test suite
+	* generic/tclTest.c: Fix for [Bug 683181] where test suite
 	left files in 'tmp'.
-	
+
 2003-02-08  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* library/safe.tcl: code cleanup of eval and string comp use.
@@ -386,7 +394,7 @@
 	* tests/stringObj.test: removed 'knownBug' constraint from
 	test 14.1 now that this bug is fixed.
 	
-        * generic/tclInt.h:
+	* generic/tclInt.h:
 	* generic/tclBasic.c:
 	* generic/tclCmdMZ.z:
 	* tests/trace.test: execution and command tracing bug fixes and
