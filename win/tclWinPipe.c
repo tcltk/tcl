@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPipe.c,v 1.33.2.2 2003/07/16 19:34:14 mdejong Exp $
+ * RCS: @(#) $Id: tclWinPipe.c,v 1.33.2.3 2003/09/28 10:29:52 davygrvy Exp $
  */
 
 #include "tclWinInt.h"
@@ -2629,6 +2629,9 @@ TclWinAddProcess(hProcess, id)
     DWORD id;                  /* Global process identifier */
 {
     ProcInfo *procPtr = (ProcInfo *) ckalloc(sizeof(ProcInfo));
+
+    PipeInit();
+    
     procPtr->hProcess = hProcess;
     procPtr->dwProcessId = id;
     Tcl_MutexLock(&pipeMutex);
