@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLiteral.c,v 1.16 2004/07/08 18:46:06 msofer Exp $
+ * RCS: @(#) $Id: tclLiteral.c,v 1.17 2004/07/15 17:42:12 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -730,22 +730,6 @@ TclReleaseLiteral(interp, objPtr)
 	}
     }
 
-    /*
-     * Check if the LiteralEntry is only being kept alive by 
-     * a circular reference from a ByteCode stored as its 
-     * internal rep. In that case, set the ByteCode object array 
-     * entry NULL to signal to TclCleanupByteCode to not try to 
-     * release this about to be freed literal again.
-     */
-    
-    if (objPtr->typePtr == &tclByteCodeType) {
-	codePtr = (ByteCode *) objPtr->internalRep.otherValuePtr;
-	if ((codePtr->numLitObjects == 1)
-		&& (codePtr->objArrayPtr[0] == objPtr)) {			
-	    codePtr->objArrayPtr[0] = NULL;
-	}
-    }
-    
     /*
      * Remove the reference corresponding to the local literal table
      * entry.
