@@ -1,3 +1,8 @@
+2000-07-17  Mo DeJong  <mdejong@redhat.com>
+
+	* unix/tcl.m4 (SC_ENABLE_GCC): Don't set CC=gcc
+	before running AC_PROG_CC if CC is already set.
+
 2000-07-13  André Pönitz <poenitz@mathematik.tu-chemnitz.de>
 
 	* doc/lappend.n:
