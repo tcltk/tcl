@@ -3,7 +3,7 @@
 # Default system startup file for Tcl-based applications.  Defines
 # "unknown" procedure and auto-load facilities.
 #
-# RCS: @(#) $Id: init.tcl,v 1.55.2.3 2004/05/03 14:28:59 dgp Exp $
+# RCS: @(#) $Id: init.tcl,v 1.55.2.4 2004/11/13 00:41:58 dgp Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
@@ -189,6 +189,14 @@ proc unknown args {
     # may get modified if caught errors occur below.  The variables will
     # be restored just before re-executing the missing command.
 
+    # Safety check in case something unsets the variables 
+    # ::errorInfo or ::errorCode.  [Bug 1063707]
+    if {![info exists errorCode]} {
+	set errorCode ""
+    }
+    if {![info exists errorInfo]} {
+	set errorInfo ""
+    }
     set savedErrorCode $errorCode
     set savedErrorInfo $errorInfo
     set name [lindex $args 0]

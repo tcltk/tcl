@@ -1,3 +1,9 @@
+2004-11-12  Don Porter  <dgp@users.sourceforge.net>
+
+	* library/init.tcl:	Made [unknown] robust in the case that
+	either of the variables ::errorInfo or ::errorCode gets unset.
+	[Bug 1063707]
+
 2004-11-12  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclEncoding.c (TableFromUtfProc): correct crash
