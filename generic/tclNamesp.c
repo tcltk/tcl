@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.31.2.3 2004/09/09 17:12:13 dgp Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.31.2.4 2004/09/10 18:22:09 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1658,8 +1658,7 @@ TclGetNamespaceForQualName(interp, qualName, cxtNsPtr, flags,
     Namespace *cxtNsPtr;	 /* The namespace in which to start the
 				  * search for qualName's namespace. If NULL
 				  * start from the current namespace.
-				  * Ignored if TCL_GLOBAL_ONLY or
-				  * TCL_NAMESPACE_ONLY are set. */
+				  * Ignored if TCL_GLOBAL_ONLY is set. */
     int flags;			 /* Flags controlling the search: an OR'd
 				  * combination of TCL_GLOBAL_ONLY,
 				  * TCL_NAMESPACE_ONLY,
@@ -1702,17 +1701,14 @@ TclGetNamespaceForQualName(interp, qualName, cxtNsPtr, flags,
 
     /*
      * Determine the context namespace nsPtr in which to start the primary
-     * search. If TCL_NAMESPACE_ONLY or FIND_ONLY_NS was specified, search
-     * from the current namespace. If the qualName name starts with a "::"
-     * or TCL_GLOBAL_ONLY was specified, search from the global
-     * namespace. Otherwise, use the given namespace given in cxtNsPtr, or
-     * if that is NULL, use the current namespace context. Note that we
-     * always treat two or more adjacent ":"s as a namespace separator.
+     * search.  If the qualName name starts with a "::" or TCL_GLOBAL_ONLY
+     * was specified, search from the global namespace. Otherwise, use the
+     * namespace given in cxtNsPtr, or if that is NULL, use the current
+     * namespace context. Note that we always treat two or more
+     * adjacent ":"s as a namespace separator.
      */
 
-    if (flags & (TCL_NAMESPACE_ONLY | FIND_ONLY_NS)) {
-	nsPtr = (Namespace *) Tcl_GetCurrentNamespace(interp);
-    } else if (flags & TCL_GLOBAL_ONLY) {
+    if (flags & TCL_GLOBAL_ONLY) {
 	nsPtr = globalNsPtr;
     } else if (nsPtr == NULL) {
 	if (iPtr->varFramePtr != NULL) {
