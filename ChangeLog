@@ -1,3 +1,9 @@
+2002-12-05  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclCompile.c (TclCleanupByteCode): when using
+	TCL_THREAD_LITERALS, do not worry about interp != NULL when
+	cleaning up bytecodes.
+
 2002-12-05  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclCompile.c (TclCleanupByteCode): When encountering a
