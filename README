@@ -1,13 +1,13 @@
 Tcl
 
-RCS: @(#) $Id: README,v 1.11 1998/10/13 19:03:52 escoffon Exp $
+RCS: @(#) $Id: README,v 1.12 1999/01/04 19:25:00 rjohnson Exp $
 
 1. Introduction
 ---------------
 
 This directory and its descendants contain the sources and documentation
 for Tcl, an embeddable scripting language.  The information here
-corresponds to release 8.0.4, which is the fourth patch update for Tcl
+corresponds to release 8.0.5, which is the fourth patch update for Tcl
 8.0. This patch provides compatibility with [incr Tcl] 3.0.
 Tcl 8.0 is a major new release that replaces the core of the
 interpreter with an on-the-fly bytecode compiler to improve execution
@@ -87,7 +87,7 @@ Before trying to compile Tcl you should do the following things:
 	without changing any features, so you should normally use the
 	latest patch release for the version of Tcl that you want. 
 	Patch releases are available in two forms.  A file like
-	tcl8.0.4.tar.Z is a complete release for patch level 4 of Tcl
+	tcl8.0.5.tar.Z is a complete release for patch level 4 of Tcl
 	version 8.0.  If there is a file with a higher patch level than
 	this release, just fetch the file with the highest patch level
 	and use it.
@@ -395,6 +395,8 @@ bug fixes only.  A patch release (e.g Tcl 7.6p2) should be completely
 compatible with the base release from which it is derived (e.g. Tcl
 7.6), and you should normally use the highest available patch release.
 
-As of 8.0.3, the patch releases use a second . instead of 'p'.  So, the
-8.0 release went to 8.0p1, 8.0p2, 8.0.3, and 8.0.4.  The alphas and betas
-will still use the 'a' and 'b' letters in their tcl_patchLevel.
+As of 8.0.3, the patch releases use a second . instead of 'p'.  So,
+the 8.0 release went to 8.0p1, 8.0p2, 8.0.3, 8.0.4, and 8.0.5.  The
+alphas and betas will still use the 'a' and 'b' letters in their
+tcl_patchLevel.
+

@@ -1,10 +1,10 @@
-Tcl 8.0.4 for Windows
+Tcl 8.0.5 for Windows
 
 by Scott Stanton
 Scriptics Corporation
 scott.stanton@scriptics.com
 
-RCS: @(#) $Id: README,v 1.7 1998/10/17 00:20:50 escoffon Exp $
+RCS: @(#) $Id: README,v 1.8 1999/01/04 19:25:05 rjohnson Exp $
 
 1. Introduction
 ---------------
@@ -41,7 +41,7 @@ In order to compile Tcl for Windows, you need the following items:
 	Visual C++ 2.x/4.x/5.x
 	Visual C++ 1.5 (to build tcl1680.dll for Win32s support of exec)
 
-In practice, the 8.0.4 release is built with Visual C++ 5.0
+In practice, the 8.0.5 release is built with Visual C++ 5.0
 
 In the "win" subdirectory of the source release, you will find two
 files called "makefile.bc" and "makefile.vc".  These are the makefiles

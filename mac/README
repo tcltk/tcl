@@ -1,4 +1,4 @@
-Tcl 8.0.3 for Macintosh
+Tcl 8.0.5 for Macintosh
 
 by Ray Johnson
 Scriptics Corporation
@@ -8,7 +8,7 @@ Jim Ingham
 Cygnus Solutions
 jingham@cygnus.com
 
-RCS: @(#) $Id: README,v 1.3 1998/09/14 18:40:04 stanton Exp $
+RCS: @(#) $Id: README,v 1.4 1999/01/04 19:25:03 rjohnson Exp $
 
 1. Introduction
 ---------------
@@ -96,7 +96,7 @@ Macintosh Tcl is distributed in three different forms.  This
 should make it easier to only download what you need.  The 
 packages are as follows:
 
-mactk8.0.3.sea.hqx
+mactk8.0.5.sea.hqx
 
     This distribution is a "binary" only release.  It contains an
     installer program that will install a 68k, PowerPC, or Fat
@@ -104,13 +104,13 @@ mactk8.0.3.sea.hqx
     it installs the Tcl & Tk libraries in the Extensions folder inside
     your System Folder.
 
-mactcltk-full-8.0.3.sea.hqx
+mactcltk-full-8.0.5.sea.hqx
 
     This release contains the full release of Tcl and Tk for the
     Macintosh plus the More Files packages which Macintosh Tcl and Tk
     rely on.
 
-mactcl-source-8.0.3.sea.hqx
+mactcl-source-8.0.5.sea.hqx
 
     This release contains the complete source for Tcl 8.0.  In
     addition, Metrowerks CodeWarrior libraries and project files

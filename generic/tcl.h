@@ -7,12 +7,12 @@
  * Copyright (c) 1987-1994 The Regents of the University of California.
  * Copyright (c) 1994-1997 Sun Microsystems, Inc.
  * Copyright (c) 1993-1996 Lucent Technologies.
- * Copyright (c) 1998 by Scriptics Corporation.
+ * Copyright (c) 1998-1999 Scriptics Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.29 1998/10/17 00:19:24 escoffon Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.30 1999/01/04 19:25:01 rjohnson Exp $
  */
 
 #ifndef _TCL
@@ -29,6 +29,7 @@
  * win/makefile.vc	(only if major.minor changes, not patchlevel)
  * win/README
  * win/README.binary
+ * mac/README
  *
  * The release level should be  0 for alpha, 1 for beta, and 2 for
  * final/patch.  The release serial value is the number that follows the
@@ -41,10 +42,10 @@
 #define TCL_MAJOR_VERSION   8
 #define TCL_MINOR_VERSION   0
 #define TCL_RELEASE_LEVEL   2
-#define TCL_RELEASE_SERIAL  4
+#define TCL_RELEASE_SERIAL  5
 
 #define TCL_VERSION	    "8.0"
-#define TCL_PATCH_LEVEL	    "8.0.4"
+#define TCL_PATCH_LEVEL	    "8.0.5"
 
 /*
  * The following definitions set up the proper options for Windows
