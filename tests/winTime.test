@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: winTime.test,v 1.5 2000/04/10 17:19:06 ericm Exp $
+# RCS: @(#) $Id: winTime.test,v 1.6 2000/11/21 21:33:42 andreas_kupries Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -32,6 +32,32 @@ test winTime-1.2 {TclpGetDate} {pcOnly} {
     unset ::env(TZ)
     set result
 } {1969}
+
+# Next test tries to make sure that the Tcl clock stays in step
+# with the Windows clock.  3000 iterations really isn't enough,
+# but how many does a tester have patience for?
+
+test winTime-2.1 {Synchronization of Tcl and Windows clocks} {pcOnly} {
+    set failed 0
+    foreach { sys_sec sys_usec tcl_sec tcl_usec } [testwinclock] {}
+    set olddiff [expr { abs ( $tcl_sec - $sys_sec
+			   + 1.0e-6 * ( $tcl_usec - $sys_usec ) ) }]
+    set ok 1
+    for { set i 0 } { $i < 3000 } { incr i } {
+	foreach { sys_sec sys_usec tcl_sec tcl_usec } [testwinclock] {}
+	set diff [expr { abs ( $tcl_sec - $sys_sec
+			       + 1.0e-6 * ( $tcl_usec - $sys_usec ) ) }]
+	if { ( $diff > $olddiff + 1000 )
+	     || ( $diff > 11000 ) } {
+	    set failed 1
+	    break
+	} else {
+	    set olddiff $diff
+	    after 1
+	}
+    }
+    set failed
+} {0}
 
 # cleanup
 ::tcltest::cleanupTests
