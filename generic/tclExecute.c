@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.89 2002/09/24 12:53:33 dkf Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.90 2002/11/12 02:25:48 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -2515,16 +2515,22 @@ TclExecuteByteCode(interp, codePtr)
 	} else if (((valuePtr->typePtr == &tclStringType)
 	        && (value2Ptr->typePtr == &tclStringType))) {
 	    /*
-	     * Do a unicode-specific comparison if both of the args
-	     * are of String type.  In benchmark testing this proved
-	     * the most efficient check between the unicode and
-	     * string comparison operations.
+	     * Do a unicode-specific comparison if both of the args are of
+	     * String type.  If the char length == byte length, we can do a
+	     * memcmp.  In benchmark testing this proved the most efficient
+	     * check between the unicode and string comparison operations.
 	     */
-	    Tcl_UniChar *uni1, *uni2;
-	    uni1 = Tcl_GetUnicodeFromObj(valuePtr, &s1len);
-	    uni2 = Tcl_GetUnicodeFromObj(value2Ptr, &s2len);
-	    iResult = TclUniCharNcmp(uni1, uni2,
-				     (unsigned) ((s1len < s2len) ? s1len : s2len));
+
+	    s1len = Tcl_GetCharLength(valuePtr);
+	    s2len = Tcl_GetCharLength(value2Ptr);
+	    if ((s1len == valuePtr->length) && (s2len == value2Ptr->length)) {
+		iResult = memcmp(valuePtr->bytes, value2Ptr->bytes,
+			(unsigned) ((s1len < s2len) ? s1len : s2len));
+	    } else {
+		iResult = TclUniCharNcmp(Tcl_GetUnicode(valuePtr),
+			Tcl_GetUnicode(value2Ptr),
+			(unsigned) ((s1len < s2len) ? s1len : s2len));
+	    }
 	} else {
 	    /*
 	     * We can't do a simple memcmp in order to handle the
@@ -2605,6 +2611,9 @@ TclExecuteByteCode(interp, codePtr)
 	    if (valuePtr->typePtr == &tclByteArrayType) {
 		objResultPtr = Tcl_NewByteArrayObj((unsigned char *)
 		        (&bytes[index]), 1);
+	    } else if (valuePtr->bytes && length == valuePtr->length) {
+		objResultPtr = Tcl_NewStringObj((CONST char *)
+		        (&valuePtr->bytes[index]), 1);
 	    } else {
 		char buf[TCL_UTF_MAX];
 		Tcl_UniChar ch;
