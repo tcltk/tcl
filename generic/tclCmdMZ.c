@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.24 2000/02/02 22:32:11 hobbs Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.25 2000/02/05 12:08:59 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -1161,7 +1161,6 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	    break;
 	}
 	case STR_INDEX: {
-	    int index;
 	    char buf[TCL_UTF_MAX];
 	    Tcl_UniChar unichar;
 
