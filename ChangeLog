@@ -1,5 +1,10 @@
 2002-04-19  Don Porter  <dgp@users.sourceforge.net>
 
+	* library/msgcat/msgcat.tcl:  [mcmax] wasn't using the caller's
+	namespace when determining the max translated length.  Also
+	made revisions for better use of namespace variables and more
+	efficient [uplevel]s.
+
 	* doc/msgcat.n:
 	* library/msgcat/msgcat.tcl:
 	* library/msgcat/pkgIndex.tcl:  Added [mcload] to the export list
