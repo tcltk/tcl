@@ -1,3 +1,13 @@
+2001-09-25  Don Porter  <dgp@users.sourceforge.net>
+
+	* doc/GetInt.3:
+	* generic/tclInt.h (TclGetLong deleted):
+	* generic/tcl{,Int}.decls:
+	* generic/tclGet.c:  Updated APIs in generic/tclGet.c
+	according to the guidelines of TIP 27.  [Patch 464674]
+
+	* generic/tcl{Int}Decls.h: make genstubs
+
 2001-09-25  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* generic/tclVar.c: removed comments referring to unused flag
