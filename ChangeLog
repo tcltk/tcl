@@ -1,5 +1,8 @@
 2002-03-24  Don Porter  <dgp@users.sourceforge.net>
 
+	* library/tcltest/tcltest.tcl: Be sure the tcltest variable is updated.
+	[Bug 454050].
+
 	* library/tcltest/pkgIndex.tcl:
         * library/tcltest/tcltest.tcl:  Allow non-proc commands to be used
         as the customization hooks.  Bump to 1.0.2.  Converted from lazy to

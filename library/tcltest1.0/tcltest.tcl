@@ -12,7 +12,7 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 # 
-# RCS: @(#) $Id: tcltest.tcl,v 1.24.2.2 2002/03/24 18:31:08 dgp Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.24.2.3 2002/03/24 19:07:48 dgp Exp $
 
 package require Tcl 8.2
 package provide tcltest 1.0.2
@@ -653,6 +653,7 @@ proc ::tcltest::initConstraints {} {
 
     # Locate tcltest executable
 
+    variable tcltest
     if {![info exists tk_version]} {
 	set tcltest [info nameofexecutable]
 
