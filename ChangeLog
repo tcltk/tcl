@@ -1,3 +1,10 @@
+2004-08-21  Kevin B. Kenny  <kennykb@acm.org>
+
+	* tests/clock.test (clock-38.1): Changed TZ setting to specify
+	CET in excruciating detail to deal with systems that lack the
+	Posix defaults for DST changes (and to be formally correct with
+	the change dates for CET).
+	
 2004-08-19  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclScan.c (Tcl_ScanObjCmd, ValidateFormat): Ensure that
