@@ -1,5 +1,12 @@
 2001-11-20  Miguel Sofer  <msofer@users.sourceforge.net>
 
+	* generic/tclBasic.c
+	* generic/tclExecute.c: a better variant of the previous-to-last
+	commit (restoring numLevels computations). The managing of the
+	levels now has to be done by the *callers* of TclEvalObjvInternal  
+
+2001-11-20  Miguel Sofer  <msofer@users.sourceforge.net>
+
 	* generic/tclExecute.c: missing variable declaration under
 	TCL_COMPILE_DEBUG. 
 

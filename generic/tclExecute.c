@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.39 2001/11/20 16:52:46 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.40 2001/11/20 19:45:19 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -765,13 +765,7 @@ TclExecuteByteCode(interp, codePtr)
 		    for (tracePtr = iPtr->tracePtr;  tracePtr != NULL;
 		            tracePtr = nextTracePtr) {
 			nextTracePtr = tracePtr->nextPtr;
-
-			/*
-			 * TclEvalObjvInternal will increment numLevels 
-			 * so use "<" rather than "<="
-			 */
-
-			if (iPtr->numLevels < tracePtr->level) {
+			if (iPtr->numLevels <= tracePtr->level) {
 			    /*
 			     * Traces will be called: get command string
 			     */
@@ -795,15 +789,12 @@ TclExecuteByteCode(interp, codePtr)
 		preservedStack = stackPtr;
 
 		/*
-		 * Finally, let TclEvalObjvInternal handle the command. As it
-		 * will increase the numLevels, decrease them here to compensate.
+		 * Finally, let TclEvalObjvInternal handle the command. 
 		 */
 
-		iPtr->numLevels--;
 		DECACHE_STACK_INFO();
 		result = TclEvalObjvInternal(interp, objc, objv, bytes, length, 0);
 		CACHE_STACK_INFO();
-		iPtr->numLevels++;
 
 		/*
 		 * If the old stack is going to be released, it is
