@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution 
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES. 
 # 
-# RCS: @(#) $Id: ioUtil.test,v 1.11 2002/06/22 04:19:47 dgp Exp $
+# RCS: @(#) $Id: ioUtil.test,v 1.12 2002/07/05 10:38:42 dkf Exp $
  
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -186,6 +186,10 @@ test ioUtil-2.8 {TclAccessDeleteProc: Verify that all procs have been deleted.} 
     list $err9 $err10 $err11
 } {{"TestAccessProc1": could not be deleteed} {"TestAccessProc2": could not be deleteed} {"TestAccessProc3": could not be deleteed}}
 
+# Some of the following tests require a writable current directory
+set oldpwd [pwd]
+cd [temporaryDirectory]
+
 test ioUtil-3.1 {TclOpenFileChannel: Check that none of the test procs are there.} {testopenfilechannelproc} {
     catch {eval [list file delete -force] [glob *testOpenFileChannel*]}
     catch {file exists testOpenFileChannel1%.fil} err1
@@ -223,12 +227,12 @@ test ioUtil-3.3 {TclOpenFileChannel: Use "file openfilechannel ?" to invoke each
     set err
 } {}
 
-test ioUtil-3.4 {TclOpenFileChannelDeleteProc: "TclpOpenFileChannel" function should not be deletedable.} {testopenfilechannelproc} {
+test ioUtil-3.4 {TclOpenFileChannelDeleteProc: "TclpOpenFileChannel" function should not be deletable.} {testopenfilechannelproc} {
     catch {testopenfilechannelproc delete TclpOpenFileChannel} err2
     set err2
 } {"TclpOpenFileChannel": could not be deleteed}
 
-test openfilechannelt-1.5 {TclOpenFileChannelDeleteProc: Delete the 2nd TclOpenFileChannel procedure.} {testopenfilechannelproc} {
+test ioUtil-3.5 {TclOpenFileChannelDeleteProc: Delete the 2nd TclOpenFileChannel procedure.} {testopenfilechannelproc} {
     # Delete the 2nd procedure and test that it longer exists but that
     #   the others do actually return a result.
 
@@ -299,18 +303,8 @@ test ioUtil-3.8 {TclOpenFileChannelDeleteProc: Verify that all procs have been d
     list $err9 $err10 $err11
 } {{"TestOpenFileChannelProc1": could not be deleteed} {"TestOpenFileChannelProc2": could not be deleteed} {"TestOpenFileChannelProc3": could not be deleteed}}
 
+cd $oldpwd
+
 # cleanup
 ::tcltest::cleanupTests
 return
-
-
-
-
-
-
-
-
-
-
-
-
