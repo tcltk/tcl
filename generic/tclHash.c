@@ -10,10 +10,11 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclHash.c,v 1.13 2003/06/24 19:56:12 dkf Exp $
+ * RCS: @(#) $Id: tclHash.c,v 1.14 2003/11/14 23:21:02 dkf Exp $
  */
 
 #include "tclInt.h"
+#include "tclPort.h"
 
 /*
  * Prevent macros from clashing with function definitions.
@@ -626,7 +627,11 @@ Tcl_DeleteHashTable(tablePtr)
      */
 
     if (tablePtr->buckets != tablePtr->staticBuckets) {
+        if (typePtr->flags & TCL_HASH_KEY_SYSTEM_HASH) {
+	    TclpSysFree((char *) tablePtr->buckets);
+        } else {
 	ckfree((char *) tablePtr->buckets);
+    }
     }
 
     /*
@@ -745,6 +750,26 @@ Tcl_HashStats(tablePtr)
     double average, tmp;
     register Tcl_HashEntry *hPtr;
     char *result, *p;
+    Tcl_HashKeyType *typePtr;
+
+#if TCL_PRESERVE_BINARY_COMPATABILITY
+    if (tablePtr->keyType == TCL_STRING_KEYS) {
+	typePtr = &tclStringHashKeyType;
+    } else if (tablePtr->keyType == TCL_ONE_WORD_KEYS) {
+	typePtr = &tclOneWordHashKeyType;
+    } else if (tablePtr->keyType == TCL_CUSTOM_TYPE_KEYS
+	       || tablePtr->keyType == TCL_CUSTOM_PTR_KEYS) {
+	typePtr = tablePtr->typePtr;
+    } else {
+	typePtr = &tclArrayHashKeyType;
+    }
+#else
+    typePtr = tablePtr->typePtr;
+    if (typePtr == NULL) {
+	Tcl_Panic("called Tcl_HashStats on deleted table");
+	return NULL;
+    }
+#endif
 
     /*
      * Compute a histogram of bucket usage.
@@ -774,8 +799,11 @@ Tcl_HashStats(tablePtr)
     /*
      * Print out the histogram and a few other pieces of information.
      */
-
+    if (typePtr->flags & TCL_HASH_KEY_SYSTEM_HASH) {
+        result = (char *) TclpSysAlloc((unsigned) ((NUM_COUNTERS*60) + 300), 0);
+    } else {
     result = (char *) ckalloc((unsigned) ((NUM_COUNTERS*60) + 300));
+    }
     sprintf(result, "%d entries in table, %d buckets\n",
 	    tablePtr->numEntries, tablePtr->numBuckets);
     p = result + strlen(result);
@@ -1122,25 +1150,6 @@ RebuildTable(tablePtr)
     Tcl_HashKeyType *typePtr;
     VOID *key;
 
-    oldSize = tablePtr->numBuckets;
-    oldBuckets = tablePtr->buckets;
-
-    /*
-     * Allocate and initialize the new bucket array, and set up
-     * hashing constants for new array size.
-     */
-
-    tablePtr->numBuckets *= 4;
-    tablePtr->buckets = (Tcl_HashEntry **) ckalloc((unsigned)
-	    (tablePtr->numBuckets * sizeof(Tcl_HashEntry *)));
-    for (count = tablePtr->numBuckets, newChainPtr = tablePtr->buckets;
-	    count > 0; count--, newChainPtr++) {
-	*newChainPtr = NULL;
-    }
-    tablePtr->rebuildSize *= 4;
-    tablePtr->downShift -= 2;
-    tablePtr->mask = (tablePtr->mask << 2) + 3;
-
 #if TCL_PRESERVE_BINARY_COMPATABILITY
     if (tablePtr->keyType == TCL_STRING_KEYS) {
 	typePtr = &tclStringHashKeyType;
@@ -1155,6 +1164,30 @@ RebuildTable(tablePtr)
 #else
     typePtr = tablePtr->typePtr;
 #endif
+
+    oldSize = tablePtr->numBuckets;
+    oldBuckets = tablePtr->buckets;
+
+    /*
+     * Allocate and initialize the new bucket array, and set up
+     * hashing constants for new array size.
+     */
+
+    tablePtr->numBuckets *= 4;
+    if (typePtr->flags & TCL_HASH_KEY_SYSTEM_HASH) {
+        tablePtr->buckets = (Tcl_HashEntry **) TclpSysAlloc((unsigned)
+    	        (tablePtr->numBuckets * sizeof(Tcl_HashEntry *)), 0);
+    } else {
+    tablePtr->buckets = (Tcl_HashEntry **) ckalloc((unsigned)
+	    (tablePtr->numBuckets * sizeof(Tcl_HashEntry *)));
+    }
+    for (count = tablePtr->numBuckets, newChainPtr = tablePtr->buckets;
+	    count > 0; count--, newChainPtr++) {
+	*newChainPtr = NULL;
+    }
+    tablePtr->rebuildSize *= 4;
+    tablePtr->downShift -= 2;
+    tablePtr->mask = (tablePtr->mask << 2) + 3;
 
     /*
      * Rehash all of the existing entries into the new bucket array.
@@ -1200,6 +1233,10 @@ RebuildTable(tablePtr)
      */
 
     if (oldBuckets != tablePtr->staticBuckets) {
+        if (typePtr->flags & TCL_HASH_KEY_SYSTEM_HASH) {
+	    TclpSysFree((char *) oldBuckets);
+        } else {
 	ckfree((char *) oldBuckets);
+        }
     }
 }

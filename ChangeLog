@@ -1,5 +1,11 @@
 2003-11-14  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
+	* generic/tclHash.c (Tcl_DeleteHashTable,Tcl_HashStats,RebuildTable): 
+	* generic/tclTest.c (TestHashSystemHashCmd): TIP#138 implementation, 
+	* tests/misc.test:	plus a new chunk of stuff to test the hash
+				functions more thoroughly in the test
+				suite. [Patch 731356, modified] 
+
 	* doc/Tcl.n: Updated Tcl version number and changebars.
 
 2003-11-14  Don Porter	<dgp@users.sourceforge.net>

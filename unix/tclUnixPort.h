@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPort.h,v 1.30 2003/11/11 08:24:55 davygrvy Exp $
+ * RCS: @(#) $Id: tclUnixPort.h,v 1.31 2003/11/14 23:21:02 dkf Exp $
  */
 
 #ifndef _TCLUNIXPORT
@@ -532,15 +532,12 @@ typedef int socklen_t;
 #define TclpReleaseFile(file)	/* Nothing. */
 
 /*
- * The following defines wrap the system memory allocation routines for
- * use by tclAlloc.c.  By default off unused on Unix.
+ * The following defines wrap the system memory allocation routines.
  */
 
-#if USE_TCLALLOC
-#   define TclpSysAlloc(size, isBin)	malloc((size_t)size)
-#   define TclpSysFree(ptr)		free((char*)ptr)
-#   define TclpSysRealloc(ptr, size)	realloc((char*)ptr, (size_t)size)
-#endif
+#define TclpSysAlloc(size, isBin)	malloc((size_t)size)
+#define TclpSysFree(ptr)		free((char*)ptr)
+#define TclpSysRealloc(ptr, size)	realloc((char*)ptr, (size_t)size)
 
 /*
  * The following macros and declaration wrap the C runtime library
