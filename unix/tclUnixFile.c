@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFile.c,v 1.4.4.1 1999/03/03 00:38:46 stanton Exp $
+ * RCS: @(#) $Id: tclUnixFile.c,v 1.4.4.2 1999/03/04 01:00:48 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -37,7 +37,6 @@ extern pid_t waitpid _ANSI_ARGS_((pid_t pid, int *stat_loc, int options));
  * Static routines for this file:
  */
 
-static void	FreeCurrentDir _ANSI_ARGS_((ClientData clientData));
 static void	FreeExecutableName _ANSI_ARGS_((ClientData clientData));
 
 /*
@@ -344,7 +343,7 @@ Tcl_FindExecutable(argv0)
 /*
  *----------------------------------------------------------------------
  *
- * TclpGetUserHome --
+ * TclGetUserHome --
  *
  *	This function takes the passed in user name and finds the
  *	corresponding home directory specified in the password file.
@@ -363,7 +362,7 @@ Tcl_FindExecutable(argv0)
  */
 
 char *
-TclpGetUserHome(name, bufferPtr)
+TclGetUserHome(name, bufferPtr)
     char *name;			/* User name to use to find home directory. */
     Tcl_DString *bufferPtr;	/* May be used to hold result.  Must not hold
 				 * anything at the time of the call, and need
@@ -535,3 +534,52 @@ TclMatchFiles(interp, separators, dirPtr, pattern, tail)
     closedir(d);
     return result;
 }
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * TclpAccess --
+ *
+ *	This function replaces the library version of access().
+ *
+ * Results:
+ *	See access() documentation.
+ *
+ * Side effects:
+ *	See access() documentation.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+int
+TclpAccess(path, mode)
+    CONST char *path;		/* Path of file to access. */
+    int mode;			/* Permission setting. */
+{
+    return access(native, mode);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpStat --
+ *
+ *	This function replaces the library version of stat().
+ *
+ * Results:
+ *	See stat() documentation.
+ *
+ * Side effects:
+ *	See stat() documentation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclpStat(path, bufPtr)
+    CONST char *path;		/* Path of file to stat. */
+    struct stat *bufPtr;	/* Filled with results of stat call. */
+{
+    return stat(path, bufPtr);
+}
+

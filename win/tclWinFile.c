@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.3.4.1 1999/03/03 00:38:47 stanton Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.3.4.2 1999/03/04 01:00:49 stanton Exp $
  */
 
 #include "tclWinInt.h"
@@ -648,7 +648,7 @@ TclpAccess(
 /*
  *----------------------------------------------------------------------
  *
- * TclpGetUserHome --
+ * TclGetUserHome --
  *
  *	This function takes the passed in user name and finds the
  *	corresponding home directory specified in the password file.
@@ -663,7 +663,7 @@ TclpAccess(
  */
 
 char *
-TclpGetUserHome(
+TclGetUserHome(
     char *name,			/* User name to use to find home directory. */
     Tcl_DString *bufferPtr)	/* May be used to hold result.  Must not hold
 				 * anything at the time of the call, and need
