@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.37 2002/07/08 10:08:58 vincentdarley Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.38 2002/07/29 16:54:41 rmax Exp $
  */
 
 #include "tclInt.h"	/* Internal definitions for Tcl. */
@@ -1892,7 +1892,7 @@ Tcl_MakeFileChannel(handle, mode)
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 #endif /* DEPRECATED */
     int socketType = 0;
-    size_t argLength = sizeof(int);
+    socklen_t argLength = sizeof(int);
 
     if (mode == 0) {
 	return NULL;
@@ -2247,7 +2247,7 @@ TcpGetOptionProc(instanceData, interp, optionName, dsPtr)
     struct sockaddr_in sockname;
     struct sockaddr_in peername;
     struct hostent *hostEntPtr;
-    size_t size = sizeof(struct sockaddr_in);
+    socklen_t size = sizeof(struct sockaddr_in);
     size_t len = 0;
     char buf[TCL_INTEGER_SPACE];
 
@@ -2257,7 +2257,7 @@ TcpGetOptionProc(instanceData, interp, optionName, dsPtr)
 
     if ((len > 1) && (optionName[1] == 'e') &&
 	    (strncmp(optionName, "-error", len) == 0)) {
-	size_t optlen = sizeof(int);
+	socklen_t optlen = sizeof(int);
 	int err, ret;
 
 	ret = getsockopt(statePtr->fd, SOL_SOCKET, SO_ERROR,
@@ -2871,7 +2871,7 @@ TcpAccept(data, mask)
     int newsock;			/* The new client socket */
     TcpState *newSockState;		/* State for new socket. */
     struct sockaddr_in addr;		/* The remote address */
-    size_t len;				/* For accept interface */
+    socklen_t len;				/* For accept interface */
     char channelName[16 + TCL_INTEGER_SPACE];
 
     sockState = (TcpState *) data;

@@ -1,3 +1,17 @@
+2002-07-29  Reinhard Max  <max@suse.de>
+
+	* unix/tcl.m4 (SC_SERIAL_PORT): Fixed detection for cases when
+                                        configure's stdin is not a tty.
+	
+	* unix/tclUnixPort.h: 
+	* generic/tclIOSock.c:          Changed size_t to socklen_t in
+                                        socket-related function calls.
+
+	* unix/configure.in:            Added test and fallback definition
+                                        for socklen_t.
+	
+	* unix/configure:               generated.
+
 2002-07-29  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* generic/tclObj.c: fixed a comment
