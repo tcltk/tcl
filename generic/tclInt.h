@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.148 2004/03/18 18:54:02 rmax Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.149 2004/04/01 15:07:20 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -1569,8 +1569,6 @@ typedef Tcl_ObjCmdProc *TclObjCmdProcType;
  *----------------------------------------------------------------
  */
 
-extern Tcl_Time			tclBlockTime;
-extern int			tclBlockTimeSet;
 extern char *			tclExecutableName;
 extern char *			tclNativeExecutableName;
 extern char *			tclDefaultEncodingDir;
