@@ -1,5 +1,9 @@
 2004-02-04  Don Porter	<dgp@users.sourceforge.net>
 
+	* generic/tclCmdAH.c (StoreStateData):	Removed improper refcount
+	decrement of the varName parameter.  This error was causing
+	segfaults following test cmdAH-28.7.
+
 	* library/tcltest/tcltest.tcl:	Corrected references to
 	non-existent $name variable in [cleanupTests]. [Bug 833637]
 
