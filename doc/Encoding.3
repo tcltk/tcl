@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Encoding.3,v 1.17 2004/09/18 17:01:05 dkf Exp $
+'\" RCS: @(#) $Id: Encoding.3,v 1.18 2004/10/07 14:44:32 dkf Exp $
 '\" 
 .so man.macros
 .TH Tcl_GetEncoding 3 "8.1" Tcl "Tcl Library Procedures"
@@ -24,16 +24,16 @@ void
 char *
 \fBTcl_ExternalToUtfDString\fR(\fIencoding, src, srcLen, dstPtr\fR)
 .sp
-int
-\fBTcl_ExternalToUtf\fR(\fIinterp, encoding, src, srcLen, flags, statePtr, dst, dstLen, srcReadPtr, dstWrotePtr, 
-	dstCharsPtr\fR)
-.sp
-char * 
+char *
 \fBTcl_UtfToExternalDString\fR(\fIencoding, src, srcLen, dstPtr\fR)
 .sp
 int
-\fBTcl_UtfToExternal\fR(\fIinterp, encoding, src, srcLen, flags, statePtr, dst, dstLen, srcReadPtr, dstWrotePtr, 
-	dstCharsPtr\fR)
+\fBTcl_ExternalToUtf\fR(\fIinterp, encoding, src, srcLen, flags, statePtr,
+                  dst, dstLen, srcReadPtr, dstWrotePtr, dstCharsPtr\fR)
+.sp
+int
+\fBTcl_UtfToExternal\fR(\fIinterp, encoding, src, srcLen, flags, statePtr,
+                  dst, dstLen, srcReadPtr, dstWrotePtr, dstCharsPtr\fR)
 .sp
 char *
 \fBTcl_WinTCharToUtf\fR(\fItsrc, srcLen, dstPtr\fR)
@@ -59,9 +59,8 @@ CONST char *
 void
 \fBTcl_SetDefaultEncodingDir\fR(\fIpath\fR)
 
-
 .SH ARGUMENTS
-.AS Tcl_EncodingState *dstWrotePtr
+.AS Tcl_EncodingState *dstWrotePtr in/out
 .AP Tcl_Interp *interp in
 Interpreter to use for error reporting, or NULL if no error reporting is
 desired.
@@ -252,6 +251,7 @@ if (running NT) {
     Tcl_FreeEncoding(encoding);
 } else {
     nativeBuffer <- Tcl_UtfToExternal(NULL, utfBuffer);
+}
 .CE
 \fBTcl_WinUtfToTChar\fR and \fBTcl_WinTCharToUtf\fR automatically
 handle this test and use the proper encoding based on the current
@@ -303,12 +303,12 @@ convert between this encoding and UTF-8.  It is defined as follows:
 .PP
 .CS
 typedef struct Tcl_EncodingType {
-	CONST char *\fIencodingName\fR;
-	Tcl_EncodingConvertProc *\fItoUtfProc\fR;
-	Tcl_EncodingConvertProc *\fIfromUtfProc\fR;
-	Tcl_EncodingFreeProc *\fIfreeProc\fR;
-	ClientData \fIclientData\fR;
-	int \fInullSize\fR;
+        CONST char *\fIencodingName\fR;
+        Tcl_EncodingConvertProc *\fItoUtfProc\fR;
+        Tcl_EncodingConvertProc *\fIfromUtfProc\fR;
+        Tcl_EncodingFreeProc *\fIfreeProc\fR;
+        ClientData \fIclientData\fR;
+        int \fInullSize\fR;
 } Tcl_EncodingType;  
 .CE
 .PP
@@ -398,19 +398,19 @@ initial line of the file, beginning with a ``#'' symbol, is a comment
 that provides a human-readable description of the file.  The next line
 identifies the type of encoding file.  It can be one of the following
 letters:
-.IP "[1]   \fBS\fR"
+.IP "[1] \fBS\fR"
 A single-byte encoding, where one character is always one byte long in the
 encoding.  An example is \fBiso8859-1\fR, used by many European languages.
-.IP "[2]   \fBD\fR"
+.IP "[2] \fBD\fR"
 A double-byte encoding, where one character is always two bytes long in the
 encoding.  An example is \fBbig5\fR, used for Chinese text.
-.IP "[3]   \fBM\fR"
+.IP "[3] \fBM\fR"
 A multi-byte encoding, where one character may be either one or two bytes long.
 Certain bytes are lead bytes, indicating that another byte must follow
 and that together the two bytes represent one character.  Other bytes are not
 lead bytes and represent themselves.  An example is \fBshiftjis\fR, used by
 many Japanese computers.
-.IP "[4]   \fBE\fR"
+.IP "[4] \fBE\fR"
 An escape-sequence encoding, specifying that certain sequences of bytes
 do not represent characters, but commands that describe how following bytes
 should be interpreted.  

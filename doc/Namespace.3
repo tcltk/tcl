@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Namespace.3,v 1.5 2004/09/18 17:01:06 dkf Exp $
+'\" RCS: @(#) $Id: Namespace.3,v 1.6 2004/10/07 14:44:33 dkf Exp $
 '\" 
 '\" Note that some of these functions do not seem to belong, but they
 '\" were all introduced with the same TIP (#139)
@@ -47,7 +47,7 @@ Tcl_Namespace *
 Tcl_Command
 \fBTcl_FindCommand\fR(\fIinterp, name, contextNsPtr, flags\fR)
 .SH ARGUMENTS
-.AS Tcl_NamespaceDeleteProc *allowOverwrite
+.AS Tcl_NamespaceDeleteProc allowOverwrite in/out
 .AP Tcl_Interp *interp in/out
 The interpreter in which the namespace exists and where name lookups
 are performed. Also where error result messages are written.

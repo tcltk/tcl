@@ -1,5 +1,9 @@
 2004-10-07  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
+	* doc/man.macros, *.3: Update .AS macro so it can know how wide to
+	make the third column of the argument list. Update documentation
+	for C API (only users) to take advantage of this.
+
 	* doc/FileSystem.3: Formatting fixes for greater documentation
 	clarity.
 

@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Tcl_Main.3,v 1.10 2003/09/05 22:55:32 dgp Exp $
+'\" RCS: @(#) $Id: Tcl_Main.3,v 1.11 2004/10/07 14:44:34 dkf Exp $
 '\" 
 .so man.macros
 .TH Tcl_Main 3 8.4 Tcl "Tcl Library Procedures"
@@ -21,7 +21,7 @@ Tcl_Main, Tcl_SetMainLoop \- main program and event loop definition for Tcl-base
 .sp
 \fBTcl_SetMainLoop\fR(\fImainLoopProc\fR)
 .SH ARGUMENTS
-.AS Tcl_AppInitProc *appInitProc
+.AS Tcl_MainLoopProc *mainLoopProc
 .AP int argc in
 Number of elements in \fIargv\fR.
 .AP char *argv[] in
