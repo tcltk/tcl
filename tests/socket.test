@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: socket.test,v 1.14 2000/04/10 17:19:04 ericm Exp $
+# RCS: @(#) $Id: socket.test,v 1.15 2000/09/20 23:09:54 jenn Exp $
 
 # Running socket tests with a remote server:
 # ------------------------------------------
@@ -1385,12 +1385,11 @@ test socket-12.1 {testing inheritance of server sockets} \
     set f [open script2 w]
     puts $f [list set tcltest $::tcltest::tcltest]
     puts $f {
-	package require tcltest
 	set f [socket -server accept 2828]
 	proc accept { file addr port } {
 	    close $file
 	}
-	exec $::tcltest::tcltest script1 &
+	exec $tcltest script1 &
 	close $f
 	after 1000 exit
 	vwait forever
@@ -1439,7 +1438,7 @@ test socket-12.2 {testing inheritance of client sockets} \
     puts $f [list set tcltest $::tcltest::tcltest]
     puts $f {
 	set f [socket 127.0.0.1 2829]
-	exec $::tcltest::tcltest script1 &
+	exec $tcltest script1 &
 	puts $f testing
 	flush $f
 	after 1000 exit
@@ -1521,7 +1520,7 @@ test socket-12.3 {testing inheritance of accepted sockets} \
 	proc accept { file host port } {
 	    global tcltest
 	    puts $file {test data on socket}
-	    exec $::tcltest::tcltest script1 &
+	    exec $tcltest script1 &
 	    after 1000 exit
 	}
 	vwait forever

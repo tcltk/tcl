@@ -960,4 +960,8 @@ if test -r tcltest.n; then
     rm -f Tcltest.n
     ln tcltest.n Tcltest.n
 fi
+if test -r tcltest2.n; then
+    rm -f Tcltest2.n
+    ln tcltest2.n Tcltest2.n
+fi
 exit 0
