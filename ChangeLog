@@ -1,3 +1,10 @@
+2003-12-02  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclBinary.c (DeleteScanNumberCache, ScanNumber): Made
+	the numeric scan-value cache have proper references to the objects
+	within it so strange patterns of writes won't cause references to
+	freed objects. [Bug 851747]
+
 2003-12-01  Miguel Sofer <msofer@users.sf.net>
 
 	* doc/lset.n: fix typo [Bug 852224]
