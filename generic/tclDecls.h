@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.48 2001/04/24 20:59:18 kennykb Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.49 2001/05/15 21:30:46 hobbs Exp $
  */
 
 #ifndef _TCLDECLS
@@ -1363,6 +1363,9 @@ EXTERN int		Tcl_AttemptSetObjLength _ANSI_ARGS_((
 /* 433 */
 EXTERN Tcl_ThreadId	Tcl_GetChannelThread _ANSI_ARGS_((
 				Tcl_Channel channel));
+/* 434 */
+EXTERN Tcl_UniChar *	Tcl_GetUnicodeFromObj _ANSI_ARGS_((Tcl_Obj * objPtr, 
+				int * lengthPtr));
 
 typedef struct TclStubHooks {
     struct TclPlatStubs *tclPlatStubs;
@@ -1864,6 +1867,7 @@ typedef struct TclStubs {
     char * (*tcl_AttemptDbCkrealloc) _ANSI_ARGS_((char * ptr, unsigned int size, char * file, int line)); /* 431 */
     int (*tcl_AttemptSetObjLength) _ANSI_ARGS_((Tcl_Obj * objPtr, int length)); /* 432 */
     Tcl_ThreadId (*tcl_GetChannelThread) _ANSI_ARGS_((Tcl_Channel channel)); /* 433 */
+    Tcl_UniChar * (*tcl_GetUnicodeFromObj) _ANSI_ARGS_((Tcl_Obj * objPtr, int * lengthPtr)); /* 434 */
 } TclStubs;
 
 #ifdef __cplusplus
@@ -3647,6 +3651,10 @@ extern TclStubs *tclStubsPtr;
 #ifndef Tcl_GetChannelThread
 #define Tcl_GetChannelThread \
 	(tclStubsPtr->tcl_GetChannelThread) /* 433 */
+#endif
+#ifndef Tcl_GetUnicodeFromObj
+#define Tcl_GetUnicodeFromObj \
+	(tclStubsPtr->tcl_GetUnicodeFromObj) /* 434 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */
