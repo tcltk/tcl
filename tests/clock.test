@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.test,v 1.35 2004/08/18 19:59:07 kennykb Exp $
+# RCS: @(#) $Id: clock.test,v 1.36 2004/08/18 20:59:34 kennykb Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -19,7 +19,26 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 }
 
 if { $::tcl_platform(platform) eq {windows} } {
-    package require registry
+    if { [catch { package require registry 1.1 }] } {
+	
+	# HIDEOUS KLUDGE: [package require registry 1.1] has failed.
+	# This failure likely means that we're running in Tcl's build
+	# directory instead of the install directory.  We recover by
+	# trying to load tclreg*.dll directly.
+	
+	if { [catch { 
+	    load [lindex \
+		      [glob -directory \
+			   [file join \
+				[pwd] \
+				[file dirname [info nameofexecutable]]] \
+			   tclReg*.dll] \
+		      0] registry
+	}] } {
+	    # Still no registry!
+	    namespace eval ::tcl::clock [set NoRegistry {}]
+	}
+    }
 }
 package require msgcat 1.4
 
