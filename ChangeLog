@@ -1,3 +1,13 @@
+2003-01-12  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* win/configure: Regen.
+	* win/configure.in: Check for typedefs like LPFN_ACCEPT
+	in winsock2.h and define HAVE_NO_LPFN_DECLS if not found.
+	* win/tclWinSock.c: Define LPFN_* typedefs if
+	HAVE_NO_LPFN_DECLS is defined. This fixes the build
+	under Mingw and Cygwin, it was broken by the changes
+	made on 2002-11-26.
+
 2003-01-10  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* generic/tclIOUtil.c: 
