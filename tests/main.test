@@ -1,6 +1,6 @@
 # This file contains a collection of tests for generic/tclMain.c.
 #
-# RCS: @(#) $Id: main.test,v 1.14 2003/09/05 21:52:12 dgp Exp $
+# RCS: @(#) $Id: main.test,v 1.15 2003/10/07 21:45:39 dgp Exp $
 
 if {[catch {package require tcltest 2.0.2}]} {
     puts stderr "Skipping tests in [info script]. tcltest 2.0.2 required."
@@ -145,7 +145,7 @@ namespace eval ::tcl::test::main {
 	stdio
     } -setup {
 	set script [makeFile {} script]
-	removeFile script
+	file delete $script
 	set f [open $script w]
 	fconfigure $f -encoding utf-8
 	puts $f {puts [list $argv0 $argv $tcl_interactive]}
@@ -166,7 +166,7 @@ namespace eval ::tcl::test::main {
 	stdio
     } -setup {
 	set script [makeFile {} script]
-	removeFile script
+	file delete $script
 	set f [open $script w]
 	fconfigure $f -encoding utf-8
 	puts $f {puts [list $argv0 $argv $tcl_interactive]}
@@ -187,7 +187,7 @@ namespace eval ::tcl::test::main {
 	stdio
     } -setup {
 	set script [makeFile {} script]
-	removeFile script
+	file delete $script
 	set f [open $script w]
 	fconfigure $f -encoding utf-8
 	puts $f {puts [list $argv0 $argv $tcl_interactive]}

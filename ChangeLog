@@ -1,7 +1,14 @@
 2003-10-07  Don Porter  <dgp@users.sourceforge.net>
 
-        * tests/pid.test:       Corrected temporary file management issues
-        uncovered by -debug 1 test operations. [Bug 675655]
+	* tests/cmdAH.test:
+        * tests/exec.test:              Corrected temporary file management
+        * tests/fileSystem.test:        issues uncovered by -debug 1 test
+        * tests/io.test:                operations.  Also backported some
+        * tests/ioCmd.test:             other fixes from the HEAD.
+	* tests/main.test:
+        * tests/pid.test:               [Bugs 675605, 675655, 675659]
+        * tests/socket.test:
+        * tests/source.test:
 
         * tests/fCmd.test:      Run tests with the [temporaryDirectory] as
         the current directory, so that tests can depend on ability to write
