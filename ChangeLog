@@ -1,3 +1,8 @@
+2003-11-17  Don Porter	<dgp@users.sourceforge.net>
+
+	* tests/reg.test:  Added tests for [Bugs 230589, 504785, 505048, 840258]
+	recently fixed by 2003-11-15 commit to regcomp.c by Pavel Goran.
+
 2003-11-16  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclExecute.c (TclExecuteByteCode): Make sure that
