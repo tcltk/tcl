@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: io.test,v 1.43 2003/03/07 02:15:44 mdejong Exp $
+# RCS: @(#) $Id: io.test,v 1.44 2003/03/07 02:23:40 mdejong Exp $
 
 if {[catch {package require tcltest 2}]} {
     puts stderr "Skipping tests in [info script].  tcltest 2 required."
@@ -6558,8 +6558,6 @@ test io-52.8 {TclCopyChannel} {stdio openpipe} {
     list $s0 [file size $path(test1)]
 } {40 40}
 
-if 0 {
-
 # Empty files, to register them with the test facility
 set path(kyrillic.txt)   [makeFile {} kyrillic.txt]
 set path(utf8-fcopy.txt) [makeFile {} utf8-fcopy.txt]
@@ -6637,9 +6635,6 @@ test io-52.11 {TclCopyChannel & encodings} {
 
     file size $path(kyrillic.txt)
 } 3
-
-} ; # end koi-8 block
-
 
 test io-53.1 {CopyData} {
     removeFile test1
