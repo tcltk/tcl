@@ -1,3 +1,14 @@
+1999-07-30    <redman@scriptics.com>
+
+	* win/tclWinPipe.c:
+	* win/Makefile.in: Fixing launching of 16-bit apps on Win9x from
+	wish.  The command line was primed with tclpip82.dll, but it was
+	ignored.  Fixed that, then fixed the gmake makefile to build
+	tclpip82.dll as an executable.
+
+	* win/tclWinSock.c: Applied small patch to get thread-specific
+	data after initializing the socket driver.
+
 1999-07-29    <redman@scriptics.com>
 
 	* win/tclWinChan.c: Allow tcl to open CON and NUL, even for std

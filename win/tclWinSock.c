@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinSock.c,v 1.15 1999/07/29 22:58:24 redman Exp $
+ * RCS: @(#) $Id: tclWinSock.c,v 1.16 1999/07/31 01:24:25 redman Exp $
  */
 
 #include "tclWinInt.h"
@@ -1435,12 +1435,13 @@ Tcl_MakeTcpClientChannel(sock)
 {
     SocketInfo *infoPtr;
     char channelName[16 + TCL_INTEGER_SPACE];
-    ThreadSpecificData *tsdPtr = 
-	(ThreadSpecificData *)TclThreadDataKeyGet(&dataKey);
+    ThreadSpecificData *tsdPtr;
 
     if (TclpHasSockets(NULL) != TCL_OK) {
 	return NULL;
     }
+
+    tsdPtr = (ThreadSpecificData *)TclThreadDataKeyGet(&dataKey);
 
     /*
      * Set kernel space buffering and non-blocking.

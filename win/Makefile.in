@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.18 1999/07/30 22:26:23 wart Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.19 1999/07/31 01:24:25 redman Exp $
 
 VERSION = @TCL_VERSION@
 
@@ -113,7 +113,7 @@ TCL_DLL_FILE		= @TCL_DLL_FILE@
 TCL_LIB_FILE		= @TCL_LIB_FILE@
 DDE_DLL_FILE		= tcldde$(VER)${DLLSUFFIX}
 REG_DLL_FILE		= tclreg$(VER)${DLLSUFFIX}
-PIPE_DLL_FILE		= tclpip$(VER)${DLLSUFFIX}
+PIPE_DLL_FILE		= tclpip$(VER).dll
 
 SHARED_LIBRARIES 	= $(TCL_DLL_FILE) $(TCL_STUB_LIB_FILE) \
 			  $(DDE_DLL_FILE) $(REG_DLL_FILE) $(PIPE_DLL_FILE)
@@ -315,9 +315,12 @@ ${REG_DLL_FILE}: ${REG_OBJS} ${TCL_STUB_LIB_FILE}
 	@$(RM) ${REG_DLL_FILE}
 	@MAKE_DLL@ ${REG_OBJS} ${TCL_STUB_LIB_FILE}
 
+# PIPE_DLL_FILE is actually an executable, don't build it
+# like a DLL.
+
 ${PIPE_DLL_FILE}: ${PIPE_OBJS}
 	@$(RM) ${PIPE_DLL_FILE}
-	@MAKE_DLL@ ${PIPE_OBJS}
+	$(CC) $(CFLAGS) ${PIPE_OBJS} $(LIBS) -Fe$(PIPE_DLL_FILE) 
 
 # Add the object extension to the implicit rules.  By default .obj is not
 # automatically added.
