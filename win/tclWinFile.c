@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.44.2.5 2003/07/17 00:16:04 hobbs Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.44.2.6 2003/10/03 17:45:37 vincentdarley Exp $
  */
 
 //#define _WIN32_WINNT  0x0500
@@ -818,7 +818,8 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 	    }
 	}
 	dirName = Tcl_DStringValue(&dirString);
-
+	Tcl_DecrRefCount(fileNamePtr);
+	
 	/*
 	 * First verify that the specified path is actually a directory.
 	 */
@@ -1556,9 +1557,13 @@ TclpObjStat(pathPtr, statPtr)
 
     transPtr = Tcl_FSGetTranslatedPath(NULL, pathPtr);
     if (transPtr == NULL || (strpbrk(Tcl_GetString(transPtr), "?*") != NULL)) {
+	if (transPtr != NULL) {
+	    Tcl_DecrRefCount(transPtr);
+	}
 	Tcl_SetErrno(ENOENT);
 	return -1;
     }
+    Tcl_DecrRefCount(transPtr);
 #endif
     
     /*

@@ -1,3 +1,10 @@
+2003-10-03  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* tests/fileName.test:
+	* tests/winFCmd.test:
+        * doc/FileSystem.3: backported various test and documentation
+        changes from HEAD.  Backport of actual code fixes to follow.
+
 2003-10-02  Don Porter  <dgp@users.sourceforge.net>
 
 	* README:		Bumped patch level to 8.4.5 to prepare

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFile.c,v 1.32 2003/02/12 18:57:52 vincentdarley Exp $
+ * RCS: @(#) $Id: tclUnixFile.c,v 1.32.2.1 2003/10/03 17:45:37 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -255,7 +255,8 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 		dirLength++;
 	    }
 	}
-
+	Tcl_DecrRefCount(fileNamePtr);
+	
 	/*
 	 * Now open the directory for reading and iterate over the contents.
 	 */
@@ -745,10 +746,14 @@ TclpObjLink(pathPtr, toPtr, linkAction)
 	char link[MAXPATHLEN];
 	int length;
 	Tcl_DString ds;
-
-	if (Tcl_FSGetTranslatedPath(NULL, pathPtr) == NULL) {
+	Tcl_Obj *transPtr;
+	
+	transPtr = Tcl_FSGetTranslatedPath(NULL, pathPtr);
+	if (transPtr == NULL) {
 	    return NULL;
 	}
+	Tcl_DecrRefCount(transPtr);
+	
 	length = readlink(Tcl_FSGetNativePath(pathPtr), link, sizeof(link));
 	if (length < 0) {
 	    return NULL;
