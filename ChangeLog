@@ -1,3 +1,13 @@
+2004-09-14  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tclClock.c (ClockOldscanObjCmd): Silenced a compiler
+	warning (long passed as a param where unsigend long was
+	expected).  'Unsigned long' is wrong, but the fix is really
+	to change the signature of TclGetDate to return a structure of
+	its 'yy' variables and then do the remaining work inside
+	clock.tcl. But, as I said on 2004-09-08, that's a job for
+	another day.  [Bug 1027993]
+	
 2004-09-10  Miguel Sofer <msofer@users.sf.net>
 
 	* doc/interp.n:
