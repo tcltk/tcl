@@ -1,3 +1,14 @@
+2004-03-10  Kevin B. Kenny <kennykb@acm.org>
+
+	* generic/tclGetDate.y (TclGetDate): Fix so that 
+	[clock scan <timeOfDay> -gmt true] uses the GMT base date
+	instead of the local one. [Bug 913513]
+	* tests/clock.test: Added test cases for wrong ISO8601 week number
+	[Bug 500285] and wrong GMT base date [Bug 913513].  Several tests
+	still fail on Windows, and these are actual faults in [clock scan].
+	Fix is still pending.
+	* generic/tclDate.c: Regenerated.
+	
 2004-03-08  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* generic/tclFileName.c:  Fix to 'glob -path' near the root

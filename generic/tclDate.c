@@ -927,7 +927,7 @@ TclGetDate(p, now, zone, timePtr)
     TclDateInput = p;
     /* now has to be cast to a time_t for 64bit compliance */
     Start = now;
-    tm = TclpGetDate((TclpTime_t) &Start, 0);
+    tm = TclpGetDate((TclpTime_t) &Start, (zone == -50000));
     thisyear = tm->tm_year + TM_YEAR_BASE;
     TclDateYear = thisyear;
     TclDateMonth = tm->tm_mon + 1;
