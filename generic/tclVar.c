@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.54 2002/07/15 22:18:07 msofer Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.55 2002/07/16 12:54:34 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -6023,8 +6023,9 @@ DupNsVarName(srcPtr, dupPtr)
  * INTERNALREP DEFINITION:
  *   twoPtrValue.ptr1 = pointer to the array name Tcl_Obj
  *                      (NULL if scalar)
- *   twoPtrValue.ptr2 = pointer to the element name Tcl_Obj
- *                      (NULL if scalar)
+ *   twoPtrValue.ptr2 = pointer to the element name string
+ *                      (owned by this Tcl_Obj), or NULL if 
+ *                      it is a scalar variable
  */
 
 static void 
