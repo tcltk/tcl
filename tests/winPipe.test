@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: winPipe.test,v 1.26 2004/02/02 02:36:14 davygrvy Exp $
+# RCS: @(#) $Id: winPipe.test,v 1.27 2004/05/19 20:15:32 dkf Exp $
 
 package require tcltest
 namespace import -force ::tcltest::*
@@ -22,12 +22,12 @@ testConstraint exec [llength [info commands exec]]
 set bindir [file join [pwd] [file dirname [info nameofexecutable]]]
 set cat32 [file join $bindir cat32.exe]
 
-set ::tcltest::testConstraints(cat32) [file exists $cat32]
+testConstraint cat32 [file exists $cat32]
 
 if {[catch {puts console1 ""}]} {
-    set ::tcltest::testConstraints(AllocConsole) 1
+    testConstraint AllocConsole 1
 } else {
-    set ::tcltest::testConstraints(.console) 1
+    testConstraint .console 1
 }
 
 set big bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\n
@@ -432,7 +432,6 @@ test winpipe-8.18 {BuildCommandLine/parse_cmdline pass-thru: special chars #2} {
 test winpipe-8.19 {ensure parse_cmdline isn't doing wildcard replacement} {pcOnly exec} {
     exec [interpreter] $path(echoArgs.tcl) foo * makefile.?c bar
 } [list $path(echoArgs.tcl) [list foo * makefile.?c bar]]
-
 
 
 # restore old values for env(TMP) and env(TEMP)

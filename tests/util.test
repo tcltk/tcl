@@ -7,18 +7,11 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: util.test,v 1.13 2003/08/27 20:29:36 dgp Exp $
+# RCS: @(#) $Id: util.test,v 1.14 2004/05/19 20:15:32 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
     namespace import -force ::tcltest::*
-}
-
-if {[info commands testobj] == {}} {
-    puts "This application hasn't been compiled with the \"testobj\""
-    puts "command, so I can't test the Tcl type and object support."
-    ::tcltest::cleanupTests
-    return
 }
 
 test util-1.1 {TclFindElement procedure - binary element in middle of list} {
@@ -347,8 +340,7 @@ test util-8.1 {TclNeedSpace - correct UTF8 handling} {
     set result
 } "\u5420 foo"
 
-set ::tcltest::testConstraints(testdstring) \
-	[expr {[info commands testdstring] != {}}]
+testConstraint testdstring [expr {[info commands testdstring] != {}}]
 
 test util-8.2 {TclNeedSpace - correct UTF8 handling} testdstring {
     # Bug 411825

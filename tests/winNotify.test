@@ -10,15 +10,14 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: winNotify.test,v 1.8 2004/05/19 13:29:33 dkf Exp $
+# RCS: @(#) $Id: winNotify.test,v 1.9 2004/05/19 20:15:32 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
     namespace import -force ::tcltest::*
 }
 
-set ::tcltest::testConstraints(testeventloop) \
-	[expr {[info commands testeventloop] != {}}]
+testConstraint testeventloop [expr {[info commands testeventloop] != {}}]
 
 # There is no explicit test for InitNotifier or NotifierExitHandler
 

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.test,v 1.27 2004/05/18 21:45:55 kennykb Exp $
+# RCS: @(#) $Id: clock.test,v 1.28 2004/05/19 20:15:31 dkf Exp $
 
 set env(LC_TIME) POSIX
 
@@ -508,7 +508,7 @@ test clock-8.1 {clock scan midnight/gmt range bug 413397} {
 	    [clock format [clock scan year -base $5amPST -gmt 1] -format $fmt]
 } {12/31 12/31}
 
-set ::tcltest::testConstraints(needPST) [expr {
+testConstraint needPST [expr {
     [regexp {^(Pacific.*|P[DS]T)$} [clock format 1 -format %Z]]
     && ([clock format 1 -format %s] != "%s")
 }]
