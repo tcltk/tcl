@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.137 2004/12/15 20:44:34 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.138 2005/01/19 23:15:14 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -3047,7 +3047,7 @@ TclEvalObjvInternal(interp, objc, objv, command, length, flags)
 	}
 	if (!(flags & TCL_EVAL_INVOKE) &&
 		(iPtr->ensembleRewrite.sourceObjs != NULL) &&
-		!TclIsEnsemble(cmdPtr)) {
+		!Tcl_IsEnsemble((Tcl_Command) cmdPtr)) {
 	    iPtr->ensembleRewrite.sourceObjs = NULL;
 	}
 	code = (*cmdPtr->objProc)(cmdPtr->objClientData, interp, objc, objv);
