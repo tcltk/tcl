@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: load.test,v 1.8 2002/05/08 05:58:57 dgp Exp $
+# RCS: @(#) $Id: load.test,v 1.9 2002/05/10 18:47:11 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -113,7 +113,7 @@ test load-4.1 {reloading package into same interpreter} [list $dll $loaded] {
 } {0 {}}
 test load-4.2 {reloading package into same interpreter} [list $dll $loaded] {
     list [catch {load [file join $testDir pkga$ext] pkgb} msg] $msg
-} "1 {file \"[file join $testDir pkga$ext\"] is already loaded for package \"Pkga\"}"
+} [list 1 "file \"[file join $testDir pkga$ext]\" is already loaded for package \"Pkga\""]
 
 test load-5.1 {file name not specified and no static package: pick default} \
 	[list $dll $loaded] {
