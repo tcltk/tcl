@@ -22,7 +22,7 @@ common source release.  The binary distribution is a self-extracting
 archive with a built-in installation script.
 
 Look for the binary release in the same location as the source release
-(ftp.smli.com:/pub/tcl or any of the mirror sites).  For most users,
+(ftp.scriptics.com:/pub/tcl or any of the mirror sites).  For most users,
 the binary release will be much easier to install and use.  You only
 need the source release if you plan to modify the core of Tcl, or if
 you need to compile with a different compiler.  With the addition of
@@ -38,8 +38,10 @@ In order to compile Tcl for Windows, you need the following items:
 
 	Borland C++ 4.52 (both 16-bit and 32-bit compilers)
 	  or
-	Visual C++ 2.x/4.x
+	Visual C++ 2.x/4.x/5.x
 	Visual C++ 1.5 (to build tcl1680.dll for Win32s support of exec)
+
+In practice, the 8.0.3 release is built with Visual C++ 5.0
 
 In the "win" subdirectory of the source release, you will find two
 files called "makefile.bc" and "makefile.vc".  These are the makefiles
@@ -72,7 +74,65 @@ Note that in order to run tclsh80.exe, you must ensure that tcl80.dll
 and tclpip80.dll (plus tcl1680.dll under Win32s) are on your path, in
 the system directory, or in the directory containing tclsh80.exe.
 
-4. Test suite
+4. Building Extensions
+----------------------
+
+With the Windows compilers you have to worry about how you export symbols
+from DLLs.  tcl.h defines a few macros to help solve this problem:
+EXTERN - all Tcl_ function prototypes use this macro, which implies
+	they are exported.  You'll see this used in tcl.h and tk.h.
+	You should use this in your exported procedures.
+	However, this is not the whole story.
+EXPORT - this is really an import/export flag, depending on if you are
+	importing symbols from a DLL (i.e., a user of the DLL), or if
+	you are exporting symbols from the DLL (i.e., you are building it.)
+	The EXTERN macro includes EXPORT.
+	EXPORT is defined to be either DLLIMPORT or DLLEXPORT as
+	described below.
+STATIC_BUILD - define this if you are *not* building a DLL
+	(e.g., a main program)
+DLLIMPORT - If STATIC_BUILD is defined, this becomes nothing.
+	(On UNIX, DLLIMPORT is defined to be empty)
+	Otherwise, this this expands to __declspec(dllimport)
+DLLEXPORT - If STATIC_BUILD is defined, this becomes nothing.
+	(On UNIX, DLLEXPORT is defined to be empty)
+	Otherwise, this this expands to __declspec(dllexport)
+
+How to use these:
+
+Assume your extension is named Foo.  In its Makefile, define
+BUILD_Foo so that you know you are building Foo and not using it.
+Then, in your main header file, foo.h, conditionally define
+EXPORT to be either DLLIMPORT or DLLEXPORT based on the
+presense of BUILD_Foo, like this:
+
+#ifndef _FOO
+#define _FOO
+#include "tcl.h"
+/* Additional includes go here */
+/*
+ * if the BUILD_foo macro is defined, the assumption is that we are
+ * building the dynamic library.
+ */
+#ifdef BUILD_foo
+#  undef EXPORT
+#  define EXPORT DLLEXPORT
+#endif
+/*
+ * Function prototypes for this module.
+ */
+EXTERN int Foo_Init _ANSI_ARGS_((Tcl_Interp *interp));
+EXTERN int Foo_SafeInit _ANSI_ARGS_((Tcl_Interp *interp));
+/* Additional prototypes go here */
+/*
+ * end of foo.h
+ * reset EXPORT to DLLIMPORT.
+ */
+# undef EXPORT
+# define EXPORT DLLIMPORT
+#endif /* _FOO */
+
+5. Test suite
 -------------
 
 This distribution contains an extensive test suite for Tcl.  Some of
@@ -84,7 +144,7 @@ In order to run the test suite, you build the "test" target using the
 appropriate makefile for your compiler.
 
 
-5. Known Bugs
+6. Known Bugs
 -------------
 
 Here is the current list of known bugs/missing features for the
@@ -102,7 +162,6 @@ Windows version of Tcl:
 If you have comments or bug reports for the Windows version of Tcl,
 please direct them to:
 
-Scott Stanton
-scott.stanton@eng.sun.com
+<bugs@scriptics.com>
 
 or post them to the comp.lang.tcl newsgroup.
