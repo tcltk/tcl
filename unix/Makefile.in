@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.15 1998/12/04 23:12:44 suresh Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.16 1998/12/08 12:43:10 suresh Exp $
 
 # Current Tcl version;  used in various names.
 
@@ -403,7 +403,7 @@ topDirName:
 gendate:
 	yacc -l $(GENERIC_DIR)/tclGetDate.y
 	sed -e 's/yy/TclDate/g' -e '/^#include <values.h>/d' \
-	    -e 's/SCCSID/RCS: @(#) $Id: Makefile.in,v 1.15 1998/12/04 23:12:44 suresh Exp $'
+	    -e 's/SCCSID/RCS: @(#) $Id: Makefile.in,v 1.16 1998/12/08 12:43:10 suresh Exp $'
 	    -e '/#ifdef __STDC__/,/#endif/d' -e '/TclDateerrlab:/d' \
 	    -e '/TclDatenewstate:/d' -e '/#pragma/d' \
 	    <y.tab.c >$(GENERIC_DIR)/tclDate.c
@@ -438,7 +438,7 @@ install-binaries: $(TCL_LIB_FILE) tclsh
 	    do \
 	    if [ ! -d $$i ] ; then \
 		echo "Making directory $$i"; \
-		mkdir $$i; \
+		mkdir -p $$i; \
 		chmod 755 $$i; \
 		else true; \
 		fi; \
@@ -458,7 +458,7 @@ install-libraries:
 	    do \
 	    if [ ! -d $$i ] ; then \
 		echo "Making directory $$i"; \
-		mkdir $$i; \
+		mkdir -p $$i; \
 		chmod 755 $$i; \
 		else true; \
 		fi; \
@@ -467,7 +467,7 @@ install-libraries:
 	    do \
 	    if [ ! -d $(SCRIPT_INSTALL_DIR)/$$i ] ; then \
 		echo "Making directory $(SCRIPT_INSTALL_DIR)/$$i"; \
-		mkdir $(SCRIPT_INSTALL_DIR)/$$i; \
+		mkdir -p $(SCRIPT_INSTALL_DIR)/$$i; \
 		chmod 755 $(SCRIPT_INSTALL_DIR)/$$i; \
 		else true; \
 		fi; \
@@ -493,7 +493,7 @@ install-man:
 	    do \
 	    if [ ! -d $$i ] ; then \
 		echo "Making directory $$i"; \
-		mkdir $$i; \
+		mkdir -p $$i; \
 		chmod 755 $$i; \
 		else true; \
 		fi; \
