@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.80 2004/12/20 18:27:18 msofer Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.81 2004/12/24 18:06:56 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1146,10 +1146,11 @@ TclCompileScript(interp, script, numBytes, envPtr)
 			/*
 			 * No compile procedure so push the word. If the
 			 * command was found, push a CmdName object to
-			 * reduce runtime lookups.
+			 * reduce runtime lookups. Avoid sharing this literal
+			 * among different namespaces to reduce shimmering.
 			 */
 
-			objIndex = TclRegisterNewLiteral(envPtr,
+			objIndex = TclRegisterNewNSLiteral(envPtr,
 				tokenPtr[1].start, tokenPtr[1].size);
 			if (cmdPtr != NULL) {
 			    TclSetCmdNameObj(interp,
@@ -1318,9 +1319,9 @@ TclCompileTokens(interp, tokenPtr, count, envPtr)
 		if (Tcl_DStringLength(&textBuffer) > 0) {
 		    int literal;
 		    
-		    literal = TclRegisterLiteral(envPtr,
+		    literal = TclRegisterNewLiteral(envPtr,
 			    Tcl_DStringValue(&textBuffer),
-			    Tcl_DStringLength(&textBuffer), /*onHeap*/ 0);
+			    Tcl_DStringLength(&textBuffer));
 		    TclEmitPush(literal, envPtr);
 		    numObjsToConcat++;
 		    Tcl_DStringFree(&textBuffer);
@@ -1339,9 +1340,9 @@ TclCompileTokens(interp, tokenPtr, count, envPtr)
 		if (Tcl_DStringLength(&textBuffer) > 0) {
 		    int literal;
 		    
-		    literal = TclRegisterLiteral(envPtr,
+		    literal = TclRegisterNewLiteral(envPtr,
 			    Tcl_DStringValue(&textBuffer),
-			    Tcl_DStringLength(&textBuffer), /*onHeap*/ 0);
+			    Tcl_DStringLength(&textBuffer));
 		    TclEmitPush(literal, envPtr);
 		    numObjsToConcat++;
 		    Tcl_DStringFree(&textBuffer);
@@ -1433,8 +1434,8 @@ TclCompileTokens(interp, tokenPtr, count, envPtr)
     if (Tcl_DStringLength(&textBuffer) > 0) {
 	int literal;
 
-	literal = TclRegisterLiteral(envPtr, Tcl_DStringValue(&textBuffer),
-	        Tcl_DStringLength(&textBuffer), /*onHeap*/ 0);
+	literal = TclRegisterNewLiteral(envPtr, Tcl_DStringValue(&textBuffer),
+	        Tcl_DStringLength(&textBuffer));
 	TclEmitPush(literal, envPtr);
 	numObjsToConcat++;
     }
@@ -1456,7 +1457,7 @@ TclCompileTokens(interp, tokenPtr, count, envPtr)
      */
     
     if (envPtr->codeNext == entryCodeNext) {
-	TclEmitPush(TclRegisterLiteral(envPtr, "", 0, /*onHeap*/ 0),
+	TclEmitPush(TclRegisterNewLiteral(envPtr, "", 0),
 	        envPtr);
     }
     Tcl_DStringFree(&textBuffer);
@@ -1573,7 +1574,7 @@ TclCompileExprWords(interp, tokenPtr, numWords, envPtr)
     for (i = 0;  i < numWords;  i++) {
 	TclCompileTokens(interp, wordPtr+1, wordPtr->numComponents, envPtr);
 	if (i < (numWords - 1)) {
-	    TclEmitPush(TclRegisterLiteral(envPtr, " ", 1, /*onHeap*/ 0),
+	    TclEmitPush(TclRegisterNewLiteral(envPtr, " ", 1),
 	            envPtr);
 	}
 	wordPtr += (wordPtr->numComponents + 1);

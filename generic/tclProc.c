@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.71 2004/12/20 21:20:06 msofer Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.72 2004/12/24 18:07:01 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1837,6 +1837,6 @@ TclCompileNoOp(interp, parsePtr, envPtr)
 	} 
     }
     envPtr->currStackDepth = savedStackDepth;
-    TclEmitPush(TclRegisterLiteral(envPtr, "", 0, /*onHeap*/ 0), envPtr);
+    TclEmitPush(TclRegisterNewLiteral(envPtr, "", 0), envPtr);
     return TCL_OK;
 }
