@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.63.2.4 2001/04/03 23:00:17 hobbs Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.63.2.5 2001/09/07 02:43:39 dgp Exp $
 
 VERSION 		= @TCL_VERSION@
 
@@ -476,7 +476,7 @@ topDirName:
 gendate:
 	yacc -l $(GENERIC_DIR)/tclGetDate.y
 	sed -e 's/yy/TclDate/g' -e '/^#include <values.h>/d' \
-	    -e 's?SCCSID?RCS: @(#) $$Id: Makefile.in,v 1.63.2.4 2001/04/03 23:00:17 hobbs Exp $$?' \
+	    -e 's?SCCSID?RCS: @(#) $$Id: Makefile.in,v 1.63.2.5 2001/09/07 02:43:39 dgp Exp $$?' \
 	    -e '/#ifdef __STDC__/,/#endif/d' -e '/TclDateerrlab:/d' \
 	    -e '/TclDatenewstate:/d' -e '/#pragma/d' \
 	    -e '/#include <inttypes.h>/d' -e 's/const /CONST /g' \
@@ -552,7 +552,7 @@ install-libraries: libraries
 		else true; \
 		fi; \
 	    done;
-	@for i in http2.3 http1.0 opt0.4 encoding msgcat1.1 tcltest1.0; \
+	@for i in http2.4 http1.0 opt0.4 encoding msgcat1.1 tcltest1.0; \
 	    do \
 	    if [ ! -d $(SCRIPT_INSTALL_DIR)/$$i ] ; then \
 		echo "Making directory $(SCRIPT_INSTALL_DIR)/$$i"; \
@@ -580,10 +580,10 @@ install-libraries: libraries
 	    do \
 	    $(INSTALL_DATA) $$j $(SCRIPT_INSTALL_DIR)/http1.0; \
 	    done;
-	@echo "Installing library http2.3 directory";
+	@echo "Installing library http2.4 directory";
 	@for j in $(TOP_DIR)/library/http/*.tcl ; \
 	    do \
-	    $(INSTALL_DATA) $$j $(SCRIPT_INSTALL_DIR)/http2.3; \
+	    $(INSTALL_DATA) $$j $(SCRIPT_INSTALL_DIR)/http2.4; \
 	    done;
 	@echo "Installing library opt0.4 directory";
 	@for j in $(TOP_DIR)/library/opt/*.tcl ; \

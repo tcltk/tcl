@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and
 # redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: http.tcl,v 1.32.2.4 2001/09/07 00:10:57 hobbs Exp $
+# RCS: @(#) $Id: http.tcl,v 1.32.2.5 2001/09/07 02:43:39 dgp Exp $
 
 # Rough version history:
 # 1.0	Old http_get interface
@@ -19,10 +19,12 @@
 # 2.3	Added SSL support, and ability to post from a channel
 #	This version also cleans up error cases and eliminates the
 #	"ioerror" status in favor of raising an error
+# 2.4	Added -binary option to http::geturl and charset element
+#	to the state array.
 
 package require Tcl 8.2
-# keep this in sink with pkgIndex.tcl
-package provide http 2.3.3
+# keep this in sync with pkgIndex.tcl
+package provide http 2.4
 
 namespace eval http {
     variable http
