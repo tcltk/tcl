@@ -223,27 +223,6 @@ AC_DEFUN(SC_LOAD_TCLCONFIG, [
     AC_SUBST(TCL_BIN_DIR)
     AC_SUBST(TCL_SRC_DIR)
     AC_SUBST(TCL_LIB_FILE)
-
-
-    # We need to find out if Tcl was compiled with thread
-    # support. We can not build an extension with thread
-    # support if Tcl is not built with thread support.
-
-    AC_MSG_CHECKING([to see if Tcl was compiled with thread support])
-
-    if test "$TCL_THREADS" = "1"; then
-        # Define the following option so that they will
-        # be passed in the CFLAGS variable. We do not
-        # need to worry about THREADS_LIBS because that
-        # gets added to the LIBS variable.
-
-        AC_MSG_RESULT([yes])
-        AC_DEFINE(TCL_THREADS)
-        AC_DEFINE(_REENTRANT)
-        AC_DEFINE(_THREAD_SAFE)
-    else
-        AC_MSG_RESULT([no])
-    fi
 ])
 
 #------------------------------------------------------------------------
@@ -354,10 +333,7 @@ AC_DEFUN(SC_ENABLE_SHARED, [
 #------------------------------------------------------------------------
 # SC_ENABLE_THREADS --
 #
-#	Specify if thread support should be enabled for Tcl. This
-#	macro can not be called from an extension's configure.in
-#	because it is not possible to build an extension with thread
-#	support if Tcl itself is not compiled with thread support.
+#	Specify if thread support should be enabled
 #
 # Arguments:
 #	none
@@ -381,13 +357,6 @@ AC_DEFUN(SC_ENABLE_THREADS, [
     AC_MSG_CHECKING(for building with threads)
     AC_ARG_ENABLE(threads, [  --enable-threads        build with threads],
 	[tcl_ok=$enableval], [tcl_ok=no])
-
-    # Make sure this macro is not getting include in an extensions
-    # configure.in by checking for the tcl.h include file.
-
-    if test ! -f ${TCL_SRC_DIR}/generic/tcl.h ; then
-        AC_MSG_ERROR([The --enable-threads macro can only be used in Tcl's configure.in])
-    fi
 
     if test "$tcl_ok" = "yes"; then
 	AC_MSG_RESULT(yes)
