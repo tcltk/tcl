@@ -1,5 +1,9 @@
 2002-04-18  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
+	* generic/tclCmdIL.c (InfoBodyCmd): 
+	* tests/info.test (info-2.6): Proc bodies without string reps
+	would report as empty [Bug #545644]
+
 	* generic/tclCmdMZ.c (Tcl_SubstObj): More clarification for
 	comment on behaviour when substitutions are not well-formed,
 	prompted by [Bug #536831]; alas, removing the ill-defined
