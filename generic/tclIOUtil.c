@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.106 2004/07/11 21:13:27 vincentdarley Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.107 2004/07/17 12:18:22 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -2548,21 +2548,38 @@ Tcl_FSGetCwd(interp)
 			if (retCd != NULL) {
 			    (*fsPtr->freeInternalRepProc)(retCd);
 			}
-		    } else if (Tcl_FSEqualPaths(tsdPtr->cwdPathPtr, norm)) {
-			/* 
-			 * If the paths were equal, we can be more
-			 * efficient and retain the old path object
-			 * which will probably already be shared.  In
-			 * this case we can simply free the normalized
-			 * path we just calculated.
-			 */
-			Tcl_DecrRefCount(norm);
-			if (retCd != NULL) {
-			    (*fsPtr->freeInternalRepProc)(retCd);
-			}
+		    } else if (norm == tsdPtr->cwdPathPtr) {
+			goto cdEqual;
 		    } else {
-			FsUpdateCwd(norm, retCd);
-			Tcl_DecrRefCount(norm);
+			/* 
+			 * Note that both 'norm' and
+			 * 'tsdPtr->cwdPathPtr' are normalized paths.
+			 * Therefore we can be more efficient than
+			 * calling 'Tcl_FSEqualPaths', and in addition
+			 * avoid a nasty infinite loop bug when trying
+			 * to normalize tsdPtr->cwdPathPtr.
+			 */
+			int len1, len2;
+			char *str1, *str2;
+			str1 = Tcl_GetStringFromObj(tsdPtr->cwdPathPtr, &len1);
+			str2 = Tcl_GetStringFromObj(norm, &len2);
+			if ((len1 == len2) && (strcmp(str1, str2) == 0)) {
+			    /* 
+			     * If the paths were equal, we can be more
+			     * efficient and retain the old path object
+			     * which will probably already be shared.  In
+			     * this case we can simply free the normalized
+			     * path we just calculated.
+			     */
+			  cdEqual:
+			    Tcl_DecrRefCount(norm);
+			    if (retCd != NULL) {
+				(*fsPtr->freeInternalRepProc)(retCd);
+			    }
+			} else {
+			    FsUpdateCwd(norm, retCd);
+			    Tcl_DecrRefCount(norm);
+			}
 		    }
 		    Tcl_DecrRefCount(retVal);
 		} else {
@@ -2658,12 +2675,13 @@ Tcl_FSChdir(pathPtr)
 	 * our private storage of the cwd, since this is the only
 	 * opportunity to do that!
 	 * 
-	 * Note: We used to call this block of code irrespective of
-	 * whether there was a getCwdProc or not, but that led to
-	 * problems with threads.
+	 * Note: We currently call this block of code irrespective of
+	 * whether there was a getCwdProc or not, but the code should
+	 * all in principle work if we only call this block if 
+	 * fsPtr->getCwdProc == NULL.
 	 */
 
-	if (fsPtr->getCwdProc == NULL && retVal == 0) {
+	if (retVal == 0) {
 	    /* 
 	     * Note that this normalized path may be different to what
 	     * we found above (or at least a different object), if the
@@ -2675,7 +2693,8 @@ Tcl_FSChdir(pathPtr)
 	     */
 	    Tcl_Obj *normDirName = Tcl_FSGetNormalizedPath(NULL, pathPtr);
 	    if (normDirName == NULL) {
-		Tcl_SetErrno(ENOENT); /*Not really true, but what else to do?*/
+		/* Not really true, but what else to do? */
+		Tcl_SetErrno(ENOENT); 
 		return -1;
 	    }
 	    if (fsPtr == &tclNativeFilesystem) {

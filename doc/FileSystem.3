@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: FileSystem.3,v 1.43 2004/05/19 16:56:39 vincentdarley Exp $
+'\" RCS: @(#) $Id: FileSystem.3,v 1.44 2004/07/17 12:18:21 vincentdarley Exp $
 '\" 
 .so man.macros
 .TH Filesystem 3 8.4 Tcl "Tcl Library Procedures"
@@ -1244,10 +1244,11 @@ typedef int Tcl_FSRemoveDirectoryProc(
 The return value is a standard Tcl result indicating whether an error
 occurred in the process.  If successful, the directory specified by
 \fIpathPtr\fR should have been removed from the filesystem.  If the
-\fIrecursive\fR flag is given, then a non-empty directory should
-be deleted without error.  If an error does occur, the name of
-the file or directory which caused the error should be placed in
-\fIerrorPtr\fR.
+\fIrecursive\fR flag is given, then a non-empty directory should be
+deleted without error.  If this flag is not given, then and the
+directory is non-empty a posix EEXIST error should be signalled.  If an
+error does occur, the name of the file or directory which caused the
+error should be placed in \fIerrorPtr\fR.
 .SH DELETEFILEPROC	    
 .PP
 Function to process a \fBTcl_FSDeleteFile()\fR call.  Should be implemented
