@@ -1,3 +1,21 @@
+2001-11-06  David Gravereaux <davygrvy@pobox.com>
+
+	* win/rules.vc (new):
+	* win/makefile.vc:  Complete over/under rewrite to support numerous
+	build options all from the commandline itself without needing to
+	edit the makefile.  Now requires vcvars32.bat to be run prior to
+	running nmake for bootstraping the environment.  Fully doc'd usage
+	for it is in makefile.vc.  Commentary welcome.  Sticky points left
+	are:
+
+	1) winhelp target shows errors in the converting script.
+	2) .rc scripts aren't getting the right #defines to build the correct
+	   "OriginalFilename" strings. (have patch, won't commit yet)
+	3) Naming convention with suffixes describing the buildtype are 'tsdx'
+	   which will need public acceptance. ie. tclsh84tsx.exe is a (t)
+	   threaded shell (s) statically linked to the core and (x) uses
+	   msvcrt instead of libcmt.
+
 2001-11-04  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* library/init.tcl: made filesystem fallback proc
