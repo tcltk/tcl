@@ -6,7 +6,7 @@
 # Copyright (c) 2000 by Ajuba Solutions
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.test,v 1.47 2004/11/11 01:16:07 das Exp $
+# RCS: @(#) $Id: tcltest.test,v 1.48 2004/11/25 16:17:09 rmax Exp $
 
 # Note that there are several places where the value of 
 # tcltest::currentFailure is stored/reset in the -setup/-cleanup
@@ -980,7 +980,7 @@ test tcltest-15.1 {basic directory walking} {
     }
     -match regexp
     -returnCodes 1
-    -result {Tests located in:.*dirtestdir.*Tests located in:.*dirtestdir2.1.*Tests located in:.*dirtestdir2.2.*Tests located in:.*dirtestdir2.3}
+    -result {Tests located in:.*dirtestdir.*Tests located in:.*dirtestdir2.[123].*Tests located in:.*dirtestdir2.[123].*Tests located in:.*dirtestdir2.[123]}
 }
 
 test tcltest-15.2 {-asidefromdir} {
@@ -995,7 +995,7 @@ test tcltest-15.2 {-asidefromdir} {
     }
     -match regexp
     -returnCodes 1
-    -result {Tests located in:.*dirtestdir.*Tests located in:.*dirtestdir2.1.*Tests located in:.*dirtestdir2.2.*dirtestdir2.2 test ended at .*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    -result {Tests located in:.*dirtestdir.*Tests located in:.*dirtestdir2.[12].*Tests located in:.*dirtestdir2.[12].*dirtestdir2.[12] test ended at .*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Error:  No test files remain after applying your match and skip patterns!
 Error:  No test files remain after applying your match and skip patterns!
 Error:  No test files remain after applying your match and skip patterns!$}
