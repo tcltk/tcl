@@ -1,3 +1,12 @@
+2004-12-01  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclEncoding.c:	Moved TclpSetInitialEncodings()
+	call from Tcl_FindExecutable() into TclInitEncodingSubsystem().
+	This is important on Windows where it establishes whether the
+	"ascii" or "unicode" set of system routines will be used, and
+	that needs to be done earlier to support filesystem operations.
+	[Bug 1077005]
+
 2004-12-01  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* tests/winDde.test: Rewritten to use tcltest2 features more
