@@ -1,3 +1,8 @@
+2004-09-10  David Gravereaux <davyrgvy@pobox.com>
+
+	* tests/tcltest.test: tcltest-12.3-4 needed to have
+	::tcltest::loadScript set to empty in their -setup
+
 2004-09-10  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclObj.c (SetIntOrWideFromAny): Rewritten integral value
