@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: man2help2.tcl,v 1.8 2002/03/28 21:45:24 davygrvy Exp $
+# RCS: @(#) $Id: man2help2.tcl,v 1.9 2002/05/08 04:23:42 davygrvy Exp $
 # 
 
 # Global variables used by these scripts:
@@ -280,16 +280,20 @@ proc macro {name args} {
 	BS {}
 	BE {}
 	CE {
-	    decrNestingLevel
+	    puts -nonewline $::file "\\f0\\fs20 "
 	    set state(noFill) 0
 	    set state(breakPending) 0
-	    newPara 0i
+	    newPara ""
+	    set state(leftIndent) [expr {$state(leftIndent) - $state(offset)}]
+	    set state(sb) 80
 	}
 	CS {
 	    # code section
-	    incrNestingLevel
 	    set state(noFill) 1
-	    newPara 0i
+	    newPara ""
+	    set state(leftIndent) [expr {$state(leftIndent) + $state(offset)}]
+	    set state(sb) 80
+	    puts -nonewline $::file "\\f1\\fs18 "
 	}
 	DE {
 	    set state(noFill) 0
@@ -903,8 +907,11 @@ proc newPara {leftIndent {firstIndent 0i}} {
     if $state(paragraph) {
 	puts -nonewline $file "\\line\n"
     }
-    set state(leftIndent) [expr {$state(leftMargin) \
-	    + ($state(offset) * $state(nestingLevel)) +[getTwips $leftIndent]}]
+    if {$leftIndent != ""} {
+	set state(leftIndent) [expr {$state(leftMargin) \
+		+ ($state(offset) * $state(nestingLevel)) \
+		+ [getTwips $leftIndent]}]
+    }
     set state(firstIndent) [getTwips $firstIndent]
     set state(paragraphPending) 1
 }
