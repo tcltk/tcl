@@ -1,3 +1,45 @@
+2004-03-30  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclHash.c (HashStringKey): Cleaned up. This function is
+	not faster, but it is a little bit clearer.
+	* generic/tclLiteral.c (HashString): Applied logic from HashObjKey.
+	* generic/tclObj.c (HashObjKey): Rewrote to fix fault which hashed
+	every single-character object to the same hash bucket.  The new
+	code is shorter, simpler, clearer, and (happily) faster.
+
+2004-03-30  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclExecute.c (TEBC): reverting to the previous method
+	for async tests in TEBC, as the new method turned out to be too
+	costly. Async tests now run every 64 instructions.
+
+2004-03-30  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclCompile.c:     New instruction code INST_START_CMD
+	* generic/tclCompile.h:     that allows checking the bytecode's
+	* generic/tclExecute.c:     validity [Bug 729692] and the interp's
+	* tests/interp.test (18.9): readyness [Bug 495830] before running
+	* tests/proc.test (7.1):    the command. It also changes the
+	* tests/rename.test (6.1):  mechanics of the async tests in TEBC,
+	doing it now at command start instead of every 16 instructions.
+
+2004-03-30  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+        * generic/tclFileName.c:  Fix to Windows glob where the pattern is
+        * generic/tclIOUtil.c:    a volume relative path or a network
+        * tests/fileName.test:    share [Bug 898238]. On windows 'glob'
+        * tests/fileSystem.test:  will now return the results of 
+        'glob /foo/bar' and 'glob \\foo\\bar' as 'C:/foo/bar', i.e. a 
+        correct absolute path (rather than a volume relative path).
+
+        Note that the test suite does not test commands like 
+        'glob //Machine/Shared/*' (on a network share).  
+
+2004-03-30  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+        * generic/tclPathObj.c:   Fix to filename bugs recently
+        * tests/fileName.test:    introduced [Bug 918320].
+
 2004-03-29  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclMain.c (Tcl_Main, StdinProc):	Append newline only

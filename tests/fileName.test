@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fileName.test,v 1.31.2.4 2004/03/26 22:28:29 dgp Exp $
+# RCS: @(#) $Id: fileName.test,v 1.31.2.5 2004/03/31 01:36:18 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -1186,6 +1186,20 @@ test filename-12.9 {globbing at filesystem root} {winOnly} {
     set equal
 } {1}
 
+test filename-12.10 {globbing with volume relative paths} {winOnly} {
+    set dir [lindex [glob -type d [lindex [file volumes] 0]*] 0]
+    set pwd [pwd]
+    cd [lindex [file volumes] 0]
+    set res1 [glob -nocomplain [string range $dir 2 end]]
+    cd $pwd
+    set res2 [list $dir]
+    set equal [string equal $res1 $res2]
+    if {!$equal} {
+        lappend equal "not equal" $res1 $res2
+    }
+    set equal
+} {1}
+
 test filename-13.1 {globbing with brace substitution} {
     list [catch {glob globTest/\{\}} msg] $msg
 } "0 $globPreResult"
@@ -1298,12 +1312,15 @@ test filename-14.21 {asterisks, question marks, and brackets} {
 test filename-14.22 {asterisks, question marks, and brackets} {
     list [catch {glob goo/* x*z foo?q} msg] $msg
 } {1 {no files matched glob patterns "goo/* x*z foo?q"}}
-test filename-14.23 {slash globbing} {unixOrPc} {
+test filename-14.23 {slash globbing} {unixOnly} {
     glob /
 } /
+test filename-14.23.2 {slash globbing} {pcOnly} {
+    glob /
+} [file norm /]
 test filename-14.24 {slash globbing} {pcOnly} {
     glob {\\}
-} /
+} [file norm /]
 test filename-14.25 {type specific globbing} {unixOnly} {
     list [catch {lsort [glob -dir globTest -types f *]} msg] $msg
 } [list 0 [lsort [list \

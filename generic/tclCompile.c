@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.49.2.5 2004/03/29 21:43:18 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.49.2.6 2004/03/31 01:36:16 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -282,6 +282,9 @@ InstructionDesc tclInstructionTable[] = {
 	/* List Index:	push (lindex stktop op4) */
     {"listRangeImm",	  9,	0,	   2,	{OPERAND_IDX4, OPERAND_IDX4}},
 	/* List Range:	push (lrange stktop op4 op4) */
+
+    {"startCommand",      5,    0,         1,   {OPERAND_UINT4}},
+        /* Start of bytecoded command: op is the length of the cmd's code */ 
     {0}
 };
 
@@ -1023,12 +1026,27 @@ TclCompileScriptTokens(interp, tokens, lastTokenPtr, envPtr)
 		    && !(cmdPtr->flags & CMD_HAS_EXEC_TRACES)
 		    && !(iPtr->flags & DONT_COMPILE_CMDS_INLINE)) {
 		Tcl_Parse parse;
+
+		/*
+		 * Mark the start of the command; the proper
+		 * bytecode length will be updated later.
+		 */
+			    
+		TclEmitInstInt4(INST_START_CMD, 0, envPtr);
+
 		parse.numWords = numWords;
 		parse.tokenPtr = tokenPtr;
 		code = (*(cmdPtr->compileProc))(interp, &parse, envPtr);
 	    }
 
 	    if (code == TCL_OK) {
+		/*
+		 * Fix the bytecode length.
+		 */
+		unsigned char *fixPtr = envPtr->codeStart + savedCodeNext + 1;
+		unsigned int fixLen = envPtr->codeNext - envPtr->codeStart
+			- savedCodeNext;
+		TclStoreInt4AtPtr(fixLen, fixPtr);
 		/*
 		 * The compileProc took care of compiling the command,
 		 * so skip past the tokens for its arguments

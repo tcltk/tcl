@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclHash.c,v 1.12.4.2 2004/02/07 05:48:01 dgp Exp $
+ * RCS: @(#) $Id: tclHash.c,v 1.12.4.3 2004/03/31 01:36:17 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1047,13 +1047,9 @@ HashStringKey(tablePtr, keyPtr)
      */
 
     result = 0;
-    while (1) {
-	c = *string;
-	if (c == 0) {
-	    break;
-	}
+
+    for (c=*string++ ; c ; c=*string++) {
 	result += (result<<3) + c;
-	string++;
     }
     return result;
 }

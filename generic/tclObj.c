@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.46.2.6 2004/03/26 22:28:27 dgp Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.46.2.7 2004/03/31 01:36:17 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2855,7 +2855,7 @@ AllocObjEntry(tablePtr, keyPtr)
 
     hPtr = (Tcl_HashEntry *) ckalloc((unsigned) (sizeof(Tcl_HashEntry)));
     hPtr->key.oneWordValue = (char *) objPtr;
-    Tcl_IncrRefCount (objPtr);
+    Tcl_IncrRefCount(objPtr);
 
     return hPtr;
 }
@@ -2898,9 +2898,9 @@ CompareObjKeys(keyPtr, hPtr)
      * Don't use Tcl_GetStringFromObj as it would prevent l1 and l2 being
      * in a register.
      */
-    p1 = Tcl_GetString (objPtr1);
+    p1 = TclGetString(objPtr1);
     l1 = objPtr1->length;
-    p2 = Tcl_GetString (objPtr2);
+    p2 = TclGetString(objPtr2);
     l2 = objPtr2->length;
 
     /*
@@ -2942,8 +2942,8 @@ FreeObjEntry(hPtr)
 {
     Tcl_Obj *objPtr = (Tcl_Obj *) hPtr->key.oneWordValue;
 
-    Tcl_DecrRefCount (objPtr);
-    ckfree ((char *) hPtr);
+    Tcl_DecrRefCount(objPtr);
+    ckfree((char *) hPtr);
 }
 
 /*
@@ -2970,13 +2970,10 @@ HashObjKey(tablePtr, keyPtr)
     VOID *keyPtr;		/* Key from which to compute hash value. */
 {
     Tcl_Obj *objPtr = (Tcl_Obj *) keyPtr;
-    register CONST char *string;
-    register int length;
-    register unsigned int result;
-    register int c;
-
-    string = Tcl_GetString (objPtr);
-    length = objPtr->length;
+    CONST char *string = TclGetString(objPtr);
+    int length = objPtr->length;
+    unsigned int result = 0;
+    int i;
 
     /*
      * I tried a zillion different hash functions and asked many other
@@ -2994,15 +2991,8 @@ HashObjKey(tablePtr, keyPtr)
      *    works well both for decimal and non-decimal strings.
      */
 
-    result = 0;
-    while (length) {
-	c = *string;
-	string++;
-	length--;
-	if (length == 0) {
-	    break;
-	}
-	result += (result<<3) + c;
+    for (i=0 ; i<length ; i++) {
+	result += (result << 3) + string[i];
     }
     return result;
 }

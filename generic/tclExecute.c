@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.101.2.6 2004/02/07 05:48:00 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.101.2.7 2004/03/31 01:36:17 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -68,8 +68,9 @@ int errno;
  */
 
 #ifndef ASYNC_CHECK_COUNT_MASK
-#   define ASYNC_CHECK_COUNT_MASK	15
+#   define ASYNC_CHECK_COUNT_MASK	63
 #endif /* !ASYNC_CHECK_COUNT_MASK */
+
 
 /*
  * Boolean flag indicating whether the Tcl bytecode interpreter has been
@@ -1105,7 +1106,11 @@ TclExecuteByteCode(interp, codePtr)
 #endif
     int instructionCount = 0;	/* Counter that is used to work out
 				 * when to call Tcl_AsyncReady() */
-
+    Namespace *namespacePtr;
+    int codeCompileEpoch = codePtr->compileEpoch;
+    int codeNsEpoch = codePtr->nsEpoch;
+    int codePrecompiled = (codePtr->flags & TCL_BYTECODE_PRECOMPILED);
+    
     /*
      * The execution uses a unified stack: first the catch stack, immediately
      * above it the execution stack.
@@ -1139,6 +1144,11 @@ TclExecuteByteCode(interp, codePtr)
     iPtr->stats.numExecutions++;
 #endif
 
+    if (iPtr->varFramePtr != NULL) {
+        namespacePtr = iPtr->varFramePtr->nsPtr;
+    } else {
+        namespacePtr = iPtr->globalNsPtr;
+    }
 
     /*
      * Loop executing instructions until a "done" instruction, a 
@@ -1222,7 +1232,8 @@ TclExecuteByteCode(interp, codePtr)
 
     /*
      * Check for asynchronous handlers [Bug 746722]; we
-     * do the check every 16th instruction.
+     * do the check every ASYNC_CHECK_COUNT_MASK instruction,
+     * of the form (2**n-1).
      */
 
     if (!(instructionCount++ & ASYNC_CHECK_COUNT_MASK) && Tcl_AsyncReady()) {
@@ -1235,6 +1246,29 @@ TclExecuteByteCode(interp, codePtr)
     }
 
     switch (*pc) {
+    case INST_START_CMD:
+	if ((!(iPtr->flags & DELETED)
+		    && (codeCompileEpoch == iPtr->compileEpoch)
+		    && (codeNsEpoch == namespacePtr->resolverEpoch))
+		|| codePrecompiled) {
+	    NEXT_INST_F(5, 0, 0);
+	} else {
+	    bytes = GetSrcInfoForPc(pc, codePtr, &length);
+	    result = Tcl_EvalEx(interp, bytes, length, 0);
+	    if (result != TCL_OK) {
+		goto checkForCatch;
+	    }
+	    opnd = TclGetUInt4AtPtr(pc+1);
+	    objResultPtr = Tcl_GetObjResult(interp);
+	    {
+		Tcl_Obj *newObjResultPtr;
+		TclNewObj(newObjResultPtr);
+		Tcl_IncrRefCount(newObjResultPtr);
+		iPtr->objResultPtr = newObjResultPtr;
+	    }
+	    NEXT_INST_V(opnd, 0, -1);
+	}
+	
     case INST_RETURN:
 	{
 	    int code = TclGetInt4AtPtr(pc+1);
@@ -1536,7 +1570,7 @@ TclExecuteByteCode(interp, codePtr)
 	    preservedStackRefCountPtr = (char **) (eePtr->stackPtr-1);
 	    ++*preservedStackRefCountPtr;
 
-	    /*
+ 	    /*
 	     * Reset the instructionCount variable, since we're about
 	     * to check for async stuff anyway while processing
 	     * TclEvalObjvInternal.

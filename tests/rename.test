@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: rename.test,v 1.10 2001/09/12 20:28:50 dgp Exp $
+# RCS: @(#) $Id: rename.test,v 1.10.10.1 2004/03/31 01:36:18 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -160,7 +160,7 @@ catch {rename unknown.old unknown}
 
 
 test rename-6.1 {old code invalidated (epoch incremented) when cmd with compile proc is renamed } {
-    proc x {} {
+     proc x {} {
         set a 123
         set b [incr a]
     }
@@ -168,6 +168,8 @@ test rename-6.1 {old code invalidated (epoch incremented) when cmd with compile 
     rename incr incr.old
     proc incr {} {puts "new incr called!"}
     catch {x} msg
+    rename incr {}
+    rename incr.old incr
     set msg
 } {wrong # args: should be "incr"}
 
