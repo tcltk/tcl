@@ -11,9 +11,10 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.140 2004/05/25 00:07:54 hobbs Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.141 2004/05/27 20:08:20 msofer Exp $
  */
 
+#include <stddef.h>
 #include "tclInt.h"
 #include "tclCompile.h"
 
@@ -1545,7 +1546,7 @@ TclExecuteByteCode(interp, codePtr)
 		objPtr = expandNestList;
 		expandNestList = (Tcl_Obj *) objPtr->internalRep.twoPtrValue.ptr2;
 		objc = tosPtr - eePtr->stackPtr 
-		        - (int) objPtr->internalRep.twoPtrValue.ptr1;
+		        - (ptrdiff_t) objPtr->internalRep.twoPtrValue.ptr1;
 		TclDecrRefCount(objPtr);
 	    }
 		
@@ -4824,7 +4825,7 @@ TclExecuteByteCode(interp, codePtr)
 	 */
 
 	processCatch:
-	while (tosPtr > (int) (eePtr->stackPtr[catchTop]) + eePtr->stackPtr) {
+	while (tosPtr > ((ptrdiff_t) (eePtr->stackPtr[catchTop])) + eePtr->stackPtr) {
 	    valuePtr = POP_OBJECT();
 	    TclDecrRefCount(valuePtr);
 	}

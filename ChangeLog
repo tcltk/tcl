@@ -1,3 +1,9 @@
+2004-05-25  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclExecute.c:
+	* generic/tclVar.c: using (ptrdiff_t) instead of (int) casting to
+	correct compiler warnings [Bug 961657], reported by Bob Techentin.
+
 2004-05-27  Kevin B. Kenny  <kennykb@acm.org>
 
 	* tests/clock.test: Added a single test for the presence of %G
