@@ -1,3 +1,12 @@
+2000-10-30  David Gravereaux  <davygrvy@ajubasolutions.com>
+
+	* win/configure.in:
+	* win/Makefile.in:
+	* win/makefile.vc:
+	* win/tcl.rc:
+	* win/tclsh.rc: Added logic to derive filenames better in the resource
+	scripts based on compile options.
+
 2000-10-30  Jeff Hobbs  <hobbs@ajubasolutions.com>
 
 	* unix/tclUnixInit.c: added default encoding map from
