@@ -893,7 +893,7 @@ test filesystem-7.7 {cross-filesystem dir copy with -force} \
 
 removeFile gorp.file
 
-test filesystem-7.8 {vfs cd} {
+test filesystem-7.8 {vfs cd} testsimplefilesystem {
     set dir [pwd]
     cd [tcltest::temporaryDirectory]
     file delete -force simpledir

@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: InitStubs.3,v 1.8.4.1 2004/09/21 23:10:25 dgp Exp $
+'\" RCS: @(#) $Id: InitStubs.3,v 1.8.4.2 2004/10/28 18:46:10 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_InitStubs 3 8.1 Tcl "Tcl Library Procedures"
@@ -15,13 +15,13 @@ Tcl_InitStubs \- initialize the Tcl stubs mechanism
 .nf
 \fB#include <tcl.h>\fR
 .sp
-CONST char *
+const char *
 \fBTcl_InitStubs\fR(\fIinterp, version, exact\fR)
 .SH ARGUMENTS
-.AS Tcl_Interp *interp in
+.AS Tcl_Interp *interp
 .AP Tcl_Interp *interp in
 Tcl interpreter handle.
-.AP "CONST char" *version in
+.AP "const char" *version in
 A version string consisting of one or more decimal numbers
 separated by dots.
 .AP int exact in

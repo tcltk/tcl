@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: ByteArrObj.3,v 1.3.20.1 2004/09/08 23:02:32 dgp Exp $
+'\" RCS: @(#) $Id: ByteArrObj.3,v 1.3.20.2 2004/10/28 18:46:07 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_ByteArrayObj 3 8.1 Tcl "Tcl Library Procedures"
@@ -27,8 +27,8 @@ unsigned char *
 unsigned char *
 \fBTcl_SetByteArrayLength\fR(\fIobjPtr, length\fR)
 .SH ARGUMENTS
-.AS "unsigned char" *lengthPtr in/out
-.AP "CONST unsigned char" *bytes in
+.AS "const unsigned char" *lengthPtr in/out
+.AP "const unsigned char" *bytes in
 The array of bytes used to initialize or set a byte-array object.
 .AP int length in
 The length of the array of bytes.  It must be >= 0.

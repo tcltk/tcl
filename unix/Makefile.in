@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.127.2.10 2004/09/21 23:10:29 dgp Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.127.2.11 2004/10/28 18:47:18 dgp Exp $
 
 VERSION 		= @TCL_VERSION@
 MAJOR_VERSION		= @TCL_MAJOR_VERSION@
@@ -646,7 +646,7 @@ install-libraries: libraries install-tzdata install-msgs
 		else true; \
 		fi; \
 	    done;
-	@for i in http2.4 http1.0 opt0.4 encoding msgcat1.4 tcltest2.2; \
+	@for i in opt0.4 http1.0 encoding ../tcl8 ../tcl8/8.2 ../tcl8/8.3 ../tcl8/8.5; \
 	    do \
 	    if [ ! -d $(SCRIPT_INSTALL_DIR)/$$i ] ; then \
 		echo "Making directory $(SCRIPT_INSTALL_DIR)/$$i"; \
@@ -674,26 +674,17 @@ install-libraries: libraries install-tzdata install-msgs
 	    do \
 	    $(INSTALL_DATA) $$j $(SCRIPT_INSTALL_DIR)/http1.0; \
 	    done;
-	@echo "Installing library http2.4 directory";
-	@for j in $(TOP_DIR)/library/http/*.tcl ; \
-	    do \
-	    $(INSTALL_DATA) $$j $(SCRIPT_INSTALL_DIR)/http2.4; \
-	    done;
+	@echo "Installing package http 2.5.0 as a Tcl Module";
+	@$(INSTALL_DATA) $(TOP_DIR)/library/http/http.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.2/http-2.5.0.tm;
 	@echo "Installing library opt0.4 directory";
 	@for j in $(TOP_DIR)/library/opt/*.tcl ; \
 	    do \
 	    $(INSTALL_DATA) $$j $(SCRIPT_INSTALL_DIR)/opt0.4; \
 	    done;
-	@echo "Installing library msgcat1.4 directory";
-	@for j in $(TOP_DIR)/library/msgcat/*.tcl ; \
-	    do \
-	    $(INSTALL_DATA) $$j $(SCRIPT_INSTALL_DIR)/msgcat1.4; \
-	    done;
-	@echo "Installing library tcltest2.2 directory";
-	@for j in $(TOP_DIR)/library/tcltest/*.tcl ; \
-	    do \
-	    $(INSTALL_DATA) $$j $(SCRIPT_INSTALL_DIR)/tcltest2.2; \
-	    done;
+	@echo "Installing package msgcat 1.4.1 as a Tcl Module";
+	@$(INSTALL_DATA) $(TOP_DIR)/library/msgcat/msgcat.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.5/msgcat-1.4.1.tm;
+	@echo "Installing package tcltest 2.2.6 as a Tcl Module";
+	@$(INSTALL_DATA) $(TOP_DIR)/library/tcltest/tcltest.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.3/tcltest-2.2.6.tm;
 	@echo "Installing library encoding directory";
 	@for i in $(TOP_DIR)/library/encoding/*.enc ; do \
 		$(INSTALL_DATA) $$i $(SCRIPT_INSTALL_DIR)/encoding; \

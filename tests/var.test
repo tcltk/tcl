@@ -14,7 +14,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: var.test,v 1.22.2.2 2004/05/27 14:29:23 dgp Exp $
+# RCS: @(#) $Id: var.test,v 1.22.2.3 2004/10/28 18:47:18 dgp Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -694,6 +694,13 @@ test var-15.1 {segfault in [unset], [Bug 735335]} {
     namespace eval test unset useSomeUnlikelyNameHere
 } {}
 
+
+test var-16.1 {CallVarTraces: save/restore interp error state} {
+    trace add variable errorCode write { ;#}
+    catch {error foo bar baz}
+    trace remove variable errorCode write { ;#}
+    set errorInfo
+} bar
 
 catch {namespace delete ns}
 catch {unset arr}

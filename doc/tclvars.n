@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: tclvars.n,v 1.13.4.4 2004/09/21 23:10:26 dgp Exp $
+'\" RCS: @(#) $Id: tclvars.n,v 1.13.4.5 2004/10/28 18:46:17 dgp Exp $
 '\" 
 .so man.macros
 .TH tclvars n 8.0 Tcl "Tcl Built-In Commands"
@@ -189,7 +189,6 @@ be defined, but they may have empty strings as values if Tcl couldn't
 retrieve any relevant information.  In addition, extensions
 and applications may add additional values to the array.  The
 predefined elements are:
-
 .RS
 .VS
 .TP
@@ -200,7 +199,7 @@ The native byte order of this machine: either \fBlittleEndian\fR or
 .TP
 \fBdebug\fR
 If this variable exists, then the interpreter was compiled with and linked
-to a debug enabled C run-time.  This variable will only exist on Windows,
+to a debug-enabled C run-time.  This variable will only exist on Windows,
 so extension writers can specify which package to load depending on the
 C run-time library that is in use.  This is not an indication that this core
 contains symbols.
@@ -285,7 +284,7 @@ This variable is useful in
 tracking down suspected problems with the Tcl compiler.
 It is also occasionally useful when converting
 existing code to use Tcl8.0.
-
+.PP
 This variable and functionality only exist if
 \fBTCL_COMPILE_DEBUG\fR was defined during Tcl's compilation.
 .TP
@@ -310,7 +309,7 @@ tracking down suspected problems with the bytecode compiler
 and interpreter.
 It is also occasionally useful when converting
 code to use Tcl8.0.
-
+.PP
 This variable and functionality only exist if
 \fBTCL_COMPILE_DEBUG\fR was defined during Tcl's compilation.
 .TP

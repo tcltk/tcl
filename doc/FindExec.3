@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: FindExec.3,v 1.5 2001/09/28 17:07:54 msofer Exp $
+'\" RCS: @(#) $Id: FindExec.3,v 1.5.8.1 2004/10/28 18:46:10 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_FindExecutable 3 8.1 Tcl "Tcl Library Procedures"
@@ -18,10 +18,10 @@ Tcl_FindExecutable, Tcl_GetNameOfExecutable \- identify or return the name of th
 void
 \fBTcl_FindExecutable\fR(\fIargv0\fR)
 .sp
-CONST char *
+const char *
 \fBTcl_GetNameOfExecutable\fR()
 .SH ARGUMENTS
-.AS char *argv0 in
+.AS char *argv0
 .AP char *argv0 in
 The first command-line argument to the program, which gives the
 application's name.

@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: array.n,v 1.8.20.2 2004/03/29 21:43:18 dgp Exp $
+'\" RCS: @(#) $Id: array.n,v 1.8.20.3 2004/10/28 18:46:12 dgp Exp $
 '\" 
 .so man.macros
 .TH array n 8.3 Tcl "Tcl Built-In Commands"
@@ -140,42 +140,40 @@ error will be raised.  If \fIpattern\fR is omitted and \fIarrayName\fR is
 an array variable, then the command unsets the entire array.
 The command always returns an empty string.
 .VE 8.3
-
 .SH EXAMPLES
-
 .CS
-array set colorcount {
-    red   1
-    green 5
-    blue  4
-    white 9
+\fBarray set\fR colorcount {
+   red   1
+   green 5
+   blue  4
+   white 9
 }
 
-foreach {color count} [array get colorcount] {
-    puts "Color: $color Count: $count"
-}
- => Color: blue Count: 4
-    Color: white Count: 9
-    Color: green Count: 5
-    Color: red Count: 1
-
-foreach color [array names colorcount] {
-    puts "Color: $color Count: $colorcount($color)"
+foreach {color count} [\fBarray get\fR colorcount] {
+   puts "Color: $color Count: $count"
 }
  => Color: blue Count: 4
     Color: white Count: 9
     Color: green Count: 5
     Color: red Count: 1
 
-foreach color [lsort [array names colorcount]] {
-    puts "Color: $color Count: $colorcount($color)"
+foreach color [\fBarray names\fR colorcount] {
+   puts "Color: $color Count: $colorcount($color)"
+}
+ => Color: blue Count: 4
+    Color: white Count: 9
+    Color: green Count: 5
+    Color: red Count: 1
+
+foreach color [lsort [\fBarray names\fR colorcount]] {
+   puts "Color: $color Count: $colorcount($color)"
 }
  => Color: blue Count: 4
     Color: green Count: 5
     Color: red Count: 1
     Color: white Count: 9
 
-array statistics colorcount
+\fBarray statistics\fR colorcount
  => 4 entries in table, 4 buckets
     number of buckets with 0 entries: 1
     number of buckets with 1 entries: 2

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.14.2.5 2004/09/30 00:51:34 dgp Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.14.2.6 2004/10/28 18:46:22 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -91,6 +91,8 @@ typedef struct ExprInfo {
 #define OP_STREQ	21
 #define OP_STRNEQ	22
 #define OP_EXPON	23
+#define OP_IN_LIST	24
+#define OP_NOT_IN_LIST	25
 
 /*
  * Table describing the expression operators. Entries in this table must
@@ -134,6 +136,8 @@ static OperatorDesc operatorTable[] = {
     {"eq",  2,  INST_STR_EQ},
     {"ne",  2,  INST_STR_NEQ},
     {"**",  2,	INST_EXPON},
+    {"in",  2,	INST_LIST_IN},
+    {"ni",  2,	INST_LIST_NOT_IN},
     {NULL}
 };
 
@@ -845,8 +849,8 @@ CompileMathFuncCall(exprTokenPtr, funcName, infoPtr, envPtr, endPtrPtr)
     code = TCL_OK;
     hPtr = Tcl_FindHashEntry(&iPtr->mathFuncTable, funcName);
     if (hPtr == NULL) {
-	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		"unknown math function \"", funcName, "\"", (char *) NULL);
+	Tcl_AppendResult(interp, "unknown math function \"", funcName,
+		"\"", (char *) NULL);
 	code = TCL_ERROR;
 	goto done;
     }
@@ -869,9 +873,8 @@ CompileMathFuncCall(exprTokenPtr, funcName, infoPtr, envPtr, endPtrPtr)
     if (mathFuncPtr->numArgs > 0) {
 	for (i = 0;  i < mathFuncPtr->numArgs;  i++) {
 	    if (tokenPtr == afterSubexprPtr) {
-		Tcl_ResetResult(interp);
-		Tcl_AppendToObj(Tcl_GetObjResult(interp),
-		        "too few arguments for math function", -1);
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		        "too few arguments for math function", -1));
 		code = TCL_ERROR;
 		goto done;
 	    }
@@ -882,16 +885,14 @@ CompileMathFuncCall(exprTokenPtr, funcName, infoPtr, envPtr, endPtrPtr)
 	    tokenPtr += (tokenPtr->numComponents + 1);
 	}
 	if (tokenPtr != afterSubexprPtr) {
-	    Tcl_ResetResult(interp);
-	    Tcl_AppendToObj(Tcl_GetObjResult(interp),
-		    "too many arguments for math function", -1);
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "too many arguments for math function", -1));
 	    code = TCL_ERROR;
 	    goto done;
 	} 
     } else if (tokenPtr != afterSubexprPtr) {
-	Tcl_ResetResult(interp);
-	Tcl_AppendToObj(Tcl_GetObjResult(interp),
-		"too many arguments for math function", -1);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"too many arguments for math function", -1));
 	code = TCL_ERROR;
 	goto done;
     }

@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: trace.n,v 1.14.2.2 2004/09/08 23:02:35 dgp Exp $
+'\" RCS: @(#) $Id: trace.n,v 1.14.2.3 2004/10/28 18:46:17 dgp Exp $
 '\" 
 .so man.macros
 .TH trace n "8.4" Tcl "Tcl Built-In Commands"
@@ -141,7 +141,7 @@ Note that the creation of many \fBenterstep\fR or
 \fBleavestep\fR traces can lead to unintuitive results, since the
 invoked commands from one trace can themselves lead to further
 command invocations for other traces.
-
+.PP
 \fICommand\fR executes in the same context as the code that invoked
 the traced operation: thus the \fIcommand\fR, if invoked from a procedure,
 will have access to the same local variables as code in the procedure.
@@ -149,19 +149,19 @@ This context may be different than the context in which the trace was
 created. If \fIcommand\fR invokes a procedure (which it normally does)
 then the procedure will have to use upvar or uplevel commands if it wishes
 to access the local variables of the code which invoked the trace operation.
-
+.PP
 While \fIcommand\fR is executing during an execution trace, traces
 on \fIname\fR are temporarily disabled. This allows the \fIcommand\fR
 to execute \fIname\fR in its body without invoking any other traces again.
 If an error occurs while executing the \fIcommand\fR body, then the
 command \fIname\fR as a whole will return that same error.
-
+.PP
 When multiple traces are set on \fIname\fR, then for \fIenter\fR
 and \fIenterstep\fR operations, the traced commands are invoked
 in the reverse order of how the traces were originally created;
 and for \fIleave\fR and \fIleavestep\fR operations, the traced
 commands are invoked in the original order of creation.
-
+.PP
 The behavior of execution traces is currently undefined for a command 
 \fIname\fR imported into another namespace.
 .RE
@@ -363,8 +363,8 @@ proc tracer {varname args} {
     upvar #0 $varname var
     puts "$varname was updated to be \e"$var\e""
 }
-trace add variable foo write "tracer foo"
-trace add variable bar write "tracer bar"
+\fBtrace add\fR variable foo write "tracer foo"
+\fBtrace add\fR variable bar write "tracer bar"
 .CE
 .PP
 Ensure that the global variable \fBfoobar\fR always contains the
@@ -374,8 +374,8 @@ proc doMult args {
     global foo bar foobar
     set foobar [expr {$foo * $bar}]
 }
-trace add variable foo write doMult
-trace add variable bar write doMult
+\fBtrace add\fR variable foo write doMult
+\fBtrace add\fR variable bar write doMult
 .CE
 
 .SH "SEE ALSO"

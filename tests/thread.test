@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: thread.test,v 1.10.20.2 2004/09/08 23:03:21 dgp Exp $
+# RCS: @(#) $Id: thread.test,v 1.10.20.3 2004/10/28 18:47:18 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -195,7 +195,7 @@ test thread-4.4 {TclThreadSend preserve code} {testthread} {
     threadReap
     set len [llength [testthread names]]
     set serverthread [testthread create]
-    set x [catch {testthread send $serverthread {break}} msg]
+    set x [catch {testthread send $serverthread {set errorInfo {}; break}} msg]
     threadReap
     list $len $x $msg $errorInfo
 } {1 3 {} {}}

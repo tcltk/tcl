@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: GetCwd.3,v 1.5 2002/02/08 02:52:54 dgp Exp $
+'\" RCS: @(#) $Id: GetCwd.3,v 1.5.4.1 2004/10/28 18:46:10 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_GetCwd 3 8.1 Tcl "Tcl Library Procedures"
@@ -21,7 +21,7 @@ char *
 int
 \fBTcl_Chdir\fR(\fIpath\fR)
 .SH ARGUMENTS
-.AS Tcl_DString *bufferPtr
+.AS Tcl_DString *bufferPtr in/out
 .AP Tcl_Interp *interp in
 Interpreter in which to report an error, if any.
 .AP Tcl_DString *bufferPtr in/out

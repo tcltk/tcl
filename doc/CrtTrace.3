@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: CrtTrace.3,v 1.6.4.1 2003/08/07 21:35:57 dgp Exp $
+'\" RCS: @(#) $Id: CrtTrace.3,v 1.6.4.2 2004/10/28 18:46:08 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_CreateTrace 3 "" Tcl "Tcl Library Procedures"
@@ -25,7 +25,7 @@ Tcl_Trace
 .sp
 \fBTcl_DeleteTrace\fR(\fIinterp, trace\fR)
 .SH ARGUMENTS
-.AS Tcl_CmdObjTraceDeleteProc (clientData)()
+.AS Tcl_CmdObjTraceDeleteProc *deleteProc
 .AP Tcl_Interp *interp in
 Interpreter containing command to be traced or untraced.
 .AP int level in
@@ -45,7 +45,7 @@ Procedure to call for each command that's executed.  See below for
 details on the calling sequence.
 .AP ClientData clientData in
 Arbitrary one-word value to pass to \fIobjProc\fR or \fIproc\fR.
-.AP Tcl_CmdObjTraceDeleteProc *deleteProc
+.AP Tcl_CmdObjTraceDeleteProc *deleteProc in
 Procedure to call when the trace is deleted.  See below for details of
 the calling sequence.  A NULL pointer is permissible and results in no
 callback when the trace is deleted.
@@ -67,13 +67,13 @@ interpreter.
 \fBTcl_CmdObjTraceProc\fR:
 .CS
 typedef int \fBTcl_CmdObjTraceProc\fR( 
-    \fBClientData\fR \fIclientData\fR,
-    \fBTcl_Interp\fR* \fIinterp\fR,
-    int \fIlevel\fR,
-    CONST char* \fIcommand\fR,
-    \fBTcl_Command\fR \fIcommandToken\fR,
-    int \fIobjc\fR,
-    \fBTcl_Obj\fR *CONST \fIobjv\fR[] );
+        \fBClientData\fR \fIclientData\fR,
+        \fBTcl_Interp\fR* \fIinterp\fR,
+        int \fIlevel\fR,
+        const char *\fIcommand\fR,
+        \fBTcl_Command\fR \fIcommandToken\fR,
+        int \fIobjc\fR,
+        \fBTcl_Obj\fR *const \fIobjv\fR[] );
 .CE
 The \fIclientData\fR and \fIinterp\fR parameters are copies of the
 corresponding arguments given to \fBTcl_CreateTrace\fR.
@@ -143,8 +143,7 @@ When \fBTcl_DeleteTrace\fR is called, the interpreter invokes the
 \fBTcl_CmdObjTraceDeleteProc\fR:
 .CS
 typedef void \fBTcl_CmdObjTraceDeleteProc\fR( 
-    \fBClientData\fR \fIclientData\fR
-);
+        \fBClientData\fR \fIclientData\fR);
 .CE
 The \fIclientData\fR parameter will be the same as the
 \fIclientData\fR parameter that was originally passed to
@@ -158,14 +157,14 @@ that its \fIproc\fR parameter should have arguments and result that
 match the type \fBTcl_CmdTraceProc\fR:
 .CS
 typedef void Tcl_CmdTraceProc(
-	ClientData \fIclientData\fR,
-	Tcl_Interp *\fIinterp\fR,
-	int \fIlevel\fR,
-	char *\fIcommand\fR,
-	Tcl_CmdProc *\fIcmdProc\fR,
-	ClientData \fIcmdClientData\fR,
-	int \fIargc\fR,
-	CONST char *\fIargv\fR[]);
+        ClientData \fIclientData\fR,
+        Tcl_Interp *\fIinterp\fR,
+        int \fIlevel\fR,
+        char *\fIcommand\fR,
+        Tcl_CmdProc *\fIcmdProc\fR,
+        ClientData \fIcmdClientData\fR,
+        int \fIargc\fR,
+        const char *\fIargv\fR[]);
 .CE
 The parameters to the \fIproc\fR callback are similar to those of the
 \fIobjProc\fR callback above. The \fIcommandToken\fR is

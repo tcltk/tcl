@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: while.n,v 1.3.20.1 2004/05/17 18:42:20 dgp Exp $
+'\" RCS: @(#) $Id: while.n,v 1.3.20.2 2004/10/28 18:46:17 dgp Exp $
 '\" 
 .so man.macros
 .TH while n "" Tcl "Tcl Built-In Commands"
@@ -45,9 +45,9 @@ For an example, try the following script with and without the braces
 around \fB$x<10\fR:
 .CS
 set x 0
-while {$x<10} {
-	puts "x is $x"
-	incr x
+\fBwhile\fR {$x<10} {
+    puts "x is $x"
+    incr x
 }
 .CE
 .SH EXAMPLE
@@ -55,8 +55,8 @@ Read lines from a channel until we get to the end of the stream, and
 print them out with a line-number prepended:
 .CS
 set lineCount 0
-while {[gets $chan line] >= 0} {
-   puts "[incr lineCount]: $line"
+\fBwhile\fR {[gets $chan line] >= 0} {
+    puts "[incr lineCount]: $line"
 }
 .CE
 

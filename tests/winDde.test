@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: winDde.test,v 1.16.2.4 2004/09/08 23:03:21 dgp Exp $
+# RCS: @(#) $Id: winDde.test,v 1.16.2.5 2004/10/28 18:47:18 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -19,15 +19,18 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 
 if {$tcl_platform(platform) == "windows"} {
     if [catch {
-	set lib [lindex [glob -directory [file join [pwd] [file dirname \
-		[info nameofexecutable]]] tcldde*.dll] 0]
-	load $lib dde
-	testConstraint dde 1
+	# Is the dde extension already static to this shell?
+	if [catch {load {} Dde; set ::ddelib {}}] {
+	    # try the location given to use on the commandline to tcltest
+	    ::tcltest::loadTestedCommands
+	    load $::ddelib Dde
+	}
+	::tcltest::testConstraint dde 1
     }] {
-	testConstraint dde 0
-	puts "WARNING: Unable to find the dde package. Skipping dde tests."
+	::tcltest::testConstraint dde 0
     }
 }
+
 
 # -------------------------------------------------------------------------
 # Setup a script for a test server
@@ -40,23 +43,15 @@ proc createChildProcess { ddeServerName {handler {}}} {
 
     set f [open $::scriptName w+]
     puts $f [list set ddeServerName $ddeServerName]
+    if {$::ddelib != ""} {
+	puts $f [list load $::ddelib Dde]
+    }
     puts $f {
         # DDE child server -
         #
 	if {[lsearch [namespace children] ::tcltest] == -1} {
 	    package require tcltest
 	    namespace import -force ::tcltest::*
-	}
-        # Load the dde package to test.
-	if [catch {
-	    set lib [lindex [glob -directory \
-		    [file join [pwd] [file dirname [info nameofexecutable]]] \
-		    tcldde*.dll] 0]
-	    load $lib dde
-	}] {
-	    puts "Unable to find the dde package. Skipping dde tests."
-	    ::tcltest::cleanupTests
-	    return
 	}
         
         # If an error occurs during the tests, this process may end up not
@@ -261,14 +256,14 @@ test winDde-6.6 {DDE remote servername collision force} -constraints {stdio win 
 test winDde-7.1 {Load DDE in slave interpreter } -constraints {win dde} -setup {
     interp create slave
 } -body {
-    slave eval [list load $lib dde]
+    slave eval [list load $::ddelib Dde]
     slave eval [list dde servername -- dde-interp-7.1]
 } -cleanup {
     interp delete slave
 } -result {dde-interp-7.1}
 test winDde-7.2 {DDE slave cleanup} -constraints {win dde} -setup {
     interp create slave
-    slave eval [list load $lib dde]
+    slave eval [list load $::ddelib Dde]
     slave eval [list dde servername -- dde-interp-7.5]
     interp delete slave
 } -body {
@@ -281,7 +276,7 @@ test winDde-7.2 {DDE slave cleanup} -constraints {win dde} -setup {
 } -result {}
 test winDde-7.3 {DDE present in slave interp} -constraints {win dde} -setup {
     interp create slave
-    slave eval [list load $lib dde]
+    slave eval [list load $::ddelib Dde]
     slave eval [list dde servername -- dde-interp-7.3]
 } -body {
     dde services TclEval dde-interp-7.3
@@ -290,7 +285,7 @@ test winDde-7.3 {DDE present in slave interp} -constraints {win dde} -setup {
 } -result {{TclEval dde-interp-7.3}}
 test winDde-7.4 {interp name collision with -force} -constraints {win dde} -setup {
     interp create slave
-    slave eval [list load $lib dde]
+    slave eval [list load $::ddelib Dde]
     slave eval [list dde servername -- dde-interp-7.4]
 } -body {
     dde servername -force -- dde-interp-7.4
@@ -299,7 +294,7 @@ test winDde-7.4 {interp name collision with -force} -constraints {win dde} -setu
 } -result {dde-interp-7.4}
 test winDde-7.5 {interp name collision without -force} -constraints {win dde} -setup {
     interp create slave
-    slave eval [list load $lib dde]
+    slave eval [list load $::ddelib Dde]
     slave eval [list dde servername -- dde-interp-7.5]
 } -body {
     dde servername -- dde-interp-7.5
@@ -311,7 +306,7 @@ test winDde-7.5 {interp name collision without -force} -constraints {win dde} -s
 
 test winDde-8.1 {Safe DDE load} -constraints {win dde} -setup {
     interp create -safe slave
-    slave invokehidden load $lib dde
+    slave invokehidden load $::ddelib Dde
 } -body {
     list [catch {slave eval dde servername slave} msg] $msg
 } -cleanup {
@@ -319,20 +314,20 @@ test winDde-8.1 {Safe DDE load} -constraints {win dde} -setup {
 } -result {1 {invalid command name "dde"}}
 test winDde-8.2 {Safe DDE set servername} -constraints {win dde} -setup {
     interp create -safe slave
-    slave invokehidden load $lib dde
+    slave invokehidden load $::ddelib Dde
 } -body {
     slave invokehidden dde servername slave
 } -cleanup {interp delete slave} -result {slave}
 test winDde-8.3 {Safe DDE check handler required for eval} -constraints {win dde} -setup {
     interp create -safe slave
-    slave invokehidden load $lib dde
+    slave invokehidden load $::ddelib Dde
     slave invokehidden dde servername slave
 } -body {
     catch {dde eval slave set a 1} msg
 } -cleanup {interp delete slave} -result {1}
 test winDde-8.4 {Safe DDE check that execute is denied} -constraints {win dde} -setup {
     interp create -safe slave
-    slave invokehidden load $lib dde
+    slave invokehidden load $::ddelib Dde
     slave invokehidden dde servername slave
 } -body {
     slave eval set a 1
@@ -343,7 +338,7 @@ test winDde-8.4 {Safe DDE check that execute is denied} -constraints {win dde} -
 } -cleanup {interp delete slave} -result {0 1}
 test winDde-8.5 {Safe DDE check that request is denied} -constraints {win dde} -setup {
     interp create -safe slave
-    slave invokehidden load $lib dde
+    slave invokehidden load $::ddelib Dde
     slave invokehidden dde servername slave
 } -body {
     slave eval set a 1
@@ -353,14 +348,14 @@ test winDde-8.5 {Safe DDE check that request is denied} -constraints {win dde} -
 } -result {1 {remote server cannot handle this command}}
 test winDde-8.6 {Safe DDE assign handler procedure} -constraints {win dde} -setup {
     interp create -safe slave
-    slave invokehidden load $lib dde
+    slave invokehidden load $::ddelib Dde
     slave eval {proc DDEACCEPT {cmd} {set ::DDECMD $cmd}}
 } -body {
     slave invokehidden dde servername -handler DDEACCEPT slave
 } -cleanup {interp delete slave} -result slave
 test winDde-8.7 {Safe DDE check simple command} -constraints {win dde} -setup {
     interp create -safe slave
-    slave invokehidden load $lib dde
+    slave invokehidden load $::ddelib Dde
     slave eval {proc DDEACCEPT {cmd} {set ::DDECMD $cmd}}
     slave invokehidden dde servername -handler DDEACCEPT slave
 } -body {
@@ -370,7 +365,7 @@ test winDde-8.7 {Safe DDE check simple command} -constraints {win dde} -setup {
 } -cleanup {interp delete slave} -result {0 {set x 1}}
 test winDde-8.8 {Safe DDE check non-list command} -constraints {win dde} -setup {
     interp create -safe slave
-    slave invokehidden load $lib dde
+    slave invokehidden load $::ddelib Dde
     slave eval {proc DDEACCEPT {cmd} {set ::DDECMD $cmd}}
     slave invokehidden dde servername -handler DDEACCEPT slave
 } -body {
@@ -382,7 +377,7 @@ test winDde-8.8 {Safe DDE check non-list command} -constraints {win dde} -setup 
 } -cleanup {interp delete slave} -result {0 0}
 test winDde-8.9 {Safe DDE check command evaluation} -constraints {win dde} -setup {
     interp create -safe slave
-    slave invokehidden load $lib dde
+    slave invokehidden load $::ddelib Dde
     slave eval {proc DDEACCEPT {cmd} {set ::DDECMD [uplevel \#0 $cmd]}}
     slave invokehidden dde servername -handler DDEACCEPT slave
 } -body {
@@ -393,7 +388,7 @@ test winDde-8.9 {Safe DDE check command evaluation} -constraints {win dde} -setu
 } -cleanup {interp delete slave} -result {0 1}
 test winDde-8.10 {Safe DDE check command evaluation (2)} -constraints {win dde} -setup {
     interp create -safe slave
-    slave invokehidden load $lib dde
+    slave invokehidden load $::ddelib Dde
     slave eval {proc DDEACCEPT {cmd} {set ::DDECMD [uplevel \#0 $cmd]}}
     slave invokehidden dde servername -handler DDEACCEPT slave
 } -body {
@@ -404,7 +399,7 @@ test winDde-8.10 {Safe DDE check command evaluation (2)} -constraints {win dde} 
 } -cleanup {interp delete slave} -result {0 1}
 test winDde-8.11 {Safe DDE check command evaluation (3)} -constraints {win dde} -setup {
     interp create -safe slave
-    slave invokehidden load $lib dde
+    slave invokehidden load $::ddelib Dde
     slave eval {proc DDEACCEPT {cmd} {set ::DDECMD [uplevel \#0 $cmd]}}
     slave invokehidden dde servername -handler DDEACCEPT slave
 } -body {

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFCmd.c,v 1.29.2.7 2004/09/08 23:03:27 dgp Exp $
+ * RCS: @(#) $Id: tclUnixFCmd.c,v 1.29.2.8 2004/10/28 18:47:19 dgp Exp $
  *
  * Portions of this code were derived from NetBSD source code which has
  * the following copyright notice:
@@ -1483,8 +1483,7 @@ SetPermissionsAttribute(interp, objIndex, fileName, attributePtr)
 
 	if (GetModeFromPermString(NULL, modeStringPtr, &newMode) != TCL_OK) {
 	    if (interp != NULL) {
-		Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-			"unknown permission string format \"",
+		Tcl_AppendResult(interp, "unknown permission string format \"",
 			modeStringPtr, "\"", (char *) NULL);
 	    }
 	    return TCL_ERROR;
@@ -1495,8 +1494,7 @@ SetPermissionsAttribute(interp, objIndex, fileName, attributePtr)
     result = chmod(native, newMode);		/* INTL: Native. */
     if (result != 0) {
 	if (interp != NULL) {
-	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		    "could not set permissions for file \"", 
+	    Tcl_AppendResult(interp, "could not set permissions for file \"", 
 		    Tcl_GetString(fileName), "\": ",
 		    Tcl_PosixError(interp), (char *) NULL);
 	}
@@ -1974,8 +1972,7 @@ SetReadOnlyAttribute(interp, objIndex, fileName, attributePtr)
     result = chflags(native, statBuf.st_flags);		/* INTL: Native. */
     if (result != 0) {
 	if (interp != NULL) {
-	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		    "could not set flags for file \"", 
+	    Tcl_AppendResult(interp, "could not set flags for file \"", 
 		    Tcl_GetString(fileName), "\": ", Tcl_PosixError(interp),
 		    (char *) NULL);
 	}

@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: ListObj.3,v 1.4.26.1 2004/09/21 23:10:25 dgp Exp $
+'\" RCS: @(#) $Id: ListObj.3,v 1.4.26.2 2004/10/28 18:46:10 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_ListObj 3 8.0 Tcl "Tcl Library Procedures"
@@ -38,7 +38,7 @@ int
 int
 \fBTcl_ListObjReplace\fR(\fIinterp, listPtr, first, count, objc, objv\fR)
 .SH ARGUMENTS
-.AS Tcl_Interp "*CONST objv[]" out
+.AS "Tcl_Obj *const" *elemListPtr in/out
 .AP Tcl_Interp *interp in
 If an error occurs while converting an object to be a list object,
 an error message is left in the interpreter's result object
@@ -73,13 +73,11 @@ will insert into a new list object,
 and \fBTcl_ListObjReplace\fR will insert into \fIlistPtr\fR.
 For \fBTcl_SetListObj\fR,
 the number of Tcl objects to insert into \fIobjPtr\fR.
-.VS
-.AP Tcl_Obj	"*CONST\ objv[]" in
+.AP "Tcl_Obj *const" objv[] in
 An array of pointers to objects.
 \fBTcl_NewListObj\fR will insert these objects into a new list object
 and \fBTcl_ListObjReplace\fR will insert them into an existing \fIlistPtr\fR.
 Each object will become a separate list element.  
-.VE
 .AP int *intPtr out
 Points to location where \fBTcl_ListObjLength\fR
 stores the length of the list.

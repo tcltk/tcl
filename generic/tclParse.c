@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.27.2.10 2004/09/30 00:51:44 dgp Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.27.2.11 2004/10/28 18:46:59 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -488,6 +488,9 @@ ParseScript(script, numBytes, flags, parsePtr)
 	    break;
 	}
     }
+    if (nested && (p >= end) && (*parsePtr->term != ']')) {
+	parsePtr->errorType = TCL_PARSE_MISSING_BRACKET;
+    }
 
     parsePtr->numTokens = numValidTokens;
 
@@ -922,8 +925,9 @@ TclParseHex(src, numBytes, resultPtr)
     while (numBytes--) {
 	unsigned char digit = UCHAR(*p);
 
-	if (!isxdigit(digit))
+	if (!isxdigit(digit)) {
 	    break;
+	}
 
 	++p;
 	result <<= 4;

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.68.2.7 2004/09/21 23:10:27 dgp Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.68.2.8 2004/10/28 18:46:27 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -7567,12 +7567,12 @@ TclCopyChannel(interp, inChan, outChan, toRead, cmdPtr)
     outStatePtr	= outPtr->state;
 
     if (inStatePtr->csPtr) {
-	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "channel \"",
+	Tcl_AppendResult(interp, "channel \"",
 		Tcl_GetChannelName(inChan), "\" is busy", NULL);
 	return TCL_ERROR;
     }
     if (outStatePtr->csPtr) {
-	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "channel \"",
+	Tcl_AppendResult(interp, "channel \"",
 		Tcl_GetChannelName(outChan), "\" is busy", NULL);
 	return TCL_ERROR;
     }
@@ -7904,7 +7904,7 @@ CopyData(csPtr, mask)
 	    result = TCL_ERROR;
 	} else {
 	    Tcl_ResetResult(interp);
-	    Tcl_SetIntObj(Tcl_GetObjResult(interp), total);
+	    Tcl_SetObjResult(interp, Tcl_NewIntObj(total));
 	}
     }
     return result;
@@ -8721,7 +8721,7 @@ Tcl_GetChannelNamesEx(interp, pattern)
      * for this interpreter.
      */
     hTblPtr	= GetChannelTable(interp);
-    resultPtr	= Tcl_GetObjResult(interp);
+    resultPtr	= Tcl_NewObj();
 
     for (hPtr = Tcl_FirstHashEntry(hTblPtr, &hSearch);
 	 hPtr != (Tcl_HashEntry *) NULL;
@@ -8745,9 +8745,11 @@ Tcl_GetChannelNamesEx(interp, pattern)
 	if (((pattern == NULL) || Tcl_StringMatch(name, pattern)) &&
 		(Tcl_ListObjAppendElement(interp, resultPtr,
 			Tcl_NewStringObj(name, -1)) != TCL_OK)) {
+	    Tcl_DecrRefCount(resultPtr);
 	    return TCL_ERROR;
 	}
     }
+    Tcl_SetObjResult(interp, resultPtr);
     return TCL_OK;
 }
 

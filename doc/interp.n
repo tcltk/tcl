@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: interp.n,v 1.9.4.4 2004/09/21 23:10:26 dgp Exp $
+'\" RCS: @(#) $Id: interp.n,v 1.9.4.5 2004/10/28 18:46:14 dgp Exp $
 '\" 
 .so man.macros
 .TH interp n 7.6 Tcl "Tcl Built-In Commands"
@@ -717,30 +717,30 @@ by Nathaniel Borenstein and Marshall Rose.
 .SH EXAMPLES
 Creating and using an alias for a command in the current interpreter:
 .CS
-interp alias {} getIndex {} lsearch {alpha beta gamma delta}
+\fBinterp alias\fR {} getIndex {} lsearch {alpha beta gamma delta}
 set idx [getIndex delta]
 .CE
-
-.VS 8.5
+.PP
 Executing an arbitrary command in a safe interpreter where every
 invokation of \fBlappend\fR is logged:
 .CS
-set i [interp create -safe]
-$i hide lappend
-$i alias lappend loggedLappend $i
+set i [\fBinterp create\fR -safe]
+\fBinterp hide\fR $i lappend
+\fBinterp alias\fR $i lappend {} loggedLappend $i
 proc loggedLappend {i args} {
    puts "logged invokation of lappend $args"
-   $i invokehidden lappend {expand}$args
+   \fBinterp invokehidden\fR $i lappend {expand}$args
 }
-$i eval $someUntrustedScript
+\fBinterp eval\fR $i $someUntrustedScript
 .CE
-
+.PP
+.VS 8.5
 Setting a resource limit on an interpreter so that an infinite loop
 terminates.
 .CS
-set i [interp create]
-$i limit command -value 1000
-$i eval {
+set i [\fBinterp create\fR]
+\fBinterp limit\fR $i command -value 1000
+\fBinterp eval\fR $i {
    set x 0
    while {1} {
       puts "Counting up... [incr x]"

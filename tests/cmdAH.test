@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: cmdAH.test,v 1.33.2.9 2004/09/30 00:51:49 dgp Exp $
+# RCS: @(#) $Id: cmdAH.test,v 1.33.2.10 2004/10/28 18:47:11 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -361,16 +361,18 @@ test cmdAH-8.44 {Tcl_FileObjCmd: dirname} testsetplatform {
 test cmdAH-8.45 {Tcl_FileObjCmd: dirname} {
     -constraints {Tcltest testsetplatform}
     -match regexp
+    -setup {
+	set temp $::env(HOME)
+    }	
     -body {
-	global env
-	set temp $env(HOME)
-	set env(HOME) "/homewontexist/test"
+	set ::env(HOME) "/homewontexist/test"
 	testsetplatform windows
-	set result [list [catch {file dirname ~} msg] $msg]
-	set env(HOME) $temp
-	set result
+	file dirname ~
     }
-    -result {{0 ([a-zA-Z]:?)/homewontexist}}
+    -cleanup {
+	set ::env(HOME) $temp
+    }
+    -result {([a-zA-Z]:?)/homewontexist}
 }
 
 test cmdAH-8.46 {Tcl_FileObjCmd: dirname} {

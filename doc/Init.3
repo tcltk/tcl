@@ -2,7 +2,7 @@
 '\" Copyright (c) 1998-2000 by Scriptics Corporation.
 '\" All rights reserved.
 '\" 
-'\" RCS: @(#) $Id: Init.3,v 1.1.24.1 2004/03/26 22:28:24 dgp Exp $
+'\" RCS: @(#) $Id: Init.3,v 1.1.24.2 2004/10/28 18:46:10 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_Init 3 8.0 Tcl "Tcl Library Procedures"
@@ -16,6 +16,7 @@ Tcl_Init \- find and source initialization script
 int
 \fBTcl_Init\fR(\fIinterp\fR)
 .SH ARGUMENTS
+.AS Tcl_Interp *interp
 .AP Tcl_Interp *interp in
 Interpreter to initialize.
 .BE

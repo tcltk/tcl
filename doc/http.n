@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: http.n,v 1.18.4.3 2004/09/08 23:02:34 dgp Exp $
+'\" RCS: @(#) $Id: http.n,v 1.18.4.4 2004/10/28 18:46:14 dgp Exp $
 '\" 
 .so man.macros
 .TH "http" n 2.5 http "Tcl Bundled Packages"
@@ -497,38 +497,41 @@ A copy of the \fBContent-Type\fR meta-data value.
 The requested URL.
 .RE
 .SH EXAMPLE
-.DS
+.CS
 # Copy a URL to a file and print meta-data
-proc ::http::copy { url file {chunk 4096} } {
-    set out [open $file w]
-    set token [geturl $url -channel $out -progress ::http::Progress \\
-	-blocksize $chunk]
-    close $out
-    # This ends the line started by ::http::Progress
-    puts stderr ""
-    upvar #0 $token state
-    set max 0
-    foreach {name value} $state(meta) {
-	if {[string length $name] > $max} {
-	    set max [string length $name]
-	}
-	if {[regexp -nocase ^location$ $name]} {
-	    # Handle URL redirects
-	    puts stderr "Location:$value"
-	    return [copy [string trim $value] $file $chunk]
-	}
-    }
-    incr max
-    foreach {name value} $state(meta) {
-	puts [format "%-*s %s" $max $name: $value]
-    }
+proc httpcopy { url file {chunk 4096} } {
+   set out [open $file w]
+   set token [\fB::http::geturl\fR $url -channel $out \\
+          -progress httpCopyProgress -blocksize $chunk]
+   close $out
 
-    return $token
+   # This ends the line started by httpCopyProgress
+   puts stderr ""
+
+   upvar #0 $token state
+   set max 0
+   foreach {name value} $state(meta) {
+      if {[string length $name] > $max} {
+         set max [string length $name]
+      }
+      if {[regexp -nocase ^location$ $name]} {
+         # Handle URL redirects
+         puts stderr "Location:$value"
+         return [httpcopy [string trim $value] $file $chunk]
+      }
+   }
+   incr max
+   foreach {name value} $state(meta) {
+      puts [format "%-*s %s" $max $name: $value]
+   }
+
+   return $token
 }
-proc ::http::Progress {args} {
-    puts -nonewline stderr . ; flush stderr
+proc httpCopyProgress {args} {
+   puts -nonewline stderr .
+   flush stderr
 }
-.DE
+.CE
 
 .SH "SEE ALSO"
 safe(n), socket(n), safesock(n)

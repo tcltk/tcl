@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: CrtObjCmd.3,v 1.7.4.2 2004/09/08 23:02:33 dgp Exp $
+'\" RCS: @(#) $Id: CrtObjCmd.3,v 1.7.4.3 2004/10/28 18:46:08 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_CreateObjCommand 3 8.0 Tcl "Tcl Library Procedures"
@@ -39,7 +39,7 @@ int
 .VE
 .sp
 .VS 8.4
-CONST char *
+const char *
 .VE
 \fBTcl_GetCommandName\fR(\fIinterp, token\fR)
 .sp
@@ -49,12 +49,10 @@ void
 Tcl_Command
 \fBTcl_GetCommandFromObj\fR(\fIinterp, objPtr\fR)
 .SH ARGUMENTS
-.AS Tcl_ObjCmdProc *deleteProc in/out
+.AS Tcl_CmdDeleteProc *deleteProc in/out
 .AP Tcl_Interp *interp in
 Interpreter in which to create a new command or that contains a command.
-.VS 8.4
 .AP char *cmdName in
-.VE
 Name of command.
 .AP Tcl_ObjCmdProc *proc in
 Implementation of the new command: \fIproc\fR will be called whenever
@@ -98,11 +96,11 @@ and it returns NULL.
 \fBTcl_ObjCmdProc\fR:
 .CS
 typedef int Tcl_ObjCmdProc(
-	ClientData \fIclientData\fR,
-	Tcl_Interp *\fIinterp\fR,
-	int \fIobjc\fR,
+        ClientData \fIclientData\fR,
+        Tcl_Interp *\fIinterp\fR,
+        int \fIobjc\fR,
 .VS
-	Tcl_Obj *CONST \fIobjv\fR[]);
+        Tcl_Obj *const \fIobjv\fR[]);
 .CE
 When \fIproc\fR is invoked, the \fIclientData\fR and \fIinterp\fR parameters
 will be copies of the \fIclientData\fR and \fIinterp\fR arguments given to
@@ -170,7 +168,8 @@ application an opportunity to release any structures associated
 with the command.  \fIDeleteProc\fR should have arguments and
 result that match the type \fBTcl_CmdDeleteProc\fR:
 .CS
-typedef void Tcl_CmdDeleteProc(ClientData \fIclientData\fR);
+typedef void Tcl_CmdDeleteProc(
+        ClientData \fIclientData\fR);
 .CE
 The \fIclientData\fR argument will be the same as the \fIclientData\fR
 argument passed to \fBTcl_CreateObjCommand\fR.
@@ -208,14 +207,14 @@ pointed to by \fIinfoPtr\fR and returns 1.
 A \fBTcl_CmdInfo\fR structure has the following fields:
 .CS
 typedef struct Tcl_CmdInfo {
-    int isNativeObjectProc;
-    Tcl_ObjCmdProc *objProc;
-    ClientData objClientData;
-    Tcl_CmdProc *proc;
-    ClientData clientData;
-    Tcl_CmdDeleteProc *deleteProc;
-    ClientData deleteData;
-    Tcl_Namespace *namespacePtr;
+    int \fIisNativeObjectProc\fR;
+    Tcl_ObjCmdProc *\fIobjProc\fR;
+    ClientData \fIobjClientData\fR;
+    Tcl_CmdProc *\fIproc\fR;
+    ClientData \fIclientData\fR;
+    Tcl_CmdDeleteProc *\fIdeleteProc\fR;
+    ClientData \fIdeleteData\fR;
+    Tcl_Namespace *\fInamespacePtr\fR;
 } Tcl_CmdInfo;
 .CE
 The \fIisNativeObjectProc\fR field has the value 1

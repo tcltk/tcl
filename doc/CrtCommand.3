@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: CrtCommand.3,v 1.5.4.2 2004/09/08 23:02:32 dgp Exp $
+'\" RCS: @(#) $Id: CrtCommand.3,v 1.5.4.3 2004/10/28 18:46:08 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_CreateCommand 3 "" Tcl "Tcl Library Procedures"
@@ -19,12 +19,10 @@ Tcl_CreateCommand \- implement new commands in C
 Tcl_Command
 \fBTcl_CreateCommand\fR(\fIinterp, cmdName, proc, clientData, deleteProc\fR)
 .SH ARGUMENTS
-.AS Tcl_CmdDeleteProc **deleteProcPtr
+.AS Tcl_CmdDeleteProc *deleteProc
 .AP Tcl_Interp *interp in
 Interpreter in which to create new command.
-.VS 8.4
-.AP "CONST char" *cmdName in
-.VE
+.AP "const char" *cmdName in
 Name of command.
 .AP Tcl_CmdProc *proc in
 Implementation of new command:  \fIproc\fR will be called whenever
@@ -81,10 +79,10 @@ and it returns NULL.
 \fBTcl_CmdProc\fR:
 .CS
 typedef int Tcl_CmdProc(
-	ClientData \fIclientData\fR,
-	Tcl_Interp *\fIinterp\fR,
-	int \fIargc\fR,
-	CONST char *\fIargv\fR[]);
+        ClientData \fIclientData\fR,
+        Tcl_Interp *\fIinterp\fR,
+        int \fIargc\fR,
+        const char *\fIargv\fR[]);
 .CE
 When \fIproc\fR is invoked the \fIclientData\fR and \fIinterp\fR
 parameters will be copies of the \fIclientData\fR and \fIinterp\fR
@@ -138,7 +136,8 @@ application an opportunity to release any structures associated
 with the command.  \fIDeleteProc\fR should have arguments and
 result that match the type \fBTcl_CmdDeleteProc\fR:
 .CS
-typedef void Tcl_CmdDeleteProc(ClientData \fIclientData\fR);
+typedef void Tcl_CmdDeleteProc(
+        ClientData \fIclientData\fR);
 .CE
 The \fIclientData\fR argument will be the same as the \fIclientData\fR
 argument passed to \fBTcl_CreateCommand\fR.

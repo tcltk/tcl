@@ -2,7 +2,7 @@
 '\" Copyright (c) 1998-2000 by Scriptics Corporation.
 '\" All rights reserved.
 '\" 
-'\" RCS: @(#) $Id: SourceRCFile.3,v 1.1.26.1 2004/03/26 22:28:24 dgp Exp $
+'\" RCS: @(#) $Id: SourceRCFile.3,v 1.1.26.2 2004/10/28 18:46:11 dgp Exp $
 '\" 
 '\"
 .so man.macros
@@ -17,6 +17,7 @@ Tcl_SourceRCFile \- source the Tcl rc file
 void
 \fBTcl_SourceRCFile\fR(\fIinterp\fR)
 .SH ARGUMENTS
+.AS Tcl_Interp *interp
 .AP Tcl_Interp *interp in
 Tcl interpreter to source rc file into.
 .BE

@@ -13,20 +13,12 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.157.2.14 2004/09/21 23:10:26 dgp Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.157.2.15 2004/10/28 18:46:17 dgp Exp $
  */
 
 #ifndef _TCL
 #define _TCL
 
-/*
- * For C++ compilers, use extern "C"
- */
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-    
 /*
  * The following defines are used to indicate the various release levels.
  */
@@ -1339,9 +1331,10 @@ typedef struct Tcl_HashSearch {
  */
 
 typedef struct {
-    Tcl_HashSearch search;
-    int epoch;
-    Tcl_Dict dictionaryPtr;
+    Tcl_HashSearch search;	/* Search struct for underlying hash table. */
+    int epoch;			/* Epoch marker for dictionary being searched,
+				 * or -1 if search has terminated. */
+    Tcl_Dict dictionaryPtr;	/* Reference to dictionary being searched. */
 } Tcl_DictSearch;
 
 
@@ -2349,12 +2342,4 @@ EXTERN int		Tcl_AppInit _ANSI_ARGS_((Tcl_Interp *interp));
 #define TCL_STORAGE_CLASS DLLIMPORT
 
 #endif /* RC_INVOKED */
-
-/*
- * end block for C++
- */
-#ifdef __cplusplus
-}
-#endif
-
 #endif /* _TCL */

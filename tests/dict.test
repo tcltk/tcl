@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: dict.test,v 1.2.2.4 2004/03/26 22:28:29 dgp Exp $
+# RCS: @(#) $Id: dict.test,v 1.2.2.5 2004/10/28 18:47:11 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -38,7 +38,7 @@ test dict-1.1 {dict command basic syntax} {
 } {1 {wrong # args: should be "dict subcommand ?arg ...?"}}
 test dict-1.2 {dict command basic syntax} {
     list [catch {dict ?} msg] $msg
-} {1 {bad subcommand "?": must be append, create, exists, filter, for, get, incr, info, keys, lappend, merge, remove, replace, set, size, unset, or values}}
+} {1 {bad subcommand "?": must be append, create, exists, filter, for, get, incr, info, keys, lappend, merge, remove, replace, set, size, unset, update, values, or with}}
 
 test dict-2.1 {dict create command} {
     dict create
@@ -538,10 +538,10 @@ test dict-15.6 {dict set command} {
     set dictVar {a {b {c y}}}
     dict set dictVar a b c x
 } {a {b {c x}}}
-test dict-15.7 {dict set command: no path creation} {
+test dict-15.7 {dict set command: path creation} {
     set dictVar {}
-    list [catch {dict set dictVar a b x} msg] $msg
-} {1 {key "a" not known in dictionary}}
+    dict set dictVar a b x
+} {a {b x}}
 test dict-15.8 {dict set command: creates variables} {
     catch {unset dictVar}
     dict set dictVar a x
@@ -893,6 +893,150 @@ test dict-20.9 {dict merge command} {
 test dict-20.10 {dict merge command} {
     getOrder [dict merge {a b c d e f} {a x 1 2 3 4} {a - 1 -}] a c e 1 3
 } {a - c d e f 1 - 3 4 5}
+
+test dict-21.1 {dict update command} -body {
+    dict update
+} -returnCodes 1 -result {wrong # args: should be "dict update varName key varName ?key varName ...? script"}
+test dict-21.2 {dict update command} -body {
+    dict update v
+} -returnCodes 1 -result {wrong # args: should be "dict update varName key varName ?key varName ...? script"}
+test dict-21.3 {dict update command} -body {
+    dict update v k
+} -returnCodes 1 -result {wrong # args: should be "dict update varName key varName ?key varName ...? script"}
+test dict-21.4 {dict update command} -body {
+    dict update v k v
+} -returnCodes 1 -result {wrong # args: should be "dict update varName key varName ?key varName ...? script"}
+test dict-21.5 {dict update command} {
+    set a {b c}
+    set result {}
+    set bb {}
+    dict update a b bb {
+	lappend result $a $bb
+    }
+    lappend result $a
+} {{b c} c {b c}}
+test dict-21.6 {dict update command} {
+    set a {b c}
+    set result {}
+    set bb {}
+    dict update a b bb {
+	lappend result $a $bb [set bb d]
+    }
+    lappend result $a
+} {{b c} c d {b d}}
+test dict-21.7 {dict update command} {
+    set a {b c}
+    set result {}
+    set bb {}
+    dict update a b bb {
+	lappend result $a $bb [unset bb]
+    }
+    lappend result $a
+} {{b c} c {} {}}
+test dict-21.8 {dict update command} {
+    set a {b c d e}
+    dict update a b v1 d v2 {
+	lassign "$v1 $v2" v2 v1
+    }
+    getOrder $a b d
+} {b e d c 2}
+test dict-21.9 {dict update command} {
+    set a {b c d e}
+    dict update a b v1 d v2 {unset a}
+    info exist a
+} 0
+test dict-21.10 {dict update command} {
+    set a {b {c d}}
+    dict update a b v1 {
+	dict update v1 c v2 {
+	    set v2 foo
+	}
+    }
+    set a
+} {b {c foo}}
+test dict-21.11 {dict update command} {
+    set a {b c d e}
+    dict update a b v1 d v2 {
+	dict set a f g
+    }
+    getOrder $a b d f
+} {b c d e f g 3}
+test dict-21.12 {dict update command} {
+    set a {b c d e}
+    dict update a b v1 d v2 f v3 {
+	set v3 g
+    }
+    getOrder $a b d f
+} {b c d e f g 3}
+
+test dict-22.1 {dict with command} -body {
+    dict with
+} -returnCodes 1 -result {wrong # args: should be "dict with dictVar ?key ...? script"}
+test dict-22.2 {dict with command} -body {
+    dict with v
+} -returnCodes 1 -result {wrong # args: should be "dict with dictVar ?key ...? script"}
+test dict-22.3 {dict with command} -body {
+    unset -nocomplain v
+    dict with v {error "in body"}
+} -returnCodes 1 -result {can't read "v": no such variable}
+test dict-22.4 {dict with command} {
+    set a {b c d e}
+    unset -nocomplain b d
+    set result [list [info exist b] [info exist d]]
+    dict with a {
+	lappend result [info exist b] [info exist d] $b $d
+    }
+    set result
+} {0 0 1 1 c e}
+test dict-22.5 {dict with command} {
+    set a {b c d e}
+    dict with a {
+	lassign "$b $d" d b
+    }
+    getOrder $a b d
+} {b e d c 2}
+test dict-22.6 {dict with command} {
+    set a {b c d e}
+    dict with a {
+	unset b
+	# This *won't* go into the dict...
+	set f g
+    }
+    set a
+} {d e}
+test dict-22.7 {dict with command} {
+    set a {b c d e}
+    dict with a {
+	dict unset a b
+    }
+    getOrder $a b d
+} {b c d e 2}
+test dict-22.8 {dict with command} {
+    set a [dict create b c]
+    dict with a {
+	set b $a
+    }
+    set a
+} {b {b c}}
+test dict-22.9 {dict with command} {
+    set a {b {c d}}
+    dict with a b {
+	set c $c$c
+    }
+    set a
+} {b {c dd}}
+test dict-22.10 {dict with command: result handling tricky case} {
+    set a {b {c d}}
+    foreach i {0 1} {
+	if {$i} break
+	dict with a b {
+	    set a {}
+	    # We're checking to see if we lose this break
+	    break
+	}
+    }
+    list $i $a
+} {0 {}}
 
 # cleanup
 ::tcltest::cleanupTests

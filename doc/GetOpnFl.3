@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: GetOpnFl.3,v 1.4.6.2 2004/09/21 23:10:25 dgp Exp $
+'\" RCS: @(#) $Id: GetOpnFl.3,v 1.4.6.3 2004/10/28 18:46:10 dgp Exp $
 .so man.macros
 .TH Tcl_GetOpenFile 3 8.0 Tcl "Tcl Library Procedures"
 .BS
@@ -18,10 +18,10 @@ int
 \fBTcl_GetOpenFile\fR(\fIinterp, string, write, checkUsage, filePtr\fR)
 .sp
 .SH ARGUMENTS
-.AS Tcl_Interp checkUsage
+.AS Tcl_Interp checkUsage out
 .AP Tcl_Interp *interp in
 Tcl interpreter from which file handle is to be obtained.
-.AP "CONST char" *string in
+.AP "const char" *string in
 String identifying channel, such as \fBstdin\fR or \fBfile4\fR.
 .AP int write in
 Non-zero means the file will be used for writing, zero means it will

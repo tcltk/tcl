@@ -21,7 +21,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.31.4.8 2004/09/30 00:51:43 dgp Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.31.4.9 2004/10/28 18:46:57 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -172,6 +172,18 @@ typedef struct EnsembleCmdRep {
 static void		DeleteImportedCmd _ANSI_ARGS_((ClientData clientData));
 static void		DupNsNameInternalRep _ANSI_ARGS_((Tcl_Obj *objPtr,
 			    Tcl_Obj *copyPtr));
+static char *		ErrorCodeRead _ANSI_ARGS_(( ClientData clientData,
+			    Tcl_Interp *interp, CONST char *name1,
+			    CONST char *name2, int flags));
+static char *		ErrorInfoRead _ANSI_ARGS_(( ClientData clientData,
+			    Tcl_Interp *interp, CONST char *name1,
+			    CONST char *name2, int flags));
+static char *		EstablishErrorCodeTraces _ANSI_ARGS_((
+			    ClientData clientData, Tcl_Interp *interp,
+			    CONST char *name1, CONST char *name2, int flags));
+static char *		EstablishErrorInfoTraces _ANSI_ARGS_((
+			    ClientData clientData, Tcl_Interp *interp,
+			    CONST char *name1, CONST char *name2, int flags));
 static void		FreeNsNameInternalRep _ANSI_ARGS_((Tcl_Obj *objPtr));
 static int		GetNamespaceFromObj _ANSI_ARGS_((
 			    Tcl_Interp *interp, Tcl_Obj *objPtr,
@@ -477,7 +489,6 @@ Tcl_PopCallFrame(interp)
 {
     register Interp *iPtr = (Interp *) interp;
     register CallFrame *framePtr = iPtr->framePtr;
-    int saveErrFlag;
     Namespace *nsPtr;
 
     /*
@@ -490,21 +501,6 @@ Tcl_PopCallFrame(interp)
     iPtr->framePtr = framePtr->callerPtr;
     iPtr->varFramePtr = framePtr->callerVarPtr;
 
-    /*
-     * Delete the local variables. As a hack, we save then restore the
-     * ERR_IN_PROGRESS flag in the interpreter. The problem is that there
-     * could be unset traces on the variables, which cause scripts to be
-     * evaluated. This will clear the ERR_IN_PROGRESS flag, losing stack
-     * trace information if the procedure was exiting with an error. The
-     * code below preserves the flag. Unfortunately, that isn't really
-     * enough: we really should preserve the errorInfo variable too
-     * (otherwise a nested error in the trace script will trash errorInfo).
-     * What's really needed is a general-purpose mechanism for saving and
-     * restoring interpreter state.
-     */
-
-    saveErrFlag = (iPtr->flags & ERR_IN_PROGRESS);
-
     if (framePtr->varTablePtr != NULL) {
         TclDeleteVars(iPtr, framePtr->varTablePtr);
         ckfree((char *) framePtr->varTablePtr);
@@ -513,8 +509,6 @@ Tcl_PopCallFrame(interp)
     if (framePtr->numCompiledLocals > 0) {
         TclDeleteCompiledLocalVars(iPtr, framePtr);
     }
-
-    iPtr->flags |= saveErrFlag;
 
     /*
      * Decrement the namespace's count of active call frames. If the
@@ -529,6 +523,136 @@ Tcl_PopCallFrame(interp)
         Tcl_DeleteNamespace((Tcl_Namespace *) nsPtr);
     }
     framePtr->nsPtr = NULL;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * EstablishErrorCodeTraces --
+ *
+ *	Creates traces on the ::errorCode variable to keep its value
+ *	consistent with the expectations of legacy code.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Read and unset traces are established on ::errorCode.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static char *
+EstablishErrorCodeTraces(clientData, interp, name1, name2, flags)
+    ClientData clientData;
+    Tcl_Interp *interp;
+    CONST char *name1;
+    CONST char *name2;
+    int flags;
+{
+    Tcl_TraceVar(interp, "errorCode", TCL_GLOBAL_ONLY | TCL_TRACE_READS,
+	    ErrorCodeRead, (ClientData) NULL);
+    Tcl_TraceVar(interp, "errorCode", TCL_GLOBAL_ONLY | TCL_TRACE_UNSETS,
+	    EstablishErrorCodeTraces, (ClientData) NULL);
+    return NULL;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ErrorCodeRead --
+ *
+ *	Called when the ::errorCode variable is read.  Copies the
+ *	current value of the interp's errorCode field into ::errorCode.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static char *
+ErrorCodeRead(clientData, interp, name1, name2, flags)
+    ClientData clientData;
+    Tcl_Interp *interp;
+    CONST char *name1;
+    CONST char *name2;
+    int flags;
+{
+    Interp *iPtr = (Interp *)interp;
+
+    if (flags & TCL_INTERP_DESTROYED) return NULL;
+    if (iPtr->errorCode == NULL) return NULL;
+    Tcl_ObjSetVar2(interp, iPtr->ecVar, NULL, iPtr->errorCode, TCL_GLOBAL_ONLY);
+    return NULL;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * EstablishErrorInfoTraces --
+ *
+ *	Creates traces on the ::errorInfo variable to keep its value
+ *	consistent with the expectations of legacy code.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Read and unset traces are established on ::errorInfo.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static char *
+EstablishErrorInfoTraces(clientData, interp, name1, name2, flags)
+    ClientData clientData;
+    Tcl_Interp *interp;
+    CONST char *name1;
+    CONST char *name2;
+    int flags;
+{
+    Tcl_TraceVar(interp, "errorInfo", TCL_GLOBAL_ONLY | TCL_TRACE_READS,
+	    ErrorInfoRead, (ClientData) NULL);
+    Tcl_TraceVar(interp, "errorInfo", TCL_GLOBAL_ONLY | TCL_TRACE_UNSETS,
+	    EstablishErrorInfoTraces, (ClientData) NULL);
+    return NULL;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ErrorInfoRead --
+ *
+ *	Called when the ::errorInfo variable is read.  Copies the
+ *	current value of the interp's errorInfo field into ::errorInfo.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static char *
+ErrorInfoRead(clientData, interp, name1, name2, flags)
+    ClientData clientData;
+    Tcl_Interp *interp;
+    CONST char *name1;
+    CONST char *name2;
+    int flags;
+{
+    Interp *iPtr = (Interp *)interp;
+
+    if (flags & TCL_INTERP_DESTROYED) return NULL;
+    if (iPtr->errorInfo == NULL) return NULL;
+    Tcl_ObjSetVar2(interp, iPtr->eiVar, NULL, iPtr->errorInfo, TCL_GLOBAL_ONLY);
+    return NULL;
 }
 
 /*
@@ -592,8 +716,8 @@ Tcl_CreateNamespace(interp, name, clientData, deleteProc)
         parentPtr = NULL;
         simpleName = "";
     } else if (*name == '\0') {
-	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		"can't create namespace \"\": only global namespace can have empty name", (char *) NULL);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"can't create namespace \"\": only global namespace can have empty name", -1));
 	return NULL;
     } else {
 	/*
@@ -621,8 +745,7 @@ Tcl_CreateNamespace(interp, name, clientData, deleteProc)
 	 */
 
         if (Tcl_FindHashEntry(&parentPtr->childTable, simpleName) != NULL) {
-	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		    "can't create namespace \"", name,
+	    Tcl_AppendResult(interp, "can't create namespace \"", name,
     	    	    "\": already exists", (char *) NULL);
             return NULL;
         }
@@ -667,6 +790,14 @@ Tcl_CreateNamespace(interp, name, clientData, deleteProc)
         entryPtr = Tcl_CreateHashEntry(&parentPtr->childTable, simpleName,
 	        &newEntry);
         Tcl_SetHashValue(entryPtr, (ClientData) nsPtr);
+    } else {
+	/* 
+	 * In the global namespace create traces to maintain the
+	 * ::errorInfo and ::errorCode variables.
+	 */
+	iPtr->globalNsPtr = nsPtr;
+	EstablishErrorInfoTraces(NULL, interp, NULL, NULL, 0);
+	EstablishErrorCodeTraces(NULL, interp, NULL, NULL, 0);
     }
 
     /*
@@ -787,11 +918,11 @@ Tcl_DeleteNamespace(namespacePtr)
         TclTeardownNamespace(nsPtr);
 
         if ((nsPtr != globalNsPtr) || (iPtr->flags & DELETED)) {
-            /*
+	    /*
 	     * If this is the global namespace, then it may have residual
-             * "errorInfo" and "errorCode" variables for errors that
-             * occurred while it was being torn down.  Try to clear the
-             * variable list one last time.
+	     * "errorInfo" and "errorCode" variables for errors that
+	     * occurred while it was being torn down.  Try to clear the
+	     * variable list one last time.
 	     */
 
             TclDeleteVars((Interp *) nsPtr->interp, &nsPtr->varTable);
@@ -809,7 +940,11 @@ Tcl_DeleteNamespace(namespacePtr)
             } else {
                 nsPtr->flags |= NS_DEAD;
             }
-        }
+        } else {
+	    /* Restore the ::errorInfo and ::errorCode traces */
+	    EstablishErrorInfoTraces(NULL, nsPtr->interp, NULL, NULL, 0);
+	    EstablishErrorCodeTraces(NULL, nsPtr->interp, NULL, NULL, 0);
+	}
     }
 }
 
@@ -823,9 +958,7 @@ Tcl_DeleteNamespace(namespacePtr)
  *	commands, variables, and child namespaces.
  *
  *	This is kept separate from Tcl_DeleteNamespace so that the global
- *	namespace can be handled specially. Global variables like
- *	"errorInfo" and "errorCode" need to remain intact while other
- *	namespaces and commands are torn down, in case any errors occur.
+ *	namespace can be handled specially. 
  *
  * Results:
  *	None.
@@ -833,8 +966,6 @@ Tcl_DeleteNamespace(namespacePtr)
  * Side effects:
  *	Removes this namespace from its parent's child namespace hashtable.
  *	Deletes all commands, variables and namespaces in this namespace.
- *	If this is the global namespace, the "errorInfo" and "errorCode"
- *	variables are left alone and deleted later.
  *
  *----------------------------------------------------------------------
  */
@@ -849,65 +980,17 @@ TclTeardownNamespace(nsPtr)
     Tcl_HashSearch search;
     Tcl_Namespace *childNsPtr;
     Tcl_Command cmd;
-    Namespace *globalNsPtr =
-	    (Namespace *) Tcl_GetGlobalNamespace((Tcl_Interp *) iPtr);
     int i;
 
     /*
      * Start by destroying the namespace's variable table,
      * since variables might trigger traces.
+     * Variable table should be cleared but not freed!
+     * TclDeleteVars frees it, so we reinitialize it afterwards.
      */
 
-    if (nsPtr == globalNsPtr) {
-	/*
-	 * This is the global namespace, so be careful to preserve the
-	 * "errorInfo" and "errorCode" variables. These might be needed
-	 * later on if errors occur while deleting commands. We are careful
-	 * to destroy and recreate the "errorInfo" and "errorCode"
-	 * variables, in case they had any traces on them.
-	 */
-
-        CONST char *str;
-        char *errorInfoStr, *errorCodeStr;
-
-        str = Tcl_GetVar((Tcl_Interp *) iPtr, "errorInfo", TCL_GLOBAL_ONLY);
-        if (str != NULL) {
-            errorInfoStr = ckalloc((unsigned) (strlen(str)+1));
-            strcpy(errorInfoStr, str);
-        } else {
-            errorInfoStr = NULL;
-        }
-
-        str = Tcl_GetVar((Tcl_Interp *) iPtr, "errorCode", TCL_GLOBAL_ONLY);
-        if (str != NULL) {
-            errorCodeStr = ckalloc((unsigned) (strlen(str)+1));
-            strcpy(errorCodeStr, str);
-        } else {
-            errorCodeStr = NULL;
-        }
-
-        TclDeleteVars(iPtr, &nsPtr->varTable);
-        Tcl_InitHashTable(&nsPtr->varTable, TCL_STRING_KEYS);
-
-        if (errorInfoStr != NULL) {
-            Tcl_SetVar((Tcl_Interp *) iPtr, "errorInfo", errorInfoStr,
-                TCL_GLOBAL_ONLY);
-            ckfree(errorInfoStr);
-        }
-        if (errorCodeStr != NULL) {
-            Tcl_SetVar((Tcl_Interp *) iPtr, "errorCode", errorCodeStr,
-                TCL_GLOBAL_ONLY);
-            ckfree(errorCodeStr);
-        }
-    } else {
-	/*
-	 * Variable table should be cleared but not freed! TclDeleteVars
-	 * frees it, so we reinitialize it afterwards.
-	 */
-
-        TclDeleteVars(iPtr, &nsPtr->varTable);
-        Tcl_InitHashTable(&nsPtr->varTable, TCL_STRING_KEYS);
-    }
+    TclDeleteVars(iPtr, &nsPtr->varTable);
+    Tcl_InitHashTable(&nsPtr->varTable, TCL_STRING_KEYS);
 
     /*
      * Remove the namespace from its parent's child hashtable.
@@ -1101,10 +1184,8 @@ Tcl_Export(interp, namespacePtr, pattern, resetListFirst)
 	    &exportNsPtr, &dummyPtr, &dummyPtr, &simplePattern);
 
     if ((exportNsPtr != nsPtr) || (strcmp(pattern, simplePattern) != 0)) {
-	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-	        "invalid export pattern \"", pattern,
-		"\": pattern can't specify a namespace",
-		(char *) NULL);
+	Tcl_AppendResult(interp, "invalid export pattern \"", pattern,
+		"\": pattern can't specify a namespace", (char *) NULL);
 	return TCL_ERROR;
     }
 
@@ -1330,8 +1411,7 @@ Tcl_Import(interp, namespacePtr, pattern, allowOverwrite)
      */
 
     if (strlen(pattern) == 0) {
-	Tcl_SetStringObj(Tcl_GetObjResult(interp),
-	        "empty import pattern", -1);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj("empty import pattern", -1));
         return TCL_ERROR;
     }
     TclGetNamespaceForQualName(interp, pattern, nsPtr,
@@ -1339,19 +1419,17 @@ Tcl_Import(interp, namespacePtr, pattern, allowOverwrite)
 	    &importNsPtr, &dummyPtr, &dummyPtr, &simplePattern);
 
     if (importNsPtr == NULL) {
-	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		"unknown namespace in import pattern \"",
+	Tcl_AppendResult(interp, "unknown namespace in import pattern \"",
 		pattern, "\"", (char *) NULL);
         return TCL_ERROR;
     }
     if (importNsPtr == nsPtr) {
 	if (pattern == simplePattern) {
-	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
+	    Tcl_AppendResult(interp,
 		    "no namespace specified in import pattern \"", pattern,
 		    "\"", (char *) NULL);
 	} else {
-	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		    "import pattern \"", pattern,
+	    Tcl_AppendResult(interp, "import pattern \"", pattern,
 		    "\" tries to import from namespace \"",
 		    importNsPtr->name, "\" into itself", (char *) NULL);
 	}
@@ -1429,8 +1507,8 @@ Tcl_Import(interp, namespacePtr, pattern, allowOverwrite)
 			dataPtr = (ImportedCmdData *) link->objClientData;
 			link = dataPtr->realCmdPtr;
 			if (overwrite == link) {
-			    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-				    "import pattern \"", pattern,
+			    Tcl_AppendResult(interp, "import pattern \"",
+				    pattern,
 				    "\" would create a loop containing ",
 				    "command \"", Tcl_DStringValue(&ds),
 				    "\"", (char *) NULL);
@@ -1461,8 +1539,7 @@ Tcl_Import(interp, namespacePtr, pattern, allowOverwrite)
                 refPtr->nextPtr = cmdPtr->importRefPtr;
                 cmdPtr->importRefPtr = refPtr;
             } else {
-		Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		        "can't import command \"", cmdName,
+		Tcl_AppendResult(interp, "can't import command \"", cmdName,
 			"\": already exists", (char *) NULL);
                 return TCL_ERROR;
             }
@@ -1534,7 +1611,7 @@ Tcl_ForgetImport(interp, namespacePtr, pattern)
 	    &sourceNsPtr, &dummyPtr, &dummyPtr, &simplePattern);
 
     if (sourceNsPtr == NULL) {
-        Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
+        Tcl_AppendResult(interp,
 		"unknown namespace in namespace forget pattern \"",
 		pattern, "\"", (char *) NULL);
         return TCL_ERROR;
@@ -2100,8 +2177,8 @@ Tcl_FindNamespace(interp, name, contextNsPtr, flags)
        return (Tcl_Namespace *) nsPtr;
     } else if (flags & TCL_LEAVE_ERR_MSG) {
 	Tcl_ResetResult(interp);
-	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-                "unknown namespace \"", name, "\"", (char *) NULL);
+	Tcl_AppendResult(interp, "unknown namespace \"", name,
+		"\"", (char *) NULL);
     }
     return NULL;
 }
@@ -2226,8 +2303,8 @@ Tcl_FindCommand(interp, name, contextNsPtr, flags)
         return (Tcl_Command) cmdPtr;
     } else if (flags & TCL_LEAVE_ERR_MSG) {
 	Tcl_ResetResult(interp);
-	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-                "unknown command \"", name, "\"", (char *) NULL);
+	Tcl_AppendResult(interp, "unknown command \"", name,
+		"\"", (char *) NULL);
     }
 
     return (Tcl_Command) NULL;
@@ -2353,8 +2430,8 @@ Tcl_FindNamespaceVar(interp, name, contextNsPtr, flags)
 	return (Tcl_Var) varPtr;
     } else if (flags & TCL_LEAVE_ERR_MSG) {
 	Tcl_ResetResult(interp);
-	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-                "unknown variable \"", name, "\"", (char *) NULL);
+	Tcl_AppendResult(interp, "unknown variable \"", name,
+		"\"", (char *) NULL);
     }
     return (Tcl_Var) NULL;
 }
@@ -2798,8 +2875,8 @@ NamespaceChildrenCmd(dummy, interp, objc, objv)
             return TCL_ERROR;
         }
         if (namespacePtr == NULL) {
-	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-                    "unknown namespace \"", TclGetString(objv[2]),
+	    Tcl_AppendResult(interp, "unknown namespace \"",
+		    TclGetString(objv[2]),
 		    "\" in namespace children command", (char *) NULL);
             return TCL_ERROR;
         }
@@ -2989,9 +3066,9 @@ NamespaceCurrentCmd(dummy, interp, objc, objv)
 
     currNsPtr = (Namespace *) Tcl_GetCurrentNamespace(interp);
     if (currNsPtr == (Namespace *) Tcl_GetGlobalNamespace(interp)) {
-        Tcl_AppendToObj(Tcl_GetObjResult(interp), "::", -1);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj("::", 2));
     } else {
-	Tcl_AppendToObj(Tcl_GetObjResult(interp), currNsPtr->fullName, -1);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(currNsPtr->fullName, -1));
     }
     return TCL_OK;
 }
@@ -3055,8 +3132,8 @@ NamespaceDeleteCmd(dummy, interp, objc, objv)
 	namespacePtr = Tcl_FindNamespace(interp, name,
 		(Tcl_Namespace *) NULL, /*flags*/ 0);
         if (namespacePtr == NULL) {
-	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-                    "unknown namespace \"", TclGetString(objv[i]),
+	    Tcl_AppendResult(interp, "unknown namespace \"",
+		    TclGetString(objv[i]),
 		    "\" in namespace delete command", (char *) NULL);
             return TCL_ERROR;
         }
@@ -3237,7 +3314,7 @@ NamespaceExistsCmd(dummy, interp, objc, objv)
         return TCL_ERROR;
     }
 
-    Tcl_SetBooleanObj(Tcl_GetObjResult(interp), (namespacePtr != NULL));
+    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(namespacePtr != NULL));
     return TCL_OK;
 }
 
@@ -3545,8 +3622,7 @@ NamespaceInscopeCmd(dummy, interp, objc, objv)
         return result;
     }
     if (namespacePtr == NULL) {
-	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-	        "unknown namespace \"", TclGetString(objv[2]),
+	Tcl_AppendResult(interp, "unknown namespace \"", TclGetString(objv[2]),
 		"\" in inscope namespace command", (char *) NULL);
         return TCL_ERROR;
     }
@@ -3643,6 +3719,7 @@ NamespaceOriginCmd(dummy, interp, objc, objv)
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
     Tcl_Command command, origCommand;
+    Tcl_Obj *resultPtr;
 
     if (objc != 3) {
         Tcl_WrongNumArgs(interp, 2, objv, "name");
@@ -3651,12 +3728,12 @@ NamespaceOriginCmd(dummy, interp, objc, objv)
 
     command = Tcl_GetCommandFromObj(interp, objv[2]);
     if (command == (Tcl_Command) NULL) {
-	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		"invalid command name \"", TclGetString(objv[2]),
-		"\"", (char *) NULL);
+	Tcl_AppendResult(interp, "invalid command name \"",
+		TclGetString(objv[2]), "\"", (char *) NULL);
 	return TCL_ERROR;
     }
     origCommand = TclGetOriginalCommand(command);
+    resultPtr = Tcl_NewObj();
     if (origCommand == (Tcl_Command) NULL) {
 	/*
 	 * The specified command isn't an imported command. Return the
@@ -3664,10 +3741,11 @@ NamespaceOriginCmd(dummy, interp, objc, objv)
 	 * was defined in.
 	 */
 
-	Tcl_GetCommandFullName(interp, command, Tcl_GetObjResult(interp));
+	Tcl_GetCommandFullName(interp, command, resultPtr);
     } else {
-	Tcl_GetCommandFullName(interp, origCommand, Tcl_GetObjResult(interp));
+	Tcl_GetCommandFullName(interp, origCommand, resultPtr);
     }
+    Tcl_SetObjResult(interp, resultPtr);
     return TCL_OK;
 }
 
@@ -3710,8 +3788,8 @@ NamespaceParentCmd(dummy, interp, objc, objv)
             return result;
         }
         if (nsPtr == NULL) {
-            Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-                    "unknown namespace \"", TclGetString(objv[2]),
+            Tcl_AppendResult(interp, "unknown namespace \"",
+		    TclGetString(objv[2]),
 		    "\" in namespace parent command", (char *) NULL);
             return TCL_ERROR;
         }
@@ -3725,8 +3803,8 @@ NamespaceParentCmd(dummy, interp, objc, objv)
      */
 
     if (nsPtr->parentPtr != NULL) {
-        Tcl_SetStringObj(Tcl_GetObjResult(interp),
-	        nsPtr->parentPtr->fullName, -1);
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(
+	        nsPtr->parentPtr->fullName, -1));
     }
     return TCL_OK;
 }
@@ -3793,7 +3871,7 @@ NamespaceQualifiersCmd(dummy, interp, objc, objv)
 
     if (p >= name) {
         length = p-name+1;
-        Tcl_AppendToObj(Tcl_GetObjResult(interp), name, length);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(name, length));
     }
     return TCL_OK;
 }
@@ -3855,7 +3933,7 @@ NamespaceTailCmd(dummy, interp, objc, objv)
     }
 
     if (p >= name) {
-        Tcl_AppendToObj(Tcl_GetObjResult(interp), p, -1);
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(p, -1));
     }
     return TCL_OK;
 }
@@ -3893,6 +3971,7 @@ NamespaceWhichCmd(dummy, interp, objc, objv)
 	"-command", "-variable", NULL
     };
     int lookupType = 0;
+    Tcl_Obj *resultPtr;
 
     if (objc < 3 || objc > 4) {
       badArgs:
@@ -3913,24 +3992,25 @@ NamespaceWhichCmd(dummy, interp, objc, objv)
 	}
     }
 
+    resultPtr = Tcl_NewObj();
     switch (lookupType) {
     case 0: {			/* -command */
 	Tcl_Command cmd = Tcl_GetCommandFromObj(interp, objv[objc-1]);
-        if (cmd == (Tcl_Command) NULL) {	
-            return TCL_OK;	/* cmd not found, just return (no error) */
+        if (cmd != (Tcl_Command) NULL) {	
+	    Tcl_GetCommandFullName(interp, cmd, resultPtr);
         }
-	Tcl_GetCommandFullName(interp, cmd, Tcl_GetObjResult(interp));
         break;
     }
     case 1: {			/* -variable */
 	Tcl_Var var = Tcl_FindNamespaceVar(interp,
 		TclGetString(objv[objc-1]), NULL, /*flags*/ 0);
         if (var != (Tcl_Var) NULL) {
-            Tcl_GetVariableFullName(interp, var, Tcl_GetObjResult(interp));
+            Tcl_GetVariableFullName(interp, var, resultPtr);
         }
         break;
     }
     }
+    Tcl_SetObjResult(interp, resultPtr);
     return TCL_OK;
 }
 
@@ -4442,8 +4522,8 @@ NamespaceEnsembleCmd(dummy, interp, objc, objv)
 	    Tcl_WrongNumArgs(interp, 3, objv, "cmdname");
 	    return TCL_ERROR;
 	}
-	Tcl_SetBooleanObj(Tcl_GetObjResult(interp),
-		FindEnsemble(interp, objv[3], 0) != NULL);
+	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(
+		FindEnsemble(interp, objv[3], 0) != NULL));
 	return TCL_OK;
 
     case ENS_CONFIG:
@@ -4969,7 +5049,8 @@ NsEnsembleImplementationCmd(clientData, interp, objc, objv)
     tempObjv = (Tcl_Obj **) ckalloc(sizeof(Tcl_Obj *)*(objc-2+prefixObjc));
     memcpy(tempObjv,            prefixObjv, sizeof(Tcl_Obj *) * prefixObjc);
     memcpy(tempObjv+prefixObjc, objv+2,     sizeof(Tcl_Obj *) * (objc-2));
-    result = Tcl_EvalObjv(interp, objc-2+prefixObjc, tempObjv, 0);
+    result = Tcl_EvalObjv(interp, objc-2+prefixObjc, tempObjv,
+	    TCL_EVAL_INVOKE);
     Tcl_DecrRefCount(prefixObj);
     ckfree((char *)tempObjv);
     return result;
@@ -5078,26 +5159,24 @@ NsEnsembleImplementationCmd(clientData, interp, objc, objv)
 
     Tcl_ResetResult(interp);
     if (ensemblePtr->subcommandTable.numEntries == 0) {
-	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		"unknown subcommand \"", TclGetString(objv[1]),
+	Tcl_AppendResult(interp, "unknown subcommand \"", TclGetString(objv[1]),
 		"\": namespace ", ensemblePtr->nsPtr->fullName,
 		" does not export any commands", NULL);
 	return TCL_ERROR;
     }
-    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "unknown ",
+    Tcl_AppendResult(interp, "unknown ",
 	    (ensemblePtr->flags & ENS_PREFIX ? "or ambiguous " : ""),
 	    "subcommand \"", TclGetString(objv[1]), "\": must be ", NULL);
     if (ensemblePtr->subcommandTable.numEntries == 1) {
-	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		ensemblePtr->subcommandArrayPtr[0], NULL);
+	Tcl_AppendResult(interp, ensemblePtr->subcommandArrayPtr[0], NULL);
     } else {
 	int i;
 	for (i=0 ; i<ensemblePtr->subcommandTable.numEntries-1 ; i++) {
-	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
+	    Tcl_AppendResult(interp,
 		    ensemblePtr->subcommandArrayPtr[i], ", ", NULL);
 	}
-	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		"or ", ensemblePtr->subcommandArrayPtr[i], NULL);
+	Tcl_AppendResult(interp, "or ",
+		ensemblePtr->subcommandArrayPtr[i], NULL);
     }
     return TCL_ERROR;
 }

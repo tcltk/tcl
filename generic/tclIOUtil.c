@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.81.2.12 2004/09/30 00:51:40 dgp Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.81.2.13 2004/10/28 18:46:37 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -30,15 +30,16 @@
  * Prototypes for procedures defined later in this file.
  */
 
-static FilesystemRecord*   FsGetFirstFilesystem _ANSI_ARGS_((void));
-static void                FsThrExitProc _ANSI_ARGS_((ClientData cd));
-static Tcl_Obj*            FsListMounts _ANSI_ARGS_((Tcl_Obj *pathPtr, 
-					   CONST char *pattern));
-static Tcl_Obj*            FsAddMountsToGlobResult  _ANSI_ARGS_((Tcl_Obj *result, 
-	                                   Tcl_Obj *pathPtr, CONST char *pattern, 
-					   Tcl_GlobTypeData *types));
-static void                FsUpdateCwd _ANSI_ARGS_((Tcl_Obj *cwdObj, 
-					   ClientData clientData));
+static FilesystemRecord *	FsGetFirstFilesystem _ANSI_ARGS_((void));
+static void			FsThrExitProc _ANSI_ARGS_((ClientData cd));
+static Tcl_Obj*			FsListMounts _ANSI_ARGS_((Tcl_Obj *pathPtr, 
+				    CONST char *pattern));
+static void			FsAddMountsToGlobResult _ANSI_ARGS_((
+				    Tcl_Obj *resultPtr, Tcl_Obj *pathPtr,
+				    CONST char *pattern, 
+				    Tcl_GlobTypeData *types));
+static void			FsUpdateCwd _ANSI_ARGS_((Tcl_Obj *cwdObj, 
+				    ClientData clientData));
 
 #ifdef TCL_THREADS
 static void FsRecacheFilesystemList(void);
@@ -295,7 +296,6 @@ TCL_DECLARE_MUTEX(obsoleteFsHookMutex)
  */
 static Tcl_FSFilesystemSeparatorProc NativeFilesystemSeparator;
 static Tcl_FSFreeInternalRepProc NativeFreeInternalRep;
-static Tcl_FSCreateInternalRepProc NativeCreateNativeRep;
 static Tcl_FSFileAttrStringsProc NativeFileAttrStrings;
 static Tcl_FSFileAttrsGetProc NativeFileAttrsGet;
 static Tcl_FSFileAttrsSetProc NativeFileAttrsSet;
@@ -343,7 +343,7 @@ Tcl_Filesystem tclNativeFilesystem = {
     &TclNativeDupInternalRep,
     &NativeFreeInternalRep,
     &TclpNativeToNormalized,
-    &NativeCreateNativeRep,
+    &TclNativeCreateNativeRep,
     &TclpObjNormalizePath,
     &TclpFilesystemPathType,
     &NativeFilesystemSeparator,
@@ -463,6 +463,18 @@ FsThrExitProc(cd)
 	    ckfree((char *)fsRecPtr);
 	}
 	fsRecPtr = tmpFsRecPtr;
+    }
+}
+
+int
+TclFSCwdIsNative() 
+{
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&tclFsDataKey);
+
+    if (tsdPtr->cwdClientData != NULL) {
+	return 1;
+    } else {
+	return 0;
     }
 }
 
@@ -1003,9 +1015,9 @@ Tcl_FSUnregister(fsPtr)
  */
 
 int
-Tcl_FSMatchInDirectory(interp, result, pathPtr, pattern, types)
+Tcl_FSMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
     Tcl_Interp *interp;		/* Interpreter to receive error messages. */
-    Tcl_Obj *result;		/* List object to receive results. */
+    Tcl_Obj *resultPtr;		/* List object to receive results. */
     Tcl_Obj *pathPtr;	        /* Contains path to directory to search. */
     CONST char *pattern;	/* Pattern to match against. */
     Tcl_GlobTypeData *types;	/* Object containing list of acceptable types.
@@ -1013,7 +1025,9 @@ Tcl_FSMatchInDirectory(interp, result, pathPtr, pattern, types)
 				 * flag is very important. */
 {
     Tcl_Filesystem *fsPtr;
-    
+    Tcl_Obj *cwd, *tmpResultPtr, **elemsPtr;
+    int resLength, i, ret = -1;
+
     if (types != NULL && types->type & TCL_GLOB_TYPE_MOUNT) {
 	/* 
 	 * We don't currently allow querying of mounts by external code
@@ -1030,83 +1044,74 @@ Tcl_FSMatchInDirectory(interp, result, pathPtr, pattern, types)
 	fsPtr = NULL;
     }
     
+    /*
+     * Check if we've successfully mapped the path to a filesystem
+     * within which to search.
+     */
+
     if (fsPtr != NULL) {
-	Tcl_FSMatchInDirectoryProc *proc = fsPtr->matchInDirectoryProc;
-	if (proc != NULL) {
-	    int ret = (*proc)(interp, result, pathPtr, pattern, types);
-	    if (ret == TCL_OK && pattern != NULL) {
-		result = FsAddMountsToGlobResult(result, pathPtr, 
-						 pattern, types);
-	    }
-	    return ret;
+	if (fsPtr->matchInDirectoryProc == NULL) {
+	    Tcl_SetErrno(ENOENT);
+	    return -1;
 	}
-    } else {
-	Tcl_Obj* cwd;
-	int ret = -1;
-	if (pathPtr != NULL) {
-	    int len;
-	    Tcl_GetStringFromObj(pathPtr,&len);
-	    if (len != 0) {
-		/* 
-		 * We have no idea how to match files in a directory
-		 * which belongs to no known filesystem
-		 */
-		Tcl_SetErrno(ENOENT);
-		return -1;
-	    }
+	ret = (*fsPtr->matchInDirectoryProc)(interp, resultPtr, pathPtr,
+		pattern, types);
+	if (ret == TCL_OK && pattern != NULL) {
+	    FsAddMountsToGlobResult(resultPtr, pathPtr, pattern, types);
 	}
-	/* 
-	 * We have an empty or NULL path.  This is defined to mean we
-	 * must search for files within the current 'cwd'.  We
-	 * therefore use that, but then since the proc we call will
-	 * return results which include the cwd we must then trim it
-	 * off the front of each path in the result.  We choose to deal
-	 * with this here (in the generic code), since if we don't,
-	 * every single filesystem's implementation of
-	 * Tcl_FSMatchInDirectory will have to deal with it for us.
-	 */
-	cwd = Tcl_FSGetCwd(NULL);
-	if (cwd == NULL) {
-	    if (interp != NULL) {
-		Tcl_SetResult(interp, "glob couldn't determine "
-			  "the current working directory", TCL_STATIC);
-	    }
-	    return TCL_ERROR;
-	}
-	fsPtr = Tcl_FSGetFileSystemForPath(cwd);
-	if (fsPtr != NULL) {
-	    Tcl_FSMatchInDirectoryProc *proc = fsPtr->matchInDirectoryProc;
-	    if (proc != NULL) {
-		Tcl_Obj* tmpResultPtr = Tcl_NewListObj(0, NULL);
-		Tcl_IncrRefCount(tmpResultPtr);
-		ret = (*proc)(interp, tmpResultPtr, cwd, pattern, types);
-		if (ret == TCL_OK) {
-		    int resLength;
-
-		    tmpResultPtr = FsAddMountsToGlobResult(tmpResultPtr, cwd,
-							   pattern, types);
-
-		    ret = Tcl_ListObjLength(interp, tmpResultPtr, &resLength);
-		    if (ret == TCL_OK) {
-			int i;
-
-			for (i = 0; i < resLength; i++) {
-			    Tcl_Obj *elt;
-			    
-			    Tcl_ListObjIndex(interp, tmpResultPtr, i, &elt);
-			    Tcl_ListObjAppendElement(interp, result, 
-				TclFSMakePathRelative(interp, elt, cwd));
-			}
-		    }
-		}
-		Tcl_DecrRefCount(tmpResultPtr);
-	    }
-	}
-	Tcl_DecrRefCount(cwd);
 	return ret;
     }
-    Tcl_SetErrno(ENOENT);
-    return -1;
+
+    /* 
+     * If the path isn't empty, we have no idea how to match files in
+     * a directory which belongs to no known filesystem
+     */
+
+    if (pathPtr != NULL && TclGetString(pathPtr)[0] != '\0') {
+	Tcl_SetErrno(ENOENT);
+	return -1;
+    }
+
+    /* 
+     * We have an empty or NULL path.  This is defined to mean we
+     * must search for files within the current 'cwd'.  We
+     * therefore use that, but then since the proc we call will
+     * return results which include the cwd we must then trim it
+     * off the front of each path in the result.  We choose to deal
+     * with this here (in the generic code), since if we don't,
+     * every single filesystem's implementation of
+     * Tcl_FSMatchInDirectory will have to deal with it for us.
+     */
+
+    cwd = Tcl_FSGetCwd(NULL);
+    if (cwd == NULL) {
+	if (interp != NULL) {
+	    Tcl_SetResult(interp, "glob couldn't determine "
+		    "the current working directory", TCL_STATIC);
+	}
+	return TCL_ERROR;
+    }
+
+    fsPtr = Tcl_FSGetFileSystemForPath(cwd);
+    if (fsPtr != NULL && fsPtr->matchInDirectoryProc != NULL) {
+	TclNewObj(tmpResultPtr);
+	Tcl_IncrRefCount(tmpResultPtr);
+	ret = (*fsPtr->matchInDirectoryProc)(interp, tmpResultPtr, cwd,
+		pattern, types);
+	if (ret == TCL_OK) {
+	    FsAddMountsToGlobResult(tmpResultPtr, cwd, pattern, types);
+	    /* Note that we know resultPtr and tmpResultPtr are distinct */
+	    ret = Tcl_ListObjGetElements(interp, tmpResultPtr,
+		    &resLength, &elemsPtr);
+	    for (i = 0; ret == TCL_OK && i < resLength; i++) {
+		ret = Tcl_ListObjAppendElement(interp, resultPtr,
+			TclFSMakePathRelative(interp, elemsPtr[i], cwd));
+	    }
+	}
+	TclDecrRefCount(tmpResultPtr);
+    }
+    Tcl_DecrRefCount(cwd);
+    return ret;
 }
 
 /*
@@ -1120,20 +1125,20 @@ Tcl_FSMatchInDirectory(interp, result, pathPtr, pattern, types)
  *	'glob *' merge mounts and listings correctly.
  *	
  * Results: 
- *	
- *	The passed in 'result' may be modified (in place, if
- *	necessary), and the correct list is returned.
+ *	None.
  *
  * Side effects:
- *	None.
+ *	Modifies the resultPtr.
  *
  *---------------------------------------------------------------------- 
  */
-static Tcl_Obj*
-FsAddMountsToGlobResult(result, pathPtr, pattern, types)
-    Tcl_Obj *result;            /* The current list of matching paths */
-    Tcl_Obj *pathPtr;           /* The directory in question */
-    CONST char *pattern;        /* Pattern to match against. */
+
+static void
+FsAddMountsToGlobResult(resultPtr, pathPtr, pattern, types)
+    Tcl_Obj *resultPtr;		/* The current list of matching paths; must
+				 * not be shared! */
+    Tcl_Obj *pathPtr;		/* The directory in question */
+    CONST char *pattern;	/* Pattern to match against. */
     Tcl_GlobTypeData *types;	/* Object containing list of acceptable types.
 				 * May be NULL. In particular the directory
 				 * flag is very important. */
@@ -1142,12 +1147,14 @@ FsAddMountsToGlobResult(result, pathPtr, pattern, types)
     int dir = (types == NULL || (types->type & TCL_GLOB_TYPE_DIR));
     Tcl_Obj *mounts = FsListMounts(pathPtr, pattern);
 
-    if (mounts == NULL) return result; 
+    if (mounts == NULL) {
+	return;
+    }
 
     if (Tcl_ListObjLength(NULL, mounts, &mLength) != TCL_OK || mLength == 0) {
 	goto endOfMounts;
     }
-    if (Tcl_ListObjLength(NULL, result, &gLength) != TCL_OK) {
+    if (Tcl_ListObjLength(NULL, resultPtr, &gLength) != TCL_OK) {
 	goto endOfMounts;
     }
     for (i = 0; i < mLength; i++) {
@@ -1159,18 +1166,13 @@ FsAddMountsToGlobResult(result, pathPtr, pattern, types)
 
 	for (j = 0; j < gLength; j++) {
 	    Tcl_Obj *gElt;
-	    Tcl_ListObjIndex(NULL, result, j, &gElt);
+
+	    Tcl_ListObjIndex(NULL, resultPtr, j, &gElt);
 	    if (Tcl_FSEqualPaths(mElt, gElt)) {
 		found = 1;
 		if (!dir) {
 		    /* We don't want to list this */
-		    if (Tcl_IsShared(result)) {
-			Tcl_Obj *newList;
-			newList = Tcl_DuplicateObj(result);
-			Tcl_DecrRefCount(result);
-			result = newList;
-		    }
-		    Tcl_ListObjReplace(NULL, result, j, 1, 0, NULL);
+		    Tcl_ListObjReplace(NULL, resultPtr, j, 1, 0, NULL);
 		    gLength--;
 		}
 		/* Break out of for loop */
@@ -1181,12 +1183,7 @@ FsAddMountsToGlobResult(result, pathPtr, pattern, types)
             int len, mlen;
             CONST char *path;
             CONST char *mount;
-	    if (Tcl_IsShared(result)) {
-		Tcl_Obj *newList;
-		newList = Tcl_DuplicateObj(result);
-		Tcl_DecrRefCount(result);
-		result = newList;
-	    }
+
             /* 
              * We know mElt is absolute normalized and lies inside pathPtr, 
              * so now we must add to the result the right
@@ -1201,7 +1198,7 @@ FsAddMountsToGlobResult(result, pathPtr, pattern, types)
                 len--;
             }
             mElt = TclNewFSPathObj(pathPtr, mount + len + 1, mlen - len);
-            Tcl_ListObjAppendElement(NULL, result, mElt);
+            Tcl_ListObjAppendElement(NULL, resultPtr, mElt);
 	    /* 
 	     * No need to increment gLength, since we
 	     * don't want to compare mounts against
@@ -1209,9 +1206,9 @@ FsAddMountsToGlobResult(result, pathPtr, pattern, types)
 	     */
 	}
     }
+
   endOfMounts:
     Tcl_DecrRefCount(mounts);
-    return result;
 }
 
 /*
@@ -1787,23 +1784,23 @@ Tcl_SetErrno(err)
  *
  *	This procedure is typically called after UNIX kernel calls
  *	return errors.  It stores machine-readable information about
- *	the error in $errorCode returns an information string for
- *	the caller's use.
+ *	the error in errorCode field of interp and returns an
+ *	information string for the caller's use.
  *
  * Results:
  *	The return value is a human-readable string describing the
  *	error.
  *
  * Side effects:
- *	The global variable $errorCode is reset.
+ *	The errorCode field of the interp is set.
  *
  *----------------------------------------------------------------------
  */
 
 CONST char *
 Tcl_PosixError(interp)
-    Tcl_Interp *interp;		/* Interpreter whose $errorCode variable
-				 * is to be changed. */
+    Tcl_Interp *interp;		/* Interpreter whose errorCode field 
+				 * is to be set. */
 {
     CONST char *id, *msg;
 
@@ -4137,179 +4134,6 @@ Tcl_FSGetNativePath(pathPtr)
     Tcl_Obj *pathPtr;
 {
     return (CONST char *)Tcl_FSGetInternalRep(pathPtr, &tclNativeFilesystem);
-}
-
-/*
- *---------------------------------------------------------------------------
- *
- * NativeCreateNativeRep --
- *
- *      Create a native representation for the given path.
- *
- * Results:
- *      None.
- *
- * Side effects:
- *	None.
- *
- *---------------------------------------------------------------------------
- */
-static ClientData 
-NativeCreateNativeRep(pathPtr)
-    Tcl_Obj* pathPtr;
-{
-    char *nativePathPtr;
-    Tcl_DString ds;
-    Tcl_Obj* validPathPtr;
-    int len;
-    char *str;
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&tclFsDataKey);
-
-    if (tsdPtr->cwdClientData != NULL) {
-        /* The cwd is native */
-	validPathPtr = Tcl_FSGetTranslatedPath(NULL, pathPtr);
-    } else {
-	/* Make sure the normalized path is set */
-	validPathPtr = Tcl_FSGetNormalizedPath(NULL, pathPtr);
-	Tcl_IncrRefCount(validPathPtr);
-    }
-
-    str = Tcl_GetStringFromObj(validPathPtr, &len);
-#ifdef __WIN32__
-    Tcl_WinUtfToTChar(str, len, &ds);
-    if (tclWinProcs->useWide) {
-	len = Tcl_DStringLength(&ds) + sizeof(WCHAR);
-    } else {
-	len = Tcl_DStringLength(&ds) + sizeof(char);
-    }
-#else
-    Tcl_UtfToExternalDString(NULL, str, len, &ds);
-    len = Tcl_DStringLength(&ds) + sizeof(char);
-#endif
-    Tcl_DecrRefCount(validPathPtr);
-    nativePathPtr = ckalloc((unsigned) len);
-    memcpy((VOID*)nativePathPtr, (VOID*)Tcl_DStringValue(&ds), (size_t) len);
-	  
-    Tcl_DStringFree(&ds);
-    return (ClientData)nativePathPtr;
-}
-
-/*
- *---------------------------------------------------------------------------
- *
- * TclpNativeToNormalized --
- *
- *      Convert native format to a normalized path object, with refCount
- *      of zero.
- *      
- *      Currently assumes all native paths are actually normalized
- *      already, so if the path given is not normalized this will
- *      actually just convert to a valid string path, but not
- *      necessarily a normalized one.
- *
- * Results:
- *      A valid normalized path.
- *
- * Side effects:
- *	None.
- *
- *---------------------------------------------------------------------------
- */
-Tcl_Obj* 
-TclpNativeToNormalized(clientData)
-    ClientData clientData;
-{
-    Tcl_DString ds;
-    Tcl_Obj *objPtr;
-    int len;
-    
-#ifdef __WIN32__
-    char *copy;
-    char *p;
-    Tcl_WinTCharToUtf((CONST char*)clientData, -1, &ds);
-#else
-    CONST char *copy;
-    Tcl_ExternalToUtfDString(NULL, (CONST char*)clientData, -1, &ds);
-#endif
-    
-    copy = Tcl_DStringValue(&ds);
-    len = Tcl_DStringLength(&ds);
-
-#ifdef __WIN32__
-    /* 
-     * Certain native path representations on Windows have this special
-     * prefix to indicate that they are to be treated specially.  For
-     * example extremely long paths, or symlinks 
-     */
-    if (*copy == '\\') {
-        if (0 == strncmp(copy,"\\??\\",4)) {
-	    copy += 4;
-	    len -= 4;
-	} else if (0 == strncmp(copy,"\\\\?\\",4)) {
-	    copy += 4;
-	    len -= 4;
-	}
-    }
-    /* 
-     * Ensure we are using forward slashes only.
-     */
-    for (p = copy; *p != '\0'; p++) {
-	if (*p == '\\') {
-	    *p = '/';
-	}
-    }
-#endif
-
-    objPtr = Tcl_NewStringObj(copy,len);
-    Tcl_DStringFree(&ds);
-    
-    return objPtr;
-}
-
-
-/*
- *---------------------------------------------------------------------------
- *
- * TclNativeDupInternalRep --
- *
- *      Duplicate the native representation.
- *
- * Results:
- *      The copied native representation, or NULL if it is not possible
- *      to copy the representation.
- *
- * Side effects:
- *	None.
- *
- *---------------------------------------------------------------------------
- */
-ClientData 
-TclNativeDupInternalRep(clientData)
-    ClientData clientData;
-{
-    char *copy;
-    size_t len;
-
-    if (clientData == NULL) {
-	return NULL;
-    }
-
-#ifdef __WIN32__
-    if (tclWinProcs->useWide) {
-	/* unicode representation when running on NT/2K/XP */
-	len = sizeof(WCHAR) + (wcslen((CONST WCHAR*)clientData) * sizeof(WCHAR));
-    } else {
-	/* ansi representation when running on 95/98/ME */
-	len = sizeof(char) + (strlen((CONST char*)clientData) * sizeof(char));
-    }
-#else
-    /* ansi representation when running on Unix */
-    len = sizeof(char) + (strlen((CONST char*)clientData) * sizeof(char));
-#endif
-    
-    copy = (char *) ckalloc(len);
-    memcpy((VOID*)copy, (VOID*)clientData, len);
-    return (ClientData)copy;
 }
 
 /*

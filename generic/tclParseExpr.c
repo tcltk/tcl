@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParseExpr.c,v 1.17.4.6 2004/09/30 00:51:44 dgp Exp $
+ * RCS: @(#) $Id: tclParseExpr.c,v 1.17.4.7 2004/10/28 18:47:00 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -136,6 +136,13 @@ typedef struct ParseInfo {
 #define EXPON		36
 
 /*
+ * List containment operators
+ */
+
+#define IN_LIST		37
+#define NOT_IN_LIST	38
+
+/*
  * Mapping from lexemes to strings; used for debugging messages. These
  * entries must match the order and number of the lexeme definitions above.
  */
@@ -146,7 +153,7 @@ static char *lexemeStrings[] = {
     "*", "/", "%", "+", "-",
     "<<", ">>", "<", ">", "<=", ">=", "==", "!=",
     "&", "^", "|", "&&", "||", "?", ":",
-    "!", "~", "eq", "ne", "**"
+    "!", "~", "eq", "ne", "**", "in", "ni"
 };
 
 /*
@@ -768,8 +775,8 @@ ParseEqualityExpr(infoPtr)
     }
 
     lexeme = infoPtr->lexeme;
-    while ((lexeme == EQUAL) || (lexeme == NEQ)
-	    || (lexeme == STREQ) || (lexeme == STRNEQ)) {
+    while (lexeme == EQUAL || lexeme == NEQ || lexeme == NOT_IN_LIST ||
+	    lexeme == IN_LIST || lexeme == STREQ || lexeme == STRNEQ) {
 	operator = infoPtr->start;
 	code = GetLexeme(infoPtr); /* skip over ==, !=, 'eq' or 'ne'  */
 	if (code != TCL_OK) {
@@ -1900,7 +1907,8 @@ GetLexeme(infoPtr)
 	    return TCL_OK;
 
 	case 'e':
-	    if ((src[1] == 'q') && ((infoPtr->lastChar - src) > 1)) {
+	    if ((src[1] == 'q') && ((infoPtr->lastChar - src) > 1) &&
+		    (infoPtr->lastChar-src==2 || !isalpha(UCHAR(src[2])))) {
 		infoPtr->lexeme = STREQ;
 		infoPtr->size = 2;
 		infoPtr->next = src+2;
@@ -1911,8 +1919,28 @@ GetLexeme(infoPtr)
 	    }
 
 	case 'n':
-	    if ((src[1] == 'e') && ((infoPtr->lastChar - src) > 1)) {
+	    if ((src[1] == 'e') && ((infoPtr->lastChar - src) > 1) &&
+		    (infoPtr->lastChar-src==2 || !isalpha(UCHAR(src[2])))) {
 		infoPtr->lexeme = STRNEQ;
+		infoPtr->size = 2;
+		infoPtr->next = src+2;
+		parsePtr->term = infoPtr->next;
+		return TCL_OK;
+	    } else if ((src[1] == 'i') && ((infoPtr->lastChar - src) > 1) &&
+		    (infoPtr->lastChar-src==2 || !isalpha(UCHAR(src[2])))) {
+		infoPtr->lexeme = NOT_IN_LIST;
+		infoPtr->size = 2;
+		infoPtr->next = src+2;
+		parsePtr->term = infoPtr->next;
+		return TCL_OK;
+	    } else {
+		goto checkFuncName;
+	    }
+
+	case 'i':
+	    if ((src[1] == 'n') && ((infoPtr->lastChar - src) > 1) &&
+		    (infoPtr->lastChar-src==2 || !isalpha(UCHAR(src[2])))) {
+		infoPtr->lexeme = IN_LIST;
 		infoPtr->size = 2;
 		infoPtr->next = src+2;
 		parsePtr->term = infoPtr->next;

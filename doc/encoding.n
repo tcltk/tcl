@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: encoding.n,v 1.3.20.1 2003/06/27 15:10:10 dgp Exp $
+'\" RCS: @(#) $Id: encoding.n,v 1.3.20.2 2004/10/28 18:46:13 dgp Exp $
 '\" 
 .so man.macros
 .TH encoding n "8.1" Tcl "Tcl Built-In Commands"
@@ -21,13 +21,12 @@ Strings in Tcl are encoded using 16-bit Unicode characters.  Different
 operating system interfaces or applications may generate strings in
 other encodings such as Shift-JIS.  The \fBencoding\fR command helps
 to bridge the gap between Unicode and these other formats.
-
 .SH DESCRIPTION
 .PP
 Performs one of several encoding related operations, depending on
 \fIoption\fR.  The legal \fIoption\fRs are:
 .TP
-\fBencoding convertfrom ?\fIencoding\fR? \fIdata\fR
+\fBencoding convertfrom\fR ?\fIencoding\fR? \fIdata\fR
 Convert \fIdata\fR to Unicode from the specified \fIencoding\fR.  The
 characters in \fIdata\fR are treated as binary data where the lower
 8-bits of each character is taken as a single byte.  The resulting
@@ -35,7 +34,7 @@ sequence of bytes is treated as a string in the specified
 \fIencoding\fR.  If \fIencoding\fR is not specified, the current
 system encoding is used.
 .TP
-\fBencoding convertto ?\fIencoding\fR? \fIstring\fR
+\fBencoding convertto\fR ?\fIencoding\fR? \fIstring\fR
 Convert \fIstring\fR from Unicode to the specified \fIencoding\fR.
 The result is a sequence of bytes that represents the converted
 string.  Each byte is stored in the lower 8-bits of a Unicode
@@ -50,7 +49,6 @@ currently available.
 Set the system encoding to \fIencoding\fR. If \fIencoding\fR is
 omitted then the command returns the current system encoding.  The
 system encoding is used whenever Tcl passes strings to system calls.
-
 .SH EXAMPLE
 .PP
 It is common practice to write script files using a text editor that
@@ -71,7 +69,7 @@ of the original string.  The \fBencoding\fR command can be used to
 convert this string to the expected Japanese Unicode characters.  For
 example,
 .CS
-	set s [encoding convertfrom euc-jp "\\xA4\\xCF"]
+set s [\fBencoding convertfrom\fR euc-jp "\\xA4\\xCF"]
 .CE
 would return the Unicode string "\\u306F", which is the Hiragana
 letter HA.

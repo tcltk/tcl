@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: UpVar.3,v 1.7.4.1 2004/09/21 23:10:25 dgp Exp $
+'\" RCS: @(#) $Id: UpVar.3,v 1.7.4.2 2004/10/28 18:46:12 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_UpVar 3 7.4 Tcl "Tcl Library Procedures"
@@ -22,18 +22,18 @@ int
 int
 \fBTcl_UpVar2(\fIinterp, frameName, name1, name2, destName, flags\fB)\fR
 .SH ARGUMENTS
-.AS Tcl_VarTraceProc prevClientData
+.AS "const char" *sourceName
 .AP Tcl_Interp *interp in
 Interpreter containing variables;  also used for error reporting.
-.AP "CONST char" *frameName in
+.AP "const char" *frameName in
 Identifies the stack frame containing source variable.
 May have any of the forms accepted by
 the \fBupvar\fR command, such as \fB#0\fR or \fB1\fR.
-.AP "CONST char" *sourceName in
+.AP "const char" *sourceName in
 Name of source variable, in the frame given by \fIframeName\fR.
 May refer to a scalar variable or to an array variable with a
 parenthesized index.
-.AP "CONST char" *destName in
+.AP "const char" *destName in
 Name of destination variable, which is to be linked to source
 variable so that references to \fIdestName\fR
 refer to the other variable.  Must not currently exist except as
@@ -42,10 +42,10 @@ an upvar-ed variable.
 Either \fBTCL_GLOBAL_ONLY\fR or 0;  if non-zero, then \fIdestName\fR is
 a global variable;  otherwise it is a local to the current procedure
 (or global if no procedure is active).
-.AP "CONST char" *name1 in
+.AP "const char" *name1 in
 First part of source variable's name (scalar name, or name of array
 without array index).
-.AP "CONST char" *name2 in
+.AP "const char" *name2 in
 If source variable is an element of an array, gives the index of the element.
 For scalar source variables, is NULL.
 .BE

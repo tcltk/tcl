@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: format.n,v 1.7.4.2 2004/09/08 23:02:34 dgp Exp $
+'\" RCS: @(#) $Id: format.n,v 1.7.4.3 2004/10/28 18:46:14 dgp Exp $
 '\" 
 .so man.macros
 .TH format n 8.1 Tcl "Tcl Built-In Commands"
@@ -219,33 +219,29 @@ are ignored on all other conversions.
 .SH EXAMPLES
 Convert the output of \fBtime\fR into seconds to an accuracy of
 hundredths of a second:
-
 .CS
 set us [lindex [time $someTclCode] 0]
-puts [format "%.2f seconds to execute" [expr {$us / 1e6}]]
+puts [\fBformat\fR "%.2f seconds to execute" [expr {$us / 1e6}]]
 .CE
-
+.PP
 Create a packed X11 literal color specification:
-
 .CS
 # Each color-component should be in range (0..255)
-set color [format "#%02x%02x%02x" $r $g $b]
+set color [\fBformat\fR "#%02x%02x%02x" $r $g $b]
 .CE
-
+.PP
 Use XPG3 format codes to allow reordering of fields (a technique that
 is often used in localized message catalogs; see \fBmsgcat\fR) without
-reordering the data values passed to format:
-
+reordering the data values passed to \fBformat\fR:
 .CS
 set fmt1 "Today, %d shares in %s were bought at $%.2f each"
-puts [format $fmt1 123 "Global BigCorp" 19.37]
+puts [\fBformat\fR $fmt1 123 "Global BigCorp" 19.37]
 
 set fmt2 "Bought %2\\$s equity ($%3$.2f x %1\\$d) today"
-puts [format $fmt2 123 "Global BigCorp" 19.37]
+puts [\fBformat\fR $fmt2 123 "Global BigCorp" 19.37]
 .CE
-
+.PP
 Print a small table of powers of three:
-
 .CS
 # Set up the column widths
 set w1 5
@@ -254,13 +250,13 @@ set w2 10
 # Make a nice header (with separator) for the table first
 set sep +-[string repeat - $w1]-+-[string repeat - $w2]-+
 puts $sep
-puts [format "| %-*s | %-*s |" $w1 "Index" $w2 "Power"]
+puts [\fBformat\fR "| %-*s | %-*s |" $w1 "Index" $w2 "Power"]
 puts $sep
 
 # Print the contents of the table
 set p 1
 for {set i 0} {$i<=20} {incr i} {
-   puts [format "| %*d | %*ld |" $w1 $i $w2 $p]
+   puts [\fBformat\fR "| %*d | %*ld |" $w1 $i $w2 $p]
    set p [expr {wide($p) * 3}]
 }
 
@@ -269,7 +265,7 @@ puts $sep
 .CE
 
 .SH "SEE ALSO"
-sprintf(3), string(n)
+scan(n), sprintf(3), string(n)
 
 .SH KEYWORDS
 conversion specifier, format, sprintf, string, substitution

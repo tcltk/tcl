@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclHash.c,v 1.12.4.7 2004/09/08 23:02:41 dgp Exp $
+ * RCS: @(#) $Id: tclHash.c,v 1.12.4.8 2004/10/28 18:46:27 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -47,13 +47,11 @@
  */
 
 static Tcl_HashEntry *	AllocArrayEntry _ANSI_ARGS_((
-			    Tcl_HashTable *tablePtr,
-			    VOID *keyPtr));
+			    Tcl_HashTable *tablePtr, VOID *keyPtr));
 static int		CompareArrayKeys _ANSI_ARGS_((
 			    VOID *keyPtr, Tcl_HashEntry *hPtr));
 static unsigned int	HashArrayKey _ANSI_ARGS_((
-			    Tcl_HashTable *tablePtr,
-			    VOID *keyPtr));
+			    Tcl_HashTable *tablePtr, VOID *keyPtr));
 
 /*
  * Prototypes for the one word hash key methods.
@@ -61,13 +59,11 @@ static unsigned int	HashArrayKey _ANSI_ARGS_((
 
 #if 0
 static Tcl_HashEntry *	AllocOneWordEntry _ANSI_ARGS_((
-			    Tcl_HashTable *tablePtr,
-			    VOID *keyPtr));
+			    Tcl_HashTable *tablePtr, VOID *keyPtr));
 static int		CompareOneWordKeys _ANSI_ARGS_((
 			    VOID *keyPtr, Tcl_HashEntry *hPtr));
 static unsigned int	HashOneWordKey _ANSI_ARGS_((
-			    Tcl_HashTable *tablePtr,
-			    VOID *keyPtr));
+			    Tcl_HashTable *tablePtr, VOID *keyPtr));
 #endif
 
 /*
@@ -75,13 +71,11 @@ static unsigned int	HashOneWordKey _ANSI_ARGS_((
  */
 
 static Tcl_HashEntry *	AllocStringEntry _ANSI_ARGS_((
-			    Tcl_HashTable *tablePtr,
-			    VOID *keyPtr));
+			    Tcl_HashTable *tablePtr, VOID *keyPtr));
 static int		CompareStringKeys _ANSI_ARGS_((
 			    VOID *keyPtr, Tcl_HashEntry *hPtr));
 static unsigned int	HashStringKey _ANSI_ARGS_((
-			    Tcl_HashTable *tablePtr,
-			    VOID *keyPtr));
+			    Tcl_HashTable *tablePtr, VOID *keyPtr));
 
 /*
  * Procedure prototypes for static procedures in this file:
@@ -286,7 +280,7 @@ Tcl_FindHashEntry(tablePtr, key)
     } else if (tablePtr->keyType == TCL_ONE_WORD_KEYS) {
 	typePtr = &tclOneWordHashKeyType;
     } else if (tablePtr->keyType == TCL_CUSTOM_TYPE_KEYS
-	       || tablePtr->keyType == TCL_CUSTOM_PTR_KEYS) {
+	    || tablePtr->keyType == TCL_CUSTOM_PTR_KEYS) {
 	typePtr = tablePtr->typePtr;
     } else {
 	typePtr = &tclArrayHashKeyType;
@@ -384,7 +378,7 @@ Tcl_CreateHashEntry(tablePtr, key, newPtr)
     } else if (tablePtr->keyType == TCL_ONE_WORD_KEYS) {
 	typePtr = &tclOneWordHashKeyType;
     } else if (tablePtr->keyType == TCL_CUSTOM_TYPE_KEYS
-	       || tablePtr->keyType == TCL_CUSTOM_PTR_KEYS) {
+	    || tablePtr->keyType == TCL_CUSTOM_PTR_KEYS) {
 	typePtr = tablePtr->typePtr;
     } else {
 	typePtr = &tclArrayHashKeyType;
@@ -520,7 +514,7 @@ Tcl_DeleteHashEntry(entryPtr)
     } else if (tablePtr->keyType == TCL_ONE_WORD_KEYS) {
 	typePtr = &tclOneWordHashKeyType;
     } else if (tablePtr->keyType == TCL_CUSTOM_TYPE_KEYS
-	       || tablePtr->keyType == TCL_CUSTOM_PTR_KEYS) {
+	    || tablePtr->keyType == TCL_CUSTOM_PTR_KEYS) {
 	typePtr = tablePtr->typePtr;
     } else {
 	typePtr = &tclArrayHashKeyType;
@@ -531,7 +525,7 @@ Tcl_DeleteHashEntry(entryPtr)
     
 #if TCL_HASH_KEY_STORE_HASH
     if (typePtr->hashKeyProc == NULL
-	|| typePtr->flags & TCL_HASH_KEY_RANDOMIZE_HASH) {
+	    || typePtr->flags & TCL_HASH_KEY_RANDOMIZE_HASH) {
 	index = RANDOM_INDEX (tablePtr, entryPtr->hash);
     } else {
 	index = ((unsigned int) entryPtr->hash) & tablePtr->mask;
@@ -595,7 +589,7 @@ Tcl_DeleteHashTable(tablePtr)
     } else if (tablePtr->keyType == TCL_ONE_WORD_KEYS) {
 	typePtr = &tclOneWordHashKeyType;
     } else if (tablePtr->keyType == TCL_CUSTOM_TYPE_KEYS
-	       || tablePtr->keyType == TCL_CUSTOM_PTR_KEYS) {
+	    || tablePtr->keyType == TCL_CUSTOM_PTR_KEYS) {
 	typePtr = tablePtr->typePtr;
     } else {
 	typePtr = &tclArrayHashKeyType;
@@ -757,7 +751,7 @@ Tcl_HashStats(tablePtr)
     } else if (tablePtr->keyType == TCL_ONE_WORD_KEYS) {
 	typePtr = &tclOneWordHashKeyType;
     } else if (tablePtr->keyType == TCL_CUSTOM_TYPE_KEYS
-	       || tablePtr->keyType == TCL_CUSTOM_PTR_KEYS) {
+	    || tablePtr->keyType == TCL_CUSTOM_PTR_KEYS) {
 	typePtr = tablePtr->typePtr;
     } else {
 	typePtr = &tclArrayHashKeyType;
@@ -846,10 +840,11 @@ AllocArrayEntry(tablePtr, keyPtr)
     unsigned int size;
 
     count = tablePtr->keyType;
-    
+
     size = sizeof(Tcl_HashEntry) + (count*sizeof(int)) - sizeof(hPtr->key);
-    if (size < sizeof(Tcl_HashEntry))
+    if (size < sizeof(Tcl_HashEntry)) {
 	size = sizeof(Tcl_HashEntry);
+    }
     hPtr = (Tcl_HashEntry *) ckalloc(size);
     
     for (iPtr1 = array, iPtr2 = hPtr->key.words;
@@ -958,8 +953,9 @@ AllocStringEntry(tablePtr, keyPtr)
     unsigned int size;
 
     size = sizeof(Tcl_HashEntry) + strlen(string) + 1 - sizeof(hPtr->key);
-    if (size < sizeof(Tcl_HashEntry))
+    if (size < sizeof(Tcl_HashEntry)) {
 	size = sizeof(Tcl_HashEntry);
+    }
     hPtr = (Tcl_HashEntry *) ckalloc(size);
     strcpy(hPtr->key.string, string);
 
@@ -1154,7 +1150,7 @@ RebuildTable(tablePtr)
     } else if (tablePtr->keyType == TCL_ONE_WORD_KEYS) {
 	typePtr = &tclOneWordHashKeyType;
     } else if (tablePtr->keyType == TCL_CUSTOM_TYPE_KEYS
-	       || tablePtr->keyType == TCL_CUSTOM_PTR_KEYS) {
+	    || tablePtr->keyType == TCL_CUSTOM_PTR_KEYS) {
 	typePtr = tablePtr->typePtr;
     } else {
 	typePtr = &tclArrayHashKeyType;
@@ -1196,7 +1192,7 @@ RebuildTable(tablePtr)
 	    *oldChainPtr = hPtr->nextPtr;
 #if TCL_HASH_KEY_STORE_HASH
 	    if (typePtr->hashKeyProc == NULL
-		|| typePtr->flags & TCL_HASH_KEY_RANDOMIZE_HASH) {
+		    || typePtr->flags & TCL_HASH_KEY_RANDOMIZE_HASH) {
 		index = RANDOM_INDEX (tablePtr, hPtr->hash);
 	    } else {
 		index = ((unsigned int) hPtr->hash) & tablePtr->mask;

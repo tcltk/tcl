@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: switch.n,v 1.5.20.2 2004/05/04 17:44:16 dgp Exp $
+'\" RCS: @(#) $Id: switch.n,v 1.5.20.3 2004/10/28 18:46:15 dgp Exp $
 '\" 
 .so man.macros
 .TH switch n 7.0 Tcl "Tcl Built-In Commands"
@@ -109,31 +109,30 @@ several patterns.
 Beware of how you place comments in \fBswitch\fR commands.  Comments
 should only be placed \fBinside\fR the execution body of one of the
 patterns, and not intermingled with the patterns.
-
 .SH "EXAMPLES"
 The \fBswitch\fR command can match against variables and not just
 literals, as shown here (the result is \fI2\fR):
 .CS
 set foo "abc"
-switch abc a \- b {expr 1} $foo {expr 2} default {expr 3}
+\fBswitch\fR abc a \- b {expr 1} $foo {expr 2} default {expr 3}
 .CE
-
+.PP
 Using glob matching and the fall-through body is an alternative to
 writing regular expressions with alternations, as can be seen here
 (this returns \fI1\fR):
 .CS
-switch \-glob aaab {
+\fBswitch\fR \-glob aaab {
    a*b     \-
    b       {expr 1}
    a*      {expr 2}
    default {expr 3}
 }
 .CE
-
+.PP
 Whenever nothing matches, the \fBdefault\fR clause (which must be
 last) is taken.  This example has a result of \fI3\fR:
 .CS
-switch xyz {
+\fBswitch\fR xyz {
    a  \-
    b {
       # Correct Comment Placement
@@ -147,12 +146,12 @@ switch xyz {
    }
 }
 .CE
-
+.PP
 .VS 8.5
 When matching against regular expressions, information about what
 exactly matched is easily obtained using the \fB\-matchvar\fR option:
 .CS
-switch -regexp -matchvar foo -- $bar {
+\fBswitch\fR -regexp -matchvar foo -- $bar {
    a(b*)c {
       puts "Found [string length [lindex $foo 1]] 'b's"
    }

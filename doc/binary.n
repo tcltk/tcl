@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: binary.n,v 1.13.2.4 2004/09/08 23:02:34 dgp Exp $
+'\" RCS: @(#) $Id: binary.n,v 1.13.2.5 2004/10/28 18:46:12 dgp Exp $
 '\" 
 .so man.macros
 .TH binary n 8.0 Tcl "Tcl Built-In Commands"
@@ -745,21 +745,21 @@ universal.  To transfer floating-point numbers portably between all
 architectures, use their textual representation (as produced by
 \fBformat\fR) instead.
 .SH EXAMPLES
-This is a procedure write a Tcl string to a binary-encoded channel as
+This is a procedure to write a Tcl string to a binary-encoded channel as
 UTF-8 data preceded by a length word:
 .CS
 proc writeString {channel string} {
     set data [encoding convertto utf-8 $string]
-    puts -nonewline [binary format Ia* \e
+    puts -nonewline [\fBbinary format\fR Ia* \e
             [string length $data] $data]
 }
 .CE
-
+.PP
 This procedure reads a string from a channel that was written by the
 previously presented \fBwriteString\fR procedure:
 .CS
 proc readString {channel} {
-    if {![binary scan [read $channel 4] I length]} {
+    if {![\fBbinary scan\fR [read $channel 4] I length]} {
         error "missing length"
     }
     set data [read $channel $length]

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMain.c,v 1.20.4.6 2004/09/08 23:02:46 dgp Exp $
+ * RCS: @(#) $Id: tclMain.c,v 1.20.4.7 2004/10/28 18:46:57 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -435,16 +435,19 @@ Tcl_Main(argc, argv, appInitProc)
 	if (code != TCL_OK) {
 	    errChannel = Tcl_GetStdChannel(TCL_STDERR);
 	    if (errChannel) {
+		Tcl_Obj *options = TclGetReturnOptions(interp, code);
+		Tcl_Obj *keyPtr = Tcl_NewStringObj("-errorinfo", -1);
+		Tcl_Obj *valuePtr;
 
-		/*
-		 * The following statement guarantees that the errorInfo
-		 * variable is set properly.
-		 */
+		Tcl_IncrRefCount(keyPtr);
+		Tcl_DictObjGet(NULL, options, keyPtr, &valuePtr);
+		Tcl_DecrRefCount(keyPtr);
 
-		Tcl_AddErrorInfo(interp, "");
-		Tcl_WriteObj(errChannel, Tcl_GetVar2Ex(interp, "errorInfo",
-			NULL, TCL_GLOBAL_ONLY));
+		if (valuePtr) {
+		    Tcl_WriteObj(errChannel, valuePtr);
+		}
 		Tcl_WriteChars(errChannel, "\n", 1);
+		Tcl_DecrRefCount(options);
 	    }
 	    exitCode = 1;
 	}

@@ -15,7 +15,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: basic.test,v 1.27.2.6 2004/09/30 00:51:49 dgp Exp $
+# RCS: @(#) $Id: basic.test,v 1.27.2.7 2004/10/28 18:47:07 dgp Exp $
 #
 
 package require tcltest 2
@@ -888,7 +888,7 @@ test basic-48.23.$noComp {expansion: handle return codes} -constraints $constrai
 
 } ;# End of noComp loop
 
-test basic-49.1 {Tcl_EvalEx: verify TCL_EVAL_GLOBAL operation} {
+test basic-49.1 {Tcl_EvalEx: verify TCL_EVAL_GLOBAL operation} testevalex {
     set ::x global
     namespace eval ns {
 	variable x namespace
@@ -898,7 +898,7 @@ test basic-49.1 {Tcl_EvalEx: verify TCL_EVAL_GLOBAL operation} {
     namespace delete ns
     set ::result
 } {changed namespace}
-test basic-49.2 {Tcl_EvalEx: verify TCL_EVAL_GLOBAL operation} {
+test basic-49.2 {Tcl_EvalEx: verify TCL_EVAL_GLOBAL operation} testevalex {
     set ::x global
     namespace eval ns {
 	variable x namespace

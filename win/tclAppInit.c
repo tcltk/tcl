@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclAppInit.c,v 1.13.2.4 2004/09/21 23:10:30 dgp Exp $
+ * RCS: @(#) $Id: tclAppInit.c,v 1.13.2.5 2004/10/28 18:47:37 dgp Exp $
  */
 
 #include "tcl.h"
@@ -19,13 +19,10 @@
 #include <locale.h>
 
 #ifdef TCL_TEST
-extern int		Procbodytest_Init _ANSI_ARGS_((Tcl_Interp *interp));
-extern int		Procbodytest_SafeInit _ANSI_ARGS_((Tcl_Interp *interp));
-extern int		Tcltest_Init _ANSI_ARGS_((Tcl_Interp *interp));
-extern int		TclObjTest_Init _ANSI_ARGS_((Tcl_Interp *interp));
-#ifdef TCL_THREADS
-extern int		TclThread_Init _ANSI_ARGS_((Tcl_Interp *interp));
-#endif
+extern Tcl_PackageInitProc	Procbodytest_Init;
+extern Tcl_PackageInitProc	Procbodytest_SafeInit;
+extern Tcl_PackageInitProc	Tcltest_Init;
+extern Tcl_PackageInitProc	TclObjTest_Init;
 #endif /* TCL_TEST */
 
 #if defined(__GNUC__)
@@ -155,16 +152,10 @@ Tcl_AppInit(interp)
     if (Tcltest_Init(interp) == TCL_ERROR) {
 	return TCL_ERROR;
     }
-    Tcl_StaticPackage(interp, "Tcltest", Tcltest_Init,
-            (Tcl_PackageInitProc *) NULL);
+    Tcl_StaticPackage(interp, "Tcltest", Tcltest_Init, NULL);
     if (TclObjTest_Init(interp) == TCL_ERROR) {
 	return TCL_ERROR;
     }
-#ifdef TCL_THREADS
-    if (TclThread_Init(interp) == TCL_ERROR) {
-	return TCL_ERROR;
-    }
-#endif
     if (Procbodytest_Init(interp) == TCL_ERROR) {
 	return TCL_ERROR;
     }

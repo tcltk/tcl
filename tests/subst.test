@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: subst.test,v 1.14 2003/03/13 02:48:54 dgp Exp $
+# RCS: @(#) $Id: subst.test,v 1.14.2.1 2004/10/28 18:47:18 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -219,6 +219,45 @@ test subst-11.5 {continue in a subst, parse error} -body {
 test subst-11.6 {continue in a variable subst} {
     subst {foo $var([continue]) bar}
 } {foo  bar}
+
+test subst-12.1 {nasty case, Bug 1036649} {
+    for {set i 0} {$i < 10} {incr i} {
+	set res [list [catch {subst "\[subst {};"} msg] $msg]
+	if {$msg ne "missing close-bracket"} break
+    }
+    set res
+} {1 {missing close-bracket}}
+test subst-12.2 {nasty case, Bug 1036649} {
+    for {set i 0} {$i < 10} {incr i} {
+	set res [list [catch {subst "\[subst {}; "} msg] $msg]
+	if {$msg ne "missing close-bracket"} break
+    }
+    set res
+} {1 {missing close-bracket}}
+test subst-12.3 {nasty case, Bug 1036649} {
+    set x 0
+    for {set i 0} {$i < 10} {incr i} {
+	set res [list [catch {subst "\[incr x;"} msg] $msg]
+	if {$msg ne "missing close-bracket"} break
+    }
+    list $res $x
+} {{1 {missing close-bracket}} 10}
+test subst-12.4 {nasty case, Bug 1036649} {
+    set x 0
+    for {set i 0} {$i < 10} {incr i} {
+	set res [list [catch {subst "\[incr x; "} msg] $msg]
+	if {$msg ne "missing close-bracket"} break
+    }
+    list $res $x
+} {{1 {missing close-bracket}} 10}
+test subst-12.5 {nasty case, Bug 1036649} {
+    set x 0
+    for {set i 0} {$i < 10} {incr i} {
+	set res [list [catch {subst "\[incr x"} msg] $msg]
+	if {$msg ne "missing close-bracket"} break
+    }
+    list $res $x
+} {{1 {missing close-bracket}} 0}
 
 # cleanup
 ::tcltest::cleanupTests

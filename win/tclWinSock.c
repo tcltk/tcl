@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinSock.c,v 1.37.2.4 2004/05/17 18:42:25 dgp Exp $
+ * RCS: @(#) $Id: tclWinSock.c,v 1.37.2.5 2004/10/28 18:47:41 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -2193,7 +2193,9 @@ TcpGetOptionProc(instanceData, interp, optionName, dsPtr)
 	} else {
 	    Tcl_DStringAppendElement(dsPtr, "0");
 	}
-	if (len > 0) return TCL_OK;
+	if (len > 0) {
+	    return TCL_OK;
+	}
     }
 
     if (len == 0 || !strncmp(optionName, "-nagle", len)) {
@@ -2211,7 +2213,9 @@ TcpGetOptionProc(instanceData, interp, optionName, dsPtr)
 	} else {
 	    Tcl_DStringAppendElement(dsPtr, "1");
 	}
-	if (len > 0) return TCL_OK;
+	if (len > 0) {
+	    return TCL_OK;
+	}
     }
 */
 
@@ -2692,8 +2696,9 @@ TclpCutSockChannel(chan)
     SocketInfo **nextPtrPtr;
     int removed = 0;
 
-    if (Tcl_GetChannelType(chan) != &tcpChannelType)
+    if (Tcl_GetChannelType(chan) != &tcpChannelType) {
         return;
+    }
 
     /*
      * The initializtion of tsdPtr _after_ we have determined that we
@@ -2758,8 +2763,9 @@ TclpSpliceSockChannel(chan)
     ThreadSpecificData *tsdPtr;
     SocketInfo *infoPtr;
 
-    if (Tcl_GetChannelType(chan) != &tcpChannelType)
+    if (Tcl_GetChannelType(chan) != &tcpChannelType) {
         return;
+    }
 
     /*
      * Ensure that socket subsystem is initialized in this thread, or

@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: RecordEval.3,v 1.4.6.1 2004/09/21 23:10:25 dgp Exp $
+'\" RCS: @(#) $Id: RecordEval.3,v 1.4.6.2 2004/10/28 18:46:11 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_RecordAndEval 3 7.4 Tcl "Tcl Library Procedures"
@@ -19,10 +19,10 @@ Tcl_RecordAndEval \- save command on history list before evaluating
 int
 \fBTcl_RecordAndEval\fR(\fIinterp, cmd, flags\fR)
 .SH ARGUMENTS
-.AS Tcl_Interp *interp;
+.AS Tcl_Interp *interp
 .AP Tcl_Interp *interp in
 Tcl interpreter in which to evaluate command.
-.AP "CONST char" *cmd in
+.AP "const char" *cmd in
 Command (or sequence of commands) to execute.
 .AP int flags in
 An OR'ed combination of flag bits.  \fBTCL_NO_EVAL\fR means record the

@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: CallDel.3,v 1.2 1998/09/14 18:39:46 stanton Exp $
+'\" RCS: @(#) $Id: CallDel.3,v 1.2.42.1 2004/10/28 18:46:07 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_CallWhenDeleted 3 7.0 Tcl "Tcl Library Procedures"
@@ -40,8 +40,8 @@ time of the call.
 type \fBTcl_InterpDeleteProc\fR:
 .CS
 typedef void Tcl_InterpDeleteProc(
-	ClientData \fIclientData\fR,
-	Tcl_Interp *\fIinterp\fR);
+        ClientData \fIclientData\fR,
+        Tcl_Interp *\fIinterp\fR);
 .CE
 The \fIclientData\fR and \fIinterp\fR parameters are
 copies of the \fIclientData\fR and \fIinterp\fR arguments given

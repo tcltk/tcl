@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPipe.c,v 1.7.4.2 2004/09/08 23:02:48 dgp Exp $
+ * RCS: @(#) $Id: tclPipe.c,v 1.7.4.3 2004/10/28 18:47:00 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -322,10 +322,10 @@ TclCleanupChildren(interp, numPids, pidPtr, errorChan)
 	    char msg1[TCL_INTEGER_SPACE], msg2[TCL_INTEGER_SPACE];
 
 	    result = TCL_ERROR;
-	    TclFormatInt(msg1, (long) resolvedPid);
+	    sprintf(msg1, "%lu", resolvedPid);
 	    if (WIFEXITED(waitStatus)) {
                 if (interp != (Tcl_Interp *) NULL) {
-		    TclFormatInt(msg2, WEXITSTATUS(waitStatus));
+		    sprintf(msg2, "%hu", WEXITSTATUS(waitStatus));
                     Tcl_SetErrorCode(interp, "CHILDSTATUS", msg1, msg2,
                             (char *) NULL);
                 }

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEncoding.c,v 1.16.4.5 2004/09/08 23:02:39 dgp Exp $
+ * RCS: @(#) $Id: tclEncoding.c,v 1.16.4.6 2004/10/28 18:46:24 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -193,8 +193,8 @@ static Encoding *	GetTableEncoding _ANSI_ARGS_((
 			    EscapeEncodingData *dataPtr, int state));
 static Tcl_Encoding	LoadEncodingFile _ANSI_ARGS_((Tcl_Interp *interp,
 			    CONST char *name));
-static Tcl_Encoding	LoadTableEncoding _ANSI_ARGS_((Tcl_Interp *interp,
-			    CONST char *name, int type, Tcl_Channel chan));
+static Tcl_Encoding	LoadTableEncoding _ANSI_ARGS_((CONST char *name,
+			    int type, Tcl_Channel chan));
 static Tcl_Encoding	LoadEscapeEncoding _ANSI_ARGS_((CONST char *name, 
 			    Tcl_Channel chan));
 static Tcl_Channel	OpenEncodingFile _ANSI_ARGS_((CONST char *dir,
@@ -629,13 +629,7 @@ Tcl_GetEncodingNames(interp)
 	Tcl_DecrRefCount(encodingObj);
     }
 
-    /*
-     * Clear any values placed in the result by globbing.
-     */
-
-    Tcl_ResetResult(interp);
-    resultPtr = Tcl_GetObjResult(interp);
-
+    resultPtr = Tcl_NewObj();
     hPtr = Tcl_FirstHashEntry(&table, &search);
     while (hPtr != NULL) {
 	Tcl_Obj *strPtr;
@@ -645,6 +639,7 @@ Tcl_GetEncodingNames(interp)
 	hPtr = Tcl_NextHashEntry(&search);
     }
     Tcl_DeleteHashTable(&table);
+    Tcl_SetObjResult(interp, resultPtr);
 }
 
 /*
@@ -1245,18 +1240,15 @@ LoadEncodingFile(interp, name)
     encoding = NULL;
     switch (ch) {
 	case 'S': {
-	    encoding = LoadTableEncoding(interp, name, ENCODING_SINGLEBYTE,
-		    chan);
+	    encoding = LoadTableEncoding(name, ENCODING_SINGLEBYTE, chan);
 	    break;
 	}
 	case 'D': {
-	    encoding = LoadTableEncoding(interp, name, ENCODING_DOUBLEBYTE,
-		    chan);
+	    encoding = LoadTableEncoding(name, ENCODING_DOUBLEBYTE, chan);
 	    break;
 	}
 	case 'M': {
-	    encoding = LoadTableEncoding(interp, name, ENCODING_MULTIBYTE,
-		    chan);
+	    encoding = LoadTableEncoding(name, ENCODING_MULTIBYTE, chan);
 	    break;
 	}
 	case 'E': {
@@ -1348,8 +1340,7 @@ OpenEncodingFile(dir, name)
  */
 
 static Tcl_Encoding
-LoadTableEncoding(interp, name, type, chan)
-    Tcl_Interp *interp;		/* Interp for temporary obj while reading. */
+LoadTableEncoding(name, type, chan)
     CONST char *name;		/* Name for new encoding. */
     int type;			/* Type of encoding (ENCODING_?????). */
     Tcl_Channel chan;		/* File containing new encoding. */
@@ -1424,11 +1415,8 @@ LoadTableEncoding(interp, name, type, chan)
     memset(dataPtr->toUnicode, 0, size);
     pageMemPtr = (unsigned short *) (dataPtr->toUnicode + 256);
 
-    if (interp == NULL) {
-	objPtr = Tcl_NewObj();
-    } else {
-	objPtr = Tcl_GetObjResult(interp);
-    }
+    TclNewObj(objPtr);
+    Tcl_IncrRefCount(objPtr);
     for (i = 0; i < numPages; i++) {
 	int ch;
 	char *p;
@@ -1452,11 +1440,7 @@ LoadTableEncoding(interp, name, type, chan)
 	    p += 4;
 	}
     }
-    if (interp == NULL) {
-	Tcl_DecrRefCount(objPtr);
-    } else {
-	Tcl_ResetResult(interp);
-    }
+    TclDecrRefCount(objPtr);
 	
     if (type == ENCODING_DOUBLEBYTE) {
 	memset(dataPtr->prefixBytes, 1, sizeof(dataPtr->prefixBytes));

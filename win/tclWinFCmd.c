@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFCmd.c,v 1.35.4.4 2004/09/08 23:03:29 dgp Exp $
+ * RCS: @(#) $Id: tclWinFCmd.c,v 1.35.4.5 2004/10/28 18:47:38 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -202,7 +202,7 @@ DoRenameFile(
      */
 
     if (nativeSrc == NULL || nativeSrc[0] == '\0' ||
-        nativeDst == NULL || nativeDst[0] == '\0') {
+	    nativeDst == NULL || nativeDst[0] == '\0') {
 	Tcl_SetErrno(ENOENT);
 	return TCL_ERROR;
     }
@@ -261,12 +261,15 @@ DoRenameFile(
               "=m"(RESTORED_EBP),
               "=r"(RESTORED_HANDLER) );
 
-    if (INITIAL_ESP != RESTORED_ESP)
+    if (INITIAL_ESP != RESTORED_ESP) {
         Tcl_Panic("ESP restored incorrectly");
-    if (INITIAL_EBP != RESTORED_EBP)
+    }
+    if (INITIAL_EBP != RESTORED_EBP) {
         Tcl_Panic("EBP restored incorrectly");
-    if (INITIAL_HANDLER != RESTORED_HANDLER)
+    }
+    if (INITIAL_HANDLER != RESTORED_HANDLER) {
         Tcl_Panic("HANDLER restored incorrectly");
+    }
 # endif /* TCL_MEM_DEBUG */
 #else
     } __except (EXCEPTION_EXECUTE_HANDLER) {}
@@ -275,8 +278,9 @@ DoRenameFile(
     /*
      * Avoid using control flow statements in the SEH guarded block!
      */
-    if (retval != -1)
+    if (retval != -1) {
         return retval;
+    }
 
     TclWinConvertError(GetLastError());
 
@@ -332,8 +336,8 @@ DoRenameFile(
 	     * source path.  This is true if the prefix matches, and the next
 	     * character is either end-of-string or a directory separator
 	     */
-	    if ((strncmp(src, dst, (size_t) Tcl_DStringLength(&srcString)) == 0) 
-		&& (dst[Tcl_DStringLength(&srcString)] == '\\'
+	    if ((strncmp(src, dst, (size_t) Tcl_DStringLength(&srcString))==0) 
+		    && (dst[Tcl_DStringLength(&srcString)] == '\\'
 		    || dst[Tcl_DStringLength(&srcString)] == '/'
 		    || dst[Tcl_DStringLength(&srcString)] == '\0')) {
 		/*
@@ -581,7 +585,7 @@ DoCopyFile(
      */
 
     if (nativeSrc == NULL || nativeSrc[0] == '\0' ||
-        nativeDst == NULL || nativeDst[0] == '\0') {
+	    nativeDst == NULL || nativeDst[0] == '\0') {
 	Tcl_SetErrno(ENOENT);
 	return TCL_ERROR;
     }
@@ -640,12 +644,15 @@ DoCopyFile(
               "=m"(RESTORED_EBP),
               "=r"(RESTORED_HANDLER) );
 
-    if (INITIAL_ESP != RESTORED_ESP)
+    if (INITIAL_ESP != RESTORED_ESP) {
         Tcl_Panic("ESP restored incorrectly");
-    if (INITIAL_EBP != RESTORED_EBP)
+    }
+    if (INITIAL_EBP != RESTORED_EBP) {
         Tcl_Panic("EBP restored incorrectly");
-    if (INITIAL_HANDLER != RESTORED_HANDLER)
+    }
+    if (INITIAL_HANDLER != RESTORED_HANDLER) {
         Tcl_Panic("HANDLER restored incorrectly");
+    }
 # endif /* TCL_MEM_DEBUG */
 #else
     } __except (EXCEPTION_EXECUTE_HANDLER) {}
@@ -654,8 +661,9 @@ DoCopyFile(
     /*
      * Avoid using control flow statements in the SEH guarded block!
      */
-    if (retval != -1)
+    if (retval != -1) {
         return retval;
+    }
 
     TclWinConvertError(GetLastError());
     if (Tcl_GetErrno() == EBADF) {
@@ -1002,8 +1010,8 @@ TclpObjRemoveDirectory(pathPtr, recursive, errorPtr)
     if (ret != TCL_OK) {
 	int len = Tcl_DStringLength(&ds);
 	if (len > 0) {
-	    if (normPtr != NULL 
-	      && !strcmp(Tcl_DStringValue(&ds), Tcl_GetString(normPtr))) {
+	    if (normPtr != NULL &&
+		    !strcmp(Tcl_DStringValue(&ds), TclGetString(normPtr))) {
 		*errorPtr = pathPtr;
 	    } else {
 		*errorPtr = Tcl_NewStringObj(Tcl_DStringValue(&ds), -1);
@@ -1262,7 +1270,7 @@ TraverseWinTree(
     }
     nativeSource = (TCHAR *) Tcl_DStringValue(sourcePtr);
     handle = (*tclWinProcs->findFirstFileProc)(nativeSource, &data);
-    if (handle == INVALID_HANDLE_VALUE) {      
+    if (handle == INVALID_HANDLE_VALUE) {
 	/* 
 	 * Can't read directory
 	 */
@@ -1434,7 +1442,7 @@ TraversalCopy(
 	    if (DoCreateDirectory(nativeDst) == TCL_OK) {
 		DWORD attr = (*tclWinProcs->getFileAttributesProc)(nativeSrc);
 		if ((*tclWinProcs->setFileAttributesProc)(nativeDst, attr) 
-		  != FALSE) {
+			!= FALSE) {
 		    return TCL_OK;
 		}
 		TclWinConvertError(GetLastError());
@@ -1540,10 +1548,8 @@ StatError(
 				 * error. */
 {
     TclWinConvertError(GetLastError());
-    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), 
-			   "could not read \"", Tcl_GetString(fileName), 
-			   "\": ", Tcl_PosixError(interp), 
-			   (char *) NULL);
+    Tcl_AppendResult(interp, "could not read \"", Tcl_GetString(fileName), 
+	    "\": ", Tcl_PosixError(interp), (char *) NULL);
 }
 
 /*
@@ -1605,7 +1611,7 @@ GetWinFileAttributes(
 		/* Path is pointing to the root volume */
 		attr = 0;
 	    } else if ((str[1] == ':') 
-		       && (len == 2 || (str[2] == '/' || str[2] == '\\'))) {
+		    && (len == 2 || (str[2] == '/' || str[2] == '\\'))) {
 		/* Path is of the form 'x:' or 'x:/' or 'x:\' */
 		attr = 0;
 	    }
@@ -1654,10 +1660,9 @@ ConvertFileNameFormat(
     
     if (splitPath == NULL || pathc == 0) {
 	if (interp != NULL) {
-	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), 
-		"could not read \"", Tcl_GetString(fileName),
-		"\": no such file or directory", 
-		(char *) NULL);
+	    Tcl_AppendResult(interp, "could not read \"",
+		    Tcl_GetString(fileName), "\": no such file or directory", 
+		    (char *) NULL);
 	}
 	goto cleanup;
     }
@@ -1676,10 +1681,8 @@ ConvertFileNameFormat(
 	Tcl_ListObjIndex(NULL, splitPath, i, &elt);
 	
 	pathv = Tcl_GetStringFromObj(elt, &pathLen);
-	if ((pathv[0] == '/')
-		|| ((pathLen == 3) && (pathv[1] == ':'))
-		|| (strcmp(pathv, ".") == 0)
-		|| (strcmp(pathv, "..") == 0)) {
+	if ((pathv[0] == '/') || ((pathLen == 3) && (pathv[1] == ':'))
+		|| (strcmp(pathv, ".") == 0) || (strcmp(pathv, "..") == 0)) {
 	    /*
 	     * Handle "/", "//machine/export", "c:/", "." or ".." by just
 	     * copying the string literally.  Uppercase the drive letter,
@@ -1951,10 +1954,9 @@ CannotSetAttribute(
     Tcl_Obj *fileName,	        /* The name of the file. */
     Tcl_Obj *attributePtr)	/* The new value of the attribute. */
 {
-    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), 
-	    "cannot set attribute \"", tclpFileAttrStrings[objIndex],
-	    "\" for file \"", Tcl_GetString(fileName), 
-	    "\": attribute is readonly", 
+    Tcl_AppendResult(interp, "cannot set attribute \"",
+	    tclpFileAttrStrings[objIndex], "\" for file \"",
+	    Tcl_GetString(fileName), "\": attribute is readonly",
 	    (char *) NULL);
     return TCL_ERROR;
 }
@@ -2008,7 +2010,7 @@ TclpObjListVolumes(void)
 
 	for (i = 0; i < 26; i++) {
 	    buf[0] = (char) ('a' + i);
-	    if (GetVolumeInformationA(buf, NULL, 0, NULL, NULL, NULL, NULL, 0)  
+	    if (GetVolumeInformationA(buf, NULL, 0, NULL, NULL, NULL, NULL, 0)
 		    || (GetLastError() == ERROR_NOT_READY)) {
 		elemPtr = Tcl_NewStringObj(buf, -1);
 		Tcl_ListObjAppendElement(NULL, resultPtr, elemPtr);

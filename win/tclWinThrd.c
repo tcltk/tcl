@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinThrd.c,v 1.26.2.3 2004/09/08 23:03:30 dgp Exp $
+ * RCS: @(#) $Id: tclWinThrd.c,v 1.26.2.4 2004/10/28 18:47:42 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -437,7 +437,8 @@ TclFinalizeLock ()
 	allocOnce = 0;
     }
 #endif
-    /* Destroy the critical section that we are holding! */
+    LeaveCriticalSection(&initLock);
+    /* Destroy the critical section that we were holding. */
     DeleteCriticalSection(&initLock);
 }
 

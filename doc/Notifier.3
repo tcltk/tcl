@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Notifier.3,v 1.9 2002/07/01 18:24:39 jenglish Exp $
+'\" RCS: @(#) $Id: Notifier.3,v 1.9.4.1 2004/10/28 18:46:10 dgp Exp $
 '\" 
 .so man.macros
 .TH Notifier 3 8.1 Tcl "Tcl Library Procedures"
@@ -65,12 +65,12 @@ int
 int
 \fBTcl_GetServiceMode\fR()
 .sp
-int		
+int
 \fBTcl_SetServiceMode\fR(\fImode\fR)
 .VE
 
 .SH ARGUMENTS
-.AS Tcl_EventDeleteProc milliseconds
+.AS Tcl_EventDeleteProc *deleteProc
 .AP Tcl_EventSetupProc *setupProc in
 Procedure to invoke to prepare for event wait in \fBTcl_DoOneEvent\fR.
 .AP Tcl_EventCheckProc *checkProc in
@@ -99,11 +99,9 @@ Procedure to invoke for each queued event in \fBTcl_DeleteEvents\fR.
 .AP int flags in
 What types of events to service.  These flags are the same as those
 passed to \fBTcl_DoOneEvent\fR.
-.VS 8.1
 .AP int mode in
 Indicates whether events should be serviced by \fBTcl_ServiceAll\fR.
 Must be one of \fBTCL_SERVICE_NONE\fR or \fBTCL_SERVICE_ALL\fR.
-.VE
 .BE
 
 .SH INTRODUCTION
@@ -137,9 +135,7 @@ sources place events onto the queue so that they may be processed in
 order at appropriate times during the event loop. The event queue
 guarantees a fair discipline of event handling, so that no event
 source can starve the others.  It also allows events to be saved for
-servicing at a future time.
-.VS 8.1
-Threaded applications work in a
+servicing at a future time.  Threaded applications work in a
 similar manner, except that there is a separate event queue for
 each thread containing a Tcl interpreter.
 \fBTcl_QueueEvent\fR is used (primarily
@@ -171,7 +167,6 @@ The procedures \fBTcl_ServiceAll\fR, \fBTcl_ServiceEvent\fR,
 to help connect Tcl's event loop to an external event loop such as
 Motif's.
 .SH "NOTIFIER BASICS"
-.VE
 .PP
 The easiest way to understand how the notifier works is to consider
 what happens when \fBTcl_DoOneEvent\fR is called.
@@ -182,17 +177,13 @@ things:
 .IP [1]
 Check the event queue to see if it contains any events that can
 be serviced.  If so, service the first possible event, remove it
-.VS 8.1
 from the queue, and return.  It does this by calling
 \fBTcl_ServiceEvent\fR and passing in the \fIflags\fR argument.
-.VE
 .IP [2]
 Prepare to block for an event.  To do this, \fBTcl_DoOneEvent\fR
 invokes a \fIsetup procedure\fR in each event source.
 The event source will perform event-source specific initialization and
-.VS 8.1
 possibly call \fBTcl_SetMaxBlockTime\fR to limit how long
-.VE
 \fBTcl_WaitForEvent\fR will block if no new events occur.
 .IP [3]
 Call \fBTcl_WaitForEvent\fR.  This procedure is implemented differently
@@ -235,8 +226,8 @@ the event source.
 \fISetupProc\fR should match the following prototype:
 .CS
 typedef void Tcl_EventSetupProc(
-	ClientData \fIclientData\fR,
-	int \fIflags\fR);
+        ClientData \fIclientData\fR,
+        int \fIflags\fR);
 .CE
 The \fIclientData\fR argument will be the same as the \fIclientData\fR
 argument to \fBTcl_CreateEventSource\fR;  it is typically used to
@@ -258,7 +249,6 @@ request notification with a Windows event.  For timer-driven event
 sources such as timer events or any polled event, the event source
 can call \fBTcl_SetMaxBlockTime\fR to force the application to wake
 up after a specified time even if no events have occurred.
-.VS 8.1
 If no event source calls \fBTcl_SetMaxBlockTime\fR
 then \fBTcl_WaitForEvent\fR will wait as long as necessary for an
 event to occur; otherwise, it will only wait as long as the shortest
@@ -270,28 +260,24 @@ events already queued.  If there are, it calls
 \fBTcl_SetMaxBlockTime\fR with a 0 block time so that
 \fBTcl_WaitForEvent\fR does not block if there is no new data on the X
 connection.
-.VE
 The \fItimePtr\fR argument to \fBTcl_WaitForEvent\fR points to
 a structure that describes a time interval in seconds and
 microseconds:
 .CS
 typedef struct Tcl_Time {
-	long \fIsec\fR;
-	long \fIusec\fR;
+        long \fIsec\fR;
+        long \fIusec\fR;
 } Tcl_Time;
 .CE
 The \fIusec\fR field should be less than 1000000.
 .PP
-.VS 8.1
 Information provided to \fBTcl_SetMaxBlockTime\fR
 is only used for the next call to \fBTcl_WaitForEvent\fR; it is
 discarded after \fBTcl_WaitForEvent\fR returns.
-.VE
 The next time an event wait is done each of the event sources'
 setup procedures will be called again, and they can specify new
 information for that event wait.
 .PP
-.VS 8.1
 If the application uses an external event loop rather than
 \fBTcl_DoOneEvent\fR, the event sources may need to call
 \fBTcl_SetMaxBlockTime\fR at other times.  For example, if a new event
@@ -307,7 +293,6 @@ platform-specific procedures may also be available for
 \fIsetupProc\fR, if there is additional information needed by
 \fBTcl_WaitForEvent\fR on that platform.  For example, on Unix systems
 the \fBTcl_CreateFileHandler\fR interface can be used to wait for file events.
-.VE
 .PP
 The second procedure provided by each event source is its check
 procedure, indicated by the \fIcheckProc\fR argument to
@@ -315,8 +300,8 @@ procedure, indicated by the \fIcheckProc\fR argument to
 following prototype:
 .CS
 typedef void Tcl_EventCheckProc(
-	ClientData \fIclientData\fR,
-	int \fIflags\fR);
+        ClientData \fIclientData\fR,
+        int \fIflags\fR);
 .CE
 The arguments to this procedure are the same as those for \fIsetupProc\fR.
 \fBCheckProc\fR is invoked by \fBTcl_DoOneEvent\fR after it has waited
@@ -365,24 +350,20 @@ events at the front of the queue, such as a series of
 Enter and Leave events synthesized during a grab or ungrab operation
 in Tk.
 .PP
-.VS 8.1
 When it is time to handle an event from the queue (steps 1 and 4
 above) \fBTcl_ServiceEvent\fR will invoke the \fIproc\fR specified
-.VE
 in the first queued \fBTcl_Event\fR structure.
 \fIProc\fR must match the following prototype:
 .CS
 typedef int Tcl_EventProc(
-	Tcl_Event *\fIevPtr\fR,
-	int \fIflags\fR);
+        Tcl_Event *\fIevPtr\fR,
+        int \fIflags\fR);
 .CE
 The first argument to \fIproc\fR is a pointer to the event, which will
 be the same as the first argument to the \fBTcl_QueueEvent\fR call that
 added the event to the queue.
 The second argument to \fIproc\fR is the \fIflags\fR argument for the
-.VS 8.1
 current call to \fBTcl_ServiceEvent\fR;  this is used by the event source
-.VE
 to return immediately if its events are not relevant.
 .PP
 It is up to \fIproc\fR to handle the event, typically by invoking
@@ -391,9 +372,7 @@ Once the event source has finished handling the event it returns 1
 to indicate that the event can be removed from the queue.
 If for some reason the event source decides that the event cannot
 be handled at this time, it may return 0 to indicate that the event
-.VS 8.1
 should be deferred for processing later;  in this case \fBTcl_ServiceEvent\fR
-.VE
 will go on to the next event in the queue and attempt to service it.
 There are several reasons why an event source might defer an event.
 One possibility is that events of this type are excluded by the
@@ -404,7 +383,6 @@ Another example of deferring events happens in Tk if
 \fBTk_RestrictEvents\fR has been invoked to defer certain kinds
 of window events.
 .PP
-.VS 8.1
 When \fIproc\fR returns 1, \fBTcl_ServiceEvent\fR will remove the
 event from the event queue and free its storage.
 Note that the storage for an event must be allocated by
@@ -434,8 +412,8 @@ returns 1.  Events for which the procedure returns 0 are left in the
 queue.  \fIProc\fR should match the following prototype:
 .CS
 typedef int Tcl_EventDeleteProc(
-	Tcl_Event *\fIevPtr\fR,
-	ClientData \fIclientData\fR);
+        Tcl_Event *\fIevPtr\fR,
+        ClientData \fIclientData\fR);
 .CE
 The \fIclientData\fR argument will be the same as the \fIclientData\fR
 argument to \fBTcl_DeleteEvents\fR; it is typically used to point to
@@ -446,13 +424,11 @@ point to the next event in the queue.
 \fIcheckProc\fR, and \fIclientData\fR arguments must exactly match those
 provided to the \fBTcl_CreateEventSource\fR for the event source to be deleted.
 If no such source exists, \fBTcl_DeleteEventSource\fR has no effect.
-.VE
 
 .SH "CREATING A NEW NOTIFIER"
 .PP
 The notifier consists of all the procedures described in this manual
 entry, plus \fBTcl_DoOneEvent\fR and \fBTcl_Sleep\fR, which are
-.VS 8.1
 available on all platforms, and \fBTcl_CreateFileHandler\fR and
 \fBTcl_DeleteFileHandler\fR, which are Unix-specific.  Most of these
 procedures are generic, in that they are the same for all notifiers.
@@ -594,7 +570,7 @@ then calls to \fBTcl_ServiceAll\fR will behave normally.
 mode, which should be restored when the recursive loop exits.
 \fBTcl_GetServiceMode\fR returns the current value of the service
 mode.
-.VE
+
 .SH "SEE ALSO"
 \fBTcl_CreateFileHandler\fR, \fBTcl_DeleteFileHandler\fR, \fBTcl_Sleep\fR,
 \fBTcl_DoOneEvent\fR, \fBThread(3)\fR

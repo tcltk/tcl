@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFCmd.c,v 1.21.2.4 2004/04/09 20:58:14 dgp Exp $
+ * RCS: @(#) $Id: tclFCmd.c,v 1.21.2.5 2004/10/28 18:46:27 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -609,7 +609,9 @@ CopyRenameOneFile(interp, source, target, copyFlag, force)
 		 */
 		if (Tcl_FSGetPathType(path) == TCL_PATH_RELATIVE) {
 		    Tcl_Obj *abs = Tcl_FSJoinToPath(actualSource, 1, &path);
-		    if (abs == NULL) break;
+		    if (abs == NULL) {
+			break;
+		    }
 		    Tcl_IncrRefCount(abs);
 		    Tcl_DecrRefCount(path);
 		    path = abs;
@@ -640,7 +642,6 @@ CopyRenameOneFile(interp, source, target, copyFlag, force)
 		 * cross-filesystem copy.  We do this through our Tcl
 		 * library.
 		 */
-		Tcl_SavedResult savedResult;
 		Tcl_Obj *copyCommand = Tcl_NewListObj(0,NULL);
 		Tcl_IncrRefCount(copyCommand);
 		Tcl_ListObjAppendElement(interp, copyCommand, 
@@ -654,7 +655,6 @@ CopyRenameOneFile(interp, source, target, copyFlag, force)
 		}
 		Tcl_ListObjAppendElement(interp, copyCommand, source);
 		Tcl_ListObjAppendElement(interp, copyCommand, target);
-		Tcl_SaveResult(interp, &savedResult);
 		result = Tcl_EvalObjEx(interp, copyCommand, 
 				       TCL_EVAL_GLOBAL | TCL_EVAL_DIRECT);
 		Tcl_DecrRefCount(copyCommand);
@@ -664,11 +664,7 @@ CopyRenameOneFile(interp, source, target, copyFlag, force)
 		     * We will pass on the Tcl error message and
 		     * can ensure this by setting errfile to NULL
 		     */
-		    Tcl_DiscardResult(&savedResult);
 		    errfile = NULL;
-		} else {
-		    /* The copy was successful */
-		    Tcl_RestoreResult(interp, &savedResult);
 		}
 	    } else {
 		errfile = errorBuffer;
@@ -934,9 +930,8 @@ TclFileAttrsCmd(interp, objc, objv)
 		 * There was an error, probably that the filePtr is
 		 * not accepted by any filesystem
 		 */
-		Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), 
-			"could not read \"", Tcl_GetString(filePtr), 
-			"\": ", Tcl_PosixError(interp), 
+		Tcl_AppendResult(interp, "could not read \"",
+			Tcl_GetString(filePtr), "\": ", Tcl_PosixError(interp), 
 			(char *) NULL);
 		return TCL_ERROR;
 	    }

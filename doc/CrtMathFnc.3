@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: CrtMathFnc.3,v 1.7.2.2 2004/09/21 23:10:24 dgp Exp $
+'\" RCS: @(#) $Id: CrtMathFnc.3,v 1.7.2.3 2004/10/28 18:46:08 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_CreateMathFunc 3 8.4 Tcl "Tcl Library Procedures"
@@ -21,18 +21,17 @@ void
 .sp
 .VS 8.4
 int
-\fBTcl_GetMathFuncInfo\fR(\fIinterp, name, numArgsPtr, argTypesPtr, procPtr, clientDataPtr\fR)
+\fBTcl_GetMathFuncInfo\fR(\fIinterp, name, numArgsPtr, argTypesPtr, procPtr,
+                    clientDataPtr\fR)
 .sp
 Tcl_Obj *
 \fBTcl_ListMathFuncs\fR(\fIinterp, pattern\fR)
 .VE
 .SH ARGUMENTS
-.AS Tcl_ValueType *clientDataPtr
+.AS Tcl_ValueType *clientDataPtr out
 .AP Tcl_Interp *interp in
 Interpreter in which new function will be defined.
-.VS 8.4
-.AP "CONST char" *name in
-.VE
+.AP "const char" *name in
 Name for new function.
 .AP int numArgs in
 Number of arguments to new function;  also gives size of \fIargTypes\fR array.
@@ -58,7 +57,7 @@ implemented directly in bytecode).
 Points to a variable that will be set to contain the clientData
 argument passed to \fITcl_CreateMathFunc\fR when the function was
 created if the function is not implemented directly in bytecode.
-.AP "CONST char" *pattern in
+.AP "const char" *pattern in
 Pattern to match against function names so as to filter them (by
 passing to \fITcl_StringMatch\fR), or NULL to not apply any filter.
 .BE
@@ -86,10 +85,10 @@ Whenever the function is invoked in an expression Tcl will invoke
 the type \fBTcl_MathProc\fR:
 .CS
 typedef int Tcl_MathProc(
-	ClientData \fIclientData\fR,
-	Tcl_Interp *\fIinterp\fR,
-	Tcl_Value *\fIargs\fR,
-	Tcl_Value *\fIresultPtr\fR);
+        ClientData \fIclientData\fR,
+        Tcl_Interp *\fIinterp\fR,
+        Tcl_Value *\fIargs\fR,
+        Tcl_Value *\fIresultPtr\fR);
 .CE
 .PP
 When \fIproc\fR is invoked the \fIclientData\fR and \fIinterp\fR
@@ -99,10 +98,10 @@ which describe the actual arguments to the function:
 .VS 8.4
 .CS
 typedef struct Tcl_Value {
-	Tcl_ValueType \fItype\fR;
-	long \fIintValue\fR;
-	double \fIdoubleValue\fR;
-	Tcl_WideInt \fIwideValue\fR;
+        Tcl_ValueType \fItype\fR;
+        long \fIintValue\fR;
+        double \fIdoubleValue\fR;
+        Tcl_WideInt \fIwideValue\fR;
 } Tcl_Value;
 .CE
 .PP

@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: if.n,v 1.3.20.1 2004/05/04 17:44:16 dgp Exp $
+'\" RCS: @(#) $Id: if.n,v 1.3.20.2 2004/10/28 18:46:14 dgp Exp $
 '\" 
 .so man.macros
 .TH if n "" Tcl "Tcl Built-In Commands"
@@ -41,35 +41,35 @@ if none of the expressions was non-zero and there was no \fIbodyN\fR.
 .SH EXAMPLES
 A simple conditional:
 .CS
-if {$vbl == 1} { puts "vbl is one" }
+\fBif\fR {$vbl == 1} { puts "vbl is one" }
 .CE
-
+.PP
 With an \fBelse\fR-clause:
 .CS
-if {$vbl == 1} {
+\fBif\fR {$vbl == 1} {
    puts "vbl is one"
-} else {
+} \fBelse\fR {
    puts "vbl is not one"
 }
 .CE
-
+.PP
 With an \fBelseif\fR-clause too:
 .CS
-if {$vbl == 1} {
+\fBif\fR {$vbl == 1} {
    puts "vbl is one"
-} elseif {$vbl == 2} {
+} \fBelseif\fR {$vbl == 2} {
    puts "vbl is two"
-} else {
+} \fBelse\fR {
    puts "vbl is not one or two"
 }
 .CE
-
+.PP
 Remember, expressions can be multi-line, but in that case it can be a
 good idea to use the optional \fBthen\fR keyword for clarity:
 .CS
-if {
+\fBif\fR {
    $vbl == 1 || $vbl == 2 || $vbl == 3
-} then {
+} \fBthen\fR {
    puts "vbl is one, two or three"
 }
 .CE

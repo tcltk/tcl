@@ -11,12 +11,13 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.50.2.9 2004/09/08 23:03:29 dgp Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.50.2.10 2004/10/28 18:47:39 dgp Exp $
  */
 
 //#define _WIN32_WINNT  0x0500
 
 #include "tclWinInt.h"
+#include "tclFileSystem.h"
 #include <winioctl.h>
 #include <sys/stat.h>
 #include <shlobj.h>
@@ -2637,6 +2638,268 @@ TclpObjNormalizePath(interp, pathPtr, nextCheckpoint)
     }
     Tcl_DStringFree(&dsNorm);
     return nextCheckpoint;
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * TclWinVolumeRelativeNormalize --
+ *
+ *      Only Windows has volume-relative paths.  These paths are rather
+ *      rare, but it is nice if Tcl can handle them.  It is much better
+ *      if we can handle them here, rather than in the native fs code,
+ *      because we really need to have a real absolute path just below.
+ * 
+ *      We do not let this block compile on non-Windows platforms
+ *      because the test suite's manual forcing of tclPlatform can
+ *      otherwise cause this code path to be executed, causing various
+ *      errors because volume-relative paths really do not exist.
+ *
+ * Results:
+ *      A valid normalized path.
+ *
+ * Side effects:
+ *	None.
+ *
+ *---------------------------------------------------------------------------
+ */
+Tcl_Obj*
+TclWinVolumeRelativeNormalize(interp, path, useThisCwdPtr)
+    Tcl_Interp *interp;
+    CONST char *path;
+    Tcl_Obj **useThisCwdPtr;
+{
+    Tcl_Obj *absolutePath, *useThisCwd;
+    
+    useThisCwd = Tcl_FSGetCwd(interp);
+    if (useThisCwd == NULL) {
+        return NULL;
+    }
+    
+    if (path[0] == '/') {
+	/* 
+	 * Path of form /foo/bar which is a path in the
+	 * root directory of the current volume.
+	 */
+	CONST char *drive = Tcl_GetString(useThisCwd);
+	
+	absolutePath = Tcl_NewStringObj(drive,2);
+	Tcl_AppendToObj(absolutePath, path, -1);
+	Tcl_IncrRefCount(absolutePath);
+	/* We have a refCount on the cwd */
+    } else {
+	/* 
+	 * Path of form C:foo/bar, but this only makes
+	 * sense if the cwd is also on drive C.
+	 */
+	
+	int cwdLen;
+	CONST char *drive = 
+	        Tcl_GetStringFromObj(useThisCwd, &cwdLen);
+	char drive_cur = path[0];
+	
+	if (drive_cur >= 'a') {
+	    drive_cur -= ('a' - 'A');
+	}
+	if (drive[0] == drive_cur) {
+	    absolutePath = Tcl_DuplicateObj(useThisCwd);
+	    /* 
+	     * We have a refCount on the cwd, which we
+	     * will release later.
+	     */
+
+	    if (drive[cwdLen-1] != '/' && (path[2] != '\0')) {
+		/* 
+		 * Only add a trailing '/' if needed, which
+		 * is if there isn't one already, and if we
+		 * are going to be adding some more
+		 * characters.
+		 */
+		Tcl_AppendToObj(absolutePath, "/", 1);
+	    }
+	} else {
+	    Tcl_DecrRefCount(useThisCwd);
+	    useThisCwd = NULL;
+	    /* 
+	     * The path is not in the current drive, but
+	     * is volume-relative.  The way Tcl 8.3 handles
+	     * this is that it treats such a path as
+	     * relative to the root of the drive.  We
+	     * therefore behave the same here.  This
+	     * behaviour is, however, different to that
+	     * of the windows command-line.  If we want
+	     * to fix this at some point in the future
+	     * (at the expense of a behaviour change to
+	     * Tcl), we could use the '_dgetdcwd' Win32
+	     * API to get the drive's cwd.
+	     */
+	    absolutePath = Tcl_NewStringObj(path, 2);
+	    Tcl_AppendToObj(absolutePath, "/", 1);
+	}
+	Tcl_IncrRefCount(absolutePath);
+	Tcl_AppendToObj(absolutePath, path+2, -1);
+    }
+    *useThisCwdPtr = useThisCwd;
+    return absolutePath;
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * TclpNativeToNormalized --
+ *
+ *      Convert native format to a normalized path object, with refCount
+ *      of zero.
+ *      
+ *      Currently assumes all native paths are actually normalized
+ *      already, so if the path given is not normalized this will
+ *      actually just convert to a valid string path, but not
+ *      necessarily a normalized one.
+ *
+ * Results:
+ *      A valid normalized path.
+ *
+ * Side effects:
+ *	None.
+ *
+ *---------------------------------------------------------------------------
+ */
+Tcl_Obj* 
+TclpNativeToNormalized(clientData)
+    ClientData clientData;
+{
+    Tcl_DString ds;
+    Tcl_Obj *objPtr;
+    int len;
+    
+    char *copy;
+    char *p;
+    Tcl_WinTCharToUtf((CONST char*)clientData, -1, &ds);
+    
+    copy = Tcl_DStringValue(&ds);
+    len = Tcl_DStringLength(&ds);
+
+    /* 
+     * Certain native path representations on Windows have this special
+     * prefix to indicate that they are to be treated specially.  For
+     * example extremely long paths, or symlinks 
+     */
+    if (*copy == '\\') {
+	if (0 == strncmp(copy,"\\??\\",4)) {
+	    copy += 4;
+	    len -= 4;
+	} else if (0 == strncmp(copy,"\\\\?\\",4)) {
+	    copy += 4;
+	    len -= 4;
+	}
+    }
+    /* 
+     * Ensure we are using forward slashes only.
+     */
+    for (p = copy; *p != '\0'; p++) {
+	if (*p == '\\') {
+	    *p = '/';
+	}
+    }
+
+    objPtr = Tcl_NewStringObj(copy,len);
+    Tcl_DStringFree(&ds);
+    
+    return objPtr;
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * TclNativeCreateNativeRep --
+ *
+ *      Create a native representation for the given path.
+ *
+ * Results:
+ *      The nativePath representation.
+ *
+ * Side effects:
+ *	Memory will be allocated.  The path may need to be normalized.
+ *
+ *---------------------------------------------------------------------------
+ */
+ClientData 
+TclNativeCreateNativeRep(pathPtr)
+    Tcl_Obj* pathPtr;
+{
+    char *nativePathPtr;
+    Tcl_DString ds;
+    Tcl_Obj* validPathPtr;
+    int len;
+    char *str;
+
+    if (TclFSCwdIsNative()) {
+	/* 
+	 * The cwd is native, which means we can use the translated
+	 * path without worrying about normalization (this will also
+	 * usually be shorter so the utf-to-external conversion will
+	 * be somewhat faster).
+	 */
+	validPathPtr = Tcl_FSGetTranslatedPath(NULL, pathPtr);
+    } else {
+	/* Make sure the normalized path is set */
+	validPathPtr = Tcl_FSGetNormalizedPath(NULL, pathPtr);
+	Tcl_IncrRefCount(validPathPtr);
+    }
+
+    str = Tcl_GetStringFromObj(validPathPtr, &len);
+    Tcl_WinUtfToTChar(str, len, &ds);
+    if (tclWinProcs->useWide) {
+	len = Tcl_DStringLength(&ds) + sizeof(WCHAR);
+    } else {
+	len = Tcl_DStringLength(&ds) + sizeof(char);
+    }
+    Tcl_DecrRefCount(validPathPtr);
+    nativePathPtr = ckalloc((unsigned) len);
+    memcpy((VOID*)nativePathPtr, (VOID*)Tcl_DStringValue(&ds), (size_t) len);
+	  
+    Tcl_DStringFree(&ds);
+    return (ClientData)nativePathPtr;
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * TclNativeDupInternalRep --
+ *
+ *      Duplicate the native representation.
+ *
+ * Results:
+ *      The copied native representation, or NULL if it is not possible
+ *      to copy the representation.
+ *
+ * Side effects:
+ *	Memory allocation for the copy.
+ *
+ *---------------------------------------------------------------------------
+ */
+ClientData 
+TclNativeDupInternalRep(clientData)
+    ClientData clientData;
+{
+    char *copy;
+    size_t len;
+
+    if (clientData == NULL) {
+	return NULL;
+    }
+
+    if (tclWinProcs->useWide) {
+	/* unicode representation when running on NT/2K/XP */
+	len = sizeof(WCHAR) + (wcslen((CONST WCHAR*)clientData) * sizeof(WCHAR));
+    } else {
+	/* ansi representation when running on 95/98/ME */
+	len = sizeof(char) + (strlen((CONST char*)clientData) * sizeof(char));
+    }
+    
+    copy = (char *) ckalloc(len);
+    memcpy((VOID*)copy, (VOID*)clientData, len);
+    return (ClientData)copy;
 }
 
 /*

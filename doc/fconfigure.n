@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: fconfigure.n,v 1.8.2.2 2004/05/27 14:29:08 dgp Exp $
+'\" RCS: @(#) $Id: fconfigure.n,v 1.8.2.3 2004/10/28 18:46:14 dgp Exp $
 '\"
 .so man.macros
 .TH fconfigure n 8.3 Tcl "Tcl Built-In Commands"
@@ -204,14 +204,14 @@ sockets and thus support the socket options.
 Instruct Tcl to always send output to \fBstdout\fR immediately,
 whether or not it is to a terminal:
 .CS
-fconfigure stdout -buffering none
+\fBfconfigure\fR stdout -buffering none
 .CE
-
+.PP
 Open a socket and read lines from it without ever blocking the
 processing of other events:
 .CS
 set s [socket some.where.com 12345]
-fconfigure $s -blocking 0
+\fBfconfigure\fR $s -blocking 0
 fileevent $s readable "readMe $s"
 proc readMe chan {
    if {[gets $chan line] < 0} {
@@ -227,12 +227,12 @@ proc readMe chan {
    }
 }
 .CE
-
+.PP
 Read a PPM-format image from a file:
 .CS
 # Open the file and put it into Unix ASCII mode
 set f [open teapot.ppm]
-fconfigure $f \-encoding ascii \-translation lf
+\fBfconfigure\fR $f \-encoding ascii \-translation lf
 
 # Get the header
 if {[gets $f] ne "P6"} {
@@ -249,12 +249,12 @@ while {[llength $words] < 3} {
 }
 
 # Those words supply the size of the image and its
-# overall depth per channel.
+# overall depth per channel. Assign to variables.
 lassign $words xSize ySize depth
 
 # Now switch to binary mode to pull in the data,
-# one byte per channel (red,gree,blue) per pixel.
-fconfigure $f \-translation binary
+# one byte per channel (red,green,blue) per pixel.
+\fBfconfigure\fR $f \-translation binary
 set numDataBytes [expr {3 * $xSize * $ySize}]
 set data [read $f $numDataBytes]
 

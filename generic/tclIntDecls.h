@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.50.2.9 2004/09/30 00:51:42 dgp Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.50.2.10 2004/10/28 18:46:55 dgp Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -1007,6 +1007,73 @@ EXTERN void		TclFinalizeThreadStorageData _ANSI_ARGS_((
 EXTERN void		TclFinalizeThreadStorageDataKey _ANSI_ARGS_((
 				Tcl_ThreadDataKey * keyPtr));
 #endif
+/* Slot 197 is reserved */
+#ifndef TclObjGetFrame_TCL_DECLARED
+#define TclObjGetFrame_TCL_DECLARED
+/* 198 */
+EXTERN int		TclObjGetFrame _ANSI_ARGS_((Tcl_Interp * interp, 
+				Tcl_Obj * objPtr, CallFrame ** framePtrPtr));
+#endif
+#ifndef TclMatchIsTrivial_TCL_DECLARED
+#define TclMatchIsTrivial_TCL_DECLARED
+/* 199 */
+EXTERN int		TclMatchIsTrivial _ANSI_ARGS_((CONST char * pattern));
+#endif
+#ifndef TclpObjRemoveDirectory_TCL_DECLARED
+#define TclpObjRemoveDirectory_TCL_DECLARED
+/* 200 */
+EXTERN int		TclpObjRemoveDirectory _ANSI_ARGS_((
+				Tcl_Obj * pathPtr, int recursive, 
+				Tcl_Obj ** errorPtr));
+#endif
+#ifndef TclpObjCopyDirectory_TCL_DECLARED
+#define TclpObjCopyDirectory_TCL_DECLARED
+/* 201 */
+EXTERN int		TclpObjCopyDirectory _ANSI_ARGS_((
+				Tcl_Obj * srcPathPtr, Tcl_Obj * destPathPtr, 
+				Tcl_Obj ** errorPtr));
+#endif
+#ifndef TclpObjCreateDirectory_TCL_DECLARED
+#define TclpObjCreateDirectory_TCL_DECLARED
+/* 202 */
+EXTERN int		TclpObjCreateDirectory _ANSI_ARGS_((
+				Tcl_Obj * pathPtr));
+#endif
+#ifndef TclpObjDeleteFile_TCL_DECLARED
+#define TclpObjDeleteFile_TCL_DECLARED
+/* 203 */
+EXTERN int		TclpObjDeleteFile _ANSI_ARGS_((Tcl_Obj * pathPtr));
+#endif
+#ifndef TclpObjCopyFile_TCL_DECLARED
+#define TclpObjCopyFile_TCL_DECLARED
+/* 204 */
+EXTERN int		TclpObjCopyFile _ANSI_ARGS_((Tcl_Obj * srcPathPtr, 
+				Tcl_Obj * destPathPtr));
+#endif
+#ifndef TclpObjRenameFile_TCL_DECLARED
+#define TclpObjRenameFile_TCL_DECLARED
+/* 205 */
+EXTERN int		TclpObjRenameFile _ANSI_ARGS_((Tcl_Obj * srcPathPtr, 
+				Tcl_Obj * destPathPtr));
+#endif
+#ifndef TclpObjStat_TCL_DECLARED
+#define TclpObjStat_TCL_DECLARED
+/* 206 */
+EXTERN int		TclpObjStat _ANSI_ARGS_((Tcl_Obj * pathPtr, 
+				Tcl_StatBuf * buf));
+#endif
+#ifndef TclpObjAccess_TCL_DECLARED
+#define TclpObjAccess_TCL_DECLARED
+/* 207 */
+EXTERN int		TclpObjAccess _ANSI_ARGS_((Tcl_Obj * pathPtr, 
+				int mode));
+#endif
+#ifndef TclpOpenFileChannel_TCL_DECLARED
+#define TclpOpenFileChannel_TCL_DECLARED
+/* 208 */
+EXTERN Tcl_Channel	TclpOpenFileChannel _ANSI_ARGS_((Tcl_Interp * interp, 
+				Tcl_Obj * pathPtr, int mode, int permissions));
+#endif
 
 typedef struct TclIntStubs {
     int magic;
@@ -1224,6 +1291,18 @@ typedef struct TclIntStubs {
     void (*tclFinalizeThreadStorage) _ANSI_ARGS_((void)); /* 194 */
     void (*tclFinalizeThreadStorageData) _ANSI_ARGS_((Tcl_ThreadDataKey * keyPtr)); /* 195 */
     void (*tclFinalizeThreadStorageDataKey) _ANSI_ARGS_((Tcl_ThreadDataKey * keyPtr)); /* 196 */
+    void *reserved197;
+    int (*tclObjGetFrame) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * objPtr, CallFrame ** framePtrPtr)); /* 198 */
+    int (*tclMatchIsTrivial) _ANSI_ARGS_((CONST char * pattern)); /* 199 */
+    int (*tclpObjRemoveDirectory) _ANSI_ARGS_((Tcl_Obj * pathPtr, int recursive, Tcl_Obj ** errorPtr)); /* 200 */
+    int (*tclpObjCopyDirectory) _ANSI_ARGS_((Tcl_Obj * srcPathPtr, Tcl_Obj * destPathPtr, Tcl_Obj ** errorPtr)); /* 201 */
+    int (*tclpObjCreateDirectory) _ANSI_ARGS_((Tcl_Obj * pathPtr)); /* 202 */
+    int (*tclpObjDeleteFile) _ANSI_ARGS_((Tcl_Obj * pathPtr)); /* 203 */
+    int (*tclpObjCopyFile) _ANSI_ARGS_((Tcl_Obj * srcPathPtr, Tcl_Obj * destPathPtr)); /* 204 */
+    int (*tclpObjRenameFile) _ANSI_ARGS_((Tcl_Obj * srcPathPtr, Tcl_Obj * destPathPtr)); /* 205 */
+    int (*tclpObjStat) _ANSI_ARGS_((Tcl_Obj * pathPtr, Tcl_StatBuf * buf)); /* 206 */
+    int (*tclpObjAccess) _ANSI_ARGS_((Tcl_Obj * pathPtr, int mode)); /* 207 */
+    Tcl_Channel (*tclpOpenFileChannel) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * pathPtr, int mode, int permissions)); /* 208 */
 } TclIntStubs;
 
 #ifdef __cplusplus
@@ -1898,6 +1977,51 @@ extern TclIntStubs *tclIntStubsPtr;
 #ifndef TclFinalizeThreadStorageDataKey
 #define TclFinalizeThreadStorageDataKey \
 	(tclIntStubsPtr->tclFinalizeThreadStorageDataKey) /* 196 */
+#endif
+/* Slot 197 is reserved */
+#ifndef TclObjGetFrame
+#define TclObjGetFrame \
+	(tclIntStubsPtr->tclObjGetFrame) /* 198 */
+#endif
+#ifndef TclMatchIsTrivial
+#define TclMatchIsTrivial \
+	(tclIntStubsPtr->tclMatchIsTrivial) /* 199 */
+#endif
+#ifndef TclpObjRemoveDirectory
+#define TclpObjRemoveDirectory \
+	(tclIntStubsPtr->tclpObjRemoveDirectory) /* 200 */
+#endif
+#ifndef TclpObjCopyDirectory
+#define TclpObjCopyDirectory \
+	(tclIntStubsPtr->tclpObjCopyDirectory) /* 201 */
+#endif
+#ifndef TclpObjCreateDirectory
+#define TclpObjCreateDirectory \
+	(tclIntStubsPtr->tclpObjCreateDirectory) /* 202 */
+#endif
+#ifndef TclpObjDeleteFile
+#define TclpObjDeleteFile \
+	(tclIntStubsPtr->tclpObjDeleteFile) /* 203 */
+#endif
+#ifndef TclpObjCopyFile
+#define TclpObjCopyFile \
+	(tclIntStubsPtr->tclpObjCopyFile) /* 204 */
+#endif
+#ifndef TclpObjRenameFile
+#define TclpObjRenameFile \
+	(tclIntStubsPtr->tclpObjRenameFile) /* 205 */
+#endif
+#ifndef TclpObjStat
+#define TclpObjStat \
+	(tclIntStubsPtr->tclpObjStat) /* 206 */
+#endif
+#ifndef TclpObjAccess
+#define TclpObjAccess \
+	(tclIntStubsPtr->tclpObjAccess) /* 207 */
+#endif
+#ifndef TclpOpenFileChannel
+#define TclpOpenFileChannel \
+	(tclIntStubsPtr->tclpOpenFileChannel) /* 208 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclScan.c,v 1.12.4.4 2004/09/08 23:02:48 dgp Exp $
+ * RCS: @(#) $Id: tclScan.c,v 1.12.4.5 2004/10/28 18:47:01 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -396,7 +396,7 @@ ValidateFormat(interp, format, numVars, totalSubs)
 		if (flags & SCAN_LONGER) {
 		invalidLonger:
 		    buf[Tcl_UniCharToUtf(ch, buf)] = '\0';
-		    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
+		    Tcl_AppendResult(interp,
 			   "'l' modifier may not be specified in %", buf,
 			   " conversion", NULL);
 		    goto error;
@@ -452,8 +452,8 @@ ValidateFormat(interp, format, numVars, totalSubs)
 		char buf[TCL_UTF_MAX+1];
 
 		buf[Tcl_UniCharToUtf(ch, buf)] = '\0';
-		Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-			"bad scan conversion character \"", buf, "\"", NULL);
+		Tcl_AppendResult(interp, "bad scan conversion character \"",
+			buf, "\"", NULL);
 		goto error;
 	    }
 	}
@@ -1167,8 +1167,7 @@ Tcl_ScanObjCmd(dummy, interp, objc, objv)
 		result++;
 		if (Tcl_ObjSetVar2(interp, objv[i+3], NULL,
 			objs[i], 0) == NULL) {
-		    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-			    "couldn't set variable \"",
+		    Tcl_AppendResult(interp, "couldn't set variable \"",
 			    Tcl_GetString(objv[i+3]), "\"", (char *) NULL);
 		    code = TCL_ERROR;
 		}

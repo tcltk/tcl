@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.37.2.6 2004/09/30 00:51:46 dgp Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.37.2.7 2004/10/28 18:47:03 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1416,6 +1416,43 @@ Tcl_StringCaseMatch(string, pattern, nocase)
 /*
  *----------------------------------------------------------------------
  *
+ * TclMatchIsTrivial --
+ *
+ *	Test whether a particular glob pattern is a trivial pattern.
+ *	(i.e. where matching is the same as equality testing).
+ *
+ * Results:
+ *	A boolean indicating whether the pattern is free of all of the
+ *	glob special chars.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclMatchIsTrivial(pattern)
+    CONST char *pattern;
+{
+    CONST char *p = pattern;
+
+    while (1) {
+	switch (*p++) {
+	case '\0':
+	    return 1;
+	case '*':
+	case '?':
+	case '[':
+	case '\\':
+	    return 0;
+	}
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_DStringInit --
  *
  *	Initializes a dynamic string, discarding any previous contents
@@ -1764,10 +1801,7 @@ Tcl_DStringGetResult(interp, dsPtr)
      * string result, then reset the object result.
      */
 
-    if (*(iPtr->result) == 0) {
-	Tcl_SetResult(interp, TclGetString(Tcl_GetObjResult(interp)),
-	        TCL_VOLATILE);
-    }
+    (void) Tcl_GetStringResult(interp);
 
     dsPtr->length = strlen(iPtr->result);
     if (iPtr->freeProc != NULL) {
@@ -2331,10 +2365,8 @@ TclGetIntForIndex(interp, objPtr, endValue, indexPtr)
 	     * because this is an error-generation path anyway.
 	     */
 	    Tcl_ResetResult(interp);
-	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-				   "bad index \"", bytes,
-				   "\": must be integer or end?-integer?",
-				   (char *) NULL);
+	    Tcl_AppendResult(interp, "bad index \"", bytes,
+		    "\": must be integer or end?-integer?", (char *) NULL);
 	    if (!strncmp(bytes, "end-", 3)) {
 		bytes += 3;
 	    }
@@ -2426,10 +2458,8 @@ SetEndOffsetFromAny(interp, objPtr)
 	    (size_t)((length > 3) ? 3 : length)) != 0)) {
 	if (interp != NULL) {
 	    Tcl_ResetResult(interp);
-	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-				   "bad index \"", bytes,
-				   "\": must be end?-integer?",
-				   (char*) NULL);
+	    Tcl_AppendResult(interp, "bad index \"", bytes,
+		    "\": must be end?-integer?", (char*) NULL);
 	}
 	return TCL_ERROR;
     }
@@ -2453,10 +2483,8 @@ SetEndOffsetFromAny(interp, objPtr)
 	 */
 	if (interp != NULL) {
 	    Tcl_ResetResult(interp);
-	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-				   "bad index \"", bytes,
-				   "\": must be integer or end?-integer?",
-				   (char *) NULL);
+	    Tcl_AppendResult(interp, "bad index \"", bytes,
+		    "\": must be integer or end?-integer?", (char *) NULL);
 	}
 	return TCL_ERROR;
     }

@@ -58,9 +58,10 @@ namespace eval ::tcl::tm {
     # Export the public API
 
     namespace export path
+    namespace ensemble create -command path -subcommand {add remove list}
 }
 
-# ::tcl::tm::path --
+# ::tcl::tm::path implementations --
 #
 #	Public API to the module path. See specification.
 #
@@ -78,92 +79,107 @@ namespace eval ::tcl::tm {
 #	paths to search for Tcl Modules. The subcommand 'list' has no
 #	sideeffects.
 
-proc ::tcl::tm::path {cmd args} {
+proc ::tcl::tm::add {args} {
+    # PART OF THE ::tcl::tm::path ENSEMBLE
+    #
+    # The path is added at the head to the list of module paths.
+    #
+    # The command enforces the restriction that no path may be an
+    # ancestor directory of any other path on the list. If the new
+    # path violates this restriction an error wil be raised.
+    #
+    # If the path is already present as is no error will be raised and
+    # no action will be taken.
+
+    if {[llength $args] == 0} {
+	return -code error \
+	    "wrong # args: should be \"::tcl::tm::path add path ?path ...?\""
+    }
+
     variable paths
-    switch -exact -- $cmd {
-	add {
-	    # The path is added at the head to the list of module
-	    # paths.
-	    #
-	    # The command enforces the restriction that no path may be
-	    # an ancestor directory of any other path on the list. If
-	    # the new path violates this restriction an error wil be
-	    # raised.
-	    #
-	    # If the path is already present as is no error will be
-	    # raised and no action will be taken.
 
-	    if {![llength $args]} {
-		return -code error "wrong#args, expected: [lindex [info level 0] 0] add path path..."
-	    }
+    # We use a copy of the path as source during validation, and
+    # extend it as well. Because we not only have to detect if the new
+    # paths are bogus with respect to the existing paths, but also
+    # between themselves. Otherwise we can still add bogus paths, by
+    # specifying them in a single call. This makes the use of the new
+    # paths simpler as well, a trivial assignment of the collected
+    # paths to the official state var.
 
-	    set newpaths {}
-	    foreach p $args {
-		set pos [lsearch -exact $paths $p]
-		if {$pos >= 0} {
-		    # Ignore a path already on the list.
-		    continue
-		}
+    set newpaths $paths
+    foreach p $args {
+	if {$p in $newpaths} {
+	    # Ignore a path already on the list.
+	    continue
+	}
 
-		# Search for paths which are subdirectories of the new
-		# one. If there are any then new path violates the
-		# restriction about ancestors.
+	# Search for paths which are subdirectories of the new one. If
+	# there are any then the new path violates the restriction
+	# about ancestors.
 
-		set pos [lsearch -glob $paths ${p}/*]
-		if {$pos >= 0} {
-		    return -code error "$p is ancestor of existing module path [lindex $paths $pos]."
-		}
+	set pos [lsearch -glob $newpaths ${p}/*]
+	# Cannot use "in", we need the position for the message.
+	if {$pos >= 0} {
+	    return -code error \
+		"$p is ancestor of existing module path [lindex $newpaths $pos]."
+	}
 
-		# Now look for paths which are ancestors of the new
-		# one. This reverse question req us to loop over the
-		# existing paths :(
+	# Now look for existing paths which are ancestors of the new
+	# one. This reverse question forces us to loop over the
+	# existing paths, as each element is the pattern, not the new
+	# path :(
 
-		foreach ep $paths {
-		    if {[string match ${ep}/* $p]} {
-			return -code error "$p is subdirectory of existing module path $ep."
-		    }
-		}
-
-		lappend newpaths $p
-	    }
-
-	    # The validation of the input is complete and successful,
-	    # and everything in newpaths is actually new. We can now
-	    # extend the list of paths.
-
-	    foreach p $newpaths {
-		set paths [linsert $paths 0 $p]
+	foreach ep $newpaths {
+	    if {[string match ${ep}/* $p]} {
+		return -code error \
+		    "$p is subdirectory of existing module path $ep."
 	    }
 	}
-	remove {
-	    # Removes the path from the list of module paths. The
-	    # command is silently ignored if the path is not on the
-	    # list.
 
-	    if {![llength $args]} {
-		return -code error "wrong#args, expected: [lindex [info level 0] 0] remove path path ..."
-	    }
+	set newpaths [linsert $newpaths 0 $p]
+    }
 
-	    foreach p $args {
-		set pos [lsearch -exact $paths $p]
-		if {$pos >= 0} {
-		    set paths [lreplace $paths $pos $pos]
-		}
-	    }
-	}
-	list {
-	    if {[llength $args]} {
-		return -code error "wrong#args, expected: [lindex [info level 0] 0] list"
-	    }
-	    return $paths
-	}
-	default {
-	    return -code error "Expect one of add, remove, or list, got \"$cmd\""
+    # The validation of the input is complete and successful, and
+    # everything in newpaths is either an old path, or added. We can
+    # now extend the official list of paths, a simple assignment is
+    # sufficient.
+
+    set paths $newpaths
+    return
+}
+
+proc ::tcl::tm::remove {args} {
+    # PART OF THE ::tcl::tm::path ENSEMBLE
+    #
+    # Removes the path from the list of module paths. The command is
+    # silently ignored if the path is not on the list.
+
+    if {[llength $args] == 0} {
+	return -code error \
+	    "wrong # args: should be \"::tcl::tm::path remove path ?path ...?\""
+    }
+
+    variable paths
+
+    foreach p $args {
+	set pos [lsearch -exact $paths $p]
+	if {$pos >= 0} {
+	    set paths [lreplace $paths $pos $pos]
 	}
     }
 }
 
-# ::tcl::tm::unknown --
+proc ::tcl::tm::list {args} {
+    # PART OF THE ::tcl::tm::path ENSEMBLE
+
+    if {[llength $args] != 0} {
+	return -code error "wrong # args: should be \"::tcl::tm::path list\""
+    }
+    variable paths
+    return  $paths
+}
+
+# ::tcl::tm::UnknownHandler --
 #
 #	Unknown handler for Tcl Modules, i.e. packages in module form.
 #
@@ -186,7 +202,7 @@ proc ::tcl::tm::path {cmd args} {
 #	May populate the package ifneeded database with additional
 #	provide scripts.
 
-proc ::tcl::tm::unknown {original name version {exact {}}} {
+proc ::tcl::tm::UnknownHandler {original name version {exact {}}} {
     # Import the list of paths to search for packages in module form.
     # Import the pattern used to check package names in detail.  
 
@@ -199,7 +215,9 @@ proc ::tcl::tm::unknown {original name version {exact {}}} {
     if {[llength $paths]} {
 	set pkgpath [string map {:: /} $name]
 	set pkgroot [file dirname $pkgpath]
-	if {$pkgroot eq "."} {set pkgroot ""}
+	if {$pkgroot eq "."} {
+	    set pkgroot ""
+	}
 
 	# We don't remember a copy of the paths while looping. Tcl
 	# Modules are unable to change the list while we are searching
@@ -209,10 +227,14 @@ proc ::tcl::tm::unknown {original name version {exact {}}} {
 
 	set satisfied 0
 	foreach path $paths {
-	    if {![file exists $path]} continue
+	    if {![file exists $path]} {
+		continue
+	    }
 	    set currentsearchpath [file join $path $pkgroot]
-	    if {![file exists $currentsearchpath]} continue
-	    set strip             [llength [file split $path]]
+	    if {![file exists $currentsearchpath]} {
+		continue
+	    }
+	    set strip [llength [file split $path]]
 
 	    # We can't use glob in safe interps, so enclose the following
 	    # in a catch statement, where we get the module files out
@@ -240,9 +262,12 @@ proc ::tcl::tm::unknown {original name version {exact {}}} {
 		    }
 
 		    # We have found a candidate, generate a "provide
-		    # script" for it, and remember it.
+		    # script" for it, and remember it.  Note that we
+		    # are using ::list to do this; locally [list]
+		    # means something else without the namespace
+		    # specifier.
 
-		    package ifneeded $pkgname $pkgversion [list source $file]
+		    package ifneeded $pkgname $pkgversion [::list source $file]
 
 		    # We abort in this unknown handler only if we got
 		    # a satisfying candidate for the requested
@@ -251,11 +276,11 @@ proc ::tcl::tm::unknown {original name version {exact {}}} {
 		    # processing.
 
 		    if {
-			($pkgname eq $name) &&
-			((($exact eq "-exact") && (0==[package vcompare $pkgversion $version])) ||
-			(($version ne "") && [package vsatisfies $pkgversion $version]) ||
+			$pkgname eq $name && (
+			($exact eq "-exact" && ![package vcompare $pkgversion $version]) ||
+			($version ne "" && [package vsatisfies $pkgversion $version]) ||
 			($version eq ""))
-		    } {
+		    } then {
 			set satisfied 1
 			# We do not abort the loop, and keep adding
 			# provide scripts for every candidate in the
@@ -271,9 +296,11 @@ proc ::tcl::tm::unknown {original name version {exact {}}} {
 	}
     }
 
-    # Fallback to previous command, if existing.
+    # Fallback to previous command, if existing.  See comment above
+    # about ::list...
+
     if {[llength $original]} {
-	uplevel 1 $original [list $name $version $exact]
+	uplevel 1 $original [::list $name $version $exact]
     }
 }
 
@@ -291,22 +318,27 @@ proc ::tcl::tm::unknown {original name version {exact {}}} {
 #	May add paths to the list of defaults.
 
 proc ::tcl::tm::Defaults {} {
-    foreach {major minor} [split [info tclversion] .] break
+    global env tcl_platform
 
-    roots [list \
+    lassign [split [info tclversion] .] major minor
+    set exe [file normalize [info nameofexecutable]]
+
+    # Note that we're using [::list], not [list] because [list] means
+    # something other than [::list] in this namespace.
+    roots [::list \
 	    [file dirname [info library]] \
-	    [file join [file dirname [file normalize [info nameofexecutable]]] lib] \
+	    [file join [file dirname [file dirname $exe]] lib] \
 	    ]
 
-    if {$::tcl_platform(platform) eq "windows"} {
-	set sep \;
+    if {$tcl_platform(platform) eq "windows"} {
+	set sep ";"
     } else {
-	set sep :
+	set sep ":"
     }
     for {set n $minor} {$n >= 0} {incr n -1} {
 	set ev TCL${major}.{$n}_TM_PATH
-	if {[info exists ::env($ev)]} {
-	    foreach p [split $::env($ev) $sep] {
+	if {[info exists env($ev)]} {
+	    foreach p [split $env($ev) $sep] {
 		path add $p
 	    }
 	}
@@ -343,4 +375,4 @@ proc ::tcl::tm::roots {paths} {
 # handler into the chain.
 
 ::tcl::tm::Defaults
-package unknown [list ::tcl::tm::unknown [package unknown]]
+package unknown [list ::tcl::tm::UnknownHandler [package unknown]]

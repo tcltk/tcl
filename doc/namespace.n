@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: namespace.n,v 1.10.2.5 2004/09/08 23:02:34 dgp Exp $
+'\" RCS: @(#) $Id: namespace.n,v 1.10.2.6 2004/10/28 18:46:15 dgp Exp $
 '\" 
 .so man.macros
 .TH namespace n 8.5 Tcl "Tcl Built-In Commands"
@@ -262,15 +262,15 @@ The global namespace holds all global variables and commands.
 The \fBnamespace eval\fR command lets you create new namespaces.
 For example,
 .CS
-\fBnamespace eval Counter {
-    namespace export bump
-    variable num 0
+\fBnamespace eval\fR Counter {
+   \fBnamespace export\fR bump
+   variable num 0
 
-    proc bump {} {
-        variable num
-        incr num
-    }
-}\fR
+   proc bump {} {
+      variable num
+      incr num
+   }
+}
 .CE
 creates a new namespace containing the variable \fBnum\fR and
 the procedure \fBbump\fR.
@@ -292,21 +292,21 @@ namespace over time using a series of \fBnamespace eval\fR commands.
 For example, the following series of commands has the same effect
 as the namespace definition shown above:
 .CS
-\fBnamespace eval Counter {
-    variable num 0
-    proc bump {} {
-        variable num
-        return [incr num]
-    }
+\fBnamespace eval\fR Counter {
+   variable num 0
+   proc bump {} {
+      variable num
+      return [incr num]
+   }
 }
-namespace eval Counter {
-    proc test {args} {
-        return $args
-    }
+\fBnamespace eval\fR Counter {
+   proc test {args} {
+      return $args
+   }
 }
-namespace eval Counter {
+\fBnamespace eval\fR Counter {
     rename test ""
-}\fR
+}
 .CE
 Note that the \fBtest\fR procedure is added to the \fBCounter\fR namespace,
 and later removed via the \fBrename\fR command.
@@ -339,12 +339,12 @@ Names must be qualified by the namespace that contains them.
 From the global namespace,
 we might access the \fBCounter\fR procedures like this:
 .CS
-\fBCounter::bump 5
-Counter::Reset\fR
+Counter::bump 5
+Counter::Reset
 .CE
 We could access the current count like this:
 .CS
-\fBputs "count = $Counter::num"\fR
+puts "count = $Counter::num"
 .CE
 When one namespace contains another, you may need more than one
 qualifier to reach its elements.
@@ -352,18 +352,18 @@ If we had a namespace \fBFoo\fR that contained the namespace \fBCounter\fR,
 you could invoke its \fBbump\fR procedure
 from the global namespace like this:
 .CS
-\fBFoo::Counter::bump 3\fR
+Foo::Counter::bump 3
 .CE
 .PP
 You can also use qualified names when you create and rename commands.
 For example, you could add a procedure to the \fBFoo\fR
 namespace like this:
 .CS
-\fBproc Foo::Test {args} {return $args}\fR
+proc Foo::Test {args} {return $args}
 .CE
 And you could move the same procedure to another namespace like this:
 .CS
-\fBrename Foo::Test Bar::Test\fR
+rename Foo::Test Bar::Test
 .CE
 .PP
 There are a few remaining points about qualified names
@@ -396,10 +396,10 @@ by looking in only the current namespace.
 .PP
 In the following example,
 .CS
-\fBset traceLevel 0
-namespace eval Debug {
-    printTrace $traceLevel
-}\fR
+set traceLevel 0
+\fBnamespace eval\fR Debug {
+   printTrace $traceLevel
+}
 .CE
 Tcl looks for \fBtraceLevel\fR in the namespace \fBDebug\fR
 and then in the global namespace.
@@ -408,14 +408,14 @@ If a variable or command name is not found in either context,
 the name is undefined.
 To make this point absolutely clear, consider the following example:
 .CS
-\fBset traceLevel 0
-namespace eval Foo {
-    variable traceLevel 3
+set traceLevel 0
+\fBnamespace eval\fR Foo {
+   variable traceLevel 3
 
-    namespace eval Debug {
-        printTrace $traceLevel
-    }
-}\fR
+   \fBnamespace eval\fR Debug {
+      printTrace $traceLevel
+   }
+}
 .CE
 Here Tcl looks for \fBtraceLevel\fR first in the namespace \fBFoo::Debug\fR.
 Since it is not found there, Tcl then looks for it 
@@ -427,12 +427,12 @@ You can use the \fBnamespace which\fR command to clear up any question
 about name resolution.
 For example, the command:
 .CS
-\fBnamespace eval Foo::Debug {namespace which \-variable traceLevel}\fR
+\fBnamespace eval\fR Foo::Debug {\fBnamespace which\fR \-variable traceLevel}
 .CE
 returns \fB::traceLevel\fR.
 On the other hand, the command,
 .CS
-\fBnamespace eval Foo {namespace which \-variable traceLevel}\fR
+\fBnamespace eval\fR Foo {\fBnamespace which\fR \-variable traceLevel}
 .CE
 returns \fB::Foo::traceLevel\fR.
 .PP
@@ -472,21 +472,21 @@ For example, suppose that all of the commands in a package
 like BLT are contained in a namespace called \fBBlt\fR.
 Then you might access these commands like this:
 .CS
-\fBBlt::graph .g \-background red
-Blt::table . .g 0,0\fR
+Blt::graph .g \-background red
+Blt::table . .g 0,0
 .CE
 If you use the \fBgraph\fR and \fBtable\fR commands frequently,
 you may want to access them without the \fBBlt::\fR prefix.
 You can do this by importing the commands into the current namespace,
 like this:
 .CS
-\fBnamespace import Blt::*\fR
+\fBnamespace import\fR Blt::*
 .CE
 This adds all exported commands from the \fBBlt\fR namespace
 into the current namespace context, so you can write code like this:
 .CS
-\fBgraph .g \-background red
-table . .g 0,0\fR
+graph .g \-background red
+table . .g 0,0
 .CE
 The \fBnamespace import\fR command only imports commands
 from a namespace that that namespace exported
@@ -497,7 +497,7 @@ a bad idea since you don't know what you will get.
 It is better to import just the specific commands you need.
 For example, the command
 .CS
-\fBnamespace import Blt::graph Blt::table\fR
+\fBnamespace import\fR Blt::graph Blt::table
 .CE
 imports only the \fBgraph\fR and \fBtable\fR commands into the
 current context.
@@ -510,12 +510,12 @@ reissue the \fBnamespace import\fR command to pick up new commands
 that have appeared in a namespace.  In that case, you can use the
 \fB\-force\fR option, and existing commands will be silently overwritten:
 .CS
-\fBnamespace import \-force Blt::graph Blt::table\fR
+\fBnamespace import\fR \-force Blt::graph Blt::table
 .CE
 If for some reason, you want to stop using the imported commands,
 you can remove them with a \fBnamespace forget\fR command, like this:
 .CS
-\fBnamespace forget Blt::*\fR
+\fBnamespace forget\fR Blt::*
 .CE
 This searches the current namespace for any commands imported from \fBBlt\fR.
 If it finds any, it removes them.  Otherwise, it does nothing.
@@ -524,41 +524,41 @@ prefix.
 .PP
 When you delete a command from the exporting namespace like this:
 .CS
-\fBrename Blt::graph ""\fR
+rename Blt::graph ""
 .CE
 the command is automatically removed from all namespaces that import it.
 .SH "EXPORTING COMMANDS"
 You can export commands from a namespace like this:
 .CS
-\fBnamespace eval Counter {
-    namespace export bump reset
-    variable Num 0
-    variable Max 100
+\fBnamespace eval\fR Counter {
+   \fBnamespace export\fR bump reset
+   variable Num 0
+   variable Max 100
 
-    proc bump {{by 1}} {
-        variable Num
-        incr Num $by
-        Check
-        return $Num
-    }
-    proc reset {} {
-        variable Num
-        set Num 0
-    }
-    proc Check {} {
-        variable Num
-        variable Max
-        if {$Num > $Max} {
-            error "too high!"
-        }
-    }
-}\fR
+   proc bump {{by 1}} {
+      variable Num
+      incr Num $by
+      Check
+      return $Num
+   }
+   proc reset {} {
+      variable Num
+      set Num 0
+   }
+   proc Check {} {
+      variable Num
+      variable Max
+      if {$Num > $Max} {
+         error "too high!"
+      }
+   }
+}
 .CE
 The procedures \fBbump\fR and \fBreset\fR are exported,
 so they are included when you import from the \fBCounter\fR namespace,
 like this:
 .CS
-\fBnamespace import Counter::*\fR
+\fBnamespace import\fR Counter::*
 .CE
 However, the \fBCheck\fR procedure is not exported,
 so it is ignored by the import operation.
@@ -577,14 +577,14 @@ and traces for evaluation in the global context.  For instance, the following
 code indicates how to direct a variable trace callback into the current
 namespace:
 .CS
-namespace eval a {
-    variable b
-    proc theTraceCallback { n1 n2 op } {
-       upvar 1 $n1 var
-       puts "the value of $n1 has changed to $var"
-       return
-    }
-    trace variable b w [namespace code theTraceCallback]
+\fBnamespace eval\fR a {
+   variable b
+   proc theTraceCallback { n1 n2 op } {
+      upvar 1 $n1 var
+      puts "the value of $n1 has changed to $var"
+      return
+   }
+   trace variable b w [\fBnamespace code\fR theTraceCallback]
 }
 set a::b c
 .CE
@@ -751,16 +751,16 @@ delete its namespace.
 .SH EXAMPLES
 Create a namespace containing a variable and an exported command:
 .CS
-namespace eval foo {
+\fBnamespace eval\fR foo {
    variable bar 0
    proc grill {} {
       variable bar
       puts "called [incr bar] times"
    }
-   namespace export grill
+   \fBnamespace export\fR grill
 }
 .CE
-
+.PP
 Call the command defined in the previous example in various ways.
 .CS
 # Direct call
@@ -772,17 +772,17 @@ grill
 
 # Create two ensembles, one with the default name and one with a
 # specified name.  Then call through the ensembles.
-namespace eval foo {
-   namespace ensemble create
-   namespace ensemble create -command ::foobar
+\fBnamespace eval\fR foo {
+   \fBnamespace ensemble\fR create
+   \fBnamespace ensemble\fR create -command ::foobar
 }
 foo grill
 foobar grill
 .CE
-
+.PP
 Look up where the command imported in the previous example came from:
 .CS
-puts "grill came from [namespace which grill]"
+puts "grill came from [\fBnamespace which\fR grill]"
 .CE
 
 .SH "SEE ALSO"

@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: split.n,v 1.3.20.1 2004/05/17 18:42:20 dgp Exp $
+'\" RCS: @(#) $Id: split.n,v 1.3.20.2 2004/10/28 18:46:15 dgp Exp $
 '\" 
 .so man.macros
 .TH split n "" Tcl "Tcl Built-In Commands"
@@ -33,33 +33,32 @@ If \fIsplitChars\fR is an empty string then each character of
 .SH EXAMPLES
 Divide up a USENET group name into its hierarchical components:
 .CS
-split "comp.lang.tcl.announce" .
-     \fB=> comp lang tcl announce\fR
+\fBsplit\fR "comp.lang.tcl.announce" .
+     \fI=> comp lang tcl announce\fR
 .CE
-
+.PP
 See how the \fBsplit\fR command splits on \fIevery\fR character in
 \fIsplitChars\fR, which can result in information loss if you are not
 careful:
 .CS
-split "alpha beta gamma" "temp"
-     \fB=> al {ha b} {} {a ga} {} a\fR
+\fBsplit\fR "alpha beta gamma" "temp"
+     \fI=> al {ha b} {} {a ga} {} a\fR
 .CE
-
+.PP
 Extract the list words from a string that is not a well-formed list:
 .CS
-split "Example with {unbalanced brace character"
-     \fB=> Example with \\{unbalanced brace character\fR
+\fBsplit\fR "Example with {unbalanced brace character"
+     \fI=> Example with \\{unbalanced brace character\fR
 .CE
-
+.PP
 Split a string into its constituent characters
 .CS
-split "Hello world" {}
-     \fB=> H e l l o { } w o r l d\fR
+\fBsplit\fR "Hello world" {}
+     \fI=> H e l l o { } w o r l d\fR
 .CE
 .SS "PARSING RECORD-ORIENTED FILES"
 Parse a Unix /etc/passwd file, which consists of one entry per line,
 with each line consisting of a colon-separated list of fields:
-
 .CS
 ## Read the file
 set fid [open /etc/passwd]
@@ -67,13 +66,13 @@ set content [read $fid]
 close $fid
 
 ## Split into records on newlines
-set records [split $content "\\n"]
+set records [\fBsplit\fR $content "\\n"]
 
 ## Iterate over the records
 foreach rec $records {
 
    ## Split into fields on colons
-   set fields [split $rec ":"]
+   set fields [\fBsplit\fR $rec ":"]
 
    ## Assign fields to variables and print some out...
    lassign $fields \\

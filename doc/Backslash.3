@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Backslash.3,v 1.4 2002/07/01 18:24:38 jenglish Exp $
+'\" RCS: @(#) $Id: Backslash.3,v 1.4.4.1 2004/10/28 18:46:07 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_Backslash 3 "8.1" Tcl "Tcl Library Procedures"
@@ -19,7 +19,7 @@ Tcl_Backslash \- parse a backslash sequence
 char
 \fBTcl_Backslash\fR(\fIsrc, countPtr\fR)
 .SH ARGUMENTS
-.AS char *countPtr
+.AS char *countPtr out
 .AP char *src in
 Pointer to a string starting with a backslash.
 .AP int *countPtr out

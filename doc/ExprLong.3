@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: ExprLong.3,v 1.6 2002/08/05 03:24:39 dgp Exp $
+'\" RCS: @(#) $Id: ExprLong.3,v 1.6.4.1 2004/10/28 18:46:09 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_ExprLong 3 7.0 Tcl "Tcl Library Procedures"
@@ -28,12 +28,10 @@ int
 int
 \fBTcl_ExprString\fR(\fIinterp, string\fR)
 .SH ARGUMENTS
-.AS Tcl_Interp *booleanPtr
+.AS Tcl_Interp *booleanPtr out
 .AP Tcl_Interp *interp in
 Interpreter in whose context to evaluate \fIstring\fR or \fIobjPtr\fR.
-.VS 8.4
-.AP "CONST char" *string in
-.VE
+.AP "const char" *string in
 Expression to be evaluated.  
 .AP long *longPtr out
 Pointer to location in which to store the integer value of the

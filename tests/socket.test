@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: socket.test,v 1.26.4.5 2004/09/08 23:03:20 dgp Exp $
+# RCS: @(#) $Id: socket.test,v 1.26.4.6 2004/10/28 18:47:18 dgp Exp $
 
 # Running socket tests with a remote server:
 # ------------------------------------------
@@ -1621,40 +1621,40 @@ test socket-12.3 {testing inheritance of accepted sockets} {socket stdio exec} {
 } {accepted socket was not inherited}
 
 test socket-13.1 {Testing use of shared socket between two threads} \
-	{socket testthread} {
+        -constraints {socket testthread} -setup {
 
-    file delete $path(script1)
     threadReap
 
-    makeFile {
-	set f [socket -server accept 0]
-	set listen [lindex [fconfigure $f -sockname] 2]
-	proc accept {s a p} {
+    set path(script) [makeFile {
+        set f [socket -server accept 0]
+        set listen [lindex [fconfigure $f -sockname] 2]
+        proc accept {s a p} {
             fileevent $s readable [list echo $s]
             fconfigure $s -buffering line
         }
-	proc echo {s} {
-	     global i
+        proc echo {s} {
+             global i
              set l [gets $s]
              if {[eof $s]} {
                  global x
                  close $s
                  set x done
-             } else { 
-	         incr i
+             } else {
+                 incr i
                  puts $s $l
              }
-	}
-	set i 0
-	vwait x
-	close $f
+        }
+        set i 0
+        vwait x
+        close $f
 
-	# thread cleans itself up.
-	testthread exit
-    } script
-    
+        # thread cleans itself up.
+        testthread exit
+    } script]
+
+} -body {
     # create a thread
-    set serverthread [testthread create { source script } ]
+    set serverthread [testthread create [list source $path(script) ] ]
     update
     set port [testthread send $serverthread {set listen}]
     update
@@ -1664,18 +1664,18 @@ test socket-13.1 {Testing use of shared socket between two threads} \
     fconfigure $s -buffering line
 
     catch {
-	puts $s "hello"
-	gets $s result
+        puts $s "hello"
+        gets $s result
     }
     close $s
     update
 
     after 2000
     lappend result [threadReap]
-    
-    set result
+} -cleanup {
+    removeFile script
+} -result {hello 1}
 
-} {hello 1}
 
 removeFile script1
 removeFile script2

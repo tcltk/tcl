@@ -3,7 +3,7 @@
 # utility procs formerly in init.tcl dealing with auto execution
 # of commands and can be auto loaded themselves.
 #
-# RCS: @(#) $Id: auto.tcl,v 1.13.2.3 2004/09/08 23:02:51 dgp Exp $
+# RCS: @(#) $Id: auto.tcl,v 1.13.2.4 2004/10/28 18:47:05 dgp Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1998 Sun Microsystems, Inc.
@@ -51,7 +51,7 @@ proc auto_reset {} {
 
 proc tcl_findLibrary {basename version patch initScript enVarName varName} {
     upvar #0 $varName the_library
-    global env errorInfo
+    global env
 
     set dirs {}
     set errors {}
@@ -141,10 +141,11 @@ proc tcl_findLibrary {basename version patch initScript enVarName varName} {
 	# we have a source command, but no file exists command
 
         if {[interp issafe] || [file exists $file]} {
-            if {![catch {uplevel #0 [list source $file]} msg]} {
+            if {![catch {uplevel #0 [list source $file]} msg opts]} {
                 return
             } else {
-                append errors "$file: $msg\n$errorInfo\n"
+                append errors "$file: $msg\n"
+		append errors [dict get $opts -errorinfo]\n
             }
         }
     }
@@ -186,8 +187,6 @@ if {[interp issafe]} {
 #		are given auto_mkindex will look for *.tcl.
 
 proc auto_mkindex {dir args} {
-    global errorCode errorInfo
-
     if {[interp issafe]} {
         error "can't generate index within safe interpreter"
     }
@@ -209,13 +208,11 @@ proc auto_mkindex {dir args} {
 
     auto_mkindex_parser::init
     foreach file [glob {expand}$args] {
-        if {[catch {auto_mkindex_parser::mkindex $file} msg] == 0} {
+        if {[catch {auto_mkindex_parser::mkindex $file} msg opts] == 0} {
             append index $msg
         } else {
-            set code $errorCode
-            set info $errorInfo
             cd $oldDir
-            error $msg $info $code
+	    return -options $opts $msg
         }
     }
     auto_mkindex_parser::cleanup
@@ -230,7 +227,6 @@ proc auto_mkindex {dir args} {
 # code for "proc" at the beginning of the line.
 
 proc auto_mkindex_old {dir args} {
-    global errorCode errorInfo
     set oldDir [pwd]
     cd $dir
     set dir [pwd]
@@ -256,13 +252,11 @@ proc auto_mkindex_old {dir args} {
 		}
 	    }
 	    close $f
-	} msg]
+	} msg opts]
 	if {$error} {
-	    set code $errorCode
-	    set info $errorInfo
 	    catch {close $f}
 	    cd $oldDir
-	    error $msg $info $code
+	    return -options $opts $msg
 	}
     }
     set f ""
@@ -271,13 +265,12 @@ proc auto_mkindex_old {dir args} {
 	puts -nonewline $f $index
 	close $f
 	cd $oldDir
-    } msg]
+    } msg opts]
     if {$error} {
-	set code $errorCode
-	set info $errorInfo
 	catch {close $f}
 	cd $oldDir
 	error $msg $info $code
+	return -options $opts $msg
     }
 }
 

@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.16 2004/09/30 00:51:31 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.17 2004/10/28 18:46:18 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -221,26 +221,15 @@ Tcl_CreateInterp()
     iPtr->varFramePtr = NULL;
     iPtr->activeVarTracePtr = NULL;
 
-    iPtr->returnCodeKey = Tcl_NewStringObj("-code",-1);
-    Tcl_IncrRefCount(iPtr->returnCodeKey);
-    iPtr->returnErrorcodeKey = Tcl_NewStringObj("-errorcode",-1);
-    Tcl_IncrRefCount(iPtr->returnErrorcodeKey);
-    iPtr->returnErrorinfoKey = Tcl_NewStringObj("-errorinfo",-1);
-    Tcl_IncrRefCount(iPtr->returnErrorinfoKey);
-    iPtr->returnErrorlineKey = Tcl_NewStringObj("-errorline",-1);
-    Tcl_IncrRefCount(iPtr->returnErrorlineKey);
-    iPtr->returnLevelKey = Tcl_NewStringObj("-level",-1);
-    Tcl_IncrRefCount(iPtr->returnLevelKey);
-    iPtr->returnOptionsKey = Tcl_NewStringObj("-options",-1);
-    Tcl_IncrRefCount(iPtr->returnOptionsKey);
-    iPtr->defaultReturnOpts = Tcl_NewDictObj();
-    Tcl_DictObjPut(NULL, iPtr->defaultReturnOpts,
-	    iPtr->returnCodeKey, Tcl_NewIntObj(TCL_OK));
-    Tcl_DictObjPut(NULL, iPtr->defaultReturnOpts,
-	    iPtr->returnLevelKey, Tcl_NewIntObj(1));
-    Tcl_IncrRefCount(iPtr->defaultReturnOpts);
-    iPtr->returnOpts = iPtr->defaultReturnOpts;
-    Tcl_IncrRefCount(iPtr->returnOpts);
+    iPtr->returnOpts = NULL;
+    iPtr->errorInfo = NULL;
+    iPtr->eiVar = Tcl_NewStringObj("errorInfo", -1);
+    Tcl_IncrRefCount(iPtr->eiVar);
+    iPtr->errorCode = NULL;
+    iPtr->ecVar = Tcl_NewStringObj("errorCode", -1);
+    Tcl_IncrRefCount(iPtr->ecVar);
+    iPtr->returnLevel = 0;
+    iPtr->returnCode = TCL_OK;
 
     iPtr->appendResult = NULL;
     iPtr->appendAvl = 0;
@@ -380,6 +369,9 @@ Tcl_CreateInterp()
     Tcl_CreateObjCommand( interp,	 "::tcl::clock::clicks",
 	    TclClockClicksObjCmd,	 (ClientData) NULL,
 	    (Tcl_CmdDeleteProc*) NULL );
+    Tcl_CreateObjCommand( interp,	 "::tcl::clock::getenv",
+	    TclClockGetenvObjCmd,	 (ClientData) NULL,
+	    (Tcl_CmdDeleteProc*) NULL );
     Tcl_CreateObjCommand( interp,	 "::tcl::clock::microseconds",
 	    TclClockMicrosecondsObjCmd,	 (ClientData) NULL,
 	    (Tcl_CmdDeleteProc*) NULL );
@@ -419,37 +411,12 @@ Tcl_CreateInterp()
 	mathFuncPtr->builtinFuncIndex = i;
 	i++;
     }
-    iPtr->flags |= EXPR_INITIALIZED;
 
     /*
      * Do Multiple/Safe Interps Tcl init stuff
      */
 
     TclInterpInit(interp);
-
-    /*
-     * We used to create the "errorInfo" and "errorCode" global vars at this
-     * point because so much of the Tcl implementation assumes they already
-     * exist. This is not quite enough, however, since they can be unset
-     * at any time.
-     *
-     * There are 2 choices:
-     *    + Check every place where a GetVar of those is used 
-     *      and the NULL result is not checked (like in tclLoad.c)
-     *    + Make SetVar,... NULL friendly
-     * We choose the second option because :
-     *    + It is easy and low cost to check for NULL pointer before
-     *      calling strlen()
-     *    + It can be helpfull to other people using those API
-     *    + Passing a NULL value to those closest 'meaning' is empty string
-     *      (specially with the new objects where 0 bytes strings are ok)
-     * So the following init is commented out:              -- dl
-     *
-     * (void) Tcl_SetVar2((Tcl_Interp *)iPtr, "errorInfo", (char *) NULL,
-     *       "", TCL_GLOBAL_ONLY);
-     * (void) Tcl_SetVar2((Tcl_Interp *)iPtr, "errorCode", (char *) NULL,
-     *       "NONE", TCL_GLOBAL_ONLY);
-     */
 
 #ifndef TCL_GENERIC_ONLY
     TclSetupEnv(interp);
@@ -918,10 +885,6 @@ DeleteInterpProc(interp)
     TclLimitRemoveAllHandlers(interp);
 
     /*
-     * Dismantle everything in the global namespace except for the
-     * "errorInfo" and "errorCode" variables. These remain until the
-     * namespace is actually destroyed, in case any errors occur.
-     *   
      * Dismantle the namespace here, before we clear the assocData. If any
      * background errors occur here, they will be deleted below.
      *
@@ -1006,14 +969,19 @@ DeleteInterpProc(interp)
     interp->result = NULL;
     Tcl_DecrRefCount(iPtr->objResultPtr);
     iPtr->objResultPtr = NULL;
-    Tcl_DecrRefCount(iPtr->returnOpts);
-    Tcl_DecrRefCount(iPtr->defaultReturnOpts);
-    Tcl_DecrRefCount(iPtr->returnCodeKey);
-    Tcl_DecrRefCount(iPtr->returnErrorcodeKey);
-    Tcl_DecrRefCount(iPtr->returnErrorinfoKey);
-    Tcl_DecrRefCount(iPtr->returnErrorlineKey);
-    Tcl_DecrRefCount(iPtr->returnLevelKey);
-    Tcl_DecrRefCount(iPtr->returnOptionsKey);
+    Tcl_DecrRefCount(iPtr->ecVar);
+    if (iPtr->errorCode) {
+	Tcl_DecrRefCount(iPtr->errorCode);
+	iPtr->errorCode = NULL;
+    }
+    Tcl_DecrRefCount(iPtr->eiVar);
+    if (iPtr->errorInfo) {
+	Tcl_DecrRefCount(iPtr->errorInfo);
+	iPtr->errorInfo = NULL;
+    }
+    if (iPtr->returnOpts) {
+	Tcl_DecrRefCount(iPtr->returnOpts);
+    }
     if (iPtr->appendResult != NULL) {
 	ckfree(iPtr->appendResult);
         iPtr->appendResult = NULL;
@@ -1110,7 +1078,7 @@ Tcl_HideCommand(interp, cmdName, hiddenCmdToken)
      */
 
     if (strstr(hiddenCmdToken, "::") != NULL) {
-        Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
+        Tcl_AppendResult(interp,
                 "cannot use namespace qualifiers in hidden command",
 		" token (rename)", (char *) NULL);
         return TCL_ERROR;
@@ -1134,8 +1102,7 @@ Tcl_HideCommand(interp, cmdName, hiddenCmdToken)
      */
 
     if ( cmdPtr->nsPtr != iPtr->globalNsPtr ) {
-        Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-                "can only hide global namespace commands",
+        Tcl_AppendResult(interp, "can only hide global namespace commands",
 		" (use rename then hide)", (char *) NULL);
         return TCL_ERROR;
     }
@@ -1160,9 +1127,8 @@ Tcl_HideCommand(interp, cmdName, hiddenCmdToken)
     
     hPtr = Tcl_CreateHashEntry(hiddenCmdTablePtr, hiddenCmdToken, &new);
     if (!new) {
-        Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-                "hidden command named \"", hiddenCmdToken, "\" already exists",
-                (char *) NULL);
+        Tcl_AppendResult(interp, "hidden command named \"", hiddenCmdToken,
+		"\" already exists", (char *) NULL);
         return TCL_ERROR;
     }
 
@@ -1264,10 +1230,8 @@ Tcl_ExposeCommand(interp, hiddenCmdToken, cmdName)
      */
 
     if (strstr(cmdName, "::") != NULL) {
-        Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-                "can not expose to a namespace ",
-		"(use expose to toplevel, then rename)",
-                 (char *) NULL);
+        Tcl_AppendResult(interp, "can not expose to a namespace ",
+		"(use expose to toplevel, then rename)", (char *) NULL);
         return TCL_ERROR;
     }
 
@@ -1281,8 +1245,7 @@ Tcl_ExposeCommand(interp, hiddenCmdToken, cmdName)
 	hPtr = Tcl_FindHashEntry(hiddenCmdTablePtr, hiddenCmdToken);
     }
     if (hPtr == (Tcl_HashEntry *) NULL) {
-        Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-                "unknown hidden command \"", hiddenCmdToken,
+        Tcl_AppendResult(interp, "unknown hidden command \"", hiddenCmdToken,
                 "\"", (char *) NULL);
         return TCL_ERROR;
     }
@@ -1300,7 +1263,7 @@ Tcl_ExposeCommand(interp, hiddenCmdToken, cmdName)
 	 * This case is theoritically impossible,
 	 * we might rather Tcl_Panic() than 'nicely' erroring out ?
 	 */
-        Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
+        Tcl_AppendResult(interp,
                 "trying to expose a non global command name space command",
 		(char *) NULL);
         return TCL_ERROR;
@@ -1316,8 +1279,7 @@ Tcl_ExposeCommand(interp, hiddenCmdToken, cmdName)
 
     hPtr = Tcl_CreateHashEntry(&nsPtr->cmdTable, cmdName, &new);
     if (!new) {
-        Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-                "exposed command \"", cmdName,
+        Tcl_AppendResult(interp, "exposed command \"", cmdName,
                 "\" already exists", (char *) NULL);
         return TCL_ERROR;
     }
@@ -1838,8 +1800,7 @@ TclInvokeObjectCommand(clientData, interp, argc, argv)
      * then reset the object result.
      */
 
-    Tcl_SetResult(interp, TclGetString(Tcl_GetObjResult(interp)),
-	    TCL_VOLATILE);
+    (void) Tcl_GetStringResult(interp);
     
     /*
      * Decrement the ref counts for the argument objects created above,
@@ -1906,7 +1867,7 @@ TclRenameCommand(interp, oldName, newName)
 	/*flags*/ 0);
     cmdPtr = (Command *) cmd;
     if (cmdPtr == NULL) {
-	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "can't ",
+	Tcl_AppendResult(interp, "can't ",
                 ((newName == NULL)||(*newName == '\0'))? "delete":"rename",
                 " \"", oldName, "\": command doesn't exist", (char *) NULL);
 	return TCL_ERROR;
@@ -1938,15 +1899,13 @@ TclRenameCommand(interp, oldName, newName)
        TCL_CREATE_NS_IF_UNKNOWN, &newNsPtr, &dummy1, &dummy2, &newTail);
 
     if ((newNsPtr == NULL) || (newTail == NULL)) {
-	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		 "can't rename to \"", newName, "\": bad command name",
-    	    	 (char *) NULL);
+	Tcl_AppendResult(interp, "can't rename to \"", newName,
+		"\": bad command name", (char *) NULL);
 	result = TCL_ERROR;
 	goto done;
     }
     if (Tcl_FindHashEntry(&newNsPtr->cmdTable, newTail) != NULL) {
-	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		 "can't rename to \"", newName,
+	Tcl_AppendResult(interp, "can't rename to \"", newName,
 		 "\": command already exists", (char *) NULL);
 	result = TCL_ERROR;
 	goto done;
@@ -2789,9 +2748,8 @@ Tcl_GetMathFuncInfo(interp, name, numArgsPtr, argTypesPtr, procPtr,
 
     hPtr = Tcl_FindHashEntry(&iPtr->mathFuncTable, name);
     if (hPtr == NULL) {
-        Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-                "math function \"", name, "\" not known in this interpreter",
-		(char *) NULL);
+        Tcl_AppendResult(interp, "math function \"", name,
+		"\" not known in this interpreter", (char *) NULL);
 	return TCL_ERROR;
     }
     mathFuncPtr = (MathFunc *) Tcl_GetHashValue(hPtr);
@@ -2899,8 +2857,8 @@ TclInterpReady(interp)
     
     if (iPtr->flags & DELETED) {
 	Tcl_ResetResult(interp);
-	Tcl_AppendToObj(Tcl_GetObjResult(interp),
-	        "attempt to call eval in deleted interpreter", -1);
+	Tcl_AppendResult(interp,
+	        "attempt to call eval in deleted interpreter", (char *) NULL);
 	Tcl_SetErrorCode(interp, "CORE", "IDELETE",
 	        "attempt to call eval in deleted interpreter",
 		(char *) NULL);
@@ -2914,8 +2872,8 @@ TclInterpReady(interp)
 
     if (((iPtr->numLevels) > iPtr->maxNestingDepth) 
 	    || (TclpCheckStackSpace() == 0)) {
-	Tcl_AppendToObj(Tcl_GetObjResult(interp),
-		"too many nested evaluations (infinite loop?)", -1); 
+	Tcl_AppendResult(interp,
+		"too many nested evaluations (infinite loop?)", (char *) NULL); 
 	return TCL_ERROR;
     }
 
@@ -3093,9 +3051,8 @@ TclEvalObjvInternal(interp, objc, objv, command, length, flags)
 	    Tcl_IncrRefCount(newObjv[0]);
 	    cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, newObjv[0]);
 	    if (cmdPtr == NULL) {
-	        Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		    "invalid command name \"", Tcl_GetString(objv[0]), "\"",
-		    (char *) NULL);
+	        Tcl_AppendResult(interp, "invalid command name \"",
+			Tcl_GetString(objv[0]), "\"", (char *) NULL);
 	        code = TCL_ERROR;
 	    } else {
 	        code = TEOVI(interp, objc+1, newObjv, command, length, 0);
@@ -3162,10 +3119,6 @@ TclEvalObjvInternal(interp, objc, objv, command, length, flags)
      * Call 'leave' command traces
      */
     if (!(cmdPtr->flags & CMD_IS_DELETED)) {
-	int saveErrFlags = iPtr->flags
-		& (ERR_IN_PROGRESS | ERR_ALREADY_LOGGED | ERROR_CODE_SET);
-	Tcl_Obj *saveOptions = iPtr->returnOpts;
-	Tcl_IncrRefCount(saveOptions);
         if ((cmdPtr->flags & CMD_HAS_EXEC_TRACES) && (traceCode == TCL_OK)) {
             traceCode = TclCheckExecutionTraces(interp, command, length,
                    cmdPtr, code, TCL_TRACE_LEAVE_EXEC, objc, objv);
@@ -3174,13 +3127,6 @@ TclEvalObjvInternal(interp, objc, objv, command, length, flags)
             traceCode = TclCheckInterpTraces(interp, command, length,
                    cmdPtr, code, TCL_TRACE_LEAVE_EXEC, objc, objv);
         }
-	if (traceCode == TCL_OK) {
-	    Tcl_DecrRefCount(iPtr->returnOpts);
-	    iPtr->returnOpts = saveOptions;
-	    Tcl_IncrRefCount(iPtr->returnOpts);
-	    iPtr->flags |= saveErrFlags;
-	}
-	Tcl_DecrRefCount(saveOptions);
     }
     TclCleanupCommand(cmdPtr);
 
@@ -3320,7 +3266,7 @@ Tcl_EvalObjv(interp, objc, objv, flags)
  * Tcl_LogCommandInfo --
  *
  *	This procedure is invoked after an error occurs in an interpreter.
- *	It adds information to the "errorInfo" variable to describe the
+ *	It adds information to iPtr->errorInfo field to describe the
  *	command that was being executed when the error occurred.
  *
  * Results:
@@ -3328,10 +3274,7 @@ Tcl_EvalObjv(interp, objc, objv, flags)
  *
  * Side effects:
  *	Information about the command is added to errorInfo and the
- *	line number stored internally in the interpreter is set.  If this
- *	is the first call to this procedure or Tcl_AddObjErrorInfo since
- *	an error occurred, then old information in errorInfo is
- *	deleted.
+ *	line number stored internally in the interpreter is set.  
  *
  *----------------------------------------------------------------------
  */
@@ -3370,7 +3313,7 @@ Tcl_LogCommandInfo(interp, script, command, length)
 	}
     }
 
-    if (!(iPtr->flags & ERR_IN_PROGRESS)) {
+    if (iPtr->errorInfo == NULL) {
 	message = Tcl_NewStringObj("\n    while executing\n\"", -1);
     } else {
 	message = Tcl_NewStringObj("\n    invoked from within\n\"", -1);
@@ -3380,9 +3323,6 @@ Tcl_LogCommandInfo(interp, script, command, length)
     Tcl_AppendToObj(message, "\"", -1);
     TclAppendObjToErrorInfo(interp, message);
     Tcl_DecrRefCount(message);
-    if (!(iPtr->flags & ERROR_CODE_SET)) {
-	Tcl_SetErrorCode(interp, "NONE", NULL);
-    }
 }
 
 /*
@@ -3758,8 +3698,7 @@ Tcl_Eval(interp, string)
      * back into the string result (some callers may expect it there).
      */
 
-    Tcl_SetResult(interp, TclGetString(Tcl_GetObjResult(interp)),
-	    TCL_VOLATILE);
+    (void) Tcl_GetStringResult(interp);
     return code;
 }
 
@@ -3847,8 +3786,6 @@ Tcl_EvalObjEx(interp, objPtr, flags)
      */
 
     if ((flags & TCL_EVAL_DIRECT)	/* Caller requested no bytecompile   */
-	    && !(iPtr->flags & USE_EVAL_DIRECT)
-	    				/* and interp is not forcing a parse */
 	    && (objPtr->typePtr == &tclListType) /* and we have a list...    */
 	    && (objPtr->bytes == NULL)	/* ...without a string rep.          */
 	    ) {
@@ -3867,9 +3804,7 @@ Tcl_EvalObjEx(interp, objPtr, flags)
 
 	iPtr->evalFlags = 0;
 	Tcl_IncrRefCount(objPtr);
-	if ((iPtr->flags & USE_EVAL_DIRECT)  /* Interp forces no bytecode   */
-		|| (flags & TCL_EVAL_DIRECT) /* Caller requests no bytecode */
-		) {
+	if (flags & TCL_EVAL_DIRECT) { /* Caller requests no bytecode */
 	    /* Parse the script into tokens, and eval the tokens */
 
 	    Tcl_Token *lastTokenPtr;
@@ -3933,11 +3868,11 @@ ProcessUnexpectedResult(interp, returnCode)
 {
     Tcl_ResetResult(interp);
     if (returnCode == TCL_BREAK) {
-	Tcl_AppendToObj(Tcl_GetObjResult(interp),
-	        "invoked \"break\" outside of a loop", -1);
+	Tcl_AppendResult(interp,
+		"invoked \"break\" outside of a loop", (char *) NULL);
     } else if (returnCode == TCL_CONTINUE) {
-	Tcl_AppendToObj(Tcl_GetObjResult(interp),
-		"invoked \"continue\" outside of a loop", -1);
+	Tcl_AppendResult(interp,
+		"invoked \"continue\" outside of a loop", (char *) NULL);
     } else {
         char buf[30 + TCL_INTEGER_SPACE];
 
@@ -4004,8 +3939,7 @@ Tcl_ExprLong(interp, string, ptr)
 	     * then reset the object result.
 	     */
 
-	    Tcl_SetResult(interp, TclGetString(Tcl_GetObjResult(interp)),
-	            TCL_VOLATILE);
+	    (void) Tcl_GetStringResult(interp);
 	}
 	Tcl_DecrRefCount(exprPtr);  /* discard the expression object */	
     } else {
@@ -4055,8 +3989,7 @@ Tcl_ExprDouble(interp, string, ptr)
 	     * then reset the object result.
 	     */
 
-	    Tcl_SetResult(interp, TclGetString(Tcl_GetObjResult(interp)),
-	            TCL_VOLATILE);
+	    (void) Tcl_GetStringResult(interp);
 	}
 	Tcl_DecrRefCount(exprPtr);  /* discard the expression object */
     } else {
@@ -4105,8 +4038,7 @@ Tcl_ExprBoolean(interp, string, ptr)
 	     * then reset the object result.
 	     */
 
-	    Tcl_SetResult(interp, TclGetString(Tcl_GetObjResult(interp)),
-	            TCL_VOLATILE);
+	    (void) Tcl_GetStringResult(interp);
 	}
 	Tcl_DecrRefCount(exprPtr); /* discard the expression object */
     } else {
@@ -4304,48 +4236,39 @@ TclObjInvoke(interp, objc, objv, flags)
     register Interp *iPtr = (Interp *) interp;
     Tcl_HashTable *hTblPtr;	/* Table of hidden commands. */
     char *cmdName;		/* Name of the command from objv[0]. */
-    register Tcl_HashEntry *hPtr;
+    Tcl_HashEntry *hPtr = NULL;
     Command *cmdPtr;
-    Tcl_Obj **localObjv = NULL;	/* command is not found. */
     int result;
 
     /* make whole thing a call to TEOVICount */
 
-    if (objc == 0) {
-	return TCL_OK;
+    if ((objc < 1) || (objv == (Tcl_Obj **) NULL)) {
+        Tcl_AppendResult(interp, "illegal argument vector", (char *) NULL);
+        return TCL_ERROR;
     }
 
-    cmdName = Tcl_GetString(objv[0]);
-    if (flags & TCL_INVOKE_HIDDEN) {
-        /*
-         * We never invoke "unknown" for hidden commands.
-         */
-        
-	hPtr = NULL;
-        hTblPtr = ((Interp *) interp)->hiddenCmdTablePtr;
-        if (hTblPtr != NULL) {
-	    hPtr = Tcl_FindHashEntry(hTblPtr, cmdName);
-	}
-	if (hPtr == NULL) {
-	    Tcl_ResetResult(interp);
-	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		     "invalid hidden command name \"", cmdName, "\"",
-		     (char *) NULL);
-            return TCL_ERROR;
-        }
-	cmdPtr = (Command *) Tcl_GetHashValue(hPtr);
-    } else {
-	cmdPtr = NULL; /* Avoid warning */
+    if ((flags & TCL_INVOKE_HIDDEN) == 0) {
 	Tcl_Panic("TclObjInvoke: called without TCL_INVOKE_HIDDEN");
     }
 
-    /*
-     * Invoke the command procedure. First reset the interpreter's string
-     * and object results to their default empty values since they could
-     * have gotten changed by earlier invocations.
-     */
+    if (TclInterpReady(interp) == TCL_ERROR) {
+	return TCL_ERROR;
+    }
 
-    Tcl_ResetResult(interp);
+    cmdName = Tcl_GetString(objv[0]);
+    hTblPtr = iPtr->hiddenCmdTablePtr;
+    if (hTblPtr != NULL) {
+	hPtr = Tcl_FindHashEntry(hTblPtr, cmdName);
+    }
+    if (hPtr == NULL) {
+	Tcl_AppendResult(interp, "invalid hidden command name \"",
+		cmdName, "\"", (char *) NULL);
+	return TCL_ERROR;
+    }
+    cmdPtr = (Command *) Tcl_GetHashValue(hPtr);
+
+    /* Invoke the command procedure. */
+
     iPtr->cmdCount++;
     result = (*cmdPtr->objProc)(cmdPtr->objClientData, interp, objc, objv);
 
@@ -4358,32 +4281,11 @@ TclObjInvoke(interp, objc, objv, flags)
 	    && ((flags & TCL_INVOKE_NO_TRACEBACK) == 0)
 	    && ((iPtr->flags & ERR_ALREADY_LOGGED) == 0)) {
 	int length;
-	CONST char* cmdString;
-	Tcl_Obj *message, *command = Tcl_NewListObj(objc, objv);
+	Tcl_Obj *command = Tcl_NewListObj(objc, objv);
+	CONST char* cmdString = Tcl_GetStringFromObj(command, &length);
 
-        if (!(iPtr->flags & ERR_IN_PROGRESS)) {
-	    message = Tcl_NewStringObj("\n    while invoking\n\"", -1);
-        } else {
-	    message = Tcl_NewStringObj("\n    invoked from within\n\"", -1);
-        }
-	Tcl_IncrRefCount(message);
-	Tcl_IncrRefCount(command);
-	cmdString = Tcl_GetStringFromObj(command, &length);
-	TclAppendLimitedToObj(message, cmdString, length, 100, NULL);
-	Tcl_DecrRefCount(command);
-        Tcl_AppendToObj(message, "\"", -1);
-        TclAppendObjToErrorInfo(interp, message);
-	Tcl_DecrRefCount(message);
+	Tcl_LogCommandInfo(interp, cmdString, cmdString, length);
 	iPtr->flags &= ~ERR_ALREADY_LOGGED;
-    }
-
-    /*
-     * Free any locally allocated storage used to call "unknown".
-     */
-
-    if (localObjv != (Tcl_Obj **) NULL) {
-	Tcl_DecrRefCount(localObjv[0]);
-        ckfree((char *) localObjv);
     }
     return result;
 }
@@ -4454,8 +4356,7 @@ Tcl_ExprString(interp, string)
 	     * then reset the object result.
 	     */
 	    
-	    Tcl_SetResult(interp, TclGetString(Tcl_GetObjResult(interp)),
-	            TCL_VOLATILE);
+	    (void) Tcl_GetStringResult(interp);
 	}
 	Tcl_DecrRefCount(exprPtr); /* discard the expression object */
     } else {
@@ -4473,16 +4374,14 @@ Tcl_ExprString(interp, string)
  *
  * TclAppendObjToErrorInfo --
  *
- *	Add a Tcl_Obj value to the "errorInfo" variable that describes the
+ *	Add a Tcl_Obj value to the errorInfo field that describes the
  *	current error.
  *
  * Results:
  *	None.
  *
  * Side effects:
- * 	The value of the Tcl_obj is added to the "errorInfo" variable.
- *	If Tcl_Eval has been called since the current value of errorInfo
- *	was set, errorInfo is cleared before adding the new message.
+ * 	The value of the Tcl_obj is appended to the errorInfo field.
  *	If we are just starting to log an error, errorInfo is initialized
  *	from the error message in the interpreter's result.
  *
@@ -4505,16 +4404,14 @@ TclAppendObjToErrorInfo(interp, objPtr)
  *
  * Tcl_AddErrorInfo --
  *
- *	Add information to the "errorInfo" variable that describes the
+ *	Add information to the errorInfo field that describes the
  *	current error.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	The contents of message are added to the "errorInfo" variable.
- *	If Tcl_Eval has been called since the current value of errorInfo
- *	was set, errorInfo is cleared before adding the new message.
+ *	The contents of message are appended to the errorInfo field.
  *	If we are just starting to log an error, errorInfo is initialized
  *	from the error message in the interpreter's result.
  *
@@ -4535,7 +4432,7 @@ Tcl_AddErrorInfo(interp, message)
  *
  * Tcl_AddObjErrorInfo --
  *
- *	Add information to the "errorInfo" variable that describes the
+ *	Add information to the errorInfo field that describes the
  *	current error. This routine differs from Tcl_AddErrorInfo by
  *	taking a byte pointer and length.
  *
@@ -4543,10 +4440,8 @@ Tcl_AddErrorInfo(interp, message)
  *	None.
  *
  * Side effects:
- *	"length" bytes from "message" are added to the "errorInfo" variable.
+ *	"length" bytes from "message" are appended to the errorInfo field.
  *	If "length" is negative, use bytes up to the first NULL byte.
- *	If Tcl_EvalObj has been called since the current value of errorInfo
- *	was set, errorInfo is cleared before adding the new message.
  *	If we are just starting to log an error, errorInfo is initialized
  *	from the error message in the interpreter's result.
  *
@@ -4564,35 +4459,27 @@ Tcl_AddObjErrorInfo(interp, message, length)
 				 * NULL byte. */
 {
     register Interp *iPtr = (Interp *) interp;
-    Tcl_Obj *messagePtr;
     
     /*
      * If we are just starting to log an error, errorInfo is initialized
      * from the error message in the interpreter's result.
      */
 
-    if (!(iPtr->flags & ERR_IN_PROGRESS)) { /* just starting to log error */
-	iPtr->flags |= ERR_IN_PROGRESS;
-
-	if (iPtr->result[0] == 0) {
-	    Tcl_ObjSetVar2(interp, iPtr->execEnvPtr->errorInfo, NULL, 
-	            iPtr->objResultPtr, TCL_GLOBAL_ONLY);
-	} else {		/* use the string result */
-	    Tcl_ObjSetVar2(interp, iPtr->execEnvPtr->errorInfo, NULL, 
-	            Tcl_NewStringObj(interp->result, -1), TCL_GLOBAL_ONLY);
+    if (iPtr->errorInfo == NULL) { /* just starting to log error */
+	if (iPtr->result[0] != 0) {
+	    /*
+	     * The interp's string result is set, apparently by some
+	     * extension making a deprecated direct write to it.
+	     * That extension may expect interp->result to continue
+	     * to be set, so we'll take special pains to avoid clearing
+	     * it, until we drop support for interp->result completely.
+	     */
+	    iPtr->errorInfo = Tcl_NewStringObj(interp->result, -1);
+	} else {
+	    iPtr->errorInfo = iPtr->objResultPtr;
 	}
-
-	/*
-	 * If the errorCode variable wasn't set by the code that generated
-	 * the error, set it to "NONE".
-	 *
-	 * NOTE: The main check for setting the default value of
-	 * errorCode to NONE is in Tcl_LogCommandInfo.  This one
-	 * should go away, but currently it's taking care of setting
-	 * up errorCode after compile errors.
-	 */
-
-	if (!(iPtr->flags & ERROR_CODE_SET)) {
+	Tcl_IncrRefCount(iPtr->errorInfo);
+	if (!iPtr->errorCode) {
 	    Tcl_SetErrorCode(interp, "NONE", NULL);
 	}
     }
@@ -4602,11 +4489,12 @@ Tcl_AddObjErrorInfo(interp, message, length)
      */
 
     if (length != 0) {
-	messagePtr = Tcl_NewStringObj(message, length);
-	Tcl_IncrRefCount(messagePtr);
-	Tcl_ObjSetVar2(interp, iPtr->execEnvPtr->errorInfo, NULL, 
-	        messagePtr, (TCL_GLOBAL_ONLY | TCL_APPEND_VALUE));
-	Tcl_DecrRefCount(messagePtr); /* free msg object appended above */
+	if (Tcl_IsShared(iPtr->errorInfo)) {
+	    Tcl_DecrRefCount(iPtr->errorInfo);
+	    iPtr->errorInfo = Tcl_DuplicateObj(iPtr->errorInfo);
+	    Tcl_IncrRefCount(iPtr->errorInfo);
+	}
+	Tcl_AppendToObj(iPtr->errorInfo, message, length);
     }
 }
 

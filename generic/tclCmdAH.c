@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.33.2.7 2004/09/30 00:51:32 dgp Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.33.2.8 2004/10/28 18:46:20 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -93,7 +93,7 @@ Tcl_CaseObjCmd(dummy, interp, objc, objv)
 {
     register int i;
     int body, result, caseObjc;
-    char *string, *arg;
+    char *stringPtr, *arg;
     Tcl_Obj *CONST *caseObjv;
     Tcl_Obj *armPtr;
 
@@ -103,10 +103,10 @@ Tcl_CaseObjCmd(dummy, interp, objc, objv)
 	return TCL_ERROR;
     }
 
-    string = Tcl_GetString(objv[1]);
+    stringPtr = TclGetString(objv[1]);
     body = -1;
 
-    arg = Tcl_GetString(objv[2]);
+    arg = TclGetString(objv[2]);
     if (strcmp(arg, "in") == 0) {
 	i = 3;
     } else {
@@ -122,7 +122,7 @@ Tcl_CaseObjCmd(dummy, interp, objc, objv)
 
     if (caseObjc == 1) {
 	Tcl_Obj **newObjv;
-	
+
 	Tcl_ListObjGetElements(interp, caseObjv[0], &caseObjc, &newObjv);
 	caseObjv = newObjv;
     }
@@ -135,8 +135,7 @@ Tcl_CaseObjCmd(dummy, interp, objc, objv)
 
 	if (i == (caseObjc - 1)) {
 	    Tcl_ResetResult(interp);
-	    Tcl_AppendToObj(Tcl_GetObjResult(interp),
-	            "extra case pattern with no body", -1);
+	    Tcl_AppendResult(interp, "extra case pattern with no body", NULL);
 	    return TCL_ERROR;
 	}
 
@@ -145,7 +144,7 @@ Tcl_CaseObjCmd(dummy, interp, objc, objv)
 	 * no backslash sequences.
 	 */
 
-	pat = Tcl_GetString(caseObjv[i]);
+	pat = TclGetString(caseObjv[i]);
 	for (p = (unsigned char *) pat; *p != '\0'; p++) {
 	    if (isspace(*p) || (*p == '\\')) {	/* INTL: ISO space, UCHAR */
 		break;
@@ -155,13 +154,12 @@ Tcl_CaseObjCmd(dummy, interp, objc, objv)
 	    if ((*pat == 'd') && (strcmp(pat, "default") == 0)) {
 		body = i + 1;
 	    }
-	    if (Tcl_StringMatch(string, pat)) {
+	    if (Tcl_StringMatch(stringPtr, pat)) {
 		body = i + 1;
 		goto match;
 	    }
 	    continue;
 	}
-
 
 	/*
 	 * Break up pattern lists, then check each of the patterns
@@ -173,7 +171,7 @@ Tcl_CaseObjCmd(dummy, interp, objc, objv)
 	    return result;
 	}
 	for (j = 0; j < patObjc; j++) {
-	    if (Tcl_StringMatch(string, patObjv[j])) {
+	    if (Tcl_StringMatch(stringPtr, patObjv[j])) {
 		body = i + 1;
 		break;
 	    }
@@ -190,11 +188,10 @@ Tcl_CaseObjCmd(dummy, interp, objc, objv)
 	result = Tcl_EvalObjEx(interp, caseObjv[body], 0);
 	if (result == TCL_ERROR) {
 	    char msg[100 + TCL_INTEGER_SPACE];
-	    
-	    arg = Tcl_GetString(armPtr);
-	    sprintf(msg,
-		    "\n    (\"%.50s\" arm line %d)", arg,
-	            interp->errorLine);
+
+	    arg = TclGetString(armPtr);
+	    sprintf(msg, "\n    (\"%.50s\" arm line %d)", arg,
+		    interp->errorLine);
 	    Tcl_AddObjErrorInfo(interp, msg, -1);
 	}
 	return result;
@@ -266,68 +263,25 @@ Tcl_CatchObjCmd(dummy, interp, objc, objv)
 	if (NULL == Tcl_ObjSetVar2(interp, varNamePtr, NULL,
 		Tcl_GetObjResult(interp), 0)) {
 	    Tcl_ResetResult(interp);
-	    Tcl_AppendToObj(Tcl_GetObjResult(interp),  
-	            "couldn't save command result in variable", -1);
+	    Tcl_AppendResult(interp,  
+	            "couldn't save command result in variable", NULL);
 	    return TCL_ERROR;
 	}
     }
     if (objc == 4) {
-	Interp  *iPtr = (Interp *) interp;
-	Tcl_Obj *options = Tcl_DuplicateObj(iPtr->returnOpts);
-	Tcl_Obj *value = NULL;
-
-	if (result != TCL_RETURN) {
-	    Tcl_DictObjPut(NULL, options,
-		    iPtr->returnCodeKey, Tcl_NewIntObj(result));
-	    Tcl_DictObjPut(NULL, options,
-		    iPtr->returnLevelKey, Tcl_NewIntObj(0));
-	}
-
-	if (iPtr->flags & ERR_IN_PROGRESS) {
-	    value = NULL;
-	    Tcl_DictObjGet(NULL, options, iPtr->returnErrorinfoKey, &value);
-	    if (NULL == value) {
-		Tcl_DictObjPut(NULL, options, iPtr->returnErrorinfoKey,
-			Tcl_ObjGetVar2(interp, iPtr->execEnvPtr->errorInfo,
-			NULL, TCL_GLOBAL_ONLY));
-	    }
-	}
-
-	if (result == TCL_ERROR) {
-	    value = NULL;
-	    Tcl_DictObjGet(NULL, options, iPtr->returnErrorcodeKey, &value);
-	    if (NULL == value) {
-		Tcl_DictObjPut(NULL, options, iPtr->returnErrorcodeKey,
-			Tcl_ObjGetVar2(interp, iPtr->execEnvPtr->errorCode,
-			NULL, TCL_GLOBAL_ONLY));
-	    }
-	    value = NULL;
-	    Tcl_DictObjGet(NULL, options, iPtr->returnErrorlineKey, &value);
-	    if (NULL == value) {
-		Tcl_DictObjPut(NULL, options, iPtr->returnErrorlineKey,
-			Tcl_NewIntObj(iPtr->errorLine));
-	    }
-	}
-
-	if (NULL ==
-		Tcl_ObjSetVar2(interp, optionVarNamePtr, NULL, options, 0)) {
+	Tcl_Obj *options = TclGetReturnOptions(interp, result);
+	if (NULL == Tcl_ObjSetVar2(interp, optionVarNamePtr, NULL,
+		options, 0)) {
 	    Tcl_DecrRefCount(options);
 	    Tcl_ResetResult(interp);
-	    Tcl_AppendToObj(Tcl_GetObjResult(interp),  
-	            "couldn't save return options in variable", -1);
+	    Tcl_AppendResult(interp,
+	            "couldn't save return options in variable", NULL);
 	    return TCL_ERROR;
 	}
     }
 
-    /*
-     * Set the interpreter's object result to an integer object holding the
-     * integer Tcl_EvalObj result. Note that we don't bother generating a
-     * string representation. We reset the interpreter's object result
-     * to an unshared empty object and then set it to be an integer object.
-     */
-
     Tcl_ResetResult(interp);
-    Tcl_SetIntObj(Tcl_GetObjResult(interp), result);
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(result));
     return TCL_OK;
 }
 
@@ -376,7 +330,7 @@ Tcl_CdObjCmd(dummy, interp, objc, objv)
 	result = Tcl_FSChdir(dir);
 	if (result != TCL_OK) {
 	    Tcl_AppendResult(interp, "couldn't change working directory to \"",
-		    Tcl_GetString(dir), "\": ", Tcl_PosixError(interp), (char *) NULL);
+		    TclGetString(dir), "\": ", Tcl_PosixError(interp), NULL);
 	    result = TCL_ERROR;
 	}
     }
@@ -478,9 +432,8 @@ Tcl_EncodingObjCmd(dummy, interp, objc, objv)
 {
     int index, length;
     Tcl_Encoding encoding;
-    char *string;
+    char *stringPtr;
     Tcl_DString ds;
-    Tcl_Obj *resultPtr;
 
     static CONST char *optionStrings[] = {
 	"convertfrom", "convertto", "names", "system",
@@ -491,7 +444,7 @@ Tcl_EncodingObjCmd(dummy, interp, objc, objv)
     };
 
     if (objc < 2) {
-    	Tcl_WrongNumArgs(interp, 1, objv, "option ?arg ...?");
+	Tcl_WrongNumArgs(interp, 1, objv, "option ?arg ...?");
         return TCL_ERROR;
     }
     if (Tcl_GetIndexFromObj(interp, objv[1], optionStrings, "option", 0,
@@ -508,13 +461,13 @@ Tcl_EncodingObjCmd(dummy, interp, objc, objv)
 		name = NULL;
 		data = objv[2];
 	    } else if (objc == 4) {
-		name = Tcl_GetString(objv[2]);
+		name = TclGetString(objv[2]);
 		data = objv[3];
 	    } else {
 		Tcl_WrongNumArgs(interp, 2, objv, "?encoding? data");
 		return TCL_ERROR;
 	    }
-	    
+
 	    encoding = Tcl_GetEncoding(interp, name);
 	    if (!encoding) {
 		return TCL_ERROR;
@@ -525,28 +478,27 @@ Tcl_EncodingObjCmd(dummy, interp, objc, objv)
 		 * Treat the string as binary data.
 		 */
 
-		string = (char *) Tcl_GetByteArrayFromObj(data, &length);
-		Tcl_ExternalToUtfDString(encoding, string, length, &ds);
+		stringPtr = (char *) Tcl_GetByteArrayFromObj(data, &length);
+		Tcl_ExternalToUtfDString(encoding, stringPtr, length, &ds);
 
 		/*
 		 * Note that we cannot use Tcl_DStringResult here because
 		 * it will truncate the string at the first null byte.
 		 */
 
-		Tcl_SetStringObj(Tcl_GetObjResult(interp),
-			Tcl_DStringValue(&ds), Tcl_DStringLength(&ds));
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			Tcl_DStringValue(&ds), Tcl_DStringLength(&ds)));
 		Tcl_DStringFree(&ds);
 	    } else {
 		/*
 		 * Store the result as binary data.
 		 */
 
-		string = Tcl_GetStringFromObj(data, &length);
-		Tcl_UtfToExternalDString(encoding, string, length, &ds);
-		resultPtr = Tcl_GetObjResult(interp);
-		Tcl_SetByteArrayObj(resultPtr, 
+		stringPtr = Tcl_GetStringFromObj(data, &length);
+		Tcl_UtfToExternalDString(encoding, stringPtr, length, &ds);
+		Tcl_SetObjResult(interp, Tcl_NewByteArrayObj( 
 			(unsigned char *) Tcl_DStringValue(&ds),
-			Tcl_DStringLength(&ds));
+			Tcl_DStringLength(&ds)));
 		Tcl_DStringFree(&ds);
 	    }
 
@@ -567,11 +519,10 @@ Tcl_EncodingObjCmd(dummy, interp, objc, objv)
 		return TCL_ERROR;
 	    }
 	    if (objc == 2) {
-		Tcl_SetStringObj(Tcl_GetObjResult(interp),
-			Tcl_GetEncodingName(NULL), -1);
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			Tcl_GetEncodingName(NULL), -1));
 	    } else {
-	        return Tcl_SetSystemEncoding(interp,
-			Tcl_GetStringFromObj(objv[2], NULL));
+	        return Tcl_SetSystemEncoding(interp, TclGetString(objv[2]));
 	    }
 	    break;
 	}
@@ -604,29 +555,29 @@ Tcl_ErrorObjCmd(dummy, interp, objc, objv)
     int objc;			/* Number of arguments. */
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
-    Interp *iPtr = (Interp *) interp;
-    char *info;
-    int infoLen;
+    Tcl_Obj *options;
 
     if ((objc < 2) || (objc > 4)) {
 	Tcl_WrongNumArgs(interp, 1, objv, "message ?errorInfo? ?errorCode?");
 	return TCL_ERROR;
     }
-    
+
+    options = Tcl_NewStringObj("-code error -level 0", -1);
+
     if (objc >= 3) {		/* process the optional info argument */
-	info = Tcl_GetStringFromObj(objv[2], &infoLen);
-	if (infoLen > 0) {
-	    Tcl_AddObjErrorInfo(interp, info, infoLen);
-	    iPtr->flags |= ERR_ALREADY_LOGGED;
-	}
+	Tcl_ListObjAppendElement(NULL, options,
+		Tcl_NewStringObj("-errorinfo", -1));
+	Tcl_ListObjAppendElement(NULL, options, objv[2]);
     }
-    
-    if (objc == 4) {
-	Tcl_SetObjErrorCode(interp, objv[3]);
+
+    if (objc == 4) {		/* process the optional code argument */
+	Tcl_ListObjAppendElement(NULL, options,
+		Tcl_NewStringObj("-errorcode", -1));
+	Tcl_ListObjAppendElement(NULL, options, objv[3]);
     }
-    
+
     Tcl_SetObjResult(interp, objv[1]);
-    return TCL_ERROR;
+    return TclSetReturnOptions(interp, options);
 }
 
 /*
@@ -661,7 +612,7 @@ Tcl_EvalObjCmd(dummy, interp, objc, objv)
 	Tcl_WrongNumArgs(interp, 1, objv, "arg ?arg ...?");
 	return TCL_ERROR;
     }
-    
+
     if (objc == 2) {
 	result = Tcl_EvalObjEx(interp, objv[1], TCL_EVAL_DIRECT);
     } else {
@@ -670,7 +621,7 @@ Tcl_EvalObjCmd(dummy, interp, objc, objv)
 	 * between, then evaluate the result.  Tcl_EvalObjEx will delete
 	 * the object when it decrements its refcount after eval'ing it.
 	 */
-    	objPtr = Tcl_ConcatObj(objc-1, objv+1);
+	objPtr = Tcl_ConcatObj(objc-1, objv+1);
 	result = Tcl_EvalObjEx(interp, objPtr, TCL_EVAL_DIRECT);
     }
     if (result == TCL_ERROR) {
@@ -713,7 +664,7 @@ Tcl_ExitObjCmd(dummy, interp, objc, objv)
 	Tcl_WrongNumArgs(interp, 1, objv, "?returnCode?");
 	return TCL_ERROR;
     }
-    
+
     if (objc == 1) {
 	value = 0;
     } else if (Tcl_GetIntFromObj(interp, objv[1], &value) != TCL_OK) {
@@ -840,16 +791,16 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
     };
 
     if (objc < 2) {
-    	Tcl_WrongNumArgs(interp, 1, objv, "option ?arg ...?");
+	Tcl_WrongNumArgs(interp, 1, objv, "option ?arg ...?");
         return TCL_ERROR;
     }
     if (Tcl_GetIndexFromObj(interp, objv[1], fileOptions, "option", 0,
 	    &index) != TCL_OK) {
-    	return TCL_ERROR;
+	return TCL_ERROR;
     }
 
     switch ((enum options) index) {
-    	case FCMD_ATIME: {
+	case FCMD_ATIME: {
 	    Tcl_StatBuf buf;
 	    struct utimbuf tval;
 
@@ -874,9 +825,9 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 		tval.actime = newTime;
 		tval.modtime = buf.st_mtime;
 		if (Tcl_FSUtime(objv[2], &tval) != 0) {
-		    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
+		    Tcl_AppendResult(interp,
 			    "could not set access time for file \"",
-			    Tcl_GetString(objv[2]), "\": ",
+			    TclGetString(objv[2]), "\": ",
 			    Tcl_PosixError(interp), (char *) NULL);
 		    return TCL_ERROR;
 		}
@@ -890,7 +841,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 		    return TCL_ERROR;
 		}
 	    }
-	    Tcl_SetLongObj(Tcl_GetObjResult(interp), (long) buf.st_atime);
+	    Tcl_SetObjResult(interp, Tcl_NewLongObj((long) buf.st_atime));
 	    return TCL_OK;
 	}
 	case FCMD_ATTRIBUTES:
@@ -901,12 +852,12 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 		return TCL_ERROR;
 	    }
 	    return Tcl_GetChannelNamesEx(interp,
-		    ((objc == 2) ? NULL : Tcl_GetString(objv[2])));
+		    ((objc == 2) ? NULL : TclGetString(objv[2])));
 	case FCMD_COPY:
 	    return TclFileCopyCmd(interp, objc, objv);
 	case FCMD_DELETE:
 	    return TclFileDeleteCmd(interp, objc, objv);
-    	case FCMD_DIRNAME: {
+	case FCMD_DIRNAME: {
 	    Tcl_Obj *dirPtr;
 
 	    if (objc != 3) {
@@ -933,9 +884,9 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    return CheckAccess(interp, objv[2], F_OK);
 	case FCMD_EXTENSION: {
 	    Tcl_Obj *ext;
-	    
+
 	    if (objc != 3) {
-	    	goto only3Args;
+		goto only3Args;
 	    }
 	    ext = TclPathPart(interp, objv[2], TCL_PATH_EXTENSION);
 	    if (ext != NULL) {
@@ -946,7 +897,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 		return TCL_ERROR;
 	    }
 	}
-    	case FCMD_ISDIRECTORY: {
+	case FCMD_ISDIRECTORY: {
 	    int value;
 	    Tcl_StatBuf buf;
 
@@ -957,21 +908,21 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    if (GetStatBuf(NULL, objv[2], Tcl_FSStat, &buf) == TCL_OK) {
 		value = S_ISDIR(buf.st_mode);
 	    }
-	    Tcl_SetBooleanObj(Tcl_GetObjResult(interp), value);
+	    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(value));
 	    return TCL_OK;
 	}
-    	case FCMD_ISFILE: {
+	case FCMD_ISFILE: {
 	    int value;
 	    Tcl_StatBuf buf;
-	    
-    	    if (objc != 3) {
-    	    	goto only3Args;
-    	    }
+
+	    if (objc != 3) {
+		goto only3Args;
+	    }
 	    value = 0;
 	    if (GetStatBuf(NULL, objv[2], Tcl_FSStat, &buf) == TCL_OK) {
 		value = S_ISREG(buf.st_mode);
 	    }
-	    Tcl_SetBooleanObj(Tcl_GetObjResult(interp), value);
+	    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(value));
 	    return TCL_OK;
 	}
 	case FCMD_JOIN: {
@@ -988,20 +939,20 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	case FCMD_LINK: {
 	    Tcl_Obj *contents;
 	    int index;
-	    
+
 	    if (objc < 3 || objc > 5) {
 		Tcl_WrongNumArgs(interp, 2, objv, 
 				 "?-linktype? linkname ?target?");
 		return TCL_ERROR;
 	    }
-	    
+
 	    /* Index of the 'source' argument */
 	    if (objc == 5) {
 		index = 3;
 	    } else {
 		index = 2;
 	    }
-	    
+
 	    if (objc > 3) {
 		int linkAction;
 		if (objc == 5) {
@@ -1033,8 +984,9 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 		     * error message.
 		     */
 		    if (errno == EEXIST) {
-			Tcl_AppendResult(interp, "could not create new link \"", 
-				Tcl_GetString(objv[index]), 
+			Tcl_AppendResult(interp,
+				"could not create new link \"", 
+				TclGetString(objv[index]), 
 				"\": that path already exists", (char *) NULL);
 		    } else if (errno == ENOENT) {
 			/*
@@ -1053,22 +1005,23 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 			if (access != 0) {
 			    Tcl_AppendResult(interp, 
 			            "could not create new link \"", 
-				    Tcl_GetString(objv[index]), 
+				    TclGetString(objv[index]), 
 				    "\": no such file or directory", 
 				    (char *) NULL);
 			} else {
 			    Tcl_AppendResult(interp, 
 			            "could not create new link \"", 
-				    Tcl_GetString(objv[index]), 
+				    TclGetString(objv[index]), 
 				    "\": target \"", 
-				    Tcl_GetString(objv[index+1]), 
+				    TclGetString(objv[index+1]), 
 				    "\" doesn't exist", 
 				    (char *) NULL);
 			}
 		    } else {
-			Tcl_AppendResult(interp, "could not create new link \"", 
-				Tcl_GetString(objv[index]), "\" pointing to \"", 
-				Tcl_GetString(objv[index+1]), "\": ", 
+			Tcl_AppendResult(interp,
+				"could not create new link \"",
+				TclGetString(objv[index]), "\" pointing to \"",
+				TclGetString(objv[index+1]), "\": ", 
 				Tcl_PosixError(interp), (char *) NULL);
 		    }
 		    return TCL_ERROR;
@@ -1081,7 +1034,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 		contents = Tcl_FSLink(objv[index], NULL, 0);
 		if (contents == NULL) {
 		    Tcl_AppendResult(interp, "could not read link \"", 
-			    Tcl_GetString(objv[index]), "\": ", 
+			    TclGetString(objv[index]), "\": ", 
 			    Tcl_PosixError(interp), (char *) NULL);
 		    return TCL_ERROR;
 		}
@@ -1097,13 +1050,13 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    }
 	    return TCL_OK;
 	}
-    	case FCMD_LSTAT: {
+	case FCMD_LSTAT: {
 	    Tcl_StatBuf buf;
 
-    	    if (objc != 4) {
-    	    	Tcl_WrongNumArgs(interp, 2, objv, "name varName");
-    	    	return TCL_ERROR;
-    	    }
+	    if (objc != 4) {
+		Tcl_WrongNumArgs(interp, 2, objv, "name varName");
+		return TCL_ERROR;
+	    }
 	    if (GetStatBuf(interp, objv[2], Tcl_FSLstat, &buf) != TCL_OK) {
 		return TCL_ERROR;
 	    }
@@ -1134,9 +1087,9 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 		tval.actime = buf.st_atime;
 		tval.modtime = newTime;
 		if (Tcl_FSUtime(objv[2], &tval) != 0) {
-		    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
+		    Tcl_AppendResult(interp,
 			    "could not set modification time for file \"",
-			    Tcl_GetString(objv[2]), "\": ",
+			    TclGetString(objv[2]), "\": ",
 			    Tcl_PosixError(interp), (char *) NULL);
 		    return TCL_ERROR;
 		}
@@ -1150,7 +1103,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 		    return TCL_ERROR;
 		}
 	    }
-	    Tcl_SetLongObj(Tcl_GetObjResult(interp), (long) buf.st_mtime);
+	    Tcl_SetObjResult(interp, Tcl_NewLongObj((long) buf.st_mtime));
 	    return TCL_OK;
 	}
 	case FCMD_MKDIR:
@@ -1166,13 +1119,13 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    if (objc != 3) {
 		goto only3Args;
 	    }
-	    fileName = Tcl_GetString(objv[2]);
+	    fileName = TclGetString(objv[2]);
 	    fileName = Tcl_TranslateFileName(interp, fileName, &ds);
 	    if (fileName == NULL) {
 		return TCL_ERROR;
 	    }
-	    Tcl_SetStringObj(Tcl_GetObjResult(interp), fileName, 
-			     Tcl_DStringLength(&ds));
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(fileName, 
+			     Tcl_DStringLength(&ds)));
 	    Tcl_DStringFree(&ds);
 	    return TCL_OK;
 	}
@@ -1194,7 +1147,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	case FCMD_OWNED: {
 	    int value;
 	    Tcl_StatBuf buf;
-	    
+
 	    if (objc != 3) {
 		goto only3Args;
 	    }
@@ -1211,7 +1164,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 		value = (geteuid() == buf.st_uid);
 #endif
 	    }	    
-	    Tcl_SetBooleanObj(Tcl_GetObjResult(interp), value);
+	    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(value));
 	    return TCL_OK;
 	}
 	case FCMD_PATHTYPE:
@@ -1220,29 +1173,29 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    }
 	    switch (Tcl_FSGetPathType(objv[2])) {
 	    case TCL_PATH_ABSOLUTE:
-		Tcl_SetStringObj(Tcl_GetObjResult(interp), "absolute", -1);
+		Tcl_SetObjResult(interp, Tcl_NewStringObj("absolute", -1));
 		break;
 	    case TCL_PATH_RELATIVE:
-		Tcl_SetStringObj(Tcl_GetObjResult(interp), "relative", -1);
+		Tcl_SetObjResult(interp, Tcl_NewStringObj("relative", -1));
 		break;
 	    case TCL_PATH_VOLUME_RELATIVE:
-		Tcl_SetStringObj(Tcl_GetObjResult(interp), "volumerelative",
-			-1);
+		Tcl_SetObjResult(interp,
+			Tcl_NewStringObj("volumerelative", -1));
 		break;
 	    }
 	    return TCL_OK;
-    	case FCMD_READABLE:
+	case FCMD_READABLE:
 	    if (objc != 3) {
 		goto only3Args;
 	    }
 	    return CheckAccess(interp, objv[2], R_OK);
 	case FCMD_READLINK: {
 	    Tcl_Obj *contents;
-		
+
 	    if (objc != 3) {
 		goto only3Args;
 	    }
-	    
+
 	    if (Tcl_FSConvertToPathType(interp, objv[2]) != TCL_OK) {
 		return TCL_ERROR;
 	    }
@@ -1250,10 +1203,10 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    contents = Tcl_FSLink(objv[2], NULL, 0);
 
 	    if (contents == NULL) {
-	    	Tcl_AppendResult(interp, "could not readlink \"", 
-	    		Tcl_GetString(objv[2]), "\": ", 
-	    		Tcl_PosixError(interp), (char *) NULL);
-	    	return TCL_ERROR;
+		Tcl_AppendResult(interp, "could not readlink \"", 
+			TclGetString(objv[2]), "\": ", 
+			Tcl_PosixError(interp), (char *) NULL);
+		return TCL_ERROR;
 	    }
 	    Tcl_SetObjResult(interp, contents);
 	    Tcl_DecrRefCount(contents);
@@ -1263,7 +1216,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    return TclFileRenameCmd(interp, objc, objv);
 	case FCMD_ROOTNAME: {
 	    Tcl_Obj *root;
-	    
+
 	    if (objc != 3) {
 		goto only3Args;
 	    }
@@ -1305,30 +1258,29 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    return TCL_OK;
 	case FCMD_SIZE: {
 	    Tcl_StatBuf buf;
-	    
+
 	    if (objc != 3) {
 		goto only3Args;
 	    }
 	    if (GetStatBuf(interp, objv[2], Tcl_FSStat, &buf) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	    Tcl_SetWideIntObj(Tcl_GetObjResult(interp),
-		    (Tcl_WideInt) buf.st_size);
+	    Tcl_SetObjResult(interp,
+		    Tcl_NewWideIntObj((Tcl_WideInt) buf.st_size));
 	    return TCL_OK;
 	}
 	case FCMD_SPLIT: {
 	    Tcl_Obj *res;
-	    
+
 	    if (objc != 3) {
 		goto only3Args;
 	    }
 	    res = Tcl_FSSplitPath(objv[2], NULL);
 	    if (res == NULL) {
 		if (interp != NULL) {
-		    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), 
-			"could not read \"", Tcl_GetString(objv[2]),
-			"\": no such file or directory", 
-			(char *) NULL);
+		    Tcl_AppendResult(interp, "could not read \"",
+			TclGetString(objv[2]),
+			"\": no such file or directory", (char *) NULL);
 		}
 		return TCL_ERROR;
 	    } else {
@@ -1338,9 +1290,9 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	}
 	case FCMD_STAT: {
 	    Tcl_StatBuf buf;
-	    
+
 	    if (objc != 4) {
-	    	Tcl_WrongNumArgs(interp, 1, objv, "stat name varName");
+		Tcl_WrongNumArgs(interp, 1, objv, "stat name varName");
 		return TCL_ERROR;
 	    }
 	    if (GetStatBuf(interp, objv[2], Tcl_FSStat, &buf) != TCL_OK) {
@@ -1364,7 +1316,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 		return TCL_ERROR;
 	    }
 	}
-    	case FCMD_TAIL: {
+	case FCMD_TAIL: {
 	    Tcl_Obj *dirPtr;
 
 	    if (objc != 3) {
@@ -1383,13 +1335,13 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    Tcl_StatBuf buf;
 
 	    if (objc != 3) {
-	    	goto only3Args;
+		goto only3Args;
 	    }
 	    if (GetStatBuf(interp, objv[2], Tcl_FSLstat, &buf) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	    Tcl_SetStringObj(Tcl_GetObjResult(interp), 
-		    GetTypeFromMode((unsigned short) buf.st_mode), -1);
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    GetTypeFromMode((unsigned short) buf.st_mode), -1));
 	    return TCL_OK;
 	}
 	case FCMD_VOLUMES:
@@ -1401,7 +1353,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    return TCL_OK;
 	case FCMD_WRITABLE:
 	    if (objc != 3) {
-	    	goto only3Args;
+		goto only3Args;
 	    }
 	    return CheckAccess(interp, objv[2], W_OK);
     }
@@ -1428,7 +1380,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
  *
  *---------------------------------------------------------------------------
  */
-  
+
 static int
 CheckAccess(interp, pathPtr, mode)
     Tcl_Interp *interp;		/* Interp for status return.  Must not be
@@ -1438,13 +1390,13 @@ CheckAccess(interp, pathPtr, mode)
 				 * access(). */
 {
     int value;
-    
+
     if (Tcl_FSConvertToPathType(interp, pathPtr) != TCL_OK) {
 	value = 0;
     } else {
 	value = (Tcl_FSAccess(pathPtr, mode) == 0);
     }
-    Tcl_SetBooleanObj(Tcl_GetObjResult(interp), value);
+    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(value));
 
     return TCL_OK;
 }
@@ -1479,17 +1431,17 @@ GetStatBuf(interp, pathPtr, statProc, statPtr)
 				 * calling (*statProc)(). */
 {
     int status;
-    
+
     if (Tcl_FSConvertToPathType(interp, pathPtr) != TCL_OK) {
 	return TCL_ERROR;
     }
 
     status = (*statProc)(pathPtr, statPtr);
-    
+
     if (status < 0) {
 	if (interp != NULL) {
 	    Tcl_AppendResult(interp, "could not read \"",
-		    Tcl_GetString(pathPtr), "\": ",
+		    TclGetString(pathPtr), "\": ",
 		    Tcl_PosixError(interp), (char *) NULL);
 	}
 	return TCL_ERROR;
@@ -1738,11 +1690,11 @@ Tcl_ForeachObjCmd(dummy, interp, objc, objv)
      * the evaluation stack and that stack might be grown and reallocated
      * if the loop body requires a large amount of stack space.
      */
-    
+
 #define NUM_ARGS 9
     Tcl_Obj *(argObjStorage[NUM_ARGS]);
     Tcl_Obj **argObjv = argObjStorage;
-    
+
 #define STATIC_LIST_SIZE 4
     int indexArray[STATIC_LIST_SIZE];
     int varcListArray[STATIC_LIST_SIZE];
@@ -1810,18 +1762,17 @@ Tcl_ForeachObjCmd(dummy, interp, objc, objv)
 	    goto done;
 	}
 	if (varcList[i] < 1) {
-	    Tcl_AppendToObj(Tcl_GetObjResult(interp),
-	            "foreach varlist is empty", -1);
+	    Tcl_AppendResult(interp, "foreach varlist is empty", NULL);
 	    result = TCL_ERROR;
 	    goto done;
 	}
-	
+
 	result = Tcl_ListObjGetElements(interp, argObjv[2+i*2],
 	        &argcList[i], &argvList[i]);
 	if (result != TCL_OK) {
 	    goto done;
 	}
-	
+
 	j = argcList[i] / varcList[i];
 	if ((argcList[i] % varcList[i]) != 0) {
 	    j++;
@@ -1835,7 +1786,7 @@ Tcl_ForeachObjCmd(dummy, interp, objc, objv)
      * Iterate maxj times through the lists in parallel
      * If some value lists run out of values, set loop vars to ""
      */
-    
+
     bodyPtr = argObjv[objc-1];
     for (j = 0;  j < maxj;  j++) {
 	for (i = 0;  i < numLists;  i++) {
@@ -1858,12 +1809,12 @@ Tcl_ForeachObjCmd(dummy, interp, objc, objv)
 	    if (result != TCL_OK) {
 		Tcl_Panic("Tcl_ForeachObjCmd: could not reconvert value list %d to a list object\n", i);
 	    }
-	    
+
 	    for (v = 0;  v < varcList[i];  v++) {
 		int k = index[i]++;
 		Tcl_Obj *valuePtr, *varValuePtr;
 		int isEmptyObj = 0;
-		
+
 		if (k < argcList[i]) {
 		    valuePtr = argvList[i][k];
 		} else {
@@ -1877,9 +1828,8 @@ Tcl_ForeachObjCmd(dummy, interp, objc, objv)
 			Tcl_DecrRefCount(valuePtr);
 		    }
 		    Tcl_ResetResult(interp);
-		    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-			"couldn't set loop variable: \"",
-			Tcl_GetString(varvList[i][v]), "\"", (char *) NULL);
+		    Tcl_AppendResult(interp, "couldn't set loop variable: \"",
+			    TclGetString(varvList[i][v]), "\"", (char *) NULL);
 		    result = TCL_ERROR;
 		    goto done;
 		}
@@ -1946,7 +1896,7 @@ Tcl_ForeachObjCmd(dummy, interp, objc, objv)
 	/* ARGSUSED */
 int
 Tcl_FormatObjCmd(dummy, interp, objc, objv)
-    ClientData dummy;    	/* Not used. */
+    ClientData dummy;		/* Not used. */
     Tcl_Interp *interp;		/* Current interpreter. */
     int objc;			/* Number of arguments. */
     Tcl_Obj *CONST objv[];	/* Argument objects. */
@@ -1983,7 +1933,7 @@ Tcl_FormatObjCmd(dummy, interp, objc, objv)
 #   define WIDE_VALUE 5
 #   define MAX_FLOAT_SIZE 320
 
-    Tcl_Obj *resultPtr;  	/* Where result is stored finally. */
+    Tcl_Obj *resultPtr;		/* Where result is stored finally. */
     char staticBuf[MAX_FLOAT_SIZE + 1];
 				/* A static buffer to copy the format results 
 				 * into */

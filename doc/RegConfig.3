@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: RegConfig.3,v 1.2.2.2 2004/09/08 23:02:34 dgp Exp $
+'\" RCS: @(#) $Id: RegConfig.3,v 1.2.2.3 2004/10/28 18:46:11 dgp Exp $
 .so man.macros
 .TH Tcl_RegisterConfig 3 8.4 Tcl "Tcl Library Procedures"
 .BS
@@ -19,11 +19,11 @@ void
 \fBTcl_RegisterConfig\fR(\fIinterp, pkgName, configuration, valEncoding\fR)
 .sp
 .SH ARGUMENTS
-.AS Tcl_Interp *interp
+.AS Tcl_Interp *configuration
 .AP Tcl_Interp *interp in
 Refers to the interpreter the embedded configuration information is
 registered for. Must not be NULL.
-.AP "CONST char" *pkgName in
+.AP "const char" *pkgName in
 Contains the name of the package registering the embedded
 configuration as ASCII string. This means that this information is in
 UTF-8 too. Must not be NULL.
@@ -32,7 +32,7 @@ Refers to an array of Tcl_Config entries containing the information
 embedded in the binary library. Must not be NULL. The end of the array
 is signaled by either a key identical to NULL, or a key referring to
 the empty string.
-.AP "CONST char" *valEncoding in
+.AP "const char" *valEncoding in
 Contains the name of the encoding used to store the configuration
 values as ASCII string. This means that this information is in UTF-8
 too. Must not be NULL.
@@ -103,10 +103,10 @@ Returns the configuration value associated with the specified
 The \fBTcl_Config\fR structure contains the following fields:
 .PP
 .CS
- typedef struct Tcl_Config {
-    CONST char* key;
-    CONST char* value;
- } Tcl_Config;
+typedef struct Tcl_Config {
+        const char* key;
+        const char* value;
+} Tcl_Config;
 .CE
 
 '\" No cross references yet.

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.49.2.4 2004/09/30 00:51:34 dgp Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.49.2.5 2004/10/28 18:46:22 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2258,58 +2258,66 @@ TclCompileReturnCmd(interp, parsePtr, envPtr)
      * General syntax: [return ?-option value ...? ?result?]
      * An even number of words means an explicit result argument is present.
      */
-    int level = 1, code = TCL_OK, status = TCL_OK;
+    int level, code, status = TCL_OK;
     int numWords = parsePtr->numWords;
     int explicitResult = (0 == (numWords % 2));
     int numOptionWords = numWords - 1 - explicitResult;
-    Interp *iPtr = (Interp *) interp;
-    Tcl_Obj *returnOpts = iPtr->defaultReturnOpts;
+    Tcl_Obj *returnOpts;
     Tcl_Token *wordTokenPtr = parsePtr->tokenPtr
 		+ (parsePtr->tokenPtr->numComponents + 1);
+#define NUM_STATIC_OBJS 20
+    int objc;
+    Tcl_Obj *staticObjArray[NUM_STATIC_OBJS], **objv;
 
-    if (numOptionWords > 0) {
-	/* 
-	 * Scan through the return options.  If any are unknown at compile
-	 * time, there is no value in bytecompiling.  Save the option values
-	 * known in an objv array for merging into a return options dictionary.
-	 */
-	int objc;
-	Tcl_Obj **objv = (Tcl_Obj **)
-		ckalloc(numOptionWords * sizeof(Tcl_Obj *));
-	for (objc = 0; objc < numOptionWords; objc++) {
-	    objv[objc] = Tcl_NewObj();
-	    Tcl_IncrRefCount(objv[objc]);
-	    if (!TclWordKnownAtCompileTime(wordTokenPtr, objv[objc])) {
-		objc++;
-		status = TCL_ERROR;
-		goto cleanup;
-	    }
-	    wordTokenPtr += wordTokenPtr->numComponents + 1;
-	}
-	status = TclMergeReturnOptions(interp, objc, objv,
-		&returnOpts, &code, &level);
-    cleanup:
-	while (--objc >= 0) {
-	    Tcl_DecrRefCount(objv[objc]);
-	}
-	ckfree((char *)objv);
-	if (TCL_ERROR == status) {
-	    /* Something was bogus in the return options.  Clear the
-	     * error message, and report back to the compiler that this
-	     * must be interpreted at runtime. */
-	    Tcl_ResetResult(interp);
-	    return TCL_OUT_LINE_COMPILE;
-	}
+    if (numOptionWords > NUM_STATIC_OBJS) {
+	objv = (Tcl_Obj **) ckalloc(numOptionWords * sizeof(Tcl_Obj *));
+    } else {
+	objv = staticObjArray;
     }
 
-    /* All options are known at compile time, so we're going to
-     * bytecompile.   Emit instructions to push the result on
-     * the stack */
+    /* 
+     * Scan through the return options.  If any are unknown at compile
+     * time, there is no value in bytecompiling.  Save the option values
+     * known in an objv array for merging into a return options dictionary.
+     */
+
+    for (objc = 0; objc < numOptionWords; objc++) {
+	objv[objc] = Tcl_NewObj();
+	Tcl_IncrRefCount(objv[objc]);
+	if (!TclWordKnownAtCompileTime(wordTokenPtr, objv[objc])) {
+	    objc++;
+	    status = TCL_ERROR;
+	    goto cleanup;
+	}
+	wordTokenPtr += wordTokenPtr->numComponents + 1;
+    }
+    status = TclMergeReturnOptions(interp, objc, objv,
+	    &returnOpts, &code, &level);
+cleanup:
+    while (--objc >= 0) {
+	Tcl_DecrRefCount(objv[objc]);
+    }
+    if (numOptionWords > NUM_STATIC_OBJS) {
+	ckfree((char *)objv);
+    }
+    if (TCL_ERROR == status) {
+	/*
+	 * Something was bogus in the return options.  Clear the
+	 * error message, and report back to the compiler that this
+	 * must be interpreted at runtime.
+	 */
+	Tcl_ResetResult(interp);
+	return TCL_OUT_LINE_COMPILE;
+    }
+
+    /*
+     * All options are known at compile time, so we're going to bytecompile.
+     * Emit instructions to push the result on the stack
+     */
 
     if (explicitResult) {
 	if (wordTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
-	    /* Explicit result is a simple word, so we can compile quickly to
-	     * a simple push */
+	    /* Simple word: compile quickly to a simple push */
 	    TclEmitPush(TclRegisterNewLiteral(envPtr, wordTokenPtr[1].start,
 			wordTokenPtr[1].size), envPtr);
 	} else {
@@ -2322,13 +2330,12 @@ TclCompileReturnCmd(interp, parsePtr, envPtr)
 	TclEmitPush(TclRegisterNewLiteral(envPtr, "", 0), envPtr);
     }
 
-    /* 
-     * Check for optimization:  When [return] is in a proc, and there's
-     * no enclosing [catch], and the default return options are in effect,
-     * then the INST_DONE instruction is equivalent, and considerably more
-     * efficient.
-     */
-    if (returnOpts == iPtr->defaultReturnOpts) {
+   /* 
+    * Check for optimization:  When [return] is in a proc, and there's
+    * no enclosing [catch], and there are no return options, then the
+    * INST_DONE instruction is equivalent, and may be more efficient.
+    */
+    if (numOptionWords == 0) {
 	/* We have default return options... */
 	if (envPtr->procPtr != NULL) {
 	    /* ... and we're in a proc ... */
@@ -2345,6 +2352,7 @@ TclCompileReturnCmd(interp, parsePtr, envPtr)
 	    }
 	    if (!enclosingCatch) {
 		/* ... and there is no enclosing catch. */
+		Tcl_DecrRefCount(returnOpts);
 		TclEmitOpcode(INST_DONE, envPtr);
 		return TCL_OK;
 	    }
@@ -2356,6 +2364,7 @@ TclCompileReturnCmd(interp, parsePtr, envPtr)
      * dictionary, and emit the INST_RETURN instruction with code
      * and level as operands.
      */
+
     TclEmitPush(TclAddLiteralObj(envPtr, returnOpts, NULL), envPtr);
     TclEmitInstInt4(INST_RETURN, code, envPtr);
     TclEmitInt4(level, envPtr);

@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: join.n,v 1.3.20.1 2004/05/17 18:42:20 dgp Exp $
+'\" RCS: @(#) $Id: join.n,v 1.3.20.2 2004/10/28 18:46:15 dgp Exp $
 '\" 
 .so man.macros
 .TH join n "" Tcl "Tcl Built-In Commands"
@@ -28,14 +28,14 @@ The \fIjoinString\fR argument defaults to a space character.
 Making a comma-separated list:
 .CS
 set data {1 2 3 4 5}
-join $data ", "
+\fBjoin\fR $data ", "
      \fB=> 1, 2, 3, 4, 5\fR
 .CE
-
+.PP
 Using \fBjoin\fR to flatten a list by a single level:
 .CS
 set data {1 {2 3} 4 {5 {6 7} 8}}
-join $data
+\fBjoin\fR $data
      \fB=> 1 2 3 4 5 {6 7} 8\fR
 .CE
 

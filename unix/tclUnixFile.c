@@ -9,10 +9,11 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFile.c,v 1.32.4.4 2004/09/08 23:03:27 dgp Exp $
+ * RCS: @(#) $Id: tclUnixFile.c,v 1.32.4.5 2004/10/28 18:47:35 dgp Exp $
  */
 
 #include "tclInt.h"
+#include "tclFileSystem.h"
 
 static int NativeMatchType(CONST char* nativeName, Tcl_GlobTypeData *types);
 
@@ -898,6 +899,132 @@ TclpFilesystemPathType(pathPtr)
 {
     /* All native paths are of the same type */
     return NULL;
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * TclpNativeToNormalized --
+ *
+ *      Convert native format to a normalized path object, with refCount
+ *      of zero.
+ *      
+ *      Currently assumes all native paths are actually normalized
+ *      already, so if the path given is not normalized this will
+ *      actually just convert to a valid string path, but not
+ *      necessarily a normalized one.
+ *
+ * Results:
+ *      A valid normalized path.
+ *
+ * Side effects:
+ *	None.
+ *
+ *---------------------------------------------------------------------------
+ */
+Tcl_Obj* 
+TclpNativeToNormalized(clientData)
+    ClientData clientData;
+{
+    Tcl_DString ds;
+    Tcl_Obj *objPtr;
+    int len;
+    
+    CONST char *copy;
+    Tcl_ExternalToUtfDString(NULL, (CONST char*)clientData, -1, &ds);
+    
+    copy = Tcl_DStringValue(&ds);
+    len = Tcl_DStringLength(&ds);
+
+    objPtr = Tcl_NewStringObj(copy,len);
+    Tcl_DStringFree(&ds);
+    
+    return objPtr;
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * TclNativeCreateNativeRep --
+ *
+ *      Create a native representation for the given path.
+ *
+ * Results:
+ *      The nativePath representation.
+ *
+ * Side effects:
+ *	Memory will be allocated.  The path may need to be normalized.
+ *
+ *---------------------------------------------------------------------------
+ */
+ClientData 
+TclNativeCreateNativeRep(pathPtr)
+    Tcl_Obj* pathPtr;
+{
+    char *nativePathPtr;
+    Tcl_DString ds;
+    Tcl_Obj* validPathPtr;
+    int len;
+    char *str;
+
+    if (TclFSCwdIsNative()) {
+	/* 
+	 * The cwd is native, which means we can use the translated
+	 * path without worrying about normalization (this will also
+	 * usually be shorter so the utf-to-external conversion will
+	 * be somewhat faster).
+	 */
+	validPathPtr = Tcl_FSGetTranslatedPath(NULL, pathPtr);
+    } else {
+	/* Make sure the normalized path is set */
+	validPathPtr = Tcl_FSGetNormalizedPath(NULL, pathPtr);
+	Tcl_IncrRefCount(validPathPtr);
+    }
+
+    str = Tcl_GetStringFromObj(validPathPtr, &len);
+    Tcl_UtfToExternalDString(NULL, str, len, &ds);
+    len = Tcl_DStringLength(&ds) + sizeof(char);
+    Tcl_DecrRefCount(validPathPtr);
+    nativePathPtr = ckalloc((unsigned) len);
+    memcpy((VOID*)nativePathPtr, (VOID*)Tcl_DStringValue(&ds), (size_t) len);
+	  
+    Tcl_DStringFree(&ds);
+    return (ClientData)nativePathPtr;
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * TclNativeDupInternalRep --
+ *
+ *      Duplicate the native representation.
+ *
+ * Results:
+ *      The copied native representation, or NULL if it is not possible
+ *      to copy the representation.
+ *
+ * Side effects:
+ *	Memory will be allocated for the copy.
+ *
+ *---------------------------------------------------------------------------
+ */
+ClientData 
+TclNativeDupInternalRep(clientData)
+    ClientData clientData;
+{
+    char *copy;
+    size_t len;
+
+    if (clientData == NULL) {
+	return NULL;
+    }
+
+    /* ascii representation when running on Unix */
+    len = sizeof(char) + (strlen((CONST char*)clientData) * sizeof(char));
+    
+    copy = (char *) ckalloc(len);
+    memcpy((VOID*)copy, (VOID*)clientData, len);
+    return (ClientData)copy;
 }
 
 /*

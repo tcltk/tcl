@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: list.n,v 1.7.6.2 2004/05/17 18:42:20 dgp Exp $
+'\" RCS: @(#) $Id: list.n,v 1.7.6.3 2004/10/28 18:46:15 dgp Exp $
 '\" 
 .so man.macros
 .TH list n "" Tcl "Tcl Built-In Commands"
@@ -32,7 +32,7 @@ the list, while \fBlist\fR works directly from the original arguments.
 .SH EXAMPLE
 The command
 .CS
-list a b "c d e  " "  f {g h}"
+\fBlist\fR a b "c d e  " "  f {g h}"
 .CE
 will return
 .CS
@@ -44,11 +44,11 @@ while \fBconcat\fR with the same arguments will return
 .CE
 
 .SH "SEE ALSO"
-lappend(n), lindex(n), linsert(n), llength(n),
+lappend(n), lindex(n), linsert(n), llength(n), lrange(n),
 .VS 8.5
 lrepeat(n),
-.VE
-lrange(n), lreplace(n), lsearch(n), lset(n), lsort(n)
+.VE 8.5
+lreplace(n), lsearch(n), lset(n), lsort(n)
 
 .SH KEYWORDS
 element, list

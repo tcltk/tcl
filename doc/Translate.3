@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Translate.3,v 1.6.4.1 2003/08/07 21:35:58 dgp Exp $
+'\" RCS: @(#) $Id: Translate.3,v 1.6.4.2 2004/10/28 18:46:12 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_TranslateFileName 3 8.1 Tcl "Tcl Library Procedures"
@@ -19,10 +19,10 @@ Tcl_TranslateFileName \- convert file name to native form and replace tilde with
 char *
 \fBTcl_TranslateFileName\fR(\fIinterp\fR, \fIname\fR, \fIbufferPtr\fR)
 .SH ARGUMENTS
-.AS Tcl_DString *bufferPtr
+.AS Tcl_DString *bufferPtr in/out
 .AP Tcl_Interp *interp in
 Interpreter in which to report an error, if any.
-.AP "CONST char" *name in
+.AP "const char" *name in
 File name, which may start with a ``~''.
 .AP Tcl_DString *bufferPtr in/out
 If needed, this dynamic string is used to store the new file name.

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.127.2.16 2004/09/30 00:51:41 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.127.2.17 2004/10/28 18:46:54 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -530,6 +530,18 @@ typedef struct Var {
 #define TclClearVarUndefined(varPtr) \
     (varPtr)->flags &= ~VAR_UNDEFINED
 
+#define TclSetVarTraceActive(varPtr) \
+    (varPtr)->flags |= VAR_TRACE_ACTIVE
+
+#define TclClearVarTraceActive(varPtr) \
+    (varPtr)->flags &= ~VAR_TRACE_ACTIVE
+
+#define TclSetVarNamespaceVar(varPtr) \
+    (varPtr)->flags |= VAR_NAMESPACE_VAR
+
+#define TclClearVarNamespaceVar(varPtr) \
+    (varPtr)->flags &= ~VAR_NAMESPACE_VAR
+
 /*
  * Macros to read various flag bits of variables.
  * The ANSI C "prototypes" for these macros are:
@@ -559,6 +571,9 @@ typedef struct Var {
 #define TclIsVarArrayElement(varPtr) \
     ((varPtr)->flags & VAR_ARRAY_ELEMENT)
 
+#define TclIsVarNamespaceVar(varPtr) \
+    ((varPtr)->flags & VAR_NAMESPACE_VAR)
+
 #define TclIsVarTemporary(varPtr) \
     ((varPtr)->flags & VAR_TEMPORARY)
     
@@ -567,6 +582,28 @@ typedef struct Var {
     
 #define TclIsVarResolved(varPtr) \
     ((varPtr)->flags & VAR_RESOLVED)
+
+#define TclIsVarTraceActive(varPtr) \
+    ((varPtr)->flags & VAR_TRACE_ACTIVE)
+
+#define TclIsVarUntraced(varPtr) \
+    ((varPtr)->tracePtr == NULL)
+
+/*
+ * Macros for direct variable access by TEBC
+ */
+
+#define TclIsVarDirectReadable(varPtr) \
+       (TclIsVarScalar(varPtr) \
+    && !TclIsVarUndefined(varPtr) \
+    && TclIsVarUntraced(varPtr))
+
+#define TclIsVarDirectWritable(varPtr) \
+    (   !(((varPtr)->flags & VAR_IN_HASHTABLE) \
+		&& ((varPtr)->hPtr == NULL)) \
+     && TclIsVarUntraced(varPtr) \
+     && (TclIsVarScalar(varPtr) \
+	     || TclIsVarUndefined(varPtr)))
 
 /*
  *----------------------------------------------------------------
@@ -888,8 +925,6 @@ typedef struct ExecEnv {
     Tcl_Obj **tosPtr;		/* Points to current top of stack; 
 				 * (stackPtr-1) when the stack is empty. */
     Tcl_Obj **endPtr;		/* Points to last usable item in stack. */
-    Tcl_Obj *errorInfo;
-    Tcl_Obj *errorCode;
 } ExecEnv;
 
 /*
@@ -1224,7 +1259,7 @@ typedef struct Interp {
     ActiveVarTrace *activeVarTracePtr;
 				/* First in list of active traces for
 				 * interp, or NULL if no active traces. */
-    int unused2;		/* No longer used (was returnCode) */
+    int returnCode;		/* [return -code] parameter */
     char *unused3;		/* No longer used (was errorInfo) */
     char *unused4;		/* No longer used (was errorCode) */
 
@@ -1324,13 +1359,12 @@ typedef struct Interp {
     /* Fields used to manage extensible return options (TIP 90) */
     Tcl_Obj *returnOpts;	/* A dictionary holding the options to the
 				 * last [return] command */
-    Tcl_Obj *defaultReturnOpts; /* Default [return] options */
-    Tcl_Obj *returnCodeKey;	/* holds "-code" */
-    Tcl_Obj *returnErrorcodeKey;	/* holds "-errorcode" */
-    Tcl_Obj *returnErrorinfoKey;	/* holds "-errorinfo" */
-    Tcl_Obj *returnErrorlineKey;	/* holds "-errorline" */
-    Tcl_Obj *returnLevelKey;	/* holds "-level" */
-    Tcl_Obj *returnOptionsKey;	/* holds "-options" */
+
+    Tcl_Obj *errorInfo;		/* errorInfo value (now as a Tcl_Obj) */
+    Tcl_Obj *eiVar;		/* cached ref to ::errorInfo variable */
+    Tcl_Obj *errorCode;		/* errorCode value (now as a Tcl_Obj) */
+    Tcl_Obj *ecVar;		/* cached ref to ::errorInfo variable */
+    int returnLevel;		/* [return -level] parameter */
 
     /*
      * Resource limiting framework support (TIP#143).
@@ -1393,19 +1427,10 @@ typedef struct Interp {
  *			don't process any more commands for it, and destroy
  *			the structure as soon as all nested invocations of
  *			Tcl_Eval are done.
- * ERR_IN_PROGRESS:	Non-zero means an error unwind is already in
- *			progress. Zero means a command proc has been
- *			invoked since last error occured.
  * ERR_ALREADY_LOGGED:	Non-zero means information has already been logged
- *			in $errorInfo for the current Tcl_Eval instance,
+ *			in iPtr->errorInfo for the current Tcl_Eval instance,
  *			so Tcl_Eval needn't log it (used to implement the
  *			"error message log" command).
- * ERROR_CODE_SET:	Non-zero means that Tcl_SetErrorCode has been
- *			called to record information for the current
- *			error.	Zero means Tcl_Eval must clear the
- *			errorCode variable if an error is returned.
- * EXPR_INITIALIZED:	Non-zero means initialization specific to
- *			expressions has	been carried out.
  * DONT_COMPILE_CMDS_INLINE: Non-zero means that the bytecode compiler
  *			should not compile any commands into an inline
  *			sequence of instructions. This is set 1, for
@@ -1416,25 +1441,19 @@ typedef struct Interp {
  * SAFE_INTERP:		Non zero means that the current interp is a
  *			safe interp (ie it has only the safe commands
  *			installed, less priviledge than a regular interp).
- * USE_EVAL_DIRECT:	Non-zero means don't use the compiler or byte-code
- *			interpreter; instead, have Tcl_EvalObj call
- *			Tcl_EvalEx. Used primarily for testing the
- *			new parser.
  * INTERP_TRACE_IN_PROGRESS: Non-zero means that an interp trace is currently
  *			active; so no further trace callbacks should be
  *			invoked.
  */
 
 #define DELETED				    1
-#define ERR_IN_PROGRESS			    2
 #define ERR_ALREADY_LOGGED		    4
-#define ERROR_CODE_SET			    8
-#define EXPR_INITIALIZED		 0x10
 #define DONT_COMPILE_CMDS_INLINE	 0x20
 #define RAND_SEED_INITIALIZED		 0x40
 #define SAFE_INTERP			 0x80
-#define USE_EVAL_DIRECT			0x100
 #define INTERP_TRACE_IN_PROGRESS	0x200
+
+typedef struct TclInterpState_ *TclInterpState;
 
 /*
  * Maximum number of levels of nesting permitted in Tcl commands (used
@@ -1710,6 +1729,7 @@ extern Tcl_ObjType	tclEnsembleCmdType;
 extern Tcl_ObjType	tclWideIntType;
 extern Tcl_ObjType	tclLocalVarNameType;
 extern Tcl_ObjType	tclRegexpType;
+extern Tcl_ObjType	tclLevelReferenceType;
 extern Tcl_ObjType	tclTokensType;
 
 /*
@@ -1802,6 +1822,8 @@ EXTERN int		TclCheckBadOctal _ANSI_ARGS_((Tcl_Interp *interp,
 			    CONST char *value));
 EXTERN void             TclCleanupLiteralTable _ANSI_ARGS_((
                             Tcl_Interp* interp, LiteralTable* tablePtr ));
+EXTERN void		TclDiscardInterpState _ANSI_ARGS_ ((
+			    TclInterpState state));
 EXTERN int		TclEvalScriptTokens _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr, int length, int flags));
 EXTERN int		TclFileAttrsCmd _ANSI_ARGS_((Tcl_Interp *interp,
@@ -1830,6 +1852,8 @@ EXTERN void		TclFinalizeAsync _ANSI_ARGS_((void));
 EXTERN void		TclFinalizeSynchronization _ANSI_ARGS_((void));
 EXTERN void		TclFinalizeLock _ANSI_ARGS_((void));
 EXTERN void		TclFinalizeThreadData _ANSI_ARGS_((void));
+EXTERN Tcl_Obj *	TclGetReturnOptions _ANSI_ARGS_((Tcl_Interp *interp,
+			    int result));
 EXTERN Tcl_Token *	TclGetTokensFromObj _ANSI_ARGS_((Tcl_Obj *objPtr,
 			    Tcl_Token **lastTokenPtrPtr));
 EXTERN int		TclGlob _ANSI_ARGS_((Tcl_Interp *interp,
@@ -1904,8 +1928,6 @@ EXTERN int		TclParseWhiteSpace _ANSI_ARGS_((CONST char *src,
 			    int numBytes, Tcl_Parse *parsePtr, char *typePtr));
 EXTERN int		TclProcessReturn _ANSI_ARGS_((Tcl_Interp *interp,
 			    int code, int level, Tcl_Obj *returnOpts));
-EXTERN int		TclpObjAccess _ANSI_ARGS_((Tcl_Obj *filename,
-			    int mode));
 EXTERN int              TclpObjLstat _ANSI_ARGS_((Tcl_Obj *pathPtr, 
 			    Tcl_StatBuf *buf));
 EXTERN int		TclpCheckStackSpace _ANSI_ARGS_((void));
@@ -1948,7 +1970,6 @@ EXTERN int		TclpMatchFiles _ANSI_ARGS_((Tcl_Interp *interp,
 			    char *pattern, char *tail));
 EXTERN int              TclpObjNormalizePath _ANSI_ARGS_((Tcl_Interp *interp, 
 			    Tcl_Obj *pathPtr, int nextCheckpoint));
-EXTERN int		TclpObjCreateDirectory _ANSI_ARGS_((Tcl_Obj *pathPtr));
 EXTERN void             TclpNativeJoinPath _ANSI_ARGS_((Tcl_Obj *prefix, 
 							char *joining));
 EXTERN Tcl_Obj*         TclpNativeSplitPath _ANSI_ARGS_((Tcl_Obj *pathPtr, 
@@ -1957,15 +1978,6 @@ EXTERN Tcl_PathType     TclpGetNativePathType _ANSI_ARGS_((Tcl_Obj *pathPtr,
 			    int *driveNameLengthPtr, Tcl_Obj **driveNameRef));
 EXTERN int 		TclCrossFilesystemCopy _ANSI_ARGS_((Tcl_Interp *interp, 
 			    Tcl_Obj *source, Tcl_Obj *target));
-EXTERN int		TclpObjDeleteFile _ANSI_ARGS_((Tcl_Obj *pathPtr));
-EXTERN int		TclpObjCopyDirectory _ANSI_ARGS_((Tcl_Obj *srcPathPtr, 
-				Tcl_Obj *destPathPtr, Tcl_Obj **errorPtr));
-EXTERN int		TclpObjCopyFile _ANSI_ARGS_((Tcl_Obj *srcPathPtr, 
-				Tcl_Obj *destPathPtr));
-EXTERN int		TclpObjRemoveDirectory _ANSI_ARGS_((Tcl_Obj *pathPtr, 
-				int recursive, Tcl_Obj **errorPtr));
-EXTERN int		TclpObjRenameFile _ANSI_ARGS_((Tcl_Obj *srcPathPtr, 
-				Tcl_Obj *destPathPtr));
 EXTERN int		TclpMatchInDirectory _ANSI_ARGS_((Tcl_Interp *interp, 
 			        Tcl_Obj *resultPtr, Tcl_Obj *pathPtr, 
 				CONST char *pattern, Tcl_GlobTypeData *types));
@@ -1976,11 +1988,6 @@ EXTERN Tcl_Obj*		TclpObjLink _ANSI_ARGS_((Tcl_Obj *pathPtr,
 EXTERN int		TclpObjChdir _ANSI_ARGS_((Tcl_Obj *pathPtr));
 EXTERN Tcl_Obj*         TclPathPart _ANSI_ARGS_((Tcl_Interp *interp, 
 				Tcl_Obj *pathPtr, Tcl_PathPart portion));
-EXTERN int		TclpObjStat _ANSI_ARGS_((Tcl_Obj *pathPtr, 
-						 Tcl_StatBuf *buf));
-EXTERN Tcl_Channel	TclpOpenFileChannel _ANSI_ARGS_((Tcl_Interp *interp,
-			    Tcl_Obj *pathPtr, int mode,
-			    int permissions));
 EXTERN void		TclpCutFileChannel _ANSI_ARGS_((Tcl_Channel chan));
 EXTERN void		TclpCutSockChannel _ANSI_ARGS_((Tcl_Channel chan));
 EXTERN void		TclpSpliceFileChannel _ANSI_ARGS_((Tcl_Channel chan));
@@ -2006,6 +2013,12 @@ EXTERN VOID             TclRememberJoinableThread _ANSI_ARGS_((Tcl_ThreadId id))
 EXTERN void		TclRememberMutex _ANSI_ARGS_((Tcl_Mutex *mutex));
 EXTERN void		TclRemoveScriptLimitCallbacks _ANSI_ARGS_((
 			    Tcl_Interp *interp));
+EXTERN int		TclRestoreInterpState _ANSI_ARGS_ ((
+			    Tcl_Interp *interp, TclInterpState state));
+EXTERN TclInterpState	TclSaveInterpState _ANSI_ARGS_ ((
+			    Tcl_Interp *interp, int status));
+EXTERN int		TclSetReturnOptions _ANSI_ARGS_((Tcl_Interp *interp,
+			    Tcl_Obj *options));
 EXTERN VOID             TclSignalExitThread _ANSI_ARGS_((Tcl_ThreadId id,
 			    int result));
 EXTERN int		TclSubstTokens _ANSI_ARGS_((Tcl_Interp *interp,
@@ -2049,6 +2062,8 @@ EXTERN int	Tcl_CatchObjCmd _ANSI_ARGS_((ClientData clientData,
 EXTERN int	Tcl_CdObjCmd _ANSI_ARGS_((ClientData clientData,
 		    Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]));
 EXTERN int	TclClockClicksObjCmd _ANSI_ARGS_((ClientData clientData,
+		    Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]));
+EXTERN int	TclClockGetenvObjCmd _ANSI_ARGS_((ClientData clientData,
 		    Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]));
 EXTERN int	TclClockMicrosecondsObjCmd _ANSI_ARGS_((ClientData clientData,
 		    Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]));

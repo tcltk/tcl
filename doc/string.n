@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: string.n,v 1.18.2.1 2004/09/08 23:02:35 dgp Exp $
+'\" RCS: @(#) $Id: string.n,v 1.18.2.2 2004/10/28 18:46:15 dgp Exp $
 '\" 
 .so man.macros
 .TH string n 8.1 Tcl "Tcl Built-In Commands"
@@ -178,9 +178,9 @@ number of bytes used to store the string.  If the object is a
 ByteArray object (such as those returned from reading a binary encoded
 channel), then this will return the actual byte length of the object.
 .TP
-\fBstring map\fR ?\fB\-nocase\fR? \fIcharMap string\fR
-Replaces characters in \fIstring\fR based on the key-value pairs in
-\fIcharMap\fR.  \fIcharMap\fR is a list of \fIkey value key value ...\fR
+\fBstring map\fR ?\fB\-nocase\fR? \fImapping string\fR
+Replaces substrings in \fIstring\fR based on the key-value pairs in
+\fImapping\fR.  \fImapping\fR is a list of \fIkey value key value ...\fR
 as in the form returned by \fBarray get\fR.  Each instance of a
 key in the string will be replaced with its corresponding value.  If
 \fB\-nocase\fR is specified, then matching is done without regard to
@@ -321,11 +321,11 @@ single character other than these.
 Test if the string in the variable \fIstring\fR is a proper non-empty
 prefix of the string \fBfoobar\fR.
 .CS
-set length [string length $string]
+set length [\fBstring length\fR $string]
 if {$length == 0} {
-    set isPrefix 0
+   set isPrefix 0
 } else {
-    set isPrefix [string equal -length $string $string "foobar"]
+   set isPrefix [\fBstring equal\fR -length $string $string "foobar"]
 }
 .CE
 

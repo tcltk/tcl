@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: DString.3,v 1.9 2002/02/08 02:52:54 dgp Exp $
+'\" RCS: @(#) $Id: DString.3,v 1.9.4.1 2004/10/28 18:46:08 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_DString 3 7.4 Tcl "Tcl Library Procedures"
@@ -44,10 +44,10 @@ char *
 .sp
 \fBTcl_DStringGetResult\fR(\fIinterp, dsPtr\fR)
 .SH ARGUMENTS
-.AS Tcl_DString newLength
+.AS Tcl_DString newLength in/out
 .AP Tcl_DString *dsPtr in/out
 Pointer to structure that is used to manage a dynamic string.
-.AP "CONST char" *string in
+.AP "const char" *string in
 Pointer to characters to add to dynamic string.
 .AP int length in
 Number of characters from string to add to dynamic string.  If -1,

@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: OpenTcp.3,v 1.4.6.1 2004/03/26 22:28:24 dgp Exp $
+'\" RCS: @(#) $Id: OpenTcp.3,v 1.4.6.2 2004/10/28 18:46:10 dgp Exp $
 .so man.macros
 .TH Tcl_OpenTcpClient 3 8.0 Tcl "Tcl Library Procedures"
 .BS
@@ -25,18 +25,18 @@ Tcl_Channel
 \fBTcl_OpenTcpServer\fR(\fIinterp, port, myaddr, proc, clientData\fR)
 .sp
 .SH ARGUMENTS
-.AS Tcl_ChannelType newClientProcPtr in
+.AS Tcl_TcpAcceptProc clientData
 .AP Tcl_Interp *interp in
 Tcl interpreter to use for error reporting.  If non-NULL and an
 error occurs, an error message is left in the interpreter's result.
 .AP int port in
 A port number to connect to as a client or to listen on as a server.
-.AP "CONST char" *host in
+.AP "const char" *host in
 A string specifying a host name or address for the remote end of the connection.
 .AP int myport in
 A port number for the client's end of the socket.  If 0, a port number
 is allocated at random.
-.AP "CONST char" *myaddr in
+.AP "const char" *myaddr in
 A string specifying the host name or address for network interface to use
 for the local end of the connection.  If NULL, a default interface is
 chosen.
@@ -122,10 +122,10 @@ for the new connection and invokes \fIproc\fR with information about
 the channel.  \fIProc\fR must match the following prototype:
 .CS
 typedef void Tcl_TcpAcceptProc(
-	ClientData \fIclientData\fR,
-	Tcl_Channel \fIchannel\fR,
-	char *\fIhostName\fR,
-	int \fIport\fP);
+        ClientData \fIclientData\fR,
+        Tcl_Channel \fIchannel\fR,
+        char *\fIhostName\fR,
+        int \fIport\fP);
 .CE
 .PP
 The \fIclientData\fR argument will be the same as the \fIclientData\fR

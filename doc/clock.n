@@ -8,7 +8,7 @@
 .SH "NAME"
 clock \- Obtain and manipulate dates and times
 .SH "SYNOPSIS"
-package require \fBTcl  8.5\fR
+package require \fBTcl 8.5\fR
 .sp
 \fBclock add\fR \fItimeVal\fR ?\fIcount unit...\fR? ?\fI-option value\fR?
 .sp
@@ -190,10 +190,10 @@ that observe summer time (Daylight Saving Time).  For example,
 the following code sets the value of \fBx\fR to \fB04:00:00\fR because
 the clock has changed in the interval in question.
 .CS
-set s [clock scan {2004-10-30 05:00:00} \\
+set s [\fBclock scan\fR {2004-10-30 05:00:00} \\
            -format {%Y-%m-%d %H:%M:%S} -timezone :America/New_York]
-set a [clock add $s 24 hours -timezone :America/New_York]
-set x [clock format $a \\
+set a [\fBclock add\fR $s 24 hours -timezone :America/New_York]
+set x [\fBclock format\fR $a \\
            -format {%H:%M:%S} -timezone :America/New_York]
 .CE
 .PP
@@ -209,10 +209,10 @@ the time changes at the start or end of summer time (Daylight Saving Time)
 results in the \fIsame local time\fR on the day in question.  For
 instance, the following code sets the value of \fBx\fR to \fB05:00:00\fR.
 .CS
-set s [clock scan {2004-10-30 05:00:00} \\
+set s [\fBclock scan\fR {2004-10-30 05:00:00} \\
            -format {%Y-%m-%d %H:%M:%S} -timezone :America/New_York]
-set a [clock add $s 1 day -timezone :America/New_York]
-set x [clock format $a \\
+set a [\fBclock add\fR $s 1 day -timezone :America/New_York]
+set x [\fBclock format\fR $a \\
            -format {%H:%M:%S} -timezone :America/New_York]
 .CE
 .PP
@@ -223,10 +223,10 @@ Daylight Saving Time change using US rules), the time is converted
 as if the clock had not changed.  Thus, the following code
 will set the value of \fBx\fR to \fB03:30:00\fR.
 .CS
-set s [clock scan {2004-04-03 02:30:00} \\
+set s [\fBclock scan\fR {2004-04-03 02:30:00} \\
            -format {%Y-%m-%d %H:%M:%S} -timezone :America/New_York]
-set a [clock add $s 1 day -timezone :America/New_York]
-set x [clock format $a \\
+set a [\fBclock add\fR $s 1 day -timezone :America/New_York]
+set x [\fBclock format\fR $a \\
            -format {%H:%M:%S} -timezone :America/New_York]
 .CE
 .PP
@@ -234,9 +234,9 @@ Adding a given number of days or weeks works correctly across the conversion
 between the Julian and Gregorian calendars; the omitted days are skipped.
 The following code sets \fBz\fR to \fB1752-09-14\fR.
 .CS
-set x [clock scan 1752-09-02 -format %Y-%m-%d -locale en_US]
-set y [clock add $x 1 day -locale en_US]
-set z [clock format $y -format %Y-%m-%d -locale en_US]
+set x [\fBclock scan\fR 1752-09-02 -format %Y-%m-%d -locale en_US]
+set y [\fBclock add\fR $x 1 day -locale en_US]
+set z [\fBclock format\fR $y -format %Y-%m-%d -locale en_US]
 .CE
 .PP
 In the bizarre case that adding the given number of days yields a date
@@ -794,7 +794,7 @@ an integer clock value.  Only the date in this value is used, not the
 time.  This is useful for determining the time on a specific day or
 doing other date-relative conversions.
 .PP
-The \fIinputString\fR argument  consists of zero or more specifications of the
+The \fIinputString\fR argument consists of zero or more specifications of the
 following form:
 .TP
 \fItime\fR
@@ -846,9 +846,9 @@ years.  This means that when crossing the daylight savings time boundary,
 different results will be given for \fBclock scan "1 day"\fR and
 \fBclock scan "24 hours"\fR:
 .CS
-% clock scan "1 day" -base [clock scan 1999-10-31]
+% \fBclock scan\fR "1 day" -base [\fBclock scan\fR 1999-10-31]
 941443200
-% clock scan "24 hours" -base [clock scan 1999-10-31]
+% \fBclock scan\fR "24 hours" -base [\fBclock scan\fR 1999-10-31]
 941439600
 .CE
 .SH "SEE ALSO"

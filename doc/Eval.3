@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Eval.3,v 1.14.2.2 2004/09/08 23:02:33 dgp Exp $
+'\" RCS: @(#) $Id: Eval.3,v 1.14.2.3 2004/10/28 18:46:08 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_Eval 3 8.1 Tcl "Tcl Library Procedures"
@@ -17,7 +17,6 @@ Tcl_EvalObjEx, Tcl_EvalFile, Tcl_EvalObjv, Tcl_Eval, Tcl_EvalEx, Tcl_GlobalEval,
 .nf
 \fB#include <tcl.h>\fR
 .sp
-.VS
 int
 \fBTcl_EvalObjEx\fR(\fIinterp, objPtr, flags\fR)
 .sp
@@ -45,7 +44,7 @@ int
 int
 \fBTcl_VarEvalVA\fR(\fIinterp, argList\fR)
 .SH ARGUMENTS
-.AS Tcl_Interp **termPtr;
+.AS Tcl_Interp **termPtr
 .AP Tcl_Interp *interp in
 Interpreter in which to execute the script.  The interpreter's result is
 modified to hold the result or error message from the script.
@@ -54,7 +53,7 @@ A Tcl object containing the script to execute.
 .AP int flags in
 ORed combination of flag bits that specify additional options.
 \fBTCL_EVAL_GLOBAL\fR and \fBTCL_EVAL_DIRECT\fR are currently supported.
-.AP "CONST char" *fileName in
+.AP "const char" *fileName in
 Name of a file containing a Tcl script.
 .AP int objc in
 The number of objects in the array pointed to by \fIobjPtr\fR;
@@ -66,7 +65,7 @@ value of a single word in the command to execute.
 The number of bytes in \fIscript\fR, not including any
 null terminating character.  If \-1, then all characters up to the
 first null byte are used.
-.AP "CONST char" *script in
+.AP "const char" *script in
 Points to first byte of script to execute (null-terminated and UTF-8).
 .AP char *string in
 String forming part of a Tcl script.
@@ -199,7 +198,6 @@ the \fBreturn\fR, \fBbreak\fR, or \fBcontinue\fR command was
 invoked in an inappropriate place.
 This means that top-level applications should never see a return code
 from \fBTcl_EvalObjEx\fR other then \fBTCL_OK\fR or \fBTCL_ERROR\fR.
-.VE
 
 .SH KEYWORDS
 execute, file, global, object, result, script

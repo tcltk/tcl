@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPipe.c,v 1.35.2.5 2004/09/08 23:03:30 dgp Exp $
+ * RCS: @(#) $Id: tclWinPipe.c,v 1.35.2.6 2004/10/28 18:47:40 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -1214,8 +1214,9 @@ TclpCreateProcess(
 		tclExePtr = Tcl_NewStringObj(TclpFindExecutable(""), -1);
 		start = Tcl_GetStringFromObj(tclExePtr, &i);
 		for (end = start + (i-1); end > start; end--) {
-		    if (*end == '/')
+		    if (*end == '/') {
 		        break;
+		    }
 		}
 		if (*end != '/') {
 		    Tcl_Panic("no / in executable path name");
@@ -1576,7 +1577,9 @@ BuildCommandLine(
      */
 
     Tcl_DStringAppend(&ds, Tcl_DStringValue(linePtr), -1);
-    if (Tcl_DStringLength(linePtr) > 0) Tcl_DStringAppend(&ds, " ", 1);
+    if (Tcl_DStringLength(linePtr) > 0) {
+	Tcl_DStringAppend(&ds, " ", 1);
+    }
 
     for (i = 0; i < argc; i++) {
 	if (i == 0) {
@@ -1594,7 +1597,7 @@ BuildCommandLine(
 	    Tcl_UniChar ch;
 	    for (start = arg; *start != '\0'; start += count) {
 	        count = Tcl_UtfToUniChar(start, &ch);
-		if (Tcl_UniCharIsSpace(ch)) { /* INTL: ISO space. */
+		if (Tcl_UniCharIsSpace(ch)) {	/* INTL: ISO space. */
 		    quote = 1;
 		    break;
 		}
@@ -1605,8 +1608,8 @@ BuildCommandLine(
 	}
 	start = arg;	    
 	for (special = arg; ; ) {
-	    if ((*special == '\\') && 
-		    (special[1] == '\\' || special[1] == '"' || (quote && special[1] == '\0'))) {
+	    if ((*special == '\\') && (special[1] == '\\' ||
+		    special[1] == '"' || (quote && special[1] == '\0'))) {
 		Tcl_DStringAppend(&ds, start, (int) (special - start));
 		start = special;
 		while (1) {
@@ -1884,8 +1887,7 @@ PipeClose2Proc(
     DWORD exitCode;
 
     errorCode = 0;
-    if ((!flags || (flags == TCL_CLOSE_READ))
-	    && (pipePtr->readFile != NULL)) {
+    if ((!flags || flags == TCL_CLOSE_READ) && (pipePtr->readFile != NULL)) {
 	/*
 	 * Clean up the background thread if necessary.  Note that this
 	 * must be done before we can close the file, since the 
@@ -1913,8 +1915,8 @@ PipeClose2Proc(
 		 * Wait at most 20 milliseconds for the reader thread to close.
 		 */
 
-		if (WaitForSingleObject(pipePtr->readThread, 20)
-			== WAIT_TIMEOUT) {
+		if (WaitForSingleObject(pipePtr->readThread,
+			20) == WAIT_TIMEOUT) {
 		    /*
 		     * The thread must be blocked waiting for the pipe to
 		     * become readable in ReadFile().  There isn't a clean way
@@ -1949,9 +1951,7 @@ PipeClose2Proc(
 	pipePtr->validMask &= ~TCL_READABLE;
 	pipePtr->readFile = NULL;
     }
-    if ((!flags || (flags & TCL_CLOSE_WRITE))
-	    && (pipePtr->writeFile != NULL)) {
-
+    if ((!flags || flags & TCL_CLOSE_WRITE) && (pipePtr->writeFile != NULL)) {
 	if (pipePtr->writeThread) {
 	    /*
 	     * Wait for the writer thread to finish the current buffer,
@@ -1982,8 +1982,8 @@ PipeClose2Proc(
 		 * Wait at most 20 milliseconds for the reader thread to close.
 		 */
 
-		if (WaitForSingleObject(pipePtr->writeThread, 20)
-			== WAIT_TIMEOUT) {
+		if (WaitForSingleObject(pipePtr->writeThread,
+			20) == WAIT_TIMEOUT) {
 		    /*
 		     * The thread must be blocked waiting for the pipe to
 		     * consume input in WriteFile().  There isn't a clean way
@@ -2340,8 +2340,7 @@ PipeEventProc(
     }
 
     filePtr = (WinFile*) ((PipeInfo*)infoPtr)->readFile;
-    if ((infoPtr->watchMask & TCL_READABLE) &&
-	    (WaitForRead(infoPtr, 0) >= 0)) {
+    if ((infoPtr->watchMask & TCL_READABLE) && (WaitForRead(infoPtr,0) >= 0)) {
 	if (infoPtr->readFlags & PIPE_EOF) {
 	    mask = TCL_READABLE;
 	} else {
@@ -2700,9 +2699,8 @@ Tcl_PidObjCmd(
 	return TCL_ERROR;
     }
     if (objc == 1) {
-	resultPtr = Tcl_GetObjResult(interp);
 	wsprintfA(buf, "%lu", (unsigned long) getpid());
-	Tcl_SetStringObj(resultPtr, buf, -1);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(buf, -1));
     } else {
         chan = Tcl_GetChannel(interp, Tcl_GetStringFromObj(objv[1], NULL),
 		NULL);
@@ -2715,12 +2713,13 @@ Tcl_PidObjCmd(
 	}
 
         pipePtr = (PipeInfo *) Tcl_GetChannelInstanceData(chan);
-	resultPtr = Tcl_GetObjResult(interp);
+	resultPtr = Tcl_NewObj();
         for (i = 0; i < pipePtr->numPids; i++) {
 	    wsprintfA(buf, "%lu", TclpGetPid(pipePtr->pidPtr[i]));
 	    Tcl_ListObjAppendElement(/*interp*/ NULL, resultPtr,
 		    Tcl_NewStringObj(buf, -1));
 	}
+	Tcl_SetObjResult(interp, resultPtr);
     }
     return TCL_OK;
 }
@@ -2899,9 +2898,8 @@ PipeReaderThread(LPVOID arg)
 	 * we can read a single byte off of the pipe.
 	 */
 
-	if ((ReadFile(handle, NULL, 0, &count, NULL) == FALSE)
-		|| (PeekNamedPipe(handle, NULL, 0, NULL, &count,
-			NULL) == FALSE)) {
+	if (ReadFile(handle, NULL, 0, &count, NULL) == FALSE ||
+		PeekNamedPipe(handle, NULL, 0, NULL, &count, NULL) == FALSE) {
 	    /*
 	     * The error is a result of an EOF condition, so set the
 	     * EOF bit before signalling the main thread.

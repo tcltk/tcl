@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: rename.n,v 1.3.20.1 2004/05/04 17:44:16 dgp Exp $
+'\" RCS: @(#) $Id: rename.n,v 1.3.20.2 2004/10/28 18:46:15 dgp Exp $
 '\" 
 .so man.macros
 .TH rename n "" Tcl "Tcl Built-In Commands"
@@ -31,9 +31,8 @@ The \fBrename\fR command returns an empty string as result.
 The \fBrename\fR command can be used to wrap the standard Tcl commands
 with your own monitoring machinery.  For example, you might wish to
 count how often the \fBsource\fR command is called:
-
 .CS
-rename ::source ::theRealSource
+\fBrename\fR ::source ::theRealSource
 set sourceCount 0
 proc ::source args {
     global sourceCount

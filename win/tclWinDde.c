@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinDde.c,v 1.15.2.5 2004/09/08 23:03:29 dgp Exp $
+ * RCS: @(#) $Id: tclWinDde.c,v 1.15.2.6 2004/10/28 18:47:38 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -71,7 +71,7 @@ static DWORD ddeInstance;       /* The application instance handle given
 				 * to us by DdeInitialize. */
 static int ddeIsServer = 0;
 
-#define TCL_DDE_VERSION "1.3"
+#define TCL_DDE_VERSION "1.3.1"
 #define TCL_DDE_PACKAGE_NAME "dde"
 #define TCL_DDE_SERVICE_NAME "TclEval"
 
@@ -322,13 +322,15 @@ DdeSetServerName(
     Tcl_DStringInit(&dString);
     actualName = name;
 
-    if (! exactName )
-    {
-	    r = DdeGetServicesList(interp, "TclEval", NULL);
-        if (r == TCL_OK)
-	        srvListPtr = Tcl_GetObjResult(interp);
-	    if (r == TCL_OK)
-	        r = Tcl_ListObjGetElements(interp, srvListPtr, &srvCount, &srvPtrPtr);
+    if (!exactName) {
+	r = DdeGetServicesList(interp, "TclEval", NULL);
+	if (r == TCL_OK) {
+	    srvListPtr = Tcl_GetObjResult(interp);
+	}
+	if (r == TCL_OK) {
+	    r = Tcl_ListObjGetElements(interp, srvListPtr, &srvCount,
+		    &srvPtrPtr);
+	}
         if (r != TCL_OK) {
             OutputDebugString(Tcl_GetStringResult(interp));
             return NULL;
@@ -362,8 +364,7 @@ DdeSetServerName(
 		Tcl_Obj* namePtr;
 		
 		Tcl_ListObjIndex(interp, srvPtrPtr[n], 1, &namePtr);
-		if (strcmp(actualName, Tcl_GetString(namePtr)) == 0)
-		{
+		if (strcmp(actualName, Tcl_GetString(namePtr)) == 0) {
 		    suffix++;
 		    break;
 		}
@@ -380,8 +381,9 @@ DdeSetServerName(
     riPtr->name = ckalloc((unsigned int) strlen(actualName) + 1);
     riPtr->nextPtr = tsdPtr->interpListPtr;
     riPtr->handlerPtr = handlerPtr;
-    if (riPtr->handlerPtr != NULL)
+    if (riPtr->handlerPtr != NULL) {
 	Tcl_IncrRefCount(riPtr->handlerPtr);
+    }
     tsdPtr->interpListPtr = riPtr;
     strcpy(riPtr->name, actualName);
 
@@ -478,8 +480,9 @@ DeleteProc(clientData)
 	}
     }
     ckfree(riPtr->name);
-    if (riPtr->handlerPtr)
+    if (riPtr->handlerPtr) {
 	Tcl_DecrRefCount(riPtr->handlerPtr);
+    }
     Tcl_EventuallyFree(clientData, TCL_DYNAMIC);
 }
 
@@ -543,12 +546,14 @@ ExecuteRemoteObject(
     if (result == TCL_ERROR) {
 	errorObjPtr = Tcl_GetVar2Ex(riPtr->interp, "errorCode", NULL,
 		TCL_GLOBAL_ONLY);
-	if (errorObjPtr)
+	if (errorObjPtr) {
 	    Tcl_ListObjAppendElement(NULL, returnPackagePtr, errorObjPtr);
+	}
 	errorObjPtr = Tcl_GetVar2Ex(riPtr->interp, "errorInfo", NULL,
 		TCL_GLOBAL_ONLY);
-	if (errorObjPtr)
+	if (errorObjPtr) {
 	    Tcl_ListObjAppendElement(NULL, returnPackagePtr, errorObjPtr);
+	}
     }
 
     return returnPackagePtr;
@@ -1002,23 +1007,29 @@ DdeServicesOnAck(HWND hwnd, WPARAM wParam, LPARAM lParam)
     if ((es->service == (ATOM)NULL || es->service == service)
 	&& (es->topic == (ATOM)NULL || es->topic == topic)) {
 	Tcl_Obj *matchPtr = Tcl_NewListObj(0, NULL);
+	Tcl_Obj *resultPtr = Tcl_GetObjResult(es->interp);
 
 	GlobalGetAtomName((ATOM)service, sz, 255);
-	Tcl_ListObjAppendElement(es->interp, matchPtr,
+	Tcl_ListObjAppendElement(NULL, matchPtr,
 		Tcl_NewStringObj(sz, -1));
 	GlobalGetAtomName(topic, sz, 255);
-	Tcl_ListObjAppendElement(es->interp, matchPtr,
+	Tcl_ListObjAppendElement(NULL, matchPtr,
 		Tcl_NewStringObj(sz, -1));
 	/* Adding the hwnd as a third list element provides a unique
 	 * identifier in the case of multiple servers with the name
 	 * application and topic names.
 	 */
 	/* Needs a TIP though
-	 * Tcl_ListObjAppendElement(es->interp, matchPtr,
+	 * Tcl_ListObjAppendElement(NULL, matchPtr,
 	 *	Tcl_NewLongObj((long)hwndRemote));
 	 */
-	Tcl_ListObjAppendElement(es->interp,
-		Tcl_GetObjResult(es->interp), matchPtr);
+	if (Tcl_IsShared(resultPtr)) {
+	    resultPtr = Tcl_DuplicateObj(resultPtr);
+	}
+	if (Tcl_ListObjAppendElement(es->interp, resultPtr, matchPtr)
+		== TCL_OK) {
+	    Tcl_SetObjResult(es->interp, resultPtr);
+	}
     }
 
     /* tell the server we are no longer interested */
@@ -1054,12 +1065,15 @@ DdeGetServicesList(Tcl_Interp *interp, char *serviceName, char *topicName)
     DdeCreateClient(&es);
     EnumWindows(DdeEnumWindowsCallback, (LPARAM)&es);
     
-    if (IsWindow(es.hwnd))
+    if (IsWindow(es.hwnd)) {
         DestroyWindow(es.hwnd);
-    if (es.service != (ATOM)NULL)
+    }
+    if (es.service != (ATOM)NULL) {
 	GlobalDeleteAtom(es.service);
-    if (es.topic != (ATOM)NULL)
+    }
+    if (es.topic != (ATOM)NULL) {
 	GlobalDeleteAtom(es.topic);
+    }
     return es.result;
 }
 
@@ -1085,29 +1099,27 @@ static void
 SetDdeError(
     Tcl_Interp *interp)	    /* The interp to put the message in.*/
 {
-    Tcl_Obj *resultPtr = Tcl_GetObjResult(interp);
-    int err;
-
-    err = DdeGetLastError(ddeInstance);
-    switch (err) {
+    switch (DdeGetLastError(ddeInstance)) {
 	case DMLERR_DATAACKTIMEOUT:
 	case DMLERR_EXECACKTIMEOUT:
 	case DMLERR_POKEACKTIMEOUT:
-	    Tcl_SetStringObj(resultPtr,
-		    "remote interpreter did not respond", -1);
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "remote interpreter did not respond", -1));
 	    break;
 
 	case DMLERR_BUSY:
-	    Tcl_SetStringObj(resultPtr, "remote server is busy", -1);
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "remote server is busy", -1));
 	    break;
 
 	case DMLERR_NOTPROCESSED:
-	    Tcl_SetStringObj(resultPtr, 
-		    "remote server cannot handle this command", -1);
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "remote server cannot handle this command", -1));
 	    break;
 
 	default:
-	    Tcl_SetStringObj(resultPtr, "dde command failed", -1);
+	    Tcl_SetObjResult(interp,
+		    Tcl_NewStringObj("dde command failed", -1));
     }
 }
 
@@ -1215,10 +1227,9 @@ Tcl_DdeObjCmd(
 		    break;
 		} else {
 		    Tcl_ResetResult(interp);
-		    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-			    "bad option \"", Tcl_GetString(objv[i]),
-			    "\": must be -force, -handler or --",
-			    (char*)NULL);
+		    Tcl_AppendResult(interp, "bad option \"",
+			    Tcl_GetString(objv[i]),
+			    "\": must be -force, -handler or --", (char*)NULL);
 		    return TCL_ERROR;
 		}
 	    }
@@ -1356,8 +1367,7 @@ Tcl_DdeObjCmd(
 	    serviceName = DdeSetServerName(interp, serviceName,
 		   exact, handlerPtr);
 	    if (serviceName != NULL) {
-		Tcl_SetStringObj(Tcl_GetObjResult(interp),
-			serviceName, -1);
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(serviceName, -1));
 	    } else {
 		Tcl_ResetResult(interp);
 	    }
@@ -1366,8 +1376,8 @@ Tcl_DdeObjCmd(
 	case DDE_EXECUTE: {
 	    dataString = Tcl_GetStringFromObj(objv[firstArg + 2], &dataLength);
 	    if (dataLength == 0) {
-		Tcl_SetStringObj(Tcl_GetObjResult(interp),
-			"cannot execute null data", -1);
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			"cannot execute null data", -1));
 		result = TCL_ERROR;
 		break;
 	    }
@@ -1407,8 +1417,8 @@ Tcl_DdeObjCmd(
 	case DDE_REQUEST: {
 	    itemString = Tcl_GetStringFromObj(objv[firstArg + 2], &length);
 	    if (length == 0) {
-		Tcl_SetStringObj(Tcl_GetObjResult(interp),
-			"cannot request value of null data", -1);
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			"cannot request value of null data", -1));
 		goto errorNoResult;
 	    }
 	    hConv = DdeConnect(ddeInstance, ddeService, ddeTopic, NULL);
@@ -1453,8 +1463,8 @@ Tcl_DdeObjCmd(
 	case DDE_POKE: {
 	    itemString = Tcl_GetStringFromObj(objv[firstArg + 2], &length);
 	    if (length == 0) {
-		Tcl_SetStringObj(Tcl_GetObjResult(interp),
-			"cannot have a null item", -1);
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			"cannot have a null item", -1));
 		goto errorNoResult;
 	    }
 	    dataString = Tcl_GetStringFromObj(objv[firstArg + 3], &length);
@@ -1490,8 +1500,8 @@ Tcl_DdeObjCmd(
 	}
 	case DDE_EVAL: {
 	    if (serviceName == NULL) {
-		Tcl_SetStringObj(Tcl_GetObjResult(interp),
-			"invalid service name \"\"", -1);
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			"invalid service name \"\"", -1));
 		goto errorNoResult;
 	    }
 
@@ -1578,8 +1588,9 @@ Tcl_DdeObjCmd(
 			
 			objPtr = Tcl_GetVar2Ex(sendInterp, "errorCode", NULL,
 				TCL_GLOBAL_ONLY);
-			if (objPtr)
+			if (objPtr) {
 			    Tcl_SetObjErrorCode(interp, objPtr);
+			}
 		    }
 		    Tcl_SetObjResult(interp, Tcl_GetObjResult(sendInterp));
 		}
@@ -1697,8 +1708,8 @@ Tcl_DdeObjCmd(
     return result;
 
     error:
-    Tcl_SetStringObj(Tcl_GetObjResult(interp),
-	    "invalid data returned from server", -1);
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+	    "invalid data returned from server", -1));
 
     errorNoResult:
     if (ddeCookie != NULL) {

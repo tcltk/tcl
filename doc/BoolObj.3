@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: BoolObj.3,v 1.3 2002/08/07 17:13:56 msofer Exp $
+'\" RCS: @(#) $Id: BoolObj.3,v 1.3.4.1 2004/10/28 18:46:07 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_BooleanObj 3 8.0 Tcl "Tcl Library Procedures"
@@ -23,7 +23,7 @@ Tcl_Obj *
 int
 \fBTcl_GetBooleanFromObj\fR(\fIinterp, objPtr, boolPtr\fR)
 .SH ARGUMENTS
-.AS Tcl_Interp *interp
+.AS Tcl_Interp boolValue in/out
 .AP int boolValue in
 Integer value used to initialize or set a boolean object.
 If the integer is nonzero, the boolean object is set to 1;

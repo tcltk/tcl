@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: DictObj.3,v 1.1.2.3 2004/09/21 23:10:24 dgp Exp $
+'\" RCS: @(#) $Id: DictObj.3,v 1.1.2.4 2004/10/28 18:46:08 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_DictObj 3 8.5 Tcl "Tcl Library Procedures"
@@ -32,7 +32,8 @@ int
 \fBTcl_DictObjSize\fR(\fIinterp, dictPtr, sizePtr\fR)
 .sp
 int
-\fBTcl_DictObjFirst\fR(\fIinterp, dictPtr, searchPtr, keyPtrPtr, valuePtrPtr, donePtr\fR)
+\fBTcl_DictObjFirst\fR(\fIinterp, dictPtr, searchPtr,
+                 keyPtrPtr, valuePtrPtr, donePtr\fR)
 .sp
 void
 \fBTcl_DictObjNext\fR(\fIsearchPtr, keyPtrPtr, valuePtrPtr, donePtr\fR)
@@ -46,7 +47,7 @@ int
 int
 \fBTcl_DictObjRemoveKeyList\fR(\fIinterp, dictPtr, keyc, keyv\fR)
 .SH ARGUMENTS
-.AS Tcl_DictSearch "**valuePtrPtr" out
+.AS Tcl_DictSearch "**valuePtrPtr" in/out
 .AP Tcl_Interp *interp in
 If an error occurs while converting an object to be a dictionary object,
 an error message is left in the interpreter's result object
@@ -88,7 +89,7 @@ completed, and a zero otherwise.
 .AP int keyc in
 Indicates the number of keys that will be supplied in the \fIkeyv\fR
 array.
-.AP "Tcl_Obj *CONST" *keyv in
+.AP "Tcl_Obj *const" *keyv in
 Array of \fIkeyc\fR pointers to objects that
 \fBTcl_DictObjPutKeyList\fR and \fBTcl_DictObjRemoveKeyList\fR will
 use to locate the key/value pair to manipulate within the
@@ -99,7 +100,8 @@ sub-dictionaries of the main dictionary object passed to them.
 .PP
 Tcl dictionary objects have an internal representation that supports
 efficient mapping from keys to values and which does not guarantee any
-particular ordering of keys within the dictionary.
+particular ordering of keys within the dictionary (the underlying
+basic data-structure is a hash table created with \fBTcl_InitObjHashTable\fR).
 The procedures described in this man page are used to
 create, modify, index, and iterate over dictionary objects from C code.
 .PP
@@ -161,9 +163,11 @@ If the last call to \fBTcl_DictObjFirst\fR or \fBTcl_DictObjNext\fR
 \fIdonePtr\fR argument to zero but no further key/value pairs are
 desired from that particular iteration, the \fIsearchPtr\fR argument
 must be passed to \fBTcl_DictObjDone\fR to release any internal locks
-held by the searching process.  \fBTcl_DictObjDone\fR \fImust not\fR
-be called if either \fBTcl_DictObjFirst\fR or \fBTcl_DictObjNext\fR
-set the variable pointed to by \fIdonePtr\fR to 1.
+held by the searching process.  If \fBTcl_DictObjNext\fR is called on
+a particular \fIsearchPtr\fR after \fBTcl_DictObjDone\fR is called on
+it, the variable pointed to by \fIdonePtr\fR will always be set to 1
+(and nothing else will happen). It is safe to call
+\fBTcl_DictObjDone\fR multiple times on the same \fIsearchPtr\fR.
 .PP
 The procedures \fBTcl_DictObjPutKeyList\fR and
 \fBTcl_DictObjRemoveKeyList\fR are the close analogues of
@@ -175,7 +179,10 @@ stored as values inside outer dictionaries.  The \fIkeyc\fR and
 first) that acts as a path to the key/value pair to be affected.  Note
 that there is no corresponding operation for reading a value for a
 path as this is easy to construct from repeated use of
-\fBTcl_DictObjGet\fR.
+\fBTcl_DictObjGet\fR. With \fBTcl_DictObjPutKeyList\fR, nested
+dictionaries are created for non-terminal keys where they do not
+already exist. With \fBTcl_DictObjRemoveKeyList\fR, all non-terminal
+keys must exist and have dictionaries as their values.
 .SH EXAMPLE
 Using the dictionary iteration interface to search determine if there
 is a key that maps to itself:
@@ -193,37 +200,28 @@ int done;
  * reference count management is also used.  The lock is
  * released automatically when the loop is finished, but must
  * be released manually when an exceptional exit from the loop
- * is performed.
+ * is performed. However it is safe to try to release the lock
+ * even if we've finished iterating over the loop.
  */
 if (Tcl_DictObjFirst(interp, objPtr, &search,
         &key, &value, &done) != TCL_OK) {
     return TCL_ERROR;
 }
 for (; done ; Tcl_DictObjNext(&search, &key, &value, &done)) {
-
     /*
      * Note that strcmp() is not a good way of comparing
      * objects and is just used here for demonstration
      * purposes.
      */
     if (!strcmp(Tcl_GetString(key), Tcl_GetString(value))) {
-
-        /*
-         * We jump out of the loop, so we must release the
-         * lock on the object representation that the iterator
-         * is currently holding.
-         */
-        Tcl_DictObjDone(&search);
-
         break;
     }
 }
-/*
- * Note, *no* call to Tcl_DictObjDone() here!
- */
+Tcl_DictObjDone(&search);
 Tcl_SetObjResult(interp, Tcl_NewBooleanObj(!done));
 return TCL_OK;
 .CE
+
 .SH "SEE ALSO"
 Tcl_NewObj, Tcl_DecrRefCount, Tcl_IncrRefCount, Tcl_InitObjHashTable
 .SH KEYWORDS

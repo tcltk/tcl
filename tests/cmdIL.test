@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: cmdIL.test,v 1.14.8.3 2004/02/07 05:48:02 dgp Exp $
+# RCS: @(#) $Id: cmdIL.test,v 1.14.8.4 2004/10/28 18:47:11 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -23,7 +23,7 @@ test cmdIL-1.1 {Tcl_LsortObjCmd procedure} {
 } {1 {wrong # args: should be "lsort ?options? list"}}
 test cmdIL-1.2 {Tcl_LsortObjCmd procedure} {
     list [catch {lsort -foo {1 3 2 5}} msg] $msg
-} {1 {bad option "-foo": must be -ascii, -command, -decreasing, -dictionary, -increasing, -index, -integer, -real, or -unique}}
+} {1 {bad option "-foo": must be -ascii, -command, -decreasing, -dictionary, -increasing, -index, -indices, -integer, -real, or -unique}}
 test cmdIL-1.3 {Tcl_LsortObjCmd procedure, default options} {
     lsort {d e c b a \{ d35 d300}
 } {a b c d d300 d35 e \{}
@@ -112,6 +112,12 @@ test cmdIL-1.25 {Tcl_LsortObjCmd procedure, order of -index and -command} -setup
 test cmdIL-1.26 {Tcl_LsortObjCmd procedure, offset indexing from end} {
     lsort -index end-1 {{a 1 e i} {b 2 3 f g} {c 4 5 6 d h}}
 } {{c 4 5 6 d h} {a 1 e i} {b 2 3 f g}}
+test cmdIL-1.27 {Tcl_LsortObjCmd procedure, returning indices} {
+    lsort -indices {a c b}
+} {0 2 1}
+test cmdIL-1.28 {Tcl_LsortObjCmd procedure, returning indices} {
+    lsort -indices -unique -decreasing -real {1.2 34.5 34.5 5.6}
+} {2 3 0}
 
 # Can't think of any good tests for the MergeSort and MergeLists
 # procedures, except a bunch of random lists to sort.

@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: for.n,v 1.3.20.1 2004/05/17 18:42:20 dgp Exp $
+'\" RCS: @(#) $Id: for.n,v 1.3.20.2 2004/10/28 18:46:14 dgp Exp $
 '\" 
 .so man.macros
 .TH for n "" Tcl "Tcl Built-In Commands"
@@ -56,7 +56,7 @@ for {set x 0} {$x<10} {incr x} {
    puts "x is $x"
 }
 .CE
-
+.PP
 Either loop infinitely or not at all because the expression being
 evaluated is actually the constant, or even generate an error!  The
 actual behaviour will depend on whether the variable \fIx\fR exists
@@ -69,7 +69,7 @@ for {set x 0} $x<10 {incr x} {
    puts "x is $x"
 }
 .CE
-
+.PP
 Print out the powers of two from 1 to 1024:
 .CS
 for {set x 1} {$x<=1024} {set x [expr {$x * 2}]} {

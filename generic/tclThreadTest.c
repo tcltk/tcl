@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThreadTest.c,v 1.16 2002/01/26 01:10:08 dgp Exp $
+ * RCS: @(#) $Id: tclThreadTest.c,v 1.16.4.1 2004/10/28 18:47:03 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -868,13 +868,13 @@ ThreadEventProc(evPtr, mask)
 	code = Tcl_GlobalEval(interp, threadEventPtr->script);
 	Tcl_DeleteThreadExitHandler(ThreadFreeProc,
 		(ClientData) threadEventPtr->script);
-	result = Tcl_GetStringResult(interp);
 	if (code != TCL_OK) {
 	    errorCode = Tcl_GetVar(interp, "errorCode", TCL_GLOBAL_ONLY);
 	    errorInfo = Tcl_GetVar(interp, "errorInfo", TCL_GLOBAL_ONLY);
 	} else {
 	    errorCode = errorInfo = NULL;
 	}
+	result = Tcl_GetStringResult(interp);
     }
     ckfree(threadEventPtr->script);
     if (resultPtr) {

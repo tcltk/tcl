@@ -8,19 +8,189 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclResult.c,v 1.6.2.4 2004/09/30 00:51:45 dgp Exp $
+ * RCS: @(#) $Id: tclResult.c,v 1.6.2.5 2004/10/28 18:47:01 dgp Exp $
  */
 
 #include "tclInt.h"
+
+/* Indices of the standard return options dictionary keys */
+enum returnKeys {
+    KEY_CODE,	KEY_ERRORCODE,	KEY_ERRORINFO,	KEY_ERRORLINE,
+    KEY_LEVEL,	KEY_OPTIONS,	KEY_LAST
+};
 
 /*
  * Function prototypes for local procedures in this file:
  */
 
+static Tcl_Obj **	GetKeys();
+static void		ReleaseKeys _ANSI_ARGS_((ClientData clientData));
 static void             ResetObjResult _ANSI_ARGS_((Interp *iPtr));
 static void		SetupAppendBuffer _ANSI_ARGS_((Interp *iPtr,
 			    int newSpace));
 
+/*
+ *  This structure is used to take a snapshot of the interpreter
+ *  state in TclSaveInterpState.  You can snapshot the state,
+ *  execute a command, and then back up to the result or the
+ *  error that was previously in progress.
+ */
+typedef struct InterpState {
+    int status;			/* return code status */
+    int flags;			/* Each remaining field saves */
+    int returnLevel;		/* the corresponding field of */
+    int returnCode;		/* the Interp struct.  These */
+    Tcl_Obj *errorInfo;		/* fields take together are the */
+    Tcl_Obj *errorCode;		/* "state" of the interp. */
+    Tcl_Obj *returnOpts;
+    Tcl_Obj *objResult;
+} InterpState;
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclSaveInterpState --
+ *
+ *      Fills a token with a snapshot of the current state of the
+ *      interpreter.  The snapshot can be restored at any point by
+ *      TclRestoreInterpState. 
+ *
+ *      The token returned must be eventally passed to one of the
+ *      routines TclRestoreInterpState or TclDiscardInterpState,
+ *      or there will be a memory leak.
+ *
+ * Results:
+ *	Returns a token representing the interp state.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+TclInterpState
+TclSaveInterpState(interp, status)
+    Tcl_Interp* interp;     /* Interpreter's state to be saved */
+    int status;             /* status code for current operation */
+{
+    Interp *iPtr = (Interp *)interp;
+    InterpState *statePtr = (InterpState *)ckalloc(sizeof(InterpState));
+
+    statePtr->status = status;
+    statePtr->flags = iPtr->flags & ERR_ALREADY_LOGGED;
+    statePtr->returnLevel = iPtr->returnLevel;
+    statePtr->returnCode = iPtr->returnCode;
+    statePtr->errorInfo = iPtr->errorInfo;
+    if (statePtr->errorInfo) {
+	Tcl_IncrRefCount(statePtr->errorInfo);
+    }
+    statePtr->errorCode = iPtr->errorCode;
+    if (statePtr->errorCode) {
+	Tcl_IncrRefCount(statePtr->errorCode);
+    }
+    statePtr->returnOpts = iPtr->returnOpts;
+    if (statePtr->returnOpts) {
+	Tcl_IncrRefCount(statePtr->returnOpts);
+    }
+    statePtr->objResult = Tcl_GetObjResult(interp);
+    Tcl_IncrRefCount(statePtr->objResult);
+    return (TclInterpState) statePtr;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclRestoreInterpState --
+ *
+ *      Accepts an interp and a token previously returned by
+ *      TclSaveInterpState.  Restore the state of the interp
+ *      to what it was at the time of the TclSaveInterpState call.
+ *
+ * Results:
+ *	Returns the status value originally passed in to TclSaveInterpState.
+ *
+ * Side effects:
+ *	Restores the interp state and frees memory held by token.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclRestoreInterpState(interp, state)
+    Tcl_Interp* interp;		/* Interpreter's state to be restored*/
+    TclInterpState state;	/* saved interpreter state */
+{
+    Interp *iPtr = (Interp *)interp;
+    InterpState *statePtr = (InterpState *)state;
+    int status = statePtr->status;
+
+    iPtr->flags &= ~ERR_ALREADY_LOGGED;
+    iPtr->flags |= (statePtr->flags & ERR_ALREADY_LOGGED);
+
+    iPtr->returnLevel = statePtr->returnLevel;
+    iPtr->returnCode = statePtr->returnCode;
+    if (iPtr->errorInfo) {
+	Tcl_DecrRefCount(iPtr->errorInfo);
+    }
+    iPtr->errorInfo = statePtr->errorInfo;
+    if (iPtr->errorInfo) {
+	Tcl_IncrRefCount(iPtr->errorInfo);
+    }
+    if (iPtr->errorCode) {
+	Tcl_DecrRefCount(iPtr->errorCode);
+    }
+    iPtr->errorCode = statePtr->errorCode;
+    if (iPtr->errorCode) {
+	Tcl_IncrRefCount(iPtr->errorCode);
+    }
+    if (iPtr->returnOpts) {
+	Tcl_DecrRefCount(iPtr->returnOpts);
+    }
+    iPtr->returnOpts = statePtr->returnOpts;
+    if (iPtr->returnOpts) {
+	Tcl_IncrRefCount(iPtr->returnOpts);
+    }
+    Tcl_SetObjResult(interp, statePtr->objResult);
+    TclDiscardInterpState(state);
+    return status;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclDiscardInterpState --
+ *
+ *      Accepts a token previously returned by TclSaveInterpState.
+ *      Frees the memory it uses.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Frees memory.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclDiscardInterpState(state)
+    TclInterpState state;	/* saved interpreter state */
+{
+    InterpState *statePtr = (InterpState *)state;
+
+    if (statePtr->errorInfo) {
+        Tcl_DecrRefCount(statePtr->errorInfo);
+    }
+    if (statePtr->errorCode) {
+        Tcl_DecrRefCount(statePtr->errorCode);
+    }
+    if (statePtr->returnOpts) {
+        Tcl_DecrRefCount(statePtr->returnOpts);
+    }
+    Tcl_DecrRefCount(statePtr->objResult);
+    ckfree((char*) statePtr);
+}
 
 /*
  *----------------------------------------------------------------------
@@ -224,10 +394,10 @@ Tcl_DiscardResult(statePtr)
  */
 
 void
-Tcl_SetResult(interp, string, freeProc)
+Tcl_SetResult(interp, stringPtr, freeProc)
     Tcl_Interp *interp;		/* Interpreter with which to associate the
 				 * return value. */
-    register char *string;	/* Value to be returned.  If NULL, the
+    register char *stringPtr;	/* Value to be returned.  If NULL, the
 				 * result is set to an empty string. */
     Tcl_FreeProc *freeProc;	/* Gives information about the string:
 				 * TCL_STATIC, TCL_VOLATILE, or the address
@@ -238,12 +408,12 @@ Tcl_SetResult(interp, string, freeProc)
     register Tcl_FreeProc *oldFreeProc = iPtr->freeProc;
     char *oldResult = iPtr->result;
 
-    if (string == NULL) {
+    if (stringPtr == NULL) {
 	iPtr->resultSpace[0] = 0;
 	iPtr->result = iPtr->resultSpace;
 	iPtr->freeProc = 0;
     } else if (freeProc == TCL_VOLATILE) {
-	length = strlen(string);
+	length = strlen(stringPtr);
 	if (length > TCL_RESULT_SIZE) {
 	    iPtr->result = (char *) ckalloc((unsigned) length+1);
 	    iPtr->freeProc = TCL_DYNAMIC;
@@ -251,9 +421,9 @@ Tcl_SetResult(interp, string, freeProc)
 	    iPtr->result = iPtr->resultSpace;
 	    iPtr->freeProc = 0;
 	}
-	strcpy(iPtr->result, string);
+	strcpy(iPtr->result, stringPtr);
     } else {
-	iPtr->result = string;
+	iPtr->result = stringPtr;
 	iPtr->freeProc = freeProc;
     }
 
@@ -428,7 +598,7 @@ Tcl_GetObjResult(interp)
  *
  * Tcl_AppendResultVA --
  *
- *	Append a variable number of strings onto the interpreter's string
+ *	Append a variable number of strings onto the interpreter's
  *	result.
  *
  * Results:
@@ -436,102 +606,34 @@ Tcl_GetObjResult(interp)
  *
  * Side effects:
  *	The result of the interpreter given by the first argument is
- *	extended by the strings in the va_list (up to a terminating NULL
- *	argument).
+ *	extended by the strings in the va_list (up to a terminating
+ *	NULL argument).
  *
- *	If the string result is empty, the object result is moved to the
- *	string result, then the object result is reset.
+ *	If the string result is non-empty, the object result forced to
+ *	be a duplicate of it first. There will be a string result
+ *	afterwards.
  *
  *----------------------------------------------------------------------
  */
 
 void
-Tcl_AppendResultVA (interp, argList)
+Tcl_AppendResultVA(interp, argList)
     Tcl_Interp *interp;		/* Interpreter with which to associate the
 				 * return value. */
     va_list argList;		/* Variable argument list. */
 {
-#define STATIC_LIST_SIZE 16
-    Interp *iPtr = (Interp *) interp;
-    char *string, *static_list[STATIC_LIST_SIZE];
-    char **args = static_list;
-    int nargs_space = STATIC_LIST_SIZE;
-    int nargs, newSpace, i;
+    Tcl_Obj *objPtr = Tcl_GetObjResult(interp);
 
-    /*
-     * If the string result is empty, move the object result to the
-     * string result, then reset the object result.
-     */
-
-    if (*(iPtr->result) == 0) {
-	Tcl_SetResult((Tcl_Interp *) iPtr,
-	        TclGetString(Tcl_GetObjResult((Tcl_Interp *) iPtr)),
-	        TCL_VOLATILE);
+    if (Tcl_IsShared(objPtr)) {
+	objPtr = Tcl_DuplicateObj(objPtr);
     }
-    
+    Tcl_AppendStringsToObjVA(objPtr, argList);
+    Tcl_SetObjResult(interp, objPtr);
     /*
-     * Scan through all the arguments to see how much space is needed
-     * and save pointers to the arguments in the args array,
-     * reallocating as necessary.
+     * Ensure that the interp->result is legal so old Tcl 7.* code
+     * still works. There's still embarrasingly much of it about...
      */
-
-    nargs = 0;
-    newSpace = 0;
-    while (1) {
- 	string = va_arg(argList, char *);
-	if (string == NULL) {
-	    break;
-	}
- 	if (nargs >= nargs_space) {
- 	    /* 
- 	     * Expand the args buffer
- 	     */
- 	    nargs_space += STATIC_LIST_SIZE;
- 	    if (args == static_list) {
- 	    	args = (void *)ckalloc(nargs_space * sizeof(char *));
- 		for (i = 0; i < nargs; ++i) {
- 		    args[i] = static_list[i];
- 		}
- 	    } else {
- 		args = (void *)ckrealloc((void *)args,
-			nargs_space * sizeof(char *));
- 	    }
- 	}
-  	newSpace += strlen(string);
-	args[nargs++] = string;
-    }
-
-    /*
-     * If the append buffer isn't already setup and large enough to hold
-     * the new data, set it up.
-     */
-
-    if ((iPtr->result != iPtr->appendResult)
-	    || (iPtr->appendResult[iPtr->appendUsed] != 0)
-	    || ((newSpace + iPtr->appendUsed) >= iPtr->appendAvl)) {
-       SetupAppendBuffer(iPtr, newSpace);
-    }
-
-    /*
-     * Now go through all the argument strings again, copying them into the
-     * buffer.
-     */
-
-    for (i = 0; i < nargs; ++i) {
- 	string = args[i];
-  	strcpy(iPtr->appendResult + iPtr->appendUsed, string);
-  	iPtr->appendUsed += strlen(string);
-    }
- 
-    /*
-     * If we had to allocate a buffer from the heap, 
-     * free it now.
-     */
- 
-    if (args != static_list) {
-     	ckfree((void *)args);
-    }
-#undef STATIC_LIST_SIZE
+    (void) Tcl_GetStringResult(interp);
 }
 
 /*
@@ -539,7 +641,7 @@ Tcl_AppendResultVA (interp, argList)
  *
  * Tcl_AppendResult --
  *
- *	Append a variable number of strings onto the interpreter's string
+ *	Append a variable number of strings onto the interpreter's
  *	result.
  *
  * Results:
@@ -547,11 +649,12 @@ Tcl_AppendResultVA (interp, argList)
  *
  * Side effects:
  *	The result of the interpreter given by the first argument is
- *	extended by the strings given by the second and following arguments
- *	(up to a terminating NULL argument).
+ *	extended by the strings given by the second and following
+ *	arguments (up to a terminating NULL argument).
  *
- *	If the string result is empty, the object result is moved to the
- *	string result, then the object result is reset.
+ *	If the string result is non-empty, the object result forced to
+ *	be a duplicate of it first. There will be a string result
+ *	afterwards.
  *
  *----------------------------------------------------------------------
  */
@@ -591,10 +694,10 @@ Tcl_AppendResult TCL_VARARGS_DEF(Tcl_Interp *,arg1)
  */
 
 void
-Tcl_AppendElement(interp, string)
+Tcl_AppendElement(interp, stringPtr)
     Tcl_Interp *interp;		/* Interpreter whose result is to be
 				 * extended. */
-    CONST char *string;		/* String to convert to list element and
+    CONST char *stringPtr;	/* String to convert to list element and
 				 * add to result. */
 {
     Interp *iPtr = (Interp *) interp;
@@ -607,17 +710,14 @@ Tcl_AppendElement(interp, string)
      * string result, then reset the object result.
      */
 
-    if (*(iPtr->result) == 0) {
-	Tcl_SetResult(interp, TclGetString(Tcl_GetObjResult(interp)),
-	        TCL_VOLATILE);
-    }
+    (void) Tcl_GetStringResult(interp);
 
     /*
      * See how much space is needed, and grow the append buffer if
      * needed to accommodate the list element.
      */
 
-    size = Tcl_ScanElement(string, &flags) + 1;
+    size = Tcl_ScanElement(stringPtr, &flags) + 1;
     if ((iPtr->result != iPtr->appendResult)
 	    || (iPtr->appendResult[iPtr->appendUsed] != 0)
 	    || ((size + iPtr->appendUsed) >= iPtr->appendAvl)) {
@@ -641,7 +741,7 @@ Tcl_AppendElement(interp, string)
 	 */
 	flags |= TCL_DONT_QUOTE_HASH;
     }
-    iPtr->appendUsed += Tcl_ConvertElement(string, dst, flags);
+    iPtr->appendUsed += Tcl_ConvertElement(stringPtr, dst, flags);
 }
 
 /*
@@ -801,7 +901,25 @@ Tcl_ResetResult(interp)
     }
     iPtr->result = iPtr->resultSpace;
     iPtr->resultSpace[0] = 0;
-    iPtr->flags &= ~(ERR_ALREADY_LOGGED | ERR_IN_PROGRESS | ERROR_CODE_SET);
+    if (iPtr->errorCode) {
+	/* Legacy support */
+	Tcl_ObjSetVar2(interp, iPtr->ecVar, NULL,
+		iPtr->errorCode, TCL_GLOBAL_ONLY);
+	Tcl_DecrRefCount(iPtr->errorCode);
+	iPtr->errorCode = NULL;
+    }
+    if (iPtr->errorInfo) {
+	/* Legacy support */
+	Tcl_ObjSetVar2(interp, iPtr->eiVar, NULL,
+		iPtr->errorInfo, TCL_GLOBAL_ONLY);
+	Tcl_DecrRefCount(iPtr->errorInfo);
+	iPtr->errorInfo = NULL;
+    }
+    if (iPtr->returnOpts) {
+	Tcl_DecrRefCount(iPtr->returnOpts);
+	iPtr->returnOpts = NULL;
+    }
+    iPtr->flags &= ~ERR_ALREADY_LOGGED;
 }
 
 /*
@@ -858,26 +976,23 @@ ResetObjResult(iPtr)
  *	None.
  *
  * Side effects:
- *	The errorCode global variable is modified to hold all of the
+ *	The errorCode field of the interp is modified to hold all of the
  *	arguments to this procedure, in a list form with each argument
- *	becoming one element of the list.  A flag is set internally
- *	to remember that errorCode has been set, so the variable doesn't
- *	get set automatically when the error is returned.
+ *	becoming one element of the list.  
  *
  *----------------------------------------------------------------------
  */
 
 void
 Tcl_SetErrorCodeVA (interp, argList)
-    Tcl_Interp *interp;		/* Interpreter in which to access the errorCode
-				 * variable. */
+    Tcl_Interp *interp;		/* Interpreter in which to set errorCode */
     va_list argList;		/* Variable argument list. */
 {
     Tcl_Obj *errorObj = Tcl_NewObj();
 
     /*
      * Scan through the arguments one at a time, appending them to
-     * $errorCode as list elements.
+     * the errorCode field as list elements.
      */
 
     while (1) {
@@ -902,11 +1017,9 @@ Tcl_SetErrorCodeVA (interp, argList)
  *	None.
  *
  * Side effects:
- *	The errorCode global variable is modified to hold all of the
+ *	The errorCode field of the interp is modified to hold all of the
  *	arguments to this procedure, in a list form with each argument
- *	becoming one element of the list.  A flag is set internally
- *	to remember that errorCode has been set, so the variable doesn't
- *	get set automatically when the error is returned.
+ *	becoming one element of the list.  
  *
  *----------------------------------------------------------------------
  */
@@ -919,7 +1032,7 @@ Tcl_SetErrorCode TCL_VARARGS_DEF(Tcl_Interp *,arg1)
 
     /*
      * Scan through the arguments one at a time, appending them to
-     * $errorCode as list elements.
+     * the errorCode field as list elements.
      */
 
     interp = TCL_VARARGS_START(Tcl_Interp *,arg1,argList);
@@ -940,10 +1053,7 @@ Tcl_SetErrorCode TCL_VARARGS_DEF(Tcl_Interp *,arg1)
  *	None.
  *
  * Side effects:
- *	The errorCode global variable is modified to be the new value.
- *	A flag is set internally to remember that errorCode has been
- *	set, so the variable doesn't get set automatically when the
- *	error is returned.
+ *	The errorCode field of the interp is set to the new value.
  *
  *----------------------------------------------------------------------
  */
@@ -955,9 +1065,404 @@ Tcl_SetObjErrorCode(interp, errorObjPtr)
 {
     Interp *iPtr = (Interp *) interp;
     
-    Tcl_ObjSetVar2(interp, iPtr->execEnvPtr->errorCode, NULL,
-	    errorObjPtr, TCL_GLOBAL_ONLY);
-    iPtr->flags |= ERROR_CODE_SET;
+    if (iPtr->errorCode) {
+	Tcl_DecrRefCount(iPtr->errorCode);
+    }
+    iPtr->errorCode = errorObjPtr;
+    Tcl_IncrRefCount(iPtr->errorCode);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetKeys --
+ *
+ *	Returns a Tcl_Obj * array of the standard keys used in the
+ *	return options dictionary.
+ *
+ *	Broadly sharing one copy of these key values helps with both
+ *	memory efficiency and dictionary lookup times.
+ *
+ * Results:
+ *	A Tcl_Obj * array.
+ *
+ * Side effects:
+ * 	First time called in a thread, creates the keys (allocating
+ * 	memory) and arranges for their cleanup at thread exit.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static Tcl_Obj **
+GetKeys()
+{
+    static Tcl_ThreadDataKey returnKeysKey;
+    Tcl_Obj **keys = Tcl_GetThreadData(&returnKeysKey,
+	    (int) (KEY_LAST * sizeof(Tcl_Obj *)));
+    if (keys[0] == NULL) {
+	/* First call in this thread, create the keys... */
+	int i;
+	keys[KEY_CODE]		 = Tcl_NewStringObj("-code", -1);
+	keys[KEY_ERRORCODE]	 = Tcl_NewStringObj("-errorcode", -1);
+	keys[KEY_ERRORINFO]	 = Tcl_NewStringObj("-errorinfo", -1);
+	keys[KEY_ERRORLINE]	 = Tcl_NewStringObj("-errorline", -1);
+	keys[KEY_LEVEL]		 = Tcl_NewStringObj("-level", -1);
+	keys[KEY_OPTIONS]	 = Tcl_NewStringObj("-options", -1);
+	for (i = KEY_CODE; i < KEY_LAST; i++) {
+	    Tcl_IncrRefCount(keys[i]);
+	}
+	/* ... and arrange for their clenaup. */
+	Tcl_CreateThreadExitHandler(ReleaseKeys, (ClientData) keys);
+    }
+    return keys;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ReleaseKeys --
+ *
+ *	Called as a thread exit handler to cleanup return options
+ *	dictionary keys.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ * 	Frees memory.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+ReleaseKeys(clientData)
+    ClientData clientData;
+{
+    Tcl_Obj **keys = (Tcl_Obj **)clientData;
+    int i;
+    for (i = KEY_CODE; i < KEY_LAST; i++) {
+	Tcl_DecrRefCount(keys[i]);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclProcessReturn --
+ *
+ *	Does the work of the [return] command based on the code,
+ *	level, and returnOpts arguments.  Note that the code argument
+ *	must agree with the -code entry in returnOpts and the level
+ *	argument must agree with the -level entry in returnOpts, as
+ *	is the case for values returned from TclMergeReturnOptions.
+ *
+ * Results:
+ *	Returns the return code the [return] command should return.
+ *
+ * Side effects:
+ * 	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclProcessReturn(interp, code, level, returnOpts)
+    Tcl_Interp *interp;
+    int code;
+    int level;
+    Tcl_Obj *returnOpts;
+{
+    Interp *iPtr = (Interp *) interp;
+    Tcl_Obj *valuePtr;
+    Tcl_Obj **keys = GetKeys();
+
+    /* Store the merged return options */
+    if (iPtr->returnOpts != returnOpts) {
+	if (iPtr->returnOpts) {
+	    Tcl_DecrRefCount(iPtr->returnOpts);
+	}
+	iPtr->returnOpts = returnOpts;
+	Tcl_IncrRefCount(iPtr->returnOpts);
+    }
+
+    if (code == TCL_ERROR) {
+	if (iPtr->errorInfo) {
+	    Tcl_DecrRefCount(iPtr->errorInfo);
+	    iPtr->errorInfo = NULL;
+	}
+	Tcl_DictObjGet(NULL, iPtr->returnOpts, keys[KEY_ERRORINFO], &valuePtr);
+	if (valuePtr != NULL) {
+	    int infoLen;
+	    (void) Tcl_GetStringFromObj(valuePtr, &infoLen);
+	    if (infoLen) {
+		iPtr->errorInfo = valuePtr;
+		Tcl_IncrRefCount(iPtr->errorInfo);
+		iPtr->flags |= ERR_ALREADY_LOGGED;
+	    }
+	}
+	Tcl_DictObjGet(NULL, iPtr->returnOpts, keys[KEY_ERRORCODE], &valuePtr);
+	if (valuePtr != NULL) {
+	    Tcl_SetObjErrorCode(interp, valuePtr);
+	} else {
+	    Tcl_SetErrorCode(interp, "NONE", NULL);
+	}
+
+	Tcl_DictObjGet(NULL, iPtr->returnOpts, keys[KEY_ERRORLINE], &valuePtr);
+	if (valuePtr != NULL) {
+	    Tcl_GetIntFromObj(NULL, valuePtr, &iPtr->errorLine);
+	}
+    }
+    if (level != 0) {
+	iPtr->returnLevel = level;
+	iPtr->returnCode = code;
+	return TCL_RETURN;
+    }
+    return code;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclMergeReturnOptions --
+ *
+ *	Parses, checks, and stores the options to the [return] command.
+ *
+ * Results:
+ *	Returns TCL_ERROR is any of the option values are invalid.
+ *	Otherwise, returns TCL_OK, and writes the returnOpts, code,
+ *	and level values to the pointers provided.
+ *
+ * Side effects:
+ * 	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclMergeReturnOptions(interp, objc, objv, optionsPtrPtr, codePtr, levelPtr)
+    Tcl_Interp *interp;		/* Current interpreter. */
+    int objc;			/* Number of arguments. */
+    Tcl_Obj *CONST objv[];	/* Argument objects. */
+    Tcl_Obj **optionsPtrPtr;	/* If not NULL, points to space for a
+				 * (Tcl_Obj *) where the pointer to the
+				 * merged return options dictionary should
+				 * be written */
+    int *codePtr;		/* If not NULL, points to space where the
+				 * -code value should be written */
+    int *levelPtr;		/* If not NULL, points to space where the
+				 * -level value should be written */
+{
+    int code=TCL_OK;
+    int level = 1;
+    Tcl_Obj *valuePtr;
+    Tcl_Obj *returnOpts = Tcl_NewObj();
+    Tcl_Obj **keys = GetKeys();
+
+    for (;  objc > 1;  objv += 2, objc -= 2) {
+	int optLen;
+	CONST char *opt = Tcl_GetStringFromObj(objv[0], &optLen);
+	int compareLen;
+	CONST char *compare =
+		Tcl_GetStringFromObj(keys[KEY_OPTIONS], &compareLen);
+
+	if ((optLen == compareLen) && (strcmp(opt, compare) == 0)) {
+	    Tcl_DictSearch search;
+	    int done = 0;
+	    Tcl_Obj *keyPtr;
+	    Tcl_Obj *dict = objv[1];
+
+	    nestedOptions:
+	    if (TCL_ERROR == Tcl_DictObjFirst(NULL, dict,
+		    &search, &keyPtr, &valuePtr, &done)) {
+		/* Value is not a legal dictionary */
+		Tcl_ResetResult(interp);
+		Tcl_AppendResult(interp, "bad ",
+			compare, " value: expected dictionary but got \"",
+			TclGetString(objv[1]), "\"", (char *) NULL);
+		goto error;
+	    }
+
+	    while (!done) {
+		Tcl_DictObjPut(NULL, returnOpts, keyPtr, valuePtr);
+		Tcl_DictObjNext(&search, &keyPtr, &valuePtr, &done);
+	    }
+
+	    Tcl_DictObjGet(NULL, returnOpts, keys[KEY_OPTIONS], &valuePtr);
+	    if (valuePtr != NULL) {
+		dict = valuePtr;
+		Tcl_DictObjRemove(NULL, returnOpts, keys[KEY_OPTIONS]);
+		goto nestedOptions;
+	    }
+
+	} else {
+	    Tcl_DictObjPut(NULL, returnOpts, objv[0], objv[1]);
+	}
+    }
+
+    /* Check for bogus -code value */
+    Tcl_DictObjGet(NULL, returnOpts, keys[KEY_CODE], &valuePtr);
+    if ((valuePtr != NULL) 
+	    && (TCL_ERROR == Tcl_GetIntFromObj(NULL, valuePtr, &code))) {
+	static CONST char *returnCodes[] = {
+	    "ok", "error", "return", "break", "continue", NULL
+	};
+
+	if (TCL_ERROR == Tcl_GetIndexFromObj(NULL, valuePtr, returnCodes,
+		NULL, TCL_EXACT, &code)) {
+	    /* Value is not a legal return code */
+	    Tcl_ResetResult(interp);
+	    Tcl_AppendResult(interp, "bad completion code \"",
+		    TclGetString(valuePtr),
+		    "\": must be ok, error, return, break, ",
+		    "continue, or an integer", (char *) NULL);
+	    goto error;
+	}
+	Tcl_DictObjRemove(NULL, returnOpts, keys[KEY_CODE]);
+    }
+
+    /* Check for bogus -level value */
+    Tcl_DictObjGet(NULL, returnOpts, keys[KEY_LEVEL], &valuePtr);
+    if (valuePtr != NULL) {
+	if ((TCL_ERROR == Tcl_GetIntFromObj(NULL, valuePtr, &level)) 
+		|| (level < 0)) {
+	    /* Value is not a legal level */
+	    Tcl_ResetResult(interp);
+	    Tcl_AppendResult(interp, "bad -level value: ",
+		"expected non-negative integer but got \"",
+		TclGetString(valuePtr), "\"", (char *) NULL);
+	    goto error;
+	}
+	Tcl_DictObjRemove(NULL, returnOpts, keys[KEY_LEVEL]);
+    }
+
+    /* 
+     * Convert [return -code return -level X] to
+     * [return -code ok -level X+1]
+     */
+    if (code == TCL_RETURN) {
+	level++;
+	code = TCL_OK;
+    }
+
+    if (codePtr != NULL) {
+	*codePtr = code;
+    }
+    if (levelPtr != NULL) {
+	*levelPtr = level;
+    }
+    if (optionsPtrPtr == NULL) {
+	/* Not passing back the options (?!), so clean them up */
+	Tcl_DecrRefCount(returnOpts);
+    } else {
+	*optionsPtrPtr = returnOpts;
+    }
+    return TCL_OK;
+
+error:
+    Tcl_DecrRefCount(returnOpts);
+    return TCL_ERROR;
+}
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * TclGetReturnOptions --
+ *
+ *	Packs up the interp state into a dictionary of return options.
+ *
+ * Results:
+ *	A dictionary of return options.
+ *
+ * Side effects:
+ *	None.
+ *
+ *-------------------------------------------------------------------------
+ */
+
+Tcl_Obj *
+TclGetReturnOptions(interp, result)
+    Tcl_Interp *interp;
+    int result;
+{
+    Interp *iPtr = (Interp *) interp;
+    Tcl_Obj *options;
+    Tcl_Obj **keys = GetKeys();
+
+    if (iPtr->returnOpts) {
+	options = Tcl_DuplicateObj(iPtr->returnOpts);
+    } else {
+	options = Tcl_NewObj();
+    }
+
+    if (result == TCL_RETURN) {
+	Tcl_DictObjPut(NULL, options, keys[KEY_CODE],
+		Tcl_NewIntObj(iPtr->returnCode));
+	Tcl_DictObjPut(NULL, options, keys[KEY_LEVEL],
+		Tcl_NewIntObj(iPtr->returnLevel));
+    } else {
+	Tcl_DictObjPut(NULL, options, keys[KEY_CODE],
+		Tcl_NewIntObj(result));
+	Tcl_DictObjPut(NULL, options, keys[KEY_LEVEL],
+		Tcl_NewIntObj(0));
+    }
+
+    if (result == TCL_ERROR) {
+	/*
+	 * When result was an error, fill in any missing values
+	 * for -errorinfo, -errorcode, and -errorline
+	 */
+        Tcl_AddObjErrorInfo(interp, "", -1);
+	Tcl_DictObjPut(NULL, options, keys[KEY_ERRORINFO], iPtr->errorInfo);
+	Tcl_DictObjPut(NULL, options, keys[KEY_ERRORCODE], iPtr->errorCode);
+	Tcl_DictObjPut(NULL, options, keys[KEY_ERRORLINE],
+		Tcl_NewIntObj(iPtr->errorLine));
+    }
+    return options;
+}
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * TclSetReturnOptions --
+ *
+ *	Accepts an interp and a  dictionary of return options, and sets
+ *	the return options of the interp to match the dictionary.
+ *
+ * Results:
+ *	A standard status code.  Usually TCL_OK, but TCL_ERROR if an
+ *	invalid option value was found in the dictionary.  If a -level
+ *	value of 0 is in the dictionary, then the -code value in the
+ *	dictionary will be returned (TCL_OK default).
+ *
+ * Side effects:
+ *	Sets the state of the interp.
+ *
+ *-------------------------------------------------------------------------
+ */
+
+int
+TclSetReturnOptions(interp, options)
+    Tcl_Interp *interp;
+    Tcl_Obj *options;
+{
+    int objc, level, code;
+    Tcl_Obj **objv, *mergedOpts;
+
+    if (TCL_ERROR == Tcl_ListObjGetElements(interp, options, &objc, &objv)
+	    || (objc % 2)) {
+	Tcl_ResetResult(interp);
+	Tcl_AppendResult(interp, "expected dict but got \"",
+		Tcl_GetString(options), "\"", NULL);
+	code = TCL_ERROR;
+    } else if (TCL_ERROR == TclMergeReturnOptions(interp, objc, objv,
+	    &mergedOpts, &code, &level)) {
+	code = TCL_ERROR;
+    } else {
+	code = TclProcessReturn(interp, code, level, mergedOpts);
+    }
+
+    Tcl_DecrRefCount(options);
+    return code;
 }
 
 /*
@@ -979,9 +1484,9 @@ Tcl_SetObjErrorCode(interp, errorObjPtr)
  *
  * Results:
  *	The target interp's result is set to a copy of the source interp's
- *	result.  The source's error information "$errorInfo" may be
- *	appended to the target's error information and the source's error
- *	code "$errorCode" may be stored in the target's error code.
+ *	result.  The source's errorInfo field may be transferred to the
+ *	target's errorInfo field, and the source's errorCode field may be
+ *	transferred to the target's errorCode field.
  *
  * Side effects:
  *	None.
@@ -1002,46 +1507,15 @@ TclTransferResult(sourceInterp, result, targetInterp)
 				 * should be stored.  If source and target
 				 * are the same, nothing is done. */
 {
-    Interp *iPtr;
-    Tcl_Obj *objPtr;
+    Interp *iPtr = (Interp *) targetInterp;
 
     if (sourceInterp == targetInterp) {
 	return;
     }
 
-    if (result == TCL_ERROR) {
-	/*
-	 * An error occurred, so transfer error information from the source
-	 * interpreter to the target interpreter.  Setting the flags tells
-	 * the target interp that it has inherited a partial traceback
-	 * chain, not just a simple error message.
-	 */
-
-	iPtr = (Interp *) sourceInterp;
-        if ((iPtr->flags & ERR_ALREADY_LOGGED) == 0) {
-            Tcl_AddErrorInfo(sourceInterp, "");
-        }
-        iPtr->flags &= ~(ERR_ALREADY_LOGGED);
-        
-        Tcl_ResetResult(targetInterp);
-        
-	objPtr = Tcl_GetVar2Ex(sourceInterp, "errorInfo", NULL,
-		TCL_GLOBAL_ONLY);
-	Tcl_SetVar2Ex(targetInterp, "errorInfo", NULL, objPtr,
-		TCL_GLOBAL_ONLY);
-	((Interp *) targetInterp)->flags |= ERR_IN_PROGRESS;
-
-	objPtr = Tcl_GetVar2Ex(sourceInterp, "errorCode", NULL,
-		TCL_GLOBAL_ONLY);
-	Tcl_SetObjErrorCode(targetInterp, objPtr);
-    }
-
-    /* This may need examination for safety */
-    Tcl_DecrRefCount( ((Interp *) targetInterp)->returnOpts );
-    ((Interp *) targetInterp)->returnOpts = 
-	    ((Interp *) sourceInterp)->returnOpts;
-    Tcl_IncrRefCount( ((Interp *) targetInterp)->returnOpts );
-
+    TclSetReturnOptions(targetInterp,
+	    TclGetReturnOptions(sourceInterp, result));
+    iPtr->flags &= ~(ERR_ALREADY_LOGGED);
     Tcl_SetObjResult(targetInterp, Tcl_GetObjResult(sourceInterp));
     Tcl_ResetResult(sourceInterp);
 }

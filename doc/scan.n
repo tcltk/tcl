@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: scan.n,v 1.9.4.1 2004/05/17 18:42:20 dgp Exp $
+'\" RCS: @(#) $Id: scan.n,v 1.9.4.2 2004/10/28 18:46:15 dgp Exp $
 '\" 
 .so man.macros
 .TH scan n 8.4 Tcl "Tcl Built-In Commands"
@@ -212,35 +212,35 @@ Parse a simple color specification of the form \fI#RRGGBB\fR using
 hexadecimal conversions with field sizes:
 .CS
 set string "#08D03F"
-scan $string "#%2x%2x%2x" r g b
+\fBscan\fR $string "#%2x%2x%2x" r g b
 .CE
-
+.PP
 Parse a \fIHH:MM\fR time string, noting that this avoids problems with
 octal numbers by forcing interpretation as decimals (if we did not
 care, we would use the \fB%i\fR conversion instead):
 .CS
 set string "08:08"   ;# *Not* octal!
-if {[scan $string "%d:%d" hours minutes] != 2} {
-    error "not a valid time string"
+if {[\fBscan\fR $string "%d:%d" hours minutes] != 2} {
+   error "not a valid time string"
 }
 # We have to understand numeric ranges ourselves...
 if {$minutes < 0 || $minutes > 59} {
-    error "invalid number of minutes"
+   error "invalid number of minutes"
 }
 .CE
-
+.PP
 Break a string up into sequences of non-whitespace characters (note
 the use of the \fB%n\fR conversion so that we get skipping over
 leading whitespace correct):
 .CS
 set string " a string {with braced words} + leading space "
 set words {}
-while {[scan $string %s%n word length] == 2} {
-    lappend words $word
-    set string [string range $string $length end]
+while {[\fBscan\fR $string %s%n word length] == 2} {
+   lappend words $word
+   set string [string range $string $length end]
 }
 .CE
-
+.PP
 Parse a simple coordinate string, checking that it is complete by
 looking for the terminating character explicitly:
 .CS
@@ -249,7 +249,7 @@ set string "(5.2,-4e-2)"
 # the scan pattern are significant, and that ")" is
 # the Unicode character \\u0029
 if {
-   [scan $string " (%f ,%f %c" x y last] != 3
+   [\fBscan\fR $string " (%f ,%f %c" x y last] != 3
    || $last != 0x0029
 } then {
    error "invalid coordinate string"

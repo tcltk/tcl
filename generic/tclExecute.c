@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.101.2.13 2004/09/30 00:51:37 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.101.2.14 2004/10/28 18:46:25 dgp Exp $
  */
 
 #ifdef STDC_HEADERS
@@ -527,12 +527,6 @@ TclCreateExecEnv(interp)
     eePtr->tosPtr = stackPtr - 1;
     eePtr->endPtr = stackPtr + (TCL_STACK_INITIAL_SIZE - 2);
 
-    eePtr->errorInfo = Tcl_NewStringObj("::errorInfo", -1);
-    Tcl_IncrRefCount(eePtr->errorInfo);
-
-    eePtr->errorCode = Tcl_NewStringObj("::errorCode", -1);
-    Tcl_IncrRefCount(eePtr->errorCode);
-
     Tcl_MutexLock(&execMutex);
     if (!execInitialized) {
 	TclInitAuxDataTypeTable();
@@ -571,8 +565,6 @@ TclDeleteExecEnv(eePtr)
     } else {
 	Tcl_Panic("ERROR: freeing an execEnv whose stack is still in use.\n");
     }
-    TclDecrRefCount(eePtr->errorInfo);
-    TclDecrRefCount(eePtr->errorCode);
     ckfree((char *) eePtr);
 }
 
@@ -759,16 +751,16 @@ Tcl_ExprObj(interp, objPtr, resultPtrPtr)
     if (objPtr->typePtr == &tclByteCodeType) {
 	codePtr = (ByteCode *) objPtr->internalRep.otherValuePtr;
 	if (((Interp *) *codePtr->interpHandle != iPtr)
-	        || (codePtr->compileEpoch != iPtr->compileEpoch)) {
-            if (codePtr->flags & TCL_BYTECODE_PRECOMPILED) {
-                if ((Interp *) *codePtr->interpHandle != iPtr) {
-                    Tcl_Panic("Tcl_ExprObj: compiled expression jumped interps");
-                }
-	        codePtr->compileEpoch = iPtr->compileEpoch;
-            } else {
-                (*tclByteCodeType.freeIntRepProc)(objPtr);
-                objPtr->typePtr = (Tcl_ObjType *) NULL;
-            }
+		|| (codePtr->compileEpoch != iPtr->compileEpoch)) {
+	    if (codePtr->flags & TCL_BYTECODE_PRECOMPILED) {
+		if ((Interp *) *codePtr->interpHandle != iPtr) {
+		    Tcl_Panic("Tcl_ExprObj: compiled expression jumped interps");
+		}
+		codePtr->compileEpoch = iPtr->compileEpoch;
+	    } else {
+		objPtr->typePtr->freeIntRepProc(objPtr);
+		objPtr->typePtr = (Tcl_ObjType *) NULL;
+	    }
 	}
     }
     if (objPtr->typePtr != &tclByteCodeType) {
@@ -800,7 +792,7 @@ Tcl_ExprObj(interp, objPtr, resultPtrPtr)
 #ifdef TCL_COMPILE_DEBUG
 	    TclVerifyGlobalLiteralTable(iPtr);
 #endif /*TCL_COMPILE_DEBUG*/
-    
+
 	    auxDataPtr = compEnv.auxDataArrayPtr;
 	    for (i = 0;  i < compEnv.auxDataArrayNext;  i++) {
 		if (auxDataPtr->type->freeProc != NULL) {
@@ -819,9 +811,9 @@ Tcl_ExprObj(interp, objPtr, resultPtrPtr)
 	    
 	if (compEnv.codeNext == compEnv.codeStart) {
 	    TclEmitPush(TclRegisterLiteral(&compEnv, "0", 1, /*onHeap*/ 0),
-	            &compEnv);
+		    &compEnv);
 	}
-	    
+
 	/*
 	 * Add a "done" instruction as the last instruction and change the
 	 * object into a ByteCode object. Ownership of the literal objects
@@ -939,7 +931,7 @@ TclCompEvalObj(interp, objPtr, flags)
      */
 
     if (objPtr->typePtr != &tclByteCodeType) {
-        recompileObj:
+      recompileObj:
 	iPtr->errorLine = 1; 
 	result = tclByteCodeType.setFromAnyProc(interp, objPtr);
 	if (result != TCL_OK) {
@@ -967,23 +959,23 @@ TclCompEvalObj(interp, objPtr, flags)
 	 */
 	codePtr = (ByteCode *) objPtr->internalRep.otherValuePtr;
 	if (((Interp *) *codePtr->interpHandle != iPtr)
-	        || (codePtr->compileEpoch != iPtr->compileEpoch)
+		|| (codePtr->compileEpoch != iPtr->compileEpoch)
 #ifdef CHECK_PROC_ORIGINATION	/* [Bug: 3412 Pedantic] */
 		|| (codePtr->procPtr != NULL && !(iPtr->varFramePtr &&
 			iPtr->varFramePtr->procPtr == codePtr->procPtr))
 #endif
-	        || (codePtr->nsPtr != namespacePtr)
-	        || (codePtr->nsEpoch != namespacePtr->resolverEpoch)) {
-            if (codePtr->flags & TCL_BYTECODE_PRECOMPILED) {
-                if ((Interp *) *codePtr->interpHandle != iPtr) {
-                    Tcl_Panic("Tcl_EvalObj: compiled script jumped interps");
-                }
-	        codePtr->compileEpoch = iPtr->compileEpoch;
-            } else {
+		|| (codePtr->nsPtr != namespacePtr)
+		|| (codePtr->nsEpoch != namespacePtr->resolverEpoch)) {
+	    if (codePtr->flags & TCL_BYTECODE_PRECOMPILED) {
+		if ((Interp *) *codePtr->interpHandle != iPtr) {
+		    Tcl_Panic("Tcl_EvalObj: compiled script jumped interps");
+		}
+		codePtr->compileEpoch = iPtr->compileEpoch;
+	    } else {
 		/*
 		 * This byteCode is invalid: free it and recompile
 		 */
-                tclByteCodeType.freeIntRepProc(objPtr);
+		objPtr->typePtr->freeIntRepProc(objPtr);
 		goto recompileObj;
 	    }
 	}
@@ -999,11 +991,6 @@ PrintByteCodeInfo(codePtr);
      */
 
     codePtr->refCount++;
-    if (iPtr->returnOpts != iPtr->defaultReturnOpts) {
-	Tcl_DecrRefCount(iPtr->returnOpts);
-	iPtr->returnOpts = iPtr->defaultReturnOpts;
-	Tcl_IncrRefCount(iPtr->returnOpts);
-    }
     result = TclExecuteByteCode(interp, codePtr);
     codePtr->refCount--;
     if (codePtr->refCount <= 0) {
@@ -1260,10 +1247,7 @@ TclExecuteByteCode(interp, codePtr)
 	    int level = TclGetUInt4AtPtr(pc+5);
 	    Tcl_Obj *returnOpts = POP_OBJECT();
 
-	    DECACHE_STACK_INFO();
-	    Tcl_ResetResult(interp);
 	    result = TclProcessReturn(interp, code, level, returnOpts);
-	    CACHE_STACK_INFO();
 	    Tcl_DecrRefCount(returnOpts);
 	    if (result != TCL_OK) {
 		Tcl_SetObjResult(interp, *tosPtr);
@@ -1343,7 +1327,9 @@ TclExecuteByteCode(interp, codePtr)
 	    Tcl_Obj *newObjResultPtr;
 	    
 	    bytes = GetSrcInfoForPc(pc, codePtr, &length);
+	    DECACHE_STACK_INFO();	    
 	    result = Tcl_EvalEx(interp, bytes, length, 0);
+	    CACHE_STACK_INFO();
 	    if (result != TCL_OK) {
 		cleanup = 0;
 		goto processExceptionReturn;
@@ -1680,7 +1666,7 @@ TclExecuteByteCode(interp, codePtr)
 		     */
 		    
 		    TRACE_WITH_OBJ(("%u => ... after \"%.20s\": TCL_OK, result=",
-					   objc, cmdNameBuf), Tcl_GetObjResult(interp));
+			    objc, cmdNameBuf), Tcl_GetObjResult(interp));
 		    
 		    objResultPtr = Tcl_GetObjResult(interp);
 		    
@@ -1767,8 +1753,8 @@ TclExecuteByteCode(interp, codePtr)
 	    result = Tcl_ExprObj(interp, objPtr, &valuePtr);
 	    CACHE_STACK_INFO();
 	    if (result != TCL_OK) {
-		TRACE_WITH_OBJ(("\"%.30s\" => ERROR: ", 
-				       O2S(objPtr)), Tcl_GetObjResult(interp));
+		TRACE_WITH_OBJ(("\"%.30s\" => ERROR: ", O2S(objPtr)),
+			Tcl_GetObjResult(interp));
 		goto checkForCatch;
 	    }
 	    objResultPtr = valuePtr;
@@ -1798,8 +1784,7 @@ TclExecuteByteCode(interp, codePtr)
 		varPtr = varPtr->value.linkPtr;
 	    }
 	    TRACE(("%u => ", opnd));
-	    if (TclIsVarScalar(varPtr) && !TclIsVarUndefined(varPtr) 
-		    && (varPtr->tracePtr == NULL)) {
+	    if (TclIsVarDirectReadable(varPtr)) {
 		/*
 		 * No errors, no traces: just get the value.
 		 */
@@ -1821,8 +1806,7 @@ TclExecuteByteCode(interp, codePtr)
 		varPtr = varPtr->value.linkPtr;
 	    }
 	    TRACE(("%u => ", opnd));
-	    if (TclIsVarScalar(varPtr) && !TclIsVarUndefined(varPtr) 
-		    && (varPtr->tracePtr == NULL)) {
+	    if (TclIsVarDirectReadable(varPtr)) {
 		/*
 		 * No errors, no traces: just get the value.
 		 */
@@ -1861,10 +1845,9 @@ TclExecuteByteCode(interp, codePtr)
 		result = TCL_ERROR;
 		goto checkForCatch;
 	    }
-	    if (TclIsVarScalar(varPtr) && !TclIsVarUndefined(varPtr) 
-		    && (varPtr->tracePtr == NULL)
+	    if (TclIsVarDirectReadable(varPtr)
 		    && ((arrayPtr == NULL) 
-			    || (arrayPtr->tracePtr == NULL))) {
+			    || TclIsVarUntraced(arrayPtr))) {
 		/*
 		 * No errors, no traces: just get the value.
 		 */
@@ -1899,10 +1882,9 @@ TclExecuteByteCode(interp, codePtr)
 		result = TCL_ERROR;
 		goto checkForCatch;
 	    }
-	    if (TclIsVarScalar(varPtr) && !TclIsVarUndefined(varPtr) 
-		    && (varPtr->tracePtr == NULL)
+	    if (TclIsVarDirectReadable(varPtr)
 		    && ((arrayPtr == NULL) 
-			    || (arrayPtr->tracePtr == NULL))) {
+			    || TclIsVarUntraced(arrayPtr))) {
 		/*
 		 * No errors, no traces: just get the value.
 		 */
@@ -2123,13 +2105,9 @@ TclExecuteByteCode(interp, codePtr)
 	    
 	doCallPtrSetVar:
 	    if ((storeFlags == TCL_LEAVE_ERR_MSG)
-		    && !((varPtr->flags & VAR_IN_HASHTABLE) 
-			    && (varPtr->hPtr == NULL))
-		    && (varPtr->tracePtr == NULL)
-		    && (TclIsVarScalar(varPtr) 
-			    || TclIsVarUndefined(varPtr))
+		    && TclIsVarDirectWritable(varPtr)
 		    && ((arrayPtr == NULL) 
-			    || (arrayPtr->tracePtr == NULL))) {
+			    || TclIsVarUntraced(arrayPtr))) {
 		/*
 		 * No traces, no errors, plain 'set': we can safely inline.
 		 * The value *will* be set to what's requested, so that 
@@ -2216,10 +2194,8 @@ TclExecuteByteCode(interp, codePtr)
 		 REQUIRE_WIDE_OR_INT(result, objPtr, i, w);
 		 if (result != TCL_OK) {
 		     TRACE_WITH_OBJ(("%u (by %s) => ERROR converting increment amount to int: ",
-					    opnd, O2S(objPtr)), Tcl_GetObjResult(interp));
-		     DECACHE_STACK_INFO();
+			     opnd, O2S(objPtr)), Tcl_GetObjResult(interp));
 		     Tcl_AddErrorInfo(interp, "\n    (reading increment)");
-		     CACHE_STACK_INFO();
 		     goto checkForCatch;
 		 }
 		 isWide = (objPtr->typePtr == &tclWideIntType);
@@ -2262,10 +2238,8 @@ TclExecuteByteCode(interp, codePtr)
 	     varPtr = TclObjLookupVar(interp, objPtr, part2, 
 		     TCL_LEAVE_ERR_MSG, "read", 0, 1, &arrayPtr);
 	     if (varPtr == NULL) {
-		 DECACHE_STACK_INFO();
 		 Tcl_AddObjErrorInfo(interp,
 			 "\n    (reading value of variable to increment)", -1);
-		 CACHE_STACK_INFO();
 		 TRACE_APPEND(("ERROR: %.30s\n", O2S(Tcl_GetObjResult(interp))));
 		 result = TCL_ERROR;
 		 goto checkForCatch;
@@ -2318,11 +2292,9 @@ TclExecuteByteCode(interp, codePtr)
 		
 	 doIncrVar:
 	     objPtr = varPtr->value.objPtr;
-	     if (TclIsVarScalar(varPtr)
-		     && !TclIsVarUndefined(varPtr) 
-		     && (varPtr->tracePtr == NULL)
+	     if (TclIsVarDirectReadable(varPtr)
 		     && ((arrayPtr == NULL) 
-			     || (arrayPtr->tracePtr == NULL))) {
+			     || TclIsVarUntraced(arrayPtr))) {
 		 if (objPtr->typePtr == &tclIntType && !isWide) {
 		     /*
 		      * No errors, no traces, the variable already has an
@@ -2549,9 +2521,7 @@ TclExecuteByteCode(interp, codePtr)
 	    if (result != TCL_OK) {
 		TRACE(("\"%.20s\" => ILLEGAL TYPE %s \n", O2S(valuePtr),
 		        (t1Ptr? t1Ptr->name : "null")));
-		DECACHE_STACK_INFO();
 		IllegalExprOperandType(interp, pc, valuePtr);
-		CACHE_STACK_INFO();
 		goto checkForCatch;
 	    }
 	}
@@ -2580,9 +2550,7 @@ TclExecuteByteCode(interp, codePtr)
 	    if (result != TCL_OK) {
 		TRACE(("\"%.20s\" => ILLEGAL TYPE %s \n", O2S(value2Ptr),
 		        (t2Ptr? t2Ptr->name : "null")));
-		DECACHE_STACK_INFO();
 		IllegalExprOperandType(interp, pc, value2Ptr);
-		CACHE_STACK_INFO();
 		goto checkForCatch;
 	    }
 	}
@@ -2921,6 +2889,71 @@ TclExecuteByteCode(interp, codePtr)
 	TRACE_WITH_OBJ(("\"%.30s\" %d %d => ", O2S(valuePtr),
 		TclGetInt4AtPtr(pc+1), TclGetInt4AtPtr(pc+5)), objResultPtr);
 	NEXT_INST_F(9, 1, 1);
+    }
+
+    case INST_LIST_IN:
+    case INST_LIST_NOT_IN: {
+	/*
+	 * Basic list containment operators.
+	 */
+	int found, s1len, s2len, llen, i;
+	Tcl_Obj *valuePtr, *value2Ptr, *o;
+	char *s1, *s2;
+
+	value2Ptr = *tosPtr;
+	valuePtr = *(tosPtr - 1);
+
+	s1 = Tcl_GetStringFromObj(valuePtr, &s1len);
+	result = Tcl_ListObjLength(interp, value2Ptr, &llen);
+	if (result != TCL_OK) {
+	    TRACE_WITH_OBJ(("\"%.30s\" \"%.30s\" => ERROR: ", O2S(valuePtr),
+		    O2S(value2Ptr)), Tcl_GetObjResult(interp));
+	    goto checkForCatch;
+	}
+	found = 0;
+	if (llen > 0) {
+	    /* An empty list doesn't match anything */
+	    i = 0;
+	    do {
+		Tcl_ListObjIndex(NULL, value2Ptr, i, &o);
+		if (o != NULL) {
+		    s2 = Tcl_GetStringFromObj(o, &s2len);
+		} else {
+		    s2 = "";
+		}
+		if (s1len == s2len) {
+		    found = (strcmp(s1, s2) == 0);
+		}
+		i++;
+	    } while (i < llen && found == 0);
+	}
+
+	if (*pc == INST_LIST_NOT_IN) {
+	    found = !found;
+	}
+
+	TRACE(("%.20s %.20s => %d\n", O2S(valuePtr), O2S(value2Ptr), found));
+
+	/*
+	 * Peep-hole optimisation: if you're about to jump, do jump
+	 * from here.
+	 */
+
+	pc++;
+#ifndef TCL_COMPILE_DEBUG
+	switch (*pc) {
+	case INST_JUMP_FALSE1:
+	    NEXT_INST_F((found ? 2 : TclGetInt1AtPtr(pc+1)), 2, 0);
+	case INST_JUMP_TRUE1:
+	    NEXT_INST_F((found ? TclGetInt1AtPtr(pc+1) : 2), 2, 0);
+	case INST_JUMP_FALSE4:
+	    NEXT_INST_F((found ? 5 : TclGetInt4AtPtr(pc+1)), 2, 0);
+	case INST_JUMP_TRUE4:
+	    NEXT_INST_F((found ? TclGetInt4AtPtr(pc+1) : 5), 2, 0);
+	}
+#endif
+	objResultPtr = Tcl_NewBooleanObj(found);
+	NEXT_INST_F(0, 2, 1);
     }
 
     /*
@@ -3459,9 +3492,7 @@ TclExecuteByteCode(interp, codePtr)
 		        O2S(valuePtr), O2S(value2Ptr), 
 		        (valuePtr->typePtr? 
 			     valuePtr->typePtr->name : "null")));
-		DECACHE_STACK_INFO();
 		IllegalExprOperandType(interp, pc, valuePtr);
-		CACHE_STACK_INFO();
 		goto checkForCatch;
 	    }
 	}
@@ -3476,9 +3507,7 @@ TclExecuteByteCode(interp, codePtr)
 		        O2S(valuePtr), O2S(value2Ptr),
 		        (value2Ptr->typePtr?
 			    value2Ptr->typePtr->name : "null")));
-		DECACHE_STACK_INFO();
 		IllegalExprOperandType(interp, pc, value2Ptr);
-		CACHE_STACK_INFO();
 		goto checkForCatch;
 	    }
 	}
@@ -3793,9 +3822,7 @@ TclExecuteByteCode(interp, codePtr)
 		        s, O2S(valuePtr),
 		        (valuePtr->typePtr?
 			    valuePtr->typePtr->name : "null")));
-		DECACHE_STACK_INFO();
 		IllegalExprOperandType(interp, pc, valuePtr);
-		CACHE_STACK_INFO();
 		goto checkForCatch;
 	    }
 	    t1Ptr = valuePtr->typePtr;
@@ -3827,9 +3854,7 @@ TclExecuteByteCode(interp, codePtr)
 		        O2S(value2Ptr), s,
 		        (value2Ptr->typePtr?
 			    value2Ptr->typePtr->name : "null")));
-		DECACHE_STACK_INFO();
 		IllegalExprOperandType(interp, pc, value2Ptr);
-		CACHE_STACK_INFO();
 		goto checkForCatch;
 	    }
 	    t2Ptr = value2Ptr->typePtr;
@@ -3882,9 +3907,7 @@ TclExecuteByteCode(interp, codePtr)
 	    if (IS_NAN(dResult) || IS_INF(dResult)) {
 		TRACE(("%.20s %.20s => IEEE FLOATING PT ERROR\n",
 		        O2S(valuePtr), O2S(value2Ptr)));
-		DECACHE_STACK_INFO();
 		TclExprFloatError(interp, dResult);
-		CACHE_STACK_INFO();
 		result = TCL_ERROR;
 		goto checkForCatch;
 	    }
@@ -4060,9 +4083,7 @@ TclExecuteByteCode(interp, codePtr)
 	    if (result != TCL_OK) { 
 		TRACE(("\"%.20s\" => ILLEGAL TYPE %s \n",
 		        s, (tPtr? tPtr->name : "null")));
-		DECACHE_STACK_INFO();
 		IllegalExprOperandType(interp, pc, valuePtr);
-		CACHE_STACK_INFO();
 		goto checkForCatch;
 	    }
 	    tPtr = valuePtr->typePtr;
@@ -4150,9 +4171,7 @@ TclExecuteByteCode(interp, codePtr)
 		if (result != TCL_OK) {
 		    TRACE(("\"%.20s\" => ILLEGAL TYPE %s\n",
 		            s, (tPtr? tPtr->name : "null")));
-		    DECACHE_STACK_INFO();
 		    IllegalExprOperandType(interp, pc, valuePtr);
-		    CACHE_STACK_INFO();
 		    goto checkForCatch;
 		}
 	    }
@@ -4245,9 +4264,7 @@ TclExecuteByteCode(interp, codePtr)
 	    if (result != TCL_OK) {   /* try to convert to double */
 		TRACE(("\"%.20s\" => ILLEGAL TYPE %s\n",
 		        O2S(valuePtr), (tPtr? tPtr->name : "null")));
-		DECACHE_STACK_INFO();
 		IllegalExprOperandType(interp, pc, valuePtr);
-		CACHE_STACK_INFO();
 		goto checkForCatch;
 	    }
 	}
@@ -4427,9 +4444,7 @@ TclExecuteByteCode(interp, codePtr)
 		if (IS_NAN(d) || IS_INF(d)) {
 		    TRACE(("\"%.20s\" => IEEE FLOATING PT ERROR\n",
 		            O2S(objResultPtr)));
-		    DECACHE_STACK_INFO();
 		    TclExprFloatError(interp, d);
-		    CACHE_STACK_INFO();
 		    result = TCL_ERROR;
 		    goto checkForCatch;
 		}
@@ -4600,9 +4615,7 @@ TclExecuteByteCode(interp, codePtr)
 			while (TclIsVarLink(varPtr)) {
 			    varPtr = varPtr->value.linkPtr;
 			}
-			if (!((varPtr->flags & VAR_IN_HASHTABLE) && (varPtr->hPtr == NULL))
-			        && (varPtr->tracePtr == NULL)
-			        && (TclIsVarScalar(varPtr) || TclIsVarUndefined(varPtr))) {
+			if (TclIsVarDirectWritable(varPtr)) {
 			    value2Ptr = varPtr->value.objPtr;
 			    if (valuePtr != value2Ptr) {
 				if (value2Ptr != NULL) {
@@ -4621,8 +4634,8 @@ TclExecuteByteCode(interp, codePtr)
 			    CACHE_STACK_INFO();
 			    if (value2Ptr == NULL) {
 				TRACE_WITH_OBJ(("%u => ERROR init. index temp %d: ",
-						opnd, varIndex),
-					       Tcl_GetObjResult(interp));
+					opnd, varIndex),
+					Tcl_GetObjResult(interp));
 				if (setEmptyStr) {
 				    TclDecrRefCount(valuePtr);
 				}
@@ -4671,7 +4684,7 @@ TclExecuteByteCode(interp, codePtr)
 	    
     case INST_PUSH_RESULT:
 	objResultPtr = Tcl_GetObjResult(interp);
-	TRACE_WITH_OBJ(("=> "), Tcl_GetObjResult(interp));
+	TRACE_WITH_OBJ(("=> "), objResultPtr);
 
 	/*
 	 * See the comments at INST_INVOKE_STK
@@ -4700,12 +4713,9 @@ TclExecuteByteCode(interp, codePtr)
      */
 	
  divideByZero:
-    DECACHE_STACK_INFO();
-    Tcl_ResetResult(interp);
-    Tcl_AppendToObj(Tcl_GetObjResult(interp), "divide by zero", -1);
+    Tcl_SetObjResult(interp, Tcl_NewStringObj("divide by zero", -1));
     Tcl_SetErrorCode(interp, "ARITH", "DIVZERO", "divide by zero",
             (char *) NULL);
-    CACHE_STACK_INFO();
 
     result = TCL_ERROR;
     goto checkForCatch;
@@ -4716,13 +4726,10 @@ TclExecuteByteCode(interp, codePtr)
      */
 
  exponOfZero:
-    DECACHE_STACK_INFO();
-    Tcl_ResetResult(interp);
-    Tcl_AppendToObj(Tcl_GetObjResult(interp),
-	    "exponentiation of zero by negative power", -1);
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+	    "exponentiation of zero by negative power", -1));
     Tcl_SetErrorCode(interp, "ARITH", "DOMAIN",
 	    "exponentiation of zero by negative power", (char *) NULL);
-    CACHE_STACK_INFO();
     result = TCL_ERROR;
     goto checkForCatch;
 
@@ -4834,9 +4841,7 @@ TclExecuteByteCode(interp, codePtr)
 	if ((result == TCL_ERROR) && !(iPtr->flags & ERR_ALREADY_LOGGED)) {
 	    bytes = GetSrcInfoForPc(pc, codePtr, &length);
 	    if (bytes != NULL) {
-		DECACHE_STACK_INFO();
 		Tcl_LogCommandInfo(interp, codePtr->source, bytes, length);
-		CACHE_STACK_INFO();
 	    }
 	}
 	iPtr->flags &= ~ERR_ALREADY_LOGGED;
@@ -5089,15 +5094,16 @@ ValidatePcAndStackTop(codePtr, pc, stackTop, stackLowerBound, checkStack)
  *
  * IllegalExprOperandType --
  *
- *	Used by TclExecuteByteCode to add an error message to errorInfo
- *	when an illegal operand type is detected by an expression
- *	instruction. The argument opndPtr holds the operand object in error.
+ *	Used by TclExecuteByteCode to append an error message to
+ *	the interp result when an illegal operand type is detected by an
+ *	expression instruction. The argument opndPtr holds the operand
+ *	object in error.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	An error message is appended to errorInfo.
+ *	An error message is appended to the interp result.
  *
  *----------------------------------------------------------------------
  */
@@ -5117,11 +5123,10 @@ IllegalExprOperandType(interp, pc, opndPtr)
 	operator = "**";
     }
 
-    Tcl_ResetResult(interp);
+    Tcl_SetObjResult(interp, Tcl_NewObj()); 
     if ((opndPtr->bytes == NULL) || (opndPtr->length == 0)) {
-	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		"can't use empty string as operand of \"", operator, "\"",
-		(char *) NULL);
+	Tcl_AppendResult(interp, "can't use empty string as operand of \"",
+		operator, "\"", (char *) NULL);
     } else {
 	char *msg = "non-numeric string";
 	char *s, *p;
@@ -5219,8 +5224,8 @@ IllegalExprOperandType(interp, pc, opndPtr)
 	    }
 	}
       makeErrorMessage:
-	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "can't use ",
-		msg, " as operand of \"", operator, "\"", (char *) NULL);
+	Tcl_AppendResult(interp, "can't use ", msg, " as operand of \"",
+		operator, "\"", (char *) NULL);
     }
 }
 
@@ -5487,15 +5492,14 @@ VerifyExprObjType(interp, objPtr)
 	    result = Tcl_GetDoubleFromObj((Tcl_Interp *) NULL, objPtr, &d);
 	}
 	if ((result != TCL_OK) && (interp != NULL)) {
-	    Tcl_ResetResult(interp);
 	    if (TclCheckBadOctal((Tcl_Interp *) NULL, s)) {
-		Tcl_AppendToObj(Tcl_GetObjResult(interp),
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"argument to math function was an invalid octal number",
-			-1);
+			-1));
 	    } else {
-		Tcl_AppendToObj(Tcl_GetObjResult(interp),
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"argument to math function didn't have numeric value",
-			-1);
+			-1));
 	    }
 	}
 	return result;
@@ -5642,9 +5646,8 @@ ExprAbsFunc(interp, tosPtr, clientData)
 	if (i < 0) {
 	    iResult = -i;
 	    if (iResult < 0) {
-		Tcl_ResetResult(interp);
-		Tcl_AppendToObj(Tcl_GetObjResult(interp),
-		        "integer value too large to represent", -1);
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		        "integer value too large to represent", -1));
 		Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW",
 			"integer value too large to represent", (char *) NULL);
 		return TCL_ERROR;
@@ -5659,9 +5662,8 @@ ExprAbsFunc(interp, tosPtr, clientData)
 	if (w < W0) {
 	    wResult = -w;
 	    if (wResult < 0) {
-		Tcl_ResetResult(interp);
-		Tcl_AppendToObj(Tcl_GetObjResult(interp),
-		        "integer value too large to represent", -1);
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		        "integer value too large to represent", -1));
 		Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW",
 			"integer value too large to represent", (char *) NULL);
 		return TCL_ERROR;
@@ -5750,9 +5752,8 @@ ExprIntFunc(interp, tosPtr, clientData)
 	if (d < 0.0) {
 	    if (d < (double) (long) LONG_MIN) {
 		tooLarge:
-		Tcl_ResetResult(interp);
-		Tcl_AppendToObj(Tcl_GetObjResult(interp),
-		        "integer value too large to represent", -1);
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		        "integer value too large to represent", -1));
 		Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW",
 			"integer value too large to represent", (char *) NULL);
 		return TCL_ERROR;
@@ -5808,9 +5809,8 @@ ExprWideFunc(interp, tosPtr, clientData)
 	if (d < 0.0) {
 	    if (d < Tcl_WideAsDouble(LLONG_MIN)) {
 		tooLarge:
-		Tcl_ResetResult(interp);
-		Tcl_AppendToObj(Tcl_GetObjResult(interp),
-		        "integer value too large to represent", -1);
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		        "integer value too large to represent", -1));
 		Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW",
 			"integer value too large to represent", (char *) NULL);
 		return TCL_ERROR;
@@ -5979,9 +5979,8 @@ ExprRoundFunc(interp, tosPtr, clientData)
      */
     
     tooLarge:
-    Tcl_ResetResult(interp);
-    Tcl_AppendToObj(Tcl_GetObjResult(interp),
-	    "integer value too large to represent", -1);
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+	    "integer value too large to represent", -1));
     Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW",
 	    "integer value too large to represent",
 	    (char *) NULL);
@@ -6018,10 +6017,8 @@ ExprSrandFunc(interp, tosPtr, clientData)
 	/*
 	 * At this point, the only other possible type is double
 	 */
-	Tcl_ResetResult(interp);
-	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		"can't use floating-point value as argument to srand",
-		(char *) NULL);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"can't use floating-point value as argument to srand", -1));
 	return TCL_ERROR;
     }
     
@@ -6098,8 +6095,8 @@ ExprCallMathFunc(interp, objc, objv)
     funcName = TclGetString(objv[0]);
     hPtr = Tcl_FindHashEntry(&iPtr->mathFuncTable, funcName);
     if (hPtr == NULL) {
-	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		"unknown math function \"", funcName, "\"", (char *) NULL);
+	Tcl_AppendResult(interp, "unknown math function \"", funcName,
+		"\"", (char *) NULL);
 	return TCL_ERROR;
     }
     mathFuncPtr = (MathFunc *) Tcl_GetHashValue(hPtr);
@@ -6231,28 +6228,27 @@ TclExprFloatError(interp, value)
     double value;		/* Value returned after error;  used to
 				 * distinguish underflows from overflows. */
 {
-    char *s;
+    CONST char *s;
 
-    Tcl_ResetResult(interp);
     if ((errno == EDOM) || IS_NAN(value)) {
 	s = "domain error: argument not in valid range";
-	Tcl_AppendToObj(Tcl_GetObjResult(interp), s, -1);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
 	Tcl_SetErrorCode(interp, "ARITH", "DOMAIN", s, (char *) NULL);
     } else if ((errno == ERANGE) || IS_INF(value)) {
 	if (value == 0.0) {
 	    s = "floating-point value too small to represent";
-	    Tcl_AppendToObj(Tcl_GetObjResult(interp), s, -1);
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
 	    Tcl_SetErrorCode(interp, "ARITH", "UNDERFLOW", s, (char *) NULL);
 	} else {
 	    s = "floating-point value too large to represent";
-	    Tcl_AppendToObj(Tcl_GetObjResult(interp), s, -1);
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
 	    Tcl_SetErrorCode(interp, "ARITH", "OVERFLOW", s, (char *) NULL);
 	}
     } else {
 	char msg[64 + TCL_INTEGER_SPACE];
 	
 	sprintf(msg, "unknown floating-point error, errno = %d", errno);
-	Tcl_AppendToObj(Tcl_GetObjResult(interp), msg, -1);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(msg, -1));
 	Tcl_SetErrorCode(interp, "ARITH", "UNKNOWN", msg, (char *) NULL);
     }
 }

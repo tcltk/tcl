@@ -12,7 +12,7 @@
 # Copyright (c) 2001-2004 David Gravereaux.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.107.2.10 2004/09/30 00:51:53 dgp Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.107.2.11 2004/10/28 18:47:36 dgp Exp $
 #------------------------------------------------------------------------------
 
 !if !defined(MSDEVDIR) && !defined(MSVCDIR)
@@ -465,10 +465,16 @@ install:    install-binaries install-libraries install-docs
 test: setup $(TCLTEST) dlls $(CAT32)
 	set TCL_LIBRARY=$(ROOT)/library
 !if "$(OS)" == "Windows_NT"  || "$(MSVCDIR)" == "IDE"
-	$(TCLTEST) "$(ROOT)/tests/all.tcl" $(TESTFLAGS)
+	$(TCLTEST) "$(ROOT)/tests/all.tcl" $(TESTFLAGS) -loadfile <<
+		set ::ddelib [file normalize $(TCLDDELIB:\=/)]
+		set ::reglib [file normalize $(TCLREGLIB:\=/)]
+<<
 !else
 	@echo Please wait while the tests are collected...
-	$(TCLTEST) "$(ROOT)/tests/all.tcl" $(TESTFLAGS) > tests.log
+	$(TCLTEST) "$(ROOT)/tests/all.tcl" $(TESTFLAGS) -loadfile <<
+		set ::ddelib [file normalize $(TCLDDELIB:\=/)]
+		set ::reglib [file normalize $(TCLREGLIB:\=/)]
+<< > tests.log
 	type tests.log | more
 !endif
 

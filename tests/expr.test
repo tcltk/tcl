@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: expr.test,v 1.18.2.6 2004/09/30 00:51:50 dgp Exp $
+# RCS: @(#) $Id: expr.test,v 1.18.2.7 2004/10/28 18:47:12 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -314,6 +314,14 @@ test expr-8.21 {CompileBitAndExpr: error in equality expr} {
     catch {expr a eq b} msg
     set msg
 } {syntax error in expression "a eq b": variable references require preceding $}
+test expr-8.22 {CompileBitAndExpr: error in equality expr} {
+    catch {expr {false eqfalse}} msg
+    set msg
+} {syntax error in expression "false eqfalse": extra tokens at end of expression}
+test expr-8.23 {CompileBitAndExpr: error in equality expr} {
+    catch {expr {false nefalse}} msg
+    set msg
+} {syntax error in expression "false nefalse": extra tokens at end of expression}
 
 test expr-9.1 {CompileRelationalExpr: just shift expr} {expr 3<<2} 12
 test expr-9.2 {CompileRelationalExpr: just shift expr} {expr 0xff>>2} 63
@@ -866,6 +874,23 @@ test expr-24.6 {expr edge cases; shifting} nonPortable {expr int(5)<<63} 0
 test expr-24.7 {expr edge cases; shifting} {expr wide(5)<<32} 21474836480
 test expr-24.8 {expr edge cases; shifting} {expr wide(10)<<63} 0
 test expr-24.9 {expr edge cases; shifting} {expr 5>>32} 0
+
+# List membership tests
+test expr-25.1 {'in' operator} {expr {"a" in "a b c"}} 1
+test expr-25.2 {'in' operator} {expr {"a" in "b a c"}} 1
+test expr-25.3 {'in' operator} {expr {"a" in "b c a"}} 1
+test expr-25.4 {'in' operator} {expr {"a" in ""}} 0
+test expr-25.5 {'in' operator} {expr {"" in {a b c ""}}} 1
+test expr-25.6 {'in' operator} {expr {"" in "a b c"}} 0
+test expr-25.7 {'in' operator} {expr {"" in ""}} 0
+
+test expr-26.1 {'ni' operator} {expr {"a" ni "a b c"}} 0
+test expr-26.2 {'ni' operator} {expr {"a" ni "b a c"}} 0
+test expr-26.3 {'ni' operator} {expr {"a" ni "b c a"}} 0
+test expr-26.4 {'ni' operator} {expr {"a" ni ""}} 1
+test expr-26.5 {'ni' operator} {expr {"" ni {a b c ""}}} 0
+test expr-26.6 {'ni' operator} {expr {"" ni "a b c"}} 1
+test expr-26.7 {'ni' operator} {expr {"" ni ""}} 1
 
 # cleanup
 if {[info exists a]} {

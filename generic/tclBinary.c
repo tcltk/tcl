@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBinary.c,v 1.13.4.4 2004/09/30 00:51:32 dgp Exp $
+ * RCS: @(#) $Id: tclBinary.c,v 1.13.4.5 2004/10/28 18:46:19 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -575,7 +575,7 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
 				 * character. */
     char *format;		/* Pointer to current position in format
 				 * string. */
-    Tcl_Obj *resultPtr;		/* Object holding result buffer. */
+    Tcl_Obj *resultPtr = NULL;	/* Object holding result buffer. */
     unsigned char *buffer;	/* Start of result buffer. */
     unsigned char *cursor;	/* Current position within result buffer. */
     unsigned char *maxPos;	/* Greatest position within result buffer that
@@ -774,7 +774,7 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
 	     * number of bytes and filling with nulls.
 	     */
 
-	    resultPtr = Tcl_GetObjResult(interp);
+	    resultPtr = Tcl_NewObj();
 	    buffer = Tcl_SetByteArrayLength(resultPtr, length);
 	    memset((VOID *) buffer, 0, (size_t) length);
 
@@ -1033,6 +1033,7 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
 		    }
 		}
 	    }
+	    Tcl_SetObjResult(interp, resultPtr);
 	    break;
 	}
 	case BINARY_SCAN: {
@@ -1342,8 +1343,7 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
 	     */
 
 	    done:
-	    Tcl_ResetResult(interp);
-	    Tcl_SetLongObj(Tcl_GetObjResult(interp), arg - 4);
+	    Tcl_SetObjResult(interp, Tcl_NewLongObj(arg - 4));
 	    DeleteScanNumberCache(numberCachePtr);
 	    break;
 	}
@@ -1352,7 +1352,7 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
 
     badValue:
     Tcl_ResetResult(interp);
-    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "expected ", errorString,
+    Tcl_AppendResult(interp, "expected ", errorString,
 	    " string but got \"", errorValue, "\" instead", NULL);
     return TCL_ERROR;
 

@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: GetIndex.3,v 1.10.4.3 2004/09/21 23:10:25 dgp Exp $
+'\" RCS: @(#) $Id: GetIndex.3,v 1.10.4.4 2004/10/28 18:46:10 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_GetIndexFromObj 3 8.1 Tcl "Tcl Library Procedures"
@@ -22,10 +22,10 @@ indexPtr\fR)
 .sp
 int
 \fBTcl_GetIndexFromObjStruct\fR(\fIinterp, objPtr, structTablePtr, offset,
-msg, flags, indexPtr\fR)
+                          msg, flags, indexPtr\fR)
 .VE
 .SH ARGUMENTS
-.AS "CONST char" **tablePtr
+.AS "const char" *structTablePtr in/out
 .AP Tcl_Interp *interp in
 Interpreter to use for error reporting; if NULL, then no message is
 provided on errors.
@@ -33,19 +33,17 @@ provided on errors.
 The string value of this object is used to search through \fItablePtr\fR.
 The internal representation is modified to hold the index of the matching
 table entry.
-.AP "CONST char" **tablePtr in
+.AP "const char" **tablePtr in
 An array of null-terminated strings.  The end of the array is marked
 by a NULL string pointer.
-.AP "CONST VOID" *structTablePtr in
+.AP "const void" *structTablePtr in
 An array of arbitrary type, typically some \fBstruct\fP type.
 The first member of the structure must be a null-terminated string.
 The size of the structure is given by \fIoffset\fP.
-.VS
 .AP int offset in
 The offset to add to structTablePtr to get to the next entry.
 The end of the array is marked by a NULL string pointer.
-.VE
-.AP "CONST char" *msg in
+.AP "const char" *msg in
 Null-terminated string describing what is being looked up, such as
 \fBoption\fR.  This string is included in error messages.
 .AP int flags in

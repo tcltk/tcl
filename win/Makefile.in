@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.71.2.6 2004/09/30 00:51:53 dgp Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.71.2.7 2004/10/28 18:47:36 dgp Exp $
 
 VERSION = @TCL_VERSION@
 
@@ -586,13 +586,13 @@ install-libraries: libraries install-tzdata install-msgs
 
 install-tzdata:
 	@echo "Installing time zone data"
-	@TCL_LIBRARY="${TCL_BUILDTIME_LIBRARY}"; export TCL_LIBRARY; \
+	@TCL_LIBRARY="${LIBRARY_DIR}"; export TCL_LIBRARY; \
 	./$(TCLSH) "$(ROOT_DIR)/tools/installData.tcl" \
 	    "$(ROOT_DIR)/library/tzdata" "$(SCRIPT_INSTALL_DIR)/tzdata"
 
 install-msgs:
 	@echo "Installing message catalogs"
-	@TCL_LIBRARY="${TCL_BUILDTIME_LIBRARY}"; export TCL_LIBRARY; \
+	@TCL_LIBRARY="${LIBRARY_DIR}"; export TCL_LIBRARY; \
 	./$(TCLSH) "$(ROOT_DIR)/tools/installData.tcl" \
 	    "$(ROOT_DIR)/library/msgs" "$(SCRIPT_INSTALL_DIR)/msgs"
 
@@ -623,12 +623,14 @@ install-private-headers: libraries
 test: binaries $(TCLTEST)
 	TCL_LIBRARY="$(LIBRARY_DIR)"; export TCL_LIBRARY; \
 	./$(TCLTEST) "$(ROOT_DIR_NATIVE)/tests/all.tcl" $(TESTFLAGS) \
-	| ./$(CAT32)
+	-load "set ::ddelib [file normalize ${DDE_DLL_FILE}]; \
+	set ::reglib [file normalize ${REG_DLL_FILE}]" | ./$(CAT32)
 
 # Useful target to launch a built tcltest with the proper path,...
 runtest: binaries $(TCLTEST)
 	@TCL_LIBRARY="$(LIBRARY_DIR)"; export TCL_LIBRARY; \
-	./$(TCLTEST) $(TESTFLAGS) $(SCRIPT)
+	./$(TCLTEST) $(TESTFLAGS) -load "set ::ddelib [file normalize ${DDE_DLL_FILE}]; \
+	set ::reglib [file normalize ${REG_DLL_FILE}]" $(SCRIPT)
 
 # This target can be used to run tclsh from the build directory
 # via `make shell SCRIPT=foo.tcl`

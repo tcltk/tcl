@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: SplitList.3,v 1.6.4.1 2003/09/05 23:08:05 dgp Exp $
+'\" RCS: @(#) $Id: SplitList.3,v 1.6.4.2 2004/10/28 18:46:11 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_SplitList 3 8.0 Tcl "Tcl Library Procedures"
@@ -34,7 +34,7 @@ int
 int
 \fBTcl_ConvertCountedElement\fR(\fIsrc, length, dst, flags\fR)
 .SH ARGUMENTS
-.AS "CONST char * CONST" ***argvPtr
+.AS "const char *const" ***argvPtr out
 .AP Tcl_Interp *interp out
 Interpreter to use for error reporting.  If NULL, then no error message
 is left.
@@ -42,17 +42,17 @@ is left.
 Pointer to a string with proper list structure.
 .AP int *argcPtr out
 Filled in with number of elements in \fIlist\fR.
-.AP "CONST char" ***argvPtr out
+.AP "const char" ***argvPtr out
 \fI*argvPtr\fR will be filled in with the address of an array of
 pointers to the strings that are the extracted elements of \fIlist\fR.
 There will be \fI*argcPtr\fR valid entries in the array, followed by
 a NULL entry.
 .AP int argc in
 Number of elements in \fIargv\fR.
-.AP "CONST char * CONST" *argv in
+.AP "const char *const" *argv in
 Array of strings to merge together into a single list.
 Each string will become a separate element of the list.
-.AP "CONST char" *src in
+.AP "const char" *src in
 String that is to become an element of a list.
 .AP int *flagsPtr in
 Pointer to word to fill in with information about \fIsrc\fR.

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * CVS: $Id: tclIOGT.c,v 1.7.4.2 2004/09/21 23:10:27 dgp Exp $
+ * CVS: $Id: tclIOGT.c,v 1.7.4.3 2004/10/28 18:46:37 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -383,13 +383,13 @@ ExecuteCallback (dataPtr, interp, op, buf, bufLen, transmit, preserve)
     Tcl_Obj* resObj;		    /* See below, switch (transmit) */
     int resLen;
     unsigned char* resBuf;
-    Tcl_SavedResult ciSave;
+    TclInterpState state = NULL;
     int res = TCL_OK;
     Tcl_Obj* command = Tcl_DuplicateObj (dataPtr->command);
     Tcl_Obj* temp;
 
     if (preserve) {
-	Tcl_SaveResult (dataPtr->interp, &ciSave);
+	state = TclSaveInterpState(dataPtr->interp, res);
     }
 
     if (command == (Tcl_Obj*) NULL) {
@@ -409,9 +409,9 @@ ExecuteCallback (dataPtr, interp, op, buf, bufLen, transmit, preserve)
     }
 
     res = Tcl_ListObjAppendElement(dataPtr->interp, command, temp);
-
-    if (res != TCL_OK)
+    if (res != TCL_OK) {
 	goto cleanup;
+    }
 
     /*
      * Use a byte-array to prevent the misinterpretation of binary data
@@ -427,9 +427,9 @@ ExecuteCallback (dataPtr, interp, op, buf, bufLen, transmit, preserve)
     }
 
     res = Tcl_ListObjAppendElement (dataPtr->interp, command, temp);
-
-    if (res != TCL_OK)
+    if (res != TCL_OK) {
         goto cleanup;
+    }
 
     /*
      * Step 2, execute the command at the global level of the interpreter
@@ -488,14 +488,14 @@ ExecuteCallback (dataPtr, interp, op, buf, bufLen, transmit, preserve)
     Tcl_ResetResult(dataPtr->interp);
 
     if (preserve) {
-	Tcl_RestoreResult(dataPtr->interp, &ciSave);
+	(void) TclRestoreInterpState(dataPtr->interp, state);
     }
 
     return res;
 
     cleanup:
     if (preserve) {
-	Tcl_RestoreResult(dataPtr->interp, &ciSave);
+	(void) TclRestoreInterpState(dataPtr->interp, state);
     }
 
     if (command != (Tcl_Obj*) NULL) {

@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.67.2.7 2004/09/08 23:02:49 dgp Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.67.2.8 2004/10/28 18:47:02 dgp Exp $
  */
 
 #define TCL_TEST
@@ -1927,31 +1927,14 @@ TestevalexObjCmd(dummy, interp, objc, objv)
     int objc;				/* Number of arguments. */
     Tcl_Obj *CONST objv[];		/* Argument objects. */
 {
-    Interp *iPtr = (Interp *) interp;
-    int code, oldFlags, length, flags;
-    char *string;
-
-    if (objc == 1) {
-	/*
-	 * The command was invoked with no arguments, so just toggle
-	 * the flag that determines whether we use Tcl_EvalEx.
-	 */
-
-	if (iPtr->flags & USE_EVAL_DIRECT) {
-	    iPtr->flags &= ~USE_EVAL_DIRECT;
-	    Tcl_SetResult(interp, "disabling direct evaluation", TCL_STATIC);
-	} else {
-	    iPtr->flags |= USE_EVAL_DIRECT;
-	    Tcl_SetResult(interp, "enabling direct evaluation", TCL_STATIC);
-	}
-	return TCL_OK;
-    }
+    int length, flags;
+    char *script;
 
     flags = 0;
     if (objc == 3) {
-	string = Tcl_GetStringFromObj(objv[2], &length);
-	if (strcmp(string, "global") != 0) {
-	    Tcl_AppendResult(interp, "bad value \"", string,
+	char *global = Tcl_GetStringFromObj(objv[2], &length);
+	if (strcmp(global, "global") != 0) {
+	    Tcl_AppendResult(interp, "bad value \"", global,
 		    "\": must be global", (char *) NULL);
 	    return TCL_ERROR;
 	}
@@ -1960,21 +1943,9 @@ TestevalexObjCmd(dummy, interp, objc, objv)
 	Tcl_WrongNumArgs(interp, 1, objv, "script ?global?");
         return TCL_ERROR;
     }
-    Tcl_SetResult(interp, "xxx", TCL_STATIC);
 
-    /*
-     * Note, we have to set the USE_EVAL_DIRECT flag in the interpreter
-     * in addition to calling Tcl_EvalEx.  This is needed so that even nested
-     * commands are evaluated directly.
-     */
-
-    oldFlags = iPtr->flags;
-    iPtr->flags |= USE_EVAL_DIRECT;
-    string = Tcl_GetStringFromObj(objv[1], &length);
-    code = Tcl_EvalEx(interp, string, length, flags); 
-    iPtr->flags = (iPtr->flags & ~USE_EVAL_DIRECT)
-	    | (oldFlags & USE_EVAL_DIRECT);
-    return code;
+    script = Tcl_GetStringFromObj(objv[1], &length);
+    return Tcl_EvalEx(interp, script, length, flags); 
 }
 
 /*
@@ -3953,16 +3924,7 @@ TestsetobjerrorcodeCmd(dummy, interp, objc, objv)
     int objc;			/* Number of arguments. */
     Tcl_Obj *CONST objv[];	/* The argument objects. */
 {
-    Tcl_Obj *listObjPtr;
-
-    if (objc > 1) {
-	listObjPtr = Tcl_ConcatObj(objc - 1, objv + 1);
-    } else {
-	listObjPtr = Tcl_NewObj();
-    }
-    Tcl_IncrRefCount(listObjPtr);
-    Tcl_SetObjErrorCode(interp, listObjPtr);
-    Tcl_DecrRefCount(listObjPtr);
+    Tcl_SetObjErrorCode(interp, Tcl_ConcatObj(objc - 1, objv + 1));
     return TCL_ERROR;
 }
 

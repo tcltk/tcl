@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: ParseCmd.3,v 1.11.2.3 2004/09/08 23:02:34 dgp Exp $
+'\" RCS: @(#) $Id: ParseCmd.3,v 1.11.2.4 2004/10/28 18:46:10 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_ParseCommand 3 8.3 Tcl "Tcl Library Procedures"
@@ -30,7 +30,7 @@ int
 int
 \fBTcl_ParseVarName\fR(\fIinterp, string, numBytes, parsePtr, append\fR)
 .sp
-CONST char *
+const char *
 \fBTcl_ParseVar\fR(\fIinterp, string, termPtr\fR)
 .sp
 \fBTcl_FreeParse\fR(\fIusedParsePtr\fR)
@@ -41,7 +41,7 @@ Tcl_Obj *
 int
 \fBTcl_EvalTokensStandard\fR(\fIinterp, tokenPtr, numTokens\fR)
 .SH ARGUMENTS
-.AS Tcl_Interp *usedParsePtr
+.AS Tcl_Interp *usedParsePtr out
 .AP Tcl_Interp *interp out
 For procedures other than \fBTcl_FreeParse\fR, \fBTcl_EvalTokens\fR
 and \fBTcl_EvalTokensStandard\fR, used only for error reporting;
@@ -49,7 +49,7 @@ if NULL, then no error messages are left after errors.
 For \fBTcl_EvalTokens\fR and \fBTcl_EvalTokensStandard\fR,
 determines the context for evaluating the
 script and also is used for error reporting; must not be NULL.
-.AP "CONST char" *string in
+.AP "const char" *string in
 Pointer to first character in string to parse.
 .AP int numBytes in
 Number of bytes in \fIstring\fR, not including any terminating null
@@ -71,7 +71,7 @@ Any previous information in this structure
 is ignored, unless \fIappend\fR is non-zero in a call to
 \fBTcl_ParseBraces\fR, \fBTcl_ParseQuotedString\fR,
 or \fBTcl_ParseVarName\fR.
-.AP "CONST char" **termPtr out
+.AP "const char" **termPtr out
 If not NULL, points to a location where
 \fBTcl_ParseBraces\fR, \fBTcl_ParseQuotedString\fR, and
 \fBTcl_ParseVar\fR will store a pointer to the character
@@ -212,21 +212,21 @@ of \fBTcl_EvalTokens\fR is deprecated.
 return parse information in two data structures, Tcl_Parse and Tcl_Token:
 .CS
 typedef struct Tcl_Parse {
-	CONST char *\fIcommentStart\fR;
-	int \fIcommentSize\fR;
-	CONST char *\fIcommandStart\fR;
-	int \fIcommandSize\fR;
-	int \fInumWords\fR;
-	Tcl_Token *\fItokenPtr\fR;
-	int \fInumTokens\fR;
-	...
+        const char *\fIcommentStart\fR;
+        int \fIcommentSize\fR;
+        const char *\fIcommandStart\fR;
+        int \fIcommandSize\fR;
+        int \fInumWords\fR;
+        Tcl_Token *\fItokenPtr\fR;
+        int \fInumTokens\fR;
+        ...
 } Tcl_Parse;
 
 typedef struct Tcl_Token {
-    int \fItype\fR;
-    CONST char *\fIstart\fR;
-    int \fIsize\fR;
-    int \fInumComponents\fR;
+        int \fItype\fR;
+        const char *\fIstart\fR;
+        int \fIsize\fR;
+        int \fInumComponents\fR;
 } Tcl_Token;
 .CE
 .PP
@@ -286,9 +286,9 @@ of \fBTCL_TOKEN_VARIABLE\fR and \fBTCL_TOKEN_BS\fR tokens.
 This token has the same meaning as \fBTCL_TOKEN_WORD\fR, except that
 the word is guaranteed to consist of a single \fBTCL_TOKEN_TEXT\fR
 sub-token.  The \fInumComponents\fR field is always 1.
-.VS 8.5
 .TP
 \fBTCL_TOKEN_EXPAND_WORD\fR
+.VS 8.5
 This token has the same meaning as \fBTCL_TOKEN_WORD\fR, except that
 the command parser notes this word began with the expansion
 prefix \fB{expand}\fR, indicating that after substitution,

@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: LinkVar.3,v 1.6.4.2 2004/09/21 23:10:25 dgp Exp $
+'\" RCS: @(#) $Id: LinkVar.3,v 1.6.4.3 2004/10/28 18:46:10 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_LinkVar 3 7.5 Tcl "Tcl Library Procedures"
@@ -27,7 +27,7 @@ int
 .AP Tcl_Interp *interp in
 Interpreter that contains \fIvarName\fR.
 Also used by \fBTcl_LinkVar\fR to return error messages.
-.AP "CONST char" *varName in
+.AP "const char" *varName in
 Name of global variable.  
 .AP char *addr in
 Address of C variable that is to be linked to \fIvarName\fR.

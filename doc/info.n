@@ -7,7 +7,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: info.n,v 1.8.4.2 2004/09/08 23:02:34 dgp Exp $
+'\" RCS: @(#) $Id: info.n,v 1.8.4.3 2004/10/28 18:46:14 dgp Exp $
 '\" 
 .so man.macros
 .TH info n 8.4 Tcl "Tcl Built-In Commands"
@@ -163,6 +163,11 @@ only those procedure names in the current namespace
 matching \fIpattern\fR are returned.
 Matching is determined using the same rules as for
 \fBstring match\fR.
+If \fIpattern\fR contains any namespace separators, they are used to
+select a namespace relative to the current namespace (or relative to
+the global namespace if \fIpattern\fR starts with \fB::\fR) to match
+within; the matching pattern is taken to be the part after the last
+namespace separator.
 .TP
 \fBinfo script\fR ?\fIfilename\fR?
 If a Tcl script file is currently being evaluated (i.e. there is a
@@ -209,8 +214,8 @@ script:
 proc printProc {procName} {
     set result [list proc $procName]
     set formals {}
-    foreach var [info args $procName] {
-        if {[info default $procName $var def]} {
+    foreach var [\fBinfo args\fR $procName] {
+        if {[\fBinfo default\fR $procName $var def]} {
             lappend formals [list $var $def]
         } else {
             # Still need the list-quoting because variable
@@ -218,7 +223,7 @@ proc printProc {procName} {
             lappend formals [list $var]
         }
     }
-    puts [lappend result $formals [info body $procName]]
+    puts [lappend result $formals [\fBinfo body\fR $procName]]
 }
 .CE
 

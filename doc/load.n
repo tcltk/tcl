@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: load.n,v 1.7.4.2 2004/09/08 23:02:34 dgp Exp $
+'\" RCS: @(#) $Id: load.n,v 1.7.4.3 2004/10/28 18:46:15 dgp Exp $
 '\" 
 .so man.macros
 .TH load n 7.5 Tcl "Tcl Built-In Commands"
@@ -122,7 +122,7 @@ When loading a DLL in the current directory, Windows will ignore ``./'' as
 a path specifier and use a search heuristic to find the DLL instead.
 To avoid this, load the DLL with:
 .CS
-load [file join [pwd] mylib.DLL]
+\fBload\fR [file join [pwd] mylib.DLL]
 .CE
 .SH BUGS
 .PP
@@ -158,12 +158,12 @@ it can then be loaded into Tcl with the following:
 .CS
 # Load the extension
 switch $tcl_platform(platform) {
-    windows {
-        \fBload\fR ./foo.dll
-    }
-    unix {
-        \fBload\fR ./libfoo[info sharedlibextension]
-    }
+   windows {
+      \fBload\fR ./foo.dll
+   }
+   unix {
+      \fBload\fR ./libfoo[info sharedlibextension]
+   }
 }
 
 # Now execute the command defined by the extension

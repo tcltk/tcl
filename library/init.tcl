@@ -3,7 +3,7 @@
 # Default system startup file for Tcl-based applications.  Defines
 # "unknown" procedure and auto-load facilities.
 #
-# RCS: @(#) $Id: init.tcl,v 1.56.2.5 2004/09/08 23:02:52 dgp Exp $
+# RCS: @(#) $Id: init.tcl,v 1.56.2.6 2004/10/28 18:47:06 dgp Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
@@ -130,8 +130,6 @@ if {[llength [info commands exec]] == 0} {
 
     set auto_noexec 1
 }
-set errorCode ""
-set errorInfo ""
 
 # Define a log command (which can be overwitten to log errors
 # differently, specially when stderr is not available)
@@ -167,7 +165,6 @@ if {[llength [info commands tclLog]] == 0} {
 proc unknown args {
     variable ::tcl::UnknownPending
     global auto_noexec auto_noload env tcl_interactive
-    global errorCode errorInfo
 
     # If the command word has the form "namespace inscope ns cmd"
     # then concatenate its arguments onto the end and evaluate it.
@@ -175,48 +172,42 @@ proc unknown args {
     set cmd [lindex $args 0]
     if {[regexp "^:*namespace\[ \t\n\]+inscope" $cmd] && [llength $cmd] == 4} {
         set arglist [lrange $args 1 end]
-	set ret [catch {uplevel 1 ::$cmd $arglist} result]
-        if {$ret == 0} {
-            return $result
-        } else {
-	    return -code $ret -errorcode $errorCode $result
-        }
+	set ret [catch {uplevel 1 ::$cmd $arglist} result opts]
+	dict unset opts -errorinfo
+	return -options $opts $ret
     }
 
-    # Save the values of errorCode and errorInfo variables, since they
-    # may get modified if caught errors occur below.  The variables will
-    # be restored just before re-executing the missing command.
-
-    set savedErrorCode $errorCode
-    set savedErrorInfo $errorInfo
     set name [lindex $args 0]
     if {![info exists auto_noload]} {
 	#
 	# Make sure we're not trying to load the same proc twice.
 	#
 	if {[info exists UnknownPending($name)]} {
-	    return -code error "self-referential recursion in \"unknown\" for command \"$name\"";
+	    return -code error "self-referential recursion\
+		    in \"unknown\" for command \"$name\"";
 	}
 	set UnknownPending($name) pending;
-	set ret [catch {auto_load $name [uplevel 1 {::namespace current}]} msg]
+	set ret [catch {
+		auto_load $name [uplevel 1 {::namespace current}]
+	} msg opts]
 	unset UnknownPending($name);
 	if {$ret != 0} {
-	    append errorInfo "\n    (autoloading \"$name\")"
-	    return -code $ret -errorcode $errorCode -errorinfo $errorInfo $msg
+	    dict append opts -errorinfo "\n    (autoloading \"$name\")"
+	    return -options $opts $msg
 	}
 	if {![array size UnknownPending]} {
 	    unset UnknownPending
 	}
 	if {$msg} {
-	    set errorCode $savedErrorCode
-	    set errorInfo $savedErrorInfo
-	    set code [catch {uplevel 1 $args} msg]
+	    set code [catch {uplevel 1 $args} msg opts]
 	    if {$code ==  1} {
 		#
 		# Compute stack trace contribution from the [uplevel].
 		# Note the dependence on how Tcl_AddErrorInfo, etc. 
 		# construct the stack trace.
 		#
+		set errorInfo [dict get $opts -errorinfo]
+		set errorCode [dict get $opts -errorcode]
 		set cinfo $args
 		if {[string bytelength $cinfo] > 153} {
 		    set cinfo [string range $cinfo 0 152]
@@ -238,7 +229,9 @@ proc unknown args {
 		    # The stack has only the eval from the expanded command
 		    # Do not generate any stack trace here.
 		    #
-		    return -code error -errorcode $errorCode $msg
+		    dict unset opts -errorinfo
+		    dict incr opts -level
+		    return -options $opts $msg
 		}
 		#
 		# Stack trace is nested, trim off just the contribution
@@ -270,8 +263,6 @@ proc unknown args {
 	if {![info exists auto_noexec]} {
 	    set new [auto_execok $name]
 	    if {$new != ""} {
-		set errorCode $savedErrorCode
-		set errorInfo $savedErrorInfo
 		set redir ""
 		if {[string equal [info commands console] ""]} {
 		    set redir ">&@stdout <@stdin"
@@ -279,8 +270,6 @@ proc unknown args {
 		return [uplevel 1 exec $redir $new [lrange $args 1 end]]
 	    }
 	}
-	set errorCode $savedErrorCode
-	set errorInfo $savedErrorInfo
 	if {[string equal $name "!!"]} {
 	    set newcmd [history event]
 	} elseif {[regexp {^!(.+)$} $name dummy event]} {
@@ -300,9 +289,9 @@ proc unknown args {
 	    set name ""
 	}
 	if {$ret != 0} {
-	    return -code $ret -errorcode $errorCode \
-		"error in unknown while checking if \"$name\" is\
-		a unique command abbreviation:\n$msg"
+	    dict append opts -errorinfo \
+		    "\n    (expanding command prefix \"$name\" in unknown)"
+	    return -options $opts $msg
 	}
 	# Filter out bogus matches when $name contained
 	# a glob-special char [Bug 946952]
@@ -393,7 +382,7 @@ proc auto_load {cmd {namespace {}}} {
 
 proc auto_load_index {} {
     variable ::tcl::auto_oldpath
-    global auto_index auto_path errorInfo errorCode
+    global auto_index auto_path
 
     if {[info exists auto_oldpath] && \
 	    [string equal $auto_oldpath $auto_path]} {
@@ -431,12 +420,12 @@ proc auto_load_index {} {
 		} else {
 		    error "[file join $dir tclIndex] isn't a proper Tcl index file"
 		}
-	    } msg]
+	    } msg opts]
 	    if {$f != ""} {
 		close $f
 	    }
 	    if {$error} {
-		error $msg $errorInfo $errorCode
+		return -options $opts $msg
 	    }
 	}
     }

@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Async.3,v 1.5 2000/07/26 01:29:00 davidg Exp $
+'\" RCS: @(#) $Id: Async.3,v 1.5.20.1 2004/10/28 18:46:07 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_AsyncCreate 3 7.0 Tcl "Tcl Library Procedures"
@@ -85,9 +85,9 @@ the actions associated with the asynchronous event.
 type \fBTcl_AsyncProc\fR:
 .CS
 typedef int Tcl_AsyncProc(
-	ClientData \fIclientData\fR,
-	Tcl_Interp *\fIinterp\fR,
-	int \fIcode\fR);
+        ClientData \fIclientData\fR,
+        Tcl_Interp *\fIinterp\fR,
+        int \fIcode\fR);
 .CE
 The \fIclientData\fR will be the same as the \fIclientData\fR
 argument passed to \fBTcl_AsyncCreate\fR when the handler was

@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: namespace.test,v 1.21.4.7 2004/09/30 00:51:52 dgp Exp $
+# RCS: @(#) $Id: namespace.test,v 1.21.4.8 2004/10/28 18:47:17 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -193,6 +193,31 @@ test namespace-8.4 {TclTeardownNamespace, cmds imported from deleted ns go away}
          [namespace delete test_ns_export] \
          [info commands test_ns_import::*]
 } [list [lsort {::test_ns_import::p ::test_ns_import::cmd1 ::test_ns_import::cmd2}] {} ::test_ns_import::p]
+test namespace-8.5 {TclTeardownNamespace: preserve errorInfo; errorCode values} {
+    interp create slave
+    slave eval {trace add execution error leave {namespace delete :: ;#}}
+    catch {slave eval error foo bar baz}
+    interp delete slave
+    set ::errorInfo
+} {bar
+    invoked from within
+"slave eval error foo bar baz"}
+test namespace-8.6 {TclTeardownNamespace: preserve errorInfo; errorCode values} {
+    interp create slave 
+    slave eval {trace add variable errorCode write {namespace delete :: ;#}}
+    catch {slave eval error foo bar baz}
+    interp delete slave
+    set ::errorInfo
+} {bar
+    invoked from within
+"slave eval error foo bar baz"}
+test namespace-8.7 {TclTeardownNamespace: preserve errorInfo; errorCode values} {
+    interp create slave
+    slave eval {trace add execution error leave {namespace delete :: ;#}}
+    catch {slave eval error foo bar baz}
+    interp delete slave
+    set ::errorCode
+} baz
 
 test namespace-9.1 {Tcl_Import, empty import pattern} {
     catch {namespace delete {expand}[namespace children :: test_ns_*]}
@@ -407,7 +432,7 @@ test namespace-10.8 {Tcl_ForgetImport: Bug 560297} -setup {
     namespace delete origin link link2 my
 }
 
-test namespace-10.8 {Tcl_ForgetImport: Bug 560297} -setup {
+test namespace-10.9 {Tcl_ForgetImport: Bug 560297} -setup {
     namespace eval origin {
 	namespace export cmd
 	proc cmd {} {}
@@ -1666,14 +1691,12 @@ test namespace-46.4 {ensemble: implementation errors} {
 } {ns 1 {unknown subcommand "?": namespace ::ns does not export any commands}}
 test namespace-46.5 {ensemble: implementation errors} {
     namespace eval ns {
-	namespace ensemble create -map {foo ::error}
+	namespace ensemble create -map {makeError ::error}
     }
-    list [catch {ns foo bar} msg] $msg $::errorInfo [namespace delete ns]
-} {1 bar {bar
+    list [catch {ns makeError "an error happened"} msg] $msg $::errorInfo [namespace delete ns]
+} {1 {an error happened} {an error happened
     while executing
-"::error bar"
-    invoked from within
-"ns foo bar"} {}}
+"ns makeError "an error happened""} {}}
 test namespace-46.6 {ensemble: implementation renames/deletes itself} {
     namespace eval ns {
 	namespace ensemble create -map {to ::rename}

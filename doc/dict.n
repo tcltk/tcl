@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: dict.n,v 1.2.2.3 2004/09/21 23:10:26 dgp Exp $
+'\" RCS: @(#) $Id: dict.n,v 1.2.2.4 2004/10/28 18:46:13 dgp Exp $
 '\"
 .so man.macros
 .TH dict n 8.5 Tcl "Tcl Built-In Commands"
@@ -19,7 +19,8 @@ dict \- Manipulate dictionaries
 .SH DESCRIPTION
 .PP
 Performs one of several operations on dictionary values or variables
-containing dictionary values, depending on \fIoption\fR.  The legal
+containing dictionary values (see the \fBDICTIONARY VALUES\fR section
+below for a description), depending on \fIoption\fR.  The legal
 \fIoption\fRs (which may be abbreviated) are:
 .TP
 \fBdict append \fIdictionaryVariable key \fR?\fIstring ...\fR?
@@ -59,7 +60,7 @@ argument after the rule selection word is a two-element list.  If the
 \fIscript\fR returns with a condition of \fBTCL_BREAK\fR, no further
 key/value pairs are considered for inclusion in the resulting
 dictionary, and a condition of \fBTCL_CONTINUE\fR is equivalent to a false
-result.
+result. The order in which the key/value pairs are tested is undefined.
 .TP
 \fBdict filter \fIdictionaryValue \fBvalue \fIglobPattern\fR
 The value rule only matches those key/value pairs whose values match
@@ -157,9 +158,9 @@ key but no value.
 \fBdict set \fIdictionaryVariable key \fR?\fIkey ...\fR? \fIvalue\fR
 This operation takes the name of a variable containing a dictionary
 value and places an updated dictionary value in that variable
-containing a mapping from the given key to the given value. In a
-manner analogous to \fBlset\fR, where multiple keys are present, they
-do indexing into nested dictionaries.
+containing a mapping from the given key to the given value. When
+multiple keys are present, this operation creates or updates a chain
+of nested dictionaries.
 .TP
 \fBdict size \fIdictionaryValue\fR
 Return the number of key/value mappings in the given dictionary value.
@@ -173,6 +174,22 @@ through nested dictionaries to the mapping to remove. At least one key
 must be specified, but the last key on the key-path need not exist.
 All other components on the path must exist.
 .TP
+\fBdict update \fIdictionaryVariable key varName \fR?\fIkey varName ...\fR? \fIbody\fR
+Execute the Tcl script in \fIbody\fR with the value for each \fIkey\fR
+(as found by reading the dictionary value in \fIdictionaryVariable\fR)
+mapped to the variable \fIvarName\fR. There may be multiple
+\fIkey\fR/\fIvarName\fR pairs. If a \fIkey\fR does not have a mapping,
+that corresponds to an unset \fIvarName\fR. When \fIbody\fR
+terminates, any changes made to the \fIvarName\fRs is reflected back
+to the dictionary within \fIdictionaryVariable\fR (unless
+\fIdictionaryVariable\fR itself becomes unreadable, when all updates
+are silently discarded), even if the result of \fIbody\fR is an error
+or some other kind of exceptional exit. The result of \fBdict
+update\fR is (unless some kind of error occurs) the result of the
+evaluation of \fIbody\fR. Note that the mapping of values to variables
+does not use traces; changes to the \fIdictionaryVariable\fR's
+contents only happen when \fIbody\fR terminates.
+.TP
 \fBdict values \fIdictionaryValue \fR?\fIglobPattern\fR?
 Return a list of all values in the given dictionary value. If a
 pattern is supplied, only those values that match it (according to the
@@ -181,33 +198,83 @@ will be in an arbitrary implementation-specific order, though where no
 pattern is supplied the i'th key returned by \fBdict keys\fR will be
 the key for the i'th value returned by \fBdict values\fR applied to
 the same dictionary value.
+.TP
+\fBdict with \fIdictionaryVariable \fR?\fIkey ...\fR? \fIbody\fR
+Execute the Tcl script in \fIbody\fR with the value for each key in
+\fIdictionaryVariable\fR mapped (in a manner similarly to \fBdict
+update\fR) to a variable with the same name. Where one or more
+\fIkey\fRs are available, these indicate a chain of nested
+dictionaries, with the innermost dictionary being the one opened out
+for the execution of \fIbody\fR. As with \fBdict update\fR, making
+\fIdictionaryVariable\fR unreadable will make the updates to the
+dictionary be discarded, and this also happens if the contents of
+\fIdictionaryVariable\fR are adjusted so that the chain of
+dictionaries no longer exists. The result of \fBdict update\fR is
+(unless some kind of error occurs) the result of the evaluation of
+\fIbody\fR. Note that the mapping of values to variables does not use
+traces; changes to the \fIdictionaryVariable\fR's contents only happen
+when \fIbody\fR terminates.
 .SH "DICTIONARY VALUES"
-Dictionaries are values that contain an efficient mapping from
-arbitrary keys to arbitrary values.  They have a textual format that
-is exactly that of any list with an even number of elements, with each
-mapping in the dictionary being represented as two items in the list.
-When a command takes a dictionary and produces a new dictionary based
-on it (either returning it or writing it back into the variable that
-the starting dictionary was read from) there is no guarantee that the
-new dictionary will have the same ordering of keys.
-.SH EXAMPLE
+Dictionaries are values that contain an efficient (but \fInot\fR
+order-preserving) mapping from arbitrary keys to arbitrary values.
+They have a textual format that is exactly that of any list with an
+even number of elements, with each mapping in the dictionary being
+represented as two items in the list.  When a command takes a
+dictionary and produces a new dictionary based on it (either returning
+it or writing it back into the variable that the starting dictionary
+was read from) there is \fIno\fR guarantee that the new dictionary
+will have the same ordering of keys.
+.SH EXAMPLES
+Constructing and using nested dictionaries:
+.CS
+# Data for one employee
+\fBdict set\fR employeeInfo 12345-A forenames "Joe"
+\fBdict set\fR employeeInfo 12345-A surname   "Schmoe"
+\fBdict set\fR employeeInfo 12345-A street "147 Short Street"
+\fBdict set\fR employeeInfo 12345-A city   "Springfield"
+\fBdict set\fR employeeInfo 12345-A phone  "555-1234"
+# Data for another employee
+\fBdict set\fR employeeInfo 98372-J forenames "Anne"
+\fBdict set\fR employeeInfo 98372-J surname   "Other"
+\fBdict set\fR employeeInfo 98372-J street "32995 Oakdale Way"
+\fBdict set\fR employeeInfo 98372-J city   "Springfield"
+\fBdict set\fR employeeInfo 98372-J phone  "555-8765"
+# The above data probably ought to come from a database...
+
+# Print out some employee info
+set i 0
+puts "There are [\fBdict size\fR $employeeInfo] employees"
+\fBdict for\fR {id info} $employeeInfo {
+   puts "Employee #[incr i]: $id"
+   \fBdict with\fR info {
+      puts "   Name: $forenames $surname"
+      puts "   Address: $street, $city"
+      puts "   Telephone: $phone"
+   }
+}
+# Another way to iterate and pick out names...
+foreach id [\fBdict keys\fR $employeeInfo] {
+   puts "Hello, [\fBdict get\fR $employeeInfo $id forenames]!"
+}
+.CE
+
 A localizable version of \fBstring toupper\fR:
 .CS
 # Set up the basic C locale
-set capital [dict create C [dict create]]
+set capital [\fBdict create\fR C [\fBdict create\fR]]
 foreach c {abcdefghijklmnopqrstuvwxyz} {
-    dict set capital C $c [string toupper $c]
+   \fBdict set\fR capital C $c [string toupper $c]
 }
 
 # English locales can luckily share the "C" locale
-dict set capital en [dict get $capital C]
-dict set capital en_US [dict get $capital C]
-dict set capital en_GB [dict get $capital C]
+\fBdict set\fR capital en [\fBdict get\fR $capital C]
+\fBdict set\fR capital en_US [\fRdict get\fR $capital C]
+\fBdict set\fR capital en_GB [\fRdict get\fR $capital C]
 
 # ... and so on for other supported languages ...
 
 # Now get the mapping for the current locale and use it.
-set upperCaseMap [dict get $capital $env(LANG)]
+set upperCaseMap [\fBdict get\fR $capital $env(LANG)]
 set upperCase [string map $upperCaseMap $string]
 .CE
 

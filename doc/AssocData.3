@@ -5,7 +5,7 @@
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
 '\" 
-'\" RCS: @(#) $Id: AssocData.3,v 1.4.18.1 2004/09/08 23:02:32 dgp Exp $
+'\" RCS: @(#) $Id: AssocData.3,v 1.4.18.2 2004/10/28 18:46:07 dgp Exp $
 .so man.macros
 .TH Tcl_SetAssocData 3 7.5 Tcl "Tcl Library Procedures"
 .BS
@@ -22,12 +22,10 @@ ClientData
 .sp
 \fBTcl_DeleteAssocData\fR(\fIinterp, key\fR)
 .SH ARGUMENTS
-.AS Tcl_InterpDeleteProc *delProcPtr
+.AS Tcl_InterpDeleteProc **delProcPtr
 .AP Tcl_Interp *interp in
 Interpreter in which to execute the specified command.
-.VS 8.4
-.AP "CONST char" *key in
-.VE
+.AP "const char" *key in
 Key for association with which to store data or from which to delete or
 retrieve data.  Typically the module prefix for a package.
 .AP Tcl_InterpDeleteProc *delProc in
@@ -67,8 +65,8 @@ is deleted.  \fIDeleteProc\fR should have arguments and result that match
 the type \fBTcl_InterpDeleteProc\fR:
 .CS
 typedef void Tcl_InterpDeleteProc(
-	ClientData \fIclientData\fR,
-	Tcl_Interp *\fIinterp\fR);
+        ClientData \fIclientData\fR,
+        Tcl_Interp *\fIinterp\fR);
 .CE
 When \fIdeleteProc\fR is invoked the \fIclientData\fR and \fIinterp\fR
 arguments will be the same as the corresponding arguments passed to

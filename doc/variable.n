@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: variable.n,v 1.4.20.1 2004/09/08 23:02:35 dgp Exp $
+'\" RCS: @(#) $Id: variable.n,v 1.4.20.2 2004/10/28 18:46:17 dgp Exp $
 '\" 
 .so man.macros
 .TH variable n 8.0 Tcl "Tcl Built-In Commands"
@@ -62,14 +62,14 @@ elements within the array can be set using ordinary
 Create a variable in a namespace:
 .CS
 namespace eval foo {
-    variable bar 12345
+    \fBvariable\fR bar 12345
 }
 .CE
 .PP
 Create an array in a namespace:
 .CS
 namespace eval someNS {
-    variable someAry
+    \fBvariable\fR someAry
     array set someAry {
         someName  someValue
         otherName otherValue
@@ -82,11 +82,11 @@ Access variables in namespaces from a procedure:
 namespace eval foo {
     proc spong {} {
         # Variable in this namespace
-        variable bar
+        \fBvariable\fR bar
         puts "bar is $bar"
 
         # Variable in another namespace
-        variable ::someNS::someAry
+        \fBvariable\fR ::someNS::someAry
         parray someAry
     }
 }

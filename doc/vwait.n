@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: vwait.n,v 1.4.20.1 2004/05/27 14:29:08 dgp Exp $
+'\" RCS: @(#) $Id: vwait.n,v 1.4.20.2 2004/10/28 18:46:17 dgp Exp $
 '\" 
 .so man.macros
 .TH vwait n 8.0 Tcl "Tcl Built-In Commands"
@@ -40,9 +40,9 @@ Run the event-loop continually until some event calls \fBexit\fR.
 (You can use any variable not mentioned elsewhere, but the name
 \fIforever\fR reminds you at a glance of the intent.)
 .CS
-vwait forever
+\fBvwait\fR forever
 .CE
-
+.PP
 Wait five seconds for a connection to a server socket, otherwise
 close the socket and continue running the script:
 .CS
@@ -56,7 +56,7 @@ proc accept {args} {
 }
 
 # Wait for something to happen
-vwait state
+\fBvwait\fR state
 
 # Clean up events that could have happened
 close $server
@@ -75,7 +75,7 @@ switch $state {
 .CE
 
 .SH "SEE ALSO"
-global(n)
+global(n), update(n)
 
 .SH KEYWORDS
 event, variable, wait
