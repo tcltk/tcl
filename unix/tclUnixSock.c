@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixSock.c,v 1.1.2.6 1999/03/10 06:49:29 stanton Exp $
+ * RCS: @(#) $Id: tclUnixSock.c,v 1.1.2.7 1999/03/25 23:27:49 stanton Exp $
  */
 
 #include "tcl.h"
@@ -71,7 +71,7 @@ Tcl_GetHostName()
 #else
     char buffer[sizeof(hostname)];
 #endif
-    char *native;
+    CONST char *native;
 
     Tcl_MutexLock(&hostMutex);
     if (hostnameInited) {
