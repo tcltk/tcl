@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEvent.c,v 1.28.2.2 2004/05/06 01:02:18 davygrvy Exp $
+ * RCS: @(#) $Id: tclEvent.c,v 1.28.2.3 2004/05/06 01:17:41 davygrvy Exp $
  */
 
 #include "tclInt.h"
@@ -613,8 +613,8 @@ TclSetLibraryPath(pathPtr)
 	ckfree(tclLibraryPathStr);
     }
     toDupe = Tcl_GetStringFromObj(pathPtr, &size);
-    tclLibraryPathStr = ckalloc(size+1);
-    strcpy(tclLibraryPathStr, toDupe);
+    tclLibraryPathStr = ckalloc((unsigned)size+1);
+    memcpy(tclLibraryPathStr, toDupe, (unsigned)size+1);
 }
 
 /*
