@@ -1,3 +1,8 @@
+2004-05-24  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclInterp.c (TclInitLimitSupport): Made limits work on
+	platforms where sizeof(void*)!=sizeof(int). [Bug 959193]
+
 2004-05-24 Miguel Sofer <msofer@users.sf.net>
 
 	* doc/set.n: accurate description of name resolution process,
