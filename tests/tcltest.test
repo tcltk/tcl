@@ -6,7 +6,7 @@
 # Copyright (c) 2000 by Ajuba Solutions
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.test,v 1.14 2001/05/22 00:52:13 hobbs Exp $
+# RCS: @(#) $Id: tcltest.test,v 1.15 2001/08/22 01:29:18 hobbs Exp $
 
 set tcltestVersion [package require tcltest]
 namespace import -force ::tcltest::*
@@ -733,8 +733,8 @@ test tcltest-12.1 {-load xxx} {unixOrPc} {
 test tcltest-12.2 {-loadfile load.tcl} {unixOrPc} {
     catch {exec $::tcltest::tcltest load.tcl -debug 2 -loadfile load.tcl} msg
     list \
-	    [regexp {tcltest} [join $msg [split $msg \n]]] \
-	    [regexp {loadScript} [join $msg [split $msg \n]]]
+	    [regexp {tcltest} [join [list $msg] [split $msg \n]]] \
+	    [regexp {loadScript} [join [list $msg] [split $msg \n]]]
 } {1 1}
 
 test tcltest-12.3 {tcltest::loadScript} {
