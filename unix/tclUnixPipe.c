@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPipe.c,v 1.23.2.2 2004/06/08 20:43:33 dgp Exp $
+ * RCS: @(#) $Id: tclUnixPipe.c,v 1.23.2.3 2005/01/27 22:53:36 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -72,7 +72,7 @@ static int	SetupStdFile _ANSI_ARGS_((TclFile file, int type));
 
 static Tcl_ChannelType pipeChannelType = {
     "pipe",			/* Type name. */
-    TCL_CHANNEL_VERSION_2,	/* v2 channel */
+    TCL_CHANNEL_VERSION_4,	/* v4 channel */
     PipeCloseProc,		/* Close proc. */
     PipeInputProc,		/* Input proc. */
     PipeOutputProc,		/* Output proc. */
@@ -85,6 +85,8 @@ static Tcl_ChannelType pipeChannelType = {
     PipeBlockModeProc,		/* Set blocking or non-blocking mode.*/
     NULL,			/* flush proc. */
     NULL,			/* handler proc. */
+    NULL,                       /* wide seek proc */
+    NULL,                       /* thread action proc */
 };
 
 /*

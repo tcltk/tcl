@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.61.2.8 2004/09/10 20:06:41 dkf Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.61.2.9 2005/01/27 22:53:32 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -1208,18 +1208,19 @@ Tcl_CreateChannel(typePtr, chanName, instanceData, mask)
      * in the list on exit.
      *
      * JH: Could call Tcl_SpliceChannel, but need to avoid NULL check.
+     *
+     * TIP #218.
+     * AK: Just initialize the field to NULL before invoking Tcl_SpliceChannel
+     *     We need Tcl_SpliceChannel, for the threadAction calls.
+     *     There is no real reason to duplicate all of this.
+     * NOTE: All drivers using thread actions now have to perform their TSD
+     *       manipulation only in their thread action proc. Doing it when
+     *       creating their instance structures will collide with the thread
+     *       action activity and lead to damaged lists.
      */
 
-    statePtr->nextCSPtr	= tsdPtr->firstCSPtr;
-    tsdPtr->firstCSPtr	= statePtr;
-
-    /*
-     * TIP #10. Mark the current thread as the one managing the new
-     *          channel. Note: 'Tcl_GetCurrentThread' returns sensible
-     *          values even for a non-threaded core.
-     */
-
-    statePtr->managingThread = Tcl_GetCurrentThread ();
+    statePtr->nextCSPtr = (ChannelState *) NULL;
+    Tcl_SpliceChannel ((Tcl_Channel) chanPtr);
 
     /*
      * Install this channel in the first empty standard channel slot, if
@@ -2378,7 +2379,7 @@ CloseChannel(interp, chanPtr, errorCode)
  *	Resets the field 'nextCSPtr' of the specified channel state to NULL.
  *
  * NOTE:
- *	The channel to splice out of the list must not be referenced
+ *	The channel to cut out of the list must not be referenced
  *	in any interpreter. This is something this procedure cannot
  *	check (despite the refcount) because the caller usually wants
  *	fiddle with the channel (like transfering it to a different
@@ -2400,6 +2401,7 @@ Tcl_CutChannel(chan)
                                          * channel out of the list on close. */
     ChannelState *statePtr = ((Channel *) chan)->state;
 					/* state of the channel stack. */
+    Tcl_DriverThreadActionProc *threadActionProc;
 
     /*
      * Remove this channel from of the list of all channels
@@ -2422,7 +2424,12 @@ Tcl_CutChannel(chan)
 
     statePtr->nextCSPtr = (ChannelState *) NULL;
 
-    TclpCutFileChannel(chan);
+    /* TIP #218, Channel Thread Actions */
+    threadActionProc = Tcl_ChannelThreadActionProc (Tcl_GetChannelType (chan));
+    if (threadActionProc != NULL) {
+        (*threadActionProc) (Tcl_GetChannelInstanceData(chan),
+			     TCL_CHANNEL_THREAD_REMOVE);
+    }
 }
 
 /*
@@ -2441,7 +2448,7 @@ Tcl_CutChannel(chan)
  *	Nothing.
  *
  * NOTE:
- *	The channel to add to the list must not be referenced in any
+ *	The channel to splice into the list must not be referenced in any
  *	interpreter. This is something this procedure cannot check
  *	(despite the refcount) because the caller usually wants figgle
  *	with the channel (like transfering it to a different thread)
@@ -2459,6 +2466,7 @@ Tcl_SpliceChannel(chan)
 {
     ThreadSpecificData	*tsdPtr = TCL_TSD_INIT(&dataKey);
     ChannelState	*statePtr = ((Channel *) chan)->state;
+    Tcl_DriverThreadActionProc *threadActionProc;
 
     if (statePtr->nextCSPtr != (ChannelState *) NULL) {
         panic("Tcl_SpliceChannel: trying to add channel used in different list");
@@ -2475,7 +2483,12 @@ Tcl_SpliceChannel(chan)
 
     statePtr->managingThread = Tcl_GetCurrentThread ();
 
-    TclpSpliceFileChannel(chan);
+    /* TIP #218, Channel Thread Actions */
+    threadActionProc = Tcl_ChannelThreadActionProc (Tcl_GetChannelType (chan));
+    if (threadActionProc != NULL) {
+        (*threadActionProc) (Tcl_GetChannelInstanceData(chan),
+			     TCL_CHANNEL_THREAD_INSERT);
+    }
 }
 
 /*
@@ -8902,6 +8915,8 @@ Tcl_ChannelVersion(chanTypePtr)
 	return TCL_CHANNEL_VERSION_2;
     } else if (chanTypePtr->version == TCL_CHANNEL_VERSION_3) {
 	return TCL_CHANNEL_VERSION_3;
+    } else if (chanTypePtr->version == TCL_CHANNEL_VERSION_4) {
+	return TCL_CHANNEL_VERSION_4;
     } else {
 	/*
 	 * In <v2 channel versions, the version field is occupied
@@ -9250,6 +9265,33 @@ Tcl_ChannelWideSeekProc(chanTypePtr)
 {
     if (HaveVersion(chanTypePtr, TCL_CHANNEL_VERSION_3)) {
 	return chanTypePtr->wideSeekProc;
+    } else {
+	return NULL;
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_ChannelThreadActionProc --
+ *
+ *	Return the Tcl_DriverThreadActionProc of the channel type.
+ *
+ * Results:
+ *	A pointer to the proc.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_DriverThreadActionProc *
+Tcl_ChannelThreadActionProc(chanTypePtr)
+    Tcl_ChannelType *chanTypePtr;	/* Pointer to channel type. */
+{
+    if (HaveVersion(chanTypePtr, TCL_CHANNEL_VERSION_4)) {
+	return chanTypePtr->threadActionProc;
     } else {
 	return NULL;
     }
