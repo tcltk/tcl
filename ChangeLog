@@ -1,3 +1,8 @@
+2004-04-16  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* doc/FileSystem.3: Corrected documentation of Tcl_FSUtime, and
+	the corresponding filesystem driver Tcl_FSUtimeProc. [Bug 935838]
+
 2004-04-16  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* doc/socket.n: Added example from [Patch 936245].
