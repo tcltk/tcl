@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.11 1999/04/16 00:46:50 stanton Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.12 1999/10/05 22:45:40 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -256,7 +256,7 @@ Tcl_PushCallFrame(interp, callFramePtr, namespacePtr, isProcCallFrame)
     Tcl_Interp *interp;		 /* Interpreter in which the new call frame
 				  * is to be pushed. */
     Tcl_CallFrame *callFramePtr; /* Points to a call frame structure to
-				  * push. Storage for this have already been
+				  * push. Storage for this has already been
 				  * allocated by the caller; typically this
 				  * is the address of a CallFrame structure
 				  * allocated on the caller's C stack.  The
@@ -874,8 +874,8 @@ NamespaceFree(nsPtr)
  * Tcl_Export --
  *
  *	Makes all the commands matching a pattern available to later be
- *	imported from the namespace specified by contextNsPtr (or the
- *	current namespace if contextNsPtr is NULL). The specified pattern is
+ *	imported from the namespace specified by namespacePtr (or the
+ *	current namespace if namespacePtr is NULL). The specified pattern is
  *	appended onto the namespace's export pattern list, which is
  *	optionally cleared beforehand.
  *
@@ -902,8 +902,7 @@ Tcl_Export(interp, namespacePtr, pattern, resetListFirst)
 				  * in the specified namespace may be
 				  * exported. */
     int resetListFirst;		 /* If nonzero, resets the namespace's
-				  * export list before appending 
-				  * be overwritten by imported commands.
+				  * export list before appending.
 				  * If 0, return an error if an imported
 				  * cmd conflicts with an existing one. */
 {
@@ -1057,7 +1056,7 @@ Tcl_AppendExportList(interp, namespacePtr, objPtr)
  * Tcl_Import --
  *
  *	Imports all of the commands matching a pattern into the namespace
- *	specified by contextNsPtr (or the current namespace if contextNsPtr
+ *	specified by namespacePtr (or the current namespace if contextNsPtr
  *	is NULL). This is done by creating a new command (the "imported
  *	command") that points to the real command in its original namespace.
  *
@@ -1382,10 +1381,10 @@ Tcl_ForgetImport(interp, namespacePtr, pattern)
  *
  * TclGetOriginalCommand --
  *
- *	An imported command is created in an namespace when it imports a
- *	"real" command from another namespace. If the specified command is a
+ *	An imported command is created in an namespace when a "real" command
+ *	is imported from another namespace. If the specified command is an
  *	imported command, this procedure returns the original command it
- *	refers to.  
+ *	refers to. 
  *
  * Results:
  *	If the command was imported into a sequence of namespaces a, b,...,n
@@ -1402,8 +1401,8 @@ Tcl_ForgetImport(interp, namespacePtr, pattern)
 
 Tcl_Command
 TclGetOriginalCommand(command)
-    Tcl_Command command;	/* The command for which the original
-				 * command should be returned. */
+    Tcl_Command command;	/* The imported command for which the
+				 * original command should be returned. */
 {
     register Command *cmdPtr = (Command *) command;
     ImportedCmdData *dataPtr;
@@ -2301,7 +2300,7 @@ TclResetShadowedCmdRefs(interp, newCmdPtr)
  *
  * GetNamespaceFromObj --
  *
- *	Returns the namespace specified by the name in a Tcl_Obj.
+ *	Gets the namespace specified by the name in a Tcl_Obj.
  *
  * Results:
  *	Returns TCL_OK if the namespace was resolved successfully, and

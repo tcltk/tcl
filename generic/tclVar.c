@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.13 1999/09/21 04:20:41 hobbs Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.14 1999/10/05 22:45:40 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -1263,12 +1263,12 @@ Tcl_SetVar2Ex(interp, part1, part2, newValuePtr, flags)
 	    if (oldValuePtr == NULL) {
 		TclNewObj(oldValuePtr);
 		varPtr->value.objPtr = oldValuePtr;
-		Tcl_IncrRefCount(oldValuePtr); /* since var is reference */
+		Tcl_IncrRefCount(oldValuePtr); /* since var is referenced */
 	    } else if (Tcl_IsShared(oldValuePtr)) {
 		varPtr->value.objPtr = Tcl_DuplicateObj(oldValuePtr);
 		Tcl_DecrRefCount(oldValuePtr);
 		oldValuePtr = varPtr->value.objPtr;
-		Tcl_IncrRefCount(oldValuePtr); /* since var is reference */
+		Tcl_IncrRefCount(oldValuePtr); /* since var is referenced */
 	    }
 	    result = Tcl_ListObjAppendElement(interp, oldValuePtr,
 		    newValuePtr);
@@ -2469,8 +2469,8 @@ Tcl_VarTraceInfo(interp, varName, flags, proc, prevClientData)
     Tcl_Interp *interp;		/* Interpreter containing variable. */
     char *varName;		/* Name of variable;  may end with "(index)"
 				 * to signify an array reference. */
-    int flags;			/* 0, TCL_GLOBAL_ONLY, or
-				 * TCL_NAMESPACE_ONLY. */
+    int flags;			/* OR-ed combo or TCL_GLOBAL_ONLY,
+				 * TCL_NAMESPACE_ONLY (can be 0). */
     Tcl_VarTraceProc *proc;	/* Procedure assocated with trace. */
     ClientData prevClientData;	/* If non-NULL, gives last value returned
 				 * by this procedure, so this call will

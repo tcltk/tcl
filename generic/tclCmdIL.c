@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.16 1999/09/21 04:20:40 hobbs Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.17 1999/10/05 22:45:40 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -465,7 +465,7 @@ Tcl_InfoObjCmd(clientData, interp, objc, objv)
  *          info args procName
  *
  * Results:
- *      Returns TCL_OK is successful and TCL_ERROR is there is an error.
+ *      Returns TCL_OK if successful and TCL_ERROR if there is an error.
  *
  * Side effects:
  *      Returns a result in the interpreter's result object. If there is
@@ -527,7 +527,7 @@ InfoArgsCmd(dummy, interp, objc, objv)
  *          info body procName
  *
  * Results:
- *      Returns TCL_OK is successful and TCL_ERROR is there is an error.
+ *      Returns TCL_OK if successful and TCL_ERROR if there is an error.
  *
  * Side effects:
  *      Returns a result in the interpreter's result object. If there is
@@ -596,7 +596,7 @@ InfoBodyCmd(dummy, interp, objc, objv)
  *          info cmdcount
  *
  * Results:
- *      Returns TCL_OK is successful and TCL_ERROR is there is an error.
+ *      Returns TCL_OK if successful and TCL_ERROR if there is an error.
  *
  * Side effects:
  *      Returns a result in the interpreter's result object. If there is
@@ -638,7 +638,7 @@ InfoCmdCountCmd(dummy, interp, objc, objv)
  *          info commands ?pattern?
  *
  * Results:
- *      Returns TCL_OK is successful and TCL_ERROR is there is an error.
+ *      Returns TCL_OK if successful and TCL_ERROR if there is an error.
  *
  * Side effects:
  *      Returns a result in the interpreter's result object. If there is
@@ -764,7 +764,7 @@ InfoCommandsCmd(dummy, interp, objc, objv)
  *          info complete command
  *
  * Results:
- *      Returns TCL_OK is successful and TCL_ERROR is there is an error.
+ *      Returns TCL_OK if successful and TCL_ERROR if there is an error.
  *
  * Side effects:
  *      Returns a result in the interpreter's result object. If there is
@@ -806,7 +806,7 @@ InfoCompleteCmd(dummy, interp, objc, objv)
  *          info default procName arg varName
  *
  * Results:
- *      Returns TCL_OK is successful and TCL_ERROR is there is an error.
+ *      Returns TCL_OK if successful and TCL_ERROR if there is an error.
  *
  * Side effects:
  *      Returns a result in the interpreter's result object. If there is
@@ -890,7 +890,7 @@ InfoDefaultCmd(dummy, interp, objc, objv)
  *          info exists varName
  *
  * Results:
- *      Returns TCL_OK is successful and TCL_ERROR is there is an error.
+ *      Returns TCL_OK if successful and TCL_ERROR if there is an error.
  *
  * Side effects:
  *      Returns a result in the interpreter's result object. If there is
@@ -936,7 +936,7 @@ InfoExistsCmd(dummy, interp, objc, objv)
  *          info globals ?pattern?
  *
  * Results:
- *      Returns TCL_OK is successful and TCL_ERROR is there is an error.
+ *      Returns TCL_OK if successful and TCL_ERROR if there is an error.
  *
  * Side effects:
  *      Returns a result in the interpreter's result object. If there is
@@ -1002,7 +1002,7 @@ InfoGlobalsCmd(dummy, interp, objc, objv)
  *          info hostname
  *
  * Results:
- *      Returns TCL_OK is successful and TCL_ERROR is there is an error.
+ *      Returns TCL_OK if successful and TCL_ERROR if there is an error.
  *
  * Side effects:
  *      Returns a result in the interpreter's result object. If there is
@@ -1046,7 +1046,7 @@ InfoHostnameCmd(dummy, interp, objc, objv)
  *          info level ?number?
  *
  * Results:
- *      Returns TCL_OK is successful and TCL_ERROR is there is an error.
+ *      Returns TCL_OK if successful and TCL_ERROR if there is an error.
  *
  * Side effects:
  *      Returns a result in the interpreter's result object. If there is
@@ -1120,7 +1120,7 @@ InfoLevelCmd(dummy, interp, objc, objv)
  *          info library
  *
  * Results:
- *      Returns TCL_OK is successful and TCL_ERROR is there is an error.
+ *      Returns TCL_OK if successful and TCL_ERROR if there is an error.
  *
  * Side effects:
  *      Returns a result in the interpreter's result object. If there is
@@ -1165,7 +1165,7 @@ InfoLibraryCmd(dummy, interp, objc, objv)
  *          info loaded ?interp?
  *
  * Results:
- *      Returns TCL_OK is successful and TCL_ERROR is there is an error.
+ *      Returns TCL_OK if successful and TCL_ERROR if there is an error.
  *
  * Side effects:
  *      Returns a result in the interpreter's result object. If there is
@@ -1210,7 +1210,7 @@ InfoLoadedCmd(dummy, interp, objc, objv)
  *          info locals ?pattern?
  *
  * Results:
- *      Returns TCL_OK is successful and TCL_ERROR is there is an error.
+ *      Returns TCL_OK if successful and TCL_ERROR if there is an error.
  *
  * Side effects:
  *      Returns a result in the interpreter's result object. If there is
@@ -1339,7 +1339,7 @@ AppendLocals(interp, listPtr, pattern, includeLinks)
  *          info nameofexecutable
  *
  * Results:
- *      Returns TCL_OK is successful and TCL_ERROR is there is an error.
+ *      Returns TCL_OK if successful and TCL_ERROR if there is an error.
  *
  * Side effects:
  *      Returns a result in the interpreter's result object. If there is
@@ -1382,7 +1382,7 @@ InfoNameOfExecutableCmd(dummy, interp, objc, objv)
  *          info patchlevel
  *
  * Results:
- *      Returns TCL_OK is successful and TCL_ERROR is there is an error.
+ *      Returns TCL_OK if successful and TCL_ERROR if there is an error.
  *
  * Side effects:
  *      Returns a result in the interpreter's result object. If there is
@@ -1426,7 +1426,7 @@ InfoPatchLevelCmd(dummy, interp, objc, objv)
  *          info procs ?pattern?
  *
  * Results:
- *      Returns TCL_OK is successful and TCL_ERROR is there is an error.
+ *      Returns TCL_OK if successful and TCL_ERROR if there is an error.
  *
  * Side effects:
  *      Returns a result in the interpreter's result object. If there is
@@ -1502,7 +1502,7 @@ InfoProcsCmd(dummy, interp, objc, objv)
  *          info script
  *
  * Results:
- *      Returns TCL_OK is successful and TCL_ERROR is there is an error.
+ *      Returns TCL_OK if successful and TCL_ERROR if there is an error.
  *
  * Side effects:
  *      Returns a result in the interpreter's result object. If there is
@@ -1542,7 +1542,7 @@ InfoScriptCmd(dummy, interp, objc, objv)
  *          info sharedlibextension
  *
  * Results:
- *      Returns TCL_OK is successful and TCL_ERROR is there is an error.
+ *      Returns TCL_OK if successful and TCL_ERROR if there is an error.
  *
  * Side effects:
  *      Returns a result in the interpreter's result object. If there is
@@ -1580,7 +1580,7 @@ InfoSharedlibCmd(dummy, interp, objc, objv)
  *          info tclversion
  *
  * Results:
- *      Returns TCL_OK is successful and TCL_ERROR is there is an error.
+ *      Returns TCL_OK if successful and TCL_ERROR if there is an error.
  *
  * Side effects:
  *      Returns a result in the interpreter's result object. If there is
@@ -1627,7 +1627,7 @@ InfoTclVersionCmd(dummy, interp, objc, objv)
  *          info vars ?pattern?
  *
  * Results:
- *      Returns TCL_OK is successful and TCL_ERROR is there is an error.
+ *      Returns TCL_OK if successful and TCL_ERROR if there is an error.
  *
  * Side effects:
  *      Returns a result in the interpreter's result object. If there is

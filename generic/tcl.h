@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.57 1999/08/10 23:16:25 redman Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.58 1999/10/05 22:45:39 hobbs Exp $
  */
 
 #ifndef _TCL
@@ -38,28 +38,27 @@ extern "C" {
  * When version numbers change here, must also go into the following files
  * and update the version numbers:
  *
- * library/init.tcl	(only if major.minor changes, not patchlevel)
- * unix/configure.in
- * win/configure.in	(only if major.minor changes, not patchlevel)
- * win/makefile.bc	(only if major.minor changes, not patchlevel)
- * win/makefile.vc	(only if major.minor changes, not patchlevel)
- * win/pkgIndex.tcl	(for tclregNN.dll, not patchlevel)
- * README
- * mac/README
- * win/README.binary
- * win/README		(only if major.minor changes, not patchlevel)
- * unix/README		(only if major.minor changes, not patchlevel)
- * tools/tcl.hpj.in	(for windows installer)
+ * library/init.tcl	(only if Major.minor changes, not patchlevel) 1 LOC
+ * unix/configure.in	(2 LOC Major, 2 LOC minor, 1 LOC patch)
+ * win/configure.in	(as above)
+ * win/makefile.vc	(not patchlevel) 2 LOC
+ * win/pkgIndex.tcl	(not patchlevel, for tclregNN.dll)
+ * README		(sections 0 and 2)
+ * mac/README		(2 LOC)
+ * win/README.binary	(sections 0-4)
+ * win/README		(not patchlevel) (sections 0 and 2)
+ * unix/README		(not patchlevel) (part (h))
+ * tools/tcl.hpj.in	(not patchlevel, for windows installer)
  * tools/tcl.wse.in	(for windows installer)
  */
 
 #define TCL_MAJOR_VERSION   8
-#define TCL_MINOR_VERSION   2
-#define TCL_RELEASE_LEVEL   TCL_FINAL_RELEASE
-#define TCL_RELEASE_SERIAL  0
+#define TCL_MINOR_VERSION   3
+#define TCL_RELEASE_LEVEL   TCL_ALPHA_RELEASE
+#define TCL_RELEASE_SERIAL  1
 
-#define TCL_VERSION	    "8.2"
-#define TCL_PATCH_LEVEL	    "8.2.0"
+#define TCL_VERSION	    "8.3"
+#define TCL_PATCH_LEVEL	    "8.3a1"
 
 /*
  * The following definitions set up the proper options for Windows
@@ -681,7 +680,7 @@ typedef struct Tcl_SavedResult {
 /*
  * The following definitions support Tcl's namespace facility.
  * Note: the first five fields must match exactly the fields in a
- * Namespace structure (see tcl.h). 
+ * Namespace structure (see tclInt.h). 
  */
 
 typedef struct Tcl_Namespace {
