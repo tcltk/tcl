@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.85 2000/12/08 04:22:43 ericm Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.86 2001/01/18 19:09:55 andreas_kupries Exp $
  */
 
 #ifndef _TCL
@@ -339,7 +339,8 @@ typedef long LONG;
 
 /*
  * This flag controls whether binary compatability is maintained with
- * extensions built against a previous version of Tcl.
+ * extensions built against a previous version of Tcl. This is true
+ * by default.
  */
 #ifndef TCL_PRESERVE_BINARY_COMPATABILITY
 #define TCL_PRESERVE_BINARY_COMPATABILITY 1
@@ -1206,12 +1207,14 @@ typedef struct Tcl_HashSearch {
 	(*((tablePtr)->createProc))(tablePtr, key, newPtr)
 #endif
 
+#if !TCL_PRESERVE_BINARY_COMPATABILITY
 /*
  * Macro to use new extended version of Tcl_InitHashTable.
  */
 #define Tcl_InitHashTable(tablePtr, keyType) \
 	Tcl_InitHashTableEx(tablePtr, keyType, NULL)
-    
+#endif
+
 /*
  * Flag values to pass to Tcl_DoOneEvent to disable searches
  * for some kinds of events:

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.18 2000/08/10 18:24:52 davidg Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.19 2001/01/18 19:09:55 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -2148,7 +2148,8 @@ Tcl_InitObjHashTable(tablePtr)
     register Tcl_HashTable *tablePtr;	/* Pointer to table record, which
 					 * is supplied by the caller. */
 {
-    Tcl_InitHashTableEx (tablePtr, TCL_CUSTOM_PTR_KEYS, &tclObjHashKeyType);
+    Tcl_InitCustomHashTable(tablePtr, TCL_CUSTOM_PTR_KEYS,
+	    &tclObjHashKeyType);
 }
 
 /*
