@@ -1,5 +1,20 @@
 2003-01-25  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* win/tclWin32Dll.c (TclpCheckStackSpace, squelch_warnings):
+	* win/tclWinChan.c (Tcl_MakeFileChannel, squelch_warnings):
+	* win/tclWinFCmd.c (DoRenameFile, DoCopyFile, squelch_warnings):
+	Re-implement inline ASM SEH handlers for gcc.
+	The esp and ebp registers are now saved on the
+	stack instead of in global variables so that
+	the code is thread safe. Add additional checks
+	when TCL_MEM_DEBUG is defined to be sure the
+	values were recovered from the stack properly.
+	Remove squelch_warnings functions and add
+	a dummy call in the handler methods to squelch
+	compiler warnings.
+
+2003-01-25  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* win/configure:
 	* win/configure.in: Define HAVE_ALLOCA_GCC_INLINE
 	when we detect that no alloca function is found
