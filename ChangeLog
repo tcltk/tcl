@@ -93,7 +93,7 @@
 	* tests/if.test:
 	* tests/incr.test:
 	* tests/while.test: 
-	Report compilation errors at runtime, [Patch 103368] by dgp. 
+	Report compilation errors at runtime, [Patch 1033689] by dgp. 
 	
 2004-09-23  Mo DeJong  <mdejong@users.sourceforge.net>
 
