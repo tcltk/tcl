@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.44 2004/04/02 18:54:39 msofer Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.45 2004/05/14 19:15:35 msofer Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -628,7 +628,7 @@ extern InstructionDesc tclInstructionTable[];
  */
 
 typedef int (CallBuiltinFuncProc) _ANSI_ARGS_((Tcl_Interp *interp,
-	ExecEnv *eePtr, ClientData clientData));
+	Tcl_Obj **tosPtr, ClientData clientData));
 
 typedef struct {
     char *name;			/* Name of function. */
