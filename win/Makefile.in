@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.79 2004/07/20 10:23:14 das Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.80 2004/08/18 20:59:35 kennykb Exp $
 
 VERSION = @TCL_VERSION@
 
@@ -514,7 +514,7 @@ install-binaries: binaries
 	    $(COPY) $(REG_LIB_FILE) $(LIB_INSTALL_DIR)/reg1.1; \
 	    fi
 
-install-libraries: libraries
+install-libraries: libraries install-tzdata install-msgs
 	@for i in $(prefix)/lib $(INCLUDE_INSTALL_DIR) \
 		$(SCRIPT_INSTALL_DIR); \
 	    do \
@@ -572,6 +572,18 @@ install-libraries: libraries
 	@for i in $(ROOT_DIR)/library/encoding/*.enc ; do \
 		$(COPY) "$$i" "$(SCRIPT_INSTALL_DIR)/encoding"; \
 	done;
+
+install-tzdata:
+	@echo "Installing time zone data"
+	@TCL_LIBRARY="${TCL_BUILDTIME_LIBRARY}"; export TCL_LIBRARY; \
+	./$(TCLSH) "$(ROOT_DIR)/tools/installData.tcl" \
+	    "$(ROOT_DIR)/library/tzdata" "$(SCRIPT_INSTALL_DIR)/tzdata"
+
+install-msgs:
+	@echo "Installing message catalogs"
+	@TCL_LIBRARY="${TCL_BUILDTIME_LIBRARY}"; export TCL_LIBRARY; \
+	./$(TCLSH) "$(ROOT_DIR)/tools/installData.tcl" \
+	    "$(ROOT_DIR)/library/msgs" "$(SCRIPT_INSTALL_DIR)/msgs"
 
 install-doc: doc
 

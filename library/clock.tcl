@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.tcl,v 1.1 2004/08/18 19:59:00 kennykb Exp $
+# RCS: @(#) $Id: clock.tcl,v 1.2 2004/08/18 20:59:33 kennykb Exp $
 #
 #----------------------------------------------------------------------
 
@@ -24,7 +24,26 @@
 uplevel \#0 {
     package require msgcat 1.4
     if { $::tcl_platform(platform) eq {windows} } {
-	package require registry 1.1
+	if { [catch { package require registry 1.1 }] } {
+
+	    # HIDEOUS KLUDGE: [package require registry 1.1] has failed.
+	    # This failure likely means that we're running in Tcl's build
+	    # directory instead of the install directory.  We recover by
+	    # trying to load tclreg*.dll directly.
+
+	    if { [catch { 
+		load [lindex \
+			  [glob -directory \
+			       [file join \
+				    [pwd] \
+				    [file dirname [info nameofexecutable]]] \
+			       tclReg*.dll] \
+			  0] registry
+	    }] } {
+		# Still no registry!
+		namespace eval ::tcl::clock [list variable NoRegistry {}]
+	    }
+	}
     }
 }
 
@@ -2140,6 +2159,11 @@ proc ::tcl::clock::EnterLocale { locale oldLocaleVar } {
 
 proc ::tcl::clock::LoadWindowsDateTimeFormats { locale } {
 
+    # Bail out if we can't find the Registry
+
+    variable NoRegistry
+    if { [info exists NoRegistry] } return
+
     if { ![catch {
 	registry get "HKEY_CURRENT_USER\\Control Panel\\International" \
 	    sShortDate
@@ -3144,13 +3168,12 @@ proc ::tcl::clock::SetupTimeZone { timezone } {
 	    # We couldn't parse this as a POSIX time zone.  Try
 	    # again with a time zone file - this time without a colon
 
-	    if { [catch {
-		LoadTimeZoneFile $timezone
-	    } msg] } {
-		return -code error -errorcode $::errorCode $msg
+	    if { [catch { LoadTimeZoneFile $timezone }]
+		 && [catch { LoadZoneinfoFile $timezone }] } {
+		return -code error -errorcode $::errorCode \
+		    "time zone $timezone not found"
 	    }
 	    set TZData($timezone) $TZData(:$timezone)
-
 	}
     }
 
@@ -3190,25 +3213,38 @@ proc ::tcl::clock::GuessWindowsTimeZone {} {
     variable SecondsPerHour
     variable SecondsPerMinute
     variable MinutesPerHour
+    variable NoRegistry
+
+    if { [info exists NoRegistry] } {
+	return :localtime
+    }
 
     # Dredge time zone information out of the registry
 
-    set rpath HKEY_LOCAL_MACHINE\\System\\CurrentControlSet\\Control\\TimeZoneInformation
-    set data [list \
-		  [expr { -$SecondsPerMinute * [registry get $rpath Bias] }] \
-		  [expr { -$SecondsPerMinute \
-			      * [registry get $rpath StandardBias] }] \
-		  [expr { -$SecondsPerMinute \
-			      * [registry get $rpath DaylightBias] }]]
-    set stdtzi [registry get $rpath StandardStart]
-    foreach ind {0 2 14 4 6 8 10 12} {
-	binary scan $stdtzi @${ind}s val
-	lappend data $val
-    }
-    set daytzi [registry get $rpath DaylightStart]
-    foreach ind {0 2 14 4 6 8 10 12} {
-	binary scan $daytzi @${ind}s val
-	lappend data $val
+    if { [catch {
+	set rpath HKEY_LOCAL_MACHINE\\System\\CurrentControlSet\\Control\\TimeZoneInformation
+	set data [list \
+		      [expr { -$SecondsPerMinute
+			      * [registry get $rpath Bias] }] \
+		      [expr { -$SecondsPerMinute \
+				  * [registry get $rpath StandardBias] }] \
+		      [expr { -$SecondsPerMinute \
+				  * [registry get $rpath DaylightBias] }]]
+	set stdtzi [registry get $rpath StandardStart]
+	foreach ind {0 2 14 4 6 8 10 12} {
+	    binary scan $stdtzi @${ind}s val
+	    lappend data $val
+	}
+	set daytzi [registry get $rpath DaylightStart]
+	foreach ind {0 2 14 4 6 8 10 12} {
+	    binary scan $daytzi @${ind}s val
+	    lappend data $val
+	}
+    }] } {
+
+	# Missing values in the Registry - bail out
+
+	return :localtime
     }
 
     # Make up a Posix time zone specifier if we can't find one
@@ -3302,6 +3338,10 @@ proc ::tcl::clock::LoadTimeZoneFile { fileName } {
     variable DataDir
     variable TZData
 
+    if { [info exists TZData($fileName)] } {
+	return
+    }
+
     # Since an unsafe interp uses the [clock] command in the master,
     # this code is security sensitive.  Make sure that the path name
     # cannot escape the given directory.
@@ -3318,6 +3358,7 @@ proc ::tcl::clock::LoadTimeZoneFile { fileName } {
 	    -errorcode [list CLOCK badTimeZone :$fileName] \
 	    "time zone \":$fileName\" not found"
     }
+    return
 }
 
 #----------------------------------------------------------------------
@@ -3397,6 +3438,7 @@ proc ::tcl::clock::LoadZoneinfoFile { fileName } {
     binary scan $d @${seek}I${nTime}c${nTime} times tempCodes
     incr seek [expr { 5 * $nTime }]
     set times [linsert $times 0 $MINWIDE]
+    set codes {}
     foreach c $tempCodes {
 	lappend codes [expr { $c & 0xff }]
     }
