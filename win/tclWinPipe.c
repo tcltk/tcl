@@ -9,12 +9,11 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPipe.c,v 1.15 2000/09/28 06:38:23 hobbs Exp $
+ * RCS: @(#) $Id: tclWinPipe.c,v 1.16 2001/07/16 23:30:16 mdejong Exp $
  */
 
 #include "tclWinInt.h"
 
-#include <dos.h>
 #include <fcntl.h>
 #include <io.h>
 #include <sys/stat.h>
