@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.33 2002/08/26 17:38:54 msofer Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.34 2002/09/30 18:05:07 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -2196,8 +2196,7 @@ TclCompileRegexpCmd(interp, parsePtr, envPtr)
     Tcl_Token *varTokenPtr;	/* Pointer to the Tcl_Token representing
 				 * the parse of the RE or string */
     int i, len, code, exactMatch, nocase;
-    Tcl_Obj *patternObj;
-    CONST char *str;
+    char *str;
 
     /*
      * We are only interested in compiling simple regexp cases.
@@ -2223,7 +2222,7 @@ TclCompileRegexpCmd(interp, parsePtr, envPtr)
 	    /* Not a simple string - punt to runtime. */
 	    return TCL_OUT_LINE_COMPILE;
 	}
-	str = varTokenPtr[1].start;
+	str = (char *) varTokenPtr[1].start;
 	len = varTokenPtr[1].size;
 	if ((len == 2) && (str[0] == '-') && (str[1] == '-')) {
 	    i++;
@@ -2247,7 +2246,7 @@ TclCompileRegexpCmd(interp, parsePtr, envPtr)
      * If it has a '-', it could be an incorrectly formed regexp command.
      */
     varTokenPtr = varTokenPtr + (varTokenPtr->numComponents + 1);
-    str = varTokenPtr[1].start;
+    str = (char *) varTokenPtr[1].start;
     len = varTokenPtr[1].size;
     if ((varTokenPtr->type != TCL_TOKEN_SIMPLE_WORD) || (*str == '-')) {
 	return TCL_OUT_LINE_COMPILE;
@@ -2262,21 +2261,23 @@ TclCompileRegexpCmd(interp, parsePtr, envPtr)
     }
 
     /*
+     * Make a copy of the string that is null-terminated for checks which
+     * require such.
+     */
+    str = (char *) ckalloc((unsigned) len + 1);
+    strncpy(str, varTokenPtr[1].start, (size_t) len);
+    str[len] = '\0';
+
+    /*
      * On the first (pattern) arg, check to see if any RE special characters
      * are in the word.  If not, this is the same as 'string equal'.
-     * We can use strchr here because the glob chars are all in the ascii-7
-     * range.  If -nocase was specified, we can't do this because INST_STR_EQ
-     * has no support for nocase.
      */
-    
-    if (Tcl_RegExpCompile(NULL, str) == NULL) {
-	/*
-	 * This is a bad RE.  Let it complain at runtime.
-	 */
-	return TCL_OUT_LINE_COMPILE;	
-    }
 #if 0
     if ((len > 2) && (*str == '.') && (str[1] == '*')) {
+	/*
+	 * We can't modify the string after we have ckalloc'ed it, so this
+	 * code will have to change before being used.
+	 */
 	str += 2; len -= 2;
     }
     if ((len > 2) && (str[len-3] != '\\')
@@ -2288,24 +2289,26 @@ TclCompileRegexpCmd(interp, parsePtr, envPtr)
 	    && (str[len-2] != '\\')) {
 	/*
 	 * It appears and exact search was requested (ie ^foo$), so strip
-	 * off the special chars and signal exactMatch.
+	 * off the special chars and signal exactMatch.	 Defer the stripping
+	 * to the TclEmitPush so the str ptr is not modified.
 	 */
-	str++; len -= 2;
 	exactMatch = 1;
     } else {
 	exactMatch = 0;
     }
-    
-    patternObj = Tcl_NewStringObj(str, len);
-    Tcl_IncrRefCount(patternObj);
-    code = (strpbrk(Tcl_GetString(patternObj), "*+?{}()[].\\|^$") != NULL);
-    Tcl_DecrRefCount(patternObj);
-    if (code) {
-	/* We don't do anything with REs with special chars yet. */
+
+    /*
+     * Don't do anything with REs with other special chars.  Also check if
+     * this is a bad RE (do this at the end because it can be expensive).
+     * If so, let it complain at runtime.
+     */
+    if ((strpbrk(str, "*+?{}()[].\\|^$") != NULL)
+	    || (Tcl_RegExpCompile(NULL, str) == NULL)) {
+	ckfree((char *) str);
 	return TCL_OUT_LINE_COMPILE;
     }
     if (exactMatch) {
-	TclEmitPush(TclRegisterNewLiteral(envPtr, str, len), envPtr);
+	TclEmitPush(TclRegisterNewLiteral(envPtr, str+1, len-2), envPtr);
     } else {
 	/*
 	 * This needs to find the substring anywhere in the string, so
@@ -2319,6 +2322,7 @@ TclCompileRegexpCmd(interp, parsePtr, envPtr)
 	TclEmitPush(TclRegisterNewLiteral(envPtr, newStr, len+2), envPtr);
 	ckfree((char *) newStr);
     }
+    ckfree((char *) str);
 
     /*
      * Push the string arg
