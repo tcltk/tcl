@@ -1,3 +1,9 @@
+2001-07-06  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* tests/cmdAH.test: Added leading zero to file modes to work
+	around fault in HPUX strtol() which ignores the base parameter
+	[Bug #438808]
+
 2001-07-05  Mo DeJong  <mdejong@redhat.com>
 
 	* win/Makefile.in: Subst DEPARG directly instead
