@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: tm.n,v 1.3 2004/10/22 22:27:18 dkf Exp $
+'\" RCS: @(#) $Id: tm.n,v 1.4 2004/10/22 22:33:48 dkf Exp $
 '\" 
 .so man.macros
 .TH tm n 8.5 Tcl "Tcl Built-In Commands"
@@ -100,14 +100,12 @@ package vcompare $version 0
 .PP
 .SH "FINDING MODULES"
 The directory tree for storing Tcl modules is separate from other
-parts of the filesystem and independent of \fBauto_path\fR. The
-reasons for this are detailed in the TIP.
+parts of the filesystem and independent of \fBauto_path\fR.
 .PP
 Tcl Modules are searched for in all directories listed in the result
-of the command \fB::tcl::tm::path list\fR
-(See also section \fBAPI\fR).
-This is called the \fIModule path\fR. Neither \fBauto_path\fR nor
-\fBtcl_pkgPath\fR are used.
+of the command \fB::tcl::tm::path list\fR.
+This is called the \fIModule path\fR. Neither the \fBauto_path\fR nor
+the \fBtcl_pkgPath\fR variables are used.
 All directories on the module path have to obey one restriction:
 .IP
 For any two directories, neither is an ancestor directory of the
@@ -135,7 +133,7 @@ After this translation the package is looked for in all module paths,
 by combining them one-by-one, first to last with the partial path to
 form a complete search pattern. Note that the search algorithm rejects
 all files where the filename does not match the regular expression
-given in the section \fBModule Definition\fR. For the remaining
+given in the section \fBMODULE DEFINITION\fR. For the remaining
 files \fIprovide scripts\fR are generated and added to the package
 ifneeded database.
 .PP
@@ -148,22 +146,22 @@ Note that packages in module form have \fIno\fR control over the
 database for them.
 For a module file \fBMF\fR the \fIindex script\fR is always:
 .CS
-package ifneeded PNAME PVERSION [list source MF]
+package ifneeded \fBPNAME PVERSION\fR [list source \fBMF\fR]
 .CE
 and the \fIprovide script\fR embedded in the above is:
 .CS
-source MF
+source \fBMF\fR
 .CE
 .PP
 Both package name \fBPNAME\fR and package version \fBPVERSION\fR are
 extracted from the filename \fBMF\fR according to the definition
 below:
 .CS
-MF = /module_path/PNAME'-PVERSION.tm
+\fBMF\fR = /module_path/\fBPNAME'\fR-\fBPVERSION\fR.tm
 .CE
 .PP
 Where \fBPNAME'\fR is the partial path of the module as defined in
-section \fBFinding Modules\fR, and translated into PNAME by
+section \fBFINDING MODULES\fR, and translated into \fB\fRPNAME by
 changing all directory separators to "\fB::\fR",
 and \fBmodule_path\fR is the path (from the list of paths to search)
 that we found the module file under.
