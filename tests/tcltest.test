@@ -6,7 +6,7 @@
 # Copyright (c) 2000 by Ajuba Solutions
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.test,v 1.18 2002/03/27 08:19:57 dgp Exp $
+# RCS: @(#) $Id: tcltest.test,v 1.19 2002/04/15 17:04:29 dgp Exp $
 
 set tcltestVersion [package require tcltest]
 namespace import -force ::tcltest::*
@@ -1026,6 +1026,10 @@ test tcltest-20.1 {PrintError} {unixOrPc} {
 } {1 1 1 1 1 1}
 
 # test::test
+test tcltest-21.0 {name and desc but no args specified} -body {
+   test foo bar
+} -result {}
+
 test tcltest-21.1 {expect with glob} {
     -body {
 	list a b c d e
@@ -1040,9 +1044,8 @@ test tcltest-21.2 {force a test command failure} {
 	    return 2
 	} {1}
     }
-    -errorOutput {^test foo: bad flag 1 supplied to tcltest::test\n$}
-    -result {1}
-    -match regexp
+    -returnCodes 1
+    -result {bad option "1": must be -body, -cleanup, -constraints, -errorOutput, -match, -output, -result, -returnCodes, or -setup}
 }
 
 test tcltest-21.3 {test command with setup} {
@@ -1067,7 +1070,7 @@ test tcltest-21.4 {test command with cleanup failure} {
 	    -cleanup {unset foo}
 	}
     }
-    -result {^0$}
+    -result {^$}
     -match regexp
     -output "Test cleanup failed:.*can't unset \"foo\": no such variable"
 }
@@ -1083,7 +1086,7 @@ test tcltest-21.5 {test command with setup failure} {
 	    -setup {unset foo}
 	}
     }
-    -result {^0$}
+    -result {^$}
     -match regexp
     -output "Test setup failed:.*can't unset \"foo\": no such variable"
 }
@@ -1112,36 +1115,37 @@ test tcltest-21.6 {test command - setup occurs before cleanup & before script} {
 	    -result {$expected}
 	}
     }
-    -result {^0$}
+    -result {^$}
     -match regexp
     -output "foo is 2"
 }
 
 test tcltest-21.7 {test command - bad flag} {
-     -body {
+    -body {
 	test foo-4 {foo-4} {
 	    -foobar {}
 	}
     }
-    -result {1}
-    -errorOutput {test foo-4: bad flag -foobar supplied to tcltest::test*}
-    -match glob
+    -returnCodes 1
+    -result {bad option "-foobar": must be -body, -cleanup, -constraints, -errorOutput, -match, -output, -result, -returnCodes, or -setup}
 }
 
 # alternate test command format (these are the same as 21.1-21.6, with the
 # exception of being in the all-inline format)
 
-test tcltest-21.7 {expect with glob} \
+test tcltest-21.7a {expect with glob} \
 	-body {list a b c d e} \
 	-result {[ab] b c d e} \
 	-match glob
 
-test tcltest-21.8 {force a test command failure} -body {
-    test foo {
-	return 2
-    } {1}
-} -errorOutput {test foo: bad flag 1 supplied to tcltest::test
-} -result {1}
+test tcltest-21.8 {force a test command failure} \
+    -body {
+        test foo {
+            return 2
+        } {1}
+    } \
+    -returnCodes 1 \
+    -result {bad option "1": must be -body, -cleanup, -constraints, -errorOutput, -match, -output, -result, -returnCodes, or -setup}
 
 test tcltest-21.9 {test command with setup} \
 	-setup {set foo 1} \
@@ -1155,7 +1159,7 @@ test tcltest-21.10 {test command with cleanup failure} -setup {
     }
 } -body {
     test foo-1 {foo-1} -cleanup {unset foo}
-} -result {^0$} -match regexp \
+} -result {^$} -match regexp \
 	-output {Test cleanup failed:.*can't unset \"foo\": no such variable}
 
 test tcltest-21.11 {test command with setup failure} -setup {
@@ -1164,7 +1168,7 @@ test tcltest-21.11 {test command with setup failure} -setup {
     }
 } -body {
     test foo-2 {foo-2} -setup {unset foo}
-} -result {^0$} -output {Test setup failed:.*can't unset \"foo\": no such variable} -match regexp
+} -result {^$} -output {Test setup failed:.*can't unset \"foo\": no such variable} -match regexp
 
 test tcltest-21.12 {test command - setup occurs before cleanup & before script} -body {
     test foo-3 {foo-3} -setup {
@@ -1183,7 +1187,7 @@ test tcltest-21.12 {test command - setup occurs before cleanup & before script} 
 	    puts [tcltest::outputChannel] "foo is 2"
 	}
     }  -result {$expected}
-} -result {^0$} -output {foo is 2} -match regexp
+} -result {^$} -output {foo is 2} -match regexp
 
 # test all.tcl usage (runAllTests); simulate .test file failure, as well as
 # crashes to determine whether or not these errors are logged.

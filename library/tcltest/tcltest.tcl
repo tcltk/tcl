@@ -15,7 +15,7 @@
 # Copyright (c) 2000 by Ajuba Solutions
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.tcl,v 1.47 2002/04/08 18:35:51 dgp Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.48 2002/04/15 17:04:29 dgp Exp $
 
 # create the "tcltest" namespace for all testing variables and
 # procedures
@@ -1823,10 +1823,10 @@ proc tcltest::SubstArguments {argList} {
 #  		  	help humans understand what it does.
 #
 # Results:
-#	0 if the command ran successfully; 1 otherwise.
+#	None.
 #
 # Side effects:
-#       None.
+#       Just about anything is possible depending on the test.
 #
 
 proc tcltest::test {name description args} {
@@ -1854,13 +1854,8 @@ proc tcltest::test {name description args} {
 
     # The old test format can't have a 3rd argument (constraints or
     # script) that starts with '-'.
-    if {[llength $args] == 0} {
-	puts [errorChannel] "test $name: {wrong # args:\
-		should be \"test name desc ?options?\"}"
-	incr testLevel -1
-	return 1
-    } elseif {[string match -* [lindex $args 0]]
-	    || ([llength $args] == 1)} {
+    if {[string match -* [lindex $args 0]]
+	    || ([llength $args] <= 1)} {
 	if {[llength $args] == 1} {
 	    set list [SubstArguments [lindex $args 0]]
 	    foreach {element value} $list {
@@ -1882,10 +1877,11 @@ proc tcltest::test {name description args} {
 
 	foreach flag [array names testAttributes] {
 	    if {[lsearch -exact $validFlags $flag] == -1} {
-		puts [errorChannel] "test $name:\
-			bad flag $flag supplied to tcltest::test"
 		incr tcltest::testLevel -1
-		return 1
+		set sorted [lsort $validFlags]
+		set options [join [lrange $sorted 0 end-1] ", "]
+		append options ", or [lindex $sorted end]"
+		return -code error "bad option \"$flag\": must be $options"
 	    }
 	}
 
@@ -1896,10 +1892,9 @@ proc tcltest::test {name description args} {
 
 	# Check the values supplied for -match
 	if {[lsearch {regexp glob exact} $match] == -1} {
-	    puts [errorChannel] "test $name: {bad value for -match:\
-		    must be one of exact, glob, regexp}"
 	    incr tcltest::testLevel -1
-	    return 1
+	    return -code error "bad -match value \"$match\":\
+		    must be exact, glob, or regexp"
 	}
 
 	# Replace symbolic valies supplied for -returnCodes
@@ -1918,11 +1913,9 @@ proc tcltest::test {name description args} {
 	    set constraints [lindex $args 0]
 	    set body [lindex $args 1]
 	} else {
-	    puts [errorChannel] "test $name: {wrong # args:\
-		    should be \"test name desc ?constraints?\
-		    script expectedResult\"}"
 	    incr tcltest::testLevel -1
-	    return 1
+	    return -code error "wrong # args:\
+		    should be \"test name desc ?options?\""
 	}
     }
 
@@ -2107,7 +2100,7 @@ proc tcltest::test {name description args} {
     }
 
     incr testLevel -1
-    return 0
+    return
 }
 
 

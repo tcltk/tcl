@@ -1,3 +1,13 @@
+2002-04-15  Don Porter  <dgp@users.sourceforge.net>
+
+	* doc/tcltest.n:
+	* library/tcltest/tcltest.tcl:
+	* tests/tcltest.test:  Revised [tcltest::test] to return errors
+	when called with invalid syntax and to accept exactly two arguments
+	as documented.  Improved error messages.  [Bug 497446, Patch 513983]
+	***POTENTIAL INCOMPATIBILITY***: Incompatible with previous
+	tcltest 2.* releases, found only in alpha releases of Tcl 8.4.
+
 2002-04-11  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclNotify.c (TclFinalizeNotifier): remove remaining
