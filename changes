@@ -3597,3 +3597,5 @@ subdirectories. (SS)
 8/6/98 (new feature) Added tcl_findLibrary to init.tcl for use by
 extensions, including Tk.  This searches in a canonical way for
 an extensions library directory and initialization file. (BW)
+
+-------- Released 8.0.3 to the Tcl Consortium CD-ROM project, 8/7/98 ------
