@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclConfig.c,v 1.4 2003/11/01 01:20:34 dkf Exp $
+ * RCS: @(#) $Id: tclConfig.c,v 1.5 2003/12/24 04:18:19 davygrvy Exp $
  */
 
 #include "tclInt.h"
@@ -220,7 +220,7 @@ QueryConfigObjCmd(clientData, interp, objc, objv)
     pDB = GetConfigDict(interp);
     res = Tcl_DictObjGet(interp, pDB, pkgName, &pkgDict);
     if (res!=TCL_OK || pkgDict==NULL) {
-        /* Maybe a panic is better, because the package data has to be present */
+        /* Maybe a Tcl_Panic is better, because the package data has to be present */
         Tcl_SetObjResult(interp, Tcl_NewStringObj("package not known", -1));
 	return TCL_ERROR;
     }

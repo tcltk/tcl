@@ -710,7 +710,7 @@ GetThreadDataStruct(keyVal)
     if ((int) keyVal <= 0)  {
         return NULL;
     } else if ((int) keyVal > keyCounter) {
-        panic("illegal data key value");
+        Tcl_Panic("illegal data key value");
     }
     
     GetCurrentThread(&curThread);
@@ -755,7 +755,7 @@ RemoveThreadDataStruct(keyVal)
     if ((int) keyVal <= 0)  {
         return NULL;
     } else if ((int) keyVal > keyCounter) {
-        panic("illegal data key value");
+        Tcl_Panic("illegal data key value");
     }
     
     GetCurrentThread(&curThread);

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.68 2003/04/22 23:20:41 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.69 2003/12/24 04:18:19 davygrvy Exp $
  */
 
 #include "tclInt.h"
@@ -758,7 +758,7 @@ Tcl_RegisterChannel(interp, chan)
     statePtr = chanPtr->state;
 
     if (statePtr->channelName == (CONST char *) NULL) {
-        panic("Tcl_RegisterChannel: channel without name");
+        Tcl_Panic("Tcl_RegisterChannel: channel without name");
     }
     if (interp != (Tcl_Interp *) NULL) {
         hTblPtr = GetChannelTable(interp);
@@ -768,7 +768,7 @@ Tcl_RegisterChannel(interp, chan)
                 return;
             }
 
-	    panic("Tcl_RegisterChannel: duplicate channel names");
+	    Tcl_Panic("Tcl_RegisterChannel: duplicate channel names");
         }
         Tcl_SetHashValue(hPtr, (ClientData) chanPtr);
     }
@@ -1126,7 +1126,7 @@ Tcl_CreateChannel(typePtr, chanName, instanceData, mask)
         statePtr->channelName = tmp;
         strcpy(tmp, chanName);
     } else {
-        panic("Tcl_CreateChannel: NULL channel name");
+        Tcl_Panic("Tcl_CreateChannel: NULL channel name");
     }
 
     statePtr->flags		= mask;
@@ -2245,7 +2245,7 @@ CloseChannel(interp, chanPtr, errorCode)
      */
 
     if (statePtr->outQueueHead != (ChannelBuffer *) NULL) {
-        panic("TclFlush, closed channel: queued output left");
+        Tcl_Panic("TclFlush, closed channel: queued output left");
     }
 
     /*
@@ -2403,7 +2403,7 @@ Tcl_CutChannel(chan)
             /* Empty loop body. */
         }
         if (prevCSPtr == (ChannelState *) NULL) {
-            panic("FlushChannel: damaged channel list");
+            Tcl_Panic("FlushChannel: damaged channel list");
         }
         prevCSPtr->nextCSPtr = statePtr->nextCSPtr;
     }
@@ -2450,7 +2450,7 @@ Tcl_SpliceChannel(chan)
     ChannelState	*statePtr = ((Channel *) chan)->state;
 
     if (statePtr->nextCSPtr != (ChannelState *) NULL) {
-        panic("Tcl_SpliceChannel: trying to add channel used in different list");
+        Tcl_Panic("Tcl_SpliceChannel: trying to add channel used in different list");
     }
 
     statePtr->nextCSPtr	= tsdPtr->firstCSPtr;
@@ -2527,7 +2527,7 @@ Tcl_Close(interp, chan)
     chanPtr	= statePtr->topChanPtr;
 
     if (statePtr->refCount > 0) {
-        panic("called Tcl_Close on channel with refCount > 0");
+        Tcl_Panic("called Tcl_Close on channel with refCount > 0");
     }
 
     /*
@@ -6066,7 +6066,7 @@ Tcl_BadChannelOption(interp, optionName, optionList)
 	}
 	if (Tcl_SplitList(interp, Tcl_DStringValue(&ds), 
 		&argc, &argv) != TCL_OK) {
-	    panic("malformed option list in channel driver");
+	    Tcl_Panic("malformed option list in channel driver");
 	}
 	Tcl_ResetResult(interp);
 	Tcl_AppendResult(interp, "bad option \"", optionName, 
@@ -8083,7 +8083,7 @@ CopyAndTranslateBuffer(statePtr, result, space)
             break;
 	}
         default: {
-            panic("unknown eol translation mode");
+            Tcl_Panic("unknown eol translation mode");
 	}
     }
 
@@ -8334,9 +8334,9 @@ DoWrite(chanPtr, src, srcLen)
                 }
                 break;
             case TCL_TRANSLATE_AUTO:
-                panic("Tcl_Write: AUTO output translation mode not supported");
+                Tcl_Panic("Tcl_Write: AUTO output translation mode not supported");
             default:
-                panic("Tcl_Write: unknown output translation mode");
+                Tcl_Panic("Tcl_Write: unknown output translation mode");
         }
 
         /*

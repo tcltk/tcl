@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTrace.c,v 1.6 2003/10/03 20:42:06 dgp Exp $
+ * RCS: @(#) $Id: tclTrace.c,v 1.7 2003/12/24 04:18:20 davygrvy Exp $
  */
 
 #include "tclInt.h"
@@ -1810,7 +1810,7 @@ TraceExecutionProc(ClientData clientData, Tcl_Interp *interp,
 		    Tcl_DStringAppendElement(&cmd, "leavestep");
 		}
 	    } else {
-		panic("TraceExecutionProc: bad flag combination");
+		Tcl_Panic("TraceExecutionProc: bad flag combination");
 	    }
 	    
 	    /*
@@ -2985,11 +2985,11 @@ Tcl_TraceVar2(interp, part1, part2, flags, proc, clientData)
 
     /*
      * Check for a nonsense flag combination.  Note that this is a
-     * panic() because there should be no code path that ever sets
+     * Tcl_Panic() because there should be no code path that ever sets
      * both flags.
      */
     if ((flags&TCL_TRACE_RESULT_DYNAMIC) && (flags&TCL_TRACE_RESULT_OBJECT)) {
-	panic("bad result flag combination");
+	Tcl_Panic("bad result flag combination");
     }
 
     /*

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBinary.c,v 1.15 2003/12/17 18:40:07 das Exp $
+ * RCS: @(#) $Id: tclBinary.c,v 1.16 2003/12/24 04:18:18 davygrvy Exp $
  */
 
 #include "tclInt.h"
@@ -265,7 +265,7 @@ Tcl_SetByteArrayObj(objPtr, bytes, length)
     ByteArray *byteArrayPtr;
 
     if (Tcl_IsShared(objPtr)) {
-	panic("Tcl_SetByteArrayObj called with shared object");
+	Tcl_Panic("Tcl_SetByteArrayObj called with shared object");
     }
     typePtr = objPtr->typePtr;
     if ((typePtr != NULL) && (typePtr->freeIntRepProc != NULL)) {
@@ -347,7 +347,7 @@ Tcl_SetByteArrayLength(objPtr, length)
     ByteArray *byteArrayPtr, *newByteArrayPtr;
     
     if (Tcl_IsShared(objPtr)) {
-	panic("Tcl_SetObjLength called with shared object");
+	Tcl_Panic("Tcl_SetObjLength called with shared object");
     }
     if (objPtr->typePtr != &tclByteArrayType) {
 	SetByteArrayFromAny(NULL, objPtr);

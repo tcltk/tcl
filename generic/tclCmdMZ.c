@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.97 2003/12/14 18:32:36 dkf Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.98 2003/12/24 04:18:18 davygrvy Exp $
  */
 
 #include "tclInt.h"
@@ -2515,7 +2515,7 @@ Tcl_SubstObjCmd(dummy, interp, objc, objv)
 		break;
 	    }
 	    default: {
-		panic("Tcl_SubstObjCmd: bad option index to SubstOptions");
+		Tcl_Panic("Tcl_SubstObjCmd: bad option index to SubstOptions");
 	    }
 	}
     }
@@ -2868,7 +2868,7 @@ Tcl_SwitchObjCmd(dummy, interp, objc, objv)
 		 * This shouldn't happen since we've checked that the
 		 * last body is not a continuation...
 		 */
-		panic("fall-out when searching for body to match pattern");
+		Tcl_Panic("fall-out when searching for body to match pattern");
 	    }
 	    if (strcmp(Tcl_GetString(objv[j]), "-") != 0) {
 		break;

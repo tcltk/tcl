@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacResource.c,v 1.19 2003/10/23 10:07:09 vincentdarley Exp $
+ * RCS: @(#) $Id: tclMacResource.c,v 1.20 2003/12/24 04:18:21 davygrvy Exp $
  */
 
 #include <Errors.h>
@@ -547,7 +547,7 @@ resourceRef? resourceType");
 			macPermision = fsRdWrShPerm;
 			break;
 		    default:
-			panic("Tcl_ResourceObjCmd: invalid mode value");
+			Tcl_Panic("Tcl_ResourceObjCmd: invalid mode value");
 		    break;
 		}
 	    } else {
@@ -791,7 +791,7 @@ resourceRef? resourceType");
 	        if (resource == NULL) {
 	            resource = NewHandleSys(length);
 	            if (resource == NULL) {
-	                panic("could not allocate memory to write resource");
+	                Tcl_Panic("could not allocate memory to write resource");
 	            }
 	        }
 	        HLock(resource);
@@ -862,7 +862,7 @@ resourceRef? resourceType");
                      
                     SetHandleSize(resource, length);
                     if ( MemError() != noErr ) {
-                        panic("could not allocate memory to write resource");
+                        Tcl_Panic("could not allocate memory to write resource");
                     }
 
                     HLock(resource);
@@ -916,7 +916,7 @@ resourceRef? resourceType");
 
 	    return result;
 	default:
-	    panic("Tcl_GetIndexFromObj returned unrecognized option");
+	    Tcl_Panic("Tcl_GetIndexFromObj returned unrecognized option");
 	    return TCL_ERROR;	/* Should never be reached. */
     }
 }
@@ -2042,7 +2042,7 @@ TclMacRegisterResourceFork(
 
     nameHashPtr = Tcl_CreateHashEntry(&nameTable, resourceId, &new);
     if (!new) {
-	panic("resource id has repeated itself");
+	Tcl_Panic("resource id has repeated itself");
     }
     
     resourceRef = (OpenResourceFork *) ckalloc(sizeof(OpenResourceFork));
@@ -2145,7 +2145,7 @@ TclMacUnRegisterResourceFork(
 	}
     }
     if (!match) {
-        panic("the resource Fork List is out of synch!");
+	Tcl_Panic("the resource Fork List is out of synch!");
     }
     
     Tcl_ListObjReplace(NULL, resourceForkList, index, 1, 0, NULL);
@@ -2153,7 +2153,7 @@ TclMacUnRegisterResourceFork(
     resourceHashPtr = Tcl_FindHashEntry(&resourceTable, (char *) fileRef);
     
     if (resourceHashPtr == NULL) {
-	panic("Resource & Name tables are out of synch in resource command.");
+	Tcl_Panic("Resource & Name tables are out of synch in resource command.");
     }
     ckfree(Tcl_GetHashValue(resourceHashPtr));
     Tcl_DeleteHashEntry(resourceHashPtr);

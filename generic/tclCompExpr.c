@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.16 2003/10/14 15:44:52 dgp Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.17 2003/12/24 04:18:19 davygrvy Exp $
  */
 
 #include "tclInt.h"
@@ -351,7 +351,7 @@ CompileSubExpr(exprTokenPtr, infoPtr, envPtr)
     char buffer[TCL_UTF_MAX];
 
     if (exprTokenPtr->type != TCL_TOKEN_SUB_EXPR) {
-	panic("CompileSubExpr: token type %d not TCL_TOKEN_SUB_EXPR\n",
+	Tcl_Panic("CompileSubExpr: token type %d not TCL_TOKEN_SUB_EXPR\n",
 	        exprTokenPtr->type);
     }
     code = TCL_OK;
@@ -532,14 +532,14 @@ CompileSubExpr(exprTokenPtr, infoPtr, envPtr)
 		    break;
 		    
 		default:
-		    panic("CompileSubExpr: unexpected operator %d requiring special treatment\n",
+		    Tcl_Panic("CompileSubExpr: unexpected operator %d requiring special treatment\n",
 		        opIndex);
 	    } /* end switch on operator requiring special treatment */
 	    infoPtr->hasOperators = 1;
 	    break;
 
         default:
-	    panic("CompileSubExpr: unexpected token type %d\n",
+	    Tcl_Panic("CompileSubExpr: unexpected token type %d\n",
 	            tokenPtr->type);
     }
 
@@ -624,7 +624,7 @@ CompileLandOrLorExpr(exprTokenPtr, opIndex, infoPtr, envPtr, endPtrPtr)
     dist = (envPtr->codeNext - envPtr->codeStart) - lhsTrueFixup.codeOffset;
     if (TclFixupForwardJump(envPtr, &lhsTrueFixup, dist, 127)) {
         badDist:
-	panic("CompileLandOrLorExpr: bad jump distance %d\n", dist);
+	Tcl_Panic("CompileLandOrLorExpr: bad jump distance %d\n", dist);
     }
     envPtr->currStackDepth = savedStackDepth;
     TclEmitPush(TclRegisterNewLiteral(envPtr, "1", 1), envPtr);
