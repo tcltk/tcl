@@ -1,3 +1,16 @@
+2000-07-26  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* unix/Makefile.in: undid 07-25 Makefile.in changes because we
+	don't really want to force all private makefiles on everyone.
+	This needs to be addressed again in the future.  Best possible
+	solution is to create a tcl/ subdir in the installing include dir
+	(as is done already with the lib dir).
+
+	* tests/iogt.test: added RCS string, marked tests 2.* to be
+	unixOnly due to underlying system differences.
+
+	* tests/all.tcl: corrected additional sets by Kupries for testing.
+
 2000-07-25 Brent Welch	<welch@ajubasolutions.com>
 
 	* unix/Makefile.in: Need to install all the Tcl headers because

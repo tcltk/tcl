@@ -4,10 +4,10 @@
 # tests.  Execute it by invoking "source all.test" when running tcltest
 # in this directory.
 #
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright (c) 1998-2000 Ajuba Solutions.
 # All rights reserved.
 # 
-# RCS: @(#) $Id: all.tcl,v 1.10.4.1 2000/07/25 16:54:53 kupries Exp $
+# RCS: @(#) $Id: all.tcl,v 1.10.4.2 2000/07/26 23:53:27 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -19,9 +19,6 @@ set ::tcltest::testsDirectory [file dir [info script]]
 
 # We need to ensure that the testsDirectory is absolute
 ::tcltest::normalizePath ::tcltest::testsDirectory
-
-set ::tcltest::matchFiles iogt*.test
-set ::tcltest::match      iogt-3.0x
 
 puts stdout "Tcl $tcl_patchLevel tests running in interp:  [info nameofexecutable]"
 puts stdout "Tests running in working dir:  $::tcltest::testsDirectory"

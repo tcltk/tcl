@@ -5,6 +5,12 @@
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+# 
+# Copyright (c) 2000 Ajuba Solutions.
+# Copyright (c) 2000 Andreas Kupries.
+# All rights reserved.
+# 
+# RCS: @(#) $Id: iogt.test,v 1.1.2.6 2000/07/26 23:53:27 hobbs Exp $
 
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -470,7 +476,7 @@ test iogt-2.0 {basic I/O going through transform} {
 } {1 71 71}
 
 
-test iogt-2.1 {basic I/O, operation trail} {
+test iogt-2.1 {basic I/O, operation trail} {unixOnly} {
     set fin  [open dummy    r]
     set fout [open dummyout w]
 
@@ -521,7 +527,7 @@ write
 flush/write
 delete/write}
 
-test iogt-2.2 {basic I/O, data trail} {
+test iogt-2.2 {basic I/O, data trail} {unixOnly} {
     set fin  [open dummy    r]
     set fout [open dummyout w]
 
@@ -577,7 +583,7 @@ flush/write {} {}
 delete/write {} *ignored*}
 
 
-test iogt-2.3 {basic I/O, mixed trail} {
+test iogt-2.3 {basic I/O, mixed trail} {unixOnly} {
     set fin  [open dummy    r]
     set fout [open dummyout w]
 
