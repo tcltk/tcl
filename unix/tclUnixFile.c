@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFile.c,v 1.21 2002/06/12 09:28:58 vincentdarley Exp $
+ * RCS: @(#) $Id: tclUnixFile.c,v 1.22 2002/06/12 15:05:20 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -728,9 +728,11 @@ TclpObjLink(pathPtr, toPtr)
     Tcl_Obj *pathPtr;
     Tcl_Obj *toPtr;
 {
+    extern Tcl_Filesystem nativeFilesystem;
+
     if (toPtr != NULL) {
 	CONST char *src = Tcl_FSGetNativePath(pathPtr);
-	CONST char *target Tcl_FSGetNativePath(toPtr);
+	CONST char *target = Tcl_FSGetNativePath(toPtr);
 	
 	if (src == NULL || target == NULL) {
 	    return NULL;
