@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.157 2004/05/04 20:09:33 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.158 2004/05/06 04:41:53 msofer Exp $
  */
 
 #ifndef _TCLINT
@@ -2139,39 +2139,22 @@ EXTERN Tcl_Obj *TclPtrIncrWideVar _ANSI_ARGS_((Tcl_Interp *interp, Var *varPtr,
 
 # define TclDecrRefCount(objPtr) \
     if (--(objPtr)->refCount <= 0) { \
-	if (((objPtr)->typePtr != NULL) \
-		&& ((objPtr)->typePtr->freeIntRepProc != NULL)) { \
-	    (objPtr)->typePtr->freeIntRepProc(objPtr); \
-	} \
-	if (((objPtr)->bytes != NULL) \
-		&& ((objPtr)->bytes != tclEmptyStringRep)) { \
-	    ckfree((char *) (objPtr)->bytes); \
-	} \
-        TclFreeObjStorage(objPtr); \
-	TclIncrObjsFreed(); \
-    }
-#endif /* TCL_MEM_DEBUG */
+        TclFreeObjMacro(objPtr); \
+    } 
 
-#ifdef TCL_MEM_DEBUG
-EXTERN void	TclDbInitNewObj _ANSI_ARGS_((Tcl_Obj *objPtr));
+#define TclFreeObjMacro(objPtr) \
+    if (((objPtr)->typePtr != NULL) \
+	    && ((objPtr)->typePtr->freeIntRepProc != NULL)) { \
+	(objPtr)->typePtr->freeIntRepProc(objPtr); \
+    } \
+    if (((objPtr)->bytes != NULL) \
+            && ((objPtr)->bytes != tclEmptyStringRep)) { \
+        ckfree((char *) (objPtr)->bytes); \
+    } \
+    TclFreeObjStorage(objPtr); \
+    TclIncrObjsFreed()
 
-# define TclDbNewObj(objPtr, file, line) \
-    TclIncrObjsAllocated(); \
-    (objPtr) = (Tcl_Obj *) Tcl_DbCkalloc(sizeof(Tcl_Obj), (file), (line)); \
-    TclDbInitNewObj(objPtr);
-
-# define TclNewObj(objPtr) \
-    TclDbNewObj(objPtr, __FILE__, __LINE__);
-
-# define TclDecrRefCount(objPtr) \
-    Tcl_DbDecrRefCount(objPtr, __FILE__, __LINE__)
-
-# define TclNewListObjDirect(objc, objv) \
-    TclDbNewListObjDirect(objc, objv, __FILE__, __LINE__)
-
-#undef USE_THREAD_ALLOC
-
-#elif defined(PURIFY)
+#if defined(PURIFY)
 
 /*
  * The PURIFY mode is like the regular mode, but instead of doing block
@@ -2205,7 +2188,7 @@ EXTERN void TclpSetAllocCache _ANSI_ARGS_((void *));
 #  define TclFreeObjStorage(objPtr) \
        TclThreadFreeObj((objPtr))
 
-#else /* not TCL_MEM_DEBUG */
+#else /* not PURIFY or USE_THREAD_ALLOC */
 
 #ifdef TCL_THREADS
 /* declared in tclObj.c */
@@ -2227,7 +2210,26 @@ extern Tcl_Mutex tclObjMutex;
        (objPtr)->internalRep.otherValuePtr = (VOID *) tclFreeObjList; \
        tclFreeObjList = (objPtr); \
        Tcl_MutexUnlock(&tclObjMutex)
+#endif
 
+#else /* TCL_MEM_DEBUG */
+EXTERN void	TclDbInitNewObj _ANSI_ARGS_((Tcl_Obj *objPtr));
+
+# define TclDbNewObj(objPtr, file, line) \
+    TclIncrObjsAllocated(); \
+    (objPtr) = (Tcl_Obj *) Tcl_DbCkalloc(sizeof(Tcl_Obj), (file), (line)); \
+    TclDbInitNewObj(objPtr);
+
+# define TclNewObj(objPtr) \
+    TclDbNewObj(objPtr, __FILE__, __LINE__);
+
+# define TclDecrRefCount(objPtr) \
+    Tcl_DbDecrRefCount(objPtr, __FILE__, __LINE__)
+
+# define TclNewListObjDirect(objc, objv) \
+    TclDbNewListObjDirect(objc, objv, __FILE__, __LINE__)
+
+#undef USE_THREAD_ALLOC
 #endif /* TCL_MEM_DEBUG */
 
 /*
