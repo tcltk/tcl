@@ -180,10 +180,6 @@ SOURCE=..\compat\stdlib.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\compat\strftime.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\compat\string.h
 # End Source File
 # Begin Source File

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.101 2004/08/25 01:11:20 dgp Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.102 2004/09/27 14:31:19 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -106,7 +106,7 @@ TclIntStubs tclIntStubs = {
     TclFormatInt, /* 24 */
     TclFreePackageInfo, /* 25 */
     NULL, /* 26 */
-    TclGetDate, /* 27 */
+    NULL, /* 27 */
     TclpGetDefaultStdChannel, /* 28 */
     NULL, /* 29 */
     NULL, /* 30 */
@@ -218,7 +218,7 @@ TclIntStubs tclIntStubs = {
     Tcl_SetNamespaceResolvers, /* 131 */
     TclpHasSockets, /* 132 */
     TclpGetDate, /* 133 */
-    TclpStrftime, /* 134 */
+    NULL, /* 134 */
     NULL, /* 135 */
     NULL, /* 136 */
     NULL, /* 137 */
