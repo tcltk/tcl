@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFCmd.c,v 1.28.2.1 2003/07/16 15:28:30 dgp Exp $
+ * RCS: @(#) $Id: tclUnixFCmd.c,v 1.28.2.2 2003/10/03 17:45:37 vincentdarley Exp $
  *
  * Portions of this code were derived from NetBSD source code which has
  * the following copyright notice:
@@ -624,13 +624,22 @@ TclpObjCopyDirectory(srcPathPtr, destPathPtr, errorPtr)
     Tcl_DString ds;
     Tcl_DString srcString, dstString;
     int ret;
-
+    Tcl_Obj *transPtr;
+    
+    transPtr = Tcl_FSGetTranslatedPath(NULL,srcPathPtr);
     Tcl_UtfToExternalDString(NULL, 
-			     Tcl_FSGetTranslatedStringPath(NULL,srcPathPtr), 
+			     (transPtr != NULL ? Tcl_GetString(transPtr) : NULL), 
 			     -1, &srcString);
+    if (transPtr != NULL) {
+	Tcl_DecrRefCount(transPtr);
+    }
+    transPtr = Tcl_FSGetTranslatedPath(NULL,destPathPtr);
     Tcl_UtfToExternalDString(NULL, 
-			     Tcl_FSGetTranslatedStringPath(NULL,destPathPtr), 
+			     (transPtr != NULL ? Tcl_GetString(transPtr) : NULL), 
 			     -1, &dstString);
+    if (transPtr != NULL) {
+	Tcl_DecrRefCount(transPtr);
+    }
 
     ret = TraverseUnixTree(TraversalCopy, &srcString, &dstString, &ds);
 
@@ -681,9 +690,14 @@ TclpObjRemoveDirectory(pathPtr, recursive, errorPtr)
     Tcl_DString ds;
     Tcl_DString pathString;
     int ret;
+    Tcl_Obj *transPtr = Tcl_FSGetTranslatedPath(NULL, pathPtr);
 
-    Tcl_UtfToExternalDString(NULL, Tcl_FSGetTranslatedStringPath(NULL, pathPtr), 
+    Tcl_UtfToExternalDString(NULL, 
+			     (transPtr != NULL ? Tcl_GetString(transPtr) : NULL), 
 			     -1, &pathString);
+    if (transPtr != NULL) {
+	Tcl_DecrRefCount(transPtr);
+    }
     ret = DoRemoveDirectory(&pathString, recursive, &ds);
     Tcl_DStringFree(&pathString);
 
