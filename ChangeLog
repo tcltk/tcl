@@ -1,3 +1,20 @@
+1999-04-01    <stanton@scriptics.com>
+
+	* tests/registry.test: 
+	* win/tclWinReg.c: Internationalized the registry code.  It now
+	uses Unicode interfaces on NT. [Bug: 1197]
+
+	* tests/parse.test: 
+	* generic/tclParse.c: Fixed crash due to multiple frees in parser
+	during error cleanup when parsing commands with more tokens than
+	will fit in the static area of the parse structure. [Bug: 1681]
+
+	* generic/tclInt.h: Removed duplicate declarations.
+
+	* generic/tclInt.decls: 
+	* generic/tcl.decls: Added Tcl_WinUtfToTChar and Tcl_WinTCharToUtf
+	to the tclPlat table.
+
 1999-04-01    <redman@scriptics.com>
 
 	* generic/tcl.decls:
