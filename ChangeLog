@@ -1,3 +1,8 @@
+1999-11-17 Brent Welch <welch@scriptics.com>
+	*  library/http2.1/http.tcl: Correctly fixed the -timeout
+	problem mentioned in the 10-29 change.  Also added error
+	handling for failed writes on the socket during the protocol.
+
 1999-11-09  Jeff Hobbs  <hobbs@scriptics.com>
 
 	* doc/open.n: corrected docs for 'a' open mode.

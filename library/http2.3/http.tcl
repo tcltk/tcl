@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and
 # redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: http.tcl,v 1.14 1999/11/10 02:52:20 hobbs Exp $
+# RCS: @(#) $Id: http.tcl,v 1.15 1999/11/18 02:22:44 welch Exp $
 
 package provide http 2.1	;# This uses Tcl namespaces
 
@@ -82,6 +82,17 @@ proc http::config {args} {
     }
 }
 
+# http::Finish --
+#
+#	Clean up the socket and eval close time callbacks
+#
+# Arguments:
+#	token	Connection token.
+#	errormsg	If set, forces status to error.
+#
+# Side Effects:
+#        Closes the socket
+
  proc http::Finish { token {errormsg ""} } {
     variable $token
     upvar 0 $token state
@@ -113,8 +124,9 @@ proc http::config {args} {
 # Arguments:
 #	token	Connection token.
 #	why	Status info.
-# Results:
-#        TODO
+#
+# Side Effects:
+#       See Finish
 
 proc http::reset { token {why reset} } {
     variable $token
@@ -235,8 +247,8 @@ proc http::geturl { url args } {
     if {$state(-timeout) > 0} {
 	fileevent $s writable [list http::Connect $token]
 	http::wait $token
-	if {[string equal $state(status) "timeout"]} {
-	    return
+	if {![string equal $state(status) "connect"]} {
+	    return $token
 	}
 	fileevent $s writable {}
 	set state(status) ""
@@ -260,28 +272,37 @@ proc http::geturl { url args } {
     } elseif {$state(-validate)} {
 	set how HEAD
     }
-    puts $s "$how $srvurl HTTP/1.0"
-    puts $s "Accept: $http(-accept)"
-    puts $s "Host: $host"
-    puts $s "User-Agent: $http(-useragent)"
-    foreach {key value} $state(-headers) {
-	regsub -all \[\n\r\]  $value {} value
-	set key [string trim $key]
-	if {[string length $key]} {
-	    puts $s "$key: $value"
+    if {[catch {
+	puts $s "$how $srvurl HTTP/1.0"
+	puts $s "Accept: $http(-accept)"
+	puts $s "Host: $host"
+	puts $s "User-Agent: $http(-useragent)"
+	foreach {key value} $state(-headers) {
+	    regsub -all \[\n\r\]  $value {} value
+	    set key [string trim $key]
+	    if {[string length $key]} {
+		puts $s "$key: $value"
+	    }
 	}
+	if {$len > 0} {
+	    puts $s "Content-Length: $len"
+	    puts $s "Content-Type: application/x-www-form-urlencoded"
+	    puts $s ""
+	    fconfigure $s -translation {auto binary}
+	    puts $s $state(-query)
+	} else {
+	    puts $s ""
+	}
+	flush $s
+	fileevent $s readable [list http::Event $token]
+    } err]} {
+	# The socket probably was never connected, or the connection
+	# dropped later.
+
+	reset $token ioerror
+	return $token
     }
-    if {$len > 0} {
-	puts $s "Content-Length: $len"
-	puts $s "Content-Type: application/x-www-form-urlencoded"
-	puts $s ""
-	fconfigure $s -translation {auto binary}
-	puts $s $state(-query)
-    } else {
-	puts $s ""
-    }
-    flush $s
-    fileevent $s readable [list http::Event $token]
+
     if {! [info exists state(-command)]} {
 	wait $token
     }
@@ -332,11 +353,37 @@ proc http::cleanup {token} {
 	unset state
     }
 }
+
+# http::Connect
+#
+#	Wait for an asynchronous connection to complete
+#
+# Arguments
+#	token	The token returned from http::geturl
+#
+# Side Effects
+#	Sets the status of the connection, which unblocks
+# 	the waiting geturl call
+
  proc http::Connect {token} {
     variable $token
     upvar 0 $token state
-    set state(status) connect
+    if {[eof $state(sock)]} {
+	set state(status) ioerror
+    } else {
+	set state(status) connect
+    }
  }
+
+# http::Event
+#
+#	Handle input on the socket
+#
+# Arguments
+#	token	The token returned from http::geturl
+#
+# Side Effects
+#	Read the socket and handle callbacks.
 
  proc http::Event {token} {
     variable $token
@@ -402,6 +449,18 @@ proc http::cleanup {token} {
 	}
     }
 }
+
+# http::CopyStart
+#
+#	Error handling wrapper around fcopy
+#
+# Arguments
+#	s	The socket to copy from
+#	token	The token returned from http::geturl
+#
+# Side Effects
+#	This closes the connection upon error
+
  proc http::CopyStart {s token} {
     variable $token
     upvar 0 $token state
@@ -412,6 +471,18 @@ proc http::cleanup {token} {
 	Finish $token $err
     }
 }
+
+# http::CopyDone
+#
+#	fcopy completion callback
+#
+# Arguments
+#	token	The token returned from http::geturl
+#	count	The amount transfered
+#
+# Side Effects
+#	Invokes callbacks
+
  proc http::CopyDone {token count {error {}}} {
     variable $token
     upvar 0 $token state
@@ -429,6 +500,17 @@ proc http::cleanup {token} {
 	CopyStart $s $token
     }
 }
+
+# http::Eof
+#
+#	Handle eof on the socket
+#
+# Arguments
+#	token	The token returned from http::geturl
+#
+# Side Effects
+#	Clean up the socket
+
  proc http::Eof {token} {
     variable $token
     upvar 0 $token state
@@ -493,15 +575,25 @@ proc http::formatQuery {args} {
     return $result
 }
 
-# do x-www-urlencoded character mapping
-# The spec says: "non-alphanumeric characters are replaced by '%HH'"
-# 1 leave alphanumerics characters alone
-# 2 Convert every other character to an array lookup
-# 3 Escape constructs that are "special" to the tcl parser
-# 4 "subst" the result, doing all the array substitutions
- 
+# http::mapReply --
+#
+#	Do x-www-urlencoded character mapping
+#
+# Arguments:
+#	string	The string the needs to be encoded
+#
+# Results:
+#       The encoded string
+
  proc http::mapReply {string} {
     variable formMap
+
+    # The spec says: "non-alphanumeric characters are replaced by '%HH'"
+    # 1 leave alphanumerics characters alone
+    # 2 Convert every other character to an array lookup
+    # 3 Escape constructs that are "special" to the tcl parser
+    # 4 "subst" the result, doing all the array substitutions
+
     set alphanumeric	a-zA-Z0-9
     regsub -all \[^$alphanumeric\] $string {$formMap(&)} string
     regsub -all \n $string {\\n} string
@@ -510,7 +602,15 @@ proc http::formatQuery {args} {
     return [subst $string]
 }
 
-# Default proxy filter. 
+# http::ProxyRequired --
+#	Default proxy filter. 
+#
+# Arguments:
+#	host	The destination host
+#
+# Results:
+#       The current proxy settings
+
  proc http::ProxyRequired {host} {
     variable http
     if {[info exists http(-proxyhost)] && [string length $http(-proxyhost)]} {
