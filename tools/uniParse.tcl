@@ -1,25 +1,42 @@
+# uniParse.tcl --
+#
+#	This program parses the UnicodeData file and generates the
+#	corresponding tclUniData.c file with compressed character
+#	data tables.  The input to this program should be the latest
+#	UnicodeData file from:
+#	    ftp://ftp.unicode.org/Public/UNIDATA/UnicodeData-Latest.txt
+#
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+# All rights reserved.
+# 
+# RCS: @(#) $Id: uniParse.tcl,v 1.3 1999/06/24 03:27:58 stanton Exp $
+
+
 namespace eval uni {
-    set shift 9			;# number of bits of data within a page
-    variable pMap		;# map from page to page index, each entry is
-				 # an index into the pages table, indexed by
-				 # page number
-    variable pages		;# map from page index to page info, each
-				 # entry is a list of indices into the groups
-				 # table, the list is indexed by the offset
-    variable groups		;# list of character info values, indexed by
-				 # group number, initialized with the
-				 # unassigned character group
+    set shift 5;		# number of bits of data within a page
+				# This value can be adjusted to find the
+				# best split to minimize table size
+
+    variable pMap;		# map from page to page index, each entry is
+				# an index into the pages table, indexed by
+				# page number
+    variable pages;		# map from page index to page info, each
+				# entry is a list of indices into the groups
+				# table, the list is indexed by the offset
+    variable groups;		# list of character info values, indexed by
+				# group number, initialized with the
+				# unassigned character group
 
     variable categories {
 	Cn Lu Ll Lt Lm Lo Mn Me Mc Nd Nl No Zs Zl Zp
 	Cc Cf Co Cs Pc Pd Ps Pe Pi Pf Po Sm Sc Sk So
-    }				;# Ordered list of character categories, must
-				 # match the enumeration in the header file.
+    };				# Ordered list of character categories, must
+				# match the enumeration in the header file.
 
-    variable titleCount 0	;# Count of the number of title case
-				 # characters.  This value is used in the
-				 # regular expression code to allocate enough
-				 # space for the title case variants.
+    variable titleCount 0;	# Count of the number of title case
+				# characters.  This value is used in the
+				# regular expression code to allocate enough
+				# space for the title case variants.
 }
 
 proc uni::getValue {items index} {
@@ -149,15 +166,14 @@ proc uni::main {} {
     variable shift
     variable titleCount
 
-    if {$argc != 2 && $argc != 3} {
-	puts stderr "\nusage: $argv0 <datafile> <outdir> ?optimize?\n"
+    if {$argc != 2} {
+	puts stderr "\nusage: $argv0 <datafile> <outdir>\n"
 	exit 1
     }
     set f [open [lindex $argv 0] r]
     set data [read $f]
     close $f
 
-    set shift 6
     buildTables $data
     puts "X = [llength $pMap]  Y= [llength $pages]  A= [llength $groups]"
     set size [expr {[llength $pMap] + [llength $pages]*(1<<$shift)}]
@@ -165,6 +181,7 @@ proc uni::main {} {
     puts "title case count = $titleCount"
 
     set f [open [file join [lindex $argv 1] tclUniData.c] w]
+    fconfigure $f -translation lf
     puts $f "/*
  * tclUtfData.c --
  *
@@ -192,7 +209,7 @@ proc uni::main {} {
  * to the same alternate page number.
  */
 
-static char pageMap\[\] = {"
+static unsigned char pageMap\[\] = {"
     set line "    "
     set last [expr {[llength $pMap] - 1}]
     for {set i 0} {$i <= $last} {incr i} {
@@ -214,7 +231,7 @@ static char pageMap\[\] = {"
  * set of character attributes.
  */
 
-static char groupMap\[\] = {"
+static unsigned char groupMap\[\] = {"
     set line "    "
     set lasti [expr {[llength $pages] - 1}]
     for {set i 0} {$i <= $lasti} {incr i} {

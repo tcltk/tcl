@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.34 1999/06/22 18:57:23 wart Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.35 1999/06/24 03:27:58 stanton Exp $
 
 VERSION 		= @TCL_VERSION@
 
@@ -562,7 +562,7 @@ install-libraries:
 		$(INSTALL_DATA) $$i $(SCRIPT_INSTALL_DIR)/encoding; \
 	done;
 
-install-doc:
+install-man:
 	@chmod +x $(UNIX_DIR)/mkLinks
 	@for i in $(MAN_INSTALL_DIR) $(MAN1_INSTALL_DIR) $(MAN3_INSTALL_DIR) $(MANN_INSTALL_DIR) ; \
 	    do \

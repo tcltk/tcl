@@ -1,6 +1,12 @@
+This directory contains unsupported tools used to build parts of Tcl
+for distribution.
 
- This directory contains unsupported tools that are used
- during the release engineering process.
+
+uniParse.tcl -- Script for converting the Unicode character database
+	into a compact table stored in generic/tclUniData.c.
+
+uniClass.tcl -- Script for generating regexp class tables from the Tcl
+	"string is" classes
 
 Generating HTML files.
 The tcl8.1-tk8.1-man-html.tcl script from Robert Critchlow
