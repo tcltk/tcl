@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.7 1999/12/12 22:46:42 hobbs Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.8 2000/01/11 22:08:59 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -1652,9 +1652,9 @@ TclGlob(interp, pattern, unquotedPrefix, globFlags, types)
 	 * the user name anymore (Vince Darley, June 1999), since the
 	 * new code is designed to handle special chars.
 	 */
-	#ifndef NOT_NEEDED_ANYMORE
+#ifndef NOT_NEEDED_ANYMORE
 	head = DoTildeSubst(interp, start+1, &buffer);
-	#else
+#else
 	
 	if (strpbrk(start+1, "\\[]*?{}") == NULL) {
 	    head = DoTildeSubst(interp, start+1, &buffer);
@@ -1666,7 +1666,7 @@ TclGlob(interp, pattern, unquotedPrefix, globFlags, types)
 	    }
 	    head = NULL;
 	}
-	#endif
+#endif
 	*tail = c;
 	if (head == NULL) {
 	    if (globFlags & GLOBMODE_NO_COMPLAIN) {

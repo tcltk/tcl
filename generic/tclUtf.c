@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUtf.c,v 1.10 1999/07/22 01:08:05 redman Exp $
+ * RCS: @(#) $Id: tclUtf.c,v 1.11 2000/01/11 22:09:00 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -864,16 +864,19 @@ Tcl_UtfBackslash(src, readPtr, dst)
             count = 1;
             break;
 	default:
-	    if (isdigit(UCHAR(*p))) { /* INTL: digit */
+	    /*
+	     * Check for an octal number \oo?o?
+	     */
+	    if (isdigit(UCHAR(*p)) && (UCHAR(*p) < '8')) { /* INTL: digit */
 		result = (unsigned char)(*p - '0');
 		p++;
-		if (!isdigit(UCHAR(*p))) { /* INTL: digit */
+		if (!isdigit(UCHAR(*p)) || (UCHAR(*p) >= '8')) { /* INTL: digit */
 		    break;
 		}
 		count = 3;
 		result = (unsigned char)((result << 3) + (*p - '0'));
 		p++;
-		if (!isdigit(UCHAR(*p))) { /* INTL: digit */
+		if (!isdigit(UCHAR(*p)) || (UCHAR(*p) >= '8')) { /* INTL: digit */
 		    break;
 		}
 		count = 4;

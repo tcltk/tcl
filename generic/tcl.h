@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.60 1999/12/21 23:58:03 hobbs Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.61 2000/01/11 22:08:59 hobbs Exp $
  */
 
 #ifndef _TCL
@@ -41,6 +41,7 @@ extern "C" {
  * library/init.tcl	(only if Major.minor changes, not patchlevel) 1 LOC
  * unix/configure.in	(2 LOC Major, 2 LOC minor, 1 LOC patch)
  * win/configure.in	(as above)
+ * win/tcl.m4		(not patchlevel)
  * win/makefile.vc	(not patchlevel) 2 LOC
  * win/pkgIndex.tcl	(not patchlevel, for tclregNN.dll)
  * README		(sections 0 and 2)
@@ -51,6 +52,7 @@ extern "C" {
  * tests/basic.test	(not patchlevel) (version checks)
  * tools/tcl.hpj.in	(not patchlevel, for windows installer)
  * tools/tcl.wse.in	(for windows installer)
+ * tools/tclSplash.bmp	(not patchlevel)
  */
 
 #define TCL_MAJOR_VERSION   8
@@ -275,6 +277,13 @@ extern "C" {
 #   define _ANSI_ARGS_(x)	()
 #   define CONST
 #endif
+
+/*
+ * Make sure EXTERN isn't defined elsewhere
+ */
+#ifdef EXTERN
+#undef EXTERN
+#endif /* EXTERN */
 
 #ifdef __cplusplus
 #   define EXTERN extern "C" TCL_STORAGE_CLASS
