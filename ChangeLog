@@ -1,3 +1,8 @@
+2003-05-14  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* generic/tclCmdAH.c (Tcl_FormatObjCmd): Stop unwarranted demotion
+	of wide values to longs by formatting of int values.  [Bug 699060]
+
 2003-05-14  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* library/encoding/gb2312.enc: copy euc-cn.enc over original
