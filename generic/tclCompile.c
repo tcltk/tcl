@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.33 2002/05/30 15:03:57 msofer Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.34 2002/06/11 15:42:20 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1212,7 +1212,7 @@ TclCompileTokens(interp, tokenPtr, count, envPtr)
 		            /*onHeap*/ 0), envPtr);
 		} else {
 		    localVar = TclFindCompiledLocal(name, nameBytes, 
-			    /*create*/ 0, /*flags*/ 0, envPtr->procPtr);
+			    /*create*/ 1, /*flags*/ 0, envPtr->procPtr);
 		    if (localVar < 0) {
 			TclEmitPush(TclRegisterLiteral(envPtr, name,
 			        nameBytes, /*onHeap*/ 0), envPtr); 

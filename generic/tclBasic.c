@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.57 2002/06/11 13:22:35 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.58 2002/06/11 15:42:19 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -109,7 +109,7 @@ static CmdInfo builtInCmds[] = {
     {"format",		(Tcl_CmdProc *) NULL,	Tcl_FormatObjCmd,
         (CompileProc *) NULL,		1},
     {"global",		(Tcl_CmdProc *) NULL,	Tcl_GlobalObjCmd,
-        TclCompileGlobalCmd,		1},
+        (CompileProc *) NULL,		1},
     {"if",		(Tcl_CmdProc *) NULL,	Tcl_IfObjCmd,
         TclCompileIfCmd,		1},
     {"incr",		(Tcl_CmdProc *) NULL,	Tcl_IncrObjCmd,
@@ -173,9 +173,9 @@ static CmdInfo builtInCmds[] = {
     {"uplevel",		(Tcl_CmdProc *) NULL,	Tcl_UplevelObjCmd,	
         (CompileProc *) NULL,		1},
     {"upvar",		(Tcl_CmdProc *) NULL,	Tcl_UpvarObjCmd,	
-        TclCompileUpvarCmd,		1},
+        (CompileProc *) NULL,		1},
     {"variable",	(Tcl_CmdProc *) NULL,	Tcl_VariableObjCmd,
-        TclCompileVariableCmd,		1},
+        (CompileProc *) NULL,		1},
     {"while",		(Tcl_CmdProc *) NULL,	Tcl_WhileObjCmd,
         TclCompileWhileCmd,		1},
 
