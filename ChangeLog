@@ -1,3 +1,8 @@
+2003-05-10  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclCmdMZ.c (Tcl_StringObjCmd): prevent string repeat
+	crash when overflow sizes were given (throws error). [Bug #714106]
+
 2003-05-09  Joe Mistachkin <joe@mistachkin.com>
 
 	* generic/tclThreadAlloc.c (TclFreeAllocCache): Fixed memory leak
@@ -184,10 +189,10 @@
 	test guarding Tcl_AddObjErrorInfo to take this into account.  [Bug
 	reported by Don Porter; no bug-id.]
 
-2003-04-07  Don Porter  <dgp@users.sourceforge.net>
+2003-04-07  Don Porter	<dgp@users.sourceforge.net>
 
-        * generic/tclCompCmds.c (TclCompileIfCmd):  Corrected string limits of
-        arguments interpolated in error messages. [Bug 711371]
+	* generic/tclCompCmds.c (TclCompileIfCmd):  Corrected string limits of
+	arguments interpolated in error messages. [Bug 711371]
 
 	* generic/tclCmdMZ.c (TraceExecutionProc):  Added missing
 	Tcl_DiscardResult() call to avoid memory leak.
@@ -210,11 +215,11 @@
 	-ltclstub85 instead of -ltclstub85s when
 	configured with --disable-shared.
 
-2003-04-01  Don Porter  <dgp@users.sourceforge.net>
+2003-04-01  Don Porter	<dgp@users.sourceforge.net>
 
-        * tests/README:  Direct [source] of *.test files is no longer
-        recommended.  The tests/*.test files should only be evaluated under
-        the control of the [runAllTests] command in tests/all.tcl.
+	* tests/README:	 Direct [source] of *.test files is no longer
+	recommended.  The tests/*.test files should only be evaluated under
+	the control of the [runAllTests] command in tests/all.tcl.
 
 2003-03-27  Miguel Sofer <msofer@users.sf.net>
 
@@ -240,22 +245,22 @@
 	* tests/format.test:
 	* tests/foreach.test:
 
-2003-03-26  Don Porter  <dgp@users.sourceforge.net>
+2003-03-26  Don Porter	<dgp@users.sourceforge.net>
   
 	* doc/tcltest.n:
-	* library/tcltest/tcltest.tcl:  Added reporting during
+	* library/tcltest/tcltest.tcl:	Added reporting during
 	[configure -debug 1] operations to warn about multiple uses of
 	the same test name.  [FR 576693]  Replaced [regexp] and [regsub]
 	with [string map] where possible.  Thanks to David Welton.
 	[Bugs 667456,667558]
-        * library/tcltest/pkgIndex.tcl: Bumped to tcltest 2.2.3
+	* library/tcltest/pkgIndex.tcl: Bumped to tcltest 2.2.3
 
 	* tests/msgcat.test (msgcat-2.2.1): changed test name to avoid
 	duplication.  [Bug 710356]
 
-  	* unix/dltest/pkg?.c:  Changed all Tcl_InitStubs calls to pass
-  	argument exact = 0, so that rebuilds are not required when Tcl
-  	bumps to a new version.  [Bug 701926]
+	* unix/dltest/pkg?.c:  Changed all Tcl_InitStubs calls to pass
+	argument exact = 0, so that rebuilds are not required when Tcl
+	bumps to a new version.	 [Bug 701926]
 
 2003-03-24  Miguel Sofer <msofer@users.sf.net>
 
@@ -373,11 +378,11 @@
 
 	* win/makefile.vc: Added two missing uses of $(DBGX) so that
 	tclpip8x.dll loads without panicking on Win9x.
-	
-2003-03-08  Don Porter  <dgp@users.sourceforge.net>
 
-        * doc/tcltest.n:  Added missing "-body" to example.  Thanks to
-        Helmut Giese.  [Bug 700011]
+2003-03-08  Don Porter	<dgp@users.sourceforge.net>
+
+	* doc/tcltest.n:  Added missing "-body" to example.  Thanks to
+	Helmut Giese.  [Bug 700011]
 
 2003-03-06  Don Porter	<dgp@users.sourceforge.net>
 
