@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: tclsh.1,v 1.4 2001/08/06 20:43:05 dgp Exp $
+'\" RCS: @(#) $Id: tclsh.1,v 1.5 2001/09/10 21:49:37 andreas_kupries Exp $
 '\" 
 .so man.macros
 .TH tclsh 1 "" Tcl "Tcl Applications"
@@ -122,6 +122,13 @@ The variable \fBtcl_prompt2\fR is used in a similar way when
 a newline is typed but the current command isn't yet complete;
 if \fBtcl_prompt2\fR isn't set then no prompt is output for
 incomplete commands.
+
+.SH "STANDARD CHANNELS"
+.PP
+See \fBTcl_StandardChannel\fR for more explanations.
+
+.SH "SEE ALSO"
+fconfigure(1), tclvars(1)
 
 .SH KEYWORDS
 argument, interpreter, prompt, script file, shell

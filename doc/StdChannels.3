@@ -1,0 +1,118 @@
+'\"
+'\" Copyright (c) 2001 by ActiveState Corporation
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+'\" RCS: @(#) $Id: StdChannels.3,v 1.1 2001/09/10 21:49:37 andreas_kupries Exp $
+'\" 
+.so man.macros
+.TH Standard channels 3 7.5 Tcl "Tcl Library Procedures"
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+Tcl_StandardChannels \- How the Tcl library deals with the standard channels
+.SH SYNOPSIS
+.PP
+This page explains the initialization and use of standard channels in
+the Tcl library.
+.PP
+The term \fIstandard channels\fR comes out of the Unix world and
+refers to the three channels automatically opened by the OS for
+each new application. They are \fBstdin\fR, \fBstdout\fR and
+\fBstderr\fR. The first is the standard input an application can read
+from, the other two refer to writable channels, one for regular
+output and the other for error messages.
+.PP
+Tcl generalizes this concept in a cross-platform way and
+exposes standard channels to the script level.
+.SH APIs
+.PP
+The public API procedures dealing directly with standard channels are
+\fBTcl_GetStdChannel\fR and \fBTcl_SetStdChannel\fR. Additional public
+APIs to consider are \fBTcl_RegisterChannel\fR,
+\fBTcl_CreateChannel\fR and \fBTcl_GetChannel\fR.
+.SH Initialization of Tcl standard channels
+.PP
+There are several ways for the Tcl standard channels to be
+initialized, described below. Each of these deals differently with the
+situation of having no platform-specific standard channels available.
+A channel is not "available" if it could not be successfully opened;
+for example, in a Tcl application run as a Windows NT service.
+.TP
+1)
+The application using the Tcl library explicitly specifies the Tcl
+channels to use as standard channels by calling
+\fBTcl_SetStdChannel\fR.  Missing platform-specific standard channels
+do not matter here. This approach is not available at the script
+level.
+.TP
+2a)
+The application asks for one of the Tcl standard channels by calling
+\fBTcl_GetStdChannel\fR. This will initialize any of them which were
+not initialized before to their platform-dependent default values.
+.sp
+In case of missing platform-specific standard channels, the Tcl
+standard channels are considered as initialized and then immediately
+closed. This means that the first three Tcl channels then opened by
+the application are designated as the Tcl standard channels.
+.TP
+2b)
+This is a special case of (2a). The initialization mentioned there
+will also happen whenever \fBTcl_GetChannel\fR is called with one of
+the standard names \fBstdin\fR, \fBstdout\fR and \fBstderr\fR as the
+name of the channel to retrieve. This happens whenever a command
+expecting a channel handle gets one of the standard names as its
+argument.
+.TP
+2c)
+Introspection of the list of open channels via \fBfile channels\fR (or
+\fBTcl_GetChannelNames\fR) will also initialize the Tcl standard
+channels to their platform-dependent default values.
+.TP
+3)
+If the application does neither of the above the Tcl library will
+setup and initialize the Tcl standard channels to their platform
+dependent default values during the creation of the first
+user-requested channel. This happens inside of
+\fBTcl_RegisterChannel\fR.
+.sp
+In case of missing platform-specific standard channels the channel
+whose creation caused the initialization of the Tcl standard channels
+is made a normal channel. The next three Tcl channels opened by the
+application are designated as the Tcl standard channels. In other
+words, of the first four Tcl channels opened by the application the
+second to fourth are designated as the Tcl standard channels.
+
+.PP
+.SH Re-initialization of Tcl standard channels
+.PP
+Once a Tcl standard channel is initialized through one of the methods
+above, closing this Tcl standard channel will cause the next call to
+\fBTcl_CreateChannel\fR to make the new channel the new standard
+channel, too. If more than one Tcl standard channel was closed
+\fBTcl_CreateChannel\fR will fill the empty slots in the order
+\fBstdin\fR, \fBstdout\fR and \fBstderr\fR.
+.PP
+\fBTcl_CreateChannel\fR will not try to reinitialize an empty slot if
+that slot was not initialized before. It is this behavior which
+enables an application to employ method 1 of initialization, i.e. to
+create and designate their own Tcl standard channels.
+
+.SH tclsh
+.PP
+The Tcl shell (or rather \fBTcl_Main\fR) uses method 2 to initialize
+the standard channels.
+
+.SH wish
+.PP
+The windowing shell (or rather \fBTk_MainEx\fR) uses method 1 to
+initialize the standard channels (See \fBTk_InitConsoleChannels\fR)
+on non-Unix platforms.  On Unix platforms, \fBTk_MainEx\fR implicitly
+uses method 2 to initialize the standard channels.
+
+.SH "SEE ALSO"
+Tcl_CreateChannel(3), Tcl_RegisterChannel(3), Tcl_GetChannel(3), Tcl_GetStdChannel(3), Tcl_SetStdChannel(3), Tk_InitConsoleChannels(3), tclsh(1), wish(1), Tcl_Main(3), Tk_MainEx(3)
+
+.SH KEYWORDS
+standard channels
