@@ -1,3 +1,16 @@
+2004-08-18  Andreas Kupries  <andreask@activestate.com>
+
+	* library/init.tcl: Integrated TIP #189. We source a separate file
+	  (see below), instead of inlining the contents of that file. This
+	  should beeasier to maintain, and easier to backport/install in
+	  8.4 installations.
+
+	  Note: Usage of Tcl Modules is restricted to non-safe interps. It
+	  cannot be loaded into a safe interp.
+
+	* library/tm.tcl: New file, the v2 reference implementation for
+	  TIP #189, Tcl Modules.
+
 2004-08-18  Kevin Kenny  <kennykb@acm.org>
 
 	* doc/clock.n
