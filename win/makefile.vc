@@ -6,7 +6,7 @@
 # Copyright (c) 1995-1996 Sun Microsystems, Inc.
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 #
-# RCS: @(#) $Id: makefile.vc,v 1.26 1999/04/16 00:48:07 stanton Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.27 1999/04/17 00:18:26 surles Exp $
 
 # Does not depend on the presence of any environment variables in
 # order to compile tcl; all needed information is derived from 
@@ -469,6 +469,7 @@ package ifneeded dde 1.0 "load [list [file join $$dir .. $(TCLDDEDLLNAME)]] dde"
 	-@copy "$(ROOT)\library\opt0.4\optparse.tcl" "$(SCRIPT_INSTALL_DIR)\opt0.4"
 	-@copy "$(ROOT)\library\opt0.4\pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)\opt0.4"
 	-@copy "$(GENERICDIR)\tcl.h"         "$(INCLUDE_INSTALL_DIR)"
+	-@copy "$(GENERICDIR)\tclDecls.h"    "$(INCLUDE_INSTALL_DIR)"
 	-@copy "$(ROOT)\library\history.tcl" "$(SCRIPT_INSTALL_DIR)"
 	-@copy "$(ROOT)\library\init.tcl"    "$(SCRIPT_INSTALL_DIR)"
 	-@copy "$(ROOT)\library\ldAout.tcl"  "$(SCRIPT_INSTALL_DIR)"

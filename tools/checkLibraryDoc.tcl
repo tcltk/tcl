@@ -19,11 +19,11 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 # 
-# RCS: @(#) $Id: checkLibraryDoc.tcl,v 1.3 1999/04/16 18:48:25 surles Exp $
+# RCS: @(#) $Id: checkLibraryDoc.tcl,v 1.4 1999/04/17 00:18:26 surles Exp $
 
 
-#lappend auto_path "c:/program\ files/tclpro1.2/win32-ix86/bin"
-lappend auto_path "/home/surles/cvs/tclx8.0/tcl/unix"
+lappend auto_path "c:/program\ files/tclpro1.2/win32-ix86/bin"
+#lappend auto_path "/home/surles/cvs/tclx8.0/tcl/unix"
 if {[catch {package require Tclx}]} {
     puts "error: could not load TclX.  Please set TCL_LIBRARY."
     exit 1
