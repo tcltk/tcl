@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: genStubs.tcl,v 1.9.8.2 2001/10/17 06:49:36 wolfsuit Exp $
+# RCS: @(#) $Id: genStubs.tcl,v 1.9.8.3 2001/11/11 17:58:00 wolfsuit Exp $
 
 package require Tcl 8
 
@@ -611,7 +611,7 @@ proc genStubs::forAllStubs {name slotProc onAll textVar \
 		append text [$slotProc $name $stubs($name,generic,$i) $i]
 		set emit 1
 	    } elseif {[llength $slots] > 0} {
-		foreach plat {unix win mac macosx} {
+		foreach plat {unix win mac} {
 		    if {[info exists stubs($name,$plat,$i)]} {
 			append text [addPlatformGuard $plat \
 				[$slotProc $name $stubs($name,$plat,$i) $i]]
@@ -622,14 +622,20 @@ proc genStubs::forAllStubs {name slotProc onAll textVar \
 		    }
 		}
                 #
-                # "aqua" is a special case, since it always implies
-                # "macosx", so we need to be careful not to emit duplicate
-                # stubs entries for the two.
+                # "aqua" and "macosx" a special cases, since "macosx" always implies
+                # "unix" and "aqua", "macosx", so we need to be careful not to 
+                # emit duplicate stubs entries for the two.
                 #
 		if {[info exists stubs($name,aqua,$i)]
                         && ![info exists stubs($name,macosx,$i)]} {
 		    append text [addPlatformGuard aqua \
 			    [$slotProc $name $stubs($name,aqua,$i) $i]]
+		    set emit 1
+		}
+		if {[info exists stubs($name,macosx,$i)]
+                        && ![info exists stubs($name,unix,$i)]} {
+		    append text [addPlatformGuard macosx \
+			    [$slotProc $name $stubs($name,macosx,$i) $i]]
 		    set emit 1
 		}
 	    }
@@ -639,7 +645,7 @@ proc genStubs::forAllStubs {name slotProc onAll textVar \
 	}
     } else {
 	# Emit separate stubs blocks per platform
-	foreach plat {unix win mac macosx} {
+	foreach plat {unix win mac} {
 	    if {[info exists stubs($name,$plat,lastNum)]} {
 		set lastNum $stubs($name,$plat,lastNum)
 		set temp {}
@@ -653,7 +659,7 @@ proc genStubs::forAllStubs {name slotProc onAll textVar \
 		append text [addPlatformGuard $plat $temp]
 	    }
 	}
-        # Again, make sure you don't duplicate entries for macosx  & aqua.
+        # Again, make sure you don't duplicate entries for macosx & aqua.
 	if {[info exists stubs($name,aqua,lastNum)]
                 && ![info exists stubs($name,macosx,lastNum)]} {
 	    set lastNum $stubs($name,aqua,lastNum)
@@ -666,6 +672,20 @@ proc genStubs::forAllStubs {name slotProc onAll textVar \
 		    }
 		}
 		append text [addPlatformGuard aqua $temp]
+	    }
+        # Again, make sure you don't duplicate entries for macosx & unix.
+	if {[info exists stubs($name,macosx,lastNum)]
+                && ![info exists stubs($name,unix,lastNum)]} {
+	    set lastNum $stubs($name,macosx,lastNum)
+	    set temp {}
+	    for {set i 0} {$i <= $lastNum} {incr i} {
+		if {![info exists stubs($name,macosx,$i)]} {
+		    eval {append temp} $skipString
+		} else {
+			append temp [$slotProc $name $stubs($name,macosx,$i) $i]
+		    }
+		}
+		append text [addPlatformGuard macosx $temp]
 	    }
     }
 
