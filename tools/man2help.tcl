@@ -6,7 +6,7 @@
 #
 # Copyright (c) 1996 by Sun Microsystems, Inc.
 #
-# RCS: @(#) $Id: man2help.tcl,v 1.10 2002/03/28 21:45:24 davygrvy Exp $
+# RCS: @(#) $Id: man2help.tcl,v 1.11 2002/03/28 21:52:41 davygrvy Exp $
 # 
 
 #
@@ -117,8 +117,8 @@ set arg 0
 if {![string compare [lindex $argv $arg] "-bitmap"]} {
     set bitmap [lindex $argv [incr arg]]
 }
-puts [set baseName [lindex $argv [incr arg]]]
-puts [set version [lindex $argv [incr arg]]]
+set baseName [lindex $argv [incr arg]]
+set version [lindex $argv [incr arg]]
 set files {}
 foreach i [lrange $argv [incr arg] end] {
     set i [file join $i]
