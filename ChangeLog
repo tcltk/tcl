@@ -1,3 +1,27 @@
+2004-01-29  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* doc/file.n: 
+	* generic/tclFCmd.c
+	* generic/tclTest.c
+	* library/init.tcl
+	* mac/tclMacFile.c
+	* tests/fileSystem.test: fix to [Bug 886352] where 'file copy
+	-force' had inconsistent behaviour wrt target files with
+	insufficient permissions, particular from vfs->native fs.
+	Behaviour of '-force' is now always consistent (and now
+	consistent with behaviour of 'file delete -force').  Added new
+	tests and documentation and cleaned up the 'simplefs' test
+	filesystem.
+	
+	* generic/tclIOUtil.c
+	* unix/tclUnixFCmd.c
+	* unix/tclUnixFile.c
+	* win/tclWinFile.c: made native filesystems more robust to C code
+	which asks for mount lists.
+	
+	* generic/tclPathObj.c: fix to [Bug 886607] removing warning/error
+	with some compilers.
+	
 2004-01-28  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclObj.c (SetBooleanFromAny): Rewrite to do more

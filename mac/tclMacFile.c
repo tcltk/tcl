@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacFile.c,v 1.29 2004/01/21 19:59:33 vincentdarley Exp $
+ * RCS: @(#) $Id: tclMacFile.c,v 1.30 2004/01/29 10:28:22 vincentdarley Exp $
  */
 
 /*
@@ -155,6 +155,11 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
     OSType okType = 0;
     OSType okCreator = 0;
     Tcl_Obj *fileNamePtr;
+
+    if (types != NULL && types->type == TCL_GLOB_TYPE_MOUNT) {
+	/* The native filesystem never adds mounts */
+	return TCL_OK;
+    }
 
     fileNamePtr = Tcl_FSGetTranslatedPath(interp, pathPtr);
     if (fileNamePtr == NULL) {

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.60 2004/01/23 11:06:00 vincentdarley Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.61 2004/01/29 10:28:23 vincentdarley Exp $
  */
 
 //#define _WIN32_WINNT  0x0500
@@ -742,6 +742,11 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 				 * flag is very important. */
 {
     CONST TCHAR *native;
+
+    if (types != NULL && types->type == TCL_GLOB_TYPE_MOUNT) {
+	/* The native filesystem never adds mounts */
+	return TCL_OK;
+    }
 
     if (pattern == NULL || (*pattern == '\0')) {
 	Tcl_Obj *norm = Tcl_FSGetNormalizedPath(NULL, pathPtr);
