@@ -8,20 +8,33 @@
  *
  * Copyright (c) 1993-1994 The Regents of the University of California.
  * Copyright (c) 1994-1997 Sun Microsystems, Inc.
- * Copyright (c) 1998-1999 by Scriptics Corporation.
+ * Copyright (c) 1998-2000 by Scriptics Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.17 1999/10/13 02:22:18 hobbs Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.18 2000/05/19 21:30:16 hobbs Exp $
  */
 
 #define TCL_TEST
 
 #include "tclInt.h"
 #include "tclPort.h"
+
+/*
+ * Required for Testregexp*Cmd
+ */
 #include "tclRegexp.h"
+
+/*
+ * Required for TestlocaleCmd
+ */
 #include <locale.h>
+
+/*
+ * Required for the TestChannelCmd and TestChannelEventCmd
+ */
+#include "tclIO.h"
 
 /*
  * Declare external functions used in Windows tests.
@@ -277,6 +290,11 @@ static int		TesttranslatefilenameCmd _ANSI_ARGS_((ClientData dummy,
 static int		TestupvarCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Interp *interp, int argc, char **argv));
 
+static int		TestChannelCmd _ANSI_ARGS_((ClientData clientData,
+			    Tcl_Interp *interp, int argc, char **argv));
+static int		TestChannelEventCmd _ANSI_ARGS_((ClientData clientData,
+			    Tcl_Interp *interp, int argc, char **argv));
+
 /*
  * External (platform specific) initialization routine, these declarations
  * explicitly don't use EXTERN since this code does not get compiled
@@ -329,9 +347,9 @@ Tcltest_Init(interp)
 	    (Tcl_CmdDeleteProc *) NULL);
     Tcl_CreateCommand(interp, "testasync", TestasyncCmd, (ClientData) 0,
 	    (Tcl_CmdDeleteProc *) NULL);
-    Tcl_CreateCommand(interp, "testchannel", TclTestChannelCmd,
+    Tcl_CreateCommand(interp, "testchannel", TestChannelCmd,
             (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
-    Tcl_CreateCommand(interp, "testchannelevent", TclTestChannelEventCmd,
+    Tcl_CreateCommand(interp, "testchannelevent", TestChannelEventCmd,
             (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
     Tcl_CreateCommand(interp, "testchmod", TestchmodCmd,
             (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
@@ -4241,4 +4259,585 @@ TestOpenFileChannelProc3(interp, fileName, modeString, permissions)
     } else {
 	return (NULL);
     }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TestChannelCmd --
+ *
+ *	Implements the Tcl "testchannel" debugging command and its
+ *	subcommands. This is part of the testing environment but must be
+ *	in this file instead of tclTest.c because it needs access to the
+ *	fields of struct Channel.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+	/* ARGSUSED */
+static int
+TestChannelCmd(clientData, interp, argc, argv)
+    ClientData clientData;	/* Not used. */
+    Tcl_Interp *interp;		/* Interpreter for result. */
+    int argc;			/* Count of additional args. */
+    char **argv;		/* Additional arg strings. */
+{
+    char *cmdName;		/* Sub command. */
+    Tcl_HashTable *hTblPtr;	/* Hash table of channels. */
+    Tcl_HashSearch hSearch;	/* Search variable. */
+    Tcl_HashEntry *hPtr;	/* Search variable. */
+    Channel *chanPtr;		/* The actual channel. */
+    Tcl_Channel chan = NULL;	/* The opaque type. */
+    size_t len;			/* Length of subcommand string. */
+    int IOQueued;		/* How much IO is queued inside channel? */
+    ChannelBuffer *bufPtr;	/* For iterating over queued IO. */
+    char buf[TCL_INTEGER_SPACE];/* For sprintf. */
+    
+    if (argc < 2) {
+        Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+                " subcommand ?additional args..?\"", (char *) NULL);
+        return TCL_ERROR;
+    }
+    cmdName = argv[1];
+    len = strlen(cmdName);
+
+    chanPtr = (Channel *) NULL;
+
+    if (argc > 2) {
+        chan = Tcl_GetChannel(interp, argv[2], NULL);
+        if (chan == (Tcl_Channel) NULL) {
+            return TCL_ERROR;
+        }
+        chanPtr = (Channel *) chan;
+    }
+
+    if ((cmdName[0] == 'c') &&
+            (strncmp(cmdName, "cut", len) == 0)) {
+        if (argc != 3) {
+            Tcl_AppendResult(interp, "channel name required",
+                    (char *) NULL);
+            return TCL_ERROR;
+        }
+        
+        Tcl_CutChannel (chan);
+        return TCL_OK;
+    }
+
+    if ((cmdName[0] == 'c') &&
+            (strncmp(cmdName, "forgetch", len) == 0)) {
+        if (argc != 3) {
+            Tcl_AppendResult(interp, "channel name required",
+                    (char *) NULL);
+            return TCL_ERROR;
+        }
+        
+        Tcl_ClearChannelHandlers (chan);
+        return TCL_OK;
+    }
+
+    if ((cmdName[0] == 'i') && (strncmp(cmdName, "info", len) == 0)) {
+        if (argc != 3) {
+            Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+                    " info channelName\"", (char *) NULL);
+            return TCL_ERROR;
+        }
+        Tcl_AppendElement(interp, argv[2]);
+        Tcl_AppendElement(interp, chanPtr->typePtr->typeName);
+        if (chanPtr->flags & TCL_READABLE) {
+            Tcl_AppendElement(interp, "read");
+        } else {
+            Tcl_AppendElement(interp, "");
+        }
+        if (chanPtr->flags & TCL_WRITABLE) {
+            Tcl_AppendElement(interp, "write");
+        } else {
+            Tcl_AppendElement(interp, "");
+        }
+        if (chanPtr->flags & CHANNEL_NONBLOCKING) {
+            Tcl_AppendElement(interp, "nonblocking");
+        } else {
+            Tcl_AppendElement(interp, "blocking");
+        }
+        if (chanPtr->flags & CHANNEL_LINEBUFFERED) {
+            Tcl_AppendElement(interp, "line");
+        } else if (chanPtr->flags & CHANNEL_UNBUFFERED) {
+            Tcl_AppendElement(interp, "none");
+        } else {
+            Tcl_AppendElement(interp, "full");
+        }
+        if (chanPtr->flags & BG_FLUSH_SCHEDULED) {
+            Tcl_AppendElement(interp, "async_flush");
+        } else {
+            Tcl_AppendElement(interp, "");
+        }
+        if (chanPtr->flags & CHANNEL_EOF) {
+            Tcl_AppendElement(interp, "eof");
+        } else {
+            Tcl_AppendElement(interp, "");
+        }
+        if (chanPtr->flags & CHANNEL_BLOCKED) {
+            Tcl_AppendElement(interp, "blocked");
+        } else {
+            Tcl_AppendElement(interp, "unblocked");
+        }
+        if (chanPtr->inputTranslation == TCL_TRANSLATE_AUTO) {
+            Tcl_AppendElement(interp, "auto");
+            if (chanPtr->flags & INPUT_SAW_CR) {
+                Tcl_AppendElement(interp, "saw_cr");
+            } else {
+                Tcl_AppendElement(interp, "");
+            }
+        } else if (chanPtr->inputTranslation == TCL_TRANSLATE_LF) {
+            Tcl_AppendElement(interp, "lf");
+            Tcl_AppendElement(interp, "");
+        } else if (chanPtr->inputTranslation == TCL_TRANSLATE_CR) {
+            Tcl_AppendElement(interp, "cr");
+            Tcl_AppendElement(interp, "");
+        } else if (chanPtr->inputTranslation == TCL_TRANSLATE_CRLF) {
+            Tcl_AppendElement(interp, "crlf");
+            if (chanPtr->flags & INPUT_SAW_CR) {
+                Tcl_AppendElement(interp, "queued_cr");
+            } else {
+                Tcl_AppendElement(interp, "");
+            }
+        }
+        if (chanPtr->outputTranslation == TCL_TRANSLATE_AUTO) {
+            Tcl_AppendElement(interp, "auto");
+        } else if (chanPtr->outputTranslation == TCL_TRANSLATE_LF) {
+            Tcl_AppendElement(interp, "lf");
+        } else if (chanPtr->outputTranslation == TCL_TRANSLATE_CR) {
+            Tcl_AppendElement(interp, "cr");
+        } else if (chanPtr->outputTranslation == TCL_TRANSLATE_CRLF) {
+            Tcl_AppendElement(interp, "crlf");
+        }
+        for (IOQueued = 0, bufPtr = chanPtr->inQueueHead;
+                 bufPtr != (ChannelBuffer *) NULL;
+                 bufPtr = bufPtr->nextPtr) {
+            IOQueued += bufPtr->nextAdded - bufPtr->nextRemoved;
+        }
+        TclFormatInt(buf, IOQueued);
+        Tcl_AppendElement(interp, buf);
+        
+        IOQueued = 0;
+        if (chanPtr->curOutPtr != (ChannelBuffer *) NULL) {
+            IOQueued = chanPtr->curOutPtr->nextAdded -
+                chanPtr->curOutPtr->nextRemoved;
+        }
+        for (bufPtr = chanPtr->outQueueHead;
+                 bufPtr != (ChannelBuffer *) NULL;
+                 bufPtr = bufPtr->nextPtr) {
+            IOQueued += (bufPtr->nextAdded - bufPtr->nextRemoved);
+        }
+        TclFormatInt(buf, IOQueued);
+        Tcl_AppendElement(interp, buf);
+        
+        TclFormatInt(buf, Tcl_Tell((Tcl_Channel) chanPtr));
+        Tcl_AppendElement(interp, buf);
+
+        TclFormatInt(buf, chanPtr->refCount);
+        Tcl_AppendElement(interp, buf);
+
+        return TCL_OK;
+    }
+
+    if ((cmdName[0] == 'i') &&
+            (strncmp(cmdName, "inputbuffered", len) == 0)) {
+        if (argc != 3) {
+            Tcl_AppendResult(interp, "channel name required",
+                    (char *) NULL);
+            return TCL_ERROR;
+        }
+        
+        for (IOQueued = 0, bufPtr = chanPtr->inQueueHead;
+                 bufPtr != (ChannelBuffer *) NULL;
+                 bufPtr = bufPtr->nextPtr) {
+            IOQueued += bufPtr->nextAdded - bufPtr->nextRemoved;
+        }
+        TclFormatInt(buf, IOQueued);
+        Tcl_AppendResult(interp, buf, (char *) NULL);
+        return TCL_OK;
+    }
+        
+    if ((cmdName[0] == 'i') &&
+            (strncmp(cmdName, "isshared", len) == 0)) {
+        if (argc != 3) {
+            Tcl_AppendResult(interp, "channel name required",
+                    (char *) NULL);
+            return TCL_ERROR;
+        }
+        
+        TclFormatInt(buf, Tcl_IsChannelShared (chan));
+        Tcl_AppendResult(interp, buf, (char *) NULL);
+        return TCL_OK;
+    }
+        
+    if ((cmdName[0] == 'm') && (strncmp(cmdName, "mode", len) == 0)) {
+        if (argc != 3) {
+            Tcl_AppendResult(interp, "channel name required",
+                    (char *) NULL);
+            return TCL_ERROR;
+        }
+        
+        if (chanPtr->flags & TCL_READABLE) {
+            Tcl_AppendElement(interp, "read");
+        } else {
+            Tcl_AppendElement(interp, "");
+        }
+        if (chanPtr->flags & TCL_WRITABLE) {
+            Tcl_AppendElement(interp, "write");
+        } else {
+            Tcl_AppendElement(interp, "");
+        }
+        return TCL_OK;
+    }
+    
+    if ((cmdName[0] == 'n') && (strncmp(cmdName, "name", len) == 0)) {
+        if (argc != 3) {
+            Tcl_AppendResult(interp, "channel name required",
+                    (char *) NULL);
+            return TCL_ERROR;
+        }
+        Tcl_AppendResult(interp, chanPtr->channelName, (char *) NULL);
+        return TCL_OK;
+    }
+    
+    if ((cmdName[0] == 'o') && (strncmp(cmdName, "open", len) == 0)) {
+        hTblPtr = (Tcl_HashTable *) Tcl_GetAssocData(interp, "tclIO", NULL);
+        if (hTblPtr == (Tcl_HashTable *) NULL) {
+            return TCL_OK;
+        }
+        for (hPtr = Tcl_FirstHashEntry(hTblPtr, &hSearch);
+                 hPtr != (Tcl_HashEntry *) NULL;
+                 hPtr = Tcl_NextHashEntry(&hSearch)) {
+            Tcl_AppendElement(interp, Tcl_GetHashKey(hTblPtr, hPtr));
+        }
+        return TCL_OK;
+    }
+
+    if ((cmdName[0] == 'o') &&
+            (strncmp(cmdName, "outputbuffered", len) == 0)) {
+        if (argc != 3) {
+            Tcl_AppendResult(interp, "channel name required",
+                    (char *) NULL);
+            return TCL_ERROR;
+        }
+        
+        IOQueued = 0;
+        if (chanPtr->curOutPtr != (ChannelBuffer *) NULL) {
+            IOQueued = chanPtr->curOutPtr->nextAdded -
+                chanPtr->curOutPtr->nextRemoved;
+        }
+        for (bufPtr = chanPtr->outQueueHead;
+                 bufPtr != (ChannelBuffer *) NULL;
+                 bufPtr = bufPtr->nextPtr) {
+            IOQueued += (bufPtr->nextAdded - bufPtr->nextRemoved);
+        }
+        TclFormatInt(buf, IOQueued);
+        Tcl_AppendResult(interp, buf, (char *) NULL);
+        return TCL_OK;
+    }
+        
+    if ((cmdName[0] == 'q') &&
+            (strncmp(cmdName, "queuedcr", len) == 0)) {
+        if (argc != 3) {
+            Tcl_AppendResult(interp, "channel name required",
+                    (char *) NULL);
+            return TCL_ERROR;
+        }
+        
+        Tcl_AppendResult(interp,
+                (chanPtr->flags & INPUT_SAW_CR) ? "1" : "0",
+                (char *) NULL);
+        return TCL_OK;
+    }
+    
+    if ((cmdName[0] == 'r') && (strncmp(cmdName, "readable", len) == 0)) {
+        hTblPtr = (Tcl_HashTable *) Tcl_GetAssocData(interp, "tclIO", NULL);
+        if (hTblPtr == (Tcl_HashTable *) NULL) {
+            return TCL_OK;
+        }
+        for (hPtr = Tcl_FirstHashEntry(hTblPtr, &hSearch);
+                 hPtr != (Tcl_HashEntry *) NULL;
+                 hPtr = Tcl_NextHashEntry(&hSearch)) {
+            chanPtr = (Channel *) Tcl_GetHashValue(hPtr);
+            if (chanPtr->flags & TCL_READABLE) {
+                Tcl_AppendElement(interp, Tcl_GetHashKey(hTblPtr, hPtr));
+            }
+        }
+        return TCL_OK;
+    }
+
+    if ((cmdName[0] == 'r') && (strncmp(cmdName, "refcount", len) == 0)) {
+        if (argc != 3) {
+            Tcl_AppendResult(interp, "channel name required",
+                    (char *) NULL);
+            return TCL_ERROR;
+        }
+        
+        TclFormatInt(buf, chanPtr->refCount);
+        Tcl_AppendResult(interp, buf, (char *) NULL);
+        return TCL_OK;
+    }
+
+    if ((cmdName[0] == 'c') &&
+            (strncmp(cmdName, "splice", len) == 0)) {
+        if (argc != 3) {
+            Tcl_AppendResult(interp, "channel name required",
+                    (char *) NULL);
+            return TCL_ERROR;
+        }
+        
+        Tcl_SpliceChannel (chan);
+        return TCL_OK;
+    }
+
+    if ((cmdName[0] == 't') && (strncmp(cmdName, "type", len) == 0)) {
+        if (argc != 3) {
+            Tcl_AppendResult(interp, "channel name required",
+                    (char *) NULL);
+            return TCL_ERROR;
+        }
+        Tcl_AppendResult(interp, chanPtr->typePtr->typeName, (char *) NULL);
+        return TCL_OK;
+    }
+    
+    if ((cmdName[0] == 'w') && (strncmp(cmdName, "writable", len) == 0)) {
+        hTblPtr = (Tcl_HashTable *) Tcl_GetAssocData(interp, "tclIO", NULL);
+        if (hTblPtr == (Tcl_HashTable *) NULL) {
+            return TCL_OK;
+        }
+        for (hPtr = Tcl_FirstHashEntry(hTblPtr, &hSearch);
+                 hPtr != (Tcl_HashEntry *) NULL;
+                 hPtr = Tcl_NextHashEntry(&hSearch)) {
+            chanPtr = (Channel *) Tcl_GetHashValue(hPtr);
+            if (chanPtr->flags & TCL_WRITABLE) {
+                Tcl_AppendElement(interp, Tcl_GetHashKey(hTblPtr, hPtr));
+            }
+        }
+        return TCL_OK;
+    }
+
+    Tcl_AppendResult(interp, "bad option \"", cmdName, "\": should be ",
+            "info, open, readable, or writable",
+            (char *) NULL);
+    return TCL_ERROR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TestChannelEventCmd --
+ *
+ *	This procedure implements the "testchannelevent" command. It is
+ *	used to test the Tcl channel event mechanism. It is present in
+ *	this file instead of tclTest.c because it needs access to the
+ *	internal structure of the channel.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	Creates, deletes and returns channel event handlers.
+ *
+ *----------------------------------------------------------------------
+ */
+
+	/* ARGSUSED */
+static int
+TestChannelEventCmd(dummy, interp, argc, argv)
+    ClientData dummy;			/* Not used. */
+    Tcl_Interp *interp;			/* Current interpreter. */
+    int argc;				/* Number of arguments. */
+    char **argv;			/* Argument strings. */
+{
+    Tcl_Obj *resultListPtr;
+    Channel *chanPtr;
+    EventScriptRecord *esPtr, *prevEsPtr, *nextEsPtr;
+    char *cmd;
+    int index, i, mask, len;
+
+    if ((argc < 3) || (argc > 5)) {
+        Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+                " channelName cmd ?arg1? ?arg2?\"", (char *) NULL);
+        return TCL_ERROR;
+    }
+    chanPtr = (Channel *) Tcl_GetChannel(interp, argv[1], NULL);
+    if (chanPtr == (Channel *) NULL) {
+        return TCL_ERROR;
+    }
+    cmd = argv[2];
+    len = strlen(cmd);
+    if ((cmd[0] == 'a') && (strncmp(cmd, "add", (unsigned) len) == 0)) {
+        if (argc != 5) {
+            Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+                    " channelName add eventSpec script\"", (char *) NULL);
+            return TCL_ERROR;
+        }
+        if (strcmp(argv[3], "readable") == 0) {
+            mask = TCL_READABLE;
+        } else if (strcmp(argv[3], "writable") == 0) {
+            mask = TCL_WRITABLE;
+        } else if (strcmp(argv[3], "none") == 0) {
+            mask = 0;
+	} else {
+            Tcl_AppendResult(interp, "bad event name \"", argv[3],
+                    "\": must be readable, writable, or none", (char *) NULL);
+            return TCL_ERROR;
+        }
+
+        esPtr = (EventScriptRecord *) ckalloc((unsigned)
+                sizeof(EventScriptRecord));
+        esPtr->nextPtr = chanPtr->scriptRecordPtr;
+        chanPtr->scriptRecordPtr = esPtr;
+        
+        esPtr->chanPtr = chanPtr;
+        esPtr->interp = interp;
+        esPtr->mask = mask;
+	esPtr->scriptPtr = Tcl_NewStringObj(argv[4], -1);
+	Tcl_IncrRefCount(esPtr->scriptPtr);
+
+        Tcl_CreateChannelHandler((Tcl_Channel) chanPtr, mask,
+                TclChannelEventScriptInvoker, (ClientData) esPtr);
+        
+        return TCL_OK;
+    }
+
+    if ((cmd[0] == 'd') && (strncmp(cmd, "delete", (unsigned) len) == 0)) {
+        if (argc != 4) {
+            Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+                    " channelName delete index\"", (char *) NULL);
+            return TCL_ERROR;
+        }
+        if (Tcl_GetInt(interp, argv[3], &index) == TCL_ERROR) {
+            return TCL_ERROR;
+        }
+        if (index < 0) {
+            Tcl_AppendResult(interp, "bad event index: ", argv[3],
+                    ": must be nonnegative", (char *) NULL);
+            return TCL_ERROR;
+        }
+        for (i = 0, esPtr = chanPtr->scriptRecordPtr;
+                 (i < index) && (esPtr != (EventScriptRecord *) NULL);
+                 i++, esPtr = esPtr->nextPtr) {
+	    /* Empty loop body. */
+        }
+        if (esPtr == (EventScriptRecord *) NULL) {
+            Tcl_AppendResult(interp, "bad event index ", argv[3],
+                    ": out of range", (char *) NULL);
+            return TCL_ERROR;
+        }
+        if (esPtr == chanPtr->scriptRecordPtr) {
+            chanPtr->scriptRecordPtr = esPtr->nextPtr;
+        } else {
+            for (prevEsPtr = chanPtr->scriptRecordPtr;
+                     (prevEsPtr != (EventScriptRecord *) NULL) &&
+                         (prevEsPtr->nextPtr != esPtr);
+                     prevEsPtr = prevEsPtr->nextPtr) {
+                /* Empty loop body. */
+            }
+            if (prevEsPtr == (EventScriptRecord *) NULL) {
+                panic("TclTestChannelEventCmd: damaged event script list");
+            }
+            prevEsPtr->nextPtr = esPtr->nextPtr;
+        }
+        Tcl_DeleteChannelHandler((Tcl_Channel) chanPtr,
+                TclChannelEventScriptInvoker, (ClientData) esPtr);
+	Tcl_DecrRefCount(esPtr->scriptPtr);
+        ckfree((char *) esPtr);
+
+        return TCL_OK;
+    }
+
+    if ((cmd[0] == 'l') && (strncmp(cmd, "list", (unsigned) len) == 0)) {
+        if (argc != 3) {
+            Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+                    " channelName list\"", (char *) NULL);
+            return TCL_ERROR;
+        }
+	resultListPtr = Tcl_GetObjResult(interp);
+        for (esPtr = chanPtr->scriptRecordPtr;
+                 esPtr != (EventScriptRecord *) NULL;
+                 esPtr = esPtr->nextPtr) {
+	    if (esPtr->mask) {
+ 	        Tcl_ListObjAppendElement(interp, resultListPtr, Tcl_NewStringObj(
+		    (esPtr->mask == TCL_READABLE) ? "readable" : "writable", -1));
+ 	    } else {
+ 	        Tcl_ListObjAppendElement(interp, resultListPtr, 
+                    Tcl_NewStringObj("none", -1));
+	    }
+  	    Tcl_ListObjAppendElement(interp, resultListPtr, esPtr->scriptPtr);
+        }
+	Tcl_SetObjResult(interp, resultListPtr);
+        return TCL_OK;
+    }
+
+    if ((cmd[0] == 'r') && (strncmp(cmd, "removeall", (unsigned) len) == 0)) {
+        if (argc != 3) {
+            Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+                    " channelName removeall\"", (char *) NULL);
+            return TCL_ERROR;
+        }
+        for (esPtr = chanPtr->scriptRecordPtr;
+                 esPtr != (EventScriptRecord *) NULL;
+                 esPtr = nextEsPtr) {
+            nextEsPtr = esPtr->nextPtr;
+            Tcl_DeleteChannelHandler((Tcl_Channel) chanPtr,
+                    TclChannelEventScriptInvoker, (ClientData) esPtr);
+	    Tcl_DecrRefCount(esPtr->scriptPtr);
+            ckfree((char *) esPtr);
+        }
+        chanPtr->scriptRecordPtr = (EventScriptRecord *) NULL;
+        return TCL_OK;
+    }
+
+    if  ((cmd[0] == 's') && (strncmp(cmd, "set", (unsigned) len) == 0)) {
+        if (argc != 5) {
+            Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+                    " channelName delete index event\"", (char *) NULL);
+            return TCL_ERROR;
+        }
+        if (Tcl_GetInt(interp, argv[3], &index) == TCL_ERROR) {
+            return TCL_ERROR;
+        }
+        if (index < 0) {
+            Tcl_AppendResult(interp, "bad event index: ", argv[3],
+                    ": must be nonnegative", (char *) NULL);
+            return TCL_ERROR;
+        }
+        for (i = 0, esPtr = chanPtr->scriptRecordPtr;
+                 (i < index) && (esPtr != (EventScriptRecord *) NULL);
+                 i++, esPtr = esPtr->nextPtr) {
+	    /* Empty loop body. */
+        }
+        if (esPtr == (EventScriptRecord *) NULL) {
+            Tcl_AppendResult(interp, "bad event index ", argv[3],
+                    ": out of range", (char *) NULL);
+            return TCL_ERROR;
+        }
+
+        if (strcmp(argv[4], "readable") == 0) {
+            mask = TCL_READABLE;
+        } else if (strcmp(argv[4], "writable") == 0) {
+            mask = TCL_WRITABLE;
+        } else if (strcmp(argv[4], "none") == 0) {
+            mask = 0;
+	} else {
+            Tcl_AppendResult(interp, "bad event name \"", argv[4],
+                    "\": must be readable, writable, or none", (char *) NULL);
+            return TCL_ERROR;
+        }
+	esPtr->mask = mask;
+        Tcl_CreateChannelHandler((Tcl_Channel) chanPtr, mask,
+                TclChannelEventScriptInvoker, (ClientData) esPtr);
+	return TCL_OK;
+    }    
+    Tcl_AppendResult(interp, "bad command ", cmd, ", must be one of ",
+            "add, delete, list, set, or removeall", (char *) NULL);
+    return TCL_ERROR;
 }

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.19 1999/12/12 22:46:42 hobbs Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.20 2000/05/19 21:30:16 hobbs Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -506,13 +506,8 @@ EXTERN void		TclRegExpRangeUniChar _ANSI_ARGS_((Tcl_RegExp re,
 EXTERN void		TclSetLibraryPath _ANSI_ARGS_((Tcl_Obj * pathPtr));
 /* 153 */
 EXTERN Tcl_Obj *	TclGetLibraryPath _ANSI_ARGS_((void));
-/* 154 */
-EXTERN int		TclTestChannelCmd _ANSI_ARGS_((ClientData clientData, 
-				Tcl_Interp * interp, int argc, char ** argv));
-/* 155 */
-EXTERN int		TclTestChannelEventCmd _ANSI_ARGS_((
-				ClientData clientData, Tcl_Interp * interp, 
-				int argc, char ** argv));
+/* Slot 154 is reserved */
+/* Slot 155 is reserved */
 /* 156 */
 EXTERN void		TclRegError _ANSI_ARGS_((Tcl_Interp * interp, 
 				char * msg, int status));
@@ -529,6 +524,9 @@ EXTERN int		TclpMatchFilesTypes _ANSI_ARGS_((Tcl_Interp * interp,
 				char * separators, Tcl_DString * dirPtr, 
 				char * pattern, char * tail, 
 				GlobTypeData * types));
+/* 161 */
+EXTERN void		TclChannelEventScriptInvoker _ANSI_ARGS_((
+				ClientData clientData, int mask));
 
 typedef struct TclIntStubs {
     int magic;
@@ -720,13 +718,14 @@ typedef struct TclIntStubs {
     void (*tclRegExpRangeUniChar) _ANSI_ARGS_((Tcl_RegExp re, int index, int * startPtr, int * endPtr)); /* 151 */
     void (*tclSetLibraryPath) _ANSI_ARGS_((Tcl_Obj * pathPtr)); /* 152 */
     Tcl_Obj * (*tclGetLibraryPath) _ANSI_ARGS_((void)); /* 153 */
-    int (*tclTestChannelCmd) _ANSI_ARGS_((ClientData clientData, Tcl_Interp * interp, int argc, char ** argv)); /* 154 */
-    int (*tclTestChannelEventCmd) _ANSI_ARGS_((ClientData clientData, Tcl_Interp * interp, int argc, char ** argv)); /* 155 */
+    void *reserved154;
+    void *reserved155;
     void (*tclRegError) _ANSI_ARGS_((Tcl_Interp * interp, char * msg, int status)); /* 156 */
     Var * (*tclVarTraceExists) _ANSI_ARGS_((Tcl_Interp * interp, char * varName)); /* 157 */
     void (*tclSetStartupScriptFileName) _ANSI_ARGS_((char * filename)); /* 158 */
     char * (*tclGetStartupScriptFileName) _ANSI_ARGS_((void)); /* 159 */
     int (*tclpMatchFilesTypes) _ANSI_ARGS_((Tcl_Interp * interp, char * separators, Tcl_DString * dirPtr, char * pattern, char * tail, GlobTypeData * types)); /* 160 */
+    void (*tclChannelEventScriptInvoker) _ANSI_ARGS_((ClientData clientData, int mask)); /* 161 */
 } TclIntStubs;
 
 #ifdef __cplusplus
@@ -1352,14 +1351,8 @@ extern TclIntStubs *tclIntStubsPtr;
 #define TclGetLibraryPath \
 	(tclIntStubsPtr->tclGetLibraryPath) /* 153 */
 #endif
-#ifndef TclTestChannelCmd
-#define TclTestChannelCmd \
-	(tclIntStubsPtr->tclTestChannelCmd) /* 154 */
-#endif
-#ifndef TclTestChannelEventCmd
-#define TclTestChannelEventCmd \
-	(tclIntStubsPtr->tclTestChannelEventCmd) /* 155 */
-#endif
+/* Slot 154 is reserved */
+/* Slot 155 is reserved */
 #ifndef TclRegError
 #define TclRegError \
 	(tclIntStubsPtr->tclRegError) /* 156 */
@@ -1379,6 +1372,10 @@ extern TclIntStubs *tclIntStubsPtr;
 #ifndef TclpMatchFilesTypes
 #define TclpMatchFilesTypes \
 	(tclIntStubsPtr->tclpMatchFilesTypes) /* 160 */
+#endif
+#ifndef TclChannelEventScriptInvoker
+#define TclChannelEventScriptInvoker \
+	(tclIntStubsPtr->tclChannelEventScriptInvoker) /* 161 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */
