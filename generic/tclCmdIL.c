@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.23 2000/01/26 03:37:40 hobbs Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.24 2000/04/04 08:04:41 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -1836,7 +1836,7 @@ InfoVarsCmd(dummy, interp, objc, objv)
 		entryPtr = Tcl_NextHashEntry(&search);
 	    }
 	}
-    } else {
+    } else if (((Interp *)interp)->varFramePtr->procPtr != NULL) {
 	AppendLocals(interp, listPtr, simplePattern, 1);
     }
     
