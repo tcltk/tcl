@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinSock.c,v 1.34 2002/12/08 15:31:59 davygrvy Exp $
+ * RCS: @(#) $Id: tclWinSock.c,v 1.35 2003/01/13 01:27:51 mdejong Exp $
  */
 
 #include "tclWinInt.h"
@@ -34,6 +34,64 @@ static char hostname[255];	/* This buffer should be big enough for
                                  * hostname plus domain name. */
 
 TCL_DECLARE_MUTEX(socketMutex)
+
+
+/*
+ * Mingw and Cygwin may not have LPFN_* typedefs.
+ */
+
+#ifdef HAVE_NO_LPFN_DECLS
+    typedef SOCKET (PASCAL FAR *LPFN_ACCEPT)(SOCKET s,
+            struct sockaddr FAR * addr, int FAR * addrlen);
+    typedef int (PASCAL FAR *LPFN_BIND)(SOCKET s,
+            const struct sockaddr FAR *addr, int namelen);
+    typedef int (PASCAL FAR *LPFN_CLOSESOCKET)(SOCKET s);
+    typedef int (PASCAL FAR *LPFN_CONNECT)(SOCKET s,
+            const struct sockaddr FAR *name, int namelen);
+    typedef struct hostent FAR * (PASCAL FAR *LPFN_GETHOSTBYADDR)
+            (const char FAR *addr, int addrlen, int addrtype);
+    typedef struct hostent FAR * (PASCAL FAR *LPFN_GETHOSTBYNAME)
+            (const char FAR * name);
+    typedef int (PASCAL FAR *LPFN_GETHOSTNAME)(char FAR * name,
+            int namelen);
+    typedef int (PASCAL FAR *LPFN_GETPEERNAME)(SOCKET sock,
+            struct sockaddr FAR *name, int FAR *namelen);
+    typedef struct servent FAR * (PASCAL FAR *LPFN_GETSERVBYNAME)
+            (const char FAR * name, const char FAR * proto);
+    typedef int (PASCAL FAR *LPFN_GETSOCKNAME)(SOCKET sock,
+            struct sockaddr FAR *name, int FAR *namelen);
+    typedef int (PASCAL FAR *LPFN_GETSOCKOPT)(SOCKET s, int level,
+            int optname, char FAR * optval, int FAR *optlen);
+    typedef u_short (PASCAL FAR *LPFN_HTONS)(u_short hostshort);
+    typedef unsigned long (PASCAL FAR *LPFN_INET_ADDR)
+            (const char FAR * cp);
+    typedef char FAR * (PASCAL FAR *LPFN_INET_NTOA)
+            (struct in_addr in);
+    typedef int (PASCAL FAR *LPFN_IOCTLSOCKET)(SOCKET s,
+            long cmd, u_long FAR *argp);
+    typedef int (PASCAL FAR *LPFN_LISTEN)(SOCKET s, int backlog);
+    typedef u_short (PASCAL FAR *LPFN_NTOHS)(u_short netshort);
+    typedef int (PASCAL FAR *LPFN_RECV)(SOCKET s, char FAR * buf,
+            int len, int flags);
+    typedef int (PASCAL FAR *LPFN_SELECT)(int nfds,
+            fd_set FAR * readfds, fd_set FAR * writefds,
+            fd_set FAR * exceptfds,
+            const struct timeval FAR * timeout);
+    typedef int (PASCAL FAR *LPFN_SEND)(SOCKET s,
+            const char FAR * buf, int len, int flags);
+    typedef int (PASCAL FAR *LPFN_SETSOCKOPT)(SOCKET s,
+            int level, int optname, const char FAR * optval,
+            int optlen);
+    typedef SOCKET (PASCAL FAR *LPFN_SOCKET)(int af,
+            int type, int protocol);
+    typedef int (PASCAL FAR *LPFN_WSAASYNCSELECT)(SOCKET s,
+            HWND hWnd, u_int wMsg, long lEvent);
+    typedef int (PASCAL FAR *LPFN_WSACLEANUP)(void);
+    typedef int (PASCAL FAR *LPFN_WSAGETLASTERROR)(void);
+    typedef int (PASCAL FAR *LPFN_WSASTARTUP)(WORD wVersionRequired,
+            LPWSADATA lpWSAData);
+#endif
+
 
 /*
  * The following structure contains pointers to all of the WinSock API
