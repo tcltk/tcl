@@ -1,3 +1,9 @@
+2003-11-10  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* tests/cmdIL.test: Stopped cmdIL-5.5 from stomping over the test
+	command, and updated the tests to use some tcltest2 features in
+	relation to cleanup. [Bug 838384]
+
 2003-11-10  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* generic/tclCmdAH.c:
