@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.25 2001/04/27 22:11:51 kennykb Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.26 2001/09/04 22:45:52 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -336,6 +336,14 @@ TclCreateProc(interp, nsPtr, procName, argsPtr, bodyPtr, procPtrPtr)
 		    ckfree((char *) fieldValues);
 		    goto procError;
 		}
+	    } else if ((*p == ':') && (*(p+1) == ':')) {
+		Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
+		        "procedure \"", procName,
+		        "\" has formal parameter \"", fieldValues[0],
+			"\" that is not a simple name",
+			(char *) NULL);
+		ckfree((char *) fieldValues);
+		goto procError;
 	    }
 	    p++;
 	}
