@@ -11,12 +11,10 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: compile.test,v 1.21 2002/06/22 04:19:47 dgp Exp $
+# RCS: @(#) $Id: compile.test,v 1.22 2002/07/10 11:56:44 dgp Exp $
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest 2
-    namespace import -force ::tcltest::*
-}
+package require tcltest 2
+namespace import -force ::tcltest::*
 
 # The following tests are very incomplete, although the rest of the
 # test suite covers this file fairly well.
@@ -265,8 +263,8 @@ test compile-11.9 {Tcl_Append*: ensure Tcl_ResetResult is used properly} {
 # with TCL_MEM_DEBUG
 #
 # Special test for leak on interp delete [Bug 467523]. 
-::tcltest::testConstraint execCommandExists [expr {[info commands exec] != ""}]
-::tcltest::testConstraint memDebug [expr {[info commands memory] != ""}]
+::tcltest::testConstraint exec [llength [info commands exec]]
+::tcltest::testConstraint memDebug [llength [info commands memory]]
 
 test compile-12.1 {testing literal leak on interp delete} {memDebug} {
     proc getbytes {} {
@@ -288,8 +286,9 @@ test compile-12.1 {testing literal leak on interp delete} {memDebug} {
     set leak [expr {$end - $tmp}]
 } 0
 # Special test for a memory error in a preliminary fix of [Bug 467523]. 
-# It requires executing a helpfile
-test compile-12.2 {testing error on literal deletion} {memDebug execCommandExists} {
+# It requires executing a helpfile.  Presumably the child process is
+# used because when this test fails, it crashes.
+test compile-12.2 {testing error on literal deletion} {memDebug exec} {
     makeFile {
 	for {set i 0} {$i < 5} {incr i} {
 	    namespace eval bar {}
@@ -298,9 +297,9 @@ test compile-12.2 {testing error on literal deletion} {memDebug execCommandExist
 	puts 0
     } source.file
     set res [catch {
-	exec [info nameofexecutable] source.file 
+	exec [interpreter] source.file 
     }]
-    catch {::tcltest::removeFile source.file}
+    catch {removeFile source.file}
     set res
 } 0
 # Test to catch buffer overrun in TclCompileTokens from buf 530320
@@ -314,14 +313,14 @@ test compile-12.3 {check for a buffer overrun} {
 # Special test for underestimating the maxStackSize required for a
 # compiled command. A failure will cause a segfault in the child 
 # process.
-test compile-13.1 {testing underestimate of maxStackSize in list cmd} {execCommandExists} {
+test compile-13.1 {testing underestimate of maxStackSize in list cmd} {exec} {
     set body {set x [list}
     for {set i 0} {$i < 3000} {incr i} {
 	append body " $i"
     }
     append body {]; puts OK}
     regsub BODY {proc crash {} {BODY}; crash} $body script
-    list [catch {exec [info nameofexecutable] << $script} msg] $msg
+    list [catch {exec [interpreter] << $script} msg] $msg
 } {0 OK}
 
 # cleanup
