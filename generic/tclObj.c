@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.48 2003/07/22 00:59:58 mdejong Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.49 2003/07/24 18:16:31 mdejong Exp $
  */
 
 #include "tclInt.h"
@@ -49,6 +49,18 @@ Tcl_Mutex tclObjMutex;
 
 char tclEmptyString = '\0';
 char *tclEmptyStringRep = &tclEmptyString;
+
+#if defined(TCL_MEM_DEBUG) && defined(TCL_THREADS)
+/*
+ * Thread local table that is used to check that a Tcl_Obj
+ * was not allocated by some other thread.
+ */
+typedef struct ThreadSpecificData {
+    Tcl_HashTable *objThreadMap;
+} ThreadSpecificData;
+
+static Tcl_ThreadDataKey dataKey;
+#endif /* TCL_MEM_DEBUG && TCL_THREADS */
 
 /*
  * Prototypes for procedures defined later in this file:
@@ -507,7 +519,28 @@ void TclDbInitNewObj(objPtr)
     objPtr->length = 0;
     objPtr->typePtr = NULL;
 # ifdef TCL_THREADS
-    objPtr->allocThread = Tcl_GetCurrentThread();
+    /*
+     * Add entry to a thread local map used to check if a Tcl_Obj
+     * was allocated by the currently executing thread.
+     */
+    {
+        Tcl_HashEntry *hPtr;
+        Tcl_HashTable *tablePtr;
+        int new;
+        ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+
+        if (tsdPtr->objThreadMap == NULL) {
+            tsdPtr->objThreadMap = (Tcl_HashTable *)
+                    ckalloc(sizeof(Tcl_HashTable));
+            Tcl_InitHashTable(tsdPtr->objThreadMap, TCL_ONE_WORD_KEYS);
+        }
+        tablePtr = tsdPtr->objThreadMap;
+        hPtr = Tcl_CreateHashEntry(tablePtr, (char *) objPtr, &new);
+        if (!new) {
+            panic("expected to create new entry for object map");
+        }
+        Tcl_SetHashValue(hPtr, NULL);
+    }
 # endif /* TCL_THREADS */
 }
 #endif /* TCL_MEM_DEBUG */
@@ -2557,11 +2590,30 @@ Tcl_DbIncrRefCount(objPtr, file, line)
 	fflush(stderr);
 	panic("Trying to increment refCount of previously disposed object.");
     }
-#ifdef TCL_THREADS
-    if (Tcl_GetCurrentThread() != objPtr->allocThread) {
-        panic("Attempt to incr Tcl_Obj ref count in another thread");
+# ifdef TCL_THREADS
+    /*
+     * Check to make sure that the Tcl_Obj was allocated by the
+     * current thread. Don't do this check when shutting down
+     * since thread local storage can be finalized before the
+     * last Tcl_Obj is freed.
+     */
+    if (!TclInExit())
+    {
+        Tcl_HashTable *tablePtr;
+        Tcl_HashEntry *hPtr;
+        ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+        tablePtr = tsdPtr->objThreadMap;
+        if (!tablePtr) {
+            panic("object table not initialized");
+        }
+        hPtr = Tcl_FindHashEntry(tablePtr, (char *) objPtr);
+        if (!hPtr) {
+            panic("%s%s",
+                    "Trying to incr ref count of",
+                    "Tcl_Obj allocated in another thread");
+        }
     }
-#endif
+# endif
 #endif
     ++(objPtr)->refCount;
 }
@@ -2602,11 +2654,35 @@ Tcl_DbDecrRefCount(objPtr, file, line)
 	fflush(stderr);
 	panic("Trying to decrement refCount of previously disposed object.");
     }
-#ifdef TCL_THREADS
-    if (Tcl_GetCurrentThread() != objPtr->allocThread) {
-        panic("Attempt to decr Tcl_Obj ref count in another thread");
+# ifdef TCL_THREADS
+    /*
+     * Check to make sure that the Tcl_Obj was allocated by the
+     * current thread. Don't do this check when shutting down
+     * since thread local storage can be finalized before the
+     * last Tcl_Obj is freed.
+     */
+    if (!TclInExit())
+    {
+        Tcl_HashTable *tablePtr;
+        Tcl_HashEntry *hPtr;
+        ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+        tablePtr = tsdPtr->objThreadMap;
+        if (!tablePtr) {
+            panic("object table not initialized");
+        }
+        hPtr = Tcl_FindHashEntry(tablePtr, (char *) objPtr);
+        if (!hPtr) {
+            panic("%s%s",
+                    "Trying to decr ref count of",
+                    "Tcl_Obj allocated in another thread");
+        }
+
+        /* If the Tcl_Obj is going to be deleted, remove the entry */
+        if ((((objPtr)->refCount) - 1) <= 0) {
+            Tcl_DeleteHashEntry(hPtr);
+        }
     }
-#endif
+# endif
 #endif
     if (--(objPtr)->refCount <= 0) {
 	TclFreeObj(objPtr);
@@ -2648,11 +2724,30 @@ Tcl_DbIsShared(objPtr, file, line)
 	fflush(stderr);
 	panic("Trying to check whether previously disposed object is shared.");
     }
-#ifdef TCL_THREADS
-    if (Tcl_GetCurrentThread() != objPtr->allocThread) {
-        panic("Attempt to query shared status in another thread");
+# ifdef TCL_THREADS
+    /*
+     * Check to make sure that the Tcl_Obj was allocated by the
+     * current thread. Don't do this check when shutting down
+     * since thread local storage can be finalized before the
+     * last Tcl_Obj is freed.
+     */
+    if (!TclInExit())
+    {
+        Tcl_HashTable *tablePtr;
+        Tcl_HashEntry *hPtr;
+        ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+        tablePtr = tsdPtr->objThreadMap;
+        if (!tablePtr) {
+            panic("object table not initialized");
+        }
+        hPtr = Tcl_FindHashEntry(tablePtr, (char *) objPtr);
+        if (!hPtr) {
+            panic("%s%s",
+                    "Trying to check shared status of",
+                    "Tcl_Obj allocated in another thread");
+        }
     }
-#endif
+# endif
 #endif
 #ifdef TCL_COMPILE_STATS
     Tcl_MutexLock(&tclObjMutex);
