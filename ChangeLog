@@ -2,6 +2,10 @@
 
 	* doc/clock.n: Corrected a buglet in the header information.
 	[Bug 1024058]
+	* generic/tclClock.c (TclClockMktimeObjCmd): Fixed a bug where
+	the month was scanned incorrectly in -timezone :localtime.
+	* tests/clock.test (clock-40.1): Added regression test case for
+	the bug where month was scanned incorrectly in -timezone :localtime.
 	
 2004-09-07  David Gravereaux <davygrvy@pobox.com>
 
