@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.62.2.3 2003/10/22 22:35:46 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.62.2.4 2003/10/31 13:33:40 vincentdarley Exp $
  */
 
 #define TCL_TEST
@@ -4014,7 +4014,7 @@ TestfileCmd(dummy, interp, argc, argv)
     }
 
     for (j = i; j < argc; j++) {
-        if (Tcl_FSGetTranslatedPath(interp, argv[j]) == NULL) {
+        if (Tcl_FSGetNormalizedPath(interp, argv[j]) == NULL) {
 	    return TCL_ERROR;
 	}
     }
