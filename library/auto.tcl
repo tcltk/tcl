@@ -3,7 +3,7 @@
 # utility procs formerly in init.tcl dealing with auto execution
 # of commands and can be auto loaded themselves.
 #
-# RCS: @(#) $Id: auto.tcl,v 1.13 2003/03/19 21:57:40 dgp Exp $
+# RCS: @(#) $Id: auto.tcl,v 1.14 2003/11/14 20:44:45 dgp Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1998 Sun Microsystems, Inc.
@@ -178,12 +178,12 @@ proc auto_mkindex {dir args} {
     append index "# sets an element in the auto_index array, where the\n"
     append index "# element name is the name of a command and the value is\n"
     append index "# a script that loads the command.\n\n"
-    if {$args == ""} {
+    if {[llength $args] == 0} {
 	set args *.tcl
     }
 
     auto_mkindex_parser::init
-    foreach file [eval glob $args] {
+    foreach file [glob {expand}$args] {
         if {[catch {auto_mkindex_parser::mkindex $file} msg] == 0} {
             append index $msg
         } else {
@@ -216,10 +216,10 @@ proc auto_mkindex_old {dir args} {
     append index "# sets an element in the auto_index array, where the\n"
     append index "# element name is the name of a command and the value is\n"
     append index "# a script that loads the command.\n\n"
-    if {[string equal $args ""]} {
+    if {[llength $args] == 0} {
 	set args *.tcl
     }
-    foreach file [eval glob $args] {
+    foreach file [glob {expand}$args] {
 	set f ""
 	set error [catch {
 	    set f [open $file]

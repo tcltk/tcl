@@ -3,7 +3,7 @@
 # utility procs formerly in init.tcl which can be loaded on demand
 # for package management.
 #
-# RCS: @(#) $Id: package.tcl,v 1.26 2003/09/24 18:07:45 vincentdarley Exp $
+# RCS: @(#) $Id: package.tcl,v 1.27 2003/11/14 20:44:45 dgp Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1998 Sun Microsystems, Inc.
@@ -140,7 +140,7 @@ proc pkg_mkIndex {args} {
     set oldDir [pwd]
     cd $dir
 
-    if {[catch {eval glob $patternList} fileList]} {
+    if {[catch {glob {expand}$patternList} fileList]} {
 	global errorCode errorInfo
 	cd $oldDir
 	return -code error -errorcode $errorCode -errorinfo $errorInfo $fileList
@@ -206,7 +206,7 @@ proc pkg_mkIndex {args} {
 	    proc package {what args} {
 		switch -- $what {
 		    require { return ; # ignore transitive requires }
-		    default { eval __package_orig {$what} $args }
+		    default { __package_orig $what {expand}$args }
 		}
 	    }
 	    proc tclPkgUnknown args {}
@@ -261,7 +261,7 @@ proc pkg_mkIndex {args} {
 		proc ::tcl::GetAllNamespaces {{root ::}} {
 		    set list $root
 		    foreach ns [namespace children $root] {
-			eval lappend list [::tcl::GetAllNamespaces $ns]
+			lappend list {expand}[::tcl::GetAllNamespaces $ns]
 		    }
 		    return $list
 		}

@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: compile.test,v 1.27 2003/05/09 13:42:40 msofer Exp $
+# RCS: @(#) $Id: compile.test,v 1.28 2003/11/14 20:44:46 dgp Exp $
 
 package require tcltest 2
 namespace import -force ::tcltest::*
@@ -274,9 +274,9 @@ test compile-11.9 {Tcl_Append*: ensure Tcl_ResetResult is used properly} {
 #
 # Special test for leak on interp delete [Bug 467523]. 
 ::tcltest::testConstraint exec [llength [info commands exec]]
-::tcltest::testConstraint memDebug [llength [info commands memory]]
+::tcltest::testConstraint memory [llength [info commands memory]]
 
-test compile-12.1 {testing literal leak on interp delete} {memDebug} {
+test compile-12.1 {testing literal leak on interp delete} {memory} {
     proc getbytes {} {
 	set lines [split [memory info] "\n"]
 	lindex [lindex $lines 3] 3
@@ -298,7 +298,7 @@ test compile-12.1 {testing literal leak on interp delete} {memDebug} {
 # Special test for a memory error in a preliminary fix of [Bug 467523]. 
 # It requires executing a helpfile.  Presumably the child process is
 # used because when this test fails, it crashes.
-test compile-12.2 {testing error on literal deletion} {memDebug exec} {
+test compile-12.2 {testing error on literal deletion} {memory exec} {
     makeFile {
 	for {set i 0} {$i < 5} {incr i} {
 	    namespace eval bar {}
@@ -373,6 +373,137 @@ test compile-15.5 {proper TCL_RETURN code from [return]} {
     set result
 } ""
 
+testConstraint testevalex [llength [info commands testevalex]]
+for {set noComp 1} {$noComp <= 1} {incr noComp} {
+
+if $noComp {
+    interp alias {} run {} testevalex
+    set constraints testevalex
+} else {
+    interp alias {} run {} if 1
+    set constraints {}
+}
+
+test compile-16.1.$noComp {TclCompileScript: word expansion} $constraints {
+    run "list [string repeat {{expand}a } 255]"
+} [lrepeat 255 a]
+
+test compile-16.2.$noComp {TclCompileScript: word expansion} $constraints {
+    run "list [string repeat {{expand}a } 256]"
+} [lrepeat 256 a]
+
+test compile-16.3.$noComp {TclCompileScript: word expansion} $constraints {
+    run "list [string repeat {{expand}a } 257]"
+} [lrepeat 257 a]
+
+test compile-16.4.$noComp {TclCompileScript: word expansion} $constraints {
+    run {{expand}list}
+} {}
+
+test compile-16.5.$noComp {TclCompileScript: word expansion} $constraints {
+    run {{expand}list {expand}{x y z}}
+} {x y z}
+
+test compile-16.6.$noComp {TclCompileScript: word expansion} $constraints {
+    run {{expand}list {expand}[list x y z]}
+} {x y z}
+
+test compile-16.7.$noComp {TclCompileScript: word expansion} $constraints {
+    run {{expand}list {expand}[list x y z][list x y z]}
+} {x y zx y z}
+
+test compile-16.8.$noComp {TclCompileScript: word expansion} -body {
+    set l {x y z}
+    run {{expand}list {expand}$l}
+} -constraints $constraints -cleanup {
+    unset l
+} -result {x y z}
+
+test compile-16.9.$noComp {TclCompileScript: word expansion} -body {
+    set l {x y z}
+    run {{expand}list {expand}$l$l}
+} -constraints $constraints -cleanup {
+    unset l
+} -result {x y zx y z}
+
+test compile-16.10.$noComp {TclCompileScript: word expansion} -body {
+    run {{expand}\{}
+} -constraints $constraints -returnCodes error \
+-result {unmatched open brace in list}
+
+test compile-16.11.$noComp {TclCompileScript: word expansion} -body {
+    proc badList {} {return \{}
+    run {{expand}[badList]}
+} -constraints $constraints -cleanup {
+    rename badList {}
+} -returnCodes error  -result {unmatched open brace in list}
+
+test compile-16.12.$noComp {TclCompileScript: word expansion} $constraints {
+    run {{expand}list x y z}
+} {x y z}
+
+test compile-16.13.$noComp {TclCompileScript: word expansion} $constraints {
+    run {{expand}list x y {expand}z}
+} {x y z}
+
+test compile-16.14.$noComp {TclCompileScript: word expansion} $constraints {
+    run {{expand}list x {expand}y z}
+} {x y z}
+
+test compile-16.15.$noComp {TclCompileScript: word expansion} $constraints {
+    run {list x y {expand}z}
+} {x y z}
+
+test compile-16.16.$noComp {TclCompileScript: word expansion} $constraints {
+    run {list x {expand}y z}
+} {x y z}
+
+test compile-16.17.$noComp {TclCompileScript: word expansion} $constraints {
+    run {list {expand}x y z}
+} {x y z}
+
+# These tests note that expansion can in theory cause the number of
+# arguments to a command to exceed INT_MAX, which is as big as objc
+# is allowed to get.
+#
+# In practice, it seems we will run out of memory before we confront
+# this issue.  Note that compiled operations run out of memory at
+# smaller objc values than direct string evaluation.
+#
+# These tests are constrained as knownBug because they are likely
+# to cause memory allocation panics somewhere, and we don't want
+# panics in the test suite.
+#
+test compile-16.18.$noComp {TclCompileScript: word expansion} -body {
+    proc LongList {} {return [lrepeat [expr {1<<10}] x]}
+    llength [run "list [string repeat {{expand}[LongList] } [expr {1<<10}]]"]
+} -constraints [linsert $constraints 0 knownBug] -cleanup {
+    rename LongList {}
+} -returnCodes ok  -result [expr {1<<20}]
+
+test compile-16.19.$noComp {TclCompileScript: word expansion} -body {
+    proc LongList {} {return [lrepeat [expr {1<<11}] x]}
+    llength [run "list [string repeat {{expand}[LongList] } [expr {1<<11}]]"]
+} -constraints [linsert $constraints 0 knownBug] -cleanup {
+    rename LongList {}
+} -returnCodes ok  -result [expr {1<<22}]
+
+test compile-16.20.$noComp {TclCompileScript: word expansion} -body {
+    proc LongList {} {return [lrepeat [expr {1<<12}] x]}
+    llength [run "list [string repeat {{expand}[LongList] } [expr {1<<12}]]"]
+} -constraints [linsert $constraints 0 knownBug] -cleanup {
+    rename LongList {}
+} -returnCodes ok  -result [expr {1<<24}]
+
+# This is the one that should cause overflow
+test compile-16.21.$noComp {TclCompileScript: word expansion} -body {
+    proc LongList {} {return [lrepeat [expr {1<<16}] x]}
+    llength [run "list [string repeat {{expand}[LongList] } [expr {1<<16}]]"]
+} -constraints [linsert $constraints 0 knownBug] -cleanup {
+    rename LongList {}
+} -returnCodes ok  -result [expr {wide(1)<<32}]
+
+}	;# End of noComp loop
 
 # cleanup
 catch {rename p ""}

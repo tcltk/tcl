@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.69 2003/10/13 16:48:06 vincentdarley Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.70 2003/11/14 20:44:45 dgp Exp $
  */
 
 #define TCL_TEST
@@ -3045,6 +3045,9 @@ PrintParse(interp, parsePtr)
     for (i = 0; i < parsePtr->numTokens; i++) {
 	tokenPtr = &parsePtr->tokenPtr[i];
 	switch (tokenPtr->type) {
+	    case TCL_TOKEN_EXPAND_WORD:
+		typeString = "expand";
+		break;
 	    case TCL_TOKEN_WORD:
 		typeString = "word";
 		break;
