@@ -1577,7 +1577,15 @@ dnl AC_CHECK_TOOL(AR, ar)
 		arch=`isainfo`
 		if test "$arch" = "sparcv9 sparc" ; then
 			if test "$GCC" = "yes" ; then
-			    AC_MSG_WARN("64bit mode not supported with GCC on $system")
+			    if test "`gcc -dumpversion` | awk -F. '{print $1}'" -lt "3" ; then
+				AC_MSG_WARN([64bit mode not supported with GCC < 3.2 on $system])
+			    else
+				do64bit_ok=yes
+				CFLAGS="$CFLAGS -m64 -mcpu=v9"
+				LDFLAGS="$LDFLAGS -m64 -mcpu=v9"
+				SHLIB_CFLAGS="-fPIC"
+				SHLIB_LD_FLAGS=""
+			    fi
 			else
 			    do64bit_ok=yes
 			    if test "$do64bitVIS" = "yes" ; then
@@ -1587,9 +1595,11 @@ dnl AC_CHECK_TOOL(AR, ar)
 				CFLAGS="$CFLAGS -xarch=v9"
 			    	LDFLAGS="$LDFLAGS -xarch=v9"
 			    fi
+			    # Solaris 64 uses this as well
+			    #LD_LIBRARY_PATH_VAR="LD_LIBRARY_PATH_64"
 			fi
 		else
-		    AC_MSG_WARN("64bit mode only supported sparcv9 system")
+		    AC_MSG_WARN([64bit mode only supported sparcv9 system])
 		fi
 	    fi
 	    
@@ -1604,6 +1614,15 @@ dnl AC_CHECK_TOOL(AR, ar)
 		SHLIB_LD="$CC -shared"
 		CC_SEARCH_FLAGS='-Wl,-R,${LIB_RUNTIME_DIR}'
 		LD_SEARCH_FLAGS=${CC_SEARCH_FLAGS}
+		if test "$do64bit" = "yes" ; then
+		    # We need to specify -static-libgcc or we need to
+		    # add the path to the sparv9 libgcc.
+		    SHLIB_LD="$SHLIB_LD -m64 -mcpu=v9 -static-libgcc"
+		    # for finding sparcv9 libgcc, get the regular libgcc
+		    # path, remove so name and append 'sparcv9'
+		    #v9gcclibdir="`gcc -print-file-name=libgcc_s.so` | ..."
+		    #CC_SEARCH_FLAGS="${CC_SEARCH_FLAGS},-R,$v9gcclibdir"
+		fi
 	    else
 		SHLIB_LD="/usr/ccs/bin/ld -G -z text"
 		CC_SEARCH_FLAGS='-Wl,-R,${LIB_RUNTIME_DIR}'
