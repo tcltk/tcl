@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: %Z% $Id: tclInt.h,v 1.15 1998/08/07 11:48:51 stanton Exp $ 
+ * SCCS: %Z% $Id: tclInt.h,v 1.16 1998/08/10 15:44:18 welch Exp $ 
  */
 
 #ifndef _TCLINT
@@ -849,6 +849,21 @@ typedef struct ImportRef {
 				 * these imported commands on this list when
 				 * it is deleted. */
 } ImportRef;
+
+/*
+ * Data structure used as the ClientData of imported commands: commands
+ * created in an namespace when it imports a "real" command from another
+ * namespace.
+ */
+
+typedef struct ImportedCmdData {
+    struct Command *realCmdPtr;	/* "Real" command that this imported command
+                                 * refers to. */
+    struct Command *selfPtr;	/* Pointer to this imported command. Needed
+				 * only when deleting it in order to remove
+				 * it from the real command's linked list of
+				 * imported commands that refer to it. */
+} ImportedCmdData;
 
 /*
  * A Command structure exists for each command in a namespace. The
