@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.133 2004/05/17 02:36:46 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.134 2004/05/17 21:30:12 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1343,7 +1343,8 @@ TclExecuteByteCode(interp, codePtr)
 	 * its compileEpoch is modified, so that the epoch
 	 * check also verifies that the interp is not deleted.
 	 */
-	
+
+	iPtr->cmdCount++;
 	if (((codeCompileEpoch == iPtr->compileEpoch)
 		    && (codeNsEpoch == namespacePtr->resolverEpoch))
 		|| codePrecompiled) {
