@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIndexObj.c,v 1.10 2001/08/30 19:02:43 hobbs Exp $
+ * RCS: @(#) $Id: tclIndexObj.c,v 1.11 2002/01/14 15:07:39 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -76,10 +76,10 @@ int
 Tcl_GetIndexFromObj(interp, objPtr, tablePtr, msg, flags, indexPtr)
     Tcl_Interp *interp; 	/* Used for error reporting if not NULL. */
     Tcl_Obj *objPtr;		/* Object containing the string to lookup. */
-    char **tablePtr;		/* Array of strings to compare against the
+    char * CONST *tablePtr;	/* Array of strings to compare against the
 				 * value of objPtr; last entry must be NULL
 				 * and there must not be duplicate entries. */
-    char *msg;			/* Identifying word to use in error messages. */
+    CONST char *msg;		/* Identifying word to use in error messages. */
     int flags;			/* 0 or TCL_EXACT */
     int *indexPtr;		/* Place to store resulting integer index. */
 {
@@ -135,18 +135,19 @@ Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr, offset, msg, flags,
 	indexPtr)
     Tcl_Interp *interp; 	/* Used for error reporting if not NULL. */
     Tcl_Obj *objPtr;		/* Object containing the string to lookup. */
-    char **tablePtr;		/* The first string in the table. The second
+    char * CONST *tablePtr;	/* The first string in the table. The second
 				 * string will be at this address plus the
 				 * offset, the third plus the offset again,
 				 * etc. The last entry must be NULL
 				 * and there must not be duplicate entries. */
     int offset;			/* The number of bytes between entries */
-    char *msg;			/* Identifying word to use in error messages. */
+    CONST char *msg;		/* Identifying word to use in error messages. */
     int flags;			/* 0 or TCL_EXACT */
     int *indexPtr;		/* Place to store resulting integer index. */
 {
     int index, length, i, numAbbrev;
-    char *key, *p1, *p2, **entryPtr;
+    char *key, *p1, *p2;
+    char * CONST *entryPtr;
     Tcl_Obj *resultPtr;
 
     /*
@@ -301,7 +302,7 @@ Tcl_WrongNumArgs(interp, objc, objv, message)
     Tcl_Obj *CONST objv[];		/* Initial argument objects, which
 					 * should be included in the error
 					 * message. */
-    char *message;			/* Error message to print after the
+    CONST char *message;		/* Error message to print after the
 					 * leading objects in objv. The
 					 * message may be NULL. */
 {

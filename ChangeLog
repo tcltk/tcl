@@ -1,3 +1,14 @@
+2002-01-14  Don Porter <dgp@users.sourceforge.net>
+  
+	* doc/GetIndex.3:
+	* doc/WrongNumArgs.3:
+	* generic/tcl.decls (Tcl_GetIndexFromObj, Tcl_GetIndexFromObjStruct,
+	  Tcl_WrongNumArgs):
+	* generic/tclIndexObj.c (Tcl_GetIndexFromObj, Tcl_GetIndexFromObjStruct,
+	  Tcl_WrongNumArgs):  Updated APIs in the file generic/tclIndexObj.c
+	according to the guidelines of TIP 27.
+	* generic/tclDecls.h: make genstubs
+
 2002-01-11  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* unix/configure: Regen.

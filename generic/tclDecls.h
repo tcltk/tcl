@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.68 2002/01/09 19:09:28 kennykb Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.69 2002/01/14 15:07:39 dgp Exp $
  */
 
 #ifndef _TCLDECLS
@@ -137,8 +137,8 @@ EXTERN int		Tcl_GetDoubleFromObj _ANSI_ARGS_((
 				double * doublePtr));
 /* 36 */
 EXTERN int		Tcl_GetIndexFromObj _ANSI_ARGS_((Tcl_Interp * interp, 
-				Tcl_Obj * objPtr, char ** tablePtr, 
-				char * msg, int flags, int * indexPtr));
+				Tcl_Obj * objPtr, char * CONST * tablePtr, 
+				CONST char * msg, int flags, int * indexPtr));
 /* 37 */
 EXTERN int		Tcl_GetInt _ANSI_ARGS_((Tcl_Interp * interp, 
 				CONST char * str, int * intPtr));
@@ -858,7 +858,7 @@ EXTERN int		Tcl_Write _ANSI_ARGS_((Tcl_Channel chan, char * s,
 /* 264 */
 EXTERN void		Tcl_WrongNumArgs _ANSI_ARGS_((Tcl_Interp * interp, 
 				int objc, Tcl_Obj *CONST objv[], 
-				char * message));
+				CONST char * message));
 /* 265 */
 EXTERN int		Tcl_DumpActiveMemory _ANSI_ARGS_((
 				CONST char * fileName));
@@ -979,8 +979,8 @@ EXTERN void		Tcl_GetEncodingNames _ANSI_ARGS_((
 /* 304 */
 EXTERN int		Tcl_GetIndexFromObjStruct _ANSI_ARGS_((
 				Tcl_Interp * interp, Tcl_Obj * objPtr, 
-				char ** tablePtr, int offset, char * msg, 
-				int flags, int * indexPtr));
+				char * CONST * tablePtr, int offset, 
+				CONST char * msg, int flags, int * indexPtr));
 /* 305 */
 EXTERN VOID *		Tcl_GetThreadData _ANSI_ARGS_((
 				Tcl_ThreadDataKey * keyPtr, int size));
@@ -1573,7 +1573,7 @@ typedef struct TclStubs {
     unsigned char * (*tcl_GetByteArrayFromObj) _ANSI_ARGS_((Tcl_Obj * objPtr, int * lengthPtr)); /* 33 */
     int (*tcl_GetDouble) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * str, double * doublePtr)); /* 34 */
     int (*tcl_GetDoubleFromObj) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * objPtr, double * doublePtr)); /* 35 */
-    int (*tcl_GetIndexFromObj) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * objPtr, char ** tablePtr, char * msg, int flags, int * indexPtr)); /* 36 */
+    int (*tcl_GetIndexFromObj) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * objPtr, char * CONST * tablePtr, CONST char * msg, int flags, int * indexPtr)); /* 36 */
     int (*tcl_GetInt) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * str, int * intPtr)); /* 37 */
     int (*tcl_GetIntFromObj) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * objPtr, int * intPtr)); /* 38 */
     int (*tcl_GetLongFromObj) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * objPtr, long * longPtr)); /* 39 */
@@ -1833,7 +1833,7 @@ typedef struct TclStubs {
     ClientData (*tcl_VarTraceInfo) _ANSI_ARGS_((Tcl_Interp * interp, char * varName, int flags, Tcl_VarTraceProc * procPtr, ClientData prevClientData)); /* 261 */
     ClientData (*tcl_VarTraceInfo2) _ANSI_ARGS_((Tcl_Interp * interp, char * part1, char * part2, int flags, Tcl_VarTraceProc * procPtr, ClientData prevClientData)); /* 262 */
     int (*tcl_Write) _ANSI_ARGS_((Tcl_Channel chan, char * s, int slen)); /* 263 */
-    void (*tcl_WrongNumArgs) _ANSI_ARGS_((Tcl_Interp * interp, int objc, Tcl_Obj *CONST objv[], char * message)); /* 264 */
+    void (*tcl_WrongNumArgs) _ANSI_ARGS_((Tcl_Interp * interp, int objc, Tcl_Obj *CONST objv[], CONST char * message)); /* 264 */
     int (*tcl_DumpActiveMemory) _ANSI_ARGS_((CONST char * fileName)); /* 265 */
     void (*tcl_ValidateAllMemory) _ANSI_ARGS_((CONST char * file, int line)); /* 266 */
     void (*tcl_AppendResultVA) _ANSI_ARGS_((Tcl_Interp * interp, va_list argList)); /* 267 */
@@ -1873,7 +1873,7 @@ typedef struct TclStubs {
     Tcl_Encoding (*tcl_GetEncoding) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * name)); /* 301 */
     char * (*tcl_GetEncodingName) _ANSI_ARGS_((Tcl_Encoding encoding)); /* 302 */
     void (*tcl_GetEncodingNames) _ANSI_ARGS_((Tcl_Interp * interp)); /* 303 */
-    int (*tcl_GetIndexFromObjStruct) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * objPtr, char ** tablePtr, int offset, char * msg, int flags, int * indexPtr)); /* 304 */
+    int (*tcl_GetIndexFromObjStruct) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * objPtr, char * CONST * tablePtr, int offset, CONST char * msg, int flags, int * indexPtr)); /* 304 */
     VOID * (*tcl_GetThreadData) _ANSI_ARGS_((Tcl_ThreadDataKey * keyPtr, int size)); /* 305 */
     Tcl_Obj * (*tcl_GetVar2Ex) _ANSI_ARGS_((Tcl_Interp * interp, char * part1, char * part2, int flags)); /* 306 */
     ClientData (*tcl_InitNotifier) _ANSI_ARGS_((void)); /* 307 */
