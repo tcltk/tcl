@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinDde.c,v 1.13.2.2 2004/06/14 15:22:38 patthoyts Exp $
+ * RCS: @(#) $Id: tclWinDde.c,v 1.13.2.3 2004/07/23 00:24:45 dgp Exp $
  */
 
 #include "tclPort.h"
@@ -71,7 +71,7 @@ static DWORD ddeInstance;       /* The application instance handle given
 				 * to us by DdeInitialize. */
 static int ddeIsServer = 0;
 
-#define TCL_DDE_VERSION "1.2.2"
+#define TCL_DDE_VERSION "1.2.3"
 #define TCL_DDE_PACKAGE_NAME "dde"
 #define TCL_DDE_SERVICE_NAME "TclEval"
 
