@@ -12,7 +12,7 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 # 
-# RCS: @(#) $Id: tcltest.tcl,v 1.6 1999/07/12 21:03:48 jenn Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.7 1999/07/26 22:50:55 jenn Exp $
 
 package provide tcltest 1.0
 
@@ -55,15 +55,14 @@ namespace eval tcltest {
 
     variable errorChannel stderr
 
-    # debug output doesn't get printed by default; default debugLevel (1) spits
+    # debug output doesn't get printed by default; debug level 1 spits
     # up only the tets that were skipped because they didn't match or were 
-    # specifically skipped.  A debugLevel of 2 would spit up the tcltest
-    # variables and flags provided; a debugLevel of 3 causes some additional
+    # specifically skipped.  A debug level of 2 would spit up the tcltest
+    # variables and flags provided; a debug level of 3 causes some additional
     # output regarding operations of the test harness.  The tcltest package
-    # currently implements only up to debugLevel 3.
+    # currently implements only up to debug level 3.
 
-    variable debug false
-    variable debugLevel 1
+    variable debug 0
 
     # Count the number of files tested (0 if all.tcl wasn't called).
     # The all.tcl file will set testSingleFile to false, so stats will
@@ -232,22 +231,43 @@ proc ::tcltest::PrintError {errorMsg} {
     set InitialMessage "Error:  "
     set InitialMsgLen  [string length $InitialMessage]
     puts -nonewline $::tcltest::errorChannel $InitialMessage
-    set beginningIndex [string last " " [string range $errorMsg 0 \
-	    [string wordend $errorMsg 72]]]
-    puts $::tcltest::errorChannel [string range $errorMsg 0 $beginningIndex]
+
+    # Keep track of where we last started from and where the end of the
+    # string is.
+    set priorBeginningIndex 0
     set endingIndex [string length $errorMsg]
-    while {$beginningIndex < $endingIndex} {
-	set newEndingIndex [string last " " [string range $errorMsg \
-		$beginningIndex [string wordend $errorMsg \
-		[expr {$beginningIndex + 72}]]]]
-	if {$newEndingIndex == 0} {
-	    set newEndingIndex $endingIndex
+
+    if {$endingIndex < 80} {
+	puts $::tcltest::errorChannel $errorMsg
+    } else {
+	# Print up to 80 characters on the first line, including the
+	# InitialMessage. 
+	set beginningIndex [string last " " [string range $errorMsg 0 \
+		[string wordend $errorMsg [expr {80 - $InitialMsgLen}]]]]
+	puts $::tcltest::errorChannel [string range $errorMsg 0 $beginningIndex]
+
+	while {$beginningIndex != "end"} {
+	    puts -nonewline $::tcltest::errorChannel \
+		    [string repeat " " $InitialMsgLen]  
+	    if {[expr {$endingIndex - $beginningIndex}] < 72} {
+		puts $::tcltest::errorChannel [string trim \
+			[string range $errorMsg $beginningIndex end]]
+		set beginningIndex end
+	    } else {
+		set newEndingIndex [string last " " [string range $errorMsg \
+			$beginningIndex [string wordend $errorMsg \
+			[expr {$beginningIndex + 72}]]]]
+		if {($newEndingIndex <= 0) \
+			|| ($newEndingIndex == $beginningIndex)} {
+		    set newEndingIndex end
+		}
+		puts $::tcltest::errorChannel [string trim \
+			[string range $errorMsg \
+			$beginningIndex $newEndingIndex]]
+		set beginningIndex $newEndingIndex
+		set priorBeginningIndex $beginningIndex
+	    }
 	}
-	puts -nonewline $::tcltest::errorChannel \
-		[string repeat " " $InitialMsgLen]  
-	puts $::tcltest::errorChannel [string trim \
-		[string range $errorMsg $beginningIndex $newEndingIndex]]
-	set beginningIndex $newEndingIndex
     }
     flush $::tcltest::errorChannel
     return
@@ -639,8 +659,8 @@ proc ::tcltest::processCmdLineArgs {} {
     # conflicts with the wish option -visual.
 
     # Process -help first
-    if {([lsearch -exact $flagArray{-help}] != -1) || \
-	    ([lsearch -exact $flagArray{-h}] != -1)} {
+    if {([lsearch -exact $flagArray {-help}] != -1) || \
+	    ([lsearch -exact $flagArray {-h}] != -1)} {
 	::tcltest::PrintUsageInfo
 	exit
     }
@@ -721,34 +741,6 @@ proc ::tcltest::processCmdLineArgs {} {
 	}
     }
 
-    # If an alternate error or output files are specified, change the
-    # default channels.
-
-    if {[info exists flag(-outfile)]} {
-	set tmp $flag(-outfile)
-	if {[string compare [file pathtype $tmp] "absolute"] != 0} {
-	    set tmp [file join $::tcltest::temporaryDirectory $tmp]
-	}
-	set ::tcltest::outputChannel [open $tmp w]
-    } 
-
-    if {[info exists flag(-errfile)]} {
-	set tmp $flag(-errfile)
-	if {[string compare [file pathtype $tmp] "absolute"] != 0} {
-	    set tmp [file join $::tcltest::temporaryDirectory $tmp]
-	}
-	set ::tcltest::errorChannel [open $tmp w]
-    }
-
-    # If the user specifies debug testing, print out extra information during
-    # the run.
-    if {[info exists flag(-debug)]} {
-	set ::tcltest::debug true
-	if {$flag(-debug) != {}} {
-	    set ::tcltest::debugLevel $flag(-debug)
-	}
-    }
-
     # Set the ::tcltest::temporaryDirectory to the arg of -tmpdir, if
     # given.
     # 
@@ -787,6 +779,10 @@ proc ::tcltest::processCmdLineArgs {} {
     } else {
 	file mkdir $::tcltest::temporaryDirectory
     }
+    set oldpwd [pwd]
+    cd $::tcltest::temporaryDirectory
+    set ::tcltest::temporaryDirectory [pwd]
+    cd $oldpwd
 
     # Save the names of files that already exist in
     # the output directory.
@@ -795,20 +791,44 @@ proc ::tcltest::processCmdLineArgs {} {
 	lappend ::tcltest::filesExisted [file tail $file]
     }
 
+    # If an alternate error or output files are specified, change the
+    # default channels.
+
+    if {[info exists flag(-outfile)]} {
+	set tmp $flag(-outfile)
+	if {[string compare [file pathtype $tmp] "absolute"] != 0} {
+	    set tmp [file join $::tcltest::temporaryDirectory $tmp]
+	}
+	set ::tcltest::outputChannel [open $tmp w]
+    } 
+
+    if {[info exists flag(-errfile)]} {
+	set tmp $flag(-errfile)
+	if {[string compare [file pathtype $tmp] "absolute"] != 0} {
+	    set tmp [file join $::tcltest::temporaryDirectory $tmp]
+	}
+	set ::tcltest::errorChannel [open $tmp w]
+    }
+
+    # If the user specifies debug testing, print out extra information during
+    # the run.
+    if {[info exists flag(-debug)]} {
+	set ::tcltest::debug $flag(-debug)
+    }
+
     # Handle -preservecore
     if {[info exists flag(-preservecore)]} {
-	set ::tcltest::preserveCore $flag(-preserveCore)
+	set ::tcltest::preserveCore $flag(-preservecore)
     }
 
     # Call the hook
     ::tcltest::processCmdLineArgsHook [array get flag]
 
-    # Spit out everything you know if ::tcltest::debug is set.
-    if {($::tcltest::debug) && ($::tcltest::debugLevel > 1)} {
+    # Spit out everything you know if we're at debug level 2 or greater
+    if {$::tcltest::debug > 1} {
 	puts "Flags passed into tcltest:"
 	parray flag
 	puts "::tcltest::debug = $::tcltest::debug"
-	puts "::tcltest::debugLevel = $::tcltest::debugLevel"
 	puts "::tcltest::testsDirectory = $::tcltest::testsDirectory"
 	puts "::tcltest::workingDirectory = $::tcltest::workingDirectory"
 	puts "::tcltest::temporaryDirectory = $::tcltest::temporaryDirectory"
@@ -998,13 +1018,17 @@ proc ::tcltest::cleanupTests {{calledFromAllFile 0}} {
 
 	if {[file exists [file join $::tcltest::workingDirectory core]]} {
 	    if {$::tcltest::preserveCore > 1} {
-		file rename -force \
-			[file join $::tcltest::workingDirectory core] \
-			[file join $::tcltest::temporaryDirectory core-$name]
-		
 		puts $::tcltest::outputChannel "produced core file! \
-			Moved file to: \
+			Moving file to: \
 			[file join $::tcltest::temporaryDirectory core-$name]"
+		flush $::tcltest::outputChannel
+		catch {file rename -force \
+			[file join $::tcltest::workingDirectory core] \
+			[file join $::tcltest::temporaryDirectory \
+			core-$name]} msg
+		if {[string length $msg] > 0} {
+		    ::tcltest::PrintError "Problem renaming file: $msg"
+		}
 	    } else {
 		# Print a message if there is a core file and (1) there
 		# previously wasn't one or (2) the new one is different from
@@ -1055,7 +1079,7 @@ proc ::tcltest::cleanupTestsHook {} {}
 # expectedAnswer -	Expected result from script.
 
 proc ::tcltest::test {name description script expectedAnswer args} {
-    if {($::tcltest::debug) && ($::tcltest::debugLevel > 2)} {
+    if {$::tcltest::debug > 2} {
 	puts "Running $name ($description)"
     }
 
@@ -1211,13 +1235,16 @@ proc ::tcltest::test {name description script expectedAnswer args} {
 	set currentTclPlatform [array get tcl_platform]
 	if {[file exists [file join $::tcltest::workingDirectory core]]} {
 	    if {$::tcltest::preserveCore > 1} {
-		file rename -force \
-			[file join $::tcltest::workingDirectory core] \
-			[file join $::tcltest::temporaryDirectory core-$name]
-		
 		puts $::tcltest::outputChannel "==== $name produced core file! \
-			Moved file to: \
+			Moving file to: \
 			[file join $::tcltest::temporaryDirectory core-$name]"
+		catch {file rename -force \
+			[file join $::tcltest::workingDirectory core] \
+			[file join $::tcltest::temporaryDirectory \
+			core-$name]} msg
+		if {[string length $msg] > 0} {
+		    ::tcltest::PrintError "Problem renaming file: $msg"
+		}
 	    } else {
 		# Print a message if there is a core file and (1) there
 		# previously wasn't one or (2) the new one is different from
@@ -1318,7 +1345,7 @@ proc ::tcltest::leakfiles {old} {
 
 proc ::tcltest::saveState {} {
     uplevel #0 {set ::tcltest::saveState [list [info procs] [info vars]]}
-    if {($::tcltest::debug) && ($::tcltest::debugLevel > 1)} {
+    if {$::tcltest::debug > 1} {
 	puts "::tcltest::saveState: $::tcltest::saveState"
     }
 }
@@ -1339,7 +1366,7 @@ proc ::tcltest::restoreState {} {
     foreach p [info procs] {
 	if {([lsearch [lindex $::tcltest::saveState 0] $p] < 0) && \
 		(![string equal ::tcltest::$p [namespace origin $p]])} {
-	    if {($::tcltest::debug) && ($::tcltest::debugLevel > 2)} {
+	    if {$::tcltest::debug > 2} {
 		puts "::tcltest::restoreState: Removing proc $p"
 	    }
 	    rename $p {}
@@ -1347,7 +1374,7 @@ proc ::tcltest::restoreState {} {
     }
     foreach p [uplevel #0 {info vars}] {
 	if {[lsearch [lindex $::tcltest::saveState 1] $p] < 0} {
-	    if {($::tcltest::debug) && ($::tcltest::debugLevel > 2)} {
+	    if {$::tcltest::debug > 2} {
 		puts "::tcltest::restoreState: Removing variable $p"
 	    }
 	    uplevel #0 "unset $p"
@@ -1381,10 +1408,10 @@ proc ::tcltest::normalizeMsg {msg} {
 proc ::tcltest::makeFile {contents name} {
     global tcl_platform
     
-    if {($::tcltest::debug) && ($::tcltest::debugLevel > 2)} {
+    if {$::tcltest::debug > 2} {
 	puts "::tcltest::makeFile: putting $contents into $name"
     }
-    set fd [open $name w]
+    set fd [open [file join $::tcltest::temporaryDirectory $name] w]
 
     fconfigure $fd -translation lf
 
@@ -1412,10 +1439,10 @@ proc ::tcltest::makeFile {contents name} {
 #
 
 proc ::tcltest::removeFile {name} {
-    if {($::tcltest::debug) && ($::tcltest::debugLevel > 2)} {
+    if {$::tcltest::debug > 2} {
 	puts "::tcltest::removeFile: removing $name"
     }
-    file delete $name
+    file delete [file join $::tcltest::temporaryDirectory $name]
 }
 
 # makeDirectory --
@@ -1451,12 +1478,12 @@ proc ::tcltest::viewFile {name} {
     global tcl_platform
     if {([string equal $tcl_platform(platform) "macintosh"]) || \
 	    ($::tcltest::testConstraints(unixExecs) == 0)} {
-	set f [open $name]
+	set f [open [file join $::tcltest::temporaryDirectory $name]]
 	set data [read -nonewline $f]
 	close $f
 	return $data
     } else {
-	exec cat $name
+	exec cat [file join $::tcltest::temporaryDirectory $name]
     }
 }
 

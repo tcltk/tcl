@@ -1,3 +1,10 @@
+1999-07-26  Jennifer Hom  <jenn@scriptics.com>
+
+	* tests/tcltest.test:
+	* library/tcltest1.0/tcltest.tcl:
+	* doc/tcltest.n: Cleaned up code in ::tcltest::PrintError, revised
+	documentation, and added tests for the tcltest package.
+
 1999-07-23    <redman@scriptics.com>
 
 	* tests/info.test:
