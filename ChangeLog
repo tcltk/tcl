@@ -1,3 +1,8 @@
+2004-04-29  Don Porter  <dgp@users.sourceforge.net>
+
+	* tests/execute.test (execute-8.2):	Avoid crashes when there
+	is limited system stack space (threads-enabled).
+
 2004-04-28  Miguel Sofer <msofer@users.sf.net>
 
 	* doc/global.n:
