@@ -1,3 +1,12 @@
+2003-07-04  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* generic/tclVar.c (Tcl_ArrayObjCmd, TclArraySet): Made [array
+	get] and [array set] work with dictionaries, producing them and
+	consuming them.  Note that for compatability reasons, you will
+	never get a dict from feeding a string literal to [array set]
+	since that alters the trace behaviour of "multi-key" sets.
+	[Bug 759935]
+
 2003-06-23  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* generic/tclTrace.c: fix to Window debug build compilation error.
