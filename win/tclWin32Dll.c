@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWin32Dll.c,v 1.13 2002/02/08 02:52:54 dgp Exp $
+ * RCS: @(#) $Id: tclWin32Dll.c,v 1.14 2002/03/08 01:45:52 mdejong Exp $
  */
 
 #include "tclWinInt.h"
@@ -340,6 +340,8 @@ TclWinNoBackslash(
 int
 TclpCheckStackSpace()
 {
+    int retval = 0;
+
     /*
      * We can recurse only if there is at least TCL_WIN_STACK_THRESHOLD
      * bytes of stack space left.  alloca() is cheap on windows; basically
@@ -349,10 +351,13 @@ TclpCheckStackSpace()
 
     __try {
 	alloca(TCL_WIN_STACK_THRESHOLD);
-	return 1;
-    } __except (1) {}
+	retval = 1;
+    } __except (EXCEPTION_EXECUTE_HANDLER) {}
 
-    return 0;
+    /*
+     * Avoid using control flow statements in the SEH guarded block!
+     */
+    return retval;
 }
 
 

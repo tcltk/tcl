@@ -1,3 +1,11 @@
+2002-03-07  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* win/tclWin32Dll.c (TclpCheckStackSpace):
+	* win/tclWinFCmd.c (DoRenameFile, DoCopyFile): Replace
+	hard coded constants with Win32 symbolic names.
+	Move control flow statements out of __try blocks
+	since the documentation indicates it is frowned upon.
+
 2002-03-07  Don Porter  <dgp@users.sourceforge.net>
 
 	* doc/interp.n:
@@ -235,7 +243,7 @@
 	sign symbols '+' and '-' and '0X' and raise overflow errors.
 	[Bug 440916]  Also corrects prototype and errno problems.
 
-2002-02-23  Mo DeJong  <supermo@bayarea.net>
+2002-02-23  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* configure: Regen.
 	* unix/tcl.m4 (SC_CONFIG_CFLAGS): Link with -n32
