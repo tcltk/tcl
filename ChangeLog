@@ -1,3 +1,9 @@
+2004-05-02  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclProc.c (TclObjInvokeProc):
+	* tests/proc.test (proc-3.6): fix for bad quoting of multi-word
+	proc names in error messages [Bug 942757]
+
 2004-04-23  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclIO.c (Tcl_SetChannelOption): Fixed [SF Tcl Bug
