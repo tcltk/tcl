@@ -1,3 +1,19 @@
+2002-07-28  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* generic/tcl.h: 
+	* generic/tclBasic.c: added the new flag TCL_EVAL_NO_TRACEBACK to
+	the interface of the Tcl_Eval* functions. Modified the error
+	message for too many nested evaluations.
+	* generic/tclInterp.h: changed the Alias struct to be of variable
+	length and store the prefix arguments directly (instead of a
+	pointer to a Tcl_Obj list). Made AliasObjCmd call Tcl_EvalObjv
+	instead of TclObjInvoke - thus making aliases trigger execution
+	traces [Bug 582522].
+	* tests/interp.test:
+	* tests/stack.test: adapted to the new error message.
+	* tests/trace.test: added tests for aliases firing the exec
+	traces. 
+
 2002-07-27  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* unix/Makefile.in: Revert fix for Tcl bug 529801
