@@ -1,3 +1,10 @@
+2002-05-24  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
+	
+	* win/tclWinSock.c (TcpWatchProc): Fixed SF Tcl Bug #557878. We
+	  are not allowed to mess with the watch mask if the socket is a
+	  server socket. I believe that the original reporter is George
+	  Peter Staplin.
+
 2002-05-21  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* unix/configure: Regen.
@@ -307,8 +314,8 @@
 	
 	* generic/tclExecute.c:
 	* tests/compile.test: made bytecodes check for a catch before
-	returning; the compiled [return] is otherwise non-catchable. 
-	[Bug 542588] reported by Andreas Kupries.
+	  returning; the compiled [return] is otherwise non-catchable. 
+	  [Bug 542588] reported by Andreas Kupries.
 
 2002-04-15  Don Porter  <dgp@users.sourceforge.net>
 
