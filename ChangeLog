@@ -1,3 +1,11 @@
+2002-12-13  Don Porter  <dgp@users.sourceforge.net>
+
+	* unix/configure.in:	Updated configure of CVS snapshots to reflect
+	* win/configure.in:	the 8.4.1.1 patchlevel.
+
+	* unix/configure:	autoconf
+	* win/configure		autoconf
+
 2002-12-11  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclProc.c (ProcessProcResultCode): Fix failure to
