@@ -1,5 +1,10 @@
 2002-08-01  Miguel Sofer  <msofer@users.sourceforge.net>
 
+	* generic/tclExecute.c: bugfix (reading freed memory). Testsuite
+	passed on linux/i386, compile-13.1 hung on linux/alpha.
+
+2002-08-01  Miguel Sofer  <msofer@users.sourceforge.net>
+
 	* generic/tclExecute.c: added a reference count for the complete
 	execution stack, instead of Tcl_Preserve/Tcl_Release. 
 
