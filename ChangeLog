@@ -1,5 +1,10 @@
 2002-02-06  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	* tests/scan.test:
+	* generic/tclScan.c (Tcl_ScanObjCmd): corrected scan 0x... %x
+	handling that didn't accept the 0x as a prelude to a base 16
+	number.  [Bug #495213]
+
 	* generic/tclCompCmds.c (TclCompileRegexpCmd): made early check
 	for bad RE to stop checking further.
 
