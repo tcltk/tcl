@@ -1,3 +1,9 @@
+2003-07-18  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* library/http/pkgIndex.tcl: upped to http v2.4.4
+	* library/http/http.tcl: add support for user:pass info in URL.
+	* tests/http.test:       [Bug 759888] (shiobara)
+
 2003-07-18  Don Porter  <dgp@users.sourceforge.net>
 
 	* doc/AddErrInfo.3:	Improved consistency of documentation
