@@ -1,5 +1,8 @@
 2004-05-18  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
+	* tools/man2help2.tcl (macro,SHmacro): Added support for
+	subsection (.SS) header macros.
+
 	* doc/interp.n: Added user documentation for the TIP#143 resource
 	limits and some examples.
 
