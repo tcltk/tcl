@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.94.2.5 2003/09/19 18:43:00 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.94.2.6 2004/05/25 00:08:23 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -4739,8 +4739,9 @@ VerifyExprObjType(interp, objPtr)
 	char *s = Tcl_GetStringFromObj(objPtr, &length);
 	
 	if (TclLooksLikeInt(s, length)) {
+	    long i;
 	    Tcl_WideInt w;
-	    result = Tcl_GetWideIntFromObj((Tcl_Interp *) NULL, objPtr, &w);
+	    GET_WIDE_OR_INT(result, objPtr, i, w);
 	} else {
 	    double d;
 	    result = Tcl_GetDoubleFromObj((Tcl_Interp *) NULL, objPtr, &d);
