@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.69 2002/04/19 14:19:02 das Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.70 2002/05/24 21:19:06 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -896,6 +896,7 @@ TclStubs tclStubs = {
     Tcl_AllocStatBuf, /* 490 */
     Tcl_Seek, /* 491 */
     Tcl_Tell, /* 492 */
+    Tcl_ChannelWideSeekProc, /* 493 */
 };
 
 /* !END!: Do not edit above this line. */

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.86 2002/03/20 22:47:36 dgp Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.87 2002/05/24 21:19:05 dkf Exp $
  */
 
 #ifndef _TCLDECLS
@@ -1553,6 +1553,9 @@ EXTERN Tcl_WideInt	Tcl_Seek _ANSI_ARGS_((Tcl_Channel chan,
 				Tcl_WideInt offset, int mode));
 /* 492 */
 EXTERN Tcl_WideInt	Tcl_Tell _ANSI_ARGS_((Tcl_Channel chan));
+/* 493 */
+EXTERN Tcl_DriverWideSeekProc * Tcl_ChannelWideSeekProc _ANSI_ARGS_((
+				Tcl_ChannelType * chanTypePtr));
 
 typedef struct TclStubHooks {
     struct TclPlatStubs *tclPlatStubs;
@@ -2105,6 +2108,7 @@ typedef struct TclStubs {
     Tcl_StatBuf * (*tcl_AllocStatBuf) _ANSI_ARGS_((void)); /* 490 */
     Tcl_WideInt (*tcl_Seek) _ANSI_ARGS_((Tcl_Channel chan, Tcl_WideInt offset, int mode)); /* 491 */
     Tcl_WideInt (*tcl_Tell) _ANSI_ARGS_((Tcl_Channel chan)); /* 492 */
+    Tcl_DriverWideSeekProc * (*tcl_ChannelWideSeekProc) _ANSI_ARGS_((Tcl_ChannelType * chanTypePtr)); /* 493 */
 } TclStubs;
 
 #ifdef __cplusplus
@@ -4116,6 +4120,10 @@ extern TclStubs *tclStubsPtr;
 #ifndef Tcl_Tell
 #define Tcl_Tell \
 	(tclStubsPtr->tcl_Tell) /* 492 */
+#endif
+#ifndef Tcl_ChannelWideSeekProc
+#define Tcl_ChannelWideSeekProc \
+	(tclStubsPtr->tcl_ChannelWideSeekProc) /* 493 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */
