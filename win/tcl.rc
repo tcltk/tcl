@@ -1,4 +1,4 @@
-// RCS: @(#) $Id: tcl.rc,v 1.9 2003/12/16 02:43:57 davygrvy Exp $
+// RCS: @(#) $Id: tcl.rc,v 1.10 2004/01/16 02:40:20 davygrvy Exp $
 //
 // Version Resource Script
 //
@@ -9,14 +9,14 @@
 //
 // build-up the name suffix that defines the type of build this is.
 //
-#ifdef TCL_THREADS
+#if TCL_THREADS
 #define SUFFIX_THREADS	    "t"
 #else
 #define SUFFIX_THREADS	    ""
 #endif
 
-#ifdef DEBUG
-#define SUFFIX_DEBUG	    "d"
+#if DEBUG
+#define SUFFIX_DEBUG	    "g"
 #else
 #define SUFFIX_DEBUG	    ""
 #endif
