@@ -1,3 +1,8 @@
+2002-11-26  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* win/README: Update msys build env URL. This
+	release #4 build both tcl and tk without problems.
+
 2002-11-22  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* library/init.tcl:         code cleanup to reduce use of
