@@ -12,11 +12,15 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.193 2004/11/03 19:13:38 davygrvy Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.194 2004/11/12 16:44:56 dkf Exp $
  */
 
 #ifndef _TCLINT
 #define _TCLINT
+
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 
 /*
  * Common include files needed by most of the Tcl source files are
