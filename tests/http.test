@@ -12,7 +12,7 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
 #
-# RCS: @(#) $Id: http.test,v 1.32 2003/02/07 11:59:43 vincentdarley Exp $
+# RCS: @(#) $Id: http.test,v 1.33 2003/02/11 20:41:38 kennykb Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -122,7 +122,7 @@ test http-3.2 {http::geturl} {
 } {Unsupported URL: http:junk}
 
 set url [info hostname]:$port
-set badurl www.scriptics.com:6666
+set badurl [info hostname]:6666
 test http-3.3 {http::geturl} {
     set token [http::geturl $url]
     http::data $token
@@ -447,7 +447,7 @@ test http-4.15 {http::Event} {
     # This test may fail if you use a proxy server.  That is to be
     # expected and is not a problem with Tcl.
     set code [catch {
-	set token [http::geturl not_a_host.scriptics.com -timeout 1000 -command {#}]
+	set token [http::geturl not_a_host.tcl.tk -timeout 1000 -command {#}]
 	http::wait $token
 	http::status $token
     } err]
