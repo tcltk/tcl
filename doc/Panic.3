@@ -2,7 +2,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Panic.3,v 1.6 2004/10/07 14:52:43 dkf Exp $
+'\" RCS: @(#) $Id: Panic.3,v 1.7 2004/10/07 15:15:47 dkf Exp $
 '\" 
 .so man.macros
 .TH Tcl_Panic 3 8.4 Tcl "Tcl Library Procedures"
@@ -25,7 +25,7 @@ void
 .sp
 .SH ARGUMENTS
 .AS Tcl_PanicProc *panicProc
-.AP "CONST char*" format in
+.AP "const char*" format in
 A printf-style format string.
 .AP "" arg in
 Arguments matching the format string.
@@ -61,7 +61,7 @@ type \fBTcl_PanicProc\fR:
 .PP
 .CS
 typedef void Tcl_PanicProc(
-        CONST char *\fBformat\fR,
+        const char *\fBformat\fR,
         \fBarg\fR, \fBarg\fR,...);
 .CE
 .PP

@@ -5,7 +5,7 @@
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
 '\" 
-'\" RCS: @(#) $Id: AssocData.3,v 1.6 2004/10/07 14:44:31 dkf Exp $
+'\" RCS: @(#) $Id: AssocData.3,v 1.7 2004/10/07 15:15:35 dkf Exp $
 .so man.macros
 .TH Tcl_SetAssocData 3 7.5 Tcl "Tcl Library Procedures"
 .BS
@@ -25,7 +25,7 @@ ClientData
 .AS Tcl_InterpDeleteProc **delProcPtr
 .AP Tcl_Interp *interp in
 Interpreter in which to execute the specified command.
-.AP "CONST char" *key in
+.AP "const char" *key in
 Key for association with which to store data or from which to delete or
 retrieve data.  Typically the module prefix for a package.
 .AP Tcl_InterpDeleteProc *delProc in

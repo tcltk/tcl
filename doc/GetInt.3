@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: GetInt.3,v 1.6 2004/10/07 14:44:32 dkf Exp $
+'\" RCS: @(#) $Id: GetInt.3,v 1.7 2004/10/07 15:15:38 dkf Exp $
 '\" 
 .so man.macros
 .TH Tcl_GetInt 3 "" Tcl "Tcl Library Procedures"
@@ -28,7 +28,7 @@ int
 .AS Tcl_Interp *doublePtr out
 .AP Tcl_Interp *interp in
 Interpreter to use for error reporting.
-.AP "CONST char" *string in
+.AP "const char" *string in
 Textual value to be converted.
 .AP int *intPtr out
 Points to place to store integer value converted from \fIstring\fR.

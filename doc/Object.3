@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Object.3,v 1.9 2004/10/07 14:52:43 dkf Exp $
+'\" RCS: @(#) $Id: Object.3,v 1.10 2004/10/07 15:15:38 dkf Exp $
 '\" 
 .so man.macros
 .TH Tcl_Obj 3 8.1 Tcl "Tcl Library Procedures"
@@ -120,10 +120,10 @@ typedef struct Tcl_Obj {
         union {
                 long \fIlongValue\fR;
                 double \fIdoubleValue\fR;
-                VOID *\fIotherValuePtr\fR;
+                void *\fIotherValuePtr\fR;
                 struct {
-                        VOID *\fIptr1\fR;
-                        VOID *\fIptr2\fR;
+                        void *\fIptr1\fR;
+                        void *\fIptr2\fR;
                 } \fItwoPtrValue\fR;
         } \fIinternalRep\fR;
 } Tcl_Obj;
