@@ -1,3 +1,9 @@
+2002-02-01  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
+
+	* tests/io.test: io-39.22 split into two tests, one platform
+	  dependent, the other not. -eofchar is not empty on the windows
+	  platform.
+
 2002-01-25  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	Make -eofchar and -translation options read only for

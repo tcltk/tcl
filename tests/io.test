@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: io.test,v 1.14.2.3 2002/01/26 00:30:31 mdejong Exp $
+# RCS: @(#) $Id: io.test,v 1.14.2.4 2002/02/01 21:47:12 andreas_kupries Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -5015,7 +5015,8 @@ test io-39.21 {Tcl_SetChannelOption, setting read mode independently} \
     close $s2
     set modes
 } {auto crlf}
-test io-39.22 {Tcl_SetChannelOption, invariance} {
+
+test io-39.22 {Tcl_SetChannelOption, invariance} {unixOnly} {
     removeFile test1
     set f1 [open test1 w+]
     set l ""
@@ -5024,11 +5025,24 @@ test io-39.22 {Tcl_SetChannelOption, invariance} {
     lappend l [fconfigure $f1 -eofchar]
     fconfigure $f1 -eofchar D
     lappend l [fconfigure $f1 -eofchar]
+    close $f1
+    set l
+} {{{} {}} {O G} {D D}}
+
+test io-39.22a {Tcl_SetChannelOption, invariance} {
+    removeFile test1
+    set f1 [open test1 w+]
+    set l [list]
+    fconfigure $f1 -eofchar {ON GO}
+    lappend l [fconfigure $f1 -eofchar]
+    fconfigure $f1 -eofchar D
+    lappend l [fconfigure $f1 -eofchar]
     lappend l [list [catch {fconfigure $f1 -eofchar {1 2 3}} msg] $msg]
     close $f1
     set l
-} {{{} {}} {O G} {D D}\
-{1 {bad value for -eofchar: should be a list of zero, one, or two elements}}}
+} {{O G} {D D} {1 {bad value for -eofchar: should be a list of zero, one, or two elements}}}
+
+
 test io-39.23 {Tcl_GetChannelOption, server socket is not readable or
         writeable, it should still have valid -eofchar and -translation options } {
     set l [list]
