@@ -6,7 +6,7 @@
 # Copyright (c) 1995-1996 Sun Microsystems, Inc.
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 #
-# RCS: @(#) $Id: makefile.vc,v 1.32 1999/05/05 20:29:04 stanton Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.33 1999/05/07 20:06:52 stanton Exp $
 
 # Does not depend on the presence of any environment variables in
 # order to compile tcl; all needed information is derived from 
@@ -61,8 +61,7 @@ NODEBUG = 1
 #				needed when using Purify.
 #
 #DEBUGDEFINES = -DTCL_MEM_DEBUG -DTCL_COMPILE_DEBUG -DTCL_COMPILE_STATS
-#DEBUGDEFINES = -DUSE_TCLALLOC=0
-DEBUGDEFINES = -DTCL_COMPILE_DEBUG
+#DEBUGDEFINES = -DUSE_TCL_ALLOC=0
 
 ######################################################################
 # Do not modify below this line
@@ -334,7 +333,7 @@ setup:
 	@$(MKDIR) $(OUTDIR)
 
 $(DUMPEXTS): $(WINDIR)\winDumpExts.c
-	$(cc32) $(CON_CFLAGS) -Fo$(TMPDIR)\ $?
+	$(cc32) $(CON_CFLAGS) -DTCL_LIB_VERSION=$(VERSION) -Fo$(TMPDIR)\ $?
 	set LIB="$(TOOLS32)\lib"
 	$(link32) $(ldebug) $(conlflags) $(guilibs) -out:$@ \
 		$(TMPDIR)\winDumpExts.obj 
