@@ -1,3 +1,20 @@
+2004-03-18  Reinhard Max  <max@suse.de>
+
+	* generic/tclIntDecls.h: Removed TclpTime_t. It wasn't really needed,
+	* generic/tclInt.h:      but caused warnings related to
+	* generic/tclInt.decls:  strict aliasing with GCC 3.3.
+	* generic/tclClock.c:
+	* generic/tclDate.c:
+	* generic/tclGetDate.y: 
+	* win/tclWinTime.c: 
+	* unix/tclUnixTime.c: 
+
+	* generic/tclNamesp.c:   Added temporary pointer variables to work
+	* generic/tclStubLib.c:  around warnings related to
+	* unix/tclUnixChan.c:    strict aliasing with GCC 3.3.
+
+	* unix/tcl.m4:           Removed -Wno-strict-aliasing.
+
 2004-03-18  Daniel Steffen  <das@users.sourceforge.net>
 
 	Removed support for Mac OS Classic platform [Patch 918142]
