@@ -1,3 +1,9 @@
+2003-11-12  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* tests/cmdMZ.test (cmdMZ-1.4): change to nonPortable as more
+	systems are using permissions caching, and this isn't really a Tcl
+	controlled issue.
+
 2003-11-11  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* unix/configure:
