@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.121 2004/10/01 03:10:35 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.122 2004/10/01 03:19:56 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -419,7 +419,6 @@ Tcl_CreateInterp()
 	mathFuncPtr->builtinFuncIndex = i;
 	i++;
     }
-    iPtr->flags |= EXPR_INITIALIZED;
 
     /*
      * Do Multiple/Safe Interps Tcl init stuff
