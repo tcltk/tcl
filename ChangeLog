@@ -237,7 +237,7 @@
 2003-06-10  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclBasic.c:
-	* generic/tclExecute.c: let TclExecuteObjvInternal call
+	* generic/tclExecute.c: let TclEvalObjvInternal call
 	TclInterpReady instead of relying on its callers to do so; fix for
 	the part of [Bug 495830] that is new in 8.4. 
 	* tests/interp.test: Added tests 18.9 (knownbug) and 18.10
