@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.42 2001/07/31 19:12:06 vincentdarley Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.43 2001/08/07 00:56:15 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -252,11 +252,18 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
 	return TCL_ERROR;
     }
 
+    /*
+     * Get the length of the string that we are matching against so
+     * we can do the termination test for -all matches.  Do this before
+     * getting the regexp to avoid shimmering problems.
+     */
+    objPtr = objv[1];
+    stringLength = Tcl_GetCharLength(objPtr);
+
     regExpr = Tcl_GetRegExpFromObj(interp, objv[0], cflags);
     if (regExpr == NULL) {
 	return TCL_ERROR;
     }
-    objPtr = objv[1];
 
     if (about) {
 	if (TclRegAbout(interp, regExpr) < 0) {
@@ -291,12 +298,6 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
 	numMatchesSaved = (objc == 0) ? all : objc;
     }
 
-    /*
-     * Get the length of the string that we are matching against so
-     * we can do the termination test for -all matches.
-     */
-    stringLength = Tcl_GetCharLength(objPtr);
-    
     /*
      * The following loop is to handle multiple matches within the
      * same source string;  each iteration handles one match.  If "-all"
@@ -552,15 +553,20 @@ Tcl_RegsubObjCmd(dummy, interp, objc, objv)
 
     objv += idx;
 
-    regExpr = Tcl_GetRegExpFromObj(interp, objv[0], cflags);
-    if (regExpr == NULL) {
-	return TCL_ERROR;
-    }
+    /*
+     * Get the length of the string that we are matching before
+     * getting the regexp to avoid shimmering problems.
+     */
 
     objPtr	= objv[1];
     wstring	= Tcl_GetUnicodeFromObj(objPtr, &wlen);
     wsubspec	= Tcl_GetUnicodeFromObj(objv[2], &wsublen);
     varPtr	= objv[3];
+
+    regExpr = Tcl_GetRegExpFromObj(interp, objv[0], cflags);
+    if (regExpr == NULL) {
+	return TCL_ERROR;
+    }
 
     result = TCL_OK;
     resultPtr = Tcl_NewUnicodeObj(wstring, 0);
