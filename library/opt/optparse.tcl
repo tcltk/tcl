@@ -8,9 +8,9 @@
 #	on it.  If your code does rely on this package you
 #	may directly incorporate this code into your application.
 #
-# RCS: @(#) $Id: optparse.tcl,v 1.4 2000/07/18 21:30:41 ericm Exp $
+# RCS: @(#) $Id: optparse.tcl,v 1.5 2000/12/11 04:17:39 dgp Exp $
 
-package provide opt 0.4.1
+package provide opt 0.4.2
 
 namespace eval ::tcl {
 
@@ -239,7 +239,7 @@ proc ::tcl::OptKeyDelete {key} {
 # Assign a temporary key, call OptKeyParse and then free the storage
 proc ::tcl::OptParse {desc arglist} {
     set tempkey [OptKeyRegister $desc];
-    set ret [catch {uplevel [list ::tcl::OptKeyParse $tempkey $arglist]} res];
+    set ret [catch {uplevel 1 [list ::tcl::OptKeyParse $tempkey $arglist]} res];
     OptKeyDelete $tempkey;
     return -code $ret $res;
 }
@@ -252,7 +252,7 @@ proc ::tcl::OptParse {desc arglist} {
 # (the other will be sets to their default value)
 # into local variable named "Args".
 proc ::tcl::OptProc {name desc body} {
-    set namespace [uplevel namespace current];
+    set namespace [uplevel 1 [list ::namespace current]];
     if {   ([string match "::*" $name]) 
         || ([string compare $namespace "::"]==0)} {
         # absolute name or global namespace, name is the key
@@ -262,7 +262,7 @@ proc ::tcl::OptProc {name desc body} {
         set key "${namespace}::${name}";
     }
     OptKeyRegister $desc $key;
-    uplevel [list proc $name args "set Args \[::tcl::OptKeyParse $key \$args\]\n$body"];
+    uplevel 1 [list ::proc $name args "set Args \[::tcl::OptKeyParse $key \$args\]\n$body"];
     return $key;
 }
 # Check that a argument has been given
@@ -307,7 +307,7 @@ proc ::tcl::OptProcArgGiven {argname} {
 
     # Advance to next description
     proc OptNextDesc {descName} {
-        uplevel [list Lvarincr $descName {0 1}];
+        uplevel 1 [list Lvarincr $descName {0 1}];
     }
 
     # Get the current description, eventually descend
@@ -365,7 +365,7 @@ proc ::tcl::OptProcArgGiven {argname} {
     }
     # Advance to next argument
     proc OptNextArg {argsName} {
-        uplevel [list Lvarpop1 $argsName];
+        uplevel 1 [list Lvarpop1 $argsName];
     }
     #######
 
@@ -1055,7 +1055,7 @@ proc ::tcl::Lassign {list args} {
     set lg [llength $list];
     foreach vname $args {
         if {$i>=$lg} break
-        uplevel [list set $vname [lindex $list $i]];
+        uplevel 1 [list ::set $vname [lindex $list $i]];
         incr i;
     }
     return $lg;
