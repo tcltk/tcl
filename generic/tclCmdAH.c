@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.22 2002/02/19 10:26:24 dkf Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.23 2002/02/27 06:39:26 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -1441,6 +1441,8 @@ StoreStatData(interp, varName, statPtr)
     STORE_ARY("mode",  Tcl_NewIntObj(mode));
     STORE_ARY("type",  Tcl_NewStringObj(GetTypeFromMode(mode), -1));
 #undef STORE_ARY
+    Tcl_DecrRefCount(var);
+    Tcl_DecrRefCount(field);
     return TCL_OK;
 }
 
