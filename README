@@ -1,27 +1,23 @@
 README:  Tcl
+    This is the Tcl 8.1 source distribution.
 
-	Tcl is maintained, enhanced, and distributed freely as a
-	service to the Tcl community by Scriptics Corporation.
-
-RCS: @(#) $Id: README,v 1.17 1999/04/21 21:50:22 rjohnson Exp $
+RCS: @(#) $Id: README,v 1.18 1999/04/24 01:46:51 stanton Exp $
 
 Contents
 --------
     1. Introduction
     2. Documentation
     3. Compiling and installing Tcl
-    4. Summary of changes in Tcl 8.1
-    5. Development tools
-    6. Tcl newsgroup
-    7. Tcl contributed archive
-    8. Tcl Resource Center
-    9. Mailing lists
-    10. Support and bug fixes
-    11. Tcl version numbers
+    4. Development tools
+    5. Tcl newsgroup
+    6. Tcl contributed archive
+    7. Tcl Resource Center
+    8. Mailing lists
+    9. Support and Training
+    10. Thank You
 
 1. Introduction
 ---------------
-
 Tcl provides a powerful platform for creating integration
 applications that tie together diverse applications, protocols,
 devices, and frameworks.  When paired with the Tk toolkit, Tcl
@@ -30,17 +26,11 @@ that run on PCs, Unix, and the Macintosh.  Tcl can also be used for a
 variety of web-related tasks and for creating powerful command
 languages for applications.
 
-This directory contains the sources and documentation for Tcl.  The
-information here corresponds to release 8.1.0.
+Tcl is maintained, enhanced, and distributed freely as a
+service to the Tcl community by Scriptics Corporation.
+The official home for Tcl/Tk is on the Scriptics Web site:
 
-Tcl 8.1 includes four major new features: Unicode support (all internal
-strings are now stored in UTF-8 form), a new regular expression matcher
-which surpass the features of Perl, support for multithreading, and a
-new message catalog package.  For details on features,
-incompatibilities, and potential problems with this release, see the
-Tcl/Tk 8.1 Web page at http://www.scriptics.com/software/8.1.html or
-refer to the "changes" file in this directory, which contains a
-historical record of all changes to Tcl.
+    http://www.scriptics.com
 
 Tcl is a freely available open source package.  You can do virtually
 anything you like with it, such as modifying it, redistributing it,
@@ -48,36 +38,23 @@ and selling it either in whole or in part.  See the file
 "license.terms" for complete information.
 
 2. Documentation
-----------------
+---------------
 
-The best way to get started with Tcl is to read about Tcl on the
-Scriptics Web site at:
+Extensive documentation is available at our website.  The
+home page for this release is
+    http://www.scriptics.com/software/8.1.html
 
-	http://www.scriptics.com/scripting
+Information about new features in 8.1 can be found at
+    http://www.scriptics.com/software/whatsnew81.html
 
-Another good way to get started with Tcl is to read one of the
-introductory books on Tcl:
+Detailed release notes can be found at
+    http://www.scriptics.com/software/relnotes/tcl8.1
 
-    Practical Programming in Tcl and Tk, 2nd Edition, by Brent Welch,
-    Prentice-Hall, 1997, ISBN 0-13-616830-2
+Information about Tcl itself can be found at
+    http://www.scriptics.com/scripting/
 
-    Tcl and the Tk Toolkit, by John Ousterhout,
-    Addison-Wesley, 1994, ISBN 0-201-63337-X
-
-    Exploring Expect, by Don Libes,
-    O'Reilly and Associates, 1995, ISBN 1-56592-090-2
-
-Other books are listed at
-http://www.scriptics.com/resource/doc/books/
-
-There is also an official home for Tcl and Tk on the Scriptics Web site:
-
-	http://www.scriptics.com
-
-These Web pages include information about the latest releases, products
-related to Tcl and Tk, reports on bug fixes and porting issues, HTML
-versions of the manual pages, and pointers to many other Tcl/Tk Web
-pages at other sites.  Check them out!
+There are many Tcl books on the market.  Most are listed at
+    http://www.scriptics.com/resource/doc/books/
 
 2a. Unix Documentation
 ----------------------
@@ -103,7 +80,7 @@ using the normal "man" mechanisms, such as
 -------------------------
 
 The "doc/help" subdirectory in this release contains a complete set of
-Windows help files for TclPro.  Once you install this Tcl release, a
+Windows help files for Tcl.  Once you install this Tcl release, a
 shortcut to the Windows help Tcl documentation will appear in the
 "Start" menu:
 
@@ -112,116 +89,13 @@ shortcut to the Windows help Tcl documentation will appear in the
 3. Compiling and installing Tcl
 -------------------------------
 
-This release contains everything you should need to compile and run
-Tcl under UNIX, PCs (either Windows NT, Windows 95, or Win 3.1 with
-Win32s), and Macintoshes.
+There are brief notes in the unix/README, win/README, and mac/README
+about compiling on these different platforms.  There is additional
+information about building Tcl from sources at
+    http://www.scriptics.com/support/howto/compile.html
 
-Before trying to compile Tcl you should do the following things:
 
-    (a) Check for a binary release.  Pre-compiled binary releases are
-        available now for PCs, Macintoshes, and several flavors of UNIX.
-        Binary releases are much easier to install than source releases.
-        To find out whether a binary release is available for your
-        platform, check the Scriptics Tcl Resource Center
-        (http://www.scriptics.com/resource).  Also, check in
-        the FTP directory from which you retrieved the base
-        distribution.
-
-    (b) Make sure you have the most recent patch release.  Look in the
-	FTP directory from which you retrieved this distribution to see
-	if it has been updated with patches.  Patch releases fix bugs
-	without changing any features, so you should normally use the
-	latest patch release for the version of Tcl that you want. 
-
-Once you've done this, change to the "unix" subdirectory if you're
-compiling under UNIX, "win" if you're compiling under Windows, or
-"mac" if you're compiling on a Macintosh.  Then follow the instructions
-in the README file in that directory for compiling Tcl, installing it,
-and running the test suite.
-
-4. Summary of changes in Tcl 8.1
---------------------------------
-
-Here are the most significant changes in Tcl 8.1.  In addition to these
-changes, there are several smaller changes and bug fixes.  See the file
-"changes" for a complete list of all changes.
-
-    1. Internationalization. Tcl has undergone a major revision to
-    support international character sets:
-
-    All strings in Tcl are now represented in UTF-8 instead of ASCII,
-    so that Tcl now supports the full Unicode character set.  The
-    representation of ASCII characters is unchanged (in UTF-8 anything
-    that looks like an ASCII character is an ASCII character), but
-    characters with the high-order bit set, such as those in ISO-8859,
-    are represented with multi-byte sequences, as are all Unicode
-    characters with values greater than 127.  This change does not
-    affect Tcl scripts but it does affect C code that parses strings.
-    Tcl automatically translates between UTF-8 and the normal encoding
-    for the platform during interactions with the system.
-
-    In Tcl scripts the backslash sequence \u can be used to enter
-    16-bit Unicode characters.  \o and \x generate only 8-bit
-    characters as before.
-
-    There is a new "encoding" command that allows scripts to determine
-    what encodings are available as well as to convert strings between
-    different encodings.  The fconfigure command now supports a
-    -encoding option for specifying the encoding of an open file or
-    socket.  Tcl will automatically translate between the specified
-    encoding and UTF-8 during I/O.
-
-    There are several new C APIs that support UTF-8 and various
-    encodings.  See the manual entry Utf.3 for procedures that
-    translate between Unicode and UTF-8 and manipulate UTF-8 strings.
-    See Encoding.3 for procedures that create new encodings and
-    translate between encodings.  See ToUpper.3 for procedures that
-    perform case conversions on UTF-8 strings.
-
-    2. Binary data.  Binary data is handled differently in Tcl 8.1
-    than in Tcl 8.0.  Tcl 8.1 uses the UTF-8 facilities to represent
-    binary data: the character value zero is represented with a
-    multi-byte sequence, so that (once again) strings in Tcl 8.1 never
-    contain null bytes.  This means that binary data is now accepted
-    everywhere in Tcl and Tk (in Tcl 8.0 the support for binary data
-    was incomplete).  If you have C code that needs to manipulate the
-    bytes of binary data (as opposed to just passing the data through)
-    you should use a new object type called "byte array".  See the
-    manual entry ByteArrObj.3 for information about procedures such as
-    Tcl_GetByteArrayFromObj.
-
-    3. Regular expressions.  Tcl 8.1 contains a brand new
-    implementation of regular expressions from Henry Spencer.  The
-    regular expression syntax has been greatly expanded to include
-    most of the features in Perl.  In addition, the regexp engine
-    supports Unicode and binary data.  See the doc/regexp.n manual
-    entry for more details.
-
-    4. Threads.  If configured with the --enable-threads flag, Tcl can
-    now be compiled for use in a multi-threaded application.
-    Individual threads are allowed to use one or more interpreters as
-    long as each interpreter (and any slave interpreters) is only
-    accessed by one thread.  Each thread runs its own event loop, and
-    you can post events to other threads. There are new C APIs for
-    mutexes, condition variables, and thread local storage.  See the
-    doc/Thread.3 manual entry for more details.  Tk 8.1 is not yet
-    multi-thread safe.  There is not yet support for tcl level use of
-    threading except for a test command. (Compile tcltest and try
-    testthread.)
-
-    5. Message catalog. There is a new message catalog package which makes
-    it easy to localize the strings in a script.  See the doc/msgcat.n
-    manual entry for more details.
-
-    6. Stubbs library for building extensions.  There is now a new
-    way to build extensions for Tcl.  Instead of linking with the
-    tcl shared library you can now link to a stubs library that gets
-    built in this release.  By linking with the stubs library it
-    is possible to use dynamically loaded extensions in staticlly
-    built applications.  It will also be possible for some extensions
-    to work for both Tcl 8.0 & 8.1 with out having to recompile.
-
-5. Development tools
+4. TclPro Development tools
 --------------------
 
 A high quality set of commercial development tools is now available to
@@ -231,10 +105,9 @@ and bytecode compiler.  Visit the Scriptics Web site at:
 
 	http://www.scriptics.com/tclpro
 
-for more information on TclPro and for a free 30-day evaluation
-download.
+for more information on TclPro and for a free evaluation download.
 
-6. Tcl newsgroup
+5. Tcl newsgroup
 ----------------
 
 There is a network news group "comp.lang.tcl" intended for the
@@ -242,7 +115,7 @@ exchange of information about Tcl, Tk, and related applications.  The
 newsgroup is a greata place to ask general information questions.  For
 bug reports, please see the "Support and bug fixes" section below.
 
-7. Tcl contributed archive
+6. Tcl contributed archive
 --------------------------
 
 Many people have created exciting packages and applications based on Tcl
@@ -253,7 +126,7 @@ in the directory "/pub/tcl".  The archive also contains several FAQ
 ("frequently asked questions") documents that provide solutions to problems
 that are commonly encountered by TCL newcomers.
 
-8. Tcl Resource Center
+7. Tcl Resource Center
 ----------------------
 
 Visit http://www.scriptics.com/resource/ to see an annotated index of
@@ -263,7 +136,7 @@ applications, binary releases, and patches.  You can also recommend
 additional URLs for the resource center using the forms labeled "Add a
 Resource".
 
-9. Mailing lists
+8. Mailing lists
 ----------------
 
 A couple of  Mailing List have been set up to discuss Macintosh or
@@ -285,8 +158,8 @@ subscribing put the line:
 	
 in the body instead (or wintcl).
 
-10. Support and bug fixes
--------------------------
+9. Support and Training
+------------------------
 
 Scriptics is very interested in receiving bug reports, patches, and
 suggestions for improvements.  We prefer that you send this
@@ -301,20 +174,6 @@ The bug form also includes an option to automatically post your report
 on comp.lang.tcl.  We strongly recommend that you select this option
 because someone else who reads comp.lang.tcl may be able to offer a
 solution.
-
-When reporting bugs, please provide full information about the Tcl/Tk
-version and the platform on which you are running Tcl/Tk.  Also,
-please include a short tclsh script that we can use to reproduce the
-bug.  Make sure that the script runs with a bare-bones tclsh and
-doesn't depend on any extensions or other programs, particularly those
-that exist only at your site.  Also, please include three additional
-pieces of information with the script:
-
-    (a) how do we use the script to make the problem happen (e.g.
-	what things do we click on, in what order)?
-    (b) what happens when you do these things (presumably this is
-        undesirable)?
-    (c) what did you expect to happen instead?
 
 We will log and follow-up on each bug, although we cannot promise a
 specific turn-around time.  Enhancements may take longer and may not
@@ -337,59 +196,7 @@ offer Tcl/Tk training:
 
 	http://www.scriptics.com/resource/commercial/training
 
-11. Tcl version numbers
------------------------
-
-You can test the current version of Tcl by examining the
-tcl_version and tcl_patchLevel variables.  The tcl_patchLevel
-variable follows the naming rules outlined below (e.g., 8.0.5).
-The tcl_version just has the major.minor numbers in it (e.g., 8.0)
-
-Each Tcl release is identified by two numbers separated by a dot, e.g.
-6.7 or 7.0.  If a new release contains changes that are likely to break
-existing C code or Tcl scripts then the major release number increments
-and the minor number resets to zero: 6.0, 7.0, etc.  If a new release
-contains only bug fixes and compatible changes, then the minor number
-increments without changing the major number, e.g. 7.1, 7.2, etc.  If
-you have C code or Tcl scripts that work with release X.Y, then they
-should also work with any release X.Z as long as Z > Y.
-
-Alpha and beta releases have an additional suffix of the form a2 or b1.
-For example, Tcl 7.0b1 is the first beta release of Tcl version 7.0,
-Tcl 7.0b2 is the second beta release, and so on.  A beta release is an
-initial version of a new release, used to fix bugs and bad features before
-declaring the release stable.  An alpha release is like a beta release,
-except it's likely to need even more work before it's "ready for prime
-time".  New releases are normally preceded by one or more alpha and beta
-releases.  We hope that lots of people will try out the alpha and beta
-releases and report problems.  We'll make new alpha/beta releases to fix
-the problems, until eventually there is a beta release that appears to
-be stable.  Once this occurs we'll make the final release.
-
-We can't promise to maintain compatibility among alpha and beta releases.
-For example, release 7.1b2 may not be backward compatible with 7.1b1, even
-though the final 7.1 release will be backward compatible with 7.0.  This
-allows us to change new features as we find problems during beta testing.
-We'll try to minimize incompatibilities between beta releases, but if
-a major problem turns up then we'll fix it even if it introduces an
-incompatibility.  Once the official release is made then there won't
-be any more incompatibilities until the next release with a new major
-version number.
-
-(Note: This compatibility is true for Tcl scripts, but historically
-the Tcl C APIs have changed enough between releases that you may need
-to work a bit to upgrade extensions.)
-
-Patch releases now have a suffix such as ".4" or ".5".  Prior to
-version 8.0.3, patch releases had the suffix "p1" or "p2".  So, the
-8.0 release went to 8.0p1, 8.0p2, 8.0.3, 8.0.4, and 8.0.5.  The alphas
-and betas continue to use the 'a' and 'b' letters in their
-tcl_patchLevel.  Patch releases normally contain bug fixes only.  A
-patch release (e.g Tcl 8.0.5) should be completely compatible with the
-base release from which it is derived (e.g. Tcl 8.0), and you should
-normally use the highest available patch release.
-
-12. Thank You
+10. Thank You
 -------------
 
 We'd like to express our thanks to the Tcl community for all the
