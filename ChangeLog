@@ -1,3 +1,13 @@
+1999-10-19  Jennifer Hom  <jenn@scriptics.com>
+
+	* library/tcltest1.0/pkgIndex.tcl: Removed nonexistent
+	procs from pkgIndex.tcl.
+	
+	* library/tcltest1.0/tcltest.tcl: Fixed the way that the
+	interactive constraint is set so that it checks the content
+	of the tcl_interactive flag as well as its existence, and removed
+	the extra return at the end of tcltest.tcl.
+
 1999-10-01  Jeff Hobbs  <hobbs@scriptics.com>
 
 	* All frozen for 10/4/99 8.2.1 release
