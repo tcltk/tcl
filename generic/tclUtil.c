@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.34 2002/08/05 15:01:05 dgp Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.35 2002/11/12 02:26:40 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -924,7 +924,7 @@ Tcl_Backslash(src, readPtr)
     Tcl_UniChar ch;
 
     Tcl_UtfBackslash(src, readPtr, buf);
-    Tcl_UtfToUniChar(buf, &ch);
+    TclUtfToUniChar(buf, &ch);
     return (char) ch;
 }
 
@@ -1191,7 +1191,7 @@ Tcl_StringCaseMatch(string, pattern, nocase)
 				 * characters. */
     int nocase;			/* 0 for case sensitive, 1 for insensitive */
 {
-    int p;
+    int p, charLen;
     CONST char *pstart = pattern;
     Tcl_UniChar ch1, ch2;
     
@@ -1227,9 +1227,17 @@ Tcl_StringCaseMatch(string, pattern, nocase)
 	    if (p == '\0') {
 		return 1;
 	    }
-	    Tcl_UtfToUniChar(pattern, &ch2);
-	    if (nocase) {
-		ch2 = Tcl_UniCharToLower(ch2);
+	    /*
+	     * This is a special case optimization for single-byte utf.
+	     */
+	    if (UCHAR(*pattern) < 0x80) {
+		ch2 = (Tcl_UniChar)
+		    (nocase ? tolower(UCHAR(*pattern)) : UCHAR(*pattern));
+	    } else {
+		Tcl_UtfToUniChar(pattern, &ch2);
+		if (nocase) {
+		    ch2 = Tcl_UniCharToLower(ch2);
+		}
 	    }
 	    while (1) {
 		/*
@@ -1240,7 +1248,7 @@ Tcl_StringCaseMatch(string, pattern, nocase)
 		if ((p != '[') && (p != '?') && (p != '\\')) {
 		    if (nocase) {
 			while (*string) {
-			    int charLen = Tcl_UtfToUniChar(string, &ch1);
+			    charLen = TclUtfToUniChar(string, &ch1);
 			    if (ch2==ch1 || ch2==Tcl_UniCharToLower(ch1)) {
 				break;
 			    }
@@ -1253,7 +1261,7 @@ Tcl_StringCaseMatch(string, pattern, nocase)
 			 * compare each time is non-constant.
 			 */
 			while (*string) {
-			    int charLen = Tcl_UtfToUniChar(string, &ch1);
+			    charLen = TclUtfToUniChar(string, &ch1);
 			    if (ch2 == ch1) {
 				break;
 			    }
@@ -1267,7 +1275,7 @@ Tcl_StringCaseMatch(string, pattern, nocase)
 		if (*string == '\0') {
 		    return 0;
 		}
-		string += Tcl_UtfToUniChar(string, &ch1);
+		string += TclUtfToUniChar(string, &ch1);
 	    }
 	}
 
@@ -1278,7 +1286,7 @@ Tcl_StringCaseMatch(string, pattern, nocase)
 
 	if (p == '?') {
 	    pattern++;
-	    string += Tcl_UtfToUniChar(string, &ch1);
+	    string += TclUtfToUniChar(string, &ch1);
 	    continue;
 	}
 
@@ -1292,26 +1300,45 @@ Tcl_StringCaseMatch(string, pattern, nocase)
 	    Tcl_UniChar startChar, endChar;
 
 	    pattern++;
-	    string += Tcl_UtfToUniChar(string, &ch1);
-	    if (nocase) {
-		ch1 = Tcl_UniCharToLower(ch1);
+	    if (UCHAR(*string) < 0x80) {
+		ch1 = (Tcl_UniChar)
+		    (nocase ? tolower(UCHAR(*string)) : UCHAR(*string));
+		string++;
+	    } else {
+		string += Tcl_UtfToUniChar(string, &ch1);
+		if (nocase) {
+		    ch1 = Tcl_UniCharToLower(ch1);
+		}
 	    }
 	    while (1) {
 		if ((*pattern == ']') || (*pattern == '\0')) {
 		    return 0;
 		}
-		pattern += Tcl_UtfToUniChar(pattern, &startChar);
-		if (nocase) {
-		    startChar = Tcl_UniCharToLower(startChar);
+		if (UCHAR(*pattern) < 0x80) {
+		    startChar = (Tcl_UniChar)
+			(nocase ? tolower(UCHAR(*pattern)) : UCHAR(*pattern));
+		    pattern++;
+		} else {
+		    pattern += Tcl_UtfToUniChar(pattern, &startChar);
+		    if (nocase) {
+			startChar = Tcl_UniCharToLower(startChar);
+		    }
 		}
 		if (*pattern == '-') {
 		    pattern++;
 		    if (*pattern == '\0') {
 			return 0;
 		    }
-		    pattern += Tcl_UtfToUniChar(pattern, &endChar);
-		    if (nocase) {
-			endChar = Tcl_UniCharToLower(endChar);
+		    if (UCHAR(*pattern) < 0x80) {
+			endChar = (Tcl_UniChar)
+			    (nocase ? tolower(UCHAR(*pattern))
+				    : UCHAR(*pattern));
+			pattern++;
+		    } else {
+			pattern += Tcl_UtfToUniChar(pattern, &endChar);
+			if (nocase) {
+			    endChar = Tcl_UniCharToLower(endChar);
+			}
 		    }
 		    if (((startChar <= ch1) && (ch1 <= endChar))
 			    || ((endChar <= ch1) && (ch1 <= startChar))) {
@@ -1335,7 +1362,7 @@ Tcl_StringCaseMatch(string, pattern, nocase)
 	    pattern++;
 	    continue;
 	}
-    
+
 	/*
 	 * If the next pattern character is '\', just strip off the '\'
 	 * so we do exact matching on the character that follows.
@@ -1353,8 +1380,8 @@ Tcl_StringCaseMatch(string, pattern, nocase)
 	 * bytes of each string match.
 	 */
 
-	string  += Tcl_UtfToUniChar(string, &ch1);
-	pattern += Tcl_UtfToUniChar(pattern, &ch2);
+	string  += TclUtfToUniChar(string, &ch1);
+	pattern += TclUtfToUniChar(pattern, &ch2);
 	if (nocase) {
 	    if (Tcl_UniCharToLower(ch1) != Tcl_UniCharToLower(ch2)) {
 		return 0;
@@ -1839,11 +1866,16 @@ Tcl_PrintDouble(interp, value, dst)
      * If the ASCII result looks like an integer, add ".0" so that it
      * doesn't look like an integer anymore.  This prevents floating-point
      * values from being converted to integers unintentionally.
+     * Check for ASCII specifically to speed up the function.
      */
 
     for (p = dst; *p != 0; ) {
-	p += Tcl_UtfToUniChar(p, &ch);
-	c = UCHAR(ch);
+	if (UCHAR(*p) < 0x80) {
+	    c = *p++;
+	} else {
+	    p += Tcl_UtfToUniChar(p, &ch);
+	    c = UCHAR(ch);
+	}
 	if ((c == '.') || isalpha(UCHAR(c))) {	/* INTL: ISO only. */
 	    return;
 	}
@@ -1967,7 +1999,7 @@ TclPrecTraceProc(clientData, interp, name1, name2, flags)
 int
 TclNeedSpace(start, end)
     CONST char *start;		/* First character in string. */
-    CONST char *end;			/* End of string (place where space will
+    CONST char *end;		/* End of string (place where space will
 				 * be added, if appropriate). */
 {
     Tcl_UniChar ch;
