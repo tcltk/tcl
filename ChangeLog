@@ -1,5 +1,35 @@
 2002-02-21  David Gravereaux <davygrvy@pobox.com>
 
+	* win/mkd.bat (removed):
+	* win/coffbase.txt (new):
+	* win/makefile.bc:
+	* win/makefile.vc:  Changed the 'setup' target to stop using
+	the mkd.bat file and just make the directory right in the rule.
+	Same change to makefile.bc.  configure.in nor Makefile.in use
+	it.
+
+	coffbase.txt will be the master list for our "prefered base
+	addresses" set by the linker.  This should improve load-time
+	(NT only) by avoiding relocations.  Submissions to the list
+	by extension authors are encouraged.
+
+	Added a 'tidy' target to compliment 'clean' and 'hose' to remove
+	just the outputs. Also removed the $(winlibs) macro as it wasn't
+	being used.
+
+	Stuff left to do:
+	1) get the winhelp target to stop building in the tools/
+	directory.
+	2) stop using rmd.bat
+	3) add more dependacy rules.
+
+	* win/tclAppInit.c:  Reverted back to -r1.6, as the header file
+	change to tclPort.h won't allow for easy embedded support
+	outside of the source dist.  Thanks to Don Porter for pointing
+	this out to me.
+
+2002-02-21  David Gravereaux <davygrvy@pobox.com>
+
 	* win/makefile.vc:
 	* win/rules.vc:  Added a new "loimpact" option that sets the
 	-ws:aggressive linker option.  Off by default.  It's said to
