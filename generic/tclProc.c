@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.68 2004/12/14 21:11:47 msofer Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.69 2004/12/15 20:44:41 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -918,8 +918,7 @@ TclObjInterpProc(clientData, interp, objc, objv)
 {
     register Proc *procPtr = (Proc *) clientData;
     Namespace *nsPtr = procPtr->cmdPtr->nsPtr;
-    CallFrame frame;
-    register CallFrame *framePtr = &frame;
+    CallFrame *framePtr, **framePtrPtr;
     register Var *varPtr;
     register CompiledLocal *localPtr;
     char *procName;
@@ -975,7 +974,8 @@ TclObjInterpProc(clientData, interp, objc, objv)
      * from one namespace to another.
      */
 
-    result = Tcl_PushCallFrame(interp, (Tcl_CallFrame *) framePtr,
+    framePtrPtr = &framePtr;
+    result = TclPushStackFrame(interp, (Tcl_CallFrame **) framePtrPtr,
 	    (Tcl_Namespace *) nsPtr, FRAME_IS_PROC);
 
     if (result != TCL_OK) {
@@ -1139,7 +1139,7 @@ TclObjInterpProc(clientData, interp, objc, objv)
      */
 
     procDone:
-    Tcl_PopCallFrame(interp);
+    TclPopStackFrame(interp);
     if (compiledLocals != localStorage) {
 	ckfree((char *) compiledLocals);
     }
@@ -1181,7 +1181,7 @@ TclProcCompileProc(interp, procPtr, bodyPtr, nsPtr, description, procName)
 {
     Interp *iPtr = (Interp*)interp;
     int result;
-    Tcl_CallFrame frame;
+    Tcl_CallFrame *framePtr;
     Proc *saveProcPtr;
     ByteCode *codePtr = (ByteCode *) bodyPtr->internalRep.otherValuePtr;
 
@@ -1247,12 +1247,12 @@ TclProcCompileProc(interp, procPtr, bodyPtr, nsPtr, description, procName)
  	saveProcPtr = iPtr->compiledProcPtr;
  	iPtr->compiledProcPtr = procPtr;
 
- 	result = Tcl_PushCallFrame(interp, &frame,
+ 	result = TclPushStackFrame(interp, &framePtr,
 		(Tcl_Namespace*)nsPtr, /* isProcCallFrame */ 0);
 
  	if (result == TCL_OK) {
 	    result = tclByteCodeType.setFromAnyProc(interp, bodyPtr);
-	    Tcl_PopCallFrame(interp);
+	    TclPopStackFrame(interp);
 	}
 
  	iPtr->compiledProcPtr = saveProcPtr;
