@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.50 2002/06/21 14:22:28 vincentdarley Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.51 2002/06/26 16:01:09 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -1721,6 +1721,13 @@ Tcl_FSOpenFileChannel(interp, pathPtr, modeString, permissions)
 	    return (*proc)(interp, pathPtr, modeString, permissions);
 	}
     }
+    /* File doesn't belong to any filesystem that can open it */
+    Tcl_SetErrno(ENOENT);
+    if (interp != NULL) {
+	Tcl_AppendResult(interp, "couldn't open \"", 
+			 Tcl_GetString(pathPtr), "\": ",
+			 Tcl_PosixError(interp), (char *) NULL);
+    }
     return NULL;
 }
 
@@ -1793,6 +1800,7 @@ Tcl_FSMatchInDirectory(interp, result, pathPtr, pattern, types)
 		 * We have no idea how to match files in a directory
 		 * which belongs to no known filesystem
 		 */
+		Tcl_SetErrno(ENOENT);
 		return -1;
 	    }
 	}
@@ -1892,6 +1900,7 @@ Tcl_FSMatchInDirectory(interp, result, pathPtr, pattern, types)
 	Tcl_DecrRefCount(cwd);
 	return ret;
     }
+    Tcl_SetErrno(ENOENT);
     return -1;
 }
 
@@ -2246,6 +2255,7 @@ Tcl_FSFileAttrStrings(pathPtr, objPtrRef)
 	    return (*proc)(pathPtr, objPtrRef);
 	}
     }
+    Tcl_SetErrno(ENOENT);
     return NULL;
 }
 
@@ -2286,6 +2296,7 @@ Tcl_FSFileAttrsGet(interp, index, pathPtr, objPtrRef)
 	    return (*proc)(interp, index, pathPtr, objPtrRef);
 	}
     }
+    Tcl_SetErrno(ENOENT);
     return -1;
 }
 
@@ -2321,6 +2332,7 @@ Tcl_FSFileAttrsSet(interp, index, pathPtr, objPtr)
 	    return (*proc)(interp, index, pathPtr, objPtr);
 	}
     }
+    Tcl_SetErrno(ENOENT);
     return -1;
 }
 
@@ -2591,6 +2603,7 @@ Tcl_FSLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr,
 	    }
 	}
     }
+    Tcl_SetErrno(ENOENT);
     return -1;
 }
 
@@ -2732,6 +2745,8 @@ Tcl_FSLink(pathPtr, toPtr, linkAction)
      */
 #ifndef S_IFLNK
     errno = EINVAL;
+#else
+    Tcl_SetErrno(ENOENT);
 #endif /* S_IFLNK */
     return NULL;
 }
@@ -3400,6 +3415,7 @@ Tcl_FSDeleteFile(pathPtr)
 	    return (*proc)(pathPtr);
 	}
     }
+    Tcl_SetErrno(ENOENT);
     return -1;
 }
 
@@ -3431,6 +3447,7 @@ Tcl_FSCreateDirectory(pathPtr)
 	    return (*proc)(pathPtr);
 	}
     }
+    Tcl_SetErrno(ENOENT);
     return -1;
 }
 
@@ -3540,6 +3557,7 @@ Tcl_FSRemoveDirectory(pathPtr, recursive, errorPtr)
 	    return (*proc)(pathPtr, recursive, errorPtr);
 	}
     }
+    Tcl_SetErrno(ENOENT);
     return -1;
 }
 

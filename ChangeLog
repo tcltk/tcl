@@ -1,3 +1,10 @@
+2002-06-26  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* tests/fileSystem.test: 
+	* generic/tclIOUtil.c: fix to handling of empty paths ""
+	which are not claimed by any filesystem (Bug #573758).
+	Ensure good error messages are given in all cases.
+	
 2002-06-26  Reinhard Max  <max@suse.de>
 
 	* unix/tclUnixTime.c: Make [clock format] respect locale settings.
