@@ -13,8 +13,9 @@
 	in tclInt.decls.
 
 	* win/tclWinPort.h:  Added a block for OpenWatcom adjustments
-	that fixes the same issue Mo did for MinGW lack of missing LPFN_*
-	typedefs in their WINE derived <winsock2.h>
+	that fixes 1) the same issue Mo did for MinGW lack of missing LPFN_*
+	typedefs in their WINE derived <winsock2.h> and 2) The need to be
+	strict about how the char type needs to be signed by default.
 
 	* win/tclWinSock.c:  Added OpenWatcom to the commentary about the
 	#ifdef HAVE_NO_LPFN_DECLS block.
