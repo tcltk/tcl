@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPort.h,v 1.12 1999/10/29 03:04:58 hobbs Exp $
+ * RCS: @(#) $Id: tclUnixPort.h,v 1.13 2000/01/24 02:30:17 hobbs Exp $
  */
 
 #ifndef _TCLUNIXPORT
@@ -36,7 +36,6 @@
  *---------------------------------------------------------------------------
  */
 
-#include <utime.h>
 #include <errno.h>
 #include <fcntl.h>
 #ifdef HAVE_NET_ERRNO_H
@@ -94,6 +93,7 @@
 #	include	<sys/ioctl.h>	/* For FIONBIO. */
 #   endif
 #endif	/* USE_FIONBIO */
+#include <utime.h>
 
 /*
  * Socket support stuff: This likely needs more work to parameterize for

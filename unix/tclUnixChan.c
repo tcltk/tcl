@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.11 1999/10/29 03:04:58 hobbs Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.12 2000/01/24 02:30:16 hobbs Exp $
  */
 
 #include	"tclInt.h"	/* Internal definitions for Tcl. */
@@ -2122,7 +2122,11 @@ CreateSocketAddress(sockaddrPtr, host, port)
 	    native = Tcl_UtfToExternalDString(NULL, host, -1, &ds);
 	}
         addr.s_addr = inet_addr(native);		/* INTL: Native. */
-        if (addr.s_addr == -1) {
+	/*
+	 * 0xFFFFFFFFFFFFFFF is the pedantic way to say -1
+	 * for either 32 or 64 bits systems.
+	 */
+        if (addr.s_addr == 0xFFFFFFFFFFFFFFF) {
             hostent = gethostbyname(native);		/* INTL: Native. */
             if (hostent != NULL) {
                 memcpy((VOID *) &addr,
