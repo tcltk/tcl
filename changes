@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.48 1999/08/10 02:40:04 welch Exp $
+RCS: @(#) $Id: changes,v 1.49 1999/08/10 22:45:10 redman Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -4588,6 +4588,28 @@ thread's stack space. (redman)
 
 --------------- Released 8.2b2, August 5, 1999 ----------------------
 
+8/4/99 (bug fix) Applied patches supplied by Henry Spencer to greatly
+enhance performance of certain classes of regular expressions. 
+[Bug: 2440 2447] (stanton)
+
+8/5/99 (doc change) Made it clear that tcl_pkgPath was not set for
+Windows. [Bug: 2455] (hobbs)
+
+8/5/99 (bug fix) Fixed reference to bytes that might not be null
+terminated in tclLiteral.c. [Bug: 2496] (hobbs)
+
+8/5/99 (bug fix) Fixed typo in http.tcl. [Bug: 2502] (hobbs)
+
+8/9/99 (bug fix) Fixed test suite to handle larger integers
+(64bit). Patch from Don Porter. (hobbs)
+
+8/9/99 (documentation fix) Clarified Tcl_DecrRefCount docs 
+[Bug: 1952]. Clarified array pattern docs [Bug: 1330]. Fixed clock docs
+[Bug: 693]. Fixed formatting errors [Bug: 2188 2189]. Fixed doc error
+in tclvars.n [Bug: 2042]. (hobbs)
+
+8/9/99 (bug fix) Fixed path handling in auto_execok [Bug: 1276] (hobbs)
+
 8/9/99 (internal api change) Removed the TclpMutexLock and TclpMutexUnlock
 APIs and added a new exported api, Tcl_GetAllocMutex. These APIs are all for
 the mutex used in the simple memory allocators.  By making this change
@@ -4603,3 +4625,9 @@ deleting interpreters. (welch)
 happen in Tcl 7.6 and earlier. An "info exists" now fires a read trace,
 if defined.  This makes it possible to fully implement variables that
 are defined via traces. (welch)
+
+8/10/99 (bug fix) Fixed Brent's changes so that they work on
+Windows. (redman)
+
+--------------- Released 8.2b3, August 11, 1999 ----------------------
+

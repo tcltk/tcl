@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclListObj.c,v 1.6 1999/08/10 17:35:19 redman Exp $
+ * RCS: @(#) $Id: tclListObj.c,v 1.7 1999/08/10 22:45:11 redman Exp $
  */
 
 #include "tclInt.h"
@@ -305,7 +305,7 @@ Tcl_ListObjGetElements(interp, listPtr, objcPtr, objvPtr)
 				 * is to be returned. */
     int *objcPtr;		/* Where to store the count of objects
 				 * referenced by objv. */
-    Tcl_Obj * CONST **objvPtr;	/* Where to store the pointer to an array
+    Tcl_Obj ***objvPtr;	        /* Where to store the pointer to an array
 				 * of pointers to the list's objects. */
 {
     register List *listRepPtr;

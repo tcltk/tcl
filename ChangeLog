@@ -1,12 +1,5 @@
 1999-08-10  Scott Redman  <redman@scriptics.com>
 
-	* generic/tclListObj.c:
-	* generic/tcl.decls:
-	* generic/tclDecls.h: Applied patch from Jim Ingham to change the
-	prototype of Tcl_ListObjGetElements to have the last argument have
-	a CONST so that you can feed it the objv that you get from the
-	standard TclObj command proc.
-
 	* generic/tclAlloc.c:
 	* generic/tclCmdIL.c:
 	* generic/tclIO.c:
