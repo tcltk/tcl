@@ -1,3 +1,11 @@
+2004-11-03  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclTrace.c (TclCallVarTraces):  Improved ability to debug
+	* tests/incr-old.test (incr-old-2.6):	  errors during variable
+	* tests/incr.test (incr-{1,2}.28):	  traces by preserving the
+	* tests/set.test (set-{2,4}.4):		  -errorinfo data.
+	* tests/trace.test (trace-33.1):	  [Bug 527164]
+
 2004-11-02  David Gravereaux <davygrvy@pobox.com>
 
 	* generic/tclInt.h: added a check for #ifdef __cplusplus around
