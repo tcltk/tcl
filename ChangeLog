@@ -1,3 +1,14 @@
+2004-06-10  Zoran Vasiljevic <vasiljevic@users.sf.net>
+
+	* generic/tclIOUtil.c: removed forceful setting of the
+	  private cached current working directory rep from 
+	  within the Tcl_FSChdir(). We delegate this task to
+	  the Tcl_FSGetCwd() which does this task anyway.
+	  The relevant code is still present but disabled 
+	  temporarily until the change proves correct. The Tcl
+	  test suite passes all test with the given change so
+	  I suppose it is good enough.
+
 2004-06-10  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclPathObj.c:	Corrected [file tail] results when operating
