@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.79.2.15 2004/11/18 15:44:25 dgp Exp $
+RCS: @(#) $Id: changes,v 1.79.2.16 2004/12/03 00:34:46 hobbs Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -6115,3 +6115,24 @@ Test suite expansion [1036649,1001997,etc.]
 
 --- Released 8.4.8, November 18, 2004 --- See ChangeLog for details ---
 
+2004-11-22 (bug fix)[1030465] Improve HAVE_TYPE_OFF64_T check (dejong)
+
+2004-11-23 (bug fix)[1072654] Fixed segfault in info vars trivial
+matching branch (new in 8.4.8) (porter)
+
+2004-11-23 (bug fix)[1043129] Fixed the treatment of backslashes in file
+join on Windows (darley)
+
+2004-11-24 (bug fix)[1001325, 1071701] Fixed readdir_r detection and usage
+(dejong, kenny, porter)
+
+2004-11-24 (bug fix)[1071807] Fixed all uses of 'select' to use standard
+macros rather than older bit-whacking style (kenny)
+
+2004-11-26 (bug fix)[1072136] Remove file normalize on tcl_findLibrary
+search path uniqification added in 8.4.8 (porter)
+
+2004-12-02 (bug fix)[1074671] Ensure tilde paths are not returned specially
+by 'glob' (darley)
+
+--- Released 8.4.9, December 6, 2004 --- See ChangeLog for details ---
