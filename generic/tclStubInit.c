@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.107 2004/11/13 00:19:10 dgp Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.108 2004/11/30 19:34:49 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -293,6 +293,9 @@ TclIntStubs tclIntStubs = {
     TclpObjStat, /* 206 */
     TclpObjAccess, /* 207 */
     TclpOpenFileChannel, /* 208 */
+    TclGetEncodingSearchPath, /* 209 */
+    TclSetEncodingSearchPath, /* 210 */
+    TclpGetEncodingNameFromEnvironment, /* 211 */
 };
 
 TclIntPlatStubs tclIntPlatStubs = {

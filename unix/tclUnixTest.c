@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixTest.c,v 1.18 2004/06/18 20:38:02 dgp Exp $
+ * RCS: @(#) $Id: tclUnixTest.c,v 1.19 2004/11/30 19:34:51 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -444,7 +444,6 @@ TestfindexecutableCmd(clientData, interp, argc, argv)
     int argc;				/* Number of arguments. */
     CONST char **argv;			/* Argument strings. */
 {
-    char *oldName;
     char *oldNativeName;
     int oldDone;
 
@@ -454,24 +453,19 @@ TestfindexecutableCmd(clientData, interp, argc, argv)
 	return TCL_ERROR;
     }
 
-    oldName       = tclExecutableName;
     oldNativeName = tclNativeExecutableName;
     oldDone       = tclFindExecutableSearchDone;
 
-    tclExecutableName       = NULL;
     tclNativeExecutableName = NULL;
     tclFindExecutableSearchDone = 0;
 
+    Tcl_GetNameOfExecutable();
     Tcl_FindExecutable(argv[1]);
-    if (tclExecutableName != NULL) {
-	Tcl_SetResult(interp, tclExecutableName, TCL_VOLATILE);
-	ckfree(tclExecutableName);
-    }
+    Tcl_SetResult(interp, (char *) Tcl_GetNameOfExecutable(), TCL_VOLATILE);
     if (tclNativeExecutableName != NULL) {
 	ckfree(tclNativeExecutableName);
     }
 
-    tclExecutableName           = oldName;
     tclNativeExecutableName     = oldNativeName;
     tclFindExecutableSearchDone = oldDone;
 
@@ -529,7 +523,7 @@ TestgetopenfileCmd(clientData, interp, argc, argv)
  * TestsetdefencdirCmd --
  *
  *	This procedure implements the "testsetdefenc" command. It is
- *	used to set the value of tclDefaultEncodingDir.
+ *	used to test Tcl_SetDefaultEncodingDir().
  *
  * Results:
  *	A standard Tcl result.
@@ -555,15 +549,7 @@ TestsetdefencdirCmd(clientData, interp, argc, argv)
         return TCL_ERROR;
     }
 
-    if (tclDefaultEncodingDir != NULL) {
-	ckfree(tclDefaultEncodingDir);
-	tclDefaultEncodingDir = NULL;
-    }
-    if (*argv[1] != '\0') {
-	tclDefaultEncodingDir = (char *)
-	    ckalloc((unsigned) strlen(argv[1]) + 1);
-	strcpy(tclDefaultEncodingDir, argv[1]);
-    }
+    Tcl_SetDefaultEncodingDir(argv[1]);
     return TCL_OK;
 }
 
@@ -573,7 +559,7 @@ TestsetdefencdirCmd(clientData, interp, argc, argv)
  * TestgetdefencdirCmd --
  *
  *	This procedure implements the "testgetdefenc" command. It is
- *	used to get the value of tclDefaultEncodingDir.
+ *	used to test Tcl_GetDefaultEncodingDir().
  *
  * Results:
  *	A standard Tcl result.
@@ -598,9 +584,7 @@ TestgetdefencdirCmd(clientData, interp, argc, argv)
         return TCL_ERROR;
     }
 
-    if (tclDefaultEncodingDir != NULL) {
-        Tcl_AppendResult(interp, tclDefaultEncodingDir, (char *) NULL);
-    }
+    Tcl_AppendResult(interp, Tcl_GetDefaultEncodingDir(), (char *) NULL);
     return TCL_OK;
 }
 

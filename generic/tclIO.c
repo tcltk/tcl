@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.80 2004/11/09 15:47:26 dkf Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.81 2004/11/30 19:34:47 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3556,8 +3556,7 @@ Tcl_GetsObj(chan, objPtr)
 
     /*
      * If there is no encoding, use "iso8859-1" -- Tcl_GetsObj() doesn't
-     * produce ByteArray objects.  To avoid circularity problems,
-     * "iso8859-1" is builtin to Tcl.
+     * produce ByteArray objects.  
      */
 
     if (encoding == NULL) {

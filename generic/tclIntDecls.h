@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.73 2004/11/03 19:13:38 davygrvy Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.74 2004/11/30 19:34:49 dgp Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -1085,6 +1085,23 @@ EXTERN int		TclpObjAccess _ANSI_ARGS_((Tcl_Obj * pathPtr,
 EXTERN Tcl_Channel	TclpOpenFileChannel _ANSI_ARGS_((Tcl_Interp * interp, 
 				Tcl_Obj * pathPtr, int mode, int permissions));
 #endif
+#ifndef TclGetEncodingSearchPath_TCL_DECLARED
+#define TclGetEncodingSearchPath_TCL_DECLARED
+/* 209 */
+EXTERN Tcl_Obj *	TclGetEncodingSearchPath _ANSI_ARGS_((void));
+#endif
+#ifndef TclSetEncodingSearchPath_TCL_DECLARED
+#define TclSetEncodingSearchPath_TCL_DECLARED
+/* 210 */
+EXTERN int		TclSetEncodingSearchPath _ANSI_ARGS_((
+				Tcl_Obj * searchPath));
+#endif
+#ifndef TclpGetEncodingNameFromEnvironment_TCL_DECLARED
+#define TclpGetEncodingNameFromEnvironment_TCL_DECLARED
+/* 211 */
+EXTERN CONST char *	TclpGetEncodingNameFromEnvironment _ANSI_ARGS_((
+				Tcl_DString * bufPtr));
+#endif
 
 typedef struct TclIntStubs {
     int magic;
@@ -1314,6 +1331,9 @@ typedef struct TclIntStubs {
     int (*tclpObjStat) _ANSI_ARGS_((Tcl_Obj * pathPtr, Tcl_StatBuf * buf)); /* 206 */
     int (*tclpObjAccess) _ANSI_ARGS_((Tcl_Obj * pathPtr, int mode)); /* 207 */
     Tcl_Channel (*tclpOpenFileChannel) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * pathPtr, int mode, int permissions)); /* 208 */
+    Tcl_Obj * (*tclGetEncodingSearchPath) _ANSI_ARGS_((void)); /* 209 */
+    int (*tclSetEncodingSearchPath) _ANSI_ARGS_((Tcl_Obj * searchPath)); /* 210 */
+    CONST char * (*tclpGetEncodingNameFromEnvironment) _ANSI_ARGS_((Tcl_DString * bufPtr)); /* 211 */
 } TclIntStubs;
 
 #ifdef __cplusplus
@@ -2036,6 +2056,18 @@ extern TclIntStubs *tclIntStubsPtr;
 #ifndef TclpOpenFileChannel
 #define TclpOpenFileChannel \
 	(tclIntStubsPtr->tclpOpenFileChannel) /* 208 */
+#endif
+#ifndef TclGetEncodingSearchPath
+#define TclGetEncodingSearchPath \
+	(tclIntStubsPtr->tclGetEncodingSearchPath) /* 209 */
+#endif
+#ifndef TclSetEncodingSearchPath
+#define TclSetEncodingSearchPath \
+	(tclIntStubsPtr->tclSetEncodingSearchPath) /* 210 */
+#endif
+#ifndef TclpGetEncodingNameFromEnvironment
+#define TclpGetEncodingNameFromEnvironment \
+	(tclIntStubsPtr->tclpGetEncodingNameFromEnvironment) /* 211 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */

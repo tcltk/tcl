@@ -7,7 +7,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclWinInit.c,v 1.63 2004/11/24 21:12:20 kennykb Exp $
+ * RCS: @(#) $Id: tclWinInit.c,v 1.64 2004/11/30 19:34:52 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -92,167 +92,15 @@ static char* processors[NUMPROCESSORS] = {
     "amd64", "ia32_on_win64"
 };
 
-/* Used to store the encoding used for binary files */
-static Tcl_Encoding binaryEncoding = NULL;
-/* Has the basic library path encoding issue been fixed */
-static int libraryPathEncodingFixed = 0;
+/*
+ * The default directory in which the init.tcl file is expected to be found.
+ */
+static TclInitProcessGlobalValueProc	InitializeDefaultLibraryDir;
+static ProcessGlobalValue defaultLibraryDir =
+	{0, 0, NULL, NULL, InitializeDefaultLibraryDir, NULL, NULL};
 
 static void		AppendEnvironment(Tcl_Obj *listPtr, CONST char *lib);
-static void		AppendDllPath(Tcl_Obj *listPtr, HMODULE hModule,
-			    CONST char *lib);
-static void		FreeDefaultLibraryDir(ClientData);
-static void		FreeThreadDefaultLibraryDir(ClientData);
-static Tcl_Obj *	GetDefaultLibraryDir();
-static void		SetDefaultLibraryDir(Tcl_Obj *directory);
 static int		ToUtf(CONST WCHAR *wSrc, char *dst);
-
-/*
- *---------------------------------------------------------------------------
- *
- * SetDefaultLibraryDir --
- *
- *	Called by TclpInitLibraryPath to save the path to the
- *	directory ../lib/tcl<version> relative to the Tcl Dll.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Saves a per-thread (Tcl_Obj *) and a per-process string.
- *	Sets up exit handlers to free them.
- *
- *---------------------------------------------------------------------------
- */
-
-/*
- * Per-process copy of the default library dir, as a string, shared by
- * all threads
- */
-static char *defaultLibraryDir = NULL;
-static int defaultLibraryDirLength = 0;
-static Tcl_ThreadDataKey defaultLibraryDirKey;
-
-static void
-FreeThreadDefaultLibraryDir(clientData)
-    ClientData clientData;
-{
-    Tcl_Obj **objPtrPtr = (Tcl_Obj **) clientData;
-    Tcl_DecrRefCount(*objPtrPtr);
-}
-
-static void
-FreeDefaultLibraryDir(clientData)
-    ClientData clientData;
-{
-    ckfree(defaultLibraryDir);
-    defaultLibraryDir = NULL;
-    defaultLibraryDirLength = 0;
-}
-
-static void
-SetDefaultLibraryDir(directory)
-    Tcl_Obj *directory;
-{
-    int numBytes = 0;
-    CONST char *bytes;
-    Tcl_Obj **savedDirectoryPtr = (Tcl_Obj **)
-	    Tcl_GetThreadData(&defaultLibraryDirKey, (int) sizeof(Tcl_Obj *));
-
-    Tcl_IncrRefCount(directory);
-    if (*savedDirectoryPtr == NULL) {
-	/*
-	 * First call in this thread, set up the thread exit handler
-	 */
-	Tcl_CreateThreadExitHandler(FreeThreadDefaultLibraryDir,
-		(ClientData) savedDirectoryPtr);
-    } else {
-	/*
-	 * Called SetDLD after a previous SetDLD or GetDLD in this thread ?!
-	 */
-	Tcl_DecrRefCount(*savedDirectoryPtr);
-    }
-    *savedDirectoryPtr = directory;
-
-    /*
-     * No Mutex protection, as the only caller is already in TclpInitLock
-     */
-
-    bytes = Tcl_GetStringFromObj(directory, &numBytes);
-    if (defaultLibraryDir != NULL) {
-	/*
-	 * This function has been called before.  We only ever want to
-	 * set up the default library directory once, but if it is set
-	 * multiple times to the same value that's not harmful.
-	 */
-	if (defaultLibraryDirLength != numBytes ||
-		memcmp(defaultLibraryDir, bytes, (unsigned) numBytes) != 0) {
-	    Tcl_Panic("Attempt to modify defaultLibraryDir");
-	}
-	return;
-    }
-
-    /*
-     * First call from any thread; set up exit handler
-     */
-
-    Tcl_CreateExitHandler(FreeDefaultLibraryDir, NULL);
-
-    defaultLibraryDirLength = numBytes;
-    defaultLibraryDir = ckalloc((unsigned int) numBytes + 1);
-    memcpy(defaultLibraryDir, bytes, (unsigned int) numBytes + 1);
-}
-
-/*
- *---------------------------------------------------------------------------
- *
- * GetDefaultLibraryDir --
- *
- *	Called by TclpSetVariables to retrieve the saved value
- *	stored by SetDefaultLibraryDir in order to store that value
- *	in ::tclDefaultLibrary .
- *
- * Results:
- *	A pointer to a Tcl_Obj holding the default directory path
- *	for init.tcl.
- *
- * Side effects:
- *
- *---------------------------------------------------------------------------
- */
-
-static Tcl_Obj *
-GetDefaultLibraryDir()
-{
-    Tcl_Obj **savedDirectoryPtr = (Tcl_Obj **)
-	    Tcl_GetThreadData(&defaultLibraryDirKey, (int) sizeof(Tcl_Obj *));
-
-    if (NULL != *savedDirectoryPtr) {
-	return *savedDirectoryPtr;
-    }
-
-    if (NULL == defaultLibraryDir) {
-	/*
-	 * Careful here.  This may be bogus, calling TclpInitLibraryPath
-	 * when not in TclpInitLock.  
-	 *
-	 * This path is taken by wish because it calls Tcl_CreateInterp
-	 * before it calls Tcl_FindExecutable.
-	 */
-	TclpInitLibraryPath(NULL);
-	if (NULL != *savedDirectoryPtr) {
-	    return *savedDirectoryPtr;
-	} else {
-	    Tcl_Panic("TclpInitLibraryPath failed to set default library dir");
-	}
-    }
-
-    *savedDirectoryPtr =
-	    Tcl_NewStringObj(defaultLibraryDir, defaultLibraryDirLength);
-    Tcl_IncrRefCount(*savedDirectoryPtr);
-    Tcl_CreateThreadExitHandler(FreeThreadDefaultLibraryDir,
-		(ClientData) savedDirectoryPtr);
-    return *savedDirectoryPtr;
-}
 
 /*
  *---------------------------------------------------------------------------
@@ -304,59 +152,43 @@ TclpInitPlatform()
 }
 
 /*
- *---------------------------------------------------------------------------
+ *-------------------------------------------------------------------------
  *
  * TclpInitLibraryPath --
  *
- *	Initialize the library path at startup.  
- *
- *	This call sets the library path to strings in UTF-8. Any 
- *	pre-existing library path information is assumed to have been 
- *	in the native multibyte encoding.
- *
- *	Called at process initialization time.
+ *      This is the fallback routine that sets the library path
+ *      if the application has not set one by the first time
+ *      it is needed.
  *
  * Results:
- *	Return 0, indicating that the UTF is clean.
+ *      None.
  *
  * Side effects:
- *	None.
+ *      Sets the library path to an initial value.  
  *
- *---------------------------------------------------------------------------
- */
+ *-------------------------------------------------------------------------
+ */  
 
-int
-TclpInitLibraryPath(path)
-    CONST char *path;		/* Potentially dirty UTF string that is */
-				/* the path to the executable name.     */
+void
+TclpInitLibraryPath(valuePtr, lengthPtr, encodingPtr)
+    char **valuePtr;
+    int *lengthPtr;
+    Tcl_Encoding *encodingPtr;
 {
 #define LIBRARY_SIZE	    32
-    Tcl_Obj *pathPtr, *objPtr, **objv;
-    CONST char *str;
-    Tcl_DString ds;
-    int objc;
+    Tcl_Obj *pathPtr;
     char installLib[LIBRARY_SIZE];
+    char *bytes;
 
-    Tcl_DStringInit(&ds);
     pathPtr = Tcl_NewObj();
 
     /*
-     * Initialize the substrings used when locating an executable.  The
-     * installLib variable computes the path as though the executable
-     * is installed.
+     * Initialize the substring used when locating the script library.  The
+     * installLib variable computes the script library path relative to the
+     * installed DLL.
      */
 
     sprintf(installLib, "lib/tcl%s", TCL_VERSION);
-
-    /*
-     * Look for the library relative to default encoding dir.
-     */
-
-    str = Tcl_GetDefaultEncodingDir();
-    if ((str != NULL) && (str[0] != '\0')) {
-	objPtr = Tcl_NewStringObj(str, -1);
-	Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
-    }
 
     /*
      * Look for the library relative to the TCL_LIBRARY env variable.
@@ -368,17 +200,16 @@ TclpInitLibraryPath(path)
     AppendEnvironment(pathPtr, installLib);
 
     /*
-     * Look for the library relative to the DLL.  Only use the installLib
-     * because in practice, the DLL is always installed.
+     * Look for the library in its default location.
      */
+    Tcl_ListObjAppendElement(NULL, pathPtr,
+	    TclGetProcessGlobalValue(&defaultLibraryDir));
 
-    AppendDllPath(pathPtr, TclWinGetTclInstance(), installLib);
-
-    Tcl_ListObjGetElements(NULL, pathPtr, &objc, &objv);
-    SetDefaultLibraryDir(Tcl_DuplicateObj(objv[objc-1]));
-    TclSetLibraryPath(pathPtr);
-
-    return 0; /* 0 indicates that pathPtr is clean (true) utf */
+    *encodingPtr = NULL;
+    bytes = Tcl_GetStringFromObj(pathPtr, lengthPtr);
+    *valuePtr = ckalloc((unsigned int)(*lengthPtr)+1);
+    memcpy((VOID *) *valuePtr, (VOID *) bytes, (size_t)(*lengthPtr)+1);
+    Tcl_DecrRefCount(pathPtr);
 }
 
 /*
@@ -481,10 +312,10 @@ AppendEnvironment(
 /*
  *---------------------------------------------------------------------------
  *
- * AppendDllPath --
+ * InitializeDefaultLibraryDir --
  *
- *	Append a path onto the path pointer that tries to locate the Tcl
- *	library relative to the location of the Tcl DLL.
+ *	Locate the Tcl script library default location relative to
+ *	the location of the Tcl DLL.
  *
  * Results:
  *	None.
@@ -496,22 +327,21 @@ AppendEnvironment(
  */
 
 static void
-AppendDllPath(
-    Tcl_Obj *pathPtr,
-    HMODULE hModule,
-    CONST char *lib)
+InitializeDefaultLibraryDir(valuePtr, lengthPtr, encodingPtr)
+    char **valuePtr;
+    int *lengthPtr;
+    Tcl_Encoding *encodingPtr;
 {
+    HMODULE hModule = TclWinGetTclInstance();
     WCHAR wName[MAX_PATH + LIBRARY_SIZE];
     char name[(MAX_PATH + LIBRARY_SIZE) * TCL_UTF_MAX];
+    char *end, *p;
 
     if (GetModuleFileNameW(hModule, wName, MAX_PATH) == 0) {
 	GetModuleFileNameA(hModule, name, MAX_PATH);
     } else {
 	ToUtf(wName, name);
     }
-    if (lib != NULL) {
-	char *end, *p;
-
 	end = strrchr(name, '\\');
 	*end = '\0';
 	p = strrchr(name, '\\');
@@ -519,10 +349,12 @@ AppendDllPath(
 	    end = p;
 	}
 	*end = '\\';
-	strcpy(end + 1, lib);
-    }
     TclWinNoBackslash(name);
-    Tcl_ListObjAppendElement(NULL, pathPtr, Tcl_NewStringObj(name, -1));
+    sprintf(end + 1, "lib/tcl%s", TCL_VERSION);
+    *lengthPtr = strlen(name);
+    *valuePtr = ckalloc((unsigned int) *lengthPtr + 1);
+    *encodingPtr = NULL;
+    memcpy((VOID *) *valuePtr, (VOID *) name, (size_t) *lengthPtr + 1);
 }
 
 /*
@@ -580,11 +412,6 @@ void
 TclWinEncodingsCleanup()
 {
     TclWinResetInterfaceEncodings();
-    libraryPathEncodingFixed = 0;
-    if (binaryEncoding != NULL) {
-	Tcl_FreeEncoding(binaryEncoding);
-	binaryEncoding = NULL;
-    }
 }
 
 /*
@@ -614,57 +441,26 @@ TclWinEncodingsCleanup()
 void
 TclpSetInitialEncodings()
 {
-    CONST char *encoding;
-    char buf[4 + TCL_INTEGER_SPACE];
+    int platformId, useWide;
+    Tcl_DString encodingName;
 
-    if (libraryPathEncodingFixed == 0) {
-	int platformId, useWide;
+    platformId = TclWinGetPlatformId();
+    useWide = ((platformId == VER_PLATFORM_WIN32_NT)
+	    || (platformId == VER_PLATFORM_WIN32_CE));
+    TclWinSetInterfaces(useWide);
 
-	platformId = TclWinGetPlatformId();
-	useWide = ((platformId == VER_PLATFORM_WIN32_NT)
-		|| (platformId == VER_PLATFORM_WIN32_CE));
-	TclWinSetInterfaces(useWide);
+    Tcl_SetSystemEncoding(NULL,
+	    TclpGetEncodingNameFromEnvironment(&encodingName));
+    Tcl_DStringFree(&encodingName);
+}
 
-	wsprintfA(buf, "cp%d", GetACP());
-	Tcl_SetSystemEncoding(NULL, buf);
-
-	if (!useWide) {
-	    Tcl_Obj *pathPtr = TclGetLibraryPath();
-	    if (pathPtr != NULL) {
-		int i, objc;
-		Tcl_Obj **objv;
-
-		objc = 0;
-		Tcl_ListObjGetElements(NULL, pathPtr, &objc, &objv);
-		for (i = 0; i < objc; i++) {
-		    int length;
-		    char *string;
-		    Tcl_DString ds;
-
-		    string = Tcl_GetStringFromObj(objv[i], &length);
-		    Tcl_ExternalToUtfDString(NULL, string, length, &ds);
-		    Tcl_SetStringObj(objv[i], Tcl_DStringValue(&ds),
-			    Tcl_DStringLength(&ds));
-		    Tcl_DStringFree(&ds);
-		}
-	    }
-	}
-
-	libraryPathEncodingFixed = 1;
-    } else {
-	wsprintfA(buf, "cp%d", GetACP());
-	Tcl_SetSystemEncoding(NULL, buf);
-    }
-
-    /* This is only ever called from the startup thread */
-    if (binaryEncoding == NULL) {
-	/*
-	 * Keep this encoding preloaded.  The IO package uses it for
-	 * gets on a binary channel.
-	 */
-	encoding = "iso8859-1";
-	binaryEncoding = Tcl_GetEncoding(NULL, encoding);
-    }
+CONST char *
+TclpGetEncodingNameFromEnvironment(bufPtr)
+    Tcl_DString *bufPtr;
+{
+    Tcl_DStringInit(bufPtr);
+    wsprintfA(Tcl_DStringValue(bufPtr), "cp%d", GetACP());
+    return Tcl_DStringValue(bufPtr);
 }
 
 /*
@@ -699,7 +495,7 @@ TclpSetVariables(interp)
     DWORD dwUserNameLen = sizeof(szUserName);
 
     Tcl_SetVar2Ex(interp, "tclDefaultLibrary", NULL,
-	    GetDefaultLibraryDir(), TCL_GLOBAL_ONLY);
+	    TclGetProcessGlobalValue(&defaultLibraryDir), TCL_GLOBAL_ONLY);
 
     osInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFOA);
     GetVersionExA(&osInfo);
