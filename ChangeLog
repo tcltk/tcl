@@ -1,5 +1,7 @@
 2002-07-10  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
+	* tests/cmdAH.test: Removed [exec] of Unix utilities. [Bug 579211]
+
 	* tests/expr.test: Added tests to make sure that this works.
 	* generic/tclExecute.c (ExprCallMathFunc): Functions should also
 	be able to return wide-ints.  [Bug 579284]
