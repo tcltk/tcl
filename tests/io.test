@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: io.test,v 1.21 2001/09/11 17:30:44 andreas_kupries Exp $
+# RCS: @(#) $Id: io.test,v 1.22 2001/12/17 22:55:51 andreas_kupries Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -6609,6 +6609,55 @@ test io-53.6 {CopyData: error during fcopy} {stdio} {
     close $out
     set fcopyTestDone	;# 0 for plain end of file
 } {0}
+
+proc doFcopy {in out {bytes 0} {error {}}} {
+    global fcopyTestDone fcopyTestCount
+    incr fcopyTestCount $bytes
+    if {[string length $error]} {
+	    set fcopyTestDone 1
+    } elseif {[eof $in]} {
+	    set fcopyTestDone 0
+    } else {
+        # Delay next fcopy to wait for size>0 input bytes
+        after 100 [list 
+            fcopy $in $out -size 1000 -command [list doFcopy $in $out]
+        ]
+    }
+}
+
+test io-53.7 {CopyData: Flooding fcopy from pipe} {stdio} {
+    removeFile pipe
+    removeFile test1
+    catch {unset fcopyTestDone}
+    set fcopyTestCount 0
+    set f1 [open pipe w]
+    puts $f1 {
+	# Write  10 bytes / 10 msec
+	proc Write {count} {
+	    puts -nonewline "1234567890"
+	    if {[incr count -1]} {
+	        after 10 [list Write $count]
+	    } else {
+	        set ::ready 1
+	    }
+	}
+	fconfigure stdout -buffering none
+	Write 345 ;# 3450 bytes ~3.45 sec
+	vwait ready
+	exit 0
+    }
+    close $f1
+    set in [open "|[list $::tcltest::tcltest pipe &]" r+]
+    set out [open test1 w]
+    doFcopy $in $out
+    if ![info exists fcopyTestDone] {
+	vwait fcopyTestDone
+    }
+    catch {close $in}
+    close $out
+    # -1=error 0=script error N=number of bytes
+    expr ($fcopyTestDone == 0) ? $fcopyTestCount : -1
+} {3450}
 
 test io-54.1 {Recursive channel events} {socket} {
     # This test checks to see if file events are delivered during recursive
