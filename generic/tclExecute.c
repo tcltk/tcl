@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.40 2001/11/20 19:45:19 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.41 2001/11/20 21:17:39 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -792,6 +792,7 @@ TclExecuteByteCode(interp, codePtr)
 		 * Finally, let TclEvalObjvInternal handle the command. 
 		 */
 
+		Tcl_ResetResult(interp);
 		DECACHE_STACK_INFO();
 		result = TclEvalObjvInternal(interp, objc, objv, bytes, length, 0);
 		CACHE_STACK_INFO();
