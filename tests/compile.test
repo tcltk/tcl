@@ -11,10 +11,10 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: compile.test,v 1.20 2002/06/16 22:24:12 msofer Exp $
+# RCS: @(#) $Id: compile.test,v 1.21 2002/06/22 04:19:47 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest
+    package require tcltest 2
     namespace import -force ::tcltest::*
 }
 
@@ -265,8 +265,8 @@ test compile-11.9 {Tcl_Append*: ensure Tcl_ResetResult is used properly} {
 # with TCL_MEM_DEBUG
 #
 # Special test for leak on interp delete [Bug 467523]. 
-set ::tcltest::testConstraints(execCommandExists) [expr {[info commands exec] != ""}]
-set ::tcltest::testConstraints(memDebug) [expr {[info commands memory] != ""}]
+::tcltest::testConstraint execCommandExists [expr {[info commands exec] != ""}]
+::tcltest::testConstraint memDebug [expr {[info commands memory] != ""}]
 
 test compile-12.1 {testing literal leak on interp delete} {memDebug} {
     proc getbytes {} {

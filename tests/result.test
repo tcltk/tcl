@@ -13,13 +13,13 @@
 # SCCS: @(#) result.test 1.4 97/12/08 15:07:49
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest
+    package require tcltest 2
     namespace import -force ::tcltest::*
 }
 
 # Some tests require the testsaveresult command
 
-set ::tcltest::testConstraints(testsaveresult) \
+::tcltest::testConstraint testsaveresult \
 	[expr {[info commands testsaveresult] != {}}]
 
 test result-1.1 {Tcl_SaveInterpResult} {testsaveresult} {
