@@ -11,6 +11,9 @@
 	* win/tclWinSock.c:  WSAStartup() loaded version comparison
 	error which resulted in 2.0 looking less than 1.1.
 
+	* win/tclWinChan.c (Tcl_MakeFileChannel):  return of
+	DuplicateHandle() incorrectly used [Bug 618852].
+
 2002-11-26  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclEncoding.c (TclFinalizeEncodingSubsystem): properly
