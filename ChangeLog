@@ -1,3 +1,10 @@
+2003-02-18  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* unix/configure: Regen.
+	* unix/tcl.m4 (SC_ENABLE_THREADS): Make sure
+	-lpthread gets passed on the link line when
+	checking for the pthread_attr_setstacksize symbol.
+
 2003-02-18  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* generic/tclTest.c: cleanup of new 'simplefs' test code, and
