@@ -1,5 +1,8 @@
 2003-05-07  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
+	* doc/trace.n: Fixed very strange language in the documentation
+	for 'trace add execution'.  [Bug 729821]
+
 	* generic/tclCmdMZ.c (Tcl_TraceObjCmd): Made error message for
 	'trace info' more consistent with documentation.  [Bug 706961]
 
