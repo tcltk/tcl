@@ -1,3 +1,9 @@
+2004-05-22  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclVar.c: fix for [Bug 735335]. The use of
+	tclNsVarNameType objs is still disabled, pending resolution of
+	[Bug 736729].
+
 2004-05-21  Miguel Sofer <msofer@users.sf.net>
 
 	* tests/namespace.test (namespace-41.3): removed the {knownBug}
