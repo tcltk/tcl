@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.158 2003/06/09 22:48:32 andreas_kupries Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.159 2003/07/16 22:03:52 hobbs Exp $
  */
 
 #ifndef _TCL
@@ -2186,15 +2186,32 @@ typedef struct Tcl_Parse {
 
 /*
  * The maximum number of bytes that are necessary to represent a single
- * Unicode character in UTF-8.
+ * Unicode character in UTF-8.  The valid values should be 3 or 6 (or
+ * perhaps 1 if we want to support a non-unicode enabled core).
+ * If 3, then Tcl_UniChar must be 2-bytes in size (UCS-2). (default)
+ * If 6, then Tcl_UniChar must be 4-bytes in size (UCS-4).
+ * At this time UCS-2 mode is the default and recommended mode.
+ * UCS-4 is experimental and not recommended.  It works for the core,
+ * but most extensions expect UCS-2.
  */
+#ifndef TCL_UTF_MAX
 #define TCL_UTF_MAX		3
+#endif
 
 /*
  * This represents a Unicode character.  Any changes to this should
  * also be reflected in regcustom.h.
  */
+#if TCL_UTF_MAX > 3
+    /*
+     * unsigned int isn't 100% accurate as it should be a strict 4-byte
+     * value (perhaps wchar_t).  64-bit systems may have troubles.  The
+     * size of this value must be reflected correctly in regcustom.h.
+     */
+typedef unsigned int Tcl_UniChar;
+#else
 typedef unsigned short Tcl_UniChar;
+#endif
 
 /* TIP #59: The following structure is used in calls
  * 'Tcl_RegisterConfig' to provide the system with the embedded
