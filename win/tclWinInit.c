@@ -7,22 +7,12 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclWinInit.c,v 1.28 2001/08/27 02:14:08 dgp Exp $
+ * RCS: @(#) $Id: tclWinInit.c,v 1.29 2001/09/10 21:06:55 dgp Exp $
  */
 
 #include "tclWinInt.h"
-#include <winreg.h>
 #include <winnt.h>
 #include <winbase.h>
-
-/*
- * The following macro can be defined at compile time to specify
- * the root of the Tcl registry keys.
- */
- 
-#ifndef TCL_REGISTRY_KEY
-#define TCL_REGISTRY_KEY "Software\\Scriptics\\Tcl\\" TCL_VERSION
-#endif
 
 /*
  * The following declaration is a workaround for some Microsoft brain damage.
@@ -548,8 +538,7 @@ TclpSetInitialEncodings()
  *	None.
  *
  * Side effects:
- *	Sets "tclDefaultLibrary", "tcl_platform", and "env(HOME)" Tcl
- *	variables.
+ *	Sets "tcl_platform", and "env(HOME)" Tcl variables.
  *
  *----------------------------------------------------------------------
  */
@@ -570,12 +559,6 @@ TclpSetVariables(interp)
 
     oemId = (OemId *) &sysInfo;
     GetSystemInfo(&sysInfo);
-
-    /*
-     * Initialize the tclDefaultLibrary variable from the registry.
-     */
-
-    Tcl_SetVar(interp, "tclDefaultLibrary", "", TCL_GLOBAL_ONLY);
 
     /*
      * Define the tcl_platform array.
