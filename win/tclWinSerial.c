@@ -11,7 +11,7 @@
  *
  * Serial functionality implemented by Rolf.Schroedter@dlr.de
  *
- * RCS: @(#) $Id: tclWinSerial.c,v 1.19 2002/01/24 01:34:16 dgp Exp $
+ * RCS: @(#) $Id: tclWinSerial.c,v 1.20 2002/01/25 21:36:10 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -1531,7 +1531,7 @@ SerialSetOptionProc(instanceData, interp, optionName, value)
     BOOL result, flag;
     size_t len, vlen;
     Tcl_DString ds;
-    TCHAR *native;
+    CONST TCHAR *native;
     int argc;
     char **argv;
     

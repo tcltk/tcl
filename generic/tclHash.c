@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclHash.c,v 1.9 2001/01/18 19:09:55 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclHash.c,v 1.10 2002/01/25 21:36:09 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -736,7 +736,7 @@ Tcl_NextHashEntry(searchPtr)
  *----------------------------------------------------------------------
  */
 
-char *
+CONST char *
 Tcl_HashStats(tablePtr)
     Tcl_HashTable *tablePtr;		/* Table for which to produce stats. */
 {

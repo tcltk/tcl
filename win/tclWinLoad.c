@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinLoad.c,v 1.10 2002/01/09 19:09:28 kennykb Exp $
+ * RCS: @(#) $Id: tclWinLoad.c,v 1.11 2002/01/25 21:36:10 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -55,7 +55,7 @@ TclpLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr,
 				 * this file. */
 {
     HINSTANCE handle;
-    TCHAR *nativeName;
+    CONST TCHAR *nativeName;
     Tcl_DString ds;
 
     char *fileName = Tcl_GetString(pathPtr);

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.78 2002/01/25 20:40:55 dgp Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.79 2002/01/25 21:36:09 dgp Exp $
  */
 
 #ifndef _TCLDECLS
@@ -149,7 +149,7 @@ EXTERN int		Tcl_GetIntFromObj _ANSI_ARGS_((Tcl_Interp * interp,
 EXTERN int		Tcl_GetLongFromObj _ANSI_ARGS_((Tcl_Interp * interp, 
 				Tcl_Obj * objPtr, long * longPtr));
 /* 40 */
-EXTERN Tcl_ObjType *	Tcl_GetObjType _ANSI_ARGS_((char * typeName));
+EXTERN Tcl_ObjType *	Tcl_GetObjType _ANSI_ARGS_((CONST char * typeName));
 /* 41 */
 EXTERN char *		Tcl_GetStringFromObj _ANSI_ARGS_((Tcl_Obj * objPtr, 
 				int * lengthPtr));
@@ -879,7 +879,7 @@ EXTERN void		Tcl_AppendResultVA _ANSI_ARGS_((Tcl_Interp * interp,
 EXTERN void		Tcl_AppendStringsToObjVA _ANSI_ARGS_((
 				Tcl_Obj * objPtr, va_list argList));
 /* 269 */
-EXTERN char *		Tcl_HashStats _ANSI_ARGS_((Tcl_HashTable * tablePtr));
+EXTERN CONST char *	Tcl_HashStats _ANSI_ARGS_((Tcl_HashTable * tablePtr));
 /* 270 */
 EXTERN CONST char *	Tcl_ParseVar _ANSI_ARGS_((Tcl_Interp * interp, 
 				char * str, char ** termPtr));
@@ -1139,7 +1139,8 @@ EXTERN Tcl_Obj *	Tcl_EvalTokens _ANSI_ARGS_((Tcl_Interp * interp,
 EXTERN void		Tcl_FreeParse _ANSI_ARGS_((Tcl_Parse * parsePtr));
 /* 359 */
 EXTERN void		Tcl_LogCommandInfo _ANSI_ARGS_((Tcl_Interp * interp, 
-				char * script, char * command, int length));
+				CONST char * script, CONST char * command, 
+				int length));
 /* 360 */
 EXTERN int		Tcl_ParseBraces _ANSI_ARGS_((Tcl_Interp * interp, 
 				char * string, int numBytes, 
@@ -1585,7 +1586,7 @@ typedef struct TclStubs {
     int (*tcl_GetInt) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * str, int * intPtr)); /* 37 */
     int (*tcl_GetIntFromObj) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * objPtr, int * intPtr)); /* 38 */
     int (*tcl_GetLongFromObj) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * objPtr, long * longPtr)); /* 39 */
-    Tcl_ObjType * (*tcl_GetObjType) _ANSI_ARGS_((char * typeName)); /* 40 */
+    Tcl_ObjType * (*tcl_GetObjType) _ANSI_ARGS_((CONST char * typeName)); /* 40 */
     char * (*tcl_GetStringFromObj) _ANSI_ARGS_((Tcl_Obj * objPtr, int * lengthPtr)); /* 41 */
     void (*tcl_InvalidateStringRep) _ANSI_ARGS_((Tcl_Obj * objPtr)); /* 42 */
     int (*tcl_ListObjAppendList) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * listPtr, Tcl_Obj * elemListPtr)); /* 43 */
@@ -1846,7 +1847,7 @@ typedef struct TclStubs {
     void (*tcl_ValidateAllMemory) _ANSI_ARGS_((CONST char * file, int line)); /* 266 */
     void (*tcl_AppendResultVA) _ANSI_ARGS_((Tcl_Interp * interp, va_list argList)); /* 267 */
     void (*tcl_AppendStringsToObjVA) _ANSI_ARGS_((Tcl_Obj * objPtr, va_list argList)); /* 268 */
-    char * (*tcl_HashStats) _ANSI_ARGS_((Tcl_HashTable * tablePtr)); /* 269 */
+    CONST char * (*tcl_HashStats) _ANSI_ARGS_((Tcl_HashTable * tablePtr)); /* 269 */
     CONST char * (*tcl_ParseVar) _ANSI_ARGS_((Tcl_Interp * interp, char * str, char ** termPtr)); /* 270 */
     CONST char * (*tcl_PkgPresent) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * name, CONST char * version, int exact)); /* 271 */
     CONST char * (*tcl_PkgPresentEx) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * name, CONST char * version, int exact, ClientData * clientDataPtr)); /* 272 */
@@ -1936,7 +1937,7 @@ typedef struct TclStubs {
     Tcl_RegExp (*tcl_GetRegExpFromObj) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * patObj, int flags)); /* 356 */
     Tcl_Obj * (*tcl_EvalTokens) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Token * tokenPtr, int count)); /* 357 */
     void (*tcl_FreeParse) _ANSI_ARGS_((Tcl_Parse * parsePtr)); /* 358 */
-    void (*tcl_LogCommandInfo) _ANSI_ARGS_((Tcl_Interp * interp, char * script, char * command, int length)); /* 359 */
+    void (*tcl_LogCommandInfo) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * script, CONST char * command, int length)); /* 359 */
     int (*tcl_ParseBraces) _ANSI_ARGS_((Tcl_Interp * interp, char * string, int numBytes, Tcl_Parse * parsePtr, int append, char ** termPtr)); /* 360 */
     int (*tcl_ParseCommand) _ANSI_ARGS_((Tcl_Interp * interp, char * string, int numBytes, int nested, Tcl_Parse * parsePtr)); /* 361 */
     int (*tcl_ParseExpr) _ANSI_ARGS_((Tcl_Interp * interp, char * string, int numBytes, Tcl_Parse * parsePtr)); /* 362 */

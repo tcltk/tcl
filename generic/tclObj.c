@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.27 2001/12/28 23:36:31 dgp Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.28 2002/01/25 21:36:09 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -400,7 +400,7 @@ Tcl_AppendAllObjTypes(interp, objPtr)
 
 Tcl_ObjType *
 Tcl_GetObjType(typeName)
-    char *typeName;		/* Name of Tcl object type to look up. */
+    CONST char *typeName;	/* Name of Tcl object type to look up. */
 {
     register Tcl_HashEntry *hPtr;
     Tcl_ObjType *typePtr;
