@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.168 2003/11/14 23:21:02 dkf Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.169 2003/12/23 02:39:08 davygrvy Exp $
  */
 
 #ifndef _TCL
@@ -43,7 +43,6 @@ extern "C" {
  * unix/configure.in	(2 LOC Major, 2 LOC minor, 1 LOC patch)
  * win/configure.in	(as above)
  * win/tcl.m4		(not patchlevel)
- * win/makefile.vc	(not patchlevel) 2 LOC
  * win/makefile.bc	(not patchlevel) 2 LOC
  * README		(sections 0 and 2)
  * mac/README		(2 LOC, not patchlevel)
