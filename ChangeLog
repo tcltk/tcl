@@ -1,3 +1,10 @@
+2004-07-21  Don Porter  <dgp@users.sourceforge.net>
+
+	* win/tclWinDde.c:		Bump to dde 1.2.3 to cover changes
+	* library/dde/pkgIndex.tcl:	committed on 2004-06-14.
+
+	* changes:	Updated for Tcl 8.4.7 release.
+
 2004-07-20  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclEvent.c:       Correct threaded obj allocator to
@@ -355,7 +362,7 @@
 	    all calls to localtime, gmtime, and tzset.  Added a check
 	    in front of those calls to make sure that the TZ env var
 	    hasn't changed since the last call to tzset, and repeat
-	    tzset if necessary. [Bug #942078]  Removed a buggy test
+	    tzset if necessary. [Bug #940278]  Removed a buggy test
 	    of the Daylight Saving Time information in 'gettimeofday'
 	    in favor of applying 'localtime' to a known value.
 	    [Bug #922848]
