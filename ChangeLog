@@ -1,3 +1,8 @@
+2001-09-25  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* generic/tclVar.c: removed comments referring to unused flag
+	TCL_PARSE_PART1. 
+	
 2001-09-24  Don Porter  <dgp@users.sourceforge.net>
 
 	* doc/{Concat,DString,SplitList}.3:
