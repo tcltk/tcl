@@ -1,5 +1,11 @@
 2002-02-22  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
+	--- TIP#76 CHANGES ---
+	* generic/tclCmdMZ.c (Tcl_RegsubObjCmd): Final-argument-less
+	[regsub] returns the modified string.
+	* doc/regsub.n: Updated docs.
+	* tests/regexp.test: Updated and added tests.
+
 	* compat/strtoll.c (strtoll): 
 	* compat/strtoull.c (strtoull): 
 	* unix/tclUnixPort.h:
