@@ -1,3 +1,14 @@
+2001-07-18  Mo DeJong  <mdejong@redhat.com>
+
+	* generic/tclPlatDecls.h: Define TCHAR by including
+	windows.h instead of tchar.h since Cygwin does not
+	support the tchar.h header. Include CHECK_UNICODE_CALLS
+	logic from tclWinPort.h.
+	* win/tclWinPort.h: Remove CHECK_UNICODE_CALLS logic.
+	Remove include of windows.h since this now done it
+	tclPlatDecls.h.
+	* win/tclWinReg.c: Remove duplicate include of windows.h.
+
 2001-07-18  Andreas Kupries <andreas_kupries@users.sourceforge.net>
 
 	* generic/tclIO.c: Aftermath to [SF #427196]. Squash empty buffers
