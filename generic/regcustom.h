@@ -37,17 +37,20 @@
 #endif
 /* interface types */
 #define	__REG_WIDE_T	Tcl_UniChar
-#define	__REG_WIDE_COMPILE	re_ucomp
-#define	__REG_WIDE_EXEC		re_uexec
 #define	__REG_REGOFF_T	long	/* not really right, but good enough... */
 #define	__REG_VOID_T	VOID
 #define	__REG_CONST	CONST
+/* names and declarations */
+#define	__REG_WIDE_COMPILE	re_ucomp
+#define	__REG_WIDE_EXEC		re_uexec
 #ifndef __REG_NOFRONT
 #define	__REG_NOFRONT		/* don't want regcomp() and regexec() */
 #endif
 #ifndef __REG_NOCHAR
 #define	__REG_NOCHAR		/* or the char versions */
 #endif
+#define	regfree		re_ufree
+#define	regerror	re_uerror
 /* --- end --- */
 
 
@@ -73,18 +76,11 @@ typedef int celt;		/* type to hold chr, MCCE number, or NOCELT */
 /* name the external functions */
 #define	compile		re_ucomp
 #define	exec		re_uexec
-#ifdef notdef
-#define	regfree		re_ufree
-#define	regerror	re_uerror
-#endif
 
-/*
- * Implement a mistake in the original POSIX.2:  in EREs, and only in EREs
- * (AREs do not support this botch), an unbalanced right parenthesis is an
- * ordinary character rather than an error.  This was unintentional, and
- * will be fixed someday.
- */
-#define	POSIX_MISTAKE	/* sigh */
+/* enable/disable debugging code (by whether REG_DEBUG is defined or not) */
+#ifdef notdef
+#define	REG_DEBUG	/* */
+#endif
 
 /* and pick up the standard header */
 #include "regex.h"

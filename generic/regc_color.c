@@ -8,90 +8,75 @@
 
 
 
-/*
- * If this declaration draws a complaint about a negative array size,
- * then CHRBITS is defined incorrectly for the chr type.
- */
-static char isCHRBITSright[NEGIFNOT(sizeof(chr)*CHAR_BIT == CHRBITS)];
-
-
-
 #define	CISERR()	VISERR(cm->v)
 #define	CERR(e)		VERR(cm->v, (e))
 
 
 
 /*
- - newcm - get new colormap
- ^ static struct colormap *newcm(struct vars *);
+ - initcm - set up new colormap
+ ^ static VOID initcm(struct vars *, struct colormap *);
  */
-static struct colormap *	/* NULL for allocation failure */
-newcm(v)
+static VOID
+initcm(v, cm)
 struct vars *v;
+struct colormap *cm;
 {
-	struct colormap *cm;
 	int i;
 	int j;
 	union tree *t;
 	union tree *nextt;
 	struct colordesc *cd;
 
-	cm = (struct colormap *)MALLOC(sizeof(struct colormap));
-	if (cm == NULL) {
-		ERR(REG_ESPACE);
-		return NULL;
-	}
 	cm->magic = CMMAGIC;
 	cm->v = v;
-	cm->rest = WHITE;
-	cm->filled = 0;
 
 	cm->ncds = NINLINECDS;
-	cm->cd = cm->cds;
-	for (cd = cm->cd; cd < CDEND(cm); cd++) {
-		cd->nchrs = 0;
-		cd->sub = NOSUB;
-		cd->arcs = NULL;
-		cd->flags = 0;
-	}
-	cm->cd[WHITE].nchrs = CHR_MAX - CHR_MIN + 1;
+	cm->cd = cm->cdspace;
+	cm->max = 0;
+	cm->free = 0;
 
-	/* treetop starts as NULLs if there are lower levels */
-	t = cm->tree;
-	if (NBYTS > 1)
-		for (i = BYTTAB-1; i >= 0; i--)
-			t->tptr[i] = NULL;
-	/* if no lower levels, treetop and last fill block are the same */
+	cd = cm->cd;			/* cm->cd[WHITE] */
+	cd->sub = NOSUB;
+	cd->arcs = NULL;
+	cd->flags = 0;
+	cd->nchrs = CHR_MAX - CHR_MIN + 1;
 
-	/* fill blocks point to next fill block... */
-	for (t = &cm->tree[1], j = NBYTS-2; j > 0; t = nextt, j--) {
+	/* upper levels of tree */
+	for (t = &cm->tree[0], j = NBYTS-1; j > 0; t = nextt, j--) {
 		nextt = t + 1;
 		for (i = BYTTAB-1; i >= 0; i--)
-			t->tptr[i] = t + 1;
+			t->tptr[i] = nextt;
 	}
-	/* ...except last which is solid white */
+	/* bottom level is solid white */
 	t = &cm->tree[NBYTS-1];
 	for (i = BYTTAB-1; i >= 0; i--)
 		t->tcolor[i] = WHITE;
-
-
-	return cm;
+	cd->block = t;
 }
 
 /*
- - freecm - free a colormap
+ - freecm - free dynamically-allocated things in a colormap
  ^ static VOID freecm(struct colormap *);
  */
 static VOID
 freecm(cm)
 struct colormap *cm;
 {
+	size_t i;
+	union tree *cb;
+
 	cm->magic = 0;
 	if (NBYTS > 1)
 		cmtreefree(cm, cm->tree, 0);
-	if (cm->cd != cm->cds)
+	for (i = 1; i < cm->max; i++)		/* skip WHITE */
+		if (!UNUSEDCOLOR(&cm->cd[i])) {
+			cb = cm->cd[i].block;
+			if (cb != NULL)
+				FREE(cb);
+		}
+	if (cm->cd != cm->cdspace)
 		FREE(cm->cd);
-	FREE(cm);
 }
 
 /*
@@ -107,89 +92,23 @@ int level;			/* level number (top == 0) of this block */
 	int i;
 	union tree *t;
 	union tree *fillt = &cm->tree[level+1];
+	union tree *cb;
 
 	assert(level < NBYTS-1);	/* this level has pointers */
 	for (i = BYTTAB-1; i >= 0; i--) {
 		t = tree->tptr[i];
-		if (t != NULL && t != fillt) {
-			if (level < NBYTS-2)	/* more pointer blocks below */
+		assert(t != NULL);
+		if (t != fillt) {
+			if (level < NBYTS-2) {	/* more pointer blocks below */
 				cmtreefree(cm, t, level+1);
-			FREE(t);
+				FREE(t);
+			} else {		/* color block below */
+				cb = cm->cd[t->tcolor[0]].block;
+				if (t != cb)	/* not a solid block */
+					FREE(t);
+			}
 		}
 	}
-}
-
-/*
- - fillcm - fill in a colormap, so no NULLs remain
- * The point of this is that the tree traversal can then be a fixed set
- * of table lookups with no conditional branching.  It might be better
- * to do reallocation for a more compacted structure, on the order of
- * what's done for NFAs, but the colormap can be quite large and a total
- * rebuild of it could be costly.
- ^ static VOID fillcm(struct colormap *);
- */
-static VOID
-fillcm(cm)
-struct colormap *cm;
-{
-	if (!cm->filled && NBYTS > 1)
-		cmtreefill(cm, cm->tree, 0);
-	cm->filled = 1;
-}
-
-/*
- - cmtreefill - fill a non-terminal part of a colormap tree
- ^ static VOID cmtreefill(struct colormap *, union tree *, int);
- */
-static VOID
-cmtreefill(cm, tree, level)
-struct colormap *cm;
-union tree *tree;
-int level;			/* level number (top == 0) of this block */
-{
-	int i;
-	union tree *t;
-	union tree *fillt = &cm->tree[level+1];
-
-	assert(level < NBYTS-1);	/* this level has pointers */
-	for (i = BYTTAB-1; i >= 0; i--) {
-		t = tree->tptr[i];
-		if (t == fillt)			/* oops */
-			{}
-		else if (t == NULL)
-			tree->tptr[i] = fillt;
-		else if (level < NBYTS-2)	/* more pointer blocks below */
-			cmtreefill(cm, t, level+1);
-	}
-}
-
-/*
- - getcolor - get the color of a character from a colormap
- ^ static color getcolor(struct colormap *, pchr);
- */
-static color
-getcolor(cm, c)
-struct colormap *cm;
-pchr c;
-{
-	uchr uc = c;
-	int shift;
-	int b;
-	union tree *t;
-
-	assert(cm->magic == CMMAGIC);
-
-	t = cm->tree;
-	for (shift = BYTBITS * (NBYTS - 1); t != NULL; shift -= BYTBITS) {
-		b = (uc >> shift) & BYTMASK;
-		if (shift == 0)		/* reached the bottom */
-			return t->tcolor[b];
-		t = t->tptr[b];
-	}
-
-	/* we fell off an incomplete part of the tree */
-	assert(!cm->filled);
-	return cm->rest;
 }
 
 /*
@@ -204,11 +123,14 @@ pcolor co;
 {
 	uchr uc = c;
 	int shift;
-	int i;
+	int level;
 	int b;
 	int bottom;
 	union tree *t;
+	union tree *newt;
+	union tree *fillt;
 	union tree *lastt;
+	union tree *cb;
 	color prev;
 
 	assert(cm->magic == CMMAGIC);
@@ -216,28 +138,32 @@ pcolor co;
 		return COLORLESS;
 
 	t = cm->tree;
-	for (shift = BYTBITS * (NBYTS - 1); shift > 0; shift -= BYTBITS) {
+	for (level = 0, shift = BYTBITS * (NBYTS - 1); shift > 0;
+						level++, shift -= BYTBITS) {
 		b = (uc >> shift) & BYTMASK;
 		lastt = t;
-		t = t->tptr[b];
-		if (t == NULL) {	/* fell off an incomplete part */
-			bottom = (shift <= BYTBITS) ? 1 : 0;
-			t = (union tree *)MALLOC((bottom) ?
+		t = lastt->tptr[b];
+		assert(t != NULL);
+		fillt = &cm->tree[level+1];
+		bottom = (shift <= BYTBITS) ? 1 : 0;
+		cb = (bottom) ? cm->cd[t->tcolor[0]].block : fillt;
+		if (t == fillt || t == cb) {	/* must allocate a new block */
+			newt = (union tree *)MALLOC((bottom) ?
 				sizeof(struct colors) : sizeof(struct ptrs));
-			if (t == NULL) {
+			if (newt == NULL) {
 				CERR(REG_ESPACE);
 				return COLORLESS;
 			}
 			if (bottom)
-				for (i = BYTTAB-1; i >= 0; i--)
-					t->tcolor[i] = cm->rest;
+				memcpy(VS(newt->tcolor), VS(t->tcolor),
+							BYTTAB*sizeof(color));
 			else
-				for (i = BYTTAB-1; i >= 0; i--)
-					t->tptr[i] = NULL;
+				memcpy(VS(newt->tptr), VS(t->tptr),
+						BYTTAB*sizeof(union tree *));
+			t = newt;
 			lastt->tptr[b] = t;
 		}
 	}
-	assert(shift == 0 && t != NULL);	/* we hit bottom; it's there */
 
 	b = uc & BYTMASK;
 	prev = t->tcolor[b];
@@ -253,20 +179,10 @@ static color
 maxcolor(cm)
 struct colormap *cm;
 {
-	struct colordesc *cd;
-	struct colordesc *end;
-	struct colordesc *lastused;
-
 	if (CISERR())
 		return COLORLESS;
 
-	lastused = NULL;
-	end = CDEND(cm);
-	for (cd = cm->cd; cd < end; cd++)
-		if (!UNUSEDCOLOR(cd))
-			lastused = cd;
-	assert(lastused != NULL);
-	return (color)(lastused - cm->cd);
+	return (color)cm->max;
 }
 
 /*
@@ -279,47 +195,85 @@ newcolor(cm)
 struct colormap *cm;
 {
 	struct colordesc *cd;
-	struct colordesc *end;
-	struct colordesc *firstnew;
+	struct colordesc *new;
 	size_t n;
 
 	if (CISERR())
 		return COLORLESS;
 
-	end = CDEND(cm);
-	for (cd = cm->cd; cd < end; cd++)
-		if (UNUSEDCOLOR(cd)) {
-			assert(cd->arcs == NULL);
-			return (color)(cd - cm->cd);
-		}
-
-	/* oops, must allocate more */
-	n = cm->ncds * 2;
-	if (cm->cd == cm->cds) {
-		cd = (struct colordesc *)MALLOC(sizeof(struct colordesc) * n);
-		if (cd != NULL)
-			memcpy(VS(cd), VS(cm->cds), cm->ncds *
-						sizeof(struct colordesc));
+	if (cm->free != 0) {
+		assert(cm->free > 0);
+		assert((size_t)cm->free < cm->ncds);
+		cd = &cm->cd[cm->free];
+		assert(UNUSEDCOLOR(cd));
+		assert(cd->arcs == NULL);
+		cm->free = cd->sub;
+	} else if (cm->max < cm->ncds - 1) {
+		cm->max++;
+		cd = &cm->cd[cm->max];
 	} else {
-		cd = (struct colordesc *)REALLOC(cm->cd,
+		/* oops, must allocate more */
+		n = cm->ncds * 2;
+		if (cm->cd == cm->cdspace) {
+			new = (struct colordesc *)MALLOC(n *
+						sizeof(struct colordesc));
+			if (new != NULL)
+				memcpy(VS(new), VS(cm->cdspace), cm->ncds *
+						sizeof(struct colordesc));
+		} else
+			new = (struct colordesc *)REALLOC(cm->cd,
 						n * sizeof(struct colordesc));
+		if (new == NULL) {
+			CERR(REG_ESPACE);
+			return COLORLESS;
+		}
+		cm->cd = new;
+		cm->ncds = n;
+		assert(cm->max < cm->ncds - 1);
+		cm->max++;
+		cd = &cm->cd[cm->max];
 	}
-	if (cd == NULL) {
-		CERR(REG_ESPACE);
-		return COLORLESS;
+
+	cd->nchrs = 0;
+	cd->sub = NOSUB;
+	cd->arcs = NULL;
+	cd->flags = 0;
+	cd->block = NULL;
+
+	return (color)(cd - cm->cd);
+}
+
+/*
+ - freecolor - free a color (must have no arcs or subcolor)
+ ^ static VOID freecolor(struct colormap *, pcolor);
+ */
+static VOID
+freecolor(cm, co)
+struct colormap *cm;
+pcolor co;
+{
+	struct colordesc *cd = &cm->cd[co];
+
+	assert(co >= 0);
+	if (co == WHITE)
+		return;
+
+	assert(cd->arcs == NULL);
+	assert(cd->sub == NOSUB);
+	assert(cd->nchrs == 0);
+	cd->flags = FREECOL;
+	if (cd->block != NULL) {
+		FREE(cd->block);
+		cd->block = NULL;	/* just paranoia */
 	}
-	cm->cd = cd;
-	firstnew = CDEND(cm);
-	cm->ncds = n;
-	end = CDEND(cm);
-	for (cd = firstnew; cd < end; cd++) {
-		cd->nchrs = 0;
-		cd->sub = NOSUB;
-		cd->arcs = NULL;
-		cd->flags = 0;
+
+	if ((size_t)co == cm->max)
+		while (cm->max > WHITE && UNUSEDCOLOR(&cm->cd[cm->max]))
+				cm->max--;
+	else {
+		cd->sub = cm->free;
+		cm->free = (color)(cd - cm->cd);
 	}
-	assert(firstnew < CDEND(cm) && UNUSEDCOLOR(firstnew));
-	return (color)(firstnew - cm->cd);
 }
 
 /*
@@ -352,24 +306,167 @@ pchr c;
 	color co;			/* current color of c */
 	color sco;			/* new subcolor */
 
-	co = getcolor(cm, c);
-	sco = cm->cd[co].sub;
-	if (sco == NOSUB) {		/* must create subcolor */
-		if (cm->cd[co].nchrs == 1)	/* shortcut */
-			return co;
-		sco = newcolor(cm);
-		if (sco == COLORLESS)
-			return COLORLESS;
-		cm->cd[co].sub = sco;
-		cm->cd[sco].sub = sco;	/* self-referential subcolor ptr */
-	}
+	co = GETCOLOR(cm, c);
+	sco = newsub(cm, co);
 
-	if (co == sco)		/* repeated character */
-		return co;	/* no further action needed */
+	if (co == sco)		/* already in an open subcolor */
+		return co;	/* rest is redundant */
 	cm->cd[co].nchrs--;
 	cm->cd[sco].nchrs++;
 	setcolor(cm, c, sco);
 	return sco;
+}
+
+/*
+ - newsub - allocate a new subcolor (if necessary) for a color
+ ^ static color newsub(struct colormap *, pcolor);
+ */
+static color
+newsub(cm, co)
+struct colormap *cm;
+pcolor co;
+{
+	color sco;			/* new subcolor */
+
+	sco = cm->cd[co].sub;
+	if (sco == NOSUB) {		/* color has no open subcolor */
+		if (cm->cd[co].nchrs == 1)	/* optimization */
+			return co;
+		sco = newcolor(cm);	/* must create subcolor */
+		if (sco == COLORLESS)
+			return COLORLESS;
+		cm->cd[co].sub = sco;
+		cm->cd[sco].sub = sco;	/* open subcolor points to self */
+	}
+	assert(sco != NOSUB);
+
+	return sco;
+}
+
+/*
+ - subrange - allocate new subcolors to this range of chrs, fill in arcs
+ ^ static VOID subrange(struct vars *, pchr, pchr, struct state *,
+ ^ 	struct state *);
+ */
+static VOID
+subrange(v, from, to, lp, rp)
+struct vars *v;
+pchr from;
+pchr to;
+struct state *lp;
+struct state *rp;
+{
+	uchr uf;
+	int i;
+
+	assert(from <= to);
+
+	/* first, align "from" on a tree-block boundary */
+	uf = (uchr)from;
+	i = (int)( ((uf + BYTTAB-1) & (uchr)~BYTMASK) - uf );
+	for (; from <= to && i > 0; i--, from++)
+		newarc(v->nfa, PLAIN, subcolor(v->cm, from), lp, rp);
+	if (from > to)			/* didn't reach a boundary */
+		return;
+
+	/* deal with whole blocks */
+	for (; to - from >= BYTTAB; from += BYTTAB)
+		subblock(v, from, lp, rp);
+
+	/* clean up any remaining partial table */
+	for (; from <= to; from++)
+		newarc(v->nfa, PLAIN, subcolor(v->cm, from), lp, rp);
+}
+
+/*
+ - subblock - allocate new subcolors for one tree block of chrs, fill in arcs
+ ^ static VOID subblock(struct vars *, pchr, struct state *, struct state *);
+ */
+static VOID
+subblock(v, start, lp, rp)
+struct vars *v;
+pchr start;			/* first of BYTTAB chrs */
+struct state *lp;
+struct state *rp;
+{
+	uchr uc = start;
+	struct colormap *cm = v->cm;
+	int shift;
+	int level;
+	int i;
+	int b;
+	union tree *t;
+	union tree *cb;
+	union tree *fillt;
+	union tree *lastt;
+	int previ;
+	int ndone;
+	color co;
+	color sco;
+
+	assert((uc & BYTMASK) == 0);
+
+	/* find its color block, making new pointer blocks as needed */
+	t = cm->tree;
+	fillt = NULL;
+	for (level = 0, shift = BYTBITS * (NBYTS - 1); shift > 0;
+						level++, shift -= BYTBITS) {
+		b = (uc >> shift) & BYTMASK;
+		lastt = t;
+		t = lastt->tptr[b];
+		assert(t != NULL);
+		fillt = &cm->tree[level+1];
+		if (t == fillt && shift > BYTBITS) {	/* need new ptr block */
+			t = (union tree *)MALLOC(sizeof(struct ptrs));
+			if (t == NULL) {
+				CERR(REG_ESPACE);
+				return;
+			}
+			memcpy(VS(t->tptr), VS(fillt->tptr),
+						BYTTAB*sizeof(union tree *));
+			lastt->tptr[b] = t;
+		}
+	}
+
+	/* special cases:  fill block or solid block */
+	co = t->tcolor[0];
+	cb = cm->cd[co].block;
+	if (t == fillt || t == cb) {
+		/* either way, we want a subcolor solid block */
+		sco = newsub(cm, co);
+		t = cm->cd[sco].block;
+		if (t == NULL) {	/* must set it up */
+			t = (union tree *)MALLOC(sizeof(struct colors));
+			if (t == NULL) {
+				CERR(REG_ESPACE);
+				return;
+			}
+			for (i = 0; i < BYTTAB; i++)
+				t->tcolor[i] = sco;
+			cm->cd[sco].block = t;
+		}
+		/* find loop must have run at least once */
+		lastt->tptr[b] = t;
+		newarc(v->nfa, PLAIN, sco, lp, rp);
+		cm->cd[co].nchrs -= BYTTAB;
+		cm->cd[sco].nchrs += BYTTAB;
+		return;
+	}
+
+	/* general case, a mixed block to be altered */
+	i = 0;
+	while (i < BYTTAB) {
+		co = t->tcolor[i];
+		sco = newsub(cm, co);
+		newarc(v->nfa, PLAIN, sco, lp, rp);
+		previ = i;
+		do {
+			t->tcolor[i++] = sco;
+		} while (i < BYTTAB && t->tcolor[i] == co);
+		ndone = i - previ;
+		cm->cd[co].nchrs -= ndone;
+		cm->cd[sco].nchrs += ndone;
+	}
 }
 
 /*
@@ -390,7 +487,7 @@ struct colormap *cm;
 
 	for (cd = cm->cd, co = 0; cd < end; cd++, co++) {
 		sco = cd->sub;
-		if (sco == NOSUB) {
+		if (UNUSEDCOLOR(cd) || sco == NOSUB) {
 			/* has no subcolor, no further action */
 		} else if (sco == co) {
 			/* is subcolor, let parent deal with it */
@@ -410,6 +507,7 @@ struct colormap *cm;
 				a->colorchain = scd->arcs;
 				scd->arcs = a;
 			}
+			freecolor(cm, co);
 		} else {
 			/* parent's arcs must gain parallel subcolor arcs */
 			cd->sub = NOSUB;
@@ -475,7 +573,7 @@ pchr c;
 {
 	color co;			/* color of c */
 
-	co = getcolor(cm, c);
+	co = GETCOLOR(cm, c);
 	if (cm->cd[co].nchrs == 1 && cm->cd[co].sub == NOSUB)
 		return 1;
 	return 0;
@@ -548,24 +646,27 @@ FILE *f;
 	struct colordesc *end;
 	color co;
 	chr c;
+	char *has;
 
-	if (cm->filled) {
-		fprintf(f, "filled\n");
-		if (NBYTS > 1)
-			fillcheck(cm, cm->tree, 0, f);
-	}
+	fprintf(f, "max %ld\n", (long)cm->max);
+	if (NBYTS > 1)
+		fillcheck(cm, cm->tree, 0, f);
 	end = CDEND(cm);
 	for (cd = cm->cd + 1, co = 1; cd < end; cd++, co++)	/* skip 0 */
-		if (cd->nchrs > 0) {
+		if (!UNUSEDCOLOR(cd)) {
+			assert(cd->nchrs > 0);
+			has = (cd->block != NULL) ? "#" : "";
 			if (cd->flags&PSEUDO)
-				fprintf(f, "#%2ld(ps): ", (long)co);
+				fprintf(f, "#%2ld%s(ps): ", (long)co, has);
 			else
-				fprintf(f, "#%2ld(%2d): ", (long)co, cd->nchrs);
+				fprintf(f, "#%2ld%s(%2d): ", (long)co,
+							has, cd->nchrs);
+			/* it's hard to do this more efficiently */
 			for (c = CHR_MIN; c < CHR_MAX; c++)
-				if (getcolor(cm, c) == co)
+				if (GETCOLOR(cm, c) == co)
 					dumpchr(c, f);
 			assert(c == CHR_MAX);
-			if (getcolor(cm, c) == co)
+			if (GETCOLOR(cm, c) == co)
 				dumpchr(c, f);
 			fprintf(f, "\n");
 		}
@@ -613,7 +714,7 @@ FILE *f;
 	else if (c > ' ' && c <= '~')
 		putc((char)c, f);
 	else
-		fprintf(f, "\\0%lo", (long)c);
+		fprintf(f, "\\u%04lx", (long)c);
 }
 
 #endif				/* ifdef REG_DEBUG */

@@ -96,7 +96,9 @@
  * debugging facilities
  */
 #ifdef REG_DEBUG
+/* FDEBUG does finite-state tracing */
 #define	FDEBUG(arglist)	{ if (v->eflags&REG_FTRACE) printf arglist; }
+/* MDEBUG does higher-level tracing */
 #define	MDEBUG(arglist)	{ if (v->eflags&REG_MTRACE) printf arglist; }
 #else
 #define	FDEBUG(arglist)	{}
@@ -111,15 +113,6 @@
 #define	UBITS	(CHAR_BIT * sizeof(unsigned))
 #define	BSET(uv, sn)	((uv)[(sn)/UBITS] |= (unsigned)1 << ((sn)%UBITS))
 #define	ISBSET(uv, sn)	((uv)[(sn)/UBITS] & ((unsigned)1 << ((sn)%UBITS)))
-
-
-
-/*
- * Map a truth value into -1 for false, 1 for true.  This is so it is
- * possible to write compile-time assertions by declaring a dummy array
- * of this size.  (Why not #if?  Because sizeof is not available there.)
- */
-#define	NEGIFNOT(x)	(2*!!(x) - 1)		/* !! ensures 0 or 1 */
 
 
 
@@ -154,10 +147,10 @@ typedef int pcolor;		/* what color promotes to */
  * A colormap is a tree -- more precisely, a DAG -- indexed at each level
  * by a byt of the chr, to map the chr to a color efficiently.  Because
  * lower sections of the tree can be shared, it can exploit the usual
- * sparseness of such a mapping table.  The final tree is always NBYTS
- * levels deep (at present it may be shallower during construction, but
- * it is always "filled" to full depth at the end of that, using pointers
- * to "fill blocks" which are entirely WHITE in color).
+ * sparseness of such a mapping table.  The tree is always NBYTS levels
+ * deep (in the past it was shallower during construction but was "filled"
+ * to full depth at the end of that); areas that are unaltered as yet point
+ * to "fill blocks" which are entirely WHITE in color.
  */
 
 /* the tree itself */
@@ -177,12 +170,14 @@ union tree {
 /* internal per-color structure for the color machinery */
 struct colordesc {
 	uchr nchrs;		/* number of chars of this color */
-	color sub;		/* open subcolor of this one, or NOSUB */
+	color sub;		/* open subcolor (if any); free chain ptr */
 #		define	NOSUB	COLORLESS
 	struct arc *arcs;	/* color chain */
-#	define	UNUSEDCOLOR(cd)	((cd)->nchrs == 0 && (cd)->sub == NOSUB)
 	int flags;
-#		define	PSEUDO	1	/* pseudocolor, no real chars */
+#		define	FREECOL	01	/* currently free */
+#		define	PSEUDO	02	/* pseudocolor, no real chars */
+#	define	UNUSEDCOLOR(cd)	((cd)->flags&FREECOL)
+	union tree *block;	/* block of solid color, if any */
 };
 
 /* the color map itself */
@@ -190,13 +185,13 @@ struct colormap {
 	int magic;
 #		define	CMMAGIC	0x876
 	struct vars *v;			/* for compile error reporting */
-	color rest;
-	int filled;			/* has it been filled? */
 	size_t ncds;			/* number of colordescs */
+	size_t max;			/* highest in use */
+	color free;			/* beginning of free chain (if non-0) */
 	struct colordesc *cd;
-#	define	CDEND(cm)	(&(cm)->cd[(cm)->ncds])
+#	define	CDEND(cm)	(&(cm)->cd[(cm)->max + 1])
 #		define	NINLINECDS	((size_t)10)
-	struct colordesc cds[NINLINECDS];
+	struct colordesc cdspace[NINLINECDS];
 	union tree tree[NBYTS];		/* tree top, plus fill blocks */
 };
 
@@ -208,6 +203,7 @@ struct colormap {
 #if NBYTS == 1
 #define	GETCOLOR(cm, c)	((cm)->tree->tcolor[B0(c)])
 #endif
+/* beware, for NBYTS>1, GETCOLOR() is unsafe -- 2nd arg used repeatedly */
 #if NBYTS == 2
 #define	GETCOLOR(cm, c)	((cm)->tree->tptr[B1(c)]->tcolor[B0(c)])
 #endif
@@ -326,34 +322,35 @@ struct cnfa {
 
 
 /*
- * definitions for subexpression tree
- * The intrepid code-reader is hereby warned that the subexpression tree
- * is kludge piled upon kludge, and is badly in need of rethinking.  Do
- * not expect it to look clean and sensible.
+ * subexpression tree
  */
 struct subre {
-	struct state *begin;	/* outarcs from here... */
-	struct state *end;	/* ...ending in inarcs here */
-	int prefer;		/* match preference */
-#		define	NONEYET		00
-#		define	LONGER		01
-#		define	SHORTER		02
-	int subno;		/* subexpression number (0 none, <0 backref) */
+	char op;		/* '|', '.' (concat), 'b' (backref), '(', '=' */
+	char flags;
+#		define	LONGER	01	/* prefers longer match */
+#		define	SHORTER	02	/* prefers shorter match */
+#		define	MIXED	04	/* mixed preference below */
+#		define	CAP	010	/* capturing parens below */
+#		define	BACKR	020	/* back reference below */
+#		define	INUSE	0100	/* in use in final tree */
+#		define	LOCAL	03	/* bits which may not propagate up */
+#		define	LMIX(f)	((f)<<2)	/* LONGER -> MIXED */
+#		define	SMIX(f)	((f)<<1)	/* SHORTER -> MIXED */
+#		define	UP(f)	(((f)&~LOCAL) | (LMIX(f) & SMIX(f) & MIXED))
+#		define	MESSY(f)	((f)&(MIXED|CAP|BACKR))
+#		define	PREF(f)	((f)&LOCAL)
+#		define	PREF2(f1, f2)	((PREF(f1) != 0) ? PREF(f1) : PREF(f2))
+#		define	COMBINE(f1, f2)	(UP((f1)|(f2)) | PREF2(f1, f2))
+	short retry;		/* index into retry memory */
+	int subno;		/* subexpression number (for 'b' and '(') */
 	short min;		/* min repetitions, for backref only */
 	short max;		/* max repetitions, for backref only */
-	struct rtree *tree;	/* substructure, if any */
+	struct subre *left;	/* left child, if any (also freelist chain) */
+	struct subre *right;	/* right child, if any */
+	struct state *begin;	/* outarcs from here... */
+	struct state *end;	/* ...ending in inarcs here */
 	struct cnfa cnfa;	/* compacted NFA, if any */
-};
-
-struct rtree {
-	char op;		/* operator:  '|', ',' */
-	char flags;
-#		define	INUSE	01	/* in use in the tree */
-	short no;		/* index into retry memory */
-	struct subre left;
-	struct rtree *next;	/* for '|' */
-	struct subre right;	/* for ',' */
-	struct rtree *chain;	/* for bookkeeping and error cleanup */
+	struct subre *chain;	/* for bookkeeping and error cleanup */
 };
 
 
@@ -377,12 +374,13 @@ struct guts {
 	int cflags;		/* copy of compile flags */
 	int info;		/* copy of re_info */
 	size_t nsub;		/* copy of re_nsub */
-	struct cnfa cnfa;
-	struct rtree *tree;
+	struct subre *tree;
+	struct cnfa search;	/* for fast preliminary search */
 	int ntree;
-	struct colormap *cm;
+	struct colormap cmap;
 	int FUNCPTR(compare, (CONST chr *, CONST chr *, size_t));
 	struct subre *lacons;	/* lookahead-constraint vector */
 	int nlacons;		/* size of lacons */
 	int usedshorter;	/* used non-greedy quantifiers? */
+	int unmatchable;	/* cannot match anything? */
 };

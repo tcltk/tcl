@@ -33,13 +33,13 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclRegexp.h,v 1.1.2.3 1998/10/21 20:40:06 stanton Exp $
+ * RCS: @(#) $Id: tclRegexp.h,v 1.1.2.4 1998/11/11 01:44:54 stanton Exp $
  */
 
 #ifndef _TCLREGEXP
 #define _TCLREGEXP
 
-#include "regcustom.h"
+#include "regex.h"
 
 #ifdef BUILD_tcl
 # undef TCL_STORAGE_CLASS
@@ -78,7 +78,7 @@ EXTERN VOID		TclRegXflags _ANSI_ARGS_((char *string, int length,
 			    int *cflagsPtr, int *eflagsPtr));
 EXTERN int		TclRegExpExecUniChar _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_RegExp re, CONST Tcl_UniChar *uniString,
-			    int numChars, int flags));
+			    int numChars, int nmatches, int flags));
 EXTERN int		TclRegExpMatchObj _ANSI_ARGS_((Tcl_Interp *interp,
 			    char *string, Tcl_Obj *patObj));
 EXTERN void		TclRegExpRangeUniChar _ANSI_ARGS_((Tcl_RegExp re,

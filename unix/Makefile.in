@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.1.2.4 1998/10/21 20:40:12 stanton Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.1.2.5 1998/11/11 01:44:57 stanton Exp $
 
 # Current Tcl version;  used in various names.
 
@@ -618,7 +618,7 @@ regcomp.o: $(REGHDRS) $(GENERIC_DIR)/regcomp.c $(GENERIC_DIR)/regc_lex.c \
 		$(GENERIC_DIR)/regc_nfa.c $(GENERIC_DIR)/regc_cvec.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/regcomp.c
 
-regexec.o: $(REGHDRS) $(GENERIC_DIR)/regexec.c
+regexec.o: $(REGHDRS) $(GENERIC_DIR)/regexec.c $(GENERIC_DIR)/rege_dfa.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/regexec.c
 
 regfree.o: $(REGHDRS) $(GENERIC_DIR)/regfree.c

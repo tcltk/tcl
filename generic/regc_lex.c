@@ -364,7 +364,7 @@ struct vars *v;
 			NOTE(REG_UNONPOSIX);
 			if (ATEOS())
 				FAILW(REG_EESCAPE);
-			(DISCARD) lexescape(v);
+			(DISCARD)lexescape(v);
 			switch (v->nexttype) {	/* not all escapes okay here */
 			case PLAIN:
 				return 1;
@@ -459,10 +459,10 @@ struct vars *v;
 		break;
 	}
 
-	/* that got rid of everything except EREs */
+	/* that got rid of everything except EREs and AREs */
 	assert(INCON(L_ERE));
 
-	/* deal with EREs, except for backslashes */
+	/* deal with EREs and AREs, except for backslashes */
 	switch (c) {
 	case CHR('|'):
 		RET('|');
@@ -529,12 +529,6 @@ struct vars *v;
 				NOTE(REG_ULOOKAHEAD);
 				RETV(LACON, 0);
 				break;
-			case CHR('<'):		/* prefer short */
-				RETV(PREFER, 0);
-				break;
-			case CHR('>'):		/* prefer long */
-				RETV(PREFER, 1);
-				break;
 			default:
 				FAILW(REG_BADRPT);
 				break;
@@ -547,8 +541,9 @@ struct vars *v;
 			RETV('(', 1);
 		break;
 	case CHR(')'):
-		if (LASTTYPE('('))
+		if (LASTTYPE('(')) {
 			NOTE(REG_UUNSPEC);
+		}
 		RETV(')', c);
 		break;
 	case CHR('['):		/* easy except for [[:<:]] and [[:>:]] */
@@ -589,7 +584,7 @@ struct vars *v;
 		break;
 	}
 
-	/* ERE backslash handling; backslash already eaten */
+	/* ERE/ARE backslash handling; backslash already eaten */
 	assert(!ATEOS());
 	if (!(v->cflags&REG_ADVF)) {	/* only AREs have non-trivial escapes */
 		if (iscalnum(*v->now)) {
@@ -598,7 +593,7 @@ struct vars *v;
 		}
 		RETV(PLAIN, *v->now++);
 	}
-	(DISCARD) lexescape(v);
+	(DISCARD)lexescape(v);
 	if (ISERR())
 		FAILW(REG_EESCAPE);
 	if (v->nexttype == CCLASS) {	/* fudge at lexical level */
@@ -681,6 +676,12 @@ struct vars *v;
 		break;
 	case CHR('f'):
 		RETV(PLAIN, CHR('\f'));
+		break;
+	case CHR('m'):
+		RET('<');
+		break;
+	case CHR('M'):
+		RET('>');
 		break;
 	case CHR('n'):
 		RETV(PLAIN, CHR('\n'));

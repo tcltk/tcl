@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.1.2.8 1998/11/04 04:47:50 stanton Exp $
+RCS: @(#) $Id: changes,v 1.1.2.9 1998/11/11 01:44:46 stanton Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -3933,3 +3933,11 @@ the encoding.n manual entry for more details. (stanton)
 11/3/98 (bug fix) The regular expression character classification
 syntax now includes Unicode characters in the supported
 classes. (stanton)
+
+11/9/98 (bug fix) "format" now correctly handles multibyte characters
+in %s format strings. (stanton)
+
+11/10/98 (new feature) "regexp" now accepts three new switches
+("-line", "-lineanchor", and "-linestop") that control how regular
+expressions treat line breaks. See the regexp manual entry for more
+details. (stanton)

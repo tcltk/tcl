@@ -1,9 +1,15 @@
-/*
- * locale-specific stuff, including MCCE handling
- * This file is #included by regcomp.c.
+/* 
+ * regc_locale.c --
  *
- * No MCCEs for Tcl.  The handling of character names and classes is
- * still ASCII-centric, and needs to be extended to handle full Unicode.
+ *	This file contains the Unicode locale specific regexp routines.
+ *	This file is #included by regcomp.c.
+ *
+ * Copyright (c) 1998 by Scriptics Corporation.
+ *
+ * See the file "license.terms" for information on usage and redistribution
+ * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ *
+ * RCS: @(#) $Id: regc_locale.c,v 1.1.2.3 1998/11/11 01:44:49 stanton Exp $
  */
 
 /* ASCII character-name table */

@@ -14,7 +14,11 @@
 int compile _ANSI_ARGS_((regex_t *, CONST chr *, size_t, int));
 static VOID moresubs _ANSI_ARGS_((struct vars *, int));
 static int freev _ANSI_ARGS_((struct vars *, int));
-static struct rtree *parse _ANSI_ARGS_((struct vars *, int, int, struct state *, struct state *, int));
+static struct subre *parse _ANSI_ARGS_((struct vars *, int, int, struct state *, struct state *));
+static struct subre *parsebranch _ANSI_ARGS_((struct vars *, int, int, struct state *, struct state *, int));
+static VOID parseqatom _ANSI_ARGS_((struct vars *, int, int, struct state *, struct state *, struct subre *));
+static VOID nonword _ANSI_ARGS_((struct vars *, int, struct state *, struct state *));
+static VOID word _ANSI_ARGS_((struct vars *, int, struct state *, struct state *));
 static int scannum _ANSI_ARGS_((struct vars *));
 static VOID repeat _ANSI_ARGS_((struct vars *, struct state *, struct state *, int, int));
 static VOID bracket _ANSI_ARGS_((struct vars *, struct state *, struct state *));
@@ -24,24 +28,23 @@ static chr *scanplain _ANSI_ARGS_((struct vars *));
 static VOID leaders _ANSI_ARGS_((struct vars *, struct cvec *));
 static VOID onechr _ANSI_ARGS_((struct vars *, pchr, struct state *, struct state *));
 static VOID dovec _ANSI_ARGS_((struct vars *, struct cvec *, struct state *, struct state *));
-static color nlcolor _ANSI_ARGS_((struct vars *));
+static celt nextleader _ANSI_ARGS_((struct vars *, pchr, pchr));
 static VOID wordchrs _ANSI_ARGS_((struct vars *));
-static struct subre subre _ANSI_ARGS_((struct state *, struct state *, int, int, struct rtree *));
-static struct rtree *newrt _ANSI_ARGS_((struct vars *));
-static VOID freert _ANSI_ARGS_((struct vars *, struct rtree *));
-static VOID freertnode _ANSI_ARGS_((struct vars *, struct rtree *));
-static VOID optrt _ANSI_ARGS_((struct vars *, struct rtree *));
-static int numrt _ANSI_ARGS_((struct rtree *, int));
-static VOID markrt _ANSI_ARGS_((struct rtree *));
-static VOID cleanrt _ANSI_ARGS_((struct vars *));
-static VOID nfatree _ANSI_ARGS_((struct vars *, struct rtree *, FILE *));
-static VOID nfanode _ANSI_ARGS_((struct vars *, struct subre *, FILE *));
+static struct subre *subre _ANSI_ARGS_((struct vars *, int, int, struct state *, struct state *));
+static VOID freesubre _ANSI_ARGS_((struct vars *, struct subre *));
+static VOID freesrnode _ANSI_ARGS_((struct vars *, struct subre *));
+static VOID optst _ANSI_ARGS_((struct vars *, struct subre *));
+static int numst _ANSI_ARGS_((struct subre *, int));
+static VOID markst _ANSI_ARGS_((struct subre *));
+static VOID cleanst _ANSI_ARGS_((struct vars *));
+static int nfatree _ANSI_ARGS_((struct vars *, struct subre *, FILE *));
+static int nfanode _ANSI_ARGS_((struct vars *, struct subre *, FILE *));
 static int newlacon _ANSI_ARGS_((struct vars *, struct state *, struct state *, int));
 static VOID freelacons _ANSI_ARGS_((struct subre *, int));
 static VOID rfree _ANSI_ARGS_((regex_t *));
 static VOID dump _ANSI_ARGS_((regex_t *, FILE *));
-static VOID dumprt _ANSI_ARGS_((struct rtree *, FILE *, int));
-static VOID rtdump _ANSI_ARGS_((struct rtree *, FILE *, int, int));
+static VOID dumpst _ANSI_ARGS_((struct subre *, FILE *, int));
+static VOID stdump _ANSI_ARGS_((struct subre *, FILE *, int, int));
 /* === regc_lex.c === */
 static VOID lexstart _ANSI_ARGS_((struct vars *));
 static VOID prefixes _ANSI_ARGS_((struct vars *));
@@ -56,17 +59,18 @@ static chr newline _ANSI_ARGS_((NOPARMS));
 static chr *ch _ANSI_ARGS_((NOPARMS));
 static chr chrnamed _ANSI_ARGS_((struct vars *, chr *, chr *, pchr));
 /* === regc_color.c === */
-static struct colormap *newcm _ANSI_ARGS_((struct vars *));
+static VOID initcm _ANSI_ARGS_((struct vars *, struct colormap *));
 static VOID freecm _ANSI_ARGS_((struct colormap *));
 static VOID cmtreefree _ANSI_ARGS_((struct colormap *, union tree *, int));
-static VOID fillcm _ANSI_ARGS_((struct colormap *));
-static VOID cmtreefill _ANSI_ARGS_((struct colormap *, union tree *, int));
-static color getcolor _ANSI_ARGS_((struct colormap *, pchr));
 static color setcolor _ANSI_ARGS_((struct colormap *, pchr, pcolor));
 static color maxcolor _ANSI_ARGS_((struct colormap *));
 static color newcolor _ANSI_ARGS_((struct colormap *));
+static VOID freecolor _ANSI_ARGS_((struct colormap *, pcolor));
 static color pseudocolor _ANSI_ARGS_((struct colormap *));
 static color subcolor _ANSI_ARGS_((struct colormap *, pchr c));
+static color newsub _ANSI_ARGS_((struct colormap *, pcolor));
+static VOID subrange _ANSI_ARGS_((struct vars *, pchr, pchr, struct state *, struct state *));
+static VOID subblock _ANSI_ARGS_((struct vars *, pchr, struct state *, struct state *));
 static VOID okcolors _ANSI_ARGS_((struct nfa *, struct colormap *));
 static VOID colorchain _ANSI_ARGS_((struct colormap *, struct arc *));
 static VOID uncolorchain _ANSI_ARGS_((struct colormap *, struct arc *));
@@ -115,10 +119,9 @@ static VOID cleanup _ANSI_ARGS_((struct nfa *));
 static VOID markreachable _ANSI_ARGS_((struct nfa *, struct state *, struct state *, struct state *));
 static VOID markcanreach _ANSI_ARGS_((struct nfa *, struct state *, struct state *, struct state *));
 static int analyze _ANSI_ARGS_((struct nfa *));
-static int isempty _ANSI_ARGS_((struct state *, struct state *));
 static VOID compact _ANSI_ARGS_((struct nfa *, struct cnfa *));
 static VOID carcsort _ANSI_ARGS_((struct carc *, struct carc *));
-static VOID freecnfa _ANSI_ARGS_((struct cnfa *, int));
+static VOID freecnfa _ANSI_ARGS_((struct cnfa *));
 static VOID dumpnfa _ANSI_ARGS_((struct nfa *, FILE *));
 static VOID dumpstate _ANSI_ARGS_((struct state *, FILE *));
 static VOID dumparcs _ANSI_ARGS_((struct state *, FILE *));
@@ -173,9 +176,9 @@ struct vars {
 	struct colormap *cm;	/* character color map */
 	color nlcolor;		/* color of newline */
 	struct state *wordchrs;	/* state in nfa holding word-char outarcs */
-	struct rtree *tree;	/* subexpression tree */
-	struct rtree *treechain;	/* all tree nodes allocated */
-	struct rtree *treefree;		/* any free tree nodes */
+	struct subre *tree;	/* subexpression tree */
+	struct subre *treechain;	/* all tree nodes allocated */
+	struct subre *treefree;		/* any free tree nodes */
 	int ntree;		/* number of tree nodes */
 	struct cvec *cv;	/* interface cvec */
 	struct cvec *cv2;	/* utility cvec */
@@ -186,6 +189,7 @@ struct vars {
 	struct subre *lacons;	/* lookahead-constraint vector */
 	int nlacons;		/* size of lacons */
 	int usedshorter;	/* used short-preferring quantifiers */
+	int unmatchable;	/* can never match */
 };
 
 /* parsing macros; most know that `v' is the struct vars pointer */
@@ -199,6 +203,7 @@ struct vars {
 #define	ERR(e)	VERR(v, e)		/* record an error */
 #define	NOERR()	{if (ISERR()) return;}	/* if error seen, return */
 #define	NOERRN()	{if (ISERR()) return NULL;}	/* NOERR with retval */
+#define	NOERRZ()	{if (ISERR()) return 0;}	/* NOERR with retval */
 #define	INSIST(c, e)	((c) ? 0 : ERR(e))	/* if condition false, error */
 #define	NOTE(b)	(v->re->re_info |= (b))		/* note visible condition */
 #define	EMPTYARC(x, y)	newarc(v->nfa, EMPTY, 0, x, y)
@@ -259,7 +264,6 @@ int flags;
 
 	if (re == NULL || string == NULL)
 		return REG_INVARG;
-	assert(REG_ADVANCED == (REG_EXTENDED|REG_ADVF));
 	if ((flags&REG_QUOTE) &&
 			(flags&(REG_ADVANCED|REG_EXPANDED|REG_NEWLINE)))
 		return REG_INVARG;
@@ -297,19 +301,18 @@ int flags;
 	re->re_fns = VS(&functions);
 
 	/* more complex setup, malloced things */
-	v->cm = newcm(v);
-	CNOERR();
-	v->nfa = newnfa(v, v->cm, (struct nfa *)NULL);
-	CNOERR();
 	re->re_guts = VS(MALLOC(sizeof(struct guts)));
 	if (re->re_guts == NULL)
 		return freev(v, REG_ESPACE);
 	g = (struct guts *)re->re_guts;
-	ZAPCNFA(g->cnfa);
 	g->tree = NULL;
-	g->cm = NULL;
+	initcm(v, &g->cmap);
+	v->cm = &g->cmap;
 	g->lacons = NULL;
 	g->nlacons = 0;
+	ZAPCNFA(g->search);
+	v->nfa = newnfa(v, v->cm, (struct nfa *)NULL);
+	CNOERR();
 	v->cv = newcvec(100, 20, 10);
 	if (v->cv == NULL)
 		return freev(v, REG_ESPACE);
@@ -324,53 +327,56 @@ int flags;
 
 	/* parsing */
 	lexstart(v);			/* also handles prefixes */
-	v->tree = parse(v, EOS, PLAIN, v->nfa->init, v->nfa->final, NONEYET);
+	if ((v->cflags&REG_NLSTOP) || (v->cflags&REG_NLANCH)) {
+		/* assign newline a unique color */
+		v->nlcolor = subcolor(v->cm, newline());
+		okcolors(v->nfa, v->cm);
+	}
+	CNOERR();
+	v->tree = parse(v, EOS, PLAIN, v->nfa->init, v->nfa->final);
 	assert(SEE(EOS));		/* even if error; ISERR() => SEE(EOS) */
 	CNOERR();
+	assert(v->tree != NULL);
 
 	/* finish setup of nfa and its subre tree */
 	specialcolors(v->nfa);
 	CNOERR();
 	if (debug != NULL) {
 		dumpnfa(v->nfa, debug);
-		dumprt(v->tree, debug, 1);
+		dumpst(v->tree, debug, 1);
 	}
 	v->usedshorter = 0;
-	optrt(v, v->tree);
-	if (v->tree != NULL) {
-		v->ntree = numrt(v->tree, 1);
-		markrt(v->tree);
-	} else
-		v->ntree = 0;
-	cleanrt(v);
+	v->unmatchable = 0;
+	optst(v, v->tree);
+	v->ntree = numst(v->tree, 1);
+	markst(v->tree);
+	cleanst(v);
 	if (debug != NULL) {
 		fprintf(debug, "-->\n");
-		dumprt(v->tree, debug, 1);
+		dumpst(v->tree, debug, 1);
 	}
 
-	/* build compacted NFAs for tree, lacons, main nfa */
-	nfatree(v, v->tree, debug);
+	/* build compacted NFAs for tree, lacons, fast search */
+	re->re_info |= nfatree(v, v->tree, debug);
 	if (debug != NULL) {
 		fprintf(debug, "---->\n");
-		dumprt(v->tree, debug, 1);
+		dumpst(v->tree, debug, 1);
 	}
 	CNOERR();
+	if (re->re_info&REG_UIMPOSSIBLE)
+		v->unmatchable = 1;
 	assert(v->nlacons == 0 || v->lacons != NULL);
 	for (i = 1; i < v->nlacons; i++)
 		nfanode(v, &v->lacons[i], debug);
 	CNOERR();
-	re->re_info |= optimize(v->nfa, debug);
+	rainbow(v->nfa, v->cm, PLAIN, COLORLESS, v->nfa->pre, v->nfa->pre);
+	newarc(v->nfa, PLAIN, v->nfa->bos[0], v->nfa->pre, v->nfa->pre);
+	newarc(v->nfa, PLAIN, v->nfa->bos[1], v->nfa->pre, v->nfa->pre);
+	newarc(v->nfa, PLAIN, v->nfa->eos[0], v->nfa->pre, v->nfa->pre);
+	newarc(v->nfa, PLAIN, v->nfa->eos[1], v->nfa->pre, v->nfa->pre);
+	(DISCARD)optimize(v->nfa, debug);
 	CNOERR();
-	if (v->nfa->post->nins <= 0)	
-		return freev(v, REG_IMPOSS);	/* end unreachable! */
-	assert(v->nfa->pre->nouts > 0);
-	compact(v->nfa, &g->cnfa);
-	CNOERR();
-	freenfa(v->nfa);
-	v->nfa = NULL;
-
-	/* fill color map */
-	fillcm(v->cm);
+	compact(v->nfa, &g->search);
 	CNOERR();
 
 	/* looks okay, package it up */
@@ -380,8 +386,6 @@ int flags;
 	g->cflags = v->cflags;
 	g->info = re->re_info;
 	g->nsub = re->re_nsub;
-	g->cm = v->cm;
-	v->cm = NULL;
 	g->tree = v->tree;
 	v->tree = NULL;
 	g->ntree = v->ntree;
@@ -390,6 +394,7 @@ int flags;
 	v->lacons = NULL;
 	g->nlacons = v->nlacons;
 	g->usedshorter = v->usedshorter;
+	g->unmatchable = v->unmatchable;
 
 	if (flags&REG_DUMP)
 		dump(re, stdout);
@@ -447,12 +452,10 @@ int err;
 		FREE(v->subs);
 	if (v->nfa != NULL)
 		freenfa(v->nfa);
-	if (v->cm != NULL)
-		freecm(v->cm);
 	if (v->tree != NULL)
-		freert(v, v->tree);
+		freesubre(v, v->tree);
 	if (v->treechain != NULL)
-		cleanrt(v);
+		cleanst(v);
 	if (v->cv != NULL)
 		freecvec(v->cv);
 	if (v->cv2 != NULL)
@@ -468,510 +471,53 @@ int err;
 
 /*
  - parse - parse an RE
- * Arguably this is too big and too complex and ought to be divided up.
- * However, the code is somewhat intertwined...
- *
- * Note that it is no longer necessary to be rigorous about freeing tree
- * nodes on error exits, as the tree machinery keeps track of them.
- ^ static struct rtree *parse(struct vars *, int, int, struct state *,
- ^ 	struct state *, int);
+ * This is actually just the top level, which parses a bunch of branches
+ * tied together with '|'.  They appear in the tree as the left children
+ * of a chain of '|' subres.
+ ^ static struct subre *parse(struct vars *, int, int, struct state *,
+ ^ 	struct state *);
  */
-static struct rtree *		/* NULL if no interesting substructure */
-parse(v, stopper, type, init, final, pprefer)
+static struct subre *
+parse(v, stopper, type, init, final)
 struct vars *v;
 int stopper;			/* EOS or ')' */
 int type;			/* LACON (lookahead subRE) or PLAIN */
 struct state *init;		/* initial state */
 struct state *final;		/* final state */
-int pprefer;			/* parent's short/long preference */
 {
 	struct state *left;	/* scaffolding for branch */
 	struct state *right;
-	struct state *lp;	/* scaffolding for current construct */
-	struct state *rp;
-	struct state *s;	/* temporaries for new states */
-	struct state *s2;
-#	define	ARCV(t, val)	newarc(v->nfa, t, val, lp, rp)
-	int m, n;
-	int emptybranch;	/* is there anything in this branch yet? */
-	struct rtree *branches;	/* top level */
-	struct rtree *branch;	/* current branch */
-	struct subre *now;	/* current subtree's top */
-	struct subre sub;	/* communication variable */
-	struct rtree *rt1;	/* temporaries */
-	struct rtree *rt2;
-	struct subre *t;	/* work pointer, top of interesting subtree */
+	struct subre *branches;	/* top level */
+	struct subre *branch;	/* current branch */
+	struct subre *t;	/* temporary */
 	int firstbranch;	/* is this the first branch? */
-	int capture;		/* any capturing parens within this? */
-	int constraint;		/* is the current atom a constraint? */
 
 	assert(stopper == ')' || stopper == EOS);
 
-	capture = 0;
-	branches = newrt(v);
-	branch = branches;
-	rt1 = NULL;		/* shut up lint */
-	firstbranch = 1;
+	branches = subre(v, '|', LONGER, init, final);
 	NOERRN();
-	do {
-		/* a branch */
-		emptybranch = 1;	/* tentatively */
+	branch = branches;
+	firstbranch = 1;
+	do {	/* a branch */
+		if (!firstbranch) {
+			/* need a place to hang it */
+			branch->right = subre(v, '|', LONGER, init, final);
+			NOERRN();
+			branch = branch->right;
+		}
+		firstbranch = 0;
 		left = newstate(v->nfa);
 		right = newstate(v->nfa);
 		NOERRN();
-		if (!firstbranch) {
-			rt1 = newrt(v);
-			NOERRN();
-			branch->next = rt1;
-			branch = rt1;
-		}
 		EMPTYARC(init, left);
 		EMPTYARC(right, final);
-		lp = left;
-		rp = right;
-		branch->op = '|';
-		now = &branch->left;
-		*now = subre(left, right, NONEYET, 0, (struct rtree *)NULL);
-		firstbranch = 0;
 		NOERRN();
-
-		while (!SEE('|') && !SEE(stopper) && !SEE(EOS)) {
-			/* initial bookkeeping */
-			sub.begin = NULL;	/* no substructure seen yet */
-			sub.subno = 0;
-			sub.prefer = NONEYET;
-			constraint = 0;
-			if (emptybranch)	/* first of the branch */
-				emptybranch = 0;
-			else {			/* implicit concat operator */
-				lp = newstate(v->nfa);
-				NOERRN();
-				moveins(v->nfa, rp, lp);
-			}
-			assert(lp->nouts == 0);	/* must string new code */
-			assert(rp->nins == 0);	/*  between lp and rp */
-
-			/* an atom... */
-			switch (v->nexttype) {
-			case '(':	/* value flags as capturing or non */
-				m = (type == LACON) ? 0 : v->nextvalue;
-				if (m) {
-					v->nsubexp++;
-					sub.subno = v->nsubexp;
-					if ((size_t)sub.subno >= v->nsubs)
-						moresubs(v, sub.subno);
-					assert((size_t)sub.subno < v->nsubs);
-				} else
-					sub.subno = 0;
-				NEXT();
-				sub.begin = lp;	/* NB, substructure seen */
-				sub.end = rp;
-				/* use now->tree as temporary, so */
-				/*  things get freed on error returns */
-				assert(now->tree == NULL);
-				now->tree = parse(v, ')', PLAIN, lp, rp,
-								now->prefer);
-				assert(SEE(')') || ISERR());
-				NEXT();
-				NOERRN();
-				if (!m && now->tree == NULL) {
-					/* actually no relevant substructure */
-					sub.begin = NULL;
-				}
-				if (now->tree != NULL) {
-					if (now->tree->op == '|')
-						sub.prefer = LONGER;
-					else
-						sub.prefer =
-							now->tree->left.prefer;
-				}
-				/* must postpone other processing until we */
-				/*  know about any {0,0} quantifier */
-				break;
-			case BACKREF:	/* the Feature From The Black Lagoon */
-				INSIST(type != LACON, REG_ESUBREG);
-				INSIST(v->nextvalue < v->nsubs, REG_ESUBREG);
-				INSIST(v->subs[v->nextvalue] != NULL,
-								REG_ESUBREG);
-				NOERRN();
-				assert(v->nextvalue > 0);
-				sub.subno = -v->nextvalue;
-				sub.begin = lp;	/* NB, substructure seen */
-				sub.end = rp;
-				EMPTYARC(lp, rp);	/* temporarily */
-				assert(now->tree == NULL);
-				NEXT();
-				break;
-			case LACON:	/* lookahead constraint */
-				m = v->nextvalue;	/* is positive? */
-				NEXT();
-				s = newstate(v->nfa);
-				s2 = newstate(v->nfa);
-				NOERRN();
-				rt1 = parse(v, ')', LACON, s, s2, NONEYET);
-				assert(SEE(')') || ISERR());
-				NEXT();
-				m = newlacon(v, s, s2, m);
-				freert(v, rt1);
-				NOERRN();
-				ARCV(LACON, m);
-				constraint = 1;
-				break;
-			case PREFER:	/* length preference */
-				sub.prefer = (v->nextvalue) ? LONGER : SHORTER;
-				NEXT();
-				sub.begin = lp;	/* NB, substructure seen */
-				sub.end = rp;
-				/* use now->tree as temporary, so */
-				/*  things get freed on error returns */
-				assert(now->tree == NULL);
-				now->tree = parse(v, ')', PLAIN, lp, rp,
-								sub.prefer);
-				assert(SEE(')') || ISERR());
-				NEXT();
-				NOERRN();
-				if (now->prefer == NONEYET)
-					now->prefer = sub.prefer;
-				if (sub.prefer == now->prefer &&
-							now->tree == NULL) {
-					/* actually no relevant substructure */
-					sub.begin = NULL;
-				}
-				break;
-			case '[':
-				if (v->nextvalue == 1)
-					bracket(v, lp, rp);
-				else
-					cbracket(v, lp, rp);
-				assert(SEE(']') || ISERR());
-				NEXT();
-				break;
-			case '.':
-				rainbow(v->nfa, v->cm, PLAIN,
-					(v->cflags&REG_NLSTOP) ?
-							nlcolor(v) : COLORLESS,
-					lp, rp);
-				NEXT();
-				break;
-			case '^':
-				ARCV('^', 1);
-				if (v->cflags&REG_NLANCH)
-					ARCV(BEHIND, nlcolor(v));
-				NEXT();
-				constraint = 1;
-				break;
-			case '$':
-				ARCV('$', 1);
-				if (v->cflags&REG_NLANCH)
-					ARCV(AHEAD, nlcolor(v));
-				NEXT();
-				constraint = 1;
-				break;
-			case SBEGIN:
-				ARCV('^', 1);	/* BOL */
-				ARCV('^', 0);	/* or BOS */
-				NEXT();
-				constraint = 1;
-				break;
-			case SEND:
-				ARCV('$', 1);	/* EOL */
-				ARCV('$', 0);	/* or EOS */
-				NEXT();
-				constraint = 1;
-				break;
-			case '<':
-				wordchrs(v);	/* does NEXT() */
-				s = newstate(v->nfa);
-				NOERRN();
-				/* needs BOL, BOS, or nonword to left... */
-				newarc(v->nfa, '^', 1, lp, s);
-				newarc(v->nfa, '^', 0, lp, s);
-				colorcomplement(v->nfa, v->cm, BEHIND,
-							v->wordchrs, lp, s);
-				/* ... and word to right */
-				cloneouts(v->nfa, v->wordchrs, s, rp, AHEAD);
-				/* (no need for special attention to \n) */
-				constraint = 1;
-				break;
-			case '>':
-				wordchrs(v);	/* does NEXT() */
-				s = newstate(v->nfa);
-				NOERRN();
-				/* needs word to left... */
-				cloneouts(v->nfa, v->wordchrs, lp, s, BEHIND);
-				/* ... and EOL, EOS, or nonword to right */
-				newarc(v->nfa, '$', 1, s, rp);
-				newarc(v->nfa, '$', 0, s, rp);
-				colorcomplement(v->nfa, v->cm, AHEAD,
-							v->wordchrs, s, rp);
-				/* (no need for special attention to \n) */
-				constraint = 1;
-				break;
-			case WBDRY:
-				wordchrs(v);	/* does NEXT() */
-				s = newstate(v->nfa);
-				NOERRN();
-				/* needs BOL, BOS, or nonword to left... */
-				newarc(v->nfa, '^', 1, lp, s);
-				newarc(v->nfa, '^', 0, lp, s);
-				colorcomplement(v->nfa, v->cm, BEHIND,
-							v->wordchrs, lp, s);
-				/* ... and word to right... */
-				cloneouts(v->nfa, v->wordchrs, s, rp, AHEAD);
-				/* ...or... */
-				s = newstate(v->nfa);
-				NOERRN();
-				/* ...needs word to left... */
-				cloneouts(v->nfa, v->wordchrs, lp, s, BEHIND);
-				/* ... and EOL, EOS, or nonword to right */
-				newarc(v->nfa, '$', 1, s, rp);
-				newarc(v->nfa, '$', 0, s, rp);
-				colorcomplement(v->nfa, v->cm, AHEAD,
-							v->wordchrs, s, rp);
-				/* (no need for special attention to \n) */
-				constraint = 1;
-				break;
-			case NWBDRY:
-				wordchrs(v);	/* does NEXT() */
-				s = newstate(v->nfa);
-				NOERRN();
-				/* needs word to both left and right... */
-				cloneouts(v->nfa, v->wordchrs, lp, s, BEHIND);
-				cloneouts(v->nfa, v->wordchrs, s, rp, AHEAD);
-				/* ...or... */
-				s = newstate(v->nfa);
-				NOERRN();
-				/* ...BOL, BOS, or nonword to left... */
-				newarc(v->nfa, '^', 1, lp, s);
-				newarc(v->nfa, '^', 0, lp, s);
-				colorcomplement(v->nfa, v->cm, BEHIND,
-							v->wordchrs, lp, s);
-				/* ... and EOL, EOS, or nonword to right */
-				newarc(v->nfa, '$', 1, s, rp);
-				newarc(v->nfa, '$', 0, s, rp);
-				colorcomplement(v->nfa, v->cm, AHEAD,
-							v->wordchrs, s, rp);
-				/* (no need for special attention to \n) */
-				constraint = 1;
-				break;
-			case ')':		/* unbalanced paren */
-#ifdef POSIX_MISTAKE
-				if (!(v->cflags&REG_EXTENDED) ||
-							(v->cflags&REG_ADVF)) {
-					ERR(REG_EPAREN);
-					return NULL;
-				}
-				NOTE(REG_UPBOTCH);
-				/* fallthrough into case PLAIN */
-#else
-				ERR(REG_EPAREN);
-				return NULL;
-				break;
-#endif
-			case PLAIN:
-				onechr(v, v->nextvalue, lp, rp);
-				okcolors(v->nfa, v->cm);
-				NOERRN();
-				NEXT();
-				break;
-			case '*':
-			case '+':
-			case '?':
-			case '{':
-				ERR(REG_BADRPT);
-				return NULL;
-				break;
-			default:
-				ERR(REG_ASSERT);
-				return NULL;
-				break;
-			}
-
-			/* ...possibly followed by a quantifier */
-			switch (v->nexttype) {
-			case '*':
-				m = 0;
-				n = INFINITY;
-				sub.prefer = (v->nextvalue) ? LONGER : SHORTER;
-				NEXT();
-				break;
-			case '+':
-				m = 1;
-				n = INFINITY;
-				sub.prefer = (v->nextvalue) ? LONGER : SHORTER;
-				NEXT();
-				break;
-			case '?':
-				m = 0;
-				n = 1;
-				sub.prefer = (v->nextvalue) ? LONGER : SHORTER;
-				NEXT();
-				break;
-			case '{':
-				NEXT();
-				m = scannum(v);
-				if (EAT(',')) {
-					if (SEE(DIGIT))
-						n = scannum(v);
-					else
-						n = INFINITY;
-					if (m > n) {
-						ERR(REG_BADBR);
-						return NULL;
-					}
-				} else
-					n = m;
-				if (!SEE('}')) {	/* gets errors too */
-					ERR(REG_BADBR);
-					return NULL;
-				}
-				if (m != n)
-					sub.prefer = (v->nextvalue) ? LONGER :
-									SHORTER;
-				NEXT();
-				break;
-			default:		/* no quantifier */
-				m = n = 1;
-				constraint = 0;
-				break;
-			}
-
-			/* constraints may not be quantified */
-			if (constraint) {
-				ERR(REG_BADRPT);
-				return NULL;
-			}
-
-			/* annoying special case:  {0,0} cancels everything */
-			if (m == 0 && n == 0 && sub.begin != NULL) {
-				freert(v, now->tree);
-				now->tree = NULL;
-				sub.begin = NULL;	/* no substructure */
-				sub.prefer = NONEYET;
-				/* the repeat() below will do the rest */
-			}
-
-			/* if no substructure, avoid hard part */
-			if (now->prefer == NONEYET)
-				now->prefer = sub.prefer;
-			if (sub.begin == NULL && (sub.prefer == NONEYET ||
-						sub.prefer == now->prefer)) {
-				assert(sub.subno >= 0 || (m == 0 && n == 0));
-				if (!(m == 1 && n == 1))
-					repeat(v, lp, rp, m, n);
-				continue;		/* NOTE CONTINUE */
-			}
-
-			/* hard part:  something messy seen */
-			/* break subRE into pre, x{...}, post-to-be */
-			capture = 1;		/* upper levels will care */
-			rt1 = newrt(v);
-			rt2 = newrt(v);
-			s = newstate(v->nfa);	/* between x and post-to-be */
-			NOERRN();
-			moveins(v->nfa, rp, s);
-			EMPTYARC(s, rp);
-			rt1->op = ',';
-			rt1->left = subre(now->begin, lp, now->prefer, 0,
-							(struct rtree *)NULL);
-			assert(now->end == rp);
-			rt1->right = subre(lp, rp, sub.prefer, 0, rt2);
-			rt2->op = ',';
-			rt2->left = subre(lp, s, sub.prefer, 0, now->tree);
-			rt2->right = subre(s, rp, NONEYET, 0,
-							(struct rtree *)NULL);
-			now->tree = rt1;
-			now = &rt2->right;	/* future elaborations here */
-			t = &rt2->left;		/* current activity here */
-
-			/* if it's a backref, time to replicate the subNFA */
-			if (sub.subno < 0) {
-				assert(lp->nouts == 1);	/* just the EMPTY */
-				delsub(v->nfa, lp, s);
-				assert(v->subs[-sub.subno] != NULL);
-				dupnfa(v->nfa, v->subs[-sub.subno]->begin,
-					v->subs[-sub.subno]->end, lp, s);
-				NOERRN();
-			}
-
-			/* if no/vacuous quantifier and not backref, done */
-			if (m == 1 && n == 1 && sub.subno >= 0) {
-				t->subno = sub.subno;
-				if (sub.subno > 0)
-					v->subs[sub.subno] = t;
-				continue;		/* NOTE CONTINUE */
-			}
-
-			/* really sticky part, quantified capturer/backref */
-			/* first, turn x{0,...} into x{1,...}| */
-			if (m == 0) {
-				s = newstate(v->nfa);
-				s2 = newstate(v->nfa);
-				rt1 = newrt(v);
-				rt2 = newrt(v);
-				NOERRN();
-				moveouts(v->nfa, t->begin, s);
-				EMPTYARC(t->begin, s);
-				EMPTYARC(t->begin, s2);
-				EMPTYARC(s2, t->end);
-				rt1->op = rt2->op = '|';
-				rt1->left = subre(s, t->end, sub.prefer, 0,
-								t->tree);
-				rt1->next = rt2;
-				rt2->left = subre(s2, t->end, sub.prefer, 0,
-							(struct rtree *)NULL);
-				t->tree = rt1;
-				t = &rt1->left;
-				m = 1;
-			}
-
-			/* second, x{1,1} is just x */
-			if (m == 1 && n == 1 && sub.subno >= 0) {
-				t->subno = sub.subno;
-				if (sub.subno > 0)
-					v->subs[sub.subno] = t;
-				continue;		/* NOTE CONTINUE */
-			}
-
-			/* backrefs get special treatment */
-			if (sub.subno < 0) {
-				repeat(v, t->begin, t->end, m, n);
-				rt1 = newrt(v);
-				NOERRN();
-				assert(t->tree == NULL);
-				t->tree = rt1;
-				rt1->op = 'b';
-				rt1->left.subno = sub.subno;
-				rt1->left.min = (short)m;
-				rt1->left.max = (short)n;
-				rt1->left.prefer = sub.prefer;
-				continue;		/* NOTE CONTINUE */
-			}
-
-			/* turn x{m,n} into x{m-1,n-1}x, with capturing */
-			/*  parens in only second x */
-			s = newstate(v->nfa);
-			NOERRN();
-			moveouts(v->nfa, t->begin, s);
-			dupnfa(v->nfa, s, t->end, t->begin, s);
-			assert(m >= 1 && m != INFINITY && n >= 1);
-			repeat(v, t->begin, s, m-1, (n == INFINITY) ? n : n-1);
-			rt1 = newrt(v);
-			NOERRN();
-			rt1->op = ',';
-			rt1->left = subre(t->begin, s, sub.prefer, 0,
-							(struct rtree *)NULL);
-			/* sub.prefer not really right, but doesn't matter */
-			rt1->right = subre(s, t->end, sub.prefer, sub.subno,
-								t->tree);
-			if (sub.subno > 0)
-				v->subs[sub.subno] = &rt1->right;
-			t->tree = rt1;
-		}
-		if (emptybranch) {
-			NOTE(REG_UUNSPEC);
-			EMPTYARC(lp, rp);
-		}
+		branch->left = parsebranch(v, stopper, type, left, right, 0);
+		NOERRN();
+		branch->flags |= UP(branch->flags | branch->left->flags);
+		if ((branch->flags &~ branches->flags) != 0)	/* new flags */
+			for (t = branches; t != branch; t = t->right)
+				t->flags |= branch->flags;
 	} while (EAT('|'));
 	assert(SEE(stopper) || SEE(EOS));
 
@@ -980,29 +526,507 @@ int pprefer;			/* parent's short/long preference */
 		ERR(REG_EPAREN);
 	}
 
-	/* higher levels care about our preference in certain situations */
-	if (branch != branches) {	/* >1 branch */
-		if (pprefer != LONGER)
-			capture = 1;
-	} else if (branches->left.prefer != pprefer)
-		capture = 1;
-
-	/* optimize out vacuous alternation */
-	if (branch == branches) {
-		assert(branch->next == NULL && branch->right.begin == NULL);
-		assert(branch->left.subno == 0);
-		if (capture && branch->left.tree == NULL)
-			branch->op = ',';
-		else {
-			branches = branch->left.tree;	/* might be NULL */
-			freertnode(v, branch);
-		}
+	/* optimize out simple cases */
+	if (branch == branches) {	/* only one branch */
+		assert(branch->right == NULL);
+		t = branch->left;
+		branch->left = NULL;
+		freesubre(v, branches);
+		branches = t;
+	} else if (!MESSY(branches->flags)) {	/* no interesting innards */
+		freesubre(v, branches->left);
+		branches->left = NULL;
+		freesubre(v, branches->right);
+		branches->right = NULL;
+		branches->op = '=';
 	}
 
-	if (capture)			/* actually a catchall flag */
-		return branches;
-	freert(v, branches);
-	return NULL;
+	return branches;
+}
+
+/*
+ - parsebranch - parse one branch of an RE
+ * This mostly manages concatenation, working closely with parseqatom().
+ * Concatenated things are bundled up as much as possible, with separate
+ * ',' nodes introduced only when necessary due to substructure.
+ ^ static struct subre *parsebranch(struct vars *, int, int, struct state *,
+ ^ 	struct state *, int);
+ */
+static struct subre *
+parsebranch(v, stopper, type, left, right, partial)
+struct vars *v;
+int stopper;			/* EOS or ')' */
+int type;			/* LACON (lookahead subRE) or PLAIN */
+struct state *left;		/* leftmost state */
+struct state *right;		/* rightmost state */
+int partial;			/* is this only part of a branch? */
+{
+	struct state *lp;	/* left end of current construct */
+	int seencontent;	/* is there anything in this branch yet? */
+	struct subre *t;
+
+	lp = left;
+	seencontent = 0;
+	t = subre(v, '=', 0, left, right);	/* op '=' is tentative */
+	NOERRN();
+	while (!SEE('|') && !SEE(stopper) && !SEE(EOS)) {
+		if (seencontent) {	/* implicit concat operator */
+			lp = newstate(v->nfa);
+			NOERRN();
+			moveins(v->nfa, right, lp);
+		}
+		seencontent = 1;
+
+		/* NB, recursion in parseqatom() may swallow rest of branch */
+		parseqatom(v, stopper, type, lp, right, t);
+	}
+
+	if (!seencontent) {		/* empty branch */
+		if (!partial)
+			NOTE(REG_UUNSPEC);
+		assert(lp == left);
+		EMPTYARC(left, right);
+	}
+
+	return t;
+}
+
+/*
+ - parseqatom - parse one quantified atom or constraint of an RE
+ * The bookkeeping near the end cooperates very closely with parsebranch();
+ * in particular, it contains a recursion that can involve parsing the rest
+ * of the branch, making this function's name somewhat inaccurate.
+ ^ static VOID parseqatom(struct vars *, int, int, struct state *,
+ ^ 	struct state *, struct subre *);
+ */
+static VOID
+parseqatom(v, stopper, type, lp, rp, top)
+struct vars *v;
+int stopper;			/* EOS or ')' */
+int type;			/* LACON (lookahead subRE) or PLAIN */
+struct state *lp;		/* left state to hang it on */
+struct state *rp;		/* right state to hang it on */
+struct subre *top;		/* subtree top */
+{
+	struct state *s;	/* temporaries for new states */
+	struct state *s2;
+#	define	ARCV(t, val)	newarc(v->nfa, t, val, lp, rp)
+	int m, n;
+	struct subre *atom;	/* atom's subtree */
+	struct subre *t;
+	int cap;		/* capturing parens? */
+	int pos;		/* positive lookahead? */
+	int subno;		/* capturing-parens or backref number */
+	int atomtype;
+	int qprefer;		/* quantifier short/long preference */
+	int f;
+	struct subre **atomp;	/* where the pointer to atom is */
+
+	/* initial bookkeeping */
+	atom = NULL;
+	assert(lp->nouts == 0);	/* must string new code */
+	assert(rp->nins == 0);	/*  between lp and rp */
+	subno = 0;		/* just to shut lint up */
+
+	/* an atom or constraint... */
+	atomtype = v->nexttype;
+	switch (atomtype) {
+	/* first, constraints, which end by returning */
+	case '^':
+		ARCV('^', 1);
+		if (v->cflags&REG_NLANCH)
+			ARCV(BEHIND, v->nlcolor);
+		NEXT();
+		return;
+		break;
+	case '$':
+		ARCV('$', 1);
+		if (v->cflags&REG_NLANCH)
+			ARCV(AHEAD, v->nlcolor);
+		NEXT();
+		return;
+		break;
+	case SBEGIN:
+		ARCV('^', 1);	/* BOL */
+		ARCV('^', 0);	/* or BOS */
+		NEXT();
+		return;
+		break;
+	case SEND:
+		ARCV('$', 1);	/* EOL */
+		ARCV('$', 0);	/* or EOS */
+		NEXT();
+		return;
+		break;
+	case '<':
+		wordchrs(v);	/* does NEXT() */
+		s = newstate(v->nfa);
+		NOERR();
+		nonword(v, BEHIND, lp, s);
+		word(v, AHEAD, s, rp);
+		return;
+		break;
+	case '>':
+		wordchrs(v);	/* does NEXT() */
+		s = newstate(v->nfa);
+		NOERR();
+		word(v, BEHIND, lp, s);
+		nonword(v, AHEAD, s, rp);
+		return;
+		break;
+	case WBDRY:
+		wordchrs(v);	/* does NEXT() */
+		s = newstate(v->nfa);
+		NOERR();
+		nonword(v, BEHIND, lp, s);
+		word(v, AHEAD, s, rp);
+		s = newstate(v->nfa);
+		NOERR();
+		word(v, BEHIND, lp, s);
+		nonword(v, AHEAD, s, rp);
+		return;
+		break;
+	case NWBDRY:
+		wordchrs(v);	/* does NEXT() */
+		s = newstate(v->nfa);
+		NOERR();
+		word(v, BEHIND, lp, s);
+		word(v, AHEAD, s, rp);
+		s = newstate(v->nfa);
+		NOERR();
+		nonword(v, BEHIND, lp, s);
+		nonword(v, AHEAD, s, rp);
+		return;
+		break;
+	case LACON:	/* lookahead constraint */
+		pos = v->nextvalue;
+		NEXT();
+		s = newstate(v->nfa);
+		s2 = newstate(v->nfa);
+		NOERR();
+		t = parse(v, ')', LACON, s, s2);
+		freesubre(v, t);	/* internal structure irrelevant */
+		assert(SEE(')') || ISERR());
+		NEXT();
+		n = newlacon(v, s, s2, pos);
+		NOERR();
+		ARCV(LACON, n);
+		return;
+		break;
+	/* then errors, to get them out of the way */
+	case '*':
+	case '+':
+	case '?':
+	case '{':
+		ERR(REG_BADRPT);
+		return;
+		break;
+	default:
+		ERR(REG_ASSERT);
+		return;
+		break;
+	/* then plain characters, and minor variants on that theme */
+	case ')':		/* unbalanced paren */
+		if ((v->cflags&REG_ADVANCED) != REG_EXTENDED) {
+			ERR(REG_EPAREN);
+			return;
+		}
+		/* legal in EREs due to specification botch */
+		NOTE(REG_UPBOTCH);
+		/* fallthrough into case PLAIN */
+	case PLAIN:
+		onechr(v, v->nextvalue, lp, rp);
+		okcolors(v->nfa, v->cm);
+		NOERR();
+		NEXT();
+		break;
+	case '[':
+		if (v->nextvalue == 1)
+			bracket(v, lp, rp);
+		else
+			cbracket(v, lp, rp);
+		assert(SEE(']') || ISERR());
+		NEXT();
+		break;
+	case '.':
+		rainbow(v->nfa, v->cm, PLAIN,
+				(v->cflags&REG_NLSTOP) ? v->nlcolor : COLORLESS,
+				lp, rp);
+		NEXT();
+		break;
+	/* and finally the ugly stuff */
+	case '(':	/* value flags as capturing or non */
+		cap = (type == LACON) ? 0 : v->nextvalue;
+		if (cap) {
+			v->nsubexp++;
+			subno = v->nsubexp;
+			if ((size_t)subno >= v->nsubs)
+				moresubs(v, subno);
+			assert((size_t)subno < v->nsubs);
+		} else
+			atomtype = PLAIN;	/* something that's not '(' */
+		NEXT();
+		/* need new endpoints because tree will contain pointers */
+		s = newstate(v->nfa);
+		s2 = newstate(v->nfa);
+		NOERR();
+		EMPTYARC(lp, s);
+		EMPTYARC(s2, rp);
+		NOERR();
+		atom = parse(v, ')', PLAIN, s, s2);
+		assert(SEE(')') || ISERR());
+		NEXT();
+		NOERR();
+		if (cap) {
+			v->subs[subno] = atom;
+			t = subre(v, '(', atom->flags|CAP, lp, rp);
+			NOERR();
+			t->subno = subno;
+			t->left = atom;
+			atom = t;
+		}
+		/* postpone everything else pending possible {0} */
+		break;
+	case BACKREF:	/* the Feature From The Black Lagoon */
+		INSIST(type != LACON, REG_ESUBREG);
+		INSIST(v->nextvalue < v->nsubs, REG_ESUBREG);
+		INSIST(v->subs[v->nextvalue] != NULL, REG_ESUBREG);
+		NOERR();
+		assert(v->nextvalue > 0);
+		atom = subre(v, 'b', BACKR, lp, rp);
+		subno = v->nextvalue;
+		atom->subno = subno;
+		EMPTYARC(lp, rp);	/* temporarily, so there's something */
+		NEXT();
+		break;
+	}
+
+	/* ...and an atom may be followed by a quantifier */
+	switch (v->nexttype) {
+	case '*':
+		m = 0;
+		n = INFINITY;
+		qprefer = (v->nextvalue) ? LONGER : SHORTER;
+		NEXT();
+		break;
+	case '+':
+		m = 1;
+		n = INFINITY;
+		qprefer = (v->nextvalue) ? LONGER : SHORTER;
+		NEXT();
+		break;
+	case '?':
+		m = 0;
+		n = 1;
+		qprefer = (v->nextvalue) ? LONGER : SHORTER;
+		NEXT();
+		break;
+	case '{':
+		NEXT();
+		m = scannum(v);
+		if (EAT(',')) {
+			if (SEE(DIGIT))
+				n = scannum(v);
+			else
+				n = INFINITY;
+			if (m > n) {
+				ERR(REG_BADBR);
+				return;
+			}
+			/* {m,n} exercises preference, even if it's {m,m} */
+			qprefer = (v->nextvalue) ? LONGER : SHORTER;
+		} else {
+			n = m;
+			/* {m} passes operand's preference through */
+			qprefer = 0;
+		}
+		if (!SEE('}')) {	/* catches errors too */
+			ERR(REG_BADBR);
+			return;
+		}
+		NEXT();
+		break;
+	default:		/* no quantifier */
+		m = n = 1;
+		qprefer = 0;
+		break;
+	}
+
+	/* annoying special case:  {0} or {0,0} cancels everything */
+	if (m == 0 && n == 0) {
+		if (atom != NULL)
+			freesubre(v, atom);
+		if (atomtype == '(')
+			v->subs[subno] = NULL;
+		delsub(v->nfa, lp, rp);
+		EMPTYARC(lp, rp);
+		return;
+	}
+
+	/* if not a messy case, avoid hard part */
+	assert(!MESSY(top->flags));
+	f = top->flags | qprefer | ((atom != NULL) ? atom->flags : 0);
+	if (atomtype != '(' && atomtype != BACKREF && !MESSY(UP(f))) {
+		if (!(m == 1 && n == 1))
+			repeat(v, lp, rp, m, n);
+		if (atom != NULL)
+			freesubre(v, atom);
+		top->flags = f;
+		return;
+	}
+
+	/*
+	 * hard part:  something messy
+	 * That is, capturing parens, back reference, short/long clash, or
+	 * an atom with substructure containing one of those.
+	 */
+
+	/* now we'll need a subre for the contents even if they're boring */
+	if (atom == NULL) {
+		atom = subre(v, '=', 0, lp, rp);
+		NOERR();
+	}
+
+	/*
+	 * prepare a general-purpose state skeleton
+	 *
+	 *    ---> [s] ---prefix---> [begin] ---atom---> [end] ----rest---> [rp]
+	 *   /                                            /
+	 * [lp] ----> [s2] ----bypass---------------------
+	 *
+	 * where bypass is an empty, and prefix is some repetitions of atom
+	 */
+	s = newstate(v->nfa);		/* first, new endpoints for the atom */
+	s2 = newstate(v->nfa);
+	NOERR();
+	moveouts(v->nfa, lp, s);
+	moveins(v->nfa, rp, s2);
+	NOERR();
+	atom->begin = s;
+	atom->end = s2;
+	s = newstate(v->nfa);		/* and spots for prefix and bypass */
+	s2 = newstate(v->nfa);
+	NOERR();
+	EMPTYARC(lp, s);
+	EMPTYARC(lp, s2);
+	NOERR();
+
+	/* break remaining subRE into x{...} and what follows */
+	t = subre(v, '.', COMBINE(qprefer, atom->flags), lp, rp);
+	t->left = atom;
+	atomp = &t->left;
+	/* here we should recurse... but we must postpone that to the end */
+
+	/* split top into prefix and remaining */
+	assert(top->op == '=' && top->left == NULL && top->right == NULL);
+	top->left = subre(v, '=', top->flags, top->begin, lp);
+	top->op = '.';
+	top->right = t;
+
+	/* if it's a backref, now is the time to replicate the subNFA */
+	if (atomtype == BACKREF) {
+		assert(atom->begin->nouts == 1);	/* just the EMPTY */
+		delsub(v->nfa, atom->begin, atom->end);
+		assert(v->subs[subno] != NULL);
+		/* and here's why the recursion got postponed:  it must */
+		/* wait until the skeleton is filled in, because it may */
+		/* hit a backref that wants to copy the filled-in skeleton */
+		dupnfa(v->nfa, v->subs[subno]->begin, v->subs[subno]->end,
+						atom->begin, atom->end);
+		NOERR();
+	}
+
+	/* it's quantifier time; first, turn x{0,...} into x{1,...}|empty */
+	if (m == 0) {
+		EMPTYARC(s2, atom->end);		/* the bypass */
+		assert(PREF(qprefer) != 0);
+		f = COMBINE(qprefer, atom->flags);
+		t = subre(v, '|', f, lp, atom->end);
+		NOERR();
+		t->left = atom;
+		t->right = subre(v, '|', PREF(f), s2, atom->end);
+		NOERR();
+		t->right->left = subre(v, '=', 0, s2, atom->end);
+		NOERR();
+		*atomp = t;
+		atomp = &t->left;
+		m = 1;
+	}
+
+	/* deal with the rest of the quantifier */
+	if (atomtype == BACKREF) {
+		/* special case:  backrefs have internal quantifiers */
+		EMPTYARC(s, atom->begin);	/* empty prefix */
+		/* just stuff everything into atom */
+		repeat(v, atom->begin, atom->end, m, n);
+		atom->min = (short)m;
+		atom->max = (short)n;
+		atom->flags |= COMBINE(qprefer, atom->flags);
+	} else if (m == 1 && n == 1) {
+		/* no/vacuous quantifier:  done */
+		EMPTYARC(s, atom->begin);	/* empty prefix */
+	} else {
+		/* turn x{m,n} into x{m-1,n-1}x, with capturing */
+		/*  parens in only second x */
+		dupnfa(v->nfa, atom->begin, atom->end, s, atom->begin);
+		assert(m >= 1 && m != INFINITY && n >= 1);
+		repeat(v, s, atom->begin, m-1, (n == INFINITY) ? n : n-1);
+		f = COMBINE(qprefer, atom->flags);
+		t = subre(v, '.', f, s, atom->end);	/* prefix and atom */
+		NOERR();
+		t->left = subre(v, '=', PREF(f), s, atom->begin);
+		NOERR();
+		t->right = atom;
+		*atomp = t;
+	}
+
+	/* and finally, look after that postponed recursion */
+	t = top->right;
+	if (!(SEE('|') || SEE(stopper) || SEE(EOS)))
+		t->right = parsebranch(v, stopper, type, atom->end, rp, 1);
+	else {
+		EMPTYARC(atom->end, rp);
+		t->right = subre(v, '=', 0, atom->end, rp);
+	}
+	assert(SEE('|') || SEE(stopper) || SEE(EOS));
+	t->flags |= COMBINE(t->flags, t->right->flags);
+	top->flags |= COMBINE(top->flags, t->flags);
+}
+
+/*
+ - nonword - generate arcs for non-word-character ahead or behind
+ ^ static VOID nonword(struct vars *, int, struct state *, struct state *);
+ */
+static VOID
+nonword(v, dir, lp, rp)
+struct vars *v;
+int dir;			/* AHEAD or BEHIND */
+struct state *lp;
+struct state *rp;
+{
+	int anchor = (dir == AHEAD) ? '$' : '^';
+
+	assert(dir == AHEAD || dir == BEHIND);
+	newarc(v->nfa, anchor, 1, lp, rp);
+	newarc(v->nfa, anchor, 0, lp, rp);
+	colorcomplement(v->nfa, v->cm, dir, v->wordchrs, lp, rp);
+	/* (no need for special attention to \n) */
+}
+
+/*
+ - word - generate arcs for word character ahead or behind
+ ^ static VOID word(struct vars *, int, struct state *, struct state *);
+ */
+static VOID
+word(v, dir, lp, rp)
+struct vars *v;
+int dir;			/* AHEAD or BEHIND */
+struct state *lp;
+struct state *rp;
+{
+	assert(dir == AHEAD || dir == BEHIND);
+	cloneouts(v->nfa, v->wordchrs, lp, rp, dir);
+	/* (no need for special attention to \n) */
 }
 
 /*
@@ -1163,7 +1187,7 @@ struct state *rp;
 	NOERR();
 	bracket(v, left, right);
 	if (v->cflags&REG_NLSTOP)
-		newarc(v->nfa, PLAIN, nlcolor(v), left, right);
+		newarc(v->nfa, PLAIN, v->nlcolor, left, right);
 	NOERR();
 
 	assert(lp->nouts == 0);		/* all outarcs will be ours */
@@ -1181,7 +1205,7 @@ struct state *rp;
 	/* but complementing gets messy in the presence of MCCEs... */
 	NOTE(REG_ULOCALE);
 	for (p = v->mcces->chrs, i = v->mcces->nchrs; i > 0; p++, i--) {
-		co = getcolor(v->cm, *p);
+		co = GETCOLOR(v->cm, *p);
 		a = findarc(lp, PLAIN, co);
 		ba = findarc(left, PLAIN, co);
 		if (ba == NULL) {
@@ -1391,7 +1415,7 @@ struct cvec *cv;
 			okcolors(v->nfa, v->cm);
 		} else {
 			a = findarc(v->mccepbegin, PLAIN,
-						getcolor(v->cm, leader));
+						GETCOLOR(v->cm, leader));
 			assert(a != NULL);
 			s = a->to;
 			assert(s != v->mccepend);
@@ -1438,6 +1462,7 @@ struct state *lp;
 struct state *rp;
 {
 	chr ch, from, to;
+	celt ce;
 	chr *p;
 	int i;
 	color co;
@@ -1478,16 +1503,17 @@ struct state *rp;
 	for (p = cv->ranges, i = cv->nranges; i > 0; p += 2, i--) {
 		from = *p;
 		to = *(p+1);
-		for (ch = from; ch <= to; ch++)
-			if (!ISCELEADER(v, ch))
-				newarc(v->nfa, PLAIN, subcolor(v->cm, ch), lp,
-									rp);
-			else {
-				assert(singleton(v->cm, ch));
-				assert(leads != NULL);
-				if (!haschr(leads, ch))
-					addchr(leads, ch);
-			}
+		while (from <= to && (ce = nextleader(v, from, to)) != NOCELT) {
+			if (from < ce)
+				subrange(v, from, ce - 1, lp, rp);
+			assert(singleton(v->cm, ce));
+			assert(leads != NULL);
+			if (!haschr(leads, ce))
+				addchr(leads, ce);
+			from = ce + 1;
+		}
+		if (from <= to)
+			subrange(v, from, to, lp, rp);
 	}
 
 	if ((leads == NULL || leads->nchrs == 0) && cv->nmcces == 0)
@@ -1496,7 +1522,7 @@ struct state *rp;
 	/* deal with the MCCE leaders */
 	NOTE(REG_ULOCALE);
 	for (p = leads->chrs, i = leads->nchrs; i > 0; p++, i--) {
-		co = getcolor(v->cm, *p);
+		co = GETCOLOR(v->cm, *p);
 		a = findarc(lp, PLAIN, co);
 		if (a != NULL)
 			s = a->to;
@@ -1519,7 +1545,8 @@ struct state *rp;
 	for (i = 0; i < cv->nmcces; i++) {
 		p = cv->mcces[i];
 		assert(singleton(v->cm, *p));
-		co = getcolor(v->cm, *p++);
+		ch = *p++;
+		co = GETCOLOR(v->cm, ch);
 		a = findarc(lp, PLAIN, co);
 		if (a != NULL)
 			s = a->to;
@@ -1531,7 +1558,8 @@ struct state *rp;
 		}
 		assert(*p != 0);	/* at least two chars */
 		assert(singleton(v->cm, *p));
-		co = getcolor(v->cm, *p++);
+		ch = *p++;
+		co = GETCOLOR(v->cm, ch);
 		assert(*p == 0);	/* and only two, for now */
 		newarc(v->nfa, PLAIN, co, s, rp);
 		NOERR();
@@ -1539,20 +1567,30 @@ struct state *rp;
 }
 
 /*
- - nlcolor - assign newline a unique color, if it doesn't have one already
- * Restriction:  can't be called when there are subcolors open.  (Maybe
- * this should be enforced...)
- ^ static color nlcolor(struct vars *);
+ - nextleader - find next MCCE leader within range
+ ^ static celt nextleader(struct vars *, pchr, pchr);
  */
-static color
-nlcolor(v)
+static celt			/* NOCELT means none */
+nextleader(v, from, to)
 struct vars *v;
+pchr from;
+pchr to;
 {
-	if (v->nlcolor == COLORLESS) {
-		v->nlcolor = subcolor(v->cm, newline());
-		okcolors(v->nfa, v->cm);
+	int i;
+	chr *p;
+	chr ch;
+	celt it = NOCELT;
+
+	if (v->mcces == NULL)
+		return it;
+
+	for (i = v->mcces->nchrs, p = v->mcces->chrs; i > 0; i--, p++) {
+		ch = *p;
+		if (from <= ch && ch <= to)
+			if (it == NOCELT || ch < it)
+				it = ch;
 	}
-	return v->nlcolor;
+	return it;
 }
 
 /*
@@ -1579,6 +1617,7 @@ struct vars *v;
 	left = newstate(v->nfa);
 	right = newstate(v->nfa);
 	NOERR();
+	/* fine point:  implemented with [::], and lexer will set REG_ULOCALE */
 	lexword(v);
 	NEXT();
 	assert(v->savenow != NULL && SEE('['));
@@ -1590,273 +1629,169 @@ struct vars *v;
 }
 
 /*
- - subre - construct a subre struct
- ^ static struct subre subre(struct state *, struct state *, int, int,
- ^ 	struct rtree *);
+ - subre - allocate a subre
+ ^ static struct subre *subre(struct vars *, int, int, struct state *,
+ ^	struct state *);
  */
-static struct subre
-subre(begin, end, prefer, subno, tree)
+static struct subre *
+subre(v, op, flags, begin, end)
+struct vars *v;
+int op;
+int flags;
 struct state *begin;
 struct state *end;
-int prefer;
-int subno;
-struct rtree *tree;
 {
-	struct subre ret;
+	struct subre *ret;
 
-	ret.begin = begin;
-	ret.end = end;
-	ret.prefer = prefer;
-	ret.subno = subno;
-	ret.min = ret.max = 1;
-	ret.tree = tree;
-	ZAPCNFA(ret.cnfa);
+	ret = v->treefree;
+	if (ret != NULL)
+		v->treefree = ret->left;
+	else {
+		ret = (struct subre *)MALLOC(sizeof(struct subre));
+		if (ret == NULL) {
+			ERR(REG_ESPACE);
+			return NULL;
+		}
+		ret->chain = v->treechain;
+		v->treechain = ret;
+	}
+
+	assert(strchr("|.b(=", op) != NULL);
+
+	ret->op = op;
+	ret->flags = flags;
+	ret->retry = 0;
+	ret->subno = 0;
+	ret->min = ret->max = 1;
+	ret->left = NULL;
+	ret->right = NULL;
+	ret->begin = begin;
+	ret->end = end;
+	ZAPCNFA(ret->cnfa);
+
 	return ret;
 }
 
 /*
- - newrt - allocate subRE-tree node
- ^ static struct rtree *newrt(struct vars *);
+ - freesubre - free a subRE subtree
+ ^ static VOID freesubre(struct vars *, struct subre *);
  */
-static struct rtree *
-newrt(v)
-struct vars *v;
+static VOID
+freesubre(v, sr)
+struct vars *v;			/* might be NULL */
+struct subre *sr;
 {
-	struct rtree *rt;
+	if (sr == NULL)
+		return;
 
-	rt = v->treefree;
-	if (rt != NULL)
-		v->treefree = rt->next;
-	else {
-		rt = (struct rtree *)MALLOC(sizeof(struct rtree));
-		if (rt == NULL) {
-			ERR(REG_ESPACE);
-			return NULL;
-		}
-		rt->chain = v->treechain;
-		v->treechain = rt;
-	}
+	if (sr->left != NULL)
+		freesubre(v, sr->left);
+	if (sr->right != NULL)
+		freesubre(v, sr->right);
 
-	rt->op = '?';		/* invalid */
-	rt->flags = 0;
-	rt->no = 0;
-	rt->left.begin = NULL;
-	rt->left.end = NULL;
-	rt->left.prefer = NONEYET;
-	rt->left.subno = 0;
-	rt->left.min = rt->left.max = 1;
-	rt->left.tree = NULL;
-	ZAPCNFA(rt->left.cnfa);
-	rt->right.begin = NULL;
-	rt->right.end = NULL;
-	rt->right.prefer = NONEYET;
-	rt->right.subno = 0;
-	rt->right.min = rt->right.max = 1;
-	rt->right.tree = NULL;
-	ZAPCNFA(rt->right.cnfa);
-	rt->next = NULL;
-
-	return rt;
+	freesrnode(v, sr);
 }
 
 /*
- - freert - free a subRE subtree
- ^ static VOID freert(struct vars *, struct rtree *);
+ - freesrnode - free one node in a subRE subtree
+ ^ static VOID freesrnode(struct vars *, struct subre *);
  */
 static VOID
-freert(v, rt)
+freesrnode(v, sr)
 struct vars *v;			/* might be NULL */
-struct rtree *rt;
+struct subre *sr;
 {
-	if (rt == NULL)
+	if (sr == NULL)
 		return;
 
-	if (rt->left.tree != NULL)
-		freert(v, rt->left.tree);
-	if (rt->right.tree != NULL)
-		freert(v, rt->right.tree);
-	if (rt->next != NULL)
-		freert(v, rt->next);
-
-	freertnode(v, rt);
-}
-
-/*
- - freertnode - free one node in a subRE subtree
- ^ static VOID freertnode(struct vars *, struct rtree *);
- */
-static VOID
-freertnode(v, rt)
-struct vars *v;			/* might be NULL */
-struct rtree *rt;
-{
-	if (rt == NULL)
-		return;
-
-	if (!NULLCNFA(rt->left.cnfa))
-		freecnfa(&rt->left.cnfa, 0);
-	if (!NULLCNFA(rt->right.cnfa))
-		freecnfa(&rt->right.cnfa, 0);
-	rt->flags = 0;
+	if (!NULLCNFA(sr->cnfa))
+		freecnfa(&sr->cnfa);
+	sr->flags = 0;
 
 	if (v != NULL) {
-		rt->next = v->treefree;
-		v->treefree = rt;
+		sr->left = v->treefree;
+		v->treefree = sr;
 	} else
-		FREE(rt);
+		FREE(sr);
 }
 
 /*
- - optrt - optimize a subRE subtree
- ^ static VOID optrt(struct vars *, struct rtree *);
+ - optst - optimize a subRE subtree
+ ^ static VOID optst(struct vars *, struct subre *);
  */
 static VOID
-optrt(v, rt)
+optst(v, t)
 struct vars *v;
-struct rtree *rt;
+struct subre *t;
 {
-	struct rtree *t;
-	int subno;
-
-	if (rt == NULL)
+	if (t == NULL)
 		return;
-	assert(rt->op != 'b');
-
-	/* pull up subtrees if possible */
-	if (rt->left.begin != NULL && rt->left.tree != NULL &&
-						rt->left.tree->op != 'b') {
-		t = rt->left.tree;
-		optrt(v, t);
-		if (t->right.begin == NULL && t->next == NULL &&
-				(rt->left.prefer == NONEYET ||
-					t->left.prefer == rt->left.prefer) &&
-				(rt->left.subno == 0 || t->left.subno == 0)) {
-			subno = rt->left.subno;
-			rt->left = t->left;
-			assert(NULLCNFA(t->left.cnfa));
-			freertnode(v, t);
-			if (subno != 0) {
-				assert(rt->left.subno == 0 && subno > 0);
-				rt->left.subno = subno;
-			}
-		}
-	}
-	if (rt->right.begin != NULL && rt->right.tree != NULL &&
-						rt->right.tree->op != 'b') {
-		t = rt->right.tree;
-		optrt(v, t);
-		if (t->right.begin == NULL && t->next == NULL &&
-				(rt->right.prefer == NONEYET ||
-					t->right.prefer == rt->right.prefer) &&
-				(rt->right.subno == 0 || t->right.subno == 0)) {
-			subno = rt->right.subno;
-			rt->right = t->left;
-			assert(NULLCNFA(t->right.cnfa));
-			freertnode(v, t);
-			if (subno != 0) {
-				assert(rt->right.subno == 0 && subno > 0);
-				rt->right.subno = subno;
-			}
-		}
-	}
-
-	/* simplify empties */
-	if (rt->left.begin != NULL && isempty(rt->left.begin, rt->left.end))
-		rt->left.end = rt->left.begin;
-	if (rt->right.begin != NULL && isempty(rt->right.begin, rt->right.end))
-		rt->right.end = rt->right.begin;
-
-	/* if left subtree vacuous and right non-empty, move right over */
-	if (rt->left.begin != NULL && rt->left.begin == rt->left.end &&
-				rt->left.subno == 0 && rt->left.tree == NULL &&
-				rt->right.begin != NULL) {
-		rt->left = rt->right;
-		rt->right.begin = NULL;
-		rt->right.tree = NULL;
-	}
-
-	/* if right subtree vacuous, clear it out */
-	if (rt->right.begin != NULL && rt->right.begin == rt->right.end &&
-			rt->right.subno == 0 && rt->right.tree == NULL) {
-		rt->right.begin = NULL;
-		rt->right.tree = NULL;
-	}
 
 	/* preference cleanup and analysis */
-	if (rt->left.prefer == NONEYET)
-		rt->left.prefer = LONGER;
-	if (rt->left.prefer == SHORTER)
+	if (t->flags&SHORTER)
 		v->usedshorter = 1;
-	if (rt->right.begin != NULL) {
-		if (rt->right.prefer == NONEYET)
-			rt->right.prefer = LONGER;
-		if (rt->right.prefer == SHORTER)
-			v->usedshorter = 1;
-	}
 
-	/* recurse through alternatives */
-	if (rt->next != NULL)
-		optrt(v, rt->next);
+	/* recurse through children */
+	if (t->left != NULL)
+		optst(v, t->left);
+	if (t->right != NULL)
+		optst(v, t->right);
 }
 
 /*
- - numrt - number tree nodes
- ^ static int numrt(struct rtree *, int);
+ - numst - number tree nodes (assigning retry indexes)
+ ^ static int numst(struct subre *, int);
  */
 static int			/* next number */
-numrt(rt, start)
-struct rtree *rt;
+numst(t, start)
+struct subre *t;
 int start;			/* starting point for subtree numbers */
 {
 	int i;
 
-	assert(rt != NULL);
+	assert(t != NULL);
 
 	i = start;
-	rt->no = (short)i++;
-	if (rt->left.tree != NULL)
-		i = numrt(rt->left.tree, i);
-	if (rt->right.tree != NULL)
-		i = numrt(rt->right.tree, i);
-	if (rt->next != NULL)
-		i = numrt(rt->next, i);
+	t->retry = (short)i++;
+	if (t->left != NULL)
+		i = numst(t->left, i);
+	if (t->right != NULL)
+		i = numst(t->right, i);
 	return i;
 }
 
 /*
- - markrt - mark tree nodes as INUSE
- ^ static VOID markrt(struct rtree *);
+ - markst - mark tree nodes as INUSE
+ ^ static VOID markst(struct subre *);
  */
 static VOID
-markrt(rt)
-struct rtree *rt;
+markst(t)
+struct subre *t;
 {
-	assert(rt != NULL);
+	assert(t != NULL);
 
-	rt->flags |= INUSE;
-	if (rt->left.tree != NULL)
-		markrt(rt->left.tree);
-	if (rt->right.tree != NULL)
-		markrt(rt->right.tree);
-	if (rt->next != NULL)
-		markrt(rt->next);
+	t->flags |= INUSE;
+	if (t->left != NULL)
+		markst(t->left);
+	if (t->right != NULL)
+		markst(t->right);
 }
 
 /*
- - cleanrt - free any tree nodes not marked INUSE
- ^ static VOID cleanrt(struct vars *);
+ - cleanst - free any tree nodes not marked INUSE
+ ^ static VOID cleanst(struct vars *);
  */
 static VOID
-cleanrt(v)
+cleanst(v)
 struct vars *v;
 {
-	struct rtree *rt;
-	struct rtree *next;
+	struct subre *t;
+	struct subre *next;
 
-	for (rt = v->treechain; rt != NULL; rt = next) {
-		next = rt->next;
-		if (!(rt->flags&INUSE))
-			FREE(rt);
+	for (t = v->treechain; t != NULL; t = next) {
+		next = t->chain;
+		if (!(t->flags&INUSE))
+			FREE(t);
 	}
 	v->treechain = NULL;
 	v->treefree = NULL;		/* just on general principles */
@@ -1864,56 +1799,51 @@ struct vars *v;
 
 /*
  - nfatree - turn a subRE subtree into a tree of compacted NFAs
- ^ static VOID nfatree(struct vars *, struct rtree *, FILE *);
+ ^ static int nfatree(struct vars *, struct subre *, FILE *);
  */
-static VOID
-nfatree(v, rt, f)
+static int			/* optimize results from top node */
+nfatree(v, t, f)
 struct vars *v;
-struct rtree *rt;
+struct subre *t;
 FILE *f;			/* for debug output */
 {
-	if (rt == NULL)
-		return;
+	assert(t != NULL && t->begin != NULL);
 
-	if (rt->left.begin != NULL)
-		nfanode(v, &rt->left, f);
-	if (rt->left.tree != NULL)
-		nfatree(v, rt->left.tree, f);
+	if (t->left != NULL)
+		(DISCARD)nfatree(v, t->left, f);
+	if (t->right != NULL)
+		(DISCARD)nfatree(v, t->right, f);
 
-	if (rt->right.begin != NULL)
-		nfanode(v, &rt->right, f);
-	if (rt->right.tree != NULL)
-		nfatree(v, rt->right.tree, f);
-
-	if (rt->next != NULL)
-		nfatree(v, rt->next, f);
+	return nfanode(v, t, f);
 }
 
 /*
  - nfanode - do one NFA for nfatree
- ^ static VOID nfanode(struct vars *, struct subre *, FILE *);
+ ^ static int nfanode(struct vars *, struct subre *, FILE *);
  */
-static VOID
-nfanode(v, sub, f)
+static int			/* optimize results */
+nfanode(v, t, f)
 struct vars *v;
-struct subre *sub;
+struct subre *t;
 FILE *f;			/* for debug output */
 {
 	struct nfa *nfa;
+	int ret = 0;
 
-	if (sub->begin == NULL)
-		return;
+	assert(t->begin != NULL);
 
 	nfa = newnfa(v, v->cm, v->nfa);
-	NOERR();
-	dupnfa(nfa, sub->begin, sub->end, nfa->init, nfa->final);
+	NOERRZ();
+	dupnfa(nfa, t->begin, t->end, nfa->init, nfa->final);
 	if (!ISERR()) {
 		specialcolors(nfa);
-		(DISCARD) optimize(nfa, f);
+		ret = optimize(nfa, f);
 	}
 	if (!ISERR())
-		compact(nfa, &sub->cnfa);
+		compact(nfa, &t->cnfa);
+
 	freenfa(nfa);
+	return ret;
 }
 
 /*
@@ -1964,9 +1894,9 @@ int n;
 	int i;
 
 	assert(n > 0);
-	for (sub = subs + 1, i = n - 1; i > 0; sub++, i--)
+	for (sub = subs + 1, i = n - 1; i > 0; sub++, i--)	/* no 0th */
 		if (!NULLCNFA(sub->cnfa))
-			freecnfa(&sub->cnfa, 0);
+			freecnfa(&sub->cnfa);
 	FREE(subs);
 }
 
@@ -1988,14 +1918,13 @@ regex_t *re;
 	re->re_guts = NULL;
 	re->re_fns = NULL;
 	g->magic = 0;
-	if (!NULLCNFA(g->cnfa))
-		freecnfa(&g->cnfa, 0);
-	if (g->cm != NULL)
-		freecm(g->cm);
+	freecm(&g->cmap);
 	if (g->tree != NULL)
-		freert((struct vars *)NULL, g->tree);
+		freesubre((struct vars *)NULL, g->tree);
 	if (g->lacons != NULL)
 		freelacons(g->lacons, g->nlacons);
+	if (!NULLCNFA(g->search))
+		freecnfa(&g->search);
 	FREE(g);
 }
 
@@ -2028,41 +1957,44 @@ FILE *f;
 		re->re_nsub, re->re_info, re->re_csize, g->ntree,
 		g->usedshorter);
 
-	dumpcolors(g->cm, f);
-	dumpcnfa(&g->cnfa, f);
+	dumpcolors(&g->cmap, f);
+	if (!NULLCNFA(g->search)) {
+		printf("search:\n");
+		dumpcnfa(&g->search, f);
+	}
 	for (i = 1; i < g->nlacons; i++) {
 		fprintf(f, "la%d (%s):\n", i,
 				(g->lacons[i].subno) ? "positive" : "negative");
 		dumpcnfa(&g->lacons[i].cnfa, f);
 	}
-	dumprt(g->tree, f, 0);
+	dumpst(g->tree, f, 0);
 #endif
 }
 
 /*
- - dumprt - dump a subRE tree
- ^ static VOID dumprt(struct rtree *, FILE *, int);
+ - dumpst - dump a subRE tree
+ ^ static VOID dumpst(struct subre *, FILE *, int);
  */
 static VOID
-dumprt(rt, f, nfapresent)
-struct rtree *rt;
+dumpst(t, f, nfapresent)
+struct subre *t;
 FILE *f;
 int nfapresent;			/* is the original NFA still around? */
 {
-	if (rt == NULL)
+	if (t == NULL)
 		fprintf(f, "null tree\n");
 	else
-		rtdump(rt, f, nfapresent, 0);
+		stdump(t, f, nfapresent, 0);
 	fflush(f);
 }
 
 /*
- - rtdump - recursive guts of dumprt
- ^ static VOID rtdump(struct rtree *, FILE *, int, int);
+ - stdump - recursive guts of dumpst
+ ^ static VOID stdump(struct subre *, FILE *, int, int);
  */
 static VOID
-rtdump(rt, f, nfapresent, level)
-struct rtree *rt;
+stdump(t, f, nfapresent, level)
+struct subre *t;
 FILE *f;
 int nfapresent;			/* is the original NFA still around? */
 int level;
@@ -2072,102 +2004,41 @@ int level;
 
 	for (i = 0; i < level; i++)
 		fprintf(f, RTSEP);
-	fprintf(f, "%c (n%d) {\n", rt->op, rt->no);
-	if (rt->left.begin != NULL) {
-		for (i = 0; i < level+1; i++)
-			fprintf(f, RTSEP);
+	fprintf(f, "%c (", t->op);
+	if (t->flags&LONGER)
 		fprintf(f, "L");
-		fprintf(f, "%s", (rt->left.prefer == NONEYET) ? "-" :
-				((rt->left.prefer == LONGER) ? ">" : "<"));
-		if (nfapresent)
-			fprintf(f, "%ld-%ld", (long)rt->left.begin->no,
-							(long)rt->left.end->no);
-		if (rt->left.subno > 0)
-			fprintf(f, " (%d)", rt->left.subno);
-		else if (rt->left.subno < 0) {
-			fprintf(f, " \\%d", -rt->left.subno);
-			if (rt->left.min != 1 || rt->left.max != 1) {
-				fprintf(f, "{%d-", (int)rt->left.min);
-				if (rt->left.max != INFINITY)
-					fprintf(f, "%d", (int)rt->left.max);
-				fprintf(f, "}");
-			}
-			if (rt->left.tree != NULL)
-				fprintf(f, "(nonNULL tree!!)");
-		}
-		if (rt->left.tree != NULL || !NULLCNFA(rt->left.cnfa))
-			fprintf(f, ":");
-		fprintf(f, "\n");
-		if (!NULLCNFA(rt->left.cnfa))
-			dumpcnfa(&rt->left.cnfa, f);
-		if (rt->left.tree != NULL)
-			rtdump(rt->left.tree, f, nfapresent, level+1);
-	} else if (rt->op == 'b') {
-		for (i = 0; i < level+1; i++)
-			fprintf(f, RTSEP);
-		fprintf(f, "L");
-		fprintf(f, "%s", (rt->left.prefer == NONEYET) ? "-" :
-				((rt->left.prefer == LONGER) ? ">" : "<"));
-		assert(rt->left.subno < 0);
-		fprintf(f, " \\%d", -rt->left.subno);
-		if (rt->left.min != 1 || rt->left.max != 1) {
-			fprintf(f, "{%d-", (int)rt->left.min);
-			if (rt->left.max != INFINITY)
-				fprintf(f, "%d", (int)rt->left.max);
-			fprintf(f, "}");
-		}
-		if (rt->left.tree != NULL)
-			fprintf(f, "(nonNULL tree!!)");
-		fprintf(f, "\n");
+	if (t->flags&SHORTER)
+		fprintf(f, "S");
+	if (t->flags&MIXED)
+		fprintf(f, "M");
+	if (t->flags&CAP)
+		fprintf(f, "c");
+	if (t->flags&BACKR)
+		fprintf(f, "b");
+	if (!(t->flags&INUSE))
+		fprintf(f, "!u");
+	fprintf(f, ") r%d", t->retry);
+	if (t->subno != 0)
+		fprintf(f, " #%d", t->subno);
+	if (t->min != 1 || t->max != 1) {
+		fprintf(f, "{%d,", t->min);
+		if (t->max != INFINITY)
+			fprintf(f, "%d", t->max);
+		fprintf(f, "}");
 	}
-
-	if (rt->right.begin != NULL) {
-		if (rt->op != ',')
-			fprintf(f, "op %c has non-NULL right tree\n", rt->op);
-		for (i = 0; i < level+1; i++)
-			fprintf(f, RTSEP);
-		fprintf(f, "R");
-		fprintf(f, "%s", (rt->right.prefer == NONEYET) ? "-" :
-				((rt->right.prefer == LONGER) ? ">" : "<"));
-		if (nfapresent)
-			fprintf(f, "%ld-%ld", (long)rt->right.begin->no,
-						(long)rt->right.end->no);
-		if (rt->right.subno > 0)
-			fprintf(f, " (%d)", rt->right.subno);
-		else if (rt->right.subno < 0) {
-			fprintf(f, " \\%d", -rt->right.subno);
-			if (rt->right.min != 1 || rt->right.max != 1) {
-				fprintf(f, "{%d-", (int)rt->right.min);
-				if (rt->right.max != INFINITY)
-					fprintf(f, "%d", (int)rt->right.max);
-				fprintf(f, "}");
-			}
-			if (rt->right.tree != NULL)
-				fprintf(f, "(nonNULL tree!!)");
-		}
-		if (rt->right.tree != NULL || !NULLCNFA(rt->right.cnfa))
-			fprintf(f, ":");
-		fprintf(f, "\n");
-		if (!NULLCNFA(rt->right.cnfa))
-			dumpcnfa(&rt->right.cnfa, f);
-		if (rt->right.tree != NULL)
-			rtdump(rt->right.tree, f, nfapresent, level+1);
-	}
-	for (i = 0; i < level; i++)
-		fprintf(f, RTSEP);
-	fprintf(f, "}\n");
-
-	if (rt->next != NULL) {
-		if (rt->op != '|')
-			fprintf(f, "op %c has non-NULL next\n", rt->op);
-		if (rt->next->op != rt->op)
-			fprintf(f, "next op %c, expecting %c\n", rt->next->op,
-									rt->op);
-		rtdump(rt->next, f, nfapresent, level);
-	}
+	if (nfapresent)
+		fprintf(f, " %ld-%ld", (long)t->begin->no, (long)t->end->no);
+	if (!NULLCNFA(t->cnfa))
+		fprintf(f, ":");
+	fprintf(f, "\n");
+	if (t->left != NULL)
+		stdump(t->left, f, nfapresent, level+1);
+	if (!NULLCNFA(t->cnfa))
+		dumpcnfa(&t->cnfa, f);
+	if (t->right != NULL)
+		stdump(t->right, f, nfapresent, level+1);
 }
 
-#define	COMPILE	1
 #include "regc_lex.c"
 #include "regc_color.c"
 #include "regc_nfa.c"

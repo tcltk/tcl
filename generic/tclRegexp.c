@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclRegexp.c,v 1.1.2.3 1998/10/21 20:40:06 stanton Exp $
+ * RCS: @(#) $Id: tclRegexp.c,v 1.1.2.4 1998/11/11 01:44:53 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -22,60 +22,42 @@
  * The routines in this file use Henry Spencer's regular expression
  * package contained in the following additional source files:
  *
- *	chr.h		tclRegexp.h	lex.c
- *	guts.h		color.c		locale.c
- *	wchar.h		compile.c	nfa.c
- *	wctype.h	exec.c
+ *	regc_color.c	regc_cvec.c	regc_lex.c
+ *	regc_nfa.c	regcomp.c	regcustom.h
+ *	rege_dfa.c	regerror.c	regerrs.h
+ *	regex.h		regexec.c	regfree.c
+ *	regfronts.c	regguts.h
  *
- *	Copyright (c) 1986 by University of Toronto.
- *	Written by Henry Spencer.  Not derived from licensed software.
- *
- *	Permission is granted to anyone to use this software for any
- *	purpose on any computer system, and to redistribute it freely,
- *	subject to the following restrictions:
- *
- *	1. The author is not responsible for the consequences of use of
- *		this software, no matter how awful, even if they arise
- *		from defects in it.
- *
- *	2. The origin of this software must not be misrepresented, either
- *		by explicit claim or by omission.
- *
- *	3. Altered versions must be plainly marked as such, and must not
- *		be misrepresented as being the original software.
- *
- * Beware that some of this code is subtly aware of the way operator
- * precedence is structured in regular expressions.  Serious changes in
- * regular-expression syntax might require a total rethink.
+ * Copyright (c) 1998 Henry Spencer.  All rights reserved.
+ * 
+ * Development of this software was funded, in part, by Cray Research Inc.,
+ * UUNET Communications Services Inc., Sun Microsystems Inc., and Scriptics
+ * Corporation, none of whom are responsible for the results.  The author
+ * thanks all of them. 
+ * 
+ * Redistribution and use in source and binary forms -- with or without
+ * modification -- are permitted for any purpose, provided that
+ * redistributions in source form retain this entire copyright notice and
+ * indicate the origin and nature of any modifications.
+ * 
+ * I'd appreciate being given credit for this package in the documentation
+ * of software which uses it, but that is not a requirement.
+ * 
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES,
+ * INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY
+ * AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL
+ * HENRY SPENCER BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+ * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+ * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * *** NOTE: this code has been altered slightly for use in Tcl: ***
- * *** 1. Use ckalloc, ckfree, and ckrealloc instead of malloc,	 ***
- * ***    free, and realloc.					 ***
- * *** 2. Add extra argument to regexp to specify the real	 ***
- * ***    start of the string separately from the start of the	 ***
- * ***    current search. This is needed to search for multiple	 ***
- * ***    matches within a string.				 ***
- * *** 3. Names have been changed, e.g. from re_comp to		 ***
+ * *** 1. Names have been changed, e.g. from re_comp to		 ***
  * ***    TclRegComp, to avoid clashes with other 		 ***
  * ***    regexp implementations used by applications. 		 ***
- * *** 4. Various lint-like things, such as casting arguments	 ***
- * ***	  in procedure calls, removing debugging code and	 ***
- * ***	  unused vars and procs.	 	 	 	 ***
- * *** 5. Removed "backward-compatibility kludges" such as	 ***
- * ***	  REG_PEND and REG_STARTEND flags, the re_endp field in	 ***
- * ***	  the regex_t struct, and the fronts.c layer.		 ***
- * *** 6. Changed char to Tcl_UniChar.				 ***
- * *** 7. Removed -DPOSIX_MISTAKE compile-time flag.		 ***
- * ***	  This is now the default.				 ***
- * *** 8. For performance considerations, created new Unicode    ***
- * ***    interfaces to avoid having to convert between UTF and  ***
- * ***	  Unicode when we already had the Unicode string.  For   ***
- * ***    example, in a "regsub -all" we were converting the     ***
- * ***    match string to Unicode N times, where N is the number ***
- * ***    of bytes in the source string.                         ***
- * *** 9. Changed/widened some of the interfaces to allow	 ***
- * ***	  explicit passing of flags so that tclTest.c could      ***
- * ***    test the full range of acceptable flags.               ***
  */
 
 /*
@@ -181,7 +163,7 @@ Tcl_RegExpCompile(interp, string)
 
     if (iPtr->patterns[NUM_REGEXPS-1] != NULL) {
 	ckfree(iPtr->patterns[NUM_REGEXPS-1]);
-	regfree(&(iPtr->regexps[NUM_REGEXPS-1]->re));
+	re_ufree(&(iPtr->regexps[NUM_REGEXPS-1]->re));
 	ckfree((char *) iPtr->regexps[NUM_REGEXPS-1]);
     }
     for (i = NUM_REGEXPS - 2; i >= 0; i--) {
@@ -249,7 +231,7 @@ Tcl_RegExpExec(interp, re, string, start)
      * Perform the regexp match.
      */
 
-    result = TclRegExpExecUniChar(interp, re, uniString, numChars,
+    result = TclRegExpExecUniChar(interp, re, uniString, numChars, -1,
 	    ((string > start) ? REG_NOTBOL : 0));
 
     Tcl_DStringFree(&stringBuffer);
@@ -324,7 +306,7 @@ Tcl_RegExpRange(re, index, startPtr, endPtr)
  */
 
 int
-TclRegExpExecUniChar(interp, re, wString, numChars, flags)
+TclRegExpExecUniChar(interp, re, wString, numChars, nmatches, flags)
     Tcl_Interp *interp;		/* Interpreter to use for error reporting. */
     Tcl_RegExp re;		/* Compiled regular expression; returned by
 				 * a previous call to Tcl_RegExpCompile() or
@@ -332,14 +314,20 @@ TclRegExpExecUniChar(interp, re, wString, numChars, flags)
     CONST Tcl_UniChar *wString;	/* String against which to match re. */
     int numChars;		/* Length of string in Tcl_UniChars (must
 				 * be >= 0). */
+    int nmatches;		/* How many subexpression matches (counting
+				 * the whole match as subexpression 0) are
+				 * of interest.  -1 means "don't know". */
     int flags;			/* Regular expression flags. */
 {
     int status;
     TclRegexp *regexpPtr = (TclRegexp *) re;
+    size_t nm = regexpPtr->re.re_nsub + 1;
+
+    if (nmatches >= 0 && (size_t) nmatches < nm)
+	nm = (size_t) nmatches;
 
     status = re_uexec(&regexpPtr->re, wString, (size_t) numChars,
-	    (rm_detail_t *)NULL,
-	    regexpPtr->re.re_nsub + 1, regexpPtr->matches, flags);
+	    (rm_detail_t *)NULL, nm, regexpPtr->matches, flags);
 
     /*
      * Check for errors.
@@ -569,6 +557,7 @@ TclRegAbout(interp, re)
 	REG_UUNPORT,		"REG_UUNPORT",
 	REG_ULOCALE,		"REG_ULOCALE",
 	REG_UEMPTYMATCH,	"REG_UEMPTYMATCH",
+	REG_UIMPOSSIBLE,	"REG_UIMPOSSIBLE",
 	0,			"",
     };
     struct infoname *inf;
@@ -632,12 +621,12 @@ TclRegError(interp, msg, status)
     char *p;
 
     Tcl_ResetResult(interp);
-    n = regerror(status, (regex_t *)NULL, buf, sizeof(buf));
+    n = re_uerror(status, (regex_t *)NULL, buf, sizeof(buf));
     p = (n > sizeof(buf)) ? "..." : "";
     Tcl_AppendResult(interp, msg, buf, p, NULL);
 
     sprintf(cbuf, "%d", status);
-    (VOID) regerror(REG_ITOA, (regex_t *)NULL, cbuf, sizeof(cbuf));
+    (VOID) re_uerror(REG_ITOA, (regex_t *)NULL, cbuf, sizeof(cbuf));
     Tcl_SetErrorCode(interp, "REGEXP", cbuf, buf, NULL);
 }
 
@@ -665,7 +654,7 @@ FreeRegexpInternalRep(objPtr)
 {
     TclRegexp *regexpRepPtr = (TclRegexp *) objPtr->internalRep.otherValuePtr;
 
-    regfree(&regexpRepPtr->re);
+    re_ufree(&regexpRepPtr->re);
     if (regexpRepPtr->matches) {
 	ckfree((char *) regexpRepPtr->matches);
     }
@@ -677,7 +666,7 @@ FreeRegexpInternalRep(objPtr)
  *
  * DupRegexpInternalRep --
  *
- *	It is way to hairy to copy a regular expression, so we punt
+ *	It is way too hairy to copy a regular expression, so we punt
  *	and revert the object back to a vanilla string. 
  *
  * Results:
@@ -801,101 +790,4 @@ CompileRegexp(interp, string, length, flags)
 	    sizeof(regmatch_t) * (regexpPtr->re.re_nsub + 1));
 
     return regexpPtr;
-}
-
-/*
- *---------------------------------------------------------------------------
- *
- * TclRegXflags --
- *
- *	Parse a string of extended regexp flag letters, for testing.
- *
- * Results:
- *	No return value (you're on your own for errors here).
- *
- * Side effects:
- *	Modifies *cflagsPtr, a regcomp flags word, and *eflagsPtr, a
- *	regexec flags word, as appropriate.
- *
- *----------------------------------------------------------------------
- */
-
-VOID
-TclRegXflags(string, length, cflagsPtr, eflagsPtr)
-    char *string;		/* The string of flags. */
-    int length;			/* The length of the string in bytes. */
-    int *cflagsPtr;		/* compile flags word */
-    int *eflagsPtr;		/* exec flags word */
-{
-    int i;
-    int cflags;
-    int eflags;
-
-    cflags = *cflagsPtr;
-    eflags = *eflagsPtr;
-    for (i = 0; i < length; i++) {
-	switch (string[i]) {
-	    case 'a': {
-		cflags |= REG_ADVF;
-		break;
-	    }
-	    case 'b': {
-		cflags &= ~REG_ADVANCED;
-		break;
-	    }
-	    case 'e': {
-		cflags &= ~REG_ADVANCED;
-		cflags |= REG_EXTENDED;
-		break;
-	    }
-	    case 'q': {
-		cflags &= ~REG_ADVANCED;
-		cflags |= REG_QUOTE;
-		break;
-	    }
-	    case 'i': {
-		cflags |= REG_ICASE;
-		break;
-	    }
-	    case 'o': {			/* o for opaque */
-		cflags |= REG_NOSUB;
-		break;
-	    }
-	    case 'x': {
-		cflags |= REG_EXPANDED;
-		break;
-	    }
-	    case 'p': {
-		cflags |= REG_NLSTOP;
-		break;
-	    }
-	    case 'w': {
-		cflags |= REG_NLANCH;
-		break;
-	    }
-	    case 'n': {
-		cflags |= REG_NEWLINE;
-		break;
-	    }
-	    case '+': {
-		cflags |= REG_FAKEEC;
-		break;
-	    }
-	    case '^': {
-		eflags |= REG_NOTBOL;
-		break;
-	    }
-	    case '$': {
-		eflags |= REG_NOTEOL;
-		break;
-	    }
-	    case '%': {
-		eflags |= REG_SMALL;
-		break;
-	    }
-	}
-    }
-
-    *cflagsPtr = cflags;
-    *eflagsPtr = eflags;
 }

@@ -16,7 +16,7 @@
  * suggestive of the wide type, e.g. re_ucomp and re_uexec for Unicode).
  * For cranky old compilers, it may be necessary to do something like:
  * #define	__REG_WIDE_COMPILE(a,b,c,d)	re_Xcomp(a,b,c,d)
- * #define	__REG_WIDE_EXEC(a,b,c,d,e,f)	re_Xexec(a,b,c,d,e,f)
+ * #define	__REG_WIDE_EXEC(a,b,c,d,e,f,g)	re_Xexec(a,b,c,d,e,f,g)
  * rather than just #defining the names as parameterless macros.
  *
  * For some specialized purposes, it may be desirable to suppress the
@@ -44,8 +44,14 @@ extern "C" {
 
 
 /*
- * Add your own defines, if needed, here.  The --- stuff is for automatic
- * generation of this file from regproto.h and regcustom.h.
+ * Add your own defines, if needed, here.
+ */
+
+
+
+/*
+ * Location where a chunk of regcustom.h is automatically spliced into
+ * this file (working from its prototype, regproto.h).
  */
 /* --- begin --- */
 /* ensure certain things don't sneak in from system headers */
@@ -69,17 +75,20 @@ extern "C" {
 #endif
 /* interface types */
 #define	__REG_WIDE_T	Tcl_UniChar
-#define	__REG_WIDE_COMPILE	re_ucomp
-#define	__REG_WIDE_EXEC		re_uexec
 #define	__REG_REGOFF_T	long	/* not really right, but good enough... */
 #define	__REG_VOID_T	VOID
 #define	__REG_CONST	CONST
+/* names and declarations */
+#define	__REG_WIDE_COMPILE	re_ucomp
+#define	__REG_WIDE_EXEC		re_uexec
 #ifndef __REG_NOFRONT
 #define	__REG_NOFRONT		/* don't want regcomp() and regexec() */
 #endif
 #ifndef __REG_NOCHAR
 #define	__REG_NOCHAR		/* or the char versions */
 #endif
+#define	regfree		re_ufree
+#define	regerror	re_uerror
 /* --- end --- */
 
 
@@ -139,6 +148,7 @@ typedef struct {
 #		define	REG_UUNPORT		001000
 #		define	REG_ULOCALE		002000
 #		define	REG_UEMPTYMATCH		004000
+#		define	REG_UIMPOSSIBLE		010000
 	int re_csize;		/* sizeof(character) */
 	char *re_endp;		/* backward compatibility kludge */
 	/* the rest is opaque pointers to hidden innards */
@@ -249,7 +259,6 @@ typedef struct {
 #define	REG_INVARG	16	/* invalid argument to regex function */
 #define	REG_MIXED	17	/* character widths of regex and string differ */
 #define	REG_BADOPT	18	/* invalid embedded option */
-#define	REG_IMPOSS	19	/* can never match */
 /* two specials for debugging and testing */
 #define	REG_ATOI	101	/* convert error-code name to number */
 #define	REG_ITOA	102	/* convert error-code number to name */
@@ -280,8 +289,8 @@ int regexec _ANSI_ARGS_((regex_t *, __REG_CONST char *, size_t, regmatch_t [], i
 #ifdef __REG_WIDE_T
 int __REG_WIDE_EXEC _ANSI_ARGS_((regex_t *, __REG_CONST __REG_WIDE_T *, size_t, rm_detail_t *, size_t, regmatch_t [], int));
 #endif
-re_void regfree _ANSI_ARGS_((regex_t *));
-extern size_t regerror _ANSI_ARGS_((int, __REG_CONST regex_t *, char *, size_t));
+re_void re_ufree _ANSI_ARGS_((regex_t *));
+extern size_t re_uerror _ANSI_ARGS_((int, __REG_CONST regex_t *, char *, size_t));
 /* automatically gathered by fwd; do not hand-edit */
 /* =====^!^===== end forwards =====^!^===== */
 

@@ -12,13 +12,14 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.1.2.3 1998/10/21 20:40:07 stanton Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.1.2.4 1998/11/11 01:44:54 stanton Exp $
  */
 
 #define TCL_TEST
 
 #include "tclInt.h"
 #include "tclPort.h"
+#include "tclRegexp.h"
 #include <locale.h>
 
 /*
@@ -244,6 +245,11 @@ static int		TestparsevarObjCmd _ANSI_ARGS_((ClientData dummy,
 static int		TestparsevarnameObjCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *CONST objv[]));
+static int		TestregexpObjCmd _ANSI_ARGS_((ClientData dummy,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *CONST objv[]));
+static void		TestregexpXflags _ANSI_ARGS_((char *string,
+			    int length, int *cflagsPtr, int *eflagsPtr));
 static int		TestsaveresultCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *CONST objv[]));
@@ -393,6 +399,8 @@ Tcltest_Init(interp)
     Tcl_CreateObjCommand(interp, "testparsevar", TestparsevarObjCmd,
 	    (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
     Tcl_CreateObjCommand(interp, "testparsevarname", TestparsevarnameObjCmd,
+	    (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
+    Tcl_CreateObjCommand(interp, "testregexp", TestregexpObjCmd,
 	    (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
     Tcl_CreateObjCommand(interp, "testsaveresult", TestsaveresultCmd,
 	    (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
@@ -2496,6 +2504,317 @@ TestparsevarnameObjCmd(clientData, interp, objc, objv)
     PrintParse(interp, &parse);
     Tcl_FreeParse(&parse);
     return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TestregexpObjCmd --
+ *
+ *	This procedure implements the "testregexp" command. It is
+ *	used to give a direct interface for regexp flags.  It's identical
+ *	to Tcl_RegexpObjCmd except for the REGEXP_TEST define, which
+ *	enables the -xflags option.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	See the user documentation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+	/* ARGSUSED */
+int
+TestregexpObjCmd(dummy, interp, objc, objv)
+    ClientData dummy;			/* Not used. */
+    Tcl_Interp *interp;			/* Current interpreter. */
+    int objc;				/* Number of arguments. */
+    Tcl_Obj *CONST objv[];		/* Argument objects. */
+{
+    int i, result, indices, stringLength, wLen, match, about;
+    int hasxflags, cflags, eflags;
+    Tcl_RegExp regExpr;
+    char *string;
+    Tcl_DString stringBuffer, valueBuffer;
+    Tcl_UniChar *wStart;
+#   define	REGEXP_TEST	/* yes */
+    static char *options[] = {
+	"-indices",	"-nocase",	"-about",	"-expanded",
+	"-line",	"-linestop",	"-lineanchor",
+#ifdef REGEXP_TEST
+	"-xflags",
+#endif
+	"--",		(char *) NULL
+    };
+    enum options {
+	REGEXP_INDICES, REGEXP_NOCASE,	REGEXP_ABOUT,	REGEXP_EXPANDED,
+	REGEXP_MULTI,	REGEXP_NOCROSS,	REGEXP_NEWL,
+#ifdef REGEXP_TEST
+	REGEXP_XFLAGS,
+#endif
+	REGEXP_LAST
+    };
+#ifndef REGEXP_TEST
+#   define REGEXP_XFLAGS	-1	/* impossible value */
+#   define TestregexpXflags(a,b,c,d)	/* do nothing */
+#endif
+
+    indices = 0;
+    about = 0;
+    cflags = REG_ADVANCED;
+    eflags = 0;
+    hasxflags = 0;
+    
+    for (i = 1; i < objc; i++) {
+	char *name;
+	int index;
+
+	name = Tcl_GetString(objv[i]);
+	if (name[0] != '-') {
+	    break;
+	}
+	if (Tcl_GetIndexFromObj(interp, objv[i], options, "switch", TCL_EXACT,
+		&index) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	switch ((enum options) index) {
+	    case REGEXP_INDICES: {
+		indices = 1;
+		break;
+	    }
+	    case REGEXP_NOCASE: {
+		cflags |= REG_ICASE;
+		break;
+	    }
+	    case REGEXP_ABOUT: {
+		about = 1;
+		break;
+	    }
+	    case REGEXP_EXPANDED: {
+		cflags |= REG_EXPANDED;
+		break;
+	    }
+	    case REGEXP_MULTI: {
+		cflags |= REG_NEWLINE;
+		break;
+	    }
+	    case REGEXP_NOCROSS: {
+		cflags |= REG_NLSTOP;
+		break;
+	    }
+	    case REGEXP_NEWL: {
+		cflags |= REG_NLANCH;
+		break;
+	    }
+	    case REGEXP_XFLAGS: {
+		hasxflags = 1;
+		break;
+	    }
+	    case REGEXP_LAST: {
+		i++;
+		goto endOfForLoop;
+	    }
+	}
+    }
+
+    endOfForLoop:
+    if (objc - i < hasxflags + 2 - about) {
+	Tcl_WrongNumArgs(interp, 1, objv,
+		"?switches? exp string ?matchVar? ?subMatchVar subMatchVar ...?");
+	return TCL_ERROR;
+    }
+    objc -= i;
+    objv += i;
+
+    if (hasxflags) {
+	string = Tcl_GetStringFromObj(objv[0], &stringLength);
+	TestregexpXflags(string, stringLength, &cflags, &eflags);
+	objc--;
+	objv++;
+    }
+
+    regExpr = TclRegCompObj(interp, objv[0], cflags);
+    if (regExpr == NULL) {
+	return TCL_ERROR;
+    }
+
+    if (about) {
+	if (TclRegAbout(interp, regExpr) < 0) {
+	    return TCL_ERROR;
+	}
+	return TCL_OK;
+    }
+
+    result = TCL_OK;
+    string = Tcl_GetStringFromObj(objv[1], &stringLength);
+
+    Tcl_DStringInit(&valueBuffer);
+    
+    Tcl_DStringInit(&stringBuffer);
+    wStart = TclUtfToUniCharDString(string, stringLength, &stringBuffer);
+    wLen = Tcl_DStringLength(&stringBuffer) / sizeof(Tcl_UniChar);
+
+    match = TclRegExpExecUniChar(interp, regExpr, wStart, wLen, objc-2, eflags);
+    if (match < 0) {
+	result = TCL_ERROR;
+	goto done;
+    }
+    if (match == 0) {
+	/*
+	 * Set the interpreter's object result to an integer object w/ value 0. 
+	 */
+	
+	Tcl_SetIntObj(Tcl_GetObjResult(interp), 0);
+	goto done;
+    }
+
+    /*
+     * If additional variable names have been specified, return
+     * index information in those variables.
+     */
+
+    objc -= 2;
+    objv += 2;
+
+    for (i = 0; i < objc; i++) {
+	char *varName, *value;
+	int start, end;
+	
+	varName = Tcl_GetString(objv[i]);
+
+	TclRegExpRangeUniChar(regExpr, i, &start, &end);
+	if (start < 0) {
+	    if (indices) {
+		value = Tcl_SetVar(interp, varName, "-1 -1", 0);
+	    } else {
+		value = Tcl_SetVar(interp, varName, "", 0);
+	    }
+	} else {
+	    if (indices) {
+		char info[TCL_INTEGER_SPACE * 2];
+		
+		sprintf(info, "%d %d", start, end - 1);
+		value = Tcl_SetVar(interp, varName, info, 0);
+	    } else {
+		value = TclUniCharToUtfDString(wStart + start, end - start,
+			&valueBuffer);
+		value = Tcl_SetVar(interp, varName, value, 0);
+		Tcl_DStringSetLength(&valueBuffer, 0);
+	    }
+	}
+	if (value == NULL) {
+	    Tcl_AppendResult(interp, "couldn't set variable \"",
+		    varName, "\"", (char *) NULL);
+	    result = TCL_ERROR;
+	    goto done;
+	}
+    }
+
+    /*
+     * Set the interpreter's object result to an integer object w/ value 1. 
+     */
+	
+    Tcl_SetIntObj(Tcl_GetObjResult(interp), 1);
+
+    done:
+    Tcl_DStringFree(&stringBuffer);
+    Tcl_DStringFree(&valueBuffer);
+    return result;
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * TestregexpXflags --
+ *
+ *	Parse a string of extended regexp flag letters, for testing.
+ *
+ * Results:
+ *	No return value (you're on your own for errors here).
+ *
+ * Side effects:
+ *	Modifies *cflagsPtr, a regcomp flags word, and *eflagsPtr, a
+ *	regexec flags word, as appropriate.
+ *
+ *----------------------------------------------------------------------
+ */
+
+VOID
+TestregexpXflags(string, length, cflagsPtr, eflagsPtr)
+    char *string;		/* The string of flags. */
+    int length;			/* The length of the string in bytes. */
+    int *cflagsPtr;		/* compile flags word */
+    int *eflagsPtr;		/* exec flags word */
+{
+    int i;
+    int cflags;
+    int eflags;
+
+    cflags = *cflagsPtr;
+    eflags = *eflagsPtr;
+    for (i = 0; i < length; i++) {
+	switch (string[i]) {
+	    case 'a': {
+		cflags |= REG_ADVF;
+		break;
+	    }
+	    case 'b': {
+		cflags &= ~REG_ADVANCED;
+		break;
+	    }
+	    case 'e': {
+		cflags &= ~REG_ADVANCED;
+		cflags |= REG_EXTENDED;
+		break;
+	    }
+	    case 'q': {
+		cflags &= ~REG_ADVANCED;
+		cflags |= REG_QUOTE;
+		break;
+	    }
+	    case 'o': {			/* o for opaque */
+		cflags |= REG_NOSUB;
+		break;
+	    }
+	    case '+': {
+		cflags |= REG_FAKEEC;
+		break;
+	    }
+	    case ',': {
+		cflags |= REG_PROGRESS;
+		break;
+	    }
+	    case '.': {
+		cflags |= REG_DUMP;
+		break;
+	    }
+	    case ':': {
+		eflags |= REG_MTRACE;
+		break;
+	    }
+	    case ';': {
+		eflags |= REG_FTRACE;
+		break;
+	    }
+	    case '^': {
+		eflags |= REG_NOTBOL;
+		break;
+	    }
+	    case '$': {
+		eflags |= REG_NOTEOL;
+		break;
+	    }
+	    case '%': {
+		eflags |= REG_SMALL;
+		break;
+	    }
+	}
+    }
+
+    *cflagsPtr = cflags;
+    *eflagsPtr = eflags;
 }
 
 /*

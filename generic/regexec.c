@@ -17,8 +17,6 @@ struct vars {
 	chr *stop;		/* just past end of string */
 	int err;		/* error code if any (0 none) */
 	regoff_t *mem;		/* memory vector for backtracking */
-	regoff_t *mem1;		/* localizer vector */
-	regoff_t *mem2;		/* dissector vector */
 };
 #define	VISERR(vv)	((vv)->err != 0)	/* have we seen an error yet? */
 #define	ISERR()	VISERR(v)
@@ -79,21 +77,20 @@ struct dfa {
 int exec _ANSI_ARGS_((regex_t *, CONST chr *, size_t, rm_detail_t *, size_t, regmatch_t [], int));
 static int find _ANSI_ARGS_((struct vars *, struct cnfa *, struct colormap *));
 static int cfind _ANSI_ARGS_((struct vars *, struct cnfa *, struct colormap *));
-static VOID zapmatches _ANSI_ARGS_((regmatch_t *, size_t));
-static VOID zapmem _ANSI_ARGS_((struct vars *, struct rtree *));
+static VOID zapsubs _ANSI_ARGS_((regmatch_t *, size_t));
+static VOID zapmem _ANSI_ARGS_((struct vars *, struct subre *));
 static VOID subset _ANSI_ARGS_((struct vars *, struct subre *, chr *, chr *));
-static int dissect _ANSI_ARGS_((struct vars *, struct rtree *, chr *, chr *));
-static int altdissect _ANSI_ARGS_((struct vars *, struct rtree *, chr *, chr *));
-static int cdissect _ANSI_ARGS_((struct vars *, struct rtree *, chr *, chr *));
-static int crevdissect _ANSI_ARGS_((struct vars *, struct rtree *, chr *, chr *));
-static int csindissect _ANSI_ARGS_((struct vars *, struct rtree *, chr *, chr *));
-static int cbrdissect _ANSI_ARGS_((struct vars *, struct rtree *, chr *, chr *));
-static int caltdissect _ANSI_ARGS_((struct vars *, struct rtree *, chr *, chr *));
-static chr *dismatch _ANSI_ARGS_((struct vars *, struct rtree *, chr *, chr *));
-static chr *dismrev _ANSI_ARGS_((struct vars *, struct rtree *, chr *, chr *));
-static chr *dismsin _ANSI_ARGS_((struct vars *, struct rtree *, chr *, chr *));
+static int dissect _ANSI_ARGS_((struct vars *, struct subre *, chr *, chr *));
+static int condissect _ANSI_ARGS_((struct vars *, struct subre *, chr *, chr *));
+static int altdissect _ANSI_ARGS_((struct vars *, struct subre *, chr *, chr *));
+static int cdissect _ANSI_ARGS_((struct vars *, struct subre *, chr *, chr *));
+static int ccondissect _ANSI_ARGS_((struct vars *, struct subre *, chr *, chr *));
+static int crevdissect _ANSI_ARGS_((struct vars *, struct subre *, chr *, chr *));
+static int cbrdissect _ANSI_ARGS_((struct vars *, struct subre *, chr *, chr *));
+static int caltdissect _ANSI_ARGS_((struct vars *, struct subre *, chr *, chr *));
+/* === rege_dfa.c === */
 static chr *longest _ANSI_ARGS_((struct vars *, struct dfa *, chr *, chr *));
-static chr *shortest _ANSI_ARGS_((struct vars *, struct dfa *, chr *, chr *, chr *));
+static chr *shortest _ANSI_ARGS_((struct vars *, struct dfa *, chr *, chr *, chr *, chr **));
 static struct dfa *newdfa _ANSI_ARGS_((struct vars *, struct cnfa *, struct colormap *));
 static VOID freedfa _ANSI_ARGS_((struct dfa *));
 static unsigned hash _ANSI_ARGS_((unsigned *, int));
@@ -137,6 +134,8 @@ int flags;
 	/* setup */
 	v->re = re;
 	v->g = (struct guts *)re->re_guts;
+	if (v->g->unmatchable)
+		return REG_NOMATCH;
 	complications = (v->g->info&REG_UBACKREF) ? 1 : 0;
 	if (v->g->usedshorter)
 		complications = 1;
@@ -157,30 +156,30 @@ int flags;
 	v->stop = (chr *)string + len;
 	v->err = 0;
 	if (complications) {
-		v->mem1 = (regoff_t *)MALLOC(2*v->g->ntree*sizeof(regoff_t));
-		if (v->mem1 == NULL) {
+		v->mem = (regoff_t *)MALLOC(v->g->ntree*sizeof(regoff_t));
+		if (v->mem == NULL) {
 			if (v->pmatch != pmatch)
 				FREE(v->pmatch);
 			return REG_ESPACE;
 		}
-		v->mem2 = v->mem1 + v->g->ntree;
 	} else
-		v->mem1 = NULL;
+		v->mem = NULL;
 
 	/* do it */
+	assert(v->g->tree != NULL);
 	if (complications)
-		st = cfind(v, &v->g->cnfa, v->g->cm);
+		st = cfind(v, &v->g->tree->cnfa, &v->g->cmap);
 	else
-		st = find(v, &v->g->cnfa, v->g->cm);
+		st = find(v, &v->g->tree->cnfa, &v->g->cmap);
 	if (st == REG_OKAY && v->pmatch != pmatch && nmatch > 0) {
-		zapmatches(pmatch, nmatch);
+		zapsubs(pmatch, nmatch);
 		n = (nmatch < v->nmatch) ? nmatch : v->nmatch;
 		memcpy(VS(pmatch), VS(v->pmatch), n*sizeof(regmatch_t));
 	}
 	if (v->pmatch != pmatch)
 		FREE(v->pmatch);
-	if (v->mem1 != NULL)
-		FREE(v->mem1);
+	if (v->mem != NULL)
+		FREE(v->mem);
 	return st;
 }
 
@@ -195,33 +194,57 @@ struct cnfa *cnfa;
 struct colormap *cm;
 {
 	struct dfa *d = newdfa(v, cnfa, cm);
+	struct dfa *s = newdfa(v, &v->g->search, cm);
 	chr *begin;
 	chr *end;
+#ifdef notdef
+	chr *open;		/* open and close of range of possible starts */
+	chr *close;
+#endif
 	chr *stop = (cnfa->flags&LEFTANCH) ? v->start : v->stop;
 
 	if (d == NULL)
 		return v->err;
-
-	for (begin = v->start; begin <= stop; begin++) {
-		MDEBUG(("\ntrying at %ld\n", (long)OFF(begin)));
-		end = longest(v, d, begin, v->stop);
-		if (end != NULL) {
-			if (v->nmatch > 0) {
-				v->pmatch[0].rm_so = OFF(begin);
-				v->pmatch[0].rm_eo = OFF(end);
-			}
-			freedfa(d);
-			if (v->nmatch > 1) {
-				zapmatches(v->pmatch, v->nmatch);
-				return dissect(v, v->g->tree, begin, end);
-			}
-			if (ISERR())
-				return v->err;
-			return REG_OKAY;
-		}
+	if (s == NULL) {
+		freedfa(d);
+		return v->err;
 	}
 
+#ifdef notdef
+	close = v->start;
+	while (close < stop) {
+		MDEBUG(("\nsearch at %ld\n", (long)OFF(close)));
+		close = shortest(v, s, close, close, v->stop, &open);
+		if (close == NULL)
+			break;				/* NOTE BREAK */
+		MDEBUG(("between %ld and %ld\n", (long)OFF(open),
+							(long)OFF(close)));
+#endif
+		for (begin = v->start; begin <= stop; begin++) {
+			end = longest(v, d, begin, v->stop);
+			if (end != NULL) {
+				if (v->nmatch > 0) {
+					v->pmatch[0].rm_so = OFF(begin);
+					v->pmatch[0].rm_eo = OFF(end);
+				}
+				freedfa(d);
+				freedfa(s);
+				if (v->nmatch > 1) {
+					zapsubs(v->pmatch, v->nmatch);
+					return dissect(v, v->g->tree, begin,
+									end);
+				}
+				if (ISERR())
+					return v->err;
+				return REG_OKAY;
+			}
+		}
+#ifdef notdef
+	}
+#endif
+
 	freedfa(d);
+	freedfa(s);
 	if (ISERR())
 		return v->err;
 	return REG_NOMATCH;
@@ -241,33 +264,28 @@ struct colormap *cm;
 	chr *begin;
 	chr *end;
 	chr *stop = (cnfa->flags&LEFTANCH) ? v->start : v->stop;
+	chr *estart;
 	chr *estop;
 	int er;
-	int usedis = (v->g->tree == NULL || v->g->tree->op == '|') ? 0 : 1;
+	int shorter = v->g->tree->flags&SHORTER;
 
 	if (d == NULL)
 		return v->err;
 
-	if (!v->g->usedshorter)
-		usedis = 0;
 	for (begin = v->start; begin <= stop; begin++) {
-		MDEBUG(("\ntrying at %ld\n", (long)OFF(begin)));
-		if (usedis) {
-			v->mem = v->mem1;
-			zapmem(v, v->g->tree);
-		}
+		MDEBUG(("\ncfind trying at %ld\n", (long)OFF(begin)));
+		estart = begin;
 		estop = v->stop;
 		for (;;) {
-			if (usedis) {
-				v->mem = v->mem1;
-				end = dismatch(v, v->g->tree, begin, v->stop);
-			} else
+			if (shorter)
+				end = shortest(v, d, begin, estart, estop,
+								(chr **)NULL);
+			else
 				end = longest(v, d, begin, estop);
 			if (end == NULL)
 				break;		/* NOTE BREAK OUT */
 			MDEBUG(("tentative end %ld\n", (long)OFF(end)));
-			zapmatches(v->pmatch, v->nmatch);
-			v->mem = v->mem2;
+			zapsubs(v->pmatch, v->nmatch);
 			zapmem(v, v->g->tree);
 			er = cdissect(v, v->g->tree, begin, end);
 			switch (er) {
@@ -283,14 +301,15 @@ struct colormap *cm;
 				break;
 			case REG_NOMATCH:
 				/* go around and try again */
-				if (!usedis) {
-					if (end == begin) {
-						/* no point in trying again */
-						freedfa(d);
-						return REG_NOMATCH;
-					}
-					estop = end - 1;
+				if ((shorter) ? end == estop : end == begin) {
+					/* no point in trying again */
+					freedfa(d);
+					return REG_NOMATCH;
 				}
+				if (shorter)
+					estart = end + 1;
+				else
+					estop = end - 1;
 				break;
 			default:
 				freedfa(d);
@@ -307,11 +326,11 @@ struct colormap *cm;
 }
 
 /*
- - zapmatches - initialize the subexpression matches to "no match"
- ^ static VOID zapmatches(regmatch_t *, size_t);
+ - zapsubs - initialize the subexpression matches to "no match"
+ ^ static VOID zapsubs(regmatch_t *, size_t);
  */
 static VOID
-zapmatches(p, n)
+zapsubs(p, n)
 regmatch_t *p;
 size_t n;
 {
@@ -325,33 +344,28 @@ size_t n;
 
 /*
  - zapmem - initialize the retry memory of a subtree to zeros
- ^ static VOID zapmem(struct vars *, struct rtree *);
+ ^ static VOID zapmem(struct vars *, struct subre *);
  */
 static VOID
-zapmem(v, rt)
+zapmem(v, t)
 struct vars *v;
-struct rtree *rt;
+struct subre *t;
 {
-	if (rt == NULL)
+	if (t == NULL)
 		return;
 
 	assert(v->mem != NULL);
-	v->mem[rt->no] = 0;
+	v->mem[t->retry] = 0;
+	if (t->op == '(') {
+		assert(t->subno > 0);
+		v->pmatch[t->subno].rm_so = -1;
+		v->pmatch[t->subno].rm_eo = -1;
+	}
 
-	if (rt->left.tree != NULL)
-		zapmem(v, rt->left.tree);
-	if (rt->left.subno > 0) {
-		v->pmatch[rt->left.subno].rm_so = -1;
-		v->pmatch[rt->left.subno].rm_eo = -1;
-	}
-	if (rt->right.tree != NULL)
-		zapmem(v, rt->right.tree);
-	if (rt->right.subno > 0) {
-		v->pmatch[rt->right.subno].rm_so = -1;
-		v->pmatch[rt->right.subno].rm_eo = -1;
-	}
-	if (rt->next != NULL)
-		zapmem(v, rt->next);
+	if (t->left != NULL)
+		zapmem(v, t->left);
+	if (t->right != NULL)
+		zapmem(v, t->right);
 }
 
 /*
@@ -367,8 +381,6 @@ chr *end;
 {
 	int n = sub->subno;
 
-	if (n == 0)
-		return;
 	assert(n > 0);
 	if ((size_t)n >= v->nmatch)
 		return;
@@ -380,12 +392,54 @@ chr *end;
 
 /*
  - dissect - determine subexpression matches (uncomplicated case)
- ^ static int dissect(struct vars *, struct rtree *, chr *, chr *);
+ ^ static int dissect(struct vars *, struct subre *, chr *, chr *);
  */
 static int			/* regexec return code */
-dissect(v, rt, begin, end)
+dissect(v, t, begin, end)
 struct vars *v;
-struct rtree *rt;
+struct subre *t;
+chr *begin;			/* beginning of relevant substring */
+chr *end;			/* end of same */
+{
+	assert(t != NULL);
+	MDEBUG(("dissect %ld-%ld\n", (long)OFF(begin), (long)OFF(end)));
+
+	switch (t->op) {
+	case '=':		/* terminal node */
+		assert(t->left == NULL && t->right == NULL);
+		return REG_OKAY;	/* no action, parent did the work */
+		break;
+	case '|':		/* alternation */
+		assert(t->left != NULL);
+		return altdissect(v, t, begin, end);
+		break;
+	case 'b':		/* back ref -- shouldn't be calling us! */
+		return REG_ASSERT;
+		break;
+	case '.':		/* concatenation */
+		assert(t->left != NULL && t->right != NULL);
+		return condissect(v, t, begin, end);
+		break;
+	case '(':		/* capturing */
+		assert(t->left != NULL && t->right == NULL);
+		assert(t->subno > 0);
+		subset(v, t, begin, end);
+		return dissect(v, t->left, begin, end);
+		break;
+	default:
+		return REG_ASSERT;
+		break;
+	}
+}
+
+/*
+ - condissect - determine concatenation subexpression matches (uncomplicated)
+ ^ static int condissect(struct vars *, struct subre *, chr *, chr *);
+ */
+static int			/* regexec return code */
+condissect(v, t, begin, end)
+struct vars *v;
+struct subre *t;
 chr *begin;			/* beginning of relevant substring */
 chr *end;			/* end of same */
 {
@@ -394,37 +448,14 @@ chr *end;			/* end of same */
 	chr *mid;
 	int i;
 
-	if (rt == NULL)
-		return REG_OKAY;
-	MDEBUG(("substring %ld-%ld\n", (long)OFF(begin), (long)OFF(end)));
+	assert(t->op == '.');
+	assert(t->left != NULL && t->left->cnfa.nstates > 0);
+	assert(t->right != NULL && t->right->cnfa.nstates > 0);
 
-	/* alternatives -- punt to auxiliary */
-	if (rt->op == '|')
-		return altdissect(v, rt, begin, end);
-
-	/* concatenation -- need to split the substring between parts */
-	assert(rt->op == ',');
-	assert(rt->left.cnfa.nstates > 0);
-	d = newdfa(v, &rt->left.cnfa, v->g->cm);
+	d = newdfa(v, &t->left->cnfa, &v->g->cmap);
 	if (ISERR())
 		return v->err;
-
-	/* in some cases, there may be no right side... */
-	if (rt->right.cnfa.nstates == 0) {
-		MDEBUG(("singleton\n"));
-		if (longest(v, d, begin, end) != end) {
-			freedfa(d);
-			return REG_ASSERT;
-		}
-		freedfa(d);
-		assert(rt->left.subno >= 0);
-		subset(v, &rt->left, begin, end);
-		return dissect(v, rt->left.tree, begin, end);
-	}
-
-	/* general case */
-	assert(rt->right.cnfa.nstates > 0);
-	d2 = newdfa(v, &rt->right.cnfa, v->g->cm);
+	d2 = newdfa(v, &t->right->cnfa, &v->g->cmap);
 	if (ISERR()) {
 		freedfa(d);
 		return v->err;
@@ -464,45 +495,39 @@ chr *end;			/* end of same */
 	MDEBUG(("successful\n"));
 	freedfa(d);
 	freedfa(d2);
-	assert(rt->left.subno >= 0);
-	subset(v, &rt->left, begin, mid);
-	assert(rt->right.subno >= 0);
-	subset(v, &rt->right, mid, end);
-	i = dissect(v, rt->left.tree, begin, mid);
+	i = dissect(v, t->left, begin, mid);
 	if (i != REG_OKAY)
 		return i;
-	return dissect(v, rt->right.tree, mid, end);
+	return dissect(v, t->right, mid, end);
 }
 
 /*
  - altdissect - determine alternative subexpression matches (uncomplicated)
- ^ static int altdissect(struct vars *, struct rtree *, chr *, chr *);
+ ^ static int altdissect(struct vars *, struct subre *, chr *, chr *);
  */
 static int			/* regexec return code */
-altdissect(v, rt, begin, end)
+altdissect(v, t, begin, end)
 struct vars *v;
-struct rtree *rt;
+struct subre *t;
 chr *begin;			/* beginning of relevant substring */
 chr *end;			/* end of same */
 {
 	struct dfa *d;
 	int i;
 
-	assert(rt != NULL);
-	assert(rt->op == '|');
+	assert(t != NULL);
+	assert(t->op == '|');
 
-	for (i = 0; rt != NULL; rt = rt->next, i++) {
+	for (i = 0; t != NULL; t = t->right, i++) {
 		MDEBUG(("trying %dth\n", i));
-		assert(rt->left.begin != NULL);
-		d = newdfa(v, &rt->left.cnfa, v->g->cm);
+		assert(t->left != NULL && t->left->cnfa.nstates > 0);
+		d = newdfa(v, &t->left->cnfa, &v->g->cmap);
 		if (ISERR())
 			return v->err;
 		if (longest(v, d, begin, end) == end) {
 			MDEBUG(("success\n"));
 			freedfa(d);
-			assert(rt->left.subno >= 0);
-			subset(v, &rt->left, begin, end);
-			return dissect(v, rt->left.tree, begin, end);
+			return dissect(v, t->left, begin, end);
 		}
 		freedfa(d);
 	}
@@ -513,12 +538,61 @@ chr *end;			/* end of same */
  - cdissect - determine subexpression matches (with complications)
  * The retry memory stores the offset of the trial midpoint from begin, 
  * plus 1 so that 0 uniquely means "clean slate".
- ^ static int cdissect(struct vars *, struct rtree *, chr *, chr *);
+ ^ static int cdissect(struct vars *, struct subre *, chr *, chr *);
  */
 static int			/* regexec return code */
-cdissect(v, rt, begin, end)
+cdissect(v, t, begin, end)
 struct vars *v;
-struct rtree *rt;
+struct subre *t;
+chr *begin;			/* beginning of relevant substring */
+chr *end;			/* end of same */
+{
+	int er;
+
+	assert(t != NULL);
+	MDEBUG(("cdissect %ld-%ld\n", (long)OFF(begin), (long)OFF(end)));
+
+	switch (t->op) {
+	case '=':		/* terminal node */
+		assert(t->left == NULL && t->right == NULL);
+		return REG_OKAY;	/* no action, parent did the work */
+		break;
+	case '|':		/* alternation */
+		assert(t->left != NULL);
+		return caltdissect(v, t, begin, end);
+		break;
+	case 'b':		/* back ref -- shouldn't be calling us! */
+		assert(t->left == NULL && t->right == NULL);
+		return cbrdissect(v, t, begin, end);
+		break;
+	case '.':		/* concatenation */
+		assert(t->left != NULL && t->right != NULL);
+		return ccondissect(v, t, begin, end);
+		break;
+	case '(':		/* capturing */
+		assert(t->left != NULL && t->right == NULL);
+		assert(t->subno > 0);
+		er = cdissect(v, t->left, begin, end);
+		if (er == REG_OKAY)
+			subset(v, t, begin, end);
+		return er;
+		break;
+	default:
+		return REG_ASSERT;
+		break;
+	}
+}
+
+/*
+ - ccondissect - concatenation subexpression matches (with complications)
+ * The retry memory stores the offset of the trial midpoint from begin, 
+ * plus 1 so that 0 uniquely means "clean slate".
+ ^ static int ccondissect(struct vars *, struct subre *, chr *, chr *);
+ */
+static int			/* regexec return code */
+ccondissect(v, t, begin, end)
+struct vars *v;
+struct subre *t;
 chr *begin;			/* beginning of relevant substring */
 chr *end;			/* end of same */
 {
@@ -527,36 +601,25 @@ chr *end;			/* end of same */
 	chr *mid;
 	int er;
 
-	if (rt == NULL)
-		return REG_OKAY;
-	MDEBUG(("csubstr %ld-%ld\n", (long)OFF(begin), (long)OFF(end)));
+	assert(t->op == '.');
+	assert(t->left != NULL && t->left->cnfa.nstates > 0);
+	assert(t->right != NULL && t->right->cnfa.nstates > 0);
 
-	/* punt various cases to auxiliaries */
-	if (rt->op == '|')			/* alternatives */
-		return caltdissect(v, rt, begin, end);
-	if (rt->op == 'b')			/* backref */
-		return cbrdissect(v, rt, begin, end);
-	if (rt->right.cnfa.nstates == 0)	/* no RHS */
-		return csindissect(v, rt, begin, end);
-	if (rt->left.prefer == SHORTER)		/* reverse scan */
-		return crevdissect(v, rt, begin, end);
+	if (t->left->flags&SHORTER)		/* reverse scan */
+		return crevdissect(v, t, begin, end);
 
-	/* concatenation -- need to split the substring between parts */
-	assert(rt->op == ',');
-	assert(rt->left.cnfa.nstates > 0);
-	assert(rt->right.cnfa.nstates > 0);
-	d = newdfa(v, &rt->left.cnfa, v->g->cm);
+	d = newdfa(v, &t->left->cnfa, &v->g->cmap);
 	if (ISERR())
 		return v->err;
-	d2 = newdfa(v, &rt->right.cnfa, v->g->cm);
+	d2 = newdfa(v, &t->right->cnfa, &v->g->cmap);
 	if (ISERR()) {
 		freedfa(d);
 		return v->err;
 	}
-	MDEBUG(("cconcat %d\n", rt->no));
+	MDEBUG(("cconcat %d\n", t->retry));
 
 	/* pick a tentative midpoint */
-	if (v->mem[rt->no] == 0) {
+	if (v->mem[t->retry] == 0) {
 		mid = longest(v, d, begin, end);
 		if (mid == NULL) {
 			freedfa(d);
@@ -564,19 +627,18 @@ chr *end;			/* end of same */
 			return REG_NOMATCH;
 		}
 		MDEBUG(("tentative midpoint %ld\n", (long)OFF(mid)));
-		subset(v, &rt->left, begin, mid);
-		v->mem[rt->no] = (mid - begin) + 1;
+		v->mem[t->retry] = (mid - begin) + 1;
 	} else {
-		mid = begin + (v->mem[rt->no] - 1);
+		mid = begin + (v->mem[t->retry] - 1);
 		MDEBUG(("working midpoint %ld\n", (long)OFF(mid)));
 	}
 
 	/* iterate until satisfaction or failure */
 	for (;;) {
 		/* try this midpoint on for size */
-		er = cdissect(v, rt->left.tree, begin, mid);
+		er = cdissect(v, t->left, begin, mid);
 		if (er == REG_OKAY && longest(v, d2, mid, end) == end &&
-				(er = cdissect(v, rt->right.tree, mid, end)) == 
+				(er = cdissect(v, t->right, mid, end)) == 
 								REG_OKAY)
 			break;			/* NOTE BREAK OUT */
 		if (er != REG_OKAY && er != REG_NOMATCH) {
@@ -588,7 +650,7 @@ chr *end;			/* end of same */
 		/* that midpoint didn't work, find a new one */
 		if (mid == begin) {
 			/* all possibilities exhausted */
-			MDEBUG(("%d no midpoint\n", rt->no));
+			MDEBUG(("%d no midpoint\n", t->retry));
 			freedfa(d);
 			freedfa(d2);
 			return REG_NOMATCH;
@@ -596,23 +658,21 @@ chr *end;			/* end of same */
 		mid = longest(v, d, begin, mid-1);
 		if (mid == NULL) {
 			/* failed to find a new one */
-			MDEBUG(("%d failed midpoint\n", rt->no));
+			MDEBUG(("%d failed midpoint\n", t->retry));
 			freedfa(d);
 			freedfa(d2);
 			return REG_NOMATCH;
 		}
-		MDEBUG(("%d: new midpoint %ld\n", rt->no, (long)OFF(mid)));
-		subset(v, &rt->left, begin, mid);
-		v->mem[rt->no] = (mid - begin) + 1;
-		zapmem(v, rt->left.tree);
-		zapmem(v, rt->right.tree);
+		MDEBUG(("%d: new midpoint %ld\n", t->retry, (long)OFF(mid)));
+		v->mem[t->retry] = (mid - begin) + 1;
+		zapmem(v, t->left);
+		zapmem(v, t->right);
 	}
 
 	/* satisfaction */
 	MDEBUG(("successful\n"));
 	freedfa(d);
 	freedfa(d2);
-	subset(v, &rt->right, mid, end);
 	return REG_OKAY;
 }
 
@@ -620,12 +680,12 @@ chr *end;			/* end of same */
  - crevdissect - determine shortest-first subexpression matches
  * The retry memory stores the offset of the trial midpoint from begin, 
  * plus 1 so that 0 uniquely means "clean slate".
- ^ static int crevdissect(struct vars *, struct rtree *, chr *, chr *);
+ ^ static int crevdissect(struct vars *, struct subre *, chr *, chr *);
  */
 static int			/* regexec return code */
-crevdissect(v, rt, begin, end)
+crevdissect(v, t, begin, end)
 struct vars *v;
-struct rtree *rt;
+struct subre *t;
 chr *begin;			/* beginning of relevant substring */
 chr *end;			/* end of same */
 {
@@ -634,45 +694,43 @@ chr *end;			/* end of same */
 	chr *mid;
 	int er;
 
-	if (rt == NULL)
-		return REG_OKAY;
-	assert(rt->op == ',' && rt->left.prefer == SHORTER);
+	assert(t->op == '.');
+	assert(t->left != NULL && t->left->cnfa.nstates > 0);
+	assert(t->right != NULL && t->right->cnfa.nstates > 0);
+	assert(t->left->flags&SHORTER);
 
 	/* concatenation -- need to split the substring between parts */
-	assert(rt->left.cnfa.nstates > 0);
-	assert(rt->right.cnfa.nstates > 0);
-	d = newdfa(v, &rt->left.cnfa, v->g->cm);
+	d = newdfa(v, &t->left->cnfa, &v->g->cmap);
 	if (ISERR())
 		return v->err;
-	d2 = newdfa(v, &rt->right.cnfa, v->g->cm);
+	d2 = newdfa(v, &t->right->cnfa, &v->g->cmap);
 	if (ISERR()) {
 		freedfa(d);
 		return v->err;
 	}
-	MDEBUG(("crev %d\n", rt->no));
+	MDEBUG(("crev %d\n", t->retry));
 
 	/* pick a tentative midpoint */
-	if (v->mem[rt->no] == 0) {
-		mid = shortest(v, d, begin, begin, end);
+	if (v->mem[t->retry] == 0) {
+		mid = shortest(v, d, begin, begin, end, (chr **)NULL);
 		if (mid == NULL) {
 			freedfa(d);
 			freedfa(d2);
 			return REG_NOMATCH;
 		}
 		MDEBUG(("tentative midpoint %ld\n", (long)OFF(mid)));
-		subset(v, &rt->left, begin, mid);
-		v->mem[rt->no] = (mid - begin) + 1;
+		v->mem[t->retry] = (mid - begin) + 1;
 	} else {
-		mid = begin + (v->mem[rt->no] - 1);
+		mid = begin + (v->mem[t->retry] - 1);
 		MDEBUG(("working midpoint %ld\n", (long)OFF(mid)));
 	}
 
 	/* iterate until satisfaction or failure */
 	for (;;) {
 		/* try this midpoint on for size */
-		er = cdissect(v, rt->left.tree, begin, mid);
+		er = cdissect(v, t->left, begin, mid);
 		if (er == REG_OKAY && longest(v, d2, mid, end) == end &&
-				(er = cdissect(v, rt->right.tree, mid, end)) == 
+				(er = cdissect(v, t->right, mid, end)) == 
 								REG_OKAY)
 			break;			/* NOTE BREAK OUT */
 		if (er != REG_OKAY && er != REG_NOMATCH) {
@@ -684,101 +742,58 @@ chr *end;			/* end of same */
 		/* that midpoint didn't work, find a new one */
 		if (mid == end) {
 			/* all possibilities exhausted */
-			MDEBUG(("%d no midpoint\n", rt->no));
+			MDEBUG(("%d no midpoint\n", t->retry));
 			freedfa(d);
 			freedfa(d2);
 			return REG_NOMATCH;
 		}
-		mid = shortest(v, d, begin, mid+1, end);
+		mid = shortest(v, d, begin, mid+1, end, (chr **)NULL);
 		if (mid == NULL) {
 			/* failed to find a new one */
-			MDEBUG(("%d failed midpoint\n", rt->no));
+			MDEBUG(("%d failed midpoint\n", t->retry));
 			freedfa(d);
 			freedfa(d2);
 			return REG_NOMATCH;
 		}
-		MDEBUG(("%d: new midpoint %ld\n", rt->no, (long)OFF(mid)));
-		subset(v, &rt->left, begin, mid);
-		v->mem[rt->no] = (mid - begin) + 1;
-		zapmem(v, rt->left.tree);
-		zapmem(v, rt->right.tree);
+		MDEBUG(("%d: new midpoint %ld\n", t->retry, (long)OFF(mid)));
+		v->mem[t->retry] = (mid - begin) + 1;
+		zapmem(v, t->left);
+		zapmem(v, t->right);
 	}
 
 	/* satisfaction */
 	MDEBUG(("successful\n"));
 	freedfa(d);
 	freedfa(d2);
-	subset(v, &rt->right, mid, end);
-	return REG_OKAY;
-}
-
-/*
- - csindissect - determine singleton subexpression matches (with complications)
- ^ static int csindissect(struct vars *, struct rtree *, chr *, chr *);
- */
-static int			/* regexec return code */
-csindissect(v, rt, begin, end)
-struct vars *v;
-struct rtree *rt;
-chr *begin;			/* beginning of relevant substring */
-chr *end;			/* end of same */
-{
-	struct dfa *d;
-	int er;
-
-	assert(rt != NULL);
-	assert(rt->op == ',');
-	assert(rt->right.cnfa.nstates == 0);
-	MDEBUG(("csingleton %d\n", rt->no));
-
-	assert(rt->left.cnfa.nstates > 0);
-
-	/* exploit memory only to suppress repeated work in retries */
-	if (!v->mem[rt->no]) {
-		d = newdfa(v, &rt->left.cnfa, v->g->cm);
-		if (longest(v, d, begin, end) != end) {
-			freedfa(d);
-			return REG_NOMATCH;
-		}
-		freedfa(d);
-		v->mem[rt->no] = 1;
-		MDEBUG(("csingleton matched\n"));
-	}
-
-	er = cdissect(v, rt->left.tree, begin, end);
-	if (er != REG_OKAY)
-		return er;
-	subset(v, &rt->left, begin, end);
 	return REG_OKAY;
 }
 
 /*
  - cbrdissect - determine backref subexpression matches
- ^ static int cbrdissect(struct vars *, struct rtree *, chr *, chr *);
+ ^ static int cbrdissect(struct vars *, struct subre *, chr *, chr *);
  */
 static int			/* regexec return code */
-cbrdissect(v, rt, begin, end)
+cbrdissect(v, t, begin, end)
 struct vars *v;
-struct rtree *rt;
+struct subre *t;
 chr *begin;			/* beginning of relevant substring */
 chr *end;			/* end of same */
 {
 	int i;
-	int n = -rt->left.subno;
+	int n = t->subno;
 	size_t len;
 	chr *paren;
 	chr *p;
 	chr *stop;
-	int min = rt->left.min;
-	int max = rt->left.max;
+	int min = t->min;
+	int max = t->max;
 
-	assert(rt != NULL);
-	assert(rt->op == 'b');
-	assert(rt->right.cnfa.nstates == 0);
+	assert(t != NULL);
+	assert(t->op == 'b');
 	assert(n >= 0);
 	assert((size_t)n < v->nmatch);
 
-	MDEBUG(("cbackref n%d %d{%d-%d}\n", rt->no, n, min, max));
+	MDEBUG(("cbackref n%d %d{%d-%d}\n", t->retry, n, min, max));
 
 	if (v->pmatch[n].rm_so == -1)
 		return REG_NOMATCH;
@@ -786,9 +801,9 @@ chr *end;			/* end of same */
 	len = v->pmatch[n].rm_eo - v->pmatch[n].rm_so;
 
 	/* no room to maneuver -- retries are pointless */
-	if (v->mem[rt->no])
+	if (v->mem[t->retry])
 		return REG_NOMATCH;
-	v->mem[rt->no] = 1;
+	v->mem[t->retry] = 1;
 
 	/* special-case zero-length string */
 	if (len == 0) {
@@ -822,12 +837,12 @@ chr *end;			/* end of same */
 
 /*
  - caltdissect - determine alternative subexpression matches (w. complications)
- ^ static int caltdissect(struct vars *, struct rtree *, chr *, chr *);
+ ^ static int caltdissect(struct vars *, struct subre *, chr *, chr *);
  */
 static int			/* regexec return code */
-caltdissect(v, rt, begin, end)
+caltdissect(v, t, begin, end)
 struct vars *v;
-struct rtree *rt;
+struct subre *t;
 chr *begin;			/* beginning of relevant substring */
 chr *end;			/* end of same */
 {
@@ -837,839 +852,37 @@ chr *end;			/* end of same */
 #	define	TRYING	1	/* top matched, trying submatches */
 #	define	TRIED	2	/* top didn't match or submatches exhausted */
 
-	if (rt == NULL)
+	if (t == NULL)
 		return REG_NOMATCH;
-	assert(rt->op == '|');
-	if (v->mem[rt->no] == TRIED)
-		return caltdissect(v, rt->next, begin, end);
+	assert(t->op == '|');
+	if (v->mem[t->retry] == TRIED)
+		return caltdissect(v, t->right, begin, end);
 
-	MDEBUG(("calt n%d\n", rt->no));
-	assert(rt->left.begin != NULL);
+	MDEBUG(("calt n%d\n", t->retry));
+	assert(t->left != NULL);
 
-	if (v->mem[rt->no] == UNTRIED) {
-		d = newdfa(v, &rt->left.cnfa, v->g->cm);
+	if (v->mem[t->retry] == UNTRIED) {
+		d = newdfa(v, &t->left->cnfa, &v->g->cmap);
 		if (ISERR())
 			return v->err;
 		if (longest(v, d, begin, end) != end) {
 			freedfa(d);
-			v->mem[rt->no] = TRIED;
-			return caltdissect(v, rt->next, begin, end);
+			v->mem[t->retry] = TRIED;
+			return caltdissect(v, t->right, begin, end);
 		}
 		freedfa(d);
 		MDEBUG(("calt matched\n"));
-		v->mem[rt->no] = TRYING;
+		v->mem[t->retry] = TRYING;
 	}
 
-	er = cdissect(v, rt->left.tree, begin, end);
-	if (er == REG_OKAY) {
-		subset(v, &rt->left, begin, end);
-		return REG_OKAY;
-	}
+	er = cdissect(v, t->left, begin, end);
 	if (er != REG_NOMATCH)
 		return er;
 
-	v->mem[rt->no] = TRIED;
-	return caltdissect(v, rt->next, begin, end);
+	v->mem[t->retry] = TRIED;
+	return caltdissect(v, t->right, begin, end);
 }
 
-/*
- - dismatch - determine overall match using top-level dissection
- * The retry memory stores the offset of the trial midpoint from begin, 
- * plus 1 so that 0 uniquely means "clean slate".
- ^ static chr *dismatch(struct vars *, struct rtree *, chr *, chr *);
- */
-static chr *			/* endpoint, or NULL */
-dismatch(v, rt, begin, end)
-struct vars *v;
-struct rtree *rt;
-chr *begin;			/* beginning of relevant substring */
-chr *end;			/* end of same */
-{
-	struct dfa *d;
-	struct dfa *d2;
-	chr *mid;
-	chr *ret;
 
-	if (rt == NULL)
-		return begin;
-	MDEBUG(("dsubstr %ld-%ld\n", (long)OFF(begin), (long)OFF(end)));
 
-	/* punt various cases to auxiliaries */
-	if (rt->right.cnfa.nstates == 0)	/* no RHS */
-		return dismsin(v, rt, begin, end);
-	if (rt->left.prefer == SHORTER)		/* reverse scan */
-		return dismrev(v, rt, begin, end);
-
-	/* concatenation -- need to split the substring between parts */
-	assert(rt->op == ',');
-	assert(rt->left.cnfa.nstates > 0);
-	assert(rt->right.cnfa.nstates > 0);
-	d = newdfa(v, &rt->left.cnfa, v->g->cm);
-	if (ISERR())
-		return NULL;
-	d2 = newdfa(v, &rt->right.cnfa, v->g->cm);
-	if (ISERR()) {
-		freedfa(d);
-		return NULL;
-	}
-	MDEBUG(("dconcat %d\n", rt->no));
-
-	/* pick a tentative midpoint */
-	if (v->mem[rt->no] == 0) {
-		mid = longest(v, d, begin, end);
-		if (mid == NULL) {
-			freedfa(d);
-			freedfa(d2);
-			return NULL;
-		}
-		MDEBUG(("tentative midpoint %ld\n", (long)OFF(mid)));
-		v->mem[rt->no] = (mid - begin) + 1;
-	} else {
-		mid = begin + (v->mem[rt->no] - 1);
-		MDEBUG(("working midpoint %ld\n", (long)OFF(mid)));
-	}
-
-	/* iterate until satisfaction or failure */
-	for (;;) {
-		/* try this midpoint on for size */
-		if (rt->right.tree == NULL || rt->right.tree->op == 'b') {
-			if (rt->right.prefer == LONGER)
-				ret = longest(v, d2, mid, end);
-			else
-				ret = shortest(v, d2, mid, mid, end);
-		} else {
-			if (longest(v, d2, mid, end) != NULL)
-				ret = dismatch(v, rt->right.tree, mid, end);
-			else
-				ret = NULL;
-		}
-		if (ret != NULL)
-			break;			/* NOTE BREAK OUT */
-
-		/* that midpoint didn't work, find a new one */
-		if (mid == begin) {
-			/* all possibilities exhausted */
-			MDEBUG(("%d no midpoint\n", rt->no));
-			freedfa(d);
-			freedfa(d2);
-			return NULL;
-		}
-		mid = longest(v, d, begin, mid-1);
-		if (mid == NULL) {
-			/* failed to find a new one */
-			MDEBUG(("%d failed midpoint\n", rt->no));
-			freedfa(d);
-			freedfa(d2);
-			return NULL;
-		}
-		MDEBUG(("%d: new midpoint %ld\n", rt->no, (long)OFF(mid)));
-		v->mem[rt->no] = (mid - begin) + 1;
-		zapmem(v, rt->right.tree);
-	}
-
-	/* satisfaction */
-	MDEBUG(("successful\n"));
-	freedfa(d);
-	freedfa(d2);
-	return ret;
-}
-
-/*
- - dismrev - determine overall match using top-level dissection
- * The retry memory stores the offset of the trial midpoint from begin, 
- * plus 1 so that 0 uniquely means "clean slate".
- ^ static chr *dismrev(struct vars *, struct rtree *, chr *, chr *);
- */
-static chr *			/* endpoint, or NULL */
-dismrev(v, rt, begin, end)
-struct vars *v;
-struct rtree *rt;
-chr *begin;			/* beginning of relevant substring */
-chr *end;			/* end of same */
-{
-	struct dfa *d;
-	struct dfa *d2;
-	chr *mid;
-	chr *ret;
-
-	if (rt == NULL)
-		return begin;
-	MDEBUG(("rsubstr %ld-%ld\n", (long)OFF(begin), (long)OFF(end)));
-
-	/* concatenation -- need to split the substring between parts */
-	assert(rt->op == ',');
-	assert(rt->left.cnfa.nstates > 0);
-	assert(rt->right.cnfa.nstates > 0);
-	d = newdfa(v, &rt->left.cnfa, v->g->cm);
-	if (ISERR())
-		return NULL;
-	d2 = newdfa(v, &rt->right.cnfa, v->g->cm);
-	if (ISERR()) {
-		freedfa(d);
-		return NULL;
-	}
-	MDEBUG(("dconcat %d\n", rt->no));
-
-	/* pick a tentative midpoint */
-	if (v->mem[rt->no] == 0) {
-		mid = shortest(v, d, begin, begin, end);
-		if (mid == NULL) {
-			freedfa(d);
-			freedfa(d2);
-			return NULL;
-		}
-		MDEBUG(("tentative midpoint %ld\n", (long)OFF(mid)));
-		v->mem[rt->no] = (mid - begin) + 1;
-	} else {
-		mid = begin + (v->mem[rt->no] - 1);
-		MDEBUG(("working midpoint %ld\n", (long)OFF(mid)));
-	}
-
-	/* iterate until satisfaction or failure */
-	for (;;) {
-		/* try this midpoint on for size */
-		if (rt->right.tree == NULL || rt->right.tree->op == 'b') {
-			if (rt->right.prefer == LONGER)
-				ret = longest(v, d2, mid, end);
-			else
-				ret = shortest(v, d2, mid, mid, end);
-		} else {
-			if (longest(v, d2, mid, end) != NULL)
-				ret = dismatch(v, rt->right.tree, mid, end);
-			else
-				ret = NULL;
-		}
-		if (ret != NULL)
-			break;			/* NOTE BREAK OUT */
-
-		/* that midpoint didn't work, find a new one */
-		if (mid == end) {
-			/* all possibilities exhausted */
-			MDEBUG(("%d no midpoint\n", rt->no));
-			freedfa(d);
-			freedfa(d2);
-			return NULL;
-		}
-		mid = shortest(v, d, begin, mid+1, end);
-		if (mid == NULL) {
-			/* failed to find a new one */
-			MDEBUG(("%d failed midpoint\n", rt->no));
-			freedfa(d);
-			freedfa(d2);
-			return NULL;
-		}
-		MDEBUG(("%d: new midpoint %ld\n", rt->no, (long)OFF(mid)));
-		v->mem[rt->no] = (mid - begin) + 1;
-		zapmem(v, rt->right.tree);
-	}
-
-	/* satisfaction */
-	MDEBUG(("successful\n"));
-	freedfa(d);
-	freedfa(d2);
-	return ret;
-}
-
-/*
- - dismsin - determine singleton subexpression matches (with complications)
- ^ static chr *dismsin(struct vars *, struct rtree *, chr *, chr *);
- */
-static chr *
-dismsin(v, rt, begin, end)
-struct vars *v;
-struct rtree *rt;
-chr *begin;			/* beginning of relevant substring */
-chr *end;			/* end of same */
-{
-	struct dfa *d;
-	chr *ret;
-
-	assert(rt != NULL);
-	assert(rt->op == ',');
-	assert(rt->right.cnfa.nstates == 0);
-	MDEBUG(("dsingleton %d\n", rt->no));
-
-	assert(rt->left.cnfa.nstates > 0);
-
-	/* retries are pointless */
-	if (v->mem[rt->no])
-		return NULL;
-	v->mem[rt->no] = 1;
-
-	d = newdfa(v, &rt->left.cnfa, v->g->cm);
-	if (d == NULL)
-		return NULL;
-	if (rt->left.prefer == LONGER)
-		ret = longest(v, d, begin, end);
-	else
-		ret = shortest(v, d, begin, begin, end);
-	freedfa(d);
-	if (ret != NULL)
-		MDEBUG(("dsingleton matched\n"));
-	return ret;
-}
-
-/*
- - longest - longest-preferred matching engine
- ^ static chr *longest(struct vars *, struct dfa *, chr *, chr *);
- */
-static chr *			/* endpoint, or NULL */
-longest(v, d, start, stop)
-struct vars *v;			/* used only for debug and exec flags */
-struct dfa *d;
-chr *start;			/* where the match should start */
-chr *stop;			/* match must end at or before here */
-{
-	chr *cp;
-	chr *realstop = (stop == v->stop) ? stop : stop + 1;
-	color co;
-	struct sset *css;
-	struct sset *ss;
-	chr *post;
-	int i;
-	struct colormap *cm = d->cm;
-
-	/* initialize */
-	css = initialize(v, d, start);
-	cp = start;
-
-	/* startup */
-	FDEBUG(("+++ startup +++\n"));
-	if (cp == v->start) {
-		co = d->cnfa->bos[(v->eflags&REG_NOTBOL) ? 0 : 1];
-		FDEBUG(("color %ld\n", (long)co));
-	} else {
-		co = GETCOLOR(cm, *(cp - 1));
-		FDEBUG(("char %c, color %ld\n", (char)*(cp-1), (long)co));
-	}
-	css = miss(v, d, css, co, cp, start);
-	if (css == NULL)
-		return NULL;
-	css->lastseen = cp;
-
-	/* main loop */
-	if (v->eflags&REG_FTRACE)
-		while (cp < realstop) {
-			FDEBUG(("+++ at c%d +++\n", css - d->ssets));
-			co = GETCOLOR(cm, *cp);
-			FDEBUG(("char %c, color %ld\n", (char)*cp, (long)co));
-			ss = css->outs[co];
-			if (ss == NULL) {
-				ss = miss(v, d, css, co, cp+1, start);
-				if (ss == NULL)
-					break;	/* NOTE BREAK OUT */
-			}
-			cp++;
-			ss->lastseen = cp;
-			css = ss;
-		}
-	else
-		while (cp < realstop) {
-			co = GETCOLOR(cm, *cp);
-			ss = css->outs[co];
-			if (ss == NULL) {
-				ss = miss(v, d, css, co, cp+1, start);
-				if (ss == NULL)
-					break;	/* NOTE BREAK OUT */
-			}
-			cp++;
-			ss->lastseen = cp;
-			css = ss;
-		}
-
-	/* shutdown */
-	FDEBUG(("+++ shutdown at c%d +++\n", css - d->ssets));
-	if (cp == v->stop && stop == v->stop) {
-		co = d->cnfa->eos[(v->eflags&REG_NOTEOL) ? 0 : 1];
-		FDEBUG(("color %ld\n", (long)co));
-		ss = miss(v, d, css, co, cp, start);
-		/* special case:  match ended at eol? */
-		if (ss != NULL && (ss->flags&POSTSTATE))
-			return cp;
-		else if (ss != NULL)
-			ss->lastseen = cp;	/* to be tidy */
-	}
-
-	/* find last match, if any */
-	post = d->lastpost;
-	for (ss = d->ssets, i = 0; i < d->nssused; ss++, i++)
-		if ((ss->flags&POSTSTATE) && post != ss->lastseen &&
-					(post == NULL || post < ss->lastseen))
-			post = ss->lastseen;
-	if (post != NULL)		/* found one */
-		return post - 1;
-
-	return NULL;
-}
-
-/*
- - shortest - shortest-preferred matching engine
- ^ static chr *shortest(struct vars *, struct dfa *, chr *, chr *, chr *);
- */
-static chr *			/* endpoint, or NULL */
-shortest(v, d, start, min, max)
-struct vars *v;			/* used only for debug and exec flags */
-struct dfa *d;
-chr *start;			/* where the match should start */
-chr *min;			/* match must end at or after here */
-chr *max;			/* match must end at or before here */
-{
-	chr *cp;
-	chr *realmin = (min == v->stop) ? min : min + 1;
-	chr *realmax = (max == v->stop) ? max : max + 1;
-	color co;
-	struct sset *css;
-	struct sset *ss;
-	struct colormap *cm = d->cm;
-
-	/* initialize */
-	css = initialize(v, d, start);
-	cp = start;
-
-	/* startup */
-	FDEBUG(("--- startup ---\n"));
-	if (cp == v->start) {
-		co = d->cnfa->bos[(v->eflags&REG_NOTBOL) ? 0 : 1];
-		FDEBUG(("color %ld\n", (long)co));
-	} else {
-		co = GETCOLOR(cm, *(cp - 1));
-		FDEBUG(("char %c, color %ld\n", (char)*(cp-1), (long)co));
-	}
-	css = miss(v, d, css, co, cp, start);
-	if (css == NULL)
-		return NULL;
-	css->lastseen = cp;
-	ss = css;
-
-	/* main loop */
-	if (v->eflags&REG_FTRACE)
-		while (cp < realmax) {
-			FDEBUG(("--- at c%d ---\n", css - d->ssets));
-			co = GETCOLOR(cm, *cp);
-			FDEBUG(("char %c, color %ld\n", (char)*cp, (long)co));
-			ss = css->outs[co];
-			if (ss == NULL) {
-				ss = miss(v, d, css, co, cp+1, start);
-				if (ss == NULL)
-					break;	/* NOTE BREAK OUT */
-			}
-			cp++;
-			ss->lastseen = cp;
-			css = ss;
-			if ((ss->flags&POSTSTATE) && cp >= realmin)
-				break;		/* NOTE BREAK OUT */
-		}
-	else
-		while (cp < realmax) {
-			co = GETCOLOR(cm, *cp);
-			ss = css->outs[co];
-			if (ss == NULL) {
-				ss = miss(v, d, css, co, cp+1, start);
-				if (ss == NULL)
-					break;	/* NOTE BREAK OUT */
-			}
-			cp++;
-			ss->lastseen = cp;
-			css = ss;
-			if ((ss->flags&POSTSTATE) && cp >= realmin)
-				break;		/* NOTE BREAK OUT */
-		}
-
-	if (ss == NULL)
-		return NULL;
-	if (ss->flags&POSTSTATE) {
-		assert(cp >= realmin);
-		return cp - 1;
-	}
-
-	/* shutdown */
-	FDEBUG(("--- shutdown at c%d ---\n", css - d->ssets));
-	if (cp == v->stop && max == v->stop) {
-		co = d->cnfa->eos[(v->eflags&REG_NOTEOL) ? 0 : 1];
-		FDEBUG(("color %ld\n", (long)co));
-		ss = miss(v, d, css, co, cp, start);
-		/* special case:  match ended at eol? */
-		if (ss != NULL && (ss->flags&POSTSTATE))
-			return cp;
-	}
-
-	return NULL;
-}
-
-/*
- - newdfa - set up a fresh DFA
- ^ static struct dfa *newdfa(struct vars *, struct cnfa *,
- ^ 	struct colormap *);
- */
-static struct dfa *
-newdfa(v, cnfa, cm)
-struct vars *v;
-struct cnfa *cnfa;
-struct colormap *cm;
-{
-	struct dfa *d = (struct dfa *)MALLOC(sizeof(struct dfa));
-	int wordsper = (cnfa->nstates + UBITS - 1) / UBITS;
-	struct sset *ss;
-	int i;
-
-	assert(cnfa != NULL && cnfa->nstates != 0);
-	if (d == NULL) {
-		ERR(REG_ESPACE);
-		return NULL;
-	}
-
-	d->ssets = (struct sset *)MALLOC(CACHE * sizeof(struct sset));
-	d->statesarea = (unsigned *)MALLOC((CACHE+WORK) * wordsper *
-							sizeof(unsigned));
-	d->work = &d->statesarea[CACHE * wordsper];
-	d->outsarea = (struct sset **)MALLOC(CACHE * cnfa->ncolors *
-							sizeof(struct sset *));
-	d->incarea = (struct arcp *)MALLOC(CACHE * cnfa->ncolors *
-							sizeof(struct arcp));
-	if (d->ssets == NULL || d->statesarea == NULL || d->outsarea == NULL ||
-							d->incarea == NULL) {
-		freedfa(d);
-		ERR(REG_ESPACE);
-		return NULL;
-	}
-
-	d->nssets = (v->eflags&REG_SMALL) ? 5 : CACHE;
-	d->nssused = 0;
-	d->nstates = cnfa->nstates;
-	d->ncolors = cnfa->ncolors;
-	d->wordsper = wordsper;
-	d->cnfa = cnfa;
-	d->cm = cm;
-	d->lastpost = NULL;
-	d->search = d->ssets;
-
-	for (ss = d->ssets, i = 0; i < d->nssets; ss++, i++) {
-		/* initialization of most fields is done as needed */
-		ss->states = &d->statesarea[i * d->wordsper];
-		ss->outs = &d->outsarea[i * d->ncolors];
-		ss->inchain = &d->incarea[i * d->ncolors];
-	}
-
-	return d;
-}
-
-/*
- - freedfa - free a DFA
- ^ static VOID freedfa(struct dfa *);
- */
-static VOID
-freedfa(d)
-struct dfa *d;
-{
-	if (d->ssets != NULL)
-		FREE(d->ssets);
-	if (d->statesarea != NULL)
-		FREE(d->statesarea);
-	if (d->outsarea != NULL)
-		FREE(d->outsarea);
-	if (d->incarea != NULL)
-		FREE(d->incarea);
-	FREE(d);
-}
-
-/*
- - hash - construct a hash code for a bitvector
- * There are probably better ways, but they're more expensive.
- ^ static unsigned hash(unsigned *, int);
- */
-static unsigned
-hash(uv, n)
-unsigned *uv;
-int n;
-{
-	int i;
-	unsigned h;
-
-	h = 0;
-	for (i = 0; i < n; i++)
-		h ^= uv[i];
-	return h;
-}
-
-/*
- - initialize - hand-craft a cache entry for startup, otherwise get ready
- ^ static struct sset *initialize(struct vars *, struct dfa *, chr *);
- */
-static struct sset *
-initialize(v, d, start)
-struct vars *v;			/* used only for debug flags */
-struct dfa *d;
-chr *start;
-{
-	struct sset *ss;
-	int i;
-
-	/* is previous one still there? */
-	if (d->nssused > 0 && (d->ssets[0].flags&STARTER))
-		ss = &d->ssets[0];
-	else {				/* no, must (re)build it */
-		ss = getvacant(v, d, start, start);
-		for (i = 0; i < d->wordsper; i++)
-			ss->states[i] = 0;
-		BSET(ss->states, d->cnfa->pre);
-		ss->hash = hash(ss->states, d->wordsper);
-		assert(d->cnfa->pre != d->cnfa->post);
-		ss->flags = STARTER;
-		/* lastseen dealt with below */
-	}
-
-	for (i = 0; i < d->nssused; i++)
-		d->ssets[i].lastseen = NULL;
-	ss->lastseen = start;		/* maybe untrue, but harmless */
-	d->lastpost = NULL;
-	return ss;
-}
-
-/*
- - miss - handle a cache miss
- ^ static struct sset *miss(struct vars *, struct dfa *, struct sset *,
- ^ 	pcolor, chr *, chr *);
- */
-static struct sset *		/* NULL if goes to empty set */
-miss(v, d, css, co, cp, start)
-struct vars *v;			/* used only for debug flags */
-struct dfa *d;
-struct sset *css;
-pcolor co;
-chr *cp;			/* next chr */
-chr *start;			/* where the attempt got started */
-{
-	struct cnfa *cnfa = d->cnfa;
-	int i;
-	unsigned h;
-	struct carc *ca;
-	struct sset *p;
-	int ispost;
-	int gotstate;
-	int dolacons;
-	int didlacons;
-
-	/* for convenience, we can be called even if it might not be a miss */
-	if (css->outs[co] != NULL) {
-		FDEBUG(("hit\n"));
-		return css->outs[co];
-	}
-	FDEBUG(("miss\n"));
-
-	/* first, what set of states would we end up in? */
-	for (i = 0; i < d->wordsper; i++)
-		d->work[i] = 0;
-	ispost = 0;
-	gotstate = 0;
-	for (i = 0; i < d->nstates; i++)
-		if (ISBSET(css->states, i))
-			for (ca = cnfa->states[i]; ca->co != COLORLESS; ca++)
-				if (ca->co == co) {
-					BSET(d->work, ca->to);
-					gotstate = 1;
-					if (ca->to == cnfa->post)
-						ispost = 1;
-					FDEBUG(("%d -> %d\n", i, ca->to));
-				}
-	dolacons = (gotstate) ? (cnfa->flags&HASLACONS) : 0;
-	didlacons = 0;
-	while (dolacons) {		/* transitive closure */
-		dolacons = 0;
-		for (i = 0; i < d->nstates; i++)
-			if (ISBSET(d->work, i))
-				for (ca = cnfa->states[i]; ca->co != COLORLESS;
-									ca++)
-					if (ca->co > cnfa->ncolors &&
-						!ISBSET(d->work, ca->to) &&
-							lacon(v, cnfa, cp,
-								ca->co)) {
-						BSET(d->work, ca->to);
-						dolacons = 1;
-						didlacons = 1;
-						if (ca->to == cnfa->post)
-							ispost = 1;
-						FDEBUG(("%d :> %d\n",i,ca->to));
-					}
-	}
-	if (!gotstate)
-		return NULL;
-	h = hash(d->work, d->wordsper);
-
-	/* next, is that in the cache? */
-	for (p = d->ssets, i = d->nssused; i > 0; p++, i--)
-		if (p->hash == h && memcmp(VS(d->work), VS(p->states),
-					d->wordsper*sizeof(unsigned)) == 0) {
-			FDEBUG(("cached c%d\n", p - d->ssets));
-			break;			/* NOTE BREAK OUT */
-		}
-	if (i == 0) {		/* nope, need a new cache entry */
-		p = getvacant(v, d, cp, start);
-		assert(p != css);
-		for (i = 0; i < d->wordsper; i++)
-			p->states[i] = d->work[i];
-		p->hash = h;
-		p->flags = (ispost) ? POSTSTATE : 0;
-		/* lastseen to be dealt with by caller */
-	}
-
-	if (!didlacons) {		/* lookahead conds. always cache miss */
-		css->outs[co] = p;
-		css->inchain[co] = p->ins;
-		p->ins.ss = css;
-		p->ins.co = (color)co;
-	}
-	return p;
-}
-
-/*
- - lacon - lookahead-constraint checker for miss()
- ^ static int lacon(struct vars *, struct cnfa *, chr *, pcolor);
- */
-static int			/* predicate:  constraint satisfied? */
-lacon(v, pcnfa, cp, co)
-struct vars *v;
-struct cnfa *pcnfa;		/* parent cnfa */
-chr *cp;
-pcolor co;			/* "color" of the lookahead constraint */
-{
-	int n;
-	struct subre *sub;
-	struct dfa *d;
-	chr *end;
-
-	n = co - pcnfa->ncolors;
-	assert(n < v->g->nlacons && v->g->lacons != NULL);
-	FDEBUG(("=== testing lacon %d\n", n));
-	sub = &v->g->lacons[n];
-	d = newdfa(v, &sub->cnfa, v->g->cm);
-	if (d == NULL) {
-		ERR(REG_ESPACE);
-		return 0;
-	}
-	end = longest(v, d, cp, v->stop);
-	freedfa(d);
-	FDEBUG(("=== lacon %d match %d\n", n, (end != NULL)));
-	return (sub->subno) ? (end != NULL) : (end == NULL);
-}
-
-/*
- - getvacant - get a vacant state set
- * This routine clears out the inarcs and outarcs, but does not otherwise
- * clear the innards of the state set -- that's up to the caller.
- ^ static struct sset *getvacant(struct vars *, struct dfa *, chr *, chr *);
- */
-static struct sset *
-getvacant(v, d, cp, start)
-struct vars *v;			/* used only for debug flags */
-struct dfa *d;
-chr *cp;
-chr *start;
-{
-	int i;
-	struct sset *ss;
-	struct sset *p;
-	struct arcp ap;
-	struct arcp lastap;
-	color co;
-
-	ss = pickss(v, d, cp, start);
-	assert(!(ss->flags&LOCKED));
-
-	/* clear out its inarcs, including self-referential ones */
-	ap = ss->ins;
-	while ((p = ap.ss) != NULL) {
-		co = ap.co;
-		FDEBUG(("zapping c%d's %ld outarc\n", p - d->ssets, (long)co));
-		p->outs[co] = NULL;
-		ap = p->inchain[co];
-		p->inchain[co].ss = NULL;	/* paranoia */
-	}
-	ss->ins.ss = NULL;
-
-	/* take it off the inarc chains of the ssets reached by its outarcs */
-	for (i = 0; i < d->ncolors; i++) {
-		p = ss->outs[i];
-		assert(p != ss);		/* not self-referential */
-		if (p == NULL)
-			continue;		/* NOTE CONTINUE */
-		FDEBUG(("del outarc %d from c%d's in chn\n", i, p - d->ssets));
-		if (p->ins.ss == ss && p->ins.co == i)
-			p->ins = ss->inchain[i];
-		else {
-			assert(p->ins.ss != NULL);
-			for (ap = p->ins; ap.ss != NULL &&
-						!(ap.ss == ss && ap.co == i);
-						ap = ap.ss->inchain[ap.co])
-				lastap = ap;
-			assert(ap.ss != NULL);
-			lastap.ss->inchain[lastap.co] = ss->inchain[i];
-		}
-		ss->outs[i] = NULL;
-		ss->inchain[i].ss = NULL;
-	}
-
-	/* if ss was a success state, may need to remember location */
-	if ((ss->flags&POSTSTATE) && ss->lastseen != d->lastpost &&
-			(d->lastpost == NULL || d->lastpost < ss->lastseen))
-		d->lastpost = ss->lastseen;
-
-	return ss;
-}
-
-/*
- - pickss - pick the next stateset to be used
- ^ static struct sset *pickss(struct vars *, struct dfa *, chr *, chr *);
- */
-static struct sset *
-pickss(v, d, cp, start)
-struct vars *v;			/* used only for debug flags */
-struct dfa *d;
-chr *cp;
-chr *start;
-{
-	int i;
-	struct sset *ss;
-	struct sset *end;
-	chr *ancient;
-
-	/* shortcut for cases where cache isn't full */
-	if (d->nssused < d->nssets) {
-		ss = &d->ssets[d->nssused];
-		d->nssused++;
-		FDEBUG(("new c%d\n", ss - d->ssets));
-		/* must make innards consistent */
-		ss->ins.ss = NULL;
-		for (i = 0; i < d->ncolors; i++) {
-			ss->outs[i] = NULL;
-			ss->inchain[i].ss = NULL;
-		}
-		ss->flags = 0;
-		return ss;
-	}
-
-	/* look for oldest, or old enough anyway */
-	if (cp - start > d->nssets*3/4)		/* oldest 25% are expendable */
-		ancient = cp - d->nssets*3/4;
-	else
-		ancient = start;
-	for (ss = d->search, end = &d->ssets[d->nssets]; ss < end; ss++)
-		if ((ss->lastseen == NULL || ss->lastseen < ancient) &&
-							!(ss->flags&LOCKED)) {
-			d->search = ss + 1;
-			FDEBUG(("replacing c%d\n", ss - d->ssets));
-			return ss;
-		}
-	for (ss = d->ssets, end = d->search; ss < end; ss++)
-		if ((ss->lastseen == NULL || ss->lastseen < ancient) &&
-							!(ss->flags&LOCKED)) {
-			d->search = ss + 1;
-			FDEBUG(("replacing c%d\n", ss - d->ssets));
-			return ss;
-		}
-
-	/* nobody's old enough?!? -- something's really wrong */
-	FDEBUG(("can't find victim to replace!\n"));
-	assert(NOTREACHED);
-	ERR(REG_ASSERT);
-	return d->ssets;
-}
+#include "rege_dfa.c"

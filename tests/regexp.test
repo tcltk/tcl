@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: regexp.test,v 1.1.2.3 1998/10/21 20:40:08 stanton Exp $
+# RCS: @(#) $Id: regexp.test,v 1.1.2.4 1998/11/11 01:44:56 stanton Exp $
 
 if {[string compare test [info procs test]] == 1} then {source defs}
 
@@ -183,7 +183,7 @@ test regexp-6.2 {regexp errors} {
 } {1 {wrong # args: should be "regexp ?switches? exp string ?matchVar? ?subMatchVar subMatchVar ...?"}}
 test regexp-6.3 {regexp errors} {
     list [catch {regexp -gorp a} msg] $msg
-} {1 {bad switch "-gorp": must be -indices, -nocase, -about, -expanded, or --}}
+} {1 {bad switch "-gorp": must be -indices, -nocase, -about, -expanded, -line, -linestop, -lineanchor, or --}}
 test regexp-6.4 {regexp errors} {
     list [catch {regexp a( b} msg] $msg
 } {1 {couldn't compile regular expression pattern: parentheses () not balanced}}

@@ -56,6 +56,7 @@ if {[string compare test [info procs test]] == 1} then {source defs}
 #	B	ERE/ARE literal-_b_race heuristic used
 #	E	backslash (_e_scape) seen within []
 #	H	looka_h_ead constraint seen
+#	I	_i_mpossible to match
 #	L	_l_ocale-specific construct seen
 #	M	unportable (_m_achine-specific) construct seen
 #	N	RE can match empty (_n_ull) string
@@ -74,7 +75,7 @@ if {[string compare test [info procs test]] == 1} then {source defs}
 # test procedures and related
 
 set ask "about"
-set xflags "unsupported0"
+set xflags "xflags"
 set testbypassed 0
 
 # re_info abbreviation mapping table
@@ -82,6 +83,7 @@ set infonames(A) "REG_UBSALNUM"
 set infonames(B) "REG_UBRACES"
 set infonames(E) "REG_UBBS"
 set infonames(H) "REG_ULOOKAHEAD"
+set infonames(I) "REG_UIMPOSSIBLE"
 set infonames(L) "REG_ULOCALE"
 set infonames(M) "REG_UUNPORT"
 set infonames(N) "REG_UEMPTYMATCH"
@@ -90,7 +92,7 @@ set infonames(Q) "REG_UBOUNDS"
 set infonames(R) "REG_UBACKREF"
 set infonames(S) "REG_UUNSPEC"
 set infonames(U) "REG_UPBOTCH"
-set infonameorder "RHQBAUEPSMLN"	;# must match bit order, lsb first
+set infonameorder "RHQBAUEPSMLNI"	;# must match bit order, lsb first
 
 # set major test number and description
 proc doing {major desc} {
@@ -132,6 +134,9 @@ proc flags {fl} {
 		switch -exact -- $f {
 		"i" { lappend args "-nocase" }
 		"x" { lappend args "-expanded" }
+		"n" { lappend args "-line" }
+		"p" { lappend args "-linestop" }
+		"w" { lappend args "-lineanchor" }
 		"-" { }
 		default { append flags $f }
 		}
@@ -169,7 +174,7 @@ proc e {testid flags re err} {
 		return
 	}
 
-	set cmd [concat [list regexp -$ask] [flags $flags] [list $re]]
+	set cmd [concat [list testregexp -$ask] [flags $flags] [list $re]]
 	set run "list \[catch \{$cmd\}\] \[lindex \$errorCode 1\]"
 	test $prefix.[tno $testid] [desc $testid] $run [list 1 REG_$err]
 }
@@ -192,7 +197,7 @@ proc f {testid flags re target args} {
 
 	set f [flags $flags]
 	set infoflags [infoflags $flags]
-	set ccmd [concat [list regexp -$ask] $f [list $re]]
+	set ccmd [concat [list testregexp -$ask] $f [list $re]]
 	set nsub [expr [llength $args] - 1]
 	if {$nsub == -1} {
 		# didn't tell us number of subexps
@@ -205,7 +210,7 @@ proc f {testid flags re target args} {
 	test $prefix.[tno $testid] [desc $testid] $ccmd $info
 
 	set testid [lreplace $testid end end "execute"]
-	set ecmd [concat [list regexp] $f [list $re $target]]
+	set ecmd [concat [list testregexp] $f [list $re $target]]
 	test $prefix.[tno $testid] [desc $testid] $ecmd 0
 }
 
@@ -229,8 +234,8 @@ proc matchexpected {opts testid flags re target args} {
 
 	set f [flags $flags]
 	set infoflags [infoflags $flags]
-	set ccmd [concat [list regexp -$ask] $f [list $re]]
-	set ecmd [concat [list regexp] $opts $f [list $re $target]]
+	set ccmd [concat [list testregexp -$ask] $f [list $re]]
+	set ecmd [concat [list testregexp] $opts $f [list $re $target]]
 
 	set nsub [expr [llength $args] - 1]
 	set names [list]
@@ -364,7 +369,7 @@ m  5	b	^*		*	*
 e  6	-	^*		BADRPT
 f  7	&	^b		^b
 m  8	b	x^		x^	x^
-e  9	-	x^		IMPOSS
+f  9	I	x^		x
 m 10	n	"\n^"		"x\nb"	"\n"
 f 11	bS	{\(^b\)}	^b
 m 12	-	(^b)		b	b	b
@@ -372,7 +377,7 @@ m 13	&	{x$}		x	x
 m 14	bS	{\(x$\)}	x	x	x
 m 15	-	{(x$)}		x	x	x
 m 16	b	{x$y}		"x\$y"	"x\$y"
-e 17	-	{x$y}		IMPOSS
+f 17	I	{x$y}		xy
 m 18	n	"x\$\n"		"x\n"	"x\n"
 e 19	-	+		BADRPT
 e 20	-	?		BADRPT
@@ -473,6 +478,8 @@ m 40	eE	{a[\\]b}	"a\\b"	"a\\b"
 m 41	bE	{a[\\]b}	"a\\b"	"a\\b"
 e 42	-	{a[\Z]b}	EESCAPE
 m 43	&	{a[[b]c}	"a\[c"	"a\[c"
+m 44	EMP	{a[\u00fe-\u0507][\u00ff-\u0300]b} \
+			"a\u0102\u02ffb"	"a\u0102\u02ffb"
 
 
 
@@ -539,6 +546,12 @@ e 23	b	{\<*}		BADRPT
 e 24	b	{\>*}		BADRPT
 e 25	-	{\y*}		BADRPT
 e 26	-	{\Y*}		BADRPT
+m 27	LP	{\ma}		a	a
+f 28	LP	{\ma}		ba
+m 29	LP	{a\M}		a	a
+f 30	LP	{a\M}		ab
+f 31	ILP	{\Ma}		a
+f 32	ILP	{a\m}		a
 
 
 
@@ -587,7 +600,7 @@ m 19	P	"a\\U00000008x"	"a\bx"	"a\bx"
 e 20	-	{a\U0000008x}	EESCAPE
 m 21	P	"a\\vb"		"a\vb"	"a\vb"
 m 22	MP	"a\\x08x"	"a\bx"	"a\bx"
-e 23	-	{a\xx}		EESCAPE
+e 23	-	{a\xq}		EESCAPE
 m 24	MP	"a\\x0008x"	"a\bx"	"a\bx"
 e 25	-	{a\z}		EESCAPE
 m 26	MP	"a\\010b"	"a\bb"	"a\bb"
@@ -663,7 +676,7 @@ m  1	P	a(?#comment)b	ab	ab
 
 
 doing 18 "unmatchable REs"
-e  1	-	a^b		IMPOSS
+f  1	I	a^b		ab
 
 
 
@@ -757,7 +770,7 @@ doing 22 "multicharacter collating elements"
 # again ugh
 # currently disabled because the fake MCCE we use for testing is unavailable
 xx m  1	&+L	{a[c]e}		ace	ace
-xx e  2	&+	{a[c]h}		IMPOSS
+xx f  2	&+I	{a[c]h}		ach
 xx m  3	&+L	{a[[.ch.]]}	ach	ach
 xx f  4	&+L	{a[[.ch.]]}	ace
 xx m  5	&+L	{a[c[.ch.]]}	ac	ac

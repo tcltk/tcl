@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.1.2.4 1998/10/21 20:40:05 stanton Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.1.2.5 1998/11/11 01:44:52 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -90,7 +90,9 @@ Tcl_PwdObjCmd(dummy, interp, objc, objv)
  * Tcl_RegexpObjCmd --
  *
  *	This procedure is invoked to process the "regexp" Tcl command.
- *	See the user documentation for details on what it does.
+ *	See the user documentation for details on what it does.  The
+ *	REGEXP_TEST stuff is to minimize code differences between this
+ *	and the "testregexp" command.
  *
  * Results:
  *	A standard Tcl result.
@@ -117,12 +119,24 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
     Tcl_UniChar *wStart;
     static char *options[] = {
 	"-indices",	"-nocase",	"-about",	"-expanded",
-	"-unsupported0",	"--",		(char *) NULL
+	"-line",	"-linestop",	"-lineanchor",
+#ifdef REGEXP_TEST
+	"-xflags",
+#endif
+	"--",		(char *) NULL
     };
     enum options {
 	REGEXP_INDICES, REGEXP_NOCASE,	REGEXP_ABOUT,	REGEXP_EXPANDED,
-	REGEXP_XFLAGS,		REGEXP_LAST
+	REGEXP_MULTI,	REGEXP_NOCROSS,	REGEXP_NEWL,
+#ifdef REGEXP_TEST
+	REGEXP_XFLAGS,
+#endif
+	REGEXP_LAST
     };
+#ifndef REGEXP_TEST
+#   define REGEXP_XFLAGS	-1	/* impossible value */
+#   define TclRegXflags(a,b,c,d)	/* do nothing */
+#endif
 
     indices = 0;
     about = 0;
@@ -157,6 +171,18 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
 	    }
 	    case REGEXP_EXPANDED: {
 		cflags |= REG_EXPANDED;
+		break;
+	    }
+	    case REGEXP_MULTI: {
+		cflags |= REG_NEWLINE;
+		break;
+	    }
+	    case REGEXP_NOCROSS: {
+		cflags |= REG_NLSTOP;
+		break;
+	    }
+	    case REGEXP_NEWL: {
+		cflags |= REG_NLANCH;
 		break;
 	    }
 	    case REGEXP_XFLAGS: {
@@ -207,7 +233,7 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
     wStart = TclUtfToUniCharDString(string, stringLength, &stringBuffer);
     wLen = Tcl_DStringLength(&stringBuffer) / sizeof(Tcl_UniChar);
 
-    match = TclRegExpExecUniChar(interp, regExpr, wStart, wLen, eflags);
+    match = TclRegExpExecUniChar(interp, regExpr, wStart, wLen, objc-2, eflags);
     if (match < 0) {
 	result = TCL_ERROR;
 	goto done;
@@ -384,7 +410,7 @@ Tcl_RegsubObjCmd(dummy, interp, objc, objv)
 	 * so that "^" won't match.
 	 */
 
-	match = TclRegExpExecUniChar(interp, regExpr, w, wEnd - w,
+	match = TclRegExpExecUniChar(interp, regExpr, w, wEnd - w, 10,
 		((w > wStart) ? REG_NOTBOL : 0));
 	if (match < 0) {
 	    result = TCL_ERROR;

@@ -575,7 +575,7 @@ struct state *s;
 static VOID
 dupnfa(nfa, start, stop, from, to)
 struct nfa *nfa;
-struct state *start;		/* duplicate starting here */
+struct state *start;		/* duplicate of subNFA starting here */
 struct state *stop;		/* and stopping here */
 struct state *from;		/* stringing duplicate from here */
 struct state *to;		/* to here */
@@ -1161,35 +1161,13 @@ struct nfa *nfa;
 	struct arc *a;
 	struct arc *aa;
 
-	/* can the NFA match the empty string? */
+	if (nfa->pre->outs == NULL)
+		return REG_UIMPOSSIBLE;
 	for (a = nfa->pre->outs; a != NULL; a = a->outchain)
 		for (aa = a->to->outs; aa != NULL; aa = aa->outchain)
 			if (aa->to == nfa->post)
 				return REG_UEMPTYMATCH;
 	return 0;
-}
-
-/*
- - isempty - is a sub-NFA composed only of EMPTY arcs?
- * Somewhat limited implementation, makes assumptions.
- ^ static int isempty(struct state *, struct state *);
- */
-static int
-isempty(begin, end)
-struct state *begin;
-struct state *end;
-{
-	struct state *s;
-
-	for (s = begin; s != end; s = s->outs->to) {
-		if (s->nouts != 1)
-			return 0;
-		assert(s->outs != NULL);
-		if (s->outs->type != EMPTY)
-			return 0;
-	}
-
-	return 1;
 }
 
 /*
@@ -1305,19 +1283,16 @@ struct carc *last;
 
 /*
  - freecnfa - free a compacted NFA
- ^ static VOID freecnfa(struct cnfa *, int);
+ ^ static VOID freecnfa(struct cnfa *);
  */
 static VOID
-freecnfa(cnfa, dynalloc)
+freecnfa(cnfa)
 struct cnfa *cnfa;
-int dynalloc;			/* is the cnfa struct itself dynamic? */
 {
 	assert(cnfa->nstates != 0);	/* not empty already */
 	cnfa->nstates = 0;
 	FREE(cnfa->states);
 	FREE(cnfa->arcs);
-	if (dynalloc)
-		FREE(cnfa);
 }
 
 /*

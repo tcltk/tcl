@@ -15,7 +15,7 @@ static struct rerr {
 } rerrs[] = {
 	/* the actual table is built from regex.h */
 #	include "regerrs.h"
-	-1,	"",	"oops",		/* explanation special-cased in code */
+	{ -1,	"",	"oops" },	/* explanation special-cased in code */
 };
 
 /*

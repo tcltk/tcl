@@ -4,7 +4,7 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
 # Copyright (c) 1995-1996 Sun Microsystems, Inc.
-# RCS: @(#) $Id: makefile.vc,v 1.1.2.7 1998/11/04 04:41:26 stanton Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.1.2.8 1998/11/11 01:44:57 stanton Exp $
 
 # Does not depend on the presence of any environment variables in
 # order to compile tcl; all needed information is derived from 
@@ -466,12 +466,23 @@ $(TMPDIR)\tclAppInit.obj : $(WINDIR)\tclAppInit.c
 # Dedependency rules
 
 $(GENERICDIR)\regcomp.c: \
-	$(GENERICDIR)\regc_locale.c \
 	$(GENERICDIR)\regguts.h \
 	$(GENERICDIR)\regc_lex.c \
 	$(GENERICDIR)\regc_color.c \
 	$(GENERICDIR)\regc_nfa.c \
-	$(GENERICDIR)\regc_cvec.c
+	$(GENERICDIR)\regc_cvec.c \
+	$(GENERICDIR)\regc_locale.c
+$(GENERICDIR)\regcustom.h: \
+	$(GENERICDIR)\tclInt.h \
+	$(GENERICDIR)\tclPort.h \
+	$(GENERICDIR)\regex.h
+$(GENERICDIR)\regexec.c: \
+	$(GENERICDIR)\rege_dfa.c \
+	$(GENERICDIR)\regguts.h
+$(GENERICDIR)\regerror.c: $(GENERICDIR)\regguts.h
+$(GENERICDIR)\regfree.c: $(GENERICDIR)\regguts.h
+$(GENERICDIR)\regfronts.c: $(GENERICDIR)\regguts.h
+$(GENERICDIR)\regguts.h: $(GENERICDIR)\regcustom.h
 
 #
 # Implicit rules
