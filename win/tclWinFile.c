@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.44 2003/02/10 12:50:32 vincentdarley Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.44.2.1 2003/03/18 10:51:31 vincentdarley Exp $
  */
 
 //#define _WIN32_WINNT  0x0500
@@ -474,6 +474,16 @@ WinReadLinkDirectory(LinkDirectory)
 		if (0 == strncmp(copy,"\\??\\",4)) {
 		    copy += 4;
 		    len -= 4;
+		    if (0 == strncmp(copy,"Volume{",7)) {
+			/* 
+			 * This is actually a mounted drive, which is in any
+			 * case treated as being mounted in place, so it is
+			 * in some sense a symlink to itself
+			 */
+			Tcl_DStringFree(&ds);
+			Tcl_SetErrno(EINVAL);
+			return NULL;
+		    }
 		} else if (0 == strncmp(copy,"\\\\?\\",4)) {
 		    copy += 4;
 		    len -= 4;
