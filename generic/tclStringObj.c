@@ -31,7 +31,7 @@ A Unicode string
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.8 1999/06/15 01:16:25 hershey Exp $
+ * RCS: @(#) $Id: tclStringObj.c,v 1.9 1999/06/15 03:14:44 hershey Exp $
  */
 
 #include "tclInt.h"
@@ -793,31 +793,18 @@ Tcl_AppendToObj(objPtr, bytes, length)
     }
 
     /*
-     * TEMPORARY!!!  This is terribly inefficient, but it works, and Don
-     * needs for me to check this stuff in ASAP.  -Melissa
-     */
-    
-/*     printf("called Tcl_AppendToObj with str = %s\n", bytes); */
-    UpdateStringOfString(objPtr);
-    AppendUtfToUtfRep(objPtr, bytes, length);
-    return;
-
-    /*
      * If objPtr has a valid Unicode rep, then append the Unicode
      * conversion of "bytes" to the objPtr's Unicode rep, otherwise
      * append "bytes" to objPtr's string rep.
      */
 
     stringPtr = GET_STRING(objPtr);
-    if (stringPtr->allocated > 0) {
+    if (stringPtr->uallocated > 0) {
 	AppendUtfToUnicodeRep(objPtr, bytes, length);
 
 	stringPtr = GET_STRING(objPtr);
-/* 	printf(" ended Tcl_AppendToObj with %d unicode chars.\n", */
-/* 		stringPtr->numChars); */
     } else {
 	AppendUtfToUtfRep(objPtr, bytes, length);
-/* 	printf(" ended Tcl_AppendToObj with str = %s\n", objPtr->bytes); */
     }
 }
 
@@ -862,9 +849,9 @@ Tcl_AppendUnicodeToObj(objPtr, unicode, length)
      * needs for me to check this stuff in ASAP.  -Melissa
      */
     
-    UpdateStringOfString(objPtr);
-    AppendUnicodeToUtfRep(objPtr, unicode, length);
-    return;
+/*     UpdateStringOfString(objPtr); */
+/*     AppendUnicodeToUtfRep(objPtr, unicode, length); */
+/*     return; */
 
     /*
      * If objPtr has a valid Unicode rep, then append the "unicode"
@@ -873,7 +860,7 @@ Tcl_AppendUnicodeToObj(objPtr, unicode, length)
      */
 
     stringPtr = GET_STRING(objPtr);
-    if (stringPtr->allocated > 0) {
+    if (stringPtr->uallocated > 0) {
 	AppendUnicodeToUnicodeRep(objPtr, unicode, length);
     } else {
 	AppendUnicodeToUtfRep(objPtr, unicode, length);
@@ -910,22 +897,12 @@ Tcl_AppendObjToObj(objPtr, appendObjPtr)
     SetStringFromAny(NULL, objPtr);
 
     /*
-     * TEMPORARY!!!  This is terribly inefficient, but it works, and Don
-     * needs for me to check this stuff in ASAP.  -Melissa
-     */
-
-    UpdateStringOfString(objPtr);
-    bytes = Tcl_GetStringFromObj(appendObjPtr, &length);
-    AppendUtfToUtfRep(objPtr, bytes, length);
-    return;
-
-    /*
      * If objPtr has a valid Unicode rep, then get a Unicode string
      * from appendObjPtr and append it.
      */
 
     stringPtr = GET_STRING(objPtr);
-    if (stringPtr->allocated > 0) {
+    if (stringPtr->uallocated > 0) {
 	
 	/*
 	 * If appendObjPtr is not of the "String" type, don't convert it.
@@ -1047,7 +1024,6 @@ AppendUnicodeToUtfRep(objPtr, unicode, numChars)
     int numChars;	      /* Number of chars of "unicode" to convert. */
 {
     Tcl_DString dsPtr;
-    int length = numChars * sizeof(Tcl_UniChar);
     char *bytes;
     
     if (numChars == 0) {

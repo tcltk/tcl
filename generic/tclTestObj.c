@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTestObj.c,v 1.4 1999/06/08 02:59:26 hershey Exp $
+ * RCS: @(#) $Id: tclTestObj.c,v 1.5 1999/06/15 03:14:45 hershey Exp $
  */
 
 #include "tclInt.h"
@@ -58,6 +58,14 @@ static int		TestobjCmd _ANSI_ARGS_((ClientData dummy,
 static int		TeststringobjCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *CONST objv[]));
+
+typedef struct TestString {
+    int numChars;
+    size_t allocated;
+    size_t uallocated;
+    Tcl_UniChar unicode[2];
+} TestString;
+
 
 /*
  *----------------------------------------------------------------------
@@ -872,6 +880,7 @@ TeststringobjCmd(clientData, interp, objc, objv)
     int varIndex, option, i, length;
 #define MAX_STRINGS 11
     char *index, *string, *strings[MAX_STRINGS+1];
+    TestString *strPtr;
     static char *options[] = {
 	"append", "appendstrings", "get", "get2", "length", "length2",
 	"set", "set2", "setlength", (char *) NULL
@@ -974,8 +983,14 @@ TeststringobjCmd(clientData, interp, objc, objv)
 	    if (objc != 3) {
 		goto wrongNumArgs;
 	    }
-	    Tcl_SetIntObj(Tcl_GetObjResult(interp), (varPtr[varIndex] != NULL)
-		    ? (int) varPtr[varIndex]->internalRep.longValue : -1);
+	    if (varPtr[varIndex] != NULL) {
+		strPtr = (TestString *)
+		    (varPtr[varIndex])->internalRep.otherValuePtr;
+		length = (int) strPtr->allocated;
+	    } else {
+		length = -1;
+	    }
+	    Tcl_SetIntObj(Tcl_GetObjResult(interp), length);
 	    break;
 	case 6:				/* set */
 	    if (objc != 4) {
