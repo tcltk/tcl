@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.20.6.6 2001/11/25 17:27:48 dkf Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.20.6.7 2001/11/26 23:10:30 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1383,6 +1383,7 @@ Tcl_FSStat(pathPtr, buf)
     Tcl_Filesystem *fsPtr;
 #ifdef USE_OBSOLETE_FS_HOOKS
     StatProc *statProcPtr;
+    struct stat oldStyleStatBuffer;
     int retVal = -1;
     char *path;
     Tcl_Obj *transPtr = Tcl_FSGetTranslatedPath(NULL, pathPtr);
@@ -1402,11 +1403,28 @@ Tcl_FSStat(pathPtr, buf)
     Tcl_MutexLock(&obsoleteFsHookMutex);
     statProcPtr = statProcList;
     while ((retVal == -1) && (statProcPtr != NULL)) {
-	retVal = (*statProcPtr->proc)(path, buf);
+	retVal = (*statProcPtr->proc)(path, &oldStyleStatBuffer);
 	statProcPtr = statProcPtr->nextPtr;
     }
     Tcl_MutexUnlock(&obsoleteFsHookMutex);
     if (retVal != -1) {
+	/*
+	 * Note that EOVERFLOW is not a problem here, and these
+	 * assignments should all be widening (if not identity.)
+	 */
+	buf->st_mode = oldStyleStatBuffer.st_mode;
+	buf->st_ino = (Tcl_WideUInt) Tcl_LongAsWide(oldStyleStatBuffer.st_ino);
+	buf->st_dev = oldStyleStatBuffer.st_dev;
+	buf->st_rdev = oldStyleStatBuffer.st_rdev;
+	buf->st_nlink = oldStyleStatBuffer.st_nlink;
+	buf->st_uid = oldStyleStatBuffer.st_uid;
+	buf->st_gid = oldStyleStatBuffer.st_gid;
+	buf->st_size = Tcl_LongAsWide(oldStyleStatBuffer.st_size);
+	buf->st_atime = oldStyleStatBuffer.st_atime;
+	buf->st_mtime = oldStyleStatBuffer.st_mtime;
+	buf->st_ctime = oldStyleStatBuffer.st_ctime;
+	buf->st_blksize = oldStyleStatBuffer.st_blksize;
+	buf->st_blocks = Tcl_LongAsWide(oldStyleStatBuffer.st_blocks);
         return retVal;
     }
 #endif /* USE_OBSOLETE_FS_HOOKS */

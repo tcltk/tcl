@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.31.2.4 2001/11/07 13:35:21 dkf Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.31.2.5 2001/11/26 23:10:31 dkf Exp $
  */
 
 #define TCL_TEST
@@ -284,13 +284,13 @@ static int		TestsetrecursionlimitCmd _ANSI_ARGS_((
 static int		TeststaticpkgCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Interp *interp, int argc, char **argv));
 static int		PretendTclpStat _ANSI_ARGS_((CONST char *path,
-			    Tcl_StatBuf *buf));
+			    struct stat *buf));
 static int		TestStatProc1 _ANSI_ARGS_((CONST char *path,
-			    Tcl_StatBuf *buf));
+			    struct stat *buf));
 static int		TestStatProc2 _ANSI_ARGS_((CONST char *path,
-			    Tcl_StatBuf *buf));
+			    struct stat *buf));
 static int		TestStatProc3 _ANSI_ARGS_((CONST char *path,
-			    Tcl_StatBuf *buf));
+			    struct stat *buf));
 static int		TeststatprocCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Interp *interp, int argc, char **argv));
 static int		TesttranslatefilenameCmd _ANSI_ARGS_((ClientData dummy,
@@ -4168,13 +4168,61 @@ TeststatprocCmd (dummy, interp, argc, argv)
 
 static int PretendTclpStat(path, buf)
     CONST char *path;
-    Tcl_StatBuf *buf;
+    struct stat *buf;
 {
     int ret;
     Tcl_Obj *pathPtr = Tcl_NewStringObj(path, -1);
+#ifndef TCL_WIDE_INT_IS_LONG
+    Tcl_StatBuf realBuf;
+#endif
     Tcl_IncrRefCount(pathPtr);
-    ret = TclpObjStat(pathPtr, buf);
+    ret = TclpObjStat(pathPtr, &realBuf);
     Tcl_DecrRefCount(pathPtr);
+    if (ret != -1) {
+#ifndef TCL_WIDE_INT_IS_LONG
+#   define OUT_OF_RANGE(x) \
+	(((Tcl_WideInt)(x)) < Tcl_LongAsWide(LONG_MIN) || \
+	 ((Tcl_WideInt)(x)) > Tcl_LongAsWide(LONG_MAX))
+#   define OUT_OF_URANGE(x) \
+	(((Tcl_WideUInt)(x)) > (Tcl_WideUInt)ULONG_MAX)
+
+	/*
+	 * Perform the result-buffer overflow check manually.
+	 *
+	 * Note that ino_t/ino64_t is unsigned...
+	 */
+
+        if (OUT_OF_URANGE(realBuf.st_ino) || OUT_OF_RANGE(realBuf.st_size)
+		|| OUT_OF_RANGE(realBuf.st_blocks)) {
+	    errno = EOVERFLOW;
+	    return -1;
+	}
+
+#   undef OUT_OF_RANGE
+#endif /* !TCL_WIDE_INT_IS_LONG */
+
+	/*
+	 * Copy across all supported fields, with possible type
+	 * coercions on those fields that change between the normal
+	 * and lf64 versions of the stat structure (on Solaris at
+	 * least.)  This is slow when the structure sizes coincide,
+	 * but that's what you get for mixing interfaces...
+	 */
+
+	buf->st_mode    = realBuf.st_mode;
+	buf->st_ino     = (ino_t) realBuf.st_ino;
+	buf->st_dev     = realBuf.st_dev;
+	buf->st_rdev    = realBuf.st_rdev;
+	buf->st_nlink   = realBuf.st_nlink;
+	buf->st_uid     = realBuf.st_uid;
+	buf->st_gid     = realBuf.st_gid;
+	buf->st_size    = (off_t) realBuf.st_size;
+	buf->st_atime   = realBuf.st_atime;
+	buf->st_mtime   = realBuf.st_mtime;
+	buf->st_ctime   = realBuf.st_ctime;
+	buf->st_blksize = realBuf.st_blksize;
+	buf->st_blocks  = (blkcnt_t) realBuf.st_blocks;
+    }
     return ret;
 }
 
@@ -4186,7 +4234,7 @@ static int PretendTclpStat(path, buf)
 static int
 TestStatProc1(path, buf)
     CONST char *path;
-    Tcl_StatBuf *buf;
+    struct stat *buf;
 {
     buf->st_size = 1234;
     return ((strstr(path, "testStat1%.fil") == NULL) ? -1 : 0);
@@ -4196,7 +4244,7 @@ TestStatProc1(path, buf)
 static int
 TestStatProc2(path, buf)
     CONST char *path;
-    Tcl_StatBuf *buf;
+    struct stat *buf;
 {
     buf->st_size = 2345;
     return ((strstr(path, "testStat2%.fil") == NULL) ? -1 : 0);
@@ -4206,7 +4254,7 @@ TestStatProc2(path, buf)
 static int
 TestStatProc3(path, buf)
     CONST char *path;
-    Tcl_StatBuf *buf;
+    struct stat *buf;
 {
     buf->st_size = 3456;
     return ((strstr(path, "testStat3%.fil") == NULL) ? -1 : 0);

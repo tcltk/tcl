@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.64.6.6 2001/10/05 08:14:56 dkf Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.64.6.7 2001/11/26 23:10:31 dkf Exp $
  */
 
 #ifndef _TCLINT
@@ -1524,7 +1524,7 @@ typedef struct TclpTime_t_ *TclpTime_t;
  *----------------------------------------------------------------
  */
 
-typedef int (TclStatProc_) _ANSI_ARGS_((CONST char *path, Tcl_StatBuf *buf));
+typedef int (TclStatProc_) _ANSI_ARGS_((CONST char *path, struct stat *buf));
 typedef int (TclAccessProc_) _ANSI_ARGS_((CONST char *path, int mode));
 typedef Tcl_Channel (TclOpenFileChannelProc_) _ANSI_ARGS_((Tcl_Interp *interp,
 	char *fileName, char *modeString,

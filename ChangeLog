@@ -1,3 +1,15 @@
+2001-11-26  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* generic/tclTest.c (PretendTclpStat): Yet more buffer type
+	juggling, because the test suite uses the 'obsolete fs hooks' even
+	though the rest of the core doesn't.
+	(TestStatProc1, TestStatProc2, TestStatProc3): Type fix.
+	* generic/tclInt.h: Changed declaration of TclStatProc_ back to
+	what it was originally.
+	* generic/tclIOUtil.c (Tcl_FSStat): Updated to use old-style stat
+	buffers for the 'obsolete fs hooks' for better interim prowrap and
+	mktclapp support.  (Thanks to Vince Darley for feedback.)
+
 2001-11-25  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* doc/FileSystem.3: 
