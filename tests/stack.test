@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: stack.test,v 1.17 2004/06/22 19:41:25 kennykb Exp $
+# RCS: @(#) $Id: stack.test,v 1.18 2004/06/23 00:24:43 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -56,30 +56,26 @@ test stack-2.1 {maxNestingDepth reached on infinite recursion} {minStack2400} {
 } {too many nested evaluations (infinite loop?)}
 
 # Make sure that there is enough stack to run regexp even if we're
-# close to the recursion limit. [Bug 947070]
-
-test stack-3.1 {enough room for regexp near recursion limit} \
-    -constraints { win } \
-    -setup {
-	set ::limit [interp recursionlimit {} 10000]
-	proc a { max } {
-	    if { [info level] < $max } {
-		set ::depth [info level]
-		a $max
-	    } else {
-		regexp {^ ?} x
-	    }
+# close to the recursion limit. [Bug 947070] [Patch 746378]
+test stack-3.1 {enough room for regexp near recursion limit} -setup {
+    set limit [interp recursionlimit {} 10000]
+    set depth 0
+    proc a { max } {
+	if { [info level] < $max } {
+	    set ::depth [info level]
+	    a $max
+	} else {
+	    regexp {^ ?} x
 	}
-    } -body {
-	set ::depth 0
-	catch { a 10001 }
-	set depth2 $depth
-	catch { a $::depth }
-	expr { $depth2 - $depth }
-    } -cleanup {
-	interp recursionlimit {} $::limit
-	rename a {}
-    } -result {1}
+    }
+} -body {
+    catch { a 10001 }
+    set depth2 $depth
+    list [a $depth] [expr { $depth2 - $depth }]
+} -cleanup {
+    interp recursionlimit {} $limit
+    rename a {}
+} -result {1 1}
 
 # cleanup
 ::tcltest::cleanupTests

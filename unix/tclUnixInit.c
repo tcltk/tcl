@@ -1,4 +1,4 @@
-/* 
+/*
  * tclUnixInit.c --
  *
  *	Contains the Unix-specific interpreter initialization functions.
@@ -7,17 +7,19 @@
  * Copyright (c) 1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclUnixInit.c,v 1.45 2004/06/18 15:26:00 dkf Exp $
+ * RCS: @(#) $Id: tclUnixInit.c,v 1.46 2004/06/23 00:24:41 dkf Exp $
  */
 
 #if defined(HAVE_CFBUNDLE)
 #include <CoreFoundation/CoreFoundation.h>
 #endif
 #include "tclInt.h"
+#include <stddef.h>
 #include <locale.h>
 #ifdef HAVE_LANGINFO
 #include <langinfo.h>
 #endif
+#include <sys/resource.h>
 #if defined(__FreeBSD__)
 #   include <floatingpoint.h>
 #endif
@@ -27,6 +29,69 @@
 #	include <dlfcn.h>
 #   endif
 #endif
+
+/*
+ * Define this if you want to revert to the old behavior of
+ * never checking the stack.
+ */
+#undef TCL_NO_STACK_CHECK
+
+/*
+ * Define this if you want to see a lot of output regarding
+ * stack checking.
+ */
+#undef TCL_DEBUG_STACK_CHECK
+
+/*
+ * Values used to compute how much space is really available for Tcl's
+ * use for the stack.
+ *
+ * NOTE: Now I have some idea why the maximum stack size must be
+ * divided by 64 on FreeBSD with threads enabled to get a reasonably
+ * correct value.
+ *
+ * The getrlimit() function is documented to return the maximum stack
+ * size in bytes. However, with threads enabled, the pthread library
+ * does bad things to the stack size limits.  First, the limits cannot
+ * be changed. Second, they appear to be reported incorrectly by a
+ * factor of about 64.
+ *
+ * The defines below may need to be adjusted if more platforms have
+ * this broken behavior with threads enabled.
+ */
+
+#if defined(__FreeBSD__)
+#   define TCL_MAGIC_STACK_DIVISOR	64
+#   define TCL_RESERVED_STACK_PAGES	3
+#endif
+
+#ifndef TCL_MAGIC_STACK_DIVISOR
+#define TCL_MAGIC_STACK_DIVISOR		1
+#endif
+#ifndef TCL_RESERVED_STACK_PAGES
+#define TCL_RESERVED_STACK_PAGES	8
+#endif
+
+/*
+ * Thread specific data for stack checking.
+ */
+
+#ifndef TCL_NO_STACK_CHECK
+typedef struct ThreadSpecificData {
+    int *outerVarPtr;		/* The "outermost" stack frame pointer for
+				 * this thread. */
+    int initialised;		/* Have we found what the stack size was? */
+    int stackDetermineResult;	/* What happened when we did that? */
+    size_t stackSize;		/* The size of the current stack. */
+} ThreadSpecificData;
+static Tcl_ThreadDataKey dataKey;
+#endif /* TCL_NO_STACK_CHECK */
+
+#ifdef TCL_DEBUG_STACK_CHECK
+#define STACK_DEBUG(args) printf args
+#else
+#define STACK_DEBUG(args) (void)0
+#endif /* TCL_DEBUG_STACK_CHECK */
 
 /* Used to store the encoding used for binary files */
 static Tcl_Encoding binaryEncoding = NULL;
@@ -106,8 +171,8 @@ static CONST LocaleTable localeTable[] = {
     {"Jp_JP",		"shiftjis"},
     {"japan",		"euc-jp"},
 #ifdef hpux
-    {"japanese",	"shiftjis"},	
-    {"ja",		"shiftjis"},	
+    {"japanese",	"shiftjis"},
+    {"ja",		"shiftjis"},
 #else
     {"japanese",	"euc-jp"},
     {"ja",		"euc-jp"},
@@ -124,9 +189,9 @@ static CONST LocaleTable localeTable[] = {
     {"ko_KR.eucKR",     "euc-kr"},
     {"korean",          "euc-kr"},
 
-    {"ru",		"iso8859-5"},		
-    {"ru_RU",		"iso8859-5"},		
-    {"ru_SU",		"iso8859-5"},		
+    {"ru",		"iso8859-5"},
+    {"ru_RU",		"iso8859-5"},
+    {"ru_SU",		"iso8859-5"},
 
     {"zh",		"cp936"},
     {"zh_CN.gb2312",	"euc-cn"},
@@ -138,8 +203,13 @@ static CONST LocaleTable localeTable[] = {
     {NULL, NULL}
 };
 
+#ifndef TCL_NO_STACK_CHECK
+static int		GetStackSize _ANSI_ARGS_((size_t *stackSizePtr));
+#endif /* TCL_NO_STACK_CHECK */
 #ifdef HAVE_CFBUNDLE
-static int Tcl_MacOSXGetLibraryPath(Tcl_Interp *interp, int maxPathLen, char *tclLibPath);
+static int		MacOSXGetLibraryPath _ANSI_ARGS((
+			    Tcl_Interp *interp, int maxPathLen,
+			    char *tclLibPath));
 #endif /* HAVE_CFBUNDLE */
 
 
@@ -167,7 +237,7 @@ TclpInitPlatform()
 {
 #ifdef DJGPP
     tclPlatform = TCL_PLATFORM_WINDOWS;
-#else		
+#else
     tclPlatform = TCL_PLATFORM_UNIX;
 #endif
 
@@ -201,7 +271,7 @@ TclpInitPlatform()
 
 #ifdef __FreeBSD__
     fpsetround(FP_RN);
-    fpsetmask(0L);
+    (void) fpsetmask(0L);
 #endif
 
 #if defined(__bsdi__) && (_BSDI_VERSION > 199501)
@@ -256,7 +326,7 @@ TclpInitPlatform()
 
 int
 TclpInitLibraryPath(path)
-CONST char *path;		/* Path to the executable in native 
+CONST char *path;		/* Path to the executable in native
 				 * multi-byte encoding. */
 {
 #define LIBRARY_SIZE	    32
@@ -276,7 +346,7 @@ CONST char *path;		/* Path to the executable in native
      * is installed.  The developLib computes the path as though the
      * executable is run from a develpment directory.
      */
-     
+
     sprintf(installLib, "lib/tcl%s", TCL_VERSION);
     sprintf(developLib, "tcl%s/library", TCL_PATCH_LEVEL);
 
@@ -305,7 +375,7 @@ CONST char *path;		/* Path to the executable in native
 	/*
 	 * If TCL_LIBRARY is set, search there.
 	 */
-	 
+
 	objPtr = Tcl_NewStringObj(str, -1);
 	Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
 
@@ -318,7 +388,7 @@ CONST char *path;		/* Path to the executable in native
 	     * removing the old "tclX.Y" and substituting the current
 	     * version string.
 	     */
-	    
+
 	    pathv[pathc - 1] = installLib + 4;
 	    str = Tcl_JoinPath(pathc, pathv, &ds);
 	    objPtr = Tcl_NewStringObj(str, Tcl_DStringLength(&ds));
@@ -347,7 +417,6 @@ CONST char *path;		/* Path to the executable in native
      *	<bindir>/../../../<developLib>
      *	  (e.g. /usr/src/tcl8.4.0/unix/solaris-sparc/../../../tcl8.4.0/library)
      */
-     
 
      /*
       * The variable path holds an absolute path.  Take care not to
@@ -437,12 +506,12 @@ CONST char *path;		/* Path to the executable in native
      * This is needed when users install Tcl with an exec-prefix that
      * is different from the prtefix.
      */
-			      
+
     {
 #ifdef HAVE_CFBUNDLE
     char tclLibPath[MAXPATHLEN + 1];
-    
-    if (Tcl_MacOSXGetLibraryPath(NULL, MAXPATHLEN, tclLibPath) == TCL_OK) {
+
+    if (MacOSXGetLibraryPath(NULL, MAXPATHLEN, tclLibPath) == TCL_OK) {
         str = tclLibPath;
     } else
 #endif /* HAVE_CFBUNDLE */
@@ -455,7 +524,7 @@ CONST char *path;		/* Path to the executable in native
     }
     }
 
-    TclSetLibraryPath(pathPtr);    
+    TclSetLibraryPath(pathPtr);
     Tcl_DStringFree(&buffer);
 
     return 1; /* 1 indicates that pathPtr may be dirty utf (needs cleaning) */
@@ -657,9 +726,9 @@ TclpSetInitialEncodings()
 	 * actually in the native multi-byte encoding, and not really UTF-8
 	 * as advertised.  We cheated as follows:
 	 *
-	 * 1. It was safe to allow the Tcl_SetSystemEncoding() call to 
-	 * append the ASCII chars that make up the encoding's filename to 
-	 * the names (in the native encoding) of directories in the library 
+	 * 1. It was safe to allow the Tcl_SetSystemEncoding() call to
+	 * append the ASCII chars that make up the encoding's filename to
+	 * the names (in the native encoding) of directories in the library
 	 * path, since all Unix multi-byte encodings have ASCII in the
 	 * beginning.
 	 *
@@ -669,8 +738,8 @@ TclpSetInitialEncodings()
 	 *
 	 * Now that the system encoding was actually successfully set,
 	 * translate all the names in the library path to UTF-8.  That way,
-	 * next time we search the library path, we'll translate the names 
-	 * from UTF-8 to the system encoding which will be the native 
+	 * next time we search the library path, we'll translate the names
+	 * from UTF-8 to the system encoding which will be the native
 	 * encoding.
 	 */
 
@@ -678,7 +747,7 @@ TclpSetInitialEncodings()
 	if (pathPtr != NULL) {
 	    int objc;
 	    Tcl_Obj **objv;
-	    
+
 	    objc = 0;
 	    Tcl_ListObjGetElements(NULL, pathPtr, &objc, &objv);
 	    for (i = 0; i < objc; i++) {
@@ -688,7 +757,7 @@ TclpSetInitialEncodings()
 
 		string = Tcl_GetStringFromObj(objv[i], &length);
 		Tcl_ExternalToUtfDString(NULL, string, length, &ds);
-		Tcl_SetStringObj(objv[i], Tcl_DStringValue(&ds), 
+		Tcl_SetStringObj(objv[i], Tcl_DStringValue(&ds),
 			Tcl_DStringLength(&ds));
 		Tcl_DStringFree(&ds);
 	    }
@@ -696,7 +765,7 @@ TclpSetInitialEncodings()
 
 	libraryPathEncodingFixed = 1;
     }
-    
+
     /* This is only ever called from the startup thread */
     if (binaryEncoding == NULL) {
 	/*
@@ -739,13 +808,13 @@ TclpSetVariables(interp)
 
 #ifdef HAVE_CFBUNDLE
     char tclLibPath[MAXPATHLEN + 1];
-    
-    if (Tcl_MacOSXGetLibraryPath(interp, MAXPATHLEN, tclLibPath) == TCL_OK) {
+
+    if (MacOSXGetLibraryPath(interp, MAXPATHLEN, tclLibPath) == TCL_OK) {
         CONST char *str;
         Tcl_DString ds;
         CFBundleRef bundleRef;
 
-        Tcl_SetVar(interp, "tclDefaultLibrary", tclLibPath, 
+        Tcl_SetVar(interp, "tclDefaultLibrary", tclLibPath,
                 TCL_GLOBAL_ONLY);
         Tcl_SetVar(interp, "tcl_pkgPath", tclLibPath,
                 TCL_GLOBAL_ONLY);
@@ -809,13 +878,13 @@ TclpSetVariables(interp)
 #ifndef NO_UNAME
     if (uname(&name) >= 0) {
 	CONST char *native;
-	
+
 	unameOK = 1;
 
 	native = Tcl_ExternalToUtfDString(NULL, name.sysname, -1, &ds);
 	Tcl_SetVar2(interp, "tcl_platform", "os", native, TCL_GLOBAL_ONLY);
 	Tcl_DStringFree(&ds);
-	
+
 	/*
 	 * The following code is a special hack to handle differences in
 	 * the way version information is returned by uname.  On most
@@ -829,7 +898,7 @@ TclpSetVariables(interp)
 	    Tcl_SetVar2(interp, "tcl_platform", "osVersion", name.release,
 		    TCL_GLOBAL_ONLY);
 	} else {
-#ifdef DJGPP	
+#ifdef DJGPP
 		/* For some obscure reason DJGPP puts major version into
 		 * name.release and minor into name.version. As of DJGPP 2.04
 		 * this is documented in djgpp libc.info file*/
@@ -881,7 +950,7 @@ TclpSetVariables(interp)
  *
  * TclpFindVariable --
  *
- *	Locate the entry in environ for a given name.  On Unix this 
+ *	Locate the entry in environ for a given name.  On Unix this
  *	routine is case sensetive, on Windows this matches mixed case.
  *
  * Results:
@@ -923,10 +992,10 @@ TclpFindVariable(name, lengthPtr)
 	    result = i;
 	    goto done;
 	}
-	
+
 	Tcl_DStringFree(&envString);
     }
-    
+
     *lengthPtr = i;
 
     done:
@@ -939,7 +1008,7 @@ TclpFindVariable(name, lengthPtr)
  *
  * TclpCheckStackSpace --
  *
- *	Detect if we are about to blow the stack.  Called before an 
+ *	Detect if we are about to blow the stack.  Called before an
  *	evaluation can happen when nesting depth is checked.
  *
  * Results:
@@ -954,18 +1023,182 @@ TclpFindVariable(name, lengthPtr)
 int
 TclpCheckStackSpace()
 {
+#ifdef TCL_NO_STACK_CHECK
+
     /*
-     * This function is unimplemented on Unix platforms.
+     * This function was normally unimplemented on Unix platforms and
+     * this implements old behavior, i.e. no stack checking performed.
      */
 
     return 1;
+
+#else
+
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+				/* Most variables are actually in a
+				 * thread-specific data block to minimise the
+				 * impact on the stack. */
+    register ptrdiff_t stackUsed;
+    int localVar;		/* Reference to somewhere on the local stack.
+				 * This is declared last so it's as "deep" as
+				 * possible. */
+
+    if (tsdPtr == NULL) {
+        /* this should probably be a panic(). */
+        Tcl_Panic("failed to get thread specific stack check data");
+    }
+
+    /*
+     * The first time through, we record the "outermost" stack frame.
+     */
+
+    if (tsdPtr->outerVarPtr == NULL) {
+	tsdPtr->outerVarPtr = &localVar;
+    }
+
+    if (tsdPtr->initialised == 0) {
+	/*
+	 * We appear to have not computed the stack size before.
+	 * Attempt to retrieve it from either the current thread or,
+	 * failing that, the process accounting limit.  Note that we
+	 * assume that stack sizes do not change throughout the
+	 * lifespan of the thread/process; this is almost always true.
+	 */
+
+	tsdPtr->stackDetermineResult = GetStackSize(&tsdPtr->stackSize);
+	tsdPtr->initialised = 1;
+    }
+
+    switch (tsdPtr->stackDetermineResult) {
+    case TCL_BREAK:
+	STACK_DEBUG(("skipping stack check with failure\n"));
+	return 0;
+    case TCL_CONTINUE:
+	STACK_DEBUG(("skipping stack check with success\n"));
+	return 1;
+    }
+
+    /*
+     * Sanity check to see if somehow the stack started going the
+     * other way.
+     */
+
+    if (&localVar > tsdPtr->outerVarPtr) {
+	stackUsed = (char *)&localVar - (char *)tsdPtr->outerVarPtr;
+    } else {
+	stackUsed = (char *)tsdPtr->outerVarPtr - (char *)&localVar;
+    }
+
+    /*
+     * Now we perform the actual check.  Are we about to blow
+     * our stack frame?
+     */
+
+    if (stackUsed < (ptrdiff_t) tsdPtr->stackSize) {
+	STACK_DEBUG(("stack OK\tin:%p\tout:%p\tuse:%04X\tmax:%04X\n",
+		&localVar, tsdPtr->outerVarPtr, stackUsed, tsdPtr->stackSize));
+	return 1;
+    } else {
+	STACK_DEBUG(("stack OVERFLOW\tin:%p\tout:%p\tuse:%04X\tmax:%04X\n",
+		&localVar, tsdPtr->outerVarPtr, stackUsed, tsdPtr->stackSize));
+	return 0;
+    }
+#endif /* TCL_NO_STACK_CHECK */
 }
 
-#ifdef HAVE_CFBUNDLE
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_MacOSXGetLibraryPath --
+ * GetStackSize --
+ *
+ *	Discover what the stack size for the current thread/process
+ *	actually is.  Expects to only ever be called once per thread
+ *	and then only at a point when there is a reasonable amount of
+ *	space left on the current stack; TclpCheckStackSpace is called
+ *	sufficiently frequently that that is true.
+ *
+ * Results:
+ *	TCL_OK if the stack space was discovered, TCL_BREAK if the
+ *	stack space was undiscoverable in a way that stack checks
+ *	should fail, and TCL_CONTINUE if the stack space was
+ *	undiscoverable in a way that stack checks should succeed.
+ *
+ * Side effects:
+ *	None
+ *
+ *----------------------------------------------------------------------
+ */
+
+#ifndef TCL_NO_STACK_CHECK
+static int
+GetStackSize(stackSizePtr)
+    size_t *stackSizePtr;
+{
+    size_t rawStackSize;
+    struct rlimit rLimit;	/* The result from getrlimit(). */
+
+#ifdef TCL_THREADS
+    rawStackSize = (size_t) TclpThreadGetStackSize();
+    if (rawStackSize == (size_t) -1) {
+	/*
+	 * Some kind of confirmed error?!
+	 */
+	return TCL_BREAK;
+    }
+    if (rawStackSize > 0) {
+	goto finalSanityCheck;
+    }
+
+    /*
+     * If we have zero or an error, try the system limits
+     * instead. After all, the pthread documentation states that
+     * threads should always be bound by the system stack size limit
+     * in any case.
+     */
+#endif /* TCL_THREADS */
+
+    if (getrlimit(RLIMIT_STACK, &rLimit) != 0) {
+	/*
+	 * getrlimit() failed, just fail the whole thing.
+	 */
+	return TCL_BREAK;
+    }
+    if (rLimit.rlim_cur == RLIM_INFINITY) {
+	/*
+	 * Limit is "infinite"; there is no stack limit.
+	 */
+	return TCL_CONTINUE;
+    }
+    rawStackSize = rLimit.rlim_cur;
+
+    /*
+     * Final sanity check on the determined stack size.  If we fail
+     * this, assume there are bogus values about and that we can't
+     * actually figure out what the stack size really is.
+     */
+
+#ifdef TCL_THREADS /* Stop warning... */
+  finalSanityCheck:
+#endif
+    if (rawStackSize <= 0) {
+	return TCL_CONTINUE;
+    }
+
+    /*
+     * Calculate a stack size with a safety margin.
+     */
+
+    *stackSizePtr = (rawStackSize / TCL_MAGIC_STACK_DIVISOR)
+	    - (getpagesize() * TCL_RESERVED_STACK_PAGES);
+
+    return TCL_OK;
+}
+#endif /* TCL_NO_STACK_CHECK */
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * MacOSXGetLibraryPath --
  *
  *	If we have a bundle structure for the Tcl installation,
  *	then check there first to see if we can find the libraries
@@ -979,14 +1212,16 @@ TclpCheckStackSpace()
  *
  *----------------------------------------------------------------------
  */
-static int Tcl_MacOSXGetLibraryPath(Tcl_Interp *interp, int maxPathLen, char *tclLibPath)
+
+#ifdef HAVE_CFBUNDLE
+static int
+MacOSXGetLibraryPath(Tcl_Interp *interp, int maxPathLen, char *tclLibPath)
 {
     int foundInFramework = TCL_ERROR;
     if (strcmp(defaultLibraryDir, "@TCL_IN_FRAMEWORK@") == 0) {
-	foundInFramework = Tcl_MacOSXOpenVersionedBundleResources(interp, 
+	foundInFramework = Tcl_MacOSXOpenVersionedBundleResources(interp,
 	    "com.tcltk.tcllibrary", TCL_VERSION, 0, maxPathLen, tclLibPath);
     }
     return foundInFramework;
 }
 #endif /* HAVE_CFBUNDLE */
-

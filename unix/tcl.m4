@@ -469,6 +469,16 @@ AC_DEFUN(SC_ENABLE_THREADS, [
 	ac_saved_libs=$LIBS
 	LIBS="$LIBS $THREADS_LIBS"
 	AC_CHECK_FUNCS(pthread_attr_setstacksize)
+	AC_CHECK_FUNCS(pthread_attr_get_np pthread_getattr_np)
+	AC_MSG_CHECKING([for pthread_getattr_np declaration])
+	AC_CACHE_VAL(tcl_cv_grep_pthread_getattr_np,
+	    AC_EGREP_HEADER(pthread_getattr_np, pthread.h,
+		tcl_cv_grep_pthread_getattr_np=present,
+		tcl_cv_grep_pthread_getattr_np=missing))
+	AC_MSG_RESULT($tcl_cv_grep_pthread_getattr_np)
+	if test $tcl_cv_grep_pthread_getattr_np = missing ; then
+	    AC_DEFINE(GETATTRNP_NOT_DECLARED)
+	fi
 	LIBS=$ac_saved_libs
 	AC_CHECK_FUNCS(readdir_r)
     else
