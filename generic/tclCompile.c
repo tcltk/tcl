@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.63 2004/05/04 02:38:07 msofer Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.64 2004/05/04 02:44:23 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -919,6 +919,12 @@ TclCompileScript(interp, script, numBytes, envPtr)
     Tcl_ResetResult(interp);
     isFirstCmd = 1;
 
+    if (envPtr->procPtr != NULL) {
+	cmdNsPtr = envPtr->procPtr->cmdPtr->nsPtr;
+    } else {
+	cmdNsPtr = NULL; /* use current NS */
+    }
+
     /*
      * Each iteration through the following loop compiles the next
      * command from the script.
@@ -1000,12 +1006,6 @@ TclCompileScript(interp, script, numBytes, envPtr)
 	    startCodeOffset = (envPtr->codeNext - envPtr->codeStart);
 	    EnterCmdStartData(envPtr, currCmdIndex,
 	            (parse.commandStart - envPtr->source), startCodeOffset);
-
-	    if (envPtr->procPtr != NULL) {
-		cmdNsPtr = envPtr->procPtr->cmdPtr->nsPtr;
-	    } else {
-		cmdNsPtr = NULL; /* use current NS */
-	    }
 
 	    /*
 	     * Each iteration of the following loop compiles one word
