@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLiteral.c,v 1.2 1999/04/16 00:46:50 stanton Exp $
+ * RCS: @(#) $Id: tclLiteral.c,v 1.3 1999/04/22 22:57:07 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -199,8 +199,9 @@ TclRegisterLiteral(envPtr, bytes, length, onHeap)
      */
 
     localHash = (hash & localTablePtr->mask);
+
     for (localPtr = localTablePtr->buckets[localHash];
-	    localPtr != NULL;  localPtr = localPtr->nextPtr) {
+	  localPtr != NULL;  localPtr = localPtr->nextPtr) {
 	objPtr = localPtr->objPtr;
 	if ((objPtr->length == length) && ((length == 0)
 		|| ((objPtr->bytes[0] == bytes[0])
@@ -224,7 +225,7 @@ TclRegisterLiteral(envPtr, bytes, length, onHeap)
 
     globalHash = (hash & globalTablePtr->mask);
     for (globalPtr = globalTablePtr->buckets[globalHash];
-	    globalPtr != NULL;  globalPtr = globalPtr->nextPtr) {
+	 globalPtr != NULL;  globalPtr = globalPtr->nextPtr) {
 	objPtr = globalPtr->objPtr;
 	if ((objPtr->length == length) && ((length == 0)
 		|| ((objPtr->bytes[0] == bytes[0])
@@ -242,8 +243,8 @@ TclRegisterLiteral(envPtr, bytes, length, onHeap)
 #ifdef TCL_COMPILE_DEBUG
 	    if (globalPtr->refCount < 1) {
 		panic("TclRegisterLiteral: global literal \"%.*s\" had bad refCount %d",
-		        (length>60? 60 : length), bytes,
-		        globalPtr->refCount);
+			(length>60? 60 : length), bytes,
+			globalPtr->refCount);
 	    }
 	    TclVerifyLocalLiteralTable(envPtr);
 #endif /*TCL_COMPILE_DEBUG*/ 
@@ -376,6 +377,119 @@ TclLookupLiteralEntry(interp, objPtr)
 /*
  *----------------------------------------------------------------------
  *
+ * TclHideLiteral --
+ *
+ *	Remove a literal entry from the literal hash tables, leaving it in
+ *	the literal array so existing references continue to function.
+ *	This makes it possible to turn a shared literal into a private
+ *	literal that cannot be shared.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Removes the literal from the local hash table and decrements the
+ *	global hash entry's reference count.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclHideLiteral(interp, envPtr, index)
+    Tcl_Interp *interp;		 /* Interpreter for which objPtr was created
+                                  * to hold a literal. */
+    register CompileEnv *envPtr; /* Points to CompileEnv whose literal array
+				  * contains the entry being hidden. */
+    int index;			 /* The index of the entry in the literal
+				  * array. */
+{
+    LiteralEntry **nextPtrPtr, *entryPtr, *lPtr;
+    LiteralTable *localTablePtr = &(envPtr->localLitTable);
+    int localHash, length;
+    char *bytes;
+
+    lPtr = &(envPtr->literalArrayPtr[index]);
+
+    /*
+     * We need to bump the object refcount to avoid having the object freed
+     * when we remove the last global reference.
+     */
+
+    Tcl_IncrRefCount(lPtr->objPtr);
+      
+    TclReleaseLiteral(interp, lPtr->objPtr);
+
+    bytes = Tcl_GetStringFromObj(lPtr->objPtr, &length);
+    localHash = (HashString(bytes, length) & localTablePtr->mask);
+    nextPtrPtr = &localTablePtr->buckets[localHash];
+
+    for (entryPtr = *nextPtrPtr; entryPtr != NULL; entryPtr = *nextPtrPtr) {
+	if (entryPtr == lPtr) {
+	    *nextPtrPtr = lPtr->nextPtr;
+	    lPtr->nextPtr = NULL;
+	    localTablePtr->numEntries--;
+	    break;
+	}
+	nextPtrPtr = &entryPtr->nextPtr;
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclAddLiteralObj --
+ *
+ *	Add a single literal object to the literal array.  This
+ *	function does not add the literal to the local or global
+ *	literal tables.  The caller is expected to add the entry
+ *	to whatever tables are appropriate.
+ *
+ * Results:
+ *	The index in the CompileEnv's literal array that references the
+ *	literal.  Stores the pointer to the new literal entry in the
+ *	location referenced by the localPtrPtr argument.
+ *
+ * Side effects:
+ *	Expands the literal array if necessary.  Increments the refcount
+ *	on the literal object.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclAddLiteralObj(envPtr, objPtr, litPtrPtr)
+    register CompileEnv *envPtr; /* Points to CompileEnv in whose literal
+				  * array the object is to be inserted. */
+    Tcl_Obj *objPtr;		 /* The object to insert into the array. */
+    LiteralEntry **litPtrPtr;	 /* The location where the pointer to the
+				  * new literal entry should be stored.
+				  * May be NULL. */
+{
+    register LiteralEntry *lPtr;
+    int objIndex;
+
+    if (envPtr->literalArrayNext >= envPtr->literalArrayEnd) {
+	ExpandLocalLiteralArray(envPtr);
+    }
+    objIndex = envPtr->literalArrayNext;
+    envPtr->literalArrayNext++;
+
+    lPtr = &(envPtr->literalArrayPtr[objIndex]);
+    lPtr->objPtr = objPtr;
+    Tcl_IncrRefCount(objPtr);
+    lPtr->refCount = -1;	/* i.e., unused */
+    lPtr->nextPtr = NULL;
+
+    if (litPtrPtr) {
+	*litPtrPtr = lPtr;
+    }
+
+    return objIndex;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * AddLocalLiteralEntry --
  *
  *	Insert a new literal into a CompileEnv's local literal array.
@@ -402,18 +516,15 @@ AddLocalLiteralEntry(envPtr, globalPtr, localHash)
     int localHash;		 /* Hash value for the literal's string. */
 {
     register LiteralTable *localTablePtr = &(envPtr->localLitTable);
-    register LiteralEntry *localPtr;
+    LiteralEntry *localPtr;
     int objIndex;
     
-    if (envPtr->literalArrayNext >= envPtr->literalArrayEnd) {
-	ExpandLocalLiteralArray(envPtr);
-    }
-    objIndex = envPtr->literalArrayNext;
-    envPtr->literalArrayNext++;
+    objIndex = TclAddLiteralObj(envPtr, globalPtr->objPtr, &localPtr);
 
-    localPtr = &(envPtr->literalArrayPtr[objIndex]);
-    localPtr->objPtr = globalPtr->objPtr;
-    localPtr->refCount = -1;	/* i.e., unused */
+    /*
+     * Add the literal to the local table.
+     */
+
     localPtr->nextPtr = localTablePtr->buckets[localHash];
     localTablePtr->buckets[localHash] = localPtr;
     localTablePtr->numEntries++;
@@ -614,10 +725,14 @@ TclReleaseLiteral(interp, objPtr)
 	    return;
 	}
     }
-#ifdef TCL_COMPILE_DEBUG
-    panic("TclReleaseLiteral: literal \"%.*s\" not found",
-	    (length>60? 60 : length), bytes);
-#endif /*TCL_COMPILE_DEBUG*/
+
+    /*
+     * The object wasn't in the literal hash table, so it must be a unique
+     * local object in the object table that has no global entry.  Just
+     * decrement the refcount and return.
+     */
+
+    Tcl_DecrRefCount(objPtr);
 }
 
 /*

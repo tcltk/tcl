@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.14 1999/04/16 00:46:44 stanton Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.15 1999/04/22 22:57:06 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -255,6 +255,135 @@ Tcl_ObjType tclByteCodeType = {
 };
 
 /*
+ *----------------------------------------------------------------------
+ *
+ * TclSetByteCodeFromAny --
+ *
+ *	Part of the bytecode Tcl object type implementation. Attempts to
+ *	generate an byte code internal form for the Tcl object "objPtr" by
+ *	compiling its string representation.  This function also takes
+ *	a hook procedure that will be invoked to perform any needed post
+ *	processing on the compilation results before generating byte
+ *	codes.
+ *
+ * Results:
+ *	The return value is a standard Tcl object result. If an error occurs
+ *	during compilation, an error message is left in the interpreter's
+ *	result unless "interp" is NULL.
+ *
+ * Side effects:
+ *	Frees the old internal representation. If no error occurs, then the
+ *	compiled code is stored as "objPtr"s bytecode representation.
+ *	Also, if debugging, initializes the "tcl_traceCompile" Tcl variable
+ *	used to trace compilations.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclSetByteCodeFromAny(interp, objPtr, hookProc, clientData)
+    Tcl_Interp *interp;		/* The interpreter for which the code is
+				 * being compiled.  Must not be NULL. */
+    Tcl_Obj *objPtr;		/* The object to make a ByteCode object. */
+    CompileHookProc *hookProc;	/* Procedure to invoke after compilation. */
+    ClientData clientData;	/* Hook procedure private data. */
+{
+    Interp *iPtr = (Interp *) interp;
+    CompileEnv compEnv;		/* Compilation environment structure
+				 * allocated in frame. */
+    LiteralTable *localTablePtr = &(compEnv.localLitTable);
+    register AuxData *auxDataPtr;
+    LiteralEntry *entryPtr;
+    register int i;
+    int length, nested, result;
+    char *string;
+
+    if (!traceInitialized) {
+        if (Tcl_LinkVar(interp, "tcl_traceCompile",
+	            (char *) &tclTraceCompile,  TCL_LINK_INT) != TCL_OK) {
+            panic("SetByteCodeFromAny: unable to create link for tcl_traceCompile variable");
+        }
+        traceInitialized = 1;
+    }
+
+    if (iPtr->evalFlags & TCL_BRACKET_TERM) {
+	nested = 1;
+    } else {
+	nested = 0;
+    }
+    string = Tcl_GetStringFromObj(objPtr, &length);
+    TclInitCompileEnv(interp, &compEnv, string, length);
+    result = TclCompileScript(interp, string, length, nested, &compEnv);
+
+    if (result == TCL_OK) {
+	/*
+	 * Successful compilation. Add a "done" instruction at the end.
+	 */
+
+	compEnv.numSrcBytes = iPtr->termOffset;
+	TclEmitOpcode(INST_DONE, &compEnv);
+
+	/*
+	 * Invoke the compilation hook procedure if one exists.
+	 */
+
+	if (hookProc) {
+	    result = (*hookProc)(interp, &compEnv, clientData);
+	}
+
+	/*
+	 * Change the object into a ByteCode object. Ownership of the literal
+	 * objects and aux data items is given to the ByteCode object.
+	 */
+    
+#ifdef TCL_COMPILE_DEBUG
+	TclVerifyLocalLiteralTable(&compEnv);
+#endif /*TCL_COMPILE_DEBUG*/
+
+	TclInitByteCodeObj(objPtr, &compEnv);
+#ifdef TCL_COMPILE_DEBUG
+	if (tclTraceCompile == 2) {
+	    TclPrintByteCodeObj(interp, objPtr);
+	}
+#endif /* TCL_COMPILE_DEBUG */
+    }
+	
+    if (result != TCL_OK) {
+	/*
+	 * Compilation errors. 
+	 */
+
+	entryPtr = compEnv.literalArrayPtr;
+	for (i = 0;  i < compEnv.literalArrayNext;  i++) {
+	    TclReleaseLiteral(interp, entryPtr->objPtr);
+	    entryPtr++;
+	}
+#ifdef TCL_COMPILE_DEBUG
+	TclVerifyGlobalLiteralTable(iPtr);
+#endif /*TCL_COMPILE_DEBUG*/
+
+	auxDataPtr = compEnv.auxDataArrayPtr;
+	for (i = 0;  i < compEnv.auxDataArrayNext;  i++) {
+	    if (auxDataPtr->type->freeProc != NULL) {
+		auxDataPtr->type->freeProc(auxDataPtr->clientData);
+	    }
+	    auxDataPtr++;
+	}
+    }
+
+
+    /*
+     * Free storage allocated during compilation.
+     */
+    
+    if (localTablePtr->buckets != localTablePtr->staticBuckets) {
+	ckfree((char *) localTablePtr->buckets);
+    }
+    TclFreeCompileEnv(&compEnv);
+    return result;
+}
+
+/*
  *-----------------------------------------------------------------------
  *
  * SetByteCodeFromAny --
@@ -283,88 +412,8 @@ SetByteCodeFromAny(interp, objPtr)
 				 * being compiled.  Must not be NULL. */
     Tcl_Obj *objPtr;		/* The object to make a ByteCode object. */
 {
-    Interp *iPtr = (Interp *) interp;
-    CompileEnv compEnv;		/* Compilation environment structure
-				 * allocated in frame. */
-    LiteralTable *localTablePtr = &(compEnv.localLitTable);
-    register AuxData *auxDataPtr;
-    LiteralEntry *entryPtr;
-    register int i;
-    int length, nested, result;
-    char *string;
-
-    if (!traceInitialized) {
-        if (Tcl_LinkVar(interp, "tcl_traceCompile",
-	            (char *) &tclTraceCompile,  TCL_LINK_INT) != TCL_OK) {
-            panic("SetByteCodeFromAny: unable to create link for tcl_traceCompile variable");
-        }
-        traceInitialized = 1;
-    }
-
-    if (iPtr->evalFlags & TCL_BRACKET_TERM) {
-	nested = 1;
-    } else {
-	nested = 0;
-    }
-    string = Tcl_GetStringFromObj(objPtr, &length);
-    TclInitCompileEnv(interp, &compEnv, string, length);
-    result = TclCompileScript(interp, string, length, nested, &compEnv);
-    if (result != TCL_OK) {
-	/*
-	 * Compilation errors. 
-	 */
-
-	entryPtr = compEnv.literalArrayPtr;
-	for (i = 0;  i < compEnv.literalArrayNext;  i++) {
-	    TclReleaseLiteral(interp, entryPtr->objPtr);
-	    entryPtr++;
-	}
-#ifdef TCL_COMPILE_DEBUG
-	TclVerifyGlobalLiteralTable(iPtr);
-#endif /*TCL_COMPILE_DEBUG*/
-
-	auxDataPtr = compEnv.auxDataArrayPtr;
-	for (i = 0;  i < compEnv.auxDataArrayNext;  i++) {
-	    if (auxDataPtr->type->freeProc != NULL) {
-		auxDataPtr->type->freeProc(auxDataPtr->clientData);
-	    }
-	    auxDataPtr++;
-	}
-	goto done;
-    }
-
-    /*
-     * Successful compilation. Add a "done" instruction at the end.
-     */
-
-    compEnv.numSrcBytes = iPtr->termOffset;
-    TclEmitOpcode(INST_DONE, &compEnv);
-
-    /*
-     * Change the object into a ByteCode object. Ownership of the literal
-     * objects and aux data items is given to the ByteCode object.
-     */
-    
-#ifdef TCL_COMPILE_DEBUG
-    TclVerifyLocalLiteralTable(&compEnv);
-#endif /*TCL_COMPILE_DEBUG*/    
-    TclInitByteCodeObj(objPtr, &compEnv);
-#ifdef TCL_COMPILE_DEBUG
-    if (tclTraceCompile == 2) {
-	TclPrintByteCodeObj(interp, objPtr);
-    }
-#endif /* TCL_COMPILE_DEBUG */
-
-    /*
-     * Free storage allocated during compilation.
-     */
-    
-    done:
-    if (localTablePtr->buckets != localTablePtr->staticBuckets) {
-	ckfree((char *) localTablePtr->buckets);
-    }
-    TclFreeCompileEnv(&compEnv);
-    return result;
+    return TclSetByteCodeFromAny(interp, objPtr,
+	    (CompileHookProc *) NULL, (ClientData) NULL);
 }
 
 /*
@@ -923,7 +972,7 @@ TclCompileScript(interp, script, numBytes, nested, envPtr)
      */
     
     if (envPtr->codeNext == entryCodeNext) {
-	TclEmitPush(TclRegisterLiteral(envPtr, "", 0, /*alreadyAlloced*/ 0),
+	TclEmitPush(TclRegisterLiteral(envPtr, "", 0, /*onHeap*/ 0),
 	        envPtr);
 	maxDepth = 1;
     }
@@ -1185,7 +1234,7 @@ TclCompileTokens(interp, tokenPtr, count, envPtr)
      */
     
     if (envPtr->codeNext == entryCodeNext) {
-	TclEmitPush(TclRegisterLiteral(envPtr, "", 0, /*alreadyAlloced*/ 0),
+	TclEmitPush(TclRegisterLiteral(envPtr, "", 0, /*onHeap*/ 0),
 	        envPtr);
 	maxDepth = 1;
     }

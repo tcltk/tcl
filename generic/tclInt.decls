@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.8 1999/04/21 21:50:26 rjohnson Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.9 1999/04/22 22:57:07 stanton Exp $
 
 library tcl
 
@@ -525,10 +525,22 @@ declare 139 generic {
 declare 140 generic {
     int TclLooksLikeInt(char *bytes, int length)
 }
-
 declare 141 generic {
     char *TclpGetCwd(Tcl_Interp *interp, Tcl_DString *cwdPtr)
 }
+declare 142 generic {
+    int TclSetByteCodeFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr, \
+	    CompileHookProc *hookProc, ClientData clientData)
+}
+declare 143 generic {
+    int TclAddLiteralObj(struct CompileEnv *envPtr, Tcl_Obj *objPtr, \
+	    LiteralEntry **litPtrPtr)
+}
+declare 144 generic {
+    void TclHideLiteral(Tcl_Interp *interp, struct CompileEnv *envPtr, \
+	    int index)
+}
+
 ##############################################################################
 
 # Define the platform specific internal Tcl interface. These functions are

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.7 1999/04/21 21:50:27 rjohnson Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.8 1999/04/22 22:57:07 stanton Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -444,6 +444,18 @@ EXTERN int		TclLooksLikeInt _ANSI_ARGS_((char * bytes,
 /* 141 */
 EXTERN char *		TclpGetCwd _ANSI_ARGS_((Tcl_Interp * interp, 
 				Tcl_DString * cwdPtr));
+/* 142 */
+EXTERN int		TclSetByteCodeFromAny _ANSI_ARGS_((
+				Tcl_Interp * interp, Tcl_Obj * objPtr, 
+				CompileHookProc * hookProc, 
+				ClientData clientData));
+/* 143 */
+EXTERN int		TclAddLiteralObj _ANSI_ARGS_((
+				struct CompileEnv * envPtr, Tcl_Obj * objPtr, 
+				LiteralEntry ** litPtrPtr));
+/* 144 */
+EXTERN void		TclHideLiteral _ANSI_ARGS_((Tcl_Interp * interp, 
+				struct CompileEnv * envPtr, int index));
 
 typedef struct TclIntStubs {
     int magic;
@@ -591,6 +603,9 @@ typedef struct TclIntStubs {
     int (*tclpLoadFile) _ANSI_ARGS_((Tcl_Interp * interp, char * fileName, char * sym1, char * sym2, Tcl_PackageInitProc ** proc1Ptr, Tcl_PackageInitProc ** proc2Ptr, ClientData * clientDataPtr)); /* 139 */
     int (*tclLooksLikeInt) _ANSI_ARGS_((char * bytes, int length)); /* 140 */
     char * (*tclpGetCwd) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_DString * cwdPtr)); /* 141 */
+    int (*tclSetByteCodeFromAny) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * objPtr, CompileHookProc * hookProc, ClientData clientData)); /* 142 */
+    int (*tclAddLiteralObj) _ANSI_ARGS_((struct CompileEnv * envPtr, Tcl_Obj * objPtr, LiteralEntry ** litPtrPtr)); /* 143 */
+    void (*tclHideLiteral) _ANSI_ARGS_((Tcl_Interp * interp, struct CompileEnv * envPtr, int index)); /* 144 */
 } TclIntStubs;
 
 extern TclIntStubs *tclIntStubsPtr;
@@ -1129,6 +1144,18 @@ extern TclIntStubs *tclIntStubsPtr;
 #ifndef TclpGetCwd
 #define TclpGetCwd \
 	(tclIntStubsPtr->tclpGetCwd) /* 141 */
+#endif
+#ifndef TclSetByteCodeFromAny
+#define TclSetByteCodeFromAny \
+	(tclIntStubsPtr->tclSetByteCodeFromAny) /* 142 */
+#endif
+#ifndef TclAddLiteralObj
+#define TclAddLiteralObj \
+	(tclIntStubsPtr->tclAddLiteralObj) /* 143 */
+#endif
+#ifndef TclHideLiteral
+#define TclHideLiteral \
+	(tclIntStubsPtr->tclHideLiteral) /* 144 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */

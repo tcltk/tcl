@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.27 1999/04/21 21:50:26 rjohnson Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.28 1999/04/22 22:57:07 stanton Exp $
  */
 
 #ifndef _TCLINT
@@ -810,7 +810,6 @@ typedef void (Tcl_ThreadCreateProc) _ANSI_ARGS_((ClientData clientData));
  * CompileProc declared below.
  */
 
-struct Tcl_Parse;
 struct CompileEnv;
 
 /*
@@ -833,7 +832,15 @@ struct CompileEnv;
 #define TCL_OUT_LINE_COMPILE	(TCL_CONTINUE + 1)
 
 typedef int (CompileProc) _ANSI_ARGS_((Tcl_Interp *interp,
-	struct Tcl_Parse *parsePtr, struct CompileEnv *compEnvPtr));
+	Tcl_Parse *parsePtr, struct CompileEnv *compEnvPtr));
+
+/*
+ * The type of procedure called from the compilation hook point in
+ * SetByteCodeFromAny.
+ */
+
+typedef int (CompileHookProc) _ANSI_ARGS_((Tcl_Interp *interp,
+	struct CompileEnv *compEnvPtr, ClientData clientData));
 
 /*
  * The data structure defining the execution environment for ByteCode's.
