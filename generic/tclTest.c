@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.17.2.1 2000/07/27 01:39:19 hobbs Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.17.2.2 2000/08/06 00:20:10 hobbs Exp $
  */
 
 #define TCL_TEST
@@ -4305,6 +4305,10 @@ TestChannelCmd(clientData, interp, argc, argv)
 	statePtr	= chanPtr->state;
         chanPtr		= statePtr->topChanPtr;
 	chan		= (Tcl_Channel) chanPtr;
+    } else {
+	/* lint */
+	statePtr	= NULL;
+	chan		= NULL;
     }
 
     if ((cmdName[0] == 'i') && (strncmp(cmdName, "info", len) == 0)) {
