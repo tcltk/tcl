@@ -1,3 +1,8 @@
+2004-09-15  Daniel Steffen  <das@users.sourceforge.net>
+
+	* tests/load.test (load-2.3): adopted fix for failure on darwin
+	from HEAD.
+
 2004-09-14  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclObj.c (Tcl_GetIntFromObj):	Corrected flaw in returning
