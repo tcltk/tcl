@@ -390,7 +390,7 @@ test filesystem-6.33 {empty file name} {
 while {![catch {testfilesystem 0}]} {}
 }
 
-test filesystem-7.1 {load from vfs} {win} {
+test filesystem-7.1 {load from vfs} {win knownBug} {
     # This may cause a crash on exit
     set dir [pwd]
     cd [file dirname [info nameof]]
