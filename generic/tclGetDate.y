@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclGetDate.y,v 1.15 2000/02/28 18:49:42 ericm Exp $
+ * RCS: @(#) $Id: tclGetDate.y,v 1.15.2.1 2000/08/07 21:30:36 hobbs Exp $
  */
 
 %{
@@ -147,7 +147,7 @@ yyparse _ANSI_ARGS_((void));
 
 %type   <Number>        tDAY tDAYZONE tMINUTE_UNIT tMONTH tMONTH_UNIT tDST
 %type   <Number>        tSEC_UNIT tSNUMBER tUNUMBER tZONE tISOBASE tDAY_UNIT
-%type   <Number>        unit ago sign tNEXT tSTARDATE
+%type   <Number>        unit sign tNEXT tSTARDATE
 %type   <Meridian>      tMERIDIAN o_merid
 
 %%
@@ -357,11 +357,18 @@ trek    : tSTARDATE tUNUMBER '.' tUNUMBER {
         }
         ;
 
-relspec : sign tUNUMBER unit ago { *yyRelPointer += $1 * $2 * $3 * $4; }
-        | tUNUMBER unit ago      { *yyRelPointer += $1 * $2 * $3; }
-        | tNEXT unit             { *yyRelPointer += $2; }
-        | tNEXT tUNUMBER unit    { *yyRelPointer += $2 * $3; }
-        | unit ago               { *yyRelPointer += $1 * $2; }
+relspec : relunits tAGO {
+	    yyRelSeconds *= -1;
+	    yyRelMonth *= -1;
+	    yyRelDay *= -1;
+	}
+	| relunits
+	;
+relunits : sign tUNUMBER unit  { *yyRelPointer += $1 * $2 * $3; }
+        | tUNUMBER unit        { *yyRelPointer += $1 * $2; }
+        | tNEXT unit           { *yyRelPointer += $2; }
+        | tNEXT tUNUMBER unit  { *yyRelPointer += $2 * $3; }
+        | unit                 { *yyRelPointer += $1; }
         ;
 sign    : '-'            { $$ = -1; }
         | '+'            { $$ =  1; }
@@ -369,9 +376,6 @@ sign    : '-'            { $$ = -1; }
 unit    : tSEC_UNIT      { $$ = $1; yyRelPointer = &yyRelSeconds; }
         | tDAY_UNIT      { $$ = $1; yyRelPointer = &yyRelDay; }
         | tMONTH_UNIT    { $$ = $1; yyRelPointer = &yyRelMonth; }
-        ;
-ago     : tAGO           { $$ = -1; }
-        |                { $$ = 1; }
         ;
 
 number  : tUNUMBER
