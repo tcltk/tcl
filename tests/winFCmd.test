@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: winFCmd.test,v 1.20.2.1 2003/10/03 17:25:22 vincentdarley Exp $
+# RCS: @(#) $Id: winFCmd.test,v 1.20.2.2 2003/11/20 19:05:45 vincentdarley Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -1002,12 +1002,20 @@ test winFCmd-16.8 {Windows file normalization} {pcOnly} {
 test winFCmd-16.9 {Windows file normalization} {pcOnly} {
     file norm /bar/foo
 } "${d}:/bar/foo"
-test winFCmd-16.10 {Windows file normalization} {pcOnly knownBug} {
-    if {$d eq "C"} { set dd "D" } else { set dd "C" }
+test winFCmd-16.10 {Windows file normalization} {pcOnly} {
     file norm ${dd}:foo
-} {Tcl doesn't know about a drive-specific cwd}
+} "${dd}:/foo"
+test winFCmd-16.11 {Windows file normalization} {pcOnly cdrom} {
+    cd ${d}:
+    cd $cdrom
+    cd ${d}:
+    cd $cdrom
+    # Must not crash
+    set result "no crash"
+} {no crash}
 
-unset d pwd
+cd $pwd
+unset d dd pwd
 
 # This block of code used to occur after the "return" call, so I'm
 # commenting it out and assuming that this code is still under construction.
