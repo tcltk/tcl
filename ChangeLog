@@ -1,5 +1,8 @@
 2001-03-13  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
+	* generic/tclVar.c (Tcl_UnsetObjCmd): Made command behave as
+	documented [issue remaining from bug #405769]
+
 	* generic/tclCmdMZ.c (Tcl_StringObjCmd): A missing
 	{return TCL_OK;} was causing memory corruption.  [Bug #408002]
 
