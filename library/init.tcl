@@ -3,7 +3,7 @@
 # Default system startup file for Tcl-based applications.  Defines
 # "unknown" procedure and auto-load facilities.
 #
-# RCS: @(#) $Id: init.tcl,v 1.32 1999/08/09 16:30:50 hobbs Exp $
+# RCS: @(#) $Id: init.tcl,v 1.32.4.1 1999/10/30 11:06:17 hobbs Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
@@ -52,12 +52,10 @@ if {[string compare [info library] {}]} {
 	}
     }
 }
-foreach __dir [list [file dirname [info nameofexecutable]] \
-	[file join [file dirname [file dirname \
-	[info nameofexecutable]]] lib]] {
-    if {[lsearch -exact $auto_path $__dir] < 0} {
-	lappend auto_path $__dir
-    }
+set __dir [file join [file dirname \
+	[file dirname [info nameofexecutable]]] lib]
+if {[lsearch -exact $auto_path $__dir] < 0} {
+    lappend auto_path $__dir
 }
 if {[info exist tcl_pkgPath]} {
     foreach __dir $tcl_pkgPath {
