@@ -1,3 +1,13 @@
+2003-07-16  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tcl.h:       add recognition of -DTCL_UTF_MAX=6 on the
+	* generic/regcustom.h: make line to support UCS-4 mode.  No config
+	arg at this time, as it is not the recommended build mode.
+
+	* generic/tclPreserve.c: In Result and Preserve'd routines, do not
+	* generic/tclUtil.c:     assume that ckfree == free, as that is not
+	* generic/tclResult.c:   always true. [Bug 756791] (fuller)
+
 2003-07-16  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* doc/CrtSlave.3 (Tcl_MakeSafe): Updated documentation to strongly
