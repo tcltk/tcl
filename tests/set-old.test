@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: set-old.test,v 1.8 2000/04/10 17:19:04 ericm Exp $
+# RCS: @(#) $Id: set-old.test,v 1.9 2000/05/08 21:25:31 ericm Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -296,7 +296,7 @@ test set-old-8.6 {array command} {
     catch {unset a}
     set a(22) 3
     list [catch {array gorp a} msg] $msg
-} {1 {bad option "gorp": must be anymore, donesearch, exists, get, names, nextelement, set, size, startsearch, or unset}}
+} {1 {bad option "gorp": must be anymore, donesearch, exists, get, names, nextelement, set, size, startsearch, statistics, or unset}}
 test set-old-8.7 {array command, anymore option} {
     catch {unset a}
     list [catch {array anymore a x} msg] $msg
@@ -564,11 +564,36 @@ test set-old-8.47 {array command, startsearch option, array doesn't exist yet bu
     }
     list [catch {p 1} msg] $msg
 } {1 {"a" isn't an array}}
+test set-old-8.48 {array command, statistics option} {
+    catch {unset a}
+    set a(abc) 1
+    set a(def) 2
+    set a(ghi) 3
+    set a(jkl) 4
+    set a(mno) 5
+    set a(pqr) 6
+    set a(stu) 7
+    set a(vwx) 8
+    set a(yz) 9
+    array statistics a
+} "9 entries in table, 4 buckets
+number of buckets with 0 entries: 0
+number of buckets with 1 entries: 0
+number of buckets with 2 entries: 3
+number of buckets with 3 entries: 1
+number of buckets with 4 entries: 0
+number of buckets with 5 entries: 0
+number of buckets with 6 entries: 0
+number of buckets with 7 entries: 0
+number of buckets with 8 entries: 0
+number of buckets with 9 entries: 0
+number of buckets with 10 or more entries: 0
+average search distance for entry: 1.7"
 
 test set-old-9.1 {ids for array enumeration} {
     catch {unset a}
     set a(a) 1
-    list [array st a] [array st a] [array done a s-1-a; array st a] \
+    list [array star a] [array star a] [array done a s-1-a; array star a] \
 	    [array done a s-2-a; array d a s-3-a; array start a]
 } {s-1-a s-2-a s-3-a s-1-a}
 test set-old-9.2 {array enumeration} {

@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.16 2000/01/21 03:29:14 ericm Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.17 2000/05/08 21:25:31 ericm Exp $
  */
 
 #include "tclInt.h"
@@ -2861,10 +2861,10 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
 
     enum {ARRAY_ANYMORE, ARRAY_DONESEARCH,  ARRAY_EXISTS, ARRAY_GET,
 	  ARRAY_NAMES, ARRAY_NEXTELEMENT, ARRAY_SET, ARRAY_SIZE,
-	  ARRAY_STARTSEARCH, ARRAY_UNSET}; 
+	  ARRAY_STARTSEARCH, ARRAY_STATISTICS, ARRAY_UNSET}; 
     static char *arrayOptions[] = {
 	"anymore", "donesearch", "exists", "get", "names", "nextelement",
-	"set", "size", "startsearch", "unset", (char *) NULL
+	"set", "size", "startsearch", "statistics", "unset", (char *) NULL
     };
 
     Interp *iPtr = (Interp *) interp;
@@ -3178,7 +3178,22 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
 	    varPtr->searchPtr = searchPtr;
 	    break;
 	}
-        case ARRAY_UNSET: {
+
+	case ARRAY_STATISTICS: {
+	    char *stats;
+	    stats = Tcl_HashStats(varPtr->value.tablePtr);
+	    if (stats != NULL) {
+		Tcl_SetResult(interp, stats, TCL_VOLATILE);
+		ckfree((void *)stats);
+	    } else {
+		Tcl_SetResult(interp, "error reading array statistics",
+			TCL_STATIC);
+		return TCL_ERROR;
+	    }
+	    break;
+        }
+	
+	case ARRAY_UNSET: {
 	    Tcl_HashSearch search;
 	    Var *varPtr2;
 	    char *pattern = NULL;

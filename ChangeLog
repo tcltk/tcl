@@ -1,3 +1,9 @@
+2000-05-08  Eric Melski  <ericm@scriptics.com>
+
+	* tests/set-old.test: 
+	* doc/array.n: 
+	* generic/tclVar.c: Added [array statistics] command [RFE: 4557]
+
 2000-05-06  Andreas Kupries <a.kupries@westend.com>
 	operating as proxy for David Gravereaux <davygrvy@pobox.com>
 
