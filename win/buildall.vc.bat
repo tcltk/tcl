@@ -4,7 +4,7 @@
 ::  edit this (or make your own) for your needs and wants using
 ::  the instructions for calling makefile.vc found in makefile.vc
 ::
-::  RCS: @(#) $Id: buildall.vc.bat,v 1.4 2002/03/27 21:15:43 davygrvy Exp $
+::  RCS: @(#) $Id: buildall.vc.bat,v 1.5 2002/03/27 22:57:57 davygrvy Exp $
 
 echo Sit back and have a cup of coffee while this grinds through ;)
 echo You asked for *everything*, remember?
@@ -21,7 +21,7 @@ nmake -nologo -f makefile.vc core dlls OPTS=static,msvcrt
 if errorlevel 1 goto error
 nmake -nologo -f makefile.vc core OPTS=static,threads
 if errorlevel 1 goto error
-nmake -nologo -f makefile.vc dlls OPTS=static,msvcrt,threads
+nmake -nologo -f makefile.vc core dlls OPTS=static,msvcrt,threads
 if errorlevel 1 goto error
 nmake -nologo -f makefile.vc shell OPTS=threads
 if errorlevel 1 goto error

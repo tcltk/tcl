@@ -12,7 +12,7 @@
 # Copyright (c) 2001-2002 David Gravereaux.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.84 2002/03/27 21:15:43 davygrvy Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.85 2002/03/27 22:57:57 davygrvy Exp $
 #------------------------------------------------------------------------------
 
 !if "$(MSVCDIR)" == ""
@@ -191,8 +191,6 @@ TCLHLPCNT	= $(OUT_DIR)\$(TCLHLPBASE).cnt
 
 TCLTEST		= $(OUT_DIR)\$(PROJECT)test.exe
 CAT32		= $(OUT_DIR)\cat32.exe
-RMDIR		= .\rmd.bat
-RM		= del
 
 LIB_INSTALL_DIR		= $(INSTALLDIR)\lib
 BIN_INSTALL_DIR		= $(INSTALLDIR)\bin
@@ -409,10 +407,9 @@ TESTFLAGS = -file $(TESTPAT)
 release:    setup $(TCLSH) $(TCLSTUBLIB) dlls
 core:	    setup $(TCLLIB) $(TCLSTUBLIB)
 shell:	    setup $(TCLSH)
-dlls:	    setup $(TCLPIPEDLL) $(TCLREGDLL) $(TCLDDEDLL)
+dlls:	    setup $(TCLPIPEDLL) $(TCLREGLIB) $(TCLDDELIB)
 all:	    setup $(TCLSH) $(TCLSTUBLIB) dlls $(CAT32) 
 tcltest:    setup $(TCLTEST) dlls $(CAT32)
-plugin:	    setup $(TCLPLUGINDLL) $(TCLSHP)
 install:    install-binaries install-libraries
 
 
@@ -762,15 +759,21 @@ install-libraries:
 # Clean up
 #---------------------------------------------------------------------
 
+!if "$(OS)" == "Windows_NT"
+RMDIR	= rmdir /S /Q
+!else
+RMDIR	= deltree /Y
+!endif
+
 tidy:
-	-del $(TCLLIB)
-	-del $(TCLSH)
-	-del $(TCLTEST)
-	-del $(TCLDDELIB)
-	-del $(TCLREGLIB)
+	if exist $(TCLLIB) del $(TCLLIB)
+	if exist $(TCLSH) del $(TCLSH)
+	if exist $(TCLTEST) del $(TCLTEST)
+	if exist $(TCLDDELIB) del $(TCLDDELIB)
+	if exist $(TCLREGLIB) del $(TCLREGLIB)
 
-clean: tidy
-	-@$(RMDIR) $(TMP_DIR)
+clean:
+	if exist $(TMP_DIR)\nul $(RMDIR) $(TMP_DIR)
 
-hose: clean
-	-@$(RMDIR) $(OUT_DIR)
+hose:
+	if exist $(OUT_DIR)\nul $(RMDIR) $(OUT_DIR)
