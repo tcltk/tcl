@@ -1,6 +1,7 @@
 .cvsignore
 Debug
 Release
+*.dsp
 *.opt
 *.ncb
 *.plg
