@@ -6,11 +6,13 @@
 
 2004-09-08  Kevin B. Kenny <kennykb@acm.org>
 
+	* compat/strftime.c (_conv): Corrected a problem where hour 0
+	would format as a blank format group with %k.
 	* doc/clock.n: Corrected a buglet in the header information.
 	[Bug 1024058]
 	* generic/tclClock.c (TclClockMktimeObjCmd): Fixed a bug where
 	the month was scanned incorrectly in -timezone :localtime.
-	* tests/clock.test (clock-34.*,clock-40.1): Adjusted the
+	* tests/clock.test (clock-34.*,clock-40.1, clock-41.1): Adjusted the
 	clock-34.* test cases so that the consistency check is performed
 	in :localtime rather than the current time zone.  This change
 	allows dealing with issues where the C library has a different
@@ -18,7 +20,8 @@
 	TclGetDate into separate parser and time converter, and do
 	the time conversion in clock.tcl. That's for another day.)
 	Added regression test case for the bug where month was scanned
-	incorrectly in -timezone :localtime.
+	incorrectly in -timezone :localtime. [Bug 1023779] Added 
+	regression test case for %k at the zero hour.
 	
 2004-09-07  David Gravereaux <davygrvy@pobox.com>
 
