@@ -1,5 +1,8 @@
 1998-12-03    <stanton@GASPODE>
 
+	* win/tclWinPipe.c (BuildCommandLine): Fixed bug that kept
+	arguments containing spaces from being properly quoted.
+
 	* tests/defs: Changed so auto_path is set to only contain the Tcl
 	library directory.  This keeps the tests from accidentally picking
 	up stuff in installed packages. 
