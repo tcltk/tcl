@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.1.2.23 1999/03/30 23:56:19 stanton Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.1.2.24 1999/04/01 21:52:57 redman Exp $
 
 # Current Tcl version;  used in various names.
 
@@ -270,7 +270,7 @@ GENERIC_OBJS = regcomp.o regexec.o regfree.o regerror.o tclAlloc.o \
 	tclObj.o tclPanic.o tclParse.o tclParseExpr.o tclPipe.o \
 	tclPkg.o tclPosixStr.o tclPreserve.o tclProc.o tclRegexp.o \
 	tclResolve.o tclResult.o tclScan.o tclStringObj.o tclThread.o \
-	tclStubInit.o tclTimer.o tclUtf.o tclUtil.o tclVar.o
+	tclStubInit.o tclStubLib.o tclTimer.o tclUtf.o tclUtil.o tclVar.o
 
 STUB_LIB_OBJS = tclStubLib.o ${COMPAT_OBJS}
 
@@ -344,6 +344,7 @@ GENERIC_SRCS = \
 	$(GENERIC_DIR)/tclResult.c \
 	$(GENERIC_DIR)/tclScan.c \
 	$(GENERIC_DIR)/tclStubInit.c \
+	$(GENERIC_DIR)/tclStubLib.c \
 	$(GENERIC_DIR)/tclStringObj.c \
 	$(GENERIC_DIR)/tclTest.c \
 	$(GENERIC_DIR)/tclTestObj.c \

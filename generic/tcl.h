@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.1.2.20 1999/03/30 01:55:49 redman Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.1.2.21 1999/04/01 21:52:53 redman Exp $
  */
 
 #ifndef _TCL
@@ -809,46 +809,6 @@ typedef struct Tcl_DString {
 #define TCL_LINK_READ_ONLY	0x80
 
 /*
- * The following declarations either map ckalloc and ckfree to
- * malloc and free, or they map them to procedures with all sorts
- * of debugging hooks defined in tclCkalloc.c.
- */
-
-#ifdef TCL_MEM_DEBUG
-
-#   define Tcl_Alloc(x) Tcl_DbCkalloc(x, __FILE__, __LINE__)
-#   define Tcl_Free(x)  Tcl_DbCkfree(x, __FILE__, __LINE__)
-#   define Tcl_Realloc(x,y) Tcl_DbCkrealloc((x), (y),__FILE__, __LINE__)
-#   define ckalloc(x) Tcl_DbCkalloc(x, __FILE__, __LINE__)
-#   define ckfree(x)  Tcl_DbCkfree(x, __FILE__, __LINE__)
-#   define ckrealloc(x,y) Tcl_DbCkrealloc((x), (y),__FILE__, __LINE__)
-
-#else /* !TCL_MEM_DEBUG */
-
-/*
- * If USE_TCLALLOC is true, then we need to call Tcl_Alloc instead of
- * the native malloc/free.  The only time USE_TCLALLOC should not be
- * true is when compiling the Tcl/Tk libraries on Unix systems.  In this
- * case we can safely call the native malloc/free directly as a performance
- * optimization.
- */
-
-#   if USE_TCLALLOC
-#	define ckalloc(x) Tcl_Alloc(x)
-#	define ckfree(x) Tcl_Free(x)
-#	define ckrealloc(x,y) Tcl_Realloc(x,y)
-#   else
-#	define ckalloc(x) malloc(x)
-#	define ckfree(x)  free(x)
-#	define ckrealloc(x,y) realloc(x,y)
-#   endif
-#   define Tcl_InitMemory(x)
-#   define Tcl_DumpActiveMemory(x)
-#   define Tcl_ValidateAllMemory(x,y)
-
-#endif /* !TCL_MEM_DEBUG */
-
-/*
  * Forward declaration of Tcl_HashTable.  Needed by some C++ compilers
  * to prevent errors when the forward reference to Tcl_HashTable is
  * encountered in the Tcl_HashEntry structure.
@@ -1082,6 +1042,43 @@ typedef int	(Tcl_DriverGetHandleProc) _ANSI_ARGS_((
 		    ClientData *handlePtr));
 
 /*
+ * The following declarations either map ckalloc and ckfree to
+ * malloc and free, or they map them to procedures with all sorts
+ * of debugging hooks defined in tclCkalloc.c.
+ */
+
+#ifdef TCL_MEM_DEBUG
+
+#   define ckalloc(x) Tcl_DbCkalloc(x, __FILE__, __LINE__)
+#   define ckfree(x)  Tcl_DbCkfree(x, __FILE__, __LINE__)
+#   define ckrealloc(x,y) Tcl_DbCkrealloc((x), (y),__FILE__, __LINE__)
+
+#else /* !TCL_MEM_DEBUG */
+
+/*
+ * If USE_TCLALLOC is true, then we need to call Tcl_Alloc instead of
+ * the native malloc/free.  The only time USE_TCLALLOC should not be
+ * true is when compiling the Tcl/Tk libraries on Unix systems.  In this
+ * case we can safely call the native malloc/free directly as a performance
+ * optimization.
+ */
+
+#   if USE_TCLALLOC
+#	define ckalloc(x) Tcl_Alloc(x)
+#	define ckfree(x) Tcl_Free(x)
+#	define ckrealloc(x,y) Tcl_Realloc(x,y)
+#   else
+#	define ckalloc(x) malloc(x)
+#	define ckfree(x)  free(x)
+#	define ckrealloc(x,y) realloc(x,y)
+#   endif
+#   define Tcl_InitMemory(x)
+#   define Tcl_DumpActiveMemory(x)
+#   define Tcl_ValidateAllMemory(x,y)
+
+#endif /* !TCL_MEM_DEBUG */
+
+/*
  * Enum for different end of line translation and recognition modes.
  */
 
@@ -1306,12 +1303,10 @@ typedef unsigned short Tcl_UniChar;
  * linked into an application.
  */
 
-#ifdef USE_TCL_STUBS
-
 EXTERN char *		Tcl_InitStubs _ANSI_ARGS_((Tcl_Interp *interp,
 			    char *version, int exact));
 
-#else
+#ifndef USE_TCL_STUBS
 
 /*
  * When not using stubs, make it a macro.
@@ -1334,7 +1329,6 @@ EXTERN char *		Tcl_InitStubs _ANSI_ARGS_((Tcl_Interp *interp,
  * Public functions that are not accessible via the stubs table.
  */
 
-EXTERN void Tcl_InitMemory _ANSI_ARGS_((Tcl_Interp *interp));
 EXTERN void Tcl_Main _ANSI_ARGS_((int argc, char **argv,
 	Tcl_AppInitProc *appInitProc));
 

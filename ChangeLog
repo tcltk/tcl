@@ -1,3 +1,16 @@
+1999-04-01    <redman@scriptics.com>
+
+	* generic/tcl.decls:
+	* generic/tcl.h:
+	* generic/tclBasic.c:
+	* generic/tclDecls.h:
+	* generic/StubInit.c:
+	* tools/genStubs.tcl:
+	* unix/Makefile.in:
+	* win/makefile.vc: Applied patch from Jan Nijtmans to fix Ultrix
+	multiple symbol definition problem.  Now, even Tcl includes a copy
+	of the Tcl stub library.  Also fixed TCL_MEM_DEBUG mode (for Tk).
+
 1999-03-31    <redman@scriptics.com>
 
 	* win/tclWinConsole.c: WinNT has a bug when reading a single

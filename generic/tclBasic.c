@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.1.2.12 1999/03/30 01:55:50 redman Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.1.2.13 1999/04/01 21:52:54 redman Exp $
  */
 
 #include "tclInt.h"
@@ -403,6 +403,11 @@ Tcl_CreateInterp()
      */
 
     iPtr->stubTable = &tclStubs;
+
+#ifdef Tcl_InitStubs
+#undef Tcl_InitStubs
+#endif
+    Tcl_InitStubs(interp, TCL_VERSION, 1);
     
     /*
      * Create the core commands. Do it here, rather than calling

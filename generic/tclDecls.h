@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.3.2.12 1999/03/30 23:56:16 stanton Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.3.2.13 1999/04/01 21:52:55 redman Exp $
  */
 
 #ifndef _TCLDECLS
@@ -873,7 +873,8 @@ EXTERN void		Tcl_PanicVA _ANSI_ARGS_((char * format,
 /* 279 */
 EXTERN void		Tcl_GetVersion _ANSI_ARGS_((int * major, int * minor, 
 				int * patchLevel, int * type));
-/* Slot 280 is reserved */
+/* 280 */
+EXTERN void		Tcl_InitMemory _ANSI_ARGS_((Tcl_Interp * interp));
 /* Slot 281 is reserved */
 /* Slot 282 is reserved */
 /* Slot 283 is reserved */
@@ -1366,7 +1367,7 @@ typedef struct TclStubs {
     Tcl_Pid (*tcl_WaitPid) _ANSI_ARGS_((Tcl_Pid pid, int * statPtr, int options)); /* 277 */
     void (*tcl_PanicVA) _ANSI_ARGS_((char * format, va_list argList)); /* 278 */
     void (*tcl_GetVersion) _ANSI_ARGS_((int * major, int * minor, int * patchLevel, int * type)); /* 279 */
-    void *reserved280;
+    void (*tcl_InitMemory) _ANSI_ARGS_((Tcl_Interp * interp)); /* 280 */
     void *reserved281;
     void *reserved282;
     void *reserved283;
@@ -2564,7 +2565,10 @@ extern TclStubs *tclStubsPtr;
 #define Tcl_GetVersion \
 	(tclStubsPtr->tcl_GetVersion) /* 279 */
 #endif
-/* Slot 280 is reserved */
+#ifndef Tcl_InitMemory
+#define Tcl_InitMemory \
+	(tclStubsPtr->tcl_InitMemory) /* 280 */
+#endif
 /* Slot 281 is reserved */
 /* Slot 282 is reserved */
 /* Slot 283 is reserved */

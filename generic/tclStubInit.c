@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.3.2.7 1999/03/24 04:25:15 stanton Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.3.2.8 1999/04/01 21:52:56 redman Exp $
  */
 
 #include "tclInt.h"
@@ -349,7 +349,7 @@ TclStubs tclStubs = {
     Tcl_WaitPid, /* 277 */
     Tcl_PanicVA, /* 278 */
     Tcl_GetVersion, /* 279 */
-    NULL, /* 280 */
+    Tcl_InitMemory, /* 280 */
     NULL, /* 281 */
     NULL, /* 282 */
     NULL, /* 283 */
@@ -415,8 +415,6 @@ TclStubs tclStubs = {
     Tcl_AlertNotifier, /* 343 */
     Tcl_ServiceModeHook, /* 344 */
 };
-
-TclStubs *tclStubsPtr = &tclStubs;
 
 TclIntStubs tclIntStubs = {
     TCL_STUB_MAGIC,
@@ -564,8 +562,6 @@ TclIntStubs tclIntStubs = {
     TclLooksLikeInt, /* 140 */
 };
 
-TclIntStubs *tclIntStubsPtr = &tclIntStubs;
-
 TclIntPlatStubs tclIntPlatStubs = {
     TCL_STUB_MAGIC,
     NULL,
@@ -640,8 +636,6 @@ TclIntPlatStubs tclIntPlatStubs = {
 #endif /* MAC_TCL */
 };
 
-TclIntPlatStubs *tclIntPlatStubsPtr = &tclIntPlatStubs;
-
 TclPlatStubs tclPlatStubs = {
     TCL_STUB_MAGIC,
     NULL,
@@ -657,8 +651,6 @@ TclPlatStubs tclPlatStubs = {
     strcasecmp, /* 8 */
 #endif /* MAC_TCL */
 };
-
-TclPlatStubs *tclPlatStubsPtr = &tclPlatStubs;
 
 static TclStubHooks tclStubHooks = {
     &tclPlatStubs,
