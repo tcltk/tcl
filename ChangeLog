@@ -1,5 +1,8 @@
 2004-06-18  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
+	* unix/tclUnixInit.c (localeTable): Added some more locale to
+	encoding mapping info from Jim Huang <jserv@kaffe.org>
+
 	* generic/tclInt.h (PendingObjData,TclFreeObjMacro,etc): 
 	* generic/tclObj.c (TclFreeObj): Added scheme for making TclFreeObj()
 	avoid blowing up the C stack when freeing up very large object
