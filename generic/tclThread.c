@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThread.c,v 1.1.2.5 1998/12/10 21:57:48 stanton Exp $
+ * RCS: @(#) $Id: tclThread.c,v 1.1.2.6 1998/12/11 00:12:07 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -123,8 +123,8 @@ Tcl_GetThreadData(keyPtr, size)
 
     result = TclpThreadDataKeyGet(keyPtr);
     if (result == NULL) {
-	result  = (VOID *)ckalloc(size);
-	memset(result, 0, size);
+	result  = (VOID *)ckalloc((size_t)size);
+	memset(result, 0, (size_t)size);
 	TclpThreadDataKeySet(keyPtr, result);
     }
 #else

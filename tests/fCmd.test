@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fCmd.test,v 1.1.2.3 1998/12/10 03:28:02 stanton Exp $
+# RCS: @(#) $Id: fCmd.test,v 1.1.2.4 1998/12/11 00:12:08 stanton Exp $
 #
 
 if {[string compare test [info procs test]] == 1} then {source defs}
@@ -584,13 +584,11 @@ test fCmd-6.30 {CopyRenameOneFile: TclpRemoveDirectory failed} {unixOnly} {
     file mkdir foo/bar
     file attr foo -perm 040555
     set msg [list [catch {file rename foo/bar /tmp} msg] $msg]
-    set a1 {1 {can't unlink "foo/bar": permission denied}}
-    set result [expr {$msg == $a1}]
     catch {file delete /tmp/bar}
     catch {file attr foo -perm 040777}
     catch {file delete -force foo}
-    set result
-} {1}
+    set msg
+} {1 {can't unlink "foo/bar": permission denied}}
 test fCmd-6.31 {CopyRenameOneFile: TclpDeleteFile passed} {unixOnly xdev} {
     catch {cleanup /tmp}
     file mkdir /tmp/td1
