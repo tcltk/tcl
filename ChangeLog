@@ -1,3 +1,17 @@
+1999-10-29  Brent Welch <welch@scriptics.com>
+	* generic/tclInt.h: Modified the TclNewObj and TclDecrRefCount
+	in two ways.  First, in the case of TCL_THREADS, we do not use
+	the special Tcl_Obj allocator because that is a source of 
+	lock contention.  Second, general code cleanup to eliminate
+	duplicated code. In particular, TclDecrRefCount now uses
+	TclFreeObj instead of duplicating that code, so it is now
+	identical to Tcl_DecrRefCount.
+
+	* generic/tclObj.c: Changed Tcl_NewObj so it uses the
+	TclNewObj macro instead of duplicating the code.  Adjusted
+	TclFreeObj so it understands the TCL_THREADS case described
+	above.
+
 1999-10-28  Jeff Hobbs  <hobbs@scriptics.com>
 
 	* unix/aclocal.m4: made it just include tcl.m4

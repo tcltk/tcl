@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.9 1999/06/15 01:16:23 hershey Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.10 1999/10/30 00:27:26 welch Exp $
  */
 
 #include "tclInt.h"
@@ -26,18 +26,10 @@ TCL_DECLARE_MUTEX(tableMutex)
 
 /*
  * Head of the list of free Tcl_Obj structs we maintain.
+ * This is not used in the threaded case, so no lock is declared.
  */
 
 Tcl_Obj *tclFreeObjList = NULL;
-
-/*
- * The object allocator is single threaded.  This mutex is referenced
- * by the TclNewObj macro, however, so must be visible.
- */
-
-#ifdef TCL_THREADS
-Tcl_Mutex tclObjMutex;
-#endif
 
 /*
  * Pointer to a heap-allocated string of length zero that the Tcl core uses
@@ -56,6 +48,7 @@ char *tclEmptyStringRep = &emptyString;
 #ifdef TCL_COMPILE_STATS
 long tclObjsAlloced = 0;
 long tclObjsFreed = 0;
+TCL_DECLARE_MUTEX(tclCompStatsMutex)
 #endif /* TCL_COMPILE_STATS */
 
 /*
@@ -140,10 +133,10 @@ TclInitObjSubsystem()
     Tcl_RegisterObjType(&tclProcBodyType);
 
 #ifdef TCL_COMPILE_STATS
-    Tcl_MutexLock(&tclObjMutex);
+    Tcl_MutexLock(&tclCompStatsMutex);
     tclObjsAlloced = 0;
     tclObjsFreed = 0;
-    Tcl_MutexUnlock(&tclObjMutex);
+    Tcl_MutexUnlock(&tclCompStatsMutex);
 #endif
 }
 
@@ -174,9 +167,12 @@ TclFinalizeCompExecEnv()
         typeTableInitialized = 0;
     }
     Tcl_MutexUnlock(&tableMutex);
-    Tcl_MutexLock(&tclObjMutex);
+#ifndef TCL_THREADS
+    /*
+     * This would a source of lock contention, so we don't use it.
+     */
     tclFreeObjList = NULL;
-    Tcl_MutexUnlock(&tclObjMutex);
+#endif
 
     TclFinalizeCompilation();
     TclFinalizeExecution();
@@ -389,43 +385,16 @@ Tcl_ConvertToType(interp, objPtr, typePtr)
 
 #ifdef TCL_MEM_DEBUG
 #undef Tcl_NewObj
+#endif
 
 Tcl_Obj *
 Tcl_NewObj()
 {
-    return Tcl_DbNewObj("unknown", 0);
-}
-
-#else /* if not TCL_MEM_DEBUG */
-
-Tcl_Obj *
-Tcl_NewObj()
-{
-    register Tcl_Obj *objPtr;
-
-    /*
-     * Allocate the object using the list of free Tcl_Obj structs
-     * we maintain.
-     */
-
-    Tcl_MutexLock(&tclObjMutex);
-    if (tclFreeObjList == NULL) {
-	TclAllocateFreeObjects();
-    }
-    objPtr = tclFreeObjList;
-    tclFreeObjList = (Tcl_Obj *) tclFreeObjList->internalRep.otherValuePtr;
-    
-    objPtr->refCount = 0;
-    objPtr->bytes    = tclEmptyStringRep;
-    objPtr->length   = 0;
-    objPtr->typePtr  = NULL;
-#ifdef TCL_COMPILE_STATS
-    tclObjsAlloced++;
-#endif /* TCL_COMPILE_STATS */
-    Tcl_MutexUnlock(&tclObjMutex);
+    Tcl_Obj *objPtr;
+    TclNewObj(objPtr);
     return objPtr;
 }
-#endif /* TCL_MEM_DEBUG */
+
 
 /*
  *----------------------------------------------------------------------
@@ -441,7 +410,7 @@ Tcl_NewObj()
  *	number when reporting objects that haven't been freed.
  *
  *	When TCL_MEM_DEBUG is not defined, this procedure just returns the
- *	result of calling Tcl_NewObj.
+ *	result of calling TclNewObj.
  *
  * Results:
  *	The result is a newly allocated that represents the empty string.
@@ -454,7 +423,6 @@ Tcl_NewObj()
  *----------------------------------------------------------------------
  */
 
-#ifdef TCL_MEM_DEBUG
 
 Tcl_Obj *
 Tcl_DbNewObj(file, line)
@@ -464,38 +432,13 @@ Tcl_DbNewObj(file, line)
 				 * for debugging. */
 {
     register Tcl_Obj *objPtr;
-
-    /*
-     * If debugging Tcl's memory usage, allocate the object using ckalloc.
-     * Otherwise, allocate it using the list of free Tcl_Obj structs we
-     * maintain.
-     */
-
-    objPtr = (Tcl_Obj *) Tcl_DbCkalloc(sizeof(Tcl_Obj), file, line);
-    objPtr->refCount = 0;
-    objPtr->bytes    = tclEmptyStringRep;
-    objPtr->length   = 0;
-    objPtr->typePtr  = NULL;
-#ifdef TCL_COMPILE_STATS
-    Tcl_MutexLock(&tclObjMutex);
-    tclObjsAlloced++;
-    Tcl_MutexUnlock(&tclObjMutex);
-#endif /* TCL_COMPILE_STATS */
+#ifdef TCL_MEM_DEBUG
+    TclDbNewObj(objPtr, file, line);
+#else
+    TclNewObj(objPtr);
+#endif
     return objPtr;
 }
-
-#else /* if not TCL_MEM_DEBUG */
-
-Tcl_Obj *
-Tcl_DbNewObj(file, line)
-    char *file;			/* The name of the source file calling this
-				 * procedure; used for debugging. */
-    int line;			/* Line number in the source file; used
-				 * for debugging. */
-{
-    return Tcl_NewObj();
-}
-#endif /* TCL_MEM_DEBUG */
 
 /*
  *----------------------------------------------------------------------
@@ -505,7 +448,7 @@ Tcl_DbNewObj(file, line)
  *	Procedure to allocate a number of free Tcl_Objs. This is done using
  *	a single ckalloc to reduce the overhead for Tcl_Obj allocation.
  *
- *	Assumes mutex is held.
+ *	NOTE: This memory is not freed.
  *
  * Results:
  *	None.
@@ -588,23 +531,22 @@ TclFreeObj(objPtr)
     Tcl_InvalidateStringRep(objPtr);
 
     /*
-     * If debugging Tcl's memory usage, deallocate the object using ckfree.
-     * Otherwise, deallocate it by adding it onto the list of free
-     * Tcl_Obj structs we maintain.
+     * There are three cases, TCL_MEM_DEBUG and TCL_THREADS just use
+     * ckfree.  The normal case uses the special object freelist.
      */
 
-    Tcl_MutexLock(&tclObjMutex);
 #ifdef TCL_MEM_DEBUG
+    ckfree((char *) objPtr);
+#else
+#ifdef TCL_THREADS
     ckfree((char *) objPtr);
 #else
     objPtr->internalRep.otherValuePtr = (VOID *) tclFreeObjList;
     tclFreeObjList = objPtr;
+#endif /* TCL_THREADS */
 #endif /* TCL_MEM_DEBUG */
 
-#ifdef TCL_COMPILE_STATS
-    tclObjsFreed++;
-#endif /* TCL_COMPILE_STATS */
-    Tcl_MutexUnlock(&tclObjMutex);
+    TclIncrObjsFreed();
 }
 
 /*
