@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.60 2002/06/17 22:52:51 hobbs Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.61 2002/06/20 00:11:43 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2985,7 +2985,8 @@ TclEvalObjvInternal(interp, objc, objv, command, length, flags)
                 traceCode = TclCheckInterpTraces(interp, command, length,
                                cmdPtr, code, TCL_TRACE_ENTER_EXEC, objc, objv);
             }
-            if (cmdPtr->flags & CMD_HAS_EXEC_TRACES && traceCode == TCL_OK) {
+            if ((cmdPtr->flags & CMD_HAS_EXEC_TRACES) 
+		    && (traceCode == TCL_OK)) {
                 traceCode = TclCheckExecutionTraces(interp, command, length,
                                cmdPtr, code, TCL_TRACE_ENTER_EXEC, objc, objv);
             }
@@ -3019,7 +3020,7 @@ TclEvalObjvInternal(interp, objc, objv, command, length, flags)
     /*
      * Call 'leave' command traces
      */
-    if (cmdPtr->flags & CMD_HAS_EXEC_TRACES && traceCode == TCL_OK) {
+    if ((cmdPtr->flags & CMD_HAS_EXEC_TRACES) && (traceCode == TCL_OK)) {
 	traceCode = TclCheckExecutionTraces(interp, command, length,
 		       cmdPtr, code, TCL_TRACE_LEAVE_EXEC, objc, objv);
     }
