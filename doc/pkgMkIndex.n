@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: pkgMkIndex.n,v 1.11 2001/07/21 20:26:42 dgp Exp $
+'\" RCS: @(#) $Id: pkgMkIndex.n,v 1.12 2001/08/07 02:54:30 hobbs Exp $
 '\" 
 .so man.macros
 .TH pkg_mkIndex n 8.3 Tcl "Tcl Built-In Commands"
@@ -104,7 +104,7 @@ The optional switches are:
 .TP 15
 \fB\-direct\fR
 The generated index will implement direct loading of the package
-upon \fBpackage require\R.  This is the default.
+upon \fBpackage require\fR.  This is the default.
 .TP 15
 \fB\-lazy\fR
 The generated index will manage to delay loading the package until the
