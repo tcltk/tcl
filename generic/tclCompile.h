@@ -6,7 +6,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.1.2.4 1999/02/10 23:31:15 stanton Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.1.2.5 1999/03/10 22:51:14 redman Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -327,14 +327,10 @@ typedef struct ByteCode {
 				 * Proc structure; otherwise NULL. This
 				 * pointer is also not owned by the ByteCode
 				 * and must not be freed by it. */
-#ifdef TCL_COMPILE_STATS
-    int structureSize;		/* Number of bytes in the ByteCode structure
+    size_t structureSize;	/* Number of bytes in the ByteCode structure
 				 * itself. Does not include heap space for
 				 * literal Tcl objects or storage referenced
 				 * by AuxData entries. */
-    Tcl_Time createTime;	/* Absolute time when the ByteCode was
-				 * created. */
-#endif /* TCL_COMPILE_STATS */
     int numCommands;		/* Number of commands compiled. */
     int numSrcBytes;		/* Number of source bytes compiled. */
     int numCodeBytes;		/* Number of code bytes. */
@@ -394,6 +390,10 @@ typedef struct ByteCode {
 				 * are always positive. This sequence is
 				 * just after the last byte in the source
 				 * delta sequence. */
+#ifdef TCL_COMPILE_STATS
+    Tcl_Time createTime;	/* Absolute time when the ByteCode was
+				 * created. */
+#endif /* TCL_COMPILE_STATS */
 } ByteCode;
 
 /*
