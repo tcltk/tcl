@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.23 2003/02/11 18:03:27 msofer Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.24 2003/02/11 18:34:43 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -1646,7 +1646,7 @@ CommandComplete(script, numBytes)
     while (Tcl_ParseCommand((Tcl_Interp *) NULL, p, end - p, 0, &parse)
 	    == TCL_OK) {
 	p = parse.commandStart + parse.commandSize;
-	if (p == end) {
+	if (p >= end) {
 	    break;
 	}
 	Tcl_FreeParse(&parse);
