@@ -1,3 +1,8 @@
+2001-09-24  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* doc/OpenFileChnl.3: Add docs for Tcl_OutputBuffered; remove some
+	old changebars.
+
 2001-09-21  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclExecute.c (TclExecuteByteCode): corrected

@@ -4,13 +4,13 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: OpenFileChnl.3,v 1.12 2001/09/11 18:29:56 andreas_kupries Exp $
+'\" RCS: @(#) $Id: OpenFileChnl.3,v 1.13 2001/09/24 09:41:17 dkf Exp $
 .so man.macros
 .TH Tcl_OpenFileChannel 3 8.3 Tcl "Tcl Library Procedures"
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
-Tcl_OpenFileChannel, Tcl_OpenCommandChannel, Tcl_MakeFileChannel, Tcl_GetChannel, Tcl_GetChannelNames, Tcl_GetChannelNamesEx, Tcl_RegisterChannel, Tcl_UnregisterChannel, Tcl_DetachChannel, Tcl_IsStandardChannel, Tcl_Close, Tcl_ReadChars, Tcl_Read, Tcl_GetsObj, Tcl_Gets, Tcl_WriteObj, Tcl_WriteChars, Tcl_Write, Tcl_Flush, Tcl_Seek, Tcl_Tell, Tcl_GetChannelOption, Tcl_SetChannelOption, Tcl_Eof, Tcl_InputBlocked, Tcl_InputBuffered, Tcl_Ungets,  Tcl_ReadRaw, Tcl_WriteRaw \- buffered I/O facilities using channels
+Tcl_OpenFileChannel, Tcl_OpenCommandChannel, Tcl_MakeFileChannel, Tcl_GetChannel, Tcl_GetChannelNames, Tcl_GetChannelNamesEx, Tcl_RegisterChannel, Tcl_UnregisterChannel, Tcl_DetachChannel, Tcl_IsStandardChannel, Tcl_Close, Tcl_ReadChars, Tcl_Read, Tcl_GetsObj, Tcl_Gets, Tcl_WriteObj, Tcl_WriteChars, Tcl_Write, Tcl_Flush, Tcl_Seek, Tcl_Tell, Tcl_GetChannelOption, Tcl_SetChannelOption, Tcl_Eof, Tcl_InputBlocked, Tcl_InputBuffered, Tcl_OutputBuffered, Tcl_Ungets, Tcl_ReadRaw, Tcl_WriteRaw \- buffered I/O facilities using channels
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -22,11 +22,9 @@ Tcl_Channel
 .sp
 Tcl_Channel
 \fBTcl_OpenCommandChannel\fR(\fIinterp, argc, argv, flags\fR)
-.VS 8.0
 .sp
 Tcl_Channel
 \fBTcl_MakeFileChannel\fR(\fIhandle, readOrWrite\fR)
-.VE
 .sp
 Tcl_Channel
 \fBTcl_GetChannel\fR(\fIinterp, channelName, modePtr\fR)
@@ -99,6 +97,11 @@ int
 .sp
 int
 \fBTcl_InputBuffered\fR(\fIchannel\fR)
+.VS 8.4
+.sp
+int
+\fBTcl_OutputBuffered\fR(\fIchannel\fR)
+.VE
 .sp
 int
 \fBTcl_Seek\fR(\fIchannel, offset, seekMode\fR)
@@ -140,7 +143,6 @@ input of the invoking process; likewise for \fBTCL_STDOUT\fR and
 redirect stdio handles to override the stdio handles for which
 \fBTCL_STDIN\fR, \fBTCL_STDOUT\fR and \fBTCL_STDERR\fR have been set.  If it
 is set, then such redirections cause an error.
-.VS 8.0
 .AP ClientData handle in
 Operating system specific handle for I/O to a file. For Unix this is a
 file descriptor, for Windows it is a HANDLE.
@@ -149,7 +151,6 @@ OR-ed combination of \fBTCL_READABLE\fR and \fBTCL_WRITABLE\fR to indicate
 what operations are valid on \fIhandle\fR.
 .AP char *channelName in
 The name of the channel. 
-.VE
 .AP int *modePtr out
 Points at an integer variable that will receive an OR-ed combination of
 \fBTCL_READABLE\fR and \fBTCL_WRITABLE\fR denoting whether the channel is
@@ -653,7 +654,13 @@ The call always returns zero if the channel is in blocking mode.
 buffered in the internal buffers for a channel. If the channel is not open
 for reading, this function always returns zero.
 
-.VS 8.0
+.SH TCL_OUTPUTBUFFERED
+.VS 8.4
+\fBTcl_OutputBuffered\fR returns the number of bytes of output
+currently buffered in the internal buffers for a channel. If the
+channel is not open for writing, this function always returns zero.
+.VE
+
 .SH "PLATFORM ISSUES"
 .PP
 The handles returned from \fBTcl_GetChannelHandle\fR depend on the
@@ -665,7 +672,6 @@ the channel was created with \fBTcl_OpenFileChannel\fR,
 channel types may return a different type of handle on Windows
 platforms.  On the Macintosh platform, the handle is a file reference
 number as returned from \fBHOpenDF\fR.
-.VE
 
 .SH "SEE ALSO"
 DString(3), fconfigure(n), filename(n), fopen(2), Tcl_CreateChannel(3)
