@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOCmd.c,v 1.9 2001/08/06 22:17:58 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclIOCmd.c,v 1.10 2001/09/19 00:50:23 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -63,45 +63,62 @@ Tcl_PutsObjCmd(dummy, interp, objc, objv)
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
     Tcl_Channel chan;			/* The channel to puts on. */
-    int i;				/* Counter. */
+    Tcl_Obj *string;			/* String to write. */
     int newline;			/* Add a newline at end? */
     char *channelId;			/* Name of channel for puts. */
     int result;				/* Result of puts operation. */
     int mode;				/* Mode in which channel is opened. */
-    char *arg;
-    int length;
 
-    i = 1;
-    newline = 1;
-    if ((objc >= 2) && (strcmp(Tcl_GetString(objv[1]), "-nonewline") == 0)) {
+    switch (objc) {
+    case 2: /* puts $x */
+	string = objv[1];
+	newline = 1;
+	channelId = "stdout";
+	break;
+
+    case 3: /* puts -nonewline $x  or  puts $chan $x */ 
+	if (strcmp(Tcl_GetString(objv[1]), "-nonewline") == 0) {
+	    newline = 0;
+	    channelId = "stdout";
+	} else {
+	    newline = 1;
+	    channelId = Tcl_GetString(objv[1]);
+	}
+	string = objv[2];
+	break;
+
+    case 4: /* puts -nonewline $chan $x  or  puts $chan $x nonewline */
+	if (strcmp(Tcl_GetString(objv[1]), "-nonewline") == 0) {
+	    channelId = Tcl_GetString(objv[2]);
+	    string = objv[3];
+	} else {
+	    /*
+	     * The code below provides backwards compatibility with an
+	     * old form of the command that is no longer recommended
+	     * or documented.
+	     */
+
+	    char *arg;
+	    int length;
+
+	    arg = Tcl_GetStringFromObj(objv[3], &length);
+	    if (strncmp(arg, "nonewline", (size_t) length) != 0) {
+		Tcl_AppendResult(interp, "bad argument \"", arg,
+				 "\": should be \"nonewline\"",
+				 (char *) NULL);
+		return TCL_ERROR;
+	    }
+	    channelId = Tcl_GetString(objv[1]);
+	    string = objv[2];
+	}
 	newline = 0;
-	i++;
-    }
-    if ((i < (objc-3)) || (i >= objc)) {
+	break;
+
+    default: /* puts  or  puts some bad number of arguments... */
 	Tcl_WrongNumArgs(interp, 1, objv, "?-nonewline? ?channelId? string");
 	return TCL_ERROR;
     }
 
-    /*
-     * The code below provides backwards compatibility with an old
-     * form of the command that is no longer recommended or documented.
-     */
-
-    if (i == (objc-3)) {
-	arg = Tcl_GetStringFromObj(objv[i + 2], &length);
-	if (strncmp(arg, "nonewline", (size_t) length) != 0) {
-	    Tcl_AppendResult(interp, "bad argument \"", arg,
-		    "\": should be \"nonewline\"", (char *) NULL);
-	    return TCL_ERROR;
-	}
-	newline = 0;
-    }
-    if (i == (objc - 1)) {
-	channelId = "stdout";
-    } else {
-	channelId = Tcl_GetString(objv[i]);
-	i++;
-    }
     chan = Tcl_GetChannel(interp, channelId, &mode);
     if (chan == (Tcl_Channel) NULL) {
         return TCL_ERROR;
@@ -112,7 +129,7 @@ Tcl_PutsObjCmd(dummy, interp, objc, objv)
         return TCL_ERROR;
     }
 
-    result = Tcl_WriteObj(chan, objv[i]);
+    result = Tcl_WriteObj(chan, string);
     if (result < 0) {
         goto error;
     }
