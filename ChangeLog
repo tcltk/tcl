@@ -1,3 +1,18 @@
+2002-07-22  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* generic/tclIOUtil.c: made tclNativeFilesystem static
+	(since 07-19 changes removed its usage elsewhere), and
+	added comments about its usage.
+	* generic/tclLoad.c:
+	* generic/tcl.h:
+	* generic/tcl.decls: 
+	* doc/FileSystem.3: converted last load-related ClientData
+	parameter to Tcl_LoadHandle opaque structure, removing a 
+	couple of casts in the process.
+	
+	* generic/tclInt.h: removed tclNativeFilesystem declaration
+	since it is now static again.
+	
 2002-07-22  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* tests/expr.test (expr-22.*): Added tests to help detect the
