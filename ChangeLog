@@ -28,8 +28,10 @@
 
 2003-08-27  Don Porter  <dgp@users.sourceforge.net>
 
-	* tests/util.test: Added new tests for remaining TclNeedSpace()
-	bugs discussed in [Bug 411825].
+        * generic/tclUtil.c:    Corrected [Bug 411825] and other bugs in
+        TclNeedSpace() where non-breaking space (\u00A0) and backslash-escaped
+        spaces were handled incorrectly.  
+        * tests/util.test:      Added new tests util-8.[2-6].
 
 2003-08-26  David Gravereaux <davygrvy@pobox.com>
 
