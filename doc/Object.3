@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Object.3,v 1.8 2004/10/07 14:44:33 dkf Exp $
+'\" RCS: @(#) $Id: Object.3,v 1.9 2004/10/07 14:52:43 dkf Exp $
 '\" 
 .so man.macros
 .TH Tcl_Obj 3 8.1 Tcl "Tcl Library Procedures"
@@ -113,19 +113,19 @@ Each Tcl object is represented by a \fBTcl_Obj\fR structure
 which is defined as follows.
 .CS
 typedef struct Tcl_Obj {
-	int \fIrefCount\fR;
-	char *\fIbytes\fR;
-	int \fIlength\fR;
-	Tcl_ObjType *\fItypePtr\fR;
-	union {
-		long \fIlongValue\fR;
-		double \fIdoubleValue\fR;
-		VOID *\fIotherValuePtr\fR;
-		struct {
-			VOID *\fIptr1\fR;
-			VOID *\fIptr2\fR;
-		} \fItwoPtrValue\fR;
-	} \fIinternalRep\fR;
+        int \fIrefCount\fR;
+        char *\fIbytes\fR;
+        int \fIlength\fR;
+        Tcl_ObjType *\fItypePtr\fR;
+        union {
+                long \fIlongValue\fR;
+                double \fIdoubleValue\fR;
+                VOID *\fIotherValuePtr\fR;
+                struct {
+                        VOID *\fIptr1\fR;
+                        VOID *\fIptr2\fR;
+                } \fItwoPtrValue\fR;
+        } \fIinternalRep\fR;
 } Tcl_Obj;
 .CE
 The \fIbytes\fR and the \fIlength\fR members together hold
@@ -322,7 +322,7 @@ by inserting \fIobjc-3\fR new elements before \fIindex\fR.
 .CS
 listPtr = objv[1];
 if (Tcl_IsShared(listPtr)) {
-	listPtr = Tcl_DuplicateObj(listPtr);
+        listPtr = Tcl_DuplicateObj(listPtr);
 }
 result = Tcl_ListObjReplace(interp, listPtr, index, 0, (objc-3), &(objv[3]));
 .CE
