@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.72.2.6 2005/03/02 23:10:44 kennykb Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.72.2.7 2005/03/02 23:31:15 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -24,7 +24,7 @@
  * Define test for NaN
  */
 
-#ifdef _isnan
+#ifdef _MSC_VER
 #define IS_NAN(f) _isnan((f))
 #else
 #define IS_NAN(f) ((f) != (f))

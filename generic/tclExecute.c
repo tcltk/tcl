@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.167.2.3 2005/03/02 23:10:41 kennykb Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.167.2.4 2005/03/02 23:30:52 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -137,14 +137,11 @@ long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
  * by comparing against the largest floating-point value.
  */
 
-#ifdef _isnan
+#ifdef _MSC_VER
 #define IS_NAN(f) (_isnan((f)))
-#else
-#define IS_NAN(f) ((f) != (f))
-#endif
-#ifdef _finite
 #define IS_INF(f) ( ! (_finite((f))))
 #else
+#define IS_NAN(f) ((f) != (f))
 #define IS_INF(f) ( (f) > DBL_MAX || (f) < -DBL_MAX )
 #endif
 
