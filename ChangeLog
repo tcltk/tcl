@@ -1,3 +1,10 @@
+2001-08-24 Vince Darley <vincentdarley@users.sourceforge.net>
+
+	* doc/glob.n: documented windows-style path issue with glob.
+	[Bug: 219392]
+	* doc/filename.n: documented windows path/file length limitation.
+	[Bug: 454597]
+
 2001-08-24  Don Porter <dgp@users.sourceforge.net>
 
 	* tests/unixInit.test (unixInit-2.9): Corrected expected result
@@ -22,7 +29,7 @@
 	* generic/tclIOUtil.c:
 	* generic/tclFileName.c: corrected minor compiler warnings.
 
-2001-08-24 Vince Darley <vincentdarley@users.sourceforge.net>
+2001-08-23 Vince Darley <vincentdarley@users.sourceforge.net>
 
 	Variety of small filesystem and vfs issues fixed or improved.
 	The new fs code allows many new opportunities for efficiency
