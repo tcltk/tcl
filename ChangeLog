@@ -1,3 +1,9 @@
+2003-06-23  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* generic/tclFCmd.c: fix to bad error message when trying to
+	do 'file copy foo ""'. [Bug 756951]
+	* tests/fCmd.test: added two new tests for the bug.
+
 2003-06-18  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclNamesp.c (Tcl_Export): removed erroneous comments
