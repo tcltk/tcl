@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: io.test,v 1.27 2002/03/02 04:57:29 hobbs Exp $
+# RCS: @(#) $Id: io.test,v 1.28 2002/03/04 22:00:40 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -101,7 +101,7 @@ test io-1.8 {Tcl_WriteChars: WriteChars} {
     puts -nonewline $f [format %s%c [string repeat " " 4] 12399] 
     close           $f 
     contents test2
-} "\x1b(B    \x1b\$B\$O"
+} "    \x1b\$B\$O\x1b(B"
 
 test io-2.1 {WriteBytes} {
     # loop until all bytes are written
