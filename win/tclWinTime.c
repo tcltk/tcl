@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinTime.c,v 1.15 2003/04/12 19:08:56 kennykb Exp $
+ * RCS: @(#) $Id: tclWinTime.c,v 1.16 2003/04/14 02:36:58 mdejong Exp $
  */
 
 #include "tclWinInt.h"
@@ -106,6 +106,7 @@ static TimeInfo timeInfo = {
     (HANDLE) NULL,
     (HANDLE) NULL,
 #ifdef HAVE_CAST_TO_UNION
+    (LARGE_INTEGER) (LONGLONG) 0,
     (ULARGE_INTEGER) (DWORDLONG) 0,
     (LARGE_INTEGER) (LONGLONG) 0,
     (LARGE_INTEGER) (LONGLONG) 0,
@@ -113,13 +114,10 @@ static TimeInfo timeInfo = {
     0,
     0,
     0,
+    0,
 #endif
-    0,
-    0,
-    0,
     { 0 },
     { 0 },
-    0,
     0
 };
 
@@ -875,7 +873,7 @@ UpdateTimeEachSecond()
      */
 
     estFreq = AccumulateSample( curPerfCounter.QuadPart,
-				curFileTime.QuadPart );
+				(ULONGLONG) curFileTime.QuadPart );
 
     /*
      * We want to adjust things so that time appears to be continuous.

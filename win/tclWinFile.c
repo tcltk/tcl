@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.45 2003/04/11 16:00:13 vincentdarley Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.46 2003/04/14 02:36:58 mdejong Exp $
  */
 
 //#define _WIN32_WINNT  0x0500
@@ -128,6 +128,7 @@ typedef struct {
     WCHAR  dummyBuf[MAX_PATH*3];
 } DUMMY_REPARSE_BUFFER;
 
+#ifdef HAVE_NO_FINDEX_ENUMS
 /* These two aren't in VC++ 5.2 headers */
 typedef enum _FINDEX_INFO_LEVELS {
 	FindExInfoStandard,
@@ -139,6 +140,7 @@ typedef enum _FINDEX_SEARCH_OPS {
 	FindExSearchLimitToDevices,
 	FindExSearchMaxSearchOp
 } FINDEX_SEARCH_OPS;
+#endif /* HAVE_NO_FINDEX_ENUMS */
 
 /* Other typedefs required by this code */
 
