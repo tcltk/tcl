@@ -3,7 +3,7 @@
 # Makefile to build Tcl on Mac OS X packaged as a Framework
 #	uses standard unix build system in tcl/unix
 #
-# RCS: @(#) $Id: Makefile,v 1.16 2004/08/26 16:01:28 das Exp $
+# RCS: @(#) $Id: Makefile,v 1.17 2004/11/11 01:16:41 das Exp $
 #
 ########################################################################################################
 
@@ -107,7 +107,7 @@ DYLIB_INSTALL_DIR	:= ${DYLIB_INSTALL_PATH}/${PRODUCT_NAME}.framework/Versions/${
 INCLUDEDIR		:= ${LIBDIR}/Headers
 PRIVATEINCLUDEDIR	:= ${LIBDIR}/PrivateHeaders
 SCRIPTDIR		:= ${LIBDIR}/Resources/Scripts
-DOCDIR			:= ${LIBDIR}/Resources/English.lproj/Documentation/Reference
+DOCDIR			:= ${LIBDIR}/Resources/Documentation/Reference
 INFOPLIST		:= ${LIBDIR}/Resources/Info.plist
 
 BUILD_STYLE		=
@@ -235,5 +235,7 @@ endif
 
 .PHONY: ${meta} ${targets} ${PROJECT} build-${PROJECT} install-${PROJECT} \
 	clean-${PROJECT} distclean-${PROJECT}
+
+.NOTPARALLEL:
 
 #-------------------------------------------------------------------------------------------------------
