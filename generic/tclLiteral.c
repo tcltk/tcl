@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLiteral.c,v 1.17 2004/07/15 17:42:12 msofer Exp $
+ * RCS: @(#) $Id: tclLiteral.c,v 1.18 2004/07/15 18:31:34 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -685,7 +685,6 @@ TclReleaseLiteral(interp, objPtr)
     Interp *iPtr = (Interp *) interp;
     LiteralTable *globalTablePtr = &(iPtr->literalTable);
     register LiteralEntry *entryPtr, *prevPtr;
-    ByteCode* codePtr;
     char *bytes;
     int length, index;
 
