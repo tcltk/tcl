@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: unset.n,v 1.7 2004/05/27 15:45:43 dkf Exp $
+'\" RCS: @(#) $Id: unset.n,v 1.8 2004/10/27 14:43:54 dkf Exp $
 '\" 
 .so man.macros
 .TH unset n 8.4 Tcl "Tcl Built-In Commands"
@@ -54,8 +54,8 @@ array set squares {
 puts "The squares are:"
 parray squares
 
-unset squares(1) squares(4) squares(6)
-unset squares(8) squares(9) squares(10)
+\fBunset\fR squares(1) squares(4) squares(6)
+\fBunset\fR squares(8) squares(9) squares(10)
 
 puts "The prime squares are:"
 parray squares
