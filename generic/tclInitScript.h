@@ -8,7 +8,7 @@
  * Copyright (c) 1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclInitScript.h,v 1.11 1999/07/21 17:43:21 hershey Exp $
+ * RCS: @(#) $Id: tclInitScript.h,v 1.12 1999/08/19 02:59:10 hobbs Exp $
  */
 
 /*
@@ -58,7 +58,7 @@ static char initScript[] = "if {[info proc tclInit]==\"\"} {\n\
 	set tclfile [file join $i init.tcl]\n\
 	if {[file exists $tclfile]} {\n\
 	    if {![catch {uplevel #0 [list source $tclfile]} msg]} {\n\
-	        return\n\
+		return\n\
 	    } else {\n\
 		append errors \"$tclfile: $msg\n$errorInfo\n\"\n\
 	    }\n\

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.27 1999/08/10 22:45:10 redman Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.28 1999/08/19 02:59:08 hobbs Exp $
 
 library tcl
 
@@ -1339,6 +1339,9 @@ declare 387 generic {
 }
 declare 388 generic {
     int Tcl_GetChannelNames(Tcl_Interp *interp)
+}
+declare 389 generic {
+    int Tcl_GetChannelNamesEx(Tcl_Interp *interp, char *pattern)
 }
 
 

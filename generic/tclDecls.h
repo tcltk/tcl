@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.28 1999/08/10 22:45:11 redman Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.29 1999/08/19 02:59:09 hobbs Exp $
  */
 
 #ifndef _TCLDECLS
@@ -1212,6 +1212,9 @@ EXTERN void		Tcl_SetNotifier _ANSI_ARGS_((
 EXTERN Tcl_Mutex *	Tcl_GetAllocMutex _ANSI_ARGS_((void));
 /* 388 */
 EXTERN int		Tcl_GetChannelNames _ANSI_ARGS_((Tcl_Interp * interp));
+/* 389 */
+EXTERN int		Tcl_GetChannelNamesEx _ANSI_ARGS_((
+				Tcl_Interp * interp, char * pattern));
 
 typedef struct TclStubHooks {
     struct TclPlatStubs *tclPlatStubs;
@@ -1668,6 +1671,7 @@ typedef struct TclStubs {
     void (*tcl_SetNotifier) _ANSI_ARGS_((Tcl_NotifierProcs * notifierProcPtr)); /* 386 */
     Tcl_Mutex * (*tcl_GetAllocMutex) _ANSI_ARGS_((void)); /* 387 */
     int (*tcl_GetChannelNames) _ANSI_ARGS_((Tcl_Interp * interp)); /* 388 */
+    int (*tcl_GetChannelNamesEx) _ANSI_ARGS_((Tcl_Interp * interp, char * pattern)); /* 389 */
 } TclStubs;
 
 #ifdef __cplusplus
@@ -3268,6 +3272,10 @@ extern TclStubs *tclStubsPtr;
 #ifndef Tcl_GetChannelNames
 #define Tcl_GetChannelNames \
 	(tclStubsPtr->tcl_GetChannelNames) /* 388 */
+#endif
+#ifndef Tcl_GetChannelNamesEx
+#define Tcl_GetChannelNamesEx \
+	(tclStubsPtr->tcl_GetChannelNamesEx) /* 389 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.3 1999/04/16 00:46:44 stanton Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.4 1999/08/19 02:59:08 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -494,7 +494,7 @@ CompileSubExpr(exprTokenPtr, infoPtr, envPtr)
 	    hPtr = Tcl_FindHashEntry(&opHashTable, operator);
 	    if (hPtr == NULL) {
 		code = CompileMathFuncCall(exprTokenPtr, operator, infoPtr,
-		        envPtr, &endPtr);
+			envPtr, &endPtr);
 		operator[tokenPtr->size] = (char) savedChar;
 		if (code != TCL_OK) {
 		    goto done;

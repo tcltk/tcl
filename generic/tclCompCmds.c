@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.2 1999/04/16 00:46:43 stanton Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.3 1999/08/19 02:59:08 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -1446,7 +1446,7 @@ TclCompileIncrCmd(interp, parsePtr, envPtr)
 
 	    word[numBytes] = '\0';
 	    if (TclLooksLikeInt(word, numBytes)
-		     && (TclGetLong((Tcl_Interp *) NULL, word, &n) == TCL_OK)) {
+		    && (TclGetLong((Tcl_Interp *) NULL, word, &n) == TCL_OK)) {
 		if ((-127 <= n) && (n <= 127)) {
 		    haveImmValue = 1;
 		    immValue = n;

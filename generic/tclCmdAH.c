@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.7 1999/07/01 23:21:06 redman Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.8 1999/08/19 02:59:08 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -793,7 +793,8 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
  */
 
     static char *fileOptions[] = {
-	"atime",	"attributes",	"copy",		"delete",
+	"atime",	"attributes",	"channels",	"copy",
+	"delete",
 	"dirname",	"executable",	"exists",	"extension",
 	"isdirectory",	"isfile",	"join",		"lstat",
 	"mtime",	"mkdir",	"nativename",	"owned",
@@ -803,7 +804,8 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	(char *) NULL
     };
     enum options {
-	FILE_ATIME,	FILE_ATTRIBUTES, FILE_COPY,	FILE_DELETE,
+	FILE_ATIME,	FILE_ATTRIBUTES, FILE_CHANNELS,	FILE_COPY,
+	FILE_DELETE,
 	FILE_DIRNAME,	FILE_EXECUTABLE, FILE_EXISTS,	FILE_EXTENSION,
 	FILE_ISDIRECTORY, FILE_ISFILE,	FILE_JOIN,	FILE_LSTAT,
 	FILE_MTIME,	FILE_MKDIR,	FILE_NATIVENAME, FILE_OWNED,
@@ -837,6 +839,14 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	}
 	case FILE_ATTRIBUTES: {
             return TclFileAttrsCmd(interp, objc, objv);
+	}
+	case FILE_CHANNELS: {
+	    if ((objc < 2) || (objc > 3)) {
+		Tcl_WrongNumArgs(interp, 2, objv, "?pattern?");
+		return TCL_ERROR;
+	    }
+	    return Tcl_GetChannelNamesEx(interp,
+		    ((objc == 2) ? NULL : Tcl_GetString(objv[2])));
 	}
 	case FILE_COPY: {
 	    int result;

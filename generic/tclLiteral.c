@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLiteral.c,v 1.7 1999/08/05 16:56:45 hobbs Exp $
+ * RCS: @(#) $Id: tclLiteral.c,v 1.8 1999/08/19 02:59:10 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -188,7 +188,6 @@ TclRegisterLiteral(envPtr, bytes, length, onHeap)
     long n;
     char buf[TCL_INTEGER_SPACE];
 
- 
     if (length < 0) {
 	length = (bytes? strlen(bytes) : 0);
     }
@@ -303,7 +302,6 @@ TclRegisterLiteral(envPtr, bytes, length, onHeap)
     if (globalTablePtr->numEntries >= globalTablePtr->rebuildSize) {
 	RebuildLiteralTable(globalTablePtr);
     }
-    
     objIndex = AddLocalLiteralEntry(envPtr, globalPtr, localHash);
 
 #ifdef TCL_COMPILE_DEBUG
@@ -752,7 +750,6 @@ TclReleaseLiteral(interp, objPtr)
      * Remove the reference corresponding to the local literal table
      * entry.
      */
-
     Tcl_DecrRefCount(objPtr);
 }
 

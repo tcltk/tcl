@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.14 1999/08/10 17:35:18 redman Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.15 1999/08/19 02:59:10 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -8157,7 +8157,6 @@ SetBlockMode(interp, chanPtr, mode)
     }
     return TCL_OK;
 }
-
 
 /*
  *----------------------------------------------------------------------
@@ -8178,13 +8177,39 @@ SetBlockMode(interp, chanPtr, mode)
 int
 Tcl_GetChannelNames(Tcl_Interp *interp)
 {
+    return Tcl_GetChannelNamesEx(interp, (char *) NULL);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_GetChannelNamesEx --
+ *
+ *	Return the names of open channels in the interp filtered
+ *	filtered through a pattern.  If pattern is NULL, it returns
+ *	all the open channels.
+ *
+ * Results:
+ *	TCL_OK or TCL_ERROR.
+ *
+ * Side effects:
+ *	Interp result modified with list of channel names.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_GetChannelNamesEx(Tcl_Interp *interp, char *pattern)
+{
     Channel *chanPtr;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     char *name;
+    Tcl_Obj *resultPtr;
 
-    Tcl_ResetResult(interp);
-    chanPtr = tsdPtr->firstChanPtr;
-    while (chanPtr != NULL) {
+    resultPtr = Tcl_GetObjResult(interp);
+    for (chanPtr = tsdPtr->firstChanPtr;
+	 chanPtr != NULL;
+	 chanPtr = chanPtr->nextChanPtr) {
         if (chanPtr == (Channel *) tsdPtr->stdinChannel) {
 	    name = "stdin";
 	} else if (chanPtr == (Channel *) tsdPtr->stdoutChannel) {
@@ -8194,8 +8219,11 @@ Tcl_GetChannelNames(Tcl_Interp *interp)
 	} else {
 	    name = chanPtr->channelName;
 	}
-	Tcl_AppendElement(interp, name);
-	chanPtr = chanPtr->nextChanPtr;
+	if (((pattern == NULL) || Tcl_StringMatch(name, pattern)) &&
+		(Tcl_ListObjAppendElement(interp, resultPtr,
+			Tcl_NewStringObj(name, -1)) != TCL_OK)) {
+	    return TCL_ERROR;
+	}
     }
     return TCL_OK;
 }
