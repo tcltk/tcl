@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.79.2.12 2004/11/04 06:06:50 dgp Exp $
+RCS: @(#) $Id: changes,v 1.79.2.13 2004/11/15 21:52:26 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -6098,7 +6098,13 @@ Corrects Tcl_StatBuf definition issues.  (hobbs)
 
 2004-11-02 (bug fix)[1017151] misleading errorInfo after tests (seeger,porter)
 
-Documentation improvements [759545,1058446,etc.]
+2004-11-11 (bug fix)[1034337] recursive file delete, MacOSX (steffen)
+
+2004-11-12 (bug fix)[1004065] stop crash when TCL_UTF_MAX==6 (hobbs,porter)
+
+2004-11-15 (bug fix)[10653678] [trace variable],[trace remove] interop (porter)
+
+Documentation improvements [759545,1058446,1062647,etc.]
 Test suite expansion [1036649,1001997,etc.]
 
 --- Released 8.4.8, November XX, 2004 --- See ChangeLog for details ---
