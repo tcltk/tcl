@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: unixInit.test,v 1.30.2.2 2003/11/06 21:47:33 hobbs Exp $
+# RCS: @(#) $Id: unixInit.test,v 1.30.2.3 2003/11/10 20:32:34 dgp Exp $
 
 package require tcltest 2
 namespace import -force ::tcltest::*
@@ -268,7 +268,7 @@ test unixInit-2.9 {TclpInitLibraryPath: paths relative to executable} {unix noSp
         /tmp/library /library /tcl[info patchlevel]/library]
 
 test unixInit-2.10 {TclpInitLibraryPath: executable relative} -constraints {
-	unixOnly stdio knownBug
+	unixOnly stdio
 } -setup {
     set tmpDir [makeDirectory tmp]
     set sparklyDir [makeDirectory sparkly $tmpDir]
