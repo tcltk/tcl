@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.59 2003/02/07 11:59:43 vincentdarley Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.60 2003/02/10 12:50:31 vincentdarley Exp $
  */
 
 #define TCL_TEST
@@ -6041,6 +6041,8 @@ SimplePathInFilesystem(Tcl_Obj *pathPtr, ClientData *clientDataPtr) {
  * copy without an interp
  */
 static Tcl_Interp *simpleInterpPtr = NULL;
+/* We use this to ensure we clean up after ourselves */
+static Tcl_Obj *tempFile = NULL;
 
 /* 
  * This is a very 'hacky' filesystem which is used just so 
@@ -6085,6 +6087,11 @@ TestSimpleFilesystemObjCmd(dummy, interp, objc, objv)
 	msg = (res == TCL_OK) ? "registered" : "failed";
 	simpleInterpPtr = interp;
     } else {
+	if (tempFile != NULL) {
+	    Tcl_FSDeleteFile(tempFile);
+	    Tcl_DecrRefCount(tempFile);
+	    tempFile = NULL;
+	}
 	res = Tcl_FSUnregister(&simpleFilesystem);
 	msg = (res == TCL_OK) ? "unregistered" : "failed";
 	simpleInterpPtr = NULL;
@@ -6121,6 +6128,7 @@ SimpleCopy(pathPtr)
     Tcl_DecrRefCount(origPtr);
 
     if (res != TCL_OK) {
+	Tcl_FSDeleteFile(tempPtr);
 	Tcl_DecrRefCount(tempPtr);
 	return NULL;
     }
@@ -6153,8 +6161,12 @@ SimpleOpenFileChannel(interp, pathPtr, mode, permissions)
     }
     
     chan = Tcl_FSOpenFileChannel(interp, tempPtr, "r", permissions);
-
-    Tcl_DecrRefCount(tempPtr);
+    /* When we are done with this file, it will never be deleted */
+    if (tempFile != NULL) {
+        Tcl_FSDeleteFile(tempFile);
+	Tcl_DecrRefCount(tempFile);
+    }
+    tempFile = tempPtr;
 
     return chan;
 }
@@ -6179,6 +6191,7 @@ SimpleStat(pathPtr, bufPtr)
 	return TCL_OK;
     } else {
 	int res = Tcl_FSStat(tempPtr, bufPtr);
+	Tcl_FSDeleteFile(tempPtr);
 	Tcl_DecrRefCount(tempPtr);
 	return res;
     }

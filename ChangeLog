@@ -18,6 +18,9 @@
 	foreach f [glob *] { # action and/or recursion on $f }
 	cd ..
 
+        * generic/tclTest.c: Fix for [Bug 683181] where test suite
+	left files in 'tmp'.
+	
 2003-02-08  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* library/safe.tcl: code cleanup of eval and string comp use.

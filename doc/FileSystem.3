@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: FileSystem.3,v 1.31 2003/02/10 10:26:24 vincentdarley Exp $
+'\" RCS: @(#) $Id: FileSystem.3,v 1.32 2003/02/10 12:50:31 vincentdarley Exp $
 '\" 
 .so man.macros
 .TH Filesystem 3 8.4 Tcl "Tcl Library Procedures"
@@ -856,6 +856,12 @@ its case or other aspects should be made unique).  All other path
 components should be converted from symbolic links.  This one
 exception is required to agree with Tcl's semantics with 'file
 delete', 'file rename', 'file copy' operating on symbolic links.
+This function may be called with 'nextCheckpoint' either
+at the beginning of the path (i.e. zero), at the end of the path, or
+at any intermediate file separator in the path.  It will never
+point to any other arbitrary position in the path. In the last of
+the three valid cases, the implementation can assume that the path 
+up to and including the file separator is known and normalized.
 .PP
 .CS
 typedef int Tcl_FSNormalizePathProc(
