@@ -1,5 +1,9 @@
 1999-03-23    <redman@scriptics.com>
 
+	* win/tclWinSerial.c: Fixed problem with fileevent on the serial
+	port and nonblocking mode.  Gets no longer hangs, fileevents fire
+	whenever there is any character data on the port.
+	
 	* tests/winConsole.test:
 	* win/tclWinConsole.c: Fixed problem with fileevents and gets from
 	a console stdin.  Previously, fileevents were firing before an
