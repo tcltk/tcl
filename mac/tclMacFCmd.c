@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacFCmd.c,v 1.14 2002/01/25 20:40:56 dgp Exp $
+ * RCS: @(#) $Id: tclMacFCmd.c,v 1.15 2002/01/26 01:10:08 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1490,7 +1490,7 @@ TclpObjListVolumes(void)
             break;
         }
         
-        Tcl_ExternalToUtfDString(NULL, (char *) &name[1], name[0], &dstr);  
+        Tcl_ExternalToUtfDString(NULL, (CONST char *)&name[1], name[0], &dstr);
         elemPtr = Tcl_NewStringObj(Tcl_DStringValue(&dstr),
 		Tcl_DStringLength(&dstr));
         Tcl_AppendToObj(elemPtr, ":", 1);

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.19 2002/01/25 20:40:55 dgp Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.20 2002/01/26 01:10:08 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1916,7 +1916,7 @@ Tcl_FormatObjCmd(dummy, interp, objc, objv)
 	return TCL_ERROR;
     }
 
-    format = (char *) Tcl_GetStringFromObj(objv[1], &formatLen);
+    format = Tcl_GetStringFromObj(objv[1], &formatLen);
     endPtr = format + formatLen;
     resultPtr = Tcl_NewObj();
     objIndex = 2;
