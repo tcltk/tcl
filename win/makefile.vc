@@ -12,7 +12,7 @@
 # Copyright (c) 2001 Tomasoft Engineering.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.75 2001/11/28 01:05:53 davygrvy Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.76 2001/12/03 08:56:18 davygrvy Exp $
 #------------------------------------------------------------------------------
 
 !if "$(MSVCDIR)" == ""
@@ -380,11 +380,11 @@ TESTFLAGS = -file $(TESTPAT)
 # Project specific targets
 #---------------------------------------------------------------------
 
-release:    setup $(TCLSH) dlls
-core:	    setup $(TCLLIB)
+release:    setup $(TCLSH) $(TCLSTUBLIB) dlls
+core:	    setup $(TCLLIB) $(TCLSTUBLIB)
 shell:	    setup $(TCLSH)
 dlls:	    setup $(TCLPIPEDLL) $(TCLREGDLL) $(TCLDDEDLL)
-all:	    setup $(TCLSH) dlls $(CAT32) 
+all:	    setup $(TCLSH) $(TCLSTUBLIB) dlls $(CAT32) 
 tcltest:    setup $(TCLTEST) dlls $(CAT32)
 plugin:	    setup $(TCLPLUGINDLL) $(TCLSHP)
 install:    install-binaries install-libraries
@@ -469,92 +469,71 @@ $(CAT32): $(WINDIR)\cat.c
 		$(baselibs)
 
 install-binaries:
-	$(MKDIR) "$(BIN_INSTALL_DIR)"
-	$(MKDIR) "$(LIB_INSTALL_DIR)"
-	@echo installing $(TCLDLLNAME)
+	@echo installing $(TCLLIBNAME)
 !if "$(TCLLIB)" != "$(TCLIMPLIB)"
-	@copy "$(TCLLIB)" "$(BIN_INSTALL_DIR)"
+	@xcopy /i /y "$(TCLLIB)" "$(BIN_INSTALL_DIR)\"
 !endif
-	@copy "$(TCLIMPLIB)" "$(LIB_INSTALL_DIR)"
+	@xcopy /i /y "$(TCLIMPLIB)" "$(LIB_INSTALL_DIR)\"
 !if exist($(TCLSH))
-	@echo installing "$(TCLSHNAME)"
-	@copy "$(TCLSH)" "$(BIN_INSTALL_DIR)"
+	@echo installing $(TCLSHNAME)
+	@xcopy /i /y "$(TCLSH)" "$(BIN_INSTALL_DIR)\"
 !endif
 !if exist($(TCLPIPEDLL))
 	@echo installing $(TCLPIPEDLLNAME)
-	@copy "$(TCLPIPEDLL)" "$(BIN_INSTALL_DIR)"
+	@xcopy /i /y "$(TCLPIPEDLL)" "$(BIN_INSTALL_DIR)\"
 !endif
 	@echo installing $(TCLSTUBLIBNAME)
-	@copy "$(TCLSTUBLIB)" "$(LIB_INSTALL_DIR)"
+	@xcopy /i /y "$(TCLSTUBLIB)" "$(LIB_INSTALL_DIR)\"
 !if exist($(TCLHLP))
-	$(MKDIR) "$(DOC_INSTALL_DIR)"
-	@copy "$(TCLHLP)" "$(DOC_INSTALL_DIR)"
-	@copy "$(TCLHLPCNT)" "$(DOC_INSTALL_DIR)"
+	@xcopy /i /y "$(TCLHLP)" "$(DOC_INSTALL_DIR)\"
+	@xcopy /i /y "$(TCLHLPCNT)" "$(DOC_INSTALL_DIR)\"
 !endif
 
 install-libraries:
-	-@$(MKDIR) "$(LIB_INSTALL_DIR)"
-	-@$(MKDIR) "$(INCLUDE_INSTALL_DIR)"
-	-@$(MKDIR) "$(SCRIPT_INSTALL_DIR)"
 	@echo installing http1.0
-	-@$(MKDIR) "$(SCRIPT_INSTALL_DIR)\http1.0"
-	-@copy "$(ROOT)\library\http1.0\http.tcl" \
-		"$(SCRIPT_INSTALL_DIR)\http1.0"
-	-@copy "$(ROOT)\library\http1.0\pkgIndex.tcl" \
-		"$(SCRIPT_INSTALL_DIR)\http1.0"
+	@xcopy /i /y "$(ROOT)\library\http1.0\*.tcl" \
+		"$(SCRIPT_INSTALL_DIR)\http1.0\"
 	@echo installing http2.4
-	-@$(MKDIR) "$(SCRIPT_INSTALL_DIR)\http2.4"
-	-@copy "$(ROOT)\library\http\http.tcl" \
-		"$(SCRIPT_INSTALL_DIR)\http2.4"
-	-@copy "$(ROOT)\library\http\pkgIndex.tcl" \
-		"$(SCRIPT_INSTALL_DIR)\http2.4"
+	@xcopy /i /y "$(ROOT)\library\http\*.tcl" \
+		"$(SCRIPT_INSTALL_DIR)\http2.4\"
 	@echo installing opt0.4
-	-@$(MKDIR) "$(SCRIPT_INSTALL_DIR)\opt0.4"
-	-@copy "$(ROOT)\library\opt\optparse.tcl" \
-		"$(SCRIPT_INSTALL_DIR)\opt0.4"
-	-@copy "$(ROOT)\library\opt\pkgIndex.tcl" \
-		"$(SCRIPT_INSTALL_DIR)\opt0.4"
+	@xcopy /i /y "$(ROOT)\library\opt\*.tcl" \
+		"$(SCRIPT_INSTALL_DIR)\opt0.4\"
 	@echo installing msgcat1.2
-	-@$(MKDIR) "$(SCRIPT_INSTALL_DIR)\msgcat1.2"
-	-@copy "$(ROOT)\library\msgcat\msgcat.tcl" \
-	    "$(SCRIPT_INSTALL_DIR)\msgcat1.2"
-	-@copy "$(ROOT)\library\msgcat\pkgIndex.tcl" \
-	    "$(SCRIPT_INSTALL_DIR)\msgcat1.2"
+	@xcopy /i /y "$(ROOT)\library\msgcat\*.tcl" \
+	    "$(SCRIPT_INSTALL_DIR)\msgcat1.2\"
 	@echo installing $(TCLDDEDLLNAME)
 !if $(STATIC_BUILD)
-	-@copy "$(TCLDDEDLL)" "$(LIB_INSTALL_DIR)"
+	@xcopy /i /y "$(TCLDDEDLL)" "$(LIB_INSTALL_DIR)\"
 !else
-	-@$(MKDIR) "$(LIB_INSTALL_DIR)\dde$(DDEDOTVERSION)"
-	-@copy "$(TCLDDEDLL)" "$(LIB_INSTALL_DIR)\dde$(DDEDOTVERSION)"
-	-@copy "$(ROOT)\library\dde\pkgIndex.tcl" \
-	    "$(LIB_INSTALL_DIR)\dde$(DDEDOTVERSION)"
+	@xcopy /i /y "$(TCLDDEDLL)" "$(LIB_INSTALL_DIR)\dde$(DDEDOTVERSION)\"
+	@xcopy /i /y "$(ROOT)\library\dde\pkgIndex.tcl" \
+	    "$(LIB_INSTALL_DIR)\dde$(DDEDOTVERSION)\"
 !endif
 	@echo installing $(TCLREGDLLNAME)
 !if $(STATIC_BUILD)
-	-@copy "$(TCLREGDLL)" "$(LIB_INSTALL_DIR)"
+	@xcopy /i /y "$(TCLREGDLL)" "$(LIB_INSTALL_DIR)\"
 !else
-	-@$(MKDIR) "$(LIB_INSTALL_DIR)\reg$(REGDOTVERSION)"
-	-@copy "$(TCLREGDLL)" "$(LIB_INSTALL_DIR)\reg$(REGDOTVERSION)"
-	-@copy "$(ROOT)\library\reg\pkgIndex.tcl" \
-	    "$(LIB_INSTALL_DIR)\reg$(REGDOTVERSION)"
+	@xcopy /i /y "$(TCLREGDLL)" "$(LIB_INSTALL_DIR)\reg$(REGDOTVERSION)\"
+	@xcopy /i /y "$(ROOT)\library\reg\pkgIndex.tcl" \
+	    "$(LIB_INSTALL_DIR)\reg$(REGDOTVERSION)\"
 !endif
 	@echo installing encoding files
-	-@$(MKDIR) "$(SCRIPT_INSTALL_DIR)\encoding"
-	-@copy "$(ROOT)\library\encoding\*.enc" \
-		"$(SCRIPT_INSTALL_DIR)\encoding"
+	@xcopy /i /y "$(ROOT)\library\encoding\*.enc" \
+		"$(SCRIPT_INSTALL_DIR)\encoding\"
 	@echo installing library files
-	-@copy "$(GENERICDIR)\tcl.h"          "$(INCLUDE_INSTALL_DIR)"
-	-@copy "$(GENERICDIR)\tclDecls.h"     "$(INCLUDE_INSTALL_DIR)"
-	-@copy "$(GENERICDIR)\tclPlatDecls.h" "$(INCLUDE_INSTALL_DIR)"
-	-@copy "$(ROOT)\library\history.tcl"  "$(SCRIPT_INSTALL_DIR)"
-	-@copy "$(ROOT)\library\init.tcl"     "$(SCRIPT_INSTALL_DIR)"
-	-@copy "$(ROOT)\library\ldAout.tcl"   "$(SCRIPT_INSTALL_DIR)"
-	-@copy "$(ROOT)\library\parray.tcl"   "$(SCRIPT_INSTALL_DIR)"
-	-@copy "$(ROOT)\library\safe.tcl"     "$(SCRIPT_INSTALL_DIR)"
-	-@copy "$(ROOT)\library\tclIndex"     "$(SCRIPT_INSTALL_DIR)"
-	-@copy "$(ROOT)\library\package.tcl"  "$(SCRIPT_INSTALL_DIR)"
-	-@copy "$(ROOT)\library\word.tcl"     "$(SCRIPT_INSTALL_DIR)"
-	-@copy "$(ROOT)\library\auto.tcl"     "$(SCRIPT_INSTALL_DIR)"
+	@xcopy /i /y "$(GENERICDIR)\tcl.h"          "$(INCLUDE_INSTALL_DIR)\"
+	@xcopy /i /y "$(GENERICDIR)\tclDecls.h"     "$(INCLUDE_INSTALL_DIR)\"
+	@xcopy /i /y "$(GENERICDIR)\tclPlatDecls.h" "$(INCLUDE_INSTALL_DIR)\"
+	@xcopy /i /y "$(ROOT)\library\history.tcl"  "$(SCRIPT_INSTALL_DIR)\"
+	@xcopy /i /y "$(ROOT)\library\init.tcl"     "$(SCRIPT_INSTALL_DIR)\"
+	@xcopy /i /y "$(ROOT)\library\ldAout.tcl"   "$(SCRIPT_INSTALL_DIR)\"
+	@xcopy /i /y "$(ROOT)\library\parray.tcl"   "$(SCRIPT_INSTALL_DIR)\"
+	@xcopy /i /y "$(ROOT)\library\safe.tcl"     "$(SCRIPT_INSTALL_DIR)\"
+	@xcopy /i /y "$(ROOT)\library\tclIndex"     "$(SCRIPT_INSTALL_DIR)\"
+	@xcopy /i /y "$(ROOT)\library\package.tcl"  "$(SCRIPT_INSTALL_DIR)\"
+	@xcopy /i /y "$(ROOT)\library\word.tcl"     "$(SCRIPT_INSTALL_DIR)\"
+	@xcopy /i /y "$(ROOT)\library\auto.tcl"     "$(SCRIPT_INSTALL_DIR)\"
 
 
 #---------------------------------------------------------------------
