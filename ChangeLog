@@ -1,3 +1,19 @@
+2002-12-06  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclStubInit.c: regen
+	* generic/tclIntPlatDecls.h: regen
+	* generic/tclInt.decls: added TclWinResetInterface
+
+	* win/tclWin32Dll.c (TclWinResetInterfaces):
+	* win/tclWinInit.c (TclpSetInitialEncodings, WinEncodingsCleanup):
+	add exit handler that resets the encoding information to a state
+	where we can reuse Tcl.  Following these changes, it is possible
+	to reuse Tcl (following Tcl_FindExecutable or Tcl_CreateInterp)
+	following a Tcl_Finalize.
+
+	* generic/tclIOUtil.c (TclFinalizeFilesystem): reset statics to
+	their original values on finalize to allow reuse of the library.
+
 2002-12-04  David Gravereaux  <davygrvy@pobox.com>
 
 	* win/tclWinPipe.c: reverted back to -r1.27 due to numerous test

@@ -7,7 +7,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclWinInit.c,v 1.35 2002/02/08 02:52:55 dgp Exp $
+ * RCS: @(#) $Id: tclWinInit.c,v 1.36 2002/12/06 23:22:59 hobbs Exp $
  */
 
 #include "tclWinInt.h"
@@ -461,7 +461,34 @@ ToUtf(
     *dst = '\0';
     return (int) (dst - start);
 }
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * WinEncodingsCleanup --
+ *
+ *	Reset information to its original state in finalization to
+ *	allow for reinitialization to be possible.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Static information reset to startup state.
+ *
+ *---------------------------------------------------------------------------
+ */
 
+static void
+WinEncodingsCleanup(ClientData clientData)
+{
+    TclWinResetInterfaces();
+    libraryPathEncodingFixed = 0;
+    if (binaryEncoding != NULL) {
+	Tcl_FreeEncoding(binaryEncoding);
+	binaryEncoding = NULL;
+    }
+}
 
 /*
  *---------------------------------------------------------------------------
@@ -538,6 +565,8 @@ TclpSetInitialEncodings()
 	encoding = "iso8859-1";
 	binaryEncoding = Tcl_GetEncoding(NULL, encoding);
     }
+
+    Tcl_CreateExitHandler(WinEncodingsCleanup, NULL);
 }
 
 /*
