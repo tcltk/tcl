@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.114 2003/01/09 10:38:29 vincentdarley Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.115 2003/01/17 14:19:49 vincentdarley Exp $
  */
 
 #ifndef _TCLINT
@@ -287,6 +287,10 @@ typedef struct CommandTrace {
 				     * TCL_TRACE_RENAME, TCL_TRACE_DELETE. */
     struct CommandTrace *nextPtr;   /* Next in list of traces associated with
 				     * a particular command. */
+    int refCount;                   /* Used to ensure this structure is
+                                     * not deleted too early.  Keeps track
+                                     * of how many pieces of code have
+                                     * a pointer to this structure. */
 } CommandTrace;
 
 /*
