@@ -10,6 +10,14 @@
 	overflows and a couple envars upsetting invokations of cl.exe
 	and link.exe.  [Bug 885537]
 
+	--------
+	* tests/winPipe.test: Added proof that BuildCommandLine() is not
+	doing the "N backslashes followed a quote -> insert N * 2 + 1
+	backslashes then a quote" rule needed for the crt's
+	parse_cmdline().
+	* win/tclWinPipe.c: Fixed BuildCommandLine() to pass the new
+	cases.
+
 2004-01-30  David Gravereaux <davygrvy@pobox.com>
 
 	* win/makefile.vc: Use the -GZ compiler switch when building for
