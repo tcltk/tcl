@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.12 1999/05/22 01:20:13 stanton Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.12.4.1 1999/12/08 05:49:39 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -581,7 +581,7 @@ Tcl_ScanCountedElement(string, length, flagPtr)
     if ((p == lastChar) || (*p == '{') || (*p == '"')) {
 	flags |= USE_BRACES;
     }
-    for ( ; p != lastChar; p++) {
+    for ( ; p < lastChar; p++) {
 	switch (*p) {
 	    case '{':
 		nestingLevel++;

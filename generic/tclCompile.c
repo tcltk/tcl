@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.15.6.2 1999/10/30 11:05:59 hobbs Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.15.6.3 1999/12/08 05:49:38 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -882,6 +882,13 @@ TclCompileScript(interp, script, numBytes, nested, envPtr)
 			    } else if (code == TCL_OUT_LINE_COMPILE) {
 				/* do nothing */
 			    } else { /* an error */
+				/*
+				 * There was a compilation error, the last
+				 * command did not get compiled into (*envPtr).
+				 * Decrement the number of commands
+				 * claimed to be in (*envPtr).
+				 */
+				envPtr->numCommands--;
 				goto error;
 			    }
 			}
@@ -1344,9 +1351,8 @@ TclCompileExprWords(interp, tokenPtr, numWords, envPtr)
 				 * token contains one or more subtokens. */
     CompileEnv *envPtr;		/* Holds the resulting instructions. */
 {
-    Tcl_Token *wordPtr, *partPtr;
-    JumpFixup jumpFixup;
-    int maxDepth, doExprInline, range, numBytes, i, j, code;
+    Tcl_Token *wordPtr;
+    int maxDepth, range, numBytes, i, code;
     char *script;
     int saveExprIsJustVarRef = envPtr->exprIsJustVarRef;
     int saveExprIsComparison = envPtr->exprIsComparison;
@@ -1372,112 +1378,7 @@ TclCompileExprWords(interp, tokenPtr, numWords, envPtr)
 	code = TclCompileExpr(interp, script, numBytes, envPtr);
 	return code;
     }
-	
-    /*
-     * Multiple words or the single word requires substitutions. We may
-     * need to call expr's command proc at runtime. This often recompiles
-     * the expression each time and is slow. However, there are some
-     * circumstances where we can still compile inline code "optimistically"
-     * and check for type errors during execution that signal when double
-     * substitutions must be done.
-     */
-
-    doExprInline = 1;
-    wordPtr = tokenPtr;
-    for (i = 0;  ((i < numWords) && doExprInline);  i++) {
-	if (wordPtr->type == TCL_TOKEN_WORD) {
-	    for (j = 0, partPtr = wordPtr+1;  j < wordPtr->numComponents;
-		    j++, partPtr++) {
-		if ((partPtr->type == TCL_TOKEN_BS)
-		        || (partPtr->type == TCL_TOKEN_COMMAND)
-			|| (partPtr->type == TCL_TOKEN_VARIABLE)) {
-		    doExprInline = 0;
-		    break;
-		}
-	    }
-	}
-	wordPtr += (wordPtr->numComponents + 1);
-    }
-
-    /*
-     * If only variable substitutions appear (no backslash or command
-     * substitutions), inline compile the expr inside a "catch" so that if
-     * there is any error, we call expr's command proc at runtime.
-     */
-    
-    if (doExprInline) {
-	Tcl_DString exprBuffer;
-	int startCodeOffset = (envPtr->codeNext - envPtr->codeStart);
-	int startExceptNext = envPtr->exceptArrayNext;
-	
-	envPtr->exceptDepth++;
-	envPtr->maxExceptDepth =
-	        TclMax(envPtr->exceptDepth, envPtr->maxExceptDepth);
- 	range = TclCreateExceptRange(CATCH_EXCEPTION_RANGE, envPtr);
-	TclEmitInstInt4(INST_BEGIN_CATCH4, range, envPtr);
-
-	Tcl_DStringInit(&exprBuffer);
-	wordPtr = tokenPtr;
-	for (i = 0;  i < numWords;  i++) {
-	    if (i > 0) {
-		Tcl_DStringAppend(&exprBuffer, " ", 1);
-	    }
-	    for (j = 0, partPtr = wordPtr+1;  j < wordPtr->numComponents;
-		    j++, partPtr++) {
-		switch (partPtr->type) {
-		    case TCL_TOKEN_TEXT:
-			Tcl_DStringAppend(&exprBuffer, partPtr->start,
-		                partPtr->size);
-			break;
-
-		    case TCL_TOKEN_VARIABLE:
-			Tcl_DStringAppend(&exprBuffer, partPtr->start,
-		                partPtr->size);
-			j += partPtr->numComponents;
-			partPtr += partPtr->numComponents;
-			break;
-
-		    default:
-			panic("unexpected token type in TclCompileExprWords");
-		}
-	    }
-	    wordPtr += (wordPtr->numComponents + 1);
-	}
-	envPtr->exceptArrayPtr[range].codeOffset =
-	        (envPtr->codeNext - envPtr->codeStart);
-	code = TclCompileExpr(interp, Tcl_DStringValue(&exprBuffer),
-		Tcl_DStringLength(&exprBuffer), envPtr);
-	envPtr->exceptArrayPtr[range].numCodeBytes =
-	        (envPtr->codeNext - envPtr->codeStart)
-	        - envPtr->exceptArrayPtr[range].codeOffset;
-	maxDepth = envPtr->maxStackDepth;
-	Tcl_DStringFree(&exprBuffer);
-	
-	if ((code != TCL_OK) || (envPtr->exprIsJustVarRef)
-	        || (envPtr->exprIsComparison)) {
-	    /*
-	     * Delete the inline code and call the expr command proc at
-	     * runtime. There was a compilation error or the inline code
-	     * might not have the right 2 level substitution semantics:
-	     * e.g., if the expr consisted of a single variable ref or the
-	     * top-level operator is a comparison (which might operate on
-	     * strings). The code might appear to execute successfully but
-	     * produce the wrong result. We depend on execution failing if a
-	     * second level of substitutions is required.
-	     */
-	    
-	    envPtr->codeNext = (envPtr->codeStart + startCodeOffset);
-	    envPtr->exceptArrayNext = startExceptNext;
-	    doExprInline = 0;
-	} else {
-	    TclEmitOpcode(INST_END_CATCH, envPtr); /* for ok case */
-	    TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, &jumpFixup);
-	    envPtr->exceptArrayPtr[range].catchOffset =
-		    (envPtr->codeNext - envPtr->codeStart);
-	    TclEmitOpcode(INST_END_CATCH, envPtr); /* for error case */
-	}
-    }
-	    
+   
     /*
      * Emit code to call the expr command proc at runtime. Concatenate the
      * (already substituted once) expr tokens with a space between each.
@@ -1510,25 +1411,7 @@ TclCompileExprWords(interp, tokenPtr, numWords, envPtr)
 	}
 	TclEmitOpcode(INST_EXPR_STK, envPtr);
     }
-    
-    /*
-     * If generating inline code, update the target of the jump at the end.
-     */
-    
-    if (doExprInline) {
-	int jumpDist = (envPtr->codeNext - envPtr->codeStart)
-	        - jumpFixup.codeOffset;
-	if (TclFixupForwardJump(envPtr, &jumpFixup, jumpDist, 127)) {
-	    /*
-	     * Update the inline expression code's catch ExceptionRange
-	     * target since it, being after the jump, also moved down.
-	     */
-	    
-	    envPtr->exceptArrayPtr[range].catchOffset += 3;
-	}
-	envPtr->exceptDepth--;
-    }
-    
+
     envPtr->exprIsJustVarRef = saveExprIsJustVarRef;
     envPtr->exprIsComparison = saveExprIsComparison;
     envPtr->maxStackDepth = maxDepth;
