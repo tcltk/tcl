@@ -1,3 +1,9 @@
+2002-01-04  Don Porter <dgp@users.sourceforge.net>
+
+	* generic/tclThreadJoin.c (TclRememberJoinableThread,TclJoinThread):
+	Replaced Tcl_Alloc and Tcl_Free calls with ckalloc and ckfree so that
+	memory debugging is supported.
+
 2002-01-04  Daniel Steffen <das@users.sourceforge.net>
 
 	* mac/tclMacTime.c (TclpGetTZName): fix for daylight savings TZName bug
