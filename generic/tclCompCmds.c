@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.8 2001/05/17 02:13:02 hobbs Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.9 2001/06/28 00:42:39 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -2164,6 +2164,7 @@ TclCompileStringCmd(interp, parsePtr, envPtr)
     opObj = Tcl_NewStringObj(opTokenPtr->start, opTokenPtr->size);
     if (Tcl_GetIndexFromObj(interp, opObj, options, "option", 0,
 	    &index) != TCL_OK) {
+	Tcl_DecrRefCount(opObj);
 	return TCL_ERROR;
     }
     Tcl_DecrRefCount(opObj);
