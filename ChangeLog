@@ -1,8 +1,23 @@
+2004-02-05  David Gravereaux <davygrvy@pobox.com>
+
+	* win/makefile.vc:
+	* win/rules.vc:
+	* win/tcl.rc:
+	* win/tclsh.rc:  Added an 'unchecked' option to the OPTS macro so a
+	core build with symbols can be linked to the non-debug enabled C
+	run-time.  As per discussion with Kevin Kenny.  Called like this:
+
+	nmake -af makefile.vc OPTS=unchecked,symbols
+
+	This clarifies the meaning of the 'g' naming suffix to mean only that
+	the binary requires the debug enabled C run-time.  Whether the binary
+	contains symbols or not is a seperate condition.
+
 2004-02-06  Don Porter	<dgp@users.sourceforge.net>
 
 	* doc/clock.n:	Removed reference to non-existent [file ctime].
 
-2004-02-05  David Gravereaux <davygrvy@pobo.co>
+2004-02-05  David Gravereaux <davygrvy@pobox.com>
 
 	* docs/tclvars.n: Added clarification of the tcl_platform(debug)
 	var that it only refers to the flavor of the C run-time, and not
