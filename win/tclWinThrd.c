@@ -37,6 +37,13 @@ static int init = 0;
 static CRITICAL_SECTION initLock;
 
 /*
+ * allocLock is used by Tcl's version of malloc for synchronization.
+ * For obvious reasons, cannot use any dyamically allocated storage.
+ */
+
+static CRITICAL_SECTION allocLock;
+
+/*
  * Condition variables are implemented with a combination of a 
  * per-thread Windows Event and a per-condition waiting queue.
  * The idea is that each thread has its own Event that it waits
@@ -202,6 +209,7 @@ TclpInitLock()
 	init = 1;
 	InitializeCriticalSection(&initLock);
 	InitializeCriticalSection(&masterLock);
+	InitializeCriticalSection(&allocLock);
     }
     EnterCriticalSection(&initLock);
 }
@@ -264,6 +272,7 @@ TclpMasterLock()
 	init = 1;
 	InitializeCriticalSection(&initLock);
 	InitializeCriticalSection(&masterLock);
+	InitializeCriticalSection(&allocLock);
     }
     EnterCriticalSection(&masterLock);
 }
@@ -292,44 +301,34 @@ TclpMasterUnlock()
     LeaveCriticalSection(&masterLock);
 }
 
-#ifdef TCL_THREADS
 
 /*
  *----------------------------------------------------------------------
  *
- * TclpMutexInit --
- * TclpMutexLock --
- * TclpMutexUnlock --
+ * Tcl_GetAllocMutex
  *
- *	These procedures use an explicitly initialized mutex.
- *	These are used by memory allocators for their own mutex.
- * 
+ *	This procedure returns a pointer to a statically initialized
+ *	mutex for use by the memory allocator.  The alloctor must
+ *	use this lock, because all other locks are allocated...
+ *
  * Results:
- *	None.
+ *	A pointer to a mutex that is suitable for passing to
+ *	Tcl_MutexLock and Tcl_MutexUnlock.
  *
  * Side effects:
- *	Initialize, Lock, and Unlock the mutex.
+ *	None.
  *
  *----------------------------------------------------------------------
  */
 
-void
-TclpMutexInit(mPtr)
-    TclpMutex *mPtr;
+Tcl_Mutex *
+Tcl_GetAllocMutex()
 {
-    InitializeCriticalSection((CRITICAL_SECTION *)mPtr);
-}
-void
-TclpMutexLock(mPtr)
-    TclpMutex *mPtr;
-{
-    EnterCriticalSection((CRITICAL_SECTION *)mPtr);
-}
-void
-TclpMutexUnlock(mPtr)
-    TclpMutex *mPtr;
-{
-    LeaveCriticalSection((CRITICAL_SECTION *)mPtr);
+#ifdef TCL_THREADS
+    return &allocLock;
+#else
+    return NULL;
+#endif
 }
 
 

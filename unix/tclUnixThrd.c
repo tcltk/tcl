@@ -36,6 +36,13 @@ static pthread_mutex_t masterLock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t initLock = PTHREAD_MUTEX_INITIALIZER;
 
 /*
+ * allocLock is used by Tcl's version of malloc for synchronization.
+ * For obvious reasons, cannot use any dyamically allocated storage.
+ */
+
+static pthread_mutex_t allocLock = PTHREAD_MUTEX_INITIALIZER;
+
+/*
  * These are for the critical sections inside this file.
  */
 
@@ -248,45 +255,37 @@ TclpMasterUnlock()
 #endif
 }
 
-#ifdef TCL_THREADS
 
 /*
  *----------------------------------------------------------------------
  *
- * TclpMutexInit --
- * TclpMutexLock --
- * TclpMutexUnlock --
+ * Tcl_GetAllocMutex
  *
- *	These procedures use an explicitly initialized mutex.
- *	These are used by memory allocators for their own mutex.
- * 
+ *	This procedure returns a pointer to a statically initialized
+ *	mutex for use by the memory allocator.  The alloctor must
+ *	use this lock, because all other locks are allocated...
+ *
  * Results:
- *	None.
+ *	A pointer to a mutex that is suitable for passing to
+ *	Tcl_MutexLock and Tcl_MutexUnlock.
  *
  * Side effects:
- *	Initialize, Lock, and Unlock the mutex.
+ *	None.
  *
  *----------------------------------------------------------------------
  */
 
-void
-TclpMutexInit(mPtr)
-    TclpMutex *mPtr;
+Tcl_Mutex *
+Tcl_GetAllocMutex()
 {
-    pthread_mutex_init((pthread_mutex_t *)mPtr, NULL);
+#ifdef TCL_THREADS
+    return (Tcl_Mutex *)&allocLock;
+#else
+    return NULL;
+#endif
 }
-void
-TclpMutexLock(mPtr)
-    TclpMutex *mPtr;
-{
-    pthread_mutex_lock((pthread_mutex_t *)mPtr);
-}
-void
-TclpMutexUnlock(mPtr)
-    TclpMutex *mPtr;
-{
-    pthread_mutex_unlock((pthread_mutex_t *)mPtr);
-}
+
+#ifdef TCL_THREADS
 
 /*
  *----------------------------------------------------------------------

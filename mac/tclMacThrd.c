@@ -308,6 +308,33 @@ TclpMasterUnlock()
 #endif
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_GetAllocMutex
+ *
+ *	This procedure returns a pointer to a statically initialized
+ *	mutex for use by the memory allocator.  The alloctor must
+ *	use this lock, because all other locks are allocated...
+ *
+ * Results:
+ *	A pointer to a mutex that is suitable for passing to
+ *	Tcl_MutexLock and Tcl_MutexUnlock.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Mutex *
+Tcl_GetAllocMutex()
+{
+    /* There is nothing to do on the Mac */
+    return NULL;
+}
+
 #ifdef TCL_THREADS
 
 /*
