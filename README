@@ -5,7 +5,7 @@ README:  Tcl
     Tcl/Tk is also available through NetCVS:
 	http://dev.scriptics.com/software/tcltk/netcvs.html
 
-RCS: @(#) $Id: README,v 1.32 2000/05/03 00:15:05 hobbs Exp $
+RCS: @(#) $Id: README,v 1.33 2000/08/14 18:37:59 ericm Exp $
 
 Contents
 --------
@@ -93,7 +93,7 @@ shortcut to the Windows help Tcl documentation will appear in the
 There are brief notes in the unix/README, win/README, and mac/README
 about compiling on these different platforms.  There is additional
 information about building Tcl from sources at
-    http://dev.scriptics.com/support/howto/compile.html
+    http://dev.scriptics.com/doc/howto/compile.html
 
 
 4. TclPro Development tools
