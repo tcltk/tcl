@@ -1,3 +1,22 @@
+1999-05-19    <stanton@scriptics.com>
+
+	Merged in various changes submitted by Jeff Hobbs:
+	
+	* generic/tcl.decls: 
+	* generic/tclUtf.c: Added Tcl_UniCharIs* functions for control,
+	graph, print, and punct classes.
+
+	* generic/tclUtil.c:
+	* doc/StrMatch.3: Added Tcl_StringCaseMatch() implementation to
+	support case-insensitive globbing.
+	
+	* doc/string.n: 
+	* unix/mkLinks: 
+	* tests/string.test: 
+	* generic/tclCmdMZ.c: Added additional character class tests,
+	added -nocase switch to "string match", changed string first/last
+	to use offsets.
+
 1999-05-19    <redman@scriptics.com>
 
 	* generic/tcl.h: Add extern "C" block around entire header file for
