@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and
 # redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: http.tcl,v 1.36 2001/08/09 01:06:42 dgp Exp $
+# RCS: @(#) $Id: http.tcl,v 1.37 2001/08/21 01:09:13 hobbs Exp $
 
 # Rough version history:
 # 1.0	Old http_get interface
@@ -29,9 +29,9 @@ namespace eval http {
 	-accept */*
 	-proxyhost {}
 	-proxyport {}
-	-useragent {Tcl http client package 2.3.2}
 	-proxyfilter http::ProxyRequired
     }
+    set http(-useragent) "Tcl http client package [package provide http]"
 
     variable formMap
     variable alphanumeric a-zA-Z0-9
@@ -394,7 +394,7 @@ proc http::geturl { url args } {
     if {[catch {
 	puts $s "$how $srvurl HTTP/1.0"
 	puts $s "Accept: $http(-accept)"
-	puts $s "Host: $host"
+	puts $s "Host: $host:$port"
 	puts $s "User-Agent: $http(-useragent)"
 	foreach {key value} $state(-headers) {
 	    regsub -all \[\n\r\]  $value {} value
