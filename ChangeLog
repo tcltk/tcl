@@ -1,5 +1,11 @@
 2004-11-05  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
+	* tests/reg.test: Major reorganization so that this file is much
+	easier for a normal Tcl maintainer to comprehend.  The test flags
+	are still very cryptic, but they appear to have to be that way.
+	The number of skipped tests has increased, but now the skipped
+	tests have much more meaningful content.
+
 	* tests/tm.test (genpaths): Add a [file normalize] so we pick up
 	Windows drive letters, etc. [Bug 1053568]
 
