@@ -2,6 +2,20 @@
 
 	*** 8.4.2 TAGGED FOR RELEASE ***
 
+2003-03-03  Daniel Steffen  <das@users.sourceforge.net>
+
+	Mac OS Classic specific fixes:
+	* generic/tclIOUtil.c (TclNewFSPathObj): on TCL_PLATFORM_MAC,
+	skip potential directory separator at the beginning of addStrRep.
+	* mac/tclMacChan.c (OpenFileChannel, CommonWatch): followup
+	fixes to cut and splice implementation for file channels.
+	* mac/tclMacFile.c (TclpUtime): pass native path to utime().
+	* mac/tclMacFile.c (TclpObjLink): correctly implemented creation
+	of alias files via new static proc CreateAliasFile().
+	* mac/tclMacPort.h: define S_ISLNK macro to fix stat'ing of links.
+	* mac/tclMacUtil.c (FSpLocationFromPathAlias): fix to enable
+	stat'ing of broken links.
+
 2003-03-03  Kevin Kenny  <kennykb@users.sourceforge.net>
 
 	* win/Makefile.vc: corrected bug introduced by 'g' for debug builds.
