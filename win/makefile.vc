@@ -12,7 +12,7 @@
 # Copyright (c) 2001 Tomasoft Engineering.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.73 2001/11/13 04:30:51 davygrvy Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.74 2001/11/15 00:19:40 davygrvy Exp $
 #------------------------------------------------------------------------------
 
 !if "$(MSVCDIR)" == ""
@@ -61,7 +61,7 @@ the environment.  Jump to this line to read the new instructions.
 #		Sets where to install Tcl from the built binaries.
 #		C:\Progra~1\Tcl is assumed when not specified.
 #
-#	OPTS=static,msvcrt,threads,symbols,profile,none
+#	OPTS=static,msvcrt,linkexten,threads,symbols,profile,none
 #		Sets special options for the core.  The default is for none.
 #		Any combination of the above may be used (comma separated).
 #		'none' will over-ride everything to nothing.
@@ -122,19 +122,6 @@ the environment.  Jump to this line to read the new instructions.
 #       Targeting Windows pre64 RETAIL
 #       c:\tcl_src\win\>nmake -f makefile.vc MACHINE=IA64
 #
-#     I've found the following batchfile useful for building everything:
-#
-#	if "%MSVCDir%" == "" call c:\progra~1\micros~1\vc98\bin\vcvars32.bat
-#	set INSTALLDIR=C:\tclTestArea
-#	nmake -nologo -f makefile.vc release winhelp
-#	nmake -nologo -f makefile.vc release   OPTS=static,linkexten
-#	nmake -nologo -f makefile.vc core dlls OPTS=static,msvcrt
-#	nmake -nologo -f makefile.vc core      OPTS=static,threads
-#	nmake -nologo -f makefile.vc core      OPTS=static,msvcrt,threads
-#	nmake -nologo -f makefile.vc shell     OPTS=threads
-#	pause
-#
-#
 #------------------------------------------------------------------------------
 #==============================================================================
 ###############################################################################
@@ -182,7 +169,8 @@ TCLLIB		= $(OUT_DIR)\$(TCLLIBNAME)
 TCLSTUBLIBNAME	= $(STUBPREFIX)$(VERSION).lib
 TCLSTUBLIB	= $(OUT_DIR)\$(TCLSTUBLIBNAME)
 
-TCLSH		= $(OUT_DIR)\$(PROJECT)sh$(VERSION)$(SUFX).exe
+TCLSHNAME	= $(PROJECT)sh$(VERSION)$(SUFX).exe
+TCLSH		= $(OUT_DIR)\$(TCLSHNAME)
 TCLPIPEDLLNAME	= $(PROJECT)pip$(VERSION).dll
 TCLPIPEDLL	= $(OUT_DIR)\$(TCLPIPEDLLNAME)
 
@@ -436,11 +424,15 @@ $(TCLSTUBLIB): $(TCLSTUBOBJS)
 	$(lib32) -nologo -out:$@ $(TCLSTUBOBJS)
 
 $(TCLSH): $(TCLSHOBJS) $(TCLIMPLIB)
-	$(link32) $(ldebug) $(conlflags) -stack:2300000 -out:$@ $(baselibs) $**
+	$(link32) $(ldebug) $(conlflags) -stack:2300000 -out:$@ $(baselibs) @<<
+$**
+<<
 
 
 $(TCLTEST): $(TCLTESTOBJS) $(TCLIMPLIB)
-	$(link32) $(ldebug) $(conlflags) -stack:2300000 -out:$@ $(baselibs) $**
+	$(link32) $(ldebug) $(conlflags) -stack:2300000 -out:$@ $(baselibs) @<<
+$**
+<<
 
 
 $(TCLPIPEDLL): $(WINDIR)\stub16.c
@@ -476,7 +468,7 @@ $(CAT32): $(WINDIR)\cat.c
 	$(link32) $(conlflags) -out:$@ -stack:16384 $(TMP_DIR)\cat.obj \
 		$(baselibs)
 
-install-binaries: $(TCLSH)
+install-binaries:
 	$(MKDIR) "$(BIN_INSTALL_DIR)"
 	$(MKDIR) "$(LIB_INSTALL_DIR)"
 	@echo installing $(TCLDLLNAME)
@@ -484,15 +476,21 @@ install-binaries: $(TCLSH)
 	@copy "$(TCLLIB)" "$(BIN_INSTALL_DIR)"
 !endif
 	@copy "$(TCLIMPLIB)" "$(LIB_INSTALL_DIR)"
-	@echo installing "$(TCLSH)"
+!if exist($(TCLSH))
+	@echo installing "$(TCLSHNAME)"
 	@copy "$(TCLSH)" "$(BIN_INSTALL_DIR)"
+!endif
+!if exist($(TCLPIPEDLL))
 	@echo installing $(TCLPIPEDLLNAME)
 	@copy "$(TCLPIPEDLL)" "$(BIN_INSTALL_DIR)"
+!endif
 	@echo installing $(TCLSTUBLIBNAME)
 	@copy "$(TCLSTUBLIB)" "$(LIB_INSTALL_DIR)"
-	@if exist $(TCLHLP) $(MKDIR) "$(DOC_INSTALL_DIR)"
-	@if exist $(TCLHLP) copy "$(TCLHLP)" "$(DOC_INSTALL_DIR)"
-	@if exist $(TCLHLPCNT) copy "$(TCLHLPCNT)" "$(DOC_INSTALL_DIR)"
+!if exist($(TCLHLP))
+	$(MKDIR) "$(DOC_INSTALL_DIR)"
+	@copy "$(TCLHLP)" "$(DOC_INSTALL_DIR)"
+	@copy "$(TCLHLPCNT)" "$(DOC_INSTALL_DIR)"
+!endif
 
 install-libraries:
 	-@$(MKDIR) "$(LIB_INSTALL_DIR)"
@@ -609,7 +607,11 @@ $(TMP_DIR)\tclWinInit.obj: $(WINDIR)\tclWinInit.c
 	$(cc32) -DBUILD_tcl $(TCL_CFLAGS) $(EXTFLAGS) -Fo$(TMP_DIR)\ $?
 
 $(TMP_DIR)\testMain.obj: $(WINDIR)\tclAppInit.c
-	$(cc32) $(TCL_CFLAGS) -DTCL_TEST -Fo$(TMP_DIR)\testMain.obj $?
+!if $(TCL_LINKWITHEXTENSIONS)
+	$(cc32) $(TCL_CFLAGS) -DTCL_TEST -DTCL_LINKWITHEXTENSIONS -Fo$@ $?
+!else
+	$(cc32) $(TCL_CFLAGS) -DTCL_TEST -Fo$@ $?
+!endif
 
 $(TMP_DIR)\tclTest.obj: $(GENERICDIR)\tclTest.c
 	$(cc32) $(TCL_CFLAGS) -Fo$@ $?
