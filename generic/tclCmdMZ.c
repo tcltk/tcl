@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.108 2004/09/30 23:06:48 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.109 2004/10/06 05:52:21 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -90,7 +90,7 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
     int i, indices, match, about, offset, all, doinline, numMatchesSaved;
     int cflags, eflags, stringLength;
     Tcl_RegExp regExpr;
-    Tcl_Obj *objPtr, *resultPtr;
+    Tcl_Obj *objPtr, *resultPtr = NULL;
     Tcl_RegExpInfo info;
     static CONST char *options[] = {
 	"-all",		"-about",	"-indices",	"-inline",
@@ -231,7 +231,6 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
 
     objc -= 2;
     objv += 2;
-    resultPtr = Tcl_GetObjResult(interp);
 
     if (doinline) {
 	/*
@@ -273,14 +272,12 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
 	     */
 	    if (all <= 1) {
 		/*
-		 * If inlining, set the interpreter's object result to an
-		 * empty list, otherwise set it to an integer object w/
+		 * If inlining, the interpreter's object result remains
+		 * an empty list, otherwise set it to an integer object w/
 		 * value 0.
 		 */
-		if (doinline) {
-		    Tcl_SetListObj(resultPtr, 0, NULL);
-		} else {
-		    Tcl_SetIntObj(resultPtr, 0);
+		if (!doinline) {
+		    Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
 		}
 		return TCL_OK;
 	    }
@@ -299,6 +296,9 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
 	     * at index 0
 	     */
 	    objc = info.nsubs + 1;
+	    if (all <= 1) {
+		resultPtr = Tcl_NewObj();
+	    }
 	}
 	for (i = 0; i < objc; i++) {
 	    Tcl_Obj *newPtr;
@@ -345,6 +345,7 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
 		if (Tcl_ListObjAppendElement(interp, resultPtr, newPtr)
 			!= TCL_OK) {
 		    Tcl_DecrRefCount(newPtr);
+		    Tcl_DecrRefCount(resultPtr);
 		    return TCL_ERROR;
 		}
 	    } else {
@@ -386,13 +387,12 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
      * Set the interpreter's object result to an integer object
      * with value 1 if -all wasn't specified, otherwise it's all-1
      * (the number of times through the while - 1).
-     * Get the resultPtr again as the Tcl_ObjSetVar2 above may have
-     * cause the result to change. [Patch #558324] (watson).
      */
 
-    if (!doinline) {
-	resultPtr = Tcl_GetObjResult(interp);
-	Tcl_SetIntObj(resultPtr, (all ? all-1 : 1));
+    if (doinline) {
+	Tcl_SetObjResult(interp, resultPtr);
+    } else {
+	Tcl_SetObjResult(interp, Tcl_NewIntObj(all ? all-1 : 1));
     }
     return TCL_OK;
 }
@@ -765,7 +765,7 @@ Tcl_RegsubObjCmd(dummy, interp, objc, objv)
 	     * holding the number of matches. 
 	     */
 
-	    Tcl_SetIntObj(Tcl_GetObjResult(interp), numMatches);
+	    Tcl_SetObjResult(interp, Tcl_NewIntObj(numMatches));
 	}
     } else {
 	/*
@@ -992,7 +992,7 @@ TclMergeReturnOptions(interp, objc, objv, optionsPtrPtr, codePtr, levelPtr)
 		    &search, &keyPtr, &valuePtr, &done)) {
 		/* Value is not a legal dictionary */
 		Tcl_ResetResult(interp);
-		Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "bad ",
+		Tcl_AppendResult(interp, "bad ",
 			compare, " value: expected dictionary but got \"",
 			Tcl_GetString(objv[1]), "\"", (char *) NULL);
 		goto error;
@@ -1027,8 +1027,7 @@ TclMergeReturnOptions(interp, objc, objv, optionsPtrPtr, codePtr, levelPtr)
 		NULL, TCL_EXACT, &code)) {
 	    /* Value is not a legal return code */
 	    Tcl_ResetResult(interp);
-	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		    "bad completion code \"",
+	    Tcl_AppendResult(interp, "bad completion code \"",
 		    Tcl_GetString(valuePtr),
 		    "\": must be ok, error, return, break, ",
 		    "continue, or an integer", (char *) NULL);
@@ -1044,7 +1043,7 @@ TclMergeReturnOptions(interp, objc, objv, optionsPtrPtr, codePtr, levelPtr)
     if (TCL_ERROR == Tcl_GetIntFromObj(NULL, valuePtr, &level) || (level < 0)) {
 	/* Value is not a legal level */
 	Tcl_ResetResult(interp);
-	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
+	Tcl_AppendResult(interp,
 		"bad -level value: expected non-negative integer but got \"",
 		Tcl_GetString(valuePtr), "\"", (char *) NULL);
 	goto error;
@@ -1184,7 +1183,7 @@ Tcl_SplitObjCmd(dummy, interp, objc, objv)
 
     string = Tcl_GetStringFromObj(objv[1], &stringLen);
     end = string + stringLen;
-    listPtr = Tcl_GetObjResult(interp);
+    listPtr = Tcl_NewObj();
     
     if (stringLen == 0) {
 	/*
@@ -1262,6 +1261,7 @@ Tcl_SplitObjCmd(dummy, interp, objc, objv)
 	objPtr = Tcl_NewStringObj(element, string - element);
 	Tcl_ListObjAppendElement(NULL, listPtr, objPtr);
     }
+    Tcl_SetObjResult(interp, listPtr);
     return TCL_OK;
 }
 
@@ -1298,7 +1298,6 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
     int index, left, right;
-    Tcl_Obj *resultPtr;
     char *string1, *string2;
     int length1, length2;
     static CONST char *options[] = {
@@ -1328,7 +1327,6 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	return TCL_ERROR;
     }
 
-    resultPtr = Tcl_GetObjResult(interp);
     switch ((enum options) index) {
 	case STR_EQUAL:
 	case STR_COMPARE: {
@@ -1365,7 +1363,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 			return TCL_ERROR;
 		    }
 		} else {
-		    Tcl_AppendStringsToObj(resultPtr, "bad option \"",
+		    Tcl_AppendResult(interp, "bad option \"",
 			    string2, "\": must be -nocase or -length",
 			    (char *) NULL);
 		    return TCL_ERROR;
@@ -1383,8 +1381,8 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		 * Alway match at 0 chars of if it is the same obj.
 		 */
 
-		Tcl_SetBooleanObj(resultPtr,
-			((enum options) index == STR_EQUAL));
+		Tcl_SetObjResult(interp,
+			Tcl_NewBooleanObj((enum options) index == STR_EQUAL));
 		break;
 	    } else if (!nocase && objv[0]->typePtr == &tclByteArrayType &&
 		    objv[1]->typePtr == &tclByteArrayType) {
@@ -1451,10 +1449,10 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	    }
 
 	    if ((enum options) index == STR_EQUAL) {
-		Tcl_SetBooleanObj(resultPtr, (match) ? 0 : 1);
+		Tcl_SetObjResult(interp, Tcl_NewBooleanObj(match ? 0 : 1));
 	    } else {
-		Tcl_SetIntObj(resultPtr, ((match > 0) ? 1 :
-					  (match < 0) ? -1 : 0));
+		Tcl_SetObjResult(interp, Tcl_NewIntObj(
+			(match > 0) ? 1 : (match < 0) ? -1 : 0));
 	    }
 	    break;
 	}
@@ -1528,7 +1526,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	    }
 
 	    str_first_done:
-	    Tcl_SetIntObj(resultPtr, match);
+	    Tcl_SetObjResult(interp, Tcl_NewIntObj(match));
 	    break;
 	}
 	case STR_INDEX: {
@@ -1552,8 +1550,8 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		    return TCL_ERROR;
 		}
 		if ((index >= 0) && (index < length1)) {
-		    Tcl_SetByteArrayObj(resultPtr,
-			    (unsigned char *)(&string1[index]), 1);
+		    Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(
+			    (unsigned char *)(&string1[index]), 1));
 		}
 	    } else {
 		/*
@@ -1571,7 +1569,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 
 		    ch      = Tcl_GetUniChar(objv[2], index);
 		    length1 = Tcl_UniCharToUtf(ch, buf);
-		    Tcl_SetStringObj(resultPtr, buf, length1);
+		    Tcl_SetObjResult(interp, Tcl_NewStringObj(buf, length1));
 		}
 	    }
 	    break;
@@ -1629,7 +1627,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 			}
 			failVarObj = objv[++i];
 		    } else {
-			Tcl_AppendStringsToObj(resultPtr, "bad option \"",
+			Tcl_AppendResult(interp, "bad option \"",
 				string2, "\": must be -strict or -failindex",
 				(char *) NULL);
 			return TCL_ERROR;
@@ -1901,7 +1899,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 			       TCL_LEAVE_ERR_MSG) == NULL) {
 		return TCL_ERROR;
 	    }
-	    Tcl_SetBooleanObj(resultPtr, result);
+	    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(result));
 	    break;
 	}
 	case STR_LAST: {
@@ -1960,7 +1958,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	    }
 
 	    str_last_done:
-	    Tcl_SetIntObj(resultPtr, match);
+	    Tcl_SetObjResult(interp, Tcl_NewIntObj(match));
 	    break;
 	}
 	case STR_BYTELENGTH:
@@ -1986,12 +1984,12 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		    length1 = Tcl_GetCharLength(objv[2]);
 		}
 	    }
-	    Tcl_SetIntObj(resultPtr, length1);
+	    Tcl_SetObjResult(interp, Tcl_NewIntObj(length1));
 	    break;
 	}
 	case STR_MAP: {
 	    int mapElemc, nocase = 0, mapWithDict = 0, copySource = 0;
-	    Tcl_Obj **mapElemv, *sourceObj;
+	    Tcl_Obj **mapElemv, *sourceObj, *resultPtr;
 	    Tcl_UniChar *ustring1, *ustring2, *p, *end;
 	    int (*strCmpFn)_ANSI_ARGS_((CONST Tcl_UniChar*,
 		    CONST Tcl_UniChar*, unsigned long));
@@ -2007,7 +2005,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		    strncmp(string2, "-nocase", (size_t) length2) == 0) {
 		    nocase = 1;
 		} else {
-		    Tcl_AppendStringsToObj(resultPtr, "bad option \"",
+		    Tcl_AppendResult(interp, "bad option \"",
 			    string2, "\": must be -nocase", (char *) NULL);
 		    return TCL_ERROR;
 		}
@@ -2064,7 +2062,8 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		    /*
 		     * The charMap must be an even number of key/value items
 		     */
-		    Tcl_SetStringObj(resultPtr, "char map list unbalanced", -1);
+		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			    "char map list unbalanced", -1));
 		    return TCL_ERROR;
 		}
 	    }
@@ -2100,7 +2099,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	    /*
 	     * Force result to be Unicode
 	     */
-	    Tcl_SetUnicodeObj(resultPtr, ustring1, 0);
+	    resultPtr = Tcl_NewUnicodeObj(ustring1, 0);
 
 	    if (mapElemc == 2) {
 		/*
@@ -2216,6 +2215,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	    if (copySource) {
 		Tcl_DecrRefCount(sourceObj);
 	    }
+	    Tcl_SetObjResult(interp, resultPtr);
 	    break;
 	}
 	case STR_MATCH: {
@@ -2233,16 +2233,15 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		    strncmp(string2, "-nocase", (size_t) length2) == 0) {
 		    nocase = 1;
 		} else {
-		    Tcl_AppendStringsToObj(resultPtr, "bad option \"",
-					   string2, "\": must be -nocase",
-					   (char *) NULL);
+		    Tcl_AppendResult(interp, "bad option \"",
+			    string2, "\": must be -nocase", (char *) NULL);
 		    return TCL_ERROR;
 		}
 	    }
 	    ustring1 = Tcl_GetUnicodeFromObj(objv[objc-1], &length1);
 	    ustring2 = Tcl_GetUnicodeFromObj(objv[objc-2], &length2);
-	    Tcl_SetBooleanObj(resultPtr, TclUniCharMatch(ustring1, length1,
-		    ustring2, length2, nocase));
+	    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(TclUniCharMatch(
+		    ustring1, length1, ustring2, length2, nocase)));
 	    break;
 	}
 	case STR_RANGE: {
@@ -2286,9 +2285,8 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	    if (last >= first) {
 		if (string1 != NULL) {
 		    int numBytes = last - first + 1;
-		    resultPtr = Tcl_NewByteArrayObj(
-			(unsigned char *) &string1[first], numBytes);
-		    Tcl_SetObjResult(interp, resultPtr);
+		    Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(
+			(unsigned char *) &string1[first], numBytes));
 		} else {
 		    Tcl_SetObjResult(interp,
 			    Tcl_GetRange(objv[2], first, last));
@@ -2319,11 +2317,12 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		     * the necessary space once and copy the string value in.
 		     * Check for overflow with back-division. [Bug #714106]
 		     */
+		    Tcl_Obj *resultPtr;
 		    length2		= length1 * count;
 		    if ((length2 / count) != length1) {
 			char buf[TCL_INTEGER_SPACE+1];
 			sprintf(buf, "%d", INT_MAX);
-			Tcl_AppendStringsToObj(resultPtr,
+			Tcl_AppendResult(interp,
 				"string size overflow, must be less than ",
 				buf, (char *) NULL);
 			return TCL_ERROR;
@@ -2372,11 +2371,12 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	    if ((last < first) || (last < 0) || (first > length1)) {
 		Tcl_SetObjResult(interp, objv[2]);
 	    } else {
+		Tcl_Obj *resultPtr;
 		if (first < 0) {
 		    first = 0;
 		}
 
-		Tcl_SetUnicodeObj(resultPtr, ustring1, first);
+		resultPtr = Tcl_NewUnicodeObj(ustring1, first);
 		if (objc == 6) {
 		    Tcl_AppendObjToObj(resultPtr, objv[5]);
 		}
@@ -2384,6 +2384,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		    Tcl_AppendUnicodeToObj(resultPtr, ustring1 + last + 1,
 			    length1 - last);
 		}
+		Tcl_SetObjResult(interp, resultPtr);
 	    }
 	    break;
 	}
@@ -2398,14 +2399,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	    string1 = Tcl_GetStringFromObj(objv[2], &length1);
 
 	    if (objc == 3) {
-		/*
-		 * Since the result object is not a shared object, it is
-		 * safe to copy the string into the result and do the
-		 * conversion in place.  The conversion may change the length
-		 * of the string, so reset the length after conversion.
-		 */
-
-		Tcl_SetStringObj(resultPtr, string1, length1);
+		Tcl_Obj *resultPtr = Tcl_NewStringObj(string1, length1);
 		if ((enum options) index == STR_TOLOWER) {
 		    length1 = Tcl_UtfToLower(Tcl_GetString(resultPtr));
 		} else if ((enum options) index == STR_TOUPPER) {
@@ -2414,9 +2408,11 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		    length1 = Tcl_UtfToTitle(Tcl_GetString(resultPtr));
 		}
 		Tcl_SetObjLength(resultPtr, length1);
+		Tcl_SetObjResult(interp, resultPtr);
 	    } else {
 		int first, last;
 		CONST char *start, *end;
+		Tcl_Obj *resultPtr;
 
 		length1 = Tcl_NumUtfChars(string1, length1) - 1;
 		if (TclGetIntForIndex(interp, objv[3], length1,
@@ -2451,9 +2447,10 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		} else {
 		    length2 = Tcl_UtfToTitle(string2);
 		}
-		Tcl_SetStringObj(resultPtr, string1, start - string1);
+		resultPtr = Tcl_NewStringObj(string1, start - string1);
 		Tcl_AppendToObj(resultPtr, string2, length2);
 		Tcl_AppendToObj(resultPtr, end, -1);
+		Tcl_SetObjResult(interp, resultPtr);
 		ckfree(string2);
 	    }
 	    break;
@@ -2533,7 +2530,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		    }
 		}
 	    }
-	    Tcl_SetStringObj(resultPtr, string1, length1);
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(string1, length1));
 	    break;
 	}
 	case STR_TRIMLEFT: {
@@ -2581,7 +2578,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	    } else {
 		cur = numChars;
 	    }
-	    Tcl_SetIntObj(resultPtr, cur);
+	    Tcl_SetObjResult(interp, Tcl_NewIntObj(cur));
 	    break;
 	}
 	case STR_WORDSTART: {
@@ -2618,7 +2615,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		    cur += 1;
 		}
 	    }
-	    Tcl_SetIntObj(resultPtr, cur);
+	    Tcl_SetObjResult(interp, Tcl_NewIntObj(cur));
 	    break;
 	}
     }
@@ -3122,8 +3119,7 @@ Tcl_TimeObjCmd(dummy, interp, objc, objv)
 		      + ( stop.usec - start.usec ) );
     sprintf(buf, "%.0f microseconds per iteration",
 	((count <= 0) ? 0 : totalMicroSec/count));
-    Tcl_ResetResult(interp);
-    Tcl_AppendToObj(Tcl_GetObjResult(interp), buf, -1);
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(buf, -1));
     return TCL_OK;
 }
 
