@@ -4,40 +4,41 @@
 #	    Microsoft NMAKE  v1.62+	[MSVC++ v5+]
 #	    Borland MAKE     v5.2	[Borland C++ Builder 5.5]
 #	    Watcom WMAKE     v11.0	[OpenWatcom]
+#	    MinGW MAKE	     v3.79.1    [MinGW: Minimalist GNU For Windows]
 #
 #   Tool specific syntax is NOT allowed in this file.
 #
 #==============================================================================
-# RCS: @(#) $Id: makefile.win,v 1.1.2.2 2001/09/09 04:20:04 davygrvy Exp $
+# RCS: @(#) $Id: makefile.win,v 1.1.2.3 2001/09/11 02:46:52 davygrvy Exp $
 #==============================================================================
 
 
+### Remove all '!' for MinGW..  Sorry, could find another way to do this.
+
 #==============================================
-#  Load the user info.
+# Load the user info.
 #==============================================
 
-!include "mkconfig.mif"
+!include mkconfig.mif
 
 #==============================================
 # Within what context are we ?
 #==============================================
 
 !ifdef _NMAKE_VER
-!include "mkvc32.mif"	# Microsoft 32-bit Toolset
+!include "mkvc32.mif"	# Microsoft Toolset
 !else
 !ifdef __LOADDLL__
-!ifdef __NT__
-!include "mkwc32.mif"	# Watcom 32-bit Toolset
-!else
-!ifdef __MSDOS__
-!include "mkwc16.mif"	# Watcom 16-bit Toolset
-!endif
-!endif
+!include "mkwc32.mif"	# Watcom Toolset
 !else
 !ifdef __MAKE__
-!include "mkbc32.mif"	# Borland 32-bit Toolset
+!include "mkbc32.mif"	# Borland Toolset
+!else
+!ifdef MAKE_VERSION
+!include mkmgw32.mif	# MinGW Toolset
 !else
 !error Unknown make tool.  Toolset cannot be determined.
+!endif
 !endif
 !endif
 !endif
@@ -49,23 +50,32 @@
 all : $(SYM)
 	@echo doing all target
 
-nonthreadedcore : $(SYM)
+core : $(SYM)
 	$(MAKECMD) core
 
 threadedcore : $(SYM)
-	$(MAKECMD) TCL_THREADS=1 core
+	$(MAKECMD) SFX="t" TCL_THREADS=1 core
 
 minicore : $(SYM)
-	$(MAKECMD) TCL_GENERIC_ONLY=1 core
+	$(MAKECMD) SFX="m" TCL_GENERIC_ONLY=1 core
 
 staticcore : $(SYM)
-	$(MAKECMD) STATIC_BUILD=1 core
+	$(MAKECMD) SFX="s" STATIC_BUILD=1 core
+
+staticXcore : $(SYM)
+	$(MAKECMD) SFX="sx" STATIC_BUILD=1 NOMSVCRT=0 core
 
 ministaticcore : $(SYM)
-	$(MAKECMD) STATIC_BUILD=1 TCL_GENERIC_ONLY=1 core
+	$(MAKECMD) SFX="ms" STATIC_BUILD=1 TCL_GENERIC_ONLY=1 core
+
+ministaticXcore : $(SYM)
+	$(MAKECMD) SFX="msx" STATIC_BUILD=1 TCL_GENERIC_ONLY=1 NOMSVCRT=0 core
 
 ministaticthreadedcore : $(SYM)
-	$(MAKECMD) STATIC_BUILD=1 TCL_GENERIC_ONLY=1 TCL_THREADS=1 core
+	$(MAKECMD) SFX="mst" STATIC_BUILD=1 TCL_GENERIC_ONLY=1 TCL_THREADS=1 core
+
+ministaticXthreadedcore : $(SYM)
+	$(MAKECMD) SFX="msxt" STATIC_BUILD=1 TCL_GENERIC_ONLY=1 TCL_THREADS=1 NOMSVCRT=0 core
 
 dlls : $(SYM)
 	$(MAKECMD) dde
@@ -77,4 +87,4 @@ docs : $(SYM)
 cvsupdate : $(SYM)
 	cd ..
 	set CVS_RSH=$(CVS_RSH)
-	$(CVSCMD) update
+	$(CVSCMD) update $(CVS_OPTS)
