@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.tcl,v 1.11 2004/11/03 23:00:22 kennykb Exp $
+# RCS: @(#) $Id: clock.tcl,v 1.12 2004/11/30 15:45:04 kennykb Exp $
 #
 #----------------------------------------------------------------------
 
@@ -1668,7 +1668,7 @@ proc ::tcl::clock::ParseClockScanFormat { formatString } {
 			    "\]\n"
 		    }
 		    z - Z {			# Time zone name
-			append re {(?:([-+]\d\d:?\d\d(?::?\d\d)?)|([[:alnum:]]{1,4}))}
+			append re {(?:([-+]\d\d(?::?\d\d(?::?\d\d)?)?)|([[:alnum:]]{1,4}))}
 			dict set fieldSet tzName [incr fieldCount]
 			append postcode \
 			    {if } \{ { $field} [incr captureCount] \
@@ -3237,21 +3237,23 @@ proc ::tcl::clock::SetupTimeZone { timezone } {
 
 	    # Nothing to do, we'll convert using the localtime function
 
-	} elseif { [regexp {^([-+])(\d\d):?(\d\d)(?::?(\d\d))?} $timezone \
+	} elseif { [regexp {^([-+])(\d\d)(?::?(\d\d)(?::?(\d\d))?)?} $timezone \
 		    -> s hh mm ss] } {
 
 	    # Make a fixed offset
 
 	    ::scan $hh %d hh
-	    ::scan $mm %d mm
+	    if { $mm eq {} } {
+		set mm 0
+	    } else {
+		::scan $mm %d mm
+	    }
 	    if { $ss eq {} } {
 		set ss 0
 	    } else {
 		::scan $ss %d ss
 	    }
-	    set offset [expr { ( $hh * 60
-				 + $mm ) * 60
-			       + $ss }]
+	    set offset [expr { ( $hh * 60 + $mm ) * 60 + $ss }]
 	    if { $s eq {-} } {
 		set offset [expr { - $offset }]
 	    }

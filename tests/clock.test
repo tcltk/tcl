@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.test,v 1.51 2004/11/03 23:00:23 kennykb Exp $
+# RCS: @(#) $Id: clock.test,v 1.52 2004/11/30 15:45:04 kennykb Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -35369,7 +35369,11 @@ test clock-44.1 {regression test - time zone name containing hyphen } \
     } \
     -result {12:34:56-0500}
     
-
+test clock-45.1 {regression test - time zone containing only two digits} \
+    -body {
+	clock scan 1985-04-12T10:15:30+04 -format %Y-%m-%dT%H:%M:%S%Z
+    } \
+    -result 482134530
 
 # cleanup
 
