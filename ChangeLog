@@ -30,7 +30,7 @@
 	  is accepted. [Tcl SF Bug 985869], reported by Joe Mistachkin
 	  <mistachkin@users.sourceforge.net>.
 
-2004-07-15  Kevin Kenny  <kennykb@acm.org>
+2004-07-15  Zoran Vasiljevic <vasiljevic@users.sf.net>
 
 	* generic/tclEvent.c (Tcl_Finalize): stuffed memory leak
 	incurred by re-initializing of TSD slots after the last call to
@@ -42,6 +42,11 @@
 	OS level. Such change requires much more work and would also
 	require TIP because some visible parts of Tcl API would have to
 	be modified. In the meantime, this will do. 
+
+        * generic/tclNotify.c (TclFinalizeNotifier): Added conditional
+        notifier finalization based on the fact that an TclInitNotifier
+        has been called for the current thread. This fixes the Tcl
+        Bug #770053 again. Hopefully this time w/o unwanted side-effects.
 
 2004-07-15  Kevin Kenny  <kennykb@acm.org>
 
