@@ -13478,7 +13478,10 @@ echo "${ECHO_T}standard shared library" >&6
 
 
 # tclConfig.sh needs a version of the _LIB_SUFFIX that has been eval'ed
-# so that the backslashes quoting the DBX braces are dropped.
+# since on some platforms TCL_LIB_FILE contains shell escapes.
+# (See also: TCL_TRIM_DOTS).
+
+eval "TCL_LIB_FILE=${TCL_LIB_FILE}"
 
 # Note:  in the following variable, it's important to use the absolute
 # path name of the Tcl directory rather than "..":  this is because
@@ -13541,7 +13544,10 @@ fi
 #--------------------------------------------------------------------
 
 # Replace ${VERSION} with contents of ${TCL_VERSION}
+# double-eval to account for TCL_TRIM_DOTS.
+#
 eval "TCL_STUB_LIB_FILE=libtclstub${TCL_UNSHARED_LIB_SUFFIX}"
+eval "TCL_STUB_LIB_FILE=\"${TCL_STUB_LIB_FILE}\""
 
 if test "${TCL_LIB_VERSIONS_OK}" = "ok"; then
     TCL_STUB_LIB_FLAG="-ltclstub${TCL_VERSION}"
