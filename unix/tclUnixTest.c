@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixTest.c,v 1.10 1999/04/16 00:48:05 stanton Exp $
+ * RCS: @(#) $Id: tclUnixTest.c,v 1.10.6.1 1999/10/30 11:09:45 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -464,6 +464,9 @@ TestfindexecutableCmd(clientData, interp, argc, argv)
     if (tclExecutableName != NULL) {
 	Tcl_SetResult(interp, tclExecutableName, TCL_VOLATILE);
 	ckfree(tclExecutableName);
+    }
+    if (tclNativeExecutableName != NULL) {
+	ckfree(tclNativeExecutableName);
     }
 
     tclExecutableName       = oldName;
