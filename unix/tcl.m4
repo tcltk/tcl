@@ -864,9 +864,9 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 		if test "$using_gcc" = "no" ; then
 		    EXTRA_CFLAGS="${EXTRA_CFLAGS} -pthread"
 		    LDFLAGS="-pthread"
-		    THREADS_LIBS=""
 		else
-		    THREADS_LIBS=" -lpthread -lmach -lexc"
+		    LIBS=`echo $LIBS | sed s/-lpthreads//`
+		    LIBS="$LIBS -lpthread -lmach -lexc"
 		fi
 	    fi
 
