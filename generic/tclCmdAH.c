@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.27 2002/07/02 12:16:05 vincentdarley Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.28 2003/03/07 11:38:29 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -835,11 +835,17 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 		return TCL_ERROR;
 	    }
 	    if (objc == 4) {
-		if (Tcl_GetLongFromObj(interp, objv[3],
-			(long*)(&buf.st_atime)) != TCL_OK) {
+		/*
+		 * Need separate variable for reading longs from an
+		 * object on 64-bit platforms. [Bug #698146]
+		 */
+		long newTime;
+
+		if (Tcl_GetLongFromObj(interp, objv[3], &newTime) != TCL_OK) {
 		    return TCL_ERROR;
 		}
-		tval.actime = buf.st_atime;
+
+		tval.actime = newTime;
 		tval.modtime = buf.st_mtime;
 		if (Tcl_FSUtime(objv[2], &tval) != 0) {
 		    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
@@ -1071,12 +1077,18 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 		return TCL_ERROR;
 	    }
 	    if (objc == 4) {
-		if (Tcl_GetLongFromObj(interp, objv[3],
-			(long*)(&buf.st_mtime)) != TCL_OK) {
+		/*
+		 * Need separate variable for reading longs from an
+		 * object on 64-bit platforms. [Bug #698146]
+		 */
+		long newTime;
+
+		if (Tcl_GetLongFromObj(interp, objv[3], &newTime) != TCL_OK) {
 		    return TCL_ERROR;
 		}
+
 		tval.actime = buf.st_atime;
-		tval.modtime = buf.st_mtime;
+		tval.modtime = newTime;
 		if (Tcl_FSUtime(objv[2], &tval) != 0) {
 		    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
 			    "could not set modification time for file \"",
