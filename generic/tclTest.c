@@ -121,6 +121,14 @@ static int              NoopObjCmd _ANSI_ARGS_((ClientData clientData,
                             Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]));
 static void		SpecialFree _ANSI_ARGS_((char *blockPtr));
 static int		StaticInitProc _ANSI_ARGS_((Tcl_Interp *interp));
+static int		TestaccessprocCmd _ANSI_ARGS_((ClientData dummy,
+			    Tcl_Interp *interp, int argc, char **argv));
+static int		TestAccessProc1 _ANSI_ARGS_((CONST char *path,
+			   int mode));
+static int		TestAccessProc2 _ANSI_ARGS_((CONST char *path,
+			   int mode));
+static int		TestAccessProc3 _ANSI_ARGS_((CONST char *path,
+			   int mode));
 static int		TestasyncCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Interp *interp, int argc, char **argv));
 static int		TestcmdinfoCmd _ANSI_ARGS_((ClientData dummy,
@@ -168,6 +176,12 @@ static int		TestMathFunc _ANSI_ARGS_((ClientData clientData,
 static int		TestMathFunc2 _ANSI_ARGS_((ClientData clientData,
 			    Tcl_Interp *interp, Tcl_Value *args,
 			    Tcl_Value *resultPtr));
+static Tcl_Channel	TestOpenFileChannelProc1 _ANSI_ARGS_((Tcl_Interp *interp,
+			    char *filename, char *modeString, int permissions));
+static Tcl_Channel	TestOpenFileChannelProc2 _ANSI_ARGS_((Tcl_Interp *interp,
+			    char *filename, char *modeString, int permissions));
+static Tcl_Channel	TestOpenFileChannelProc3 _ANSI_ARGS_((Tcl_Interp *interp,
+			    char *filename, char *modeString, int permissions));
 static int		TestPanicCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Interp *interp, int argc, char **argv));
 static int		TestsetassocdataCmd _ANSI_ARGS_((ClientData dummy,
@@ -177,6 +191,8 @@ static int		TestsetnoerrCmd _ANSI_ARGS_((ClientData dummy,
 static int		TestsetobjerrorcodeCmd _ANSI_ARGS_((
 			    ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *CONST objv[]));
+static int		TestopenfilechannelprocCmd _ANSI_ARGS_((ClientData dummy,
+			    Tcl_Interp *interp, int argc, char **argv));
 static int		TestsetplatformCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Interp *interp, int argc, char **argv));
 static int		TestsetrecursionlimitCmd _ANSI_ARGS_((
@@ -184,13 +200,13 @@ static int		TestsetrecursionlimitCmd _ANSI_ARGS_((
 			    int objc, Tcl_Obj *CONST objv[]));
 static int		TeststaticpkgCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Interp *interp, int argc, char **argv));
-static int		TestTclStatProc1 _ANSI_ARGS_((CONST char *path,
+static int		TestStatProc1 _ANSI_ARGS_((CONST char *path,
 			    TclStat_ *buf));
-static int		TestTclStatProc2 _ANSI_ARGS_((CONST char *path,
+static int		TestStatProc2 _ANSI_ARGS_((CONST char *path,
 			    TclStat_ *buf));
-static int		TestTclStatProc3 _ANSI_ARGS_((CONST char *path,
+static int		TestStatProc3 _ANSI_ARGS_((CONST char *path,
 			    TclStat_ *buf));
-static int		TestTclStatCmd _ANSI_ARGS_((ClientData dummy,
+static int		TeststatprocCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Interp *interp, int argc, char **argv));
 static int		TesttranslatefilenameCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Interp *interp, int argc, char **argv));
@@ -244,6 +260,8 @@ Tcltest_Init(interp)
 	    (Tcl_CmdDeleteProc *) NULL);
     Tcl_CreateObjCommand(interp, "noop", NoopObjCmd, (ClientData) 0,
 	    (Tcl_CmdDeleteProc *) NULL);
+    Tcl_CreateCommand(interp, "testaccessproc", TestaccessprocCmd, (ClientData) 0,
+	    (Tcl_CmdDeleteProc *) NULL);
     Tcl_CreateCommand(interp, "testasync", TestasyncCmd, (ClientData) 0,
 	    (Tcl_CmdDeleteProc *) NULL);
     Tcl_CreateCommand(interp, "testchannel", TclTestChannelCmd,
@@ -288,6 +306,9 @@ Tcltest_Init(interp)
             (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
     Tcl_CreateCommand(interp, "testlink", TestlinkCmd, (ClientData) 0,
 	    (Tcl_CmdDeleteProc *) NULL);
+    Tcl_CreateCommand(interp, "testopenfilechannelproc",
+    	    TestopenfilechannelprocCmd, (ClientData) 0, 
+    	    (Tcl_CmdDeleteProc *) NULL);
     Tcl_CreateCommand(interp, "testsetassocdata", TestsetassocdataCmd,
             (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
     Tcl_CreateCommand(interp, "testsetnoerr", TestsetnoerrCmd,
@@ -319,7 +340,7 @@ Tcltest_Init(interp)
 	    (ClientData) 123);
     Tcl_CreateMathFunc(interp, "T2", 0, (Tcl_ValueType *) NULL, TestMathFunc,
 	    (ClientData) 345);
-    Tcl_CreateCommand(interp, "testTclStat", TestTclStatCmd, (ClientData) 0,
+    Tcl_CreateCommand(interp, "teststatproc", TeststatprocCmd, (ClientData) 0,
 	    (Tcl_CmdDeleteProc *) NULL);
     t3ArgTypes[0] = TCL_EITHER;
     t3ArgTypes[1] = TCL_EITHER;
@@ -2732,7 +2753,7 @@ TestsetnoerrCmd(dummy, interp, argc, argv)
 /*
  *----------------------------------------------------------------------
  *
- * TestTclStatCmd  --
+ * TeststatprocCmd  --
  *
  *	Implements the "testTclStatProc" cmd that is used to test the
  *	'TclStatInsertProc' C Api.
@@ -2747,7 +2768,7 @@ TestsetnoerrCmd(dummy, interp, argc, argv)
  */
 
 static int
-TestTclStatCmd (dummy, interp, argc, argv)
+TeststatprocCmd (dummy, interp, argc, argv)
     ClientData dummy;			/* Not used. */
     register Tcl_Interp *interp;	/* Current interpreter. */
     int argc;				/* Number of arguments. */
@@ -2764,16 +2785,16 @@ TestTclStatCmd (dummy, interp, argc, argv)
 
     if (strcmp(argv[2], "TclpStat") == 0) {
 	proc = TclpStat;
-    } else if (strcmp(argv[2], "TestTclStatProc1") == 0) {
-	proc = TestTclStatProc1;
-    } else if (strcmp(argv[2], "TestTclStatProc2") == 0) {
-	proc = TestTclStatProc2;
-    } else if (strcmp(argv[2], "TestTclStatProc3") == 0) {
-	proc = TestTclStatProc3;
+    } else if (strcmp(argv[2], "TestStatProc1") == 0) {
+	proc = TestStatProc1;
+    } else if (strcmp(argv[2], "TestStatProc2") == 0) {
+	proc = TestStatProc2;
+    } else if (strcmp(argv[2], "TestStatProc3") == 0) {
+	proc = TestStatProc3;
     } else {
 	Tcl_AppendResult(interp, "bad arg \"", argv[1], "\": ",
 		"must be TclpStat, ",
-		"TestTclStatProc1, TestTclStatProc2, or TestTclStatProc3",
+		"TestStatProc1, TestStatProc2, or TestStatProc3",
 		(char *) NULL);
 	return TCL_ERROR;
     }
@@ -2782,7 +2803,7 @@ TestTclStatCmd (dummy, interp, argc, argv)
 	if (proc == TclpStat) {
 	    Tcl_AppendResult(interp, "bad arg \"", argv[1], "\": ",
 		   "must be ",
-		   "TestTclStatProc1, TestTclStatProc2, or TestTclStatProc3",
+		   "TestStatProc1, TestStatProc2, or TestStatProc3",
 		   (char *) NULL);
 	    return TCL_ERROR;
 	}
@@ -2805,30 +2826,267 @@ TestTclStatCmd (dummy, interp, argc, argv)
 
 
 static int
-TestTclStatProc1(path, buf)
+TestStatProc1(path, buf)
     CONST char *path;
     TclStat_ *buf;
 {
     buf->st_size = 1234;
-    return (strcmp("testTclStat1%.fil", path) ? -1 : 0);
+    return (strcmp("testStat1%.fil", path) ? -1 : 0);
 }
 
 
 static int
-TestTclStatProc2(path, buf)
+TestStatProc2(path, buf)
     CONST char *path;
     TclStat_ *buf;
 {
     buf->st_size = 2345;
-    return (strcmp("testTclStat2%.fil", path) ? -1 : 0);
+    return (strcmp("testStat2%.fil", path) ? -1 : 0);
 }
 
 
 static int
-TestTclStatProc3(path, buf)
+TestStatProc3(path, buf)
     CONST char *path;
     TclStat_ *buf;
 {
     buf->st_size = 3456;
-    return (strcmp("testTclStat3%.fil", path) ? -1 : 0);
+    return (strcmp("testStat3%.fil", path) ? -1 : 0);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TestaccessprocCmd  --
+ *
+ *	Implements the "testTclAccessProc" cmd that is used to test the
+ *	'TclAccessInsertProc' C Api.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TestaccessprocCmd (dummy, interp, argc, argv)
+    ClientData dummy;			/* Not used. */
+    register Tcl_Interp *interp;	/* Current interpreter. */
+    int argc;				/* Number of arguments. */
+    char **argv;			/* Argument strings. */
+{
+    TclAccessProc_ *proc;
+    int retVal;
+
+    if (argc != 3) {
+	Tcl_AppendResult(interp, "wrong # args: should be \"",
+		argv[0], " option arg\"", (char *) NULL);
+	return TCL_ERROR;
+    }
+
+    if (strcmp(argv[2], "TclpAccess") == 0) {
+	proc = TclpAccess;
+    } else if (strcmp(argv[2], "TestAccessProc1") == 0) {
+	proc = TestAccessProc1;
+    } else if (strcmp(argv[2], "TestAccessProc2") == 0) {
+	proc = TestAccessProc2;
+    } else if (strcmp(argv[2], "TestAccessProc3") == 0) {
+	proc = TestAccessProc3;
+    } else {
+	Tcl_AppendResult(interp, "bad arg \"", argv[1], "\": ",
+		"must be TclpAccess, ",
+		"TestAccessProc1, TestAccessProc2, or TestAccessProc3",
+		(char *) NULL);
+	return TCL_ERROR;
+    }
+
+    if (strcmp(argv[1], "insert") == 0) {
+	if (proc == TclpAccess) {
+	    Tcl_AppendResult(interp, "bad arg \"", argv[1], "\": ",
+		   "must be ",
+		   "TestAccessProc1, TestAccessProc2, or TestAccessProc3",
+		   (char *) NULL);
+	    return TCL_ERROR;
+	}
+	retVal = TclAccessInsertProc(proc);
+    } else if (strcmp(argv[1], "delete") == 0) {
+	retVal = TclAccessDeleteProc(proc);
+    } else {
+	Tcl_AppendResult(interp, "bad option \"", argv[1], "\": ",
+		"must be insert or delete", (char *) NULL);
+	return TCL_ERROR;
+    }
+
+    if (retVal == TCL_ERROR) {
+	Tcl_AppendResult(interp, "\"", argv[2], "\": ",
+		"could not be ", argv[1], "ed", (char *) NULL);
+    }
+
+    return retVal;
+}
+
+
+static int
+TestAccessProc1(path, mode)
+    CONST char *path;
+    int mode;
+{
+    return (strcmp("testAccess1%.fil", path) ? -1 : 0);
+}
+
+
+static int
+TestAccessProc2(path, mode)
+    CONST char *path;
+    int mode;
+{
+    return (strcmp("testAccess2%.fil", path) ? -1 : 0);
+}
+
+
+static int
+TestAccessProc3(path, mode)
+    CONST char *path;
+    int mode;
+{
+    return (strcmp("testAccess3%.fil", path) ? -1 : 0);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TestopenfilechannelprocCmd  --
+ *
+ *	Implements the "testTclOpenFileChannelProc" cmd that is used to test the
+ *	'TclAccessInsertProc' C Api.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TestopenfilechannelprocCmd (dummy, interp, argc, argv)
+    ClientData dummy;			/* Not used. */
+    register Tcl_Interp *interp;	/* Current interpreter. */
+    int argc;				/* Number of arguments. */
+    char **argv;			/* Argument strings. */
+{
+    TclOpenFileChannelProc_ *proc;
+    int retVal;
+
+    if (argc != 3) {
+	Tcl_AppendResult(interp, "wrong # args: should be \"",
+		argv[0], " option arg\"", (char *) NULL);
+	return TCL_ERROR;
+    }
+
+    if (strcmp(argv[2], "TclpOpenFileChannel") == 0) {
+	proc = TclpOpenFileChannel;
+    } else if (strcmp(argv[2], "TestOpenFileChannelProc1") == 0) {
+	proc = TestOpenFileChannelProc1;
+    } else if (strcmp(argv[2], "TestOpenFileChannelProc2") == 0) {
+	proc = TestOpenFileChannelProc2;
+    } else if (strcmp(argv[2], "TestOpenFileChannelProc3") == 0) {
+	proc = TestOpenFileChannelProc3;
+    } else {
+	Tcl_AppendResult(interp, "bad arg \"", argv[1], "\": ",
+		"must be TclpOpenFileChannel, ",
+		"TestOpenFileChannelProc1, TestOpenFileChannelProc2, or ",
+		"TestOpenFileChannelProc3",
+		(char *) NULL);
+	return TCL_ERROR;
+    }
+
+    if (strcmp(argv[1], "insert") == 0) {
+	if (proc == TclpOpenFileChannel) {
+	    Tcl_AppendResult(interp, "bad arg \"", argv[1], "\": ",
+		   "must be ",
+		   "TestOpenFileChannelProc1, TestOpenFileChannelProc2, or ",
+		   "TestOpenFileChannelProc3",
+		   (char *) NULL);
+	    return TCL_ERROR;
+	}
+	retVal = TclOpenFileChannelInsertProc(proc);
+    } else if (strcmp(argv[1], "delete") == 0) {
+	retVal = TclOpenFileChannelDeleteProc(proc);
+    } else {
+	Tcl_AppendResult(interp, "bad option \"", argv[1], "\": ",
+		"must be insert or delete", (char *) NULL);
+	return TCL_ERROR;
+    }
+
+    if (retVal == TCL_ERROR) {
+	Tcl_AppendResult(interp, "\"", argv[2], "\": ",
+		"could not be ", argv[1], "ed", (char *) NULL);
+    }
+
+    return retVal;
+}
+
+
+static Tcl_Channel
+TestOpenFileChannelProc1(interp, fileName, modeString, permissions)
+    Tcl_Interp *interp;                 /* Interpreter for error reporting;
+                                         * can be NULL. */
+    char *fileName;                     /* Name of file to open. */
+    char *modeString;                   /* A list of POSIX open modes or
+                                         * a string such as "rw". */
+    int permissions;                    /* If the open involves creating a
+                                         * file, with what modes to create
+                                         * it? */
+{
+    if (!strcmp("testOpenFileChannel1%.fil", fileName)) {
+	return (TclpOpenFileChannel(interp, "__testOpenFileChannel1%__.fil",
+		modeString, permissions));
+    } else {
+	return (NULL);
+    }
+}
+
+
+static Tcl_Channel
+TestOpenFileChannelProc2(interp, fileName, modeString, permissions)
+    Tcl_Interp *interp;                 /* Interpreter for error reporting;
+                                         * can be NULL. */
+    char *fileName;                     /* Name of file to open. */
+    char *modeString;                   /* A list of POSIX open modes or
+                                         * a string such as "rw". */
+    int permissions;                    /* If the open involves creating a
+                                         * file, with what modes to create
+                                         * it? */
+{
+    if (!strcmp("testOpenFileChannel2%.fil", fileName)) {
+	return (TclpOpenFileChannel(interp, "__testOpenFileChannel2%__.fil",
+		modeString, permissions));
+    } else {
+	return (NULL);
+    }
+}
+
+
+static Tcl_Channel
+TestOpenFileChannelProc3(interp, fileName, modeString, permissions)
+    Tcl_Interp *interp;                 /* Interpreter for error reporting;
+                                         * can be NULL. */
+    char *fileName;                     /* Name of file to open. */
+    char *modeString;                   /* A list of POSIX open modes or
+                                         * a string such as "rw". */
+    int permissions;                    /* If the open involves creating a
+                                         * file, with what modes to create
+                                         * it? */
+{
+    if (!strcmp("testOpenFileChannel3%.fil", fileName)) {
+	return (TclpOpenFileChannel(interp, "__testOpenFileChannel3%__.fil",
+		modeString, permissions));
+    } else {
+	return (NULL);
+    }
 }
