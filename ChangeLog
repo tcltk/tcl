@@ -1,3 +1,9 @@
+2002-11-10  Kevin Kenny <kennykb@acm.org>
+
+	* doc/Tcl.n: Added language to the Endekalogue to make it clear
+	that substitutions always take place from left to right. [Bug
+	#635644]
+
 2002-11-06  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* changes: Note TclInExit TclInThreadExit changes.
