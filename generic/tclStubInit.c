@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.80 2003/03/21 03:23:24 dgp Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.81 2003/04/05 01:26:11 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -925,6 +925,17 @@ TclStubs tclStubs = {
     Tcl_Seek, /* 491 */
     Tcl_Tell, /* 492 */
     Tcl_ChannelWideSeekProc, /* 493 */
+    Tcl_DictObjPut, /* 494 */
+    Tcl_DictObjGet, /* 495 */
+    Tcl_DictObjRemove, /* 496 */
+    Tcl_DictObjSize, /* 497 */
+    Tcl_DictObjFirst, /* 498 */
+    Tcl_DictObjNext, /* 499 */
+    Tcl_DictObjDone, /* 500 */
+    Tcl_DictObjPutKeyList, /* 501 */
+    Tcl_DictObjRemoveKeyList, /* 502 */
+    Tcl_NewDictObj, /* 503 */
+    Tcl_DbNewDictObj, /* 504 */
 };
 
 /* !END!: Do not edit above this line. */
