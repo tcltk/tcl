@@ -3,7 +3,7 @@
 # utility procs formerly in init.tcl which can be loaded on demand
 # for package management.
 #
-# RCS: @(#) $Id: package.tcl,v 1.17 2001/03/14 18:25:40 dgp Exp $
+# RCS: @(#) $Id: package.tcl,v 1.18 2001/07/21 20:26:42 dgp Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1998 Sun Microsystems, Inc.
@@ -87,7 +87,7 @@ proc pkg_compareExtension { fileName {ext {}} } {
 
 proc pkg_mkIndex {args} {
     global errorCode errorInfo
-    set usage {"pkg_mkIndex ?-direct? ?-verbose? ?-load pattern? ?--? dir ?pattern ...?"};
+    set usage {"pkg_mkIndex ?-direct? ?-lazy? ?-load pattern? ?-verbose? ?--? dir ?pattern ...?"};
 
     set argCount [llength $args]
     if {$argCount < 1} {
