@@ -1,3 +1,7 @@
+2003-02-22  Zoran Vasiljevic  <zoran@archiwrae.com>
+
+	* generic/tclEvent.c (Tcl_FinalizeThread): Fix [Bug #571002] 
+
 2003-02-21  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* tests/binary.test (binary-44.[34]): 
