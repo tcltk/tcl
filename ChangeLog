@@ -1,6 +1,15 @@
+2000-03-29  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* generic/tclCompile.c (TclCleanupByteCode): made ByteCode cleanup
+	more aware of TCL_BYTECODE_PRECOMPILED flagged structs (gen'd by
+	tbcload), to correctly clean them up.
+
+	* generic/tclClock.c (FormatClock): moved check for empty format
+	earlier, commented 0 result return value
+
 2000-03-29  Sandeep Tamhankar <sandeep@scriptics.com>
 
-        * library/http2.1/http.tcl: Removed an unnecessary fileevent
+	* library/http2.1/http.tcl: Removed an unnecessary fileevent
 	statement from the error processing part of the Write method.
 	Also, fixed two potential memory leaks in wait and reset, in which
 	the state array wasn't being unset before throwing an exception.
