@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: DictObj.3,v 1.1 2003/04/05 01:03:20 dkf Exp $
+'\" RCS: @(#) $Id: DictObj.3,v 1.2 2004/04/26 09:47:18 dkf Exp $
 '\" 
 .so man.macros
 .TH Tcl_DictObj 3 8.5 Tcl "Tcl Library Procedures"
@@ -58,6 +58,10 @@ an attempt will be made to convert it to one.
 .AP Tcl_Obj *keyPtr in
 Points to the key for the key/value pair being manipulated within the
 dictionary object.
+.AP Tcl_Obj **keyPtrPtr out
+Points to a variable that will have the key from a key/value pair
+placed within it.  May be NULL to indicate that the caller is not
+interested in the key.
 .AP Tcl_Obj *valuePtr in
 Points to the value for the key/value pair being manipulate within the
 dictionary object (or sub-object, in the case of
@@ -67,10 +71,6 @@ Points to a variable that will have the value from a key/value pair
 placed within it.  For \fBTcl_DictObjFirst\fR and
 \fBTcl_DictObjNext\fR, this may be NULL to indicate that the caller is
 not interested in the value.
-.AP Tcl_Obj **valuePtrPtr out
-Points to a variable that will have the key from a key/value pair
-placed within it.  May be NULL to indicate that the caller is not
-interested in the key.
 .AP int *sizePtr out
 Points to a variable that will have the number of key/value pairs
 contained within the dictionary placed within it.
@@ -160,7 +160,9 @@ If the last call to \fBTcl_DictObjFirst\fR or \fBTcl_DictObjNext\fR
 \fIdonePtr\fR argument to zero but no further key/value pairs are
 desired from that particular iteration, the \fIsearchPtr\fR argument
 must be passed to \fBTcl_DictObjDone\fR to release any internal locks
-held by the searching process.  
+held by the searching process.  \fBTcl_DictObjDone\fR \fImust not\fR
+be called if either \fBTcl_DictObjFirst\fR or \fBTcl_DictObjNext\fR
+set the variable pointed to by \fIdonePtr\fR to 1.
 .PP
 The procedures \fBTcl_DictObjPutKeyList\fR and
 \fBTcl_DictObjRemoveKeyList\fR are the close analogues of
@@ -173,12 +175,55 @@ first) that acts as a path to the key/value pair to be affected.  Note
 that there is no corresponding operation for reading a value for a
 path as this is easy to construct from repeated use of
 \fBTcl_DictObjGet\fR.
+.SH EXAMPLE
+Using the dictionary iteration interface to search determine if there
+is a key that maps to itself:
 
-'\" TODO: Example of using Tcl_DictObj{First,Next,Done}
+.CS
+Tcl_DictSearch search;
+Tcl_Obj *key, *value;
+int done;
 
+/*
+ * Assume interp and objPtr are parameters.  This is the
+ * idiomatic way to start an iteration over the dictionary; it
+ * sets a lock on the internal representation that ensures that
+ * there are no concurrent modification issues when normal
+ * reference count management is also used.  The lock is
+ * released automatically when the loop is finished, but must
+ * be released manually when an exceptional exit from the loop
+ * is performed.
+ */
+if (Tcl_DictObjFirst(interp, objPtr, &search,
+        &key, &value, &done) != TCL_OK) {
+    return TCL_ERROR;
+}
+for (; done ; Tcl_DictObjNext(&search, &key, &value, &done)) {
+
+    /*
+     * Note that strcmp() is not a good way of comparing
+     * objects and is just used here for demonstration
+     * purposes.
+     */
+    if (!strcmp(Tcl_GetString(key), Tcl_GetString(value))) {
+
+        /*
+         * We jump out of the loop, so we must release the
+         * lock on the object representation that the iterator
+         * is currently holding.
+         */
+        Tcl_DictObjDone(&search);
+
+        break;
+    }
+}
+/*
+ * Note, *no* call to Tcl_DictObjDone() here!
+ */
+Tcl_SetObjResult(interp, Tcl_NewBooleanObj(!done));
+return TCL_OK;
+.CE
 .SH "SEE ALSO"
 Tcl_NewObj, Tcl_DecrRefCount, Tcl_IncrRefCount, Tcl_InitObjHashTable
-
 .SH KEYWORDS
 dict, dict object, dictionary, hash table, iteration, object
-

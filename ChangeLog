@@ -1,5 +1,8 @@
 2004-04-26  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
+	* doc/DictObj.3: Added warning about the use of Tcl_DictObjDone and an
+	example of use of iteration. [Bug 940843]
+
 	* doc/Thread.3: Reworked to remove references to testing interfaces
 	and instead promote the use of the Thread package. [Patch 932527]
 	Also reworked and reordered the page for better readability.
