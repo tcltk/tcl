@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: CrtMathFnc.3,v 1.5 2001/05/30 08:57:05 dkf Exp $
+'\" RCS: @(#) $Id: CrtMathFnc.3,v 1.5.14.1 2003/03/26 16:32:20 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_CreateMathFunc 3 8.4 Tcl "Tcl Library Procedures"
@@ -46,11 +46,11 @@ Arbitrary one-word value to pass to \fIproc\fR when it is invoked.
 .AP int *numArgsPtr out
 Points to a variable that will be set to contain the number of
 arguments to the function.
-.AP Tcl_ValueType *argTypesPtr out
+.AP Tcl_ValueType **argTypesPtr out
 Points to a variable that will be set to contain a pointer to an array
 giving the permissible types for each argument to the function which
 will need to be freed up using \fITcl_Free\fR.
-.AP Tcl_MathProc *procPtr out
+.AP Tcl_MathProc **procPtr out
 Points to a variable that will be set to contain a pointer to the
 implementation code for the function (or NULL if the function is
 implemented directly in bytecode.)
