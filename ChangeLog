@@ -1,3 +1,8 @@
+2002-04-23  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* doc/TraceCmd.3: New file that documents Tcl_CommandTraceInfo,
+	Tcl_TraceCommand and Tcl_UntraceCommand [Bug 414927]
+
 2002-04-22  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclIOUtil.c (Tcl_FSRegister, Tcl_FSUnregister):
