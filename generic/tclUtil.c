@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.33 2002/08/05 03:24:41 dgp Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.34 2002/08/05 15:01:05 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -947,7 +947,7 @@ Tcl_Backslash(src, readPtr)
  *----------------------------------------------------------------------
  */
 
-CONST char *
+char *
 Tcl_Concat(argc, argv)
     int argc;			/* Number of strings to concatenate. */
     CONST char * CONST *argv;	/* Array of strings to concatenate. */
