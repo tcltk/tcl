@@ -21,7 +21,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.43 2004/08/03 20:31:52 dkf Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.44 2004/08/03 21:46:55 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -4813,7 +4813,8 @@ NsEnsembleImplementationCmd(clientData, interp, objc, objv)
 	    if (ensembleCmd->nsPtr == ensemblePtr->nsPtr &&
 		ensembleCmd->epoch == ensemblePtr->epoch) {
 		prefixObj = ensembleCmd->realPrefixObj;
-		goto runSubcommand;
+		Tcl_IncrRefCount(prefixObj);
+		goto runResultingSubcommand;
 	    }
 	}
     }
@@ -4900,7 +4901,6 @@ NsEnsembleImplementationCmd(clientData, interp, objc, objv)
 	MakeCachedEnsembleCommand(objv[1], ensemblePtr, fullName, prefixObj);
     }
 
- runSubcommand:
     /*
      * Do the real work of execution of the subcommand by building an
      * array of objects (note that this is potentially not the same
@@ -4923,7 +4923,7 @@ NsEnsembleImplementationCmd(clientData, interp, objc, objv)
     ckfree((char *)tempObjv);
     return result;
 
- unknownOrAmbiguousSubcommand:
+  unknownOrAmbiguousSubcommand:
     /*
      * Have not been able to match the subcommand asked for with a
      * real subcommand that we export.  See whether a handler has been
@@ -4979,14 +4979,10 @@ NsEnsembleImplementationCmd(clientData, interp, objc, objv)
 	    if (Tcl_ListObjLength(interp, prefixObj, &prefixObjc) != TCL_OK) {
 		Tcl_DecrRefCount(prefixObj);
 		Tcl_AddErrorInfo(interp,
-		    "\n    while parsing result of ensemble unknown subcommand handler");
+			"\n    while parsing result of ensemble unknown subcommand handler");
 		return TCL_ERROR;
 	    }
 	    if (prefixObjc > 0) {
-		/*
-		 * Not 'runSubcommand' because we want to get the
-		 * object refcounting right.
-		 */
 		goto runResultingSubcommand;
 	    }
 
@@ -4994,6 +4990,7 @@ NsEnsembleImplementationCmd(clientData, interp, objc, objv)
 	     * Namespace alive & empty result => reparse.
 	     */
 
+	    Tcl_DecrRefCount(prefixObj);
 	    goto restartEnsembleParse;
 	}
 	if (!Tcl_InterpDeleted(interp)) {
@@ -5019,7 +5016,7 @@ NsEnsembleImplementationCmd(clientData, interp, objc, objv)
 		}
 		}
 		Tcl_AddErrorInfo(interp,
-		    "\n    result of ensemble unknown subcommand handler: ");
+			"\n    result of ensemble unknown subcommand handler: ");
 		Tcl_AddErrorInfo(interp, TclGetString(unknownCmd));
 	    } else {
 		Tcl_AddErrorInfo(interp,
@@ -5030,12 +5027,14 @@ NsEnsembleImplementationCmd(clientData, interp, objc, objv)
 	Tcl_Release(ensemblePtr);
 	return TCL_ERROR;
     }
+
     /*
      * Cannot determine what subcommand to hand off to, so generate a
      * (standard) failure message.  Note the one odd case compared
      * with standard ensemble-like command, which is where a namespace
      * has no exported commands at all...
      */
+
     Tcl_ResetResult(interp);
     if (ensemblePtr->subcommandTable.numEntries == 0) {
 	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
