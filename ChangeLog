@@ -1,3 +1,8 @@
+2003-08-19  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* win/tclWinSerial.c: Adjusted commenting and spacing usage to
+	follow the principles of the Style Guide better.
+
 2003-08-18  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* win/configure: Regen.
