@@ -1,3 +1,12 @@
+2003-06-17  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* win/makefile.vc:  fixes to check-in below so compilation now
+        works again on Windows.
+
+	* generic/tclCmdMZ.c:
+	* tests/regexp.test: fixing of bugs related to regexp and regsub
+        matching of empty strings.  Addition of a number of new tests.
+
 2003-06-16  Andreas Kupries  <andreask@activestate.com>
 
 	* win/Makefile.in:  Haven't heard back from David for a week.

@@ -12,7 +12,7 @@
 # Copyright (c) 2001-2002 David Gravereaux.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.108 2003/06/16 18:36:45 andreas_kupries Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.109 2003/06/17 20:36:20 vincentdarley Exp $
 #------------------------------------------------------------------------------
 
 !if "$(MSVCDIR)" == ""
@@ -623,16 +623,16 @@ $(TMP_DIR)\tclWinTest.obj: $(WINDIR)\tclWinTest.c
 
 $(TMP_DIR)\tclPkgConfig.obj: $(GENERICDIR)\tclPkgConfig.c
 	$(cc32) -DBUILD_tcl $(TCL_CFLAGS) \
-	-DCFG_INSTALL_LIBDIR=\"$(LIB_INSTALL_DIR)\" \
-	-DCFG_INSTALL_BINDIR=\"$(BIN_INSTALL_DIR)\" \
-	-DCFG_INSTALL_SCRDIR=\"$(SCRIPT_INSTALL_DIR)\" \
-	-DCFG_INSTALL_INCDIR=\"$(INCLUDE_INSTALL_DIR)\" \
-	-DCFG_INSTALL_DOCDIR=\"$(DOC_INSTALL_DIR)\"	\
-	-DCFG_RUNTIME_LIBDIR=\"$(LIB_INSTALL_DIR)\" \    
-	-DCFG_RUNTIME_BINDIR=\"$(BIN_INSTALL_DIR)\" \    
-	-DCFG_RUNTIME_SCRDIR=\"$(SCRIPT_INSTALL_DIR)\" \ 
-	-DCFG_RUNTIME_INCDIR=\"$(INCLUDE_INSTALL_DIR)\" \
-	-DCFG_RUNTIME_DOCDIR=\"$(DOC_INSTALL_DIR)\"     \
+	-DCFG_INSTALL_LIBDIR="\"$(LIB_INSTALL_DIR:\=\\)\"" \
+	-DCFG_INSTALL_BINDIR="\"$(BIN_INSTALL_DIR:\=\\)\"" \
+	-DCFG_INSTALL_SCRDIR="\"$(SCRIPT_INSTALL_DIR:\=\\)\"" \
+	-DCFG_INSTALL_INCDIR="\"$(INCLUDE_INSTALL_DIR:\=\\)\"" \
+	-DCFG_INSTALL_DOCDIR="\"$(DOC_INSTALL_DIR:\=\\)\""	\
+	-DCFG_RUNTIME_LIBDIR="\"$(LIB_INSTALL_DIR:\=\\)\"" \
+	-DCFG_RUNTIME_BINDIR="\"$(BIN_INSTALL_DIR:\=\\)\"" \
+	-DCFG_RUNTIME_SCRDIR="\"$(SCRIPT_INSTALL_DIR:\=\\)\"" \
+	-DCFG_RUNTIME_INCDIR="\"$(INCLUDE_INSTALL_DIR:\=\\)\"" \
+	-DCFG_RUNTIME_DOCDIR="\"$(DOC_INSTALL_DIR:\=\\)\""     \
 	-Fo$@ $?
 
 $(TMP_DIR)\tclAppInit.obj: $(WINDIR)\tclAppInit.c
