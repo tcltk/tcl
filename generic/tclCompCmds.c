@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.39 2003/02/07 01:07:05 mdejong Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.40 2003/03/05 22:31:23 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -242,7 +242,7 @@ TclCompileCatchCmd(interp, parsePtr, envPtr)
     JumpFixup jumpFixup;
     Tcl_Token *cmdTokenPtr, *nameTokenPtr;
     CONST char *name;
-    int localIndex, nameChars, range, startOffset, jumpDist;
+    int localIndex, nameChars, range, startOffset;
     int code;
     int savedStackDepth = envPtr->currStackDepth;
 
@@ -369,10 +369,9 @@ TclCompileCatchCmd(interp, parsePtr, envPtr)
      * an endCatch instruction at the end of the catch command.
      */
 
-    jumpDist = (envPtr->codeNext - envPtr->codeStart)
-	    - jumpFixup.codeOffset;
-    if (TclFixupForwardJump(envPtr, &jumpFixup, jumpDist, 127)) {
-	panic("TclCompileCatchCmd: bad jump distance %d\n", jumpDist);
+    if (TclFixupForwardJumpToHere(envPtr, &jumpFixup, 127)) {
+	panic("TclCompileCatchCmd: bad jump distance %d\n",
+		(envPtr->codeNext - envPtr->codeStart) - jumpFixup.codeOffset);
     }
     TclEmitOpcode(INST_END_CATCH, envPtr);
 
@@ -717,7 +716,7 @@ TclCompileForeachCmd(interp, parsePtr, envPtr)
     Tcl_Token *tokenPtr, *bodyTokenPtr;
     unsigned char *jumpPc;
     JumpFixup jumpFalseFixup;
-    int jumpDist, jumpBackDist, jumpBackOffset, infoIndex, range;
+    int jumpBackDist, jumpBackOffset, infoIndex, range;
     int numWords, numLists, numVars, loopIndex, tempVar, i, j, code;
     char buffer[32 + TCL_INTEGER_SPACE];
     int savedStackDepth = envPtr->currStackDepth;
@@ -961,9 +960,7 @@ TclCompileForeachCmd(interp, parsePtr, envPtr)
      * Fix the target of the jump after the foreach_step test.
      */
 
-    jumpDist = (envPtr->codeNext - envPtr->codeStart)
-	    - jumpFalseFixup.codeOffset;
-    if (TclFixupForwardJump(envPtr, &jumpFalseFixup, jumpDist, 127)) {
+    if (TclFixupForwardJumpToHere(envPtr, &jumpFalseFixup, 127)) {
 	/*
 	 * Update the loop body's starting PC offset since it moved down.
 	 */
@@ -1139,7 +1136,7 @@ TclCompileIfCmd(interp, parsePtr, envPtr)
 				 * body to the end of the "if" when that PC
 				 * is determined. */
     Tcl_Token *tokenPtr, *testTokenPtr;
-    int jumpDist, jumpFalseDist;
+    int jumpFalseDist;
     int jumpIndex = 0;          /* avoid compiler warning. */
     int numWords, wordIdx, numBytes, j, code;
     CONST char *word;
@@ -1320,10 +1317,8 @@ TclCompileIfCmd(interp, parsePtr, envPtr)
 	     * 4 byte jump.
 	     */
 
-	    jumpDist = (envPtr->codeNext - envPtr->codeStart)
-	            - jumpFalseFixupArray.fixup[jumpIndex].codeOffset;
-	    if (TclFixupForwardJump(envPtr,
-	            &(jumpFalseFixupArray.fixup[jumpIndex]), jumpDist, 120)) {
+	    if (TclFixupForwardJumpToHere(envPtr,
+	            &(jumpFalseFixupArray.fixup[jumpIndex]), 120)) {
 		/*
 		 * Adjust the code offset for the proceeding jump to the end
 		 * of the "if" command.
@@ -1429,10 +1424,8 @@ TclCompileIfCmd(interp, parsePtr, envPtr)
     
     for (j = jumpEndFixupArray.next;  j > 0;  j--) {
 	jumpIndex = (j - 1);	/* i.e. process the closest jump first */
-	jumpDist = (envPtr->codeNext - envPtr->codeStart)
-	        - jumpEndFixupArray.fixup[jumpIndex].codeOffset;
-	if (TclFixupForwardJump(envPtr,
-	        &(jumpEndFixupArray.fixup[jumpIndex]), jumpDist, 127)) {
+	if (TclFixupForwardJumpToHere(envPtr,
+	        &(jumpEndFixupArray.fixup[jumpIndex]), 127)) {
 	    /*
 	     * Adjust the immediately preceeding "ifFalse" jump. We moved
 	     * it's target (just after this jump) down three bytes.
@@ -2831,6 +2824,395 @@ TclCompileStringCmd(interp, parsePtr, envPtr)
 	}
     }
 
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclCompileSwitchCmd --
+ *
+ *	Procedure called to compile the "switch" command.
+ *
+ * Results:
+ *	The return value is a standard Tcl result, which is TCL_OK if
+ *	compilation was successful. If an error occurs then the
+ *	interpreter's result contains a standard error message and TCL_ERROR
+ *	is returned. If compilation failed because the command is too
+ *	complex for TclCompileWhileCmd, TCL_OUT_LINE_COMPILE is returned
+ *	indicating that the while command should be compiled "out of line"
+ *	by emitting code to invoke its command procedure at runtime.  Note
+ *	that most errors actually return TCL_OUT_LINE_COMPILE because that
+ *	allows the real error to be raised at run-time.
+ *
+ * Side effects:
+ *	Instructions are added to envPtr to execute the "switch" command
+ *	at runtime.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+TclCompileSwitchCmd(interp, parsePtr, envPtr)
+    Tcl_Interp *interp;		/* Used for error reporting. */
+    Tcl_Parse *parsePtr;	/* Points to a parse structure for the
+				 * command created by Tcl_ParseCommand. */
+    CompileEnv *envPtr;		/* Holds resulting instructions. */
+{
+    Tcl_Token *tokenPtr;	/* Pointer to tokens in command */
+    Tcl_Token *valueTokenPtr;	/* Token for the value to switch on. */
+    int foundDefault;		/* Flag to indicate whether a "default"
+				 * clause is present. */
+    enum {Switch_Exact, Switch_Glob} mode;
+				/* What kind of switch are we doing? */
+    int i, j;			/* Loop counter variables. */
+
+    Tcl_DString bodyList;	/* Used for splitting the pattern list. */
+    int argc;			/* Number of items in pattern list. */
+    CONST char **argv;		/* Array of copies of items in pattern list. */
+    Tcl_Token *bodyTokenArray;	/* Array of real pattern list items. */
+    CONST char *tokenStartPtr;	/* Used as part of synthesizing tokens. */
+    int isTokenBraced;
+
+    JumpFixup *fixupArray;	/* Array of forward-jump fixup records. */
+    int *fixupTargetArray;	/* Array of places for fixups to point at. */
+    int fixupCount;		/* Number of places to fix up. */
+    int contFixIndex;		/* Where the first of the jumps due to a
+				 * group of continuation bodies starts,
+				 * or -1 if there aren't any. */
+    int contFixCount;		/* Number of continuation bodies pointing
+				 * to the current (or next) real body. */
+    int codeOffset;		/* Cache of current bytecode offset. */
+    int savedStackDepth = envPtr->currStackDepth;
+
+    tokenPtr = parsePtr->tokenPtr;
+
+    /*
+     * Only handle the following versions:
+     *   switch        -- word {pattern body ...}
+     *   switch -exact -- word {pattern body ...} 
+     *   switch -glob  -- word {pattern body ...}
+     */
+
+    if (parsePtr->numWords != 5 &&
+	parsePtr->numWords != 4) {
+	return TCL_OUT_LINE_COMPILE;
+    }
+
+    /*
+     * We don't care how the command's word was generated; we're
+     * compiling it anyway!
+     */
+    tokenPtr += tokenPtr->numComponents + 1;
+
+    if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
+	return TCL_OUT_LINE_COMPILE;
+    } else {
+	register int size = tokenPtr[1].size;
+	register CONST char *chrs = tokenPtr[1].start;
+
+	if (size < 2) {
+	    return TCL_OUT_LINE_COMPILE;
+	}
+	if ((size <= 6) && (parsePtr->numWords == 5)
+		&& !strncmp(chrs, "-exact", (unsigned) TclMin(size, 6))) {
+	    mode = Switch_Exact;
+	    tokenPtr += 2;
+	} else if ((size <= 5) && (parsePtr->numWords == 5)
+		&& !strncmp(chrs, "-glob", (unsigned) TclMin(size, 5))) {
+	    mode = Switch_Glob;
+	    tokenPtr += 2;
+	} else if ((size == 2) && (parsePtr->numWords == 4)
+		&& !strncmp(chrs, "--", 2)) {
+	    /*
+	     * If no control flag present, use glob matching.  We end up
+	     * re-checking this word, but that's the way things are...
+	     */
+	    mode = Switch_Glob;
+	} else {
+	    return TCL_OUT_LINE_COMPILE;
+	}
+    }
+    if ((tokenPtr->type != TCL_TOKEN_SIMPLE_WORD)
+	|| (tokenPtr[1].size != 2) || strncmp(tokenPtr[1].start, "--", 2)) {
+	return TCL_OUT_LINE_COMPILE;
+    }
+    tokenPtr += 2;
+
+    /*
+     * The value to test against is going to always get pushed on the
+     * stack.  But not yet; we need to verify that the rest of the
+     * command is compilable too.
+     */
+
+    valueTokenPtr = tokenPtr;
+    tokenPtr += tokenPtr->numComponents + 1;
+
+    /*
+     * Test that we've got a suitable body list as a simple (i.e.
+     * braced) word, and that the elements of the body are simple
+     * words too.  This is really rather nasty indeed.
+     */
+
+    if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
+	return TCL_OUT_LINE_COMPILE;
+    }
+    Tcl_DStringInit(&bodyList);
+    Tcl_DStringAppend(&bodyList, tokenPtr[1].start, tokenPtr[1].size);
+    if (Tcl_SplitList(NULL, Tcl_DStringValue(&bodyList), &argc,
+	    &argv) != TCL_OK) {
+	Tcl_DStringFree(&bodyList);
+	return TCL_OUT_LINE_COMPILE;
+    }
+    Tcl_DStringFree(&bodyList);
+    if (argc == 0 || argc % 2) {
+	ckfree((char *)argv);
+	return TCL_OUT_LINE_COMPILE;
+    }
+    bodyTokenArray = (Tcl_Token *) ckalloc(sizeof(Tcl_Token) * argc);
+    tokenStartPtr = tokenPtr[1].start;
+    while (isspace(UCHAR(*tokenStartPtr))) {
+	tokenStartPtr++;
+    }
+    if (*tokenStartPtr == '{') {
+	tokenStartPtr++;
+	isTokenBraced = 1;
+    } else {
+	isTokenBraced = 0;
+    }
+    for (i=0 ; i<argc ; i++) {
+	bodyTokenArray[i].type = TCL_TOKEN_TEXT;
+	bodyTokenArray[i].start = tokenStartPtr;
+	bodyTokenArray[i].size = strlen(argv[i]);
+	bodyTokenArray[i].numComponents = 0;
+	tokenStartPtr += bodyTokenArray[i].size;
+	/*
+	 * Test to see if we have guessed the end of the word
+	 * correctly; if not, we can't feed the real string to the
+	 * sub-compilation engine, and we're then stuck and so have to
+	 * punt out to doing everything at runtime.
+	 */
+	if (isTokenBraced && *(tokenStartPtr++) != '}') {
+	    ckfree((char *)argv);
+	    ckfree((char *)bodyTokenArray);
+	    return TCL_OUT_LINE_COMPILE;
+	}
+	if ((tokenStartPtr < tokenPtr[1].start+tokenPtr[1].size)
+		&& !isspace(UCHAR(*tokenStartPtr))) {
+	    ckfree((char *)argv);
+	    ckfree((char *)bodyTokenArray);
+	    return TCL_OUT_LINE_COMPILE;
+	}
+	while (isspace(UCHAR(*tokenStartPtr))) {
+	    tokenStartPtr++;
+	    if (tokenStartPtr >= tokenPtr[1].start+tokenPtr[1].size) {
+		break;
+	    }
+	}
+	if (*tokenStartPtr == '{') {
+	    tokenStartPtr++;
+	    isTokenBraced = 1;
+	} else {
+	    isTokenBraced = 0;
+	}
+    }
+    if (tokenStartPtr != tokenPtr[1].start+tokenPtr[1].size) {
+	ckfree((char *)argv);
+	ckfree((char *)bodyTokenArray);
+	fprintf(stderr, "BAD ASSUMPTION\n");
+	return TCL_OUT_LINE_COMPILE;
+    }
+
+    /*
+     * Complain if the last body is a continuation.  Note that this
+     * check assumes that the list is non-empty!
+     */
+
+    if (argc>0 && argv[argc-1][0]=='-' && argv[argc-1]=='\0') {
+	ckfree((char *)argv);
+	ckfree((char *)bodyTokenArray);
+	return TCL_OUT_LINE_COMPILE;
+    }
+
+    /*
+     * Now we commit to generating code; the parsing stage per se is
+     * done.
+     *
+     * First, we push the value we're matching against on the stack.
+     */
+
+    if (valueTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
+	TclEmitPush(TclRegisterNewLiteral(envPtr, valueTokenPtr[1].start,
+		valueTokenPtr[1].size), envPtr);
+    } else {
+	int code = TclCompileTokens(interp, valueTokenPtr+1,
+		valueTokenPtr->numComponents, envPtr);
+	if (code != TCL_OK) {
+	    ckfree((char *)argv);
+	    ckfree((char *)bodyTokenArray);
+	    return code;
+	}
+    }
+
+    /*
+     * Generate a test for each arm.
+     */
+
+    contFixIndex = -1;
+    fixupArray = (JumpFixup *) ckalloc(sizeof(JumpFixup) * argc);
+    fixupTargetArray = (int *) ckalloc(sizeof(int) * argc);
+    bzero(fixupTargetArray, sizeof(int) * argc);
+    fixupCount = 0;
+    foundDefault = 0;
+    for (i=0 ; i<argc ; i+=2) {
+	int code;		/* Return codes from sub-compiles. */
+	int nextArmFixupIndex;
+
+	/*
+	 * Generate the test for the arm.
+	 */
+
+	envPtr->currStackDepth = savedStackDepth + 1;
+	if (argv[i][0]!='d' || strcmp(argv[i], "default") || i!=argc-2) {
+	    switch (mode) {
+	    case Switch_Exact:
+		TclEmitOpcode(INST_DUP, envPtr);
+		TclEmitPush(TclRegisterNewLiteral(envPtr, argv[i],
+			(int) strlen(argv[i])), envPtr);
+		TclEmitOpcode(INST_STR_EQ, envPtr);
+		break;
+	    case Switch_Glob:
+		TclEmitPush(TclRegisterNewLiteral(envPtr, argv[i],
+			(int) strlen(argv[i])), envPtr);
+		TclEmitInstInt4(INST_OVER, 1, envPtr);
+		TclEmitInstInt1(INST_STR_MATCH, /*nocase*/0, envPtr);
+		break;
+	    default:
+		panic("unknown switch mode: %d",mode);
+	    }
+	    /*
+	     * Process fall-through clauses here...
+	     */
+	    if (argv[i+1][0]=='-' && argv[i+1][1]=='\0') {
+		if (contFixIndex == -1) {
+		    contFixIndex = fixupCount;
+		    contFixCount = 0;
+		}
+		TclEmitForwardJump(envPtr, TCL_TRUE_JUMP,
+			&fixupArray[contFixIndex+contFixCount]);
+		fixupCount++;
+		contFixCount++;
+		continue;
+	    }
+	    TclEmitForwardJump(envPtr, TCL_FALSE_JUMP,
+		    &fixupArray[fixupCount]);
+	    nextArmFixupIndex = fixupCount;
+	    fixupCount++;
+	} else {
+	    /*
+	     * Got a default clause; set a flag.
+	     */
+	    foundDefault = 1;
+	    /*
+	     * Note that default clauses (which are always last
+	     * clauses) cannot be fall-through clauses as well,
+	     * because the last clause is never a fall-through clause.
+	     */
+	}
+
+	/*
+	 * Generate the body for the arm.  This is guaranteed not to
+	 * be a fall-through case, but it might have preceding
+	 * fall-through cases, so we must process those first.
+	 */
+
+	if (contFixIndex != -1) {
+	    codeOffset = envPtr->codeNext-envPtr->codeStart;
+	    for (j=0 ; j<contFixCount ; j++) {
+		fixupTargetArray[contFixIndex+j] = codeOffset;
+	    }
+	    contFixIndex = -1;
+	}
+
+	/*
+	 * Now do the actual compilation.
+	 */
+
+	TclEmitOpcode(INST_POP, envPtr);
+	envPtr->currStackDepth = savedStackDepth + 1;
+	code = TclCompileScript(interp, bodyTokenArray[i+1].start,
+		bodyTokenArray[i+1].size, /*nested*/ 0, envPtr);
+	if (code != TCL_OK) {
+	    ckfree((char *)argv);
+	    ckfree((char *)bodyTokenArray);
+	    ckfree((char *)fixupArray);
+	    ckfree((char *)fixupTargetArray);
+
+	    if (code == TCL_ERROR) {
+		char *errInfBuf =
+			ckalloc(strlen(argv[i])+40+TCL_INTEGER_SPACE);
+
+		sprintf(errInfBuf, "\n    (\"%s\" arm line %d)",
+			argv[i], interp->errorLine);
+		Tcl_AddObjErrorInfo(interp, errInfBuf, -1);
+		ckfree(errInfBuf);
+	    }
+	    return code;
+	}
+
+	if (!foundDefault) {
+	    TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP,
+		    &fixupArray[fixupCount]);
+	    fixupCount++;
+	    fixupTargetArray[nextArmFixupIndex] =
+		    envPtr->codeNext-envPtr->codeStart;
+	}
+    }
+    ckfree((char *)argv);
+    ckfree((char *)bodyTokenArray);
+
+    /*
+     * Discard the value we are matching against unless we've had a
+     * default clause (in which case it will already be gone) and make
+     * the result of the command an empty string.
+     */
+
+    if (!foundDefault) {
+	TclEmitOpcode(INST_POP, envPtr);
+	TclEmitPush(TclRegisterNewLiteral(envPtr, "", 0), envPtr);
+    }
+
+    /*
+     * Do jump fixups for arms that were executed.  First, fill in the
+     * jumps of all jumps that don't point elsewhere to point to here.
+     */
+    codeOffset = envPtr->codeNext-envPtr->codeStart;
+    for (i=0 ; i<fixupCount ; i++) {
+	if (fixupTargetArray[i] == 0) {
+	    fixupTargetArray[i] = codeOffset;
+	}
+    }
+
+    /*
+     * Now scan backwards over all the jumps (all of which are forward
+     * jumps) doing each one.  When we do one and there is a size
+     * changes, we must scan back over all the previous ones and see
+     * if they need adjusting before proceeding with further jump
+     * fixups.
+     */
+    for (i=fixupCount-1 ; i>=0 ; i--) {
+	if (TclFixupForwardJump(envPtr, &fixupArray[i],
+		fixupTargetArray[i]-fixupArray[i].codeOffset, 127)) {
+	    for (j=i-1 ; j>=0 ; j--) {
+		if (fixupTargetArray[j] > fixupArray[i].codeOffset) {
+		    fixupTargetArray[j] += 3;
+		}
+	    }
+	}
+    }
+    ckfree((char *)fixupArray);
+    ckfree((char *)fixupTargetArray);
+
+    envPtr->currStackDepth = savedStackDepth + 1;
     return TCL_OK;
 }
 

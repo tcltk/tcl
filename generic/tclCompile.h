@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.33 2002/10/09 11:54:05 das Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.34 2003/03/05 22:31:23 dkf Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -980,6 +980,20 @@ EXTERN int		TclCompileVariableCmd _ANSI_ARGS_((
 #define TclUpdateInstInt4AtPc(op, i, pc) \
     *(pc) = (unsigned char) (op); \
     TclStoreInt4AtPtr((i), ((pc)+1))
+
+/*
+ * Macro to fix up a forward jump to point to the current
+ * code-generation position in the bytecode being created (the most
+ * common case). The ANSI C "prototypes" for this macro is:
+ *
+ * EXTERN int	TclFixupForwardJumpToHere _ANSI_ARGS_((CompileEnv *envPtr,
+ *		    JumpFixup *fixupPtr, int threshold));
+ */
+
+#define TclFixupForwardJumpToHere(envPtr, fixupPtr, threshold) \
+    TclFixupForwardJump((envPtr), (fixupPtr), \
+	    (envPtr)->codeNext-(envPtr)->codeStart-(fixupPtr)->codeOffset, \
+	    (threshold))
     
 /*
  * Macros to get a signed integer (GET_INT{1,2}) or an unsigned int
@@ -1039,8 +1053,3 @@ EXTERN int		TclCompileVariableCmd _ANSI_ARGS_((
 # define TCL_STORAGE_CLASS DLLIMPORT
 
 #endif /* _TCLCOMPILATION */
-
-
-
-
-
