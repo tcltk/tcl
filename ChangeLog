@@ -1,5 +1,10 @@
 2002-07-23  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* unix/Makefile.in: Combine ranlib tests and
+	avoid printing unless ranlib is actually run.
+
+2002-07-23  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* unix/tcl.m4 (SC_PATH_X): Set XINCLUDES to "" instead
 	of "# no special path needed" or "# no include files found"
 	when x headers cannot be located.
