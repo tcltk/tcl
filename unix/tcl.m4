@@ -1117,7 +1117,7 @@ dnl AC_CHECK_TOOL(AR, ar)
 		SHLIB_LD="${CC} -shared"
 		DL_OBJS="tclLoadDl.o"
 		DL_LIBS="-ldl"
-		LDFLAGS="-rdynamic"
+		LDFLAGS="-Wl,--export-dynamic"
 		CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
 		LD_SEARCH_FLAGS=${CC_SEARCH_FLAGS}
 	    else
@@ -1157,7 +1157,7 @@ dnl AC_CHECK_TOOL(AR, ar)
 		SHLIB_LD="${CC} -shared"
 		DL_OBJS=""
 		DL_LIBS="-ldl"
-		LDFLAGS="-rdynamic"
+		LDFLAGS="-Wl,--export-dynamic"
 		CC_SEARCH_FLAGS=""
 		LD_SEARCH_FLAGS=""
 	    else
