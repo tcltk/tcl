@@ -1,5 +1,8 @@
 2003-03-14  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
+	* generic/tclCmdAH.c (Tcl_FileObjCmd): Remove assumption that file
+	times and longs are the same size.  [Bug #698146]
+
 	* generic/tclCmdAH.c (Tcl_FormatObjCmd): Only add the modifier
 	that indicates we've got a wide int when we're formatting in an
 	integer style.  Stops some libc's from going mad.  [Bug #702622]
