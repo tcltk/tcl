@@ -3,7 +3,7 @@ README:  Tcl
 	Tcl is maintained, enhanced, and distributed freely as a
 	service to the Tcl community by Scriptics Corporation.
 
-RCS: @(#) $Id: README,v 1.1.2.8 1999/02/17 02:34:01 hershey Exp $
+RCS: @(#) $Id: README,v 1.1.2.9 1999/03/14 00:53:23 rjohnson Exp $
 
 Contents
 --------
@@ -216,6 +216,14 @@ changes, there are several smaller changes and bug fixes.  See the file
     5. Message catalog. There is a new message catalog package which makes
     it easy to localize the strings in a script.  See the doc/msgcat.n
     manual entry for more details.
+
+    6. Stubbs library for building extensions.  There is now a new
+    way to build extensions for Tcl.  Instead of linking with the
+    tcl shared library you can now link to a stubs library that gets
+    built in this release.  By linking with the stubs library it
+    is possible to use dynamically loaded extensions in staticlly
+    built applications.  It will also be possible for some extensions
+    to work for both Tcl 8.0 & 8.1 with out having to recompile.
 
 5. Development tools
 --------------------
