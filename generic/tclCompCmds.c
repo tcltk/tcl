@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.39.2.1 2003/04/07 20:03:05 dgp Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.39.2.2 2003/07/15 20:51:49 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1197,7 +1197,7 @@ TclCompileIfCmd(interp, parsePtr, envPtr)
 	if (wordIdx >= numWords) {
 	    sprintf(buffer,
 	            "wrong # args: no expression after \"%.*s\" argument",
-		    numBytes, word);
+		    (numBytes > 50 ? 50 : numBytes), word);
 	    Tcl_ResetResult(interp);
 	    Tcl_AppendToObj(Tcl_GetObjResult(interp), buffer, -1);
 	    code = TCL_ERROR;
@@ -1259,7 +1259,10 @@ TclCompileIfCmd(interp, parsePtr, envPtr)
 	tokenPtr = testTokenPtr + (testTokenPtr->numComponents + 1);
 	wordIdx++;
 	if (wordIdx >= numWords) {
-	    sprintf(buffer, "wrong # args: no script following \"%.*s\" argument", testTokenPtr->size, testTokenPtr->start);
+	    sprintf(buffer,
+		    "wrong # args: no script following \"%.*s\" argument",
+		    (testTokenPtr->size > 50 ? 50 : testTokenPtr->size),
+		    testTokenPtr->start);
 	    Tcl_ResetResult(interp);
 	    Tcl_AppendToObj(Tcl_GetObjResult(interp), buffer, -1);
 	    code = TCL_ERROR;
