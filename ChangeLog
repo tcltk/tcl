@@ -1,5 +1,14 @@
 2003-10-22  Andreas Kupries  <andreask@activestate.com>
 
+	* win/tclWinSock.c (TcpWatchProc): Watch for FD_CLOSE too when
+	  asked for writable events by the generic layer.
+	  (SocketEventProc): Generate a writable event too when a close is
+	  detected.
+
+	  Together the changes fix [Bug 599468].
+
+2003-10-22  Andreas Kupries  <andreask@activestate.com>
+
 	* generic/tclIOUtil.c (FsListMounts, FsAddMountsToGlobResult): New
 	  functions. See below for context.
 	  (Tcl_FSMatchInDirectory): Modified to call on the new functions
