@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: namespace.test,v 1.23 2003/11/14 20:44:46 dgp Exp $
+# RCS: @(#) $Id: namespace.test,v 1.24 2004/03/24 21:54:32 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -1389,6 +1389,13 @@ test namespace-44.4 {ensemble: errors} {
 	list [catch {namespace ensemble create -map {x {}}} msg] $msg
     }
 } {1 {ensemble subcommand implementations must be non-empty lists}}
+test namespace-44.5 {ensemble: errors} -setup {
+    namespace ensemble create -command foobar -subcommands {foobarcget foobarconfigure}
+} -body {
+    foobar foobarcon
+} -cleanup {
+    rename foobar {}
+} -returnCodes error -result {invalid command name "::foobarconfigure"}
 
 test namespace-45.1 {ensemble: introspection} {
     namespace eval ns {
