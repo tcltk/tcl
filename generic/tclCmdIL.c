@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.24 2000/04/04 08:04:41 hobbs Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.25 2000/05/08 22:21:15 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -2019,77 +2019,58 @@ Tcl_LinsertObjCmd(dummy, interp, objc, objv)
     register int objc;		/* Number of arguments. */
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
-    Tcl_Obj *listPtr, *resultPtr;
-    Tcl_ObjType *typePtr;
+    Tcl_Obj *listPtr;
     int index, isDuplicate, len, result;
-   
+
     if (objc < 4) {
 	Tcl_WrongNumArgs(interp, 1, objv, "list index element ?element ...?");
 	return TCL_ERROR;
     }
-
-    /*
-     * Get the index first since, if a conversion to int is needed, it
-     * will invalidate the list's internal representation.
-     */
 
     result = Tcl_ListObjLength(interp, objv[1], &len);
     if (result != TCL_OK) {
 	return result;
     }
 
-    result = TclGetIntForIndex(interp, objv[2], /*endValue*/ len, &index);
+    /*
+     * Get the index.  "end" is interpreted to be the index after the last
+     * element, such that using it will cause any inserted elements to be
+     * appended to the list.
+     */
+
+    result = TclGetIntForIndex(interp, objv[2], /*end*/ len, &index);
     if (result != TCL_OK) {
 	return result;
+    }
+    if (index > len) {
+	index = len;
     }
 
     /*
      * If the list object is unshared we can modify it directly. Otherwise
-     * we create a copy to modify: this is "copy on write". We create the
-     * duplicate directly in the interpreter's object result.
+     * we create a copy to modify: this is "copy on write".
      */
-    
+
     listPtr = objv[1];
     isDuplicate = 0;
     if (Tcl_IsShared(listPtr)) {
-	/*
-	 * The following code must reflect the logic in Tcl_DuplicateObj()
-	 * except that it must duplicate the list object directly into the
-	 * interpreter's result.
-	 */
-	
-	Tcl_ResetResult(interp);
-	resultPtr = Tcl_GetObjResult(interp);
-	typePtr = listPtr->typePtr;
-	if (listPtr->bytes == NULL) {
-	    resultPtr->bytes = NULL;
-	} else if (listPtr->bytes != tclEmptyStringRep) {
-	    len = listPtr->length;
-	    TclInitStringRep(resultPtr, listPtr->bytes, len);
-	}
-	if (typePtr != NULL) {
-	    if (typePtr->dupIntRepProc == NULL) {
-		resultPtr->internalRep = listPtr->internalRep;
-		resultPtr->typePtr = typePtr;
-	    } else {
-		(*typePtr->dupIntRepProc)(listPtr, resultPtr);
-	    }
-	}
-	listPtr = resultPtr;
+	listPtr = Tcl_DuplicateObj(listPtr);
 	isDuplicate = 1;
     }
-    
-    if ((objc == 4) && (index == INT_MAX)) {
+
+    if ((objc == 4) && (index == len)) {
 	/*
 	 * Special case: insert one element at the end of the list.
 	 */
-
 	result = Tcl_ListObjAppendElement(interp, listPtr, objv[3]);
     } else if (objc > 3) {
 	result = Tcl_ListObjReplace(interp, listPtr, index, 0,
 				    (objc-3), &(objv[3]));
     }
     if (result != TCL_OK) {
+	if (isDuplicate) {
+	    Tcl_DecrRefCount(listPtr); /* free unneeded obj */
+	}
 	return result;
     }
     
@@ -2097,9 +2078,7 @@ Tcl_LinsertObjCmd(dummy, interp, objc, objv)
      * Set the interpreter's object result.
      */
 
-    if (!isDuplicate) {
-	Tcl_SetObjResult(interp, listPtr);
-    }
+    Tcl_SetObjResult(interp, listPtr);
     return TCL_OK;
 }
 
@@ -2306,9 +2285,7 @@ Tcl_LreplaceObjCmd(dummy, interp, objc, objv)
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
     register Tcl_Obj *listPtr;
-    int createdNewObj, first, last, listLen, numToDelete;
-    int firstArgLen, result;
-    char *firstArg;
+    int isDuplicate, first, last, listLen, numToDelete, result;
 
     if (objc < 4) {
 	Tcl_WrongNumArgs(interp, 1, objv,
@@ -2316,53 +2293,43 @@ Tcl_LreplaceObjCmd(dummy, interp, objc, objv)
 	return TCL_ERROR;
     }
 
-    /*
-     * If the list object is unshared we can modify it directly, otherwise
-     * we create a copy to modify: this is "copy on write".
-     */
-    
-    listPtr = objv[1];
-    createdNewObj = 0;
-    if (Tcl_IsShared(listPtr)) {
-	listPtr = Tcl_DuplicateObj(listPtr);
-	createdNewObj = 1;
-    }
-    result = Tcl_ListObjLength(interp, listPtr, &listLen);
+    result = Tcl_ListObjLength(interp, objv[1], &listLen);
     if (result != TCL_OK) {
-        errorReturn:
-	if (createdNewObj) {
-	    Tcl_DecrRefCount(listPtr); /* free unneeded obj */
-	}
 	return result;
     }
 
     /*
-     * Get the first and last indexes.
+     * Get the first and last indexes.  "end" is interpreted to be the index
+     * for the last element, such that using it will cause that element to
+     * be included for deletion.
      */
 
-    result = TclGetIntForIndex(interp, objv[2], /*endValue*/ (listLen - 1),
-	    &first);
+    result = TclGetIntForIndex(interp, objv[2], /*end*/ (listLen - 1), &first);
     if (result != TCL_OK) {
-	goto errorReturn;
+	return result;
     }
-    firstArg = Tcl_GetStringFromObj(objv[2], &firstArgLen);
 
-    result = TclGetIntForIndex(interp, objv[3], /*endValue*/ (listLen - 1),
-	    &last);
+    result = TclGetIntForIndex(interp, objv[3], /*end*/ (listLen - 1), &last);
     if (result != TCL_OK) {
-	goto errorReturn;
+	return result;
     }
 
     if (first < 0)  {
     	first = 0;
     }
-    if ((first >= listLen) && (listLen > 0)
-	    && (strncmp(firstArg, "end", (unsigned) firstArgLen) != 0)) {
+
+    /*
+     * Complain if the user asked for a start element that is greater than the
+     * list length.  This won't ever trigger for the "end*" case as that will
+     * be properly constrained by TclGetIntForIndex because we use listLen-1
+     * (to allow for replacing the last elem).
+     */
+
+    if ((first >= listLen) && (listLen > 0)) {
 	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
 		"list doesn't contain element ",
 		Tcl_GetString(objv[2]), (int *) NULL);
-	result = TCL_ERROR;
-	goto errorReturn;
+	return TCL_ERROR;
     }
     if (last >= listLen) {
     	last = (listLen - 1);
@@ -2373,6 +2340,17 @@ Tcl_LreplaceObjCmd(dummy, interp, objc, objv)
 	numToDelete = 0;
     }
 
+    /*
+     * If the list object is unshared we can modify it directly, otherwise
+     * we create a copy to modify: this is "copy on write".
+     */
+
+    listPtr = objv[1];
+    isDuplicate = 0;
+    if (Tcl_IsShared(listPtr)) {
+	listPtr = Tcl_DuplicateObj(listPtr);
+	isDuplicate = 1;
+    }
     if (objc > 4) {
 	result = Tcl_ListObjReplace(interp, listPtr, first, numToDelete,
 	        (objc-4), &(objv[4]));
@@ -2381,7 +2359,10 @@ Tcl_LreplaceObjCmd(dummy, interp, objc, objv)
 		0, NULL);
     }
     if (result != TCL_OK) {
-	goto errorReturn;
+	if (isDuplicate) {
+	    Tcl_DecrRefCount(listPtr); /* free unneeded obj */
+	}
+	return result;
     }
 
     /*
