@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacResource.r,v 1.5 2001/11/23 01:28:26 das Exp $
+ * RCS: @(#) $Id: tclMacResource.r,v 1.6 2001/12/27 22:46:28 das Exp $
  */
 
 #include <Types.r>
@@ -25,21 +25,6 @@
 
 #define RESOURCE_INCLUDED
 #include "tcl.h"
-
-#if (TCL_RELEASE_LEVEL == 0)
-#   define RELEASE_LEVEL alpha
-#elif (TCL_RELEASE_LEVEL == 1)
-#   define RELEASE_LEVEL beta
-#elif (TCL_RELEASE_LEVEL == 2)
-#   define RELEASE_LEVEL final
-#endif
-
-#if (TCL_RELEASE_LEVEL == 2)
-#   define MINOR_VERSION (TCL_MINOR_VERSION * 16) + TCL_RELEASE_SERIAL
-#else
-#   define MINOR_VERSION TCL_MINOR_VERSION * 16
-#endif
-
 
 /* 
  * The mechanisim below loads Tcl source into the resource fork of the
