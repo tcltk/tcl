@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoad.c,v 1.9 2003/02/01 23:37:29 kennykb Exp $
+ * RCS: @(#) $Id: tclLoad.c,v 1.10 2004/02/21 12:48:50 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -168,7 +168,8 @@ Tcl_LoadObjCmd(dummy, interp, objc, objv)
 	slaveIntName = Tcl_GetString(objv[3]);
 	target = Tcl_GetSlave(interp, slaveIntName);
 	if (target == NULL) {
-	    return TCL_ERROR;
+	    code = TCL_ERROR;
+	    goto done;
 	}
     }
 

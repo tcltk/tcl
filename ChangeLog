@@ -1,3 +1,8 @@
+2004-02-21  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclLoad.c (Tcl_LoadObjCmd): Fixed memory leak due to
+	an improper error exit route.
+
 2004-02-20  David Gravereaux <davygrvy@pobox.com>
 
 	* win/tclWinSock.c (SocketThreadExitHandler): Don't call
