@@ -21,7 +21,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.40 2004/05/25 19:45:14 msofer Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.41 2004/07/11 23:11:22 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -5262,7 +5262,15 @@ BuildEnsembleConfig(ensemblePtr)
 	/*
 	 * Remove pre-existing table.
 	 */
+	Tcl_HashSearch search;
+
 	ckfree((char *)ensemblePtr->subcommandArrayPtr);
+	hPtr = Tcl_FirstHashEntry(hash, &search);
+	while (hPtr != NULL) {
+	    Tcl_Obj *prefixObj = (Tcl_Obj *) Tcl_GetHashValue(hPtr);
+	    Tcl_DecrRefCount(prefixObj);
+	    hPtr = Tcl_NextHashEntry(&search);
+	}
 	Tcl_DeleteHashTable(hash);
 	Tcl_InitHashTable(hash, TCL_STRING_KEYS);
     }
