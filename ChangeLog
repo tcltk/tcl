@@ -1,3 +1,8 @@
+2002-09-03  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* generic/tclInterp.c (AliasCreate): a Tcl_Obj was leaked on error
+	return from TclPreventAliasLoop.
+	
 2002-09-03  Daniel Steffen  <das@users.sourceforge.net>
 
 	* macosx/Tcl.pbproj/project.pbxproj: Bumped version number to
