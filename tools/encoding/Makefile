@@ -89,7 +89,7 @@ clean:
 	@rm -f txt2enc *.enc euc-jp.txt euc-kr.txt
 
 txt2enc: txt2enc.c
-	@cc -o txt2enc txt2enc.c
+	@gcc -o txt2enc txt2enc.c
 
 euc-jp.txt: ascii.txt Makefile
 	@echo Building euc-jp.txt from components.
