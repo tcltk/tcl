@@ -20,15 +20,6 @@
 #include "tclPort.h"
 
 /*
- * The following variable holds the full path name of the binary
- * from which this application was executed, or NULL if it isn't
- * know.  The value of the variable is set by the procedure
- * Tcl_FindExecutable.  The storage space is dynamically allocated.
- */
-
-char *tclExecutableName = NULL;
-
-/*
  * During execution of the "lsort" command, structures of the following
  * type are used to arrange the objects being sorted into a collection
  * of linked lists.
@@ -1287,13 +1278,17 @@ InfoNameOfExecutableCmd(dummy, interp, objc, objv)
     int objc;			/* Number of arguments. */
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
+    CONST char *nameOfExecutable;
+
     if (objc != 2) {
         Tcl_WrongNumArgs(interp, 2, objv, NULL);
         return TCL_ERROR;
     }
+
+    nameOfExecutable = Tcl_GetNameOfExecutable();
     
-    if (tclExecutableName != NULL) {
-	Tcl_SetStringObj(Tcl_GetObjResult(interp), tclExecutableName, -1);
+    if (nameOfExecutable != NULL) {
+	Tcl_SetStringObj(Tcl_GetObjResult(interp), (char *)nameOfExecutable, -1);
     }
     return TCL_OK;
 }
