@@ -1,9 +1,13 @@
 2002-02-22  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	* tests/regexpComp.test: updated regexp-11.[1-4] to match changes
+	in regexp.test for new regsub syntax
+
 	* unix/configure:
 	* unix/tcl.m4: added --enable-64bit support for AIX-4 (using -q64
 	flag) when using IBM's xlc compiler.
 
+	* tests/safe.test: updated safe-8.5 and safe-8.7
 	* library/safe.tcl (CheckFileName): removed the limit on
 	sourceable file names (was only *.tcl or tclIndex files with no
 	more than one dot and 14 chars).  There is enough internal
