@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.34 2002/06/11 15:42:20 msofer Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.35 2002/06/16 22:24:12 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1203,20 +1203,35 @@ TclCompileTokens(interp, tokenPtr, count, envPtr)
 
 		/*
 		 * Either push the variable's name, or find its index in
-		 * the array of local variables in a procedure frame.
+		 * the array of local variables in a procedure frame. 
 		 */
 
-		if ((envPtr->procPtr == NULL) || hasNsQualifiers) {
-		    localVar = -1;
-		    TclEmitPush(TclRegisterLiteral(envPtr, name, nameBytes,
-		            /*onHeap*/ 0), envPtr);
-		} else {
+		localVar = -1;
+		if ((envPtr->procPtr != NULL) && !hasNsQualifiers) {
+		    int createVar = 1;
+		    char *p;
+		    
+		    if ((tokenPtr->numComponents == 1) 
+		            && (*(name + nameBytes - 1) == ')')) {
+			/*
+			 * Do not attempt to use a compiled local if the
+			 * name has a single component that looks like
+			 * an array element (see [Bug 569438]).
+			 */
+
+			for (p = name; p < name + nameBytes; p++) {
+			    if (*p == '(') {
+				createVar = 0;
+				break;
+			    }
+			}
+		    }			
 		    localVar = TclFindCompiledLocal(name, nameBytes, 
-			    /*create*/ 1, /*flags*/ 0, envPtr->procPtr);
-		    if (localVar < 0) {
-			TclEmitPush(TclRegisterLiteral(envPtr, name,
-			        nameBytes, /*onHeap*/ 0), envPtr); 
-		    }
+			        createVar, /*flags*/ 0, envPtr->procPtr);
+		}
+		if (localVar < 0) {
+		    TclEmitPush(TclRegisterLiteral(envPtr, name,
+		            nameBytes, /*onHeap*/ 0), envPtr); 
 		}
 
 		/*
