@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.80 2004/05/22 03:42:56 msofer Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.81 2004/05/22 16:21:17 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -542,17 +542,10 @@ TclObjLookupVar(interp, part1Ptr, part2, flags, msg, createPart1, createPart2,
 	procPtr->refCount++;
 	part1Ptr->internalRep.twoPtrValue.ptr1 = (VOID *) procPtr;
 	part1Ptr->internalRep.twoPtrValue.ptr2 = (VOID *) index;
-#if 0
-    /*
-     * TEMPORARYLY DISABLED tclNsVarNameType
-     *
-     * This is a stop-gap fix for [Bug 736729]; it may not address the 
-     * real issue (which I haven't pinned down yet).
-     * This optimisation will hopefully be turned back on soon.
-     *      Miguel Sofer, 2004-05-22
-     */
-
     } else if (index > -3) {
+	/*
+	 * A cacheable namespace or global variable.
+	 */
 	Namespace *nsPtr;
     
 	nsPtr = ((index == -1)? iPtr->globalNsPtr : varFramePtr->nsPtr);
@@ -560,7 +553,6 @@ TclObjLookupVar(interp, part1Ptr, part2, flags, msg, createPart1, createPart2,
 	part1Ptr->typePtr = &tclNsVarNameType;
 	part1Ptr->internalRep.twoPtrValue.ptr1 = (VOID *) nsPtr;
 	part1Ptr->internalRep.twoPtrValue.ptr2 = (VOID *) varPtr;
-#endif
     } else {
 	/*
 	 * At least mark part1Ptr as already parsed.
@@ -767,6 +759,21 @@ TclLookupSimpleVar(interp, varName, flags, create, errMsgPtr, indexPtr)
 	} 
 
 	/*
+	 * FIXME: [Bug 736729]
+	 *
+	 * When a varName is looked from a namespace different from the
+	 * global one, there is no corresponding variable in the namespace and
+	 * there is a "zombie" variable in the global namespace (ie, the
+	 * varName is in the hash table, but the variable is unset), this code
+	 * returns a reference to the zombie. It should instead create a
+	 * variable in the namespace.
+	 *
+	 * Fix in progress - that it is not here yet may indicate that the
+	 * picture above is incomplete or wrong.
+	 *    - Miguel Sofer, 2004-05-22
+	 */
+
+        /*
 	 * Don't pass TCL_LEAVE_ERR_MSG, we may yet create the variable,
 	 * or otherwise generate our own error!
 	 */
@@ -2274,6 +2281,17 @@ TclObjUnsetVar2(interp, part1Ptr, part2, flags)
 	    TclVarErrMsg(interp, part1, part2, "unset", 
 		    ((arrayPtr == NULL) ? noSuchVar : noSuchElement));
 	}
+    }
+
+    /*
+     * Try to avoid keeping the Var struct allocated due to a tclNsVarNameType 
+     * keeping a reference. This removes some additional exteriorisations of
+     * [Bug 736729], but may be a good thing independently of the bug.
+     */
+
+    if (part1Ptr->typePtr == &tclNsVarNameType) {
+	part1Ptr->typePtr->freeIntRepProc(part1Ptr);
+	part1Ptr->typePtr = NULL;
     }
 
     /*
