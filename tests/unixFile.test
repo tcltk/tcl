@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: unixFile.test,v 1.8 2004/05/19 20:15:32 dkf Exp $
+# RCS: @(#) $Id: unixFile.test,v 1.9 2004/06/23 15:36:58 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -27,31 +27,31 @@ catch {
 }
 set absPath [file join [temporaryDirectory] junk]
 
-test unixFile-1.1 {Tcl_FindExecutable} {testfindexecutable unixOnly} {
+test unixFile-1.1 {Tcl_FindExecutable} {testfindexecutable unix} {
     set env(PATH) ""
     testfindexecutable junk
 } $absPath
-test unixFile-1.2 {Tcl_FindExecutable} {testfindexecutable unixOnly} {
+test unixFile-1.2 {Tcl_FindExecutable} {testfindexecutable unix} {
     set env(PATH) "/dummy"
     testfindexecutable junk
 } {}
-test unixFile-1.3 {Tcl_FindExecutable} {testfindexecutable unixOnly} {
+test unixFile-1.3 {Tcl_FindExecutable} {testfindexecutable unix} {
     set env(PATH) "/dummy:[pwd]"
     testfindexecutable junk
 } $absPath
-test unixFile-1.4 {Tcl_FindExecutable} {testfindexecutable unixOnly} {
+test unixFile-1.4 {Tcl_FindExecutable} {testfindexecutable unix} {
     set env(PATH) "/dummy:"
     testfindexecutable junk
 } $absPath
-test unixFile-1.5 {Tcl_FindExecutable} {testfindexecutable unixOnly} {
+test unixFile-1.5 {Tcl_FindExecutable} {testfindexecutable unix} {
     set env(PATH) "/dummy:/dummy"
     testfindexecutable junk
 } {}
-test unixFile-1.6 {Tcl_FindExecutable} {testfindexecutable unixOnly} {
+test unixFile-1.6 {Tcl_FindExecutable} {testfindexecutable unix} {
     set env(PATH) "/dummy::/dummy"
     testfindexecutable junk
 } $absPath
-test unixFile-1.7 {Tcl_FindExecutable} {testfindexecutable unixOnly} {
+test unixFile-1.7 {Tcl_FindExecutable} {testfindexecutable unix} {
     set env(PATH) ":/dummy"
     testfindexecutable junk
 } $absPath

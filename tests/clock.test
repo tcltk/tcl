@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.test,v 1.30 2004/05/27 18:45:35 kennykb Exp $
+# RCS: @(#) $Id: clock.test,v 1.31 2004/06/23 15:36:55 dkf Exp $
 
 set env(LC_TIME) POSIX
 
@@ -103,7 +103,7 @@ test clock-2.12 {clock clicks test, wrong num args} {
 } {1 {wrong # args: should be "clock clicks ?option?"}}
 
 # clock format
-test clock-3.1 {clock format tests} {unixOnly} {
+test clock-3.1 {clock format tests} {unix} {
     set clockval 657687766
     clock format $clockval -format {%a %b %d %I:%M:%S %p %Y} -gmt true
 } {Sun Nov 04 03:02:46 AM 1990}

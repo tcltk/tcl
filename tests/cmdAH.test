@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: cmdAH.test,v 1.41 2004/05/19 16:56:40 vincentdarley Exp $
+# RCS: @(#) $Id: cmdAH.test,v 1.42 2004/06/23 15:36:55 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -205,16 +205,16 @@ test cmdAH-6.2 {Tcl_FileObjCmd: volumes} {
 		set result 1
 	}
 } {1}
-test cmdAH-6.3 {Tcl_FileObjCmd: volumes} {unixOnly} {
+test cmdAH-6.3 {Tcl_FileObjCmd: volumes} {unix} {
     set volumeList [file volumes]
     catch [list glob -nocomplain [lindex $volumeList 0]*]
 } {0}
-test cmdAH-6.4 {Tcl_FileObjCmd: volumes} winOnly {
+test cmdAH-6.4 {Tcl_FileObjCmd: volumes} win {
     set volumeList [string tolower [file volumes]]
     list [catch {lsearch $volumeList "c:/"} element] [expr $element != -1] [catch {list glob -nocomplain [lindex $volumeList $element]*}]
 } {0 1 0}
 
-test cmdAH-6.5 {cd} {unixOnly nonPortable} {
+test cmdAH-6.5 {cd} {unix nonPortable} {
     set dir [pwd]
     cd /
     set res [pwd]
@@ -807,7 +807,7 @@ test cmdAH-16.2 {Tcl_FileObjCmd: readable} {
     -result 	 1
 }
 test cmdAH-16.3 {Tcl_FileObjCmd: readable} {
-    -constraints {unixOnly notRoot testchmod}
+    -constraints {unix notRoot testchmod}
     -setup  	 {testchmod 0333 $gorpfile}
     -body   	 {file reada $gorpfile}
     -result 	 0
@@ -846,7 +846,7 @@ test cmdAH-18.1 {Tcl_FileObjCmd: executable} {testchmod} {
 test cmdAH-18.2 {Tcl_FileObjCmd: executable} {testchmod notRoot} {
     file executable $gorpfile
 } 0
-test cmdAH-18.3 {Tcl_FileObjCmd: executable} {unixOnly testchmod} {
+test cmdAH-18.3 {Tcl_FileObjCmd: executable} {unix testchmod} {
     # Only on unix will setting the execute bit on a regular file
     # cause that file to be executable.
 
@@ -854,7 +854,7 @@ test cmdAH-18.3 {Tcl_FileObjCmd: executable} {unixOnly testchmod} {
     file exe $gorpfile
 } 1
 
-test cmdAH-18.5 {Tcl_FileObjCmd: executable} {winOnly testchmod} {
+test cmdAH-18.5 {Tcl_FileObjCmd: executable} {win testchmod} {
     # On pc, must be a .exe, .com, etc.
 
     set x [file exe $gorpfile]
@@ -863,7 +863,7 @@ test cmdAH-18.5 {Tcl_FileObjCmd: executable} {winOnly testchmod} {
     removeFile $gorpexe
     set x
 } {0 1}
-test cmdAH-18.5.1 {Tcl_FileObjCmd: executable} {winOnly testchmod} {
+test cmdAH-18.5.1 {Tcl_FileObjCmd: executable} {win testchmod} {
     # On pc, must be a .exe, .com, etc.
 
     set x [file exe $gorpfile]
@@ -926,7 +926,7 @@ test cmdAH-19.10 {Tcl_FileObjCmd: ~ : nativename} {
 # directory in order to guarantee (?) a local file system:  some
 # NFS file systems won't do the stuff below correctly.
 
-test cmdAH-19.11 {Tcl_FileObjCmd: exists} {unixOnly notRoot} {
+test cmdAH-19.11 {Tcl_FileObjCmd: exists} {unix notRoot} {
     file delete -force /tmp/tcl.foo.dir/file
     file delete -force /tmp/tcl.foo.dir
     makeDirectory /tmp/tcl.foo.dir
@@ -973,14 +973,14 @@ test cmdAH-20.3 {Tcl_FileObjCmd: atime} {
 test cmdAH-20.4 {Tcl_FileObjCmd: atime} {
     list [catch {file atime $file notint} msg] $msg
 } {1 {expected integer but got "notint"}}
-test cmdAH-20.5 {Tcl_FileObjCmd: atime touch} {unixOnly} {
+test cmdAH-20.5 {Tcl_FileObjCmd: atime touch} {unix} {
     set atime [file atime $file]
     after 1100; # pause a sec to notice change in atime
     set newatime [clock seconds]
     set modatime [file atime $file $newatime]
     expr {$newatime == $modatime ? 1 : "$newatime != $modatime"}
 } 1
-test cmdAH-20.6 {Tcl_FileObjCmd: atime touch} {winOnly testvolumetype} {
+test cmdAH-20.6 {Tcl_FileObjCmd: atime touch} {win testvolumetype} {
     set old [pwd]
     cd $::tcltest::temporaryDirectory
     if {![string equal "NTFS" [testvolumetype]]} {
@@ -1033,12 +1033,12 @@ test cmdAH-23.1 {Tcl_FileObjCmd: lstat} {
 test cmdAH-23.2 {Tcl_FileObjCmd: lstat} {
     list [catch {file lstat a b c} msg] $msg
 } {1 {wrong # args: should be "file lstat name varName"}}
-test cmdAH-23.3 {Tcl_FileObjCmd: lstat} {unixOnly nonPortable} {
+test cmdAH-23.3 {Tcl_FileObjCmd: lstat} {unix nonPortable} {
     catch {unset stat}
     file lstat $linkfile stat
     lsort [array names stat]
 } {atime ctime dev gid ino mode mtime nlink size type uid}
-test cmdAH-23.4 {Tcl_FileObjCmd: lstat} {unixOnly nonPortable} {
+test cmdAH-23.4 {Tcl_FileObjCmd: lstat} {unix nonPortable} {
     catch {unset stat}
     file lstat $linkfile stat
     list $stat(nlink) [expr $stat(mode)&0777] $stat(type)
@@ -1173,14 +1173,14 @@ test cmdAH-24.5 {Tcl_FileObjCmd: mtime} {
 test cmdAH-24.7 {Tcl_FileObjCmd: mtime} {
     list [catch {file mtime $file notint} msg] $msg
 } {1 {expected integer but got "notint"}}
-test cmdAH-24.8 {Tcl_FileObjCmd: mtime touch} unixOnly {
+test cmdAH-24.8 {Tcl_FileObjCmd: mtime touch} unix {
     set mtime [file mtime $file]
     after 1100; # pause a sec to notice change in mtime
     set newmtime [clock seconds]
     set modmtime [file mtime $file $newmtime]
     expr {$newmtime == $modmtime ? 1 : "$newmtime != $modmtime"}
 } 1
-test cmdAH-24.9 {Tcl_FileObjCmd: mtime touch with non-ascii chars} unixOnly {
+test cmdAH-24.9 {Tcl_FileObjCmd: mtime touch with non-ascii chars} unix {
     set oldfile $file
     # introduce some non-ascii characters.
     append file \u2022
@@ -1196,7 +1196,7 @@ test cmdAH-24.9 {Tcl_FileObjCmd: mtime touch with non-ascii chars} unixOnly {
     }
     expr {$newmtime == $modmtime ? 1 : "$newmtime != $modmtime"}
 } 1
-test cmdAH-24.10 {Tcl_FileObjCmd: mtime touch} winOnly {
+test cmdAH-24.10 {Tcl_FileObjCmd: mtime touch} win {
     waitForEvenSecondForFAT
     set mtime [file mtime $file]
     after 2100; # pause two secs to notice change in mtime on FAT fs'es
@@ -1204,7 +1204,7 @@ test cmdAH-24.10 {Tcl_FileObjCmd: mtime touch} winOnly {
     set modmtime [file mtime $file $newmtime]
     expr {$newmtime == $modmtime ? 1 : "$newmtime != $modmtime"}
 } 1
-test cmdAH-24.11 {Tcl_FileObjCmd: mtime touch with non-ascii chars} winOnly {
+test cmdAH-24.11 {Tcl_FileObjCmd: mtime touch with non-ascii chars} win {
     waitForEvenSecondForFAT
     set oldfile $file
     # introduce some non-ascii characters.
@@ -1240,7 +1240,7 @@ test cmdAH-25.2.1 {Tcl_FileObjCmd: owned} -constraints {unix} -setup {
 } -cleanup {
 	removeFile touch.me /tmp
 } -result 1
-test cmdAH-25.3 {Tcl_FileObjCmd: owned} {unixOnly notRoot} {
+test cmdAH-25.3 {Tcl_FileObjCmd: owned} {unix notRoot} {
     file owned /
 } 0
 
@@ -1249,14 +1249,14 @@ test cmdAH-25.3 {Tcl_FileObjCmd: owned} {unixOnly notRoot} {
 test cmdAH-26.1 {Tcl_FileObjCmd: readlink} {
     list [catch {file readlink a b} msg] $msg
 } {1 {wrong # args: should be "file readlink name"}}
-test cmdAH-26.2 {Tcl_FileObjCmd: readlink} {unixOnly nonPortable} {
+test cmdAH-26.2 {Tcl_FileObjCmd: readlink} {unix nonPortable} {
     file readlink $linkfile
 } $gorpfile
-test cmdAH-26.3 {Tcl_FileObjCmd: readlink errors} {unixOnly nonPortable} {
+test cmdAH-26.3 {Tcl_FileObjCmd: readlink errors} {unix nonPortable} {
     list [catch {file readlink _bogus_} msg] [string tolower $msg] \
 	    [string tolower $errorCode]
 } {1 {could not readlink "_bogus_": no such file or directory} {posix enoent {no such file or directory}}}
-test cmdAH-26.5 {Tcl_FileObjCmd: readlink errors} {winOnly nonPortable} {
+test cmdAH-26.5 {Tcl_FileObjCmd: readlink errors} {win nonPortable} {
     list [catch {file readlink _bogus_} msg] [string tolower $msg] \
 	    [string tolower $errorCode]
 } {1 {could not readlink "_bogus_": invalid argument} {posix einval {invalid argument}}}
@@ -1302,7 +1302,7 @@ test cmdAH-28.4 {Tcl_FileObjCmd: stat} {
     file stat $gorpfile stat
     list $stat(nlink) $stat(size) $stat(type)
 } {1 12 file}
-test cmdAH-28.5 {Tcl_FileObjCmd: stat} {unixOnly} {
+test cmdAH-28.5 {Tcl_FileObjCmd: stat} {unix} {
     catch {unset stat}
     file stat $gorpfile stat
     expr $stat(mode)&0777
@@ -1325,7 +1325,7 @@ test cmdAH-28.8 {Tcl_FileObjCmd: stat} {
     removeFile $filename
     set x
 } 1
-test cmdAH-28.9 {Tcl_FileObjCmd: stat} winOnly {
+test cmdAH-28.9 {Tcl_FileObjCmd: stat} win {
     # stat of root directory was failing.
     # don't care about answer, just that test runs.
 
@@ -1341,7 +1341,7 @@ test cmdAH-28.9 {Tcl_FileObjCmd: stat} winOnly {
     file stat c:/ stat
     file stat c:/. stat
 } {}
-test cmdAH-28.10 {Tcl_FileObjCmd: stat} {winOnly nonPortable} {
+test cmdAH-28.10 {Tcl_FileObjCmd: stat} {win nonPortable} {
     # stat of root directory was failing.
     # don't care about answer, just that test runs.
 
@@ -1349,7 +1349,7 @@ test cmdAH-28.10 {Tcl_FileObjCmd: stat} {winOnly nonPortable} {
     file stat //pop/$env(USERNAME)/ stat
     file stat //pop/$env(USERNAME)/. stat
 } {}
-test cmdAH-28.11 {Tcl_FileObjCmd: stat} {winOnly nonPortable} {
+test cmdAH-28.11 {Tcl_FileObjCmd: stat} {win nonPortable} {
     # stat of network directory was returning id of current local drive.
 
     set old [pwd]
@@ -1378,7 +1378,7 @@ test cmdAH-29.1 {Tcl_FileObjCmd: type} {
 test cmdAH-29.2 {Tcl_FileObjCmd: type} {
     file type $dirfile
 } directory
-test cmdAH-29.3.0 {Tcl_FileObjCmd: delete removes link not file} {unixOnly nonPortable} {
+test cmdAH-29.3.0 {Tcl_FileObjCmd: delete removes link not file} {unix nonPortable} {
     set exists [list [file exists $linkfile] [file exists $gorpfile]]
     file delete $linkfile
     set exists2	[list [file exists $linkfile] [file exists $gorpfile]]
@@ -1387,7 +1387,7 @@ test cmdAH-29.3.0 {Tcl_FileObjCmd: delete removes link not file} {unixOnly nonPo
 test cmdAH-29.3 {Tcl_FileObjCmd: type} {
     file type $gorpfile
 } file
-test cmdAH-29.4 {Tcl_FileObjCmd: type} {unixOnly} {
+test cmdAH-29.4 {Tcl_FileObjCmd: type} {unix} {
     catch {file delete $linkfile}
     # Unlike [exec ln -s], [file link] requires an existing target
     file link -symbolic $linkfile $gorpfile

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: unixInit.test,v 1.39 2004/06/11 22:39:29 dgp Exp $
+# RCS: @(#) $Id: unixInit.test,v 1.40 2004/06/23 15:36:58 dkf Exp $
 
 package require tcltest 2
 namespace import -force ::tcltest::*
@@ -18,7 +18,7 @@ unset -nocomplain path
 catch {set oldlang $env(LANG)}
 set env(LANG) C
 
-test unixInit-1.1 {TclpInitPlatform: ignore SIGPIPE} {unixOnly stdio} {
+test unixInit-1.1 {TclpInitPlatform: ignore SIGPIPE} {unix stdio} {
     set x {}
 
     # Watch out for a race condition here.  If tcltest is too slow to start
@@ -44,7 +44,7 @@ test unixInit-1.1 {TclpInitPlatform: ignore SIGPIPE} {unixOnly stdio} {
 # This test is really a test of code in tclUnixChan.c, but the
 # channels are set up as part of initialisation of the interpreter so
 # the test seems to me to fit here as well as anywhere else.
-test unixInit-1.2 {initialisation: standard channel type deduction} {unixOnly stdio} {
+test unixInit-1.2 {initialisation: standard channel type deduction} {unix stdio} {
     # pipe1 is a connection to a server that reports what port it
     # starts on, and delivers a constant string to the first client to
     # connect to that port before exiting.
@@ -109,7 +109,7 @@ proc getlibpath [list [list program [interpreter]]] {
 testConstraint testgetdefenc [llength [info commands testgetdefenc]]
 
 test unixInit-2.0 {TclpInitLibraryPath: setting tclDefaultEncodingDir} \
-	{unixOnly testgetdefenc} {
+	{unix testgetdefenc} {
     set origDir [testgetdefenc]
     testsetdefenc slappy
     set path [testgetdefenc]
@@ -117,7 +117,7 @@ test unixInit-2.0 {TclpInitLibraryPath: setting tclDefaultEncodingDir} \
     set path
 } {slappy}
 test unixInit-2.1 {TclpInitLibraryPath: value of installLib, developLib} \
-	{unixOnly stdio knownBug} {
+	{unix stdio knownBug} {
     set path [getlibpath]
 
     set installLib lib/tcl[info tclversion]
@@ -130,7 +130,7 @@ test unixInit-2.1 {TclpInitLibraryPath: value of installLib, developLib} \
     set x
 } {0 0}
 test unixInit-2.2 {TclpInitLibraryPath: TCL_LIBRARY} -constraints {
-    unixOnly stdio knownBug
+    unix stdio knownBug
 } -setup {
     if {[info exists env(TCL_LIBRARY)]} {
 	set oldlibrary $env(TCL_LIBRARY)
@@ -150,7 +150,7 @@ test unixInit-2.2 {TclpInitLibraryPath: TCL_LIBRARY} -constraints {
     }
 } -result "sparkly"
 test unixInit-2.3 {TclpInitLibraryPath: TCL_LIBRARY wrong version} -constraints {
-    unixOnly stdio knownBug
+    unix stdio knownBug
 } -setup {
     if {[info exists env(TCL_LIBRARY)]} {
 	set oldlibrary $env(TCL_LIBRARY)
@@ -170,7 +170,7 @@ test unixInit-2.3 {TclpInitLibraryPath: TCL_LIBRARY wrong version} -constraints 
     }
 } -result [list /a/b/tcl1.7 /a/b/tcl[info tclversion]]
 test unixInit-2.4 {TclpInitLibraryPath: TCL_LIBRARY: INTL} -constraints {
-    unixOnly stdio knownBug
+    unix stdio knownBug
 } -setup {
     if {[info exists env(TCL_LIBRARY)]} {
 	set oldlibrary $env(TCL_LIBRARY)
@@ -191,11 +191,11 @@ test unixInit-2.4 {TclpInitLibraryPath: TCL_LIBRARY: INTL} -constraints {
     }
 } -result "\xa7"
 test unixInit-2.5 {TclpInitLibraryPath: compiled-in library path} \
-	{emptyTest unixOnly} {
+	{emptyTest unix} {
     # cannot test
 } {}
 test unixInit-2.6 {TclpInitLibraryPath: executable relative} \
-	{unixOnly stdio knownBug} {
+	{unix stdio knownBug} {
     makeDirectory tmp
     makeDirectory [file join tmp sparkly]
     makeDirectory [file join tmp sparkly bin]
@@ -216,7 +216,7 @@ test unixInit-2.6 {TclpInitLibraryPath: executable relative} \
     set x
 } [list [temporaryDirectory]/tmp/sparkly/lib/tcl[info tclversion] [temporaryDirectory]/tmp/lib/tcl[info tclversion]]
 test unixInit-2.7 {TclpInitLibraryPath: compiled-in library path} \
-	{emptyTest unixOnly} {
+	{emptyTest unix} {
     # would need test command to get defaultLibDir and compare it to
     # [lindex $auto_path end]
 } {}
@@ -298,7 +298,7 @@ test unixInit-2.9 {TclpInitLibraryPath: paths relative to executable} {unix noSp
         /tmp/library /library /tcl[info patchlevel]/library]
 
 test unixInit-2.10 {TclpInitLibraryPath: executable relative} -constraints {
-	unixOnly stdio knownBug
+	unix stdio knownBug
 } -setup {
     set tmpDir [makeDirectory tmp]
     set sparklyDir [makeDirectory sparkly $tmpDir]
@@ -336,7 +336,7 @@ test unixInit-2.10 {TclpInitLibraryPath: executable relative} -constraints {
 	[file join [temporaryDirectory] tmp library] ]
 
 test unixInit-3.1 {TclpSetInitialEncodings} -constraints {
-	unixOnly stdio
+	unix stdio
 } -body {
     set env(LANG) C
 
@@ -351,7 +351,7 @@ test unixInit-3.1 {TclpSetInitialEncodings} -constraints {
 } -match regexp -result [expr {
 	($tcl_platform(os) eq "Darwin") ? "^utf-8$" : "^iso8859-15?$"}]
 
-test unixInit-3.2 {TclpSetInitialEncodings} {unixOnly stdio} {
+test unixInit-3.2 {TclpSetInitialEncodings} {unix stdio} {
     set env(LANG) japanese
     catch {set oldlc_all $env(LC_ALL)}
     set env(LC_ALL) japanese
@@ -375,7 +375,7 @@ test unixInit-3.2 {TclpSetInitialEncodings} {unixOnly stdio} {
     expr {[lsearch -exact $validEncodings $enc] < 0}
 } 0
     
-test unixInit-4.1 {TclpSetVariables} {unixOnly} {
+test unixInit-4.1 {TclpSetVariables} {unix} {
     # just make sure they exist
 
     set a [list $tcl_library $tcl_pkgPath $tcl_platform(os)]
@@ -383,15 +383,15 @@ test unixInit-4.1 {TclpSetVariables} {unixOnly} {
     set tcl_platform(platform)
 } "unix"
 
-test unixInit-5.1 {Tcl_Init} {emptyTest unixOnly} {
+test unixInit-5.1 {Tcl_Init} {emptyTest unix} {
     # test initScript
 } {}
 
-test unixInit-6.1 {Tcl_SourceRCFile} {emptyTest unixOnly} {
+test unixInit-6.1 {Tcl_SourceRCFile} {emptyTest unix} {
 } {}
 
 test unixInit-7.1 {closed standard channel: Bug 772288} -constraints {
-	unixOnly stdio
+	unix stdio
 } -body {
     set tclsh [interpreter]
     makeFile {puts [open /dev/null]} crash.tcl
