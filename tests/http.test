@@ -12,7 +12,7 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
 #
-# RCS: @(#) $Id: http.test,v 1.29 2002/07/05 10:38:42 dkf Exp $
+# RCS: @(#) $Id: http.test,v 1.30 2002/09/02 19:27:27 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -246,6 +246,7 @@ test http-3.11 {http::geturl querychannel with -command} {
     set t [http::geturl $posturl -querychannel $fp -command asyncCB]
     set postResult [list PostStart]
     http::wait $t
+    close $fp
 
     lappend testRes [http::status $t] $postResult
     removeFile outdata
