@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: compExpr.test,v 1.6 2001/12/06 10:59:17 dkf Exp $
+# RCS: @(#) $Id: compExpr.test,v 1.7 2004/05/19 20:15:31 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -16,11 +16,9 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 }
 
 if {([catch {expr T1()} msg] == 1) && ($msg == {unknown math function "T1"})} {
-    set gotT1 0
-    puts "This application hasn't been compiled with the \"T1\" and"
-    puts "\"T2\" math functions, so I'll skip some of the expr tests."
+    testConstraint testmathfunctions 0
 } else {
-    set gotT1 1
+    testConstraint testmathfunctions 1
 }
 
 catch {unset a}
@@ -294,14 +292,12 @@ test compExpr-5.1 {CompileMathFuncCall procedure, math function found} {
 test compExpr-5.2 {CompileMathFuncCall procedure, math function not found} {
     list [catch {expr {do_it()}} msg] $msg
 } {1 {unknown math function "do_it"}}
-if $gotT1 {
-    test compExpr-5.3 {CompileMathFuncCall: call registered math function} {
-	expr 3*T1()-1
-    } 368
-    test compExpr-5.4 {CompileMathFuncCall: call registered math function} {
-	expr T2()*3
-    } 1035
-}
+test compExpr-5.3 {CompileMathFuncCall: call registered math function} testmathfunctions {
+    expr 3*T1()-1
+} 368
+test compExpr-5.4 {CompileMathFuncCall: call registered math function} testmathfunctions {
+    expr T2()*3
+} 1035
 test compExpr-5.5 {CompileMathFuncCall procedure, too few arguments} {
     list [catch {expr {atan2(1.0)}} msg] $msg
 } {1 {too few arguments for math function}}
