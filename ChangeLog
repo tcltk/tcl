@@ -1,3 +1,8 @@
+2005-01-27  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclBasic.c (Tcl_ExprBoolean, Tcl_ExprDouble) 
+	(Tcl_ExprLong): Fix to recognize Tcl_WideInt type. [Bug 1109484]
+
 2005-01-26  Andreas Kupries <andreask@activestate.com>
 
 	TIP#218 IMPLEMENTATION
