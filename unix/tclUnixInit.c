@@ -7,7 +7,7 @@
  * Copyright (c) 1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclUnixInit.c,v 1.22 2001/07/02 20:57:02 dgp Exp $
+ * RCS: @(#) $Id: tclUnixInit.c,v 1.23 2001/07/31 19:12:08 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -29,6 +29,10 @@
  */
 #include "tclInitScript.h"
 
+/* Used to store the encoding used for binary files */
+static Tcl_Encoding binaryEncoding = NULL;
+/* Has the basic library path encoding issue been fixed */
+static int libraryPathEncodingFixed = 0;
 
 /*
  * Default directory in which to look for Tcl library scripts.  The
@@ -370,13 +374,18 @@ CONST char *path;		/* Path to the executable in native
  *	Based on the locale, determine the encoding of the operating
  *	system and the default encoding for newly opened files.
  *
- *	Called at process initialization time.
+ *	Called at process initialization time, and part way through
+ *	startup, we verify that the initial encodings were correctly
+ *	setup.  Depending on Tcl's environment, there may not have been
+ *	enough information first time through (above).
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	The Tcl library path is converted from native encoding to UTF-8.
+ *	The Tcl library path is converted from native encoding to UTF-8,
+ *	on the first call, and the encodings may be changed on first or
+ *	second call.
  *
  *---------------------------------------------------------------------------
  */
@@ -384,141 +393,147 @@ CONST char *path;		/* Path to the executable in native
 void
 TclpSetInitialEncodings()
 {
-    CONST char *encoding;
-    int i;
-    Tcl_Obj *pathPtr;
-    char *langEnv;
+    if (libraryPathEncodingFixed == 0) {
+	CONST char *encoding;
+	int i;
+	Tcl_Obj *pathPtr;
+	char *langEnv;
 
-    /*
-     * Determine the current encoding from the LC_* or LANG environment
-     * variables.  We previously used setlocale() to determine the locale,
-     * but this does not work on some systems (e.g. Linux/i386 RH 5.0).
-     */
-
-    langEnv = getenv("LC_ALL");
-
-    if (langEnv == NULL || langEnv[0] == '\0') {
-	langEnv = getenv("LC_CTYPE");
-    }
-    if (langEnv == NULL || langEnv[0] == '\0') {
-	langEnv = getenv("LANG");
-    }
-    if (langEnv == NULL || langEnv[0] == '\0') {
-	langEnv = NULL;
-    }
-
-    encoding = NULL;
-    if (langEnv != NULL) {
-	for (i = 0; localeTable[i].lang != NULL; i++) {
-	    if (strcmp(localeTable[i].lang, langEnv) == 0) {
-		encoding = localeTable[i].encoding;
-		break;
-	    }
-	}
 	/*
-	 * There was no mapping in the locale table.  If there is an
-	 * encoding subfield, we can try to guess from that.
+	 * Determine the current encoding from the LC_* or LANG environment
+	 * variables.  We previously used setlocale() to determine the locale,
+	 * but this does not work on some systems (e.g. Linux/i386 RH 5.0).
 	 */
 
-	if (encoding == NULL) {
-	    char *p;
-	    for (p = langEnv; *p != '\0'; p++) {
-		if (*p == '.') {
-		    p++;
+	langEnv = getenv("LC_ALL");
+
+	if (langEnv == NULL || langEnv[0] == '\0') {
+	    langEnv = getenv("LC_CTYPE");
+	}
+	if (langEnv == NULL || langEnv[0] == '\0') {
+	    langEnv = getenv("LANG");
+	}
+	if (langEnv == NULL || langEnv[0] == '\0') {
+	    langEnv = NULL;
+	}
+
+	encoding = NULL;
+	if (langEnv != NULL) {
+	    for (i = 0; localeTable[i].lang != NULL; i++) {
+		if (strcmp(localeTable[i].lang, langEnv) == 0) {
+		    encoding = localeTable[i].encoding;
 		    break;
 		}
 	    }
-	    if (*p != '\0') {
-		Tcl_DString ds;
-		Tcl_DStringInit(&ds);
-		Tcl_DStringAppend(&ds, p, -1);
+	    /*
+	     * There was no mapping in the locale table.  If there is an
+	     * encoding subfield, we can try to guess from that.
+	     */
 
-		encoding = Tcl_DStringValue(&ds);
-		Tcl_UtfToLower(Tcl_DStringValue(&ds));
-		if (Tcl_SetSystemEncoding(NULL, encoding) == TCL_OK) {
-		    Tcl_DStringFree(&ds);
-		    goto resetPath;
+	    if (encoding == NULL) {
+		char *p;
+		for (p = langEnv; *p != '\0'; p++) {
+		    if (*p == '.') {
+			p++;
+			break;
+		    }
 		}
-		Tcl_DStringFree(&ds);
-		encoding = NULL;
+		if (*p != '\0') {
+		    Tcl_DString ds;
+		    Tcl_DStringInit(&ds);
+		    Tcl_DStringAppend(&ds, p, -1);
+
+		    encoding = Tcl_DStringValue(&ds);
+		    Tcl_UtfToLower(Tcl_DStringValue(&ds));
+		    if (Tcl_SetSystemEncoding(NULL, encoding) == TCL_OK) {
+			Tcl_DStringFree(&ds);
+			goto resetPath;
+		    }
+		    Tcl_DStringFree(&ds);
+		    encoding = NULL;
+		}
 	    }
 	}
-    }
-    if (encoding == NULL) {
-	encoding = "iso8859-1";
-    }
-
-    Tcl_SetSystemEncoding(NULL, encoding);
-
-    resetPath:
-    /*
-     * Initialize the C library's locale subsystem.  This is required
-     * for input methods to work properly on X11.  We only do this for
-     * LC_CTYPE because that's the necessary one, and we don't want to
-     * affect LC_TIME here.  The side effect of setting the default locale
-     * should be to load any locale specific modules that are needed by X.
-     * [BUG: 5422 3345 4236 2522 2521].
-     */
-
-    setlocale(LC_CTYPE, "");
-
-    /*
-     * In case the initial locale is not "C", ensure that the numeric
-     * processing is done in "C" locale regardless.  This is needed because
-     * Tcl relies on routines like strtod, but should not have locale
-     * dependent behavior.
-     */
-
-    setlocale(LC_NUMERIC, "C");
-
-    /*
-     * Until the system encoding was actually set, the library path was
-     * actually in the native multi-byte encoding, and not really UTF-8
-     * as advertised.  We cheated as follows:
-     *
-     * 1. It was safe to allow the Tcl_SetSystemEncoding() call to 
-     * append the ASCII chars that make up the encoding's filename to 
-     * the names (in the native encoding) of directories in the library 
-     * path, since all Unix multi-byte encodings have ASCII in the
-     * beginning.
-     *
-     * 2. To open the encoding file, the native bytes in the file name
-     * were passed to the OS, without translating from UTF-8 to native,
-     * because the name was already in the native encoding.
-     *
-     * Now that the system encoding was actually successfully set,
-     * translate all the names in the library path to UTF-8.  That way,
-     * next time we search the library path, we'll translate the names 
-     * from UTF-8 to the system encoding which will be the native 
-     * encoding.
-     */
-
-    pathPtr = TclGetLibraryPath();
-    if (pathPtr != NULL) {
-	int objc;
-	Tcl_Obj **objv;
-	
-	objc = 0;
-	Tcl_ListObjGetElements(NULL, pathPtr, &objc, &objv);
-	for (i = 0; i < objc; i++) {
-	    int length;
-	    char *string;
-	    Tcl_DString ds;
-
-	    string = Tcl_GetStringFromObj(objv[i], &length);
-	    Tcl_ExternalToUtfDString(NULL, string, length, &ds);
-	    Tcl_SetStringObj(objv[i], Tcl_DStringValue(&ds), 
-		    Tcl_DStringLength(&ds));
-	    Tcl_DStringFree(&ds);
+	if (encoding == NULL) {
+	    encoding = "iso8859-1";
 	}
+
+	Tcl_SetSystemEncoding(NULL, encoding);
+
+	resetPath:
+	/*
+	 * Initialize the C library's locale subsystem.  This is required
+	 * for input methods to work properly on X11.  We only do this for
+	 * LC_CTYPE because that's the necessary one, and we don't want to
+	 * affect LC_TIME here.  The side effect of setting the default locale
+	 * should be to load any locale specific modules that are needed by X.
+	 * [BUG: 5422 3345 4236 2522 2521].
+	 */
+
+	setlocale(LC_CTYPE, "");
+
+	/*
+	 * In case the initial locale is not "C", ensure that the numeric
+	 * processing is done in "C" locale regardless.  This is needed because
+	 * Tcl relies on routines like strtod, but should not have locale
+	 * dependent behavior.
+	 */
+
+	setlocale(LC_NUMERIC, "C");
+
+	/*
+	 * Until the system encoding was actually set, the library path was
+	 * actually in the native multi-byte encoding, and not really UTF-8
+	 * as advertised.  We cheated as follows:
+	 *
+	 * 1. It was safe to allow the Tcl_SetSystemEncoding() call to 
+	 * append the ASCII chars that make up the encoding's filename to 
+	 * the names (in the native encoding) of directories in the library 
+	 * path, since all Unix multi-byte encodings have ASCII in the
+	 * beginning.
+	 *
+	 * 2. To open the encoding file, the native bytes in the file name
+	 * were passed to the OS, without translating from UTF-8 to native,
+	 * because the name was already in the native encoding.
+	 *
+	 * Now that the system encoding was actually successfully set,
+	 * translate all the names in the library path to UTF-8.  That way,
+	 * next time we search the library path, we'll translate the names 
+	 * from UTF-8 to the system encoding which will be the native 
+	 * encoding.
+	 */
+
+	pathPtr = TclGetLibraryPath();
+	if (pathPtr != NULL) {
+	    int objc;
+	    Tcl_Obj **objv;
+	    
+	    objc = 0;
+	    Tcl_ListObjGetElements(NULL, pathPtr, &objc, &objv);
+	    for (i = 0; i < objc; i++) {
+		int length;
+		char *string;
+		Tcl_DString ds;
+
+		string = Tcl_GetStringFromObj(objv[i], &length);
+		Tcl_ExternalToUtfDString(NULL, string, length, &ds);
+		Tcl_SetStringObj(objv[i], Tcl_DStringValue(&ds), 
+			Tcl_DStringLength(&ds));
+		Tcl_DStringFree(&ds);
+	    }
+	}
+
+	libraryPathEncodingFixed = 1;
     }
-
-    /*
-     * Keep the iso8859-1 encoding preloaded.  The IO package uses it for
-     * gets on a binary channel.
-     */
-
-    Tcl_GetEncoding(NULL, "iso8859-1");
+    
+    /* This is only ever called from the startup thread */
+    if (binaryEncoding == NULL) {
+	/*
+	 * Keep the iso8859-1 encoding preloaded.  The IO package uses
+	 * it for gets on a binary channel.
+	 */
+	binaryEncoding = Tcl_GetEncoding(NULL, "iso8859-1");
+    }
 }
 
 /*

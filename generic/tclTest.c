@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.25 2001/04/04 17:35:25 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.26 2001/07/31 19:12:06 vincentdarley Exp $
  */
 
 #define TCL_TEST
@@ -301,7 +301,73 @@ static int		TestChannelCmd _ANSI_ARGS_((ClientData clientData,
 			    Tcl_Interp *interp, int argc, char **argv));
 static int		TestChannelEventCmd _ANSI_ARGS_((ClientData clientData,
 			    Tcl_Interp *interp, int argc, char **argv));
+/* Filesystem testing */
 
+static int		TestFilesystemObjCmd _ANSI_ARGS_((ClientData dummy,
+			    Tcl_Interp *interp, int objc, 
+			    Tcl_Obj *CONST objv[]));
+
+static void TestReport _ANSI_ARGS_((CONST char* cmd, Tcl_Obj* arg1, Tcl_Obj* arg2));
+
+static Tcl_FSStatProc TestReportStat;
+static Tcl_FSAccessProc TestReportAccess;
+static Tcl_FSOpenFileChannelProc TestReportOpenFileChannel;
+static Tcl_FSMatchInDirectoryProc TestReportMatchInDirectory;
+static Tcl_FSGetCwdProc TestReportGetCwd;
+static Tcl_FSChdirProc TestReportChdir;
+static Tcl_FSLstatProc TestReportLstat;
+static Tcl_FSCopyFileProc TestReportCopyFile;
+static Tcl_FSDeleteFileProc TestReportDeleteFile;
+static Tcl_FSRenameFileProc TestReportRenameFile;
+static Tcl_FSCreateDirectoryProc TestReportCreateDirectory;
+static Tcl_FSCopyDirectoryProc TestReportCopyDirectory; 
+static Tcl_FSRemoveDirectoryProc TestReportRemoveDirectory; 
+static Tcl_FSLoadFileProc TestReportLoadFile;
+static Tcl_FSUnloadFileProc TestReportUnloadFile;
+static Tcl_FSReadlinkProc TestReportReadlink;
+static Tcl_FSListVolumesProc TestReportListVolumes;
+static Tcl_FSFileAttrStringsProc TestReportFileAttrStrings;
+static Tcl_FSFileAttrsGetProc TestReportFileAttrsGet;
+static Tcl_FSFileAttrsSetProc TestReportFileAttrsSet;
+static Tcl_FSUtimeProc TestReportUtime;
+static Tcl_FSNormalizePathProc TestReportNormalizePath;
+
+static Tcl_Filesystem testReportingFilesystem = {
+    "reporting",
+    sizeof(Tcl_Filesystem),
+    TCL_FILESYSTEM_VERSION_1,
+    NULL, /* path in */
+    NULL, /* native dup */
+    NULL, /* native free */
+    NULL, /* native to norm */
+    NULL, /* convert to native */
+    &TestReportNormalizePath,
+    NULL, /* path type */
+    NULL, /* separator */
+    &TestReportStat,
+    &TestReportAccess,
+    &TestReportOpenFileChannel,
+    &TestReportMatchInDirectory,
+    &TestReportUtime,
+    &TestReportReadlink,
+    &TestReportListVolumes,
+    &TestReportFileAttrStrings,
+    &TestReportFileAttrsGet,
+    &TestReportFileAttrsSet,
+    &TestReportCreateDirectory,
+    &TestReportRemoveDirectory, 
+    &TestReportDeleteFile,
+    &TestReportLstat,
+    &TestReportCopyFile,
+    &TestReportRenameFile,
+    &TestReportCopyDirectory, 
+    &TestReportLoadFile,
+    &TestReportUnloadFile,
+    &TestReportGetCwd,
+    &TestReportChdir
+};
+
+
 /*
  * External (platform specific) initialization routine, these declarations
  * explicitly don't use EXTERN since this code does not get compiled
@@ -351,6 +417,8 @@ Tcltest_Init(interp)
     Tcl_CreateObjCommand(interp, "noop", NoopObjCmd, (ClientData) 0,
 	    (Tcl_CmdDeleteProc *) NULL);
     Tcl_CreateObjCommand(interp, "testwrongnumargs", TestWrongNumArgsObjCmd,
+	    (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
+    Tcl_CreateObjCommand(interp, "testfilesystem", TestFilesystemObjCmd, 
 	    (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
     Tcl_CreateObjCommand(interp, "testgetindexfromobjstruct",
 			 TestGetIndexFromObjStructObjCmd, (ClientData) 0,
@@ -4269,10 +4337,18 @@ TestOpenFileChannelProc1(interp, fileName, modeString, permissions)
                                          * file, with what modes to create
                                          * it? */
 {
-    if (!strcmp("testOpenFileChannel1%.fil", fileName)) {
+	char *expectname="testOpenFileChannel1%.fil";
+    Tcl_DString ds;
+    
+	Tcl_DStringInit(&ds);
+	Tcl_JoinPath(1, &expectname, &ds);
+
+    if (!strcmp(Tcl_DStringValue(&ds), fileName)) {
+    Tcl_DStringFree(&ds);
 	return (TclpOpenFileChannel(interp, "__testOpenFileChannel1%__.fil",
 		modeString, permissions));
     } else {
+    Tcl_DStringFree(&ds);
 	return (NULL);
     }
 }
@@ -4289,10 +4365,18 @@ TestOpenFileChannelProc2(interp, fileName, modeString, permissions)
                                          * file, with what modes to create
                                          * it? */
 {
-    if (!strcmp("testOpenFileChannel2%.fil", fileName)) {
+	char *expectname="testOpenFileChannel2%.fil";
+    Tcl_DString ds;
+    
+	Tcl_DStringInit(&ds);
+	Tcl_JoinPath(1, &expectname, &ds);
+
+    if (!strcmp(Tcl_DStringValue(&ds), fileName)) {
+    Tcl_DStringFree(&ds);
 	return (TclpOpenFileChannel(interp, "__testOpenFileChannel2%__.fil",
 		modeString, permissions));
     } else {
+    Tcl_DStringFree(&ds);
 	return (NULL);
     }
 }
@@ -4309,10 +4393,18 @@ TestOpenFileChannelProc3(interp, fileName, modeString, permissions)
                                          * file, with what modes to create
                                          * it? */
 {
-    if (!strcmp("testOpenFileChannel3%.fil", fileName)) {
+	char *expectname="testOpenFileChannel3%.fil";
+    Tcl_DString ds;
+    
+	Tcl_DStringInit(&ds);
+	Tcl_JoinPath(1, &expectname, &ds);
+
+    if (!strcmp(Tcl_DStringValue(&ds), fileName)) {
+    Tcl_DStringFree(&ds);
 	return (TclpOpenFileChannel(interp, "__testOpenFileChannel3%__.fil",
 		modeString, permissions));
     } else {
+    Tcl_DStringFree(&ds);
 	return (NULL);
     }
 }
@@ -4533,6 +4625,17 @@ TestChannelCmd(clientData, interp, argc, argv)
         TclFormatInt(buf, Tcl_IsChannelShared(chan));
         Tcl_AppendResult(interp, buf, (char *) NULL);
         return TCL_OK;
+    }
+
+    if ((cmdName[0] == 'i') && (strncmp(cmdName, "isstandard", len) == 0)) {
+	if (argc != 3) {
+	    Tcl_AppendResult(interp, "channel name required", (char *) NULL);
+	    return TCL_ERROR;
+	}
+	
+	TclFormatInt(buf, Tcl_IsStandardChannel(chan));
+	Tcl_AppendResult(interp, buf, (char *) NULL);
+	return TCL_OK;
     }
 
     if ((cmdName[0] == 'm') && (strncmp(cmdName, "mode", len) == 0)) {
@@ -5052,4 +5155,297 @@ TestGetIndexFromObjStructObjCmd(dummy, interp, objc, objv)
     }
     Tcl_WrongNumArgs(interp, 3, objv, NULL);
     return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TestFilesystemObjCmd --
+ *
+ *	This procedure implements the "testfilesystem" command.  It is
+ *	used to test Tcl_FSRegister, Tcl_FSUnregister, and can be used
+ *	to test that the pluggable filesystem works.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	Inserts or removes a filesystem from Tcl's stack.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TestFilesystemObjCmd(dummy, interp, objc, objv)
+    ClientData dummy;
+    Tcl_Interp *interp;
+    int		objc;
+    Tcl_Obj	*CONST objv[];
+{
+    int res;
+    int onOff;
+    
+    if (objc != 2) {
+	char *cmd = Tcl_GetString(objv[0]);
+	Tcl_AppendResult(interp, "wrong # args: should be \"", cmd,
+		" (1 or 0)\"", (char *) NULL);
+	return TCL_ERROR;
+    }
+    if (Tcl_GetBooleanFromObj(interp, objv[1], &onOff) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    if (onOff) {
+	res = Tcl_FSRegister((ClientData)interp, &testReportingFilesystem);
+	if (res == TCL_OK) {
+	    Tcl_SetResult(interp, "registered", TCL_STATIC);
+	} else {
+	    Tcl_SetResult(interp, "failed", TCL_STATIC);
+	}
+    } else {
+	res = Tcl_FSUnregister(&testReportingFilesystem);
+	if (res == TCL_OK) {
+	    Tcl_SetResult(interp, "unregistered", TCL_STATIC);
+	} else {
+	    Tcl_SetResult(interp, "failed", TCL_STATIC);
+	}
+    }
+    return res;
+}
+
+void
+TestReport(cmd, arg1, arg2)
+    CONST char* cmd;
+    Tcl_Obj* arg1;
+    Tcl_Obj* arg2;
+{
+    Tcl_Interp* interp = (Tcl_Interp*) Tcl_FSData(&testReportingFilesystem);
+    if (interp == NULL) {
+	/* This is bad, but not much we can do about it */
+    } else {
+	Tcl_SavedResult savedResult;
+	Tcl_DString ds;
+	Tcl_DStringInit(&ds);
+	Tcl_DStringAppend(&ds, "puts stderr ",-1);
+	Tcl_DStringStartSublist(&ds);
+	Tcl_DStringAppendElement(&ds, cmd);
+	if (arg1 != NULL) {
+	    Tcl_DStringAppendElement(&ds, Tcl_GetString(arg1));
+	}
+	if (arg2 != NULL) {
+	    Tcl_DStringAppendElement(&ds, Tcl_GetString(arg2));
+	}
+	Tcl_DStringEndSublist(&ds);
+	Tcl_SaveResult(interp, &savedResult);
+	Tcl_Eval(interp, Tcl_DStringValue(&ds));
+	Tcl_DStringFree(&ds);
+	Tcl_RestoreResult(interp, &savedResult);
+   }
+}
+int
+TestReportStat(path, buf)
+    Tcl_Obj *path;		/* Path of file to stat (in current CP). */
+    struct stat *buf;		/* Filled with results of stat call. */
+{
+    TestReport("stat",path, NULL);
+    return -1;
+}
+int
+TestReportLstat(path, buf)
+    Tcl_Obj *path;		/* Path of file to stat (in current CP). */
+    struct stat *buf;		/* Filled with results of stat call. */
+{
+    TestReport("lstat",path, NULL);
+    return -1;
+}
+int
+TestReportAccess(path, mode)
+    Tcl_Obj *path;		/* Path of file to access (in current CP). */
+    int mode;                   /* Permission setting. */
+{
+    TestReport("access",path,NULL);
+    return -1;
+}
+Tcl_Channel
+TestReportOpenFileChannel(interp, fileName, modeString, permissions)
+    Tcl_Interp *interp;                 /* Interpreter for error reporting;
+					 * can be NULL. */
+    Tcl_Obj *fileName;                     /* Name of file to open. */
+    char *modeString;                   /* A list of POSIX open modes or
+					 * a string such as "rw". */
+    int permissions;                    /* If the open involves creating a
+					 * file, with what modes to create
+					 * it? */
+{
+    TestReport("open",fileName, NULL);
+    return NULL;
+}
+
+int
+TestReportMatchInDirectory(interp, resultPtr, dirPtr, pattern, types)
+    Tcl_Interp *interp;		/* Interpreter to receive results. */
+    Tcl_Obj *resultPtr;		/* Directory separators to pass to TclDoGlob. */
+    Tcl_Obj *dirPtr;	        /* Contains path to directory to search. */
+    char *pattern;		/* Pattern to match against. */
+    Tcl_GlobTypeData *types;	/* Object containing list of acceptable types.
+				 * May be NULL. */
+{
+    TestReport("matchindirectory",dirPtr, NULL);
+    return -1;
+}
+Tcl_Obj *
+TestReportGetCwd(interp)
+    Tcl_Interp *interp;
+{
+    TestReport("cwd",NULL,NULL);
+    return NULL;
+}
+int
+TestReportChdir(dirName)
+    Tcl_Obj *dirName;
+{
+    TestReport("chdir",dirName,NULL);
+    return -1;
+}
+int
+TestReportLoadFile(interp, fileName, sym1, sym2, proc1Ptr, proc2Ptr, clientDataPtr)
+    Tcl_Interp *interp;		/* Used for error reporting. */
+    Tcl_Obj *fileName;		/* Name of the file containing the desired
+				 * code. */
+    char *sym1, *sym2;		/* Names of two procedures to look up in
+				 * the file's symbol table. */
+    Tcl_PackageInitProc **proc1Ptr, **proc2Ptr;
+				/* Where to return the addresses corresponding
+				 * to sym1 and sym2. */
+    ClientData *clientDataPtr;	/* Filled with token for dynamically loaded
+				 * file which will be passed back to 
+				 * TclpUnloadFile() to unload the file. */
+{
+    TestReport("loadfile",fileName,NULL);
+    return -1;
+}
+void
+TestReportUnloadFile(clientData)
+    ClientData clientData;    /* ClientData returned by a previous call
+			       * to TclpLoadFile().  The clientData is 
+			       * a token that represents the loaded 
+			       * file. */
+{
+    TestReport("unloadfile",NULL,NULL);
+}
+Tcl_Obj *
+TestReportReadlink(path)
+    Tcl_Obj *path;		/* Path of file to readlink (UTF-8). */
+{
+    TestReport("readlink",path,NULL);
+    return NULL;
+}
+int
+TestReportListVolumes(interp)
+    Tcl_Interp *interp;		/* Interpreter for returning volume list. */
+{
+    TestReport("listvolumes",NULL,NULL);
+    return TCL_OK;
+}
+int
+TestReportRenameFile(src, dst)
+    Tcl_Obj *src;		/* Pathname of file or dir to be renamed
+				 * (UTF-8). */
+    Tcl_Obj *dst;		/* New pathname of file or directory
+				 * (UTF-8). */
+{
+    TestReport("renamefile",src,dst);
+    return -1;
+}
+int 
+TestReportCopyFile(src, dst)
+    Tcl_Obj *src;		/* Pathname of file to be copied (UTF-8). */
+    Tcl_Obj *dst;		/* Pathname of file to copy to (UTF-8). */
+{
+    TestReport("copyfile",src,dst);
+    return -1;
+}
+int
+TestReportDeleteFile(path)
+    Tcl_Obj *path;		/* Pathname of file to be removed (UTF-8). */
+{
+    TestReport("deletefile",path,NULL);
+    return -1;
+}
+int
+TestReportCreateDirectory(path)
+    Tcl_Obj *path;		/* Pathname of directory to create (UTF-8). */
+{
+    TestReport("createdirectory",path,NULL);
+    return -1;
+}
+int
+TestReportCopyDirectory(src, dst, errorPtr)
+    Tcl_Obj *src;		/* Pathname of directory to be copied
+				 * (UTF-8). */
+    Tcl_Obj *dst;		/* Pathname of target directory (UTF-8). */
+    Tcl_Obj **errorPtr;	/* If non-NULL, uninitialized or free
+				 * DString filled with UTF-8 name of file
+				 * causing error. */
+{
+    TestReport("copydirectory",src,dst);
+    return -1;
+}
+int
+TestReportRemoveDirectory(path, recursive, errorPtr)
+    Tcl_Obj *path;		/* Pathname of directory to be removed
+				 * (UTF-8). */
+    int recursive;		/* If non-zero, removes directories that
+				 * are nonempty.  Otherwise, will only remove
+				 * empty directories. */
+    Tcl_Obj **errorPtr;	/* If non-NULL, uninitialized or free
+				 * DString filled with UTF-8 name of file
+				 * causing error. */
+{
+    TestReport("removedirectory",path,NULL);
+    return -1;
+}
+char**
+TestReportFileAttrStrings(fileName, objPtrRef)
+    Tcl_Obj* fileName;
+    Tcl_Obj** objPtrRef;
+{
+    TestReport("fileattributestrings",fileName,NULL);
+    return NULL;
+}
+int
+TestReportFileAttrsGet(interp, index, fileName, objPtrRef)
+    Tcl_Interp *interp;		/* The interpreter for error reporting. */
+    int index;			/* index of the attribute command. */
+    Tcl_Obj *fileName;		/* filename we are operating on. */
+    Tcl_Obj **objPtrRef;	/* for output. */
+{
+    TestReport("fileattributesget",fileName,NULL);
+    return -1;
+}
+int
+TestReportFileAttrsSet(interp, index, fileName, objPtr)
+    Tcl_Interp *interp;		/* The interpreter for error reporting. */
+    int index;			/* index of the attribute command. */
+    Tcl_Obj *fileName;		/* filename we are operating on. */
+    Tcl_Obj *objPtr;		/* for input. */
+{
+    TestReport("fileattributesset",fileName,objPtr);
+    return -1;
+}
+int 
+TestReportUtime (fileName, tval)
+    Tcl_Obj* fileName;
+    struct utimbuf *tval;
+{
+    TestReport("utime",fileName,NULL);
+    return -1;
+}
+int
+TestReportNormalizePath(interp, pathPtr, nextCheckpoint)
+    Tcl_Interp *interp;
+    Tcl_Obj *pathPtr;
+    int nextCheckpoint;
+{
+    TestReport("normalizepath",pathPtr,NULL);
+    return nextCheckpoint;
 }

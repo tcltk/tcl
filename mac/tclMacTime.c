@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacTime.c,v 1.3 1999/03/10 05:52:51 stanton Exp $
+ * RCS: @(#) $Id: tclMacTime.c,v 1.4 2001/07/31 19:12:07 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -26,12 +26,56 @@ static int initalized = false;
 static unsigned long baseSeconds;
 static UnsignedWide microOffset;
 
+static int gmt_initialized = false;
+static long gmt_offset;
+static int gmt_isdst;
+TCL_DECLARE_MUTEX(gmtMutex)
+
+static int gmt_lastGetDateUseGMT = 0;
+
 /*
  * Prototypes for procedures that are private to this file:
  */
 
 static void SubtractUnsignedWide _ANSI_ARGS_((UnsignedWide *x,
 	UnsignedWide *y, UnsignedWide *result));
+
+/*
+ *-----------------------------------------------------------------------------
+ *
+ * TclpGetGMTOffset --
+ *
+ *	This procedure gets the offset seconds that needs to be _added_ to tcl time
+ *  in seconds (i.e. GMT time) to get local time needed as input to various
+ *  Mac OS APIs, to convert Mac OS API output to tcl time, _subtract_ this value.
+ *
+ * Results:
+ *	Number of seconds separating GMT time and mac.
+ *
+ * Side effects:
+ *	None.
+ *
+ *-----------------------------------------------------------------------------
+ */
+
+long
+TclpGetGMTOffset()
+{
+    if (gmt_initialized == false) {
+	MachineLocation loc;
+	
+    Tcl_MutexLock(&gmtMutex);
+	ReadLocation(&loc);
+	gmt_offset = loc.u.gmtDelta & 0x00ffffff;
+	if (gmt_offset & 0x00800000) {
+	    gmt_offset = gmt_offset | 0xff000000;
+	}
+	gmt_isdst=(loc.u.dlsDelta < 0);
+	gmt_initialized = true;
+    Tcl_MutexUnlock(&gmtMutex);
+    }
+	return (gmt_offset);
+}
 
 /*
  *-----------------------------------------------------------------------------
@@ -57,21 +101,9 @@ unsigned long
 TclpGetSeconds()
 {
     unsigned long seconds;
-    MachineLocation loc;
-    long int offset;
-    
-    ReadLocation(&loc);
-    offset = loc.u.gmtDelta & 0x00ffffff;
-    if (offset & 0x00800000) {
-	offset = offset | 0xff000000;
-    }
 
-    if (ReadDateTime(&seconds) == noErr) {
-	return (seconds - offset);
-    } else {
-	panic("Can't get time.");
-	return 0;
-    }
+    GetDateTime(&seconds);
+	return (seconds - TclpGetGMTOffset() + tcl_mac_epoch_offset);
 }
 
 /*
@@ -123,22 +155,15 @@ int
 TclpGetTimeZone (
     unsigned long  currentTime)		/* Ignored on Mac. */
 {
-    MachineLocation loc;
-    long int offset;
-
-    ReadLocation(&loc);
-    offset = loc.u.gmtDelta & 0x00ffffff;
-    if (offset & 0x00700000) {
-	offset |= 0xff000000;
-    }
+    long offset;
 
     /*
      * Convert the Mac offset from seconds to minutes and
      * add an hour if we have daylight savings time.
      */
-    offset = -offset;
+    offset = -TclpGetGMTOffset();
     offset /= 60;
-    if (loc.u.dlsDelta < 0) {
+    if (gmt_isdst) {
 	offset += 60;
     }
     
@@ -172,24 +197,11 @@ TclpGetTime(
 #endif
 	
     if (initalized == false) {
-        MachineLocation loc;
-        long int offset;
-    
-        ReadLocation(&loc);
-        offset = loc.u.gmtDelta & 0x00ffffff;
-        if (offset & 0x00800000) {
-            offset = offset | 0xff000000;
-	}
-	if (ReadDateTime(&baseSeconds) != noErr) {
-	    /*
-	     * This should never happen!
-	     */
-	    return;
-	}
+	GetDateTime(&baseSeconds);
 	/*
 	 * Remove the local offset that ReadDateTime() adds.
 	 */
-	baseSeconds -= offset;
+	baseSeconds -= TclpGetGMTOffset() - tcl_mac_epoch_offset;
 	Microseconds(&microOffset);
 	initalized = true;
     }
@@ -246,25 +258,16 @@ TclpGetDate(
 {
     const time_t *tp = (const time_t *)time;
     DateTimeRec dtr;
-    MachineLocation loc;
-    long int offset;
+    unsigned long offset=0L;
     static struct tm statictime;
     static const short monthday[12] =
         {0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334};
-
-    ReadLocation(&loc);
+	    
+	if(useGMT)
+		SecondsToDate(*tp - tcl_mac_epoch_offset, &dtr);
+	else
+		SecondsToDate(*tp + TclpGetGMTOffset() - tcl_mac_epoch_offset, &dtr);
 	
-    if (useGMT) {
-	SecondsToDate(*tp, &dtr);
-    } else {
-	offset = loc.u.gmtDelta & 0x00ffffff;
-	if (offset & 0x00700000) {
-	    offset |= 0xff000000;
-	}
-	
-	SecondsToDate(*tp + offset, &dtr);
-    }
-
     statictime.tm_sec = dtr.second;
     statictime.tm_min = dtr.minute;
     statictime.tm_hour = dtr.hour;
@@ -277,7 +280,11 @@ TclpGetDate(
     if (1 < statictime.tm_mon && !(statictime.tm_year & 3)) {
 	++statictime.tm_yday;
     }
-    statictime.tm_isdst = loc.u.dlsDelta;
+    if(useGMT)
+    	statictime.tm_isdst = 0;
+    else
+    	statictime.tm_isdst = gmt_isdst;
+    gmt_lastGetDateUseGMT=useGMT; /* hack to make TclpGetTZName below work */
     return(&statictime);
 }
 

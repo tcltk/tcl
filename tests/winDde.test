@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: winDde.test,v 1.9 2001/01/12 09:54:17 dkf Exp $
+# RCS: @(#) $Id: winDde.test,v 1.10 2001/07/31 19:12:07 vincentdarley Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -18,11 +18,11 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 
 if {$tcl_platform(platform) == "windows"} {
     if [catch {
-	set lib [lindex [glob [file join [pwd] [file dirname \
-		[info nameofexecutable]] tcldde*.dll]] 0]
+	set lib [lindex [glob -directory [file join [pwd] [file dirname \
+		[info nameofexecutable]]] tcldde*.dll] 0]
 	load $lib dde
     }] {
-	puts "Unable to find the dde package. Skipping registry tests."
+	puts "Unable to find the dde package. Skipping dde tests."
 	::tcltest::cleanupTests
 	return
     }
@@ -38,11 +38,11 @@ proc createChildProcess { ddeServerName } {
     set f [open $::scriptName w+]
     puts $f {
 	if [catch {
-	    set lib [lindex [glob [file join [pwd] [file dirname \
-		    [info nameofexecutable]] tcldde*.dll]] 0]
+	    set lib [lindex [glob -directory [file join [pwd] [file dirname \
+		    [info nameofexecutable]]] tcldde*.dll] 0]
 	    load $lib dde
 	}] {
-	    puts "Unable to find the dde package. Skipping registry tests."
+	    puts "Unable to find the dde package. Skipping dde tests."
 	    ::tcltest::cleanupTests
 	    return
 	}

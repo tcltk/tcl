@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fCmd.test,v 1.9 2000/09/29 01:12:14 hobbs Exp $
+# RCS: @(#) $Id: fCmd.test,v 1.10 2001/07/31 19:12:07 vincentdarley Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -18,21 +18,8 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
     namespace import -force ::tcltest::*
 }
 
-if {[string compare testgetplatform [info commands testgetplatform]] != 0} {
-    puts "This application hasn't been compiled with the \"testgetplatform\""
-    puts "command, therefore I am skipping all of these tests."
-    ::tcltest::cleanupTests
-    return
-}
-
-set platform [testgetplatform]
-
-if {"[info commands testchmod]" != "testchmod"} {
-    puts "Skipping fCmd tests. This application does not seem to have the"
-    puts "testchmod command that is needed to run these tests."
-    ::tcltest::cleanupTests
-    return
-}
+tcltest::testConstraint testsetplatform [string equal testsetplatform [info commands testsetplatform]]
+tcltest::testConstraint testchmod [string equal testchmod [info commands testchmod]]
 
 # Several tests require need to match results against the unix username
 set user {}
@@ -74,7 +61,7 @@ proc openup {path} {
     testchmod 777 $path
     if {[file isdirectory $path]} {
 	catch {
-	    foreach p [glob [file join $path *]] {
+	    foreach p [glob -directory $path *] {
 		openup $p
 	    }
 	}
@@ -82,10 +69,15 @@ proc openup {path} {
 }
 
 proc cleanup {args} {
-    foreach p ". $args" {
+	if {$::tcl_platform(platform) == "macintosh"} {
+		set wd [list :]
+	} else {
+		set wd [list .]
+	}
+    foreach p [concat $wd $args] {
 	set x ""
 	catch {
-	    set x [glob [file join $p tf*] [file join $p td*]]
+	    set x [glob -directory $p tf* td*]
 	}
 	foreach file $x {
 	    if {[catch {file delete -force -- $file}]} {
@@ -299,7 +291,7 @@ test fCmd-4.10 {TclFileMakeDirsCmd: exists, is dir} {notRoot} {
     list $x [file exist td1]
 } {1 1}
 test fCmd-4.11 {TclFileMakeDirsCmd: doesn't exist: errno != ENOENT} \
-	{unixOnly notRoot} {
+	{unixOnly notRoot testchmod} {
     cleanup
     file mkdir td1/td2/td3
     testchmod 000 td1/td2
@@ -309,8 +301,8 @@ test fCmd-4.11 {TclFileMakeDirsCmd: doesn't exist: errno != ENOENT} \
 } {1 {can't create directory "td1/td2/td3": permission denied}}
 test fCmd-4.12 {TclFileMakeDirsCmd: doesn't exist: errno != ENOENT} {macOnly} {
     cleanup
-    list [catch {file mkdir nonexistantvolume:} msg] $msg
-} {1 {can't create directory "nonexistantvolume:": invalid argument}}
+    list [catch {file mkdir nonexistentvolume:} msg] $msg
+} {1 {can't create directory "nonexistentvolume:": invalid argument}}
 test fCmd-4.13 {TclFileMakeDirsCmd: doesn't exist: errno == ENOENT} {notRoot} {
     cleanup
     set x [file exist td1]
@@ -415,7 +407,7 @@ test fCmd-6.5 {CopyRenameOneFile: lstat(target) != 0} {notRoot} {
     file rename tf1 tf2
     glob tf*
 } {tf2}
-test fCmd-6.6 {CopyRenameOneFile: errno != ENOENT} {unixOnly notRoot} {
+test fCmd-6.6 {CopyRenameOneFile: errno != ENOENT} {unixOnly notRoot testchmod} {
     cleanup
     file mkdir td1
     testchmod 000 td1
@@ -676,7 +668,7 @@ test fCmd-9.2 {file rename: comprehensive: source doesn't exist} {notRoot} {
     cleanup
     list [catch {file rename tf1 tf2} msg] $msg
 } {1 {error renaming "tf1": no such file or directory}}
-test fCmd-9.3 {file rename: comprehensive: file to new name} {notRoot} {
+test fCmd-9.3 {file rename: comprehensive: file to new name} {notRoot testchmod} {
     cleanup
     createfile tf1
     createfile tf2
@@ -685,7 +677,7 @@ test fCmd-9.3 {file rename: comprehensive: file to new name} {notRoot} {
     file rename tf2 tf4
     list [lsort [glob tf*]] [file writable tf3] [file writable tf4]
 } {{tf3 tf4} 1 0}    
-test fCmd-9.4 {file rename: comprehensive: dir to new name} {unixOrPc notRoot} {
+test fCmd-9.4 {file rename: comprehensive: dir to new name} {unixOrPc notRoot testchmod} {
     cleanup
     file mkdir td1 td2
     testchmod 555 td2
@@ -693,7 +685,7 @@ test fCmd-9.4 {file rename: comprehensive: dir to new name} {unixOrPc notRoot} {
     file rename td2 td4
     list [lsort [glob td*]] [file writable td3] [file writable td4]
 } {{td3 td4} 1 0}    
-test fCmd-9.5 {file rename: comprehensive: file to self} {notRoot} {
+test fCmd-9.5 {file rename: comprehensive: file to self} {notRoot testchmod} {
     cleanup
     createfile tf1 tf1
     createfile tf2 tf2
@@ -702,7 +694,7 @@ test fCmd-9.5 {file rename: comprehensive: file to self} {notRoot} {
     file rename -force tf2 tf2
     list [contents tf1] [contents tf2] [file writable tf1] [file writable tf2]
 } {tf1 tf2 1 0}    
-test fCmd-9.6 {file rename: comprehensive: dir to self} {notRoot unixOrPc} {
+test fCmd-9.6 {file rename: comprehensive: dir to self} {notRoot unixOrPc testchmod} {
     cleanup
     file mkdir td1
     file mkdir td2
@@ -711,7 +703,7 @@ test fCmd-9.6 {file rename: comprehensive: dir to self} {notRoot unixOrPc} {
     file rename -force td2 .
     list [lsort [glob td*]] [file writable td1] [file writable td2]
 } {{td1 td2} 1 0}    
-test fCmd-9.7 {file rename: comprehensive: file to existing file} {notRoot} {
+test fCmd-9.7 {file rename: comprehensive: file to existing file} {notRoot testchmod} {
     cleanup
     createfile tf1
     createfile tf2
@@ -734,7 +726,7 @@ test fCmd-9.7 {file rename: comprehensive: file to existing file} {notRoot} {
     file rename -force tfs4 tfd4
     list [lsort [glob tf*]] $msg [file writable tfd1] [file writable tfd2] [file writable tfd3] [file writable tfd4] 
 } {{tf1 tf2 tfd1 tfd2 tfd3 tfd4} {1 {error renaming "tf1" to "tf2": file already exists}} 1 1 0 0}
-test fCmd-9.8 {file rename: comprehensive: dir to empty dir} {notRoot} {
+test fCmd-9.8 {file rename: comprehensive: dir to empty dir} {notRoot testchmod} {
     # Under unix, you can rename a read-only directory, but you can't
     # move it into another directory.
 
@@ -772,7 +764,7 @@ test fCmd-9.8 {file rename: comprehensive: dir to empty dir} {notRoot} {
     list [lsort [glob td*]] $msg [file writable [file join tdd1 tds1]] \
     [file writable [file join tdd2 tds2]] $w3 $w4
 } [subst {{td1 td2 tdd1 tdd2 tdd3 tdd4} {1 {error renaming "td1" to "[file join td2 td1]": file already exists}} 1 1 0 0}]
-test fCmd-9.9 {file rename: comprehensive: dir to non-empty dir} {notRoot} {
+test fCmd-9.9 {file rename: comprehensive: dir to non-empty dir} {notRoot testchmod} {
     cleanup
     file mkdir tds1
     file mkdir tds2
@@ -790,7 +782,7 @@ test fCmd-9.9 {file rename: comprehensive: dir to non-empty dir} {notRoot} {
     }
     list [lsort [glob td*]] $a1 $a2 [file writable tds1] $w2
 } [subst {{tdd1 tdd2 tds1 tds2} {1 {error renaming "tds1" to "[file join tdd1 tds1]": file already exists}} {1 {error renaming "tds2" to "[file join tdd2 tds2]": file already exists}} 1 0}]
-test fCmd-9.10 {file rename: comprehensive: file to new name and dir} {notRoot} {
+test fCmd-9.10 {file rename: comprehensive: file to new name and dir} {notRoot testchmod} {
     cleanup
     createfile tf1
     createfile tf2
@@ -798,10 +790,10 @@ test fCmd-9.10 {file rename: comprehensive: file to new name and dir} {notRoot} 
     testchmod 444 tf2
     file rename tf1 [file join td1 tf3]
     file rename tf2 [file join td1 tf4]
-    list [catch {glob tf*}] [lsort [glob [file join td1 t*]]] \
+    list [catch {glob tf*}] [lsort [glob -directory td1 t*]] \
     [file writable [file join td1 tf3]] [file writable [file join td1 tf4]]
 } [subst {1 {[file join td1 tf3] [file join td1 tf4]} 1 0}]
-test fCmd-9.11 {file rename: comprehensive: dir to new name and dir} {notRoot} {
+test fCmd-9.11 {file rename: comprehensive: dir to new name and dir} {notRoot testchmod} {
     cleanup
     file mkdir td1
     file mkdir td2
@@ -816,10 +808,10 @@ test fCmd-9.11 {file rename: comprehensive: dir to new name and dir} {notRoot} {
     } else {
         set w4 0
     }
-    list [lsort [glob td*]] [lsort [glob [file join td3 t*]]] \
+    list [lsort [glob td*]] [lsort [glob -directory td3 t*]] \
     [file writable [file join td3 td3]] $w4
 } [subst {td3 {[file join td3 td3] [file join td3 td4]} 1 0}]
-test fCmd-9.12 {file rename: comprehensive: target exists} {notRoot} {
+test fCmd-9.12 {file rename: comprehensive: target exists} {notRoot testchmod} {
     cleanup
     file mkdir [file join td1 td2] [file join td2 td1]
     if {$tcl_platform(platform) != "macintosh"} {
@@ -863,7 +855,7 @@ test fCmd-10.1 {file copy: comprehensive: source doesn't exist} {notRoot} {
     cleanup
     list [catch {file copy tf1 tf2} msg] $msg
 } {1 {error copying "tf1": no such file or directory}}
-test fCmd-10.2 {file copy: comprehensive: file to new name} {notRoot} {
+test fCmd-10.2 {file copy: comprehensive: file to new name} {notRoot testchmod} {
     cleanup
     createfile tf1 tf1
     createfile tf2 tf2
@@ -872,22 +864,22 @@ test fCmd-10.2 {file copy: comprehensive: file to new name} {notRoot} {
     file copy tf2 tf4
     list [lsort [glob tf*]] [contents tf3] [contents tf4] [file writable tf3] [file writable tf4]
 } {{tf1 tf2 tf3 tf4} tf1 tf2 1 0}
-test fCmd-10.3 {file copy: comprehensive: dir to new name} {notRoot unixOrPc} {
+test fCmd-10.3 {file copy: comprehensive: dir to new name} {notRoot unixOrPc testchmod} {
     cleanup
     file mkdir [file join td1 tdx]
     file mkdir [file join td2 tdy]
     testchmod 555 td2
     file copy td1 td3
     file copy td2 td4
-    set msg [list [lsort [glob td*]] [glob [file join td3 t*]] \
-	    [glob [file join td4 t*]] [file writable td3] [file writable td4]]
+    set msg [list [lsort [glob td*]] [glob -directory td3 t*] \
+	    [glob -directory td4 t*] [file writable td3] [file writable td4]]
     if {$tcl_platform(platform) != "macintosh"} {
     	testchmod 755 td2
     	testchmod 755 td4
     }
     set msg
 } [subst {{td1 td2 td3 td4} [file join td3 tdx] [file join td4 tdy] 1 0}]
-test fCmd-10.4 {file copy: comprehensive: file to existing file} {notRoot} {
+test fCmd-10.4 {file copy: comprehensive: file to existing file} {notRoot testchmod} {
     cleanup
     createfile tf1
     createfile tf2
@@ -910,7 +902,7 @@ test fCmd-10.4 {file copy: comprehensive: file to existing file} {notRoot} {
     file copy -force tfs4 tfd4
     list [lsort [glob tf*]] $msg [file writable tfd1] [file writable tfd2] [file writable tfd3] [file writable tfd4] 
 } {{tf1 tf2 tfd1 tfd2 tfd3 tfd4 tfs1 tfs2 tfs3 tfs4} {1 {error copying "tf1" to "tf2": file already exists}} 1 1 0 0}
-test fCmd-10.5 {file copy: comprehensive: dir to empty dir} {notRoot} {
+test fCmd-10.5 {file copy: comprehensive: dir to empty dir} {notRoot testchmod} {
     cleanup
     file mkdir td1
     file mkdir [file join td2 td1]
@@ -936,7 +928,7 @@ test fCmd-10.5 {file copy: comprehensive: dir to empty dir} {notRoot} {
     list [lsort [glob td*]] $a1 $a2 $a3 $a4 $a5 
 } [subst {{td1 td2 tdd1 tdd2 tdd3 tdd4 tds1 tds2 tds3 tds4} {1 {error copying "td1" to "[file join td2 td1]": file already exists}} {1 {error copying "tds1" to "[file join tdd1 tds1]": file already exists}} 1 1 1}]
 test fCmd-10.6 {file copy: comprehensive: dir to non-empty dir} \
-	{notRoot unixOrPc} {
+	{notRoot unixOrPc testchmod} {
     cleanup
     file mkdir tds1
     file mkdir tds2
@@ -947,7 +939,7 @@ test fCmd-10.6 {file copy: comprehensive: dir to non-empty dir} \
     set a2 [list [catch {file copy -force tds2 tdd2} msg] $msg]
     list [lsort [glob td*]] $a1 $a2 [file writable tds1] [file writable tds2]
 } [subst {{tdd1 tdd2 tds1 tds2} {1 {error copying "tds1" to "[file join tdd1 tds1]": file already exists}} {1 {error copying "tds2" to "[file join tdd2 tds2]": file already exists}} 1 0}]
-test fCmd-10.7 {file rename: comprehensive: file to new name and dir} {notRoot} {
+test fCmd-10.7 {file rename: comprehensive: file to new name and dir} {notRoot testchmod} {
     cleanup
     createfile tf1
     createfile tf2
@@ -955,11 +947,11 @@ test fCmd-10.7 {file rename: comprehensive: file to new name and dir} {notRoot} 
     testchmod 444 tf2
     file copy tf1 [file join td1 tf3]
     file copy tf2 [file join td1 tf4]
-    list [lsort [glob tf*]] [lsort [glob [file join td1 t*]]] \
+    list [lsort [glob tf*]] [lsort [glob -directory td1 t*]] \
     [file writable [file join td1 tf3]] [file writable [file join td1 tf4]]
 } [subst {{tf1 tf2} {[file join td1 tf3] [file join td1 tf4]} 1 0}]
 test fCmd-10.8 {file rename: comprehensive: dir to new name and dir} \
-	{notRoot unixOrPc} {
+	{notRoot unixOrPc testchmod} {
     cleanup
     file mkdir td1
     file mkdir td2
@@ -967,7 +959,7 @@ test fCmd-10.8 {file rename: comprehensive: dir to new name and dir} \
     testchmod 555 td2
     file copy td1 [file join td3 td3]
     file copy td2 [file join td3 td4]
-    list [lsort [glob td*]] [lsort [glob [file join td3 t*]]] \
+    list [lsort [glob td*]] [lsort [glob -directory td3 t*]] \
     [file writable [file join td3 td3]] [file writable [file join td3 td4]]
 } [subst {{td1 td2 td3} {[file join td3 td3] [file join td3 td4]} 1 0}]
 test fCmd-10.9 {file copy: comprehensive: source and target incompatible} \
@@ -2111,7 +2103,8 @@ test fCmd-26.3 { TclDeleteFilesCmd : delete dangling symlink} {unixOnly notRoot}
     set result
 } {1}
 
-test fCmd-27.2 {TclFileAttrsCmd - Tcl_TranslateFileName fails} {
+test fCmd-27.2 {TclFileAttrsCmd - Tcl_TranslateFileName fails} {testsetplatform} {
+    set platform [testgetplatform]
     testsetplatform unix
     list [catch {file attributes ~_totally_bogus_user} msg] $msg [testsetplatform $platform]
 } {1 {user "_totally_bogus_user" doesn't exist} {}}

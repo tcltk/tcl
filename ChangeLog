@@ -1,3 +1,61 @@
+2001-07-31  Vince Darley <vincentdarley@users.sourceforge.net>
+
+        Changes from TIP#17 "Redo Tcl's filesystem"
+	The following files were impacted:
+	* doc/Access.3: 
+	* doc/FileSystem.3: 
+	* doc/OpenFileChnl.3: 
+	* doc/file.n: 
+	* doc/glob.n: 
+	* generic/tcl.decls: 
+	* generic/tcl.h: 
+	* generic/tclCmdAH.c: 
+	* generic/tclCmdIL.c: 
+	* generic/tclCmdMZ.c: 
+	* generic/tclDate.c: 
+	* generic/tclDecls.h: 
+	* generic/tclEncoding.c: 
+	* generic/tclFCmd.c: 
+	* generic/tclFileName.c: 
+	* generic/tclGetDate.y: 
+	* generic/tclIO.c: 
+	* generic/tclIOCmd.c: 
+	* generic/tclIOUtil.c: 
+	* generic/tclInt.decls: 
+	* generic/tclInt.h: 
+	* generic/tclIntDecls.h: 
+	* generic/tclLoad.c: 
+	* generic/tclStubInit.c: 
+	* generic/tclTest.c: 
+	* generic/tclUtil.c: 
+	* library/init.tcl: 
+	* mac/tclMacFCmd.c: 
+	* mac/tclMacFile.c: 
+	* mac/tclMacInit.c: 
+	* mac/tclMacPort.h: 
+	* mac/tclMacResource.c: 
+	* mac/tclMacTime.c: 
+	* tests/cmdAH.test: 
+	* tests/event.test: 
+	* tests/fCmd.test: 
+	* tests/fileName.test: 
+	* tests/io.test: 
+	* tests/ioCmd.test: 
+	* tests/proc-old.test: 
+	* tests/registry.test: 
+	* tests/unixFCmd.test: 
+	* tests/winDde.test: 
+	* tests/winFCmd.test: 
+	* unix/mkLinks: 
+	* unix/tclUnixFCmd.c: 
+	* unix/tclUnixFile.c: 
+	* unix/tclUnixInit.c: 
+	* unix/tclUnixPipe.c: 
+	* win/tclWinFCmd.c: 
+	* win/tclWinFile.c: 
+	* win/tclWinInit.c: 
+	* win/tclWinPipe.c
+
 2001-07-24  Mo DeJong  <mdejong@redhat.com>
 
 	* win/tclWinThrd.c (Tcl_CreateThread): Close Windows

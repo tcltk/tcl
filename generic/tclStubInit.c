@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.53 2001/07/12 13:15:09 dkf Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.54 2001/07/31 19:12:06 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -80,11 +80,11 @@ TclIntStubs tclIntStubs = {
     TclDumpMemoryInfo, /* 14 */
     NULL, /* 15 */
     TclExprFloatError, /* 16 */
-    TclFileAttrsCmd, /* 17 */
-    TclFileCopyCmd, /* 18 */
-    TclFileDeleteCmd, /* 19 */
-    TclFileMakeDirsCmd, /* 20 */
-    TclFileRenameCmd, /* 21 */
+    NULL, /* 17 */
+    NULL, /* 18 */
+    NULL, /* 19 */
+    NULL, /* 20 */
+    NULL, /* 21 */
     TclFindElement, /* 22 */
     TclFindProc, /* 23 */
     TclFormatInt, /* 24 */
@@ -122,7 +122,7 @@ TclIntStubs tclIntStubs = {
     NULL, /* 56 */
     NULL, /* 57 */
     TclLookupVar, /* 58 */
-    TclpMatchFiles, /* 59 */
+    NULL, /* 59 */
     TclNeedSpace, /* 60 */
     TclNewProcBodyObj, /* 61 */
     TclObjCommandComplete, /* 62 */
@@ -133,10 +133,10 @@ TclIntStubs tclIntStubs = {
     TclOpenFileChannelInsertProc, /* 67 */
     TclpAccess, /* 68 */
     TclpAlloc, /* 69 */
-    TclpCopyFile, /* 70 */
-    TclpCopyDirectory, /* 71 */
-    TclpCreateDirectory, /* 72 */
-    TclpDeleteFile, /* 73 */
+    NULL, /* 70 */
+    NULL, /* 71 */
+    NULL, /* 72 */
+    NULL, /* 73 */
     TclpFree, /* 74 */
     TclpGetClicks, /* 75 */
     TclpGetSeconds, /* 76 */
@@ -145,8 +145,8 @@ TclIntStubs tclIntStubs = {
     TclpListVolumes, /* 79 */
     TclpOpenFileChannel, /* 80 */
     TclpRealloc, /* 81 */
-    TclpRemoveDirectory, /* 82 */
-    TclpRenameFile, /* 83 */
+    NULL, /* 82 */
+    NULL, /* 83 */
     NULL, /* 84 */
     NULL, /* 85 */
     NULL, /* 86 */
@@ -216,11 +216,11 @@ TclIntStubs tclIntStubs = {
     TclpStrftime, /* 134 */
     TclpCheckStackSpace, /* 135 */
     NULL, /* 136 */
-    TclpChdir, /* 137 */
+    NULL, /* 137 */
     TclGetEnv, /* 138 */
     TclpLoadFile, /* 139 */
     TclLooksLikeInt, /* 140 */
-    TclpGetCwd, /* 141 */
+    NULL, /* 141 */
     TclSetByteCodeFromAny, /* 142 */
     TclAddLiteralObj, /* 143 */
     TclHideLiteral, /* 144 */
@@ -239,9 +239,16 @@ TclIntStubs tclIntStubs = {
     TclVarTraceExists, /* 157 */
     TclSetStartupScriptFileName, /* 158 */
     TclGetStartupScriptFileName, /* 159 */
-    TclpMatchFilesTypes, /* 160 */
+    NULL, /* 160 */
     TclChannelTransform, /* 161 */
     TclChannelEventScriptInvoker, /* 162 */
+    TclFileCopyCmd, /* 163 */
+    TclFileRenameCmd, /* 164 */
+    TclFileDeleteCmd, /* 165 */
+    TclFileMakeDirsCmd, /* 166 */
+    TclFileAttrsCmd, /* 167 */
+    TclpTempFileName, /* 168 */
+    TclpSetInitialEncodings, /* 169 */
 };
 
 TclIntPlatStubs tclIntPlatStubs = {
@@ -833,6 +840,44 @@ TclStubs tclStubs = {
     Tcl_GetMathFuncInfo, /* 435 */
     Tcl_ListMathFuncs, /* 436 */
     Tcl_SubstObj, /* 437 */
+    Tcl_DetachChannel, /* 438 */
+    Tcl_IsStandardChannel, /* 439 */
+    Tcl_FSCopyFile, /* 440 */
+    Tcl_FSCopyDirectory, /* 441 */
+    Tcl_FSCreateDirectory, /* 442 */
+    Tcl_FSDeleteFile, /* 443 */
+    Tcl_FSLoadFile, /* 444 */
+    Tcl_FSMatchInDirectory, /* 445 */
+    Tcl_FSReadlink, /* 446 */
+    Tcl_FSRemoveDirectory, /* 447 */
+    Tcl_FSRenameFile, /* 448 */
+    Tcl_FSLstat, /* 449 */
+    Tcl_FSUtime, /* 450 */
+    Tcl_FSFileAttrsGet, /* 451 */
+    Tcl_FSFileAttrsSet, /* 452 */
+    Tcl_FSFileAttrStrings, /* 453 */
+    Tcl_FSStat, /* 454 */
+    Tcl_FSAccess, /* 455 */
+    Tcl_FSOpenFileChannel, /* 456 */
+    Tcl_FSGetCwd, /* 457 */
+    Tcl_FSChdir, /* 458 */
+    Tcl_FSConvertToPathType, /* 459 */
+    Tcl_FSJoinPath, /* 460 */
+    Tcl_FSSplitPath, /* 461 */
+    Tcl_FSEqualPaths, /* 462 */
+    Tcl_FSGetNormalizedPath, /* 463 */
+    Tcl_FSJoinToPath, /* 464 */
+    Tcl_FSGetInternalRep, /* 465 */
+    Tcl_FSGetTranslatedPath, /* 466 */
+    Tcl_FSEvalFile, /* 467 */
+    Tcl_FSNewNativePath, /* 468 */
+    Tcl_FSGetNativePath, /* 469 */
+    Tcl_FSFileSystemInfo, /* 470 */
+    Tcl_FSPathSeparator, /* 471 */
+    Tcl_FSListVolumes, /* 472 */
+    Tcl_FSRegister, /* 473 */
+    Tcl_FSUnregister, /* 474 */
+    Tcl_FSData, /* 475 */
 };
 
 /* !END!: Do not edit above this line. */

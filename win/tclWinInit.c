@@ -7,7 +7,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclWinInit.c,v 1.26 2001/07/02 20:57:02 dgp Exp $
+ * RCS: @(#) $Id: tclWinInit.c,v 1.27 2001/07/31 19:12:08 vincentdarley Exp $
  */
 
 #include "tclWinInt.h"
@@ -71,6 +71,11 @@ static char* platforms[NUMPLATFORMS] = {
 static char* processors[NUMPROCESSORS] = {
     "intel", "mips", "alpha", "ppc"
 };
+
+/* Used to store the encoding used for binary files */
+static Tcl_Encoding binaryEncoding = NULL;
+/* Has the basic library path encoding issue been fixed */
+static int libraryPathEncodingFixed = 0;
 
 /*
  * The Init script (common to Windows and Unix platforms) is
@@ -462,13 +467,18 @@ ToUtf(
  *	Based on the locale, determine the encoding of the operating
  *	system and the default encoding for newly opened files.
  *
- *	Called at process initialization time.
+ *	Called at process initialization time, and part way through
+ *	startup, we verify that the initial encodings were correctly
+ *	setup.  Depending on Tcl's environment, there may not have been
+ *	enough information first time through (above).
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	The Tcl library path is converted from native encoding to UTF-8.
+ *	The Tcl library path is converted from native encoding to UTF-8,
+ *	on the first call, and the encodings may be changed on first or
+ *	second call.
  *
  *---------------------------------------------------------------------------
  */
@@ -478,45 +488,52 @@ TclpSetInitialEncodings()
 {
     CONST char *encoding;
     char buf[4 + TCL_INTEGER_SPACE];
-    int platformId;
-    Tcl_Obj *pathPtr;
 
-    platformId = TclWinGetPlatformId();
+    if (libraryPathEncodingFixed == 0) {
+	int platformId;
+	platformId = TclWinGetPlatformId();
+	TclWinSetInterfaces(platformId == VER_PLATFORM_WIN32_NT);
+	
+	wsprintfA(buf, "cp%d", GetACP());
+	Tcl_SetSystemEncoding(NULL, buf);
 
-    TclWinSetInterfaces(platformId == VER_PLATFORM_WIN32_NT);
+	if (platformId != VER_PLATFORM_WIN32_NT) {
+	    Tcl_Obj *pathPtr = TclGetLibraryPath();
+	    if (pathPtr != NULL) {
+		int i, objc;
+		Tcl_Obj **objv;
+		
+		objc = 0;
+		Tcl_ListObjGetElements(NULL, pathPtr, &objc, &objv);
+		for (i = 0; i < objc; i++) {
+		    int length;
+		    char *string;
+		    Tcl_DString ds;
 
-    wsprintfA(buf, "cp%d", GetACP());
-    Tcl_SetSystemEncoding(NULL, buf);
-
-    if (platformId != VER_PLATFORM_WIN32_NT) {
-	pathPtr = TclGetLibraryPath();
-	if (pathPtr != NULL) {
-	    int i, objc;
-	    Tcl_Obj **objv;
-	    
-	    objc = 0;
-	    Tcl_ListObjGetElements(NULL, pathPtr, &objc, &objv);
-	    for (i = 0; i < objc; i++) {
-		int length;
-		char *string;
-		Tcl_DString ds;
-
-		string = Tcl_GetStringFromObj(objv[i], &length);
-		Tcl_ExternalToUtfDString(NULL, string, length, &ds);
-		Tcl_SetStringObj(objv[i], Tcl_DStringValue(&ds), 
-			Tcl_DStringLength(&ds));
-		Tcl_DStringFree(&ds);
+		    string = Tcl_GetStringFromObj(objv[i], &length);
+		    Tcl_ExternalToUtfDString(NULL, string, length, &ds);
+		    Tcl_SetStringObj(objv[i], Tcl_DStringValue(&ds), 
+			    Tcl_DStringLength(&ds));
+		    Tcl_DStringFree(&ds);
+		}
 	    }
 	}
+	
+	libraryPathEncodingFixed = 1;
+    } else {
+	wsprintfA(buf, "cp%d", GetACP());
+	Tcl_SetSystemEncoding(NULL, buf);
     }
 
-    /*
-     * Keep this encoding preloaded.  The IO package uses it for gets on a
-     * binary channel.  
-     */
-
-    encoding = "iso8859-1";
-    Tcl_GetEncoding(NULL, encoding);
+    /* This is only ever called from the startup thread */
+    if (binaryEncoding == NULL) {
+	/*
+	 * Keep this encoding preloaded.  The IO package uses it for
+	 * gets on a binary channel.
+	 */
+	encoding = "iso8859-1";
+	binaryEncoding = Tcl_GetEncoding(NULL, encoding);
+    }
 }
 
 /*
