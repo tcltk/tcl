@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMain.c,v 1.25 2004/04/06 22:25:54 dgp Exp $
+ * RCS: @(#) $Id: tclMain.c,v 1.26 2004/05/13 12:59:23 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -272,7 +272,7 @@ Tcl_Main(argc, argv, appInitProc)
     Tcl_Obj *resultPtr;
     Tcl_Obj *commandPtr = NULL;
     CONST char *encodingName = NULL;
-    char buffer[TCL_INTEGER_SPACE + 5], *args;
+    char *args;
     PromptType prompt = PROMPT_START;
     int code, length, tty;
     int exitCode = 0;
@@ -334,8 +334,8 @@ Tcl_Main(argc, argv, appInitProc)
 	Tcl_SetStartupScript(path, encodingName);
     }
 
-    TclFormatInt(buffer, (long) argc-1);
-    Tcl_SetVar(interp, "argc", buffer, TCL_GLOBAL_ONLY);
+    Tcl_SetVar2Ex(interp, "argc", NULL, Tcl_NewIntObj(argc-1),
+	    TCL_GLOBAL_ONLY);
     Tcl_SetVar(interp, "argv0", Tcl_DStringValue(&argString), TCL_GLOBAL_ONLY);
 
     /*
@@ -361,6 +361,9 @@ Tcl_Main(argc, argv, appInitProc)
 	}
     }
     if (Tcl_InterpDeleted(interp)) {
+	goto done;
+    }
+    if (Tcl_LimitExceeded(interp)) {
 	goto done;
     }
 
@@ -399,6 +402,9 @@ Tcl_Main(argc, argv, appInitProc)
      */
 
     Tcl_SourceRCFile(interp);
+    if (Tcl_LimitExceeded(interp)) {
+	goto done;
+    }
 
     /*
      * Process commands from stdin until there's an end-of-file.  Note
@@ -419,6 +425,9 @@ Tcl_Main(argc, argv, appInitProc)
 	if (tty) {
 	    Prompt(interp, &prompt);
 	    if (Tcl_InterpDeleted(interp)) {
+		break;
+	    }
+	    if (Tcl_LimitExceeded(interp)) {
 		break;
 	    }
 	    inChannel = Tcl_GetStdChannel(TCL_STDIN);
@@ -557,7 +566,8 @@ Tcl_Main(argc, argv, appInitProc)
     }
 
     done:
-    if ((exitCode == 0) && (mainLoopProc != NULL)) {
+    if ((exitCode == 0) && (mainLoopProc != NULL)
+	    && !Tcl_LimitExceeded(interp)) {
 
 	/*
 	 * If everything has gone OK so far, call the main loop proc,
@@ -579,14 +589,18 @@ Tcl_Main(argc, argv, appInitProc)
      */
 
     if (!Tcl_InterpDeleted(interp)) {
-        sprintf(buffer, "exit %d", exitCode);
-        Tcl_Eval(interp, buffer);
+	if (!Tcl_LimitExceeded(interp)) {
+	    char buffer[TCL_INTEGER_SPACE + 5];
+
+	    sprintf(buffer, "exit %d", exitCode);
+	    Tcl_Eval(interp, buffer);
+	}
 
         /*
          * If Tcl_Eval returns, trying to eval [exit], something
-         * unusual is happening.  Maybe interp has been deleted;
-         * maybe [exit] was redefined.  We still want to cleanup
-         * and exit.
+         * unusual is happening.  Maybe interp has been deleted; maybe
+         * [exit] was redefined, maybe we've blown up because of an
+         * exceeded limit.  We still want to cleanup and exit.
          */
 
         if (!Tcl_InterpDeleted(interp)) {

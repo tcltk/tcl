@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.125 2004/05/12 17:43:55 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.126 2004/05/13 12:59:22 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1011,26 +1011,39 @@ TclCompEvalObj(interp, objPtr)
     }
     iPtr->numLevels--;
 
-
     /*
      * If no commands at all were executed, check for asynchronous
-     * handlers so that they at least get one change to execute.
-     * This is needed to handle event loops written in Tcl with
-     * empty bodies.
+     * handlers and resource limits so that they at least get one
+     * change to execute.  This is needed to handle event loops
+     * written in Tcl with empty bodies.
      */
 
-    if ((oldCount == iPtr->cmdCount) && Tcl_AsyncReady()) {
-	result = Tcl_AsyncInvoke(interp, result);
-    
+    if (oldCount == iPtr->cmdCount) {
+	if (Tcl_AsyncReady()) {
+	    result = Tcl_AsyncInvoke(interp, result);
 
-	/*
-	 * If an error occurred, record information about what was being
-	 * executed when the error occurred.
-	 */
-	
-	if ((result == TCL_ERROR) && !(iPtr->flags & ERR_ALREADY_LOGGED)) {
-	    script = Tcl_GetStringFromObj(objPtr, &numSrcBytes);
-	    Tcl_LogCommandInfo(interp, script, script, numSrcBytes);
+	    /*
+	     * If an error occurred, record information about what was
+	     * being executed when the error occurred.
+	     */
+
+	    if ((result == TCL_ERROR) && !(iPtr->flags & ERR_ALREADY_LOGGED)) {
+		script = Tcl_GetStringFromObj(objPtr, &numSrcBytes);
+		Tcl_LogCommandInfo(interp, script, script, numSrcBytes);
+	    }
+	}
+	if (result==TCL_OK && Tcl_LimitReady(interp)) {
+	    result = Tcl_LimitCheck(interp);
+
+	    /*
+	     * If an error occurred, record information about what was
+	     * being executed when the error occurred.
+	     */
+
+	    if (result==TCL_ERROR && !(iPtr->flags & ERR_ALREADY_LOGGED)) {
+		script = Tcl_GetStringFromObj(objPtr, &numSrcBytes);
+		Tcl_LogCommandInfo(interp, script, script, numSrcBytes);
+	    }
 	}
     }
 
@@ -1229,12 +1242,22 @@ TclExecuteByteCode(interp, codePtr)
      * of the form (2**n-1).
      */
 
-    if (!(instructionCount++ & ASYNC_CHECK_COUNT_MASK) && Tcl_AsyncReady()) {
-	DECACHE_STACK_INFO();
-	result = Tcl_AsyncInvoke(interp, result);
-	CACHE_STACK_INFO();
-	if (result == TCL_ERROR) {
-	    goto checkForCatch;
+    if ((instructionCount++ & ASYNC_CHECK_COUNT_MASK) == 0) {
+	if (Tcl_AsyncReady()) {
+	    DECACHE_STACK_INFO();
+	    result = Tcl_AsyncInvoke(interp, result);
+	    CACHE_STACK_INFO();
+	    if (result == TCL_ERROR) {
+		goto checkForCatch;
+	    }
+	}
+	if (Tcl_LimitReady(interp)) {
+	    DECACHE_STACK_INFO();
+	    result = Tcl_LimitCheck(interp);
+	    CACHE_STACK_INFO();
+	    if (result == TCL_ERROR) {
+		goto checkForCatch;
+	    }
 	}
     }
 
@@ -4557,6 +4580,20 @@ TclExecuteByteCode(interp, codePtr)
             CACHE_STACK_INFO();
 	    iPtr->flags |= ERR_ALREADY_LOGGED;
 	}
+    }
+    /*
+     * We must not catch an exceeded limit.  Instead, it blows
+     * outwards until we either hit another interpreter (presumably
+     * where the limit is not exceeded) or we get to the top-level.
+     */
+    if (Tcl_LimitExceeded(interp)) {
+#ifdef TCL_COMPILE_DEBUG
+	if (traceInstructions) {
+	    fprintf(stdout, "   ... limit exceeded, returning %s\n",
+	            StringForResultCode(result));
+	}
+#endif
+	goto abnormalReturn;
     }
     if (catchTop == initCatchTop) {
 #ifdef TCL_COMPILE_DEBUG

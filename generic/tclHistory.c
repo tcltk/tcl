@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclHistory.c,v 1.5 2004/04/06 22:25:51 dgp Exp $
+ * RCS: @(#) $Id: tclHistory.c,v 1.6 2004/05/13 12:59:22 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -131,6 +131,14 @@ Tcl_RecordAndEvalObj(interp, cmdPtr, flags)
     Tcl_IncrRefCount(objPtr);
     (void) Tcl_EvalObjEx(interp, objPtr, TCL_EVAL_GLOBAL);
     Tcl_DecrRefCount(objPtr);
+
+    /*
+     * One possible failure mode above: exceeding a resource limit
+     */
+
+    if (Tcl_LimitExceeded(interp)) {
+	return TCL_ERROR;
+    }
 
     /*
      * Execute the command.

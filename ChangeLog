@@ -1,5 +1,13 @@
 2004-05-13  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
+	TIP#143 IMPLEMENTATION
+
+	* generic/tclExecute.c (TclCompEvalObj, TclExecuteByteCode): 
+	* generic/tclBasic.c (TclEvalObjvInternal): Enable limit checking.
+	* generic/tclInterp.c (Tcl_Limit*): Public limit API.
+	* generic/tcl.decls: 
+	* tests/interp.test: Basic tests of command limits.
+
 	* doc/binary.n:		TIP#129 IMPLEMENTATION [Patch 858211]
 	* generic/tclBinary.c:	Note that the test suite probably has many more
 	* tests/binary.test:	failures now due to alterations in constraints.
