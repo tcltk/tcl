@@ -1,3 +1,8 @@
+2001-10-22  Andreas Kupries  <andreas_kupries@users.sourceforge.net> 
+
+	* doc/ObjectType.3: Minor documentation fix, reported by David
+	  N. Welton <davidw@users.sourceforge.net> directly to me.
+
 2001-10-22  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* win/tclWinFCmd.c: fix to stop test suite from hanging process
