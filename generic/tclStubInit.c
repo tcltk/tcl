@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.112 2005/01/21 22:25:19 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.113 2005/01/27 00:23:27 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -970,6 +970,7 @@ TclStubs tclStubs = {
     Tcl_GetEnsembleNamespace, /* 551 */
     Tcl_SetTimeProc, /* 552 */
     Tcl_QueryTimeProc, /* 553 */
+    Tcl_ChannelThreadActionProc, /* 554 */
 };
 
 /* !END!: Do not edit above this line. */

@@ -1,3 +1,25 @@
+2005-01-26  Andreas Kupries <andreask@activestate.com>
+
+	TIP#218 IMPLEMENTATION
+
+	* generic/tclDecls.h:	Regenerated from tcl.decls.
+	* generic/tclStubInit.c:	
+
+	* doc/CrtChannel.3:	Documentation of extended API,
+	* generic/tcl.decls:	extended testsuite, and
+	* generic/tcl.h:	implementation. Removal of old
+	* generic/tclIO.c:	driver-specific TclpCut/Splice
+	* generic/tclInt.h:	functions. Replaced with generic
+	* tests/io.test:	thread-action calls through the
+	* unix/tclUnixChan.c:	new hooks. Update of all builtin
+	* unix/tclUnixPipe.c:	channel drivers to version 4.
+	* unix/tclUnixSock.c:	Windows drivers extended to 
+	* win/tclWinChan.c:	manage thread state in a thread
+	* win/tclWinConsole.c:	action handler.
+	* win/tclWinPipe.c:	
+	* win/tclWinSerial.c:	
+	* win/tclWinSock.c:	
+
 2005-01-25  Don Porter  <dgp@users.sourceforge.net>
 
 	* library/auto.tcl:	Updated [auto_reset] to clear auto-loaded
