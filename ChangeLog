@@ -1,5 +1,12 @@
 2002-02-04  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
 
+	* unix/tclUnixChan.c (FileOutputProc): Fixed [bug 465765] reported
+	  by Dale Talcott <daletalcott@users.sourceforge.net>. Avoid
+	  writing nothing into a file as STREAM based implementations will
+	  consider this a EOF (if the file is a pipe). Not done in the
+	  generic layer as this type of writing is actually useful to
+	  check the state of a socket.
+
 	* doc/open.n: Fixed [Bug 511540], added cross-reference to 'pid'
 	  as the command to use to retrieve the pid of a command pipeline
 	  created via 'open'.
