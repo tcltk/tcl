@@ -1,3 +1,10 @@
+2001-12-19  David Gravereaux <davygrvy@pobox.com>
+
+	* tools/tcl.wse.in: Fix for #495120.  tcl.wse.in was
+	stored in cvs with improper <eol>.  This resulted in
+	corrupted <eol> when checked-out on translating CVS
+	clients such as windows (CRCRLF) and mac (CRCR).
+
 2001-12-19  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* unix/configure:
