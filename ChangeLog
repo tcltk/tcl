@@ -1,3 +1,9 @@
+2001-08-14  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* generic/tclBasic.c: make the intial maxNestingDepth of an
+	interpreter be MAX_NESTING_DEPTH instead of a hardwired value
+	[Bug: 232564]
+
 2001-08-13  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* tests/trace.test: Corrected test numbers [Bug: 449794] 
