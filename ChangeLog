@@ -1,3 +1,8 @@
+2004-07-01  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* doc/Namespace.3, doc/load.n, doc/Limit.3: Typo fixes and remove
+	duplicate documentation. [Bug 983146]
+
 2004-06-30  Don Porter  <dgp@users.sourceforge.net>
 
 	* tests/fileSystem.test: Minor correction to new fileSystem-9.X
