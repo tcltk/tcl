@@ -6,7 +6,7 @@
 # Copyright (c) 1995-1996 Sun Microsystems, Inc.
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 #
-# RCS: @(#) $Id: makefile.vc,v 1.48 2000/01/26 03:38:10 hobbs Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.49 2000/02/10 02:54:33 hobbs Exp $
 
 # Does not depend on the presence of any environment variables in
 # order to compile tcl; all needed information is derived from 
@@ -44,7 +44,7 @@ TOOLS32_rc	= c:\Progra~1\devstudio\sharedide
 #THREADDEFINES = -DTCL_THREADS=1
 
 # Set NODEBUG to 0 to compile with symbols
-NODEBUG = 0
+NODEBUG = 1
 
 # The following defines can be used to control the amount of debugging
 # code that is added to the compilation.
