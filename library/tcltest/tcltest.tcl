@@ -16,7 +16,7 @@
 # Contributions from Don Porter, NIST, 2002.  (not subject to US copyright)
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.tcl,v 1.56 2002/06/25 01:13:38 dgp Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.57 2002/06/26 01:11:09 dgp Exp $
 
 package require Tcl 8.3		;# uses [glob -directory]
 namespace eval tcltest {
@@ -1782,9 +1782,9 @@ proc tcltest::test {name description args} {
 	    }
 	    foreach item {constraints match setup body cleanup \
 		    result returnCodes output errorOutput} {
-		if {[info exists testAttributes([subst -$item])]} {
-		    set testAttributes([subst -$item]) [uplevel 1 \
-			    ::concat $testAttributes([subst -$item])]
+		if {[info exists testAttributes(-$item)]} {
+		    set testAttributes(-$item) [uplevel 1 \
+			    ::concat $testAttributes(-$item)]
 		}
 	    }
 	} else {
