@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixInit.c,v 1.1.2.6 1999/03/10 06:49:28 stanton Exp $
+ * RCS: @(#) $Id: tclUnixInit.c,v 1.1.2.7 1999/03/11 06:16:50 welch Exp $
  */
 
 #include "tclInt.h"
@@ -438,6 +438,8 @@ TclpSetVariables(interp)
     struct utsname name;
 #endif
     int unameOK;
+    char *user;
+    Tcl_DString ds;
 
     Tcl_SetVar(interp, "tcl_library", defaultLibraryDir, TCL_GLOBAL_ONLY);
     Tcl_SetVar(interp, "tcl_pkgPath", pkgPath, TCL_GLOBAL_ONLY);
@@ -445,7 +447,6 @@ TclpSetVariables(interp)
     unameOK = 0;
 #ifndef NO_UNAME
     if (uname(&name) >= 0) {
-	Tcl_DString ds;
 	char *native;
 	
 	unameOK = 1;
@@ -483,6 +484,22 @@ TclpSetVariables(interp)
 	Tcl_SetVar2(interp, "tcl_platform", "osVersion", "", TCL_GLOBAL_ONLY);
 	Tcl_SetVar2(interp, "tcl_platform", "machine", "", TCL_GLOBAL_ONLY);
     }
+
+    /*
+     * Copy USER or LOGNAME environment variable into tcl_platform(user)
+     */
+
+    Tcl_DStringInit(&ds);
+    user = TclGetEnv("USER", &ds);
+    if (user == NULL) {
+	user = TclGetEnv("LOGNAME", &ds);
+	if (user == NULL) {
+	    user = "";
+	}
+    }
+    Tcl_SetVar2(interp, "tcl_platform", "user", user, TCL_GLOBAL_ONLY);
+    Tcl_DStringFree(&ds);
+
 }
 
 /*

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacInit.c,v 1.1.2.3 1999/02/10 23:31:22 stanton Exp $
+ * RCS: @(#) $Id: tclMacInit.c,v 1.1.2.4 1999/03/11 06:16:47 welch Exp $
  */
 
 #include <AppleEvents.h>
@@ -498,6 +498,7 @@ TclpSetVariables(interp)
     char versStr[2 * TCL_INTEGER_SPACE];
     char *str;
     Tcl_Obj *pathPtr;
+    Tcl_DString ds;
 
     str = "no library";
     pathPtr = TclGetLibraryPath();
@@ -527,6 +528,22 @@ TclpSetVariables(interp)
 #else
     Tcl_SetVar2(interp, "tcl_platform", "machine", "68k", TCL_GLOBAL_ONLY);
 #endif
+
+    /*
+     * Copy USER or LOGIN environment variable into tcl_platform(user)
+     * These are set by SystemVariables in tclMacEnv.c
+     */
+
+    Tcl_DStringInit(&ds);
+    str = TclGetEnv("USER", &ds);
+    if (str == NULL) {
+	str = TclGetEnv("LOGIN", &ds);
+	if (str == NULL) {
+	    str = "";
+	}
+    }
+    Tcl_SetVar2(interp, "tcl_platform", "user", str, TCL_GLOBAL_ONLY);
+    Tcl_DStringFree(&ds);
 }
 
 /*

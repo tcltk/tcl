@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.1.2.18 1999/02/10 23:31:10 stanton Exp $
+RCS: @(#) $Id: changes,v 1.1.2.19 1999/03/11 06:16:37 welch Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -4117,3 +4117,6 @@ renaming Tcl_EvalObj to Tcl_EvalObjEx, renaming Tcl_Eval2 to
 Tcl_EvalEx and restoring Tcl_EvalObj and Tcl_GlobalEvalObj interfaces
 so they match Tcl 8.0. (stanton)
 *** POTENTIAL INCOMPATIBILITY with previous alpha/beta releases ***
+
+3/9/99 (new feature) Added tcl_platform(user) to provide a portable
+way to get the name of the current user. (welch)
