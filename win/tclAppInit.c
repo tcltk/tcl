@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclAppInit.c,v 1.11.2.1 2003/05/10 05:00:11 mistachkin Exp $
+ * RCS: @(#) $Id: tclAppInit.c,v 1.11.2.2 2003/10/14 22:41:42 davygrvy Exp $
  */
 
 #include "tcl.h"
@@ -426,6 +426,12 @@ BOOL __stdcall
 sigHandler(DWORD fdwCtrlType)
 {
     HANDLE hStdIn;
+
+    if (!exitToken) {
+	/* Async token must have been destroyed, punt gracefully. */
+	return FALSE;
+    }
+
     /*
      * If Tcl is currently executing some bytecode or in the eventloop,
      * this will cause Tcl to enter asyncExit at the next command
