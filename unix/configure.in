@@ -3,7 +3,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.88 2002/06/21 23:55:35 dkf Exp $
+# RCS: @(#) $Id: configure.in,v 1.89 2002/06/25 15:20:44 rmax Exp $
 
 AC_INIT(../generic/tcl.h)
 
@@ -26,6 +26,11 @@ fi
 # libdir must be a fully qualified path and (not ${exec_prefix}/lib)
 eval libdir="$libdir"
 TCL_SRC_DIR=`cd $srcdir/..; pwd`
+
+#------------------------------------------------------------------------
+# Compress and/or soft link the manpages?
+#------------------------------------------------------------------------
+SC_CONFIG_MANPAGES
 
 #------------------------------------------------------------------------
 # Standard compiler checks

@@ -1,5 +1,15 @@
 2002-06-25  Reinhard Max  <max@suse.de>
 
+	* unix/tcl.m4:       New macro SC_CONFIG_MANPAGES.
+	* unix/configure.in: Added support for symlinks and compression
+	* unix/Makefile.in:  when installing the manpages. [Patch 518052]
+	* unix/mkLinks.tcl:  Default is still hardlinks and no compression.
+
+	* unix/mkLinks:      generated
+	* unix/configure:
+
+	* unix/README:       Added documentation for the new features.
+
 	* unix/tcl.m4 (SC_PATH_TCLCONFIG): Replaced ${exec_prefix}/lib by
 	${libdir}.
 
