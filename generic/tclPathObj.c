@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPathObj.c,v 1.2 2003/04/14 15:48:38 vincentdarley Exp $
+ * RCS: @(#) $Id: tclPathObj.c,v 1.3 2003/04/16 08:16:23 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -132,7 +132,7 @@ typedef struct FsPath {
  *
  *---------------------------------------------------------------------------
  */
-static Tcl_Obj*
+Tcl_Obj*
 TclFSNormalizeAbsolutePath(interp, pathPtr, clientDataPtr)
     Tcl_Interp* interp;    /* Interpreter to use */
     Tcl_Obj *pathPtr;      /* Absolute path to normalize */
