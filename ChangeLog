@@ -5,6 +5,8 @@
 	* macosx/Makefile: add platform standard locations to default
 	module path roots. [Patch 94288]
 
+	* tests/env.test: macosx fixes.
+
 2004-08-25  Don Porter  <dgp@users.sourceforge.net>
 
 	* tests/timer.test (timer-10.1):	Test for Bug 1016167.
