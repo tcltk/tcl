@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: interp.n,v 1.4 1999/08/21 19:40:48 hobbs Exp $
+'\" RCS: @(#) $Id: interp.n,v 1.5 1999/09/02 16:26:11 hobbs Exp $
 '\" 
 .so man.macros
 .TH interp n 7.6 Tcl "Tcl Built-In Commands"
@@ -383,15 +383,15 @@ fcopy	fileevent	flush	for
 foreach	format	gets	global
 history	if	incr	info
 interp	join	lappend	lindex
-linsert	list	llength	lower
-lrange	lreplace	lsearch	lsort
-namespace	package	pid	proc
-puts	read	regexp	regsub
-rename	return	scan	seek
-set	split	string	subst
-switch	tell	trace	unset
-update	uplevel	upvar	variable
-vwait	while\fR
+linsert	list	llength	lrange
+lreplace	lsearch	lsort	namespace
+package	pid	proc	puts
+read	regexp	regsub	rename
+return	scan	seek	set
+split	string	subst	switch
+tell	trace	unset	update
+uplevel	upvar	variable	vwait
+while\fR
 .DE
 .VS ""  BR
 The following commands are hidden by \fBinterp create\fR when it
