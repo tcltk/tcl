@@ -366,8 +366,14 @@ AC_DEFUN(SC_ENABLE_THREADS, [
 	    # The space is needed
 	    THREADS_LIBS=" -lpthread"
 	else
-	    TCL_THREADS=0
-	    AC_MSG_WARN("Don t know how to find pthread lib on your system - you must disable thread support or edit the LIBS in the Makefile...")
+	    AC_CHECK_LIB(pthreads,pthread_mutex_init,tcl_ok=yes,tcl_ok=no)
+	    if test "$tcl_ok" = "yes"; then
+		# The space is needed
+		THREADS_LIBS=" -lpthreads"
+	    else
+	    	TCL_THREADS=0
+	    	AC_MSG_WARN("Don t know how to find pthread lib on your system - you must disable thread support or edit the LIBS in the Makefile...")
+	    fi
 	fi
     else
 	TCL_THREADS=0
