@@ -41,6 +41,7 @@ static pthread_mutex_t initLock = PTHREAD_MUTEX_INITIALIZER;
  */
 
 static pthread_mutex_t allocLock = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t *allocLockPtr = &allocLock;
 
 /*
  * These are for the critical sections inside this file.
@@ -279,7 +280,7 @@ Tcl_Mutex *
 Tcl_GetAllocMutex()
 {
 #ifdef TCL_THREADS
-    return (Tcl_Mutex *)&allocLock;
+    return (Tcl_Mutex *)&allocLockPtr;
 #else
     return NULL;
 #endif
