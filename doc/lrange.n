@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: lrange.n,v 1.6 2001/11/14 23:38:39 hobbs Exp $
+'\" RCS: @(#) $Id: lrange.n,v 1.7 2004/04/16 22:20:58 dkf Exp $
 '\" 
 .so man.macros
 .TH lrange n 7.4 Tcl "Tcl Built-In Commands"
@@ -35,6 +35,36 @@ Note: ``\fBlrange \fIlist first first\fR'' does not always produce the
 same result as ``\fBlindex \fIlist first\fR'' (although it often does
 for simple fields that aren't enclosed in braces); it does, however,
 produce exactly the same results as ``\fBlist [lindex \fIlist first\fB]\fR''
+
+.SH EXAMPLES
+Selecting the first two elements:
+.CS
+% lrange {a b c d e} 0 1
+a b
+.CS
+
+Selecting the last three elements:
+.CS
+% lrange {a b c d e} end-2 end
+c d e
+.CE
+
+Selecting everything except the first and last element:
+.CS
+% lrange {a b c d e} 1 end-1
+b c d
+.CE
+
+Selecting a single element with \fBlrange\fR is not the same as doing
+so with \fBlindex\fR:
+.CS
+% set var {some {elements to} select}
+some {elements to} select
+% lindex $var 1
+elements to
+% lrange $var 1 1
+{elements to}
+.CE
 
 .SH "SEE ALSO"
 .VS 8.4
