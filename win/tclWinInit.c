@@ -7,7 +7,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclWinInit.c,v 1.59 2004/07/01 12:07:01 dkf Exp $
+ * RCS: @(#) $Id: tclWinInit.c,v 1.60 2004/07/08 08:06:50 dkf Exp $
  */
 
 #include "tclWinInt.h"
@@ -50,7 +50,7 @@ typedef struct {
 #ifndef PROCESSOR_ARCHITECTURE_PPC
 #define PROCESSOR_ARCHITECTURE_PPC   3
 #endif
-#ifndef PROCESSOR_ARCHITECTURE_SHX  
+#ifndef PROCESSOR_ARCHITECTURE_SHX
 #define PROCESSOR_ARCHITECTURE_SHX   4
 #endif
 #ifndef PROCESSOR_ARCHITECTURE_ARM
@@ -156,7 +156,7 @@ SetDefaultLibraryDir(directory)
     int numBytes = 0;
     CONST char *bytes;
     Tcl_Obj **savedDirectoryPtr = (Tcl_Obj **)
-	    Tcl_GetThreadData(&defaultLibraryDirKey, (int)sizeof(Tcl_Obj *));
+	    Tcl_GetThreadData(&defaultLibraryDirKey, (int) sizeof(Tcl_Obj *));
 
     Tcl_IncrRefCount(directory);
     if (*savedDirectoryPtr == NULL) {
@@ -184,8 +184,8 @@ SetDefaultLibraryDir(directory)
 	 * set up the default library directory once, but if it is set
 	 * multiple times to the same value that's not harmful.
 	 */
-	if (defaultLibraryDirLength != numBytes 
-		|| memcmp(defaultLibraryDir, bytes, (unsigned)numBytes) != 0) {
+	if (defaultLibraryDirLength != numBytes ||
+		memcmp(defaultLibraryDir, bytes, (unsigned) numBytes) != 0) {
 	    Tcl_Panic("Attempt to modify defaultLibraryDir");
 	}
 	return;
@@ -224,7 +224,7 @@ static Tcl_Obj *
 GetDefaultLibraryDir()
 {
     Tcl_Obj **savedDirectoryPtr = (Tcl_Obj **)
-	    Tcl_GetThreadData(&defaultLibraryDirKey, (int)sizeof(Tcl_Obj *));
+	    Tcl_GetThreadData(&defaultLibraryDirKey, (int) sizeof(Tcl_Obj *));
 
     if (NULL != *savedDirectoryPtr) {
 	return *savedDirectoryPtr;
@@ -399,7 +399,7 @@ TclpInitLibraryPath(path)
      *	<bindir>/../../../<developLib>
      *	   (e.g. /usr/src/tcl8.4.0/unix/solaris-sparc/../../../tcl8.4.0/library)
      */
-     
+
     /*
      * The variable path holds an absolute path.  Take care not to
      * overwrite pathv[0] since that might produce a relative path.
@@ -411,7 +411,7 @@ TclpInitLibraryPath(path)
 
 	Tcl_SplitPath(path, &origc, &origv);
 	pathc = 0;
-	pathv = (CONST char **) ckalloc((unsigned int)(origc * sizeof(char *)));
+	pathv = (CONST char **) ckalloc((unsigned) (origc * sizeof(char *)));
 	for (i=0; i< origc; i++) {
 	    if (origv[i][0] == '.') {
 		if (strcmp(origv[i], ".") == 0) {
@@ -525,26 +525,26 @@ AppendEnvironment(
      * lib path. For example, "lib/tcl8.4" -> "tcl8.4" while
      * "usr/share/tcl8.5" -> "tcl8.5".
      */
-    for (shortlib = (char *) (lib + strlen(lib) - 1); shortlib > lib ; shortlib--) {
-        if (*shortlib == '/') { 
-            if (shortlib == (lib + strlen(lib) - 1)) {
-                Tcl_Panic("last character in lib cannot be '/'");
-            }
-            shortlib++;
-            break;
-        }
+    for (shortlib = (char *) &lib[strlen(lib)-1]; shortlib>lib ; shortlib--) {
+	if (*shortlib == '/') {
+	    if (shortlib - lib == strlen(lib) - 1) {
+		Tcl_Panic("last character in lib cannot be '/'");
+	    }
+	    shortlib++;
+	    break;
+	}
     }
     if (shortlib == lib) {
-        Tcl_Panic("no '/' character found in lib");
+	Tcl_Panic("no '/' character found in lib");
     }
 
     /*
      * The "L" preceeding the TCL_LIBRARY string is used to tell VC++
      * that this is a unicode string.
      */
-    
+
     if (GetEnvironmentVariableW(L"TCL_LIBRARY", wBuf, MAX_PATH) == 0) {
-        buf[0] = '\0';
+	buf[0] = '\0';
 	GetEnvironmentVariableA("TCL_LIBRARY", buf, MAX_PATH);
     } else {
 	ToUtf(wBuf, buf);
@@ -571,7 +571,7 @@ AppendEnvironment(
 	     * removing the old "tclX.Y" and substituting the current
 	     * version string.
 	     */
-	    
+
 	    pathv[pathc - 1] = shortlib;
 	    Tcl_DStringInit(&ds);
 	    str = Tcl_JoinPath(pathc, pathv, &ds);
@@ -602,9 +602,9 @@ AppendEnvironment(
  *---------------------------------------------------------------------------
  */
 
-static void 
+static void
 AppendDllPath(
-    Tcl_Obj *pathPtr, 
+    Tcl_Obj *pathPtr,
     HMODULE hModule,
     CONST char *lib)
 {
@@ -731,7 +731,7 @@ TclpSetInitialEncodings()
 	useWide = ((platformId == VER_PLATFORM_WIN32_NT)
 		|| (platformId == VER_PLATFORM_WIN32_CE));
 	TclWinSetInterfaces(useWide);
-	
+
 	wsprintfA(buf, "cp%d", GetACP());
 	Tcl_SetSystemEncoding(NULL, buf);
 
@@ -740,7 +740,7 @@ TclpSetInitialEncodings()
 	    if (pathPtr != NULL) {
 		int i, objc;
 		Tcl_Obj **objv;
-		
+
 		objc = 0;
 		Tcl_ListObjGetElements(NULL, pathPtr, &objc, &objv);
 		for (i = 0; i < objc; i++) {
@@ -750,13 +750,13 @@ TclpSetInitialEncodings()
 
 		    string = Tcl_GetStringFromObj(objv[i], &length);
 		    Tcl_ExternalToUtfDString(NULL, string, length, &ds);
-		    Tcl_SetStringObj(objv[i], Tcl_DStringValue(&ds), 
+		    Tcl_SetStringObj(objv[i], Tcl_DStringValue(&ds),
 			    Tcl_DStringLength(&ds));
 		    Tcl_DStringFree(&ds);
 		}
 	    }
 	}
-	
+
 	libraryPathEncodingFixed = 1;
     } else {
 	wsprintfA(buf, "cp%d", GetACP());
@@ -794,15 +794,15 @@ TclpSetInitialEncodings()
 
 void
 TclpSetVariables(interp)
-    Tcl_Interp *interp;		/* Interp to initialize. */	
-{	    
+    Tcl_Interp *interp;		/* Interp to initialize. */
+{
     CONST char *ptr;
     char buffer[TCL_INTEGER_SPACE * 2];
     SYSTEM_INFO sysInfo;
     OemId *oemId;
     OSVERSIONINFOA osInfo;
     Tcl_DString ds;
-    TCHAR szUserName[ UNLEN+1 ];
+    TCHAR szUserName[UNLEN+1];
     DWORD dwUserNameLen = sizeof(szUserName);
 
     Tcl_SetVar2Ex(interp, "tclDefaultLibrary", NULL,
@@ -873,12 +873,11 @@ TclpSetVariables(interp)
      * faster than asking the system.
      */
 
-    Tcl_DStringInit( &ds );
+    Tcl_DStringInit(&ds);
     if (TclGetEnv("USERNAME", &ds) == NULL) {
-
-	if ( GetUserName( szUserName, &dwUserNameLen ) != 0 ) {
-	    Tcl_WinTCharToUtf( szUserName, (int)dwUserNameLen, &ds );
-	}	
+	if (GetUserName(szUserName, &dwUserNameLen) != 0) {
+	    Tcl_WinTCharToUtf(szUserName, (int) dwUserNameLen, &ds);
+	}
     }
     Tcl_SetVar2(interp, "tcl_platform", "user", Tcl_DStringValue(&ds),
 	    TCL_GLOBAL_ONLY);
@@ -929,7 +928,7 @@ TclpFindVariable(name, lengthPtr)
     nameUpper = (char *) ckalloc((unsigned) length+1);
     memcpy((VOID *) nameUpper, (VOID *) name, (size_t) length+1);
     Tcl_UtfToUpper(nameUpper);
-    
+
     Tcl_DStringInit(&envString);
     for (i = 0, env = environ[i]; env != NULL; i++, env = environ[i]) {
 	/*
@@ -937,7 +936,7 @@ TclpFindVariable(name, lengthPtr)
 	 * the name to all upper case, so we do not have to convert
 	 * all the characters after the equal sign.
 	 */
-	
+
 	envUpper = Tcl_ExternalToUtfDString(NULL, env, -1, &envString);
 	p1 = strchr(envUpper, '=');
 	if (p1 == NULL) {
@@ -957,10 +956,10 @@ TclpFindVariable(name, lengthPtr)
 	    result = i;
 	    goto done;
 	}
-	
+
 	Tcl_DStringFree(&envString);
     }
-    
+
     *lengthPtr = i;
 
     done:
