@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.75.2.12 2005/02/10 18:58:35 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.75.2.13 2005/02/10 19:03:59 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -4011,6 +4011,11 @@ Tcl_EvalObjEx(interp, objPtr, flags)
 		objv = (Tcl_Obj **) ckalloc(objc*sizeof(Tcl_Obj *));
 	    }
 #undef TEOE_PREALLOC
+	    /*
+	     * Copy the list elements here, to avoid a segfault if objPtr
+	     * loses its List internal rep [Bug 1119369]
+	     */
+	    
 	    for (i=0; i < objc; i++) {
 		objv[i] = listRepPtr->elements[i];
 		Tcl_IncrRefCount(objv[i]);
