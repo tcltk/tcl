@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinConsole.c,v 1.1.2.1 1999/02/26 02:19:23 redman Exp $
+ * RCS: @(#) $Id: tclWinConsole.c,v 1.1.2.2 1999/03/13 02:55:56 redman Exp $
  */
 
 #include "tclWinInt.h"
@@ -511,9 +511,6 @@ ConsoleCloseProc(
     }
     ckfree((char*) consolePtr);
 
-    if (errorCode == 0) {
-        return result;
-    }
     return errorCode;
 }
 
@@ -1129,6 +1126,7 @@ TclWinOpenConsoleChannel(handle, channelName, permissions)
     char *channelName;
     int permissions;
 {
+    char encoding[4 + TCL_INTEGER_SPACE];
     ConsoleInfo *infoPtr;
     ThreadSpecificData *tsdPtr;
     DWORD id;
@@ -1145,6 +1143,8 @@ TclWinOpenConsoleChannel(handle, channelName, permissions)
     infoPtr->validMask = permissions;
     infoPtr->handle = handle;
 
+    wsprintfA(encoding, "cp%d", GetConsoleCP());
+    
     /*
      * Use the pointer for the name of the result channel.
      * This keeps the channel names unique, since some may share
@@ -1179,6 +1179,7 @@ TclWinOpenConsoleChannel(handle, channelName, permissions)
     
     Tcl_SetChannelOption(NULL, infoPtr->channel, "-translation", "auto");
     Tcl_SetChannelOption(NULL, infoPtr->channel, "-eofchar", "\032 {}");
+    Tcl_SetChannelOption(NULL, infoPtr->channel, "-encoding", encoding);
 
     return infoPtr->channel;
 }
