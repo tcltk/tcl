@@ -11,10 +11,10 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: cmdMZ.test,v 1.13 2002/07/19 08:52:27 dkf Exp $
+# RCS: @(#) $Id: cmdMZ.test,v 1.13.2.1 2003/10/06 13:55:37 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest
+    package require tcltest 2
     namespace import -force ::tcltest::*
 }
 set tcltest::testConstraints(nonLinuxOnly) \
