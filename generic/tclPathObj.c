@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPathObj.c,v 1.22 2004/01/29 10:28:20 vincentdarley Exp $
+ * RCS: @(#) $Id: tclPathObj.c,v 1.23 2004/01/29 13:01:24 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -246,16 +246,48 @@ TclFSNormalizeAbsolutePath(interp, pathPtr, clientDataPtr)
 		if (!first || (tclPlatform == TCL_PLATFORM_UNIX)) {
 		    link = Tcl_FSLink(retVal, NULL, 0);
 		    if (link != NULL) {
-			/* Got a link */
-			Tcl_DecrRefCount(retVal);
-			retVal = link;
-			linkStr = Tcl_GetStringFromObj(retVal, &curLen);
-			/* Convert to forward-slashes on windows */
-			if (tclPlatform == TCL_PLATFORM_WINDOWS) {
-			    int i;
-			    for (i = 0; i < curLen; i++) {
-				if (linkStr[i] == '\\') {
-				    linkStr[i] = '/';
+			/* 
+			 * Got a link.  Need to check if the link
+			 * is relative or absolute, for those platforms
+			 * where relative links exist.
+			 */
+			if ((tclPlatform != TCL_PLATFORM_WINDOWS)
+			   && (Tcl_FSGetPathType(link) == TCL_PATH_RELATIVE)) {
+			    /* 
+			     * We need to follow this link which is
+			     * relative to retVal's directory.  This
+			     * means concatenating the link onto
+			     * the directory of the path so far.
+			     */
+			    CONST char *path = Tcl_GetStringFromObj(retVal, 
+								    &curLen);
+			    while (--curLen >= 0) {
+			        if (IsSeparatorOrNull(path[curLen])) {
+			            break;
+			        }
+			    }
+			    if (Tcl_IsShared(retVal)) {
+				Tcl_DecrRefCount(retVal);
+				retVal = Tcl_DuplicateObj(retVal);
+				Tcl_IncrRefCount(retVal);
+			    }
+			    /* We want the trailing slash */
+			    Tcl_SetObjLength(retVal, curLen+1);
+			    Tcl_AppendObjToObj(retVal, link);
+			    Tcl_DecrRefCount(link);
+			    linkStr = Tcl_GetStringFromObj(retVal, &curLen);
+			} else {
+			    /* Absolute link */
+			    Tcl_DecrRefCount(retVal);
+			    retVal = link;
+			    linkStr = Tcl_GetStringFromObj(retVal, &curLen);
+			    /* Convert to forward-slashes on windows */
+			    if (tclPlatform == TCL_PLATFORM_WINDOWS) {
+				int i;
+				for (i = 0; i < curLen; i++) {
+				    if (linkStr[i] == '\\') {
+					linkStr[i] = '/';
+				    }
 				}
 			    }
 			}
