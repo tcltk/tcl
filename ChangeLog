@@ -1,3 +1,9 @@
+2004-11-01  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclNamesp.c (NamespaceInscopeCmd): Make the error
+	message generation the same as in NamespaceEvalCmd().
+	(Tcl_Import): Rationalized to use Tcl_EvalObjv().
+
 2004-10-31  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* tests/io.test (io-40.3): Convert umask2 test constraint into a
