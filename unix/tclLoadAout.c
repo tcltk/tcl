@@ -14,7 +14,7 @@
  * and Design Engineering (MADE) Initiative through ARPA contract
  * F33615-94-C-4400.
  *
- * RCS: @(#) $Id: tclLoadAout.c,v 1.8 2001/10/16 21:13:50 hobbs Exp $
+ * RCS: @(#) $Id: tclLoadAout.c,v 1.9 2002/01/09 19:09:28 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -474,12 +474,13 @@ TclpUnloadFile(clientData)
 
 int
 TclGuessPackageName(fileName, bufPtr)
-    char *fileName;		/* Name of file containing package (already
+    CONST char *fileName;	/* Name of file containing package (already
 				 * translated to local form if needed). */
     Tcl_DString *bufPtr;	/* Initialized empty dstring.  Append
 				 * package name to this if possible. */
 {
-    char *p, *q, *r;
+    CONST char *p, *q;
+    char *r;
 
     if ((q = strrchr(fileName,'/'))) {
 	q++;

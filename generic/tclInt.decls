@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.39 2002/01/05 22:55:51 dgp Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.40 2002/01/09 19:09:28 kennykb Exp $
 
 library tcl
 
@@ -184,7 +184,7 @@ declare 43 generic {
     int TclGlobalInvoke(Tcl_Interp *interp, int argc, char **argv, int flags)
 }
 declare 44 generic {
-    int TclGuessPackageName(char *fileName, Tcl_DString *bufPtr)
+    int TclGuessPackageName(CONST char *fileName, Tcl_DString *bufPtr)
 }
 declare 45 generic {
     int TclHideUnsafeCommands(Tcl_Interp *interp)
