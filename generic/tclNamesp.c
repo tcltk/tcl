@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.9 1999/02/03 00:55:05 stanton Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.10 1999/02/03 21:28:01 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -1554,6 +1554,9 @@ DeleteImportedCmd(clientData)
  *	set to the input context namespace pointer in cxtNsPtr. If cxtNsPtr
  *	is NULL, it is set to the current namespace context.
  *
+ *	For backwards compatibility with the TclPro byte code loader,
+ *	this function always returns TCL_OK.
+ *
  * Side effects:
  *     If "flags" contains CREATE_NS_IF_UNKNOWN, new namespaces may be
  *     created.
@@ -1561,7 +1564,7 @@ DeleteImportedCmd(clientData)
  *----------------------------------------------------------------------
  */
 
-void
+int
 TclGetNamespaceForQualName(interp, qualName, cxtNsPtr, flags,
 	nsPtrPtr, altNsPtrPtr, actualCxtPtrPtr, simpleNamePtr)
     Tcl_Interp *interp;		 /* Interpreter in which to find the
@@ -1647,7 +1650,7 @@ TclGetNamespaceForQualName(interp, qualName, cxtNsPtr, flags,
             *altNsPtrPtr     = NULL;
 	    *actualCxtPtrPtr = globalNsPtr;
             *simpleNamePtr   = start; /* points to empty string */
-            return;
+            return TCL_OK;
         }
     }
     *actualCxtPtrPtr = nsPtr;
@@ -1706,7 +1709,7 @@ TclGetNamespaceForQualName(interp, qualName, cxtNsPtr, flags,
 		*altNsPtrPtr   = altNsPtr;
 		*simpleNamePtr = start;
 		Tcl_DStringFree(&buffer);
-               return;
+               return TCL_OK;
 	    }
 	} else {
 	    /*
@@ -1773,7 +1776,7 @@ TclGetNamespaceForQualName(interp, qualName, cxtNsPtr, flags,
             *altNsPtrPtr   = NULL;
             *simpleNamePtr = NULL;
             Tcl_DStringFree(&buffer);
-            return;
+            return TCL_OK;
         }
 
 	start = end;
@@ -1806,7 +1809,7 @@ TclGetNamespaceForQualName(interp, qualName, cxtNsPtr, flags,
     *nsPtrPtr    = nsPtr;
     *altNsPtrPtr = altNsPtr;
     Tcl_DStringFree(&buffer);
-    return;
+    return TCL_OK;
 }
 
 /*
