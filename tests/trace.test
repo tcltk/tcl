@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: trace.test,v 1.6 2000/04/10 17:19:05 ericm Exp $
+# RCS: @(#) $Id: trace.test,v 1.6.2.1 2001/10/16 05:46:04 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -961,6 +961,22 @@ test trace-17.1 {unset traces on procedure returns} {
     p1 foo bar
     set info
 } {0 {a x y}}
+
+test trace-18.1 {test for Tcl Bug 219393} {
+    # This test demonstrates the memory corruption error described
+    # in Tcl Bug 219393.  On some platforms it may cause a segfault.
+    # On others it may apparently succeed, but the memory problems
+    # should be detectable when evaluating the test suite with a
+    # tool like Purify.
+    proc p1 args {
+	trace vdelete x r p1
+	trace variable x r p1
+	error "This causes memory error"
+    }
+    set x 123
+    trace variable x r p1
+    catch {set x}
+} 1
 
 # Delete arrays when done, so they can be re-used as scalars
 # elsewhere.
