@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPort.h,v 1.19 2002/02/08 09:33:03 hobbs Exp $
+ * RCS: @(#) $Id: tclUnixPort.h,v 1.20 2002/02/12 14:39:48 davygrvy Exp $
  */
 
 #ifndef _TCLUNIXPORT
@@ -456,7 +456,11 @@ extern double strtod();
  * The default platform eol translation on Unix is TCL_TRANSLATE_LF.
  */
 
+#ifdef DJGPP
+#define	TCL_PLATFORM_TRANSLATION	TCL_TRANSLATE_CRLF
+#else
 #define	TCL_PLATFORM_TRANSLATION	TCL_TRANSLATE_LF
+#endif
 
 /*
  * The following macros have trivial definitions, allowing generic code to 
