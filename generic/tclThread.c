@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThread.c,v 1.2 1999/04/16 00:46:54 stanton Exp $
+ * RCS: @(#) $Id: tclThread.c,v 1.3 1999/08/10 17:35:19 redman Exp $
  */
 
 #include "tclInt.h"
@@ -403,7 +403,9 @@ TclFinalizeThreadData()
 	}
 #endif
     }
+#ifdef TCL_THREADS
     TclpMasterUnlock();
+#endif
 }
 
 /*

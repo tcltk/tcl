@@ -1,3 +1,41 @@
+1999-08-10  Scott Redman  <redman@scriptics.com>
+
+	* generic/tclListObj.c:
+	* generic/tcl.decls:
+	* generic/tclDecls.h: Applied patch from Jim Ingham to change the
+	prototype of Tcl_ListObjGetElements to have the last argument have
+	a CONST so that you can feed it the objv that you get from the
+	standard TclObj command proc.
+
+	* generic/tclAlloc.c:
+	* generic/tclCmdIL.c:
+	* generic/tclIO.c:
+	* generic/tclThread.c:
+	* win/tclWinThrd.c:
+	* unix/tclUnixThrd.c: Fixed Brent's changes so that they work on
+	Windows (and he fixed the bug in the Unix thread implementation).
+
+1999-08-09  Brent Welch  <welch@scriptics.com>
+        
+	* generic/tcl.decls:
+	* generic/tclAlloc.c:
+	* generic/tclCkalloc.c:
+	* generic/tclCmdIL.c:
+	* generic/tclDecls.h: 
+	* generic/tclIO.c:
+	* generic/tclInt.decls:
+	* generic/tclIntDecls.h:
+	* generic/tclStubInit.c:
+	* generic/tclVar.c:
+	* mac/tclMacThrd.c:
+	* unix/tclUnixThrd.c:
+	* win/tclWinThrd.c: Added use of Tcl_GetAllocMutex to tclAlloc.c
+	and tclCkalloc.c so they can be linked against alternate thread
+	packages. Added Tcl_GetChannelNames to tclIO.c.	Added
+	TclVarTraceExists hook so "info exists" triggers read traces
+	exactly like it did in Tcl 7.6. Stubs table changes to reflect new
+	internal and external APIs.
+
 1999-08-09  Jeff Hobbs  <hobbs@scriptics.com>
 
 	* tests/string.test: added largest_int proc to adapt for >32 bit

@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclAlloc.c,v 1.7 1999/08/10 02:42:12 welch Exp $
+ * RCS: @(#) $Id: tclAlloc.c,v 1.8 1999/08/10 17:35:18 redman Exp $
  */
 
 #include "tclInt.h"
@@ -162,7 +162,9 @@ TclInitAlloc()
 {
     if (!allocInit) {
 	allocInit = 1;
+#ifdef TCL_THREADS
 	allocMutexPtr = Tcl_GetAllocMutex();
+#endif
     }
 }
 
@@ -254,7 +256,7 @@ TclpAlloc(nbytes)
 	 * may be used before any other part of Tcl.  E.g., see
 	 * main() for tclsh!
 	 */
-	TclAllocInit();
+	TclInitAlloc();
     }
     Tcl_MutexLock(allocMutexPtr);
     /*

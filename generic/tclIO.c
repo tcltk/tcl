@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.13 1999/08/10 02:42:13 welch Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.14 1999/08/10 17:35:18 redman Exp $
  */
 
 #include "tclInt.h"
@@ -590,40 +590,6 @@ TclFinalizeIOSubsystem()
             chanPtr->instanceData = (ClientData) NULL;
             chanPtr->flags |= CHANNEL_DEAD;
         }
-    }
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_CloseChannels --
- *
- *	Close all open channels in this interp, except for the
- *	standard input/output channels.  This is useful for cleanup.
- *
- * Results:
- *	None
- *
- * Side effects:
- *	May closes one or more channels.
- *
- *----------------------------------------------------------------------
- */
-
-void
-Tcl_CloseChannels(Tcl_Interp *interp)
-{
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-    Channel *chanPtr, *nextChanPtr;
-
-    for (chanPtr = tsdPtr->firstChanPtr; chanPtr != NULL; chanPtr = nextChanPtr) {
-	nextChanPtr = chanPtr->nextChanPtr;
-	if (chanPtr != (Channel *) tsdPtr->stdinChannel
-		&& chanPtr != (Channel *) tsdPtr->stdoutChannel
-		&& chanPtr != (Channel *) tsdPtr->stderrChannel) {
-            (void) Tcl_UnregisterChannel(interp, (Tcl_Channel) chanPtr);
-	}
     }
 }
 

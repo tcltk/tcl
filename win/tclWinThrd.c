@@ -42,6 +42,7 @@ static CRITICAL_SECTION initLock;
  */
 
 static CRITICAL_SECTION allocLock;
+static Tcl_Mutex allocLockPtr = (Tcl_Mutex) &allocLock;
 
 /*
  * Condition variables are implemented with a combination of a 
@@ -209,7 +210,6 @@ TclpInitLock()
 	init = 1;
 	InitializeCriticalSection(&initLock);
 	InitializeCriticalSection(&masterLock);
-	InitializeCriticalSection(&allocLock);
     }
     EnterCriticalSection(&initLock);
 }
@@ -272,33 +272,8 @@ TclpMasterLock()
 	init = 1;
 	InitializeCriticalSection(&initLock);
 	InitializeCriticalSection(&masterLock);
-	InitializeCriticalSection(&allocLock);
     }
     EnterCriticalSection(&masterLock);
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * TclpMasterUnlock
- *
- *	This procedure is used to release a lock that serializes creation
- *	and deletion of synchronization objects.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Release the master mutex.
- *
- *----------------------------------------------------------------------
- */
-
-void
-TclpMasterUnlock()
-{
-    LeaveCriticalSection(&masterLock);
 }
 
 
@@ -325,10 +300,36 @@ Tcl_Mutex *
 Tcl_GetAllocMutex()
 {
 #ifdef TCL_THREADS
-    return &allocLock;
+    InitializeCriticalSection(&allocLock);
+    return &allocLockPtr;
 #else
     return NULL;
 #endif
+}
+
+
+#ifdef TCL_THREADS
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpMasterUnlock
+ *
+ *	This procedure is used to release a lock that serializes creation
+ *	and deletion of synchronization objects.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Release the master mutex.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclpMasterUnlock()
+{
+    LeaveCriticalSection(&masterLock);
 }
 
 

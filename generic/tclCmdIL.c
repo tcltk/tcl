@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.14 1999/08/10 02:42:13 welch Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.15 1999/08/10 17:35:18 redman Exp $
  */
 
 #include "tclInt.h"
@@ -907,7 +907,7 @@ InfoExistsCmd(dummy, interp, objc, objv)
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
     char *varName;
-    Var *varPtr, *arrayPtr;
+    Var *varPtr;
 
     if (objc != 3) {
         Tcl_WrongNumArgs(interp, 2, objv, "varName");
