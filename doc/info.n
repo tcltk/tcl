@@ -7,7 +7,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: info.n,v 1.6 2001/03/13 15:10:32 dkf Exp $
+'\" RCS: @(#) $Id: info.n,v 1.7 2001/05/30 08:57:06 dkf Exp $
 '\" 
 .so man.macros
 .TH info n 8.4 Tcl "Tcl Built-In Commands"
@@ -75,6 +75,15 @@ into variable \fIvarname\fR.
 Returns \fB1\fR if the variable named \fIvarName\fR exists in the
 current context (either as a global or local variable) and has been
 defined by being given a value, returns \fB0\fR otherwise.
+.VS 8.4
+.TP
+\fBinfo functions \fR?\fIpattern\fR?
+If \fIpattern\fR isn't specified, returns a list of all the math
+functions currently defined.
+If \fIpattern\fR is specified, only those functions whose name matches
+\fIpattern\fR are returned.  Matching is determined using the same
+rules as for \fBstring match\fR.
+.VE
 .TP
 \fBinfo globals \fR?\fIpattern\fR?
 If \fIpattern\fR isn't specified, returns a list of all the names
