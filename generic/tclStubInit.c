@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.66 2002/01/05 22:55:52 dgp Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.67 2002/02/10 20:36:34 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -885,6 +885,9 @@ TclStubs tclStubs = {
     Tcl_FSMountsChanged, /* 480 */
     Tcl_EvalTokensStandard, /* 481 */
     Tcl_GetTime, /* 482 */
+    Tcl_CreateObjTrace, /* 483 */
+    Tcl_GetCommandInfoFromToken, /* 484 */
+    Tcl_SetCommandInfoFromToken, /* 485 */
 };
 
 /* !END!: Do not edit above this line. */
