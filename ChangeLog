@@ -1,3 +1,13 @@
+2004-05-12  Miguel Sofer <msofer@users.sf.net>
+
+	Optimisations for INST_START_CMD [Bug 926164].
+	* generic/tclCompile.c (TclCompileScript): avoid emitting
+	INST_START_CMD as the first instruction in a bytecoded Tcl_Obj. It
+	is not needed, as the checks are done before calling TEBC.
+	* generic/tclExecute.c (TclExecuteByteCode): runtime peephole
+	optimisation: check at INST_POP if the next instruction is
+	INST_START_CMD, in which case we fall through.
+	
 2004-05-11  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* doc/split.n, doc/join.n: Updated examples and added more.
