@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.44 2002/05/14 09:44:43 vincentdarley Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.45 2002/05/28 15:05:22 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -594,6 +594,11 @@ TclFinalizeFilesystem() {
      * We defer unloading of packages until very late 
      * to avoid memory access issues.  Both exit callbacks and
      * synchronization variables may be stored in packages.
+     * 
+     * Note that TclFinalizeLoad unloads packages in the reverse
+     * of the order they were loaded in (i.e. last to be loaded
+     * is the first to be unloaded).  This can be important for
+     * correct unloading when dependencies exist.
      */
 
     TclFinalizeLoad();
@@ -720,7 +725,9 @@ Tcl_FSRegister(clientData, fsPtr)
  *    TCL_ERROR otherwise.
  *
  * Side effects:
- *    Memory is deallocated and the respective list updated.
+ *    Memory may be deallocated (or will be later, once no "path" 
+ *    objects refer to this filesystem), but the list of registered
+ *    filesystems is updated immediately.
  *
  *----------------------------------------------------------------------
  */
@@ -2413,6 +2420,14 @@ Tcl_FSChdir(pathPtr)
  *	the addresses of two procedures within that file, if they are
  *	defined.  The appropriate function for the filesystem to which
  *	pathPtr belongs will be called.
+ *	
+ *	Note that the native filesystem doesn't actually assume
+ *	'pathPtr' is a path.  Rather it assumes filename is either
+ *	a path or just the name of a file which can be found somewhere
+ *	in the environment's loadable path.  This behaviour is not
+ *	very compatible with virtual filesystems (and has other problems
+ *	documented in the load man-page), so it is advised that full
+ *	paths are always used.
  *
  * Results:
  *	A standard Tcl completion code.  If an error occurs, an error
@@ -2455,11 +2470,21 @@ Tcl_FSLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr,
 	    return retVal;
 	} else {
 	    Tcl_Filesystem *copyFsPtr;
+	    Tcl_Obj *copyToPtr;
+	    
+	    /* First check if it is readable -- and exists! */
+	    if (Tcl_FSAccess(pathPtr, R_OK) != 0) {
+		Tcl_AppendResult(interp, "couldn't load library \"",
+				 Tcl_GetString(pathPtr), "\": ", 
+				 Tcl_PosixError(interp), (char *) NULL);
+		return TCL_ERROR;
+	    }
+	    
 	    /* 
 	     * Get a temporary filename to use, first to
 	     * copy the file into, and then to load. 
 	     */
-	    Tcl_Obj *copyToPtr = TclpTempFileName();
+	    copyToPtr = TclpTempFileName();
 	    if (copyToPtr == NULL) {
 	        return -1;
 	    }
@@ -2470,8 +2495,10 @@ Tcl_FSLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr,
 		/* 
 		 * We already know we can't use Tcl_FSLoadFile from 
 		 * this filesystem, and we must avoid a possible
-		 * infinite loop. 
+		 * infinite loop.  Try to delete the file we
+		 * probably created, and then exit.
 		 */
+		Tcl_FSDeleteFile(copyToPtr);
 		Tcl_DecrRefCount(copyToPtr);
 		return -1;
 	    }
@@ -2499,11 +2526,22 @@ Tcl_FSLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr,
 		retVal = Tcl_FSLoadFile(interp, copyToPtr, sym1, sym2,
 					proc1Ptr, proc2Ptr, &newClientData,
 					&newUnloadProcPtr);
-	        if (retVal == -1) {
+	        if (retVal != TCL_OK) {
 		    /* The file didn't load successfully */
 		    Tcl_FSDeleteFile(copyToPtr);
 		    Tcl_DecrRefCount(copyToPtr);
-		    return -1;
+		    return retVal;
+		}
+		/* 
+		 * Try to delete the file immediately -- this is
+		 * possible in some OSes, and avoids any worries
+		 * about leaving the copy laying around on exit. 
+		 */
+		if (Tcl_FSDeleteFile(copyToPtr) == TCL_OK) {
+		    Tcl_DecrRefCount(copyToPtr);
+		    (*clientDataPtr) = NULL;
+		    (*unloadProcPtr) = NULL;
+		    return TCL_OK;
 		}
 		/* 
 		 * When we unload this file, we need to divert the 
@@ -2538,6 +2576,11 @@ Tcl_FSLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr,
 		(*unloadProcPtr) = &FSUnloadTempFile;
 		
 		return retVal;
+	    } else {
+		/* Cross-platform copy failed */
+		Tcl_FSDeleteFile(copyToPtr);
+		Tcl_DecrRefCount(copyToPtr);
+		return TCL_ERROR;
 	    }
 	}
     }
@@ -2577,7 +2620,13 @@ FSUnloadTempFile(clientData)
      */
     if (tvdlPtr == NULL) { return; }
     
-    /* Call the real 'unloadfile' proc we actually used. */
+    /* 
+     * Call the real 'unloadfile' proc we actually used. It is very
+     * important that we call this first, so that the shared library
+     * is actually unloaded by the OS.  Otherwise, the following
+     * 'delete' may well fail because the shared library is still in
+     * use.
+     */
     if (tvdlPtr->unloadProcPtr != NULL) {
 	(*tvdlPtr->unloadProcPtr)(tvdlPtr->clientData);
     }
