@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.50 1999/08/13 18:30:24 redman Exp $
+RCS: @(#) $Id: changes,v 1.50.2.1 1999/10/02 01:09:52 hobbs Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -4640,3 +4640,16 @@ error code. [Bug: 2535] (stanton)
 
 --------------- Released 8.2.0, August 17, 1999 ----------------------
 
+9/21/99 (config fixes) fixed several AIX configuration issues.  gcc and
+threading may still cause problems on AIX. (hobbs)
+
+9/21/99 (bug fix) fixed expr double-eval problem. [Bug: 732] (hobbs)
+
+9/21/99 (bug fix) fixed static buffer overflow problem. [Bug: 2483] (hobbs)
+
+9/21/99 (bug fix) fixed end-int linsert interpretation. [Bug: 2693] (hobbs)
+
+9/21/99 (bug fix) fixed bug when setting array in non-existent
+namespace. [Bug: 2613] (hobbs)
+
+--- Released 8.2.1, October 04, 1999 --- See ChangeLog for details ---

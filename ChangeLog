@@ -1,3 +1,9 @@
+1999-10-01  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* All frozen for 10/4/99 8.2.1 release
+	* changes: updated from ChangeLog
+	* unix/Makefile.in: added ChangeLog to source dist
+
 1999-09-30  Jeff Hobbs  <hobbs@scriptics.com>
 
 	* unix/configure.in:
