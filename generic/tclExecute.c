@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.116 2003/11/16 01:15:55 dkf Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.117 2003/11/16 02:12:56 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1220,7 +1220,7 @@ TclExecuteByteCode(interp, codePtr)
      * do the check every 16th instruction.
      */
 
-    if (!(instructionCount++ & ~ASYNC_CHECK_COUNT_MASK) && Tcl_AsyncReady()) {
+    if (!(instructionCount++ & ASYNC_CHECK_COUNT_MASK) && Tcl_AsyncReady()) {
 	DECACHE_STACK_INFO();
 	result = Tcl_AsyncInvoke(interp, result);
 	CACHE_STACK_INFO();
