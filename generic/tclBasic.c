@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: %Z% $Id: tclBasic.c,v 1.8 1998/07/15 11:09:11 escoffon Exp $ 
+ * SCCS: %Z% $Id: tclBasic.c,v 1.9 1998/07/20 16:43:31 welch Exp $ 
  */
 
 #include "tclInt.h"
@@ -311,6 +311,7 @@ Tcl_CreateInterp()
     iPtr->termOffset = 0;
     iPtr->compileEpoch = 0;
     iPtr->compiledProcPtr = NULL;
+    iPtr->resolverPtr = NULL;
     iPtr->evalFlags = 0;
     iPtr->scriptFile = NULL;
     iPtr->flags = 0;
@@ -752,6 +753,7 @@ DeleteInterpProc(interp)
     Tcl_HashSearch search;
     Tcl_HashTable *hTablePtr;
     AssocData *dPtr;
+    ResolverScheme *resPtr, *nextResPtr;
     int i;
 
     /*
@@ -863,6 +865,14 @@ DeleteInterpProc(interp)
     }
     Tcl_DecrRefCount(iPtr->emptyObjPtr);
     iPtr->emptyObjPtr = NULL;
+
+    resPtr = iPtr->resolverPtr;
+    while (resPtr) {
+	nextResPtr = resPtr->nextPtr;
+	ckfree(resPtr->name);
+	ckfree((char *) resPtr);
+        resPtr = nextResPtr;
+    }
     
     ckfree((char *) iPtr);
 }
@@ -2452,6 +2462,7 @@ Tcl_EvalObj(interp, objPtr)
 					 * at all were executed. */
     int numSrcChars;
     register int result;
+    Namespace *namespacePtr;
 
     /*
      * Reset both the interpreter's string and object results and clear out
@@ -2507,17 +2518,26 @@ Tcl_EvalObj(interp, objPtr)
      * compile procedure (this might make the compiled code wrong). If
      * necessary, convert the object to be a ByteCode object and compile it.
      * Also, if the code was compiled in/for a different interpreter,
-     * we recompile it.
+     * or for a different namespace, or for the same namespace but
+     * with different name resolution rules, we recompile it.
      *
      * Precompiled objects, however, are immutable and therefore
      * they are not recompiled, even if the epoch has changed.
      */
 
+    if (iPtr->varFramePtr != NULL) {
+        namespacePtr = iPtr->varFramePtr->nsPtr;
+    } else {
+        namespacePtr = iPtr->globalNsPtr;
+    }
+
     if (objPtr->typePtr == &tclByteCodeType) {
 	codePtr = (ByteCode *) objPtr->internalRep.otherValuePtr;
 	
 	if ((codePtr->iPtr != iPtr)
-	        || (codePtr->compileEpoch != iPtr->compileEpoch)) {
+	        || (codePtr->compileEpoch != iPtr->compileEpoch)
+	        || (codePtr->nsPtr != namespacePtr)
+	        || (codePtr->nsEpoch != namespacePtr->resolverEpoch)) {
             if (codePtr->flags & TCL_BYTECODE_PRECOMPILED) {
                 if (codePtr->iPtr != iPtr) {
                     panic("Tcl_EvalObj: compiled script jumped interps");
