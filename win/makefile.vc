@@ -12,7 +12,7 @@
 # Copyright (c) 2001-2002 David Gravereaux.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.111 2003/10/09 00:29:27 patthoyts Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.112 2003/10/21 00:23:34 kennykb Exp $
 #------------------------------------------------------------------------------
 
 !if "$(MSVCDIR)" == ""
@@ -773,9 +773,9 @@ install-libraries:
 	@echo installing opt0.4
 	@$(CPY) "$(ROOT)\library\opt\*.tcl" \
 		"$(SCRIPT_INSTALL_DIR)\opt0.4\"
-	@echo installing msgcat1.3
+	@echo installing msgcat1.4
 	@$(CPY) "$(ROOT)\library\msgcat\*.tcl" \
-	    "$(SCRIPT_INSTALL_DIR)\msgcat1.3\"
+	    "$(SCRIPT_INSTALL_DIR)\msgcat1.4\"
 	@echo installing tcltest2.2 
 	@$(CPY) "$(ROOT)\library\tcltest\*.tcl" \
 	    "$(SCRIPT_INSTALL_DIR)\tcltest2.2\"
