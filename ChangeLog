@@ -1,3 +1,14 @@
+2001-11-19  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* win/tclWinFile.c:
+	* win/tclWinFCmd.c:
+	* win/tclWin32Dll.c:
+	* doc/file.n:
+	* tests/winFCmd.test: improved speed of file normalization
+	for Win95/98, and clarified docs on differences in file
+	normalization between NT/2000 and the older operating systems.
+	Added test to ensure normalization is correct.
+	
 2001-11-19  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* generic/tclBasic.c:
