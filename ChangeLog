@@ -1,3 +1,13 @@
+2004-05-30  David Gravereaux <davygrvy@pobox.com>
+
+	* win/tclWinPipe.c:
+	* win/tclWinPort.h:  Reworked the win implementation of
+	Tcl_WaitPid to support exitcodes in the 'signed short' range.
+	Even though this range is non-portable, it is valid on windows.
+	Detection of exception codes are now more accurate.  Previously,
+	an application that exited with ExitProcess((DWORD)-1); was
+	improperly reported as exiting with SIGABRT.
+
 2004-05-30  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclInterp.c: Added comments describing the purposes of
