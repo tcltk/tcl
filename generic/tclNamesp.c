@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.27 2002/01/25 20:40:55 dgp Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.28 2002/01/25 22:01:32 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -902,7 +902,7 @@ Tcl_Export(interp, namespacePtr, pattern, resetListFirst)
     Tcl_Namespace *namespacePtr; /* Points to the namespace from which 
 				  * commands are to be exported. NULL for
                                   * the current namespace. */
-    char *pattern;               /* String pattern indicating which commands
+    CONST char *pattern;         /* String pattern indicating which commands
                                   * to export. This pattern may not include
 				  * any namespace qualifiers; only commands
 				  * in the specified namespace may be
@@ -1103,7 +1103,7 @@ Tcl_Import(interp, namespacePtr, pattern, allowOverwrite)
     Tcl_Namespace *namespacePtr; /* Points to the namespace into which the
 				  * commands are to be imported. NULL for
                                   * the current namespace. */
-    char *pattern;               /* String pattern indicating which commands
+    CONST char *pattern;         /* String pattern indicating which commands
                                   * to import. This pattern should be
 				  * qualified by the name of the namespace
 				  * from which to import the command(s). */
@@ -1338,7 +1338,7 @@ Tcl_ForgetImport(interp, namespacePtr, pattern)
     Tcl_Namespace *namespacePtr; /* Points to the namespace from which
 				  * previously imported commands should be
 				  * removed. NULL for current namespace. */
-    char *pattern;		 /* String pattern indicating which imported
+    CONST char *pattern;	 /* String pattern indicating which imported
 				  * commands to remove. This pattern should
 				  * be qualified by the name of the
 				  * namespace from which the command(s) were
@@ -1881,7 +1881,7 @@ Tcl_Namespace *
 Tcl_FindNamespace(interp, name, contextNsPtr, flags)
     Tcl_Interp *interp;		 /* The interpreter in which to find the
 				  * namespace. */
-    char *name;			 /* Namespace name. If it starts with "::",
+    CONST char *name;		 /* Namespace name. If it starts with "::",
 				  * will be looked up in global namespace.
 				  * Else, looked up first in contextNsPtr
 				  * (current namespace if contextNsPtr is
