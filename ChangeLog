@@ -1,3 +1,10 @@
+2004-10-26  David Gravereaux <davygrvy@pobox.com>
+
+	* generic/tclPipe.c (TclCleanupChildren): bad cast of resolvedPid
+	caused PIDs on win95 to go negative.  winpipe-4.2 brought this to
+	the surface.  Fixed with sprintf in place of TclFormatInt.  Thanks
+	to hgiese [Patch 767676]
+
 2004-10-26  Andreas Kupries <andreask@activestate.com>
 
 	* library/tm.tcl (::tcl::tm::Defaults): Added a second [file
