@@ -1,3 +1,15 @@
+2004-07-08  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclBasic.c (DeleteInterpProc): reverted the modification
+	of 3 days ago, as the leak of [Bug 983660] is now handled by the
+	change in TclCleanupByteCode.
+	* generic/tclCompile.c (TclCleanupByteCode): let each bytecode
+	remove its references to literals at interp deletion, without
+	updating the dying literal table.
+	* generic/tclLiteral.c (TclDeleteLiteralTable): with the above
+	change to TclCleanupByteCode, this function now removes a single
+	reference to the literal object and cleans up its own structures.
+
 2004-07-08  Kevin Kenny  <kennykb@acm.org>
 
 	* win/tclWinInit.c (AppendEnvironment): Silenced a compilation

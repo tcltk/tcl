@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.107 2004/07/05 22:41:01 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.108 2004/07/08 18:46:04 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -997,12 +997,13 @@ DeleteInterpProc(interp)
      * Dismantle the namespace here, before we clear the assocData. If any
      * background errors occur here, they will be deleted below.
      *
-     * Dismantle the namespace before freeing the iPtr->handle, to insure
-     * that non-shared literals are freed properly [Bug 983660].
+     * Dismantle the namespace after freeing the iPtr->handle so that each
+     * bytecode releases its literals without caring to update the literal
+     * table, as it will be freed later in this function without further use.
      */
     
-    TclTeardownNamespace(iPtr->globalNsPtr);
     TclHandleFree(iPtr->handle);
+    TclTeardownNamespace(iPtr->globalNsPtr);
 
     /*
      * Delete all the hidden commands.
