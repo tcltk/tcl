@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinReg.c,v 1.11 2000/03/31 08:52:32 hobbs Exp $
+ * RCS: @(#) $Id: tclWinReg.c,v 1.12 2000/06/13 20:30:24 ericm Exp $
  */
 
 #include <tclPort.h>
@@ -367,7 +367,7 @@ DeleteKey(
      */
 
     keyName = Tcl_GetStringFromObj(keyNameObj, &length);
-    buffer = ckalloc(length + 1);
+    buffer = ckalloc((unsigned int) length + 1);
     strcpy(buffer, keyName);
 
     if (ParseKeyName(interp, buffer, &hostName, &rootKey, &keyName)
@@ -621,7 +621,7 @@ GetType(
      */
 
     if (type > lastType || type < 0) {
-	Tcl_SetIntObj(resultPtr, type);
+	Tcl_SetIntObj(resultPtr, (int) type);
     } else {
 	Tcl_SetStringObj(resultPtr, typeNames[type], -1);
     }
@@ -680,7 +680,7 @@ GetValue(
 
     Tcl_DStringInit(&data);
     length = TCL_DSTRING_STATIC_SIZE - 1;
-    Tcl_DStringSetLength(&data, length);
+    Tcl_DStringSetLength(&data, (int) length);
 
     resultPtr = Tcl_GetObjResult(interp);
 
@@ -696,7 +696,7 @@ GetValue(
 	 * Required for HKEY_PERFORMANCE_DATA
 	 */
 	length *= 2;
-        Tcl_DStringSetLength(&data, length);
+        Tcl_DStringSetLength(&data, (int) length);
         result = (*regWinProcs->regQueryValueExProc)(key, valueName, NULL,
 		&type, (BYTE *) Tcl_DStringValue(&data), &length);
     }
@@ -719,7 +719,7 @@ GetValue(
      */
 
     if (type == REG_DWORD || type == REG_DWORD_BIG_ENDIAN) {
-	Tcl_SetIntObj(resultPtr, ConvertDWORD(type,
+	Tcl_SetIntObj(resultPtr, (int) ConvertDWORD(type,
 		*((DWORD*) Tcl_DStringValue(&data))));
     } else if (type == REG_MULTI_SZ) {
 	char *p = Tcl_DStringValue(&data);
@@ -754,7 +754,7 @@ GetValue(
 	 * Save binary data as a byte array.
 	 */
 
-	Tcl_SetByteArrayObj(resultPtr, Tcl_DStringValue(&data), length);
+	Tcl_SetByteArrayObj(resultPtr, Tcl_DStringValue(&data), (int) length);
     }
     Tcl_DStringFree(&data);
     return result;
@@ -822,7 +822,7 @@ GetValueNames(
 
     Tcl_DStringInit(&buffer);
     Tcl_DStringSetLength(&buffer,
-	    (regWinProcs->useWide) ? maxSize*2 : maxSize);
+	    (int) ((regWinProcs->useWide) ? maxSize*2 : maxSize));
     index = 0;
     result = TCL_OK;
 
@@ -847,7 +847,7 @@ GetValueNames(
 	    size *= 2;
 	}
 
-	Tcl_WinTCharToUtf((TCHAR *) Tcl_DStringValue(&buffer), size, &ds);
+	Tcl_WinTCharToUtf((TCHAR *) Tcl_DStringValue(&buffer), (int) size, &ds);
 	name = Tcl_DStringValue(&ds);
 	if (!pattern || Tcl_StringMatch(name, pattern)) {
 	    result = Tcl_ListObjAppendElement(interp, resultPtr,
@@ -901,7 +901,7 @@ OpenKey(
     DWORD result;
 
     keyName = Tcl_GetStringFromObj(keyNameObj, &length);
-    buffer = ckalloc(length + 1);
+    buffer = ckalloc((unsigned int) length + 1);
     strcpy(buffer, keyName);
 
     result = ParseKeyName(interp, buffer, &hostName, &rootKey, &keyName);
@@ -1135,7 +1135,7 @@ RecursiveDeleteKey(
 
     Tcl_DStringInit(&subkey);
     Tcl_DStringSetLength(&subkey,
-	    (regWinProcs->useWide) ? maxSize * 2 : maxSize);
+	    (int) ((regWinProcs->useWide) ? maxSize * 2 : maxSize));
 
     while (result == ERROR_SUCCESS) {
 	/*
@@ -1272,7 +1272,7 @@ SetValue(
 	length = Tcl_DStringLength(&buf) + 1;
 
 	result = (*regWinProcs->regSetValueExProc)(key, valueName, 0, type,
-		(BYTE*)data, length);
+		(BYTE*)data, (DWORD) length);
 	Tcl_DStringFree(&buf);
     } else {
 	char *data;
@@ -1283,7 +1283,7 @@ SetValue(
 
 	data = Tcl_GetByteArrayFromObj(dataObj, &length);
 	result = (*regWinProcs->regSetValueExProc)(key, valueName, 0, type,
-		(BYTE *)data, length);
+		(BYTE *)data, (DWORD) length);
     }
     Tcl_DStringFree(&nameBuf);
     RegCloseKey(key);
@@ -1346,7 +1346,7 @@ AppendSystemError(
 	if (error == ERROR_CALL_NOT_IMPLEMENTED) {
 	    msg = "function not supported under Win32s";
 	} else {
-	    sprintf(msgBuf, "unknown error: %d", error);
+	    sprintf(msgBuf, "unknown error: %ld", error);
 	    msg = msgBuf;
 	}
     } else {
@@ -1371,7 +1371,7 @@ AppendSystemError(
 	}
     }
 
-    sprintf(id, "%d", error);
+    sprintf(id, "%ld", error);
     Tcl_SetErrorCode(interp, "WINDOWS", id, msg, (char *) NULL);
     Tcl_AppendToObj(resultPtr, msg, length);
 

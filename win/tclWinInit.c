@@ -7,7 +7,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclWinInit.c,v 1.22 2000/03/31 08:52:31 hobbs Exp $
+ * RCS: @(#) $Id: tclWinInit.c,v 1.23 2000/06/13 20:30:23 ericm Exp $
  */
 
 #include "tclWinInt.h"
@@ -88,7 +88,6 @@ static DWORD mainThreadId;
 static void		AppendEnvironment(Tcl_Obj *listPtr, CONST char *lib);
 static void		AppendDllPath(Tcl_Obj *listPtr, HMODULE hModule,
 			    CONST char *lib);
-static void		AppendRegistry(Tcl_Obj *listPtr, CONST char *lib);
 static int		ToUtf(CONST WCHAR *wSrc, char *dst);
 
 /*
@@ -622,7 +621,7 @@ TclpSetVariables(interp)
 
     Tcl_DStringSetLength(&ds, 100);
     if (TclGetEnv("USERNAME", &ds) == NULL) {
-	if (GetUserName(Tcl_DStringValue(&ds), &Tcl_DStringLength(&ds)) == 0) {
+	if (GetUserName(Tcl_DStringValue(&ds), (LPDWORD) &Tcl_DStringLength(&ds)) == 0) {
 	    Tcl_DStringSetLength(&ds, 0);
 	}
     }

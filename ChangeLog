@@ -1,3 +1,30 @@
+2000-06-13  Eric Melski  <ericm@scriptics.com>
+
+	* win/tclWinDde.c:
+	* win/tclWinInit.c:
+	* win/tclWinNotify.c:
+	* win/tclWinPipe.c:
+	* win/tclWinReg.c:
+	* win/tclWinThrd.c: Applied patch from [Bug 5794].
+
+2000-05-31  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* tests/set-old.test:
+	* doc/unset.n:
+	* generic/tclVar.c (Tcl_UnsetObjCmd): added -nocomplain and --
+	options to unset, to allow for a silent unset operation.
+
+2000-05-31  Eric Melski  <ericm@scriptics.com>
+
+	* generic/tclVar.c (Tcl_ArrayObjCmd): Added support for regexp and
+	exact matching for [array names] command. [RFE: 3684].
+
+	* doc/array.n: Added documentation for [array names
+	-exact/-regexp/-glob] [RFE: 3684].
+
+	* tests/set-old.test: Added tests for [array names
+	-exact/-regexp/-glob] [RFE: 3684].
+
 2000-06-06  Jeff Hobbs  <hobbs@scriptics.com>
 
 	8.4a1 RELEASE
@@ -26,24 +53,6 @@
 	opposed to being thrown an exception.	For the http package, this
 	menas the user can check http::status for "error" and http::error
 	for the error message after doing the http::wait.
-
-2000-05-31  Jeff Hobbs  <hobbs@scriptics.com>
-
-	* tests/set-old.test:
-	* doc/unset.n:
-	* generic/tclVar.c (Tcl_UnsetObjCmd): added -nocomplain and --
-	options to unset, to allow for a silent unset operation.
-
-2000-05-31  Eric Melski  <ericm@scriptics.com>
-
-	* generic/tclVar.c (Tcl_ArrayObjCmd): Added support for regexp and
-	exact matching for [array names] command. [RFE: 3684].
-
-	* doc/array.n: Added documentation for [array names
-	-exact/-regexp/-glob] [RFE: 3684].
-
-	* tests/set-old.test: Added tests for [array names
-	-exact/-regexp/-glob] [RFE: 3684].
 
 2000-05-27  Jeff Hobbs  <hobbs@scriptics.com>
 
