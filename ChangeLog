@@ -1,3 +1,11 @@
+2002-03-06  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* generic/tcl.h, tools/tcl.wse.in, unix/configure.in,
+	* unix/tcl.spec, win/README.binary, win/configure.in, README:
+	Bumped patchlevel; this might need to change in the future, but it
+	will help us distinguish between the CVS version and the most
+	recent released version.
+
 2002-03-06  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* generic/tclInt.h: for unshared objects, TclDecrRefCount now
