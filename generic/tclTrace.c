@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTrace.c,v 1.9 2004/03/01 17:33:45 dgp Exp $
+ * RCS: @(#) $Id: tclTrace.c,v 1.10 2004/05/13 12:59:23 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1295,7 +1295,8 @@ TraceCommandProc(clientData, interp, oldName, newName, flags)
     
     tcmdPtr->refCount++;
     
-    if ((tcmdPtr->flags & flags) && !(flags & TCL_INTERP_DESTROYED)) {
+    if ((tcmdPtr->flags & flags) && !(flags & TCL_INTERP_DESTROYED)
+	    && !Tcl_LimitExceeded(interp)) {
 	/*
 	 * Generate a command to execute by appending list elements
 	 * for the old and new command name and the operation.
@@ -1333,6 +1334,7 @@ TraceCommandProc(clientData, interp, oldName, newName, flags)
 		Tcl_DStringLength(&cmd), 0);
 	if (code != TCL_OK) {	     
 	    /* We ignore errors in these traced commands */
+	    /*** QUESTION: Use Tcl_BackgroundError(interp); instead? ***/
 	}
 
 	Tcl_RestoreResult(interp, &state);
@@ -1728,7 +1730,7 @@ TraceExecutionProc(ClientData clientData, Tcl_Interp *interp,
 	return traceCode;
     }
     
-    if (!(flags & TCL_INTERP_DESTROYED)) {
+    if (!(flags & TCL_INTERP_DESTROYED) && !Tcl_LimitExceeded(interp)) {
 	/*
 	 * Check whether the current call is going to eval arbitrary
 	 * Tcl code with a generated trace, or whether we are only
@@ -1938,7 +1940,8 @@ TraceVarProc(clientData, interp, name1, name2, flags)
     Tcl_Preserve((ClientData) tvarPtr);
 
     result = NULL;
-    if ((tvarPtr->flags & flags) && !(flags & TCL_INTERP_DESTROYED)) {
+    if ((tvarPtr->flags & flags) && !(flags & TCL_INTERP_DESTROYED)
+	    && !Tcl_LimitExceeded(interp)) {
 	if (tvarPtr->length != (size_t) 0) {
 	    /*
 	     * Generate a command to execute by appending list elements

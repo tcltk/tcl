@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.26 2004/04/06 22:25:53 dgp Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.27 2004/05/13 12:59:23 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -145,6 +145,24 @@ typedef struct InterpInfo {
 } InterpInfo;
 
 /*
+ * Limit callbacks handled by scripts are modelled as structures which
+ * are stored in hashes indexed by a two-word key.  Note that the type
+ * of the 'type' field in the key is not int; this is to make sure
+ * that things work properly on 64-bit architectures.
+ */
+
+struct ScriptLimitCallback {
+    Tcl_Interp *interp;
+    Tcl_Obj *scriptObj;
+    int type;
+};
+
+struct ScriptLimitCallbackKey {
+    Tcl_Interp *interp;
+    long type;
+};
+
+/*
  * Prototypes for local static procedures:
  */
 
@@ -196,6 +214,23 @@ static void		SlaveObjCmdDeleteProc _ANSI_ARGS_((
 static int		SlaveRecursionLimit _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Interp *slaveInterp, int objc,
 			    Tcl_Obj *CONST objv[]));
+static int		SlaveCommandLimit _ANSI_ARGS_((Tcl_Interp *interp,
+			    Tcl_Interp *slaveInterp, int consumedObjc,
+			    int objc, Tcl_Obj *CONST objv[]));
+static int		SlaveTimeLimit _ANSI_ARGS_((Tcl_Interp *interp,
+			    Tcl_Interp *slaveInterp, int consumedObjc,
+			    int objc, Tcl_Obj *CONST objv[]));
+static void		InheritLimits _ANSI_ARGS_((Tcl_Interp *slaveInterp,
+			    Tcl_Interp *masterInterp));
+static void		SetLimitCallback _ANSI_ARGS_((Tcl_Interp *interp,
+			    int type, Tcl_Interp *targetInterp,
+			    Tcl_Obj *scriptObj));
+static void		CallScriptLimitCallback _ANSI_ARGS_((
+			    ClientData clientData, Tcl_Interp *interp));
+static void		DeleteScriptLimitCallback _ANSI_ARGS_((
+			    ClientData clientData));
+static void		RunLimitHandlers _ANSI_ARGS_((LimitHandler *handlerPtr,
+			    Tcl_Interp *interp));
 
 
 /*
@@ -357,16 +392,16 @@ Tcl_InterpObjCmd(clientData, interp, objc, objv)
     static CONST char *options[] = {
         "alias",	"aliases",	"create",	"delete", 
 	"eval",		"exists",	"expose",	"hide", 
-	"hidden",	"issafe",	"invokehidden",	"marktrusted", 
-	"recursionlimit",		"slaves",	"share",
+	"hidden",	"issafe",	"invokehidden",	"limit",
+	"marktrusted",	"recursionlimit","slaves",	"share",
 	"target",	"transfer",
         NULL
     };
     enum option {
 	OPT_ALIAS,	OPT_ALIASES,	OPT_CREATE,	OPT_DELETE,
 	OPT_EVAL,	OPT_EXISTS,	OPT_EXPOSE,	OPT_HIDE,
-	OPT_HIDDEN,	OPT_ISSAFE,	OPT_INVOKEHID,	OPT_MARKTRUSTED,
-	OPT_RECLIMIT,			OPT_SLAVES,	OPT_SHARE,
+	OPT_HIDDEN,	OPT_ISSAFE,	OPT_INVOKEHID,	OPT_LIMIT,
+	OPT_MARKTRUSTED,OPT_RECLIMIT,	OPT_SLAVES,	OPT_SHARE,
 	OPT_TARGET,	OPT_TRANSFER
     };
 
@@ -627,6 +662,35 @@ Tcl_InterpObjCmd(clientData, interp, objc, objv)
 	    }
 	    return SlaveInvokeHidden(interp, slaveInterp, global, objc - i,
 		    objv + i);
+	}
+	case OPT_LIMIT: {
+	    Tcl_Interp *slaveInterp;
+	    static CONST char *limitTypes[] = {
+		"commands", "time", NULL
+	    };
+	    enum LimitTypes {
+		LIMIT_TYPE_COMMANDS, LIMIT_TYPE_TIME
+	    };
+	    int limitType;
+
+	    if (objc < 4) {
+		Tcl_WrongNumArgs(interp, 2, objv, "path limitType ?options?");
+		return TCL_ERROR;
+	    }
+	    slaveInterp = GetInterp(interp, objv[2]);
+	    if (slaveInterp == NULL) {
+		return TCL_ERROR;
+	    }
+	    if (Tcl_GetIndexFromObj(interp, objv[3], limitTypes, "limit type",
+		    0, &limitType) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    switch ((enum LimitTypes) limitType) {
+	    case LIMIT_TYPE_COMMANDS:
+		return SlaveCommandLimit(interp, slaveInterp, 4, objc, objv);
+	    case LIMIT_TYPE_TIME:
+		return SlaveTimeLimit(interp, slaveInterp, 4, objc, objv);
+	    }
 	}
 	case OPT_MARKTRUSTED: {
 	    Tcl_Interp *slaveInterp;
@@ -1838,6 +1902,12 @@ SlaveCreate(interp, pathPtr, safe)
 	 */
 	Tcl_InitMemory(slaveInterp);
     }
+
+    /*
+     * Inherit the TIP#143 limits.
+     */
+    InheritLimits(slaveInterp, masterInterp);
+
     return slaveInterp;
 
     error:
@@ -1874,14 +1944,14 @@ SlaveObjCmd(clientData, interp, objc, objv)
     Tcl_Interp *slaveInterp;
     int index;
     static CONST char *options[] = {
-        "alias",	"aliases",	"eval",		"expose",
-        "hide",		"hidden",	"issafe",	"invokehidden",
-        "marktrusted",	"recursionlimit", NULL
+	"alias",	"aliases",	"eval",		"expose",
+	"hide",		"hidden",	"issafe",	"invokehidden",
+	"limit",	"marktrusted",	"recursionlimit", NULL
     };
     enum options {
 	OPT_ALIAS,	OPT_ALIASES,	OPT_EVAL,	OPT_EXPOSE,
 	OPT_HIDE,	OPT_HIDDEN,	OPT_ISSAFE,	OPT_INVOKEHIDDEN,
-	OPT_MARKTRUSTED, OPT_RECLIMIT
+	OPT_LIMIT,	OPT_MARKTRUSTED, OPT_RECLIMIT
     };
     
     slaveInterp = (Tcl_Interp *) clientData;
@@ -1991,6 +2061,30 @@ SlaveObjCmd(clientData, interp, objc, objv)
 	    }
 	    return SlaveInvokeHidden(interp, slaveInterp, global, objc - i,
 		    objv + i);
+	}
+	case OPT_LIMIT: {
+	    static CONST char *limitTypes[] = {
+		"commands", "time", NULL
+	    };
+	    enum LimitTypes {
+		LIMIT_TYPE_COMMANDS, LIMIT_TYPE_TIME
+	    };
+	    int limitType;
+
+	    if (objc < 3) {
+		Tcl_WrongNumArgs(interp, 2, objv, "limitType ?options?");
+		return TCL_ERROR;
+	    }
+	    if (Tcl_GetIndexFromObj(interp, objv[2], limitTypes, "limit type",
+		    0, &limitType) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    switch ((enum LimitTypes) limitType) {
+	    case LIMIT_TYPE_COMMANDS:
+		return SlaveCommandLimit(interp, slaveInterp, 3, objc, objv);
+	    case LIMIT_TYPE_TIME:
+		return SlaveTimeLimit(interp, slaveInterp, 3, objc, objv);
+	    }
 	}
 	case OPT_MARKTRUSTED: {
 	    if (objc != 2) {
@@ -2485,4 +2579,919 @@ Tcl_MakeSafe(interp)
     }
 
     return TCL_OK;
+}
+
+int
+Tcl_LimitExceeded(interp)
+    Tcl_Interp *interp;
+{
+    register Interp *iPtr = (Interp *) interp;
+
+    return iPtr->limit.exceeded != 0;
+}
+
+int
+Tcl_LimitReady(interp)
+    Tcl_Interp *interp;
+{
+    register Interp *iPtr = (Interp *) interp;
+
+    if (iPtr->limit.active != 0) {
+	register int ticker = ++iPtr->limit.granularityTicker;
+
+	if ((iPtr->limit.active & TCL_LIMIT_COMMANDS) &&
+		((iPtr->limit.cmdGranularity == 1) ||
+			(ticker % iPtr->limit.cmdGranularity == 0))) {
+	    return 1;
+	}
+	if ((iPtr->limit.active & TCL_LIMIT_TIME) &&
+		((iPtr->limit.timeGranularity == 1) ||
+			(ticker % iPtr->limit.timeGranularity == 0))) {
+	    return 1;
+	}
+    }
+    return 0;
+}
+
+int
+Tcl_LimitCheck(interp)
+    Tcl_Interp *interp;
+{
+    Interp *iPtr = (Interp *) interp;
+    register int ticker = iPtr->limit.granularityTicker;
+
+    if (Tcl_InterpDeleted(interp)) {
+	return TCL_OK;
+    }
+
+    if ((iPtr->limit.active & TCL_LIMIT_COMMANDS) &&
+	    ((iPtr->limit.cmdGranularity == 1) ||
+		    (ticker % iPtr->limit.cmdGranularity == 0)) &&
+	    (iPtr->limit.cmdCount < iPtr->cmdCount)) {
+	iPtr->limit.exceeded |= TCL_LIMIT_COMMANDS;
+	Tcl_Preserve(interp);
+	RunLimitHandlers(iPtr->limit.cmdHandlers, interp);
+	if (iPtr->limit.cmdCount >= iPtr->cmdCount) {
+	    iPtr->limit.exceeded &= ~TCL_LIMIT_COMMANDS;
+	} else {
+	    Tcl_ResetResult(interp);
+	    Tcl_AppendResult(interp, "command count limit exceeded", NULL);
+	    Tcl_Release(interp);
+	    return TCL_ERROR;
+	}
+    }
+
+    if ((iPtr->limit.active & TCL_LIMIT_TIME) &&
+	    ((iPtr->limit.timeGranularity == 1) ||
+		    (ticker % iPtr->limit.timeGranularity == 0))) {
+	Tcl_Time now;
+
+	Tcl_GetTime(&now);
+	if (iPtr->limit.time.sec < now.sec ||
+		(iPtr->limit.time.sec == now.sec &&
+		iPtr->limit.time.usec < now.usec)) {
+	    iPtr->limit.exceeded |= TCL_LIMIT_TIME;
+	    Tcl_Preserve(interp);
+	    RunLimitHandlers(iPtr->limit.timeHandlers, interp);
+	    if (iPtr->limit.time.sec < now.sec ||
+		    (iPtr->limit.time.sec == now.sec &&
+		    iPtr->limit.time.usec < now.usec)) {
+		iPtr->limit.exceeded &= ~TCL_LIMIT_TIME;
+	    } else {
+		Tcl_ResetResult(interp);
+		Tcl_AppendResult(interp, "time limit exceeded", NULL);
+		Tcl_Release(interp);
+		return TCL_ERROR;
+	    }
+	}
+    }
+
+    return TCL_OK;
+}
+
+static void
+RunLimitHandlers(handlerPtr, interp)
+    LimitHandler *handlerPtr;
+    Tcl_Interp *interp;
+{
+    LimitHandler *nextPtr;
+    for (; handlerPtr!=NULL ; handlerPtr=nextPtr) {
+	if (handlerPtr->flags & (LIMIT_HANDLER_DELETED|LIMIT_HANDLER_ACTIVE)) {
+	    /*
+	     * Reentrant call or something seriously strange in the
+	     * delete code.
+	     */
+	    nextPtr = handlerPtr->nextPtr;
+	    continue;
+	}
+
+	/*
+	 * Set the ACTIVE flag while running the limit handler itself
+	 * so we cannot reentrantly call this handler and know to use
+	 * the alternate method of deletion if necessary.
+	 */
+
+	handlerPtr->flags |= LIMIT_HANDLER_ACTIVE;
+	(handlerPtr->handlerProc)(handlerPtr->clientData, interp);
+	handlerPtr->flags &= ~LIMIT_HANDLER_ACTIVE;
+
+	/*
+	 * Rediscover this value; it might have changed during the
+	 * processing of a limit handler.  We have to record it here
+	 * because we might delete the structure below, and reading a
+	 * value out of a deleted structure is unsafe (even if
+	 * actually legal with some malloc()/free() implementations.)
+	 */
+
+	nextPtr = handlerPtr->nextPtr;
+
+	/*
+	 * If we deleted the current handler while we were executing
+	 * it, we will have spliced it out of the list and set the
+	 * LIMIT_HANDLER_DELETED flag.
+	 */
+	if (handlerPtr->flags & LIMIT_HANDLER_DELETED) {
+	    if (handlerPtr->deleteProc != NULL) {
+		(handlerPtr->deleteProc)(handlerPtr->clientData);
+	    }
+	    ckfree((char *) handlerPtr);
+	}
+    }
+}
+
+void
+Tcl_LimitAddHandler(interp, type, handlerProc, clientData, deleteProc)
+    Tcl_Interp *interp;
+    int type;
+    Tcl_LimitHandlerProc *handlerProc;
+    ClientData clientData;
+    Tcl_LimitHandlerDeleteProc *deleteProc;
+{
+    Interp *iPtr = (Interp *) interp;
+    LimitHandler *handlerPtr;
+
+    if (deleteProc == (Tcl_LimitHandlerDeleteProc *) TCL_DYNAMIC) {
+	deleteProc = (Tcl_LimitHandlerDeleteProc *) Tcl_Alloc;
+    }
+    if (deleteProc == (Tcl_LimitHandlerDeleteProc *) TCL_STATIC) {
+	deleteProc = (Tcl_LimitHandlerDeleteProc *) NULL;
+    }
+
+    switch (type) {
+    case TCL_LIMIT_COMMANDS:
+	handlerPtr = (LimitHandler *) ckalloc(sizeof(LimitHandler));
+
+	handlerPtr->flags = 0;
+	handlerPtr->handlerProc = handlerProc;
+	handlerPtr->clientData = clientData;
+	handlerPtr->deleteProc = deleteProc;
+	handlerPtr->prevPtr = NULL;
+	handlerPtr->nextPtr = iPtr->limit.cmdHandlers;
+	if (handlerPtr->nextPtr != NULL) {
+	    handlerPtr->nextPtr->prevPtr = handlerPtr;
+	}
+	iPtr->limit.cmdHandlers = handlerPtr;
+	return;
+
+    case TCL_LIMIT_TIME:
+	handlerPtr = (LimitHandler *) ckalloc(sizeof(LimitHandler));
+
+	handlerPtr->flags = 0;
+	handlerPtr->handlerProc = handlerProc;
+	handlerPtr->clientData = clientData;
+	handlerPtr->deleteProc = deleteProc;
+	handlerPtr->prevPtr = NULL;
+	handlerPtr->nextPtr = iPtr->limit.timeHandlers;
+	if (handlerPtr->nextPtr != NULL) {
+	    handlerPtr->nextPtr->prevPtr = handlerPtr;
+	}
+	iPtr->limit.timeHandlers = handlerPtr;
+	return;
+    }
+
+    Tcl_Panic("unknown type of resource limit");
+}
+
+void
+Tcl_LimitRemoveHandler(interp, type, handlerProc, clientData)
+    Tcl_Interp *interp;
+    int type;
+    Tcl_LimitHandlerProc *handlerProc;
+    ClientData clientData;
+{
+    Interp *iPtr = (Interp *) interp;
+    LimitHandler *handlerPtr;
+
+    switch (type) {
+    case TCL_LIMIT_COMMANDS:
+	handlerPtr = iPtr->limit.cmdHandlers;
+	break;
+    case TCL_LIMIT_TIME:
+	handlerPtr = iPtr->limit.timeHandlers;
+	break;
+    default:
+	Tcl_Panic("unknown type of resource limit");
+    }
+
+    for (; handlerPtr!=NULL ; handlerPtr=handlerPtr->nextPtr) {
+	if ((handlerPtr->handlerProc != handlerProc) ||
+		(handlerPtr->clientData != clientData)) {
+	    continue;
+	}
+
+	/*
+	 * We've found the handler to delete; mark it as doomed if not
+	 * already so marked (which shouldn't actually happen).
+	 */
+
+	if (handlerPtr->flags & LIMIT_HANDLER_DELETED) {
+	    return;
+	}
+	handlerPtr->flags |= LIMIT_HANDLER_DELETED;
+
+	/*
+	 * Splice the handler out of the doubly-linked list.
+	 */
+
+	if (handlerPtr->prevPtr == NULL) {
+	    switch (type) {
+	    case TCL_LIMIT_COMMANDS:
+		iPtr->limit.cmdHandlers = handlerPtr->nextPtr;
+		break;
+	    case TCL_LIMIT_TIME:
+		iPtr->limit.timeHandlers = handlerPtr->nextPtr;
+		break;
+	    }
+	} else {
+	    handlerPtr->prevPtr->nextPtr = handlerPtr->nextPtr;
+	}
+	if (handlerPtr->nextPtr != NULL) {
+	    handlerPtr->nextPtr->prevPtr = handlerPtr->prevPtr;
+	}
+
+	/*
+	 * If nothing is currently executing the handler, delete its
+	 * client data and the overall handler structure now.
+	 * Otherwise it will all go away when the handler returns.
+	 */
+
+	if (!(handlerPtr->flags & LIMIT_HANDLER_ACTIVE)) {
+	    if (handlerPtr->deleteProc != NULL) {
+		(handlerPtr->deleteProc)(handlerPtr->clientData);
+	    }
+	    ckfree((char *) handlerPtr);
+	}
+	return;
+    }
+}
+
+int
+Tcl_LimitTypeEnabled(interp, type)
+    Tcl_Interp *interp;
+    int type;
+{
+    Interp *iPtr = (Interp *) interp;
+
+    return (iPtr->limit.active & type) != 0;
+}
+
+int
+Tcl_LimitTypeExceeded(interp, type)
+    Tcl_Interp *interp;
+    int type;
+{
+    Interp *iPtr = (Interp *) interp;
+
+    return (iPtr->limit.exceeded & type) != 0;
+}
+
+void
+Tcl_LimitTypeSet(interp, type)
+    Tcl_Interp *interp;
+    int type;
+{
+    Interp *iPtr = (Interp *) interp;
+
+    iPtr->limit.active |= type;
+}
+
+void
+Tcl_LimitTypeReset(interp, type)
+    Tcl_Interp *interp;
+    int type;
+{
+    Interp *iPtr = (Interp *) interp;
+
+    iPtr->limit.active &= ~type;
+}
+
+void
+Tcl_LimitSetCommands(interp, commandLimit)
+    Tcl_Interp *interp;
+    int commandLimit;
+{
+    Interp *iPtr = (Interp *) interp;
+
+    iPtr->limit.cmdCount = commandLimit;
+    iPtr->limit.exceeded &= ~TCL_LIMIT_COMMANDS;
+}
+
+int
+Tcl_LimitGetCommands(interp)
+    Tcl_Interp *interp;
+{
+    Interp *iPtr = (Interp *) interp;
+
+    return iPtr->limit.cmdCount;
+}
+
+void
+Tcl_LimitSetTime(interp, timeLimitPtr)
+    Tcl_Interp *interp;
+    Tcl_Time *timeLimitPtr;
+{
+    Interp *iPtr = (Interp *) interp;
+
+    memcpy(&iPtr->limit.time, timeLimitPtr, sizeof(Tcl_Time));
+    iPtr->limit.exceeded &= ~TCL_LIMIT_COMMANDS;
+}
+
+void
+Tcl_LimitGetTime(interp, timeLimitPtr)
+    Tcl_Interp *interp;
+    Tcl_Time *timeLimitPtr;
+{
+    Interp *iPtr = (Interp *) interp;
+
+    memcpy(timeLimitPtr, &iPtr->limit.time, sizeof(Tcl_Time));
+}
+
+void
+Tcl_LimitSetGranularity(interp, type, granularity)
+    Tcl_Interp *interp;
+    int type;
+    int granularity;
+{
+    Interp *iPtr = (Interp *) interp;
+    if (granularity < 1) {
+	Tcl_Panic("limit granularity must be positive");
+    }
+
+    switch (type) {
+    case TCL_LIMIT_COMMANDS:
+	iPtr->limit.cmdGranularity = granularity;
+	return;
+    case TCL_LIMIT_TIME:
+	iPtr->limit.timeGranularity = granularity;
+	return;
+    }
+    Tcl_Panic("unknown type of resource limit");
+}
+
+int
+Tcl_LimitGetGranularity(interp, type)
+    Tcl_Interp *interp;
+    int type;
+{
+    Interp *iPtr = (Interp *) interp;
+
+    switch (type) {
+    case TCL_LIMIT_COMMANDS:
+	return iPtr->limit.cmdGranularity;
+    case TCL_LIMIT_TIME:
+	return iPtr->limit.timeGranularity;
+    }
+    Tcl_Panic("unknown type of resource limit");
+    return -1; /* NOT REACHED */
+}    
+
+/*
+ * Callback for when a script limit is deleted.
+ */
+static void
+DeleteScriptLimitCallback(clientData)
+    ClientData clientData;
+{
+    struct ScriptLimitCallback *limitCBPtr =
+	    (struct ScriptLimitCallback *) clientData;
+
+    Tcl_DecrRefCount(limitCBPtr->scriptObj);
+    ckfree((char *) limitCBPtr);
+}
+
+/*
+ * Callback for when a script limit is invoked.
+ */
+static void
+CallScriptLimitCallback(clientData, interp)
+    ClientData clientData;
+    Tcl_Interp *interp;		/* Interpreter which failed the limit */
+{
+    struct ScriptLimitCallback *limitCBPtr =
+	    (struct ScriptLimitCallback *) clientData;
+    int code;
+
+    if (Tcl_InterpDeleted(limitCBPtr->interp)) {
+	return;
+    }
+    Tcl_Preserve(limitCBPtr->interp);
+    code = Tcl_EvalObjEx(limitCBPtr->interp, limitCBPtr->scriptObj,
+	    TCL_EVAL_GLOBAL);
+    if (code != TCL_OK && !Tcl_InterpDeleted(limitCBPtr->interp)) {
+	Tcl_BackgroundError(limitCBPtr->interp);
+    }
+    Tcl_Release(limitCBPtr->interp);
+}
+
+/*
+ * Install (or remove, if scriptObj is NULL) a limit callback script
+ * that is called when the target interpreter exceeds the type of
+ * limit specified.
+ */
+static void
+SetLimitCallback(interp, type, targetInterp, scriptObj)
+    Tcl_Interp *interp;
+    int type;
+    Tcl_Interp *targetInterp;
+    Tcl_Obj *scriptObj;
+{
+    struct ScriptLimitCallback *limitCBPtr;
+    Tcl_HashEntry *hashPtr;
+    int isNew;
+    struct ScriptLimitCallbackKey key;
+    Interp *iPtr = (Interp *) interp;
+
+    if (interp == targetInterp) {
+	Tcl_Panic("installing limit callback to the limited interpreter");
+    }
+
+    key.interp = targetInterp;
+    key.type = type;
+
+    if (scriptObj == NULL) {
+	hashPtr = Tcl_FindHashEntry(&iPtr->limit.callbacks, (char *) &key);
+	if (hashPtr != NULL) {
+	    Tcl_LimitRemoveHandler(targetInterp, type, CallScriptLimitCallback,
+		    Tcl_GetHashValue(hashPtr));
+	    Tcl_DeleteHashEntry(hashPtr);
+	}
+	return;
+    }
+
+    limitCBPtr = (struct ScriptLimitCallback *)
+	    ckalloc(sizeof(struct ScriptLimitCallback));
+    limitCBPtr->interp = interp;
+    limitCBPtr->scriptObj = scriptObj;
+    limitCBPtr->type = type;
+    Tcl_IncrRefCount(scriptObj);
+
+    hashPtr = Tcl_CreateHashEntry(&iPtr->limit.callbacks, (char *) &key,
+	    &isNew);
+    if (!isNew) {
+	Tcl_LimitRemoveHandler(targetInterp, type, CallScriptLimitCallback,
+		Tcl_GetHashValue(hashPtr));
+    }
+    Tcl_LimitAddHandler(targetInterp, type, CallScriptLimitCallback,
+	    (ClientData) limitCBPtr, DeleteScriptLimitCallback);
+    Tcl_SetHashValue(hashPtr, (ClientData) limitCBPtr);
+}
+
+/*
+ * Remove all limit callback scripts that make callbacks into the
+ * given interpreter.
+ */
+
+void
+TclDecommissionLimitCallbacks(interp)
+    Tcl_Interp *interp;
+{
+    Interp *iPtr = (Interp *) interp;
+    Tcl_HashEntry *hashPtr;
+    Tcl_HashSearch search;
+    struct ScriptLimitCallbackKey *keyPtr;
+
+    hashPtr = Tcl_FirstHashEntry(&iPtr->limit.callbacks, &search);
+    while (hashPtr != NULL) {
+	keyPtr = (struct ScriptLimitCallbackKey *)
+		Tcl_GetHashKey(&iPtr->limit.callbacks, hashPtr);
+	Tcl_LimitRemoveHandler(keyPtr->interp, keyPtr->type,
+		CallScriptLimitCallback, Tcl_GetHashValue(hashPtr));
+	hashPtr = Tcl_NextHashEntry(&search);
+    }
+    Tcl_DeleteHashTable(&iPtr->limit.callbacks);
+}
+
+void
+TclInitLimitSupport(interp)
+    Tcl_Interp *interp;
+{
+    Interp *iPtr = (Interp *) interp;
+
+    iPtr->limit.active = 0;
+    iPtr->limit.granularityTicker = 0;
+    iPtr->limit.exceeded = 0;
+    iPtr->limit.cmdCount = 0;
+    iPtr->limit.cmdHandlers = NULL;
+    iPtr->limit.cmdGranularity = 1;
+    memset(&iPtr->limit.time, 0, sizeof(Tcl_Time));
+    iPtr->limit.timeHandlers = NULL;
+    iPtr->limit.timeGranularity = 10;
+    Tcl_InitHashTable(&iPtr->limit.callbacks,
+	    sizeof(struct ScriptLimitCallbackKey)/sizeof(ClientData));
+}
+
+static void
+InheritLimits(slaveInterp, masterInterp)
+    Tcl_Interp *slaveInterp, *masterInterp;
+{
+    Interp *slavePtr = (Interp *) slaveInterp;
+    Interp *masterPtr = (Interp *) masterInterp;
+
+    if (masterPtr->limit.active & TCL_LIMIT_COMMANDS) {
+	slavePtr->limit.active |= TCL_LIMIT_COMMANDS;
+	slavePtr->limit.cmdCount = 0;
+	slavePtr->limit.cmdGranularity = masterPtr->limit.cmdGranularity;
+    }
+    if (masterPtr->limit.active & TCL_LIMIT_TIME) {
+	slavePtr->limit.active |= TCL_LIMIT_TIME;
+	memcpy(&slavePtr->limit.time, &masterPtr->limit.time,
+		sizeof(Tcl_Time));
+	slavePtr->limit.timeGranularity = masterPtr->limit.timeGranularity;
+    }
+}
+
+static int
+SlaveCommandLimit(interp, slaveInterp, consumedObjc, objc, objv)
+    Tcl_Interp *interp;			/* Current interpreter. */
+    Tcl_Interp *slaveInterp;		/* Interpreter being adjusted. */
+    int consumedObjc;			/* Number of args already parsed. */
+    int objc;				/* Total number of arguments. */
+    Tcl_Obj *CONST objv[];		/* Argument objects. */
+{
+    static CONST char *options[] = {
+	"-command", "-granularity", "-value", NULL
+    };
+    enum Options {
+	OPT_CMD, OPT_GRAN, OPT_VAL
+    };
+    Interp *iPtr = (Interp *) interp;
+    int index;
+    struct ScriptLimitCallbackKey key;
+    struct ScriptLimitCallback *limitCBPtr;
+    Tcl_HashEntry *hPtr;
+
+    if (objc == consumedObjc) {
+	Tcl_Obj *dictPtr;
+
+	TclNewObj(dictPtr);
+	key.interp = slaveInterp;
+	key.type = TCL_LIMIT_COMMANDS;
+	hPtr = Tcl_FindHashEntry(&iPtr->limit.callbacks, (char *) &key);
+	if (hPtr != NULL) {
+	    limitCBPtr = (struct ScriptLimitCallback *)
+		    Tcl_GetHashValue(hPtr);
+	    if (limitCBPtr != NULL && limitCBPtr->scriptObj != NULL) {
+		Tcl_DictObjPut(NULL, dictPtr, Tcl_NewStringObj(options[0], -1),
+			limitCBPtr->scriptObj);
+	    } else {
+		goto putEmptyCommandInDict;
+	    }
+	} else {
+	    Tcl_Obj *empty;
+	putEmptyCommandInDict:
+	    TclNewObj(empty);
+	    Tcl_DictObjPut(NULL, dictPtr,
+		    Tcl_NewStringObj(options[0], -1), empty);
+	}
+	Tcl_DictObjPut(NULL, dictPtr, Tcl_NewStringObj(options[1], -1),
+		Tcl_NewIntObj(Tcl_LimitGetGranularity(slaveInterp,
+		TCL_LIMIT_COMMANDS)));
+
+	if (Tcl_LimitTypeEnabled(slaveInterp, TCL_LIMIT_COMMANDS)) {
+	    Tcl_DictObjPut(NULL, dictPtr, Tcl_NewStringObj(options[2], -1),
+		    Tcl_NewIntObj(Tcl_LimitGetCommands(slaveInterp)));
+	} else {
+	    Tcl_Obj *empty;
+
+	    TclNewObj(empty);
+	    Tcl_DictObjPut(NULL, dictPtr,
+		    Tcl_NewStringObj(options[2], -1), empty);
+	}
+	Tcl_SetObjResult(interp, dictPtr);
+	return TCL_OK;
+    } else if (objc == consumedObjc+1) {
+	if (Tcl_GetIndexFromObj(interp, objv[consumedObjc], options, "option",
+		0, &index) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	switch ((enum Options) index) {
+	case OPT_CMD:
+	    key.interp = slaveInterp;
+	    key.type = TCL_LIMIT_COMMANDS;
+	    hPtr = Tcl_FindHashEntry(&iPtr->limit.callbacks, (char *) &key);
+	    if (hPtr != NULL) {
+		limitCBPtr = (struct ScriptLimitCallback *)
+			Tcl_GetHashValue(hPtr);
+		if (limitCBPtr != NULL && limitCBPtr->scriptObj != NULL) {
+		    Tcl_SetObjResult(interp, limitCBPtr->scriptObj);
+		}
+	    }
+	    break;
+	case OPT_GRAN:
+	    Tcl_SetObjResult(interp, Tcl_NewIntObj(
+		    Tcl_LimitGetGranularity(slaveInterp, TCL_LIMIT_COMMANDS)));
+	    break;
+	case OPT_VAL:
+	    if (Tcl_LimitTypeEnabled(slaveInterp, TCL_LIMIT_COMMANDS)) {
+		Tcl_SetObjResult(interp,
+			Tcl_NewIntObj(Tcl_LimitGetCommands(slaveInterp)));
+	    }
+	    break;
+	}
+	return TCL_OK;
+    } else if ((objc-consumedObjc) & 1 /* isOdd(objc-consumedObjc) */) {
+	Tcl_WrongNumArgs(interp, consumedObjc, objv,
+		"?-option? ?value? ?-option value ...?");
+	return TCL_ERROR;
+    } else {
+	int i, scriptLen = 0, limitLen = 0;
+	Tcl_Obj *scriptObj = NULL, *granObj = NULL, *limitObj = NULL;
+	int gran = 0, limit = 0;
+
+	for (i=consumedObjc ; i<objc ; i+=2) {
+	    if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", 0,
+		    &index) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    switch ((enum Options) index) {
+	    case OPT_CMD:
+		scriptObj = objv[i+1];
+		(void) Tcl_GetStringFromObj(objv[i+1], &scriptLen);
+		break;
+	    case OPT_GRAN:
+		granObj = objv[i+1];
+		if (Tcl_GetIntFromObj(interp, objv[i+1], &gran) != TCL_OK) {
+		    return TCL_ERROR;
+		}
+		if (gran < 1) {
+		    Tcl_AppendResult(interp, "granularity must be at ",
+			    "least 1", NULL);
+		    return TCL_ERROR;
+		}
+		break;
+	    case OPT_VAL:
+		limitObj = objv[i+1];
+		(void) Tcl_GetStringFromObj(objv[i+1], &limitLen);
+		if (limitLen == 0) {
+		    break;
+		}
+		if (Tcl_GetIntFromObj(interp, objv[i+1], &limit) != TCL_OK) {
+		    return TCL_ERROR;
+		}
+		if (limit < 0) {
+		    Tcl_AppendResult(interp, "command limit value must be at ",
+			    "least 0", NULL);
+		    return TCL_ERROR;
+		}
+		break;
+	    }
+	}
+	if (scriptObj != NULL) {
+	    SetLimitCallback(interp, TCL_LIMIT_COMMANDS, slaveInterp,
+		    (scriptLen > 0 ? scriptObj : NULL));
+	}
+	if (granObj != NULL) {
+	    Tcl_LimitSetGranularity(slaveInterp, TCL_LIMIT_COMMANDS, gran);
+	}
+	if (limitObj != NULL) {
+	    if (limitLen > 0) {
+		Tcl_LimitSetCommands(slaveInterp, limit);
+		Tcl_LimitTypeSet(slaveInterp, TCL_LIMIT_COMMANDS);
+	    } else {
+		Tcl_LimitTypeReset(slaveInterp, TCL_LIMIT_COMMANDS);
+	    }
+	}
+	return TCL_OK;
+    }
+}
+
+static int
+SlaveTimeLimit(interp, slaveInterp, consumedObjc, objc, objv)
+    Tcl_Interp *interp;			/* Current interpreter. */
+    Tcl_Interp *slaveInterp;		/* Interpreter being adjusted. */
+    int consumedObjc;			/* Number of args already parsed. */
+    int objc;				/* Total number of arguments. */
+    Tcl_Obj *CONST objv[];		/* Argument objects. */
+{
+    static CONST char *options[] = {
+	"-command", "-granularity", "-milliseconds", "-seconds", NULL
+    };
+    enum Options {
+	OPT_CMD, OPT_GRAN, OPT_MILLI, OPT_SEC
+    };
+    Interp *iPtr = (Interp *) interp;
+    int index;
+    struct ScriptLimitCallbackKey key;
+    struct ScriptLimitCallback *limitCBPtr;
+    Tcl_HashEntry *hPtr;
+
+    if (objc == consumedObjc) {
+	Tcl_Obj *dictPtr;
+
+	TclNewObj(dictPtr);
+	key.interp = slaveInterp;
+	key.type = TCL_LIMIT_TIME;
+	hPtr = Tcl_FindHashEntry(&iPtr->limit.callbacks, (char *) &key);
+	if (hPtr != NULL) {
+	    limitCBPtr = (struct ScriptLimitCallback *)
+		    Tcl_GetHashValue(hPtr);
+	    if (limitCBPtr != NULL && limitCBPtr->scriptObj != NULL) {
+		Tcl_DictObjPut(NULL, dictPtr, Tcl_NewStringObj(options[0], -1),
+			limitCBPtr->scriptObj);
+	    } else {
+		goto putEmptyCommandInDict;
+	    }
+	} else {
+	    Tcl_Obj *empty;
+	putEmptyCommandInDict:
+	    TclNewObj(empty);
+	    Tcl_DictObjPut(NULL, dictPtr,
+		    Tcl_NewStringObj(options[0], -1), empty);
+	}
+	Tcl_DictObjPut(NULL, dictPtr, Tcl_NewStringObj(options[1], -1),
+		Tcl_NewIntObj(Tcl_LimitGetGranularity(slaveInterp,
+		TCL_LIMIT_TIME)));
+
+	if (Tcl_LimitTypeEnabled(slaveInterp, TCL_LIMIT_TIME)) {
+	    Tcl_Time limitMoment;
+
+	    Tcl_LimitGetTime(slaveInterp, &limitMoment);
+	    Tcl_DictObjPut(NULL, dictPtr, Tcl_NewStringObj(options[2], -1),
+		    Tcl_NewLongObj(limitMoment.usec/1000));
+	    Tcl_DictObjPut(NULL, dictPtr, Tcl_NewStringObj(options[3], -1),
+		    Tcl_NewLongObj(limitMoment.sec));
+	} else {
+	    Tcl_Obj *empty;
+
+	    TclNewObj(empty);
+	    Tcl_DictObjPut(NULL, dictPtr,
+		    Tcl_NewStringObj(options[2], -1), empty);
+	    Tcl_DictObjPut(NULL, dictPtr,
+		    Tcl_NewStringObj(options[3], -1), empty);
+	}
+	Tcl_SetObjResult(interp, dictPtr);
+	return TCL_OK;
+    } else if (objc == consumedObjc+1) {
+	if (Tcl_GetIndexFromObj(interp, objv[consumedObjc], options, "option",
+		0, &index) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	switch ((enum Options) index) {
+	case OPT_CMD:
+	    key.interp = slaveInterp;
+	    key.type = TCL_LIMIT_TIME;
+	    hPtr = Tcl_FindHashEntry(&iPtr->limit.callbacks, (char *) &key);
+	    if (hPtr != NULL) {
+		limitCBPtr = (struct ScriptLimitCallback *)
+			Tcl_GetHashValue(hPtr);
+		if (limitCBPtr != NULL && limitCBPtr->scriptObj != NULL) {
+		    Tcl_SetObjResult(interp, limitCBPtr->scriptObj);
+		}
+	    }
+	    break;
+	case OPT_GRAN:
+	    Tcl_SetObjResult(interp, Tcl_NewIntObj(
+		    Tcl_LimitGetGranularity(slaveInterp, TCL_LIMIT_TIME)));
+	    break;
+	case OPT_MILLI:
+	    if (Tcl_LimitTypeEnabled(slaveInterp, TCL_LIMIT_TIME)) {
+		Tcl_Time limitMoment;
+
+		Tcl_LimitGetTime(slaveInterp, &limitMoment);
+		Tcl_SetObjResult(interp,
+			Tcl_NewLongObj(limitMoment.usec/1000));
+	    }
+	    break;
+	case OPT_SEC:
+	    if (Tcl_LimitTypeEnabled(slaveInterp, TCL_LIMIT_TIME)) {
+		Tcl_Time limitMoment;
+
+		Tcl_LimitGetTime(slaveInterp, &limitMoment);
+		Tcl_SetObjResult(interp, Tcl_NewLongObj(limitMoment.sec));
+	    }
+	    break;
+	}
+	return TCL_OK;
+    } else if ((objc-consumedObjc) & 1 /* isOdd(objc-consumedObjc) */) {
+	Tcl_WrongNumArgs(interp, consumedObjc, objv,
+		"?-option? ?value? ?-option value ...?");
+	return TCL_ERROR;
+    } else {
+	int i, scriptLen = 0, milliLen = 0, secLen = 0;
+	Tcl_Obj *scriptObj = NULL, *granObj = NULL;
+	Tcl_Obj *milliObj = NULL, *secObj = NULL;
+	int gran = 0;
+	Tcl_Time limitMoment;
+	int tmp;
+
+	Tcl_LimitGetTime(slaveInterp, &limitMoment);
+	for (i=consumedObjc ; i<objc ; i+=2) {
+	    if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", 0,
+		    &index) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    switch ((enum Options) index) {
+	    case OPT_CMD:
+		scriptObj = objv[i+1];
+		(void) Tcl_GetStringFromObj(objv[i+1], &scriptLen);
+		break;
+	    case OPT_GRAN:
+		granObj = objv[i+1];
+		if (Tcl_GetIntFromObj(interp, objv[i+1], &gran) != TCL_OK) {
+		    return TCL_ERROR;
+		}
+		if (gran < 1) {
+		    Tcl_AppendResult(interp, "granularity must be at ",
+			    "least 1", NULL);
+		    return TCL_ERROR;
+		}
+		break;
+	    case OPT_MILLI:
+		milliObj = objv[i+1];
+		(void) Tcl_GetStringFromObj(objv[i+1], &milliLen);
+		if (milliLen == 0) {
+		    break;
+		}
+		if (Tcl_GetIntFromObj(interp, objv[i+1], &tmp) != TCL_OK) {
+		    return TCL_ERROR;
+		}
+		if (tmp < 0) {
+		    Tcl_AppendResult(interp, "milliseconds must be at least 0",
+			    NULL);
+		    return TCL_ERROR;
+		}
+		limitMoment.usec = ((long)tmp)*1000;
+		break;
+	    case OPT_SEC:
+		secObj = objv[i+1];
+		(void) Tcl_GetStringFromObj(objv[i+1], &secLen);
+		if (secLen == 0) {
+		    break;
+		}
+		if (Tcl_GetIntFromObj(interp, objv[i+1], &tmp) != TCL_OK) {
+		    return TCL_ERROR;
+		}
+		if (tmp < 0) {
+		    Tcl_AppendResult(interp, "seconds must be at least 0",
+			    NULL);
+		    return TCL_ERROR;
+		}
+		limitMoment.sec = tmp;
+		break;
+	    }
+	}
+	if (milliObj != NULL || secObj != NULL) {
+	    if (milliObj != NULL) {
+		/*
+		 * Setting -milliseconds but clearing -seconds, or
+		 * resetting -milliseconds but not resetting -seconds?
+		 * Bad voodoo!
+		 */
+		if (secObj != NULL && secLen == 0 && milliLen > 0) {
+		    Tcl_AppendResult(interp, "may only set -milliseconds ",
+			    "if -seconds is not also being reset", NULL);
+		    return TCL_ERROR;
+		}
+		if (milliLen == 0 && (secObj == NULL || secLen > 0)) {
+		    Tcl_AppendResult(interp, "may only reset -milliseconds ",
+			    "if -seconds is also being reset", NULL);
+		    return TCL_ERROR;
+		}
+	    }
+
+	    if (milliLen > 0 || secLen > 0) {
+		/*
+		 * Force usec to be in range [0..1000000), possibly
+		 * incrementing sec in the process.  This makes it
+		 * much easier for people to write scripts that do
+		 * small time increments.
+		 */
+		limitMoment.sec += limitMoment.usec / 1000000;
+		limitMoment.usec %= 1000000;
+
+		Tcl_LimitSetTime(slaveInterp, &limitMoment);
+		Tcl_LimitTypeSet(slaveInterp, TCL_LIMIT_TIME);
+	    } else {
+		Tcl_LimitTypeReset(slaveInterp, TCL_LIMIT_TIME);
+	    }
+	}
+	if (scriptObj != NULL) {
+	    SetLimitCallback(interp, TCL_LIMIT_TIME, slaveInterp,
+		    (scriptLen > 0 ? scriptObj : NULL));
+	}
+	if (granObj != NULL) {
+	    Tcl_LimitSetGranularity(slaveInterp, TCL_LIMIT_TIME, gran);
+	}
+	return TCL_OK;
+    }
 }
