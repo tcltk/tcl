@@ -1,3 +1,8 @@
+2004-07-07  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic.tclCmdMZ.c (TclMergeReturnOptions):  Simplified logic and
+	removed potential memory leak.  [Bug 986257].
+
 2004-07-07  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* tools/man2help2.tcl (setTabs, IPmacro): Added support for the
