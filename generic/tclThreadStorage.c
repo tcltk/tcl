@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThreadStorage.c,v 1.2 2004/06/24 04:13:30 dgp Exp $
+ * RCS: @(#) $Id: tclThreadStorage.c,v 1.3 2004/06/24 08:58:40 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -23,21 +23,24 @@
  * the number of hash table lookups in the master thread storage hash
  * table.
  */
+
 static Tcl_Mutex threadStorageLock;
 
 /*
  * This is the struct used for a thread storage cache slot. It contains
  * the owning thread Id and the associated hash table pointer.
  */
+
 typedef struct ThreadStorage {
-  Tcl_ThreadId id;             /* the owning thread id */
-  Tcl_HashTable *hashTablePtr; /* the hash table for the thread */
+    Tcl_ThreadId id;			/* the owning thread id */
+    Tcl_HashTable *hashTablePtr;	/* the hash table for the thread */
 } ThreadStorage;
 
 /*
  * These are the prototypes for the custom hash table allocation
  * functions used by the thread storage subsystem.
  */
+
 static Tcl_HashEntry *	AllocThreadStorageEntry _ANSI_ARGS_((
 			    Tcl_HashTable *tablePtr, void *keyPtr));
 static void		FreeThreadStorageEntry _ANSI_ARGS_((
@@ -49,41 +52,46 @@ static void		FreeThreadStorageEntry _ANSI_ARGS_((
  * because these hash tables MAY be used by the threaded memory allocator.
  */
 Tcl_HashKeyType tclThreadStorageHashKeyType = {
-    TCL_HASH_KEY_TYPE_VERSION,          /* version */
-    TCL_HASH_KEY_SYSTEM_HASH,           /* flags */
-    NULL,                               /* hashKeyProc */
-    NULL,                               /* compareKeysProc */
-    AllocThreadStorageEntry,            /* allocEntryProc */
-    FreeThreadStorageEntry              /* freeEntryProc */
+    TCL_HASH_KEY_TYPE_VERSION,		/* version */
+    TCL_HASH_KEY_SYSTEM_HASH,		/* flags */
+    NULL,				/* hashKeyProc */
+    NULL,				/* compareKeysProc */
+    AllocThreadStorageEntry,		/* allocEntryProc */
+    FreeThreadStorageEntry		/* freeEntryProc */
 };
 
 /*
  * This is an invalid thread value.
  */
+
 #define STORAGE_INVALID_THREAD  (Tcl_ThreadId)0
 
 /*
  * This is the value for an invalid thread storage key.
  */
-#define STORAGE_INVALID_KEY     0
+
+#define STORAGE_INVALID_KEY	0
 
 /*
  * This is the first valid key for use by external callers.
  * All the values below this are RESERVED for future use.
  */
-#define STORAGE_FIRST_KEY       101
+
+#define STORAGE_FIRST_KEY	101
 
 /*
  * This is the default number of thread storage cache slots.
  * This define may need to be fine tuned for maximum performance.
  */
-#define STORAGE_CACHE_SLOTS     97
+
+#define STORAGE_CACHE_SLOTS	97
 
 /*
  * This is the master thread storage hash table. It is keyed on
  * thread Id and contains values that are hash tables for each thread.
  * The thread specific hash tables contain the actual thread storage.
  */
+
 static Tcl_HashTable *threadStorageHashTablePtr = NULL;
 
 /*
@@ -91,11 +99,13 @@ static Tcl_HashTable *threadStorageHashTablePtr = NULL;
  * everytime we "allocate" one. It is initially set to 1 in
  * TclThreadStorageInit.
  */
+
 static int nextThreadStorageKey = STORAGE_INVALID_KEY;
 
 /*
  * Have we initialized the thread storage mutex yet?
  */
+
 static int initThreadStorage = 0;
 
 /*
@@ -103,23 +113,23 @@ static int initThreadStorage = 0;
  * prevents unnecessary lookups for threads that use a lot of thread
  * storage.
  */
-static volatile ThreadStorage threadStorageCache[STORAGE_CACHE_SLOTS];
 
+static volatile ThreadStorage threadStorageCache[STORAGE_CACHE_SLOTS];
 
 /*
  *----------------------------------------------------------------------
  *
  * TclThreadStorageLockInit
  *
- *      This procedure is used to initialize the lock that serializes
- *      creation of thread storage.
+ *	This procedure is used to initialize the lock that serializes
+ *	creation of thread storage.
  *
  * Results:
- *      None.
+ *	None.
  *
  * Side effects:
- *      The master lock is acquired and possibly initialized for the
- *      first time.
+ *	The master lock is acquired and possibly initialized for the
+ *	first time.
  *
  *----------------------------------------------------------------------
  */
@@ -128,12 +138,12 @@ void
 TclThreadStorageLockInit()
 {
     if (!initThreadStorage) {
-        /*
-         * Mutexes in Tcl are self initializing, and we are taking
-         * advantage of that fact since this file cannot contain
-         * platform specific calls.
-         */
-        initThreadStorage = 1;
+	/*
+	 * Mutexes in Tcl are self initializing, and we are taking
+	 * advantage of that fact since this file cannot contain
+	 * platform specific calls.
+	 */
+	initThreadStorage = 1;
     }
 }
 
@@ -142,17 +152,17 @@ TclThreadStorageLockInit()
  *
  * TclThreadStorageLock
  *
- *      This procedure is used to grab a lock that serializes creation
- *      of thread storage.
+ *	This procedure is used to grab a lock that serializes creation
+ *	of thread storage.
  *
- *      This lock must be different than the initLock because the
- *      initLock is held during creation of syncronization objects.
+ *	This lock must be different than the initLock because the
+ *	initLock is held during creation of syncronization objects.
  *
  * Results:
- *      None.
+ *	None.
  *
  * Side effects:
- *      Acquire the thread storage mutex.
+ *	Acquire the thread storage mutex.
  *
  *----------------------------------------------------------------------
  */
@@ -169,14 +179,14 @@ TclThreadStorageLock()
  *
  * TclThreadStorageUnlock
  *
- *      This procedure is used to release a lock that serializes creation
- *      of thread storage.
+ *	This procedure is used to release a lock that serializes creation
+ *	of thread storage.
  *
  * Results:
- *      None.
+ *	None.
  *
  * Side effects:
- *      Release the thread storage mutex.
+ *	Release the thread storage mutex.
  *
  *----------------------------------------------------------------------
  */
@@ -192,15 +202,15 @@ TclThreadStorageUnlock()
  *
  * AllocThreadStorageEntry --
  *
- *	    Allocate space for a Tcl_HashEntry using TclpSysAlloc (not 
- *      ckalloc). We do this because the threaded memory allocator MAY 
- *      use the thread storage hash tables.
+ *	Allocate space for a Tcl_HashEntry using TclpSysAlloc (not
+ *	ckalloc). We do this because the threaded memory allocator MAY
+ *	use the thread storage hash tables.
  *
  * Results:
- *	    The return value is a pointer to the created entry.
+ *	The return value is a pointer to the created entry.
  *
  * Side effects:
- *	    None.
+ *	None.
  *
  *----------------------------------------------------------------------
  */
@@ -223,15 +233,15 @@ AllocThreadStorageEntry(tablePtr, keyPtr)
  *
  * FreeThreadStorageEntry --
  *
- *	    Frees space for a Tcl_HashEntry using TclpSysFree (not ckfree). 
- *      We do this because the threaded memory allocator MAY use the 
- *      thread storage hash tables.
+ *	Frees space for a Tcl_HashEntry using TclpSysFree (not ckfree).
+ *	We do this because the threaded memory allocator MAY use the
+ *	thread storage hash tables.
  *
  * Results:
- *	    None.
+ *	None.
  *
  * Side effects:
- *	    None.
+ *	None.
  *
  *----------------------------------------------------------------------
  */
@@ -248,88 +258,96 @@ FreeThreadStorageEntry(hPtr)
  *
  *  TclThreadStoragePrint --
  *
- *      This procedure prints out the contents of the master thread
- *      storage hash table, the thread storage cache, and the next key
- *      value to the specified file.
+ *	This procedure prints out the contents of the master thread
+ *	storage hash table, the thread storage cache, and the next key
+ *	value to the specified file.
  *
- *      This assumes that thread storage lock is held.
+ *	This assumes that thread storage lock is held.
  *
  * Results:
- *      None.
+ *	None.
  *
  * Side effects:
- *      The thread storage lock is acquired and released.
+ *	The thread storage lock is acquired and released.
  *
  *----------------------------------------------------------------------
  */
 
 void
 TclThreadStoragePrint(outFile, flags)
-    FILE *outFile;              /* The file to print the information to. */
-    int flags;                  /* Reserved for future use. */
+    FILE *outFile;		/* The file to print the information to. */
+    int flags;			/* Reserved for future use. */
 {
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
-#if 0
-    /* Please see comment regarding Tcl_HashStats below. */
-    CONST char *stats;
-#endif
-    int header;
-    int index;
+    int header, index;
 
     if (threadStorageHashTablePtr != NULL) {
-        hPtr = Tcl_FirstHashEntry(threadStorageHashTablePtr, &search);
+	hPtr = Tcl_FirstHashEntry(threadStorageHashTablePtr, &search);
 
-        if (hPtr != NULL) {
-            fprintf(outFile, "master thread storage hash table:\n");
-            for (; hPtr != NULL; hPtr = Tcl_NextHashEntry(&search)) {
-                fprintf(outFile, "master entry ptr %p, thread %p, thread table ptr %p\n",
-                    hPtr, Tcl_GetHashKey(threadStorageHashTablePtr, hPtr), Tcl_GetHashValue(hPtr));
-            }
-        } else {
-            fprintf(outFile, "master thread storage hash table has no entries\n");
-        }
+	if (hPtr != NULL) {
+	    fprintf(outFile, "master thread storage hash table:\n");
+	    for (; hPtr != NULL; hPtr = Tcl_NextHashEntry(&search)) {
+		fprintf(outFile,
+			"master entry ptr %p, thread %p, thread table ptr %p\n",
+			hPtr, Tcl_GetHashKey(threadStorageHashTablePtr, hPtr),
+			Tcl_GetHashValue(hPtr));
+	    }
+	} else {
+	    fprintf(outFile,
+		    "master thread storage hash table has no entries\n");
+	}
     } else {
-        fprintf(outFile, "master thread storage hash table not initialized\n");
+	fprintf(outFile,
+		"master thread storage hash table not initialized\n");
     }
 
     header = 0; /* we have not output the header yet. */
     for (index = 0; index < STORAGE_CACHE_SLOTS; index++) {
-        if (threadStorageCache[index].id != STORAGE_INVALID_THREAD) {
-            if (!header) {
-                fprintf(outFile, "thread storage cache (%d total slots):\n", STORAGE_CACHE_SLOTS);
-                header = 1;
-            }
+	if (threadStorageCache[index].id != STORAGE_INVALID_THREAD) {
+	    if (!header) {
+		fprintf(outFile, "thread storage cache (%d total slots):\n",
+			STORAGE_CACHE_SLOTS);
+		header = 1;
+	    }
 
-            fprintf(outFile, "slot %d, thread %p, thread table ptr %p\n",
-                index, threadStorageCache[index].id,
-                threadStorageCache[index].hashTablePtr);
-#if 0
-            /*
-             * Currently disabled due to Tcl_HashStats use of ckalloc and ckfree.
-             * Please note that this can produce a LOT of output.
-             */
-            if (threadStorageCache[index].hashTablePtr != NULL) {
-                stats = Tcl_HashStats(threadStorageCache[index].hashTablePtr);
-                if (stats != NULL) {
-                    fprintf(outFile, "%s\n", stats);
-                    ckfree((void *)stats);
-                } else {
-                    fprintf(outFile, "could not get table statistics for slot %d\n", index);
-                }
-            }
+	    fprintf(outFile, "slot %d, thread %p, thread table ptr %p\n",
+		    index, threadStorageCache[index].id,
+		    threadStorageCache[index].hashTablePtr);
+#ifdef VERBOSE_THREAD_STORAGE_DEBUGGING
+	    /*
+	     * Currently not enabled by default due to Tcl_HashStats
+	     * use of ckalloc and ckfree.  Please note that this can
+	     * produce a LOT of output.
+	     */
+	    if (threadStorageCache[index].hashTablePtr != NULL) {
+		CONST char *stats =
+			Tcl_HashStats(threadStorageCache[index].hashTablePtr);
+		if (stats != NULL) {
+		    fprintf(outFile, "%s\n", stats);
+		    ckfree((void *)stats);
+		} else {
+		    fprintf(outFile,
+			    "could not get table statistics for slot %d\n",
+			    index);
+		}
+	    }
 #endif
-        } else {
-            /* fprintf(outFile, "cache slot %d not used\n", index); */
-        }
+	} else {
+	    /* fprintf(outFile, "cache slot %d not used\n", index); */
+	}
     }
 
     if (!header) {
-        fprintf(outFile, "thread storage cache is empty (%d total slots)\n", STORAGE_CACHE_SLOTS);
-        header = 1;
+	fprintf(outFile, "thread storage cache is empty (%d total slots)\n",
+		STORAGE_CACHE_SLOTS);
+	header = 1;
     }
 
-    /* Show the next data key value. */
+    /*
+     * Show the next data key value.
+     */
+
     fprintf(outFile, "next data key value is: %d\n", nextThreadStorageKey);
 }
 
@@ -338,25 +356,25 @@ TclThreadStoragePrint(outFile, flags)
  *
  * TclThreadStorageGetHashTable --
  *
- *      This procedure returns a hash table pointer to be used for thread
- *      storage for the specified thread.
+ *	This procedure returns a hash table pointer to be used for thread
+ *	storage for the specified thread.
+ *
+ *	This assumes that thread storage lock is held.
  *
  * Results:
- *      A hash table pointer for the specified thread, or NULL
- *      if the hash table has not been created yet.
- *
- *      This assumes that thread storage lock is held.
+ *	A hash table pointer for the specified thread, or NULL
+ *	if the hash table has not been created yet.
  *
  * Side effects:
- *      May change an entry in the master thread storage cache to point
- *      to the specified thread and it's associated hash table.
+ *	May change an entry in the master thread storage cache to point
+ *	to the specified thread and it's associated hash table.
  *
  *----------------------------------------------------------------------
  */
 
 Tcl_HashTable *
 TclThreadStorageGetHashTable(id)
-    Tcl_ThreadId id;    /* Id of the thread to get the hash table for */
+    Tcl_ThreadId id;		/* Id of thread to get hash table for */
 {
     int index = (unsigned int)id % STORAGE_CACHE_SLOTS;
     Tcl_HashEntry *hPtr;
@@ -367,54 +385,79 @@ TclThreadStorageGetHashTable(id)
      * comparing thread Id in case another thread is in the critical
      * region changing things out from under you.
      */
+
     Tcl_HashTable *hashTablePtr = threadStorageCache[index].hashTablePtr;
 
     if (threadStorageCache[index].id != id) {
-        TclThreadStorageLock();
+	TclThreadStorageLock();
 
-        /* make sure the master hash table is initialized. */
-        TclThreadStorageInit(STORAGE_INVALID_THREAD, NULL);
+	/*
+	 * Make sure the master hash table is initialized.
+	 */
 
-        if (threadStorageHashTablePtr != NULL) {
-            /* it's not in the cache, so we look it up... */
-            hPtr = Tcl_FindHashEntry(threadStorageHashTablePtr, (char *)id);
+	TclThreadStorageInit(STORAGE_INVALID_THREAD, NULL);
 
-            if (hPtr != NULL) {
-                /* we found it, extract the hash table pointer. */
-                hashTablePtr = Tcl_GetHashValue(hPtr);
-            } else {
-                /* the thread specific hash table is not found. */
-                hashTablePtr = NULL;
-            }
+	if (threadStorageHashTablePtr != NULL) {
+	    /*
+	     * It's not in the cache, so we look it up...
+	     */
 
-            if (hashTablePtr == NULL) {          
-                hashTablePtr = (Tcl_HashTable *)TclpSysAlloc(sizeof(Tcl_HashTable), 0);
-          
-                if (hashTablePtr != NULL) {
-                    Tcl_InitCustomHashTable(hashTablePtr, TCL_CUSTOM_TYPE_KEYS, &tclThreadStorageHashKeyType);
-          
-                    /* add new thread storage hash table to the master hash table */
-                    hPtr = Tcl_CreateHashEntry(threadStorageHashTablePtr, (char *)id, &new);
-          
-                    if (hPtr != NULL) {
-                        Tcl_SetHashValue(hPtr, hashTablePtr);
-                    } else {
-                        Tcl_Panic("Tcl_CreateHashEntry failed from TclThreadStorageInit!");
-                    }
-                } else {
-                    Tcl_Panic("could not allocate thread specific hash table, TclpSysAlloc failed from TclThreadStorageGetHashTable!");
-                }
-            }
+	    hPtr = Tcl_FindHashEntry(threadStorageHashTablePtr, (char *)id);
 
-            /* now, we put it in the cache since it is highly likely it will
-               be needed again shortly. */
-            threadStorageCache[index].id = id;
-            threadStorageCache[index].hashTablePtr = hashTablePtr;
-        } else {
-            /* we cannot look it up, the master hash table has not been initialized. */
-            hashTablePtr = NULL;
-        }
-        TclThreadStorageUnlock();
+	    if (hPtr != NULL) {
+		/*
+		 * We found it, extract the hash table pointer.
+		 */
+		hashTablePtr = Tcl_GetHashValue(hPtr);
+	    } else {
+		/*
+		 * The thread specific hash table is not found.
+		 */
+		hashTablePtr = NULL;
+	    }
+
+	    if (hashTablePtr == NULL) {
+		hashTablePtr = (Tcl_HashTable *)
+			TclpSysAlloc(sizeof(Tcl_HashTable), 0);
+
+		if (hashTablePtr == NULL) {
+		    Tcl_Panic("could not allocate thread specific hash "
+			    "table, TclpSysAlloc failed from "
+			    "TclThreadStorageGetHashTable!");
+		}
+		Tcl_InitCustomHashTable(hashTablePtr, TCL_CUSTOM_TYPE_KEYS,
+			&tclThreadStorageHashKeyType);
+
+		/*
+		 * Add new thread storage hash table to the master
+		 * hash table.
+		 */
+
+		hPtr = Tcl_CreateHashEntry(threadStorageHashTablePtr,
+			(char *)id, &new);
+
+		if (hPtr == NULL) {
+		    Tcl_Panic("Tcl_CreateHashEntry failed from "
+			    "TclThreadStorageInit!");
+		}
+		Tcl_SetHashValue(hPtr, hashTablePtr);
+	    }
+
+	    /*
+	     * Now, we put it in the cache since it is highly likely
+	     * it will be needed again shortly.
+	     */
+
+	    threadStorageCache[index].id = id;
+	    threadStorageCache[index].hashTablePtr = hashTablePtr;
+	} else {
+	    /*
+	     * We cannot look it up, the master hash table has not
+	     * been initialized.
+	     */
+	    hashTablePtr = NULL;
+	}
+	TclThreadStorageUnlock();
     }
 
     return hashTablePtr;
@@ -425,49 +468,59 @@ TclThreadStorageGetHashTable(id)
  *
  * TclThreadStorageInit --
  *
- *      This procedure initializes a thread specific hash table for the
- *      current thread. It may also initialize the master hash table which
- *      stores all the thread specific hash tables.
+ *	This procedure initializes a thread specific hash table for the
+ *	current thread. It may also initialize the master hash table which
+ *	stores all the thread specific hash tables.
  *
- *      This assumes that thread storage lock is held.
+ *	This assumes that thread storage lock is held.
  *
  * Results:
- *      A hash table pointer for the specified thread, or NULL if we are
- *      be called to initialize the master hash table only.
+ *	A hash table pointer for the specified thread, or NULL if we are
+ *	be called to initialize the master hash table only.
  *
  * Side effects:
- *      The thread specific hash table may be initialized and added to the
- *      master hash table.
+ *	The thread specific hash table may be initialized and added to the
+ *	master hash table.
  *
  *----------------------------------------------------------------------
  */
 
 Tcl_HashTable *
 TclThreadStorageInit(id, reserved)
-    Tcl_ThreadId id;    /* Id of the thread to get the hash table for */
-    void *reserved;     /* reserved for future use */
+    Tcl_ThreadId id;		/* Id of thread to get hash table for */
+    void *reserved;		/* reserved for future use */
 {
 #if 0 /* #ifdef TCL_THREAD_STORAGE_DEBUG */
     TclThreadStoragePrint(stderr, 0);
 #endif
 
     if (threadStorageHashTablePtr == NULL) {
-        /* looks like we haven't created the outer hash table yet
-           we can just do that now. */
-        threadStorageHashTablePtr = (Tcl_HashTable *)TclpSysAlloc(sizeof(Tcl_HashTable), 0);
+	/*
+	 * Looks like we haven't created the outer hash table yet we
+	 * can just do that now.
+	 */
 
-        if (threadStorageHashTablePtr != NULL) {
-            /* initialize the hash table */
-            Tcl_InitCustomHashTable(threadStorageHashTablePtr, TCL_CUSTOM_TYPE_KEYS, &tclThreadStorageHashKeyType);
-        } else {
-            Tcl_Panic("could not allocate master thread storage hash table, TclpSysAlloc failed from TclThreadStorageInit!");
-        }
+	threadStorageHashTablePtr = (Tcl_HashTable *)
+		TclpSysAlloc(sizeof(Tcl_HashTable), 0);
+	if (threadStorageHashTablePtr == NULL) {
+	    Tcl_Panic("could not allocate master thread storage hash table, "
+		    "TclpSysAlloc failed from TclThreadStorageInit!");
+	}
+	Tcl_InitCustomHashTable(threadStorageHashTablePtr,
+		TCL_CUSTOM_TYPE_KEYS, &tclThreadStorageHashKeyType);
 
-        /* we also initialize the cache. */
-        memset((ThreadStorage *)&threadStorageCache, 0, sizeof(ThreadStorage) * STORAGE_CACHE_SLOTS);
+	/*
+	 * We also initialize the cache.
+	 */
 
-        /* now, we set the first value to be used for a thread data key. */
-        nextThreadStorageKey = STORAGE_FIRST_KEY;
+	memset((ThreadStorage *)&threadStorageCache, 0,
+		sizeof(ThreadStorage) * STORAGE_CACHE_SLOTS);
+
+	/*
+	 * Now, we set the first value to be used for a thread data key.
+	 */
+
+	nextThreadStorageKey = STORAGE_FIRST_KEY;
     }
 
     return NULL;
@@ -478,67 +531,67 @@ TclThreadStorageInit(id, reserved)
  *
  * TclThreadStorageDataKeyInit --
  *
- *      This procedure initializes a thread specific data block key.
- *      Each thread has table of pointers to thread specific data.
- *      all threads agree on which table entry is used by each module.
- *      this is remembered in a "data key", that is just an index into
- *      this table.  To allow self initialization, the interface
- *      passes a pointer to this key and the first thread to use
- *      the key fills in the pointer to the key.  The key should be
- *      a process-wide static.
+ *	This procedure initializes a thread specific data block key.
+ *	Each thread has table of pointers to thread specific data.
+ *	all threads agree on which table entry is used by each module.
+ *	this is remembered in a "data key", that is just an index into
+ *	this table.  To allow self initialization, the interface
+ *	passes a pointer to this key and the first thread to use
+ *	the key fills in the pointer to the key.  The key should be
+ *	a process-wide static.
  *
  * Results:
- *      None.
+ *	None.
  *
  * Side effects:
- *      Will allocate memory the first time this process calls for
- *      this key.  In this case it modifies its argument
- *      to hold the pointer to information about the key.
+ *	Will allocate memory the first time this process calls for
+ *	this key.  In this case it modifies its argument
+ *	to hold the pointer to information about the key.
  *
  *----------------------------------------------------------------------
  */
 
 void
 TclThreadStorageDataKeyInit(keyPtr)
-    Tcl_ThreadDataKey *keyPtr;  /* Identifier for the data chunk,
-                                 * really (int **) */
+    Tcl_ThreadDataKey *keyPtr;	/* Identifier for the data chunk,
+				 * really (int **) */
 {
     int *indexPtr;
     int newKey;
 
     if (*keyPtr == NULL) {
-        indexPtr = (int *)TclpSysAlloc(sizeof(int), 0);
+	indexPtr = (int *)TclpSysAlloc(sizeof(int), 0);
+	if (indexPtr == NULL) {
+	    Tcl_Panic("TclpSysAlloc failed from TclThreadStorageDataKeyInit!");
+	}
 
-        if (indexPtr != NULL) {
-            /*
-             * We must call this now to make sure
-             * that nextThreadStorageKey has a well defined
-             * value.
-             */
-            TclThreadStorageLock();
+	/*
+	 * We must call this now to make sure that
+	 * nextThreadStorageKey has a well defined value.
+	 */
 
-            /* make sure the master hash table is initialized. */
-            TclThreadStorageInit(STORAGE_INVALID_THREAD, NULL);
+	TclThreadStorageLock();
 
-            /*
-             * These data key values are sequentially
-             * assigned and we must use the storage
-             * lock to prevent serious problems here.
-             * Also note that the caller should
-             * NOT make any assumptions about the
-             * provided values. In particular, we may
-             * need to reserve some values in the
-             * future.
-             */
-            newKey = nextThreadStorageKey++;
-            TclThreadStorageUnlock();
+	/*
+	 * Make sure the master hash table is initialized.
+	 */
 
-            *indexPtr = newKey;
-            *keyPtr = (Tcl_ThreadDataKey)indexPtr;
-            TclRememberDataKey(keyPtr);
-        } else {
-            Tcl_Panic("TclpSysAlloc failed from TclThreadStorageDataKeyInit!"); /* this should also be a fatal error */
-        }
+	TclThreadStorageInit(STORAGE_INVALID_THREAD, NULL);
+
+	/*
+	 * These data key values are sequentially assigned and we must
+	 * use the storage lock to prevent serious problems here.
+	 * Also note that the caller should NOT make any assumptions
+	 * about the provided values. In particular, we may need to
+	 * reserve some values in the future.
+	 */
+
+	newKey = nextThreadStorageKey++;
+	TclThreadStorageUnlock();
+
+	*indexPtr = newKey;
+	*keyPtr = (Tcl_ThreadDataKey)indexPtr;
+	TclRememberDataKey(keyPtr);
     }
 }
 
@@ -547,46 +600,44 @@ TclThreadStorageDataKeyInit(keyPtr)
  *
  * TclThreadStorageDataKeyGet --
  *
- *      This procedure returns a pointer to a block of thread local storage.
+ *	This procedure returns a pointer to a block of thread local storage.
  *
  * Results:
- *      A thread-specific pointer to the data structure, or NULL
- *      if the memory has not been assigned to this key for this thread.
+ *	A thread-specific pointer to the data structure, or NULL
+ *	if the memory has not been assigned to this key for this thread.
  *
  * Side effects:
- *      None.
+ *	None.
  *
  *----------------------------------------------------------------------
  */
 
 void *
 TclThreadStorageDataKeyGet(keyPtr)
-    Tcl_ThreadDataKey *keyPtr;  /* Identifier for the data chunk,
-                                 * really (int **) */
+    Tcl_ThreadDataKey *keyPtr;	/* Identifier for the data chunk,
+				 * really (int **) */
 {
     int *indexPtr = *(int **)keyPtr;
     void *result;
-    Tcl_ThreadId id = Tcl_GetCurrentThread();
-    Tcl_HashTable *hashTablePtr;
-    Tcl_HashEntry *hPtr;
 
     if (indexPtr == NULL) {
-        result = NULL;
+	return NULL;
     } else {
-        hashTablePtr = TclThreadStorageGetHashTable(id);
+	Tcl_HashTable *hashTablePtr =
+		TclThreadStorageGetHashTable(Tcl_GetCurrentThread(););
+	Tcl_HashEntry *hPtr;
 
-        if (hashTablePtr != NULL) {
-            hPtr = Tcl_FindHashEntry(hashTablePtr, (char *)*indexPtr);
+	if (hashTablePtr != NULL) {
+	    Tcl_Panic("TclThreadStorageGetHashTable failed from "
+		    "TclThreadStorageDataKeyGet!");
+	}
 
-            if (hPtr != NULL) {
-                result = (void *)Tcl_GetHashValue(hPtr);
-            } else {
-                result = NULL;
-            }
-        } else {
-            Tcl_Panic("TclThreadStorageGetHashTable failed from TclThreadStorageDataKeyGet!");
-            result = NULL;
-        }
+	hPtr = Tcl_FindHashEntry(hashTablePtr, (char *)*indexPtr);
+
+	if (hPtr == NULL) {
+	    return NULL;
+	}
+	return (void *)Tcl_GetHashValue(hPtr);
     }
     return result;
 }
@@ -596,48 +647,49 @@ TclThreadStorageDataKeyGet(keyPtr)
  *
  * TclThreadStorageDataKeySet --
  *
- *      This procedure sets the pointer to a block of thread local storage.
+ *	This procedure sets the pointer to a block of thread local storage.
  *
  * Results:
- *      None.
+ *	None.
  *
  * Side effects:
- *      Sets up the thread so future calls to TclThreadStorageDataKeyGet
- *      with this key will return the data pointer.
+ *	Sets up the thread so future calls to TclThreadStorageDataKeyGet
+ *	with this key will return the data pointer.
  *
  *----------------------------------------------------------------------
  */
 
 void
 TclThreadStorageDataKeySet(keyPtr, data)
-    Tcl_ThreadDataKey *keyPtr;  /* Identifier for the data chunk,
-                                 * really (pthread_key_t **) */
-    void *data;                 /* Thread local storage */
+    Tcl_ThreadDataKey *keyPtr;	/* Identifier for the data chunk,
+				 * really (pthread_key_t **) */
+    void *data;			/* Thread local storage */
 {
     int *indexPtr = *(int **)keyPtr;
-    Tcl_ThreadId id = Tcl_GetCurrentThread();
     Tcl_HashTable *hashTablePtr;
     Tcl_HashEntry *hPtr;
-    int new;
 
-    hashTablePtr = TclThreadStorageGetHashTable(id);
-
-    if (hashTablePtr != NULL) {
-        hPtr = Tcl_FindHashEntry(hashTablePtr, (char *)*indexPtr);
-
-        /* does the item need to be created? */
-        if (hPtr == NULL) {
-            hPtr = Tcl_CreateHashEntry(hashTablePtr, (char *)*indexPtr, &new);
-        }
-
-        if (hPtr != NULL) {
-            Tcl_SetHashValue(hPtr, data);
-        } else {
-            Tcl_Panic("could not set hash entry value from TclThreadStorageDataKeySet");
-        }
-    } else {
-        Tcl_Panic("TclThreadStorageGetHashTable failed from TclThreadStorageDataKeySet!");
+    hashTablePtr = TclThreadStorageGetHashTable(Tcl_GetCurrentThread());
+    if (hashTablePtr == NULL) {
+	Tcl_Panic("TclThreadStorageGetHashTable failed from "
+		"TclThreadStorageDataKeySet!");
     }
+
+    hPtr = Tcl_FindHashEntry(hashTablePtr, (char *)*indexPtr);
+
+    /*
+     * Does the item need to be created?
+     */
+    if (hPtr == NULL) {
+	int new;
+	hPtr = Tcl_CreateHashEntry(hashTablePtr, (char *)*indexPtr, &new);
+	if (hPtr == NULL) {
+	    Tcl_Panic("could not create hash entry value from "
+		    "TclThreadStorageDataKeySet");
+	}
+    }
+
+    Tcl_SetHashValue(hPtr, data);
 }
 
 /*
@@ -645,56 +697,72 @@ TclThreadStorageDataKeySet(keyPtr, data)
  *
  * TclFinalizeThreadStorageThread --
  *
- *      This procedure cleans up the thread storage hash table for the
- *      specified thread.
+ *	This procedure cleans up the thread storage hash table for the
+ *	specified thread.
  *
  * Results:
- *      None.
+ *	None.
  *
  * Side effects:
- *      None.
+ *	None.
  *
  *----------------------------------------------------------------------
  */
+
 void
 TclFinalizeThreadStorageThread(id)
-    Tcl_ThreadId id;    /* Id of the thread to finalize */
+    Tcl_ThreadId id;		/* Id of the thread to finalize */
 {
     int index = (unsigned int)id % STORAGE_CACHE_SLOTS;
-    Tcl_HashTable *hashTablePtr; /* hash table for current thread */
-    Tcl_HashEntry *hPtr;  /* hash entry for current thread in master table */
+    Tcl_HashTable *hashTablePtr; /* Hash table for current thread */
+    Tcl_HashEntry *hPtr;	/* Hash entry for current thread in master
+				 * table */
 
     TclThreadStorageLock();
+
     if (threadStorageHashTablePtr != NULL) {
-        hPtr = Tcl_FindHashEntry(threadStorageHashTablePtr, (char *)id);
+	hPtr = Tcl_FindHashEntry(threadStorageHashTablePtr, (char *)id);
 
-        if (hPtr != NULL) {
-            /* we found it, extract the hash table pointer. */
-            hashTablePtr = Tcl_GetHashValue(hPtr);
+	if (hPtr != NULL) {
+	    /*
+	     * We found it, extract the hash table pointer.
+	     */
 
-            if (hashTablePtr != NULL) {
-                /* delete thread specific hash table and free the struct. */
-                Tcl_DeleteHashTable(hashTablePtr);
-                TclpSysFree((char *)hashTablePtr);
-            }
+	    hashTablePtr = Tcl_GetHashValue(hPtr);
 
-            /* delete thread specific entry from master hash table. */
-            Tcl_DeleteHashEntry(hPtr);
-        }
+	    if (hashTablePtr != NULL) {
+		/*
+		 * Delete thread specific hash table and free the
+		 * struct.
+		 */
+
+		Tcl_DeleteHashTable(hashTablePtr);
+		TclpSysFree((char *)hashTablePtr);
+	    }
+
+	    /*
+	     * Delete thread specific entry from master hash table.
+	     */
+
+	    Tcl_DeleteHashEntry(hPtr);
+	}
     }
 
     /*
      * Make sure cache entry for this thread is NULL.
      */
+
     if (threadStorageCache[index].id == id) {
-        /*
-         * We do not step on another thread's cache entry.
-         * This is especially important if we are creating
-         * and exiting a lot of threads.
-         */
-        threadStorageCache[index].id = STORAGE_INVALID_THREAD;
-        threadStorageCache[index].hashTablePtr = NULL;
+	/*
+	 * We do not step on another thread's cache entry.  This is
+	 * especially important if we are creating and exiting a lot
+	 * of threads.
+	 */
+
+	threadStorageCache[index].id = STORAGE_INVALID_THREAD;
+	threadStorageCache[index].hashTablePtr = NULL;
     }
+
     TclThreadStorageUnlock();
 }
 
@@ -703,15 +771,15 @@ TclFinalizeThreadStorageThread(id)
  *
  * TclFinalizeThreadStorage --
  *
- *      This procedure cleans up the master thread storage hash table,
- *      all thread specific hash tables, and the thread storage cache.
+ *	This procedure cleans up the master thread storage hash table,
+ *	all thread specific hash tables, and the thread storage cache.
  *
  * Results:
- *      None.
+ *	None.
  *
  * Side effects:
- *      The master thread storage hash table and thread storage cache are
- *      reset to their initial (empty) state.
+ *	The master thread storage hash table and thread storage cache are
+ *	reset to their initial (empty) state.
  *
  *----------------------------------------------------------------------
  */
@@ -719,45 +787,63 @@ TclFinalizeThreadStorageThread(id)
 void
 TclFinalizeThreadStorage()
 {
-    Tcl_HashTable *hashTablePtr; /* hash table for current thread */
-    Tcl_HashSearch search; /* we need to hit every thread with this search */
-    Tcl_HashEntry *hPtr;  /* hash entry for current thread in master table */
-
     TclThreadStorageLock();
+
     if (threadStorageHashTablePtr != NULL) {
-        /*
-         * We are going to delete the hash table for every thread now. This
-         * hash table should be empty at this point, except for one entry
-         * for the current thread.
-         */
-        for (hPtr = Tcl_FirstHashEntry(threadStorageHashTablePtr, &search);
-                hPtr != NULL; hPtr = Tcl_NextHashEntry(&search)) {
+	Tcl_HashSearch search;		/* We need to hit every thread with
+					 * this search. */
+	Tcl_HashEntry *hPtr;		/* Hash entry for current thread in
+					 * master table. */
 
-            /* get the hash table corresponding to the thread in question. */
-            hashTablePtr = Tcl_GetHashValue(hPtr);
+	/*
+	 * We are going to delete the hash table for every thread now.
+	 * This hash table should be empty at this point, except for
+	 * one entry for the current thread.
+	 */
 
-            if (hashTablePtr != NULL) {
-                /* delete thread specific hash table and free the struct. */
-                Tcl_DeleteHashTable(hashTablePtr);
-                TclpSysFree((char *)hashTablePtr);
-            }
+	for (hPtr = Tcl_FirstHashEntry(threadStorageHashTablePtr, &search);
+		hPtr != NULL; hPtr = Tcl_NextHashEntry(&search)) {
+	    Tcl_HashTable *hashTablePtr = Tcl_GetHashValue(hPtr);
 
-            /* delete thread specific entry from master hash table. */
-            Tcl_SetHashValue(hPtr, NULL);
-        }
+	    if (hashTablePtr != NULL) {
+		/*
+		 * Delete thread specific hash table for the thread in
+		 * question and free the struct.
+		 */
 
-        Tcl_DeleteHashTable(threadStorageHashTablePtr);
-        TclpSysFree((char *)threadStorageHashTablePtr);
+		Tcl_DeleteHashTable(hashTablePtr);
+		TclpSysFree((char *)hashTablePtr);
+	    }
 
-        /* reset this so that next time around we know it's not valid. */
-        threadStorageHashTablePtr = NULL;
+	    /*
+	     * Delete thread specific entry from master hash table.
+	     */
+
+	    Tcl_SetHashValue(hPtr, NULL);
+	}
+
+	Tcl_DeleteHashTable(threadStorageHashTablePtr);
+	TclpSysFree((char *)threadStorageHashTablePtr);
+
+	/*
+	 * Reset this so that next time around we know it's not valid.
+	 */
+
+	threadStorageHashTablePtr = NULL;
     }
 
-    /* clear out the thread storage cache as well */
-    memset((ThreadStorage *)&threadStorageCache, 0, sizeof(ThreadStorage) * STORAGE_CACHE_SLOTS);
+    /*
+     * Clear out the thread storage cache as well.
+     */
 
-    /* reset this to zero, it will be set to STORAGE_FIRST_KEY if the 
-       thread storage subsystem gets reinitialized */       
+    memset((ThreadStorage *)&threadStorageCache, 0,
+	    sizeof(ThreadStorage) * STORAGE_CACHE_SLOTS);
+
+    /*
+     * Reset this to zero, it will be set to STORAGE_FIRST_KEY if the
+     * thread storage subsystem gets reinitialized
+     */
+
     nextThreadStorageKey = STORAGE_INVALID_KEY;
 
     TclThreadStorageUnlock();
@@ -768,14 +854,14 @@ TclFinalizeThreadStorage()
  *
  * TclFinalizeThreadStorageData --
  *
- *      This procedure cleans up the thread-local storage.  This is
- *      called once for each thread.
+ *	This procedure cleans up the thread-local storage.  This is
+ *	called once for each thread.
  *
  * Results:
- *      None.
+ *	None.
  *
  * Side effects:
- *      Frees up the memory.
+ *	Frees up the memory.
  *
  *----------------------------------------------------------------------
  */
@@ -784,34 +870,33 @@ void
 TclFinalizeThreadStorageData(keyPtr)
     Tcl_ThreadDataKey *keyPtr;
 {
-    void *result;
-    int *indexPtr;
-    Tcl_ThreadId id = Tcl_GetCurrentThread();
-    Tcl_HashTable *hashTablePtr; /* hash table for current thread */
-    Tcl_HashEntry *hPtr; /* hash entry for data key in current thread */
-
     if (*keyPtr != NULL) {
-        indexPtr = *(int **)keyPtr;
+	Tcl_ThreadId id = Tcl_GetCurrentThread();
+	Tcl_HashTable *hashTablePtr;	/* Hash table for current thread */
+	Tcl_HashEntry *hPtr;		/* Hash entry for data key in current
+					 * thread. */
+	int *indexPtr = *(int **)keyPtr;
 
-        hashTablePtr = TclThreadStorageGetHashTable(id);
+	hashTablePtr = TclThreadStorageGetHashTable(id);
+	if (hashTablePtr == NULL) {
+	    Tcl_Panic("TclThreadStorageGetHashTable failed from "
+		    "TclFinalizeThreadStorageData!");
+	}
 
-        if (hashTablePtr != NULL) {
-            hPtr = Tcl_FindHashEntry(hashTablePtr, (char *)*indexPtr);
+	hPtr = Tcl_FindHashEntry(hashTablePtr, (char *)*indexPtr);
+	if (hPtr != NULL) {
+	    void *result = Tcl_GetHashValue(hPtr);
 
-            if (hPtr != NULL) {
-                result = Tcl_GetHashValue(hPtr);
+	    if (result != NULL) {
+		/*
+		 * This must be ckfree because tclThread.c allocates
+		 * these using ckalloc.
+		 */
+		ckfree((char *)result);
+	    }
 
-                if (result != NULL) {
-                    /* this must be ckfree because tclThread.c 
-                       allocates these using ckalloc. */
-                    ckfree((char *)result);
-                }
-
-                Tcl_SetHashValue(hPtr, NULL);
-            }
-        } else {
-            Tcl_Panic("TclThreadStorageGetHashTable failed from TclFinalizeThreadStorageData!");
-        }
+	    Tcl_SetHashValue(hPtr, NULL);
+	}
     }
 }
 
@@ -820,17 +905,17 @@ TclFinalizeThreadStorageData(keyPtr)
  *
  * TclFinalizeThreadStorageDataKey --
  *
- *      This procedure is invoked to clean up one key.  This is a
- *      process-wide storage identifier.  The thread finalization code
- *      cleans up the thread local storage itself.
+ *	This procedure is invoked to clean up one key.  This is a
+ *	process-wide storage identifier.  The thread finalization code
+ *	cleans up the thread local storage itself.
  *
- *      This assumes the master lock is held.
+ *	This assumes the master lock is held.
  *
  * Results:
- *      None.
+ *	None.
  *
  * Side effects:
- *      The key is deallocated.
+ *	The key is deallocated.
  *
  *----------------------------------------------------------------------
  */
@@ -840,55 +925,66 @@ TclFinalizeThreadStorageDataKey(keyPtr)
     Tcl_ThreadDataKey *keyPtr;
 {
     int *indexPtr;
-    Tcl_HashTable *hashTablePtr; /* hash table for current thread */
-    Tcl_HashSearch search; /* we need to hit every thread with this search */
-    Tcl_HashEntry *hPtr; /* hash entry for current thread in master table */
-    Tcl_HashEntry *hDataPtr; /* hash entry for data key in current thread */
+    Tcl_HashTable *hashTablePtr;/* Hash table for current thread */
+    Tcl_HashSearch search;	/* Need to hit every thread with this search */
+    Tcl_HashEntry *hPtr;	/* Hash entry for current thread in master
+				 * table. */
+    Tcl_HashEntry *hDataPtr;	/* Hash entry for data key in current thread */
 
     if (*keyPtr != NULL) {
-        indexPtr = *(int **)keyPtr;
+	indexPtr = *(int **)keyPtr;
 
-        TclThreadStorageLock();
-        if (threadStorageHashTablePtr != NULL) {
-            /*
-             * We are going to delete the specified data key entry from every thread.
-             */
-            for (hPtr = Tcl_FirstHashEntry(threadStorageHashTablePtr, &search);
-                    hPtr != NULL; hPtr = Tcl_NextHashEntry(&search)) {
+	TclThreadStorageLock();
 
-                /* get the hash table corresponding to the thread in question. */
-                hashTablePtr = Tcl_GetHashValue(hPtr);
+	if (threadStorageHashTablePtr != NULL) {
+	    /*
+	     * We are going to delete the specified data key entry
+	     * from every thread.
+	     */
 
-                if (hashTablePtr != NULL) {
-                    /* now find the entry for the specified data key. */
-                    hDataPtr = Tcl_FindHashEntry(hashTablePtr, (char *)*indexPtr);
+	    for (hPtr = Tcl_FirstHashEntry(threadStorageHashTablePtr, &search);
+		    hPtr != NULL; hPtr = Tcl_NextHashEntry(&search)) {
 
-                    if (hDataPtr != NULL) {
-                        /* delete the data key for this thread. */
-                        Tcl_DeleteHashEntry(hDataPtr);
-                    }
-                }
-            }
-        }
-        TclThreadStorageUnlock();
+		/*
+		 * Get the hash table corresponding to the thread in question.
+		 */
+		hashTablePtr = Tcl_GetHashValue(hPtr);
 
-        TclpSysFree((char *)indexPtr);
-        *keyPtr = NULL;
+		if (hashTablePtr != NULL) {
+		    /*
+		     * Now find the entry for the specified data key.
+		     */
+		    hDataPtr = Tcl_FindHashEntry(hashTablePtr,
+			    (char *)*indexPtr);
+
+		    if (hDataPtr != NULL) {
+			/*
+			 * Delete the data key for this thread.
+			 */
+			Tcl_DeleteHashEntry(hDataPtr);
+		    }
+		}
+	    }
+	}
+
+	TclThreadStorageUnlock();
+
+	TclpSysFree((char *)indexPtr);
+	*keyPtr = NULL;
     }
 }
 
-#else /* !defined(TCL_THREADS) || !defined(USE_THREAD_STORAGE) */ 
+#else /* !defined(TCL_THREADS) || !defined(USE_THREAD_STORAGE) */
 
-static void ThreadStoragePanic _ANSI_ARGS_((
-          CONST char *message));
+static void ThreadStoragePanic _ANSI_ARGS_((CONST char *message));
 
 /*
  *----------------------------------------------------------------------
  *
  * ThreadStoragePanic --
  *
- *      Panic if Tcl was compiled without TCL_THREADS or without 
- *      USE_THREAD_STORAGE and a thread storage function has been 
+ *      Panic if Tcl was compiled without TCL_THREADS or without
+ *      USE_THREAD_STORAGE and a thread storage function has been
  *      called.
  *
  * Results:
@@ -900,49 +996,54 @@ static void ThreadStoragePanic _ANSI_ARGS_((
  *----------------------------------------------------------------------
  */
 static void ThreadStoragePanic(message)
-    CONST char *message; /* currently ignored */
+    CONST char *message;	/* currently ignored */
 {
 #ifdef TCL_THREADS
-  #ifdef USE_THREAD_STORAGE
-    /* 
-     * Do nothing, everything is OK. However, this should never happen 
-     * because this function only gets called by the dummy thread storage 
-     * functions (used when one or both of these DEFINES are not present).
+#   ifdef USE_THREAD_STORAGE
+    /*
+     * Do nothing, everything is OK. However, this should never happen
+     * because this function only gets called by the dummy thread
+     * storage functions (used when one or both of these DEFINES are
+     * not present).
      */
-  #else
+#   else
     Tcl_Panic("Tcl was not compiled with thread storage enabled.");
-  #endif
+#   endif /* USE_THREAD_STORAGE */
 #else
     Tcl_Panic("Tcl was not compiled with threads enabled.");
-#endif
+#endif /* TCL_THREADS */
 }
 
+/*
+ * Stub functions that just call ThreadStoragePanic.
+ */
+
 void
 TclThreadStorageLockInit()
 {
     ThreadStoragePanic(NULL);
 }
-
+
 void
 TclThreadStorageLock()
 {
     ThreadStoragePanic(NULL);
 }
-
+
 void
 TclThreadStorageUnlock()
 {
     ThreadStoragePanic(NULL);
 }
-
+
 void
 TclThreadStoragePrint(outFile, flags)
-    FILE *outFile;              
-    int flags;                  
+    FILE *outFile;
+    int flags;
 {
     ThreadStoragePanic(NULL);
 }
-
+
 Tcl_HashTable *
 TclThreadStorageGetHashTable(id)
     Tcl_ThreadId id;
@@ -950,59 +1051,59 @@ TclThreadStorageGetHashTable(id)
     ThreadStoragePanic(NULL);
     return NULL;
 }
-
+
 Tcl_HashTable *
 TclThreadStorageInit(id, reserved)
-    Tcl_ThreadId id;    
+    Tcl_ThreadId id;
     void *reserved;
 {
     ThreadStoragePanic(NULL);
     return NULL;
 }
-
+
 void
 TclThreadStorageDataKeyInit(keyPtr)
-    Tcl_ThreadDataKey *keyPtr;  
+    Tcl_ThreadDataKey *keyPtr;
 {
     ThreadStoragePanic(NULL);
-}                                
-
+}
+
 void *
 TclThreadStorageDataKeyGet(keyPtr)
-    Tcl_ThreadDataKey *keyPtr;  
+    Tcl_ThreadDataKey *keyPtr;
 {
     ThreadStoragePanic(NULL);
     return NULL;
-}                                
-
+}
+
 void
 TclThreadStorageDataKeySet(keyPtr, data)
-    Tcl_ThreadDataKey *keyPtr;                                 
-    void *data;                 
+    Tcl_ThreadDataKey *keyPtr;
+    void *data;
 {
     ThreadStoragePanic(NULL);
 }
-
+
 void
 TclFinalizeThreadStorageThread(id)
-    Tcl_ThreadId id;    
+    Tcl_ThreadId id;
 {
     ThreadStoragePanic(NULL);
 }
-
+
 void
 TclFinalizeThreadStorage()
 {
     ThreadStoragePanic(NULL);
 }
-
+
 void
 TclFinalizeThreadStorageData(keyPtr)
     Tcl_ThreadDataKey *keyPtr;
 {
     ThreadStoragePanic(NULL);
 }
-
+
 void
 TclFinalizeThreadStorageDataKey(keyPtr)
     Tcl_ThreadDataKey *keyPtr;
