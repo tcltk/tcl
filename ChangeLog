@@ -1,3 +1,66 @@
+1999-03-03    <stanton@GASPODE>
+
+	* unix/tclUnixTime.c: Added TclpGetDate and TclStrftime.
+
+	* unix/tclUnixSock.c: Added TclHasSockets.
+
+	* unix/tclUnixPort.h: Eliminated various Tclp* macros that have
+	been replaced with function defintions.
+
+	* win/tclWinInt.h: 
+	* win/tclWin32Dll.c: 
+	* unix/tclUnixInit.c: Added TclpCheckStackSpace.
+
+	* unix/tclUnixFile.c: 
+	* mac/tclMacShLib.exp: 
+	* mac/tclMacFile.c: 
+	* generic/tclFileName.c: 
+	* win/tclWinFile.c: Renamed TclpGetUserHome back to
+	TclGetUserHome for patch level compatibility.
+
+	* unix/tclUnixFile.c: Added TclpAccess and TclpState.
+
+	* win/tclWinPort.h: 
+	* mac/tclMacPort.h: 
+	* mac/tclMacInt.h: 
+	* mac/tclMac.h: 
+	* generic/tcl.decls: Added Mac specific declarations.
+
+	* mac/tclMacChan.c: Added stub implementation of
+	Tcl_MakeFileChannel that doesn't do anything.  This could be
+	implemented at a later date.
+
+	* generic/tclStubLib.c: Added internal interface hooks.
+
+	* generic/tclStubs.c: 
+	* generic/tclStubInit.c: Added undefs for all of the TCL_MEM_DEBUG
+	macros to avoid conflicts with the stub names.
+	
+	* generic/tclStubInit.c: 
+	* generic/tclInt.h: 
+	* generic/tclInt.decls: Moved some declarations out of the generic
+	and into the platform specific sections.  Added missing
+	declarations and Mac specific declarations.
+
+	* win/tclWinTime.c: 
+	* unix/tclUnixTime.c: 
+	* mac/tclMacTime.c: 
+	* generic/tclInt.h: 
+	* generic/tclDate.c: 
+	* generic/tclClock.c: Created a new opaque TclpTime_t type so
+	generic functions that depend on the format of time_t can appear
+	in the generic header files.
+
+	* unix/Makefile.in: 
+	* generic/tclAlloc.c: Changed so stub versions of TclpAlloc,
+	etc. are generated when TCL_MEM_DEBUG is not defined.
+
+	* generic/tclStubInit.c: 
+	* generic/tclPanic.c: 
+	* generic/tcl.h: 
+	* generic/tcl.decls: renamed Tcl_Panic back to panic to avoid
+	incompatibilities in a patch release.
+
 1999-03-02    <stanton@GASPODE>
 
 	* unix/Makefile.in:
