@@ -1355,7 +1355,7 @@
 	Tcl_GetOpenMode was used instead of private GetOpenMode).
 
 	* mac/tclMacFCmd.c: removed GenerateUniqueName(), use equivalent
-	(and identiaclly named) routine from MoreFiles instead.
+	(and identically named) routine from MoreFiles instead.
 
 	* mac/tclMacLoad.c: CONSTification, fixes to Vince's last changes.
 
@@ -1363,7 +1363,7 @@
 	* mac/tclMacTest.c:
 	* mac/tclMacUnix.c: CONSTification.
 
-	* mac/tclMacOSA.c: CONSTificcation, sprintf fixes, UH 3.4.x changes;
+	* mac/tclMacOSA.c: CONSTification, sprintf fixes, UH 3.4.x changes;
 	fix for missing autoname token from TclOSACompileCmd. (bdesgraupes)
 	* mac/AppleScript.html(AppleScript delete): doc fix. (bdesgraupes)
 
