@@ -960,23 +960,23 @@ item: If/While Statement
   Flags=00001010
 end
 item: Install File
-  Source=${__TKBASEDIR__}\win\release\tk82.lib
-  Destination=%MAINDIR%\lib\tk82.lib
+  Source=${__TKBASEDIR__}\win\release\tk83.lib
+  Destination=%MAINDIR%\lib\tk83.lib
   Flags=0000000000000010
 end
 item: Install File
-  Source=${__TKBASEDIR__}\win\release\tkstub82.lib
-  Destination=%MAINDIR%\lib\tkstub82.lib
+  Source=${__TKBASEDIR__}\win\release\tkstub83.lib
+  Destination=%MAINDIR%\lib\tkstub83.lib
   Flags=0000000000000010
 end
 item: Install File
-  Source=${__TCLBASEDIR__}\win\release\tcl82.lib
-  Destination=%MAINDIR%\lib\tcl82.lib
+  Source=${__TCLBASEDIR__}\win\release\tcl83.lib
+  Destination=%MAINDIR%\lib\tcl83.lib
   Flags=0000000000000010
 end
 item: Install File
-  Source=${__TCLBASEDIR__}\win\release\tclstub82.lib
-  Destination=%MAINDIR%\lib\tclstub82.lib
+  Source=${__TCLBASEDIR__}\win\release\tclstub83.lib
+  Destination=%MAINDIR%\lib\tclstub83.lib
   Flags=0000000000000010
 end
 item: Install File
@@ -1567,8 +1567,8 @@ item: Install File
   Flags=0000000000000010
 end
 item: Install File
-  Source=${__TCLBASEDIR__}\win\release\tclreg82.dll
-  Destination=%MAINDIR%\lib\tcl%VER%\reg1.0\tclreg82.dll
+  Source=${__TCLBASEDIR__}\win\release\tclreg83.dll
+  Destination=%MAINDIR%\lib\tcl%VER%\reg1.0\tclreg83.dll
   Flags=0000000000000010
 end
 item: Install File
@@ -1577,8 +1577,8 @@ item: Install File
   Flags=0000000000000010
 end
 item: Install File
-  Source=${__TCLBASEDIR__}\win\release\tcldde82.dll
-  Destination=%MAINDIR%\lib\tcl%VER%\dde1.1\tcldde82.dll
+  Source=${__TCLBASEDIR__}\win\release\tcldde83.dll
+  Destination=%MAINDIR%\lib\tcl%VER%\dde1.1\tcldde83.dll
   Flags=0000000000000010
 end
 item: Install File
@@ -1587,28 +1587,28 @@ item: Install File
   Flags=0010001000000011
 end
 item: Install File
-  Source=${__TKBASEDIR__}\win\release\wish82.exe
-  Destination=%MAINDIR%\bin\wish82.exe
+  Source=${__TKBASEDIR__}\win\release\wish83.exe
+  Destination=%MAINDIR%\bin\wish83.exe
   Flags=0000000000000010
 end
 item: Install File
-  Source=${__TCLBASEDIR__}\win\release\tclsh82.exe
-  Destination=%MAINDIR%\bin\tclsh82.exe
+  Source=${__TCLBASEDIR__}\win\release\tclsh83.exe
+  Destination=%MAINDIR%\bin\tclsh83.exe
   Flags=0000000000000010
 end
 item: Install File
-  Source=${__TCLBASEDIR__}\win\release\tclpip82.dll
-  Destination=%MAINDIR%\bin\tclpip82.dll
+  Source=${__TCLBASEDIR__}\win\release\tclpip83.dll
+  Destination=%MAINDIR%\bin\tclpip83.dll
   Flags=0000000000000010
 end
 item: Install File
-  Source=${__TCLBASEDIR__}\win\release\tcl82.dll
-  Destination=%MAINDIR%\bin\tcl82.dll
+  Source=${__TCLBASEDIR__}\win\release\tcl83.dll
+  Destination=%MAINDIR%\bin\tcl83.dll
   Flags=0000000000000010
 end
 item: Install File
-  Source=${__TKBASEDIR__}\win\release\tk82.dll
-  Destination=%MAINDIR%\bin\tk82.dll
+  Source=${__TKBASEDIR__}\win\release\tk83.dll
+  Destination=%MAINDIR%\bin\tk83.dll
   Flags=0000000000000010
 end
 item: Install File
@@ -2011,13 +2011,13 @@ item: If/While Statement
   Flags=00001010
 end
 item: Install File
-  Source=${__TCLBASEDIR__}\tools\tcl82.cnt
-  Destination=%MAINDIR%\doc\tcl82.cnt
+  Source=${__TCLBASEDIR__}\tools\tcl83.cnt
+  Destination=%MAINDIR%\doc\tcl83.cnt
   Flags=0000000000000010
 end
 item: Install File
-  Source=${__TCLBASEDIR__}\tools\tcl82.hlp
-  Destination=%MAINDIR%\doc\tcl82.hlp
+  Source=${__TCLBASEDIR__}\tools\tcl83.hlp
+  Destination=%MAINDIR%\doc\tcl83.hlp
   Flags=0000000000000010
 end
 item: End Block
@@ -2050,7 +2050,7 @@ item: If/While Statement
   Flags=00001010
 end
 item: Create Shortcut
-  Source=%MAINDIR%\bin\wish82.exe
+  Source=%MAINDIR%\bin\wish83.exe
   Destination=%GROUP%\Wish.lnk
   Working Directory=%MAINDIR%
 end
@@ -2062,7 +2062,7 @@ item: If/While Statement
   Flags=00001010
 end
 item: Create Shortcut
-  Source=%MAINDIR%\bin\tclsh82.exe
+  Source=%MAINDIR%\bin\tclsh83.exe
   Destination=%GROUP%\Tclsh.lnk
   Working Directory=%MAINDIR%
   Key Type=1536
@@ -2076,7 +2076,7 @@ item: If/While Statement
   Flags=00001010
 end
 item: Create Shortcut
-  Source=%MAINDIR%\doc\tcl82.hlp
+  Source=%MAINDIR%\doc\tcl83.hlp
   Destination=%GROUP%\Tcl Help.lnk
   Working Directory=%MAINDIR%
 end
@@ -2112,7 +2112,7 @@ item: Add ProgMan Icon
   Group=%GROUP%
   Icon Name=Widget Tour
   Command Line=%MAINDIR%\lib\tk%VER%\demos\widget.tcl
-  Icon Pathname=%MAINDIR%\bin\wish82.exe
+  Icon Pathname=%MAINDIR%\bin\wish83.exe
   Default Directory=%MAINDIR%
 end
 item: End Block
@@ -2125,7 +2125,7 @@ end
 item: Add ProgMan Icon
   Group=%GROUP%
   Icon Name=Tcl Help
-  Command Line=%MAINDIR%\doc\tcl82.hlp
+  Command Line=%MAINDIR%\doc\tcl83.hlp
   Default Directory=%MAINDIR%
 end
 item: End Block
@@ -2144,7 +2144,7 @@ end
 item: Add ProgMan Icon
   Group=%GROUP%
   Icon Name=Wish
-  Command Line=%MAINDIR%\bin\wish82.exe
+  Command Line=%MAINDIR%\bin\wish83.exe
   Default Directory=%MAINDIR%
 end
 item: End Block
@@ -2157,7 +2157,7 @@ end
 item: Add ProgMan Icon
   Group=%GROUP%
   Icon Name=Tclsh
-  Command Line=%MAINDIR%\bin\tclsh82.exe
+  Command Line=%MAINDIR%\bin\tclsh83.exe
   Default Directory=%MAINDIR%
 end
 item: End Block
@@ -2177,7 +2177,7 @@ end
 item: Edit Registry
   Total Keys=1
   Key=TclScript\DefaultIcon
-  New Value=%MAINDIR%\bin\tk82.dll
+  New Value=%MAINDIR%\bin\tk83.dll
 end
 item: Edit Registry
   Total Keys=1
@@ -2192,7 +2192,7 @@ end
 item: Edit Registry
   Total Keys=1
   Key=TclScript\shell\open\command
-  New Value=%MAINDIRSHORT%\bin\wish82.exe "%%1"
+  New Value=%MAINDIRSHORT%\bin\wish83.exe "%%1"
 end
 item: Edit Registry
   Total Keys=1
