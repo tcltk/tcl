@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinReg.c,v 1.15 2002/01/25 21:36:10 dgp Exp $
+ * RCS: @(#) $Id: tclWinReg.c,v 1.16 2002/01/29 02:04:35 hobbs Exp $
  */
 
 #include <tclPort.h>
@@ -173,8 +173,8 @@ static int		GetValueNames(Tcl_Interp *interp, Tcl_Obj *keyNameObj,
 			    Tcl_Obj *patternObj);
 static int		OpenKey(Tcl_Interp *interp, Tcl_Obj *keyNameObj,
 			    REGSAM mode, int flags, HKEY *keyPtr);
-static DWORD		OpenSubKey(char *hostName, HKEY rootKey,
-			    char *keyName, REGSAM mode, int flags,
+static DWORD		OpenSubKey(CONST char *hostName, HKEY rootKey,
+			    CONST char *keyName, REGSAM mode, int flags,
 			    HKEY *keyPtr);
 static int		ParseKeyName(Tcl_Interp *interp, char *name,
 			    char **hostNamePtr, HKEY *rootKeyPtr,
@@ -952,7 +952,7 @@ OpenSubKey(
 {
     DWORD result;
     Tcl_DString buf;
-    CONST TCHAR *nativeHost, nativeKey;
+    CONST TCHAR *nativeHost, *nativeKey;
 
     /*
      * Attempt to open the root key on a remote host if necessary.
