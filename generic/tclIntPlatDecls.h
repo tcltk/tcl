@@ -9,7 +9,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclIntPlatDecls.h,v 1.8 2000/03/31 08:52:05 hobbs Exp $
+ * RCS: @(#) $Id: tclIntPlatDecls.h,v 1.8.2.1 2001/04/04 21:22:18 hobbs Exp $
  */
 
 #ifndef _TCLINTPLATDECLS
@@ -148,15 +148,15 @@ EXTERN OSErr		FSpFindFolder _ANSI_ARGS_((short vRefNum,
 				OSType folderType, Boolean createFolder, 
 				FSSpec * spec));
 /* 7 */
-EXTERN void		GetGlobalMouse _ANSI_ARGS_((Point * mouse));
+EXTERN void		GetGlobalMouseTcl _ANSI_ARGS_((Point * mouse));
 /* 8 */
-EXTERN pascal OSErr	FSpGetDirectoryID _ANSI_ARGS_((CONST FSSpec * spec, 
+EXTERN pascal OSErr	FSpGetDirectoryIDTcl _ANSI_ARGS_((CONST FSSpec * spec, 
 				long * theDirID, Boolean * isDirectory));
 /* 9 */
-EXTERN pascal short	FSpOpenResFileCompat _ANSI_ARGS_((
+EXTERN pascal short	FSpOpenResFileCompatTcl _ANSI_ARGS_((
 				CONST FSSpec * spec, SignedByte permission));
 /* 10 */
-EXTERN pascal void	FSpCreateResFileCompat _ANSI_ARGS_((
+EXTERN pascal void	FSpCreateResFileCompatTcl _ANSI_ARGS_((
 				CONST FSSpec * spec, OSType creator, 
 				OSType fileType, ScriptCode scriptTag));
 /* 11 */
@@ -250,10 +250,10 @@ typedef struct TclIntPlatStubs {
     int (*fSpGetDefaultDir) _ANSI_ARGS_((FSSpecPtr theSpec)); /* 4 */
     int (*fSpSetDefaultDir) _ANSI_ARGS_((FSSpecPtr theSpec)); /* 5 */
     OSErr (*fSpFindFolder) _ANSI_ARGS_((short vRefNum, OSType folderType, Boolean createFolder, FSSpec * spec)); /* 6 */
-    void (*getGlobalMouse) _ANSI_ARGS_((Point * mouse)); /* 7 */
-    pascal OSErr (*fSpGetDirectoryID) _ANSI_ARGS_((CONST FSSpec * spec, long * theDirID, Boolean * isDirectory)); /* 8 */
-    pascal short (*fSpOpenResFileCompat) _ANSI_ARGS_((CONST FSSpec * spec, SignedByte permission)); /* 9 */
-    pascal void (*fSpCreateResFileCompat) _ANSI_ARGS_((CONST FSSpec * spec, OSType creator, OSType fileType, ScriptCode scriptTag)); /* 10 */
+    void (*getGlobalMouseTcl) _ANSI_ARGS_((Point * mouse)); /* 7 */
+    pascal OSErr (*fSpGetDirectoryIDTcl) _ANSI_ARGS_((CONST FSSpec * spec, long * theDirID, Boolean * isDirectory)); /* 8 */
+    pascal short (*fSpOpenResFileCompatTcl) _ANSI_ARGS_((CONST FSSpec * spec, SignedByte permission)); /* 9 */
+    pascal void (*fSpCreateResFileCompatTcl) _ANSI_ARGS_((CONST FSSpec * spec, OSType creator, OSType fileType, ScriptCode scriptTag)); /* 10 */
     int (*fSpLocationFromPath) _ANSI_ARGS_((int length, CONST char * path, FSSpecPtr theSpec)); /* 11 */
     OSErr (*fSpPathFromLocation) _ANSI_ARGS_((FSSpecPtr theSpec, int * length, Handle * fullPath)); /* 12 */
     void (*tclMacExitHandler) _ANSI_ARGS_((void)); /* 13 */
@@ -452,21 +452,21 @@ extern TclIntPlatStubs *tclIntPlatStubsPtr;
 #define FSpFindFolder \
 	(tclIntPlatStubsPtr->fSpFindFolder) /* 6 */
 #endif
-#ifndef GetGlobalMouse
-#define GetGlobalMouse \
-	(tclIntPlatStubsPtr->getGlobalMouse) /* 7 */
+#ifndef GetGlobalMouseTcl
+#define GetGlobalMouseTcl \
+	(tclIntPlatStubsPtr->getGlobalMouseTcl) /* 7 */
 #endif
-#ifndef FSpGetDirectoryID
-#define FSpGetDirectoryID \
-	(tclIntPlatStubsPtr->fSpGetDirectoryID) /* 8 */
+#ifndef FSpGetDirectoryIDTcl
+#define FSpGetDirectoryIDTcl \
+	(tclIntPlatStubsPtr->fSpGetDirectoryIDTcl) /* 8 */
 #endif
-#ifndef FSpOpenResFileCompat
-#define FSpOpenResFileCompat \
-	(tclIntPlatStubsPtr->fSpOpenResFileCompat) /* 9 */
+#ifndef FSpOpenResFileCompatTcl
+#define FSpOpenResFileCompatTcl \
+	(tclIntPlatStubsPtr->fSpOpenResFileCompatTcl) /* 9 */
 #endif
-#ifndef FSpCreateResFileCompat
-#define FSpCreateResFileCompat \
-	(tclIntPlatStubsPtr->fSpCreateResFileCompat) /* 10 */
+#ifndef FSpCreateResFileCompatTcl
+#define FSpCreateResFileCompatTcl \
+	(tclIntPlatStubsPtr->fSpCreateResFileCompatTcl) /* 10 */
 #endif
 #ifndef FSpLocationFromPath
 #define FSpLocationFromPath \

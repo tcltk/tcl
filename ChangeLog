@@ -1,12 +1,52 @@
 2001-04-04  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	** Start changes for improved mac build (steffen)  **
+	
+	* generic/tcl.h: addition of ConditionalMacros.h and use of
+	DLLIMPORT and DLLEXPORT.
+
+	* generic/tclIntPlatDecls.h:
+	* generic/tclInt.decls:
+	* generic/tclMain.c:
+	* generic/tclStubInit.c:
+	* generic/tclThreadTest.c: NewThread -> NewTestThread
+	* mac/MW_TclAppleScriptHeader.pch:
+	* mac/MW_TclHeader.pch:
+	* mac/MW_TclTestHeader.pch:
+	* mac/tclMac.h:
+	* mac/tclMacAppInit.c:
+	* mac/tclMacApplication.r:
+	* mac/tclMacChan.c: cast for *BlockMode
+	* mac/tclMacCommonPch.h:
+	* mac/tclMacFCmd.c:
+	* mac/tclMacInt.h:
+	* mac/tclMacLibrary.c:
+	* mac/tclMacLibrary.r:
+	* mac/tclMacMath.h:
+	* mac/tclMacNotify.c:
+	* mac/tclMacOSA.c:
+	* mac/tclMacOSA.r:
+	* mac/tclMacPanic.c:
+	* mac/tclMacPort.h:
+	* mac/tclMacResource.r:
+	* mac/tclMacSock.c: cast for *BlockMode
+	* mac/tclMacThrd.c:
+	* mac/tclMacUnix.c:
+	* mac/tclMacUtil.c: changed mac declarations to use Tcl ending,
+	fixed copyrights, updated headers, fixed comments, updated
+	resource files.  Mac builds are now meant to be build with
+	MetroWerks CW 6.
+
 	* mac/MW_TclBuildLibHeader.h:
 	* mac/MW_TclBuildLibHeader.pch:
 	* mac/MW_TclHeaderCommon.h:
 	* mac/MW_TclStaticHeader.h:
 	* mac/MW_TclStaticHeader.pch:
-	* mac/tcltkMacBuildSupport.sea.hqx: new files for improved mac build
-	* mac/tclMacProjects.sea.hqx: new mac build project files.  (steffen)
+	* mac/tcltkMacBuildSupport.sea.hqx: new files
+
+	* mac/tclMacProjects.sea.hqx: new mac build project files.
+
+	** End changes for improved mac build (steffen) **
 
 	* unix/configure:
 	* unix/tcl.m4: extended test of termios vs. termio vs. sgtty to

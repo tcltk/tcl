@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacApplication.r,v 1.3 1999/08/16 00:09:09 jingham Exp $
+ * RCS: @(#) $Id: tclMacApplication.r,v 1.3.2.1 2001/04/04 21:22:18 hobbs Exp $
  */
 
 #include <Types.r>
@@ -42,21 +42,21 @@ resource 'vers' (1) {
 	TCL_MAJOR_VERSION, MINOR_VERSION,
 	RELEASE_LEVEL, 0x00, verUS,
 	TCL_PATCH_LEVEL,
-	TCL_PATCH_LEVEL ", by Ray Johnson & Jim Ingham © Scriptics Inc"
+	TCL_PATCH_LEVEL ", by Ray Johnson & Jim Ingham" "\n" "© 2000 Ajuba Solutions"
 };
 
 resource 'vers' (2) {
 	TCL_MAJOR_VERSION, MINOR_VERSION,
 	RELEASE_LEVEL, 0x00, verUS,
 	TCL_PATCH_LEVEL,
-	"Tcl Shell " TCL_PATCH_LEVEL " © 1996-1997 Sun Microsystems, 1998-1999 Scriptics Inc"
+	"Tcl Shell " TCL_PATCH_LEVEL " © 1993-2000"
 };
 
 #define TCL_APP_CREATOR 'Tcl '
 
 type TCL_APP_CREATOR as 'STR ';
 resource TCL_APP_CREATOR (0, purgeable) {
-	"Tcl Shell " TCL_PATCH_LEVEL " © 1996-1999"
+	"Tcl Shell " TCL_PATCH_LEVEL " © 1993-2000"
 };
 
 /*

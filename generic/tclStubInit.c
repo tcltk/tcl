@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.35.2.1 2000/07/27 01:39:19 hobbs Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.35.2.2 2001/04/04 21:22:18 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -292,10 +292,10 @@ TclIntPlatStubs tclIntPlatStubs = {
     FSpGetDefaultDir, /* 4 */
     FSpSetDefaultDir, /* 5 */
     FSpFindFolder, /* 6 */
-    GetGlobalMouse, /* 7 */
-    FSpGetDirectoryID, /* 8 */
-    FSpOpenResFileCompat, /* 9 */
-    FSpCreateResFileCompat, /* 10 */
+    GetGlobalMouseTcl, /* 7 */
+    FSpGetDirectoryIDTcl, /* 8 */
+    FSpOpenResFileCompatTcl, /* 9 */
+    FSpCreateResFileCompatTcl, /* 10 */
     FSpLocationFromPath, /* 11 */
     FSpPathFromLocation, /* 12 */
     TclMacExitHandler, /* 13 */

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacOSA.r,v 1.3 1999/08/16 00:09:26 jingham Exp $
+ * RCS: @(#) $Id: tclMacOSA.r,v 1.3.2.1 2001/04/04 21:22:19 hobbs Exp $
  */
 
 #include <Types.r>
@@ -20,12 +20,12 @@
  */
 
 #define SCRIPT_MAJOR_VERSION 1		/* Major number */
-#define SCRIPT_MINOR_VERSION  0		/* Minor number */
-#define SCRIPT_RELEASE_SERIAL  2	/* Really minor number! */
-#define RELEASE_LEVEL alpha		/* alpha, beta, or final */
-#define SCRIPT_VERSION "1.0"
-#define SCRIPT_PATCH_LEVEL "1.0a2"
-#define FINAL 0				/* Change to 1 if final version. */
+#define SCRIPT_MINOR_VERSION  1		/* Minor number */
+#define SCRIPT_RELEASE_SERIAL  0	/* Really minor number! */
+#define RELEASE_LEVEL final		/* alpha, beta, or final */
+#define SCRIPT_VERSION "1.1"
+#define SCRIPT_PATCH_LEVEL "1.1.0"
+#define FINAL 1				/* Change to 1 if final version. */
 
 #if FINAL
 #   define MINOR_VERSION (SCRIPT_MINOR_VERSION * 16) + SCRIPT_RELEASE_SERIAL
@@ -39,14 +39,14 @@ resource 'vers' (1) {
 	SCRIPT_MAJOR_VERSION, MINOR_VERSION,
 	RELEASE_LEVEL, 0x00, verUS,
 	SCRIPT_PATCH_LEVEL,
-	SCRIPT_PATCH_LEVEL ", by Jim Ingham © Cygnus Solutions"
+	SCRIPT_PATCH_LEVEL ", by Jim Ingham © Cygnus Solutions" "\n" "© 2000 Ajuba Solutions"
 };
 
 resource 'vers' (2) {
 	SCRIPT_MAJOR_VERSION, MINOR_VERSION,
 	RELEASE_LEVEL, 0x00, verUS,
 	SCRIPT_PATCH_LEVEL,
-	"Tclapplescript " SCRIPT_PATCH_LEVEL " © 1996-1999"
+	"Tclapplescript " SCRIPT_PATCH_LEVEL " © 1996-2000"
 };
 
 /*
@@ -60,7 +60,7 @@ resource 'STR ' (-16397, purgeable) {
 	"TclAppleScript Library\n\n"
 	"This library provides the ability to run AppleScript "
 	" commands from Tcl/Tk programs.  To work properly, it "
-	"should be placed in the ÔTool Command LanguageÕ folder "
+	"should be placed in the ŒTool Command Language¹ folder "
 	"within the Extensions folder."
 };
 
@@ -71,6 +71,6 @@ resource 'STR ' (-16397, purgeable) {
 
 data 'TEXT' (4000,"pkgIndex",purgeable, preload) {
 	"# Tcl package index file, version 1.0\n"
-	"package ifneeded Tclapplescript 1.0 [list tclPkgSetup $dir Tclapplescript 1.0 {{Tclapplescript" 
+	"package ifneeded Tclapplescript 1.1 [list tclPkgSetup $dir Tclapplescript 1.1 {{Tclapplescript" 
 	".shlb load AppleScript}}]\n"
 };

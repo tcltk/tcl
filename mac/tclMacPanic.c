@@ -11,12 +11,13 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacPanic.c,v 1.2 1998/09/14 18:40:05 stanton Exp $
+ * RCS: @(#) $Id: tclMacPanic.c,v 1.2.18.1 2001/04/04 21:22:19 hobbs Exp $
  */
 
 
 #include <Events.h>
 #include <Controls.h>
+#include <ControlDefinitions.h>
 #include <Windows.h>
 #include <TextEdit.h>
 #include <Fonts.h>
@@ -151,7 +152,7 @@ MacPanic(
 		    	part = FindControl(event.where, macWinPtr,
 				&okButtonHandle);
     	
-			if ((inButton == part) && 
+			if ((kControlButtonPart == part) && 
 				(TrackControl(okButtonHandle,
 					event.where, NULL))) {
 			    done = true;
@@ -175,7 +176,7 @@ MacPanic(
 		    if (stopIconHandle != NULL) {
 			PlotIcon(&iconRect, stopIconHandle);
 		    }
-		    TextBox(msg, strlen(msg), &textRect, teFlushDefault);
+		    TETextBox(msg, strlen(msg), &textRect, teFlushDefault);
 		    DrawControls(macWinPtr);
 		    EndUpdate(macWinPtr);
 	    }

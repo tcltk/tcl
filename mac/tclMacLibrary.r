@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacLibrary.r,v 1.4 1999/08/16 00:09:22 jingham Exp $
+ * RCS: @(#) $Id: tclMacLibrary.r,v 1.4.2.1 2001/04/04 21:22:19 hobbs Exp $
  */
 
 #include <Types.r>
@@ -42,14 +42,14 @@ resource 'vers' (1) {
 	TCL_MAJOR_VERSION, MINOR_VERSION,
 	RELEASE_LEVEL, 0x00, verUS,
 	TCL_PATCH_LEVEL,
-	TCL_PATCH_LEVEL ", by Ray Johnson & Jim Ingham © Scriptics Inc."
+	TCL_PATCH_LEVEL ", by Ray Johnson & Jim Ingham" "\n" "© 2000 Ajuba Solutions"
 };
 
 resource 'vers' (2) {
 	TCL_MAJOR_VERSION, MINOR_VERSION,
 	RELEASE_LEVEL, 0x00, verUS,
 	TCL_PATCH_LEVEL,
-	"Tcl Library " TCL_PATCH_LEVEL " © 1996-1997 Sun Microsystems, 1998-1999 Scriptics Inc."
+	"Tcl Library " TCL_PATCH_LEVEL " © 1993-2000"
 };
 
 /*
@@ -96,7 +96,7 @@ resource 'FREF' (TCL_LIBRARY_RESOURCES, purgeable)
 
 type TCL_CREATOR as 'STR ';
 resource TCL_CREATOR (0, purgeable) {
-	"Tcl Library " TCL_PATCH_LEVEL " © 1996-1999"
+	"Tcl Library " TCL_PATCH_LEVEL " © 1993-2000"
 };
 
 /*
@@ -125,7 +125,7 @@ resource 'kind' (TCL_LIBRARY_RESOURCES, "Tcl kind", purgeable) {
 resource 'STR ' (-16397, purgeable) {
 	"Tcl Library\n\n"
 	"This is the core library needed to run Tool Command Language programs. "
-	"To work properly, it should be placed in the ÔTool Command LanguageÕ folder "
+	"To work properly, it should be placed in the ŒTool Command Language¹ folder "
 	"within the Extensions folder."
 };
 

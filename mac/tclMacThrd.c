@@ -124,7 +124,7 @@ Tcl_CreateThread(idPtr, proc, clientData, stackSize, flags)
 #if TARGET_CPU_68K && TARGET_RT_MAC_CFM
     {
         ThreadEntryProcPtr entryProc;
-        entryProc = NewThreadEntryProc(proc);
+        entryProc = NewThreadEntryUPP(proc);
         
         NewThread(kCooperativeThread, entryProc, (void *) clientData, 
             stackSize, kCreateIfNeeded, NULL, (ThreadID *) idPtr);
