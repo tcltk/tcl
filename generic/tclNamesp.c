@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.24 2001/05/26 01:25:59 msofer Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.25 2001/06/28 12:43:33 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -2293,7 +2293,7 @@ TclResetShadowedCmdRefs(interp, newCmdPtr)
 		 * for a fresh compilation of every bytecode.
 		 */
 
-		if ((((Command *) hPtr)->compileProc) != NULL) {
+		if ((((Command *) Tcl_GetHashValue(hPtr))->compileProc) != NULL) {
 		    nsPtr->resolverEpoch++;
 		}
             }
