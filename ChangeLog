@@ -1,3 +1,18 @@
+2001-11-09  David Gravereaux <davygrvy@pobox.com>
+
+	* win/makefile.vc:
+	* win/tcl.dsp:  winhelp target fixes for non-NT systems.  It
+	seems NMAKE under these remembers changed directories during
+	commands.   A new tcltest feature from Peter Spjuth 
+	<peter.spjuth@space.se> to specify a pattern file from the
+	commandline and redirecting output to a file when not under
+	NT with it's scrollback console.  Then it replays it, piped
+	through more.  Added 2 new static "configurations" to tcl.dsp.
+	I could keep adding more, but I think we should leave it up to
+	the user for customizing it.
+
+	Sticky-points left:  'profile' option.
+
 2001-11-09  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* doc/FileSystem.3:
