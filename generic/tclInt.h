@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.131 2003/08/11 13:26:13 dkf Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.132 2003/09/23 14:48:49 msofer Exp $
  */
 
 #ifndef _TCLINT
@@ -873,9 +873,9 @@ typedef int (CompileHookProc) _ANSI_ARGS_((Tcl_Interp *interp,
 typedef struct ExecEnv {
     Tcl_Obj **stackPtr;		/* Points to the first item in the
 				 * evaluation stack on the heap. */
-    int stackTop;		/* Index of current top of stack; -1 when
-				 * the stack is empty. */
-    int stackEnd;		/* Index of last usable item in stack. */
+    Tcl_Obj **tosPtr;		/* Points to current top of stack; 
+				 * (stackPtr-1) when the stack is empty. */
+    Tcl_Obj **endPtr;		/* Points to last usable item in stack. */
     Tcl_Obj *errorInfo;
     Tcl_Obj *errorCode;
 } ExecEnv;

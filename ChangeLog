@@ -1,3 +1,10 @@
+2003-09-23  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclExecute.c:
+	* generic/tclInt.h: changed the evaluation-stack addressing mode,
+	from array-style to pointer-style; the catch stack and evaluation
+	stack are now contiguous in memory. [Patch 457449]
+
 2003-09-23  Don Porter  <dgp@users.sourceforge.net>
 
 	* library/init.tcl (auto_load, auto_import):  Expanded Eric Melski's
