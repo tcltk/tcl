@@ -1,3 +1,11 @@
+2001-10-10  David Gravereaux  <davygrvy@pobox.com>
+
+        * win/tclWinPort.h:  #include <winsock2.h> needed to get moved
+	to after #include <windows.h> or wierd misunderstandings took
+	place when -D_WIN32_WINNT=0x0400 is set for outside code that
+	requires knowledge of Tcl innards.  General header macro magic
+	applied liberally...
+
 2001-10-10  Don Porter  <dgp@users.sourceforge.net>
 
         * tests/unixInit.test:  Corrected restore of ::env(LANG).
