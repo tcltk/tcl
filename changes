@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.64 2002/02/27 04:36:38 dgp Exp $
+RCS: @(#) $Id: changes,v 1.65 2002/03/01 21:26:14 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -5296,7 +5296,7 @@ enable all compile and execution tracing (sofer)
 
 2001-09-19 (performance enhancement) bytecompiled [string match] (hobbs)
 
-2001-10-15 (new feature)[TIP 35] serial channel configuration (schroedter)
+2001-10-15 (new feature)[TIP 35] serial channel configuration: Win (schroedter)
 
 2001-11-06 (bug fix)[478856] loss of fileevents due to short reads (kupries)
 
@@ -5307,6 +5307,7 @@ enable all compile and execution tracing (sofer)
 
 2001-11-07 (new feature) Support --include-dir= and --libdir= options to
 configure.  Store in tclConfig.sh as TCL_INCLUDE_SPEC and TCL_LIB_SPEC. (dejong)
+        **POTENTIAL INCOMPATIBILITY***
 
 2001-11-08 (new feature) Enable --enable-threads on FreeBSD (dejong)
 
@@ -5393,6 +5394,33 @@ that amount to string matching.  Also -nocase and --. (hobbs)
 platforms and ability to work with >2GiB files.  Extends many
 commands.  See ChangeLog and TIP for details.
         **POTENTIAL INCOMPATIBILITY***
+
+2002-02-22 (bug fix)[476537] Fix panic when loading shared library without
+proper use of stubs on platform without backlinking (porter)
+
+2002-02-22 (new feature)  64-bit support for xlc compiler on AIX-4 (hobbs)
+
+2002-02-22 (new feature)[521560] Removed limits on filename length and format
+[source]able through the Safe Base (hobbs)
+
+2002-02-22 (performance enhancement) optimized bytecodes for [if], [for],
+[while] and constant conditions (sofer)
+
+2002-02-22 (new feature)[TIP 76] [regsub] can now return result (fellows)
+
+2002-02-25 (bug fix)[495207] buffer overrun when closing ] left out of argument
+to [subst] (sofer, english)
+
+2002-02-25 (bug fix)[514392] [load] updated for Mac OS X 10.1 (steffen)
+
+2002-02-26 (bug fix) [info hostname] choked on names >31 characters (hobbs)
+
+2002-02-26 (new feature)[TIP 35] serial channel configuration: Unix (schroedter)
+
+2002-02-25 (bug fix)[483575] [fconfigure ... -error] now no-op on Mac (kupries)
+
+2002-02-28 (performance enhancement)[458872] fully qualified command names use
+cached Command for all namespaces, avoiding repeated lookups (sofer)
 
  * (new feature)[TIP 27] completed CONST-ification of TCL APIs.
 Added compiler macro USE_NON_CONST to keep using those old API prototypes
