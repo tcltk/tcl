@@ -9,7 +9,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclIntPlatDecls.h,v 1.19.2.3 2004/05/17 16:25:14 dgp Exp $
+ * RCS: @(#) $Id: tclIntPlatDecls.h,v 1.19.2.4 2004/06/05 17:25:40 kennykb Exp $
  */
 
 #ifndef _TCLINTPLATDECLS
@@ -139,6 +139,9 @@ EXTERN void		TclWinSetInterfaces _ANSI_ARGS_((int wide));
 EXTERN void		TclWinFlushDirtyChannels _ANSI_ARGS_((void));
 /* 28 */
 EXTERN void		TclWinResetInterfaces _ANSI_ARGS_((void));
+/* 29 */
+EXTERN int		TclWinCPUID _ANSI_ARGS_((unsigned int index, 
+				unsigned int * regs));
 #endif /* __WIN32__ */
 #ifdef MAC_TCL
 /* 0 */
@@ -263,6 +266,7 @@ typedef struct TclIntPlatStubs {
     void (*tclWinSetInterfaces) _ANSI_ARGS_((int wide)); /* 26 */
     void (*tclWinFlushDirtyChannels) _ANSI_ARGS_((void)); /* 27 */
     void (*tclWinResetInterfaces) _ANSI_ARGS_((void)); /* 28 */
+    int (*tclWinCPUID) _ANSI_ARGS_((unsigned int index, unsigned int * regs)); /* 29 */
 #endif /* __WIN32__ */
 #ifdef MAC_TCL
     VOID * (*tclpSysAlloc) _ANSI_ARGS_((long size, int isBin)); /* 0 */
@@ -465,6 +469,10 @@ extern TclIntPlatStubs *tclIntPlatStubsPtr;
 #ifndef TclWinResetInterfaces
 #define TclWinResetInterfaces \
 	(tclIntPlatStubsPtr->tclWinResetInterfaces) /* 28 */
+#endif
+#ifndef TclWinCPUID
+#define TclWinCPUID \
+	(tclIntPlatStubsPtr->tclWinCPUID) /* 29 */
 #endif
 #endif /* __WIN32__ */
 #ifdef MAC_TCL
