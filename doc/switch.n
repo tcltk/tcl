@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: switch.n,v 1.5 2000/09/07 14:27:51 poenitz Exp $
+'\" RCS: @(#) $Id: switch.n,v 1.6 2003/12/14 18:32:36 dkf Exp $
 '\" 
 .so man.macros
 .TH switch n 7.0 Tcl "Tcl Built-In Commands"
@@ -48,6 +48,37 @@ When matching \fIstring\fR to the patterns, use glob-style matching
 When matching \fIstring\fR to the patterns, use regular
 expression matching
 (as described in the \fBre_syntax\fR reference page).
+'\" Options defined by TIP#75
+.VS 8.5
+.TP 10
+\fB\-matchvar\fR \fIvarName\fR
+This option (only legal when \fB\-regexp\fR is also specified)
+specifies the name of a variable into which the list of matches
+found by the regular expression engine will be written.  The first
+element of the list written will be the overall substring of the input
+string (i.e. the \fIstring\fR argument to \fBswitch\fR) matched, the
+second element of the list will be the substring matched by the first
+capturing parenthesis in the regular expression that matched, and so
+on.  When a \fBdefault\fR branch is taken, the variable will have the
+empty list written to it.  This option may be specified at the same
+time as the \fB\-indexvar\fR option.
+.TP 10
+\fB\-indexvar\fR \fIvarName\fR
+This option (only legal when \fB\-regexp\fR is also specified)
+specifies the name of a variable into which the list of indices
+referring to matching substrings
+found by the regular expression engine will be written.  The first
+element of the list written will be a two-element list specifying the
+index of the start and index of the first character after the end of
+the overall substring of the input
+string (i.e. the \fIstring\fR argument to \fBswitch\fR) matched, in a
+similar way to the \fB\-indices\fR option to the \fBregexp\fR can
+obtain.  Similarly, the second element of the list refers to the first
+capturing parenthesis in the regular expression that matched, and so
+on.  When a \fBdefault\fR branch is taken, the variable will have the
+empty list written to it.  This option may be specified at the same
+time as the \fB\-matchvar\fR option.
+.VE 8.5
 .TP 10
 \fB\-\|\-\fR
 Marks the end of options.  The argument following this one will
