@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: expr-old.test,v 1.16 2002/08/05 03:24:41 dgp Exp $
+# RCS: @(#) $Id: expr-old.test,v 1.16.2.1 2003/03/27 13:49:22 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -194,16 +194,16 @@ test expr-old-4.23 {string operators} {expr {"" eq "abd"}} 0
 test expr-old-4.24 {string operators} {expr {"" eq ""}} 1
 test expr-old-4.25 {string operators} {expr {"abd" ne ""}} 1
 test expr-old-4.26 {string operators} {expr {"" ne ""}} 0
-test expr-old-4.26 {string operators} {expr {"longerstring" eq "shorter"}} 0
-test expr-old-4.26 {string operators} {expr {"longerstring" ne "shorter"}} 1
+test expr-old-4.27 {string operators} {expr {"longerstring" eq "shorter"}} 0
+test expr-old-4.28 {string operators} {expr {"longerstring" ne "shorter"}} 1
 
 # The following tests are non-portable because on some systems "+"
 # and "-" can be parsed as numbers.
 
-test expr-old-4.19 {string operators} {nonPortable} {expr {"0" == "+"}} 0
-test expr-old-4.20 {string operators} {nonPortable} {expr {"0" == "-"}} 0
-test expr-old-4.21 {string operators} {expr {1?"foo":"bar"}} foo
-test expr-old-4.22 {string operators} {expr {0?"foo":"bar"}} bar
+test expr-old-4.29 {string operators} {nonPortable} {expr {"0" == "+"}} 0
+test expr-old-4.30 {string operators} {nonPortable} {expr {"0" == "-"}} 0
+test expr-old-4.31 {string operators} {expr {1?"foo":"bar"}} foo
+test expr-old-4.32 {string operators} {expr {0?"foo":"bar"}} bar
 
 # Operators that aren't legal on string operands.
 
