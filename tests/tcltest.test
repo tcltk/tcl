@@ -10,7 +10,7 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.test,v 1.4 1999/07/30 19:10:47 jenn Exp $
+# RCS: @(#) $Id: tcltest.test,v 1.5 1999/08/10 05:09:20 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -230,7 +230,8 @@ test tcltest-8.1 {tcltest a.tcl -tmpdir a} {
 } {1 {}}
 test tcltest-8.2 {tcltest a.tcl -tmpdir thisdirectoryisafile} {
     catch {exec $::tcltest::tcltest a.tcl -tmpdir thisdirectoryisafile} msg
-    list [regexp "not a directory" $msg]
+    # The join is necessary because the message can be split on multiple lines
+    list [regexp "not a directory" [join $msg]]
 } {1}
 
 # Platform-specific attribute testing still needs to be set up

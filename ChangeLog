@@ -1,5 +1,9 @@
 1999-08-09  Jeff Hobbs  <hobbs@scriptics.com>
 
+	* tests/string.test: added largest_int proc to adapt for >32 bit
+	machines and int overflow testing.
+	* tests/tcltest.test: fixed minor error in 8.2 result (from dgp)
+
 	* doc/Object.3: clarified Tcl_DecrRefCount docs [Bug: 1952]
 	* doc/array.n: clarified array pattern docs [Bug: 1330]
 	* doc/clock.n: fixed clock docs [Bug: 693]

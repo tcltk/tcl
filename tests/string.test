@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: string.test,v 1.19 1999/07/09 02:11:56 stanton Exp $
+# RCS: @(#) $Id: string.test,v 1.20 1999/08/10 05:09:20 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -245,6 +245,15 @@ test string-5.15 {string index, bytearray object} {
     string compare $i1 $i2
 } 0
 
+proc largest_int {} {
+    # This will give us what the largest valid int on this machine is,
+    # so we can test for overflow properly below on >32 bit systems
+    set int 1
+    set exp 7; # assume we get at least 8 bits
+    while {$int > 0} { set int [expr {1 << [incr exp]}] }
+    return [expr {$int-1}]
+}
+
 test string-6.1 {string is, too few args} {
     list [catch {string is} msg] $msg
 } {1 {wrong # args: should be "string is class ?-strict? ?-failindex var? str"}}
@@ -355,7 +364,8 @@ test string-6.36 {string is double, false} {
     list [string is double -fail var "\n"] $var
 } {0 0}
 test string-6.37 {string is double, false on int overflow} {
-    list [string is double -fail var 12345678901234567890] $var
+    # Make it the largest int recognizable, with one more digit for overflow
+    list [string is double -fail var [largest_int]0] $var
 } {0 -1}
 test string-6.38 {string is double, false on underflow} {
     catch {unset var}
@@ -416,7 +426,7 @@ test string-6.54 {string is integer, false} {
     list [string is integer -fail var 123abc] $var
 } {0 3}
 test string-6.55 {string is integer, false on overflow} {
-    list [string is integer -fail var +12345678901234567890] $var
+    list [string is integer -fail var +[largest_int]0] $var
 } {0 -1}
 test string-6.56 {string is integer, false} {
     list [string is integer -fail var [expr double(1)]] $var
@@ -527,6 +537,8 @@ test string-6.88 {string is punct} {
 test string-6.89 {string is xdigit} {
     list [string is xdigit -fail var 0123456789\u0061bcdefABCDEFg] $var
 } {0 22}
+
+catch {rename largest_int {}}
 
 test string-7.1 {string last, too few args} {
     list [catch {string last a} msg] $msg
