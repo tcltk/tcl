@@ -1,3 +1,35 @@
+2002-10-09  Daniel Steffen  <das@users.sourceforge.net>
+
+	* generic/tclInt.decls: made TclSetPreInitScript() declaration
+	generic as it is used on mac & aqua as well.
+	* generic/tclIntDecls.h:
+	* generic/tclStubInit.c: regen.
+	* generic/tclCompile.h: added prototype for TclCompileVariableCmd.
+
+	* mac/tclMacPort.h: removed incorrect <fcntl.h> definitions
+	and obsolete <stat.h> definitions.
+	* mac/tclMacChan.c: removed obsolete GetOpenMode() and replaced 
+	associated constants with the <fcntl.h> analogues (they existing
+	defs were inconsistent with <fcntl.h> which was causing havoc when
+	Tcl_GetOpenMode was used instead of private GetOpenMode).
+
+	* mac/tclMacFCmd.c: removed GenerateUniqueName(), use equivalent
+	(and identiaclly named) routine from MoreFiles instead.
+
+	* mac/tclMacLoad.c: CONSTification, fixes to Vince's last changes.
+
+	* mac/tclMacFile.c: 
+	* mac/tclMacTest.c:
+	* mac/tclMacUnix.c: CONSTification.
+
+	* mac/tclMacOSA.c: CONSTificcation, sprintf fixes, UH 3.4.x changes;
+	fix for missing autoname token from TclOSACompileCmd. (bdesgraupes)
+	* mac/AppleScript.html(AppleScript delete): doc fix. (bdesgraupes)
+
+	* mac/tcltkMacBuildSupport.sea.hqx: updated MoreFiles to 1.5.3, 
+	updated build instructions for 8.4.
+	* mac/tclMacProjects.sea.hqx: rebuilt archive.
+
 2002-10-09  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* doc/Alloc.3: Added a note to mention that attempting to allocate

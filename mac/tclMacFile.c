@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacFile.c,v 1.24 2002/07/15 10:28:18 vincentdarley Exp $
+ * RCS: @(#) $Id: tclMacFile.c,v 1.25 2002/10/09 11:54:24 das Exp $
  */
 
 /*
@@ -1172,7 +1172,7 @@ TclpObjLink(pathPtr, toPtr, linkAction)
 	    FSSpec spec;
 	    FSSpec linkSpec;
 	    OSErr err;
-	    char *path;
+	    CONST char *path;
 	    AliasHandle alias;
 	    
 	    err = FspLocationFromFsPath(toPtr, &spec);
