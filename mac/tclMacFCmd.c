@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacFCmd.c,v 1.8 2001/07/31 19:12:07 vincentdarley Exp $
+ * RCS: @(#) $Id: tclMacFCmd.c,v 1.9 2001/08/23 17:37:08 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -102,14 +102,14 @@ int
 TclpObjCreateDirectory(pathPtr)
     Tcl_Obj *pathPtr;
 {
-    return TclpCreateDirectory(Tcl_FSGetTranslatedPath(NULL, pathPtr));
+    return DoCreateDirectory(Tcl_FSGetNativePath(pathPtr));
 }
 
 int 
 TclpObjDeleteFile(pathPtr)
     Tcl_Obj *pathPtr;
 {
-    return TclpDeleteFile(Tcl_FSGetTranslatedPath(NULL, pathPtr));
+    return DoDeleteFile(Tcl_FSGetNativePath(pathPtr));
 }
 
 int 
@@ -120,8 +120,8 @@ TclpObjCopyDirectory(srcPathPtr, destPathPtr, errorPtr)
 {
     Tcl_DString ds;
     int ret;
-    ret = TclpCopyDirectory(Tcl_FSGetTranslatedPath(NULL,srcPathPtr),
-			    Tcl_FSGetTranslatedPath(NULL,destPathPtr), &ds);
+    ret = DoCopyDirectory(Tcl_FSGetNativePath(srcPathPtr),
+			  Tcl_FSGetNativePath(destPathPtr), &ds);
     if (ret != TCL_OK) {
 	*errorPtr = Tcl_NewStringObj(Tcl_DStringValue(&ds), -1);
 	Tcl_DStringFree(&ds);
@@ -135,8 +135,8 @@ TclpObjCopyFile(srcPathPtr, destPathPtr)
     Tcl_Obj *srcPathPtr;
     Tcl_Obj *destPathPtr;
 {
-    return TclpCopyFile(Tcl_FSGetTranslatedPath(NULL,srcPathPtr),
-			Tcl_FSGetTranslatedPath(NULL,destPathPtr));
+    return DoCopyFile(Tcl_FSGetNativePath(srcPathPtr),
+		      Tcl_FSGetNativePath(destPathPtr));
 }
 
 int 
@@ -147,7 +147,7 @@ TclpObjRemoveDirectory(pathPtr, recursive, errorPtr)
 {
     Tcl_DString ds;
     int ret;
-    ret = TclpRemoveDirectory(Tcl_FSGetTranslatedPath(NULL, pathPtr),recursive, &ds);
+    ret = DoRemoveDirectory(Tcl_FSGetNativePath(pathPtr),recursive, &ds);
     if (ret != TCL_OK) {
 	*errorPtr = Tcl_NewStringObj(Tcl_DStringValue(&ds), -1);
 	Tcl_DStringFree(&ds);
@@ -161,8 +161,8 @@ TclpObjRenameFile(srcPathPtr, destPathPtr)
     Tcl_Obj *srcPathPtr;
     Tcl_Obj *destPathPtr;
 {
-    return TclpRenameFile(Tcl_FSGetTranslatedPath(NULL,srcPathPtr),
-			  Tcl_FSGetTranslatedPath(NULL,destPathPtr));
+    return DoRenameFile(Tcl_FSGetNativePath(srcPathPtr),
+			Tcl_FSGetNativePath(destPathPtr));
 }
 
 /*
@@ -744,8 +744,8 @@ TclpCopyDirectory(
 static int
 DoCopyDirectory(
     CONST char *src,		/* Pathname of directory to be copied
-				 * (UTF-8). */
-    CONST char *dst,		/* Pathname of target directory (UTF-8). */
+				 * (Native). */
+    CONST char *dst,		/* Pathname of target directory (Native). */
     Tcl_DString *errorPtr)	/* If non-NULL, uninitialized or free
 				 * DString filled with UTF-8 name of file
 				 * causing error. */
@@ -1555,23 +1555,20 @@ SetFileReadOnly(
 /*
  *---------------------------------------------------------------------------
  *
- * TclpListVolumes --
+ * TclpObjListVolumes --
  *
  *	Lists the currently mounted volumes
  *
  * Results:
- *	A standard Tcl result.  Will always be TCL_OK, since there is no way
- *	that this command can fail.  Also, the interpreter's result is set to 
- *	the list of volumes.
+ *	The list of volumes.
  *
  * Side effects:
  *	None
  *
  *---------------------------------------------------------------------------
  */
-int
-TclpListVolumes( 
-		Tcl_Interp *interp)    /* Interpreter to which to pass the volume list */
+Tcl_Obj*
+TclpObjListVolumes(void)
 {
     HParamBlockRec pb;
     Str255 name;
@@ -1606,15 +1603,15 @@ TclpListVolumes(
         elemPtr = Tcl_NewStringObj(Tcl_DStringValue(&dstr),
 		Tcl_DStringLength(&dstr));
         Tcl_AppendToObj(elemPtr, ":", 1);
-        Tcl_ListObjAppendElement(interp, resultPtr, elemPtr);
+        Tcl_ListObjAppendElement(NULL, resultPtr, elemPtr);
         
         Tcl_DStringFree(&dstr);
                 
         volIndex++;             
     }
-        
-    Tcl_SetObjResult(interp, resultPtr);
-    return TCL_OK;      
+
+    Tcl_IncrRefCount(resultPtr);
+    return resultPtr;
 }
 
 /*

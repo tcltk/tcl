@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: filename.n,v 1.4 2000/09/07 14:27:47 poenitz Exp $
+'\" RCS: @(#) $Id: filename.n,v 1.5 2001/08/23 17:37:07 vincentdarley Exp $
 '\" 
 .so man.macros
 .TH filename n 7.5 Tcl "Tcl Built-In Commands"
@@ -177,9 +177,13 @@ substitution.
 .PP
 The Macintosh and Windows platforms do not support tilde substitution
 when a user name follows the tilde.  On these platforms, attempts to
-use a tilde followed by a user name will generate an error.  File
-names that have a tilde without a user name will be substituted using
-the \fB$HOME\fR environment variable, just like for Unix.
+use a tilde followed by a user name will generate an error that the
+user does not exist when Tcl attempts to interpret that part of the
+path or otherwise access the file.  The behaviour of these paths
+when not trying to interpret them is the same as on Unix.  File
+names that have a tilde without a user name will be correctly
+substituted using the \fB$HOME\fR environment variable, just like 
+for Unix.
 
 .SH "PORTABILITY ISSUES"
 .PP

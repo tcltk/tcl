@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.13 2001/07/31 19:12:06 vincentdarley Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.14 2001/08/23 17:37:07 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -28,8 +28,6 @@ static int		GetStatBuf _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *objPtr, Tcl_FSStatProc *statProc,
 			    struct stat *statPtr));
 static char *		GetTypeFromMode _ANSI_ARGS_((int mode));
-static int		SplitPath _ANSI_ARGS_((Tcl_Interp *interp,
-			    Tcl_Obj *objPtr, int *argcPtr, char ***argvPtr));
 static int		StoreStatData _ANSI_ARGS_((Tcl_Interp *interp,
 			    char *varName, struct stat *statPtr));
 
@@ -782,7 +780,6 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
     int objc;			/* Number of arguments. */
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
-    Tcl_Obj *resultPtr;
     int index;
 
 /*
@@ -824,7 +821,6 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
     	return TCL_ERROR;
     }
 
-    resultPtr = Tcl_GetObjResult(interp);
     switch ((enum options) index) {
     	case FILE_ATIME: {
 	    struct stat buf;
@@ -845,7 +841,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 		tval.actime = buf.st_atime;
 		tval.modtime = buf.st_mtime;
 		if (Tcl_FSUtime(objv[2], &tval) != 0) {
-		    Tcl_AppendStringsToObj(resultPtr,
+		    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
 			    "could not set access time for file \"",
 			    Tcl_GetString(objv[2]), "\": ",
 			    Tcl_PosixError(interp), (char *) NULL);
@@ -861,7 +857,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 		    return TCL_ERROR;
 		}
 	    }
-	    Tcl_SetLongObj(resultPtr, (long) buf.st_atime);
+	    Tcl_SetLongObj(Tcl_GetObjResult(interp), (long) buf.st_atime);
 	    return TCL_OK;
 	}
 	case FILE_ATTRIBUTES: {
@@ -882,14 +878,28 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    return TclFileDeleteCmd(interp, objc, objv);
 	}
     	case FILE_DIRNAME: {
-    	    int argc;
-	    char ** argv;
+    	    int splitElements;
+	    Tcl_Obj *splitPtr;
+	    Tcl_Obj *splitResultPtr = NULL;
 
 	    if (objc != 3) {
 		goto only3Args;
 	    }
-	    if (SplitPath(interp, objv[2], &argc, &argv) != TCL_OK) {
-		return TCL_ERROR;
+	    /* 
+	     * The behaviour we want here is slightly different to
+	     * the standard Tcl_FSSplitPath in the handling of home
+	     * directories; Tcl_FSSplitPath preserves the "~" while 
+	     * this code computes the actual full path name, if we
+	     * had just a single component.
+	     */	    
+	    splitPtr = Tcl_FSSplitPath(objv[2], &splitElements);
+	    if ((splitElements == 1) && (Tcl_GetString(objv[2])[0] == '~')) {
+		Tcl_DecrRefCount(splitPtr);
+		splitPtr = Tcl_FSGetNormalizedPath(interp, objv[2]);
+		if (splitPtr == NULL) {
+		    return TCL_ERROR;
+		}
+		splitPtr = Tcl_FSSplitPath(splitPtr, &splitElements);
 	    }
 
 	    /*
@@ -898,22 +908,17 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	     * return the current directory.
 	     */
 
-	    if (argc > 1) {
-		Tcl_DString ds;
-
-		Tcl_DStringInit(&ds);
-	    	Tcl_JoinPath(argc - 1, argv, &ds);
-	    	Tcl_SetStringObj(resultPtr, Tcl_DStringValue(&ds),
-			Tcl_DStringLength(&ds));
-		Tcl_DStringFree(&ds);
-	    } else if ((argc == 0)
-		    || (Tcl_GetPathType(argv[0]) == TCL_PATH_RELATIVE)) {
-		Tcl_SetStringObj(resultPtr,
+	    if (splitElements > 1) {
+		splitResultPtr = Tcl_FSJoinPath(splitPtr, splitElements - 1);
+	    } else if (splitElements == 0 || 
+		       (Tcl_FSGetPathType(objv[2], NULL, NULL) == TCL_PATH_RELATIVE)) {
+		splitResultPtr = Tcl_NewStringObj(
 			((tclPlatform == TCL_PLATFORM_MAC) ? ":" : "."), 1);
 	    } else {
-	    	Tcl_SetStringObj(resultPtr, argv[0], -1);
+		Tcl_ListObjIndex(NULL, splitPtr, 0, &splitResultPtr);
 	    }
-	    ckfree((char *) argv);
+	    Tcl_SetObjResult(interp, splitResultPtr);
+	    Tcl_DecrRefCount(splitPtr);
 	    return TCL_OK;
 	}
 	case FILE_EXECUTABLE: {
@@ -936,7 +941,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    fileName = Tcl_GetString(objv[2]);
 	    extension = TclGetExtension(fileName);
 	    if (extension != NULL) {
-	    	Tcl_SetStringObj(resultPtr, extension, -1);
+	    	Tcl_SetStringObj(Tcl_GetObjResult(interp), extension, -1);
 	    }
 	    return TCL_OK;
 	}
@@ -951,7 +956,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    if (GetStatBuf(NULL, objv[2], Tcl_FSStat, &buf) == TCL_OK) {
 		value = S_ISDIR(buf.st_mode);
 	    }
-	    Tcl_SetBooleanObj(resultPtr, value);
+	    Tcl_SetBooleanObj(Tcl_GetObjResult(interp), value);
 	    return TCL_OK;
 	}
     	case FILE_ISFILE: {
@@ -965,7 +970,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    if (GetStatBuf(NULL, objv[2], Tcl_FSStat, &buf) == TCL_OK) {
 		value = S_ISREG(buf.st_mode);
 	    }
-	    Tcl_SetBooleanObj(resultPtr, value);
+	    Tcl_SetBooleanObj(Tcl_GetObjResult(interp), value);
 	    return TCL_OK;
 	}
 	case FILE_JOIN: {
@@ -1012,7 +1017,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 		tval.actime = buf.st_atime;
 		tval.modtime = buf.st_mtime;
 		if (Tcl_FSUtime(objv[2], &tval) != 0) {
-		    Tcl_AppendStringsToObj(resultPtr,
+		    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
 			    "could not set modification time for file \"",
 			    Tcl_GetString(objv[2]), "\": ",
 			    Tcl_PosixError(interp), (char *) NULL);
@@ -1028,7 +1033,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 		    return TCL_ERROR;
 		}
 	    }
-	    Tcl_SetLongObj(resultPtr, (long) buf.st_mtime);
+	    Tcl_SetLongObj(Tcl_GetObjResult(interp), (long) buf.st_mtime);
 	    return TCL_OK;
 	}
 	case FILE_MKDIR: {
@@ -1050,7 +1055,8 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    if (fileName == NULL) {
 		return TCL_ERROR;
 	    }
-	    Tcl_SetStringObj(resultPtr, fileName, Tcl_DStringLength(&ds));
+	    Tcl_SetStringObj(Tcl_GetObjResult(interp), fileName, 
+			     Tcl_DStringLength(&ds));
 	    Tcl_DStringFree(&ds);
 	    return TCL_OK;
 	}
@@ -1086,25 +1092,23 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 		value = (geteuid() == buf.st_uid);
 #endif
 	    }	    
-	    Tcl_SetBooleanObj(resultPtr, value);
+	    Tcl_SetBooleanObj(Tcl_GetObjResult(interp), value);
 	    return TCL_OK;
 	}
 	case FILE_PATHTYPE: {
-	    char *fileName;
-
 	    if (objc != 3) {
 		goto only3Args;
 	    }
-	    fileName = Tcl_GetString(objv[2]);
-	    switch (Tcl_GetPathType(fileName)) {
+	    switch (Tcl_FSGetPathType(objv[2], NULL, NULL)) {
 	    	case TCL_PATH_ABSOLUTE:
-	    	    Tcl_SetStringObj(resultPtr, "absolute", -1);
+	    	    Tcl_SetStringObj(Tcl_GetObjResult(interp), "absolute", -1);
 		    break;
 	    	case TCL_PATH_RELATIVE:
-	    	    Tcl_SetStringObj(resultPtr, "relative", -1);
+	    	    Tcl_SetStringObj(Tcl_GetObjResult(interp), "relative", -1);
 	    	    break;
 	    	case TCL_PATH_VOLUME_RELATIVE:
-		    Tcl_SetStringObj(resultPtr, "volumerelative", -1);
+		    Tcl_SetStringObj(Tcl_GetObjResult(interp), 
+				     "volumerelative", -1);
 		    break;
 	    }
 	    return TCL_OK;
@@ -1126,7 +1130,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 		return TCL_ERROR;
 	    }
 
-	    contents = Tcl_FSReadlink(objv[2]);
+	    contents = Tcl_FSLink(objv[2], NULL);
 
 	    if (contents == NULL) {
 	    	Tcl_AppendResult(interp, "could not readlink \"", 
@@ -1153,7 +1157,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    if (extension == NULL) {
 	    	Tcl_SetObjResult(interp, objv[2]);
 	    } else {
-	        Tcl_SetStringObj(resultPtr, fileName,
+	        Tcl_SetStringObj(Tcl_GetObjResult(interp), fileName,
 			(int) (length - strlen(extension)));
 	    }
 	    return TCL_OK;
@@ -1198,7 +1202,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    if (GetStatBuf(interp, objv[2], Tcl_FSStat, &buf) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	    Tcl_SetLongObj(resultPtr, (long) buf.st_size);
+	    Tcl_SetLongObj(Tcl_GetObjResult(interp), (long) buf.st_size);
 	    return TCL_OK;
 	}
 	case FILE_SPLIT: {
@@ -1238,14 +1242,27 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    }
 	}
     	case FILE_TAIL: {
-	    int argc;
-	    char **argv;
+	    int splitElements;
+	    Tcl_Obj *splitPtr;
 
 	    if (objc != 3) {
 		goto only3Args;
 	    }
-	    if (SplitPath(interp, objv[2], &argc, &argv) != TCL_OK) {
-		return TCL_ERROR;
+	    /* 
+	     * The behaviour we want here is slightly different to
+	     * the standard Tcl_FSSplitPath in the handling of home
+	     * directories; Tcl_FSSplitPath preserves the "~" while 
+	     * this code computes the actual full path name, if we
+	     * had just a single component.
+	     */	    
+	    splitPtr = Tcl_FSSplitPath(objv[2], &splitElements);
+	    if ((splitElements == 1) && (Tcl_GetString(objv[2])[0] == '~')) {
+		Tcl_DecrRefCount(splitPtr);
+		splitPtr = Tcl_FSGetNormalizedPath(interp, objv[2]);
+		if (splitPtr == NULL) {
+		    return TCL_ERROR;
+		}
+		splitPtr = Tcl_FSSplitPath(splitPtr, &splitElements);
 	    }
 
 	    /*
@@ -1253,13 +1270,16 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	     * and it is the root of an absolute path.
 	     */
 
-	    if (argc > 0) {
-	    	if ((argc > 1)
-		    	|| (Tcl_GetPathType(argv[0]) == TCL_PATH_RELATIVE)) {
-		    Tcl_SetStringObj(resultPtr, argv[argc - 1], -1);
+	    if (splitElements > 0) {
+	    	if ((splitElements > 1)
+		  || (Tcl_FSGetPathType(objv[2], NULL, NULL) == TCL_PATH_RELATIVE)) {
+		    
+		    Tcl_Obj *tail = NULL;
+		    Tcl_ListObjIndex(NULL, splitPtr, splitElements-1, &tail);
+		    Tcl_SetObjResult(interp, tail);
 	    	}
 	    }
-	    ckfree((char *) argv);
+	    Tcl_DecrRefCount(splitPtr);
 	    return TCL_OK;
 	}
 	case FILE_TYPE: {
@@ -1271,7 +1291,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    if (GetStatBuf(interp, objv[2], Tcl_FSLstat, &buf) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	    Tcl_SetStringObj(resultPtr, 
+	    Tcl_SetStringObj(Tcl_GetObjResult(interp), 
 		    GetTypeFromMode((unsigned short) buf.st_mode), -1);
 	    return TCL_OK;
 	}
@@ -1280,7 +1300,8 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 		Tcl_WrongNumArgs(interp, 2, objv, NULL);
 		return TCL_ERROR;
 	    }
-	    return Tcl_FSListVolumes(interp);
+	    Tcl_SetObjResult(interp, Tcl_FSListVolumes());
+	    return TCL_OK;
 	}
 	case FILE_WRITABLE: {
 	    if (objc != 3) {
@@ -1293,63 +1314,6 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
     only3Args:
     Tcl_WrongNumArgs(interp, 2, objv, "name");
     return TCL_ERROR;
-}
-
-/*
- *---------------------------------------------------------------------------
- *
- * SplitPath --
- *
- *	Utility procedure used by Tcl_FileObjCmd() to split a path.
- *	Differs from standard Tcl_SplitPath in its handling of home
- *	directories; Tcl_SplitPath preserves the "~" while this
- *	procedure computes the actual full path name.
- *
- * Results:
- *	The return value is TCL_OK if the path could be split, TCL_ERROR
- *	otherwise.  If TCL_ERROR was returned, an error message is left
- *	in interp.  If TCL_OK was returned, *argvPtr is set to a newly
- *	allocated array of strings that represent the individual
- *	directories in the specified path, and *argcPtr is filled with
- *	the length of that array.
- *
- * Side effects:
- *	Memory allocated.  The caller must eventually free this memory
- *	by calling ckfree() on *argvPtr.
- *
- *---------------------------------------------------------------------------
- */
-
-static int
-SplitPath(interp, objPtr, argcPtr, argvPtr)
-    Tcl_Interp *interp;		/* Interp for error return.  May be NULL. */
-    Tcl_Obj *objPtr;		/* Path to be split. */
-    int *argcPtr;		/* Filled with length of following array. */
-    char ***argvPtr;		/* Filled with array of strings representing
-				 * the elements of the specified path. */
-{
-    char *fileName;
-
-    fileName = Tcl_GetString(objPtr);
-
-    /*
-     * If there is only one element, and it starts with a tilde,
-     * perform tilde substitution and resplit the path.
-     */
-
-    Tcl_SplitPath(fileName, argcPtr, argvPtr);
-    if ((*argcPtr == 1) && (fileName[0] == '~')) {
-	Tcl_DString ds;
-	
-	ckfree((char *) *argvPtr);
-	fileName = Tcl_TranslateFileName(interp, fileName, &ds);
-	if (fileName == NULL) {
-	    return TCL_ERROR;
-	}
-	Tcl_SplitPath(fileName, argcPtr, argvPtr);
-	Tcl_DStringFree(&ds);
-    }
-    return TCL_OK;
 }
 
 /*

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFile.c,v 1.10 2001/07/31 19:12:07 vincentdarley Exp $
+ * RCS: @(#) $Id: tclUnixFile.c,v 1.11 2001/08/23 17:37:08 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -210,15 +210,15 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
     int matchHidden;
     int result = TCL_OK;
     Tcl_DString dsOrig;
-    char *fileName;
+    Tcl_Obj *fileNamePtr;
     int baseLength;
 
-    fileName = Tcl_FSGetTranslatedPath(interp, pathPtr);
-    if (fileName == NULL) {
+    fileNamePtr = Tcl_FSGetTranslatedPath(interp, pathPtr);
+    if (fileNamePtr == NULL) {
 	return TCL_ERROR;
     }
     Tcl_DStringInit(&dsOrig);
-    Tcl_DStringAppend(&dsOrig, fileName, -1);
+    Tcl_DStringAppend(&dsOrig, Tcl_GetString(fileNamePtr), -1);
     baseLength = Tcl_DStringLength(&dsOrig);
     
     /*
@@ -315,10 +315,8 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 	}
 
 	/*
-	 * Now check to see if the file matches.  If there are more
-	 * characters to be processed, then ensure matching files are
-	 * directories before calling TclDoGlob. Otherwise, just add
-	 * the file to the result.
+	 * Now check to see if the file matches, according to both type
+	 * and pattern.  If so, add the file to the result.
 	 */
 
 	utf = Tcl_ExternalToUtfDString(NULL, entryPtr->d_name, -1, &ds);
@@ -329,17 +327,29 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 	    Tcl_DStringAppend(&dsOrig, utf, -1);
 	    fname = Tcl_DStringValue(&dsOrig);
 	    if (types != NULL) {
-		if (types->perm != 0) {
-		    struct stat buf;
+		struct stat buf;
 
+		if (types->perm != 0) {
 		    if (TclpStat(fname, &buf) != 0) {
-			panic("stat failed on known file");
+			/* 
+			 * Either the file has disappeared between the
+			 * 'readdir' call and the 'TclpStat' call, or
+			 * the file is a link to a file which doesn't
+			 * exist (which we could ascertain with
+			 * TclpLstat), or there is some other strange
+			 * problem.  In all these cases, we define this
+			 * to mean the file does not match any defined
+			 * permission, and therefore it is not 
+			 * added to the list of files to return.
+			 */
+			typeOk = 0;
 		    }
+		    
 		    /* 
 		     * readonly means that there are NO write permissions
 		     * (even for user), but execute is OK for anybody
 		     */
-		    if (
+		    if (typeOk && (
 			((types->perm & TCL_GLOB_PERM_RONLY) &&
 				(buf.st_mode & (S_IWOTH|S_IWGRP|S_IWUSR))) ||
 			((types->perm & TCL_GLOB_PERM_R) &&
@@ -348,17 +358,19 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 				(TclpAccess(fname, W_OK) != 0)) ||
 			((types->perm & TCL_GLOB_PERM_X) &&
 				(TclpAccess(fname, X_OK) != 0))
-			) {
+			)) {
 			typeOk = 0;
 		    }
 		}
 		if (typeOk && (types->type != 0)) {
-		    struct stat buf;
-		    /*
-		     * We must match at least one flag to be listed
-		     */
-		    typeOk = 0;
-		    if (TclpLstat(fname, &buf) >= 0) {
+		    if (types->perm == 0) {
+			/* We haven't yet done a stat on the file */
+			if (TclpStat(fname, &buf) != 0) {
+			    /* Posix error occurred */
+			    typeOk = 0;
+			}
+		    }
+		    if (typeOk) {
 			/*
 			 * In order bcdpfls as in 'find -t'
 			 */
@@ -373,19 +385,24 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 				    S_ISFIFO(buf.st_mode)) ||
 			    ((types->type & TCL_GLOB_TYPE_FILE) &&
 				    S_ISREG(buf.st_mode))
-#ifdef S_ISLNK
-			    || ((types->type & TCL_GLOB_TYPE_LINK) &&
-				    S_ISLNK(buf.st_mode))
-#endif
 #ifdef S_ISSOCK
 			    || ((types->type & TCL_GLOB_TYPE_SOCK) &&
 				    S_ISSOCK(buf.st_mode))
 #endif
 			    ) {
-			    typeOk = 1;
+			    /* Do nothing -- this file is ok */
+			} else {
+			    typeOk = 0;
+#ifdef S_ISLNK
+			    if (types->type & TCL_GLOB_TYPE_LINK) {
+				if (TclpLstat(fname, &buf) == 0) {
+				    if (S_ISLNK(buf.st_mode)) {
+				        typeOk = 1;
+				    }
+				}
+			    }
+#endif
 			}
-		    } else {
-			/* Posix error occurred */
 		    }
 		}
 	    }
@@ -729,32 +746,38 @@ TclpObjAccess(pathPtr, mode)
 #ifdef S_IFLNK
 
 Tcl_Obj* 
-TclpObjReadlink(pathPtr)
+TclpObjLink(pathPtr, toPtr)
     Tcl_Obj *pathPtr;
+    Tcl_Obj *toPtr;
 {
-    char link[MAXPATHLEN];
-    int length;
-    char *native;
-    Tcl_Obj* linkPtr;
-    
-    if (Tcl_FSGetTranslatedPath(NULL, pathPtr) == NULL) {
+    Tcl_Obj* linkPtr = NULL;
+
+    if (toPtr != NULL) {
         return NULL;
+    } else {
+	char link[MAXPATHLEN];
+	int length;
+	char *native;
+
+	if (Tcl_FSGetTranslatedPath(NULL, pathPtr) == NULL) {
+	    return NULL;
+	}
+	length = readlink(Tcl_FSGetNativePath(pathPtr), link, sizeof(link));
+	if (length < 0) {
+	    return NULL;
+	}
+	
+	/* 
+	 * Allocate and copy the name, taking care since the
+	 * name need not be null terminated. 
+	 */
+	native = (char*)ckalloc((unsigned)(1+length));
+	strncpy(native, link, (unsigned)length);
+	native[length] = '\0';
+	
+	linkPtr = Tcl_FSNewNativePath(pathPtr, native);
+	Tcl_IncrRefCount(linkPtr);
     }
-    length = readlink(Tcl_FSGetNativePath(pathPtr), link, sizeof(link));
-    if (length < 0) {
-        return NULL;
-    }
-    
-    /* 
-     * Allocate and copy the name, taking care since the
-     * name need not be null terminated. 
-     */
-    native = (char*)ckalloc((unsigned)(1+length));
-    strncpy(native, link, (unsigned)length);
-    native[length] = '\0';
-    
-    linkPtr = Tcl_FSNewNativePath(pathPtr, native);
-    Tcl_IncrRefCount(linkPtr);
     return linkPtr;
 }
 

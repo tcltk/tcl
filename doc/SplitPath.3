@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: SplitPath.3,v 1.2 1998/09/14 18:39:50 stanton Exp $
+'\" RCS: @(#) $Id: SplitPath.3,v 1.3 2001/08/23 17:37:07 vincentdarley Exp $
 '\" 
 .so man.macros
 .TH Tcl_SplitPath 3 7.5 Tcl "Tcl Library Procedures"
@@ -44,6 +44,9 @@ A pointer to an initialized \fBTcl_DString\fR to which the result of
 .BE
 
 .SH DESCRIPTION
+.PP
+These procedures have been superceded by the objectified procedures in
+the \fBFileSystem\fR man page, which are more efficient.
 .PP
 These procedures may be used to disassemble and reassemble file
 paths in a platform independent manner: they provide C-level access to
