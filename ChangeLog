@@ -1,5 +1,7 @@
 2004-11-26  Don Porter  <dgp@users.sourceforge.net>
 
+	* tests/reg.test (reg-32.*):	Added missing testregexp constraints.
+
 	* library/auto.tcl (tcl_findLibrary):	Made sure the uniquifying
 	operations on the search path does not also normalize.  [Bug 1072136]
 
