@@ -1,3 +1,9 @@
+2004-08-10  Zoran Vasiljevic <vasiljevic@users.sf.net>
+
+        * unix/tclUnixThrd.c (TclpThreadCreate): changed handling of
+        the returned thread ID since broken on 64-bit systems (Cray).
+        Thanks to Rob Ratcliff for reporting the bug.
+
 2004-08-03  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclNamesp.c (MakeCachedEnsembleCommand): Initialize the
