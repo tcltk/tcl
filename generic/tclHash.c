@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclHash.c,v 1.12 2002/11/12 02:23:18 hobbs Exp $
+ * RCS: @(#) $Id: tclHash.c,v 1.13 2003/06/24 19:56:12 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -766,7 +766,9 @@ Tcl_HashStats(tablePtr)
 	    overflow++;
 	}
 	tmp = j;
-	average += (tmp+1.0)*(tmp/tablePtr->numEntries)/2.0;
+	if (tablePtr->numEntries != 0) {
+	    average += (tmp+1.0)*(tmp/tablePtr->numEntries)/2.0;
+	}
     }
 
     /*
