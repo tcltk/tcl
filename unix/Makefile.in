@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.92 2001/12/20 02:17:58 dgp Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.93 2002/01/11 19:17:49 mdejong Exp $
 
 VERSION 		= @TCL_VERSION@
 
@@ -444,10 +444,17 @@ tclsh: ${TCLSH_OBJS} ${TCL_LIB_FILE}
 	${CC} ${LDFLAGS} ${TCLSH_OBJS} @TCL_BUILD_LIB_SPEC@ ${LIBS} \
 		@TCL_LD_SEARCH_FLAGS@ -o tclsh
 
+# Resetting the LIB_RUNTIME_DIR below is required so that
+# the generated tcltest executable gets the build directory
+# burned into its ld search path. This keeps tcltest from
+# picking up an already installed version of the Tcl library.
+
 tcltest: ${TCLTEST_OBJS} ${TCL_LIB_FILE} ${BUILD_DLTEST}
+	$(MAKE) tcltest-real LIB_RUNTIME_DIR=`pwd`
+
+tcltest-real:
 	${CC} ${LDFLAGS} ${TCLTEST_OBJS} @TCL_BUILD_LIB_SPEC@ ${LIBS} \
 		@TCL_LD_SEARCH_FLAGS@ -o tcltest
-
 
 # Note, in the target below TCL_LIBRARY needs to be set or else
 # "make test" won't work in the case where the compilation directory
