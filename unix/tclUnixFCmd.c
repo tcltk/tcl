@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFCmd.c,v 1.7 2001/07/31 19:12:07 vincentdarley Exp $
+ * RCS: @(#) $Id: tclUnixFCmd.c,v 1.8 2001/08/02 01:27:13 hobbs Exp $
  *
  * Portions of this code were derived from NetBSD source code which has
  * the following copyright notice:
@@ -1157,7 +1157,7 @@ GetGroupAttribute(interp, objIndex, fileName, attributePtrPtr)
 
     groupPtr = getgrgid(statBuf.st_gid);		/* INTL: Native. */
     if (groupPtr == NULL) {
-	*attributePtrPtr = Tcl_NewIntObj(statBuf.st_gid);
+	*attributePtrPtr = Tcl_NewIntObj((int) statBuf.st_gid);
     } else {
 	Tcl_DString ds;
 	CONST char *utf;
@@ -1208,7 +1208,7 @@ GetOwnerAttribute(interp, objIndex, fileName, attributePtrPtr)
 
     pwPtr = getpwuid(statBuf.st_uid);			/* INTL: Native. */
     if (pwPtr == NULL) {
-	*attributePtrPtr = Tcl_NewIntObj(statBuf.st_uid);
+	*attributePtrPtr = Tcl_NewIntObj((int) statBuf.st_uid);
     } else {
 	Tcl_DString ds;
 	CONST char *utf;
@@ -1257,7 +1257,7 @@ GetPermissionsAttribute(interp, objIndex, fileName, attributePtrPtr)
 	return TCL_ERROR;
     }
 
-    sprintf(returnString, "%0#5lo", (statBuf.st_mode & 0x00007FFF));
+    sprintf(returnString, "%0#5lo", (long) (statBuf.st_mode & 0x00007FFF));
 
     *attributePtrPtr = Tcl_NewStringObj(returnString, -1);
     
