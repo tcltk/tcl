@@ -3,7 +3,7 @@
 # Default system startup file for Tcl-based applications.  Defines
 # "unknown" procedure and auto-load facilities.
 #
-# RCS: @(#) $Id: init.tcl,v 1.37 2000/01/29 00:12:46 ericm Exp $
+# RCS: @(#) $Id: init.tcl,v 1.38 2000/02/01 01:14:01 ericm Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
@@ -312,10 +312,10 @@ proc auto_load {cmd {namespace {}}} {
 	    # name.  One is to use
 	    #    info commands $name
 	    # Unfortunately, if the name has glob-magic chars in it like *
-	    # or [], it may not match.  Since we really want an exact match,
-	    # a better route is to use 
-	    #    lsearch -exact [info commands] $name
-	    if {[lsearch -exact [info commands] $name] != -1 } {
+	    # or [], it may not match.  For our purposes here, a better
+	    # route is to use 
+	    #    namespace which -command $name
+	    if { ![string equal [namespace which -command $name] ""] } {
 		return 1
 	    }
 	}

@@ -3,7 +3,7 @@
 # utility procs formerly in init.tcl dealing with auto execution
 # of commands and can be auto loaded themselves.
 #
-# RCS: @(#) $Id: auto.tcl,v 1.5 2000/01/28 16:38:34 ericm Exp $
+# RCS: @(#) $Id: auto.tcl,v 1.6 2000/02/01 01:14:01 ericm Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1998 Sun Microsystems, Inc.
@@ -318,13 +318,13 @@ proc auto_mkindex_parser::mkindex {file} {
     # There is one problem with sourcing files into the safe
     # interpreter:  references like "$x" will fail since code is not
     # really being executed and variables do not really exist.
-    # Be careful to escape all naked "$" before evaluating.
-    regsub -expanded -all {
-	([^\\](?:(?:\\\\)*)) # match any even number of backslashes ...
-	\$                   # ... followed by an unescaped dollar sign ...
-	([^\$])              # ... followed by anything but another dollar sign
-    } $contents {\1\\$\2} contents; # add one backslash for the dollar sign
-
+    # To avoid this, we replace all $ with \0 (literally, the null char)
+    # later, when getting proc names we will have to reverse this replacement,
+    # in case there were any $ in the proc name.  This will cause a problem
+    # if somebody actually tries to have a \0 in their proc name.  Too bad
+    # for them.
+    regsub -all {\$} $contents "\0" contents
+    
     set index ""
     set contextStack ""
     set imports ""
@@ -466,10 +466,14 @@ proc auto_mkindex_parser::fullname {name} {
     }
 
     if {[string equal [namespace qualifiers $name] ""]} {
-        return [namespace tail $name]
+        set name [namespace tail $name]
     } elseif {![string match ::* $name]} {
-        return "::$name"
+        set name "::$name"
     }
+    
+    # Earlier, mkindex replaced all $'s with \0.  Now, we have to reverse
+    # that replacement.
+    regsub -all "\0" $name "\$" name
     return $name
 }
 
