@@ -1,5 +1,9 @@
 2002-02-27  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
 
+	* tests/socket.test (2.7): Accepted and applied patch for Tcl SF
+	  bug #523470 provided by Don Porter <dgp@users.sourceforge.net>
+	  to avoid timing problems in that test.
+
 	* unix/tclUnixChan.c (TclpOpenFileChannel): Added code to regonize
 	  "/dev/tty" (by name) and to not handle it as tty / serial
 	  line. This is the controlling terminal and is special. Setting
