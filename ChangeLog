@@ -5,7 +5,7 @@
 
 	* generic/tclCmdAH.c (Tcl_FormatObjCmd):
 	* generic/tclScan.c (Tcl_ScanObjCmd): corrected handling of format
-	and scan on 64-bit machines. [Bug #412696] (rmax)
+	and scan on 64-bit machines. [Bug 219223, Patch #412696] (rmax)
 
 	* unix/configure: regen'ed
 	* unix/tcl.m4: added --enable-64bit support for HP-11 with the
