@@ -1,3 +1,14 @@
+2001-12-06  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* tests/parseExpr.test, tests/for.test, tests/expr.test:
+	* tests/expr-old.test, tests/compile.test, tests/compExpr.test
+	* tests/compExpr-old.test: Kept up to date with syntax errors.
+	* generic/tclParseExpr.c (ParsePrimaryExpr): Rewrote to give even
+	better syntax errors in the fairly common case of an identifier
+	without decorations by guessing based on the currently available
+	functions.  Also made messages consistent between memdebug and
+	ordinary builds.
+
 2001-12-05  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* generic/tclVar.c: 

@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: compExpr.test,v 1.5 2001/12/04 15:36:29 dkf Exp $
+# RCS: @(#) $Id: compExpr.test,v 1.6 2001/12/06 10:59:17 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -211,7 +211,7 @@ test compExpr-3.2 {CompileLandOrLorExpr procedure, nonnumeric 1st operand} {
 } 0
 test compExpr-3.3 {CompileSubExpr procedure, error in 1st operand} {
     list [catch {expr {[expr *2]||0}} msg] $msg
-} {1 {syntax error in expression "*2": unexpected operator}}
+} {1 {syntax error in expression "*2": unexpected operator *}}
 test compExpr-3.4 {CompileLandOrLorExpr procedure, result is 1 or 0} {
     catch {unset a}
     catch {unset b}
@@ -241,7 +241,7 @@ test compExpr-3.8 {CompileLandOrLorExpr procedure, nonnumeric 2nd operand} {
 } 0
 test compExpr-3.9 {CompileLandOrLorExpr procedure, error in 2nd operand} {
     list [catch {expr {0||[expr %2]}} msg] $msg
-} {1 {syntax error in expression "%2": unexpected operator}}
+} {1 {syntax error in expression "%2": unexpected operator %}}
 test compExpr-3.10 {CompileLandOrLorExpr procedure, long lor/land arm} {
     set a "abcdefghijkl"
     set i 7
@@ -260,7 +260,7 @@ test compExpr-4.2 {CompileCondExpr procedure, complex test, convert to numeric} 
 } -54
 test compExpr-4.3 {CompileCondExpr procedure, error in test} {
     list [catch {expr {[expr *2]? +1 : -1}} msg] $msg
-} {1 {syntax error in expression "*2": unexpected operator}}
+} {1 {syntax error in expression "*2": unexpected operator *}}
 test compExpr-4.4 {CompileCondExpr procedure, simple "true" clause} {
     catch {unset a}
     set a no
@@ -273,7 +273,7 @@ test compExpr-4.5 {CompileCondExpr procedure, convert "true" clause to numeric} 
 } no
 test compExpr-4.6 {CompileCondExpr procedure, error in "true" clause} {
     list [catch {expr {1? [expr *2] : -127}} msg] $msg
-} {1 {syntax error in expression "*2": unexpected operator}}
+} {1 {syntax error in expression "*2": unexpected operator *}}
 test compExpr-4.7 {CompileCondExpr procedure, simple "false" clause} {
     catch {unset a}
     set a no
@@ -286,7 +286,7 @@ test compExpr-4.8 {CompileCondExpr procedure, convert "false" clause to numeric}
 } 83
 test compExpr-4.9 {CompileCondExpr procedure, error in "false" clause} {
     list [catch {expr {1? 15 : [expr *2]}} msg] $msg
-} {1 {syntax error in expression "*2": unexpected operator}}
+} {1 {syntax error in expression "*2": unexpected operator *}}
 
 test compExpr-5.1 {CompileMathFuncCall procedure, math function found} {
     format %.6g [expr atan2(1.0, 2.0)]
@@ -310,7 +310,7 @@ test compExpr-5.6 {CompileMathFuncCall procedure, complex argument} {
 } 9.97424
 test compExpr-5.7 {CompileMathFuncCall procedure, error in argument} {
     list [catch {expr {sinh(2.*)}} msg] $msg
-} {1 {syntax error in expression "sinh(2.*)": unexpected operator}}
+} {1 {syntax error in expression "sinh(2.*)": unexpected close parenthesis}}
 test compExpr-5.8 {CompileMathFuncCall procedure, too many arguments} {
     list [catch {expr {sinh(2.0, 3.0)}} msg] $msg
 } {1 {too many arguments for math function}}
