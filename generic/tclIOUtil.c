@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.61 2002/07/20 01:01:41 vincentdarley Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.62 2002/07/21 17:03:00 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -455,7 +455,9 @@ static int filesystemIteratorsInProgress = 0;
  */
 static int filesystemWantToModify = 0;
 
+#ifdef TCL_THREADS
 static Tcl_Condition filesystemOkToModify = NULL;
+#endif
 
 TCL_DECLARE_MUTEX(filesystemMutex)
 
