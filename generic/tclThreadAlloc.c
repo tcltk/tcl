@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThreadAlloc.c,v 1.1 2002/04/23 17:03:34 hobbs Exp $ */
+ * RCS: @(#) $Id: tclThreadAlloc.c,v 1.2 2002/05/29 00:18:29 hobbs Exp $ */
 
 #if defined(TCL_THREADS) && defined(USE_THREAD_ALLOC)
 
@@ -302,7 +302,7 @@ TclFreeAllocCache(void *arg)
 char *
 TclpAlloc(unsigned int reqsize)
 {
-    Cache          *cachePtr = GetCache();
+    Cache         *cachePtr = GetCache();
     Block         *blockPtr;
     register int   bucket;
     size_t  	   size;
@@ -365,32 +365,34 @@ TclpAlloc(unsigned int reqsize)
 void
 TclpFree(char *ptr)
 {
-    Cache  *cachePtr = GetCache();
-    Block *blockPtr;
-    int bucket;
+    if (ptr != NULL) {
+	Cache  *cachePtr = GetCache();
+	Block *blockPtr;
+	int bucket;
  
-    /*
-     * Get the block back from the user pointer and
-     * call system free directly for large blocks.
-     * Otherwise, push the block back on the bucket and
-     * move blocks to the shared cache if there are now
-     * too many free.
-     */
+	/*
+	 * Get the block back from the user pointer and
+	 * call system free directly for large blocks.
+	 * Otherwise, push the block back on the bucket and
+	 * move blocks to the shared cache if there are now
+	 * too many free.
+	 */
 
-    blockPtr = Ptr2Block(ptr);
-    bucket = blockPtr->b_bucket;
-    if (bucket == NBUCKETS) {
-	cachePtr->nsysalloc -= blockPtr->b_reqsize;
-	free(blockPtr);
-    } else {
-	cachePtr->buckets[bucket].nrequest -= blockPtr->b_reqsize;
-	blockPtr->b_next = cachePtr->buckets[bucket].firstPtr;
-	cachePtr->buckets[bucket].firstPtr = blockPtr;
-	++cachePtr->buckets[bucket].nfree;
-	++cachePtr->buckets[bucket].nput;
-    	if (cachePtr != sharedPtr &&
-	    cachePtr->buckets[bucket].nfree > binfo[bucket].maxblocks) {
-	    PutBlocks(cachePtr, bucket, binfo[bucket].nmove);
+	blockPtr = Ptr2Block(ptr);
+	bucket = blockPtr->b_bucket;
+	if (bucket == NBUCKETS) {
+	    cachePtr->nsysalloc -= blockPtr->b_reqsize;
+	    free(blockPtr);
+	} else {
+	    cachePtr->buckets[bucket].nrequest -= blockPtr->b_reqsize;
+	    blockPtr->b_next = cachePtr->buckets[bucket].firstPtr;
+	    cachePtr->buckets[bucket].firstPtr = blockPtr;
+	    ++cachePtr->buckets[bucket].nfree;
+	    ++cachePtr->buckets[bucket].nput;
+	    if (cachePtr != sharedPtr &&
+		    cachePtr->buckets[bucket].nfree > binfo[bucket].maxblocks) {
+		PutBlocks(cachePtr, bucket, binfo[bucket].nmove);
+	    }
 	}
     }
 }
@@ -420,6 +422,10 @@ TclpRealloc(char *ptr, unsigned int reqsize)
     void *new;
     size_t size, min;
     int bucket;
+
+    if (ptr == NULL) {
+	return TclpAlloc(reqsize);
+    }
 
     /*
      * If the block is not a system block and fits in place,
