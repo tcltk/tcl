@@ -1,5 +1,7 @@
 1999-01-28    <stanton@GASPODE>
 
+	* Merged Tcl 8.0.5b1 changes.
+	
 	* generic/tclUtil.c (Tcl_DStringSetLength): Changed so the buffer
 	overallocates in a manner similar to Tcl_DStringAppend.  This
 	should improve performance for TclUniCharToUtfDString.
