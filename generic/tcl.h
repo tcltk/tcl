@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.142 2002/09/02 20:10:59 hobbs Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.143 2002/09/12 17:33:20 das Exp $
  */
 
 #ifndef _TCL
@@ -117,23 +117,15 @@ extern "C" {
 
 /* 
  * A special definition used to allow this header file to be included
- * from windows resource files so that they can obtain version
- * information.  RC_INVOKED is defined by default by the RC tool.
+ * from windows or mac resource files so that they can obtain version
+ * information.  RC_INVOKED is defined by default by the windows RC tool
+ * and manually set for macintosh.
+ *
  * Resource compilers don't like all the C stuff, like typedefs and
  * procedure declarations, that occur below, so block them out.
  */
 
 #ifndef RC_INVOKED
-
-/* 
- * A special definition for Macintosh used to allow this header file
- * to be included in resource files so that they can get obtain
- * version information from this file.  Resource compilers don't like
- * all the C stuff, like typedefs and procedure declarations, that
- * occur below.  
-*/
-
-#ifndef RESOURCE_INCLUDED
 
 /*
  * Special macro to define mutexes, that doesn't do anything
@@ -2282,12 +2274,10 @@ EXTERN void Tcl_Main _ANSI_ARGS_((int argc, char **argv,
 
 EXTERN int		Tcl_AppInit _ANSI_ARGS_((Tcl_Interp *interp));
 
-#endif /* RC_INVOKED */
-
 #undef TCL_STORAGE_CLASS
 #define TCL_STORAGE_CLASS DLLIMPORT
 
-#endif /* RESOURCE_INCLUDED */
+#endif /* RC_INVOKED */
 
 /*
  * end block for C++
