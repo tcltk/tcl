@@ -11,7 +11,7 @@
  *
  * Serial functionality implemented by Rolf.Schroedter@dlr.de
  *
- * RCS: @(#) $Id: tclWinSerial.c,v 1.22 2002/11/07 02:13:37 mdejong Exp $
+ * RCS: @(#) $Id: tclWinSerial.c,v 1.23 2002/11/26 22:35:20 davygrvy Exp $
  */
 
 #include "tclWinInt.h"
@@ -103,6 +103,9 @@ typedef struct SerialInfo {
     HANDLE evStartWriter;       /* Auto-reset event used by the main thread to
                                  * signal when the writer thread should attempt
                                  * to write to the serial. */
+    HANDLE evStopWriter;	/* Auto-reset event used by the main thread to
+                                 * signal when the writer thread should close.
+				 */
     DWORD writeError;           /* An error caused by the last background
                                  * write.  Set to 0 if no error has been
                                  * detected.  This word is shared with the
@@ -585,6 +588,7 @@ SerialCloseProc(
     int errorCode, result = 0;
     SerialInfo *infoPtr, **nextPtrPtr;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+    DWORD exitCode;
 
     errorCode = 0;
 
@@ -600,30 +604,52 @@ SerialCloseProc(
          * Generally we cannot wait for a pending write operation
          * because it may hang due to handshake
          *    WaitForSingleObject(serialPtr->evWritable, INFINITE);
-         */ 
-        /*
-         * Forcibly terminate the background thread.  We cannot rely on the
-         * thread to cleanly terminate itself because we have no way of
-         * closing the handle without blocking in the case where the
-         * thread is in the middle of an I/O operation.  Note that we need
-         * to guard against terminating the thread while it is in the
-         * middle of Tcl_ThreadAlert because it won't be able to release
-         * the notifier lock.
          */
 
-        Tcl_MutexLock(&serialMutex);
-        TerminateThread(serialPtr->writeThread, 0);
-        Tcl_MutexUnlock(&serialMutex);
+	/*
+	 * The thread may have already closed on it's own.  Check it's
+	 * exit code.
+	 */
 
-        /*
-         * Wait for the thread to terminate.  This ensures that we are
-         * completely cleaned up before we leave this function. 
-         */
+	GetExitCodeThread(serialPtr->writeThread, &exitCode);
 
-        WaitForSingleObject(serialPtr->writeThread, INFINITE);
+	if (exitCode == STILL_ACTIVE) {
+	    /*
+	     * Set the stop event so that if the writer thread is
+	     * blocked in SerialWriterThread on WaitForMultipleEvents, it
+	     * will exit cleanly.
+	     */
+
+	    SetEvent(serialPtr->evStopWriter);
+
+	    /*
+	     * Wait at most 20 milliseconds for the writer thread to
+	     * close.
+	     */
+
+	    if (WaitForSingleObject(serialPtr->writeThread, 20)
+		    == WAIT_TIMEOUT) {
+		/*
+		 * Forcibly terminate the background thread as a last
+		 * resort.  Note that we need to guard against
+		 * terminating the thread while it is in the middle of
+		 * Tcl_ThreadAlert because it won't be able to release
+		 * the notifier lock.
+		 */
+
+		Tcl_MutexLock(&serialMutex);
+
+		/* BUG: this leaks memory */
+		TerminateThread(serialPtr->writeThread, 0);
+
+		Tcl_MutexUnlock(&serialMutex);
+	    }
+	}
+
         CloseHandle(serialPtr->writeThread);
         CloseHandle(serialPtr->evWritable);
         CloseHandle(serialPtr->evStartWriter);
+        CloseHandle(serialPtr->evStopWriter);
         serialPtr->writeThread = NULL;
 
         PurgeComm(serialPtr->handle, PURGE_TXABORT | PURGE_TXCLEAR);
@@ -637,13 +663,13 @@ SerialCloseProc(
      */
 
     if (!TclInThreadExit()
-        || ((GetStdHandle(STD_INPUT_HANDLE) != serialPtr->handle)
-        && (GetStdHandle(STD_OUTPUT_HANDLE) != serialPtr->handle)
-        && (GetStdHandle(STD_ERROR_HANDLE) != serialPtr->handle))) {
-           if (CloseHandle(serialPtr->handle) == FALSE) {
-                TclWinConvertError(GetLastError());
-                errorCode = errno;
-            }
+	|| ((GetStdHandle(STD_INPUT_HANDLE) != serialPtr->handle)
+	&& (GetStdHandle(STD_OUTPUT_HANDLE) != serialPtr->handle)
+	&& (GetStdHandle(STD_ERROR_HANDLE) != serialPtr->handle))) {
+	    if (CloseHandle(serialPtr->handle) == FALSE) {
+		TclWinConvertError(GetLastError());
+		errorCode = errno;
+	    }
     }
 
     serialPtr->watchMask &= serialPtr->validMask;
@@ -653,8 +679,8 @@ SerialCloseProc(
      */
 
     for (nextPtrPtr = &(tsdPtr->firstSerialPtr), infoPtr = *nextPtrPtr;
-            infoPtr != NULL;
-                    nextPtrPtr = &infoPtr->nextPtr, infoPtr = *nextPtrPtr) {
+	    infoPtr != NULL;
+	    nextPtrPtr = &infoPtr->nextPtr, infoPtr = *nextPtrPtr) {
         if (infoPtr == (SerialInfo *)serialPtr) {
             *nextPtrPtr = infoPtr->nextPtr;
             break;
@@ -703,20 +729,20 @@ blockingRead(
     LPOVERLAPPED osPtr )    /* OVERLAPPED structure */
 {
     /*
-    *  Perform overlapped blocking read. 
-    *  1. Reset the overlapped event
-    *  2. Start overlapped read operation
-    *  3. Wait for completion
-    */
+     *  Perform overlapped blocking read. 
+     *  1. Reset the overlapped event
+     *  2. Start overlapped read operation
+     *  3. Wait for completion
+     */
 
-	/* 
-	* Set Offset to ZERO, otherwise NT4.0 may report an error 
-	*/
-	osPtr->Offset = osPtr->OffsetHigh = 0;
+    /* 
+     * Set Offset to ZERO, otherwise NT4.0 may report an error.
+     */
+    osPtr->Offset = osPtr->OffsetHigh = 0;
     ResetEvent(osPtr->hEvent);
     if (! ReadFile(infoPtr->handle, buf, bufSize, lpRead, osPtr) ) {
         if (GetLastError() != ERROR_IO_PENDING) {
-            /* ReadFile failed, but it isn't delayed. Report error */
+            /* ReadFile failed, but it isn't delayed. Report error. */
             return FALSE;
         } else {   
             /* Read is pending, wait for completion, timeout ? */
@@ -1247,16 +1273,32 @@ SerialWriterThread(LPVOID arg)
 
     SerialInfo *infoPtr = (SerialInfo *)arg;
     HANDLE *handle = infoPtr->handle;
-    DWORD bytesWritten, toWrite;
+    DWORD bytesWritten, toWrite, waitResult;
     char *buf;
     OVERLAPPED myWrite; /* have an own OVERLAPPED in this thread */
+    HANDLE wEvents[2];
+
+    /*
+     * The stop event takes precedence by being first in the list.
+     */
+    wEvents[0] = infoPtr->evStopWriter;
+    wEvents[1] = infoPtr->evStartWriter;
 
     for (;;) {
         /*
          * Wait for the main thread to signal before attempting to write.
          */
 
-        WaitForSingleObject(infoPtr->evStartWriter, INFINITE);
+	waitResult = WaitForMultipleObjects(2, wEvents, FALSE, INFINITE);
+
+	if (waitResult != (WAIT_OBJECT_0 + 1)) {
+	    /*
+	     * The start event was not signaled.  It might be the stop event
+	     * or an error, so exit.
+	     */
+
+	    break;
+	}
 
         buf = infoPtr->writeBuf;
         toWrite = infoPtr->toWrite;
@@ -1306,7 +1348,8 @@ SerialWriterThread(LPVOID arg)
         Tcl_ThreadAlert(infoPtr->threadId);
         Tcl_MutexUnlock(&serialMutex);
     }
-    return 0;                   /* NOT REACHED */
+
+    return 0;
 }
 
 
@@ -1426,8 +1469,9 @@ TclWinOpenSerialChannel(handle, channelName, permissions)
         infoPtr->osWrite.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
         infoPtr->evWritable = CreateEvent(NULL, TRUE, TRUE, NULL);
         infoPtr->evStartWriter = CreateEvent(NULL, FALSE, FALSE, NULL);
+	infoPtr->evStopWriter = CreateEvent(NULL, FALSE, FALSE, NULL);
         InitializeCriticalSection(&infoPtr->csWrite);
-        infoPtr->writeThread = CreateThread(NULL, 8000, SerialWriterThread,
+        infoPtr->writeThread = CreateThread(NULL, 256, SerialWriterThread,
             infoPtr, 0, &id);
     }
 

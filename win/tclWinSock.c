@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinSock.c,v 1.26 2002/05/24 18:57:09 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclWinSock.c,v 1.27 2002/11/26 22:35:20 davygrvy Exp $
  */
 
 #include "tclWinInt.h"
@@ -435,7 +435,7 @@ InitSockets()
 	
 	tsdPtr->readyEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 	tsdPtr->socketListLock = CreateEvent(NULL, FALSE, TRUE, NULL);
-	tsdPtr->socketThread = CreateThread(NULL, 8000, SocketThread,
+	tsdPtr->socketThread = CreateThread(NULL, 256, SocketThread,
 		tsdPtr, 0, &id);
 	SetThreadPriority(tsdPtr->socketThread, THREAD_PRIORITY_HIGHEST); 
 
