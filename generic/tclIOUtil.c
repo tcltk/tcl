@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.77.2.14 2004/01/09 13:19:42 vincentdarley Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.77.2.15 2004/02/18 01:34:04 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -96,6 +96,11 @@ Tcl_FSPathInFilesystemProc NativePathInFilesystem;
 static Tcl_Obj*  TclFSNormalizeAbsolutePath 
 			    _ANSI_ARGS_((Tcl_Interp* interp, Tcl_Obj *pathPtr,
 					 ClientData *clientDataPtr));
+
+static int 	FindSplitPos _ANSI_ARGS_((CONST char *path,
+					  int separator));
+static int	IsSeparatorOrNull _ANSI_ARGS_((int ch));
+
 /*
  * Prototypes for procedures defined later in this file.
  */
@@ -1303,6 +1308,9 @@ Tcl_FSData(fsPtr)
  *	
  *	The behaviour of this function if passed a non-absolute path
  *	is NOT defined.
+ *	
+ *	pathPtr may have a refCount of zero, or may be a shared
+ *	object.
  *
  * Results:
  *	The result is returned in a Tcl_Obj with a refCount of 1,
@@ -1313,93 +1321,195 @@ Tcl_FSData(fsPtr)
  *	None (beyond the memory allocation for the result).
  *
  * Special note:
- *	This code is based on code from Matt Newman and Jean-Claude
- *	Wippler, with additions from Vince Darley and is copyright 
- *	those respective authors.
+ *	This code was originally based on code from Matt Newman and
+ *	Jean-Claude Wippler, but has since been totally rewritten by
+ *	Vince Darley to deal with symbolic links.
  *
  *---------------------------------------------------------------------------
  */
 Tcl_Obj*
 TclFSNormalizeAbsolutePath(interp, pathPtr, clientDataPtr)
-    Tcl_Interp* interp;    /* Interpreter to use */
-    Tcl_Obj *pathPtr;      /* Absolute path to normalize */
-    ClientData *clientDataPtr;
+    Tcl_Interp* interp;	       /* Interpreter to use */
+    Tcl_Obj *pathPtr;	       /* Absolute path to normalize */
+    ClientData *clientDataPtr; /* If non-NULL, then may be set to the
+				* fs-specific clientData for this path.
+				* This will happen when that extra
+				* information can be calculated efficiently
+				* as a side-effect of normalization. */
 {
-    int splen = 0, nplen, eltLen, i;
-    char *eltName;
-    Tcl_Obj *retVal;
-    Tcl_Obj *split;
-    Tcl_Obj *elt;
+    ClientData clientData = NULL;
+    CONST char *dirSep, *oldDirSep;
+    int first = 1;   /* Set to zero once we've passed the first
+                      * directory separator - we can't use '..' to 
+                      * remove the volume in a path. */
+    Tcl_Obj *retVal = NULL;
+    dirSep = Tcl_GetString(pathPtr);
     
-    /* Split has refCount zero */
-    split = Tcl_FSSplitPath(pathPtr, &splen);
-
-    /* 
-     * Modify the list of entries in place, by removing '.', and
-     * removing '..' and the entry before -- unless that entry before
-     * is the top-level entry, i.e. the name of a volume.
-     */
-    nplen = 0;
-    for (i = 0; i < splen; i++) {
-	Tcl_ListObjIndex(NULL, split, nplen, &elt);
-	eltName = Tcl_GetStringFromObj(elt, &eltLen);
-
-	if ((eltLen == 1) && (eltName[0] == '.')) {
-	    Tcl_ListObjReplace(NULL, split, nplen, 1, 0, NULL);
-	} else if ((eltLen == 2)
-		&& (eltName[0] == '.') && (eltName[1] == '.')) {
-	    if (nplen > 1) {
-	        nplen--;
-		Tcl_ListObjReplace(NULL, split, nplen, 2, 0, NULL);
-	    } else {
-		Tcl_ListObjReplace(NULL, split, nplen, 1, 0, NULL);
+    if (tclPlatform == TCL_PLATFORM_WINDOWS) {
+        if (dirSep[0] != 0 && dirSep[1] == ':' && 
+	    (dirSep[2] == '/' || dirSep[2] == '\\')) {
+	    /* Do nothing */
+	} else if ((dirSep[0] == '/' || dirSep[0] == '\\') 
+	    && (dirSep[1] == '/' || dirSep[1] == '\\')) {
+	    /* 
+	     * UNC style path, where we must skip over the
+	     * first separator, since the first two segments
+	     * are actually inseparable.
+	     */
+	    dirSep += 2;
+	    dirSep += FindSplitPos(dirSep, '/');
+	    if (*dirSep != 0) {
+	        dirSep++;
 	    }
-	} else {
-	    nplen++;
 	}
     }
-    if (nplen > 0) {
-	ClientData clientData = NULL;
-	
-	retVal = Tcl_FSJoinPath(split, nplen);
-	/* 
-	 * Now we have an absolute path, with no '..', '.' sequences,
-	 * but it still may not be in 'unique' form, depending on the
-	 * platform.  For instance, Unix is case-sensitive, so the
-	 * path is ok.  Windows is case-insensitive, and also has the
-	 * weird 'longname/shortname' thing (e.g. C:/Program Files/ and
-	 * C:/Progra~1/ are equivalent).  MacOS is case-insensitive.
-	 * 
-	 * Virtual file systems which may be registered may have
-	 * other criteria for normalizing a path.
-	 */
-	Tcl_IncrRefCount(retVal);
-	TclFSNormalizeToUniquePath(interp, retVal, 0, &clientData);
-	/* 
-	 * Since we know it is a normalized path, we can
-	 * actually convert this object into an "path" object for
-	 * greater efficiency 
-	 */
-	TclFSMakePathFromNormalized(interp, retVal, clientData);
-	if (clientDataPtr != NULL) {
-	    *clientDataPtr = clientData;
-	}
-    } else {
-	/* Init to an empty string */
-	retVal = Tcl_NewStringObj("",0);
-	Tcl_IncrRefCount(retVal);
-    }
+
     /* 
-     * We increment and then decrement the refCount of split to free
-     * it.  We do this right at the end, in case there are
-     * optimisations in Tcl_FSJoinPath(split, nplen) above which would
-     * let it make use of split more effectively if it has a refCount
-     * of zero.  Also we can't just decrement the ref count, in case
-     * 'split' was actually returned by the join call above, in a
-     * single-element optimisation when nplen == 1.
+     * Scan forward from one directory separator to the next,
+     * checking for '..' and '.' sequences which must be handled
+     * specially.  In particular handling of '..' can be complicated
+     * if the directory before is a link, since we will have to
+     * expand the link to be able to back up one level.
      */
-    Tcl_IncrRefCount(split);
-    Tcl_DecrRefCount(split);
+    while (*dirSep != 0) {
+	oldDirSep = dirSep;
+        dirSep += 1+FindSplitPos(dirSep+1, '/');
+	if (dirSep[0] == 0 || dirSep[1] == 0) {
+	    if (retVal != NULL) {
+		Tcl_AppendToObj(retVal, oldDirSep, dirSep - oldDirSep);
+	    }
+	    break;
+	}
+	if (dirSep[1] == '.') {
+	    if (retVal != NULL) {
+		Tcl_AppendToObj(retVal, oldDirSep, dirSep - oldDirSep);
+	    }
+	  again:
+	    if (IsSeparatorOrNull(dirSep[2])) {
+		/* Need to skip '.' in the path */
+		if (retVal == NULL) {
+		    CONST char *path = Tcl_GetString(pathPtr);
+		    retVal = Tcl_NewStringObj(path, dirSep - path);
+		    Tcl_IncrRefCount(retVal);
+		}
+		dirSep += 2;
+		if (dirSep[0] != 0 && dirSep[1] == '.') {
+		    goto again;
+		}
+		continue;
+	    }
+	    if (dirSep[2] == '.' && IsSeparatorOrNull(dirSep[3])) {
+		Tcl_Obj *link;
+		int curLen;
+		char *linkStr;
+		/* Have '..' so need to skip previous directory */
+		if (retVal == NULL) {
+		    CONST char *path = Tcl_GetString(pathPtr);
+		    retVal = Tcl_NewStringObj(path, dirSep - path);
+		    Tcl_IncrRefCount(retVal);
+		}
+		if (!first) {
+		    link = Tcl_FSLink(retVal, NULL, 0);
+		    if (link != NULL) {
+			/* Got a link */
+			Tcl_DecrRefCount(retVal);
+			retVal = link;
+			linkStr = Tcl_GetStringFromObj(retVal, &curLen);
+			/* Convert to forward-slashes on windows */
+			if (tclPlatform == TCL_PLATFORM_WINDOWS) {
+			    int i;
+			    for (i = 0; i < curLen; i++) {
+				if (linkStr[i] == '\\') {
+				    linkStr[i] = '/';
+				}
+			    }
+			}
+		    } else {
+			linkStr = Tcl_GetStringFromObj(retVal, &curLen);
+		    }
+		    /* Either way, we now remove the last path element */
+		    while (--curLen > 0) {
+			if (IsSeparatorOrNull(linkStr[curLen])) {
+			    Tcl_SetObjLength(retVal, curLen);
+			    break;
+			}
+		    }
+		}
+		dirSep += 3;
+		if (dirSep[0] != 0 && dirSep[1] == '.') {
+		    goto again;
+		}
+		continue;
+	    }
+	}
+	first = 0;
+	if (retVal != NULL) {
+	    Tcl_AppendToObj(retVal, oldDirSep, dirSep - oldDirSep);
+	}
+    }
+    
+    /* 
+     * If we didn't make any changes, just use the input path 
+     */
+    if (retVal == NULL) {
+	retVal = pathPtr;
+	Tcl_IncrRefCount(retVal);
+	
+	if (Tcl_IsShared(retVal)) {
+	    /* 
+	     * Unfortunately, the platform-specific normalization code
+	     * which will be called below has no way of dealing with the
+	     * case where an object is shared.  It is expecting to
+	     * modify an object in place.  So, we must duplicate this
+	     * here to ensure an object with a single ref-count.
+	     * 
+	     * If that changes in the future (e.g. the normalize proc is
+	     * given one object and is able to return a different one),
+	     * then we could remove this code.
+	     */
+	    Tcl_DecrRefCount(retVal);
+	    retVal = Tcl_DuplicateObj(pathPtr);
+	    Tcl_IncrRefCount(retVal);
+	}
+    }
+
+    /* 
+     * Ensure a windows drive like C:/ has a trailing separator 
+     */
+    if (tclPlatform == TCL_PLATFORM_WINDOWS) {
+	int len;
+	CONST char *path = Tcl_GetStringFromObj(retVal, &len);
+	if (len == 2 && path[0] != 0 && path[1] == ':') {
+	    if (Tcl_IsShared(retVal)) {
+		Tcl_DecrRefCount(retVal);
+		retVal = Tcl_DuplicateObj(retVal);
+		Tcl_IncrRefCount(retVal);
+	    }
+	    Tcl_AppendToObj(retVal, "/", 1);
+	}
+    }
+
+    /* 
+     * Now we have an absolute path, with no '..', '.' sequences,
+     * but it still may not be in 'unique' form, depending on the
+     * platform.  For instance, Unix is case-sensitive, so the
+     * path is ok.  Windows is case-insensitive, and also has the
+     * weird 'longname/shortname' thing (e.g. C:/Program Files/ and
+     * C:/Progra~1/ are equivalent).  MacOS is case-insensitive.
+     * 
+     * Virtual file systems which may be registered may have
+     * other criteria for normalizing a path.
+     */
+    TclFSNormalizeToUniquePath(interp, retVal, 0, &clientData);
+    /* 
+     * Since we know it is a normalized path, we can
+     * actually convert this object into an FsPath for
+     * greater efficiency 
+     */
+    TclFSMakePathFromNormalized(interp, retVal, clientData);
+    if (clientDataPtr != NULL) {
+	*clientDataPtr = clientData;
+    }
 
     /* This has a refCount of 1 for the caller */
     return retVal;
@@ -4479,9 +4589,6 @@ static void		FreeFsPathInternalRep _ANSI_ARGS_((Tcl_Obj *listPtr));
 static void             UpdateStringOfFsPath _ANSI_ARGS_((Tcl_Obj *objPtr));
 static int		SetFsPathFromAny _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *objPtr));
-static int 		FindSplitPos _ANSI_ARGS_((char *path, char *separator));
-
-
 
 /*
  * Define the 'path' object type, which Tcl uses to represent
@@ -4885,20 +4992,45 @@ Tcl_FSConvertToPathType(interp, objPtr)
 }
 
 /* 
+ * Helper function for normalization.
+ */
+static int
+IsSeparatorOrNull(ch)
+    int ch;
+{
+    if (ch == 0) {
+        return 1;
+    }
+    switch (tclPlatform) {
+	case TCL_PLATFORM_UNIX: {
+	    return (ch == '/' ? 1 : 0);
+	}
+	case TCL_PLATFORM_MAC: {
+	    return (ch == ':' ? 1 : 0);
+	}
+	case TCL_PLATFORM_WINDOWS: {
+	    return ((ch == '/' || ch == '\\') ? 1 : 0);
+	}
+    }
+    return 0;
+}
+
+/* 
  * Helper function for SetFsPathFromAny.  Returns position of first
- * directory delimiter in the path.
+ * directory delimiter in the path.  If no separator is found, then
+ * returns the position of the end of the string.
  */
 static int
 FindSplitPos(path, separator)
-    char *path;
-    char *separator;
+    CONST char *path;
+    int separator;
 {
     int count = 0;
     switch (tclPlatform) {
 	case TCL_PLATFORM_UNIX:
 	case TCL_PLATFORM_MAC:
 	    while (path[count] != 0) {
-		if (path[count] == *separator) {
+		if (path[count] == separator) {
 		    return count;
 		}
 		count++;
@@ -4907,7 +5039,7 @@ FindSplitPos(path, separator)
 
 	case TCL_PLATFORM_WINDOWS:
 	    while (path[count] != 0) {
-		if (path[count] == *separator || path[count] == '\\') {
+		if (path[count] == separator || path[count] == '\\') {
 		    return count;
 		}
 		count++;
@@ -5568,12 +5700,14 @@ Tcl_FSGetNormalizedPath(interp, pathObjPtr)
 		     * Path of form C:foo/bar, but this only makes
 		     * sense if the cwd is also on drive C.
 		     */
-		    CONST char *drive = Tcl_GetString(useThisCwd);
-		    char drive_c = path[0];
-		    if (drive_c >= 'a') {
-			drive_c -= ('a' - 'A');
+		    int cwdLen;
+		    CONST char *drive = Tcl_GetStringFromObj(useThisCwd, 
+							     &cwdLen);
+		    char drive_cur = path[0];
+		    if (drive_cur >= 'a') {
+			drive_cur -= ('a' - 'A');
 		    }
-		    if (drive[0] == drive_c) {
+		    if (drive[0] == drive_cur) {
 			absolutePath = Tcl_DuplicateObj(useThisCwd);
 			/* We have a refCount on the cwd */
 		    } else {
@@ -5589,7 +5723,10 @@ Tcl_FSGetNormalizedPath(interp, pathObjPtr)
 			absolutePath = Tcl_NewStringObj(path, 2);
 		    }
 		    Tcl_IncrRefCount(absolutePath);
-		    Tcl_AppendToObj(absolutePath, "/", 1);
+		    if (drive[cwdLen-1] != '/') {
+			/* Only add a trailing '/' if needed */
+		        Tcl_AppendToObj(absolutePath, "/", 1);
+		    }
 		    Tcl_AppendToObj(absolutePath, path+2, -1);
 		}
 #endif /* __WIN32__ */
@@ -5932,7 +6069,7 @@ SetFsPathFromAny(interp, objPtr)
 	    if (strchr(name, ':') != NULL) separator = ':';
 	}
 	
-	split = FindSplitPos(name, &separator);
+	split = FindSplitPos(name, separator);
 	if (split != len) {
 	    /* We have multiple pieces '~user/foo/bar...' */
 	    name[split] = '\0';
