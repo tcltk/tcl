@@ -3542,11 +3542,17 @@ insert pointers to such routines; TclAccessDeleteProc, TclStatDeleteProc,
 & TclOpenFileChannelDeleteProc delete pointers to such routines.  See
 the file generic/tclIOUtils.c for more details. (SKS)
  
- 7/1/98 (enhancement) Added a new internal C variable
- tclPreInitScript.  This is a pointer to a string that may hold an
- initialization script; If this pointer is non-NULL it is evaluated in
- Tcl_Init() prior to the built-in initialization script defined in the
- file generic/tclInitScript.h.  (SKS)
+7/1/98 (enhancement) Added a new internal C variable
+tclPreInitScript.  This is a pointer to a string that may hold an
+initialization script; If this pointer is non-NULL it is evaluated in
+Tcl_Init() prior to the built-in initialization script defined in the
+file generic/tclInitScript.h.  (SKS)
 
 7/6/98 (bug fix) Removed dead code in PlatformInitExitHandler so that
 the TCL_LIBRARY value can be safely patched in binaries. (BW)
+
+7/24/98 (enhancement) Incorporated a new version of auto_mkindex that
+can support the [incr Tcl] class structures.  This version will index
+all procedures in a source file, not just those where "proc" starts
+at the beginning of the line.  If you want the old behavior, use the
+auto_mkindex_old procedure. (MMC)
