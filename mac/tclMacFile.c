@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacFile.c,v 1.1.2.2 1998/09/24 23:59:12 stanton Exp $
+ * RCS: @(#) $Id: tclMacFile.c,v 1.1.2.3 1998/10/06 00:37:43 stanton Exp $
  */
 
 /*
@@ -125,7 +125,8 @@ TclpMatchFiles(
     Tcl_DString *dirPtr,	/* Contains path to directory to search. */
     char *pattern,		/* Pattern to match against. */
     char *tail)			/* Pointer to end of pattern.  Tail must
-				 * point to a location in pattern. */
+				 * point to a location in pattern and must
+				 * not be static.*/
 {
     char *dirName, *patternEnd = tail;
     char savedChar;
