@@ -1,3 +1,11 @@
+2002-09-15  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* unix/configure: Regen.
+	* unix/tcl.m4 (SC_CONFIG_CFLAGS): Add PEEK_XCLOSEIM
+	define under Linux. This is used by Tk to double
+	check that an X input context is cleaned up
+	before it is closed.
+
 2002-09-12  David Gravereaux <davygrvy@pobox.com>
 
 	* win/coffbase.txt: Added BLT to the virtual base address
