@@ -1,3 +1,10 @@
+2002-07-24  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* generic/tclExecute.c: restoring the tcl_traceCompile
+	functionality while I repair tcl_traceExec. The core now compiles
+	and runs also under TCL_COMPILE_DEBUG, but execution in the
+	bytecode engine can still not be traced.
+
 2002-07-24  Daniel Steffen  <das@users.sourceforge.net>
 
 	* unix/Makefile.in:
