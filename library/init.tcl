@@ -3,7 +3,7 @@
 # Default system startup file for Tcl-based applications.  Defines
 # "unknown" procedure and auto-load facilities.
 #
-# RCS: @(#) $Id: init.tcl,v 1.54 2002/10/28 16:34:25 dgp Exp $
+# RCS: @(#) $Id: init.tcl,v 1.55 2002/11/23 01:41:35 hobbs Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
@@ -48,7 +48,7 @@ if {![info exists auto_path]} {
 }
 namespace eval tcl {
     variable Dir
-    if {[string compare [info library] {}]} {
+    if {[info library] != ""} {
 	foreach Dir [list [info library] [file dirname [info library]]] {
 	    if {[lsearch -exact $::auto_path $Dir] < 0} {
 		lappend ::auto_path $Dir
@@ -82,7 +82,7 @@ if {(![interp issafe]) && [string equal $tcl_platform(platform) "windows"]} {
 	    global env tcl_platform
 	    foreach p [array names env] {
 		set u [string toupper $p]
-		if {[string compare $u $p]} {
+		if {![string equal $u $p]} {
 		    switch -- $u {
 			COMSPEC -
 			PATH {
@@ -267,7 +267,7 @@ proc unknown args {
 	    && [info exists tcl_interactive] && $tcl_interactive} {
 	if {![info exists auto_noexec]} {
 	    set new [auto_execok $name]
-	    if {[string compare {} $new]} {
+	    if {$new != ""} {
 		set errorCode $savedErrorCode
 		set errorInfo $savedErrorInfo
 		set redir ""
@@ -418,7 +418,7 @@ proc auto_load_index {} {
 		    error "[file join $dir tclIndex] isn't a proper Tcl index file"
 		}
 	    } msg]
-	    if {[string compare $f ""]} {
+	    if {$f != ""} {
 		close $f
 	    }
 	    if {$error} {
