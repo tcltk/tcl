@@ -118,6 +118,16 @@
 
 	* generic/tclDecls.h: make genstubs
 
+2001-01-18  Daniel Steffen  <das@users.sourceforge.net>
+
+	* generic/tclThreadTest.c:
+	* mac/tclMacChan.c:
+	* mac/tclMacFCmd.c:
+	* mac/tclMacFile.c:
+	* mac/tclMacLoad.c:
+	* mac/tclMacResource.c: TIP 27 CONSTification broke the mac
+	build in a number of places.
+
 2002-01-15  Don Porter <dgp@users.sourceforge.net>
 
 	* doc/SetErrno.3 (Tcl_ErrnoMsg): Corrected documentation for

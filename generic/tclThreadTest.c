@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThreadTest.c,v 1.13 2001/12/29 00:49:49 hobbs Exp $
+ * RCS: @(#) $Id: tclThreadTest.c,v 1.14 2002/01/18 03:22:31 das Exp $
  */
 
 #include "tclInt.h"
@@ -203,7 +203,7 @@ Tcl_ThreadObjCmd(dummy, interp, objc, objv)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     int option;
-    static char *threadOptions[] = {"create", "exit", "id", "join", "names",
+    static CONST char *threadOptions[] = {"create", "exit", "id", "join", "names",
 				    "send", "wait", "errorproc",
 				    (char *) NULL};
     enum options {THREAD_CREATE, THREAD_EXIT, THREAD_ID, THREAD_JOIN,
