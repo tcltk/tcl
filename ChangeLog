@@ -5,7 +5,8 @@
 	* tests/fileName.test:
 	* tests/load.test:
 	* tests/main.test:
-	* tests/tcltest.test: Fixes to test suite when there's a space
+	* tests/tcltest.test: 
+	* tests/unixInit.test: Fixes to test suite when there's a space
 	in the working path.  Thanks to Kevin Kenny.
 
 2002-05-07  David Gravereaux <davygrvy@pobox.com>
