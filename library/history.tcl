@@ -2,7 +2,7 @@
 #
 # Implementation of the history command.
 #
-# RCS: @(#) $Id: history.tcl,v 1.3 1998/09/14 18:40:03 stanton Exp $
+# RCS: @(#) $Id: history.tcl,v 1.3.18.1 2000/08/07 21:31:47 hobbs Exp $
 #
 # Copyright (c) 1997 Sun Microsystems, Inc.
 #
@@ -305,7 +305,8 @@ proc history {args} {
  proc tcl::HistIndex {event} {
     variable history
     if {[catch {expr {~$event}}]} {
-	for {set i $history(nextid)} {[info exists history($i)]} {incr i -1} {
+	for {set i [expr {$history(nextid)-1}]} {[info exists history($i)]} \
+		{incr i -1} {
 	    if {[string match $event* $history($i)]} {
 		return $i;
 	    }
