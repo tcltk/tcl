@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.64 2003/03/09 14:22:06 kennykb Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.65 2003/04/11 15:59:58 vincentdarley Exp $
  */
 
 #define TCL_TEST
@@ -3339,12 +3339,26 @@ TestregexpObjCmd(dummy, interp, objc, objv)
 	    char *varName;
 	    CONST char *value;
 	    int start, end;
-	    char info[TCL_INTEGER_SPACE * 2];
+	    char resinfo[TCL_INTEGER_SPACE * 2];
 
 	    varName = Tcl_GetString(objv[2]);
 	    TclRegExpRangeUniChar(regExpr, -1, &start, &end);
-	    sprintf(info, "%d %d", start, end-1);
-	    value = Tcl_SetVar(interp, varName, info, 0);
+	    sprintf(resinfo, "%d %d", start, end-1);
+	    value = Tcl_SetVar(interp, varName, resinfo, 0);
+	    if (value == NULL) {
+		Tcl_AppendResult(interp, "couldn't set variable \"",
+			varName, "\"", (char *) NULL);
+		return TCL_ERROR;
+	    }
+	} else if (cflags & TCL_REG_CANMATCH) {
+	    char *varName;
+	    CONST char *value;
+	    char resinfo[TCL_INTEGER_SPACE * 2];
+
+	    Tcl_RegExpGetInfo(regExpr, &info);
+	    varName = Tcl_GetString(objv[2]);
+	    sprintf(resinfo, "%d", info.extendStart);
+	    value = Tcl_SetVar(interp, varName, resinfo, 0);
 	    if (value == NULL) {
 		Tcl_AppendResult(interp, "couldn't set variable \"",
 			varName, "\"", (char *) NULL);
@@ -3461,6 +3475,10 @@ TestregexpXflags(string, length, cflagsPtr, eflagsPtr)
 	    }
 	    case 'b': {
 		cflags &= ~REG_ADVANCED;
+		break;
+	    }
+	    case 'c': {
+		cflags |= TCL_REG_CANMATCH;
 		break;
 	    }
 	    case 'e': {
@@ -4014,7 +4032,7 @@ TestfileCmd(dummy, interp, argc, argv)
     }
 
     for (j = i; j < argc; j++) {
-        if (Tcl_FSGetTranslatedPath(interp, argv[j]) == NULL) {
+        if (Tcl_FSGetNormalizedPath(interp, argv[j]) == NULL) {
 	    return TCL_ERROR;
 	}
     }
