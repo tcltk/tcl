@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinSock.c,v 1.1.2.7 1999/03/24 23:53:18 redman Exp $
+ * RCS: @(#) $Id: tclWinSock.c,v 1.1.2.8 1999/03/25 01:25:15 redman Exp $
  */
 
 #include "tclWinInt.h"
@@ -405,7 +405,7 @@ InitSockets()
 	class.hIcon = NULL;
 	class.hCursor = NULL;
 
-	if (RegisterClassA(&class)) {
+	if (!RegisterClassA(&class)) {
 	    TclWinConvertError(GetLastError());
 	    (*winSock.WSACleanup)();
 	    goto unloadLibrary;

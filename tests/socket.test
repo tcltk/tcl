@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: socket.test,v 1.1.2.9 1999/03/24 23:53:17 redman Exp $
+# RCS: @(#) $Id: socket.test,v 1.1.2.10 1999/03/25 01:25:14 redman Exp $
 
 # Running socket tests with a remote server:
 # ------------------------------------------
@@ -448,6 +448,7 @@ test socket-2.7 {echo server, one line} {socket stdio} {
     set s [socket 127.0.0.1 2828]
     fconfigure $s -buffering line -translation lf
     puts $s "hello abcdefghijklmnop"
+    after 1000
     set x [gets $s]
     close $s
     set y [gets $f]
@@ -1619,15 +1620,11 @@ test socket-13.1 {Testing use of shared socket between two threads} \
              }
 	}
 	set i 0
-	puts ready
-	set timer [after 20000 "set x done"]
 	vwait x
-	after cancel $timer
 	close $f
-	puts "done $i"
 
 	# thread cleans itself up.
-	testhread exit
+	testthread exit
     }
     close $f
     
@@ -1643,9 +1640,13 @@ test socket-13.1 {Testing use of shared socket between two threads} \
 	gets $s result
     }
     close $s
+    update
 
+    after 2000
     ThreadReap
+    
     set result
+
 } hello
 
 # cleanup
