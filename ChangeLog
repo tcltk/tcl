@@ -1,3 +1,8 @@
+2003-07-18  Don Porter  <dgp@users.sourceforge.net>
+
+	* doc/CrtSlave.3 (Tcl_MakeSafe):  Removed warning about possible
+	deprecation (no TIP on that).
+
 2003-07-17  Daniel Steffen  <das@users.sourceforge.net>
 
 	* macosx/Makefile: added var to allow overriding of tclsh used
@@ -76,8 +81,8 @@
 
 2003-07-15  Don Porter  <dgp@users.sourceforge.net>
 
-        * doc/http.n:  Updated SYNOPSIS to match actual syntax of
-        commands.  [Bug 756112]
+	* doc/http.n:  Updated SYNOPSIS to match actual syntax of
+	commands.  [Bug 756112]
 
 	* unix/dltest/pkga.c:	Updated to not use Tcl_UtfNcmp and counted
 	strings instead of strcmp (not defined in any #include'd header)
