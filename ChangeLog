@@ -1,3 +1,12 @@
+2002-02-27  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclBasic.c (Tcl_EvalTokensStandard): corrected mem leak
+	in error case.
+
+	* generic/tclTest.c (TestStatProc[123]): correct harmless UMRs.
+
+	* generic/tclLink.c (Tcl_LinkVar): correct mem leak in error case.
+
 2002-02-27  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
 
 	* tests/socket.test (2.7): Accepted and applied patch for Tcl SF
