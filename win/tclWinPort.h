@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPort.h,v 1.12.2.5 2001/10/15 17:39:34 hobbs Exp $
+ * RCS: @(#) $Id: tclWinPort.h,v 1.12.2.6 2002/10/15 20:23:54 hobbs Exp $
  */
 
 #ifndef _TCLWINPORT
@@ -345,6 +345,23 @@
 #endif /* _MSC_VER || __MINGW32__ */
 
 /*
+ * Borland's timezone and environ functions.
+ */
+
+#ifdef  __BORLANDC__
+#   define timezone _timezone
+#   define environ  _environ
+#endif /* __BORLANDC__ */
+
+#ifdef __CYGWIN__
+/* On Cygwin, the environment is imported from the Cygwin DLL. */
+     DLLIMPORT extern char **__cygwin_environ;
+#    define environ __cygwin_environ
+#    define putenv TclCygwinPutenv
+#    define timezone _timezone
+#endif /* __CYGWIN__ */
+
+/*
  *---------------------------------------------------------------------------
  * The following macros and declarations represent the interface between 
  * generic and windows-specific parts of Tcl.  Some of the macros may 
@@ -377,12 +394,18 @@
  * use by tclAlloc.c.
  */
 
-#define TclpSysAlloc(size, isBin)	((void*)HeapAlloc(GetProcessHeap(), \
+#ifdef __CYGWIN__
+#   define TclpSysAlloc(size, isBin)	malloc((size))
+#   define TclpSysFree(ptr)		free((ptr))
+#   define TclpSysRealloc(ptr, size)	realloc((ptr), (size))
+#else
+#   define TclpSysAlloc(size, isBin)	((void*)HeapAlloc(GetProcessHeap(), \
 					    (DWORD)0, (DWORD)size))
-#define TclpSysFree(ptr)		(HeapFree(GetProcessHeap(), \
+#   define TclpSysFree(ptr)		(HeapFree(GetProcessHeap(), \
 					    (DWORD)0, (HGLOBAL)ptr))
-#define TclpSysRealloc(ptr, size)	((void*)HeapReAlloc(GetProcessHeap(), \
+#   define TclpSysRealloc(ptr, size)	((void*)HeapReAlloc(GetProcessHeap(), \
 					    (DWORD)0, (LPVOID)ptr, (DWORD)size))
+#endif
 
 /*
  * The following defines map from standard socket names to our internal

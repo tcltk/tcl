@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEnv.c,v 1.7.2.4 2002/10/14 22:26:00 hobbs Exp $
+ * RCS: @(#) $Id: tclEnv.c,v 1.7.2.5 2002/10/15 20:23:51 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -54,6 +54,9 @@ void			TclSetEnv _ANSI_ARGS_((CONST char *name,
 			    CONST char *value));
 void			TclUnsetEnv _ANSI_ARGS_((CONST char *name));
 
+#if defined (__CYGWIN__) && defined(__WIN32__)
+static void		TclCygwinPutenv _ANSI_ARGS_((CONST char *string));
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -678,3 +681,84 @@ TclFinalizeEnvironment()
 #endif
     }
 }
+
+#if defined(__CYGWIN__) && defined(__WIN32__)
+
+#include <windows.h>
+
+/*
+ * When using cygwin, when an environment variable changes, we need to synch
+ * with both the cygwin environment (in case the application C code calls
+ * fork) and the Windows environment (in case the application TCL code calls
+ * exec, which calls the Windows CreateProcess function).
+ */
+
+static void
+TclCygwinPutenv(str)
+    const char *str;
+{
+    char *name, *value;
+
+    /* Get the name and value, so that we can change the environment
+       variable for Windows.  */
+    name = (char *) alloca (strlen (str) + 1);
+    strcpy (name, str);
+    for (value = name; *value != '=' && *value != '\0'; ++value)
+	;
+    if (*value == '\0') {
+	    /* Can't happen.  */
+	    return;
+	}
+    *value = '\0';
+    ++value;
+    if (*value == '\0') {
+	value = NULL;
+    }
+
+    /* Set the cygwin environment variable.  */
+#undef putenv
+    if (value == NULL) {
+	unsetenv (name);
+    } else {
+	putenv(str);
+    }
+
+    /*
+     * Before changing the environment variable in Windows, if this is PATH,
+     * we need to convert the value back to a Windows style path.
+     *
+     * FIXME: The calling program may know it is running under windows, and
+     * may have set the path to a Windows path, or, worse, appended or
+     * prepended a Windows path to PATH.
+     */
+    if (strcmp (name, "PATH") != 0) {
+	/* If this is Path, eliminate any PATH variable, to prevent any
+	   confusion.  */
+	if (strcmp (name, "Path") == 0) {
+	    SetEnvironmentVariable ("PATH", (char *) NULL);
+	    unsetenv ("PATH");
+	}
+
+	SetEnvironmentVariable (name, value);
+    } else {
+	char *buf;
+
+	    /* Eliminate any Path variable, to prevent any confusion.  */
+	SetEnvironmentVariable ("Path", (char *) NULL);
+	unsetenv ("Path");
+
+	if (value == NULL) {
+	    buf = NULL;
+	} else {
+	    int size;
+
+	    size = cygwin_posix_to_win32_path_list_buf_size (value);
+	    buf = (char *) alloca (size + 1);
+	    cygwin_posix_to_win32_path_list (value, buf);
+	}
+
+	SetEnvironmentVariable (name, buf);
+    }
+}
+
+#endif /* __CYGWIN__ && __WIN32__ */
