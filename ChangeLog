@@ -1,3 +1,7 @@
+2001-11-16  Kevin B. Kenny  <kennykb@users.sourceforge.net>
+	* generic/tclListObj.c: removed a C++-style comment that
+	  was inadvertently left in the source code.
+	
 2001-11-16  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* unix/tclUnixInit.c: added HAVE_LANGINFO code block.
