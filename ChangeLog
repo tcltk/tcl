@@ -7,6 +7,9 @@
 
 2003-09-23  Don Porter  <dgp@users.sourceforge.net>
 
+	* tests/trace.test (trace-31,32-*):  Added tests for [Bug 807243]
+	and [Bug 811483].
+
 	* library/init.tcl (auto_load, auto_import):  Expanded Eric Melski's
 	2000-01-28 fix for [Bug 218871] to all potentially troubled uses of
 	[info commands] on input data, where glob-special characters could
