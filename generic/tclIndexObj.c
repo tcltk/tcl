@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIndexObj.c,v 1.15 2002/02/16 00:37:54 hobbs Exp $
+ * RCS: @(#) $Id: tclIndexObj.c,v 1.16 2002/02/28 05:11:25 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -161,7 +161,7 @@ Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr, offset, msg, flags,
 	indexPtr)
     Tcl_Interp *interp; 	/* Used for error reporting if not NULL. */
     Tcl_Obj *objPtr;		/* Object containing the string to lookup. */
-    CONST char **tablePtr;	/* The first string in the table. The second
+    CONST VOID *tablePtr;	/* The first string in the table. The second
 				 * string will be at this address plus the
 				 * offset, the third plus the offset again,
 				 * etc. The last entry must be NULL
@@ -274,7 +274,7 @@ Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr, offset, msg, flags,
 	resultPtr = Tcl_GetObjResult(interp);
 	Tcl_AppendStringsToObj(resultPtr,
 		(numAbbrev > 1) ? "ambiguous " : "bad ", msg, " \"",
-		key, "\": must be ", *tablePtr, (char *) NULL);
+		key, "\": must be ", STRING_AT(tablePtr,offset,0), (char*)NULL);
 	for (entryPtr = NEXT_ENTRY(tablePtr, offset), count = 0;
 		*entryPtr != NULL;
 		entryPtr = NEXT_ENTRY(entryPtr, offset), count++) {
