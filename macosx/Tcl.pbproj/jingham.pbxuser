@@ -14,12 +14,12 @@
 			PBXWorkspaceConfiguration = {
 				ContentSize = "{876, 673}";
 				LeftSlideOut = {
-					ActiveTab = 0;
+					ActiveTab = 3;
 					Frame = "{{0, 23}, {876, 650}}";
 					Split0 = {
-						Frame = "{{244, 0}, {632, 650}}";
+						Frame = "{{224, 0}, {652, 650}}";
 						Split0 = {
-							Frame = "{{0, 25}, {632, 625}}";
+							Frame = "{{0, 24}, {652, 626}}";
 						};
 						SplitCount = 1;
 						Tab0 = {
