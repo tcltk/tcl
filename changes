@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.79.2.13 2004/11/15 21:52:26 dgp Exp $
+RCS: @(#) $Id: changes,v 1.79.2.14 2004/11/16 16:56:00 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -6104,7 +6104,9 @@ Corrects Tcl_StatBuf definition issues.  (hobbs)
 
 2004-11-15 (bug fix)[10653678] [trace variable],[trace remove] interop (porter)
 
-Documentation improvements [759545,1058446,1062647,etc.]
+2004-11-16 (bug fix)[695441] [tcl_findLibrary] search $::auto_path too (porter)
+
+Documentation improvements [759545,1058446,1062647,1065732,etc.]
 Test suite expansion [1036649,1001997,etc.]
 
 --- Released 8.4.8, November XX, 2004 --- See ChangeLog for details ---
