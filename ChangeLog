@@ -1,6 +1,11 @@
 2005-03-13 Miguel Sofer <msofer@users.sf.net>
 
-	* Changed files are the usual suspects.
+	* generic/tclCompCmds.c:
+	* generic/tclCompExpr.c:
+	* generic/tclCompile.c:
+	* generic/tclCompile.h:
+	* generic/tclExecute.c:
+	* generic/tclProc.c:
 	Each (instruction+operands) takes two words; instructions that
 	take two operands pack them into a single pointer-sized int. 
 	Unused instructions removed from tclInstructionTable.
