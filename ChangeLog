@@ -1,3 +1,10 @@
+2004-05-24  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclExecute.c (VerifyExprObjType): use GET_WIDE_OR_INT to
+	properly have tclIntType used for smaller values.  This corrects
+	TclX bug 896727 and any other 3rd party extension that created
+	math functions but was not yet WIDE_INT aware in them.
+
 2004-05-24 Miguel Sofer <msofer@users.sf.net>
 
 	* doc/set.n: accurate description of name resolution process,
