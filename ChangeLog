@@ -1,3 +1,12 @@
+2003-02-01  Kevin Kenny  <kennykb@users.sourceforge.net>
+
+	* doc/Tcl.n: Added headings to the eleven paragraphs, to improve
+	formatting in the tools that attempt to extract tables of contents
+	from the manual pages. [Bug 627455]
+
+	* generic/tclClock.c: Expanded mutex protection around the setting
+	of env(TZ) and the thread-unsafe call to tzset(). [Bug 656660]
+	
 2003-01-31  Don Porter  <dgp@users.sourceforge.net>
 
 	* tests/tcltest.test: Cleaned up management of file/directory
