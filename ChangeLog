@@ -1,9 +1,14 @@
 2004-07-20  Daniel Steffen  <das@users.sourceforge.net>
 
+	* unix/Makefile.in:
+	* win/Makefile.in: added 'install-private-headers' makefile target
+	to allow optionally installing private tcl headers. [FR 922727]
+
+	* macosx/Makefile: use new 'install-private-headers' target
+	to install private headers into framework. [FR 922727]
+
 	* unix/tclUnixFile.c (NativeMatchType): added support for
 	readonly matching of user immutable files (where available).
-
-2004-07-20  Daniel Steffen  <das@users.sourceforge.net>
 
 	* macosx/tclMacOSXBundle.c: dynamically acquire address for
 	CFBundleOpenBundleResourceMap symbol, since it is only present in
