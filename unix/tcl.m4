@@ -33,6 +33,13 @@ AC_DEFUN(SC_PATH_TCLCONFIG, [
 
 	    # First check to see if --with-tcl was specified.
 	    if test x"${with_tclconfig}" != x ; then
+		case ${with_tclconfig} in
+		    */tclConfig.sh )
+			if test -f ${with_tclconfig}; then
+			    AC_MSG_WARN([--with-tcl argument should refer to directory containing tclConfig.sh, not to tclConfig.sh itself])
+			    with_tclconfig=`echo ${with_tclconfig} | sed 's!/tclConfig\.sh$!!'`
+			fi ;;
+		esac
 		if test -f "${with_tclconfig}/tclConfig.sh" ; then
 		    ac_cv_c_tclconfig=`(cd ${with_tclconfig}; pwd)`
 		else
@@ -137,6 +144,13 @@ AC_DEFUN(SC_PATH_TKCONFIG, [
 
 	    # First check to see if --with-tkconfig was specified.
 	    if test x"${with_tkconfig}" != x ; then
+		case ${with_tkconfig} in
+		    */tkConfig.sh )
+			if test -f ${with_tkconfig}; then
+			    AC_MSG_WARN([--with-tk argument should refer to directory containing tkConfig.sh, not to tkConfig.sh itself])
+			    with_tkconfig=`echo ${with_tkconfig} | sed 's!/tkConfig\.sh$!!'`
+			fi ;;
+		esac
 		if test -f "${with_tkconfig}/tkConfig.sh" ; then
 		    ac_cv_c_tkconfig=`(cd ${with_tkconfig}; pwd)`
 		else
