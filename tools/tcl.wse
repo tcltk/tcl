@@ -143,31 +143,10 @@ end
 item: Wizard Block
   Direction Variable=DIRECTION
   Display Variable=DISPLAY
-  Bitmap Pathname=C:\Program Files\Wise\DIALOGS\TEMPLATE\WIZARD.BMP
-  X Position=9
-  Y Position=10
+  X Position=0
+  Y Position=0
   Filler Color=8421440
-  Dialog=Welcome
-  Dialog=Select Destination Directory
-  Dialog=Select Installation Type
-  Dialog=Select Components
-  Dialog=Select Program Manager Group
-  Variable=
-  Variable=
-  Variable=
-  Variable=TYPE
-  Variable=EXPLORER
-  Value=
-  Value=
-  Value=
-  Value=C
-  Value=1
-  Compare=0
-  Compare=0
-  Compare=0
-  Compare=1
-  Compare=0
-  Flags=00000011
+  Flags=00000001
 end
 item: Custom Dialog Set
   Name=Splash
@@ -201,14 +180,51 @@ item: Custom Dialog Set
       Text=Cancel
     end
     item: Static
-      Rectangle=0 0 268 209
-      Destination Dialog=1
+      Rectangle=0 0 269 213
+      Action=2
+      Enabled Color=00000000000000001111111111111111
+      Create Flags=01010000000000000000000000001011
+      Pathname=D:\ws\core8.1\tcl8.1b2\tools\white.bmp
+    end
+    item: Static
+      Rectangle=34 13 242 184
       Action=2
       Enabled Color=00000000000000001111111111111111
       Create Flags=01010000000000000000000000001011
       Pathname=D:\ws\core8.1\tcl8.1b2\tools\tclSplash.bmp
     end
   end
+end
+item: End Block
+end
+item: Wizard Block
+  Direction Variable=DIRECTION
+  Display Variable=DISPLAY
+  Bitmap Pathname=C:\Program Files\Wise\DIALOGS\TEMPLATE\WIZARD.BMP
+  X Position=9
+  Y Position=10
+  Filler Color=8421440
+  Dialog=Welcome
+  Dialog=Select Destination Directory
+  Dialog=Select Installation Type
+  Dialog=Select Components
+  Dialog=Select Program Manager Group
+  Variable=
+  Variable=
+  Variable=
+  Variable=TYPE
+  Variable=EXPLORER
+  Value=
+  Value=
+  Value=
+  Value=C
+  Value=1
+  Compare=0
+  Compare=0
+  Compare=0
+  Compare=1
+  Compare=0
+  Flags=00000011
 end
 item: Custom Dialog Set
   Name=Welcome
