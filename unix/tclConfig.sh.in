@@ -9,7 +9,7 @@
 #
 # The information in this file is specific to a single platform.
 #
-# RCS: @(#) $Id: tclConfig.sh.in,v 1.1.2.3 1999/03/10 06:49:28 stanton Exp $
+# RCS: @(#) $Id: tclConfig.sh.in,v 1.1.2.4 1999/03/12 23:01:01 stanton Exp $
 
 # Tcl's version number.
 TCL_VERSION='@TCL_VERSION@'
@@ -139,7 +139,7 @@ TCL_SRC_DIR='@TCL_SRC_DIR@'
 TCL_PACKAGE_PATH='@TCL_PACKAGE_PATH@'
 
 # Tcl supports stub.
-TCL_SUPPORTS_STUBS=@TCL_SUPPORTS_STUBS@
+TCL_SUPPORTS_STUBS=1
 
 # The name of the Tcl stub library (.a):
 TCL_STUB_LIB_FILE='@TCL_STUB_LIB_FILE@'

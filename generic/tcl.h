@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.1.2.16 1999/03/11 01:50:27 stanton Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.1.2.17 1999/03/12 23:00:59 stanton Exp $
  */
 
 #ifndef _TCL
@@ -1294,7 +1294,7 @@ typedef unsigned short Tcl_UniChar;
  * in the stubs tables.
  */
 
-#define TCL_STUB_MAGIC 0xFCA1BACF
+#define TCL_STUB_MAGIC 0xFCA3BACF
 
 /*
  * The following function is required to be defined in all stubs aware

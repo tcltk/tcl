@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.1.2.19 1999/03/11 06:16:37 welch Exp $
+RCS: @(#) $Id: changes,v 1.1.2.20 1999/03/12 23:00:59 stanton Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -3741,6 +3741,8 @@ extension" so that it splits at the last period.  Now the extension of
 a file like "foo..o" is ".o" instead of "..o" as in previous versions. 
 *** POTENTIAL INCOMPATIBILITY ***
 
+----------------- Released 8.0.5, 3/9/99 -------------------------
+
 ======== Changes for 8.0 go above this line ========
 ======== Changes for 8.1 go below this line ========
 
@@ -4118,5 +4120,36 @@ Tcl_EvalEx and restoring Tcl_EvalObj and Tcl_GlobalEvalObj interfaces
 so they match Tcl 8.0. (stanton)
 *** POTENTIAL INCOMPATIBILITY with previous alpha/beta releases ***
 
+2/25/99 (bug fix/new feature) On Windows, the channel drivers for
+consoles and serial ports now completely support file events. (redman)
+
+3/5/99 (bug fix) Integrated patches to fix various configure problems
+that affected HP-UX-11, 64-bit IRIX, Linux, and Solaris. (stanton)
+
+3/9/99 (bug fix) Integrated various AIX related patches to improve
+support for shared libraries. (stanton)
+
 3/9/99 (new feature) Added tcl_platform(user) to provide a portable
 way to get the name of the current user. (welch)
+
+3/9/99 (new feature) Integrated the stub library mechanism contributed
+by Jan Nijtmans, Paul Duffin, and Jean-Claude Wippler.  This feature
+should make it possible to write extensions that support multiple
+versions of Tcl simultaneously.  It also makes it possible to
+dynamically load extensions into statically linked interpreters.  This
+patch includes the following changes:
+      -	Added a Tcl_InitStubs() interface
+      -	Added Tcl_PkgProvideEx, Tcl_PkgRequireEx, Tcl_PkgPresentEx,
+      	and Tcl_PkgPresent.
+      - Added va_list versions of all VARARGS functions so they can be
+	invoked from wrapper functions.
+See the manual for more information. (stanton)
+
+
+3/10/99 (feature change) Replaced Tcl_AlertNotifier with
+Tcl_ThreadAlert since the Tcl_AlertNotifier function relied on passing
+internal data structures. (stanton)
+*** POTENTIAL INCOMPATIBILITY with previous alpha/beta releases ***
+
+3/10/99 (new feature) Added a Tcl_GetVersion API to make it easier to
+check the Tcl version and patch level from C. (redman)

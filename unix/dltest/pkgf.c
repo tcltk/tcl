@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: pkgf.c,v 1.1.2.1 1998/09/24 23:59:48 stanton Exp $
+ * RCS: @(#) $Id: pkgf.c,v 1.1.2.2 1999/03/12 23:01:02 stanton Exp $
  */
 #include "tcl.h"
 
@@ -45,5 +45,9 @@ Pkgf_Init(interp)
     Tcl_Interp *interp;		/* Interpreter in which the package is
 				 * to be made available. */
 {
-    return Tcl_Eval(interp, "if 44 {open non_existent}");
+    static char script[] = "if 44 {open non_existent}";
+    if (Tcl_InitStubs(interp, TCL_VERSION, 1) == NULL) {
+	return TCL_ERROR;
+    }
+    return Tcl_Eval(interp, script);
 }

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: pkgb.c,v 1.1.2.1 1998/09/24 23:59:48 stanton Exp $
+ * RCS: @(#) $Id: pkgb.c,v 1.1.2.2 1999/03/12 23:01:01 stanton Exp $
  */
 #include "tcl.h"
 
@@ -114,6 +114,9 @@ Pkgb_Init(interp)
 {
     int code;
 
+    if (Tcl_InitStubs(interp, TCL_VERSION, 1) == NULL) {
+	return TCL_ERROR;
+    }
     code = Tcl_PkgProvide(interp, "Pkgb", "2.3");
     if (code != TCL_OK) {
 	return code;
@@ -147,6 +150,9 @@ Pkgb_SafeInit(interp)
     Tcl_Interp *interp;		/* Interpreter in which the package is
 				 * to be made available. */
 {
+    if (Tcl_InitStubs(interp, TCL_VERSION, 1) == NULL) {
+	return TCL_ERROR;
+    }
     Tcl_CreateCommand(interp, "pkgb_sub", Pkgb_SubCmd, (ClientData) 0,
 	    (Tcl_CmdDeleteProc *) NULL);
     return TCL_OK;

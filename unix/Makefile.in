@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.1.2.17 1999/03/11 23:49:42 hershey Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.1.2.18 1999/03/12 23:01:00 stanton Exp $
 
 # Current Tcl version;  used in various names.
 
@@ -273,7 +273,7 @@ GENERIC_OBJS = regcomp.o regexec.o regfree.o regerror.o tclAlloc.o \
 	tclStubInit.o tclTimer.o tclUtf.o tclUtil.o tclVar.o
 
 STUB_LIB_OBJS = tclIntPlatStubs.o tclIntStubs.o tclPlatStubs.o tclStubLib.o \
-	tclStubs.o
+	tclStubs.o ${COMPAT_OBJS}
 
 OBJS = ${GENERIC_OBJS} ${UNIX_OBJS} ${NOTIFY_OBJS} ${COMPAT_OBJS} @DL_OBJS@
 
@@ -399,7 +399,7 @@ all: ${TCL_LIB_FILE} $(TCL_STUB_LIB_FILE) tclsh
 
 # The following target is configured by autoconf to generate either
 # a shared library or non-shared library for Tcl.
-${TCL_LIB_FILE}: ${OBJS}
+${TCL_LIB_FILE}: ${OBJS} ${STUB_LIB_FILE}
 	rm -f ${TCL_LIB_FILE}
 	@MAKE_LIB@
 	$(RANLIB) ${TCL_LIB_FILE}
@@ -927,40 +927,43 @@ tclUnixInit.o: $(UNIX_DIR)/tclUnixInit.c $(GENERIC_DIR)/tclInitScript.h tclConfi
 		-DTCL_PACKAGE_PATH="\"${TCL_PACKAGE_PATH}\"" \
 		$(UNIX_DIR)/tclUnixInit.c
 
-# compat binaries
+# compat binaries, these must be compiled for use in a shared library
+# even though they may be placed in a static executable or library.  Since
+# they are included in both the tcl library and the stub library, they
+# need to be relocatable.
 
 fixstrtod.o: $(COMPAT_DIR)/fixstrtod.c
-	$(CC) -c $(CC_SWITCHES) $(COMPAT_DIR)/fixstrtod.c
+	$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/fixstrtod.c
 
 getcwd.o: $(COMPAT_DIR)/getcwd.c
-	$(CC) -c $(CC_SWITCHES) $(COMPAT_DIR)/getcwd.c
+	$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/getcwd.c
 
 opendir.o: $(COMPAT_DIR)/opendir.c
-	$(CC) -c $(CC_SWITCHES) $(COMPAT_DIR)/opendir.c
+	$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/opendir.c
 
 memcmp.o: $(COMPAT_DIR)/memcmp.c
-	$(CC) -c $(CC_SWITCHES) $(COMPAT_DIR)/memcmp.c
+	$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/memcmp.c
 
 strncasecmp.o: $(COMPAT_DIR)/strncasecmp.c
-	$(CC) -c $(CC_SWITCHES) $(COMPAT_DIR)/strncasecmp.c
+	$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/strncasecmp.c
 
 strstr.o: $(COMPAT_DIR)/strstr.c
-	$(CC) -c $(CC_SWITCHES) $(COMPAT_DIR)/strstr.c
+	$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/strstr.c
 
 strtod.o: $(COMPAT_DIR)/strtod.c
-	$(CC) -c $(CC_SWITCHES) $(COMPAT_DIR)/strtod.c
+	$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/strtod.c
 
 strtol.o: $(COMPAT_DIR)/strtol.c
-	$(CC) -c $(CC_SWITCHES) $(COMPAT_DIR)/strtol.c
+	$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/strtol.c
 
 strtoul.o: $(COMPAT_DIR)/strtoul.c
-	$(CC) -c $(CC_SWITCHES) $(COMPAT_DIR)/strtoul.c
+	$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/strtoul.c
 
 tmpnam.o: $(COMPAT_DIR)/tmpnam.c
-	$(CC) -c $(CC_SWITCHES) $(COMPAT_DIR)/tmpnam.c
+	$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/tmpnam.c
 
 waitpid.o: $(COMPAT_DIR)/waitpid.c
-	$(CC) -c $(CC_SWITCHES) $(COMPAT_DIR)/waitpid.c
+	$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/waitpid.c
 
 # Stub library binaries, these must be compiled for use in a shared library
 # even though they will be placed in a static archive
