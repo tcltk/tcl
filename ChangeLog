@@ -1,3 +1,20 @@
+2001-09-14  Andreas Kupries <andreas_kupries@users.sourceforge.net>
+
+	* doc/gets.n: 
+	* doc/read.n: 
+	* doc/puts.n: 
+	* doc/flush.n: 
+	* doc/fconfigure.n: 
+	* doc/flush.n: 
+	* doc/eof.n: 
+	* doc/seek.n: 
+	* doc/tell.n: 
+	* doc/close.n: 
+	* doc/fileevent.n: Added references to the Tcl standard
+	  channels. Item [219250], reported by David LeBlanc
+	  <whisper@oz.net>. Thanks to Christopher Nelson
+	  <chris@pinebush.com> for doing editorial work.
+
 2001-09-13  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
 
 	* win/Makefile.in:
@@ -20,7 +37,7 @@
 
 	* ChangeLog.1999:
 	* ChangeLog: broke changes from 199x into ChangeLog.1999 to reduce
-	size of the main ChangeLog.
+	  size of the main ChangeLog.
 
 2001-09-13  Andreas Kupries <andreas_kupries@users.sourceforge.net>
 
