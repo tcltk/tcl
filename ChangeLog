@@ -1,3 +1,8 @@
+2004-05-18  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclExecute.c (TclExecuteByteCode): added comments to
+	classify the variables according to their use in TEBC.
+
 2004-05-17  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* doc/global.n, doc/uplevel.n: Added an example.
