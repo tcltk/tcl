@@ -15,8 +15,6 @@
 # The script takes one argument, which is the name of the directory
 # where the manual entries have been installed.
 
-S=""
-
 ZIP=true
 while true; do
     case $1 in
@@ -870,6 +868,34 @@ if test -r Macintosh.3; then
     ln $S Macintosh.3$Z Tcl_SetOSTypeObj.3$Z 
     ln $S Macintosh.3$Z Tcl_NewOSTypeObj.3$Z 
 fi
+if test -r Namespace.3; then
+    rm -f Namespace.3.*
+    $ZIP Namespace.3
+    rm -f Tcl_AppendExportList.3 Tcl_AppendExportList.3.* 
+    rm -f Tcl_CreateNamespace.3 Tcl_CreateNamespace.3.* 
+    rm -f Tcl_DeleteNamespace.3 Tcl_DeleteNamespace.3.* 
+    rm -f Tcl_Export.3 Tcl_Export.3.* 
+    rm -f Tcl_FindCommand.3 Tcl_FindCommand.3.* 
+    rm -f Tcl_FindNamespace.3 Tcl_FindNamespace.3.* 
+    rm -f Tcl_ForgetImport.3 Tcl_ForgetImport.3.* 
+    rm -f Tcl_GetCommandFromObj.3 Tcl_GetCommandFromObj.3.* 
+    rm -f Tcl_GetCommandFullName.3 Tcl_GetCommandFullName.3.* 
+    rm -f Tcl_GetCurrentNamespace.3 Tcl_GetCurrentNamespace.3.* 
+    rm -f Tcl_GetGloblaNamespace.3 Tcl_GetGloblaNamespace.3.* 
+    rm -f Tcl_Import.3 Tcl_Import.3.* 
+    ln $S Namespace.3$Z Tcl_AppendExportList.3$Z 
+    ln $S Namespace.3$Z Tcl_CreateNamespace.3$Z 
+    ln $S Namespace.3$Z Tcl_DeleteNamespace.3$Z 
+    ln $S Namespace.3$Z Tcl_Export.3$Z 
+    ln $S Namespace.3$Z Tcl_FindCommand.3$Z 
+    ln $S Namespace.3$Z Tcl_FindNamespace.3$Z 
+    ln $S Namespace.3$Z Tcl_ForgetImport.3$Z 
+    ln $S Namespace.3$Z Tcl_GetCommandFromObj.3$Z 
+    ln $S Namespace.3$Z Tcl_GetCommandFullName.3$Z 
+    ln $S Namespace.3$Z Tcl_GetCurrentNamespace.3$Z 
+    ln $S Namespace.3$Z Tcl_GetGloblaNamespace.3$Z 
+    ln $S Namespace.3$Z Tcl_Import.3$Z 
+fi
 if test -r Notifier.3; then
     rm -f Notifier.3.*
     $ZIP Notifier.3
@@ -1091,8 +1117,10 @@ if test -r RecordEval.3; then
     ln $S RecordEval.3$Z Tcl_RecordAndEval.3$Z 
 fi
 if test -r RegConfig.3; then
-    rm -f Tcl_RegisterConfig.3
-    ln RegConfig.3 Tcl_RegisterConfig.3
+    rm -f RegConfig.3.*
+    $ZIP RegConfig.3
+    rm -f Tcl_RegisterConfig.3 Tcl_RegisterConfig.3.* 
+    ln $S RegConfig.3$Z Tcl_RegisterConfig.3$Z 
 fi
 if test -r RegExp.3; then
     rm -f RegExp.3.*
@@ -1693,6 +1721,10 @@ fi
 if test -r lrange.n; then
     rm -f lrange.n.*
     $ZIP lrange.n
+fi
+if test -r lrepeat.n; then
+    rm -f lrepeat.n.*
+    $ZIP lrepeat.n
 fi
 if test -r lreplace.n; then
     rm -f lreplace.n.*
