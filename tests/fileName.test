@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fileName.test,v 1.21 2002/05/08 05:58:56 dgp Exp $
+# RCS: @(#) $Id: fileName.test,v 1.22 2002/05/30 09:27:11 vincentdarley Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -1227,6 +1227,13 @@ test filename-11.17.4 {Tcl_GlobCmd} {unixOnly notRoot} {
     file delete [file join $globname link]
     set ret
 } [list 0 [list [file join $globname link]]]
+test filename-11.17.5 {Tcl_GlobCmd} {
+    list [catch {lsort [glob -directory $globname -tails *.c]} msg] $msg
+} [list 0 [lsort [list "weird name.c" x,z1.c x1.c y1.c z1.c]]]
+test filename-11.17.6 {Tcl_GlobCmd} {
+    list [catch {lsort [glob -directory $globname -tails *.c *.c]} msg] $msg
+} [list 0 [lsort [concat [list "weird name.c" x,z1.c x1.c y1.c z1.c] \
+  [list "weird name.c" x,z1.c x1.c y1.c z1.c]]]]
 test filename-11.18 {Tcl_GlobCmd} {unixOnly} {
     list [catch {lsort [glob -path $globname/ *]} msg] $msg
 } [list 0 [lsort [list [file join $globname a1] [file join $globname a2]\
@@ -1676,7 +1683,7 @@ test filename-15.2 {unix specific no complain: no errors} {unixOnly nonPortable}
     glob -nocomplain globTest/a1/*
 } {}
 test filename-15.3 {unix specific no complain: no errors, good result} \
-	{unixOnly nonPortable knownBug} {
+	{unixOnly nonPortable} {
     # test fails because if an error occur , the interp's result
     # is reset...
     glob -nocomplain globTest/a2 globTest/a1/* globTest/a3
@@ -1684,12 +1691,18 @@ test filename-15.3 {unix specific no complain: no errors, good result} \
 
 catch {exec chmod 755 globTest/a1}
 test filename-15.4 {unix specific no complain: no errors, good result} \
-	{unixOnly nonPortable knownBug} {
+	{unixOnly nonPortable} {
     # test fails because if an error occurs, the interp's result
     # is reset... or you don't run at scriptics where the
     # outser and welch users exists
     glob -nocomplain ~ouster ~foo ~welch
 } {/home/ouster /home/welch}
+test filename-15.4.1 {no complain: no errors, good result} {
+    # test used to fail because if an error occurs, the interp's result
+    # is reset... 
+    string equal [glob -nocomplain ~wontexist ~blah ~] \
+      [glob -nocomplain ~ ~blah ~wontexist]
+} {1}
 test filename-15.5 {unix specific globbing} {unixOnly nonPortable} {
     glob ~ouster/.csh*
 } "/home/ouster/.cshrc"

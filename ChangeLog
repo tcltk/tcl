@@ -1,3 +1,11 @@
+2002-05-30  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* generic/tclFileName.c (TclGlob): fix to longstanding
+	'knownBug' in fileName tests 15.2-15.4, and fix to a new
+	Tcl 8.4 bug in certain uses of 'glob -tails'.
+	* tests/fileName.test: removed 'knownBug' flag from some tests,
+	added some new tests for above bugs.
+	
 2002-05-29  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* unix/configure: regen'ed
