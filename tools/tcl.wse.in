@@ -42,7 +42,7 @@ item: End Block
 end
 item: Set Variable
   Variable=VER
-  Value=8.2
+  Value=8.3
 end
 item: Set Variable
   Variable=PATCHLEVEL
