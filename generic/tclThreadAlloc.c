@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThreadAlloc.c,v 1.2 2002/05/29 00:18:29 hobbs Exp $ */
+ * RCS: @(#) $Id: tclThreadAlloc.c,v 1.3 2002/08/23 21:07:04 msofer Exp $ */
 
 #if defined(TCL_THREADS) && defined(USE_THREAD_ALLOC)
 
@@ -570,13 +570,13 @@ TclThreadFreeObj(Tcl_Obj *objPtr)
      
     objPtr->internalRep.otherValuePtr = cachePtr->firstObjPtr;
     cachePtr->firstObjPtr = objPtr;
+    ++cachePtr->nobjs;
     
     /*
      * If the number of free objects has exceeded the high
      * water mark, move some blocks to the shared list.
      */
      
-    ++cachePtr->nobjs;
     if (cachePtr->nobjs > NOBJHIGH) {
 	Tcl_MutexLock(objLockPtr);
 	MoveObjs(cachePtr, sharedPtr, NOBJALLOC);
@@ -655,16 +655,30 @@ Tcl_GetMemoryInfo(Tcl_DString *dsPtr)
 static void
 MoveObjs(Cache *fromPtr, Cache *toPtr, int nmove)
 {
-    register Tcl_Obj *objPtr;
+    register Tcl_Obj *objPtr = fromPtr->firstObjPtr;
+    Tcl_Obj *fromFirstObjPtr = objPtr;
 
     toPtr->nobjs += nmove;
     fromPtr->nobjs -= nmove;
-    while (--nmove >= 0) {
-	objPtr = fromPtr->firstObjPtr;
-	fromPtr->firstObjPtr = objPtr->internalRep.otherValuePtr;
-	objPtr->internalRep.otherValuePtr = toPtr->firstObjPtr;
-	toPtr->firstObjPtr = objPtr;
+
+    /*
+     * Find the last object to be moved; set the next one
+     * (the first one not to be moved) as the first object
+     * in the 'from' cache.
+     */
+
+    while (--nmove) {
+	objPtr = objPtr->internalRep.otherValuePtr;
     }
+    fromPtr->firstObjPtr = objPtr->internalRep.otherValuePtr;    
+
+    /*
+     * Move all objects as a block - they are already linked to
+     * each other, we just have to update the first and last.
+     */
+
+    objPtr->internalRep.otherValuePtr = toPtr->firstObjPtr;
+    toPtr->firstObjPtr = fromFirstObjPtr;
 }
 
 
