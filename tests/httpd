@@ -58,6 +58,12 @@ proc httpdRead { sock } {
 	}
 	return
     }
+    # Extra check to handle -1,query,POST case, where we may see eof,
+    # although the data is there, just without a final newline.  A proper
+    # server would handle this better.
+    if {[regexp {Content-Length: (\d+)} $line match length]} {
+	set data(length) $length
+    }
 
     # string compare $readCount 0 maps -1 to -1, 0 to 0, and > 0 to 1
 
@@ -77,9 +83,19 @@ proc httpdRead { sock } {
 	1,mime,HEAD	-
 	1,mime,POST	-
 	1,mime,GET	{
-	    if [regexp {([^:]+):[ 	]*(.*)}  $line dummy key value] {
+	    if {[regexp {([^:]+):[ 	]*(.*)}  $line dummy key value]} {
 		set data(mime,[string tolower $key]) $value
 	    }
+	}
+	-1,query,POST	{
+	    if {[info exists data(length)]} {
+		append data(query) [read $sock $data(length)]
+		httpdRespond $sock
+		return
+	    }
+	    httpd_log $sock Error "unexpected eof on <$data(url)> request"
+	    httpdError $sock 404
+	    httpdSockDone $sock
 	}
 	1,query,POST	{
 	    append data(query) $line
