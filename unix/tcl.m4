@@ -18,79 +18,78 @@
 #------------------------------------------------------------------------
 
 AC_DEFUN(SC_PATH_TCLCONFIG, [
-#
-# Ok, lets find the tcl configuration
-# First, look for one uninstalled.
-# the alternative search directory is invoked by --with-tcl
-#
+    #
+    # Ok, lets find the tcl configuration
+    # First, look for one uninstalled.
+    # the alternative search directory is invoked by --with-tcl
+    #
 
-if test x"${no_tcl}" = x ; then
-    # we reset no_tcl in case something fails here
-    no_tcl=true
-    AC_ARG_WITH(tcl, [  --with-tcl              directory containing tcl configuration (tclConfig.sh)],
-	    with_tclconfig=${withval})
-    AC_MSG_CHECKING([for Tcl configuration])
-    AC_CACHE_VAL(ac_cv_c_tclconfig,[
+    if test x"${no_tcl}" = x ; then
+	# we reset no_tcl in case something fails here
+	no_tcl=true
+	AC_ARG_WITH(tcl, [  --with-tcl              directory containing tcl configuration (tclConfig.sh)], with_tclconfig=${withval})
+	AC_MSG_CHECKING([for Tcl configuration])
+	AC_CACHE_VAL(ac_cv_c_tclconfig,[
 
-	# First check to see if --with-tclconfig was specified.
-	if test x"${with_tclconfig}" != x ; then
-	    if test -f "${with_tclconfig}/tclConfig.sh" ; then
-		ac_cv_c_tclconfig=`(cd ${with_tclconfig}; pwd)`
-	    else
-		AC_MSG_ERROR([${with_tclconfig} directory doesn't contain tclConfig.sh])
+	    # First check to see if --with-tclconfig was specified.
+	    if test x"${with_tclconfig}" != x ; then
+		if test -f "${with_tclconfig}/tclConfig.sh" ; then
+		    ac_cv_c_tclconfig=`(cd ${with_tclconfig}; pwd)`
+		else
+		    AC_MSG_ERROR([${with_tclconfig} directory doesn't contain tclConfig.sh])
+		fi
 	    fi
-	fi
 
-	# then check for a private Tcl installation
-	if test x"${ac_cv_c_tclconfig}" = x ; then
-	    for i in \
-		    ../tcl \
-		    `ls -dr ../tcl[[8-9]].[[0-9]]* 2>/dev/null` \
-		    ../../tcl \
-		    `ls -dr ../../tcl[[8-9]].[[0-9]]* 2>/dev/null` \
-		    ../../../tcl \
-		    `ls -dr ../../../tcl[[8-9]].[[0-9]]* 2>/dev/null` ; do
-		if test -f "$i/unix/tclConfig.sh" ; then
+	    # then check for a private Tcl installation
+	    if test x"${ac_cv_c_tclconfig}" = x ; then
+		for i in \
+			../tcl \
+			`ls -dr ../tcl[[8-9]].[[0-9]]* 2>/dev/null` \
+			../../tcl \
+			`ls -dr ../../tcl[[8-9]].[[0-9]]* 2>/dev/null` \
+			../../../tcl \
+			`ls -dr ../../../tcl[[8-9]].[[0-9]]* 2>/dev/null` ; do
+		    if test -f "$i/unix/tclConfig.sh" ; then
+			ac_cv_c_tclconfig=`(cd $i/unix; pwd)`
+			break
+		    fi
+		done
+	    fi
+
+	    # check in a few common install locations
+	    if test x"${ac_cv_c_tclconfig}" = x ; then
+		for i in `ls -d ${prefix}/lib 2>/dev/null` \
+			`ls -d /usr/local/lib 2>/dev/null` ; do
+		    if test -f "$i/tclConfig.sh" ; then
+			ac_cv_c_tclconfig=`(cd $i; pwd)`
+			break
+		    fi
+		done
+	    fi
+
+	    # check in a few other private locations
+	    if test x"${ac_cv_c_tcliconfig}" = x ; then
+		for i in \
+			${srcdir}/../tcl \
+			`ls -dr ${srcdir}/../tcl[[8-9]].[[0-9]]* 2>/dev/null` ; do
+		    if test -f "$i/unix/tclConfig.sh" ; then
 		    ac_cv_c_tclconfig=`(cd $i/unix; pwd)`
 		    break
 		fi
-	    done
-	fi
-
-	# check in a few common install locations
-	if test x"${ac_cv_c_tclconfig}" = x ; then
-	    for i in `ls -d ${prefix}/lib 2>/dev/null` \
-		    `ls -d /usr/local/lib 2>/dev/null` ; do
-		if test -f "$i/tclConfig.sh" ; then
-		    ac_cv_c_tclconfig=`(cd $i; pwd)`
-		    break
-		fi
-	    done
-	fi
-
-	# check in a few other private locations
-	if test x"${ac_cv_c_tcliconfig}" = x ; then
-	    for i in \
-		    ${srcdir}/../tcl \
-		    `ls -dr ${srcdir}/../tcl[[8-9]].[[0-9]]* 2>/dev/null` ; do
-		if test -f "$i/unix/tclConfig.sh" ; then
-		ac_cv_c_tclconfig=`(cd $i/unix; pwd)`
-		break
+		done
 	    fi
-	    done
-	fi
-    ])
+	])
 
-    if test x"${ac_cv_c_tclconfig}" = x ; then
-	TCL_BIN_DIR="# no Tcl configs found"
-	AC_MSG_WARN(Can't find Tcl configuration definitions)
-	exit 0
-    else
-	no_tcl=
-	TCL_BIN_DIR=${ac_cv_c_tclconfig}
-	AC_MSG_RESULT(found $TCL_BIN_DIR/tclConfig.sh)
+	if test x"${ac_cv_c_tclconfig}" = x ; then
+	    TCL_BIN_DIR="# no Tcl configs found"
+	    AC_MSG_WARN(Can't find Tcl configuration definitions)
+	    exit 0
+	else
+	    no_tcl=
+	    TCL_BIN_DIR=${ac_cv_c_tclconfig}
+	    AC_MSG_RESULT(found $TCL_BIN_DIR/tclConfig.sh)
+	fi
     fi
-fi
 ])
 
 #------------------------------------------------------------------------
@@ -121,8 +120,7 @@ AC_DEFUN(SC_PATH_TKCONFIG, [
     if test x"${no_tk}" = x ; then
 	# we reset no_tk in case something fails here
 	no_tk=true
-	AC_ARG_WITH(tk, [  --with-tk               directory containing tk configuration (tkConfig.sh)],
-		with_tkconfig=${withval})
+	AC_ARG_WITH(tk, [  --with-tk               directory containing tk configuration (tkConfig.sh)], with_tkconfig=${withval})
 	AC_MSG_CHECKING([for Tk configuration])
 	AC_CACHE_VAL(ac_cv_c_tkconfig,[
 
@@ -197,18 +195,21 @@ AC_DEFUN(SC_PATH_TKCONFIG, [
 #
 # Results:
 #
-#	Sets the following vars that should be in tclConfig.sh:
+#	Subst the following vars:
+#		TCL_BIN_DIR
 #		TCL_SRC_DIR
 #		TCL_LIB_FILE
-#		TCL_LIB_FLAG
-#	Does not defines the following vars:
-#		TCL_THREADS
 #
 #------------------------------------------------------------------------
 
 AC_DEFUN(SC_LOAD_TCLCONFIG, [
+    AC_MSG_CHECKING([for existence of $TCL_BIN_DIR/tclConfig.sh])
+
     if test -f "$TCL_BIN_DIR/tclConfig.sh" ; then
+        AC_MSG_RESULT([loading])
 	. $TCL_BIN_DIR/tclConfig.sh
+    else
+        AC_MSG_RESULT([file not found])
     fi
 
     #
@@ -219,11 +220,9 @@ AC_DEFUN(SC_LOAD_TCLCONFIG, [
     eval TCL_LIB_FILE=${TCL_LIB_FILE}
     eval TCL_LIB_FLAG=${TCL_LIB_FLAG}
 
-#    if test "x$TCL_THREADS" = "x"; then
-#	echo "Tcl not built with threads"
-#    else
-#	AC_DEFINE(TCL_THREADS)
-#    fi
+    AC_SUBST(TCL_BIN_DIR)
+    AC_SUBST(TCL_SRC_DIR)
+    AC_SUBST(TCL_LIB_FILE)
 ])
 
 #------------------------------------------------------------------------
@@ -238,21 +237,23 @@ AC_DEFUN(SC_LOAD_TCLCONFIG, [
 #
 # Results:
 #
-#	Subst's the following vars:
-#		TK_VERSION
-#		TK_DEFS
-#		TK_DBGX
-#		TK_LIBS
-#		TK_XINCLUDES
-#		TK_XLIBSW
-#		TK_BUILD_LIB_SPEC
-#		TK_LIB_SPEC
+#	Sets the following vars that should be in tkConfig.sh:
+#		TK_BIN_DIR
 #------------------------------------------------------------------------
 
 AC_DEFUN(SC_LOAD_TKCONFIG, [
+    AC_MSG_CHECKING([for existence of $TCLCONFIG])
+
     if test -f "$TK_BIN_DIR/tkConfig.sh" ; then
-      . $TK_BIN_DIR/tkConfig.sh
+        AC_MSG_CHECKING([loading $TK_BIN_DIR/tkConfig.sh])
+	. $TK_BIN_DIR/tkConfig.sh
+    else
+        AC_MSG_RESULT([could not find $TK_BIN_DIR/tkConfig.sh])
     fi
+
+    AC_SUBST(TK_BIN_DIR)
+    AC_SUBST(TK_SRC_DIR)
+    AC_SUBST(TK_LIB_FILE)
 ])
 
 #------------------------------------------------------------------------
@@ -268,7 +269,7 @@ AC_DEFUN(SC_LOAD_TKCONFIG, [
 #	Adds the following arguments to configure:
 #		--enable-gcc
 #
-#	Subst's the following vars:
+#	Sets the following vars:
 #		CC	Command to use for the compiler
 #------------------------------------------------------------------------
 
@@ -276,10 +277,10 @@ AC_DEFUN(SC_ENABLE_GCC, [
     AC_ARG_ENABLE(gcc, [  --enable-gcc            allow use of gcc if available [--disable-gcc]],
 	[ok=$enableval], [ok=no])
     if test "$ok" = "yes"; then
+	CC=gcc
 	AC_PROG_CC
     else
 	CC=${CC-cc}
-	AC_SUBST(CC)
     fi
 ])
 
@@ -296,11 +297,12 @@ AC_DEFUN(SC_ENABLE_GCC, [
 #	Adds the following arguments to configure:
 #		--enable-shared=yes|no
 #
-#	Subst's the following vars:
-#		SHARED_BUILD	Value of 1 or 0
+#	Defines the following vars:
+#		STATIC_BUILD	Used for building import/export libraries
+#				on Windows.
 #
-#	May define the following vars:
-#		STATIC_BUILD (Not sure, but might only be used in Windows)
+#	Sets the following vars:
+#		SHARED_BUILD	Value of 1 or 0
 #------------------------------------------------------------------------
 
 AC_DEFUN(SC_ENABLE_SHARED, [
@@ -324,8 +326,6 @@ AC_DEFUN(SC_ENABLE_SHARED, [
 	SHARED_BUILD=0
 	AC_DEFINE(STATIC_BUILD)
     fi
-
-    AC_SUBST(SHARED_BUILD)
 ])
 
 #------------------------------------------------------------------------
@@ -409,12 +409,12 @@ AC_DEFUN(SC_ENABLE_SYMBOLS, [
     AC_ARG_ENABLE(symbols, [  --enable-symbols        build with debugging symbols [--disable-symbols]],    [tcl_ok=$enableval], [tcl_ok=no])
     if test "$tcl_ok" = "yes"; then
 	CFLAGS_DEFAULT="${CFLAGS_DEBUG}"
-	LD_FLAGS_DEFAULT="${LDFLAGS_DEBUG}"
+	LDFLAGS_DEFAULT="${LDFLAGS_DEBUG}"
 	DBGX=g
 	AC_MSG_RESULT([yes])
     else
 	CFLAGS_DEFAULT="${CFLAGS_OPTIMIZE}"
-	LD_FLAGS_DEFAULT="${LDFLAGS_OPTIMIZE}"
+	LDFLAGS_DEFAULT="${LDFLAGS_OPTIMIZE}"
 	DBGX=""
 	AC_MSG_RESULT([no])
     fi
@@ -437,7 +437,7 @@ AC_DEFUN(SC_ENABLE_SYMBOLS, [
 #                       loading for Tcl on this system.
 #       DL_LIBS -       Library file(s) to include in tclsh and other base
 #                       applications in order for the "load" command to work.
-#       LD_FLAGS -      Flags to pass to the compiler when linking object
+#       LDFLAGS -      Flags to pass to the compiler when linking object
 #                       files into an executable application binary such
 #                       as tclsh.
 #       LD_SEARCH_FLAGS-Flags to pass to ld, such as "-R /usr/local/tcl/lib",
@@ -570,7 +570,7 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS="-ldl"
-	    LD_FLAGS=""
+	    LDFLAGS=""
 	    LD_SEARCH_FLAGS='-L${LIB_RUNTIME_DIR}'
 	    TCL_NEEDS_EXP_FILE=1
 	    TCL_EXPORT_FILE_SUFFIX='${VERSION}\$\{DBGX\}.exp'
@@ -583,7 +583,7 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	    DL_OBJS="tclLoadDl.o"
 	    LIBOBJS="$LIBOBJS tclLoadAix.o"
 	    DL_LIBS="-lld"
-	    LD_FLAGS=""
+	    LDFLAGS=""
 	    LD_SEARCH_FLAGS='-L${LIB_RUNTIME_DIR}'
 	    TCL_NEEDS_EXP_FILE=1
 	    TCL_EXPORT_FILE_SUFFIX='${VERSION}\$\{DBGX\}.exp'
@@ -595,7 +595,7 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS="-ldl"
-	    LD_FLAGS=""
+	    LDFLAGS=""
 	    LD_SEARCH_FLAGS=""
 	    ;;
 	BSD/OS-4.*)
@@ -605,7 +605,7 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS="-ldl"
-	    LD_FLAGS="-export-dynamic"
+	    LDFLAGS="-export-dynamic"
 	    LD_SEARCH_FLAGS=""
 	    ;;
 	dgux*)
@@ -615,7 +615,7 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS="-ldl"
-	    LD_FLAGS=""
+	    LDFLAGS=""
 	    LD_SEARCH_FLAGS=""
 	    ;;
 	HP-UX-*.08.*|HP-UX-*.09.*|HP-UX-*.10.*|HP-UX-*.11.*)
@@ -627,7 +627,7 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 		SHLIB_LD_LIBS=""
 		DL_OBJS="tclLoadShl.o"
 		DL_LIBS="-ldld"
-		LD_FLAGS="-Wl,-E"
+		LDFLAGS="-Wl,-E"
 		LD_SEARCH_FLAGS='-Wl,+s,+b,${LIB_RUNTIME_DIR}:.'
 	    fi
 	    ;;
@@ -638,7 +638,7 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	    SHLIB_LD_LIBS='${LIBS}'
 	    DL_OBJS="tclLoadAout.o"
 	    DL_LIBS=""
-	    LD_FLAGS="-Wl,-D,08000000"
+	    LDFLAGS="-Wl,-D,08000000"
 	    LD_SEARCH_FLAGS='-L${LIB_RUNTIME_DIR}'
 	    SHARED_LIB_SUFFIX='${VERSION}\$\{DBGX\}.a'
 	    ;;
@@ -652,7 +652,7 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	    LD_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
 	    if test "$CC" = "gcc" -o `$CC -v 2>&1 | grep -c gcc` != "0" ; then
 		EXTRA_CFLAGS="-mabi=n32"
-		LD_FLAGS="-mabi=n32"
+		LDFLAGS="-mabi=n32"
 	    else
 		case $system in
 		    IRIX-6.3)
@@ -663,7 +663,7 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 			EXTRA_CFLAGS="-n32"
 			;;
 		esac
-		LD_FLAGS="-n32"
+		LDFLAGS="-n32"
 	    fi
 	    ;;
 	IRIX64-6.*)
@@ -673,7 +673,7 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS=""
-	    LD_FLAGS=""
+	    LDFLAGS=""
 	    LD_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
 	    ;;
 	Linux*)
@@ -684,14 +684,14 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 		SHLIB_LD="${CC} -shared"
 		DL_OBJS="tclLoadDl.o"
 		DL_LIBS="-ldl"
-		LD_FLAGS="-rdynamic"
+		LDFLAGS="-rdynamic"
 		LD_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
 	    else
 		AC_CHECK_HEADER(dld.h, [
 		    SHLIB_LD="ld -shared"
 		    DL_OBJS="tclLoadDld.o"
 		    DL_LIBS="-ldld"
-		    LD_FLAGS=""
+		    LDFLAGS=""
 		    LD_SEARCH_FLAGS=""])
 	    fi
 	    ;;
@@ -702,7 +702,7 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS="-ldl"
-	    LD_FLAGS=""
+	    LDFLAGS=""
 	    LD_SEARCH_FLAGS=""
 	    ;;
 	MP-RAS-*)
@@ -712,7 +712,7 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS="-ldl"
-	    LD_FLAGS="-Wl,-Bexport"
+	    LDFLAGS="-Wl,-Bexport"
 	    LD_SEARCH_FLAGS=""
 	    ;;
 	NetBSD-*|FreeBSD-[[12]].*|OpenBSD-*)
@@ -724,7 +724,7 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 		SHLIB_SUFFIX=".so"
 		DL_OBJS="tclLoadDl.o"
 		DL_LIBS=""
-		LD_FLAGS=""
+		LDFLAGS=""
 		LD_SEARCH_FLAGS=""
 		SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}\$\{DBGX\}.so.1.0'
 	    ], [
@@ -734,7 +734,7 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 		SHLIB_SUFFIX=".a"
 		DL_OBJS="tclLoadAout.o"
 		DL_LIBS=""
-		LD_FLAGS=""
+		LDFLAGS=""
 		LD_SEARCH_FLAGS='-L${LIB_RUNTIME_DIR}'
 		SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}\$\{DBGX\}.a'
 	    ])
@@ -752,7 +752,7 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS=""
-	    LD_FLAGS=""
+	    LDFLAGS=""
 	    LD_SEARCH_FLAGS=""
 	    ;;
 	NEXTSTEP-*)
@@ -762,7 +762,7 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadNext.o"
 	    DL_LIBS=""
-	    LD_FLAGS=""
+	    LDFLAGS=""
 	    LD_SEARCH_FLAGS=""
 	    ;;
 	OS/390-*)
@@ -778,7 +778,7 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadOSF.o"
 	    DL_LIBS=""
-	    LD_FLAGS=""
+	    LDFLAGS=""
 	    LD_SEARCH_FLAGS=""
 	    ;;
 	OSF1-1.*)
@@ -789,7 +789,7 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS=""
-	    LD_FLAGS=""
+	    LDFLAGS=""
 	    LD_SEARCH_FLAGS=""
 	    ;;
 	OSF1-V*)
@@ -800,7 +800,7 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS=""
-	    LD_FLAGS=""
+	    LDFLAGS=""
 	    LD_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
 	    ;;
 	RISCos-*)
@@ -810,7 +810,7 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	    SHLIB_SUFFIX=".a"
 	    DL_OBJS="tclLoadAout.o"
 	    DL_LIBS=""
-	    LD_FLAGS="-Wl,-D,08000000"
+	    LDFLAGS="-Wl,-D,08000000"
 	    LD_SEARCH_FLAGS='-L${LIB_RUNTIME_DIR}'
 	    ;;
 	SCO_SV-3.2*)
@@ -823,7 +823,7 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS=""
-	    LD_FLAGS="-belf -Wl,-Bexport"
+	    LDFLAGS="-belf -Wl,-Bexport"
 	    LD_SEARCH_FLAGS=""
 	    ;;
 	SINIX*5.4*)
@@ -833,7 +833,7 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS="-ldl"
-	    LD_FLAGS=""
+	    LDFLAGS=""
 	    LD_SEARCH_FLAGS=""
 	    ;;
 	SunOS-4*)
@@ -843,7 +843,7 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS="-ldl"
-	    LD_FLAGS=""
+	    LDFLAGS=""
 	    LD_SEARCH_FLAGS='-L${LIB_RUNTIME_DIR}'
 
 	    # SunOS can't handle version numbers with dots in them in library
@@ -866,13 +866,13 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS="-ldl"
-	    LD_FLAGS=""
+	    LDFLAGS=""
 	    LD_SEARCH_FLAGS='-Wl,-R,${LIB_RUNTIME_DIR}'
 	    ;;
 	SunOS-5*)
 	    SHLIB_CFLAGS="-KPIC"
 	    SHLIB_LD="/usr/ccs/bin/ld -G -z text"
-	    LD_FLAGS=""
+	    LDFLAGS=""
     
 	    do64bit_ok=no
 	    if test "$do64bit" = "yes" ; then
@@ -881,7 +881,7 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 		if test "$CC" != "gcc" -a `$CC -v 2>&1 | grep -c gcc` = "0" ; then
 		do64bit_ok=yes
 		EXTRA_CFLAGS="-xarch=v9"
-		LD_FLAGS="-xarch=v9"
+		LDFLAGS="-xarch=v9"
 		else 
 		AC_MSG_WARN("64bit mode not supported using GCC on $system")
 		fi
@@ -910,7 +910,7 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	    SHLIB_LD_LIBS='${LIBS}'
 	    DL_OBJS="tclLoadAout.o"
 	    DL_LIBS=""
-	    LD_FLAGS="-Wl,-D,08000000"
+	    LDFLAGS="-Wl,-D,08000000"
 	    LD_SEARCH_FLAGS='-L${LIB_RUNTIME_DIR}'
 	    ;;
 	UNIX_SV* | UnixWare-5*)
@@ -929,9 +929,9 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	    LDFLAGS=$hold_ldflags
 	    AC_MSG_RESULT($found)
 	    if test $found = yes; then
-	    LD_FLAGS="-Wl,-Bexport"
+	    LDFLAGS="-Wl,-Bexport"
 	    else
-	    LD_FLAGS=""
+	    LDFLAGS=""
 	    fi
 	    LD_SEARCH_FLAGS=""
 	    ;;
@@ -1036,7 +1036,7 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	SHLIB_SUFFIX=""
 	DL_OBJS="tclLoadNone.o"
 	DL_LIBS=""
-	LD_FLAGS=""
+	LDFLAGS=""
 	LD_SEARCH_FLAGS=""
 	BUILD_DLTEST=""
     fi
