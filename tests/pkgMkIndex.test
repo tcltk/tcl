@@ -8,7 +8,7 @@
 # Copyright (c) 1998 by Scriptics Corporation.
 # All rights reserved.
 #
-# RCS: @(#) $Id: pkgMkIndex.test,v 1.3 1998/11/10 06:54:11 jingham Exp $
+# RCS: @(#) $Id: pkgMkIndex.test,v 1.4 1998/11/12 05:54:21 welch Exp $
 
 if {[string compare test [info procs test]] == 1} then {source defs}
 
@@ -20,32 +20,11 @@ set scriptDir [file dirname [info script]]
 set oldDir [pwd]
 lappend auto_path [file join [pwd] $scriptDir pkg1]
 
-# pkgproc --
-#
-#  Wraps around proc, saves the name of the procedure in procList, so that
-#  the procedure can be undefined at the end.
-#
-# Arguments:
-#  procName	procedure name
-#  argList	arguments list
-#  body		procedure body
-#
-# Results:
-#  Returns the return value of proc
-
-proc pkgproc { procName argList body } {
-    set result [proc $procName $argList $body]
-
-    lappend ::procList $procName
-
-    return $result
+namespace eval pkgtest {
+    # Namespace for procs we can discard
 }
 
-set ::procList pkgproc
-
-set ::pkgDriverCount 0
-
-# parseArgs --
+# pkgtest::parseArgs --
 #
 #  Parse an argument list.
 #
@@ -63,7 +42,7 @@ set ::pkgDriverCount 0
 #    1: the directory to index
 #    2: the patterns list
 
-pkgproc parseArgs { args } {
+proc pkgtest::parseArgs { args } {
     set options ""
 
     set argc [llength $args]
@@ -71,6 +50,10 @@ pkgproc parseArgs { args } {
 	set a [lindex $args $iarg]
 	if {[regexp {^-} $a]} {
 	    lappend options $a
+	    if {[string compare -load $a] == 0} {
+		incr iarg
+		lappend options [lindex $args $iarg]
+	    }
 	} else {
 	    break
 	}
@@ -83,7 +66,7 @@ pkgproc parseArgs { args } {
     return [list $options $dirPath $patternList]
 }
 
-# parsePkgIndex --
+# pkgtest::parseIndex --
 #
 #  Loads a pkgIndex.tcl file, records all the calls to "package ifneeded".
 #
@@ -95,7 +78,7 @@ pkgproc parseArgs { args } {
 #  name and version (in the form "$name:$version"), and the values the rest
 #  of the command line.
 
-pkgproc parsePkgIndex { filePath } {
+proc pkgtest::parseIndex { filePath } {
     # create a slave interpreter, where we override "package ifneeded"
 
     set slave [interp create]
@@ -147,7 +130,7 @@ pkgproc parsePkgIndex { filePath } {
     return $PKGS
 }
 
-# createIndex --
+# pkgtest::createIndex --
 #
 #  Runs pkg_mkIndex for the given directory and set of patterns.
 #  This procedure deletes any pkgIndex.tcl file in the target directory,
@@ -166,7 +149,7 @@ pkgproc parsePkgIndex { filePath } {
 #    0: 1 if the procedure encountered an error, 0 otherwise.
 #    1: the error result if element 0 was 1
 
-pkgproc createIndex { args } {
+proc pkgtest::createIndex { args } {
     set parsed [eval parseArgs $args]
     set options [lindex $parsed 0]
     set dirPath [lindex $parsed 1]
@@ -184,11 +167,11 @@ pkgproc createIndex { args } {
 
 # makePkgList --
 #
-#  Takes the output of a parsePkgIndex call, filters it and returns a
+#  Takes the output of a pkgtest::parseIndex call, filters it and returns a
 #  cleaned up list of packages and their actions.
 #
 # Arguments:
-#  inList	output from a parsePkgIndex.
+#  inList	output from a pkgtest::parseIndex.
 #
 # Results:
 #  Returns a list of two element lists:
@@ -200,7 +183,7 @@ pkgproc createIndex { args } {
 #	 2: the second file ...
 #	 N: the N-1st file ...
 
-pkgproc makePkgList { inList } {
+proc makePkgList { inList } {
     set pkgList ""
 
     foreach {k v} $inList {
@@ -227,7 +210,7 @@ pkgproc makePkgList { inList } {
     return $pkgList
 }
 
-# runIndex --
+# pkgtest::runIndex --
 #
 #  Runs pkg_mkIndex, parses the generated index file.
 #
@@ -243,10 +226,10 @@ pkgproc makePkgList { inList } {
 #  Returns a two element list:
 #    0: 1 if the procedure encountered an error, 0 otherwise.
 #    1: if no error, this is the parsed generated index file, in the format
-#	returned by parsePkgIndex.
+#	returned by pkgtest::parseIndex.
 #	If error, this is the error result.
 
-pkgproc runIndex { args } {
+proc pkgtest::runIndex { args } {
     set rv [eval createIndex $args]
     if {[lindex $rv 0] == 0} {
 	set parsed [eval parseArgs $args]
@@ -254,7 +237,7 @@ pkgproc runIndex { args } {
 	set idxFile [file join $dirPath pkgIndex.tcl]
 
 	if {[catch {
-	    set result [list 0 [makePkgList [parsePkgIndex $idxFile]]]
+	    set result [list 0 [makePkgList [parseIndex $idxFile]]]
 	} err]} {
 	    set result [list 1 $err]
 	}
@@ -270,27 +253,27 @@ pkgproc runIndex { args } {
 # changed on us
 
 test pkgMkIndex-1.1 {nothing matches pattern - current dir is the same} {
-    list [runIndex pkg nomatch.tcl] [pwd]
+    list [pkgtest::runIndex pkg nomatch.tcl] [pwd]
 } [list {1 {no files matched glob pattern "nomatch.tcl"}} [pwd]]
 cd $oldDir	;# 'cause 8.0.3 is left in the wrong place
 test pkgMkIndex-2.1 {simple package} {
-    runIndex pkg simple.tcl
+    pkgtest::runIndex pkg simple.tcl
 } {0 {{simple:1.0 {tclPkgSetup {simple.tcl source {::simple::lower ::simple::upper}}}}}}
 
 test pkgMkIndex-2.2 {simple package - use -direct} {
-    runIndex -direct pkg simple.tcl
+    pkgtest::runIndex -direct pkg simple.tcl
 } "0 {{simple:1.0 {source [file join pkg simple.tcl]}}}"
 
 test pkgMkIndex-3.1 {simple package with global symbols} {
-    runIndex pkg global.tcl
+    pkgtest::runIndex pkg global.tcl
 } {0 {{global:1.0 {tclPkgSetup {global.tcl source {global_lower global_upper}}}}}}
 
 test pkgMkIndex-4.1 {split package} {
-    runIndex pkg pkg2_a.tcl pkg2_b.tcl
+    pkgtest::runIndex pkg pkg2_a.tcl pkg2_b.tcl
 } {0 {{pkg2:1.0 {tclPkgSetup {pkg2_a.tcl source ::pkg2::p2-1} {pkg2_b.tcl source ::pkg2::p2-2}}}}}
 
 test pkgMkIndex-4.2 {split package - direct loading} {
-    runIndex -direct pkg pkg2_a.tcl pkg2_b.tcl
+    pkgtest::runIndex -direct pkg pkg2_a.tcl pkg2_b.tcl
 } "0 {{pkg2:1.0 {source [file join pkg pkg2_a.tcl]
 source [file join pkg pkg2_b.tcl]}}}"
 
@@ -301,36 +284,36 @@ source [file join pkg pkg2_b.tcl]}}}"
 # Both failures are caused by Tcl code executed in pkgIndex.tcl.
 
 test pkgMkIndex-5.1 {requires -direct package} {
-    runIndex pkg std.tcl
+    pkgtest::runIndex pkg std.tcl
 } {0 {{std:1.0 {tclPkgSetup {std.tcl source {::std::p1 ::std::p2}}}}}}
 
 test pkgMkIndex-6.1 {pkg1 requires pkg3} {
-    runIndex pkg pkg1.tcl pkg3.tcl
+    pkgtest::runIndex pkg pkg1.tcl pkg3.tcl
 } {0 {{pkg1:1.0 {tclPkgSetup {pkg1.tcl source {::pkg1::p1-1 ::pkg1::p1-2}}}} {pkg3:1.0 {tclPkgSetup {pkg3.tcl source {::pkg3::p3-1 ::pkg3::p3-2}}}}}}
 
 test pkgMkIndex-6.2 {pkg1 requires pkg3 - use -direct} {
-    runIndex -direct pkg pkg1.tcl pkg3.tcl
+    pkgtest::runIndex -direct pkg pkg1.tcl pkg3.tcl
 } "0 {{pkg1:1.0 {source [file join pkg pkg1.tcl]}} {pkg3:1.0 {source [file join pkg pkg3.tcl]}}}"
 
 test pkgMkIndex-7.1 {pkg4 uses pkg3} {
-    runIndex pkg pkg4.tcl pkg3.tcl
+    pkgtest::runIndex pkg pkg4.tcl pkg3.tcl
 } {0 {{pkg3:1.0 {tclPkgSetup {pkg3.tcl source {::pkg3::p3-1 ::pkg3::p3-2}}}} {pkg4:1.0 {tclPkgSetup {pkg4.tcl source {::pkg4::p4-1 ::pkg4::p4-2}}}}}}
 
 test pkgMkIndex-7.2 {pkg4 uses pkg3 - use -direct} {
-    runIndex -direct pkg pkg4.tcl pkg3.tcl
+    pkgtest::runIndex -direct pkg pkg4.tcl pkg3.tcl
 } "0 {{pkg3:1.0 {source [file join pkg pkg3.tcl]}} {pkg4:1.0 {source [file join pkg pkg4.tcl]}}}"
 
 test pkgMkIndex-8.1 {pkg5 uses pkg2} {
-    runIndex pkg pkg5.tcl pkg2_a.tcl pkg2_b.tcl
+    pkgtest::runIndex pkg pkg5.tcl pkg2_a.tcl pkg2_b.tcl
 } {0 {{pkg2:1.0 {tclPkgSetup {pkg2_a.tcl source ::pkg2::p2-1} {pkg2_b.tcl source ::pkg2::p2-2}}} {pkg5:1.0 {tclPkgSetup {pkg5.tcl source {::pkg5::p5-1 ::pkg5::p5-2}}}}}}
 
 test pkgMkIndex-8.2 {pkg5 uses pkg2 - use -direct} {
-    runIndex -direct pkg pkg5.tcl pkg2_a.tcl pkg2_b.tcl
+    pkgtest::runIndex -direct pkg pkg5.tcl pkg2_a.tcl pkg2_b.tcl
 } "0 {{pkg2:1.0 {source [file join pkg pkg2_a.tcl]
 source [file join pkg pkg2_b.tcl]}} {pkg5:1.0 {source [file join pkg pkg5.tcl]}}}"
 
 test pkgMkIndex-9.1 {circular packages} {
-    runIndex pkg circ1.tcl circ2.tcl circ3.tcl
+    pkgtest::runIndex pkg circ1.tcl circ2.tcl circ3.tcl
 } {0 {{circ1:1.0 {tclPkgSetup {circ1.tcl source {::circ1::c1-1 ::circ1::c1-2 ::circ1::c1-3 ::circ1::c1-4}}}} {circ2:1.0 {tclPkgSetup {circ2.tcl source {::circ2::c2-1 ::circ2::c2-2}}}} {circ3:1.0 {tclPkgSetup {circ3.tcl source ::circ3::c3-1}}}}}
 
 # Try to find one of the DLLs in the dltest directory
@@ -339,8 +322,11 @@ set x [file join $x ../unix/dltest/pkga[info sharedlibextension]]
 if {[file exists $x]} {
     file copy -force $x pkg
     test pkgMkIndex-10.1 {package in DLL and script} {
-	runIndex pkg pkga.tcl pkga[info sharedlibextension]
-    } {0 {{Pkga:1.0 {tclPkgSetup {pkga.tcl source pkga_neq} {pkga.so load {pkga_eq pkga_quote}}}}}}
+	pkgtest::runIndex pkg pkga[info sharedlibextension] pkga.tcl
+    } {0 {{Pkga:1.0 {tclPkgSetup {pkga.so load {pkga_eq pkga_quote}} {pkga.tcl source pkga_neq}}}}}
+    test pkgMkIndex-10.2 {package in DLL hidden by -load} {
+	pkgtest::runIndex -load Pkg* -- pkg pkga[info sharedlibextension]
+    } {0 {}}
 } else {
     puts "Skipping pkgMkIndex-10.1 (index of DLL and script)"
 }
@@ -349,13 +335,6 @@ if {[file exists $x]} {
 # cleanup
 #
 if {![info exist TESTS]} {
-
-file delete [file join pkg pkgIndex.tcl]
-
-foreach p $::procList {
-    rename $p {}
-}
-
-unset ::procList
-unset ::pkgDriverCount
+    file delete [file join pkg pkgIndex.tcl]
+    namespace delete pkgtest
 }
