@@ -1,5 +1,9 @@
 2004-10-27  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclCmdAH.c (Tcl_FormatObjCmd):	Restored missing
+	line from yesterdays' 868486 backport that caused failed alloc's
+	on LP64 systems.
+
 	* tests/appendComp.test:	Backport test suite fixes of errors
 	* tests/autoMkindex.test:	revealed by -singleproc 1 -debug 1
 	* tests/exec.test:		options to make test.

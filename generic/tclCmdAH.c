@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.27.2.9 2004/10/27 15:39:35 kennykb Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.27.2.10 2004/10/28 04:16:20 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2220,6 +2220,7 @@ Tcl_FormatObjCmd(dummy, interp, objc, objv)
 	    newPtr[-2] = 'l';
 #endif /* LONG_MAX > INT_MAX */
 	    whichValue = INT_VALUE;
+	    size = 40 + precision;
 	    break;
 	case 's':
 	    /*
