@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: tclvars.n,v 1.18 2004/10/27 14:43:54 dkf Exp $
+'\" RCS: @(#) $Id: tclvars.n,v 1.19 2004/11/15 21:46:05 dkf Exp $
 '\" 
 .so man.macros
 .TH tclvars n 8.0 Tcl "Tcl Built-In Commands"
@@ -337,9 +337,36 @@ incompatibilities and changes to \fIy\fR represent small enhancements and
 bug fixes that retain backward compatibility.
 The value of this variable is returned by the \fBinfo tclversion\fR
 command.
+.SH "OTHER GLOBAL VARIABLES"
+The following variables are only guaranteed to exist in \fBtclsh\fR
+and \fBwish\fR executables; the Tcl library does not define them
+itself but many Tcl environments do.
+.TP 6
+\fBargc\fR
+The number of arguments to \fBtclsh\fR or \fBwish\fR.
+.TP 6
+\fBargv\fR
+Tcl list of arguments to \fBtclsh\fR or \fBwish\fR.
+.TP 6
+\fBargv0\fR
+The script that \fBtclsh\fR or \fBwish\fR started executing (if it was
+specified) or otherwise the name by which \fBtclsh\fR or \fBwish\fR
+was invoked.
+.TP 6
+\fBtcl_interactive\fR
+Contains 1 if \fBtclsh\fR or \fBwish\fR is running interactively (no
+script was specified and standard input is a terminal-like device), 0
+otherwise.
+.PP
+The \fBwish\fR executably additionally specifies the following global
+variable:
+.TP 6
+\fBgeometry\fR
+If set, contains the user-supplied geometry specification to use for
+the main Tk window.
 
 .SH "SEE ALSO"
-eval(n)
+eval(n), tclsh(1), wish(1)
 
 .SH KEYWORDS
 arithmetic, bytecode, compiler, error, environment, POSIX, precision, subprocess, variables
