@@ -1,5 +1,7 @@
 2000-04-25  Jeff Hobbs  <hobbs@scriptics.com>
 
+	8.3.1 RELEASE
+
 	* unix/Makefile.in:
 	* win/Makefile.in:
 	* win/makefile.vc: updated for http change and some cleanup
@@ -122,7 +124,7 @@
 	library path as it was unnecessary and conflicts with move of
 	tclLibraryPath to thread-local storage.
 
-2000-04-18    <redman@scriptics.com>
+2000-04-18  Scott Redman  <redman@scriptics.com>
 
 	* win/Makefile.in:
 	* win/tcl.rc:

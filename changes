@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.55 2000/02/10 09:53:46 hobbs Exp $
+RCS: @(#) $Id: changes,v 1.56 2000/04/26 00:24:19 hobbs Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -4830,3 +4830,46 @@ mac panic from an error when closing an async socket (steffen, ingham)
 loads on Windows (dejong, hobbs)
 
 --- Released 8.3.0, February 10, 2000 --- See ChangeLog for details ---
+
+2000-03 (bug fixes, feature enhancement) overhaul of http package for
+proper handling of async callbacks (new options), version is now at 2.3
+(tamhankar, welch)
+
+2000-03 (speed improvements) speedup in Windows filename handling (newman)
+and ==/!= empty string in exprs. (hobbs)
+
+2000-03-27 (bug fix) added uniq'ing test to namespace export list to
+prevent unnecessary mem growth (hobbs)
+
+2000-03-29 (bug fix) fixed mem leak when repeatedly sourcing the same
+bytecompiled (tbc) code repeatedly across different interpreters (hobbs)
+
+2000-03-29 (config enhancement) improved build support for gcc/mingw on
+Windows (nijtmans, hobbs) and added RPM target (melski)
+
+2000-03-31 (bug fix) corrected data encoding problem when using
+"exec << $data" construct (melski)
+
+2000-04 (feature enhancement) overhaul of threading mechanism to better
+support tcl level thread command (new APIs Tcl_ConditionFinalize,
+Tcl_MutexFinalize, Tcl_CreateThread, etc, all docs in Thread.3).
+(kupries, graveraux)
+This enables the tcl level thread extension. (welch)
+
+2000-04-10 (bug fix) fixed infinite loop case in regexp -all (melski)
+
+2000-04-13 (config enhancement) added support for --enable-64bit-vis
+Sparc target. (hobbs)
+
+2000-04-18 (bug fix) moved tclLibraryPath to thread-local storage to fix
+possible race condition on MP machines (hobbs)
+
+2000-04-18 (config enhancement) added MacOS X build target and
+tclLoadDyld.c dl type. (sanchez)
+
+2000-04-23 (bug fix) several Mac socket fixes (ingham)
+
+2000-04-24 (bug fix) fixed hang in threaded Unix case when backgrounded
+exec process was running (dejong)
+
+--- Released 8.3.1, April 26, 2000 --- See ChangeLog for details ---
