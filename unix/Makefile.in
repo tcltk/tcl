@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.48 1999/10/13 00:32:49 hobbs Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.49 1999/11/13 01:35:43 wart Exp $
 
 VERSION 		= @TCL_VERSION@
 
@@ -431,7 +431,7 @@ test: tcltest
 	LIBPATH=`pwd`:${LIBPATH}; export LIBPATH; \
 	SHLIB_PATH=`pwd`:${SHLIB_PATH}; export SHLIB_PATH; \
 	TCL_LIBRARY="${TCL_BUILDTIME_LIBRARY}"; export TCL_LIBRARY; \
-	./tcltest $(TOP_DIR)/tests/all.tcl
+	./tcltest $(TOP_DIR)/tests/all.tcl $(TCLTESTARGS)
 
 # Useful target to launch a built tcltest with the proper path,...
 runtest: tcltest
@@ -460,7 +460,7 @@ topDirName:
 gendate:
 	yacc -l $(GENERIC_DIR)/tclGetDate.y
 	sed -e 's/yy/TclDate/g' -e '/^#include <values.h>/d' \
-	    -e 's?SCCSID?RCS: @(#) $$Id: Makefile.in,v 1.48 1999/10/13 00:32:49 hobbs Exp $$?' \
+	    -e 's?SCCSID?RCS: @(#) $$Id: Makefile.in,v 1.49 1999/11/13 01:35:43 wart Exp $$?' \
 	    -e '/#ifdef __STDC__/,/#endif/d' -e '/TclDateerrlab:/d' \
 	    -e '/TclDatenewstate:/d' -e '/#pragma/d' \
 	    -e '/#include <inttypes.h>/d' \
