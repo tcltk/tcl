@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.1.2.2 1998/09/24 23:58:53 stanton Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.1.2.3 1998/09/30 20:46:25 stanton Exp $
  */
 
 #ifndef _TCLINT
@@ -1936,6 +1936,8 @@ EXTERN int		TclInvokeObjectCommand _ANSI_ARGS_((
 EXTERN int		TclInvokeStringCommand _ANSI_ARGS_((
                             ClientData clientData, Tcl_Interp *interp,
                             int objc, Tcl_Obj *CONST objv[]));
+EXTERN int		TclIsLocalScalar _ANSI_ARGS_((CONST char *src,
+			    int len));
 EXTERN Proc *		TclIsProc _ANSI_ARGS_((Command *cmdPtr));
 EXTERN int		TclLooksLikeInt _ANSI_ARGS_((char *bytes,
 			    int length));
@@ -1982,7 +1984,6 @@ EXTERN int		TclpCreateProcess _ANSI_ARGS_((Tcl_Interp *interp,
 EXTERN TclFile		TclpCreateTempFile _ANSI_ARGS_((CONST char *contents));
 EXTERN int              TclpDeleteFile _ANSI_ARGS_((CONST char *path));
 EXTERN void		TclpExit _ANSI_ARGS_((int status));
-EXTERN void		TclpFinalize _ANSI_ARGS_((void));
 EXTERN void		TclpFinalizeCondition _ANSI_ARGS_((
 			    Tcl_Condition *condPtr));
 EXTERN void		TclpFinalizeMutex _ANSI_ARGS_((Tcl_Mutex *mutexPtr));

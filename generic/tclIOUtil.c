@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.1.2.3 1998/09/28 20:24:18 stanton Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.1.2.4 1998/09/30 20:46:25 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -277,6 +277,7 @@ Tcl_EvalFile(interp, fileName)
 				 * will be performed on this name. */
 {
     int result, length;
+    struct stat statBuf;
     char *oldScriptFile;
     Interp *iPtr;
     Tcl_DString nameString;
@@ -292,18 +293,13 @@ Tcl_EvalFile(interp, fileName)
     result = TCL_ERROR;
     objPtr = Tcl_NewObj();
 
-    if (nativeName != Tcl_DStringValue(&buffer)) {
-	Tcl_DStringSetLength(&buffer, 0);
-	Tcl_DStringAppend(&buffer, nativeName, -1);
-	nativeName = Tcl_DStringValue(&buffer);
-    }
-    if (TclStat(nativeName, &statBuf) == -1) {
+    if (TclStat(name, &statBuf) == -1) {
         Tcl_SetErrno(errno);
 	Tcl_AppendResult(interp, "couldn't read file \"", fileName,
 		"\": ", Tcl_PosixError(interp), (char *) NULL);
-	goto error;
+	goto end;
     }
-    chan = Tcl_OpenFileChannel(interp, nativeName, "r", 0644);
+    chan = Tcl_OpenFileChannel(interp, name, "r", 0644);
     if (chan == (Tcl_Channel) NULL) {
         Tcl_ResetResult(interp);
 	Tcl_AppendResult(interp, "couldn't read file \"", fileName,

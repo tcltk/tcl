@@ -6,7 +6,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.1.2.2 1998/09/24 23:58:46 stanton Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.1.2.3 1998/09/30 20:46:24 stanton Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -669,6 +669,8 @@ typedef struct ForeachInfo {
 				 * enough to numVars indexes. THIS MUST BE
 				 * THE LAST FIELD IN THE STRUCTURE! */
 } ForeachInfo;
+
+extern AuxDataType		tclForeachInfoType;
 
 /*
  * Structure containing a cached pointer to a command that is the result

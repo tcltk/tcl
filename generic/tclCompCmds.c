@@ -114,9 +114,9 @@ TclCompileCatchCmd(interp, parsePtr, envPtr)
 {
     JumpFixup jumpFixup;
     Tcl_Token *cmdTokenPtr, *nameTokenPtr;
-    char *name, *p;
+    char *name;
     int localIndex, nameChars, range, maxDepth, startOffset, jumpDist;
-    int i, code;
+    int code;
     char buffer[32 + TCL_INTEGER_SPACE];
 
     envPtr->maxStackDepth = 0;

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.1.2.2 1998/09/24 23:59:02 stanton Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.1.2.3 1998/09/30 20:46:26 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -49,7 +49,7 @@ Tcl_ProcObjCmd(dummy, interp, objc, objv)
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
     register Interp *iPtr = (Interp *) interp;
-    register Proc *procPtr;
+    Proc *procPtr;
     char *fullName, *procName;
     Namespace *nsPtr, *altNsPtr, *cxtNsPtr;
     Tcl_Command cmd;

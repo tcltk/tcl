@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.1.2.2 1998/09/24 23:58:44 stanton Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.1.2.3 1998/09/30 20:46:23 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -2180,7 +2180,7 @@ TclCreateExceptRange(type, envPtr)
  */
 
 int
-TclCreateAuxData(clientData, dupProc, freeProc, envPtr)
+TclCreateAuxData(clientData, typePtr, envPtr)
     ClientData clientData;	/* The compilation auxiliary data to store
 				 * in the new aux data record. */
     AuxDataType *typePtr;	/* Pointer to the type to attach to this AuxData */
@@ -2577,7 +2577,7 @@ TclRegisterAuxDataType(typePtr)
      * If there's already a type with the given name, remove it.
      */
 
-    hPtr = Tcl_FindHashEntry(&tsdPtr->auxDataTypeTable, typePtr->name);
+    hPtr = Tcl_FindHashEntry(&auxDataTypeTable, typePtr->name);
     if (hPtr != (Tcl_HashEntry *) NULL) {
         Tcl_DeleteHashEntry(hPtr);
     }
@@ -2586,7 +2586,7 @@ TclRegisterAuxDataType(typePtr)
      * Now insert the new object type.
      */
 
-    hPtr = Tcl_CreateHashEntry(&tsdPtr->auxDataTypeTable, typePtr->name, &new);
+    hPtr = Tcl_CreateHashEntry(&auxDataTypeTable, typePtr->name, &new);
     if (new) {
         Tcl_SetHashValue(hPtr, typePtr);
     }
