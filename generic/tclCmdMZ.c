@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.51 2001/11/21 17:17:17 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.52 2001/11/27 13:30:54 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2482,9 +2482,10 @@ Tcl_SwitchObjCmd(dummy, interp, objc, objv)
     int objc;			/* Number of arguments. */
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
-    int i, j, index, mode, matched, result, splitObjs, seenComment;
+    int i, j, index, mode, matched, result, splitObjs;
     char *string, *pattern;
     Tcl_Obj *stringObj;
+    Tcl_Obj *CONST *savedObjv = objv;
     static char *options[] = {
 	"-exact",	"-glob",	"-regexp",	"--", 
 	NULL
@@ -2532,45 +2533,71 @@ Tcl_SwitchObjCmd(dummy, interp, objc, objv)
 	if (Tcl_ListObjGetElements(interp, objv[0], &objc, &listv) != TCL_OK) {
 	    return TCL_ERROR;
 	}
+
+	/*
+	 * Ensure that the list is non-empty.
+	 */
+
+	if (objc < 1) {
+	    Tcl_WrongNumArgs(interp, 1, savedObjv,
+		    "?switches? string {pattern body ... ?default body?}");
+	    return TCL_ERROR;
+	}
 	objv = listv;
 	splitObjs = 1;
     }
 
-    seenComment = 0;
-    for (i = 0; i < objc; i += 2) {
-	if (i == objc - 1) {
-	    Tcl_ResetResult(interp);
-	    Tcl_AppendToObj(Tcl_GetObjResult(interp),
-	            "extra switch pattern with no body", -1);
+    /*
+     * Complain if there is an odd number of words in the list of
+     * patterns and bodies.
+     */
 
-	    /*
-	     * Check if this can be due to a badly placed comment
-	     * in the switch block
-	     */
-
-	    if (splitObjs && seenComment) {
-		Tcl_AppendToObj(Tcl_GetObjResult(interp),
-			", this may be due to a comment incorrectly placed outside of a switch body - see the \"switch\" documentation", -1);
-	    }
-
-	    return TCL_ERROR;
-	}
+    if (objc % 2) {
+	Tcl_ResetResult(interp);
+	Tcl_AppendResult(interp, "extra switch pattern with no body", NULL);
 
 	/*
-	 * See if the pattern matches the string.
-	 */
-
-	pattern = Tcl_GetString(objv[i]);
-
-	/*
+	 * Check if this can be due to a badly placed comment
+	 * in the switch block.
+	 *
 	 * The following is an heuristic to detect the infamous
 	 * "comment in switch" error: just check if a pattern
 	 * begins with '#'.
 	 */
 
-	if (splitObjs && *pattern == '#') {
-	    seenComment = 1;
+	if (splitObjs) {
+	    for (i=0 ; i<objc ; i+=2) {
+		if (Tcl_GetString(objv[i])[0] == '#') {
+		    Tcl_AppendResult(interp, ", this may be due to a ",
+			    "comment incorrectly placed outside of a ",
+			    "switch body - see the \"switch\" ",
+			    "documentation", NULL);
+		    break;
+		}
+	    }
 	}
+
+	return TCL_ERROR;
+    }
+
+    /*
+     * Complain if the last body is a continuation.  Note that this
+     * check assumes that the list is non-empty!
+     */
+
+    if (strcmp(Tcl_GetString(objv[objc-1]), "-") == 0) {
+	Tcl_ResetResult(interp);
+	Tcl_AppendResult(interp, "no body specified for pattern \"",
+		Tcl_GetString(objv[objc-2]), "\"", NULL);
+	return TCL_ERROR;
+    }
+
+    for (i = 0; i < objc; i += 2) {
+	/*
+	 * See if the pattern matches the string.
+	 */
+
+	pattern = Tcl_GetString(objv[i]);
 
 	matched = 0;
 	if ((i == objc - 2) 
@@ -2605,10 +2632,11 @@ Tcl_SwitchObjCmd(dummy, interp, objc, objv)
 
 	for (j = i + 1; ; j += 2) {
 	    if (j >= objc) {
-		Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-			"no body specified for pattern \"", pattern,
-			"\"", (char *) NULL);
-		return TCL_ERROR;
+		/*
+		 * This shouldn't happen since we've checked that the
+		 * last body is not a continuation...
+		 */
+		panic("fall-out when searching for body to match pattern");
 	    }
 	    if (strcmp(Tcl_GetString(objv[j]), "-") != 0) {
 		break;
