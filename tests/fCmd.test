@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fCmd.test,v 1.16 2002/07/01 07:52:02 dgp Exp $
+# RCS: @(#) $Id: fCmd.test,v 1.17 2002/07/01 14:35:10 dgp Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -2202,39 +2202,63 @@ makeFile contents abc2.file
 
 cd [temporaryDirectory]
 test fCmd-28.5 {file link: source already exists} {linkDirectory} {
-    list [catch {file link abc.dir abc2.dir} msg] $msg
+    cd [temporaryDirectory]
+    set res [list [catch {file link abc.dir abc2.dir} msg] $msg]
+    cd [workingDirectory]
+    set res
 } {1 {could not create new link "abc.dir": that path already exists}}
 
 test fCmd-28.6 {file link: unsupported operation} {linkDirectory macOrWin} {
-    list [catch {file link -hard abc.link abc.dir} msg] $msg
+    cd [temporaryDirectory]
+    set res [list [catch {file link -hard abc.link abc.dir} msg] $msg]
+    cd [workingDirectory]
+    set res
 } {1 {could not create new link "abc.link" pointing to "abc.dir": illegal operation on a directory}}
 
 test fCmd-28.7 {file link: source already exists} {linkFile} {
-    list [catch {file link abc.file abc2.file} msg] $msg
+    cd [temporaryDirectory]
+    set res [list [catch {file link abc.file abc2.file} msg] $msg]
+    cd [workingDirectory]
+    set res
 } {1 {could not create new link "abc.file": that path already exists}}
 
 test fCmd-28.8 {file link} {linkFile winOnly} {
-    list [catch {file link -symbolic abc.link abc.file} msg] $msg
+    cd [temporaryDirectory]
+    set res [list [catch {file link -symbolic abc.link abc.file} msg] $msg]
+    cd [workingDirectory]
+    set res
 } {1 {could not create new link "abc.link" pointing to "abc.file": not a directory}}
 
 test fCmd-28.9 {file link: success with file} {linkFile} {
+    cd [temporaryDirectory]
     file delete -force abc.link
-    list [catch {file link abc.link abc.file} msg] $msg
+    set res [list [catch {file link abc.link abc.file} msg] $msg]
+    cd [workingDirectory]
+    set res
 } {0 abc.file}
 
+cd [temporaryDirectory]
 catch {file delete -force abc.link}
+cd [workingDirectory]
 
 test fCmd-28.10 {file link: linking to nonexistent path} {linkDirectory} {
+    cd [temporaryDirectory]
     file delete -force abc.link
-    list [catch {file link abc.link abc2.doesnt} msg] $msg
+    set res [list [catch {file link abc.link abc2.doesnt} msg] $msg]
+    cd [workingDirectory]
+    set res
 } {1 {could not create new link "abc.link" since target "abc2.doesnt" doesn't exist}}
 
 test fCmd-28.11 {file link: success with directory} {linkDirectory} {
+    cd [temporaryDirectory]
     file delete -force abc.link
-    list [catch {file link abc.link abc.dir} msg] $msg
+    set res [list [catch {file link abc.link abc.dir} msg] $msg]
+    cd [workingDirectory]
+    set res
 } {0 abc.dir}
 
 test fCmd-28.12 {file link: cd into a link} {linkDirectory} {
+    cd [temporaryDirectory]
     file delete -force abc.link
     file link abc.link abc.dir
     set orig [pwd]
@@ -2253,46 +2277,68 @@ test fCmd-28.12 {file link: cd into a link} {linkDirectory} {
     } else {
 	set res "ok"
     }
+    cd [workingDirectory]
     set res
 } {ok}
 
 test fCmd-28.13 {file link} {linkDirectory} {
     # duplicate link throws error
-    list [catch {file link abc.link abc.dir} msg] $msg
+    cd [temporaryDirectory]
+    set res [list [catch {file link abc.link abc.dir} msg] $msg]
+    cd [workingDirectory]
+    set res
 } {1 {could not create new link "abc.link": that path already exists}}
 
 test fCmd-28.14 {file link: deletes link not dir} {linkDirectory} {
+    cd [temporaryDirectory]
     file delete -force abc.link
-    list [file exists abc.link] [file exists abc.dir]
+    set res [list [file exists abc.link] [file exists abc.dir]]
+    cd [workingDirectory]
+    set res
 } {0 1}
 
 test fCmd-28.15 {file link: copies link not dir} {linkDirectory} {
+    cd [temporaryDirectory]
     file delete -force abc.link
     file link abc.link abc.dir
     file copy abc.link abc2.link
-    list [file type abc2.link] [file tail [file link abc2.link]]
+    set res [list [file type abc2.link] [file tail [file link abc2.link]]]
+    cd [workingDirectory]
+    set res
 } {link abc.dir}
 
+cd [temporaryDirectory]
 file delete -force abc.link
 file delete -force abc2.link
 
 file copy abc.file abc.dir
 file copy abc2.file abc.dir
+cd [workingDirectory]
 
 test fCmd-28.16 {file link: glob inside link} {linkDirectory} {
+    cd [temporaryDirectory]
     file delete -force abc.link
     file link abc.link abc.dir
-    glob -dir abc.link -tails *
+    set res [glob -dir abc.link -tails *]
+    cd [workingDirectory]
+    set res
 } {abc.file abc2.file}
 
 test fCmd-28.17 {file link: glob -type l} {linkDirectory} {
-    glob -dir [pwd] -type l -tails abc*
+    cd [temporaryDirectory]
+    set res [glob -dir [pwd] -type l -tails abc*]
+    cd [workingDirectory]
+    set res
 } {abc.link}
 
 test fCmd-28.18 {file link: glob -type d} {linkDirectory} {
-    lsort [glob -dir [pwd] -type d -tails abc*]
+    cd [temporaryDirectory]
+    set res [lsort [glob -dir [pwd] -type d -tails abc*]]
+    cd [workingDirectory]
+    set res
 } [lsort [list abc.link abc.dir abc2.dir]]
 
+cd [temporaryDirectory]
 file delete -force abc.link
 cd [workingDirectory]
 

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: cmdAH.test,v 1.23 2002/07/01 02:29:22 dgp Exp $
+# RCS: @(#) $Id: cmdAH.test,v 1.24 2002/07/01 14:35:10 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -1145,8 +1145,8 @@ test cmdAH-19.10 {Tcl_FileObjCmd: ~ : nativename} {
 # NFS file systems won't do the stuff below correctly.
 
 test cmdAH-19.11 {Tcl_FileObjCmd: exists} {unixOnly notRoot} {
-    removeFile /tmp/tcl.foo.dir/file
-    removeDirectory /tmp/tcl.foo.dir
+    file delete -force /tmp/tcl.foo.dir/file
+    file delete -force /tmp/tcl.foo.dir
     makeDirectory /tmp/tcl.foo.dir
     makeFile 12345 /tmp/tcl.foo.dir/file
     exec chmod 000 /tmp/tcl.foo.dir
@@ -1205,6 +1205,7 @@ test cmdAH-20.5 {Tcl_FileObjCmd: atime touch} {unixOrPc} {
     expr {$newatime == $modatime ? 1 : "$newatime != $modatime"}
 } 1
 
+removeFile touch.me
 # isdirectory
 
 test cmdAH-21.1 {Tcl_FileObjCmd: isdirectory} {
@@ -1359,7 +1360,7 @@ test cmdAH-24.8 {Tcl_FileObjCmd: mtime touch} {
     set modmtime [file mtime $file $newmtime]
     expr {$newmtime == $modmtime ? 1 : "$newmtime != $modmtime"}
 } 1
-
+removeFile touch.me
 
 # owned
 

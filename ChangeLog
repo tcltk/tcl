@@ -1,3 +1,10 @@
+2002-07-01  Don Porter  <dgp@users.sourceforge.net>
+
+	* tests/pkg/samename.tcl: restored.  needed by pkgMkIndex.test.
+
+	* library/tcltest/tcltest.tcl: restored writeability testing of
+	-tmpdir, augmented by a special exception for the deafault value.
+
 2002-07-01  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* doc/concat.n: Documented the *real* behaviour of [concat]!
