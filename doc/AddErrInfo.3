@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: AddErrInfo.3,v 1.9 2003/07/18 16:56:41 dgp Exp $
+'\" RCS: @(#) $Id: AddErrInfo.3,v 1.10 2004/10/07 14:44:31 dkf Exp $
 '\" 
 .so man.macros
 .TH Tcl_AddErrorInfo 3 8.0 Tcl "Tcl Library Procedures"
@@ -32,7 +32,7 @@ CONST char *
 void
 \fBTcl_LogCommandInfo\fR(\fIinterp, script, command, commandLength\fR)
 .SH ARGUMENTS
-.AS Tcl_Interp *message
+.AS Tcl_Interp commandLength
 .AP Tcl_Interp *interp in
 Interpreter in which to record information.
 .AP char *message in
