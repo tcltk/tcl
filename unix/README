@@ -18,7 +18,7 @@ SGI, as well as PCs running Linux, BSDI, and SCO UNIX.  To compile for
 a PC running Windows, see the README file in the directory ../win.  To
 compile for a Macintosh, see the README file in the directory ../mac.
 
-RCS: @(#) $Id: README,v 1.7 1999/07/22 21:50:56 redman Exp $
+RCS: @(#) $Id: README,v 1.8 1999/10/05 22:46:40 hobbs Exp $
 
 How To Compile And Install Tcl:
 -------------------------------
@@ -93,9 +93,9 @@ How To Compile And Install Tcl:
     Tcl then you'll first need to set your TCL_LIBRARY variable to
     hold the full path name of the "library" subdirectory.  Note that
     the installed versions of tclsh, libtcl.a, and libtcl.so have a
-    version number in their names, such as "tclsh8.2" or "libtcl8.2.so";
+    version number in their names, such as "tclsh8.3" or "libtcl8.3.so";
     to use the installed versions, either specify the version number
-    or create a symbolic link (e.g. from "tclsh" to "tclsh8.2").
+    or create a symbolic link (e.g. from "tclsh" to "tclsh8.3").
 
 If you have trouble compiling Tcl, check out the following Web URL:
     http://www.scriptics.com/software/install.html#Database
