@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.45 1999/05/26 02:39:12 stanton Exp $
+RCS: @(#) $Id: changes,v 1.46 1999/07/13 22:21:56 redman Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -4405,3 +4405,107 @@ Tcl_UniCharIs* character classification functions. (stanton)
 ../lib directory relative to that to the auto_path variable. (redman)
 
 --------------- Released 8.1.1, May 25, 1999 ----------------------
+
+5/21/99 (bug fix) Fixed launching command.com on Win95/98, no longer
+hangs. [Bug: 2105] (redman)
+
+5/28/99 (bug fix) Fixed bug where dde calls were being passed an
+invalid dde handle. [Bug: 2124] (stanton)
+
+6/1/99  (bug fix) Small configure.in patches. [Bug: 2121] (stanton)
+
+6/1/99  (bug fix) Applied latest regular expression patches to fix an
+infinite loop bug and add support for testing whether a string could
+match with additional input. [Bug: 2117] (stanton)
+
+6/2/99  (bug fix) Fixed incorrect computation of relative ordering in
+Utf case-insensitive comparison. [Bug: 2135] (stanton)
+
+6/3/99  (bug fix) Fxied bug where string equal/compare -nocase
+reported wrong result on null strings. [Bug: 2138] (stanton)
+
+6/4/99  (new feature) Windows build now uses Cygwin tools plus GNU
+make and autoconf to build static/dynamic and debug/nodebug. (stanton)
+
+6/7/99  (new feature) Optimized string index, length, range, and
+append commands. Added a new Unicode object type. (hershey)
+
+6/8/99  (bug fix) Rolled back Windows socket driver to 8.1.0
+version. (stanton)
+
+6/9/99  (new feature) Added Tcl_RegExpMatchObj and Tcl_RegExpGetInfo
+to public Tcl API, these functions are needed by Expect.  Changed
+tools/genStubs.tcl to always write output in LF mode. (stanton)
+
+6/14/99 (new feature) Merged string and Unicode object types.  Added
+new public Tcl API functions:  Tcl_NewUnicodeObj, Tcl_SetUnicodeObj,
+Tcl_GetUnicode, Tcl_GetUniChar, Tcl_GetCharLength, Tcl_GetRange,
+Tcl_AppendUnicodeToObj. (hershey)
+
+6/16/99 (new feature) Changed to conform to TEA specification, added
+tcl.m4 and aclocal.m4 macro libraries for configure.  (wart)
+
+6/17/99 (new feature) Added new regexp interfaces: -expanded, -line,
+-linestop, and -lineanchor switches.  Renamed Tcl_RegExpMatchObj to
+Tcl_RegExpExecObj and added new Tcl_RegExpMatchObj that is equivalent
+to Tcl_RegExpMatch.  Added public macros for regexp flags.  Added
+REG_BOSONLY flag to allow Expect to iterate through a string and only
+find matches that start at the current position within the
+string. (stanton)
+
+6/21/99 (bug fix) Fixed memory leak in TclpThreadCreate where thread
+attributes were not being released.  [Bug: 2254] (stanton)
+
+6/23/99 (new feature) Updated Unicode character tables to reflect
+Unicode 2.1 data. (stanton)
+
+6/25/99 (new feature) Fixed bugs in non-greedy quantifiers for regular
+expression code. (stanton)
+
+6/25/99 (new feature) Added initial implementation of new Tcl test
+harness package.  Modified test files to use new tcltest package.
+(jenn)
+
+6/26/99 (new feature) Applied patch from Peter Hardie to add poke
+command to dde and changed the dde package version number to
+1.1. (redman) 
+
+6/28/99 (bug fix) Applied patch from Peter Hardie to fix problem in
+Tcl_GetIndexFromObj() when the key being passed is the empty string.
+[Bug: 1738] (redman)
+
+6/29/99 (new feature) Added options to tcltest package: -preservecore,
+-limitconstraints, -help, -file, -notfile, and flags.  (jenn)
+
+7/3/99  (new feature) Changed parsing of variable names to allow empty
+array names.  Now "$(foo)" is a variable reference.  Previously you
+had to use something line $::(foo), which is slower.  This change was
+requested by Jean-Luc Fontaine for his STOOOP package. (welch)
+
+7/3/99  (new feature) Added Tcl_SetNotifier (public API) and
+associated hook points in the notifiers to be able to replace the
+notifier calls at runtime. The Xt notifier and test program use this
+hook.  (welch)
+
+7/3/99  (new feature) Added a new variant of the "Trf core patch" from
+Andreas Kupries that adds new C APIs Tcl_StackChannel,
+Tcl_UnstackChannel, and Tcl_GetStackedChannel.  This allows the Trf
+extension to work without applying patches to the Tcl core. (welch)
+
+7/6/99  (new feature) Added -timeout option to http.tcl to handle
+timeouts that occur during connection attempts to hosts that are
+down. (welch)
+
+7/6/99  (bug fix) Applied new implementation of the Windows serial
+port driver from Rolf Schroedter that fixes reading only one byte from
+the port at a time.  Uses polling every 10ms to implement
+fileevents. [Bug: 1980 2217] (redman)
+
+7/8/99  (bug fix) Applied fix for bug in DFA state caching under
+lookahead conditions (regular expressions).  [Bug: 2318] (stanton)
+
+7/8/99  (bug fix) Fixed bug in string range bounds checking
+code. (stanton)
+
+--------------- Released 8.2b1, July 14, 1999 ----------------------
+
