@@ -1,3 +1,8 @@
+2002-06-10  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* generic/tclExecute.c: optimised algorithm for exception range
+	lookup; part of [Patch 453709].
+
 2002-06-10  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* unix/tclUnixFCmd.c: fixed [Bug #566669]
