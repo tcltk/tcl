@@ -384,39 +384,21 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	    # dynamic
             AC_MSG_RESULT([using shared flags])
 
-	    # check to see if ld supports --shared. Libtool does a much
-	    # more extensive test, but not really needed in this case.
-	    if test -z "$LD"; then
-		ld_prog="`(${CC} -print-prog-name=ld) 2>/dev/null`"
-		if test -z "$ld_prog"; then
-		  ld_prog=ld
-		else
-		  # get rid of the potential '\r' from ld_prog.
-		  ld_prog="`(echo $ld_prog | tr -d '\015' | sed 's,\\\\,\\/,g')`"
-		fi
-		LD="$ld_prog"
+	    # ad-hoc check to see if CC supports -shared.
+	    if "${CC}" -shared 2>&1 | egrep ': -shared not supported' >/dev/null; then
+		AC_MSG_ERROR([${CC} does not support the -shared option.
+                You will need to upgrade to a newer version of the toolchain.])
 	    fi
-
-	    AC_MSG_CHECKING([whether $ld_prog supports -shared option])
-
-	    # now the ad-hoc check to see if GNU ld supports --shared.
-	    if "$LD" --shared 2>&1 | egrep ': -shared not supported' >/dev/null; then
-		ld_supports_shared="no"
-		SHLIB_LD="${DLLWRAP-dllwrap}"
-	    else
-		ld_supports_shared="yes"
-		SHLIB_LD="${CC} -shared"
-	    fi
-	    AC_MSG_RESULT([$ld_supports_shared])
 
 	    runtime=
+	    # Link with gcc since ld does not link to default libs like
+	    # -luser32 and -lmsvcrt by default. Make sure CFLAGS is
+	    # included so -mno-cygwin passed the correct libs to the linker.
+	    SHLIB_LD='${CC} -shared ${CFLAGS}'
 	    # Add SHLIB_LD_LIBS to the Make rule, not here.
-	    MAKE_DLL="\${SHLIB_LD} \$(LDFLAGS) -o \[$]@ ${extra_ldflags}"
-	    if test "${ld_supports_shared}" = "yes"; then
-	        MAKE_DLL="${MAKE_DLL} -Wl,--out-implib,\$(patsubst %.dll,lib%.a,\[$]@)"
-	    else
-	        MAKE_DLL="${MAKE_DLL} --output-lib \$(patsubst %.dll,lib%.a,\[$]@)"
-	    fi
+	    MAKE_DLL="\${SHLIB_LD} \$(LDFLAGS) -o \[$]@ ${extra_ldflags} \
+	        -Wl,--out-implib,\$(patsubst %.dll,lib%.a,\[$]@)"
+
 	    LIBSUFFIX="\${DBGX}.a"
 	    DLLSUFFIX="\${DBGX}.dll"
 	    EXESUFFIX="\${DBGX}.exe"
