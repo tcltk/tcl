@@ -12,7 +12,7 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 # 
-# RCS: @(#) $Id: tcltest.tcl,v 1.3 1999/07/02 20:39:52 jenn Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.4 1999/07/08 02:57:17 rjohnson Exp $
 
 package provide tcltest 1.0
 
@@ -1362,12 +1362,7 @@ proc ::tcltest::makeFile {contents name} {
 	puts "::tcltest::makeFile: putting $contents into $name"
     }
     set fd [open $name w]
-
-    # Doing the translation breaks TclPro Checker tests
-    # under Windows 
-    if {[string equal $tcl_platform(platform) "unix"]} {
-	fconfigure $fd -translation lf
-    }
+    fconfigure $fd -translation lf
 
     if {[string equal \
 	    [string index $contents [expr {[string length $contents] - 1}]] \
