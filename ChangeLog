@@ -1,3 +1,8 @@
+2002-11-01  David Gravereaux <davygrvy@pobox.com>
+
+	* win/tclWinReg.c:  Changed the Tcl_PkgProvide() line to declare
+	the registry extension at version 1.1 from 1.0.
+
 2002-10-31  Andreas Kupries  <andreask@activestate.com>
 
 	* library/word.tcl: Changed $tcl_platform to $::tcl_platform to
