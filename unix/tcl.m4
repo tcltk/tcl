@@ -574,7 +574,6 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
     # Step 3: set configuration options based on system name and version.
 
     do64bit_ok=no
-    fullSrcDir=`cd $srcdir; pwd`
     EXTRA_CFLAGS=""
     TCL_EXPORT_FILE_SUFFIX=""
     UNSHARED_LIB_SUFFIX=""
@@ -604,6 +603,7 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 		fi
 		AC_MSG_RESULT(Using $CC for compiling with threads)
 	    fi
+	    LIBS="$LIBS -lc"
 	    # AIX-5 uses ELF style dynamic libraries
 	    SHLIB_CFLAGS=""
 	    SHLIB_LD="/usr/ccs/bin/ld -G -z text"
@@ -641,8 +641,9 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 		fi
 		AC_MSG_RESULT(Using $CC for compiling with threads)
 	    fi
+	    LIBS="$LIBS -lc"
 	    SHLIB_CFLAGS=""
-	    SHLIB_LD="$fullSrcDir/ldAix /bin/ld -bhalt:4 -bM:SRE -bE:lib.exp -H512 -T512 -bnoentry"
+	    SHLIB_LD="${TCL_SRC_DIR}/unix/ldAix /bin/ld -bhalt:4 -bM:SRE -bE:lib.exp -H512 -T512 -bnoentry"
 	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
@@ -937,6 +938,19 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 	    UNSHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}\$\{DBGX\}.a'
 	    SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}\$\{DBGX\}.so'
 	    TCL_LIB_VERSIONS_OK=nodots
+	    ;;
+	Rhapsody-*|Darwin-*)
+	    SHLIB_CFLAGS="-fno-common"
+	    SHLIB_LD="cc -dynamiclib \${LDFLAGS}"
+	    TCL_SHLIB_LD_EXTRAS="-compatibility_version ${TCL_MAJOR_VERSION} -current_version \${VERSION} -install_name \${LIB_RUNTIME_DIR}/\${TCL_LIB_FILE} -prebind -seg1addr a000000"
+	    SHLIB_LD_LIBS="${LIBS}"
+	    SHLIB_SUFFIX=".dylib"
+	    DL_OBJS="tclLoadDyld.o"
+	    DL_LIBS=""
+	    LDFLAGS="-prebind"
+	    LD_SEARCH_FLAGS=""
+	    CFLAGS_OPTIMIZE="-O3"
+	    EXTRA_CFLAGS="-arch ppc -pipe"
 	    ;;
 	NEXTSTEP-*)
 	    SHLIB_CFLAGS=""
@@ -1291,6 +1305,8 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 		IRIX*)
 		    ;;
 		NetBSD-*|FreeBSD-*|OpenBSD-*)
+		    ;;
+		Rhapsody-*|Darwin-*)
 		    ;;
 		RISCos-*)
 		    ;;
