@@ -1,17 +1,16 @@
 /* 
  * tclIO.h --
  *
- *	This file provides the header information (those that are the same on
+ *	This file provides the generic portions (those that are the same on
  *	all platforms and for all channel types) of Tcl's IO facilities.
- *	This is used by tclIO.c and tclTest.c.
  *
+ * Copyright (c) 1998-2000 Ajuba Solutions
  * Copyright (c) 1995-1997 Sun Microsystems, Inc.
- * Copyright (c) 1998-2000 Scriptics Corporation
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.h,v 1.1 2000/05/19 21:30:17 hobbs Exp $
+ * RCS: @(#) $Id: tclIO.h,v 1.2 2000/09/28 06:38:21 hobbs Exp $
  */
 
 /*
@@ -29,7 +28,7 @@
 #   define EAGAIN EWOULDBLOCK
 #endif
 #if ((!defined(EAGAIN)) && (!defined(EWOULDBLOCK)))
-    error one of EWOULDBLOCK or EAGAIN must be defined
+error one of EWOULDBLOCK or EAGAIN must be defined
 #endif
 
 /*
@@ -96,7 +95,7 @@ typedef struct ChannelBuffer {
 typedef struct CloseCallback {
     Tcl_CloseProc *proc;		/* The procedure to call. */
     ClientData clientData;		/* Arbitrary one-word data to pass
-                                         * to the callback. */
+					 * to the callback. */
     struct CloseCallback *nextPtr;	/* For chaining close callbacks. */
 } CloseCallback;
 
@@ -108,15 +107,15 @@ typedef struct CloseCallback {
 
 typedef struct EventScriptRecord {
     struct Channel *chanPtr;	/* The channel for which this script is
-                                 * registered. This is used only when an
-                                 * error occurs during evaluation of the
-                                 * script, to delete the handler. */
+				 * registered. This is used only when an
+				 * error occurs during evaluation of the
+				 * script, to delete the handler. */
     Tcl_Obj *scriptPtr;		/* Script to invoke. */
     Tcl_Interp *interp;		/* In what interpreter to invoke script? */
     int mask;			/* Events must overlap current mask for the
-                                 * stored script to be invoked. */
+				 * stored script to be invoked. */
     struct EventScriptRecord *nextPtr;
-    				/* Next in chain of records. */
+				/* Next in chain of records. */
 } EventScriptRecord;
 
 /*
@@ -129,11 +128,41 @@ typedef struct EventScriptRecord {
  */
 
 typedef struct Channel {
+    struct ChannelState *state; /* Split out state information */
+
+    ClientData instanceData;	/* Instance-specific data provided by
+				 * creator of channel. */
+    Tcl_ChannelType *typePtr;	/* Pointer to channel type structure. */
+
+    struct Channel *downChanPtr;/* Refers to channel this one was stacked
+				 * upon.  This reference is NULL for normal
+				 * channels.  See Tcl_StackChannel. */
+    struct Channel *upChanPtr;	/* Refers to the channel above stacked this
+				 * one. NULL for the top most channel. */
+
+    /*
+     * Intermediate buffers to hold pre-read data for consumption by a
+     * newly stacked transformation. See 'Tcl_StackChannel'.
+     */
+    ChannelBuffer *inQueueHead;	/* Points at first buffer in input queue. */
+    ChannelBuffer *inQueueTail;	/* Points at last buffer in input queue. */
+} Channel;
+
+/*
+ * struct ChannelState:
+ *
+ * One of these structures is allocated for each open channel. It contains data
+ * specific to the channel but which belongs to the generic part of the Tcl
+ * channel mechanism, and it points at an instance specific (and type
+ * specific) * instance data, and at a channel type structure.
+ */
+
+typedef struct ChannelState {
     char *channelName;		/* The name of the channel instance in Tcl
-                                 * commands. Storage is owned by the generic IO
-                                 * code,  is dynamically allocated. */
+				 * commands. Storage is owned by the generic IO
+				 * code, is dynamically allocated. */
     int	flags;			/* ORed combination of the flags defined
-                                 * below. */
+				 * below. */
     Tcl_Encoding encoding;	/* Encoding to apply when reading or writing
 				 * data on this channel.  NULL means no
 				 * encoding is applied to data. */
@@ -155,26 +184,23 @@ typedef struct Channel {
 				 * TCL_ENCODING_END when EOF is seen. */
     Tcl_EolTranslation inputTranslation;
 				/* What translation to apply for end of line
-                                 * sequences on input? */    
+				 * sequences on input? */    
     Tcl_EolTranslation outputTranslation;
-    				/* What translation to use for generating
-                                 * end of line sequences in output? */
+				/* What translation to use for generating
+				 * end of line sequences in output? */
     int inEofChar;		/* If nonzero, use this as a signal of EOF
-                                 * on input. */
+				 * on input. */
     int outEofChar;             /* If nonzero, append this to the channel
-                                 * when it is closed if it is open for
-                                 * writing. */
+				 * when it is closed if it is open for
+				 * writing. */
     int unreportedError;	/* Non-zero if an error report was deferred
-                                 * because it happened in the background. The
-                                 * value is the POSIX error code. */
-    ClientData instanceData;	/* Instance-specific data provided by
-				 * creator of channel. */
-
-    Tcl_ChannelType *typePtr;	/* Pointer to channel type structure. */
+				 * because it happened in the background. The
+				 * value is the POSIX error code. */
     int refCount;		/* How many interpreters hold references to
-                                 * this IO channel? */
+				 * this IO channel? */
+
     CloseCallback *closeCbPtr;	/* Callbacks registered to be called when the
-                                 * channel is closed. */
+				 * channel is closed. */
     char *outputStage;		/* Temporary staging buffer used when
 				 * translating EOL before converting from
 				 * UTF-8 to external form. */
@@ -183,28 +209,31 @@ typedef struct Channel {
     ChannelBuffer *outQueueTail;/* Points at last buffer in output queue. */
 
     ChannelBuffer *saveInBufPtr;/* Buffer saved for input queue - eliminates
-                                 * need to allocate a new buffer for "gets"
-                                 * that crosses buffer boundaries. */
+				 * need to allocate a new buffer for "gets"
+				 * that crosses buffer boundaries. */
     ChannelBuffer *inQueueHead;	/* Points at first buffer in input queue. */
     ChannelBuffer *inQueueTail;	/* Points at last buffer in input queue. */
 
     struct ChannelHandler *chPtr;/* List of channel handlers registered
-                                  * for this channel. */
+				  * for this channel. */
     int interestMask;		/* Mask of all events this channel has
-                                 * handlers for. */
-    struct Channel *nextChanPtr;/* Next in list of channels currently open. */
+				 * handlers for. */
     EventScriptRecord *scriptRecordPtr;
-    				/* Chain of all scripts registered for
-                                 * event handlers ("fileevent") on this
-                                 * channel. */
+				/* Chain of all scripts registered for
+				 * event handlers ("fileevent") on this
+				 * channel. */
+
     int bufSize;		/* What size buffers to allocate? */
     Tcl_TimerToken timer;	/* Handle to wakeup timer for this channel. */
     CopyState *csPtr;		/* State of background copy, or NULL. */
-    struct Channel* supercedes; /* Refers to channel this one was stacked upon.
-				   This reference is NULL for normal channels.
-				   See Tcl_StackChannel. */
-
-} Channel;
+    Channel *topChanPtr;	/* Refers to topmost channel in a stack.
+				 * Never NULL. */
+    Channel *bottomChanPtr;	/* Refers to bottommost channel in a stack.
+				 * This channel can be relied on to live as
+				 * long as the channel state. Never NULL. */
+    struct ChannelState *nextCSPtr;
+				/* Next in list of channels currently open. */
+} ChannelState;
     
 /*
  * Values for the flags field in Channel. Any ORed combination of the
@@ -237,10 +266,10 @@ typedef struct Channel {
 					 * we saw the input eofChar. This bit
                                          * prevents clearing of the EOF bit
                                          * before every input operation. */
-#define CHANNEL_BLOCKED	(1<<11)	/* EWOULDBLOCK or EAGAIN occurred
+#define CHANNEL_BLOCKED		(1<<11)	/* EWOULDBLOCK or EAGAIN occurred
 					 * on this channel. This bit is
-                                         * cleared before every input or
-                                         * output operation. */
+					 * cleared before every input or
+					 * output operation. */
 #define INPUT_SAW_CR		(1<<12)	/* Channel is in CRLF eol input
 					 * translation mode and the last
                                          * byte seen was a "\r". */
@@ -263,6 +292,8 @@ typedef struct Channel {
 					 * When set, file events will not be
 					 * delivered for buffered data until
 					 * the state of the channel changes. */
+#define CHANNEL_RAW_MODE	(1<<16)	/* When set, notes that the Raw API is
+					 * being used. */
 
 /*
  * For each channel handler registered in a call to Tcl_CreateChannelHandler,
@@ -301,8 +332,8 @@ typedef struct NextChannelHandler {
     ChannelHandler *nextHandlerPtr;	/* The next handler to be invoked in
                                          * this invocation. */
     struct NextChannelHandler *nestedHandlerPtr;
-					/* Next nested invocation of
-                                         * ChannelHandlerEventProc. */
+    /* Next nested invocation of
+     * ChannelHandlerEventProc. */
 } NextChannelHandler;
 
 
