@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.61.2.1 2003/04/10 22:18:07 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.61.2.2 2003/04/11 17:35:33 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -6852,15 +6852,46 @@ UpdateInterest(chanPtr)
 	    mask &= ~TCL_READABLE;
 
 	    /*
-	     * Andreas Kupries -- Experimental change
+	     * Andreas Kupries, April 11, 2003
 	     *
-	     * Squash interest in exceptions too. Solaris may/will
-	     * generate superfluous exceptions for plain text files,
-	     * screwing up expect, which doesn't get the synthesized
-	     * readable event, or to late.
+	     * Some operating systems (Solaris 2.6 and higher (but not
+	     * Solaris 2.5, go figure)) generate READABLE and
+	     * EXCEPTION events when select()'ing [*] on a plain file,
+	     * even if EOF was not yet reached. This is a problem in
+	     * the following situation:
+	     *
+	     * - An extension asks to get both READABLE and EXCEPTION
+	     *   events.
+	     * - It reads data into a buffer smaller than the buffer
+	     *   used by Tcl itself.
+	     * - It does not process all events in the event queue, but
+	     *   only only one, at least in some situations.
+	     *
+	     * In that case we can get into a situation where
+	     *
+	     * - Tcl drops READABLE here, because it has data in its own
+	     *   buffers waiting to be read by the extension.
+	     * - A READABLE event is syntesized via timer.
+	     * - The OS still reports the EXCEPTION condition on the file.
+	     * - And the extension gets the EXCPTION event first, and
+	     *   handles this as EOF.
+	     *
+	     * End result ==> Premature end of reading from a file.
+	     *
+	     * The concrete example is 'Expect', and its [expect]
+	     * command (and at the C-level, deep in the bowels of
+	     * Expect, 'exp_get_next_event'. See marker 'SunOS' for
+	     * commentary in that function too).
+	     *
+	     * [*] As the Tcl notifier does. See also for marker
+	     * 'SunOS' in file 'exp_event.c' of Expect.
+	     *
+	     * Our solution here is to drop the interest in the
+	     * EXCEPTION events too. This compiles on all platforms,
+	     * and also passes the testsuite on all of them.
 	     */
-	    mask &= ~TCL_EXCEPTION;
 
+	    mask &= ~TCL_EXCEPTION;
 
 	    if (!statePtr->timer) {
 		statePtr->timer = Tcl_CreateTimerHandler(0, ChannelTimerProc,
