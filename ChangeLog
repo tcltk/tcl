@@ -1,3 +1,8 @@
+2004-06-15  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* doc/binary.n: Added some notes to the documentation of the 'a'
+	format to address the point raised in [RFE 768852].
+
 2004-06-15  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* unix/tclConfig.sh.in (TCL_EXTRA_CFLAGS): set to @CFLAGS@, which
