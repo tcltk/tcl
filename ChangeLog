@@ -1,5 +1,9 @@
 2002-06-30  Don Porter  <dgp@users.sourceforge.net>
 
+	* library/tcltest/tcltest.tcl:	Stopped checking for writeability
+	of -tmpdir value because no default directory can be guaranteed to
+	be writeable.
+
 	* tests/autoMkindex.tcl: removed.
 	* tests/pkg/samename.tcl: removed.
 	* tests/pkg/magicchar.tcl: removed.

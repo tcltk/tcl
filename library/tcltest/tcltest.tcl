@@ -16,7 +16,7 @@
 # Contributions from Don Porter, NIST, 2002.  (not subject to US copyright)
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.tcl,v 1.61 2002/07/01 02:29:22 dgp Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.62 2002/07/01 04:56:11 dgp Exp $
 
 package require Tcl 8.3		;# uses [glob -directory]
 namespace eval tcltest {
@@ -650,9 +650,15 @@ namespace eval tcltest {
 	    file mkdir $directory
 	}
 	set directory [AcceptDirectory $directory]
-	if {![file writable $directory]} {
-	    return -code error "\"$directory\" is not writeable"
-	}
+	#
+	# Would be good to test that the -tmpdir is a writeable
+	# directory, but then we need a default value that we
+	# can guarantee will pass the writeability test, and there
+	# doesn't seem to be one.
+	#
+	#if {![file writable $directory]} {
+	#    return -code error "\"$directory\" is not writeable"
+	#}
 	return $directory
     }
 
