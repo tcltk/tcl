@@ -503,24 +503,24 @@ test regexp-10.5 {inverse partial newline sensitivity in regsub} {
 
 test regexp-11.1 {regsub errors} {
     evalInProc {
-	list [catch {regsub a b c} msg] $msg
+	list [catch {regsub a b} msg] $msg
     }
-} {1 {wrong # args: should be "regsub ?switches? exp string subSpec varName"}}
+} {1 {wrong # args: should be "regsub ?switches? exp string subSpec ?varName?"}}
 test regexp-11.2 {regsub errors} {
     evalInProc {
-	list [catch {regsub -nocase a b c} msg] $msg
+	list [catch {regsub -nocase a b} msg] $msg
     }
-} {1 {wrong # args: should be "regsub ?switches? exp string subSpec varName"}}
+} {1 {wrong # args: should be "regsub ?switches? exp string subSpec ?varName?"}}
 test regexp-11.3 {regsub errors} {
     evalInProc {
-	list [catch {regsub -nocase -all a b c} msg] $msg
+	list [catch {regsub -nocase -all a b} msg] $msg
     }
-} {1 {wrong # args: should be "regsub ?switches? exp string subSpec varName"}}
+} {1 {wrong # args: should be "regsub ?switches? exp string subSpec ?varName?"}}
 test regexp-11.4 {regsub errors} {
     evalInProc {
 	list [catch {regsub a b c d e f} msg] $msg
     }
-} {1 {wrong # args: should be "regsub ?switches? exp string subSpec varName"}}
+} {1 {wrong # args: should be "regsub ?switches? exp string subSpec ?varName?"}}
 test regexp-11.5 {regsub errors} {
     evalInProc {
 	list [catch {regsub -gorp a b c} msg] $msg
