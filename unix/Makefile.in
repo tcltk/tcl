@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.160 2005/01/06 11:15:21 dkf Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.161 2005/01/10 18:43:37 jenglish Exp $
 
 VERSION 		= @TCL_VERSION@
 MAJOR_VERSION		= @TCL_MAJOR_VERSION@
@@ -80,9 +80,6 @@ TCL_PACKAGE_PATH	= @TCL_PACKAGE_PATH@
 
 # Tcl Module default path roots (TIP189).
 TCL_MODULE_PATH		=
-
-# Libraries built with optimization switches have this additional extension
-TCL_DBGX		= @TCL_DBGX@
 
 # warning flags
 CFLAGS_WARNING		= @CFLAGS_WARNING@
