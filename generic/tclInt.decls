@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.3.2.4 1999/03/19 04:01:20 stanton Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.3.2.5 1999/04/01 21:58:17 stanton Exp $
 
 library tcl
 
@@ -728,12 +728,6 @@ declare 23 win {
 }
 declare 24 win {
     char * TclWinNoBackslash(char *path)
-}
-declare 25 win {
-    TCHAR * Tcl_WinUtfToTChar(CONST char *str, int len, Tcl_DString *dsPtr)
-}
-declare 26 win {
-    char * Tcl_WinTCharToUtf(CONST TCHAR *str, int len, Tcl_DString *dsPtr)
 }
 
 #########################

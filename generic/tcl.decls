@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.3.2.11 1999/04/01 21:52:53 redman Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.3.2.12 1999/04/01 21:58:17 stanton Exp $
 
 library tcl
 
@@ -1181,6 +1181,18 @@ declare 344 generic {
 # only available on the designated platform.
 
 interface tclPlat
+
+######################
+# Windows declarations
+
+# Added in Tcl 8.1
+
+declare 0 win {
+    TCHAR * Tcl_WinUtfToTChar(CONST char *str, int len, Tcl_DString *dsPtr)
+}
+declare 1 win {
+    char * Tcl_WinTCharToUtf(CONST TCHAR *str, int len, Tcl_DString *dsPtr)
+}
 
 ##################
 # Mac declarations

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.1.2.16 1999/03/30 22:29:03 stanton Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.1.2.17 1999/04/01 21:58:17 stanton Exp $
  */
 
 #ifndef _TCLINT
@@ -1806,8 +1806,6 @@ EXTERN Proc *		TclFindProc _ANSI_ARGS_((Interp *iPtr,
 			    char *procName));
 EXTERN int		TclFormatInt _ANSI_ARGS_((char *buffer, long n));
 EXTERN void		TclFreePackageInfo _ANSI_ARGS_((Interp *iPtr));
-EXTERN void		TclGetAndDetachPids _ANSI_ARGS_((Tcl_Interp *interp,
-			    Tcl_Channel chan));
 EXTERN int		TclGetDate _ANSI_ARGS_((char *p,
 			    unsigned long now, long zone,
 			    unsigned long *timePtr));
@@ -1901,22 +1899,11 @@ EXTERN int		TclpAccess _ANSI_ARGS_((CONST char *filename,
 			    int mode));
 EXTERN char *		TclpAlloc _ANSI_ARGS_((unsigned int size));
 EXTERN int		TclpCheckStackSpace _ANSI_ARGS_((void));
-EXTERN int		TclpCloseFile _ANSI_ARGS_((TclFile file));
 EXTERN int		TclpCopyFile _ANSI_ARGS_((CONST char *source,
 			    CONST char *dest));
 EXTERN int		TclpCopyDirectory _ANSI_ARGS_((CONST char *source,
 			    CONST char *dest, Tcl_DString *errorPtr));
-EXTERN Tcl_Channel	TclpCreateCommandChannel _ANSI_ARGS_((
-			    TclFile readFile, TclFile writeFile,
-			    TclFile errorFile, int numPids, Tcl_Pid *pidPtr));
 EXTERN int		TclpCreateDirectory _ANSI_ARGS_((CONST char *path));
-EXTERN int		TclpCreatePipe _ANSI_ARGS_((TclFile *readPipe,
-			    TclFile *writePipe));
-EXTERN int		TclpCreateProcess _ANSI_ARGS_((Tcl_Interp *interp,
-			    int argc, char **argv, TclFile inputFile, 
-			    TclFile outputFile, TclFile errorFile,
-			    Tcl_Pid *pidPtr));
-EXTERN TclFile		TclpCreateTempFile _ANSI_ARGS_((CONST char *contents));
 EXTERN int		TclpDeleteFile _ANSI_ARGS_((CONST char *path));
 EXTERN void		TclpExit _ANSI_ARGS_((int status));
 EXTERN void		TclpFinalizeCondition _ANSI_ARGS_((
@@ -1933,11 +1920,9 @@ EXTERN unsigned long	TclpGetClicks _ANSI_ARGS_((void));
 EXTERN char *		TclpGetCwd _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_DString *cwdPtr));
 EXTERN Tcl_Channel	TclpGetDefaultStdChannel _ANSI_ARGS_((int type));
-EXTERN unsigned long	TclpGetPid _ANSI_ARGS_((Tcl_Pid pid));
 EXTERN unsigned long	TclpGetSeconds _ANSI_ARGS_((void));
 EXTERN void		TclpGetTime _ANSI_ARGS_((Tcl_Time *time));
 EXTERN int		TclpGetTimeZone _ANSI_ARGS_((unsigned long time));
-EXTERN char *		TclpGetTZName _ANSI_ARGS_((int isdst));
 EXTERN char *		TclpGetUserHome _ANSI_ARGS_((CONST char *name,
 			    Tcl_DString *bufferPtr));
 EXTERN int		TclpHasSockets _ANSI_ARGS_((Tcl_Interp *interp));
@@ -1946,15 +1931,11 @@ EXTERN void		TclpInitLock _ANSI_ARGS_((void));
 EXTERN void		TclpInitPlatform _ANSI_ARGS_((void));
 EXTERN void		TclpInitUnlock _ANSI_ARGS_((void));
 EXTERN int		TclpListVolumes _ANSI_ARGS_((Tcl_Interp *interp));
-EXTERN TclFile		TclpMakeFile _ANSI_ARGS_((Tcl_Channel channel,
-			    int direction));
 EXTERN void		TclpMasterLock _ANSI_ARGS_((void));
 EXTERN void		TclpMasterUnlock _ANSI_ARGS_((void));
 EXTERN int		TclpMatchFiles _ANSI_ARGS_((Tcl_Interp *interp,
 			    char *separators, Tcl_DString *dirPtr,
 			    char *pattern, char *tail));
-EXTERN TclFile		TclpOpenFile _ANSI_ARGS_((CONST char *fname,
-			    int mode));
 EXTERN Tcl_Channel	TclpOpenFileChannel _ANSI_ARGS_((Tcl_Interp *interp,
 			    char *fileName, char *modeString,
 			    int permissions));

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.3.2.8 1999/04/01 21:52:56 redman Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.3.2.9 1999/04/01 21:58:19 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -603,8 +603,6 @@ TclIntPlatStubs tclIntPlatStubs = {
     TclpCreateTempFile, /* 22 */
     TclpGetTZName, /* 23 */
     TclWinNoBackslash, /* 24 */
-    Tcl_WinUtfToTChar, /* 25 */
-    Tcl_WinTCharToUtf, /* 26 */
 #endif /* __WIN32__ */
 #ifdef MAC_TCL
     TclpSysAlloc, /* 0 */
@@ -639,6 +637,10 @@ TclIntPlatStubs tclIntPlatStubs = {
 TclPlatStubs tclPlatStubs = {
     TCL_STUB_MAGIC,
     NULL,
+#ifdef __WIN32__
+    Tcl_WinUtfToTChar, /* 0 */
+    Tcl_WinTCharToUtf, /* 1 */
+#endif /* __WIN32__ */
 #ifdef MAC_TCL
     Tcl_MacSetEventProc, /* 0 */
     Tcl_MacConvertTextResource, /* 1 */

@@ -6,7 +6,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclPlatDecls.h,v 1.3.2.4 1999/03/30 01:55:54 redman Exp $
+ * RCS: @(#) $Id: tclPlatDecls.h,v 1.3.2.5 1999/04/01 21:58:18 stanton Exp $
  */
 
 #ifndef _TCLPLATDECLS
@@ -18,6 +18,14 @@
  * Exported function declarations:
  */
 
+#ifdef __WIN32__
+/* 0 */
+EXTERN TCHAR *		Tcl_WinUtfToTChar _ANSI_ARGS_((CONST char * str, 
+				int len, Tcl_DString * dsPtr));
+/* 1 */
+EXTERN char *		Tcl_WinTCharToUtf _ANSI_ARGS_((CONST TCHAR * str, 
+				int len, Tcl_DString * dsPtr));
+#endif /* __WIN32__ */
 #ifdef MAC_TCL
 /* 0 */
 EXTERN void		Tcl_MacSetEventProc _ANSI_ARGS_((
@@ -55,6 +63,10 @@ typedef struct TclPlatStubs {
     int magic;
     struct TclPlatStubHooks *hooks;
 
+#ifdef __WIN32__
+    TCHAR * (*tcl_WinUtfToTChar) _ANSI_ARGS_((CONST char * str, int len, Tcl_DString * dsPtr)); /* 0 */
+    char * (*tcl_WinTCharToUtf) _ANSI_ARGS_((CONST TCHAR * str, int len, Tcl_DString * dsPtr)); /* 1 */
+#endif /* __WIN32__ */
 #ifdef MAC_TCL
     void (*tcl_MacSetEventProc) _ANSI_ARGS_((Tcl_MacConvertEventPtr procPtr)); /* 0 */
     char * (*tcl_MacConvertTextResource) _ANSI_ARGS_((Handle resource)); /* 1 */
@@ -76,6 +88,16 @@ extern TclPlatStubs *tclPlatStubsPtr;
  * Inline function declarations:
  */
 
+#ifdef __WIN32__
+#ifndef Tcl_WinUtfToTChar
+#define Tcl_WinUtfToTChar \
+	(tclPlatStubsPtr->tcl_WinUtfToTChar) /* 0 */
+#endif
+#ifndef Tcl_WinTCharToUtf
+#define Tcl_WinTCharToUtf \
+	(tclPlatStubsPtr->tcl_WinTCharToUtf) /* 1 */
+#endif
+#endif /* __WIN32__ */
 #ifdef MAC_TCL
 #ifndef Tcl_MacSetEventProc
 #define Tcl_MacSetEventProc \
