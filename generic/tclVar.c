@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.17 2000/05/08 21:25:31 ericm Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.18 2000/05/31 15:03:34 ericm Exp $
  */
 
 #include "tclInt.h"
@@ -3047,9 +3047,17 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
 	    char *pattern = NULL;
 	    char *name;
 	    Tcl_Obj *namePtr;
+	    int mode, matched = 0;
+	    static char *options[] = {
+		"-exact", "-glob", "-regexp", (char *) NULL
+	    };
+	    enum options { OPT_EXACT, OPT_GLOB, OPT_REGEXP };
+
+	    mode = OPT_GLOB;
 	    
-	    if ((objc != 3) && (objc != 4)) {
-  	        Tcl_WrongNumArgs(interp, 2, objv, "arrayName ?pattern?");
+	    if ((objc < 3) && (objc > 5)) {
+  	        Tcl_WrongNumArgs(interp, 2, objv,
+			"arrayName ?mode? ?pattern?");
 		return TCL_ERROR;
 	    }
 	    if (notArray) {
@@ -3057,7 +3065,13 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
 	    }
 	    if (objc == 4) {
 	        pattern = Tcl_GetString(objv[3]);
-	    }
+	    } else if (objc == 5) {
+		pattern = Tcl_GetString(objv[4]);
+		if (Tcl_GetIndexFromObj(interp, objv[3], options, "option",
+			0, &mode) != TCL_OK) {
+		    return TCL_ERROR;
+		}
+	    }       		
 	    for (hPtr = Tcl_FirstHashEntry(varPtr->value.tablePtr, &search);
 		 hPtr != NULL; hPtr = Tcl_NextHashEntry(&search)) {
 	        varPtr2 = (Var *) Tcl_GetHashValue(hPtr);
@@ -3065,8 +3079,25 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
 		    continue;
 		}
 		name = Tcl_GetHashKey(varPtr->value.tablePtr, hPtr);
-		if ((objc == 4) && !Tcl_StringMatch(name, pattern)) {
- 		    continue;	/* element name doesn't match pattern */
+		if (objc > 3) {
+		    switch ((enum options) mode) {
+			case OPT_EXACT:
+			    matched = (strcmp(name, pattern) == 0);
+			    break;
+			case OPT_GLOB:
+			    matched = Tcl_StringMatch(name, pattern);
+			    break;
+			case OPT_REGEXP:
+			    matched = Tcl_RegExpMatch(interp, name,
+				    pattern);
+			    if (matched < 0) {
+				return TCL_ERROR;
+			    }
+			    break;
+		    }
+		    if (matched == 0) {
+			continue;
+		    }
 		}
 		
 		namePtr = Tcl_NewStringObj(name, -1);

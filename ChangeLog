@@ -1,3 +1,14 @@
+2000-05-31  Eric Melski  <ericm@scriptics.com>
+
+	* generic/tclVar.c (Tcl_ArrayObjCmd): Added support for regexp and
+	exact matching for [array names] command. [RFE: 3684].
+
+	* doc/array.n: Added documentation for [array names
+	-exact/-regexp/-glob] [RFE: 3684].
+
+	* tests/set-old.test: Added tests for [array names
+	-exact/-regexp/-glob] [RFE: 3684].
+
 2000-05-27  Jeff Hobbs  <hobbs@scriptics.com>
 
 	* tests/info.test:

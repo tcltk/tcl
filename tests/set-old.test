@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: set-old.test,v 1.9 2000/05/08 21:25:31 ericm Exp $
+# RCS: @(#) $Id: set-old.test,v 1.10 2000/05/31 15:03:35 ericm Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -388,7 +388,7 @@ test set-old-8.22 {array command, names option} {
     catch {unset a}
     set a(22) 3
     list [catch {array names a 4 5} msg] $msg
-} {1 {wrong # args: should be "array names arrayName ?pattern?"}}
+} {1 {bad option "4": must be -exact, -glob, or -regexp}}
 test set-old-8.19 {array command, names option} {
     catch {unset a}
     array names a
@@ -589,6 +589,47 @@ number of buckets with 8 entries: 0
 number of buckets with 9 entries: 0
 number of buckets with 10 or more entries: 0
 average search distance for entry: 1.7"
+test set-old-8.49 {array command, array names -exact on glob pattern} {
+    catch {unset a}
+    set a(1*2) 1
+    list [catch {array names a -exact 1*2} msg] $msg
+} {0 1*2}
+test set-old-8.48 {array command, array names -glob on glob pattern} {
+    catch {unset a}
+    set a(1*2) 1
+    set a(12) 1
+    set a(11) 1
+    list [catch {lsort [array names a -glob 1*2]} msg] $msg
+} {0 {1*2 12}}
+test set-old-8.49 {array command, array names -regexp on regexp pattern} {
+    catch {unset a}
+    set a(1*2) 1
+    set a(12) 1
+    set a(11) 1
+    list [catch {lsort [array names a -regexp ^1]} msg] $msg
+} {0 {1*2 11 12}}
+test set-old-8.50 {array command, array names -regexp} {
+    catch {unset a}
+    set a(-glob) 1
+    set a(-regexp) 1
+    set a(-exact) 1
+    list [catch {array names a -regexp} msg] $msg
+} {0 -regexp}
+test set-old-8.51 {array command, array names -exact} {
+    catch {unset a}
+    set a(-glob) 1
+    set a(-regexp) 1
+    set a(-exact) 1
+    list [catch {array names a -exact} msg] $msg
+} {0 -exact}
+test set-old-8.52 {array command, array names -glob} {
+    catch {unset a}
+    set a(-glob) 1
+    set a(-regexp) 1
+    set a(-exact) 1
+    list [catch {array names a -glob} msg] $msg
+} {0 -glob}
+
 
 test set-old-9.1 {ids for array enumeration} {
     catch {unset a}
