@@ -1,5 +1,12 @@
 2000-11-15  jeff hobbs  <jeff.hobbs@acm.org>
 
+	* unix/Makefile.in: removed bp.c references (hasn't existed in a
+	long time).  Corrected 'make dist' to make dist with unversioned
+	library directories (same as out of cvs), so make install works
+	correctly with either source tree.
+
+2000-11-15  jeff hobbs  <jeff.hobbs@acm.org>
+
 	* generic/tclVar.c (TclLookupVar): reverted fix below as it broke
 	all other array unset error reporting.  Bug-119192 is still open.
 
