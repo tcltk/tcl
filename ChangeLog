@@ -1,3 +1,7 @@
+2002-02-19  Don Porter	<dgp@users.sourceforge.net>
+
+	* changes: reversed the order of 8.3.3 changes.
+
 2002-02-15  Don Porter	<dgp@users.sourceforge.net>
 
 	* changes: First draft of Tcl changes for 8.3.5 release.
