@@ -1,5 +1,9 @@
 2002-12-11  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclProc.c (ProcessProcResultCode): Fix failure to
+	  propagate negative return codes up the call stack. [Bug 647307]
+	* tests/proc.test (proc-6.1): Test for Bug 647307
+
 	* generic/tclParseExpr.c (TclParseInteger):  Return 1 for the
 	string "0x" (recognize leading "0" as an integer).  [Bug 648441].
 	* tests/parseExpr.test (parseExpr-19.1): Test for Bug 648441.

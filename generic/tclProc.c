@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.43 2002/10/02 01:36:29 hobbs Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.44 2002/12/11 21:29:52 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1297,7 +1297,7 @@ ProcessProcResultCode(interp, procName, nameLen, returnCode)
     if (returnCode == TCL_OK) {
 	return TCL_OK;
     }
-    if (returnCode > TCL_CONTINUE) {
+    if ((returnCode > TCL_CONTINUE) || (returnCode < TCL_OK)) {
 	return returnCode;
     }
     if (returnCode == TCL_RETURN) {
