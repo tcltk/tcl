@@ -1,3 +1,31 @@
+2003-07-15  Daniel Steffen  <das@users.sourceforge.net>
+
+	* macosx/Makefile: Rewrote buildsystem for Mac OS X framework build
+	to be purely make driven; in order to become independent of Apple's
+	closed-source IDE and build tool. The changes are intended to be
+	transparent to the Makefile user, all existing make targets and
+	cmd line variable overrides should continue to work.
+	Changed build to only include tcl specific html help in Tcl.framework,
+	the tk specific html help is now included in Tk.framework.
+
+	* macosx/Tcl.pbproj/project.pbxproj:
+	* macosx/Tcl.pbproj/jingham.pbxuser: Changed to purely call through
+	to the make driven buildsystem; Tcl.framework is no longer assembled
+	by ProjectBuilder.
+	Set default SYMROOT in target options to simplify setting up PB
+	(manually setting common build folder for tcl & tk no longer needed).
+
+	* tools/tcltk-man2html.tcl: Added options to allow building only the
+	tcl or tk html help files; the default behaviour with none of the new
+	options is to build both, as before.
+
+	* unix/Makefile.in: Added targets for building only the tcl or tk help.
+
+	* macosx/README (new): Tcl specific excerpts of tk/macosx/README. 
+
+	* generic/tcl.h: Updated reminder comment about editing
+	macosx/Tcl.pbproj/project.pbxproj when version number changes.
+
 2003-07-11  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* tests/binary.test (binary-46.*): Tests to help enforce the
