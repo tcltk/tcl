@@ -1,3 +1,8 @@
+2001-08-23  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* tests/format.test: Converted conditional execution of tests into
+	a test constraint.
+
 2001-08-22  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* win/Makefile.in:
