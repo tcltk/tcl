@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinThrd.c,v 1.8 2000/04/20 01:30:20 hobbs Exp $
+ * RCS: @(#) $Id: tclWinThrd.c,v 1.9 2000/05/02 22:02:38 kupries Exp $
  */
 
 #include "tclWinInt.h"
@@ -43,6 +43,15 @@ static CRITICAL_SECTION initLock;
 
 static CRITICAL_SECTION allocLock;
 static Tcl_Mutex allocLockPtr = (Tcl_Mutex) &allocLock;
+
+/*
+ * The joinLock serializes Create- and ExitThread. This is necessary to
+ * prevent a race where a new joinable thread exits before the creating
+ * thread had the time to create the necessary data structures in the
+ * emulation layer.
+ */
+
+static CRITICAL_SECTION joinLock;
 
 /*
  * Condition variables are implemented with a combination of a 
@@ -125,13 +134,49 @@ Tcl_CreateThread(idPtr, proc, clientData, stackSize, flags)
 {
     unsigned long code;
 
+    EnterCriticalSection(&joinLock);
+
     code = _beginthreadex(NULL, stackSize, proc, clientData, 0,
 	(unsigned *)idPtr);
+
     if (code == 0) {
+        LeaveCriticalSection(&joinLock);
 	return TCL_ERROR;
     } else {
+        if (flags & TCL_THREAD_JOINABLE) {
+	    TclRememberJoinableThread (*idPtr);
+	}
+
+	LeaveCriticalSection(&joinLock);
 	return TCL_OK;
     }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_JoinThread --
+ *
+ *	This procedure waits upon the exit of the specified thread.
+ *
+ * Results:
+ *	TCL_OK if the wait was successful, TCL_ERROR else.
+ *
+ * Side effects:
+ *	The result area is set to the exit code of the thread we
+ *	waited upon.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_JoinThread(id, result)
+    Tcl_ThreadId id;	/* Id of the thread to wait upon */
+    int*     result;	/* Reference to the storage the result
+			 * of the thread we wait upon will be
+			 * written into. */
+{
+    return TclJoinThread (id, result);
 }
 
 /*
@@ -154,6 +199,10 @@ void
 TclpThreadExit(status)
     int status;
 {
+    EnterCriticalSection(&joinLock);
+    TclSignalExitThread (Tcl_GetCurrentThread (), status);
+    LeaveCriticalSection(&joinLock);
+
     _endthreadex((DWORD)status);
 }
 
@@ -609,7 +658,7 @@ TclpFinalizeThreadDataKey(keyPtr)
  * Tcl_ConditionWait --
  *
  *	This procedure is invoked to wait on a condition variable.
- *	The mutex is automically released as part of the wait, and
+ *	The mutex is atomically released as part of the wait, and
  *	automatically grabbed when the condition is signaled.
  *
  *	The mutex must be held when this procedure is called.
@@ -647,7 +696,7 @@ Tcl_ConditionWait(condPtr, mutexPtr, timePtr)
     }
 
     /*
-     * Self initialize the two parts of the contition.
+     * Self initialize the two parts of the condition.
      * The per-condition and per-thread parts need to be
      * handled independently.
      */
@@ -672,7 +721,7 @@ Tcl_ConditionWait(condPtr, mutexPtr, timePtr)
 	if (doExit) {
 	    /*
 	     * Create a per-thread exit handler to clean up the condEvent.
-	     * We must be careful do do this outside the Master Lock
+	     * We must be careful to do this outside the Master Lock
 	     * because Tcl_CreateThreadExitHandler uses its own
 	     * ThreadSpecificData, and initializing that may drop
 	     * back into the Master Lock.

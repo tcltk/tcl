@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Thread.3,v 1.11 2000/04/25 23:03:53 hobbs Exp $
+'\" RCS: @(#) $Id: Thread.3,v 1.12 2000/05/02 22:02:33 kupries Exp $
 '\" 
 .so man.macros
 .TH Threads 3 "8.1" Tcl "Tcl Library Procedures"
@@ -39,6 +39,9 @@ void
 .sp
 int
 \fBTcl_CreateThread\fR(\fIidPtr, threadProc, clientData, stackSize, flags\fR)
+.sp
+int
+\fBTcl_JoinThread\fR(\fIid, result\fR)
 .SH ARGUMENTS
 .AS Tcl_ThreadDataKey *keyPtr
 .AP Tcl_Condition *condPtr in
@@ -59,6 +62,8 @@ calls \fBTcl_GetThreadData\fR.
 .AP Tcl_ThreadId *idPtr out
 The refered storage will contain the id of the newly created thread as
 returned by the operating system.
+.AP Tcl_ThreadId id in
+Id of the thread waited upon.
 .AP Tcl_ThreadCreateProc threadProc in
 This procedure will act as the \fBmain()\fR of the newly created
 thread. The specified \fIclientData\fR will be its sole argument.
@@ -69,6 +74,9 @@ The size of the stack given to the new thread.
 .AP int flags in
 Bitmask containing flags allowing the caller to modify behaviour of
 the new thread.
+.AP int *result out
+The refered storage is used to place the exit code of the thread
+waited upon into it.
 .BE
 .SH INTRODUCTION
 Beginning with the 8.1 release, the Tcl core is thread safe, which
@@ -108,6 +116,20 @@ Tcl does provide \fBTcl_ExitThread\fR and \fBTcl_FinalizeThread\fR
 for terminating threads and invoking optional per-thread exit
 handlers.  See the \fBTcl_Exit\fR page for more information on these
 procedures.
+.PP
+.VS
+The \fBTcl_JoinThread\fR function is provided to allow threads to wait
+upon the exit of another thread, which must have been marked as
+joinable through usage of the \fBTCL_THREAD_JOINABLE\fR-flag during
+its creation via \fBTcl_CreateThread\fR.
+.PP
+Trying to wait for the exit of a non-joinable thread or a thread which
+is already waited upon will result in an error. Waiting for a joinable
+thread which already exited is possible, the system will retain the
+necessary information until after the call to \fBTcl_JoinThread\fR.
+This means that not calling \fBTcl_JoinThread\fR for a joinable thread
+will cause a memory leak.
+.VE
 .PP
 Tcl provides \fBTcl_ThreadQueueEvent\fR and \fBTcl_ThreadAlert\fR
 for handling event queueing in multithreaded applications.  See

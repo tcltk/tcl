@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.63 2000/04/25 20:58:48 hobbs Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.64 2000/05/02 22:02:36 kupries Exp $
 
 VERSION 		= @TCL_VERSION@
 
@@ -274,6 +274,7 @@ GENERIC_OBJS = regcomp.o regexec.o regfree.o regerror.o tclAlloc.o \
 	tclResolve.o tclResult.o tclScan.o tclStringObj.o tclThread.o \
 	tclStubInit.o tclStubLib.o tclTimer.o tclUtf.o tclUtil.o tclVar.o
 
+
 STUB_LIB_OBJS = tclStubLib.o ${COMPAT_OBJS}
 
 OBJS = ${GENERIC_OBJS} ${UNIX_OBJS} ${NOTIFY_OBJS} ${COMPAT_OBJS} @DL_OBJS@
@@ -352,6 +353,7 @@ GENERIC_SRCS = \
 	$(GENERIC_DIR)/tclTestObj.c \
 	$(GENERIC_DIR)/tclTestProcBodyObj.c \
 	$(GENERIC_DIR)/tclThread.c \
+	$(GENERIC_DIR)/tclThreadJoin.c \
 	$(GENERIC_DIR)/tclTimer.c \
 	$(GENERIC_DIR)/tclUtil.c \
 	$(GENERIC_DIR)/tclVar.c
@@ -473,7 +475,7 @@ topDirName:
 gendate:
 	yacc -l $(GENERIC_DIR)/tclGetDate.y
 	sed -e 's/yy/TclDate/g' -e '/^#include <values.h>/d' \
-	    -e 's?SCCSID?RCS: @(#) $$Id: Makefile.in,v 1.63 2000/04/25 20:58:48 hobbs Exp $$?' \
+	    -e 's?SCCSID?RCS: @(#) $$Id: Makefile.in,v 1.64 2000/05/02 22:02:36 kupries Exp $$?' \
 	    -e '/#ifdef __STDC__/,/#endif/d' -e '/TclDateerrlab:/d' \
 	    -e '/TclDatenewstate:/d' -e '/#pragma/d' \
 	    -e '/#include <inttypes.h>/d' -e 's/const /CONST /g' \
@@ -907,6 +909,9 @@ tclTimer.o: $(GENERIC_DIR)/tclTimer.c
 
 tclThread.o: $(GENERIC_DIR)/tclThread.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclThread.c
+
+tclThreadJoin.o: $(GENERIC_DIR)/tclThreadJoin.c
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclThreadJoin.c
 
 tclThreadTest.o: $(GENERIC_DIR)/tclThreadTest.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclThreadTest.c

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.33 2000/04/09 16:04:17 kupries Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.34 2000/05/02 22:02:33 kupries Exp $
 
 library tcl
 
@@ -1357,6 +1357,28 @@ declare 393 generic {
     int Tcl_CreateThread (Tcl_ThreadId *idPtr, Tcl_ThreadCreateProc proc, \
 	    ClientData clientData, int stackSize, int flags)
 }
+declare 394 generic {
+    int Tcl_JoinThread (Tcl_ThreadId id, int* result)
+}
+declare 395 generic {
+    int Tcl_IsChannelShared (Tcl_Channel channel)
+}
+declare 396 generic {
+    int Tcl_IsChannelRegistered (Tcl_Interp* interp, Tcl_Channel channel)
+}
+declare 397 generic {
+    void Tcl_CutChannel (Tcl_Channel channel)
+}
+declare 398 generic {
+    void Tcl_SpliceChannel (Tcl_Channel channel)
+}
+declare 399 generic {
+    void Tcl_ClearChannelHandlers (Tcl_Channel channel)
+}
+declare 400 generic {
+    int Tcl_IsChannelExisting (CONST char* channelName)
+}
+
 
 ##############################################################################
 

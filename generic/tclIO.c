@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.20 2000/04/05 19:00:41 kupries Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.21 2000/05/02 22:02:34 kupries Exp $
  */
 
 #include "tclInt.h"
@@ -1155,6 +1155,134 @@ Tcl_UnregisterChannel(interp, chan)
 }
 
 /*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_IsChannelRegistered --
+ *
+ *	Checks whether the channel is associated with the interp.
+ *
+ * Results:
+ *	0 if the channel is not registered in the interpreter, 1 else.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_IsChannelRegistered (interp, chan)
+     Tcl_Interp* interp;	/* The interp to query of the channel */
+     Tcl_Channel chan;		/* The channel to check */
+{
+    Tcl_HashTable *hTblPtr;	/* Hash table of channels. */
+    Tcl_HashEntry *hPtr;	/* Search variable. */
+    Channel       *chanPtr;	/* The real IO channel. */
+
+    chanPtr = (Channel *) chan;
+    hTblPtr = (Tcl_HashTable *) Tcl_GetAssocData(interp, "tclIO", NULL);
+
+    if (hTblPtr == (Tcl_HashTable *) NULL) {
+        return 0;
+    }
+
+    hPtr = Tcl_FindHashEntry(hTblPtr, chanPtr->channelName);
+
+    if (hPtr == (Tcl_HashEntry *) NULL) {
+        return 0;
+    }
+    if ((Channel *) Tcl_GetHashValue(hPtr) != chanPtr) {
+        return 0;
+    }
+
+    return 1;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_IsChannelShared --
+ *
+ *	Checks whether the channel is shared by multiple interpreters.
+ *
+ * Results:
+ *	A boolean value (0 = Not shared, 1 = Shared).
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_IsChannelShared (chan)
+    Tcl_Channel chan;	/* The channel to query */
+{
+    Channel *chanPtr;	/* The real IO channel. */
+
+    chanPtr = (Channel *) chan;
+
+    return (chanPtr->refCount > 1) ? 1 : 0;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_IsChannelExisting --
+ *
+ *	Checks whether a channel of the given name exists in the
+ *	(thread)-global list of all channels.
+ *
+ * Results:
+ *	A boolean value (0 = Does not exist, 1 = Does exist).
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_IsChannelExisting (chanName)
+    CONST char* chanName;	/* The name of the channel to look for. */
+{
+    Channel *chanPtr;
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+    char *name;
+    int cLen, nLen, match;
+
+    cLen = strlen (chanName);
+
+    for (chanPtr = tsdPtr->firstChanPtr;
+	 chanPtr != NULL;
+	 chanPtr = chanPtr->nextChanPtr) {
+        if (chanPtr == (Channel *) tsdPtr->stdinChannel) {
+	    name = "stdin";
+	} else if (chanPtr == (Channel *) tsdPtr->stdoutChannel) {
+	    name = "stdout";
+	} else if (chanPtr == (Channel *) tsdPtr->stderrChannel) {
+	    name = "stderr";
+	} else {
+	    name = chanPtr->channelName;
+	}
+
+	nLen = strlen (name);
+
+	if (nLen != cLen) {
+	    continue;
+	}
+
+	match = memcmp(name, chanName, (unsigned) cLen);
+
+	if (match == 0) {
+	    return 1;
+	}
+    }
+
+    return 0;
+}
+
+/*
  *---------------------------------------------------------------------------
  *
  * Tcl_GetChannel --
@@ -1313,7 +1441,8 @@ Tcl_CreateChannel(typePtr, chanName, instanceData, mask)
     chanPtr->bufSize = CHANNELBUFFER_DEFAULT_SIZE;
     chanPtr->timer = NULL;
     chanPtr->csPtr = NULL;
-    chanPtr->supercedes = (Channel*) NULL;
+    chanPtr->supercedes  = (Channel*) NULL;
+    chanPtr->nextChanPtr = (Channel*) NULL;
 
     chanPtr->outputStage = NULL;
     if ((chanPtr->encoding != NULL) && (chanPtr->flags & TCL_WRITABLE)) {
@@ -1327,8 +1456,7 @@ Tcl_CreateChannel(typePtr, chanName, instanceData, mask)
      * in the list on exit.
      */
 
-    chanPtr->nextChanPtr = tsdPtr->firstChanPtr;
-    tsdPtr->firstChanPtr = chanPtr;
+    Tcl_SpliceChannel ((Tcl_Channel) chanPtr);
 
     /*
      * Install this channel in the first empty standard channel slot, if
@@ -1653,7 +1781,6 @@ Tcl_UnstackChannel (interp, chan)
     Tcl_Interp* interp; /* The interpreter we are working in */
     Tcl_Channel chan;   /* The channel to unstack */
 {
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     Channel* chanPtr = (Channel*) chan;
 
     if (chanPtr->supercedes != (Channel*) NULL) {
@@ -1778,10 +1905,8 @@ Tcl_UnstackChannel (interp, chan)
 	 * We know that its refCount dropped to 0.
 	 */
 
-	chanDownPtr->nextChanPtr = tsdPtr->firstChanPtr;
-	tsdPtr->firstChanPtr     = chanDownPtr;
-
-	Tcl_Close (interp, (Tcl_Channel)chanDownPtr);
+	Tcl_SpliceChannel ((Tcl_Channel) chanDownPtr);
+	Tcl_Close (interp, (Tcl_Channel) chanDownPtr);
 
 	/*
 	 * Now it is possible to wind down the transformation (in 'top'),
@@ -2436,10 +2561,6 @@ CloseChannel(interp, chanPtr, errorCode)
 {
     int result = 0;			/* Of calling driver close
                                          * operation. */
-    Channel *prevChanPtr;		/* Preceding channel in list of
-                                         * all channels - used to splice a
-                                         * channel out of the list on close. */
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     if (chanPtr == NULL) {
         return result;
@@ -2491,25 +2612,8 @@ CloseChannel(interp, chanPtr, errorCode)
      */
 
     chanPtr->flags &= (~(TCL_READABLE|TCL_WRITABLE));
-        
-    /*
-     * Splice this channel out of the list of all channels.
-     */
 
-    if (chanPtr == tsdPtr->firstChanPtr) {
-        tsdPtr->firstChanPtr = chanPtr->nextChanPtr;
-    } else {
-        for (prevChanPtr = tsdPtr->firstChanPtr;
-                 (prevChanPtr != (Channel *) NULL) &&
-                     (prevChanPtr->nextChanPtr != chanPtr);
-                 prevChanPtr = prevChanPtr->nextChanPtr) {
-            /* Empty loop body. */
-        }
-        if (prevChanPtr == (Channel *) NULL) {
-            panic("FlushChannel: damaged channel list");
-        }
-        prevChanPtr->nextChanPtr = chanPtr->nextChanPtr;
-    }
+    Tcl_CutChannel ((Tcl_Channel) chanPtr);
 
     /*
      * Close and free the channel driver state.
@@ -2575,8 +2679,7 @@ CloseChannel(interp, chanPtr, errorCode)
 	 * the list of open channels, then do a regular close.
 	 */
 
-	chanPtr->supercedes->nextChanPtr = tsdPtr->firstChanPtr;
-	tsdPtr->firstChanPtr             = chanPtr->supercedes;
+        Tcl_SpliceChannel ((Tcl_Channel) chanPtr->supercedes);
 	chanPtr->supercedes->refCount --; /* is deregistered */
 	Tcl_Close (interp, (Tcl_Channel) chanPtr->supercedes);
     }
@@ -2596,6 +2699,109 @@ CloseChannel(interp, chanPtr, errorCode)
     Tcl_EventuallyFree((ClientData) chanPtr, TCL_DYNAMIC);
 
     return errorCode;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_CutChannel --
+ *
+ *	Removes a channel from the (thread-)global list of all channels
+ *	(in that thread).
+ *
+ * Results:
+ *	Nothing.
+ *
+ * Side effects:
+ *	Resets the field 'nextChanPtr' of the specified channel to NULL.
+ *
+ * NOTE:
+ *	The channel to splice out of the list must not be referenced
+ *	in any interpreter. This is something this procedure cannot
+ *	check (despite the refcount) because the caller usually wants
+ *	figgle with the channel (like transfering it to a different
+ *	thread) and thus keeps the refcount artifically high to prevent
+ *	its destruction.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Tcl_CutChannel (chan)
+    Tcl_Channel chan;			/* The channel being removed. Must
+                                         * not be referenced in any
+                                         * interpreter. */
+{
+    ThreadSpecificData* tsdPtr  = TCL_TSD_INIT(&dataKey);
+    Channel*            chanPtr = (Channel *) chan;
+    Channel*            prevChanPtr;	/* Preceding channel in list of
+                                         * all channels - used to splice a
+                                         * channel out of the list on close. */
+
+    /*
+     * Splice this channel out of the list of all channels (in the current
+     * thread).
+     */
+
+    if (chanPtr == tsdPtr->firstChanPtr) {
+        tsdPtr->firstChanPtr = chanPtr->nextChanPtr;
+    } else {
+        for (prevChanPtr = tsdPtr->firstChanPtr;
+                 (prevChanPtr != (Channel *) NULL) &&
+                     (prevChanPtr->nextChanPtr != chanPtr);
+                 prevChanPtr = prevChanPtr->nextChanPtr) {
+            /* Empty loop body. */
+        }
+        if (prevChanPtr == (Channel *) NULL) {
+            panic("FlushChannel: damaged channel list");
+        }
+        prevChanPtr->nextChanPtr = chanPtr->nextChanPtr;
+    }
+
+    chanPtr->nextChanPtr = (Channel *) NULL;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_SpliceChannel --
+ *
+ *	Adds a channel to the (thread-)global list of all channels
+ *	(in that thread). Expects that the field 'nextChanPtr' in
+ *	the channel is set to NULL.
+ *
+ * Results:
+ *	Nothing.
+ *
+ * Side effects:
+ *	Nothing.
+ *
+ * NOTE:
+ *	The channel to add to the list must not be referenced in any
+ *	interpreter. This is something this procedure cannot check
+ *	(despite the refcount) because the caller usually wants figgle
+ *	with the channel (like transfering it to a different thread)
+ *	and thus keeps the refcount artifically high to prevent its
+ *	destruction.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Tcl_SpliceChannel (chan)
+    Tcl_Channel chan;			/* The channel being added. Must
+                                         * not be referenced in any
+                                         * interpreter. */
+{
+    ThreadSpecificData* tsdPtr  = TCL_TSD_INIT(&dataKey);
+    Channel*            chanPtr = (Channel *) chan;
+
+    if (chanPtr->nextChanPtr != (Channel *) NULL) {
+        panic("Tcl_SpliceChannel: trying to add channel used in different list");
+    }
+
+    chanPtr->nextChanPtr = tsdPtr->firstChanPtr;
+    tsdPtr->firstChanPtr = chanPtr;
 }
 
 /*
@@ -2628,14 +2834,10 @@ Tcl_Close(interp, chan)
                                          * not be referenced in any
                                          * interpreter. */
 {
-    ChannelHandler *chPtr, *chNext;	/* Iterate over channel handlers. */
     CloseCallback *cbPtr;		/* Iterate over close callbacks
                                          * for this channel. */
-    EventScriptRecord *ePtr, *eNextPtr;	/* Iterate over eventscript records. */
     Channel *chanPtr;			/* The real IO channel. */
     int result;				/* Of calling FlushChannel. */
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-    NextChannelHandler *nhPtr;
 
     if (chan == (Tcl_Channel) NULL) {
         return TCL_OK;
@@ -2655,6 +2857,83 @@ Tcl_Close(interp, chan)
     if (chanPtr->refCount > 0) {
         panic("called Tcl_Close on channel with refCount > 0");
     }
+
+    Tcl_ClearChannelHandlers (chan);
+        
+    /*
+     * Invoke the registered close callbacks and delete their records.
+     */
+
+    while (chanPtr->closeCbPtr != (CloseCallback *) NULL) {
+        cbPtr = chanPtr->closeCbPtr;
+        chanPtr->closeCbPtr = cbPtr->nextPtr;
+        (cbPtr->proc) (cbPtr->clientData);
+        ckfree((char *) cbPtr);
+    }
+
+    /*
+     * Ensure that the last output buffer will be flushed.
+     */
+    
+    if ((chanPtr->curOutPtr != (ChannelBuffer *) NULL) &&
+           (chanPtr->curOutPtr->nextAdded > chanPtr->curOutPtr->nextRemoved)) {
+        chanPtr->flags |= BUFFER_READY;
+    }
+
+    /*
+     * If this channel supports it, close the read side, since we don't need it
+     * anymore and this will help avoid deadlocks on some channel types.
+     */
+
+    if (chanPtr->typePtr->closeProc == TCL_CLOSE2PROC) {
+	result = (chanPtr->typePtr->close2Proc)(chanPtr->instanceData, interp,
+		TCL_CLOSE_READ);
+    } else {
+	result = 0;
+    }
+
+    /*
+     * The call to FlushChannel will flush any queued output and invoke
+     * the close function of the channel driver, or it will set up the
+     * channel to be flushed and closed asynchronously.
+     */
+
+    chanPtr->flags |= CHANNEL_CLOSED;
+    if ((FlushChannel(interp, chanPtr, 0) != 0) || (result != 0)) {
+        return TCL_ERROR;
+    }
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_ClearChannelHandlers --
+ *
+ *	Removes all channel handlers and event scripts from the channel,
+ *	cancels all background copies involving the channel and any interest
+ *	in events.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	See above. Deallocates memory.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Tcl_ClearChannelHandlers (channel)
+    Tcl_Channel channel;
+{
+    ChannelHandler *chPtr, *chNext;	/* Iterate over channel handlers. */
+    EventScriptRecord *ePtr, *eNextPtr;	/* Iterate over eventscript records. */
+    Channel *chanPtr;			/* The real IO channel. */
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+    NextChannelHandler *nhPtr;
+
+    chanPtr = (Channel *) channel;
 
     /*
      * Remove any references to channel handlers for this channel that
@@ -2711,50 +2990,6 @@ Tcl_Close(interp, chan)
         ckfree((char *) ePtr);
     }
     chanPtr->scriptRecordPtr = (EventScriptRecord *) NULL;
-        
-    /*
-     * Invoke the registered close callbacks and delete their records.
-     */
-
-    while (chanPtr->closeCbPtr != (CloseCallback *) NULL) {
-        cbPtr = chanPtr->closeCbPtr;
-        chanPtr->closeCbPtr = cbPtr->nextPtr;
-        (cbPtr->proc) (cbPtr->clientData);
-        ckfree((char *) cbPtr);
-    }
-
-    /*
-     * Ensure that the last output buffer will be flushed.
-     */
-    
-    if ((chanPtr->curOutPtr != (ChannelBuffer *) NULL) &&
-           (chanPtr->curOutPtr->nextAdded > chanPtr->curOutPtr->nextRemoved)) {
-        chanPtr->flags |= BUFFER_READY;
-    }
-
-    /*
-     * If this channel supports it, close the read side, since we don't need it
-     * anymore and this will help avoid deadlocks on some channel types.
-     */
-
-    if (chanPtr->typePtr->closeProc == TCL_CLOSE2PROC) {
-	result = (chanPtr->typePtr->close2Proc)(chanPtr->instanceData, interp,
-		TCL_CLOSE_READ);
-    } else {
-	result = 0;
-    }
-
-    /*
-     * The call to FlushChannel will flush any queued output and invoke
-     * the close function of the channel driver, or it will set up the
-     * channel to be flushed and closed asynchronously.
-     */
-
-    chanPtr->flags |= CHANNEL_CLOSED;
-    if ((FlushChannel(interp, chanPtr, 0) != 0) || (result != 0)) {
-        return TCL_ERROR;
-    }
-    return TCL_OK;
 }
 
 /*
@@ -6806,6 +7041,29 @@ TclTestChannelCmd(clientData, interp, argc, argv)
         chanPtr = (Channel *) chan;
     }
 
+    if ((cmdName[0] == 'c') &&
+            (strncmp(cmdName, "cut", len) == 0)) {
+        if (argc != 3) {
+            Tcl_AppendResult(interp, "channel name required",
+                    (char *) NULL);
+            return TCL_ERROR;
+        }
+        
+        Tcl_CutChannel (chan);
+        return TCL_OK;
+    }
+
+    if ((cmdName[0] == 'c') &&
+            (strncmp(cmdName, "forgetch", len) == 0)) {
+        if (argc != 3) {
+            Tcl_AppendResult(interp, "channel name required",
+                    (char *) NULL);
+            return TCL_ERROR;
+        }
+        
+        Tcl_ClearChannelHandlers (chan);
+        return TCL_OK;
+    }
 
     if ((cmdName[0] == 'i') && (strncmp(cmdName, "info", len) == 0)) {
         if (argc != 3) {
@@ -6930,6 +7188,19 @@ TclTestChannelCmd(clientData, interp, argc, argv)
         return TCL_OK;
     }
         
+    if ((cmdName[0] == 'i') &&
+            (strncmp(cmdName, "isshared", len) == 0)) {
+        if (argc != 3) {
+            Tcl_AppendResult(interp, "channel name required",
+                    (char *) NULL);
+            return TCL_ERROR;
+        }
+        
+        TclFormatInt(buf, Tcl_IsChannelShared (chan));
+        Tcl_AppendResult(interp, buf, (char *) NULL);
+        return TCL_OK;
+    }
+        
     if ((cmdName[0] == 'm') && (strncmp(cmdName, "mode", len) == 0)) {
         if (argc != 3) {
             Tcl_AppendResult(interp, "channel name required",
@@ -7037,7 +7308,19 @@ TclTestChannelCmd(clientData, interp, argc, argv)
         Tcl_AppendResult(interp, buf, (char *) NULL);
         return TCL_OK;
     }
-    
+
+    if ((cmdName[0] == 'c') &&
+            (strncmp(cmdName, "splice", len) == 0)) {
+        if (argc != 3) {
+            Tcl_AppendResult(interp, "channel name required",
+                    (char *) NULL);
+            return TCL_ERROR;
+        }
+        
+        Tcl_SpliceChannel (chan);
+        return TCL_OK;
+    }
+
     if ((cmdName[0] == 't') && (strncmp(cmdName, "type", len) == 0)) {
         if (argc != 3) {
             Tcl_AppendResult(interp, "channel name required",

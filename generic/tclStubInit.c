@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.35 2000/04/09 16:04:18 kupries Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.36 2000/05/02 22:02:35 kupries Exp $
  */
 
 #include "tclInt.h"
@@ -791,6 +791,13 @@ TclStubs tclStubs = {
     Tcl_ConditionFinalize, /* 391 */
     Tcl_MutexFinalize, /* 392 */
     Tcl_CreateThread, /* 393 */
+    Tcl_JoinThread, /* 394 */
+    Tcl_IsChannelShared, /* 395 */
+    Tcl_IsChannelRegistered, /* 396 */
+    Tcl_CutChannel, /* 397 */
+    Tcl_SpliceChannel, /* 398 */
+    Tcl_ClearChannelHandlers, /* 399 */
+    Tcl_IsChannelExisting, /* 400 */
 };
 
 /* !END!: Do not edit above this line. */

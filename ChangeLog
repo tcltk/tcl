@@ -1,3 +1,76 @@
+2000-05-02  Andreas Kupries <a.kupries@westend.com>
+
+	* Overall changes:
+	  (1) Implementation of joinable threads for all platforms.
+	  (2) Additional API's for channels. Required to allow the
+	  thread extension to move channels between threads.
+
+	* generic/tcl.decls (lines 1360f): Added Tcl_JoinThread,
+	  Tcl_IsChannelShared, Tcl_IsChannelRegistered, Tcl_CutChannel,
+	  Tcl_SpliceChannel, Tcl_IsChannelExisting and
+	  Tcl_ClearChannelHandlers (slots 394 to 400).
+
+	* generic/tclIO.c: Implemented Tcl_IsChannelRegistered,
+ 	  Tcl_IsChannelShared, Tcl_CutChannel, Tcl_SpliceChannel,
+ 	  Tcl_IsChannelExisting and Tcl_ClearChannelHandlers.
+	  Tcl_CutChannel uses code from CloseChannel. Replaced this code
+ 	  by a call to Tcl_CutChannel.  Replaced several code fragments
+ 	  adding channels to the channel list with calls to
+ 	  Tcl_SpliceChannel. Removed now unused variables from
+ 	  CloseChannel and Tcl_UnstackChannel.  Tcl_ClearChannelHandlers
+ 	  uses code from Tcl_Close. Replaced this code by a call to
+ 	  Tcl_ClearChannelHandlers. Removed now unused variables from
+ 	  Tcl_Close. Added the subcommands 'cut', 'forgetch', 'splice' and
+ 	  'isshared' to the test code
+	  (TclTestChannelCmd).
+
+	* unix/tclUnixThread.c: Implemented Tcl_JoinThread using the
+	  pthread-functionality.
+
+	* win/tclWinThrd.c: Fixed several small typos in comments.
+	  Implemented Tcl_JoinThread using a platform independent
+	  emulation layer (see generic/tclThreadJoin.c below). Added
+	  'joinLock' to serialize Tcl_CreateThread and TclpExitThread to
+	  prevent a race for joinable threads.
+
+	* mac/tclMacThrd.c: Implemented Tcl_JoinThread using a platform
+	  independent emulation layer (see generic/tclThreadJoin.c
+	  below). Due to the cooperative nature of threading on this
+	  platform the race mentioned above is not present.
+
+	* generic/tclThreadJoin.c: New file. Contains a platform
+	  independent emulation layer helping in the implementation of
+	  joinable threads for the win and mac platforms.
+
+	* generic/tclInt.h: Added declarations for TclJoinThread,
+	  TclRememberJoinableThread and TclSignalExitThread. These
+	  procedures define the API of the emulation layer for joinable
+	  threads (see generic/tclThreadJoin.c above).
+
+	* win/Makefile.in:
+	* win/makefile.vc: Added generic/tclTheadJoin.o to the rules.
+
+	* mac/: I don't know to which file generic/tclTheadJoin.o has to
+	  be added to so that it compiles. Sorry.
+
+	* unix/tclUnixChan.c: #ifdef'd the thread-local list of file
+ 	  channels as it prevents us from transfering channels. To restore
+ 	  this we may need an extended interface to drivers in the
+ 	  future. Target: 9.0. Found while testing the new transfer of
+ 	  channels. The information in this list for a channel was left
+ 	  behind and then crashed the system during finalization.
+
+	* generic/tclThreadTest.c: Added -joinable flag to 'testthread
+	  create'. Added subcommand 'testthread join'.
+
+	* doc/CrtChannel.3: Added documentation for Tcl_IsChannelRegistered,
+ 	  Tcl_IsChannelShared, Tcl_CutChannel, Tcl_SpliceChannel,
+	  Tcl_IsChannelExisting and Tcl_ClearChannelHandlers.
+
+	* doc/Thread.3: Added documentation for Tcl_JoinThread.
+
+	* tests/thread.test: Added tests for joining of threads.
+
 2000-04-27  Eric Melski  <ericm@scriptics.com>
 
 	* doc/library.n: Added entries for auto_qualify and auto_import

@@ -4,13 +4,13 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: CrtChannel.3,v 1.5 2000/04/14 23:01:49 hobbs Exp $
+'\" RCS: @(#) $Id: CrtChannel.3,v 1.6 2000/05/02 22:02:33 kupries Exp $
 .so man.macros
 .TH Tcl_CreateChannel 3 8.0 Tcl "Tcl Library Procedures"
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
-Tcl_CreateChannel, Tcl_GetChannelInstanceData, Tcl_GetChannelType, Tcl_GetChannelName, Tcl_GetChannelHandle, Tcl_GetChannelMode, Tcl_GetChannelBufferSize, Tcl_SetChannelBufferSize, Tcl_NotifyChannel, Tcl_BadChannelOption \- procedures for creating and manipulating channels
+Tcl_CreateChannel, Tcl_GetChannelInstanceData, Tcl_GetChannelType, Tcl_GetChannelName, Tcl_GetChannelHandle, Tcl_GetChannelMode, Tcl_GetChannelBufferSize, Tcl_SetChannelBufferSize, Tcl_NotifyChannel, Tcl_BadChannelOption, Tcl_IsChannelShared, Tcl_IsChannelRegistered, Tcl_CutChannel, Tcl_SpliceChannel, Tcl_IsChannelExisting, Tcl_ClearChannelHandlers \- procedures for creating and manipulating channels
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -42,6 +42,24 @@ int
 .sp
 int
 \fBTcl_BadChannelOption\fR(\fIinterp, optionName, optionList\fR)
+.sp
+int
+\fBTcl_IsChannelShared\fR(\fIchannel\fR)
+.sp
+int
+\fBTcl_IsChannelRegistered\fR(\fIinterp, channel\fR)
+.sp
+int
+\fBTcl_IsChannelExisting\fR(\fIchannelName\fR)
+.sp
+void
+\fBTcl_CutChannel\fR(\fIchannel\fR)
+.sp
+void
+\fBTcl_SpliceChannel\fR(\fIchannel\fR)
+.sp
+void
+\fBTcl_ClearChannelHandlers\fR(\fIchannel\fR)
 .VE
 .sp
 .SH ARGUMENTS
@@ -165,7 +183,7 @@ for each driver to determine what type of handle is returned.
 and \fBTCL_WRITABLE\fR, indicating whether the channel is open for input
 and output.
 .PP
- \fBTcl_GetChannelBufferSize\fR returns the size, in bytes, of buffers
+\fBTcl_GetChannelBufferSize\fR returns the size, in bytes, of buffers
 allocated to store input or output in \fIchan\fR. If the value was not set
 by a previous call to \fBTcl_SetChannelBufferSize\fR, described below, then
 the default value of 4096 is returned.
@@ -189,7 +207,33 @@ channel.  See \fBWATCHPROC\fR below for more details.
 \fBTcl_BadChannelOption\fR is called from driver specific set or get option
 procs to generate a complete error message.
 .VE
-
+.PP
+.VS
+\fBTcl_IsChannelShared\fR checks the refcount of the specified
+\fIchannel\fR and returns whether the \fIchannel\fR was shared among
+multiple interpreters (result == 1) or not (result == 0).
+.PP
+\fBTcl_IsChannelRegistered\fR checks wether the specified \fIchannel\fR is
+registered in the given \fIinterp\fRreter (result == 1) or not
+(result == 0).
+.PP
+\fBTcl_IsChannelExisting\fR checks wether a channel with the specified
+name is registered in the (thread)-global list of all channels (result
+== 1) or not (result == 0).
+.PP
+\fBTcl_CutChannel\fR removes the specified \fIchannel\fR from the
+(thread)global list of all channels (of the current thread).
+Application to a channel still registered in some interpreter
+is not allowed.
+.PP
+\fBTcl_SpliceChannel\fR adds the specified \fIchannel\fR to the
+(thread)global list of all channels (of the current thread).
+Application to a channel registered in some interpreter is not allowed.
+.PP
+\fBTcl_ClearChannelHandlers\fR removes all channelhandlers and event
+scripts associated with the specified \fIchannels\fR, thus shutting
+down all event processing for this channel.
+.VE
 .SH TCL_CHANNELTYPE
 .PP
 A channel driver provides a \fBTcl_ChannelType\fR structure that contains

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.34 2000/04/09 16:04:17 kupries Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.35 2000/05/02 22:02:33 kupries Exp $
  */
 
 #ifndef _TCLDECLS
@@ -1228,6 +1228,24 @@ EXTERN int		Tcl_CreateThread _ANSI_ARGS_((Tcl_ThreadId * idPtr,
 				Tcl_ThreadCreateProc proc, 
 				ClientData clientData, int stackSize, 
 				int flags));
+/* 394 */
+EXTERN int		Tcl_JoinThread _ANSI_ARGS_((Tcl_ThreadId id, 
+				int* result));
+/* 395 */
+EXTERN int		Tcl_IsChannelShared _ANSI_ARGS_((Tcl_Channel channel));
+/* 396 */
+EXTERN int		Tcl_IsChannelRegistered _ANSI_ARGS_((
+				Tcl_Interp* interp, Tcl_Channel channel));
+/* 397 */
+EXTERN void		Tcl_CutChannel _ANSI_ARGS_((Tcl_Channel channel));
+/* 398 */
+EXTERN void		Tcl_SpliceChannel _ANSI_ARGS_((Tcl_Channel channel));
+/* 399 */
+EXTERN void		Tcl_ClearChannelHandlers _ANSI_ARGS_((
+				Tcl_Channel channel));
+/* 400 */
+EXTERN int		Tcl_IsChannelExisting _ANSI_ARGS_((
+				CONST char* channelName));
 
 typedef struct TclStubHooks {
     struct TclPlatStubs *tclPlatStubs;
@@ -1689,6 +1707,13 @@ typedef struct TclStubs {
     void (*tcl_ConditionFinalize) _ANSI_ARGS_((Tcl_Condition * condPtr)); /* 391 */
     void (*tcl_MutexFinalize) _ANSI_ARGS_((Tcl_Mutex * mutex)); /* 392 */
     int (*tcl_CreateThread) _ANSI_ARGS_((Tcl_ThreadId * idPtr, Tcl_ThreadCreateProc proc, ClientData clientData, int stackSize, int flags)); /* 393 */
+    int (*tcl_JoinThread) _ANSI_ARGS_((Tcl_ThreadId id, int* result)); /* 394 */
+    int (*tcl_IsChannelShared) _ANSI_ARGS_((Tcl_Channel channel)); /* 395 */
+    int (*tcl_IsChannelRegistered) _ANSI_ARGS_((Tcl_Interp* interp, Tcl_Channel channel)); /* 396 */
+    void (*tcl_CutChannel) _ANSI_ARGS_((Tcl_Channel channel)); /* 397 */
+    void (*tcl_SpliceChannel) _ANSI_ARGS_((Tcl_Channel channel)); /* 398 */
+    void (*tcl_ClearChannelHandlers) _ANSI_ARGS_((Tcl_Channel channel)); /* 399 */
+    int (*tcl_IsChannelExisting) _ANSI_ARGS_((CONST char* channelName)); /* 400 */
 } TclStubs;
 
 #ifdef __cplusplus
@@ -3309,6 +3334,34 @@ extern TclStubs *tclStubsPtr;
 #ifndef Tcl_CreateThread
 #define Tcl_CreateThread \
 	(tclStubsPtr->tcl_CreateThread) /* 393 */
+#endif
+#ifndef Tcl_JoinThread
+#define Tcl_JoinThread \
+	(tclStubsPtr->tcl_JoinThread) /* 394 */
+#endif
+#ifndef Tcl_IsChannelShared
+#define Tcl_IsChannelShared \
+	(tclStubsPtr->tcl_IsChannelShared) /* 395 */
+#endif
+#ifndef Tcl_IsChannelRegistered
+#define Tcl_IsChannelRegistered \
+	(tclStubsPtr->tcl_IsChannelRegistered) /* 396 */
+#endif
+#ifndef Tcl_CutChannel
+#define Tcl_CutChannel \
+	(tclStubsPtr->tcl_CutChannel) /* 397 */
+#endif
+#ifndef Tcl_SpliceChannel
+#define Tcl_SpliceChannel \
+	(tclStubsPtr->tcl_SpliceChannel) /* 398 */
+#endif
+#ifndef Tcl_ClearChannelHandlers
+#define Tcl_ClearChannelHandlers \
+	(tclStubsPtr->tcl_ClearChannelHandlers) /* 399 */
+#endif
+#ifndef Tcl_IsChannelExisting
+#define Tcl_IsChannelExisting \
+	(tclStubsPtr->tcl_IsChannelExisting) /* 400 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */

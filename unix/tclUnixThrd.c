@@ -53,8 +53,6 @@ static pthread_mutex_t *allocLockPtr = &allocLock;
 #endif /* TCL_THREADS */
 
 
-
-
 /*
  *----------------------------------------------------------------------
  *
@@ -131,6 +129,40 @@ Tcl_CreateThread(idPtr, proc, clientData, stackSize, flags)
 #else
     return TCL_ERROR;
 #endif /* TCL_THREADS */
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_JoinThread --
+ *
+ *	This procedure waits upon the exit of the specified thread.
+ *
+ * Results:
+ *	TCL_OK if the wait was successful, TCL_ERROR else.
+ *
+ * Side effects:
+ *	The result area is set to the exit code of the thread we
+ *	waited upon.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_JoinThread(id, state)
+    Tcl_ThreadId id;	/* Id of the thread to wait upon */
+    int*     state;	/* Reference to the storage the result
+			 * of the thread we wait upon will be
+			 * written into. */
+{
+#ifdef TCL_THREADS
+    int result;
+
+    result = pthread_join ((pthread_t) id, (VOID**) state);
+    return (result == 0) ? TCL_OK : TCL_ERROR;
+#else
+    return TCL_ERROR;
+#endif
 }
 
 #ifdef TCL_THREADS
