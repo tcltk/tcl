@@ -15,7 +15,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: basic.test,v 1.23 2002/07/10 11:56:44 dgp Exp $
+# RCS: @(#) $Id: basic.test,v 1.24 2003/02/04 17:06:52 vincentdarley Exp $
 #
 
 package require tcltest 2
@@ -587,7 +587,7 @@ test basic-46.2 {Tcl_AllowExceptions: exception return not allowed} {exec} {
     } BREAKtest]
     set res [list [catch {exec [interpreter] $fName} msg] $msg]
     removeFile BREAKtest
-    regsub {"[^ ]*BREAKtest"} $res {"BREAKtest"} res
+    regsub {file ".*BREAKtest"} $res {file "BREAKtest"} res
     set res
 } {1 {hello
 invoked "break" outside of a loop
@@ -603,7 +603,7 @@ test basic-46.3 {Tcl_AllowExceptions: exception return not allowed} {exec} {
     } BREAKtest]
     set res [list [catch {exec [interpreter] $fName} msg] $msg]
     removeFile BREAKtest
-    regsub {"[^ ]*BREAKtest"} $res {"BREAKtest"} res
+    regsub {file ".*BREAKtest"} $res {file "BREAKtest"} res
     set res
 } {1 {invoked "break" outside of a loop
     while executing
@@ -616,7 +616,7 @@ test basic-46.4 {Tcl_AllowExceptions: exception return not allowed} {exec} {
     } BREAKtest]
     set res [list [catch {exec [interpreter] $fName} msg] $msg]
     removeFile BREAKtest
-    regsub {"[^ ]*BREAKtest"} $res {"BREAKtest"} res
+    regsub {file ".*BREAKtest"} $res {file "BREAKtest"} res
     set res
 } {1 {invoked "break" outside of a loop
     while executing
@@ -631,7 +631,7 @@ test basic-46.5 {Tcl_AllowExceptions: exception return not allowed} {exec} {
     } BREAKtest]
     set res [list [catch {exec [interpreter] $fName} msg] $msg]
     removeFile BREAKtest
-    regsub {"[^ ]*BREAKtest"} $res {"BREAKtest"} res
+    regsub {file ".*BREAKtest"} $res {file "BREAKtest"} res
     set res
 } {1 {command returned bad code: 2
     while executing

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacFCmd.c,v 1.18 2002/10/09 11:54:20 das Exp $
+ * RCS: @(#) $Id: tclMacFCmd.c,v 1.19 2003/02/04 17:06:51 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -85,7 +85,6 @@ static int		DoCopyDirectory _ANSI_ARGS_((CONST char *src,
 static int		DoCopyFile _ANSI_ARGS_((CONST char *src, 
 			    CONST char *dst));
 static int		DoCreateDirectory _ANSI_ARGS_((CONST char *path));
-static int		DoDeleteFile _ANSI_ARGS_((CONST char *path));
 static int		DoRemoveDirectory _ANSI_ARGS_((CONST char *path, 
 			    int recursive, Tcl_DString *errorPtr));
 static int		DoRenameFile _ANSI_ARGS_((CONST char *src,
@@ -482,7 +481,7 @@ DoCopyFile(
 /*
  *---------------------------------------------------------------------------
  *
- * TclpObjDeleteFile, DoDeleteFile --
+ * TclpObjDeleteFile, TclpDeleteFile --
  *
  *      Removes a single file (not a directory).
  *
@@ -505,11 +504,11 @@ int
 TclpObjDeleteFile(pathPtr)
     Tcl_Obj *pathPtr;
 {
-    return DoDeleteFile(Tcl_FSGetNativePath(pathPtr));
+    return TclpDeleteFile(Tcl_FSGetNativePath(pathPtr));
 }
 
-static int
-DoDeleteFile(
+int
+TclpDeleteFile(
     CONST char *path)		/* Pathname of file to be removed (native). */
 {
     OSErr err;

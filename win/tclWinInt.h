@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinInt.h,v 1.19 2003/01/10 15:03:55 vincentdarley Exp $
+ * RCS: @(#) $Id: tclWinInt.h,v 1.20 2003/02/04 17:06:53 vincentdarley Exp $
  */
 
 #ifndef _TCLWININT
@@ -112,7 +112,8 @@ EXTERN TclWinProcs *tclWinProcs;
  * stubs table.
  */
 
-EXTERN void		TclWinFilesystemAndEncodingsCleanup();
+EXTERN void		TclWinEncodingsCleanup();
+EXTERN void		TclWinResetInterfaceEncodings();
 EXTERN void		TclWinInit(HINSTANCE hInst);
 EXTERN int              TclWinSymLinkCopyDirectory(CONST TCHAR* LinkOriginal,
 						   CONST TCHAR* LinkCopy);

@@ -1,3 +1,26 @@
+2003-01-28  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* generic/tclIOUtil.c:
+	* generic/tclEvent.c:
+	* generic/tclInt.h:
+	* mac/tclMacFCmd.c:
+	* unix/tclUnixFCmd.c:
+	* win/tclWin32Dll.c:
+	* win/tclWinFCmd.c:
+	* win/tclWinInit.c:
+	* win/tclWinInt.h:
+	* tests/fileSystem.test: fix to finalization/unloading/encoding
+	issues to make filesystem much less dependent on encodings for
+	its cleanup, and therefore allow it to be finalized later in the
+	exit process.  This fixes fileSystem.test-7.1.  Also fixed one
+	more bug in setting of modification dates of files which have 
+	undergone cross-platform copies.  [Patch 676271]
+	
+	* tests/basic.test:
+	* tests/fileName.test:
+	* tests/io.test: fixed some test failures when tests are run 
+	from a directory containing spaces.
+	
 2003-02-01  Kevin Kenny  <kennykb@users.sourceforge.net>
 
 	* generic/tclCompCmds.c: Removed an unused variable that caused
