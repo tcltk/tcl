@@ -1,3 +1,7 @@
+2002-07-11  Don Porter  <dgp@users.sourceforge.net>
+
+	* doc/Hash.3: Overlooked CONST documentation update.
+
 2002-07-11  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* generic/tclCkalloc.c: ckalloc() and friends take the block size
