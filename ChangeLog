@@ -1,3 +1,33 @@
+2001-10-15  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tcl.h: 
+	* win/tclWinPort.h: moved #define of WIN32 to tcl.h where __WIN32__
+	is defined and added #ifndef check.
+
+2001-10-12  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* tests/winPipe.test: removed obsolete cat16 tests, fixed
+	winpipe-1.22 to only run on Win9*.
+
+	* tests/timer.test: slight skewing of after values to allow for
+	correct results on burdened machines.
+
+	* tests/winFCmd.test: differentiated test results for win2k 
+	versus not.
+
+	* win/tclWinInit.c: cleanup back-ported from 8.4 HEAD.
+
+	* win/tclWinPort.h: move winsock2.h include, header cleanup
+	back-ported from 8.4 HEAD.
+
+	* library/encoding/ebcdic.enc:
+	* tools/encoding/ebcdic.txt: EBCDIC charset mapping.
+	[Patch #219323] (nijtmans)
+
+	* library/encoding/tis-620.enc:
+	* tools/encoding/tis-620.txt: TIS-620 charset mapping.
+	[Patch #467423] (poonlap)
+
 2001-10-11  Miguel Sofer  <msofer@users.sourceforge.net>
 	
 	* generic/tclLiteral.c: (TclReleaseLiteral) insured that
