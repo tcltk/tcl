@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.65 2002/03/29 22:47:23 hobbs Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.66 2002/04/05 19:26:35 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2525,10 +2525,16 @@ Tcl_SubstObj(interp, objPtr, flags)
 		p += parse.tokenPtr->size;
 		code = Tcl_EvalTokensStandard(interp, parse.tokenPtr,
 		        parse.numTokens);
-		if (code != TCL_OK) {
+		if (code == TCL_ERROR) {
 		    goto errorResult;
 		}
-		Tcl_AppendObjToObj(resultObj, Tcl_GetObjResult(interp));
+		if (code == TCL_BREAK) {
+		    Tcl_ResetResult(interp);
+		    return resultObj;
+		}
+		if (code != TCL_CONTINUE) {
+		    Tcl_AppendObjToObj(resultObj, Tcl_GetObjResult(interp));
+		}
 		Tcl_ResetResult(interp);
 		old = p;
 	    } else {
