@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixNotfy.c,v 1.5 1999/07/02 06:05:34 welch Exp $
+ * RCS: @(#) $Id: tclUnixNotfy.c,v 1.6 1999/10/21 02:18:09 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -719,15 +719,12 @@ Tcl_WaitForEvent(timePtr)
         waitingListPtr = tsdPtr;
 	tsdPtr->onList = 1;
 	
-	Tcl_MutexUnlock(&notifierMutex);
 	write(triggerPipe, "", 1);
-	Tcl_MutexLock(&notifierMutex);
     }
 
     memset((VOID *) tsdPtr->readyMasks, 0, 3*MASK_SIZE*sizeof(fd_mask));
 
     if (!tsdPtr->eventReady) {
-
         Tcl_ConditionWait(&tsdPtr->waitCV, &notifierMutex, timePtr);
     }
     tsdPtr->eventReady = 0;
@@ -750,10 +747,7 @@ Tcl_WaitForEvent(timePtr)
         }
         tsdPtr->nextPtr = tsdPtr->prevPtr = NULL;
 	tsdPtr->onList = 0;
-        Tcl_MutexUnlock(&notifierMutex);
 	write(triggerPipe, "", 1);
-        Tcl_MutexLock(&notifierMutex);
-
     }
 
     
@@ -870,9 +864,17 @@ NotifierThreadProc(clientData)
     if (fcntl(receivePipe, F_SETFL, status) < 0) {
 	panic("NotifierThreadProc: could not make receive pipe non blocking.");
     }
+    status = fcntl(fds[1], F_GETFL);
+    status |= O_NONBLOCK;
+    if (fcntl(fds[1], F_SETFL, status) < 0) {
+	panic("NotifierThreadProc: could not make trigger pipe non blocking.");
+    }
 #else
     if (ioctl(receivePipe, (int) FIONBIO, &status) < 0) {
 	panic("NotifierThreadProc: could not make receive pipe non blocking.");
+    }
+    if (ioctl(fds[1], (int) FIONBIO, &status) < 0) {
+	panic("NotifierThreadProc: could not make trigger pipe non blocking.");
     }
 #endif
 
