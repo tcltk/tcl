@@ -8,12 +8,15 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: cmdIL.test,v 1.18 2003/11/10 18:30:41 dkf Exp $
+# RCS: @(#) $Id: cmdIL.test,v 1.19 2004/01/17 00:28:08 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
     namespace import -force ::tcltest::*
 }
+
+# Used for constraining memory leak tests
+testConstraint memory [llength [info commands memory]]
 
 test cmdIL-1.1 {Tcl_LsortObjCmd procedure} {
     list [catch {lsort} msg] $msg
@@ -415,6 +418,85 @@ test cmdIL-5.5 {lsort with list style index and sharing} -body {
     test_lsort 0
 } -result 0 -cleanup {
     rename test_lsort ""
+}
+
+test cmdIL-6.1 {lassign command syntax} -body {
+    lassign
+} -code 1 -result {wrong # args: should be "lassign list varname ?varname ...?"}
+test cmdIL-6.2 {lassign command syntax} -body {
+    lassign x
+} -code 1 -result {wrong # args: should be "lassign list varname ?varname ...?"}
+test cmdIL-6.3 {lassign command} {
+    set x FAIL
+    list [lassign a x] $x
+} {{} a}
+test cmdIL-6.4 {lassign command} {
+    set x FAIL
+    set y FAIL
+    list [lassign a x y] $x $y
+} {{} a {}}
+test cmdIL-6.5 {lassign command} {
+    set x FAIL
+    set y FAIL
+    list [lassign {a b} x y] $x $y
+} {{} a b}
+test cmdIL-6.6 {lassign command} {
+    set x FAIL
+    set y FAIL
+    list [lassign {a b c} x y] $x $y
+} {c a b}
+test cmdIL-6.7 {lassign command} {
+    set x FAIL
+    set y FAIL
+    list [lassign {a b c d} x y] $x $y
+} {{c d} a b}
+test cmdIL-6.8 {lassign command - list format error} {
+    set x FAIL
+    set y FAIL
+    list [catch {lassign {a {b}c d} x y} msg] $msg $x $y
+} {1 {list element in braces followed by "c" instead of space} FAIL FAIL}
+catch {unset x y}
+test cmdIL-6.9 {lassign command - assignment to arrays} {
+    list [lassign {a b} x(x)] $x(x)
+} {b a}
+test cmdIL-6.10 {lassign command - variable update error} -body {
+    set x(x) {}
+    lassign a x
+} -code 1 -result {can't set "x": variable is array} -cleanup {
+    unset x
+}
+test cmdIL-6.11 {lassign command - variable update error} -body {
+    set x(x) {}
+    set y FAIL
+    list [catch {lassign a y x} msg] $msg $y
+} -result {1 {can't set "x": variable is array} a} -cleanup {
+    unset x
+}
+test cmdIL-6.12 {lassign command - memory leak testing} -setup {
+    set x(x) {}
+    set y FAIL
+    proc getbytes {} {
+        set lines [split [memory info] "\n"]
+        lindex [lindex $lines 3] 3
+    }
+    proc stress {} {
+	global x y
+	lassign {} y y y y y y y y y y y y y y y y y y y y y y y y y y y y y y
+	catch {lassign {} y y y y y y y y y y y y y y y y y y y y y y y y y x}
+	catch {lassign {} x}
+    }
+} -constraints memory -body {
+    set end [getbytes]
+    for {set i 0} {$i < 5} {incr i} {
+	stress
+	set tmp $end
+	set end [getbytes]
+    }
+    expr {$end - $tmp}
+} -result 0 -cleanup {
+    unset -nocomplain x y i tmp end
+    rename getbytes {}
+    rename stress {}
 }
 
 # cleanup
