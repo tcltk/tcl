@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: tell.n,v 1.4 2000/09/07 14:27:52 poenitz Exp $
+'\" RCS: @(#) $Id: tell.n,v 1.5 2001/09/14 19:20:40 andreas_kupries Exp $
 '\" 
 .so man.macros
 .TH tell n 8.1 Tcl "Tcl Built-In Commands"
@@ -27,9 +27,16 @@ that this value is in terms of bytes, not characters like \fBread\fR.
 .VE 8.1
 The value returned is -1 for channels that do not support
 seeking.
+.PP
+.VS
+\fIChannelId\fR must be an identifier for an open channel such as a
+Tcl standard channel (\fBstdin\fR, \fBstdout\fR, or \fBstderr\fR),
+the return value from an invocation of \fBopen\fR or \fBsocket\fR, or
+the result of a channel creation command provided by a Tcl extension.
+.VE
 
 .SH "SEE ALSO"
-file(n), open(n), close(n), gets(n), seek(n)
+file(n), open(n), close(n), gets(n), seek(n), Tcl_StandardChannels(3)
 
 .SH KEYWORDS
 access position, channel, seeking

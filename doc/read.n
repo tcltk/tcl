@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: read.n,v 1.6 2001/04/06 14:27:51 dkf Exp $
+'\" RCS: @(#) $Id: read.n,v 1.7 2001/09/14 19:20:40 andreas_kupries Exp $
 '\" 
 .so man.macros
 .TH read n 8.1 Tcl "Tcl Built-In Commands"
@@ -32,6 +32,14 @@ the channel is configured to use a multi-byte encoding, then the
 number of characters read may not be the same as the number of bytes
 read.
 .PP
+.VS
+\fIChannelId\fR must be an identifier for an open channel such as the
+Tcl standard input channel (\fBstdin\fR), the return value from an
+invocation of \fBopen\fR or \fBsocket\fR, or the result of a channel
+creation command provided by a Tcl extension. The channel must have
+been opened for input.
+.VE
+.PP
 If \fIchannelId\fR is in nonblocking mode, the command may not read as
 many characters as requested: once all available input has been read,
 the command will return the data that is available rather than
@@ -50,27 +58,25 @@ which \fBfconfigure\fR will alter input.
 
 .SH "USE WITH SERIAL PORTS"
 '\" Note:  this advice actually applies to many versions of Tcl
-.VS 8.4
+
 For most applications a channel connected to a serial port should be
 configured to be nonblocking: \fBfconfigure \fIchannelId \fB\-blocking
 \fI0\fR.  Then \fBread\fR behaves much like described above.  Care
 must be taken when using \fBread\fR on blocking serial ports:
 .TP
 \fBread \fIchannelId numChars\fR 
-. 
 In this form \fBread\fR blocks until \fInumChars\fR have been received
 from the serial port.
 .TP
 \fBread \fIchannelId\fR 
-. 
 In this form \fBread\fR blocks until the reception of the end-of-file
 character, see \fBfconfigure -eofchar\fR. If there no end-of-file
 character has been configured for the channel, then \fBread\fR will
 block forever.
-.VE
+
 
 .SH "SEE ALSO"
-file(n), eof(n), fblocked(n), fconfigure(n)
+file(n), eof(n), fblocked(n), fconfigure(n), Tcl_StandardChannels(3)
 
 .SH KEYWORDS
 blocking, channel, end of line, end of file, nonblocking, read, translation, encoding
