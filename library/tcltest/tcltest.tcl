@@ -5,14 +5,14 @@
 #       directory, constraints available, output and error channels, etc. used
 #       by Tcl tests.  See the README file for more details.
 #       
-#       This design was based on the original Tcl testing approach designed and
+#       This design was based on the Tcl testing approach designed and
 #       initially implemented by Mary Ann May-Pumphrey of Sun Microsystems. 
 #
 # Copyright (c) 1994-1997 Sun Microsystems, Inc.
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 # 
-# RCS: @(#) $Id: tcltest.tcl,v 1.4 1999/07/08 02:57:17 rjohnson Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.5 1999/07/09 00:01:02 jenn Exp $
 
 package provide tcltest 1.0
 
@@ -24,10 +24,9 @@ set auto_path [list [info library]]
 namespace eval tcltest {
 
     # Export the public tcltest procs
-    set procList [list test cleanupTests dotests saveState restoreState \
+    set procList [list test cleanupTests saveState restoreState \
 	    normalizeMsg makeFile removeFile makeDirectory removeDirectory \
-	    viewFile grep bytestring set_iso8859_1_locale restore_locale \
-	    safeFetch threadReap getMatchingTestFiles]
+	    viewFile bytestring safeFetch threadReap getMatchingTestFiles]
     foreach proc $procList {
 	namespace export $proc
     }
@@ -45,11 +44,8 @@ namespace eval tcltest {
     variable matchFiles {*.test}
     variable skipFiles {}
 
-    variable matchDirectories {}
-    variable skipDirectories {}
-
     # By default, don't save core files
-    variable preserveCore false
+    variable preserveCore 0
 
     # output goes to stdout by default
 
@@ -126,7 +122,7 @@ namespace eval tcltest {
 	set mainThread [testthread names]
     }
 
-    # save the original environement so that it can be restored later
+    # save the original environment so that it can be restored later
     
     array set ::tcltest::originalEnv [array get ::env]
 
@@ -140,7 +136,10 @@ namespace eval tcltest {
     # Files that are part of the test suite should be accessed relative to 
     # ::tcltest::testsDirectory.
 
+    set oDir [pwd]
+    cd [file join [file dirname [info library]] tests]
     variable testsDirectory [pwd]
+    cd $oDir
 
     # the variables and procs that existed when ::tcltest::saveState was
     # called are stored in a variable of the same name
@@ -185,7 +184,15 @@ namespace eval tcltest {
     variable tcltest [info nameofexecutable]
 
     # save the platform information so it can be restored later
-    variable tcl_platform [array get tcl_platform]
+    variable originalTclPlatform [array get tcl_platform]
+
+
+    # If a core file exists, save its modification time.
+    if {[file exists [file join $::tcltest::workingDirectory core]]} {
+	variable coreModificationTime [file mtime [file join \
+		$::tcltest::workingDirectory core]]
+    }
+
 }   
 
 # ::tcltest::AddToSkippedBecause --
@@ -215,7 +222,7 @@ proc ::tcltest::AddToSkippedBecause { constraint } {
 # ::tcltest::PrintError --
 #
 #	Prints errors to ::tcltest::errorChannel and then flushes that
-#       channel.  
+#       channel, making sure that all messages are < 80 characters per line.
 #
 # Arguments:
 #	errorMsg     String containing the error to be printed
@@ -225,18 +232,24 @@ proc ::tcltest::PrintError {errorMsg} {
     set InitialMessage "Error:  "
     set InitialMsgLen  [string length $InitialMessage]
     puts -nonewline $::tcltest::errorChannel $InitialMessage
-    set beginningIndex [string wordend $errorMsg 72]
+    set beginningIndex [string last " " [string range $errorMsg 0 \
+	    [string wordend $errorMsg 72]]]
     puts $::tcltest::errorChannel [string range $errorMsg 0 $beginningIndex]
     set endingIndex [string length $errorMsg]
     while {$beginningIndex < $endingIndex} {
-	set newEndingIndex [string wordend $errorMsg \
-		[expr {$beginningIndex + 72}]]
+	set newEndingIndex [string last " " [string range $errorMsg \
+		$beginningIndex [string wordend $errorMsg \
+		[expr {$beginningIndex + 72}]]]]
+	if {$newEndingIndex == 0} {
+	    set newEndingIndex $endingIndex
+	}
 	puts -nonewline $::tcltest::errorChannel \
 		[string repeat " " $InitialMsgLen]  
 	puts $::tcltest::errorChannel [string trim \
 		[string range $errorMsg $beginningIndex $newEndingIndex]]
 	set beginningIndex $newEndingIndex
     }
+    flush $::tcltest::errorChannel
     return
 }
 
@@ -291,11 +304,14 @@ proc ::tcltest::initConstraints {} {
     set ::tcltest::testConstraints(pc) $::tcltest::testConstraints(pcOnly)
 
     set ::tcltest::testConstraints(unixOrPc) \
-	    [expr {$::tcltest::testConstraints(unix) || $::tcltest::testConstraints(pc)}]
+	    [expr {$::tcltest::testConstraints(unix) \
+	    || $::tcltest::testConstraints(pc)}]
     set ::tcltest::testConstraints(macOrPc) \
-	    [expr {$::tcltest::testConstraints(mac) || $::tcltest::testConstraints(pc)}]
+	    [expr {$::tcltest::testConstraints(mac) \
+	    || $::tcltest::testConstraints(pc)}]
     set ::tcltest::testConstraints(macOrUnix) \
-	    [expr {$::tcltest::testConstraints(mac) || $::tcltest::testConstraints(unix)}]
+	    [expr {$::tcltest::testConstraints(mac) \
+	    || $::tcltest::testConstraints(unix)}]
 
     set ::tcltest::testConstraints(nt) [string equal $tcl_platform(os) \
 	    "Windows NT"]
@@ -310,18 +326,25 @@ proc ::tcltest::initConstraints {} {
     # but have been temporarily disabled on certain platforms because they don't
     # and we haven't gotten around to fixing the underlying problem.
 
-    set ::tcltest::testConstraints(tempNotPc) [expr {!$::tcltest::testConstraints(pc)}]
-    set ::tcltest::testConstraints(tempNotMac) [expr {!$::tcltest::testConstraints(mac)}]
-    set ::tcltest::testConstraints(tempNotUnix) [expr {!$::tcltest::testConstraints(unix)}]
+    set ::tcltest::testConstraints(tempNotPc) \
+	    [expr {!$::tcltest::testConstraints(pc)}]
+    set ::tcltest::testConstraints(tempNotMac) \
+	    [expr {!$::tcltest::testConstraints(mac)}]
+    set ::tcltest::testConstraints(tempNotUnix) \
+	    [expr {!$::tcltest::testConstraints(unix)}]
 
     # The following Constraints switches are used to mark tests that crash on
     # certain platforms, so that they can be reactivated again when the
     # underlying problem is fixed.
 
-    set ::tcltest::testConstraints(pcCrash) [expr {!$::tcltest::testConstraints(pc)}]
-    set ::tcltest::testConstraints(win32sCrash) [expr {!$::tcltest::testConstraints(win32s)}]
-    set ::tcltest::testConstraints(macCrash) [expr {!$::tcltest::testConstraints(mac)}]
-    set ::tcltest::testConstraints(unixCrash) [expr {!$::tcltest::testConstraints(unix)}]
+    set ::tcltest::testConstraints(pcCrash) \
+	    [expr {!$::tcltest::testConstraints(pc)}]
+    set ::tcltest::testConstraints(win32sCrash) \
+	    [expr {!$::tcltest::testConstraints(win32s)}]
+    set ::tcltest::testConstraints(macCrash) \
+	    [expr {!$::tcltest::testConstraints(mac)}]
+    set ::tcltest::testConstraints(unixCrash) \
+	    [expr {!$::tcltest::testConstraints(unix)}]
 
     # Skip empty tests
 
@@ -547,13 +570,10 @@ proc ::tcltest::PrintUsageInfo {} {
 		\t                 match the glob pattern given. \n\
 		-notfile pattern\t Skip all test files that match the \n\
 		\t                 glob pattern given. \n\
-		-relateddir pattern\t Run tests in directories that match \n\
-		\t                 the glob pattern given. \n\
-                -asidefromdir pattern\t Skip tests in directories that match \n\
-		\t                 the glob pattern given. \n\
 		-preservecore level \t If 2, save any core files produced \n\
 		\t                 during testing in the directory \n\
-		\t                 specified by -tmpdir. The default \n\
+		\t                 specified by -tmpdir. If 1, notify the\n\
+		\t                 user if core files are created. The default \n\
 		\t                 is $::tcltest::preserveCore. \n\
 		-tmpdir directory\t Save temporary files in the specified\n\
 		\t                 directory.  The default value is \n\
@@ -634,8 +654,8 @@ proc ::tcltest::processCmdLineArgs {} {
 
     # -help is not listed since it has already been processed
     lappend defaultFlags -verbose -match -skip -constraints \
-	    -outfile -errfile -debug -tmpdir -file -notfile -relateddir \
-	    -asidefromdir -preservecore -limitconstraints
+	    -outfile -errfile -debug -tmpdir -file -notfile \
+	    -preservecore -limitconstraints
     set defaultFlags [concat $defaultFlags \
 	    [ ::tcltest::processCmdLineArgsAddFlagsHook ]]
 
@@ -672,14 +692,6 @@ proc ::tcltest::processCmdLineArgs {} {
     }
     if {[info exists flag(-notfile)]} {
 	set ::tcltest::skipFiles $flag(-notfile)
-    }
-
-    # Handle -relateddir and -asidefromdir flags
-    if {[info exists flag(-relateddir)]} {
-	set ::tcltest::matchDirectories $flag(-relateddir)
-    }
-    if {[info exists flag(-asidefromdir)]} {
-	set ::tcltest::skipDirectories $flag(-asidefromdir)
     }
 
     # Use the -constraints flag, if given, to turn on constraints that are
@@ -786,29 +798,6 @@ proc ::tcltest::processCmdLineArgs {} {
     # Handle -preservecore
     if {[info exists flag(-preservecore)]} {
 	set ::tcltest::preserveCore $flag(-preserveCore)
-    }
-
-    # Find the matching directories and then remove the ones that are 
-    # specified in the skip pattern; if no match pattern is specified, use
-    # the default value specified for ::tcltest::testsDirectory - ignore the
-    # value of ::tcltest::skipDirectories if the default value is being used.
-    if {$::tcltest::matchDirectories != {}} {
-	set matchDir {}
-	set skipDir {}
-	if {$::tcltest::skipDirectories != {}} {
-	    set skipDir [glob -nocomplain $::tcltest::skipDirectories]
-	}
-	foreach dir [glob -nocomplain $::tcltest::matchDirectories] {
-	    if {[lsearch -exact $skipDir $dir] == -1} {
-		lappend matchDir $dir
-	    }
-	}
-	
-	# Only reset ::tcltest::testsDirectory if anything actually matched
-	# after removing the skip patterns.
-	if {[llength $matchDir] > 0} {
-	    set ::tcltest::testsDirectory $matchDir
-	}
     }
 
     # Call the hook
@@ -993,6 +982,44 @@ proc ::tcltest::cleanupTests {{calledFromAllFile 0}} {
 		    "env array elements removed:\t$removedEnv"
 	}
 
+	set changedTclPlatform {}
+	foreach index [array names ::tcltest::originalTclPlatform] {
+	    if {$::tcl_platform($index) != \
+		    $::tcltest::originalTclPlatform($index)} { 
+		lappend changedTclPlatform $index
+		set ::tcl_platform($index) \
+			$::tcltest::originalTclPlatform($index) 
+	    }
+	}
+	if {[llength $changedTclPlatform] > 0} {
+	    puts $::tcltest::outputChannel \
+		    "tcl_platform array elements changed:\t$changedTclPlatform"
+	} 
+
+	if {[file exists [file join $::tcltest::workingDirectory core]]} {
+	    if {$::tcltest::preserveCore > 1} {
+		file rename -force \
+			[file join $::tcltest::workingDirectory core] \
+			[file join $::tcltest::temporaryDirectory core-$name]
+		
+		puts $::tcltest::outputChannel "produced core file! \
+			Moved file to: \
+			[file join $::tcltest::temporaryDirectory core-$name]"
+	    } else {
+		# Print a message if there is a core file and (1) there
+		# previously wasn't one or (2) the new one is different from
+		# the old one. 
+
+		if {[info exists ::tcltest::coreModificationTime]} {
+		    if {$::tcltest::coreModificationTime != [file mtime \
+			    [file join $::tcltest::workingDirectory core]]} {
+			puts $::tcltest::outputChannel "A core file was created!"
+		    }
+		} else {
+		    puts $::tcltest::outputChannel "A core file was created!"
+		} 
+	    }
+	}
     }
 }
 
@@ -1028,12 +1055,11 @@ proc ::tcltest::cleanupTestsHook {} {}
 # expectedAnswer -	Expected result from script.
 
 proc ::tcltest::test {name description script expectedAnswer args} {
-    incr ::tcltest::numTests(Total)
+    if {($::tcltest::debug) && ($::tcltest::debugLevel > 2)} {
+	puts "Running $name ($description)"
+    }
 
-#      if {[file exists [file join $::tcltest::workingDirectory core]]} {
-#  	set coreModificationTime [file mtime [file join \
-#  		$::tcltest::workingDirectory core]]
-#      }
+    incr ::tcltest::numTests(Total)
 
     # skip the test if it's name matches an element of skip
 
@@ -1065,6 +1091,7 @@ proc ::tcltest::test {name description script expectedAnswer args} {
 	    return
 	}
     }
+
     set i [llength $args]
     if {$i == 0} {
 	set constraints {}
@@ -1122,6 +1149,19 @@ proc ::tcltest::test {name description script expectedAnswer args} {
 	error "wrong # args: must be \"test name description ?constraints? script expectedAnswer\""
     }   
 
+    # Save information about the core file.  You need to restore the original
+    # tcl_platform environment because some of the tests mess with tcl_platform.
+
+    if {$::tcltest::preserveCore} {
+	set currentTclPlatform [array get tcl_platform]
+	array set tcl_platform $::tcltest::originalTclPlatform
+	if {[file exists [file join $::tcltest::workingDirectory core]]} {
+	    set coreModTime [file mtime [file join \
+		    $::tcltest::workingDirectory core]]
+	}
+	array set tcl_platform $currentTclPlatform
+    }
+
     # If there is no "memory" command (because memory debugging isn't
     # enabled), then don't attempt to use the command.
     
@@ -1167,28 +1207,34 @@ proc ::tcltest::test {name description script expectedAnswer args} {
 	puts $::tcltest::outputChannel "---- Result should have been:\n$expectedAnswer"
 	puts $::tcltest::outputChannel "==== $name FAILED\n"
     }
-#      if {[file exists [file join $::tcltest::workingDirectory core]]} {
-#  	if {$::tcltest::preserveCore} {
-#  	    file rename -force [file join $::tcltest::workingDirectory core] \
-#  		    [file join $::tcltest::temporaryDirectory core-$name]
-	    
-#  	    puts $::tcltest::outputChannel "==== $name produced core file! \
-#  		    Moved file to: \
-#  		    [file join $::tcltest::temporaryDirectory core-$name]"
-#  	} else {
-#  	    # Print a message if there is a core file and (1) there previously 
-#  	    # wasn't one or (2) the new one is different from the old one.
+    if {$::tcltest::preserveCore} {
+	set currentTclPlatform [array get tcl_platform]
+	if {[file exists [file join $::tcltest::workingDirectory core]]} {
+	    if {$::tcltest::preserveCore > 1} {
+		file rename -force \
+			[file join $::tcltest::workingDirectory core] \
+			[file join $::tcltest::temporaryDirectory core-$name]
+		
+		puts $::tcltest::outputChannel "==== $name produced core file! \
+			Moved file to: \
+			[file join $::tcltest::temporaryDirectory core-$name]"
+	    } else {
+		# Print a message if there is a core file and (1) there
+		# previously wasn't one or (2) the new one is different from
+		# the old one. 
 
-#  	    if {[info exists coreModificationTime]} {
-#  		if {$coreModificationTime != [file mtime \
-#  			[file join $::tcltest::workingDirectory core]]} {
-#  		    puts $::tcltest::outputChannel "==== $name produced core file!"
-#  		}
-#  	    } else {
-#  		puts $::tcltest::outputChannel "==== $name produced core file!"
-#  	    } 
-#  	}
-#      }
+		if {[info exists coreModTime]} {
+		    if {$coreModTime != [file mtime \
+			    [file join $::tcltest::workingDirectory core]]} {
+			puts $::tcltest::outputChannel "==== $name produced core file!"
+		    }
+		} else {
+		    puts $::tcltest::outputChannel "==== $name produced core file!"
+		} 
+	    }
+	}
+	array set tcl_platform $currentTclPlatform
+    }
 }
 
 # ::tcltest::getMatchingTestFiles
@@ -1237,29 +1283,6 @@ proc ::tcltest::getMatchingFiles {} {
     }
     return $matchingFiles
 }
-
-# ::tcltest::dotests --
-#
-#	takes two arguments--the name of the test file (such
-#	as "parse.test"), and a pattern selecting the tests you want to
-#	execute.  It sets ::tcltest::match to the second argument, calls
-#	"source" on the file specified in the first argument, and restores
-#	::tcltest::match to its pre-call value at the end.
-#
-# Arguments:
-#	file    name of tests file to source
-#	args    pattern selecting the tests you want to execute
-#
-# Results:
-#	none
-
-proc ::tcltest::dotests {file args} {
-    set savedTests $::tcltest::match
-    set ::tcltest::match $args
-    source $file
-    set ::tcltest::match $savedTests
-}
-
 
 # The following two procs are used in the io tests.
 
@@ -1362,6 +1385,7 @@ proc ::tcltest::makeFile {contents name} {
 	puts "::tcltest::makeFile: putting $contents into $name"
     }
     set fd [open $name w]
+
     fconfigure $fd -translation lf
 
     if {[string equal \

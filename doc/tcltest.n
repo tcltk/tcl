@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: tcltest.n,v 1.2 1999/06/29 20:14:10 jenn Exp $
+'\" RCS: @(#) $Id: tcltest.n,v 1.3 1999/07/09 00:01:01 jenn Exp $
 '\" 
 .so man.macros
 .TH "Tcltest" n 8.1 Tcl "Tcl Built-In Commands"
@@ -22,8 +22,6 @@ Tcltest \- Test harness support code and utilities
 \fB::tcltest::cleanupTests \fI?runningMultipleTests?\fR
 .sp
 \fB::tcltest::getMatchingTestFiles
-.sp
-\fB::tcltest::dotests \fIfile pattern\fR
 .sp
 \fB::tcltest::makeFile \fIcontents name\fR
 .sp
@@ -97,9 +95,6 @@ environment. The default value for \fIcalledFromAll\fR is false.
 This command is used when you want to run multiple test files.  It returns
 the list of tests that should be sourced in an 'all.tcl' file.  See the
 section \fI"Running test files"\fR for more information.
-.TP
-\fB::tcltest::dotests\fP \fIfile pattern\fR
-Source a test file and run tests of the specified pattern.
 .TP
 \fB::tcltest::makeFile\fP \fIcontents name\fR
 Create a file that will be automatically be removed by
@@ -224,8 +219,7 @@ the output directory - defaults to the current working directory and can be
 specified using -tmpdir
 .TP
 \fB::tcltest::testsDirectory\fR
-where the tests reside - defaults to [pwd] and can be affected by use of
--relateddir and -asidefromdir
+where the tests reside 
 .TP
 \fB::tcltest::isoLocale\fR
 used for internationalization support - default language is French; default
@@ -383,14 +377,6 @@ only source test files that match any of the items in
 source files except for those that match any of the items in
 <globPatternList> (relative to ::tcltest::testsDirectory).  
 .TP
-\fB-relateddir <globPattern>\fR
-only run tests in the directories that match <globPattern> (relative to the
-current directory).
-.TP
-\fB-asidefromdir <globPattern>\fR
-use all specified directories except those that match <globPattern> (relative
-to the current directory).
-.TP
 \fB-constraints <list>\fR
 tests with any constraints in <list> will not be skipped.  Note that
 elements of <list> must exactly match the existing constraints.
@@ -406,23 +392,36 @@ put any temporary files (created with ::tcltest::makeFile and
 ::tcltest::makeDirectory) into the named directory.  The default
 location is your current working directory.
 .TP
-\fB-preservecore <bool>\fR
-If the argument to this flag is 1 (true), the test harness saves any
-core files produced at the end of a test run in
-::tcltest::temporaryDirectory. The default value for this flag is 0
-(false).
+\fB-preservecore <level>\fR
+check for core files.  This flag is used to determine how much
+checking should be done for core files.  The default value for
+\fIlevel\fR is 0.  Levels are defined as:
+.RS
+.IP 0
+No checking - do not check for core files at the end of each test
+command, but do check for them whenever ::tcltest::cleanupTests is
+called from an all.tcl file. 
+.IP 1
+Check for core files at the end of each test command and whenever
+::tcltest::cleanupTests is called from all.tcl.
+.IP 2
+Check for core files at the end of all test commands and whenever
+::tcltest::cleanupTests is called from all.tcl.  Save any core files
+produced in ::tcltest::temporaryDirectory.
 .TP
 \fB-debug <debugLevel>\fR
 print out debug information.  This is used to debug code in the test
-harness.  The default debug level is 1.  Levels are defined as:
+harness.  The default debug level is 0.  Levels are defined as:
 .RS
+.IP 0
+Do not display any debug information.
 .IP 1
 Display information regarding whether a test is skipped because it
 doesn't match any of the tests that were specified using -match or
 ::tcltest::match (userSpecifiedNonMatch) or matches any of the tests
 specified by -skip or ::tcltest::skip (userSpecifiedSkip).  
 .IP 2
-Display the flag array parssed by the command line processor, the
+Display the flag array parsed by the command line processor, the
 contents of the env array, and all user-defined variables that exist
 in the current namespace as they are used.
 .IP 3

@@ -1,3 +1,11 @@
+1999-07-08  Jennifer Hom  <jenn@scriptics.com>
+
+	* doc/tcltest.n:
+	* library/tcltest1.0/tcltest.tcl: Removed -asidefromdir and
+	-relateddir flags, removed unused ::tcltest::dotests proc, cleaned
+	up implementation of core file checking, and fixed the code that
+	checks for 1-letter flag abbreviations.
+
 1999-07-08    <stanton@scriptics.com>
 
 	* win/Makefile.in: Added tcltest target so runtest works
@@ -97,7 +105,8 @@
 	* library/tcltest1.0/tcltest.tcl:
 	* library/tcltest1.0: Added initial implementation of the Tcl test
 	harness package.  This package was based on the defs.tcl file that
-	was part of the tests directory. 
+	was part of the tests directory. Reversed the way that tests were
+	evaluated to fix a problem with false passes.
 
 	* doc/tcltest.n: Added documentation for the tcltest package.
 
