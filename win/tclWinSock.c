@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinSock.c,v 1.31 2002/11/27 05:29:46 davygrvy Exp $
+ * RCS: @(#) $Id: tclWinSock.c,v 1.32 2002/11/27 18:37:28 davygrvy Exp $
  */
 
 #include "tclWinInt.h"
@@ -67,7 +67,6 @@ static struct {
     LPFN_SELECT		    select;
     LPFN_SEND		    send;
     LPFN_SETSOCKOPT	    setsockopt;
-    LPFN_SHUTDOWN	    shutdown;
     LPFN_SOCKET		    socket;
     LPFN_WSAASYNCSELECT	    WSAAsyncSelect;
     LPFN_WSACLEANUP	    WSACleanup;
@@ -267,14 +266,14 @@ InitSockets()
 
 	winSock.hModule = LoadLibraryA("wsock32.dll");
 
-	/*
-	 * Initialize the function table.
-	 */
-
 	if (winSock.hModule == NULL) {
 	    return;
 	}
     
+	/*
+	 * Initialize the function table.
+	 */
+
 	winSock.accept = (LPFN_ACCEPT)
 		GetProcAddress(winSock.hModule, "accept");
 	winSock.bind = (LPFN_BIND)
@@ -317,8 +316,6 @@ InitSockets()
 		GetProcAddress(winSock.hModule, "send");
 	winSock.setsockopt = (LPFN_SETSOCKOPT)
 		GetProcAddress(winSock.hModule, "setsockopt");
-	winSock.shutdown = (LPFN_SHUTDOWN)
-		GetProcAddress(winSock.hModule, "shutdown");
 	winSock.socket = (LPFN_SOCKET)
 		GetProcAddress(winSock.hModule, "socket");
 	winSock.WSAAsyncSelect = (LPFN_WSAASYNCSELECT)
@@ -1211,7 +1208,7 @@ CreateSocketAddress(sockaddrPtr, host, port)
         return 0;
     }
 
-    (void) memset((char *) sockaddrPtr, '\0', sizeof(struct sockaddr_in));
+    ZeroMemory(sockaddrPtr, sizeof(SOCKADDR_IN));
     sockaddrPtr->sin_family = AF_INET;
     sockaddrPtr->sin_port = winSock.htons((u_short) (port & 0xFFFF));
     if (host == NULL) {
@@ -1221,9 +1218,7 @@ CreateSocketAddress(sockaddrPtr, host, port)
         if (addr.s_addr == INADDR_NONE) {
             hostent = winSock.gethostbyname(host);
             if (hostent != NULL) {
-                memcpy((char *) &addr,
-                        (char *) hostent->h_addr_list[0],
-                        (size_t) hostent->h_length);
+                memcpy(&addr, hostent->h_addr, hostent->h_length);
             } else {
 #ifdef	EHOSTUNREACH
                 Tcl_SetErrno(EHOSTUNREACH);
