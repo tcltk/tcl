@@ -10,6 +10,9 @@
 	headers as they are now resetting TCL_STORAGE_CLASS.  Removed
 	extrainious reset from tclWinPort.h.  [Patch 1055668]
 
+	* generic/tclCompile.h: Removed	extrainious reset of
+	TCL_STORAGE_CLASS missed in my last edit.
+
 2004-11-03  Don Porter  <dgp@users.sourceforge.net>
 
 	* library/init.tcl ([unknown]):	Corrections to the 2004-10-25 mods
