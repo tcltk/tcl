@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.31 2002/04/19 13:08:56 dkf Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.32 2002/06/25 08:59:36 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2197,7 +2197,7 @@ TclGetIntForIndex(interp, objPtr, endValue, indexPtr)
 				 * representing an index. */
 {
     char *bytes;
-    int length, offset;
+    int offset;
 #ifndef TCL_WIDE_INT_IS_LONG
     Tcl_WideInt wideOffset;
 #endif
@@ -2267,8 +2267,14 @@ TclGetIntForIndex(interp, objPtr, endValue, indexPtr)
 	 * Report a parse error.
 	 */
 
-	if ((Interp *)interp != NULL) {
-	    bytes = Tcl_GetStringFromObj(objPtr, &length);
+	if (interp != NULL) {
+	    bytes = Tcl_GetString(objPtr);
+	    /*
+	     * The result might not be empty; this resets it which
+	     * should be both a cheap operation, and of little problem
+	     * because this is an error-generation path anyway.
+	     */
+	    Tcl_ResetResult(interp);
 	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
 				   "bad index \"", bytes,
 				   "\": must be integer or end?-integer?",
@@ -2365,6 +2371,7 @@ SetEndOffsetFromAny(interp, objPtr)
     if ((*bytes != 'e') || (strncmp(bytes, "end",
 	    (size_t)((length > 3) ? 3 : length)) != 0)) {
 	if (interp != NULL) {
+	    Tcl_ResetResult(interp);
 	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
 				   "bad index \"", bytes,
 				   "\": must be end?-integer?",
@@ -2390,6 +2397,7 @@ SetEndOffsetFromAny(interp, objPtr)
 	 * Conversion failed.  Report the error.
 	 */
 	if (interp != NULL) {
+	    Tcl_ResetResult(interp);
 	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
 				   "bad index \"", bytes,
 				   "\": must be integer or end?-integer?",
