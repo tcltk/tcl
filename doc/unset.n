@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: unset.n,v 1.6 2004/05/07 22:26:03 msofer Exp $
+'\" RCS: @(#) $Id: unset.n,v 1.7 2004/05/27 15:45:43 dkf Exp $
 '\" 
 .so man.macros
 .TH unset n 8.4 Tcl "Tcl Built-In Commands"
@@ -39,6 +39,27 @@ If an error occurs, any variables after the named one causing the error not
 deleted.  An error can occur when the named variable doesn't exist, or the
 name refers to an array element but the variable is a scalar, or the name
 refers to a variable in a non-existent namespace.
+.SH EXAMPLE
+Create an array containing a mapping from some numbers to their
+squares and remove the array elements for non-prime numbers:
+.CS
+array set squares {
+    1 1    6 36
+    2 4    7 49
+    3 9    8 64
+    4 16   9 81
+    5 25  10 100
+}
+
+puts "The squares are:"
+parray squares
+
+unset squares(1) squares(4) squares(6)
+unset squares(8) squares(9) squares(10)
+
+puts "The prime squares are:"
+parray squares
+.CE
 
 .SH "SEE ALSO"
 set(n), trace(n), upvar(n)
