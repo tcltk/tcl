@@ -1,3 +1,16 @@
+2003-11-01  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* generic/tclCmdIL.c (Tcl_LrepeatObjCmd): Check for sensible list
+	lengths and allow for soft failure of the memory subsystem in the
+	[lconcat] command [Bug 829027].  Uses direct list creation to
+	avoid extra copies when working near the limit of available
+	memory.  Also reorganized to encourage optimizing compilers to
+	optimize heavily.
+	* generic/tclListObj.c (TclNewListObjDirect): New list constructor
+	that does not copy the array of objects. Useful for creating
+	potentially very large lists or where you are about to throw away
+	the array argument which is being used in its entirety.
+
 2003-10-28  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclExecute.c (NEXT_INST macros): replaced macro variable

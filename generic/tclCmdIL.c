@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.55 2003/10/15 13:15:45 dkf Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.56 2003/11/01 01:20:33 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2650,7 +2650,7 @@ Tcl_LrepeatObjCmd(dummy, interp, objc, objv)
     register int objc;			/* Number of arguments. */
     register Tcl_Obj *CONST objv[];	/* The argument objects. */
 {
-    int elementCount, i, j, k, result;
+    int elementCount, i, result;
     Tcl_Obj **dataArray;
 
     /* 
@@ -2685,22 +2685,50 @@ Tcl_LrepeatObjCmd(dummy, interp, objc, objv)
      * elementCount times.  Note that we don't bother with stack
      * allocation for this, as we expect this function to be used
      * mainly when stack allocation would be inappropriate anyway.
+     * First check to see if we'd overflow and try to allocate an
+     * object larger than our memory allocator allows.  Note that this
+     * is actually a fairly small value when you're on a serious
+     * 64-bit machine, but that requires API changes to fix.
      *
-     * POSSIBLE FUTURE ENHANCEMENT: Build the resulting list object
-     * directly and avoid a copy.
+     * We allocate using attemptckalloc() because if we ask for
+     * something big but can't get it, we've still got a high chance
+     * of having a proper failover strategy.  If *that* fails to get
+     * memory, panic() will happen just a few lines lower...
      */
 
-    dataArray = (Tcl_Obj **) ckalloc(elementCount * objc * sizeof(Tcl_Obj));
+    if (elementCount > INT_MAX/sizeof(Tcl_Obj *)/objc) {
+	Tcl_AppendResult(interp, "overflow of maximum list length", NULL);
+	return TCL_ERROR;
+    }
+
+    dataArray = (Tcl_Obj **)
+	    attemptckalloc(elementCount * objc * sizeof(Tcl_Obj *));
+
+    if (dataArray == NULL) {
+	Tcl_AppendResult(interp, "insufficient memory to create list", NULL);
+	return TCL_ERROR;
+    }
 
     /*
-     * Set the elements.  Note that this ends up setting k to the
-     * total number of elements.
+     * Set the elements.  Note that we handle the common degenerate
+     * case of a single value being repeated separately to permit the
+     * compiler as much room as possible to optimize a loop that might
+     * be run a very large number of times.
      */
 
-    k = 0;
-    for (i=0 ; i<elementCount ; i++) {
-	for (j=0 ; j<objc ; j++) {
-	    dataArray[k++] = objv[j];
+    if (objc == 1) {
+	register Tcl_Obj *tmpPtr = objv[0];
+
+	for (i=0 ; i<elementCount ; i++) {
+	    dataArray[i] = tmpPtr;
+	}
+    } else {
+	int j, k = 0;
+
+	for (i=0 ; i<elementCount ; i++) {
+	    for (j=0 ; j<objc ; j++) {
+		dataArray[k++] = objv[j];
+	    }
 	}
     }
 
@@ -2708,8 +2736,7 @@ Tcl_LrepeatObjCmd(dummy, interp, objc, objv)
      * Build the result list, clean up and return.
      */
 
-    Tcl_SetObjResult(interp, Tcl_NewListObj(k, dataArray));
-    ckfree((char*) dataArray);
+    Tcl_SetObjResult(interp, TclNewListObjDirect(elementCount*objc,dataArray));
     return TCL_OK;
 }
 
