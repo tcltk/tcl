@@ -1,11 +1,24 @@
+2003-02-14  Kevin Kenny  <kennykb@users.sourceforge.net
+
+	* win/tclWinTime.c: Added code to test and compensate for
+	forward leaps of the performance counter. See the MSDN Knowledge
+	Base article Q274323 for the hardware problem that makes this
+	necessary on certain machines.
+	* tests/winTime.test: Revised winTime-2.1 - it had a tolerance
+	of thousands of seconds, rather than milliseconds. (What's six
+	orders of magnitude among friends?
+	Both the above changes are triggered by a problem reported at
+	http://aspn.activestate.com/ASPN/Mail/Message/ActiveTcl/1536811
+	although the developers find it difficult to believe that it
+	accounts for the observed behavior and suspect a fault in the
+	RTC chip.
+
 2003-02-13  Kevin Kenny  <kennykb@users.sourceforge.net>
 
 	* win/tclWinInit.c: Added conversion from the system encoding
 	to tcl_platform(user), so that it works with non-ASCII7 user names.
 	[Bug 685926]
 	
-2003-02-13  Kevin Kenny  <kennykb@users.sourceforge.net>
-
 	* doc/tclsh.1: Added language to describe the handling of the
 	end-of-file character \u001a embedded in a script file.
 	[Bug 685485]
@@ -203,8 +216,6 @@
 	* generic/tclCompCmds.c: Removed an unused variable that caused
 	compiler warnings on SGI. [Bug 664379]
 	
-2003-02-01  Kevin Kenny  <kennykb@users.sourceforge.net>
-
 	* generic/tclLoad.c: Changed the code so that if Tcl_StaticPackage
 	is called to report the same package as being loaded in two interps,
 	it shows up in [info loaded {}] in both of them (previously,
@@ -213,8 +224,6 @@
 	* tests/load.test Added regression test for the above bug.
 	[Bug 670042]
 	
-2003-02-01  Kevin Kenny  <kennykb@users.sourceforge.net>
-
 	* generic/tclClock.c: Fixed a bug that incorrectly allowed
 	[clock clicks {}] and [clock clicks -] to be accepted as if
 	they were [clock clicks -milliseconds].
@@ -222,13 +231,9 @@
 	* tests/clock.test: Added regression tests for the above bug.
 	[Bug 675356]
 	
-2003-02-01  Kevin Kenny  <kennykb@users.sourceforge.net>
-
 	* tests/unixNotfy.test: Added cleanup of working files
 	[Bug 675609]
 	
-2003-02-01  Kevin Kenny  <kennykb@users.sourceforge.net>
-
 	* doc/Tcl.n: Added headings to the eleven paragraphs, to improve
 	formatting in the tools that attempt to extract tables of contents
 	from the manual pages. [Bug 627455]
