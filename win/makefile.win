@@ -9,9 +9,8 @@
 #   Tool specific syntax is NOT allowed in this file.
 #
 #==============================================================================
-# RCS: @(#) $Id: makefile.win,v 1.1.2.3 2001/09/11 02:46:52 davygrvy Exp $
+# RCS: @(#) $Id: makefile.win,v 1.1.2.4 2001/09/11 03:52:13 davygrvy Exp $
 #==============================================================================
-
 
 ### Remove all '!' for MinGW..  Sorry, could find another way to do this.
 
@@ -34,10 +33,14 @@
 !ifdef __MAKE__
 !include "mkbc32.mif"	# Borland Toolset
 !else
+!ifdef BUILDLIB
+			# Lcc-Win32 doesn't have an include directive...  oh well.
+!else
 !ifdef MAKE_VERSION
 !include mkmgw32.mif	# MinGW Toolset
 !else
 !error Unknown make tool.  Toolset cannot be determined.
+!endif
 !endif
 !endif
 !endif
