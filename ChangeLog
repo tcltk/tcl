@@ -1,3 +1,8 @@
+2001-08-09  Mo DeJong  <mdejong@redhat.com>
+
+	* unix/Makefile.in: Delete the unused getcwd.o
+	target. This fixes bug #440942.
+
 2001-08-08  Don Porter <dgp@users.sourceforge.net>
 
 	* library/dde/pkgIndex.tcl:

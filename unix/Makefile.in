@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.80 2001/07/11 00:59:30 mdejong Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.81 2001/08/10 01:18:43 mdejong Exp $
 
 VERSION 		= @TCL_VERSION@
 
@@ -1012,9 +1012,6 @@ tclXtTest.o: $(UNIX_DIR)/tclXtTest.c
 
 fixstrtod.o: $(COMPAT_DIR)/fixstrtod.c
 	$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/fixstrtod.c
-
-getcwd.o: $(COMPAT_DIR)/getcwd.c
-	$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/getcwd.c
 
 opendir.o: $(COMPAT_DIR)/opendir.c
 	$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/opendir.c
