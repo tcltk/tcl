@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclListObj.c,v 1.11 2001/11/16 21:41:14 kennykb Exp $
+ * RCS: @(#) $Id: tclListObj.c,v 1.12 2001/12/28 23:36:31 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -132,9 +132,9 @@ Tcl_NewListObj(objc, objv)
  *	TCL_MEM_DEBUG is defined. It creates new list objects. It is the
  *	same as the Tcl_NewListObj procedure above except that it calls
  *	Tcl_DbCkalloc directly with the file name and line number from its
- *	caller. This simplifies debugging since then the checkmem command
- *	will report the correct file name and line number when reporting
- *	objects that haven't been freed.
+ *	caller. This simplifies debugging since then the [memory active]
+ *	command	will report the correct file name and line number when
+ *	reporting objects that haven't been freed.
  *
  *	When TCL_MEM_DEBUG is not defined, this procedure just returns the
  *	result of calling Tcl_NewListObj.

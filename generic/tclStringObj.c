@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.21 2001/05/15 21:30:46 hobbs Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.22 2001/12/28 23:36:31 dgp Exp $ */
 
 #include "tclInt.h"
 
@@ -219,9 +219,9 @@ Tcl_NewStringObj(bytes, length)
  *	TCL_MEM_DEBUG is defined. It creates new string objects. It is the
  *	same as the Tcl_NewStringObj procedure above except that it calls
  *	Tcl_DbCkalloc directly with the file name and line number from its
- *	caller. This simplifies debugging since then the checkmem command
- *	will report the correct file name and line number when reporting
- *	objects that haven't been freed.
+ *	caller. This simplifies debugging since then the [memory active]
+ *	command	will report the correct file name and line number when
+ *	reporting objects that haven't been freed.
  *
  *	When TCL_MEM_DEBUG is not defined, this procedure just returns the
  *	result of calling Tcl_NewStringObj.
