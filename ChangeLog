@@ -1,5 +1,8 @@
 2004-12-01  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclUtil.c (TclGetProcessGlobalValue):	Narrowed the scope
+	of mutex locks.
+
 	* generic/tclUtil.c:		Updated Tcl_GetNameOfExecutable() to
 	* generic/tclEncoding.c:	make use of a ProcessGlobalValue for
 	* generic/tclEvent.c:		storing the executable name.
