@@ -3,7 +3,7 @@
 	* generic/tclInt.h:
 	* generic/tcl.h:
 	* */*Load*.c: added comments on changes of 07/17 and 
-	replaced clientData with TclLoadHandle in all locations.
+	replaced clientData with Tcl_LoadHandle in all locations.
 
 	* generic/tclFCmd.c:
 	* tests/fileSystem.test: fixed a 'knownBug' with 'file
@@ -46,7 +46,7 @@
 	* mac/tclMacLoad.c:
 	* win/tclWinLoad.c: modified to move more functionality
 	to the generic code and avoid duplication.  Partial replacement
-	of internal uses of clientData with opaque TclLoadHandle.  A
+	of internal uses of clientData with opaque Tcl_LoadHandle.  A
 	little further work still needed, but significant changes are done.
 
 2002-07-17  D. Richard Hipp    <drh@hwaci.com>
