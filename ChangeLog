@@ -1,3 +1,9 @@
+2003-03-06  Kevin Kenny  <kennykb@users.sourceforge.net>
+
+	* generic/tclCompCmds.c (TclCompileSwitchCmd):
+	Replaced a non-portable 'bzero' with a portable 'memset'.
+	[Bug 698442].
+	
 2003-03-06  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* generic/tclIO.c (Tcl_Seek, Tcl_OutputBuffered):
