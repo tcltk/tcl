@@ -1,3 +1,13 @@
+2001-09-28  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* win/tclWinFCmd.c:
+	* unix/tclUnixFCmd.c: fix to performance issue reported
+	by jcw in which 'access("")' is called unnecessarily when
+	normalizing any absolute path.
+	* generic/tclIO.c: added '(ClientData)' cast to calls to
+	Tcl_(Preserve|Release) newly introduced, fixing compile
+	error on Windows.
+	
 2001-09-27  Don Porter  <dgp@users.sourceforge.net>
 
 	* doc/FileSystem.3 (Tcl_FSLoadFile):
