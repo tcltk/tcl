@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclListObj.c,v 1.15 2003/10/30 22:18:07 dkf Exp $
+ * RCS: @(#) $Id: tclListObj.c,v 1.16 2003/11/01 01:20:35 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -204,6 +204,120 @@ Tcl_DbNewListObj(objc, objv, file, line)
 				 * for debugging. */
 {
     return Tcl_NewListObj(objc, objv);
+}
+#endif /* TCL_MEM_DEBUG */
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclNewListObjDirect, TclDbNewListObjDirect --
+ *
+ *	Version of Tcl_NewListOb/Tcl_DbNewListObj that does not copy
+ *	the array of Tcl_Objs. It still scans it though to update the
+ *	reference counts.
+ *
+ * Results:
+ *	A new list object is returned that is initialized from the object
+ *	pointers in objv. If objc is less than or equal to zero, an empty
+ *	object is returned (and "ownership" of the array of objects is
+ *	not transferred.) The new object's string representation is left
+ *	NULL. The resulting new list object has ref count 0.
+ *
+ * Side effects:
+ *	The ref counts of the elements in objv are incremented since the
+ *	resulting list now refers to them.
+ *
+ *----------------------------------------------------------------------
+ */
+
+#ifdef TCL_MEM_DEBUG
+#undef TclNewListObjDirect
+Tcl_Obj *
+TclNewListObjDirect(objc, objv)
+    int objc;			/* Count of objects referenced by objv. */
+    Tcl_Obj *CONST objv[];	/* An array of pointers to Tcl objects. */
+{
+    return TclDbNewListObjDirect(objc, objv, "unknown", 0);
+}
+#else /* !TCL_MEM_DEBUG */
+Tcl_Obj *
+TclNewListObjDirect(objc, objv)
+    int objc;			/* Count of objects referenced by objv. */
+    Tcl_Obj *CONST objv[];	/* An array of pointers to Tcl objects. */
+{
+    register Tcl_Obj *listPtr;
+
+    TclNewObj(listPtr);
+
+    if (objc > 0) {
+	register List *listRepPtr;
+	int i;
+
+	Tcl_InvalidateStringRep(listPtr);
+
+	for (i=0 ; i<objc ; i++) {
+	    Tcl_IncrRefCount(objv[i]);
+	}
+
+	listRepPtr = (List *) ckalloc(sizeof(List));
+	listRepPtr->maxElemCount = objc;
+	listRepPtr->elemCount    = objc;
+	listRepPtr->elements     = objv;
+
+	listPtr->internalRep.twoPtrValue.ptr1 = (VOID *) listRepPtr;
+	listPtr->internalRep.twoPtrValue.ptr2 = NULL;
+	listPtr->typePtr = &tclListType;
+    }
+    return listPtr;
+}
+#endif /* TCL_MEM_DEBUG */
+
+#ifdef TCL_MEM_DEBUG
+Tcl_Obj *
+TclDbNewListObjDirect(objc, objv, file, line)
+    int objc;			/* Count of objects referenced by objv. */
+    Tcl_Obj *CONST objv[];	/* An array of pointers to Tcl objects. */
+    CONST char *file;		/* The name of the source file calling this
+				 * procedure; used for debugging. */
+    int line;			/* Line number in the source file; used
+				 * for debugging. */
+{
+    register Tcl_Obj *listPtr;
+
+    TclDbNewObj(listPtr, file, line);
+
+    if (objc > 0) {
+	register List *listRepPtr;
+	int i;
+
+	Tcl_InvalidateStringRep(listPtr);
+
+	for (i=0 ; i<objc ; i++) {
+	    Tcl_IncrRefCount(objv[i]);
+	}
+
+	listRepPtr = (List *) ckalloc(sizeof(List));
+	listRepPtr->maxElemCount = objc;
+	listRepPtr->elemCount    = objc;
+	listRepPtr->elements     = objv;
+
+	listPtr->internalRep.twoPtrValue.ptr1 = (VOID *) listRepPtr;
+	listPtr->internalRep.twoPtrValue.ptr2 = NULL;
+	listPtr->typePtr = &tclListType;
+    }
+    return listPtr;
+}
+#else /* !TCL_MEM_DEBUG */
+Tcl_Obj *
+TclDbNewListObjDirect(objc, objv, file, line)
+    int objc;			/* Count of objects referenced by objv. */
+    Tcl_Obj *CONST objv[];	/* An array of pointers to Tcl objects. */
+    CONST char *file;		/* The name of the source file calling this
+				 * procedure; used for debugging. */
+    int line;			/* Line number in the source file; used
+				 * for debugging. */
+{
+    return TclNewListObjDirect(objc, objv);
 }
 #endif /* TCL_MEM_DEBUG */
 
