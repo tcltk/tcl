@@ -8,7 +8,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: tcltest.n,v 1.29 2002/07/03 00:54:48 dgp Exp $
+'\" RCS: @(#) $Id: tcltest.n,v 1.30 2002/07/03 01:14:55 dgp Exp $
 '\" 
 .so man.macros
 .TH "tcltest" n 2.1 tcltest "Tcl Bundled Packages"
@@ -36,11 +36,9 @@ tcltest \- Test harness support code and utilities
 \fBtcltest::configure\fR
 \fBtcltest::configure \fIoption\fR
 \fBtcltest::configure \fIoption value ?option value ...?\fR
-.VE
-\fBtcltest::testConstraint \fIconstraint ?value?\fR
-.VS 2.1
 \fBtcltest::customMatch \fImode command\fR
 .VE
+\fBtcltest::testConstraint \fIconstraint ?value?\fR
 \fBtcltest::outputChannel \fI?channelID?\fR
 \fBtcltest::errorChannel \fI?channelID?\fR
 \fBtcltest::interpreter \fI?interp?\fR
@@ -336,9 +334,10 @@ an unfortunate attempt to overthrow Tcl's substitution rules by
 performing substitutions on some of the list elements as an attempt to
 implement a ``do what I mean'' interpretation of a brace-enclosed
 ``block''.  The result is nearly impossible to document clearly, and
-for that reason this form is not recommended.  See \fBTESTS\fR below
-for better ways to reduce the need to backslash quote newlines
-when calling [\fBtest\fR].  If you insist on using this form, examine
+for that reason this form is not recommended.  See the examples in
+\fBCREATING TEST SUITES WITH TCLTEST\fR below to see that this
+form is really not necessary to avoid backslash-quoted newlines.
+If you insist on using this form, examine
 the source code of \fBtcltest\fR if you want to know the substitution
 details, or just enclose the third through last argument
 to [\fBtest\fR] in braces and hope for the best.
