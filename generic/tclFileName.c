@@ -1558,7 +1558,7 @@ TclDoGlob(interp, separators, headPtr, tail)
 		Tcl_DStringAppend(headPtr, ":", 1);
 	    }
 	    name = Tcl_DStringValue(headPtr);
-	    if (access(name, F_OK) == 0) {
+	    if (TclAccess(name, F_OK) == 0) {
 		if ((name[1] != '\0') && (strchr(name+1, ':') == NULL)) {
 		    Tcl_AppendElement(interp, name+1);
 		} else {
@@ -1589,7 +1589,7 @@ TclDoGlob(interp, separators, headPtr, tail)
 		}
 	    }
 	    name = Tcl_DStringValue(headPtr);
-	    exists = (access(name, F_OK) == 0);
+	    exists = (TclAccess(name, F_OK) == 0);
 	    for (p = name; *p != '\0'; p++) {
 		if (*p == '\\') {
 		    *p = '/';
@@ -1609,7 +1609,7 @@ TclDoGlob(interp, separators, headPtr, tail)
 		}
 	    }
 	    name = Tcl_DStringValue(headPtr);
-	    if (access(name, F_OK) == 0) {
+	    if (TclAccess(name, F_OK) == 0) {
 		Tcl_AppendElement(interp, name);
 	    }
 	    break;
