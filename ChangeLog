@@ -1,3 +1,11 @@
+2001-05-03  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* generic/tclParse.c: 
+	* tests/namespace.test: Insure consistent behaviour of the
+	[unknown] command: when a command is unknown, it is always
+	processed by [::unknown], ignoring any namespace proc which
+	happens to be called "unknown" [Patch #421166, Bug #420507]
+
 2001-05-02  Don Porter  <dgp@users.sourceforge.net>
 
 	* tools/genStubs.tcl: Add a package require of Tcl 8
