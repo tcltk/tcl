@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: tcltest.n,v 1.5 1999/08/13 19:01:05 welch Exp $
+'\" RCS: @(#) $Id: tcltest.n,v 1.6 1999/08/31 01:48:25 jenn Exp $
 '\" 
 .so man.macros
 .TH "Tcltest" n 8.2 Tcl "Tcl Built-In Commands"
@@ -67,7 +67,7 @@ thanks to her for donating her work back to the public Tcl release.
 .SH COMMANDS
 .TP
 \fB::tcltest::test\fP \fIname desc ?constraints? script expectedAnswer\fR 
-The \fB::tcltest::test\fR command is used \fIscript\fR and compare the
+The \fB::tcltest::test\fR command runs\fIscript\fR and compares 
 its result to \fIexpectedAnswer\fR. It prints an error message if the two do
 not match.  If \fB::tcltest::verbose\fR contains "p" or "s", it also prints
 out a message if the test passed or was skipped.  The test will be
@@ -77,7 +77,7 @@ of \fIconstraint\fR turns out not to be true.  The
 \fB::tcltest::test\fR command has no defined return values.  See the
 \fI"Writing a new test"\fR section for more details on this command.  
 .TP
-\fB::tcltest::cleanupTests\fP \fI?calledFromAll?\fR
+\fB::tcltest::cleanupTests\fP \fI?runningMultipleTests?\fR
 This command should be called at the end of a test file.  It prints
 statistics about the tests run and removes files that were created by
 \fB::tcltest::makeDirectory\fR and \fB::tcltest::makeFile\fR.  Names
@@ -543,8 +543,10 @@ tclsh socket.test -verbose bps
 .SH "CONTENTS OF A TEST FILE"
 Test files should begin by loading the \fBtcltest\fR package:
 .DS
-package require tcltest
-namespace import ::tcltest::*
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import ::tcltest::*
+}
 .DE
 Test files should end by cleaning up after themselves and calling
 \fB::tcltest::cleanupTests\fR.  The \fB::tcltest::cleanupTests\fR
