@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.22.2.2 2001/05/12 00:01:03 hobbs Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.22.2.3 2001/05/15 20:07:38 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -102,7 +102,7 @@ static char *operatorStrings[] = {
     "BUILTIN FUNCTION", "FUNCTION",
     "", "", "", "", "", "", "", "", "eq", "ne",
 };
-    
+
 /*
  * Mapping from Tcl result codes to strings; used for error and debugging
  * messages. 
@@ -203,7 +203,7 @@ long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
 	       (unsigned int)(pc - codePtr->codeStart), \
 	       GetOpcodeName(pc)); \
 	printf a; \
-        TclPrintObject(stdout, (objPtr ? objPtr : ""), 30); \
+        TclPrintObject(stdout, objPtr, 30); \
         fprintf(stdout, "\n"); \
     }
 #define O2S(objPtr) \
@@ -556,7 +556,7 @@ TclExecuteByteCode(interp, codePtr)
 				 * process break, continue, and errors. */
     int result = TCL_OK;	/* Return code returned after execution. */
     int traceInstructions = (tclTraceExec == 3);
-    Tcl_Obj *valuePtr, *value2Ptr, *objPtr, *elemPtr = NULL;
+    Tcl_Obj *valuePtr, *value2Ptr, *objPtr, *elemPtr;
     char *bytes;
     int length;
     long i;
@@ -1097,8 +1097,7 @@ TclExecuteByteCode(interp, codePtr)
 #ifdef TCL_COMPILE_DEBUG
 	    opnd = TclGetUInt1AtPtr(pc+1);
 	    DECACHE_STACK_INFO();
-	    valuePtr = TclGetIndexedScalar(interp, opnd,
-		    /*leaveErrorMsg*/ 1);
+	    valuePtr = TclGetIndexedScalar(interp, opnd, TCL_LEAVE_ERR_MSG);
 	    CACHE_STACK_INFO();
 	    if (valuePtr == NULL) {
 		TRACE_WITH_OBJ(("%u => ERROR: ", opnd),
@@ -1111,7 +1110,7 @@ TclExecuteByteCode(interp, codePtr)
 #else /* TCL_COMPILE_DEBUG */
 	    DECACHE_STACK_INFO();
 	    opnd = TclGetUInt1AtPtr(pc+1);
-	    valuePtr = TclGetIndexedScalar(interp, opnd, /*leaveErrorMsg*/ 1);
+	    valuePtr = TclGetIndexedScalar(interp, opnd, TCL_LEAVE_ERR_MSG);
 	    CACHE_STACK_INFO();
 	    if (valuePtr == NULL) {
 		result = TCL_ERROR;
@@ -1124,8 +1123,7 @@ TclExecuteByteCode(interp, codePtr)
 	case INST_LOAD_SCALAR4:
 	    opnd = TclGetUInt4AtPtr(pc+1);
 	    DECACHE_STACK_INFO();
-	    valuePtr = TclGetIndexedScalar(interp, opnd,
-					   /*leaveErrorMsg*/ 1);
+	    valuePtr = TclGetIndexedScalar(interp, opnd, TCL_LEAVE_ERR_MSG);
 	    CACHE_STACK_INFO();
 	    if (valuePtr == NULL) {
 		TRACE_WITH_OBJ(("%u => ERROR: ", opnd),
@@ -1169,7 +1167,7 @@ TclExecuteByteCode(interp, codePtr)
 
 	    DECACHE_STACK_INFO();
 	    valuePtr = TclGetElementOfIndexedArray(interp, opnd,
-		    elemPtr, /*leaveErrorMsg*/ 1);
+		    elemPtr, TCL_LEAVE_ERR_MSG);
 	    CACHE_STACK_INFO();
 	    if (valuePtr == NULL) {
 		TRACE_WITH_OBJ(("%u \"%.30s\" => ERROR: ",
@@ -1351,10 +1349,13 @@ TclExecuteByteCode(interp, codePtr)
 	    ADJUST_PC(pcAdjustment);
 
 	case INST_APPEND_STK:
-	case INST_APPEND_SCALAR_STK:
 	case INST_APPEND_ARRAY_STK:
 	    valuePtr = POP_OBJECT(); /* value to append */
-	    if (*pc == INST_APPEND_ARRAY_STK) elemPtr = POP_OBJECT();
+	    if (*pc == INST_APPEND_ARRAY_STK) {
+		elemPtr = POP_OBJECT();
+	    } else {
+		elemPtr = NULL;
+	    }
 	    objPtr = POP_OBJECT(); /* scalar name */
 
 	    DECACHE_STACK_INFO();
@@ -1459,14 +1460,17 @@ TclExecuteByteCode(interp, codePtr)
 	    ADJUST_PC(pcAdjustment);
 
 	case INST_LAPPEND_STK:
-	case INST_LAPPEND_SCALAR_STK:
 	case INST_LAPPEND_ARRAY_STK:
 	{
 	    Tcl_Obj *newValuePtr;
 	    int createdNewObj = 0;
 
 	    value2Ptr = POP_OBJECT(); /* value to append */
-	    if (*pc == INST_LAPPEND_ARRAY_STK) elemPtr = POP_OBJECT();
+	    if (*pc == INST_LAPPEND_ARRAY_STK) {
+		elemPtr = POP_OBJECT();
+	    } else {
+		elemPtr = NULL;
+	    }
 	    objPtr = POP_OBJECT(); /* scalar name */
 
 	    DECACHE_STACK_INFO();
@@ -1905,12 +1909,12 @@ TclExecuteByteCode(interp, codePtr)
 		int iResult;
 		char *s;
 		Tcl_ObjType *t1Ptr, *t2Ptr;
-		
+
 		value2Ptr = POP_OBJECT();
 		valuePtr  = POP_OBJECT();
 		t1Ptr = valuePtr->typePtr;
 		t2Ptr = value2Ptr->typePtr;
-		
+
 		if ((t1Ptr == &tclIntType) || (t1Ptr == &tclBooleanType)) {
 		    i1 = (valuePtr->internalRep.longValue != 0);
 		} else if (t1Ptr == &tclDoubleType) {
@@ -1961,7 +1965,7 @@ TclExecuteByteCode(interp, codePtr)
 			goto checkForCatch;
 		    }
 		}
-		
+
 		/*
 		 * Reuse the valuePtr object already on stack if possible.
 		 */

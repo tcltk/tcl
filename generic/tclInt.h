@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.52.2.1 2001/05/11 20:47:44 hobbs Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.52.2.2 2001/05/15 20:07:38 hobbs Exp $
  */
 
 #ifndef _TCLINT
@@ -1700,7 +1700,7 @@ EXTERN int		TclGetDate _ANSI_ARGS_((char *p,
 			    unsigned long *timePtr));
 EXTERN Tcl_Obj *	TclGetElementOfIndexedArray _ANSI_ARGS_((
 			    Tcl_Interp *interp, int localIndex,
-			    Tcl_Obj *elemPtr, int leaveErrorMsg));
+			    Tcl_Obj *elemPtr, int flags));
 EXTERN char *		TclGetExtension _ANSI_ARGS_((char *name));
 EXTERN int		TclGetFrame _ANSI_ARGS_((Tcl_Interp *interp,
 			    char *string, CallFrame **framePtrPtr));
@@ -1708,7 +1708,7 @@ EXTERN TclCmdProcType	TclGetInterpProc _ANSI_ARGS_((void));
 EXTERN int		TclGetIntForIndex _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *objPtr, int endValue, int *indexPtr));
 EXTERN Tcl_Obj *	TclGetIndexedScalar _ANSI_ARGS_((Tcl_Interp *interp,
-			    int localIndex, int leaveErrorMsg));
+			    int localIndex, int flags));
 EXTERN int		TclGetLong _ANSI_ARGS_((Tcl_Interp *interp,
 			    char *string, long *longPtr));
 EXTERN int		TclGetLoadedPackages _ANSI_ARGS_((
@@ -1876,11 +1876,9 @@ EXTERN void		TclResetShadowedCmdRefs _ANSI_ARGS_((
 EXTERN int		TclServiceIdle _ANSI_ARGS_((void));
 EXTERN Tcl_Obj *	TclSetElementOfIndexedArray _ANSI_ARGS_((
 			    Tcl_Interp *interp, int localIndex,
-			    Tcl_Obj *elemPtr, Tcl_Obj *objPtr,
-			    int leaveErrorMsg));
+			    Tcl_Obj *elemPtr, Tcl_Obj *objPtr, int flags));
 EXTERN Tcl_Obj *	TclSetIndexedScalar _ANSI_ARGS_((Tcl_Interp *interp,
-			    int localIndex, Tcl_Obj *objPtr,
-			    int leaveErrorMsg));
+			    int localIndex, Tcl_Obj *objPtr, int flags));
 EXTERN char *		TclSetPreInitScript _ANSI_ARGS_((char *string));
 EXTERN void		TclSetupEnv _ANSI_ARGS_((Tcl_Interp *interp));
 EXTERN VOID             TclSignalExitThread _ANSI_ARGS_((Tcl_ThreadId id,

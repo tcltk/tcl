@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.31.2.2 2001/05/12 00:01:03 hobbs Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.31.2.3 2001/05/15 20:07:38 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -665,7 +665,7 @@ Tcl_GetVar2Ex(interp, part1, part2, flags)
  *	given by localIndex. If the specified variable doesn't exist, or
  *	there is a clash in array usage, or an error occurs while executing
  *	variable traces, then NULL is returned and a message will be left in
- *	the interpreter's result if leaveErrorMsg is 1.
+ *	the interpreter's result if TCL_LEAVE_ERR_MSG is set in flags.
  *
  * Side effects:
  *	The ref count for the returned object is _not_ incremented to
@@ -676,13 +676,13 @@ Tcl_GetVar2Ex(interp, part1, part2, flags)
  */
 
 Tcl_Obj *
-TclGetIndexedScalar(interp, localIndex, leaveErrorMsg)
+TclGetIndexedScalar(interp, localIndex, flags)
     Tcl_Interp *interp;		/* Command interpreter in which variable is
 				 * to be looked up. */
     register int localIndex;	/* Index of variable in procedure's array
 				 * of local variables. */
-    int leaveErrorMsg;		/* 1 if to leave an error message in
-				 * interpreter's result on an error.
+    int flags;			/* TCL_LEAVE_ERR_MSG if to leave an error
+				 * message in interpreter's result on an error.
 				 * Otherwise no error message is left. */
 {
     Interp *iPtr = (Interp *) interp;
@@ -736,7 +736,7 @@ TclGetIndexedScalar(interp, localIndex, leaveErrorMsg)
 	msg = CallTraces(iPtr, /*arrayPtr*/ NULL, varPtr, varName, NULL,
 		TCL_TRACE_READS);
 	if (msg != NULL) {
-	    if (leaveErrorMsg) {
+	    if (flags & TCL_LEAVE_ERR_MSG) {
 		VarErrMsg(interp, varName, NULL, "read", msg);
 	    }
 	    return NULL;
@@ -749,7 +749,7 @@ TclGetIndexedScalar(interp, localIndex, leaveErrorMsg)
      */
 
     if (!TclIsVarScalar(varPtr) || TclIsVarUndefined(varPtr)) {
-	if (leaveErrorMsg) {
+	if (flags & TCL_LEAVE_ERR_MSG) {
 	    if (TclIsVarArray(varPtr)) {
 		msg = isArray;
 	    } else {
@@ -778,7 +778,7 @@ TclGetIndexedScalar(interp, localIndex, leaveErrorMsg)
  *	element. If the specified array or element doesn't exist, or there
  *	is a clash in array usage, or an error occurs while executing
  *	variable traces, then NULL is returned and a message will be left in
- *	the interpreter's result if leaveErrorMsg is 1.
+ *	the interpreter's result if TCL_LEAVE_ERR_MSG is set in flags.
  *
  * Side effects:
  *	The ref count for the returned object is _not_ incremented to
@@ -789,15 +789,15 @@ TclGetIndexedScalar(interp, localIndex, leaveErrorMsg)
  */
 
 Tcl_Obj *
-TclGetElementOfIndexedArray(interp, localIndex, elemPtr, leaveErrorMsg)
+TclGetElementOfIndexedArray(interp, localIndex, elemPtr, flags)
     Tcl_Interp *interp;		/* Command interpreter in which variable is
 				 * to be looked up. */
     int localIndex;		/* Index of array variable in procedure's
 				 * array of local variables. */
     Tcl_Obj *elemPtr;		/* Points to an object holding the name of
 				 * an element to get in the array. */
-    int leaveErrorMsg;		/* 1 if to leave an error message in
-				 * the interpreter's result on an error.
+    int flags;			/* TCL_LEAVE_ERR_MSG if to leave an error
+				 * message in interpreter's result on an error.
 				 * Otherwise no error message is left. */
 {
     Interp *iPtr = (Interp *) interp;
@@ -856,7 +856,7 @@ TclGetElementOfIndexedArray(interp, localIndex, elemPtr, leaveErrorMsg)
      */
 
     if (!TclIsVarArray(arrayPtr) || TclIsVarUndefined(arrayPtr)) {
-	if (leaveErrorMsg) {
+	if (flags & TCL_LEAVE_ERR_MSG) {
 	    VarErrMsg(interp, arrayName, elem, "read", noSuchVar);
 	}
 	goto errorReturn;
@@ -894,7 +894,7 @@ TclGetElementOfIndexedArray(interp, localIndex, elemPtr, leaveErrorMsg)
 	msg = CallTraces(iPtr, arrayPtr, varPtr, arrayName, elem,
 	        TCL_TRACE_READS);
 	if (msg != NULL) {
-	    if (leaveErrorMsg) {
+	    if (flags & TCL_LEAVE_ERR_MSG) {
 		VarErrMsg(interp, arrayName, elem, "read", msg);
 	    }
 	    goto errorReturn;
@@ -909,7 +909,7 @@ TclGetElementOfIndexedArray(interp, localIndex, elemPtr, leaveErrorMsg)
 	return varPtr->value.objPtr;
     }
     
-    if (leaveErrorMsg) {
+    if (flags & TCL_LEAVE_ERR_MSG) {
 	if (TclIsVarArray(varPtr)) {
 	    msg = isArray;
 	} else {
@@ -1190,8 +1190,7 @@ Tcl_SetVar2Ex(interp, part1, part2, newValuePtr, flags)
     Var *arrayPtr;
     Tcl_Obj *oldValuePtr;
     Tcl_Obj *resultPtr = NULL;
-    char *bytes;
-    int length, result;
+    int result;
 
     varPtr = TclLookupVar(interp, part1, part2, flags, "set",
 	    /*createPart1*/ 1, /*createPart2*/ 1, &arrayPtr);
@@ -1272,10 +1271,9 @@ Tcl_SetVar2Ex(interp, part1, part2, newValuePtr, flags)
 	     * We append newValuePtr's bytes but don't change its ref count.
 	     */
 
-	    bytes = Tcl_GetStringFromObj(newValuePtr, &length);
 	    if (oldValuePtr == NULL) {
-		varPtr->value.objPtr = Tcl_NewStringObj(bytes, length);
-		Tcl_IncrRefCount(varPtr->value.objPtr);
+		varPtr->value.objPtr = newValuePtr;
+		Tcl_IncrRefCount(newValuePtr);
 	    } else {
 		if (Tcl_IsShared(oldValuePtr)) {   /* append to copy */
 		    varPtr->value.objPtr = Tcl_DuplicateObj(oldValuePtr);
@@ -1286,34 +1284,16 @@ Tcl_SetVar2Ex(interp, part1, part2, newValuePtr, flags)
 		Tcl_AppendObjToObj(oldValuePtr, newValuePtr);
 	    }
 	}
-    } else {
-	if (flags & TCL_LIST_ELEMENT) {	       /* set var to list element */
-	    int neededBytes, listFlags;
+    } else if (newValuePtr != oldValuePtr) {
+	/*
+	 * In this case we are replacing the value, so we don't need to
+	 * do more than swap the objects.
+	 */
 
-	    /*
-	     * We set the variable to the result of converting newValuePtr's
-	     * string rep to a list element. We do not change newValuePtr's
-	     * ref count.
-	     */
-
-	    if (oldValuePtr != NULL) {
-		Tcl_DecrRefCount(oldValuePtr); /* discard old value */
-	    }
-	    bytes = Tcl_GetStringFromObj(newValuePtr, &length);
-	    neededBytes = Tcl_ScanElement(bytes, &listFlags);
-	    oldValuePtr = Tcl_NewObj();
-	    oldValuePtr->bytes = (char *)
-		ckalloc((unsigned) (neededBytes + 1));
-	    oldValuePtr->length = Tcl_ConvertElement(bytes,
-		    oldValuePtr->bytes, listFlags);
-	    varPtr->value.objPtr = oldValuePtr;
-	    Tcl_IncrRefCount(varPtr->value.objPtr);
-	} else if (newValuePtr != oldValuePtr) {
-	    varPtr->value.objPtr = newValuePtr;
-	    Tcl_IncrRefCount(newValuePtr);      /* var is another ref */
-	    if (oldValuePtr != NULL) {
-		TclDecrRefCount(oldValuePtr);   /* discard old value */
-	    }
+	varPtr->value.objPtr = newValuePtr;
+	Tcl_IncrRefCount(newValuePtr);      /* var is another ref */
+	if (oldValuePtr != NULL) {
+	    TclDecrRefCount(oldValuePtr);   /* discard old value */
 	}
     }
     TclSetVarScalar(varPtr);
@@ -1381,8 +1361,8 @@ Tcl_SetVar2Ex(interp, part1, part2, newValuePtr, flags)
  *	variable given by localIndex. If the specified variable doesn't
  *	exist, or there is a clash in array usage, or an error occurs while
  *	executing variable traces, then NULL is returned and a message will
- *	be left in the interpreter's result if leaveErrorMsg is 1. Note
- *	that the returned object may not be the same one referenced by
+ *	be left in the interpreter's result if flags has TCL_LEAVE_ERR_MSG.
+ *	Note that the returned object may not be the same one referenced by
  *	newValuePtr; this is because variable traces may modify the
  *	variable's value.
  *
@@ -1407,9 +1387,9 @@ TclSetIndexedScalar(interp, localIndex, newValuePtr, flags)
     int localIndex;		/* Index of variable in procedure's array
 				 * of local variables. */
     Tcl_Obj *newValuePtr;	/* New value for variable. */
-    int flags;			/* 1 if to leave an error message in
-				 * the interpreter's result on an error.
-				 * Otherwise no error message is left. */
+    int flags;			/* Various flags that tell how to set value:
+				 * any of TCL_APPEND_VALUE,
+				 * TCL_LIST_ELEMENT or TCL_LEAVE_ERR_MSG. */
 {
     Interp *iPtr = (Interp *) interp;
     CallFrame *varFramePtr = iPtr->varFramePtr;
@@ -1421,7 +1401,6 @@ TclSetIndexedScalar(interp, localIndex, newValuePtr, flags)
     register Var *varPtr;	/* Points to the variable's in-frame Var
 				 * structure. */
     char *varName;		/* Name of the local variable. */
-    int leaveErrorMsg = (flags & TCL_LEAVE_ERR_MSG);
     Tcl_Obj *oldValuePtr;
     Tcl_Obj *resultPtr = NULL;
 
@@ -1466,7 +1445,7 @@ TclSetIndexedScalar(interp, localIndex, newValuePtr, flags)
      */
 
     if ((varPtr->flags & VAR_IN_HASHTABLE) && (varPtr->hPtr == NULL)) {
-	if (leaveErrorMsg) {
+	if (flags & TCL_LEAVE_ERR_MSG) {
 	    if (TclIsVarArrayElement(varPtr)) {
 		VarErrMsg(interp, varName, NULL, "set", danglingElement);
 	    } else {
@@ -1481,7 +1460,7 @@ TclSetIndexedScalar(interp, localIndex, newValuePtr, flags)
      */
 
     if (TclIsVarArray(varPtr) && !TclIsVarUndefined(varPtr)) {
-	if (leaveErrorMsg) {
+	if (flags & TCL_LEAVE_ERR_MSG) {
 	    VarErrMsg(interp, varName, NULL, "set", isArray);
 	}
 	return NULL;
@@ -1498,10 +1477,6 @@ TclSetIndexedScalar(interp, localIndex, newValuePtr, flags)
 	    varPtr->value.objPtr = NULL;
 	    oldValuePtr = NULL;
 	}
-
-	/*
-	 * We only handle TCL_LIST_ELEMENT in the TCL_APPEND_VALUE case
-	 */
 	if (flags & TCL_LIST_ELEMENT) {	/* append list element */
 	    if (oldValuePtr == NULL) {
 		TclNewObj(oldValuePtr);
@@ -1536,6 +1511,11 @@ TclSetIndexedScalar(interp, localIndex, newValuePtr, flags)
 	    }
 	}
     } else if (newValuePtr != oldValuePtr) {        /* set new value */
+	/*
+	 * In this case we are replacing the value, so we don't need to
+	 * do more than swap the objects.
+	 */
+
 	varPtr->value.objPtr = newValuePtr;
 	Tcl_IncrRefCount(newValuePtr);       /* var is another ref to obj */
 	if (oldValuePtr != NULL) {
@@ -1553,7 +1533,7 @@ TclSetIndexedScalar(interp, localIndex, newValuePtr, flags)
 	char *msg = CallTraces(iPtr, /*arrayPtr*/ NULL, varPtr,
 	        varName, (char *) NULL, TCL_TRACE_WRITES);
 	if (msg != NULL) {
-	    if (leaveErrorMsg) {
+	    if (flags & TCL_LEAVE_ERR_MSG) {
 		VarErrMsg(interp, varName, NULL, "set", msg);
 	    }
 	    goto cleanup;
@@ -1600,7 +1580,7 @@ TclSetIndexedScalar(interp, localIndex, newValuePtr, flags)
  *	element. If the specified array or element doesn't exist, or there
  *	is a clash in array usage, or an error occurs while executing
  *	variable traces, then NULL is returned and a message will be left in
- *	the interpreter's result if leaveErrorMsg is 1. Note that the
+ *	the interpreter's result if flags has TCL_LEAVE_ERR_MSG. Note that the
  *	returned object may not be the same one referenced by newValuePtr;
  *	this is because variable traces may modify the variable's value.
  *
@@ -1629,9 +1609,9 @@ TclSetElementOfIndexedArray(interp, localIndex, elemPtr, newValuePtr, flags)
     Tcl_Obj *elemPtr;		/* Points to an object holding the name of
 				 * an element to set in the array. */
     Tcl_Obj *newValuePtr;	/* New value for variable. */
-    int flags;			/* 1 if to leave an error message in
-				 * the interpreter's result on an error.
-				 * Otherwise no error message is left. */
+    int flags;			/* Various flags that tell how to set value:
+				 * any of TCL_APPEND_VALUE,
+				 * TCL_LIST_ELEMENT or TCL_LEAVE_ERR_MSG. */
 {
     Interp *iPtr = (Interp *) interp;
     CallFrame *varFramePtr = iPtr->varFramePtr;
@@ -1644,7 +1624,6 @@ TclSetElementOfIndexedArray(interp, localIndex, elemPtr, newValuePtr, flags)
 				 * structure. */
     char *arrayName;		/* Name of the local array. */
     char *elem;
-    int leaveErrorMsg = (flags & TCL_LEAVE_ERR_MSG);
     Tcl_HashEntry *hPtr;
     Var *varPtr = NULL;		/* Points to the element's Var structure
 				 * that we return. */
@@ -1694,7 +1673,7 @@ TclSetElementOfIndexedArray(interp, localIndex, elemPtr, newValuePtr, flags)
      */
 
     if ((arrayPtr->flags & VAR_IN_HASHTABLE) && (arrayPtr->hPtr == NULL)) {
-	if (leaveErrorMsg) {
+	if (flags & TCL_LEAVE_ERR_MSG) {
 	    if (TclIsVarArrayElement(arrayPtr)) {
 		VarErrMsg(interp, arrayName, elem, "set", danglingElement);
 	    } else {
@@ -1715,7 +1694,7 @@ TclSetElementOfIndexedArray(interp, localIndex, elemPtr, newValuePtr, flags)
 	Tcl_InitHashTable(arrayPtr->value.tablePtr, TCL_STRING_KEYS);
 	TclClearVarUndefined(arrayPtr);
     } else if (!TclIsVarArray(arrayPtr)) {
-	if (leaveErrorMsg) {
+	if (flags & TCL_LEAVE_ERR_MSG) {
 	    VarErrMsg(interp, arrayName, elem, "set", needArray);
 	}
 	goto errorReturn;
@@ -1743,7 +1722,7 @@ TclSetElementOfIndexedArray(interp, localIndex, elemPtr, newValuePtr, flags)
      */
 
     if (TclIsVarArray(varPtr)) {
-	if (leaveErrorMsg) {
+	if (flags & TCL_LEAVE_ERR_MSG) {
 	    VarErrMsg(interp, arrayName, elem, "set", isArray);
 	}
 	goto errorReturn;
@@ -1760,10 +1739,6 @@ TclSetElementOfIndexedArray(interp, localIndex, elemPtr, newValuePtr, flags)
 	    varPtr->value.objPtr = NULL;
 	    oldValuePtr = NULL;
 	}
-
-	/*
-	 * We only handle TCL_LIST_ELEMENT in the TCL_APPEND_VALUE case
-	 */
 	if (flags & TCL_LIST_ELEMENT) {	/* append list element */
 	    if (oldValuePtr == NULL) {
 		TclNewObj(oldValuePtr);
@@ -1798,6 +1773,11 @@ TclSetElementOfIndexedArray(interp, localIndex, elemPtr, newValuePtr, flags)
 	    }
 	}
     } else if (newValuePtr != oldValuePtr) {	/* set new value */
+	/*
+	 * In this case we are replacing the value, so we don't need to
+	 * do more than swap the objects.
+	 */
+
 	varPtr->value.objPtr = newValuePtr;
 	Tcl_IncrRefCount(newValuePtr);		/* var is another ref to obj */
 	if (oldValuePtr != NULL) {
@@ -1816,7 +1796,7 @@ TclSetElementOfIndexedArray(interp, localIndex, elemPtr, newValuePtr, flags)
 	char *msg = CallTraces(iPtr, arrayPtr, varPtr, arrayName, elem,
 		TCL_TRACE_WRITES);
 	if (msg != NULL) {
-	    if (leaveErrorMsg) {
+	    if (flags & TCL_LEAVE_ERR_MSG) {
 		VarErrMsg(interp, arrayName, elem, "set", msg);
 	    }
 	    goto errorReturn;
@@ -1979,8 +1959,7 @@ TclIncrIndexedScalar(interp, localIndex, incrAmount)
     long i;
     int result;
 
-    varValuePtr = TclGetIndexedScalar(interp, localIndex,
-	    /*leaveErrorMsg*/ 1);
+    varValuePtr = TclGetIndexedScalar(interp, localIndex, TCL_LEAVE_ERR_MSG);
     if (varValuePtr == NULL) {
 	Tcl_AddObjErrorInfo(interp,
 		"\n    (reading value of variable to increment)", -1);
@@ -2067,7 +2046,7 @@ TclIncrElementOfIndexedArray(interp, localIndex, elemPtr, incrAmount)
     int result;
 
     varValuePtr = TclGetElementOfIndexedArray(interp, localIndex, elemPtr,
-	    /*leaveErrorMsg*/ 1);
+	    TCL_LEAVE_ERR_MSG);
     if (varValuePtr == NULL) {
 	Tcl_AddObjErrorInfo(interp,
 		"\n    (reading value of variable to increment)", -1);
@@ -2101,8 +2080,7 @@ TclIncrElementOfIndexedArray(interp, localIndex, elemPtr, incrAmount)
      */
     
     resultPtr = TclSetElementOfIndexedArray(interp, localIndex, elemPtr,
-	    varValuePtr,
-	    /*leaveErrorMsg*/ 1);
+	    varValuePtr, TCL_LEAVE_ERR_MSG);
     if (resultPtr == NULL) {
 	return NULL;
     }

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.31.2.1 2001/05/11 20:47:44 hobbs Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.31.2.2 2001/05/15 20:07:38 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -65,7 +65,7 @@ static CmdInfo builtInCmds[] = {
      */
 
     {"append",		(Tcl_CmdProc *) NULL,	Tcl_AppendObjCmd,
-        (CompileProc *) TclCompileAppendCmd,		1},
+	TclCompileAppendCmd,		1},
     {"array",		(Tcl_CmdProc *) NULL,	Tcl_ArrayObjCmd,
         (CompileProc *) NULL,		1},
     {"binary",		(Tcl_CmdProc *) NULL,	Tcl_BinaryObjCmd,
@@ -113,15 +113,15 @@ static CmdInfo builtInCmds[] = {
     {"join",		(Tcl_CmdProc *) NULL,	Tcl_JoinObjCmd,
         (CompileProc *) NULL,		1},
     {"lappend",		(Tcl_CmdProc *) NULL,	Tcl_LappendObjCmd,
-        (CompileProc *) TclCompileLappendCmd,		1},
+        TclCompileLappendCmd,		1},
     {"lindex",		(Tcl_CmdProc *) NULL,	Tcl_LindexObjCmd,
-        (CompileProc *) TclCompileLindexCmd,		1},
+        TclCompileLindexCmd,		1},
     {"linsert",		(Tcl_CmdProc *) NULL,	Tcl_LinsertObjCmd,
         (CompileProc *) NULL,		1},
     {"list",		(Tcl_CmdProc *) NULL,	Tcl_ListObjCmd,
         (CompileProc *) NULL,		1},
     {"llength",		(Tcl_CmdProc *) NULL,	Tcl_LlengthObjCmd,
-        (CompileProc *) TclCompileLlengthCmd,		1},
+        TclCompileLlengthCmd,		1},
     {"load",		(Tcl_CmdProc *) NULL,	Tcl_LoadObjCmd,
         (CompileProc *) NULL,		0},
     {"lrange",		(Tcl_CmdProc *) NULL,	Tcl_LrangeObjCmd,

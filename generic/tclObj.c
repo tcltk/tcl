@@ -6,11 +6,12 @@
  *
  * Copyright (c) 1995-1997 Sun Microsystems, Inc.
  * Copyright (c) 1999 by Scriptics Corporation.
+ * Copyright (c) 2001 by ActiveState Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.20.4.1 2001/05/11 20:47:44 hobbs Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.20.4.2 2001/05/15 20:07:38 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -201,6 +202,8 @@ TclInitObjSubsystem()
 void
 TclFinalizeCompExecEnv()
 {
+    Tcl_Obj *objPtr;
+
     Tcl_MutexLock(&tableMutex);
     if (typeTableInitialized) {
         Tcl_DeleteHashTable(&typeTable);
@@ -208,6 +211,15 @@ TclFinalizeCompExecEnv()
     }
     Tcl_MutexUnlock(&tableMutex);
     Tcl_MutexLock(&tclObjMutex);
+    /*
+     * Ensure that at least the last set of objects created with
+     * TclAllocateFreeObjects is freed.
+     */
+    objPtr = tclFreeObjList;
+    while (objPtr) {
+	objPtr = (Tcl_Obj *) objPtr->internalRep.otherValuePtr;
+    }
+    ckfree((char *) objPtr);
     tclFreeObjList = NULL;
     Tcl_MutexUnlock(&tclObjMutex);
 
@@ -556,10 +568,7 @@ Tcl_DbNewObj(file, line)
 void
 TclAllocateFreeObjects()
 {
-    Tcl_Obj tmp[2];
-    size_t objSizePlusPadding =	/* NB: this assumes byte addressing. */
-	((int)(&(tmp[1])) - (int)(&(tmp[0])));
-    size_t bytesToAlloc = (OBJS_TO_ALLOC_EACH_TIME * objSizePlusPadding);
+    size_t bytesToAlloc = (OBJS_TO_ALLOC_EACH_TIME * sizeof(Tcl_Obj));
     char *basePtr;
     register Tcl_Obj *prevPtr, *objPtr;
     register int i;
@@ -569,10 +578,10 @@ TclAllocateFreeObjects()
 
     prevPtr = NULL;
     objPtr = (Tcl_Obj *) basePtr;
-    for (i = 0;  i < OBJS_TO_ALLOC_EACH_TIME;  i++) {
+    for (i = 0; i < OBJS_TO_ALLOC_EACH_TIME; i++) {
 	objPtr->internalRep.otherValuePtr = (VOID *) prevPtr;
 	prevPtr = objPtr;
-	objPtr = (Tcl_Obj *) (((char *)objPtr) + objSizePlusPadding);
+	objPtr++;
     }
     tclFreeObjList = prevPtr;
 }
