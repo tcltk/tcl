@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclAppInit.c,v 1.10 2002/11/04 05:50:19 davygrvy Exp $
+ * RCS: @(#) $Id: tclAppInit.c,v 1.11 2002/12/04 03:59:17 davygrvy Exp $
  */
 
 #include "tcl.h"
@@ -376,6 +376,7 @@ asyncExit (ClientData clientData, Tcl_Interp *interp, int code)
 BOOL __stdcall
 sigHandler(DWORD fdwCtrlType)
 {
+    HANDLE hStdIn;
     /*
      * If Tcl is currently executing some bytecode or in the eventloop,
      * this will cause Tcl to enter asyncExit at the next command
@@ -388,8 +389,11 @@ sigHandler(DWORD fdwCtrlType)
      * This will cause Tcl_Gets in Tcl_Main() to drop-out with an <EOF> 
      * should it be blocked on input and our Tcl_AsyncMark didn't grab 
      * the attention of the interpreter. 
-     */ 
-    CloseHandle(GetStdHandle(STD_INPUT_HANDLE));
+     */
+    hStdIn = GetStdHandle(STD_INPUT_HANDLE);
+    if (hStdIn) {
+	CloseHandle(hStdIn);
+    }
 
     /* indicate to the OS not to call the default terminator */ 
     return TRUE; 
