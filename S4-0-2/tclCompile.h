@@ -7,7 +7,9 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.1.2.1 2001/05/19 16:25:55 msofer Exp $
+ * Up-to-date with 1.15
+ *
+ * RCS: @(#) $Id: tclCompile.h,v 1.1.2.2 2001/07/13 21:25:00 msofer Exp $
  */
 
 #ifndef _TCLCOMPILATION

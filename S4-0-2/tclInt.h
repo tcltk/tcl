@@ -11,7 +11,9 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.1.2.1 2001/05/19 16:25:55 msofer Exp $
+ * Up-to-date with 1.57
+ *
+ * RCS: @(#) $Id: tclInt.h,v 1.1.2.2 2001/07/13 21:25:00 msofer Exp $
  */
 
 #ifndef _TCLINT
@@ -1609,6 +1611,9 @@ extern Tcl_ObjType	tclIntType;
 extern Tcl_ObjType	tclListType;
 extern Tcl_ObjType	tclProcBodyType;
 extern Tcl_ObjType	tclStringType;
+extern Tcl_ObjType      tclArraySearchType;
+extern Tcl_ObjType      tclIndexType;
+extern Tcl_ObjType      tclNsNameType;
 
 /*
  * Variables denoting the hash key types defined in the core.
@@ -1849,6 +1854,7 @@ EXTERN int		TclpMatchFiles _ANSI_ARGS_((Tcl_Interp *interp,
 EXTERN Tcl_Channel	TclpOpenFileChannel _ANSI_ARGS_((Tcl_Interp *interp,
 			    char *fileName, char *modeString,
 			    int permissions));
+EXTERN void             TclpPanic _ANSI_ARGS_(TCL_VARARGS(CONST char *, format));
 EXTERN char *		TclpReadlink _ANSI_ARGS_((CONST char *fileName,
 			    Tcl_DString *linkPtr));
 EXTERN char *		TclpRealloc _ANSI_ARGS_((char *ptr,
@@ -2195,6 +2201,39 @@ EXTERN int	TclCompileWhileCmd _ANSI_ARGS_((Tcl_Interp *interp,
 	TclIncrObjsFreed(); \
     }
 
+#elif defined(PURIFY)                                                           
+ 
+/*
+ * The PURIFY mode is like the regular mode, but instead of doing block
+ * Tcl_Obj allocation and keeping a freed list for efficiency, it always
+ * allocates and frees a single Tcl_Obj so that tools like Purify can
+ * better track memory leaks
+ */
+                                                        
+ 
+#  define TclNewObj(objPtr) \ 
+(objPtr) = (Tcl_Obj *) Tcl_Ckalloc(sizeof(Tcl_Obj)); \
+(objPtr)->refCount = 0; \
+(objPtr)->bytes    = tclEmptyStringRep; \
+(objPtr)->length   = 0; \
+(objPtr)->typePtr  = NULL; \
+TclIncrObjsAllocated();
+
+
+#  define TclDecrRefCount(objPtr) \ 
+if (--(objPtr)->refCount <= 0) { \
+    if (((objPtr)->bytes != NULL) \ 
+            && ((objPtr)->bytes != tclEmptyStringRep)) { \
+        ckfree((char *) (objPtr)->bytes); \
+    } \
+    if (((objPtr)->typePtr != NULL) \
+            && ((objPtr)->typePtr->freeIntRepProc != NULL)) { \
+        (objPtr)->typePtr->freeIntRepProc(objPtr); \
+    } \
+    ckfree((char *) (objPtr)); \
+    TclIncrObjsFreed(); \
+}
+ 
 #else /* not TCL_MEM_DEBUG */
 
 #ifdef TCL_THREADS

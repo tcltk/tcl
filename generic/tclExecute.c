@@ -17,7 +17,9 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.21.2.10 2001/07/13 17:03:46 msofer Exp $
+ * Up-to-date with 1.25; missing the read-traces firing new in 1.26
+ *
+ * RCS: @(#) $Id: tclExecute.c,v 1.21.2.11 2001/07/13 21:25:00 msofer Exp $
  */
 
 #include "tclInt.h"
