@@ -1,7 +1,7 @@
 # Command line options covered:
 #  -help, -verbose, -match, -skip, -file, -notfile, -constraints,
 #  -limitconstraints, -preservecore, -tmpdir, -debug, -outfile, 
-#  -errfile 
+#  -errfile, -args
 #
 # This file contains a collection of tests for one or more of the Tcl
 # built-in commands.  Sourcing this file into Tcl runs the tests and
@@ -10,7 +10,7 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.test,v 1.6 1999/08/23 17:54:59 jenn Exp $
+# RCS: @(#) $Id: tcltest.test,v 1.7 1999/08/27 01:17:06 jenn Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -323,10 +323,33 @@ test tcltest-10.4 {-preservecore 3} {unixOrPc} {
 	    [regexp "core-" $msg] [file delete core-makecore]
 } {1 1 1 {}}
 
+makeFile {
+    package require tcltest
+    namespace import ::tcltest::*
+    puts "=$::tcltest::parameters="
+    return
+} args.tcl
+
+# -args
+test tcltest-11.1 {-args foo} {unixOrPc} {
+    catch {exec $::tcltest::tcltest args.tcl -args foo} msg
+    list $msg
+} {=foo=}
+
+test tcltest-11.2 {-args {}} {unixOrPc} {
+    catch {exec $::tcltest::tcltest args.tcl -args {}} msg
+    list $msg
+} {==}
+
+test tcltest-11.3 {-args {-foo bar -baz}} {unixOrPc} {
+    catch {exec $::tcltest::tcltest args.tcl -args {-foo bar -baz}} msg
+    list $msg
+} {{=-foo bar -baz=}}
+
 # Begin testing of tcltest procs ...
 
 # PrintError
-test tcltest-11.1 {PrintError} {unixOrPc} {
+test tcltest-20.1 {PrintError} {unixOrPc} {
     set result [catch {exec $::tcltest::tcltest printerror.tcl} msg]
     list $result [regexp "Error:  a really short string" $msg] \
 	    [regexp "     \"quotes\"" $msg] [regexp "    \"Path" $msg] \

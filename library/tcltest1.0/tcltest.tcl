@@ -12,7 +12,7 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 # 
-# RCS: @(#) $Id: tcltest.tcl,v 1.9 1999/07/30 01:35:27 jenn Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.10 1999/08/27 01:17:04 jenn Exp $
 
 package provide tcltest 1.0
 
@@ -63,6 +63,10 @@ namespace eval tcltest {
     # currently implements only up to debug level 3.
 
     variable debug 0
+
+    # Save any arguments that we might want to pass through to other programs. 
+    # This is used by the -args flag.
+    variable parameters {}
 
     # Count the number of files tested (0 if all.tcl wasn't called).
     # The all.tcl file will set testSingleFile to false, so stats will
@@ -672,7 +676,7 @@ proc ::tcltest::processCmdLineArgs {} {
     # -help is not listed since it has already been processed
     lappend defaultFlags -verbose -match -skip -constraints \
 	    -outfile -errfile -debug -tmpdir -file -notfile \
-	    -preservecore -limitconstraints
+	    -preservecore -limitconstraints -args
     set defaultFlags [concat $defaultFlags \
 	    [ ::tcltest::processCmdLineArgsAddFlagsHook ]]
 
@@ -683,6 +687,11 @@ proc ::tcltest::processCmdLineArgs {} {
 		$flagArray $abbrev])} { 
 	    set flag($arg) $flag($abbrev)
 	}
+    }
+
+    # Set ::tcltest::parameters to the arg of the -args flag, if given
+    if {[info exists flag(-args)]} {
+	set ::tcltest::parameters $flag(-args)
     }
 
     # Set ::tcltest::verbose to the arg of the -verbose flag, if given
@@ -1135,16 +1144,14 @@ proc ::tcltest::test {name description script expectedAnswer args} {
 	if {[string match {*[$\[]*} $constraints] != 0} {
 	    # full expression, e.g. {$foo > [info tclversion]}
 	    catch {set doTest [uplevel #0 expr $constraints]}
-
 	} elseif {[regexp {[^.a-zA-Z0-9 ]+} $constraints] != 0} {
 	    # something like {a || b} should be turned into 
 	    # $::tcltest::testConstraints(a) || $::tcltest::testConstraints(b).
- 	    regsub -all {[.a-zA-Z0-9]+} $constraints \
+ 	    regsub -all {[.\w]+} $constraints \
 		    {$::tcltest::testConstraints(&)} c
 	    catch {set doTest [eval expr $c]}
 	} else {
 	    # just simple constraints such as {unixOnly fonts}.
-
 	    set doTest 1
 	    foreach constraint $constraints {
 		if {(![info exists ::tcltest::testConstraints($constraint)]) \
