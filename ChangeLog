@@ -1,5 +1,11 @@
 2002-01-07  Don Porter <dgp@users.sourceforge.net>
 
+	* generic/tclEvent.c (TclInExit):
+	* generic/tclIOUtil.c (SetFsPathFromAbsoluteNormalized,
+	  SetFsPathFromAny,Tcl_FSNewNativePath,DupFsPathInternalRep):
+	* generic/tclListObj.c (TclLsetList,TclLsetFlat):  Added some type
+	casts to satisfy picky compilers.
+
 	* generic/tclMain.c:  Bug fix: neglected the NULL case in
 	TclGetStartupScriptFileName().  Broke Tk/wish.
 
