@@ -10,7 +10,7 @@
  *
  * Changes 2002 Copyright (c) 2002 ActiveState Corporation.
  *
- * RCS: @(#) $Id: strftime.c,v 1.10 2002/05/29 00:19:39 hobbs Exp $
+ * RCS: @(#) $Id: strftime.c,v 1.11 2003/05/18 19:48:26 kennykb Exp $
  */
 
 /*
@@ -47,7 +47,7 @@
  */
 
 #if defined(LIBC_SCCS)
-static char *rcsid = "$Id: strftime.c,v 1.10 2002/05/29 00:19:39 hobbs Exp $";
+static char *rcsid = "$Id: strftime.c,v 1.11 2003/05/18 19:48:26 kennykb Exp $";
 #endif /* LIBC_SCCS */
 
 #include <time.h>
@@ -59,16 +59,22 @@ static char *rcsid = "$Id: strftime.c,v 1.10 2002/05/29 00:19:39 hobbs Exp $";
 #define TM_YEAR_BASE   1900
 #define IsLeapYear(x)   ((x % 4 == 0) && (x % 100 != 0 || x % 400 == 0))
 
+/*
+ * Structure type holding the locale-dependent strings for formatting
+ * times. The strings are all expected to be encoded in UTF-8.
+ */
+
 typedef struct {
-    const char *abday[7];
-    const char *day[7];
-    const char *abmon[12];
-    const char *mon[12];
-    const char *am_pm[2];
-    const char *d_t_fmt;
-    const char *d_fmt;
-    const char *t_fmt;
-    const char *t_fmt_ampm;
+    const char *abday[7];	/* Abbreviated weekday names */
+    const char *day[7];		/* Full weekday names */
+    const char *abmon[12];	/* Abbreviated month names */
+    const char *mon[12];	/* Full month name */
+    const char *am_pm[2];	/* The strings to use for meridian time
+				 * (am, pm) */
+    const char *d_t_fmt;	/* The locale-dependent date-time format */
+    const char *d_fmt;		/* The locale-dependent date format */
+    const char *t_fmt;		/* The locale-dependent 24hr time format */
+    const char *t_fmt_ampm;	/* The locale-dependent 12hr time format */
 } _TimeLocale;
 
 /*
@@ -114,13 +120,34 @@ static int		_secs _ANSI_ARGS_((const struct tm *t));
 static size_t		_fmt _ANSI_ARGS_((const char *format,
 			    const struct tm *t));
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpStrftime --
+ *
+ *	Formats a time (in 'struct tm' representation) for use by
+ *	[clock format].
+ *
+ * Results:
+ *	Returns the length of the formatted string.
+ *
+ * Side effects:
+ *	Stores the formatted string in the 's' parameter. The
+ *	formatted string is returned in UTF-8 encoding, *not* the
+ *	system encoding.
+ *
+ *----------------------------------------------------------------------
+ */
+
 size_t
 TclpStrftime(s, maxsize, format, t, useGMT)
-    char *s;
-    size_t maxsize;
-    const char *format;
-    const struct tm *t;
-    int useGMT;
+    char *s;			/* Buffer to hold the formatted string */
+    size_t maxsize;		/* Size of the passed buffer */
+    const char *format;		/* Format to use (see the user documentation
+				 * for [clock] for details) */
+    const struct tm *t;		/* Time to format */
+    int useGMT;			/* Flag == 1 if time is to be returned
+				 * in UTC */
 {
     if (format[0] == '%' && format[1] == 'Q') {
 	/* Format as a stardate */
