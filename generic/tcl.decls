@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.11 1999/05/06 18:46:24 stanton Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.12 1999/05/07 20:07:46 stanton Exp $
 
 library tcl
 
@@ -1199,7 +1199,7 @@ declare 352 generic {
     int Tcl_UniCharLen(Tcl_UniChar *str)
 }
 declare 353 generic {
-    int Tcl_UniCharNcmp(const Tcl_UniChar *cs, const Tcl_UniChar *ct, size_t n)
+    int Tcl_UniCharNcmp(CONST Tcl_UniChar *cs, CONST Tcl_UniChar *ct, size_t n)
 }
 declare 354 generic {
     char * Tcl_UniCharToUtfDString(CONST Tcl_UniChar *string, int numChars, \

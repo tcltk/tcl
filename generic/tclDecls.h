@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.11 1999/05/06 18:46:24 stanton Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.12 1999/05/07 20:07:47 stanton Exp $
  */
 
 #ifndef _TCLDECLS
@@ -1069,8 +1069,8 @@ EXTERN int		Tcl_UniCharIsWordChar _ANSI_ARGS_((int ch));
 /* 352 */
 EXTERN int		Tcl_UniCharLen _ANSI_ARGS_((Tcl_UniChar * str));
 /* 353 */
-EXTERN int		Tcl_UniCharNcmp _ANSI_ARGS_((const Tcl_UniChar * cs, 
-				const Tcl_UniChar * ct, size_t n));
+EXTERN int		Tcl_UniCharNcmp _ANSI_ARGS_((CONST Tcl_UniChar * cs, 
+				CONST Tcl_UniChar * ct, size_t n));
 /* 354 */
 EXTERN char *		Tcl_UniCharToUtfDString _ANSI_ARGS_((
 				CONST Tcl_UniChar * string, int numChars, 
@@ -1517,7 +1517,7 @@ typedef struct TclStubs {
     int (*tcl_UniCharIsUpper) _ANSI_ARGS_((int ch)); /* 350 */
     int (*tcl_UniCharIsWordChar) _ANSI_ARGS_((int ch)); /* 351 */
     int (*tcl_UniCharLen) _ANSI_ARGS_((Tcl_UniChar * str)); /* 352 */
-    int (*tcl_UniCharNcmp) _ANSI_ARGS_((const Tcl_UniChar * cs, const Tcl_UniChar * ct, size_t n)); /* 353 */
+    int (*tcl_UniCharNcmp) _ANSI_ARGS_((CONST Tcl_UniChar * cs, CONST Tcl_UniChar * ct, size_t n)); /* 353 */
     char * (*tcl_UniCharToUtfDString) _ANSI_ARGS_((CONST Tcl_UniChar * string, int numChars, Tcl_DString * dsPtr)); /* 354 */
     Tcl_UniChar * (*tcl_UtfToUniCharDString) _ANSI_ARGS_((CONST char * string, int length, Tcl_DString * dsPtr)); /* 355 */
     Tcl_RegExp (*tcl_GetRegExpFromObj) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * patObj, int flags)); /* 356 */
