@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.38 2001/11/19 17:30:27 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.39 2001/11/20 19:45:19 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -2796,11 +2796,10 @@ TclEvalObjvInternal(interp, objc, objv, command, length, flags)
      * it's probably because of an infinite loop somewhere.
      */
 
-    if (iPtr->numLevels >= iPtr->maxNestingDepth) {
+    if (iPtr->numLevels > iPtr->maxNestingDepth) {
 	iPtr->result =  "too many nested calls to Tcl_Eval (infinite loop?)";
 	return TCL_ERROR;
     }
-    iPtr->numLevels++;
 
     /*
      * On the Mac, we will never reach the default recursion limit before
@@ -2809,7 +2808,6 @@ TclEvalObjvInternal(interp, objc, objv, command, length, flags)
     
     if (TclpCheckStackSpace() == 0) {
 	/*NOTREACHED*/
-	iPtr->numLevels--;
 	iPtr->result =  "too many nested calls to Tcl_Eval (infinite loop?)";
 	return TCL_ERROR;
     }
@@ -2838,7 +2836,9 @@ TclEvalObjvInternal(interp, objc, objv, command, length, flags)
 		    (char *) NULL);
 	    code = TCL_ERROR;
 	} else {
+	    iPtr->numLevels++;
 	    code = TclEvalObjvInternal(interp, objc+1, newObjv, command, length, 0);
+	    iPtr->numLevels--;
 	}
 	Tcl_DecrRefCount(newObjv[0]);
 	ckfree((char *) newObjv);
@@ -2918,7 +2918,6 @@ TclEvalObjvInternal(interp, objc, objv, command, length, flags)
     }
 
     done:
-    iPtr->numLevels--;
     return code;
 }
 
@@ -2962,10 +2961,7 @@ Tcl_EvalObjv(interp, objc, objv, flags)
     int code = TCL_OK;
 
     for (tracePtr = iPtr->tracePtr; tracePtr; tracePtr = tracePtr->nextPtr) {
-	/*
-	 * EvalObjv will increment numLevels so use "<" rather than "<="
-	 */
-	if (iPtr->numLevels < tracePtr->level) {
+	if (iPtr->numLevels <= tracePtr->level) {
 	    int i;
 	    /*
 	     * The command will be needed for an execution trace or stack trace
@@ -2987,7 +2983,9 @@ Tcl_EvalObjv(interp, objc, objv, flags)
      */
     switch (code) {
 	case TCL_OK:
+	    iPtr->numLevels++;
 	    code = TclEvalObjvInternal(interp, objc, objv, cmdString, cmdLen, flags);
+	    iPtr->numLevels--;
 	    if (code == TCL_ERROR && cmdLen == 0)
 		goto cmdtraced;
 	    break;
@@ -3417,8 +3415,10 @@ Tcl_EvalEx(interp, script, numBytes, flags)
 	    /*
 	     * Execute the command and free the objects for its words.
 	     */
-    
+
+	    iPtr->numLevels++;    
 	    code = TclEvalObjvInternal(interp, objectsUsed, objv, p, bytesLeft, 0);
+	    iPtr->numLevels--;
 	    if (code != TCL_OK) {
 		goto error;
 	    }
