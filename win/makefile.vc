@@ -6,7 +6,7 @@
 # Copyright (c) 1995-1996 Sun Microsystems, Inc.
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 #
-# RCS: @(#) $Id: makefile.vc,v 1.54 2000/08/15 00:08:37 ericm Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.55 2000/09/28 06:35:40 hobbs Exp $
 
 # Does not depend on the presence of any environment variables in
 # order to compile tcl; all needed information is derived from 
@@ -156,6 +156,7 @@ TCLOBJS = \
 	$(TMPDIR)\tclInterp.obj \
 	$(TMPDIR)\tclIO.obj \
 	$(TMPDIR)\tclIOCmd.obj \
+	$(TMPDIR)\tclIOGT.obj \
 	$(TMPDIR)\tclIOSock.obj \
 	$(TMPDIR)\tclIOUtil.obj \
 	$(TMPDIR)\tclLink.obj \
