@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinSock.c,v 1.42 2004/02/21 02:17:31 davygrvy Exp $
+ * RCS: @(#) $Id: tclWinSock.c,v 1.43 2004/05/05 18:22:38 davygrvy Exp $
  */
 
 #include "tclWinInt.h"
@@ -901,6 +901,10 @@ SocketEventProc(evPtr, flags)
     }
     if (events & (FD_WRITE | FD_CONNECT)) {
 	mask |= TCL_WRITABLE;
+	if (events & FD_CONNECT && infoPtr->lastError != NO_ERROR) {
+	    /* connect errors should also fire the readable handler. */
+	    mask |= TCL_READABLE;
+	}
     }
 
     if (mask) {
@@ -2461,7 +2465,7 @@ SocketProc(hwnd, message, wParam, lParam)
 			}
 
 		    } 
-		    if(infoPtr->flags & SOCKET_ASYNC_CONNECT) {
+		    if (infoPtr->flags & SOCKET_ASYNC_CONNECT) {
 			infoPtr->flags &= ~(SOCKET_ASYNC_CONNECT);
 			if (error != ERROR_SUCCESS) {
 			    TclWinConvertWSAError((DWORD) error);
