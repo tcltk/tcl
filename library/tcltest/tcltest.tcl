@@ -15,7 +15,7 @@
 # Copyright (c) 2000 by Ajuba Solutions
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.tcl,v 1.49 2002/04/18 00:04:55 dgp Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.50 2002/05/08 05:50:24 dgp Exp $
 
 # create the "tcltest" namespace for all testing variables and
 # procedures
@@ -2778,7 +2778,7 @@ proc tcltest::runAllTests { {shell ""} } {
 	puts [outputChannel] [string repeat ~ 44]
 	puts [outputChannel] "$dir test began at [eval $timeCmd]\n"
 	
-	uplevel 1 "::source [file join $directory all.tcl]"
+	uplevel 1 [list ::source [file join $directory all.tcl]]
 	
 	set endTime [eval $timeCmd]
 	puts [outputChannel] "\n$dir test ended at $endTime"
