@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.27 2003/04/02 19:31:23 dgp Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.28 2003/11/02 18:57:35 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2077,7 +2077,7 @@ TclSubstTokens(interp, tokenPtr, count, tokensLeftPtr)
  * CommandComplete --
  *
  *	This procedure is shared by TclCommandComplete and
- *	Tcl_ObjCommandcoComplete; it does all the real work of seeing
+ *	Tcl_ObjCommandComplete; it does all the real work of seeing
  *	whether a script is complete
  *
  * Results:
