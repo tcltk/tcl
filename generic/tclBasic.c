@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.140 2005/01/28 01:49:50 hobbs Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.141 2005/02/10 19:08:12 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -3754,11 +3754,27 @@ Tcl_EvalObjEx(interp, objPtr, flags)
 	 * everything into a string and back out again.
 	 */
 	if ((objPtr->typePtr == &tclListType) && /* is a list... */
-		(objPtr->bytes == NULL) /* ...without a string rep */) {
-	    register List *listRepPtr =
+		(objPtr->bytes == NULL) /* ...without a string rep */) {	    
+	    List *listRepPtr =
 		(List *) objPtr->internalRep.twoPtrValue.ptr1;
-	    result = Tcl_EvalObjv(interp, listRepPtr->elemCount,
-		    listRepPtr->elements, flags);
+	    int i, objc = listRepPtr->elemCount;
+	    Tcl_Obj **objv;
+
+	    /*
+	     * Copy the list elements here, to avoid a segfault if objPtr
+	     * loses its List internal rep [Bug 1119369]
+	     */
+	    
+	    objv = (Tcl_Obj **) TclStackAlloc(interp, objc*sizeof(Tcl_Obj *));
+	    for (i=0; i < objc; i++) {
+		objv[i] = listRepPtr->elements[i];
+		Tcl_IncrRefCount(objv[i]);
+	    }
+	    result = Tcl_EvalObjv(interp, objc, objv, flags);
+	    for (i=0; i < objc; i++) {
+		TclDecrRefCount(objv[i]);
+	    }
+	    TclStackFree(interp);
 	} else {
 	    script = Tcl_GetStringFromObj(objPtr, &numSrcBytes);
 	    result = Tcl_EvalEx(interp, script, numSrcBytes, flags);

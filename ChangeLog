@@ -1,3 +1,10 @@
+2005-02-10  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclBasic.c (Tcl_EvalObjEx):
+	* tests/basic.test (basic-26.2): preserve the arguments passed to
+	TEOV in the pure-list branch, in case the list shimmers away. Fix
+	for [Bug 1119369], reported by Peter MacDonald.
+
 2005-02-10  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* generic/tclFileName.c: fix for test failures introduced 
