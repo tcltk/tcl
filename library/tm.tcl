@@ -79,7 +79,7 @@ namespace eval ::tcl::tm {
 #	paths to search for Tcl Modules. The subcommand 'list' has no
 #	sideeffects.
 
-proc ::tcl::tm::add {args} {
+proc ::tcl::tm::add {path args} {
     # PART OF THE ::tcl::tm::path ENSEMBLE
     #
     # The path is added at the head to the list of module paths.
@@ -90,11 +90,6 @@ proc ::tcl::tm::add {args} {
     #
     # If the path is already present as is no error will be raised and
     # no action will be taken.
-
-    if {[llength $args] == 0} {
-	return -code error \
-	    "wrong # args: should be \"::tcl::tm::path add path ?path ...?\""
-    }
 
     variable paths
 
@@ -107,7 +102,7 @@ proc ::tcl::tm::add {args} {
     # paths to the official state var.
 
     set newpaths $paths
-    foreach p $args {
+    foreach p [linsert $args 0 $path] {
 	if {$p in $newpaths} {
 	    # Ignore a path already on the list.
 	    continue
@@ -148,20 +143,15 @@ proc ::tcl::tm::add {args} {
     return
 }
 
-proc ::tcl::tm::remove {args} {
+proc ::tcl::tm::remove {path args} {
     # PART OF THE ::tcl::tm::path ENSEMBLE
     #
     # Removes the path from the list of module paths. The command is
     # silently ignored if the path is not on the list.
 
-    if {[llength $args] == 0} {
-	return -code error \
-	    "wrong # args: should be \"::tcl::tm::path remove path ?path ...?\""
-    }
-
     variable paths
 
-    foreach p $args {
+    foreach p [linsert $args 0 $path] {
 	set pos [lsearch -exact $paths $p]
 	if {$pos >= 0} {
 	    set paths [lreplace $paths $pos $pos]
@@ -169,12 +159,9 @@ proc ::tcl::tm::remove {args} {
     }
 }
 
-proc ::tcl::tm::list {args} {
+proc ::tcl::tm::list {} {
     # PART OF THE ::tcl::tm::path ENSEMBLE
 
-    if {[llength $args] != 0} {
-	return -code error "wrong # args: should be \"::tcl::tm::path list\""
-    }
     variable paths
     return  $paths
 }

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.189 2004/10/27 17:13:58 davygrvy Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.190 2004/10/29 15:39:05 dkf Exp $
  */
 
 #ifndef _TCLINT
@@ -1400,6 +1400,23 @@ typedef struct Interp {
     } limit;
 
     /*
+     * Information for improved default error generation from
+     * ensembles (TIP#112).
+     */
+
+    struct {
+	Tcl_Obj * CONST *sourceObjs;
+				/* What arguments were actually input into
+				 * the *root* ensemble command?  (Nested
+				 * ensembles don't rewrite this.)  NULL if
+				 * we're not processing an ensemble. */
+	int numRemovedObjs;	/* How many arguments have been stripped off
+				 * because of ensemble processing. */
+	int numInsertedObjs;	/* How many of the current arguments were
+				 * inserted by an ensemble. */
+    } ensembleRewrite;
+
+    /*
      * Statistical information about the bytecode compiler and interpreter's
      * operation.
      */
@@ -1949,6 +1966,7 @@ EXTERN int              TclpDlopen _ANSI_ARGS_((Tcl_Interp *interp,
 		            Tcl_FSUnloadFileProc **unloadProcPtr));
 EXTERN int              TclpUtime _ANSI_ARGS_((Tcl_Obj *pathPtr,
 					       struct utimbuf *tval));
+EXTERN int		TclIsEnsemble _ANSI_ARGS_((Command *cmdPtr));
 
 /*
  *----------------------------------------------------------------

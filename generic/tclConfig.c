@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclConfig.c,v 1.5 2003/12/24 04:18:19 davygrvy Exp $
+ * RCS: @(#) $Id: tclConfig.c,v 1.6 2004/10/29 15:39:05 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -209,7 +209,7 @@ QueryConfigObjCmd(clientData, interp, objc, objv)
     };
 
     if ((objc < 2) || (objc > 3)) {
-        Tcl_WrongNumArgs (interp, 0, NULL, "list | get key");
+	Tcl_WrongNumArgs(interp, 1, objv, "subcommand ?argument?");
 	return TCL_ERROR;
     }
     if (Tcl_GetIndexFromObj(interp, objv[1], subcmdStrings,
@@ -228,7 +228,7 @@ QueryConfigObjCmd(clientData, interp, objc, objv)
     switch ((enum subcmds) index) {
     case CFG_GET:
 	if (objc != 3) {
-	    Tcl_WrongNumArgs(interp, 0, NULL, "get key");
+	    Tcl_WrongNumArgs(interp, 1, objv, "get key");
 	    return TCL_ERROR;
 	}
 
@@ -243,7 +243,7 @@ QueryConfigObjCmd(clientData, interp, objc, objv)
 
     case CFG_LIST:
 	if (objc != 2) {
-	    Tcl_WrongNumArgs(interp, 0, NULL, "list");
+	    Tcl_WrongNumArgs(interp, 1, objv, "list");
 	    return TCL_ERROR;
 	}
 
