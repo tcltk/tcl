@@ -1,3 +1,9 @@
+2002-07-08  Don Porter  <dgp@users.sourceforge.net>
+
+	* doc/tcltest.n:		Fixed incompatibility in [viewFile].
+	* library/tcltest/tcltest.tcl:	Corrected docs.  Bumped to 2.2.1.
+	* library/tcltest/pkgIndex.tcl: [Bug 578163]
+
 2002-07-08  Vince Darley  <vincentdarley@users.sourceforge.net>
 
         * tests/cmdAH.test:
