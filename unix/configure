@@ -5125,6 +5125,18 @@ fi
 	    if test "`uname -m`" = "alpha" ; then
 		EXTRA_CFLAGS="-mieee"
 	    fi
+
+	    # The combo of gcc + glibc has a bug related
+	    # to inlining of functions like strtod(). The
+	    # -fno-builtin flag should address this problem
+	    # but it does not work. The -fno-inline flag
+	    # is kind of overkill but it works.
+	    # Disable inlining only when one of the
+	    # files in compat/*.c is being linked in.
+	    if test x"${LIBOBJS}" != x ; then
+	        EXTRA_CFLAGS="${EXTRA_CFLAGS} -fno-inline"
+	    fi
+
 	    ;;
 	GNU*)
 	    SHLIB_CFLAGS="-fPIC"
@@ -5140,17 +5152,17 @@ fi
 	    else
 		ac_safe=`echo "dld.h" | sed 'y%./+-%__p_%'`
 echo $ac_n "checking for dld.h""... $ac_c" 1>&6
-echo "configure:5144: checking for dld.h" >&5
+echo "configure:5156: checking for dld.h" >&5
 if eval "test \"`echo '$''{'ac_cv_header_$ac_safe'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   cat > conftest.$ac_ext <<EOF
-#line 5149 "configure"
+#line 5161 "configure"
 #include "confdefs.h"
 #include <dld.h>
 EOF
 ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
-{ (eval echo configure:5154: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
+{ (eval echo configure:5166: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
 ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
 if test -z "$ac_err"; then
   rm -rf conftest*
@@ -5205,17 +5217,17 @@ fi
 	    # Not available on all versions:  check for include file.
 	    ac_safe=`echo "dlfcn.h" | sed 'y%./+-%__p_%'`
 echo $ac_n "checking for dlfcn.h""... $ac_c" 1>&6
-echo "configure:5209: checking for dlfcn.h" >&5
+echo "configure:5221: checking for dlfcn.h" >&5
 if eval "test \"`echo '$''{'ac_cv_header_$ac_safe'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   cat > conftest.$ac_ext <<EOF
-#line 5214 "configure"
+#line 5226 "configure"
 #include "confdefs.h"
 #include <dlfcn.h>
 EOF
 ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
-{ (eval echo configure:5219: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
+{ (eval echo configure:5231: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
 ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
 if test -z "$ac_err"; then
   rm -rf conftest*
@@ -5242,9 +5254,9 @@ if eval "test \"`echo '$ac_cv_header_'$ac_safe`\" = yes"; then
 		LDFLAGS=""
 		LD_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
 		echo $ac_n "checking for ELF""... $ac_c" 1>&6
-echo "configure:5246: checking for ELF" >&5
+echo "configure:5258: checking for ELF" >&5
 		cat > conftest.$ac_ext <<EOF
-#line 5248 "configure"
+#line 5260 "configure"
 #include "confdefs.h"
 
 #ifdef __ELF__
@@ -5534,17 +5546,17 @@ EOF
 	    # that don't grok the -Bexport option.  Test that it does.
 	    hold_ldflags=$LDFLAGS
 	    echo $ac_n "checking for ld accepts -Bexport flag""... $ac_c" 1>&6
-echo "configure:5538: checking for ld accepts -Bexport flag" >&5
+echo "configure:5550: checking for ld accepts -Bexport flag" >&5
 	    LDFLAGS="${LDFLAGS} -Wl,-Bexport"
 	    cat > conftest.$ac_ext <<EOF
-#line 5541 "configure"
+#line 5553 "configure"
 #include "confdefs.h"
 
 int main() {
 int i;
 ; return 0; }
 EOF
-if { (eval echo configure:5548: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+if { (eval echo configure:5560: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
   rm -rf conftest*
   found=yes
 else
@@ -5590,9 +5602,9 @@ rm -f conftest*
 
     if test "x$DL_OBJS" = "xtclLoadAout.o" ; then
 	echo $ac_n "checking sys/exec.h""... $ac_c" 1>&6
-echo "configure:5594: checking sys/exec.h" >&5
+echo "configure:5606: checking sys/exec.h" >&5
 	cat > conftest.$ac_ext <<EOF
-#line 5596 "configure"
+#line 5608 "configure"
 #include "confdefs.h"
 #include <sys/exec.h>
 int main() {
@@ -5610,7 +5622,7 @@ int main() {
     
 ; return 0; }
 EOF
-if { (eval echo configure:5614: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
+if { (eval echo configure:5626: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
   rm -rf conftest*
   tcl_ok=usable
 else
@@ -5628,9 +5640,9 @@ EOF
 
 	else
 	    echo $ac_n "checking a.out.h""... $ac_c" 1>&6
-echo "configure:5632: checking a.out.h" >&5
+echo "configure:5644: checking a.out.h" >&5
 	    cat > conftest.$ac_ext <<EOF
-#line 5634 "configure"
+#line 5646 "configure"
 #include "confdefs.h"
 #include <a.out.h>
 int main() {
@@ -5648,7 +5660,7 @@ int main() {
 	    
 ; return 0; }
 EOF
-if { (eval echo configure:5652: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
+if { (eval echo configure:5664: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
   rm -rf conftest*
   tcl_ok=usable
 else
@@ -5666,9 +5678,9 @@ EOF
 
 	    else
 		echo $ac_n "checking sys/exec_aout.h""... $ac_c" 1>&6
-echo "configure:5670: checking sys/exec_aout.h" >&5
+echo "configure:5682: checking sys/exec_aout.h" >&5
 		cat > conftest.$ac_ext <<EOF
-#line 5672 "configure"
+#line 5684 "configure"
 #include "confdefs.h"
 #include <sys/exec_aout.h>
 int main() {
@@ -5686,7 +5698,7 @@ int main() {
 		
 ; return 0; }
 EOF
-if { (eval echo configure:5690: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
+if { (eval echo configure:5702: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
   rm -rf conftest*
   tcl_ok=usable
 else
@@ -5781,7 +5793,7 @@ fi
 
 
     echo $ac_n "checking for build with symbols""... $ac_c" 1>&6
-echo "configure:5785: checking for build with symbols" >&5
+echo "configure:5797: checking for build with symbols" >&5
     # Check whether --enable-symbols or --disable-symbols was given.
 if test "${enable_symbols+set}" = set; then
   enableval="$enable_symbols"
@@ -5818,17 +5830,17 @@ TCL_DBGX=${DBGX}
 do
 ac_safe=`echo "$ac_hdr" | sed 'y%./+-%__p_%'`
 echo $ac_n "checking for $ac_hdr""... $ac_c" 1>&6
-echo "configure:5822: checking for $ac_hdr" >&5
+echo "configure:5834: checking for $ac_hdr" >&5
 if eval "test \"`echo '$''{'ac_cv_header_$ac_safe'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   cat > conftest.$ac_ext <<EOF
-#line 5827 "configure"
+#line 5839 "configure"
 #include "confdefs.h"
 #include <$ac_hdr>
 EOF
 ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
-{ (eval echo configure:5832: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
+{ (eval echo configure:5844: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
 ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
 if test -z "$ac_err"; then
   rm -rf conftest*
@@ -5858,17 +5870,17 @@ done
 do
 ac_safe=`echo "$ac_hdr" | sed 'y%./+-%__p_%'`
 echo $ac_n "checking for $ac_hdr""... $ac_c" 1>&6
-echo "configure:5862: checking for $ac_hdr" >&5
+echo "configure:5874: checking for $ac_hdr" >&5
 if eval "test \"`echo '$''{'ac_cv_header_$ac_safe'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   cat > conftest.$ac_ext <<EOF
-#line 5867 "configure"
+#line 5879 "configure"
 #include "confdefs.h"
 #include <$ac_hdr>
 EOF
 ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
-{ (eval echo configure:5872: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
+{ (eval echo configure:5884: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
 ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
 if test -z "$ac_err"; then
   rm -rf conftest*
@@ -5895,7 +5907,7 @@ fi
 done
 
     echo $ac_n "checking FIONBIO vs. O_NONBLOCK for nonblocking I/O""... $ac_c" 1>&6
-echo "configure:5899: checking FIONBIO vs. O_NONBLOCK for nonblocking I/O" >&5
+echo "configure:5911: checking FIONBIO vs. O_NONBLOCK for nonblocking I/O" >&5
     if test -f /usr/lib/NextStep/software_version; then
 	system=NEXTSTEP-`awk '/3/,/3/' /usr/lib/NextStep/software_version`
     else
@@ -5957,7 +5969,7 @@ TCL_SHARED_LIB_SUFFIX=${SHARED_LIB_SUFFIX}
 
 
     echo $ac_n "checking how to build libraries""... $ac_c" 1>&6
-echo "configure:5961: checking how to build libraries" >&5
+echo "configure:5973: checking how to build libraries" >&5
     # Check whether --enable-shared or --disable-shared was given.
 if test "${enable_shared+set}" = set; then
   enableval="$enable_shared"

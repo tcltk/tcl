@@ -1,3 +1,9 @@
+2001-09-18  Don Porter  <dgp@users.sourceforge.net>
+
+	* unix/configure: Regen.
+	* unix/tcl.m4 (SC_CONFIG_CFLAGS): On Linux, disable inlining when
+	one of the compat/*.c routines is to be linked in. [Patch 440891]
+
 2001-09-17  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tcl.h: removed forced #define USE_TCLALLOC 1 for

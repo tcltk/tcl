@@ -797,6 +797,18 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 	    if test "`uname -m`" = "alpha" ; then
 		EXTRA_CFLAGS="-mieee"
 	    fi
+
+	    # The combo of gcc + glibc has a bug related
+	    # to inlining of functions like strtod(). The
+	    # -fno-builtin flag should address this problem
+	    # but it does not work. The -fno-inline flag
+	    # is kind of overkill but it works.
+	    # Disable inlining only when one of the
+	    # files in compat/*.c is being linked in.
+	    if test x"${LIBOBJS}" != x ; then
+	        EXTRA_CFLAGS="${EXTRA_CFLAGS} -fno-inline"
+	    fi
+
 	    ;;
 	GNU*)
 	    SHLIB_CFLAGS="-fPIC"
