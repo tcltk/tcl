@@ -6,7 +6,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: util.test,v 1.2 1998/09/14 18:40:14 stanton Exp $
+# RCS: @(#) $Id: util.test,v 1.3 1998/11/02 23:04:15 stanton Exp $
 
 if {[info commands testobj] == {}} {
     puts "This application hasn't been compiled with the \"testobj\""
@@ -96,7 +96,7 @@ set tcl_precision 12
 test util-6.4 {Tcl_PrintDouble - make sure there's a decimal point} {
     concat x[expr 2.0]
 } {x2.0}
-test util-6.5 {Tcl_PrintDouble - make sure there's a decimal point} {
+test util-6.5 {Tcl_PrintDouble - make sure there's a decimal point} {eformat} {
     concat x[expr 3.0e98]
 } {x3e+98}
 
