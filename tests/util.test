@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: util.test,v 1.10 2002/01/02 13:52:04 dkf Exp $
+# RCS: @(#) $Id: util.test,v 1.10.4.1 2003/08/27 17:56:46 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -300,6 +300,12 @@ set tcl_precision 12
 
 # This test always succeeded in the C locale anyway...
 test util-8.1 {TclNeedSpace - correct UTF8 handling} {
+    # Bug 411825
+    # Note that this test relies on the fact that
+    # [interp target] calls on Tcl_AppendElement()
+    # which calls on TclNeedSpace().  If [interp target]
+    # is ever updated, this test will no longer test
+    # TclNeedSpace.
     interp create \u5420
     interp create [list \u5420 foo]
     interp alias {} fooset [list \u5420 foo] set
@@ -307,6 +313,35 @@ test util-8.1 {TclNeedSpace - correct UTF8 handling} {
     interp delete \u5420
     set result
 } "\u5420 foo"
+
+set ::tcltest::testConstraints(testdstring) \
+	[expr {[info commands testdstring] != {}}]
+
+test util-8.2 {TclNeedSpace - correct UTF8 handling} testdstring {
+    # Bug 411825
+    # This tests the same bug as the previous test, but
+    # should be more future-proof, as the DString
+    # operations will likely continue to call TclNeedSpace
+    testdstring free
+    testdstring append \u5420 -1
+    testdstring element foo
+    llength [testdstring get]
+} 2
+test util-8.3 {TclNeedSpace - correct UTF8 handling} testdstring {
+    # Bug 411825 - new variant reported by Dossy Shiobara
+    testdstring free
+    testdstring append \u00A0 -1
+    testdstring element foo
+    llength [testdstring get]
+} 2
+test util-8.4 {TclNeedSpace - correct UTF8 handling} testdstring {
+    # Another bug uncovered while fixing 411825
+    testdstring free
+    testdstring append {\ } -1
+    testdstring append \{ -1
+    testdstring element foo
+    llength [testdstring get]
+} 2
 
 # cleanup
 ::tcltest::cleanupTests
