@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.151 2004/09/21 22:45:41 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.152 2004/09/22 15:48:22 msofer Exp $
  */
 
 #ifdef STDC_HEADERS
@@ -1335,7 +1335,8 @@ TclExecuteByteCode(interp, codePtr)
 	    bytes = GetSrcInfoForPc(pc, codePtr, &length);
 	    result = Tcl_EvalEx(interp, bytes, length, 0);
 	    if (result != TCL_OK) {
-		goto checkForCatch;
+		cleanup = 0;
+		goto processExceptionReturn;
 	    }
 	    opnd = TclGetUInt4AtPtr(pc+1);
 	    objResultPtr = Tcl_GetObjResult(interp);
