@@ -1,3 +1,8 @@
+2004-04-02  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclCompile.h: removed redundant #ifdef _TCLINT 
+	[Bug 928415], reported by tauvan.
+
 2004-04-02  Don Porter  <dgp@users.sourceforge.net>
 
 	* tests/tcltest.test: Corrected constraint typos: "nonRoot" ->
