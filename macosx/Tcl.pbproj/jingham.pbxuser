@@ -4,9 +4,10 @@
 		activeBuildStyle = 00E2F847016E82EB0ACA28DC;
 		activeTarget = F50DC359017027D801DC9062;
 		addToTargets = (
-			F50DC359017027D801DC9062,
+			00E2F84C016E8B780ACA28DC,
 		);
 		breakpoints = (
+			F52175A5019EEC7801DC9062,
 		);
 		intermediatesDirectory = /Volumes/CodeBits/jingham/Build;
 		perUserDictionary = {
@@ -54,12 +55,12 @@
 							};
 						};
 						Tab2 = {
-							BuildMessageFrame = "{{0, 0}, {653, 132}}";
-							BuildTranscriptFrame = "{{0, 141}, {653, 128}}";
-							Frame = "{{0, 0}, {651, 267}}";
+							BuildMessageFrame = "{{0, 0}, {634, 132}}";
+							BuildTranscriptFrame = "{{0, 141}, {634, 128}}";
+							Frame = "{{0, 0}, {632, 267}}";
 						};
 						Tab3 = {
-							Frame = "{{0, 0}, {601, 295}}";
+							Frame = "{{0, 0}, {632, 295}}";
 						};
 						TabCount = 4;
 					};
@@ -116,5 +117,11 @@
 		activeExec = 0;
 		customExecs = {
 		};
+	};
+	F52175A5019EEC7801DC9062 = {
+		fileReference = F5F24FAA016ECAFC01DC9062;
+		isa = PBXFileBreakpoint;
+		lineNumber = 346;
+		state = 1;
 	};
 }
