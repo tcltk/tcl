@@ -3572,3 +3572,7 @@ directory relative to the executable, a source directory relative to
 the executable, and a tcl directory relative to the source heirarchy
 containing the executable.  See the comment at the top of
 generic/tclInitScript.h for more details. (SS)
+
+7/27/98 (config change) Changed the use of the DBGX flag in configure.in
+and the makefile to be TCL_DBGX.  Users of tclConfig.sh may need to pass
+this through their configure files with AC_SUBST. (BW)
