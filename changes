@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.63 2002/02/19 08:38:14 dgp Exp $
+RCS: @(#) $Id: changes,v 1.64 2002/02/27 04:36:38 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -5259,39 +5259,6 @@ relative months and years during swing hours. (lavana)
 
 --- Released 8.3.4, October 19, 2001 --- See ChangeLog for details ---
 
-2001-11-06 (bug fix)[478856] loss of fileevents due to short reads (kupries)
-
-2001-11-09 (bug fix)[480176] [global] mishandled varnames matching :* (porter)
-
-2001-11-19 (bug fix)[478847] overflows in [time] of >2**31 microseconds (kenny)
-
-2001-12-10 (bug fix)[490514] doc fixes (porter,english)
-
-2001-12-21 (new feature) MaxOSX / Darwin support (steffen)
-
-2001-12-28 (bug fix) proper case in [auto_execok] use of $env(COMPSPEC) (hobbs)
-
-2002-01-17 (bug fix)[504642] Tcl_Obj refCounts in [gets] (griffen,kupries)
-
-2002-01-21 (bug fix)[506297] infinite loop writing in iso2022-jap encoding
-(forssen,kupries)
-
-2002-01-24 (HTTP server bug workaround)[504508] leave the default port out
-of the Host: header value
-=> http 2.4.1 (hobbs)
-
-2002-01-25 (new feature)[496733] socket options -eofchar and -translation
-return read-only values (dejong)
-
-2002-02-05 (bug fix) [http::error] called when [::error] intended
-=> http 2.4.2 (porter)
-
-2002-02-05 (bug fix)[465765] avoid zero-byte writes to STREAMs (talcott,kupries)
-
-2002-02-06 (bug fix)[495213] [scan] accept 0x as prefix of base 16 value (hobbs)
-
---- Released 8.3.5, February XX, 2002 --- See ChangeLog for details ---
-
 2001-08-21 (bug fix)[219184] overagressive compilation of [catch] (sofer)
 
 2001-08-22 (new feature)[227482] [dde request -binary] (hobbs)
@@ -5331,6 +5298,8 @@ enable all compile and execution tracing (sofer)
 
 2001-10-15 (new feature)[TIP 35] serial channel configuration (schroedter)
 
+2001-11-06 (bug fix)[478856] loss of fileevents due to short reads (kupries)
+
 2001-11-06 (new feature) revitalized makefile.vc (gravereaux)
 
 2001-11-07 (new feature) Cygwin gcc support dropped.  Use mingw (dejong)
@@ -5342,6 +5311,8 @@ configure.  Store in tclConfig.sh as TCL_INCLUDE_SPEC and TCL_LIB_SPEC. (dejong)
 2001-11-08 (new feature) Enable --enable-threads on FreeBSD (dejong)
 
 2001-11-08 (new feature) New make target 'make gdb' (dejong)
+
+2001-11-09 (bug fix)[480176] [global] mishandled varnames matching :* (porter)
 
 2001-11-12 (new feature)[TIP 22,33,45] new command [lset],
 [lindex] extended to accept multiple indices. (kenny, hobbs)
@@ -5356,6 +5327,8 @@ or a dynamic string as well as a static string to indicate an error (fellows)
 
 2001-11-19 (new feature)[TIP 73] Tcl_GetTime API (kenny)
 
+2001-11-19 (bug fix)[478847] overflows in [time] of >2**31 microseconds (kenny)
+
 2001-11-29 (performance enhancement) caching scheme added to [binary scan]
 (fellows)
 
@@ -5363,26 +5336,51 @@ or a dynamic string as well as a static string to indicate an error (fellows)
 traces modify the array. (sofer)
         **POTENTIAL INCOMPATIBILITY***
 
+2001-12-10 (bug fix)[490514] doc fixes (porter,english)
+
 2001-12-18 (new feature) removed unix/dltest/configure; unix/configure does all
 (dejong)
 
 2001-12-19 (new feature) New make target 'make shell' (dejong)
 
+2001-12-21 (new feature) MaxOSX / Darwin support (steffen)
+
 2001-12-28 (new feature) new command [memory onexit] replaces [checkmem] when
 compiled with TCL_MEM_DEBUG.  Added documentation. (porter)
         **POTENTIAL INCOMPATIBILITY***
 
+2001-12-28 (bug fix) proper case in [auto_execok] use of $env(COMPSPEC) (hobbs)
+
 2002-01-05 (feature rewrite) Tcl_Main() rewritten and documentation improved.
 Interactive operation and event loop operation (via Tcl_SetMainLoop) now
 interleave cleanly.  Also more robust against strange happenings. (porter)
+
+2002-01-17 (bug fix)[504642] Tcl_Obj refCounts in [gets] (griffen,kupries)
+
+2002-01-21 (bug fix)[506297] infinite loop writing in iso2022-jap encoding
+(forssen,kupries)
+
+2002-01-24 (HTTP server bug workaround)[504508] leave the default port out
+of the Host: header value
+=> http 2.4.1 (hobbs)
+
+2002-01-25 (new feature)[496733] socket options -eofchar and -translation
+return read-only values (dejong)
 
 2002-01-28 (new feature) Old ChangeLog entries => ChangeLog.20900 (hobbs)
 
 2002-01-28 (performance enhancement) bytecompiled [regexp] for trivial cases
 that amount to string matching.  Also -nocase and --. (hobbs)
 
+2002-02-05 (bug fix) [http::error] called when [::error] intended
+=> http 2.4.2 (porter)
+
+2002-02-05 (bug fix)[465765] avoid zero-byte writes to STREAMs (talcott,kupries)
+
 2002-02-06 (performance enhancement) [regsub] special cases that map to
 [string map] detected. (hobbs)
+
+2002-02-06 (bug fix)[495213] [scan] accept 0x as prefix of base 16 value (hobbs)
 
 2002-02-10 (new feature)[TIP 32,79] Tcl_CreateObjTrace API (kenny)
 
