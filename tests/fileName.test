@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fileName.test,v 1.25 2002/07/08 08:50:23 vincentdarley Exp $
+# RCS: @(#) $Id: fileName.test,v 1.26 2002/07/10 13:08:20 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -1701,7 +1701,7 @@ unset globname
 # On some systems, like AFS, "000" protection doesn't prevent
 # access by owner, so the following test is not portable.
 
-catch {exec chmod 000 globTest/a1}
+catch {file attributes globTest/a1 -permissions 0000}
 test filename-15.1 {unix specific globbing} {unixOnly nonPortable} {
     string tolower [list [catch {glob globTest/a1/*} msg]  $msg $errorCode]
 } {1 {couldn't read directory "globtest/a1": permission denied} {posix eacces {permission denied}}}
@@ -1715,7 +1715,7 @@ test filename-15.3 {unix specific no complain: no errors, good result} \
     glob -nocomplain globTest/a2 globTest/a1/* globTest/a3
 } {globTest/a2 globTest/a3}
 
-catch {exec chmod 755 globTest/a1}
+catch {file attributes globTest/a1 -permissions 0755}
 test filename-15.4 {unix specific no complain: no errors, good result} \
 	{unixOnly nonPortable} {
     # test fails because if an error occurs, the interp's result
@@ -1741,7 +1741,7 @@ test filename-15.6 {unix specific globbing} {unixOnly} {
     set env(HOME) $temp
     set result
 } [list 0 [list [lindex [glob ~] 0]/globTest/odd\\\[\]*?\{\}name]]
-catch {exec rm -f globTest/odd\\\[\]*?\{\}name}
+catch {file delete -force globTest/odd\\\[\]*?\{\}name}
 
 # The following tests are only valid for Windows systems.
 set oldDir [pwd]
@@ -1818,8 +1818,8 @@ test filename-16.16 {windows specific globbing} {pcOnly} {
 
 # cleanup
 catch {file delete -force C:/globTest}
-cd $oldpwd
 file delete -force globTest
+cd $oldpwd
 set env(HOME) $oldhome
 if {[tcltest::testConstraint testsetplatform]} {
     testsetplatform $platform
