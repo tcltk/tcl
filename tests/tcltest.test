@@ -6,7 +6,7 @@
 # Copyright (c) 2000 by Ajuba Solutions
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.test,v 1.23 2002/06/05 01:12:38 dgp Exp $
+# RCS: @(#) $Id: tcltest.test,v 1.24 2002/06/06 18:44:44 dgp Exp $
 
 if {[catch {package require tcltest 2.1}]} {
     puts stderr "Skipping tests in [info script].  tcltest 2.1 required."
@@ -213,7 +213,7 @@ test tcltest-4.6 {tcltest::skip} {
 }
 
 # -constraints, -limitconstraints, [testConstraint],
-# [constraintsSpecified], [constraintList], [limitConstraints]
+# $constraintsSpecified, [limitConstraints]
 test tcltest-5.1 {tcltest -constraints 'knownBug'} {unixOrPc} {
     set result [catch {exec [interpreter] test.tcl -constraints knownBug -verbose 'ps'} msg]
     list $result [regexp a-1.0 $msg] [regexp b-1.0 $msg] [regexp c-1.0 $msg] \
@@ -236,29 +236,31 @@ test tcltest-5.3 {testConstraint - constraint empty (tcltest::safeFetch)}  {
     -cleanup {unset ::tcltest::testConstraints(tcltestFakeConstraint)}
 }
 
-test tcltest-5.4 {tcltest::constraintsSpecified} {
-    -setup {
-	set constraintlist $::tcltest::constraintsSpecified
-	set ::tcltest::constraintsSpecified {}
-    }
-    -body {
-	set r1 $::tcltest::constraintsSpecified
-	testConstraint tcltestFakeConstraint1 1
-	set r2 $::tcltest::constraintsSpecified
-	testConstraint tcltestFakeConstraint2 1
-	set r3 $::tcltest::constraintsSpecified
-	list $r1 $r2 $r3
-    }
-    -result {{} tcltestFakeConstraint1 {tcltestFakeConstraint1 tcltestFakeConstraint2}}
-    -cleanup {
-	set ::tcltest::constraintsSpecified $constraintlist
-	unset ::tcltest::testConstraints(tcltestFakeConstraint1) 
-	unset ::tcltest::testConstraints(tcltestFakeConstraint2) 
-    }
-}
+# Removed this test of internals of tcltest.  Those internals have changed.
+#test tcltest-5.4 {tcltest::constraintsSpecified} {
+#    -setup {
+#	set constraintlist $::tcltest::constraintsSpecified
+#	set ::tcltest::constraintsSpecified {}
+#    }
+#    -body {
+#	set r1 $::tcltest::constraintsSpecified
+#	testConstraint tcltestFakeConstraint1 1
+#	set r2 $::tcltest::constraintsSpecified
+#	testConstraint tcltestFakeConstraint2 1
+#	set r3 $::tcltest::constraintsSpecified
+#	list $r1 $r2 $r3
+#    }
+#    -result {{} tcltestFakeConstraint1 {tcltestFakeConstraint1 tcltestFakeConstraint2}}
+#    -cleanup {
+#	set ::tcltest::constraintsSpecified $constraintlist
+#	unset ::tcltest::testConstraints(tcltestFakeConstraint1) 
+#	unset ::tcltest::testConstraints(tcltestFakeConstraint2) 
+#    }
+#}
 
-test tcltest-5.5 {tcltest::constraintList} \
-	-constraints {!$::tcltest::testConstraints(singleTestInterp)} \
+test tcltest-5.5 {InitConstraints: list of built-in constraints} \
+	-constraints {!singleTestInterp} \
+	-setup {tcltest::InitConstraints} \
 	-body { lsort [array names ::tcltest::testConstraints] } \
 	-result [lsort {
     95 98 asyncPipeClose eformat emptyTest hasIsoLocale interactive knownBug
@@ -268,23 +270,26 @@ test tcltest-5.5 {tcltest::constraintList} \
     unixOrWin userInteraction win winCrash winOnly
 }]
 
-test tcltest-5.6 {tcltest::limitConstraints} {
-    -setup {
-	set keeplc $::tcltest::limitConstraints
-	set keepkb [testConstraint knownBug]
-    }
-    -body {
-	set r1 [limitConstraints]
-	set r2 [limitConstraints knownBug]
-	set r3 [limitConstraints]
-	list $r1 $r2 $r3
-    }
-    -cleanup {
-	limitConstraints $keeplc
-	testConstraint knownBug $keepkb
-    }
-    -result {false knownBug knownBug}
-}
+# Removed this broken test.  Its usage of [limitConstraints] was not
+# in agreement with the documentation.  [limitConstraints] is supposed
+# to take an optional boolean argument, and "knownBug" ain't no boolean!
+#test tcltest-5.6 {tcltest::limitConstraints} {
+#    -setup {
+#        set keeplc $::tcltest::limitConstraints
+#        set keepkb [testConstraint knownBug]
+#    }
+#    -body {
+#        set r1 [limitConstraints]
+#        set r2 [limitConstraints knownBug]
+#        set r3 [limitConstraints]
+#        list $r1 $r2 $r3
+#    }
+#    -cleanup {
+#        limitConstraints $keeplc
+#        testConstraint knownBug $keepkb
+#    }
+#    -result {false knownBug knownBug}
+#}
 
 # -outfile, -errfile, [outputChannel], [outputFile], [errorChannel], [errorFile]
 set printerror [makeFile {

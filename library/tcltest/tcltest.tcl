@@ -15,7 +15,7 @@
 # Copyright (c) 2000 by Ajuba Solutions
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.tcl,v 1.52 2002/06/05 01:12:38 dgp Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.53 2002/06/06 18:44:43 dgp Exp $
 
 # create the "tcltest" namespace for all testing variables and
 # procedures
@@ -131,9 +131,14 @@ namespace eval tcltest {
     # predefined constraints (see the explanation for the
     # InitConstraints proc for more details).
     ArrayDefault testConstraints {}
-    Default constraintsSpecified {}
+    Default ConstraintsSpecifiedByCommandLineArgument {}
 
-    # Don't run only the constrained tests by default
+    # Kept only for compatibility
+    Default constraintsSpecified {}
+    trace variable constraintsSpecified r {set ::tcltest::constraintsSpecified \
+		[array names ::tcltest::testConstraints] ;# }
+
+    # Don't run only the "-constraint" specified tests by default
     Default limitConstraints false
 
     # A test application has to know how to load the tested commands
@@ -434,7 +439,7 @@ namespace eval tcltest {
     foreach var {
 	    match skip matchFiles skipFiles matchDirectories
 	    skipDirectories preserveCore debug loadScript singleProcess
-	    mainThread
+	    mainThread ConstraintsSpecifiedByCommandLineArgument
     } {
 	proc $var { {new ""} } [subst -nocommands {
 	    variable $var
@@ -667,25 +672,29 @@ proc tcltest::errorFile { {filename ""} } {
 #	content of tcltest::testConstraints($constraint)
 #
 # Side effects:
-#	appends the constraint name to tcltest::constraintsSpecified
+#	none
 
 proc tcltest::testConstraint {constraint {value ""}} {
     variable testConstraints
-    variable constraintsSpecified
     DebugPuts 3 "entering testConstraint $constraint $value"
     if {[llength [info level 0]] == 2} {
 	return $testConstraints($constraint)
     }
-    lappend constraintsSpecified $constraint
+    # Check for boolean values
+    if {[catch {expr {$value && $value}} msg]} {
+	return -code error $msg
+    }
     set testConstraints($constraint) $value
 }
 
 # tcltest::limitConstraints --
 #
-#	sets the limited constraints to tcltest::limitConstraints
+#	sets/gets flag indicating whether tests run are limited only
+#	to those matching constraints specified by the -constraints
+#	command line option.
 #
 # Arguments:
-#	list of constraint names
+#	new boolean value for the flag
 #
 # Results:
 #	content of tcltest::limitConstraints
@@ -693,17 +702,22 @@ proc tcltest::testConstraint {constraint {value ""}} {
 # Side effects:
 #	None.
 
-proc tcltest::limitConstraints { {constraintList ""} } {
-    variable constraintsSpecified
+proc tcltest::limitConstraints { {value ""} } {
     variable testConstraints
     variable limitConstraints
-    DebugPuts 3 "entering limitConstraints $constraintList"
+    DebugPuts 3 "entering limitConstraints $value"
     if {[llength [info level 0]] == 1} {
 	return $limitConstraints
     }
-    set limitConstraints $constraintList
+    # Check for boolean values
+    if {[catch {expr {$value && $value}} msg]} {
+	return -code error $msg
+    }
+    set limitConstraints $value
+    if {!$limitConstraints} {return $limitConstraints}
     foreach elt [array names testConstraints] {
-	if {[lsearch -exact $constraintsSpecified $elt] == -1} {
+	if {[lsearch -exact [ConstraintsSpecifiedByCommandLineArgument] $elt] 
+		== -1} {
 	    testConstraint $elt 0
 	}
     }
@@ -951,10 +965,6 @@ proc tcltest::PrintError {errorMsg} {
     return
 }
 
-if {[llength [info commands tcltest::initConstraintsHook]] == 0} {
-    proc tcltest::initConstraintsHook {} {}
-}
-
 # tcltest::SafeFetch --
 #
 #	 The following trace procedure makes it so that we can safely
@@ -981,16 +991,44 @@ proc tcltest::SafeFetch {n1 n2 op} {
     DebugPuts 3 "entering SafeFetch $n1 $n2 $op"
     if {[string equal {} $n2]} {return}
     if {![info exists testConstraints($n2)]} {
-	testConstraint $n2 0
+	if {[catch {testConstraint $n2 [eval [ConstraintInitializer $n2]]}]} {
+	    testConstraint $n2 0
+	}
     }
+}
+
+# tcltest::ConstraintInitializer --
+#
+#	Get or set a script that when evaluated in the tcltest namespace
+#	will return a boolean value with which to initialize the
+#	associated constraint.
+#
+# Arguments:
+#	constraint - name of the constraint initialized by the script
+#	script - the initializer script
+#
+# Results
+#	boolean value of the constraint - enabled or disabled
+#
+# Side effects:
+#	Constraint is initialized for future reference by [test]
+proc tcltest::ConstraintInitializer {constraint {script ""}} {
+    variable ConstraintInitializer
+    DebugPuts 3 "entering ConstraintInitializer $constraint $script"
+    if {[llength [info level 0]] == 2} {
+	return $ConstraintInitializer($constraint)
+    }
+    # Check for boolean values
+    if {![info complete $script]} {
+	return -code error "ConstraintInitializer must be complete script"
+    }
+    set ConstraintInitializer($constraint) $script
 }
 
 # tcltest::InitConstraints --
 #
-# Check constraint information that will determine which tests to run.
-# To do this, create an array testConstraints.  Each element has a value
-# of 0 or 1.  If the element is "true" then tests with that constraint
-# will be run, otherwise tests with that constraint will be skipped.
+# Call all registered constraint initializers to force initialization
+# of all known constraints.
 # See the tcltest man page for the list of built-in constraints defined
 # in this procedure.
 #
@@ -1006,118 +1044,109 @@ proc tcltest::SafeFetch {n1 n2 op} {
 #
 
 proc tcltest::InitConstraints {} {
-    global tcl_platform tcl_interactive tk_version
-    variable testConstraints
-
-    # Safely refer to non-existent members of the testConstraints array
-    # without causing an error.
-    trace variable testConstraints r [namespace code SafeFetch]
-
+    variable ConstraintInitializer
     initConstraintsHook
+    foreach constraint [array names ConstraintInitializer] {
+	testConstraint $constraint
+    }
+}
 
-    testConstraint singleTestInterp [singleProcess]
+proc tcltest::DefineConstraintInitializers {} {
+    ConstraintInitializer singleTestInterp {singleProcess}
 
     # All the 'pc' constraints are here for backward compatibility and
     # are not documented.  They have been replaced with equivalent 'win'
     # constraints.
 
-    testConstraint unixOnly [string equal $tcl_platform(platform) unix]
-    testConstraint macOnly \
-	    [string equal $tcl_platform(platform) macintosh]
-    testConstraint pcOnly [string equal $tcl_platform(platform) windows]
-    testConstraint winOnly \
-	    [string equal $tcl_platform(platform) windows]
+    ConstraintInitializer unixOnly \
+	    {string equal $::tcl_platform(platform) unix}
+    ConstraintInitializer macOnly \
+	    {string equal $::tcl_platform(platform) macintosh}
+    ConstraintInitializer pcOnly \
+	    {string equal $::tcl_platform(platform) windows}
+    ConstraintInitializer winOnly \
+	    {string equal $::tcl_platform(platform) windows}
 
-    testConstraint unix [testConstraint unixOnly]
-    testConstraint mac [testConstraint macOnly]
-    testConstraint pc [testConstraint pcOnly]
-    testConstraint win [testConstraint winOnly]
+    ConstraintInitializer unix {testConstraint unixOnly}
+    ConstraintInitializer mac {testConstraint macOnly}
+    ConstraintInitializer pc {testConstraint pcOnly}
+    ConstraintInitializer win {testConstraint winOnly}
 
-    testConstraint unixOrPc \
-	    [expr {[testConstraint unix] || [testConstraint pc]}]
-    testConstraint macOrPc \
-	    [expr {[testConstraint mac] || [testConstraint pc]}]
-    testConstraint unixOrWin \
-	    [expr {[testConstraint unix] || [testConstraint win]}]
-    testConstraint macOrWin \
-	    [expr {[testConstraint mac] || [testConstraint win]}]
-    testConstraint macOrUnix \
-	    [expr {[testConstraint mac] || [testConstraint unix]}]
+    ConstraintInitializer unixOrPc \
+	    {expr {[testConstraint unix] || [testConstraint pc]}}
+    ConstraintInitializer macOrPc \
+	    {expr {[testConstraint mac] || [testConstraint pc]}}
+    ConstraintInitializer unixOrWin \
+	    {expr {[testConstraint unix] || [testConstraint win]}}
+    ConstraintInitializer macOrWin \
+	    {expr {[testConstraint mac] || [testConstraint win]}}
+    ConstraintInitializer macOrUnix \
+	    {expr {[testConstraint mac] || [testConstraint unix]}}
 
-    testConstraint nt [string equal $tcl_platform(os) "Windows NT"]
-    testConstraint 95 [string equal $tcl_platform(os) "Windows 95"]
-    testConstraint 98 [string equal $tcl_platform(os) "Windows 98"]
+    ConstraintInitializer nt {string equal $tcl_platform(os) "Windows NT"}
+    ConstraintInitializer 95 {string equal $tcl_platform(os) "Windows 95"}
+    ConstraintInitializer 98 {string equal $tcl_platform(os) "Windows 98"}
 
     # The following Constraints switches are used to mark tests that
     # should work, but have been temporarily disabled on certain
     # platforms because they don't and we haven't gotten around to
     # fixing the underlying problem.
 
-    testConstraint tempNotPc [expr {![testConstraint pc]}]
-    testConstraint tempNotWin [expr {![testConstraint win]}]
-    testConstraint tempNotMac [expr {![testConstraint mac]}]
-    testConstraint tempNotUnix [expr {![testConstraint unix]}]
+    ConstraintInitializer tempNotPc {expr {![testConstraint pc]}}
+    ConstraintInitializer tempNotWin {expr {![testConstraint win]}}
+    ConstraintInitializer tempNotMac {expr {![testConstraint mac]}}
+    ConstraintInitializer tempNotUnix {expr {![testConstraint unix]}}
 
     # The following Constraints switches are used to mark tests that
     # crash on certain platforms, so that they can be reactivated again
     # when the underlying problem is fixed.
 
-    testConstraint pcCrash [expr {![testConstraint pc]}]
-    testConstraint winCrash [expr {![testConstraint win]}]
-    testConstraint macCrash [expr {![testConstraint mac]}]
-    testConstraint unixCrash [expr {![testConstraint unix]}]
+    ConstraintInitializer pcCrash {expr {![testConstraint pc]}}
+    ConstraintInitializer winCrash {expr {![testConstraint win]}}
+    ConstraintInitializer macCrash {expr {![testConstraint mac]}}
+    ConstraintInitializer unixCrash {expr {![testConstraint unix]}}
 
     # Skip empty tests
 
-    testConstraint emptyTest 0
+    ConstraintInitializer emptyTest {format 0}
 
     # By default, tests that expose known bugs are skipped.
 
-    testConstraint knownBug 0
+    ConstraintInitializer knownBug {format 0}
 
     # By default, non-portable tests are skipped.
 
-    testConstraint nonPortable 0
+    ConstraintInitializer nonPortable {format 0}
 
     # Some tests require user interaction.
 
-    testConstraint userInteraction 0
+    ConstraintInitializer userInteraction {format 0}
 
     # Some tests must be skipped if the interpreter is not in
     # interactive mode
 
-    if {[info exists tcl_interactive]} {
-	testConstraint interactive $tcl_interactive
-    } else {
-	testConstraint interactive 0
-    }
+    ConstraintInitializer interactive \
+	    {expr {[info exists ::tcl_interactive] && $::tcl_interactive}}
 
     # Some tests can only be run if the installation came from a CD
     # image instead of a web image.  Some tests must be skipped if you
     # are running as root on Unix.  Other tests can only be run if you
     # are running as root on Unix.
 
-    testConstraint root 0
-    testConstraint notRoot 1
-    if {[string equal unix $tcl_platform(platform)]
-	    && ([string equal root $tcl_platform(user)]
-		|| [string equal "" $tcl_platform(user)])} {
-	testConstraint root 1
-	testConstraint notRoot 0
-    }
+    ConstraintInitializer root {expr \
+	    {[string equal unix $::tcl_platform(platform)]
+	    && ([string equal root $::tcl_platform(user)]
+		|| [string equal "" $::tcl_platform(user)])}}
+    ConstraintInitializer notRoot {expr {![testConstraint root]}}
 
     # Set nonBlockFiles constraint: 1 means this platform supports
     # setting files into nonblocking mode.
 
-    if {[catch {set f [open defs r]}]} {
-	testConstraint nonBlockFiles 1
-    } else {
-	if {[catch {fconfigure $f -blocking off}] == 0} {
-	    testConstraint nonBlockFiles 1
-	} else {
-	    testConstraint nonBlockFiles 0
-	}
-	close $f
+    ConstraintInitializer nonBlockFiles {
+	    set code [expr {[catch {set f [open defs r]}] 
+		    || [catch {fconfigure $f -blocking off}]}]
+	    catch {close $f}
+	    set code
     }
 
     # Set asyncPipeClose constraint: 1 means this platform supports
@@ -1127,94 +1156,82 @@ proc tcltest::InitConstraints {} {
     # potential problem with select is apparently interfering.
     # (Mark Diekhans).
 
-    testConstraint asyncPipeClose 1
-    if {[string equal unix $tcl_platform(platform)] && ([catch {
-	    exec uname -X | fgrep {Release = 3.2v}}] == 0)} {
-	testConstraint asyncPipeClose 0
-    }
+    ConstraintInitializer asyncPipeClose {expr {
+	    !([string equal unix $::tcl_platform(platform)] 
+	    && ([catch {exec uname -X | fgrep {Release = 3.2v}}] == 0))}}
 
     # Test to see if we have a broken version of sprintf with respect
     # to the "e" format of floating-point numbers.
 
-    testConstraint eformat 1
-    if {![string equal [format %g 5e-5] 5e-05]} {
-	testConstraint eformat 0
-    }
+    ConstraintInitializer eformat {string equal [format %g 5e-5] 5e-05}
 
     # Test to see if execed commands such as cat, echo, rm and so forth
     # are present on this machine.
 
-    testConstraint unixExecs 1
-    if {[string equal macintosh $tcl_platform(platform)]} {
-	testConstraint unixExecs 0
-    }
-    if {[testConstraint unixExecs]
-	    && [string equal windows $tcl_platform(platform)]} {
-	set file "_tcl_test_remove_me.txt"
-	if {[catch {
-	    set fid [open $file w]
-	    puts $fid "hello"
-	    close $fid
-	}]} {
-	    testConstraint unixExecs 0
-	} elseif {
-	    [catch {exec cat $file}] ||
-	    [catch {exec echo hello}] ||
-	    [catch {exec sh -c echo hello}] ||
-	    [catch {exec wc $file}] ||
-	    [catch {exec sleep 1}] ||
-	    [catch {exec echo abc > $file}] ||
-	    [catch {exec chmod 644 $file}] ||
-	    [catch {exec rm $file}] ||
-	    [string equal {} [auto_execok mkdir]] ||
-	    [string equal {} [auto_execok fgrep]] ||
-	    [string equal {} [auto_execok grep]] ||
-	    [string equal {} [auto_execok ps]]
+    ConstraintInitializer unixExecs {
+	set code 1
+        if {[string equal macintosh $::tcl_platform(platform)]} {
+	    set code 0
+        }
+        if {[string equal windows $::tcl_platform(platform)]} {
+	    if {[catch {
+	        set file _tcl_test_remove_me.txt
+	        makeFile {hello} $file
+	    }]} {
+	        set code 0
+	    } elseif {
+	        [catch {exec cat $file}] ||
+	        [catch {exec echo hello}] ||
+	        [catch {exec sh -c echo hello}] ||
+	        [catch {exec wc $file}] ||
+	        [catch {exec sleep 1}] ||
+	        [catch {exec echo abc > $file}] ||
+	        [catch {exec chmod 644 $file}] ||
+	        [catch {exec rm $file}] ||
+	        [llength [auto_execok mkdir]] == 0 ||
+	        [llength [auto_execok fgrep]] == 0 ||
+	        [llength [auto_execok grep]] == 0 ||
+	        [llength [auto_execok ps]] == 0
 	    } {
-	    testConstraint unixExecs 0
+	        set code 0
+	    }
+	    removeFile $file
+        }
+	set code
+    }
+
+    ConstraintInitializer stdio {
+	set code 0
+	if {![catch {set f [open "|[list [interpreter]]" w]}]} {
+	    if {![catch {puts $f exit}]} {
+		if {![catch {close $f}]} {
+		    set code 1
+		}
+	    }
 	}
-	file delete -force $file
+	set code
     }
-
-    # Locate tcltest executable
-    if {![info exists tk_version]} {
-	interpreter [info nameofexecutable]
-    }
-
-    testConstraint stdio 0
-    catch {
-	catch {file delete -force tmp}
-	set f [open tmp w]
-	puts $f {
-	    exit
-	}
-	close $f
-
-	set f [open "|[list [interpreter] tmp]" r]
-	close $f
-	
-	testConstraint stdio 1
-    }
-    catch {file delete -force tmp}
 
     # Deliberately call socket with the wrong number of arguments.  The
     # error message you get will indicate whether sockets are available
     # on this system.
 
-    catch {socket} msg
-    testConstraint socket [string compare $msg \
-	    "sockets are not available on this system"]
+    ConstraintInitializer socket {
+	catch {socket} msg
+	string compare $msg "sockets are not available on this system"
+    }
 
     # Check for internationalization
-
-    if {[llength [info commands testlocale]] == 0} {
-	# No testlocale command, no tests...
-	testConstraint hasIsoLocale 0
-    } else {
-	testConstraint hasIsoLocale \
-		[string length [SetIso8859_1_Locale]]
-	RestoreLocale
+    ConstraintInitializer hasIsoLocale {
+	if {[llength [info commands testlocale]] == 0} {
+	    set code 0
+	} else {
+	    set code [string length [SetIso8859_1_Locale]]
+	    RestoreLocale
+	}
+	set code
     }
+
 }
 #####################################################################
 
@@ -1399,12 +1416,12 @@ proc tcltest::ProcessFlags {flagArray} {
 
     # Use the -constraints flag, if given, to turn on constraints that
     # are turned off by default: userInteractive knownBug nonPortable.
-    # This code fragment must be run after constraints are initialized.
 
     if {[info exists flag(-constraints)]} {
 	foreach elt $flag(-constraints) {
 	    testConstraint $elt 1
 	}
+	ConstraintsSpecifiedByCommandLineArgument $flag(-constraints)
     }
 
     # Use the -limitconstraints flag, if given, to tell the harness to
@@ -2220,7 +2237,6 @@ proc tcltest::RunTest {
     variable numTests
     variable skip
     variable match
-    variable limitConstraints
     variable testConstraints
     variable originalTclPlatform
     variable coreModTime
@@ -2264,7 +2280,7 @@ proc tcltest::RunTest {
     if {[string equal {} $constraints]} {
 	# If we're limited to the listed constraints and there aren't
 	# any listed, then we shouldn't run the test.
-	if {$limitConstraints} {
+	if {[limitConstraints]} {
 	    AddToSkippedBecause userSpecifiedLimitConstraint
 	    if {$testLevel == 1} {
 		incr numTests(Skipped)
@@ -3309,7 +3325,25 @@ proc tcltest::threadReap {} {
 
 # Initialize the constraints and set up command line arguments
 namespace eval tcltest {
-    InitConstraints
+    # Define initializers for all the built-in contraint definitions
+    DefineConstraintInitializers
+
+    # Set up the constraints in the testConstraints array to be lazily
+    # initialized by a registered initializer, or by "false" if no
+    # initializer is registered.
+    trace variable testConstraints r [namespace code SafeFetch]
+
+    # Only initialize constraints at package load time if an
+    # [initConstraintsHook] has been pre-defined.  This is only
+    # for compatibility support.  The modern way to add a custom
+    # test constraint is to just call the [testConstraint] command
+    # straight away, without all this "hook" nonsense.
+    if {[string equal [namespace current] \
+	    [namespace qualifiers [namespace which initConstraintsHook]]]} {
+	InitConstraints
+    } else {
+	proc initConstraintsHook {} {}
+    }
     ProcessCmdLineArgs
 
     # Save the names of files that already exist in
