@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: FileSystem.3,v 1.30 2002/07/22 16:51:47 vincentdarley Exp $
+'\" RCS: @(#) $Id: FileSystem.3,v 1.31 2003/02/10 10:26:24 vincentdarley Exp $
 '\" 
 .so man.macros
 .TH Filesystem 3 8.4 Tcl "Tcl Library Procedures"
@@ -997,15 +997,17 @@ typedef int Tcl_FSMatchInDirectoryProc(
 	Tcl_GlobTypeData * \fItypes\fR);
 .CE
 .PP
-The function should return all files or directories (or other
-filesystem objects) which match the given pattern and accord with the
-\fItypes\fR specification given.  There are two ways in which this 
-function may be called.  If \fIpattern\fR is NULL, then \fIpathPtr\fR
-is a full path specification of a single file or directory which
-should be checked for existence and correct type.  Otherwise, \fIpathPtr\fR
-is a directory, the contents of which the function should search for 
-files or directories which have the correct type.  In either case,
-\fIpathPtr\fR can be assumed to be both non-NULL and non-empty.  
+The function should return all files or directories (or other filesystem
+objects) which match the given pattern and accord with the \fItypes\fR
+specification given.  There are two ways in which this function may be
+called.  If \fIpattern\fR is NULL, then \fIpathPtr\fR is a full path
+specification of a single file or directory which should be checked for
+existence and correct type.  Otherwise, \fIpathPtr\fR is a directory, the
+contents of which the function should search for files or directories
+which have the correct type.  In either case, \fIpathPtr\fR can be
+assumed to be both non-NULL and non-empty.  It is not currently
+documented whether \fIpathPtr\fR will have a file separator at its end of
+not, so code should be flexible to both possibilities.
 .PP
 The return value is a standard Tcl result indicating whether an error
 occurred in the matching process.  Error messages are placed in interp, 
