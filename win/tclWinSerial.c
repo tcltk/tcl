@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinSerial.c,v 1.1.2.5 1999/03/27 00:39:32 redman Exp $
+ * RCS: @(#) $Id: tclWinSerial.c,v 1.1.2.6 1999/04/05 21:58:16 stanton Exp $
  */
 
 #include "tclWinInt.h"
@@ -25,7 +25,14 @@
  */
 
 static int initialized = 0;
-TCL_DECLARE_MUTEX(procMutex)
+
+/*
+ * The serialMutex locks around access to the initialized variable, and it is
+ * used to protect background threads from being terminated while they are
+ * using APIs that hold locks.
+ */
+
+TCL_DECLARE_MUTEX(serialMutex)
 
 /*
  * Bit masks used in the flags field of the SerialInfo structure below.
@@ -197,12 +204,12 @@ SerialInit()
      */
     
     if (!initialized) {
-	Tcl_MutexLock(&procMutex);
+	Tcl_MutexLock(&serialMutex);
 	if (!initialized) {
 	    initialized = 1;
 	    Tcl_CreateExitHandler(ProcExitHandler, NULL);
 	}
-	Tcl_MutexUnlock(&procMutex);
+	Tcl_MutexUnlock(&serialMutex);
     }
 
     tsdPtr = (ThreadSpecificData *)TclThreadDataKeyGet(&dataKey);
@@ -260,9 +267,9 @@ static void
 ProcExitHandler(
     ClientData clientData)	/* Old window proc */
 {
-    Tcl_MutexLock(&procMutex);
+    Tcl_MutexLock(&serialMutex);
     initialized = 0;
-    Tcl_MutexUnlock(&procMutex);
+    Tcl_MutexUnlock(&serialMutex);
 }
 
 /*
@@ -454,7 +461,20 @@ SerialCloseProc(
 
     errorCode = 0;
     if (serialPtr->readThread) {
+	/*
+	 * Forcibly terminate the background thread.  We cannot rely on the
+	 * thread to cleanly terminate itself because we have no way of
+	 * closing the handle without blocking in the case where the
+	 * thread is in the middle of an I/O operation.  Note that we need
+	 * to guard against terminating the thread while it is in the
+	 * middle of Tcl_ThreadAlert because it won't be able to release
+	 * the notifier lock.
+	 */
+
+	Tcl_MutexLock(&serialMutex);
 	TerminateThread(serialPtr->readThread, 0);
+	Tcl_MutexUnlock(&serialMutex);
+
 	/*
 	 * Wait for the thread to terminate.  This ensures that we are
 	 * completely cleaned up before we leave this function. 
@@ -470,7 +490,20 @@ SerialCloseProc(
 
     if (serialPtr->writeThread) {
 	WaitForSingleObject(serialPtr->writable, INFINITE);
+
+	/*
+	 * Forcibly terminate the background thread.  We cannot rely on the
+	 * thread to cleanly terminate itself because we have no way of
+	 * closing the handle without blocking in the case where the
+	 * thread is in the middle of an I/O operation.  Note that we need
+	 * to guard against terminating the thread while it is in the
+	 * middle of Tcl_ThreadAlert because it won't be able to release
+	 * the notifier lock.
+	 */
+
+	Tcl_MutexLock(&serialMutex);
 	TerminateThread(serialPtr->writeThread, 0);
+	Tcl_MutexUnlock(&serialMutex);
 
 	/*
 	 * Wait for the thread to terminate.  This ensures that we are
@@ -1054,7 +1087,16 @@ SerialReaderThread(LPVOID arg)
 	 */
 
 	SetEvent(infoPtr->readable);
+
+	/*
+	 * Alert the foreground thread.  Note that we need to treat this like
+	 * a critical section so the foreground thread does not terminate
+	 * this thread while we are holding a mutex in the notifier code.
+	 */
+
+	Tcl_MutexLock(&serialMutex);
 	Tcl_ThreadAlert(infoPtr->threadId);
+	Tcl_MutexUnlock(&serialMutex);
     }
     return 0;			/* NOT REACHED */
 }
@@ -1121,7 +1163,16 @@ SerialWriterThread(LPVOID arg)
 	 */
 
 	SetEvent(infoPtr->writable);
+
+	/*
+	 * Alert the foreground thread.  Note that we need to treat this like
+	 * a critical section so the foreground thread does not terminate
+	 * this thread while we are holding a mutex in the notifier code.
+	 */
+
+	Tcl_MutexLock(&serialMutex);
 	Tcl_ThreadAlert(infoPtr->threadId);
+	Tcl_MutexUnlock(&serialMutex);
     }
     return 0;			/* NOT REACHED */
 }
@@ -1131,7 +1182,7 @@ SerialWriterThread(LPVOID arg)
 /*
  *----------------------------------------------------------------------
  *
- * TclWinOpenConsoleChannel --
+ * TclWinOpenSerialChannel --
  *
  *	Constructs a Serial port channel for the specified standard OS handle.
  *      This is a helper function to break up the construction of 

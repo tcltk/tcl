@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPipe.c,v 1.1.2.9 1999/03/27 00:39:31 redman Exp $
+ * RCS: @(#) $Id: tclWinPipe.c,v 1.1.2.10 1999/04/05 21:58:16 stanton Exp $
  */
 
 #include "tclWinInt.h"
@@ -25,7 +25,14 @@
  */
 
 static int initialized = 0;
-TCL_DECLARE_MUTEX(procMutex)
+
+/*
+ * The pipeMutex locks around access to the initialized and procList variables,
+ * and it is used to protect background threads from being terminated while
+ * they are using APIs that hold locks.
+ */
+
+TCL_DECLARE_MUTEX(pipeMutex)
 
 /*
  * The following defines identify the various types of applications that 
@@ -274,13 +281,13 @@ PipeInit()
      */
 
     if (!initialized) {
-	Tcl_MutexLock(&procMutex);
+	Tcl_MutexLock(&pipeMutex);
 	if (!initialized) {
 	    initialized = 1;
 	    procList = NULL;
 	    Tcl_CreateExitHandler(ProcExitHandler, NULL);
 	}
-	Tcl_MutexUnlock(&procMutex);
+	Tcl_MutexUnlock(&pipeMutex);
     }
 
     tsdPtr = (ThreadSpecificData *)TclThreadDataKeyGet(&dataKey);
@@ -337,9 +344,9 @@ static void
 ProcExitHandler(
     ClientData clientData)	/* Old window proc */
 {
-    Tcl_MutexLock(&procMutex);
+    Tcl_MutexLock(&pipeMutex);
     initialized = 0;
-    Tcl_MutexUnlock(&procMutex);
+    Tcl_MutexUnlock(&pipeMutex);
 }
 
 /*
@@ -956,14 +963,14 @@ TclpGetPid(
 {
     ProcInfo *infoPtr;
 
-    Tcl_MutexLock(&procMutex);
+    Tcl_MutexLock(&pipeMutex);
     for (infoPtr = procList; infoPtr != NULL; infoPtr = infoPtr->nextPtr) {
 	if (infoPtr->hProcess == (HANDLE) pid) {
-	    Tcl_MutexUnlock(&procMutex);
+	    Tcl_MutexUnlock(&pipeMutex);
 	    return infoPtr->dwProcessId;
 	}
     }
-    Tcl_MutexUnlock(&procMutex);
+    Tcl_MutexUnlock(&pipeMutex);
     return (unsigned long) -1;
 }
 
@@ -2145,7 +2152,19 @@ PipeClose2Proc(
 	 */
 
 	if (pipePtr->readThread) {
+	    /*
+	     * Forcibly terminate the background thread.  We cannot rely on the
+	     * thread to cleanly terminate itself because we have no way of
+	     * closing the pipe handle without blocking in the case where the
+	     * thread is in the middle of an I/O operation.  Note that we need
+	     * to guard against terminating the thread while it is in the
+	     * middle of Tcl_ThreadAlert because it won't be able to release
+	     * the notifier lock.
+	     */
+
+	    Tcl_MutexLock(&pipeMutex);
 	    TerminateThread(pipePtr->readThread, 0);
+	    Tcl_MutexUnlock(&pipeMutex);
 
 	    /*
 	     * Wait for the thread to terminate.  This ensures that we are
@@ -2174,7 +2193,22 @@ PipeClose2Proc(
 
 	if (pipePtr->writeThread) {
 	    WaitForSingleObject(pipePtr->writable, INFINITE);
+
+	    /*
+	     * Forcibly terminate the background thread.  We cannot rely on the
+	     * thread to cleanly terminate itself because we have no way of
+	     * closing the pipe handle without blocking in the case where the
+	     * thread is in the middle of an I/O operation.  Note that we need
+	     * to guard against terminating the thread while it is in the
+	     * middle of Tcl_ThreadAlert because it won't be able to release
+	     * the notifier lock.
+	     */
+
+	    Tcl_MutexLock(&pipeMutex);
 	    TerminateThread(pipePtr->writeThread, 0);
+	    Tcl_MutexUnlock(&pipeMutex);
+
+
 	    /*
 	     * Wait for the thread to terminate.  This ensures that we are
 	     * completely cleaned up before we leave this function. 
@@ -2194,6 +2228,7 @@ PipeClose2Proc(
 	pipePtr->validMask &= ~TCL_WRITABLE;
 	pipePtr->writeFile = NULL;
     }
+
     pipePtr->watchMask &= pipePtr->validMask;
 
     /*
@@ -2715,7 +2750,7 @@ Tcl_WaitPid(
      * Find the process on the process list.
      */
 
-    Tcl_MutexLock(&procMutex);
+    Tcl_MutexLock(&pipeMutex);
     prevPtrPtr = &procList;
     for (infoPtr = procList; infoPtr != NULL;
 	    prevPtrPtr = &infoPtr->nextPtr, infoPtr = infoPtr->nextPtr) {
@@ -2723,7 +2758,7 @@ Tcl_WaitPid(
 	    break;
 	}
     }
-    Tcl_MutexUnlock(&procMutex);
+    Tcl_MutexUnlock(&pipeMutex);
 
     /*
      * If the pid is not one of the processes we know about (we started it)
@@ -2800,10 +2835,10 @@ TclWinAddProcess(hProcess, id)
     ProcInfo *procPtr = (ProcInfo *) ckalloc(sizeof(ProcInfo));
     procPtr->hProcess = hProcess;
     procPtr->dwProcessId = id;
-    Tcl_MutexLock(&procMutex);
+    Tcl_MutexLock(&pipeMutex);
     procPtr->nextPtr = procList;
     procList = procPtr;
-    Tcl_MutexUnlock(&procMutex);
+    Tcl_MutexUnlock(&pipeMutex);
 }
 
 /*
@@ -3008,9 +3043,10 @@ PipeReaderThread(LPVOID arg)
 {
     PipeInfo *infoPtr = (PipeInfo *)arg;
     HANDLE *handle = ((WinFile *) infoPtr->readFile)->handle;
-    DWORD count;
+    DWORD count, err;
+    int done = 0;
 
-    for (;;) {
+    while (!done) {
 	/*
 	 * Wait for the main thread to signal before attempting to wait.
 	 */
@@ -3032,8 +3068,12 @@ PipeReaderThread(LPVOID arg)
 	     * EOF bit before signalling the main thread.
 	     */
 
-	    if (GetLastError() == ERROR_BROKEN_PIPE) {
+	    err = GetLastError();
+	    if (err == ERROR_BROKEN_PIPE) {
 		infoPtr->readFlags |= PIPE_EOF;
+		done = 1;
+	    } else if (err == ERROR_INVALID_HANDLE) {
+		break;
 	    }
 	} else if (count == 0) {
 	    if (ReadFile(handle, &(infoPtr->extraByte), 1, &count, NULL)
@@ -3045,7 +3085,6 @@ PipeReaderThread(LPVOID arg)
 
 		infoPtr->readFlags |= PIPE_EXTRABYTE;
 	    } else {
-		DWORD err;
 		err = GetLastError();
 		if (err == ERROR_BROKEN_PIPE) {
 		    /*
@@ -3054,9 +3093,13 @@ PipeReaderThread(LPVOID arg)
 		     */
 
 		    infoPtr->readFlags |= PIPE_EOF;
+		    done = 1;
+		} else if (err == ERROR_INVALID_HANDLE) {
+		    break;
 		}
 	    }
 	}
+
 		
 	/*
 	 * Signal the main thread by signalling the readable event and
@@ -3064,9 +3107,18 @@ PipeReaderThread(LPVOID arg)
 	 */
 
 	SetEvent(infoPtr->readable);
+	
+	/*
+	 * Alert the foreground thread.  Note that we need to treat this like
+	 * a critical section so the foreground thread does not terminate
+	 * this thread while we are holding a mutex in the notifier code.
+	 */
+
+	Tcl_MutexLock(&pipeMutex);
 	Tcl_ThreadAlert(infoPtr->threadId);
+	Tcl_MutexUnlock(&pipeMutex);
     }
-    return 0;			/* NOT REACHED */
+    return 0;
 }
 
 /*
@@ -3095,8 +3147,9 @@ PipeWriterThread(LPVOID arg)
     HANDLE *handle = ((WinFile *) infoPtr->writeFile)->handle;
     DWORD count, toWrite;
     char *buf;
+    int done = 0;
 
-    for (;;) {
+    while (!done) {
 	/*
 	 * Wait for the main thread to signal before attempting to write.
 	 */
@@ -3113,6 +3166,7 @@ PipeWriterThread(LPVOID arg)
 	while (toWrite > 0) {
 	    if (WriteFile(handle, buf, toWrite, &count, NULL) == FALSE) {
 		infoPtr->writeError = GetLastError();
+		done = 1; 
 		break;
 	    } else {
 		toWrite -= count;
@@ -3126,8 +3180,17 @@ PipeWriterThread(LPVOID arg)
 	 */
 
 	SetEvent(infoPtr->writable);
+
+	/*
+	 * Alert the foreground thread.  Note that we need to treat this like
+	 * a critical section so the foreground thread does not terminate
+	 * this thread while we are holding a mutex in the notifier code.
+	 */
+
+	Tcl_MutexLock(&pipeMutex);
 	Tcl_ThreadAlert(infoPtr->threadId);
+	Tcl_MutexUnlock(&pipeMutex);
     }
-    return 0;			/* NOT REACHED */
+    return 0;
 }
 

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinConsole.c,v 1.1.2.6 1999/04/01 00:56:12 redman Exp $
+ * RCS: @(#) $Id: tclWinConsole.c,v 1.1.2.7 1999/04/05 21:58:15 stanton Exp $
  */
 
 #include "tclWinInt.h"
@@ -25,8 +25,14 @@
  */
 
 static int initialized = 0;
-TCL_DECLARE_MUTEX(procMutex)
 
+/*
+ * The consoleMutex locks around access to the initialized variable, and it is
+ * used to protect background threads from being terminated while they are
+ * using APIs that hold locks.
+ */
+
+TCL_DECLARE_MUTEX(consoleMutex)
 
 /*
  * Bit masks used in the flags field of the ConsoleInfo structure below.
@@ -203,12 +209,12 @@ ConsoleInit()
      */
 
     if (!initialized) {
-	Tcl_MutexLock(&procMutex);
+	Tcl_MutexLock(&consoleMutex);
 	if (!initialized) {
 	    initialized = 1;
 	    Tcl_CreateExitHandler(ProcExitHandler, NULL);
 	}
-	Tcl_MutexUnlock(&procMutex);
+	Tcl_MutexUnlock(&consoleMutex);
     }
 
     tsdPtr = (ThreadSpecificData *)TclThreadDataKeyGet(&dataKey);
@@ -266,9 +272,9 @@ static void
 ProcExitHandler(
     ClientData clientData)	/* Old window proc */
 {
-    Tcl_MutexLock(&procMutex);
+    Tcl_MutexLock(&consoleMutex);
     initialized = 0;
-    Tcl_MutexUnlock(&procMutex);
+    Tcl_MutexUnlock(&consoleMutex);
 }
 
 /*
@@ -468,7 +474,19 @@ ConsoleCloseProc(
      */
     
     if (consolePtr->readThread) {
+	/*
+	 * Forcibly terminate the background thread.  We cannot rely on the
+	 * thread to cleanly terminate itself because we have no way of
+	 * closing the handle without blocking in the case where the
+	 * thread is in the middle of an I/O operation.  Note that we need
+	 * to guard against terminating the thread while it is in the
+	 * middle of Tcl_ThreadAlert because it won't be able to release
+	 * the notifier lock.
+	 */
+
+	Tcl_MutexLock(&consoleMutex);
 	TerminateThread(consolePtr->readThread, 0);
+	Tcl_MutexUnlock(&consoleMutex);
 
 	/*
 	 * Wait for the thread to terminate.  This ensures that we are
@@ -491,7 +509,20 @@ ConsoleCloseProc(
     
     if (consolePtr->writeThread) {
 	WaitForSingleObject(consolePtr->writable, INFINITE);
+
+	/*
+	 * Forcibly terminate the background thread.  We cannot rely on the
+	 * thread to cleanly terminate itself because we have no way of
+	 * closing the handle without blocking in the case where the
+	 * thread is in the middle of an I/O operation.  Note that we need
+	 * to guard against terminating the thread while it is in the
+	 * middle of Tcl_ThreadAlert because it won't be able to release
+	 * the notifier lock.
+	 */
+
+	Tcl_MutexLock(&consoleMutex);
 	TerminateThread(consolePtr->writeThread, 0);
+	Tcl_MutexUnlock(&consoleMutex);
 
 	/*
 	 * Wait for the thread to terminate.  This ensures that we are
@@ -1070,7 +1101,16 @@ ConsoleReaderThread(LPVOID arg)
 	 */
 
 	SetEvent(infoPtr->readable);
+
+	/*
+	 * Alert the foreground thread.  Note that we need to treat this like
+	 * a critical section so the foreground thread does not terminate
+	 * this thread while we are holding a mutex in the notifier code.
+	 */
+
+	Tcl_MutexLock(&consoleMutex);
 	Tcl_ThreadAlert(infoPtr->threadId);
+	Tcl_MutexUnlock(&consoleMutex);
     }
     return 0;			/* NOT REACHED */
 }
@@ -1132,7 +1172,16 @@ ConsoleWriterThread(LPVOID arg)
 	 */
 	
 	SetEvent(infoPtr->writable);
+
+	/*
+	 * Alert the foreground thread.  Note that we need to treat this like
+	 * a critical section so the foreground thread does not terminate
+	 * this thread while we are holding a mutex in the notifier code.
+	 */
+
+	Tcl_MutexLock(&consoleMutex);
 	Tcl_ThreadAlert(infoPtr->threadId);
+	Tcl_MutexUnlock(&consoleMutex);
     }
     return 0;			/* NOT REACHED */
 }
