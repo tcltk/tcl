@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: format.test,v 1.11.2.4 2003/05/14 23:01:56 dkf Exp $
+# RCS: @(#) $Id: format.test,v 1.11.2.5 2004/10/27 15:39:36 kennykb Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -534,6 +534,14 @@ test format-18.2 {do not demote existing numeric values} {wideIntExpressions} {
     set b 0xaaaaaaaaab
     list [catch {format %08x $a} msg] $msg [expr {$a == $b}]
 } {1 {integer value too large to represent} 1}
+
+test format-19.1 {
+    regression test - tcl-core message by Brian Griffin on
+    26 0ctober 2004
+} {
+    set x 0x8fedc654
+    list [expr { ~ $x }] [format %08x [expr { ~$x }]]
+} {-2414724693 701239ab}
 
 # cleanup
 catch {unset a}
