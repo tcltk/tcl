@@ -15,6 +15,8 @@ msgcat \- Tcl message catalog
 .SH SYNOPSIS
 \fB::msgcat::mc \fIsrc-string\fR ?\fIarg arg ...\fR?
 .sp
+\fB::msgcat::mcmax ?\fIsrc-string src-string ...\fR?
+.sp
 \fB::msgcat::mclocale \fR?\fInewLocale\fR?
 .sp
 \fB::msgcat::mcpreferences\fR
@@ -62,6 +64,12 @@ applicaton can pass the English string through \fB::msgcat::mc\fR and
 use the result.  If an application is written for a single language in
 this fashion, then it is easy to add support for additional languages
 later simply by defining new message catalog entries.
+.TP
+\fB::msgcat::mcmax ?\fIsrc-string src-string ...\fR?
+Given several source strings, \fB::msgcat::mcmax\fR returns the length
+of the longest translated string.  This is useful when designing
+localized GUI's, which may require that all buttons, for example, be a
+fixed width (which will be the width of the widest button).
 .TP
 \fB::msgcat::mclocale \fR?\fInewLocale\fR?  
 This function sets the locale to \fInewLocale\fR.  If \fInewLocale\fR

@@ -1,3 +1,11 @@
+2000-06-29  Eric Melski  <ericm@scriptics.com>
+
+	* doc/msgcat.n: Doc's for mcmax function.
+
+	* library/msgcat1.0/msgcat.tcl: Applied patches from Laurent
+	Duperval, to add mcmax function, which computes the length of the
+	longest of several translated strings.  Bumped version number to 1.1.
+
 2000-06-27  Eric Melski  <ericm@scriptics.com>
 
 	* tests/stringObj.test: Tweaked tests to avoid hardcoded
