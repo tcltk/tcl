@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.1.2.3 1998/09/30 20:46:23 stanton Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.1.2.4 1998/10/06 00:35:42 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -694,13 +694,16 @@ TclCompileScript(interp, script, numBytes, nested, envPtr)
     int startCodeOffset = -1;	/* Offset of first byte of current command's
                                  * code. Init. to avoid compiler warning. */
     unsigned char *entryCodeNext = envPtr->codeNext;
-    char *word, *p, *next;
+    char *p, *next;
     Namespace *cmdNsPtr;
     Command *cmdPtr;
     Tcl_Token *tokenPtr;
     int bytesLeft, isFirstCmd, gotParse, wordIdx, currCmdIndex;
     int commandLength, objIndex, code;
-    char savedChar, prev;
+    char prev;
+    Tcl_DString ds;
+
+    Tcl_DStringInit(&ds);
 
     if (numBytes < 0) {
 	numBytes = strlen(script);
@@ -794,21 +797,32 @@ TclCompileScript(interp, script, numBytes, nested, envPtr)
 		     * compile procedure, let it compile the command.
 		     */
 
-		    word = tokenPtr[1].start;
-		    savedChar = word[tokenPtr[1].size];
-		    word[tokenPtr[1].size] = '\0';
 		    if (wordIdx == 0) {
 			if (envPtr->procPtr != NULL) {
 			    cmdNsPtr = envPtr->procPtr->cmdPtr->nsPtr;
 			} else {
 			    cmdNsPtr = NULL; /* use current NS */
 			}
-			cmdPtr = (Command *) Tcl_FindCommand(interp, word,
+
+			/*
+			 * We copy the string before trying to find the command
+			 * by name.  We used to modify the string in place, but
+			 * this is not safe because the name resolution
+			 * handlers could have side effects that rely on the
+			 * unmodified string.
+			 */
+
+			Tcl_DStringSetLength(&ds, 0);
+			Tcl_DStringAppend(&ds, tokenPtr[1].start,
+				tokenPtr[1].size);
+
+			cmdPtr = (Command *) Tcl_FindCommand(interp,
+				Tcl_DStringValue(&ds),
 			        (Tcl_Namespace *) cmdNsPtr, /*flags*/ 0);
+
 			if ((cmdPtr != NULL)
 			        && (cmdPtr->compileProc != NULL)
 			        && !(iPtr->flags & DONT_COMPILE_CMDS_INLINE)) {
-			    word[tokenPtr[1].size] = savedChar;
 			    code = (*(cmdPtr->compileProc))(interp, &parse,
 			            envPtr);
 			    if (code == TCL_OK) {
@@ -828,19 +842,20 @@ TclCompileScript(interp, script, numBytes, nested, envPtr)
 			 * reduce runtime lookups.
 			 */
 
-			objIndex = TclRegisterLiteral(envPtr, word,
-			        tokenPtr[1].size, /*onHeap*/ 0);
+			objIndex = TclRegisterLiteral(envPtr,
+				tokenPtr[1].start, tokenPtr[1].size,
+				/*onHeap*/ 0);
 			if (cmdPtr != NULL) {
 			    TclSetCmdNameObj(interp,
 			           envPtr->literalArrayPtr[objIndex].objPtr,
 				   cmdPtr);
 			}
 		    } else {
-			objIndex = TclRegisterLiteral(envPtr, word,
-			        tokenPtr[1].size, /*onHeap*/ 0);
+			objIndex = TclRegisterLiteral(envPtr,
+				tokenPtr[1].start, tokenPtr[1].size,
+				/*onHeap*/ 0);
 		    }
 		    TclEmitPush(objIndex, envPtr);
-		    word[tokenPtr[1].size] = savedChar;
 		    maxDepth = TclMax((wordIdx + 1), maxDepth);
 		} else {
 		    /*
@@ -918,6 +933,7 @@ TclCompileScript(interp, script, numBytes, nested, envPtr)
 	iPtr->termOffset = (p - script);
     }
     envPtr->maxStackDepth = maxDepth;
+    Tcl_DStringFree(&ds);
     return TCL_OK;
 	
     error:
@@ -950,6 +966,7 @@ TclCompileScript(interp, script, numBytes, nested, envPtr)
     }
     iPtr->termOffset = (p - script);
     envPtr->maxStackDepth = maxDepth;
+    Tcl_DStringFree(&ds);
     return code;
 }
 
@@ -2923,6 +2940,7 @@ TclPrintByteCodeObj(interp, objPtr)
     unsigned char *codeDeltaNext, *codeLengthNext;
     unsigned char *srcDeltaNext, *srcLengthNext;
     int codeOffset, codeLen, srcOffset, srcLen, numCmds, delta, i;
+    Interp *iPtr = (Interp *) *codePtr->interpHandle;
 
     if (codePtr->refCount <= 0) {
 	return;			/* already freed */
@@ -2938,8 +2956,8 @@ TclPrintByteCodeObj(interp, objPtr)
 
     fprintf(stdout, "\nByteCode 0x%x, refCt %u, epoch %u, interp 0x%x (epoch %u)\n",
 	    (unsigned int) codePtr, codePtr->refCount,
-	    codePtr->compileEpoch, (unsigned int) codePtr->iPtr,
-	    codePtr->iPtr->compileEpoch);
+	    codePtr->compileEpoch, (unsigned int) iPtr,
+	    iPtr->compileEpoch);
     fprintf(stdout, "  Source ");
     TclPrintSource(stdout, codePtr->source,
 	    TclMin(codePtr->numSrcBytes, 55));
@@ -3408,7 +3426,8 @@ RecordByteCodeStats(codePtr)
     ByteCode *codePtr;		/* Points to ByteCode structure with info
 				 * to add to accumulated statistics. */
 {
-    register ByteCodeStats *statsPtr = &(codePtr->iPtr->stats);
+    Interp *iPtr = (Interp *) *codePtr->interpHandle;
+    register ByteCodeStats *statsPtr = &(iPtr->stats);
 
     statsPtr->numCompilations++;
     statsPtr->totalSrcBytes        += (double) codePtr->numSrcBytes;
