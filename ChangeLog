@@ -1,6 +1,7 @@
 2001-08-16  David Gravereaux <davygrvy@pobox.com>
 
 	* tools/tcl.wse.in:
+	* tools/tcl.hpj.in:
 	* win/tcl.hpj.in:  Removed -kb storage in CVS to ensure these text
 	files are checked-out in the translation mode CVS is in.  Setting
 	these as binary as part of an effort to make sure they are always
