@@ -62,6 +62,12 @@ if {(![interp issafe]) && ($tcl_platform(platform) == "windows")} {
 	    }
 	}
     }
+    if {[info exists p]} {
+	unset p
+    }
+    if {[info exists u]} {
+	unset u
+    }
     if {![info exists env(COMSPEC)]} {
 	if {$tcl_platform(os) == {Windows NT}} {
 	    set env(COMSPEC) cmd.exe
