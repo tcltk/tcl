@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.66 2004/10/14 17:20:11 dkf Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.67 2004/10/25 01:06:49 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1977,7 +1977,7 @@ InfoVarsCmd(dummy, interp, objc, objv)
 	    if (entryPtr != NULL) {
 		varPtr = (Var *) Tcl_GetHashValue(entryPtr);
 		if (!TclIsVarUndefined(varPtr)
-			|| (varPtr->flags & VAR_NAMESPACE_VAR)) {
+			|| TclIsVarNamespaceVar(varPtr)) {
 		    if (specificNsInPattern) {
 			elemObjPtr = Tcl_NewObj();
 			Tcl_GetVariableFullName(interp, (Tcl_Var) varPtr,
@@ -1992,7 +1992,7 @@ InfoVarsCmd(dummy, interp, objc, objv)
 			simplePattern);
 		varPtr = (Var *) Tcl_GetHashValue(entryPtr);
 		if (!TclIsVarUndefined(varPtr)
-			|| (varPtr->flags & VAR_NAMESPACE_VAR)) {
+			|| TclIsVarNamespaceVar(varPtr)) {
 		    Tcl_ListObjAppendElement(interp, listPtr,
 			    Tcl_NewStringObj(simplePattern, -1));
 		}
@@ -2006,7 +2006,7 @@ InfoVarsCmd(dummy, interp, objc, objv)
 	    while (entryPtr != NULL) {
 		varPtr = (Var *) Tcl_GetHashValue(entryPtr);
 		if (!TclIsVarUndefined(varPtr)
-			|| (varPtr->flags & VAR_NAMESPACE_VAR)) {
+			|| TclIsVarNamespaceVar(varPtr)) {
 		    varName = Tcl_GetHashKey(&nsPtr->varTable, entryPtr);
 		    if ((simplePattern == NULL)
 			    || Tcl_StringMatch(varName, simplePattern)) {
@@ -2037,7 +2037,7 @@ InfoVarsCmd(dummy, interp, objc, objv)
 		while (entryPtr != NULL) {
 		    varPtr = (Var *) Tcl_GetHashValue(entryPtr);
 		    if (!TclIsVarUndefined(varPtr)
-			    || (varPtr->flags & VAR_NAMESPACE_VAR)) {
+			    || TclIsVarNamespaceVar(varPtr)) {
 			varName = Tcl_GetHashKey(&globalNsPtr->varTable,
 				entryPtr);
 			if ((simplePattern == NULL)
