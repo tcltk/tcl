@@ -15,13 +15,17 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: basic.test,v 1.10 2000/04/10 17:18:57 ericm Exp $
+# RCS: @(#) $Id: basic.test,v 1.11 2000/10/19 18:01:00 jenn Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
     namespace import -force ::tcltest::*
 }
+
+# This variable needs to be changed when the major or minor version number for
+# Tcl changes.
+set tclvers 8.4
 
 catch {namespace delete test_ns_basic}
 catch {interp delete test_interp}
@@ -494,10 +498,10 @@ test basic-39.1 {Tcl_CreateTrace, correct command and argc/argv arguments of tra
 } {{expr 14 + 16} {expr 14 + 16} {set stuff [expr 14 + 16]} {set stuff 30}}
 test basic-39.2 {Tcl_CreateTrace, correct command and argc/argv arguments of trace proc} {
     testcmdtrace tracetest {set stuff [info tclversion]}
-} [list {info tclversion} {info tclversion} {set stuff [info tclversion]} "set stuff $::tcltest::version"]
+} [list {info tclversion} {info tclversion} {set stuff [info tclversion]} "set stuff $tclvers"]
 test basic-39.3 {Tcl_CreateTrace, correct command and argc/argv arguments of trace proc} {
     testcmdtrace deletetest {set stuff [info tclversion]}
-} $::tcltest::version
+} $tclvers
 }
 
 test basic-40.1 {Tcl_DeleteTrace} {emptyTest} {
