@@ -1,13 +1,18 @@
 @echo off
-rem RCS: @(#) $Id: rmd.bat,v 1.1.2.1 1998/09/24 23:59:49 stanton Exp $
+rem RCS: @(#) $Id: rmd.bat,v 1.1.2.2 1998/10/06 03:09:26 stanton Exp $
 
-if not exist %1 goto end
+if not exist %1\tag.txt goto end
 
-if %OS% == Windows_NT goto winnt
+echo Removing directory %1
 
-echo Add support for Win 95 please
-goto end
+if "%OS%" == "Windows_NT" goto winnt
 
+cd %1
+if errorlevel 1 goto end
+del *.*
+cd ..
+rmdir %1
+if errorlevel 1 goto end
 goto success
 
 :winnt
