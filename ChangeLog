@@ -1,3 +1,9 @@
+2004-02-03  Don Porter	<dgp@users.sourceforge.net>
+
+	* library/tcltest/tcltest.tcl:	Corrected parsing of single
+	command line argument (option with missing value) [Bug 833910]
+	* library/tcltest/pkgIndex.tcl:	Bump to version 2.2.5.
+
 2004-02-02  David Gravereaux <davygrvy@pobox.com>
 
 	* generic/tclIO.c (Tcl_Ungets): Fixes improper filling of the
