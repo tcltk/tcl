@@ -13,7 +13,7 @@
 # Copyright (c) 2000 by Ajuba Solutions
 # All rights reserved.
 # 
-# RCS: @(#) $Id: tcltest.tcl,v 1.38 2002/03/25 17:10:57 dgp Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.39 2002/03/25 19:20:03 dgp Exp $
 
 # create the "tcltest" namespace for all testing variables and procedures
 
@@ -2479,13 +2479,13 @@ proc tcltest::runTest {name description script expectedAnswer constraints} {
 	if {[string match {*[$\[]*} $constraints] != 0} {
 	    # full expression, e.g. {$foo > [info tclversion]}
 	    catch {set doTest [uplevel #0 expr $constraints]}
-	} elseif {[regexp {[^.a-zA-Z0-9 ]+} $constraints] != 0} {
+	} elseif {[regexp {[^.a-zA-Z0-9 \n\r\t]+} $constraints] != 0} {
 	    # something like {a || b} should be turned into 
 	    # $tcltest::testConstraints(a) || $tcltest::testConstraints(b).
 	    regsub -all {[.\w]+} $constraints \
 		    {$tcltest::testConstraints(&)} c
 	    catch {set doTest [eval expr $c]}
-	} else {
+	} elseif {![catch {llength $constraints}]} {
 	    # just simple constraints such as {unixOnly fonts}.
 	    set doTest 1
 	    foreach constraint $constraints {
