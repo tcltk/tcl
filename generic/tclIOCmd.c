@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOCmd.c,v 1.15.2.1 2004/07/15 20:17:48 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclIOCmd.c,v 1.15.2.2 2004/07/16 22:38:37 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -1515,7 +1515,7 @@ Tcl_FcopyObjCmd(dummy, interp, objc, objv)
     }
     if ((mode & TCL_READABLE) == 0) {
 	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "channel \"",
-		Tcl_GetString(objv[1]), 
+		arg, 
                 "\" wasn't opened for reading", (char *) NULL);
         return TCL_ERROR;
     }
@@ -1526,7 +1526,7 @@ Tcl_FcopyObjCmd(dummy, interp, objc, objv)
     }
     if ((mode & TCL_WRITABLE) == 0) {
 	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "channel \"",
-		Tcl_GetString(objv[1]), 
+		arg, 
                 "\" wasn't opened for writing", (char *) NULL);
         return TCL_ERROR;
     }
