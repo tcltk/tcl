@@ -11,6 +11,11 @@
 		hacky code to handle IEEE signed zeroes in Tcl_DoubleDigits.
 		(It can't be done other than as a hack until C9x;
 		C89 simply doesn't deal with the concept of -0.0)
+	* generic/tclBinary.c (FormatNumber):
+		Changed to allow [binary format] to handle NaN.
+	* tests/binary.test (binary-60.1):
+		Added a quick-n-dirty test to make sure that NaN's
+		can be scanned and formatted.
 	
 2005-03-02  Kevin B. Kenny  <kennykb@acm.org>
 

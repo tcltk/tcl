@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: binary.test,v 1.18.2.2 2005/03/02 22:36:26 kennykb Exp $
+# RCS: @(#) $Id: binary.test,v 1.18.2.3 2005/03/03 21:29:28 kennykb Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -2096,6 +2096,12 @@ test binary-59.15 {Tcl_BinaryObjCmd: scan} littleEndian {
     set arg2 bar
     list [binary scan \xcd\xcc\xcc\x3f\x9a\x99\x59\x40\x05 r2c* arg1 arg2] $arg1 $arg2
 } {2 {1.600000023841858 3.4000000953674316} 5}
+
+test binary-60.1 {[binary format] with NaN} {
+    binary scan [binary format dqQfrR NaN NaN NaN NaN NaN NaN] dqQfrR \
+	v1 v2 v3 v4 v5 v6
+    list $v1 $v2 $v3 $v4 $v5 $v6
+} {NaN NaN NaN NaN NaN NaN}
 
 # cleanup
 ::tcltest::cleanupTests
