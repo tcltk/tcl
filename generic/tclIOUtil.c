@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.24 2001/10/29 15:02:44 vincentdarley Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.25 2001/11/02 12:06:27 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -2861,8 +2861,13 @@ GetPathType(pathObjPtr, filesystemPtrPtr, driveNameLengthPtr, driveNameRef)
 	 * certain absolute Windows paths starting '//' and those tests
 	 * will go wrong.
 	 * 
-	 * Besides these test-suite issues, there is actually no
-	 * reason to skip the native filesystem.
+	 * Besides these test-suite issues, there is one other reason
+	 * to skip the native filesystem --- since the tclFilename.c
+	 * code has nice fast 'absolute path' checkers, we don't want
+	 * to waste time repeating that effort here, and this 
+	 * function is actually called quite often, so if we can
+	 * save the overhead of the native filesystem returning us
+	 * a list of volumes all the time, it is better.
 	 */
 	if ((fsRecPtr->fsPtr != &nativeFilesystem) && (proc != NULL)) {
 	    int numVolumes;
@@ -2871,10 +2876,10 @@ GetPathType(pathObjPtr, filesystemPtrPtr, driveNameLengthPtr, driveNameRef)
 		if (Tcl_ListObjLength(NULL, thisFsVolumes, 
 				      &numVolumes) != TCL_OK) {
 		    /* 
-		     * This is VERY bad; Tcl_FSListVolumes didn't 
-		     * return a valid list.  Set numVolumes to -1
-		     * so that we skip the while loop below and
-		     * just return with the current value of 'type'.
+		     * This is VERY bad; the Tcl_FSListVolumesProc
+		     * didn't return a valid list.  Set numVolumes to
+		     * -1 so that we skip the while loop below and just
+		     * return with the current value of 'type'.
 		     * 
 		     * It would be better if we could signal an error
 		     * here (but panic seems a bit excessive).
@@ -2978,6 +2983,10 @@ Tcl_FSRenameFile(srcPathPtr, destPathPtr)
  *	If the two paths given belong to the same filesystem, we call
  *	that filesystem's copy function.  Otherwise we simply
  *	return the posix error 'EXDEV', and -1.
+ *	
+ *	Note that in the native filesystems, 'copyFileProc' is defined
+ *	to copy soft links (i.e. it copies the links themselves, not
+ *	the things they point to).
  *
  * Results:
  *      Standard Tcl error code if a function was called.
