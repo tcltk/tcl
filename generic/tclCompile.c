@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.43.2.3 2003/07/18 23:35:38 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.43.2.4 2004/03/15 20:34:13 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -990,6 +990,7 @@ TclCompileScript(interp, script, numBytes, nested, envPtr)
 			        && !(cmdPtr->flags & CMD_HAS_EXEC_TRACES)
 			        && !(iPtr->flags & DONT_COMPILE_CMDS_INLINE)) {
 			    int savedNumCmds = envPtr->numCommands;
+			    unsigned char *savedCodeNext = envPtr->codeNext;
 
 			    code = (*(cmdPtr->compileProc))(interp, &parse,
 			            envPtr);
@@ -997,11 +998,12 @@ TclCompileScript(interp, script, numBytes, nested, envPtr)
 				goto finishCommand;
 			    } else if (code == TCL_OUT_LINE_COMPILE) {
 				/*
-				 * Restore numCommands to its correct value, removing
-				 * any commands compiled before TCL_OUT_LINE_COMPILE
-				 * [Bug 705406]
+				 * Restore numCommands and codeNext to their correct 
+				 * values, removing any commands compiled before 
+				 * TCL_OUT_LINE_COMPILE [Bugs 705406 and 735055]
 				 */
 				envPtr->numCommands = savedNumCmds;
+				envPtr->codeNext = savedCodeNext;
 			    } else { /* an error */
 				/*
 				 * There was a compilation error, the last
