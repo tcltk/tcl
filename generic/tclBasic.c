@@ -2544,7 +2544,7 @@ Tcl_EvalObj(interp, objPtr)
      */
 
     numSrcChars = codePtr->numSrcChars;
-    if (numSrcChars > 0) {
+    if ((numSrcChars > 0) || (codePtr->flags & TCL_BYTECODE_PRECOMPILED)) {
 	/*
 	 * Increment the code's ref count while it is being executed. If
 	 * afterwards no references to it remain, free the code.
