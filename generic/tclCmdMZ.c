@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.81 2003/02/18 02:25:43 hobbs Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.82 2003/02/27 00:54:36 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -4074,6 +4074,11 @@ TraceCommandProc(clientData, interp, oldName, newName, flags)
 	    /* Postpone deletion, until exec trace returns */
 	    tcmdPtr->flags = 0;
 	}
+	/* 
+	 * Decrement the refCount since the command which held our
+	 * reference (ever since we were created) has just gone away
+	 */
+	tcmdPtr->refCount--;
     }
     if ((--tcmdPtr->refCount) <= 0) {
         ckfree((char*)tcmdPtr);

@@ -1,3 +1,8 @@
+2003-02-26  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclCmdMZ.c (TraceCommandProc): Fix mem leak when
+	deleting a command that had trace on it. [Bug #693564] (sofer)
+
 2003-02-25  Don Porter  <dgp@users.sourceforge.net>
 
 	* doc/pkgMkIndex.n:	Modified [pkg_mkIndex] to use -nocase matching
@@ -8,7 +13,8 @@
 2003-02-25  Andreas Kupries  <andreask@pliers.activestate.com>
 
 	* tests/pid.test: See below [Bug #678412].
-	* tests/io.test: Made more robust against spaces in paths [Bug #678400].
+	* tests/io.test: Made more robust against spaces in paths
+	[Bug #678400].
 
 2003-02-25  Miguel Sofer <msofer@users.sf.net>
 
