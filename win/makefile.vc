@@ -12,7 +12,7 @@
 # Copyright (c) 2001-2002 David Gravereaux.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.102 2003/03/11 21:59:52 kennykb Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.103 2003/03/23 03:06:31 kennykb Exp $
 #------------------------------------------------------------------------------
 
 !if "$(MSVCDIR)" == ""
@@ -421,9 +421,9 @@ install:    install-binaries install-libraries install-docs
 test: setup $(TCLTEST) dlls $(CAT32)
 	set TCL_LIBRARY=$(ROOT)/library
 !if "$(OS)" == "Windows_NT"  || "$(MSVCDIR)" == "IDE"
-	$(TCLTEST) $(ROOT)/tests/all.tcl $(TESTFLAGS)
+	$(TCLTEST) "$(ROOT)/tests/all.tcl" $(TESTFLAGS)
 !else
-	$(TCLTEST) $(ROOT)/tests/all.tcl $(TESTFLAGS) > tests.log
+	$(TCLTEST) "$(ROOT)/tests/all.tcl" $(TESTFLAGS) > tests.log
 	type tests.log | more
 !endif
 
