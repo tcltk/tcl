@@ -1,3 +1,8 @@
+2002-10-09  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* doc/Alloc.3: Added a note to mention that attempting to allocate
+	a zero-length block can return NULL.  [Tk bug 619544]
+
 2002-10-04  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* doc/binary.n: Doc improvements [Patch 616480]
