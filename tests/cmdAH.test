@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: cmdAH.test,v 1.42 2004/06/23 15:36:55 dkf Exp $
+# RCS: @(#) $Id: cmdAH.test,v 1.43 2004/06/23 15:46:45 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -1229,16 +1229,16 @@ rename waitForEvenSecondForFAT {}
 test cmdAH-25.1 {Tcl_FileObjCmd: owned} {
     list [catch {file owned a b} msg] $msg
 } {1 {wrong # args: should be "file owned name"}}
-test cmdAH-25.2 {Tcl_FileObjCmd: owned} -constraints {!unix} -body {
-	file owned $gorpfile
+test cmdAH-25.2 {Tcl_FileObjCmd: owned} -constraints win -body {
+    file owned $gorpfile
 } -result 1
-test cmdAH-25.2.1 {Tcl_FileObjCmd: owned} -constraints {unix} -setup {
-	# Avoid problems with AFS
-	set tmpfile [makeFile "data" touch.me /tmp]
+test cmdAH-25.2.1 {Tcl_FileObjCmd: owned} -constraints unix -setup {
+    # Avoid problems with AFS
+    set tmpfile [makeFile "data" touch.me /tmp]
 } -body {
-	file owned $tmpfile
+    file owned $tmpfile
 } -cleanup {
-	removeFile touch.me /tmp
+    removeFile touch.me /tmp
 } -result 1
 test cmdAH-25.3 {Tcl_FileObjCmd: owned} {unix notRoot} {
     file owned /
