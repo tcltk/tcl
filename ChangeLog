@@ -1,3 +1,18 @@
+2002-04-11  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclNotify.c (TclFinalizeNotifier): remove remaining
+	unserviced events on finalization.
+
+	* win/tcl.m4: Enabled COFF as well as CV style debug info with
+	--enable-symbols to allow Dr. Watson users to see function info.
+	More info on debugging levels can be obtained at:
+	http://msdn.microsoft.com/library/en-us/dnvc60/html/gendepdebug.asp
+
+	* tests/ioCmd.test: fixed iocmd-8.15 to have mac and unixPc variants.
+
+	* generic/tclParse.c (Tcl_ParseVar): conditionally incr obj
+	refcount to prevent possible mem leak.
+
 2002-04-08  Daniel Steffen  <das@users.sourceforge.net>
 
 	* generic/tcl.h: no <sys/types.h> on mac.
