@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.35 2002/06/16 22:24:12 msofer Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.36 2002/06/17 00:09:19 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1127,7 +1127,7 @@ TclCompileTokens(interp, tokenPtr, count, envPtr)
 				 * TCL_TOKEN_TEXT, TCL_TOKEN_BS tokens. */
     char buffer[TCL_UTF_MAX];
     char *name, *p;
-    int numObjsToConcat, nameBytes, hasNsQualifiers, localVar;
+    int numObjsToConcat, nameBytes, localVarName, localVar;
     int length, i, code;
     unsigned char *entryCodeNext = envPtr->codeNext;
 
@@ -1187,17 +1187,29 @@ TclCompileTokens(interp, tokenPtr, count, envPtr)
 		}
 		
 		/*
-		 * Check if the name contains any namespace qualifiers.
+		 * Determine how the variable name should be handled: if it contains 
+		 * any namespace qualifiers it is not a local variable (localVarName=-1);
+		 * if it looks like an array element and the token has a single component, 
+		 * it should not be created here [Bug 569438] (localVarName=0); otherwise, 
+		 * the local variable can safely be created (localVarName=1).
 		 */
 		
 		name = tokenPtr[1].start;
 		nameBytes = tokenPtr[1].size;
-		hasNsQualifiers = 0;
-		for (i = 0, p = name;  i < nameBytes;  i++, p++) {
-		    if ((*p == ':') && (i < (nameBytes-1))
-			    && (*(p+1) == ':')) {
-			hasNsQualifiers = 1;
-			break;
+		localVarName = -1;
+		if (envPtr->procPtr != NULL) {
+		    localVarName = 1;
+		    for (i = 0, p = name;  i < nameBytes;  i++, p++) {
+			if ((*p == ':') && (i < (nameBytes-1))
+			        && (*(p+1) == ':')) {
+			    localVarName = -1;
+			    break;
+			} else if ((*p == '(')
+			        && (tokenPtr->numComponents == 1) 
+				&& (*(name + nameBytes - 1) == ')')) {
+			    localVarName = 0;
+			    break;
+			}
 		    }
 		}
 
@@ -1207,27 +1219,9 @@ TclCompileTokens(interp, tokenPtr, count, envPtr)
 		 */
 
 		localVar = -1;
-		if ((envPtr->procPtr != NULL) && !hasNsQualifiers) {
-		    int createVar = 1;
-		    char *p;
-		    
-		    if ((tokenPtr->numComponents == 1) 
-		            && (*(name + nameBytes - 1) == ')')) {
-			/*
-			 * Do not attempt to use a compiled local if the
-			 * name has a single component that looks like
-			 * an array element (see [Bug 569438]).
-			 */
-
-			for (p = name; p < name + nameBytes; p++) {
-			    if (*p == '(') {
-				createVar = 0;
-				break;
-			    }
-			}
-		    }			
+		if (localVarName != -1) {
 		    localVar = TclFindCompiledLocal(name, nameBytes, 
-			        createVar, /*flags*/ 0, envPtr->procPtr);
+			        localVarName, /*flags*/ 0, envPtr->procPtr);
 		}
 		if (localVar < 0) {
 		    TclEmitPush(TclRegisterLiteral(envPtr, name,
