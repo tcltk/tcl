@@ -1,5 +1,6 @@
 2003-10-31  Vince Darley  <vincentdarley@users.sourceforge.net>
 
+	* generic/tclTest.c: fix test suite memory leak (backport error)
 	* unix/tclUnixFile.c: ensure translated path (required for
 	  correct error messages) is freed in both code paths.
 	
