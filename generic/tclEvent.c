@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEvent.c,v 1.8.2.1 2001/04/03 22:54:37 hobbs Exp $
+ * RCS: @(#) $Id: tclEvent.c,v 1.8.2.2 2001/09/01 23:06:28 davygrvy Exp $
  */
 
 #include "tclInt.h"
@@ -907,6 +907,7 @@ Tcl_FinalizeThread()
 	}
 	TclFinalizeIOSubsystem();
 	TclFinalizeNotifier();
+	TclFinalizeAsync();
 
 	/*
 	 * Blow away all thread local storage blocks.
