@@ -1,3 +1,8 @@
+2003-07-18  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* doc/Utf.3: Tightened up documentation of Tcl_UtfNext and
+	Tcl_UtfPrev to better match the behaviour. [Bug 769895]
+
 2003-07-18  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* library/http/pkgIndex.tcl: upped to http v2.4.4
