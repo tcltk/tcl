@@ -372,6 +372,10 @@ if test -r Encoding.3; then
     ln Encoding.3 Tcl_GetDefaultEncodingDir.3
     ln Encoding.3 Tcl_SetDefaultEncodingDir.3
 fi
+if test -r Environment.3; then
+    rm -f Tcl_PutEnv.3
+    ln Environment.3 Tcl_PutEnv.3
+fi
 if test -r Eval.3; then
     rm -f Tcl_EvalObjEx.3
     rm -f Tcl_EvalFile.3
@@ -553,6 +557,26 @@ if test -r ListObj.3; then
     ln ListObj.3 Tcl_ListObjLength.3
     ln ListObj.3 Tcl_ListObjIndex.3
     ln ListObj.3 Tcl_ListObjReplace.3
+fi
+if test -r Macintosh.3; then
+    rm -f Tcl_MacSetEventProc.3
+    rm -f Tcl_MacConvertTextResource.3
+    rm -f Tcl_MacSetEventProc.3
+    rm -f Tcl_MacConvertTextResource.3
+    rm -f Tcl_MacEvalResource.3
+    rm -f Tcl_MacFindResource.3
+    rm -f Tcl_GetOSTypeFromObj.3
+    rm -f Tcl_SetOSTypeObj.3
+    rm -f Tcl_NewOSTypeObj.3
+    ln Macintosh.3 Tcl_MacSetEventProc.3
+    ln Macintosh.3 Tcl_MacConvertTextResource.3
+    ln Macintosh.3 Tcl_MacSetEventProc.3
+    ln Macintosh.3 Tcl_MacConvertTextResource.3
+    ln Macintosh.3 Tcl_MacEvalResource.3
+    ln Macintosh.3 Tcl_MacFindResource.3
+    ln Macintosh.3 Tcl_GetOSTypeFromObj.3
+    ln Macintosh.3 Tcl_SetOSTypeObj.3
+    ln Macintosh.3 Tcl_NewOSTypeObj.3
 fi
 if test -r Notifier.3; then
     rm -f Tcl_CreateEventSource.3
