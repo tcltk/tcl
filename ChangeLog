@@ -1,5 +1,8 @@
 2000-11-23  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
+	* generic/tclCmdIL.c (Tcl_LsortObjCmd): Fixed memory leak from Bug
+	#119398
+
 	* library/init.tcl (unknown): Added specific level parameters to
 	  all uplevel invokations to boost performance; didn't dare touch
 	  the "namespace inscope" stuff though, since it looks sensitive
