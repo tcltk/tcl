@@ -52,6 +52,15 @@ static int initialized = 0;
 #include "tclInitScript.h"
 
 /*
+ * A pointer to a string that holds an alternate initialization script to the
+ * built-in initialization script defined in the file "generic/tclInitScript.h".
+ * The Tcl_Init() routine will evaluate this script if it contains a non-NULL
+ * value.
+ */
+ 
+char *          tclAlternateInitScript = NULL;
+
+/*
  * Static routines in this file:
  */
 
@@ -211,6 +220,9 @@ int
 Tcl_Init(interp)
     Tcl_Interp *interp;		/* Interpreter to initialize. */
 {
+    if (tclAlternateInitScript != NULL) {
+        Tcl_Eval(interp, tclAlternateInitScript);
+    }
     return Tcl_Eval(interp, initScript);
 }
 

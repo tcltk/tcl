@@ -72,6 +72,15 @@ static char* processors[NUMPROCESSORS] = {
 
 #include "tclInitScript.h"
 
+/*
+ * A pointer to a string that holds an alternate initialization script to the
+ * built-in initialization script defined in the file "generic/tclInitScript.h".
+ * The Tcl_Init() routine will evaluate this script if it contains a non-NULL
+ * value.
+ */
+
+char *		tclAlternateInitScript = NULL;
+
 
 /*
  *----------------------------------------------------------------------
@@ -237,8 +246,10 @@ int
 Tcl_Init(interp)
     Tcl_Interp *interp;		/* Interpreter to initialize. */
 {
-    return Tcl_Eval(interp, initScript);
-
+    if (tclAlternateInitScript != NULL) {
+	Tcl_Eval(interp, tclAlternateInitScript);
+    }
+    return(Tcl_Eval(interp, initScript));
 }
 
 /*
