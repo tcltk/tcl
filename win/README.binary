@@ -1,6 +1,6 @@
 Tcl/Tk 8.3 for Windows, Binary Distribution
 
-RCS: @(#) $Id: README.binary,v 1.16 2000/02/08 10:07:05 hobbs Exp $ 
+RCS: @(#) $Id: README.binary,v 1.17 2000/03/03 02:58:10 hobbs Exp $ 
 
 1. Introduction
 --------------- 
@@ -84,7 +84,7 @@ systems.
 If you have comments or bug reports for the Windows version of Tcl,
 please use our on-line bug form at:
 
-http://www.scriptics.com/support/bugForm.html
+	http://www.scriptics.com/support/bugForm.html
 
 or post them to the newsgroup comp.lang.tcl.
 
@@ -131,9 +131,9 @@ A couple of mailing lists have been set up to discuss Macintosh or
 Windows related Tcl issues.  In order to use these Mailing Lists you
 must have access to the internet.  To subscribe send a message to:
 	
-	wintcl-request@tclconsortium.org
-	mactcl-request@tclconsortium.org
-	
+	wintcl-request@scriptics.com
+	mactcl-request@scriptics.com
+
 In the body of the message (the subject will be ignored) put:
 	
 	subscribe mactcl Joe Blow
@@ -144,7 +144,11 @@ would just like to receive more information about the list without
 subscribing put the line:
 
 	information mactcl
-	
-in the body instead (or wintcl).
+
+in the body instead (or wintcl).  There are also Special Interest
+Groups (SIGs) setup for these topics and more at:
+
+       http://dev.scriptics.com/
+
 
 
