@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and
 # redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: http.tcl,v 1.43.2.5 2005/01/06 11:34:20 dkf Exp $
+# RCS: @(#) $Id: http.tcl,v 1.43.2.6 2005/01/06 15:16:03 dkf Exp $
 
 # Rough version history:
 # 1.0	Old http_get interface
@@ -896,8 +896,16 @@ proc http::mapReply {string} {
 
     if {$http(-urlencoding) ne ""} {
 	set string [encoding convertto $http(-urlencoding) $string]
+	return [string map $formMap $string]
     }
-    return [string map $formMap $string]
+    set converted [string map $formMap $string]
+    if {[string match "*\[\u0100-\uffff\]*" $converted]} {
+	regexp {[\u0100-\uffff]} $converted badChar
+	# Return this error message for maximum compatability... :^/
+	return -code error \
+	    "can't read \"formMap($badChar)\": no such element in array"
+    }
+    return $converted
 }
 
 # http::ProxyRequired --
