@@ -2145,7 +2145,7 @@ end
 item: Edit Registry
   Total Keys=1
   Key=TclScript\DefaultIcon
-  New Value=%SYS32%\tk81.dll
+  New Value=%MAINDIRSHORT%\bin\tk81.dll
 end
 item: Edit Registry
   Total Keys=1
