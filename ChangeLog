@@ -1,3 +1,15 @@
+1999-05-28    <stanton@scriptics.com>
+
+	* generic/tclObj.c: Changed to eliminate use of isupper/tolower in
+	favor of the Unicode versions.
+
+	* win/Makefile.in:
+	* win/configure.in: Added preliminary TEA implementation.
+
+	* win/tclWinDde.c: Fixed bug where dde calls were being passed an
+	invalid dde handle because Initialize had not been called.
+	[Bug: 2124]
+
 1999-05-26    <redman@scriptic.com>
 
 	* generic/tclThreadTest.c: Fixed race condition in testthread
