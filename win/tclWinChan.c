@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinChan.c,v 1.34 2004/04/23 08:57:20 davygrvy Exp $
+ * RCS: @(#) $Id: tclWinChan.c,v 1.35 2004/06/21 22:05:55 mdejong Exp $
  */
 
 #include "tclWinInt.h"
@@ -130,6 +130,17 @@ static void *INITIAL_ESP,
             *RESTORED_EBP,
             *RESTORED_HANDLER;
 #endif /* HAVE_NO_SEH && TCL_MEM_DEBUG */
+
+#ifdef HAVE_NO_SEH
+static
+__attribute__ ((cdecl))
+EXCEPTION_DISPOSITION
+_except_makefilechannel_handler(
+    struct _EXCEPTION_RECORD *ExceptionRecord,
+    void *EstablisherFrame,
+    struct _CONTEXT *ContextRecord,
+    void *DispatcherContext);
+#endif
 
 
 /*
@@ -1057,10 +1068,13 @@ Tcl_MakeFileChannel(rawHandle, mode)
 # endif /* TCL_MEM_DEBUG */
 
         __asm__ __volatile__ (
-            "pushl %ebp" "\n\t"
-            "pushl $__except_makefilechannel_handler" "\n\t"
-            "pushl %fs:0" "\n\t"
-            "movl  %esp, %fs:0");
+            "pushl %%ebp" "\n\t"
+            "pushl %0" "\n\t"
+            "pushl %%fs:0" "\n\t"
+            "movl  %%esp, %%fs:0"
+            :
+            : "r" (_except_makefilechannel_handler)
+            );
 #else
 	__try {
 #endif /* HAVE_NO_SEH */
@@ -1132,6 +1146,22 @@ Tcl_MakeFileChannel(rawHandle, mode)
 
     return channel;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * _except_makefilechannel_handler --
+ *
+ *	SEH exception handler for Tcl_MakeFileChannel.
+ *
+ * Results:
+ *	See Tcl_MakeFileChannel.
+ *
+ * Side effects:
+ *	See Tcl_MakeFileChannel.
+ *
+ *----------------------------------------------------------------------
+ */
 #ifdef HAVE_NO_SEH
 static
 __attribute__ ((cdecl))
@@ -1144,8 +1174,6 @@ _except_makefilechannel_handler(
 {
     __asm__ __volatile__ (
             "jmp makefilechannel_reentry");
-    /* Nuke compiler warning about unused static function */
-    _except_makefilechannel_handler(NULL, NULL, NULL, NULL);
     return 0; /* Function does not return */
 }
 #endif
