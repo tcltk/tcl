@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: %Z% $Id: tcl.h,v 1.14 1998/07/29 11:09:48 escoffon Exp $ 
+ * SCCS: %Z% $Id: tcl.h,v 1.15 1998/07/29 11:41:24 escoffon Exp $ 
  */
 
 #ifndef _TCL
@@ -1542,4 +1542,8 @@ EXTERN void		Tcl_WrongNumArgs _ANSI_ARGS_((Tcl_Interp *interp,
 			    int objc, Tcl_Obj *CONST objv[], char *message));
 
 #endif /* RESOURCE_INCLUDED */
+
+#undef EXPORT
+#define EXPORT DLLIMPORT
+
 #endif /* _TCL */
