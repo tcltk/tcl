@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEvent.c,v 1.28.2.7 2004/07/15 09:57:10 vasiljevic Exp $
+ * RCS: @(#) $Id: tclEvent.c,v 1.28.2.8 2004/07/21 01:30:57 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -897,7 +897,9 @@ Tcl_Finalize()
 	/*
 	 * There shouldn't be any malloc'ed memory after this.
 	 */
-
+#if defined(TCL_THREADS) && defined(USE_THREAD_ALLOC) && !defined(TCL_MEM_DEBUG) && !defined(PURIFY)
+	TclFinalizeThreadAlloc();
+#endif
 	TclFinalizeMemorySubsystem();
 	inFinalize = 0;
     }
