@@ -131,9 +131,11 @@ if test -r ChnlStack.3; then
     rm -f Tcl_StackChannel.3
     rm -f Tcl_UnstackChannel.3
     rm -f Tcl_GetStackedChannel.3
+    rm -f Tcl_GetTopChannel.3
     ln ChnlStack.3 Tcl_StackChannel.3
     ln ChnlStack.3 Tcl_UnstackChannel.3
     ln ChnlStack.3 Tcl_GetStackedChannel.3
+    ln ChnlStack.3 Tcl_GetTopChannel.3
 fi
 if test -r CmdCmplt.3; then
     rm -f Tcl_CommandComplete.3
@@ -176,7 +178,6 @@ if test -r CrtChannel.3; then
     rm -f Tcl_ClearChannelHandlers.3
     rm -f Tcl_GetChannelThread.3
     rm -f Tcl_ChannelBuffered.3
-    rm -f Tcl_GetTopChannel.3
     ln CrtChannel.3 Tcl_CreateChannel.3
     ln CrtChannel.3 Tcl_GetChannelInstanceData.3
     ln CrtChannel.3 Tcl_GetChannelType.3
@@ -209,7 +210,6 @@ if test -r CrtChannel.3; then
     ln CrtChannel.3 Tcl_ClearChannelHandlers.3
     ln CrtChannel.3 Tcl_GetChannelThread.3
     ln CrtChannel.3 Tcl_ChannelBuffered.3
-    ln CrtChannel.3 Tcl_GetTopChannel.3
 fi
 if test -r CrtChnlHdlr.3; then
     rm -f Tcl_CreateChannelHandler.3
