@@ -1,3 +1,14 @@
+1999-03-10    <redman@scriptic.com>
+
+	* generic/tclCompile.h: Ensure that the ByteCode struct is binary
+	compatible with the version in 8.0.6.
+
+	* generic/tcl.h:
+	* generic/tclBasic.c: Add Tcl_GetVersion() function to the public
+	C API to allow programs to check the version number of the Tcl
+	library at runtime.  Also added an enum to clarify the release
+	level (alpha, beta, final).
+
 1999-03-09    <stanton@GASPODE>
 
 	* Integrated changes from Tcl 8.0 including:
