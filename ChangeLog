@@ -1,3 +1,17 @@
+2000-12-10  Don Porter  <dgp@users.sourceforge.net>
+
+	* library/init.tcl:
+	* library/msgcat/msgcat.tcl:
+	* library/msgcat/pkgIndex.tcl:
+	* library/opt/optparse.tcl:
+	* library/opt/pkgIndex.tcl: Where [uplevel] is used in a proc
+	to evaluate a Tcl built-in command in the caller's context,
+	the built-in commands are now fully namespace-qualified.  This
+	prevents problems when the caller context is in a namespace where
+	the built-in command name has been used by a command in the
+	namespace.  (For example, [::ns::set] might be called instead
+	of the intended [::set]).  [Bug #119422, Patch #102545]
+
 2000-12-09  jeff hobbs  <jhobbs@interwoven.com>
 
 	* win/tclWinTime.c (CalibrationThread): added lint return value to
