@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.13 2001/09/01 00:51:31 hobbs Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.14 2001/09/19 18:17:54 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -561,6 +561,18 @@ TclCompileForCmd(interp, parsePtr, envPtr)
     }
 
     /*
+     * Bail out also if the body or the next expression require substitutions
+     * in order to insure correct behaviour [Bug 219166]
+     */
+
+    nextTokenPtr = testTokenPtr + (testTokenPtr->numComponents + 1);
+    bodyTokenPtr = nextTokenPtr + (nextTokenPtr->numComponents + 1);
+    if ((nextTokenPtr->type != TCL_TOKEN_SIMPLE_WORD) 
+	    || (bodyTokenPtr->type != TCL_TOKEN_SIMPLE_WORD)) {
+	return TCL_OUT_LINE_COMPILE;
+    }
+
+    /*
      * Create ExceptionRange records for the body and the "next" command.
      * The "next" command's ExceptionRange supports break but not continue
      * (and has a -1 continueOffset).
@@ -609,8 +621,6 @@ TclCompileForCmd(interp, parsePtr, envPtr)
      * Compile the loop body.
      */
 
-    nextTokenPtr = testTokenPtr + (testTokenPtr->numComponents + 1);
-    bodyTokenPtr = nextTokenPtr + (nextTokenPtr->numComponents + 1);
     envPtr->exceptArrayPtr[bodyRange].codeOffset =
 	    (envPtr->codeNext - envPtr->codeStart);
     code = TclCompileCmdWord(interp, bodyTokenPtr+1,
@@ -805,6 +815,19 @@ TclCompileForeachCmd(interp, parsePtr, envPtr)
     }
 
     /*
+     * Bail out if the body requires substitutions
+     * in order to insure correct behaviour [Bug 219166]
+     */
+    for (i = 0, tokenPtr = parsePtr->tokenPtr;
+	    i < numWords-1;
+	    i++, tokenPtr += (tokenPtr->numComponents + 1)) {
+    }
+    bodyTokenPtr = tokenPtr;
+    if (bodyTokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
+	return TCL_OUT_LINE_COMPILE;
+    }
+
+    /*
      * Allocate storage for the varcList and varvList arrays if necessary.
      */
 
@@ -946,7 +969,6 @@ TclCompileForeachCmd(interp, parsePtr, envPtr)
 	    loopIndex++;
 	}
     }
-    bodyTokenPtr = tokenPtr;
 
     /*
      * Initialize the temporary var that holds the count of loop iterations.
@@ -1195,6 +1217,23 @@ TclCompileIfCmd(interp, parsePtr, envPtr)
     char *word;
     char buffer[100];
 
+    /*
+     * Only compile the "if" command if all arguments are simple
+     * words, in order to insure correct substitution [Bug 219166]
+     */
+
+    tokenPtr = parsePtr->tokenPtr;
+    wordIdx = 0;
+    numWords = parsePtr->numWords;
+
+    for (wordIdx = 0; wordIdx < numWords; wordIdx++) {
+	if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
+	    return TCL_OUT_LINE_COMPILE;
+	}
+	tokenPtr += 2;
+    }
+
+
     TclInitJumpFixupArray(&jumpFalseFixupArray);
     TclInitJumpFixupArray(&jumpEndFixupArray);
     maxDepth = 0;
@@ -1207,7 +1246,6 @@ TclCompileIfCmd(interp, parsePtr, envPtr)
 
     tokenPtr = parsePtr->tokenPtr;
     wordIdx = 0;
-    numWords = parsePtr->numWords;
     while (wordIdx < numWords) {
 	/*
 	 * Stop looping if the token isn't "if" or "elseif".
@@ -2398,8 +2436,8 @@ TclCompileStringCmd(interp, parsePtr, envPtr)
 	    return TCL_OK;
 	}
 	case STR_MATCH: {
-	    int i, length, nocase = 0, depth = 0;
-	    char *str;
+	    int i, length, exactMatch = 0, nocase = 0, depth = 0;
+	    char c, *str;
 
 	    if (parsePtr->numWords < 4 || parsePtr->numWords > 5) {
 		Tcl_SetResult(interp, "wrong # args: should be "
@@ -2418,7 +2456,7 @@ TclCompileStringCmd(interp, parsePtr, envPtr)
 			strncmp(str, "-nocase", (size_t) length) == 0) {
 		    nocase = 1;
 		} else {
-		    char c = str[length];
+		    c = str[length];
 		    str[length] = '\0';
 		    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
 			    "bad option \"", str, "\": must be -nocase",
@@ -2428,14 +2466,27 @@ TclCompileStringCmd(interp, parsePtr, envPtr)
 		}
 		varTokenPtr = varTokenPtr + (varTokenPtr->numComponents + 1);
 	    }
-	    TclEmitPush(TclRegisterLiteral(envPtr, (nocase ? "1" : "0"),
-		    1, 0), envPtr);
-	    depth++;
 
 	    for (i = 0; i < 2; i++) {
 		if (varTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
-		    TclEmitPush(TclRegisterLiteral(envPtr,
-			    varTokenPtr[1].start, varTokenPtr[1].size,
+		    str = varTokenPtr[1].start;
+		    length = varTokenPtr[1].size;
+		    if (!nocase && (i == 0)) {
+			/*
+			 * On the first (pattern) arg, check to see if any
+			 * glob special characters are in the word '*[]?\\'.
+			 * If not, this is the same as 'string equal'.  We
+			 * can use strchr here because the glob chars are all
+			 * in the ascii-7 range.  If -nocase was specified,
+			 * we can't do this because INST_STR_EQ has no support
+			 * for nocase.
+			 */
+			c = str[length];
+			str[length] = '\0';
+			exactMatch = (strpbrk(str, "*[]?\\") == NULL);
+			str[length] = c;
+		    }
+		    TclEmitPush(TclRegisterLiteral(envPtr, str, length,
 			    0), envPtr);
 		    depth++;
 		} else {
@@ -2449,8 +2500,12 @@ TclCompileStringCmd(interp, parsePtr, envPtr)
 		varTokenPtr = varTokenPtr + (varTokenPtr->numComponents + 1);
 	    }
 
+	    if (exactMatch) {
+		TclEmitOpcode(INST_STR_EQ, envPtr);
+	    } else {
+		TclEmitInstInt1(INST_STR_MATCH, nocase, envPtr);
+	    }
 	    envPtr->maxStackDepth = depth;
-	    TclEmitOpcode(INST_STR_MATCH, envPtr);
 	    return TCL_OK;
 	}
     }
@@ -2511,11 +2566,16 @@ TclCompileWhileCmd(interp, parsePtr, envPtr)
      * If the test expression requires substitutions, don't compile the
      * while command inline. E.g., the expression might cause the loop to
      * never execute or execute forever, as in "while "$x < 5" {}".
+     *
+     * Bail out also if the body expression requires substitutions
+     * in order to insure correct behaviour [Bug 219166]
      */
 
     testTokenPtr = parsePtr->tokenPtr
 	    + (parsePtr->tokenPtr->numComponents + 1);
-    if (testTokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
+    bodyTokenPtr = testTokenPtr + (testTokenPtr->numComponents + 1);
+    if ((testTokenPtr->type != TCL_TOKEN_SIMPLE_WORD)
+	    || (bodyTokenPtr->type != TCL_TOKEN_SIMPLE_WORD)) {
 	return TCL_OUT_LINE_COMPILE;
     }
 

@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: for.test,v 1.6 2000/04/10 17:18:59 ericm Exp $
+# RCS: @(#) $Id: for.test,v 1.7 2001/09/19 18:17:54 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -587,8 +587,8 @@ test for-4.1 {break must reset the interp result} {
 
 # Test for incorrect "double evaluation" semantics
 
-test for-5.1 {possible delayed substitution of increment command} {knownBug} {
-    # Increment should be 5, and lappend should always append 5
+test for-5.1 {possible delayed substitution of increment command} {
+    # Increment should be 5, and lappend should always append $a
     catch {unset a}
     catch {unset i}
     set a 5
@@ -597,12 +597,34 @@ test for-5.1 {possible delayed substitution of increment command} {knownBug} {
     set i
 } {1 6 11}
 
-test for-5.2 {possible delayed substitution of body command} {knownBug} {
-    # Increment should be 5, and lappend should always append 5
+test for-5.2 {possible delayed substitution of increment command} {
+    # Increment should be 5, and lappend should always append $a
+    catch {rename p ""}
+    proc p {} {
+	set a 5
+	set i {}
+	for {set a 1} {$a < 12} "incr a $a" {lappend i $a}
+	set i
+    }
+    p
+} {1 6 11}
+test for-5.3 {possible delayed substitution of body command} {
+    # Increment should be $a, and lappend should always append 5
     set a 5
     set i {}
     for {set a 1} {$a < 12} {incr a $a} "lappend i $a"
     set i
+} {5 5 5 5}
+test for-5.4 {possible delayed substitution of body command} {
+    # Increment should be $a, and lappend should always append 5
+    catch {rename p ""}
+    proc p {} {
+	set a 5
+	set i {}
+	for {set a 1} {$a < 12} {incr a $a} "lappend i $a"
+	set i
+    }
+    p
 } {5 5 5 5}
 
 # In the following tests we need to bypass the bytecode compiler by
