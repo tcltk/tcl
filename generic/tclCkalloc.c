@@ -13,7 +13,7 @@
  *
  * This code contributed by Karl Lehenbauer and Mark Diekhans
  *
- * RCS: @(#) $Id: tclCkalloc.c,v 1.12 2001/04/04 16:07:20 kennykb Exp $
+ * RCS: @(#) $Id: tclCkalloc.c,v 1.13 2001/12/18 15:21:20 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -449,7 +449,7 @@ Tcl_DbCkalloc(size, file, line)
 char *
 Tcl_AttemptDbCkalloc(size, file, line)
     unsigned int size;
-    char        *file;
+    CONST char  *file;
     int          line;
 {
     struct mem_header *result;
@@ -628,10 +628,10 @@ Tcl_DbCkfree(ptr, file, line)
  */
 char *
 Tcl_DbCkrealloc(ptr, size, file, line)
-    char *ptr;
+    char        *ptr;
     unsigned int size;
-    CONST char *file;
-    int line;
+    CONST char  *file;
+    int          line;
 {
     char *new;
     unsigned int copySize;
@@ -660,10 +660,10 @@ Tcl_DbCkrealloc(ptr, size, file, line)
 
 char *
 Tcl_AttemptDbCkrealloc(ptr, size, file, line)
-    char *ptr;
+    char        *ptr;
     unsigned int size;
-    char *file;
-    int line;
+    CONST char  *file;
+    int          line;
 {
     char *new;
     unsigned int copySize;
@@ -1036,7 +1036,7 @@ Tcl_AttemptAlloc (size)
 char *
 Tcl_AttemptDbCkalloc(size, file, line)
     unsigned int size;
-    char        *file;
+    CONST char  *file;
     int          line;
 {
     char *result;
@@ -1112,10 +1112,10 @@ Tcl_AttemptRealloc(ptr, size)
 
 char *
 Tcl_AttemptDbCkrealloc(ptr, size, file, line)
-    char *ptr;
+    char        *ptr;
     unsigned int size;
-    char *file;
-    int line;
+    CONST char  *file;
+    int          line;
 {
     char *result;
 
