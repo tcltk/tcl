@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinSock.c,v 1.30 2002/11/27 02:22:23 davygrvy Exp $
+ * RCS: @(#) $Id: tclWinSock.c,v 1.31 2002/11/27 05:29:46 davygrvy Exp $
  */
 
 #include "tclWinInt.h"
@@ -85,17 +85,6 @@ static struct {
 #define SOCKET_TERMINATE    WM_USER+3
 #define SELECT		    TRUE
 #define UNSELECT	    FALSE
-
-/*
- * Accepted sockets done in the message handling thread are stored here
- * and appended to the listen sockets SocketInfo struct until they are
- * processed.
- */
-
-typedef struct SocketAcceptInfo {
-    SOCKET newSock;
-    SOCKADDR_IN newAddr;
-} SocketAcceptInfo;
 
 /*
  * The following structure is used to store the data associated with
@@ -764,32 +753,26 @@ SocketEventProc(evPtr, flags)
 	    break;
 	}
     }
-    
+    SetEvent(tsdPtr->socketListLock);
+
     /*
      * Discard events that have gone stale.
      */
 
     if (!infoPtr) {
-	SetEvent(tsdPtr->socketListLock);
 	return 1;
     }
 
     infoPtr->flags &= ~SOCKET_PENDING;
 
     /*
-     * Handle all accepted connections directly.
+     * Handle connection requests directly.
      */
 
     if (infoPtr->readyEvents & FD_ACCEPT) {
 	TcpAccept(infoPtr);
 	return 1;
     }
-
-    /*
-     * Release the lock here as FD_ACCEPTs are a special case.
-     */
-
-    SetEvent(tsdPtr->socketListLock);
 
     /*
      * Mask off unwanted events and compute the read/write mask so 
@@ -1019,7 +1002,7 @@ CreateSocket(interp, port, host, server, myaddr, myport, async)
     CONST char *myaddr;		/* Optional client-side address */
     int myport;			/* Optional client-side port */
     int async;			/* If nonzero, connect client socket
-                                 * asynchronously. */
+				 * asynchronously. */
 {
     u_long flag = 1;		/* Indicates nonblocking mode. */
     int asyncConnect = 0;	/* Will be 1 if async connect is
@@ -1376,7 +1359,7 @@ Tcl_OpenTcpClient(interp, port, host, myaddr, myport, async)
 	return NULL;
     }
 
-    wsprintf(channelName, "sock%d", infoPtr->socket);
+    wsprintfA(channelName, "sock%d", infoPtr->socket);
 
     infoPtr->channel = Tcl_CreateChannel(&tcpChannelType, channelName,
 	    (ClientData) infoPtr, (TCL_READABLE | TCL_WRITABLE));
@@ -1441,7 +1424,7 @@ Tcl_MakeTcpClientChannel(sock)
     SendMessage(tsdPtr->hwnd, SOCKET_SELECT,
 	    (WPARAM) SELECT, (LPARAM) infoPtr);
 
-    wsprintf(channelName, "sock%d", infoPtr->socket);
+    wsprintfA(channelName, "sock%d", infoPtr->socket);
     infoPtr->channel = Tcl_CreateChannel(&tcpChannelType, channelName,
 	    (ClientData) infoPtr, (TCL_READABLE | TCL_WRITABLE));
     Tcl_SetChannelOption(NULL, infoPtr->channel, "-translation", "auto crlf");
@@ -1494,7 +1477,7 @@ Tcl_OpenTcpServer(interp, port, host, acceptProc, acceptProcData)
     infoPtr->acceptProc = acceptProc;
     infoPtr->acceptProcData = acceptProcData;
 
-    wsprintf(channelName, "sock%d", infoPtr->socket);
+    wsprintfA(channelName, "sock%d", infoPtr->socket);
 
     infoPtr->channel = Tcl_CreateChannel(&tcpChannelType, channelName,
 	    (ClientData) infoPtr, 0);
@@ -1541,7 +1524,7 @@ TcpAccept(infoPtr)
      */
 
     len = sizeof(SOCKADDR_IN);
-  
+
     newSocket = winSock.accept(infoPtr->socket, (SOCKADDR *)&addr,
 	    &len);
 
@@ -1862,10 +1845,10 @@ TcpOutputProc(instanceData, buf, toWrite, errorCodePtr)
  *	Sets Tcp channel specific options.
  *
  * Results:
- *	...
+ *	None, unless an error happens.
  *
  * Side effects:
- *	...
+ *	Changes attributes of the socket at the system level.
  *
  *----------------------------------------------------------------------
  */
@@ -2277,7 +2260,7 @@ SocketThread(LPVOID arg)
     }
 
     /*
-     * Process all messages on the socket window.
+     * Process all messages on the socket window until WM_QUIT.
      */
 
     while (GetMessage(&msg, NULL, 0, 0) > 0) {
@@ -2368,10 +2351,10 @@ SocketProc(hwnd, message, wParam, lParam)
 		     */
 
 		    /*
-		     * A count of FD_ACCEPTS is stored, so if an FD_CLOSE event
-		     * happens, then clear the FD_ACCEPT count.  Otherwise,
-		     * increment the count if the current event is and
-		     * FD_ACCEPT.
+		     * A count of FD_ACCEPTS is stored, so if an FD_CLOSE
+		     * event happens, then clear the FD_ACCEPT count.
+		     * Otherwise, increment the count if the current
+		     * event is an FD_ACCEPT.
 		     */
 
 		    if (event & FD_CLOSE) {
