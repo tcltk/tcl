@@ -1,5 +1,9 @@
 2002-01-28  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	* win/tclWinReg.c (regConnectRegistryProc,RecursiveDeleteKey)
+	(DeleteKey,GetKeyNames,GetType,GetValue,OpenSubKey,SetValue):
+	redid the CONSTification as previous changes caused failing tests.
+
 	* tests/regexpComp.test (new):
 	* generic/tclInt.h:
 	* generic/tclBasic.c: added TclCompileRegexpCmd entry
