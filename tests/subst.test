@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: subst.test,v 1.7 2000/11/01 22:13:39 hobbs Exp $
+# RCS: @(#) $Id: subst.test,v 1.8 2001/06/28 01:10:15 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -38,6 +38,11 @@ test subst-2.3 {simple strings} {
 test subst-3.1 {backslash substitutions} {
     subst {\x\$x\[foo bar]\\}
 } "x\$x\[foo bar]\\"
+test subst-3.2 {backslash substitutions with utf chars} {
+    # 'j' is just a char that doesn't mean anything, and \344 is 'ä'
+    # that also doesn't mean anything, but is multi-byte in UTF-8.
+    list [subst \j] [subst \\j] [subst \\344] [subst \\\344]
+} "j j \344 \344"
 
 test subst-4.1 {variable substitutions} {
     set a 44
