@@ -10,7 +10,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: clock.n,v 1.15 2004/03/17 18:14:12 das Exp $
+'\" RCS: @(#) $Id: clock.n,v 1.16 2004/05/18 21:45:55 kennykb Exp $
 '\" 
 .so man.macros
 .TH clock n 8.4 Tcl "Tcl Built-In Commands"
@@ -98,6 +98,12 @@ Day of month (01 - 31).
 Date as %m/%d/%y.
 .IP \fB%e\fR
 Day of month (1 - 31), no leading zeros.
+.IP \fB%g\fR
+The ISO8601 year number corresponding to the ISO8601 week (%V), expressed
+as a two-digit year-of-the-century, with leading zero if necessary.
+.IP \fB%G\fR
+The ISO8601 year number corresponding to the ISO8601 week (%V), expressed
+as a four-digit number.
 .IP \fB%h\fR
 Abbreviated month name.
 .VE 8.4

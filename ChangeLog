@@ -1,3 +1,11 @@
+2004-05-18  Kevin B. Kenny  <kennykb@acm.org>
+
+	* compat/strftime.c (_fmt, ISO8601Week):
+	* doc/clock.n:
+	* tests/clock.test: Major rework to the handling of ISO8601
+	week numbers.  Now passes all the %G and %V test cases on
+	Windows, Linux and Solaris [Bugs #500285, #500389, and #852944]
+	
 2004-05-18  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* doc/append.n, doc/upvar.n: Added example.
