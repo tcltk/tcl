@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUtf.c,v 1.13 2000/05/08 22:06:24 hobbs Exp $
+ * RCS: @(#) $Id: tclUtf.c,v 1.14 2000/06/05 23:36:21 ericm Exp $
  */
 
 #include "tclInt.h"
@@ -1627,7 +1627,7 @@ Tcl_UniCharIsWordChar(ch)
  * Tcl_UniCharCaseMatch --
  *
  *	See if a particular Unicode string matches a particular pattern.
- *	Allows case insensitivity.  Thie is the Unicode equivalent of
+ *	Allows case insensitivity.  This is the Unicode equivalent of
  *	the char* Tcl_StringCaseMatch.
  *
  * Results:
