@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.94.2.7 2004/07/03 22:13:10 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.94.2.8 2004/09/10 15:30:02 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1263,6 +1263,20 @@ TclExecuteByteCode(interp, codePtr)
 	{
 	    int totalLen = 0;
 	    
+	    /*
+	     * Peephole optimisation for appending an empty string.
+	     * This enables replacing 'K $x [set x{}]' by '$x[set x{}]'
+	     * for fastest execution.
+	     */
+
+	    if (opnd == 2) {
+		Tcl_GetStringFromObj(stackPtr[stackTop], &length);
+		if (length == 0) {
+		    /* Just drop the top item from the stack */
+		    NEXT_INST_F(2, 1, 0);
+		}
+	    }
+
 	    /*
 	     * Concatenate strings (with no separators) from the top
 	     * opnd items on the stack starting with the deepest item.
