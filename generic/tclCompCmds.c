@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.26 2002/02/25 14:15:10 msofer Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.27 2002/02/26 17:26:25 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -605,8 +605,9 @@ TclCompileForCmd(interp, parsePtr, envPtr)
      * Compile the "next" subcommand.
      */
 
-    envPtr->currStackDepth = savedStackDepth;
     nextCodeOffset = (envPtr->codeNext - envPtr->codeStart);
+
+    envPtr->currStackDepth = savedStackDepth;
     code = TclCompileCmdWord(interp, nextTokenPtr+1,
 	    nextTokenPtr->numComponents, envPtr);
     envPtr->currStackDepth = savedStackDepth + 1;
@@ -619,7 +620,7 @@ TclCompileForCmd(interp, parsePtr, envPtr)
     }
     envPtr->exceptArrayPtr[nextRange].numCodeBytes =
 	    (envPtr->codeNext - envPtr->codeStart)
-	    - envPtr->exceptArrayPtr[nextRange].codeOffset;
+	    - nextCodeOffset;
     TclEmitOpcode(INST_POP, envPtr);
     envPtr->currStackDepth = savedStackDepth;
 
@@ -629,6 +630,7 @@ TclCompileForCmd(interp, parsePtr, envPtr)
      */
 
     testCodeOffset = (envPtr->codeNext - envPtr->codeStart);
+
     jumpDist = testCodeOffset - jumpEvalCondFixup.codeOffset;
     if (TclFixupForwardJump(envPtr, &jumpEvalCondFixup, jumpDist, 127)) {
 	bodyCodeOffset += 3;
