@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.20 2002/01/17 03:03:12 dgp Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.21 2002/01/18 14:17:06 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -595,7 +595,7 @@ TclpGetUserHome(name, bufferPtr)
 
 static int
 NativeAccess(
-    TCHAR *nativePath,		/* Path of file to access (UTF-8). */
+    CONST TCHAR *nativePath,	/* Path of file to access (UTF-8). */
     int mode)			/* Permission setting. */
 {
     DWORD attr;
@@ -640,7 +640,7 @@ NativeAccess(
 
 static int
 NativeIsExec(nativePath)
-    TCHAR *nativePath;
+    CONST TCHAR *nativePath;
 {
     CONST char *p;
     char *path;
@@ -696,9 +696,9 @@ TclpObjChdir(pathPtr)
     Tcl_Obj *pathPtr; 	/* Path to new working directory. */
 {
     int result;
-    TCHAR *nativePath;
+    CONST TCHAR *nativePath;
 
-    nativePath = (TCHAR *) Tcl_FSGetNativePath(pathPtr);
+    nativePath = (CONST TCHAR *) Tcl_FSGetNativePath(pathPtr);
     result = (*tclWinProcs->setCurrentDirectoryProc)(nativePath);
 
     if (result == 0) {
@@ -856,7 +856,7 @@ TclpObjStat(pathPtr, statPtr)
 
     TclWinFlushDirtyChannels ();
 
-    return NativeStat((TCHAR*) Tcl_FSGetNativePath(pathPtr), statPtr);
+    return NativeStat((CONST TCHAR*) Tcl_FSGetNativePath(pathPtr), statPtr);
 }
 
 /*
@@ -884,7 +884,7 @@ TclpObjStat(pathPtr, statPtr)
 
 static int 
 NativeStat(nativePath, statPtr)
-    TCHAR *nativePath;          /* Path of file to stat */
+    CONST TCHAR *nativePath;   /* Path of file to stat */
     struct stat *statPtr;      /* Filled with results of stat call. */
 {
     Tcl_DString ds;
@@ -1213,7 +1213,7 @@ TclpObjAccess(pathPtr, mode)
     Tcl_Obj *pathPtr;
     int mode;
 {
-    return NativeAccess((TCHAR*) Tcl_FSGetNativePath(pathPtr), mode);
+    return NativeAccess((CONST TCHAR*) Tcl_FSGetNativePath(pathPtr), mode);
 }
 
 int 

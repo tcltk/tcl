@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFCmd.c,v 1.18 2002/01/17 04:37:33 dgp Exp $
+ * RCS: @(#) $Id: tclWinFCmd.c,v 1.19 2002/01/18 14:17:06 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -1303,7 +1303,7 @@ GetWinFileAttributes(
     Tcl_Obj **attributePtrPtr)	/* A pointer to return the object with. */
 {
     DWORD result;
-    TCHAR *nativeName;
+    CONST TCHAR *nativeName;
 
     nativeName = Tcl_FSGetNativePath(fileName);
     result = (*tclWinProcs->getFileAttributesProc)(nativeName);
@@ -1583,7 +1583,7 @@ SetWinFileAttributes(
     DWORD fileAttributes;
     int yesNo;
     int result;
-    TCHAR *nativeName;
+    CONST TCHAR *nativeName;
 
     nativeName = Tcl_FSGetNativePath(fileName);
     fileAttributes = (*tclWinProcs->getFileAttributesProc)(nativeName);
