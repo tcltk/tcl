@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.41 2002/01/25 20:40:55 dgp Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.42 2002/02/01 17:17:59 vincentdarley Exp $
  */
 
 #define TCL_TEST
@@ -4267,7 +4267,7 @@ TestmainthreadCmd (dummy, interp, argc, argv)
  */
 
 static void
-MainLoop()
+MainLoop(void)
 {
     while (!exitMainLoop) {
 	Tcl_DoOneEvent(0);
