@@ -1,3 +1,7 @@
+2002-07-21  Don Porter  <dgp@users.sourceforge.net>
+
+	* tclIOUtil.c: Silence compiler warning. [Bug 584408].
+
 2002-07-19  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* generic/tclIOUtil.c: fix to GetFilesystemRecord
