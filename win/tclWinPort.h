@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPort.h,v 1.40 2004/04/06 22:25:58 dgp Exp $
+ * RCS: @(#) $Id: tclWinPort.h,v 1.41 2004/05/30 21:57:09 davygrvy Exp $
  */
 
 #ifndef _TCLWINPORT
@@ -215,6 +215,18 @@
 #endif /* !EOVERFLOW */
 
 /*
+ * Signals not known to the standard ANSI signal.h.  These are used
+ * by Tcl_WaitPid() and generic/tclPosixStr.c
+ */
+
+#ifndef SIGTRAP
+#   define SIGTRAP  5
+#endif
+#ifndef SIGBUS
+#   define SIGBUS   10
+#endif
+
+/*
  * Supply definitions for macros to query wait status, if not already
  * defined in header files above.
  */
@@ -230,7 +242,7 @@
 #endif
 
 #ifndef WEXITSTATUS
-#   define WEXITSTATUS(stat) (((*((int *) &(stat))) >> 8) & 0xff)
+#   define WEXITSTATUS(stat) (short)(((*((int *) &(stat))) >> 8) & 0xffff)
 #endif
 
 #ifndef WIFSIGNALED
