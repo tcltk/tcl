@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPipe.c,v 1.5 1999/04/16 00:48:09 stanton Exp $
+ * RCS: @(#) $Id: tclWinPipe.c,v 1.6 1999/05/21 18:28:45 redman Exp $
  */
 
 #include "tclWinInt.h"
@@ -1452,7 +1452,7 @@ TclpCreateProcess(
      */
 
     if (applType == APPL_DOS) {
-	WaitForSingleObject(hProcess, 50);
+	WaitForSingleObject(procInfo.hProcess, 50);
     }
 
     /* 
