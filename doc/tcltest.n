@@ -7,7 +7,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: tcltest.n,v 1.17 2002/06/03 23:44:32 dgp Exp $
+'\" RCS: @(#) $Id: tcltest.n,v 1.18 2002/06/06 18:44:43 dgp Exp $
 '\" 
 .so man.macros
 .TH "tcltest" n 8.4 Tcl "Tcl Built-In Commands"
@@ -28,7 +28,7 @@ tcltest \- Test harness support code and utilities
 .sp
 \fBtcltest::interpreter \fI?interp?\fR
 .sp
-\fBtcltest::singleProcess \fI?boolean?\fR
+\fBtcltest::singleProcess \fI?value?\fR
 .sp
 \fBtcltest::debug \fI?level?\fR
 .sp
@@ -40,7 +40,7 @@ tcltest \- Test harness support code and utilities
 .sp
 \fBtcltest::testConstraint \fIconstraint ?value?\fR
 .sp
-\fBtcltest::limitConstraints \fI?constraintList?\fR
+\fBtcltest::limitConstraints \fI?value?\fR
 .sp
 \fBtcltest::workingDirectory \fI?dir?\fR
 .sp
@@ -151,11 +151,11 @@ suite. This is the interpreter used in runAllTests to run test files
 if singleProcess is set to false.  The default value for interpreter
 is the name of the interpreter in which the tests were started.  
 .TP
-\fBtcltest::singleProcess\fR \fI?boolean?\fR
+\fBtcltest::singleProcess\fR \fI?value?\fR
 Sets or returns a boolean indicating whether test files should be sourced
 into the current interpreter by runAllTests or run in their own
-processes. If \fIboolean\fR is true (1), tests are sourced into the
-current interpreter.  If \fIboolean\fR is false (0), tests are run in
+processes. If \fIvalue\fR is true (1), tests are sourced into the
+current interpreter.  If \fIvalue\fR is false (0), tests are run in
 the interpreter specified in tcltest::interpreter.  The default value
 for tcltest::singleProcess is false.
 .TP
@@ -232,11 +232,12 @@ whether or not the results match.  The built-in matching modes of
 Sets or returns the value associated with the named \fIconstraint\fR.
 See the section \fI"Test constraints"\fR for more information.
 .TP
-\fBtcltest::limitConstraints \fI?constraintList?\fR
+\fBtcltest::limitConstraints \fI?value?\fR
 Sets or returns a boolean indicating whether testing is being limited
-to constraints listed in \fIconstraintList\fR.
-If limitConstraints is not false, only those tests with constraints matching
-values in \fIconstraintList\fR will be run.  
+to the list of constraints specified by the \fB-constraints\fR
+command line option.  If \fIvalue\fR is true, only those tests
+with constraints present in the list specified in the \fB-constraints\fR
+command line option.
 .TP
 \fBtcltest::workingDirectory\fR \fI?directoryName?\fR
 Sets or returns the directory in which the test suite is being run.
@@ -934,10 +935,6 @@ tell the test harness about additional flags that you want it to understand.
 process the additional flags that you told the harness about in
 tcltest::processCmdLineArgsFlagHook.
 .TP
-\fBtcltest::initConstraintsHook\fR
-used to add additional built-in constraints to those already defined
-by \fBtcltest\fR.  
-.TP
 \fBtcltest::cleanupTestsHook\fR
 do additional cleanup 
 .PP
@@ -971,19 +968,6 @@ define additional usage information, define your own
 tcltest::PrintUsageInfoHook proc.  Within this proc, you should
 print out additional usage information for any flags that you've
 implemented. 
-.PP
-To add new built-in
-constraints to the test harness, define your own version of
-\fBtcltest::initConstraintsHook\fR. 
-Within your proc, you can add to the \fBtcltest::testConstraints\fR array.
-For example:
-.DS
-proc tcltest::initConstraintsHook {} {
-    set tcltest::testConstraints(win95Or98) \\
-            [expr {$tcltest::testConstraints(95) || \\
-            $tcltest::testConstraints(98)}]
-}
-.DE
 .PP
 Finally, if you want to add additional cleanup code to your harness
 you can define your own \fBtcltest::cleanupTestsHook\fR.  For example:
