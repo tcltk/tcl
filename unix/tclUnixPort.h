@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPort.h,v 1.32 2003/12/09 15:27:48 dkf Exp $
+ * RCS: @(#) $Id: tclUnixPort.h,v 1.33 2004/03/05 14:06:55 vbwagner Exp $
  */
 
 #ifndef _TCLUNIXPORT
@@ -135,7 +135,12 @@ EXTERN Tcl_WideUInt	strtoull _ANSI_ARGS_((CONST char *string,
  * Socket support stuff: This likely needs more work to parameterize for
  * each system.
  */
-
+#ifdef DJGPP
+/* ELOOP is defined in both WatTCP includes and DJGPP system includes*/
+#undef ELOOP
+#undef EILSEQ
+#undef EOVERFLOW
+#endif
 #include <sys/socket.h>		/* struct sockaddr, SOCK_STREAM, ... */
 #ifndef NO_UNAME
 #   include <sys/utsname.h>	/* uname system call. */
