@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinThrd.c,v 1.14 2001/08/07 00:43:02 hobbs Exp $
+ * RCS: @(#) $Id: tclWinThrd.c,v 1.15 2001/09/03 00:37:45 davygrvy Exp $
  */
 
 #include "tclWinInt.h"
@@ -135,8 +135,14 @@ Tcl_CreateThread(idPtr, proc, clientData, stackSize, flags)
 
     EnterCriticalSection(&joinLock);
 
+#ifdef __CYGWIN__
+    tHandle = CreateThread(NULL, (DWORD) stackSize,
+	    (LPTHREAD_START_ROUTINE) proc, (LPVOID) clientData,
+	    (DWORD) 0, (LPDWORD)idPtr);
+#else
     tHandle = (HANDLE) _beginthreadex(NULL, (unsigned) stackSize, proc,
 	clientData, 0, (unsigned *)idPtr);
+#endif
 
     if (tHandle == 0) {
         LeaveCriticalSection(&joinLock);
@@ -146,6 +152,10 @@ Tcl_CreateThread(idPtr, proc, clientData, stackSize, flags)
 	    TclRememberJoinableThread (*idPtr);
 	}
 
+	/*
+	 * The only purpose of this is to decrement the reference count so the
+	 * OS resources will be reaquired when the thread closes.
+	 */
 	CloseHandle(tHandle);
 	LeaveCriticalSection(&joinLock);
 	return TCL_OK;
@@ -203,7 +213,11 @@ TclpThreadExit(status)
     TclSignalExitThread (Tcl_GetCurrentThread (), status);
     LeaveCriticalSection(&joinLock);
 
+#ifdef __CYGWIN__
+    ExitThread((DWORD) status);
+#else
     _endthreadex((DWORD)status);
+#endif
 }
 
 
