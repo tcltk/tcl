@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.94 2002/06/13 09:40:00 vincentdarley Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.95 2002/06/17 22:52:51 hobbs Exp $
  */
 
 #ifndef _TCLINT
@@ -289,10 +289,18 @@ typedef struct CommandTrace {
 				     * a particular command. */
 } CommandTrace;
 
+/*
+ * When a command trace is active (i.e. its associated procedure is
+ * executing), one of the following structures is linked into a list
+ * associated with the command's interpreter.  The information in
+ * the structure is needed in order for Tcl to behave reasonably
+ * if traces are deleted while traces are active.
+ */
+
 typedef struct ActiveCommandTrace {
-    struct Command *cmdPtr;	/* Variable that's being traced. */
+    struct Command *cmdPtr;	/* Command that's being traced. */
     struct ActiveCommandTrace *nextPtr;
-				/* Next in list of all active variable
+				/* Next in list of all active command
 				 * traces for the interpreter, or NULL
 				 * if no more. */
     CommandTrace *nextTracePtr;	/* Next trace to check after current
@@ -654,6 +662,25 @@ typedef struct Trace {
     Tcl_CmdObjTraceDeleteProc* delProc;
 				/* Procedure to call when trace is deleted */
 } Trace;
+
+/*
+ * When an interpreter trace is active (i.e. its associated procedure
+ * is executing), one of the following structures is linked into a list
+ * associated with the interpreter.  The information in the structure
+ * is needed in order for Tcl to behave reasonably if traces are
+ * deleted while traces are active.
+ */
+
+typedef struct ActiveInterpTrace {
+    struct ActiveInterpTrace *nextPtr;
+				/* Next in list of all active command
+				 * traces for the interpreter, or NULL
+				 * if no more. */
+    Trace *nextTracePtr;	/* Next trace to check after current
+				 * trace procedure returns;  if this
+				 * trace gets deleted, must update pointer
+				 * to avoid using free'd memory. */
+} ActiveInterpTrace;
 
 /*
  * The structure below defines an entry in the assocData hash table which
@@ -1080,6 +1107,9 @@ typedef struct Command {
  *				underway for a rename/delete change.
  *				See the two flags below for which is
  *				currently being processed.
+ * CMD_HAS_EXEC_TRACES -	1 means that this command has at least
+ *                              one execution trace (as opposed to simple
+ *                              delete/rename traces) in its tracePtr list.
  * TCL_TRACE_RENAME -           A rename trace is in progress. Further
  *                              recursive renames will not be traced.
  * TCL_TRACE_DELETE -           A delete trace is in progress. Further 
@@ -1088,6 +1118,7 @@ typedef struct Command {
  */
 #define CMD_IS_DELETED		0x1
 #define CMD_TRACE_ACTIVE	0x2
+#define CMD_HAS_EXEC_TRACES	0x4
 
 /*
  *----------------------------------------------------------------
@@ -1209,7 +1240,7 @@ typedef struct Interp {
 				 * unless an "uplevel" command is
 				 * executing). NULL means no procedure is
 				 * active or "uplevel 0" is executing. */
-    ActiveVarTrace *activeTracePtr;
+    ActiveVarTrace *activeVarTracePtr;
 				/* First in list of active traces for
 				 * interp, or NULL if no active traces. */
     int returnCode;		/* Completion code to return if current
@@ -1305,6 +1336,9 @@ typedef struct Interp {
     ActiveCommandTrace *activeCmdTracePtr;
 				/* First in list of active command traces for
 				 * interp, or NULL if no active traces. */
+    ActiveInterpTrace *activeInterpTracePtr;
+				/* First in list of active traces for
+				 * interp, or NULL if no active traces. */
 
     int tracesForbiddingInline; /* Count of traces (in the list headed by
 				 * tracePtr) that forbid inline bytecode
@@ -1367,6 +1401,9 @@ typedef struct Interp {
  *			interpreter; instead, have Tcl_EvalObj call
  *			Tcl_EvalEx. Used primarily for testing the
  *			new parser.
+ * INTERP_TRACE_IN_PROGRESS: Non-zero means that an interp trace is currently
+ *			active; so no further trace callbacks should be
+ *			invoked.
  */
 
 #define DELETED				    1
@@ -1378,6 +1415,7 @@ typedef struct Interp {
 #define RAND_SEED_INITIALIZED		 0x40
 #define SAFE_INTERP			 0x80
 #define USE_EVAL_DIRECT			0x100
+#define INTERP_TRACE_IN_PROGRESS	0x200
 
 /*
  *----------------------------------------------------------------
