@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.38 2003/02/01 23:49:20 kennykb Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.39 2003/02/07 01:07:05 mdejong Exp $
  */
 
 #include "tclInt.h"
@@ -1558,10 +1558,6 @@ TclCompileIncrCmd(interp, parsePtr, envPtr)
 	    code = TclCompileTokens(interp, incrTokenPtr+1, 
 	            incrTokenPtr->numComponents, envPtr);
 	    if (code != TCL_OK) {
-		if (code == TCL_ERROR) {
-		    Tcl_AddObjErrorInfo(interp,
-	                    "\n    (increment expression)", -1);
-		}
 		goto done;
 	    }
 	}
