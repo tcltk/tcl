@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.53 2002/03/25 16:35:14 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.54 2002/03/27 14:35:40 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -3585,6 +3585,16 @@ Tcl_EvalEx(interp, script, numBytes, flags)
 		iPtr->numLevels--;
 	    }
 	    if (code != TCL_OK) {
+		if (iPtr->numLevels == 0) {
+		    if (code == TCL_RETURN) {
+			code = TclUpdateReturnInfo(iPtr);
+		    }
+		    if ((code != TCL_OK) && (code != TCL_ERROR) 
+			&& ((iPtr->evalFlags & TCL_ALLOW_EXCEPTIONS) == 0)) {
+			ProcessUnexpectedResult(interp, code);
+			code = TCL_ERROR;
+		    }
+		}
 		goto error;
 	    }
 	    for (i = 0; i < objectsUsed; i++) {
