@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclResult.c,v 1.22 2004/11/13 00:19:10 dgp Exp $
+ * RCS: @(#) $Id: tclResult.c,v 1.23 2004/11/23 00:12:57 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -630,10 +630,22 @@ Tcl_AppendResultVA(interp, argList)
     Tcl_AppendStringsToObjVA(objPtr, argList);
     Tcl_SetObjResult(interp, objPtr);
     /*
+     * Strictly we should call Tcl_GetStringResult(interp) here to
+     * make sure that interp->result is correct according to the old
+     * contract, but that makes the performance of much code (e.g. in
+     * Tk) absolutely awful. So we leave it out; code that really
+     * wants interp->result can just insert the calls to
+     * Tcl_GetStringResult() itself. [Patch 1041072 discussion]
+     */
+
+#ifdef USE_DIRECT_INTERP_RESULT_ACCESS
+    /*
      * Ensure that the interp->result is legal so old Tcl 7.* code
      * still works. There's still embarrasingly much of it about...
      */
+
     (void) Tcl_GetStringResult(interp);
+#endif /* USE_DIRECT_INTERP_RESULT_ACCESS */
 }
 
 /*
