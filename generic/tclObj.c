@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.42.2.6 2004/09/10 21:52:37 dkf Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.42.2.7 2004/09/10 22:59:54 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1749,8 +1749,7 @@ Tcl_GetIntFromObj(interp, objPtr, intPtr)
     register Tcl_Obj *objPtr;	/* The object from which to get a int. */
     register int *intPtr;	/* Place to store resulting int. */
 {
-    register long l;
-    Tcl_WideInt w;
+    register long l = 0;
     int result;
 
     /*
@@ -1771,8 +1770,8 @@ Tcl_GetIntFromObj(interp, objPtr, intPtr)
 
     if (objPtr->typePtr == &tclIntType) {
 	l = objPtr->internalRep.longValue;
-#ifndef TCL_WIDE_INT_IS_LONG
     } else if (objPtr->typePtr == &tclWideIntType) {
+#ifndef TCL_WIDE_INT_IS_LONG
 	/*
 	 * If the object is already a wide integer, don't convert it.
 	 * This code allows for any integer in the range -ULONG_MAX to
@@ -1782,12 +1781,14 @@ Tcl_GetIntFromObj(interp, objPtr, intPtr)
 	 * wide integers to 32-bit ones in the internal rep.
 	 */
 
-	w = objPtr->internalRep.wideValue;
+	Tcl_WideInt w = objPtr->internalRep.wideValue;
 	if (w >= -(Tcl_WideInt)(ULONG_MAX) && w <= (Tcl_WideInt)(ULONG_MAX)) {
 	    l = Tcl_WideAsLong(w);
 	} else {
 	    goto tooBig;
 	}
+#else
+	l = objPtr->internalRep.longValue;
 #endif
     } else {
 	Tcl_Panic( "string->integer conversion failed to convert the obj." );
@@ -1797,7 +1798,9 @@ Tcl_GetIntFromObj(interp, objPtr, intPtr)
 	*intPtr = (int)objPtr->internalRep.longValue;
 	return TCL_OK;
     }
+#ifndef TCL_WIDE_INT_IS_LONG
   tooBig:
+#endif
     if (interp != NULL) {
 	Tcl_ResetResult(interp);
 	Tcl_AppendToObj(Tcl_GetObjResult(interp),
@@ -2208,7 +2211,6 @@ Tcl_GetLongFromObj(interp, objPtr, longPtr)
     register long *longPtr;	/* Place to store resulting long. */
 {
     register int result;
-    Tcl_WideInt w;
     
     if (objPtr->typePtr != &tclIntType && objPtr->typePtr != &tclWideIntType) {
 	result = SetIntOrWideFromAny(interp, objPtr);
@@ -2228,7 +2230,7 @@ Tcl_GetLongFromObj(interp, objPtr, longPtr)
 	 * wide integers to 32-bit ones in the internal rep.
 	 */
 
-	w = objPtr->internalRep.wideValue;
+	Tcl_WideInt w = objPtr->internalRep.wideValue;
 	if (w >= -(Tcl_WideInt)(ULONG_MAX) && w <= (Tcl_WideInt)(ULONG_MAX)) {
 	    *longPtr = Tcl_WideAsLong(w);
 	    return TCL_OK;
