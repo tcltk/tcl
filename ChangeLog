@@ -1,15 +1,15 @@
 2004-10-08  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
-	* tests/expr.test: Basic tests of 'in' and 'ni' behaviour.
+	TIP#201 AND TIP#212 IMPLEMENTATIONS
 
+	* doc/dict.n, doc/expr.n: Documentation for new functionality.
+	* tests/expr.test: Basic tests of 'in' and 'ni' behaviour.
 	* tests/dict.test (dict-21.*,dict-22.*): Tests for [dict update]
 	and [dict with].
-
 	* generic/tclExecute.c (TclExecuteByteCode): Implementation of the
 	INST_LIST_IN and INST_LIST_NOT_IN bytecodes.
 	* generic/tclParseExpr.c (GetLexeme): Parse the 'in' and 'ni'
 	operators for TIP#201.
-
 	* generic/tclDictObj.c (DictUpdateCmd,DictWithCmd): Core of
 	implementation of TIP#212; docs and tests still to do...
 
