@@ -12,7 +12,7 @@
 # Copyright (c) 2001-2004 David Gravereaux.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.123 2004/03/03 09:10:11 davygrvy Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.124 2004/03/03 10:47:22 davygrvy Exp $
 #------------------------------------------------------------------------------
 
 !if "$(MSDEVDIR)" == ""
@@ -25,9 +25,9 @@ the environment.  Jump to this line to read the new instructions.
 #------------------------------------------------------------------------------
 # HOW TO USE this makefile:
 #
-# 1)  It is now necessary to have %MSVCDir% set in the environment.  This is used
+# 1)  It is now necessary to have %MSDevDir% set in the environment.  This is used
 #     as a check to see if vcvars32.bat had been run prior to running nmake or
-#     during the installation of Microsoft Visual C++, MSVCDir had been set
+#     during the installation of Microsoft Visual C++, MSDevDir had been set
 #     globally and the PATH adjusted.  Either way is valid.
 #
 #     You'll need to run vcvars32.bat contained in the MsDev's vc(98)/bin
