@@ -1,3 +1,11 @@
+2003-03-19  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCompCmds.c (TclCompileReturnCmd):  Alternative fix for
+	* generic/tclCompile.c (INST_RETURN):	[Bug 633204] that uses a new
+	* generic/tclCompile.h (INST_RETURN):	bytecode INST_RETURN to
+	* generic/tclExecute.c (INST_RETURN):	properly bytecode the
+	[return] command to something that returns TCL_RETURN.
+
 2003-03-18  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* win/configure: Regen.
@@ -1120,7 +1128,7 @@
 	
 2003-01-09  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclCompCmds.c (TclCompilerReturnCmd):  Corrected off-by-one
+	* generic/tclCompCmds.c (TclCompileReturnCmd):  Corrected off-by-one
 	problem with recent commit.  [Bug 633204]
 
 2003-01-09  Vince Darley  <vincentdarley@users.sourceforge.net>
