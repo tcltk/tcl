@@ -1,3 +1,9 @@
+2003-09-19  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclExecute.c: adding (DE)CACHE_STACK_INFO() pairs to
+	protect all calls that may cause traces on ::errorInfo or
+	::errorCode to corrupt the stack [Bug 804681]
+
 2003-09-10  Don Porter  <dgp@users.sourceforge.net>
 
 	* library/opt/optparse.tcl:	Overlooked dependence of opt 0.4.4
