@@ -5,7 +5,8 @@
 	values if the user name is 'root' or the uid is 0.
 
 	* tests/fCmd.test: Added knownBug constraints to fCmd-8.1,
-	fCmd-5.5, and fCmd-6.17; these are potentially dangerous tests.
+	fCmd-5.5, and fCmd-6.17; these are potentially dangerous
+	tests. [Bug: 3881]
 
 1999-12-07  Jeff Hobbs  <hobbs@scriptics.com>
 
