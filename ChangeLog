@@ -1,3 +1,11 @@
+2004-06-23  Kevin B. Kenny  <kennykb@acm.org>
+
+	* tests/winDde.test (createChildProcess): Added a 200-ms delay
+	(with the event loop live) when shutting down the test DDE server
+	process, With the delay in place, nuisance failures of tests
+	winDde-4.2, -6.5, and -6.6 appear to be much less frequent.
+	[Bug #957449]
+
 2004-06-23  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* tests/*.test: Standardize use of platform constraints.
