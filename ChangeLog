@@ -1,3 +1,14 @@
+1999-03-23    <redman@scriptics.com>
+
+	* tests/winConsole.test:
+	* win/tclWinConsole.c: Fixed problem with fileevents and gets from
+	a console stdin.  Previously, fileevents were firing before an
+	entire line was available for reading, which meant that when you
+	did a gets or read, it blocked (even in nonblocking mode). Now, it
+	should work the same as Unix: fileevents fire when an entire line
+	is ready, and gets and read do not block in non-blocking mode.
+	Added an interactive test case to check for this.
+
 1999-03-22    <stanton@scriptics.com>
 
 	* tests/reg.test: 

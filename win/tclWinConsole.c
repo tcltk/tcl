@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinConsole.c,v 1.1.2.3 1999/03/14 18:55:11 stanton Exp $
+ * RCS: @(#) $Id: tclWinConsole.c,v 1.1.2.4 1999/03/24 00:04:31 redman Exp $
  */
 
 #include "tclWinInt.h"
@@ -39,8 +39,9 @@ TCL_DECLARE_MUTEX(procMutex)
  * Bit masks used in the sharedFlags field of the ConsoleInfo structure below.
  */
 
-#define CONSOLE_EOF	(1<<2)	/* Console has reached EOF. */
-
+#define CONSOLE_EOF	  (1<<2)  /* Console has reached EOF. */
+#define CONSOLE_EXTRABYTE (1<<3)  /* extra byte consumed while waiting for read
+				     access */
 /*
  * This structure describes per-instance data for a console based channel.
  */
@@ -91,6 +92,8 @@ typedef struct ConsoleInfo {
     int readFlags;		/* Flags that are shared with the reader
 				 * thread.  Access is synchronized with the
 				 * readable object.  */
+    char extraByte;             /* Buffer for extra character consumed by reade
+				   thread. */
 } ConsoleInfo;
 
 typedef struct ThreadSpecificData {
@@ -559,6 +562,7 @@ ConsoleInputProc(
     int result;
 
     *errorCode = 0;
+
     /*
      * Synchronize with the reader thread.
      */
@@ -572,6 +576,26 @@ ConsoleInputProc(
     if (result == -1) {
 	*errorCode = errno;
 	return -1;
+    }
+
+    if (infoPtr->readFlags & CONSOLE_EXTRABYTE) {
+	/*
+	 * The reader thread consumed 1 byte.
+	 */
+
+	*buf = infoPtr->extraByte;
+	infoPtr->readFlags &= ~CONSOLE_EXTRABYTE;
+	buf++;
+	bufSize--;
+	bytesRead = 1;
+
+	/*
+	 * If further read attempts would block, return what we have.
+	 */
+
+	if (result == 0) {
+	    return bytesRead;
+	}
     }
     
     /*
@@ -896,7 +920,7 @@ WaitForRead(
     int blocking)		/* Indicates whether call should be
 				 * blocking or not. */
 {
-    DWORD timeout, count, peekResult;
+    DWORD timeout, count;
     HANDLE *handle = infoPtr->handle;
     INPUT_RECORD input;
     
@@ -911,7 +935,6 @@ WaitForRead(
 	     * The reader thread is blocked waiting for data and the channel
 	     * is in non-blocking mode.
 	     */
-	    
 	    errno = EAGAIN;
 	    return -1;
 	}
@@ -929,20 +952,8 @@ WaitForRead(
 	    return 1;
 	}
 	
-	/*
-	 * Check to see if there is any data sitting in the console.
-	 * But first, remove any non-key events.
-	 */
-	
-	while (peekResult = PeekConsoleInput(handle, &input, 1, &count)) {
-	    if (count == 0) break;
-	    if (input.EventType == KEY_EVENT) break;
-	    
-	    ReadConsoleInput(handle, &input, 1, &count);
-	}
-	
-	if (!peekResult) {
-	    /*
+	if (PeekConsoleInput(handle, &input, 1, &count) == FALSE) {
+            /*
 	     * Check to see if the peek failed because of EOF.
 	     */
 	    
@@ -953,17 +964,27 @@ WaitForRead(
 		return 1;
 	    }
 
-	    return -1;
+	    /*
+	     * Ignore errors if there is data in the buffer.
+	     */
+	    
+	    if (infoPtr->readFlags & CONSOLE_EXTRABYTE) {
+		return 0;
+	    } else {
+		return -1;
+	    }
 	}
 
 	/*
-	 * We found some data in the console, so it must be readable.
+	 * If there is data in the buffer, the console must be
+	 * readable (since it is a line-oriented device).
 	 */
 
-	if (count > 0) {
+	if (infoPtr->readFlags & CONSOLE_EXTRABYTE) {
 	    return 1;
 	}
 
+	
 	/*
 	 * There wasn't any data available, so reset the thread and
 	 * try again.
@@ -998,8 +1019,7 @@ ConsoleReaderThread(LPVOID arg)
 {
     ConsoleInfo *infoPtr = (ConsoleInfo *)arg;
     HANDLE *handle = infoPtr->handle;
-    DWORD count, peekResult;
-    INPUT_RECORD input;
+    DWORD count;
 
     for (;;) {
 	/*
@@ -1008,36 +1028,26 @@ ConsoleReaderThread(LPVOID arg)
 
 	WaitForSingleObject(infoPtr->startReader, INFINITE);
 
-	/*
-	 * Try waiting for an event on the console.
-	 */
-
-	WaitForSingleObject(handle, INFINITE);
-
 	count = 0;
 
 	/* 
 	 * Look for data on the console, but first ignore any events
 	 * that are not KEY_EVENTs 
 	 */
-
-	while (peekResult = PeekConsoleInput(handle, &input, 1, &count)) {
-	    if (input.EventType == KEY_EVENT) break;
-	    if (count == 0) break;
-
-	    ReadConsoleInput(handle, &input, 1, &count);
-	}
-
-	if (!peekResult) {
+	if (ReadConsole(handle, &(infoPtr->extraByte), 1, &count, NULL)
+		!= FALSE) {
 	    /*
-	     * The error is a result of an EOF condition, so set the
-	     * EOF bit before signalling the main thread.
+	     * One byte was consumed as a side effect of waiting for the
+	     * console to become readable.
 	     */
-
-	    TclWinConvertError(GetLastError());
 	    
-	    if (errno == EOF) {
-		infoPtr->readFlags |= CONSOLE_EOF;
+	    infoPtr->readFlags |= CONSOLE_EXTRABYTE;
+	} else {
+	    DWORD err;
+	    err = GetLastError();
+	    
+	    if (err == EOF) {
+		infoPtr->readFlags = CONSOLE_EOF;
 	    }
 	}
 
@@ -1177,6 +1187,7 @@ TclWinOpenConsoleChannel(handle, channelName, permissions)
 	infoPtr->startReader = CreateEvent(NULL, FALSE, FALSE, NULL);
 	infoPtr->readThread = CreateThread(NULL, 8000, ConsoleReaderThread,
 	        infoPtr, 0, &id);
+	SetThreadPriority(infoPtr->readThread, THREAD_PRIORITY_HIGHEST); 
     }
 
     if (permissions & TCL_WRITABLE) {
