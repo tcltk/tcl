@@ -11,12 +11,14 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: rename.test,v 1.11 2004/03/30 16:22:22 msofer Exp $
+# RCS: @(#) $Id: rename.test,v 1.12 2004/05/19 20:15:32 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
     namespace import -force ::tcltest::*
 }
+
+testConstraint testdel [llength [info commands testdel]]
 
 # Must eliminate the "unknown" command while the test is running,
 # especially if the test is being run in a program with its
@@ -77,65 +79,63 @@ catch {rename unknown {}}
 catch {rename unknown.old unknown}
 catch {rename bar {}}
 
-if {[info command testdel] == "testdel"} {
-    test rename-4.1 {reentrancy issues with command deletion and renaming} {
-	set x {}
-	testdel {} foo {lappend x deleted; rename bar {}; lappend x [info command bar]}
-	rename foo bar
-	lappend x |
-	rename bar {}
-	set x
-    } {| deleted {}}
-    test rename-4.2 {reentrancy issues with command deletion and renaming} {
-	set x {}
-	testdel {} foo {lappend x deleted; rename foo bar}
-	rename foo {}
-	set x
-    } {deleted}
-    test rename-4.3 {reentrancy issues with command deletion and renaming} {
-	set x {}
-	testdel {} foo {lappend x deleted; testdel {} foo {lappend x deleted2}}
-	rename foo {}
-	lappend x |
-	rename foo {}
-	set x
-    } {deleted | deleted2}
-    test rename-4.4 {reentrancy issues with command deletion and renaming} {
-	set x {}
-	testdel {} foo {lappend x deleted; rename foo bar}
-	rename foo {}
-	lappend x | [info command bar]
-    } {deleted | {}}
-    test rename-4.5 {reentrancy issues with command deletion and renaming} {
-	set env(value) before
-	interp create foo
-	testdel foo cmd {set env(value) deleted}
+test rename-4.1 {reentrancy issues with command deletion and renaming} testdel {
+    set x {}
+    testdel {} foo {lappend x deleted; rename bar {}; lappend x [info command bar]}
+    rename foo bar
+    lappend x |
+    rename bar {}
+    set x
+} {| deleted {}}
+test rename-4.2 {reentrancy issues with command deletion and renaming} testdel {
+    set x {}
+    testdel {} foo {lappend x deleted; rename foo bar}
+    rename foo {}
+    set x
+} {deleted}
+test rename-4.3 {reentrancy issues with command deletion and renaming} testdel {
+    set x {}
+    testdel {} foo {lappend x deleted; testdel {} foo {lappend x deleted2}}
+    rename foo {}
+    lappend x |
+    rename foo {}
+    set x
+} {deleted | deleted2}
+test rename-4.4 {reentrancy issues with command deletion and renaming} testdel {
+    set x {}
+    testdel {} foo {lappend x deleted; rename foo bar}
+    rename foo {}
+    lappend x | [info command bar]
+} {deleted | {}}
+test rename-4.5 {reentrancy issues with command deletion and renaming} testdel {
+    set env(value) before
+    interp create foo
+    testdel foo cmd {set env(value) deleted}
+    interp delete foo
+    set env(value)
+} {deleted}
+test rename-4.6 {reentrancy issues with command deletion and renaming} testdel {
+    proc kill args {
 	interp delete foo
-	set env(value)
-    } {deleted}
-    test rename-4.6 {reentrancy issues with command deletion and renaming} {
-	proc kill args {
-	    interp delete foo
-	}
-	set env(value) before
-	interp create foo
-	foo alias kill kill
-	testdel foo cmd {set env(value) deleted; kill}
-	list [catch {foo eval {rename cmd {}}} msg] $msg $env(value)
-    } {0 {} deleted}
-    test rename-4.7 {reentrancy issues with command deletion and renaming} {
-	proc kill args {
-	    interp delete foo
-	}
-	set env(value) before
-	interp create foo
-	foo alias kill kill
-	testdel foo cmd {set env(value) deleted; kill}
-	list [catch {interp delete foo} msg] $msg $env(value)
-    } {0 {} deleted}
-    if {[info exists env(value)]} {
-	unset env(value)
     }
+    set env(value) before
+    interp create foo
+    foo alias kill kill
+    testdel foo cmd {set env(value) deleted; kill}
+    list [catch {foo eval {rename cmd {}}} msg] $msg $env(value)
+} {0 {} deleted}
+test rename-4.7 {reentrancy issues with command deletion and renaming} testdel {
+    proc kill args {
+	interp delete foo
+    }
+    set env(value) before
+    interp create foo
+    foo alias kill kill
+    testdel foo cmd {set env(value) deleted; kill}
+    list [catch {interp delete foo} msg] $msg $env(value)
+} {0 {} deleted}
+if {[info exists env(value)]} {
+    unset env(value)
 }
 
 # Save the unknown procedure which is modified by the following test.

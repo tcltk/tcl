@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: socket.test,v 1.29 2004/03/17 18:14:18 das Exp $
+# RCS: @(#) $Id: socket.test,v 1.30 2004/05/19 20:15:32 dkf Exp $
 
 # Running socket tests with a remote server:
 # ------------------------------------------
@@ -148,8 +148,8 @@ if {$doTestsWithRemoteServer} {
 }
 
 # Some tests are run only if we are doing testing against a remote server.
-set ::tcltest::testConstraints(doTestsWithRemoteServer) $doTestsWithRemoteServer
-if {$doTestsWithRemoteServer == 0} {
+testConstraint doTestsWithRemoteServer $doTestsWithRemoteServer
+if {![testConstraint doTestsWithRemoteServer]} {
     if {[string first s $::tcltest::verbose] != -1} {
     	puts "Skipping tests with remote server. See tests/socket.test for"
 	puts "information on how to run remote server."
@@ -162,7 +162,7 @@ if {$doTestsWithRemoteServer == 0} {
 # remote server.
 #
 
-if {$doTestsWithRemoteServer == 1} {
+if {[testConstraint doTestsWithRemoteServer]} {
     proc sendCommand {c} {
 	global commandSocket
 

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: interp.test,v 1.31 2004/05/18 09:29:30 dkf Exp $
+# RCS: @(#) $Id: interp.test,v 1.32 2004/05/19 20:15:31 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -674,85 +674,81 @@ test interp-17.5 {alias loop prevention} {
 # the bugs as a core dump.
 #
 
-if {[info commands testinterpdelete] == ""} {
-    puts "This application hasn't been compiled with the \"testinterpdelete\""
-    puts "command, so I can't test slave delete calls"
-} else {
-    test interp-18.1 {testing Tcl_DeleteInterp vs slaves} {
-	list [catch {testinterpdelete} msg] $msg
-    } {1 {wrong # args: should be "testinterpdelete path"}}
-    test interp-18.2 {testing Tcl_DeleteInterp vs slaves} {
-	catch {interp delete a}
-	interp create a
-	testinterpdelete a
-    } ""
-    test interp-18.3 {testing Tcl_DeleteInterp vs slaves} {
-	catch {interp delete a}
-	interp create a
-	interp create {a b}
-	testinterpdelete {a b}
-    } ""
-    test interp-18.4 {testing Tcl_DeleteInterp vs slaves} {
-	catch {interp delete a}
-	interp create a
-	interp create {a b}
-	testinterpdelete a
-    } ""
-    test interp-18.5 {testing Tcl_DeleteInterp vs slaves} {
-	catch {interp delete a}
-	interp create a
-	interp create {a b}
-	interp alias {a b} dodel {} dodel
-	proc dodel {x} {testinterpdelete $x}
-	list [catch {interp eval {a b} {dodel {a b}}} msg] $msg
-    } {0 {}}
-    test interp-18.6 {testing Tcl_DeleteInterp vs slaves} {
-	catch {interp delete a}
-	interp create a
-	interp create {a b}
-	interp alias {a b} dodel {} dodel
-	proc dodel {x} {testinterpdelete $x}
-	list [catch {interp eval {a b} {dodel a}} msg] $msg
-    } {0 {}}
-    test interp-18.7 {eval in deleted interp} {
-	catch {interp delete a}
-	interp create a
-	a eval {
+testCosntraint testinterpdelete [llength [info commands testinterpdelete]]
+test interp-18.1 {testing Tcl_DeleteInterp vs slaves} testinterpdelete {
+    list [catch {testinterpdelete} msg] $msg
+} {1 {wrong # args: should be "testinterpdelete path"}}
+test interp-18.2 {testing Tcl_DeleteInterp vs slaves} testinterpdelete {
+    catch {interp delete a}
+    interp create a
+    testinterpdelete a
+} ""
+test interp-18.3 {testing Tcl_DeleteInterp vs slaves} testinterpdelete {
+    catch {interp delete a}
+    interp create a
+    interp create {a b}
+    testinterpdelete {a b}
+} ""
+test interp-18.4 {testing Tcl_DeleteInterp vs slaves} testinterpdelete {
+    catch {interp delete a}
+    interp create a
+    interp create {a b}
+    testinterpdelete a
+} ""
+test interp-18.5 {testing Tcl_DeleteInterp vs slaves} testinterpdelete {
+    catch {interp delete a}
+    interp create a
+    interp create {a b}
+    interp alias {a b} dodel {} dodel
+    proc dodel {x} {testinterpdelete $x}
+    list [catch {interp eval {a b} {dodel {a b}}} msg] $msg
+} {0 {}}
+test interp-18.6 {testing Tcl_DeleteInterp vs slaves} testinterpdelete {
+    catch {interp delete a}
+    interp create a
+    interp create {a b}
+    interp alias {a b} dodel {} dodel
+    proc dodel {x} {testinterpdelete $x}
+    list [catch {interp eval {a b} {dodel a}} msg] $msg
+} {0 {}}
+test interp-18.7 {eval in deleted interp} {
+    catch {interp delete a}
+    interp create a
+    a eval {
+	proc dodel {} {
+	    delme
+	    dosomething else
+	}
+	proc dosomething args {
+	    puts "I should not have been called!!"
+	}
+    }
+    a alias delme dela
+    proc dela {} {interp delete a}
+    list [catch {a eval dodel} msg] $msg
+} {1 {attempt to call eval in deleted interpreter}}
+test interp-18.8 {eval in deleted interp} {
+    catch {interp delete a}
+    interp create a
+    a eval {
+	interp create b
+	b eval {
 	    proc dodel {} {
-		delme
-		dosomething else
-	    }
-	    proc dosomething args {
-		puts "I should not have been called!!"
+		dela
 	    }
 	}
-	a alias delme dela
-	proc dela {} {interp delete a}
-	list [catch {a eval dodel} msg] $msg
-    } {1 {attempt to call eval in deleted interpreter}}
-    test interp-18.8 {eval in deleted interp} {
-	catch {interp delete a}
-	interp create a
-	a eval {
-	    interp create b
-	    b eval {
-		proc dodel {} {
-		    dela
-		}
-	    }
-	    proc foo {} {
-		b eval dela
-		dosomething else
-	    }
-	    proc dosomething args {
-		puts "I should not have been called!!"
-	    }
+	proc foo {} {
+	    b eval dela
+	    dosomething else
 	}
-	interp alias {a b} dela {} dela
-	proc dela {} {interp delete a}
-	list [catch {a eval foo} msg] $msg
-    } {1 {attempt to call eval in deleted interpreter}}
-}
+	proc dosomething args {
+	    puts "I should not have been called!!"
+	}
+    }
+    interp alias {a b} dela {} dela
+    proc dela {} {interp delete a}
+    list [catch {a eval foo} msg] $msg
+} {1 {attempt to call eval in deleted interpreter}}
 test interp-18.9 {eval in deleted interp, bug 495830} {
     interp create tst
     interp alias tst suicide {} interp delete tst

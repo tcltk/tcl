@@ -10,18 +10,18 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fileName.test,v 1.41 2004/05/04 22:31:10 hobbs Exp $
+# RCS: @(#) $Id: fileName.test,v 1.42 2004/05/19 20:15:31 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
     namespace import -force ::tcltest::*
 }
 
-tcltest::testConstraint testsetplatform [string equal testsetplatform [info commands testsetplatform]]
-tcltest::testConstraint testtranslatefilename [string equal testtranslatefilename [info commands testtranslatefilename]]
+testConstraint testsetplatform [string equal testsetplatform [info commands testsetplatform]]
+testConstraint testtranslatefilename [string equal testtranslatefilename [info commands testtranslatefilename]]
 
 global env
-if {[tcltest::testConstraint testsetplatform]} {
+if {[testConstraint testsetplatform]} {
     set platform [testgetplatform]
 }
 
@@ -204,7 +204,7 @@ test filename-4.18 {Tcl_SplitPath: unix} {testsetplatform} {
     file split foo/bar~/baz
 } {foo bar~ baz}
 
-if {[tcltest::testConstraint testsetplatform]} {
+if {[testConstraint testsetplatform]} {
     testsetplatform $platform
 }
 
@@ -662,7 +662,7 @@ test filename-10.22 {Tcl_TranslateFileName} {testsetplatform} {
     list [catch {testtranslatefilename foo//bar} msg] $msg
 } {0 {foo\bar}}
 
-if {[tcltest::testConstraint testsetplatform]} {
+if {[testConstraint testsetplatform]} {
     testsetplatform $platform
 }
 
@@ -721,7 +721,7 @@ test filename-11.12 {Tcl_GlobCmd} {testsetplatform} {
     set x
 } {1 {couldn't find HOME environment variable to expand path}}
 
-if {[tcltest::testConstraint testsetplatform]} {
+if {[testConstraint testsetplatform]} {
     testsetplatform $platform
 }
 
@@ -781,17 +781,17 @@ test filename-11.17.1 {Tcl_GlobCmd} {pcOnly} {
 if {[string equal $tcl_platform(platform) "windows"]} {
     if {[string index $tcl_platform(osVersion) 0] >= 5 \
       && ([lindex [file system [temporaryDirectory]] 1] == "NTFS")} {
-	tcltest::testConstraint linkDirectory 1
+	testConstraint linkDirectory 1
     } else {
-	tcltest::testConstraint linkDirectory 0
+	testConstraint linkDirectory 0
     }
 } else {
-    tcltest::testConstraint linkDirectory 1
+    testConstraint linkDirectory 1
 }
 if {[string equal $tcl_platform(platform) "windows"]} {
-    tcltest::testConstraint symbolicLinkFile 0
+    testConstraint symbolicLinkFile 0
 } else {
-    tcltest::testConstraint symbolicLinkFile 1
+    testConstraint symbolicLinkFile 1
 }
 test filename-11.17.2 {Tcl_GlobCmd} {notRoot linkDirectory} {
     set dir [pwd]
@@ -1409,7 +1409,7 @@ test filename-15.8 {win and unix specific globbing} {unixOrWin} {
 
 # The following tests are only valid for Windows systems.
 set oldDir [pwd]
-if {$::tcltest::testConstraints(pcOnly)} {
+if {[testConstraint pcOnly]} {
     cd c:/
     file delete -force globTest
     file mkdir globTest
@@ -1461,10 +1461,8 @@ test filename-16.11 {windows specific globbing} {pcOnly} {
 
 # some tests require a shared C drive
 
-if {[catch {cd //[info hostname]/c}]} {
-    set ::tcltest::testConstraints(sharedCdrive) 0
-} else {
-    set ::tcltest::testConstraints(sharedCdrive) 1
+if {[testConstraint pcOnly]} {
+    testConstraint sharedCdrive [expr {![catch {cd //[info hostname]/c}]}]
 }
 
 test filename-16.12 {windows specific globbing} {pcOnly sharedCdrive} {
@@ -1493,7 +1491,7 @@ test filename-17.1 {windows specific special files} {testsetplatform} {
       [file pathtype prn] [file pathtype nul] [file pathtype aux] \
       [file pathtype foo]
 } {absolute absolute absolute absolute absolute absolute relative}
-if {[tcltest::testConstraint testsetplatform]} {
+if {[testConstraint testsetplatform]} {
     testsetplatform $platform
 }
 
@@ -1515,7 +1513,7 @@ cd [temporaryDirectory]
 file delete -force globTest
 cd $oldpwd
 set env(HOME) $oldhome
-if {[tcltest::testConstraint testsetplatform]} {
+if {[testConstraint testsetplatform]} {
     testsetplatform $platform
     catch {unset platform}
 }
