@@ -1,3 +1,28 @@
+2001-05-03  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tcl.h:
+	* generic/tcl.decls:
+	* generic/tclPanic.c: Added CONST to Tcl_*Panic* public interfaces.
+	  [Patch 415648, TIP 27]
+
+	* generic/tclInt.decls:
+	* mac/tclMacAppInit.c (main):
+	* mac/tclMacBOAAppInit.c (main):
+	* mac/tclMacPanic.c: Modified special Mac implementations of
+	  Tcl_*Panic* to be exact copies of the generic implementations.
+	  Added TclMacSetPanic.  The generic implementations should be
+	  used directly, rather than copies, but that requires further
+	  changes by someone familiar with the Mac build systems.
+	  [Patch 415648]
+
+	* generic/tclDecls.h:
+	* generic/tclIntPlatDecls.h:
+	*`generic/tclStubInit.c: `make gentubs` after above changes.
+
+	* doc/Panic.3:
+	* unix/mkLinks:  New file documenting Tcl_*Panic* public interfaces,
+	  followed by `make mklinks`.  [Patch 415648, Bug 219170, Bug 414936]
+
 2001-06-03  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclUtil.c (Tcl_DStringAppendElement): patch to save an
