@@ -1578,27 +1578,27 @@ item: Install File
 end
 item: Install File
   Source=${__TKBASEDIR__}\win\release\wish82.exe
-  Destination=%MAINDIR%\bin\wish81.exe
+  Destination=%MAINDIR%\bin\wish82.exe
   Flags=0000000000000010
 end
 item: Install File
   Source=${__TCLBASEDIR__}\win\release\tclsh82.exe
-  Destination=%MAINDIR%\bin\tclsh81.exe
+  Destination=%MAINDIR%\bin\tclsh82.exe
   Flags=0000000000000010
 end
 item: Install File
   Source=${__TCLBASEDIR__}\win\release\tclpip82.dll
-  Destination=%MAINDIR%\bin\tclpip81.dll
+  Destination=%MAINDIR%\bin\tclpip82.dll
   Flags=0000000000000010
 end
 item: Install File
   Source=${__TCLBASEDIR__}\win\release\tcl82.dll
-  Destination=%MAINDIR%\bin\tcl81.dll
+  Destination=%MAINDIR%\bin\tcl82.dll
   Flags=0000000000000010
 end
 item: Install File
   Source=${__TKBASEDIR__}\win\release\tk82.dll
-  Destination=%MAINDIR%\bin\tk81.dll
+  Destination=%MAINDIR%\bin\tk82.dll
   Flags=0000000000000010
 end
 item: Install File
