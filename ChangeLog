@@ -1,4 +1,9 @@
-2001-12-29  Don Porter <dgp@users.sourceforge.net>
+2001-12-28  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* library/init.tcl: make sure env(COMSPEC) on Windows is executed
+	with the right case, as it may otherwise fail inexplicably.
+
+2001-12-28  Don Porter <dgp@users.sourceforge.net>
 
 	* generic/tclCkalloc.c (MemoryCmd, TclFinalizeMemorySubsystem):
 	Added the [memory onexit] command, intended to replace [checkmem].
