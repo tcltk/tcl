@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: stub16.c,v 1.2 1998/09/14 18:40:19 stanton Exp $
+ * RCS: @(#) $Id: stub16.c,v 1.2.8.1 1999/04/19 20:54:40 redman Exp $
  */
 
 #define STRICT
@@ -132,9 +132,9 @@ main()
 
     WaitForInputIdle(pi.hProcess, 5000);
     WaitForSingleObject(pi.hProcess, INFINITE);
+    GetExitCodeProcess(pi.hProcess, &result);
     CloseHandle(pi.hProcess);
     CloseHandle(pi.hThread);
-    result = 0;
 
     if (hFileOutput != INVALID_HANDLE_VALUE) {
 	SetFilePointer(hFileOutput, 0, 0, FILE_BEGIN);
