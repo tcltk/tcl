@@ -1,3 +1,33 @@
+2003-07-21  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	Check that the thread incrementing or decrementing
+	the ref count of a Tcl_Obj is the thread that
+	originally allocated the thread. This fail fast
+	behavior will catch programming errors that
+	allow a single Tcl_Obj to be accessed from multiple
+	threads.
+
+	* generic/tcl.h (Tcl_Obj): Add allocThread member
+	to Tcl_Obj. This member records the thread id the
+	Tcl_Obj was allocated. It is used to check that
+	any future ref count incr or decr is done from
+	the same thread that allocated the Tcl_Obj.
+	This member is defined only when threads and
+	mem debug are enabled.
+	* generic/tclInt.h (TclNewObj, TclDbNewObj,
+	TclDecrRefCount):
+	Define TclNewObj and TclDbNewObj using TclDbInitNewObj
+	when mem debug is enabled. This fixes a problem where
+	TclNewObj calls did not work the same as TclDbNewObj
+	when mem debug was enabled.
+	* generic/tclObj.c (TclDbInitNewObj, Tcl_DbIncrRefCount,
+	Tcl_DbDecrRefCount): Add new helper to init Tcl_Obj
+	members when mem debug is enabled. Init the allocThread
+	member in TclDbInitNewObj and check it in
+	Tcl_DbIncrRefCount and Tcl_DbDecrRefCount to make sure
+	a Tcl_Obj allocated in one thread is not being acted
+	upon in another thread.
+
 2003-07-21  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* test/cmdAH.test: ensure certain tests run in local filesystem
