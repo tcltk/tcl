@@ -1,5 +1,6 @@
 2004-04-16  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
+	* doc/socket.n: Added example from [Patch 936245].
 	* doc/gets.n: Added example based on [Patch 935911].
 
 2004-04-15  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
