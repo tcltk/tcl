@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.40 2002/08/24 01:29:46 msofer Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.41 2002/11/19 02:34:50 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -1794,7 +1794,7 @@ SetIntFromAny(interp, objPtr)
      * Get the string representation. Make it up-to-date if necessary.
      */
 
-    string = Tcl_GetStringFromObj(objPtr, &length);
+    p = string = Tcl_GetStringFromObj(objPtr, &length);
 
     /*
      * Now parse "objPtr"s string as an int. We use an implementation here
@@ -1805,7 +1805,8 @@ SetIntFromAny(interp, objPtr)
      */
 
     errno = 0;
-    for (p = string;  isspace(UCHAR(*p));  p++) { /* INTL: ISO space. */
+#ifdef TCL_STRTOUL_SIGN_CHECK
+    for ( ;  isspace(UCHAR(*p));  p++) { /* INTL: ISO space. */
 	/* Empty loop body. */
     }
     if (*p == '-') {
@@ -1814,9 +1815,10 @@ SetIntFromAny(interp, objPtr)
     } else if (*p == '+') {
 	p++;
 	newLong = strtoul(p, &end, 0);
-    } else {
+    } else
+#else
 	newLong = strtoul(p, &end, 0);
-    }
+#endif
     if (end == p) {
 	badInteger:
 	if (interp != NULL) {
@@ -1865,7 +1867,7 @@ SetIntFromAny(interp, objPtr)
     if ((oldTypePtr != NULL) &&	(oldTypePtr->freeIntRepProc != NULL)) {
 	oldTypePtr->freeIntRepProc(objPtr);
     }
-    
+
     objPtr->internalRep.longValue = newLong;
     objPtr->typePtr = &tclIntType;
     return TCL_OK;
@@ -2147,7 +2149,7 @@ SetWideIntFromAny(interp, objPtr)
      * Get the string representation. Make it up-to-date if necessary.
      */
 
-    string = Tcl_GetStringFromObj(objPtr, &length);
+    p = string = Tcl_GetStringFromObj(objPtr, &length);
 
     /*
      * Now parse "objPtr"s string as an int. We use an implementation here
@@ -2158,7 +2160,8 @@ SetWideIntFromAny(interp, objPtr)
      */
 
     errno = 0;
-    for (p = string;  isspace(UCHAR(*p));  p++) { /* INTL: ISO space. */
+#ifdef TCL_STRTOUL_SIGN_CHECK
+    for ( ;  isspace(UCHAR(*p));  p++) { /* INTL: ISO space. */
 	/* Empty loop body. */
     }
     if (*p == '-') {
@@ -2167,9 +2170,10 @@ SetWideIntFromAny(interp, objPtr)
     } else if (*p == '+') {
 	p++;
 	newWide = strtoull(p, &end, 0);
-    } else {
+    } else
+#else
 	newWide = strtoull(p, &end, 0);
-    }
+#endif
     if (end == p) {
 	badInteger:
 	if (interp != NULL) {
