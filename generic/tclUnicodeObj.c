@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnicodeObj.c,v 1.3 1999/06/08 23:30:24 hershey Exp $
+ * RCS: @(#) $Id: tclUnicodeObj.c,v 1.4 1999/06/09 17:06:57 hershey Exp $
  */
 
 #include <math.h>
@@ -67,10 +67,7 @@ Tcl_ObjType tclUnicodeType = {
 typedef struct Unicode {
     int numChars;		/* The number of chars in the unicode
 				 * string. */
-    int used;			/* The number of bytes used in the unicode
-				 * string. */
-    int allocated;		/* The amount of space actually allocated
-				 * minus 1 byte. */
+    size_t allocated;		/* The amount of space actually allocated. */
     unsigned char chars[4];	/* The array of chars.  The actual size of
 				 * this field depends on the 'allocated' field
 				 * above. */
@@ -115,7 +112,7 @@ TclGetUnicodeFromObj(objPtr)
     SetUnicodeFromAny(NULL, objPtr);
     unicodePtr = GET_UNICODE(objPtr);
     
-    if (AllSingleByteChars(objPtr) && (unicodePtr->allocated == 0)) {
+    if (unicodePtr->allocated == 0) {
 
 	/*
 	 * If all of the characters in the Utf string are 1 byte chars,
@@ -427,12 +424,12 @@ TclAppendUniCharStrToObj(objPtr, unichars, numNewChars)
 
     unicodePtr = GET_UNICODE(objPtr);
     
-    usedBytes = unicodePtr->used;
+    usedBytes = unicodePtr->numChars * sizeof(Tcl_UniChar);
     totalNumChars = numNewChars + unicodePtr->numChars;
     totalNumBytes = totalNumChars * sizeof(Tcl_UniChar);
     numNewBytes = numNewChars * sizeof(Tcl_UniChar);
     
-    if (unicodePtr->allocated < totalNumBytes) {
+    if (unicodePtr->allocated <= totalNumBytes) {
 	int allocatedBytes = totalNumBytes * 2;
     
 	/*
@@ -444,16 +441,12 @@ TclAppendUniCharStrToObj(objPtr, unichars, numNewChars)
 
 	unicodePtr = (Unicode *) ckrealloc(unicodePtr,
 		UNICODE_SIZE(allocatedBytes));
-	memcpy((VOID *) (unicodePtr->chars + usedBytes),
-		(VOID *) unichars, (size_t) numNewBytes);
-
 	unicodePtr->allocated = allocatedBytes;	
 	unicodePtr = SET_UNICODE(objPtr, unicodePtr);
     }
-    
     memcpy((VOID *) (unicodePtr->chars + usedBytes),
 	    (VOID *) unichars, (size_t) numNewBytes);
-    unicodePtr->used = totalNumBytes;
+    *((Tcl_UniChar *)unicodePtr->chars + totalNumChars) = 0;
     unicodePtr->numChars = totalNumChars;
 }
 
@@ -486,19 +479,25 @@ TclNewUnicodeObj(unichars, numChars)
 {
     Tcl_Obj *objPtr;
     Unicode *unicodePtr;
-    int numBytes;
+    int numBytes, allocated;
 
     numBytes = numChars * sizeof(Tcl_UniChar);
+
+    /*
+     * Allocate extra space for the null character
+     */
+
+    allocated = numBytes + sizeof(Tcl_UniChar);
     
     TclNewObj(objPtr);
     objPtr->bytes = NULL;
     objPtr->typePtr = &tclUnicodeType;
 
-    unicodePtr = (Unicode *) ckalloc(UNICODE_SIZE(numBytes));
-    unicodePtr->used = numBytes;
+    unicodePtr = (Unicode *) ckalloc(UNICODE_SIZE(allocated));
     unicodePtr->numChars = numChars;
-    unicodePtr->allocated = numBytes;
+    unicodePtr->allocated = allocated;
     memcpy((VOID *) unicodePtr->chars, (VOID *) unichars, (size_t) numBytes);
+    *((Tcl_UniChar *)unicodePtr->chars + numChars) = 0;
     SET_UNICODE(objPtr, unicodePtr);
     return objPtr;
 }
@@ -575,7 +574,6 @@ DupUnicodeInternalRep(srcPtr, copyPtr)
     if (AllSingleByteChars(srcPtr)) {
 	copyUnicodePtr = (Unicode *) ckalloc(UNICODE_SIZE(4));
     } else {
-	int used = srcUnicodePtr->used;
 	int allocated = srcUnicodePtr->allocated;
 	Tcl_UniChar *unichars;
 
@@ -583,60 +581,13 @@ DupUnicodeInternalRep(srcPtr, copyPtr)
 
 	copyUnicodePtr = (Unicode *) ckalloc(UNICODE_SIZE(allocated));
 
-	copyUnicodePtr->used = used;	
 	copyUnicodePtr->allocated = allocated;
 	memcpy((VOID *) copyUnicodePtr->chars,
-		(VOID *) srcUnicodePtr->chars, (size_t) used);
+		(VOID *) srcUnicodePtr->chars,
+		(size_t) (srcUnicodePtr->numChars + 1) * sizeof(Tcl_UniChar));
     }
     copyUnicodePtr->numChars = srcUnicodePtr->numChars;
     SET_UNICODE(copyPtr, copyUnicodePtr);
-}
-
-/*
- *---------------------------------------------------------------------------
- *
- * TclSetUnicodeObj --
- *
- *	Modify an object to be a Unicode object and to have the specified
- *	unicode string as its value.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	The object's old string rep and internal rep is freed.
- *	Memory allocated for copy of unicode argument.
- *
- *----------------------------------------------------------------------
- */
-
-void
-TclSetUnicodeObj(objPtr, chars, length)
-    Tcl_Obj *objPtr;		/* Object to initialize as a Unicode obj. */
-    unsigned char *chars;	/* The unicode string to use as the new
-				 * value. */
-    int length;			/* Length of the unicode string, which must
-				 * be >= 0. */
-{
-    Tcl_ObjType *typePtr;
-    Unicode *unicodePtr;
-
-    if (Tcl_IsShared(objPtr)) {
-	panic("TclSetUnicodeObj called with shared object");
-    }
-    typePtr = objPtr->typePtr;
-    if ((typePtr != NULL) && (typePtr->freeIntRepProc != NULL)) {
-	(*typePtr->freeIntRepProc)(objPtr);
-    }
-    Tcl_InvalidateStringRep(objPtr);
-
-    unicodePtr = (Unicode *) ckalloc(UNICODE_SIZE(length));
-    unicodePtr->used = length;
-    unicodePtr->allocated = length;
-    memcpy((VOID *) unicodePtr->chars, (VOID *) chars, (size_t) length);
-
-    objPtr->typePtr = &tclUnicodeType;
-    SET_UNICODE(objPtr, unicodePtr);
 }
 
 /*
@@ -674,7 +625,7 @@ UpdateStringOfUnicode(objPtr)
 
     unicodePtr = GET_UNICODE(objPtr);
     src = (Tcl_UniChar *) unicodePtr->chars;
-    length = unicodePtr->used;
+    length = unicodePtr->numChars * sizeof(Tcl_UniChar);
 
     /*
      * How much space will string rep need?
@@ -725,7 +676,6 @@ SetOptUnicodeFromAny(objPtr, numChars)
     unicodePtr = (Unicode *) ckalloc(UNICODE_SIZE(4));
     unicodePtr->numChars = numChars;
     unicodePtr->allocated = 0;
-    unicodePtr->used = 0;
 
     typePtr = objPtr->typePtr;
     if ((typePtr != NULL) && (typePtr->freeIntRepProc) != NULL) {
@@ -763,21 +713,19 @@ SetFullUnicodeFromAny(objPtr, src, numBytes, numChars)
     Tcl_ObjType *typePtr;
     Unicode *unicodePtr;
     char *srcEnd;
-    unsigned char *dst;
+    Tcl_UniChar *dst;
+    size_t length = (numChars + 1) * sizeof(Tcl_UniChar);
     
-	    
-    unicodePtr = (Unicode *) ckalloc(UNICODE_SIZE(numChars
-	    * sizeof(Tcl_UniChar)));
+    unicodePtr = (Unicode *) ckalloc(UNICODE_SIZE(length));
     srcEnd = src + numBytes;
 	
-    for (dst = unicodePtr->chars; src < srcEnd;
-	 dst += sizeof(Tcl_UniChar)) {
-	src += Tcl_UtfToUniChar(src, (Tcl_UniChar *) dst);
+    for (dst = (Tcl_UniChar *) unicodePtr->chars; src < srcEnd; dst++) {
+	src += Tcl_UtfToUniChar(src, dst);
     }
+    *dst = 0;
 
-    unicodePtr->used = numChars * sizeof(Tcl_UniChar);
     unicodePtr->numChars = numChars;
-    unicodePtr->allocated = numChars * sizeof(Tcl_UniChar);	
+    unicodePtr->allocated = length;
     
     typePtr = objPtr->typePtr;
     if ((typePtr != NULL) && (typePtr->freeIntRepProc) != NULL) {
