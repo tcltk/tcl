@@ -1,3 +1,66 @@
+2003-12-23  David Gravereaux <davygrvy@pobox.com>
+
+	* generic/tclAlloc.c:   All uses of 'panic' (the macro) changed
+	* generic/tclBasic.c:   to 'Tcl_Panic' (the function).  The
+	* generic/tclBinary.c
+:  #define of panic in tcl.h clearly states
+	* generic/tclCkalloc.c: it is deprecated in the comments.
+	* generic/tclCmdAH.c:   [Patch 865264]
+	* generic/tclCmdIL.c:
+	* generic/tclCmdMZ.c
+:
+	* generic/tclCompCmds.c:
+	* generic/tclCompExpr.c:
+	* generic/tclCompile.c:
+	* generic/tclConfig.c:
+	* generic/tclDictObj.c
+:
+	* generic/tclEncoding.c:
+	* generic/tclEvent.c:
+	* generic/tclExecute.c
+:
+	* generic/tclHash.c:
+	* generic/tclInterp.c:
+	* generic/tclIO.c:
+	* generic/tclIOCmd.c:
+	* generic/tclIOUtil.c:
+	* generic/tclListObj.c:
+	* generic/tclLiteral.c:
+	* generic/tclNamesp.c:
+	* generic/tclObj.c
+:
+	* generic/tclParse.c:
+	* generic/tclPathObj.c:
+	* generic/tclPkg.c:
+	* generic/tclPreserve.c:
+	* generic/tclProc.c:
+	* generic/tclStringObj.c:
+	* generic/tclTest.c:
+	* generic/tclThreadAlloc.c:
+	* generic/tclTimer.c:
+	* generic/tclTrace.c:
+	* generic/tclVar.c:
+	* mac/tclMacChan.c:
+	* mac/tclMacOSA.c:
+	* mac/tclMacResource.c:
+	* mac/tclMacSock.c
+	* mac/tclMacThrd.c:
+	* unix/tclUnixChan.c:
+	* unix/tclUnixNotfy.c:
+	* unix/tclUnixThrd.c:
+	* unix/tclXtNotify.c:
+	* win/tclWin32Dll.c:
+	* win/tclWinChan.c:
+	* win/tclWinFCmd.c:
+	* win/tclWinNotify.c:
+	* win/tclWinPipe.c:
+	* win/tclWinSock.c:
+	* win/tclWinThrd.c:
+
+
+	* generic/tclInt.h:  Deprecated use of Tcl_Ckalloc changed to
+	Tcl_Alloc in the TclAllocObjStorage macro.
+
 2003-12-22  David Gravereaux <davygrvy@pobox.com>
 
 	* win/nmakehlp.c:
