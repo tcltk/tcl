@@ -10,6 +10,9 @@
 	windows, when permissions are inadequate [Bug 1035462] and
 	to treatment of a volume-relative pwd on Windows [Bug 1018980].
 
+	* doc/FileSystem.3: added missing Tcl_GlobTypeData documentation
+	[Bug 935853]
+
 2004-09-27  Kevin Kenny  <kennykb@acm.org>
 
 	* compat/strftime.c (Removed):
