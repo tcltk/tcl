@@ -12,7 +12,7 @@
 # Copyright (c) 2001 Tomasoft Engineering.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.77.2.1 2002/01/25 01:47:02 andreas_kupries Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.77.2.2 2002/02/05 23:05:17 davygrvy Exp $
 #------------------------------------------------------------------------------
 
 !if "$(MSVCDIR)" == ""
@@ -214,6 +214,10 @@ TCLTESTOBJS = \
 	$(TMP_DIR)\tclTestProcBodyObj.obj \
 	$(TMP_DIR)\tclThreadTest.obj \
 	$(TMP_DIR)\tclWinTest.obj \
+!if $(TCL_LINKWITHEXTENSIONS)
+	$(TMP_DIR)\tclWinReg.obj \
+	$(TMP_DIR)\tclWinDde.obj \
+!endif
 	$(TMP_DIR)\testMain.obj
 
 TCLOBJS = \
@@ -315,17 +319,19 @@ TCL_DEFINES	= $(OPTDEFINES)
 # Compile flags
 #---------------------------------------------------------------------
 
-!if !$(DEBUG)
-# This cranks the optimization level to maximize speed
-cdebug = -O2 -Gs
-!else if "$(MACHINE)" == "IA64"
-cdebug = -Od -Zi
+!if $(DEBUG)
+cdebug = -Z7 -WX -Ox
 !else
-cdebug = -Z7 -Od -WX
+!if $(OPTIMIZING)
+# This cranks the optimization level to maximize speed
+cdebug	= -O2 -Op -Gs
+!else
+cdebug	=
+!endif
 !endif
 
 # declarations common to all compiler options
-cflags = -c -W3 -nologo -Fp$(TMP_DIR)\ -YX
+cflags = -nologo -c -W3 -YX -QI0f -QIfdiv -Fp$(TMP_DIR)^\
 
 !if $(MSVCRT)
 crt = -MD$(DBGX)
@@ -333,9 +339,9 @@ crt = -MD$(DBGX)
 crt = -MT$(DBGX)
 !endif
 
-BASE_CLFAGS	= $(cdebug) $(cflags) $(crt) $(TCL_INCLUDES)
+BASE_CLFAGS	= $(cflags) $(cdebug) $(crt) $(TCL_INCLUDES)
 TCL_CFLAGS	= $(BASE_CLFAGS) $(TCL_DEFINES)
-CON_CFLAGS	= $(cdebug) $(cflags) $(crt) -DCONSOLE
+CON_CFLAGS	= $(cflags) $(cdebug) $(crt) -DCONSOLE
 
 
 #---------------------------------------------------------------------
@@ -351,19 +357,9 @@ ldebug	= -release
 # declarations common to all linker options
 lflags	= -nologo -machine:$(MACHINE)
 
-# declarations for use on Intel i386, i486, and Pentium systems
-!IF "$(MACHINE)" == "IX86"
-DLLENTRY = @12
-dlllflags = $(lflags) -entry:_DllMainCRTStartup$(DLLENTRY) -dll
-!ELSE IF "$(MACHINE)" == "IA64"
-DLLENTRY = @12
 dlllflags = $(lflags) -dll
-!ELSE
-dlllflags = $(lflags) -entry:_DllMainCRTStartup$(DLLENTRY) -dll
-!ENDIF
-
-conlflags = $(lflags) -subsystem:console -entry:mainCRTStartup
-guilflags = $(lflags) -subsystem:windows -entry:WinMainCRTStartup
+conlflags = $(lflags) -subsystem:console
+guilflags = $(lflags) -subsystem:windows
 
 baselibs   = kernel32.lib advapi32.lib user32.lib
 winlibs	   = $(baselibs) gdi32.lib
@@ -415,7 +411,7 @@ $(TCLLIB): $(TCLOBJS)
 $**
 <<
 !else
-	$(link32) $(ldebug) $(dlllflags) -out:$@ $(winlibs) @<<
+	$(link32) $(dlllflags) $(ldebug) -out:$@ $(winlibs) @<<
 $**
 <<
 	-@del $*.exp
@@ -426,26 +422,28 @@ $(TCLSTUBLIB): $(TCLSTUBOBJS)
 	$(lib32) -nologo -out:$@ $(TCLSTUBOBJS)
 
 $(TCLSH): $(TCLSHOBJS) $(TCLIMPLIB)
-	$(link32) $(ldebug) $(conlflags) -stack:2300000 -out:$@ $(baselibs) @<<
+	$(link32) $(conlflags) $(ldebug) -stack:2300000 -out:$@ $(baselibs) @<<
 $**
 <<
 
 
 $(TCLTEST): $(TCLTESTOBJS) $(TCLIMPLIB)
-	$(link32) $(ldebug) $(conlflags) -stack:2300000 -out:$@ $(baselibs) @<<
+	$(link32) $(conlflags) $(ldebug) -stack:2300000 -out:$@ $(baselibs) @<<
 $**
 <<
 
 
 $(TCLPIPEDLL): $(WINDIR)\stub16.c
 	$(cc32) $(CON_CFLAGS) -Fo$(TMP_DIR)\ $(WINDIR)\stub16.c
-	$(link32) $(ldebug) $(conlflags) -out:$@ $(TMP_DIR)\stub16.obj \
+	$(link32) $(conlflags) $(ldebug) -out:$@ $(TMP_DIR)\stub16.obj \
 		$(baselibs)
 
 
 !if $(STATIC_BUILD)
+!if !$(TCL_LINKWITHEXTENSIONS)
 $(TCLDDEDLL): $(TMP_DIR)\tclWinDde.obj
 	$(lib32) -nologo -out:$@ $(TMP_DIR)\tclWinDde.obj
+!endif
 !else
 $(TCLDDEDLL): $(TMP_DIR)\tclWinDde.obj $(TCLSTUBLIB)
 	$(link32) $(ldebug) $(dlllflags) -out:$@ $** $(baselibs)
@@ -455,11 +453,13 @@ $(TCLDDEDLL): $(TMP_DIR)\tclWinDde.obj $(TCLSTUBLIB)
 
 
 !if $(STATIC_BUILD)
+!if !$(TCL_LINKWITHEXTENSIONS)
 $(TCLREGDLL): $(TMP_DIR)\tclWinReg.obj
 	$(lib32) -nologo -out:$@ $(TMP_DIR)\tclWinReg.obj
+!endif
 !else
 $(TCLREGDLL): $(TMP_DIR)\tclWinReg.obj $(TCLSTUBLIB)
-	$(link32) $(ldebug) $(dlllflags) -out:$@ $** $(baselibs)
+	$(link32) $(dlllflags) $(ldebug) -out:$@ $** $(baselibs)
 	-@del $*.exp
 	-@del $*.lib
 !endif
@@ -603,11 +603,11 @@ $(TMP_DIR)\tclWinTest.obj: $(WINDIR)\tclWinTest.c
 	$(cc32) $(TCL_CFLAGS) -Fo$@ $?
 
 $(TMP_DIR)\tclPkgConfig.obj: $(GENERICDIR)\tclPkgConfig.c
-	$(cc32) $(TCL_CFLAGS) \
-		-DCFG_INSTALL_EXEC_PREFIX=\"$(INSTALLDIR)\"	\
-		-DCFG_INSTALL_PREFIX=\"$(INSTALLDIR)\"		\
-		-DCFG_RUNTIME_EXEC_PREFIX=\"$(INSTALLDIR)\"	\
-		-DCFG_RUNTIME_PREFIX=\"$(INSTALLDIR)\"		\
+	$(cc32) -DBUILD_tcl $(TCL_CFLAGS) \
+		-DCFG_INSTALL_EXEC_PREFIX=\"$(INSTALLDIR:\=/)\"	\
+		-DCFG_INSTALL_PREFIX=\"$(INSTALLDIR:\=/)\"		\
+		-DCFG_RUNTIME_EXEC_PREFIX=\"$(INSTALLDIR:\=/)\"	\
+		-DCFG_RUNTIME_PREFIX=\"$(INSTALLDIR:\=/)\"		\
 	-Fo$@ $?
 
 $(TMP_DIR)\tclAppInit.obj: $(WINDIR)\tclAppInit.c

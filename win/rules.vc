@@ -10,7 +10,7 @@
 # Copyright (c) 2001 Tomasoft Engineering.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: rules.vc,v 1.4.2.1 2002/01/25 01:47:02 andreas_kupries Exp $
+# RCS: @(#) $Id: rules.vc,v 1.4.2.2 2002/02/05 23:05:17 davygrvy Exp $
 #------------------------------------------------------------------------------
 
 !ifndef _RULES_VC
@@ -169,7 +169,26 @@ TCL_COMPILE_DEBUG   = 0
 !endif
 !endif
 
-OPTDEFINES	= -DTCL_CFGVAL_ENCODING=${CFG_ENCODING}
+#----------------------------------------------------------
+# Test for compiler features
+#----------------------------------------------------------
+
+### test for optimizations
+!if [ $(cc32) -nologo -Ox -c -Zs -TC -Fdtemp nul 2>&1 | find "D4002" ]
+!message *** Compiler has 'optimizations'
+OPTIMIZING	= 1
+!else
+!message *** Compiler doesn't have 'optimizations'
+OPTIMIZING	= 0
+!endif
+
+### Clean-up temp files after tests.
+!if [ @for %d in (temp.idb temp.pdb) do @if exist %d erase %d ]
+!endif
+
+
+
+OPTDEFINES	= -DTCL_CFGVAL_ENCODING=$(CFG_ENCODING)
 !if $(TCL_MEM_DEBUG)
 OPTDEFINES	= -DTCL_MEM_DEBUG
 !endif
@@ -182,10 +201,9 @@ OPTDEFINES	= $(OPTDEFINES) -DTCL_THREADS=1
 !if $(STATIC_BUILD)
 OPTDEFINES	= $(OPTDEFINES) -DSTATIC_BUILD
 !endif
-
 !if $(DEBUG)
 OPTDEFINES	= $(OPTDEFINES) -DTCL_CFG_DEBUG
-!else
+!elseif $(OPTIMIZING)
 OPTDEFINES	= $(OPTDEFINES) -DTCL_CFG_OPTIMIZED
 !endif
 !if $(PROFILE)
@@ -196,5 +214,6 @@ OPTDEFINES	= $(OPTDEFINES) -DTCL_CFG_DO64BIT
 !endif
 
 !message *** Optional defines are '$(OPTDEFINES)'
+!message 
 
 !endif
