@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: read.n,v 1.1.2.1 1998/09/24 23:58:35 stanton Exp $
+'\" RCS: @(#) $Id: read.n,v 1.1.2.2 1999/04/09 18:42:03 surles Exp $
 '\" 
 .so man.macros
 .TH read n 7.5 Tcl "Tcl Built-In Commands"
@@ -40,8 +40,8 @@ before reaching the end of the file.
 \fBRead\fR translates end-of-line sequences in the input into
 newline characters according to the \fB\-translation\fR option
 for the channel.
-See the manual entry for \fBfconfigure\fR for details on the
-\fB\-translation\fR option.
+See the \fBfconfigure\fR manual entry for a discussion on ways in
+which \fBfconfigure\fR will alter input.
 
 .SH "SEE ALSO"
 eof(n), fblocked(n), fconfigure(n)
