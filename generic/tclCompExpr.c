@@ -4,11 +4,12 @@
  *	This file contains the code to compile Tcl expressions.
  *
  * Copyright (c) 1997 Sun Microsystems, Inc.
+ * Copyright (c) 1998-2000 by Scriptics Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.4 1999/08/19 02:59:08 hobbs Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.5 2000/05/09 00:00:34 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -101,6 +102,8 @@ typedef struct ExprInfo {
 #define OP_QUESTY	18
 #define OP_LNOT		19
 #define OP_BITNOT	20
+#define OP_STREQ	21
+#define OP_STRNEQ	22
 
 /*
  * Table describing the expression operators. Entries in this table must
@@ -141,6 +144,8 @@ OperatorDesc operatorTable[] = {
     {"?",   0},
     {"!",   1,  INST_LNOT},
     {"~",   1,  INST_BITNOT},
+    {"eq",  2,  INST_STREQ},
+    {"ne",  2,  INST_STRNEQ},
     {NULL}
 };
 
@@ -536,7 +541,8 @@ CompileSubExpr(exprTokenPtr, infoPtr, envPtr)
 		infoPtr->hasOperators = 1;
 		infoPtr->exprIsJustVarRef = 0;
 		infoPtr->exprIsComparison =
-		        ((opIndex >= OP_LESS) && (opIndex <= OP_NEQ));
+		    (((opIndex >= OP_LESS) && (opIndex <= OP_NEQ))
+			    || ((opIndex >= OP_STREQ) && (opIndex <= OP_STRNEQ)));
 		break;
 	    }
 	    

@@ -1,14 +1,14 @@
 '\"
 '\" Copyright (c) 1993 The Regents of the University of California.
-'\" Copyright (c) 1994-1997 Sun Microsystems, Inc.
+'\" Copyright (c) 1994-2000 Sun Microsystems, Inc.
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: expr.n,v 1.3 2000/04/28 00:47:49 ericm Exp $
+'\" RCS: @(#) $Id: expr.n,v 1.4 2000/05/09 00:00:35 hobbs Exp $
 '\" 
 .so man.macros
-.TH expr n 8.0 Tcl "Tcl Built-In Commands"
+.TH expr n 8.4 Tcl "Tcl Built-In Commands"
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
@@ -133,6 +133,12 @@ in which case string comparison is used.
 \fB==\0\0!=\fR
 Boolean equal and not equal.  Each operator produces a zero/one result.
 Valid for all operand types.
+.VS 8.4
+.TP 20
+\fBeq\0\0ne\fR
+Boolean string equal and string not equal.  Each operator produces a
+zero/one result.  The operand types are interpreted only as strings.
+.VE 8.4
 .TP 20
 \fB&\fR
 Bit-wise AND.  Valid for integer operands only.
@@ -332,7 +338,10 @@ returns \fB4.0\fR, not \fB4\fR.
 .PP
 String values may be used as operands of the comparison operators,
 although the expression evaluator tries to do comparisons as integer
-or floating-point when it can.
+or floating-point when it can,
+.VS 8.4
+except in the case of the \fBeq\fR and \fBne\fR operators.
+.VE 8.4
 If one of the operands of a comparison is a string and the other
 has a numeric value, the numeric operand is converted back to
 a string using the C \fIsprintf\fR format specifier
@@ -348,11 +357,13 @@ the second operand is converted to the string \fB18\fR.
 Because of Tcl's tendency to treat values as numbers whenever
 possible, it isn't generally a good idea to use operators like \fB==\fR
 when you really want string comparison and the values of the
-operands could be arbitrary;  it's better in these cases to use the
-\fBstring compare\fR command instead.
+operands could be arbitrary;  it's better in these cases to use
+.VS 8.4
+the \fBeq\fR or \fBne\fR operators, or
+.VE 8.4
+the \fBstring\fR command instead.
 
 .SH "PERFORMANCE CONSIDERATIONS"
-.VS
 .PP
 Enclose expressions in braces for the best speed and the smallest
 storage requirements.
@@ -383,7 +394,6 @@ The most expensive code is required for
 unbraced expressions that contain command substitutions.
 These expressions must be implemented by generating new code
 each time the expression is executed.
-.VE
 
 .SH KEYWORDS
 arithmetic, boolean, compare, expression, fuzzy comparison

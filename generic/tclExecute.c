@@ -5,11 +5,12 @@
  *	commands.
  *
  * Copyright (c) 1996-1997 Sun Microsystems, Inc.
+ * Copyright (c) 1998-2000 by Scriptics Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.10 2000/03/27 22:18:55 hobbs Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.11 2000/05/09 00:00:34 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -98,7 +99,8 @@ int (*tclMatherrPtr)() = matherr;
 static char *operatorStrings[] = {
     "||", "&&", "|", "^", "&", "==", "!=", "<", ">", "<=", ">=", "<<", ">>",
     "+", "-", "*", "/", "%", "+", "-", "~", "!",
-    "BUILTIN FUNCTION", "FUNCTION"
+    "BUILTIN FUNCTION", "FUNCTION",
+    "", "", "", "", "", "", "", "", "eq", "ne",
 };
     
 /*
@@ -1748,6 +1750,55 @@ TclExecuteByteCode(interp, codePtr)
 		} else {	/* reuse the valuePtr object */
 		    TRACE(("%.20s %.20s => %d\n", 
 			   O2S(valuePtr), O2S(value2Ptr), iResult));
+		    Tcl_SetLongObj(valuePtr, iResult);
+		    ++stackTop; /* valuePtr now on stk top has right r.c. */
+		}
+		TclDecrRefCount(value2Ptr);
+	    }
+	    ADJUST_PC(1);
+
+	case INST_STREQ:
+	case INST_STRNEQ:
+	    {
+		/*
+		 * String (in)equality check
+		 */
+		char *s1, *s2;
+		int s1len, s2len;
+		long iResult;
+
+		value2Ptr = POP_OBJECT();
+		valuePtr  = POP_OBJECT();
+
+		s1 = Tcl_GetStringFromObj(valuePtr, &s1len);
+		s2 = Tcl_GetStringFromObj(value2Ptr, &s2len);
+		if (s1len == s2len) {
+		    /*
+		     * We only need to check (in)equality when we have equal
+		     * length strings.
+		     */
+		    if (*pc == INST_STRNEQ) {
+			iResult = (strcmp(s1, s2) != 0);
+		    } else {
+			/* INST_STREQ */
+			iResult = (strcmp(s1, s2) == 0);
+		    }
+		} else {
+		    iResult = (*pc == INST_STRNEQ);
+		}
+
+		/*
+		 * Reuse the valuePtr object already on stack if possible.
+		 */
+		
+		if (Tcl_IsShared(valuePtr)) {
+		    PUSH_OBJECT(Tcl_NewLongObj(iResult));
+		    TRACE(("%.20s %.20s => %ld\n",
+			   O2S(valuePtr), O2S(value2Ptr), iResult));
+		    TclDecrRefCount(valuePtr);
+		} else {	/* reuse the valuePtr object */
+		    TRACE(("%.20s %.20s => %ld\n",
+			    O2S(valuePtr), O2S(value2Ptr), iResult));
 		    Tcl_SetLongObj(valuePtr, iResult);
 		    ++stackTop; /* valuePtr now on stk top has right r.c. */
 		}

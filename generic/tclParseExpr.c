@@ -7,11 +7,12 @@
  *	code analysis, etc.
  *
  * Copyright (c) 1997 Sun Microsystems, Inc.
+ * Copyright (c) 1998-2000 by Scriptics Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParseExpr.c,v 1.6 1999/12/04 06:15:42 hobbs Exp $
+ * RCS: @(#) $Id: tclParseExpr.c,v 1.7 2000/05/09 00:00:35 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -118,6 +119,9 @@ typedef struct ParseInfo {
 #define NOT		31
 #define BIT_NOT		32
 
+#define STREQ		33
+#define STRNEQ		34
+
 /*
  * Mapping from lexemes to strings; used for debugging messages. These
  * entries must match the order and number of the lexeme definitions above.
@@ -130,7 +134,7 @@ static char *lexemeStrings[] = {
     "*", "/", "%", "+", "-",
     "<<", ">>", "<", ">", "<=", ">=", "==", "!=",
     "&", "^", "|", "&&", "||", "?", ":",
-    "!", "~"
+    "!", "~", "eq", "ne",
 };
 #endif /* TCL_COMPILE_DEBUG */
 
@@ -720,7 +724,8 @@ ParseBitAndExpr(infoPtr)
  * ParseEqualityExpr --
  *
  *	This procedure parses a Tcl equality (inequality) expression:
- *	equalityExpr ::= relationalExpr {('==' | '!=') relationalExpr}
+ *	equalityExpr ::= relationalExpr
+ *		{('==' | '!=' | 'ne' | 'eq') relationalExpr}
  *
  * Results:
  *	The return value is TCL_OK on a successful parse and TCL_ERROR
@@ -754,9 +759,10 @@ ParseEqualityExpr(infoPtr)
     }
 
     lexeme = infoPtr->lexeme;
-    while ((lexeme == EQUAL) || (lexeme == NEQ)) {
+    while ((lexeme == EQUAL) || (lexeme == NEQ)
+	    || (lexeme == STREQ) || (lexeme == STRNEQ)) {
 	operator = infoPtr->start;
-	code = GetLexeme(infoPtr); /* skip over == or != */
+	code = GetLexeme(infoPtr); /* skip over ==, !=, 'eq' or 'ne'  */
 	if (code != TCL_OK) {
 	    return code;
 	}
@@ -766,7 +772,8 @@ ParseEqualityExpr(infoPtr)
 	}
 
 	/*
-	 * Generate tokens for the subexpression and '==' or '!=' operator.
+	 * Generate tokens for the subexpression and '==', '!=', 'eq' or 'ne'
+	 * operator.
 	 */
 
 	PrependSubExprTokens(operator, 2, srcStart,
@@ -1735,7 +1742,30 @@ GetLexeme(infoPtr)
 	    infoPtr->lexeme = BIT_NOT;
 	    return TCL_OK;
 
+	case 'e':
+	    if (src[1] == 'q') {
+		infoPtr->lexeme = STREQ;
+		infoPtr->size = 2;
+		infoPtr->next = src+2;
+		parsePtr->term = infoPtr->next;
+		return TCL_OK;
+	    } else {
+		goto checkFuncName;
+	    }
+
+	case 'n':
+	    if (src[1] == 'e') {
+		infoPtr->lexeme = STRNEQ;
+		infoPtr->size = 2;
+		infoPtr->next = src+2;
+		parsePtr->term = infoPtr->next;
+		return TCL_OK;
+	    } else {
+		goto checkFuncName;
+	    }
+
 	default:
+	checkFuncName:
 	    offset = Tcl_UtfToUniChar(src, &ch);
 	    c = UCHAR(ch);
 	    if (isalpha(UCHAR(c))) {	/* INTL: ISO only. */

@@ -5,12 +5,12 @@
 # generates output for errors.  No output means no errors were found.
 #
 # Copyright (c) 1996-1997 Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright (c) 1998-2000 by Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: expr.test,v 1.9 2000/04/10 17:18:59 ericm Exp $
+# RCS: @(#) $Id: expr.test,v 1.10 2000/05/09 00:00:37 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -124,6 +124,11 @@ test expr-1.13 {TclCompileExprCmd: second level of substitutions in expr not in 
 test expr-1.14 {TclCompileExprCmd: second level of substitutions in expr with comparison as top-level operator} {
     set a xxx
     set x 2;  set b {$x};  set a [expr $b == 2]
+    set a
+} 1
+test expr-1.15 {TclCompileExprCmd: second level of substitutions in expr with comparison as top-level operator} {
+    set a xxx
+    set x 2;  set b {$x};  set a [expr $b eq 2]
     set a
 } 1
 
@@ -269,6 +274,12 @@ test expr-7.12 {CompileBitAndExpr: runtime error in bitand arm} {
 test expr-7.13 {CompileBitAndExpr: runtime error in bitand arm} {
     list [catch {expr {"a"&"b"}} msg] $msg
 } {1 {can't use non-numeric string as operand of "&"}}
+test expr-7.14 {CompileBitAndExpr: equality expr} {expr 3eq2} 0
+test expr-7.18 {CompileBitAndExpr: equality expr} {expr {"abc" eq "abd"}} 0
+test expr-7.20 {CompileBitAndExpr: error in equality expr} {
+    catch {expr xne3} msg
+    set msg
+} {syntax error in expression "xne3"} 
 
 test expr-8.1 {CompileEqualityExpr: just relational expr} {expr 3>=2} 1
 test expr-8.2 {CompileEqualityExpr: just relational expr} {expr 2<=2.1} 1
@@ -290,7 +301,23 @@ test expr-8.11 {CompileEqualityExpr: error compiling equality arm} {
     catch {expr 2!=x} msg
     set msg
 } {syntax error in expression "2!=x"}
-
+test expr-8.14 {CompileBitAndExpr: equality expr} {expr {"a"eq"a"}} 1
+test expr-8.14 {CompileBitAndExpr: equality expr} {expr {"\374" eq "ü"}} 1
+test expr-8.14 {CompileBitAndExpr: equality expr} {expr 3eq2} 0
+test expr-8.15 {CompileBitAndExpr: equality expr} {expr 2.0eq2} 0
+test expr-8.16 {CompileBitAndExpr: equality expr} {expr 3.2ne2.2} 1
+test expr-8.17 {CompileBitAndExpr: equality expr} {expr 01eq1} 0
+test expr-8.18 {CompileBitAndExpr: equality expr} {expr {"abc" eq "abd"}} 0
+test expr-8.19 {CompileBitAndExpr: equality expr} {expr {"abc" ne "abd"}} 1
+test expr-8.20 {CompileBitAndExpr: error in equality expr} {
+    catch {expr xne3} msg
+    set msg
+} {syntax error in expression "xne3"} 
+test expr-8.20 {CompileBitAndExpr: error in equality expr} {
+    # These should be ""ed to avoid the error
+    catch {expr a eq b} msg
+    set msg
+} {syntax error in expression "a eq b"} 
 
 test expr-9.1 {CompileRelationalExpr: just shift expr} {expr 3<<2} 12
 test expr-9.2 {CompileRelationalExpr: just shift expr} {expr 0xff>>2} 63

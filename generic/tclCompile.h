@@ -2,11 +2,12 @@
  * tclCompile.h --
  *
  * Copyright (c) 1996-1998 Sun Microsystems, Inc.
+ * Copyright (c) 1998-2000 by Scriptics Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.11 1999/05/23 16:37:14 surles Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.12 2000/05/09 00:00:34 hobbs Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -493,8 +494,12 @@ typedef struct ByteCode {
 #define INST_PUSH_RESULT		71
 #define INST_PUSH_RETURN_CODE		72
 
+/* Opcodes 73 to 74 */
+#define INST_STREQ			73
+#define INST_STRNEQ			74
+
 /* The last opcode */
-#define LAST_INST_OPCODE        	72
+#define LAST_INST_OPCODE        	74
 
 /*
  * Table describing the Tcl bytecode instructions: their name (for

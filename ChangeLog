@@ -1,5 +1,26 @@
 2000-05-08  Jeff Hobbs  <hobbs@scriptics.com>
 
+	* doc/expr.n:
+	* tests/expr.test:
+	* tests/expr-old.test: added tests for 'eq' and 'ne'
+	* generic/tclExecute.c:
+	* generic/tclCompile.h: added INST_STREQ and INST_STRNEQ opcodes
+	that do strict string comparisons.
+	* generic/tclCompExpr.c: added 'eq' and 'ne' string comparison
+	operators.
+	* generic/tclParseExpr.c (GetLexeme): added 'eq' and 'ne' expr
+	parse terms (string (in)equality check).
+
+	* generic/tclCmdIL.c (Tcl_LinsertObjCmd): made use of
+	Tcl_DuplicateObj where code was otherwise duplicated.  Made
+	special case of inserting one element at the end work again (where
+	index == len).
+	(Tcl_LreplaceObjCmd): moved Tcl_DuplicateObj call lower and
+	cleaned	up use of other arguments.
+
+	* generic/tclObj.c (Tcl_DuplicateObj): simplified code to call
+	TclInitStringRep, which the code was just duplicating in part.
+
 	* doc/Utf.3:
 	* generic/tclStubInit.c:
 	* generic/tcl.decls:
@@ -8,6 +29,7 @@
 	Tcl_UniCharCaseMatch (unicode parallel to Tcl_StringCaseMatch)
 	* generic/tclUtil.c: rewrote Tcl_StringCaseMatch algorithm for
 	optimization and made Tcl_StringMatch just call Tcl_StringCaseMatch
+	* tests/string.test: extended string match tests
 
 2000-05-08  Eric Melski  <ericm@scriptics.com>
 
