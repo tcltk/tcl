@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.160 2004/10/22 14:01:00 dkf Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.161 2004/10/25 01:06:49 msofer Exp $
  */
 
 #ifdef STDC_HEADERS
@@ -1775,8 +1775,7 @@ TclExecuteByteCode(interp, codePtr)
 		varPtr = varPtr->value.linkPtr;
 	    }
 	    TRACE(("%u => ", opnd));
-	    if (TclIsVarScalar(varPtr) && !TclIsVarUndefined(varPtr) 
-		    && (varPtr->tracePtr == NULL)) {
+	    if (TclIsVarDirectReadable(varPtr)) {
 		/*
 		 * No errors, no traces: just get the value.
 		 */
@@ -1798,8 +1797,7 @@ TclExecuteByteCode(interp, codePtr)
 		varPtr = varPtr->value.linkPtr;
 	    }
 	    TRACE(("%u => ", opnd));
-	    if (TclIsVarScalar(varPtr) && !TclIsVarUndefined(varPtr) 
-		    && (varPtr->tracePtr == NULL)) {
+	    if (TclIsVarDirectReadable(varPtr)) {
 		/*
 		 * No errors, no traces: just get the value.
 		 */
@@ -1838,10 +1836,9 @@ TclExecuteByteCode(interp, codePtr)
 		result = TCL_ERROR;
 		goto checkForCatch;
 	    }
-	    if (TclIsVarScalar(varPtr) && !TclIsVarUndefined(varPtr) 
-		    && (varPtr->tracePtr == NULL)
+	    if (TclIsVarDirectReadable(varPtr)
 		    && ((arrayPtr == NULL) 
-			    || (arrayPtr->tracePtr == NULL))) {
+			    || TclIsVarUntraced(arrayPtr))) {
 		/*
 		 * No errors, no traces: just get the value.
 		 */
@@ -1876,10 +1873,9 @@ TclExecuteByteCode(interp, codePtr)
 		result = TCL_ERROR;
 		goto checkForCatch;
 	    }
-	    if (TclIsVarScalar(varPtr) && !TclIsVarUndefined(varPtr) 
-		    && (varPtr->tracePtr == NULL)
+	    if (TclIsVarDirectReadable(varPtr)
 		    && ((arrayPtr == NULL) 
-			    || (arrayPtr->tracePtr == NULL))) {
+			    || TclIsVarUntraced(arrayPtr))) {
 		/*
 		 * No errors, no traces: just get the value.
 		 */
@@ -2100,13 +2096,9 @@ TclExecuteByteCode(interp, codePtr)
 	    
 	doCallPtrSetVar:
 	    if ((storeFlags == TCL_LEAVE_ERR_MSG)
-		    && !((varPtr->flags & VAR_IN_HASHTABLE) 
-			    && (varPtr->hPtr == NULL))
-		    && (varPtr->tracePtr == NULL)
-		    && (TclIsVarScalar(varPtr) 
-			    || TclIsVarUndefined(varPtr))
+		    && TclIsVarDirectWritable(varPtr)
 		    && ((arrayPtr == NULL) 
-			    || (arrayPtr->tracePtr == NULL))) {
+			    || TclIsVarUntraced(arrayPtr))) {
 		/*
 		 * No traces, no errors, plain 'set': we can safely inline.
 		 * The value *will* be set to what's requested, so that 
@@ -2295,11 +2287,9 @@ TclExecuteByteCode(interp, codePtr)
 		
 	 doIncrVar:
 	     objPtr = varPtr->value.objPtr;
-	     if (TclIsVarScalar(varPtr)
-		     && !TclIsVarUndefined(varPtr) 
-		     && (varPtr->tracePtr == NULL)
+	     if (TclIsVarDirectReadable(varPtr)
 		     && ((arrayPtr == NULL) 
-			     || (arrayPtr->tracePtr == NULL))) {
+			     || TclIsVarUntraced(arrayPtr))) {
 		 if (objPtr->typePtr == &tclIntType && !isWide) {
 		     /*
 		      * No errors, no traces, the variable already has an
@@ -4642,9 +4632,7 @@ TclExecuteByteCode(interp, codePtr)
 			while (TclIsVarLink(varPtr)) {
 			    varPtr = varPtr->value.linkPtr;
 			}
-			if (!((varPtr->flags & VAR_IN_HASHTABLE) && (varPtr->hPtr == NULL))
-			        && (varPtr->tracePtr == NULL)
-			        && (TclIsVarScalar(varPtr) || TclIsVarUndefined(varPtr))) {
+			if (TclIsVarDirectWritable(varPtr)) {
 			    value2Ptr = varPtr->value.objPtr;
 			    if (valuePtr != value2Ptr) {
 				if (value2Ptr != NULL) {

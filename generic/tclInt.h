@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.186 2004/10/21 17:07:31 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.187 2004/10/25 01:06:51 msofer Exp $
  */
 
 #ifndef _TCLINT
@@ -530,6 +530,13 @@ typedef struct Var {
 #define TclClearVarUndefined(varPtr) \
     (varPtr)->flags &= ~VAR_UNDEFINED
 
+#define TclSetVarTraceActive(varPtr) \
+    (varPtr)->flags |= VAR_TRACE_ACTIVE
+
+#define TclClearVarTraceActive(varPtr) \
+    (varPtr)->flags &= ~VAR_TRACE_ACTIVE
+
+
 /*
  * Macros to read various flag bits of variables.
  * The ANSI C "prototypes" for these macros are:
@@ -559,6 +566,9 @@ typedef struct Var {
 #define TclIsVarArrayElement(varPtr) \
     ((varPtr)->flags & VAR_ARRAY_ELEMENT)
 
+#define TclIsVarNamespaceVar(varPtr) \
+    ((varPtr)->flags & VAR_NAMESPACE_VAR)
+
 #define TclIsVarTemporary(varPtr) \
     ((varPtr)->flags & VAR_TEMPORARY)
     
@@ -567,6 +577,28 @@ typedef struct Var {
     
 #define TclIsVarResolved(varPtr) \
     ((varPtr)->flags & VAR_RESOLVED)
+
+#define TclIsVarTraceActive(varPtr) \
+    ((varPtr)->flags & VAR_TRACE_ACTIVE)
+
+#define TclIsVarUntraced(varPtr) \
+    ((varPtr)->tracePtr == NULL)
+
+/*
+ * Macros for direct variable access by TEBC
+ */
+
+#define TclIsVarDirectReadable(varPtr) \
+       (TclIsVarScalar(varPtr) \
+    && !TclIsVarUndefined(varPtr) \
+    && TclIsVarUntraced(varPtr))
+
+#define TclIsVarDirectWritable(varPtr) \
+    (   !(((varPtr)->flags & VAR_IN_HASHTABLE) \
+		&& ((varPtr)->hPtr == NULL)) \
+     && TclIsVarUntraced(varPtr) \
+     && (TclIsVarScalar(varPtr) \
+	     || TclIsVarUndefined(varPtr)))
 
 /*
  *----------------------------------------------------------------
