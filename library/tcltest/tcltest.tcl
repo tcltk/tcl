@@ -16,10 +16,13 @@
 # Contributions from Don Porter, NIST, 2002.  (not subject to US copyright)
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.tcl,v 1.72 2002/08/05 22:36:00 dgp Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.73 2002/08/20 15:33:33 dgp Exp $
 
 package require Tcl 8.3		;# uses [glob -directory]
 namespace eval tcltest {
+
+    # When the version number changes, be sure to update the pkgIndex.tcl file,
+    # and the install directory in the Makefiles.
     variable Version 2.2
 
     # Compatibility support for dumb variables defined in tcltest 1
