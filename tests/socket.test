@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: socket.test,v 1.26.2.3 2004/07/16 19:20:25 andreas_kupries Exp $
+# RCS: @(#) $Id: socket.test,v 1.26.2.4 2004/10/28 04:16:22 dgp Exp $
 
 # Running socket tests with a remote server:
 # ------------------------------------------
@@ -1627,12 +1627,11 @@ test socket-12.3 {testing inheritance of accepted sockets} {socket stdio exec} {
 } {accepted socket was not inherited}
 
 test socket-13.1 {Testing use of shared socket between two threads} \
-	{socket testthread} {
+	-constraints {socket testthread} -setup {
 
-    file delete $path(script1)
     threadReap
 
-    makeFile {
+    set path(script) [makeFile {
 	set f [socket -server accept 0]
 	set listen [lindex [fconfigure $f -sockname] 2]
 	proc accept {s a p} {
@@ -1657,10 +1656,11 @@ test socket-13.1 {Testing use of shared socket between two threads} \
 
 	# thread cleans itself up.
 	testthread exit
-    } script
-    
+    } script]
+
+} -body {
     # create a thread
-    set serverthread [testthread create { source script } ]
+    set serverthread [testthread create { source $path(script) } ]
     update
     set port [testthread send $serverthread {set listen}]
     update
@@ -1678,10 +1678,9 @@ test socket-13.1 {Testing use of shared socket between two threads} \
 
     after 2000
     lappend result [threadReap]
-    
-    set result
-
-} {hello 1}
+} -cleanup {
+    removeFile script
+} -result {hello 1}
 
 removeFile script1
 removeFile script2
