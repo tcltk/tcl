@@ -1,3 +1,10 @@
+2004-04-22  David Gravereaux <davygrvy@pobox.com>
+
+	* generic/tclEvent.c: TclSetLibraryPath's use of caching the
+	stringrep of the pathPtr object to TclGetLibraryPath called from
+	another thread was ineffective if the original's stringrep had
+	been invalidated as what happens when it gets muted to a list.
+
 2004-04-22  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* doc/switch.n: Reworked the examples to be more systematically
