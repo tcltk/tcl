@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: socket.test,v 1.22 2002/02/27 20:55:55 andreas_kupries Exp $
+# RCS: @(#) $Id: socket.test,v 1.23 2002/04/15 23:09:12 dgp Exp $
 
 # Running socket tests with a remote server:
 # ------------------------------------------
@@ -252,7 +252,7 @@ test socket-2.1 {tcp connection} {socket stdio} {
     removeFile script
     set f [open script w]
     puts $f {
-	set timer [after 2000 "set x timed_out"]
+	set timer [after 10000 "set x timed_out"]
 	set f [socket -server accept 0]
 	proc accept {file addr port} {
 	    global x
@@ -290,7 +290,7 @@ test socket-2.2 {tcp connection with client port specified} {socket stdio} {
     removeFile script
     set f [open script w]
     puts $f {
-	set timer [after 2000 "set x done"]
+	set timer [after 10000 "set x timeout"]
         set f [socket -server accept 0]
 	proc accept {file addr port} {
             global x
@@ -390,7 +390,7 @@ test socket-2.5 {tcp connection with redundant server port} {socket stdio} {
     removeFile script
     set f [open script w]
     puts $f {
-	set timer [after 2000 "set x done"]
+	set timer [after 10000 "set x timeout"]
         set f [socket -server accept 0]
 	proc accept {file addr port} {
             global x
@@ -1450,12 +1450,12 @@ test socket-12.2 {testing inheritance of client sockets} {socket exec} {
     removeFile script1
     removeFile script2
 
-    # Script1 is just a 10 second delay.  If the server socket
+    # Script1 is just a 20 second delay.  If the server socket
     # is inherited, it will be held open for 10 seconds
 
     set f [open script1 w]
     puts $f {
-	after 10000 exit
+	after 20000 exit
 	vwait forever
     }
     close $f
@@ -1512,11 +1512,11 @@ test socket-12.2 {testing inheritance of client sockets} {socket exec} {
 	return
     }
 
-    # If the socket doesn't hit end-of-file in 5 seconds, the
+    # If the socket doesn't hit end-of-file in 10 seconds, the
     # script1 process must have inherited the client.
 
     set failed 0
-    after 5000 [list set failed 1]
+    after 10000 [list set failed 1]
 
     # Launch the script2 process
     ### exec $::tcltest::tcltest script2 &

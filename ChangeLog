@@ -5,14 +5,15 @@
 	TCL_CONTINUE returns from procs. Patch by Don Porter
 	[Bug 536955]. 
 	
-2002-04-15  Miguel Sofer  <msofer@users.sourceforge.net>
-
 	* generic/tclExecute.c:
 	* tests/compile.test: made bytecodes check for a catch before
 	returning; the compiled [return] is otherwise non-catchable. 
 	[Bug 542588] reported by Andreas Kupries.
 
 2002-04-15  Don Porter  <dgp@users.sourceforge.net>
+
+	* tests/socket.test:  Increased timeout values so that tests have
+	time to successfully complete even on slow/busy machines.  [Bug 523470]
 
 	* doc/tcltest.n:
 	* library/tcltest/tcltest.tcl:
