@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: %Z% $Id: tclInt.h,v 1.10 1998/07/24 13:49:46 surles Exp $ 
+ * SCCS: %Z% $Id: tclInt.h,v 1.11 1998/07/24 15:50:19 stanton Exp $ 
  */
 
 #ifndef _TCLINT
@@ -1162,7 +1162,7 @@ typedef struct ParseValue {
 
 extern unsigned char tclTypeTable[];
 #define CHAR_TYPE(src,last) \
-	(((src)==(last))?TCL_COMMAND_END:(tclTypeTable+128)[*(src)])
+	(((src)==(last))?TCL_COMMAND_END:(tclTypeTable)[(int)(*(src) + 128)])
 
 /*
  * Possible values returned by CHAR_TYPE. Note that except for TCL_DOLLAR,

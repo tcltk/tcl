@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: %Z% $Id: tclCompile.c,v 1.8 1998/07/24 13:49:13 surles Exp $ 
+ * SCCS: %Z% $Id: tclCompile.c,v 1.9 1998/07/24 15:50:11 stanton Exp $ 
  */
 
 #include "tclInt.h"
@@ -3291,7 +3291,7 @@ TclCompileDollarVar(interp, string, lastChar, flags, envPtr)
 static int
 IsLocalScalar(varName, length)
     char *varName;		/* The name to check. */
-    int length;			/* The number of characters in the string.  */
+    int length;		/* The number of characters in the string.  */
 {
     char *p;
     char *lastChar = varName + (length - 1);
@@ -4494,7 +4494,7 @@ TclCompileForeachCmd(interp, string, lastChar, flags, envPtr)
 	numVars = varcList[i];
 	for (j = 0;  j < numVars;  j++) {
 	    char *varName = varvList[i][j];
-	    if (!IsLocalScalar(varName, strlen(varName))) {
+	    if (!IsLocalScalar(varName, (int) strlen(varName))) {
 		result = TCL_OUT_LINE_COMPILE;
 		goto done;
 	    }
