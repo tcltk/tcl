@@ -1,3 +1,10 @@
+2004-06-23  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclThreadStorage.c:	Corrected type casting errors that led
+	to calculation of a negative index value, thus accesses outside the
+	threadStorageCache array, thus memory corruption.  Crash observed on
+	Mac OS X platform.
+
 2004-06-23  Joe Mistachkin  <joe@mistachkin.com>
 
 	* generic/tclThread.c: Implements platform independent thread storage
