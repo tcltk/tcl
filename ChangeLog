@@ -2,6 +2,9 @@
 
 	* generic/tclNamesp.c (MakeCachedEnsembleCommand): Initialize the
 	epoch field cached in the subcommand. [Bug 989298]
+	(NsEnsembleImplementationCmd): Plug a leak (thanks to Miguel Sofer
+	for spotting it with valgrind) and reduce the number of goto
+	labels to make the code clearer.
 
 2004-08-02  Don Porter  <dgp@users.sourceforge.net>
 
