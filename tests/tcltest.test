@@ -6,7 +6,7 @@
 # Copyright (c) 2000 by Ajuba Solutions
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.test,v 1.19 2002/04/15 17:04:29 dgp Exp $
+# RCS: @(#) $Id: tcltest.test,v 1.20 2002/05/08 05:51:05 dgp Exp $
 
 set tcltestVersion [package require tcltest]
 namespace import -force ::tcltest::*
@@ -365,9 +365,9 @@ test tcltest-6.6 {tcltest::errorFile (implicit errorChannel)} {
 	set f2 [tcltest::errorFile $ef]
 	set f3 [tcltest::errorChannel]
 	set f4 [tcltest::errorFile]
-	list $f0 $f1 $f2 $f3 $f4 
+	subst {$f0;$f1;$f2;$f3;$f4} 
     }
-    -result {stderr stderr .*efile file[0-9a-f]+ .*efile}
+    -result {stderr;stderr;.*efile;file[0-9a-f]+;.*efile}
     -match regexp
     -cleanup {
 	tcltest::errorFile $of
@@ -400,9 +400,9 @@ test tcltest-6.8 {tcltest::outputFile (implicit outputFile)} {
 	set f2 [tcltest::outputFile $ef]
 	set f3 [tcltest::outputChannel]
 	set f4 [tcltest::outputFile]
-	list $f0 $f1 $f2 $f3 $f4 
+	subst {$f0;$f1;$f2;$f3;$f4} 
     }
-    -result {stdout stdout .*efile file[0-9a-f]+ .*efile}
+    -result {stdout;stdout;.*efile;file[0-9a-f]+;.*efile}
     -match regexp
     -cleanup {
 	tcltest::outputFile $of
@@ -535,7 +535,7 @@ test tcltest-8.6 {tcltest::temporaryDirectory}  {
 	set f3 [tcltest::temporaryDirectory]
 	list $f1 $f2 $f3
     }
-    -result "$normaldirectory $current $current"
+    -result "[list $normaldirectory $current $current]"
     -cleanup {
 	set tcltest::temporaryDirectory $old
     }
@@ -551,7 +551,7 @@ test tcltest-8.6a {tcltest::temporaryDirectory - test format 2} -setup {
     list $f1 $f2 $f3
 } -cleanup {
     set tcltest::temporaryDirectory $old
-} -result "$normaldirectory $current $current" 
+} -result [list $normaldirectory $current $current]
 
 # -testdir, tcltest::testsDirectory
 test tcltest-8.10 {tcltest a.tcl -testdir thisdirectorydoesnotexist} {unixOrPc} {
@@ -591,7 +591,7 @@ test tcltest-8.14 {tcltest::testsDirectory} {
 	set f3 [tcltest::testsDirectory]
 	list $f1 $f2 $f3
     }
-    -result "$normaldirectory $current $current"
+    -result "[list $normaldirectory $current $current]"
     -cleanup {
 	set tcltest::testsDirectory $old
     }
@@ -613,7 +613,11 @@ test tcltest-8.60 {tcltest::workingDirectory}  {
 	set f5 [tcltest::workingDirectory]
 	list $f1 $f2 $f3 $f4 $f5
     }
-    -result "$normaldirectory $normaldirectory $current $current $current"
+    -result "[list $normaldirectory \
+                   $normaldirectory \
+                   $current \
+                   $current \
+                   $current]"
     -cleanup {
 	set tcltest::workingDirectory $old
 	cd $current
@@ -772,13 +776,12 @@ test tcltest-12.4 {tcltest::loadFile} {
 	set f5 [tcltest::loadFile]
 	list $f1 $f2 $f3 $f4 $f5
     }
-    -result "{} {} $loadfile { 
+    -result "[list {} {} $loadfile { 
     package require tcltest
     namespace import -force ::tcltest::*
-    puts \$::tcltest::loadScript
+    puts $::tcltest::loadScript
     exit
-} $loadfile
-" 
+} $loadfile]\n"
     -cleanup {
 	set tcltest::loadScript $olds
 	set tcltest::loadFile $oldf
