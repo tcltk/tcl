@@ -913,6 +913,13 @@ test filesystem-9.5 {path objects and file tail and object rep} {
     cd $origdir
     set res
 } {test test}
+test filesystem-9.6 {path objects and file tail and object rep} {winOnly} {
+    set res {}
+    set p "C:\\toto"
+    lappend res [file join $p toto]
+    file isdirectory $p
+    lappend res [file join $p toto]
+} {C:/toto/toto C:/toto/toto}
 
 cleanupTests
 unset -nocomplain drive
