@@ -1,3 +1,10 @@
+2004-09-10  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclExecute.c (INST_CONCAT1): added a peephole
+	optimisation for concatting an empty string. This enables
+	replacing the idiom 'K $x [set x {}]' by '$x[set x {}]' for
+	fastest execution.
+
 2004-09-09  David Gravereaux <davygrvy@pobox.com>
 
 	* win/tclWinConsole.c: Calls to WriteFile and WriteConsoleA
