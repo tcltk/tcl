@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.64 2004/05/04 02:44:23 msofer Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.65 2004/05/12 17:43:54 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1057,28 +1057,36 @@ TclCompileScript(interp, script, numBytes, envPtr)
 			        && !(iPtr->flags & DONT_COMPILE_CMDS_INLINE)) {
 			    int savedNumCmds = envPtr->numCommands;
 			    unsigned int savedCodeNext =
-				    envPtr->codeNext - envPtr->codeStart;
+				    envPtr->codeNext - envPtr->codeStart;			    
 
 			    /*
 			     * Mark the start of the command; the proper
-			     * bytecode length will be updated later.
+			     * bytecode length will be updated later. There
+			     * is no need to do this for the first command
+			     * in the compile env, as the check is done before
+			     * calling TclExecuteByteCode(). Remark that we
+			     * are compiling the first cmd in the environment
+			     * exactly when (savedCodeNext == 0)
 			     */
-			    
-			    TclEmitInstInt4(INST_START_CMD, 0, envPtr);
+
+			    if (savedCodeNext != 0) {
+				TclEmitInstInt4(INST_START_CMD, 0, envPtr);				
+			    }
 			    
 			    code = (*(cmdPtr->compileProc))(interp, &parse,
 			            envPtr);
 			    
 			    if (code == TCL_OK) {
-				/*
-				 * Fix the bytecode length.
-				 */
-				unsigned char *fixPtr = envPtr->codeStart + savedCodeNext + 1;
-				unsigned int fixLen = envPtr->codeNext - envPtr->codeStart
-				        - savedCodeNext;
+				if (savedCodeNext != 0) {
+				    /*
+				     * Fix the bytecode length.
+				     */
+				    unsigned char *fixPtr = envPtr->codeStart + savedCodeNext + 1;
+				    unsigned int fixLen = envPtr->codeNext - envPtr->codeStart
+				            - savedCodeNext;
 				
-				TclStoreInt4AtPtr(fixLen, fixPtr);
-				
+				    TclStoreInt4AtPtr(fixLen, fixPtr);
+				}				
 				goto finishCommand;
 			    } else if (code == TCL_OUT_LINE_COMPILE) {
 				/*
