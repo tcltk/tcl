@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: msgcat.tcl,v 1.1.2.2 1998/12/04 21:58:08 stanton Exp $
+# RCS: @(#) $Id: msgcat.tcl,v 1.1.2.3 1998/12/07 20:56:53 stanton Exp $
 
 package provide msgcat 1.0
 
@@ -27,13 +27,6 @@ namespace eval msgcat {
     # array key is of the form "<locale>,<namespace>,<src>" and the value is
     # the translated string.
     array set msgs {}
-
-    # set default locale, try to get from environment
-    if {[info exists ::env(LANG)]} {
-        mclocale $::env(LANG)
-    } else {
-        mclocale "C"
-    }
 }
 
 # msgcat::mc --
@@ -114,16 +107,18 @@ proc msgcat::mcpreferences {} {
 #	langdir		The directory to search.
 #
 # Results:
-#	None.
+#	Returns the number of message catalogs that were loaded.
 
 proc msgcat::mcload {langdir} {
+    set x 0
     foreach p [::msgcat::mcpreferences] {
 	set langfile [file join $langdir $p.msg]
 	if {[file exists $langfile]} {
+	    incr x
 	    uplevel [list source $langfile]
 	}
     }
-    return
+    return $x
 }
 
 # msgcat::mcset --
@@ -137,7 +132,7 @@ proc msgcat::mcload {langdir} {
 #			the source string is used.
 #
 # Results:
-#	None.
+#	Returns the new locale.
 
 proc msgcat::mcset {locale src {dest ""}} {
     if {$dest == ""} {
@@ -147,7 +142,7 @@ proc msgcat::mcset {locale src {dest ""}} {
     set ns [uplevel {namespace current}]
 
     set ::msgcat::msgs($locale,$ns,$src) $dest
-    return
+    return $dest
 }
 
 # msgcat::mcunknown --
@@ -168,3 +163,13 @@ proc msgcat::mcunknown {locale src} {
     return $src
 }
 
+# Initialize the default locale
+
+namespace eval msgcat {
+    # set default locale, try to get from environment
+    if {[info exists ::env(LANG)]} {
+        mclocale $::env(LANG)
+    } else {
+        mclocale "C"
+    }
+}
