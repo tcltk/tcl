@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.9 2002/05/30 15:03:56 msofer Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.10 2002/06/21 21:17:39 jenglish Exp $
  */
 
 #include "tclInt.h"
@@ -968,6 +968,7 @@ LogSyntaxError(infoPtr)
 
     sprintf(buffer, "syntax error in expression \"%.*s\"",
 	    ((numBytes > 60)? 60 : numBytes), infoPtr->expr);
+    Tcl_ResetResult(infoPtr->interp);
     Tcl_AppendStringsToObj(Tcl_GetObjResult(infoPtr->interp),
 	    buffer, (char *) NULL);
 }
