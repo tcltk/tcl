@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: CrtSlave.3,v 1.8.2.1 2003/07/16 21:31:52 dkf Exp $
+'\" RCS: @(#) $Id: CrtSlave.3,v 1.8.2.2 2003/07/18 15:20:51 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_CreateSlave 3 7.6 Tcl "Tcl Library Procedures"
@@ -146,10 +146,9 @@ potentially-unsafe core functionality (both commands and variables)
 from \fIinterp\fR.  However, it cannot know what parts of an extension
 or application are safe and does not make any attempt to remove those
 parts, so safety is not guaranteed after calling \fBTcl_MakeSafe\fR.
-For this reason, this function should not be called by new code and is
-likely to be deprecated or removed in a future version of Tcl.  Safe
-interpreters can be obtained by using \fBTcl_CreateSlave\fR instead,
-which creates interpreters in a known-safe state.
+Callers will want to take care with their use of \fBTcl_MakeSafe\fR
+to avoid false claims of safety.  For many situations, \fBTcl_CreateSlave\fR
+may be a better choice, since it creates interpreters in a known-safe state.
 .PP
 \fBTcl_GetSlave\fR returns a pointer to a slave interpreter of
 \fIinterp\fR. The slave interpreter is identified by \fIslaveName\fR.
