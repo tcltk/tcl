@@ -1,6 +1,18 @@
-2002-03-04  Jeff Hobbs  <jeffh@ActiveState.com>
+2002-03-05  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	*** 8.4a4 TAGGED FOR RELEASE ***
+
+	* unix/tclUnixChan.c: initial remedy for [Bug #525783] flush
+	problem introduced by TIP #35.  This may not satisfy true serial
+	channels, but it restores the correct flushing of std* channels on
+	exit.
+
+	* unix/README: added --enable-langinfo doc.
+
+	* unix/tcl.spec:
+	* tools/tcl.wse.in: fixed URL refs to use www.tcl.tk or SF.
+
+2002-03-04  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* README:
 	* mac/README:
