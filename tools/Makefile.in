@@ -6,41 +6,43 @@
 #
 #    HTML:		 1. Build the html target on Unix
 
-# RCS: @(#) $Id: Makefile.in,v 1.8 1999/05/22 01:20:14 stanton Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.9 2000/04/20 01:30:20 hobbs Exp $
 
-TCL = tcl@TCL_VERSION@
-TK = tk@TCL_VERSION@
-VER=@TCL_WIN_VERSION@
+TCL		= tcl@TCL_VERSION@
+TK		= tk@TCL_VERSION@
+VER		= @TCL_WIN_VERSION@
 
-TCL_BIN_DIR = @TCL_BIN_DIR@
-TCL_SOURCE = @TCL_SRC_DIR@
-TK_SOURCE = $(TCL_SOURCE)/../$(TK)
-PRO_SOURCE = $(TCL_SOURCE)/../pro
-ITCL_SOURCE = $(TCL_SOURCE)/../itcl3.0.1
+TCL_BIN_DIR	= @TCL_BIN_DIR@
+TCL_SOURCE	= @TCL_SRC_DIR@
+TK_SOURCE	= $(TCL_SOURCE)/../$(TK)
+PRO_SOURCE	= $(TCL_SOURCE)/../pro
+ITCL_SOURCE	= $(TCL_SOURCE)/../itcl3.1.0
 
-TCL_DOCS = \
-	$(TCL_SOURCE)/doc/*.[13n]
+TCL_DOCS	= $(TCL_SOURCE)/doc/*.[13n]
 
-TK_DOCS = \
-	$(TK_SOURCE)/doc/*.[13n]
+TK_DOCS		= $(TK_SOURCE)/doc/*.[13n]
 
-PRO_DOCS = \
+PRO_DOCS	= \
 	$(PRO_SOURCE)/doc/man/procheck.1 \
 	$(PRO_SOURCE)/doc/man/prodebug.1 \
 	$(PRO_SOURCE)/doc/man/prodebug.n \
 	$(PRO_SOURCE)/doc/man/prolicense.1
 
-ITCL_DOCS = \
+ITCL_DOCS	= \
 	$(ITCL_SOURCE)/itcl/doc/*.[13n] \
 	$(ITCL_SOURCE)/itk/doc/*.[13n]
 
 #	$(ITCL_SOURCE)/iwidgets3.0.0/doc/*.[13n]
 
-COREDOCS = $(TCL_DOCS) $(TK_DOCS) 
-#PRODOCS = $(COREDOCS) $(PRO_DOCS) $(ITCL_DOCS)
-PRODOCS = $(COREDOCS) $(PRO_DOCS) 
-TCLSH = $(TCL_BIN_DIR)/tclsh
-CC=@CC@
+COREDOCS	= $(TCL_DOCS) $(TK_DOCS) 
+#PRODOCS	= $(COREDOCS) $(PRO_DOCS) $(ITCL_DOCS)
+PRODOCS		= $(COREDOCS) $(PRO_DOCS) 
+TCLSH		= $(TCL_BIN_DIR)/tclsh
+CC		= @CC@
+
+#
+# Targets
+#
 
 all: core
 

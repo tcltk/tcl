@@ -1,5 +1,15 @@
 2000-04-19  Jeff Hobbs  <hobbs@scriptics.com>
 
+	* library/dde1.1/pkgIndex.tcl:
+	* library/reg1.0/pkgIndex.tcl:
+	* win/tclWinChan.c:
+	* win/tclWinThrd.c: converted CRLF to LF the */tcl.hpj.in files
+	were not converted, as it confuses hcw locally. [Bug: 5096]
+
+	* win/Makefile.in: expanded cleanup or help files
+
+	* doc/Thread.3: minor macro cleanup
+
 	* generic/tclFileName.c (SplitUnixPath): added support for QNX
 	node ids.
 

@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Thread.3,v 1.9 2000/04/09 16:04:17 kupries Exp $
+'\" RCS: @(#) $Id: Thread.3,v 1.10 2000/04/20 01:30:19 hobbs Exp $
 '\" 
 .so man.macros
 .TH Threads 3 "8.1" Tcl "Tcl Library Procedures"
@@ -86,7 +86,7 @@ the same Tcl interpreter.  (However, as was the case in previous
 releases, a single thread can safely create and use multiple
 interpreters.)
 .PP
-.VB
+.VS 8.3.1
 Tcl does provide \fBTcl_CreateThread\fR for creating threads. The
 caller can determine the size of the stack given to the new thread and
 modify the behaviour through the supplied \fIflags\fR. The value
@@ -98,7 +98,7 @@ first of them invokes the default behaviour with no
 specialities. Using the second value marks the new thread as
 \fIjoinable\fR. This means that another thread can wait for the such
 marked thread to exit and join it.
-
+.PP
 Restrictions: On some unix systems the pthread-library does not
 contain the functionality to specify the stacksize of a thread. The
 specified value for the stacksize is ignored on these systems. Both
@@ -122,6 +122,7 @@ feature at this time, see the \fItclThreadTest.c\fR
 file in the Tcl source distribution for an experimental implementation
 of a Tcl "Thread" package implementing thread creation and management
 commands at the script level.
+
 .SH DESCRIPTION
 A mutex is a lock that is used to serialize all threads through a piece
 of code by calling \fBTcl_MutexLock\fR and \fBTcl_MutexUnlock\fR.
