@@ -1,3 +1,11 @@
+2003-10-21   Daniel Steffen  <das@users.sourceforge.net>
+
+	* tools/tcltk-man2html.tcl: fixed incorrect html generated for
+	.IP/.TP lists, now use <DL><DT>...<DD>...<P><DT>...<DD>...</DL>
+	instead of illegal  <DL><P><DT>...<DD>...<P><DT>...<DD>...</DL>.
+	Added skipping of directives directly after .TP to avoid them
+	being used as item descriptions, e.g. .TP\n.VS in clock.n.
+
 2003-10-21  Andreas Kupries  <andreask@pliers.activestate.com>
 
 	* win/tclWinPipe.c (BuildCommandLine): Applied the patch coming
