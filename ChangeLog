@@ -1,3 +1,9 @@
+2005-01-10  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* unix/tclUnixFCmd.c (TclUnixCopyFile): Convert u_int to unsigned
+	to make clashes with types in standard C headers less of a
+	problem. [Bug 1098829]
+
 2005-01-09  Joe English  <jenglish@users.sourceforge.net>
 
 	* unix/tclUnixThrd.c, unix/tclUnixPort.h: Remove readdir_r()
