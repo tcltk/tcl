@@ -1,5 +1,14 @@
 2002-07-16  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* unix/Makefile.in: Use dltest.marker file
+	to keep track of when the dltest package
+	is up to date. This fixes [Tcl bug 575768]
+	since tcltest is no longer linked every time.
+	* unix/dltest/Makefile.in: Create ../dltest.marker
+	after a successful `make all` run in dltest.
+
+2002-07-16  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* unix/configure: Regen.
 	* unix/configure.in: Remove useless subst of TCL_BIN_DIR.
 
