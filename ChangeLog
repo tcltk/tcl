@@ -1,3 +1,17 @@
+2003-04-03  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* unix/Makefile.in: Don't subst MATH_LIBS,
+	LIBS, and DL_LIBS separately. Instead, just
+	subst TCL_LIBS since it includes the others.
+	* unix/configure: Regen.
+	* unix/tcl.m4 (SC_CONFIG_CFLAGS, SC_TCL_LINK_LIBS):
+	Set and subst TCL_LIBS in SC_CONFIG_CFLAGS instead
+	of SC_TCL_LINK_LIBS. Don't subst MATH_LIBS
+	since it is now covered by TCL_LIBS.
+	* unix/tclConfig.sh.in: Use TCL_LIBS instead
+	of DL_LIBS, LIBS, and MATH_LIBS.
+	* unix/dltest/Makefile.in: Ditto.
+
 2003-04-03  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclCompCmds.c (TclCompileReturnCmd):  Now that [return]
