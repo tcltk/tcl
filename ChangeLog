@@ -1,3 +1,41 @@
+2001-10-17  Kevin B. Kenny  <kennykb@users.sourceforge.net>
+
+	* doc/lappend.n:
+	* doc/lindex.n:
+	* doc/linsert.n:
+	* doc/list.n:
+	* doc/llength.n:
+	* doc/lrange.n:
+	* doc/lsearch.n:
+	* doc/lset.n (new-file):
+	* doc/lsort.n:
+	* generic/tclBasic.c (builtInCmds, Tcl_EvalObjEx):
+	* generic/tclCmdIL.c (Tcl_LindexObjCmd, Tcl_LindexList):
+	(Tcl_LindexFlat, Tcl_LsetObjCmd):
+	* generic/tclCompCmds.c (Tcl_CompileLindexCmd, Tcl_CompileLsetCmd):
+	* generic/tclCompile.c:
+	* generic/tclCompile.h:
+	* generic/tclExecute.c (TclExecuteByteCode):
+	* generic/tclInt.decls:
+	* generic/tclInt.h:
+	* generic/tclIntDecls.h:
+	* generic/tclListObj.c (TclLsetList, TclLsetFlat, TclSetListElement):
+	* generic/tclObj.c (TclInitObjSubsystem):
+	* generic/tclStubInit.c:
+	* generic/tclTestObj.c (TestobjCmd):
+	* generic/tclUtil.c (TclGetIntForIndex, SetEndOffsetFromAny):
+	* generic/tclVar.c (Tcl_LappendObjCmd):
+	* tests/lindex.test:
+	* tests/lset.test (new-file):
+	* tests/lsetComp.test (new-file):
+	* tests/obj.test:
+	* tests/string.test:
+	* tests/stringComp.test:
+	Reference implementation of TIP's #22, #33 and #45.  Adds the
+	ability of the [lindex] command to have multiple index arguments,
+	and adds the [lset] command.  Both commands are byte-code compiled.
+	[Patch #471874] (commited by Jeff)
+
 2001-11-12  David Gravereaux <davygrvy@pobox.com>
 
 	* win/buildall.vc.bat(new):
@@ -239,7 +277,7 @@
 
 	* generic/tclIOUtil.c: fix to bug in Tcl_FSChdir shown up
 	by recent tclkit builds.
-	
+
 2001-10-17  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* unix/tclUnixPipe.c (PipeInputProc, PipeOutputProc): do immediate

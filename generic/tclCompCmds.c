@@ -5,11 +5,12 @@
  *	Tcl commands into a sequence of instructions ("bytecodes"). 
  *
  * Copyright (c) 1997-1998 Sun Microsystems, Inc.
+ * Copyright (c) 2001 by Kevin B. Kenny.  All rights reserved.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.14 2001/09/19 18:17:54 hobbs Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.15 2001/11/14 23:17:03 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -1822,40 +1823,60 @@ TclCompileLindexCmd(interp, parsePtr, envPtr)
     Tcl_Token *varTokenPtr;
     int code, depth, i;
 
-    if (parsePtr->numWords != 3) {
-	Tcl_SetResult(interp, "wrong # args: should be \"lindex list index\"",
-		TCL_STATIC);
-	return TCL_ERROR;
-    }
-    varTokenPtr = parsePtr->tokenPtr
-	+ (parsePtr->tokenPtr->numComponents + 1);
-
-    depth = 0;
+    int numWords;
+    numWords = parsePtr->numWords;
 
     /*
-     * Push the two operands onto the stack.
+     * Quit if too few args
      */
 
-    for (i = 0; i < 2; i++) {
+    if ( numWords <= 1 ) {
+	return TCL_OUT_LINE_COMPILE;
+    }
+
+    varTokenPtr = parsePtr->tokenPtr
+	+ (parsePtr->tokenPtr->numComponents + 1);
+    
+    depth = 0;
+    
+    /*
+     * Push the operands onto the stack.
+     */
+	
+    for ( i = 1 ; i < numWords ; i++ ) {
 	if (varTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
-	    TclEmitPush(TclRegisterLiteral(envPtr,
-		    varTokenPtr[1].start, varTokenPtr[1].size,
-		    0), envPtr);
+	    TclEmitPush( TclRegisterLiteral( envPtr,
+					     varTokenPtr[1].start,
+					     varTokenPtr[1].size,
+					     0),
+			 envPtr);
 	    depth++;
 	} else {
 	    code = TclCompileTokens(interp, varTokenPtr+1,
-		    varTokenPtr->numComponents, envPtr);
+				    varTokenPtr->numComponents, envPtr);
 	    if (code != TCL_OK) {
+		envPtr->maxStackDepth = depth;
 		return code;
 	    }
 	    depth += envPtr->maxStackDepth;
 	}
 	varTokenPtr = varTokenPtr + (varTokenPtr->numComponents + 1);
     }
+	
+    /*
+     * Emit INST_LIST_INDEX if objc==3, or INST_LIST_INDEX_MULTI
+     * if there are multiple index args.
+     */
 
     envPtr->maxStackDepth = depth;
-    TclEmitOpcode(INST_LIST_INDEX, envPtr);
+    if ( numWords == 3 ) {
+	TclEmitOpcode( INST_LIST_INDEX, envPtr );
+    } else {
+	TclEmitInstInt4( INST_LIST_INDEX_MULTI, numWords-2, envPtr );
+    }
+
     return TCL_OK;
+
 }
 
 /*
@@ -1999,6 +2020,263 @@ TclCompileLlengthCmd(interp, parsePtr, envPtr)
     }
     TclEmitOpcode(INST_LIST_LENGTH, envPtr);
     return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclCompileLsetCmd --
+ *
+ *	Procedure called to compile the "lset" command.
+ *
+ * Results:
+ *	The return value is a standard Tcl result, which is TCL_OK if
+ *	the compilation was successful.  If the "lset" command is too
+ *	complex for this function, then TCL_OUT_LINE_COMPILE is returned,
+ *	indicating that the command should be compiled "out of line"
+ *	(that is, not byte-compiled).  If an error occurs, TCL_ERROR is
+ *	returned, and the interpreter result contains an error message.
+ *
+ *	envPtr->maxStackDepth is updated with a conservative estimate
+ *	of the number of stack elements needed to execute the command.
+ *
+ * Side effects:
+ *	Instructions are added to envPtr to execute the "lset" command
+ *	at runtime.
+ *
+ * The general template for execution of the "lset" command is:
+ *	(1) Instructions to push the variable name, unless the
+ *	    variable is local to the stack frame.
+ *	(2) If the variable is an array element, instructions
+ *	    to push the array element name.
+ *	(3) Instructions to push each of zero or more "index" arguments
+ *	    to the stack, followed with the "newValue" element.
+ *	(4) Instructions to duplicate the variable name and/or array
+ *	    element name onto the top of the stack, if either was
+ *	    pushed at steps (1) and (2).
+ *	(5) The appropriate INST_LOAD_* instruction to place the
+ *	    original value of the list variable at top of stack.
+ *	(6) At this point, the stack contains:
+ *	     varName? arrayElementName? index1 index2 ... newValue oldList
+ *	    The compiler emits one of INST_LSET_FLAT or INST_LSET_LIST
+ *	    according as whether there is exactly one index element (LIST)
+ *	    or either zero or else two or more (FLAT).  This instruction
+ *	    removes everything from the stack except for the two names
+ *	    and pushes the new value of the variable.
+ *	(7) Finally, INST_STORE_* stores the new value in the variable
+ *	    and cleans up the stack.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclCompileLsetCmd( interp, parsePtr, envPtr )
+    Tcl_Interp* interp;		/* Tcl interpreter for error reporting */
+    Tcl_Parse* parsePtr;	/* Points to a parse structure for
+				 * the command */
+    CompileEnv* envPtr;		/* Holds the resulting instructions */
+{
+
+    int depth = 0;		/* Current depth of stack */
+    int tempDepth;		/* Depth used for emitting one part
+				 * of the code burst. */
+    int maxDepth = 0;		/* Max depth used anywhere in the
+				 * code burst */
+
+    Tcl_Token* varTokenPtr;	/* Pointer to the Tcl_Token representing
+				 * the parse of the variable name */
+
+    int result;			/* Status return from library calls */
+
+    int localIndex;		/* Index of var in local var table */
+    int simpleVarName;		/* Flag == 1 if var name is simple */
+    int isScalar;		/* Flag == 1 if scalar, 0 if array */
+
+    int i;
+
+    /* Check argument count */
+
+    if ( parsePtr->numWords < 3 ) {
+	/* Fail at run time, not in compilation */
+	return TCL_OUT_LINE_COMPILE;
+    }
+
+    /*
+     * Decide if we can use a frame slot for the var/array name or if we
+     * need to emit code to compute and push the name at runtime. We use a
+     * frame slot (entry in the array of local vars) if we are compiling a
+     * procedure body and if the name is simple text that does not include
+     * namespace qualifiers. 
+     */
+
+    varTokenPtr = parsePtr->tokenPtr
+	    + (parsePtr->tokenPtr->numComponents + 1);
+    tempDepth = 0;
+    result = TclPushVarName( interp, varTokenPtr, envPtr, 0,
+			     &localIndex, &tempDepth,
+			     &simpleVarName, &isScalar );
+    if ( tempDepth > maxDepth ) {
+	maxDepth = tempDepth;
+    }
+    if (result != TCL_OK) {
+	envPtr->maxStackDepth = maxDepth;
+	return result;
+    }
+
+    /* Figure out how much is now on stack. */
+
+    depth = 0;
+    if ( simpleVarName ) {
+	if ( localIndex < 0 ) {
+	    ++depth;		/* We have pushed a variable name. */
+	}
+	if ( !isScalar ) {
+	    ++depth;		/* We have pushed an array element */
+	}
+    } else {
+	++depth;		/* Variable is complex; it's pushed to stack */
+    }
+
+    /* Push the "index" args and the new element value. */
+
+    for ( i = 2; i < parsePtr->numWords; ++i ) {
+
+	/* Advance to next arg */
+
+	varTokenPtr = varTokenPtr + (varTokenPtr->numComponents + 1);
+
+	/* Push an arg */
+
+	if (varTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
+	    TclEmitPush( TclRegisterLiteral( envPtr,
+					     varTokenPtr[1].start,
+					     varTokenPtr[1].size,
+					     0),
+			 envPtr);
+	    ++depth;
+	    if ( depth > maxDepth ) {
+		maxDepth = depth;
+	    }
+	} else {
+	    envPtr->maxStackDepth = depth;
+	    result = TclCompileTokens(interp, varTokenPtr+1,
+				      varTokenPtr->numComponents, envPtr);
+	    ++depth;
+	    if ( envPtr->maxStackDepth > maxDepth ) {
+		maxDepth = envPtr->maxStackDepth;
+	    }
+	    if ( result != TCL_OK ) {
+		envPtr->maxStackDepth = maxDepth;
+		return result;
+	    }
+	}
+    }
+
+    /*
+     * Duplicate the variable name if it's been pushed.  
+     */
+
+    if ( !simpleVarName || localIndex < 0 ) {
+	if ( !simpleVarName || isScalar ) {
+	    tempDepth = parsePtr->numWords - 2;
+	} else {
+	    tempDepth = parsePtr->numWords - 1;
+	}
+	TclEmitInstInt4( INST_OVER, tempDepth, envPtr );
+	++depth;
+	if ( depth > maxDepth ) {
+	    maxDepth = depth;
+	}
+    }
+
+    /*
+     * Duplicate an array index if one's been pushed
+     */
+
+    if ( simpleVarName && !isScalar ) {
+	if ( localIndex < 0 ) {
+	    tempDepth = parsePtr->numWords - 1;
+	} else {
+	    tempDepth = parsePtr->numWords - 2;
+	}
+	TclEmitInstInt4( INST_OVER, tempDepth, envPtr );
+	++depth;
+	if ( depth > maxDepth ) {
+	    maxDepth = depth;
+	}
+    }
+
+    /*
+     * Emit code to load the variable's value.
+     */
+
+    if ( !simpleVarName ) {
+	TclEmitOpcode( INST_LOAD_STK, envPtr );
+    } else if ( isScalar ) {
+	if ( localIndex < 0 ) {
+	    TclEmitOpcode( INST_LOAD_SCALAR_STK, envPtr );
+	} else if ( localIndex < 0x100 ) {
+	    TclEmitInstInt1( INST_LOAD_SCALAR1, localIndex, envPtr );
+	} else {
+	    TclEmitInstInt4( INST_LOAD_SCALAR4, localIndex, envPtr );
+	}
+    } else {
+	if ( localIndex < 0 ) {
+	    TclEmitOpcode( INST_LOAD_ARRAY_STK, envPtr );
+	} else if ( localIndex < 0x100 ) {
+	    TclEmitInstInt1( INST_LOAD_ARRAY1, localIndex, envPtr );
+	} else {
+	    TclEmitInstInt4( INST_LOAD_ARRAY4, localIndex, envPtr );
+	}
+    }
+
+    /*
+     * Stack has now reached the maximum depth it will attain
+     * during this code burst.
+     */
+
+    ++depth;
+    if ( depth > maxDepth ) {
+	maxDepth = depth;
+    }
+    envPtr->maxStackDepth = maxDepth;
+
+    /*
+     * Emit the correct variety of 'lset' instruction
+     */
+
+    if ( parsePtr->numWords == 4 ) {
+	TclEmitOpcode( INST_LSET_LIST, envPtr );
+    } else {
+	TclEmitInstInt4( INST_LSET_FLAT, (parsePtr->numWords - 3), envPtr );
+    }
+
+    /*
+     * Emit code to put the value back in the variable
+     */
+
+    if ( !simpleVarName ) {
+	TclEmitOpcode( INST_STORE_STK, envPtr );
+    } else if ( isScalar ) {
+	if ( localIndex < 0 ) {
+	    TclEmitOpcode( INST_STORE_SCALAR_STK, envPtr );
+	} else if ( localIndex < 0x100 ) {
+	    TclEmitInstInt1( INST_STORE_SCALAR1, localIndex, envPtr );
+	} else {
+	    TclEmitInstInt4( INST_STORE_SCALAR4, localIndex, envPtr );
+	}
+    } else {
+	if ( localIndex < 0 ) {
+	    TclEmitOpcode( INST_STORE_ARRAY_STK, envPtr );
+	} else if ( localIndex < 0x100 ) {
+	    TclEmitInstInt1( INST_STORE_ARRAY1, localIndex, envPtr );
+	} else {
+	    TclEmitInstInt4( INST_STORE_ARRAY4, localIndex, envPtr );
+	}
+    }
+    
+    return TCL_OK;
+
 }
 
 /*
