@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.52 2003/07/17 00:20:41 hobbs Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.53 2003/08/27 20:12:03 davygrvy Exp $
  */
 
 //#define _WIN32_WINNT  0x0500
@@ -518,8 +518,9 @@ WinReadLinkDirectory(LinkDirectory)
 					->SymbolicLinkReparseBuffer.PathBuffer);
 		    if (drive != -1) {
 			char driveSpec[3] = {
-			    drive, ':', '\0'
+			    '\0', ':', '\0'
 			};
+			driveSpec[0] = drive;
 			retVal = Tcl_NewStringObj(driveSpec,2);
 			Tcl_IncrRefCount(retVal);
 			return retVal;
