@@ -7,7 +7,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclWinInit.c,v 1.27 2001/07/31 19:12:08 vincentdarley Exp $
+ * RCS: @(#) $Id: tclWinInit.c,v 1.28 2001/08/27 02:14:08 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -184,8 +184,7 @@ TclpInitLibraryPath(path)
      */
 
     sprintf(installLib, "lib/tcl%s", TCL_VERSION);
-    sprintf(developLib, "../tcl%s/library",
-	    ((TCL_RELEASE_LEVEL < 2) ? TCL_PATCH_LEVEL : TCL_VERSION));
+    sprintf(developLib, "../tcl%s/library", TCL_PATCH_LEVEL);
 
     /*
      * Look for the library relative to default encoding dir.
@@ -221,17 +220,17 @@ TclpInitLibraryPath(path)
      * This code looks in the following directories:
      *
      *	<bindir>/../<installLib>
-     *		(e.g. /usr/local/bin/../lib/tcl8.2)
+     *	  (e.g. /usr/local/bin/../lib/tcl8.4)
      *	<bindir>/../../<installLib>
-     *		(e.g. /usr/local/TclPro/solaris-sparc/bin/../../lib/tcl8.2)
+     * 	  (e.g. /usr/local/TclPro/solaris-sparc/bin/../../lib/tcl8.4)
      *	<bindir>/../library
-     *		(e.g. /usr/src/tcl8.2/unix/../library)
+     * 	  (e.g. /usr/src/tcl8.4.0/unix/../library)
      *	<bindir>/../../library
-     *		(e.g. /usr/src/tcl8.2/unix/solaris-sparc/../../library)
+     *	  (e.g. /usr/src/tcl8.4.0/unix/solaris-sparc/../../library)
      *	<bindir>/../../<developLib>
-     *		(e.g. /usr/src/tcl8.2/unix/../../tcl8.2/library)
-     *	<bindir>/../../../<devlopLib>
-     *		(e.g. /usr/src/tcl8.2/unix/solaris-sparc/../../../tcl8.2/library)
+     *	  (e.g. /usr/src/tcl8.4.0/unix/../../tcl8.4.0/library)
+     *	<bindir>/../../../<developLib>
+     *	   (e.g. /usr/src/tcl8.4.0/unix/solaris-sparc/../../../tcl8.4.0/library)
      */
      
     /*
