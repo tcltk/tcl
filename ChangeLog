@@ -1,3 +1,8 @@
+2002-06-05  Don Porter  <dgp@users.sourceforge.net>
+
+	* doc/Tcl_Main.3: Documented $tcl_rcFileName and added more
+	clarifications about the intended use of Tcl_Main(). [Bug 505651]
+
 2002-06-05  Daniel Steffen  <das@users.sourceforge.net>
 
 	* generic/tclFileName.c (TclGlob): mac specific fix to
