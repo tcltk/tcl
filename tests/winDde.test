@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: winDde.test,v 1.22 2004/06/23 17:26:58 kennykb Exp $
+# RCS: @(#) $Id: winDde.test,v 1.23 2004/06/23 22:45:27 patthoyts Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -180,6 +180,7 @@ test winDde-4.2 {DDE execute async remotely} {stdio win dde} {
     set name child-4.2
     set child [createChildProcess $name]
     dde execute -async TclEval $name {set a "foo"}
+    update
     dde execute TclEval $name {set done 1}
     update
     set a
