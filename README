@@ -1,7 +1,30 @@
 Tcl
 
-SCCS: %Z% $Id: README,v 1.3 1998/06/29 18:11:58 welch Exp $ 
+SCCS: %Z% $Id: README,v 1.4 1998/06/29 22:57:36 welch Exp $ 
 
+0. Preface
+----------
+This is a pre-release of 8.0.3, tcl_patchLevel "8.0.3-1"
+we expect the 8.0.3 release to continue to change with the adoption
+of more patches, etc.  This release is being made early to help
+with the Consortium CD project.  Please do not advertise or
+circulate this release widely.  If you have problems, please figure
+out a fix and include a patch or a lot of detail, then send 
+email to <bugs@scriptics.com>
+Brent Welch
+
+Summary of changes:
+1. Scriptics changes to support its packager, which is similar in
+spirit to the stand-alone applications built by the plus-patch, but
+goes farther by putting more hooks into the file system access routines.
+2. Scriptics changes to support its byte-code reader and writer.
+3. Miscellaneous bug fixes to windows socket code.
+4. Various bug fixes derived from Victor Dukhovni's "jumbo" patch described
+on http://www.scriptics.com/resource/download/patches/tcl80p2/
+5. Jan Nijtmans compatibility change to the signature of Tcl_EvalObj.
+This works with gcc but is untested with other compilers.
+6. Patches to support [incr Tcl].  We expect changes in this area.
+ 
 1. Introduction
 ---------------
 
