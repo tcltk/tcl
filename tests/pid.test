@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: pid.test,v 1.7 2002/07/04 20:06:13 andreas_kupries Exp $
+# RCS: @(#) $Id: pid.test,v 1.8 2003/02/25 22:03:45 andreas_kupries Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -33,7 +33,7 @@ test pid-1.1 {pid command} {
     regexp {(^[0-9]+$)|(^0x[0-9a-fA-F]+$)} [pid]
 } 1
 test pid-1.2 {pid command} {unixOrPc unixExecs} {
-    set f [open [format {| echo foo | cat >%s} $path(test1)] w]
+    set f [open [format {| echo foo | cat {>%s}} $path(test1)] w]
     set pids [pid $f]
     close $f
     catch {removeFile test1}
