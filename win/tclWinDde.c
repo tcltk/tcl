@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinDde.c,v 1.13.2.3 2004/07/23 00:24:45 dgp Exp $
+ * RCS: @(#) $Id: tclWinDde.c,v 1.13.2.4 2004/09/01 17:26:06 hobbs Exp $
  */
 
 #include "tclPort.h"
@@ -297,7 +297,7 @@ DdeSetServerName(
 
     riPtr = (RegisteredInterp *) ckalloc(sizeof(RegisteredInterp));
     riPtr->interp = interp;
-    riPtr->name = ckalloc(strlen(name) + 1);
+    riPtr->name = ckalloc((unsigned int) strlen(name) + 1);
     riPtr->nextPtr = tsdPtr->interpListPtr;
     tsdPtr->interpListPtr = riPtr;
     strcpy(riPtr->name, name);
@@ -815,14 +815,18 @@ DdeCreateClient(ddeEnumServices *es)
 LRESULT CALLBACK
 DdeClientWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-    LONG lr = 0L;
+    LRESULT lr = 0L;
 
     switch (uMsg) {
 	case WM_CREATE: {
 	    LPCREATESTRUCT lpcs = (LPCREATESTRUCT)lParam;
 	    ddeEnumServices *es;
 	    es = (ddeEnumServices*)lpcs->lpCreateParams;
+#ifdef _WIN64
+	    SetWindowLongPtr(hwnd, GWLP_USERDATA, (long)es);
+#else
 	    SetWindowLong(hwnd, GWL_USERDATA, (long)es);
+#endif
 	    break;
 	}
 	case WM_DDE_ACK:
@@ -842,8 +846,12 @@ DdeServicesOnAck(HWND hwnd, WPARAM wParam, LPARAM lParam)
     ATOM topic = (ATOM)HIWORD(lParam);
     ddeEnumServices *es;
     TCHAR sz[255];
-    
+
+#ifdef _WIN64
+    es = (ddeEnumServices *)GetWindowLongPtr(hwnd, GWLP_USERDATA);
+#else
     es = (ddeEnumServices *)GetWindowLong(hwnd, GWL_USERDATA);
+#endif
 
     if ((es->service == (ATOM)NULL || es->service == service)
 	&& (es->topic == (ATOM)NULL || es->topic == topic)) {
@@ -875,7 +883,7 @@ DdeServicesOnAck(HWND hwnd, WPARAM wParam, LPARAM lParam)
 static BOOL CALLBACK
 DdeEnumWindowsCallback(HWND hwndTarget, LPARAM lParam)
 {
-    DWORD dwResult = 0;
+    LRESULT dwResult = 0;
     ddeEnumServices *es = (ddeEnumServices *)lParam;
     SendMessageTimeout(hwndTarget, WM_DDE_INITIATE,
 		       (WPARAM)es->hwnd,
