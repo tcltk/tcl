@@ -811,6 +811,7 @@ if test -r ParseCmd.3; then
     rm -f Tcl_ParseVar.3
     rm -f Tcl_FreeParse.3
     rm -f Tcl_EvalTokens.3
+    rm -f Tcl_EvalTokensStandard.3
     ln ParseCmd.3 Tcl_ParseCommand.3
     ln ParseCmd.3 Tcl_ParseExpr.3
     ln ParseCmd.3 Tcl_ParseBraces.3
@@ -819,6 +820,7 @@ if test -r ParseCmd.3; then
     ln ParseCmd.3 Tcl_ParseVar.3
     ln ParseCmd.3 Tcl_FreeParse.3
     ln ParseCmd.3 Tcl_EvalTokens.3
+    ln ParseCmd.3 Tcl_EvalTokensStandard.3
 fi
 if test -r PkgRequire.3; then
     rm -f Tcl_PkgRequire.3
