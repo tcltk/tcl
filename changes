@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.37 1999/01/04 19:25:00 rjohnson Exp $
+RCS: @(#) $Id: changes,v 1.38 1999/01/12 02:50:33 rjohnson Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -3692,3 +3692,6 @@ script.  [Bug id: 840] (RJ)
 by default.  Fixed socket code so it turns off this bit right after
 creation so sockets aren't kept open by exec'ed processes. [Bug: 892]
 Thanks to Kevin Kenny for this fix.  (SS)
+
+1/11/98 (bug fix)  On HP, "info sharedlibextension" was returning 
+empty string on static apps.  It now always returns ".sl".  (RJ)
