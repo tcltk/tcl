@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacResource.c,v 1.13 2002/04/08 09:02:52 das Exp $
+ * RCS: @(#) $Id: tclMacResource.c,v 1.14 2002/06/05 11:59:49 das Exp $
  */
 
 #include <Errors.h>
@@ -1387,20 +1387,24 @@ Tcl_MacConvertTextResource(
 {
     int i, size;
     char *resultStr;
+    Tcl_DString dstr;
 
     size = GetResourceSizeOnDisk(resource);
     
-    resultStr = ckalloc(size + 1);
+    Tcl_ExternalToUtfDString(NULL, *resource, size, &dstr);
+
+    size = Tcl_DStringLength(&dstr) + 1;
+    resultStr = (char *) ckalloc((unsigned) size);
+    
+    memcpy((VOID *) resultStr, (VOID *) Tcl_DStringValue(&dstr), (size_t) size);
+    
+    Tcl_DStringFree(&dstr);
     
     for (i=0; i<size; i++) {
-	if ((*resource)[i] == '\r') {
+	if (resultStr[i] == '\r') {
 	    resultStr[i] = '\n';
-	} else {
-	    resultStr[i] = (*resource)[i];
 	}
     }
-    
-    resultStr[size] = '\0';
 
     return resultStr;
 }

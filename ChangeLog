@@ -1,3 +1,13 @@
+2002-06-05  Daniel Steffen  <das@users.sourceforge.net>
+
+	* generic/tclFileName.c (TclGlob): mac specific fix to
+	recent changes in 'glob -tails' handling.
+	* mac/tclMacPort.h:
+	* mac/tclMacChan.c: fixed TIP#91 bustage.
+	* mac/tclMacResource.c (Tcl_MacConvertTextResource): added utf
+	conversion of text resource contents.
+	* tests/macFCmd.test (macFCmd-1.2): allow CWIE creator.
+
 2002-06-04  Don Porter  <dgp@users.sourceforge.net>
 
 	* library/tcltest/tcltest.tcl:
