@@ -1,3 +1,8 @@
+2002-10-03  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* doc/lsearch.n: Better specification of what happens when -sorted
+	is mixed with other options. [Bug 617816]
+
 2002-10-01  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclProc.c (TclCreateProc): mask out VAR_UNDEFINED for
