@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.35 2000/05/08 21:59:58 hobbs Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.36 2000/07/19 22:15:29 ericm Exp $
 
 library tcl
 
@@ -1386,6 +1386,25 @@ declare 401 generic {
 declare 402 generic {
     int Tcl_UniCharCaseMatch(CONST Tcl_UniChar *ustr, \
 	    CONST Tcl_UniChar *pattern, int nocase)
+}
+
+declare 403 generic {
+    Tcl_HashEntry *Tcl_FindHashEntry(Tcl_HashTable *tablePtr, \
+	    CONST char *key)
+}
+
+declare 404 generic {
+    Tcl_HashEntry *Tcl_CreateHashEntry(Tcl_HashTable *tablePtr, \
+	    CONST char *key, int *newPtr)
+}
+
+declare 405 generic {
+    void Tcl_InitHashTableEx(Tcl_HashTable *tablePtr, int keyType, \
+	    Tcl_HashKeyType *typePtr)
+}
+
+declare 406 generic {
+    void Tcl_InitObjHashTable(Tcl_HashTable *tablePtr)
 }
 
 ##############################################################################
