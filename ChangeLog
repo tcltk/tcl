@@ -1,3 +1,13 @@
+2003-10-20  Kevin B. Kenny  <kennykb@users.sourceforge.net>
+
+	* doc/msgcat.n:
+	* library/msgcat/msgcat.tcl (mclocale,mcload):
+	* tools/tcl.wse.in:
+	* unix/Makefile.in:     Implementation of TIP#156
+	* win/makefile.bc:      adding a "root locale" to
+	* win/Makefile.in:      the 'msgcat' package. Advanced
+	* win/Makefile.vc:      msgcat version number to 1.4.
+	
 2003-10-15  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* generic/tclCmdIL.c (SortInfo,etc): Reorganized so that SortInfo
