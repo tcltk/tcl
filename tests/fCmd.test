@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fCmd.test,v 1.39 2004/05/19 20:15:31 dkf Exp $
+# RCS: @(#) $Id: fCmd.test,v 1.40 2004/05/25 08:27:42 dkf Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -18,8 +18,10 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
     namespace import -force ::tcltest::*
 }
 
-tcltest::testConstraint testsetplatform [string equal testsetplatform [info commands testsetplatform]]
-tcltest::testConstraint testchmod [string equal testchmod [info commands testchmod]]
+testConstraint testsetplatform [llength [info commands testsetplatform]]
+testConstraint testchmod [llength [info commands testchmod]]
+# Don't know how to determine this constraint correctly
+testConstraint notNetworkFilesystem 0
 
 # Several tests require need to match results against the unix username
 set user {}
@@ -456,33 +458,37 @@ test fCmd-6.14 {CopyRenameOneFile: source is file, target is dir} {notRoot} {
     file mkdir [file join td1 tf1]
     list [catch {file rename -force tf1 td1} msg] $msg
 } [subst {1 {can't overwrite directory "[file join td1 tf1]" with file "tf1"}}]
-test fCmd-6.15 {CopyRenameOneFile: TclpRenameFile succeeds} {notRoot} {
+test fCmd-6.15 {CopyRenameOneFile: TclpRenameFile succeeds} -setup {
     cleanup
+} -constraints {notRoot notNetworkFilesystem} -body {
     file mkdir [file join td1 td2]
     file mkdir td2
     createfile [file join td2 tf1]
     file rename -force td2 td1
     file exists [file join td1 td2 tf1]
-} {1}
-test fCmd-6.16 {CopyRenameOneFile: TclpCopyRenameOneFile fails} {notRoot} {
+} -result 1
+test fCmd-6.16 {CopyRenameOneFile: TclpCopyRenameOneFile fails} -setup {
     cleanup
+} -constraints {notRoot} -body {
     file mkdir [file join td1 td2]
     createfile [file join td1 td2 tf1]
     file mkdir td2
-    list [catch {file rename -force td2 td1} msg] $msg
-} [subst {1 {error renaming "td2" to "[file join td1 td2]": file already exists}}]
-
+    file rename -force td2 td1
+} -returnCodes error -match glob -result \
+    [subst {error renaming "td2" to "[file join td1 td2]": file *}]
 test fCmd-6.17 {CopyRenameOneFile: errno == EINVAL} {notRoot} {
     cleanup
     list [catch {file rename -force $root tf1} msg] $msg
 } [subst {1 {error renaming "$root" to "tf1": trying to rename a volume or move a directory into itself}}]
-test fCmd-6.18 {CopyRenameOneFile: errno != EXDEV} {notRoot} {
+test fCmd-6.18 {CopyRenameOneFile: errno != EXDEV} -setup {
     cleanup
+} -constraints {notRoot} -body {
     file mkdir [file join td1 td2]
     createfile [file join td1 td2 tf1]
     file mkdir td2
-    list [catch {file rename -force td2 td1} msg] $msg
-} [subst {1 {error renaming "td2" to "[file join td1 td2]": file already exists}}]
+    file rename -force td2 td1
+} -returnCodes error -match glob -result \
+    [subst {error renaming "td2" to "[file join td1 td2]": file *}]
 test fCmd-6.19 {CopyRenameOneFile: errno == EXDEV} {unixOnly notRoot} {
     cleanup /tmp
     createfile tf1
@@ -726,11 +732,12 @@ test fCmd-9.7 {file rename: comprehensive: file to existing file} {notRoot testc
     file rename -force tfs4 tfd4
     list [lsort [glob tf*]] $msg [file writable tfd1] [file writable tfd2] [file writable tfd3] [file writable tfd4] 
 } {{tf1 tf2 tfd1 tfd2 tfd3 tfd4} {1 {error renaming "tf1" to "tf2": file already exists}} 1 1 0 0}
-test fCmd-9.8 {file rename: comprehensive: dir to empty dir} {notRoot testchmod} {
+test fCmd-9.8 {file rename: comprehensive: dir to empty dir} -setup {
+    cleanup
+} -constraints {notRoot testchmod notNetworkFilesystem} -body {
     # Under unix, you can rename a read-only directory, but you can't
     # move it into another directory.
 
-    cleanup
     file mkdir td1
     file mkdir [file join td2 td1]
     file mkdir tds1
@@ -761,9 +768,11 @@ test fCmd-9.8 {file rename: comprehensive: dir to empty dir} {notRoot testchmod}
     }
     list [lsort [glob td*]] $msg [file writable [file join tdd1 tds1]] \
     [file writable [file join tdd2 tds2]] $w3 $w4
-} [subst {{td1 td2 tdd1 tdd2 tdd3 tdd4} {1 {error renaming "td1" to "[file join td2 td1]": file already exists}} 1 1 0 0}]
-test fCmd-9.9 {file rename: comprehensive: dir to non-empty dir} {notRoot testchmod} {
+} -result [subst {{td1 td2 tdd1 tdd2 tdd3 tdd4} {1 {error renaming "td1" to "[file join td2 td1]": file already exists}} 1 1 0 0}]
+# Test can hit EEXIST or EBUSY, depending on underlying filesystem
+test fCmd-9.9 {file rename: comprehensive: dir to non-empty dir} -setup {
     cleanup
+} -constraints {notRoot testchmod} -body {
     file mkdir tds1
     file mkdir tds2
     file mkdir [file join tdd1 tds1 xxx]
@@ -779,7 +788,8 @@ test fCmd-9.9 {file rename: comprehensive: dir to non-empty dir} {notRoot testch
 	set w2 0
     }
     list [lsort [glob td*]] $a1 $a2 [file writable tds1] $w2
-} [subst {{tdd1 tdd2 tds1 tds2} {1 {error renaming "tds1" to "[file join tdd1 tds1]": file already exists}} {1 {error renaming "tds2" to "[file join tdd2 tds2]": file already exists}} 1 0}]
+} -match glob -result \
+    [subst {{tdd1 tdd2 tds1 tds2} {1 {error renaming "tds1" to "[file join tdd1 tds1]": file *}} {1 {error renaming "tds2" to "[file join tdd2 tds2]": file *}} 1 0}]
 test fCmd-9.10 {file rename: comprehensive: file to new name and dir} {notRoot testchmod} {
     cleanup
     createfile tf1
@@ -809,22 +819,26 @@ test fCmd-9.11 {file rename: comprehensive: dir to new name and dir} {notRoot te
     list [lsort [glob td*]] [lsort [glob -directory td3 t*]] \
     [file writable [file join td3 td3]] $w4
 } [subst {td3 {[file join td3 td3] [file join td3 td4]} 1 0}]
-test fCmd-9.12 {file rename: comprehensive: target exists} {notRoot testchmod} {
+test fCmd-9.12 {file rename: comprehensive: target exists} -setup {
     cleanup
+} -constraints {notRoot testchmod notNetworkFilesystem} -body {
     file mkdir [file join td1 td2] [file join td2 td1]
     testchmod 555 [file join td2 td1]
     file mkdir [file join td3 td4] [file join td4 td3]
     file rename -force td3 td4
-    set msg [list [file exists td3] [file exists [file join td4 td3 td4]] \
-    [catch {file rename td1 td2} msg] $msg]
+    list [file exists td3] [file exists [file join td4 td3 td4]] \
+	[catch {file rename td1 td2} msg] $msg
+} -cleanup {
     testchmod 755 [file join td2 td1]
-    set msg
-} [subst {0 1 1 {error renaming "td1" to "[file join td2 td1]": file already exists}}]
-test fCmd-9.13 {file rename: comprehensive: can't overwrite target} {notRoot} {
+} -result [subst {0 1 1 {error renaming "td1" to "[file join td2 td1]": file already exists}}]
+# Test can hit EEXIST or EBUSY, depending on underlying filesystem
+test fCmd-9.13 {file rename: comprehensive: can't overwrite target} -setup {
     cleanup
+} -constraints {notRoot} -body {
     file mkdir [file join td1 td2] [file join td2 td1 td4]
-    list [catch {file rename -force td1 td2} msg] $msg
-} [subst {1 {error renaming "td1" to "[file join td2 td1]": file already exists}}]
+    file rename -force td1 td2
+} -returnCodes error -match glob -result \
+    [subst {error renaming "td1" to "[file join td2 td1]": file *}]
 test fCmd-9.14 {file rename: comprehensive: dir into self} {notRoot} {
     cleanup
     file mkdir td1
@@ -1661,15 +1675,15 @@ test fCmd-18.7 {TclFileRenameCmd: rename dir on top of another empty dir w/o -fo
     set result
 } {1}
 
-test fCmd-18.8 {TclFileRenameCmd: rename dir on top of another empty dir w/ -force} \
-	{notRoot} {
+test fCmd-18.8 {TclFileRenameCmd: rename dir on top of another empty dir w/ -force} -setup {
     catch {file delete -force -- tfa tfad}
+} -constraints {notRoot notNetworkFilesystem} -body {
     file mkdir tfa tfad/tfa
     file rename -force tfa tfad
-    set result [expr ![file isdir tfa]]
+    file isdir tfa
+} -cleanup {
     file delete -force tfad
-    set result
-} {1}
+} -result 0
 
 test fCmd-18.9 {TclFileRenameCmd: rename dir on top of a non-empty dir w/o -force} \
 	{notRoot} {
