@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.47 2000/07/20 20:33:26 ericm Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.48 2000/07/22 01:53:24 ericm Exp $
  */
 
 #ifndef _TCLINT
@@ -1538,6 +1538,15 @@ extern Tcl_ObjType	tclIntType;
 extern Tcl_ObjType	tclListType;
 extern Tcl_ObjType	tclProcBodyType;
 extern Tcl_ObjType	tclStringType;
+
+/*
+ * Variables denoting the hash key types defined in the core.
+ */
+
+extern Tcl_HashKeyType tclArrayHashKeyType;
+extern Tcl_HashKeyType tclOneWordHashKeyType;
+extern Tcl_HashKeyType tclStringHashKeyType;
+extern Tcl_HashKeyType tclObjHashKeyType;
 
 /*
  * The head of the list of free Tcl objects, and the total number of Tcl

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.38 2000/07/20 20:33:25 ericm Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.39 2000/07/22 01:53:24 ericm Exp $
  */
 
 #ifndef _TCLDECLS
@@ -1254,6 +1254,20 @@ EXTERN int		Tcl_UniCharNcasecmp _ANSI_ARGS_((
 EXTERN int		Tcl_UniCharCaseMatch _ANSI_ARGS_((
 				CONST Tcl_UniChar * ustr, 
 				CONST Tcl_UniChar * pattern, int nocase));
+/* 403 */
+EXTERN Tcl_HashEntry *	Tcl_FindHashEntry _ANSI_ARGS_((
+				Tcl_HashTable * tablePtr, CONST char * key));
+/* 404 */
+EXTERN Tcl_HashEntry *	Tcl_CreateHashEntry _ANSI_ARGS_((
+				Tcl_HashTable * tablePtr, CONST char * key, 
+				int * newPtr));
+/* 405 */
+EXTERN void		Tcl_InitHashTableEx _ANSI_ARGS_((
+				Tcl_HashTable * tablePtr, int keyType, 
+				Tcl_HashKeyType * typePtr));
+/* 406 */
+EXTERN void		Tcl_InitObjHashTable _ANSI_ARGS_((
+				Tcl_HashTable * tablePtr));
 
 typedef struct TclStubHooks {
     struct TclPlatStubs *tclPlatStubs;
@@ -1724,6 +1738,10 @@ typedef struct TclStubs {
     int (*tcl_IsChannelExisting) _ANSI_ARGS_((CONST char* channelName)); /* 400 */
     int (*tcl_UniCharNcasecmp) _ANSI_ARGS_((CONST Tcl_UniChar * cs, CONST Tcl_UniChar * ct, unsigned long n)); /* 401 */
     int (*tcl_UniCharCaseMatch) _ANSI_ARGS_((CONST Tcl_UniChar * ustr, CONST Tcl_UniChar * pattern, int nocase)); /* 402 */
+    Tcl_HashEntry * (*tcl_FindHashEntry) _ANSI_ARGS_((Tcl_HashTable * tablePtr, CONST char * key)); /* 403 */
+    Tcl_HashEntry * (*tcl_CreateHashEntry) _ANSI_ARGS_((Tcl_HashTable * tablePtr, CONST char * key, int * newPtr)); /* 404 */
+    void (*tcl_InitHashTableEx) _ANSI_ARGS_((Tcl_HashTable * tablePtr, int keyType, Tcl_HashKeyType * typePtr)); /* 405 */
+    void (*tcl_InitObjHashTable) _ANSI_ARGS_((Tcl_HashTable * tablePtr)); /* 406 */
 } TclStubs;
 
 #ifdef __cplusplus
@@ -3380,6 +3398,22 @@ extern TclStubs *tclStubsPtr;
 #ifndef Tcl_UniCharCaseMatch
 #define Tcl_UniCharCaseMatch \
 	(tclStubsPtr->tcl_UniCharCaseMatch) /* 402 */
+#endif
+#ifndef Tcl_FindHashEntry
+#define Tcl_FindHashEntry \
+	(tclStubsPtr->tcl_FindHashEntry) /* 403 */
+#endif
+#ifndef Tcl_CreateHashEntry
+#define Tcl_CreateHashEntry \
+	(tclStubsPtr->tcl_CreateHashEntry) /* 404 */
+#endif
+#ifndef Tcl_InitHashTableEx
+#define Tcl_InitHashTableEx \
+	(tclStubsPtr->tcl_InitHashTableEx) /* 405 */
+#endif
+#ifndef Tcl_InitObjHashTable
+#define Tcl_InitObjHashTable \
+	(tclStubsPtr->tcl_InitObjHashTable) /* 406 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */
