@@ -12,14 +12,12 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
 #
-# RCS: @(#) $Id: http.test,v 1.21 2000/06/02 23:43:54 hobbs Exp $
+# RCS: @(#) $Id: http.test,v 1.22 2001/05/21 22:30:44 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
     namespace import -force ::tcltest::*
 }
-set tcltest::testConstraints(notLinux) \
-	[expr ![string equal Linux $tcl_platform(os)]]
 
 if {[catch {package require http 2} version]} {
     if {[info exist http2]} {
