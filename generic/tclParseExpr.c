@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParseExpr.c,v 1.17.4.3 2004/03/04 23:33:15 dgp Exp $
+ * RCS: @(#) $Id: tclParseExpr.c,v 1.17.4.4 2004/03/06 17:31:00 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1347,8 +1347,7 @@ ParsePrimaryExpr(infoPtr)
 	    CONST char *term;
 	    Tcl_Token *lastTokenPtr;
 	    Tcl_Token *appendTokens = TclParseScript(src,
-		    (int) (parsePtr->end - src),
-		    (PARSE_NESTED | PARSE_USE_INTERNAL_TOKENS),
+		    (int) (parsePtr->end - src), PARSE_NESTED,
 		    &lastTokenPtr, &term);
 	    int numTokens = 1 + (int) (lastTokenPtr - appendTokens);
 

@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.27.2.5 2004/03/04 23:33:15 dgp Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.27.2.6 2004/03/06 17:31:00 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -202,6 +202,8 @@ static int		ParseQuotedString _ANSI_ARGS_((Tcl_Interp *interp,
 			    CONST char *string, int numBytes,
 			    Tcl_Parse *parsePtr, int flags,
 			    CONST char **termPtr));
+void			ParseScript _ANSI_ARGS_((CONST char *script,
+			    int numBytes, int flags, Tcl_Parse *parsePtr));
 static int		ParseTokens _ANSI_ARGS_((CONST char *src, int numBytes,
 			    int mask, int flags, Tcl_Parse *parsePtr));
 static int		ParseVarName _ANSI_ARGS_((Tcl_Interp *interp,
@@ -384,31 +386,76 @@ TclParseScript(script, numBytes, flags, lastTokenPtrPtr, termPtr)
     Tcl_Token **lastTokenPtrPtr;/* Return pointer to last token */
     CONST char **termPtr;	/* Return the terminating character in string */
 {
-    Tcl_Token tokens[NUM_STATIC_TOKENS];
-    int tokensAvailable = NUM_STATIC_TOKENS;
-    Tcl_Token *tokensPtr = tokens;
-    Tcl_Token *result;
-    int numTokens = 0;
     Tcl_Parse parse;
-    CONST char *p, *end;
-    int nested = (flags & PARSE_NESTED);
+    Tcl_Token *result;
+
     if (numBytes < 0) {
 	numBytes = strlen(script);
     }
+    TclParseInit(NULL, script, numBytes, &parse);
+    ParseScript(script, numBytes, flags, &parse);
 
-    tokens[0].type = TCL_TOKEN_SCRIPT;
-    tokens[0].start = script;
-    tokens[0].size = numBytes;
-    tokens[0].numComponents = 0;
-    numTokens++;
+    if (termPtr != NULL) {
+	*termPtr = parse.term;
+    }
+    /*
+     * Note no call to Tcl_FreeParse().
+     * We'll transfer the tokens to the caller.
+     */
+    if (parse.tokenPtr != parse.staticTokens) {
+	result = (Tcl_Token *) ckrealloc((VOID *)parse.tokenPtr,
+		(unsigned int) (parse.numTokens * sizeof(Tcl_Token)));
+    } else {
+	result = (Tcl_Token *)
+		ckalloc((unsigned int) (parse.numTokens * sizeof(Tcl_Token)));
+	memcpy(result, parse.tokenPtr, 
+		(size_t) (parse.numTokens * sizeof(Tcl_Token)));
+    }
+
+    if (lastTokenPtrPtr != NULL) {
+	*lastTokenPtrPtr = &(result[parse.numTokens - 1]);
+    }
+    return result;
+}
+
+void
+ParseScript(script, numBytes, flags, parsePtr)
+    CONST char *script;		/* The string to parse */
+    int numBytes;		/* Length of string in bytes */
+    int flags;			/* Bit flags that control parsing details. */
+    Tcl_Parse *parsePtr;
+{
+    CONST char *p, *end;
+    int nested = (flags & PARSE_NESTED);
+    int scriptToken, numValidTokens;
+    Tcl_Token *scriptTokenPtr;
+
+    TclGrowParseTokenArray(parsePtr,1);
+    scriptToken = parsePtr->numTokens++;
+    scriptTokenPtr = &parsePtr->tokenPtr[scriptToken];
+    scriptTokenPtr->type = TCL_TOKEN_SCRIPT;
+    scriptTokenPtr->start = script;
+    scriptTokenPtr->size = numBytes;
+    scriptTokenPtr->numComponents = 0;
 
     p = script;
     end = p + numBytes;
-    parse.term = end;
-    parse.tokenPtr = parse.staticTokens;
-    parse.errorType = nested ? TCL_PARSE_MISSING_BRACKET : TCL_PARSE_SUCCESS;
-    while ((p < end) && (TCL_OK == ParseCommand((Tcl_Interp *)NULL, p, end - p,
-		flags | PARSE_USE_INTERNAL_TOKENS, &parse))) {
+    numValidTokens = parsePtr->numTokens;
+    parsePtr->errorType =
+	    nested ? TCL_PARSE_MISSING_BRACKET : TCL_PARSE_SUCCESS;
+
+    while (p < end) {
+	int cmdToken;
+	Tcl_Token *cmdTokenPtr;
+
+	TclGrowParseTokenArray(parsePtr,1);
+	cmdToken = parsePtr->numTokens++;
+
+	parsePtr->errorType = TCL_PARSE_SUCCESS;
+	if (TCL_OK != ParseCommand(parsePtr->interp, p, (int) (end - p),
+		flags | PARSE_APPEND | PARSE_USE_INTERNAL_TOKENS, parsePtr)) {
+	    break;
+	}
 
 	/*
 	 * Check for missing close-brace for nested script substitution.
@@ -416,68 +463,47 @@ TclParseScript(script, numBytes, flags, lastTokenPtrPtr, termPtr)
 	 * and do not add it to the token array.
 	 */
 
-	if (nested && (parse.term >= end)) {
-	    parse.errorType = TCL_PARSE_MISSING_BRACKET;
+	if (nested && (parsePtr->term >= end)) {
+	    parsePtr->errorType = TCL_PARSE_MISSING_BRACKET;
 	    break;
 	}
 
-	/*
-	 * Copy the Tcl_Tokens for the parsed command into the
-	 * Tcl_Token array.  Expand as needed.
-	 */
-
-	tokensPtr[0].numComponents++;	/* Another command parsed */
-
-	TclGrowTokenArray(tokensPtr, numTokens, tokensAvailable,
-		parse.numTokens+1, tokens);
-	tokensPtr[numTokens].type = TCL_TOKEN_CMD;
-	tokensPtr[numTokens].start = parse.commandStart;
-	if (parse.commandStart + parse.commandSize == parse.term) {
-	    tokensPtr[numTokens].size = parse.commandSize;
+	cmdTokenPtr = &parsePtr->tokenPtr[cmdToken];
+	cmdTokenPtr->type = TCL_TOKEN_CMD;
+	cmdTokenPtr->start = parsePtr->commandStart;
+	if (parsePtr->commandStart + parsePtr->commandSize == parsePtr->term) {
+	    cmdTokenPtr->size = parsePtr->commandSize;
 	} else {
-	    tokensPtr[numTokens].size = parse.commandSize - 1;
+	    cmdTokenPtr->size = parsePtr->commandSize - 1;
 	}
-	tokensPtr[numTokens].numComponents = parse.numWords;
-	numTokens++;
+	cmdTokenPtr->numComponents = parsePtr->numWords;
 
-	memcpy(&(tokensPtr[numTokens]), parse.tokenPtr,
-		(size_t) (parse.numTokens * sizeof(Tcl_Token)));
-	numTokens += parse.numTokens;
+	scriptTokenPtr = &parsePtr->tokenPtr[scriptToken];
+	scriptTokenPtr->numComponents++;	/* Another command parsed */
+	numValidTokens = parsePtr->numTokens;
 
-	p = parse.commandStart + parse.commandSize;
-	Tcl_FreeParse(&parse);
+	p = parsePtr->commandStart + parsePtr->commandSize;
 
-	if (nested && (*parse.term == ']') && (parse.term < end)) {
+	if (nested && (*parsePtr->term == ']') && (parsePtr->term < end)) {
+	    scriptTokenPtr->size = parsePtr->term - scriptTokenPtr->start;
 	    break;
 	}
     }
 
-    if ((parse.errorType != TCL_PARSE_SUCCESS)) {
-	Tcl_FreeParse(&parse);
-	TclGrowTokenArray(tokensPtr, numTokens, tokensAvailable, 1, tokens);
-	tokensPtr[numTokens].type = TCL_TOKEN_ERROR;
-	tokensPtr[numTokens].start = parse.commandStart;
-	tokensPtr[numTokens].size = end - parse.commandStart;
-	tokensPtr[numTokens].numComponents = parse.errorType;
-	numTokens++;
-    }
+    parsePtr->numTokens = numValidTokens;
 
-    if (termPtr != NULL) {
-	*termPtr = parse.term;
-    }
-    if (tokensPtr != tokens) {
-	result = (Tcl_Token *) ckrealloc((VOID *)tokensPtr,
-		(unsigned int) (numTokens * sizeof(Tcl_Token)));
-    } else {
-	result = (Tcl_Token *)
-		ckalloc((unsigned int) (numTokens * sizeof(Tcl_Token)));
-	memcpy(result, tokensPtr, (size_t) (numTokens * sizeof(Tcl_Token)));
-    }
+    if ((parsePtr->errorType != TCL_PARSE_SUCCESS)) {
+	int errorToken;
+	Tcl_Token *errorTokenPtr;
 
-    if (lastTokenPtrPtr != NULL) {
-	*lastTokenPtrPtr = &(result[numTokens - 1]);
+	TclGrowParseTokenArray(parsePtr,1);
+	errorToken = parsePtr->numTokens++;
+	errorTokenPtr = &parsePtr->tokenPtr[errorToken];
+	errorTokenPtr->type = TCL_TOKEN_ERROR;
+	errorTokenPtr->start = parsePtr->commandStart;
+	errorTokenPtr->size = end - parsePtr->commandStart;
+	errorTokenPtr->numComponents = parsePtr->errorType;
     }
-    return result;
 }
 
 
@@ -597,6 +623,9 @@ ParseCommand(interp, string, numBytes, flags, parsePtr)
 				 * point to char after terminating one. */
     int scanned;
     int nested = (flags & PARSE_NESTED);
+    int append = (flags & PARSE_APPEND);
+    CONST char *commandStart;
+    int numWords = 0;
     
     if ((string == NULL) && (numBytes>0)) {
 	if (interp != NULL) {
@@ -607,7 +636,9 @@ ParseCommand(interp, string, numBytes, flags, parsePtr)
     if (numBytes < 0) {
 	numBytes = strlen(string);
     }
-    TclParseInit(interp, string, numBytes, parsePtr);
+    if (!append) {
+	TclParseInit(interp, string, numBytes, parsePtr);
+    }
     if (nested != 0) {
 	terminators = TYPE_COMMAND_END | TYPE_CLOSE_BRACK;
     } else {
@@ -632,7 +663,7 @@ ParseCommand(interp, string, numBytes, flags, parsePtr)
      * in each iteration through the loop.
      */
 
-    parsePtr->commandStart = src;
+    commandStart = parsePtr->commandStart = src;
     while (1) {
 	int expandWord = 0;
 
@@ -663,7 +694,7 @@ ParseCommand(interp, string, numBytes, flags, parsePtr)
 	}
 	tokenPtr->start = src;
 	parsePtr->numTokens++;
-	parsePtr->numWords++;
+	numWords++;
 
 	/*
 	 * At this point the word can have one of four forms: something
@@ -783,13 +814,14 @@ parseWord:
 	goto error;
     }
 
+    parsePtr->numWords = numWords;
+    parsePtr->commandStart = commandStart;
     parsePtr->commandSize = src - parsePtr->commandStart;
     return TCL_OK;
 
     error:
-    if (parsePtr->commandStart == NULL) {
-	parsePtr->commandStart = string;
-    }
+    parsePtr->numWords = numWords;
+    parsePtr->commandStart = commandStart;
     parsePtr->commandSize = parsePtr->end - parsePtr->commandStart;
     return TCL_ERROR;
 }
@@ -1181,7 +1213,7 @@ ParseTokens(src, numBytes, mask, flags, parsePtr)
 				 * termination information. */
 {
     char type; 
-    int originalTokens, varToken;
+    int originalTokens;
     int noSubstCmds = !(flags & TCL_SUBST_COMMANDS);
     int noSubstVars = !(flags & TCL_SUBST_VARIABLES);
     int noSubstBS = !(flags & TCL_SUBST_BACKSLASHES);
@@ -1217,6 +1249,8 @@ ParseTokens(src, numBytes, mask, flags, parsePtr)
 	    tokenPtr->size = src - tokenPtr->start;
 	    parsePtr->numTokens++;
 	} else if (*src == '$') {
+	    int varToken;
+
 	    if (noSubstVars) {
 		tokenPtr->type = TCL_TOKEN_TEXT;
 		tokenPtr->size = 1;
@@ -1253,40 +1287,30 @@ ParseTokens(src, numBytes, mask, flags, parsePtr)
 
 	    src++; numBytes--;
 	    if (useInternalTokens) {
-		CONST char *term;
-		Tcl_Token *lastTokenPtr;
-		Tcl_Token *appendTokens = TclParseScript(src, numBytes,
-			flags | PARSE_NESTED, &lastTokenPtr, &term);
-		int numTokens = 1 + (int)(lastTokenPtr - appendTokens);
+		int scriptToken;
+		Tcl_Token *scriptTokenPtr;
 
-		TclGrowParseTokenArray(parsePtr,numTokens+1);
-		tokenPtr = &parsePtr->tokenPtr[parsePtr->numTokens];
-		tokenPtr->type = TCL_TOKEN_SCRIPT_SUBST;
-		tokenPtr->size = term - src + 2;
-		tokenPtr->numComponents = numTokens;
-
-		memcpy(tokenPtr+1, appendTokens, 
-			(size_t) (numTokens * sizeof(Tcl_Token)));
-		parsePtr->numTokens += (numTokens + 1);
-	
-		if (lastTokenPtr->type == TCL_TOKEN_ERROR) {
-
-		    parsePtr->errorType = lastTokenPtr->numComponents;
-		    parsePtr->term = term;
+		TclGrowParseTokenArray(parsePtr,1);
+		scriptToken = parsePtr->numTokens++;
+		ParseScript(src, numBytes, flags | PARSE_NESTED, parsePtr);
+		scriptTokenPtr = &parsePtr->tokenPtr[scriptToken];
+		scriptTokenPtr->type = TCL_TOKEN_SCRIPT_SUBST;
+		scriptTokenPtr->size = parsePtr->term - src + 2;
+		scriptTokenPtr->numComponents = parsePtr->numTokens 
+			- scriptToken - 1;
+		if (parsePtr->errorType != TCL_PARSE_SUCCESS) {
 		    parsePtr->incomplete = 1;
-
-		    ckfree((char *) appendTokens);
 		    return TCL_ERROR;
 		}
-		ckfree((char *) appendTokens);
-		src = term + 1;
+		src = parsePtr->term + 1;
 		numBytes = parsePtr->end - src;
 		continue;
 	    }
 
 	    while (1) {
 		if (ParseCommand(parsePtr->interp, src,
-			numBytes, flags | PARSE_NESTED, &nested) != TCL_OK) {
+			numBytes, (flags | PARSE_NESTED) & ~PARSE_APPEND,
+			&nested) != TCL_OK) {
 		    parsePtr->errorType = nested.errorType;
 		    parsePtr->term = nested.term;
 		    parsePtr->incomplete = nested.incomplete;
@@ -2022,7 +2046,7 @@ ParseQuotedString(interp, string, numBytes, parsePtr, flags, termPtr)
 				 * after the quoted string's terminating
 				 * close-quote if the parse succeeds. */
 {
-    int append = (flags * PARSE_APPEND);
+    int append = (flags & PARSE_APPEND);
 
     if ((numBytes == 0) || (string == NULL)) {
 	return TCL_ERROR;
@@ -2366,8 +2390,8 @@ CommandComplete(script, numBytes)
     p = script;
     end = p + numBytes;
     parse.incomplete = 0;
-    while ((p < end) && (TCL_OK == 
-	    Tcl_ParseCommand((Tcl_Interp *) NULL, p, end - p, 0, &parse))) {
+    while ((p < end) && (TCL_OK == Tcl_ParseCommand((Tcl_Interp *) NULL,
+	    p, (int) (end - p), 0, &parse))) {
         p = parse.commandStart + parse.commandSize;
         Tcl_FreeParse(&parse);
     }
