@@ -6,7 +6,7 @@
 # Copyright (c) 2000 by Ajuba Solutions
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.test,v 1.40 2004/04/02 17:39:24 dgp Exp $
+# RCS: @(#) $Id: tcltest.test,v 1.41 2004/05/04 19:50:06 dgp Exp $
 
 # Note that there are several places where the value of 
 # tcltest::currentFailure is stored/reset in the -setup/-cleanup
@@ -525,9 +525,7 @@ set a [makeFile {
 set tdiaf [makeFile {} thisdirectoryisafile]
 
 set normaldirectory [makeDirectory normaldirectory]
-if {$::tcl_platform(platform) == "macintosh"} {
-set normaldirectory [file normalize $normaldirectory]
-}
+normalizePath normaldirectory
 
 # -tmpdir, [temporaryDirectory]
 test tcltest-8.1 {tcltest a.tcl -tmpdir a} {unixOrPc} {
@@ -701,15 +699,26 @@ removeFile thisdirectoryisafile
 removeDirectory normaldirectory
 
 # -file, -notfile, [matchFiles], [skipFiles]
-test tcltest-9.1 {-file a*.tcl} {unixOrPc} {
+test tcltest-9.1 {-file a*.tcl} -constraints {unixOrPc} -setup {
+    set old [testsDirectory]
+    testsDirectory [file dirname [info script]]
+} -body {
     slave msg [file join [testsDirectory] all.tcl] -file a*.test
-    list [regexp assocd\.test $msg]
-} {1}
-test tcltest-9.2 {-file a*.tcl} {unixOrPc} {
+    set msg
+} -cleanup {
+    testsDirectory $old
+} -match regexp -result {assocd\.test}
+
+test tcltest-9.2 {-file a*.tcl} -constraints {unixOrPc} -setup {
+    set old [testsDirectory]
+    testsDirectory [file dirname [info script]]
+} -body {
     slave msg [file join [testsDirectory] all.tcl] \
 	    -file a*.test -notfile assocd*
-    list [regexp assocd\.test $msg]
-} {0}
+    regexp {assocd\.test} $msg
+} -cleanup {
+    testsDirectory $old
+} -result 0
 
 test tcltest-9.3 {matchFiles}  {
     -body {
