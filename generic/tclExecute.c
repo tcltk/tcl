@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.134 2004/05/17 21:30:12 dkf Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.135 2004/05/18 02:01:36 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1077,22 +1077,67 @@ TclExecuteByteCode(interp, codePtr)
     Tcl_Interp *interp;		/* Token for command interpreter. */
     ByteCode *codePtr;		/* The bytecode sequence to interpret. */
 {
+    /*
+     * Compiler cast directive - not a real variable.
+     */
+
     Interp *iPtr = (Interp *) interp;
+
+    /*
+     * Constants: variables that do not change during the execution,
+     * used sporadically.
+     */
+
     ExecEnv *eePtr = iPtr->execEnvPtr;
     				/* Points to the execution environment. */
-    int catchTop = -1;
+    int initStackTop;           /* Stack top at start of execution. */
+    int initCatchTop;           /* Catch stack top at start of execution. */
+    Var *compiledLocals;
+    Namespace *namespacePtr;
+
+
+    /*
+     * Globals: variables that store state, must remain valid at
+     * all times.
+     */
+    
+    int catchTop;
     register Tcl_Obj **tosPtr;  /* Cached pointer to top of evaluation stack. */
     register unsigned char *pc = codePtr->codeStart;
 				/* The current program counter. */
-    int opnd;			/* Current instruction's operand byte(s). */
-    int pcAdjustment;		/* Hold pc adjustment after instruction. */
-    int initStackTop;           /* Stack top at start of execution. */
-    int initCatchTop;           /* Catch stack top at start of execution. */
+    int instructionCount = 0;	/* Counter that is used to work out
+				 * when to call Tcl_AsyncReady() */
+    Tcl_Obj *expandNestList = NULL;
+
+
+    /*
+     * Transfer variables - needed only between opcodes, but not
+     * while executing an instruction.
+     */
+
+    register int cleanup;
+    Tcl_Obj *objResultPtr;
+
+    
+    /*
+     * Result variable - needed only when going to checkForcatch or
+     * other error handlers; also used as local in some opcodes.
+     */
+
+    int result = TCL_OK;	/* Return code returned after execution. */
+
+
+    /*
+     * Locals - variables that are used within opcodes or bounded sections
+     * of the file (jumps between opcodes within a family).
+     */
+
     ExceptionRange *rangePtr;	/* Points to closest loop or catch exception
 				 * range enclosing the pc. Used by various
 				 * instructions and processCatch to
 				 * process break, continue, and errors. */
-    int result = TCL_OK;	/* Return code returned after execution. */
+    int opnd;			/* Current instruction's operand byte(s). */
+    int pcAdjustment;		/* Hold pc adjustment after instruction. */
     int storeFlags;
     Tcl_Obj *valuePtr, *value2Ptr, *objPtr;
     char *bytes;
@@ -1100,23 +1145,13 @@ TclExecuteByteCode(interp, codePtr)
     long i = 0;			/* Init. avoids compiler warning. */
     Tcl_WideInt w;
     int isWide;
-    register int cleanup;
-    Tcl_Obj *objResultPtr;
     char *part1, *part2;
     Var *varPtr, *arrayPtr;
-    Var *compiledLocals;
+
 #ifdef TCL_COMPILE_DEBUG
     int traceInstructions = (tclTraceExec == 3);
     char cmdNameBuf[21];
 #endif
-    int instructionCount = 0;	/* Counter that is used to work out
-				 * when to call Tcl_AsyncReady() */
-    Namespace *namespacePtr;
-    int codeCompileEpoch = codePtr->compileEpoch;
-    int codeNsEpoch = codePtr->nsEpoch;
-    int codePrecompiled = (codePtr->flags & TCL_BYTECODE_PRECOMPILED);
-    
-    Tcl_Obj *expandNestList = NULL;
 
     /*
      * The execution uses a unified stack: first the catch stack, immediately
@@ -1345,9 +1380,9 @@ TclExecuteByteCode(interp, codePtr)
 	 */
 
 	iPtr->cmdCount++;
-	if (((codeCompileEpoch == iPtr->compileEpoch)
-		    && (codeNsEpoch == namespacePtr->resolverEpoch))
-		|| codePrecompiled) {
+	if (((codePtr->compileEpoch == iPtr->compileEpoch)
+		    && (codePtr->nsEpoch == namespacePtr->resolverEpoch))
+		|| (codePtr->flags & TCL_BYTECODE_PRECOMPILED)) {
 	    NEXT_INST_F(5, 0, 0);
 	} else {
 	    bytes = GetSrcInfoForPc(pc, codePtr, &length);
