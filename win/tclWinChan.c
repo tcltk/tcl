@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinChan.c,v 1.33 2003/12/24 04:18:22 davygrvy Exp $
+ * RCS: @(#) $Id: tclWinChan.c,v 1.34 2004/04/23 08:57:20 davygrvy Exp $
  */
 
 #include "tclWinInt.h"
@@ -1056,8 +1056,6 @@ Tcl_MakeFileChannel(rawHandle, mode)
               "=r"(INITIAL_HANDLER) );
 # endif /* TCL_MEM_DEBUG */
 
-        result = 0;
-
         __asm__ __volatile__ (
             "pushl %ebp" "\n\t"
             "pushl $__except_makefilechannel_handler" "\n\t"
@@ -1066,7 +1064,9 @@ Tcl_MakeFileChannel(rawHandle, mode)
 #else
 	__try {
 #endif /* HAVE_NO_SEH */
-	    CloseHandle(dupedHandle);
+
+	    result = CloseHandle(dupedHandle);
+
 #ifdef HAVE_NO_SEH
         __asm__ __volatile__ (
             "jmp  makefilechannel_pop" "\n"
@@ -1074,7 +1074,7 @@ Tcl_MakeFileChannel(rawHandle, mode)
             "movl %%fs:0, %%eax" "\n\t"
             "movl 0x8(%%eax), %%esp" "\n\t"
             "movl 0x8(%%esp), %%ebp" "\n"
-            "movl $1, %0" "\n"
+            "movl $0, %0" "\n"
         "makefilechannel_pop:" "\n\t"
             "movl (%%esp), %%eax" "\n\t"
             "movl %%eax, %%fs:0" "\n\t"
@@ -1100,8 +1100,14 @@ Tcl_MakeFileChannel(rawHandle, mode)
         Tcl_Panic("HANDLER restored incorrectly");
 # endif /* TCL_MEM_DEBUG */
 
-        if (result)
-            return NULL;
+	    if (result == 0) {
+		/*
+		 * The handle failed to close.  The original is therefore
+		 * invalid.
+		 */
+
+		return NULL;
+	    }
 #else
 	}
 	__except (EXCEPTION_EXECUTE_HANDLER) {
