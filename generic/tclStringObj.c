@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.30 2003/02/15 02:14:33 hobbs Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.31 2003/02/19 14:33:42 msofer Exp $ */
 
 #include "tclInt.h"
 
@@ -1828,7 +1828,7 @@ static void
 UpdateStringOfString(objPtr)
     Tcl_Obj *objPtr;		/* Object with string rep to update. */
 {
-    int i, length, size;
+    int i, size;
     Tcl_UniChar *unicode;
     char dummy[TCL_UTF_MAX];
     char *dst;
@@ -1850,7 +1850,6 @@ UpdateStringOfString(objPtr)
 	}
 
 	unicode = stringPtr->unicode;
-	length = stringPtr->numChars * sizeof(Tcl_UniChar);
 
 	/*
 	 * Translate the Unicode string to UTF.  "size" will hold the

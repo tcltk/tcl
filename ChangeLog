@@ -1,3 +1,13 @@
+2003-02-18  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclCompile.c (TclCompileExprWords): remove unused
+	variable "range" [Bug 664743]
+	* generic/tclExecute.c (ExprSrandFunc): remove unused
+	variable "result" [Bug 664743]
+	* generic/tclStringObj.c (UpdateStringOfString): remove unused
+	variable "length" [Bug 664751]
+	* tests/execute.test (execute-7.30): fix for [Bug 664775]	
+
 2003-02-18  Andreas Kupries  <andreask@activestate.com>
 
 	* unix/tcl.m4: [Bug #651811] Added definition of _XOPEN_SOURCE and
