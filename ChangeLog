@@ -1,3 +1,17 @@
+2000-12-09  jeff hobbs  <jhobbs@interwoven.com>
+
+	* win/tclWinTime.c (CalibrationThread): added lint return value to
+	prevent compiler warning.  [Bug #125005]
+
+	* docs/scan.n:
+	* tests/scan.test:
+	* generic/tclScan.c (Tcl_ScanObjCmd): changed %o and %x to use
+	strtoul instead of strtol to correctly preserve scan<>format
+	conversion of large integers.  [Patch #102663, Bug #124600]
+
+	* generic/tclExecute.c (TclExecuteByteCode): Commited patch fixing
+	handling of {!<boolean>} in expressions. [Patch #102702]
+
 2000-12-08  jeff hobbs  <jhobbs@interwoven.com>
 
 	* library/init.tcl: Added support for PATHEXT variable in
