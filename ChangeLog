@@ -1,3 +1,16 @@
+2001-04-07  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
+
+	* unix/mkLinks: Updated to incorporate the changes below.
+
+	* doc/StringObj.3: Added 'Tcl_AttemptSetObjLength' to the NAME
+	  section. [Bug #414435].
+
+	* doc/Alloc.3: Added both 'Tcl_AttemptAlloc' and
+	  'Tcl_AttemptRealloc' to the NAME section. [Bug #414435].
+
+	* doc/Utf.3: Added both 'Tcl_UniCharCaseMatch' and
+	  'Tcl_UniCharNcasecmp' to the NAME section. [Bug #414435].
+
 2001-04-06  Don Porter  <dgp@users.sourceforge.net>
 
 	* library/init.tcl:
