@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.33 2001/09/19 18:18:52 hobbs Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.34 2001/09/21 19:09:03 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -2161,6 +2161,11 @@ TclExecuteByteCode(interp, codePtr)
 		     */
 		    s1 = Tcl_GetStringFromObj(valuePtr, &s1len);
 		    s2 = Tcl_GetStringFromObj(value2Ptr, &s2len);
+		    /*
+		     * These have to be in true chars
+		     */
+		    s1len = Tcl_NumUtfChars(s1, s1len);
+		    s2len = Tcl_NumUtfChars(s2, s2len);
 		    iResult = Tcl_UtfNcmp(s1, s2,
 			    (size_t) ((s1len < s2len) ? s1len : s2len));
 		}
