@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.23 2001/10/18 12:08:11 vincentdarley Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.24 2001/10/29 15:02:44 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -513,7 +513,7 @@ FsReleaseIterator(void) {
  *    could not be allocated.
  *
  * Side effects:
- *    Memory allocataed and modifies the link list for filesystems.
+ *    Memory allocated and modifies the link list for filesystems.
  *
  *----------------------------------------------------------------------
  */
@@ -1344,14 +1344,12 @@ Tcl_FSStat(pathPtr, buf)
     } else {
 	path = Tcl_GetString(transPtr);
     }
-#endif /* USE_OBSOLETE_FS_HOOKS */
 
     /*
      * Call each of the "stat" function in succession.  A non-return
      * value of -1 indicates the particular function has succeeded.
      */
 
-#ifdef USE_OBSOLETE_FS_HOOKS
     Tcl_MutexLock(&obsoleteFsHookMutex);
     statProcPtr = statProcList;
     while ((retVal == -1) && (statProcPtr != NULL)) {
@@ -1449,14 +1447,12 @@ Tcl_FSAccess(pathPtr, mode)
     } else {
 	path = Tcl_GetString(transPtr);
     }
-#endif /* USE_OBSOLETE_FS_HOOKS */
 
     /*
      * Call each of the "access" function in succession.  A non-return
      * value of -1 indicates the particular function has succeeded.
      */
 
-#ifdef USE_OBSOLETE_FS_HOOKS
     Tcl_MutexLock(&obsoleteFsHookMutex);
     accessProcPtr = accessProcList;
     while ((retVal == -1) && (accessProcPtr != NULL)) {
@@ -1525,7 +1521,6 @@ Tcl_FSOpenFileChannel(interp, pathPtr, modeString, permissions)
     } else {
 	path = Tcl_GetString(transPtr);
     }
-#endif /* USE_OBSOLETE_FS_HOOKS */
 
     /*
      * Call each of the "Tcl_OpenFileChannel" function in succession.
@@ -1533,7 +1528,6 @@ Tcl_FSOpenFileChannel(interp, pathPtr, modeString, permissions)
      * succeeded.
      */
 
-#ifdef USE_OBSOLETE_FS_HOOKS
     Tcl_MutexLock(&obsoleteFsHookMutex);
     openFileChannelProcPtr = openFileChannelProcList;
     while ((retVal == NULL) && (openFileChannelProcPtr != NULL)) {
@@ -4534,7 +4528,8 @@ NativeUtime(pathPtr, tval)
     struct utimbuf local_tval;
     local_tval.actime=tval->actime+gmt_offset;
     local_tval.modtime=tval->modtime+gmt_offset;
-    return utime(Tcl_GetString(Tcl_FSGetNormalizedPath(NULL,pathPtr)),&local_tval);
+    return utime(Tcl_GetString(Tcl_FSGetNormalizedPath(NULL,pathPtr)),
+		 &local_tval);
 #else
     return utime(Tcl_GetString(Tcl_FSGetNormalizedPath(NULL,pathPtr)),tval);
 #endif
@@ -4550,8 +4545,8 @@ NativeUtime(pathPtr, tval)
  *
  *	Insert the passed procedure pointer at the head of the list of
  *	functions which are used during a call to 'TclStat(...)'. The
- *	passed function should be have exactly like 'TclStat' when called
- *	during that time (see 'TclStat(...)' for more informatin).
+ *	passed function should behave exactly like 'TclStat' when called
+ *	during that time (see 'TclStat(...)' for more information).
  *	The function will be added even if it already in the list.
  *
  * Results:
@@ -4559,7 +4554,7 @@ NativeUtime(pathPtr, tval)
  *	could not be allocated.
  *
  * Side effects:
- *      Memory allocataed and modifies the link list for 'TclStat'
+ *      Memory allocated and modifies the link list for 'TclStat'
  *	functions.
  *
  *----------------------------------------------------------------------
@@ -4652,10 +4647,11 @@ TclStatDeleteProc (proc)
  * TclAccessInsertProc --
  *
  *	Insert the passed procedure pointer at the head of the list of
- *	functions which are used during a call to 'TclAccess(...)'. The
- *	passed function should be have exactly like 'TclAccess' when
- *	called during that time (see 'TclAccess(...)' for more informatin).
- *	The function will be added even if it already in the list.
+ *	functions which are used during a call to 'TclAccess(...)'.
+ *	The passed function should behave exactly like 'TclAccess' when
+ *	called during that time (see 'TclAccess(...)' for more
+ *	information).  The function will be added even if it already in
+ *	the list.
  *
  * Results:
  *      Normally TCL_OK; TCL_ERROR if memory for a new node in the list
@@ -4756,9 +4752,9 @@ TclAccessDeleteProc(proc)
  *
  *	Insert the passed procedure pointer at the head of the list of
  *	functions which are used during a call to
- *	'Tcl_OpenFileChannel(...)'. The passed function should be have
+ *	'Tcl_OpenFileChannel(...)'. The passed function should behave
  *	exactly like 'Tcl_OpenFileChannel' when called during that time
- *	(see 'Tcl_OpenFileChannel(...)' for more informatin). The
+ *	(see 'Tcl_OpenFileChannel(...)' for more information). The
  *	function will be added even if it already in the list.
  *
  * Results:
@@ -4766,7 +4762,7 @@ TclAccessDeleteProc(proc)
  *	could not be allocated.
  *
  * Side effects:
- *      Memory allocataed and modifies the link list for
+ *      Memory allocated and modifies the link list for
  *	'Tcl_OpenFileChannel' functions.
  *
  *----------------------------------------------------------------------
