@@ -1,3 +1,8 @@
+2004-06-24  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* tests/unixNotfy.test: Modified constraints so that testing with
+	a threaded tclsh (not tcltest) will not hang.
+
 2004-06-23  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclThreadStorage.c:	Corrected type casting errors that led
