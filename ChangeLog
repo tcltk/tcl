@@ -1,3 +1,9 @@
+1999-05-19    <redman@scriptics.com>
+
+	* generic/tcl.h: Add extern "C" block around entire header file for
+	C++ compilers to fix linkage issues.  Submitted by Don Porter and
+	Paul Duffin.
+
 1999-05-18    <stanton@scriptics.com>
 
 	* win/tclWinChan.c: Modified initialization code to avoid
