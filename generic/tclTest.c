@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.51 2002/06/21 14:22:28 vincentdarley Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.52 2002/07/01 14:35:09 dgp Exp $
  */
 
 #define TCL_TEST
@@ -3590,7 +3590,7 @@ TestfeventCmd(clientData, interp, argc, argv)
             Tcl_DeleteInterp(interp2);
 	}
         interp2 = Tcl_CreateInterp();
-	return TCL_OK;
+	return Tcl_Init(interp2);
     } else if (strcmp(argv[1], "delete") == 0) {
 	if (interp2 != NULL) {
             Tcl_DeleteInterp(interp2);
