@@ -1,4 +1,24 @@
-2000-04-16  Jeff Hobbs  <hobbs@scriptics.com>
+2000-04-18  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* README:
+	* generic/tcl.h:
+	* tools/tcl.wse.in:
+	* unix/configure.in:
+	* unix/tcl.spec:
+	* win/configure.in:
+	* win/README.binary: bumped version to 8.3.1
+
+	* win/tcl.hpj.in: updated copyright date
+
+	* generic/tclEnv.c: environment support for Mac OS/X
+	* unix/tclUnixPort.h: environment support for Mac OS/X
+	* unix/tclLoadDyld.c: new file for Mac OS/X dl functions
+	* unix/Makefile.in: added install-strip target; bindir, libdir,
+	mandir, includedir vars; tclLoadDyld.c target [Bug: 2527]
+
+	* unix/tclUnixChan.c (CreateSocket): force a socket back into
+	blocking mode (default state) after a -async connect succeeds.
+	[Bug: 4388]
 
 	* generic/tclEvent.c (TclInitSubsystems): Moved tclLibraryPath to
 	thread-local storage to prevent thread-related race condition.

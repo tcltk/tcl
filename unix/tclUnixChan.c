@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.15 2000/04/15 17:34:23 hobbs Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.16 2000/04/19 08:32:46 hobbs Exp $
  */
 
 #include	"tclInt.h"	/* Internal definitions for Tcl. */
@@ -2056,7 +2056,27 @@ CreateSocket(interp, port, host, server, myaddr, myport, async)
                     asyncConnect = 1;
                     status = 0;
                 }
-            }
+	    } else {
+		/*
+		 * Here we are if the connect succeeds. In case of an
+		 * asynchronous connect we have to reset the channel to
+		 * blocking mode.  This appears to happen not very often,
+		 * but e.g. on a HP 9000/800 under HP-UX B.11.00 we enter
+		 * this stage. [Bug: 4388]
+		 */
+		if (async) {
+#ifndef USE_FIONBIO
+		    origState = fcntl(sock, F_GETFL);
+		    curState = origState & ~(O_NONBLOCK);
+		    status = fcntl(sock, F_SETFL, curState);
+#endif
+
+#ifdef  USE_FIONBIO
+		    curState = 0;
+		    status = ioctl(sock, FIONBIO, &curState);
+#endif
+		}
+	    }
         }
     }
 

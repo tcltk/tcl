@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEnv.c,v 1.6 1999/10/29 03:04:00 hobbs Exp $
+ * RCS: @(#) $Id: tclEnv.c,v 1.7 2000/04/19 08:32:44 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -31,6 +31,14 @@ static int environSize = 0;	/* Non-zero means that the environ array was
 				 * allocated to it (not all may be in use at
 				 * once).  Zero means that the environment
 				 * array is in its original static state. */
+#endif
+
+/*
+ * For MacOS X
+ */
+#if defined(__APPLE__) && defined(__DYNAMIC__)
+#include <crt_externs.h>
+char **environ = NULL;
 #endif
 
 /*
@@ -78,6 +86,13 @@ TclSetupEnv(interp)
     Tcl_DString envString;
     char *p1, *p2;
     int i;
+
+    /*
+     * For MacOS X
+     */
+#if defined(__APPLE__) && defined(__DYNAMIC__)
+    environ = *_NSGetEnviron();
+#endif
 
     /*
      * Synchronize the values in the environ array with the contents
