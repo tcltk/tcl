@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinChan.c,v 1.28 2003/01/16 19:01:59 mdejong Exp $
+ * RCS: @(#) $Id: tclWinChan.c,v 1.29 2003/01/25 14:11:32 mdejong Exp $
  */
 
 #include "tclWinInt.h"
@@ -121,10 +121,14 @@ static Tcl_ChannelType fileChannelType = {
     FileWideSeekProc,		/* Wide seek proc. */
 };
 
-#ifdef HAVE_NO_SEH
-static void *ESP;
-static void *EBP;
-#endif /* HAVE_NO_SEH */
+#if defined(HAVE_NO_SEH) && defined(TCL_MEM_DEBUG)
+static void *INITIAL_ESP,
+            *INITIAL_EBP,
+            *INITIAL_HANDLER,
+            *RESTORED_ESP,
+            *RESTORED_EBP,
+            *RESTORED_HANDLER;
+#endif /* HAVE_NO_SEH && TCL_MEM_DEBUG */
 
 
 /*
@@ -1049,34 +1053,59 @@ Tcl_MakeFileChannel(rawHandle, mode)
 	 */
 
 #ifdef HAVE_NO_SEH
+# ifdef TCL_MEM_DEBUG
         __asm__ __volatile__ (
-                "movl  %esp, _ESP" "\n\t"
-                "movl  %ebp, _EBP");
-
-        __asm__ __volatile__ (
-                "pushl $__except_makefilechannel_handler" "\n\t"
-                "pushl %fs:0" "\n\t"
-                "mov   %esp, %fs:0");
+            "movl %%esp,  %0" "\n\t"
+            "movl %%ebp,  %1" "\n\t"
+            "movl %%fs:0, %2" "\n\t"
+            : "=m"(INITIAL_ESP),
+              "=m"(INITIAL_EBP),
+              "=r"(INITIAL_HANDLER) );
+# endif /* TCL_MEM_DEBUG */
 
         result = 0;
+
+        __asm__ __volatile__ (
+            "pushl %ebp" "\n\t"
+            "pushl $__except_makefilechannel_handler" "\n\t"
+            "pushl %fs:0" "\n\t"
+            "movl  %esp, %fs:0");
 #else
 	__try {
 #endif /* HAVE_NO_SEH */
 	    CloseHandle(dupedHandle);
 #ifdef HAVE_NO_SEH
         __asm__ __volatile__ (
-                "jmp   makefilechannel_pop" "\n"
-                "makefilechannel_reentry:" "\n\t"
-                "movl  _ESP, %esp" "\n\t"
-                "movl  _EBP, %ebp");
+            "jmp  makefilechannel_pop" "\n"
+        "makefilechannel_reentry:" "\n\t"
+            "movl %%fs:0, %%eax" "\n\t"
+            "movl 0x8(%%eax), %%esp" "\n\t"
+            "movl 0x8(%%esp), %%ebp" "\n"
+            "movl $1, %0" "\n"
+        "makefilechannel_pop:" "\n\t"
+            "movl (%%esp), %%eax" "\n\t"
+            "movl %%eax, %%fs:0" "\n\t"
+            "add  $12, %%esp" "\n\t"
+            : "=m"(result)
+            :
+            : "%eax");
 
-        result = 1;  /* True when exception was raised */
+# ifdef TCL_MEM_DEBUG
+    __asm__ __volatile__ (
+            "movl  %%esp,  %0" "\n\t"
+            "movl  %%ebp,  %1" "\n\t"
+            "movl  %%fs:0, %2" "\n\t"
+            : "=m"(RESTORED_ESP),
+              "=m"(RESTORED_EBP),
+              "=r"(RESTORED_HANDLER) );
 
-        __asm__ __volatile__ (
-                "makefilechannel_pop:" "\n\t"
-                "mov   (%esp), %eax" "\n\t"
-                "mov   %eax, %fs:0" "\n\t"
-                "add   $8, %esp");
+    if (INITIAL_ESP != RESTORED_ESP)
+        panic("ESP restored incorrectly");
+    if (INITIAL_EBP != RESTORED_EBP)
+        panic("EBP restored incorrectly");
+    if (INITIAL_HANDLER != RESTORED_HANDLER)
+        panic("HANDLER restored incorrectly");
+# endif /* TCL_MEM_DEBUG */
 
         if (result)
             return NULL;
@@ -1116,6 +1145,8 @@ _except_makefilechannel_handler(
 {
     __asm__ __volatile__ (
             "jmp makefilechannel_reentry");
+    /* Nuke compiler warning about unused static function */
+    _except_makefilechannel_handler(NULL, NULL, NULL, NULL);
     return 0; /* Function does not return */
 }
 #endif
@@ -1314,18 +1345,3 @@ TclWinFlushDirtyChannels ()
 	}
     }
 }
-
-#ifdef HAVE_NO_SEH
-/*
- * This method exists only to stop the compiler from emitting
- * warnings about variables and methods accessed only from asm.
- */
-static void squelch_warnings()
-{
-    void *ptr;
-    ptr = _except_makefilechannel_handler;
-    ESP = 0;
-    EBP = 0;
-    squelch_warnings();
-}
-#endif /* HAVE_NO_SEH */

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWin32Dll.c,v 1.22 2003/01/25 12:48:12 mdejong Exp $
+ * RCS: @(#) $Id: tclWin32Dll.c,v 1.23 2003/01/25 14:11:32 mdejong Exp $
  */
 
 #include "tclWinInt.h"
@@ -37,13 +37,14 @@ typedef VOID (WINAPI UTUNREGISTER)(HANDLE hModule);
 static HINSTANCE hInstance;	/* HINSTANCE of this DLL. */
 static int platformId;		/* Running under NT, or 95/98? */
 
-#ifdef HAVE_NO_SEH
-static void *ESP;
-static void *EBP;
-static void* HANDLER[2];
-static void* NEW_HANDLER = &(HANDLER[0]);
-static void* OLD_HANDLER = &(HANDLER[1]);
-#endif /* HAVE_NO_SEH */
+#if defined(HAVE_NO_SEH) && defined(TCL_MEM_DEBUG)
+static void *INITIAL_ESP,
+            *INITIAL_EBP,
+            *INITIAL_HANDLER,
+            *RESTORED_ESP,
+            *RESTORED_EBP,
+            *RESTORED_HANDLER;
+#endif /* HAVE_NO_SEH && TCL_MEM_DEBUG */
 
 /*
  * The following function tables are used to dispatch to either the
@@ -376,17 +377,21 @@ TclpCheckStackSpace()
      */
 
 #ifdef HAVE_NO_SEH
+# ifdef TCL_MEM_DEBUG
     __asm__ __volatile__ (
-            "movl  %esp, _ESP" "\n\t"
-            "movl  %ebp, _EBP");
+            "movl %%esp,  %0" "\n\t"
+            "movl %%ebp,  %1" "\n\t"
+            "movl %%fs:0, %2" "\n\t"
+            : "=m"(INITIAL_ESP),
+              "=m"(INITIAL_EBP),
+              "=r"(INITIAL_HANDLER) );
+# endif /* TCL_MEM_DEBUG */
 
     __asm__ __volatile__ (
-            "movl  %fs:0, %eax" "\n\t"
-            "movl  %eax, _OLD_HANDLER" "\n\t"
-            "movl  __except_checkstackspace_handler, %eax" "\n\t"
-            "movl  %eax, _NEW_HANDLER" "\n\t"
-            "movl  _HANDLER, %eax" "\n\t"
-            "movl  %eax, %fs:0");
+            "pushl %ebp" "\n\t"
+            "pushl $__except_checkstackspace_handler" "\n\t"
+            "pushl %fs:0" "\n\t"
+            "movl  %esp, %fs:0");
 #else
     __try {
 #endif /* HAVE_NO_SEH */
@@ -403,15 +408,36 @@ TclpCheckStackSpace()
 	retval = 1;
 #ifdef HAVE_NO_SEH
     __asm__ __volatile__ (
-            "jmp   checkstackspace_pop" "\n"
-            "checkstackspace_reentry:" "\n\t"
-            "movl  _ESP, %esp" "\n\t"
-            "movl  _EBP, %ebp");
+            "movl %%fs:0, %%esp" "\n\t"
+            "jmp  checkstackspace_pop" "\n"
+        "checkstackspace_reentry:" "\n\t"
+            "movl %%fs:0, %%eax" "\n\t"
+            "movl 0x8(%%eax), %%esp" "\n\t"
+            "movl 0x8(%%esp), %%ebp" "\n"
+        "checkstackspace_pop:" "\n\t"
+            "movl (%%esp), %%eax" "\n\t"
+            "movl %%eax, %%fs:0" "\n\t"
+            "add  $12, %%esp" "\n\t"
+            :
+            :
+            : "%eax");
 
+# ifdef TCL_MEM_DEBUG
     __asm__ __volatile__ (
-            "checkstackspace_pop:" "\n\t"
-            "mov   _OLD_HANDLER, %eax"  "\n\t"
-            "mov   %eax, %fs:0");
+            "movl  %%esp,  %0" "\n\t"
+            "movl  %%ebp,  %1" "\n\t"
+            "movl  %%fs:0, %2" "\n\t"
+            : "=m"(RESTORED_ESP),
+              "=m"(RESTORED_EBP),
+              "=r"(RESTORED_HANDLER) );
+
+    if (INITIAL_ESP != RESTORED_ESP)
+        panic("ESP restored incorrectly");
+    if (INITIAL_EBP != RESTORED_EBP)
+        panic("EBP restored incorrectly");
+    if (INITIAL_HANDLER != RESTORED_HANDLER)
+        panic("HANDLER restored incorrectly");
+# endif /* TCL_MEM_DEBUG */
 #else
     } __except (EXCEPTION_EXECUTE_HANDLER) {}
 #endif /* HAVE_NO_SEH */
@@ -433,6 +459,8 @@ _except_checkstackspace_handler(
 {
     __asm__ __volatile__ (
             "jmp checkstackspace_reentry");
+    /* Nuke compiler warning about unused static function */
+    _except_checkstackspace_handler(NULL, NULL, NULL, NULL);
     return 0; /* Function does not return */
 }
 #endif /* HAVE_NO_SEH */
@@ -627,21 +655,3 @@ Tcl_WinTCharToUtf(string, len, dsPtr)
     return Tcl_ExternalToUtfDString(tclWinTCharEncoding, 
 	    (CONST char *) string, len, dsPtr);
 }
-
-#ifdef HAVE_NO_SEH
-/*
- * This method exists only to stop the compiler from emitting
- * warnings about variables and methods accessed only from asm.
- */
-static void squelch_warnings()
-{
-    void *ptr;
-    ptr = _except_checkstackspace_handler;
-    ESP = 0;
-    EBP = 0;
-    OLD_HANDLER = 0;
-    NEW_HANDLER = 0;
-    HANDLER[0] = 0;
-    squelch_warnings();
-}
-#endif /* HAVE_NO_SEH */
