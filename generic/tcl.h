@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.102.2.17 2001/10/18 09:03:59 dkf Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.102.2.18 2001/10/18 09:30:19 dkf Exp $
  */
 
 #ifndef _TCL
@@ -393,11 +393,6 @@ typedef unsigned long long	Tcl_WideUInt;
 #   include <sys/types.h>
 typedef long		Tcl_WideInt;
 typedef unsigned long	Tcl_WideInt;
-#   ifdef __WIN32__
-typedef long		Tcl_SeekOffset;
-#   else
-typedef off_t		Tcl_SeekOffset;
-#   endif
 typedef struct stat	Tcl_StatBuf;
 #   define Tcl_WideAsLong(val)		((long)(val))
 #   define Tcl_LongAsWide(val)		((long)(val))
