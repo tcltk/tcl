@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinReg.c,v 1.31 2004/10/07 00:14:21 dgp Exp $
+ * RCS: @(#) $Id: tclWinReg.c,v 1.32 2004/10/07 00:55:36 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -595,9 +595,9 @@ GetKeyNames(
     HKEY key;
     DWORD index;
     char buffer[MAX_PATH+1], *pattern, *name;
+    Tcl_Obj *resultPtr;
     int result = TCL_OK;
     Tcl_DString ds;
-    Tcl_Obj *resultPtr;
 
     /*
      * Attempt to open the key for enumeration.
@@ -870,6 +870,7 @@ GetValueNames(
     Tcl_Obj *patternObj)	/* Optional match pattern. */
 {
     HKEY key;
+    Tcl_Obj *resultPtr;
     DWORD index, size, maxSize, result;
     Tcl_DString buffer, ds;
     char *pattern, *name;
@@ -900,7 +901,7 @@ GetValueNames(
     }
     maxSize++;
 
-
+    resultPtr = Tcl_NewObj();
     Tcl_DStringInit(&buffer);
     Tcl_DStringSetLength(&buffer,
 	    (int) ((regWinProcs->useWide) ? maxSize*2 : maxSize));
@@ -923,7 +924,6 @@ GetValueNames(
     while ((*regWinProcs->regEnumValueProc)(key, index,
 	    Tcl_DStringValue(&buffer), &size, NULL, NULL, NULL, NULL)
 	    == ERROR_SUCCESS) {
-	Tcl_Obj *resultPtr = Tcl_NewObj();
 
 	if (regWinProcs->useWide) {
 	    size *= 2;
@@ -939,12 +939,12 @@ GetValueNames(
 		break;
 	    }
 	}
-	Tcl_SetObjResult(interp, resultPtr);
 	Tcl_DStringFree(&ds);
 
 	index++;
 	size = maxSize;
     }
+    Tcl_SetObjResult(interp, resultPtr);
     Tcl_DStringFree(&buffer);
 
     done:
