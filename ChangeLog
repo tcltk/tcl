@@ -1,3 +1,18 @@
+2002-12-16  David Gravereaux  <davygrvy@pobox.com>
+
+	* generic/tclPipe.c (TclCleanupChildren):
+	* tests/winPipe.c:
+	* win/tclWinPipe.c (Tcl_WaitPid):
+	* win/tclWinTest.c:  Gave Tcl_WaitPid the ability to return a
+	Win32 exception code translated into a posix style SIG*.  This
+	allows [close] to report "CHILDKILLED" without the meaning
+	getting lost in a truncated exit code.  In TclCleanupChildren(),
+	TclpGetPid() had to get moved to before Tcl_WaitPid() as the
+	the handle is removed from the list taking away the ability
+	to get the process id after the wait is done.  This shouldn't
+	effect the unix implimentaion unless waitpid is called with
+	a pid of zero, meaning "any".  I don't think it is..
+
 2002-12-13  Don Porter  <dgp@users.sourceforge.net>
 
 	* unix/configure.in:	Updated configure of CVS snapshots to reflect
