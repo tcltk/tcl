@@ -10,7 +10,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: clock.n,v 1.13 2004/02/06 16:48:54 dgp Exp $
+'\" RCS: @(#) $Id: clock.n,v 1.14 2004/03/03 23:58:14 hobbs Exp $
 '\" 
 .so man.macros
 .TH clock n 8.4 Tcl "Tcl Built-In Commands"
@@ -29,16 +29,16 @@ or manipulate strings or values that represent some notion of
 time.  The \fIoption\fR argument determines what action is carried
 out by the command.  The legal \fIoptions\fR (which may be
 abbreviated) are:
-.TP
 .VS 8.3
+.TP
 \fBclock clicks\fR ?\fI\-option\fR?
 If no \fIoption\fR argument is supplied, returns a high-resolution 
 time value as a system-dependent integer value.  The unit of the value
 is system-dependent but should be the highest resolution clock available
 on the system such as a CPU cycle counter. 
 .VE 8.3
-.TP
 .VS 8.5
+.TP
 If the \fIoption\fR argument is \fB\-milliseconds\fR, then the value is
 guaranteed to be an approximate count of milliseconds returned as
 a wide integer; the rule should
