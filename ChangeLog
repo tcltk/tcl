@@ -1,3 +1,9 @@
+2003-10-09  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* win/makefile.vc:  Applied patches for bug #801467 by Joe Mistachkin
+	* win/tclAppInit.c: to fix incompatible TCL_MEM_DEBUG handling in
+	* generic/tclObj.c: Win32 VC builds.
+
 2003-10-08  Don Porter  <dgp@users.sourceforge.net>
 
         * generic/tclBasic.c:   Save and restore the iPtr->flag bits that
