@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: lsort.n,v 1.7 2000/09/07 14:27:49 poenitz Exp $
+'\" RCS: @(#) $Id: lsort.n,v 1.8 2001/03/29 13:16:19 dkf Exp $
 '\" 
 .so man.macros
 .TH lsort n 8.3 Tcl "Tcl Built-In Commands"
@@ -77,7 +77,6 @@ returns \fB{Second 18} {First 24} {Third 30}\fR.
 This option is much more efficient than using \fB\-command\fR
 to achieve the same effect.
 .RE
-.VS 8.3
 .TP 20
 \fB\-unique\fR
 If this option is specified, then only the last set of duplicate
@@ -86,6 +85,88 @@ determined relative to the comparison used in the sort.  Thus if
 \fI-index 0\fR is used, \fB{1 a}\fR and \fB{1 b}\fR would be
 considered duplicates and only the second element, \fB{1 b}\fR, would
 be retained.
+
+.VS
+.SH "NOTES"
+.PP
+The options to \fBlsort\fR only control what sort of comparison is
+used, and do not necessarily constrain what the values themselves
+actually are.  This distinction is only noticeable when the list to be
+sorted has fewer than two elements.
+.PP
+The \fBlsort\fR command is reentrant, meaning it is safe to use as
+part of the implementation of a command used in the \fB\-command\fR
+option.
+
+.SH "EXAMPLES"
+
+.PP
+Sorting a list using ASCII sorting:
+.CS
+% lsort {a10 B2 b1 a1 a2}
+B2 a1 a10 a2 b1
+.CE
+
+.PP
+Sorting a list using Dictionary sorting:
+.CS
+% lsort -dictionary {a10 B2 b1 a1 a2}
+a1 a2 a10 b1 B2
+.CE
+
+.PP
+Sorting lists of integers:
+.CS
+% lsort -integer {5 3 1 2 11 4}
+1 2 3 4 5 11
+% lsort -integer {1 2 0x5 7 0 4 -1}
+-1 0 1 2 4 0x5 7
+.CE
+
+.PP
+Sorting lists of floating-point numbers:
+.CS
+% lsort -real {5 3 1 2 11 4}
+1 2 3 4 5 11
+% lsort -real {.5 0.07e1 0.4 6e-1}
+0.4 .5 6e-1 0.07e1
+.CE
+
+.PP
+Sorting using indices:
+.CS
+% # Note the space character before the c
+% lsort {{a 5} { c 3} {b 4} {e 1} {d 2}}
+{ c 3} {a 5} {b 4} {d 2} {e 1}
+% lsort -index 0 {{a 5} { c 3} {b 4} {e 1} {d 2}}
+{a 5} {b 4} { c 3} {d 2} {e 1}
+% lsort -index 1 {{a 5} { c 3} {b 4} {e 1} {d 2}}
+{e 1} {d 2} { c 3} {b 4} {a 5}
+.CE
+
+.PP
+Stripping duplicate values using sorting:
+.CS
+% lsort -unique {a b c a b c a b c}
+a b c
+.CE
+
+.PP
+More complex sorting using a comparison function:
+.CS
+% proc compare {a b} {
+    set a0 [lindex $a 0]
+    set b0 [lindex $b 0]
+    if {$a0 < $b0} {
+        return -1
+    } elseif {$a0 > $b0} {
+        return 1
+    }
+    return [string compare [lindex $a 1] [lindex $b 1]]
+}
+% lsort -command compare \\
+        {{3 apple} {0x2 carrot} {1 dingo} {2 banana}}
+{1 dingo} {2 banana} {0x2 carrot} {3 apple}
 .VE
 
 .SH "SEE ALSO"
