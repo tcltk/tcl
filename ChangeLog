@@ -1,5 +1,9 @@
-2004-07-21  Don Porter  <dgp@users.sourceforge.net>
+2004-07-22  Don Porter  <dgp@users.sourceforge.net>
 
+	* tests/eofchar.data (removed):	Test io-61.1 now generates its own
+	* tests/io.test:	file of test data as needed.
+
+2004-07-21  Don Porter  <dgp@users.sourceforge.net>
 	* win/tclWinDde.c:		Bump to dde 1.2.3 to cover changes
 	* library/dde/pkgIndex.tcl:	committed on 2004-06-14.
 
