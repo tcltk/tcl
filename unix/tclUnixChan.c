@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.19 2000/10/28 00:29:58 hobbs Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.20 2001/06/18 13:13:23 dkf Exp $
  */
 
 #include	"tclInt.h"	/* Internal definitions for Tcl. */
@@ -217,7 +217,7 @@ static void		TtyGetAttributes _ANSI_ARGS_((int fd,
 static int		TtyGetOptionProc _ANSI_ARGS_((ClientData instanceData,
 			    Tcl_Interp *interp, char *optionName,
 			    Tcl_DString *dsPtr));
-static FileState *	TtyInit _ANSI_ARGS_((int fd));
+static FileState *	TtyInit _ANSI_ARGS_((int fd, int initialize));
 static int		TtyParseMode _ANSI_ARGS_((Tcl_Interp *interp,
 			    CONST char *mode, int *speedPtr, int *parityPtr,
 			    int *dataPtr, int *stopPtr));
@@ -1201,54 +1201,61 @@ TtyParseMode(interp, mode, speedPtr, parityPtr, dataPtr, stopPtr)
  *	Given file descriptor that refers to a serial port, 
  *	initialize the serial port to a set of sane values so that
  *	Tcl can talk to a device located on the serial port.
+ *	Note that no initialization happens if the initialize flag
+ *	is not set; this is necessary for the correct handling of
+ *	UNIX console TTYs at startup.
  *
  * Results:
- *	None.
+ *	A pointer to a FileState suitable for use with Tcl_CreateChannel
+ *	and the ttyChannelType structure.
  *
  * Side effects:
  *	Serial device initialized to non-blocking raw mode, similar to
- *	sockets.  All other modes can be simulated on top of this in Tcl.
+ *	sockets (if initialize flag is non-zero.)  All other modes can
+ *	be simulated on top of this in Tcl.
  *
  *---------------------------------------------------------------------------
  */
 
 static FileState *
-TtyInit(fd)
+TtyInit(fd, initialize)
     int fd;			/* Open file descriptor for serial port to
 				 * be initialized. */
+    int initialize;
 {
-    IOSTATE iostate;
     TtyState *ttyPtr;
 
     ttyPtr = (TtyState *) ckalloc((unsigned) sizeof(TtyState));
     GETIOSTATE(fd, &ttyPtr->savedState);
 
-    iostate = ttyPtr->savedState;
+    if (initialize) {
+	IOSTATE iostate = ttyPtr->savedState;
 
 #ifdef USE_TERMIOS
-    iostate.c_iflag = IGNBRK;
-    iostate.c_oflag = 0;
-    iostate.c_lflag = 0;
-    iostate.c_cflag |= CREAD;
-    iostate.c_cc[VMIN] = 1;
-    iostate.c_cc[VTIME] = 0;
+	iostate.c_iflag = IGNBRK;
+	iostate.c_oflag = 0;
+	iostate.c_lflag = 0;
+	iostate.c_cflag |= CREAD;
+	iostate.c_cc[VMIN] = 1;
+	iostate.c_cc[VTIME] = 0;
 #endif	/* USE_TERMIOS */
 
 #ifdef USE_TERMIO
-    iostate.c_iflag = IGNBRK;
-    iostate.c_oflag = 0;
-    iostate.c_lflag = 0;
-    iostate.c_cflag |= CREAD;
-    iostate.c_cc[VMIN] = 1;
-    iostate.c_cc[VTIME] = 0;
+	iostate.c_iflag = IGNBRK;
+	iostate.c_oflag = 0;
+	iostate.c_lflag = 0;
+	iostate.c_cflag |= CREAD;
+	iostate.c_cc[VMIN] = 1;
+	iostate.c_cc[VTIME] = 0;
 #endif	/* USE_TERMIO */
 
 #ifdef USE_SGTTY
-    iostate.sg_flags &= (EVENP | ODDP);
-    iostate.sg_flags |= RAW;
+	iostate.sg_flags &= (EVENP | ODDP);
+	iostate.sg_flags |= RAW;
 #endif	/* USE_SGTTY */
 
-    SETIOSTATE(fd, &iostate);
+	SETIOSTATE(fd, &iostate);
+    }
 
     return &ttyPtr->fs;
 }
@@ -1354,7 +1361,7 @@ TclpOpenFileChannel(interp, fileName, modeString, permissions)
 	 
 	translation = "auto crlf";
 	channelTypePtr = &ttyChannelType;
-	fsPtr = TtyInit(fd);
+	fsPtr = TtyInit(fd, 1);
     } else 
 #endif	/* SUPPORTS_TTY */
     {
@@ -1428,15 +1435,16 @@ Tcl_MakeFileChannel(handle, mode)
     FileState *fsPtr;
     char channelName[16 + TCL_INTEGER_SPACE];
     int fd = (int) handle;
+    Tcl_ChannelType *channelTypePtr;
 #ifdef DEPRECATED
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 #endif
+    int socketType = 0;
+    int argLength = sizeof(int);
 
     if (mode == 0) {
         return NULL;
     }
-
-    sprintf(channelName, "file%d", fd);
 
 
     /*
@@ -1453,7 +1461,24 @@ Tcl_MakeFileChannel(handle, mode)
     }
 #endif
 
-    fsPtr = (FileState *) ckalloc((unsigned) sizeof(FileState));
+#ifdef SUPPORTS_TTY
+    if (isatty(fd)) {
+	fsPtr = TtyInit(fd, 0);
+	channelTypePtr = &ttyChannelType;
+	sprintf(channelName, "serial%d", fd);
+    } else
+#endif
+    if (getsockopt(fd, SOL_SOCKET, SO_TYPE, (VOID *)&socketType,
+		   &argLength) == 0  &&  socketType == SOCK_STREAM) {
+	/*
+	 * The mode parameter gets lost here, unfortunately.
+	 */
+	return Tcl_MakeTcpClientChannel((ClientData) fd);
+    } else {
+	channelTypePtr = &fileChannelType;
+	fsPtr = (FileState *) ckalloc((unsigned) sizeof(FileState));
+	sprintf(channelName, "file%d", fd);
+    }
 
 #ifdef DEPRECATED
     fsPtr->nextPtr = tsdPtr->firstFilePtr;
@@ -1461,9 +1486,9 @@ Tcl_MakeFileChannel(handle, mode)
 #endif
     fsPtr->fd = fd;
     fsPtr->validMask = mode | TCL_EXCEPTION;
-    fsPtr->channel = Tcl_CreateChannel(&fileChannelType, channelName,
+    fsPtr->channel = Tcl_CreateChannel(channelTypePtr, channelName,
             (ClientData) fsPtr, mode);
-    
+
     return fsPtr->channel;
 }
 
@@ -2515,7 +2540,11 @@ TclpGetDefaultStdChannel(type)
      * Set up the normal channel options for stdio handles.
      */
 
-    Tcl_SetChannelOption(NULL, channel, "-translation", "auto");
+    if (Tcl_GetChannelType(channel) == &fileChannelType) {
+	Tcl_SetChannelOption(NULL, channel, "-translation", "auto");
+    } else {
+	Tcl_SetChannelOption(NULL, channel, "-translation", "auto crlf");
+    }
     Tcl_SetChannelOption(NULL, channel, "-buffering", bufMode);
     return channel;
 }
