@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.33.2.4 2001/04/03 22:54:39 hobbs Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.33.2.5 2001/08/04 00:33:59 hobbs Exp $
 
 VERSION = @TCL_VERSION@
 
@@ -423,9 +423,15 @@ tclStubLib.${OBJEXT}: tclStubLib.c
 install: all install-binaries install-libraries install-doc
 
 install-binaries: binaries
-	@$(MKDIR) -p "$(BIN_INSTALL_DIR)"
-	@$(MKDIR) -p "$(LIB_INSTALL_DIR)"
-	$(COPY) tclConfig.sh $(LIB_INSTALL_DIR)/tclConfig.sh
+	@for i in "$(LIB_INSTALL_DIR)" "$(BIN_INSTALL_DIR)" ; \
+	    do \
+	    if [ ! -d $$i ] ; then \
+		echo "Making directory $$i"; \
+		$(MKDIR) $$i; \
+		chmod 755 $$i; \
+		else true; \
+		fi; \
+	    done;
 	@for i in dde1.1 reg1.0; \
 	    do \
 	    if [ ! -d $(LIB_INSTALL_DIR)/$$i ] ; then \
@@ -437,14 +443,14 @@ install-binaries: binaries
 	@for i in $(TCL_DLL_FILE) $(TCLSH) $(PIPE_DLL_FILE); \
 	    do \
 	    if [ -f $$i ]; then \
-		echo "Installing $$i"; \
+		echo "Installing $$i to $(BIN_INSTALL_DIR)/"; \
 		$(COPY) $$i "$(BIN_INSTALL_DIR)"; \
 	    fi; \
 	    done
-	@for i in $(TCL_LIB_FILE) $(TCL_STUB_LIB_FILE); \
+	@for i in tclConfig.sh $(TCL_LIB_FILE) $(TCL_STUB_LIB_FILE); \
 	    do \
 	    if [ -f $$i ]; then \
-		echo "Installing $$i"; \
+		echo "Installing $$i to $(LIB_INSTALL_DIR)/"; \
 		$(COPY) $$i "$(LIB_INSTALL_DIR)"; \
 	    fi; \
 	    done
