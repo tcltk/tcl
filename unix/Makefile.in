@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.118 2002/10/10 04:56:21 hobbs Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.119 2002/10/18 22:59:54 hobbs Exp $
 
 VERSION 		= @TCL_VERSION@
 MAJOR_VERSION		= @TCL_MAJOR_VERSION@
@@ -1278,7 +1278,7 @@ dist: $(UNIX_DIR)/configure mklinks
 	cp -p $(TOP_DIR)/win/README $(DISTDIR)/win
 	cp -p $(TOP_DIR)/license.terms $(DISTDIR)/win
 	mkdir $(DISTDIR)/mac
-	cp -p $(TOP_DIR)/mac/tclMacProjects.sea.hqx \
+	cp -p $(TOP_DIR)/mac/tcl*.sea.hqx \
 		$(TOP_DIR)/mac/*.c $(TOP_DIR)/mac/*.h $(TOP_DIR)/mac/*.r \
 		$(DISTDIR)/mac
 	cp -p $(TOP_DIR)/mac/porting.notes $(TOP_DIR)/mac/README $(DISTDIR)/mac
