@@ -1312,19 +1312,17 @@ fi
 
     if test "$tcl_ok" = "yes"; then
 	CFLAGS_DEFAULT='$(CFLAGS_DEBUG)'
-	LDFLAGS_DEFAULT="${LDFLAGS_DEBUG}"
+	LDFLAGS_DEFAULT='$(LDFLAGS_DEBUG})'
 	DBGX=d
 	echo "$ac_t""yes" 1>&6
     else
 	CFLAGS_DEFAULT='$(CFLAGS_OPTIMIZE)'
-	LDFLAGS_DEFAULT="${LDFLAGS_OPTIMIZE}"
+	LDFLAGS_DEFAULT='$(LDFLAGS_OPTIMIZE)'
 	DBGX=""
 	echo "$ac_t""no" 1>&6
     fi
 
 
-CFLAGS=${CFLAGS_DEFAULT}
-LDFLAGS=${LDFLAGS_DEFAULT}
 TCL_DBGX=${DBGX}
 
 #--------------------------------------------------------------------
@@ -1332,7 +1330,7 @@ TCL_DBGX=${DBGX}
 #--------------------------------------------------------------------
 
 echo $ac_n "checking how to run the C preprocessor""... $ac_c" 1>&6
-echo "configure:1336: checking how to run the C preprocessor" >&5
+echo "configure:1334: checking how to run the C preprocessor" >&5
 # On Suns, sometimes $CPP names a directory.
 if test -n "$CPP" && test -d "$CPP"; then
   CPP=
@@ -1347,13 +1345,13 @@ else
   # On the NeXT, cc -E runs the code through the compiler's parser,
   # not just through cpp.
   cat > conftest.$ac_ext <<EOF
-#line 1351 "configure"
+#line 1349 "configure"
 #include "confdefs.h"
 #include <assert.h>
 Syntax Error
 EOF
 ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
-{ (eval echo configure:1357: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
+{ (eval echo configure:1355: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
 ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
 if test -z "$ac_err"; then
   :
@@ -1364,13 +1362,13 @@ else
   rm -rf conftest*
   CPP="${CC-cc} -E -traditional-cpp"
   cat > conftest.$ac_ext <<EOF
-#line 1368 "configure"
+#line 1366 "configure"
 #include "confdefs.h"
 #include <assert.h>
 Syntax Error
 EOF
 ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
-{ (eval echo configure:1374: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
+{ (eval echo configure:1372: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
 ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
 if test -z "$ac_err"; then
   :
@@ -1381,13 +1379,13 @@ else
   rm -rf conftest*
   CPP="${CC-cc} -nologo -E"
   cat > conftest.$ac_ext <<EOF
-#line 1385 "configure"
+#line 1383 "configure"
 #include "confdefs.h"
 #include <assert.h>
 Syntax Error
 EOF
 ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
-{ (eval echo configure:1391: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
+{ (eval echo configure:1389: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
 ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
 if test -z "$ac_err"; then
   :
@@ -1413,17 +1411,17 @@ echo "$ac_t""$CPP" 1>&6
 
 ac_safe=`echo "errno.h" | sed 'y%./+-%__p_%'`
 echo $ac_n "checking for errno.h""... $ac_c" 1>&6
-echo "configure:1417: checking for errno.h" >&5
+echo "configure:1415: checking for errno.h" >&5
 if eval "test \"`echo '$''{'ac_cv_header_$ac_safe'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   cat > conftest.$ac_ext <<EOF
-#line 1422 "configure"
+#line 1420 "configure"
 #include "confdefs.h"
 #include <errno.h>
 EOF
 ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
-{ (eval echo configure:1427: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
+{ (eval echo configure:1425: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
 ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
 if test -z "$ac_err"; then
   rm -rf conftest*
@@ -1505,6 +1503,7 @@ else
         RC_DEFINES=""
     fi
 fi
+
 
 
 
@@ -1745,6 +1744,7 @@ s%@TCL_SHARED_BUILD@%$TCL_SHARED_BUILD%g
 s%@PATHTYPE@%$PATHTYPE%g
 s%@CYGPATH@%$CYGPATH%g
 s%@VPSEP@%$VPSEP%g
+s%@CFLAGS_DEFAULT@%$CFLAGS_DEFAULT%g
 s%@CFLAGS_DEBUG@%$CFLAGS_DEBUG%g
 s%@CFLAGS_OPTIMIZE@%$CFLAGS_OPTIMIZE%g
 s%@CFLAGS_WARNING@%$CFLAGS_WARNING%g
@@ -1756,6 +1756,7 @@ s%@SHLIB_CFLAGS@%$SHLIB_CFLAGS%g
 s%@SHLIB_SUFFIX@%$SHLIB_SUFFIX%g
 s%@CC_OBJNAME@%$CC_OBJNAME%g
 s%@CC_EXENAME@%$CC_EXENAME%g
+s%@LDFLAGS_DEFAULT@%$LDFLAGS_DEFAULT%g
 s%@LDFLAGS_DEBUG@%$LDFLAGS_DEBUG%g
 s%@LDFLAGS_OPTIMIZE@%$LDFLAGS_OPTIMIZE%g
 s%@LDFLAGS_CONSOLE@%$LDFLAGS_CONSOLE%g
