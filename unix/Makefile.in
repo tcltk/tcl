@@ -74,6 +74,9 @@ MANN_INSTALL_DIR =	$(MAN_INSTALL_DIR)/mann
 # Libraries built with optimization switches have this additional extension
 DBGX =			@DBGX@
 
+# warning flags
+CFLAGS_WARNING =	@CFLAGS_WARNING@
+
 # The default switches for optimization or debugging
 CFLAGS_DEBUG =		@CFLAGS_DEBUG@
 CFLAGS_OPTIMIZE =	@CFLAGS_OPTIMIZE@
@@ -207,7 +210,8 @@ CC =			@CC@
 #----------------------------------------------------------------
 
 
-CC_SWITCHES =	${CFLAGS} ${TCL_SHLIB_CFLAGS} -I${GENERIC_DIR} -I${SRC_DIR} \
+CC_SWITCHES =	${CFLAGS} ${CFLAGS_WARNING} ${TCL_SHLIB_CFLAGS} \
+-I${GENERIC_DIR} -I${SRC_DIR} \
 ${AC_FLAGS} ${MATH_FLAGS} ${GENERIC_FLAGS} ${PROTO_FLAGS} ${MEM_DEBUG_FLAGS} \
 ${COMPILE_DEBUG_FLAGS} ${ENV_FLAGS} -DTCL_SHLIB_EXT=\"${SHLIB_SUFFIX}\"
 

@@ -2,7 +2,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 AC_INIT(../generic/tcl.h)
-# SCCS: %Z% $Id: configure.in,v 1.8 1998/07/21 15:26:05 escoffon Exp $ 
+# SCCS: %Z% $Id: configure.in,v 1.9 1998/07/22 13:39:13 escoffon Exp $ 
 
 TCL_VERSION=8.0
 TCL_MAJOR_VERSION=8
@@ -28,6 +28,13 @@ else
 AC_SUBST(CC)
 fi
 AC_C_CROSS
+
+# set the warning flags depending on whether or not we are using gcc
+if test "${GCC}" = "yes" ; then
+    CFLAGS_WARNING="-Wall -Wconversion"
+else
+    CFLAGS_WARNING=""
+fi
 
 #--------------------------------------------------------------------
 #	Supply substitutes for missing POSIX library procedures, or
@@ -1227,6 +1234,7 @@ AC_SUBST(BUILD_DLTEST)
 AC_SUBST(CFLAGS_DEBUG)
 AC_SUBST(CFLAGS_DEFAULT)
 AC_SUBST(CFLAGS_OPTIMIZE)
+AC_SUBST(CFLAGS_WARNING)
 AC_SUBST(CFG_TCL_SHARED_LIB_SUFFIX)
 AC_SUBST(CFG_TCL_UNSHARED_LIB_SUFFIX)
 AC_SUBST(DBGX)
