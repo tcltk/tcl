@@ -7,6 +7,10 @@
 
 2001-03-29  Jeff Hobbs  <jeffh@gimlet.activestate.com>
 
+	* doc/tcltest.n: corrected incorrect macro usage.
+
+	* doc/lsort.n: corrected unbalanced nroff macros.
+
 	* unix/tclUnixPipe.c (TclpCreateTempFile): prevent potential race
 	condition and security leak in tmp filename creation.
  	(max) [Patch #402924]
