@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.85 2004/10/07 22:01:18 dgp Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.86 2004/11/30 19:34:50 dgp Exp $
  */
 
 #define TCL_TEST
@@ -1818,9 +1818,9 @@ TestencodingObjCmd(dummy, interp, objc, objv)
 	}
 	case ENC_PATH: {
 	    if (objc == 2) {
-		Tcl_SetObjResult(interp, TclGetLibraryPath());
+		Tcl_SetObjResult(interp, TclGetEncodingSearchPath());
 	    } else {
-		TclSetLibraryPath(objv[2]);
+		TclSetEncodingSearchPath(objv[2]);
 	    }
 	    break;
 	}

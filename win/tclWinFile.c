@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.70 2004/11/02 12:13:36 vincentdarley Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.71 2004/11/30 19:34:51 dgp Exp $
  */
 
 //#define _WIN32_WINNT  0x0500
@@ -691,19 +691,20 @@ NativeWriteReparse(LinkDirectory, buffer)
  *---------------------------------------------------------------------------
  */
 
-char *
+void
 TclpFindExecutable(argv0)
     CONST char *argv0;		/* The value of the application's argv[0]
 				 * (native). */
 {
     WCHAR wName[MAX_PATH];
     char name[MAX_PATH * TCL_UTF_MAX];
+    Tcl_DString ds;
 
     if (argv0 == NULL) {
-	return NULL;
+	return;
     }
     if (tclNativeExecutableName != NULL) {
-	return tclNativeExecutableName;
+	return;
     }
 
     /*
@@ -719,12 +720,13 @@ TclpFindExecutable(argv0)
 	MultiByteToWideChar(CP_ACP, 0, name, -1, wName, MAX_PATH);
     }
     WideCharToMultiByte(CP_UTF8, 0, wName, -1, name, sizeof(name), NULL, NULL);
+    TclWinNoBackslash(name);
 
-    tclNativeExecutableName = ckalloc((unsigned) (strlen(name) + 1));
-    strcpy(tclNativeExecutableName, name);
-
-    TclWinNoBackslash(tclNativeExecutableName);
-    return tclNativeExecutableName;
+    Tcl_UtfToExternalDString(NULL, name, -1, &ds);
+    tclNativeExecutableName = ckalloc((unsigned) (Tcl_DStringLength(&ds) + 1));
+    strcpy(tclNativeExecutableName, Tcl_DStringValue(&ds));
+    Tcl_DStringFree(&ds);
+    Tcl_GetNameOfExecutable();
 }
 
 /*

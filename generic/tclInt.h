@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.200 2004/11/17 17:53:01 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.201 2004/11/30 19:34:48 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -1688,14 +1688,46 @@ typedef Tcl_ObjCmdProc *TclObjCmdProcType;
 
 /*
  *----------------------------------------------------------------
+ * Data structures for process-global values.
+ *----------------------------------------------------------------
+ */
+
+typedef void (TclInitProcessGlobalValueProc) _ANSI_ARGS_((char **valuePtr,
+	int *lengthPtr, Tcl_Encoding *encodingPtr));
+
+/*
+ * A ProcessGlobalValue struct exists for each internal value in
+ * Tcl that is to be shared among several threads.  Each thread
+ * sees a (Tcl_Obj) copy of the value, and the master is kept as
+ * a counted string, with epoch and mutex control.  Each ProcessGlobalValue
+ * struct should be a static variable in some file.
+ */
+typedef struct ProcessGlobalValue {
+    int epoch;			/* Epoch counter to detect changes
+				 * in the master value */
+    int numBytes;		/* Length of the master string */
+    char *value;		/* The master string value */
+    Tcl_Encoding encoding;	/* system encoding when master string
+				 * was initialized */
+    TclInitProcessGlobalValueProc *proc;
+    				/* A procedure to initialize the
+				 * master string copy when a "get"
+				 * request comes in before any
+				 * "set" request has been received. */
+    Tcl_Mutex mutex;		/* Enforce orderly access from
+				 * multiple threads */
+    Tcl_ThreadDataKey key;	/* Key for per-thread data holding
+				 * the (Tcl_Obj) copy for each thread */
+} ProcessGlobalValue;
+
+/*
+ *----------------------------------------------------------------
  * Variables shared among Tcl modules but not used by the outside world.
  *----------------------------------------------------------------
  */
 
-MODULE_SCOPE char *	tclExecutableName;
 MODULE_SCOPE char *	tclNativeExecutableName;
 MODULE_SCOPE int	tclFindExecutableSearchDone;
-MODULE_SCOPE char *	tclDefaultEncodingDir;
 MODULE_SCOPE char *	tclMemDumpFileName;
 MODULE_SCOPE TclPlatformType tclPlatform;
 MODULE_SCOPE Tcl_NotifierProcs tclOriginalNotifier;
@@ -1802,6 +1834,8 @@ MODULE_SCOPE void	TclFinalizeSynchronization _ANSI_ARGS_((void));
 MODULE_SCOPE void	TclFinalizeLock _ANSI_ARGS_((void));
 MODULE_SCOPE void	TclFinalizeThreadData _ANSI_ARGS_((void));
 MODULE_SCOPE Tcl_Obj *	TclGetBgErrorHandler _ANSI_ARGS_((Tcl_Interp *interp));
+MODULE_SCOPE Tcl_Obj *	TclGetProcessGlobalValue _ANSI_ARGS_ ((
+			    ProcessGlobalValue *pgvPtr));
 MODULE_SCOPE int	TclGlob _ANSI_ARGS_((Tcl_Interp *interp,
 			    char *pattern, Tcl_Obj *unquotedPrefix, 
 			    int globFlags, Tcl_GlobTypeData* types));
@@ -1815,7 +1849,7 @@ MODULE_SCOPE void	TclInitLimitSupport _ANSI_ARGS_((Tcl_Interp *interp));
 MODULE_SCOPE void	TclInitNamespaceSubsystem _ANSI_ARGS_((void));
 MODULE_SCOPE void	TclInitNotifier _ANSI_ARGS_((void));
 MODULE_SCOPE void	TclInitObjSubsystem _ANSI_ARGS_((void));
-MODULE_SCOPE void	TclInitSubsystems _ANSI_ARGS_((CONST char *argv0));
+MODULE_SCOPE void	TclInitSubsystems ();
 MODULE_SCOPE int	TclIsLocalScalar _ANSI_ARGS_((CONST char *src,
 			    int len));
 MODULE_SCOPE int	TclJoinThread _ANSI_ARGS_((Tcl_ThreadId id,
@@ -1879,11 +1913,12 @@ MODULE_SCOPE int	TclpThreadCreate _ANSI_ARGS_((
 			    int stackSize, int flags));
 MODULE_SCOPE void	TclpFinalizeThreadDataKey _ANSI_ARGS_((
 			    Tcl_ThreadDataKey *keyPtr));
-MODULE_SCOPE char *	TclpFindExecutable _ANSI_ARGS_((
+MODULE_SCOPE void	TclpFindExecutable _ANSI_ARGS_((
 			    CONST char *argv0));
 MODULE_SCOPE int	TclpFindVariable _ANSI_ARGS_((CONST char *name,
 			    int *lengthPtr));
-MODULE_SCOPE int	TclpInitLibraryPath _ANSI_ARGS_((CONST char *argv0));
+MODULE_SCOPE void	TclpInitLibraryPath _ANSI_ARGS_((char **valuePtr,
+			    int *lengthPtr, Tcl_Encoding *encodingPtr));
 MODULE_SCOPE void	TclpInitLock _ANSI_ARGS_((void));
 MODULE_SCOPE void	TclpInitPlatform _ANSI_ARGS_((void));
 MODULE_SCOPE void	TclpInitUnlock _ANSI_ARGS_((void));
@@ -1951,6 +1986,8 @@ MODULE_SCOPE void	TclRemoveScriptLimitCallbacks _ANSI_ARGS_((
 			    Tcl_Interp *interp));
 MODULE_SCOPE void	TclSetBgErrorHandler _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *cmdPrefix));
+MODULE_SCOPE void	TclSetProcessGlobalValue _ANSI_ARGS_ ((
+			    ProcessGlobalValue *pgvPtr, Tcl_Obj *newValue));
 MODULE_SCOPE VOID	TclSignalExitThread _ANSI_ARGS_((Tcl_ThreadId id,
 			    int result));
 MODULE_SCOPE int	TclSubstTokens _ANSI_ARGS_((Tcl_Interp *interp,

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEvent.c,v 1.52 2004/11/18 20:15:32 dgp Exp $
+ * RCS: @(#) $Id: tclEvent.c,v 1.53 2004/11/30 19:34:47 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -98,16 +98,8 @@ typedef struct ThreadSpecificData {
     int inExit;			/* True when this thread is exiting. This
 				 * is used as a hack to decide to close
 				 * the standard channels. */
-    Tcl_Obj *tclLibraryPath;	/* Path(s) to the Tcl library */
 } ThreadSpecificData;
 static Tcl_ThreadDataKey dataKey;
-
-/*
- * Common string for the library path for sharing across threads.
- * This is ckalloc'd and cleared in Tcl_Finalize.
- */
-static char *tclLibraryPathStr = NULL;
-
 
 #ifdef TCL_THREADS
 
@@ -747,92 +739,6 @@ Tcl_Exit(status)
 
 /*
  *-------------------------------------------------------------------------
- * 
- * TclSetLibraryPath --
- *
- *	Set the path that will be used for searching for init.tcl and 
- *	encodings when an interp is being created.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Changing the library path will affect what directories are
- *	examined when looking for encodings for all interps from that
- *	point forward.
- *
- *	The refcount of the new library path is incremented and the 
- *	refcount of the old path is decremented.
- *
- *-------------------------------------------------------------------------
- */
-
-void
-TclSetLibraryPath(pathPtr)
-    Tcl_Obj *pathPtr;		/* A Tcl list object whose elements are
-				 * the new library path. */
-{
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-    const char *toDupe;
-    int size;
-
-    if (pathPtr != NULL) {
-	Tcl_IncrRefCount(pathPtr);
-    }
-    if (tsdPtr->tclLibraryPath != NULL) {
-	Tcl_DecrRefCount(tsdPtr->tclLibraryPath);
-    }
-    tsdPtr->tclLibraryPath = pathPtr;
-
-    /*
-     *  No mutex locking is needed here as up the stack we're within
-     *  TclpInitLock().
-     */
-    if (tclLibraryPathStr != NULL) {
-	ckfree(tclLibraryPathStr);
-    }
-    toDupe = Tcl_GetStringFromObj(pathPtr, &size);
-    tclLibraryPathStr = ckalloc((unsigned)size+1);
-    memcpy(tclLibraryPathStr, toDupe, (unsigned)size+1);
-}
-
-/*
- *-------------------------------------------------------------------------
- *
- * TclGetLibraryPath --
- *
- *	Return a Tcl list object whose elements are the library path.
- *	The caller should not modify the contents of the returned object.
- *
- * Results:
- *	As above.
- *
- * Side effects:
- *	None.
- *
- *-------------------------------------------------------------------------
- */
-
-Tcl_Obj *
-TclGetLibraryPath()
-{
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-
-    if (tsdPtr->tclLibraryPath == NULL) {
-	/*
-	 * Grab the shared string and place it into a new thread specific
-	 * Tcl_Obj.
-	 */
-	tsdPtr->tclLibraryPath = Tcl_NewStringObj(tclLibraryPathStr, -1);
-
-	/* take ownership */
-	Tcl_IncrRefCount(tsdPtr->tclLibraryPath);
-    }
-    return tsdPtr->tclLibraryPath;
-}
-
-/*
- *-------------------------------------------------------------------------
  *
  * TclInitSubsystems --
  *
@@ -858,24 +764,11 @@ TclGetLibraryPath()
  */
 
 void
-TclInitSubsystems(argv0)
-    CONST char *argv0;		/* Name of executable from argv[0] to main()
-				 * in native multi-byte encoding. */
+TclInitSubsystems()
 {
-    ThreadSpecificData *tsdPtr;
-
     if (inFinalize != 0) {
 	Tcl_Panic("TclInitSubsystems called while finalizing");
     }
-
-    /*
-     * Grab the thread local storage pointer before doing anything because
-     * the initialization routines will be registering exit handlers.
-     * We use this pointer to detect if this is the first time this
-     * thread has created an interpreter.
-     */
-
-    tsdPtr = (ThreadSpecificData *) TclThreadDataKeyGet(&dataKey);
 
     if (subsystemsInitialized == 0) {
 	/* 
@@ -891,8 +784,6 @@ TclInitSubsystems(argv0)
 	     */
 
 	    subsystemsInitialized = 1;
-
-	    tclExecutableName = NULL;
 
 	    /*
 	     * Initialize locks used by the memory allocators before anything
@@ -914,17 +805,7 @@ TclInitSubsystems(argv0)
 	}
 	TclpInitUnlock();
     }
-
-    if (tsdPtr == NULL) {
-	/*
-	 * First time this thread has created an interpreter.
-	 * We fetch the key again just in case no exit handlers were
-	 * registered by this point.
-	 */
-
-	(void) TCL_TSD_INIT(&dataKey);
-	TclInitNotifier();
-     }
+    TclInitNotifier();
 }
 
 /*
@@ -1017,21 +898,9 @@ Tcl_Finalize()
 	 */
 	TclFinalizeEncodingSubsystem();
 
-	if (tclExecutableName != NULL) {
-	    ckfree(tclExecutableName);
-	    tclExecutableName = NULL;
-	}
 	if (tclNativeExecutableName != NULL) {
 	    ckfree(tclNativeExecutableName);
 	    tclNativeExecutableName = NULL;
-	}
-	if (tclDefaultEncodingDir != NULL) {
-	    ckfree(tclDefaultEncodingDir);
-	    tclDefaultEncodingDir = NULL;
-	}
-	if (tclLibraryPathStr != NULL) {
-	    ckfree(tclLibraryPathStr);
-	    tclLibraryPathStr = NULL;
 	}
 	
 	Tcl_SetPanicProc(NULL);
@@ -1112,16 +981,6 @@ Tcl_FinalizeThread()
 
     if (tsdPtr != NULL) {
 	tsdPtr->inExit = 1;
-
-	/*
-	 * Clean up the library path now, before we invalidate thread-local
-	 * storage or calling thread exit handlers.
-	 */
-
-	if (tsdPtr->tclLibraryPath != NULL) {
-	    Tcl_DecrRefCount(tsdPtr->tclLibraryPath);
-	    tsdPtr->tclLibraryPath = NULL;
-	}
 
 	for (exitPtr = tsdPtr->firstExitPtr; exitPtr != NULL;
 		exitPtr = tsdPtr->firstExitPtr) {

@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.135 2004/11/13 00:19:06 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.136 2004/11/30 19:34:46 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -183,7 +183,7 @@ Tcl_CreateInterp()
     ByteCodeStats *statsPtr;
 #endif /* TCL_COMPILE_STATS */
 
-    TclInitSubsystems(NULL);
+    TclInitSubsystems();
 
     /*
      * Panic if someone updated the CallFrame structure without

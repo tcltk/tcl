@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFile.c,v 1.42 2004/10/07 14:50:23 vincentdarley Exp $
+ * RCS: @(#) $Id: tclUnixFile.c,v 1.43 2004/11/30 19:34:51 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -42,7 +42,7 @@ static int NativeMatchType(CONST char* nativeName, Tcl_GlobTypeData *types);
  *---------------------------------------------------------------------------
  */
 
-char *
+void
 TclpFindExecutable(argv0)
     CONST char *argv0;		/* The value of the application's argv[0]
 				 * (native). */
@@ -50,13 +50,13 @@ TclpFindExecutable(argv0)
     CONST char *name, *p;
     Tcl_StatBuf statBuf;
     int length;
-    Tcl_DString buffer, nameString;
+    Tcl_DString buffer, nameString, cwd;
 
     if (argv0 == NULL) {
-	return NULL;
+	return;
     }
     if (tclFindExecutableSearchDone) {
-	return tclNativeExecutableName;
+	return;
     }
     tclFindExecutableSearchDone = 1;
 
@@ -135,7 +135,7 @@ TclpFindExecutable(argv0)
     goto done;
 
     /*
-     * If the name starts with "/" then just copy it to tclExecutableName.
+     * If the name starts with "/" then just copy it to tclNativeExecutableName.
      */
 
 gotName:
@@ -144,11 +144,9 @@ gotName:
 #else
     if (name[0] == '/')  {
 #endif
-	Tcl_ExternalToUtfDString(NULL, name, -1, &nameString);
 	tclNativeExecutableName = (char *)
-		ckalloc((unsigned) (Tcl_DStringLength(&nameString) + 1));
-	strcpy(tclNativeExecutableName, Tcl_DStringValue(&nameString));
-	Tcl_DStringFree(&nameString);
+		ckalloc((unsigned int) strlen(name) + 1);
+	strcpy(tclNativeExecutableName, name);
 	goto done;
     }
 
@@ -162,22 +160,29 @@ gotName:
 	name += 2;
     }
 
-    Tcl_ExternalToUtfDString(NULL, name, -1, &nameString);
+    Tcl_DStringInit(&nameString);
+    Tcl_DStringAppend(&nameString, name, -1);
+
+    TclpGetCwd(NULL, &cwd);
 
     Tcl_DStringFree(&buffer);
-    TclpGetCwd(NULL, &buffer);
+    Tcl_UtfToExternalDString(NULL, Tcl_DStringValue(&cwd),
+	    Tcl_DStringLength(&cwd), &buffer);
+    if (Tcl_DStringValue(&cwd)[Tcl_DStringLength(&cwd) -1] != '/') {
+	Tcl_DStringAppend(&buffer, "/", 1);
+    }
+    Tcl_DStringFree(&cwd);
+    Tcl_DStringAppend(&buffer, Tcl_DStringValue(&nameString),
+	    Tcl_DStringLength(&nameString));
+    Tcl_DStringFree(&nameString);
 
-    length = Tcl_DStringLength(&buffer) + Tcl_DStringLength(&nameString) + 2;
+    length = Tcl_DStringLength(&buffer) + 1;
     tclNativeExecutableName = (char *) ckalloc((unsigned) length);
     strcpy(tclNativeExecutableName, Tcl_DStringValue(&buffer));
-    tclNativeExecutableName[Tcl_DStringLength(&buffer)] = '/';
-    strcpy(tclNativeExecutableName + Tcl_DStringLength(&buffer) + 1,
-	    Tcl_DStringValue(&nameString));
-    Tcl_DStringFree(&nameString);
     
 done:
     Tcl_DStringFree(&buffer);
-    return tclNativeExecutableName;
+    Tcl_GetNameOfExecutable();
 }
 
 /*
