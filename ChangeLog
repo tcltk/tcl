@@ -1,5 +1,14 @@
 2003-02-01  Kevin Kenny  <kennykb@users.sourceforge.net>
 
+	* generic/tclClock.c: Fixed a bug that incorrectly allowed
+	[clock clicks {}] and [clock clicks -] to be accepted as if
+	they were [clock clicks -milliseconds].
+	
+	* tests/clock.test: Added regression tests for the above bug.
+	[Bug 675356]
+	
+2003-02-01  Kevin Kenny  <kennykb@users.sourceforge.net>
+
 	* tests/unixNotfy.test: Added cleanup of working files
 	[Bug 675609]
 	
