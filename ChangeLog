@@ -1,3 +1,7 @@
+2003-07-15  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* doc/array.n: Added some examples from David Welton [Patch 763312]
+
 2003-07-15  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclCompCmds.c (TclCompileIfCmd):  Prior fix of Bug 711371
