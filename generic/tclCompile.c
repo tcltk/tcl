@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.78.2.1 2004/12/13 22:03:11 kennykb Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.78.2.2 2004/12/29 22:46:39 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -1146,10 +1146,11 @@ TclCompileScript(interp, script, numBytes, envPtr)
 			/*
 			 * No compile procedure so push the word. If the
 			 * command was found, push a CmdName object to
-			 * reduce runtime lookups.
+			 * reduce runtime lookups. Avoid sharing this literal
+			 * among different namespaces to reduce shimmering.
 			 */
 
-			objIndex = TclRegisterNewLiteral(envPtr,
+			objIndex = TclRegisterNewNSLiteral(envPtr,
 				tokenPtr[1].start, tokenPtr[1].size);
 			if (cmdPtr != NULL) {
 			    TclSetCmdNameObj(interp,
@@ -1318,9 +1319,9 @@ TclCompileTokens(interp, tokenPtr, count, envPtr)
 		if (Tcl_DStringLength(&textBuffer) > 0) {
 		    int literal;
 		    
-		    literal = TclRegisterLiteral(envPtr,
+		    literal = TclRegisterNewLiteral(envPtr,
 			    Tcl_DStringValue(&textBuffer),
-			    Tcl_DStringLength(&textBuffer), /*onHeap*/ 0);
+			    Tcl_DStringLength(&textBuffer));
 		    TclEmitPush(literal, envPtr);
 		    numObjsToConcat++;
 		    Tcl_DStringFree(&textBuffer);
@@ -1339,9 +1340,9 @@ TclCompileTokens(interp, tokenPtr, count, envPtr)
 		if (Tcl_DStringLength(&textBuffer) > 0) {
 		    int literal;
 		    
-		    literal = TclRegisterLiteral(envPtr,
+		    literal = TclRegisterNewLiteral(envPtr,
 			    Tcl_DStringValue(&textBuffer),
-			    Tcl_DStringLength(&textBuffer), /*onHeap*/ 0);
+			    Tcl_DStringLength(&textBuffer));
 		    TclEmitPush(literal, envPtr);
 		    numObjsToConcat++;
 		    Tcl_DStringFree(&textBuffer);
@@ -1433,8 +1434,8 @@ TclCompileTokens(interp, tokenPtr, count, envPtr)
     if (Tcl_DStringLength(&textBuffer) > 0) {
 	int literal;
 
-	literal = TclRegisterLiteral(envPtr, Tcl_DStringValue(&textBuffer),
-	        Tcl_DStringLength(&textBuffer), /*onHeap*/ 0);
+	literal = TclRegisterNewLiteral(envPtr, Tcl_DStringValue(&textBuffer),
+	        Tcl_DStringLength(&textBuffer));
 	TclEmitPush(literal, envPtr);
 	numObjsToConcat++;
     }
@@ -1456,7 +1457,7 @@ TclCompileTokens(interp, tokenPtr, count, envPtr)
      */
     
     if (envPtr->codeNext == entryCodeNext) {
-	TclEmitPush(TclRegisterLiteral(envPtr, "", 0, /*onHeap*/ 0),
+	TclEmitPush(TclRegisterNewLiteral(envPtr, "", 0),
 	        envPtr);
     }
     Tcl_DStringFree(&textBuffer);
@@ -1573,7 +1574,7 @@ TclCompileExprWords(interp, tokenPtr, numWords, envPtr)
     for (i = 0;  i < numWords;  i++) {
 	TclCompileTokens(interp, wordPtr+1, wordPtr->numComponents, envPtr);
 	if (i < (numWords - 1)) {
-	    TclEmitPush(TclRegisterLiteral(envPtr, " ", 1, /*onHeap*/ 0),
+	    TclEmitPush(TclRegisterNewLiteral(envPtr, " ", 1),
 	            envPtr);
 	}
 	wordPtr += (wordPtr->numComponents + 1);
@@ -1843,146 +1844,8 @@ TclFindCompiledLocal(name, nameBytes, create, flags, procPtr)
 	procPtr->numCompiledLocals++;
     }
     return localVar;
-}
 
-/*
- *----------------------------------------------------------------------
- *
- * TclInitCompiledLocals --
- *
- *	This routine is invoked in order to initialize the compiled
- *	locals table for a new call frame.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	May invoke various name resolvers in order to determine which
- *	variables are being referenced at runtime.
- *
- *----------------------------------------------------------------------
- */
-
-void
-TclInitCompiledLocals(interp, framePtr, nsPtr)
-    Tcl_Interp *interp;		/* Current interpreter. */
-    CallFrame *framePtr;	/* Call frame to initialize. */
-    Namespace *nsPtr;		/* Pointer to current namespace. */
-{
-    register CompiledLocal *localPtr;
-    Interp *iPtr = (Interp*) interp;
-    Tcl_ResolvedVarInfo *resVarInfo;
-    Var *varPtr = framePtr->compiledLocals;
-    int haveResolvers = (nsPtr->compiledVarResProc || iPtr->resolverPtr);
-    ByteCode *codePtr = (ByteCode *)
-	    framePtr->procPtr->bodyPtr->internalRep.otherValuePtr;
-
-    if (codePtr->flags & TCL_BYTECODE_RESOLVE_VARS) {
-	    
-	/*
-	 * This is the first run after a recompile, or else the resolver epoch
-	 * has changed: update the resolver cache.
-	 */
-
-	codePtr->flags &= ~TCL_BYTECODE_RESOLVE_VARS;
-	
-	for (localPtr = framePtr->procPtr->firstLocalPtr; localPtr != NULL;
-		localPtr = localPtr->nextPtr) {
-
-	    if (localPtr->resolveInfo) {
-		if (localPtr->resolveInfo->deleteProc) {
-		    localPtr->resolveInfo->deleteProc(localPtr->resolveInfo);
-		} else {
-		    ckfree((char*)localPtr->resolveInfo);
-		}
-		localPtr->resolveInfo = NULL;
-	    }
-	    localPtr->flags &= ~VAR_RESOLVED;
-	    
-	    if (haveResolvers &&
-		    !(localPtr->flags & (VAR_ARGUMENT|VAR_TEMPORARY))) {
-		ResolverScheme *resPtr = iPtr->resolverPtr;
-		Tcl_ResolvedVarInfo *vinfo;
-		int result;
-		
-		if (nsPtr->compiledVarResProc) {
-		    result = (*nsPtr->compiledVarResProc)(nsPtr->interp,
-			    localPtr->name, localPtr->nameLength,
-			    (Tcl_Namespace *) nsPtr, &vinfo);
-		} else {
-		    result = TCL_CONTINUE;
-		}
-		
-		while ((result == TCL_CONTINUE) && resPtr) {
-		    if (resPtr->compiledVarResProc) {
-			result = (*resPtr->compiledVarResProc)(nsPtr->interp,
-				localPtr->name, localPtr->nameLength,
-				(Tcl_Namespace *) nsPtr, &vinfo);
-		    }
-		    resPtr = resPtr->nextPtr;
-		}
-		if (result == TCL_OK) {
-		    localPtr->resolveInfo = vinfo;
-		    localPtr->flags |= VAR_RESOLVED;
-		}		    
-	    }	    
-	}
-    }
-
-    /*
-     * Initialize the array of local variables stored in the call frame.
-     * Some variables may have special resolution rules.  In that case,
-     * we call their "resolver" procs to get our hands on the variable,
-     * and we make the compiled local a link to the real variable.
-     */
-
-    if (haveResolvers) {
-	for (localPtr = framePtr->procPtr->firstLocalPtr;
-	        localPtr != NULL;
-	        localPtr = localPtr->nextPtr) {
-	    varPtr->value.objPtr = NULL;
-	    varPtr->name = localPtr->name; /* will be just '\0' if temp var */
-	    varPtr->nsPtr = NULL;
-	    varPtr->hPtr = NULL;
-	    varPtr->refCount = 0;
-	    varPtr->tracePtr = NULL;
-	    varPtr->searchPtr = NULL;
-	    varPtr->flags = localPtr->flags;
-    
-	    /*
-	     * Now invoke the resolvers to determine the exact variables that
-	     * should be used.
-	     */
-	    
-	    resVarInfo = localPtr->resolveInfo;
-	    if (resVarInfo && resVarInfo->fetchProc) {
-		Var *resolvedVarPtr = (Var*) (*resVarInfo->fetchProc)(interp,
-			resVarInfo);
-		if (resolvedVarPtr) {
-		    resolvedVarPtr->refCount++;
-		    varPtr->value.linkPtr = resolvedVarPtr;
-		    varPtr->flags = VAR_LINK;
-		}
-	    }
-	    varPtr++;
-	}
-    } else {
-	for (localPtr = framePtr->procPtr->firstLocalPtr;
-	        localPtr != NULL;
-	        localPtr = localPtr->nextPtr) {
-	    varPtr->value.objPtr = NULL;
-	    varPtr->name = localPtr->name; /* will be just '\0' if temp var */
-	    varPtr->nsPtr = NULL;
-	    varPtr->hPtr = NULL;
-	    varPtr->refCount = 0;
-	    varPtr->tracePtr = NULL;
-	    varPtr->searchPtr = NULL;
-	    varPtr->flags = localPtr->flags;
-	    varPtr++;
-	}
-    }
 }
-
 /*
  *----------------------------------------------------------------------
  *

@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.157.2.2 2004/12/09 22:59:26 kennykb Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.157.2.3 2004/12/29 22:47:09 kennykb Exp $
 
 VERSION 		= @TCL_VERSION@
 MAJOR_VERSION		= @TCL_MAJOR_VERSION@
@@ -563,6 +563,7 @@ topDirName:
 
 gendate:
 	bison --output-file=$(GENERIC_DIR)/tclDate.c \
+	--no-lines \
 	--name-prefix=TclDate \
 	$(GENERIC_DIR)/tclGetDate.y
 

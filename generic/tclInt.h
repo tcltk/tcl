@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.202.2.2 2004/12/13 22:03:13 kennykb Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.202.2.3 2004/12/29 22:47:00 kennykb Exp $
  */
 
 #ifndef _TCLINT
@@ -775,13 +775,13 @@ typedef struct AssocData {
 typedef struct CallFrame {
     Namespace *nsPtr;		/* Points to the namespace used to resolve
 				 * commands and global variables. */
-    int isProcCallFrame;	/* If nonzero, the frame was pushed to
-				 * execute a Tcl procedure and may have
-				 * local vars. If 0, the frame was pushed
-				 * to execute a namespace command and var
-				 * references are treated as references to
-				 * namespace vars; varTablePtr and
-				 * compiledLocals are ignored. */
+    int isProcCallFrame;	/* If 0, the frame was pushed to execute a
+				 * namespace command and var references are
+				 * treated as references to namespace vars;
+				 * varTablePtr and compiledLocals are ignored.
+				 * If FRAME_IS_PROC is set, the frame was
+				 * pushed to execute a Tcl procedure and may
+				 * have local vars. */
     int objc;			/* This and objv below describe the
 				 * arguments for this procedure call. */
     Tcl_Obj *CONST *objv;	/* Array of argument objects. */
@@ -817,6 +817,8 @@ typedef struct CallFrame {
 				 * emits code that refers to these variables
 				 * using an index into this array. */
 } CallFrame;
+
+#define FRAME_IS_PROC 0x1
 
 /*
  *----------------------------------------------------------------
@@ -971,6 +973,11 @@ typedef struct LiteralEntry {
 					 * entry can be freed when refCount
 					 * drops to 0. If in a local literal
 					 * table, -1. */
+    Namespace *nsPtr;                    /* Namespace in which this literal is
+					 * used. We try to avoid sharing
+					 * literal non-FQ command names among
+					 * different namespaces to reduce
+					 * shimmering.*/ 
 } LiteralEntry;
 
 typedef struct LiteralTable {
@@ -1406,6 +1413,8 @@ typedef struct Interp {
 				     * is reached. */
 	int timeGranularity;	/* Mod factor used to determine how often
 				 * to evaluate the limit check. */
+	Tcl_TimerToken timeEvent; /* Handle for a timer callback that will
+				   * occur when the time-limit is exceeded. */
 
 	Tcl_HashTable callbacks; /* Mapping from (interp,type) pair to data
 				  * used to install a limit handler callback
@@ -2112,6 +2121,9 @@ MODULE_SCOPE int	Tcl_ConcatObjCmd _ANSI_ARGS_((ClientData clientData,
 MODULE_SCOPE int	Tcl_ContinueObjCmd _ANSI_ARGS_((ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *CONST objv[]));
+MODULE_SCOPE Tcl_TimerToken TclCreateAbsoluteTimerHandler _ANSI_ARGS_((
+			    Tcl_Time *timePtr, Tcl_TimerProc *proc,
+			    ClientData clientData));
 MODULE_SCOPE int	TclDefaultBgErrorHandlerObjCmd _ANSI_ARGS_((
 			    ClientData clientData, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *CONST objv[]));

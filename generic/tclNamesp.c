@@ -21,7 +21,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.66.2.1 2004/12/13 22:03:14 kennykb Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.66.2.2 2004/12/29 22:47:01 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -528,6 +528,59 @@ Tcl_PopCallFrame(interp)
 	Tcl_DeleteNamespace((Tcl_Namespace *) nsPtr);
     }
     framePtr->nsPtr = NULL;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclPushStackFrame --
+ *
+ *	Allocates a new call frame in the interpreter's execution stack, then
+ *	pushes it onto the interpreter's Tcl call stack.
+ *	Called when executing a Tcl procedure or a "namespace eval" or
+ *	"namespace inscope" command. 
+ *
+ * Results:
+ *	Returns TCL_OK if successful, or TCL_ERROR (along with an error
+ *	message in the interpreter's result object) if something goes wrong.
+ *
+ * Side effects:
+ *	Modifies the interpreter's Tcl call stack.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclPushStackFrame(interp, framePtrPtr, namespacePtr, isProcCallFrame)
+    Tcl_Interp *interp;		 /* Interpreter in which the new call frame
+				  * is to be pushed. */
+    Tcl_CallFrame **framePtrPtr; /* Place to store a pointer to the stack
+				  * allocated call frame.*/
+    Tcl_Namespace *namespacePtr; /* Points to the namespace in which the
+				  * frame will execute. If NULL, the
+				  * interpreter's current namespace will
+				  * be used. */
+    int isProcCallFrame;	 /* If nonzero, the frame represents a
+				  * called Tcl procedure and may have local
+				  * vars. Vars will ordinarily be looked up
+				  * in the frame. If new variables are
+				  * created, they will be created in the
+				  * frame. If 0, the frame is for a
+				  * "namespace eval" or "namespace inscope"
+				  * command and var references are treated
+				  * as references to namespace variables. */
+{
+
+    *framePtrPtr = (Tcl_CallFrame *) TclStackAlloc(interp, sizeof(CallFrame));
+    return Tcl_PushCallFrame(interp, *framePtrPtr, namespacePtr, isProcCallFrame);
+}
+
+void
+TclPopStackFrame(interp)
+    Tcl_Interp* interp;		/* Interpreter with call frame to pop. */
+{
+    Tcl_PopCallFrame(interp);
+    TclStackFree(interp);    
 }
 
 /*
@@ -2046,14 +2099,14 @@ TclGetNamespaceForQualName(interp, qualName, cxtNsPtr, flags,
 	    if (entryPtr != NULL) {
 		nsPtr = (Namespace *) Tcl_GetHashValue(entryPtr);
 	    } else if (flags & TCL_CREATE_NS_IF_UNKNOWN) {
-		Tcl_CallFrame frame;
+		Tcl_CallFrame *framePtr;
 
-		(void) Tcl_PushCallFrame(interp, &frame,
+		(void) TclPushStackFrame(interp, &framePtr,
 			(Tcl_Namespace *) nsPtr, /*isProcCallFrame*/ 0);
 
 		nsPtr = (Namespace *) Tcl_CreateNamespace(interp, nsName,
 			(ClientData) NULL, (Tcl_NamespaceDeleteProc *) NULL);
-		Tcl_PopCallFrame(interp);
+		TclPopStackFrame(interp);
 
 		if (nsPtr == NULL) {
 		    Tcl_Panic("Could not create namespace '%s'", nsName);
@@ -3183,7 +3236,7 @@ NamespaceEvalCmd(dummy, interp, objc, objv)
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
     Tcl_Namespace *namespacePtr;
-    CallFrame frame, *framePtr;
+    CallFrame *framePtr, **framePtrPtr;
     Tcl_Obj *objPtr;
     int result;
 
@@ -3221,14 +3274,14 @@ NamespaceEvalCmd(dummy, interp, objc, objv)
      */
 
     /* This is needed to satisfy GCC 3.3's strict aliasing rules */
-    framePtr = &frame;
-    result = Tcl_PushCallFrame(interp, (Tcl_CallFrame *) framePtr, 
+    framePtrPtr = &framePtr;
+    result = TclPushStackFrame(interp, (Tcl_CallFrame **) framePtrPtr, 
 	    namespacePtr, /*isProcCallFrame*/ 0);
     if (result != TCL_OK) {
 	return TCL_ERROR;
     }
-    frame.objc = objc;
-    frame.objv = objv;	/* ref counts do not need to be incremented here */
+    framePtr->objc = objc;
+    framePtr->objv = objv;	/* ref counts do not need to be incremented here */
 
     if (objc == 4) {
 	result = Tcl_EvalObjEx(interp, objv[3], 0);
@@ -3260,7 +3313,7 @@ NamespaceEvalCmd(dummy, interp, objc, objv)
      * Restore the previous "current" namespace.
      */
 
-    Tcl_PopCallFrame(interp);
+    TclPopStackFrame(interp);
     return result;
 }
 
@@ -3596,7 +3649,7 @@ NamespaceInscopeCmd(dummy, interp, objc, objv)
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
     Tcl_Namespace *namespacePtr;
-    Tcl_CallFrame frame;
+    Tcl_CallFrame *framePtr;
     int i, result;
 
     if (objc < 4) {
@@ -3622,7 +3675,7 @@ NamespaceInscopeCmd(dummy, interp, objc, objv)
      * Make the specified namespace the current namespace.
      */
 
-    result = Tcl_PushCallFrame(interp, &frame, namespacePtr,
+    result = TclPushStackFrame(interp, &framePtr, namespacePtr,
 	    /*isProcCallFrame*/ 0);
     if (result != TCL_OK) {
 	return result;
@@ -3675,7 +3728,7 @@ NamespaceInscopeCmd(dummy, interp, objc, objv)
      * Restore the previous "current" namespace.
      */
 
-    Tcl_PopCallFrame(interp);
+    TclPopStackFrame(interp);
     return result;
 }
 

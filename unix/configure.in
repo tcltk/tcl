@@ -3,7 +3,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.123.2.1 2004/12/13 22:08:35 kennykb Exp $
+# RCS: @(#) $Id: configure.in,v 1.123.2.2 2004/12/29 22:47:12 kennykb Exp $
 
 AC_INIT([tcl],[8.5])
 AC_PREREQ(2.57)
@@ -581,4 +581,7 @@ AC_SUBST(TCL_HAS_LONGLONG)
 AC_SUBST(BUILD_DLTEST)
 AC_SUBST(TCL_PACKAGE_PATH)
 
+dnl	Disable the automake-friendly normalization of LIBOBJS
+dnl	performed by autoconf 2.53 and later.  It's not correct for us.
+define([_AC_LIBOBJS_NORMALIZE],[])
 AC_OUTPUT([Makefile dltest/Makefile tclConfig.sh])

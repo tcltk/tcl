@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTimer.c,v 1.12 2004/10/06 15:59:25 dgp Exp $
+ * RCS: @(#) $Id: tclTimer.c,v 1.12.2.1 2004/12/29 22:47:04 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -223,30 +223,58 @@ Tcl_CreateTimerHandler(milliseconds, proc, clientData)
     Tcl_TimerProc *proc;	/* Procedure to invoke. */
     ClientData clientData;	/* Arbitrary data to pass to proc. */
 {
-    register TimerHandler *timerHandlerPtr, *tPtr2, *prevPtr;
     Tcl_Time time;
-    ThreadSpecificData *tsdPtr;
-
-    tsdPtr = InitTimer();
-
-    timerHandlerPtr = (TimerHandler *) ckalloc(sizeof(TimerHandler));
 
     /*
      * Compute when the event should fire.
      */
 
     Tcl_GetTime(&time);
-    timerHandlerPtr->time.sec = time.sec + milliseconds/1000;
-    timerHandlerPtr->time.usec = time.usec + (milliseconds%1000)*1000;
-    if (timerHandlerPtr->time.usec >= 1000000) {
-	timerHandlerPtr->time.usec -= 1000000;
-	timerHandlerPtr->time.sec += 1;
+    time.sec += milliseconds/1000;
+    time.usec += (milliseconds%1000)*1000;
+    if (time.usec >= 1000000) {
+	time.usec -= 1000000;
+	time.sec += 1;
     }
+    return TclCreateAbsoluteTimerHandler(&time, proc, clientData);
+}
+
+/*
+ *--------------------------------------------------------------
+ *
+ * TclCreateAbsoluteTimerHandler --
+ *
+ *	Arrange for a given procedure to be invoked at a particular
+ *	time in the future.
+ *
+ * Results:
+ *	The return value is a token for the timer event, which
+ *	may be used to delete the event before it fires.
+ *
+ * Side effects:
+ *	When the time in timePtr has been reached, proc will be invoked
+ *	exactly once.
+ *
+ *--------------------------------------------------------------
+ */
+
+Tcl_TimerToken
+TclCreateAbsoluteTimerHandler(timePtr, proc, clientData)
+    Tcl_Time *timePtr;
+    Tcl_TimerProc *proc;
+    ClientData clientData;
+{
+    register TimerHandler *timerHandlerPtr, *tPtr2, *prevPtr;
+    ThreadSpecificData *tsdPtr;
+
+    tsdPtr = InitTimer();
+    timerHandlerPtr = (TimerHandler *) ckalloc(sizeof(TimerHandler));
 
     /*
-     * Fill in other fields for the event.
+     * Fill in fields for the event.
      */
 
+    memcpy((void *)&timerHandlerPtr->time, (void *)timePtr, sizeof(Tcl_Time));
     timerHandlerPtr->proc = proc;
     timerHandlerPtr->clientData = clientData;
     tsdPtr->lastTimerId++;
@@ -788,7 +816,39 @@ processInteger:
 	    ms = 0;
 	}
 	if (objc == 2) {
-	    Tcl_Sleep(ms);
+	    Interp *iPtr = (Interp *) interp;
+
+	    if (iPtr->limit.timeEvent != NULL) {
+		Tcl_Time endTime, now;
+
+		Tcl_GetTime(&endTime);
+		endTime.sec += ms/1000;
+		endTime.usec += (ms%1000)*1000;
+		if (endTime.usec >= 1000000) {
+		    endTime.sec++;
+		    endTime.usec -= 1000000;
+		}
+
+		do {
+		    Tcl_GetTime(&now);
+		    if (endTime.sec < iPtr->limit.time.sec ||
+			    (endTime.sec == iPtr->limit.time.sec &&
+			    endTime.usec < iPtr->limit.time.usec)) {
+			Tcl_Sleep(1000*(endTime.sec - now.sec) +
+				(endTime.usec - now.usec)/1000);
+			break;
+		    } else {
+			Tcl_Sleep(1000*(iPtr->limit.time.sec - now.sec) +
+				(iPtr->limit.time.usec - now.usec)/1000);
+			if (Tcl_LimitCheck(interp) != TCL_OK) {
+			    return TCL_ERROR;
+			}
+		    }
+		} while (endTime.sec > now.sec ||
+			(endTime.sec == now.sec && endTime.usec > now.usec));
+	    } else {
+		Tcl_Sleep(ms);
+	    }
 	    return TCL_OK;
 	}
 	afterPtr = (AfterInfo *) ckalloc((unsigned) (sizeof(AfterInfo)));

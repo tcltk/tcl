@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.84.2.2 2004/12/13 21:23:14 kennykb Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.84.2.3 2004/12/29 22:47:12 kennykb Exp $
 
 VERSION = @TCL_VERSION@
 
@@ -469,6 +469,7 @@ tclStubLib.${OBJEXT}: tclStubLib.c
 gendate:
 	bison --output-file=$(GENERIC_DIR)/tclDate.c \
 	--name-prefix=TclDate \
+	--no-lines \
 	$(GENERIC_DIR)/tclGetDate.y
 
 install: all install-binaries install-libraries install-doc

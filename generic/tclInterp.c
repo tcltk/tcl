@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.54 2004/12/02 15:31:28 dkf Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.54.2.1 2004/12/29 22:47:00 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -246,6 +246,7 @@ static void		DeleteScriptLimitCallback _ANSI_ARGS_((
 			    ClientData clientData));
 static void		RunLimitHandlers _ANSI_ARGS_((LimitHandler *handlerPtr,
 			    Tcl_Interp *interp));
+static void		TimeLimitCallback _ANSI_ARGS_((ClientData clientData));
 
 
 /*
@@ -2946,7 +2947,7 @@ Tcl_MakeSafe(interp)
  *
  * Tcl_LimitExceeded --
  *
- *	Tests whether any limit has been exceededin the given
+ *	Tests whether any limit has been exceeded in the given
  *	interpreter (i.e. whether the interpreter is currently unable
  *	to process further scripts).
  *
@@ -3073,7 +3074,7 @@ Tcl_LimitCheck(interp)
 	    iPtr->limit.exceeded |= TCL_LIMIT_TIME;
 	    Tcl_Preserve(interp);
 	    RunLimitHandlers(iPtr->limit.timeHandlers, interp);
-	    if (iPtr->limit.time.sec >= now.sec ||
+	    if (iPtr->limit.time.sec > now.sec ||
 		    (iPtr->limit.time.sec == now.sec &&
 		    iPtr->limit.time.usec >= now.usec)) {
 		iPtr->limit.exceeded &= ~TCL_LIMIT_TIME;
@@ -3415,6 +3416,16 @@ TclLimitRemoveAllHandlers(interp)
 	    ckfree((char *) handlerPtr);
 	}
     }
+
+    /*
+     * Delete the timer callback that is used to trap limits that
+     * occur in [vwait]s...
+     */
+
+    if (iPtr->limit.timeEvent != NULL) {
+	Tcl_DeleteTimerHandler(iPtr->limit.timeEvent);
+	iPtr->limit.timeEvent = NULL;
+    }
 }
 
 /*
@@ -3611,9 +3622,54 @@ Tcl_LimitSetTime(interp, timeLimitPtr)
     Tcl_Time *timeLimitPtr;
 {
     Interp *iPtr = (Interp *) interp;
+    Tcl_Time nextMoment;
 
     memcpy(&iPtr->limit.time, timeLimitPtr, sizeof(Tcl_Time));
+    if (iPtr->limit.timeEvent != NULL) {
+	Tcl_DeleteTimerHandler(iPtr->limit.timeEvent);
+    }
+    nextMoment.sec = timeLimitPtr->sec;
+    nextMoment.usec = timeLimitPtr->usec+10;
+    if (nextMoment.usec >= 1000000) {
+	nextMoment.sec++;
+	nextMoment.usec -= 1000000;
+    }
+    iPtr->limit.timeEvent = TclCreateAbsoluteTimerHandler(&nextMoment,
+	    TimeLimitCallback, (ClientData) interp);
     iPtr->limit.exceeded &= ~TCL_LIMIT_COMMANDS;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TimeLimitCallback --
+ *
+ *	Callback that allows time limits to be enforced even when
+ *	doing a blocking wait for events.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	May put the interpreter into a state where it can no longer
+ *	execute commands. May make callbacks into other interpreters.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+TimeLimitCallback(clientData)
+    ClientData clientData;
+{
+    Tcl_Interp *interp = (Tcl_Interp *) clientData;
+
+    Tcl_Preserve((ClientData) interp);
+    ((Interp *)interp)->limit.timeEvent = NULL;
+    if (Tcl_LimitCheck(interp) != TCL_OK) {
+	Tcl_AddErrorInfo(interp, "\n    (while waiting for event)");
+	Tcl_BackgroundError(interp);
+    }
+    Tcl_Release((ClientData) interp);
 }
 
 /*
@@ -3928,6 +3984,7 @@ TclInitLimitSupport(interp)
     iPtr->limit.cmdGranularity = 1;
     memset(&iPtr->limit.time, 0, sizeof(Tcl_Time));
     iPtr->limit.timeHandlers = NULL;
+    iPtr->limit.timeEvent = NULL;
     iPtr->limit.timeGranularity = 10;
     Tcl_InitHashTable(&iPtr->limit.callbacks,
 	    sizeof(struct ScriptLimitCallbackKey)/sizeof(int));

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: interp.test,v 1.43 2004/11/18 21:00:51 dgp Exp $
+# RCS: @(#) $Id: interp.test,v 1.43.2.1 2004/12/29 22:47:09 kennykb Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -3075,7 +3075,28 @@ test interp-34.7 {limits with callbacks: deleting the handler interp} -setup {
     rename cb3 {}
     rename cb4 {}
 }
-
+# Bug 1085023
+test interp-34.8 {time limits trigger in vwaits} -body {
+    set i [interp create]
+    interp limit $i time -seconds [expr {[clock seconds]+1}] -granularity 1
+    $i eval {
+	set x {}
+	vwait x
+    }
+} -cleanup {
+    interp delete $i
+} -returnCodes error -result {limit exceeded}
+test interp-34.9 {time limits trigger in blocking after} {
+    set i [interp create]
+    set t0 [clock seconds]
+    interp limit $i time -seconds [expr {$t0 + 1}] -granularity 1
+    set code [catch {
+	$i eval {after 10000}
+    } msg]
+    set t1 [clock seconds]
+    interp delete $i
+    list $code $msg [expr {($t1-$t0) < 3 ? "OK" : $t1-$t0}] 
+} {1 {time limit exceeded} OK}
 test interp-35.1 {interp limit syntax} -body {
     interp limit
 } -returnCodes error -result {wrong # args: should be "interp limit path limitType ?options?"}

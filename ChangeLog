@@ -1,3 +1,95 @@
+2004-12-29  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tclDate.c: Regen
+	* generic/tclGetDate.y (TclDatelex):
+		Fixed a problem where a four-digit group with >=2 
+		leading zeroes appeared to be a	two-digit group, leading to
+		misinterpreting the time 0012 as 1200.	[Bug # 1090413]
+	* library/clock.tcl: Added code to interpret correctly months
+	                     outside the range 01-12 as reduced modulo 12
+			     with a corresponding adjustment to the year.
+			     [Bug 1092789]
+	* tests/clock.test: Added regression test cases for the above two
+		            bugs.
+	* unix/Makefile.in: Added --no-lines to the 'bison' command line 
+	* win/Makefile.in:  to help constrain the number of diffs in a cvs
+	                    checkin.
+	
+2004-12-24  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclCompile.c:
+	* generic/tclCompile.h:
+	* generic/tclExecute.c:
+	* generic/tclInt.h:
+	* generic/tclLiteral.c:
+	* generic/tclProc.c:
+	Avoid sharing cmdName literals accross namespaces, and generalise
+	usage of the TclRegisterNewLiteral macro [Patch 1090905]
+
+2004-12-20  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclCompile.c: moved TclInitCompiledLocals to tclProc.c 
+	* generic/tclProc.c: new static InitCompiledLocals to allow for a
+	single pass over the proc's arguments at proc load time (instead of
+	two as previously). TclObjInterpProc() now allocates the
+	compiledLocals on the tcl execution stack, using the new
+	TclStackAlloc/Free functions.
+
+2004-12-16  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclInterp.c (Tcl_LimitSetTime, TimeLimitCallback):
+	(TclLimitRemoveAllHandlers, TclInitLimitSupport): Set a timer
+	event to trigger when the time limit runs out. All the time limit
+	actually does is check to see if the time limit has been exceeded,
+	but this is enough to fix [Bug 1085023].
+	* generic/tclInt.h (struct Interp): Added a field to hold the token
+	for the timer event handler associated with the current time limit.
+	* generic/tclEvent.c (Tcl_UpdateObjCmd, Tcl_VwaitObjCmd): Add
+	error message when limit exceeded.
+	* tests/interp.test (interp-34.[89]): Check that time limits
+	handle the two cases reported in [Bug 1085023]
+
+	* generic/tclTimer.c (TclCreateAbsoluteTimerHandler): New internal
+	function that allows setting a timer handler that will be
+	triggered at (or after) a specific time instead of at some number
+	of milliseconds in the future. This is a candidate for future
+	exposure via a TIP.
+
+2004-12-15  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclBasic.c:
+	* generic/tclExecute.c:
+	* generic/tclInt.decls:
+	* generic/tclIntDecls.h:
+	* generic/tclNamesp.c:
+	* generic/tclProc.c:
+	* generic/tclStubInit.c:
+	* generic/tclTest.c: Added two new functions to allocate memory
+	from the execution stack (TclStackAlloc, TclStackFree). Added
+	functions TclPushStackFrame and TclPopStackFrame that do the work
+	of Tcl_PushCallFrame and Tcl_PopCallFrame, but using frames
+	allocated in the execution stack - i.e., heap instead of
+	C-stack. The core uses these two new functions exclusively; the
+	old ones remain for backwards compat, as at least two popular
+	extensions (itcl, xotcl) are known to use them.
+	
+2004-12-14  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclCmdIL.c:
+	* generic/tclInt.h:
+	* generic/tclProc.c:
+	* generic/tclVar.c: changing the isProcCallFrame field of the
+	CallFrame struct from a 0/1 field to flags. Should be perfectly
+	backwards compatible.
+
+2004-12-14  Don Porter  <dgp@users.sourceforge.net>
+
+	* unix/configure.in:	Added special processing to remove "$U"
+	from libraries in the LIBOBJS value.  This is an auto-make-ism
+	we need to avoid.  [Bug 1081541]
+
+	* unix/configure:	autoconf-2.57
+
 2004-12-14  Kevin Kenny  <kennykb@acm.org>
 
         * generic/tclBigInt.c: Avoid zero-length array in 'BigInt'
@@ -6,6 +98,16 @@
         * tests/expr.test: Added torture-test vectors for correct
                            rounding in string->double and double->string
                            conversions.
+	(these changes on the kennykb-numerics-branch)
+
+2004-12-13  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tcl.h:	Restored extern "C" guards so that C++ code
+	sees function pointer typedef linkage consistent with earlier Tcl
+	releases. [Bug 1082349].
+
+	* generic/tclEncoding.c:	Plugged some memory leaks.  Thanks to
+	* generic/tclUtil.c:	 Rolf Ade for reports and testing [Bug 1083082]
 
 2004-12-13  Kevin Kenny  <kennykb@acm.org>
 

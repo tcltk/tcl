@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.70 2004/12/01 23:18:49 dgp Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.70.2.1 2004/12/29 22:46:39 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -1382,7 +1382,8 @@ InfoLocalsCmd(dummy, interp, objc, objv)
 	return TCL_ERROR;
     }
 
-    if (iPtr->varFramePtr == NULL || !iPtr->varFramePtr->isProcCallFrame) {
+    if (iPtr->varFramePtr == NULL ||
+	    !(iPtr->varFramePtr->isProcCallFrame & FRAME_IS_PROC )) {
 	return TCL_OK;
     }
 
@@ -1959,7 +1960,7 @@ InfoVarsCmd(dummy, interp, objc, objv)
     listPtr = Tcl_NewListObj(0, (Tcl_Obj **) NULL);
 
     if ((iPtr->varFramePtr == NULL)
-	    || !iPtr->varFramePtr->isProcCallFrame
+	    || !(iPtr->varFramePtr->isProcCallFrame & FRAME_IS_PROC)
 	    || specificNsInPattern) {
 	/*
 	 * There is no frame pointer, the frame pointer was pushed only

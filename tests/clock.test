@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.test,v 1.52 2004/11/30 15:45:04 kennykb Exp $
+# RCS: @(#) $Id: clock.test,v 1.52.2.1 2004/12/29 22:47:05 kennykb Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -35374,6 +35374,30 @@ test clock-45.1 {regression test - time zone containing only two digits} \
 	clock scan 1985-04-12T10:15:30+04 -format %Y-%m-%dT%H:%M:%S%Z
     } \
     -result 482134530
+
+test clock-46.1 {regression test - month zero} \
+    -body {
+	clock scan 2004-00-00 -format %Y-%m-%d
+    } -result [clock scan 2003-11-30 -format %Y-%m-%d]
+test clock-46.2 {regression test - month zero} \
+    -body {
+	clock scan 20040000
+    } -result [clock scan 2003-11-30 -format %Y-%m-%d]
+test clock-46.3 {regression test - month thirteen} \
+    -body {
+	clock scan 2004-13-01 -format %Y-%m-%d
+    } -result [clock scan 2005-01-01 -format %Y-%m-%d]
+test clock-46.4 {regression test - month thirteen} \
+    -body {
+	clock scan 20041301
+    } -result [clock scan 2005-01-01 -format %Y-%m-%d]
+
+test clock-47.1 {regression test - four-digit time} {
+    clock scan 0012
+} [clock scan 0012 -format %H%M]
+test clock-47.2 {regression test - four digit time} {
+    clock scan 0039
+} [clock scan 0039 -format %H%M]
 
 # cleanup
 
