@@ -1,5 +1,20 @@
 2002-03-14  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* win/configure: Regen.
+	* win/configure.in: Add configure time test for SEH
+	support in the compiler.
+	* win/tclWin32Dll.c (ESP, EBP, TclpCheckStackSpace,
+	_except_checkstackspace_handler):
+	* win/tclWinChan.c (ESP, EBP, Tcl_MakeFileChannel,
+	_except_makefilechannel_handler):
+	* win/tclWinFCmd.c (ESP, EBP, DoRenameFile,
+	_except_dorenamefile_handler,
+	DoCopyFile, _except_docopyfile_handler):
+	Implement SEH support under gcc using inline asm.
+	Tcl and Tk should now compile with Mingw 1.1. [Patch 525746]
+
+2002-03-14  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* win/tclWinFCmd.c (DoRenameFile, DoCopyFile): Handle
 	an SEH exception with EXCEPTION_EXECUTE_HANDLER instead
 	of restarting the faulting instruction with
