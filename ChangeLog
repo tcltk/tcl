@@ -1,3 +1,9 @@
+2002-10-21  Daniel Steffen  <das@users.sourceforge.net>
+
+	* macosx/Tcl.pbproj/project.pbxproj: bumped version to 8.4.1
+	* generic/tcl.h: Added reminder comment to edit
+	macosx/Tcl.pbproj/project.pbxproj when version number changes.
+
 2002-10-18  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* library/reg/pkgIndex.tcl:
