@@ -1,3 +1,12 @@
+2002-02-26  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* unix/configure:
+	* unix/tcl.m4 (SC_SERIAL_PORT): added sys/modem.h check and defined
+	_XOPEN_SOURCE_EXTENDED for HP-11 to get updated header decls.
+
+	* unix/tclUnixChan.c: added Unix implementation of TIP #35, serial
+	port support. [Patch #438509] (schroedter)
+
 2002-02-26  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* generic/tclCmpCmds.c: (bugfix to the bugfix, hopefully the last)
@@ -10,6 +19,24 @@
 	* mac/tclMacSock.c (TcpGetOptionProc): Changed to recognize the
 	  option "-error". Essentially ignores the option, always
 	  returning an empty string.
+
+2002-02-25  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* doc/Alloc.3:
+	* doc/LinkVar.3:
+	* doc/ObjectType.3:
+	* doc/PkgRequire.3:
+	* doc/Preserve.3:
+	* doc/TCL_MEM_DEBUG.3: Updated documentation to describe the ckalloc,
+	ckfree, ckrealloc, attemptckalloc, and attemptckrealloc macros, and
+	to accurately describe when and how they are used. [Bug #497459] (dgp)
+
+	* generic/tclHash.c (AllocArrayEntry, AllocStringEntry):
+	Before invoking ckalloc when creating a Tcl_HashEntry,
+	check that the amount of memory being allocated is
+	at least as large as sizeof(Tcl_HashEntry). The previous
+	code was allocating memory regions that were one
+	or two bytes short. [Bug #521950] (dejong)
 
 2002-02-25  Miguel Sofer  <msofer@users.sourceforge.net>
 
@@ -1153,6 +1180,22 @@
 	for testing Tcl_SetMainLoop().
 
 2002-01-04  Don Porter <dgp@users.sourceforge.net>
+
+	* doc/Alloc.3:
+	* doc/Concat.3:
+	* doc/CrtMathFnc.3:
+	* doc/Hash.3:
+	* doc/Interp.3:
+	* doc/LinkVar.3:
+	* doc/ObjectType.3:
+	* doc/PkgRequire.3:
+	* doc/Preserve.3:
+	* doc/SetResult.3:
+	* doc/SplitList.3:
+	* doc/SplitPath.3:
+	* doc/TCL_MEM_DEBUG.3: Updated documentation to describe the ckalloc,
+	ckfree, ckrealloc, attemptckalloc, and attemptckrealloc macros, and
+	to accurately describe when and how they are used.  [Bug 497459]
 
 	* generic/tclThreadJoin.c (TclRememberJoinableThread,TclJoinThread):
 	Replaced Tcl_Alloc and Tcl_Free calls with ckalloc and ckfree so that
