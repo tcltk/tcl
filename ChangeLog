@@ -1,3 +1,14 @@
+2004-03-19  Kevin B. Kenny   <kennykb@acm.org>
+
+	* compat/strtoll.c:
+	* compat/strtoull.c:
+	* generic/tclIntDecls.h:
+	* generic/tclMain.c:
+	* generic/tclObj.c:
+	* win/tclWinDde.c:
+	* win/tclWinReg.c:
+	* win/tclWinTime.c:        Made HEAD build on Windows VC++ again.
+	
 2004-03-19  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclIntDecls.h: Made HEAD build on Solaris again by
