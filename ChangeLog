@@ -3,6 +3,8 @@
 	* generic/tcl.h: Fixed Tcl_CreateThread declaration.
 	* library/tcltest1.0/tcltest.tcl: Fixed the "mainThread"
 	initialization to work with either testthread or the thread extension
+	* unix/tclUnixThrd.c: Fixed compiler warning when compiling
+	with -DTCL_THREADS
 
 2000-04-10  Eric Melski  <ericm@scriptics.com>
 
