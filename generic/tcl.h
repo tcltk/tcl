@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.170 2004/01/09 20:55:26 davygrvy Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.171 2004/02/24 22:58:45 dkf Exp $
  */
 
 #ifndef _TCL
@@ -697,6 +697,8 @@ typedef void (Tcl_NamespaceDeleteProc) _ANSI_ARGS_((ClientData clientData));
 typedef int (Tcl_ObjCmdProc) _ANSI_ARGS_((ClientData clientData,
 	Tcl_Interp *interp, int objc, struct Tcl_Obj * CONST * objv));
 typedef int (Tcl_PackageInitProc) _ANSI_ARGS_((Tcl_Interp *interp));
+typedef int (Tcl_PackageUnloadProc) _ANSI_ARGS_((Tcl_Interp *interp,
+                                                 int flags));
 typedef void (Tcl_PanicProc) _ANSI_ARGS_(TCL_VARARGS(CONST char *, format));
 typedef void (Tcl_TcpAcceptProc) _ANSI_ARGS_((ClientData callbackData,
         Tcl_Channel chan, char *address, int port));
@@ -1627,6 +1629,11 @@ typedef struct Tcl_GlobTypeData {
 #define TCL_GLOB_PERM_W			(1<<3)
 #define TCL_GLOB_PERM_X			(1<<4)
 
+/*
+ * Flags for the unload callback procedure
+ */
+#define TCL_UNLOAD_DETACH_FROM_INTERPRETER   (1<<0)
+#define TCL_UNLOAD_DETACH_FROM_PROCESS       (1<<1)
 
 /*
  * Typedefs for the various filesystem operations:
