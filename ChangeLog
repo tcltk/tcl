@@ -1,3 +1,19 @@
+2003-01-25  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* win/configure:
+	* win/configure.in: Define HAVE_ALLOCA_GCC_INLINE
+	when we detect that no alloca function is found
+	in malloc.h and we are compiling with GCC.
+	Remove HAVE_NO_ALLOC_DECL define.
+	* win/tclWin32Dll.c (TclpCheckStackSpace):
+	Don't define alloca as a cdecl function.
+	Doing this caused a tricky runtime bug because
+	the _alloca function expects the size argument
+	to be passed in a register and not on the stack.
+	To fix this problem, we use inline ASM when
+	compiling with gcc to invoke _alloca with the
+	size argument loaded into a register.
+
 2003-01-24  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* win/tclWinDde.c (Dde_Init): clarified use of tsdPtr.

@@ -9,15 +9,10 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWin32Dll.c,v 1.21 2003/01/24 08:04:29 mdejong Exp $
+ * RCS: @(#) $Id: tclWin32Dll.c,v 1.22 2003/01/25 12:48:12 mdejong Exp $
  */
 
 #include "tclWinInt.h"
-
-#if defined(HAVE_NO_ALLOC_DECL)
-void*  __cdecl _alloca(size_t size);
-#define alloca _alloca
-#endif /* HAVE_NO_ALLOC_DECL */
 
 /*
  * The following data structures are used when loading the thunking 
@@ -395,7 +390,16 @@ TclpCheckStackSpace()
 #else
     __try {
 #endif /* HAVE_NO_SEH */
+#ifdef HAVE_ALLOCA_GCC_INLINE
+    __asm__ __volatile__ (
+            "movl  %0, %%eax" "\n\t"
+            "call  __alloca" "\n\t"
+            :
+            : "i"(TCL_WIN_STACK_THRESHOLD)
+            : "%eax");
+#else
 	alloca(TCL_WIN_STACK_THRESHOLD);
+#endif /* HAVE_ALLOCA_GCC_INLINE */
 	retval = 1;
 #ifdef HAVE_NO_SEH
     __asm__ __volatile__ (
