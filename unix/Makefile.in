@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.47 1999/09/21 06:37:29 hobbs Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.48 1999/10/13 00:32:49 hobbs Exp $
 
 VERSION 		= @TCL_VERSION@
 
@@ -213,7 +213,7 @@ DLTEST_DIR =		@TCL_SRC_DIR@/unix/dltest
 # Must be absolute to so the corresponding tcltest's tcl_library is absolute.
 TCL_BUILDTIME_LIBRARY=  @TCL_SRC_DIR@/library
 
-#CC =			purify @CC@
+#CC =			purify -best-effort @CC@
 CC =			@CC@
 
 #----------------------------------------------------------------
@@ -460,7 +460,7 @@ topDirName:
 gendate:
 	yacc -l $(GENERIC_DIR)/tclGetDate.y
 	sed -e 's/yy/TclDate/g' -e '/^#include <values.h>/d' \
-	    -e 's/SCCSID/RCS: @(#) $$Id: Makefile.in,v 1.47 1999/09/21 06:37:29 hobbs Exp $$/' \
+	    -e 's?SCCSID?RCS: @(#) $$Id: Makefile.in,v 1.48 1999/10/13 00:32:49 hobbs Exp $$?' \
 	    -e '/#ifdef __STDC__/,/#endif/d' -e '/TclDateerrlab:/d' \
 	    -e '/TclDatenewstate:/d' -e '/#pragma/d' \
 	    -e '/#include <inttypes.h>/d' \
@@ -1064,8 +1064,8 @@ dist: $(UNIX_DIR)/configure
 	cp -p $(GENERIC_DIR)/*.decls $(DISTDIR)/generic
 	cp -p $(GENERIC_DIR)/README $(DISTDIR)/generic
 	cp -p $(GENERIC_DIR)/tclGetDate.y $(DISTDIR)/generic
-	cp -p $(TOP_DIR)/changes $(TOP_DIR)/README* $(TOP_DIR)/license.terms \
-		$(DISTDIR)
+	cp -p $(TOP_DIR)/changes $(TOP_DIR)/ChangeLog $(TOP_DIR)/README* \
+		$(TOP_DIR)/license.terms $(DISTDIR)
 	mkdir $(DISTDIR)/library
 	cp -p $(TOP_DIR)/license.terms $(TOP_DIR)/library/*.tcl \
 		$(TOP_DIR)/library/tclIndex $(DISTDIR)/library

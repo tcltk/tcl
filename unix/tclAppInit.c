@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclAppInit.c,v 1.6 1999/05/14 02:18:32 stanton Exp $
+ * RCS: @(#) $Id: tclAppInit.c,v 1.7 1999/10/13 00:32:49 hobbs Exp $
  */
 
 #include "tcl.h"
@@ -69,6 +69,9 @@ main(argc, argv)
 #ifdef TCL_TEST
     /*
      * Pass the build time location of the tcl library (to find init.tcl)
+     *
+     * This causes a 2400b "potential" mem leak, according to purify
+     * (the obj allocation that never seems to gets deallocated)
      */
     Tcl_Obj *path;
     path = Tcl_NewStringObj(TCL_BUILDTIME_LIBRARY, -1);

@@ -7,7 +7,7 @@
  * Copyright (c) 1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclUnixInit.c,v 1.17 1999/07/22 21:50:56 redman Exp $
+ * RCS: @(#) $Id: tclUnixInit.c,v 1.18 1999/10/13 00:32:49 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -604,7 +604,7 @@ TclpSetVariables(interp)
  * TclpFindVariable --
  *
  *	Locate the entry in environ for a given name.  On Unix this 
- *	routine is case sensetive, on Windows this matches mioxed case.
+ *	routine is case sensetive, on Windows this matches mixed case.
  *
  * Results:
  *	The return value is the index in environ of an entry with the

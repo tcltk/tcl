@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPipe.c,v 1.3 1999/04/16 00:48:05 stanton Exp $
+ * RCS: @(#) $Id: tclUnixPipe.c,v 1.4 1999/10/13 00:32:50 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -333,7 +333,9 @@ TclpCreateProcess(interp, argc, argv, inputFile, outputFile, errorFile,
     TclFile errPipeIn, errPipeOut;
     int joinThisError, count, status, fd;
     char errSpace[200 + TCL_INTEGER_SPACE];
-    int pid;
+    Tcl_DString *dsArray;
+    char **newArgv;
+    int pid, i;
     
     errPipeIn = NULL;
     errPipeOut = NULL;
@@ -350,13 +352,20 @@ TclpCreateProcess(interp, argc, argv, inputFile, outputFile, errorFile,
 	goto error;
     }
 
+    /*
+     * We need to allocate and convert this before the (v)fork
+     * so it is properly deallocated later
+     */
+    dsArray = (Tcl_DString *) ckalloc(argc * sizeof(Tcl_DString));
+    newArgv = (char **) ckalloc((argc+1) * sizeof(char *));
+    newArgv[argc] = NULL;
+    for (i = 0; i < argc; i++) {
+	newArgv[i] = Tcl_UtfToExternalDString(NULL, argv[i], -1, &dsArray[i]);
+    }
+
     joinThisError = (errorFile == outputFile);
     pid = vfork();
     if (pid == 0) {
-	Tcl_DString *dsArray;
-	char *oldArgv0;
-	int i;
-
 	fd = GetFd(errPipeOut);
 
 	/*
@@ -370,8 +379,7 @@ TclpCreateProcess(interp, argc, argv, inputFile, outputFile, errorFile,
 			((dup2(1,2) == -1) ||
 			 (fcntl(2, F_SETFD, 0) != 0)))) {
 	    sprintf(errSpace,
-		    "%dforked process couldn't set up input/output: ",
-		    errno);
+		    "%dforked process couldn't set up input/output: ", errno);
 	    write(fd, errSpace, (size_t) strlen(errSpace));
 	    _exit(1);
 	}
@@ -381,22 +389,21 @@ TclpCreateProcess(interp, argc, argv, inputFile, outputFile, errorFile,
 	 */
 
 	RestoreSignals();
-	for (i = 0; argv[i] != NULL; i++) {
-	    /*
-	     * How many arguments?
-	     */
-	}
-	oldArgv0 = argv[0];
-	dsArray = (Tcl_DString *) ckalloc(i * sizeof(Tcl_DString));
-	for (i = 0; argv[i] != NULL; i++) {
-	    argv[i] = Tcl_UtfToExternalDString(NULL, argv[i], -1, &dsArray[i]);
-	}
-	execvp(argv[0], argv);				/* INTL: Native. */
-	sprintf(errSpace, "%dcouldn't execute \"%.150s\": ", errno,
-		oldArgv0);
+	execvp(newArgv[0], newArgv);			/* INTL: Native. */
+	sprintf(errSpace, "%dcouldn't execute \"%.150s\": ", errno, argv[0]);
 	write(fd, errSpace, (size_t) strlen(errSpace));
 	_exit(1);
     }
+    
+    /*
+     * Free the mem we used for the fork
+     */
+    for (i = 0; i < argc; i++) {
+	Tcl_DStringFree(&dsArray[i]);
+    }
+    ckfree((char *) dsArray);
+    ckfree((char *) newArgv);
+
     if (pid == -1) {
 	Tcl_AppendResult(interp, "couldn't fork child process: ",
 		Tcl_PosixError(interp), (char *) NULL);
