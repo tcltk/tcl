@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.26 2000/11/15 22:19:56 hobbs Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.27 2000/11/17 11:06:53 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -177,6 +177,7 @@ TclLookupVar(interp, part1, part2, flags, msg, createPart1, createPart2,
 		}
 		closeParen = p;
 		*openParen = 0;
+		*closeParen = 0;
 		elName = openParen+1;
 	    } else {
 		openParen = NULL;
@@ -219,7 +220,10 @@ TclLookupVar(interp, part1, part2, flags, msg, createPart1, createPart2,
             varPtr = (Var *) var;
             goto lookupVarPart2;
         } else if (result != TCL_CONTINUE) {
-            return (Var *) NULL;
+	    varPtr = (Var *) NULL;
+	    /* can't just return here as input string is in an
+	     * inconsistent state... */
+	    goto done;
         }
     }
 
@@ -262,13 +266,13 @@ TclLookupVar(interp, part1, part2, flags, msg, createPart1, createPart2,
 
 		if (varNsPtr == NULL) {
 		    if (flags & TCL_LEAVE_ERR_MSG) {
-			VarErrMsg(interp, part1, part2, msg, badNamespace);
+			VarErrMsg(interp, part1, elName, msg, badNamespace);
 		    }
 		    goto done;
 		}
 		if (tail == NULL) {
 		    if (flags & TCL_LEAVE_ERR_MSG) {
-			VarErrMsg(interp, part1, part2, msg, missingName);
+			VarErrMsg(interp, part1, elName, msg, missingName);
 		    }
 		    goto done;
 		}
@@ -279,7 +283,7 @@ TclLookupVar(interp, part1, part2, flags, msg, createPart1, createPart2,
 		varPtr->nsPtr = varNsPtr;
 	    } else {		/* var wasn't found and not to create it */
 		if (flags & TCL_LEAVE_ERR_MSG) {
-		    VarErrMsg(interp, part1, part2, msg, noSuchVar);
+		    VarErrMsg(interp, part1, elName, msg, noSuchVar);
 		}
 		goto done;
 	    }
@@ -329,7 +333,7 @@ TclLookupVar(interp, part1, part2, flags, msg, createPart1, createPart2,
 		}
 		if (hPtr == NULL) {
 		    if (flags & TCL_LEAVE_ERR_MSG) {
-			VarErrMsg(interp, part1, part2, msg, noSuchVar);
+			VarErrMsg(interp, part1, elName, msg, noSuchVar);
 		    }
 		    goto done;
 		}
@@ -339,11 +343,6 @@ TclLookupVar(interp, part1, part2, flags, msg, createPart1, createPart2,
     }
 
     lookupVarPart2:
-    if (openParen != NULL) {
-	*openParen = '(';
-	openParen = NULL;
-    }
-
     /*
      * If varPtr is a link variable, we have a reference to some variable
      * that was created through an "upvar" or "global" command. Traverse
@@ -370,7 +369,7 @@ TclLookupVar(interp, part1, part2, flags, msg, createPart1, createPart2,
     if (TclIsVarUndefined(varPtr) && !TclIsVarArrayElement(varPtr)) {
 	if (!createPart1) {
 	    if (flags & TCL_LEAVE_ERR_MSG) {
-		VarErrMsg(interp, part1, part2, msg, noSuchVar);
+		VarErrMsg(interp, part1, elName, msg, noSuchVar);
 	    }
 	    varPtr = NULL;
 	    goto done;
@@ -382,7 +381,7 @@ TclLookupVar(interp, part1, part2, flags, msg, createPart1, createPart2,
 	 */
 	if ((varPtr->flags & VAR_IN_HASHTABLE) && (varPtr->hPtr == NULL)) {
 	    if (flags & TCL_LEAVE_ERR_MSG) {
-		VarErrMsg(interp, part1, part2, msg, danglingVar);
+		VarErrMsg(interp, part1, elName, msg, danglingVar);
 	    }
 	    varPtr = NULL;
 	    goto done;
@@ -395,20 +394,14 @@ TclLookupVar(interp, part1, part2, flags, msg, createPart1, createPart2,
 	Tcl_InitHashTable(varPtr->value.tablePtr, TCL_STRING_KEYS);
     } else if (!TclIsVarArray(varPtr)) {
 	if (flags & TCL_LEAVE_ERR_MSG) {
-	    VarErrMsg(interp, part1, part2, msg, needArray);
+	    VarErrMsg(interp, part1, elName, msg, needArray);
 	}
 	varPtr = NULL;
 	goto done;
     }
     *arrayPtrPtr = varPtr;
-    if (closeParen != NULL) {
-	*closeParen = 0;
-    }
     if (createPart2) {
 	hPtr = Tcl_CreateHashEntry(varPtr->value.tablePtr, elName, &new);
-	if (closeParen != NULL) {
-	    *closeParen = ')';
-	}
 	if (new) {
 	    if (varPtr->searchPtr != NULL) {
 		DeleteSearches(varPtr);
@@ -421,12 +414,9 @@ TclLookupVar(interp, part1, part2, flags, msg, createPart1, createPart2,
 	}
     } else {
 	hPtr = Tcl_FindHashEntry(varPtr->value.tablePtr, elName);
-	if (closeParen != NULL) {
-	    *closeParen = ')';
-	}
 	if (hPtr == NULL) {
 	    if (flags & TCL_LEAVE_ERR_MSG) {
-		VarErrMsg(interp, part1, part2, msg, noSuchElement);
+		VarErrMsg(interp, part1, elName, msg, noSuchElement);
 	    }
 	    varPtr = NULL;
 	    goto done;
@@ -437,6 +427,7 @@ TclLookupVar(interp, part1, part2, flags, msg, createPart1, createPart2,
     done:
     if (openParen != NULL) {
         *openParen = '(';
+	*closeParen = ')';
     }
     return varPtr;
 }
