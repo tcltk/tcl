@@ -6,7 +6,7 @@
 	Improved the error message given when too few arguments are given
 	(-nocomplain should obviously be *before* --, not after it) and
 	also modified the test suite to take account of that and the
-	documentation to use the same improvement.
+	documentation to use the same improvement. [Bug 405769]
 
 2001-03-02  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
@@ -14,6 +14,7 @@
 	pass pointers to freed memory to command implementations, which
 	most obviously caused some weird behaviour with [info level], but
 	could have caused problems with user code and command traces too.
+	[Bug 404865, Patch 405436]
 
 2001-02-23  msofer  <msofer@users.sourceforge.net>
 	* no changes; fixing up the missing comment in the previous one.
