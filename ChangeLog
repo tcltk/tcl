@@ -1,3 +1,10 @@
+2003-10-06  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* win/configure:
+	* win/tcl.m4: removed incorrect checks for existence of
+	optimization.  TCL_CFG_OPTIMIZED is now defined whenever the user
+	does not build with --enable-symbols.
+
 2003-10-06  Don Porter  <dgp@users.sourceforge.net>
 
 	* tests/fCmd.test (fCmd-8.2):	Test only that tilde-substitution
