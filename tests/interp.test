@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: interp.test,v 1.35 2004/05/19 22:22:04 dkf Exp $
+# RCS: @(#) $Id: interp.test,v 1.36 2004/05/20 13:04:12 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -2955,6 +2955,9 @@ test interp-34.4 {limits with callbacks: extending limits} -setup {
     rename cb1 {}
     rename cb2 {}
 }
+# The next three tests exercise all the three ways that limit handlers
+# can be deleted.  Fully verifying this requires additional source
+# code instrumentation.
 test interp-34.5 {limits with callbacks: removing limits} -setup {
     set i [interp create]
     set a 0
@@ -2979,6 +2982,77 @@ test interp-34.5 {limits with callbacks: removing limits} -setup {
     interp delete $i
     rename cb1 {}
     rename cb2 {}
+}
+test interp-34.6 {limits with callbacks: removing limits and handlers} -setup {
+    set i [interp create]
+    set a 0
+    set b 0
+    set c a
+    proc cb1 {} {
+	global c
+	incr ::$c
+    }
+    proc cb2 {args} {
+	global c i
+	set c b
+	$i limit command -value {} -command {}
+    }
+} -body {
+    interp alias $i foo {} cb1
+    set curlim [$i eval info cmdcount]
+    $i limit command -command cb2 -value [expr {$curlim+10}]
+    $i eval {for {set i 0} {$i<10} {incr i} {foo}}
+    list $a $b $c
+} -result {6 4 b} -cleanup {
+    interp delete $i
+    rename cb1 {}
+    rename cb2 {}
+}
+test interp-34.7 {limits with callbacks: deleting the handler interp} -setup {
+    set i [interp create]
+    $i eval {
+	set i [interp create]
+	proc cb1 {} {
+	    global c
+	    incr ::$c
+	}
+	proc cb2 {args} {
+	    global c i curlim
+	    set c b
+	    $i limit command -value [expr {$curlim+1000}]
+	    trapToParent
+	}
+    }
+    proc cb3 {} {
+	global i subi
+	interp alias [list $i $subi] foo {} cb4
+	interp delete $i
+    }
+    proc cb4 {} {
+	global n
+	incr n
+    }
+} -body {
+    set subi [$i eval set i]
+    interp alias $i trapToParent {} cb3
+    set n 0
+    $i eval {
+	set a 0
+	set b 0
+	set c a
+	interp alias $i foo {} cb1
+	set curlim [$i eval info cmdcount]
+	$i limit command -command cb2 -value [expr {$curlim+10}]
+    }
+    $i eval {
+	$i eval {
+	    for {set i 0} {$i<10} {incr i} {foo}
+	}
+    }
+    list $n [interp exists $i]
+} -result {4 0} -cleanup {
+    rename cb3 {}
+    rename cb4 {}
 }
 
 test interp-35.1 {interp limit syntax} -body {
