@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.22 1999/04/19 20:24:27 hershey Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.23 1999/04/20 01:48:40 surles Exp $
 
 # Current Tcl version;  used in various names.
 
@@ -1052,7 +1052,7 @@ dist: $(UNIX_DIR)/configure
 	mkdir $(DISTDIR)/library
 	cp -p $(TOP_DIR)/license.terms $(TOP_DIR)/library/*.tcl \
 		$(TOP_DIR)/library/tclIndex $(DISTDIR)/library
-	for i in http2.0 http1.0 opt0.4 msgcat1.0; \
+	for i in http2.0 http1.0 opt0.4 msgcat1.0 reg1.0 dde1.0; \
 	    do \
 		mkdir $(DISTDIR)/library/$$i ;\
 		cp -p $(TOP_DIR)/library/$$i/*.tcl $(DISTDIR)/library/$$i; \
@@ -1080,7 +1080,6 @@ dist: $(UNIX_DIR)/configure
 	cp -p $(TOP_DIR)/win/*.bat $(DISTDIR)/win
 	cp -p $(TOP_DIR)/win/makefile.* $(DISTDIR)/win
 	cp -p $(TOP_DIR)/win/README $(DISTDIR)/win
-	cp -p $(TOP_DIR)/win/pkgIndex.tcl $(DISTDIR)/win
 	cp -p $(TOP_DIR)/license.terms $(DISTDIR)/win
 	mkdir $(DISTDIR)/mac
 	cp -p $(TOP_DIR)/mac/tclMacProjects.sea.hqx $(DISTDIR)/mac
