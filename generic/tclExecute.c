@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.99 2003/04/18 20:03:50 hobbs Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.100 2003/04/28 12:34:25 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1060,6 +1060,7 @@ TclExecuteByteCode(interp, codePtr)
     int length;
     long i = 0;			/* Init. avoids compiler warning. */
     Tcl_WideInt w;
+    int isWide;
     register int cleanup;
     Tcl_Obj *objResultPtr;
     char *part1, *part2;
@@ -1872,8 +1873,10 @@ TclExecuteByteCode(interp, codePtr)
 	valuePtr = stackPtr[stackTop];
 	if (valuePtr->typePtr == &tclIntType) {
 	    i = valuePtr->internalRep.longValue;
+	    isWide = 0;
 	} else if (valuePtr->typePtr == &tclWideIntType) {
-	    TclGetLongFromWide(i,valuePtr);
+	    w = valuePtr->internalRep.wideValue;
+	    isWide = 1;
 	} else {
 	    REQUIRE_WIDE_OR_INT(result, valuePtr, i, w);
 	    if (result != TCL_OK) {
@@ -1882,7 +1885,7 @@ TclExecuteByteCode(interp, codePtr)
 		Tcl_AddErrorInfo(interp, "\n    (reading increment)");
 		goto checkForCatch;
 	    }
-	    FORCE_LONG(valuePtr, i, w);
+	    isWide = (valuePtr->typePtr == &tclWideIntType);
 	}
 	stackTop--;
 	TclDecrRefCount(valuePtr);
@@ -1902,6 +1905,7 @@ TclExecuteByteCode(interp, codePtr)
     case INST_INCR_SCALAR_STK_IMM:
     case INST_INCR_STK_IMM:
 	i = TclGetInt1AtPtr(pc+1);
+	isWide = 0;
 	pcAdjustment = 2;
 	    
     doIncrStk:
@@ -1933,6 +1937,7 @@ TclExecuteByteCode(interp, codePtr)
     case INST_INCR_ARRAY1_IMM:
 	opnd = TclGetUInt1AtPtr(pc+1);
 	i = TclGetInt1AtPtr(pc+2);
+	isWide = 0;
 	pcAdjustment = 3;
 
     doIncrArray:
@@ -1957,6 +1962,7 @@ TclExecuteByteCode(interp, codePtr)
     case INST_INCR_SCALAR1_IMM:
 	opnd = TclGetUInt1AtPtr(pc+1);
 	i = TclGetInt1AtPtr(pc+2);
+	isWide = 0;
 	pcAdjustment = 3;
 
     doIncrScalar:
@@ -1977,35 +1983,58 @@ TclExecuteByteCode(interp, codePtr)
 	        && !TclIsVarUndefined(varPtr) 
 	        && (varPtr->tracePtr == NULL)
 	        && ((arrayPtr == NULL) 
-		        || (arrayPtr->tracePtr == NULL))
-	        && (objPtr->typePtr == &tclIntType)) {
-	    /*
-	     * No errors, no traces, the variable already has an
-	     * integer value: inline processing.
-	     */
+		        || (arrayPtr->tracePtr == NULL))) {
+	    if (objPtr->typePtr == &tclIntType && !isWide) {
+		/*
+		 * No errors, no traces, the variable already has an
+		 * integer value: inline processing.
+		 */
 
-	    i += objPtr->internalRep.longValue;
-	    if (Tcl_IsShared(objPtr)) {
-		objResultPtr = Tcl_NewLongObj(i);
-		TclDecrRefCount(objPtr);
-		Tcl_IncrRefCount(objResultPtr);
-		varPtr->value.objPtr = objResultPtr;
-	    } else {
-		Tcl_SetLongObj(objPtr, i);
-		objResultPtr = objPtr;
-	    }
-	    TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
-	} else {
-	    DECACHE_STACK_INFO();
-	    objResultPtr = TclPtrIncrVar(interp, varPtr, arrayPtr, part1, 
-                    part2, i, TCL_LEAVE_ERR_MSG);
-	    CACHE_STACK_INFO();
-	    if (objResultPtr == NULL) {
-		TRACE_APPEND(("ERROR: %.30s\n", O2S(Tcl_GetObjResult(interp))));
-		result = TCL_ERROR;
-		goto checkForCatch;
+		i += objPtr->internalRep.longValue;
+		if (Tcl_IsShared(objPtr)) {
+		    objResultPtr = Tcl_NewLongObj(i);
+		    TclDecrRefCount(objPtr);
+		    Tcl_IncrRefCount(objResultPtr);
+		    varPtr->value.objPtr = objResultPtr;
+		} else {
+		    Tcl_SetLongObj(objPtr, i);
+		    objResultPtr = objPtr;
+		}
+		goto doneIncr;
+	    } else if (objPtr->typePtr == &tclWideIntType && isWide) {
+		/*
+		 * No errors, no traces, the variable already has a
+		 * wide integer value: inline processing.
+		 */
+
+		w += objPtr->internalRep.wideValue;
+		if (Tcl_IsShared(objPtr)) {
+		    objResultPtr = Tcl_NewWideIntObj(w);
+		    TclDecrRefCount(objPtr);
+		    Tcl_IncrRefCount(objResultPtr);
+		    varPtr->value.objPtr = objResultPtr;
+		} else {
+		    Tcl_SetWideIntObj(objPtr, w);
+		    objResultPtr = objPtr;
+		}
+		goto doneIncr;
 	    }
 	}
+	DECACHE_STACK_INFO();
+	if (isWide) {
+	    objResultPtr = TclPtrIncrWideVar(interp, varPtr, arrayPtr, part1, 
+		    part2, w, TCL_LEAVE_ERR_MSG);
+	} else {
+	    objResultPtr = TclPtrIncrVar(interp, varPtr, arrayPtr, part1, 
+		    part2, i, TCL_LEAVE_ERR_MSG);
+	}
+	CACHE_STACK_INFO();
+	if (objResultPtr == NULL) {
+	    TRACE_APPEND(("ERROR: %.30s\n", O2S(Tcl_GetObjResult(interp))));
+	    result = TCL_ERROR;
+	    goto checkForCatch;
+	}
+      doneIncr:
 	TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
 #ifndef TCL_COMPILE_DEBUG
 	if (*(pc+pcAdjustment) == INST_POP) {

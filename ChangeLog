@@ -1,5 +1,15 @@
 2003-04-28  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
+	* generic/tclDictObj.c (DictIncrCmd): Updated to reflect the
+	behaviour with wide increments of the normal [incr] command.
+	* generic/tclInt.decls: Added TclIncrWideVar2 to internal stub
+	table and cleaned up.
+	* tests/incr.test (incr-3.*):
+	* generic/tclVar.c (TclIncrWideVar2, TclPtrIncrWideVar): 
+	* generic/tclExecute.c (TclExecuteByteCode): 
+	* generic/tclCmdIL.c (Tcl_IncrObjCmd): Make [incr] work when
+	trying to increment by wide values.  [Bug 728838]
+
 	* generic/tclCompCmds.c (TclCompileSwitchCmd): Default mode of
 	operation of [switch] is exact matching.  [Bug 727563]
 
