@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.77.2.16 2004/02/18 01:59:09 hobbs Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.77.2.17 2004/05/04 22:26:00 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -2602,7 +2602,48 @@ Tcl_FSChdir(pathPtr)
     Tcl_Filesystem *fsPtr;
     int retVal = -1;
     
+#ifdef WIN32
+    /*
+     * This complete hack addresses the bug tested in winFCmd-16.12,
+     * where having your HOME as "C:" (IOW, a seemingly path relative
+     * dir) would cause a crash when you cd'd to it and requested 'pwd'.
+     * The work-around is to force such a dir into an absolute path by
+     * tacking on '/'.
+     *
+     * We check for '~' specifically because that's what Tcl_CdObjCmd
+     * passes in that triggers the bug.  A direct 'cd C:' call will not
+     * because that gets the volumerelative pwd.
+     *
+     * This is not an issue for 8.5 as that has a more elaborate change
+     * that requires the use of TCL_FILESYSTEM_VERSION_2.
+     */
+    Tcl_Obj *objPtr = NULL;
+    if (pathPtr->bytes && pathPtr->length == 1 && pathPtr->bytes[0] == '~') {
+	int len;
+	char *str;
+
+	objPtr = Tcl_FSGetTranslatedPath(NULL, pathPtr);
+	if (objPtr == NULL) {
+	    return TCL_ERROR;
+	}
+	Tcl_IncrRefCount(objPtr);
+	str = Tcl_GetStringFromObj(objPtr, &len);
+	if (len == 2 && str[1] == ':') {
+	    pathPtr = Tcl_NewStringObj(str, len);
+	    Tcl_AppendToObj(pathPtr, "/", 1);
+	    Tcl_IncrRefCount(pathPtr);
+	    Tcl_DecrRefCount(objPtr);
+	    objPtr = pathPtr;
+	} else {
+	    Tcl_DecrRefCount(objPtr);
+	    objPtr = NULL;
+	}
+    }
+#endif
     if (Tcl_FSGetNormalizedPath(NULL, pathPtr) == NULL) {
+#ifdef WIN32
+	if (objPtr) { Tcl_DecrRefCount(objPtr); }
+#endif
         return TCL_ERROR;
     }
     
@@ -2646,6 +2687,9 @@ Tcl_FSChdir(pathPtr)
 	     */
 	    Tcl_Obj *normDirName = Tcl_FSGetNormalizedPath(NULL, pathPtr);
 	    if (normDirName == NULL) {
+#ifdef WIN32
+		if (objPtr) { Tcl_DecrRefCount(objPtr); }
+#endif
 	        return TCL_ERROR;
 	    }
 	    FsUpdateCwd(normDirName);
@@ -2654,6 +2698,9 @@ Tcl_FSChdir(pathPtr)
 	Tcl_SetErrno(ENOENT);
     }
     
+#ifdef WIN32
+    if (objPtr) { Tcl_DecrRefCount(objPtr); }
+#endif
     return (retVal);
 }
 
