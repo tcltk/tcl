@@ -1,6 +1,6 @@
 # This file contains a collection of tests for generic/tclMain.c.
 #
-# RCS: @(#) $Id: main.test,v 1.10 2002/07/03 19:40:31 dgp Exp $
+# RCS: @(#) $Id: main.test,v 1.11 2003/01/28 17:59:12 dgp Exp $
 
 if {[catch {package require tcltest 2.0.2}]} {
     puts stderr "Skipping tests in [info script]. tcltest 2.0.2 required."
@@ -77,7 +77,7 @@ namespace eval ::tcl::test::main {
 
     test Tcl_Main-1.3 {
 	Tcl_Main: encoding of arguments: done by system encoding
-	Note the shortcoming explained in Tcl Patch 491789
+	Note the shortcoming explained in Tcl Feature Request 491789
     } -constraints {
 	stdio
     } -setup {
@@ -93,9 +93,9 @@ namespace eval ::tcl::test::main {
 
     test Tcl_Main-1.4 {
 	Tcl_Main: encoding of arguments: done by system encoding
-	Note the shortcoming explained in Tcl Patch 491789
+	Note the shortcoming explained in Tcl Feature Request 491789
     } -constraints {
-	stdio
+	stdio tempNotWin
     } -setup {
 	makeFile {puts [list $argv0 $argv $tcl_interactive]} script
 	catch {set f [open "|[list [interpreter] script \u20ac]" r]}
@@ -109,7 +109,7 @@ namespace eval ::tcl::test::main {
 
     test Tcl_Main-1.5 {
 	Tcl_Main: encoding of script name: system encoding loss
-	Note the shortcoming explained in Tcl Patch 491789
+	Note the shortcoming explained in Tcl Feature Request 491789
     } -constraints {
 	stdio
     } -setup {
@@ -125,9 +125,9 @@ namespace eval ::tcl::test::main {
 
     test Tcl_Main-1.6 {
 	Tcl_Main: encoding of script name: system encoding loss
-	Note the shortcoming explained in Tcl Patch 491789
+	Note the shortcoming explained in Tcl Feature Request 491789
     } -constraints {
-	stdio	
+	stdio tempNotWin
     } -setup {
 	makeFile {puts [list $argv0 $argv $tcl_interactive]} \u20ac
 	catch {set f [open "|[list [interpreter] \u20ac]" r]}
