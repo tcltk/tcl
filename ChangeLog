@@ -1,3 +1,29 @@
+2003-06-23  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* doc/file.n: clarification of 'file tail' behaviour [Bug 737977]
+
+2003-07-04  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* doc/expr.n: Tighten up the wording of some operations. [Bug 758488]
+
+	* tests/cmdAH.test: Made tests of [file mtime] work better on FAT
+	filesystems. [Patch 760768]  Also a little general cleanup.
+
+	* generic/tclCmdMZ.c (Tcl_StringObjCmd): Made [string map] accept
+	dictionaries for maps.  This is much trickier than it looks, since
+	map entry ordering is significant.  [Bug 759936]
+
+	* generic/tclVar.c (Tcl_ArrayObjCmd, TclArraySet): Made [array
+	get] and [array set] work with dictionaries, producing them and
+	consuming them.  Note that for compatability reasons, you will
+	never get a dict from feeding a string literal to [array set]
+	since that alters the trace behaviour of "multi-key" sets.
+	[Bug 759935]
+
+2003-06-23  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* generic/tclTrace.c: fix to Window debug build compilation error.
+
 2003-06-27  Don Porter  <dgp@users.sourceforge.net>
 
 	* tests/init.test:	Added [cleanupTests] to report results of tests

@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.90.2.2 2003/06/27 15:10:10 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.90.2.3 2003/07/07 20:23:38 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1811,11 +1811,11 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	    break;
 	}
 	case STR_MAP: {
-	    int mapElemc, nocase = 0;
+	    int mapElemc, nocase = 0, mapWithDict = 0;
 	    Tcl_Obj **mapElemv;
 	    Tcl_UniChar *ustring1, *ustring2, *p, *end;
 	    int (*strCmpFn)_ANSI_ARGS_((CONST Tcl_UniChar*,
-					CONST Tcl_UniChar*, unsigned long));
+		    CONST Tcl_UniChar*, unsigned long));
 
 	    if (objc < 4 || objc > 5) {
 	        Tcl_WrongNumArgs(interp, 2, objv, "?-nocase? charMap string");
@@ -1829,28 +1829,64 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		    nocase = 1;
 		} else {
 		    Tcl_AppendStringsToObj(resultPtr, "bad option \"",
-					   string2, "\": must be -nocase",
-					   (char *) NULL);
+			    string2, "\": must be -nocase", (char *) NULL);
 		    return TCL_ERROR;
 		}
 	    }
 
-	    if (Tcl_ListObjGetElements(interp, objv[objc-2], &mapElemc,
-				       &mapElemv) != TCL_OK) {
-		return TCL_ERROR;
-	    }
-	    if (mapElemc == 0) {
+	    /*
+	     * This test is tricky, but has to be that way or you get
+	     * other strange inconsistencies (see test string-10.20
+	     * for illustration why!)
+	     */
+	    if (objv[objc-2]->typePtr == &tclDictType &&
+		    objv[objc-2]->bytes == NULL) {
+		int i, done;
+		Tcl_DictSearch search;
+
 		/*
-		 * empty charMap, just return whatever string was given
+		 * We know the type exactly, so all dict operations
+		 * will succeed for sure.  This shortens this code
+		 * quite a bit.
 		 */
-		Tcl_SetObjResult(interp, objv[objc-1]);
-		return TCL_OK;
-	    } else if (mapElemc & 1) {
+		Tcl_DictObjSize(interp, objv[objc-2], &mapElemc);
+		if (mapElemc == 0) {
+		    /*
+		     * empty charMap, just return whatever string was given
+		     */
+		    Tcl_SetObjResult(interp, objv[objc-1]);
+		    return TCL_OK;
+		}
+		mapElemc *= 2;
+		mapWithDict = 1;
 		/*
-		 * The charMap must be an even number of key/value items
+		 * Copy the dictionary out into an array; that's the
+		 * easiest way to adapt this code...
 		 */
-		Tcl_SetStringObj(resultPtr, "char map list unbalanced", -1);
-		return TCL_ERROR;
+		mapElemv = (Tcl_Obj **) ckalloc(sizeof(Tcl_Obj *) * mapElemc);
+		Tcl_DictObjFirst(interp, objv[objc-2], &search,
+			mapElemv+0, mapElemv+1, &done);
+		for (i=2 ; i<mapElemc ; i+=2) {
+		    Tcl_DictObjNext(&search, mapElemv+i, mapElemv+i+1, &done);
+		}
+	    } else {
+		if (Tcl_ListObjGetElements(interp, objv[objc-2],
+			&mapElemc, &mapElemv) != TCL_OK) {
+		    return TCL_ERROR;
+		}
+		if (mapElemc == 0) {
+		    /*
+		     * empty charMap, just return whatever string was given
+		     */
+		    Tcl_SetObjResult(interp, objv[objc-1]);
+		    return TCL_OK;
+		} else if (mapElemc & 1) {
+		    /*
+		     * The charMap must be an even number of key/value items
+		     */
+		    Tcl_SetStringObj(resultPtr, "char map list unbalanced", -1);
+		    return TCL_ERROR;
+		}
 	    }
 	    objc--;
 
@@ -1859,6 +1895,9 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		/*
 		 * Empty input string, just stop now
 		 */
+		if (mapWithDict) {
+		    ckfree((char *) mapElemv);
+		}
 		break;
 	    }
 	    end = ustring1 + length1;
@@ -1921,7 +1960,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		mapLens = (int *) ckalloc((mapElemc * 2) * sizeof(int));
 		if (nocase) {
 		    u2lc = (Tcl_UniChar *)
-			ckalloc((mapElemc) * sizeof(Tcl_UniChar));
+			    ckalloc((mapElemc) * sizeof(Tcl_UniChar));
 		}
 		for (index = 0; index < mapElemc; index++) {
 		    mapStrings[index] = Tcl_GetUnicodeFromObj(mapElemv[index],
@@ -1977,6 +2016,9 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		 * Put the rest of the unmapped chars onto result
 		 */
 		Tcl_AppendUnicodeToObj(resultPtr, p, ustring1 - p);
+	    }
+	    if (mapWithDict) {
+		ckfree((char *) mapElemv);
 	    }
 	    break;
 	}

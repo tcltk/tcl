@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: string.test,v 1.37.2.1 2003/06/18 19:48:02 dgp Exp $
+# RCS: @(#) $Id: string.test,v 1.37.2.2 2003/07/07 20:23:38 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -760,6 +760,10 @@ test string-10.18 {string map, empty argument} {
 test string-10.19 {string map, empty arguments} {
     string map -nocase {{} abc f bar {} def} foo
 } baroo
+test string-10.20 {string map, dictionaries can alter map ordering} {
+    set map {aa X a Y}
+    list [string map [dict create aa X a Y] aaa] [string map $map aaa] [dict size $map] [string map $map aaa]
+} {YYY XY 2 XY}
 
 test string-11.1 {string match, too few args} {
     list [catch {string match a} msg] $msg

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTrace.c,v 1.2.2.1 2003/06/27 15:10:11 dgp Exp $
+ * RCS: @(#) $Id: tclTrace.c,v 1.2.2.2 2003/07/07 20:23:38 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2401,7 +2401,7 @@ TclCallVarTraces(iPtr, arrayPtr, varPtr, part1, part2, flags, leaveErrMsg)
 				 * plus other stuff like TCL_GLOBAL_ONLY,
 				 * TCL_NAMESPACE_ONLY, and
 				 * TCL_INTERP_DESTROYED. */
-    CONST int leaveErrMsg;	/* If true, and one of the traces indicates an
+    int leaveErrMsg;	        /* If true, and one of the traces indicates an
 				 * error, then leave an error message and stack
 				 * trace information in *iPTr. */
 {
