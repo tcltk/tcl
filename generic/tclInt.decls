@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.40 2002/01/09 19:09:28 kennykb Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.41 2002/01/15 21:19:07 dgp Exp $
 
 library tcl
 
@@ -172,7 +172,7 @@ declare 39 generic {
     TclObjCmdProcType TclGetObjInterpProc(void)
 }
 declare 40 generic {
-    int TclGetOpenMode(Tcl_Interp *interp, char *str, int *seekFlagPtr)
+    int TclGetOpenMode(Tcl_Interp *interp, CONST char *str, int *seekFlagPtr)
 }
 declare 41 generic {
     Tcl_Command TclGetOriginalCommand(Tcl_Command command)

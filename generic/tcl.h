@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.108 2002/01/15 17:55:29 dgp Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.109 2002/01/15 21:19:07 dgp Exp $
  */
 
 #ifndef _TCL
@@ -1501,7 +1501,7 @@ typedef int (Tcl_FSStatProc) _ANSI_ARGS_((Tcl_Obj *pathPtr, struct stat *buf));
 typedef int (Tcl_FSAccessProc) _ANSI_ARGS_((Tcl_Obj *pathPtr, int mode));
 typedef Tcl_Channel (Tcl_FSOpenFileChannelProc) 
 	_ANSI_ARGS_((Tcl_Interp *interp, Tcl_Obj *pathPtr, 
-	char *modeString, int permissions));
+	CONST char *modeString, int permissions));
 typedef int (Tcl_FSMatchInDirectoryProc) _ANSI_ARGS_((Tcl_Interp* interp, 
 	Tcl_Obj *result, Tcl_Obj *pathPtr, char *pattern, 
 	Tcl_GlobTypeData * types));

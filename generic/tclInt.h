@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.74 2002/01/15 17:55:30 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.75 2002/01/15 21:19:07 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -1541,7 +1541,7 @@ typedef struct TclpTime_t_ *TclpTime_t;
 typedef int (TclStatProc_) _ANSI_ARGS_((CONST char *path, struct stat *buf));
 typedef int (TclAccessProc_) _ANSI_ARGS_((CONST char *path, int mode));
 typedef Tcl_Channel (TclOpenFileChannelProc_) _ANSI_ARGS_((Tcl_Interp *interp,
-	char *fileName, char *modeString,
+	CONST char *fileName, CONST char *modeString,
 	int permissions));
 
 
@@ -1703,8 +1703,6 @@ EXTERN int		TclGetNamespaceForQualName _ANSI_ARGS_((
 			    Namespace **actualCxtPtrPtr,
 			    CONST char **simpleNamePtr));
 EXTERN TclObjCmdProcType TclGetObjInterpProc _ANSI_ARGS_((void));
-EXTERN int		TclGetOpenMode _ANSI_ARGS_((Tcl_Interp *interp,
-			    char *string, int *seekFlagPtr));
 EXTERN Tcl_Command	TclGetOriginalCommand _ANSI_ARGS_((
 			    Tcl_Command command));
 EXTERN int		TclGlob _ANSI_ARGS_((Tcl_Interp *interp,
@@ -1855,7 +1853,7 @@ EXTERN Tcl_Obj*         TclFileDirname _ANSI_ARGS_((Tcl_Interp *interp,
 						    Tcl_Obj*pathPtr));
 EXTERN int		TclpObjStat _ANSI_ARGS_((Tcl_Obj *pathPtr, struct stat *buf));
 EXTERN Tcl_Channel	TclpOpenFileChannel _ANSI_ARGS_((Tcl_Interp *interp,
-			    Tcl_Obj *pathPtr, char *modeString,
+			    Tcl_Obj *pathPtr, CONST char *modeString,
 			    int permissions));
 EXTERN void		TclpPanic _ANSI_ARGS_(TCL_VARARGS(CONST char *,
 			    format));

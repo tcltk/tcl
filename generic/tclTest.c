@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.36 2002/01/09 17:50:56 dgp Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.37 2002/01/15 21:19:07 dgp Exp $
  */
 
 #define TCL_TEST
@@ -250,14 +250,18 @@ static int		TestsetmainloopCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Interp *interp, int argc, char **argv));
 static int		TestexitmainloopCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Interp *interp, int argc, char **argv));
-static Tcl_Channel	PretendTclpOpenFileChannel _ANSI_ARGS_((Tcl_Interp *interp,
-			    char *filename, char *modeString, int permissions));
-static Tcl_Channel	TestOpenFileChannelProc1 _ANSI_ARGS_((Tcl_Interp *interp,
-			    char *filename, char *modeString, int permissions));
-static Tcl_Channel	TestOpenFileChannelProc2 _ANSI_ARGS_((Tcl_Interp *interp,
-			    char *filename, char *modeString, int permissions));
-static Tcl_Channel	TestOpenFileChannelProc3 _ANSI_ARGS_((Tcl_Interp *interp,
-			    char *filename, char *modeString, int permissions));
+static Tcl_Channel	PretendTclpOpenFileChannel _ANSI_ARGS_((
+			    Tcl_Interp *interp, CONST char *fileName,
+			    CONST char *modeString, int permissions));
+static Tcl_Channel	TestOpenFileChannelProc1 _ANSI_ARGS_((
+			    Tcl_Interp *interp, CONST char *fileName,
+			    CONST char *modeString, int permissions));
+static Tcl_Channel	TestOpenFileChannelProc2 _ANSI_ARGS_((
+			    Tcl_Interp *interp, CONST char *fileName,
+			    CONST char *modeString, int permissions));
+static Tcl_Channel	TestOpenFileChannelProc3 _ANSI_ARGS_((
+			    Tcl_Interp *interp, CONST char *fileName,
+			    CONST char *modeString, int permissions));
 static int		TestpanicCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Interp *interp, int argc, char **argv));
 static int		TestparserObjCmd _ANSI_ARGS_((ClientData dummy,
@@ -4494,8 +4498,8 @@ static Tcl_Channel
 PretendTclpOpenFileChannel(interp, fileName, modeString, permissions)
     Tcl_Interp *interp;                 /* Interpreter for error reporting;
 					 * can be NULL. */
-    char *fileName;                     /* Name of file to open. */
-    char *modeString;                   /* A list of POSIX open modes or
+    CONST char *fileName;               /* Name of file to open. */
+    CONST char *modeString;             /* A list of POSIX open modes or
 					 * a string such as "rw". */
     int permissions;                    /* If the open involves creating a
 					 * file, with what modes to create
@@ -4513,8 +4517,8 @@ static Tcl_Channel
 TestOpenFileChannelProc1(interp, fileName, modeString, permissions)
     Tcl_Interp *interp;                 /* Interpreter for error reporting;
                                          * can be NULL. */
-    char *fileName;                     /* Name of file to open. */
-    char *modeString;                   /* A list of POSIX open modes or
+    CONST char *fileName;               /* Name of file to open. */
+    CONST char *modeString;             /* A list of POSIX open modes or
                                          * a string such as "rw". */
     int permissions;                    /* If the open involves creating a
                                          * file, with what modes to create
@@ -4541,8 +4545,8 @@ static Tcl_Channel
 TestOpenFileChannelProc2(interp, fileName, modeString, permissions)
     Tcl_Interp *interp;                 /* Interpreter for error reporting;
                                          * can be NULL. */
-    char *fileName;                     /* Name of file to open. */
-    char *modeString;                   /* A list of POSIX open modes or
+    CONST char *fileName;               /* Name of file to open. */
+    CONST char *modeString;             /* A list of POSIX open modes or
                                          * a string such as "rw". */
     int permissions;                    /* If the open involves creating a
                                          * file, with what modes to create
@@ -4569,8 +4573,8 @@ static Tcl_Channel
 TestOpenFileChannelProc3(interp, fileName, modeString, permissions)
     Tcl_Interp *interp;                 /* Interpreter for error reporting;
                                          * can be NULL. */
-    char *fileName;                     /* Name of file to open. */
-    char *modeString;                   /* A list of POSIX open modes or
+    CONST char *fileName;               /* Name of file to open. */
+    CONST char *modeString;             /* A list of POSIX open modes or
                                          * a string such as "rw". */
     int permissions;                    /* If the open involves creating a
                                          * file, with what modes to create
@@ -5504,8 +5508,8 @@ static Tcl_Channel
 TestReportOpenFileChannel(interp, fileName, modeString, permissions)
     Tcl_Interp *interp;                 /* Interpreter for error reporting;
 					 * can be NULL. */
-    Tcl_Obj *fileName;                     /* Name of file to open. */
-    char *modeString;                   /* A list of POSIX open modes or
+    Tcl_Obj *fileName;                  /* Name of file to open. */
+    CONST char *modeString;             /* A list of POSIX open modes or
 					 * a string such as "rw". */
     int permissions;                    /* If the open involves creating a
 					 * file, with what modes to create
