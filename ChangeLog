@@ -1,3 +1,17 @@
+1999-03-06    <stanton@GASPODE>
+
+	* unix/Makefile.in: 
+	* generic/tcl.decls:
+	* generic/tclCompile.h: 
+	* generic/tclCompileDecls.h: 
+	* generic/tclCompileStubs.c: 
+	* generic/tclDecls.h: 
+	* generic/tclInt.decls: 
+	* generic/tclInt.h: 
+	* generic/tclStubInit.c: Removed tclCompile.h functions.  Moved
+	TclGetAuxDataType to tclInt.h so it is available for use by
+	the TclPro Byte Compiler loader.
+
 1999-03-05    <stanton@GASPODE>
 
 	* unix/configure.in: Applied patch from Jan Nijtmans to fix the
