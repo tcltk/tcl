@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.42.2.3 2004/05/04 03:50:59 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.42.2.4 2004/11/17 02:52:25 hobbs Exp $
  */
 
 #include "tclInt.h"	/* Internal definitions for Tcl. */
@@ -997,6 +997,7 @@ TtySetOptionProc(instanceData, interp, optionName, value)
      * Option -ttycontrol {DTR 1 RTS 0 BREAK 0}
      */
     if ((len > 4) && (strncmp(optionName, "-ttycontrol", len) == 0)) {
+	int i;
 	if (Tcl_SplitList(interp, value, &argc, &argv) == TCL_ERROR) {
 	    return TCL_ERROR;
 	}
@@ -1011,12 +1012,12 @@ TtySetOptionProc(instanceData, interp, optionName, value)
 	}
 
 	GETCONTROL(fsPtr->fd, &control);
-	while (argc > 1) {
-	    if (Tcl_GetBoolean(interp, argv[1], &flag) == TCL_ERROR) {
+	for (i = 0; i < argc-1; i += 2) {
+	    if (Tcl_GetBoolean(interp, argv[i+1], &flag) == TCL_ERROR) {
 		ckfree((char *) argv);
 		return TCL_ERROR;
 	    }
-	    if (strncasecmp(argv[0], "DTR", strlen(argv[0])) == 0) {
+	    if (strncasecmp(argv[i], "DTR", strlen(argv[i])) == 0) {
 #ifdef TIOCM_DTR
 		if (flag) {
 		    control |= TIOCM_DTR;
@@ -1028,7 +1029,7 @@ TtySetOptionProc(instanceData, interp, optionName, value)
 		ckfree((char *) argv);
 		return TCL_ERROR;
 #endif /* TIOCM_DTR */
-	    } else if (strncasecmp(argv[0], "RTS", strlen(argv[0])) == 0) {
+	    } else if (strncasecmp(argv[i], "RTS", strlen(argv[i])) == 0) {
 #ifdef TIOCM_RTS
 		if (flag) {
 		    control |= TIOCM_RTS;
@@ -1040,7 +1041,7 @@ TtySetOptionProc(instanceData, interp, optionName, value)
 		ckfree((char *) argv);
 		return TCL_ERROR;
 #endif /* TIOCM_RTS*/
-	    } else if (strncasecmp(argv[0], "BREAK", strlen(argv[0])) == 0) {
+	    } else if (strncasecmp(argv[i], "BREAK", strlen(argv[i])) == 0) {
 #ifdef SETBREAK
 		SETBREAK(fsPtr->fd, flag);
 #else /* !SETBREAK */
@@ -1050,15 +1051,14 @@ TtySetOptionProc(instanceData, interp, optionName, value)
 #endif /* SETBREAK */
 	    } else {
 		if (interp) {
-		    Tcl_AppendResult(interp,
-			    "bad signal for -ttycontrol: must be ",
+		    Tcl_AppendResult(interp, "bad signal \"", argv[i],
+			    "\" for -ttycontrol: must be ",
 			    "DTR, RTS or BREAK", (char *) NULL);
 		}
 		ckfree((char *) argv);
 		return TCL_ERROR;
 	    }
-	    argc -= 2, argv += 2;
-	} /* while (argc > 1) */
+	} /* -ttycontrol options loop */
 
 	SETCONTROL(fsPtr->fd, &control);
 	ckfree((char *) argv);
