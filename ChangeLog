@@ -1,3 +1,9 @@
+2004-10-28  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclExecute.c (INST_START_CMD):
+	* tests/execute.test (execute-8.3): fix for execution stack
+	corruption [Bug 1055676]. Credit dgp for detective work and fix. 
+
 2004-10-27  Don Porter  <dgp@users.sourceforge.net>
 
         * tests/socket.test (socket-13.1):      Balanced [makeFile] and
