@@ -1,3 +1,10 @@
+2002-04-18  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* generic/tclCmdMZ.c (Tcl_SubstObj): More clarification for
+	comment on behaviour when substitutions are not well-formed,
+	prompted by [Bug #536831]; alas, removing the ill-defined
+	behaviour is a lot of work.
+
 2002-04-18  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* generic/tclExecute.c:
@@ -296,7 +303,7 @@
 
 2002-03-21  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
-	* doc/expr.n: Improved documentation for ceil and floor [Bug 350535]
+	* doc/expr.n: Improved documentation for ceil and floor [Bug 530535]
 
 2002-03-20  Don Porter  <dgp@users.sourceforge.net>
 
