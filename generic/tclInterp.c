@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.1.2.9 1999/03/10 06:49:19 stanton Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.1.2.10 1999/03/14 18:56:20 stanton Exp $
  */
 
 #include <stdio.h>
@@ -2316,6 +2316,7 @@ Tcl_MakeSafe(interp)
     Tcl_UnsetVar2(interp, "tcl_platform", "os", TCL_GLOBAL_ONLY);
     Tcl_UnsetVar2(interp, "tcl_platform", "osVersion", TCL_GLOBAL_ONLY);
     Tcl_UnsetVar2(interp, "tcl_platform", "machine", TCL_GLOBAL_ONLY);
+    Tcl_UnsetVar2(interp, "tcl_platform", "user", TCL_GLOBAL_ONLY);
 
     /*
      * Unset path informations variables
