@@ -1,3 +1,9 @@
+2003-12-12  David Gravereaux <davygrvy@pobox.com>
+
+	* win/tclWinChan.c: Win32's SetFilePointer() takes LONGs not
+	DWORDs (a signed/unsigned mismatch).  Redid local vars to
+	avoid all casting except where truly required.
+
 2003-12-12  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* generic/tclCmdAH.c: fix to normalization of non-existent user
@@ -24,7 +30,8 @@
 	* win/tclWinSock.c (SocketThreadExitHandler) : added a
 	TerminateThread fallback just in case the socket handler thread
 	is really in a paused state.  This can happen when Tcl is being
-	unloaded by the OS from an exception handler.
+	unloaded by the OS from an exception handler.  See MSDN docs on
+	DllMain, it states this behavior.
 
 2003-12-09  Jeff Hobbs  <jeffh@ActiveState.com>
 
