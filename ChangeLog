@@ -1,3 +1,7 @@
+2003-01-28  Don Porter  <dgp@users.sourceforge.net>
+
+	* tests/main.test: Constrain tests that do not work on Windows.
+
 2003-01-28  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* generic/tclIOUtil.c: fix to setting modification date
