@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: namespace.test,v 1.32 2004/08/27 09:07:06 dkf Exp $
+# RCS: @(#) $Id: namespace.test,v 1.33 2004/08/27 09:18:15 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -1659,6 +1659,11 @@ test namespace-48.1 {ensembles and namespace import: unknown handler} {
 	    lappend result $ens $args
 	    namespace ensemble config $ens -subcommand {x y}
 	}
+	proc u2 {ens args} {
+	    global result
+	    lappend result $ens $args
+	    namespace ensemble config ::bar -subcommand {x y z}
+	}
 	proc x args {
 	    global result
 	    lappend result XXX $args
@@ -1667,15 +1672,20 @@ test namespace-48.1 {ensembles and namespace import: unknown handler} {
 	    global result
 	    lappend result YYY $args
 	}
+	proc z args {
+	    global result
+	    lappend result ZZZ $args
+	}
     }
     namespace import -force foo::bar
-    set result {}
-    lappend result [catch {namespace ensemble config bar} msg] $msg
+    set result [list [namespace ensemble config bar]]
     bar x 123
     bar y 456
+    namespace ensemble config bar -unknown ::foo::u2
+    bar z 789
     namespace delete foo
     set result
-} {1 {bar is not an ensemble command} XXX 123 ::foo::bar {y 456} YYY 456}
+} {{-map {} -namespace ::foo -prefixes 1 -subcommands x -unknown ::foo::u} XXX 123 ::foo::bar {y 456} YYY 456 ::foo::bar {z 789} ZZZ 789}
 test namespace-48.2 {ensembles and namespace import: exists} {
     namespace eval foo {
 	namespace ensemble create -command ::foo::bar
@@ -1709,7 +1719,7 @@ test namespace-48.3 {ensembles and namespace import: config} {
     lappend result [catch {namespace ensemble config spong} msg] $msg
     namespace delete foo
     set result
-} {::foo 1 {boo is not an ensemble command} 1 {invalid command name "spong"}}
+} {::foo 1 {"boo" is not an ensemble command} 1 {unknown command "spong"}}
 
 # cleanup
 catch {rename cmd1 {}}
