@@ -386,7 +386,7 @@ AC_DEFUN(SC_ENABLE_THREADS, [
 # Arguments:
 #	none
 #	
-#	Requires the following vars to be set:
+#	Requires the following vars to be set in the Makefile:
 #		CFLAGS_DEBUG
 #		CFLAGS_OPTIMIZE
 #		LDFLAGS_DEBUG
@@ -400,8 +400,8 @@ AC_DEFUN(SC_ENABLE_THREADS, [
 #	Defines the following vars:
 #		CFLAGS_DEFAULT	Sets to $(CFLAGS_DEBUG) if true
 #				Sets to $(CFLAGS_OPTIMIZE) if false
-#		LDFLAGS_DEFAULT	Sets to LDFLAGS_DEBUG if true
-#				Sets to LDFLAGS_OPTIMIZE if false
+#		LDFLAGS_DEFAULT	Sets to $(LDFLAGS_DEBUG) if true
+#				Sets to $(LDFLAGS_OPTIMIZE) if false
 #		DBGX		Debug library extension
 #
 #------------------------------------------------------------------------
@@ -412,12 +412,12 @@ AC_DEFUN(SC_ENABLE_SYMBOLS, [
 # FIXME: Currently, LDFLAGS_DEFAULT is not used, it should work like CFLAGS_DEFAULT.
     if test "$tcl_ok" = "yes"; then
 	CFLAGS_DEFAULT='$(CFLAGS_DEBUG)'
-	LDFLAGS_DEFAULT="${LDFLAGS_DEBUG}"
+	LDFLAGS_DEFAULT='$(LDFLAGS_DEBUG)'
 	DBGX=g
 	AC_MSG_RESULT([yes])
     else
 	CFLAGS_DEFAULT='$(CFLAGS_OPTIMIZE)'
-	LDFLAGS_DEFAULT="${LDFLAGS_OPTIMIZE}"
+	LDFLAGS_DEFAULT='$(LDFLAGS_OPTIMIZE)'
 	DBGX=""
 	AC_MSG_RESULT([no])
     fi

@@ -5694,19 +5694,18 @@ fi
 # FIXME: Currently, LDFLAGS_DEFAULT is not used, it should work like CFLAGS_DEFAULT.
     if test "$tcl_ok" = "yes"; then
 	CFLAGS_DEFAULT='$(CFLAGS_DEBUG)'
-	LDFLAGS_DEFAULT="${LDFLAGS_DEBUG}"
+	LDFLAGS_DEFAULT='$(LDFLAGS_DEBUG)'
 	DBGX=g
 	echo "$ac_t""yes" 1>&6
     else
 	CFLAGS_DEFAULT='$(CFLAGS_OPTIMIZE)'
-	LDFLAGS_DEFAULT="${LDFLAGS_OPTIMIZE}"
+	LDFLAGS_DEFAULT='$(LDFLAGS_OPTIMIZE)'
 	DBGX=""
 	echo "$ac_t""no" 1>&6
     fi
 
 
 TCL_DBGX=${DBGX}
-CFLAGS=${CFLAGS_DEFAULT}
 
 #--------------------------------------------------------------------
 #	The statements below check for systems where POSIX-style
@@ -5720,17 +5719,17 @@ CFLAGS=${CFLAGS_DEFAULT}
 do
 ac_safe=`echo "$ac_hdr" | sed 'y%./+-%__p_%'`
 echo $ac_n "checking for $ac_hdr""... $ac_c" 1>&6
-echo "configure:5724: checking for $ac_hdr" >&5
+echo "configure:5723: checking for $ac_hdr" >&5
 if eval "test \"`echo '$''{'ac_cv_header_$ac_safe'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   cat > conftest.$ac_ext <<EOF
-#line 5729 "configure"
+#line 5728 "configure"
 #include "confdefs.h"
 #include <$ac_hdr>
 EOF
 ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
-{ (eval echo configure:5734: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
+{ (eval echo configure:5733: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
 ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
 if test -z "$ac_err"; then
   rm -rf conftest*
@@ -5760,17 +5759,17 @@ done
 do
 ac_safe=`echo "$ac_hdr" | sed 'y%./+-%__p_%'`
 echo $ac_n "checking for $ac_hdr""... $ac_c" 1>&6
-echo "configure:5764: checking for $ac_hdr" >&5
+echo "configure:5763: checking for $ac_hdr" >&5
 if eval "test \"`echo '$''{'ac_cv_header_$ac_safe'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   cat > conftest.$ac_ext <<EOF
-#line 5769 "configure"
+#line 5768 "configure"
 #include "confdefs.h"
 #include <$ac_hdr>
 EOF
 ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
-{ (eval echo configure:5774: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
+{ (eval echo configure:5773: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
 ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
 if test -z "$ac_err"; then
   rm -rf conftest*
@@ -5797,7 +5796,7 @@ fi
 done
 
     echo $ac_n "checking FIONBIO vs. O_NONBLOCK for nonblocking I/O""... $ac_c" 1>&6
-echo "configure:5801: checking FIONBIO vs. O_NONBLOCK for nonblocking I/O" >&5
+echo "configure:5800: checking FIONBIO vs. O_NONBLOCK for nonblocking I/O" >&5
     if test -f /usr/lib/NextStep/software_version; then
 	system=NEXTSTEP-`awk '/3/,/3/' /usr/lib/NextStep/software_version`
     else
@@ -5859,7 +5858,7 @@ TCL_SHARED_LIB_SUFFIX=${SHARED_LIB_SUFFIX}
 
 
     echo $ac_n "checking how to build libraries""... $ac_c" 1>&6
-echo "configure:5863: checking how to build libraries" >&5
+echo "configure:5862: checking how to build libraries" >&5
     # Check whether --enable-shared or --disable-shared was given.
 if test "${enable_shared+set}" = set; then
   enableval="$enable_shared"
@@ -6015,6 +6014,11 @@ TCL_SHARED_BUILD=${SHARED_BUILD}
 
 
 
+
+
+
+
+# FIXME: Should this be TCL_LDFLAGS_DEBUG ?
 
 
 
@@ -6209,12 +6213,16 @@ s%@TCL_BUILD_STUB_LIB_PATH@%$TCL_BUILD_STUB_LIB_PATH%g
 s%@TCL_STUB_LIB_PATH@%$TCL_STUB_LIB_PATH%g
 s%@MAKE_STUB_LIB@%$MAKE_STUB_LIB%g
 s%@BUILD_DLTEST@%$BUILD_DLTEST%g
+s%@CFLAGS_DEFAULT@%$CFLAGS_DEFAULT%g
 s%@CFG_TCL_SHARED_LIB_SUFFIX@%$CFG_TCL_SHARED_LIB_SUFFIX%g
 s%@CFG_TCL_UNSHARED_LIB_SUFFIX@%$CFG_TCL_UNSHARED_LIB_SUFFIX%g
 s%@CFG_TCL_EXPORT_FILE_SUFFIX@%$CFG_TCL_EXPORT_FILE_SUFFIX%g
 s%@TCL_DBGX@%$TCL_DBGX%g
 s%@DL_OBJS@%$DL_OBJS%g
 s%@EXTRA_CFLAGS@%$EXTRA_CFLAGS%g
+s%@LDFLAGS_DEFAULT@%$LDFLAGS_DEFAULT%g
+s%@LDFLAGS_DEBUG@%$LDFLAGS_DEBUG%g
+s%@LDFLAGS_OPTIMIZE@%$LDFLAGS_OPTIMIZE%g
 s%@MAKE_LIB@%$MAKE_LIB%g
 s%@TCL_SHARED_BUILD@%$TCL_SHARED_BUILD%g
 s%@SHLIB_CFLAGS@%$SHLIB_CFLAGS%g
