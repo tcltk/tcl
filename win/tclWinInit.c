@@ -7,7 +7,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclWinInit.c,v 1.53 2004/06/17 21:26:28 dgp Exp $
+ * RCS: @(#) $Id: tclWinInit.c,v 1.54 2004/06/17 21:33:43 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -221,6 +221,7 @@ Tcl_Panic("Called GetDLD before SetDLD!");
 
     *savedDirectoryPtr =
 	    Tcl_NewStringObj(defaultLibraryDir, defaultLibraryDirLength);
+    Tcl_IncrRefCount(*savedDirectoryPtr);
     Tcl_CreateThreadExitHandler(FreeThreadDefaultLibraryDir,
 		(ClientData) savedDirectoryPtr);
     return *savedDirectoryPtr;
