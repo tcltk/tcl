@@ -1,3 +1,18 @@
+2003-03-05  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* generic/tclCompCmds.c (TclCompileSwitchCmd): First attempt at a
+	bytecode-compiled switch command.  It only handles the most common
+	case of switching, but that should be enough for this to speed up
+	a lot of people's code.  It is expected that the speed gains come
+	from two things: better handling of the switch itself, and
+	integrated compilation of the arms instead of embedding separate
+	bytecode sequences (i.e. better local variable handling.)
+	* tests/switch.test (switch-10.*): Tests of both uncompiled and
+	compiled switch behaviour. [Patch #644819]
+
+	* generic/tclCompile.h (TclFixupForwardJumpToHere): Additional
+	macro to make the most common kind of jump fixup a bit easier.
+
 2003-03-04  Don Porter	<dgp@users.sourceforge.net>
 
 	* README:				Bumped version number of
