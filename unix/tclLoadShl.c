@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoadShl.c,v 1.12 2002/07/18 16:26:04 vincentdarley Exp $
+ * RCS: @(#) $Id: tclLoadShl.c,v 1.13 2002/10/10 12:25:53 vincentdarley Exp $
  */
 
 #include <dl.h>
@@ -57,8 +57,9 @@ TclpDlopen(interp, pathPtr, loadHandle, unloadProcPtr)
 				 * this file. */
 {
     shl_t handle;
+    CONST char *native;
     char *fileName = Tcl_GetString(pathPtr);
-    
+
     /*
      * The flags below used to be BIND_IMMEDIATE; they were changed at
      * the suggestion of Wolfgang Kechel (wolfgang@prs.de): "This
@@ -69,9 +70,29 @@ TclpDlopen(interp, pathPtr, loadHandle, unloadProcPtr)
      * when they are build."
      */
 
-    handle = shl_load(fileName,
-		      BIND_DEFERRED|BIND_VERBOSE|DYNAMIC_PATH,
-		      0L);
+
+    /* 
+     * First try the full path the user gave us.  This is particularly
+     * important if the cwd is inside a vfs, and we are trying to load
+     * using a relative path.
+     */
+    native = Tcl_FSGetNativePath(pathPtr);
+    handle = shl_load(native,
+		      BIND_DEFERRED|BIND_VERBOSE|DYNAMIC_PATH, 0L);
+    
+    if (handle == NULL) {
+	/* 
+	 * Let the OS loader examine the binary search path for
+	 * whatever string the user gave us which hopefully refers
+	 * to a file on the binary path
+	 */
+	Tcl_DString ds;
+	native = Tcl_UtfToExternalDString(NULL, fileName, -1, &ds);
+	handle = shl_load(native,
+			  BIND_DEFERRED|BIND_VERBOSE|DYNAMIC_PATH, 0L);
+	Tcl_DStringFree(&ds);
+    }
+
     if (handle == NULL) {
 	Tcl_AppendResult(interp, "couldn't load file \"", fileName,
 		"\": ", Tcl_PosixError(interp), (char *) NULL);

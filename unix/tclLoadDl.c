@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoadDl.c,v 1.12 2002/07/18 16:26:04 vincentdarley Exp $
+ * RCS: @(#) $Id: tclLoadDl.c,v 1.13 2002/10/10 12:25:53 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -69,8 +69,25 @@ TclpDlopen(interp, pathPtr, loadHandle, unloadProcPtr)
     VOID *handle;
     CONST char *native;
 
+    /* 
+     * First try the full path the user gave us.  This is particularly
+     * important if the cwd is inside a vfs, and we are trying to load
+     * using a relative path.
+     */
     native = Tcl_FSGetNativePath(pathPtr);
-    handle = dlopen(native, RTLD_NOW | RTLD_GLOBAL);	/* INTL: Native. */
+    handle = dlopen(native, RTLD_NOW | RTLD_GLOBAL);
+    if (handle == NULL) {
+	/* 
+	 * Let the OS loader examine the binary search path for
+	 * whatever string the user gave us which hopefully refers
+	 * to a file on the binary path
+	 */
+	Tcl_DString ds;
+	char *fileName = Tcl_GetString(pathPtr);
+	native = Tcl_UtfToExternalDString(NULL, fileName, -1, &ds);
+	handle = dlopen(native, RTLD_NOW | RTLD_GLOBAL);
+	Tcl_DStringFree(&ds);
+    }
     
     if (handle == NULL) {
 	Tcl_AppendResult(interp, "couldn't load file \"", 
