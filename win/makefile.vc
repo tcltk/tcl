@@ -12,7 +12,7 @@
 # Copyright (c) 2001-2004 David Gravereaux.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.119 2004/01/16 02:42:45 davygrvy Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.120 2004/01/30 08:10:11 davygrvy Exp $
 #------------------------------------------------------------------------------
 
 !if "$(MSVCDIR)" == ""
@@ -352,9 +352,9 @@ cdebug	=
 !endif
 !else if "$(MACHINE)" == "IA64"
 ### Warnings are too many, can't support warnings into errors.
-cdebug	= -Z7 -Od
+cdebug	= -Z7 -Od -GZ
 !else
-cdebug	= -Z7 -WX -Od
+cdebug	= -Z7 -WX -Od -GZ
 !endif
 
 ### Declarations common to all compiler options
