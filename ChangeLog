@@ -37,6 +37,11 @@
 	coresponding closing block as it serves no purpose given that all
 	the function prototypes have the proper extern usage already.
 
+	* unix/tclAppInit.c:	When built as tcltest, TclThread_Init was
+	* win/tclAppInit.c:	getting called twice.  First by
+	Tcltest_Init, then again in Tcl_AppInit.  The call from Tcl_AppInit
+	is now removed.
+
 2004-10-27  Andreas Kupries <andreask@activestate.com>
 
 	* tests/tm.test:  Expanded on the testsuite entered by Donal.
