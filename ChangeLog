@@ -1,3 +1,8 @@
+2004-11-02  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* win/tclWinFile.c: Simplify TclpUtime to use Tcl_FSGetNativePath, 
+	and add comments.
+
 2004-11-02  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclInt.h: Change uses of EXTERN to MODULE_SCOPE (defined
