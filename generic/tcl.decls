@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.30 2000/01/26 03:37:40 hobbs Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.31 2000/02/08 10:05:40 hobbs Exp $
 
 library tcl
 
@@ -589,7 +589,7 @@ declare 166 generic {
 # generic interface, so we inlcude it here for compatibility reasons.
 
 declare 167 unix {
-    int Tcl_GetOpenFile(Tcl_Interp *interp, char *str, int write, \
+    int Tcl_GetOpenFile(Tcl_Interp *interp, char *str, int forWriting, \
 	    int checkUsage, ClientData *filePtr)
 }
 
