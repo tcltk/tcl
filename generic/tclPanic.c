@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPanic.c,v 1.1 1999/03/03 00:38:42 stanton Exp $
+ * RCS: @(#) $Id: tclPanic.c,v 1.2 1999/03/04 01:01:59 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -97,7 +97,7 @@ Tcl_PanicVA (format, argList)
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_Panic --
+ * panic --
  *
  *	Print an error message and kill the process.
  *
@@ -112,7 +112,7 @@ Tcl_PanicVA (format, argList)
 
 	/* VARARGS ARGSUSED */
 void
-Tcl_Panic TCL_VARARGS_DEF(char *,arg1)
+panic TCL_VARARGS_DEF(char *,arg1)
 {
     va_list argList;
     char *format;

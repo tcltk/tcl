@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.1 1999/03/03 00:38:39 stanton Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.2 1999/03/04 01:01:57 stanton Exp $
  */
 
 #ifndef _TCLDECLS
@@ -579,10 +579,9 @@ EXTERN Tcl_Channel	Tcl_OpenTcpServer _ANSI_ARGS_((Tcl_Interp * interp,
 				Tcl_TcpAcceptProc * acceptProc, 
 				ClientData callbackData));
 /* 185 */
-EXTERN void		Tcl_Panic _ANSI_ARGS_(TCL_VARARGS(char *,format));
+EXTERN void		panic _ANSI_ARGS_(TCL_VARARGS(char *,format));
 /* 186 */
-EXTERN void		Tcl_PanicVA _ANSI_ARGS_((char * format, 
-				va_list argList));
+EXTERN void		panicVA _ANSI_ARGS_((char * format, va_list argList));
 /* 187 */
 EXTERN char *		Tcl_ParseVar _ANSI_ARGS_((Tcl_Interp * interp, 
 				char * string, char ** termPtr));
@@ -1050,8 +1049,8 @@ typedef struct TclStubs {
     Tcl_Channel (*tcl_OpenFileChannel) _ANSI_ARGS_((Tcl_Interp * interp, char * fileName, char * modeString, int permissions)); /* 182 */
     Tcl_Channel (*tcl_OpenTcpClient) _ANSI_ARGS_((Tcl_Interp * interp, int port, char * address, char * myaddr, int myport, int async)); /* 183 */
     Tcl_Channel (*tcl_OpenTcpServer) _ANSI_ARGS_((Tcl_Interp * interp, int port, char * host, Tcl_TcpAcceptProc * acceptProc, ClientData callbackData)); /* 184 */
-    void (*tcl_Panic) _ANSI_ARGS_(TCL_VARARGS(char *,format)); /* 185 */
-    void (*tcl_PanicVA) _ANSI_ARGS_((char * format, va_list argList)); /* 186 */
+    void (*panic) _ANSI_ARGS_(TCL_VARARGS(char *,format)); /* 185 */
+    void (*panicVA) _ANSI_ARGS_((char * format, va_list argList)); /* 186 */
     char * (*tcl_ParseVar) _ANSI_ARGS_((Tcl_Interp * interp, char * string, char ** termPtr)); /* 187 */
     char * (*tcl_PkgPresent) _ANSI_ARGS_((Tcl_Interp * interp, char * name, char * version, int exact)); /* 188 */
     char * (*tcl_PkgPresentEx) _ANSI_ARGS_((Tcl_Interp * interp, char * name, char * version, int exact, ClientData * clientDataPtr)); /* 189 */
@@ -1890,13 +1889,13 @@ extern TclStubs *tclStubsPtr;
 #define Tcl_OpenTcpServer(interp, port, host, acceptProc, callbackData) \
 	(tclStubsPtr->tcl_OpenTcpServer)(interp, port, host, acceptProc, callbackData) /* 184 */
 #endif
-#ifndef Tcl_Panic
-#define Tcl_Panic \
-	(tclStubsPtr->tcl_Panic) /* 185 */
+#ifndef panic
+#define panic \
+	(tclStubsPtr->panic) /* 185 */
 #endif
-#ifndef Tcl_PanicVA
-#define Tcl_PanicVA(format, argList) \
-	(tclStubsPtr->tcl_PanicVA)(format, argList) /* 186 */
+#ifndef panicVA
+#define panicVA(format, argList) \
+	(tclStubsPtr->panicVA)(format, argList) /* 186 */
 #endif
 #ifndef Tcl_ParseVar
 #define Tcl_ParseVar(interp, string, termPtr) \

@@ -7,7 +7,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclIntPlatStubs.c,v 1.1 1999/03/03 00:38:41 stanton Exp $
+ * RCS: @(#) $Id: tclIntPlatStubs.c,v 1.2 1999/03/04 01:01:58 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -98,16 +98,227 @@ TclWinSetSockOpt(s, level, optname, optval, optlen)
     return (tclIntPlatStubsPtr->tclWinSetSockOpt)(s, level, optname, optval, optlen);
 }
 
-#endif /* __WIN32__ */
-#ifdef MAC_TCL
-/* Slot 0 */
-int
-TclpCheckStackSpace()
+/* Slot 8 */
+unsigned long
+TclpGetPid(pid)
+    Tcl_Pid pid;
 {
-    return (tclIntPlatStubsPtr->tclpCheckStackSpace)();
+    return (tclIntPlatStubsPtr->tclpGetPid)(pid);
+}
+
+/* Slot 9 */
+void
+TclpFinalize()
+{
+    (tclIntPlatStubsPtr->tclpFinalize)();
+}
+
+/* Slot 10 */
+int
+TclWinGetPlatformId()
+{
+    return (tclIntPlatStubsPtr->tclWinGetPlatformId)();
+}
+
+/* Slot 11 */
+void
+TclWinInit(hInst)
+    HINSTANCE hInst;
+{
+    (tclIntPlatStubsPtr->tclWinInit)(hInst);
+}
+
+/* Slot 12 */
+int
+TclWinSynchSpawn(args, type, trans, pidPtr)
+    void * args;
+    int type;
+    void ** trans;
+    Tcl_Pid * pidPtr;
+{
+    return (tclIntPlatStubsPtr->tclWinSynchSpawn)(args, type, trans, pidPtr);
+}
+
+/* Slot 13 */
+void
+TclGetAndDetachPids(interp, chan)
+    Tcl_Interp * interp;
+    Tcl_Channel chan;
+{
+    (tclIntPlatStubsPtr->tclGetAndDetachPids)(interp, chan);
+}
+
+/* Slot 14 */
+int
+TclpCloseFile(file)
+    TclFile file;
+{
+    return (tclIntPlatStubsPtr->tclpCloseFile)(file);
+}
+
+/* Slot 15 */
+Tcl_Channel
+TclpCreateCommandChannel(readFile, writeFile, errorFile, numPids, pidPtr)
+    TclFile readFile;
+    TclFile writeFile;
+    TclFile errorFile;
+    int numPids;
+    Tcl_Pid * pidPtr;
+{
+    return (tclIntPlatStubsPtr->tclpCreateCommandChannel)(readFile, writeFile, errorFile, numPids, pidPtr);
+}
+
+/* Slot 16 */
+int
+TclpCreatePipe(readPipe, writePipe)
+    TclFile * readPipe;
+    TclFile * writePipe;
+{
+    return (tclIntPlatStubsPtr->tclpCreatePipe)(readPipe, writePipe);
+}
+
+/* Slot 17 */
+int
+TclpCreateProcess(interp, argc, argv, inputFile, outputFile, errorFile, pidPtr)
+    Tcl_Interp * interp;
+    int argc;
+    char ** argv;
+    TclFile inputFile;
+    TclFile outputFile;
+    TclFile errorFile;
+    Tcl_Pid * pidPtr;
+{
+    return (tclIntPlatStubsPtr->tclpCreateProcess)(interp, argc, argv, inputFile, outputFile, errorFile, pidPtr);
+}
+
+/* Slot 18 */
+TclFile
+TclpCreateTempFile(contents, namePtr)
+    char * contents;
+    Tcl_DString * namePtr;
+{
+    return (tclIntPlatStubsPtr->tclpCreateTempFile)(contents, namePtr);
+}
+
+/* Slot 19 */
+char *
+TclpGetTZName()
+{
+    return (tclIntPlatStubsPtr->tclpGetTZName)();
+}
+
+/* Slot 20 */
+TclFile
+TclpMakeFile(channel, direction)
+    Tcl_Channel channel;
+    int direction;
+{
+    return (tclIntPlatStubsPtr->tclpMakeFile)(channel, direction);
+}
+
+/* Slot 21 */
+TclFile
+TclpOpenFile(fname, mode)
+    char * fname;
+    int mode;
+{
+    return (tclIntPlatStubsPtr->tclpOpenFile)(fname, mode);
+}
+
+#endif /* __WIN32__ */
+#if !defined(__WIN32__) && !defined(MAC_TCL)
+/* Slot 0 */
+void
+TclGetAndDetachPids(interp, chan)
+    Tcl_Interp * interp;
+    Tcl_Channel chan;
+{
+    (tclIntPlatStubsPtr->tclGetAndDetachPids)(interp, chan);
 }
 
 /* Slot 1 */
+int
+TclpCloseFile(file)
+    TclFile file;
+{
+    return (tclIntPlatStubsPtr->tclpCloseFile)(file);
+}
+
+/* Slot 2 */
+Tcl_Channel
+TclpCreateCommandChannel(readFile, writeFile, errorFile, numPids, pidPtr)
+    TclFile readFile;
+    TclFile writeFile;
+    TclFile errorFile;
+    int numPids;
+    Tcl_Pid * pidPtr;
+{
+    return (tclIntPlatStubsPtr->tclpCreateCommandChannel)(readFile, writeFile, errorFile, numPids, pidPtr);
+}
+
+/* Slot 3 */
+int
+TclpCreatePipe(readPipe, writePipe)
+    TclFile * readPipe;
+    TclFile * writePipe;
+{
+    return (tclIntPlatStubsPtr->tclpCreatePipe)(readPipe, writePipe);
+}
+
+/* Slot 4 */
+int
+TclpCreateProcess(interp, argc, argv, inputFile, outputFile, errorFile, pidPtr)
+    Tcl_Interp * interp;
+    int argc;
+    char ** argv;
+    TclFile inputFile;
+    TclFile outputFile;
+    TclFile errorFile;
+    Tcl_Pid * pidPtr;
+{
+    return (tclIntPlatStubsPtr->tclpCreateProcess)(interp, argc, argv, inputFile, outputFile, errorFile, pidPtr);
+}
+
+/* Slot 5 */
+TclFile
+TclpCreateTempFile(contents, namePtr)
+    char * contents;
+    Tcl_DString * namePtr;
+{
+    return (tclIntPlatStubsPtr->tclpCreateTempFile)(contents, namePtr);
+}
+
+/* Slot 6 */
+TclFile
+TclpMakeFile(channel, direction)
+    Tcl_Channel channel;
+    int direction;
+{
+    return (tclIntPlatStubsPtr->tclpMakeFile)(channel, direction);
+}
+
+/* Slot 7 */
+TclFile
+TclpOpenFile(fname, mode)
+    char * fname;
+    int mode;
+{
+    return (tclIntPlatStubsPtr->tclpOpenFile)(fname, mode);
+}
+
+/* Slot 8 */
+int
+TclUnixWaitForFile(fd, mask, timeout)
+    int fd;
+    int mask;
+    int timeout;
+{
+    return (tclIntPlatStubsPtr->tclUnixWaitForFile)(fd, mask, timeout);
+}
+
+#endif /* UNIX */
+#ifdef MAC_TCL
+/* Slot 0 */
 VOID *
 TclpSysAlloc(size, isBin)
     long size;
@@ -116,7 +327,7 @@ TclpSysAlloc(size, isBin)
     return (tclIntPlatStubsPtr->tclpSysAlloc)(size, isBin);
 }
 
-/* Slot 2 */
+/* Slot 1 */
 void
 TclpSysFree(ptr)
     VOID * ptr;
@@ -124,7 +335,7 @@ TclpSysFree(ptr)
     (tclIntPlatStubsPtr->tclpSysFree)(ptr);
 }
 
-/* Slot 3 */
+/* Slot 2 */
 VOID *
 TclpSysRealloc(cp, size)
     VOID * cp;
@@ -133,12 +344,206 @@ TclpSysRealloc(cp, size)
     return (tclIntPlatStubsPtr->tclpSysRealloc)(cp, size);
 }
 
-/* Slot 4 */
+/* Slot 3 */
 void
 TclPlatformExit(status)
     int status;
 {
     (tclIntPlatStubsPtr->tclPlatformExit)(status);
+}
+
+/* Slot 4 */
+int
+FSpGetDefaultDir(theSpec)
+    FSSpecPtr theSpec;
+{
+    return (tclIntPlatStubsPtr->fSpGetDefaultDir)(theSpec);
+}
+
+/* Slot 5 */
+int
+FSpSetDefaultDir(theSpec)
+    FSSpecPtr theSpec;
+{
+    return (tclIntPlatStubsPtr->fSpSetDefaultDir)(theSpec);
+}
+
+/* Slot 6 */
+OSErr
+FSpFindFolder(vRefNum, folderType, createFolder, spec)
+    short vRefNum;
+    OSType folderType;
+    Boolean createFolder;
+    FSSpec * spec;
+{
+    return (tclIntPlatStubsPtr->fSpFindFolder)(vRefNum, folderType, createFolder, spec);
+}
+
+/* Slot 7 */
+void
+GetGlobalMouse(mouse)
+    Point * mouse;
+{
+    (tclIntPlatStubsPtr->getGlobalMouse)(mouse);
+}
+
+/* Slot 8 */
+pascal OSErr
+FSpGetDirectoryID(spec, theDirID, isDirectory)
+    const FSSpec * spec;
+    long * theDirID;
+    Boolean * isDirectory;
+{
+    return (tclIntPlatStubsPtr->fSpGetDirectoryID)(spec, theDirID, isDirectory);
+}
+
+/* Slot 9 */
+pascal short
+FSpOpenResFileCompat(spec, permission)
+    const FSSpec * spec;
+    SignedByte permission;
+{
+    return (tclIntPlatStubsPtr->fSpOpenResFileCompat)(spec, permission);
+}
+
+/* Slot 10 */
+pascal void
+FSpCreateResFileCompat(spec, creator, fileType, scriptTag)
+    const FSSpec * spec;
+    OSType creator;
+    OSType fileType;
+    ScriptCode scriptTag;
+{
+    return (tclIntPlatStubsPtr->fSpCreateResFileCompat)(spec, creator, fileType, scriptTag);
+}
+
+/* Slot 11 */
+int
+FSpLocationFromPath(length, path, theSpec)
+    int length;
+    CONST char * path;
+    FSSpecPtr theSpec;
+{
+    return (tclIntPlatStubsPtr->fSpLocationFromPath)(length, path, theSpec);
+}
+
+/* Slot 12 */
+OSErr
+FSpPathFromLocation(theSpec, length, fullPath)
+    FSSpecPtr theSpec;
+    int * length;
+    Handle * fullPath;
+{
+    return (tclIntPlatStubsPtr->fSpPathFromLocation)(theSpec, length, fullPath);
+}
+
+/* Slot 13 */
+void
+TclMacExitHandler()
+{
+    (tclIntPlatStubsPtr->tclMacExitHandler)();
+}
+
+/* Slot 14 */
+void
+TclMacInitExitToShell(usePatch)
+    int usePatch;
+{
+    (tclIntPlatStubsPtr->tclMacInitExitToShell)(usePatch);
+}
+
+/* Slot 15 */
+OSErr
+TclMacInstallExitToShellPatch(newProc)
+    ExitToShellProcPtr newProc;
+{
+    return (tclIntPlatStubsPtr->tclMacInstallExitToShellPatch)(newProc);
+}
+
+/* Slot 16 */
+int
+TclMacOSErrorToPosixError(error)
+    int error;
+{
+    return (tclIntPlatStubsPtr->tclMacOSErrorToPosixError)(error);
+}
+
+/* Slot 17 */
+void
+TclMacRemoveTimer(timerToken)
+    void * timerToken;
+{
+    (tclIntPlatStubsPtr->tclMacRemoveTimer)(timerToken);
+}
+
+/* Slot 18 */
+void *
+TclMacStartTimer(ms)
+    long ms;
+{
+    return (tclIntPlatStubsPtr->tclMacStartTimer)(ms);
+}
+
+/* Slot 19 */
+int
+TclMacTimerExpired(timerToken)
+    void * timerToken;
+{
+    return (tclIntPlatStubsPtr->tclMacTimerExpired)(timerToken);
+}
+
+/* Slot 20 */
+int
+TclMacRegisterResourceFork(fileRef, tokenPtr, insert)
+    short fileRef;
+    Tcl_Obj * tokenPtr;
+    int insert;
+{
+    return (tclIntPlatStubsPtr->tclMacRegisterResourceFork)(fileRef, tokenPtr, insert);
+}
+
+/* Slot 21 */
+short
+TclMacUnRegisterResourceFork(tokenPtr, resultPtr)
+    char * tokenPtr;
+    Tcl_Obj * resultPtr;
+{
+    return (tclIntPlatStubsPtr->tclMacUnRegisterResourceFork)(tokenPtr, resultPtr);
+}
+
+/* Slot 22 */
+int
+TclMacCreateEnv()
+{
+    return (tclIntPlatStubsPtr->tclMacCreateEnv)();
+}
+
+/* Slot 23 */
+FILE *
+TclMacFOpenHack(path, mode)
+    const char * path;
+    const char * mode;
+{
+    return (tclIntPlatStubsPtr->tclMacFOpenHack)(path, mode);
+}
+
+/* Slot 24 */
+int
+TclMacReadlink(path, buf, size)
+    char * path;
+    char * buf;
+    int size;
+{
+    return (tclIntPlatStubsPtr->tclMacReadlink)(path, buf, size);
+}
+
+/* Slot 25 */
+int
+TclMacChmod(path, mode)
+    char * path;
+    int mode;
+{
+    return (tclIntPlatStubsPtr->tclMacChmod)(path, mode);
 }
 
 #endif /* MAC_TCL */

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.1 1999/03/03 00:38:38 stanton Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.2 1999/03/04 01:01:57 stanton Exp $
 
 library tcl
 
@@ -634,10 +634,10 @@ declare 184 generic {
 	    Tcl_TcpAcceptProc *acceptProc, ClientData callbackData)
 }
 declare 185 generic {
-    void Tcl_Panic(char *format, ...)
+    void panic(char *format, ...)
 }
 declare 186 generic {
-    void Tcl_PanicVA(char *format, va_list argList)
+    void panicVA(char *format, va_list argList)
 }
 declare 187 generic {
     char * Tcl_ParseVar(Tcl_Interp *interp, char *string, char **termPtr)
@@ -930,12 +930,66 @@ declare 274 generic {
 	    Tcl_Obj *CONST objv[], char *message)
 }
 
-
+##############################################################################
 
 # Define the platform specific public Tcl interface.  These functions are
 # only available on the designated platform.
 
 interface tclPlat
+
+##################
+# Mac declarations
+
+# This is needed by the shells to handle Macintosh events.
+ 
+declare 0 mac {
+    void Tcl_MacSetEventProc(Tcl_MacConvertEventPtr procPtr)
+}
+
+# These routines are useful for handling using scripts from resources 
+# in the application shell
+
+declare 1 mac {
+    char * Tcl_MacConvertTextResource(Handle resource)
+}
+declare 2 mac {
+    int Tcl_MacEvalResource(Tcl_Interp *interp, char *resourceName, \
+	    int resourceNumber, char *fileName)
+}
+declare 3 mac {
+    Handle Tcl_MacFindResource(Tcl_Interp *interp, long resourceType, \
+	    char *resourceName, int resourceNumber, char *resFileRef, \
+	    int * releaseIt)
+}
+
+# These routines support the new OSType object type (i.e. the packed 4
+# character type and creator codes).
+
+declare 4 mac {
+    int Tcl_GetOSTypeFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, \
+	    OSType *osTypePtr)
+}
+declare 5 mac {
+    void Tcl_SetOSTypeObj(Tcl_Obj *objPtr, OSType osType)
+}
+declare 6 mac {
+    Tcl_Obj * Tcl_NewOSTypeObj(OSType osType)
+}
+
+# These are not in MSL 2.1.2, so we need to export them from the
+# Tcl shared library.  They are found in the compat directory
+# except the panic routine which is found in tclMacPanic.h.
+ 
+declare 7 mac {
+    int strncasecmp(CONST char *s1, CONST char *s2, size_t n)
+}
+declare 8 mac {
+    int strcasecmp(CONST char *s1, CONST char *s2)
+}
+
+
+####################
+# Unix declaractions
 
 declare 0 unix {
     void Tcl_CreateFileHandler(int fd, int mask, Tcl_FileProc *proc, \
