@@ -89,7 +89,7 @@ test filesystem-1.1 {link normalisation} {hasLinks} {
    string equal [file normalize dir.dir] [file normalize dir.link]
 } {0}
 
-test filesystem-1.2 {link normalisation} {hasLinks macOrUnix} {
+test filesystem-1.2 {link normalisation} {hasLinks unixOnly} {
     testPathEqual [file normalize [file join gorp.file foo]] \
      [file normalize [file join link.file foo]]
 } {1}
@@ -114,7 +114,7 @@ test filesystem-1.6 {link normalisation} {hasLinks} {
      [file normalize [file join dir.link inside.file]]
 } {0}
 
-test filesystem-1.7 {link normalisation} {hasLinks macOrUnix} {
+test filesystem-1.7 {link normalisation} {hasLinks unixOnly} {
     testPathEqual [file normalize [file join dir.link linkinside.file foo]] \
      [file normalize [file join dir.dir inside.file foo]]
 } {1}
@@ -124,14 +124,14 @@ test filesystem-1.8 {link normalisation} {hasLinks} {
      [file normalize [file join dir.link inside.filefoo]]
 } {0}
 
-test filesystem-1.9 {link normalisation} {macOrUnix hasLinks} {
+test filesystem-1.9 {link normalisation} {unixOnly hasLinks} {
     file delete -force dir.link
     file link dir.link [file nativename dir.dir]
     testPathEqual [file normalize [file join dir.dir linkinside.file foo]] \
       [file normalize [file join dir.link inside.file foo]]
 } {1}
 
-test filesystem-1.10 {link normalisation: double link} {macOrUnix hasLinks} {
+test filesystem-1.10 {link normalisation: double link} {unixOnly hasLinks} {
     file link dir2.link dir.link
     testPathEqual [file normalize [file join dir.dir linkinside.file foo]] \
       [file normalize [file join dir2.link inside.file foo]]
@@ -139,7 +139,7 @@ test filesystem-1.10 {link normalisation: double link} {macOrUnix hasLinks} {
 
 makeDirectory dir2.file
 
-test filesystem-1.11 {link normalisation: double link, back in tree} {macOrUnix hasLinks} {
+test filesystem-1.11 {link normalisation: double link, back in tree} {unixOnly hasLinks} {
     file link [file join dir2.file dir2.link] [file join .. dir2.link]
     testPathEqual [file normalize [file join dir.dir linkinside.file foo]] \
       [file normalize [file join dir2.file dir2.link inside.file foo]]

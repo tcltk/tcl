@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.68 2004/01/21 19:59:33 vincentdarley Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.69 2004/03/17 18:14:13 das Exp $
 
 library tcl
 
@@ -741,117 +741,6 @@ declare 181 generic {
 # only available on the designated platform.
 
 interface tclIntPlat
-
-########################
-# Mac specific internals
-
-declare 0 mac {
-    VOID *TclpSysAlloc(long size, int isBin)
-}
-declare 1 mac {
-    void TclpSysFree(VOID *ptr)
-}
-declare 2 mac {
-    VOID *TclpSysRealloc(VOID *cp, unsigned int size)
-}
-declare 3 mac {
-    void TclpExit(int status)
-}
-
-# Prototypes for functions found in the tclMacUtil.c compatability library.
-
-declare 4 mac {
-    int FSpGetDefaultDir(FSSpecPtr theSpec)
-}
-declare 5 mac {
-    int FSpSetDefaultDir(FSSpecPtr theSpec)
-}
-declare 6 mac {
-    OSErr FSpFindFolder(short vRefNum, OSType folderType,
-	    Boolean createFolder, FSSpec *spec)
-}
-declare 7 mac {
-    void GetGlobalMouseTcl(Point *mouse)
-}
-
-# The following routines are utility functions in Tcl.  They are exported
-# here because they are needed in Tk.  They are not officially supported,
-# however.  The first set are from the MoreFiles package.
-
-declare 8 mac {
-    pascal OSErr FSpGetDirectoryIDTcl(CONST FSSpec *spec, long *theDirID,
-	    Boolean *isDirectory)
-}
-declare 9 mac {
-    pascal short FSpOpenResFileCompatTcl(CONST FSSpec *spec,
-	    SignedByte permission)
-}
-declare 10 mac {
-    pascal void FSpCreateResFileCompatTcl(CONST FSSpec *spec, OSType creator,
-	    OSType fileType, ScriptCode scriptTag)
-}
-
-# Like the MoreFiles routines these fix problems in the standard
-# Mac calls.  These routines are from tclMacUtils.h.
-
-declare 11 mac {
-    int FSpLocationFromPath(int length, CONST char *path, FSSpecPtr theSpec)
-}
-declare 12 mac {
-    OSErr FSpPathFromLocation(FSSpecPtr theSpec, int *length,
-	    Handle *fullPath)
-}
-
-# Prototypes of Mac only internal functions.
-
-declare 13 mac {
-    void TclMacExitHandler(void)
-}
-declare 14 mac {
-    void TclMacInitExitToShell(int usePatch)
-}
-declare 15 mac {
-    OSErr TclMacInstallExitToShellPatch(ExitToShellProcPtr newProc)
-}
-declare 16 mac {
-    int TclMacOSErrorToPosixError(int error)
-}
-declare 17 mac {
-    void TclMacRemoveTimer(void *timerToken)
-}
-declare 18 mac {
-    void *TclMacStartTimer(long ms)
-}
-declare 19 mac {
-    int TclMacTimerExpired(void *timerToken)
-}
-declare 20 mac {
-    int TclMacRegisterResourceFork(short fileRef, Tcl_Obj *tokenPtr,
-	    int insert)
-}
-declare 21 mac {
-    short TclMacUnRegisterResourceFork(char *tokenPtr, Tcl_Obj *resultPtr)
-}
-declare 22 mac {
-    int TclMacCreateEnv(void)
-}
-declare 23 mac {
-    FILE *TclMacFOpenHack(CONST char *path, CONST char *mode)
-}
-# Replaced in 8.1 by TclpReadLink:
-#  declare 24 mac {
-#      int TclMacReadlink(char *path, char *buf, int size)
-#  }
-declare 24 mac {
-    char *TclpGetTZName(int isdst)
-}
-declare 25 mac {
-    int TclMacChmod(CONST char *path, int mode)
-}
-# version of FSpLocationFromPath that doesn't resolve the last path component
-declare 26 mac {
-    int FSpLLocationFromPath(int length, CONST char *path, FSSpecPtr theSpec)
-}
 
 ############################
 # Windows specific internals

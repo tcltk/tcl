@@ -3,7 +3,7 @@
 # Default system startup file for Tcl-based applications.  Defines
 # "unknown" procedure and auto-load facilities.
 #
-# RCS: @(#) $Id: init.tcl,v 1.59 2004/01/29 10:28:21 vincentdarley Exp $
+# RCS: @(#) $Id: init.tcl,v 1.60 2004/03/17 18:14:14 das Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
@@ -37,7 +37,6 @@ package require -exact Tcl 8.5
 # tcl_pkgPath, which is set by the platform-specific initialization routines
 #	On UNIX it is compiled in
 #       On Windows, it is not used
-#	On Macintosh it is "Tool Command Language" in the Extensions folder
 
 if {![info exists auto_path]} {
     if {[info exists env(TCLLIBPATH)]} {
@@ -119,16 +118,13 @@ if {![interp issafe]} {
 	    [string equal $::tcl_platform(os) "Darwin"]} {
 	package unknown [list tcl::MacOSXPkgUnknown [package unknown]]
     }
-    if {[string equal $::tcl_platform(platform) "macintosh"]} {
-	package unknown [list tcl::MacPkgUnknown [package unknown]]
-    }
 }
 
 # Conditionalize for presence of exec.
 
 if {[llength [info commands exec]] == 0} {
 
-    # Some machines, such as the Macintosh, do not have exec. Also, on all
+    # Some machines do not have exec. Also, on all
     # platforms, safe interpreters do not have exec.
 
     set auto_noexec 1

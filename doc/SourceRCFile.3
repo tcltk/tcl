@@ -2,7 +2,7 @@
 '\" Copyright (c) 1998-2000 by Scriptics Corporation.
 '\" All rights reserved.
 '\" 
-'\" RCS: @(#) $Id: SourceRCFile.3,v 1.1 2000/04/25 00:28:06 ericm Exp $
+'\" RCS: @(#) $Id: SourceRCFile.3,v 1.2 2004/03/17 18:14:12 das Exp $
 '\" 
 '\"
 .so man.macros
@@ -29,10 +29,6 @@ sourced is obtained from the global variable \fBtcl_rcFileName\fR in
 the interpreter given by \fIinterp\fR.  If this variable is not
 defined, or if the file it indicates cannot be found, no action is
 taken.
-.PP
-On the Macintosh, after sourcing the rc file, this function will
-additionally source the TEXT resource indicated by the global variable
-\fBtcl_rcRsrcName\fR in \fIinterp\fR.
 
 .SH KEYWORDS
 application-specific initialization, main program, rc file
