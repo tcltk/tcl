@@ -1219,6 +1219,8 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 	    CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
 	    LD_SEARCH_FLAGS='-rpath ${LIB_RUNTIME_DIR}'
 	    if test "${TCL_THREADS}" = "1" ; then
+		# The -pthread needs to go in the CFLAGS, not LIBS
+		LIBS=`echo $LIBS | sed s/-pthread//`
 		EXTRA_CFLAGS="-pthread"
 	    	LDFLAGS="$LDFLAGS -pthread"
 	    fi
