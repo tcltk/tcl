@@ -71,3 +71,12 @@ namespace eval ::buried {
     {my proc} mycmd5 args {return "mycmd"}
 }
 {::buried::my proc} mycmd6 args {return "another"}
+
+# A correctly functioning [auto_import] won't choke when a child
+# namespace [namespace import]s from its parent.
+#
+namespace eval ::parent::child {
+    namespace import ::parent::*
+}
+proc ::parent::child::test {} {}
+
