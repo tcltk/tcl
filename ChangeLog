@@ -1,5 +1,7 @@
 2002-06-30  Don Porter  <dgp@users.sourceforge.net>
 
+	* doc/tcltest.n: more work in progress updating tcltest docs.
+
 	* tests/README:		Updated the instructions on running and
 	* tests/cmdMZ.test:	adding to the test suite.  Also updated
 	* tests/encoding.test:	several tests, mostly to correctly create
