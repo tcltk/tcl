@@ -6,7 +6,7 @@
 # Copyright (c) 1995-1996 Sun Microsystems, Inc.
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 #
-# RCS: @(#) $Id: makefile.vc,v 1.33 1999/05/07 20:06:52 stanton Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.34 1999/05/07 23:40:37 stanton Exp $
 
 # Does not depend on the presence of any environment variables in
 # order to compile tcl; all needed information is derived from 
@@ -333,7 +333,7 @@ setup:
 	@$(MKDIR) $(OUTDIR)
 
 $(DUMPEXTS): $(WINDIR)\winDumpExts.c
-	$(cc32) $(CON_CFLAGS) -DTCL_LIB_VERSION=$(VERSION) -Fo$(TMPDIR)\ $?
+	$(cc32) $(CON_CFLAGS) -Fo$(TMPDIR)\ $?
 	set LIB="$(TOOLS32)\lib"
 	$(link32) $(ldebug) $(conlflags) $(guilibs) -out:$@ \
 		$(TMPDIR)\winDumpExts.obj 

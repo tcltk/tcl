@@ -1,5 +1,8 @@
 1999-05-07    <stanton@scriptics.com>
 
+	* win/winDumpExts.c: 
+	* win/makefile.vc: Removed incorrect patch. [Bug: 1998]
+	
 	* generic/tcl.decls: Replaced const with CONST.
 
 	* generic/tclResult.c (Tcl_AppendResultVA): 

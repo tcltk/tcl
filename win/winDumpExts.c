@@ -19,7 +19,7 @@
  *           compiler other than Visual C++.
  *----------------------------------------------------------------------
  *
- * RCS: @(#) $Id: winDumpExts.c,v 1.4 1999/05/07 20:06:52 stanton Exp $
+ * RCS: @(#) $Id: winDumpExts.c,v 1.5 1999/05/07 23:40:38 stanton Exp $
  */
 
 #include <windows.h>
@@ -474,7 +474,6 @@ main(int argc, char **argv)
 	if (arg == argc) {
 	    goto Usage;
 	}
-	fprintf(fout, "LIBRARY TCL%d\n", TCL_LIB_VERSION);
 	fprintf(fout, "EXPORTS\n");
     }
 
