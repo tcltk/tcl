@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.88 2002/08/01 22:17:07 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.89 2002/09/24 12:53:33 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -374,14 +374,15 @@ static int		ExprUnaryFunc _ANSI_ARGS_((Tcl_Interp *interp,
 #ifndef TCL_WIDE_INT_IS_LONG
 static int		ExprWideFunc _ANSI_ARGS_((Tcl_Interp *interp,
 			    ExecEnv *eePtr, ClientData clientData));
-#endif
+#endif /* TCL_WIDE_INT_IS_LONG */
 #ifdef TCL_COMPILE_STATS
 static int              EvalStatsCmd _ANSI_ARGS_((ClientData clientData,
-                            Tcl_Interp *interp, int argc, char **argv));
-#endif
+                            Tcl_Interp *interp, int objc,
+			    Tcl_Obj *CONST objv[]));
+#endif /* TCL_COMPILE_STATS */
 #ifdef TCL_COMPILE_DEBUG
 static char *		GetOpcodeName _ANSI_ARGS_((unsigned char *pc));
-#endif
+#endif /* TCL_COMPILE_DEBUG */
 static ExceptionRange *	GetExceptRangeForPc _ANSI_ARGS_((unsigned char *pc,
 			    int catchOnly, ByteCode* codePtr));
 static char *		GetSrcInfoForPc _ANSI_ARGS_((unsigned char *pc,
@@ -398,7 +399,7 @@ static char *		StringForResultCode _ANSI_ARGS_((int result));
 static void		ValidatePcAndStackTop _ANSI_ARGS_((
 			    ByteCode *codePtr, unsigned char *pc,
 			    int stackTop, int stackLowerBound));
-#endif
+#endif /* TCL_COMPILE_DEBUG */
 static int		VerifyExprObjType _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *objPtr));
 
@@ -478,8 +479,8 @@ InitByteCodeExecution(interp)
     }
 #endif
 #ifdef TCL_COMPILE_STATS    
-    Tcl_CreateCommand(interp, "evalstats", EvalStatsCmd,
-		      (ClientData) NULL, (Tcl_CmdDeleteProc *) NULL);
+    Tcl_CreateObjCommand(interp, "evalstats", EvalStatsCmd,
+	    (ClientData) NULL, (Tcl_CmdDeleteProc *) NULL);
 #endif /* TCL_COMPILE_STATS */
 }
 
@@ -5782,11 +5783,11 @@ TclLog2(value)
  */
 
 static int
-EvalStatsCmd(unused, interp, argc, argv)
+EvalStatsCmd(unused, interp, objc, objv)
     ClientData unused;		/* Unused. */
     Tcl_Interp *interp;		/* The current interpreter. */
-    int argc;			/* The number of arguments. */
-    char **argv;		/* The argument strings. */
+    int objc;			/* The number of arguments. */
+    Tcl_Obj *CONST objv[];	/* The argument strings. */
 {
     Interp *iPtr = (Interp *) interp;
     LiteralTable *globalTablePtr = &(iPtr->literalTable);
