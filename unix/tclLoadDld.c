@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoadDld.c,v 1.8 2002/01/10 22:03:12 kennykb Exp $
+ * RCS: @(#) $Id: tclLoadDld.c,v 1.9 2002/07/17 20:00:46 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -49,17 +49,11 @@
  */
 
 int
-TclpLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr, 
-	     clientDataPtr, unloadProcPtr)
+TclpDlopen(interp, pathPtr, loadHandle, unloadProcPtr)
     Tcl_Interp *interp;		/* Used for error reporting. */
     Tcl_Obj *pathPtr;		/* Name of the file containing the desired
-				 * code. */
-    CONST char *sym1, *sym2;	/* Names of two procedures to look up in
-				 * the file's symbol table. */
-    Tcl_PackageInitProc **proc1Ptr, **proc2Ptr;
-				/* Where to return the addresses corresponding
-				 * to sym1 and sym2. */
-    ClientData *clientDataPtr;	/* Filled with token for dynamically loaded
+				 * code (UTF-8). */
+    TclLoadHandle *loadHandle;	/* Filled with token for dynamically loaded
 				 * file which will be passed back to 
 				 * (*unloadProcPtr)() to unload the file. */
     Tcl_FSUnloadFileProc **unloadProcPtr;	
@@ -73,7 +67,7 @@ TclpLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr,
     
     /*
      *  The dld package needs to know the pathname to the tcl binary.
-     *  If that's not know, return an error.
+     *  If that's not known, return an error.
      */
 
     if (firstTime) {
@@ -99,12 +93,19 @@ TclpLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr,
 			 "\": ", dld_strerror(returnCode), (char *) NULL);
 	return TCL_ERROR;
     }
-    *proc1Ptr = (Tcl_PackageInitProc *) dld_get_func(sym1);
-    *proc2Ptr = (Tcl_PackageInitProc *) dld_get_func(sym2);
-    *clientDataPtr = strcpy(
+    *loadHandle = strcpy(
 	    (char *) ckalloc((unsigned) (strlen(fileName) + 1)), fileName);
     *unloadProcPtr = &TclpUnloadFile;
     return TCL_OK;
+}
+
+Tcl_PackageInitProc*
+TclpFindSymbol(interp, loadHandle, symbol) 
+    Tcl_Interp *interp;
+    TclLoadHandle loadHandle;
+    CONST char *symbol;
+{
+    return (Tcl_PackageInitProc *) dld_get_func(symbol);
 }
 
 /*
