@@ -3,7 +3,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.75 2001/11/16 20:55:39 hobbs Exp $
+# RCS: @(#) $Id: configure.in,v 1.76 2001/11/23 01:39:50 das Exp $
 
 AC_INIT(../generic/tcl.h)
 
@@ -392,8 +392,7 @@ if test "${SHARED_BUILD}" = "1" -a "${SHLIB_SUFFIX}" != "" ; then
     if test "x$DL_OBJS" = "xtclLoadAout.o"; then
 	MAKE_LIB="\${STLIB_LD} \[$]@ \${OBJS}"
     else
-	MAKE_LIB="\${SHLIB_LD} -o \[$]@ \${OBJS} ${SHLIB_LD_LIBS}"
-	RANLIB=":"
+	MAKE_LIB="\${SHLIB_LD} ${TCL_SHLIB_LD_EXTRAS} -o \[$]@ \${OBJS} ${SHLIB_LD_LIBS}"
     fi
 else
     case $system in
