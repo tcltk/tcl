@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.90 2004/11/04 07:40:44 dgp Exp $
+RCS: @(#) $Id: changes,v 1.91 2004/11/15 22:04:51 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -6282,7 +6282,26 @@ tables to avoid system limits (mistachkin)
 
 2004-11-03 (bug fix)[527164] preserve errorinfo from var traces (porter)
 
+2004-11-08 (bug fix){947693] Made -blocking option of channel during [close]
+	consistent on Windows with Unix (gravereaux)
+	*** POTENTIAL INCOMPATIBILITY ***
+
+2004-11-11 (bug fix)[1034337] recursive file delete, MacOSX (steffen)
+
+2004-11-12 (feature)[TIP 34] make use of a configuration header file (fellows)
+	*** POTENTIAL INCOMPATIBILITY ***
+
+2004-11-12 (new feature)[TIP 221] [interp bgerror] (porter)
+
+2004-11-12 (new feature)[TIP 226] Tcl_(Save|Restore|Discard)InterpState (porter)
+
+2004-11-12 (new feature)[TIP 227] Tcl_(Get|Set)ReturnOptions (porter)
+
+2004-11-12 (bug fix)[1004065] stop crash when TCL_UTF_MAX==6 (hobbs,porter)
+
+2004-11-15 (bug fix)[10653678] [trace variable],[trace remove] interop (porter)
+
 Doc improvements [759545,926590,935853,1017072,1018486,1022527,1027849,
-			1032243,1047928,1048005,1058446,etc.]
+			1032243,1047928,1048005,1058446,1062647,1065732,etc.]
 Test suite expansion [1036649,1001997,etc.]
 
