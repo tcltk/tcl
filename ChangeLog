@@ -1,3 +1,18 @@
+2001-05-17  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* generic/tclVar.c (tclArraySearchType,SetArraySearchObj,
+	ParseSearchId): Added code to speed up array searching by reducing
+	the amount of parsing needed for searchIds.
+
+	* generic/tclObj.c (TclInitObjSubsystem): 
+	* generic/tclIndexObj.c (Tcl_GetIndexFromObjStruct): 
+	* generic/tclNamesp.c (TclInitNamespaceSubsystem): 
+	* generic/tclInt.h: Moved some Tcl_ObjType initialisation to
+	TclInitObjSubsystem to be with the bulk of the rest.
+	[Patch 
+	Committed by Miguel Sofer <msofer@users.sourceforge.net>
+
+
 2001-05-23  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* tests/io.test: changed io-52.[9-11] to not be platform sensitive

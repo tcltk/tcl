@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIndexObj.c,v 1.8 2000/11/24 11:27:37 dkf Exp $
+ * RCS: @(#) $Id: tclIndexObj.c,v 1.9 2001/05/26 01:25:59 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -44,13 +44,6 @@ Tcl_ObjType tclIndexType = {
  * with a single offset, but this is a pretty safe assumption in
  * practise...
  */
-
-/*
- * Boolean flag indicating whether or not the tclIndexType object
- * type has been registered with the Tcl compiler.
- */
-
-static int indexTypeInitialized = 0;
 
 /*
  *----------------------------------------------------------------------
@@ -170,16 +163,6 @@ Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr, offset, msg, flags,
      * Lookup the value of the object in the table.  Accept unique
      * abbreviations unless TCL_EXACT is set in flags.
      */
-
-    if (!indexTypeInitialized) {
-	/*
-	 * This is the first time we've done a lookup.  Register the
-	 * tclIndexType.
-	 */
-
-        Tcl_RegisterObjType(&tclIndexType);
-        indexTypeInitialized = 1;
-    }
 
     key = Tcl_GetStringFromObj(objPtr, &length);
     index = -1;
