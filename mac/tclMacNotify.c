@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacNotify.c,v 1.3 1999/04/16 00:47:20 stanton Exp $
+ * RCS: @(#) $Id: tclMacNotify.c,v 1.4 1999/07/02 06:04:55 welch Exp $
  */
 
 #include "tclInt.h"
@@ -327,6 +327,16 @@ void
 Tcl_SetTimer(
     Tcl_Time *timePtr)		/* New value for interval timer. */
 {
+    /*
+     * Allow the notifier to be hooked.  This may not make sense
+     * on Windows, but mirrors the UNIX hook.
+     */
+
+    if (tclStubs.tcl_SetTimer != Tcl_SetTimer) {
+	tclStubs.tcl_SetTimer(timePtr);
+	return;
+    }
+
     if (!timePtr) {
 	notifier.timerActive = 0;
     } else {
@@ -397,6 +407,15 @@ Tcl_WaitForEvent(
     Point currentMouse;
     void * timerToken;
     Rect mouseRect;
+
+    /*
+     * Allow the notifier to be hooked.  This may not make
+     * sense on windows, but mirrors the UNIX hook.
+     */
+
+    if (tclStubs.tcl_WaitForEvent != Tcl_WaitForEvent) {
+	return tclStubs.tcl_WaitForEvent(timePtr);
+    }
 
     /*
      * Compute the next timeout value.
