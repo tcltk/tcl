@@ -1,3 +1,7 @@
+2004-05-28  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* doc/*.n: Added examples to many (too many to list) more man pages.
+
 2004-05-25  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclExecute.c:
