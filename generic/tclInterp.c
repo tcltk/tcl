@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.32 2004/05/20 13:04:11 dkf Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.33 2004/05/24 21:48:32 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -3176,7 +3176,7 @@ TclInitLimitSupport(interp)
     iPtr->limit.timeHandlers = NULL;
     iPtr->limit.timeGranularity = 10;
     Tcl_InitHashTable(&iPtr->limit.callbacks,
-	    sizeof(struct ScriptLimitCallbackKey)/sizeof(ClientData));
+	    sizeof(struct ScriptLimitCallbackKey)/sizeof(int));
 }
 
 static void
