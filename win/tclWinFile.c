@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.8 2000/10/21 00:43:02 hobbs Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.9 2000/10/27 01:58:00 davidg Exp $
  */
 
 #include "tclWinInt.h"
@@ -333,7 +333,7 @@ TclpMatchFilesTypes(
 	 * because it is an expensive call.
 	 */
 
-	attr = NULL;
+	attr = 0;
 
 	if (tail == NULL) {
 	    int typeOk = 1;
