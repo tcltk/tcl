@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and
 # redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: http.tcl,v 1.3 1998/09/14 18:40:03 stanton Exp $
+# RCS: @(#) $Id: http.tcl,v 1.4 1999/01/19 23:30:54 welch Exp $
 
 package provide http 2.0	;# This uses Tcl namespaces
 
@@ -99,7 +99,10 @@ proc http::config {args} {
 		set state(status) error
 	    }
 	}
-	unset state(-command)
+	if {[info exist state(-command)]} {
+	    # Command callback may already have unset our state
+	    unset state(-command)
+	}
     }
 }
 
