@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.23.2.2 2001/09/26 14:23:10 dkf Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.23.2.3 2001/09/27 13:52:28 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -892,13 +892,13 @@ char
 Tcl_Backslash(src, readPtr)
     CONST char *src;		/* Points to the backslash character of
 				 * a backslash sequence. */
-    Tcl_Length *readPtr;	/* Fill in with number of characters read
+    int *readPtr;		/* Fill in with number of characters read
 				 * from src, unless NULL. */
 {
     char buf[TCL_UTF_MAX];
     Tcl_UniChar ch;
 
-    Tcl_UtfBackslash(src, (int *)readPtr, buf);
+    Tcl_UtfBackslash(src, readPtr, buf);
     Tcl_UtfToUniChar(buf, &ch);
     return (char) ch;
 }
@@ -999,9 +999,10 @@ Tcl_ConcatObj(objc, objv)
     int objc;			/* Number of objects to concatenate. */
     Tcl_Obj *CONST objv[];	/* Array of objects to concatenate. */
 {
-    int allocSize, finalSize, i;
-    char *p, *element, *concatStr;
-    Tcl_Length length, elemLength;
+    int allocSize, finalSize, length, elemLength, i;
+    char *p;
+    char *element;
+    char *concatStr;
     Tcl_Obj *objPtr;
 
     /*
@@ -1020,7 +1021,7 @@ Tcl_ConcatObj(objc, objv)
     }
     if (i == objc) {
 	Tcl_Obj **listv;
-	Tcl_Length listc;
+	int listc;
 
 	objPtr = Tcl_NewListObj(0, NULL);
 	for (i = 0;  i < objc;  i++) {
@@ -1031,7 +1032,7 @@ Tcl_ConcatObj(objc, objv)
 	     * the end.  It will be set right in Tcl_ListObjReplace.
 	     */
 	    Tcl_ListObjGetElements(NULL, objv[i], &listc, &listv);
-	    Tcl_ListObjReplace(NULL, objPtr, INT_MAX, 0, (int)listc, listv);
+	    Tcl_ListObjReplace(NULL, objPtr, INT_MAX, 0, listc, listv);
 	}
 	return objPtr;
     }
@@ -1518,10 +1519,13 @@ Tcl_DStringAppendElement(dsPtr, string)
 void
 Tcl_DStringSetLength(dsPtr, length)
     Tcl_DString *dsPtr;		/* Structure describing dynamic string. */
-    Tcl_Length length;		/* New length for dynamic string. */
+    int length;			/* New length for dynamic string. */
 {
     int newsize;
 
+    if (length < 0) {
+	length = 0;
+    }
     if (length >= dsPtr->spaceAvl) {
 	/*
 	 * There are two interesting cases here.  In the first case, the user
@@ -2148,14 +2152,13 @@ TclGetIntForIndex(interp, objPtr, endValue, indexPtr)
 				 * after errors. */
     Tcl_Obj *objPtr;		/* Points to an object containing either
 				 * "end" or an integer. */
-    Tcl_Length endValue;	/* The value to be stored at "indexPtr" if
+    int endValue;		/* The value to be stored at "indexPtr" if
 				 * "objPtr" holds "end". */
     int *indexPtr;		/* Location filled in with an integer
 				 * representing an index. */
 {
     char *bytes;
-    Tcl_Length length;
-    int offset;
+    int length, offset;
 
     if (objPtr->typePtr == &tclIntType) {
 	*indexPtr = (int)objPtr->internalRep.longValue;

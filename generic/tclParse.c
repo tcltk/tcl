@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.16.2.2 2001/09/26 14:23:10 dkf Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.16.2.3 2001/09/27 13:56:23 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -648,7 +648,7 @@ ParseTokens(src, mask, parsePtr)
 		}
 	    }
 	    tokenPtr->type = TCL_TOKEN_BS;
-	    Tcl_UtfBackslash(src, (int *)&tokenPtr->size, utfBytes);
+	    Tcl_UtfBackslash(src, &tokenPtr->size, utfBytes);
 	    parsePtr->numTokens++;
 	    src += tokenPtr->size;
 	} else if (*src == 0) {
@@ -1155,8 +1155,7 @@ Tcl_EvalTokensStandard(interp, tokenPtr, count)
     char nameBuffer[MAX_VAR_CHARS+1];
     char *varName, *index;
     char *p = NULL;		/* Initialized to avoid compiler warning. */
-    int code;
-    Tcl_Length length;
+    int length, code;
 
     /*
      * The only tricky thing about this procedure is that it attempts to
@@ -1190,8 +1189,8 @@ Tcl_EvalTokensStandard(interp, tokenPtr, count)
 		break;
 
 	    case TCL_TOKEN_COMMAND:
-		code = Tcl_EvalEx(interp, tokenPtr->start+1,
-			(int)tokenPtr->size-2, 0);
+		code = Tcl_EvalEx(interp, tokenPtr->start+1, tokenPtr->size-2,
+			0);
 		if (code != TCL_OK) {
 		    goto done;
 		}
@@ -1257,7 +1256,7 @@ Tcl_EvalTokensStandard(interp, tokenPtr, count)
 	    if (valuePtr != NULL) {
 		resultPtr = valuePtr;
 	    } else {
-		resultPtr = Tcl_NewStringObj(p, (int)length);
+		resultPtr = Tcl_NewStringObj(p, length);
 	    }
 	    Tcl_IncrRefCount(resultPtr);
 	} else {
@@ -1270,7 +1269,7 @@ Tcl_EvalTokensStandard(interp, tokenPtr, count)
 	    if (valuePtr != NULL) {
 		p = Tcl_GetStringFromObj(valuePtr, &length);
 	    }
-	    Tcl_AppendToObj(resultPtr, p, (int)length);
+	    Tcl_AppendToObj(resultPtr, p, length);
 	}
     }
     if (resultPtr != NULL) {
@@ -2327,10 +2326,10 @@ TclObjCommandComplete(objPtr)
 					 * to check. */
 {
     char *script;
-    Tcl_Length length;
+    int length;
 
     script = Tcl_GetStringFromObj(objPtr, &length);
-    return CommandComplete(script, (int)length);
+    return CommandComplete(script, length);
 }
 
 /*

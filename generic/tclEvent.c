@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEvent.c,v 1.13.4.2 2001/09/26 14:23:10 dkf Exp $
+ * RCS: @(#) $Id: tclEvent.c,v 1.13.4.3 2001/09/27 13:49:07 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -142,7 +142,7 @@ Tcl_BackgroundError(interp)
     BgError *errPtr;
     char *errResult, *varValue;
     ErrAssocData *assocPtr;
-    Tcl_Length length;
+    int length;
 
     /*
      * The Tcl_AddErrorInfo call below (with an empty string) ensures that
@@ -287,7 +287,7 @@ HandleBgErrors(clientData)
             errChannel = Tcl_GetStdChannel(TCL_STDERR);
             if (errChannel != (Tcl_Channel) NULL) {
 		char *string;
-		Tcl_Length len;
+		int len;
 
 		string = Tcl_GetStringFromObj(Tcl_GetObjResult(interp), &len);
                 if (strcmp(string, "\"bgerror\" is an invalid command name or ambiguous abbreviation") == 0) {
@@ -302,7 +302,7 @@ HandleBgErrors(clientData)
                             -1);
                     Tcl_WriteChars(errChannel, "\n", -1);
                     Tcl_WriteChars(errChannel, "    Error in bgerror: ", -1);
-                    Tcl_WriteChars(errChannel, string, (int)len);
+                    Tcl_WriteChars(errChannel, string, len);
                     Tcl_WriteChars(errChannel, "\n", -1);
                 }
                 Tcl_Flush(errChannel);

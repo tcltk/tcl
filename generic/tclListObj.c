@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclListObj.c,v 1.9.12.2 2001/09/26 14:23:10 dkf Exp $
+ * RCS: @(#) $Id: tclListObj.c,v 1.9.12.3 2001/09/27 13:56:23 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -304,7 +304,7 @@ Tcl_ListObjGetElements(interp, listPtr, objcPtr, objvPtr)
     Tcl_Interp *interp;		/* Used to report errors if not NULL. */
     register Tcl_Obj *listPtr;	/* List object for which an element array
 				 * is to be returned. */
-    Tcl_Length *objcPtr;	/* Where to store the count of objects
+    int *objcPtr;		/* Where to store the count of objects
 				 * referenced by objv. */
     Tcl_Obj ***objvPtr;	        /* Where to store the pointer to an array
 				 * of pointers to the list's objects. */
@@ -356,8 +356,7 @@ Tcl_ListObjAppendList(interp, listPtr, elemListPtr)
     Tcl_Obj *elemListPtr;	/* List obj with elements to append. */
 {
     register List *listRepPtr;
-    int listLen, result;
-    Tcl_Length objc;
+    int listLen, objc, result;
     Tcl_Obj **objv;
 
     if (Tcl_IsShared(listPtr)) {
@@ -382,7 +381,7 @@ Tcl_ListObjAppendList(interp, listPtr, elemListPtr)
      * Delete zero existing elements.
      */
     
-    return Tcl_ListObjReplace(interp, listPtr, listLen, 0, (int)objc, objv);
+    return Tcl_ListObjReplace(interp, listPtr, listLen, 0, objc, objv);
 }
 
 /*
@@ -549,10 +548,10 @@ Tcl_ListObjIndex(interp, listPtr, index, objPtrPtr)
  */
 
 int
-Tcl_ListObjLength(interp, listPtr, lenPtr)
-    Tcl_Interp *interp;		 /* Used to report errors if not NULL. */
-    register Tcl_Obj *listPtr;	 /* List object whose #elements to return. */
-    register Tcl_Length *lenPtr; /* The resulting int is stored here. */
+Tcl_ListObjLength(interp, listPtr, intPtr)
+    Tcl_Interp *interp;		/* Used to report errors if not NULL. */
+    register Tcl_Obj *listPtr;	/* List object whose #elements to return. */
+    register int *intPtr;	/* The resulting int is stored here. */
 {
     register List *listRepPtr;
     
@@ -564,7 +563,7 @@ Tcl_ListObjLength(interp, listPtr, lenPtr)
     }
 
     listRepPtr = (List *) listPtr->internalRep.otherValuePtr;
-    *lenPtr = listRepPtr->elemCount;
+    *intPtr = listRepPtr->elemCount;
     return TCL_OK;
 }
 
@@ -883,8 +882,7 @@ SetListFromAny(interp, objPtr)
     Tcl_ObjType *oldTypePtr = objPtr->typePtr;
     char *string, *s;
     CONST char *elemStart, *nextElem;
-    int lenRemain, estCount, elemSize, hasBrace, i, j, result;
-    Tcl_Length length;
+    int lenRemain, length, estCount, elemSize, hasBrace, i, j, result;
     char *limit;		/* Points just after string's last byte. */
     register CONST char *p;
     register Tcl_Obj **elemPtrs;
@@ -1014,7 +1012,7 @@ UpdateStringOfList(listPtr)
     int numElems = listRepPtr->elemCount;
     register int i;
     char *elem, *dst;
-    Tcl_Length length;
+    int length;
 
     /*
      * Convert each element of the list to string form and then convert it
@@ -1033,7 +1031,7 @@ UpdateStringOfList(listPtr)
     listPtr->length = 1;
     for (i = 0; i < numElems; i++) {
 	elem = Tcl_GetStringFromObj(listRepPtr->elements[i], &length);
-	listPtr->length += Tcl_ScanCountedElement(elem, (int)length,
+	listPtr->length += Tcl_ScanCountedElement(elem, length,
 		&flagPtr[i]) + 1;
     }
 
@@ -1045,7 +1043,7 @@ UpdateStringOfList(listPtr)
     dst = listPtr->bytes;
     for (i = 0; i < numElems; i++) {
 	elem = Tcl_GetStringFromObj(listRepPtr->elements[i], &length);
-	dst += Tcl_ConvertCountedElement(elem, (int)length, dst, flagPtr[i]);
+	dst += Tcl_ConvertCountedElement(elem, length, dst, flagPtr[i]);
 	*dst = ' ';
 	dst++;
     }

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.7.4.1 2001/09/26 14:23:10 dkf Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.7.4.2 2001/09/27 13:57:59 dkf Exp $
  */
 
 #include <stdio.h>
@@ -915,7 +915,7 @@ Tcl_GetAlias(interp, aliasName, targetInterpPtr, targetNamePtr, argcPtr,
     InterpInfo *iiPtr;
     Tcl_HashEntry *hPtr;
     Alias *aliasPtr;
-    Tcl_Length i, objc;
+    int i, objc;
     Tcl_Obj **objv;
     
     iiPtr = (InterpInfo *) ((Interp *) interp)->interpInfo;
@@ -975,7 +975,7 @@ Tcl_GetAliasObj(interp, aliasName, targetInterpPtr, targetNamePtr, objcPtr,
     InterpInfo *iiPtr;
     Tcl_HashEntry *hPtr;
     Alias *aliasPtr;	
-    Tcl_Length objc;
+    int objc;
     Tcl_Obj **objv;
 
     iiPtr = (InterpInfo *) ((Interp *) interp)->interpInfo;
@@ -1056,7 +1056,7 @@ TclPreventAliasLoop(interp, cmdInterp, cmd)
     aliasPtr = (Alias *) cmdPtr->objClientData;
     nextAliasPtr = aliasPtr;
     while (1) {
-	Tcl_Length objc;
+	int objc;
 	Tcl_Obj **objv;
 
         /*
@@ -1383,8 +1383,7 @@ AliasObjCmd(clientData, interp, objc, objv)
 {
     Tcl_Interp *targetInterp;	
     Alias *aliasPtr;		
-    int result;
-    Tcl_Length prefc, cmdc;
+    int result, prefc, cmdc;
     Tcl_Obj *cmdPtr;
     Tcl_Obj **prefv, **cmdv;
     
@@ -1417,10 +1416,10 @@ AliasObjCmd(clientData, interp, objc, objv)
      */
      
     Tcl_ListObjGetElements(NULL, aliasPtr->prefixPtr, &prefc, &prefv);
-    cmdPtr = Tcl_NewListObj((int)prefc, prefv);
-    Tcl_ListObjReplace(NULL, cmdPtr, (int)prefc, 0, objc - 1, objv + 1);
+    cmdPtr = Tcl_NewListObj(prefc, prefv);
+    Tcl_ListObjReplace(NULL, cmdPtr, prefc, 0, objc - 1, objv + 1);
     Tcl_ListObjGetElements(NULL, cmdPtr, &cmdc, &cmdv);
-    result = TclObjInvoke(targetInterp, (int)cmdc, cmdv,
+    result = TclObjInvoke(targetInterp, cmdc, cmdv,
 	    TCL_INVOKE_NO_TRACEBACK);
     Tcl_DecrRefCount(cmdPtr);
 
@@ -1675,7 +1674,7 @@ GetInterp(interp, pathPtr)
     Tcl_HashEntry *hPtr;	/* Search element. */
     Slave *slavePtr;		/* Interim slave record. */
     Tcl_Obj **objv;
-    Tcl_Length objc, i;	
+    int objc, i;	
     Tcl_Interp *searchInterp;	/* Interim storage for interp. to find. */
     InterpInfo *masterInfoPtr;
 
@@ -1736,8 +1735,7 @@ SlaveCreate(interp, pathPtr, safe)
     InterpInfo *masterInfoPtr;
     Tcl_HashEntry *hPtr;
     char *path;
-    int new;
-    Tcl_Length objc;
+    int new, objc;
     Tcl_Obj **objv;
 
     if (Tcl_ListObjGetElements(interp, pathPtr, &objc, &objv) != TCL_OK) {
@@ -1749,7 +1747,7 @@ SlaveCreate(interp, pathPtr, safe)
     } else {
 	Tcl_Obj *objPtr;
 	
-	objPtr = Tcl_NewListObj((int)objc - 1, objv);
+	objPtr = Tcl_NewListObj(objc - 1, objv);
 	masterInterp = GetInterp(interp, objPtr);
 	Tcl_DecrRefCount(objPtr);
 	if (masterInterp == NULL) {

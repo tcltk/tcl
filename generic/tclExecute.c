@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.34.2.2 2001/09/26 14:23:10 dkf Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.34.2.3 2001/09/27 13:49:07 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -222,7 +222,7 @@ long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
 
 static void		CallTraceProcedure _ANSI_ARGS_((Tcl_Interp *interp,
 			    Trace *tracePtr, Command *cmdPtr,
-			    char *command, Tcl_Length numChars,
+			    char *command, int numChars,
 			    int objc, Tcl_Obj *objv[]));
 static void		DupCmdNameInternalRep _ANSI_ARGS_((Tcl_Obj *objPtr,
 			    Tcl_Obj *copyPtr));
@@ -256,7 +256,7 @@ static char *		GetOpcodeName _ANSI_ARGS_((unsigned char *pc));
 static ExceptionRange *	GetExceptRangeForPc _ANSI_ARGS_((unsigned char *pc,
 			    int catchOnly, ByteCode* codePtr));
 static char *		GetSrcInfoForPc _ANSI_ARGS_((unsigned char *pc,
-        		    ByteCode* codePtr, Tcl_Length *lengthPtr));
+        		    ByteCode* codePtr, int *lengthPtr));
 static void		GrowEvaluationStack _ANSI_ARGS_((ExecEnv *eePtr));
 static void		IllegalExprOperandType _ANSI_ARGS_((
 			    Tcl_Interp *interp, unsigned char *pc,
@@ -563,7 +563,7 @@ TclExecuteByteCode(interp, codePtr)
 #endif
     Tcl_Obj *valuePtr, *value2Ptr, *objPtr, *elemPtr;
     char *bytes;
-    Tcl_Length length;
+    int length;
     long i;
 
     /*
@@ -824,7 +824,7 @@ TclExecuteByteCode(interp, codePtr)
 		            tracePtr = nextTracePtr) {
 			nextTracePtr = tracePtr->nextPtr;
 			if (iPtr->numLevels <= tracePtr->level) {
-			    Tcl_Length numChars;
+			    int numChars;
 			    char *cmd = GetSrcInfoForPc(pc, codePtr,
 				    &numChars);
 			    if (cmd != NULL) {
@@ -1927,7 +1927,7 @@ TclExecuteByteCode(interp, codePtr)
 		    i1 = (valuePtr->internalRep.doubleValue != 0.0);
 		} else {
 		    s = Tcl_GetStringFromObj(valuePtr, &length);
-		    if (TclLooksLikeInt(s, (int)length)) {
+		    if (TclLooksLikeInt(s, length)) {
 			result = Tcl_GetLongFromObj((Tcl_Interp *) NULL,
 				valuePtr, &i);
 			i1 = (i != 0);
@@ -1953,7 +1953,7 @@ TclExecuteByteCode(interp, codePtr)
 		    i2 = (value2Ptr->internalRep.doubleValue != 0.0);
 		} else {
 		    s = Tcl_GetStringFromObj(value2Ptr, &length);
-		    if (TclLooksLikeInt(s, (int)length)) {
+		    if (TclLooksLikeInt(s, length)) {
 			result = Tcl_GetLongFromObj((Tcl_Interp *) NULL,
 				value2Ptr, &i);
 			i2 = (i != 0);
@@ -2006,7 +2006,7 @@ TclExecuteByteCode(interp, codePtr)
 		TclDecrRefCount(valuePtr);
 		goto checkForCatch;
 	    }
-	    PUSH_OBJECT(Tcl_NewIntObj((int)length));
+	    PUSH_OBJECT(Tcl_NewIntObj(length));
 	    TRACE(("%.20s => %d\n", O2S(valuePtr), length));
 	    TclDecrRefCount(valuePtr);
 	    ADJUST_PC(1);
@@ -2089,7 +2089,7 @@ TclExecuteByteCode(interp, codePtr)
 		    iResult = (*pc == INST_STR_EQ);
 		} else {
 		    char *s1, *s2;
-		    Tcl_Length s1len, s2len;
+		    int s1len, s2len;
 
 		    s1 = Tcl_GetStringFromObj(valuePtr, &s1len);
 		    s2 = Tcl_GetStringFromObj(value2Ptr, &s2len);
@@ -2123,8 +2123,7 @@ TclExecuteByteCode(interp, codePtr)
 		 * String compare
 		 */
 		char *s1, *s2;
-		Tcl_Length s1len, s2len;
-		int iResult;
+		int s1len, s2len, iResult;
 
 		value2Ptr = POP_OBJECT();
 		valuePtr  = POP_OBJECT();
@@ -2165,8 +2164,8 @@ TclExecuteByteCode(interp, codePtr)
 		    /*
 		     * These have to be in true chars
 		     */
-		    s1len = Tcl_NumUtfChars(s1, (int)s1len);
-		    s2len = Tcl_NumUtfChars(s2, (int)s2len);
+		    s1len = Tcl_NumUtfChars(s1, s1len);
+		    s2len = Tcl_NumUtfChars(s2, s2len);
 		    iResult = Tcl_UtfNcmp(s1, s2,
 			    (size_t) ((s1len < s2len) ? s1len : s2len));
 		}
@@ -2193,7 +2192,7 @@ TclExecuteByteCode(interp, codePtr)
 
        case INST_STR_LEN:
 	    {
-		Tcl_Length length1;
+		int length1;
 		 
 		valuePtr = POP_OBJECT();
 
@@ -2202,7 +2201,7 @@ TclExecuteByteCode(interp, codePtr)
 		} else {
 		    length1 = Tcl_GetCharLength(valuePtr);
 		}
-		PUSH_OBJECT(Tcl_NewIntObj((int)length1));
+		PUSH_OBJECT(Tcl_NewIntObj(length1));
 		TRACE(("%.20s => %d\n", O2S(valuePtr), length1));
 		TclDecrRefCount(valuePtr);
 	    }
@@ -2251,7 +2250,7 @@ TclExecuteByteCode(interp, codePtr)
 			char buf[TCL_UTF_MAX];
 			Tcl_UniChar ch;
 
-			ch = Tcl_GetUniChar(valuePtr, (Tcl_Length)index);
+			ch = Tcl_GetUniChar(valuePtr, index);
 			/*
 			 * This could be:
 			 * Tcl_NewUnicodeObj((CONST Tcl_UniChar *)&ch, 1)
@@ -2259,7 +2258,7 @@ TclExecuteByteCode(interp, codePtr)
 			 * faster in practical use.
 			 */
 			length = Tcl_UniCharToUtf(ch, buf);
-			objPtr = Tcl_NewStringObj(buf, (int)length);
+			objPtr = Tcl_NewStringObj(buf, length);
 		    }
 		} else {
 		    objPtr = Tcl_NewObj();
@@ -2350,7 +2349,7 @@ TclExecuteByteCode(interp, codePtr)
 				|| (value2Ptr->bytes && (value2Ptr->length == 0))))) {
 		    if ((t1Ptr != &tclIntType) && (t1Ptr != &tclDoubleType)) {
 			s1 = Tcl_GetStringFromObj(valuePtr, &length);
-			if (TclLooksLikeInt(s1, (int)length)) {
+			if (TclLooksLikeInt(s1, length)) {
 			    (void) Tcl_GetLongFromObj((Tcl_Interp *) NULL,
 				    valuePtr, &i);
 			} else {
@@ -2361,7 +2360,7 @@ TclExecuteByteCode(interp, codePtr)
 		    }
 		    if ((t2Ptr != &tclIntType) && (t2Ptr != &tclDoubleType)) {
 			s2 = Tcl_GetStringFromObj(value2Ptr, &length);
-			if (TclLooksLikeInt(s2, (int)length)) {
+			if (TclLooksLikeInt(s2, length)) {
 			    (void) Tcl_GetLongFromObj((Tcl_Interp *) NULL,
 				    value2Ptr, &i2);
 			} else {
@@ -2640,7 +2639,7 @@ TclExecuteByteCode(interp, codePtr)
 		    d1 = valuePtr->internalRep.doubleValue;
 		} else {
 		    char *s = Tcl_GetStringFromObj(valuePtr, &length);
-		    if (TclLooksLikeInt(s, (int)length)) {
+		    if (TclLooksLikeInt(s, length)) {
 			result = Tcl_GetLongFromObj((Tcl_Interp *) NULL,
 				valuePtr, &i);
 		    } else {
@@ -2673,7 +2672,7 @@ TclExecuteByteCode(interp, codePtr)
 		    d2 = value2Ptr->internalRep.doubleValue;
 		} else {
 		    char *s = Tcl_GetStringFromObj(value2Ptr, &length);
-		    if (TclLooksLikeInt(s, (int)length)) {
+		    if (TclLooksLikeInt(s, length)) {
 			result = Tcl_GetLongFromObj((Tcl_Interp *) NULL,
 				value2Ptr, &i2);
 		    } else {
@@ -2819,7 +2818,7 @@ TclExecuteByteCode(interp, codePtr)
 		if ((tPtr != &tclIntType) && ((tPtr != &tclDoubleType)
 			|| (valuePtr->bytes != NULL))) {
 		    char *s = Tcl_GetStringFromObj(valuePtr, &length);
-		    if (TclLooksLikeInt(s, (int)length)) {
+		    if (TclLooksLikeInt(s, length)) {
 			result = Tcl_GetLongFromObj((Tcl_Interp *) NULL,
 				valuePtr, &i);
 		    } else {
@@ -2888,7 +2887,7 @@ TclExecuteByteCode(interp, codePtr)
 			valuePtr->typePtr = &tclIntType;
 		    } else {
 			char *s = Tcl_GetStringFromObj(valuePtr, &length);
-			if (TclLooksLikeInt(s, (int)length)) {
+			if (TclLooksLikeInt(s, length)) {
 			    result = Tcl_GetLongFromObj((Tcl_Interp *) NULL,
 				    valuePtr, &i);
 			} else {
@@ -3083,7 +3082,7 @@ TclExecuteByteCode(interp, codePtr)
 			converted = 1;
 		    } else {
 			s = Tcl_GetStringFromObj(valuePtr, &length);
-			if (TclLooksLikeInt(s, (int)length)) {
+			if (TclLooksLikeInt(s, length)) {
 			    result = Tcl_GetLongFromObj((Tcl_Interp *) NULL,
 				    valuePtr, &i);
 			} else {
@@ -3269,9 +3268,8 @@ TclExecuteByteCode(interp, codePtr)
 		Tcl_Obj *listPtr;
 		List *listRepPtr;
 		Var *iterVarPtr, *listVarPtr;
-		int iterNum, listTmpIndex, numVars;
+		int iterNum, listTmpIndex, listLen, numVars;
 		int varIndex, valIndex, continueLoop, j;
-		Tcl_Length listLen;
 
 		/*
 		 * Increment the temp holding the loop iteration number.
@@ -3424,8 +3422,7 @@ TclExecuteByteCode(interp, codePtr)
 	if ((result == TCL_ERROR) && !(iPtr->flags & ERR_ALREADY_LOGGED)) {
 	    bytes = GetSrcInfoForPc(pc, codePtr, &length);
 	    if (bytes != NULL) {
-		Tcl_LogCommandInfo(interp, codePtr->source, bytes,
-			(int)length);
+		Tcl_LogCommandInfo(interp, codePtr->source, bytes, length);
 		iPtr->flags |= ERR_ALREADY_LOGGED;
 	    }
         }
@@ -3720,7 +3717,7 @@ CallTraceProcedure(interp, tracePtr, cmdPtr, command, numChars, objc, objv)
     Command *cmdPtr;		/* Points to command's Command struct. */
     char *command;		/* Points to the first character of the
 				 * command's source before substitutions. */
-    Tcl_Length numChars;	/* The number of characters in the
+    int numChars;		/* The number of characters in the
 				 * command's source. */
     register int objc;		/* Number of arguments for the command. */
     Tcl_Obj *objv[];		/* Pointers to Tcl_Obj of each argument. */
@@ -3728,7 +3725,7 @@ CallTraceProcedure(interp, tracePtr, cmdPtr, command, numChars, objc, objv)
     Interp *iPtr = (Interp *) interp;
     register char **argv;
     register int i;
-    Tcl_Length length;
+    int length;
     char *p;
 
     /*
@@ -3794,7 +3791,7 @@ GetSrcInfoForPc(pc, codePtr, lengthPtr)
 				 * in codePtr's code. */
     ByteCode *codePtr;		/* The bytecode sequence in which to look
 				 * up the command source for the pc. */
-    Tcl_Length *lengthPtr;	/* If non-NULL, the location where the
+    int *lengthPtr;		/* If non-NULL, the location where the
 				 * length of the command's source should be
 				 * stored. If NULL, no length is stored. */
 {
@@ -4010,11 +4007,10 @@ VerifyExprObjType(interp, objPtr)
 	    (objPtr->typePtr == &tclDoubleType)) {
 	return TCL_OK;
     } else {
-	Tcl_Length length;
-	int result = TCL_OK;
+	int length, result = TCL_OK;
 	char *s = Tcl_GetStringFromObj(objPtr, &length);
 	
-	if (TclLooksLikeInt(s, (int)length)) {
+	if (TclLooksLikeInt(s, length)) {
 	    long i;
 	    result = Tcl_GetLongFromObj((Tcl_Interp *) NULL, objPtr, &i);
 	} else {

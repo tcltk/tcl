@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLiteral.c,v 1.8.16.2 2001/09/26 14:23:10 dkf Exp $
+ * RCS: @(#) $Id: tclLiteral.c,v 1.8.16.3 2001/09/27 13:56:23 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -35,7 +35,7 @@ static int		AddLocalLiteralEntry _ANSI_ARGS_((
 static void		ExpandLocalLiteralArray _ANSI_ARGS_((
 			    CompileEnv *envPtr));
 static unsigned int	HashString _ANSI_ARGS_((CONST char *bytes,
-			    Tcl_Length length));
+			    int length));
 static void		RebuildLiteralTable _ANSI_ARGS_((
 			    LiteralTable *tablePtr));
 
@@ -191,7 +191,7 @@ TclRegisterLiteral(envPtr, bytes, length, onHeap)
     if (length < 0) {
 	length = (bytes? strlen(bytes) : 0);
     }
-    hash = HashString(bytes, (Tcl_Length)length);
+    hash = HashString(bytes, length);
 
     /*
      * Is the literal already in the CompileEnv's local literal array?
@@ -364,8 +364,7 @@ TclLookupLiteralEntry(interp, objPtr)
     LiteralTable *globalTablePtr = &(iPtr->literalTable);
     register LiteralEntry *entryPtr;
     char *bytes;
-    Tcl_Length length;
-    int globalHash;
+    int length, globalHash;
 
     bytes = Tcl_GetStringFromObj(objPtr, &length);
     globalHash = (HashString(bytes, length) & globalTablePtr->mask);
@@ -409,8 +408,7 @@ TclHideLiteral(interp, envPtr, index)
 {
     LiteralEntry **nextPtrPtr, *entryPtr, *lPtr;
     LiteralTable *localTablePtr = &(envPtr->localLitTable);
-    int localHash;
-    Tcl_Length length;
+    int localHash, length;
     char *bytes;
     Tcl_Obj *newObjPtr;
 
@@ -680,8 +678,7 @@ TclReleaseLiteral(interp, objPtr)
     register LiteralEntry *entryPtr, *prevPtr;
     ByteCode* codePtr;
     char *bytes;
-    Tcl_Length length;
-    int index;
+    int length, index;
 
     bytes = Tcl_GetStringFromObj(objPtr, &length);
     index = (HashString(bytes, length) & globalTablePtr->mask);
@@ -778,7 +775,7 @@ static unsigned int
 HashString(bytes, length)
     register CONST char *bytes; /* String for which to compute hash
 				 * value. */
-    Tcl_Length length;		/* Number of bytes in the string. */
+    int length;			/* Number of bytes in the string. */
 {
     register unsigned int result;
     register int i;
@@ -833,8 +830,7 @@ RebuildLiteralTable(tablePtr)
     register LiteralEntry *entryPtr;
     LiteralEntry **bucketPtr;
     char *bytes;
-    int oldSize, count, index;
-    Tcl_Length length;
+    int oldSize, count, index, length;
 
     oldSize = tablePtr->numBuckets;
     oldBuckets = tablePtr->buckets;

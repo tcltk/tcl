@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEncoding.c,v 1.7.6.3 2001/09/27 10:21:32 dkf Exp $
+ * RCS: @(#) $Id: tclEncoding.c,v 1.7.6.4 2001/09/27 13:49:07 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -174,21 +174,21 @@ static unsigned short emptyPage[256];
  */
 
 static int		BinaryProc _ANSI_ARGS_((ClientData clientData,
-			    CONST char *src, Tcl_Length srcLen, int flags,
-			    Tcl_EncodingState *statePtr, char *dst,
-			    Tcl_Length dstLen, Tcl_Length *srcReadPtr,
-			    Tcl_Length *dstWrotePtr, Tcl_Length *dstCharsPtr));
+			    CONST char *src, int srcLen, int flags,
+			    Tcl_EncodingState *statePtr, char *dst, int dstLen,
+			    int *srcReadPtr, int *dstWrotePtr,
+			    int *dstCharsPtr));
 static void		EscapeFreeProc _ANSI_ARGS_((ClientData clientData));
 static int		EscapeFromUtfProc _ANSI_ARGS_((ClientData clientData,
-			    CONST char *src, Tcl_Length srcLen, int flags,
-			    Tcl_EncodingState *statePtr, char *dst,
-			    Tcl_Length dstLen, Tcl_Length *srcReadPtr,
-			    Tcl_Length *dstWrotePtr, Tcl_Length *dstCharsPtr));
+			    CONST char *src, int srcLen, int flags,
+			    Tcl_EncodingState *statePtr, char *dst, int dstLen,
+			    int *srcReadPtr, int *dstWrotePtr,
+			    int *dstCharsPtr));
 static int		EscapeToUtfProc _ANSI_ARGS_((ClientData clientData,
-			    CONST char *src, Tcl_Length srcLen, int flags,
-			    Tcl_EncodingState *statePtr, char *dst,
-			    Tcl_Length dstLen, Tcl_Length *srcReadPtr,
-			    Tcl_Length *dstWrotePtr, Tcl_Length *dstCharsPtr));
+			    CONST char *src, int srcLen, int flags,
+			    Tcl_EncodingState *statePtr, char *dst, int dstLen,
+			    int *srcReadPtr, int *dstWrotePtr,
+			    int *dstCharsPtr));
 static void		FreeEncoding _ANSI_ARGS_((Tcl_Encoding encoding));
 static Encoding *	GetTableEncoding _ANSI_ARGS_((
 			    EscapeEncodingData *dataPtr, int state));
@@ -202,31 +202,31 @@ static Tcl_Channel	OpenEncodingFile _ANSI_ARGS_((CONST char *dir,
 			    CONST char *name));
 static void		TableFreeProc _ANSI_ARGS_((ClientData clientData));
 static int		TableFromUtfProc _ANSI_ARGS_((ClientData clientData,
-			    CONST char *src, Tcl_Length srcLen, int flags,
-			    Tcl_EncodingState *statePtr, char *dst,
-			    Tcl_Length dstLen, Tcl_Length *srcReadPtr,
-			    Tcl_Length *dstWrotePtr, Tcl_Length *dstCharsPtr));
+			    CONST char *src, int srcLen, int flags,
+			    Tcl_EncodingState *statePtr, char *dst, int dstLen,
+			    int *srcReadPtr, int *dstWrotePtr,
+			    int *dstCharsPtr));
 static int		TableToUtfProc _ANSI_ARGS_((ClientData clientData,
-			    CONST char *src, Tcl_Length srcLen, int flags,
-			    Tcl_EncodingState *statePtr, char *dst,
-			    Tcl_Length dstLen, Tcl_Length *srcReadPtr,
-			    Tcl_Length *dstWrotePtr, Tcl_Length *dstCharsPtr));
+			    CONST char *src, int srcLen, int flags,
+			    Tcl_EncodingState *statePtr, char *dst, int dstLen,
+			    int *srcReadPtr, int *dstWrotePtr,
+			    int *dstCharsPtr));
 static size_t		unilen _ANSI_ARGS_((CONST char *src));
 static int		UnicodeToUtfProc _ANSI_ARGS_((ClientData clientData,
-			    CONST char *src, Tcl_Length srcLen, int flags,
-			    Tcl_EncodingState *statePtr, char *dst,
-			    Tcl_Length dstLen, Tcl_Length *srcReadPtr,
-			    Tcl_Length *dstWrotePtr, Tcl_Length *dstCharsPtr));
+			    CONST char *src, int srcLen, int flags,
+			    Tcl_EncodingState *statePtr, char *dst, int dstLen,
+			    int *srcReadPtr, int *dstWrotePtr,
+			    int *dstCharsPtr));
 static int		UtfToUnicodeProc _ANSI_ARGS_((ClientData clientData,
-			    CONST char *src, Tcl_Length srcLen, int flags,
-			    Tcl_EncodingState *statePtr, char *dst,
-			    Tcl_Length dstLen, Tcl_Length *srcReadPtr,
-			    Tcl_Length *dstWrotePtr, Tcl_Length *dstCharsPtr));
+			    CONST char *src, int srcLen, int flags,
+			    Tcl_EncodingState *statePtr, char *dst, int dstLen,
+			    int *srcReadPtr, int *dstWrotePtr,
+			    int *dstCharsPtr));
 static int		UtfToUtfProc _ANSI_ARGS_((ClientData clientData,
-			    CONST char *src, Tcl_Length srcLen, int flags,
-			    Tcl_EncodingState *statePtr, char *dst,
-			    Tcl_Length dstLen, Tcl_Length *srcReadPtr,
-			    Tcl_Length *dstWrotePtr, Tcl_Length *dstCharsPtr));
+			    CONST char *src, int srcLen, int flags,
+			    Tcl_EncodingState *statePtr, char *dst, int dstLen,
+			    int *srcReadPtr, int *dstWrotePtr,
+			    int *dstCharsPtr));
 
 
 /*
@@ -561,8 +561,7 @@ Tcl_GetEncodingNames(interp)
 
     pathPtr = TclGetLibraryPath();
     if (pathPtr != NULL) {
-	int i;
-	Tcl_Length objc;
+	int i, objc;
 	Tcl_Obj **objv;
 	char globArgString[10];
 	Tcl_Obj* encodingObj = Tcl_NewStringObj("encoding",-1);
@@ -595,14 +594,15 @@ Tcl_GetEncodingNames(interp)
 	     */
 	    if ((TclGlob(interp, globArgString, searchIn, 
 			 TCL_GLOBMODE_TAILS, NULL) == TCL_OK)) {
-		Tcl_Length j, objc2 = 0;
+		int objc2 = 0;
 		Tcl_Obj **objv2;
+		int j;
 
 		Tcl_ListObjGetElements(NULL, Tcl_GetObjResult(interp), &objc2,
 			&objv2);
 
 		for (j = 0; j < objc2; j++) {
-		    Tcl_Length length;
+		    int length;
 		    char *string;
 		    string = Tcl_GetStringFromObj(objv2[j], &length);
 		    length -= 4;
@@ -794,8 +794,7 @@ Tcl_ExternalToUtfDString(encoding, src, srcLen, dstPtr)
     char *dst;
     Tcl_EncodingState state;
     Encoding *encodingPtr;
-    int flags, result;
-    Tcl_Length dstLen, soFar, srcRead, dstWrote, dstChars;
+    int flags, dstLen, result, soFar, srcRead, dstWrote, dstChars;
 
     Tcl_DStringInit(dstPtr);
     dst = Tcl_DStringValue(dstPtr);
@@ -814,8 +813,8 @@ Tcl_ExternalToUtfDString(encoding, src, srcLen, dstPtr)
     flags = TCL_ENCODING_START | TCL_ENCODING_END;
     while (1) {
 	result = (*encodingPtr->toUtfProc)(encodingPtr->clientData, src,
-		(Tcl_Length)srcLen, flags, &state, dst, dstLen, &srcRead,
-		&dstWrote, &dstChars);
+		srcLen, flags, &state, dst, dstLen, &srcRead, &dstWrote,
+		&dstChars);
 	soFar = dst + dstWrote - Tcl_DStringValue(dstPtr);
 	if (result != TCL_CONVERT_NOSPACE) {
 	    Tcl_DStringSetLength(dstPtr, soFar);
@@ -868,23 +867,22 @@ Tcl_ExternalToUtf(interp, encoding, src, srcLen, flags, statePtr, dst,
 				 * routine under control of flags argument. */
     char *dst;			/* Output buffer in which converted string
 				 * is stored. */
-    Tcl_Length dstLen;		/* The maximum length of output buffer in
+    int dstLen;			/* The maximum length of output buffer in
 				 * bytes. */
-    Tcl_Length *srcReadPtr;	/* Filled with the number of bytes from the
+    int *srcReadPtr;		/* Filled with the number of bytes from the
 				 * source string that were converted.  This
 				 * may be less than the original source length
 				 * if there was a problem converting some
 				 * source characters. */
-    Tcl_Length *dstWrotePtr;	/* Filled with the number of bytes that were
+    int *dstWrotePtr;		/* Filled with the number of bytes that were
 				 * stored in the output buffer as a result of
 				 * the conversion. */
-    Tcl_Length *dstCharsPtr;	/* Filled with the number of characters that
+    int *dstCharsPtr;		/* Filled with the number of characters that
 				 * correspond to the bytes stored in the
 				 * output buffer. */
 {
     Encoding *encodingPtr;
-    int result;
-    Tcl_Length srcRead, dstWrote, dstChars;
+    int result, srcRead, dstWrote, dstChars;
     Tcl_EncodingState state;
     
     if (encoding == NULL) {
@@ -918,9 +916,9 @@ Tcl_ExternalToUtf(interp, encoding, src, srcLen, flags, statePtr, dst,
      */
 
     dstLen--;
-    result = (*encodingPtr->toUtfProc)(encodingPtr->clientData, src,
-	    (Tcl_Length)srcLen, flags, statePtr, dst, dstLen, srcReadPtr,
-	    dstWrotePtr, dstCharsPtr);
+    result = (*encodingPtr->toUtfProc)(encodingPtr->clientData, src, srcLen,
+	    flags, statePtr, dst, dstLen, srcReadPtr, dstWrotePtr,
+	    dstCharsPtr);
     dst[*dstWrotePtr] = '\0';
     return result;
 }
@@ -959,8 +957,7 @@ Tcl_UtfToExternalDString(encoding, src, srcLen, dstPtr)
     char *dst;
     Tcl_EncodingState state;
     Encoding *encodingPtr;
-    int flags, result;
-    Tcl_Length dstLen, soFar, srcRead, dstWrote, dstChars;
+    int flags, dstLen, result, soFar, srcRead, dstWrote, dstChars;
     
     Tcl_DStringInit(dstPtr);
     dst = Tcl_DStringValue(dstPtr);
@@ -979,8 +976,8 @@ Tcl_UtfToExternalDString(encoding, src, srcLen, dstPtr)
     flags = TCL_ENCODING_START | TCL_ENCODING_END;
     while (1) {
 	result = (*encodingPtr->fromUtfProc)(encodingPtr->clientData, src,
-		(Tcl_Length)srcLen, flags, &state, dst, dstLen, &srcRead,
-		&dstWrote, &dstChars);
+		srcLen, flags, &state, dst, dstLen, &srcRead, &dstWrote,
+		&dstChars);
 	soFar = dst + dstWrote - Tcl_DStringValue(dstPtr);
 	if (result != TCL_CONVERT_NOSPACE) {
 	    if (encodingPtr->nullSize == 2) {
@@ -1036,23 +1033,22 @@ Tcl_UtfToExternal(interp, encoding, src, srcLen, flags, statePtr, dst,
 				 * routine under control of flags argument. */
     char *dst;			/* Output buffer in which converted string
 				 * is stored. */
-    Tcl_Length dstLen;		/* The maximum length of output buffer in
+    int dstLen;			/* The maximum length of output buffer in
 				 * bytes. */
-    Tcl_Length *srcReadPtr;	/* Filled with the number of bytes from the
+    int *srcReadPtr;		/* Filled with the number of bytes from the
 				 * source string that were converted.  This
 				 * may be less than the original source length
 				 * if there was a problem converting some
 				 * source characters. */
-    Tcl_Length *dstWrotePtr;	/* Filled with the number of bytes that were
+    int *dstWrotePtr;		/* Filled with the number of bytes that were
 				 * stored in the output buffer as a result of
 				 * the conversion. */
-    Tcl_Length *dstCharsPtr;	/* Filled with the number of characters that
+    int *dstCharsPtr;		/* Filled with the number of characters that
 				 * correspond to the bytes stored in the
 				 * output buffer. */
 {
     Encoding *encodingPtr;
-    int result;
-    Tcl_Length srcRead, dstWrote, dstChars;
+    int result, srcRead, dstWrote, dstChars;
     Tcl_EncodingState state;
     
     if (encoding == NULL) {
@@ -1080,9 +1076,9 @@ Tcl_UtfToExternal(interp, encoding, src, srcLen, flags, statePtr, dst,
     }
 
     dstLen -= encodingPtr->nullSize;
-    result = (*encodingPtr->fromUtfProc)(encodingPtr->clientData, src,
-	    (Tcl_Length)srcLen, flags, statePtr, dst, dstLen, srcReadPtr,
-	    dstWrotePtr, dstCharsPtr);
+    result = (*encodingPtr->fromUtfProc)(encodingPtr->clientData, src, srcLen,
+	    flags, statePtr, dst, dstLen, srcReadPtr, dstWrotePtr,
+	    dstCharsPtr);
     if (encodingPtr->nullSize == 2) {
 	dst[*dstWrotePtr + 1] = '\0';
     }
@@ -1187,9 +1183,9 @@ LoadEncodingFile(interp, name)
     CONST char *name;		/* The name of the encoding file on disk
 				 * and also the name for new encoding. */
 {
-    int ch;
-    Tcl_Length objc, i;
-    Tcl_Obj **objv, *pathPtr;
+    int objc, i, ch;
+    Tcl_Obj **objv;
+    Tcl_Obj *pathPtr;
     Tcl_Channel chan;
     Tcl_Encoding encoding;
 
@@ -1683,7 +1679,7 @@ BinaryProc(clientData, src, srcLen, flags, statePtr, dst, dstLen,
 	srcReadPtr, dstWrotePtr, dstCharsPtr)
     ClientData clientData;	/* Not used. */
     CONST char *src;		/* Source string (unknown encoding). */
-    Tcl_Length srcLen;		/* Source string length in bytes. */
+    int srcLen;			/* Source string length in bytes. */
     int flags;			/* Conversion control flags. */
     Tcl_EncodingState *statePtr;/* Place for conversion routine to store
 				 * state information used during a piecewise
@@ -1692,14 +1688,14 @@ BinaryProc(clientData, src, srcLen, flags, statePtr, dst, dstLen,
 				 * routine under control of flags argument. */
     char *dst;			/* Output buffer in which converted string
 				 * is stored. */
-    Tcl_Length dstLen;		/* The maximum length of output buffer in
+    int dstLen;			/* The maximum length of output buffer in
 				 * bytes. */
-    Tcl_Length *srcReadPtr;	/* Filled with the number of bytes from the
+    int *srcReadPtr;		/* Filled with the number of bytes from the
 				 * source string that were converted. */
-    Tcl_Length *dstWrotePtr;	/* Filled with the number of bytes that were
+    int *dstWrotePtr;		/* Filled with the number of bytes that were
 				 * stored in the output buffer as a result of
 				 * the conversion. */
-    Tcl_Length *dstCharsPtr;	/* Filled with the number of characters that
+    int *dstCharsPtr;		/* Filled with the number of characters that
 				 * correspond to the bytes stored in the
 				 * output buffer. */
 {
@@ -1718,7 +1714,7 @@ BinaryProc(clientData, src, srcLen, flags, statePtr, dst, dstLen,
     *srcReadPtr = srcLen;
     *dstWrotePtr = srcLen;
     *dstCharsPtr = srcLen;
-    for ( ; srcLen-- > 0; ) {
+    for ( ; --srcLen >= 0; ) {
 	*dst++ = *src++;
     }
     return result;
@@ -1747,7 +1743,7 @@ UtfToUtfProc(clientData, src, srcLen, flags, statePtr, dst, dstLen,
 	srcReadPtr, dstWrotePtr, dstCharsPtr)
     ClientData clientData;	/* Not used. */
     CONST char *src;		/* Source string in UTF-8. */
-    Tcl_Length srcLen;		/* Source string length in bytes. */
+    int srcLen;			/* Source string length in bytes. */
     int flags;			/* Conversion control flags. */
     Tcl_EncodingState *statePtr;/* Place for conversion routine to store
 				 * state information used during a piecewise
@@ -1756,17 +1752,17 @@ UtfToUtfProc(clientData, src, srcLen, flags, statePtr, dst, dstLen,
 				 * routine under control of flags argument. */
     char *dst;			/* Output buffer in which converted string
 				 * is stored. */
-    Tcl_Length dstLen;		/* The maximum length of output buffer in
+    int dstLen;			/* The maximum length of output buffer in
 				 * bytes. */
-    Tcl_Length *srcReadPtr;	/* Filled with the number of bytes from the
+    int *srcReadPtr;		/* Filled with the number of bytes from the
 				 * source string that were converted.  This
 				 * may be less than the original source length
 				 * if there was a problem converting some
 				 * source characters. */
-    Tcl_Length *dstWrotePtr;	/* Filled with the number of bytes that were
+    int *dstWrotePtr;		/* Filled with the number of bytes that were
 				 * stored in the output buffer as a result of
 				 * the conversion. */
-    Tcl_Length *dstCharsPtr;	/* Filled with the number of characters that
+    int *dstCharsPtr;		/* Filled with the number of characters that
 				 * correspond to the bytes stored in the
 				 * output buffer. */
 {
@@ -1788,8 +1784,7 @@ UtfToUtfProc(clientData, src, srcLen, flags, statePtr, dst, dstLen,
     dstEnd = dst + dstLen - TCL_UTF_MAX;
 
     for (numChars = 0; src < srcEnd; numChars++) {
-	if ((src > srcClose) && (!Tcl_UtfCharComplete(src,
-		(Tcl_Length)(srcEnd - src)))) {
+	if ((src > srcClose) && (!Tcl_UtfCharComplete(src, srcEnd - src))) {
 	    /*
 	     * If there is more string to follow, this will ensure that the
 	     * last UTF-8 character in the source buffer hasn't been cut off.
@@ -1833,7 +1828,7 @@ UnicodeToUtfProc(clientData, src, srcLen, flags, statePtr, dst, dstLen,
 	srcReadPtr, dstWrotePtr, dstCharsPtr)
     ClientData clientData;	/* Not used. */
     CONST char *src;		/* Source string in Unicode. */
-    Tcl_Length srcLen;		/* Source string length in bytes. */
+    int srcLen;			/* Source string length in bytes. */
     int flags;			/* Conversion control flags. */
     Tcl_EncodingState *statePtr;/* Place for conversion routine to store
 				 * state information used during a piecewise
@@ -1842,17 +1837,17 @@ UnicodeToUtfProc(clientData, src, srcLen, flags, statePtr, dst, dstLen,
 				 * routine under control of flags argument. */
     char *dst;			/* Output buffer in which converted string
 				 * is stored. */
-    Tcl_Length dstLen;		/* The maximum length of output buffer in
+    int dstLen;			/* The maximum length of output buffer in
 				 * bytes. */
-    Tcl_Length *srcReadPtr;	/* Filled with the number of bytes from the
+    int *srcReadPtr;		/* Filled with the number of bytes from the
 				 * source string that were converted.  This
 				 * may be less than the original source length
 				 * if there was a problem converting some
 				 * source characters. */
-    Tcl_Length *dstWrotePtr;	/* Filled with the number of bytes that were
+    int *dstWrotePtr;		/* Filled with the number of bytes that were
 				 * stored in the output buffer as a result of
 				 * the conversion. */
-    Tcl_Length *dstCharsPtr;	/* Filled with the number of characters that
+    int *dstCharsPtr;		/* Filled with the number of characters that
 				 * correspond to the bytes stored in the
 				 * output buffer. */
 {
@@ -1911,7 +1906,7 @@ UtfToUnicodeProc(clientData, src, srcLen, flags, statePtr, dst, dstLen,
 	srcReadPtr, dstWrotePtr, dstCharsPtr)
     ClientData clientData;	/* TableEncodingData that specifies encoding. */
     CONST char *src;		/* Source string in UTF-8. */
-    Tcl_Length srcLen;		/* Source string length in bytes. */
+    int srcLen;			/* Source string length in bytes. */
     int flags;			/* Conversion control flags. */
     Tcl_EncodingState *statePtr;/* Place for conversion routine to store
 				 * state information used during a piecewise
@@ -1920,17 +1915,17 @@ UtfToUnicodeProc(clientData, src, srcLen, flags, statePtr, dst, dstLen,
 				 * routine under control of flags argument. */
     char *dst;			/* Output buffer in which converted string
 				 * is stored. */
-    Tcl_Length dstLen;		/* The maximum length of output buffer in
+    int dstLen;			/* The maximum length of output buffer in
 				 * bytes. */
-    Tcl_Length *srcReadPtr;	/* Filled with the number of bytes from the
+    int *srcReadPtr;		/* Filled with the number of bytes from the
 				 * source string that were converted.  This
 				 * may be less than the original source length
 				 * if there was a problem converting some
 				 * source characters. */
-    Tcl_Length *dstWrotePtr;	/* Filled with the number of bytes that were
+    int *dstWrotePtr;		/* Filled with the number of bytes that were
 				 * stored in the output buffer as a result of
 				 * the conversion. */
-    Tcl_Length *dstCharsPtr;	/* Filled with the number of characters that
+    int *dstCharsPtr;		/* Filled with the number of characters that
 				 * correspond to the bytes stored in the
 				 * output buffer. */
 {
@@ -1951,8 +1946,7 @@ UtfToUnicodeProc(clientData, src, srcLen, flags, statePtr, dst, dstLen,
 
     result = TCL_OK;
     for (numChars = 0; src < srcEnd; numChars++) {
-	if ((src > srcClose) && (!Tcl_UtfCharComplete(src,
-		(Tcl_Length)(srcEnd - src)))) {
+	if ((src > srcClose) && (!Tcl_UtfCharComplete(src, srcEnd - src))) {
 	    /*
 	     * If there is more string to follow, this will ensure that the
 	     * last UTF-8 character in the source buffer hasn't been cut off.
@@ -1997,7 +1991,7 @@ TableToUtfProc(clientData, src, srcLen, flags, statePtr, dst, dstLen,
     ClientData clientData;	/* TableEncodingData that specifies
 				 * encoding. */
     CONST char *src;		/* Source string in specified encoding. */
-    Tcl_Length srcLen;		/* Source string length in bytes. */
+    int srcLen;			/* Source string length in bytes. */
     int flags;			/* Conversion control flags. */
     Tcl_EncodingState *statePtr;/* Place for conversion routine to store
 				 * state information used during a piecewise
@@ -2006,17 +2000,17 @@ TableToUtfProc(clientData, src, srcLen, flags, statePtr, dst, dstLen,
 				 * routine under control of flags argument. */
     char *dst;			/* Output buffer in which converted string
 				 * is stored. */
-    Tcl_Length dstLen;		/* The maximum length of output buffer in
+    int dstLen;			/* The maximum length of output buffer in
 				 * bytes. */
-    Tcl_Length *srcReadPtr;	/* Filled with the number of bytes from the
+    int *srcReadPtr;		/* Filled with the number of bytes from the
 				 * source string that were converted.  This
 				 * may be less than the original source length
 				 * if there was a problem converting some
 				 * source characters. */
-    Tcl_Length *dstWrotePtr;	/* Filled with the number of bytes that were
+    int *dstWrotePtr;		/* Filled with the number of bytes that were
 				 * stored in the output buffer as a result of
 				 * the conversion. */
-    Tcl_Length *dstCharsPtr;	/* Filled with the number of characters that
+    int *dstCharsPtr;		/* Filled with the number of characters that
 				 * correspond to the bytes stored in the
 				 * output buffer. */
 {
@@ -2099,7 +2093,7 @@ TableFromUtfProc(clientData, src, srcLen, flags, statePtr, dst, dstLen,
     ClientData clientData;	/* TableEncodingData that specifies
 				 * encoding. */
     CONST char *src;		/* Source string in UTF-8. */
-    Tcl_Length srcLen;		/* Source string length in bytes. */
+    int srcLen;			/* Source string length in bytes. */
     int flags;			/* Conversion control flags. */
     Tcl_EncodingState *statePtr;/* Place for conversion routine to store
 				 * state information used during a piecewise
@@ -2108,17 +2102,17 @@ TableFromUtfProc(clientData, src, srcLen, flags, statePtr, dst, dstLen,
 				 * routine under control of flags argument. */
     char *dst;			/* Output buffer in which converted string
 				 * is stored. */
-    Tcl_Length dstLen;		/* The maximum length of output buffer in
+    int dstLen;			/* The maximum length of output buffer in
 				 * bytes. */
-    Tcl_Length *srcReadPtr;	/* Filled with the number of bytes from the
+    int *srcReadPtr;		/* Filled with the number of bytes from the
 				 * source string that were converted.  This
 				 * may be less than the original source length
 				 * if there was a problem converting some
 				 * source characters. */
-    Tcl_Length *dstWrotePtr;	/* Filled with the number of bytes that were
+    int *dstWrotePtr;		/* Filled with the number of bytes that were
 				 * stored in the output buffer as a result of
 				 * the conversion. */
-    Tcl_Length *dstCharsPtr;	/* Filled with the number of characters that
+    int *dstCharsPtr;		/* Filled with the number of characters that
 				 * correspond to the bytes stored in the
 				 * output buffer. */
 {
@@ -2146,8 +2140,7 @@ TableFromUtfProc(clientData, src, srcLen, flags, statePtr, dst, dstLen,
     dstEnd = dst + dstLen - 1;
 
     for (numChars = 0; src < srcEnd; numChars++) {
-	if ((src > srcClose) && (!Tcl_UtfCharComplete(src,
-		(Tcl_Length)(srcEnd - src)))) {
+	if ((src > srcClose) && (!Tcl_UtfCharComplete(src, srcEnd - src))) {
 	    /*
 	     * If there is more string to follow, this will ensure that the
 	     * last UTF-8 character in the source buffer hasn't been cut off.
@@ -2242,7 +2235,7 @@ EscapeToUtfProc(clientData, src, srcLen, flags, statePtr, dst, dstLen,
     ClientData clientData;	/* EscapeEncodingData that specifies
 				 * encoding. */
     CONST char *src;		/* Source string in specified encoding. */
-    Tcl_Length srcLen;		/* Source string length in bytes. */
+    int srcLen;			/* Source string length in bytes. */
     int flags;			/* Conversion control flags. */
     Tcl_EncodingState *statePtr;/* Place for conversion routine to store
 				 * state information used during a piecewise
@@ -2251,17 +2244,17 @@ EscapeToUtfProc(clientData, src, srcLen, flags, statePtr, dst, dstLen,
 				 * routine under control of flags argument. */
     char *dst;			/* Output buffer in which converted string
 				 * is stored. */
-    Tcl_Length dstLen;		/* The maximum length of output buffer in
+    int dstLen;			/* The maximum length of output buffer in
 				 * bytes. */
-    Tcl_Length *srcReadPtr;	/* Filled with the number of bytes from the
+    int *srcReadPtr;		/* Filled with the number of bytes from the
 				 * source string that were converted.  This
 				 * may be less than the original source length
 				 * if there was a problem converting some
 				 * source characters. */
-    Tcl_Length *dstWrotePtr;	/* Filled with the number of bytes that were
+    int *dstWrotePtr;		/* Filled with the number of bytes that were
 				 * stored in the output buffer as a result of
 				 * the conversion. */
-    Tcl_Length *dstCharsPtr;	/* Filled with the number of characters that
+    int *dstCharsPtr;		/* Filled with the number of characters that
 				 * correspond to the bytes stored in the
 				 * output buffer. */
 {
@@ -2452,7 +2445,7 @@ EscapeFromUtfProc(clientData, src, srcLen, flags, statePtr, dst, dstLen,
     ClientData clientData;	/* EscapeEncodingData that specifies
 				 * encoding. */
     CONST char *src;		/* Source string in UTF-8. */
-    Tcl_Length srcLen;		/* Source string length in bytes. */
+    int srcLen;			/* Source string length in bytes. */
     int flags;			/* Conversion control flags. */
     Tcl_EncodingState *statePtr;/* Place for conversion routine to store
 				 * state information used during a piecewise
@@ -2461,17 +2454,17 @@ EscapeFromUtfProc(clientData, src, srcLen, flags, statePtr, dst, dstLen,
 				 * routine under control of flags argument. */
     char *dst;			/* Output buffer in which converted string
 				 * is stored. */
-    Tcl_Length dstLen;		/* The maximum length of output buffer in
+    int dstLen;			/* The maximum length of output buffer in
 				 * bytes. */
-    Tcl_Length *srcReadPtr;	/* Filled with the number of bytes from the
+    int *srcReadPtr;		/* Filled with the number of bytes from the
 				 * source string that were converted.  This
 				 * may be less than the original source length
 				 * if there was a problem converting some
 				 * source characters. */
-    Tcl_Length *dstWrotePtr;	/* Filled with the number of bytes that were
+    int *dstWrotePtr;		/* Filled with the number of bytes that were
 				 * stored in the output buffer as a result of
 				 * the conversion. */
-    Tcl_Length *dstCharsPtr;	/* Filled with the number of characters that
+    int *dstCharsPtr;		/* Filled with the number of characters that
 				 * correspond to the bytes stored in the
 				 * output buffer. */
 {
@@ -2528,8 +2521,7 @@ EscapeFromUtfProc(clientData, src, srcLen, flags, statePtr, dst, dstLen,
 	int word;
 	Tcl_UniChar ch;
 	
-	if ((src > srcClose) && (!Tcl_UtfCharComplete(src,
-		(Tcl_Length)(srcEnd - src)))) {
+	if ((src > srcClose) && (!Tcl_UtfCharComplete(src, srcEnd - src))) {
 	    /*
 	     * If there is more string to follow, this will ensure that the
 	     * last UTF-8 character in the source buffer hasn't been cut off.

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMain.c,v 1.12.12.1 2001/09/25 16:49:56 dkf Exp $
+ * RCS: @(#) $Id: tclMain.c,v 1.12.12.2 2001/09/27 13:56:23 dkf Exp $
  */
 
 #include "tcl.h"
@@ -145,8 +145,8 @@ Tcl_Main(argc, argv, appInitProc)
     Tcl_Obj *resultPtr;
     Tcl_Obj *commandPtr = NULL;
     char buffer[1000], *args;
-    int code, gotPartial, exitCode = 0;
-    Tcl_Length length;
+    int code, gotPartial, length;
+    int exitCode = 0;
     Tcl_Channel inChannel, outChannel, errChannel;
     Tcl_Interp *interp;
     Tcl_DString argString;

@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.25.6.1 2001/09/25 16:49:56 dkf Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.25.6.2 2001/09/27 13:56:23 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2682,7 +2682,7 @@ NamespaceCodeCmd(dummy, interp, objc, objv)
     Namespace *currNsPtr;
     Tcl_Obj *listPtr, *objPtr;
     register char *arg, *p;
-    Tcl_Length length;
+    int length;
 
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 2, objv, "arg");
@@ -2910,8 +2910,7 @@ NamespaceEvalCmd(dummy, interp, objc, objv)
     Tcl_CallFrame frame;
     Tcl_Obj *objPtr;
     char *name;
-    Tcl_Length length;
-    int result;
+    int length, result;
 
     if (objc < 4) {
         Tcl_WrongNumArgs(interp, 2, objv, "name arg ?arg...?");

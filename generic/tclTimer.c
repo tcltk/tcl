@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTimer.c,v 1.3.26.2 2001/09/26 14:23:10 dkf Exp $
+ * RCS: @(#) $Id: tclTimer.c,v 1.3.26.3 2001/09/27 13:52:28 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -727,12 +727,13 @@ Tcl_AfterObjCmd(clientData, interp, objc, objv)
     int objc;			/* Number of arguments. */
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
+    int ms;
     AfterInfo *afterPtr;
     AfterAssocData *assocPtr = (AfterAssocData *) clientData;
     Tcl_CmdInfo cmdInfo;
-    Tcl_Length length;
+    int length;
     char *argString;
-    int ms, index;
+    int index;
     char buf[16 + TCL_INTEGER_SPACE];
     static char *afterSubCmds[] = {"cancel", "idle", "info", (char *) NULL};
     enum afterSubCmds {AFTER_CANCEL, AFTER_IDLE, AFTER_INFO};
@@ -830,7 +831,7 @@ processInteger:
         case AFTER_CANCEL: {
 	    Tcl_Obj *commandPtr;
 	    char *command, *tempCommand;
-	    Tcl_Length tempLength;
+	    int tempLength;
 
 	    if (objc < 3) {
 		Tcl_WrongNumArgs(interp, 2, objv, "id|command");
@@ -1006,7 +1007,7 @@ AfterProc(clientData)
     int result;
     Tcl_Interp *interp;
     char *script;
-    Tcl_Length numBytes;
+    int numBytes;
 
     /*
      * First remove the callback from our list of callbacks;  otherwise
@@ -1031,7 +1032,7 @@ AfterProc(clientData)
     interp = assocPtr->interp;
     Tcl_Preserve((ClientData) interp);
     script = Tcl_GetStringFromObj(afterPtr->commandPtr, &numBytes);
-    result = Tcl_EvalEx(interp, script, (int)numBytes, TCL_EVAL_GLOBAL);
+    result = Tcl_EvalEx(interp, script, numBytes, TCL_EVAL_GLOBAL);
     if (result != TCL_OK) {
 	Tcl_AddErrorInfo(interp, "\n    (\"after\" script)");
 	Tcl_BackgroundError(interp);
