@@ -1,3 +1,13 @@
+2004-03-29  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclInt.h:
+	* generic/tclEncoding.c (TclFindEncodings, Tcl_FindExecutable): 
+	* mac/tclMacInit.c (TclpInitLibraryPath):   Correct handling of UTF
+	* unix/tclUnixInit.c (TclpInitLibraryPath): data that is actually
+	* win/tclWinFile.c (TclpFindExecutable):    "clean", allowing the
+	* win/tclWinInit.c (TclpInitLibraryPath):   loading of Tcl from
+	paths that contain multi-byte chars on Windows [Bug 920667]
+
 2004-03-28  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclCompile.c (TclCompileScript): corrected possible

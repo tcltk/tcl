@@ -7,7 +7,7 @@
  * Copyright (c) 1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclUnixInit.c,v 1.34.2.3 2004/02/17 23:46:54 hobbs Exp $
+ * RCS: @(#) $Id: tclUnixInit.c,v 1.34.2.4 2004/03/29 18:49:36 hobbs Exp $
  */
 
 #if defined(HAVE_CFBUNDLE)
@@ -242,7 +242,8 @@ TclpInitPlatform()
  *	Called at process initialization time.
  *
  * Results:
- *	None.
+ *	Return 1, indicating that the UTF may be dirty and require "cleanup"
+ *	after encodings are initialized.
  *
  * Side effects:
  *	None.
@@ -250,7 +251,7 @@ TclpInitPlatform()
  *---------------------------------------------------------------------------
  */
 
-void
+int
 TclpInitLibraryPath(path)
 CONST char *path;		/* Path to the executable in native 
 				 * multi-byte encoding. */
@@ -453,6 +454,8 @@ CONST char *path;		/* Path to the executable in native
 
     TclSetLibraryPath(pathPtr);    
     Tcl_DStringFree(&buffer);
+
+    return 1; /* 1 indicates that pathPtr may be dirty utf (needs cleaning) */
 }
 
 /*

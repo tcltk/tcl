@@ -7,7 +7,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclWinInit.c,v 1.40.2.4 2004/03/21 21:03:37 hobbs Exp $
+ * RCS: @(#) $Id: tclWinInit.c,v 1.40.2.5 2004/03/29 18:49:36 hobbs Exp $
  */
 
 #include "tclWinInt.h"
@@ -165,7 +165,7 @@ TclpInitPlatform()
  *	Called at process initialization time.
  *
  * Results:
- *	None.
+ *	Return 0, indicating that the UTF is clean.
  *
  * Side effects:
  *	None.
@@ -173,7 +173,7 @@ TclpInitPlatform()
  *---------------------------------------------------------------------------
  */
 
-void
+int
 TclpInitLibraryPath(path)
     CONST char *path;		/* Potentially dirty UTF string that is */
 				/* the path to the executable name.     */
@@ -330,6 +330,8 @@ TclpInitLibraryPath(path)
     }
 
     TclSetLibraryPath(pathPtr);
+
+    return 0; /* 0 indicates that pathPtr is clean (true) utf */
 }
 
 /*
