@@ -1,3 +1,9 @@
+1999-09-23  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* README:
+	* generic/tcl.h:
+	* tools/tcl.wse.in: updated text to reflect 8.2.1 where necessary
+
 1999-09-22  Jennifer Hom  <jenn@scriptics.com>
 
 	* tests/tcltest.test: Added 'exit' calls to the scripts that the
