@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWin32Dll.c,v 1.18 2002/12/06 23:22:59 hobbs Exp $
+ * RCS: @(#) $Id: tclWin32Dll.c,v 1.19 2003/01/09 10:38:34 vincentdarley Exp $
  */
 
 #include "tclWinInt.h"
@@ -92,6 +92,7 @@ static TclWinProcs asciiProcs = {
      */
     NULL,
     NULL,
+    (int (__cdecl*)(CONST TCHAR *, struct _utimbuf *)) _utime,
 };
 
 static TclWinProcs unicodeProcs = {
@@ -138,6 +139,7 @@ static TclWinProcs unicodeProcs = {
      */
     NULL,
     NULL,
+    (int (__cdecl*)(CONST TCHAR *, struct _utimbuf *)) _wutime,
 };
 
 TclWinProcs *tclWinProcs;
