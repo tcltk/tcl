@@ -11,10 +11,11 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoadDyld.c,v 1.5.2.2 2002/02/05 02:22:05 wolfsuit Exp $
+ * RCS: @(#) $Id: tclLoadDyld.c,v 1.5.2.3 2002/02/25 15:22:30 das Exp $
  */
 
 #include "tclInt.h"
+#include "tclPort.h"
 #include <mach-o/dyld.h>
 
 /*
@@ -58,18 +59,21 @@ TclpLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr,
 				 * this file. */
 {
     NSSymbol symbol;
-    enum DYLD_BOOL dyld_return;
+    const struct mach_header *dyld_lib;
     Tcl_DString newName, ds;
     char *native;
 
     native = Tcl_FSGetNativePath(pathPtr);
-    dyld_return = NSAddLibrary(native);
+    dyld_lib = NSAddImage(native, 
+        NSADDIMAGE_OPTION_WITH_SEARCHING | 
+        NSADDIMAGE_OPTION_RETURN_ON_ERROR);
     
-    if (dyld_return !=  TRUE) {
-	Tcl_AppendResult(interp, "dyld: couldn't add library \"",
-		Tcl_GetString(pathPtr),
-		"\": ", Tcl_PosixError(interp), (char *) NULL);
-	return TCL_ERROR;
+    if (!dyld_lib) {
+        NSLinkEditErrors editError;
+        char *name, *msg;
+        NSLinkEditError(&editError, &errno, &name, &msg);
+        Tcl_AppendResult(interp, msg, (char *) NULL);
+        return TCL_ERROR;
     }
 
     *unloadProcPtr = &TclpUnloadFile;
@@ -82,8 +86,10 @@ TclpLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr,
     Tcl_DStringInit(&newName);
     Tcl_DStringAppend(&newName, "_", 1);
     native = Tcl_DStringAppend(&newName, native, -1);
-    if(NSIsSymbolNameDefined(native)) {
-        symbol = NSLookupAndBindSymbol(native);
+    symbol = NSLookupSymbolInImage(dyld_lib, native, 
+        NSLOOKUPSYMBOLINIMAGE_OPTION_BIND_NOW | 
+        NSLOOKUPSYMBOLINIMAGE_OPTION_RETURN_ON_ERROR);
+    if(symbol) {
         *proc1Ptr = NSAddressOfSymbol(symbol);
         *clientDataPtr = NSModuleForSymbol(symbol);
     } else {
@@ -97,8 +103,10 @@ TclpLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr,
     Tcl_DStringInit(&newName);
     Tcl_DStringAppend(&newName, "_", 1);
     native = Tcl_DStringAppend(&newName, native, -1);
-    if(NSIsSymbolNameDefined(native)) {
-        symbol = NSLookupAndBindSymbol(native);
+    symbol = NSLookupSymbolInImage(dyld_lib, native, 
+        NSLOOKUPSYMBOLINIMAGE_OPTION_BIND_NOW | 
+        NSLOOKUPSYMBOLINIMAGE_OPTION_RETURN_ON_ERROR);
+    if(symbol) {
         *proc2Ptr = NSAddressOfSymbol(symbol);
     } else {
         *proc2Ptr=NULL;
@@ -135,7 +143,7 @@ TclpUnloadFile(clientData)
 				 * a token that represents the loaded 
 				 * file. */
 {
-  /* Unloading Libraries is not currently supported by dyld */
+    NSUnLinkModule(clientData, FALSE);
 }
 
 /*

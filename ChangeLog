@@ -1,4 +1,10 @@
+2002-02-25  Daniel Steffen  <das@users.sourceforge.net>
+ 
+        * unix/tclLoadDyld.c: updated to use Mac OS X 10.1 dyld APIs that     
+        have more libdl-like semantics. (bug #514392)
+
 2002-02-04  Jim Ingham   <jingham@apple.com>
+
 	* Merge with the current TOT.
 	
 2002-02-04  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
