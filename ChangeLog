@@ -1,3 +1,7 @@
+2003-05-10  Zoran Vasiljevic <zoran@archiware.com>
+
+	* unix/tclUnixThrd.c: corrected Tcl Bug #723502
+
 2003-05-10  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclIOUtil.c: ensure cd is thread-safe.
