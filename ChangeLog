@@ -1,3 +1,11 @@
+2003-05-13  Joe Mistachkin  <joe@mistachkin.com>
+
+        * generic/tcl.decls:  Changed Tcl_JoinThread parameter name from      
+        * generic/tclDecls.h: "id" to "threadId". [Bug 732477]
+        * unix/tclUnixThrd.c:
+        * win/tclWinThrd.c: 
+        * mac/tclMacThrd.c:
+
 2003-05-13  Daniel Steffen  <das@users.sourceforge.net>
 
 	* generic/tcl.decls:
