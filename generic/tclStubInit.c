@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.79.2.1 2003/03/21 03:24:08 dgp Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.79.2.2 2003/05/13 08:41:26 das Exp $
  */
 
 #include "tclInt.h"
@@ -371,6 +371,7 @@ TclPlatStubs tclPlatStubs = {
 #endif /* MAC_TCL */
 #ifdef MAC_OSX_TCL
     Tcl_MacOSXOpenBundleResources, /* 0 */
+    Tcl_MacOSXOpenVersionedBundleResources, /* 1 */
 #endif /* MAC_OSX_TCL */
 };
 
