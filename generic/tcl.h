@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.96 2001/08/23 17:37:07 vincentdarley Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.97 2001/08/30 15:41:29 dgp Exp $
  */
 
 #ifndef _TCL
@@ -605,7 +605,7 @@ typedef int (Tcl_MathProc) _ANSI_ARGS_((ClientData clientData,
 	Tcl_Interp *interp, Tcl_Value *args, Tcl_Value *resultPtr));
 typedef void (Tcl_NamespaceDeleteProc) _ANSI_ARGS_((ClientData clientData));
 typedef int (Tcl_ObjCmdProc) _ANSI_ARGS_((ClientData clientData,
-	Tcl_Interp *interp, int objc, struct Tcl_Obj *CONST objv[]));
+	Tcl_Interp *interp, int objc, struct Tcl_Obj * CONST * objv));
 typedef int (Tcl_PackageInitProc) _ANSI_ARGS_((Tcl_Interp *interp));
 typedef void (Tcl_PanicProc) _ANSI_ARGS_(TCL_VARARGS(CONST char *, format));
 typedef void (Tcl_TcpAcceptProc) _ANSI_ARGS_((ClientData callbackData,
