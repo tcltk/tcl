@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.153.2.13 2004/07/13 19:21:17 hobbs Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.153.2.14 2004/09/10 20:01:03 andreas_kupries Exp $
  */
 
 #ifndef _TCL
@@ -1410,7 +1410,7 @@ typedef int (Tcl_WaitForEventProc) _ANSI_ARGS_((Tcl_Time *timePtr));
  * Bits passed to Tcl_DriverClose2Proc to indicate which side of a channel
  * should be closed.
  */
-#define TCL_CLOSE_READ		(1<<1)
+#define TCL_CLOSE_READ	(1<<1)
 #define TCL_CLOSE_WRITE	(1<<2)
 
 /*
@@ -1557,8 +1557,8 @@ typedef struct Tcl_ChannelType {
  * set the channel into blocking or nonblocking mode. They are passed
  * as arguments to the blockModeProc procedure in the above structure.
  */
-#define TCL_MODE_BLOCKING 0		/* Put channel into blocking mode. */
-#define TCL_MODE_NONBLOCKING 1		/* Put channel into nonblocking
+#define TCL_MODE_BLOCKING	0	/* Put channel into blocking mode. */
+#define TCL_MODE_NONBLOCKING	1	/* Put channel into nonblocking
 					 * mode. */
 
 /*
