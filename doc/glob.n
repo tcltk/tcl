@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: glob.n,v 1.12 2002/07/01 18:24:39 jenglish Exp $
+'\" RCS: @(#) $Id: glob.n,v 1.12.2.1 2004/10/27 12:52:40 dkf Exp $
 '\" 
 .so man.macros
 .TH glob n 8.3 Tcl "Tcl Built-In Commands"
@@ -78,6 +78,9 @@ the Unix find command:
 \fIp\fR (named pipe),
 or \fIs\fR (socket), where multiple types may be specified in the list.
 \fBGlob\fR will return all files which match at least one of the types given.
+Note that symbolic links will be returned both if \fB\-types l\fR is given, 
+or if the target of a link matches the requested type.  So, a link to
+a directory will be returned if \fB\-types d\fR was specified.
 .RS
 .PP
 The second form specifies types where all the types given must match.
@@ -149,7 +152,13 @@ command if you want the list sorted).
 Second, \fBglob\fR only returns the names of files that actually
 exist;  in csh no check for existence is made unless a pattern
 contains a ?, *, or [] construct.
-
+.LP
+When the \fBglob\fR command returns relative paths whose filenames
+start with a tilde ``~'' (for example through \fBglob *\fR or 
+\fBglob -tails\fR, the returned list will not quote the tilde with
+``./''.  This means care must be taken if those names are later to
+be used with \fBfile join\fR, to avoid them being interpreted as
+absolute paths pointing to a given user's home directory.
 .SH "PORTABILITY ISSUES"
 .PP
 Unlike other Tcl commands that will accept both network and native
@@ -184,6 +193,27 @@ When using the options, \fB\-directory\fR, \fB\-join\fR or \fB\-path\fR, glob
 assumes the directory separator for the entire pattern is the standard
 ``:''.  When not using these options, glob examines each pattern argument
 and uses ``/'' unless the pattern contains a ``:''.
+.SH EXAMPLES
+Find all the Tcl files in the current directory:
+.CS
+\fBglob\fR *.tcl
+.CE
+.PP
+Find all the Tcl files in the user's home directory, irrespective of
+what the current directory is:
+.CS
+\fBglob\fR \-directory ~ *.tcl
+.CE
+.PP
+Find all subdirectories of the current directory:
+.CS
+\fBglob\fR \-type d *
+.CE
+.PP
+Find all files whose name contains an "a", a "b" or the sequence "cde":
+.CS
+\fBglob\fR \-type f *{a,b,cde}*
+.CE
 
 .SH "SEE ALSO"
 file(n)

@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: filename.n,v 1.7 2001/09/04 18:06:34 vincentdarley Exp $
+'\" RCS: @(#) $Id: filename.n,v 1.7.12.1 2004/10/27 12:52:40 dkf Exp $
 '\" 
 .so man.macros
 .TH filename n 7.5 Tcl "Tcl Built-In Commands"
@@ -208,7 +208,14 @@ more than 3 characters.
 On Windows platforms there are file and path length restrictions. 
 Complete paths or filenames longer than about 260 characters will lead
 to errors in most file operations.
-
+.PP
+Another Windows peculiarity is that any number of trailing dots '.'  in
+filenames are totally ignored, so, for example, attempts to create a
+file or directory with a name "foo." will result in the creation of a
+file/directory with name "foo".  This fact is reflected in the
+results of 'file normalize'.  Furthermore, a file name consisting only
+of dots '.........' or dots with trailing characters '.....abc' is
+illegal.
 .SH KEYWORDS
 current directory, absolute file name, relative file name,
 volume-relative file name, portability

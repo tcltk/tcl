@@ -7,7 +7,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: lsort.n,v 1.12.4.1 2003/03/17 14:25:20 dkf Exp $
+'\" RCS: @(#) $Id: lsort.n,v 1.12.4.2 2004/10/27 12:52:40 dkf Exp $
 '\" 
 .so man.macros
 .TH lsort n 8.3 Tcl "Tcl Built-In Commands"
@@ -33,7 +33,7 @@ abbreviations are accepted):
 .TP 20
 \fB\-ascii\fR
 Use string comparison with Unicode code-point collation order (the
-name is for backward-compatability reasons.)  This is the default.
+name is for backward-compatibility reasons.)  This is the default.
 .TP 20
 \fB\-dictionary\fR
 Use dictionary-style comparison.  This is the same as \fB\-ascii\fR
@@ -102,7 +102,6 @@ determined relative to the comparison used in the sort.  Thus if
 \fI-index 0\fR is used, \fB{1 a}\fR and \fB{1 b}\fR would be
 considered duplicates and only the second element, \fB{1 b}\fR, would
 be retained.
-
 .SH "NOTES"
 .PP
 The options to \fBlsort\fR only control what sort of comparison is
@@ -113,60 +112,52 @@ sorted has fewer than two elements.
 The \fBlsort\fR command is reentrant, meaning it is safe to use as
 part of the implementation of a command used in the \fB\-command\fR
 option.
-
 .SH "EXAMPLES"
-
 .PP
 Sorting a list using ASCII sorting:
 .CS
-% lsort {a10 B2 b1 a1 a2}
+% \fBlsort\fR {a10 B2 b1 a1 a2}
 B2 a1 a10 a2 b1
 .CE
-
 .PP
 Sorting a list using Dictionary sorting:
 .CS
-% lsort -dictionary {a10 B2 b1 a1 a2}
+% \fBlsort\fR -dictionary {a10 B2 b1 a1 a2}
 a1 a2 a10 b1 B2
 .CE
-
 .PP
 Sorting lists of integers:
 .CS
-% lsort -integer {5 3 1 2 11 4}
+% \fBlsort\fR -integer {5 3 1 2 11 4}
 1 2 3 4 5 11
-% lsort -integer {1 2 0x5 7 0 4 -1}
+% \fBlsort\fR -integer {1 2 0x5 7 0 4 -1}
 -1 0 1 2 4 0x5 7
 .CE
-
 .PP
 Sorting lists of floating-point numbers:
 .CS
-% lsort -real {5 3 1 2 11 4}
+% \fBlsort\fR -real {5 3 1 2 11 4}
 1 2 3 4 5 11
-% lsort -real {.5 0.07e1 0.4 6e-1}
+% \fBlsort\fR -real {.5 0.07e1 0.4 6e-1}
 0.4 .5 6e-1 0.07e1
 .CE
-
 .PP
 Sorting using indices:
 .CS
 % # Note the space character before the c
-% lsort {{a 5} { c 3} {b 4} {e 1} {d 2}}
+% \fBlsort\fR {{a 5} { c 3} {b 4} {e 1} {d 2}}
 { c 3} {a 5} {b 4} {d 2} {e 1}
-% lsort -index 0 {{a 5} { c 3} {b 4} {e 1} {d 2}}
+% \fBlsort\fR -index 0 {{a 5} { c 3} {b 4} {e 1} {d 2}}
 {a 5} {b 4} { c 3} {d 2} {e 1}
-% lsort -index 1 {{a 5} { c 3} {b 4} {e 1} {d 2}}
+% \fBlsort\fR -index 1 {{a 5} { c 3} {b 4} {e 1} {d 2}}
 {e 1} {d 2} { c 3} {b 4} {a 5}
 .CE
-
 .PP
 Stripping duplicate values using sorting:
 .CS
-% lsort -unique {a b c a b c a b c}
+% \fBlsort\fR -unique {a b c a b c a b c}
 a b c
 .CE
-
 .PP
 More complex sorting using a comparison function:
 .CS
@@ -180,7 +171,7 @@ More complex sorting using a comparison function:
     }
     return [string compare [lindex $a 1] [lindex $b 1]]
 }
-% lsort -command compare \\
+% \fBlsort\fR -command compare \\
         {{3 apple} {0x2 carrot} {1 dingo} {2 banana}}
 {1 dingo} {2 banana} {0x2 carrot} {3 apple}
 .CE
