@@ -6,7 +6,7 @@
 #
 # Copyright (c) 1996 by Sun Microsystems, Inc.
 #
-# RCS: @(#) $Id: man2help.tcl,v 1.2 1998/09/14 18:40:15 stanton Exp $
+# RCS: @(#) $Id: man2help.tcl,v 1.3 1998/12/02 01:42:39 welch Exp $
 # 
 
 #
@@ -78,7 +78,8 @@ proc generateHelp {basename files} {
 # file -		Name of file to translate.
 
 proc doFile {file} {
-    if [catch {eval [exec man2tcl [glob $file]]} msg] {
+    if {[catch {eval [exec man2tcl [glob $file]]} msg] &&
+	    [catch {eval [exec ./man2tcl [glob $file]]} msg]} {
 	global errorInfo
 	puts stderr $msg
 	puts "in"
