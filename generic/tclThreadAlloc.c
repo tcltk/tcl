@@ -11,12 +11,12 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThreadAlloc.c,v 1.4.2.3 2004/07/21 01:30:57 hobbs Exp $ 
+ * RCS: @(#) $Id: tclThreadAlloc.c,v 1.4.2.4 2004/07/25 21:38:09 patthoyts Exp $ 
  */
 
-#if defined(TCL_THREADS) && defined(USE_THREAD_ALLOC)
-
 #include "tclInt.h"
+
+#if defined(TCL_THREADS) && defined(USE_THREAD_ALLOC)
 
 #ifdef WIN32
 #include "tclWinInt.h"
@@ -982,7 +982,7 @@ TclFinalizeThreadAlloc()
     listLockPtr = NULL;
 }
 
-#else
+#else /* ! defined(TCL_THREADS) && ! defined(USE_THREAD_ALLOC) */
 
 /*
  *----------------------------------------------------------------------
