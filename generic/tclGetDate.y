@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclGetDate.y,v 1.9 2000/01/12 01:16:08 ericm Exp $
+ * RCS: @(#) $Id: tclGetDate.y,v 1.10 2000/01/12 03:13:20 ericm Exp $
  */
 
 %{
@@ -105,6 +105,7 @@ static time_t   yySeconds;
 static time_t   yyYear;
 static MERIDIAN yyMeridian;
 static time_t   yyRelMonth;
+static time_t   yyRelDay;
 static time_t   yyRelSeconds;
 
 
@@ -118,9 +119,11 @@ static int	Convert _ANSI_ARGS_((time_t Month, time_t Day, time_t Year,
 		    time_t Hours, time_t Minutes, time_t Seconds,
 		    MERIDIAN Meridia, DSTMODE DSTmode, time_t *TimePtr));
 static time_t	DSTcorrect _ANSI_ARGS_((time_t Start, time_t Future));
-static time_t	RelativeDate _ANSI_ARGS_((time_t Start, time_t DayOrdinal,
+static time_t	NamedDay _ANSI_ARGS_((time_t Start, time_t DayOrdinal,
 		    time_t DayNumber));
 static int	RelativeMonth _ANSI_ARGS_((time_t Start, time_t RelMonth,
+		    time_t *TimePtr));
+static int	RelativeDay _ANSI_ARGS_((time_t Start, time_t RelDay,
 		    time_t *TimePtr));
 static int	LookupWord _ANSI_ARGS_((char *buff));
 static int	yylex _ANSI_ARGS_((void));
@@ -135,10 +138,10 @@ yyparse _ANSI_ARGS_((void));
 }
 
 %token  tAGO tDAY tDAYZONE tID tMERIDIAN tMINUTE_UNIT tMONTH tMONTH_UNIT
-%token  tSEC_UNIT tSNUMBER tUNUMBER tZONE tEPOCH tDST tISOBASE
+%token  tSEC_UNIT tSNUMBER tUNUMBER tZONE tEPOCH tDST tISOBASE tDAY_UNIT
 
 %type   <Number>        tDAY tDAYZONE tMINUTE_UNIT tMONTH tMONTH_UNIT tDST
-%type   <Number>        tSEC_UNIT tSNUMBER tUNUMBER tZONE tISOBASE
+%type   <Number>        tSEC_UNIT tSNUMBER tUNUMBER tZONE tISOBASE tDAY_UNIT
 %type   <Meridian>      tMERIDIAN o_merid
 
 %%
@@ -282,7 +285,7 @@ date    : tUNUMBER '/' tUNUMBER {
         ;
 
 iso     : tISOBASE tZONE tISOBASE {
-            if ($2 != HOUR(- 7)) goto yyabort;
+            if ($2 != HOUR(- 7)) YYABORT;
 	    yyYear = $1 / 10000;
 	    yyMonth = ($1 % 10000)/100;
 	    yyDay = $1 % 100;
@@ -291,7 +294,7 @@ iso     : tISOBASE tZONE tISOBASE {
 	    yySeconds = $3 % 100;
         }
         | tISOBASE tZONE tUNUMBER ':' tUNUMBER ':' tUNUMBER {
-            if ($2 != HOUR(- 7)) goto yyabort;
+            if ($2 != HOUR(- 7)) YYABORT;
 	    yyYear = $1 / 10000;
 	    yyMonth = ($1 % 10000)/100;
 	    yyDay = $1 % 100;
@@ -312,6 +315,7 @@ iso     : tISOBASE tZONE tISOBASE {
 rel     : relunit tAGO {
             yyRelSeconds = -yyRelSeconds;
             yyRelMonth = -yyRelMonth;
+	    yyRelDay = -yyRelDay;
         }
         | relunit
         ;
@@ -342,6 +346,15 @@ relunit : tUNUMBER tMINUTE_UNIT {
         }
         | tMONTH_UNIT {
             yyRelMonth += $1;
+        }
+        | '-' tUNUMBER tDAY_UNIT {
+            yyRelDay -= $2 * $3;
+        }
+        | tUNUMBER tDAY_UNIT {
+            yyRelDay += $1 * $2;
+        }
+        | tDAY_UNIT {
+            yyRelDay += $1;
         }
         ;
 
@@ -409,12 +422,12 @@ static TABLE    MonthDayTable[] = {
  * Time units table.
  */
 static TABLE    UnitsTable[] = {
-    { "year",           tMONTH_UNIT,    12 },
+    { "year",           tMONTH_UNIT,   12 },
     { "month",          tMONTH_UNIT,    1 },
-    { "fortnight",      tMINUTE_UNIT,   14 * 24 * 60 },
-    { "week",           tMINUTE_UNIT,   7 * 24 * 60 },
-    { "day",            tMINUTE_UNIT,   1 * 24 * 60 },
-    { "hour",           tMINUTE_UNIT,   60 },
+    { "fortnight",      tDAY_UNIT,     14 },
+    { "week",           tDAY_UNIT,      7 },
+    { "day",            tDAY_UNIT,      1 },
+    { "hour",           tMINUTE_UNIT,  60 },
     { "minute",         tMINUTE_UNIT,   1 },
     { "min",            tMINUTE_UNIT,   1 },
     { "second",         tSEC_UNIT,      1 },
@@ -426,11 +439,11 @@ static TABLE    UnitsTable[] = {
  * Assorted relative-time words.
  */
 static TABLE    OtherTable[] = {
-    { "tomorrow",       tMINUTE_UNIT,   1 * 24 * 60 },
-    { "yesterday",      tMINUTE_UNIT,   -1 * 24 * 60 },
-    { "today",          tMINUTE_UNIT,   0 },
+    { "tomorrow",       tDAY_UNIT,      1 },
+    { "yesterday",      tDAY_UNIT,     -1 },
+    { "today",          tDAY_UNIT,      0 },
     { "now",            tMINUTE_UNIT,   0 },
-    { "last",           tUNUMBER,       -1 },
+    { "last",           tUNUMBER,      -1 },
     { "this",           tMINUTE_UNIT,   0 },
     { "next",           tUNUMBER,       1 },
 #if 0
@@ -692,7 +705,6 @@ DSTcorrect(Start, Future)
 {
     time_t      StartDay;
     time_t      FutureDay;
-
     StartDay = (TclpGetDate((TclpTime_t)&Start, 0)->tm_hour + 1) % 24;
     FutureDay = (TclpGetDate((TclpTime_t)&Future, 0)->tm_hour + 1) % 24;
     return (Future - Start) + (StartDay - FutureDay) * 60L * 60L;
@@ -700,7 +712,7 @@ DSTcorrect(Start, Future)
 
 
 static time_t
-RelativeDate(Start, DayOrdinal, DayNumber)
+NamedDay(Start, DayOrdinal, DayNumber)
     time_t      Start;
     time_t      DayOrdinal;
     time_t      DayNumber;
@@ -760,6 +772,36 @@ RelativeMonth(Start, RelMonth, TimePtr)
     return 0;
 }
 
+
+/*
+ *-----------------------------------------------------------------------------
+ *
+ * RelativeDay --
+ *
+ *      Given a starting time and a number of days before or after, compute the
+ *      DST corrected difference between those dates.
+ *
+ * Results:
+ *     1 or -1 indicating success or failure.
+ *
+ * Side effects:
+ *      Fills TimePtr with the computed value.
+ *
+ *-----------------------------------------------------------------------------
+ */
+
+static int
+RelativeDay(Start, RelDay, TimePtr)
+    time_t Start;
+    time_t RelDay;
+    time_t *TimePtr;
+{
+    time_t new;
+
+    new = Start + (RelDay * 60 * 60 * 24);
+    *TimePtr = DSTcorrect(Start, new);
+    return 1;
+}
 
 static int
 LookupWord(buff)
@@ -970,6 +1012,7 @@ TclGetDate(p, now, zone, timePtr)
     yyMeridian = MER24;
     yyRelSeconds = 0;
     yyRelMonth = 0;
+    yyRelDay = 0;
     yyHaveDate = 0;
     yyHaveDay = 0;
     yyHaveRel = 0;
@@ -1020,8 +1063,13 @@ TclGetDate(p, now, zone, timePtr)
     }
     Start += Time;
 
+    if (RelativeDay(Start, yyRelDay, &Time) < 0) {
+	return -1;
+    }
+    Start += Time;
+    
     if (yyHaveDay && !yyHaveDate) {
-        tod = RelativeDate(Start, yyDayOrdinal, yyDayNumber);
+        tod = NamedDay(Start, yyDayOrdinal, yyDayNumber);
         Start += tod;
     }
 
