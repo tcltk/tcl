@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: expr.test,v 1.25 2004/09/19 15:03:48 dkf Exp $
+# RCS: @(#) $Id: expr.test,v 1.26 2004/09/24 21:30:11 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -839,26 +839,26 @@ test expr-23.12 {CompileExponentialExpr: runtime error} {
 test expr-23.13 {CompileExponentialExpr: runtime error} {
     list [catch {expr {wide(0)**wide(-1)}} msg] $msg
 } {1 {exponentiation of zero by negative power}}
-test epxr-23.14 {INST_EXPON: special cases} {expr {0**1}} 0
-test epxr-23.15 {INST_EXPON: special cases} {expr {0**0}} 1
-test epxr-23.16 {INST_EXPON: special cases} {expr {-2**-1}} 0
-test epxr-23.17 {INST_EXPON: special cases} {expr {-2**0}} 1
-test epxr-23.18 {INST_EXPON: special cases} {expr {-1**1}} -1
-test epxr-23.19 {INST_EXPON: special cases} {expr {-1**0}} 1
-test epxr-23.20 {INST_EXPON: special cases} {expr {-1**2}} 1
-test epxr-23.21 {INST_EXPON: special cases} {expr {-1**-1}} -1
-test epxr-23.22 {INST_EXPON: special cases} {expr {1**1234567}} 1
-test epxr-23.23 {INST_EXPON: special cases} {expr {2**-2}} 0
-test epxr-23.24 {INST_EXPON: special cases} {expr {wide(0)**wide(1)}} 0
-test epxr-23.25 {INST_EXPON: special cases} {expr {wide(0)**wide(0)}} 1
-test epxr-23.26 {INST_EXPON: special cases} {expr {wide(-2)**wide(-1)}} 0
-test epxr-23.27 {INST_EXPON: special cases} {expr {wide(-2)**wide(0)}} 1
-test epxr-23.28 {INST_EXPON: special cases} {expr {wide(-1)**wide(1)}} -1
-test epxr-23.29 {INST_EXPON: special cases} {expr {wide(-1)**wide(0)}} 1
-test epxr-23.30 {INST_EXPON: special cases} {expr {wide(-1)**wide(2)}} 1
-test epxr-23.31 {INST_EXPON: special cases} {expr {wide(-1)**wide(-1)}} -1
-test epxr-23.32 {INST_EXPON: special cases} {expr {wide(1)**wide(1234567)}} 1
-test epxr-23.33 {INST_EXPON: special cases} {expr {wide(2)**wide(-2)}} 0
+test expr-23.14 {INST_EXPON: special cases} {expr {0**1}} 0
+test expr-23.15 {INST_EXPON: special cases} {expr {0**0}} 1
+test expr-23.16 {INST_EXPON: special cases} {expr {-2**-1}} 0
+test expr-23.17 {INST_EXPON: special cases} {expr {-2**0}} 1
+test expr-23.18 {INST_EXPON: special cases} {expr {-1**1}} -1
+test expr-23.19 {INST_EXPON: special cases} {expr {-1**0}} 1
+test expr-23.20 {INST_EXPON: special cases} {expr {-1**2}} 1
+test expr-23.21 {INST_EXPON: special cases} {expr {-1**-1}} -1
+test expr-23.22 {INST_EXPON: special cases} {expr {1**1234567}} 1
+test expr-23.23 {INST_EXPON: special cases} {expr {2**-2}} 0
+test expr-23.24 {INST_EXPON: special cases} {expr {wide(0)**wide(1)}} 0
+test expr-23.25 {INST_EXPON: special cases} {expr {wide(0)**wide(0)}} 1
+test expr-23.26 {INST_EXPON: special cases} {expr {wide(-2)**wide(-1)}} 0
+test expr-23.27 {INST_EXPON: special cases} {expr {wide(-2)**wide(0)}} 1
+test expr-23.28 {INST_EXPON: special cases} {expr {wide(-1)**wide(1)}} -1
+test expr-23.29 {INST_EXPON: special cases} {expr {wide(-1)**wide(0)}} 1
+test expr-23.30 {INST_EXPON: special cases} {expr {wide(-1)**wide(2)}} 1
+test expr-23.31 {INST_EXPON: special cases} {expr {wide(-1)**wide(-1)}} -1
+test expr-23.32 {INST_EXPON: special cases} {expr {wide(1)**wide(1234567)}} 1
+test expr-23.33 {INST_EXPON: special cases} {expr {wide(2)**wide(-2)}} 0
 
 # Some compilers get this wrong; ensure that we work around it correctly
 test expr-24.1 {expr edge cases; shifting} {expr int(5)>>32} 0
