@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclAppInit.c,v 1.13 2003/05/10 04:25:49 mistachkin Exp $
+ * RCS: @(#) $Id: tclAppInit.c,v 1.13.2.1 2003/10/16 02:28:04 dgp Exp $
  */
 
 #include "tcl.h"
@@ -315,7 +315,7 @@ setargv(argcPtr, argvPtr)
 	    }
 	}
     }
-    argSpace = (char *) Tcl_Alloc(
+    argSpace = (char *) ckalloc(
 	    (unsigned) (size * sizeof(char *) + strlen(cmdLine) + 1));
     argv = (char **) argSpace;
     argSpace += size * sizeof(char *);
@@ -426,6 +426,12 @@ BOOL __stdcall
 sigHandler(DWORD fdwCtrlType)
 {
     HANDLE hStdIn;
+
+    if (!exitToken) {
+	/* Async token must have been destroyed, punt gracefully. */
+	return FALSE;
+    }
+
     /*
      * If Tcl is currently executing some bytecode or in the eventloop,
      * this will cause Tcl to enter asyncExit at the next command

@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: cmdIL.test,v 1.14.8.1 2003/08/07 21:36:04 dgp Exp $
+# RCS: @(#) $Id: cmdIL.test,v 1.14.8.2 2003/10/16 02:28:03 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -355,6 +355,46 @@ test cmdIL-4.32 {DictionaryCompare procedure, chars between Z and a in ASCII} {
 test cmdIL-4.33 {DictionaryCompare procedure, chars between Z and a in ASCII} {
     lsort -dictionary [list AA ! c CC `]
 } [list ! ` AA c CC]
+
+test cmdIL-5.1 {lsort with list style index} {
+    lsort -ascii -decreasing -index {0 1} {
+	{{Jim Alpha} 20000410}
+	{{Joe Bravo} 19990320}
+	{{Jacky Charlie} 19390911}
+    }
+} {{{Jacky Charlie} 19390911} {{Joe Bravo} 19990320} {{Jim Alpha} 20000410}}
+test cmdIL-5.2 {lsort with list style index} {
+    lsort -decreasing -index {0 1} {
+	{{Jim Alpha} 20000410}
+	{{Joe Bravo} 19990320}
+	{{Jacky Charlie} 19390911}
+    }
+} {{{Jacky Charlie} 19390911} {{Joe Bravo} 19990320} {{Jim Alpha} 20000410}}
+test cmdIL-5.3 {lsort with list style index} {
+    lsort -integer -increasing -index {1 end} {
+	{{Jim Alpha} 20000410}
+	{{Joe Bravo} 19990320}
+	{{Jacky Charlie} 19390911}
+    }
+} {{{Jacky Charlie} 19390911} {{Joe Bravo} 19990320} {{Jim Alpha} 20000410}}
+test cmdIL-5.4 {lsort with list style index} {
+    lsort -integer -index {1 end-1} {
+	{the {0 1 2 3 4 5} quick}
+	{brown {0 1 2 3 4} fox}
+	{jumps {30 31 2 33} over}
+	{the {0 1 2} lazy}
+	{dogs {0 1}}
+    }
+} {{dogs {0 1}} {the {0 1 2} lazy} {jumps {30 31 2 33} over} {brown {0 1 2 3 4} fox} {the {0 1 2 3 4 5} quick}}
+test cmdIL-5.5 {lsort with list style index and sharing} {
+    proc test {l} {
+	set n $l
+	foreach e $l {lappend n [list [expr {rand()}] $e]}
+	lindex [lsort -real -index $l $n] 1 1
+    }
+    expr srand(1)
+    test 0
+} 0
 
 # cleanup
 ::tcltest::cleanupTests

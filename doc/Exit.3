@@ -4,13 +4,13 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Exit.3,v 1.4 2000/07/24 00:03:02 jenglish Exp $
+'\" RCS: @(#) $Id: Exit.3,v 1.4.20.1 2003/10/16 02:28:01 dgp Exp $
 '\" 
 .so man.macros
-.TH Tcl_Exit 3 8.1 Tcl "Tcl Library Procedures"
+.TH Tcl_Exit 3 8.5 Tcl "Tcl Library Procedures"
 .BS
 .SH NAME
-Tcl_Exit, Tcl_Finalize, Tcl_CreateExitHandler, Tcl_DeleteExitHandler, Tcl_ExitThread, Tcl_FinalizeThread, Tcl_CreateThreadExitHandler, Tcl_DeleteThreadExitHandler \- end the application or thread (and invoke exit handlers)
+Tcl_Exit, Tcl_Finalize, Tcl_CreateExitHandler, Tcl_DeleteExitHandler, Tcl_ExitThread, Tcl_FinalizeThread, Tcl_CreateThreadExitHandler, Tcl_DeleteThreadExitHandler, Tcl_SetExitProc \- end the application or thread (and invoke exit handlers)
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -30,6 +30,11 @@ Tcl_Exit, Tcl_Finalize, Tcl_CreateExitHandler, Tcl_DeleteExitHandler, Tcl_ExitTh
 \fBTcl_CreateThreadExitHandler\fR(\fIproc, clientData\fR)
 .sp
 \fBTcl_DeleteThreadExitHandler\fR(\fIproc, clientData\fR)
+.sp
+.VS 8.5
+Tcl_ExitProc *
+\fBTcl_SetExitProc\fR(\fIproc\fR)
+.VE 8.5
 .SH ARGUMENTS
 .AS Tcl_ExitProc clientData
 .AP int status  in
@@ -38,7 +43,9 @@ Exact meaning may
 be platform-specific.  0 usually means a normal exit, any nonzero value
 usually means that an error occurred.
 .AP Tcl_ExitProc *proc in
-Procedure to invoke before exiting application.
+Procedure to invoke before exiting application, or (for
+\fBTcl_SetExitProc\fR) NULL to uninstall the current application exit
+procedure.
 .AP ClientData clientData in
 Arbitrary one-word value to pass to \fIproc\fR.
 .BE
@@ -59,6 +66,12 @@ otherwise causes the application to terminate without calling
 \fBTcl_Exit\fR, the exit handlers will not be run.
 \fBTcl_Exit\fR internally invokes the \fBexit\fR system call, thus it never
 returns control to its caller.
+.VS 8.5
+If an application exit handler has been installed (see
+\fBTcl_SetExitProc\fR), that handler is invoked with an argument
+consisting of the exit status (cast to ClientData); the application
+exit handler should not return control to Tcl.
+.VE 8.5
 .PP
 \fBTcl_Finalize\fR is similar to \fBTcl_Exit\fR except that it does not
 exit from the current process.
@@ -73,14 +86,12 @@ However, to ensure portability, your code should always invoke
 code will work on all platforms. \fBTcl_Finalize\fR can be safely called
 more than once.
 .PP
-.VS
 \fBTcl_ExitThread\fR is used to terminate the current thread and invoke
 per-thread exit handlers.  This finalization is done by
 \fBTcl_FinalizeThread\fR, which you can call if you just want to clean
 up per-thread state and invoke the thread exit handlers.
 \fBTcl_Finalize\fR calls \fBTcl_FinalizeThread\fR for the current
 thread automatically.
-.VE
 .PP
 \fBTcl_CreateExitHandler\fR arranges for \fIproc\fR to be invoked
 by \fBTcl_Finalize\fR and \fBTcl_Exit\fR.
@@ -107,7 +118,6 @@ indicated by \fIproc\fR and \fIclientData\fR so that no call
 to \fIproc\fR will be made.  If no such handler exists then
 \fBTcl_DeleteExitHandler\fR or \fBTcl_DeleteThreadExitHandler\fR does nothing.
 .PP
-.VS
 .PP
 \fBTcl_Finalize\fR and \fBTcl_Exit\fR execute all registered exit handlers,
 in reverse order from the order in which they were registered.
@@ -117,15 +127,23 @@ unloads \fBB\fR before it itself is unloaded.
 If extension \fBA\fR registers its exit handlers before loading extension
 \fBB\fR, this ensures that any exit handlers for \fBB\fR will be executed
 before the exit handlers for \fBA\fR.
-.VE
-.VS
 .PP
 \fBTcl_Finalize\fR and \fBTcl_Exit\fR call \fBTcl_FinalizeThread\fR 
 and the thread exit handlers \fIafter\fR
 the process-wide exit handlers.  This is because thread finalization shuts
 down the I/O channel system, so any attempt at I/O by the global exit
 handlers will vanish into the bitbucket.
-.VE
+.PP
+.VS 8.5
+\fBTcl_SetExitProc\fR installs an application exit handler, returning
+the previously-installed application exit handler or NULL if no
+application handler was installed.  If an application exit handler is
+installed, that exit handler takes over complete responsibility for
+finalization of Tcl's subsystems via \fBTcl_Finalize\fR at an
+appropriate time.  The argument passed to \fIproc\fR when it is
+invoked will be the exit status code (as passed to \fBTcl_Exit\fR)
+cast to a ClientData value.
+.VE 8.5
 
 .SH KEYWORDS
 callback, cleanup, dynamic loading, end application, exit, unloading, thread

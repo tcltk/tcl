@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.14.2.1 2003/05/22 19:12:03 dgp Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.14.2.2 2003/10/16 02:28:01 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -92,6 +92,7 @@ typedef struct ExprInfo {
 #define OP_BITNOT	20
 #define OP_STREQ	21
 #define OP_STRNEQ	22
+#define OP_EXPON	23
 
 /*
  * Table describing the expression operators. Entries in this table must
@@ -134,6 +135,7 @@ static OperatorDesc operatorTable[] = {
     {"~",   1,  INST_BITNOT},
     {"eq",  2,  INST_STR_EQ},
     {"ne",  2,  INST_STR_NEQ},
+    {"**",  2,	INST_EXPON},
     {NULL}
 };
 
@@ -969,12 +971,10 @@ LogSyntaxError(infoPtr)
     ExprInfo *infoPtr;		/* Describes the compilation state for the
 				 * expression being compiled. */
 {
-    int numBytes = (infoPtr->lastChar - infoPtr->expr);
-    char buffer[100];
-
-    sprintf(buffer, "syntax error in expression \"%.*s\"",
-	    ((numBytes > 60)? 60 : numBytes), infoPtr->expr);
-    Tcl_ResetResult(infoPtr->interp);
-    Tcl_AppendStringsToObj(Tcl_GetObjResult(infoPtr->interp),
-	    buffer, (char *) NULL);
+    Tcl_Obj *result =
+            Tcl_NewStringObj("syntax error in expression \"", -1);
+    TclAppendLimitedToObj(result, infoPtr->expr,
+            (int)(infoPtr->lastChar - infoPtr->expr), 60, "");
+    Tcl_AppendToObj(result, "\"", -1);
+    Tcl_SetObjResult(infoPtr->interp, result);
 }

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacFile.c,v 1.27 2003/03/03 20:22:43 das Exp $
+ * RCS: @(#) $Id: tclMacFile.c,v 1.27.4.1 2003/10/16 02:28:03 dgp Exp $
  */
 
 /*
@@ -178,6 +178,7 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 	
 	if (TclpObjLstat(fileNamePtr, &buf) != 0) {
 	    /* File doesn't exist */
+	    Tcl_DecrRefCount(fileNamePtr);
 	    return TCL_OK;
 	}
 
@@ -202,6 +203,7 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 		Tcl_ListObjAppendElement(interp, resultPtr, pathPtr);
 	    }
 	}
+	Tcl_DecrRefCount(fileNamePtr);
 	return TCL_OK;
     } else {
 	char *fname;
@@ -258,6 +260,7 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 	    
 	    if ((err != noErr) || !isDirectory) {
 		Tcl_DStringFree(&dsOrig);
+		Tcl_DecrRefCount(fileNamePtr);
 		return TCL_OK;
 	    }
 	}
@@ -326,6 +329,7 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 	}
 
 	Tcl_DStringFree(&dsOrig);
+	Tcl_DecrRefCount(fileNamePtr);
 	return result;
     }
 }
@@ -1211,6 +1215,7 @@ TclpObjLink(pathPtr, toPtr, linkAction)
 	    Tcl_IncrRefCount(link);
 	    Tcl_DStringFree(&ds);
 	}
+	Tcl_DecrRefCount(transPtr);
     }
     return link;
 }

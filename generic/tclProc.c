@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.46.2.1 2003/05/22 19:12:07 dgp Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.46.2.2 2003/10/16 02:28:02 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1172,24 +1172,21 @@ TclProcCompileProc(interp, procPtr, bodyPtr, nsPtr, description, procName)
  	}
     }
     if (bodyPtr->typePtr != &tclByteCodeType) {
+#ifdef TCL_COMPILE_DEBUG
  	int numChars;
  	char *ellipsis;
  	
-#ifdef TCL_COMPILE_DEBUG
  	if (tclTraceCompile >= 1) {
  	    /*
  	     * Display a line summarizing the top level command we
  	     * are about to compile.
  	     */
- 
- 	    numChars = strlen(procName);
- 	    ellipsis = "";
- 	    if (numChars > 50) {
- 		numChars = 50;
- 		ellipsis = "...";
- 	    }
- 	    fprintf(stdout, "Compiling %s \"%.*s%s\"\n",
- 		    description, numChars, procName, ellipsis);
+	    Tcl_Obj *message = Tcl_NewStringObj("Compiling ", -1);
+	    Tcl_IncrRefCount(message);
+	    Tcl_AppendStringsToObj(message, description, " \"", NULL);
+	    TclAppendLimitedToObj(message, procName, -1, 50, NULL);
+ 	    fprintf(stdout, "%s\"\n", Tcl_GetString(message));
+	    Tcl_DecrRefCount(message);
  	}
 #endif
  	
@@ -1219,19 +1216,19 @@ TclProcCompileProc(interp, procPtr, bodyPtr, nsPtr, description, procName)
  	
  	if (result != TCL_OK) {
  	    if (result == TCL_ERROR) {
-		char buf[100 + TCL_INTEGER_SPACE];
-
-		numChars = strlen(procName);
- 		ellipsis = "";
- 		if (numChars > 50) {
- 		    numChars = 50;
- 		    ellipsis = "...";
- 		}
- 		sprintf(buf, "\n    (compiling %s \"%.*s%s\", line %d)",
- 			description, numChars, procName, ellipsis,
- 			interp->errorLine);
- 		Tcl_AddObjErrorInfo(interp, buf, -1);
- 	    }
+		Tcl_Obj *errorLine = Tcl_NewIntObj(interp->errorLine);
+		Tcl_Obj *message =
+			Tcl_NewStringObj("\n    (compiling ", -1);
+		Tcl_IncrRefCount(message);
+		Tcl_AppendStringsToObj(message, description, " \"", NULL);
+		TclAppendLimitedToObj(message, procName, -1, 50, NULL);
+		Tcl_AppendToObj(message, "\", line ", -1);
+		Tcl_AppendObjToObj(message, errorLine);
+		Tcl_DecrRefCount(errorLine);
+		Tcl_AppendToObj(message, ")", -1);
+ 		TclAppendObjToErrorInfo(interp, message);
+		Tcl_DecrRefCount(message);
+	    }
  	    return result;
  	}
     } else if (codePtr->nsEpoch != nsPtr->resolverEpoch) {
@@ -1289,8 +1286,7 @@ ProcessProcResultCode(interp, procName, nameLen, returnCode)
     int returnCode;		/* The unexpected result code. */
 {
     Interp *iPtr = (Interp *) interp;
-    char msg[100 + TCL_INTEGER_SPACE];
-    char *ellipsis = "";
+    Tcl_Obj *message, *errorLine;
 
     if (returnCode == TCL_OK) {
 	return TCL_OK;
@@ -1307,13 +1303,16 @@ ProcessProcResultCode(interp, procName, nameLen, returnCode)
 		? "invoked \"break\" outside of a loop"
 		: "invoked \"continue\" outside of a loop"), -1);
     }
-    if (nameLen > 60) {
-	nameLen = 60;
-	ellipsis = "...";
-    }
-    sprintf(msg, "\n    (procedure \"%.*s%s\" line %d)", nameLen, procName,
-	    ellipsis, iPtr->errorLine);
-    Tcl_AddObjErrorInfo(interp, msg, -1);
+    errorLine = Tcl_NewIntObj(interp->errorLine);
+    message = Tcl_NewStringObj("\n    (procedure \"", -1);
+    Tcl_IncrRefCount(message);
+    TclAppendLimitedToObj(message, procName, nameLen, 60, NULL);
+    Tcl_AppendToObj(message, "\" line ", -1);
+    Tcl_AppendObjToObj(message, errorLine);
+    Tcl_DecrRefCount(errorLine);
+    Tcl_AppendToObj(message, ")", -1);
+    TclAppendObjToErrorInfo(interp, message);
+    Tcl_DecrRefCount(message);
     return TCL_ERROR;
 }
 

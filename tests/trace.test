@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: trace.test,v 1.28.2.1 2003/06/27 15:10:11 dgp Exp $
+# RCS: @(#) $Id: trace.test,v 1.28.2.2 2003/10/16 02:28:03 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -1982,9 +1982,10 @@ foo {if {[catch {bar}]} {
 	}} 2 error leavestep
 foo foo 0 error leave}}
 
-test trace-28.4 {exec traces in slave with 'return -code error'} {knownBug} {
+test trace-28.4 {exec traces in slave with 'return -code error'} {
     interp create slave
     interp alias slave traceExecute {} traceExecute
+    set info {}
     set res [interp eval slave {
 	set info {}
 	set res {}
@@ -2011,16 +2012,16 @@ test trace-28.4 {exec traces in slave with 'return -code error'} {knownBug} {
 	trace remove execution foo {enter enterstep leave leavestep} \
 	  [list traceExecute foo]
 	
-	list $res [join $info \n]
+	list $res
     }]
     interp delete slave
-    set res
+    lappend res [join $info \n]
 } {{error error} {foo foo enter
 foo {if {[catch {bar}]} {
-	    return "error"
-	} else {
-	    return "ok"
-	}} enterstep
+		return "error"
+	    } else {
+		return "ok"
+	    }} enterstep
 foo {catch bar} enterstep
 foo bar enterstep
 foo {return -code error msg} enterstep
@@ -2030,10 +2031,10 @@ foo {catch bar} 0 1 leavestep
 foo {return error} enterstep
 foo {return error} 2 error leavestep
 foo {if {[catch {bar}]} {
-	    return "error"
-	} else {
-	    return "ok"
-	}} 2 error leavestep
+		return "error"
+	    } else {
+		return "ok"
+	    }} 2 error leavestep
 foo foo 0 error leave}}
 
 test trace-28.5 {exec traces} {
@@ -2151,6 +2152,41 @@ test trace-29.9 {Tcl_CreateObjTrace, status return unknown} {testcmdtrace} {
 test trace-30.1 {Tcl_DeleteTrace} {emptyTest} {
     # the above tests have tested Tcl_DeleteTrace
 } {}
+
+test trace-31.1 {command and execution traces shared struct} {
+    # Tcl Bug 807243
+    proc foo {} {}
+    trace add command foo delete foo
+    trace add execution foo enter foo
+    set result [trace info command foo]
+    trace remove command foo delete foo
+    trace remove execution foo enter foo
+    rename foo {}
+    set result
+} [list [list delete foo]]
+test trace-31.2 {command and execution traces shared struct} {
+    # Tcl Bug 807243
+    proc foo {} {}
+    trace add command foo delete foo
+    trace add execution foo enter foo
+    set result [trace info execution foo]
+    trace remove command foo delete foo
+    trace remove execution foo enter foo
+    rename foo {}
+    set result
+} [list [list enter foo]]
+
+test trace-32.1 {
+    TraceCommandInfo refcount decr in TraceCommandProc w/o loss of reference
+} {
+    # Tcl Bug 811483
+    proc foo {} {}
+    trace add command foo delete foo
+    trace add execution foo enter foo
+    set result [trace info command foo]
+    rename foo {}
+    set result
+} [list [list delete foo]]
 
 # Delete procedures when done, so we don't clash with other tests
 # (e.g. foobar will clash with 'unknown' tests).

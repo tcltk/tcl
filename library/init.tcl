@@ -3,7 +3,7 @@
 # Default system startup file for Tcl-based applications.  Defines
 # "unknown" procedure and auto-load facilities.
 #
-# RCS: @(#) $Id: init.tcl,v 1.56 2003/03/04 23:46:00 dgp Exp $
+# RCS: @(#) $Id: init.tcl,v 1.56.2.1 2003/10/16 02:28:02 dgp Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
@@ -220,8 +220,12 @@ proc unknown args {
 		# construct the stack trace.
 		#
 		set cinfo $args
-		if {[string length $cinfo] > 150} {
-		    set cinfo "[string range $cinfo 0 149]..."
+		if {[string bytelength $cinfo] > 153} {
+		    set cinfo [string range $cinfo 0 152]
+		    while {[string bytelength $cinfo] > 150} {
+			set cinfo [string range $cinfo 0 end-1]
+		    }
+		    append cinfo ...
 		}
 		append cinfo "\"\n    (\"uplevel\" body line 1)"
 		append cinfo "\n    invoked from within"
@@ -253,7 +257,7 @@ proc unknown args {
 		#
 		if {$errorInfo ne "$einfo$expect"} {
 		    error "Tcl bug: unexpected stack trace in \"unknown\"" {} \
-			[list CORE UNKNOWN BADTRACE $expect $errorInfo]
+			[list CORE UNKNOWN BADTRACE $einfo $expect $errorInfo]
 		}
 		return -code error -errorcode $errorCode \
 			-errorinfo $einfo $msg
@@ -340,8 +344,17 @@ proc auto_load {cmd {namespace {}}} {
     lappend nameList $cmd
     foreach name $nameList {
 	if {[info exists auto_index($name)]} {
-	    uplevel #0 $auto_index($name)
-	    return [expr {[info commands $name] != ""}]
+	    namespace eval :: $auto_index($name)
+	    # There's a couple of ways to look for a command of a given
+	    # name.  One is to use
+	    #    info commands $name
+	    # Unfortunately, if the name has glob-magic chars in it like *
+	    # or [], it may not match.  For our purposes here, a better
+	    # route is to use 
+	    #    namespace which -command $name
+	    if {[namespace which -command $name] ne ""} {
+		return 1
+	    }
 	}
     }
     if {![info exists auto_path]} {
@@ -353,15 +366,8 @@ proc auto_load {cmd {namespace {}}} {
     }
     foreach name $nameList {
 	if {[info exists auto_index($name)]} {
-	    uplevel #0 $auto_index($name)
-	    # There's a couple of ways to look for a command of a given
-	    # name.  One is to use
-	    #    info commands $name
-	    # Unfortunately, if the name has glob-magic chars in it like *
-	    # or [], it may not match.  For our purposes here, a better
-	    # route is to use 
-	    #    namespace which -command $name
-	    if { ![string equal [namespace which -command $name] ""] } {
+	    namespace eval :: $auto_index($name)
+	    if {[namespace which -command $name] ne ""} {
 		return 1
 	    }
 	}
@@ -514,10 +520,9 @@ proc auto_import {pattern} {
 
     foreach pattern $patternList {
         foreach name [array names auto_index $pattern] {
-            if {[string equal "" [info commands $name]]
-		    && [string equal [namespace qualifiers $pattern] \
-				     [namespace qualifiers $name]]} {
-                uplevel #0 $auto_index($name)
+            if {([namespace which -command $name] eq "")
+		    && ([namespace qualifiers $pattern] eq [namespace qualifiers $name])} {
+                namespace eval :: $auto_index($name)
             }
         }
     }

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileSystem.h,v 1.2.2.1 2003/08/27 21:07:20 dgp Exp $
+ * RCS: @(#) $Id: tclFileSystem.h,v 1.2.2.2 2003/10/16 02:28:02 dgp Exp $
  */
 
 /* 
@@ -82,16 +82,15 @@ Tcl_Obj* TclFSNormalizeAbsolutePath _ANSI_ARGS_((Tcl_Interp* interp,
  * Private shared variables for use by tclIOUtil.c and tclPathObj.c
  */
 extern Tcl_Filesystem tclNativeFilesystem;
-extern int theFilesystemEpoch;
-extern Tcl_ThreadDataKey fsDataKey;
+extern Tcl_ThreadDataKey tclFsDataKey;
 
 /* 
  * Private shared functions for use by tclIOUtil.c and tclPathObj.c
  */
-Tcl_PathType     FSGetPathType  _ANSI_ARGS_((Tcl_Obj *pathObjPtr, 
+Tcl_PathType     TclFSGetPathType  _ANSI_ARGS_((Tcl_Obj *pathObjPtr, 
 			    Tcl_Filesystem **filesystemPtrPtr, 
 			    int *driveNameLengthPtr));
-Tcl_PathType     GetPathType  _ANSI_ARGS_((Tcl_Obj *pathObjPtr, 
+Tcl_PathType     TclGetPathType  _ANSI_ARGS_((Tcl_Obj *pathObjPtr, 
 			    Tcl_Filesystem **filesystemPtrPtr, 
 			    int *driveNameLengthPtr, Tcl_Obj **driveNameRef));
-Tcl_FSPathInFilesystemProc NativePathInFilesystem;
+Tcl_FSPathInFilesystemProc TclNativePathInFilesystem;

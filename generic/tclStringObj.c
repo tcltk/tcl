@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.32 2003/02/19 16:43:28 das Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.32.4.1 2003/10/16 02:28:02 dgp Exp $ */
 
 #include "tclInt.h"
 
@@ -991,6 +991,89 @@ Tcl_SetUnicodeObj(objPtr, unicode, numChars)
 /*
  *----------------------------------------------------------------------
  *
+ * TclAppendLimitedToObj --
+ *
+ *	This procedure appends a limited number of bytes from a sequence
+ *	of bytes to an object, marking any limitation with an ellipsis.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The bytes at *bytes are appended to the string representation
+ *	of objPtr.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclAppendLimitedToObj(objPtr, bytes, length, limit, ellipsis)
+    register Tcl_Obj *objPtr;	/* Points to the object to append to. */
+    CONST char *bytes;		/* Points to the bytes to append to the
+				 * object. */
+    register int length;	/* The number of bytes available to be
+				 * appended from "bytes".  If < 0, then
+				 * all bytes up to a NULL byte are available. */
+    register int limit;		/* The maximum number of bytes to append
+				 * to the object. */
+    CONST char *ellipsis;	/* Ellipsis marker string, appended to
+				 * the object to indicate not all available
+				 * bytes at "bytes" were appended. */
+{
+    String *stringPtr;
+    int toCopy = 0;
+
+    if (Tcl_IsShared(objPtr)) {
+	panic("TclAppendLimitedToObj called with shared object");
+    }
+
+    SetStringFromAny(NULL, objPtr);
+
+    if (length < 0) {
+	length = (bytes ? strlen(bytes) : 0);
+    }
+    if (length == 0) {
+	return;
+    }
+
+    if (length <= limit) {
+	toCopy = length;
+    } else {
+	if (ellipsis == NULL) {
+	    ellipsis = "...";
+	}
+	toCopy = Tcl_UtfPrev(bytes+limit+1-strlen(ellipsis), bytes) - bytes;
+    }
+
+    /*
+     * If objPtr has a valid Unicode rep, then append the Unicode
+     * conversion of "bytes" to the objPtr's Unicode rep, otherwise
+     * append "bytes" to objPtr's string rep.
+     */
+
+    stringPtr = GET_STRING(objPtr);
+    if (stringPtr->hasUnicode != 0) {
+	AppendUtfToUnicodeRep(objPtr, bytes, toCopy);
+    } else {
+	AppendUtfToUtfRep(objPtr, bytes, toCopy);
+    }
+
+    if (length <= limit) {
+	return;
+    }
+
+    stringPtr = GET_STRING(objPtr);
+    if (stringPtr->hasUnicode != 0) {
+	AppendUtfToUnicodeRep(objPtr, ellipsis, -1);
+    } else {
+	AppendUtfToUtfRep(objPtr, ellipsis, -1);
+    }
+
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_AppendToObj --
  *
  *	This procedure appends a sequence of bytes to an object.
@@ -1014,35 +1097,7 @@ Tcl_AppendToObj(objPtr, bytes, length)
 				 * "bytes". If < 0, then append all bytes
 				 * up to NULL byte. */
 {
-    String *stringPtr;
-
-    if (Tcl_IsShared(objPtr)) {
-	panic("Tcl_AppendToObj called with shared object");
-    }
-    
-    SetStringFromAny(NULL, objPtr);
-
-    if (length < 0) {
-	length = (bytes ? strlen(bytes) : 0);
-    }
-    if (length == 0) {
-	return;
-    }
-
-    /*
-     * If objPtr has a valid Unicode rep, then append the Unicode
-     * conversion of "bytes" to the objPtr's Unicode rep, otherwise
-     * append "bytes" to objPtr's string rep.
-     */
-
-    stringPtr = GET_STRING(objPtr);
-    if (stringPtr->hasUnicode != 0) {
-	AppendUtfToUnicodeRep(objPtr, bytes, length);
-
-	stringPtr = GET_STRING(objPtr);
-    } else {
-	AppendUtfToUtfRep(objPtr, bytes, length);
-    }
+    TclAppendLimitedToObj(objPtr, bytes, length, INT_MAX, NULL);
 }
 
 /*

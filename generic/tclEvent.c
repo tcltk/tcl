@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEvent.c,v 1.29 2003/05/13 12:39:50 dkf Exp $
+ * RCS: @(#) $Id: tclEvent.c,v 1.29.2.1 2003/10/16 02:28:02 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -87,6 +87,14 @@ TCL_DECLARE_MUTEX(exitMutex)
 
 static int inFinalize = 0;
 static int subsystemsInitialized = 0;
+
+/*
+ * This variable contains the application wide exit handler.  It will be
+ * called by Tcl_Exit instead of the C-runtime exit if this variable is set
+ * to a non-NULL value.
+ */
+
+static Tcl_ExitProc *appExitPtr = NULL;
 
 typedef struct ThreadSpecificData {
     ExitHandler *firstExitPtr;  /* First in list of all exit handlers for
@@ -542,6 +550,44 @@ Tcl_DeleteThreadExitHandler(proc, clientData)
 /*
  *----------------------------------------------------------------------
  *
+ * Tcl_SetExitProc --
+ *
+ *	This procedure sets the application wide exit handler that
+ *	will be called by Tcl_Exit in place of the C-runtime exit.  If
+ *	the application wide exit handler is NULL, the C-runtime exit
+ *	will be used instead.
+ *
+ * Results:
+ *	The previously set application wide exit handler.
+ *
+ * Side effects:
+ *	Sets the application wide exit handler to the specified value.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_ExitProc *
+Tcl_SetExitProc(proc)
+    Tcl_ExitProc *proc; /* new exit handler for app or NULL */
+{
+    Tcl_ExitProc *prevExitProc;
+
+    /*
+     * Swap the old exit proc for the new one, saving the old one for
+     * our return value.
+     */
+
+    Tcl_MutexLock(&exitMutex);
+    prevExitProc = appExitPtr;
+    appExitPtr = proc;
+    Tcl_MutexUnlock(&exitMutex);
+
+    return prevExitProc;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_Exit --
  *
  *	This procedure is called to terminate the application.
@@ -561,8 +607,26 @@ Tcl_Exit(status)
     int status;			/* Exit status for application;  typically
 				 * 0 for normal return, 1 for error return. */
 {
-    Tcl_Finalize();
-    TclpExit(status);
+    Tcl_ExitProc *currentAppExitPtr;
+
+    Tcl_MutexLock(&exitMutex);
+    currentAppExitPtr = appExitPtr;
+    Tcl_MutexUnlock(&exitMutex);
+
+    if (currentAppExitPtr) {
+	/*
+	 * Warning: this code SHOULD NOT return, as there is code that
+	 * depends on Tcl_Exit never returning.  In fact, we will
+	 * panic if anyone returns, so critical is this dependcy.
+	 */
+	currentAppExitPtr((ClientData) status);
+	Tcl_Panic("AppExitProc returned unexpectedly");
+    } else {
+	/* use default handling */
+	Tcl_Finalize();
+	TclpExit(status);
+	Tcl_Panic("OS exit failed!");
+    }
 }
 
 /*

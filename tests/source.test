@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: source.test,v 1.8.4.1 2003/09/05 23:08:07 dgp Exp $
+# RCS: @(#) $Id: source.test,v 1.8.4.2 2003/10/16 02:28:03 dgp Exp $
 
 if {[catch {package require tcltest 2.0.2}]} {
     puts stderr "Skipping tests in [info script]. tcltest 2.0.2 required."
@@ -306,7 +306,7 @@ test source-6.2 {source skips everything after Ctrl-Z: Bug 2040} -setup {
 
 test source-7.1 {source -encoding test} -setup {
     set sourcefile [makeFile {} source.file]
-    removeFile source.file
+    file delete $sourcefile
     set f [open $sourcefile w]
     fconfigure $f -encoding utf-8
     puts $f "set symbol(square-root) \u221A; set x correct"
@@ -326,7 +326,7 @@ test source-7.2 {source -encoding test} -setup {
     # file that contains the byte \x1A, although not the character \u001A in
     # the indicated encoding.
     set sourcefile [makeFile {} source.file]
-    removeFile source.file
+    file delete $sourcefile
     set f [open $sourcefile w]
     fconfigure $f -encoding unicode
     puts $f "set symbol(square-root) \u221A; set x correct"
@@ -354,7 +354,7 @@ test source-7.4 {source -encoding: syntax} -setup {
 
 test source-7.5 {source -encoding: correct operation} -setup {
     set sourcefile [makeFile {} source.file]
-    removeFile source.file
+    file delete $sourcefile
     set f [open $sourcefile w]
     fconfigure $f -encoding utf-8
     puts $f "proc \u20ac {} {return foo}"
@@ -369,7 +369,7 @@ test source-7.5 {source -encoding: correct operation} -setup {
 
 test source-7.6 {source -encoding: mismatch encoding error} -setup {
     set sourcefile [makeFile {} source.file]
-    removeFile source.file
+    file delete $sourcefile
     set f [open $sourcefile w]
     fconfigure $f -encoding utf-8
     puts $f "proc \u20ac {} {return foo}"

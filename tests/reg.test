@@ -9,7 +9,7 @@
 #
 # Copyright (c) 1998, 1999 Henry Spencer.  All rights reserved.
 #
-# RCS: @(#) $Id: reg.test,v 1.17 2003/04/11 16:00:00 vincentdarley Exp $
+# RCS: @(#) $Id: reg.test,v 1.17.2.1 2003/10/16 02:28:03 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -138,7 +138,7 @@ proc doing {major desc} {
 
 # build test number (internal)
 proc tno {testid} {
-	return [lindex $testid 0]
+	return [join $testid .]
 }
 
 # build description, with possible modifiers (internal)

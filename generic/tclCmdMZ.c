@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.90.2.4 2003/09/05 23:08:06 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.90.2.5 2003/10/16 02:28:01 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -627,7 +627,7 @@ Tcl_RegsubObjCmd(dummy, interp, objc, objv)
 
 	match = Tcl_RegExpExecObj(interp, regExpr, objPtr, offset,
 		10 /* matches */, ((offset > 0 &&
-		   (Tcl_GetUniChar(objPtr,offset-1) != (Tcl_UniChar)'\n'))
+		   (wstring[offset-1] != (Tcl_UniChar)'\n'))
 		   ? TCL_REG_NOTBOL : 0));
 
 	if (match < 0) {
@@ -722,6 +722,17 @@ Tcl_RegsubObjCmd(dummy, interp, objc, objv)
 	    offset++;
 	} else {
 	    offset += end;
+	    if (start == end) {
+		/*
+		 * We matched an empty string, which means we must go 
+		 * forward one more step so we don't match again at the
+		 * same spot.
+		 */
+		if (offset < wlen) {
+		    Tcl_AppendUnicodeToObj(resultPtr, wstring + offset, 1);
+		}
+		offset++;
+	    }
 	}
 	if (!all) {
 	    break;
@@ -2712,11 +2723,17 @@ Tcl_SwitchObjCmd(dummy, interp, objc, objv)
 	}
 	result = Tcl_EvalObjEx(interp, objv[j], 0);
 	if (result == TCL_ERROR) {
-	    char msg[100 + TCL_INTEGER_SPACE];
-
-	    sprintf(msg, "\n    (\"%.50s\" arm line %d)", pattern,
-		    interp->errorLine);
-	    Tcl_AddObjErrorInfo(interp, msg, -1);
+	    Tcl_Obj *msg = Tcl_NewStringObj("\n    (\"", -1);
+	    Tcl_Obj *errorLine = Tcl_NewIntObj(interp->errorLine);
+	    Tcl_IncrRefCount(msg);
+	    Tcl_IncrRefCount(errorLine);
+	    TclAppendLimitedToObj(msg, pattern, -1, 50, "");
+	    Tcl_AppendToObj(msg,"\" arm line ", -1);
+	    Tcl_AppendObjToObj(msg, errorLine);
+	    Tcl_DecrRefCount(errorLine);
+	    Tcl_AppendToObj(msg,")", -1);
+	    TclAppendObjToErrorInfo(interp, msg);
+	    Tcl_DecrRefCount(msg);
 	}
 	return result;
     }

@@ -9,10 +9,10 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: dict.test,v 1.2.2.1 2003/08/07 21:36:04 dgp Exp $
+# RCS: @(#) $Id: dict.test,v 1.2.2.2 2003/10/16 02:28:03 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest
+    package require tcltest 2
     namespace import -force ::tcltest::*
 }
 
@@ -318,7 +318,7 @@ test dict-12.3 {dict lappend command} {
     set dictv {a a}
     dict lappend dictv a b c
 } {a {a b c}}
-test dict-12.2 {dict lappend command} {
+test dict-12.2.1 {dict lappend command} {
     set dictv [dict create a [string index =a= 1]]
     dict lappend dictv a b
 } {a {a b}}
@@ -365,7 +365,7 @@ test dict-13.3 {dict append command} {
     set dictv {a a}
     dict append dictv a b c
 } {a abc}
-test dict-13.2 {dict append command} {
+test dict-13.2.1 {dict append command} {
     set dictv [dict create a [string index =a= 1]]
     dict append dictv a b
 } {a ab}

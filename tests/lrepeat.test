@@ -9,10 +9,10 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: lrepeat.test,v 1.1.2.1 2003/08/27 21:07:21 dgp Exp $
+# RCS: @(#) $Id: lrepeat.test,v 1.1.2.2 2003/10/16 02:28:03 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest
+    package require tcltest 2
     namespace import -force ::tcltest::*
 }
 

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUtf.c,v 1.31 2003/03/06 23:27:14 dgp Exp $
+ * RCS: @(#) $Id: tclUtf.c,v 1.31.2.1 2003/10/16 02:28:02 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -501,11 +501,8 @@ Tcl_NumUtfChars(str, len)
 
     i = 0;
     if (len < 0) {
-	while (1) {
+	while (*str != '\0') {
 	    str += TclUtfToUniChar(str, chPtr);
-	    if (ch == '\0') {
-		break;
-	    }
 	    i++;
 	}
     } else {

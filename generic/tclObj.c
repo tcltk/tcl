@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.46.2.3 2003/08/07 21:36:00 dgp Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.46.2.4 2003/10/16 02:28:02 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -263,6 +263,7 @@ TclInitObjSubsystem()
     Tcl_RegisterObjType(&tclArraySearchType);
     Tcl_RegisterObjType(&tclIndexType);
     Tcl_RegisterObjType(&tclNsNameType);
+    Tcl_RegisterObjType(&tclEnsembleCmdType);
     Tcl_RegisterObjType(&tclCmdNameType);
     Tcl_RegisterObjType(&tclTokensType);
 
@@ -524,6 +525,7 @@ void TclDbInitNewObj(objPtr)
      * Add entry to a thread local map used to check if a Tcl_Obj
      * was allocated by the currently executing thread.
      */
+    if (!TclInExit())
     {
         Tcl_HashEntry *hPtr;
         Tcl_HashTable *tablePtr;
@@ -1321,15 +1323,11 @@ SetBooleanFromAny(interp, objPtr)
 
     badBoolean:
     if (interp != NULL) {
-	/*
-	 * Must copy string before resetting the result in case a caller
-	 * is trying to convert the interpreter's result to a boolean.
-	 */
-	
-	char buf[100];
-	sprintf(buf, "expected boolean value but got \"%.50s\"", string);
-	Tcl_ResetResult(interp);
-	Tcl_AppendToObj(Tcl_GetObjResult(interp), buf, -1);
+	Tcl_Obj *msg =
+		Tcl_NewStringObj("expected boolean value but got \"", -1);
+	TclAppendLimitedToObj(msg, string, length, 50, "");
+	Tcl_AppendToObj(msg, "\"", -1);
+	Tcl_SetObjResult(interp, msg);
     }
     return TCL_ERROR;
 }
@@ -1600,16 +1598,11 @@ SetDoubleFromAny(interp, objPtr)
     if (end == string) {
 	badDouble:
 	if (interp != NULL) {
-	    /*
-	     * Must copy string before resetting the result in case a caller
-	     * is trying to convert the interpreter's result to an int.
-	     */
-	    
-	    char buf[100];
-	    sprintf(buf, "expected floating-point number but got \"%.50s\"",
-	            string);
-	    Tcl_ResetResult(interp);
-	    Tcl_AppendToObj(Tcl_GetObjResult(interp), buf, -1);
+	    Tcl_Obj *msg = Tcl_NewStringObj(
+		    "expected floating-point number but got \"", -1);
+	    TclAppendLimitedToObj(msg, string, length, 50, "");
+	    Tcl_AppendToObj(msg, "\"", -1);
+	    Tcl_SetObjResult(interp, msg);
 	}
 	return TCL_ERROR;
     }
@@ -1897,15 +1890,11 @@ SetIntFromAny(interp, objPtr)
     if (end == p) {
 	badInteger:
 	if (interp != NULL) {
-	    /*
-	     * Must copy string before resetting the result in case a caller
-	     * is trying to convert the interpreter's result to an int.
-	     */
-	    
-	    char buf[100];
-	    sprintf(buf, "expected integer but got \"%.50s\"", string);
-	    Tcl_ResetResult(interp);
-	    Tcl_AppendToObj(Tcl_GetObjResult(interp), buf, -1);
+	    Tcl_Obj *msg =
+		    Tcl_NewStringObj("expected integer but got \"", -1);
+	    TclAppendLimitedToObj(msg, string, length, 50, "");
+	    Tcl_AppendToObj(msg, "\"", -1);
+	    Tcl_SetObjResult(interp, msg);
 	    TclCheckBadOctal(interp, string);
 	}
 	return TCL_ERROR;
@@ -2252,15 +2241,11 @@ SetWideIntFromAny(interp, objPtr)
     if (end == p) {
 	badInteger:
 	if (interp != NULL) {
-	    /*
-	     * Must copy string before resetting the result in case a caller
-	     * is trying to convert the interpreter's result to an int.
-	     */
-	    
-	    char buf[100];
-	    sprintf(buf, "expected integer but got \"%.50s\"", string);
-	    Tcl_ResetResult(interp);
-	    Tcl_AppendToObj(Tcl_GetObjResult(interp), buf, -1);
+	    Tcl_Obj *msg =
+		    Tcl_NewStringObj("expected integer but got \"", -1);
+	    TclAppendLimitedToObj(msg, string, length, 50, "");
+	    Tcl_AppendToObj(msg, "\"", -1);
+	    Tcl_SetObjResult(interp, msg);
 	    TclCheckBadOctal(interp, string);
 	}
 	return TCL_ERROR;

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinInt.h,v 1.22 2003/04/18 20:17:45 hobbs Exp $
+ * RCS: @(#) $Id: tclWinInt.h,v 1.22.2.1 2003/10/16 02:28:04 dgp Exp $
  */
 
 #ifndef _TCLWININT
@@ -111,6 +111,31 @@ typedef struct TclWinProcs {
 					 LPVOID, UINT,
 					 LPVOID, DWORD);
     BOOL (WINAPI *getVolumeNameForVMPProc)(CONST TCHAR*, TCHAR*, DWORD);
+    /* 
+     * These six are for the security sdk to get correct file
+     * permissions on NT, 2000, XP, etc.  On 95,98,ME they are
+     * always null.
+     */
+    BOOL (WINAPI *getFileSecurityProc)(LPCTSTR lpFileName,
+		     SECURITY_INFORMATION RequestedInformation,
+		     PSECURITY_DESCRIPTOR pSecurityDescriptor,
+		     DWORD nLength, 
+		     LPDWORD lpnLengthNeeded);
+    BOOL (WINAPI *impersonateSelfProc) (SECURITY_IMPERSONATION_LEVEL 
+		      ImpersonationLevel);
+    BOOL (WINAPI *openThreadTokenProc) (HANDLE ThreadHandle,
+		      DWORD DesiredAccess, BOOL OpenAsSelf,
+		      PHANDLE TokenHandle);
+    BOOL (WINAPI *revertToSelfProc) (void);
+    VOID (WINAPI *mapGenericMaskProc) (PDWORD AccessMask,
+		      PGENERIC_MAPPING GenericMapping);
+    BOOL (WINAPI *accessCheckProc)(PSECURITY_DESCRIPTOR pSecurityDescriptor,
+		    HANDLE ClientToken, DWORD DesiredAccess,
+		    PGENERIC_MAPPING GenericMapping,
+		    PPRIVILEGE_SET PrivilegeSet,
+		    LPDWORD PrivilegeSetLength,
+		    LPDWORD GrantedAccess,
+		    LPBOOL AccessStatus);
 } TclWinProcs;
 
 EXTERN TclWinProcs *tclWinProcs;

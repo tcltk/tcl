@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWin32Dll.c,v 1.25.2.1 2003/06/24 17:27:41 dgp Exp $
+ * RCS: @(#) $Id: tclWin32Dll.c,v 1.25.2.2 2003/10/16 02:28:04 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -99,6 +99,8 @@ static TclWinProcs asciiProcs = {
     (int (__cdecl*)(CONST TCHAR *, struct _utimbuf *)) _utime,
     NULL,
     NULL,
+    /* Security SDK - not available on 95,98,ME */
+    NULL, NULL, NULL, NULL, NULL, NULL
 };
 
 static TclWinProcs unicodeProcs = {
@@ -148,6 +150,8 @@ static TclWinProcs unicodeProcs = {
     (int (__cdecl*)(CONST TCHAR *, struct _utimbuf *)) _wutime,
     NULL,
     NULL,
+    /* Security SDK - will be filled in on NT,XP,2000,2003 */
+    NULL, NULL, NULL, NULL, NULL, NULL
 };
 
 TclWinProcs *tclWinProcs;
@@ -181,7 +185,7 @@ MountPointMap *driveLetterLookup = NULL;
 TCL_DECLARE_MUTEX(mountPointMap)
 
 /* We will need this below */
-extern Tcl_FSDupInternalRepProc NativeDupInternalRep;
+extern Tcl_FSDupInternalRepProc TclNativeDupInternalRep;
 
 #ifdef __WIN32__
 #ifndef STATIC_BUILD
@@ -567,6 +571,37 @@ TclWinSetInterfaces(
 		  "GetVolumeNameForVolumeMountPointW");
 		FreeLibrary(hInstance);
 	    }
+	    hInstance = LoadLibraryA("advapi32");
+	    if (hInstance != NULL) {
+		tclWinProcs->getFileSecurityProc = (BOOL (WINAPI *)(
+		  LPCTSTR lpFileName, 
+		  SECURITY_INFORMATION RequestedInformation,
+		  PSECURITY_DESCRIPTOR pSecurityDescriptor, DWORD nLength, 
+		  LPDWORD lpnLengthNeeded)) GetProcAddress(hInstance, 
+							   "GetFileSecurityW"); 
+		tclWinProcs->impersonateSelfProc = (BOOL (WINAPI *) (
+		  SECURITY_IMPERSONATION_LEVEL ImpersonationLevel)) 
+		  GetProcAddress(hInstance, "ImpersonateSelf");
+		tclWinProcs->openThreadTokenProc = (BOOL (WINAPI *) (
+		  HANDLE ThreadHandle, DWORD DesiredAccess, BOOL OpenAsSelf,
+		  PHANDLE TokenHandle)) GetProcAddress(hInstance, 
+						       "OpenThreadToken");
+		tclWinProcs->revertToSelfProc = (BOOL (WINAPI *) (void)) 
+		  GetProcAddress(hInstance, "RevertToSelf");
+		tclWinProcs->mapGenericMaskProc = (VOID (WINAPI *) (
+		  PDWORD AccessMask, PGENERIC_MAPPING GenericMapping)) 
+		  GetProcAddress(hInstance, "MapGenericMask");
+		tclWinProcs->accessCheckProc = (BOOL (WINAPI *)(
+		  PSECURITY_DESCRIPTOR pSecurityDescriptor, 
+	          HANDLE ClientToken, DWORD DesiredAccess,
+	          PGENERIC_MAPPING GenericMapping,
+		  PPRIVILEGE_SET PrivilegeSet,
+		  LPDWORD PrivilegeSetLength,
+		  LPDWORD GrantedAccess,
+		  LPBOOL AccessStatus)) GetProcAddress(hInstance, 
+		  "AccessCheck");
+		FreeLibrary(hInstance);
+	    }
 	}
     } else {
 	tclWinProcs = &asciiProcs;
@@ -768,7 +803,7 @@ TclWinDriveLetterForVolMountPoint(CONST WCHAR *mountPoint)
 	    }
 	    if (!alreadyStored) {
 		dlPtr2 = (MountPointMap*) ckalloc(sizeof(MountPointMap));
-		dlPtr2->volumeName = NativeDupInternalRep(Target);
+		dlPtr2->volumeName = TclNativeDupInternalRep(Target);
 		dlPtr2->driveLetter = 'A' + (drive[0] - L'A');
 		dlPtr2->nextPtr = driveLetterLookup;
 		driveLetterLookup  = dlPtr2;
@@ -789,7 +824,7 @@ TclWinDriveLetterForVolMountPoint(CONST WCHAR *mountPoint)
      * up each time.
      */
     dlPtr2 = (MountPointMap*) ckalloc(sizeof(MountPointMap));
-    dlPtr2->volumeName = NativeDupInternalRep((ClientData)mountPoint);
+    dlPtr2->volumeName = TclNativeDupInternalRep((ClientData)mountPoint);
     dlPtr2->driveLetter = -1;
     dlPtr2->nextPtr = driveLetterLookup;
     driveLetterLookup  = dlPtr2;

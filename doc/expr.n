@@ -5,10 +5,10 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: expr.n,v 1.10.4.1 2003/07/07 20:23:38 dgp Exp $
+'\" RCS: @(#) $Id: expr.n,v 1.10.4.2 2003/10/16 02:28:01 dgp Exp $
 '\" 
 .so man.macros
-.TH expr n 8.4 Tcl "Tcl Built-In Commands"
+.TH expr n 8.5 Tcl "Tcl Built-In Commands"
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
@@ -55,12 +55,10 @@ If no numeric interpretation is possible, then an operand is left
 as a string (and only a limited set of operators may be applied to
 it).
 .PP
-.VS 8.4
 On 32-bit systems, integer values MAX_INT (0x7FFFFFFF) and MIN_INT
 (-0x80000000) will be represented as 32-bit values, and integer values
 outside that range will be represented as 64-bit values (if that is
 possible at all.)
-.VE 8.4
 .PP
 Operands may be specified in any of the following ways:
 .IP [1]
@@ -117,6 +115,12 @@ Unary minus, unary plus, bit-wise NOT, logical NOT.  None of these operands
 may be applied to string operands, and bit-wise NOT may be
 applied only to integers.
 .TP 20
+\fB**\fR
+.VS 8.5
+Exponentiation.  None of these operands may be applied to string
+operands.
+.VE 8.5
+.TP 20
 \fB*\0\0/\0\0%\fR
 Multiply, divide, remainder.  None of these operands may be
 applied to string operands, and remainder may be applied only
@@ -140,12 +144,10 @@ in which case string comparison is used.
 \fB==\0\0!=\fR
 Boolean equal and not equal.  Each operator produces a zero/one result.
 Valid for all operand types.
-.VS 8.4
 .TP 20
 \fBeq\0\0ne\fR
 Boolean string equal and string not equal.  Each operator produces a
 zero/one result.  The operand types are interpreted only as strings.
-.VE 8.4
 .TP 20
 \fB&\fR
 Bit-wise AND.  Valid for integer operands only.
@@ -173,6 +175,11 @@ The \fIx\fR operand must have a numeric value.
 .LP
 See the C manual for more details on the results
 produced by each operator.
+.VS 8.5
+The exponentiation operator promotes types like the multiply and
+divide operators, and produces a result that is the same as the output
+of the \fBpow\fR function (after any type conversions.)
+.VE 8.5
 All of the binary operators group left-to-right within the same
 precedence level.  For example, the command
 .CS
@@ -261,13 +268,11 @@ Computes the length of the hypotenuse of a right-angled triangle
 \fBsqrt(\fIx\fR*\fIx\fR+\fIy\fR*\fIy\fB)\fR.
 .TP
 \fBint(\fIarg\fB)\fR
-.VS 8.4
 If \fIarg\fR is an integer value of the same width as the machine
 word, returns \fIarg\fR, otherwise
 converts \fIarg\fR to an integer (of the same size as a machine word,
 i.e. 32-bits on 32-bit systems, and 64-bits on 64-bit systems) by
 truncation and returns the converted value.
-.VE 8.4
 .TP
 \fBlog(\fIarg\fB)\fR
 Returns the natural logarithm of \fIarg\fR.  \fIArg\fR must be a
@@ -316,10 +321,8 @@ Returns the tangent of \fIarg\fR, measured in radians.
 Returns the hyperbolic tangent of \fIarg\fR.
 .TP
 \fBwide(\fIarg\fB)\fR
-.VS 8.4
 Converts \fIarg\fR to an integer value at least 64-bits wide (by sign-extension
 if \fIarg\fR is a 32-bit number) if it is not one already.
-.VE 8.4
 .PP
 In addition to these predefined functions, applications may
 define additional functions using \fBTcl_CreateMathFunc\fR().
@@ -365,9 +368,7 @@ returns \fB4.0\fR, not \fB4\fR.
 String values may be used as operands of the comparison operators,
 although the expression evaluator tries to do comparisons as integer
 or floating-point when it can,
-.VS 8.4
 except in the case of the \fBeq\fR and \fBne\fR operators.
-.VE 8.4
 If one of the operands of a comparison is a string and the other
 has a numeric value, the numeric operand is converted back to
 a string using the C \fIsprintf\fR format specifier
@@ -384,10 +385,7 @@ Because of Tcl's tendency to treat values as numbers whenever
 possible, it isn't generally a good idea to use operators like \fB==\fR
 when you really want string comparison and the values of the
 operands could be arbitrary;  it's better in these cases to use
-.VS 8.4
-the \fBeq\fR or \fBne\fR operators, or
-.VE 8.4
-the \fBstring\fR command instead.
+the \fBeq\fR or \fBne\fR operators, or the \fBstring\fR command instead.
 
 .SH "PERFORMANCE CONSIDERATIONS"
 .PP

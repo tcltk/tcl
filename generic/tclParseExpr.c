@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParseExpr.c,v 1.17.4.1 2003/05/22 19:12:07 dgp Exp $
+ * RCS: @(#) $Id: tclParseExpr.c,v 1.17.4.2 2003/10/16 02:28:02 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -132,6 +132,12 @@ typedef struct ParseInfo {
 #define STRNEQ		35
 
 /*
+ * Exponentiation operator:
+ */
+
+#define EXPON		36
+
+/*
  * Mapping from lexemes to strings; used for debugging messages. These
  * entries must match the order and number of the lexeme definitions above.
  */
@@ -142,7 +148,7 @@ static char *lexemeStrings[] = {
     "*", "/", "%", "+", "-",
     "<<", ">>", "<", ">", "<=", ">=", "==", "!=",
     "&", "^", "|", "&&", "||", "?", ":",
-    "!", "~", "eq", "ne",
+    "!", "~", "eq", "ne", "**"
 };
 
 /*
@@ -166,6 +172,7 @@ static int		ParseMultiplyExpr _ANSI_ARGS_((ParseInfo *infoPtr));
 static int		ParsePrimaryExpr _ANSI_ARGS_((ParseInfo *infoPtr));
 static int		ParseRelationalExpr _ANSI_ARGS_((ParseInfo *infoPtr));
 static int		ParseShiftExpr _ANSI_ARGS_((ParseInfo *infoPtr));
+static int		ParseExponentialExpr _ANSI_ARGS_((ParseInfo *infoPtr));
 static int		ParseUnaryExpr _ANSI_ARGS_((ParseInfo *infoPtr));
 static void		PrependSubExprTokens _ANSI_ARGS_((CONST char *op,
 				int opBytes, CONST char *src, int srcBytes,
@@ -997,7 +1004,7 @@ ParseAddExpr(infoPtr)
  * ParseMultiplyExpr --
  *
  *	This procedure parses a Tcl multiply expression:
- *	multiplyExpr ::= unaryExpr {('*' | '/' | '%') unaryExpr}
+ *	multiplyExpr ::= exponentialExpr {('*' | '/' | '%') exponentialExpr}
  *
  * Results:
  *	The return value is TCL_OK on a successful parse and TCL_ERROR
@@ -1025,7 +1032,7 @@ ParseMultiplyExpr(infoPtr)
     srcStart = infoPtr->start;
     firstIndex = parsePtr->numTokens;
     
-    code = ParseUnaryExpr(infoPtr);
+    code = ParseExponentialExpr(infoPtr);
     if (code != TCL_OK) {
 	return code;
     }
@@ -1037,7 +1044,7 @@ ParseMultiplyExpr(infoPtr)
 	if (code != TCL_OK) {
 	    return code;
 	}
-	code = ParseUnaryExpr(infoPtr);
+	code = ParseExponentialExpr(infoPtr);
 	if (code != TCL_OK) {
 	    return code;
 	}
@@ -1052,6 +1059,69 @@ ParseMultiplyExpr(infoPtr)
     }
     return TCL_OK;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ParseExponentialExpr --
+ *
+ *	This procedure parses a Tcl exponential expression:
+ *	exponentialExpr ::= unaryExpr {'**' unaryExpr}
+ *
+ * Results:
+ *	The return value is TCL_OK on a successful parse and TCL_ERROR
+ *	on failure. If TCL_ERROR is returned, then the interpreter's result
+ *	contains an error message.
+ *
+ * Side effects:
+ *	If there is insufficient space in parsePtr to hold all the
+ *	information about the subexpression, then additional space is
+ *	malloc-ed.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+ParseExponentialExpr(infoPtr)
+    ParseInfo *infoPtr;			/* Holds the parse state for the
+					 * expression being parsed. */
+{
+    Tcl_Parse *parsePtr = infoPtr->parsePtr;
+    int firstIndex, lexeme, code;
+    CONST char *srcStart, *operator;
+
+    HERE("exponentiateExpr", 12);
+    srcStart = infoPtr->start;
+    firstIndex = parsePtr->numTokens;
+
+    code = ParseUnaryExpr(infoPtr);
+    if (code != TCL_OK) {
+	return code;
+    }
+
+    lexeme = infoPtr->lexeme;
+    while (lexeme == EXPON) {
+	operator = infoPtr->start;
+	code = GetLexeme(infoPtr);	/* skip over ** */
+	if (code != TCL_OK) {
+	    return code;
+	}
+	code = ParseUnaryExpr(infoPtr);
+	if (code != TCL_OK) {
+	    return code;
+	}
+
+	/*
+	 * Generate tokens for the subexpression and ** operator.
+	 */
+
+	PrependSubExprTokens(operator, 2, srcStart,
+		(infoPtr->prevEnd - srcStart), firstIndex, infoPtr);
+	lexeme = infoPtr->lexeme;
+    }
+    return TCL_OK;
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -1083,7 +1153,7 @@ ParseUnaryExpr(infoPtr)
     int firstIndex, lexeme, code;
     CONST char *srcStart, *operator;
 
-    HERE("unaryExpr", 12);
+    HERE("unaryExpr", 13);
     srcStart = infoPtr->start;
     firstIndex = parsePtr->numTokens;
     
@@ -1153,7 +1223,7 @@ ParsePrimaryExpr(infoPtr)
      * We simply recurse on parenthesized subexpressions.
      */
 
-    HERE("primaryExpr", 13);
+    HERE("primaryExpr", 14);
     lexeme = infoPtr->lexeme;
     if (lexeme == OPEN_PAREN) {
 	code = GetLexeme(infoPtr); /* skip over the '(' */
@@ -1727,6 +1797,12 @@ GetLexeme(infoPtr)
 
 	case '*':
 	    infoPtr->lexeme = MULT;
+	    if ((infoPtr->lastChar - src)>1  &&  src[1]=='*') {
+		infoPtr->lexeme = EXPON;
+		infoPtr->size = 2;
+		infoPtr->next = src+2;
+		parsePtr->term = infoPtr->next;
+	    }
 	    return TCL_OK;
 
 	case '/':
@@ -2130,19 +2206,12 @@ LogSyntaxError(infoPtr, extraInfo)
     CONST char *extraInfo;	/* String to provide extra information
 				 * about the syntax error. */
 {
-    int numBytes = (infoPtr->lastChar - infoPtr->originalExpr);
-    char buffer[100];
-
-    if (numBytes > 60) {
-	sprintf(buffer, "syntax error in expression \"%.60s...\"",
-		infoPtr->originalExpr);
-    } else {
-	sprintf(buffer, "syntax error in expression \"%.*s\"",
-		numBytes, infoPtr->originalExpr);
-    }
-    Tcl_ResetResult(infoPtr->parsePtr->interp);
-    Tcl_AppendStringsToObj(Tcl_GetObjResult(infoPtr->parsePtr->interp),
-	    buffer, ": ", extraInfo, (char *) NULL);
+    Tcl_Obj *result =
+	    Tcl_NewStringObj("syntax error in expression \"", -1);
+    TclAppendLimitedToObj(result, infoPtr->originalExpr, 
+	    (int)(infoPtr->lastChar - infoPtr->originalExpr), 63, NULL);
+    Tcl_AppendStringsToObj(result, "\": ", extraInfo, (char *) NULL);
+    Tcl_SetObjResult(infoPtr->parsePtr->interp, result);
     infoPtr->parsePtr->errorType = TCL_PARSE_SYNTAX;
     infoPtr->parsePtr->term = infoPtr->start;
 }

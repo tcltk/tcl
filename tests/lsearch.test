@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: lsearch.test,v 1.11 2003/03/27 13:19:15 dkf Exp $
+# RCS: @(#) $Id: lsearch.test,v 1.11.2.1 2003/10/16 02:28:03 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -61,7 +61,7 @@ test lsearch-2.9 {search modes} {
 } 1
 test lsearch-2.10 {search modes} {
     list [catch {lsearch -glib {b.x bx xy bcx} b.x} msg] $msg
-} {1 {bad option "-glib": must be -all, -ascii, -decreasing, -dictionary, -exact, -glob, -increasing, -inline, -integer, -not, -real, -regexp, -sorted, or -start}}
+} {1 {bad option "-glib": must be -all, -ascii, -decreasing, -dictionary, -exact, -glob, -increasing, -index, -inline, -integer, -not, -real, -regexp, -sorted, -start, or -subindices}}
 
 test lsearch-3.1 {lsearch errors} {
     list [catch lsearch msg] $msg
@@ -71,13 +71,19 @@ test lsearch-3.2 {lsearch errors} {
 } {1 {wrong # args: should be "lsearch ?options? list pattern"}}
 test lsearch-3.3 {lsearch errors} {
     list [catch {lsearch a b c} msg] $msg
-} {1 {bad option "a": must be -all, -ascii, -decreasing, -dictionary, -exact, -glob, -increasing, -inline, -integer, -not, -real, -regexp, -sorted, or -start}}
+} {1 {bad option "a": must be -all, -ascii, -decreasing, -dictionary, -exact, -glob, -increasing, -index, -inline, -integer, -not, -real, -regexp, -sorted, -start, or -subindices}}
 test lsearch-3.4 {lsearch errors} {
     list [catch {lsearch a b c d} msg] $msg
-} {1 {bad option "a": must be -all, -ascii, -decreasing, -dictionary, -exact, -glob, -increasing, -inline, -integer, -not, -real, -regexp, -sorted, or -start}}
+} {1 {bad option "a": must be -all, -ascii, -decreasing, -dictionary, -exact, -glob, -increasing, -index, -inline, -integer, -not, -real, -regexp, -sorted, -start, or -subindices}}
 test lsearch-3.5 {lsearch errors} {
     list [catch {lsearch "\{" b} msg] $msg
 } {1 {unmatched open brace in list}}
+test lsearch-3.6 {lsearch errors} {
+    list [catch {lsearch -index a b} msg] $msg
+} {1 {"-index" option must be followed by list index}}
+test lsearch-3.7 {lsearch errors} {
+    list [catch {lsearch -subindices -exact a b} msg] $msg
+} {1 {-subindices cannot be used without -index option}}
 
 test lsearch-4.1 {binary data} {
     lsearch -exact [list foo one\000two bar] bar
@@ -349,6 +355,70 @@ test lsearch-16.1 {lsearch -regexp shared object} {
     set str a
     lsearch -regexp $str $str
 } 0
+
+test lsearch-17.1 {lsearch -index option, basic functionality} {
+    lsearch -index 1 {{a c} {a b} {a a}} a
+} 2
+test lsearch-17.2 {lsearch -index option, basic functionality} {
+    lsearch -index 1 -exact {{a c} {a b} {a a}} a
+} 2
+test lsearch-17.3 {lsearch -index option, basic functionality} {
+    lsearch -index 1 -glob {{ab cb} {ab bb} {ab ab}} b* 
+} 1
+test lsearch-17.4 {lsearch -index option, basic functionality} {
+    lsearch -index 1 -regexp {{ab cb} {ab bb} {ab ab}} {[cb]b}
+} 0 
+test lsearch-17.5 {lsearch -index option, basic functionality} {
+    lsearch -all -index 0 -exact {{a c} {a b} {d a}} a
+} {0 1}
+test lsearch-17.6 {lsearch -index option, basic functionality} {
+    lsearch -all -index 1 -glob {{ab cb} {ab bb} {db bx}} b* 
+} {1 2}
+test lsearch-17.7 {lsearch -index option, basic functionality} {
+    lsearch -all -index 1 -regexp {{ab cb} {ab bb} {ab ab}} {[cb]b}
+} {0 1}
+
+test lsearch-18.1 {lsearch -index option, list as index basic functionality} {
+    lsearch -index {0 0} {{{x x} {x b} {a d}} {{a c} {a b} {a a}}} a
+} 1
+test lsearch-18.2 {lsearch -index option, list as index basic functionality} {
+    lsearch -index {2 0} -exact {{{x x} {x b} {a d}} {{a c} {a b} {a a}}} a
+} 0
+test lsearch-18.3 {lsearch -index option, list as index basic functionality} {
+    lsearch -index {1 1} -glob {{{ab cb} {ab bb} {ab ab}} {{ab cb} {ab bb} {ab ab}}} b* 
+} 0
+test lsearch-18.4 {lsearch -index option, list as index basic functionality} {
+    lsearch -index {0 1} -regexp {{{ab cb} {ab bb} {ab ab}} {{ab cb} {ab bb} {ab ab}}} {[cb]b}
+} 0 
+test lsearch-18.5 {lsearch -index option, list as index basic functionality} {
+    lsearch -all -index {0 0} -exact {{{a c} {a b} {d a}} {{a c} {a b} {d a}}} a
+} {0 1}
+
+test lsearch-19.1 {lsearch -sunindices option} {
+    lsearch -subindices -index {0 0} {{{x x} {x b} {a d}} {{a c} {a b} {a a}}} a
+} {1 0 0}
+test lsearch-19.2 {lsearch -sunindices option} {
+    lsearch -subindices -index {2 0} -exact {{{x x} {x b} {a d}} {{a c} {a b} {a a}}} a
+} {0 2 0}
+test lsearch-19.3 {lsearch -sunindices option} {
+    lsearch -subindices -index {1 1} -glob {{{ab cb} {ab bb} {ab ab}} {{ab cb} {ab bb} {ab ab}}} b* 
+} {0 1 1}
+test lsearch-19.4 {lsearch -sunindices option} {
+    lsearch -subindices -index {0 1} -regexp {{{ab cb} {ab bb} {ab ab}} {{ab cb} {ab bb} {ab ab}}} {[cb]b}
+} {0 0 1} 
+test lsearch-19.5 {lsearch -sunindices option} {
+    lsearch -subindices -all -index {0 0} -exact {{{a c} {a b} {d a}} {{a c} {a b} {d a}}} a
+} {{0 0 0} {1 0 0}}
+
+test lsearch-20.1 {lsearch -index option, index larger than sublists} {
+    list [catch {lsearch -index 2 {{a c} {a b} {a a}} a} msg] $msg
+} {1 {element 2 missing from sublist "a c"}}
+test lsearch-20.2 {lsearch -index option, malformed index} {
+    list [catch {lsearch -index foo {{a c} {a b} {a a}} a} msg] $msg
+} {1 {bad index "foo": must be integer or end?-integer?}}
+test lsearch-20.3 {lsearch -index option, malformed index} {
+    list [catch {lsearch -index \{ {{a c} {a b} {a a}} a} msg] $msg
+} {1 {unmatched open brace in list}}
 
 # cleanup
 catch {unset res}

@@ -3,7 +3,7 @@
 # Makefile to build Tcl on Mac OS X packaged as a Framework
 #	uses standard unix build system in tcl/unix
 #
-# RCS: @(#) $Id: Makefile,v 1.5.4.1 2003/08/07 21:36:03 dgp Exp $
+# RCS: @(#) $Id: Makefile,v 1.5.4.2 2003/10/16 02:28:03 dgp Exp $
 #
 ########################################################################################################
 
@@ -26,7 +26,7 @@ BINDIR			?= ${PREFIX}/bin
 MANDIR			?= ${PREFIX}/man
 
 # set to non-empty value to install manpages in addition to html help:
-INSTALL_MANPAGES ?= 
+INSTALL_MANPAGES 	?= 
 
 TCL_PACKAGE_PATH	?= "~/Library/Tcl /Library/Tcl /Network/Library/Tcl /System/Library/Tcl \
 			    ~/Library/Frameworks /Library/Frameworks /Network/Library/Frameworks \
@@ -131,7 +131,7 @@ build-${PROJECT}: ${OBJ_DIR}/Makefile
 # symolic link hackery to trick
 # 'make install INSTALL_ROOT=${OBJ_DIR}'
 # into building Tcl.framework and tclsh in ${SYMROOT}
-	cd ${OBJ_DIR}; mkdir -p $(dir ./${INSTALL_PATH}) $(dir ./${BINDIR}); \
+	cd ${OBJ_DIR}; mkdir -p $(dir ./${INSTALL_PATH}) $(dir ./${BINDIR}) ${SYMROOT}; \
 	rm -f ./${INSTALL_PATH}; ln -fs ${SYMROOT} ./${INSTALL_PATH}; \
 	rm -f ./${BINDIR}; ln -fs ${SYMROOT} ./${BINDIR}; \
 	ln -fs ${OBJ_DIR}/tcltest ${SYMROOT}
@@ -164,19 +164,18 @@ endif
 ifeq (${INSTALL_BUILD},1)
 ifeq (${EMBEDDED_BUILD},1)
 # if we are embedding frameworks, don't install tclsh
-	rm -f "${INSTALL_ROOT}/${BINDIR}/${TCLSH}"
-	-rmdir -p "${INSTALL_ROOT}/${BINDIR}" 2>&-
+	rm -f "${INSTALL_ROOT}${BINDIR}/${TCLSH}"
+	-rmdir -p "${INSTALL_ROOT}${BINDIR}" 2>&-
 else
 # redo prebinding
-	cd ${INSTALL_ROOT}; \
+	cd ${INSTALL_ROOT}/; \
 	if [ ! -d usr/lib ]; then mkdir -p usr; ln -fs /usr/lib usr/; RM_USRLIB=1; fi; \
 	if [ ! -d System ]; then ln -fs /System .; RM_SYSTEM=1; fi; \
 	redo_prebinding -r . "./${BINDIR}/${TCLSH}"; \
 	if [ -n "$${RM_USRLIB:-}" ]; then rm -f usr/lib; rmdir -p usr 2>&-; fi; \
 	if [ -n "$${RM_SYSTEM:-}" ]; then rm -f System; fi
 # install tclsh symbolic link
-	mkdir -p ${INSTALL_ROOT}/usr/bin && \
-	ln -fs ${TCLSH} ${INSTALL_ROOT}/${BINDIR}/tclsh
+	ln -fs ${TCLSH} ${INSTALL_ROOT}${BINDIR}/tclsh
 ifeq (${BUILD_STYLE},Deployment)
 ifneq (${INSTALL_MANPAGES},)
 # install manpages
