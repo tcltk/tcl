@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.67 2004/08/25 01:11:04 dgp Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.68 2004/09/27 14:31:18 kennykb Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -175,12 +175,7 @@ EXTERN int		TclFormatInt _ANSI_ARGS_((char * buffer, long n));
 EXTERN void		TclFreePackageInfo _ANSI_ARGS_((Interp * iPtr));
 #endif
 /* Slot 26 is reserved */
-#ifndef TclGetDate_TCL_DECLARED
-#define TclGetDate_TCL_DECLARED
-/* 27 */
-EXTERN int		TclGetDate _ANSI_ARGS_((char * p, unsigned long now, 
-				long zone, unsigned long * timePtr));
-#endif
+/* Slot 27 is reserved */
 #ifndef TclpGetDefaultStdChannel_TCL_DECLARED
 #define TclpGetDefaultStdChannel_TCL_DECLARED
 /* 28 */
@@ -691,13 +686,7 @@ EXTERN int		TclpHasSockets _ANSI_ARGS_((Tcl_Interp * interp));
 EXTERN struct tm *	TclpGetDate _ANSI_ARGS_((CONST time_t * time, 
 				int useGMT));
 #endif
-#ifndef TclpStrftime_TCL_DECLARED
-#define TclpStrftime_TCL_DECLARED
-/* 134 */
-EXTERN size_t		TclpStrftime _ANSI_ARGS_((char * s, size_t maxsize, 
-				CONST char * format, CONST struct tm * t, 
-				int useGMT));
-#endif
+/* Slot 134 is reserved */
 /* Slot 135 is reserved */
 /* Slot 136 is reserved */
 /* Slot 137 is reserved */
@@ -1081,7 +1070,7 @@ typedef struct TclIntStubs {
     int (*tclFormatInt) _ANSI_ARGS_((char * buffer, long n)); /* 24 */
     void (*tclFreePackageInfo) _ANSI_ARGS_((Interp * iPtr)); /* 25 */
     void *reserved26;
-    int (*tclGetDate) _ANSI_ARGS_((char * p, unsigned long now, long zone, unsigned long * timePtr)); /* 27 */
+    void *reserved27;
     Tcl_Channel (*tclpGetDefaultStdChannel) _ANSI_ARGS_((int type)); /* 28 */
     void *reserved29;
     void *reserved30;
@@ -1193,7 +1182,7 @@ typedef struct TclIntStubs {
     void (*tcl_SetNamespaceResolvers) _ANSI_ARGS_((Tcl_Namespace * namespacePtr, Tcl_ResolveCmdProc * cmdProc, Tcl_ResolveVarProc * varProc, Tcl_ResolveCompiledVarProc * compiledVarProc)); /* 131 */
     int (*tclpHasSockets) _ANSI_ARGS_((Tcl_Interp * interp)); /* 132 */
     struct tm * (*tclpGetDate) _ANSI_ARGS_((CONST time_t * time, int useGMT)); /* 133 */
-    size_t (*tclpStrftime) _ANSI_ARGS_((char * s, size_t maxsize, CONST char * format, CONST struct tm * t, int useGMT)); /* 134 */
+    void *reserved134;
     void *reserved135;
     void *reserved136;
     void *reserved137;
@@ -1367,10 +1356,7 @@ extern TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclFreePackageInfo) /* 25 */
 #endif
 /* Slot 26 is reserved */
-#ifndef TclGetDate
-#define TclGetDate \
-	(tclIntStubsPtr->tclGetDate) /* 27 */
-#endif
+/* Slot 27 is reserved */
 #ifndef TclpGetDefaultStdChannel
 #define TclpGetDefaultStdChannel \
 	(tclIntStubsPtr->tclpGetDefaultStdChannel) /* 28 */
@@ -1716,10 +1702,7 @@ extern TclIntStubs *tclIntStubsPtr;
 #define TclpGetDate \
 	(tclIntStubsPtr->tclpGetDate) /* 133 */
 #endif
-#ifndef TclpStrftime
-#define TclpStrftime \
-	(tclIntStubsPtr->tclpStrftime) /* 134 */
-#endif
+/* Slot 134 is reserved */
 /* Slot 135 is reserved */
 /* Slot 136 is reserved */
 /* Slot 137 is reserved */

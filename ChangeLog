@@ -1,3 +1,35 @@
+2004-09-27  Kevin Kenny  <kennykb@acm.org>
+
+	* compat/strftime.c (Removed):
+	* generic/tclClock.c (removed TclClockOldscanObjCmd):
+	* generic/tclDate.c (Regenerated):
+	* generic/tclGetDate.y:
+	* generic/tclInt.decls (removed TclGetDate and TclpStrftime):
+	* generic/tclInt.h (removed TclGetDateInfo):
+	* generic/tclIntDecls.h (Regenerated):
+	* generic/tclStubInit.c (Regenerated):
+	* library/clock.tcl: 
+	* unix/tclUnixTime.c (removed TclpStrftime):
+	* win/Makefile.in:
+	* win/makefile.bc:
+	* win/makefile.bc:
+	* win/tcl.dsp:
+	Continued refactoring of [clock] for TIP 173 changes.
+	Broke the free-form parser apart so that the Bison parser
+	is responsible for only parsing, while clock.tcl handles
+	relative times like "next Thursday", "next January".  This
+	change is needed to make timezones other than :localtime
+	and :Etc/UTC work with free-form scanning. This change closes
+	out the issue identified as being "for another day" in
+	my log message of 2004-09-08.  The refactored code also
+	eliminates the last known references to TclpStrftime and
+	TclGetDate, so those routines (including compat/strftime.c)
+	have been removed.  The refactoring also has the benefit
+	that all storage in the Bison parser is now on the C stack,
+	eliminating any need for mutex protection around [clock scan].
+	Also, changed the Makefiles so that 'make gendate' is
+	available on Windows as well as Unix.
+	
 2004-09-27  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* doc/FileSystem.3: fix to small typo.

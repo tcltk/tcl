@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.174 2004/09/26 16:36:04 msofer Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.175 2004/09/27 14:31:18 kennykb Exp $
  */
 
 #ifndef _TCLINT
@@ -2553,41 +2553,6 @@ EXTERN void	TclDbInitNewObj _ANSI_ARGS_((Tcl_Obj *objPtr));
 
 # undef TCL_STORAGE_CLASS
 # define TCL_STORAGE_CLASS DLLIMPORT
-
-/*
- * Data structure used to hold information returned from TclGetDate
- */
-
-typedef struct TclGetDateInfo {
-
-    time_t   dateYear;
-    time_t   dateMonth;
-    time_t   dateDay;
-    int      dateHaveDate;
-
-    time_t   dateHour;
-    time_t   dateMinutes;
-    time_t   dateSeconds;
-    int      dateMeridian;
-    int      dateHaveTime;
-
-    time_t   dateTimezone;
-    int      dateDSTmode;
-    int      dateHaveZone;
-
-    time_t   dateRelMonth;
-    time_t   dateRelDay;
-    time_t   dateRelSeconds;
-    int      dateHaveRel;
-
-    time_t   dateMonthOrdinal;
-    int      dateHaveOrdinalMonth;
-
-    time_t   dateDayOrdinal;
-    time_t   dateDayNumber;
-    int      dateHaveDay;
-
-} TclGetDateInfo;
 
 #endif /* _TCLINT */
 
