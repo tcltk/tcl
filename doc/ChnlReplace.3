@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: ChnlReplace.3,v 1.1 1999/06/25 23:29:25 welch Exp $
+'\" RCS: @(#) $Id: ChnlReplace.3,v 1.2 1999/06/25 23:46:59 welch Exp $
 .so man.macros
 .TH Tcl_ReplaceChannel 3 8.2 Tcl "Tcl Library Procedures"
 .BS
@@ -16,7 +16,7 @@ Tcl_ReplaceChannel, Tcl_UndoReplaceChannel \- stack an I/O channel on top of ano
 .nf
 \fB#include <tcl.h>\fR
 .sp
-void
+Tcl_Channel
 \fBTcl_ReplaceChannel\fR(\fIinterp, typePtr, clientData, mask, channel\fR)
 .sp
 void
@@ -44,6 +44,7 @@ These functions are for use by extensions that add processing
 layers on top of Tcl I/O channels.  Examples include compression
 and encryption modules.  These functions transparently stack and unstack
 a new channel on top of an existing one.
+Any number of channels can be stacked together.
 .PP
 \fBTcl_ReplaceChannel\fR
 interposes a new channel type on an existing \fIchannel\fP.
@@ -54,17 +55,15 @@ the new \fIclientData\fP instead of the existing client data
 for \fIchannel\fP.
 A new channel structure is created under the same name that
 exists for \fIchannel\fP, and the existing Tcl_Channel data structure
-is linked using the chanPtr->supercedes structure member.
-The new channel 
+is linked using the channelPtr->supercedes structure member.
+The new channel functions
 should use Tcl_Read and Tcl_Write to get at the underlying channel.
 Closing the new channel closes the channels stacked below it.
-Any number of channels can be stacked together using \fBTcl_ReplaceChannel\fR.
 .PP
 The set of operations allowed on the new channel can be restricted
 by the new channel type. For example, a read-write channel may become
 read-only after the \fBTcl_ReplaceChannel\fR
 call.
-
 .PP
 \fBTcl_UndoReplaceChannel\fP restores the channel to its original state.
 
