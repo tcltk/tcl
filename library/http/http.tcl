@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and
 # redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: http.tcl,v 1.49 2005/01/06 11:15:21 dkf Exp $
+# RCS: @(#) $Id: http.tcl,v 1.50 2005/01/06 15:15:42 dkf Exp $
 
 # Rough version history:
 # 1.0	Old http_get interface
@@ -41,7 +41,7 @@ namespace eval http {
     proc init {} {
 	# Set up the map for quoting chars
 	# The spec says: "non-alphanumeric characters are replaced by '%HH'"
-	for {set i 0} {$i <= 256} {incr i} {
+	for {set i 0} {$i < 256} {incr i} {
 	    set c [format %c $i]
 	    if {![string match {[a-zA-Z0-9]} $c]} {
 		set map($c) %[format %.2x $i]
@@ -896,8 +896,16 @@ proc http::mapReply {string} {
 
     if {$http(-urlencoding) ne ""} {
 	set string [encoding convertto $http(-urlencoding) $string]
+	return [string map $formMap $string]
     }
-    return [string map $formMap $string]
+    set converted [string map $formMap $string]
+    if {[string match "*\[\u0100-\uffff\]*" $converted]} {
+	regexp {[\u0100-\uffff]} $converted badChar
+	# Return this error message for maximum compatability... :^/
+	return -code error \
+	    "can't read \"formMap($badChar)\": no such element in array"
+    }
+    return $converted
 }
 
 # http::ProxyRequired --
