@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.94 2002/02/15 14:28:50 dkf Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.95 2002/03/04 23:25:43 hobbs Exp $
 
 VERSION 		= @TCL_VERSION@
 
@@ -1188,7 +1188,8 @@ dist: $(UNIX_DIR)/configure mklinks
 	cp -p $(GENERIC_DIR)/README $(DISTDIR)/generic
 	cp -p $(GENERIC_DIR)/tclGetDate.y $(DISTDIR)/generic
 	cp -p $(TOP_DIR)/changes $(TOP_DIR)/ChangeLog $(TOP_DIR)/README* \
-		$(TOP_DIR)/license.terms $(DISTDIR)
+		$(TOP_DIR)/ChangeLog.[12]??? $(TOP_DIR)/license.terms \
+		$(DISTDIR)
 	mkdir $(DISTDIR)/library
 	cp -p $(TOP_DIR)/license.terms $(TOP_DIR)/library/*.tcl \
 		$(TOP_DIR)/library/tclIndex $(DISTDIR)/library
