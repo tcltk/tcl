@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: genStubs.tcl,v 1.12 2002/08/31 06:09:46 das Exp $
+# RCS: @(#) $Id: genStubs.tcl,v 1.13 2002/10/04 08:25:14 dkf Exp $
 
 package require Tcl 8
 
@@ -175,7 +175,7 @@ proc genStubs::declare {args} {
 #	None.
 
 proc genStubs::rewriteFile {file text} {
-    if {![file exist $file]} {
+    if {![file exists $file]} {
 	puts stderr "Cannot find file: $file"
 	return
     }

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fCmd.test,v 1.24 2002/08/16 13:58:39 dkf Exp $
+# RCS: @(#) $Id: fCmd.test,v 1.25 2002/10/04 08:25:14 dkf Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -274,9 +274,9 @@ test fCmd-4.7 {TclFileMakeDirsCmd: multi levels deep} {notRoot} {
 test fCmd-4.8 {TclFileMakeDirsCmd: already exist: lstat(target) == 0} {notRoot} {
     cleanup
     file mkdir td1
-    set x [file exist td1]
+    set x [file exists td1]
     file mkdir td1
-    list $x [file exist td1]
+    list $x [file exists td1]
 } {1 1}
 test fCmd-4.9 {TclFileMakeDirsCmd: exists, not dir} {notRoot} {
     cleanup
@@ -286,9 +286,9 @@ test fCmd-4.9 {TclFileMakeDirsCmd: exists, not dir} {notRoot} {
 test fCmd-4.10 {TclFileMakeDirsCmd: exists, is dir} {notRoot} {
     cleanup
     file mkdir td1
-    set x [file exist td1]
+    set x [file exists td1]
     file mkdir td1
-    list $x [file exist td1]
+    list $x [file exists td1]
 } {1 1}
 test fCmd-4.11 {TclFileMakeDirsCmd: doesn't exist: errno != ENOENT} \
 	{unixOnly notRoot testchmod} {
@@ -305,9 +305,9 @@ test fCmd-4.12 {TclFileMakeDirsCmd: doesn't exist: errno != ENOENT} {macOnly} {
 } {1 {can't create directory "nonexistentvolume:": invalid argument}}
 test fCmd-4.13 {TclFileMakeDirsCmd: doesn't exist: errno == ENOENT} {notRoot} {
     cleanup
-    set x [file exist td1]
+    set x [file exists td1]
     file mkdir td1
-    list $x [file exist td1]
+    list $x [file exists td1]
 } {0 1}
 test fCmd-4.14 {TclFileMakeDirsCmd: TclpCreateDirectory fails} \
 	{unixOnly notRoot} {
@@ -347,9 +347,9 @@ test fCmd-5.4 {TclFileDeleteCmd: multiple files} {notRoot} {
     createfile tf1
     createfile tf2
     file mkdir td1
-    set x [list [file exist tf1] [file exist tf2] [file exist td1]]
+    set x [list [file exists tf1] [file exists tf2] [file exists td1]]
     file delete tf1 td1 tf2
-    lappend x [file exist tf1] [file exist tf2] [file exist tf3]
+    lappend x [file exists tf1] [file exists tf2] [file exists tf3]
 } {1 1 1 0 0 0}
 test fCmd-5.5 {TclFileDeleteCmd: stop at first error} {notRoot unixOrPc} {
     cleanup
@@ -357,7 +357,7 @@ test fCmd-5.5 {TclFileDeleteCmd: stop at first error} {notRoot unixOrPc} {
     createfile tf2
     file mkdir td1
     catch {file delete tf1 td1 $root tf2}
-    list [file exist tf1] [file exist tf2] [file exist td1]
+    list [file exists tf1] [file exists tf2] [file exists td1]
 } {0 1 0}
 test fCmd-5.6 {TclFileDeleteCmd: Tcl_TranslateFileName fails} {notRoot} {
     list [catch {file delete ~_totally_bogus_user} msg] $msg
@@ -369,15 +369,15 @@ test fCmd-5.7 {TclFileDeleteCmd: Tcl_TranslateFileName succeeds} {notRoot} {
 } {}
 test fCmd-5.8 {TclFileDeleteCmd: file doesn't exist: lstat(name) != 0} {notRoot} {
     cleanup
-    set x [file exist tf1]
+    set x [file exists tf1]
     file delete tf1
-    list $x [file exist tf1]
+    list $x [file exists tf1]
 } {0 0}    
 test fCmd-5.9 {TclFileDeleteCmd: is directory} {notRoot} {
     cleanup
     file mkdir td1
     file delete td1
-    file exist td1
+    file exists td1
 } {0}
 test fCmd-5.10 {TclFileDeleteCmd: TclpRemoveDirectory fails} {notRoot} {
     cleanup
