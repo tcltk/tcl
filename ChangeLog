@@ -1,4 +1,11 @@
+2002-05-20  Daniel Steffen  <das@users.sourceforge.net>
+
+	* generic/tclInt.h: added prototype for TclpFilesystemPathType().
+	* mac/tclMacChan.c: use MSL provided creator type if available
+	instead of the default 'MPW '.
+
 2002-05-16  Joe English  <jenglish@users.sf.net>
+
 	* doc/CrtObjCmd.3: 
 	Added Tcl_GetCommandFromObj, Tcl_GetCommandFullName
 	(Tcl Bug #547987, #414921)
