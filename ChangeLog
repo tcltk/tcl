@@ -1,3 +1,8 @@
+2001-04-05  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
+
+	* doc/Macintosh.3: Removed duplicates from .SH line
+	  [Bug #413983]. 
+
 2001-04-05  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* generic/tclCmdMZ.c (Tcl_StringObjCmd): Fixed so will compile
