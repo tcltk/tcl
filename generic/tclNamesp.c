@@ -21,7 +21,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.68 2004/12/10 00:16:55 dkf Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.69 2004/12/11 14:41:47 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -196,9 +196,6 @@ static char *		EstablishErrorInfoTraces _ANSI_ARGS_((
 			    ClientData clientData, Tcl_Interp *interp,
 			    CONST char *name1, CONST char *name2, int flags));
 static void		FreeNsNameInternalRep _ANSI_ARGS_((Tcl_Obj *objPtr));
-static int		GetNamespaceFromObj _ANSI_ARGS_((
-			    Tcl_Interp *interp, Tcl_Obj *objPtr,
-			    Tcl_Namespace **nsPtrPtr));
 static int		InvokeImportedCmd _ANSI_ARGS_((
 			    ClientData clientData, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *CONST objv[]));
@@ -2592,7 +2589,7 @@ TclResetShadowedCmdRefs(interp, newCmdPtr)
 /*
  *----------------------------------------------------------------------
  *
- * GetNamespaceFromObj --
+ * TclGetNamespaceFromObj --
  *
  *	Gets the namespace specified by the name in a Tcl_Obj.
  *
@@ -2614,8 +2611,8 @@ TclResetShadowedCmdRefs(interp, newCmdPtr)
  *----------------------------------------------------------------------
  */
 
-static int
-GetNamespaceFromObj(interp, objPtr, nsPtrPtr)
+int
+TclGetNamespaceFromObj(interp, objPtr, nsPtrPtr)
     Tcl_Interp *interp;		/* The current interpreter. */
     Tcl_Obj *objPtr;		/* The object to be resolved as the name
 				 * of a namespace. */
@@ -2868,7 +2865,7 @@ NamespaceChildrenCmd(dummy, interp, objc, objv)
     if (objc == 2) {
 	nsPtr = (Namespace *) Tcl_GetCurrentNamespace(interp);
     } else if ((objc == 3) || (objc == 4)) {
-	if (GetNamespaceFromObj(interp, objv[2], &namespacePtr) != TCL_OK) {
+	if (TclGetNamespaceFromObj(interp, objv[2], &namespacePtr) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (namespacePtr == NULL) {
@@ -3200,7 +3197,7 @@ NamespaceEvalCmd(dummy, interp, objc, objv)
      * namespace object along the way.
      */
 
-    result = GetNamespaceFromObj(interp, objv[2], &namespacePtr);
+    result = TclGetNamespaceFromObj(interp, objv[2], &namespacePtr);
     if (result != TCL_OK) {
 	return result;
     }
@@ -3306,7 +3303,7 @@ NamespaceExistsCmd(dummy, interp, objc, objv)
      * Check whether the given namespace exists
      */
 
-    if (GetNamespaceFromObj(interp, objv[2], &namespacePtr) != TCL_OK) {
+    if (TclGetNamespaceFromObj(interp, objv[2], &namespacePtr) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -3611,7 +3608,7 @@ NamespaceInscopeCmd(dummy, interp, objc, objv)
      * Resolve the namespace reference.
      */
 
-    result = GetNamespaceFromObj(interp, objv[2], &namespacePtr);
+    result = TclGetNamespaceFromObj(interp, objv[2], &namespacePtr);
     if (result != TCL_OK) {
 	return result;
     }
@@ -3783,7 +3780,7 @@ NamespaceParentCmd(dummy, interp, objc, objv)
     if (objc == 2) {
 	nsPtr = Tcl_GetCurrentNamespace(interp);
     } else if (objc == 3) {
-	result = GetNamespaceFromObj(interp, objv[2], &nsPtr);
+	result = TclGetNamespaceFromObj(interp, objv[2], &nsPtr);
 	if (result != TCL_OK) {
 	    return result;
 	}
