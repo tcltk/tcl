@@ -459,7 +459,6 @@ test filesystem-8.2 {relative path objects and use of pwd} {
     cd ..
     removeFile [file join abc foo]
     removeDirectory abc
-    removeDirectory def
     cd $origdir
     set res
 } {1}
