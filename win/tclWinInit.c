@@ -7,7 +7,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclWinInit.c,v 1.18 1999/07/21 02:01:37 hershey Exp $
+ * RCS: @(#) $Id: tclWinInit.c,v 1.19 1999/07/21 23:28:05 hershey Exp $
  */
 
 #include "tclWinInt.h"
@@ -532,7 +532,8 @@ TclpSetInitialEncodings()
  *	None.
  *
  * Side effects:
- *	Sets "tcl_platform" and "env(HOME)" Tcl variables.
+ *	Sets "tclDefaultLibrary", "tcl_platform", and "env(HOME)" Tcl
+ *	variables.
  *
  *----------------------------------------------------------------------
  */
@@ -561,6 +562,12 @@ TclpSetVariables(interp)
     } else {
 	GetSystemInfo(&sysInfo);
     }
+
+    /*
+     * Initialize the tclDefaultLibrary variable from the registry.
+     */
+
+    Tcl_SetVar(interp, "tclDefaultLibrary", "", TCL_GLOBAL_ONLY);
 
     /*
      * Define the tcl_platform array.
