@@ -1,4 +1,4 @@
-Tcl 8.1 for Macintosh
+Tcl 8.2 for Macintosh
 
 by Ray Johnson
 Scriptics Corporation
@@ -8,7 +8,7 @@ Jim Ingham
 Cygnus Solutions
 jingham@cygnus.com
 
-RCS: @(#) $Id: README,v 1.7 1999/04/24 01:46:53 stanton Exp $
+RCS: @(#) $Id: README,v 1.8 1999/06/25 23:29:53 welch Exp $
 
 1. Introduction
 ---------------
@@ -18,7 +18,7 @@ scripting language.  The home page for the Macintosh releases is
 	http://www.scriptics.com/mac/
 
 A summary of what's new in this release is at
-	http://www.scriptics.com/software/whatsnew81.html
+	http://www.scriptics.com/software/whatsnew82.html
 
 A summary of Macintosh-specific features is at
 	http://www.scriptics.com/mac/features.html
@@ -31,7 +31,7 @@ Macintosh Tcl is distributed in three different forms.  This
 should make it easier to only download what you need.  The 
 packages are as follows:
 
-mactk8.1.sea.hqx
+mactk8.2.sea.hqx
 
     This distribution is a "binary" only release.  It contains an
     installer program that will install a 68k, PowerPC, or Fat
@@ -39,15 +39,15 @@ mactk8.1.sea.hqx
     it installs the Tcl & Tk libraries in the Extensions folder inside
     your System Folder.
 
-mactcltk-full-8.1.sea.hqx
+mactcltk-full-8.2.sea.hqx
 
     This release contains the full release of Tcl and Tk for the
     Macintosh plus the More Files packages which Macintosh Tcl and Tk
     rely on.
 
-mactcl-source-8.1.sea.hqx
+mactcl-source-8.2.sea.hqx
 
-    This release contains the complete source for Tcl 8.1.  In
+    This release contains the complete source for Tcl 8.2.  In
     addition, Metrowerks CodeWarrior libraries and project files
     are included.  However, you must already have the More Files
     package to compile this code.
@@ -55,7 +55,7 @@ mactcl-source-8.1.sea.hqx
 The "html" subdirectory contains reference documentation in
 in the HTML format.  You may also find these pages at:
 
-	http://www.scriptics.com/man/tcl8.1/contents.html
+	http://www.scriptics.com/man/tcl8.2/contents.html
 
 3. Compiling Tcl
 ----------------

@@ -1,9 +1,9 @@
 README:  Tcl
-    This is the Tcl 8.1.1 source distribution.
+    This is the Tcl 8.2b1 source distribution.
     You can get this release from:
-        http://www.scriptics.com/registration/8.1.1.tml
+        http://www.scriptics.com/registration/8.2b1.tml
 
-RCS: @(#) $Id: README,v 1.19 1999/04/30 23:35:40 stanton Exp $
+RCS: @(#) $Id: README,v 1.20 1999/06/25 23:29:45 welch Exp $
 
 Contents
 --------
@@ -44,13 +44,13 @@ and selling it either in whole or in part.  See the file
 
 Extensive documentation is available at our website.  The
 home page for this release is
-    http://www.scriptics.com/software/8.1.html
+    http://www.scriptics.com/software/8.2.html
 
-Information about new features in 8.1 can be found at
-    http://www.scriptics.com/software/whatsnew81.html
+Information about new features in 8.2 can be found at
+    http://www.scriptics.com/software/whatsnew82.html
 
 Detailed release notes can be found at
-    http://www.scriptics.com/software/relnotes/tcl8.1.1
+    http://www.scriptics.com/software/relnotes/tcl8.2b1
 
 Information about Tcl itself can be found at
     http://www.scriptics.com/scripting/
@@ -81,7 +81,7 @@ using the normal "man" mechanisms, such as
 2b. Windows Documentation
 -------------------------
 
-The "doc/help" subdirectory in this release contains a complete set of
+The "doc" subdirectory in this release contains a complete set of
 Windows help files for Tcl.  Once you install this Tcl release, a
 shortcut to the Windows help Tcl documentation will appear in the
 "Start" menu:

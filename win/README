@@ -1,10 +1,10 @@
-Tcl 8.1 for Windows
+Tcl 8.2 for Windows
 
 by Scott Stanton
 Scriptics Corporation
 scott.stanton@scriptics.com
 
-RCS: @(#) $Id: README,v 1.11 1999/04/24 01:46:54 stanton Exp $
+RCS: @(#) $Id: README,v 1.12 1999/06/25 23:29:55 welch Exp $
 
 1. Introduction
 ---------------
@@ -39,18 +39,18 @@ find them.  Tcl looks in one of three places for the library files:
 
 	1) The path specified in the environment variable "TCL_LIBRARY".
 
-	2) In the lib\tcl8.1 directory under the installation directory
+	2) In the lib\tcl8.2 directory under the installation directory
 	   as specified in the registry:
 
-		HKEY_LOCAL_MACHINE\SOFTWARE\Scriptics\Tcl\8.1
+		HKEY_LOCAL_MACHINE\SOFTWARE\Scriptics\Tcl\8.2
 
 	3) Relative to the directory containing the current .exe.
 	    Tcl will look for a directory "..\lib\tcl8.1" relative to the
 	    directory containing the currently running .exe.
 
-Note that in order to run tclsh81.exe, you must ensure that tcl81.dll
-and tclpip81.dll are on your path, in the system directory, or in the 
-directory containing tclsh81.exe.
+Note that in order to run tclsh82.exe, you must ensure that tcl82.dll
+and tclpip82.dll are on your path, in the system directory, or in the 
+directory containing tclsh82.exe.
 
 Note: Tcl no longer provides support for Win32s.
 
