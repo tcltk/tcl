@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.103 2004/05/25 08:37:31 dkf Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.104 2004/05/30 12:18:25 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -989,7 +989,7 @@ DeleteInterpProc(interp)
      * this interpreter.
      */
 
-    TclDecommissionLimitCallbacks(interp);
+    TclRemoveScriptLimitCallbacks(interp);
     TclLimitRemoveAllHandlers(interp);
 
     /*
