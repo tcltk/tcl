@@ -6,7 +6,7 @@
 # Copyright (c) 2000 by Ajuba Solutions
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest2.test,v 1.2 2000/09/29 22:48:34 jenn Exp $
+# RCS: @(#) $Id: tcltest2.test,v 1.3 2000/10/19 18:01:00 jenn Exp $
 
 set tcltestVersion [package require tcltest]
 namespace import -force ::tcltest::*
@@ -28,6 +28,9 @@ makeFile {
 	list 1
     } {0}
     test c-1.0 {test c} {knownBug} {
+    } {}
+    test d-1.0 {test d} {
+	error "foo" foo 9
     } {}
     ::tcltest::cleanupTests
     exit
@@ -53,43 +56,60 @@ test tcltest-2.0 {tcltest (verbose default - 'b')} {unixOrPc} {
     set result [catch {exec $::tcltest::tcltest test.tcl} msg]
     list $result [regexp "Contents of test case" $msg] [regexp a-1.0 $msg] \
 	    [regexp c-1.0 $msg] \
-	    [regexp "Total.+3.+Passed.+1.+Skipped.+1.+Failed.+1" $msg]
+	    [regexp "Total.+4.+Passed.+1.+Skipped.+1.+Failed.+2" $msg]
 } {0 1 0 0 1}
 test tcltest-2.1 {tcltest -verbose 'b'} {unixOrPc} {
     set result [catch {exec $::tcltest::tcltest test.tcl -verbose 'b'} msg]
     list $result [regexp "Contents of test case" $msg] [regexp a-1.0 $msg] \
 	    [regexp c-1.0 $msg] \
-	    [regexp "Total.+3.+Passed.+1.+Skipped.+1.+Failed.+1" $msg]
+	    [regexp "Total.+4.+Passed.+1.+Skipped.+1.+Failed.+2" $msg]
 } {0 1 0 0 1}
 test tcltest-2.2 {tcltest -verbose 'p'} {unixOrPc} {
     set result [catch {exec $::tcltest::tcltest test.tcl -verbose 'p'} msg]
     list $result [regexp "Contents of test case" $msg] [regexp a-1.0 $msg] \
 	    [regexp c-1.0 $msg] \
-	    [regexp "Total.+3.+Passed.+1.+Skipped.+1.+Failed.+1" $msg]
+	    [regexp "Total.+4.+Passed.+1.+Skipped.+1.+Failed.+2" $msg]
 } {0 0 1 0 1}
 test tcltest-2.3 {tcltest -verbose 's'} {unixOrPc} {
     set result [catch {exec $::tcltest::tcltest test.tcl -verbose 's'} msg]
     list $result [regexp "Contents of test case" $msg] [regexp a-1.0 $msg] \
 	    [regexp c-1.0 $msg] \
-	    [regexp "Total.+3.+Passed.+1.+Skipped.+1.+Failed.+1" $msg]
+	    [regexp "Total.+4.+Passed.+1.+Skipped.+1.+Failed.+2" $msg]
 } {0 0 0 1 1}
 test tcltest-2.4 {tcltest -verbose 'ps'} {unixOrPc} {
     set result [catch {exec $::tcltest::tcltest test.tcl -verbose 'ps'} msg]
     list $result [regexp "Contents of test case" $msg] [regexp a-1.0 $msg] \
 	    [regexp c-1.0 $msg] \
-	    [regexp "Total.+3.+Passed.+1.+Skipped.+1.+Failed.+1" $msg]
+	    [regexp "Total.+4.+Passed.+1.+Skipped.+1.+Failed.+2" $msg]
 } {0 0 1 1 1}
 test tcltest-2.5 {tcltest -verbose 'psb'} {unixOrPc} {
     set result [catch {exec $::tcltest::tcltest test.tcl -verbose 'psb'} msg]
     list $result [regexp "Contents of test case" $msg] [regexp a-1.0 $msg] \
 	    [regexp c-1.0 $msg] \
-	    [regexp "Total.+3.+Passed.+1.+Skipped.+1.+Failed.+1" $msg]
+	    [regexp "Total.+4.+Passed.+1.+Skipped.+1.+Failed.+2" $msg]
+} {0 1 1 1 1}
+
+test tcltest-2.5a {tcltest -verbose 'pass skip body'} {unixOrPc} {
+    set result [catch {exec $::tcltest::tcltest test.tcl -verbose "pass skip body"} msg]
+    list $result [regexp "Contents of test case" $msg] [regexp a-1.0 $msg] \
+	    [regexp c-1.0 $msg] \
+	    [regexp "Total.+4.+Passed.+1.+Skipped.+1.+Failed.+2" $msg]
 } {0 1 1 1 1}
 
 test tcltest-2.6 {tcltest -verbose 't'}  {
     -constraints {unixOrPc} 
     -body {
 	set result [catch {exec $::tcltest::tcltest test.tcl -verbose 't'} msg]
+	list $result $msg
+    }
+    -result {^0 .*a-1.0 start.*b-1.0 start}
+    -match regexp
+}
+
+test tcltest-2.6a {tcltest -verbose 'start'}  {
+    -constraints {unixOrPc} 
+    -body {
+	set result [catch {exec $::tcltest::tcltest test.tcl -verbose start} msg]
 	list $result $msg
     }
     -result {^0 .*a-1.0 start.*b-1.0 start}
@@ -104,31 +124,40 @@ test tcltest-2.7 {tcltest::verbose}  {
 	tcltest::verbose foo
 	set newVerbosity [tcltest::verbose]
 	tcltest::verbose $oldVerbosity
-	list $currentVerbosity $newVerbosity
+	list $currentVerbosity $newVerbosity 
     }
-    -result {bar foo}
+    -result {{body a r} {f o o}}
 }
 
+test tcltest-2.8 {tcltest -verbose 'error'} {
+    -constraints {unixOrPc}
+    -body {
+	set result [catch {exec $::tcltest::tcltest test.tcl -verbose error} msg]
+	list $result $msg
+    }
+    -result {errorInfo: foo.*errorCode: 9}
+    -match regexp
+}
 # -match, tcltest::match
 test tcltest-3.1 {tcltest -match 'a*'} {unixOrPc} {
     set result [catch {exec $::tcltest::tcltest test.tcl -match a* -verbose 'ps'} msg]
     list $result [regexp a-1.0 $msg] [regexp b-1.0 $msg] [regexp c-1.0 $msg] \
-	    [regexp "Total.+3.+Passed.+1.+Skipped.+2.+Failed.+0" $msg]
+	    [regexp "Total.+4.+Passed.+1.+Skipped.+3.+Failed.+0" $msg]
 } {0 1 0 0 1}
 test tcltest-3.2 {tcltest -match 'b*'} {unixOrPc} {
     set result [catch {exec $::tcltest::tcltest test.tcl -match b* -verbose 'ps'} msg]
     list $result [regexp a-1.0 $msg] [regexp b-1.0 $msg] [regexp c-1.0 $msg] \
-	    [regexp "Total.+3.+Passed.+0.+Skipped.+2.+Failed.+1" $msg]
+	    [regexp "Total.+4.+Passed.+0.+Skipped.+3.+Failed.+1" $msg]
 } {0 0 1 0 1}
 test tcltest-3.3 {tcltest -match 'c*'} {unixOrPc} {
     set result [catch {exec $::tcltest::tcltest test.tcl -match c* -verbose 'ps'} msg]
     list $result [regexp a-1.0 $msg] [regexp b-1.0 $msg] [regexp c-1.0 $msg] \
-	    [regexp "Total.+3.+Passed.+0.+Skipped.+3.+Failed.+0" $msg]
+	    [regexp "Total.+4.+Passed.+0.+Skipped.+4.+Failed.+0" $msg]
 } {0 0 0 1 1}
 test tcltest-3.4 {tcltest -match 'a* b*'} {unixOrPc} {
     set result [catch {exec $::tcltest::tcltest test.tcl -match {a* b*} -verbose 'ps'} msg]
     list $result [regexp a-1.0 $msg] [regexp b-1.0 $msg] [regexp c-1.0 $msg] \
-	    [regexp "Total.+3.+Passed.+1.+Skipped.+1.+Failed.+1" $msg]
+	    [regexp "Total.+4.+Passed.+1.+Skipped.+2.+Failed.+1" $msg]
 } {0 1 1 0 1}
 
 test tcltest-3.5 {tcltest::match}  {
@@ -148,27 +177,27 @@ test tcltest-3.5 {tcltest::match}  {
 test tcltest-4.1 {tcltest -skip 'a*'} {unixOrPc} {
     set result [catch {exec $::tcltest::tcltest test.tcl -skip a* -verbose 'ps'} msg]
     list $result [regexp a-1.0 $msg] [regexp b-1.0 $msg] [regexp c-1.0 $msg] \
-	    [regexp "Total.+3.+Passed.+0.+Skipped.+2.+Failed.+1" $msg]
+	    [regexp "Total.+4.+Passed.+0.+Skipped.+2.+Failed.+1" $msg]
 } {0 0 1 1 1}
 test tcltest-4.2 {tcltest -skip 'b*'} {unixOrPc} {
     set result [catch {exec $::tcltest::tcltest test.tcl -skip b* -verbose 'ps'} msg]
     list $result [regexp a-1.0 $msg] [regexp b-1.0 $msg] [regexp c-1.0 $msg] \
-	    [regexp "Total.+3.+Passed.+1.+Skipped.+2.+Failed.+0" $msg]
+	    [regexp "Total.+4.+Passed.+1.+Skipped.+2.+Failed.+1" $msg]
 } {0 1 0 1 1}
 test tcltest-4.3 {tcltest -skip 'c*'} {unixOrPc} {
     set result [catch {exec $::tcltest::tcltest test.tcl -skip c* -verbose 'ps'} msg]
     list $result [regexp a-1.0 $msg] [regexp b-1.0 $msg] [regexp c-1.0 $msg] \
-	    [regexp "Total.+3.+Passed.+1.+Skipped.+1.+Failed.+1" $msg]
+	    [regexp "Total.+4.+Passed.+1.+Skipped.+1.+Failed.+2" $msg]
 } {0 1 1 0 1}
 test tcltest-4.4 {tcltest -skip 'a* b*'} {unixOrPc} {
     set result [catch {exec $::tcltest::tcltest test.tcl -skip {a* b*} -verbose 'ps'} msg]
     list $result [regexp a-1.0 $msg] [regexp b-1.0 $msg] [regexp c-1.0 $msg] \
-	    [regexp "Total.+3.+Passed.+0.+Skipped.+3.+Failed.+0" $msg]
+	    [regexp "Total.+4.+Passed.+0.+Skipped.+3.+Failed.+1" $msg]
 } {0 0 0 1 1}
 test tcltest-4.5 {tcltest -match 'a* b*' -skip 'b*'} {unixOrPc} {
     set result [catch {exec $::tcltest::tcltest test.tcl -match {a* b*} -skip b* -verbose 'ps'} msg]
     list $result [regexp a-1.0 $msg] [regexp b-1.0 $msg] [regexp c-1.0 $msg] \
-	    [regexp "Total.+3.+Passed.+1.+Skipped.+2.+Failed.+0" $msg]
+	    [regexp "Total.+4.+Passed.+1.+Skipped.+3.+Failed.+0" $msg]
 } {0 1 0 0 1}
 
 test tcltest-4.6 {tcltest::skip} {
@@ -190,12 +219,12 @@ test tcltest-4.6 {tcltest::skip} {
 test tcltest-5.1 {tcltest -constraints 'knownBug'} {unixOrPc} {
     set result [catch {exec $::tcltest::tcltest test.tcl -constraints knownBug -verbose 'ps'} msg]
     list $result [regexp a-1.0 $msg] [regexp b-1.0 $msg] [regexp c-1.0 $msg] \
-	    [regexp "Total.+3.+Passed.+2.+Skipped.+0.+Failed.+1" $msg]
+	    [regexp "Total.+4.+Passed.+2.+Skipped.+0.+Failed.+2" $msg]
 } {0 1 1 1 1}
 test tcltest-5.2 {tcltest -constraints 'knownBug' -limitconstraints 1} {unixOrPc} {
     set result [catch {exec $::tcltest::tcltest test.tcl -constraints knownBug -verbose 'p' -limitconstraints 1} msg]
     list $result [regexp a-1.0 $msg] [regexp b-1.0 $msg] [regexp c-1.0 $msg] \
-	    [regexp "Total.+3.+Passed.+1.+Skipped.+2.+Failed.+0" $msg]
+	    [regexp "Total.+4.+Passed.+1.+Skipped.+3.+Failed.+0" $msg]
 } {0 0 0 1 1}
 
 test tcltest-5.3 {tcltest::testConstraint - constraint empty (tcltest::safeFetch)}  {
@@ -233,7 +262,7 @@ test tcltest-5.4 {tcltest::constraintsSpecified} {
 test tcltest-5.5 {tcltest::constraintList} {
     -constraints {!$tcltest::singleTestInterp}
     -body {
-	tcltest::constraintList
+	lsort [tcltest::constraintList]
     }
     -result {unixOrPc socket nonBlockFiles asyncPipeClose nt knownBug macOnly pc unixExecs nonPortable pcCrash unix notRoot macOrPc eformat macOrUnix 95 tempNotMac 98 mac macCrash tempNotPc stdio tempNotUnix root singleTestInterp unixCrash pcOnly interactive unixOnly hasIsoLocale userInteraction emptyTest}
 }
@@ -258,7 +287,7 @@ test tcltest-5.6 {tcltest::limitConstraints} {
 
 # -outfile, -errfile, tcltest::outputChannel, tcltest::outputFile,
 # tcltest::errorChannel, tcltest::errorFile
-makeFile {
+set printerror [makeFile {
     package require tcltest
     namespace import -force ::tcltest::*
     puts $::tcltest::outputChannel "a test"
@@ -271,12 +300,17 @@ makeFile {
 	    \"Really/Long/Path/that/contains/no/spaces/and/is/longer/than/eighty/characters/to/see/what/happens\"" 
     ::tcltest::PrintError "Problem renaming file: error renaming \"Z:/ws/tcl8.2/win32-ix86/tests/core\" to \"Z:/ws/tcl8.2/win32-ix86/tests/movecore-core\""
     exit
-} printerror.tcl
+} printerror.tcl]
 
-test tcltest-6.1 {tcltest -outfile, -errfile defaults} {unixOrPc} {
-    catch {exec $::tcltest::tcltest printerror.tcl} msg
-    list [regexp "a test" $msg] [regexp "a really" $msg]
-} {1 1}
+test tcltest-6.1 {tcltest -outfile, -errfile defaults} {
+    -constraints unixOrPc
+    -body {
+	catch {exec [tcltest::interpreter] $printerror} msg
+	return $msg
+    }
+    -result {a test.*a really}
+    -match regexp
+}
 test tcltest-6.2 {tcltest -outfile a.tmp} {unixOrPc} {
     catch {exec $::tcltest::tcltest printerror.tcl -outfile a.tmp} msg
     set result1 [catch {exec grep "a test" a.tmp}]
@@ -436,11 +470,17 @@ test tcltest-8.1 {tcltest a.tcl -tmpdir a} {unixOrPc} {
     list [file exists [file join thisdirectorydoesnotexist a.tmp]] \
 	    [file delete -force thisdirectorydoesnotexist] 
 } {1 {}}
-test tcltest-8.2 {tcltest a.tcl -tmpdir thisdirectoryisafile} {unixOrPc} {
-    catch {exec $::tcltest::tcltest a.tcl -tmpdir thisdirectoryisafile} msg
-    # The join is necessary because the message can be split on multiple lines
-    list [regexp "not a directory" [join $msg]]
-} {1}
+test tcltest-8.2 {tcltest a.tcl -tmpdir thisdirectoryisafile} {
+    -constraints unixOrPc
+    -body {
+	catch {exec $::tcltest::tcltest a.tcl -tmpdir thisdirectoryisafile} msg
+	# The join is necessary because the message can be split on multiple
+	# lines 
+	join $msg
+    }
+    -result {not a directory}
+    -match regexp
+}
 
 # Test non-writeable directories, non-readable directories with directory flags
 set notReadableDir [file join $::tcltest::temporaryDirectory notreadable]
@@ -477,10 +517,10 @@ test tcltest-8.5 {tcltest a.tcl -tmpdir normaldirectory} {
     file exists [file join $normaldirectory a.tmp]
 } {1}   
 
+set current [pwd]
 test tcltest-8.6 {tcltest::temporaryDirectory}  {
     -setup {
 	set old $tcltest::temporaryDirectory
-	set current [pwd]
 	set tcltest::temporaryDirectory $normaldirectory
     }
     -body {
@@ -494,6 +534,18 @@ test tcltest-8.6 {tcltest::temporaryDirectory}  {
 	set tcltest::temporaryDirectory $old
     }
 }
+
+test tcltest-8.6a {tcltest::temporaryDirectory - test format 2} -setup {
+    set old $tcltest::temporaryDirectory
+    set tcltest::temporaryDirectory $normaldirectory
+} -body {
+    set f1 [tcltest::temporaryDirectory]
+    set f2 [tcltest::temporaryDirectory $current]
+    set f3 [tcltest::temporaryDirectory]
+    list $f1 $f2 $f3
+} -cleanup {
+    set tcltest::temporaryDirectory $old
+} -result "$normaldirectory $current $current" 
 
 # -testdir, tcltest::testsDirectory
 test tcltest-8.10 {tcltest a.tcl -testdir thisdirectorydoesnotexist} {
@@ -705,9 +757,6 @@ test tcltest-12.4 {tcltest::loadFile} {
 	set tcltest::load-body {}
 	set oldf $tcltest::loadFile
 	set tcltest::loadFile {}
-	set f [open load.tcl]
-	set content [read $f]
-	close $f
     }
     -body {
 	set f1 [tcltest::loadScript]
@@ -717,7 +766,13 @@ test tcltest-12.4 {tcltest::loadFile} {
 	set f5 [tcltest::loadFile]
 	list $f1 $f2 $f3 $f4 $f5
     }
-    -result "{} {} $loadfile \{$content\} $loadfile"
+    -result "{} {} $loadfile { 
+    package require tcltest
+    namespace import -force ::tcltest::*
+    puts \$::tcltest::loadScript
+    exit
+} $loadfile
+" 
     -cleanup {
 	set tcltest::loadScript $olds
 	set tcltest::loadFile $oldf
@@ -1054,6 +1109,17 @@ test tcltest-21.6 {test command - setup occurs before cleanup & before script} {
     -output "foo is 2"
 }
 
+test tcltest-21.7 {test command - bad flag} {
+     -body {
+	test foo-4 {foo-4} {
+	    -foobar {}
+	}
+    }
+    -result {1}
+    -errorOutput {test foo-4: bad flag -foobar supplied to tcltest::test*}
+    -match glob
+}
+
 # alternate test command format (these are the same as 21.1-21.6, with the
 # exception of being in the all-inline format)
 
@@ -1066,7 +1132,7 @@ test tcltest-21.8 {force a test command failure} -body {
     test foo {
 	return 2
     } {1}
-} -errorOutput {test foo: {wrong # args: should be "test name desc ?constraints? script expectedResult"}
+} -errorOutput {test foo: bad flag 1 supplied to tcltest::test
 } -result {1}
 
 test tcltest-21.9 {test command with setup} \
@@ -1145,6 +1211,92 @@ test tcltest-22.1 {runAllTests} {
     }
     -match regexp
     -result "Test files exiting with errors:.*error.test.*exit.test"
+}
+
+# makeFile, removeFile, makeDirectory, removeDirectory, viewFile
+test tcltest-23.1 {makeFile} {
+    -setup {
+	set mfdir [file join [tcltest::temporaryDirectory] mfdir]
+	file mkdir $mfdir
+    }
+    -body {
+	makeFile {} t1.tmp
+	makeFile {} et1.tmp $mfdir
+	list [file exists [file join [tcltest::temporaryDirectory] t1.tmp]] \
+		[file exists [file join $mfdir et1.tmp]]
+    }
+    -cleanup {
+	file delete -force $mfdir \
+		[file join [tcltest::temporaryDirectory] t1.tmp] 
+    }
+    -result {1 1}
+}
+test tcltest-23.2 {removeFile} {
+    -setup {
+	set mfdir [file join [tcltest::temporaryDirectory] mfdir]
+	file mkdir $mfdir
+	makeFile {} t1.tmp
+	makeFile {} et1.tmp $mfdir
+	if  {![file exists [file join [tcltest::temporaryDirectory] t1.tmp]] || \
+		![file exists [file join $mfdir et1.tmp]]} {
+	    error "file creation didn't work"
+	}
+    }
+    -body {
+	removeFile t1.tmp
+	removeFile et1.tmp $mfdir
+	list [file exists [file join [tcltest::temporaryDirectory] t1.tmp]] \
+		[file exists [file join $mfdir et1.tmp]]
+    }
+    -cleanup {
+	file delete -force $mfdir \
+		[file join [tcltest::temporaryDirectory] t1.tmp] 
+    }
+    -result {0 0}
+}
+test tcltest-23.3 {makeDirectory} {
+    -body {
+	set mfdir [file join [tcltest::temporaryDirectory] mfdir]
+	file mkdir $mfdir
+	makeDirectory d1
+	makeDirectory d2 $mfdir
+	list [file exists [file join [tcltest::temporaryDirectory] d1]] \
+		[file exists [file join $mfdir d2]]
+    }
+    -cleanup {
+	file delete -force [file join [tcltest::temporaryDirectory] d1] $mfdir
+    }
+    -result {1 1}
+}
+test tcltest-23.4 {removeDirectory} {
+    -body {
+	set mfdir [file join [tcltest::temporaryDirectory] mfdir]
+	file mkdir $mfdir
+	file mkdir [file join [tcltest::temporaryDirectory] t1]
+	file mkdir [file join [tcltest::temporaryDirectory] $mfdir t2]
+	if {![file exists $mfdir] || \
+		![file exists [file join [tcltest::temporaryDirectory] $mfdir t2]]} {
+	    return "setup failed - directory not created"
+	}
+	removeDirectory t1
+	removeDirectory t2 $mfdir
+	list [file exists [file join [tcltest::temporaryDirectory] t1]] \
+		[file exists [file join $mfdir t2]]
+    }
+    -result {0 0}
+}
+test tcltest-23.5 {viewFile} {
+    -body {
+	set mfdir [file join [tcltest::temporaryDirectory] mfdir]
+	file mkdir $mfdir
+	makeFile {foobar} t1.tmp
+	makeFile {foobarbaz} t2.tmp $mfdir
+	list [viewFile t1.tmp] [viewFile t2.tmp $mfdir]
+    }
+    -result {foobar foobarbaz}
+    -cleanup {
+	file delete -force $mfdir
+    }
 }
 
 # cleanup

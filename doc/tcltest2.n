@@ -7,7 +7,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: tcltest2.n,v 1.2 2000/09/29 22:47:33 jenn Exp $
+'\" RCS: @(#) $Id: tcltest2.n,v 1.3 2000/10/19 18:00:55 jenn Exp $
 '\" 
 .so man.macros
 .TH "tcltest" n 8.4 Tcl "Tcl Built-In Commands"
@@ -19,6 +19,7 @@ tcltest \- Test harness support code and utilities
 \fBpackage require tcltest ?2.0?\fP
 .sp
 \fBtcltest::test \fIname desc ?option value? ?option value? ...\fR
+.br
 \fBtcltest::test \fIname desc {?option value? ?option value? ...}\fR
 .sp
 \fBtcltest::cleanupTests \fI?runningMultipleTests?\fR
@@ -31,7 +32,7 @@ tcltest \- Test harness support code and utilities
 .sp
 \fBtcltest::debug \fI?level?\fR
 .sp
-\fBtcltest::verbose \fI?level?\fR
+\fBtcltest::verbose \fI?levelList?\fR
 .sp
 \fBtcltest::preserveCore \fI?level?\fR
 .sp
@@ -71,15 +72,15 @@ tcltest \- Test harness support code and utilities
 .sp
 \fBtcltest::errorFile \fI?filename?\fR
 .sp
-\fBtcltest::makeFile \fIcontents name\fR
+\fBtcltest::makeFile \fIcontents name ?directory?\fR
 .sp
-\fBtcltest::removeFile \fIname\fR
+\fBtcltest::removeFile \fIname ?directory?\fR
 .sp
-\fBtcltest::makeDirectory \fIname\fR
+\fBtcltest::makeDirectory \fIname ?directory?\fR
 .sp
-\fBtcltest::removeDirectory \fIname\fR
+\fBtcltest::removeDirectory \fIname ?directory?\fR
 .sp
-\fBtcltest::viewFile \fIname\fR
+\fBtcltest::viewFile \fIname ?directory?\fR
 .sp
 \fBtcltest::normalizeMsg \fImsg\fR
 .sp
@@ -179,20 +180,22 @@ Display information regarding what individual procs in the test
 harness are doing.
 .RE
 .TP
-\fBtcltest::verbose\fR \fI?level?\fR
-Sets or returns the current verbosity level.  This level must be a
-substring of "bpst".  The default verbosity level is "b".  See the
-"Test output" section for a more detailed explanation of this
-option. Levels are defined as: 
+\fBtcltest::verbose\fR \fI?levelList?\fR
+Sets or returns the current verbosity level.  The default verbosity
+level is "body".   See the "Test output" section for a more detailed
+explanation of this option. Levels are defined as: 
 .RS
-.IP b
+.IP body
 Display the body of failed tests
-.IP p
+.IP pass
 Print output when a test passes
-.IP s
+.IP skip
 Print output when a test is skipped
-.IP t
+.IP start
 Print output whenever a test starts
+.IP error
+Print errorInfo and errorCode, if they exist, when a test return code
+does not match its expected return code
 .RE
 .TP
 \fBtcltest::preserveCore\fR \fI?level?\fR
@@ -318,24 +321,20 @@ that output to \fItcltest::errorChannel\fR or
 \fItcltest::outputChannel\fR rather than letting
 that output default to stdout.
 .TP
-\fBtcltest::mainThread\fR
-Sets or returns the main thread ID.  This defaults to 1.  This is the
-only thread that is not killed by tcltest::threadReap and is set
-according to the return value of \fItestthread names\fR at
-initialization. 
-.TP
-\fBtcltest::makeFile\fP \fIcontents name\fR
+\fBtcltest::makeFile\fP \fIcontents name ?directory?\fR
 Create a file that will be automatically be removed by
 \fBtcltest::cleanupTests\fR at the end of a test file.  This file is
-created relative to tcltest::temporaryDirectory.
+created relative to \fIdirectory\fR.  If left unspecified,
+\fIdirectory\fR defaults to tcltest::temporaryDirectory.
 Returns the full path of the file created.
 .TP
-\fBtcltest::removeFile\fP \fIname\fR
+\fBtcltest::removeFile\fP \fIname ?directory?\fR
 Force the file referenced by \fIname\fR to be removed.  This file name
-should be relative to \fItcltest::temporaryDirectory\fR.  This proc has no
-defined return values.
+should be relative to \fIdirectory\fR.   If left unspecified,
+\fIdirectory\fR defaults to tcltest::temporaryDirectory.  This proc
+has no defined return values.
 .TP
-\fBtcltest::makeDirectory\fP \fIname\fR
+\fBtcltest::makeDirectory\fP \fIname ?directory?\fR
 Create a directory named \fIname\fR that will automatically be removed
 by \fBtcltest::cleanupTests\fR at the end of a test file.  This
 directory is created relative to tcltest::temporaryDirectory.
@@ -343,11 +342,14 @@ Returns the full path of the directory created.
 .TP
 \fBtcltest::removeDirectory\fP \fIname\fR
 Force the directory referenced by \fIname\fR to be removed. This
-directory should be relative to tcltest::temporaryDirectory.  This proc
+directory should be relative to \fIdirectory\fR.   If left unspecified,
+\fIdirectory\fR defaults to tcltest::temporaryDirectory.  This proc
 has no defined return value. 
 .TP
-\fBtcltest::viewFile\fP \fIfile\fR
-Returns the contents of \fIfile\fR.
+\fBtcltest::viewFile\fP \fIfile ?directory?\fR
+Returns the contents of \fIfile\fR.  This file name
+should be relative to \fIdirectory\fR.   If left unspecified,
+\fIdirectory\fR defaults to tcltest::temporaryDirectory.
 .TP
 \fBtcltest::normalizeMsg\fP \fImsg\fR
 Remove extra newlines from \fImsg\fR.
@@ -385,6 +387,12 @@ main thread.  It gets the ID of the main thread by calling
 \fItestthread names\fR during initialization.  This value is stored in
 \fItcltest::mainThread\fR. \fBtcltest::threadReap\fR returns the
 number of existing threads at completion.
+.TP
+\fBtcltest::mainThread\fR
+Sets or returns the main thread ID.  This defaults to 1.  This is the
+only thread that is not killed by tcltest::threadReap and is set
+according to the return value of \fItestthread names\fR at
+initialization. 
 .SH TESTS
 The \fBtest\fR procedure runs a test script and prints an error
 message if the script's result does not match the expected result.
@@ -530,7 +538,7 @@ test can only be run if all test files are sourced into a single interpreter
 \fIunix\fR
 test can only be run on any UNIX platform
 .TP
-\fIpc\fR
+\fIwin\fR
 test can only be run on any Windows platform
 .TP
 \fInt\fR
@@ -545,16 +553,16 @@ test can only be run on any Windows 98 platform
 \fImac\fR
 test can only be run on any Mac platform
 .TP
-\fIunixOrPc\fR
-test can only be run on a UNIX or PC platform
+\fIunixOrWin\fR
+test can only be run on a UNIX or Windows platform
 .TP
-\fImacOrPc\fR
-test can only be run on a Mac or PC platform
+\fImacOrWin\fR
+test can only be run on a Mac or Windows platform
 .TP
 \fImacOrUnix\fR
 test can only be run on a Mac or UNIX platform
 .TP
-\fItempNotPc\fR
+\fItempNotWin\fR
 test can not be run on Windows.  This flag is used to temporarily
 disable a test. 
 .TP
@@ -566,7 +574,7 @@ to temporarily disable a test.
 test crashes if it's run on UNIX.  This flag is used to temporarily
 disable a test. 
 .TP
-\fIpcCrash\fR
+\fIwinCrash\fR
 test crashes if it's run on Windows.  This flag is used to temporarily
 disable a test. 
 .TP
@@ -609,8 +617,8 @@ test can only be run if platform supports async flush and async close
 on a pipe 
 .TP
 \fIunixExecs\fR
-test can only be run if this machine has commands such as 'cat', 'echo',
-etc. available.  
+test can only be run if this machine has Unix-style commands 'cat', 'echo',
+'sh', 'wc', 'rm', 'sleep', 'fgrep', 'ps', 'chmod', and 'mkdir' available
 .TP
 \fIhasIsoLocale\fR
 test can only be run if can switch to an ISO locale
@@ -645,9 +653,10 @@ display usage information.
 if <bool> is 0, run test files in separate interpreters.  if 1, source test
 files into the current intpreter. (tcltest::singleProcess)
 .TP
-\fB-verbose <level>\fR
-set the level of verbosity to a substring of "bpst".  See the "Test
-output" section for an explanation of this option.  (tcltest::verbose)
+\fB-verbose <levelList>\fR
+set the level of verbosity to a list containing 0 or more of "body",
+"pass", "skip", "start", and "error".  See the "Test output" section
+for an explanation of this option.  (tcltest::verbose)  
 .TP
 \fB-match <matchList>\fR
 only run tests that match one or more of the glob patterns in
@@ -748,9 +757,9 @@ defaults to stderr.  (tcltest::errorFile)
 .PP
 You can specify any of the above options on the command line or by
 defining an environment variable named TCLTEST_OPTIONS containing a
-list of options (e.g. "-debug 3 -verbose 'ps'").  This environment
-variable is evaluated before the command line arguments.  Options
-specified on the command line override those specified in
+list of options (e.g. "-debug 3 -verbose 'pass skip'").  This 
+environment variable is evaluated before the command line arguments.
+Options specified on the command line override those specified in 
 TCLTEST_OPTIONS. 
 .PP
 A second way to run tets is to start up a shell, load the
@@ -783,25 +792,26 @@ passed, skipped, and failed is printed to
 statistical information, output can be controlled on a per-test basis
 by the \fBtcltest::verbose\fR variable.
 .PP
-\fBtcltest::verbose\fR can be set to any substring or permutation 
-of "bpst". In the string "bpst", the 'b' stands for a test's "body", 
-the 'p' stands for "passed" tests, the 's' stands for "skipped" 
-tests, and the 't' indicates when a test "starts". 
-The default value of \fBtcltest::verbose\fR is "b".  If 'b'
-is present, then the entire body of the test is printed for each
-failed test, otherwise only the test's name, desired output, and
-actual output, are printed for each failed test.  If 'p' is present,
+\fBtcltest::verbose\fR can be set to any combination of "body", 
+"skip", "pass", "start", or "error".  The default value of
+\fBtcltest::verbose\fR is "body".  If "body"  is present, then the
+entire body of the test is printed for each failed test, otherwise
+only the test's name, desired output, and 
+actual output, are printed for each failed test.  If "pass" is present,
 then a line is printed for each passed test, otherwise no line is
-printed for passed tests.  If 's' is present, then a line (containing
+printed for passed tests.  If "skip" is present, then a line (containing
 the consraints that cause the test to be skipped) is printed for each
-skipped test, otherwise no line is printed for skipped tests.  If 't'
+skipped test, otherwise no line is printed for skipped tests.  If "start"
 is present, then a line is printed each time a new test starts.
+If "error" is present, then the content of errorInfo and errorCode (if
+they are defined) is printed for each test whose return code doesn't
+match its expected return code.
 .PP
 You can set \fBtcltest::verbose\fR either interactively (after the
 \fBtcltest\fR package has been loaded) or by using the command line
 argument \fB-verbose\fR, for example:
 .DS
-tclsh socket.test -verbose bps
+tclsh socket.test -verbose 'body pass skip'
 .DE
 .SH "CONTENTS OF A TEST FILE"
 Test files should begin by loading the \fBtcltest\fR package:
