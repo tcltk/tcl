@@ -502,14 +502,20 @@ TclFindProc(iPtr, procName)
     char *procName;		/* Name of desired procedure. */
 {
     Tcl_Command cmd;
+    Tcl_Command origCmd;
     Command *cmdPtr;
-
+    
     cmd = Tcl_FindCommand((Tcl_Interp *) iPtr, procName,
             (Tcl_Namespace *) NULL, /*flags*/ 0);
     if (cmd == (Tcl_Command) NULL) {
         return NULL;
     }
     cmdPtr = (Command *) cmd;
+
+    origCmd = TclGetOriginalCommand(cmd);
+    if (origCmd != NULL) {
+	cmdPtr = (Command *) origCmd;
+    }
     if (cmdPtr->proc != InterpProc) {
 	return NULL;
     }
@@ -524,7 +530,7 @@ TclFindProc(iPtr, procName)
  *	Tells whether a command is a Tcl procedure or not.
  *
  * Results:
- *	If the given command is actuall a Tcl procedure, the
+ *	If the given command is actually a Tcl procedure, the
  *	return value is the address of the record describing
  *	the procedure.  Otherwise the return value is 0.
  *
@@ -538,6 +544,12 @@ Proc *
 TclIsProc(cmdPtr)
     Command *cmdPtr;		/* Command to test. */
 {
+    Tcl_Command origCmd;
+
+    origCmd = TclGetOriginalCommand((Tcl_Command) cmdPtr);
+    if (origCmd != NULL) {
+	cmdPtr = (Command *) origCmd;
+    }
     if (cmdPtr->proc == InterpProc) {
 	return (Proc *) cmdPtr->clientData;
     }
