@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.58 2000/06/05 23:14:15 ericm Exp $
+RCS: @(#) $Id: changes,v 1.59 2000/06/05 23:27:38 ericm Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -4920,3 +4920,5 @@ pattern matching for [array names] (gazetta)
 
 2000-05-31 (feature enhancement) added -nocomplain and -- flags to
 [unset] to allow for silent unset operation (hobbs)
+
+--- Released 8.4a1, June 6, 2000 --- See ChangeLog for details ---
