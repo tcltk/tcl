@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.103 2004/09/27 16:24:26 dgp Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.104 2004/10/01 12:45:20 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -282,6 +282,7 @@ TclIntStubs tclIntStubs = {
     TclFinalizeThreadStorageData, /* 195 */
     TclFinalizeThreadStorageDataKey, /* 196 */
     TclCompEvalObj, /* 197 */
+    TclObjGetFrame, /* 198 */
 };
 
 TclIntPlatStubs tclIntPlatStubs = {
