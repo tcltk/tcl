@@ -1,3 +1,14 @@
+1998-12-02    <stanton@GASPODE>
+
+	* win/tclWinPipe.c (TclpCreateCommandChannel): Changed
+	reader/writer threads to have THREAD_PRIORITY_HIGHEST so they will
+	have a chance to run whenever there is something to do.
+
+	* generic/tclIO.c (WriteBytes, WriteChars): Fixed so extraneous
+	flushes do not happen in line mode.
+	(TranslateOutputEOL): Made translation more efficient in line mode
+	and fixed a buffer overflow bug in CRLF translation. [Bug: 887]
+
 1998-12-02    <welch@SAGE>
 
 	* Updated patchlevel to 8.1b1
