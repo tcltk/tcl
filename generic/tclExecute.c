@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.96 2003/03/19 16:51:43 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.97 2003/04/01 07:18:37 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1225,6 +1225,7 @@ TclExecuteByteCode(interp, codePtr)
 #endif
     switch (*pc) {
     case INST_RETURN:
+	iPtr->returnCode = TCL_OK;
 	result = TCL_RETURN;
     case INST_DONE:
 	if (stackTop <= initStackTop) {
