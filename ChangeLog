@@ -1,3 +1,23 @@
+2002-01-16  Don Porter <dgp@users.sourceforge.net>
+
+	* generic/tcl.decls (Tcl_RecordAndEval):
+	* generic/tclDecls.h: make genstubs
+	* generic/tclHistory.c (Tcl_RecordAndEval): Updated APIs in
+	generic/tclHistory.c according to the guidelines of TIP 27.
+
+	* doc/CrtSlave.3:
+	* generic/tcl.decls (Tcl_CreateAlias, Tcl_CreateAliasObj,
+	  Tcl_CreateSlave, Tcl_GetAlias, Tcl_GetAliasObj, Tcl_GetSlave):
+	* generic/tclInterp.c (Tcl_CreateAlias, Tcl_CreateAliasObj,
+	  Tcl_CreateSlave, Tcl_GetAlias, Tcl_GetAliasObj, Tcl_GetSlave):
+	Updated APIs in the file generic/tclInterp.c according to the
+	guidelines of TIP 27.
+	***POTENTIAL INCOMPATIBILITY*** 
+	Includes a source incompatibility in the targetCmdPtr arguments of
+	the Tcl_GetAlias* routines.
+
+	* generic/tclDecls.h: make genstubs
+
 2002-01-15  Don Porter <dgp@users.sourceforge.net>
 
 	* doc/SetErrno.3 (Tcl_ErrnoMsg): Corrected documentation for

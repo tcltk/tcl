@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: CrtSlave.3,v 1.5 2001/04/24 20:59:17 kennykb Exp $
+'\" RCS: @(#) $Id: CrtSlave.3,v 1.6 2002/01/16 06:02:33 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_CreateSlave 3 7.6 Tcl "Tcl Library Procedures"
@@ -35,18 +35,18 @@ int
 .sp
 .VS
 int
-\fBTcl_CreateAlias\fR(\fIslaveInterp, srcCmd, targetInterp, targetCmd, argc, argv\fR)
+\fBTcl_CreateAlias\fR(\fIslaveInterp, slaveCmd, targetInterp, targetCmd, argc, argv\fR)
 .sp
 int
-\fBTcl_CreateAliasObj\fR(\fIslaveInterp, srcCmd, targetInterp, targetCmd, objc, objv\fR)
+\fBTcl_CreateAliasObj\fR(\fIslaveInterp, slaveCmd, targetInterp, targetCmd, objc, objv\fR)
 .VE
 .sp
 int
-\fBTcl_GetAlias\fR(\fIinterp, srcCmd, targetInterpPtr, targetCmdPtr, argcPtr, argvPtr\fR)
+\fBTcl_GetAlias\fR(\fIinterp, slaveCmd, targetInterpPtr, targetCmdPtr, argcPtr, argvPtr\fR)
 .sp
 .VS
 int
-\fBTcl_GetAliasObj\fR(\fIinterp, srcCmd, targetInterpPtr, targetCmdPtr, objcPtr, objvPtr\fR)
+\fBTcl_GetAliasObj\fR(\fIinterp, slaveCmd, targetInterpPtr, targetCmdPtr, objcPtr, objvPtr\fR)
 .sp
 int
 \fBTcl_ExposeCommand\fR(\fIinterp, hiddenCmdName, cmdName\fR)
@@ -57,7 +57,7 @@ int
 .AS Tcl_InterpDeleteProc **hiddenCmdName
 .AP Tcl_Interp *interp in
 Interpreter in which to execute the specified command.
-.AP char *slaveName in
+.AP "CONST char" *slaveName in
 Name of slave interpreter to create or manipulate.
 .AP int isSafe in
 If non-zero, a ``safe'' slave that is suitable for running untrusted code
@@ -65,15 +65,15 @@ is created, otherwise a trusted slave is created.
 .AP Tcl_Interp *slaveInterp in
 Interpreter to use for creating the source command for an alias (see
 below).
-.AP char *srcCmd in
+.AP "CONST char" *slaveCmd in
 Name of source command for alias.
 .AP Tcl_Interp *targetInterp in
 Interpreter that contains the target command for an alias.
-.AP char *targetCmd in
+.AP "CONST char" *targetCmd in
 Name of target command for alias in \fItargetInterp\fR.
 .AP int argc in
 Count of additional arguments to pass to the alias command.
-.AP char **argv in
+.AP "char * CONST" *argv in
 Vector of strings, the additional arguments to pass to the alias command.
 This storage is owned by the caller.
 .AP int objc in
@@ -85,7 +85,7 @@ This storage is owned by the caller.
 .AP Tcl_Interp **targetInterpPtr in
 Pointer to location to store the address of the interpreter where a target
 command is defined for an alias.
-.AP char **targetCmdPtr out
+.AP "CONST char" **targetCmdPtr out
 Pointer to location to store the address of the name of the target command
 for an alias.
 .AP int *argcPtr out
@@ -161,11 +161,11 @@ of the relative path succeeds, \fBTCL_OK\fR is returned, else
 \fIaskingInterp\fR contains the error message.
 .PP
 .VS
-\fBTcl_CreateAlias\fR creates an object command named \fIsrcCmd\fR in
+\fBTcl_CreateAlias\fR creates an object command named \fIslaveCmd\fR in
 \fIslaveInterp\fR that when invoked, will cause the command \fItargetCmd\fR
 to be invoked in \fItargetInterp\fR. The arguments specified by the strings
 contained in \fIargv\fR are always prepended to any arguments supplied in the
-invocation of \fIsrcCmd\fR and passed to \fItargetCmd\fR.
+invocation of \fIslaveCmd\fR and passed to \fItargetCmd\fR.
 This operation returns \fBTCL_OK\fR if it succeeds, or \fBTCL_ERROR\fR if
 it fails; in that case, an error message is left in the object result
 of \fIslaveInterp\fR.
