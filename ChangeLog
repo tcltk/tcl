@@ -1,15 +1,25 @@
+2004-03-01  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* README:           update patchlevel to 8.5a1
+	* generic/tcl.h:
+	* tools/tcl.wse.in, tools/tclSplash.bmp:
+	* unix/configure, unix/configure.in, unix/tcl.spec:
+	* win/README.binary, win/configure, win/configure.in:
+
+	* unix/tcl.m4: update HP-11 build libs setup
+
 2004-03-01  Don Porter  <dgp@users.sourceforge.net>
 
-        * unix/tcl.m4 (SC_CONFIG_CFLAGS):       Allow 64-bit enabling on
-        IRIX64-6.5* systems.  [Bug 218561]
-        * unix/configure:       autoconf-2.57
+	* unix/tcl.m4 (SC_CONFIG_CFLAGS):	Allow 64-bit enabling on
+	IRIX64-6.5* systems.  [Bug 218561]
+	* unix/configure:	autoconf-2.57
 
-        * generic/tclTrace.c (TclCheckInterpTraces):    The TIP 62
-        * generic/tclTest.c (TestcmdtraceCmd):  implementation introduced a
-        * tests/trace.test (trace-29.10):       bug by testing the CallFrame
-        level instead of the iPtr->numLevels level when deciding what traces
-        created by Tcl_Create(Obj)Trace to call.  Added test to expose the
-        error, and made fix. [Request 462580]
+	* generic/tclTrace.c (TclCheckInterpTraces):	The TIP 62
+	* generic/tclTest.c (TestcmdtraceCmd):	implementation introduced a
+	* tests/trace.test (trace-29.10):	bug by testing the CallFrame
+	level instead of the iPtr->numLevels level when deciding what traces
+	created by Tcl_Create(Obj)Trace to call.  Added test to expose the
+	error, and made fix. [Request 462580]
 
 2004-02-28  Vince Darley  <vincentdarley@users.sourceforge.net>
 
