@@ -1,3 +1,9 @@
+2004-09-22  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclExecute.c (INST_START_CMD):
+	* tests/proc.test (7.2-3): fix for [Bug 729692] was incorrect
+	whenever a loop exception was returned.
+
 2004-09-22  Kevin B. Kenny  <kennykb@acm.org>
 
 	* library/tzdata/America/Montevideo: Updated to reflect
