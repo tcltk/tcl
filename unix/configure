@@ -5892,9 +5892,9 @@ if test "${SHARED_BUILD}" = "1" -a "${SHLIB_SUFFIX}" != "" ; then
     TCL_LD_SEARCH_FLAGS="${LD_SEARCH_FLAGS}"
     eval "TCL_LIB_FILE=libtcl${TCL_SHARED_LIB_SUFFIX}"
     if test "x$DL_OBJS" = "xtclLoadAout.o"; then
-	MAKE_LIB="ar cr \${TCL_LIB_FILE} \${OBJS}"
+	MAKE_LIB="ar cr \$@ \${OBJS}"
     else
-	MAKE_LIB="\${SHLIB_LD} -o \${TCL_LIB_FILE} \${OBJS} ${SHLIB_LD_LIBS}"
+	MAKE_LIB="\${SHLIB_LD} -o \$@ \${OBJS} ${SHLIB_LD_LIBS}"
 	RANLIB=":"
     fi
 else
@@ -5912,7 +5912,7 @@ else
     TCL_SHLIB_CFLAGS=""
     TCL_LD_SEARCH_FLAGS="${LD_SEARCH_FLAGS}"
     eval "TCL_LIB_FILE=libtcl${TCL_UNSHARED_LIB_SUFFIX}"
-    MAKE_LIB="ar cr \${TCL_LIB_FILE} \${OBJS}"
+    MAKE_LIB="ar cr \$@ \${OBJS}"
 fi
 
 # tclConfig.sh needs a version of the _LIB_SUFFIX that has been eval'ed
@@ -5975,13 +5975,11 @@ fi
 #--------------------------------------------------------------------
 
 # Replace ${VERSION} with contents of ${TCL_VERSION}
-eval "STUB_LIB_FILE=libtclstub${TCL_UNSHARED_LIB_SUFFIX}"
+eval "TCL_STUB_LIB_FILE=libtclstub${TCL_UNSHARED_LIB_SUFFIX}"
 # Replace DBGX with TCL_DBGX
-eval "STUB_LIB_FILE=\"${STUB_LIB_FILE}\""
+eval "TCL_STUB_LIB_FILE=\"${TCL_STUB_LIB_FILE}\""
 
-MAKE_STUB_LIB="ar cr \${STUB_LIB_FILE} \${STUB_LIB_OBJS}"
-
-TCL_STUB_LIB_FILE=${STUB_LIB_FILE}
+MAKE_STUB_LIB="ar cr \$@ \${STUB_LIB_OBJS}"
 
 if test "${TCL_LIB_VERSIONS_OK}" = "ok"; then
     TCL_STUB_LIB_FLAG="-ltclstub${TCL_VERSION}\${TCL_DBGX}"
