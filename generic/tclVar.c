@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.69.2.3 2003/05/12 17:31:51 msofer Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.69.2.4 2003/11/20 19:19:03 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -616,7 +616,7 @@ TclObjLookupVar(interp, part1Ptr, part2, flags, msg, createPart1, createPart2,
  *     namespace; never follow the second (global) resolution path 
  *   - Bug #631741 - do not use special namespace or interp resolvers
  */
-#define LOOKUP_FOR_UPVAR 0x400
+#define LOOKUP_FOR_UPVAR 0x40000
 
 /*
  *----------------------------------------------------------------------
