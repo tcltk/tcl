@@ -16,7 +16,7 @@
 # Contributions from Don Porter, NIST, 2002.  (not subject to US copyright)
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.tcl,v 1.78 2003/02/17 19:12:06 dgp Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.78.2.1 2003/03/26 22:56:09 dgp Exp $
 
 package require Tcl 8.3		;# uses [glob -directory]
 namespace eval tcltest {
@@ -24,7 +24,7 @@ namespace eval tcltest {
     # When the version number changes, be sure to update the pkgIndex.tcl file,
     # and the install directory in the Makefiles.  When the minor version
     # changes (new feature) be sure to update the man page as well.
-    variable Version 2.2.2
+    variable Version 2.2.3
 
     # Compatibility support for dumb variables defined in tcltest 1
     # Do not use these.  Call [package provide Tcl] and [info patchlevel]
@@ -1842,6 +1842,13 @@ proc tcltest::test {name description args} {
     variable testLevel
     variable coreModTime
     DebugPuts 3 "test $name $args"
+    DebugDo 1 {
+	variable TestNames
+	catch {
+	    puts "test name '$name' re-used; prior use in $TestNames($name)"
+	}
+	set TestNames($name) [info script]
+    }
 
     FillFilesExisted
     incr testLevel
@@ -1912,11 +1919,9 @@ proc tcltest::test {name description args} {
 	}
 
 	# Replace symbolic valies supplied for -returnCodes
-	regsub -nocase normal $returnCodes 0 returnCodes
-	regsub -nocase error $returnCodes 1 returnCodes
-	regsub -nocase return $returnCodes 2 returnCodes
-	regsub -nocase break $returnCodes 3 returnCodes
-	regsub -nocase continue $returnCodes 4 returnCodes
+	foreach {strcode numcode} {normal 0 error 1 return 2 break 3 continue 4} {
+	    set returnCodes [string map -nocase [list $strcode $numcode] $returnCodes]
+	}
     } else {
 	# This is parsing for the old test command format; it is here
 	# for backward compatibility.
@@ -2882,9 +2887,8 @@ proc tcltest::restoreState {} {
 
 proc tcltest::normalizeMsg {msg} {
     regsub "\n$" [string tolower $msg] "" msg
-    regsub -all "\n\n" $msg "\n" msg
-    regsub -all "\n\}" $msg "\}" msg
-    return $msg
+    set msg [string map [list "\n\n" "\n"] $msg]
+    return [string map [list "\n\}" "\}"] $msg]
 }
 
 # tcltest::makeFile --
