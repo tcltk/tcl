@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.63 2004/10/22 13:48:58 dkf Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.64 2004/10/29 15:39:06 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1043,47 +1043,39 @@ TclObjInterpProc(clientData, interp, objc, objv)
 	localPtr = localPtr->nextPtr;
     }
     if (argCt > 0) {
-	Tcl_Obj *objResult;
-	int len, flags;
+	Tcl_Obj **desiredObjs, *argObj;
 
-	incorrectArgs:
+    incorrectArgs:
 	/*
-	 * Build up equivalent to Tcl_WrongNumArgs message for proc
+	 * Build up desired argument list for Tcl_WrongNumArgs
 	 */
 
-	Tcl_ResetResult(interp);
-	TclNewObj(objResult);
-	Tcl_AppendToObj(objResult, "wrong # args: should be \"", -1);
-
-	/*
-	 * Quote the proc name if it contains spaces (Bug 942757).
-	 */
-
-	len = Tcl_ScanCountedElement(procName, nameLen, &flags);
-	if (len != nameLen) {
-	    char *procName1 = ckalloc((unsigned) len);
-	    len = Tcl_ConvertCountedElement(procName, nameLen, procName1, flags);
-	    Tcl_AppendToObj(objResult, procName1, len);
-	    ckfree(procName1);
-	} else {
-	    Tcl_AppendToObj(objResult, procName, len);
-	}
-
+	desiredObjs = (Tcl_Obj **)
+		ckalloc(sizeof(Tcl_Obj *) * (unsigned)(numArgs+1));
+	desiredObjs[0] = objv[0];
 	localPtr = procPtr->firstLocalPtr;
-	for (i = 1;  i <= numArgs;  i++) {
+	for (i=1 ; i<=numArgs ; i++) {
+	    TclNewObj(argObj);
 	    if (localPtr->defValuePtr != NULL) {
-		Tcl_AppendStringsToObj(objResult,
-			" ?", localPtr->name, "?", (char *) NULL);
+		Tcl_AppendStringsToObj(argObj,
+			"?", localPtr->name, "?", (char *) NULL);
+	    } else if ((i==numArgs) && (strcmp(localPtr->name, "args")==0)) {
+		Tcl_AppendStringsToObj(argObj, "...", (char *) NULL);
 	    } else {
-		Tcl_AppendStringsToObj(objResult,
-			" ", localPtr->name, (char *) NULL);
+		Tcl_AppendStringsToObj(argObj, localPtr->name, (char *) NULL);
 	    }
+	    desiredObjs[i] = argObj;
 	    localPtr = localPtr->nextPtr;
 	}
-	Tcl_AppendStringsToObj(objResult, "\"", (char *) NULL);
-	Tcl_SetObjResult(interp, objResult);
 
+	Tcl_ResetResult(interp);
+	Tcl_WrongNumArgs(interp, numArgs+1, desiredObjs, NULL);
 	result = TCL_ERROR;
+
+	for (i=1 ; i<=numArgs ; i++) {
+	    TclDecrRefCount(desiredObjs[i]);
+	}
+	ckfree((char *) desiredObjs);
 	goto procDone;
     }
 

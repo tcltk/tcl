@@ -21,7 +21,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.63 2004/10/22 15:46:37 dkf Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.64 2004/10/29 15:39:06 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -3367,8 +3367,7 @@ NamespaceExportCmd(dummy, interp, objc, objv)
     int firstArg, patternCt, i, result;
 
     if (objc < 2) {
-	Tcl_WrongNumArgs(interp, 2, objv,
-	        "?-clear? ?pattern pattern...?");
+	Tcl_WrongNumArgs(interp, 2, objv, "?-clear? ?pattern pattern...?");
         return TCL_ERROR;
     }
 
@@ -3526,8 +3525,7 @@ NamespaceImportCmd(dummy, interp, objc, objv)
     int firstArg;
 
     if (objc < 2) {
-        Tcl_WrongNumArgs(interp, 2, objv,
-	        "?-force? ?pattern pattern...?");
+        Tcl_WrongNumArgs(interp, 2, objv, "?-force? ?pattern pattern...?");
         return TCL_ERROR;
     }
 
@@ -4863,6 +4861,37 @@ FindEnsemble(interp, cmdNameObj, flags)
 /*
  *----------------------------------------------------------------------
  *
+ * TclIsEnsemble --
+ *
+ *	Simple test for ensemble-hood that takes into account imported
+ *	ensemble commands as well.
+ *
+ * Results:
+ *	Boolean value
+ *
+ * Side effects:
+ *	None
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclIsEnsemble(cmdPtr)
+    Command *cmdPtr;
+{
+    if (cmdPtr->objProc == NsEnsembleImplementationCmd) {
+	return 1;
+    }
+    cmdPtr = (Command *) TclGetOriginalCommand((Tcl_Command) cmdPtr);
+    if (cmdPtr == NULL || cmdPtr->objProc != NsEnsembleImplementationCmd) {
+	return 0;
+    }
+    return 1;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * NsEnsembleImplementationCmd --
  *
  *	Implements an ensemble of commands (being those exported by a
@@ -5045,15 +5074,38 @@ NsEnsembleImplementationCmd(clientData, interp, objc, objv)
 
     Tcl_IncrRefCount(prefixObj);
   runResultingSubcommand:
-    Tcl_ListObjGetElements(NULL, prefixObj, &prefixObjc, &prefixObjv);
-    tempObjv = (Tcl_Obj **) ckalloc(sizeof(Tcl_Obj *)*(objc-2+prefixObjc));
-    memcpy(tempObjv,            prefixObjv, sizeof(Tcl_Obj *) * prefixObjc);
-    memcpy(tempObjv+prefixObjc, objv+2,     sizeof(Tcl_Obj *) * (objc-2));
-    result = Tcl_EvalObjv(interp, objc-2+prefixObjc, tempObjv,
-	    TCL_EVAL_INVOKE);
-    Tcl_DecrRefCount(prefixObj);
-    ckfree((char *)tempObjv);
-    return result;
+    {
+	Interp *iPtr = (Interp *) interp;
+	int isRootEnsemble = (iPtr->ensembleRewrite.sourceObjs == NULL);
+
+	Tcl_ListObjGetElements(NULL, prefixObj, &prefixObjc, &prefixObjv);
+	if (isRootEnsemble) {
+	    iPtr->ensembleRewrite.sourceObjs = objv;
+	    iPtr->ensembleRewrite.numRemovedObjs = 2;
+	    iPtr->ensembleRewrite.numInsertedObjs = prefixObjc;
+	} else {
+	    int ni = iPtr->ensembleRewrite.numInsertedObjs;
+	    if (ni < 2) {
+		iPtr->ensembleRewrite.numRemovedObjs += 2 - ni;
+		iPtr->ensembleRewrite.numInsertedObjs += prefixObjc - 1;
+	    } else {
+		iPtr->ensembleRewrite.numInsertedObjs += prefixObjc - 2;
+	    }
+	}
+	tempObjv = (Tcl_Obj **) ckalloc(sizeof(Tcl_Obj *)*(objc-2+prefixObjc));
+	memcpy(tempObjv, prefixObjv, sizeof(Tcl_Obj *) * prefixObjc);
+	memcpy(tempObjv+prefixObjc, objv+2, sizeof(Tcl_Obj *) * (objc-2));
+	result = Tcl_EvalObjv(interp, objc-2+prefixObjc, tempObjv,
+		TCL_EVAL_INVOKE);
+	Tcl_DecrRefCount(prefixObj);
+	ckfree((char *)tempObjv);
+	if (isRootEnsemble) {
+	    iPtr->ensembleRewrite.sourceObjs = NULL;
+	    iPtr->ensembleRewrite.numRemovedObjs = 0;
+	    iPtr->ensembleRewrite.numInsertedObjs = 0;
+	}
+	return result;
+    }
 
   unknownOrAmbiguousSubcommand:
     /*

@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.test,v 1.49 2004/10/28 00:04:33 dgp Exp $
+# RCS: @(#) $Id: clock.test,v 1.50 2004/10/29 15:39:07 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -35223,7 +35223,7 @@ test clock-35.1 {clock seconds tests} {
 } {}
 test clock-35.2 {clock seconds tests} {
     list [catch {clock seconds foo} msg] $msg
-} {1 {wrong # args: should be "::tcl::clock::seconds "}}
+} {1 {wrong # args: should be "clock seconds"}}
 test clock-35.3 {clock seconds tests} {
     set start [clock seconds]
     after 2000
