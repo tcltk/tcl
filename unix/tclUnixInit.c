@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixInit.c,v 1.13 1999/04/16 00:48:05 stanton Exp $
+ * RCS: @(#) $Id: tclUnixInit.c,v 1.14 1999/04/21 22:00:29 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -253,9 +253,23 @@ CONST char *path;		/* Path to the executable in native
     }
 
     /*
-     * Look for the library relative to the executable.  Use both the
-     * installLib and developLib because we cannot determine if this
-     * is installed or not.
+     * Look for the library relative to the executable.  This algorithm
+     * should be the same as the one in the tcl_findLibrary procedure.
+     *
+     * This code looks in the following directories:
+     *
+     *	<bindir>/../<installLib>
+     *		(e.g. /usr/local/bin/../lib/tcl8.1)
+     *	<bindir>/../../<installLib>
+     *		(e.g. /usr/local/TclPro/solaris-sparc/bin/../../lib/tcl8.1)
+     *	<bindir>/../library
+     *		(e.g. /usr/src/tcl8.1/unix/../library)
+     *	<bindir>/../../library
+     *		(e.g. /usr/src/tcl8.1/unix/solaris-sparc/../../library)
+     *	<bindir>/../../<developLib>
+     *		(e.g. /usr/src/tcl8.1/unix/../../tcl8.1/library)
+     *	<bindir>/../../../<devlopLib>
+     *		(e.g. /usr/src/tcl8.1/unix/solaris-sparc/../../../tcl8.1/library)
      */
      
     if (path != NULL) {
@@ -268,8 +282,36 @@ CONST char *path;		/* Path to the executable in native
 	    Tcl_DStringFree(&ds);
 	}
 	if (pathc > 2) {
+	    pathv[pathc - 3] = installLib;
+	    path = Tcl_JoinPath(pathc - 2, pathv, &ds);
+	    objPtr = Tcl_NewStringObj(path, Tcl_DStringLength(&ds));
+	    Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
+	    Tcl_DStringFree(&ds);
+	}
+	if (pathc > 1) {
+	    pathv[pathc - 2] = "library";
+	    path = Tcl_JoinPath(pathc - 1, pathv, &ds);
+	    objPtr = Tcl_NewStringObj(path, Tcl_DStringLength(&ds));
+	    Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
+	    Tcl_DStringFree(&ds);
+	}
+	if (pathc > 2) {
+	    pathv[pathc - 3] = "library";
+	    path = Tcl_JoinPath(pathc - 2, pathv, &ds);
+	    objPtr = Tcl_NewStringObj(path, Tcl_DStringLength(&ds));
+	    Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
+	    Tcl_DStringFree(&ds);
+	}
+	if (pathc > 1) {
 	    pathv[pathc - 3] = developLib;
 	    path = Tcl_JoinPath(pathc - 2, pathv, &ds);
+	    objPtr = Tcl_NewStringObj(path, Tcl_DStringLength(&ds));
+	    Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
+	    Tcl_DStringFree(&ds);
+	}
+	if (pathc > 3) {
+	    pathv[pathc - 4] = developLib;
+	    path = Tcl_JoinPath(pathc - 3, pathv, &ds);
 	    objPtr = Tcl_NewStringObj(path, Tcl_DStringLength(&ds));
 	    Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
 	    Tcl_DStringFree(&ds);
