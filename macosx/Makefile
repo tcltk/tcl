@@ -3,7 +3,7 @@
 # Makefile to build Tcl on Mac OS X packaged as a Framework
 #	uses standard unix build system in tcl/unix
 #
-# RCS: @(#) $Id: Makefile,v 1.14 2004/04/24 05:59:18 das Exp $
+# RCS: @(#) $Id: Makefile,v 1.15 2004/07/20 10:23:14 das Exp $
 #
 ########################################################################################################
 
@@ -94,7 +94,6 @@ PRODUCT_LONGVERSION	:= $(shell eval $$(grep '^TCL_PATCH_LEVEL=' ${UNIX_DIR}/conf
 				echo "${PRODUCT_VERSION}$${TCL_PATCH_LEVEL}")
 YEAR                    := $(shell date +%Y)
 
-PRIVATE_HEADERS		:= tclInt.h tclIntDecls.h tclIntPlatDecls.h tclPort.h ../unix/tclUnixPort.h
 TARGETS			:= tclsh tcltest
 TCLSH			:= tclsh${PRODUCT_VERSION}
 TCL_EXE			?= ${SYMROOT}/${TCLSH}
@@ -154,10 +153,10 @@ test-${PROJECT}: build-${PROJECT}
 
 install-${PROJECT}: build-${PROJECT}
 # install to ${INSTALL_ROOT} with optional stripping
-	${MAKE} -C ${OBJ_DIR} install-binaries install-libraries \
-	SCRIPT_INSTALL_DIR=${INSTALL_ROOT}${SCRIPTDIR} ${MAKE_ARGS_V} ${MAKE_ARGS} ${EXTRA_MAKE_ARGS}
-	mkdir -p ${INSTALL_ROOT}${PRIVATEINCLUDEDIR} && \
-	cd ${GENERIC_DIR} && ${CPPROG} ${PRIVATE_HEADERS} ${INSTALL_ROOT}${PRIVATEINCLUDEDIR}
+	${MAKE} -C ${OBJ_DIR} install-binaries install-libraries install-private-headers \
+	SCRIPT_INSTALL_DIR=${INSTALL_ROOT}${SCRIPTDIR} \
+	PRIVATE_INCLUDE_INSTALL_DIR=${INSTALL_ROOT}${PRIVATEINCLUDEDIR} \
+	${MAKE_ARGS_V} ${MAKE_ARGS} ${EXTRA_MAKE_ARGS}
 ifeq (${BUILD_STYLE},Development)
 # keep copy of debug library around, so that
 # Deployment build can be installed on top
