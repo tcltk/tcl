@@ -591,7 +591,7 @@ dnl AC_CHECK_TOOL(AR, ar, :)
     STLIB_LD='${AR} cr'
     case $system in
 	AIX-5.*)
-	    if test "${TCL_THREADS}" = "1" -a "$GCC" = "no" ; then
+	    if test "${TCL_THREADS}" = "1" -a "$GCC" != "yes" ; then
 		# AIX requires the _r compiler when gcc isn't being used
 		if test "${CC}" != "cc_r" ; then
 		    CC=${CC}_r
@@ -618,17 +618,17 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 	    fi
 
 	    if test "$do64bit" = "yes" ; then
-		if test "$GCC" = "no" ; then
+		if test "$GCC" = "yes" ; then
+		    AC_MSG_WARN("64bit mode not supported with GCC on $system")
+		else 
 		    do64bit_ok=yes
 		    EXTRA_CFLAGS="-q64"
 		    LDFLAGS="-q64"
-		else 
-		    AC_MSG_WARN("64bit mode not supported with GCC on $system")
 		fi
 	    fi
 	    ;;
 	AIX-*)
-	    if test "${TCL_THREADS}" = "1" -a "$GCC" = "no" ; then
+	    if test "${TCL_THREADS}" = "1" -a "$GCC" != "yes" ; then
 		# AIX requires the _r compiler when gcc isn't being used
 		if test "${CC}" != "cc_r" ; then
 		    CC=${CC}_r
@@ -945,18 +945,18 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 	    DL_LIBS=""
 	    LDFLAGS=""
 	    LD_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
-	    if test "$GCC" = "no" ; then
+	    if test "$GCC" != "yes" ; then
 		EXTRA_CFLAGS="-DHAVE_TZSET -std1"
 	    fi
 	    # see pthread_intro(3) for pthread support on osf1, k.furukawa
 	    if test "${TCL_THREADS}" = "1" ; then
 		EXTRA_CFLAGS="${EXTRA_CFLAGS} -DTCL_THREAD_STACK_MIN=PTHREAD_STACK_MIN*64"
-		if test "$GCC" = "no" ; then
-		    EXTRA_CFLAGS="${EXTRA_CFLAGS} -pthread"
-		    LDFLAGS="-pthread"
-		else
+		if test "$GCC" = "yes" ; then
 		    LIBS=`echo $LIBS | sed s/-lpthreads//`
 		    LIBS="$LIBS -lpthread -lmach -lexc"
+		else
+		    EXTRA_CFLAGS="${EXTRA_CFLAGS} -pthread"
+		    LDFLAGS="-pthread"
 		fi
 	    fi
 
@@ -1065,7 +1065,9 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 	    if test "$do64bit" = "yes" ; then
 		arch=`isainfo`
 		if test "$arch" = "sparcv9 sparc" ; then
-			if test "$GCC" = "no" ; then
+			if test "$GCC" = "yes" ; then
+			    AC_MSG_WARN("64bit mode not supported with GCC on $system")
+			else
 			    do64bit_ok=yes
 			    if test "$do64bitVIS" = "yes" ; then
 				EXTRA_CFLAGS="-xarch=v9a"
@@ -1074,8 +1076,6 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 				EXTRA_CFLAGS="-xarch=v9"
 			    	LDFLAGS="-xarch=v9"
 			    fi
-			else 
-			    AC_MSG_WARN("64bit mode not supported with GCC on $system")
 			fi
 		else
 		    AC_MSG_WARN("64bit mode only supported sparcv9 system")
@@ -1104,7 +1104,7 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 	    DL_LIBS=""
 	    LDFLAGS="-Wl,-D,08000000"
 	    LD_SEARCH_FLAGS='-L${LIB_RUNTIME_DIR}'
-	    if test "$GCC" = "no" ; then
+	    if test "$GCC" != "yes" ; then
 		EXTRA_CFLAGS="-DHAVE_TZSET -std1"
 	    fi
 	    ;;

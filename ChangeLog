@@ -1,3 +1,12 @@
+2001-09-12  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* unix/configure: Regen.
+	* unix/tcl.m4: Invert the logic that checks for $GCC.
+	Instead of checking for "$GCC" = "no" we check for
+	"$GCC" != "yes" or simply swap the true and false
+	blocks of code in an if statement. That way if
+	GCC is set to "" everything will still work. [Bug 460991]
+
 2001-09-12  Don Porter <msofer@users.sourceforge.net>
 
 	* tests/appendComp.test:
