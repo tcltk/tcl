@@ -6,12 +6,33 @@
 #   NMAKE specific syntax is allowed in this file.
 #
 #==============================================================================
-# RCS: @(#) $Id: mkvc32.mif,v 1.1.2.2 2001/09/09 04:20:04 davygrvy Exp $
+# RCS: @(#) $Id: mkvc32.mif,v 1.1.2.3 2001/09/15 01:56:54 davygrvy Exp $
 #==============================================================================
 
-TOOLSET	    = vc32
-MAKECMD	    = nmake.exe -nologo /$(MAKEFLAGS) -f makefile.vc
+!ifndef _MKVC32_MIF
+_MKVC32_MIF = 1
 
+#==============================================
+# over-ride environment.
+#==============================================
+
+### Who wrote this shameful port of make?
+### How can I set special macros I want shared
+### to recursive makefiles?
+
+#!cmdswitches +e	# Doesn't work!
+
+
+#==============================================
+# check for local.
+#==============================================
+!if !exist(.\mkvc32.mif)
+!error The current working directory must be Tcl's windows platform directory before running 'makefile.win'
+!endif
+
+
+TOOLSET	    = vc32
+MAKECMD	    = nmake.exe -nologo /$(MAKEFLAGS) -f makefile.vc32
 SYM	    =
 
 rc32	    = rc
@@ -20,13 +41,18 @@ link32	    = link
 lib32	    = lib
 cvtres32    = cvtres
 
-# Win95 doesn't support "&" on command line
-#MkDest=@for %d in ($(PLATFORM) $(ObjDir)) do $(COMSPEC) /c if not exist %d md %d
+!ifndef OUT_DIR
+OUT_DIR	    = $(TMP_DIR)
+!endif
 
 
 #==============================================
 # Are the tools in the path already?
 #==============================================
+
+###  Unfortunetly, we can't just source this into the parent
+###  environment just once and have it affect all targets.
+###  This just isn't UNIX.
 
 !if !defined(MSVCDIR)
 !if     $(TOOLSETvc32VER) == 5
@@ -34,28 +60,48 @@ vcvars	    = "$(TOOLSETvc32)\vc\bin\vcvars32.bat"
 !elseif $(TOOLSETvc32VER) == 6
 vcvars	    = "$(TOOLSETvc32)\vc98\bin\vcvars32.bat"
 !endif
+!message +++ Microsoft Visual C++ tools are NOT in the path and
+!message +++    $(vcvars) will be used.
 
-!if [$(vcvars)] != 0
+!if [ $(vcvars) ] != 0
 !endif
 
 !else
-!message Microsoft Visual C++ tools are in the path.
+!message +++ Microsoft Visual C++ tools are in the path.
 !endif
+
 
 #==============================================
 # Test for compiler features
 #==============================================
 
-!if [ cl -nologo -c -ZI -Zs -TC nul 2>&1 | find /c "D4002" > nul ] != 0
-!message compiler has edit and continue
+### Win95 doesn't support "2>&1".
+### Anyone got a work-around?
+
+!if [ $(cc32) -c -Zs -TC nul 2>&1 | find "(R)" ] == 0
+
+!if [ $(cc32) -nologo -ZI -c -Zs -TC -Fdtemp nul 2>&1 | find /c "D4002" > nul ] != 0
+!message +++ compiler has `edit and continue`
 !else
-!message compiler doesn't have edit and continue
+!message +++ compiler doesn't have `edit and continue`
 !endif
 
-!if [ cl -nologo -c -Ox -Zs -TC nul 2>&1 | find /c "D4002" > nul ] != 0
-!message compiler has optimizations
+!if [ $(cc32) -nologo -Ox -c -Zs -TC -Fdtemp nul 2>&1 | find /c "D4002" > nul ] != 0
+!message +++ compiler has `optimizations`
 !else
-!message compiler doesn't have optimizations
+!message +++ compiler doesn't have `optimizations`
+!endif
+
+## Force a chariage return.
+!if [ echo. ] != 0
+!endif
+
+## Clean-up temp files after tests.
+!if [ @for %d in (temp.idb temp.pdb) do @if exist %d erase %d ] != 0
+!endif
+
+!else
+!error "$(cc32)" is STILL not available in the path.
 !endif
 
 #==============================================
@@ -72,6 +118,9 @@ vcvars	    = "$(TOOLSETvc32)\vc98\bin\vcvars32.bat"
 _NMAKE_VER  = $(_NMAKE_VER:6.00.8168.0=600)
 #==============================================
 
+
+# Win95 doesn't support "&" on command line.
+#MkDest=@for %d in ($(PLATFORM) $(ObjDir)) do $(COMSPEC) /c if not exist %d md %d
 
 #clean:
 # $(MkDest)
@@ -114,3 +163,5 @@ _NMAKE_VER  = $(_NMAKE_VER:6.00.8168.0=600)
 # erase  $(ObjDir)\*.srl >NUL
 # erase  $(ObjDir)\*.exp >NUL
 #!endif  # OS == Windows_NT
+
+!endif  # _MKVC32_MIF

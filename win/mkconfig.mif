@@ -4,7 +4,7 @@
 #  that needs editing to build [Tcl/Tk].
 #
 #==============================================================================
-# RCS: @(#) $Id: mkconfig.mif,v 1.1.2.1 2001/09/09 00:47:49 davygrvy Exp $
+# RCS: @(#) $Id: mkconfig.mif,v 1.1.2.2 2001/09/15 01:56:54 davygrvy Exp $
 #==============================================================================
 
 
@@ -27,8 +27,8 @@ INSTALLDIR	= c:\program files\tcl
 #==============================================
 
 #### Microsoft Visual C++
-TOOLSETvc32	= c:\dev\devstudio60
-TOOLSETvc32VER	= 6
+TOOLSETvc32	= c:\dev\devstudio
+TOOLSETvc32VER	= 5
 
 #### Borland C++ Builder
 TOOLSETbc32	= c:\dev\bcc55
