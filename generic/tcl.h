@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.155 2003/03/12 19:21:24 dgp Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.156 2003/04/05 01:25:10 dkf Exp $
  */
 
 #ifndef _TCL
@@ -488,6 +488,7 @@ typedef struct Tcl_Trace_ *Tcl_Trace;
 typedef struct Tcl_Var_ *Tcl_Var;
 typedef struct Tcl_ChannelTypeVersion_ *Tcl_ChannelTypeVersion;
 typedef struct Tcl_LoadHandle_ *Tcl_LoadHandle;
+typedef struct Tcl_Dict_ *Tcl_Dict;
 
 /*
  * Definition of the interface to procedures implementing threads.
@@ -1333,6 +1334,18 @@ typedef struct Tcl_HashSearch {
 #   define Tcl_InitHashTable(tablePtr, keyType) \
 	Tcl_InitHashTableEx(tablePtr, keyType, NULL)
 #endif /* TCL_PRESERVE_BINARY_COMPATABILITY */
+
+/*
+ * Structure definition for information used to keep track of searches
+ * through dictionaries.  These fields should not be accessed by code
+ * outside tclDictObj.c
+ */
+
+typedef struct {
+    Tcl_HashSearch search;
+    int epoch;
+    Tcl_Dict dictionaryPtr;
+} Tcl_DictSearch;
 
 
 /*

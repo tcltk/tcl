@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.122 2003/04/03 22:12:53 mdejong Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.123 2003/04/05 01:25:11 dkf Exp $
 
 VERSION 		= @TCL_VERSION@
 MAJOR_VERSION		= @TCL_MAJOR_VERSION@
@@ -302,9 +302,9 @@ XTTEST_OBJS = xtTestInit.o tclTest.o tclTestObj.o tclTestProcBodyObj.o \
 	tclThreadTest.o	tclUnixTest.o tclXtNotify.o tclXtTest.o 
 
 GENERIC_OBJS = regcomp.o regexec.o regfree.o regerror.o tclAlloc.o \
-	tclAsync.o tclBasic.o tclBinary.o \
-	tclCkalloc.o tclClock.o tclCmdAH.o tclCmdIL.o tclCmdMZ.o \
-	tclCompCmds.o tclCompExpr.o tclCompile.o tclDate.o tclEncoding.o \
+	tclAsync.o tclBasic.o tclBinary.o tclCkalloc.o tclClock.o \
+	tclCmdAH.o tclCmdIL.o tclCmdMZ.o tclCompCmds.o tclCompExpr.o \
+	tclCompile.o tclDate.o tclDictObj.o tclEncoding.o \
 	tclEnv.o tclEvent.o tclExecute.o tclFCmd.o tclFileName.o tclGet.o \
 	tclHash.o tclHistory.o tclIndexObj.o tclInterp.o tclIO.o tclIOCmd.o \
 	tclIOGT.o tclIOSock.o tclIOUtil.o tclLink.o tclListObj.o \
@@ -353,6 +353,7 @@ GENERIC_SRCS = \
 	$(GENERIC_DIR)/tclCompExpr.c \
 	$(GENERIC_DIR)/tclCompile.c \
 	$(GENERIC_DIR)/tclDate.c \
+	$(GENERIC_DIR)/tclDictObj.c \
 	$(GENERIC_DIR)/tclEncoding.c \
 	$(GENERIC_DIR)/tclEnv.c \
 	$(GENERIC_DIR)/tclEvent.c \
@@ -832,6 +833,9 @@ tclCompExpr.o: $(GENERIC_DIR)/tclCompExpr.c
 
 tclCompile.o: $(GENERIC_DIR)/tclCompile.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclCompile.c
+
+tclDictObj.o: $(GENERIC_DIR)/tclDictObj.c
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclDictObj.c
 
 tclEncoding.o: $(GENERIC_DIR)/tclEncoding.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclEncoding.c
