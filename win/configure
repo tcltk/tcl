@@ -1312,7 +1312,7 @@ fi
 
     if test "$tcl_ok" = "yes"; then
 	CFLAGS_DEFAULT='$(CFLAGS_DEBUG)'
-	LDFLAGS_DEFAULT='$(LDFLAGS_DEBUG})'
+	LDFLAGS_DEFAULT='$(LDFLAGS_DEBUG)'
 	DBGX=d
 	echo "$ac_t""yes" 1>&6
     else
