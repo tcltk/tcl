@@ -1,3 +1,17 @@
+2004-10-07  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* generic/tclFileName.c:
+	* generic/tclFileSystem.h:
+	* generic/tclIOUtil.c:
+	* generic/tclPathObj.c:
+	* unix/tclUnixFile.c:
+	* win/tclWinFile.c:
+	* tests/fileName.test:
+	* tests/winFCmd.test: code reorganization for better generic/
+	platform code splitting [Bug 925620] removing the need for
+	several #ifdef's, and tests and fix for an unreported Windows 
+	glob problem ('glob -dir C: -tails *').
+
 2004-10-07  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* doc/man.macros, *.3: Update .AS macro so it can know how wide to
