@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.49 2003/04/28 12:34:23 dkf Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.50 2003/04/29 20:23:38 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -308,10 +308,10 @@ Tcl_IncrObjCmd(dummy, interp, objc, objv)
     int objc;				/* Number of arguments. */
     Tcl_Obj *CONST objv[];		/* Argument objects. */
 {
-    long incrAmount;
+    long incrAmount = 1;
     Tcl_WideInt wideIncrAmount;
     Tcl_Obj *newValuePtr;
-    int isWide;
+    int isWide = 0;
     
     if ((objc != 2) && (objc != 3)) {
 	Tcl_WrongNumArgs(interp, 1, objv, "varName ?increment?");
@@ -322,10 +322,7 @@ Tcl_IncrObjCmd(dummy, interp, objc, objv)
      * Calculate the amount to increment by.
      */
     
-    if (objc == 2) {
-	incrAmount = 1;
-	isWide = 0;
-    } else {
+    if (objc == 3) {
 	/*
 	 * Need to be a bit cautious to ensure that [expr]-like rules
 	 * are enforced for interpretation of wide integers, despite
