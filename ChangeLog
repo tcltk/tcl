@@ -1,3 +1,9 @@
+2003-06-04  Joe Mistachkin  <joe@mistachkin.com>
+
+        * tools/man2help.tcl: Added duplicate help section checking           
+        * tools/index.tcl:    and corrected a comment typo for the 
+        getTopics proc in index.tcl [Bug #748700].
+
 2003-05-23  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclObj.c (tclCmdNameType):  Converted internal rep
