@@ -1,3 +1,13 @@
+1999-04-28    <stanton@scriptics.com>
+
+	* mac/tclMacResource.c: 
+	* generic/tclListObj.c: 
+	* generic/tclObj.c: 
+	* generic/tclStringObj.c: Changed to avoid freeing the string
+	representation before freeing the internal rep.  This helps with
+	debugging since the string rep will still be valid when the free
+	proc is invoked.
+
 1999-04-27    <stanton@scriptics.com>
 
 	* generic/tclLiteral.c (TclHideLiteral): Fixed so hidden literals
