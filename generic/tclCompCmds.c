@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.34 2002/09/30 18:05:07 hobbs Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.35 2002/11/14 00:56:43 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -2195,7 +2195,7 @@ TclCompileRegexpCmd(interp, parsePtr, envPtr)
 {
     Tcl_Token *varTokenPtr;	/* Pointer to the Tcl_Token representing
 				 * the parse of the RE or string */
-    int i, len, code, exactMatch, nocase;
+    int i, len, code, nocase, anchorLeft, anchorRight, start;
     char *str;
 
     /*
@@ -2267,34 +2267,38 @@ TclCompileRegexpCmd(interp, parsePtr, envPtr)
     str = (char *) ckalloc((unsigned) len + 1);
     strncpy(str, varTokenPtr[1].start, (size_t) len);
     str[len] = '\0';
+    start = 0;
+
+    /*
+     * Check for anchored REs (ie ^foo$), so we can use string equal if
+     * possible. Do not alter the start of str so we can free it correctly.
+     */
+    if (str[0] == '^') {
+	start++;
+	anchorLeft = 1;
+    } else {
+	anchorLeft = 0;
+    }
+    if ((str[len-1] == '$') && ((len == 1) || (str[len-2] != '\\'))) {
+	anchorRight = 1;
+	str[--len] = '\0';
+    } else {
+	anchorRight = 0;
+    }
 
     /*
      * On the first (pattern) arg, check to see if any RE special characters
      * are in the word.  If not, this is the same as 'string equal'.
      */
-#if 0
-    if ((len > 2) && (*str == '.') && (str[1] == '*')) {
-	/*
-	 * We can't modify the string after we have ckalloc'ed it, so this
-	 * code will have to change before being used.
-	 */
-	str += 2; len -= 2;
+    if ((len > (1+start)) && (str[start] == '.') && (str[start+1] == '*')) {
+	start += 2;
+	anchorLeft = 0;
     }
-    if ((len > 2) && (str[len-3] != '\\')
+    if ((len > (2+start)) && (str[len-3] != '\\')
 	    && (str[len-2] == '.') && (str[len-1] == '*')) {
 	len -= 2;
-    }
-#endif
-    if ((len > 1) && (str[0] == '^') && (str[len-1] == '$')
-	    && (str[len-2] != '\\')) {
-	/*
-	 * It appears and exact search was requested (ie ^foo$), so strip
-	 * off the special chars and signal exactMatch.	 Defer the stripping
-	 * to the TclEmitPush so the str ptr is not modified.
-	 */
-	exactMatch = 1;
-    } else {
-	exactMatch = 0;
+	str[len] = '\0';
+	anchorRight = 0;
     }
 
     /*
@@ -2302,24 +2306,33 @@ TclCompileRegexpCmd(interp, parsePtr, envPtr)
      * this is a bad RE (do this at the end because it can be expensive).
      * If so, let it complain at runtime.
      */
-    if ((strpbrk(str, "*+?{}()[].\\|^$") != NULL)
+    if ((strpbrk(str + start, "*+?{}()[].\\|^$") != NULL)
 	    || (Tcl_RegExpCompile(NULL, str) == NULL)) {
 	ckfree((char *) str);
 	return TCL_OUT_LINE_COMPILE;
     }
-    if (exactMatch) {
-	TclEmitPush(TclRegisterNewLiteral(envPtr, str+1, len-2), envPtr);
+
+    if (anchorLeft && anchorRight) {
+	TclEmitPush(TclRegisterNewLiteral(envPtr, str+start, len-start),
+		envPtr);
     } else {
 	/*
 	 * This needs to find the substring anywhere in the string, so
-	 * use string match and *foo*.
+	 * use string match and *foo*, with appropriate anchoring.
 	 */
 	char *newStr  = ckalloc((unsigned) len + 3);
-	newStr[0]     = '*';
-	strncpy(newStr + 1, str, (size_t) len);
-	newStr[len+1] = '*';
-	newStr[len+2] = '\0';
-	TclEmitPush(TclRegisterNewLiteral(envPtr, newStr, len+2), envPtr);
+	len -= start;
+	if (anchorLeft) {
+	    strncpy(newStr, str + start, (size_t) len);
+	} else {
+	    newStr[0] = '*';
+	    strncpy(newStr + 1, str + start, (size_t) len++);
+	}
+	if (!anchorRight) {
+	    newStr[len++] = '*';
+	}
+	newStr[len] = '\0';
+	TclEmitPush(TclRegisterNewLiteral(envPtr, newStr, len), envPtr);
 	ckfree((char *) newStr);
     }
     ckfree((char *) str);
@@ -2339,7 +2352,7 @@ TclCompileRegexpCmd(interp, parsePtr, envPtr)
 	}
     }
 
-    if (exactMatch && !nocase) {
+    if (anchorLeft && anchorRight && !nocase) {
 	TclEmitOpcode(INST_STR_EQ, envPtr);
     } else {
 	TclEmitInstInt1(INST_STR_MATCH, nocase, envPtr);

@@ -798,6 +798,26 @@ test regexp-21.11 {regexp command compiling tests} {
     }
 } {0 {}}
 
+set i 0
+foreach {str exp result} {
+    foo		^foo		1
+    foobar	^foobar$	1
+    foobar	bar$		1
+    foobar	^$		0
+    ""		^$		1
+    anything	$		1
+    anything	^.*$		1
+    anything	^.*a$		0
+    anything	^.*a.*$		1
+    anything	^.*.*$		1
+    anything	^.*..*$		1
+    anything	^.*b$		0
+    anything	^a.*$		1
+} {
+    test regexp-22.[incr i] {regexp command compiling tests} \
+	     [subst {evalInProc {set a "$str"; regexp {$exp} \$a}}] $result
+}
+
 # cleanup
 ::tcltest::cleanupTests
 return
