@@ -1,5 +1,10 @@
 2003-04-05  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
+	* unix/Makefile.in, win/Makefile.in, win/makefile.[bv]c: Build support.
+	* generic/tcl.decls: Added dict public API to stubs table.
+	* generic/tcl.h (Tcl_DictSearch): Added declaration of structure
+	to allow user code to iterate over dictionaries.
+
 	* doc/DictObj.3:	New files containing dictionary
 	* doc/dict.n:		implementation, documentation and tests
 	* generic/tclDictObj.c:	as mandated by TIP #111.
