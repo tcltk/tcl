@@ -1,3 +1,8 @@
+2002-09-05  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclVar.c (TclDeleteVars):  Corrected logic for setting the
+	TCL_INTERP_DESTROYED flag when calling variable traces.  [Tk Bug 605121]
+
 2002-09-04  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* generic/tclVar.c (DeleteArray): leak plug [Bug 604239]. Thanks
