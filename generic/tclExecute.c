@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.43 2001/12/10 15:44:34 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.44 2001/12/11 17:57:12 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -2564,7 +2564,7 @@ TclExecuteByteCode(interp, codePtr)
 		 */
 
 		if ( objPtr == NULL ) {
-		    TRACE_WITH_OBJ( ( "%d => ERROR: ", opnd ),
+		    TRACE_WITH_OBJ( ( "\"%.30s\" => ERROR: ", O2S(value2Ptr)),
 				    Tcl_GetObjResult( interp ) );
 		    result = TCL_ERROR;
 		    goto checkForCatch;
@@ -2575,7 +2575,7 @@ TclExecuteByteCode(interp, codePtr)
 		 */
 
 		PUSH_OBJECT( objPtr );
-		TRACE(( "%d => %s\n", opnd, O2S( objPtr ) ));
+		TRACE(( "=> %s\n", O2S( objPtr ) ));
 		Tcl_DecrRefCount( objPtr );
 	    }
 	    ADJUST_PC( 1 );

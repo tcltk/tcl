@@ -1,5 +1,9 @@
 2001-12-11  Miguel Sofer  <msofer@users.sourceforge.net>
 
+	* generic/tclExecute.c: fix debug messages in INST_LSET_LIST. 
+
+2001-12-11  Miguel Sofer  <msofer@users.sourceforge.net>
+
 	* generic/tclCompCmds.c (TclCompileLindexCmd):
 	* generic/tclCompExpr.c (CompileMathFuncCall): removed the last
 	two overestimates of the necessary stack depth for bytecodes in
