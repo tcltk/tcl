@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: event.test,v 1.18 2002/07/02 19:10:57 dgp Exp $
+# RCS: @(#) $Id: event.test,v 1.19 2002/07/05 10:38:42 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -197,10 +197,12 @@ test event-5.2 {Tcl_BackgroundError, HandleBgErrors procedures} {
 test event-6.1 {BgErrorDeleteProc procedure} {
     catch {interp delete foo}
     interp create foo
+    set erroutfile [makeFile Unmodified err.out]
+    foo eval [list set erroutfile $erroutfile]
     foo eval {
 	proc bgerror args {
-	    global errorInfo
-	    set f [open err.out r+]
+	    global errorInfo erroutfile
+	    set f [open $erroutfile r+]
 	    seek $f 0 end
 	    puts $f "$args $errorInfo"
 	    close $f
@@ -208,14 +210,13 @@ test event-6.1 {BgErrorDeleteProc procedure} {
 	after 100 {error "first error"}
 	after 100 {error "second error"}
     }
-    makeFile Unmodified err.out
     after 100 {interp delete foo}
     after 200
     update
-    set f [open err.out r]
+    set f [open $erroutfile r]
     set result [read $f]
     close $f
-    removeFile err.out
+    removeFile $erroutfile
     set result
 } {Unmodified
 }
@@ -405,7 +406,8 @@ foreach i [after info] {
 }
 
 test event-11.5 {Tcl_VwaitCmd procedure: round robin scheduling, 2 sources} {socket} {
-    set f1 [open test1 w]
+    set test1file [makeFile "" test1]
+    set f1 [open $test1file w]
     proc accept {s args} {
 	puts $s foobar
 	close $s
@@ -417,30 +419,32 @@ test event-11.5 {Tcl_VwaitCmd procedure: round robin scheduling, 2 sources} {soc
     set x 0
     set y 0
     set z 0
-    fileevent $s2 readable { incr z }
+    fileevent $s2 readable {incr z}
     vwait z
-    fileevent $f1 writable { incr x; if { $y == 3 } { set z done } }
-    fileevent $s2 readable { incr y; if { $x == 3 } { set z done } }
+    fileevent $f1 writable {incr x; if {$y == 3} {set z done}}
+    fileevent $s2 readable {incr y; if {$x == 3} {set z done}}
     vwait z
     close $f1
     close $s2
-    file delete test1 test2
+    removeFile $test1file
     list $x $y $z
 } {3 3 done}
 test event-11.6 {Tcl_VwaitCmd procedure: round robin scheduling, same source} {
-    file delete test1 test2
-    set f1 [open test1 w]
-    set f2 [open test2 w]
+    set test1file [makeFile "" test1]
+    set test2file [makeFile "" test2]
+    set f1 [open $test1file w]
+    set f2 [open $test2file w]
     set x 0
     set y 0
     set z 0
     update
-    fileevent $f1 writable { incr x; if { $y == 3 } { set z done } }
-    fileevent $f2 writable { incr y; if { $x == 3 } { set z done } }
+    fileevent $f1 writable {incr x; if {$y == 3} {set z done}}
+    fileevent $f2 writable {incr y; if {$x == 3} {set z done}}
     vwait z
     close $f1
     close $f2
-    file delete test1 test2
+    removeFile $test1file
+    removeFile $test2file
     list $x $y $z
 } {3 3 done}
 
@@ -593,15 +597,3 @@ foreach i [after info] {
 }
 ::tcltest::cleanupTests
 return
-
-
-
-
-
-
-
-
-
-
-
-

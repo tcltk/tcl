@@ -1,3 +1,29 @@
+2002-07-05  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* unix/Makefile.in (ro-test,ddd,GDB,DDD): Created new targets to
+	allow running the test suite with a read-only current directory,
+	running under ddd instead of gdb, and factored out some executable
+	names for broken sites (like mine) where gdb and ddd are installed
+	with non-standard names...
+
+	* tests/httpold.test: Altered test names to httpold-* to avoid
+	clashes with http.test, and stopped tests from failing when the
+	current directory is not writable...
+
+	* tests/event.test:		Stop these tests from failing
+	* tests/ioUtil.test:		when the current directory is
+	* tests/regexp.test:		not writable...
+	* tests/regexpComp.test: 
+	* tests/source.test: 
+	* tests/unixFile.test: 
+	* tests/unixNotfy.test: 
+
+	* tests/unixFCmd.test:		Trying to make these test-files
+	* tests/macFCmd.test:		not bomb out with an error when
+	* tests/http.test:		the current directory is not
+	* tests/fileName.test:		writable...
+	* tests/env.test:
+
 2002-07-05  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	*** 8.4b1 TAGGED FOR RELEASE ***

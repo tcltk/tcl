@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.104 2002/07/04 01:20:38 dgp Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.105 2002/07/05 10:38:43 dkf Exp $
 
 VERSION 		= @TCL_VERSION@
 
@@ -241,6 +241,15 @@ CC			= @CC@
 # Flags to be passed to mkLinks to control whether the manpages
 # should be compressed and linked with softlinks
 MKLINKS_FLAGS           = @MKLINKS_FLAGS@
+
+#----------------------------------------------------------------
+# The information below is usually usable as is.  The configure
+# script won't modify it and it only exists to make working
+# around selected rare system configurations easier.
+#----------------------------------------------------------------
+
+GDB			= gdb
+DDD			= ddd
 
 #----------------------------------------------------------------
 # The information below should be usable as is.  The configure
@@ -485,6 +494,16 @@ runtest: tcltest
 	TCL_LIBRARY="${TCL_BUILDTIME_LIBRARY}"; export TCL_LIBRARY; \
 	./tcltest
 
+# Useful target for running the test suite with an unwritable current
+# directory...
+ro-test: tcltest
+	LD_LIBRARY_PATH=`pwd`:${LD_LIBRARY_PATH}; export LD_LIBRARY_PATH; \
+	DYLD_LIBRARY_PATH=`pwd`:${DYLD_LIBRARY_PATH}; export DYLD_LIBRARY_PATH; \
+	LIBPATH=`pwd`:${LIBPATH}; export LIBPATH; \
+	SHLIB_PATH=`pwd`:${SHLIB_PATH}; export SHLIB_PATH; \
+	TCL_LIBRARY="${TCL_BUILDTIME_LIBRARY}"; export TCL_LIBRARY; \
+	echo 'exec chmod -w .;package require tcltest;tcltest::temporaryDirectory /tmp;source ../tests/all.tcl;exec chmod +w .' | ./tcltest
+
 # This target can be used to run tclsh from the build directory
 # via `make shell SCRIPT=/tmp/foo.tcl`
 shell: tclsh
@@ -502,7 +521,17 @@ gdb: tclsh
 	@echo "set env LIBPATH=`pwd`:${LIBPATH}" >> gdb.run
 	@echo "set env SHLIB_PATH=`pwd`:${SHLIB_PATH}" >> gdb.run
 	@echo "set env TCL_LIBRARY=${TCL_BUILDTIME_LIBRARY}" >> gdb.run
-	gdb ./tclsh --command=gdb.run
+	$(GDB) ./tclsh --command=gdb.run
+	rm gdb.run
+
+# This target can be used to run tclsh inside ddd
+ddd: tclsh
+	@echo "set env LD_LIBRARY_PATH=`pwd`:${LD_LIBRARY_PATH}" > gdb.run
+	@echo "set env DYLD_LIBRARY_PATH=`pwd`:${DYLD_LIBRARY_PATH}" > gdb.run
+	@echo "set env LIBPATH=`pwd`:${LIBPATH}" >> gdb.run
+	@echo "set env SHLIB_PATH=`pwd`:${SHLIB_PATH}" >> gdb.run
+	@echo "set env TCL_LIBRARY=${TCL_BUILDTIME_LIBRARY}" >> gdb.run
+	$(DDD) -command=gdb.run ./tclsh
 	rm gdb.run
 
 # The following target outputs the name of the top-level source directory
