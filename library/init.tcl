@@ -3,7 +3,7 @@
 # Default system startup file for Tcl-based applications.  Defines
 # "unknown" procedure and auto-load facilities.
 #
-# RCS: @(#) $Id: init.tcl,v 1.61 2004/05/03 14:28:35 dgp Exp $
+# RCS: @(#) $Id: init.tcl,v 1.62 2004/06/11 21:30:08 dgp Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
@@ -24,7 +24,7 @@ package require -exact Tcl 8.5
 # The environment variable TCLLIBPATH
 #
 # tcl_library, which is the directory containing this init.tcl script.
-# tclInitScript.h searches around for the directory containing this
+# [tclInit] (Tcl_Init()) searches around for the directory containing this
 # init.tcl and defines tcl_library to that location before sourcing it.
 #
 # The parent directory of tcl_library. Adding the parent

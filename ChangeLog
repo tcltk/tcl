@@ -1,5 +1,14 @@
 2004-06-11  Don Porter  <dgp@users.sourceforge.net>
 
+	* unix/tclUnixInit.c:	The routines Tcl_Init() and TclSourceRCFile()
+	* win/tclWinInit.c:	had identical implementations for both win and
+	* generic/tclInterp.c:	unix.  Moved to a single generic implementation.
+	* generic/tclMain.c:
+	* library/init.tcl:
+	* generic/tclInitScript.h (removed):
+	* unix/Makefile.in:
+	* win/tcl.dsp:
+
 	* unix/configure.in:	Updated TCL_PACKAGE_PATH value to
 	* win/configure.in:	handle --libdir configuration.
 

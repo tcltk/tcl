@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMain.c,v 1.26 2004/05/13 12:59:23 dkf Exp $
+ * RCS: @(#) $Id: tclMain.c,v 1.27 2004/06/11 21:30:08 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -237,10 +237,66 @@ CONST char *TclGetStartupScriptFileName()
     }
     return Tcl_GetString(path);
 }
-
 
-/*
+/*----------------------------------------------------------------------
+ *
+ * Tcl_SourceRCFile --
+ *         
+ *      This procedure is typically invoked by Tcl_Main of Tk_Main
+ *      procedure to source an application specific rc file into the
+ *      interpreter at startup time.
+ *                            
+ * Results:
+ *      None.                                                  
+ *
+ * Side effects:
+ *      Depends on what's in the rc script.                                                
+ *
  *----------------------------------------------------------------------
+ */
+                  
+void
+Tcl_SourceRCFile(interp)
+    Tcl_Interp *interp;         /* Interpreter to source rc file into. */
+{
+    Tcl_DString temp;                                                      
+    CONST char *fileName;
+    Tcl_Channel errChannel;
+
+    fileName = Tcl_GetVar(interp, "tcl_rcFileName", TCL_GLOBAL_ONLY);
+    if (fileName != NULL) { 
+        Tcl_Channel c;
+        CONST char *fullName;
+
+	Tcl_DStringInit(&temp);
+	fullName = Tcl_TranslateFileName(interp, fileName, &temp);
+	if (fullName == NULL) {           
+	    /*
+	     * Couldn't translate the file name (e.g. it referred to a
+	     * bogus user or there was no HOME environment variable).
+	     * Just do nothing.
+	     */
+	} else {
+            /*
+	     * Test for the existence of the rc file before trying to read it.             
+	     */
+	    c = Tcl_OpenFileChannel(NULL, fullName, "r", 0);
+	    if (c != (Tcl_Channel) NULL) {
+		Tcl_Close(NULL, c);
+		if (Tcl_EvalFile(interp, fullName) != TCL_OK) {
+		    errChannel = Tcl_GetStdChannel(TCL_STDERR);
+		    if (errChannel) {
+			Tcl_WriteObj(errChannel, Tcl_GetObjResult(interp));
+			Tcl_WriteChars(errChannel, "\n", 1);
+ 		    }
+ 		}
+ 	    }
+	}
+	Tcl_DStringFree(&temp);
+    }
+}
+
+/*----------------------------------------------------------------------
  *
  * Tcl_Main --
  *
