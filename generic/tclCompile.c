@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.32 2002/03/15 15:39:06 dkf Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.33 2002/05/30 15:03:57 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -704,8 +704,6 @@ TclInitCompileEnv(interp, envPtr, string, numBytes)
     envPtr->maxStackDepth = 0;
     envPtr->currStackDepth = 0;
     TclInitLiteralTable(&(envPtr->localLitTable));
-    envPtr->exprIsJustVarRef = 0;
-    envPtr->exprIsComparison = 0;
 
     envPtr->codeStart = envPtr->staticCodeSpace;
     envPtr->codeNext = envPtr->codeStart;
@@ -1399,8 +1397,6 @@ TclCompileExprWords(interp, tokenPtr, numWords, envPtr)
     Tcl_Token *wordPtr;
     int range, numBytes, i, code;
     char *script;
-    int saveExprIsJustVarRef = envPtr->exprIsJustVarRef;
-    int saveExprIsComparison = envPtr->exprIsComparison;
 
     range = -1;
     code = TCL_OK;
@@ -1452,8 +1448,6 @@ TclCompileExprWords(interp, tokenPtr, numWords, envPtr)
 	TclEmitOpcode(INST_EXPR_STK, envPtr);
     }
 
-    envPtr->exprIsJustVarRef = saveExprIsJustVarRef;
-    envPtr->exprIsComparison = saveExprIsComparison;
     return code;
 }
 
