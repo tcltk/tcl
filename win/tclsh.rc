@@ -1,4 +1,4 @@
-// RCS: @(#) $Id: tclsh.rc,v 1.5.2.1 2001/04/03 22:54:40 hobbs Exp $
+// RCS: @(#) $Id: tclsh.rc,v 1.5.2.2 2001/10/03 20:24:59 hobbs Exp $
 //
 // Version Resource Script
 //
@@ -53,9 +53,9 @@ BEGIN
         BEGIN
             VALUE "FileDescription", "Tclsh Application\0"
             VALUE "OriginalFilename", "tclsh" STRINGIFY(TCL_MAJOR_VERSION) STRINGIFY(TCL_MINOR_VERSION) SUFFIX ".exe\0"
-            VALUE "CompanyName", "Ajuba Solutions\0"
+            VALUE "CompanyName", "ActiveState Corporation\0"
             VALUE "FileVersion", TCL_PATCH_LEVEL
-            VALUE "LegalCopyright", "Copyright (c) 2000 by Ajuba Solutions\0"
+            VALUE "LegalCopyright", "Copyright (c) 2000 by ActiveState Corporation, et al\0"
             VALUE "ProductName", "Tcl " TCL_VERSION " for Windows\0"
             VALUE "ProductVersion", TCL_PATCH_LEVEL
         END
