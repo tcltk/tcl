@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: io.test,v 1.57 2004/06/23 22:02:41 patthoyts Exp $
+# RCS: @(#) $Id: io.test,v 1.58 2004/07/02 18:36:56 kennykb Exp $
 
 if {[catch {package require tcltest 2}]} {
     puts stderr "Skipping tests in [info script].  tcltest 2 required."
@@ -2049,9 +2049,8 @@ test io-27.6 {FlushChannel, async flushing, async close} \
     close $f
     set counter 0
     while {([file size $path(output)] < 65536) && ($counter < 1000)} {
-        incr counter
-        after 20
-        update
+	after 20 [list incr [namespace which -variable counter]]
+	vwait [namespace which -variable counter]
     }
     if {$counter == 1000} {
         set result "file size only [file size $path(output)]"
@@ -2126,9 +2125,8 @@ test io-28.3 {CloseChannel, not called before output queue is empty} \
     close $f
     set counter 0
     while {([file size $path(output)] < 20480) && ($counter < 1000)} {
-        incr counter
-        after 20
-        update
+	after 20 [list incr [namespace which -variable counter]]
+	vwait [namespace which -variable counter]
     }
     if {$counter == 1000} {
         set result probably_broken
@@ -2611,15 +2609,19 @@ test io-29.31 {Tcl_WriteChars, background flush} {stdio openpipe} {
     close $f
     set counter 0
     while {([file size $path(output)] < 65536) && ($counter < 1000)} {
-	incr counter
-	after 5
-	update
+	after 10 [list incr [namespace which -variable counter]]
+	vwait [namespace which -variable counter]
     }
     if {$counter == 1000} {
 	set result "file size only [file size $path(output)]"
     } else {
 	set result ok
     }
+    # allow a little time for the background process to close.
+    # otherwise, the following test fails on the [file delete $path(output)
+    # on Windows because a process still has the file open.
+    after 100 set v 1; vwait v
+    set result
 } ok
 test io-29.32 {Tcl_WriteChars, background flush to slow reader} \
 	{stdio asyncPipeClose openpipe} {
@@ -2649,9 +2651,8 @@ test io-29.32 {Tcl_WriteChars, background flush to slow reader} \
     close $f
     set counter 0
     while {([file size $path(output)] < 65536) && ($counter < 1000)} {
-	incr counter
-	after 20
-	update
+	after 20 [list incr [namespace which -variable counter]]
+	vwait [namespace which -variable counter]
     }
     if {$counter == 1000} {
 	set result "file size only [file size $path(output)]"
