@@ -1,3 +1,9 @@
+2004-02-25  David Gravereaux <davygrvy@pobox.com>
+
+	* tests/winPipe.test:
+	* win/tclWinPipe.c: backport of BuildCommandLine changes to mirror
+	msvcrt's parse_cmdline() rules of quoting.
+
 2004-02-19  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* win/tclWinInit.c (AppendEnvironment):
