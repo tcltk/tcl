@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.test,v 1.11 2000/02/28 18:49:42 ericm Exp $
+# RCS: @(#) $Id: clock.test,v 1.12 2000/03/21 22:55:24 ericm Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -188,11 +188,14 @@ test clock-4.18 {clock scan, ISO 8601 point in time format} {
 } "Oct 23, 1992 00:00:00"
 
 # CLOCK SCAN REAL TESTS
+# We use 5am PST, 31-12-1999 as the base for these scans because irrespective
+# of your local timezone it should always give us times on December 31, 1999
+set 5amPST 946645200
 test clock-4.18 {clock scan, number meridian} {
-    set t1 [clock scan "5 am" -base 946627200 -gmt true]
-    set t2 [clock scan "5 pm" -base 946627200 -gmt true]
-    set t3 [clock scan "5 a.m." -base 946627200 -gmt true]
-    set t4 [clock scan "5 p.m." -base 946627200 -gmt true]
+    set t1 [clock scan "5 am" -base $5amPST -gmt true]
+    set t2 [clock scan "5 pm" -base $5amPST -gmt true]
+    set t3 [clock scan "5 a.m." -base $5amPST -gmt true]
+    set t4 [clock scan "5 p.m." -base $5amPST -gmt true]
     list \
 	    [clock format $t1 -format {%b %d, %Y %H:%M:%S} -gmt true] \
 	    [clock format $t2 -format {%b %d, %Y %H:%M:%S} -gmt true] \
@@ -201,27 +204,27 @@ test clock-4.18 {clock scan, number meridian} {
 } [list "Dec 31, 1999 05:00:00" "Dec 31, 1999 17:00:00" \
 	"Dec 31, 1999 05:00:00" "Dec 31, 1999 17:00:00"]
 test clock-4.19 {clock scan, number:number meridian} {
-    clock format [clock scan "5:30 pm" -base 946627200 -gmt true] \
+    clock format [clock scan "5:30 pm" -base $5amPST -gmt true] \
 	    -format {%b %d, %Y %H:%M:%S} -gmt true
 } "Dec 31, 1999 17:30:00"
 test clock-4.20 {clock scan, number:number-timezone} {
-    clock format [clock scan "00:00-0800" -gmt true -base 946627200] \
+    clock format [clock scan "00:00-0800" -gmt true -base $5amPST] \
 	    -format {%b %d, %Y %H:%M:%S} -gmt true
 } "Dec 31, 1999 08:00:00"
 test clock-4.21 {clock scan, number:number:number o_merid} {
-    clock format [clock scan "8:00:00" -gmt true -base 946627200] \
+    clock format [clock scan "8:00:00" -gmt true -base $5amPST] \
 	    -format {%b %d, %Y %H:%M:%S} -gmt true
 } "Dec 31, 1999 08:00:00"
 test clock-4.22 {clock scan, number:number:number o_merid} {
-    clock format [clock scan "8:00:00 am" -gmt true -base 946627200] \
+    clock format [clock scan "8:00:00 am" -gmt true -base $5amPST] \
 	    -format {%b %d, %Y %H:%M:%S} -gmt true
 } "Dec 31, 1999 08:00:00"
 test clock-4.23 {clock scan, number:number:number o_merid} {
-    clock format [clock scan "8:00:00 pm" -gmt true -base 946627200] \
+    clock format [clock scan "8:00:00 pm" -gmt true -base $5amPST] \
 	    -format {%b %d, %Y %H:%M:%S} -gmt true
 } "Dec 31, 1999 20:00:00"
 test clock-4.24 {clock scan, number:number:number-timezone} {
-    clock format [clock scan "00:00:30-0800" -gmt true -base 946627200] \
+    clock format [clock scan "00:00:30-0800" -gmt true -base $5amPST] \
 	    -format {%b %d, %Y %H:%M:%S} -gmt true
 } "Dec 31, 1999 08:00:30"
 test clock-4.25 {clock scan, DST for days} {

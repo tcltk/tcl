@@ -1,3 +1,13 @@
+2000-03-21  Eric Melski  <ericm@scriptics.com>
+
+	* tests/clock.test: Modified some tests that were not robust with
+	respect to the time zone in which they were run and were thus
+	failing.
+
+	* doc/clock.n: Clarified meaning of -gmt with respect to -base
+	when used with [clock scan] (-gmt does not affect the
+	interpretation of -base).
+
 2000-03-19  Sandeep Tamhankar <sandeep@scriptics.com>
 
 	* library/http2.1/http.tcl: geturl used to throw an exception when
@@ -37,6 +47,14 @@
 	This allows a timeout to occur when writing lots of post data.
 	The queryprogress callback is called after each block of query
 	data is posted.  It has the same signature as the -progress callback.
+
+2000-03-06  Eric Melski  <ericm@scriptics.com>
+
+	* library/package.tcl: Applied patch from Bug: 2570; rather than
+	setting geometry of slave interp to 0x0 when Tk was loaded, it now
+	does "wm withdraw .".  Both remove the main window from the
+	display, but the former caused some internal structures to get
+	initialized to zero, which caused crashes with some extensions.
 
 2000-03-02  Jeff Hobbs  <hobbs@scriptics.com>
 
