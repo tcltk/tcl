@@ -1,3 +1,8 @@
+2003-04-03  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCompCmds.c (TclCompileReturnCmd):  Now that [return]
+	compiles to INST_RETURN, it is safe to compile even outside a proc.
+
 2003-04-02  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* win/configure: Regen.
