@@ -1,3 +1,20 @@
+2004-12-29  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tclDate.c: Regen
+	* generic/tclGetDate.y (TclDatelex):
+		Fixed a problem where a four-digit group with >=2 
+		leading zeroes appeared to be a	two-digit group, leading to
+		misinterpreting the time 0012 as 1200.	[Bug # 1090413]
+	* library/clock.tcl: Added code to interpret correctly months
+	                     outside the range 01-12 as reduced modulo 12
+			     with a corresponding adjustment to the year.
+			     [Bug 1092789]
+	* tests/clock.test: Added regression test cases for the above two
+		            bugs.
+	* unix/Makefile.in: Added --no-lines to the 'bison' command line 
+	* win/Makefile.in:  to help constrain the number of diffs in a cvs
+	                    checkin.
+	
 2004-12-24  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclCompile.c:
