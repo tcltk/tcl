@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.61 2001/08/07 02:44:40 hobbs Exp $
+RCS: @(#) $Id: changes,v 1.62 2001/08/16 22:13:25 davygrvy Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -5127,4 +5127,4 @@ side (mem leak) Correct mem leak in channels when statePtr was released
 
  * fixed use of tmpname in TclpCreateTempFile on Unix (lim)
 
---- Released 8.4a3, August 6, 2000 --- See ChangeLog for details ---
+--- Released 8.4a3, August 6, 2001 --- See ChangeLog for details ---
