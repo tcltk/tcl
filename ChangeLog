@@ -1,3 +1,9 @@
+2004-03-28  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclCompile.c (TclCompileScript): corrected possible
+	segfault when a compilation returns TCL_OUTLINE_COMPILE after
+	having grown the compile environment [Bug 925121].
+
 2004-03-21  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* win/tclWinInt.h: define VER_PLATFORM_WIN32_CE if not already set.
