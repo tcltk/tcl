@@ -1,3 +1,8 @@
+2001-09-04  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* generic/tclCompile.c: fixed incorrect opreands for INST_LIST
+	[Bug: 458241] (David Cuthbert, dacut@users.sourceforge.net)
+
 2001-09-03  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclExecute.c (TclExecuteByteCode): fixed missing comma

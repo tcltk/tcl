@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.22 2001/05/17 02:13:02 hobbs Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.23 2001/09/04 11:54:27 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -222,7 +222,7 @@ InstructionDesc instructionTable[] = {
 	/* Str Index:	push (strindex stknext stktop) */
     {"strmatch",	  1,   0,   {OPERAND_NONE}},
 	/* Str Match:	push (strmatch stkforenext stknext stktop) */
-    {"list",		  1,   0,   {OPERAND_NONE}},
+    {"list",		  5,   1,   {OPERAND_UINT4}},
 	/* List:	push (stk1 stk2 ... stktop) */
     {"listindex",	  1,   0,   {OPERAND_NONE}},
 	/* List Index:	push (listindex stknext stktop) */
