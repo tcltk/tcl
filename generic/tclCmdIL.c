@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.60 2004/01/17 00:38:56 dkf Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.61 2004/01/17 00:52:18 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2080,13 +2080,21 @@ Tcl_LassignObjCmd(dummy, interp, objc, objv)
 	    }
 	    valueObj = emptyObj;
 	}
+	/*
+	 * Make sure the reference count for the value being assigned
+	 * is greater than one (other reference minimally in the list)
+	 * so we can't get hammered by shimmering.
+	 */
+	Tcl_IncrRefCount(valueObj);
 	if (Tcl_ObjSetVar2(interp, objv[i+2], NULL, valueObj,
 		TCL_LEAVE_ERR_MSG) == NULL) {
+	    Tcl_DecrRefCount(valueObj);
 	    if (emptyObj != NULL) {
 		Tcl_DecrRefCount(emptyObj);
 	    }
 	    return TCL_ERROR;
 	}
+	Tcl_DecrRefCount(valueObj);
     }
     if (emptyObj != NULL) {
 	Tcl_DecrRefCount(emptyObj);
