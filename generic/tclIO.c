@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.28 2001/01/30 17:32:06 dgp Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.29 2001/03/30 23:06:39 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -1056,6 +1056,14 @@ Tcl_CreateChannel(typePtr, chanName, instanceData, mask)
     tsdPtr->firstCSPtr	= statePtr;
 
     /*
+     * TIP #10. Mark the current thread as the one managing the new
+     *          channel. Note: 'Tcl_GetCurrentThread' returns sensible
+     *          values even for a non-threaded core.
+     */
+
+    statePtr->managingThread = Tcl_GetCurrentThread ();
+
+    /*
      * Install this channel in the first empty standard channel slot, if
      * the channel was previously closed explicitly.
      */
@@ -1466,6 +1474,32 @@ Tcl_GetChannelInstanceData(chan)
     Channel *chanPtr = (Channel *) chan;	/* The actual channel. */
 
     return chanPtr->instanceData;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_GetChannelThread --
+ *
+ *	Given a channel structure, returns the thread managing it.
+ *	TIP #10
+ *
+ * Results:
+ *	Returns the id of the thread managing the channel.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_ThreadId
+Tcl_GetChannelThread(chan)
+    Tcl_Channel chan;		/* The channel to return managing thread for. */
+{
+    Channel *chanPtr = (Channel *) chan;	/* The actual channel. */
+
+    return chanPtr->state->managingThread;
 }
 
 /*
@@ -2254,6 +2288,14 @@ Tcl_SpliceChannel(chan)
 
     statePtr->nextCSPtr	= tsdPtr->firstCSPtr;
     tsdPtr->firstCSPtr	= statePtr;
+
+    /*
+     * TIP #10. Mark the current thread as the new one managing this
+     *          channel. Note: 'Tcl_GetCurrentThread' returns sensible
+     *          values even for a non-threaded core.
+     */
+
+    statePtr->managingThread = Tcl_GetCurrentThread ();
 }
 
 /*
