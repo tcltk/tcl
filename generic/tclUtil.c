@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.1.2.6 1998/12/12 01:37:03 lfb Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.1.2.7 1999/01/28 20:25:00 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -1422,11 +1422,30 @@ Tcl_DStringSetLength(dsPtr, length)
     Tcl_DString *dsPtr;		/* Structure describing dynamic string. */
     int length;			/* New length for dynamic string. */
 {
+    int newsize;
+
     if (length < 0) {
 	length = 0;
     }
     if (length >= dsPtr->spaceAvl) {
-	dsPtr->spaceAvl = length + 1;
+	/*
+	 * There are two interesting cases here.  In the first case, the user
+	 * may be trying to allocate a large buffer of a specific size.  It
+	 * would be wasteful to overallocate that buffer, so we just allocate
+	 * enough for the requested size plus the trailing null byte.  In the
+	 * second case, we are growing the buffer incrementally, so we need
+	 * behavior similar to Tcl_DStringAppend.  The requested length will
+	 * usually be a small delta above the current spaceAvl, so we'll end up
+	 * doubling the old size.  This won't grow the buffer quite as quickly,
+	 * but it should be close enough.
+	 */
+
+	newsize = dsPtr->spaceAvl * 2;
+	if (length < newsize) {
+	    dsPtr->spaceAvl = newsize;
+	} else {
+	    dsPtr->spaceAvl = length + 1;
+	}
 	if (dsPtr->string == dsPtr->staticSpace) {
 	    char *newString;
 
@@ -1458,8 +1477,7 @@ Tcl_DStringSetLength(dsPtr, length)
  *	The previous contents of the dynamic string are lost, and
  *	the new value is an empty string.
  *
- *----------------------------------------------------------------------
- */
+ *---------------------------------------------------------------------- */
 
 void
 Tcl_DStringFree(dsPtr)
