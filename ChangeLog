@@ -1,3 +1,9 @@
+2003-11-17  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/regcomp.c:	Backported regexp bug fixes and tests.  Thanks
+	* generic/tclTest.c:	to Pavel Goran and Vince Darley.
+	* tests/reg.test:	[Bugs 230589, 504785, 505048, 703709, 840258]
+
 2003-11-12  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* tests/cmdMZ.test (cmdMZ-1.4): change to nonPortable as more
