@@ -107,17 +107,43 @@ AC_DEFUN(SC_LOAD_TCLCONFIG, [
     fi
 
     #
+    # If the TCL_BIN_DIR is the build directory (not the install directory),
+    # then set the common variable name to the value of the build variables.
+    # For example, the variable TCL_LIB_SPEC will be set to the value
+    # of TCL_BUILD_LIB_SPEC. An extension should make use of TCL_LIB_SPEC
+    # instead of TCL_BUILD_LIB_SPEC since it will work with both an
+    # installed and uninstalled version of Tcl.
+    #
+
+    if test -f $TCL_BIN_DIR/Makefile ; then
+        TCL_LIB_SPEC=${TCL_BUILD_LIB_SPEC}
+        TCL_STUB_LIB_SPEC=${TCL_BUILD_STUB_LIB_SPEC}
+        TCL_STUB_LIB_PATH=${TCL_BUILD_STUB_LIB_PATH}
+    fi
+
+    #
     # eval is required to do the TCL_DBGX substitution
     #
 
-    eval TCL_LIB_FILE=${TCL_LIB_FILE}
-    eval TCL_LIB_FLAG=${TCL_LIB_FLAG}
-    eval TCL_STUB_LIB_FILE=${TCL_STUB_LIB_FILE}
-    eval TCL_STUB_LIB_FLAG=${TCL_STUB_LIB_FLAG}
+    eval "TCL_LIB_FILE=\"${TCL_LIB_FILE}\""
+    eval "TCL_LIB_FLAG=\"${TCL_LIB_FLAG}\""
+    eval "TCL_LIB_SPEC=\"${TCL_LIB_SPEC}\""
 
+    eval "TCL_STUB_LIB_FILE=\"${TCL_STUB_LIB_FILE}\""
+    eval "TCL_STUB_LIB_FLAG=\"${TCL_STUB_LIB_FLAG}\""
+    eval "TCL_STUB_LIB_SPEC=\"${TCL_STUB_LIB_SPEC}\""
+
+    AC_SUBST(TCL_VERSION)
     AC_SUBST(TCL_BIN_DIR)
     AC_SUBST(TCL_SRC_DIR)
+
     AC_SUBST(TCL_LIB_FILE)
+    AC_SUBST(TCL_LIB_FLAG)
+    AC_SUBST(TCL_LIB_SPEC)
+
+    AC_SUBST(TCL_STUB_LIB_FILE)
+    AC_SUBST(TCL_STUB_LIB_FLAG)
+    AC_SUBST(TCL_STUB_LIB_SPEC)
 ])
 
 #------------------------------------------------------------------------
