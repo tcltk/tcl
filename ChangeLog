@@ -1,3 +1,9 @@
+2004-05-21  Miguel Sofer <msofer@users.sf.net>
+
+	* tests/namespace.test (namespace-41.3): removed the {knownBug}
+	constraint: [Bug 231259] is closed since nov 2001, and the fix of 
+	[Bug 729692] (INST_START_CMD) makes the test succeed.
+
 2004-05-21  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclExecute.c (TclExecuteByteCode): Move a few
