@@ -1,3 +1,7 @@
+2002-07-19  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* tests/cmdMZ.test: Renamed constraint for clarity. [Bug#583427]
+
 2002-07-18  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* generic/tclInt.h:
