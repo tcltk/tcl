@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.49 2001/11/19 14:35:54 dkf Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.50 2001/11/21 02:36:20 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -2673,17 +2673,17 @@ Tcl_TimeObjCmd(dummy, interp, objc, objv)
     
     objPtr = objv[1];
     i = count;
-    TclpGetTime(&start);
+    Tcl_GetTime(&start);
     while (i-- > 0) {
 	result = Tcl_EvalObjEx(interp, objPtr, 0);
 	if (result != TCL_OK) {
 	    return result;
 	}
     }
-    TclpGetTime(&stop);
+    Tcl_GetTime(&stop);
     
-    totalMicroSec =
-	(stop.sec - start.sec)*1000000 + (stop.usec - start.usec);
+    totalMicroSec = ( ( (double) ( stop.sec - start.sec ) ) * 1.0e6
+		      + ( stop.usec - start.usec ) );
     sprintf(buf, "%.0f microseconds per iteration",
 	((count <= 0) ? 0 : totalMicroSec/count));
     Tcl_ResetResult(interp);

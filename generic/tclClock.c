@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclClock.c,v 1.11 2000/08/18 18:02:16 ericm Exp $
+ * RCS: @(#) $Id: tclClock.c,v 1.12 2001/11/21 02:36:20 hobbs Exp $
  */
 
 #include "tcl.h"
@@ -109,7 +109,7 @@ Tcl_ClockObjCmd (client, interp, objc, objv)
 		 * We can enforce at least millisecond granularity
 		 */
 		Tcl_Time time;
-		TclpGetTime(&time);
+		Tcl_GetTime(&time);
 		Tcl_SetLongObj(resultPtr,
 			(long) (time.sec*1000 + time.usec/1000));
 	    } else {

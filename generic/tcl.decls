@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.65 2001/10/16 05:31:17 dgp Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.66 2001/11/21 02:36:20 hobbs Exp $
 
 library tcl
 
@@ -1687,7 +1687,12 @@ declare 480 generic {
 declare 481 generic {
     int Tcl_EvalTokensStandard(Tcl_Interp *interp, Tcl_Token *tokenPtr, int count)
 }
- 
+
+# New export due to TIP#73 
+declare 482 generic {
+    void Tcl_GetTime( Tcl_Time* timeBuf )
+}
+
 ##############################################################################
 
 # Define the platform specific public Tcl interface.  These functions are
