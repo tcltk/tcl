@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.66 2004/09/11 18:57:56 kennykb Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.67 2004/09/27 19:59:38 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -1236,11 +1236,7 @@ SetBooleanFromAny(interp, objPtr)
 	newBool = (objPtr->internalRep.doubleValue != 0.0);
 	goto goodBoolean;
     } else if (objPtr->typePtr == &tclWideIntType) {
-#ifdef TCL_WIDE_INT_IS_LONG
-	newBool = (objPtr->internalRep.longValue != 0);
-#else /* !TCL_WIDE_INT_IS_LONG */
-	newBool = (objPtr->internalRep.wideValue != Tcl_LongAsWide(0));
-#endif /* TCL_WIDE_INT_IS_LONG */
+	newBool = (objPtr->internalRep.wideValue != 0);
 	goto goodBoolean;
     }
 
