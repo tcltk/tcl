@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.34 2003/08/29 17:43:24 dgp Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.35 2003/10/22 08:29:13 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -863,16 +863,16 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	(char *) NULL
     };
     enum options {
-	FILE_ATIME,	FILE_ATTRIBUTES, FILE_CHANNELS,	FILE_COPY,
-	FILE_DELETE,
-	FILE_DIRNAME,	FILE_EXECUTABLE, FILE_EXISTS,	FILE_EXTENSION,
-	FILE_ISDIRECTORY, FILE_ISFILE,	FILE_JOIN,	FILE_LINK, 
-	FILE_LSTAT,     FILE_MTIME,	FILE_MKDIR,	FILE_NATIVENAME, 
-	FILE_NORMALIZE, FILE_OWNED,
-	FILE_PATHTYPE,	FILE_READABLE,	FILE_READLINK,	FILE_RENAME,
-	FILE_ROOTNAME,	FILE_SEPARATOR, FILE_SIZE,	FILE_SPLIT,	
-	FILE_STAT,      FILE_SYSTEM, 
-	FILE_TAIL,	FILE_TYPE,	FILE_VOLUMES,	FILE_WRITABLE
+	FCMD_ATIME,	FCMD_ATTRIBUTES, FCMD_CHANNELS,	FCMD_COPY,
+	FCMD_DELETE,
+	FCMD_DIRNAME,	FCMD_EXECUTABLE, FCMD_EXISTS,	FCMD_EXTENSION,
+	FCMD_ISDIRECTORY, FCMD_ISFILE,	FCMD_JOIN,	FCMD_LINK, 
+	FCMD_LSTAT,     FCMD_MTIME,	FCMD_MKDIR,	FCMD_NATIVENAME, 
+	FCMD_NORMALIZE, FCMD_OWNED,
+	FCMD_PATHTYPE,	FCMD_READABLE,	FCMD_READLINK,	FCMD_RENAME,
+	FCMD_ROOTNAME,	FCMD_SEPARATOR, FCMD_SIZE,	FCMD_SPLIT,	
+	FCMD_STAT,      FCMD_SYSTEM, 
+	FCMD_TAIL,	FCMD_TYPE,	FCMD_VOLUMES,	FCMD_WRITABLE
     };
 
     if (objc < 2) {
@@ -885,7 +885,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
     }
 
     switch ((enum options) index) {
-    	case FILE_ATIME: {
+    	case FCMD_ATIME: {
 	    Tcl_StatBuf buf;
 	    struct utimbuf tval;
 
@@ -929,25 +929,22 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    Tcl_SetLongObj(Tcl_GetObjResult(interp), (long) buf.st_atime);
 	    return TCL_OK;
 	}
-	case FILE_ATTRIBUTES: {
+	case FCMD_ATTRIBUTES:
             return TclFileAttrsCmd(interp, objc, objv);
-	}
-	case FILE_CHANNELS: {
+	case FCMD_CHANNELS:
 	    if ((objc < 2) || (objc > 3)) {
 		Tcl_WrongNumArgs(interp, 2, objv, "?pattern?");
 		return TCL_ERROR;
 	    }
 	    return Tcl_GetChannelNamesEx(interp,
 		    ((objc == 2) ? NULL : Tcl_GetString(objv[2])));
-	}
-	case FILE_COPY: {
+	case FCMD_COPY:
 	    return TclFileCopyCmd(interp, objc, objv);
-	}	    
-	case FILE_DELETE: {
+	case FCMD_DELETE:
 	    return TclFileDeleteCmd(interp, objc, objv);
-	}
-    	case FILE_DIRNAME: {
+    	case FCMD_DIRNAME: {
 	    Tcl_Obj *dirPtr;
+
 	    if (objc != 3) {
 		goto only3Args;
 	    }
@@ -960,20 +957,19 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 		return TCL_OK;
 	    }
 	}
-	case FILE_EXECUTABLE: {
+	case FCMD_EXECUTABLE:
 	    if (objc != 3) {
 		goto only3Args;
 	    }
 	    return CheckAccess(interp, objv[2], X_OK);
-	}
-	case FILE_EXISTS: {
+	case FCMD_EXISTS:
 	    if (objc != 3) {
 		goto only3Args;
 	    }
 	    return CheckAccess(interp, objv[2], F_OK);
-	}
-	case FILE_EXTENSION: {
+	case FCMD_EXTENSION: {
 	    char *fileName, *extension;
+
 	    if (objc != 3) {
 	    	goto only3Args;
 	    }
@@ -984,7 +980,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    }
 	    return TCL_OK;
 	}
-    	case FILE_ISDIRECTORY: {
+    	case FCMD_ISDIRECTORY: {
 	    int value;
 	    Tcl_StatBuf buf;
 
@@ -998,7 +994,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    Tcl_SetBooleanObj(Tcl_GetObjResult(interp), value);
 	    return TCL_OK;
 	}
-    	case FILE_ISFILE: {
+    	case FCMD_ISFILE: {
 	    int value;
 	    Tcl_StatBuf buf;
 	    
@@ -1012,7 +1008,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    Tcl_SetBooleanObj(Tcl_GetObjResult(interp), value);
 	    return TCL_OK;
 	}
-	case FILE_JOIN: {
+	case FCMD_JOIN: {
 	    Tcl_Obj *resObj;
 
 	    if (objc < 3) {
@@ -1023,7 +1019,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    Tcl_SetObjResult(interp, resObj);
 	    return TCL_OK;
 	}
-	case FILE_LINK: {
+	case FCMD_LINK: {
 	    Tcl_Obj *contents;
 	    int index;
 	    
@@ -1113,7 +1109,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    }
 	    return TCL_OK;
 	}
-    	case FILE_LSTAT: {
+    	case FCMD_LSTAT: {
 	    char *varName;
 	    Tcl_StatBuf buf;
 
@@ -1127,7 +1123,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    varName = Tcl_GetString(objv[3]);
 	    return StoreStatData(interp, varName, &buf);
 	}
-	case FILE_MTIME: {
+	case FCMD_MTIME: {
 	    Tcl_StatBuf buf;
 	    struct utimbuf tval;
 
@@ -1171,14 +1167,13 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    Tcl_SetLongObj(Tcl_GetObjResult(interp), (long) buf.st_mtime);
 	    return TCL_OK;
 	}
-	case FILE_MKDIR: {
+	case FCMD_MKDIR:
 	    if (objc < 3) {
 		Tcl_WrongNumArgs(interp, 2, objv, "name ?name ...?");
 		return TCL_ERROR;
 	    }
 	    return TclFileMakeDirsCmd(interp, objc, objv);
-	}
-	case FILE_NATIVENAME: {
+	case FCMD_NATIVENAME: {
 	    CONST char *fileName;
 	    Tcl_DString ds;
 
@@ -1195,7 +1190,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    Tcl_DStringFree(&ds);
 	    return TCL_OK;
 	}
-	case FILE_NORMALIZE: {
+	case FCMD_NORMALIZE: {
 	    Tcl_Obj *fileName;
 
 	    if (objc != 3) {
@@ -1207,7 +1202,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    Tcl_SetObjResult(interp, fileName);
 	    return TCL_OK;
 	}
-	case FILE_OWNED: {
+	case FCMD_OWNED: {
 	    int value;
 	    Tcl_StatBuf buf;
 	    
@@ -1230,31 +1225,29 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    Tcl_SetBooleanObj(Tcl_GetObjResult(interp), value);
 	    return TCL_OK;
 	}
-	case FILE_PATHTYPE: {
+	case FCMD_PATHTYPE:
 	    if (objc != 3) {
 		goto only3Args;
 	    }
 	    switch (Tcl_FSGetPathType(objv[2])) {
-	    	case TCL_PATH_ABSOLUTE:
-	    	    Tcl_SetStringObj(Tcl_GetObjResult(interp), "absolute", -1);
-		    break;
-	    	case TCL_PATH_RELATIVE:
-	    	    Tcl_SetStringObj(Tcl_GetObjResult(interp), "relative", -1);
-	    	    break;
-	    	case TCL_PATH_VOLUME_RELATIVE:
-		    Tcl_SetStringObj(Tcl_GetObjResult(interp), 
-				     "volumerelative", -1);
-		    break;
+	    case TCL_PATH_ABSOLUTE:
+		Tcl_SetStringObj(Tcl_GetObjResult(interp), "absolute", -1);
+		break;
+	    case TCL_PATH_RELATIVE:
+		Tcl_SetStringObj(Tcl_GetObjResult(interp), "relative", -1);
+		break;
+	    case TCL_PATH_VOLUME_RELATIVE:
+		Tcl_SetStringObj(Tcl_GetObjResult(interp), "volumerelative",
+			-1);
+		break;
 	    }
 	    return TCL_OK;
-	}
-    	case FILE_READABLE: {
+    	case FCMD_READABLE:
 	    if (objc != 3) {
 		goto only3Args;
 	    }
 	    return CheckAccess(interp, objv[2], R_OK);
-	}
-	case FILE_READLINK: {
+	case FCMD_READLINK: {
 	    Tcl_Obj *contents;
 		
 	    if (objc != 3) {
@@ -1277,10 +1270,9 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    Tcl_DecrRefCount(contents);
 	    return TCL_OK;
 	}
-	case FILE_RENAME: {
+	case FCMD_RENAME:
 	    return TclFileRenameCmd(interp, objc, objv);
-	}
-	case FILE_ROOTNAME: {
+	case FCMD_ROOTNAME: {
 	    int length;
 	    char *fileName, *extension;
 	    
@@ -1297,7 +1289,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    }
 	    return TCL_OK;
 	}
-	case FILE_SEPARATOR: {
+	case FCMD_SEPARATOR:
 	    if ((objc < 2) || (objc > 3)) {
 		Tcl_WrongNumArgs(interp, 2, objv, "?name?");
 		return TCL_ERROR;
@@ -1305,15 +1297,15 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    if (objc == 2) {
 	        char *separator = NULL; /* lint */
 		switch (tclPlatform) {
-		    case TCL_PLATFORM_UNIX:
-			separator = "/";
-			break;
-		    case TCL_PLATFORM_WINDOWS:
-			separator = "\\";
-			break;
-		    case TCL_PLATFORM_MAC:
-			separator = ":";
-			break;
+		case TCL_PLATFORM_UNIX:
+		    separator = "/";
+		    break;
+		case TCL_PLATFORM_WINDOWS:
+		    separator = "\\";
+		    break;
+		case TCL_PLATFORM_MAC:
+		    separator = ":";
+		    break;
 		}
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(separator,1));
 	    } else {
@@ -1327,8 +1319,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 		}
 	    }
 	    return TCL_OK;
-	}
-	case FILE_SIZE: {
+	case FCMD_SIZE: {
 	    Tcl_StatBuf buf;
 	    
 	    if (objc != 3) {
@@ -1341,14 +1332,13 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 		    (Tcl_WideInt) buf.st_size);
 	    return TCL_OK;
 	}
-	case FILE_SPLIT: {
+	case FCMD_SPLIT:
 	    if (objc != 3) {
 		goto only3Args;
 	    }
 	    Tcl_SetObjResult(interp, Tcl_FSSplitPath(objv[2], NULL));
 	    return TCL_OK;
-	}
-	case FILE_STAT: {
+	case FCMD_STAT: {
 	    char *varName;
 	    Tcl_StatBuf buf;
 	    
@@ -1362,8 +1352,9 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    varName = Tcl_GetString(objv[3]);
 	    return StoreStatData(interp, varName, &buf);
 	}
-	case FILE_SYSTEM: {
+	case FCMD_SYSTEM: {
 	    Tcl_Obj* fsInfo;
+
 	    if (objc != 3) {
 		goto only3Args;
 	    }
@@ -1377,7 +1368,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 		return TCL_ERROR;
 	    }
 	}
-    	case FILE_TAIL: {
+    	case FCMD_TAIL: {
 	    int splitElements;
 	    Tcl_Obj *splitPtr;
 
@@ -1418,7 +1409,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    Tcl_DecrRefCount(splitPtr);
 	    return TCL_OK;
 	}
-	case FILE_TYPE: {
+	case FCMD_TYPE: {
 	    Tcl_StatBuf buf;
 
 	    if (objc != 3) {
@@ -1431,20 +1422,18 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 		    GetTypeFromMode((unsigned short) buf.st_mode), -1);
 	    return TCL_OK;
 	}
-	case FILE_VOLUMES: {
+	case FCMD_VOLUMES:
 	    if (objc != 2) {
 		Tcl_WrongNumArgs(interp, 2, objv, NULL);
 		return TCL_ERROR;
 	    }
 	    Tcl_SetObjResult(interp, Tcl_FSListVolumes());
 	    return TCL_OK;
-	}
-	case FILE_WRITABLE: {
+	case FCMD_WRITABLE:
 	    if (objc != 3) {
 	    	goto only3Args;
 	    }
 	    return CheckAccess(interp, objv[2], W_OK);
-	}
     }
 
     only3Args:
