@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.58 2003/02/05 12:46:17 vincentdarley Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.59 2003/02/07 11:59:43 vincentdarley Exp $
  */
 
 #define TCL_TEST
@@ -399,8 +399,7 @@ static Tcl_Channel	SimpleOpenFileChannel _ANSI_ARGS_ ((
 static Tcl_Obj*         SimpleListVolumes _ANSI_ARGS_ ((void));
 static int              SimplePathInFilesystem _ANSI_ARGS_ ((
 			    Tcl_Obj *pathPtr, ClientData *clientDataPtr));
-static Tcl_Obj*         SimpleCopy _ANSI_ARGS_ ((Tcl_Interp *interp, 
-						 Tcl_Obj *pathPtr));
+static Tcl_Obj*         SimpleCopy _ANSI_ARGS_ ((Tcl_Obj *pathPtr));
 
 static Tcl_Filesystem testReportingFilesystem = {
     "reporting",
@@ -5744,34 +5743,6 @@ TestFilesystemObjCmd(dummy, interp, objc, objv)
     return res;
 }
 
-static int
-TestSimpleFilesystemObjCmd(dummy, interp, objc, objv)
-    ClientData dummy;
-    Tcl_Interp *interp;
-    int		objc;
-    Tcl_Obj	*CONST objv[];
-{
-    int res, boolVal;
-    char *msg;
-    
-    if (objc != 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "boolean");
-	return TCL_ERROR;
-    }
-    if (Tcl_GetBooleanFromObj(interp, objv[1], &boolVal) != TCL_OK) {
-	return TCL_ERROR;
-    }
-    if (boolVal) {
-	res = Tcl_FSRegister((ClientData)interp, &simpleFilesystem);
-	msg = (res == TCL_OK) ? "registered" : "failed";
-    } else {
-	res = Tcl_FSUnregister(&simpleFilesystem);
-	msg = (res == TCL_OK) ? "unregistered" : "failed";
-    }
-    Tcl_SetResult(interp, msg, TCL_VOLATILE);
-    return res;
-}
-
 static int 
 TestReportInFilesystem(Tcl_Obj *pathPtr, ClientData *clientDataPtr)
 {
@@ -6072,20 +6043,71 @@ SimplePathInFilesystem(Tcl_Obj *pathPtr, ClientData *clientDataPtr) {
 static Tcl_Interp *simpleInterpPtr = NULL;
 
 /* 
+ * This is a very 'hacky' filesystem which is used just so 
+ * test two important features of the vfs code: (1) that
+ * you can load a shared library from a vfs, (2) that when
+ * copying files from one fs to another, the 'mtime' is
+ * preserved.
+ * 
+ * It reates any file in 'simplefs:/' as a real file, and
+ * artificially creates a real file on the fly which it uses
+ * to extract information from.  The real file is uses is
+ * whatever follows the trailing '/' (e.g. 'foo' in 'simplefs:/foo'),
+ * and that file is assumed to exist in the native pwd, and is
+ * copied over to the native temporary directory where it is
+ * accessed.
+ * 
+ * Please do not consider this filesystem a model of how
+ * things are to be done.  It is quite the opposite!  But, it
+ * does allow us to test two important features.
+ * 
+ * Finally: this fs can only be used from one interpreter.
+ */
+static int
+TestSimpleFilesystemObjCmd(dummy, interp, objc, objv)
+    ClientData dummy;
+    Tcl_Interp *interp;
+    int		objc;
+    Tcl_Obj	*CONST objv[];
+{
+    int res, boolVal;
+    char *msg;
+    
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "boolean");
+	return TCL_ERROR;
+    }
+    if (Tcl_GetBooleanFromObj(interp, objv[1], &boolVal) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    if (boolVal) {
+	res = Tcl_FSRegister((ClientData)interp, &simpleFilesystem);
+	msg = (res == TCL_OK) ? "registered" : "failed";
+	simpleInterpPtr = interp;
+    } else {
+	res = Tcl_FSUnregister(&simpleFilesystem);
+	msg = (res == TCL_OK) ? "unregistered" : "failed";
+	simpleInterpPtr = NULL;
+    }
+    Tcl_SetResult(interp, msg, TCL_VOLATILE);
+    return res;
+}
+
+/* 
  * Treats a file name 'simplefs:/foo' by copying the file 'foo'
  * in the current (native) directory to a temporary native file,
  * and then returns that native file.
  */
 static Tcl_Obj*
-SimpleCopy(interp, pathPtr)
-    Tcl_Interp *interp;                 /* Interpreter for error reporting;
-					 * can be NULL. */
+SimpleCopy(pathPtr)
     Tcl_Obj *pathPtr;                   /* Name of file to copy. */
 {
     int res;
     CONST char *str;
     Tcl_Obj *origPtr;
-    Tcl_Obj *tempPtr = TclpTempFileName();
+    Tcl_Obj *tempPtr;
+
+    tempPtr = TclpTempFileName();
     Tcl_IncrRefCount(tempPtr);
 
     /* 
@@ -6095,12 +6117,7 @@ SimpleCopy(interp, pathPtr)
     origPtr = Tcl_NewStringObj(str+10,-1);
     Tcl_IncrRefCount(origPtr);
 
-    if (interp != NULL) {
-	simpleInterpPtr = interp;
-    } else {
-	interp = simpleInterpPtr;
-    }
-    res = TclCrossFilesystemCopy(interp, origPtr, tempPtr);
+    res = TclCrossFilesystemCopy(simpleInterpPtr, origPtr, tempPtr);
     Tcl_DecrRefCount(origPtr);
 
     if (res != TCL_OK) {
@@ -6129,7 +6146,7 @@ SimpleOpenFileChannel(interp, pathPtr, mode, permissions)
 	return NULL;
     }
     
-    tempPtr = SimpleCopy(interp, pathPtr);
+    tempPtr = SimpleCopy(pathPtr);
     
     if (tempPtr == NULL) {
 	return NULL;
@@ -6156,9 +6173,10 @@ SimpleStat(pathPtr, bufPtr)
     Tcl_Obj *pathPtr;		/* Path of file to stat (in current CP). */
     Tcl_StatBuf *bufPtr;	/* Filled with results of stat call. */
 {
-    Tcl_Obj *tempPtr = SimpleCopy(NULL, pathPtr);
+    Tcl_Obj *tempPtr = SimpleCopy(pathPtr);
     if (tempPtr == NULL) {
-	return TCL_ERROR;
+	/* We just pretend the file exists anyway */
+	return TCL_OK;
     } else {
 	int res = Tcl_FSStat(tempPtr, bufPtr);
 	Tcl_DecrRefCount(tempPtr);
