@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.61 2005/01/17 10:40:34 vincentdarley Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.62 2005/01/21 17:42:14 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -2308,7 +2308,7 @@ DoGlob(interp, matchesObj, separators, pathPtr, flags, pattern, types)
 /*
  *---------------------------------------------------------------------------
  *
- * Tcl_AllocStatBuf
+ * Tcl_AllocStatBuf --
  *
  *     This procedure allocates a Tcl_StatBuf on the heap.  It exists
  *     so that extensions may be used unchanged on systems where
