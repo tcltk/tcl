@@ -1,3 +1,10 @@
+2004-09-23  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* unix/dltest/Makefile.in (clean): Fixup make clean
+	rule so that it does not delete all files when
+	SHLIB_SUFFIX is set to the empty string in a static build.
+	[Bug 1016726]
+
 2004-09-23  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclCmdAH.c (Tcl_ExprObjCmd):	Simplified the TclObjCmdProc
