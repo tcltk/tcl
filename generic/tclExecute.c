@@ -11,14 +11,14 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.101.2.7 2004/03/31 01:36:17 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.101.2.8 2004/04/09 20:58:12 dgp Exp $
  */
 
 #include "tclInt.h"
 #include "tclCompile.h"
 
 #ifndef TCL_NO_MATH
-#   include "tclMath.h"
+#   include <math.h>
 #endif
 
 /*
@@ -27,9 +27,7 @@
  * errno here.
  */
 
-#ifndef TCL_GENERIC_ONLY
-#   include "tclPort.h"
-#else /* TCL_GENERIC_ONLY */
+#ifdef TCL_GENERIC_ONLY
 #   ifndef NO_FLOAT_H
 #	include <float.h>
 #   else /* NO_FLOAT_H */

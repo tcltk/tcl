@@ -8,15 +8,13 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.36.2.4 2004/03/31 01:36:17 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.36.2.5 2004/04/09 20:58:12 dgp Exp $
  */
 
 #ifndef _TCLCOMPILATION
 #define _TCLCOMPILATION 1
 
-#ifndef _TCLINT
 #include "tclInt.h"
-#endif /* _TCLINT */
 
 #ifdef BUILD_tcl
 # undef TCL_STORAGE_CLASS

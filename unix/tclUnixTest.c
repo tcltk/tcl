@@ -9,11 +9,10 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixTest.c,v 1.14.4.1 2003/10/16 02:28:03 dgp Exp $
+ * RCS: @(#) $Id: tclUnixTest.c,v 1.14.4.2 2004/04/09 20:58:18 dgp Exp $
  */
 
 #include "tclInt.h"
-#include "tclPort.h"
 
 /*
  * The headers are needed for the testalarm command that verifies the

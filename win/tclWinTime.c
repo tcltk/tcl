@@ -9,10 +9,10 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinTime.c,v 1.18.2.4 2004/03/26 22:28:30 dgp Exp $
+ * RCS: @(#) $Id: tclWinTime.c,v 1.18.2.5 2004/04/09 20:58:20 dgp Exp $
  */
 
-#include "tclWinInt.h"
+#include "tclInt.h"
 
 #define SECSPERDAY (60L * 60L * 24L)
 #define SECSPERYEAR (SECSPERDAY * 365L)

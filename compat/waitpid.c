@@ -12,10 +12,9 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: waitpid.c,v 1.3 2000/01/11 22:08:50 hobbs Exp $
+ * RCS: @(#) $Id: waitpid.c,v 1.3.26.1 2004/04/09 20:58:08 dgp Exp $
  */
 
-#include "tclInt.h"
 #include "tclPort.h"
 
 #ifndef pid_t

@@ -11,12 +11,11 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclGet.c,v 1.8 2002/11/19 02:34:49 hobbs Exp $
+ * RCS: @(#) $Id: tclGet.c,v 1.8.4.1 2004/04/09 20:58:14 dgp Exp $
  */
 
 #include "tclInt.h"
-#include "tclPort.h"
-#include "tclMath.h"
+#include <math.h>
 
 
 /*

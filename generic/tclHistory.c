@@ -12,11 +12,10 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclHistory.c,v 1.4 2002/01/16 06:02:34 dgp Exp $
+ * RCS: @(#) $Id: tclHistory.c,v 1.4.6.1 2004/04/09 20:58:14 dgp Exp $
  */
 
 #include "tclInt.h"
-#include "tclPort.h"
 
 
 /*

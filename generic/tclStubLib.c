@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubLib.c,v 1.6.4.1 2004/03/26 22:28:27 dgp Exp $
+ * RCS: @(#) $Id: tclStubLib.c,v 1.6.4.2 2004/04/09 20:58:16 dgp Exp $
  */
 
 /*
@@ -26,7 +26,6 @@
 #undef USE_TCL_STUB_PROCS
 
 #include "tclInt.h"
-#include "tclPort.h"
 
 /*
  * Ensure that Tcl_InitStubs is built as an exported symbol.  The other stub

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.127.2.9 2004/03/26 22:28:26 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.127.2.10 2004/04/09 20:58:15 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -1410,19 +1410,6 @@ typedef struct Interp {
 
 #define UCHAR(c) ((unsigned char) (c))
 
-/*
- * This macro is used to determine the offset needed to safely allocate any
- * data structure in memory. Given a starting offset or size, it "rounds up"
- * or "aligns" the offset to the next 8-byte boundary so that any data
- * structure can be placed at the resulting offset without fear of an
- * alignment error.
- *
- * WARNING!! DO NOT USE THIS MACRO TO ALIGN POINTERS: it will produce
- * the wrong result on platforms that allocate addresses that are divisible
- * by 4 or 2. Only use it for offsets or sizes.
- */
-
-#define TCL_ALIGN(x) (((int)(x) + 7) & ~7)
 
 /*
  * The following enum values are used to specify the runtime platform
@@ -1609,8 +1596,6 @@ typedef Tcl_ObjCmdProc *TclObjCmdProcType;
  *----------------------------------------------------------------
  */
 
-extern Tcl_Time			tclBlockTime;
-extern int			tclBlockTimeSet;
 extern char *			tclExecutableName;
 extern char *			tclNativeExecutableName;
 extern char *			tclDefaultEncodingDir;
@@ -1755,7 +1740,6 @@ EXTERN void		TclFinalizeNotifier _ANSI_ARGS_((void));
 EXTERN void		TclFinalizeAsync _ANSI_ARGS_((void));
 EXTERN void		TclFinalizeSynchronization _ANSI_ARGS_((void));
 EXTERN void		TclFinalizeThreadData _ANSI_ARGS_((void));
-EXTERN void		TclFindEncodings _ANSI_ARGS_((CONST char *argv0));
 EXTERN Tcl_Token *	TclGetTokensFromObj _ANSI_ARGS_((Tcl_Obj *objPtr,
 			    Tcl_Token **lastTokenPtrPtr));
 EXTERN int		TclGlob _ANSI_ARGS_((Tcl_Interp *interp,
@@ -1844,7 +1828,7 @@ EXTERN char *		TclpFindExecutable _ANSI_ARGS_((
 			    CONST char *argv0));
 EXTERN int		TclpFindVariable _ANSI_ARGS_((CONST char *name,
 			    int *lengthPtr));
-EXTERN void		TclpInitLibraryPath _ANSI_ARGS_((CONST char *argv0));
+EXTERN int		TclpInitLibraryPath _ANSI_ARGS_((CONST char *argv0));
 EXTERN void		TclpInitLock _ANSI_ARGS_((void));
 EXTERN void		TclpInitPlatform _ANSI_ARGS_((void));
 EXTERN void		TclpInitUnlock _ANSI_ARGS_((void));
@@ -2472,7 +2456,9 @@ extern Tcl_Mutex tclObjMutex;
 	(nsPtr)->exportLookupEpoch++; \
     }
 
+#include "tclPort.h"
 #include "tclIntDecls.h"
+#include "tclIntPlatDecls.h"
 
 # undef TCL_STORAGE_CLASS
 # define TCL_STORAGE_CLASS DLLIMPORT

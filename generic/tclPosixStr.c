@@ -11,11 +11,10 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPosixStr.c,v 1.9 2002/05/27 10:14:21 dkf Exp $
+ * RCS: @(#) $Id: tclPosixStr.c,v 1.9.4.1 2004/04/09 20:58:16 dgp Exp $
  */
 
 #include "tclInt.h"
-#include "tclPort.h"
 
 /*
  *----------------------------------------------------------------------

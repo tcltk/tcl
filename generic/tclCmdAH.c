@@ -11,11 +11,10 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.33.2.3 2004/03/26 22:28:25 dgp Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.33.2.4 2004/04/09 20:58:09 dgp Exp $
  */
 
 #include "tclInt.h"
-#include "tclPort.h"
 #include <locale.h>
 
 /*

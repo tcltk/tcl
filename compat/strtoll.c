@@ -9,10 +9,9 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: strtoll.c,v 1.5.6.1 2004/03/26 22:28:24 dgp Exp $
+ * RCS: @(#) $Id: strtoll.c,v 1.5.6.2 2004/04/09 20:58:08 dgp Exp $
  */
 
-#include "tcl.h"
 #include "tclInt.h"
 #include <ctype.h>
 

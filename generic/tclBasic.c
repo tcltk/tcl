@@ -13,14 +13,11 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.9 2004/03/26 22:28:25 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.10 2004/04/09 20:58:08 dgp Exp $
  */
 
 #include "tclInt.h"
 #include "tclCompile.h"
-#ifndef TCL_GENERIC_ONLY
-#   include "tclPort.h"
-#endif
 
 /*
  * Static procedures in this file:
@@ -3324,7 +3321,7 @@ Tcl_EvalObjv(interp, objc, objv, flags)
 	}
     }
 
-    code = TEOVICount(interp, objc, objv, cmdString, cmdLen, flags);
+    code = TEOVI(interp, objc, objv, cmdString, cmdLen, flags);
 
     /*
      * If we are again at the top level, process any unusual 

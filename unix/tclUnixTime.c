@@ -9,11 +9,10 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixTime.c,v 1.18.2.1 2004/03/26 22:28:30 dgp Exp $
+ * RCS: @(#) $Id: tclUnixTime.c,v 1.18.2.2 2004/04/09 20:58:19 dgp Exp $
  */
 
 #include "tclInt.h"
-#include "tclPort.h"
 #include <locale.h>
 #define TM_YEAR_BASE 1900
 #define IsLeapYear(x)   ((x % 4 == 0) && (x % 100 != 0 || x % 400 == 0))

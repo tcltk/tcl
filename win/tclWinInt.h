@@ -8,18 +8,13 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinInt.h,v 1.22.2.2 2004/02/07 05:48:12 dgp Exp $
+ * RCS: @(#) $Id: tclWinInt.h,v 1.22.2.3 2004/04/09 20:58:20 dgp Exp $
  */
 
 #ifndef _TCLWININT
 #define _TCLWININT
 
-#ifndef _TCLINT
 #include "tclInt.h"
-#endif
-#ifndef _TCLPORT
-#include "tclPort.h"
-#endif
 
 /*
  * The following specifies how much stack space TclpCheckStackSpace()
@@ -146,14 +141,24 @@ EXTERN TclWinProcs *tclWinProcs;
  * stubs table.
  */
 
+EXTERN char		TclWinDriveLetterForVolMountPoint(
+				CONST WCHAR *mountPoint);
 EXTERN void		TclWinEncodingsCleanup();
-EXTERN void		TclWinResetInterfaceEncodings();
 EXTERN void		TclWinInit(HINSTANCE hInst);
+EXTERN TclFile		TclWinMakeFile(HANDLE handle);
+EXTERN Tcl_Channel	TclWinOpenConsoleChannel(HANDLE handle,
+				char *channelName, int permissions);
+EXTERN Tcl_Channel	TclWinOpenFileChannel(HANDLE handle, char *channelName,
+				int permissions, int appendMode);
+EXTERN Tcl_Channel	TclWinOpenSerialChannel(HANDLE handle,
+				char *channelName, int permissions);
+EXTERN void		TclWinResetInterfaceEncodings();
+EXTERN HANDLE		TclWinSerialReopen(HANDLE handle, CONST TCHAR *name,
+				DWORD access);
 EXTERN int              TclWinSymLinkCopyDirectory(CONST TCHAR* LinkOriginal,
-						   CONST TCHAR* LinkCopy);
+				CONST TCHAR* LinkCopy);
 EXTERN int              TclWinSymLinkDelete(CONST TCHAR* LinkOriginal, 
-					    int linkOnly);
-EXTERN char TclWinDriveLetterForVolMountPoint(CONST WCHAR *mountPoint);
+				int linkOnly);
 #if defined(TCL_THREADS) && defined(USE_THREAD_ALLOC)
 EXTERN void		TclWinFreeAllocCache(void);
 EXTERN void		TclFreeAllocCache(void *);
@@ -166,8 +171,6 @@ EXTERN void		TclpSetAllocCache(void *);
 #ifndef FILE_ATTRIBUTE_REPARSE_POINT
 #define FILE_ATTRIBUTE_REPARSE_POINT 0x00000400
 #endif
-
-#include "tclIntPlatDecls.h"
 
 # undef TCL_STORAGE_CLASS
 # define TCL_STORAGE_CLASS DLLIMPORT

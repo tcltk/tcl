@@ -14,12 +14,11 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.67.2.4 2004/03/26 22:28:27 dgp Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.67.2.5 2004/04/09 20:58:16 dgp Exp $
  */
 
 #define TCL_TEST
 #include "tclInt.h"
-#include "tclPort.h"
 
 /*
  * Required for Testregexp*Cmd

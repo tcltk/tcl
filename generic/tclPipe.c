@@ -10,11 +10,10 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPipe.c,v 1.7 2002/12/17 02:47:39 davygrvy Exp $
+ * RCS: @(#) $Id: tclPipe.c,v 1.7.4.1 2004/04/09 20:58:16 dgp Exp $
  */
 
 #include "tclInt.h"
-#include "tclPort.h"
 
 /*
  * A linked list of the following structures is used to keep track

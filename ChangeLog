@@ -1,3 +1,96 @@
+2004-04-07  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* win/tclWinInit.c (TclpSetInitialEncodings): note that WIN32_CE
+	is also a unicode platform.
+	* generic/tclEncoding.c (TclFindEncodings, Tcl_FindExecutable): 
+	* generic/tclInt.h:                         Correct handling of UTF
+	* unix/tclUnixInit.c (TclpInitLibraryPath): data that is actually
+	* win/tclWinFile.c (TclpFindExecutable):    "clean", allowing the
+	* win/tclWinInit.c (TclpInitLibraryPath):   loading of Tcl from
+	paths that contain multi-byte chars on Windows [Bug 920667]
+
+	* win/configure:    define TCL_LIB_FLAG, TCL_BUILD_LIB_SPEC,
+	* win/configure.in: TCL_LIB_SPEC, TCL_PACKAGE_PATH in tclConfig.sh.
+
+2004-04-06  Don Porter  <dgp@users.sourceforge.net>
+
+	Patch 922727 committed.  Implements three changes:
+
+	* generic/tclInt.h:	Reworked the Tcl header files into a clean
+	* unix/tclUnixPort.h:	hierarchy where tcl.h < tclPort.h < tclInt.h 
+	* win/tclWinInt.h:	and every C source file should #include
+	* win/tclWinPort.h:	at most one of those files to satisfy its
+	declaration needs.  tclWinInt.h and tclWinPort.h also better organized
+	so that tclWinPort.h includes the Windows implementation of
+	cross-platform declarations, while tclWinInt.h makes declarations that
+	are available on Windows only.
+
+	* generic/tclBinary.c (TCL_NO_MATH):	Deleted the generic/tclMath.h
+	* generic/tclMath.h (removed):		header file. The internal Tcl
+	* macosx/Makefile (PRIVATE_HEADERS):	header, tclInt.h, has a
+	* win/tcl.dsp:				#include <math.h> directly,
+	and file external to Tcl needing libm should do the same.
+
+	* win/Makefile.in (WIN_OBJS):	Deleted the win/tclWinMtherr.c file.
+	* win/makefile.bc (TCLOBJS):	It's a vestige from matherr() days
+	* win/makefile.vc (TCLOBJS):	gone by.
+	* win/tcl.dsp:
+	* win/tclWinMtherr.c (removed):
+
+	End Patch 922727.
+
+	* tests/unixInit.test (unixInit-3.1):	Default encoding on Darwin
+	systems is utf-8.  Thanks to Steven Abner (tauvan).  [Bug 928808]
+
+2004-04-06  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* tests/cmdAH.test (cmdAH-18.2): Added constraint because
+	access(...,X_OK) is defined to be permitted to be meaningless when
+	running as root, and OSX exhibits this.  [Bug 929892]
+
+2004-04-02  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclCompile.c:
+	* generic/tclInt.h: removed the macro TCL_ALIGN() from tclInt.h,
+	replaced by the static macro ALIGN() in tclCompile.c [Bug 926445]
+
+2004-04-02  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclCompile.h: removed redundant #ifdef _TCLINT 
+	[Bug 928415], reported by tauvan.
+
+2004-04-02  Don Porter  <dgp@users.sourceforge.net>
+
+	* tests/tcltest.test: Corrected constraint typos: "nonRoot" ->
+	"notRoot".  Thanks to Steven Abner (tauvan).  [Bug 928353]
+
+2004-04-01  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclInt.h:  Removed obsolete tclBlockTime* declarations.
+	[Bug 926454]
+
+2004-04-01  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* generic/tclIOUtil.c:	 Fix to privately reported vfs bug with
+	'glob -type d -dir . *' across a vfs boundary.	No tests for
+	this are currently possible without effectively moving tclvfs
+	into Tcl's test suite.
+
+2004-03-31  Don Porter  <dgp@users.sourceforge.net>
+
+	* doc/msgcat.n:	Clarified message catalog file encodings. [Bug 811457]
+	* library/msgcat/msgcat.tcl:	
+	Updated internals to make use of [dict]s to store message catalog
+	data and to use [source -encoding utf-8] to access catalog files.
+	Thanks to Michael Sclenker.  [Patch 875055, RFE 811459]
+        Corrected [mcset] to be able to successfully set a translation to
+        the empty string.  [mcset $loc $src {}] was incorrectly set the
+        $loc translation of $src back to $src.  Also changed [ConvertLocale]
+        to minimally require a non-empty "language" part in the locale value.
+        If not, an error raised prompts [Init] to keep looking for a valid
+        locale value, or ultimately fall back on the "C" locale. [Bug 811461].
+	* library/msgcat/pkgIndex.tcl:	Bump to msgcat 1.4.1.  
+
 2004-03-30  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclHash.c (HashStringKey): Cleaned up. This function is
@@ -25,20 +118,20 @@
 
 2004-03-30  Vince Darley  <vincentdarley@users.sourceforge.net>
 
-        * generic/tclFileName.c:  Fix to Windows glob where the pattern is
-        * generic/tclIOUtil.c:    a volume relative path or a network
-        * tests/fileName.test:    share [Bug 898238]. On windows 'glob'
-        * tests/fileSystem.test:  will now return the results of 
-        'glob /foo/bar' and 'glob \\foo\\bar' as 'C:/foo/bar', i.e. a 
-        correct absolute path (rather than a volume relative path).
+	* generic/tclFileName.c:  Fix to Windows glob where the pattern is
+	* generic/tclIOUtil.c:	  a volume relative path or a network
+	* tests/fileName.test:	  share [Bug 898238]. On windows 'glob'
+	* tests/fileSystem.test:  will now return the results of 
+	'glob /foo/bar' and 'glob \\foo\\bar' as 'C:/foo/bar', i.e. a 
+	correct absolute path (rather than a volume relative path).
 
-        Note that the test suite does not test commands like 
-        'glob //Machine/Shared/*' (on a network share).  
+	Note that the test suite does not test commands like 
+	'glob //Machine/Shared/*' (on a network share).	 
 
 2004-03-30  Vince Darley  <vincentdarley@users.sourceforge.net>
 
-        * generic/tclPathObj.c:   Fix to filename bugs recently
-        * tests/fileName.test:    introduced [Bug 918320].
+	* generic/tclPathObj.c:	  Fix to filename bugs recently
+	* tests/fileName.test:	  introduced [Bug 918320].
 
 2004-03-29  Don Porter  <dgp@users.sourceforge.net>
 
@@ -72,9 +165,9 @@
 
 2004-03-26  Vince Darley  <vincentdarley@users.sourceforge.net>
 
-        * generic/tclPathObj.c:   Fix to Windows-only volume relative
-        * tests/fileSystem.test:  path normalization. [Bug 923586].
-        Also fixed another volume relative bug found while testing.
+	* generic/tclPathObj.c:	  Fix to Windows-only volume relative
+	* tests/fileSystem.test:  path normalization. [Bug 923586].
+	Also fixed another volume relative bug found while testing.
 
 2004-03-24  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 

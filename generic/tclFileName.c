@@ -10,11 +10,10 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.41.2.5 2004/03/31 01:36:17 dgp Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.41.2.6 2004/04/09 20:58:14 dgp Exp $
  */
 
 #include "tclInt.h"
-#include "tclPort.h"
 #include "tclRegexp.h"
 #include "tclFileSystem.h" /* For TclGetPathType() */
 

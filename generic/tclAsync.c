@@ -12,11 +12,10 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclAsync.c,v 1.6 2001/08/30 07:50:18 davygrvy Exp $
+ * RCS: @(#) $Id: tclAsync.c,v 1.6.14.1 2004/04/09 20:58:08 dgp Exp $
  */
 
 #include "tclInt.h"
-#include "tclPort.h"
 
 /* Forward declaration */
 struct ThreadSpecificData;

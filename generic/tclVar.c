@@ -15,11 +15,10 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.73.2.3 2004/02/07 05:48:01 dgp Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.73.2.4 2004/04/09 20:58:17 dgp Exp $
  */
 
 #include "tclInt.h"
-#include "tclPort.h"
 
 /*
  * The strings below are used to indicate what went wrong when a

@@ -8,10 +8,9 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixEvent.c,v 1.4 2001/11/21 02:36:21 hobbs Exp $
+ * RCS: @(#) $Id: tclUnixEvent.c,v 1.4.6.1 2004/04/09 20:58:18 dgp Exp $
  */
 
-#include "tclInt.h"
 #include "tclPort.h"
 
 /*

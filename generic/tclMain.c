@@ -10,10 +10,9 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMain.c,v 1.20.4.3 2004/03/29 21:43:18 dgp Exp $
+ * RCS: @(#) $Id: tclMain.c,v 1.20.4.4 2004/04/09 20:58:16 dgp Exp $
  */
 
-#include "tcl.h"
 #include "tclInt.h"
 
 # undef TCL_STORAGE_CLASS

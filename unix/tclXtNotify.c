@@ -9,11 +9,11 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclXtNotify.c,v 1.4.34.1 2004/02/07 05:48:11 dgp Exp $
+ * RCS: @(#) $Id: tclXtNotify.c,v 1.4.34.2 2004/04/09 20:58:19 dgp Exp $
  */
 
 #include <X11/Intrinsic.h>
-#include <tclInt.h>
+#include "tclInt.h"
 
 /*
  * This structure is used to keep track of the notifier info for a 

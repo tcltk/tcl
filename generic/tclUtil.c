@@ -11,11 +11,10 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.37.2.3 2003/09/05 23:08:07 dgp Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.37.2.4 2004/04/09 20:58:17 dgp Exp $
  */
 
 #include "tclInt.h"
-#include "tclPort.h"
 
 /*
  * The following variable holds the full path name of the binary

@@ -8,11 +8,10 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.84.2.9 2004/03/26 22:28:27 dgp Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.84.2.10 2004/04/09 20:58:16 dgp Exp $
  */
 
 #include "tclInt.h"
-#include "tclPort.h"
 
 /*
  * Remove macros that will interfere with the definitions below.

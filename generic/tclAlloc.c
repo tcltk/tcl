@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclAlloc.c,v 1.16.4.2 2004/03/26 22:28:25 dgp Exp $
+ * RCS: @(#) $Id: tclAlloc.c,v 1.16.4.3 2004/04/09 20:58:08 dgp Exp $
  */
 
 /*
@@ -26,7 +26,6 @@
 #if !defined(TCL_THREADS) || !defined(USE_THREAD_ALLOC)
 
 #include "tclInt.h"
-#include "tclPort.h"
 
 #if USE_TCLALLOC
 

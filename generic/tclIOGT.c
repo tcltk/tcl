@@ -10,11 +10,10 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * CVS: $Id: tclIOGT.c,v 1.7 2002/05/24 21:19:06 dkf Exp $
+ * CVS: $Id: tclIOGT.c,v 1.7.4.1 2004/04/09 20:58:14 dgp Exp $
  */
 
 #include "tclInt.h"
-#include "tclPort.h"
 #include "tclIO.h"
 
 

@@ -17,13 +17,11 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.81.2.7 2004/03/31 01:36:17 dgp Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.81.2.8 2004/04/09 20:58:15 dgp Exp $
  */
 
 #include "tclInt.h"
-#include "tclPort.h"
 #ifdef __WIN32__
-/* for tclWinProcs->useWide */
 #include "tclWinInt.h"
 #endif
 #include "tclFileSystem.h"
@@ -1161,13 +1159,30 @@ FsAddMountsToGlobResult(result, pathPtr, pattern, types)
 	    }
 	}
 	if (!found && dir) {
+            int len, mlen;
+            CONST char *path;
+            CONST char *mount;
 	    if (Tcl_IsShared(result)) {
 		Tcl_Obj *newList;
 		newList = Tcl_DuplicateObj(result);
 		Tcl_DecrRefCount(result);
 		result = newList;
 	    }
-	    Tcl_ListObjAppendElement(NULL, result, mElt);
+            /* 
+             * We know mElt is absolute normalized and lies inside pathPtr, 
+             * so now we must add to the result the right
+             * representation of mElt, i.e. the representation which
+             * is relative to pathPtr.
+             */
+            mount = Tcl_GetStringFromObj(mElt, &mlen);
+            path = Tcl_GetStringFromObj(Tcl_FSGetNormalizedPath(NULL, pathPtr), 
+                                        &len);
+            if (path[len-1] == '/') {
+                /* Deal with the root of the volume */
+                len--;
+            }
+            mElt = TclNewFSPathObj(pathPtr, mount + len + 1, mlen - len);
+            Tcl_ListObjAppendElement(NULL, result, mElt);
 	    /* 
 	     * No need to increment gLength, since we
 	     * don't want to compare mounts against
@@ -1276,9 +1291,9 @@ Tcl_FSData(fsPtr)
     FilesystemRecord *fsRecPtr = FsGetFirstFilesystem();
 
     /*
-     * Traverse the 'filesystemList' looking for the particular node
-     * whose 'fsPtr' member matches 'fsPtr' and remove that one from
-     * the list.  Ensure that the "default" node cannot be removed.
+     * Traverse the list of filesystems look for a particular one.
+     * If found, return that filesystem's clientData (originally
+     * provided when calling Tcl_FSRegister).
      */
 
     while ((retVal == NULL) && (fsRecPtr != NULL)) {

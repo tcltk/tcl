@@ -9,11 +9,10 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTimer.c,v 1.6.4.2 2004/02/07 05:48:01 dgp Exp $
+ * RCS: @(#) $Id: tclTimer.c,v 1.6.4.3 2004/04/09 20:58:17 dgp Exp $
  */
 
 #include "tclInt.h"
-#include "tclPort.h"
 
 /*
  * For each timer callback that's pending there is one record of the following

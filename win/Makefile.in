@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.71.2.3 2004/02/07 05:48:11 dgp Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.71.2.4 2004/04/09 20:58:19 dgp Exp $
 
 VERSION = @TCL_VERSION@
 
@@ -281,7 +281,6 @@ WIN_OBJS = \
 	tclWinFile.$(OBJEXT) \
 	tclWinInit.$(OBJEXT) \
 	tclWinLoad.$(OBJEXT) \
-	tclWinMtherr.$(OBJEXT) \
 	tclWinNotify.$(OBJEXT) \
 	tclWinPipe.$(OBJEXT) \
 	tclWinSock.$(OBJEXT) \

@@ -13,11 +13,10 @@
  *
  * This code contributed by Karl Lehenbauer and Mark Diekhans
  *
- * RCS: @(#) $Id: tclCkalloc.c,v 1.19.4.1 2004/02/07 05:48:00 dgp Exp $
+ * RCS: @(#) $Id: tclCkalloc.c,v 1.19.4.2 2004/04/09 20:58:09 dgp Exp $
  */
 
 #include "tclInt.h"
-#include "tclPort.h"
 
 #define FALSE	0
 #define TRUE	1

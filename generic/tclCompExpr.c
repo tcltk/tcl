@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.14.2.3 2004/02/07 05:48:00 dgp Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.14.2.4 2004/04/09 20:58:11 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -21,9 +21,7 @@
  * the errno from tclExecute.c here.
  */
 
-#ifndef TCL_GENERIC_ONLY
-#include "tclPort.h"
-#else
+#ifdef TCL_GENERIC_ONLY
 #define NO_ERRNO_H
 #endif
 

@@ -9,10 +9,9 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: gettod.c,v 1.2 1998/09/14 18:39:44 stanton Exp $
+ * RCS: @(#) $Id: gettod.c,v 1.2.42.1 2004/04/09 20:58:08 dgp Exp $
  */
 
-#include "tcl.h"
 #include "tclPort.h"
 #include <sys/timeb.h>
 

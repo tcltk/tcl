@@ -19,15 +19,11 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPort.h,v 1.28.2.3 2004/03/26 22:28:30 dgp Exp $
+ * RCS: @(#) $Id: tclUnixPort.h,v 1.28.2.4 2004/04/09 20:58:18 dgp Exp $
  */
 
 #ifndef _TCLUNIXPORT
 #define _TCLUNIXPORT
-
-#ifndef _TCLINT
-#   include "tclInt.h"
-#endif
 
 /*
  *---------------------------------------------------------------------------
@@ -584,8 +580,5 @@ typedef int TclpMutex;
 #define	TclpMutexLock(a)
 #define	TclpMutexUnlock(a)
 #endif /* TCL_THREADS */
-
-#include "tclPlatDecls.h"
-#include "tclIntPlatDecls.h"
 
 #endif /* _TCLUNIXPORT */

@@ -3,7 +3,7 @@
 # generate the file "configure", which is run during Tcl installation
 # to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.74.2.4 2004/03/26 22:28:30 dgp Exp $
+# RCS: @(#) $Id: configure.in,v 1.74.2.5 2004/04/09 20:58:19 dgp Exp $
 
 AC_INIT(../generic/tcl.h)
 AC_PREREQ(2.57)
@@ -378,10 +378,10 @@ eval "TCL_SRC_DIR=\"`cd $srcdir/..; pwd`\""
 eval "TCL_DLL_FILE=tcl${VER}${DLLSUFFIX}"
 
 eval "TCL_LIB_FILE=${LIBPREFIX}tcl$VER${LIBSUFFIX}"
-# FIMXE: These variables decls are missing
-#TCL_LIB_FLAG
-#TCL_BUILD_LIB_SPEC
-#TCL_LIB_SPEC
+
+eval "TCL_LIB_FLAG=\"-ltcl${VER}${LIBFLAGSUFFIX}\""
+eval "TCL_BUILD_LIB_SPEC=\"-L`pwd` ${TCL_LIB_FLAG}\""
+eval "TCL_LIB_SPEC=\"-L${libdir} ${TCL_LIB_FLAG}\""
 
 eval "TCL_STUB_LIB_FILE=\"${LIBPREFIX}tclstub${VER}${LIBSUFFIX}\""
 eval "TCL_STUB_LIB_FLAG=\"-ltclstub${VER}${LIBFLAGSUFFIX}\""
@@ -422,6 +422,18 @@ else
     fi
 fi
 
+#--------------------------------------------------------------------
+#	The statements below define the symbol TCL_PACKAGE_PATH, which
+#	gives a list of directories that may contain packages.  The list
+#	consists of one directory for machine-dependent binaries and
+#	another for platform-independent scripts.
+#--------------------------------------------------------------------
+
+if test "$prefix" != "$exec_prefix"; then
+    TCL_PACKAGE_PATH="${libdir} ${prefix}/lib"
+else
+    TCL_PACKAGE_PATH="${prefix}/lib"
+fi
 
 AC_SUBST(TCL_VERSION)
 AC_SUBST(TCL_MAJOR_VERSION)

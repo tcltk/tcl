@@ -9,11 +9,10 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFile.c,v 1.32.4.2 2004/02/07 05:48:09 dgp Exp $
+ * RCS: @(#) $Id: tclUnixFile.c,v 1.32.4.3 2004/04/09 20:58:18 dgp Exp $
  */
 
 #include "tclInt.h"
-#include "tclPort.h"
 
 static int NativeMatchType(CONST char* nativeName, Tcl_GlobTypeData *types);
 
