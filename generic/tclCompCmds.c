@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.9 2001/06/28 00:42:39 hobbs Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.10 2001/08/22 13:57:53 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -317,10 +317,27 @@ TclCompileCatchCmd(interp, parsePtr, envPtr)
     range = TclCreateExceptRange(CATCH_EXCEPTION_RANGE, envPtr);
     TclEmitInstInt4(INST_BEGIN_CATCH4, range, envPtr);
 
-    startOffset = (envPtr->codeNext - envPtr->codeStart);
+    /*
+     * If the body is a simple word, compile the instructions to
+     * eval it. Otherwise, compile instructions to substitute its
+     * text without catching, a catch instruction that resets the 
+     * stack to what it was before substituting the body, and then 
+     * an instruction to eval the body. Care has to be taken to 
+     * register the correct startOffset for the catch range so that
+     * errors in the substitution are not catched [Bug 219184]
+     */
+
+    if (cmdTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
+	startOffset = (envPtr->codeNext - envPtr->codeStart);
+	code = TclCompileCmdWord(interp, cmdTokenPtr+1, 1, envPtr);
+    } else {
+	code = TclCompileTokens(interp, cmdTokenPtr+1,
+	        cmdTokenPtr->numComponents, envPtr);
+	startOffset = (envPtr->codeNext - envPtr->codeStart);
+	TclEmitOpcode(INST_EVAL_STK, envPtr);
+    }
     envPtr->exceptArrayPtr[range].codeOffset = startOffset;
-    code = TclCompileCmdWord(interp, cmdTokenPtr+1,
-	    cmdTokenPtr->numComponents, envPtr);
+
     if (code != TCL_OK) {
 	if (code == TCL_ERROR) {
 	    sprintf(buffer, "\n    (\"catch\" body line %d)",
