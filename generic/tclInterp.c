@@ -402,6 +402,7 @@ Tcl_MakeSafe(interp)
      * (the only one remaining is [info nameofexecutable])
      */
 
+    Tcl_UnsetVar(interp, "tclDefaultLibrary", TCL_GLOBAL_ONLY);
     Tcl_UnsetVar(interp, "tcl_library", TCL_GLOBAL_ONLY);
     Tcl_UnsetVar(interp, "tcl_pkgPath", TCL_GLOBAL_ONLY);
     
