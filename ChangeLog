@@ -1,3 +1,8 @@
+2004-07-11  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclParse.c (Tcl_SubstObj): leak fix by dgp, release
+	result on error.
+
 2004-07-11  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclNamesp.c (BuildEnsembleConfig): Don't forget to clean
