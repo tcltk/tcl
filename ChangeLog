@@ -1,3 +1,8 @@
+2004-06-10  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclPathObj.c:	Corrected [file tail] results when operating
+	on a path produced by TclNewFSPathObj(). [Bug 970529]
+
 2004-06-09  Zoran Vasiljevic <vasiljevic@users.sf.net>
 
 	* generic/tclIOUtil.c: partially corrected [Bug 932314].
