@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.88 2004/07/23 16:27:28 dgp Exp $
+RCS: @(#) $Id: changes,v 1.89 2004/07/30 21:09:06 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -6039,6 +6039,8 @@ in this changeset (new minor version) rather than bug fixes:
  * [TIP #139] documented portions of Tcl's namespace C APIs
 
  * [TIP #148] correct [list]-quoting of the '#' character
+     *** POTENTIAL INCOMPATIBILITY *** 
+   For scripts that assume a particular (buggy) string rep for lists.
 
  * [TIP #156] add "root locale" to msgcat
 => msgcat 1.4
