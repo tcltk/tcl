@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.18 2002/09/03 16:31:32 msofer Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.19 2002/11/23 01:22:50 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -1063,7 +1063,7 @@ TclPreventAliasLoop(interp, cmdInterp, cmd)
     Alias *aliasPtr, *nextAliasPtr;
     Tcl_Command aliasCmd;
     Command *aliasCmdPtr;
-    
+
     /*
      * If we are not creating or renaming an alias, then it is
      * always OK to create or rename the command.
@@ -1089,6 +1089,18 @@ TclPreventAliasLoop(interp, cmdInterp, cmd)
          * the source alias, we have a loop.
 	 */
 
+	if (((Interp *)(nextAliasPtr->targetInterp))->flags & DELETED) {
+	    /*
+	     * The slave interpreter can be deleted while creating the alias.
+	     * [Bug #641195]
+	     */
+
+	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
+		    "cannot define or rename alias \"",
+		    Tcl_GetString(aliasPtr->namePtr),
+		    "\": interpreter deleted", (char *) NULL);
+	    return TCL_ERROR;
+	}
 	cmdNamePtr = nextAliasPtr->objPtr;
 	aliasCmd = Tcl_FindCommand(nextAliasPtr->targetInterp,
                 Tcl_GetString(cmdNamePtr),
@@ -1153,12 +1165,11 @@ AliasCreate(interp, slaveInterp, masterInterp, namePtr, targetNamePtr,
 {
     Alias *aliasPtr;
     Tcl_HashEntry *hPtr;
-    int new;
     Target *targetPtr;
     Slave *slavePtr;
     Master *masterPtr;
-    int i;
     Tcl_Obj **prefv;
+    int new, i;
 
     aliasPtr = (Alias *) ckalloc((unsigned) (sizeof(Alias) 
             + objc * sizeof(Tcl_Obj *)));
@@ -1210,7 +1221,7 @@ AliasCreate(interp, slaveInterp, masterInterp, namePtr, targetNamePtr,
 
         return TCL_ERROR;
     }
-    
+
     /*
      * Make an entry in the alias table. If it already exists delete
      * the alias command. Then retry.
