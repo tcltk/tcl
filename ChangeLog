@@ -1,3 +1,35 @@
+2002-05-29  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclInt.decls:
+	* generic/tclIntDecls.h:
+	* generic/tclStubInit.c:
+	* generic/tclUtf.c: added TclpUtfNcmp2 private command that
+	mirrors Tcl_UtfNcmp, but takes n in bytes, not utf-8 chars.  This
+	provides a faster alternative for comparing utf strings	internally.
+	(Tcl_UniCharNcmp, Tcl_UniCharNcasecmp): removed the explicit end
+	of string check as it wasn't correct for the function (by doc and
+	logic).
+
+	* generic/tclCmdMZ.c (Tcl_StringObjCmd): reworked the string equal
+	comparison code to use TclpUtfNcmp2 as well as short-circuit for
+	equal objects or unequal length strings in the equal case.
+	Removed the use of goto and streamlined the other parts.
+
+	* generic/tclExecute.c (TclExecuteByteCode): added check for
+	object equality in the comparison instructions.  Added
+	short-circuit for != length strings in INST_EQ, INST_NEQ and
+	INST_STR_CMP.  Reworked INST_STR_CMP to use TclpUtfNcmp2 where
+	appropriate, and only use Tcl_UniCharNcmp when at least one of the
+	objects is a Unicode obj with no utf bytes.
+
+	* generic/tclCompCmds.c (TclCompileStringCmd): removed error
+	creation in code that no longer throws an error.
+
+	* tests/string.test:
+	* tests/stringComp.test: added more string comparison checks.
+
+	* tests/clock.test: better qualified 9.1 constraint check for %s.
+
 2002-05-28  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclThreadAlloc.c (TclpRealloc, TclpFree): protect
