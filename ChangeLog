@@ -1,5 +1,10 @@
 2003-10-06  Don Porter  <dgp@users.sourceforge.net>
 
+	* tests/io.test:	Corrected several tests that failed when paths
+	* tests/ioCmd.test:	included regexp-special chars. [Bug 775394]
+
+2003-10-06  Don Porter  <dgp@users.sourceforge.net>
+
 	* tests/regexp.test:		Matched [makeFile] with [removeFile].
 	* tests/regexpComp.test:	[Bug 675652]
 
