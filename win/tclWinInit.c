@@ -7,7 +7,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclWinInit.c,v 1.20 1999/07/22 21:50:57 redman Exp $
+ * RCS: @(#) $Id: tclWinInit.c,v 1.21 1999/12/09 14:44:11 hobbs Exp $
  */
 
 #include "tclWinInt.h"
@@ -553,15 +553,7 @@ TclpSetVariables(interp)
     GetVersionExA(&osInfo);
 
     oemId = (OemId *) &sysInfo;
-    if (osInfo.dwPlatformId == VER_PLATFORM_WIN32s) {
-	/*
-	 * Since Win32s doesn't support GetSystemInfo, we use a default value.
-	 */
-
-	oemId->wProcessorArchitecture = PROCESSOR_ARCHITECTURE_INTEL;
-    } else {
-	GetSystemInfo(&sysInfo);
-    }
+    GetSystemInfo(&sysInfo);
 
     /*
      * Initialize the tclDefaultLibrary variable from the registry.

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPipe.c,v 1.8 1999/07/31 01:24:25 redman Exp $
+ * RCS: @(#) $Id: tclWinPipe.c,v 1.9 1999/12/09 14:44:11 hobbs Exp $
  */
 
 #include "tclWinInt.h"
@@ -47,10 +47,9 @@ TCL_DECLARE_MUTEX(pipeMutex)
 /*
  * The following constants and structures are used to encapsulate the state
  * of various types of files used in a pipeline.
+ * This used to have a 1 && 2 that supported Win32s.
  */
 
-#define WIN32S_PIPE 1		/* Win32s emulated pipe. */
-#define WIN32S_TMPFILE 2	/* Win32s emulated temporary file. */
 #define WIN_FILE 3		/* Basic Win32 file. */
 
 /*
@@ -62,36 +61,6 @@ typedef struct WinFile {
     int type;			/* One of the file types defined above. */
     HANDLE handle;		/* Open file handle. */
 } WinFile;
-
-/*
- * The following structure is used to keep track of temporary files under
- * Win32s and delete the disk file when the open handle is closed.
- * The type field will be WIN32S_TMPFILE.
- */
-
-typedef struct TmpFile {
-    WinFile file;		/* Common part. */
-    char name[MAX_PATH];	/* Name of temp file. */
-} TmpFile;
-
-/*
- * The following structure represents a synchronous pipe under Win32s.
- * The type field will be WIN32S_PIPE.  The handle field will refer to
- * an open file when Tcl is reading from the "pipe", otherwise it is
- * INVALID_HANDLE_VALUE.
- */
-
-typedef struct WinPipe {
-    WinFile file;		/* Common part. */
-    struct WinPipe *otherPtr;	/* Pointer to the WinPipe structure that
-				 * corresponds to the other end of this 
-				 * pipe. */
-    char *fileName;		/* The name of the staging file that gets 
-				 * the data written to this pipe.  Malloc'd.
-				 * and shared by both ends of the pipe.  Only
-				 * when both ends are freed will fileName be
-				 * freed and the file it refers to deleted. */
-} WinPipe;
 
 /*
  * This list is used to map from pids to process handles.
@@ -117,7 +86,7 @@ static ProcInfo *procList;
  */
 
 #define PIPE_EOF	(1<<2)	/* Pipe has reached EOF. */
-#define PIPE_EXTRABYTE (1<<3)	/* The reader thread has consumed one byte. */
+#define PIPE_EXTRABYTE	(1<<3)	/* The reader thread has consumed one byte. */
 
 /*
  * This structure describes per-instance data for a pipe based channel.
@@ -211,9 +180,7 @@ static int		ApplicationType(Tcl_Interp *interp,
 			    const char *fileName, char *fullName);
 static void		BuildCommandLine(const char *executable, int argc, 
 			    char **argv, Tcl_DString *linePtr);
-static void		CopyChannel(HANDLE dst, HANDLE src);
 static BOOL		HasConsole(void);
-static char *		MakeTempFile(Tcl_DString *namePtr);
 static int		PipeBlockModeProc(ClientData instanceData, int mode);
 static void		PipeCheckProc(ClientData clientData, int flags);
 static int		PipeClose2Proc(ClientData instanceData,
@@ -389,16 +356,13 @@ PipeSetupProc(
 	    infoPtr = infoPtr->nextPtr) {
 	if (infoPtr->watchMask & TCL_WRITABLE) {
 	    filePtr = (WinFile*) infoPtr->writeFile;
-	    if ((filePtr->type == WIN32S_PIPE) 
-		    || (WaitForSingleObject(infoPtr->writable, 0)
-			    != WAIT_TIMEOUT)) {
+	    if (WaitForSingleObject(infoPtr->writable, 0) != WAIT_TIMEOUT) {
 		block = 0;
 	    }
 	}
 	if (infoPtr->watchMask & TCL_READABLE) {
 	    filePtr = (WinFile*) infoPtr->readFile;
-	    if ((filePtr->type == WIN32S_PIPE) 
-		    || (WaitForRead(infoPtr, 0) >= 0)) {
+	    if (WaitForRead(infoPtr, 0) >= 0) {
 		block = 0;
 	    }
 	}
@@ -457,20 +421,15 @@ PipeCheckProc(
 
 	needEvent = 0;
 	filePtr = (WinFile*) infoPtr->writeFile;
-	if (infoPtr->watchMask & TCL_WRITABLE) {
-	    if ((filePtr->type == WIN32S_PIPE)
-		    || (WaitForSingleObject(infoPtr->writable, 0)
-			    != WAIT_TIMEOUT)) {
-		needEvent = 1;
-	    }
+	if ((infoPtr->watchMask & TCL_WRITABLE) &&
+		(WaitForSingleObject(infoPtr->writable, 0) != WAIT_TIMEOUT)) {
+	    needEvent = 1;
 	}
 	
 	filePtr = (WinFile*) infoPtr->readFile;
-	if (infoPtr->watchMask & TCL_READABLE) {
-	    if ((filePtr->type == WIN32S_PIPE)
-		    || (WaitForRead(infoPtr, 0) >= 0)) {
-		needEvent = 1;
-	    }
+	if ((infoPtr->watchMask & TCL_READABLE) &&
+		(WaitForRead(infoPtr, 0) >= 0)) {
+	    needEvent = 1;
 	}
 
 	if (needEvent) {
@@ -779,20 +738,7 @@ TclpCreateTempFile(contents)
 	}
     }
 
-    /*
-     * Under Win32s a file created with FILE_FLAG_DELETE_ON_CLOSE won't
-     * actually be deleted when it is closed, so we have to do it ourselves.
-     */
-
-    if (TclWinGetPlatformId() == VER_PLATFORM_WIN32s) {
-	TmpFile *tmpFilePtr = (TmpFile *) ckalloc(sizeof(TmpFile));
-	tmpFilePtr->file.type = WIN32S_TMPFILE;
-	tmpFilePtr->file.handle = handle;
-	lstrcpyA(tmpFilePtr->name, (char *) name);
-	return (TclFile) tmpFilePtr;
-    } else {
-	return TclWinMakeFile(handle);
-    }
+    return TclWinMakeFile(handle);
 
   error:
     TclWinConvertError(GetLastError());
@@ -806,8 +752,7 @@ TclpCreateTempFile(contents)
  *
  * TclpCreatePipe --
  *
- *      Creates an anonymous pipe.  Under Win32s, creates a temp file
- *	that is used to simulate a pipe.
+ *      Creates an anonymous pipe.
  *
  * Results:
  *      Returns 1 on success, 0 on failure. 
@@ -831,33 +776,6 @@ TclpCreatePipe(
 	*readPipe = TclWinMakeFile(readHandle);
 	*writePipe = TclWinMakeFile(writeHandle);
 	return 1;
-    }
-
-    if (TclWinGetPlatformId() == VER_PLATFORM_WIN32s) {
-	WinPipe *readPipePtr, *writePipePtr;
-	char buf[MAX_PATH];
-	int bytes;
-
-	if (TempFileName((WCHAR *) buf) != 0) {
-	    bytes = strlen((char *) buf) + 1;
-	    readPipePtr = (WinPipe *) ckalloc(sizeof(WinPipe));
-	    writePipePtr = (WinPipe *) ckalloc(sizeof(WinPipe));
-
-	    readPipePtr->file.type = WIN32S_PIPE;
-	    readPipePtr->otherPtr = writePipePtr;
-	    readPipePtr->fileName = (char *) ckalloc(bytes);
-	    lstrcpyA(readPipePtr->fileName, buf);
-	    readPipePtr->file.handle = INVALID_HANDLE_VALUE;
-	    writePipePtr->file.type = WIN32S_PIPE;
-	    writePipePtr->otherPtr = readPipePtr;
-	    writePipePtr->fileName = readPipePtr->fileName;
-	    writePipePtr->file.handle = INVALID_HANDLE_VALUE;
-
-	    *readPipe = (TclFile) readPipePtr;
-	    *writePipe = (TclFile) writePipePtr;
-
-	    return 1;
-	}
     }
 
     TclWinConvertError(GetLastError());
@@ -886,15 +804,13 @@ TclpCloseFile(
     TclFile file)	/* The file to close. */
 {
     WinFile *filePtr = (WinFile *) file;
-    WinPipe *pipePtr;
 
     switch (filePtr->type) {
 	case WIN_FILE:
-	case WIN32S_TMPFILE:
 	    /*
 	     * Don't close the Win32 handle if the handle is a standard channel
-	     * during the exit process.  Otherwise, one thread may kill the stdio
-	     * of another.
+	     * during the exit process.  Otherwise, one thread may kill the
+	     * stdio of another.
 	     */
 
 	    if (!TclInExit() 
@@ -906,27 +822,6 @@ TclpCloseFile(
 		    ckfree((char *) filePtr);
 		    return -1;
 		}
-	    }
-	    /*
-	     * Simulate deleting the file on close for Win32s.
-	     */
-
-	    if (filePtr->type == WIN32S_TMPFILE) {
-		DeleteFileA(((TmpFile *) filePtr)->name);
-	    }
-	    break;
-
-	case WIN32S_PIPE:
-	    pipePtr = (WinPipe *) file;
-
-	    if (pipePtr->otherPtr != NULL) {
-		pipePtr->otherPtr->otherPtr = NULL;
-	    } else {
-		if (pipePtr->file.handle != INVALID_HANDLE_VALUE) {
-		    CloseHandle(pipePtr->file.handle);
-		}
-		DeleteFileA(pipePtr->fileName);
-		ckfree((char *) pipePtr->fileName);
 	    }
 	    break;
 
@@ -981,9 +876,8 @@ TclpGetPid(
  *
  *	Create a child process that has the specified files as its 
  *	standard input, output, and error.  The child process runs
- *	synchronously under Win32s and asynchronously under Windows NT
- *	and Windows 95, and runs with the same environment variables
- *	as the creating process.
+ *	asynchronously under Windows NT and Windows 9x, and runs
+ *	with the same environment variables as the creating process.
  *
  *	The complete Windows search path is searched to find the specified 
  *	executable.  If an executable by the given name is not found, 
@@ -1050,158 +944,6 @@ TclpCreateProcess(
 
     result = TCL_ERROR;
     Tcl_DStringInit(&cmdLine);
-
-    if (TclWinGetPlatformId() == VER_PLATFORM_WIN32s) {
-	/*
-	 * Under Win32s, there are no pipes.  In order to simulate pipe
-	 * behavior, the child processes are run synchronously and their
-	 * I/O is redirected from/to temporary files before the next 
-	 * stage of the pipeline is started.
-	 */
-
-	MSG msg;
-	DWORD status;
-	DWORD args[4];
-	void *trans[5];
-	char *inputFileName, *outputFileName;
-	Tcl_DString inputTempFile, outputTempFile;
-
-	BuildCommandLine(execPath, argc, argv, &cmdLine);
-
-	ZeroMemory(&startInfo, sizeof(startInfo));
-	startInfo.cb = sizeof(startInfo);
-
-	Tcl_DStringInit(&inputTempFile);
-	Tcl_DStringInit(&outputTempFile);
-	outputHandle = INVALID_HANDLE_VALUE;
-
-	inputFileName = NULL;
-	outputFileName = NULL;
-	if (inputFile != NULL) {
-	    filePtr = (WinFile *) inputFile;
-	    switch (filePtr->type) {
-		case WIN_FILE:
-		case WIN32S_TMPFILE: {
-		    h = INVALID_HANDLE_VALUE;
-		    inputFileName = MakeTempFile(&inputTempFile);
-		    if (inputFileName != NULL) {
-			h = CreateFileA((char *) inputFileName, 
-				GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, 0, 
-				NULL);
-		    }
-		    if (h == INVALID_HANDLE_VALUE) {
-			Tcl_AppendResult(interp, "couldn't duplicate input handle: ", 
-				Tcl_PosixError(interp), (char *) NULL);
-			goto end32s;
-		    }
-		    CopyChannel(h, filePtr->handle);
-		    CloseHandle(h);
-		    break;
-		}
-		case WIN32S_PIPE: {
-		    inputFileName = (char *) ((WinPipe *) inputFile)->fileName;
-		    break;
-		}
-	    }
-	}
-	if (inputFileName == NULL) {
-	    inputFileName = "nul";
-	}
-	if (outputFile != NULL) {
-	    filePtr = (WinFile *) outputFile;
-	    if (filePtr->type == WIN_FILE) {
-		outputFileName = MakeTempFile(&outputTempFile);
-		if (outputFileName == NULL) {
-		    Tcl_AppendResult(interp, "couldn't duplicate output handle: ",
-			    Tcl_PosixError(interp), (char *) NULL);
-		    goto end32s;
-		}
-		outputHandle = filePtr->handle;
-	    } else if (filePtr->type == WIN32S_PIPE) {
-		outputFileName = (char *) ((WinPipe *) outputFile)->fileName;
-	    }
-	}
-	if (outputFileName == NULL) {
-	    outputFileName = "nul";
-	}
-
-	if (applType == APPL_DOS) {
-	    args[0] = (DWORD) Tcl_DStringValue(&cmdLine);
-	    args[1] = (DWORD) inputFileName;
-	    args[2] = (DWORD) outputFileName;
-	    trans[0] = &args[0];
-	    trans[1] = &args[1];
-	    trans[2] = &args[2];
-	    trans[3] = NULL;
-	    if (TclWinSynchSpawn(args, 0, trans, pidPtr) != 0) {
-		result = TCL_OK;
-	    }
-	} else if (applType == APPL_WIN3X) {
-	    args[0] = (DWORD) Tcl_DStringValue(&cmdLine);
-	    trans[0] = &args[0];
-	    trans[1] = NULL;
-	    if (TclWinSynchSpawn(args, 1, trans, pidPtr) != 0) {
-		result = TCL_OK;
-	    }
-	} else {
-	    if (CreateProcessA(NULL, Tcl_DStringValue(&cmdLine), 
-		    NULL, NULL, FALSE, DETACHED_PROCESS, NULL, NULL, 
-		    &startInfo, &procInfo) != 0) {
-		CloseHandle(procInfo.hThread);
-		while (1) {
-		    if (GetExitCodeProcess(procInfo.hProcess, &status) == FALSE) {
-			break;
-		    }
-		    if (status != STILL_ACTIVE) {
-			break;
-		    }
-		    if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE) == TRUE) {
-			TranslateMessage(&msg);
-			DispatchMessage(&msg);
-		    }
-		}
-		*pidPtr = (Tcl_Pid) procInfo.hProcess;
-		if (*pidPtr != 0) {
-		    TclWinAddProcess(procInfo.hProcess, procInfo.dwProcessId);
-		}
-		result = TCL_OK;
-	    }
-	}
-	if (result != TCL_OK) {
-	    TclWinConvertError(GetLastError());
-	    Tcl_AppendResult(interp, "couldn't execute \"", argv[0],
-		    "\": ", Tcl_PosixError(interp), (char *) NULL);
-	}
-
-	end32s:
-	if (outputHandle != INVALID_HANDLE_VALUE) {
-	    /*
-	     * Now copy stuff from temp file to actual output handle. Don't
-	     * close outputHandle because it is associated with the output
-	     * file owned by the caller.
-	     */
-
-	    h = CreateFileA(outputFileName, GENERIC_READ, 0, NULL, OPEN_ALWAYS,
-		    0, NULL);
-	    if (h != INVALID_HANDLE_VALUE) {
-		CopyChannel(outputHandle, h);
-	    }
-	    CloseHandle(h);
-	}
-
-	if (inputFileName == Tcl_DStringValue(&inputTempFile)) {
-	    DeleteFileA(inputFileName);
-	}
-	
-	if (outputFileName == Tcl_DStringValue(&outputTempFile)) {
-	    DeleteFileA(outputFileName);
-	}
-
-	Tcl_DStringFree(&inputTempFile);
-	Tcl_DStringFree(&outputTempFile);
-        Tcl_DStringFree(&cmdLine);
-	return result;
-    }
     hProcess = GetCurrentProcess();
 
     /*
@@ -1821,80 +1563,6 @@ BuildCommandLine(
 /*
  *----------------------------------------------------------------------
  *
- * MakeTempFile --
- *
- *	Helper function for TclpCreateProcess under Win32s.  Makes a 
- *	temporary file that _won't_ go away automatically when it's file
- *	handle is closed.  Used for simulated pipes, which are written
- *	in one pass and reopened and read in the next pass.
- *
- * Results:
- *	namePtr is filled with the name of the temporary file.
- *
- * Side effects:
- *	A temporary file with the name specified by namePtr is created.  
- *	The caller is responsible for deleting this temporary file.
- *
- *----------------------------------------------------------------------
- */
-
-static char *
-MakeTempFile(namePtr)
-    Tcl_DString *namePtr;	/* Initialized Tcl_DString that is filled 
-				 * with the name of the temporary file that 
-				 * was created. */
-{
-    char name[MAX_PATH];
-
-    if (TempFileName((WCHAR *) name) == 0) {
-	return NULL;
-    }
-
-    Tcl_DStringAppend(namePtr, name, -1);
-    return Tcl_DStringValue(namePtr);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * CopyChannel --
- *
- *	Helper function used by TclpCreateProcess under Win32s.  Copies
- *	what remains of source file to destination file; source file 
- *	pointer need not be positioned at the beginning of the file if
- *	all of source file is not desired, but data is copied up to end 
- *	of source file.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-static void
-CopyChannel(
-    HANDLE dst,			/* Destination file. */
-    HANDLE src)			/* Source file. */
-{
-    char buf[8192];
-    DWORD dwRead, dwWrite;
-
-    while (ReadFile(src, buf, sizeof(buf), &dwRead, NULL) != FALSE) {
-	if (dwRead == 0) {
-	    break;
-	}
-	if (WriteFile(dst, buf, dwRead, &dwWrite, NULL) == FALSE) {
-	    break;
-	}
-    }
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * TclpCreateCommandChannel --
  *
  *	This function is called by Tcl_OpenCommandChannel to perform
@@ -1923,16 +1591,6 @@ TclpCreateCommandChannel(
     int channelId;
     DWORD id;
     PipeInfo *infoPtr = (PipeInfo *) ckalloc((unsigned) sizeof(PipeInfo));
-    OSVERSIONINFO os;
-    int useThreads;
-
-    /*
-     * Fetch the OS version info.
-     */
-
-    os.dwOSVersionInfoSize = sizeof(os);
-    GetVersionEx(&os);
-    useThreads = (os.dwPlatformId != VER_PLATFORM_WIN32s);
 
     PipeInit();
 
@@ -1954,13 +1612,7 @@ TclpCreateCommandChannel(
      */
 
     if (readFile) {
-	WinPipe *pipePtr = (WinPipe *) readFile;
-	if (pipePtr->file.type == WIN32S_PIPE
-		&& pipePtr->file.handle == INVALID_HANDLE_VALUE) {
-	    pipePtr->file.handle = CreateFileA(pipePtr->fileName, GENERIC_READ,
-		    0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-	}
-	channelId = (int) pipePtr->file.handle;
+	channelId = (int) ((WinFile*)readFile)->handle;
     } else if (writeFile) {
 	channelId = (int) ((WinFile*)writeFile)->handle;
     } else if (errorFile) {
@@ -1974,37 +1626,29 @@ TclpCreateCommandChannel(
     infoPtr->threadId = Tcl_GetCurrentThread();
 
     if (readFile != NULL) {
-	if (useThreads) {
-	    /*
-	     * Start the background reader thread.
-	     */
+	/*
+	 * Start the background reader thread.
+	 */
 
-	    infoPtr->readable = CreateEvent(NULL, TRUE, TRUE, NULL);
-	    infoPtr->startReader = CreateEvent(NULL, FALSE, FALSE, NULL);
-	    infoPtr->readThread = CreateThread(NULL, 8000, PipeReaderThread,
-		    infoPtr, 0, &id);
-	    SetThreadPriority(infoPtr->readThread, THREAD_PRIORITY_HIGHEST); 
-	} else {
-	    infoPtr->readThread = 0;
-	}
+	infoPtr->readable = CreateEvent(NULL, TRUE, TRUE, NULL);
+	infoPtr->startReader = CreateEvent(NULL, FALSE, FALSE, NULL);
+	infoPtr->readThread = CreateThread(NULL, 8000, PipeReaderThread,
+		infoPtr, 0, &id);
+	SetThreadPriority(infoPtr->readThread, THREAD_PRIORITY_HIGHEST); 
         infoPtr->validMask |= TCL_READABLE;
     } else {
 	infoPtr->readThread = 0;
     }
     if (writeFile != NULL) {
-	if (useThreads) {
-	    /*
-	     * Start the background writeer thwrite.
-	     */
+	/*
+	 * Start the background writeer thwrite.
+	 */
 
-	    infoPtr->writable = CreateEvent(NULL, TRUE, TRUE, NULL);
-	    infoPtr->startWriter = CreateEvent(NULL, FALSE, FALSE, NULL);
-	    infoPtr->writeThread = CreateThread(NULL, 8000, PipeWriterThread,
-		    infoPtr, 0, &id);
-	    SetThreadPriority(infoPtr->readThread, THREAD_PRIORITY_HIGHEST); 
-	} else {
-	    infoPtr->writeThread = 0;
-	}
+	infoPtr->writable = CreateEvent(NULL, TRUE, TRUE, NULL);
+	infoPtr->startWriter = CreateEvent(NULL, FALSE, FALSE, NULL);
+	infoPtr->writeThread = CreateThread(NULL, 8000, PipeWriterThread,
+		infoPtr, 0, &id);
+	SetThreadPriority(infoPtr->readThread, THREAD_PRIORITY_HIGHEST); 
         infoPtr->validMask |= TCL_WRITABLE;
     }
 
@@ -2262,25 +1906,16 @@ PipeClose2Proc(
 
     /*
      * Wrap the error file into a channel and give it to the cleanup
-     * routine.  If we are running in Win32s, just delete the error file
-     * immediately, because it was never used.
+     * routine.
      */
 
     if (pipePtr->errorFile) {
 	WinFile *filePtr;
-	OSVERSIONINFO os;
 
-	os.dwOSVersionInfoSize = sizeof(os);
-	GetVersionEx(&os);
-	if (os.dwPlatformId == VER_PLATFORM_WIN32s) {
-	    TclpCloseFile(pipePtr->errorFile);
-	    errChan = NULL;
-	} else {
-	    filePtr = (WinFile*)pipePtr->errorFile;
-	    errChan = Tcl_MakeFileChannel((ClientData) filePtr->handle,
-		    TCL_READABLE);
-	    ckfree((char *) filePtr);
-	}
+	filePtr = (WinFile*)pipePtr->errorFile;
+	errChan = Tcl_MakeFileChannel((ClientData) filePtr->handle,
+		TCL_READABLE);
+	ckfree((char *) filePtr);
     } else {
         errChan = NULL;
     }
@@ -2336,53 +1971,39 @@ PipeInputProc(
     int result;
 
     *errorCode = 0;
-    if (filePtr->type == WIN32S_PIPE) {
-	if (((WinPipe *)filePtr)->otherPtr != NULL) {
-	    panic("PipeInputProc: child process isn't finished writing");
-	}
-	if (filePtr->handle == INVALID_HANDLE_VALUE) {
-	    filePtr->handle = CreateFileA(((WinPipe *)filePtr)->fileName,
-		    GENERIC_READ, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL,
-		    NULL);
-	}
-	if (filePtr->handle == INVALID_HANDLE_VALUE) {
-	    goto error;
-	}
-    } else {
+    /*
+     * Synchronize with the reader thread.
+     */
+
+    result = WaitForRead(infoPtr, (infoPtr->flags & PIPE_ASYNC) ? 0 : 1);
+
+    /*
+     * If an error occurred, return immediately.
+     */
+
+    if (result == -1) {
+	*errorCode = errno;
+	return -1;
+    }
+
+    if (infoPtr->readFlags & PIPE_EXTRABYTE) {
 	/*
-	 * Synchronize with the reader thread.
+	 * The reader thread consumed 1 byte as a side effect of
+	 * waiting so we need to move it into the buffer.
 	 */
 
-	result = WaitForRead(infoPtr, (infoPtr->flags & PIPE_ASYNC) ? 0 : 1);
+	*buf = infoPtr->extraByte;
+	infoPtr->readFlags &= ~PIPE_EXTRABYTE;
+	buf++;
+	bufSize--;
+	bytesRead = 1;
 
 	/*
-	 * If an error occurred, return immediately.
+	 * If further read attempts would block, return what we have.
 	 */
 
-	if (result == -1) {
-	    *errorCode = errno;
-	    return -1;
-	}
-
-	if (infoPtr->readFlags & PIPE_EXTRABYTE) {
-	    /*
-	     * The reader thread consumed 1 byte as a side effect of
-	     * waiting so we need to move it into the buffer.
-	     */
-
-	    *buf = infoPtr->extraByte;
-	    infoPtr->readFlags &= ~PIPE_EXTRABYTE;
-	    buf++;
-	    bufSize--;
-	    bytesRead = 1;
-
-	    /*
-	     * If further read attempts would block, return what we have.
-	     */
-
-	    if (result == 0) {
-		return bytesRead;
-	    }
+	if (result == 0) {
+	    return bytesRead;
 	}
     }
 
@@ -2403,7 +2024,6 @@ PipeInputProc(
 	return bytesRead;
     }
 
-    error:
     TclWinConvertError(GetLastError());
     if (errno == EPIPE) {
 	infoPtr->readFlags |= PIPE_EOF;
@@ -2567,31 +2187,26 @@ PipeEventProc(
     }
 
     /*
-     * If we aren't on Win32s, check to see if the pipe is readable.  Note
+     * Check to see if the pipe is readable.  Note
      * that we can't tell if a pipe is writable, so we always report it
      * as being writable unless we have detected EOF.
      */
 
     filePtr = (WinFile*) ((PipeInfo*)infoPtr)->writeFile;
     mask = 0;
-    if (infoPtr->watchMask & TCL_WRITABLE) {
-	if ((filePtr->type == WIN32S_PIPE)
-		|| (WaitForSingleObject(infoPtr->writable, 0)
-			!= WAIT_TIMEOUT)) {
-	    mask = TCL_WRITABLE;
-	}
+    if ((infoPtr->watchMask & TCL_WRITABLE) &&
+	    (WaitForSingleObject(infoPtr->writable, 0) != WAIT_TIMEOUT)) {
+	mask = TCL_WRITABLE;
     }
 
     filePtr = (WinFile*) ((PipeInfo*)infoPtr)->readFile;
-    if (infoPtr->watchMask & TCL_READABLE) {
-	if ((filePtr->type == WIN32S_PIPE)
-		|| (WaitForRead(infoPtr, 0) >= 0)) {
-	    if (infoPtr->readFlags & PIPE_EOF) {
-		mask = TCL_READABLE;
-	    } else {
-		mask |= TCL_READABLE;
-	    }
-	} 
+    if ((infoPtr->watchMask & TCL_READABLE) &&
+	    (WaitForRead(infoPtr, 0) >= 0)) {
+	if (infoPtr->readFlags & PIPE_EOF) {
+	    mask = TCL_READABLE;
+	} else {
+	    mask |= TCL_READABLE;
+	}
     }
 
     /*
@@ -2692,16 +2307,6 @@ PipeGetHandleProc(
 
     if (direction == TCL_READABLE && infoPtr->readFile) {
 	filePtr = (WinFile*) infoPtr->readFile;
-	if (filePtr->type == WIN32S_PIPE) {
-	    if (filePtr->handle == INVALID_HANDLE_VALUE) {
-		filePtr->handle = CreateFileA(((WinPipe *)filePtr)->fileName,
-			GENERIC_READ, 0, NULL, OPEN_ALWAYS,
-			FILE_ATTRIBUTE_NORMAL, NULL);
-	    }
-	    if (filePtr->handle == INVALID_HANDLE_VALUE) {
-		return TCL_ERROR;
-	    }
-	}
 	*handlePtr = (ClientData) filePtr->handle;
 	return TCL_OK;
     }

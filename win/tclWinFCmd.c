@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFCmd.c,v 1.6 1999/04/23 01:57:23 stanton Exp $
+ * RCS: @(#) $Id: tclWinFCmd.c,v 1.7 1999/12/09 14:44:11 hobbs Exp $
  */
 
 #include "tclWinInt.h"
@@ -159,20 +159,7 @@ TclpRenameFile(
     nativeSrc = Tcl_WinUtfToTChar(src, -1, &srcString);
     Tcl_WinUtfToTChar(dst, -1, &dstString);
 
-    if ((TclWinGetPlatformId() == VER_PLATFORM_WIN32s) 
-	    && ((Tcl_DStringLength(&srcString) >= MAX_PATH - 1) ||
-		    (Tcl_DStringLength(&dstString) >= MAX_PATH - 1))) {
-	/*
-	 * On Win32s, really long file names cause the MoveFile() call
-	 * to lock up, endlessly throwing an access violation and 
-	 * retrying the operation.
-	 */
-
-	errno = ENAMETOOLONG;
-	result = TCL_ERROR;
-    } else {
-	result = DoRenameFile(nativeSrc, &dstString);
-    }
+    result = DoRenameFile(nativeSrc, &dstString);
     Tcl_DStringFree(&srcString);
     Tcl_DStringFree(&dstString);
     return result;
@@ -223,16 +210,6 @@ DoRenameFile(
     if (errno == EBADF) {
 	errno = EACCES;
 	return TCL_ERROR;
-    }
-    if ((TclWinGetPlatformId() == VER_PLATFORM_WIN32s) && (errno == EACCES)) {
-	if ((srcAttr != 0) && (dstAttr != 0)) {
-	    /*
-	     * Win32s reports trying to overwrite an existing file or directory
-	     * as EACCES.
-	     */
-
-	    errno = EEXIST;
-	}
     }
     if (errno == EACCES) {
 	decode:
@@ -687,13 +664,6 @@ DoCreateDirectory(
     nativePath = (TCHAR *) Tcl_DStringValue(pathPtr);
     if ((*tclWinProcs->createDirectoryProc)(nativePath, NULL) == 0) {
 	error = GetLastError();
-	if (TclWinGetPlatformId() == VER_PLATFORM_WIN32s) {
-	    if ((error == ERROR_ACCESS_DENIED) 
-		    && ((*tclWinProcs->getFileAttributesProc)(nativePath) 
-			    != 0xffffffff)) {
-		error = ERROR_FILE_EXISTS;
-	    }
-	}
 	TclWinConvertError(error);
 	return TCL_ERROR;
     }   

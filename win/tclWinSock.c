@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinSock.c,v 1.17 1999/08/01 22:09:29 redman Exp $
+ * RCS: @(#) $Id: tclWinSock.c,v 1.18 1999/12/09 14:44:11 hobbs Exp $
  */
 
 #include "tclWinInt.h"
@@ -260,40 +260,19 @@ InitSockets()
 {
     DWORD id;
     WSADATA wsaData;
-    OSVERSIONINFO info;
     ThreadSpecificData *tsdPtr = 
 	(ThreadSpecificData *)TclThreadDataKeyGet(&dataKey);
 
     if (! initialized) {
 	initialized = 1;
 	Tcl_CreateExitHandler(SocketExitHandler, (ClientData) NULL);
-    
-	/*
-	 * Find out if we're running on Win32s.
-	 */
-    
-	info.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
-	GetVersionEx(&info);
-    
-	/*
-	 * Check to see if Sockets are supported on this system.  Since
-	 * win32s panics if we call WSAStartup on a system that doesn't
-	 * have winsock.dll, we need to look for it on the system first.
-	 * If we find winsock, then load the library and initialize the
-	 * stub table.
-	 */
-    
-	if ((info.dwPlatformId != VER_PLATFORM_WIN32s)
-		|| (SearchPathA(NULL, "WINSOCK", ".DLL", 0, NULL, NULL) != 0)) {
-	    winSock.hInstance = LoadLibraryA("wsock32.dll");
-	} else {
-	    winSock.hInstance = NULL;
-	}
-    
+
+	winSock.hInstance = LoadLibraryA("wsock32.dll");
+
 	/*
 	 * Initialize the function table.
 	 */
-    
+
 	if (!SocketsEnabled()) {
 	    return;
 	}
@@ -1801,7 +1780,7 @@ TcpOutputProc(instanceData, buf, toWrite, errorCodePtr)
      * use sockets.
      */
 
-    if (! SocketsEnabled()) {
+    if (!SocketsEnabled()) {
         *errorCodePtr = EFAULT;
         return -1;
     }
@@ -2161,8 +2140,12 @@ SocketThread(LPVOID arg)
 	 * store the tsdPtr, it's from a different thread, so it's
 	 * not directly accessible, but needed.
 	 */
-	
+
+#ifdef _WIN64
+	SetWindowLongPtr(tsdPtr->hwnd, GWLP_USERDATA, (LONG) tsdPtr);
+#else
 	SetWindowLong(tsdPtr->hwnd, GWL_USERDATA, (LONG) tsdPtr);
+#endif
     }
 
     while (1) {
@@ -2208,8 +2191,11 @@ SocketProc(hwnd, message, wParam, lParam)
     SOCKET socket;
     SocketInfo *infoPtr;
     ThreadSpecificData *tsdPtr =
+#ifdef _WIN64
+	(ThreadSpecificData *) GetWindowLongPtr(hwnd, GWLP_USERDATA);
+#else
 	(ThreadSpecificData *) GetWindowLong(hwnd, GWL_USERDATA);
-
+#endif
 
     switch (message) {
 
@@ -2299,8 +2285,7 @@ SocketProc(hwnd, message, wParam, lParam)
 		 * Clear the selection mask
 		 */
 		
-		(void) (*winSock.WSAAsyncSelect)(infoPtr->socket, hwnd,
-			0, 0);
+		(void) (*winSock.WSAAsyncSelect)(infoPtr->socket, hwnd, 0, 0);
 	    }
 	    break;
 	case SOCKET_TERMINATE:

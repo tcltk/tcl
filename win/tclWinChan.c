@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinChan.c,v 1.8 1999/07/30 02:02:35 redman Exp $
+ * RCS: @(#) $Id: tclWinChan.c,v 1.9 1999/12/09 14:44:10 hobbs Exp $
  */
 
 #include "tclWinInt.h"
@@ -791,8 +791,7 @@ TclpOpenFileChannel(interp, fileName, modeString, permissions)
 
     channel = NULL;
 
-    switch (type)
-    {
+    switch (type) {
     case FILE_TYPE_SERIAL:
 	channel = TclWinOpenSerialChannel(handle, channelName,
 	        channelPermissions);
@@ -802,12 +801,10 @@ TclpOpenFileChannel(interp, fileName, modeString, permissions)
 	        channelPermissions);
 	break;
     case FILE_TYPE_PIPE:
-	if (channelPermissions & TCL_READABLE)
-	{
+	if (channelPermissions & TCL_READABLE) {
 	    readFile = TclWinMakeFile(handle);
 	}
-	if (channelPermissions & TCL_WRITABLE)
-	{
+	if (channelPermissions & TCL_WRITABLE) {
 	    writeFile = TclWinMakeFile(handle);
 	}
 	channel = TclpCreateCommandChannel(readFile, writeFile, NULL, 0, NULL);
@@ -835,8 +832,7 @@ TclpOpenFileChannel(interp, fileName, modeString, permissions)
     Tcl_DStringFree(&buffer);
     Tcl_DStringFree(&ds);
 
-    if (channel != NULL)
-    {
+    if (channel != NULL) {
 	if (seekFlag) {
 	    if (Tcl_Seek(channel, 0, SEEK_END) < 0) {
 		if (interp != (Tcl_Interp *) NULL) {
