@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.175 2004/09/27 14:31:18 kennykb Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.176 2004/09/29 22:17:31 dkf Exp $
  */
 
 #ifndef _TCLINT
@@ -2474,6 +2474,22 @@ EXTERN void	TclDbInitNewObj _ANSI_ARGS_((Tcl_Obj *objPtr));
 
 #define TclGetString(objPtr) \
     ((objPtr)->bytes? (objPtr)->bytes : Tcl_GetString((objPtr)))
+
+/*
+ *----------------------------------------------------------------
+ * Macro used by the Tcl core to clean out an object's internal
+ * representation.  Does not actually reset the rep's bytes.
+ * The ANSI C "prototype" for this macro is:
+ *
+ * EXTERN void  TclFreeIntRep _ANSI_ARGS_((Tcl_Obj *objPtr));
+ *----------------------------------------------------------------
+ */
+
+#define TclFreeIntRep(objPtr) \
+    if ((objPtr)->typePtr != NULL && \
+	    (objPtr)->typePtr->freeIntRepProc != NULL) { \
+	(objPtr)->typePtr->freeIntRepProc(objPtr); \
+    }
 
 /*
  *----------------------------------------------------------------

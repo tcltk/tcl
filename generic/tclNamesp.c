@@ -21,7 +21,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.55 2004/09/24 01:14:43 dgp Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.56 2004/09/29 22:17:30 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -4051,7 +4051,6 @@ SetNsNameFromAny(interp, objPtr)
 				 * reporting if not NULL. */
     register Tcl_Obj *objPtr;	/* The object to convert. */
 {
-    register Tcl_ObjType *oldTypePtr = objPtr->typePtr;
     char *name;
     CONST char *dummy;
     Namespace *nsPtr, *dummy1Ptr, *dummy2Ptr;
@@ -4101,10 +4100,7 @@ SetNsNameFromAny(interp, objPtr)
      * (in particular, Tcl_GetStringFromObj) to use that old internalRep.
      */
 
-    if ((oldTypePtr != NULL) && (oldTypePtr->freeIntRepProc != NULL)) {
-        oldTypePtr->freeIntRepProc(objPtr);
-    }
-
+    TclFreeIntRep(objPtr);
     objPtr->internalRep.otherValuePtr = (VOID *) resNamePtr;
     objPtr->typePtr = &tclNsNameType;
     return TCL_OK;
@@ -5149,10 +5145,7 @@ MakeCachedEnsembleCommand(objPtr, ensemblePtr, subcommandName, prefixObjPtr)
 	 * Kill the old internal rep, and replace it with a brand new
 	 * one of our own.
 	 */
-	if ((objPtr->typePtr != NULL)
-		&& (objPtr->typePtr->freeIntRepProc != NULL)) {
-	    objPtr->typePtr->freeIntRepProc(objPtr);
-	}
+	TclFreeIntRep(objPtr);
 	ensembleCmd = (EnsembleCmdRep *) ckalloc(sizeof(EnsembleCmdRep));
 	objPtr->internalRep.otherValuePtr = (VOID *) ensembleCmd;
 	objPtr->typePtr = &tclEnsembleCmdType;

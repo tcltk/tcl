@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.68 2004/09/27 21:57:10 dkf Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.69 2004/09/29 22:17:30 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -518,6 +518,10 @@ Tcl_ConvertToType(interp, objPtr, typePtr)
      * representation.
      */
 
+    if (typePtr->setFromAnyProc == NULL) {
+	Tcl_Panic("may not convert object to type %s", typePtr->name);
+    }
+
     return typePtr->setFromAnyProc(interp, objPtr);
 }
 
@@ -797,11 +801,7 @@ TclFreeObj(objPtr)
 	    Tcl_Obj *objToFree;
 
 	    TclPopObjToDelete(context,objToFree);
-
-	    if ((objToFree->typePtr != NULL)
-		    && (objToFree->typePtr->freeIntRepProc != NULL)) {
-		objToFree->typePtr->freeIntRepProc(objToFree);
-	    }
+	    TclFreeIntRep(objToFree);
 
 	    Tcl_MutexLock(&tclObjMutex);
 	    ckfree((char *) objToFree);
@@ -1130,16 +1130,11 @@ Tcl_SetBooleanObj(objPtr, boolValue)
     register Tcl_Obj *objPtr;	/* Object whose internal rep to init. */
     register int boolValue;	/* Boolean used to set object's value. */
 {
-    register Tcl_ObjType *oldTypePtr = objPtr->typePtr;
-
     if (Tcl_IsShared(objPtr)) {
 	Tcl_Panic("Tcl_SetBooleanObj called with shared object");
     }
 
-    if ((oldTypePtr != NULL) && (oldTypePtr->freeIntRepProc != NULL)) {
-	oldTypePtr->freeIntRepProc(objPtr);
-    }
-
+    TclFreeIntRep(objPtr);
     objPtr->internalRep.longValue = (boolValue? 1 : 0);
     objPtr->typePtr = &tclBooleanType;
     Tcl_InvalidateStringRep(objPtr);
@@ -1211,7 +1206,6 @@ SetBooleanFromAny(interp, objPtr)
     Tcl_Interp *interp;		/* Used for error reporting if not NULL. */
     register Tcl_Obj *objPtr;	/* The object to convert. */
 {
-    Tcl_ObjType *oldTypePtr = objPtr->typePtr;
     char *string, *end;
     register char c;
     char lowerCase[8];
@@ -1412,10 +1406,7 @@ SetBooleanFromAny(interp, objPtr)
      */
 
     goodBoolean:
-    if ((oldTypePtr != NULL) &&	(oldTypePtr->freeIntRepProc != NULL)) {
-	oldTypePtr->freeIntRepProc(objPtr);
-    }
-
+    TclFreeIntRep(objPtr);
     objPtr->internalRep.longValue = newBool;
     objPtr->typePtr = &tclBooleanType;
     return TCL_OK;
@@ -1594,16 +1585,11 @@ Tcl_SetDoubleObj(objPtr, dblValue)
     register Tcl_Obj *objPtr;	/* Object whose internal rep to init. */
     register double dblValue;	/* Double used to set the object's value. */
 {
-    register Tcl_ObjType *oldTypePtr = objPtr->typePtr;
-
     if (Tcl_IsShared(objPtr)) {
 	Tcl_Panic("Tcl_SetDoubleObj called with shared object");
     }
 
-    if ((oldTypePtr != NULL) && (oldTypePtr->freeIntRepProc != NULL)) {
-	oldTypePtr->freeIntRepProc(objPtr);
-    }
-
+    TclFreeIntRep(objPtr);
     objPtr->internalRep.doubleValue = dblValue;
     objPtr->typePtr = &tclDoubleType;
     Tcl_InvalidateStringRep(objPtr);
@@ -1678,7 +1664,6 @@ SetDoubleFromAny(interp, objPtr)
     Tcl_Interp *interp;		/* Used for error reporting if not NULL. */
     register Tcl_Obj *objPtr;	/* The object to convert. */
 {
-    Tcl_ObjType *oldTypePtr = objPtr->typePtr;
     char *string, *end;
     double newDouble;
     int length;
@@ -1734,10 +1719,7 @@ SetDoubleFromAny(interp, objPtr)
      * internalRep.
      */
 
-    if ((oldTypePtr != NULL) &&	(oldTypePtr->freeIntRepProc != NULL)) {
-	oldTypePtr->freeIntRepProc(objPtr);
-    }
-
+    TclFreeIntRep(objPtr);
     objPtr->internalRep.doubleValue = newDouble;
     objPtr->typePtr = &tclDoubleType;
     return TCL_OK;
@@ -1860,16 +1842,11 @@ Tcl_SetIntObj(objPtr, intValue)
     register Tcl_Obj *objPtr;	/* Object whose internal rep to init. */
     register int intValue;	/* Integer used to set object's value. */
 {
-    register Tcl_ObjType *oldTypePtr = objPtr->typePtr;
-
     if (Tcl_IsShared(objPtr)) {
 	Tcl_Panic("Tcl_SetIntObj called with shared object");
     }
 
-    if ((oldTypePtr != NULL) && (oldTypePtr->freeIntRepProc != NULL)) {
-	oldTypePtr->freeIntRepProc(objPtr);
-    }
-
+    TclFreeIntRep(objPtr);
     objPtr->internalRep.longValue = (long) intValue;
     objPtr->typePtr = &tclIntType;
     Tcl_InvalidateStringRep(objPtr);
@@ -2029,7 +2006,6 @@ SetIntOrWideFromAny(interp, objPtr)
     Tcl_Interp *interp;		/* Used for error reporting if not NULL. */
     register Tcl_Obj *objPtr;	/* The object to convert. */
 {
-    Tcl_ObjType *oldTypePtr = objPtr->typePtr;
     char *string, *end;
     int length;
     register char *p;
@@ -2118,10 +2094,7 @@ SetIntOrWideFromAny(interp, objPtr)
      * internalRep.
      */
 
-    if ((oldTypePtr != NULL) &&	(oldTypePtr->freeIntRepProc != NULL)) {
-	oldTypePtr->freeIntRepProc(objPtr);
-    }
-
+    TclFreeIntRep(objPtr);
     if (isWide) {
 	objPtr->internalRep.wideValue =
 		(isNegative ? -(Tcl_WideInt)newLong : (Tcl_WideInt)newLong);
@@ -2319,16 +2292,11 @@ Tcl_SetLongObj(objPtr, longValue)
     register long longValue;	/* Long integer used to initialize the
 				 * object's value. */
 {
-    register Tcl_ObjType *oldTypePtr = objPtr->typePtr;
-
     if (Tcl_IsShared(objPtr)) {
 	Tcl_Panic("Tcl_SetLongObj called with shared object");
     }
 
-    if ((oldTypePtr != NULL) && (oldTypePtr->freeIntRepProc != NULL)) {
-	oldTypePtr->freeIntRepProc(objPtr);
-    }
-
+    TclFreeIntRep(objPtr);
     objPtr->internalRep.longValue = longValue;
     objPtr->typePtr = &tclIntType;
     Tcl_InvalidateStringRep(objPtr);
@@ -2427,7 +2395,6 @@ SetWideIntFromAny(interp, objPtr)
     register Tcl_Obj *objPtr;	/* The object to convert. */
 {
 #ifndef TCL_WIDE_INT_IS_LONG
-    Tcl_ObjType *oldTypePtr = objPtr->typePtr;
     char *string, *end;
     int length;
     register char *p;
@@ -2503,10 +2470,7 @@ SetWideIntFromAny(interp, objPtr)
      * internalRep.
      */
 
-    if ((oldTypePtr != NULL) &&	(oldTypePtr->freeIntRepProc != NULL)) {
-	oldTypePtr->freeIntRepProc(objPtr);
-    }
-
+    TclFreeIntRep(objPtr);
     objPtr->internalRep.wideValue = newWide;
 #else
     if (TCL_ERROR == SetIntFromAny(interp, objPtr)) {
@@ -2709,16 +2673,11 @@ Tcl_SetWideIntObj(objPtr, wideValue)
     register Tcl_WideInt wideValue;	/* Wide integer used to initialize
 					 * the object's value. */
 {
-    register Tcl_ObjType *oldTypePtr = objPtr->typePtr;
-
     if (Tcl_IsShared(objPtr)) {
 	Tcl_Panic("Tcl_SetWideIntObj called with shared object");
     }
 
-    if ((oldTypePtr != NULL) && (oldTypePtr->freeIntRepProc != NULL)) {
-	oldTypePtr->freeIntRepProc(objPtr);
-    }
-
+    TclFreeIntRep(objPtr);
     objPtr->internalRep.wideValue = wideValue;
     objPtr->typePtr = &tclWideIntType;
     Tcl_InvalidateStringRep(objPtr);
@@ -3308,10 +3267,9 @@ TclSetCmdNameObj(interp, objPtr, cmdPtr)
 {
     Interp *iPtr = (Interp *) interp;
     register ResolvedCmdName *resPtr;
-    Tcl_ObjType *oldTypePtr = objPtr->typePtr;
     register Namespace *currNsPtr;
 
-    if (oldTypePtr == &tclCmdNameType) {
+    if (objPtr->typePtr == &tclCmdNameType) {
 	return;
     }
 
@@ -3334,9 +3292,7 @@ TclSetCmdNameObj(interp, objPtr, cmdPtr)
     resPtr->cmdEpoch = cmdPtr->cmdEpoch;
     resPtr->refCount = 1;
 
-    if ((oldTypePtr != NULL) && (oldTypePtr->freeIntRepProc != NULL)) {
-	oldTypePtr->freeIntRepProc(objPtr);
-    }
+    TclFreeIntRep(objPtr);
     objPtr->internalRep.twoPtrValue.ptr1 = (VOID *) resPtr;
     objPtr->internalRep.twoPtrValue.ptr2 = NULL;
     objPtr->typePtr = &tclCmdNameType;
@@ -3511,11 +3467,7 @@ SetCmdNameFromAny(interp, objPtr)
      * structure was found, leave NULL as the cached value.
      */
 
-    if ((objPtr->typePtr != NULL)
-	    && (objPtr->typePtr->freeIntRepProc != NULL)) {
-	objPtr->typePtr->freeIntRepProc(objPtr);
-    }
-
+    TclFreeIntRep)(objPtr);
     objPtr->internalRep.twoPtrValue.ptr1 = (VOID *) resPtr;
     objPtr->internalRep.twoPtrValue.ptr2 = NULL;
     objPtr->typePtr = &tclCmdNameType;

@@ -1,3 +1,27 @@
+2004-09-29  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclVar.c (TclObjLookupVar, TclObjLookupVar): 
+	(TclObjUnsetVar2, SetArraySearchObj): 
+	* generic/tclUtil.c (SetEndOffsetFromAny): 
+	* generic/tclStringObj.c (Tcl_SetStringObj): 
+	(Tcl_SetUnicodeObj, SetStringFromAny): 
+	* generic/tclResult.c (ResetObjResult): 
+	* generic/tclRegexp.c (Tcl_GetRegExpFromObj): 
+	* generic/tclPathObj.c (TclFSMakePathRelative, SetFsPathFromAny): 
+	(TclFSMakePathFromNormalized, Tcl_FSNewNativePath): 
+	* generic/tclObj.c (TclFreeObj, Tcl_SetBooleanObj, SetBooleanFromAny): 
+	(Tcl_SetDoubleObj, SetDoubleFromAny, Tcl_SetIntObj): 
+	(SetIntOrWideFromAny, Tcl_SetLongObj, SetWideIntFromAny): 
+	(Tcl_SetWideIntObj, TclSetCmdNameObj, SetCmdNameFromAny): 
+	* generic/tclNamesp.c (SetNsNameFromAny, MakeCachedEnsembleCommand): 
+	* generic/tclListObj.c (Tcl_SetListObj, SetListFromAny): 
+	* generic/tclIndexObj.c (Tcl_GetIndexFromObjStruct): 
+	* generic/tclDictObj.c (SetDictFromAny): 
+	* generic/tclCompile.c (TclInitByteCodeObj): 
+	* generic/tclBinary.c (Tcl_SetByteArrayObj, SetByteArrayFromAny): 
+	* generic/tclInt.h (TclFreeIntRep): Factorize out deletion of object
+	internal representation to a shared macro, so simplifying much code.
+
 2004-09-27  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclBasic.c (TclObjInvoke): fix for bogus gcc warning

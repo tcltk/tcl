@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclListObj.c,v 1.18 2003/12/24 04:18:20 davygrvy Exp $
+ * RCS: @(#) $Id: tclListObj.c,v 1.19 2004/09/29 22:17:30 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -351,7 +351,6 @@ Tcl_SetListObj(objPtr, objc, objv)
 {
     register Tcl_Obj **elemPtrs;
     register List *listRepPtr;
-    Tcl_ObjType *oldTypePtr = objPtr->typePtr;
     int i;
 
     if (Tcl_IsShared(objPtr)) {
@@ -362,9 +361,7 @@ Tcl_SetListObj(objPtr, objc, objv)
      * Free any old string rep and any internal rep for the old type.
      */
 
-    if ((oldTypePtr != NULL) && (oldTypePtr->freeIntRepProc != NULL)) {
-	oldTypePtr->freeIntRepProc(objPtr);
-    }
+    TclFreeIntRep(objPtr);
     objPtr->typePtr = NULL;
     Tcl_InvalidateStringRep(objPtr);
 
@@ -1559,7 +1556,6 @@ SetListFromAny(interp, objPtr)
     Tcl_Interp *interp;		/* Used for error reporting if not NULL. */
     Tcl_Obj *objPtr;		/* The object to convert. */
 {
-    Tcl_ObjType *oldTypePtr = objPtr->typePtr;
     char *string, *s;
     CONST char *elemStart, *nextElem;
     int lenRemain, length, estCount, elemSize, hasBrace, i, j, result;
@@ -1652,10 +1648,7 @@ SetListFromAny(interp, objPtr)
      * Tcl_GetStringFromObj, to use that old internalRep.
      */
 
-    if ((oldTypePtr != NULL) && (oldTypePtr->freeIntRepProc != NULL)) {
-	oldTypePtr->freeIntRepProc(objPtr);
-    }
-
+    TclFreeIntRep(objPtr);
     objPtr->internalRep.twoPtrValue.ptr1 = (VOID *) listRepPtr;
     objPtr->internalRep.twoPtrValue.ptr2 = NULL;
     objPtr->typePtr = &tclListType;
