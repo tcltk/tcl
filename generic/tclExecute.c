@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.101.2.2 2003/06/18 19:48:01 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.101.2.3 2003/06/30 16:08:00 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3400,8 +3400,19 @@ TclExecuteByteCode(interp, codePtr)
 		
 	valuePtr = stackPtr[stackTop];
 	tPtr = valuePtr->typePtr;
-	if (!IS_INTEGER_TYPE(tPtr) && ((tPtr != &tclDoubleType) 
-                || (valuePtr->bytes != NULL))) {
+	if (IS_INTEGER_TYPE(tPtr) 
+		|| ((tPtr == &tclDoubleType) && (valuePtr->bytes == NULL))) {
+	    /*
+	     * We already have a numeric internal rep, either some kind
+	     * of integer, or a "pure" double.  (Need "pure" so that we
+	     * know the string rep of the double would not prefer to be
+	     * interpreted as an integer.)
+	     */
+	} else {
+	    /*
+	     * Otherwise, we need to generate a numeric internal rep.
+	     * from the string rep.
+	     */
 	    char *s = Tcl_GetStringFromObj(valuePtr, &length);
 	    if (TclLooksLikeInt(s, length)) {
 		GET_WIDE_OR_INT(result, valuePtr, i, w);
@@ -3464,8 +3475,19 @@ TclExecuteByteCode(interp, codePtr)
 
 	valuePtr = stackPtr[stackTop];
 	tPtr = valuePtr->typePtr;
-	if (!IS_INTEGER_TYPE(tPtr) && ((tPtr != &tclDoubleType)
-	        || (valuePtr->bytes != NULL))) {
+	if (IS_INTEGER_TYPE(tPtr) 
+		|| ((tPtr == &tclDoubleType) && (valuePtr->bytes == NULL))) {
+	    /*
+	     * We already have a numeric internal rep, either some kind
+	     * of integer, or a "pure" double.  (Need "pure" so that we
+	     * know the string rep of the double would not prefer to be
+	     * interpreted as an integer.)
+	     */
+	} else {
+	    /*
+	     * Otherwise, we need to generate a numeric internal rep.
+	     * from the string rep.
+	     */
 	    if ((tPtr == &tclBooleanType) && (valuePtr->bytes == NULL)) {
 		valuePtr->typePtr = &tclIntType;
 	    } else {
@@ -3676,8 +3698,19 @@ TclExecuteByteCode(interp, codePtr)
 	valuePtr = stackPtr[stackTop];
 	tPtr = valuePtr->typePtr;
 	converted = 0;
-	if (!IS_INTEGER_TYPE(tPtr) && ((tPtr != &tclDoubleType)
-	        || (valuePtr->bytes != NULL))) {
+	if (IS_INTEGER_TYPE(tPtr) 
+		|| ((tPtr == &tclDoubleType) && (valuePtr->bytes == NULL))) {
+	    /*
+	     * We already have a numeric internal rep, either some kind
+	     * of integer, or a "pure" double.  (Need "pure" so that we
+	     * know the string rep of the double would not prefer to be
+	     * interpreted as an integer.)
+	     */
+	} else {
+	    /*
+	     * Otherwise, we need to generate a numeric internal rep.
+	     * from the string rep.
+	     */
 	    if ((tPtr == &tclBooleanType) && (valuePtr->bytes == NULL)) {
 		valuePtr->typePtr = &tclIntType;
 		converted = 1;
