@@ -13,7 +13,7 @@
 # Copyright (c) 2000 by Ajuba Solutions
 # All rights reserved.
 # 
-# RCS: @(#) $Id: tcltest.tcl,v 1.34 2002/03/11 21:00:16 mdejong Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.35 2002/03/11 21:50:32 dgp Exp $
 
 # create the "tcltest" namespace for all testing variables and procedures
 
@@ -3468,5 +3468,5 @@ namespace eval tcltest {
     }
 }
 
-package provide tcltest 2.0.1
+package provide tcltest 2.0.2
 
