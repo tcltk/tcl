@@ -1,3 +1,8 @@
+2001-06-27  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* tests/event.test (event-11.5): Removed hard-coded port number
+	which could fail on some systems.  [Bug #436727]
+
 2001-06-26  Mo DeJong  <mdejong@redhat.com>
 
 	* unix/Makefile.in:
