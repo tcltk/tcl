@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.70 2004/03/18 18:53:41 rmax Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.71 2004/03/19 18:43:15 dgp Exp $
 
 library tcl
 
@@ -522,7 +522,7 @@ declare 132 generic {
     int TclpHasSockets(Tcl_Interp *interp)
 }
 declare 133 generic {
-    struct tm *TclpGetDate(time_t *time, int useGMT)
+    struct tm *TclpGetDate(CONST time_t *time, int useGMT)
 }
 declare 134 generic {
     size_t TclpStrftime(char *s, size_t maxsize, CONST char *format,
