@@ -1,3 +1,16 @@
+2003-01-24  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* generic/tclStringObj.c: proper fixes for Tcl_SetObjLength and 
+	Tcl_AttemptSetObjectLength dealing with string objects with
+	both pure-unicode and normal internal representations. 
+	Previous fix didn't handle all cases correctly.
+	* generic/tclIO.c: Add 'Tcl_GetString()' to ensure the object has
+	a valid 'objPtr->bytes' field before manipulating it directly.
+	
+        This fixes [Bug 635200] and [Bug 671138], but may reduce performance
+	of Unicode string handling in some cases. A further patch will
+	be applied to address this, once the code is known to be correct.
+
 2003-01-24  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* win/configure: Regen.

@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.27 2003/01/17 14:19:52 vincentdarley Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.28 2003/01/24 11:59:29 vincentdarley Exp $ */
 
 #include "tclInt.h"
 
@@ -94,15 +94,18 @@ typedef struct String {
 				 * for the UTF string (minus 1 byte for
 				 * the termination char). */
     size_t uallocated;		/* The amount of space actually allocated
-				 * for the Unicode string. 0 means the
+				 * for the Unicode string (minus 2 bytes for
+				 * the termination char). 0 means the
 				 * Unicode string rep is invalid. */
     Tcl_UniChar unicode[2];	/* The array of Unicode chars.  The actual
 				 * size of this field depends on the
 				 * 'uallocated' field above. */
 } String;
 
-#define STRING_SIZE(len)	\
-		((unsigned) (sizeof(String) + ((len-1) * sizeof(Tcl_UniChar))))
+#define STRING_UALLOC(numChars)	\
+		(numChars * sizeof(Tcl_UniChar))
+#define STRING_SIZE(ualloc)	\
+		((unsigned) (sizeof(String) - sizeof(Tcl_UniChar) + ualloc))
 #define GET_STRING(objPtr) \
 		((String *) (objPtr)->internalRep.otherValuePtr)
 #define SET_STRING(objPtr, stringPtr) \
@@ -321,7 +324,7 @@ Tcl_NewUnicodeObj(unicode, numChars)
 	    while (unicode[numChars] != 0) { numChars++; }
 	}
     }
-    uallocated = (numChars + 1) * sizeof(Tcl_UniChar);
+    uallocated = STRING_UALLOC(numChars);
 
     /*
      * Create a new obj with an invalid string rep.
@@ -759,66 +762,73 @@ Tcl_SetObjLength(objPtr, length)
 	panic("Tcl_SetObjLength called with shared object");
     }
     SetStringFromAny(NULL, objPtr);
-        
-    /*
-     * We don't want to invalidate the unicode data if it exists, since
-     * if we are handling a Unicode object, objPtr->bytes may actually be
-     * NULL. Therefore either we must create that entry, or we must
-     * assume the object is being re-used as Unicode.  For efficiency we
-     * do the latter.
-     */
-
+    
     stringPtr = GET_STRING(objPtr);
-
-    if (stringPtr->uallocated > 0) {
-	stringPtr->numChars = length;
-
-	if (length > (int) stringPtr->uallocated) {
-	    stringPtr = (String *) ckrealloc((char*) stringPtr,
-		    STRING_SIZE(length));
-	    stringPtr->uallocated = length;
-	}
-	/* Ensure the string is NULL-terminated */
-	stringPtr->unicode[length] = 0;
-	
-	if (objPtr->bytes != NULL && (length > objPtr->length)) {
-	    /* 
-	     * There is a utf-8 representation which is too short -- we
-	     * are lengthening the string, and so we must discard it.
-	     */
-	    Tcl_InvalidateStringRep(objPtr);
-	}
-    } else {
-	stringPtr->numChars = -1;
-	stringPtr->uallocated = 0;
-
-	if (length > (int) stringPtr->allocated) {
-	    char *new;
-
-	    /*
-	     * Not enough space in current string. Reallocate the string
-	     * space and free the old string.
-	     */
-	    if (objPtr->bytes != tclEmptyStringRep) {
-		new = (char *) ckrealloc((char *)objPtr->bytes,
-			(unsigned)(length+1));
-	    } else {
-		new = (char *) ckalloc((unsigned) (length+1));
-		if (objPtr->bytes != NULL && objPtr->length != 0) {
-		    memcpy((VOID *) new, (VOID *) objPtr->bytes,
-			    (size_t) objPtr->length);
-		    Tcl_InvalidateStringRep(objPtr);
-		}
+    
+    /* Check that we're not extending a pure unicode string */
+    
+    if (length > (int) stringPtr->allocated && 
+	    (objPtr->bytes != NULL || stringPtr->uallocated == 0)) {
+	char *new;
+	/*
+	 * Not enough space in current string. Reallocate the string
+	 * space and free the old string.
+	 */
+	if (objPtr->bytes != tclEmptyStringRep && objPtr->bytes != NULL) {
+	    new = (char *) ckrealloc((char *)objPtr->bytes,
+		    (unsigned)(length+1));
+	} else {
+	    new = (char *) ckalloc((unsigned) (length+1));
+	    if (objPtr->bytes != NULL && objPtr->length != 0) {
+		memcpy((VOID *) new, (VOID *) objPtr->bytes,
+			(size_t) objPtr->length);
+		Tcl_InvalidateStringRep(objPtr);
 	    }
-	    objPtr->bytes = new;
-	    stringPtr->allocated = length;
 	}
-	
+	objPtr->bytes = new;
+	stringPtr->allocated = length;
+	/* Invalidate the unicode data. */
+	stringPtr->uallocated = 0;
     }
-
-    objPtr->length = length;
-    if ((objPtr->bytes != NULL) && (objPtr->bytes != tclEmptyStringRep)) {
-	objPtr->bytes[length] = 0;
+    
+    if (objPtr->bytes != NULL) {
+        objPtr->length = length;
+        if (objPtr->bytes != tclEmptyStringRep) {
+            /* Ensure the string is NULL-terminated */
+            objPtr->bytes[length] = 0;
+        }
+        if (stringPtr->uallocated > 0) {
+            /* Shortening a string with unicode representation */
+            int numChars = Tcl_NumUtfChars(objPtr->bytes, -1);
+            size_t uallocated = STRING_UALLOC(numChars);
+            if (uallocated > stringPtr->uallocated) {
+                /* Invalidate the unicode data. */
+                stringPtr->numChars = -1;
+                stringPtr->uallocated = 0;
+            } else {
+                stringPtr->numChars = numChars;
+                stringPtr->uallocated = uallocated;
+                /* Ensure the string is NULL-terminated */
+                stringPtr->unicode[numChars] = 0;
+            }
+        } else {
+            /* Invalidate the unicode data. */
+            stringPtr->numChars = -1;
+        }
+    } else {
+        /* Changing length of pure unicode string */
+        size_t uallocated = STRING_UALLOC(length);
+        if (uallocated > stringPtr->uallocated) {
+            stringPtr = (String *) ckrealloc((char*) stringPtr,
+                    STRING_SIZE(uallocated));
+            SET_STRING(objPtr, stringPtr);
+            stringPtr->uallocated = uallocated;
+        }
+        stringPtr->numChars = length;
+        /* Ensure the string is NULL-terminated */
+        stringPtr->unicode[length] = 0;
+        stringPtr->allocated = 0;
+        objPtr->length = 0;
     }
 }
 
@@ -854,7 +864,6 @@ Tcl_AttemptSetObjLength(objPtr, length)
 				 * representation of object, not including
 				 * terminating null byte. */
 {
-    char *new;
     String *stringPtr;
 
     if (Tcl_IsShared(objPtr)) {
@@ -862,15 +871,13 @@ Tcl_AttemptSetObjLength(objPtr, length)
     }
     SetStringFromAny(NULL, objPtr);
         
-    /*
-     * Invalidate the unicode data.
-     */
-
     stringPtr = GET_STRING(objPtr);
-    stringPtr->numChars = -1;
-    stringPtr->uallocated = 0;
 
-    if (length > (int) stringPtr->allocated) {
+    /* Check that we're not extending a pure unicode string */
+
+    if (length > (int) stringPtr->allocated && 
+	    (objPtr->bytes != NULL || stringPtr->uallocated == 0)) {
+	char *new;
 
 	/*
 	 * Not enough space in current string. Reallocate the string
@@ -895,11 +902,51 @@ Tcl_AttemptSetObjLength(objPtr, length)
 	}
 	objPtr->bytes = new;
 	stringPtr->allocated = length;
+	/* Invalidate the unicode data. */
+	stringPtr->uallocated = 0;
     }
     
-    objPtr->length = length;
-    if ((objPtr->bytes != NULL) && (objPtr->bytes != tclEmptyStringRep)) {
-	objPtr->bytes[length] = 0;
+    if (objPtr->bytes != NULL) {
+	objPtr->length = length;
+	if (objPtr->bytes != tclEmptyStringRep) {
+	    /* Ensure the string is NULL-terminated */
+	    objPtr->bytes[length] = 0;
+	}
+	if (stringPtr->uallocated > 0) {
+	    /* Shortening a string with unicode representation */
+	    int numChars = Tcl_NumUtfChars(objPtr->bytes, -1);
+	    size_t uallocated = STRING_UALLOC(numChars);
+	    if (uallocated > stringPtr->uallocated) {
+		/* Invalidate the unicode data. */
+		stringPtr->numChars = -1;
+		stringPtr->uallocated = 0;
+	    } else {
+		stringPtr->numChars = numChars;
+		stringPtr->uallocated = uallocated;
+		/* Ensure the string is NULL-terminated */
+		stringPtr->unicode[numChars] = 0;
+	    }
+	} else {
+	    /* Invalidate the unicode data. */
+	    stringPtr->numChars = -1;
+	}
+    } else {
+	/* Changing length of pure unicode string */
+	size_t uallocated = STRING_UALLOC(length);
+	if (uallocated > stringPtr->uallocated) {
+	    stringPtr = (String *) attemptckrealloc((char*) stringPtr,
+		    STRING_SIZE(uallocated));
+	    if (stringPtr == NULL) {
+	        return 0;
+	    }
+	    SET_STRING(objPtr, stringPtr);
+	    stringPtr->uallocated = uallocated;
+	}
+	stringPtr->numChars = length;
+	/* Ensure the string is NULL-terminated */
+	stringPtr->unicode[length] = 0;
+	stringPtr->allocated = 0;
+	objPtr->length = 0;
     }
     return 1;
 }
@@ -938,7 +985,7 @@ Tcl_SetUnicodeObj(objPtr, unicode, numChars)
 	    while (unicode[numChars] != 0) { numChars++; }
 	}
     }
-    uallocated = (numChars + 1) * sizeof(Tcl_UniChar);
+    uallocated = STRING_UALLOC(numChars);
 
     /*
      * Free the internal rep if one exists, and invalidate the string rep.
@@ -1119,7 +1166,7 @@ Tcl_AppendObjToObj(objPtr, appendObjPtr)
 		    || (stringPtr->uallocated == 0)) {
 		
 		/*
-		 * If appendObjPtr is a string obj with no valide Unicode
+		 * If appendObjPtr is a string obj with no valid Unicode
 		 * rep, then fill its unicode rep.
 		 */
 
@@ -1202,21 +1249,22 @@ AppendUnicodeToUnicodeRep(objPtr, unicode, appendNumChars)
 
     /*
      * If not enough space has been allocated for the unicode rep,
-     * reallocate the internal rep object with additional space.  First try to
-     * double the required allocation; if that fails, try a more modest
-     * increase.  See the "TCL STRING GROWTH ALGORITHM" comment at the top of
-     * this file for an explanation of this growth algorithm.
+     * reallocate the internal rep object with additional space.  First
+     * try to double the required allocation; if that fails, try a more
+     * modest increase.  See the "TCL STRING GROWTH ALGORITHM" comment at
+     * the top of this file for an explanation of this growth algorithm.
      */
 
     numChars = stringPtr->numChars + appendNumChars;
 
-    if (numChars >= stringPtr->uallocated) {
- 	stringPtr->uallocated = 2 * numChars;
+    if (STRING_UALLOC(numChars) >= stringPtr->uallocated) {
+     	stringPtr->uallocated = STRING_UALLOC(2 * numChars);
 	tmpString = (String *) attemptckrealloc((char *)stringPtr,
 		STRING_SIZE(stringPtr->uallocated));
 	if (tmpString == NULL) {
 	    stringPtr->uallocated =
-		numChars + appendNumChars + TCL_GROWTH_MIN_ALLOC;
+	        STRING_UALLOC(numChars + appendNumChars) 
+		+ TCL_GROWTH_MIN_ALLOC;
 	    tmpString = (String *) ckrealloc((char *)stringPtr,
 		    STRING_SIZE(stringPtr->uallocated));
 	}
@@ -1671,7 +1719,7 @@ DupStringInternalRep(srcPtr, copyPtr)
      */
     
     if (srcStringPtr->uallocated == 0) {
-    	copyStringPtr = (String *) ckalloc(sizeof(String));
+	copyStringPtr = (String *) ckalloc(STRING_SIZE(0));
 	copyStringPtr->uallocated = 0;
     } else {
 	copyStringPtr = (String *) ckalloc(
@@ -1743,7 +1791,7 @@ SetStringFromAny(interp, objPtr)
 	 * Allocate enough space for the basic String structure.
 	 */
 
-	stringPtr = (String *) ckalloc(sizeof(String));
+	stringPtr = (String *) ckalloc(STRING_SIZE(0));
 	stringPtr->numChars = -1;
 	stringPtr->uallocated = 0;
 
