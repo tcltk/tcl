@@ -1,3 +1,17 @@
+2004-09-06  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* doc/tclvars.n, doc/tcltest.n, doc/tclsh.1, doc/safe.n, doc/expr.n:
+	* doc/WrongNumArgs.3, doc/Utf.3, doc/TraceVar.3, doc/Thread.3:
+	* doc/TCL_MEM_DEBUG.3, doc/SubstObj.3, doc/StdChannels.3:
+	* doc/SetResult.3, doc/RegExp.3, doc/RegConfig.3, doc/RecEvalObj.3:
+	* doc/PrintDbl.3, doc/ParseCmd.3, doc/Panic.3, doc/ObjectType.3:
+	* doc/Object.3, doc/Namespace.3, doc/Interp.3, doc/IntObj.3:
+	* doc/Hash.3, doc/GetOpnFl.3, doc/GetIndex.3, doc/Eval.3:
+	* doc/Encoding.3, doc/DoubleObj.3, doc/DictObj.3, doc/CrtTimerHdlr.3:
+	* doc/CrtObjCmd.3, doc/CrtMathFnc.3, doc/CrtCommand.3, doc/CrtChannel.3:
+	* doc/ChnlStack.3, doc/ByteArrObj.3, doc/AssocData.3, doc/Alloc.3:
+	More documentation fixes from Mikhail Kolesnitchenko. [Patch 1022527]
+
 2004-09-03  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* unix/tclUnixFCmd.c: Stop NULL interp arguments from triggering a
