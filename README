@@ -3,7 +3,7 @@ README:  Tcl
 	Tcl is maintained, enhanced, and distributed freely as a
 	service to the Tcl community by Scriptics Corporation.
 
-RCS: @(#) $Id: README,v 1.1.2.7 1999/02/17 02:18:19 hershey Exp $
+RCS: @(#) $Id: README,v 1.1.2.8 1999/02/17 02:34:01 hershey Exp $
 
 Contents
 --------
@@ -22,11 +22,18 @@ Contents
 1. Introduction
 ---------------
 
-This directory and its descendants contain the sources and
-documentation for Tcl, an embeddable scripting language.  The
-information here constitutes the 8.1b2 release, which is the second beta
-release for Tcl 8.1.  This release is mostly feature complete but may
-have bugs and be missing some minor features.  This release is for
+Tcl provides a powerful platform for creating integration
+applications that tie together diverse applications, protocols,
+devices, and frameworks.  When paired with the Tk toolkit, Tcl
+provides the fastest and most powerful way to create GUI applications
+that run on PCs, Unix, and the Macintosh.  Tcl can also be used for a
+variety of web-related tasks and for creating powerful command
+languages for applications.
+
+This directory contains the sources and documentation for Tcl.  The
+information here corresponds to release 8.1b2, which is the second
+beta release for Tcl 8.1.  This release is mostly feature complete but
+may have bugs and be missing some minor features.  This release is for
 early adopters who are willing to help us find and fix problems.
 Please let us know about any problems you uncover.
 
@@ -38,6 +45,11 @@ potential problems with this release, see the Tcl/Tk 8.1 Web page at
 http://www.scriptics.com/software/8.1.html or refer to the "changes" file
 in this directory, which contains a historical record of all changes to
 Tcl.
+
+Tcl is a freely available open source package.  You can do virtually
+anything you like with it, such as modifying it, redistributing it,
+and selling it either in whole or in part.  See the file
+"license.terms" for complete information.
 
 2. Documentation
 ----------------
