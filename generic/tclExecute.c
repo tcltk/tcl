@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.28 2001/09/01 00:51:31 hobbs Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.29 2001/09/03 17:34:16 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -1430,7 +1430,7 @@ TclExecuteByteCode(interp, codePtr)
 	    }
 
 	    PUSH_OBJECT(valuePtr);
-	    TRACE_WITH_OBJ(("%u => " opnd), valuePtr);
+	    TRACE_WITH_OBJ(("%u => ", opnd), valuePtr);
 	    ADJUST_PC(5);
 
 	    /*
