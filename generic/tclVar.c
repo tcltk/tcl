@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.75 2003/07/03 23:16:25 dkf Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.76 2003/11/20 18:37:55 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -603,8 +603,12 @@ TclObjLookupVar(interp, part1Ptr, part2, flags, msg, createPart1, createPart2,
  *   - Bug #696893 - variable is either proc-local or in the current
  *     namespace; never follow the second (global) resolution path 
  *   - Bug #631741 - do not use special namespace or interp resolvers
+ *
+ * It should also not collide with the (deprecated) TCL_PARSE_PART1 flag
+ * (Bug #835020)
  */
-#define LOOKUP_FOR_UPVAR 0x400
+
+#define LOOKUP_FOR_UPVAR 0x40000
 
 /*
  *----------------------------------------------------------------------
