@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.87 2002/05/13 13:20:00 vincentdarley Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.88 2002/05/20 10:22:26 das Exp $
  */
 
 #ifndef _TCLINT
@@ -1925,6 +1925,8 @@ EXTERN void		TclTransferResult _ANSI_ARGS_((Tcl_Interp *sourceInterp,
 EXTERN int		TclUpdateReturnInfo _ANSI_ARGS_((Interp *iPtr));
 EXTERN Tcl_Obj*         TclpNativeToNormalized 
                             _ANSI_ARGS_((ClientData clientData));
+EXTERN Tcl_Obj*	TclpFilesystemPathType
+					_ANSI_ARGS_((Tcl_Obj* pathObjPtr));
 
 /*
  *----------------------------------------------------------------
