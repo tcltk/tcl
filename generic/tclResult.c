@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclResult.c,v 1.12 2004/10/05 18:14:28 dgp Exp $
+ * RCS: @(#) $Id: tclResult.c,v 1.13 2004/10/05 23:21:26 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -224,10 +224,10 @@ Tcl_DiscardResult(statePtr)
  */
 
 void
-Tcl_SetResult(interp, string, freeProc)
+Tcl_SetResult(interp, stringPtr, freeProc)
     Tcl_Interp *interp;		/* Interpreter with which to associate the
 				 * return value. */
-    register char *string;	/* Value to be returned.  If NULL, the
+    register char *stringPtr;	/* Value to be returned.  If NULL, the
 				 * result is set to an empty string. */
     Tcl_FreeProc *freeProc;	/* Gives information about the string:
 				 * TCL_STATIC, TCL_VOLATILE, or the address
@@ -238,12 +238,12 @@ Tcl_SetResult(interp, string, freeProc)
     register Tcl_FreeProc *oldFreeProc = iPtr->freeProc;
     char *oldResult = iPtr->result;
 
-    if (string == NULL) {
+    if (stringPtr == NULL) {
 	iPtr->resultSpace[0] = 0;
 	iPtr->result = iPtr->resultSpace;
 	iPtr->freeProc = 0;
     } else if (freeProc == TCL_VOLATILE) {
-	length = strlen(string);
+	length = strlen(stringPtr);
 	if (length > TCL_RESULT_SIZE) {
 	    iPtr->result = (char *) ckalloc((unsigned) length+1);
 	    iPtr->freeProc = TCL_DYNAMIC;
@@ -251,9 +251,9 @@ Tcl_SetResult(interp, string, freeProc)
 	    iPtr->result = iPtr->resultSpace;
 	    iPtr->freeProc = 0;
 	}
-	strcpy(iPtr->result, string);
+	strcpy(iPtr->result, stringPtr);
     } else {
-	iPtr->result = string;
+	iPtr->result = stringPtr;
 	iPtr->freeProc = freeProc;
     }
 
@@ -428,7 +428,7 @@ Tcl_GetObjResult(interp)
  *
  * Tcl_AppendResultVA --
  *
- *	Append a variable number of strings onto the interpreter's string
+ *	Append a variable number of strings onto the interpreter's
  *	result.
  *
  * Results:
@@ -436,102 +436,34 @@ Tcl_GetObjResult(interp)
  *
  * Side effects:
  *	The result of the interpreter given by the first argument is
- *	extended by the strings in the va_list (up to a terminating NULL
- *	argument).
+ *	extended by the strings in the va_list (up to a terminating
+ *	NULL argument).
  *
- *	If the string result is empty, the object result is moved to the
- *	string result, then the object result is reset.
+ *	If the string result is non-empty, the object result forced to
+ *	be a duplicate of it first. There will be a string result
+ *	afterwards.
  *
  *----------------------------------------------------------------------
  */
 
 void
-Tcl_AppendResultVA (interp, argList)
+Tcl_AppendResultVA(interp, argList)
     Tcl_Interp *interp;		/* Interpreter with which to associate the
 				 * return value. */
     va_list argList;		/* Variable argument list. */
 {
-#define STATIC_LIST_SIZE 16
-    Interp *iPtr = (Interp *) interp;
-    char *string, *static_list[STATIC_LIST_SIZE];
-    char **args = static_list;
-    int nargs_space = STATIC_LIST_SIZE;
-    int nargs, newSpace, i;
+    Tcl_Obj *objPtr = Tcl_GetObjResult(interp);
 
-    /*
-     * If the string result is empty, move the object result to the
-     * string result, then reset the object result.
-     */
-
-    if (*(iPtr->result) == 0) {
-	Tcl_SetResult((Tcl_Interp *) iPtr,
-	        TclGetString(Tcl_GetObjResult((Tcl_Interp *) iPtr)),
-	        TCL_VOLATILE);
+    if (Tcl_IsShared(objPtr)) {
+	objPtr = Tcl_DuplicateObj(objPtr);
     }
-    
+    Tcl_AppendStringsToObjVA(objPtr, argList);
+    Tcl_SetObjResult(interp, objPtr);
     /*
-     * Scan through all the arguments to see how much space is needed
-     * and save pointers to the arguments in the args array,
-     * reallocating as necessary.
+     * Ensure that the interp->result is legal so old Tcl 7.* code
+     * still works. There's still embarrasingly much of it about...
      */
-
-    nargs = 0;
-    newSpace = 0;
-    while (1) {
- 	string = va_arg(argList, char *);
-	if (string == NULL) {
-	    break;
-	}
- 	if (nargs >= nargs_space) {
- 	    /* 
- 	     * Expand the args buffer
- 	     */
- 	    nargs_space += STATIC_LIST_SIZE;
- 	    if (args == static_list) {
- 	    	args = (void *)ckalloc(nargs_space * sizeof(char *));
- 		for (i = 0; i < nargs; ++i) {
- 		    args[i] = static_list[i];
- 		}
- 	    } else {
- 		args = (void *)ckrealloc((void *)args,
-			nargs_space * sizeof(char *));
- 	    }
- 	}
-  	newSpace += strlen(string);
-	args[nargs++] = string;
-    }
-
-    /*
-     * If the append buffer isn't already setup and large enough to hold
-     * the new data, set it up.
-     */
-
-    if ((iPtr->result != iPtr->appendResult)
-	    || (iPtr->appendResult[iPtr->appendUsed] != 0)
-	    || ((newSpace + iPtr->appendUsed) >= iPtr->appendAvl)) {
-       SetupAppendBuffer(iPtr, newSpace);
-    }
-
-    /*
-     * Now go through all the argument strings again, copying them into the
-     * buffer.
-     */
-
-    for (i = 0; i < nargs; ++i) {
- 	string = args[i];
-  	strcpy(iPtr->appendResult + iPtr->appendUsed, string);
-  	iPtr->appendUsed += strlen(string);
-    }
- 
-    /*
-     * If we had to allocate a buffer from the heap, 
-     * free it now.
-     */
- 
-    if (args != static_list) {
-     	ckfree((void *)args);
-    }
-#undef STATIC_LIST_SIZE
+    (void) Tcl_GetStringResult(interp);
 }
 
 /*
@@ -539,7 +471,7 @@ Tcl_AppendResultVA (interp, argList)
  *
  * Tcl_AppendResult --
  *
- *	Append a variable number of strings onto the interpreter's string
+ *	Append a variable number of strings onto the interpreter's
  *	result.
  *
  * Results:
@@ -547,11 +479,12 @@ Tcl_AppendResultVA (interp, argList)
  *
  * Side effects:
  *	The result of the interpreter given by the first argument is
- *	extended by the strings given by the second and following arguments
- *	(up to a terminating NULL argument).
+ *	extended by the strings given by the second and following
+ *	arguments (up to a terminating NULL argument).
  *
- *	If the string result is empty, the object result is moved to the
- *	string result, then the object result is reset.
+ *	If the string result is non-empty, the object result forced to
+ *	be a duplicate of it first. There will be a string result
+ *	afterwards.
  *
  *----------------------------------------------------------------------
  */
@@ -591,10 +524,10 @@ Tcl_AppendResult TCL_VARARGS_DEF(Tcl_Interp *,arg1)
  */
 
 void
-Tcl_AppendElement(interp, string)
+Tcl_AppendElement(interp, stringPtr)
     Tcl_Interp *interp;		/* Interpreter whose result is to be
 				 * extended. */
-    CONST char *string;		/* String to convert to list element and
+    CONST char *stringPtr;	/* String to convert to list element and
 				 * add to result. */
 {
     Interp *iPtr = (Interp *) interp;
@@ -617,7 +550,7 @@ Tcl_AppendElement(interp, string)
      * needed to accommodate the list element.
      */
 
-    size = Tcl_ScanElement(string, &flags) + 1;
+    size = Tcl_ScanElement(stringPtr, &flags) + 1;
     if ((iPtr->result != iPtr->appendResult)
 	    || (iPtr->appendResult[iPtr->appendUsed] != 0)
 	    || ((size + iPtr->appendUsed) >= iPtr->appendAvl)) {
@@ -641,7 +574,7 @@ Tcl_AppendElement(interp, string)
 	 */
 	flags |= TCL_DONT_QUOTE_HASH;
     }
-    iPtr->appendUsed += Tcl_ConvertElement(string, dst, flags);
+    iPtr->appendUsed += Tcl_ConvertElement(stringPtr, dst, flags);
 }
 
 /*
