@@ -7,14 +7,13 @@
  * Copyright (c) 1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclUnixInit.c,v 1.39 2004/03/09 13:34:45 vbwagner Exp $
+ * RCS: @(#) $Id: tclUnixInit.c,v 1.40 2004/04/06 22:25:57 dgp Exp $
  */
 
 #if defined(HAVE_CFBUNDLE)
 #include <CoreFoundation/CoreFoundation.h>
 #endif
 #include "tclInt.h"
-#include "tclPort.h"
 #include <locale.h>
 #ifdef HAVE_LANGINFO
 #include <langinfo.h>

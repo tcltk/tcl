@@ -9,11 +9,10 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFCmd.c,v 1.25 2004/03/17 18:14:13 das Exp $
+ * RCS: @(#) $Id: tclFCmd.c,v 1.26 2004/04/06 22:25:51 dgp Exp $
  */
 
 #include "tclInt.h"
-#include "tclPort.h"
 
 /*
  * Declarations for local procedures defined in this file:

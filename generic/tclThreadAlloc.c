@@ -11,16 +11,14 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThreadAlloc.c,v 1.8 2003/12/24 04:18:20 davygrvy Exp $
+ * RCS: @(#) $Id: tclThreadAlloc.c,v 1.9 2004/04/06 22:25:55 dgp Exp $
  */
 
 #if defined(TCL_THREADS) && defined(USE_THREAD_ALLOC)
 
 #include "tclInt.h"
 
-#ifdef WIN32
-#include "tclWinInt.h"
-#else
+#ifndef WIN32
 extern Tcl_Mutex *TclpNewAllocMutex(void);
 extern void *TclpGetAllocCache(void);
 extern void TclpSetAllocCache(void *);

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.150 2004/04/02 20:07:06 msofer Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.151 2004/04/06 22:25:53 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -2322,7 +2322,9 @@ extern Tcl_Mutex tclObjMutex;
 	(nsPtr)->exportLookupEpoch++; \
     }
 
+#include "tclPort.h"
 #include "tclIntDecls.h"
+#include "tclIntPlatDecls.h"
 
 # undef TCL_STORAGE_CLASS
 # define TCL_STORAGE_CLASS DLLIMPORT

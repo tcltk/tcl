@@ -14,7 +14,6 @@
  */
 
 #include "tclInt.h"
-#include "tclPort.h"
 
 #define EPOCH           1970
 #define START_OF_TIME   1902

@@ -11,7 +11,6 @@
  * SCCS: @(#) memcmp.c 1.2 98/01/19 10:48:58
  */
 
-#include "tcl.h"
 #include "tclPort.h"
 
 /*

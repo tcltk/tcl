@@ -15,11 +15,10 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.100 2004/01/13 23:37:11 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.101 2004/04/06 22:25:49 dgp Exp $
  */
 
 #include "tclInt.h"
-#include "tclPort.h"
 #include "tclRegexp.h"
 
 /*

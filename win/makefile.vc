@@ -12,7 +12,7 @@
 # Copyright (c) 2001-2004 David Gravereaux.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.124 2004/03/03 10:47:22 davygrvy Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.125 2004/04/06 22:25:57 dgp Exp $
 #------------------------------------------------------------------------------
 
 !if "$(MSDEVDIR)" == ""
@@ -322,7 +322,6 @@ TCLOBJS = \
 	$(TMP_DIR)\tclWinFile.obj \
 	$(TMP_DIR)\tclWinInit.obj \
 	$(TMP_DIR)\tclWinLoad.obj \
-	$(TMP_DIR)\tclWinMtherr.obj \
 	$(TMP_DIR)\tclWinNotify.obj \
 	$(TMP_DIR)\tclWinPipe.obj \
 	$(TMP_DIR)\tclWinSock.obj \

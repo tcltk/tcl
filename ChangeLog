@@ -1,5 +1,30 @@
 2004-04-06  Don Porter  <dgp@users.sourceforge.net>
 
+	Patch 922727 committed.  Implements three changes:
+
+	* generic/tclInt.h:	Reworked the Tcl header files into a clean
+	* unix/tclUnixPort.h:	hierarchy where tcl.h < tclPort.h < tclInt.h 
+	* win/tclWinInt.h:	and every C source file should #include
+	* win/tclWinPort.h:	at most one of those files to satisfy its
+	declaration needs.  tclWinInt.h and tclWinPort.h also better organized
+	so that tclWinPort.h includes the Windows implementation of
+	cross-platform declarations, while tclWinInt.h makes declarations that
+	are available on Windows only.
+
+	* generic/tclBinary.c (TCL_NO_MATH):	Deleted the generic/tclMath.h
+	* generic/tclMath.h (removed):		header file. The internal Tcl
+	* macosx/Makefile (PRIVATE_HEADERS):	header, tclInt.h, has a
+	* win/tcl.dsp:				#include <math.h> directly,
+	and file external to Tcl needing libm should do the same.
+
+	* win/Makefile.in (WIN_OBJS):	Deleted the win/tclWinMtherr.c file.
+	* win/makefile.bc (TCLOBJS):	It's a vestige from matherr() days
+	* win/makefile.vc (TCLOBJS):	gone by.
+	* win/tcl.dsp:
+	* win/tclWinMtherr.c (removed):
+
+	End Patch 922727.
+
 	* tests/unixInit.test (unixInit-3.1):	Default encoding on Darwin
 	systems is utf-8.  Thanks to Steven Abner (tauvan).  [Bug 928808]
 
