@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: namespace.n,v 1.13 2004/03/09 12:59:04 vincentdarley Exp $
+'\" RCS: @(#) $Id: namespace.n,v 1.14 2004/05/21 22:57:39 dkf Exp $
 '\" 
 .so man.macros
 .TH namespace n 8.5 Tcl "Tcl Built-In Commands"
@@ -251,7 +251,6 @@ fully-qualified name of the variable.
 If no flag is given, \fIname\fR is treated as a command name.
 See the section \fBNAME RESOLUTION\fR below for an explanation of
 the rules regarding name resolution.
-
 .SH "WHAT IS A NAMESPACE?"
 .PP
 A namespace is a collection of commands and variables.
@@ -316,7 +315,6 @@ Namespaces can have other namespaces within them,
 so they nest hierarchically.
 A nested namespace is encapsulated inside its parent namespace
 and can not interfere with other namespaces.
-
 .SH "QUALIFIED NAMES"
 .PP
 Each namespace has a textual name such as
@@ -378,7 +376,6 @@ that is, two or more \fB:\fRs are treated as a namespace separator.
 A trailing \fB::\fR in a qualified variable or command name
 refers to the variable or command named {}.
 However, a trailing \fB::\fR in a qualified namespace name is ignored.
-
 .SH "NAME RESOLUTION"
 .PP
 In general, all Tcl commands that take variable and command names
@@ -466,7 +463,6 @@ to variables in the global namespace.
 It is not necessary to use a \fBvariable\fR command
 if you always refer to the namespace variable using an
 appropriate qualified name.
-
 .SH "IMPORTING COMMANDS"
 .PP
 Namespaces are often used to represent libraries.
@@ -531,7 +527,6 @@ When you delete a command from the exporting namespace like this:
 \fBrename Blt::graph ""\fR
 .CE
 the command is automatically removed from all namespaces that import it.
-
 .SH "EXPORTING COMMANDS"
 You can export commands from a namespace like this:
 .CS
@@ -574,7 +569,6 @@ The \fBnamespace export\fR command specifies what commands
 may be imported by other namespaces.
 If a \fBnamespace import\fR command specifies a command
 that is not exported, the command is not imported.
-
 .SH "SCOPED SCRIPTS"
 The \fBnamespace code\fR command is the means by which a script may be
 packaged for evaluation in a namespace other than the one in which it
@@ -598,7 +592,6 @@ When executed, it prints the message:
 .CS
 the value of a::b has changed to c
 .CE
-
 .SH ENSEMBLES
 .PP
 .VS 8.5
@@ -646,8 +639,7 @@ the result of the command.  Note that it is legal to make the target
 of an ensemble rewrite be another (or even the same) ensemble
 command.  The ensemble command will not be visible through the use of
 the \fBuplevel\fR or \fBinfo level\fR commands.
-
-.SH "ENSEMBLE OPTIONS"
+.SS "ENSEMBLE OPTIONS"
 .PP
 The following options, supported by the \fBnamespace ensemble
 create\fR and \fBnamespace ensemble configure\fR commands, control how
@@ -706,8 +698,7 @@ configure\fR:
 \fB\-namespace\fR
 This read-only option allows the retrieval of the fully-qualified name
 of the namespace which the ensemble was created within.
-
-.SH "UNKNOWN HANDLER BEHAVIOUR"
+.SS "UNKNOWN HANDLER BEHAVIOUR"
 .PP
 If an unknown handler is specified for an ensemble, that handler is
 called when the ensemble command would otherwise return an error due
@@ -757,6 +748,42 @@ will be thrown when the subcommand is still not recognized during
 reparsing. It is also an error for an \fB\-unknown\fR handler to
 delete its namespace.
 .VE 8.5
+.SH EXAMPLES
+Create a namespace containing a variable and an exported command:
+.CS
+namespace eval foo {
+   variable bar 0
+   proc grill {} {
+      variable bar
+      puts "called [incr bar] times"
+   }
+   namespace export grill
+}
+.CE
+
+Call the command defined in the previous example in various ways.
+.CS
+# Direct call
+foo::grill
+
+# Import into current namespace, then call local alias
+namespace import foo::grill
+grill
+
+# Create two ensembles, one with the default name and one with a
+# specified name.  Then call through the ensembles.
+namespace eval foo {
+   namespace ensemble create
+   namespace ensemble create -command ::foobar
+}
+foo grill
+foobar grill
+.CE
+
+Look up where the command imported in the previous example came from:
+.CS
+puts "grill came from [namespace which grill]"
+.CE
 
 .SH "SEE ALSO"
 interp(n), variable(n)
