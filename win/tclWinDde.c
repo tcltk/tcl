@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinDde.c,v 1.11 2003/01/18 01:05:17 mdejong Exp $
+ * RCS: @(#) $Id: tclWinDde.c,v 1.12 2003/01/25 03:11:46 hobbs Exp $
  */
 
 #include "tclPort.h"
@@ -119,26 +119,19 @@ Dde_Init(
     Tcl_Interp *interp)
 {
     ThreadSpecificData *tsdPtr;
-    
+
     if (!Tcl_InitStubs(interp, "8.0", 0)) {
 	return TCL_ERROR;
     }
 
     Tcl_CreateObjCommand(interp, "dde", Tcl_DdeObjCmd, NULL, NULL);
 
-    tsdPtr = (ThreadSpecificData *)
-	Tcl_GetThreadData((Tcl_ThreadDataKey *) &dataKey, sizeof(ThreadSpecificData));
-    
-    if (tsdPtr == NULL) {
-	tsdPtr = TCL_TSD_INIT(&dataKey);
-	tsdPtr->currentConversations = NULL;
-	tsdPtr->interpListPtr = NULL;
-    }
+    tsdPtr = TCL_TSD_INIT(&dataKey);
+
     Tcl_CreateExitHandler(DdeExitProc, NULL);
 
     return Tcl_PkgProvide(interp, TCL_DDE_PACKAGE_NAME, TCL_DDE_VERSION);
 }
-
 
 /*
  *----------------------------------------------------------------------
@@ -627,6 +620,7 @@ DdeServerProc (
 	    convPtr->returnPackagePtr = NULL;
 	    returnPackagePtr = 
 		    ExecuteRemoteObject(convPtr->riPtr, ddeObjectPtr);
+	    Tcl_IncrRefCount(returnPackagePtr);
 	    for (convPtr = tsdPtr->currentConversations; (convPtr != NULL)
  		    && (convPtr->hConv != hConv); convPtr = convPtr->nextPtr) {
 		/*
@@ -635,7 +629,6 @@ DdeServerProc (
 
 	    }
 	    if (convPtr != NULL) {
-		Tcl_IncrRefCount(returnPackagePtr);
 		convPtr->returnPackagePtr = returnPackagePtr;
 	    } else {
 		Tcl_DecrRefCount(returnPackagePtr);
