@@ -1,3 +1,9 @@
+2002-06-14  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* generic/tclExecute.c (TclExecuteByteCode): runtime peep-hole
+	optimisation of INST_FOREACH - relies on peculiarities of the code
+	produced by the bytecode compiler.
+
 2002-06-14  David Gravereaux <davygrvy@pobox.com>
 
 	* win/rules.vc: The test for compiler optimizations was in error.
