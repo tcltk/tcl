@@ -1,3 +1,8 @@
+2004-11-12  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclEncoding.c (TableFromUtfProc): correct crash
+	condition when TCL_UTF_MAX == 6. [Bug 1004065]
+
 2004-11-12  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* doc/interp.n: Basic documentation of the TIP#221 API.
