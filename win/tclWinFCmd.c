@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFCmd.c,v 1.35.2.1 2003/10/03 17:45:37 vincentdarley Exp $
+ * RCS: @(#) $Id: tclWinFCmd.c,v 1.35.2.2 2004/06/21 22:07:32 mdejong Exp $
  */
 
 #include "tclWinInt.h"
@@ -81,6 +81,27 @@ static void *INITIAL_ESP,
             *RESTORED_EBP,
             *RESTORED_HANDLER;
 #endif /* HAVE_NO_SEH && TCL_MEM_DEBUG */
+
+#ifdef HAVE_NO_SEH
+static
+__attribute__ ((cdecl))
+EXCEPTION_DISPOSITION
+_except_dorenamefile_handler(
+    struct _EXCEPTION_RECORD *ExceptionRecord,
+    void *EstablisherFrame,
+    struct _CONTEXT *ContextRecord,
+    void *DispatcherContext);
+
+static
+__attribute__ ((cdecl))
+EXCEPTION_DISPOSITION
+_except_docopyfile_handler(
+    struct _EXCEPTION_RECORD *ExceptionRecord,
+    void *EstablisherFrame,
+    struct _CONTEXT *ContextRecord,
+    void *DispatcherContext);
+
+#endif /* HAVE_NO_SEH */
 
 /*
  * Prototype for the TraverseWinTree callback function.
@@ -202,10 +223,13 @@ DoRenameFile(
 # endif /* TCL_MEM_DEBUG */
 
     __asm__ __volatile__ (
-            "pushl %ebp" "\n\t"
-            "pushl $__except_dorenamefile_handler" "\n\t"
-            "pushl %fs:0" "\n\t"
-            "movl  %esp, %fs:0");
+            "pushl %%ebp" "\n\t"
+            "pushl %0" "\n\t"
+            "pushl %%fs:0" "\n\t"
+            "movl  %%esp, %%fs:0"
+            :
+            : "r" (_except_dorenamefile_handler)
+            );
 #else
     __try {
 #endif /* HAVE_NO_SEH */
@@ -467,6 +491,22 @@ DoRenameFile(
     }
     return TCL_ERROR;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * _except_dorenamefile_handler --
+ *
+ *	SEH exception handler for DoRenameFile.
+ *
+ * Results:
+ *	See DoRenameFile.
+ *
+ * Side effects:
+ *	See DoRenameFile.
+ *
+ *----------------------------------------------------------------------
+ */
 #ifdef HAVE_NO_SEH
 static
 __attribute__ ((cdecl))
@@ -479,8 +519,6 @@ _except_dorenamefile_handler(
 {
     __asm__ __volatile__ (
             "jmp dorenamefile_reentry");
-    /* Nuke compiler warning about unused static function */
-    _except_dorenamefile_handler(NULL, NULL, NULL, NULL);
     return 0; /* Function does not return */
 }
 #endif /* HAVE_NO_SEH */
@@ -556,10 +594,13 @@ DoCopyFile(
 # endif /* TCL_MEM_DEBUG */
 
     __asm__ __volatile__ (
-            "pushl %ebp" "\n\t"
-            "pushl $__except_docopyfile_handler" "\n\t"
-            "pushl %fs:0" "\n\t"
-            "movl  %esp, %fs:0");
+            "pushl %%ebp" "\n\t"
+            "pushl %0" "\n\t"
+            "pushl %%fs:0" "\n\t"
+            "movl  %%esp, %%fs:0"
+            :
+            : "r" (_except_docopyfile_handler)
+            );
 #else
     __try {
 #endif /* HAVE_NO_SEH */
@@ -649,6 +690,22 @@ DoCopyFile(
     }
     return TCL_ERROR;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * _except_docopyfile_handler --
+ *
+ *	SEH exception handler for DoCopyFile.
+ *
+ * Results:
+ *	See DoCopyFile.
+ *
+ * Side effects:
+ *	See DoCopyFile.
+ *
+ *----------------------------------------------------------------------
+ */
 #ifdef HAVE_NO_SEH
 static
 __attribute__ ((cdecl))
@@ -661,7 +718,6 @@ _except_docopyfile_handler(
 {
     __asm__ __volatile__ (
             "jmp docopyfile_reentry");
-    _except_docopyfile_handler(NULL,NULL,NULL,NULL);
     return 0; /* Function does not return */
 }
 #endif /* HAVE_NO_SEH */
