@@ -4,7 +4,11 @@
 	* generic/tcl.h:
 	* */*Load*.c: added comments on changes of 07/17 and 
 	replaced clientData with TclLoadHandle in all locations.
-	
+
+	* generic/tclFCmd.c:
+	* tests/fileSystem.test: fixed a 'knownBug' with 'file
+	attributes ""'
+
 2002-07-17  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* generic/tclBasic.c (CallCommandTraces): delete traces now
