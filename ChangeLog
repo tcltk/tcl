@@ -1,3 +1,31 @@
+1999-06-01    <stanton@scriptics.com>
+
+	* unix/configure.in: Fixed various small configure.in patches
+	submitted by Jan Nijtmans. [Bug: 2121]
+
+	* tests/reg.test: 
+	* generic/regc_color.c: 
+	* generic/regc_cvec.c: 
+	* generic/regc_lex.c: 
+	* generic/regc_locale.c: 
+	* generic/regc_nfa.c: 
+	* generic/regcomp.c: 
+	* generic/regcustom.h: 
+	* generic/rege_dfa.c: 
+	* generic/regerror.c: 
+	* generic/regerrs.h: 
+	* generic/regex.h: 
+	* generic/regexec.c: 
+	* generic/regfree.c: 
+	* generic/regfronts.c: 
+	* generic/regguts.h: 
+	* generic/tclCmdMZ.c: 
+	* generic/tclRegexp.c: 
+	* generic/tclRegexp.h: 
+	* generic/tclTest.c: Applied Henry Spencer's latest regexp patches
+	that fix an infinite loop bug and add support for testing whether
+	a string could match with additional input.  [Bug: 2117]
+
 1999-05-28    <stanton@scriptics.com>
 
 	* generic/tclObj.c: Changed to eliminate use of isupper/tolower in
