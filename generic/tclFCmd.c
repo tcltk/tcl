@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFCmd.c,v 1.7 2001/07/31 19:12:06 vincentdarley Exp $
+ * RCS: @(#) $Id: tclFCmd.c,v 1.8 2001/08/07 01:00:02 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -188,11 +188,12 @@ FileCopyRename(interp, objc, objv, copyFlag)
 	temp = Tcl_NewListObj(2, jargv);
 	newFileName = Tcl_FSJoinPath(temp, -1);
 	Tcl_IncrRefCount(newFileName);
-	Tcl_DecrRefCount(temp);
-	
 	result = CopyRenameOneFile(interp, objv[i], newFileName, copyFlag,
 		force);
 	Tcl_DecrRefCount(newFileName);
+	Tcl_DecrRefCount(temp);
+	Tcl_DecrRefCount(source);
+
 	if (result == TCL_ERROR) {
 	    break;
 	}
@@ -756,20 +757,18 @@ FileBasename(interp, pathPtr)
     Tcl_Obj *pathPtr;		/* Path whose basename to extract. */
 {
     int objc;
-    Tcl_Obj *split;
-    Tcl_Obj *resPtr = NULL;
+    Tcl_Obj *splitPtr;
+    Tcl_Obj *resultPtr = NULL;
     
-    split = Tcl_FSSplitPath(pathPtr, &objc);
+    splitPtr = Tcl_FSSplitPath(pathPtr, &objc);
 
     if (objc != 0) {
 	if ((objc == 1) && (*Tcl_GetString(pathPtr) == '~')) {
-	    
+	    Tcl_DecrRefCount(splitPtr);
 	    if (Tcl_FSConvertToPathType(interp, pathPtr) != TCL_OK) {
-		Tcl_DecrRefCount(split);
 		return NULL;
 	    }
-	    Tcl_DecrRefCount(split);
-	    split = Tcl_FSSplitPath(pathPtr, &objc);
+	    splitPtr = Tcl_FSSplitPath(pathPtr, &objc);
 	}
 
 	/*
@@ -778,23 +777,20 @@ FileBasename(interp, pathPtr)
 	 */
 
 	if (objc > 0) {
-	    if (objc > 1) {
-		Tcl_ListObjIndex(NULL, split, objc-1, &resPtr);
-	    } else {
-		Tcl_Obj *temp;
-		Tcl_ListObjIndex(NULL, split, 0, &temp);
-		if (Tcl_GetPathType(Tcl_GetString(temp)) == TCL_PATH_RELATIVE) {
-		    Tcl_ListObjIndex(NULL, split, objc-1, &resPtr);
-		}
+	    Tcl_ListObjIndex(NULL, splitPtr, objc-1, &resultPtr);
+	    if ((objc == 1) &&
+		    (Tcl_GetPathType(Tcl_GetString(resultPtr))
+			    != TCL_PATH_RELATIVE)) {
+		resultPtr = NULL;
 	    }
 	}
     }
-    if (resPtr == NULL) {
-	resPtr = Tcl_NewStringObj("",0);
+    if (resultPtr == NULL) {
+	resultPtr = Tcl_NewObj();
     }
-    Tcl_IncrRefCount(resPtr);
-    Tcl_DecrRefCount(split);
-    return resPtr;
+    Tcl_IncrRefCount(resultPtr);
+    Tcl_DecrRefCount(splitPtr);
+    return resultPtr;
 }
 
 /*
