@@ -1,3 +1,11 @@
+2001-10-18  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* tests/clock.test (clock-8.1): 
+	* generic/tclDate.c (RelativeMonth): 
+	* generic/tclGetDate.y (RelativeMonth): corrected off-by-one-day
+	error in clock scan with relative months and years during swing
+	hours. [Bug #413397, Patch #414024] (lavana)
+
 2001-10-18  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* generic/tclIOUtil.c: fix to bug in Tcl_FSChdir shown up
