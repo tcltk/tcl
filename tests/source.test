@@ -11,9 +11,9 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: source.test,v 1.1.2.3 1999/03/11 18:50:09 hershey Exp $
+# RCS: @(#) $Id: source.test,v 1.1.2.4 1999/03/23 20:06:55 hershey Exp $
 
-if {[lsearch [namespace children] ::test] == -1} {
+if {[lsearch [namespace children] ::tcltest] == -1} {
     source [file join [pwd] [file dirname [info script]] defs.tcl]
 }
 
@@ -180,7 +180,17 @@ test source-6.1 {source is binary ok} {
 } 5
 
 # cleanup
-catch {::test::removeFile source.file}
-::test::cleanupTests
+catch {::tcltest::removeFile source.file}
+::tcltest::cleanupTests
 return
+
+
+
+
+
+
+
+
+
+
 

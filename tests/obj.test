@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: obj.test,v 1.1.2.3 1999/03/11 18:49:57 hershey Exp $
+# RCS: @(#) $Id: obj.test,v 1.1.2.4 1999/03/23 20:06:42 hershey Exp $
 
 if {[info commands testobj] == {}} {
     puts "This application hasn't been compiled with the \"testobj\""
@@ -19,7 +19,7 @@ if {[info commands testobj] == {}} {
     return
 }
 
-if {[lsearch [namespace children] ::test] == -1} {
+if {[lsearch [namespace children] ::tcltest] == -1} {
     source [file join [pwd] [file dirname [info script]] defs.tcl]
 }
 
@@ -529,6 +529,16 @@ test obj-30.1 {Ref counting and object deletion, simple types} {
 testobj freeallvars
 
 # cleanup
-::test::cleanupTests
+::tcltest::cleanupTests
 return
+
+
+
+
+
+
+
+
+
+
 

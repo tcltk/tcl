@@ -10,9 +10,9 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: cmdAH.test,v 1.1.2.7 1999/03/11 18:49:26 hershey Exp $
+# RCS: @(#) $Id: cmdAH.test,v 1.1.2.8 1999/03/23 20:06:12 hershey Exp $
 
-if {[lsearch [namespace children] ::test] == -1} {
+if {[lsearch [namespace children] ::tcltest] == -1} {
     source [file join [pwd] [file dirname [info script]] defs.tcl]
 }
 
@@ -1014,7 +1014,7 @@ test cmdAH-16.2 {Tcl_FileObjCmd: readable} {
     file readable gorp.file
 } 1
 testchmod 333 gorp.file
-test cmdAH-16.3 {Tcl_FileObjCmd: readable} {unixOnly && !root} {
+test cmdAH-16.3 {Tcl_FileObjCmd: readable} {unixOnly notRoot} {
     file reada gorp.file
 } 0
 
@@ -1024,7 +1024,7 @@ test cmdAH-17.1 {Tcl_FileObjCmd: writable} {
     list [catch {file writable a b} msg] $msg
 } {1 {wrong # args: should be "file writable name"}}
 testchmod 555 gorp.file
-test cmdAH-17.2 {Tcl_FileObjCmd: writable} {!root} {
+test cmdAH-17.2 {Tcl_FileObjCmd: writable} {notRoot} {
     file writable gorp.file
 } 0
 testchmod 222 gorp.file
@@ -1044,7 +1044,7 @@ test cmdAH-18.1 {Tcl_FileObjCmd: executable} {
 test cmdAH-18.2 {Tcl_FileObjCmd: executable} {
     file executable gorp.file
 } 0
-test cmdAH-18.3 {Tcl_FileObjCmd: executable} {unix} {
+test cmdAH-18.3 {Tcl_FileObjCmd: executable} {unixOnly} {
     # Only on unix will setting the execute bit on a regular file
     # cause that file to be executable.   
     
@@ -1052,14 +1052,14 @@ test cmdAH-18.3 {Tcl_FileObjCmd: executable} {unix} {
     file exe gorp.file
 } 1
 
-test cmdAH-18.4 {Tcl_FileObjCmd: executable} {mac} {
+test cmdAH-18.4 {Tcl_FileObjCmd: executable} {macOnly} {
     # On mac, the only executable files are of type APPL.
 
     set x [file exe gorp.file]    
     file attrib gorp.file -type APPL
     lappend x [file exe gorp.file]
 } {0 1}
-test cmdAH-18.5 {Tcl_FileObjCmd: executable} {pc} {
+test cmdAH-18.5 {Tcl_FileObjCmd: executable} {pcOnly} {
     # On pc, must be a .exe, .com, etc.
     
     set x [file exe gorp.file]
@@ -1131,21 +1131,20 @@ test cmdAH-19.10 {Tcl_FileObjCmd: ~ : nativename} {
 # directory in order to guarantee (?) a local file system:  some
 # NFS file systems won't do the stuff below correctly.
 
-if {$tcl_platform(platform) == "unix"} {
-    file delete /tmp/tcl.foo.dir/file
+test cmdAH-19.11 {Tcl_FileObjCmd: exists} {unixOnly notRoot} {
+    removeFile /tmp/tcl.foo.dir/file
     removeDirectory /tmp/tcl.foo.dir
     makeDirectory /tmp/tcl.foo.dir
     makeFile 12345 /tmp/tcl.foo.dir/file
     exec chmod 000 /tmp/tcl.foo.dir
-    if {$user != "root"} {
-	test cmdAH-19.11 {Tcl_FileObjCmd: exists} {
-	    file exists /tmp/tcl.foo.dir/file
-	} 0
-    }
+
+    set result [file exists /tmp/tcl.foo.dir/file]
+
     exec chmod 775 /tmp/tcl.foo.dir
-    file delete /tmp/tcl.foo.dir/file
+    removeFile /tmp/tcl.foo.dir/file
     removeDirectory /tmp/tcl.foo.dir
-}
+    set result
+} 0
 
 # Stat related commands
 
@@ -1274,7 +1273,7 @@ test cmdAH-25.1 {Tcl_FileObjCmd: owned} {
 test cmdAH-25.2 {Tcl_FileObjCmd: owned} {
     file owned gorp.file
 } 1
-test cmdAH-25.3 {Tcl_FileObjCmd: owned} {unixOnly && !root} {
+test cmdAH-25.3 {Tcl_FileObjCmd: owned} {unixOnly notRoot} {
     file owned /
 } 0
 
@@ -1339,7 +1338,7 @@ test cmdAH-28.4 {Tcl_FileObjCmd: stat} {
     file stat gorp.file stat
     list $stat(nlink) $stat(size) $stat(type)
 } {1 12 file}
-test cmdAH-28.5 {Tcl_FileObjCmd: stat} {unix} {
+test cmdAH-28.5 {Tcl_FileObjCmd: stat} {unixOnly} {
     catch {unset stat}
     file stat gorp.file stat
     expr $stat(mode)&0777
@@ -1362,7 +1361,7 @@ test cmdAH-28.8 {Tcl_FileObjCmd: stat} {
     file delete foo.test
     set x
 } 1
-test cmdAH-28.9 {Tcl_FileObjCmd: stat} {pc} {
+test cmdAH-28.9 {Tcl_FileObjCmd: stat} {pcOnly} {
     # stat of root directory was failing.
     # don't care about answer, just that test runs.
 
@@ -1378,7 +1377,7 @@ test cmdAH-28.9 {Tcl_FileObjCmd: stat} {pc} {
     file stat c:/ stat
     file stat c:/. stat
 } {}
-test cmdAH-28.10 {Tcl_FileObjCmd: stat} {pc nonPortable} {
+test cmdAH-28.10 {Tcl_FileObjCmd: stat} {pcOnly nonPortable} {
     # stat of root directory was failing.
     # don't care about answer, just that test runs.
 
@@ -1386,7 +1385,7 @@ test cmdAH-28.10 {Tcl_FileObjCmd: stat} {pc nonPortable} {
     file stat //pop/$env(USERNAME)/ stat
     file stat //pop/$env(USERNAME)/. stat
 } {}    
-test cmdAH-28.11 {Tcl_FileObjCmd: stat} {pc nonPortable} {
+test cmdAH-28.11 {Tcl_FileObjCmd: stat} {pcOnly nonPortable} {
     # stat of network directory was returning id of current local drive.
 
     set old [pwd]
@@ -1468,7 +1467,17 @@ file delete link.file
 
 cd $cmdAHwd
 
-::test::cleanupTests
+::tcltest::cleanupTests
 return
+
+
+
+
+
+
+
+
+
+
 
 

@@ -15,10 +15,10 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: basic.test,v 1.1.2.3 1999/03/11 18:49:24 hershey Exp $
+# RCS: @(#) $Id: basic.test,v 1.1.2.4 1999/03/23 20:06:10 hershey Exp $
 #
 
-if {[lsearch [namespace children] ::test] == -1} {
+if {[lsearch [namespace children] ::tcltest] == -1} {
     source [file join [pwd] [file dirname [info script]] defs.tcl]
 }
 
@@ -529,6 +529,16 @@ catch {rename q ""}
 catch {rename cmd ""}
 catch {rename value:at: ""}
 catch {unset x}
-::test::cleanupTests
+::tcltest::cleanupTests
 return
+
+
+
+
+
+
+
+
+
+
 

@@ -10,26 +10,21 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: winFile.test,v 1.1.2.3 1999/03/11 18:50:20 hershey Exp $
+# RCS: @(#) $Id: winFile.test,v 1.1.2.4 1999/03/23 20:07:06 hershey Exp $
 
-if {$tcl_platform(platform) != "windows"} {
-    puts "skipping: Windows only tests..."
-    return
-}
-
-if {[lsearch [namespace children] ::test] == -1} {
+if {[lsearch [namespace children] ::tcltest] == -1} {
     source [file join [pwd] [file dirname [info script]] defs.tcl]
 }
 
-test winFile-1.1 {TclpGetUserHome} {
+test winFile-1.1 {TclpGetUserHome} {pcOnly} {
     list [catch {glob ~nosuchuser} msg] $msg
 } {1 {user "nosuchuser" doesn't exist}}
-test winFile-1.2 {TclpGetUserHome} {nt nonportable} {
+test winFile-1.2 {TclpGetUserHome} {nt nonPortable} {
     # The administrator account should always exist.
 
     catch {glob ~administrator}
 } {0}
-test winFile-1.2 {TclpGetUserHome} {!nt} {
+test winFile-1.2 {TclpGetUserHome} {95} {
     # Find some user in system.ini and then see if they have a home.
 
     set f [open $::env(windir)/system.ini]
@@ -48,11 +43,21 @@ test winFile-1.2 {TclpGetUserHome} {!nt} {
     close $f
     set x
 } {0}
-test winFile-1.3 {TclpGetUserHome} {nt nonportable} {
+test winFile-1.3 {TclpGetUserHome} {nt nonPortable} {
     catch {glob ~stanton@workgroup}
 } {0}
 
 # cleanup
-::test::cleanupTests
+::tcltest::cleanupTests
 return
+
+
+
+
+
+
+
+
+
+
 

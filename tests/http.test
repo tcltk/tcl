@@ -12,9 +12,9 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
 #
-# RCS: @(#) $Id: http.test,v 1.1.2.4 1999/03/11 18:49:41 hershey Exp $
+# RCS: @(#) $Id: http.test,v 1.1.2.5 1999/03/23 20:06:27 hershey Exp $
 
-if {[lsearch [namespace children] ::test] == -1} {
+if {[lsearch [namespace children] ::tcltest] == -1} {
     source [file join [pwd] [file dirname [info script]] defs.tcl]
 }
 
@@ -298,6 +298,16 @@ if {[info exists httpthread]} {
 } else {
     close $listen
 }
-::test::cleanupTests
+::tcltest::cleanupTests
 return
+
+
+
+
+
+
+
+
+
+
 

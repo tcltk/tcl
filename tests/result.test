@@ -12,7 +12,7 @@
 #
 # SCCS: @(#) result.test 1.4 97/12/08 15:07:49
 
-if {[lsearch [namespace children] ::test] == -1} {
+if {[lsearch [namespace children] ::tcltest] == -1} {
     source [file join [pwd] [file dirname [info script]] defs.tcl]
 }
 
@@ -81,6 +81,16 @@ test result-4.5 {Tcl_SetObjErrorCode - five args} {
 } {{1 2 3 4 5}}
 
 # cleanup
-::test::cleanupTests
+::tcltest::cleanupTests
 return
+
+
+
+
+
+
+
+
+
+
 

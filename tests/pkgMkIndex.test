@@ -8,16 +8,16 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 #
-# RCS: @(#) $Id: pkgMkIndex.test,v 1.4.2.4 1999/03/12 22:32:38 hershey Exp $
+# RCS: @(#) $Id: pkgMkIndex.test,v 1.4.2.5 1999/03/23 20:06:47 hershey Exp $
 
-if {[lsearch [namespace children] ::test] == -1} {
+if {[lsearch [namespace children] ::tcltest] == -1} {
     source [file join [pwd] [file dirname [info script]] defs.tcl]
 }
 
 # temporarily copy the pkg and pkg1 dirs from testsDir to tmpDir
-if {"$::test::testsDir" != "$::test::tmpDir"} {
-    set origPkgDir [file join $::test::testsDir pkg]
-    set newPkgDir [file join $::test::tmpDir pkg]
+if {"$::tcltest::testsDir" != "$::tcltest::tmpDir"} {
+    set origPkgDir [file join $::tcltest::testsDir pkg]
+    set newPkgDir [file join $::tcltest::tmpDir pkg]
     if {![catch {file copy $origPkgDir $newPkgDir}]} {
 	set removePkgDir 1
     }
@@ -31,7 +31,7 @@ if {"$::test::testsDir" != "$::test::tmpDir"} {
 # Make sure that the path to pkg1 is absolute.
 
 set oldDir [pwd]
-lappend auto_path [file join $::test::tmpDir pkg1]
+lappend auto_path [file join $::tcltest::tmpDir pkg1]
 
 namespace eval pkgtest {
     # Namespace for procs we can discard
@@ -330,7 +330,7 @@ test pkgMkIndex-9.1 {circular packages} {
 } {0 {{circ1:1.0 {tclPkgSetup {circ1.tcl source {::circ1::c1-1 ::circ1::c1-2 ::circ1::c1-3 ::circ1::c1-4}}}} {circ2:1.0 {tclPkgSetup {circ2.tcl source {::circ2::c2-1 ::circ2::c2-2}}}} {circ3:1.0 {tclPkgSetup {circ3.tcl source ::circ3::c3-1}}}}}
 
 # Try to find one of the DLLs in the dltest directory
-set x [file join $::test::testsDir ../unix/dltest/pkga[info sharedlibextension]]
+set x [file join $::tcltest::testsDir ../unix/dltest/pkga[info sharedlibextension]]
 if {[file exists $x]} {
     file copy -force $x pkg
     test pkgMkIndex-10.1 {package in DLL and script} {
@@ -345,7 +345,7 @@ if {[file exists $x]} {
 
 # cleanup
 namespace delete pkgtest
-cd $::test::tmpDir
+cd $::tcltest::tmpDir
 if {[info exists removePkgDir]} {
     # strange error deleting the pkg dir only once--needs be done twice!
     catch {file delete -force $newPkgDir}
@@ -354,5 +354,15 @@ if {[info exists removePkgDir]} {
 if {[info exists removePkg1Dir]} {
     catch {file delete -force "${newPkgDir}1"}
 }
-::test::cleanupTests
+::tcltest::cleanupTests
 return
+
+
+
+
+
+
+
+
+
+

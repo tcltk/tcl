@@ -12,9 +12,9 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: ioCmd.test,v 1.1.2.4 1999/03/11 18:49:47 hershey Exp $
+# RCS: @(#) $Id: ioCmd.test,v 1.1.2.5 1999/03/23 20:06:33 hershey Exp $
 
-if {[lsearch [namespace children] ::test] == -1} {
+if {[lsearch [namespace children] ::tcltest] == -1} {
     source [file join [pwd] [file dirname [info script]] defs.tcl]
 }
 
@@ -296,9 +296,8 @@ test iocmd-8.18 {fconfigure command / unix tty channel} {nonPortable unixOnly} {
 	close $tty;
 	set r;
 } {1 {bad option "-blah": should be one of -blocking, -buffering, -buffersize, -eofchar, -translation, or -mode}}
-test iocmd-8.19 {fconfigure command / win tty channel} {pcOnly && !win32s} {
-	# None of the com port functions are implemented on Win32s.
-	# Also, might fail if com1 is unavailable
+test iocmd-8.19 {fconfigure command / win tty channel} {pcOnly} {
+	# might fail if com1 is unavailable
 	set tty [open com1]
 	set r [list [catch {fconfigure $tty -blah blih} msg] $msg];
 	close $tty;
@@ -506,13 +505,23 @@ close $wfile
 
 # cleanup
 foreach file [list test1 test2 test3 test4] {
-    ::test::removeFile $file
+    ::tcltest::removeFile $file
 }
 # delay long enough for background processes to finish
 after 500
 foreach file [list test5 pipe output] {
-    ::test::removeFile $file
+    ::tcltest::removeFile $file
 }
-::test::cleanupTests
+::tcltest::cleanupTests
 return
+
+
+
+
+
+
+
+
+
+
 

@@ -11,7 +11,7 @@
 #
 # RCS: @(#) 
 
-if {[lsearch [namespace children] ::test] == -1} {
+if {[lsearch [namespace children] ::tcltest] == -1} {
     source [file join [pwd] [file dirname [info script]] defs.tcl]
 }
 
@@ -20,5 +20,15 @@ test platform-1.1 {TclpSetVariables: tcl_platform} {
 } {byteOrder machine os osVersion platform user}
 
 # cleanup
-::test::cleanupTests
+::tcltest::cleanupTests
 return
+
+
+
+
+
+
+
+
+
+

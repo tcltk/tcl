@@ -12,9 +12,9 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: io.test,v 1.1.2.8 1999/03/11 18:49:46 hershey Exp $
+# RCS: @(#) $Id: io.test,v 1.1.2.9 1999/03/23 20:06:32 hershey Exp $
 
-if {[lsearch [namespace children] ::test] == -1} {
+if {[lsearch [namespace children] ::tcltest] == -1} {
     source [file join [pwd] [file dirname [info script]] defs.tcl]
 }
 
@@ -24,10 +24,13 @@ if {"[info commands testchannel]" != "testchannel"} {
     return
 }
 
-::test::saveState
+::tcltest::saveState
 
 removeFile test1
 removeFile pipe
+
+# some tests can only be run is umask is 2
+set ::tcltest::testConfig(umask2) [expr {[exec umask] == 2}]
 
 # set up a long data file for some of the following tests
 
@@ -59,7 +62,7 @@ makeFile {
     vwait forever
 } cat
 
-set thisScript [file join $::test::testsDir [info script]]
+set thisScript [file join $::tcltest::testsDir [info script]]
 
 # These tests are disabled until we decide what to do with "unsupported0".
 #
@@ -1871,19 +1874,19 @@ test io-20.1 {Tcl_CreateChannel: initial settings} {
 	close $a
     set x
 } {ascii}    
-test io-20.2 {Tcl_CreateChannel: initial settings} {pc} {
+test io-20.2 {Tcl_CreateChannel: initial settings} {pcOnly} {
     set f [open test1 w+]
     set x [list [fconfigure $f -eofchar] [fconfigure $f -translation]]
     close $f
     set x
 } [list [list \x1a ""] {auto crlf}]
-test io-20.3 {Tcl_CreateChannel: initial settings} {unix} {
+test io-20.3 {Tcl_CreateChannel: initial settings} {unixOnly} {
     set f [open test1 w+]
     set x [list [fconfigure $f -eofchar] [fconfigure $f -translation]]
     close $f
     set x
 } {{{} {}} {auto lf}}
-test io-20.4 {Tcl_CreateChannel: initial settings} {mac} {
+test io-20.4 {Tcl_CreateChannel: initial settings} {macOnly} {
     set f [open test1 w+]
     set x [list [fconfigure $f -eofchar] [fconfigure $f -translation]]
     close $f
@@ -2020,7 +2023,8 @@ test io-27.4 {FlushChannel, implicit flush when buffer fills} {
     close $f
     set l
 } {0 60 72}
-test io-27.5 {FlushChannel, implicit flush when buffer fills and on close} {unixOrPc} {
+test io-27.5 {FlushChannel, implicit flush when buffer fills and on close} \
+	{unixOrPc} {
     removeFile test1
     set f [open test1 w]
     fconfigure $f -translation lf -buffersize 60 -eofchar {}
@@ -2034,7 +2038,8 @@ test io-27.5 {FlushChannel, implicit flush when buffer fills and on close} {unix
     lappend l [file size test1]
     set l
 } {0 60 72}
-test io-27.6 {FlushChannel, async flushing, async close} {stdio && asyncPipeClose} {
+test io-27.6 {FlushChannel, async flushing, async close} \
+	{stdio asyncPipeClose} {
     removeFile pipe
     removeFile output
     set f [open pipe w]
@@ -2101,7 +2106,8 @@ test io-28.2 {CloseChannel called when all references are dropped} {
     close $f
     set l
 } abcdef
-test io-28.3 {CloseChannel, not called before output queue is empty} {stdio asyncPipeClose nonPortable} {
+test io-28.3 {CloseChannel, not called before output queue is empty} \
+	{stdio asyncPipeClose nonPortable} {
     removeFile pipe
     removeFile output
     set f [open pipe w]
@@ -2533,7 +2539,7 @@ test io-29.25 {Implicit flush with Tcl_Flush to command pipelines} {stdio} {
     close $f
     set x
 } "Line 1\nLine 2\n"
-test io-29.26 {Tcl_Flush, Tcl_Write on bidirectional pipelines} {stdio && unixExecs} {
+test io-29.26 {Tcl_Flush, Tcl_Write on bidirectional pipelines} {stdio unixExecs} {
     set f [open "|[list cat -u]" r+]
     puts $f "Line1"
     flush $f
@@ -2631,7 +2637,8 @@ test io-29.31 {Tcl_WriteChars, background flush} {stdio} {
 	set result ok
     }
 } ok
-test io-29.32 {Tcl_WriteChars, background flush to slow reader} {stdio && asyncPipeClose} {
+test io-29.32 {Tcl_WriteChars, background flush to slow reader} \
+	{stdio asyncPipeClose} {
     removeFile pipe
     removeFile output
     set f [open pipe w]
@@ -5089,7 +5096,7 @@ test io-40.2 {POSIX open access modes: CREAT} {unixOnly} {
     close $f
     set x
 } {0600 {line 1}}
-test io-40.3 {POSIX open access modes: CREAT} {$::test::testConfig(unix) && ([exec umask] == 2)} {
+test io-40.3 {POSIX open access modes: CREAT} {unixOnly umask2} {
     # This test only works if your umask is 2, like ouster's.
     removeFile test3
     set f [open test3 {WRONLY CREAT}]
@@ -5283,16 +5290,15 @@ test io-42.3 {Tcl_FileeventCmd: replacing, with NULL chars in script} {
     fileevent $f r ""
     lappend result [fileevent $f readable]
 } {13 11 12 {}}
+
 #
 # Test fileevent on a pipe
 #
 
-if {$::test::testConfig(stdio) && $::test::testConfig(unixExecs)} {
-
 catch {set f2 [open "|[list cat -u]" r+]}
 catch {set f3 [open "|[list cat -u]" r+]}
 
-test io-43.1 {Tcl_FileeventCmd: creating, deleting, querying} {
+test io-43.1 {Tcl_FileeventCmd: creating, deleting, querying} {stdio unixExecs} {
     set result {}
     fileevent $f readable "script 1"
     lappend result [fileevent $f readable] [fileevent $f writable]
@@ -5303,7 +5309,7 @@ test io-43.1 {Tcl_FileeventCmd: creating, deleting, querying} {
     fileevent $f writable {}
     lappend result [fileevent $f readable] [fileevent $f writable]
 } {{script 1} {} {script 1} {write script} {} {write script} {} {}}
-test io-43.2 {Tcl_FileeventCmd: deleting when many present} {
+test io-43.2 {Tcl_FileeventCmd: deleting when many present} {stdio unixExecs} {
     set result {}
     lappend result [fileevent $f r] [fileevent $f2 r] [fileevent $f3 r]
     fileevent $f r "read f"
@@ -5318,7 +5324,7 @@ test io-43.2 {Tcl_FileeventCmd: deleting when many present} {
     lappend result [fileevent $f r] [fileevent $f2 r] [fileevent $f3 r]
 } {{} {} {} {read f} {read f2} {read f3} {read f} {} {read f3} {read f} {} {} {} {} {}}
 
-test io-44.1 {FileEventProc procedure: normal read event} {
+test io-44.1 {FileEventProc procedure: normal read event} {stdio unixExecs} {
     fileevent $f2 readable {
 	set x [gets $f2]; fileevent $f2 readable {}
     }
@@ -5327,7 +5333,7 @@ test io-44.1 {FileEventProc procedure: normal read event} {
     vwait x
     set x
 } {text}
-test io-44.2 {FileEventProc procedure: error in read event} {
+test io-44.2 {FileEventProc procedure: error in read event} {stdio unixExecs} {
     proc bgerror args {
 	global x
 	set x $args
@@ -5339,7 +5345,7 @@ test io-44.2 {FileEventProc procedure: error in read event} {
     rename bgerror {}
     list $x [fileevent $f2 readable]
 } {bogus {}}
-test io-44.3 {FileEventProc procedure: normal write event} {
+test io-44.3 {FileEventProc procedure: normal write event} {stdio unixExecs} {
     fileevent $f2 writable {
 	lappend x "triggered"
 	incr count -1
@@ -5354,7 +5360,7 @@ test io-44.3 {FileEventProc procedure: normal write event} {
     vwait x
     set x
 } {initial triggered triggered triggered}
-test io-44.4 {FileEventProc procedure: eror in write event} {
+test io-44.4 {FileEventProc procedure: eror in write event} {stdio unixExecs} {
     proc bgerror args {
 	global x
 	set x $args
@@ -5365,7 +5371,7 @@ test io-44.4 {FileEventProc procedure: eror in write event} {
     rename bgerror {}
     list $x [fileevent $f2 writable]
 } {bad-write {}}
-test io-44.5 {FileEventProc procedure: end of file} {
+test io-44.5 {FileEventProc procedure: end of file} {stdio unixExecs} {
     set f4 [open "|[list $tcltest cat << foo]" r]
     fileevent $f4 readable {
 	if {[gets $f4 line] < 0} {
@@ -5385,9 +5391,6 @@ test io-44.5 {FileEventProc procedure: end of file} {
 catch {close $f2}
 catch {close $f3}
 
-}
-	# Closes if {($platform(platform) != "macintosh") && \
-	#		($::test::testConfig(unixExecs) == 1)} clause
 
 close $f
 makeFile "foo bar" foo
@@ -6783,10 +6786,20 @@ test io-58.1 {Tcl_NotifyChannel and error when closing} {unixOrPc} {
 # cleanup
 foreach file [list fooBar longfile script output test1 pipe my_script foo \
 	bar test2 test3 cat stdout] {
-    ::test::removeFile $file
+    ::tcltest::removeFile $file
 }
 restoreState
-::test::cleanupTests
+::tcltest::cleanupTests
 return
+
+
+
+
+
+
+
+
+
+
 
 

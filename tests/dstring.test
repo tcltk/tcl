@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: dstring.test,v 1.1.2.3 1999/03/11 18:49:31 hershey Exp $
+# RCS: @(#) $Id: dstring.test,v 1.1.2.4 1999/03/23 20:06:17 hershey Exp $
 
 if {[info commands testdstring] == {}} {
     puts "This application hasn't been compiled with the \"testdstring\""
@@ -19,7 +19,7 @@ if {[info commands testdstring] == {}} {
     return
 }
 
-if {[lsearch [namespace children] ::test] == -1} {
+if {[lsearch [namespace children] ::tcltest] == -1} {
     source [file join [pwd] [file dirname [info script]] defs.tcl]
 }
 
@@ -250,6 +250,16 @@ test dstring-6.5 {Tcl_DStringGetResult} {
 
 # cleanup
 testdstring free
-::test::cleanupTests
+::tcltest::cleanupTests
 return
+
+
+
+
+
+
+
+
+
+
 

@@ -7,39 +7,36 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 # 
-# RCS: @(#) $Id: all.tcl,v 1.1.2.3 1999/03/12 19:51:30 hershey Exp $
+# RCS: @(#) $Id: all.tcl,v 1.1.2.4 1999/03/23 20:06:08 hershey Exp $
 
-if {[lsearch ::test [namespace children]] == -1} {
+if {[lsearch ::tcltest [namespace children]] == -1} {
     source [file join [pwd] [file dirname [info script]] defs.tcl]
 }
-set ::test::testSingleFile false
+set ::tcltest::testSingleFile false
 
-puts stdout "Tcl 8.1 tests running in interp:  [info nameofexecutable]"
-puts stdout "Tests running in working dir:  $::test::tmpDir"
-if {[llength $::test::skippingTests] > 0} {
-    puts stdout "Skipping tests that match:  $::test::skippingTests"
+puts stdout "Tcl $tcl_patchLevel tests running in interp:  [info nameofexecutable]"
+puts stdout "Tests running in working dir:  $::tcltest::tmpDir"
+if {[llength $::tcltest::skippingTests] > 0} {
+    puts stdout "Skipping tests that match:  $::tcltest::skippingTests"
 }
-if {[llength $::test::matchingTests] > 0} {
-    puts stdout "Only running tests that match:  $::test::matchingTests"
+if {[llength $::tcltest::matchingTests] > 0} {
+    puts stdout "Only running tests that match:  $::tcltest::matchingTests"
 }
 
 # Use command line specified glob pattern (specified by -file or -f)
-# if one exists.  Otherwise use *.test (or *.tes on win32s).  If given,
-# the file pattern should be specified relative to the dir containing
-# this file.  If no files are found to match the pattern, print an
-# error message and exit.
+# if one exists.  Otherwise use *.test.  If given, the file pattern
+# should be specified relative to the dir containing this file.  If no
+# files are found to match the pattern, print an error message and exit.
 set fileIndex [expr {[lsearch $argv "-file"] + 1}]
 set fIndex [expr {[lsearch $argv "-f"] + 1}]
 if {($fileIndex < 1) || ($fIndex > $fileIndex)} {
     set fileIndex $fIndex
 }
 if {$fileIndex > 0} {
-    set globPattern [file join $::test::testsDir [lindex $argv $fileIndex]]
+    set globPattern [file join $::tcltest::testsDir [lindex $argv $fileIndex]]
     puts stdout "Sourcing files that match:  $globPattern"
-} elseif {$tcl_platform(os) == "Win32s"} {
-    set globPattern [file join $::test::testsDir *.tes]
 } else {
-    set globPattern [file join $::test::testsDir *.test]
+    set globPattern [file join $::tcltest::testsDir *.test]
 }
 set fileList [glob -nocomplain $globPattern]
 if {[llength $fileList] < 1} {
@@ -64,5 +61,15 @@ foreach file [lsort $fileList] {
 
 # cleanup
 puts stdout "\nTests ended at [eval $timeCmd]"
-::test::cleanupTests 1
+::tcltest::cleanupTests 1
 return
+
+
+
+
+
+
+
+
+
+

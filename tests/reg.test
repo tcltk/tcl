@@ -7,9 +7,9 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 #
-# RCS: @(#) $Id: reg.test,v 1.1.2.4 1999/03/23 04:13:53 stanton Exp $
+# RCS: @(#) $Id: reg.test,v 1.1.2.5 1999/03/23 20:06:49 hershey Exp $
 
-if {[lsearch [namespace children] ::test] == -1} {
+if {[lsearch [namespace children] ::tcltest] == -1} {
     source [file join [pwd] [file dirname [info script]] defs.tcl]
 }
 
@@ -893,6 +893,6 @@ m  6	&M	 {[0-6][1-2][0-3][0-6][1-6][0-6]}	010010	010010
 doing 0 "flush"			;# to flush any leftover complaints
 
 # cleanup
-::test::cleanupTests
+::tcltest::cleanupTests
 return
 

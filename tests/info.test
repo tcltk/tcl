@@ -11,9 +11,9 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: info.test,v 1.1.2.3 1999/03/11 18:49:45 hershey Exp $
+# RCS: @(#) $Id: info.test,v 1.1.2.4 1999/03/23 20:06:30 hershey Exp $
 
-if {[lsearch [namespace children] ::test] == -1} {
+if {[lsearch [namespace children] ::tcltest] == -1} {
     source [file join [pwd] [file dirname [info script]] defs.tcl]
 }
 
@@ -406,30 +406,25 @@ test info-15.4 {info procs option} {
     }
 } {{p q r} p}
 
-set self info.test
-if {$tcl_platform(os) == "Win32s"} {
-    set self info~1.tes
-}
-
 test info-16.1 {info script option} {
     list [catch {info script x} msg] $msg
 } {1 {wrong # args: should be "info script"}}
 test info-16.2 {info script option} {
     file tail [info sc]
-} $self
+} "info.test"
 removeFile gorp.info
 makeFile "info script\n" gorp.info
 test info-16.3 {info script option} {
     list [source gorp.info] [file tail [info script]]
-} [list gorp.info $self]
+} [list gorp.info info.test]
 test info-16.4 {resetting "info script" after errors} {
     catch {source ~_nobody_/foo}
     file tail [info script]
-} $self
+} "info.test"
 test info-16.5 {resetting "info script" after errors} {
     catch {source _nonexistent_}
     file tail [info script]
-} $self
+} "info.test"
 removeFile gorp.info
 
 test info-17.1 {info sharedlibextension option} {
@@ -503,6 +498,16 @@ test info-20.5 {miscellaneous error conditions} {
 
 # cleanup
 catch {namespace delete test_ns_info1 test_ns_info2}
-::test::cleanupTests
+::tcltest::cleanupTests
 return
+
+
+
+
+
+
+
+
+
+
 

@@ -10,9 +10,9 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: compile.test,v 1.1.2.4 1999/03/11 18:49:29 hershey Exp $
+# RCS: @(#) $Id: compile.test,v 1.1.2.5 1999/03/23 20:06:15 hershey Exp $
 
-if {[lsearch [namespace children] ::test] == -1} {
+if {[lsearch [namespace children] ::tcltest] == -1} {
     source [file join [pwd] [file dirname [info script]] defs.tcl]
 }
 
@@ -197,7 +197,17 @@ catch {namespace delete test_ns_compile}
 catch {unset x}
 catch {unset y}
 catch {unset a}
-::test::cleanupTests
+::tcltest::cleanupTests
 return
+
+
+
+
+
+
+
+
+
+
 
 

@@ -1,6 +1,6 @@
 # defs.tcl --
 #
-#	This file contains support code for the Tcl test suite.It is
+#	This file contains support code for the Tcl/Tk test suite.It is
 #	It is normally sourced by the individual files in the test suite
 #	before they run their tests.  This improved approach to testing
 #	was designed and initially implemented by Mary Ann May-Pumphrey
@@ -11,21 +11,31 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 # 
-# RCS: @(#) $Id: defs.tcl,v 1.1.2.2 1999/03/12 19:51:30 hershey Exp $
+# RCS: @(#) $Id: defs.tcl,v 1.1.2.3 1999/03/23 20:06:16 hershey Exp $
 
-# Ensure that we have a minimal auto_path so we don't pick up extra junk.
-set auto_path [list [info library]]
+# Initialize wish shell
+if {[info exists tk_version]} {
+    tk appname tktest
+    wm title . tktest
+} else {
+    # Ensure that we have a minimal auto_path so we don't pick up extra junk.
+    set auto_path [list [info library]]
+}
 
 # create the "test" namespace for all testing variables and procedures
-namespace eval test {
-    foreach proc [list test cleanupTests dotests saveState restoreState \
+namespace eval tcltest {
+    set procList [list test cleanupTests dotests saveState restoreState \
 	    normalizeMsg makeFile removeFile makeDirectory removeDirectory \
 	    viewFile safeFetch bytestring set_iso8859_1_locale restore_locale \
-	    setTmpDir] {
+	    setTmpDir]
+    if {[info exists tk_version]} {
+	lappend procList setupbg dobg bgReady cleanupbg fixfocus
+    }
+    foreach proc $procList {
 	namespace export $proc
     }
 
-    # ::test::verbose defaults to "b"
+    # ::tcltest::verbose defaults to "b"
     variable verbose "b"
 
     # matchingTests defaults to the empty list
@@ -36,7 +46,7 @@ namespace eval test {
 
     # Tests should not rely on the current working directory.
     # Files that are part of the test suite should be accessed relative to
-    # ::test::testsDir.
+    # ::tcltest::testsDir.
 
     set originalDir [pwd]
     set tDir [file join $originalDir [file dirname [info script]]]
@@ -57,17 +67,21 @@ namespace eval test {
     variable failFiles {}
 
     # Tests should remove all files they create.  The test suite will
-    # check tmpDir for files created by the tests.  ::test::filesMade
-    # keeps track of such files created using the test::makeFile and
-    # test::makeDirectory procedures.  ::test::filesExisted stores
+    # check tmpDir for files created by the tests.  ::tcltest::filesMade
+    # keeps track of such files created using the ::tcltest::makeFile and
+    # ::tcltest::makeDirectory procedures.  ::tcltest::filesExisted stores
     # the names of pre-existing files.
 
     variable filesMade {}
     variable filesExisted {}
 
-    # initialize ::test::numTests array to keep track fo the number of
+    # initialize ::tcltest::numTests array to keep track fo the number of
     # tests that pass, fial, and are skipped.
     array set numTests [list Total 0 Passed 0 Skipped 0 Failed 0]
+
+    # initialize ::tcltest::skippedBecause array to keep track of
+    # constraints that kept tests from running
+    array set ::tcltest::skippedBecause {}
 }
 
 # If there is no "memory" command (because memory debugging isn't
@@ -77,47 +91,261 @@ if {[info commands memory] == ""} {
     proc memory args {}
 }
 
-# ::test::setTmpDir --
+# ::tcltest::initConfig --
 #
-#	Set the ::test::tmpDir to the specified value.  If the path
+# Check configuration information that will determine which tests
+# to run.  To do this, create an array ::tcltest::testConfig.  Each
+# element has a 0 or 1 value.  If the element is "true" then tests
+# with that constraint will be run, otherwise tests with that constraint
+# will be skipped.  See the README file for the list of built-in
+# constraints defined in this procedure.
+#
+# Arguments:
+#	none
+#
+# Results:
+#	The ::tcltest::testConfig array is reset to have an index for
+#	each built-in test constraint.
+
+proc ::tcltest::initConfig {} {
+
+    global tcl_platform tcl_interactive tk_version
+
+    catch {unset ::tcltest::testConfig}
+
+    # The following trace procedure makes it so that we can safely refer to
+    # non-existent members of the ::tcltest::testConfig array without causing an
+    # error.  Instead, reading a non-existent member will return 0.  This is
+    # necessary because tests are allowed to use constraint "X" without ensuring
+    # that ::tcltest::testConfig("X") is defined.
+
+    trace variable ::tcltest::testConfig r ::tcltest::safeFetch
+
+    proc ::tcltest::safeFetch {n1 n2 op} {
+	if {($n2 != {}) && ([info exists ::tcltest::testConfig($n2)] == 0)} {
+	    set ::tcltest::testConfig($n2) 0
+	}
+    }
+
+    set ::tcltest::testConfig(unixOnly) [expr {$tcl_platform(platform) == "unix"}]
+    set ::tcltest::testConfig(macOnly) [expr {$tcl_platform(platform) == "macintosh"}]
+    set ::tcltest::testConfig(pcOnly) [expr {$tcl_platform(platform) == "windows"}]
+
+    set ::tcltest::testConfig(unix) $::tcltest::testConfig(unixOnly)
+    set ::tcltest::testConfig(mac) $::tcltest::testConfig(macOnly)
+    set ::tcltest::testConfig(pc) $::tcltest::testConfig(pcOnly)
+
+    set ::tcltest::testConfig(unixOrPc) \
+	    [expr {$::tcltest::testConfig(unix) || $::tcltest::testConfig(pc)}]
+    set ::tcltest::testConfig(macOrPc) \
+	    [expr {$::tcltest::testConfig(mac) || $::tcltest::testConfig(pc)}]
+    set ::tcltest::testConfig(macOrUnix) \
+	    [expr {$::tcltest::testConfig(mac) || $::tcltest::testConfig(unix)}]
+
+    set ::tcltest::testConfig(nt) [expr {$tcl_platform(os) == "Windows NT"}]
+    set ::tcltest::testConfig(95) [expr {$tcl_platform(os) == "Windows 95"}]
+
+    # The following config switches are used to mark tests that should work,
+    # but have been temporarily disabled on certain platforms because they don't
+    # and we haven't gotten around to fixing the underlying problem.
+
+    set ::tcltest::testConfig(tempNotPc) [expr {!$::tcltest::testConfig(pc)}]
+    set ::tcltest::testConfig(tempNotMac) [expr {!$::tcltest::testConfig(mac)}]
+    set ::tcltest::testConfig(tempNotUnix) [expr {!$::tcltest::testConfig(unix)}]
+
+    # The following config switches are used to mark tests that crash on
+    # certain platforms, so that they can be reactivated again when the
+    # underlying problem is fixed.
+
+    set ::tcltest::testConfig(pcCrash) [expr {!$::tcltest::testConfig(pc)}]
+    set ::tcltest::testConfig(macCrash) [expr {!$::tcltest::testConfig(mac)}]
+    set ::tcltest::testConfig(unixCrash) [expr {!$::tcltest::testConfig(unix)}]
+
+    # Set the "fonts" constraint for wish apps
+    if {[info exists tk_version]} {
+	set ::tcltest::testConfig(fonts) 1
+	catch {destroy .e}
+	entry .e -width 0 -font {Helvetica -12} -bd 1
+	.e insert end "a.bcd"
+	if {([winfo reqwidth .e] != 37) || ([winfo reqheight .e] != 20)} {
+	    set ::tcltest::testConfig(fonts) 0
+	}
+	destroy .e
+	catch {destroy .t}
+	text .t -width 80 -height 20 -font {Times -14} -bd 1
+	pack .t
+	.t insert end "This is\na dot."
+	update
+	set x [list [.t bbox 1.3] [.t bbox 2.5]]
+	destroy .t
+	if {[string match {{22 3 6 15} {31 18 [34] 15}} $x] == 0} {
+	    set ::tcltest::testConfig(fonts) 0
+	}
+    }
+
+    # By default, non-portable tests are skipped.
+    set ::tcltest::testConfig(nonPortable) 0
+
+    # By default, tests that expost known bugs are skipped.
+    set ::tcltest::testConfig(knownBug) 0
+
+    # Some tests must be skipped if the interpreter is not in interactive mode
+    set ::tcltest::testConfig(interactive) $tcl_interactive
+
+    # Some tests must be skipped if you are running as root on Unix.
+    # Other tests can only be run if you are running as root on Unix.
+    set ::tcltest::testConfig(root) 0
+    set ::tcltest::testConfig(notRoot) 1
+    set user {}
+    if {$tcl_platform(platform) == "unix"} {
+	catch {set user [exec whoami]}
+	if {$user == ""} {
+	    catch {regexp {^[^(]*\(([^)]*)\)} [exec id] dummy user}
+	}
+	if {($user == "root") || ($user == "")} {
+	    set ::tcltest::testConfig(root) 1
+	    set ::tcltest::testConfig(notRoot) 0
+	}
+    }
+
+    # Set nonBlockFiles constraint: 1 means this platform supports
+    # setting files into nonblocking mode.
+    if {[catch {set f [open defs r]}]} {
+	set ::tcltest::testConfig(nonBlockFiles) 1
+    } else {
+	if {[catch {fconfigure $f -blocking off}] == 0} {
+	    set ::tcltest::testConfig(nonBlockFiles) 1
+	} else {
+	    set ::tcltest::testConfig(nonBlockFiles) 0
+	}
+	close $f
+    }
+
+    # Set asyncPipeClose constraint: 1 means this platform supports
+    # async flush and async close on a pipe.
+    #
+    # Test for SCO Unix - cannot run async flushing tests because a
+    # potential problem with select is apparently interfering.
+    # (Mark Diekhans).
+    if {$tcl_platform(platform) == "unix"} {
+	if {[catch {exec uname -X | fgrep {Release = 3.2v}}] == 0} {
+	    set ::tcltest::testConfig(asyncPipeClose) 0
+	} else {
+	    set ::tcltest::testConfig(asyncPipeClose) 1
+	}
+    } else {
+	set ::tcltest::testConfig(asyncPipeClose) 1
+    }
+
+    # Test to see if we have a broken version of sprintf with respect
+    # to the "e" format of floating-point numbers.
+    set ::tcltest::testConfig(eformat) 1
+    if {[string compare "[format %g 5e-5]" "5e-05"] != 0} {
+	set ::tcltest::testConfig(eformat) 0
+    }
+
+    # Test to see if execed commands such as cat, echo, rm and so forth are
+    # present on this machine.
+    set ::tcltest::testConfig(unixExecs) 1
+    if {$tcl_platform(platform) == "macintosh"} {
+	set ::tcltest::testConfig(unixExecs) 0
+    }
+    if {($::tcltest::testConfig(unixExecs) == 1) && \
+	    ($tcl_platform(platform) == "windows")} {
+	if {[catch {exec cat defs}] == 1} {
+	    set ::tcltest::testConfig(unixExecs) 0
+	}
+	if {($::tcltest::testConfig(unixExecs) == 1) && \
+		([catch {exec echo hello}] == 1)} {
+	    set ::tcltest::testConfig(unixExecs) 0
+	}
+	if {($::tcltest::testConfig(unixExecs) == 1) && \
+		([catch {exec sh -c echo hello}] == 1)} {
+	    set ::tcltest::testConfig(unixExecs) 0
+	}
+	if {($::tcltest::testConfig(unixExecs) == 1) && \
+		([catch {exec wc defs}] == 1)} {
+	    set ::tcltest::testConfig(unixExecs) 0
+	}
+	if {$::tcltest::testConfig(unixExecs) == 1} {
+	    exec echo hello > removeMe
+	    if {[catch {exec rm removeMe}] == 1} {
+		set ::tcltest::testConfig(unixExecs) 0
+	    }
+	}
+	if {($::tcltest::testConfig(unixExecs) == 1) && \
+		([catch {exec sleep 1}] == 1)} {
+	    set ::tcltest::testConfig(unixExecs) 0
+	}
+	if {($::tcltest::testConfig(unixExecs) == 1) && \
+		([catch {exec fgrep unixExecs defs}] == 1)} {
+	    set ::tcltest::testConfig(unixExecs) 0
+	}
+	if {($::tcltest::testConfig(unixExecs) == 1) && \
+		([catch {exec ps}] == 1)} {
+	    set ::tcltest::testConfig(unixExecs) 0
+	}
+	if {($::tcltest::testConfig(unixExecs) == 1) && \
+		([catch {exec echo abc > removeMe}] == 0) && \
+		([catch {exec chmod 644 removeMe}] == 1) && \
+		([catch {exec rm removeMe}] == 0)} {
+	    set ::tcltest::testConfig(unixExecs) 0
+	} else {
+	    catch {exec rm -f removeMe}
+	}
+	if {($::tcltest::testConfig(unixExecs) == 1) && \
+		([catch {exec mkdir removeMe}] == 1)} {
+	    set ::tcltest::testConfig(unixExecs) 0
+	} else {
+	    catch {exec rm -r removeMe}
+	}
+    }
+}
+
+::tcltest::initConfig
+
+
+# ::tcltest::setTmpDir --
+#
+#	Set the ::tcltest::tmpDir to the specified value.  If the path
 #	is relative, make it absolute.  If the file exists but is not
 #	a dir, then return an error.  If the dir does not already
 #	exist, create it.  If you cannot create it, then return an error.
 #
 # Arguments:
-#	value	the new value of ::test::tmpDir
+#	value	the new value of ::tcltest::tmpDir
 #
 # Results:
-#	::test::tmpDir is set to <value> and created if it didn't already
-#	exist.  The working dir is changed to ::test::tmpDir.
+#	::tcltest::tmpDir is set to <value> and created if it didn't already
+#	exist.  The working dir is changed to ::tcltest::tmpDir.
 
-proc ::test::setTmpDir {value} {
+proc ::tcltest::setTmpDir {value} {
 
-    set ::test::tmpDir $value
+    set ::tcltest::tmpDir $value
 
-    if {[string compare [file pathtype $::test::tmpDir] absolute] != 0} {
-	set ::test::tmpDir [file join [pwd] $::test::tmpDir]
+    if {[string compare [file pathtype $::tcltest::tmpDir] absolute] != 0} {
+	set ::tcltest::tmpDir [file join [pwd] $::tcltest::tmpDir]
     }
-    if {[file exists $::test::tmpDir]} {
-	if {![file isdir $::test::tmpDir]} {
+    if {[file exists $::tcltest::tmpDir]} {
+	if {![file isdir $::tcltest::tmpDir]} {
 	    puts stderr "Error:  bad argument \"$value\" to -tmpdir:"
-	    puts stderr "            \"$::test::tmpDir\""
+	    puts stderr "            \"$::tcltest::tmpDir\""
 	    puts stderr "        is not a directory"
 	    exit
 	}
     } else {
-	file mkdir $::test::tmpDir
+	file mkdir $::tcltest::tmpDir
     }
 
     # change the working dir to tmpDir and add the existing files in
     # tmpDir to the filesExisted list.
-    cd $::test::tmpDir
+    cd $::tcltest::tmpDir
     foreach file [glob -nocomplain [file join [pwd] *]] {
-	lappend ::test::filesExisted $file
+	lappend ::tcltest::filesExisted $file
     }
 }
 
-# ::test::processCmdLineArgs --
+# ::tcltest::processCmdLineArgs --
 #
 #	Use command line args to set the tmpDir, verbose, skippingTests, and
 #	matchingTests variables.
@@ -126,9 +354,9 @@ proc ::test::setTmpDir {value} {
 #	none
 #
 # Results:
-#	::test::verbose is set to <value>
+#	::tcltest::verbose is set to <value>
 
-proc ::test::processCmdLineArgs {} {
+proc ::tcltest::processCmdLineArgs {} {
     global argv
 
     # The "argv" var doesn't exist in some cases, so use {}
@@ -146,264 +374,60 @@ proc ::test::processCmdLineArgs {} {
     }
     
     # Allow for 1-char abbreviations, where applicable (e.g., -tmpdir == -t).
+    # Note that -verbose cannot be abbreviated to -v in wish because it conflicts
+    # with the wish option -visual.
     foreach arg {-verbose -match -skip -constraints -tmpdir} {
 	set abbrev [string range $arg 0 1]
 	if {([info exists flag($abbrev)]) && \
-		([lsearch $flagArray $arg] < [lsearch $flagArray $abbrev])} {
+		([lsearch -exact $flagArray $arg] < [lsearch -exact $flagArray $abbrev])} {
 	    set flag($arg) $flag($abbrev)
 	}
     }
 
-    # Set ::test::tmpDir to the arg of the -tmpdir flag, if given.
-    # ::test::tmpDir defaults to [pwd].
-    # Save the names of files that already exist in ::test::tmpDir.
+    # Set ::tcltest::tmpDir to the arg of the -tmpdir flag, if given.
+    # ::tcltest::tmpDir defaults to [pwd].
+    # Save the names of files that already exist in ::tcltest::tmpDir.
     if {[info exists flag(-tmpdir)]} {
-	::test::setTmpDir $flag(-tmpdir)
+	::tcltest::setTmpDir $flag(-tmpdir)
     } else {
-	set ::test::tmpDir [pwd]
+	set ::tcltest::tmpDir [pwd]
     }
-    foreach file [glob -nocomplain [file join $::test::tmpDir *]] {
-	lappend ::test::filesExisted [file tail $file]
+    foreach file [glob -nocomplain [file join $::tcltest::tmpDir *]] {
+	lappend ::tcltest::filesExisted [file tail $file]
     }
 
-    # Set ::test::verbose to the arg of the -verbose flag, if given
+    # Set ::tcltest::verbose to the arg of the -verbose flag, if given
     if {[info exists flag(-verbose)]} {
-	set ::test::verbose $flag(-verbose)
+	set ::tcltest::verbose $flag(-verbose)
     }
 
-    # Set ::test::matchingTests to the arg of the -match flag, if given
+    # Set ::tcltest::matchingTests to the arg of the -match flag, if given
     if {[info exists flag(-match)]} {
-	set ::test::matchingTests $flag(-match)
+	set ::tcltest::matchingTests $flag(-match)
     }
 
-    # Set ::test::skippingTests to the arg of the -skip flag, if given
+    # Set ::tcltest::skippingTests to the arg of the -skip flag, if given
     if {[info exists flag(-skip)]} {
-	set ::test::skippingTests $flag(-skip)
+	set ::tcltest::skippingTests $flag(-skip)
     }
 
-    # Use the -constraints flag, if given, so turn on the following
-    # constraints:  notIfCompiled, knownBug, nonPortable
+    # Use the -constraints flag, if given, to turn on the following
+    # constraints:  knownBug and nonPortable
     if {[info exists flag(-constraints)]} {
 	set constrList $flag(-constraints)
     } else {
 	set constrList {}
     }
-    foreach elt [list notIfCompiled knownBug nonPortable] {
-	set ::test::testConfig($elt) [expr {[lsearch $constrList $elt] != -1}]
-    }
-    if {$::test::testConfig(nonPortable) == 0} {
-	puts "(will skip non-portable tests)"
-    }
-}
-test::processCmdLineArgs
-
-
-# Check configuration information that will determine which tests
-# to run.  To do this, create an array ::test::testConfig.  Each element
-# has a 0 or 1 value, and the following elements are defined:
-#	unixOnly -	1 means this is a UNIX platform, so it's OK
-#			to run tests that only work under UNIX.
-#	macOnly -	1 means this is a Mac platform, so it's OK
-#			to run tests that only work on Macs.
-#	pcOnly -	1 means this is a PC platform, so it's OK to
-#			run tests that only work on PCs.
-#	unixOrPc -	1 means this is a UNIX or PC platform.
-#	macOrPc -	1 means this is a Mac or PC platform.
-#	macOrUnix -	1 means this is a Mac or UNIX platform.
-#	notIfCompiled -	1 means this that it is safe to run tests that
-#                       might fail if the bytecode compiler is used. This
-#                       element is set to 1 if the -allComp flag was used.
-#                       Normally, this element is 0 so that tests that
-#                       fail with the bytecode compiler are skipped.
-#			As of 11/2/96 these are the history tests since
-#			they depend on accurate source location information.
-#			You can run these tests by using the -constraint
-#			command line option with "knownBug" in the argument
-#			list.
-#       knownBug -      The test is known to fail and the bug is not yet
-#                       fixed. The test will be run only if the flag
-#                       -allBuggy is used (intended for Tcl dev. group
-#                       internal use only).  You can run these tests by
-#			using the -constraint command line option with
-#			"knownBug" in the argument list.
-#	nonPortable -	1 means this the tests are being running in
-#			the master Tcl/Tk development environment;
-#			Some tests are inherently non-portable because
-#			they depend on things like word length, file system
-#			configuration, window manager, etc.  These tests
-#			are only run in the main Tcl development directory
-#			where the configuration is well known.  You can
-#			run these tests by using the -constraint command
-#			line option with "nonPortable" in the argument list.
-#	tempNotPc -	The inverse of pcOnly.  This flag is used to
-#			temporarily disable a test.
-#	tempNotMac -	The inverse of macOnly.  This flag is used to
-#			temporarily disable a test.
-#	nonBlockFiles - 1 means this platform supports setting files into
-#			nonblocking mode.
-#	asyncPipeClose- 1 means this platform supports async flush and
-#			async close on a pipe.
-#	unixExecs     - 1 means this machine has commands such as 'cat',
-#			'echo' etc available.
-#       hasIsoLocale  - 1 means the tests that need to switch to an iso
-#                       locale can be run.
-#
-
-catch {unset ::test::testConfig}
-
-# The following trace procedure makes it so that we can safely refer to
-# non-existent members of the ::test::testConfig array without causing an
-# error.  Instead, reading a non-existent member will return 0.  This is
-# necessary because tests are allowed to use constraint "X" without ensuring
-# that ::test::testConfig("X") is defined.
-
-trace variable ::test::testConfig r ::test::safeFetch
-
-proc ::test::safeFetch {n1 n2 op} {
-    if {($n2 != {}) && ([info exists ::test::testConfig($n2)] == 0)} {
-	set ::test::testConfig($n2) 0
+    foreach elt [list knownBug nonPortable] {
+	set ::tcltest::testConfig($elt) \
+		[expr {[lsearch -exact $constrList $elt] != -1}]
     }
 }
 
-set ::test::testConfig(unixOnly) 	[expr {$tcl_platform(platform) == "unix"}]
-set ::test::testConfig(macOnly) 	[expr {$tcl_platform(platform) == "macintosh"}]
-set ::test::testConfig(pcOnly)		[expr {$tcl_platform(platform) == "windows"}]
+::tcltest::processCmdLineArgs
 
-set ::test::testConfig(unix)		$::test::testConfig(unixOnly)
-set ::test::testConfig(mac)		$::test::testConfig(macOnly)
-set ::test::testConfig(pc)		$::test::testConfig(pcOnly)
 
-set ::test::testConfig(unixOrPc)	[expr {$::test::testConfig(unix) || $::test::testConfig(pc)}]
-set ::test::testConfig(macOrPc)		[expr {$::test::testConfig(mac) || $::test::testConfig(pc)}]
-set ::test::testConfig(macOrUnix)	[expr {$::test::testConfig(mac) || $::test::testConfig(unix)}]
-
-set ::test::testConfig(nt)		[expr {$tcl_platform(os) == "Windows NT"}]
-set ::test::testConfig(95)		[expr {$tcl_platform(os) == "Windows 95"}]
-set ::test::testConfig(win32s)		[expr {$tcl_platform(os) == "Win32s"}]
-
-# The following config switches are used to mark tests that should work,
-# but have been temporarily disabled on certain platforms because they don't
-# and we haven't gotten around to fixing the underlying problem.
-
-set ::test::testConfig(tempNotPc) 	[expr {!$::test::testConfig(pc)}]
-set ::test::testConfig(tempNotMac) 	[expr {!$::test::testConfig(mac)}]
-set ::test::testConfig(tempNotUnix)	[expr {!$::test::testConfig(unix)}]
-
-# The following config switches are used to mark tests that crash on
-# certain platforms, so that they can be reactivated again when the
-# underlying problem is fixed.
-
-set ::test::testConfig(pcCrash) 	[expr {!$::test::testConfig(pc)}]
-set ::test::testConfig(macCrash) 	[expr {!$::test::testConfig(mac)}]
-set ::test::testConfig(unixCrash)	[expr {!$::test::testConfig(unix)}]
-
-if {[catch {set f [open defs r]}]} {
-    set ::test::testConfig(nonBlockFiles) 1
-} else {
-    if {[catch {fconfigure $f -blocking off}] == 0} {
-	set ::test::testConfig(nonBlockFiles) 1
-    } else {
-	set ::test::testConfig(nonBlockFiles) 0
-    }
-    close $f
-}
-
-# If tests are being run as root, issue a warning message and set a
-# variable to prevent some tests from running at all.
-
-set user {}
-if {$tcl_platform(platform) == "unix"} {
-    catch {set user [exec whoami]}
-    if {$user == ""} {
-        catch {regexp {^[^(]*\(([^)]*)\)} [exec id] dummy user}
-    }
-    if {$user == ""} {set user root}
-    if {$user == "root"} {
-        puts stdout "Warning: you're executing as root.  I'll have to"
-        puts stdout "skip some of the tests, since they'll fail as root."
-	set ::test::testConfig(root) 1
-    }
-}
-
-# Test for SCO Unix - cannot run async flushing tests because a potential
-# problem with select is apparently interfering. (Mark Diekhans).
-
-if {$tcl_platform(platform) == "unix"} {
-    if {[catch {exec uname -X | fgrep {Release = 3.2v}}] == 0} {
-	set ::test::testConfig(asyncPipeClose) 0
-    } else {
-	set ::test::testConfig(asyncPipeClose) 1
-    }
-} else {
-    set ::test::testConfig(asyncPipeClose) 1
-}
-
-# Test to see if we have a broken version of sprintf with respect to the
-# "e" format of floating-point numbers.
-
-set ::test::testConfig(eformat) 1
-if {[string compare "[format %g 5e-5]" "5e-05"] != 0} {
-    set ::test::testConfig(eformat) 0
-    puts stdout "(will skip tests that depend on the \"e\" format of floating-point numbers)"
-}
-
-# Test to see if execed commands such as cat, echo, rm and so forth are
-# present on this machine.
-
-set ::test::testConfig(unixExecs) 1
-if {$tcl_platform(platform) == "macintosh"} {
-    set ::test::testConfig(unixExecs) 0
-}
-if {($::test::testConfig(unixExecs) == 1) && ($tcl_platform(platform) == "windows")} {
-    if {[catch {exec cat defs}] == 1} {
-	set ::test::testConfig(unixExecs) 0
-    }
-    if {($::test::testConfig(unixExecs) == 1) && ([catch {exec echo hello}] == 1)} {
-	set ::test::testConfig(unixExecs) 0
-    }
-    if {($::test::testConfig(unixExecs) == 1) && \
-		([catch {exec sh -c echo hello}] == 1)} {
-	set ::test::testConfig(unixExecs) 0
-    }
-    if {($::test::testConfig(unixExecs) == 1) && ([catch {exec wc defs}] == 1)} {
-	set ::test::testConfig(unixExecs) 0
-    }
-    if {$::test::testConfig(unixExecs) == 1} {
-	exec echo hello > removeMe
-        if {[catch {exec rm removeMe}] == 1} {
-	    set ::test::testConfig(unixExecs) 0
-	}
-    }
-    if {($::test::testConfig(unixExecs) == 1) && ([catch {exec sleep 1}] == 1)} {
-	set ::test::testConfig(unixExecs) 0
-    }
-    if {($::test::testConfig(unixExecs) == 1) && \
-		([catch {exec fgrep unixExecs defs}] == 1)} {
-	set ::test::testConfig(unixExecs) 0
-    }
-    if {($::test::testConfig(unixExecs) == 1) && ([catch {exec ps}] == 1)} {
-	set ::test::testConfig(unixExecs) 0
-    }
-    if {($::test::testConfig(unixExecs) == 1) && \
-		([catch {exec echo abc > removeMe}] == 0) && \
-		([catch {exec chmod 644 removeMe}] == 1) && \
-		([catch {exec rm removeMe}] == 0)} {
-	set ::test::testConfig(unixExecs) 0
-    } else {
-	catch {exec rm -f removeMe}
-    }
-    if {($::test::testConfig(unixExecs) == 1) && \
-		([catch {exec mkdir removeMe}] == 1)} {
-	set ::test::testConfig(unixExecs) 0
-    } else {
-	catch {exec rm -r removeMe}
-    }
-    if {$::test::testConfig(unixExecs) == 0} {
-	puts "(will skip tests that depend on Unix-style executables)"
-    }
-}
-
-# ::test::cleanupTests --
+# ::tcltest::cleanupTests --
 #
 # Remove files and dirs created using the makeFile and makeDirectory
 # commands since the last time this proc was invoked.
@@ -415,42 +439,53 @@ if {($::test::testConfig(unixExecs) == 1) && ($tcl_platform(platform) == "window
 # tests were invoked.
 #
 
-proc ::test::cleanupTests {{all 0}} {
+proc ::tcltest::cleanupTests {{calledFromAllFile 0}} {
     # remove files and directories created by the tests
-    foreach file $::test::filesMade {
+    foreach file $::tcltest::filesMade {
 	if {[file exists $file]} {
 	    catch {file delete -force $file}
 	}
     }
 
     set tail [file tail [info script]]
-    if {$all || $::test::testSingleFile} {
+    if {$calledFromAllFile || $::tcltest::testSingleFile} {
 	# print stats
 	puts -nonewline stdout "$tail:"
 	foreach index [list "Total" "Passed" "Skipped" "Failed"] {
-	    puts -nonewline stdout "\t$index\t$::test::numTests($index)"
+	    puts -nonewline stdout "\t$index\t$::tcltest::numTests($index)"
 	}
 	puts stdout ""
 
 	# print number test files sourced
 	# print names of files that ran tests which failed
-	if {$all} {
-	    puts stdout "Sourced $::test::numTestFiles Test Files."
-	    set ::test::numTestFiles 0
-	    if {[llength $::test::failFiles] > 0} {
-		puts stdout "Files with failing tests: $::test::failFiles"
-		set ::test::failFiles {}
+	if {$calledFromAllFile} {
+	    puts stdout "Sourced $::tcltest::numTestFiles Test Files."
+	    set ::tcltest::numTestFiles 0
+	    if {[llength $::tcltest::failFiles] > 0} {
+		puts stdout "Files with failing tests: $::tcltest::failFiles"
+		set ::tcltest::failFiles {}
 	    }
 	}
 
-	# report the names of files in ::test::tmpDir that were not pre-existing.
+	# if any tests were skipped, print the constraints that kept them
+	# from running.
+	if {$::tcltest::numTests(Skipped) > 0} {
+	    puts stdout "Number of tests skipped for each constraint:"
+	    foreach constraint [lsort [array names ::tcltest::skippedBecause]] {
+		puts stdout \
+			"\t$::tcltest::skippedBecause($constraint)\t$constraint"
+		unset ::tcltest::skippedBecause($constraint)
+	    }
+	}
+
+	# report the names of files in ::tcltest::tmpDir that were not pre-existing.
 	set currentFiles {}
-	foreach file [glob -nocomplain [file join $::test::tmpDir *]] {
+	foreach file [glob -nocomplain [file join $::tcltest::tmpDir *]] {
 	    lappend currentFiles [file tail $file]
 	}
 	set filesNew {}
 	foreach file $currentFiles {
-	    if {[lsearch $::test::filesExisted $file] == -1} {
+	    if {[lsearch -exact $::tcltest::filesExisted $file] == -1} {
 		lappend filesNew $file
 	    }
 	}
@@ -459,21 +494,27 @@ proc ::test::cleanupTests {{all 0}} {
 	}
 
 	# reset filesMade, filesExisted, and numTests
-	set ::test::filesMade {}
-	set ::test::filesExisted $currentFiles
+	set ::tcltest::filesMade {}
+	set ::tcltest::filesExisted $currentFiles
 	foreach index [list "Total" "Passed" "Skipped" "Failed"] {
-	    set ::test::numTests($index) 0
+	    set ::tcltest::numTests($index) 0
+	}
+
+	# exit only if running Tk in non-interactive mode
+	global tk_version tcl_interactive
+	if {[info exists tk_version] && !$tcl_interactive} {
+	    exit
 	}
     } else {
 	# if we're deferring stat-reporting until all files are sourced,
 	# then add current file to failFile list if any tests in this file
 	# failed
-	incr ::test::numTestFiles
-	if {($::test::currentFailure) && \
-		([lsearch $::test::failFiles $tail] == -1)} {
-	    lappend ::test::failFiles $tail
+	incr ::tcltest::numTestFiles
+	if {($::tcltest::currentFailure) && \
+		([lsearch -exact $::tcltest::failFiles $tail] == -1)} {
+	    lappend ::tcltest::failFiles $tail
 	}
-	set ::test::currentFailure false
+	set ::tcltest::currentFailure false
     }
 }
 
@@ -481,10 +522,10 @@ proc ::test::cleanupTests {{all 0}} {
 # test --
 #
 # This procedure runs a test and prints an error message if the test fails.
-# If ::test::verbose has been set, it also prints a message even if the
+# If ::tcltest::verbose has been set, it also prints a message even if the
 # test succeeds.  The test will be skipped if it doesn't match the
-# ::test::matchingTests variable, if it matches an element in
-# ::test::skippingTests, or if one of the elements of "constraints" turns
+# ::tcltest::matchingTests variable, if it matches an element in
+# ::tcltest::skippingTests, or if one of the elements of "constraints" turns
 # out not to be true.
 #
 # Arguments:
@@ -493,7 +534,7 @@ proc ::test::cleanupTests {{all 0}} {
 #			help humans understand what it does.
 # constraints -		A list of one or more keywords, each of
 #			which must be the name of an element in
-#			the array "::test::testConfig".  If any of these
+#			the array "::tcltest::testConfig".  If any of these
 #			elements is zero, the test is skipped.
 #			This argument may be omitted.
 # script -		Script to run to carry out the test.  It must
@@ -501,27 +542,27 @@ proc ::test::cleanupTests {{all 0}} {
 #			correctness.
 # expectedAnswer -	Expected result from script.
 
-proc ::test::test {name description script expectedAnswer args} {
-    incr ::test::numTests(Total)
+proc ::tcltest::test {name description script expectedAnswer args} {
+    incr ::tcltest::numTests(Total)
 
     # skip the test if it's name matches an element of skippingTests
-    foreach pattern $::test::skippingTests {
+    foreach pattern $::tcltest::skippingTests {
 	if {[string match $pattern $name]} {
-	    incr ::test::numTests(Skipped)
+	    incr ::tcltest::numTests(Skipped)
 	    return
 	}
     }
     # skip the test if it's name doesn't match any element of matchingTests
-    if {[llength $::test::matchingTests] > 0} {
+    if {[llength $::tcltest::matchingTests] > 0} {
 	set ok 0
-	foreach pattern $::test::matchingTests {
+	foreach pattern $::tcltest::matchingTests {
 	    if {[string match $pattern $name]} {
 		set ok 1
 		break
 	    }
         }
 	if {!$ok} {
-	    incr ::test::numTests(Skipped)
+	    incr ::tcltest::numTests(Skipped)
 	    return
 	}
     }
@@ -542,26 +583,35 @@ proc ::test::test {name description script expectedAnswer args} {
 	    catch {set doTest [uplevel #0 expr $constraints]}
 	} elseif {[regexp {[^.a-zA-Z0-9 ]+} $constraints] != 0} {
 	    # something like {a || b} should be turned into 
-	    # $::test::testConfig(a) || $::test::testConfig(b).
+	    # $::tcltest::testConfig(a) || $::tcltest::testConfig(b).
 
- 	    regsub -all {[.a-zA-Z0-9]+} $constraints {$::test::testConfig(&)} c
+ 	    regsub -all {[.a-zA-Z0-9]+} $constraints {$::tcltest::testConfig(&)} c
 	    catch {set doTest [eval expr $c]}
 	} else {
 	    # just simple constraints such as {unixOnly fonts}.
 
 	    set doTest 1
 	    foreach constraint $constraints {
-		if {![info exists ::test::testConfig($constraint)]
-			|| !$::test::testConfig($constraint)} {
+		if {![info exists ::tcltest::testConfig($constraint)]
+			|| !$::tcltest::testConfig($constraint)} {
 		    set doTest 0
+		    # store the constraint that kept the test from running
+		    set constraints $constraint
 		    break
 		}
 	    }
 	}
 	if {$doTest == 0} {
-	    incr ::test::numTests(Skipped)
-	    if {[string first s $::test::verbose] != -1} {
+	    incr ::tcltest::numTests(Skipped)
+	    if {[string first s $::tcltest::verbose] != -1} {
 		puts stdout "++++ $name SKIPPED: $constraints"
+	    }
+	    # add the constraint to the list of constraints the kept tests
+	    # from running
+	    if {[info exists ::tcltest::skippedBecause($constraints)]} {
+		incr ::tcltest::skippedBecause($constraints)
+	    } else {
+		set ::tcltest::skippedBecause($constraints) 1
 	    }
 	    return	
 	}
@@ -571,9 +621,9 @@ proc ::test::test {name description script expectedAnswer args} {
     memory tag $name
     set code [catch {uplevel $script} actualAnswer]
     if {$code != 0 || [string compare $actualAnswer $expectedAnswer] != 0} {
-	incr ::test::numTests(Failed)
-	set ::test::currentFailure true
-	if {[string first b $::test::verbose] == -1} {
+	incr ::tcltest::numTests(Failed)
+	set ::tcltest::currentFailure true
+	if {[string first b $::tcltest::verbose] == -1} {
 	    set script ""
 	}
 	puts stdout "\n==== $name $description FAILED"
@@ -602,28 +652,28 @@ proc ::test::test {name description script expectedAnswer args} {
 	puts stdout "---- Result should have been:\n$expectedAnswer"
 	puts stdout "==== $name FAILED\n" 
     } else { 
-	incr ::test::numTests(Passed)
-	if {[string first p $::test::verbose] != -1} {
+	incr ::tcltest::numTests(Passed)
+	if {[string first p $::tcltest::verbose] != -1} {
 	    puts stdout "++++ $name PASSED"
 	}
     }
 }
 
-proc ::test::dotests {file args} {
-    set savedTests $::test::matchingTests
-    set ::test::matchingTests $args
+proc ::tcltest::dotests {file args} {
+    set savedTests $::tcltest::matchingTests
+    set ::tcltest::matchingTests $args
     source $file
-    set ::test::matchingTests $savedTests
+    set ::tcltest::matchingTests $savedTests
 }
 
-proc ::test::openfiles {} {
+proc ::tcltest::openfiles {} {
     if {[catch {testchannel open} result]} {
 	return {}
     }
     return $result
 }
 
-proc ::test::leakfiles {old} {
+proc ::tcltest::leakfiles {old} {
     if {[catch {testchannel open} new]} {
         return {}
     }
@@ -636,26 +686,26 @@ proc ::test::leakfiles {old} {
     return $leak
 }
 
-set ::test::saveState {}
+set ::tcltest::saveState {}
 
-proc ::test::saveState {} {
-    uplevel #0 {set ::test::saveState [list [info procs] [info vars]]}
+proc ::tcltest::saveState {} {
+    uplevel #0 {set ::tcltest::saveState [list [info procs] [info vars]]}
 }
 
-proc ::test::restoreState {} {
+proc ::tcltest::restoreState {} {
     foreach p [info procs] {
-	if {[lsearch [lindex $::test::saveState 0] $p] < 0} {
+	if {[lsearch [lindex $::tcltest::saveState 0] $p] < 0} {
 	    rename $p {}
 	}
     }
     foreach p [uplevel #0 {info vars}] {
-	if {[lsearch [lindex $::test::saveState 1] $p] < 0} {
+	if {[lsearch [lindex $::tcltest::saveState 1] $p] < 0} {
 	    uplevel #0 "unset $p"
 	}
     }
 }
 
-proc ::test::normalizeMsg {msg} {
+proc ::tcltest::normalizeMsg {msg} {
     regsub "\n$" [string tolower $msg] "" msg
     regsub -all "\n\n" $msg "\n" msg
     regsub -all "\n\}" $msg "\}" msg
@@ -670,7 +720,7 @@ proc ::test::normalizeMsg {msg} {
 # cleanupTests was called, add it to the $filesMade list, so it will
 # be removed by the next call to cleanupTests.
 #
-proc ::test::makeFile {contents name} {
+proc ::tcltest::makeFile {contents name} {
     set fd [open $name w]
     fconfigure $fd -translation lf
     if {[string index $contents [expr {[string length $contents] - 1}]] == "\n"} {
@@ -681,12 +731,12 @@ proc ::test::makeFile {contents name} {
     close $fd
 
     set fullName [file join [pwd] $name]
-    if {[lsearch $::test::filesMade $fullName] == -1} {
-	lappend ::test::filesMade $fullName
+    if {[lsearch -exact $::tcltest::filesMade $fullName] == -1} {
+	lappend ::tcltest::filesMade $fullName
     }
 }
 
-proc ::test::removeFile {name} {
+proc ::tcltest::removeFile {name} {
     file delete $name
 }
 
@@ -698,23 +748,23 @@ proc ::test::removeFile {name} {
 # cleanupTests was called, add it to the $directoriesMade list, so it will
 # be removed by the next call to cleanupTests.
 #
-proc ::test::makeDirectory {name} {
+proc ::tcltest::makeDirectory {name} {
     file mkdir $name
 
     set fullName [file join [pwd] $name]
-    if {[lsearch $::test::filesMade $fullName] == -1} {
-	lappend ::test::filesMade $fullName
+    if {[lsearch -exact $::tcltest::filesMade $fullName] == -1} {
+	lappend ::tcltest::filesMade $fullName
     }
 }
 
-proc ::test::removeDirectory {name} {
+proc ::tcltest::removeDirectory {name} {
     file delete -force $name
 }
 
-proc ::test::viewFile {name} {
+proc ::tcltest::viewFile {name} {
     global tcl_platform
     if {($tcl_platform(platform) == "macintosh") || \
-		($::test::testConfig(unixExecs) == 0)} {
+		($::tcltest::testConfig(unixExecs) == 0)} {
 	set f [open $name]
 	set data [read -nonewline $f]
 	close $f
@@ -738,7 +788,7 @@ proc ::test::viewFile {name} {
 # construct improperly formed strings in this manner, because it involves
 # exposing that Tcl uses UTF-8 internally.
 
-proc ::test::bytestring {string} {
+proc ::tcltest::bytestring {string} {
     encoding convertfrom identity $string
 }
 
@@ -751,35 +801,27 @@ if {$tcltest == "{}"} {
     puts stdout "Unable to find tcltest executable, multiple process tests will fail."
 }
 
-set ::test::testConfig(stdio) 0
-if {$tcl_platform(os) != "Win32s"} {
-    # Don't even try running another copy of tcltest under win32s, or you 
-    # get an error dialog about multiple instances.
+set ::tcltest::testConfig(stdio) 0
+catch {
+    catch {file delete -force tmp}
+    set f [open tmp w]
+    puts $f {
+	exit
+    }
+    close $f
+    # The following 2 lines cannot be run on Windows in Tk8.1b2
+    # This bug is logged as a pipe bug (bugID 1495).
 
-    catch {
-	file delete -force tmp
-	set f [open tmp w]
-	puts $f {
-	    exit
-	}
-	close $f
+    if {($tcl_platform(os) != "windows") || (![info exists tk_version])} {
 	set f [open "|[list $tcltest tmp]" r]
 	close $f
-	set ::test::testConfig(stdio) 1
     }
-    catch {file delete -force tmp}
+    set ::tcltest::testConfig(stdio) 1
 }
-
-if {($tcl_platform(platform) == "windows") && ($::test::testConfig(stdio) == 0)} {
-    puts stdout "(will skip tests that redirect stdio of exec'd 32-bit applications)"
-}
+catch {file delete -force tmp}
 
 catch {socket} msg
-set ::test::testConfig(socket) [expr {$msg != "sockets are not available on this system"}]
-
-if {$::test::testConfig(socket) == 0} {
-    puts stdout "(will skip tests that use sockets)"
-}
+set ::tcltest::testConfig(socket) [expr {$msg != "sockets are not available on this system"}]
 
 #
 # Internationalization / ISO support procs     -- dl
@@ -789,57 +831,159 @@ if {[info commands testlocale]==""} {
     # (it could be that we are a sub interp and we could just load
     # the Tcltest package but that would interfere with tests
     # that tests packages/loading in slaves...)
-    set ::test::testConfig(hasIsoLocale) 0
+    set ::tcltest::testConfig(hasIsoLocale) 0
 } else {
-    proc ::test::set_iso8859_1_locale {} {
-	set ::test::previousLocale [testlocale ctype]
-	testlocale ctype $::test::isoLocale
+    proc ::tcltest::set_iso8859_1_locale {} {
+	set ::tcltest::previousLocale [testlocale ctype]
+	testlocale ctype $::tcltest::isoLocale
     }
 
-    proc ::test::restore_locale {} {
-	testlocale ctype $::test::previousLocale
+    proc ::tcltest::restore_locale {} {
+	testlocale ctype $::tcltest::previousLocale
     }
 
-    if {![info exists ::test::isoLocale]} {
-	set ::test::isoLocale fr
+    if {![info exists ::tcltest::isoLocale]} {
+	set ::tcltest::isoLocale fr
         switch $tcl_platform(platform) {
 	    "unix" {
 		# Try some 'known' values for some platforms:
 		switch -exact -- $tcl_platform(os) {
 		    "FreeBSD" {
-			set ::test::isoLocale fr_FR.ISO_8859-1
+			set ::tcltest::isoLocale fr_FR.ISO_8859-1
 		    }
 		    HP-UX {
-			set ::test::isoLocale fr_FR.iso88591
+			set ::tcltest::isoLocale fr_FR.iso88591
 		    }
 		    Linux -
 		    IRIX {
-			set ::test::isoLocale fr
+			set ::tcltest::isoLocale fr
 		    }
 		    default {
 			# Works on SunOS 4 and Solaris, and maybe others...
 			# define it to something else on your system
 			#if you want to test those.
-			set ::test::isoLocale iso_8859_1
+			set ::tcltest::isoLocale iso_8859_1
 		    }
 		}
 	    }
 	    "windows" {
-		set ::test::isoLocale French
+		set ::tcltest::isoLocale French
 	    }
 	}
     }
 
-    set ::test::testConfig(hasIsoLocale) \
-	    [string length [::test::set_iso8859_1_locale]]
-    ::test::restore_locale
+    set ::tcltest::testConfig(hasIsoLocale) \
+	    [string length [::tcltest::set_iso8859_1_locale]]
+    ::tcltest::restore_locale
+} 
 
-    if {$::test::testConfig(hasIsoLocale) == 0} {
-	puts "(will skip tests that need to set an iso8859-1 locale)"
+#
+# procedures that are Tk specific
+#
+if {[info exists tk_version]} {
+    # If the main window isn't already mapped (e.g. because the tests are
+    # being run automatically) , specify a precise size for it so that the
+    # user won't have to position it manually.
+
+    if {![winfo ismapped .]} {
+	wm geometry . +0+0
+	update
     }
 
-} 
+    # The following code can be used to perform tests involving a second
+    # process running in the background.
+    
+    # Locate tktest executable
+
+    set ::tcltest::tktest [info nameofexecutable]
+    if {$::tcltest::tktest == "{}"} {
+	set ::tcltest::tktest {}
+	puts stdout "Unable to find tktest executable, skipping multiple process tests."
+    }
+
+    # Create background process
+    
+    proc ::tcltest::setupbg args {
+	if {$::tcltest::tktest == ""} {
+	    error "you're not running tktest so setupbg should not have been called"
+	}
+	if {[info exists ::tcltest::fd] && ($::tcltest::fd != "")} {
+	    cleanupbg
+	}
+	set ::tcltest::fd [open "|[list $::tcltest::tktest -geometry +0+0 -name tktest] $args" r+]
+	puts $::tcltest::fd "puts foo; flush stdout"
+	flush $::tcltest::fd
+	if {[gets $::tcltest::fd data] < 0} {
+	    error "unexpected EOF from \"$::tcltest::tktest\""
+	}
+	if {[string compare $data foo]} {
+	    error "unexpected output from background process \"$data\""
+	}
+	fileevent $::tcltest::fd readable bgReady
+    }
+    
+    # Send a command to the background process, catching errors and
+    # flushing I/O channels
+    proc ::tcltest::dobg {command} {
+	puts $::tcltest::fd "catch [list $command] msg; update; puts \$msg; puts **DONE**; flush stdout"
+	flush $::tcltest::fd
+	set ::tcltest::bgDone 0
+	set ::tcltest::bgData {}
+	tkwait variable ::tcltest::bgDone
+	set ::tcltest::bgData
+    }
+
+    # Data arrived from background process.  Check for special marker
+    # indicating end of data for this command, and make data available
+    # to dobg procedure.
+    proc ::tcltest::bgReady {} {
+	set x [gets $::tcltest::fd]
+	if {[eof $::tcltest::fd]} {
+	    fileevent $::tcltest::fd readable {}
+	    set ::tcltest::bgDone 1
+	} elseif {$x == "**DONE**"} {
+	    set ::tcltest::bgDone 1
+	} else {
+	    append ::tcltest::bgData $x
+	}
+    }
+
+    # Exit the background process, and close the pipes
+    proc ::tcltest::cleanupbg {} {
+	catch {
+	    puts $::tcltest::fd "exit"
+	    close $::tcltest::fd
+	}
+	set ::tcltest::fd ""
+    }
+
+    # Clean up focus after using generate event, which
+    # can leave the window manager with the wrong impression
+    # about who thinks they have the focus. (BW)
+    
+    proc ::tcltest::fixfocus {} {
+	catch {destroy .focus}
+	toplevel .focus
+	wm geometry .focus +0+0
+	entry .focus.e
+	.focus.e insert 0 "fixfocus"
+	pack .focus.e
+	update
+	focus -force .focus.e
+	destroy .focus
+    }
+}
 
 # Need to catch the import because it fails if defs.tcl is sourced
 # more than once.
-catch {namespace import ::test::*}
+catch {namespace import ::tcltest::*}
+
+
+
+
+
+
+
+
+
+

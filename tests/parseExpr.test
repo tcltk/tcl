@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: parseExpr.test,v 1.1.2.2 1999/03/11 18:49:59 hershey Exp $
+# RCS: @(#) $Id: parseExpr.test,v 1.1.2.3 1999/03/23 20:06:45 hershey Exp $
 
 # Note that the Tcl expression parser (tclParseExpr.c) does not check
 # the semantic validity of the expressions it parses. It does not check,
@@ -21,7 +21,7 @@ if {[info commands testexprparser] == {}} {
     return 
 }
 
-if {[lsearch [namespace children] ::test] == -1} {
+if {[lsearch [namespace children] ::tcltest] == -1} {
     source [file join [pwd] [file dirname [info script]] defs.tcl]
 }
 
@@ -620,6 +620,16 @@ test parse-16.1 {LogSyntaxError procedure, error in expr longer than 60 chars} {
 } {1 {syntax error in expression "(+0123456)*(+0123456)*(+0123456)*(+0123456)*(+0123456)*(+012"}}
 
 # cleanup
-::test::cleanupTests
+::tcltest::cleanupTests
 return
+
+
+
+
+
+
+
+
+
+
 
