@@ -1,3 +1,10 @@
+2004-11-24  David Gravereaux <davygrvy@pobox.com>
+
+	* generic/tclPort.h: Relative include of tclWinPort.h returned
+	as it was requiring me set -I$(tcl_root)/win for my extensions
+	that need to include tclInt.h and doesn't appear to serve any
+	purpose for windows builds.
+
 2004-11-24  Kevin B. Kenny  <kennykb@acm.org>
 
 	* unix/tcl.m4 (SC_ENABLE_THREADS): Corrected bad check for
