@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNotify.c,v 1.5 1999/07/02 06:04:26 welch Exp $
+ * RCS: @(#) $Id: tclNotify.c,v 1.6 1999/07/02 21:50:04 redman Exp $
  */
 
 #include "tclInt.h"
@@ -186,8 +186,10 @@ void
 Tcl_SetNotifier(notifierProcPtr)
     Tcl_NotifierProcs *notifierProcPtr;
 {
+#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
     tclStubs.tcl_CreateFileHandler = notifierProcPtr->createFileHandlerProc;
     tclStubs.tcl_DeleteFileHandler = notifierProcPtr->deleteFileHandlerProc;
+#endif
     tclStubs.tcl_SetTimer = notifierProcPtr->setTimerProc;
     tclStubs.tcl_WaitForEvent = notifierProcPtr->waitForEventProc;
 }
