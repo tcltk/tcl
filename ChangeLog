@@ -1,3 +1,11 @@
+2002-02-20  David Gravereaux <davygrvy@pobox.com>
+
+	* win/makefile.vc: Added the pentium errata switches to $(cflags)
+	which should have already been there according to the MSDN docs
+	regarding the infamous FDIV bug from `97.  Added profiling to
+	$(lflags) and also removed the explict -entry option as the default
+	works without special work.
+
 2002-02-20  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* generic/tcl.h: Added code to guess the correct settings for
