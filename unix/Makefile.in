@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.150 2004/11/12 18:07:49 rmax Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.151 2004/11/12 18:13:32 rmax Exp $
 
 VERSION 		= @TCL_VERSION@
 MAJOR_VERSION		= @TCL_MAJOR_VERSION@
@@ -1297,7 +1297,7 @@ ZIPNAME	 = tcl${MAJOR_VERSION}${MINOR_VERSION}${PATCH_LEVEL}-src.zip
 DISTDIR	 = $(DISTROOT)/$(DISTNAME)
 $(UNIX_DIR)/configure: $(UNIX_DIR)/configure.in $(UNIX_DIR)/tcl.m4
 	cd $(UNIX_DIR); autoconf
-$(UNIX_DIR)/tclConfig.h.in: $(UNIX_DIR)/configure.in
+$(UNIX_DIR)/tclConfig.h.in: $(UNIX_DIR)/configure.in $(UNIX_DIR)/tcl.m4
 	cd $(UNIX_DIR); autoheader
 
 dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in mklinks
