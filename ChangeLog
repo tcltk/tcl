@@ -1,5 +1,17 @@
 2004-10-25  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclExecute.c (IllegalExprOperandType,TclExecuteByteCode):
+	Removed several DECACHE_INFO/CACHE_INFO pairs that are no longer
+	needed for protection because routines like Tcl_SetErrorCode() and
+	Tcl_AddErrorInfo() can no longer re-enter bytecode execution.
+
+	* generic/tclResult.c (TclProcessReturn): Bug fix.  Be sure that
+	a missing -errorinfo option when code == TCL_ERROR causes the
+	errorInfo field to get reset.
+
+	* tests/thread.test (thread-4.4): Test depended on a ::errorInfo
+	value initialized to "".  Added code to test to setup that requirement.
+
 	* library/auto.tcl	Purged Tcl's script library of all
 	* library/clock.tcl	remaining references to global vars
 	* library/init.tcl	::errorInfo and ::errorCode.
