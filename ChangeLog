@@ -1,3 +1,9 @@
+2004-03-31  Don Porter  <dgp@users.sourceforge.net>
+
+	* library/msgcat/msgcat.tcl:	Added checks to prevent [mclocale]
+	* tests/msgcat.test:	from registering filesystem paths to possibly
+	malicious code to be evaluated by a later [mcload].
+
 2004-08-10  Zoran Vasiljevic <vasiljevic@users.sf.net>
 
         * unix/tclUnixThrd.c (TclpThreadCreate): changed handling of
