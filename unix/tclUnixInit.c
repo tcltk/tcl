@@ -7,9 +7,12 @@
  * Copyright (c) 1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclUnixInit.c,v 1.24 2001/08/27 02:14:08 dgp Exp $
+ * RCS: @(#) $Id: tclUnixInit.c,v 1.24.8.1 2001/10/15 09:13:49 wolfsuit Exp $
  */
 
+#if defined(HAVE_CFBUNDLE)
+#include <CoreFoundation/CoreFoundation.h>
+#endif
 #include "tclInt.h"
 #include "tclPort.h"
 #include <locale.h>
@@ -565,8 +568,54 @@ TclpSetVariables(interp)
     char *user;
     Tcl_DString ds;
 
-    Tcl_SetVar(interp, "tclDefaultLibrary", defaultLibraryDir, TCL_GLOBAL_ONLY);
+    /*
+     * This is a hack for now, we really need to make this a function, 
+     * and export it from Tcl, but I am not sure how to get it into
+     * the stubs table properly.
+     */
+     
+#ifdef HAVE_CFBUNDLE
+    int foundInFramework = 0;
+    
+    if (strcmp(defaultLibraryDir, "@TCL_IN_FRAMEWORK@") == 0) {
+        CFBundleRef bundleRef;
+        CFURLRef libURL;
+        char tclLibPath[1024];
+            
+        bundleRef = CFBundleGetBundleWithIdentifier(CFSTR("com.tcltk.tcllibrary"));
+            
+        if (bundleRef != NULL) {
+            libURL = CFBundleCopyResourceURL(bundleRef, 
+                    CFSTR("Scripts"), 
+                    NULL, 
+                    NULL);
+            if (libURL != NULL) {
+                /* 
+                * FIXME: This is a quick fix, it is probably not right 
+                * for internationalization. 
+                */
+                
+                if (CFURLGetFileSystemRepresentation (libURL, true,
+                        tclLibPath, 1024)) {
+                    Tcl_SetVar(interp, "tclDefaultLibrary", tclLibPath, 
+                            TCL_GLOBAL_ONLY);
+                    Tcl_SetVar(interp, "tcl_pkgPath", tclLibPath, 
+                            TCL_GLOBAL_ONLY);
+                    foundInFramework = 1;
+                }
+                CFRelease(libURL);
+            }
+        }
+    }    
+    if (!foundInFramework) {
+#endif /* HAVE_CFBUNDLE */    
+
+    Tcl_SetVar(interp, "tclDefaultLibrary", defaultLibraryDir, 
+            TCL_GLOBAL_ONLY);
     Tcl_SetVar(interp, "tcl_pkgPath", pkgPath, TCL_GLOBAL_ONLY);
+#if HAVE_CFBUNDLE
+    }
+#endif /* HAVE_CFBUNDLE */
     Tcl_SetVar2(interp, "tcl_platform", "platform", "unix", TCL_GLOBAL_ONLY);
     unameOK = 0;
 #ifndef NO_UNAME

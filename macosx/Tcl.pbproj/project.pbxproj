@@ -1,0 +1,1671 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 34;
+	objects = {
+		00530A0D0173C8270ACA28DC = {
+			buildActionMask = 2147483647;
+			files = (
+			);
+			generatedFileNames = (
+			);
+			isa = PBXShellScriptBuildPhase;
+			name = "Shell Script";
+			neededFileNames = (
+			);
+			shellPath = /bin/sh;
+			shellScript = "cp \"${OBJROOT}/${PRODUCT_NAME}\" \"${SYMROOT}/${PRODUCT_NAME}.${WRAPPER_EXTENSION}/Versions/${FRAMEWORK_VERSION}\"";
+		};
+		00530A0E0173CC960ACA28DC = {
+			buildActionMask = 2147483647;
+			files = (
+			);
+			generatedFileNames = (
+			);
+			isa = PBXShellScriptBuildPhase;
+			name = "Shell Script";
+			neededFileNames = (
+			);
+			shellPath = /bin/sh;
+			shellScript = "cp \"${OBJROOT}/tclConfig.sh\" \"${SYMROOT}/${PRODUCT_NAME}.${WRAPPER_EXTENSION}/Versions/${FRAMEWORK_VERSION}/Headers\"";
+		};
+		00E2F845016E82EB0ACA28DC = {
+			buildStyles = (
+				00E2F847016E82EB0ACA28DC,
+				00E2F848016E82EB0ACA28DC,
+			);
+			isa = PBXProject;
+			mainGroup = 00E2F846016E82EB0ACA28DC;
+			productRefGroup = 00E2F84A016E8A830ACA28DC;
+			projectDirPath = "";
+			targets = (
+				F50DC359017027D801DC9062,
+				00E2F84B016E8A830ACA28DC,
+				00E2F84C016E8B780ACA28DC,
+				00E2F84E016E92110ACA28DC,
+			);
+		};
+		00E2F846016E82EB0ACA28DC = {
+			children = (
+				F5F24FEE016ED0DF01DC9062,
+				00E2F855016E922C0ACA28DC,
+				00E2F857016E92B00ACA28DC,
+				00E2F85A016E92B00ACA28DC,
+				00E2F84A016E8A830ACA28DC,
+			);
+			isa = PBXGroup;
+			refType = 4;
+		};
+		00E2F847016E82EB0ACA28DC = {
+			buildRules = (
+			);
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				STRIP_BY_HAND = NO;
+			};
+			isa = PBXBuildStyle;
+			name = Development;
+		};
+		00E2F848016E82EB0ACA28DC = {
+			buildRules = (
+			);
+			buildSettings = {
+				CFLAGS = "-O3";
+				COPY_PHASE_STRIP = NO;
+				STRIP_BY_HAND = YES;
+			};
+			isa = PBXBuildStyle;
+			name = Deployment;
+		};
+		00E2F84A016E8A830ACA28DC = {
+			children = (
+				00E2F84D016E92110ACA28DC,
+			);
+			isa = PBXGroup;
+			name = Products;
+			refType = 4;
+		};
+		00E2F84B016E8A830ACA28DC = {
+			buildArgumentsString = "$SRCROOT/../unix/configure --enable-threads --enable-shared --enable-debugger --enable-framework=yes --prefix=$DSTROOT";
+			buildPhases = (
+			);
+			buildSettings = {
+				DSTROOT = /usr/local/lib;
+				OTHER_CFLAGS = "";
+				OTHER_LDFLAGS = "";
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = Configure;
+				SECTORDER_FLAGS = "";
+				WARNING_CFLAGS = "-Wmost -Wno-four-char-constants -Wno-unknown-pragmas";
+			};
+			buildToolPath = /bin/sh;
+			buildWorkingDirectory = $OBJROOT;
+			dependencies = (
+			);
+			isa = PBXLegacyTarget;
+			name = Configure;
+			productName = Configure;
+			settingsToExpand = 6;
+			settingsToPassInEnvironment = 287;
+			settingsToPassOnCommandLine = 280;
+			shouldUseHeadermap = 0;
+		};
+		00E2F84C016E8B780ACA28DC = {
+			buildArgumentsString = "Tcl libtclstub${FRAMEWORK_VERSION}.a CFLAGS=\"${CFLAGS}\" SHLIB_LD=\"${SHLIB_LD}\" TCL_LIBRARY=\"@TCL_IN_FRAMEWORK@\"";
+			buildPhases = (
+			);
+			buildSettings = {
+				CFLAGS = "-g";
+				DSTROOT = /Library;
+				FRAMEWORK_VERSION = 8.4;
+				OTHER_CFLAGS = "";
+				OTHER_LDFLAGS = "";
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = Tcl;
+				SECTORDER_FLAGS = "";
+				SHLIB_LD = "cc -framework CoreFoundation -dynamiclib -seg1addr 0xb0000 -prebind -install_name /Library/Frameworks/Tcl.framework/Versions/${FRAMEWORK_VERSION}/Tcl";
+				WARNING_CFLAGS = "-Wmost -Wno-four-char-constants -Wno-unknown-pragmas";
+			};
+			buildToolPath = /usr/bin/gnumake;
+			buildWorkingDirectory = $OBJROOT;
+			dependencies = (
+			);
+			isa = PBXLegacyTarget;
+			name = Make;
+			productName = Make;
+			settingsToExpand = 6;
+			settingsToPassInEnvironment = 287;
+			settingsToPassOnCommandLine = 280;
+			shouldUseHeadermap = 0;
+		};
+		00E2F84D016E92110ACA28DC = {
+			isa = PBXFrameworkReference;
+			path = Tcl.framework;
+			refType = 3;
+		};
+		00E2F84E016E92110ACA28DC = {
+			buildPhases = (
+				F50DC36A01703B7301DC9062,
+				F50DC367017033D701DC9062,
+				F50DC3680170344801DC9062,
+				00E2F84F016E92110ACA28DC,
+				00530A0D0173C8270ACA28DC,
+				00530A0E0173CC960ACA28DC,
+				F5F2500E016ED0E001DC9062,
+				F56570CE0172204201DC9062,
+				F59AE5E3017AC67A01DC9062,
+			);
+			buildSettings = {
+				DYLIB_COMPATIBILITY_VERSION = 8.4;
+				DYLIB_CURRENT_VERSION = 8.4;
+				FRAMEWORK_VERSION = 8.4;
+				INSTALL_PATH = /Library/Frameworks;
+				LIBRARY_SEARCH_PATHS = "$(OBJROOT)/Tcl.build";
+				OPTIMIZATION_CFLAGS = "-O0";
+				OTHER_CFLAGS = "";
+				OTHER_LDFLAGS = "";
+				OTHER_LIBTOOL_FLAGS = "";
+				OTHER_REZFLAGS = "";
+				PRINCIPAL_CLASS = "";
+				PRODUCT_NAME = Tcl;
+				SECTORDER_FLAGS = "";
+				WARNING_CFLAGS = "-Wmost -Wno-four-char-constants -Wno-unknown-pragmas";
+				WRAPPER_EXTENSION = framework;
+			};
+			dependencies = (
+			);
+			isa = PBXFrameworkTarget;
+			name = TclLibrary;
+			productInstallPath = /Library/Frameworks;
+			productName = TclLibrary;
+			productReference = 00E2F84D016E92110ACA28DC;
+			productSettingsXML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<!DOCTYPE plist SYSTEM \"file://localhost/System/Library/DTDs/PropertyList.dtd\">
+<plist version=\"0.9\">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>English</string>
+	<key>CFBundleExecutable</key>
+	<string>Tcl</string>
+	<key>CFBundleGetInfoString</key>
+	<string>Tcl Library</string>
+	<key>CFBundleIconFile</key>
+	<string></string>
+	<key>CFBundleIdentifier</key>
+	<string>com.tcltk.tcllibrary</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>Tcl Library 8.4a4</string>
+	<key>CFBundlePackageType</key>
+	<string>FMWK</string>
+	<key>CFBundleShortVersionString</key>
+	<string>libtcl8.4a4</string>
+	<key>CFBundleSignature</key>
+	<string>Tcl </string>
+	<key>CFBundleVersion</key>
+	<string>8.4a4</string>
+</dict>
+</plist>
+";
+			shouldUseHeadermap = 0;
+		};
+		00E2F84F016E92110ACA28DC = {
+			buildActionMask = 2147483647;
+			files = (
+				F5F24F79016ECAA401DC9062,
+				F5F24F7A016ECAA401DC9062,
+				F5F24F7B016ECAA401DC9062,
+				F5F24F7C016ECAA401DC9062,
+				F5F24F7D016ECAA401DC9062,
+				F5F24F7E016ECAA401DC9062,
+				F5F24F7F016ECAA401DC9062,
+				F5F24F80016ECAA401DC9062,
+				F5F24F81016ECAA401DC9062,
+				F5F24F82016ECAA401DC9062,
+				F5F24F83016ECAA401DC9062,
+				F5F24F84016ECAA401DC9062,
+				F5F24F85016ECAA401DC9062,
+				F5F24F86016ECAA401DC9062,
+			);
+			isa = PBXHeadersBuildPhase;
+			name = Headers;
+		};
+		00E2F854016E922C0ACA28DC = {
+			children = (
+				F5F24F87016ECAFC01DC9062,
+				F5F24F88016ECAFC01DC9062,
+				F5F24F89016ECAFC01DC9062,
+				F5F24F8A016ECAFC01DC9062,
+				F5F24F8B016ECAFC01DC9062,
+				F5F24F8C016ECAFC01DC9062,
+				F5F24F8D016ECAFC01DC9062,
+				F5F24F8E016ECAFC01DC9062,
+				F5F24F8F016ECAFC01DC9062,
+				F5F24F90016ECAFC01DC9062,
+				F5F24F91016ECAFC01DC9062,
+				F5F24F92016ECAFC01DC9062,
+				F5F24F93016ECAFC01DC9062,
+				F5F24F94016ECAFC01DC9062,
+				F5F24F95016ECAFC01DC9062,
+				F5F24F96016ECAFC01DC9062,
+				F5F24F97016ECAFC01DC9062,
+				F5F24F98016ECAFC01DC9062,
+				F5F24F99016ECAFC01DC9062,
+				F5F24F9A016ECAFC01DC9062,
+				F5F24F9B016ECAFC01DC9062,
+				F5F24F9C016ECAFC01DC9062,
+				F5F24F9D016ECAFC01DC9062,
+				F5F24F9E016ECAFC01DC9062,
+				F5F24F9F016ECAFC01DC9062,
+				F5F24FA0016ECAFC01DC9062,
+				F5F24FA1016ECAFC01DC9062,
+				F5F24FA2016ECAFC01DC9062,
+				F5F24FA3016ECAFC01DC9062,
+				F5F24FA4016ECAFC01DC9062,
+				F5F24FA5016ECAFC01DC9062,
+				F5F24FA6016ECAFC01DC9062,
+				F5F24FA7016ECAFC01DC9062,
+				F5F24FA8016ECAFC01DC9062,
+				F5F24FA9016ECAFC01DC9062,
+				F5F24FAA016ECAFC01DC9062,
+				F5F24FAB016ECAFC01DC9062,
+				F5F24FAC016ECAFC01DC9062,
+				F5F24FAD016ECAFC01DC9062,
+				F5F24FAE016ECAFC01DC9062,
+				F5F24FAF016ECAFC01DC9062,
+				F5F24FB0016ECAFC01DC9062,
+				F5F24FB1016ECAFC01DC9062,
+				F5F24FB2016ECAFC01DC9062,
+				F5F24FB3016ECAFC01DC9062,
+				F5F24FB4016ECAFC01DC9062,
+				F5F24FB5016ECAFC01DC9062,
+				F5F24FB6016ECAFC01DC9062,
+				F5F24FB7016ECAFC01DC9062,
+				F5F24FB8016ECAFC01DC9062,
+				F5F24FB9016ECAFC01DC9062,
+				F5F24FBA016ECAFC01DC9062,
+				F5F24FBB016ECAFC01DC9062,
+				F5F24FD3016ECB4901DC9062,
+				F5F24FBC016ECAFC01DC9062,
+				F5F24FBD016ECAFC01DC9062,
+				F5F24FBE016ECAFC01DC9062,
+				F5F24FBF016ECAFC01DC9062,
+				F5F24FC0016ECAFC01DC9062,
+				F5F24FC1016ECAFC01DC9062,
+				F5F24FC2016ECAFC01DC9062,
+				F5F24FC3016ECAFC01DC9062,
+				F5F24FC4016ECAFC01DC9062,
+				F5F24FC5016ECAFC01DC9062,
+				F5F24FC6016ECAFC01DC9062,
+				F5F24FC7016ECAFC01DC9062,
+				F5F24FC8016ECAFC01DC9062,
+				F5F24FC9016ECAFC01DC9062,
+				F5F24FCA016ECAFC01DC9062,
+				F5F24FCB016ECAFC01DC9062,
+				F5F24FCC016ECAFC01DC9062,
+				F5F24FCD016ECAFC01DC9062,
+				F5F24FCE016ECAFC01DC9062,
+				F5F24FCF016ECAFC01DC9062,
+				F5F24FD0016ECAFC01DC9062,
+			);
+			isa = PBXGroup;
+			name = Sources;
+			path = "";
+			refType = 4;
+		};
+		00E2F855016E922C0ACA28DC = {
+			children = (
+				00E2F856016E92B00ACA28DC,
+				00E2F854016E922C0ACA28DC,
+			);
+			isa = PBXGroup;
+			name = generic;
+			refType = 4;
+		};
+		00E2F856016E92B00ACA28DC = {
+			children = (
+				F5F24F6B016ECAA401DC9062,
+				F5F24F6C016ECAA401DC9062,
+				F5F24F6D016ECAA401DC9062,
+				F5F24F6E016ECAA401DC9062,
+				F5F24F6F016ECAA401DC9062,
+				F5F24F70016ECAA401DC9062,
+				F5F24F71016ECAA401DC9062,
+				F5F24F72016ECAA401DC9062,
+				F5F24F73016ECAA401DC9062,
+				F5F24F74016ECAA401DC9062,
+				F5F24F75016ECAA401DC9062,
+				F5F24F76016ECAA401DC9062,
+				F5F24F77016ECAA401DC9062,
+				F5F24F78016ECAA401DC9062,
+				F5F24FD1016ECB1E01DC9062,
+				F5F24FD2016ECB1E01DC9062,
+			);
+			isa = PBXGroup;
+			name = Headers;
+			refType = 4;
+		};
+		00E2F857016E92B00ACA28DC = {
+			children = (
+				00E2F858016E92B00ACA28DC,
+				00E2F859016E92B00ACA28DC,
+			);
+			isa = PBXGroup;
+			name = macosx;
+			refType = 4;
+		};
+		00E2F858016E92B00ACA28DC = {
+			children = (
+			);
+			isa = PBXGroup;
+			name = Headers;
+			refType = 4;
+		};
+		00E2F859016E92B00ACA28DC = {
+			children = (
+			);
+			isa = PBXGroup;
+			name = Sources;
+			refType = 4;
+		};
+		00E2F85A016E92B00ACA28DC = {
+			children = (
+				00E2F85B016E92B00ACA28DC,
+				00E2F85C016E92B00ACA28DC,
+			);
+			isa = PBXGroup;
+			name = unix;
+			refType = 4;
+		};
+		00E2F85B016E92B00ACA28DC = {
+			children = (
+				F5F24FD6016ECC0F01DC9062,
+				F5F24FD7016ECC0F01DC9062,
+			);
+			isa = PBXGroup;
+			name = Headers;
+			refType = 4;
+		};
+		00E2F85C016E92B00ACA28DC = {
+			children = (
+				F5F24FD8016ECC0F01DC9062,
+				F5F24FD9016ECC0F01DC9062,
+				F5F24FDA016ECC0F01DC9062,
+				F5F24FDB016ECC0F01DC9062,
+				F5F24FDC016ECC0F01DC9062,
+				F5F24FDD016ECC0F01DC9062,
+				F5F24FDE016ECC0F01DC9062,
+				F5F24FDF016ECC0F01DC9062,
+				F5F24FE0016ECC0F01DC9062,
+				F5F24FE1016ECC0F01DC9062,
+				F5F24FE2016ECC0F01DC9062,
+				F5F24FE3016ECC0F01DC9062,
+				F5F24FE4016ECC0F01DC9062,
+				F5F24FE5016ECC0F01DC9062,
+				F5F24FE6016ECC0F01DC9062,
+				F5F24FE7016ECC0F01DC9062,
+			);
+			isa = PBXGroup;
+			name = Sources;
+			refType = 4;
+		};
+//000
+//001
+//002
+//003
+//004
+//F50
+//F51
+//F52
+//F53
+//F54
+		F50DC359017027D801DC9062 = {
+			buildPhases = (
+			);
+			buildSettings = {
+				OTHER_CFLAGS = "";
+				OTHER_LDFLAGS = "";
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = "Tcl From Scratch";
+				SECTORDER_FLAGS = "";
+				WARNING_CFLAGS = "-Wmost -Wno-four-char-constants -Wno-unknown-pragmas";
+			};
+			dependencies = (
+				F50DC35A017027D801DC9062,
+				F50DC35B017027D801DC9062,
+				F50DC35C017027D801DC9062,
+			);
+			isa = PBXAggregateTarget;
+			name = "Tcl From Scratch";
+			productName = "Tcl From Scratch";
+			shouldUseHeadermap = 0;
+		};
+		F50DC35A017027D801DC9062 = {
+			isa = PBXTargetDependency;
+			target = 00E2F84B016E8A830ACA28DC;
+		};
+		F50DC35B017027D801DC9062 = {
+			isa = PBXTargetDependency;
+			target = 00E2F84C016E8B780ACA28DC;
+		};
+		F50DC35C017027D801DC9062 = {
+			isa = PBXTargetDependency;
+			target = 00E2F84E016E92110ACA28DC;
+		};
+		F50DC367017033D701DC9062 = {
+			buildActionMask = 2147483647;
+			files = (
+			);
+			isa = PBXFrameworksBuildPhase;
+			name = "Frameworks & Libraries";
+		};
+		F50DC3680170344801DC9062 = {
+			buildActionMask = 2147483647;
+			files = (
+			);
+			isa = PBXResourcesBuildPhase;
+			name = "Bundle Resources";
+		};
+		F50DC36A01703B7301DC9062 = {
+			buildActionMask = 2147483647;
+			files = (
+			);
+			isa = PBXSourcesBuildPhase;
+			name = Sources;
+		};
+		F56570CE0172204201DC9062 = {
+			buildActionMask = 2147483647;
+			files = (
+			);
+			generatedFileNames = (
+			);
+			isa = PBXShellScriptBuildPhase;
+			name = "Shell Script";
+			neededFileNames = (
+			);
+			shellPath = /bin/sh;
+			shellScript = "rm -rf \"${SYMROOT}/${PRODUCT_NAME}.${WRAPPER_EXTENSION}/Versions/A\"";
+		};
+		F59AE5E3017AC67A01DC9062 = {
+			buildActionMask = 2147483647;
+			files = (
+			);
+			generatedFileNames = (
+			);
+			isa = PBXShellScriptBuildPhase;
+			name = "Shell Script";
+			neededFileNames = (
+			);
+			shellPath = /bin/sh;
+			shellScript = "if test \"${STRIP_BY_HAND}\" = \"YES\"; then \n    strip -x \"${SYMROOT}/${PRODUCT_NAME}.${WRAPPER_EXTENSION}/Versions/${FRAMEWORK_VERSION}/${PRODUCT_NAME}\"\nfi";
+		};
+		F5F24F6B016ECAA401DC9062 = {
+			isa = PBXFileReference;
+			name = regcustom.h;
+			path = ../generic/regcustom.h;
+			refType = 2;
+		};
+		F5F24F6C016ECAA401DC9062 = {
+			isa = PBXFileReference;
+			name = regerrs.h;
+			path = ../generic/regerrs.h;
+			refType = 2;
+		};
+		F5F24F6D016ECAA401DC9062 = {
+			isa = PBXFileReference;
+			name = regguts.h;
+			path = ../generic/regguts.h;
+			refType = 2;
+		};
+		F5F24F6E016ECAA401DC9062 = {
+			isa = PBXFileReference;
+			name = tcl.h;
+			path = ../generic/tcl.h;
+			refType = 2;
+		};
+		F5F24F6F016ECAA401DC9062 = {
+			isa = PBXFileReference;
+			name = tclCompile.h;
+			path = ../generic/tclCompile.h;
+			refType = 2;
+		};
+		F5F24F70016ECAA401DC9062 = {
+			isa = PBXFileReference;
+			name = tclDecls.h;
+			path = ../generic/tclDecls.h;
+			refType = 2;
+		};
+		F5F24F71016ECAA401DC9062 = {
+			isa = PBXFileReference;
+			name = tclInitScript.h;
+			path = ../generic/tclInitScript.h;
+			refType = 2;
+		};
+		F5F24F72016ECAA401DC9062 = {
+			isa = PBXFileReference;
+			name = tclInt.h;
+			path = ../generic/tclInt.h;
+			refType = 2;
+		};
+		F5F24F73016ECAA401DC9062 = {
+			isa = PBXFileReference;
+			name = tclIntDecls.h;
+			path = ../generic/tclIntDecls.h;
+			refType = 2;
+		};
+		F5F24F74016ECAA401DC9062 = {
+			isa = PBXFileReference;
+			name = tclIntPlatDecls.h;
+			path = ../generic/tclIntPlatDecls.h;
+			refType = 2;
+		};
+		F5F24F75016ECAA401DC9062 = {
+			isa = PBXFileReference;
+			name = tclIO.h;
+			path = ../generic/tclIO.h;
+			refType = 2;
+		};
+		F5F24F76016ECAA401DC9062 = {
+			isa = PBXFileReference;
+			name = tclMath.h;
+			path = ../generic/tclMath.h;
+			refType = 2;
+		};
+		F5F24F77016ECAA401DC9062 = {
+			isa = PBXFileReference;
+			name = tclPlatDecls.h;
+			path = ../generic/tclPlatDecls.h;
+			refType = 2;
+		};
+		F5F24F78016ECAA401DC9062 = {
+			isa = PBXFileReference;
+			name = tclRegexp.h;
+			path = ../generic/tclRegexp.h;
+			refType = 2;
+		};
+		F5F24F79016ECAA401DC9062 = {
+			fileRef = F5F24F6B016ECAA401DC9062;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5F24F7A016ECAA401DC9062 = {
+			fileRef = F5F24F6C016ECAA401DC9062;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5F24F7B016ECAA401DC9062 = {
+			fileRef = F5F24F6D016ECAA401DC9062;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5F24F7C016ECAA401DC9062 = {
+			fileRef = F5F24F6E016ECAA401DC9062;
+			isa = PBXBuildFile;
+			settings = {
+				ATTRIBUTES = (
+					Public,
+				);
+			};
+		};
+		F5F24F7D016ECAA401DC9062 = {
+			fileRef = F5F24F6F016ECAA401DC9062;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5F24F7E016ECAA401DC9062 = {
+			fileRef = F5F24F70016ECAA401DC9062;
+			isa = PBXBuildFile;
+			settings = {
+				ATTRIBUTES = (
+					Public,
+				);
+			};
+		};
+		F5F24F7F016ECAA401DC9062 = {
+			fileRef = F5F24F71016ECAA401DC9062;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5F24F80016ECAA401DC9062 = {
+			fileRef = F5F24F72016ECAA401DC9062;
+			isa = PBXBuildFile;
+			settings = {
+				ATTRIBUTES = (
+					Private,
+				);
+			};
+		};
+		F5F24F81016ECAA401DC9062 = {
+			fileRef = F5F24F73016ECAA401DC9062;
+			isa = PBXBuildFile;
+			settings = {
+				ATTRIBUTES = (
+					Private,
+				);
+			};
+		};
+		F5F24F82016ECAA401DC9062 = {
+			fileRef = F5F24F74016ECAA401DC9062;
+			isa = PBXBuildFile;
+			settings = {
+				ATTRIBUTES = (
+					Private,
+				);
+			};
+		};
+		F5F24F83016ECAA401DC9062 = {
+			fileRef = F5F24F75016ECAA401DC9062;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5F24F84016ECAA401DC9062 = {
+			fileRef = F5F24F76016ECAA401DC9062;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5F24F85016ECAA401DC9062 = {
+			fileRef = F5F24F77016ECAA401DC9062;
+			isa = PBXBuildFile;
+			settings = {
+				ATTRIBUTES = (
+					Private,
+				);
+			};
+		};
+		F5F24F86016ECAA401DC9062 = {
+			fileRef = F5F24F78016ECAA401DC9062;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5F24F87016ECAFC01DC9062 = {
+			isa = PBXFileReference;
+			name = regc_color.c;
+			path = ../generic/regc_color.c;
+			refType = 2;
+		};
+		F5F24F88016ECAFC01DC9062 = {
+			isa = PBXFileReference;
+			name = regc_cvec.c;
+			path = ../generic/regc_cvec.c;
+			refType = 2;
+		};
+		F5F24F89016ECAFC01DC9062 = {
+			isa = PBXFileReference;
+			name = regc_lex.c;
+			path = ../generic/regc_lex.c;
+			refType = 2;
+		};
+		F5F24F8A016ECAFC01DC9062 = {
+			isa = PBXFileReference;
+			name = regc_locale.c;
+			path = ../generic/regc_locale.c;
+			refType = 2;
+		};
+		F5F24F8B016ECAFC01DC9062 = {
+			isa = PBXFileReference;
+			name = regc_nfa.c;
+			path = ../generic/regc_nfa.c;
+			refType = 2;
+		};
+		F5F24F8C016ECAFC01DC9062 = {
+			isa = PBXFileReference;
+			name = regcomp.c;
+			path = ../generic/regcomp.c;
+			refType = 2;
+		};
+		F5F24F8D016ECAFC01DC9062 = {
+			isa = PBXFileReference;
+			name = rege_dfa.c;
+			path = ../generic/rege_dfa.c;
+			refType = 2;
+		};
+		F5F24F8E016ECAFC01DC9062 = {
+			isa = PBXFileReference;
+			name = regerror.c;
+			path = ../generic/regerror.c;
+			refType = 2;
+		};
+		F5F24F8F016ECAFC01DC9062 = {
+			isa = PBXFileReference;
+			name = regexec.c;
+			path = ../generic/regexec.c;
+			refType = 2;
+		};
+		F5F24F90016ECAFC01DC9062 = {
+			isa = PBXFileReference;
+			name = regfree.c;
+			path = ../generic/regfree.c;
+			refType = 2;
+		};
+		F5F24F91016ECAFC01DC9062 = {
+			isa = PBXFileReference;
+			name = regfronts.c;
+			path = ../generic/regfronts.c;
+			refType = 2;
+		};
+		F5F24F92016ECAFC01DC9062 = {
+			isa = PBXFileReference;
+			name = tclAlloc.c;
+			path = ../generic/tclAlloc.c;
+			refType = 2;
+		};
+		F5F24F93016ECAFC01DC9062 = {
+			isa = PBXFileReference;
+			name = tclAsync.c;
+			path = ../generic/tclAsync.c;
+			refType = 2;
+		};
+		F5F24F94016ECAFC01DC9062 = {
+			isa = PBXFileReference;
+			name = tclBasic.c;
+			path = ../generic/tclBasic.c;
+			refType = 2;
+		};
+		F5F24F95016ECAFC01DC9062 = {
+			isa = PBXFileReference;
+			name = tclBinary.c;
+			path = ../generic/tclBinary.c;
+			refType = 2;
+		};
+		F5F24F96016ECAFC01DC9062 = {
+			isa = PBXFileReference;
+			name = tclCkalloc.c;
+			path = ../generic/tclCkalloc.c;
+			refType = 2;
+		};
+		F5F24F97016ECAFC01DC9062 = {
+			isa = PBXFileReference;
+			name = tclClock.c;
+			path = ../generic/tclClock.c;
+			refType = 2;
+		};
+		F5F24F98016ECAFC01DC9062 = {
+			isa = PBXFileReference;
+			name = tclCmdAH.c;
+			path = ../generic/tclCmdAH.c;
+			refType = 2;
+		};
+		F5F24F99016ECAFC01DC9062 = {
+			isa = PBXFileReference;
+			name = tclCmdIL.c;
+			path = ../generic/tclCmdIL.c;
+			refType = 2;
+		};
+		F5F24F9A016ECAFC01DC9062 = {
+			isa = PBXFileReference;
+			name = tclCmdMZ.c;
+			path = ../generic/tclCmdMZ.c;
+			refType = 2;
+		};
+		F5F24F9B016ECAFC01DC9062 = {
+			isa = PBXFileReference;
+			name = tclCompCmds.c;
+			path = ../generic/tclCompCmds.c;
+			refType = 2;
+		};
+		F5F24F9C016ECAFC01DC9062 = {
+			isa = PBXFileReference;
+			name = tclCompExpr.c;
+			path = ../generic/tclCompExpr.c;
+			refType = 2;
+		};
+		F5F24F9D016ECAFC01DC9062 = {
+			isa = PBXFileReference;
+			name = tclCompile.c;
+			path = ../generic/tclCompile.c;
+			refType = 2;
+		};
+		F5F24F9E016ECAFC01DC9062 = {
+			isa = PBXFileReference;
+			name = tclDate.c;
+			path = ../generic/tclDate.c;
+			refType = 2;
+		};
+		F5F24F9F016ECAFC01DC9062 = {
+			isa = PBXFileReference;
+			name = tclEncoding.c;
+			path = ../generic/tclEncoding.c;
+			refType = 2;
+		};
+		F5F24FA0016ECAFC01DC9062 = {
+			isa = PBXFileReference;
+			name = tclEnv.c;
+			path = ../generic/tclEnv.c;
+			refType = 2;
+		};
+		F5F24FA1016ECAFC01DC9062 = {
+			isa = PBXFileReference;
+			name = tclEvent.c;
+			path = ../generic/tclEvent.c;
+			refType = 2;
+		};
+		F5F24FA2016ECAFC01DC9062 = {
+			isa = PBXFileReference;
+			name = tclExecute.c;
+			path = ../generic/tclExecute.c;
+			refType = 2;
+		};
+		F5F24FA3016ECAFC01DC9062 = {
+			isa = PBXFileReference;
+			name = tclFCmd.c;
+			path = ../generic/tclFCmd.c;
+			refType = 2;
+		};
+		F5F24FA4016ECAFC01DC9062 = {
+			isa = PBXFileReference;
+			name = tclFileName.c;
+			path = ../generic/tclFileName.c;
+			refType = 2;
+		};
+		F5F24FA5016ECAFC01DC9062 = {
+			isa = PBXFileReference;
+			name = tclGet.c;
+			path = ../generic/tclGet.c;
+			refType = 2;
+		};
+		F5F24FA6016ECAFC01DC9062 = {
+			isa = PBXFileReference;
+			name = tclHash.c;
+			path = ../generic/tclHash.c;
+			refType = 2;
+		};
+		F5F24FA7016ECAFC01DC9062 = {
+			isa = PBXFileReference;
+			name = tclHistory.c;
+			path = ../generic/tclHistory.c;
+			refType = 2;
+		};
+		F5F24FA8016ECAFC01DC9062 = {
+			isa = PBXFileReference;
+			name = tclIndexObj.c;
+			path = ../generic/tclIndexObj.c;
+			refType = 2;
+		};
+		F5F24FA9016ECAFC01DC9062 = {
+			isa = PBXFileReference;
+			name = tclInterp.c;
+			path = ../generic/tclInterp.c;
+			refType = 2;
+		};
+		F5F24FAA016ECAFC01DC9062 = {
+			isa = PBXFileReference;
+			name = tclIO.c;
+			path = ../generic/tclIO.c;
+			refType = 2;
+		};
+		F5F24FAB016ECAFC01DC9062 = {
+			isa = PBXFileReference;
+			name = tclIOCmd.c;
+			path = ../generic/tclIOCmd.c;
+			refType = 2;
+		};
+		F5F24FAC016ECAFC01DC9062 = {
+			isa = PBXFileReference;
+			name = tclIOGT.c;
+			path = ../generic/tclIOGT.c;
+			refType = 2;
+		};
+		F5F24FAD016ECAFC01DC9062 = {
+			isa = PBXFileReference;
+			name = tclIOSock.c;
+			path = ../generic/tclIOSock.c;
+			refType = 2;
+		};
+		F5F24FAE016ECAFC01DC9062 = {
+			isa = PBXFileReference;
+			name = tclIOUtil.c;
+			path = ../generic/tclIOUtil.c;
+			refType = 2;
+		};
+		F5F24FAF016ECAFC01DC9062 = {
+			isa = PBXFileReference;
+			name = tclLink.c;
+			path = ../generic/tclLink.c;
+			refType = 2;
+		};
+		F5F24FB0016ECAFC01DC9062 = {
+			isa = PBXFileReference;
+			name = tclListObj.c;
+			path = ../generic/tclListObj.c;
+			refType = 2;
+		};
+		F5F24FB1016ECAFC01DC9062 = {
+			isa = PBXFileReference;
+			name = tclLiteral.c;
+			path = ../generic/tclLiteral.c;
+			refType = 2;
+		};
+		F5F24FB2016ECAFC01DC9062 = {
+			isa = PBXFileReference;
+			name = tclLoad.c;
+			path = ../generic/tclLoad.c;
+			refType = 2;
+		};
+		F5F24FB3016ECAFC01DC9062 = {
+			isa = PBXFileReference;
+			name = tclLoadNone.c;
+			path = ../generic/tclLoadNone.c;
+			refType = 2;
+		};
+		F5F24FB4016ECAFC01DC9062 = {
+			isa = PBXFileReference;
+			name = tclMain.c;
+			path = ../generic/tclMain.c;
+			refType = 2;
+		};
+		F5F24FB5016ECAFC01DC9062 = {
+			isa = PBXFileReference;
+			name = tclNamesp.c;
+			path = ../generic/tclNamesp.c;
+			refType = 2;
+		};
+		F5F24FB6016ECAFC01DC9062 = {
+			isa = PBXFileReference;
+			name = tclNotify.c;
+			path = ../generic/tclNotify.c;
+			refType = 2;
+		};
+		F5F24FB7016ECAFC01DC9062 = {
+			isa = PBXFileReference;
+			name = tclObj.c;
+			path = ../generic/tclObj.c;
+			refType = 2;
+		};
+		F5F24FB8016ECAFC01DC9062 = {
+			isa = PBXFileReference;
+			name = tclPanic.c;
+			path = ../generic/tclPanic.c;
+			refType = 2;
+		};
+		F5F24FB9016ECAFC01DC9062 = {
+			isa = PBXFileReference;
+			name = tclParse.c;
+			path = ../generic/tclParse.c;
+			refType = 2;
+		};
+		F5F24FBA016ECAFC01DC9062 = {
+			isa = PBXFileReference;
+			name = tclParseExpr.c;
+			path = ../generic/tclParseExpr.c;
+			refType = 2;
+		};
+		F5F24FBB016ECAFC01DC9062 = {
+			isa = PBXFileReference;
+			name = tclPipe.c;
+			path = ../generic/tclPipe.c;
+			refType = 2;
+		};
+		F5F24FBC016ECAFC01DC9062 = {
+			isa = PBXFileReference;
+			name = tclPosixStr.c;
+			path = ../generic/tclPosixStr.c;
+			refType = 2;
+		};
+		F5F24FBD016ECAFC01DC9062 = {
+			isa = PBXFileReference;
+			name = tclPreserve.c;
+			path = ../generic/tclPreserve.c;
+			refType = 2;
+		};
+		F5F24FBE016ECAFC01DC9062 = {
+			isa = PBXFileReference;
+			name = tclProc.c;
+			path = ../generic/tclProc.c;
+			refType = 2;
+		};
+		F5F24FBF016ECAFC01DC9062 = {
+			isa = PBXFileReference;
+			name = tclRegexp.c;
+			path = ../generic/tclRegexp.c;
+			refType = 2;
+		};
+		F5F24FC0016ECAFC01DC9062 = {
+			isa = PBXFileReference;
+			name = tclResolve.c;
+			path = ../generic/tclResolve.c;
+			refType = 2;
+		};
+		F5F24FC1016ECAFC01DC9062 = {
+			isa = PBXFileReference;
+			name = tclResult.c;
+			path = ../generic/tclResult.c;
+			refType = 2;
+		};
+		F5F24FC2016ECAFC01DC9062 = {
+			isa = PBXFileReference;
+			name = tclScan.c;
+			path = ../generic/tclScan.c;
+			refType = 2;
+		};
+		F5F24FC3016ECAFC01DC9062 = {
+			isa = PBXFileReference;
+			name = tclStringObj.c;
+			path = ../generic/tclStringObj.c;
+			refType = 2;
+		};
+		F5F24FC4016ECAFC01DC9062 = {
+			isa = PBXFileReference;
+			name = tclStubInit.c;
+			path = ../generic/tclStubInit.c;
+			refType = 2;
+		};
+		F5F24FC5016ECAFC01DC9062 = {
+			isa = PBXFileReference;
+			name = tclStubLib.c;
+			path = ../generic/tclStubLib.c;
+			refType = 2;
+		};
+		F5F24FC6016ECAFC01DC9062 = {
+			isa = PBXFileReference;
+			name = tclTest.c;
+			path = ../generic/tclTest.c;
+			refType = 2;
+		};
+		F5F24FC7016ECAFC01DC9062 = {
+			isa = PBXFileReference;
+			name = tclTestObj.c;
+			path = ../generic/tclTestObj.c;
+			refType = 2;
+		};
+		F5F24FC8016ECAFC01DC9062 = {
+			isa = PBXFileReference;
+			name = tclTestProcBodyObj.c;
+			path = ../generic/tclTestProcBodyObj.c;
+			refType = 2;
+		};
+		F5F24FC9016ECAFC01DC9062 = {
+			isa = PBXFileReference;
+			name = tclThread.c;
+			path = ../generic/tclThread.c;
+			refType = 2;
+		};
+		F5F24FCA016ECAFC01DC9062 = {
+			isa = PBXFileReference;
+			name = tclThreadJoin.c;
+			path = ../generic/tclThreadJoin.c;
+			refType = 2;
+		};
+		F5F24FCB016ECAFC01DC9062 = {
+			isa = PBXFileReference;
+			name = tclThreadTest.c;
+			path = ../generic/tclThreadTest.c;
+			refType = 2;
+		};
+		F5F24FCC016ECAFC01DC9062 = {
+			isa = PBXFileReference;
+			name = tclTimer.c;
+			path = ../generic/tclTimer.c;
+			refType = 2;
+		};
+		F5F24FCD016ECAFC01DC9062 = {
+			isa = PBXFileReference;
+			name = tclUniData.c;
+			path = ../generic/tclUniData.c;
+			refType = 2;
+		};
+		F5F24FCE016ECAFC01DC9062 = {
+			isa = PBXFileReference;
+			name = tclUtf.c;
+			path = ../generic/tclUtf.c;
+			refType = 2;
+		};
+		F5F24FCF016ECAFC01DC9062 = {
+			isa = PBXFileReference;
+			name = tclUtil.c;
+			path = ../generic/tclUtil.c;
+			refType = 2;
+		};
+		F5F24FD0016ECAFC01DC9062 = {
+			isa = PBXFileReference;
+			name = tclVar.c;
+			path = ../generic/tclVar.c;
+			refType = 2;
+		};
+		F5F24FD1016ECB1E01DC9062 = {
+			isa = PBXFileReference;
+			name = regex.h;
+			path = ../generic/regex.h;
+			refType = 2;
+		};
+		F5F24FD2016ECB1E01DC9062 = {
+			isa = PBXFileReference;
+			name = tclPort.h;
+			path = ../generic/tclPort.h;
+			refType = 2;
+		};
+		F5F24FD3016ECB4901DC9062 = {
+			isa = PBXFileReference;
+			name = tclPkg.c;
+			path = ../generic/tclPkg.c;
+			refType = 2;
+		};
+		F5F24FD6016ECC0F01DC9062 = {
+			isa = PBXFileReference;
+			name = tclUnixPort.h;
+			path = ../unix/tclUnixPort.h;
+			refType = 2;
+		};
+		F5F24FD7016ECC0F01DC9062 = {
+			isa = PBXFileReference;
+			name = tclUnixThrd.h;
+			path = ../unix/tclUnixThrd.h;
+			refType = 2;
+		};
+		F5F24FD8016ECC0F01DC9062 = {
+			isa = PBXFileReference;
+			name = tclAppInit.c;
+			path = ../unix/tclAppInit.c;
+			refType = 2;
+		};
+		F5F24FD9016ECC0F01DC9062 = {
+			isa = PBXFileReference;
+			name = tclLoadDyld.c;
+			path = ../unix/tclLoadDyld.c;
+			refType = 2;
+		};
+		F5F24FDA016ECC0F01DC9062 = {
+			isa = PBXFileReference;
+			name = tclMtherr.c;
+			path = ../unix/tclMtherr.c;
+			refType = 2;
+		};
+		F5F24FDB016ECC0F01DC9062 = {
+			isa = PBXFileReference;
+			name = tclUnixChan.c;
+			path = ../unix/tclUnixChan.c;
+			refType = 2;
+		};
+		F5F24FDC016ECC0F01DC9062 = {
+			isa = PBXFileReference;
+			name = tclUnixEvent.c;
+			path = ../unix/tclUnixEvent.c;
+			refType = 2;
+		};
+		F5F24FDD016ECC0F01DC9062 = {
+			isa = PBXFileReference;
+			name = tclUnixFCmd.c;
+			path = ../unix/tclUnixFCmd.c;
+			refType = 2;
+		};
+		F5F24FDE016ECC0F01DC9062 = {
+			isa = PBXFileReference;
+			name = tclUnixFile.c;
+			path = ../../../../../../CodeBits/jingham/devel_tk/source/tcl/unix/tclUnixFile.c;
+			refType = 2;
+		};
+		F5F24FDF016ECC0F01DC9062 = {
+			isa = PBXFileReference;
+			name = tclUnixInit.c;
+			path = ../unix/tclUnixInit.c;
+			refType = 2;
+		};
+		F5F24FE0016ECC0F01DC9062 = {
+			isa = PBXFileReference;
+			name = tclUnixNotfy.c;
+			path = ../../../../../../CodeBits/jingham/devel_tk/source/tcl/unix/tclUnixNotfy.c;
+			refType = 2;
+		};
+		F5F24FE1016ECC0F01DC9062 = {
+			isa = PBXFileReference;
+			name = tclUnixPipe.c;
+			path = ../../../../../../CodeBits/jingham/devel_tk/source/tcl/unix/tclUnixPipe.c;
+			refType = 2;
+		};
+		F5F24FE2016ECC0F01DC9062 = {
+			isa = PBXFileReference;
+			name = tclUnixSock.c;
+			path = ../unix/tclUnixSock.c;
+			refType = 2;
+		};
+		F5F24FE3016ECC0F01DC9062 = {
+			isa = PBXFileReference;
+			name = tclUnixTest.c;
+			path = ../../../../../../CodeBits/jingham/devel_tk/source/tcl/unix/tclUnixTest.c;
+			refType = 2;
+		};
+		F5F24FE4016ECC0F01DC9062 = {
+			isa = PBXFileReference;
+			name = tclUnixThrd.c;
+			path = ../../../../../../CodeBits/jingham/devel_tk/source/tcl/unix/tclUnixThrd.c;
+			refType = 2;
+		};
+		F5F24FE5016ECC0F01DC9062 = {
+			isa = PBXFileReference;
+			name = tclUnixTime.c;
+			path = ../../../../../../CodeBits/jingham/devel_tk/source/tcl/unix/tclUnixTime.c;
+			refType = 2;
+		};
+		F5F24FE6016ECC0F01DC9062 = {
+			isa = PBXFileReference;
+			name = tclXtNotify.c;
+			path = ../../../../../../CodeBits/jingham/devel_tk/source/tcl/unix/tclXtNotify.c;
+			refType = 2;
+		};
+		F5F24FE7016ECC0F01DC9062 = {
+			isa = PBXFileReference;
+			name = tclXtTest.c;
+			path = ../../../../../../CodeBits/jingham/devel_tk/source/tcl/unix/tclXtTest.c;
+			refType = 2;
+		};
+		F5F24FEE016ED0DF01DC9062 = {
+			children = (
+				F5F24FEF016ED0DF01DC9062,
+				F5F24FF0016ED0DF01DC9062,
+				F5F24FF1016ED0DF01DC9062,
+				F5F24FF2016ED0DF01DC9062,
+				F5F24FF3016ED0DF01DC9062,
+				F5F24FF4016ED0DF01DC9062,
+				F5F24FF5016ED0DF01DC9062,
+				F5F24FF6016ED0DF01DC9062,
+				F5F24FF7016ED0DF01DC9062,
+				F5F24FF8016ED0DF01DC9062,
+				F5F24FF9016ED0DF01DC9062,
+				F5F24FFA016ED0DF01DC9062,
+				F5F24FFB016ED0DF01DC9062,
+				F5F24FFC016ED0DF01DC9062,
+				F5F24FFD016ED0DF01DC9062,
+				F5F24FFE016ED0DF01DC9062,
+				F5F24FFF016ED0DF01DC9062,
+				F5F25000016ED0DF01DC9062,
+				F5F25001016ED0DF01DC9062,
+				F5F25002016ED0DF01DC9062,
+				F5F25003016ED0DF01DC9062,
+				F5F25004016ED0DF01DC9062,
+				F5F25005016ED0DF01DC9062,
+				F5F25006016ED0DF01DC9062,
+				F5F25007016ED0DF01DC9062,
+				F5F25008016ED0DF01DC9062,
+				F5F25009016ED0DF01DC9062,
+				F5F2500A016ED0DF01DC9062,
+			);
+			isa = PBXGroup;
+			name = Scripts;
+			refType = 4;
+		};
+		F5F24FEF016ED0DF01DC9062 = {
+			isa = PBXFileReference;
+			name = auto.tcl;
+			path = ../library/auto.tcl;
+			refType = 2;
+		};
+		F5F24FF0016ED0DF01DC9062 = {
+			isa = PBXFolderReference;
+			name = dde;
+			path = ../library/dde;
+			refType = 2;
+		};
+		F5F24FF1016ED0DF01DC9062 = {
+			isa = PBXFolderReference;
+			name = dde1.0;
+			path = ../library/dde1.0;
+			refType = 2;
+		};
+		F5F24FF2016ED0DF01DC9062 = {
+			isa = PBXFolderReference;
+			name = dde1.1;
+			path = ../library/dde1.1;
+			refType = 2;
+		};
+		F5F24FF3016ED0DF01DC9062 = {
+			isa = PBXFolderReference;
+			name = encoding;
+			path = ../library/encoding;
+			refType = 2;
+		};
+		F5F24FF4016ED0DF01DC9062 = {
+			isa = PBXFileReference;
+			name = history.tcl;
+			path = ../library/history.tcl;
+			refType = 2;
+		};
+		F5F24FF5016ED0DF01DC9062 = {
+			isa = PBXFolderReference;
+			name = http;
+			path = ../library/http;
+			refType = 2;
+		};
+		F5F24FF6016ED0DF01DC9062 = {
+			isa = PBXFolderReference;
+			name = http1.0;
+			path = ../library/http1.0;
+			refType = 2;
+		};
+		F5F24FF7016ED0DF01DC9062 = {
+			isa = PBXFolderReference;
+			name = http2.0;
+			path = ../library/http2.0;
+			refType = 2;
+		};
+		F5F24FF8016ED0DF01DC9062 = {
+			isa = PBXFolderReference;
+			name = http2.1;
+			path = ../library/http2.1;
+			refType = 2;
+		};
+		F5F24FF9016ED0DF01DC9062 = {
+			isa = PBXFolderReference;
+			name = http2.3;
+			path = ../library/http2.3;
+			refType = 2;
+		};
+		F5F24FFA016ED0DF01DC9062 = {
+			isa = PBXFileReference;
+			name = init.tcl;
+			path = ../library/init.tcl;
+			refType = 2;
+		};
+		F5F24FFB016ED0DF01DC9062 = {
+			isa = PBXFileReference;
+			name = ldAout.tcl;
+			path = ../library/ldAout.tcl;
+			refType = 2;
+		};
+		F5F24FFC016ED0DF01DC9062 = {
+			isa = PBXFolderReference;
+			name = msgcat;
+			path = ../library/msgcat;
+			refType = 2;
+		};
+		F5F24FFD016ED0DF01DC9062 = {
+			isa = PBXFolderReference;
+			name = msgcat1.0;
+			path = ../library/msgcat1.0;
+			refType = 2;
+		};
+		F5F24FFE016ED0DF01DC9062 = {
+			isa = PBXFolderReference;
+			name = opt;
+			path = ../library/opt;
+			refType = 2;
+		};
+		F5F24FFF016ED0DF01DC9062 = {
+			isa = PBXFolderReference;
+			name = opt0.1;
+			path = ../library/opt0.1;
+			refType = 2;
+		};
+		F5F25000016ED0DF01DC9062 = {
+			isa = PBXFolderReference;
+			name = opt0.4;
+			path = ../library/opt0.4;
+			refType = 2;
+		};
+		F5F25001016ED0DF01DC9062 = {
+			isa = PBXFileReference;
+			name = package.tcl;
+			path = ../library/package.tcl;
+			refType = 2;
+		};
+		F5F25002016ED0DF01DC9062 = {
+			isa = PBXFileReference;
+			name = parray.tcl;
+			path = ../library/parray.tcl;
+			refType = 2;
+		};
+		F5F25003016ED0DF01DC9062 = {
+			isa = PBXFolderReference;
+			name = reg;
+			path = ../library/reg;
+			refType = 2;
+		};
+		F5F25004016ED0DF01DC9062 = {
+			isa = PBXFolderReference;
+			name = reg1.0;
+			path = ../library/reg1.0;
+			refType = 2;
+		};
+		F5F25005016ED0DF01DC9062 = {
+			isa = PBXFileReference;
+			name = safe.tcl;
+			path = ../library/safe.tcl;
+			refType = 2;
+		};
+		F5F25006016ED0DF01DC9062 = {
+			isa = PBXFolderReference;
+			name = struct1.0;
+			path = ../library/struct1.0;
+			refType = 2;
+		};
+		F5F25007016ED0DF01DC9062 = {
+			isa = PBXFileReference;
+			name = tclIndex;
+			path = ../library/tclIndex;
+			refType = 2;
+		};
+		F5F25008016ED0DF01DC9062 = {
+			isa = PBXFolderReference;
+			name = tcltest;
+			path = ../library/tcltest;
+			refType = 2;
+		};
+		F5F25009016ED0DF01DC9062 = {
+			isa = PBXFolderReference;
+			name = tcltest1.0;
+			path = ../library/tcltest1.0;
+			refType = 2;
+		};
+		F5F2500A016ED0DF01DC9062 = {
+			isa = PBXFileReference;
+			name = word.tcl;
+			path = ../library/word.tcl;
+			refType = 2;
+		};
+		F5F2500E016ED0E001DC9062 = {
+			buildActionMask = 2147483647;
+			dstPath = "../../$(FRAMEWORK_VERSION)/Resources/Scripts";
+			dstSubfolderSpec = 7;
+			files = (
+				F5F2500F016ED0E001DC9062,
+				F5F25010016ED0E001DC9062,
+				F5F25011016ED0E001DC9062,
+				F5F25012016ED0E001DC9062,
+				F5F25013016ED0E001DC9062,
+				F5F25014016ED0E001DC9062,
+				F5F25015016ED0E001DC9062,
+				F5F25016016ED0E001DC9062,
+				F5F25017016ED0E001DC9062,
+				F5F25018016ED0E001DC9062,
+				F5F25019016ED0E001DC9062,
+				F5F2501A016ED0E001DC9062,
+				F5F2501B016ED0E001DC9062,
+				F5F2501C016ED0E001DC9062,
+				F5F2501D016ED0E001DC9062,
+				F5F2501E016ED0E001DC9062,
+				F5F2501F016ED0E001DC9062,
+				F5F25020016ED0E001DC9062,
+				F5F25021016ED0E001DC9062,
+				F5F25022016ED0E001DC9062,
+				F5F25023016ED0E001DC9062,
+				F5F25024016ED0E001DC9062,
+				F5F25025016ED0E001DC9062,
+				F5F25026016ED0E001DC9062,
+				F5F25027016ED0E001DC9062,
+				F5F25028016ED0E001DC9062,
+				F5F25029016ED0E001DC9062,
+				F5F2502A016ED0E001DC9062,
+			);
+			isa = PBXCopyFilesBuildPhase;
+			name = "Copy Files";
+		};
+		F5F2500F016ED0E001DC9062 = {
+			fileRef = F5F24FEF016ED0DF01DC9062;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5F25010016ED0E001DC9062 = {
+			fileRef = F5F24FF0016ED0DF01DC9062;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5F25011016ED0E001DC9062 = {
+			fileRef = F5F24FF1016ED0DF01DC9062;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5F25012016ED0E001DC9062 = {
+			fileRef = F5F24FF2016ED0DF01DC9062;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5F25013016ED0E001DC9062 = {
+			fileRef = F5F24FF3016ED0DF01DC9062;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5F25014016ED0E001DC9062 = {
+			fileRef = F5F24FF4016ED0DF01DC9062;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5F25015016ED0E001DC9062 = {
+			fileRef = F5F24FF5016ED0DF01DC9062;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5F25016016ED0E001DC9062 = {
+			fileRef = F5F24FF6016ED0DF01DC9062;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5F25017016ED0E001DC9062 = {
+			fileRef = F5F24FF7016ED0DF01DC9062;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5F25018016ED0E001DC9062 = {
+			fileRef = F5F24FF8016ED0DF01DC9062;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5F25019016ED0E001DC9062 = {
+			fileRef = F5F24FF9016ED0DF01DC9062;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5F2501A016ED0E001DC9062 = {
+			fileRef = F5F24FFA016ED0DF01DC9062;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5F2501B016ED0E001DC9062 = {
+			fileRef = F5F24FFB016ED0DF01DC9062;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5F2501C016ED0E001DC9062 = {
+			fileRef = F5F24FFC016ED0DF01DC9062;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5F2501D016ED0E001DC9062 = {
+			fileRef = F5F24FFD016ED0DF01DC9062;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5F2501E016ED0E001DC9062 = {
+			fileRef = F5F24FFE016ED0DF01DC9062;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5F2501F016ED0E001DC9062 = {
+			fileRef = F5F24FFF016ED0DF01DC9062;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5F25020016ED0E001DC9062 = {
+			fileRef = F5F25000016ED0DF01DC9062;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5F25021016ED0E001DC9062 = {
+			fileRef = F5F25001016ED0DF01DC9062;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5F25022016ED0E001DC9062 = {
+			fileRef = F5F25002016ED0DF01DC9062;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5F25023016ED0E001DC9062 = {
+			fileRef = F5F25003016ED0DF01DC9062;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5F25024016ED0E001DC9062 = {
+			fileRef = F5F25004016ED0DF01DC9062;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5F25025016ED0E001DC9062 = {
+			fileRef = F5F25005016ED0DF01DC9062;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5F25026016ED0E001DC9062 = {
+			fileRef = F5F25006016ED0DF01DC9062;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5F25027016ED0E001DC9062 = {
+			fileRef = F5F25007016ED0DF01DC9062;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5F25028016ED0E001DC9062 = {
+			fileRef = F5F25008016ED0DF01DC9062;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5F25029016ED0E001DC9062 = {
+			fileRef = F5F25009016ED0DF01DC9062;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5F2502A016ED0E001DC9062 = {
+			fileRef = F5F2500A016ED0DF01DC9062;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+	};
+	rootObject = 00E2F845016E82EB0ACA28DC;
+}

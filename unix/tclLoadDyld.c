@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoadDyld.c,v 1.5 2001/09/28 01:21:53 dgp Exp $
+ * RCS: @(#) $Id: tclLoadDyld.c,v 1.5.2.1 2001/10/15 09:13:49 wolfsuit Exp $
  */
 
 #include "tclInt.h"
@@ -58,46 +58,18 @@ TclpLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr,
 				 * function which should be used for
 				 * this file. */
 {
-    NSObjectFileImageReturnCode	err;
-    NSObjectFileImage		image;
-    NSModule			module;
-    NSSymbol			symbol;
-    char			*name;
+    NSSymbol symbol;
+    enum DYLD_BOOL dyld_return;
+    CONST char *native;
+    char *name;
 
-    char *fileName = Tcl_GetString(pathPtr);
-    err = NSCreateObjectFileImageFromFile(fileName, &image);
-    if (err != NSObjectFileImageSuccess) {
-	switch (err) {
-	    case NSObjectFileImageFailure:
-		Tcl_SetResult(interp, "dyld: general failure", TCL_STATIC);
-		break;
-	    case NSObjectFileImageInappropriateFile:
-		Tcl_SetResult(interp, "dyld: inappropriate Mach-O file",
-			TCL_STATIC);
-		break;
-	    case NSObjectFileImageArch:
-		Tcl_SetResult(interp,
-			"dyld: inappropriate Mach-O architecture", TCL_STATIC);
-		break;
-	    case NSObjectFileImageFormat:
-		Tcl_SetResult(interp, "dyld: invalid Mach-O file format",
-			TCL_STATIC);
-		break;
-	    case NSObjectFileImageAccess:
-		Tcl_SetResult(interp, "dyld: permission denied", TCL_STATIC);
-		break;
-	    default:
-		Tcl_SetResult(interp, "dyld: unknown failure", TCL_STATIC);
-		break;
-	}
-	return TCL_ERROR;
-    }
+    native = Tcl_FSGetNativePath(pathPtr);
 
-    module = NSLinkModule(image, fileName, TRUE);
-
-    if (module == NULL) {
-	Tcl_SetResult(interp, "dyld: falied to link module", TCL_STATIC);
-	return TCL_ERROR;
+    dyld_return = NSAddLibrary(native);
+    
+    if (dyld_return !=  TRUE) {
+      Tcl_SetResult (interp, "dyld: Couldn't add library", TCL_STATIC);
+      return TCL_ERROR;
     }
 
     name = (char*)malloc(sizeof(char)*(strlen(sym1)+2));
@@ -112,7 +84,7 @@ TclpLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr,
     free(name);
     *proc2Ptr = NSAddressOfSymbol(symbol);
 
-    *clientDataPtr = module;
+    *clientDataPtr = NULL;
     *unloadProcPtr = &TclpUnloadFile;
     
     return TCL_OK;
@@ -144,7 +116,7 @@ TclpUnloadFile(clientData)
 				 * a token that represents the loaded 
 				 * file. */
 {
-    NSUnLinkModule(clientData, FALSE);
+  /* Unloading Libraries is not currently supported by dyld */
 }
 
 /*

@@ -1,0 +1,121 @@
+// !$*UTF8*$!
+{
+	00E2F845016E82EB0ACA28DC = {
+		activeBuildStyle = 00E2F848016E82EB0ACA28DC;
+		activeTarget = 00E2F84E016E92110ACA28DC;
+		addToTargets = (
+			00E2F84E016E92110ACA28DC,
+		);
+		breakpoints = (
+		);
+		intermediatesDirectory = /Volumes/CodeBits/jingham/Build;
+		perUserDictionary = {
+			PBXWorkspaceConfiguration = {
+				ContentSize = "{748, 673}";
+				LeftSlideOut = {
+					ActiveTab = 3;
+					Frame = "{{0, 23}, {748, 650}}";
+					Split0 = {
+						ActiveTab = 2;
+						Frame = "{{225, 0}, {523, 650}}";
+						Split0 = {
+							Frame = "{{0, 292}, {523, 358}}";
+						};
+						SplitCount = 1;
+						Tab0 = {
+							Debugger = {
+								Frame = "{{0, 0}, {484, 208}}";
+								Split0 = {
+									Frame = "{{0, 25}, {484, 183}}";
+									Split0 = {
+										Frame = "{{0, 0}, {236, 183}}";
+									};
+									Split1 = {
+										Frame = "{{245, 0}, {239, 183}}";
+									};
+									SplitCount = 2;
+								};
+								SplitCount = 1;
+								Tab0 = {
+									Frame = "{{0, 0}, {100, 50}}";
+								};
+								Tab1 = {
+									Frame = "{{0, 0}, {100, 50}}";
+								};
+								TabCount = 2;
+							};
+							Frame = "{{0, 0}, {484, 208}}";
+							LauncherConfigVersion = 4;
+						};
+						Tab1 = {
+							Frame = "{{0, 0}, {484, 208}}";
+							LauncherConfigVersion = 3;
+							Runner = {
+								Frame = "{{0, 0}, {484, 208}}";
+							};
+						};
+						Tab2 = {
+							BuildMessageFrame = "{{0, 0}, {525, 151}}";
+							BuildTranscriptFrame = "{{0, 160}, {525, 109}}";
+							Frame = "{{0, 0}, {523, 267}}";
+						};
+						Tab3 = {
+							Frame = "{{0, 0}, {653, 295}}";
+						};
+						TabCount = 4;
+					};
+					SplitCount = 1;
+					Tab0 = {
+						Frame = "{{0, 0}, {167, 650}}";
+					};
+					Tab1 = {
+						ClassesFrame = "{{0, 0}, {202, 56}}";
+						Frame = "{{0, 0}, {200, 100}}";
+						MembersFrame = "{{0, 65}, {202, 35}}";
+						OptionsSetName = "Default Options";
+					};
+					Tab2 = {
+						Frame = "{{0, 0}, {200, 100}}";
+					};
+					Tab3 = {
+						Frame = "{{0, 0}, {200, 650}}";
+						Split0 = {
+							Frame = "{{0, 0}, {200, 314}}";
+						};
+						Split1 = {
+							Frame = "{{0, 323}, {200, 327}}";
+						};
+						SplitCount = 2;
+					};
+					Tab4 = {
+						Frame = "{{0, 0}, {250, 100}}";
+					};
+					TabCount = 5;
+				};
+			};
+		};
+		productDirectory = /Volumes/CodeBits/jingham/Products;
+		wantsIndex = 1;
+		wantsSCM = 1;
+	};
+	00E2F84B016E8A830ACA28DC = {
+		activeExec = 0;
+		customExecs = {
+		};
+	};
+	00E2F84C016E8B780ACA28DC = {
+		activeExec = 0;
+		customExecs = {
+		};
+	};
+	00E2F84E016E92110ACA28DC = {
+		activeExec = 0;
+		customExecs = {
+		};
+	};
+	F50DC359017027D801DC9062 = {
+		activeExec = 0;
+		customExecs = {
+		};
+	};
+}

@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.83 2001/09/10 00:33:09 mdejong Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.83.6.1 2001/10/15 09:13:49 wolfsuit Exp $
 
 VERSION 		= @TCL_VERSION@
 
@@ -226,6 +226,8 @@ GENERIC_DIR		= $(TOP_DIR)/generic
 COMPAT_DIR		= $(TOP_DIR)/compat
 TOOL_DIR		= $(TOP_DIR)/tools
 UNIX_DIR		= $(TOP_DIR)/unix
+MACOSX_DIR		= $(TOP_DIR)/macosx
+
 # Must be absolute because of the cd dltest $(DLTEST_DIR)/configure below.
 DLTEST_DIR		= @TCL_SRC_DIR@/unix/dltest
 # Must be absolute to so the corresponding tcltest's tcl_library is absolute.
@@ -282,7 +284,8 @@ GENERIC_OBJS = regcomp.o regexec.o regfree.o regerror.o tclAlloc.o \
 
 STUB_LIB_OBJS = tclStubLib.o ${COMPAT_OBJS}
 
-OBJS = ${GENERIC_OBJS} ${UNIX_OBJS} ${NOTIFY_OBJS} ${COMPAT_OBJS} @DL_OBJS@
+OBJS = ${GENERIC_OBJS} ${UNIX_OBJS} ${NOTIFY_OBJS} ${COMPAT_OBJS} \
+        @DL_OBJS@ @PLAT_OBJS@
 
 TCL_DECLS = \
 	$(GENERIC_DIR)/tcl.decls \
@@ -396,9 +399,12 @@ DL_SRCS = \
 	$(UNIX_DIR)/tclLoadOSF.c \
 	$(UNIX_DIR)/tclLoadShl.c
 
-# Note: don't include DL_SRCS in SRCS:  most of those files won't
-# compile on the current machine, and they will cause problems for
-# things like "make depend".
+MACOSX_SRCS =
+
+
+# Note: don't include DL_SRCS or MACOSX_SRCS in SRCS: most of those
+# files won't compile on the current machine, and they will cause
+# problems for things like "make depend".
 
 SRCS = $(GENERIC_SRCS) $(UNIX_SRCS) $(STUB_SRCS)
 
@@ -451,7 +457,7 @@ tcltest: ${TCLTEST_OBJS} ${TCL_LIB_FILE} ${BUILD_DLTEST}
 #	% make test TESTFLAGS="-verbose bps -file fileName.test"
 
 test: tcltest
-	LD_LIBRARY_PATH=`pwd`:${LD_LIBRARY_PATH}; export LD_LIBRARY_PATH; \
+	@LD_LIBRARY_PATH_VAR@=`pwd`:${@LD_LIBRARY_PATH_VAR@}; export @LD_LIBRARY_PATH_VAR@; \
 	LIBPATH=`pwd`:${LIBPATH}; export LIBPATH; \
 	SHLIB_PATH=`pwd`:${SHLIB_PATH}; export SHLIB_PATH; \
 	TCL_LIBRARY="${TCL_BUILDTIME_LIBRARY}"; export TCL_LIBRARY; \
@@ -459,7 +465,7 @@ test: tcltest
 
 # Useful target to launch a built tcltest with the proper path,...
 runtest: tcltest
-	LD_LIBRARY_PATH=`pwd`:${LD_LIBRARY_PATH}; export LD_LIBRARY_PATH; \
+	@LD_LIBRARY_PATH_VAR@=`pwd`:${@LD_LIBRARY_PATH_VAR@}; export @LD_LIBRARY_PATH_VAR@; \
 	LIBPATH=`pwd`:${LIBPATH}; export LIBPATH; \
 	SHLIB_PATH=`pwd`:${SHLIB_PATH}; export SHLIB_PATH; \
 	TCL_LIBRARY="${TCL_BUILDTIME_LIBRARY}"; export TCL_LIBRARY; \
@@ -468,7 +474,7 @@ runtest: tcltest
 # This target can be used to run tclsh from the build directory
 # via `make shell SCRIPT=/tmp/foo.tcl`
 shell: tclsh
-	@LD_LIBRARY_PATH=`pwd`:${LD_LIBRARY_PATH}; export LD_LIBRARY_PATH; \
+	@@LD_LIBRARY_PATH_VAR@=`pwd`:${@LD_LIBRARY_PATH_VAR@}; export @LD_LIBRARY_PATH_VAR@; \
 	LIBPATH=`pwd`:${LIBPATH}; export LIBPATH; \
 	SHLIB_PATH=`pwd`:${SHLIB_PATH}; export SHLIB_PATH; \
 	TCL_LIBRARY="${TCL_BUILDTIME_LIBRARY}"; export TCL_LIBRARY; \
@@ -986,6 +992,7 @@ tclUnixInit.o: $(UNIX_DIR)/tclUnixInit.c $(GENERIC_DIR)/tclInitScript.h tclConfi
 	$(CC) -c $(CC_SWITCHES) -DTCL_LIBRARY=\"${TCL_LIBRARY}\" \
 		-DTCL_PACKAGE_PATH="\"${TCL_PACKAGE_PATH}\"" \
 		$(UNIX_DIR)/tclUnixInit.c
+
 
 # The following targets are not completely general.  They are provide
 # purely for documentation purposes so people who are interested in

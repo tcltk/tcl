@@ -307,6 +307,48 @@ AC_DEFUN(SC_ENABLE_SHARED, [
 ])
 
 #------------------------------------------------------------------------
+# SC_ENABLE_FRAMEWORK --
+#
+#	Allows the building of shared libraries into frameworks
+#
+# Arguments:
+#	none
+#	
+# Results:
+#
+#	Adds the following arguments to configure:
+#		--enable-framework=yes|no
+#
+#	Sets the following vars:
+#		FRAMEWORK_BUILD	Value of 1 or 0
+#------------------------------------------------------------------------
+
+AC_DEFUN(SC_ENABLE_FRAMEWORK, [
+    AC_MSG_CHECKING([how to package libraries])
+    AC_ARG_ENABLE(framework,
+	[  --enable-framework        package shared libraries in frameworks [--enable-framework]],
+	[tcl_ok=$enableval], [tcl_ok=no])
+
+    if test "${enable_framework+set}" = set; then
+	enableval="$enable_framework"
+	tcl_ok=$enableval
+    else
+	tcl_ok=no
+    fi
+
+    if test "$tcl_ok" = "yes" ; then
+        if test "${SHARED_BUILD}" = "0" ; then
+            AC_MSG_ERROR("Frameworks can only be built if --enable-shared is yes")
+        fi
+	AC_MSG_RESULT([framework])
+	FRAMEWORK_BUILD=1
+    else
+	AC_MSG_RESULT([standard shared library])
+	FRAMEWORK_BUILD=0
+    fi
+])
+
+#------------------------------------------------------------------------
 # SC_ENABLE_THREADS --
 #
 #	Specify if thread support should be enabled
@@ -473,6 +515,13 @@ AC_DEFUN(SC_ENABLE_SYMBOLS, [
 #                       to use shared libraries on this platform.
 #       TCL_LIB_FILE -  Name of the file that contains the Tcl library, such
 #                       as libtcl7.8.so or libtcl7.8.a.
+# TCL_SHLIB_LD_EXTRAS - Additional element which are added to SHLIB_LD_LIBS
+#                       for the build of TCL, but not recorded in the
+#                       tclConfig.sh, since they are only used for the build
+#                       of Tcl. 
+#                       Examples: MacOS X records the library version and
+#                       compatibility version in the shared library.  But
+#                       of course the Tcl version of this is only used for Tcl.
 #       TCL_LIB_SUFFIX -Specifies everything that comes after the "libtcl"
 #                       in the shared library name, using the $VERSION variable
 #                       to put the version in the right place.  This is used
@@ -589,6 +638,8 @@ dnl FIXME: Replace AC_CHECK_PROG with AC_CHECK_TOOL once cross compiling is fixe
 dnl AC_CHECK_TOOL(AR, ar, :)
     AC_CHECK_PROG(AR, ar, ar)
     STLIB_LD='${AR} cr'
+    LD_LIBRARY_PATH_VAR="LD_LIBRARY_PATH"
+    PLAT_OBJS=""
     case $system in
 	AIX-5.*)
 	    if test "${TCL_THREADS}" = "1" -a "$GCC" != "yes" ; then
@@ -927,10 +978,26 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 	    LD_SEARCH_FLAGS=""
 
 	    # FreeBSD doesn't handle version numbers with dots.
-
+ 
 	    UNSHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}\$\{DBGX\}.a'
 	    SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}\$\{DBGX\}.so'
 	    TCL_LIB_VERSIONS_OK=nodots
+	    ;;
+	Rhapsody-*|Darwin-*)
+            EXTRA_CFLAGS="${EXTRA_CFLAGS} -DHAVE_CFBUNDLE"
+	    SHLIB_CFLAGS="-fno-common"
+	    SHLIB_LD="cc -dynamiclib \${LDFLAGS} "
+            TCL_SHLIB_LD_EXTRAS="-compatibility_version ${TCL_VERSION} -current_version \${VERSION} -framework CoreFoundation"
+	    SHLIB_LD_LIBS=""
+	    SHLIB_SUFFIX=".dylib"
+	    DL_OBJS="tclLoadDyld.o"
+            PLAT_OBJS=""
+	    DL_LIBS=""
+	    LDFLAGS=""
+	    LD_SEARCH_FLAGS=""
+	    CFLAGS_OPTIMIZE="-O3"
+	    LD_LIBRARY_PATH_VAR="DYLD_LIBRARY_PATH"
+	    LIBS="$LIBS -framework CoreFoundation"
 	    ;;
 	NEXTSTEP-*)
 	    SHLIB_CFLAGS=""
@@ -1284,6 +1351,8 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 		IRIX*)
 		    ;;
 		NetBSD-*|FreeBSD-*|OpenBSD-*)
+		    ;;
+		Rhapsody-*|Darwin-*)
 		    ;;
 		RISCos-*)
 		    ;;

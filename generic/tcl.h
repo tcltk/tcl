@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.103 2001/09/28 01:21:53 dgp Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.103.2.1 2001/10/15 09:13:49 wolfsuit Exp $
  */
 
 #ifndef _TCL
@@ -64,6 +64,15 @@ extern "C" {
 
 #define TCL_VERSION	    "8.4"
 #define TCL_PATCH_LEVEL	    "8.4a4"
+
+/* 
+ * A special definition used to allow this header file to be included 
+ * in resource files so that they can get obtain version information from
+ * this file.  Resource compilers don't like all the C stuff, like typedefs
+ * and procedure declarations, that occur below.
+ */
+
+#ifndef RESOURCE_INCLUDED
 
 /*
  * The following definitions set up the proper options for Windows
@@ -163,15 +172,6 @@ extern "C" {
 #define Tcl_ConditionWait(condPtr, mutexPtr, timePtr)
 #define Tcl_ConditionFinalize(condPtr)
 #endif /* TCL_THREADS */
-
-/* 
- * A special definition used to allow this header file to be included 
- * in resource files so that they can get obtain version information from
- * this file.  Resource compilers don't like all the C stuff, like typedefs
- * and procedure declarations, that occur below.
- */
-
-#ifndef RESOURCE_INCLUDED
 
 #ifndef BUFSIZ
 #include <stdio.h>
@@ -614,6 +614,10 @@ typedef void (Tcl_CommandTraceProc) _ANSI_ARGS_((ClientData clientData,
 typedef void (Tcl_CreateFileHandlerProc) _ANSI_ARGS_((int fd, int mask,
 	Tcl_FileProc *proc, ClientData clientData));
 typedef void (Tcl_DeleteFileHandlerProc) _ANSI_ARGS_((int fd));
+typedef void (Tcl_AlertNotifierProc) _ANSI_ARGS_((ClientData clientData));
+typedef void (Tcl_ServiceModeHookProc) _ANSI_ARGS_(());
+typedef ClientData (Tcl_InitNotifierProc) _ANSI_ARGS_(());
+typedef void (Tcl_FinalizeNotifierProc) _ANSI_ARGS_((ClientData clientData));
 typedef void (Tcl_MainLoopProc) _ANSI_ARGS_((void));
 
 /*
@@ -1771,6 +1775,10 @@ typedef struct Tcl_NotifierProcs {
     Tcl_WaitForEventProc *waitForEventProc;
     Tcl_CreateFileHandlerProc *createFileHandlerProc;
     Tcl_DeleteFileHandlerProc *deleteFileHandlerProc;
+    Tcl_InitNotifierProc *initNotifierProc;
+    Tcl_FinalizeNotifierProc *finalizeNotifierProc;
+    Tcl_AlertNotifierProc *alertNotifierProc;
+    Tcl_ServiceModeHookProc *serviceModeHookProc;
 } Tcl_NotifierProcs;
 
 /*

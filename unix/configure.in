@@ -3,7 +3,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 AC_INIT(../generic/tcl.h)
-# RCS: @(#) $Id: configure.in,v 1.72 2001/08/12 21:17:43 mdejong Exp $
+# RCS: @(#) $Id: configure.in,v 1.72.8.1 2001/10/15 09:13:49 wolfsuit Exp $
 
 TCL_VERSION=8.4
 TCL_MAJOR_VERSION=8
@@ -376,6 +376,7 @@ TCL_UNSHARED_LIB_SUFFIX=${UNSHARED_LIB_SUFFIX}
 TCL_SHARED_LIB_SUFFIX=${SHARED_LIB_SUFFIX}
 
 SC_ENABLE_SHARED
+SC_ENABLE_FRAMEWORK
 
 if test "${SHARED_BUILD}" = "1" -a "${SHLIB_SUFFIX}" != "" ; then
     TCL_SHLIB_CFLAGS="${SHLIB_CFLAGS}"
@@ -384,7 +385,7 @@ if test "${SHARED_BUILD}" = "1" -a "${SHLIB_SUFFIX}" != "" ; then
     if test "x$DL_OBJS" = "xtclLoadAout.o"; then
 	MAKE_LIB="\${STLIB_LD} \[$]@ \${OBJS}"
     else
-	MAKE_LIB="\${SHLIB_LD} -o \[$]@ \${OBJS} ${SHLIB_LD_LIBS}"
+	MAKE_LIB="\${SHLIB_LD} ${TCL_SHLIB_LD_EXTRAS} -o \[$]@ \${OBJS} ${SHLIB_LD_LIBS}"
 	RANLIB=":"
     fi
 else
@@ -417,27 +418,34 @@ eval "TCL_LIB_FILE=${TCL_LIB_FILE}"
 # AIX remembers this path and will attempt to use it at run-time to look
 # up the Tcl library.
 
-if test "$SHARED_BUILD" = "0" -o $TCL_NEEDS_EXP_FILE = 0; then
-    if test "${TCL_LIB_VERSIONS_OK}" = "ok"; then
-        TCL_LIB_FLAG="-ltcl${TCL_VERSION}\${TCL_DBGX}"
-    else
-        TCL_LIB_FLAG="-ltcl`echo ${TCL_VERSION} | tr -d .`\${TCL_DBGX}"
-    fi
-    TCL_BUILD_LIB_SPEC="-L`pwd` ${TCL_LIB_FLAG}"
-    TCL_LIB_SPEC="-L${exec_prefix}/lib ${TCL_LIB_FLAG}"
+if test "$FRAMEWORK_BUILD" = "1" ; then
+    TCL_BUILD_LIB_SPEC="-F`pwd` -framework Tcl"
+    TCL_LIB_SPEC="-framework Tcl"
+    TCL_LIB_FILE="Tcl"
 else
-    TCL_BUILD_EXP_FILE="lib.exp"
-    eval "TCL_EXP_FILE=libtcl${TCL_EXPORT_FILE_SUFFIX}"
-
-    # Replace DBGX with TCL_DBGX
-    eval "TCL_EXP_FILE=\"${TCL_EXP_FILE}\""
-    
-    if test "$GCC" = "yes" ; then
-	TCL_BUILD_LIB_SPEC="-Wl,-bI:`pwd`/${TCL_BUILD_EXP_FILE} -L`pwd`"
-	TCL_LIB_SPEC="-Wl,-bI:${exec_prefix}/lib/${TCL_EXP_FILE} -L`pwd`"    
+    if test "$SHARED_BUILD" = "0" -o $TCL_NEEDS_EXP_FILE = 0; then
+	if test "${TCL_LIB_VERSIONS_OK}" = "ok"; then
+	    TCL_LIB_FLAG="-ltcl${TCL_VERSION}\${TCL_DBGX}"
+	else
+	    TCL_LIB_FLAG="-ltcl`echo ${TCL_VERSION} | tr -d .`\${TCL_DBGX}"
+	fi
+	
+	TCL_BUILD_LIB_SPEC="-L`pwd` ${TCL_LIB_FLAG}"
+	TCL_LIB_SPEC="-L${exec_prefix}/lib ${TCL_LIB_FLAG}"
     else
-	TCL_BUILD_LIB_SPEC="-bI:`pwd`/${TCL_BUILD_EXP_FILE}"
-	TCL_LIB_SPEC="-bI:${exec_prefix}/lib/${TCL_EXP_FILE}"    
+	TCL_BUILD_EXP_FILE="lib.exp"
+	eval "TCL_EXP_FILE=libtcl${TCL_EXPORT_FILE_SUFFIX}"
+	
+	# Replace DBGX with TCL_DBGX
+	eval "TCL_EXP_FILE=\"${TCL_EXP_FILE}\""
+	
+	if test "$GCC" = "yes" ; then
+	    TCL_BUILD_LIB_SPEC="-Wl,-bI:`pwd`/${TCL_BUILD_EXP_FILE} -L`pwd`"
+	    TCL_LIB_SPEC="-Wl,-bI:${exec_prefix}/lib/${TCL_EXP_FILE} -L`pwd`"    
+	else
+	    TCL_BUILD_LIB_SPEC="-bI:`pwd`/${TCL_BUILD_EXP_FILE}"
+	    TCL_LIB_SPEC="-bI:${exec_prefix}/lib/${TCL_EXP_FILE}"    
+	fi
     fi
 fi
 VERSION='${VERSION}'
@@ -504,7 +512,9 @@ AC_SUBST(CFG_TCL_UNSHARED_LIB_SUFFIX)
 AC_SUBST(CFG_TCL_EXPORT_FILE_SUFFIX)
 AC_SUBST(TCL_DBGX)
 AC_SUBST(DL_OBJS)
+AC_SUBST(PLAT_OBJS)
 AC_SUBST(EXTRA_CFLAGS)
+AC_SUBST(LD_LIBRARY_PATH_VAR)
 AC_SUBST(LDFLAGS)
 AC_SUBST(LDFLAGS_DEFAULT)
 # FIXME: Should this be TCL_LDFLAGS_DEBUG ?
@@ -521,8 +531,8 @@ AC_SUBST(SHLIB_LD_LIBS)
 AC_SUBST(SHLIB_SUFFIX)
 AC_SUBST(TCL_BUILD_LIB_SPEC)
 AC_SUBST(TCL_LD_SEARCH_FLAGS)
-AC_SUBST(TCL_LDFLAGS_DEBUG)
-AC_SUBST(TCL_LDFLAGS_OPTIMIZE)
+AC_SUBST(LDFLAGS_DEBUG)
+AC_SUBST(LDFLAGS_OPTIMIZE)
 AC_SUBST(TCL_LIB_FILE)
 AC_SUBST(TCL_LIB_FLAG)
 AC_SUBST(TCL_NEEDS_EXP_FILE)
