@@ -1,7 +1,14 @@
+2001-12-13  Andreas Kupries  <andreas_kupries@users.sourceforge.net> 
+
+	* win/tclWinSock.c (TcpGetOptionProc): Fix for tcl bug item
+	  #478565 reported by an unknown person. Bypasses all calls to
+	  "gethostbyaddr" for address "0.0.0.0" to prevent delays on
+	  Win/NT.
+
 2001-12-12  Andreas Kupries  <andreas_kupries@users.sourceforge.net> 
 
 	* generic/tclIO.c (Tcl_GetsObj): Applied patch for bug #491341 as
-	  provided by Don Porter <dgp@users.sourceforge.net>. Fixes
+	  provided by Don Porter <dgp@users.sourceforge.net>. Fixes the
 	  assumption of having an empty Tcl_Obj to work with.
 
 2001-12-11  Miguel Sofer  <msofer@users.sourceforge.net>
@@ -15,11 +22,7 @@
 	  INST_LIST_INDEX_MULTI and INST_LSET_FLAT, so this has no effect
 	  on bytecodes generated up to tcl8.4a3 inclusive.
 
-2001-12-11  Miguel Sofer  <msofer@users.sourceforge.net>
-
 	* generic/tclExecute.c: fix debug messages in INST_LSET_LIST. 
-
-2001-12-11  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* generic/tclCompCmds.c (TclCompileLindexCmd):
 	* generic/tclCompExpr.c (CompileMathFuncCall): removed the last
