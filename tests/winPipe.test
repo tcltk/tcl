@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: winPipe.test,v 1.25 2004/02/02 01:34:54 davygrvy Exp $
+# RCS: @(#) $Id: winPipe.test,v 1.26 2004/02/02 02:36:14 davygrvy Exp $
 
 package require tcltest
 namespace import -force ::tcltest::*
@@ -357,10 +357,19 @@ test winpipe-7.12 {BuildCommandLine: N backslashes followed a quote rule #4} {pc
 test winpipe-7.13 {BuildCommandLine: N backslashes followed a quote rule #5} {pcOnly exec} {
     exec $env(COMSPEC) /c echo foo \\\ \\\\\\ bar
 } {foo "\ \\\\\\" bar}
-test winpipe-7.14 {BuildCommandLine: special chars #4} {pcOnly exec} {
+test winpipe-7.14 {BuildCommandLine: N backslashes followed a quote rule #6} {pcOnly exec} {
+    exec $env(COMSPEC) /c echo foo \\\ \\\" bar
+} {foo "\ \\\"" bar}
+test winpipe-7.15 {BuildCommandLine: N backslashes followed a quote rule #7} {pcOnly exec} {
+    exec $env(COMSPEC) /c echo foo \\\ \\\\\" bar
+} {foo "\ \\\\\"" bar}
+test winpipe-7.16 {BuildCommandLine: N backslashes followed a quote rule #8} {pcOnly exec} {
+    exec $env(COMSPEC) /c echo foo \\\ \\\\\\\" bar
+} {foo "\ \\\\\\\"" bar}
+test winpipe-7.17 {BuildCommandLine: special chars #4} {pcOnly exec} {
     exec $env(COMSPEC) /c echo foo \{ bar
 } "foo \{ bar"
-test winpipe-7.15 {BuildCommandLine: special chars #5} {pcOnly exec} {
+test winpipe-7.18 {BuildCommandLine: special chars #5} {pcOnly exec} {
     exec $env(COMSPEC) /c echo foo \} bar
 } "foo \} bar"
 
@@ -405,13 +414,22 @@ test winpipe-8.12 {BuildCommandLine/parse_cmdline pass-thru: N backslashes follo
 test winpipe-8.13 {BuildCommandLine/parse_cmdline pass-thru: N backslashes followed a quote rule #5} {pcOnly exec} {
     exec [interpreter] $path(echoArgs.tcl) foo \\\ \\\\\\ bar
 } [list $path(echoArgs.tcl) [list foo \\\ \\\\\\ bar]]
-test winpipe-8.14 {BuildCommandLine/parse_cmdline pass-thru: special chars #1} {pcOnly exec} {
+test winpipe-8.14 {BuildCommandLine/parse_cmdline pass-thru: N backslashes followed a quote rule #6} {pcOnly exec} {
+    exec [interpreter] $path(echoArgs.tcl) foo \\\ \\\" bar
+} [list $path(echoArgs.tcl) [list foo \\\ \\\" bar]]
+test winpipe-8.15 {BuildCommandLine/parse_cmdline pass-thru: N backslashes followed a quote rule #7} {pcOnly exec} {
+    exec [interpreter] $path(echoArgs.tcl) foo \\\ \\\\\" bar
+} [list $path(echoArgs.tcl) [list foo \\\ \\\\\" bar]]
+test winpipe-8.16 {BuildCommandLine/parse_cmdline pass-thru: N backslashes followed a quote rule #8} {pcOnly exec} {
+    exec [interpreter] $path(echoArgs.tcl) foo \\\ \\\\\\\" bar
+} [list $path(echoArgs.tcl) [list foo \\\ \\\\\\\" bar]]
+test winpipe-8.17 {BuildCommandLine/parse_cmdline pass-thru: special chars #1} {pcOnly exec} {
     exec [interpreter] $path(echoArgs.tcl) foo \{ bar
 } [list $path(echoArgs.tcl) [list foo \{ bar]]
-test winpipe-8.15 {BuildCommandLine/parse_cmdline pass-thru: special chars #2} {pcOnly exec} {
+test winpipe-8.18 {BuildCommandLine/parse_cmdline pass-thru: special chars #2} {pcOnly exec} {
     exec [interpreter] $path(echoArgs.tcl) foo \} bar
 } [list $path(echoArgs.tcl) [list foo \} bar]]
-test winpipe-8.16 {ensure parse_cmdline isn't doing wildcard replacement} {pcOnly exec} {
+test winpipe-8.19 {ensure parse_cmdline isn't doing wildcard replacement} {pcOnly exec} {
     exec [interpreter] $path(echoArgs.tcl) foo * makefile.?c bar
 } [list $path(echoArgs.tcl) [list foo * makefile.?c bar]]
 
