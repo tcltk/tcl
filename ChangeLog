@@ -1,3 +1,22 @@
+2001-09-21  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclExecute.c (TclExecuteByteCode): corrected
+	INST_STR_CMP else case for strings to pass true utf char length to
+	Tcl_UtfNCmp.
+
+2001-09-20  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* win/tclWinInit.c: added extra processor definitions. (mstacy)
+
+	* win/tclWinSock.c (SocketThread): corrected pointer cast for _WIN64.
+
+	* win/tclWinNotify.c: removed unnecessary winsock include (it is
+	already in from tclWinPort.h).
+
+	* win/tclWinPort.h: changed winsock.h include to winsock2.h.
+	Reverses change from 2000-11-16, but is necessary for WIN64.
+	Extensions should comply with defined OS words, or use #ifndef.
+
 2001-09-20  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* tests/socket.test: removed dependence on being run from same dir
@@ -5,6 +24,22 @@
 	file.  [Bug #219326]
 
 2001-09-19  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclTest.c (TestcmdtokenCmd): corrected pointer
+	storage/retrieval for 64bit machines.
+
+	* generic/tclCmdAH.c (Tcl_FormatObjCmd):
+	* generic/tclScan.c (Tcl_ScanObjCmd): corrected handling of format
+	and scan on 64-bit machines. [Bug #412696] (rmax)
+
+	* unix/configure: regen'ed
+	* unix/tcl.m4: added --enable-64bit support for HP-11 with the
+	64-bit kernel.
+
+	* tests/basic.test:
+	* tests/cmdInfo.test: improved skip reporting of missing commands
+
+	* tests/winFCmd.test: simplified error check for winFCmd-7.9
 
 	* tests/winPipe.test: removed obsolete cat16 tests
 
