@@ -1,3 +1,9 @@
+2004-09-10  Kevin Kenny  <kennykb@acm.org>
+
+	* library/clock.tcl: Fixed a bug where %z always put a plus
+	sign on the time zone in :localtime.
+	* tests/clock.test: Added test case for the above bug.
+	
 2004-09-10  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclExecute.c (INST_CONCAT1): added a peephole
