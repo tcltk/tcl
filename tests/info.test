@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: info.test,v 1.6 1999/04/16 00:47:29 stanton Exp $
+# RCS: @(#) $Id: info.test,v 1.7 1999/05/28 00:01:08 surles Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     source [file join [pwd] [file dirname [info script]] defs.tcl]
@@ -25,7 +25,7 @@ catch {namespace delete test_ns_info1 test_ns_info2}
 namespace eval test_ns_info1 {
     namespace export *
     proc p {x} {return "x=$x"}
-    proc q {{y 27} z} {return "y=$y"}
+    proc q {{y 27} {z {}}} {return "y=$y"}
 }
 
 
