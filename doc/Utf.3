@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Utf.3,v 1.7 2000/04/25 17:55:29 hobbs Exp $
+'\" RCS: @(#) $Id: Utf.3,v 1.8 2000/05/08 22:00:01 hobbs Exp $
 '\" 
 .so man.macros
 .TH Utf 3 "8.1" Tcl "Tcl Library Procedures"
@@ -34,6 +34,14 @@ int
 .sp
 int
 \fBTcl_UniCharNcmp\fR(\fIuniStr, uniStr, num\fR)
+.VS 8.4
+.sp
+int
+\fBTcl_UniCharNcasecmp\fR(\fIuniStr, uniStr, num\fR)
+.sp
+int
+\fBTcl_UniCharCaseMatch\fR(\fIuniStr, uniPattern, nocase\fR)
+.VE 8.4
 .sp
 int
 \fBTcl_UtfNcmp\fR(\fIsrc, src, num\fR)
@@ -80,6 +88,8 @@ Filled with the Tcl_UniChar represented by the head of the UTF-8 string.
 Pointer to a UTF-8 string.
 .AP "CONST Tcl_UniChar" *uniStr in
 A NULL-terminated Unicode string.
+.AP "CONST Tcl_UniChar" *uniPattern in
+A NULL-terminated Unicode string.
 .AP int len in
 The length of the UTF-8 string in bytes (not UTF-8 characters).  If
 negative, all bytes up to the first null byte are used.
@@ -100,6 +110,11 @@ including the backslash character.
 .AP char *dst out
 Buffer in which the bytes represented by the backslash sequence are stored.
 At most TCL_UTF_MAX bytes are stored in the buffer.
+.VS 8.4
+.AP int nocase in
+Specifies whether the match should be done case-sensitive (0) or
+case-insensitive (1).
+.VE 8.4
 .BE
 
 .SH DESCRIPTION
@@ -147,15 +162,22 @@ is terminated with a Unicode NULL character.
 characters.  It accepts a NULL-terminated Unicode string and returns
 the number of Unicode characters (not bytes) in that string.
 .PP
-\fBTcl_UniCharNcmp\fR corresponds to \fBstrncmp\fR for Unicode
-characters.  It accepts two NULL-terminated Unicode strings
-and the number of characters to compare.  (Both strings are
-assumed to be at least \fIlen\fR characters long.)
-\fBTcl_UniCharNcmp\fR compares the two strings character-by-character
-according to the Unicode character ordering.  It returns an integer
-greater than, equal to,
-or less than 0 if the first string is greater than, equal to, or
-less than the second string respectively.
+\fBTcl_UniCharNcmp\fR and \fBTcl_UniCharNcasecmp\fR correspond to
+\fBstrncmp\fR and \fBstrncasecmp\fR, respectively, for Unicode characters.
+They accepts two NULL-terminated Unicode strings and the number of characters
+to compare.  Both strings are assumed to be at least \fIlen\fR characters
+long. \fBTcl_UniCharNcmp\fR  compares the two strings character-by-character
+according to the Unicode character ordering.  It returns an integer greater
+than, equal to, or less than 0 if the first string is greater than, equal
+to, or less than the second string respectively.  \fBTcl_UniCharNcasecmp\fR
+is the Unicode case insensitive version.
+.PP
+.VS 8.4
+\fBTcl_UniCharCaseMatch\fR is the Unicode equivalent to
+\fBTcl_StringCaseMatch\fR.  It accepts a NULL-terminated Unicode string,
+a Unicode pattern, and a boolean value specifying whether the match should
+be case sensitive and returns whether the string matches the pattern.
+.VE 8.4
 .PP
 \fBTcl_UtfNcmp\fR corresponds to \fBstrncmp\fR for UTF-8 strings. It
 accepts two NULL-terminated UTF-8 strings and the number of characters

@@ -1,3 +1,14 @@
+2000-05-08  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* doc/Utf.3:
+	* generic/tclStubInit.c:
+	* generic/tcl.decls:
+	* generic/tclDecls.h:
+	* generic/tclUtf.c: Added new functions Tcl_UniCharNcasecmp and
+	Tcl_UniCharCaseMatch (unicode parallel to Tcl_StringCaseMatch)
+	* generic/tclUtil.c: rewrote Tcl_StringCaseMatch algorithm for
+	optimization and made Tcl_StringMatch just call Tcl_StringCaseMatch
+
 2000-05-08  Eric Melski  <ericm@scriptics.com>
 
 	* tests/set-old.test: 

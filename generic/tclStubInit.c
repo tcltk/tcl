@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.36 2000/05/02 22:02:35 kupries Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.37 2000/05/08 21:59:59 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -798,6 +798,8 @@ TclStubs tclStubs = {
     Tcl_SpliceChannel, /* 398 */
     Tcl_ClearChannelHandlers, /* 399 */
     Tcl_IsChannelExisting, /* 400 */
+    Tcl_UniCharNcasecmp, /* 401 */
+    Tcl_UniCharCaseMatch, /* 402 */
 };
 
 /* !END!: Do not edit above this line. */

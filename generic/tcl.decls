@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.34 2000/05/02 22:02:33 kupries Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.35 2000/05/08 21:59:58 hobbs Exp $
 
 library tcl
 
@@ -1379,6 +1379,14 @@ declare 400 generic {
     int Tcl_IsChannelExisting (CONST char* channelName)
 }
 
+declare 401 generic {
+    int Tcl_UniCharNcasecmp(CONST Tcl_UniChar *cs, CONST Tcl_UniChar *ct,\
+	    unsigned long n)
+}
+declare 402 generic {
+    int Tcl_UniCharCaseMatch(CONST Tcl_UniChar *ustr, \
+	    CONST Tcl_UniChar *pattern, int nocase)
+}
 
 ##############################################################################
 
