@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and
 # redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: http.tcl,v 1.13 1999/10/30 00:31:58 welch Exp $
+# RCS: @(#) $Id: http.tcl,v 1.14 1999/11/10 02:52:20 hobbs Exp $
 
 package provide http 2.1	;# This uses Tcl namespaces
 
@@ -348,7 +348,7 @@ proc http::cleanup {token} {
 	return
     }
     if {[string equal $state(state) "header"]} {
-        if {[catch {gets $s line} n]} {
+	if {[catch {gets $s line} n]} {
 	    Finish $token $err
 	}
 	if {$n == 0} {
