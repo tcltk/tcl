@@ -1,5 +1,14 @@
 2001-10-17 Daniel Steffen <das@users.sourceforge.net>
 
+	* mac/tclMacProjects.sea.hqx: updated projects with new version
+	numbers and resource reorganization; included XML versions of
+	the projects for CW Pro5 or Pro7 users.
+	
+	* mac/tcltkMacBuildSupport.sea.hqx: updated build instructions 
+	and readme's; MoreFiles 1.5.2 added; XML versions of projects.
+
+2001-10-17 Daniel Steffen <das@users.sourceforge.net>
+
 	Backport of mac specific changes added to 8.4 since 8.3.3:
 	
 	* generic/tcl.h: removed line continuation in #if clause as this
