@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: winPipe.test,v 1.28 2004/05/25 19:38:16 dgp Exp $
+# RCS: @(#) $Id: winPipe.test,v 1.29 2004/06/02 22:12:58 davygrvy Exp $
 
 package require tcltest
 namespace import -force ::tcltest::*
@@ -295,6 +295,7 @@ test winpipe-6.1 {PipeSetupProc & PipeCheckProc: read threads} \
     lappend x [read $f]
     after 100 { lappend x timeout }
     vwait x
+    fconfigure $f -blocking 1
     lappend x [catch {close $f} msg] $msg
 } {writable timeout readable {foobar
 } timeout 1 stderr32}
