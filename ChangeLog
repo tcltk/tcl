@@ -1,5 +1,10 @@
 2004-05-25  Miguel Sofer <msofer@users.sf.net>
 
+	* docs/global.n: added details for qualified variable names 
+	[Bug 959831]
+
+2004-05-25  Miguel Sofer <msofer@users.sf.net>
+
 	* generic/tclNamesp.c (Tcl_FindNamespaceVar):
 	* tests/namespace.test (namespace-17.10-12): reverted commit of
 	2004-05-23 and removed the tests, as it interferes with the
