@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.27 2000/02/07 21:35:04 ericm Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.28 2000/03/07 02:21:58 wart Exp $
 
 VERSION = @TCL_VERSION@
 
@@ -121,7 +121,9 @@ TCL_STUB_LIB_FILE	= @TCL_STUB_LIB_FILE@
 TCL_DLL_FILE		= @TCL_DLL_FILE@
 TCL_LIB_FILE		= @TCL_LIB_FILE@
 DDE_DLL_FILE		= tcldde$(VER)${DLLSUFFIX}
+DDE_LIB_FILE		= tcldde$(VER)${LIBSUFFIX}
 REG_DLL_FILE		= tclreg$(VER)${DLLSUFFIX}
+REG_LIB_FILE		= tclreg$(VER)${LIBSUFFIX}
 PIPE_DLL_FILE		= tclpip$(VER).dll
 
 SHARED_LIBRARIES 	= $(TCL_DLL_FILE) $(TCL_STUB_LIB_FILE) \
@@ -422,10 +424,18 @@ install-binaries:
 	    $(COPY) $(DDE_DLL_FILE) $(LIB_INSTALL_DIR)/dde1.1; \
 	    $(COPY) $(ROOT_DIR)/library/dde1.1/pkgIndex.tcl $(LIB_INSTALL_DIR)/dde1.1; \
 	    fi
+	@if [ -f $(DDE_LIB_FILE) ]; then \
+	    echo installing $(DDE_LIB_FILE); \
+	    $(COPY) $(DDE_LIB_FILE) $(LIB_INSTALL_DIR)/dde1.1; \
+	    fi
 	@if [ -f $(REG_DLL_FILE) ]; then \
 	    echo installing $(REG_DLL_FILE); \
 	    $(COPY) $(REG_DLL_FILE) $(LIB_INSTALL_DIR)/reg1.0; \
 	    $(COPY) $(ROOT_DIR)/library/reg1.0/pkgIndex.tcl $(LIB_INSTALL_DIR)/reg1.0; \
+	    fi
+	@if [ -f $(REG_LIB_FILE) ]; then \
+	    echo installing $(REG_LIB_FILE); \
+	    $(COPY) $(REG_LIB_FILE) $(LIB_INSTALL_DIR)/reg1.0; \
 	    fi
 
 install-libraries:
