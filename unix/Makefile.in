@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.121.2.1 2003/05/20 17:26:26 hobbs Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.121.2.2 2003/07/15 01:15:51 das Exp $
 
 VERSION 		= @TCL_VERSION@
 MAJOR_VERSION		= @TCL_MAJOR_VERSION@
@@ -1343,9 +1343,12 @@ allpatch: dist
 # TOOL_DIR.
 #
 
-html: 
+html-tcl: EXTRA_HTML_ARGS=--tcl
+html-tk:  EXTRA_HTML_ARGS=--tk
+
+html html-tcl html-tk: 
 	$(TCL_EXE) $(TOOL_DIR)/tcltk-man2html.tcl --htmldir=$(DISTDIR)/html \
-		--srcdir=$(TOP_DIR)/..
+		--srcdir=$(TOP_DIR)/.. $(EXTRA_HTML_ARGS)
 
 #
 # Target to create a Macintosh version of the distribution.  This will
