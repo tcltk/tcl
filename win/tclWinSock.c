@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinSock.c,v 1.32 2002/11/27 18:37:28 davygrvy Exp $
+ * RCS: @(#) $Id: tclWinSock.c,v 1.33 2002/11/27 22:47:28 davygrvy Exp $
  */
 
 #include "tclWinInt.h"
@@ -257,6 +257,7 @@ InitSockets()
 {
     DWORD id;
     WSADATA wsaData;
+    int err;
     ThreadSpecificData *tsdPtr = 
 	(ThreadSpecificData *)TclThreadDataKeyGet(&dataKey);
 
@@ -385,19 +386,36 @@ InitSockets()
 	    TclWinConvertError(GetLastError());
 	    goto unloadLibrary;
 	}
-	
+
 	/*
-	 * Initialize the winsock library and check the version number.
-	 * We only ask for the 1.1 interface.
+	 * Initialize the winsock library and check the interface
+	 * version number. We only ask for the 1.1 interface.
+	 *
+	 * Note that WSA_VERSION_REQD has major/minor swapped for the API
+	 * call (as it is supposed to be) and wsaData.wVersion is
+	 * reversed back for the comparison.  Also, note that
+	 * WSAVERNOTSUPPORTED is not listed in the error table, but
+	 * simply gets translated to EINVAL by being out-of-range.
 	 */
-    
-	if (winSock.WSAStartup(MAKEWORD(1,1), &wsaData) != 0) {
+
+#define WSA_VERSION_MAJOR   1
+#define WSA_VERSION_MINOR   1
+#define WSA_VERSION_REQD    MAKEWORD(WSA_VERSION_MINOR, WSA_VERSION_MAJOR)
+
+	if ((err = winSock.WSAStartup(WSA_VERSION_REQD, &wsaData)) != 0) {
+	    TclWinConvertWSAError(err);
 	    goto unloadLibrary;
 	}
-	if (wsaData.wVersion < MAKEWORD(1,1)) {
+	if (((LOBYTE(wsaData.wVersion) << 16) + HIBYTE(wsaData.wVersion))
+		< (WSA_VERSION_MAJOR << 16) + WSA_VERSION_MINOR) {
+	    TclWinConvertWSAError(WSAVERNOTSUPPORTED);
 	    winSock.WSACleanup();
 	    goto unloadLibrary;
 	}
+
+#undef WSA_VERSION_REQD
+#undef WSA_VERSION_MAJOR
+#undef WSA_VERSION_MINOR
     }
 
     /*
