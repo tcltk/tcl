@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLiteral.c,v 1.19 2004/07/21 00:42:39 kennykb Exp $
+ * RCS: @(#) $Id: tclLiteral.c,v 1.20 2004/08/02 15:33:36 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -96,34 +96,55 @@ TclInitLiteralTable(tablePtr)
 
 void
 TclCleanupLiteralTable( interp, tablePtr )
-    Tcl_Interp* interp;		/* Interpreter containing literals to purge */
-    LiteralTable* tablePtr;	/* Points to the literal table being cleaned */
+    Tcl_Interp* interp;         /* Interpreter containing literals to purge */
+    LiteralTable* tablePtr;     /* Points to the literal table being cleaned */
 {
     int i;
-    LiteralEntry* entryPtr;
-    LiteralEntry* nextPtr;
-    Tcl_Obj* objPtr;
-    Tcl_ObjType* typePtr;
+    LiteralEntry* entryPtr;     /* Pointer to the current entry in the
+                                 * hash table of literals */
+    LiteralEntry* nextPtr;      /* Pointer to the next entry in tbe
+                                 * bucket */
+    Tcl_Obj* objPtr;            /* Pointer to a literal object whose internal
+                                 * rep is being freed */
+    Tcl_ObjType* typePtr;       /* Pointer to the object's type */
+    int didOne;                 /* Flag for whether we've removed a literal
+                                 * in the current bucket */
 
 #ifdef TCL_COMPILE_DEBUG
     TclVerifyGlobalLiteralTable( (Interp*) interp );
 #endif /* TCL_COMPILE_DEBUG */
 
     for ( i = 0; i < tablePtr->numBuckets; i++ ) {
-	entryPtr = tablePtr->buckets[i];
-	while ( entryPtr != NULL ) {
-	    objPtr = entryPtr->objPtr;
-	    nextPtr = entryPtr->nextPtr;
-	    typePtr = objPtr->typePtr;
-	    if ( ( typePtr != NULL ) && ( typePtr->freeIntRepProc != NULL ) ) {
-		if ( objPtr->bytes == NULL ) {
-		    Tcl_Panic( "literal without a string rep" );
-		}
-		objPtr->typePtr = NULL;
-		typePtr->freeIntRepProc( objPtr );
-	    }
-	    entryPtr = nextPtr;
-	}
+
+        /* 
+         * It is tempting simply to walk each hash bucket once and
+         * delete the internal representations of each literal in turn.
+         * It's also wrong.  The problem is that freeing a literal's
+         * internal representation can delete other literals to which
+         * it refers, making nextPtr invalid.  So each time we free an
+         * internal rep, we start its bucket over again.
+         */
+        didOne = 1;
+        while ( didOne ) {
+            didOne = 0;
+            entryPtr = tablePtr->buckets[i];
+            while ( entryPtr != NULL ) {
+                objPtr = entryPtr->objPtr;
+                nextPtr = entryPtr->nextPtr;
+                typePtr = objPtr->typePtr;
+                if ( ( typePtr != NULL )
+                     && ( typePtr->freeIntRepProc != NULL ) ) {
+                    if ( objPtr->bytes == NULL ) {
+                      Tcl_Panic( "literal without a string rep" );
+                    }
+                    objPtr->typePtr = NULL;
+                    typePtr->freeIntRepProc( objPtr );
+                    didOne = 1;
+                } else {
+                    entryPtr = nextPtr;
+                }
+            }
+        }
     }
 }
 	    
