@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPathObj.c,v 1.12 2003/10/13 16:48:06 vincentdarley Exp $
+ * RCS: @(#) $Id: tclPathObj.c,v 1.13 2003/11/03 12:49:11 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -709,7 +709,7 @@ TclFSMakePathRelative(interp, objPtr, cwdPtr)
 			if (interp != NULL) {
 			    Tcl_ResetResult(interp);
 			    Tcl_AppendResult(interp, "can't find object",
-					     "string representation", (char *) NULL);
+				   "string representation", (char *) NULL);
 			}
 			return NULL;
 		    }
