@@ -197,11 +197,11 @@ MacOS X Port by Jim Ingham &lt;jingham@apple.com&gt; &amp; Ian Reid, Copyright Â
 	<key>CFBundlePackageType</key>
 	<string>FMWK</string>
 	<key>CFBundleShortVersionString</key>
-	<string>8.4.2</string>
+	<string>8.4.3</string>
 	<key>CFBundleSignature</key>
 	<string>Tcl </string>
 	<key>CFBundleVersion</key>
-	<string>8.4.2</string>
+	<string>8.4.3</string>
 </dict>
 </plist>
 ";
