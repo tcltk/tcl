@@ -1,10 +1,6 @@
 Tcl 8.3 for Windows
 
-by Scott Stanton
-Scriptics Corporation
-scott.stanton@scriptics.com
-
-RCS: @(#) $Id: README,v 1.16 2000/04/26 17:31:22 hobbs Exp $
+RCS: @(#) $Id: README,v 1.16.2.1 2001/04/03 22:08:32 hobbs Exp $
 
 1. Introduction
 ---------------
@@ -23,9 +19,9 @@ In order to compile Tcl for Windows, you need the following items:
 
 	Tcl 8.3 Source Distribution (plus any patches)
 
-	Visual C++ 2.x/4.x/5.x
+	Visual C++ 4+
 
-In practice, this release is built with Visual C++ 5.0
+In practice, this release is built with Visual C++ 6.0
 
 In the "win" subdirectory of the source release, you will find
 "makefile.vc".  This is the makefile Visual C++ compiler.  You should
@@ -64,7 +60,7 @@ This distribution contains an extensive test suite for Tcl.  Some of
 the tests are timing dependent and will fail from time to time.  If a
 test is failing consistently, please send us a bug report with as much
 detail as you can manage.  Please use the online database at
-	http://dev.scriptics.com/ticket/
+	http://tcl.sourceforge.net/
 
 In order to run the test suite, you build the "test" target using the
 appropriate makefile for your compiler.

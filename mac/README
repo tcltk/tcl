@@ -1,14 +1,6 @@
 Tcl 8.3 for Macintosh
 
-by Ray Johnson
-Scriptics Corporation
-rjohnson@scriptics.com
-with major help from
-Jim Ingham
-Cygnus Solutions
-jingham@cygnus.com
-
-RCS: @(#) $Id: README,v 1.12 2000/04/26 17:31:20 hobbs Exp $
+RCS: @(#) $Id: README,v 1.12.2.1 2001/04/03 22:08:32 hobbs Exp $
 
 1. Introduction
 ---------------
@@ -75,4 +67,3 @@ current release notes please check this page:
 If you have comments or Bug reports send them to:
 Jim Ingham
 jingham@cygnus.com
-
