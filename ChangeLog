@@ -1,3 +1,8 @@
+2003-10-14  David Gravereaux <davygrvy@pobox.com>
+
+	* win/tclAppInit.c (sigHandler): Punt gracefully if exitToken
+	has already been destroyed.
+
 2003-10-14  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* generic/tclCmdMZ.c:
