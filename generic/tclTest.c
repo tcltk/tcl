@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.1.2.7 1998/12/02 01:46:07 stanton Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.1.2.8 1998/12/02 02:05:28 stanton Exp $
  */
 
 #define TCL_TEST
@@ -1567,7 +1567,7 @@ TestevalobjvObjCmd(dummy, interp, objc, objv)
     if (Tcl_GetIntFromObj(interp, objv[1], &evalGlobal) != TCL_OK) {
 	return TCL_ERROR;
     }
-    return Tcl_EvalObjv(interp, objc-2, objv+2, command, length,
+    return Tcl_EvalObjv(interp, objc-2, objv+2,
 	    (evalGlobal) ? TCL_EVAL_GLOBAL : 0);
 }
 
