@@ -1,5 +1,10 @@
 2002-06-13  Miguel Sofer  <msofer@users.sourceforge.net>
 
+	* generic/tclExecute.c (TclExecuteByteCode): consolidated code for
+	the conditional branch instructions.
+
+2002-06-13  Miguel Sofer  <msofer@users.sourceforge.net>
+
 	* generic/tclExecute.c (TclExecuteByteCode): fixed the previous
 	patch - wouldn't compile with TCL_COMPILE_DEBUG set.
 
