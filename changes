@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.59 2000/06/05 23:27:38 ericm Exp $
+RCS: @(#) $Id: changes,v 1.60 2000/11/04 00:03:29 hobbs Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -4873,6 +4873,7 @@ tclLoadDyld.c dl type. (sanchez)
 exec process was running (dejong)
 
 --- Released 8.3.1, April 26, 2000 --- See ChangeLog for details ---
+
 2000-04-26 (doc fix) updated/added documentation for many API's and
 commands (melski)
 
@@ -4922,3 +4923,95 @@ pattern matching for [array names] (gazetta)
 [unset] to allow for silent unset operation (hobbs)
 
 --- Released 8.4a1, June 6, 2000 --- See ChangeLog for details ---
+
+2000-05-29 (bug fix) corrected resource cleanup in http error cases.
+Improved handling of error cases in http. (tamhankar)
+
+2000-07 (feature rewrite) complete rewrite of the Tcl IO channel subsystem
+to correct problems (hangs, core dumps) with the initial stacked channel
+implementation.  The new system has many more tests for robustness and
+scalability.  There are new C APIs (see Tcl_CreateChannel), but only
+stacked channel drivers are affected (ie: TLS, Trf, iogt).  The iogt
+extension has been added to the core test code to test the system.
+(hobbs, kupries)
+	**** POTENTIAL INCOMPATABILITY ****
+
+2000-07 (build improvements) cleanup of the makefiles and configure scripts
+to correct support for building under gcc for Windows. (dejong)
+
+2000-08-07 (bug fix) corrected sizeof error in Tcl_GetIndexFromObjStruct.
+(perkins)
+
+2000-08-07 (bug fix) correct off-by-one error in HistIndex, which was
+causing [history redo] to start its search at the wrong event index. (melski)
+
+2000-08-07 (bug fix) corrected setlocale calls for XIM support and locale
+issues in startup. (takahashi)
+
+2000-08-07 (bug fix) correct code to handle locale specific return values
+from strftime, if any. (wagner)
+
+2000-08-07 (bug fix) tweaked grammar to properly handle the "ago" keyword
+when it follows multiple relative unit specifiers, as in
+"2 days 2 hours ago". (melski)
+
+2000-08-07 (doc fixes) numerous doc fixes to correct SEE ALSO and NAME
+sections. (english)
+
+2000-08-07 (bug fix) new man pages memory.n, TCL_MEM_DEBUG.3, Init.3 and
+DumpActiveMemory.3. (melski)
+
+--- Released 8.3.2, August 9, 2000 --- See ChangeLog for details ---
+
+ * New 'array names -exact/-glob/-regexp' options (melski, gazetta)
+
+ * Added -nocomplain option to 'unset' (hobbs)
+
+ * Added support for mingw (gcc on Windows), AIX-5 and Win64 builds
+   (dejong, hobbs)
+
+ * Added ability to use Tcl_Obj *s as hash keys (duffin)
+
+ * New ::msgcat::mcmax function, extended ::msgcat::unknown function,
+   new ::msgcat::mcmset function (duperval, krone, nelson)
+
+ * Much improved doc SEE ALSO, NAME, KEYWORDS sections (peonitz, english)
+
+ * Updated IO core to 8.3.2 version.
+
+ * Fixed mem leak in Tcl_CreateChannel. Re-purified core via test suites.
+   (hobbs)
+
+ * Added tclPlatDecls.h to default install (melski)
+
+ * Enhanced trace syntax to add:
+	trace {add|remove|list} {variable|command} name ops command
+   (darley, melski)
+
+ * Improved string allocation growth for large strings (hintermayer,
+   melski)
+
+ * Set ^Z (\32) as cross-platform default EOF char.  This was already
+   enforced by Windows, it is now just cross-platform.
+
+ * partial fix for bug 2460 to prevent exec mem leak on Windows for the
+   common case (gravereaux)
+
+ * New non-panic'ing mem allocation functions Tcl_AttemptAlloc,
+   Tcl_AttemptRealloc, Tcl_AttemptSetObjLength (melski)
+
+ * Updgraded tcltest to version 2 with completely new, enhanced syntax.
+   This provides backwards compatability with tcltest v1. (hom)
+
+ * Fixed overaggressive stat'ing of files in Windows glob command (results
+   in significant speed increase for glob) (hobbs)
+
+ * Added "ja_JP.eucJP" to "euc-jp" encoding mapping (takahashi)
+
+ * Corrected excessive mem use when info exists was called on a
+   non-existent array element (patton)
+
+ * New Tcl_SetMainLoop function that enables defining an event loop for
+   tclsh.  This enables Tk as a truly loadable package.
+
+--- Released 8.4a2, November 3, 2000 --- See ChangeLog for details ---
