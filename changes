@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.91 2004/11/15 22:04:51 dgp Exp $
+RCS: @(#) $Id: changes,v 1.92 2004/11/18 18:34:10 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -6300,6 +6300,10 @@ tables to avoid system limits (mistachkin)
 2004-11-12 (bug fix)[1004065] stop crash when TCL_UTF_MAX==6 (hobbs,porter)
 
 2004-11-15 (bug fix)[10653678] [trace variable],[trace remove] interop (porter)
+
+2004-11-16 (bug fix)[1067709] crash in [fconfigure -ttycontrol] (hobbs)
+
+2004-11-18 (new feature) configure options --enable-man-suffix (max)
 
 Doc improvements [759545,926590,935853,1017072,1018486,1022527,1027849,
 			1032243,1047928,1048005,1058446,1062647,1065732,etc.]
