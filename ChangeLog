@@ -1,3 +1,11 @@
+1998-12-04    <stanton@GASPODE>
+
+	* library/msgcat1.0/msgcat.tcl: Changed code to conform to Tcl
+	coding standards.  Changed to use file join for portability.
+
+	* library/msgcat1.0: Added initial implementaion of Tcl message
+	catalog package contributed by Mark Harrison.
+
 1998-12-03    <stanton@GASPODE>
 
 	* win/tclWinPipe.c (BuildCommandLine): Fixed bug that kept
