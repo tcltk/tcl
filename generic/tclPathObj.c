@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPathObj.c,v 1.6 2003/08/23 12:16:49 vasiljevic Exp $
+ * RCS: @(#) $Id: tclPathObj.c,v 1.7 2003/09/16 14:56:08 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -1177,6 +1177,7 @@ Tcl_FSGetNormalizedPath(interp, pathObjPtr)
 	 */
 	Tcl_Obj *absolutePath = fsPathPtr->translatedPathPtr;
 	char *path = Tcl_GetString(absolutePath);
+	int type;
 	
 	/* 
 	 * We have to be a little bit careful here to avoid infinite loops
@@ -1184,17 +1185,61 @@ Tcl_FSGetNormalizedPath(interp, pathObjPtr)
 	 * that call can actually result in a lot of other filesystem
 	 * action, which might loop back through here.
 	 */
-	if ((path[0] != '\0') && 
-	  (Tcl_FSGetPathType(pathObjPtr) == TCL_PATH_RELATIVE)) {
-	    useThisCwd = Tcl_FSGetCwd(interp);
+	if (path[0] != '\0') {
+	    type = Tcl_FSGetPathType(pathObjPtr);
+	    if (type == TCL_PATH_RELATIVE) {
+		useThisCwd = Tcl_FSGetCwd(interp);
 
-	    if (useThisCwd == NULL) {
-		return NULL;
+		if (useThisCwd == NULL) return NULL;
+
+		absolutePath = Tcl_FSJoinToPath(useThisCwd, 1, &absolutePath);
+		Tcl_IncrRefCount(absolutePath);
+		/* We have a refCount on the cwd */
+	    } else if (type == TCL_PATH_VOLUME_RELATIVE) {
+		/* 
+		 * Only Windows has volume-relative paths.  These
+		 * paths are rather rare, but is is nice if Tcl can
+		 * handle them.  It is much better if we can
+		 * handle them here, rather than in the native fs code,
+		 * because we really need to have a real absolute path
+		 * just below.
+		 */
+		useThisCwd = Tcl_FSGetCwd(interp);
+		if (useThisCwd == NULL) return NULL;
+		
+		if (path[0] == '/') {
+		    /* 
+		     * Path of form /foo/bar which is a path in the
+		     * root directory of the current volume.
+		     */
+		    CONST char *drive = Tcl_GetString(useThisCwd);
+		    absolutePath = Tcl_NewStringObj(drive,2);
+		    Tcl_AppendToObj(absolutePath, path, -1);
+		    Tcl_IncrRefCount(absolutePath);
+		    /* We have a refCount on the cwd */
+		} else {
+		    /* 
+		     * Path of form C:foo/bar, but this only makes
+		     * sense if the cwd is also on drive C.
+		     */
+		    CONST char *drive = Tcl_GetString(useThisCwd);
+		    char drive_c = path[0];
+		    if (drive_c >= 'a') {
+			drive_c -= ('a' - 'A');
+		    }
+		    if (drive[0] == drive_c) {
+			absolutePath = Tcl_DuplicateObj(useThisCwd);
+			Tcl_IncrRefCount(absolutePath);
+			Tcl_AppendToObj(absolutePath, "/", 1);
+			Tcl_AppendToObj(absolutePath, path+2, -1);
+			/* We have a refCount on the cwd */
+		    } else {
+			/* We just can't handle it correctly here */
+			Tcl_DecrRefCount(useThisCwd);
+			useThisCwd = NULL;
+		    }
+		}
 	    }
-
-	    absolutePath = Tcl_FSJoinToPath(useThisCwd, 1, &absolutePath);
-	    Tcl_IncrRefCount(absolutePath);
-	    /* We have a refCount on the cwd */
 	}
 	/* Already has refCount incremented */
 	fsPathPtr->normPathPtr = TclFSNormalizeAbsolutePath(interp, absolutePath, 
