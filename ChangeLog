@@ -1,3 +1,9 @@
+2001-09-28  Kevin Kenny   <kennykb@users.sourceforge.net>
+
+	* generic/tclIO.c: added two more '(ClientData)' casts
+	on calls to Tcl_Preserve and Tcl_Release -- ones that
+	Vince apparently missed.
+	
 2001-09-28  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* doc/lsort.n: Improved doc...
