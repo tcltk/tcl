@@ -1,3 +1,9 @@
+2004-04-06  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* tests/cmdAH.test (cmdAH-18.2): Added constraint because
+	access(...,X_OK) is defined to be permitted to be meaningless when
+	running as root, and OSX exhibits this.  [Bug 929892]
+
 2004-04-02  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclCompile.c:
