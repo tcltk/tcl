@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixNotfy.c,v 1.11.2.2 2003/07/16 22:09:48 hobbs Exp $
+ * RCS: @(#) $Id: tclUnixNotfy.c,v 1.11.2.3 2004/06/22 11:55:36 vasiljevic Exp $
  */
 
 #include "tclInt.h"
@@ -208,7 +208,7 @@ Tcl_InitNotifier()
 
     Tcl_MutexLock(&notifierMutex);
     if (notifierCount == 0) {
-	if (Tcl_CreateThread(&notifierThread, NotifierThreadProc, NULL,
+	if (TclpThreadCreate(&notifierThread, NotifierThreadProc, NULL,
 		     TCL_THREAD_STACK_DEFAULT, TCL_THREAD_NOFLAGS) != TCL_OK) {
 	    panic("Tcl_InitNotifier: unable to start notifier thread");
 	}
