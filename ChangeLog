@@ -1,3 +1,14 @@
+2002-08-20  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
+
+	* win/Makefile.in (CFLAGS): 
+	* unix/Makefile.in (MEM_DEBUG_FLAGS): Added usage of @MEM_DEBUG_FLAGS@.
+	* win/configure.in:
+	* unix/configure.in: Added usage of SC_ENABLE_MEMDEBUG.
+	* win/tcl.m4:
+	* unix/tcl.m4: Added macro SC_ENABLE_MEMDEBUG. Allows a user of
+	  configure to (de)activate memory validation and debugging
+	  (TCL_MEM_DEBUG). No need to modify the makefile anymore.
+
 2002-07-30  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	Revert incorrect RANLIB related changed added

@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.63.2.13 2002/07/30 19:18:26 mdejong Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.63.2.14 2002/08/20 21:45:30 andreas_kupries Exp $
 
 VERSION 		= @TCL_VERSION@
 
@@ -134,7 +134,7 @@ NOTIFY_OBJS = tclUnixNotfy.o
 # lines.  Warning:  if you enable memory debugging, you must do it
 # *everywhere*, including all the code that calls Tcl, and you must use
 # ckalloc and ckfree everywhere instead of malloc and free.
-MEM_DEBUG_FLAGS		=
+MEM_DEBUG_FLAGS		= @MEM_DEBUG_FLAGS@
 #MEM_DEBUG_FLAGS	= -DTCL_MEM_DEBUG
 
 # To enable support for stubs in Tcl.
@@ -508,7 +508,7 @@ topDirName:
 gendate:
 	yacc -l $(GENERIC_DIR)/tclGetDate.y
 	sed -e 's/yy/TclDate/g' -e '/^#include <values.h>/d' \
-	    -e 's?SCCSID?RCS: @(#) $$Id: Makefile.in,v 1.63.2.13 2002/07/30 19:18:26 mdejong Exp $$?' \
+	    -e 's?SCCSID?RCS: @(#) $$Id: Makefile.in,v 1.63.2.14 2002/08/20 21:45:30 andreas_kupries Exp $$?' \
 	    -e '/#ifdef __STDC__/,/#endif/d' -e '/TclDateerrlab:/d' \
 	    -e '/TclDatenewstate:/d' -e '/#pragma/d' \
 	    -e '/#include <inttypes.h>/d' -e 's/const /CONST /g' \

@@ -3,7 +3,7 @@
 # generate the file "configure", which is run during Tcl installation
 # to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.20.2.7 2001/10/15 21:54:20 hobbs Exp $
+# RCS: @(#) $Id: configure.in,v 1.20.2.8 2002/08/20 21:45:32 andreas_kupries Exp $
 
 AC_INIT(../generic/tcl.h)
 
@@ -96,6 +96,7 @@ SC_CONFIG_CFLAGS
 #--------------------------------------------------------------------
 
 SC_ENABLE_SYMBOLS
+SC_ENABLE_MEMDEBUG
 
 TCL_DBGX=${DBGX}
 
