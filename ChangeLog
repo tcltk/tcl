@@ -1,3 +1,9 @@
+1999-08-27  Jennifer Hom  <jenn@scriptics.com>
+
+	* library/tcltest1.0/tcltest.tcl:  Modified tcltest so that
+	variables are only initialized to their default values if they did
+	not previously exist. 
+
 1999-08-26  Jennifer Hom  <jenn@scriptics.com>
 
 	* tests/tcltest.test:

@@ -12,7 +12,7 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 # 
-# RCS: @(#) $Id: tcltest.tcl,v 1.10 1999/08/27 01:17:04 jenn Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.11 1999/08/27 18:12:26 jenn Exp $
 
 package provide tcltest 1.0
 
@@ -32,28 +32,40 @@ namespace eval tcltest {
     }
 
     # ::tcltest::verbose defaults to "b"
-
-    variable verbose "b"
+    if {![info exists verbose]} {
+	variable verbose "b"
+    }
 
     # Match and skip patterns default to the empty list, except for
     # matchFiles, which defaults to all .test files in the testsDirectory
 
-    variable match {}
-    variable skip {}
-
-    variable matchFiles {*.test}
-    variable skipFiles {}
+    if {![info exists match]} {
+	variable match {}
+    }
+    if {![info exists skip]} {
+	variable skip {}
+    }
+    if {![info exists matchFiles]} {
+	variable matchFiles {*.test}
+    }
+    if {![info exists skipFiles]} {
+	variable skipFiles {}
+    }
 
     # By default, don't save core files
-    variable preserveCore 0
+    if {![info exists preserveCore]} {
+	variable preserveCore 0
+    }
 
     # output goes to stdout by default
-
-    variable outputChannel stdout
+    if {![info exists outputChannel]} {
+	variable outputChannel stdout
+    }
 
     # errors go to stderr by default
-
-    variable errorChannel stderr
+    if {![info exists errorChannel]} {
+	variable errorChannel stderr
+    }
 
     # debug output doesn't get printed by default; debug level 1 spits
     # up only the tets that were skipped because they didn't match or were 
@@ -61,12 +73,15 @@ namespace eval tcltest {
     # variables and flags provided; a debug level of 3 causes some additional
     # output regarding operations of the test harness.  The tcltest package
     # currently implements only up to debug level 3.
-
-    variable debug 0
+    if {![info exists debug]} {
+	variable debug 0
+    }
 
     # Save any arguments that we might want to pass through to other programs. 
     # This is used by the -args flag.
-    variable parameters {}
+    if {![info exists parameters]} {
+	variable parameters {}
+    }
 
     # Count the number of files tested (0 if all.tcl wasn't called).
     # The all.tcl file will set testSingleFile to false, so stats will
@@ -75,10 +90,18 @@ namespace eval tcltest {
     # current test file has had any failures.  The failFiles list
     # stores the names of test files that had failures.
 
-    variable numTestFiles 0
-    variable testSingleFile true
-    variable currentFailure false
-    variable failFiles {}
+    if {![info exists numTestFiles]} {
+	variable numTestFiles 0
+    }
+    if {![info exists testSingleFile]} {
+	variable testSingleFile true
+    }
+    if {![info exists currentFailure]} {
+	variable currentFailure false
+    }
+    if {![info exists failFiles]} {
+	variable failFiles {}
+    }
 
     # Tests should remove all files they create.  The test suite will
     # check the current working dir for files created by the tests.
@@ -86,18 +109,29 @@ namespace eval tcltest {
     # ::tcltest::makeFile and ::tcltest::makeDirectory procedures.
     # ::tcltest::filesExisted stores the names of pre-existing files.
 
-    variable filesMade {}
-    variable filesExisted {}
+    if {![info exists filesMade]} {
+	variable filesMade {}
+    }
+    if {![info exists filesExisted]} {
+	variable filesExisted {}
+    }
 
     # ::tcltest::numTests will store test files as indices and the list
     # of files (that should not have been) left behind by the test files.
 
-    array set ::tcltest::createdNewFiles {}
+    if {![info exists createdNewFiles]} {
+	variable createdNewFiles
+	array set ::tcltest::createdNewFiles {}
+    }
 
     # initialize ::tcltest::numTests array to keep track fo the number of
     # tests that pass, fial, and are skipped.
 
-    array set ::tcltest::numTests [list Total 0 Passed 0 Skipped 0 Failed 0] 
+    if {![info exists numTests]} {
+	variable numTests
+	array set ::tcltest::numTests \
+		[list Total 0 Passed 0 Skipped 0 Failed	0] 
+    }
 
     # initialize ::tcltest::skippedBecause array to keep track of
     # constraints that kept tests from running; a constraint name of
@@ -107,49 +141,70 @@ namespace eval tcltest {
     # both of these constraints are counted only if ::tcltest::debug is set to
     # true. 
 
-    array set ::tcltest::skippedBecause {}
+    if {![info exists skippedBecause]} {
+	variable skippedBecause
+	array set ::tcltest::skippedBecause {}
+    }
 
     # initialize the ::tcltest::testConstraints array to keep track of valid
     # predefined constraints (see the explanation for the
     # ::tcltest::initConstraints proc for more details).
 
-    array set ::tcltest::testConstraints {}
+    if {![info exists testConstraints]} {
+	variable testConstraints
+	array set ::tcltest::testConstraints {}
+    }
 
     # Don't run only the constrained tests by default
-    variable limitConstraints false
+    if {![info exists limitConstraints]} {
+	variable limitConstraints false
+    }
 
     # tests that use thread need to know which is the main thread
 
-    variable mainThread 1
-    if {[info commands testthread] != {}} {
-	set mainThread [testthread names]
+    if {![info exists mainThread]} {
+	variable mainThread 1
+	if {[info commands testthread] != {}} {
+	    set mainThread [testthread names]
+	}
     }
 
     # save the original environment so that it can be restored later
     
-    array set ::tcltest::originalEnv [array get ::env]
+    if {![info exists originalEnv]} {
+	variable originalEnv
+	array set ::tcltest::originalEnv [array get ::env]
+    }
 
     # Set ::tcltest::workingDirectory to [pwd]. The default output directory
     # for Tcl tests is the working directory.
 
-    variable workingDirectory [pwd]
-    variable temporaryDirectory $workingDirectory
+    if {![info exists workingDirectory]} {
+	variable workingDirectory [pwd]
+    }
+    if {![info exists temporaryDirectory]} {
+	variable temporaryDirectory $workingDirectory
+    }
 
     # Tests should not rely on the current working directory.
     # Files that are part of the test suite should be accessed relative to 
     # ::tcltest::testsDirectory.
 
-    set oDir [pwd]
-    catch {cd [file join [file dirname [info script]] .. .. tests]}
-    variable testsDirectory [pwd]
-    cd $oDir
+    if {![info exists testsDirectory]} {
+	set oDir [pwd]
+	catch {cd [file join [file dirname [info script]] .. .. tests]}
+	variable testsDirectory [pwd]
+	cd $oDir
+    }
 
     # the variables and procs that existed when ::tcltest::saveState was
     # called are stored in a variable of the same name
-    variable saveState {}
+    if {![info exists saveState]} {
+	variable saveState {}
+    }
 
     # Internationalization support
-    if {![info exists ::tcltest::isoLocale]} {
+    if {![info exists isoLocale]} {
 	variable isoLocale fr
         switch $tcl_platform(platform) {
 	    "unix" {
@@ -184,18 +239,22 @@ namespace eval tcltest {
     }
 
     # Set the location of the execuatble
-    variable tcltest [info nameofexecutable]
-
-    # save the platform information so it can be restored later
-    variable originalTclPlatform [array get tcl_platform]
-
-
-    # If a core file exists, save its modification time.
-    if {[file exists [file join $::tcltest::workingDirectory core]]} {
-	variable coreModificationTime [file mtime [file join \
-		$::tcltest::workingDirectory core]]
+    if {![info exists tcltest]} {
+	variable tcltest [info nameofexecutable]
     }
 
+    # save the platform information so it can be restored later
+    if {![info exists originalTclPlatform]} {
+	variable originalTclPlatform [array get tcl_platform]
+    }
+
+    # If a core file exists, save its modification time.
+    if {![info exists coreModificationTime]} {
+	if {[file exists [file join $::tcltest::workingDirectory core]]} {
+	    variable coreModificationTime [file mtime [file join \
+		    $::tcltest::workingDirectory core]]
+	}
+    }
 }   
 
 # ::tcltest::AddToSkippedBecause --
