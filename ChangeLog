@@ -1,3 +1,8 @@
+2004-09-21  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* doc/interp.n: Tighten up wording on how [interp eval] and
+	[interp invokehidden] operate w.r.t. stack frames. [Bug 926590]
+
 2004-09-20  Don Porter  <dgp@users.sourceforge.net>
 
 	* tests/error.test (error-6.2,3):	Added more tests to verify
