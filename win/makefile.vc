@@ -4,7 +4,7 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
 # Copyright (c) 1995-1996 Sun Microsystems, Inc.
-# RCS: @(#) $Id: makefile.vc,v 1.1.2.8 1998/11/11 01:44:57 stanton Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.1.2.9 1998/11/11 04:08:39 stanton Exp $
 
 # Does not depend on the presence of any environment variables in
 # order to compile tcl; all needed information is derived from 
@@ -236,11 +236,11 @@ guilflags = $(lflags) -subsystem:windows -entry:WinMainCRTStartup
 dlllflags = $(lflags) -entry:_DllMainCRTStartup$(DLLENTRY) -dll
 
 !IF "$(MACHINE)" == "PPC"
-libc = libc.lib
-libcdll = crtdll.lib
+libc = libc$(DBGX).lib
+libcdll = crtdll$(DBGX).lib
 !ELSE
-libc = libc.lib oldnames.lib
-libcdll = msvcrt.lib oldnames.lib
+libc = libc$(DBGX).lib oldnames.lib
+libcdll = msvcrt$(DBGX).lib oldnames.lib
 !ENDIF
 
 baselibs   = kernel32.lib $(optlibs) advapi32.lib user32.lib
@@ -260,7 +260,9 @@ conlibsdll = $(libcdll) $(baselibs)
 # MSVC on Alpha doesn't understand -Ot
 cdebug = -O2i -Gs -GD
 !ELSE
-cdebug = -Oti -Gs -GD
+#cdebug = -Oti -Gs -GD
+# This cranks the optimization level to maximize speed
+cdebug = -O2 -Gs -GD
 !ENDIF
 !ELSE
 cdebug = -Z7 -Od -WX
@@ -305,8 +307,9 @@ all:	    setup $(TCLSH) dlls $(CAT16) $(CAT32)
 tcltest:    setup $(TCLTEST) dlls $(CAT16) $(CAT32)
 plugin:	    setup $(TCLPLUGINDLL) $(TCLSHP)
 install:    install-binaries install-libraries
-test:	    setup $(TCLTEST) dlls $(CAT16) $(CAT32) 
-	set TCL_LIBRARY=$(ROOT)\library
+test:	    setup $(TCLTEST) dlls $(CAT16) $(CAT32)
+	copy $(WINDIR)\pkgIndex.tcl $(OUTDIR)
+	set TCL_LIBRARY=$(ROOT)/library
 	$(TCLTEST) <<
 		cd ../tests
 		source all
@@ -418,26 +421,26 @@ install-binaries: $(TCLSH)
 	@copy $(TCLSH) $(BIN_INSTALL_DIR)
 
 install-libraries:
-	@mkd $(LIB_INSTALL_DIR)
-	@mkd $(INCLUDE_INSTALL_DIR)
-	@mkd $(SCRIPT_INSTALL_DIR)
-	@mkd $(SCRIPT_INSTALL_DIR)\http1.0
-	@copy $(ROOT)\library\http1.0\http.tcl $(SCRIPT_INSTALL_DIR)\http1.0
-	@copy $(ROOT)\library\http1.0\pkgIndex.tcl $(SCRIPT_INSTALL_DIR)\http1.0
-	@mkd $(SCRIPT_INSTALL_DIR)\http2.0
-	@copy $(ROOT)\library\http2.0\http.tcl $(SCRIPT_INSTALL_DIR)\http2.0
-	@copy $(ROOT)\library\http2.0\pkgIndex.tcl $(SCRIPT_INSTALL_DIR)\http2.0
-	@mkd $(SCRIPT_INSTALL_DIR)\opt0.1
-	@copy $(ROOT)\library\opt0.1\optparse.tcl $(SCRIPT_INSTALL_DIR)\opt0.1
-	@copy $(ROOT)\library\opt0.1\pkgIndex.tcl $(SCRIPT_INSTALL_DIR)\opt0.1
-	@copy $(GENERICDIR)\tcl.h $(INCLUDE_INSTALL_DIR)
-	@copy $(ROOT)\library\history.tcl $(SCRIPT_INSTALL_DIR)
-	@copy $(ROOT)\library\init.tcl $(SCRIPT_INSTALL_DIR)
-	@copy $(ROOT)\library\ldAout.tcl $(SCRIPT_INSTALL_DIR)
-	@copy $(ROOT)\library\parray.tcl $(SCRIPT_INSTALL_DIR)
-	@copy $(ROOT)\library\safe.tcl $(SCRIPT_INSTALL_DIR)
-	@copy $(ROOT)\library\tclIndex $(SCRIPT_INSTALL_DIR)
-	@copy $(ROOT)\library\word.tcl $(SCRIPT_INSTALL_DIR)
+	-@mkd $(LIB_INSTALL_DIR)
+	-@mkd $(INCLUDE_INSTALL_DIR)
+	-@mkd $(SCRIPT_INSTALL_DIR)
+	-@mkd $(SCRIPT_INSTALL_DIR)\http1.0
+	-@copy $(ROOT)\library\http1.0\http.tcl $(SCRIPT_INSTALL_DIR)\http1.0
+	-@copy $(ROOT)\library\http1.0\pkgIndex.tcl $(SCRIPT_INSTALL_DIR)\http1.0
+	-@mkd $(SCRIPT_INSTALL_DIR)\http2.0
+	-@copy $(ROOT)\library\http2.0\http.tcl $(SCRIPT_INSTALL_DIR)\http2.0
+	-@copy $(ROOT)\library\http2.0\pkgIndex.tcl $(SCRIPT_INSTALL_DIR)\http2.0
+	-@mkd $(SCRIPT_INSTALL_DIR)\opt0.1
+	-@copy $(ROOT)\library\opt0.1\optparse.tcl $(SCRIPT_INSTALL_DIR)\opt0.1
+	-@copy $(ROOT)\library\opt0.1\pkgIndex.tcl $(SCRIPT_INSTALL_DIR)\opt0.1
+	-@copy $(GENERICDIR)\tcl.h $(INCLUDE_INSTALL_DIR)
+	-@copy $(ROOT)\library\history.tcl $(SCRIPT_INSTALL_DIR)
+	-@copy $(ROOT)\library\init.tcl $(SCRIPT_INSTALL_DIR)
+	-@copy $(ROOT)\library\ldAout.tcl $(SCRIPT_INSTALL_DIR)
+	-@copy $(ROOT)\library\parray.tcl $(SCRIPT_INSTALL_DIR)
+	-@copy $(ROOT)\library\safe.tcl $(SCRIPT_INSTALL_DIR)
+	-@copy $(ROOT)\library\tclIndex $(SCRIPT_INSTALL_DIR)
+	-@copy $(ROOT)\library\word.tcl $(SCRIPT_INSTALL_DIR)
 
 #
 # Special case object file targets

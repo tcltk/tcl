@@ -4,11 +4,12 @@
  *	Contains platform specific test commands for the Unix platform.
  *
  * Copyright (c) 1996-1997 Sun Microsystems, Inc.
+ * Copyright (c) 1998 by Scriptics Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixTest.c,v 1.1.2.2 1998/09/24 23:59:46 stanton Exp $
+ * RCS: @(#) $Id: tclUnixTest.c,v 1.1.2.3 1998/11/11 04:08:38 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -516,7 +517,7 @@ TestgetopenfileCmd(clientData, interp, argc, argv)
  *----------------------------------------------------------------------
  */
 
-int
+static int
 TestalarmCmd(clientData, interp, argc, argv)
     ClientData clientData;		/* Not used. */
     Tcl_Interp *interp;			/* Current interpreter. */
@@ -593,7 +594,7 @@ AlarmHandler()
  *----------------------------------------------------------------------
  */
 
-int
+static int
 TestgotsigCmd(clientData, interp, argc, argv)
     ClientData clientData;		/* Not used. */
     Tcl_Interp *interp;			/* Current interpreter. */

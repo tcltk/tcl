@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.1.2.4 1998/11/11 01:44:54 stanton Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.1.2.5 1998/11/11 04:08:22 stanton Exp $
  */
 
 #define TCL_TEST
@@ -3963,14 +3963,18 @@ TeststatprocCmd (dummy, interp, argc, argv)
     return retVal;
 }
 
-
+/* Be careful in the compares in these tests, since the Macintosh puts a  
+ * leading : in the beginning of non-absolute paths before passing them 
+ * into the file command procedures.
+ */
+ 
 static int
 TestStatProc1(path, buf)
     CONST char *path;
     TclStat_ *buf;
 {
     buf->st_size = 1234;
-    return (strcmp("testStat1%.fil", path) ? -1 : 0);
+    return ((strstr(path, "testStat1%.fil") == NULL) ? -1 : 0);
 }
 
 
@@ -3980,7 +3984,7 @@ TestStatProc2(path, buf)
     TclStat_ *buf;
 {
     buf->st_size = 2345;
-    return (strcmp("testStat2%.fil", path) ? -1 : 0);
+    return ((strstr(path, "testStat2%.fil") == NULL) ? -1 : 0);
 }
 
 
@@ -3990,7 +3994,7 @@ TestStatProc3(path, buf)
     TclStat_ *buf;
 {
     buf->st_size = 3456;
-    return (strcmp("testStat3%.fil", path) ? -1 : 0);
+    return ((strstr(path, "testStat3%.fil") == NULL) ? -1 : 0);
 }
 
 /*
@@ -4073,7 +4077,7 @@ TestAccessProc1(path, mode)
     CONST char *path;
     int mode;
 {
-    return (strcmp("testAccess1%.fil", path) ? -1 : 0);
+    return ((strstr(path, "testAccess1%.fil") == NULL) ? -1 : 0);
 }
 
 
@@ -4082,7 +4086,7 @@ TestAccessProc2(path, mode)
     CONST char *path;
     int mode;
 {
-    return (strcmp("testAccess2%.fil", path) ? -1 : 0);
+    return ((strstr(path, "testAccess2%.fil") == NULL) ? -1 : 0);
 }
 
 
@@ -4091,7 +4095,7 @@ TestAccessProc3(path, mode)
     CONST char *path;
     int mode;
 {
-    return (strcmp("testAccess3%.fil", path) ? -1 : 0);
+    return ((strstr(path, "testAccess3%.fil") == NULL) ? -1 : 0);
 }
 
 /*

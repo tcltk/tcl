@@ -9,11 +9,12 @@
  * Copyright (c) 1987-1993 The Regents of the University of California.
  * Copyright (c) 1993-1997 Lucent Technologies.
  * Copyright (c) 1994-1997 Sun Microsystems, Inc.
+ * Copyright (c) 1998 by Scriptics Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.1.2.3 1998/10/21 20:40:04 stanton Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.1.2.4 1998/11/11 04:08:15 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -782,19 +783,17 @@ InfoCompleteCmd(dummy, interp, objc, objv)
     int objc;			/* Number of arguments. */
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
-    char *command;
-
     if (objc != 3) {
         Tcl_WrongNumArgs(interp, 2, objv, "command");
         return TCL_ERROR;
     }
 
-    command = Tcl_GetString(objv[2]);
-    if (Tcl_CommandComplete(command)) {
+    if (TclObjCommandComplete(objv[2])) {
 	Tcl_SetIntObj(Tcl_GetObjResult(interp), 1);
     } else {
 	Tcl_SetIntObj(Tcl_GetObjResult(interp), 0);
     }
+
     return TCL_OK;
 }
 
@@ -2890,11 +2889,11 @@ DictionaryCompare(left, right)
 	     */
 
 	    zeros = 0;
-	    while ((*right == '0') && (*(right + 1) != '\0')) {
+	    while ((*right == '0') && (isdigit(UCHAR(right[1])))) {
 		right++;
 		zeros--;
 	    }
-	    while ((*left == '0') && (*(left + 1) != '\0')) {
+	    while ((*left == '0') && (isdigit(UCHAR(left[1])))) {
 		left++;
 		zeros++;
 	    }

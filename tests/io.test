@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: io.test,v 1.1.2.2 1998/09/24 23:59:27 stanton Exp $
+# RCS: @(#) $Id: io.test,v 1.1.2.3 1998/11/11 04:08:30 stanton Exp $
 
 if {[string compare test [info procs test]] == 1} then {source defs}
 
@@ -6705,8 +6705,8 @@ test io-34.2 {buffered data and file events, read} {
     proc accept {sock args} {
 	set ::s2 $sock
     }
-    set server [socket -server accept 4040]
-    set s [socket localhost 4040]
+    set server [socket -server accept 4041]
+    set s [socket localhost 4041]
     vwait s2
     update
     fileevent $s2 readable {lappend result readable}
@@ -6723,6 +6723,31 @@ test io-34.2 {buffered data and file events, read} {
     set result
 } {1 readable 234567890 timer}
         
+test io-35.1 {Tcl_NotifyChannel and error when closing} {unixOrPc} {
+    set out [open script w]
+    puts $out {
+	puts "normal message from pipe"
+	puts stderr "error message from pipe"
+	exit 1
+    }
+    proc readit {pipe} {
+	global x result
+	if {[eof $pipe]} {
+	    set x [catch {close $pipe} line]
+	    lappend result catch $line
+	} else {
+	    gets $pipe line
+	    lappend result gets $line
+	}
+    }
+    close $out
+    set pipe [open "|[list $tcltest] script" r]
+    fileevent $pipe readable [list readit $pipe]
+    set x ""
+    set result ""
+    vwait x
+    list $x $result
+} {1 {gets {normal message from pipe} gets {} catch {error message from pipe}}}
 
 
 removeFile fooBar

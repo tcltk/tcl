@@ -5,11 +5,12 @@
 # generates output for errors.  No output means no errors were found.
 #
 # Copyright (c) 1995-1996 Sun Microsystems, Inc.
+# Copyright (c) 1998 by Scriptics Corporation.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: interp.test,v 1.1.2.3 1998/10/05 18:47:26 stanton Exp $
+# RCS: @(#) $Id: interp.test,v 1.1.2.4 1998/11/11 04:08:29 stanton Exp $
 
 if {[string compare test [info procs test]] == 1} then {source defs}
 
@@ -2316,8 +2317,15 @@ test interp-29.2 {recursion limit inheritance} {
 #test interp-29.1 {interp and stack (info level)} {
 #} {}
 
+# End of stack-recursion tests
 }
 
+# This test dumps core in Tcl 8.0.3!
+#test interp-30.1 {deletion of aliases inside namespaces} {
+#    set i [interp create]
+#    $i alias ns::cmd list
+#    $i alias ns::cmd {}
+#} {}
 
 foreach i [interp slaves] {
   interp delete $i

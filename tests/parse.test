@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: parse.test,v 1.1.2.2 1998/09/24 23:59:33 stanton Exp $
+# RCS: @(#) $Id: parse.test,v 1.1.2.3 1998/11/11 04:08:33 stanton Exp $
 
 if {[info commands testparser] == {}} {
     puts "This application hasn't been compiled with the \"testparser\""
@@ -555,151 +555,185 @@ test parse-15.4 {Tcl_ParseQuotedString procedure, garbage after quoted string} {
     invoked from within
 "testparser {foo "a b c"d} 0"}}
 
-test parse-15.1 {CommandComplete procedure} {
+test parse-15.5 {CommandComplete procedure} {
     info complete ""
 } 1
-test parse-15.2 {CommandComplete procedure} {
+test parse-15.6 {CommandComplete procedure} {
     info complete "  \n"
 } 1
-test parse-15.3 {CommandComplete procedure} {
+test parse-15.7 {CommandComplete procedure} {
     info complete "abc def"
 } 1
-test parse-15.4 {CommandComplete procedure} {
+test parse-15.8 {CommandComplete procedure} {
     info complete "a b c d e f \t\n"
 } 1
-test parse-15.5 {CommandComplete procedure} {
+test parse-15.9 {CommandComplete procedure} {
     info complete {a b c"d}
 } 1
-test parse-15.6 {CommandComplete procedure} {
+test parse-15.10 {CommandComplete procedure} {
     info complete {a b "c d" e}
 } 1
-test parse-15.7 {CommandComplete procedure} {
-    info complete {a b "c d"}
-} 1
-test parse-15.8 {CommandComplete procedure} {
-    info complete {a b "c d"}
-} 1
-test parse-15.9 {CommandComplete procedure} {
-    info complete {a b "c d}
-} 0
-test parse-15.10 {CommandComplete procedure} {
-    info complete {a b "}
-} 0
 test parse-15.11 {CommandComplete procedure} {
-    info complete {a b "cd"xyz}
+    info complete {a b "c d"}
 } 1
 test parse-15.12 {CommandComplete procedure} {
-    info complete {a b "c $d() d"}
+    info complete {a b "c d"}
 } 1
 test parse-15.13 {CommandComplete procedure} {
-    info complete {a b "c $dd("}
+    info complete {a b "c d}
 } 0
 test parse-15.14 {CommandComplete procedure} {
-    info complete {a b "c \"}
+    info complete {a b "}
 } 0
 test parse-15.15 {CommandComplete procedure} {
-    info complete {a b "c [d e f]"}
+    info complete {a b "cd"xyz}
 } 1
 test parse-15.16 {CommandComplete procedure} {
-    info complete {a b "c [d e f] g"}
+    info complete {a b "c $d() d"}
 } 1
 test parse-15.17 {CommandComplete procedure} {
-    info complete {a b "c [d e f"}
+    info complete {a b "c $dd("}
 } 0
 test parse-15.18 {CommandComplete procedure} {
-    info complete {a {b c d} e}
-} 1
+    info complete {a b "c \"}
+} 0
 test parse-15.19 {CommandComplete procedure} {
-    info complete {a {b c d}}
+    info complete {a b "c [d e f]"}
 } 1
 test parse-15.20 {CommandComplete procedure} {
-    info complete "a b\{c d"
+    info complete {a b "c [d e f] g"}
 } 1
 test parse-15.21 {CommandComplete procedure} {
-    info complete "a b \{c"
+    info complete {a b "c [d e f"}
 } 0
 test parse-15.22 {CommandComplete procedure} {
-    info complete "a b \{c{ }"
-} 0
+    info complete {a {b c d} e}
+} 1
 test parse-15.23 {CommandComplete procedure} {
-    info complete "a b {c d e}xxx"
+    info complete {a {b c d}}
 } 1
 test parse-15.24 {CommandComplete procedure} {
-    info complete "a b {c \\\{d e}xxx"
+    info complete "a b\{c d"
 } 1
 test parse-15.25 {CommandComplete procedure} {
+    info complete "a b \{c"
+} 0
+test parse-15.26 {CommandComplete procedure} {
+    info complete "a b \{c{ }"
+} 0
+test parse-15.27 {CommandComplete procedure} {
+    info complete "a b {c d e}xxx"
+} 1
+test parse-15.28 {CommandComplete procedure} {
+    info complete "a b {c \\\{d e}xxx"
+} 1
+test parse-15.29 {CommandComplete procedure} {
     info complete {a b [ab cd ef]}
 } 1
-test parse-15.26 {CommandComplete procedure} {
+test parse-15.30 {CommandComplete procedure} {
     info complete {a b x[ab][cd][ef] gh}
 } 1
-test parse-15.27 {CommandComplete procedure} {
+test parse-15.31 {CommandComplete procedure} {
     info complete {a b x[ab][cd[ef] gh}
 } 0
-test parse-15.28 {CommandComplete procedure} {
+test parse-15.32 {CommandComplete procedure} {
     info complete {a b x[ gh}
 } 0
-test parse-15.29 {CommandComplete procedure} {
+test parse-15.33 {CommandComplete procedure} {
     info complete {[]]]}
 } 1
-test parse-15.30 {CommandComplete procedure} {
+test parse-15.34 {CommandComplete procedure} {
     info complete {abc x$yyy}
 } 1
-test parse-15.31 {CommandComplete procedure} {
+test parse-15.35 {CommandComplete procedure} {
     info complete "abc x\${abc\[\\d} xyz"
 } 1
-test parse-15.32 {CommandComplete procedure} {
+test parse-15.36 {CommandComplete procedure} {
     info complete "abc x\$\{ xyz"
 } 0
-test parse-15.33 {CommandComplete procedure} {
+test parse-15.37 {CommandComplete procedure} {
     info complete {word $a(xyz)}
 } 1
-test parse-15.34 {CommandComplete procedure} {
+test parse-15.38 {CommandComplete procedure} {
     info complete {word $a(}
 } 0
-test parse-15.35 {CommandComplete procedure} {
+test parse-15.39 {CommandComplete procedure} {
     info complete "set a \\\n"
 } 0
-test parse-15.36 {CommandComplete procedure} {
+test parse-15.40 {CommandComplete procedure} {
     info complete "set a \\\\\n"
 } 1
-test parse-15.37 {CommandComplete procedure} {
+test parse-15.41 {CommandComplete procedure} {
     info complete "set a \\n "
 } 1
-test parse-15.38 {CommandComplete procedure} {
+test parse-15.42 {CommandComplete procedure} {
     info complete "set a \\"
 } 1
-test parse-15.39 {CommandComplete procedure} {
+test parse-15.43 {CommandComplete procedure} {
     info complete "foo \\\n\{"
 } 0
-test parse-15.40 {CommandComplete procedure} {
+test parse-15.44 {CommandComplete procedure} {
     info complete "a\nb\n# \{\n# \{\nc\n"
 } 1
-test parse-15.41 {CommandComplete procedure} {
+test parse-15.45 {CommandComplete procedure} {
     info complete "#Incomplete comment\\\n"
 } 0
-test parse-15.42 {CommandComplete procedure} {
+test parse-15.46 {CommandComplete procedure} {
     info complete "#Incomplete comment\\\nBut now it's complete.\n"
 } 1
-test parse-15.43 {CommandComplete procedure} {
+test parse-15.47 {CommandComplete procedure} {
     info complete "# Complete comment\\\\\n"
 } 1
-test parse-15.44 {CommandComplete procedure} {
+test parse-15.48 {CommandComplete procedure} {
     info complete "abc\\\n def"
 } 1
-test parse-15.45 {CommandComplete procedure} {
+test parse-15.49 {CommandComplete procedure} {
     info complete "abc\\\n "
 } 1
-test parse-15.46 {CommandComplete procedure} {
+test parse-15.50 {CommandComplete procedure} {
     info complete "abc\\\n"
 } 0
-test parse-15.47 {CommandComplete procedure} {
+test parse-15.51 {CommandComplete procedure} {
     info complete "\{abc\}\{"
 } 1
-test parse-15.48 {CommandComplete procedure} {
+test parse-15.52 {CommandComplete procedure} {
     info complete "\"abc\"("
 } 1
+test parse-15.53 {CommandComplete procedure} {
+    parse complete " # \{"
+} 1
+test parse-15.54 {CommandComplete procedure} {
+    parse complete "foo bar;# \{"
+} 1
+test parse-15.55 {CommandComplete procedure} {
+    parse complete "a\nb\n# \{\n# \{\nc\n"
+} 1
+test parse-15.56 {CommandComplete procedure} {
+    parse complete "#Incomplete comment\\\n"
+} 0
+test parse-15.57 {CommandComplete procedure} {
+    parse complete "#Incomplete comment\\\nBut now it's complete.\n"
+} 1
+test parse-15.58 {CommandComplete procedure} {
+    parse complete "# Complete comment\\\\\n"
+} 1
+test parse-15.59 {CommandComplete procedure} {
+    parse complete "abc\\\n def"
+} 1
+test parse-15.60 {CommandComplete procedure} {
+    parse complete "abc\\\n "
+} 1
+test parse-15.61 {CommandComplete procedure} {
+    parse complete "abc\\\n"
+} 0
+test parse-15.62 {CommandComplete procedure} {
+    parse complete "set x [binary format H 00]; puts hi"
+} 1
+test parse-15.63 {CommandComplete procedure} {
+    parse complete "set x [binary format H 00]; {"
+} 0
 
 
 catch {unset a}
 return
+

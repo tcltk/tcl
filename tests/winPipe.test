@@ -11,14 +11,15 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: winPipe.test,v 1.1.2.2 1998/09/24 23:59:40 stanton Exp $
+# RCS: @(#) $Id: winPipe.test,v 1.1.2.3 1998/11/11 04:08:35 stanton Exp $
 
 if {($tcl_platform(platform) != "windows") || ($testConfig(stdio) == 0)} {
     return
 }
 
-set cat16 [file join $tcl_library ../win/cat16.exe]
-set cat32 [file join $tcl_library ../win/cat32.exe]
+set bindir [file join [pwd] [file dirname [info nameofexecutable]]]
+set cat16 [file join  $bindir cat16.exe]
+set cat32 [file join $bindir cat32.exe]
 
 if {[string compare test [info procs test]] == 1} then {source defs}
 
@@ -263,7 +264,7 @@ test winpipe-2.21 {16 bit comprehensive tests: read/write application} {nt} {
 } "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
 }
 
-test winpipe-3.1 {Tcl_WaitPid} {nt} {
+test winpipe-4.1 {Tcl_WaitPid} {nt} {
     proc readResults {f} {
 	global x result
 	if { [eof $f] } {

@@ -7,11 +7,12 @@
  * Copyright (c) 1987-1994 The Regents of the University of California.
  * Copyright (c) 1993-1996 Lucent Technologies.
  * Copyright (c) 1994-1998 Sun Microsystems, Inc.
+ * Copyright (c) 1998 by Scriptics Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.1.2.4 1998/11/04 04:39:52 stanton Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.1.2.5 1998/11/11 04:08:15 stanton Exp $
  */
 
 #ifndef _TCL
@@ -25,12 +26,13 @@
  * library/init.tcl	(only if major.minor changes, not patchlevel)
  * unix/configure.in
  * unix/pkginfo
- * win/makefile.bc
- * win/makefile.vc
+ * win/makefile.bc	(only if major.minor changes, not patchlevel)
+ * win/makefile.vc	(only if major.minor changes, not patchlevel)
  * win/pkgIndex.tcl (for tclregNN.dll)
  * README
  * mac/README
  * win/README
+ * win/README.binary
  * unix/README
  *
  * The release level should be  0 for alpha, 1 for beta, and 2 for

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: httpold.test,v 1.1.2.1 1998/09/24 23:59:25 stanton Exp $
+# RCS: @(#) $Id: httpold.test,v 1.1.2.2 1998/11/11 04:08:28 stanton Exp $
 
 if {[string compare test [info procs test]] == 1} then {source defs}
 
@@ -145,6 +145,14 @@ proc httpdRespond { sock } {
 	    append html "<h2>Query</h2>\n<dl>\n"
 	    foreach {key value} [split $data(query) &=] {
 		append html "<dt>$key<dd>$value\n"
+		if {[string compare $key timeout] == 0} {
+		    # Simulate a timeout by not responding,
+		    # but clean up our socket later.
+
+		    after 50 [list httpdSockDone $sock]
+		    httpd_log $sock Noresponse ""
+		    return
+		}
 	    }
 	    append html </dl>\n
 	}

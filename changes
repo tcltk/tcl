@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.1.2.9 1998/11/11 01:44:46 stanton Exp $
+RCS: @(#) $Id: changes,v 1.1.2.10 1998/11/11 04:08:12 stanton Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -3622,7 +3622,54 @@ Windows, MYDLLNAME.DLL was sourced, and mydllname.dll loaded. (EMS)
 
 10/5/98 (new feature) Created a new Tcl_Obj type, "procbody". This object's
 internal representation holds a pointer to a Proc structure. Extended
-TclCreateProc to take both strings and "procbody" (EMS)
+TclCreateProc to take both strings and "procbody". (EMS)
+
+10/13/98 (bug fix) The "info complete" command can now handle strings
+with NULLs embedded.  Thanks to colin@field.medicine.adelaide.edu.au 
+for providing this fix. (RJ)
+
+10/13/98 (bug fix) The "lsort -dictionary" command did not properly
+handle some numbers starting with 0.  Thanks to Richard Hipp
+<drh@acm.org> for submitting the fix to Scriptics. (RJ)
+
+10/13/98 (bug fix) The function Tcl_SetListObj was creating an invalid
+Tcl_Obj if the list had zero elements (despite what the comments said
+it would do).  Thanks to Sebastian Wangnick for reporting the
+problem. (RJ)
+
+10/20/98 (new feature) Added tcl_platform(debug) element to the
+tcl_platform array on Windows platform.  The existence of the debug
+element of the tcl_platform array indicates that the particular Tcl
+shell has been compiled with debug information.  Using
+"info exists tcl_platform(debug)" a Tcl script can direct the interpreter
+to load debug versions of DLLs with the load command. (SKS)
+
+10/20/98 (feature change) The Makefile and configure scripts have been
+changed for IRIX to build n32 binaries instead of the old 32 abi
+format.  If you have extensions built with the o32 abi's you will need
+to update them to n32 for them to work with Tcl.  (RJ)
+*** POTENTIAL INCOMPATIBILITY ***
+
+10/23/98 (bug fix) tcl_findLibrary had a stray ] in one of the pathnames
+it searched for the initialization script.  tclInitScript.h was incorrectly
+adding the parent of tcl_library to tcl_pkgPath.  This logic was moved
+into init.tcl, and the initialization of auto_path was documented.
+Thanks to Donald Porter and Tom Silva for related patches. (BW)
+
+10/29/98 (bug fix) Fixed Tcl_NotifyChannel to use Tcl_Preserve instead
+of Tcl_RegisterChannel so that 1) unregistered channels do not get
+closed after their first fileevent, and 2) errors that occur during
+close in a fileevent script are actually reflected by the close command. (BW)
+
+10/30/98 (bug fix) Overhaul of pkg_mkIndex to deal with transitive
+package requires and packages split among scripts and binary files.
+Also fixed ommision of global for errorInfo in tcl_findLibrary. (BW)
+
+11/08/98 (bug fix) Fixed TclMacRegisterResourceFork to always detect
+the case where a file is opened a second time with the same
+permissions.  In IM, it claims that this will always cause the same
+FileRef to be returned, but in MacOS 8.1+, this is no longer the case,
+so we have to test for this explicitly.
 
 ======== Changes for 8.0 go above this line ========
 ======== Changes for 8.1 go below this line ========

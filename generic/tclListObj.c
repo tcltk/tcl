@@ -5,11 +5,12 @@
  *	type.
  *
  * Copyright (c) 1995-1997 Sun Microsystems, Inc.
+ * Copyright (c) 1998 by Scriptics Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclListObj.c,v 1.1.2.2 1998/09/24 23:58:55 stanton Exp $
+ * RCS: @(#) $Id: tclListObj.c,v 1.1.2.3 1998/11/11 04:08:22 stanton Exp $
  */
 
 #include "tclInt.h"

@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: safe.test,v 1.1.2.2 1998/09/24 23:59:35 stanton Exp $
+# RCS: @(#) $Id: safe.test,v 1.1.2.3 1998/11/11 04:08:35 stanton Exp $
 
 if {[string compare test [info procs test]] == 1} then {source defs}
 
@@ -167,7 +167,10 @@ test safe-6.1 {test safe interpreters knowledge of the world} {
 test safe-6.2 {test safe interpreters knowledge of the world} {
     SI; set r [$I eval {info script}]; DI; set r
 } {}
-test safe-6.3 {test safe interpreters knowledge of the world} {
+test safe-6.3 {test safe interpreters knowledge of the world} {pcOnly} {
+    SI; set r [lsort [$I eval {array names tcl_platform}]]; DI; set r
+} {byteOrder debug platform}
+test safe-6.3 {test safe interpreters knowledge of the world} {macOrUnix} {
     SI; set r [lsort [$I eval {array names tcl_platform}]]; DI; set r
 } {byteOrder platform}
 

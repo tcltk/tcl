@@ -4,18 +4,18 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: pkgMkIndex.n,v 1.1.2.2 1998/09/24 23:58:34 stanton Exp $
+'\" RCS: @(#) $Id: pkgMkIndex.n,v 1.1.2.3 1998/11/11 04:08:14 stanton Exp $
 '\" 
 .so man.macros
-.TH pkg_mkIndex n 7.6 Tcl "Tcl Built-In Commands"
+.TH pkg_mkIndex n 8.0 Tcl "Tcl Built-In Commands"
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
 pkg_mkIndex \- Build an index for automatic loading of packages
 .SH SYNOPSIS
 .nf
-.VS 8.1
-\fBpkg_mkIndex ?\fI-direct\fR? \fIdir\fR ?\fIpattern pattern ...\fR?
+.VS 8.0.3
+\fBpkg_mkIndex ?\fI-direct\fR? ?\fI-verbose\fR? \fIdir\fR ?\fIpattern pattern ...\fR?
 .VE
 .fi
 .BE
@@ -41,12 +41,14 @@ Create the index by invoking \fBpkg_mkIndex\fR.
 The \fIdir\fR argument gives the name of a directory and each
 \fIpattern\fR argument is a \fBglob\fR-style pattern that selects
 script or binary files in \fIdir\fR.
-.VS 8.1
+.VS 8.0.3
 The default pattern is \fB*.tcl\fR and \fB*.[info sharedlibextension]\fR.
 If the optional \fI-direct\fR argument is given, the generated index
 will manage to load the package immediately upon \fBpackage require\fR
 instead of delaying loading until actual use of one of the commands.
 .VE
+.RS
+.LP
 \fBPkg_mkIndex\fR will create a file \fBpkgIndex.tcl\fR in \fIdir\fR
 with package information about all the files given by the \fIpattern\fR
 arguments.
@@ -54,6 +56,11 @@ It does this by loading each file and seeing what packages
 and new commands appear (this is why it is essential to have
 \fBpackage provide\fR commands or \fBTcl_PkgProvide\fR calls
 in the files, as described above).
+If you have a package split among scripts and binary files, 
+or if you have dependencies among files,
+you may have to adjust the order in which \fBpkg_mkIndex\fR processes
+the files.  See COMPLEX CASES below.
+.RE
 .IP [3]
 Install the package as a subdirectory of one of the directories given by
 the \fBtcl_pkgPath\fR variable.  If \fB$tcl_pkgPath\fR contains more
@@ -70,7 +77,7 @@ directory in \fB$tcl_pkgPath\fR it will automatically be found during
 .RS
 .LP
 If you install the package anywhere else, then you must ensure that
-the directory contain the package is in the \fBauto_path\fR global variable
+the directory containing the package is in the \fBauto_path\fR global variable
 or an immediate subdirectory of one of the directories in \fBauto_path\fR.
 \fBAuto_path\fR contains a list of directories that are searched
 by both the auto-loader and the package loader; by default it
@@ -130,22 +137,22 @@ commands for each version of each available package;  these commands
 invoke \fBpackage provide\fR commands to announce the
 availability of the package, and they setup auto-loader
 information to load the files of the package.
-.VS
+.VS 8.0.3
 Unless the \fI-direct\fR flag was provided when the \fBpkgIndex.tcl\fR
 was generated,
 .VE
 a given file of a given version of a given package isn't
 actually loaded until the first time one of its commands
 is invoked.
-Thus, after invoking \fBpackage require\fR you 
-.VS 8.1
+Thus, after invoking \fBpackage require\fR you
+.VS 8.0.3
 may
 .VE
 not see
 the package's commands in the interpreter, but you will be able
 to invoke the commands and they will be auto-loaded.
 
-.VS 8.1
+.VS 8.0.3
 .SH "DIRECT LOADING"
 .PP
 Some packages, for instance packages which use namespaces and export
@@ -155,6 +162,61 @@ instead of delaying the actual loading to the first use of one of the
 package's command. This mode is enabled when generating the package
 index by specifying the \fI-direct\fR argument.
 .VE
+
+.SH "COMPLEX CASES"
+Most complex cases of dependencies among scripts
+and binary files, and packages being split among scripts and
+binary files are handled OK.  However, you may have to adjust
+the order in which files are processed by \fBpkg_mkIndex\fR.
+The only case that is not supported is a package that is
+provided by more than one binary file.
+These issues are described in detail below.
+.PP
+If each script or file contains one package, and packages
+are only contained in one file, then things are easy.
+You simply specify all files to be indexed in any order
+with some glob patterns.
+.PP
+In general, it is OK for scripts to have dependencies on other
+packages.
+If scripts contain \fBpackage require\fP commands, these are
+stubbed out in the interpreter used to process the scripts,
+so these do not cause problems.
+If scripts call into other packages in global code,
+these calls are handled by a stub \fBunknown\fP command.
+However, if scripts make variable references to other package's
+variables in global code, these will cause errors.  That is
+also bad coding style.
+.PP
+If binary files have dependencies on other packages, things
+can become tricky because it is not possible to stub out
+the C-level \fBTcl_PkgRequire\fP API.
+For example, suppose the BLT package requires Tk, and expresses
+this with a call to \fBTcl_PkgRequire\fP in its \fBBlt_Init\fP routine.
+To support this, you must run \fBpkg_mkIndex\fR in a shell that
+has Tk loaded.  \fBpkg_mkIndex\fR will load any packages listed by
+\fBinfo loaded\fP into the interpreter used to process files.
+In most cases this will satisfy the \fBTcl_PkgRequire\fP calls
+made by binary files.
+.PP
+If you are indexing two binary files and one depends on the other,
+you should specify the one that has dependencies last.
+This way the one without dependencies will get loaded and indexed,
+and then the package it provides
+will be available when the second file is processed.
+.PP
+You cannot have the same package provided by two different binary
+files.  Well, you can, but they cannot be indexed by \fBpkg_mkIndex\fR
+and it seems like a poor design choice anyway.  The problem is that
+once the package is provided by the first binary file, then that
+masks the provide made by the other binary file.  If you
+absolutely must do this, you'll have to run \fBpkg_mkIndex\fR on
+each different file, save the resulting pkgIndex.tcl files,
+and merge the results.
+.PP
+If you have a package that is split across scripts and a binary file,
+then you must specify the scripts first; otherwise the package loaded from
+the binary file may mask the package defined by the scripts.
 
 .SH KEYWORDS
 auto-load, index, package, version

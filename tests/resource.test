@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: resource.test,v 1.1.2.1 1998/09/24 23:59:35 stanton Exp $
+# RCS: @(#) $Id: resource.test,v 1.1.2.2 1998/11/11 04:08:34 stanton Exp $
 
 # Only run this test on Macintosh systems
 if {$tcl_platform(platform) != "macintosh"} {
@@ -45,27 +45,38 @@ test resource-2.5 {resource open & close tests} {
 } {}
 test resource-2.6 {resource open & close tests} {
     catch {file delete rsrc.file}
-    testWriteTextResource -rsrc fileRsrcName -file rsrc.file  {error "don't source me"}
+    testWriteTextResource -rsrc fileRsrcName -file rsrc.file  {A test string}
     set id [resource open rsrc.file]
     set result [string compare [resource open rsrc.file] $id]
+    lappend result [resource read TEXT fileRsrcName $id]
     resource close $id
     file delete rsrc.file
     set result
-} {0}
+} {0 {A test string}}
 test resource-2.7 {resource open & close tests} {
+    catch {file delete rsrc.file}
+    testWriteTextResource -rsrc fileRsrcName -file rsrc.file  {error "don't source me"}
+    set id [resource open rsrc.file r]
+    set result [catch {resource open rsrc.file w} mssg]
+    resource close $id
+    file delete rsrc.file
+    lappend result $mssg
+    set result
+} {1 {Resource already open with different permissions.}}
+test resource-2.8 {resource open & close tests} {
     list [catch {resource close} msg] $msg
 } {1 {wrong # args: should be "resource close resourceRef"}}
-test resource-2.8 {resource open & close tests} {
+test resource-2.9 {resource open & close tests} {
     list [catch {resource close foo bar} msg] $msg
 } {1 {wrong # args: should be "resource close resourceRef"}}
-test resource-2.9 {resource open & close tests} {
+test resource-2.10 {resource open & close tests} {
     list [catch {resource close _bad_resource_} msg] $msg
 } {1 {invalid resource file reference "_bad_resource_"}}
-test resource-2.10 {resource open & close tests} {
+test resource-2.11 {resource open & close tests} {
     set result [catch {resource close System} mssg]
     lappend result $mssg
 } {1 {can't close "System" resource file}}
-test resource-2.11 {resource open & close tests} {
+test resource-2.12 {resource open & close tests} {
     set result [catch {resource close application} mssg]
     lappend result $mssg
 } {1 {can't close "application" resource file}}

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacResource.c,v 1.1.2.2 1998/09/24 23:59:16 stanton Exp $
+ * RCS: @(#) $Id: tclMacResource.c,v 1.1.2.3 1998/11/11 04:08:27 stanton Exp $
  */
 
 #include <Errors.h>
@@ -1827,7 +1827,7 @@ GetRsrcRefFromObj(
  *	managed by the procedures in this file.  If the resource file
  *      is already registered with the table, then no new token is made.
  *
- *      The bahavior is controlled by the value of tokenPtr, and of the 
+ *      The behavior is controlled by the value of tokenPtr, and of the 
  *	flags variable.  For tokenPtr, the possibilities are:
  *	  - NULL: The new token is auto-generated, but not returned.
  *        - The string value of tokenPtr is the empty string: Then
@@ -1849,7 +1849,7 @@ GetRsrcRefFromObj(
  *	Standard Tcl Result
  *
  * Side effects:
- *	An entry is added to the resource name table.
+ *	An entry may be added to the resource name table.
  *
  *----------------------------------------------------------------------
  */
@@ -1875,12 +1875,14 @@ TclMacRegisterResourceFork(
     
     /*
      * If we were asked to, check that this file has not been opened
-     * already.
+     * already with a different permission.  It it has, then return an error.
      */
      
+    new = 1;
+    
     if (flags & TCL_RESOURCE_CHECK_IF_OPEN) {
         Tcl_HashSearch search;
-        short oldFileRef;
+        short oldFileRef, filePermissionFlag;
         FCBPBRec newFileRec, oldFileRec;
         OSErr err;
         
@@ -1894,15 +1896,17 @@ TclMacRegisterResourceFork(
         newFileRec.ioVRefNum = 0;
         newFileRec.ioRefNum = fileRef;
         err = PBGetFCBInfo(&newFileRec, false);
+        filePermissionFlag = ( newFileRec.ioFCBFlags >> 12 ) & 0x1;
             
         
         resourceHashPtr = Tcl_FirstHashEntry(&resourceTable, &search);
         while (resourceHashPtr != NULL) {
-            
             oldFileRef = (short) Tcl_GetHashKey(&resourceTable,
                     resourceHashPtr);
-            
-            
+            if (oldFileRef == fileRef) {
+                new = 0;
+                break;
+            }
             oldFileRec.ioVRefNum = 0;
             oldFileRec.ioRefNum = oldFileRef;
             err = PBGetFCBInfo(&oldFileRec, false);
@@ -1913,43 +1917,52 @@ TclMacRegisterResourceFork(
              * to fix it here, OR because it is the ROM MAP, which has a 
              * fileRef, but can't be gotten to by PBGetFCBInfo.
              */
-             
-            if (oldFileRef == fileRef) {
-                resourceId = (char *) Tcl_GetHashValue(resourceHashPtr);
-		Tcl_SetStringObj(tokenPtr, resourceId, -1);
-                return TCL_OK;
-            } else if ((err == noErr) 
+            if ((err == noErr) 
                     && (newFileRec.ioFCBVRefNum == oldFileRec.ioFCBVRefNum)
-                    && (newFileRec.ioFCBFlNm == oldFileRec.ioFCBFlNm)
-                    && (newFileRec.ioFCBFlags == oldFileRec.ioFCBFlags)) {
+                    && (newFileRec.ioFCBFlNm == oldFileRec.ioFCBFlNm)) {
                 /*
-                 * THis is the same file.  If the permissions are the same as well, 
-                 * then close the second path, and return the token for the 
-                 * first path
-                 */
-                CloseResFile((short) fileRef); 
-                resourceId = (char *) Tcl_GetHashValue(resourceHashPtr);
-		Tcl_SetStringObj(tokenPtr, resourceId, -1);
-                return TCL_OK;
+		 * In MacOS 8.1 it seems like we get different file refs even
+                 * though we pass the same file & permissions.  This is not
+                 * what Inside Mac says should happen, but it does, so if it
+                 * does, then close the new res file and return the original
+                 * one...
+		 */
+                 
+                if (filePermissionFlag == ((oldFileRec.ioFCBFlags >> 12) & 0x1)) {
+                    CloseResFile(fileRef);
+                    new = 0;
+                    break;
+                } else {
+                    if (tokenPtr != NULL) {
+                        Tcl_SetStringObj(tokenPtr, "Resource already open with different permissions.", -1);
+                    }   	
+                    return TCL_ERROR;
+                }
             }
-            
             resourceHashPtr = Tcl_NextHashEntry(&search);
         }
-        
-        
     }
+       
     
-    resourceHashPtr = Tcl_CreateHashEntry(&resourceTable,
+    /*
+     * If the file has already been opened with these same permissions, then it
+     * will be in our list and we will have set new to 0 above.
+     * So we will just return the token (if tokenPtr is non-null)
+     */
+     
+    if (new) {
+        resourceHashPtr = Tcl_CreateHashEntry(&resourceTable,
 		(char *) fileRef, &new);
-    if (!new) {
-        if (tokenPtr != NULL) {
-            resourceId = (char *) Tcl_GetHashValue(resourceHashPtr);
-            Tcl_SetStringObj(tokenPtr, resourceId, -1);
-        }
-        return  TCL_OK;
     }
     
-    
+    if (!new) {
+        if (tokenPtr != NULL) {   
+            resourceId = (char *) Tcl_GetHashValue(resourceHashPtr);
+	    Tcl_SetStringObj(tokenPtr, resourceId, -1);
+        }
+        return TCL_OK;
+    }        
+
     /*
      * If we were passed in a result pointer which is not an empty
      * string, attempt to use that as the key.  If the key already
