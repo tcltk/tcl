@@ -1,3 +1,28 @@
+2000-01-18  Andreas Kupries  <a.kupries@westend.com>
+
+	* Everything below belongs together, it fixes bug #123153.
+
+	* generic/tcl.h (line 342): A bit more explanation about the
+	  default value for TCL_PRESERVE_BINARY_COMPATABILITY.
+
+	* generic/tcl.h (line 1208): Removed the macro 'Tcl_InitHashTable'
+	  as it kills binary compatibility to 8.3 and earlier
+	  versions. This is the main part of the patch/change.
+
+	* generic/tcl.decls (line 1469):
+	* generic/tclHash.c (Tcl_InitHashTable):
+	* generic/tclHash.c (Tcl_InitHashTableEx):
+	* generic/tclObj.c (Tcl_InitObjHashTable): Changed
+	  'Tcl_InitHashTableEx' to 'Tcl_InitCustomHashTable'. This change
+	  is more of an estethical nature, replacing the ubiquitous 'Ex'
+	  suffix with a more meaningful name. The introduced binary
+	  incompatibility is deemed acceptable as it is between alpha
+	  versions.  Updated callers.
+
+	* doc/Hash.3:
+	* unix/mkLinks: Changed 'Tcl_InitHashTableEx' to
+	  'Tcl_InitCustomHashTable'.
+
 2001-01-10  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* tests/winPipe.test (winpipe-1.20): 
@@ -19,6 +44,7 @@
 	[Bug 119416, Patch 102972]
 
 2000-12-14  Don Porter  <dgp@users.sourceforge.net>
+
 	* generic/tclExecute.c:
 	* tests/expr-old.test:  Re-wrote Tcl's [expr rand()] and
 	[expr srand($seed)] implementations, fixing a range error

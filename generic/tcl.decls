@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.42 2000/11/03 18:46:10 hobbs Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.43 2001/01/18 19:09:55 andreas_kupries Exp $
 
 library tcl
 
@@ -1466,7 +1466,7 @@ declare 422 generic {
 }
 
 declare 423 generic {
-    void Tcl_InitHashTableEx(Tcl_HashTable *tablePtr, int keyType, \
+    void Tcl_InitCustomHashTable(Tcl_HashTable *tablePtr, int keyType, \
 	    Tcl_HashKeyType *typePtr)
 }
 
