@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.112 2004/10/15 04:01:31 dgp Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.113 2004/11/17 00:31:47 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -642,13 +642,7 @@ TclFSEpochOk (filesystemEpoch)
     int filesystemEpoch; 
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&tclFsDataKey);
-#ifndef TCL_THREADS
-    tsdPtr->filesystemEpoch = theFilesystemEpoch;
-#else
-    Tcl_MutexLock(&filesystemMutex);
-    tsdPtr->filesystemEpoch = theFilesystemEpoch;
-    Tcl_MutexUnlock(&filesystemMutex);
-#endif
+    (void) FsGetFirstFilesystem();
     return (filesystemEpoch == tsdPtr->filesystemEpoch);
 }
 
