@@ -54,6 +54,8 @@ static int		TestfilehandlerCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Interp *interp, int argc, char **argv));
 static int		TestfilewaitCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Interp *interp, int argc, char **argv));
+static int		TestfindexecutableCmd _ANSI_ARGS_((ClientData dummy,
+			    Tcl_Interp *interp, int argc, char **argv));
 static int		TestgetopenfileCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Interp *interp, int argc, char **argv));
 int			TclplatformtestInit _ANSI_ARGS_((Tcl_Interp *interp));
@@ -82,6 +84,8 @@ TclplatformtestInit(interp)
     Tcl_CreateCommand(interp, "testfilehandler", TestfilehandlerCmd,
             (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
     Tcl_CreateCommand(interp, "testfilewait", TestfilewaitCmd,
+            (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
+    Tcl_CreateCommand(interp, "testfindexecutable", TestfindexecutableCmd,
             (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
     Tcl_CreateCommand(interp, "testgetopenfile", TestgetopenfileCmd,
             (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
@@ -382,6 +386,46 @@ TestfilewaitCmd(clientData, interp, argc, argv)
     if (result & TCL_WRITABLE) {
 	Tcl_AppendElement(interp, "writable");
     }
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TestfindexecutableCmd --
+ *
+ *	This procedure implements the "testfindexecutable" command. It is
+ *	used to test Tcl_FindExecutable.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TestfindexecutableCmd(clientData, interp, argc, argv)
+    ClientData clientData;		/* Not used. */
+    Tcl_Interp *interp;			/* Current interpreter. */
+    int argc;				/* Number of arguments. */
+    char **argv;			/* Argument strings. */
+{
+    char *oldName;
+
+    if (argc != 2) {
+	Tcl_AppendResult(interp, "wrong # arguments: should be \"", argv[0],
+		" argv0\"", (char *) NULL);
+	return TCL_ERROR;
+    }
+    oldName = tclExecutableName;
+    tclExecutableName = NULL;
+    Tcl_FindExecutable(argv[1]);
+    Tcl_SetResult(interp, tclExecutableName, TCL_DYNAMIC);
+    ckfree(tclExecutableName);
+    tclExecutableName = oldName;
     return TCL_OK;
 }
 
