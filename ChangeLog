@@ -1,3 +1,8 @@
+2002-07-24  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* generic/tclExecute.c: restoring full TCL_COMPILE_DEBUG
+	functionality.
+
 2002-07-24  Don Porter  <dgp@users.sourceforge.net>
 
 	* tests/unixInit.test: relaxed unixInit-3.1 to accept iso8859-15
