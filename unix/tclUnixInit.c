@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixInit.c,v 1.1.2.10 1999/03/14 21:41:17 surles Exp $
+ * RCS: @(#) $Id: tclUnixInit.c,v 1.1.2.11 1999/03/14 21:41:57 surles Exp $
  */
 
 #include "tclInt.h"
@@ -279,6 +279,8 @@ CONST char *path;		/* Path to the executable in native
 
     /*
      * Finally, look for the library relative to the compiled-in path.
+     * This is needed when users install Tcl with an exec-prefix that
+     * is different from the prtefix.
      */
 			      
     str = defaultLibraryDir;
