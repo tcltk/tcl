@@ -6,7 +6,7 @@
 # Copyright (c) 1995-1996 Sun Microsystems, Inc.
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 #
-# RCS: @(#) $Id: makefile.vc,v 1.35 1999/06/08 02:59:31 hershey Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.36 1999/06/15 01:16:29 hershey Exp $
 
 # Does not depend on the presence of any environment variables in
 # order to compile tcl; all needed information is derived from 
@@ -186,7 +186,6 @@ TCLOBJS = \
 	$(TMPDIR)\tclStubLib.obj \
 	$(TMPDIR)\tclThread.obj \
 	$(TMPDIR)\tclTimer.obj \
-	$(TMPDIR)\tclUnicodeObj.obj \
 	$(TMPDIR)\tclUtf.obj \
 	$(TMPDIR)\tclUtil.obj \
 	$(TMPDIR)\tclVar.obj \

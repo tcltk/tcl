@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.14 1999/06/10 04:28:50 stanton Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.15 1999/06/15 01:16:22 hershey Exp $
  */
 
 #include "tclInt.h"
@@ -274,7 +274,7 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
 	    newPtr = Tcl_NewListObj(2, objs);
 	} else {
 	    if (i <= info.nsubs) {
-		newPtr = TclGetRangeFromObj(objPtr, info.matches[i].start,
+		newPtr = Tcl_GetRange(objPtr, info.matches[i].start,
 			info.matches[i].end - 1);
 	    } else {
 		newPtr = Tcl_NewObj();
@@ -385,8 +385,8 @@ Tcl_RegsubObjCmd(dummy, interp, objc, objv)
     Tcl_IncrRefCount(resultPtr);
 
     objPtr = objv[1];
-    wlen = TclGetUnicodeLengthFromObj(objPtr);
-    wstring = TclGetUnicodeFromObj(objPtr);
+    wlen = Tcl_GetCharLength(objPtr);
+    wstring = Tcl_GetUnicode(objPtr);
     subspec = Tcl_GetString(objv[2]);
     varPtr = objv[3];
 
@@ -430,7 +430,7 @@ Tcl_RegsubObjCmd(dummy, interp, objc, objv)
 	Tcl_RegExpGetInfo(regExpr, &info);
 	start = info.matches[0].start;
 	end = info.matches[0].end;
-	TclAppendUnicodeToObj(resultPtr, wstring + offset, start);
+	Tcl_AppendUnicodeToObj(resultPtr, wstring + offset, start);
 
 	/*
 	 * Append the subSpec argument to the variable, making appropriate
@@ -468,7 +468,7 @@ Tcl_RegsubObjCmd(dummy, interp, objc, objv)
 	    subStart = info.matches[index].start;
 	    subEnd = info.matches[index].end;
 	    if ((subStart >= 0) && (subEnd >= 0)) {
-		TclAppendUnicodeToObj(resultPtr, wstring + offset + subStart,
+		Tcl_AppendUnicodeToObj(resultPtr, wstring + offset + subStart,
 			subEnd - subStart);
 	    }
 	    if (*src == '\\') {
@@ -485,7 +485,7 @@ Tcl_RegsubObjCmd(dummy, interp, objc, objv)
 	     * in order to prevent infinite loops.
 	     */
 
-	    TclAppendUnicodeToObj(resultPtr, wstring + offset, 1);
+	    Tcl_AppendUnicodeToObj(resultPtr, wstring + offset, 1);
 	    offset++;
 	}
 	offset += end;
@@ -500,7 +500,7 @@ Tcl_RegsubObjCmd(dummy, interp, objc, objv)
      */
 
     if ((offset < wlen) || (numMatches == 0)) {
-	TclAppendUnicodeToObj(resultPtr, wstring + offset, wlen - offset);
+	Tcl_AppendUnicodeToObj(resultPtr, wstring + offset, wlen - offset);
     }
     if (Tcl_ObjSetVar2(interp, varPtr, NULL, resultPtr, 0) == NULL) {
 	Tcl_AppendResult(interp, "couldn't set variable \"",
@@ -973,8 +973,11 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		    if (length2 == utflen) {
 			/* no unicode chars */
 			string2 += start;
+			length2 -= start;
 		    } else {
-			string2 = Tcl_UtfAtIndex(string2, start);
+			char *s = Tcl_UtfAtIndex(string2, start);
+			length2 -= s - string2;
+			string2 = s;
 		    }
 		}
 	    }
@@ -1049,14 +1052,14 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		 * 'end' really means.
 		 */
 
-		length2 = TclGetUnicodeLengthFromObj(objv[2]);
+		length2 = Tcl_GetCharLength(objv[2]);
     
 		if (TclGetIntForIndex(interp, objv[3], length2 - 1,
 			&index) != TCL_OK) {
 		    return TCL_ERROR;
 		}
 		if ((index >= 0) && (index < length2)) {
-		    unichar = TclGetUniCharFromObj(objv[2], index);
+		    unichar = Tcl_GetUniChar(objv[2], index);
 		    length2 = Tcl_UniCharToUtf((int)unichar, buf);
 		    Tcl_SetStringObj(resultPtr, buf, length2);
 		}
@@ -1432,7 +1435,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		    Tcl_SetIntObj(resultPtr, length1);
 		} else {
 		    Tcl_SetIntObj(resultPtr,
-			    TclGetUnicodeLengthFromObj(objv[2]));
+			    Tcl_GetCharLength(objv[2]));
 		}
 	    }
 	    break;
@@ -1611,7 +1614,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		 * create a result object.
 		 */
 
-		length2 = TclGetUnicodeLengthFromObj(objv[2]) - 1;
+		length2 = Tcl_GetCharLength(objv[2]) - 1;
     
 		if (TclGetIntForIndex(interp, objv[3], length2,
 			&first) != TCL_OK) {
@@ -1628,7 +1631,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		    last = length1 - 1;
 		}
 		if (last >= first) {
-		    resultPtr = TclGetRangeFromObj(objv[2], first, last);
+		    resultPtr = Tcl_GetRange(objv[2], first, last);
 		    Tcl_SetObjResult(interp, resultPtr);
 		}
 	    }
@@ -1761,6 +1764,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		Tcl_SetStringObj(resultPtr, string1, start - string1);
 		Tcl_AppendToObj(resultPtr, string2, length2);
 		Tcl_AppendToObj(resultPtr, end, -1);
+		ckfree(string2);
 	    }
 	    break;
 

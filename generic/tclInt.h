@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.32 1999/06/10 04:28:51 stanton Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.33 1999/06/15 01:16:23 hershey Exp $
  */
 
 #ifndef _TCLINT
@@ -1509,7 +1509,6 @@ extern Tcl_ObjType	tclIntType;
 extern Tcl_ObjType	tclListType;
 extern Tcl_ObjType	tclProcBodyType;
 extern Tcl_ObjType	tclStringType;
-extern Tcl_ObjType	tclUnicodeType;
 
 /*
  * The head of the list of free Tcl objects, and the total number of Tcl
@@ -1543,12 +1542,6 @@ EXTERN int		TclAccess _ANSI_ARGS_((CONST char *path,
 EXTERN int		TclAccessDeleteProc _ANSI_ARGS_((TclAccessProc_ *proc));
 EXTERN int		TclAccessInsertProc _ANSI_ARGS_((TclAccessProc_ *proc));
 EXTERN void		TclAllocateFreeObjects _ANSI_ARGS_((void));
-EXTERN Tcl_Obj *	TclAppendObjToUnicodeObj _ANSI_ARGS_((
-	    		    register Tcl_Obj *targetObjPtr,
-	    		    register Tcl_Obj *srcObjPtr));
-EXTERN void		TclAppendUnicodeToObj _ANSI_ARGS_((
-	    		    register Tcl_Obj *objPtr, Tcl_UniChar *unichars,
-			    int length));
 EXTERN int		TclArraySet _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *arrayNameObj, Tcl_Obj *arrayElemObj));
 EXTERN int		TclCleanupChildren _ANSI_ARGS_((Tcl_Interp *interp,
@@ -1641,13 +1634,6 @@ EXTERN int		TclGetOpenMode _ANSI_ARGS_((Tcl_Interp *interp,
 			    char *string, int *seekFlagPtr));
 EXTERN Tcl_Command	TclGetOriginalCommand _ANSI_ARGS_((
 			    Tcl_Command command));
-EXTERN Tcl_Obj*         TclGetRangeFromObj _ANSI_ARGS_((Tcl_Obj *objPtr,
-			    int first, int last));
-EXTERN Tcl_UniChar      TclGetUniCharFromObj _ANSI_ARGS_((Tcl_Obj *objPtr,
-			    int index));
-EXTERN Tcl_UniChar *    TclGetUnicodeFromObj _ANSI_ARGS_((Tcl_Obj *objPtr));
-EXTERN int		TclGetUnicodeLengthFromObj _ANSI_ARGS_((
-			    Tcl_Obj *objPtr));
 EXTERN int		TclGlob _ANSI_ARGS_((Tcl_Interp *interp,
 			    char *pattern, int noComplain));
 EXTERN int		TclGlobalInvoke _ANSI_ARGS_((Tcl_Interp *interp,
@@ -1695,8 +1681,6 @@ EXTERN Var *		TclLookupVar _ANSI_ARGS_((Tcl_Interp *interp,
 EXTERN int		TclMathInProgress _ANSI_ARGS_((void));
 EXTERN int		TclNeedSpace _ANSI_ARGS_((char *start, char *end));
 EXTERN Tcl_Obj *	TclNewProcBodyObj _ANSI_ARGS_((Proc *procPtr));
-EXTERN Tcl_Obj *	TclNewUnicodeObj _ANSI_ARGS_((Tcl_UniChar *unichars,
-			    int numChars));
 EXTERN int		TclObjCommandComplete _ANSI_ARGS_((Tcl_Obj *cmdPtr));
 EXTERN int		TclObjInterpProc _ANSI_ARGS_((ClientData clientData,
 			    Tcl_Interp *interp, int objc,

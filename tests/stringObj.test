@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: stringObj.test,v 1.3 1999/04/16 00:47:35 stanton Exp $
+# RCS: @(#) $Id: stringObj.test,v 1.4 1999/06/15 01:16:27 hershey Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     source [file join [pwd] [file dirname [info script]] defs.tcl]
@@ -189,6 +189,185 @@ test stringObj-8.1 {DupStringInternalRep procedure} {
 	    [teststringobj length 2] [teststringobj length2 2] \
 	    [teststringobj get 2]
 } {5 10 5 5 abcde}
+
+test unicode-1.1 {TclGetUniCharFromObj with byte-size chars} {
+    string index "abcdefghi" 0
+} "a"
+test unicode-1.2 {TclGetUniCharFromObj with byte-size chars} {
+    string index "abcdefghi" 3
+} "d"
+test unicode-1.3 {TclGetUniCharFromObj with byte-size chars} {
+    string index "abcdefghi" end
+} "i"
+test unicode-1.4 {TclGetUniCharFromObj with mixed width chars} {
+    string index "ïa¿b®c®¿dï" 0
+} "ï"
+test unicode-1.5 {TclGetUniCharFromObj} {
+    string index "ïa¿b®c®¿dï" 4
+} "®"
+test unicode-1.6 {TclGetUniCharFromObj} {
+    string index "ïa¿b®cï¿d®" end
+} "®"
+
+test unicode-2.1 {TclGetUnicodeLengthFromObj with byte-size chars} {
+    string length "" 
+} 0
+test unicode-2.2 {TclGetUnicodeLengthFromObj with byte-size chars} {
+    string length "a"
+} 1
+test unicode-2.3 {TclGetUnicodeLengthFromObj with byte-size chars} {
+    string length "abcdef"
+} 6
+test unicode-2.4 {TclGetUnicodeLengthFromObj with mixed width chars} {
+    string length "®" 
+} 1
+test unicode-2.5 {TclGetUnicodeLengthFromObj with mixed width chars} {
+    string length "ï¿®ï¿®" 
+} 6
+test unicode-2.6 {TclGetUnicodeLengthFromObj with mixed width chars} {
+    string length "ïa¿b®cï¿d®" 
+} 10
+
+test unicode-3.1 {TclGetRangeFromObj with all byte-size chars} {testobj} {
+    set x "abcdef"
+    list [testobj objtype $x] [set y [string range $x 1 end-1]] \
+	    [testobj objtype $x] [testobj objtype $y]
+} {none bcde string none}
+
+test unicode-3.2 {TclGetRangeFromObj with some mixed width chars} {testobj} {
+    set x "abcïïdef"
+    list [testobj objtype $x] [set y [string range $x 1 end-1]] \
+	    [testobj objtype $x] [testobj objtype $y]
+} {none bcïïde string string}
+
+test unicode-4.1 {UpdateStringOfUnicode} {testobj} {
+    set x 2345
+    list [string index $x end] [testobj objtype $x] [incr x] \
+	    [testobj objtype $x]
+} {5 string 2346 int}
+
+test unicode-5.1 {SetUnicodeFromAny called with non-unicode obj} {testobj} {
+    set x 2345
+    list [incr x] [testobj objtype $x] [string index $x end] \
+	    [testobj objtype $x]
+} {2346 int 6 string}
+
+test unicode-5.2 {SetUnicodeFromAny called with unicode obj} {testobj} {
+    set x "abcdef"
+    list [string length $x] [testobj objtype $x] \
+	    [string length $x] [testobj objtype $x]
+} {6 string 6 string}
+
+test unicode-6.1 {DupUnicodeInternalRep, mixed width chars} {testobj} {
+    set x abcï¿®ghi
+    string length $x
+    set y $x
+    list [testobj objtype $x] [testobj objtype $y] [append x "®¿ï"] \
+	    [set y] [testobj objtype $x] [testobj objtype $y]
+} {string string abcï¿®ghi®¿ï abcï¿®ghi string string}
+
+test unicode-6.2 {DupUnicodeInternalRep, mixed width chars} {testobj} {
+    set x abcï¿®ghi
+    set y $x
+    string length $x
+    list [testobj objtype $x] [testobj objtype $y] [append x "®¿ï"] \
+	    [set y] [testobj objtype $x] [testobj objtype $y]
+} {string string abcï¿®ghi®¿ï abcï¿®ghi string string}
+
+test unicode-6.3 {DupUnicodeInternalRep, all byte-size chars} {testobj} {
+    set x abcdefghi
+    string length $x
+    set y $x
+    list [testobj objtype $x] [testobj objtype $y] [append x jkl] \
+	    [set y] [testobj objtype $x] [testobj objtype $y]
+} {string string abcdefghijkl abcdefghi string string}
+
+test unicode-6.4 {DupUnicodeInternalRep, all byte-size chars} {testobj} {
+    set x abcdefghi
+    set y $x
+    string length $x
+    list [testobj objtype $x] [testobj objtype $y] [append x jkl] \
+	    [set y] [testobj objtype $x] [testobj objtype $y]
+} {string string abcdefghijkl abcdefghi string string}
+
+test unicode-7.1 {TclAppendObjToUnicodeObj, mixed src & dest} {testobj} {
+    set x abcï¿®ghi
+    set y ®¿ï
+    string length $x
+    list [testobj objtype $x] [testobj objtype $y] [append x $y] \
+	    [set y] [testobj objtype $x] [testobj objtype $y]
+} {string none abcï¿®ghi®¿ï ®¿ï string string}
+
+test unicode-7.2 {TclAppendObjToUnicodeObj, mixed src & dest} {testobj} {
+    set x abcï¿®ghi
+    string length $x
+    list [testobj objtype $x] [append x $x] [testobj objtype $x] \
+	    [append x $x] [testobj objtype $x]
+} {string abcï¿®ghiabcï¿®ghi string\
+abcï¿®ghiabcï¿®ghiabcï¿®ghiabcï¿®ghi\
+string}
+
+test unicode-7.3 {TclAppendObjToUnicodeObj, mixed src & 1-byte dest} {testobj} {
+    set x abcdefghi
+    set y ®¿ï
+    string length $x
+    list [testobj objtype $x] [testobj objtype $y] [append x $y] \
+	    [set y] [testobj objtype $x] [testobj objtype $y]
+} {string none abcdefghi®¿ï ®¿ï string string}
+
+test unicode-7.4 {TclAppendObjToUnicodeObj, 1-byte src & dest} {testobj} {
+    set x abcdefghi
+    set y jkl
+    string length $x
+    list [testobj objtype $x] [testobj objtype $y] [append x $y] \
+	    [set y] [testobj objtype $x] [testobj objtype $y]
+} {string none abcdefghijkl jkl string string}
+
+test unicode-7.5 {TclAppendObjToUnicodeObj, 1-byte src & dest} {testobj} {
+    set x abcdefghi
+    string length $x
+    list [testobj objtype $x] [append x $x] [testobj objtype $x] \
+	    [append x $x] [testobj objtype $x]
+} {string abcdefghiabcdefghi string abcdefghiabcdefghiabcdefghiabcdefghi\
+string}
+
+test unicode-7.6 {TclAppendObjToUnicodeObj, 1-byte src & mixed dest} {testobj} {
+    set x abcï¿®ghi
+    set y jkl
+    string length $x
+    list [testobj objtype $x] [testobj objtype $y] [append x $y] \
+	    [set y] [testobj objtype $x] [testobj objtype $y]
+} {string none abcï¿®ghijkl jkl string string}
+
+test unicode-7.7 {TclAppendObjToUnicodeObj, integer src & dest} {testobj} {
+    set x [expr {4 * 5}]
+    set y [expr {4 + 5}]
+    list [testobj objtype $x] [testobj objtype $y] [append x $y] \
+	    [testobj objtype $x] [append x $y] [testobj objtype $x] \
+	    [testobj objtype $y]
+} {int int 209 string 2099 string int}
+
+test unicode-7.8 {TclAppendObjToUnicodeObj, integer src & dest} {testobj} {
+    set x [expr {4 * 5}]
+    list [testobj objtype $x] [append x $x] [testobj objtype $x] \
+	    [append x $x] [testobj objtype $x]
+} {int 2020 string 20202020 string}
+
+test unicode-7.9 {TclAppendObjToUnicodeObj, integer src & 1-byte dest} {testobj} {
+    set x abcdefghi
+    set y [expr {4 + 5}]
+    string length $x
+    list [testobj objtype $x] [testobj objtype $y] [append x $y] \
+	    [set y] [testobj objtype $x] [testobj objtype $y]
+} {string int abcdefghi9 9 string int}
+
+test unicode-7.10 {TclAppendObjToUnicodeObj, integer src & mixed dest} {testobj} {
+    set x abcï¿®ghi
+    set y [expr {4 + 5}]
+    string length $x
+    list [testobj objtype $x] [testobj objtype $y] [append x $y] \
+	    [set y] [testobj objtype $x] [testobj objtype $y]
+} {string int abcï¿®ghi9 9 string int}
 
 testobj freeallvars
 

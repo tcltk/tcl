@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.15 1999/06/10 04:28:49 stanton Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.16 1999/06/15 01:16:21 hershey Exp $
 
 library tcl
 
@@ -1284,7 +1284,29 @@ declare 376 generic {
 declare 377 generic {
     void Tcl_RegExpGetInfo(Tcl_RegExp regexp, Tcl_RegExpInfo *infoPtr)
 }
-
+declare 378 generic {
+    Tcl_Obj * Tcl_NewUnicodeObj(Tcl_UniChar *unicode, int numChars)
+}
+declare 379 generic {
+    void Tcl_SetUnicodeObj(Tcl_Obj *objPtr, Tcl_UniChar *unicode, \
+	    int numChars)
+}
+declare 380 generic {
+    int Tcl_GetCharLength (Tcl_Obj *objPtr)
+}
+declare 381 generic {
+    Tcl_UniChar Tcl_GetUniChar (Tcl_Obj *objPtr, int index)
+}
+declare 382 generic {
+    Tcl_UniChar * Tcl_GetUnicode (Tcl_Obj *objPtr)
+}
+declare 383 generic {
+    Tcl_Obj * Tcl_GetRange (Tcl_Obj *objPtr, int first, int last)
+}
+declare 384 generic {
+    void Tcl_AppendUnicodeToObj (register Tcl_Obj *objPtr, \
+	    Tcl_UniChar *unicode, int length)
+}
 
 ##############################################################################
 

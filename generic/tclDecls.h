@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.15 1999/06/10 04:28:50 stanton Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.16 1999/06/15 01:16:22 hershey Exp $
  */
 
 #ifndef _TCLDECLS
@@ -1175,6 +1175,26 @@ EXTERN int		Tcl_RegExpMatchObj _ANSI_ARGS_((Tcl_Interp * interp,
 /* 377 */
 EXTERN void		Tcl_RegExpGetInfo _ANSI_ARGS_((Tcl_RegExp regexp, 
 				Tcl_RegExpInfo * infoPtr));
+/* 378 */
+EXTERN Tcl_Obj *	Tcl_NewUnicodeObj _ANSI_ARGS_((Tcl_UniChar * unicode, 
+				int numChars));
+/* 379 */
+EXTERN void		Tcl_SetUnicodeObj _ANSI_ARGS_((Tcl_Obj * objPtr, 
+				Tcl_UniChar * unicode, int numChars));
+/* 380 */
+EXTERN int		Tcl_GetCharLength _ANSI_ARGS_((Tcl_Obj * objPtr));
+/* 381 */
+EXTERN Tcl_UniChar	Tcl_GetUniChar _ANSI_ARGS_((Tcl_Obj * objPtr, 
+				int index));
+/* 382 */
+EXTERN Tcl_UniChar *	Tcl_GetUnicode _ANSI_ARGS_((Tcl_Obj * objPtr));
+/* 383 */
+EXTERN Tcl_Obj *	Tcl_GetRange _ANSI_ARGS_((Tcl_Obj * objPtr, 
+				int first, int last));
+/* 384 */
+EXTERN void		Tcl_AppendUnicodeToObj _ANSI_ARGS_((
+				register Tcl_Obj * objPtr, 
+				Tcl_UniChar * unicode, int length));
 
 typedef struct TclStubHooks {
     struct TclPlatStubs *tclPlatStubs;
@@ -1620,6 +1640,13 @@ typedef struct TclStubs {
     int (*tcl_UniCharIsPunct) _ANSI_ARGS_((int ch)); /* 375 */
     int (*tcl_RegExpMatchObj) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_RegExp regexp, Tcl_Obj * objPtr, int offset, int nmatches, int flags)); /* 376 */
     void (*tcl_RegExpGetInfo) _ANSI_ARGS_((Tcl_RegExp regexp, Tcl_RegExpInfo * infoPtr)); /* 377 */
+    Tcl_Obj * (*tcl_NewUnicodeObj) _ANSI_ARGS_((Tcl_UniChar * unicode, int numChars)); /* 378 */
+    void (*tcl_SetUnicodeObj) _ANSI_ARGS_((Tcl_Obj * objPtr, Tcl_UniChar * unicode, int numChars)); /* 379 */
+    int (*tcl_GetCharLength) _ANSI_ARGS_((Tcl_Obj * objPtr)); /* 380 */
+    Tcl_UniChar (*tcl_GetUniChar) _ANSI_ARGS_((Tcl_Obj * objPtr, int index)); /* 381 */
+    Tcl_UniChar * (*tcl_GetUnicode) _ANSI_ARGS_((Tcl_Obj * objPtr)); /* 382 */
+    Tcl_Obj * (*tcl_GetRange) _ANSI_ARGS_((Tcl_Obj * objPtr, int first, int last)); /* 383 */
+    void (*tcl_AppendUnicodeToObj) _ANSI_ARGS_((register Tcl_Obj * objPtr, Tcl_UniChar * unicode, int length)); /* 384 */
 } TclStubs;
 
 #ifdef __cplusplus
@@ -3167,6 +3194,34 @@ extern TclStubs *tclStubsPtr;
 #ifndef Tcl_RegExpGetInfo
 #define Tcl_RegExpGetInfo \
 	(tclStubsPtr->tcl_RegExpGetInfo) /* 377 */
+#endif
+#ifndef Tcl_NewUnicodeObj
+#define Tcl_NewUnicodeObj \
+	(tclStubsPtr->tcl_NewUnicodeObj) /* 378 */
+#endif
+#ifndef Tcl_SetUnicodeObj
+#define Tcl_SetUnicodeObj \
+	(tclStubsPtr->tcl_SetUnicodeObj) /* 379 */
+#endif
+#ifndef Tcl_GetCharLength
+#define Tcl_GetCharLength \
+	(tclStubsPtr->tcl_GetCharLength) /* 380 */
+#endif
+#ifndef Tcl_GetUniChar
+#define Tcl_GetUniChar \
+	(tclStubsPtr->tcl_GetUniChar) /* 381 */
+#endif
+#ifndef Tcl_GetUnicode
+#define Tcl_GetUnicode \
+	(tclStubsPtr->tcl_GetUnicode) /* 382 */
+#endif
+#ifndef Tcl_GetRange
+#define Tcl_GetRange \
+	(tclStubsPtr->tcl_GetRange) /* 383 */
+#endif
+#ifndef Tcl_AppendUnicodeToObj
+#define Tcl_AppendUnicodeToObj \
+	(tclStubsPtr->tcl_AppendUnicodeToObj) /* 384 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */

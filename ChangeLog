@@ -1,3 +1,16 @@
+1999-06-14  Melissa Hirschl  <hershey@matisse.scriptics.com>
+
+	* doc/StringObj.3
+	* test/stringObj.test
+	* unix/Makefile.in
+	* win/Makefile.in
+	* win/makefile.vc
+	* generic/tclStringObj.c:
+	Merged String and Unicode object types.  Added new functions to
+	the puplic API:  Tcl_NewUnicodeObj, Tcl_SetUnicodeObj,
+	Tcl_GetUnicode, Tcl_GetUniChar, Tcl_GetCharLength, Tcl_GetRange,
+	Tcl_AppendUnicodeToObj.
+
 1999-06-09    <stanton@scriptics.com>
 
 	* generic/tclUnicodeObj.c: Lots of cleanup and simplification.

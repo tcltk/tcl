@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclRegexp.c,v 1.7 1999/06/10 04:28:51 stanton Exp $
+ * RCS: @(#) $Id: tclRegexp.c,v 1.8 1999/06/15 01:16:24 hershey Exp $
  */
 
 #include "tclInt.h"
@@ -429,8 +429,8 @@ Tcl_RegExpMatchObj(interp, re, objPtr, offset, nmatches, flags)
 
     Tcl_IncrRefCount(objPtr);
 
-    udata = TclGetUnicodeFromObj(objPtr);
-    length = TclGetUnicodeLengthFromObj(objPtr);
+    udata = Tcl_GetUnicode(objPtr);
+    length = Tcl_GetCharLength(objPtr);
 
     /*
      * Save the target object so we can extract strings from it later.
