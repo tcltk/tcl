@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.47 2001/01/18 19:09:55 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.48 2001/03/30 23:06:40 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -836,6 +836,7 @@ TclStubs tclStubs = {
     Tcl_AttemptRealloc, /* 430 */
     Tcl_AttemptDbCkrealloc, /* 431 */
     Tcl_AttemptSetObjLength, /* 432 */
+    Tcl_GetChannelThread, /* 433 */
 };
 
 /* !END!: Do not edit above this line. */

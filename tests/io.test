@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: io.test,v 1.14 2000/04/10 17:19:00 ericm Exp $
+# RCS: @(#) $Id: io.test,v 1.15 2001/03/30 23:06:40 andreas_kupries Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -6722,6 +6722,29 @@ test io-58.1 {Tcl_NotifyChannel and error when closing} {unixOrPc} {
     list $x $result
 } {1 {gets {normal message from pipe} gets {} catch {error message from pipe}}}
 
+
+
+if {[info commands testthread] != {}} {
+    set mainthread [testthread id]
+} else {
+    set mainthread 0
+}
+
+test io-59.1 {Thread reference of channels} {
+    # TIP #10
+    # More complicated tests (like that the reference changes as a
+    # channel is moved from thread to thread) can be done only in the
+    # extension which fully implements the moving of channels between
+    # threads, i.e. 'Threads'. Or we have to extend [testthread] as well.
+
+    set f [open longfile r]
+    set result [testchannel mthread $f]
+    close $f
+    set result
+} $mainthread
+
+
+
 # cleanup
 foreach file [list fooBar longfile script output test1 pipe my_script foo \
 	bar test2 test3 cat stdout] {
@@ -6730,16 +6753,3 @@ foreach file [list fooBar longfile script output test1 pipe my_script foo \
 ::tcltest::restoreState
 ::tcltest::cleanupTests
 return
-
-
-
-
-
-
-
-
-
-
-
-
-

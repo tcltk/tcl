@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.22 2000/11/24 11:27:37 dkf Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.23 2001/03/30 23:06:40 andreas_kupries Exp $
  */
 
 #define TCL_TEST
@@ -4517,6 +4517,18 @@ TestChannelCmd(clientData, interp, argc, argv)
         return TCL_OK;
     }
     
+    if ((cmdName[0] == 'm') && (strncmp(cmdName, "mthread", len) == 0)) {
+        if (argc != 3) {
+            Tcl_AppendResult(interp, "channel name required",
+                    (char *) NULL);
+            return TCL_ERROR;
+        }
+
+        TclFormatInt(buf, Tcl_GetChannelThread (chan));
+        Tcl_AppendResult(interp, buf, (char *) NULL);
+        return TCL_OK;
+    }
+
     if ((cmdName[0] == 'n') && (strncmp(cmdName, "name", len) == 0)) {
         if (argc != 3) {
             Tcl_AppendResult(interp, "channel name required",
