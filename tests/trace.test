@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: trace.test,v 1.22 2002/09/06 00:20:29 dgp Exp $
+# RCS: @(#) $Id: trace.test,v 1.23 2002/10/15 16:13:47 vincentdarley Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -1838,11 +1838,44 @@ test trace-27.1 {memory leak in rename trace (604609)} {
     info commands foo
 } {}
 
+test trace-28.1 {enterstep and leavestep traces with update idletasks (615043)} {
+    catch {rename foo {}}
+    proc foo {} {
+        set a 1
+        update idletasks
+        set b 1
+    }
+
+    set info {}
+    trace add execution foo {enter enterstep leavestep leave} \
+        [list traceExecute foo]
+    update
+    after idle {puts idle}
+    foo
+
+    trace remove execution foo {enter enterstep leavestep leave} \
+        [list traceExecute foo]
+    rename foo {}
+    join $info "\n"
+} {foo foo enter
+foo {set a 1} enterstep
+foo {set a 1} 0 1 leavestep
+foo {update idletasks} enterstep
+foo {puts idle} enterstep
+foo {puts idle} 0 {} leavestep
+foo {update idletasks} 0 {} leavestep
+foo {set b 1} enterstep
+foo {set b 1} 0 1 leavestep
+foo foo 0 1 leave}
+
 # Delete procedures when done, so we don't clash with other tests
 # (e.g. foobar will clash with 'unknown' tests).
 catch {rename foobar {}}
 catch {rename foo {}}
 catch {rename bar {}}
+
+# Unset the varaible when done
+catch {unset info}
 
 # cleanup
 ::tcltest::cleanupTests
