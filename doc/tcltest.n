@@ -8,7 +8,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: tcltest.n,v 1.38.2.1 2003/03/08 21:43:49 dgp Exp $
+'\" RCS: @(#) $Id: tcltest.n,v 1.38.2.2 2003/03/26 23:51:25 dgp Exp $
 '\" 
 .so man.macros
 .TH "tcltest" n 2.2 tcltest "Tcl Bundled Packages"
@@ -18,7 +18,7 @@
 tcltest \- Test harness support code and utilities
 .SH SYNOPSIS
 .nf
-\fBpackage require tcltest ?2.2?\fR
+\fBpackage require tcltest ?2.2.3?\fR
 .sp
 \fBtcltest::test \fIname description ?option value ...?\fR
 \fBtcltest::test \fIname description ?constraints? body result\fR
@@ -32,12 +32,10 @@ tcltest \- Test harness support code and utilities
 \fBtcltest::cleanupTests \fI?runningMultipleTests?\fR
 \fBtcltest::runAllTests\fR
 .sp
-.VS 2.1
 \fBtcltest::configure\fR
 \fBtcltest::configure \fIoption\fR
 \fBtcltest::configure \fIoption value ?option value ...?\fR
 \fBtcltest::customMatch \fImode command\fR
-.VE
 \fBtcltest::testConstraint \fIconstraint ?value?\fR
 \fBtcltest::outputChannel \fI?channelID?\fR
 \fBtcltest::errorChannel \fI?channelID?\fR
@@ -200,7 +198,6 @@ the configurable options of \fBtcltest\fR.  See \fBRUNNING ALL TESTS\fR
 below for a complete description of the many variations possible
 with [\fBrunAllTests\fR].
 .SH "CONFIGURATION COMMANDS"
-.VS
 .TP
 \fBconfigure\fR
 Returns the list of configurable options supported by \fBtcltest\fR.
@@ -238,7 +235,6 @@ is evaluated in the global namespace.
 The completed script is expected to return a boolean value indicating
 whether or not the results match.  The built-in matching modes of
 [\fBtest\fR] are \fBexact\fR, \fBglob\fR, and \fBregexp\fR.
-.VE
 .TP
 \fBtestConstraint \fIconstraint ?boolean?\fR
 Sets or returns the boolean value associated with the named \fIconstraint\fR.
@@ -754,6 +750,7 @@ doesn't match any of the tests that were specified using by
 [\fBconfigure -match\fR] (userSpecifiedNonMatch) or matches any of
 the tests specified by [\fBconfigure -skip\fR] (userSpecifiedSkip).  Also
 print warnings about possible lack of cleanup or balance in test files.
+Also print warnings about any re-use of test names.
 .IP 2
 Display the flag array parsed by the command line processor, the
 contents of the ::env array, and all user-defined variables that exist
