@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: man2help2.tcl,v 1.10 2002/05/08 12:20:15 davygrvy Exp $
+# RCS: @(#) $Id: man2help2.tcl,v 1.11 2002/05/08 23:48:13 davygrvy Exp $
 # 
 
 # Global variables used by these scripts:
@@ -682,6 +682,22 @@ proc char {name} {
 	}
     }
 }
+
+
+# macro2 --
+#
+# This procedure handles macros that are invoked with a leading "'"
+# character instead of space.  Right now it just generates an
+# error diagnostic.
+#
+# Arguments:
+# name -		The name of the macro (without the ".").
+# args -		Any additional arguments to the macro.
+
+proc macro2 {name args} {
+    puts stderr "Unknown macro: '$name [join $args " "]"
+}
+
 
 
 # SHmacro --
