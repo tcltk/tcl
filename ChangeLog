@@ -1,5 +1,9 @@
 2002-02-26  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	* unix/tclUnixSock.c (Tcl_GetHostName): added an extra
+	gethostbyname check to guard against failure with truncated names
+	returned by uname.
+
 	* unix/configure:
 	* unix/tcl.m4 (SC_SERIAL_PORT): added sys/modem.h check and defined
 	_XOPEN_SOURCE_EXTENDED for HP-11 to get updated header decls.
