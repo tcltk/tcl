@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: stringObj.test,v 1.10 2000/04/10 17:19:04 ericm Exp $
+# RCS: @(#) $Id: stringObj.test,v 1.10.2.1 2000/08/07 21:32:25 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -321,27 +321,42 @@ test stringObj-10.1 {Tcl_GetRange with all byte-size chars} {
     set x "abcdef"
     list [testobj objtype $x] [set y [string range $x 1 end-1]] \
 	    [testobj objtype $x] [testobj objtype $y]
-} {none bcde string string}
+} [list none bcde string string]
 test stringObj-10.2 {Tcl_GetRange with some mixed width chars} {
+    # Because this test does not use \uXXXX notation below instead of
+    # hardcoding the values, it may fail in multibyte locales.  However,
+    # we need to test that the parser produces untyped objects even when there
+    # are high-ASCII characters in the input (like "ï").  I don't know what
+    # else to do but inline those characters here.
     set x "abcïïdef"
     list [testobj objtype $x] [set y [string range $x 1 end-1]] \
 	    [testobj objtype $x] [testobj objtype $y]
-} {none bcïïde string string}
+} [list none "bc\u00EF\u00EFde" string string]
 test stringObj-10.3 {Tcl_GetRange with some mixed width chars} {
-    set x "abcïïdef"
+    # set x "abcïïdef"
+    # Use \uXXXX notation below instead of hardcoding the values, otherwise
+    # the test will fail in multibyte locales.
+    set x "abc\u00EF\u00EFdef"
     string length $x
     list [testobj objtype $x] [set y [string range $x 1 end-1]] \
 	    [testobj objtype $x] [testobj objtype $y]
-} {string bcïïde string string}
+} [list string "bc\u00EF\u00EFde" string string]
 test stringObj-10.4 {Tcl_GetRange with some mixed width chars} {
-    set a "ïa¿b®cï¿d®"
+    # set a "ïa¿b®cï¿d®"
+    # Use \uXXXX notation below instead of hardcoding the values, otherwise
+    # the test will fail in multibyte locales.
+    set a "\u00EFa\u00BFb\u00AEc\u00EF\u00BFd\u00AE"
     set result [list]
     while {[string length $a] > 0} {
 	set a [string range $a 1 end-1]
 	lappend result $a
     }
     set result
-} {a¿b®cï¿d ¿b®cï¿ b®cï ®c {}}
+} [list a\u00BFb\u00AEc\u00EF\u00BFd	\
+	\u00BFb\u00AEc\u00EF\u00BF	\
+	b\u00AEc\u00EF			\
+	\u00AEc				\
+	{}]
 
 test stringObj-11.1 {UpdateStringOfString} {
     set x 2345
@@ -387,10 +402,16 @@ test stringObj-13.4 {Tcl_GetCharLength with mixed width chars} {
     string length "®" 
 } 1
 test stringObj-13.5 {Tcl_GetCharLength with mixed width chars} {
-    string length "ï¿®ï¿®" 
+    # string length "ï¿®ï¿®" 
+    # Use \uXXXX notation below instead of hardcoding the values, otherwise
+    # the test will fail in multibyte locales.
+    string length "\u00EF\u00BF\u00AE\u00EF\u00BF\u00AE"
 } 6
 test stringObj-13.6 {Tcl_GetCharLength with mixed width chars} {
-    set a "ïa¿b®cï¿d®"
+    # set a "ïa¿b®cï¿d®"
+    # Use \uXXXX notation below instead of hardcoding the values, otherwise
+    # the test will fail in multibyte locales.
+    set a "\u00EFa\u00BFb\u00AEc\u00EF\u00BFd\u00AE"
     list [string length $a] [string length $a]
 } {10 10}
 
