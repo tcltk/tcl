@@ -6,7 +6,7 @@
 # Copyright (c) 2000 by Ajuba Solutions
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.test,v 1.27 2002/06/25 01:13:38 dgp Exp $
+# RCS: @(#) $Id: tcltest.test,v 1.28 2002/06/26 01:31:15 dgp Exp $
 
 # Note that there are several places where the value of 
 # tcltest::currentFailure is stored/reset in the -setup/-cleanup
@@ -1190,7 +1190,7 @@ test tcltest-21.10 {test command with cleanup failure} -setup {
 } -cleanup {
     set ::tcltest::currentFailure $fail
 } -body {
-    test 21.10.0 {foo-1} -cleanup {unset foo}
+    test tcltest-21.10.0 {foo-1} -cleanup {unset foo}
 } -result {^$} -match regexp \
 	-output {Test cleanup failed:.*can't unset \"foo\": no such variable}
 
@@ -1200,7 +1200,7 @@ test tcltest-21.11 {test command with setup failure} -setup {
     }
     set fail $::tcltest::currentFailure
 } -cleanup {set ::tcltest::currentFailure $fail} -body {
-    test 21.11.0 {foo-2} -setup {unset foo}
+    test tcltest-21.11.0 {foo-2} -setup {unset foo}
 } -result {^$} -output {Test setup failed:.*can't unset \"foo\": no such variable} -match regexp
 
 test tcltest-21.12 {
@@ -1210,7 +1210,7 @@ test tcltest-21.12 {
 } -cleanup {
 	set ::tcltest::currentFailure $fail
 } -body {
-    test 21.12.0 {foo-3} -setup {
+    test tcltest-21.12.0 {foo-3} -setup {
 	if {[info exists foo]} {
 	    unset foo
 	}
