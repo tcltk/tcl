@@ -694,6 +694,7 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 		LD_SEARCH_FLAGS='-R${LIB_RUNTIME_DIR}'
 	    fi
 
+	    # Check to enable 64-bit flags for compiler/linker
 	    if test "$do64bit" = "yes" ; then
 		if test "$GCC" = "yes" ; then
 		    AC_MSG_WARN("64bit mode not supported with GCC on $system")
@@ -747,6 +748,17 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 	    	MATH_LIBS="$MATH_LIBS -lbsd"
 	    	AC_DEFINE(USE_DELTA_FOR_TZ)
 	    fi
+
+	    # Check to enable 64-bit flags for compiler/linker
+	    if test "$do64bit" = "yes" ; then
+		if test "$GCC" = "yes" ; then
+		    AC_MSG_WARN("64bit mode not supported with GCC on $system")
+		else 
+		    do64bit_ok=yes
+		    EXTRA_CFLAGS="-q64"
+		    LDFLAGS="-q64"
+		fi
+	    fi
 	    ;;
 	BSD/OS-2.1*|BSD/OS-3*)
 	    SHLIB_CFLAGS=""
@@ -790,6 +802,8 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 		LDFLAGS="-Wl,-E"
 		LD_SEARCH_FLAGS='-Wl,+s,+b,${LIB_RUNTIME_DIR}:.'
 	    fi
+
+	    # Check to enable 64-bit flags for compiler/linker
 	    if test "$do64bit" = "yes" ; then
 		if test "$GCC" = "yes" ; then
 		    AC_MSG_WARN("64bit mode not supported with GCC on $system")
@@ -1200,6 +1214,7 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 	    SHLIB_LD="/usr/ccs/bin/ld -G -z text"
 	    LDFLAGS=""
     
+	    # Check to enable 64-bit flags for compiler/linker
 	    if test "$do64bit" = "yes" ; then
 		arch=`isainfo`
 		if test "$arch" = "sparcv9 sparc" ; then
