@@ -540,7 +540,6 @@ Tcl_Finalize()
     
     TclFinalizeCompExecEnv();
     TclFinalizeEnvironment();
-    TclpFinalize();
     firstExitPtr = NULL;
     tclInExit = 0;
 }
