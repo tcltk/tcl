@@ -1,3 +1,7 @@
+2004-05-05  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* doc/for.n, doc/while.n: More examples.
+
 2004-05-05  Don Porter  <dgp@users.sourceforge.net>
 
 	* tests/unixInit.test (unixInit-2.10):	Test correction for Mac OSX.
