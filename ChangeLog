@@ -1,3 +1,8 @@
+2004-05-17  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* doc/list.n: Updated example to fit with the unified format.
+	* doc/seek.n: Added some examples.
+
 2004-05-17  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* win/tclWinFile.c:
