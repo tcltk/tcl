@@ -1,5 +1,11 @@
 2002-03-11  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* library/tcltest/tcltest.tcl (getMatchingFiles): Pass
+	a proper list to foreach to avoid munging a Windows
+	patch like D:\Foo\Bar into D:FooBar before the glob.
+
+2002-03-11  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* generic/tclEncoding.c: Fix typo in comment.
 	* generic/tclIO.c (DoReadChars, ReadBytes, ReadChars):
 	Use NULL value instead of pointer set to NULL to make
