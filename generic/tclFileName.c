@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.13.2.2 2001/10/10 00:47:41 hobbs Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.13.2.3 2002/10/15 20:24:55 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -1010,8 +1010,6 @@ Tcl_TranslateFileName(interp, name, bufferPtr)
     Tcl_DString *bufferPtr;	/* Uninitialized or free DString filled
 				 * with name after tilde substitution. */
 {
-    register char *p;
-
     /*
      * Handle tilde substitutions, if needed.
      */
@@ -1055,11 +1053,30 @@ Tcl_TranslateFileName(interp, name, bufferPtr)
      */
 
     if (tclPlatform == TCL_PLATFORM_WINDOWS) {
+#if defined(__CYGWIN__) && defined(__WIN32__)
+	extern int cygwin_conv_to_win32_path 
+	    _ANSI_ARGS_((CONST char *, char *));
+	char winbuf[MAX_PATH];
+
+	/*
+	 * In the Cygwin world, call conv_to_win32_path in order to use the
+	 * mount table to translate the file name into something Windows will
+	 * understand.  Take care when converting empty strings!
+	 */
+	if (Tcl_DStringLength(bufferPtr)) {
+	    cygwin_conv_to_win32_path(Tcl_DStringValue(bufferPtr), winbuf);
+	    Tcl_DStringFree(bufferPtr);
+	    Tcl_DStringAppend(bufferPtr, winbuf, -1);
+	}
+#else /* __CYGWIN__ && __WIN32__ */
+
+	register char *p;
 	for (p = Tcl_DStringValue(bufferPtr); *p != '\0'; p++) {
 	    if (*p == '/') {
 		*p = '\\';
 	    }
 	}
+#endif /* __CYGWIN__ && __WIN32__ */
     }
     return Tcl_DStringValue(bufferPtr);
 }
@@ -1908,6 +1925,25 @@ TclDoGlob(interp, separators, headPtr, tail, types)
 	     * this is the first absolute element, or a later relative
 	     * element.  Add an extra slash if this is a UNC path.
 	     */
+
+#if defined(__CYGWIN__) && defined(__WIN32__)
+	    {
+
+	    extern int cygwin_conv_to_win32_path 
+	    	_ANSI_ARGS_((CONST char *, char *));
+	    char winbuf[MAX_PATH];
+
+	    /*
+	     * In the Cygwin world, call conv_to_win32_path in order to use
+	     * the mount table to translate the file name into something
+	     * Windows will understand.
+	     */
+	    cygwin_conv_to_win32_path(Tcl_DStringValue(headPtr), winbuf);
+	    Tcl_DStringFree(headPtr);
+	    Tcl_DStringAppend(headPtr, winbuf, -1);
+
+	    }
+#endif /* __CYGWIN__ && __WIN32__ */
 
 	    if (*name == ':') {
 		Tcl_DStringAppend(headPtr, ":", 1);
