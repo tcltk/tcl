@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.102 2002/07/17 20:00:45 vincentdarley Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.103 2002/07/18 15:04:53 vincentdarley Exp $
  */
 
 #ifndef _TCLINT
@@ -1762,10 +1762,7 @@ EXTERN void		TclpInitPlatform _ANSI_ARGS_((void));
 EXTERN void		TclpInitUnlock _ANSI_ARGS_((void));
 EXTERN int              TclpLoadFile _ANSI_ARGS_((Tcl_Interp *interp, 
 				Tcl_Obj *pathPtr,
-				CONST char *sym1, CONST char *sym2, 
-				Tcl_PackageInitProc **proc1Ptr,
-				Tcl_PackageInitProc **proc2Ptr, 
-				ClientData *clientDataPtr,
+				TclLoadHandle *loadHandle,
 				Tcl_FSUnloadFileProc **unloadProcPtr));
 EXTERN Tcl_Obj*		TclpObjListVolumes _ANSI_ARGS_((void));
 EXTERN void		TclpMasterLock _ANSI_ARGS_((void));
@@ -1812,7 +1809,7 @@ EXTERN char *		TclpReadlink _ANSI_ARGS_((CONST char *fileName,
 			    Tcl_DString *linkPtr));
 EXTERN void		TclpReleaseFile _ANSI_ARGS_((TclFile file));
 EXTERN void		TclpSetVariables _ANSI_ARGS_((Tcl_Interp *interp));
-EXTERN void		TclpUnloadFile _ANSI_ARGS_((ClientData clientData));
+EXTERN void		TclpUnloadFile _ANSI_ARGS_((TclLoadHandle loadHandle));
 EXTERN VOID *		TclpThreadDataKeyGet _ANSI_ARGS_((
 			    Tcl_ThreadDataKey *keyPtr));
 EXTERN void		TclpThreadDataKeyInit _ANSI_ARGS_((

@@ -1,3 +1,10 @@
+2002-07-18  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* generic/tclInt.h:
+	* generic/tcl.h:
+	* */*Load*.c: added comments on changes of 07/17 and 
+	replaced clientData with TclLoadHandle in all locations.
+	
 2002-07-17  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* generic/tclBasic.c (CallCommandTraces): delete traces now
