@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.tcl,v 1.7 2004/10/21 03:53:10 kennykb Exp $
+# RCS: @(#) $Id: clock.tcl,v 1.8 2004/10/22 14:27:39 kennykb Exp $
 #
 #----------------------------------------------------------------------
 
@@ -2927,7 +2927,7 @@ proc ::tcl::clock::GetSystemTimeZone {} {
 	dict set TimeZoneBad $timezone [catch {SetupTimeZone $timezone}]
     }
     if { [dict get $TimeZoneBad $timezone] } {
-	return ::localtime
+	return :localtime
     } else {
 	return $timezone
     }
@@ -3466,7 +3466,7 @@ proc ::tcl::clock::LoadTimeZoneFile { fileName } {
     # this code is security sensitive.  Make sure that the path name
     # cannot escape the given directory.
 
-    if { ![regexp {^[[:alpha:]_]+(?:/[[:alpha:]_]+)*$} $fileName] } {
+    if { ![regexp {^[[.-.][:alpha:]_]+(?:/[[.-.][:alpha:]_]+)*$} $fileName] } {
 	return -code error \
 	    -errorcode [list CLOCK badTimeZone $:fileName] \
 	    "time zone \":$fileName\" not valid"
@@ -3509,7 +3509,7 @@ proc ::tcl::clock::LoadZoneinfoFile { fileName } {
     # this code is security sensitive.  Make sure that the path name
     # cannot escape the given directory.
 
-    if { ![regexp {^[[:alpha:]_]+(?:/[[:alpha:]_]+)*$} $fileName] } {
+    if { ![regexp {^[[.-.][:alpha:]_]+(?:/[[.-.][:alpha:]_]+)*$} $fileName] } {
 	return -code error \
 	    -errorcode [list CLOCK badTimeZone $:fileName] \
 	    "time zone \":$fileName\" not valid"
