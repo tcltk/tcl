@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: utf.test,v 1.8.14.1 2003/03/06 23:24:18 dgp Exp $
+# RCS: @(#) $Id: utf.test,v 1.8.14.2 2003/03/27 13:11:18 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -290,11 +290,11 @@ test utf-24.2 {unicode digit char in regc_locale.c} {
     list [regexp {^[[:digit:]]+$} \u1040] [regexp {^\d+$} \u1040]
 } {1 1}
 
-test utf-24.1 {TclUniCharIsSpace} {
+test utf-24.3 {TclUniCharIsSpace} {
     # this returns 1 with Unicode 3 compliance
     string is space \u1680
 } {1}
-test utf-24.2 {unicode space char in regc_locale.c} {
+test utf-24.4 {unicode space char in regc_locale.c} {
     # this returns 1 with Unicode 3 compliance
     list [regexp {^[[:space:]]+$} \u1680] [regexp {^\s+$} \u1680]
 } {1 1}
@@ -336,16 +336,3 @@ test utf-25.4 {Tcl_UniCharNcasecmp} teststringobj {
 # cleanup
 ::tcltest::cleanupTests
 return
-
-
-
-
-
-
-
-
-
-
-
-
-
