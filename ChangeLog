@@ -1,3 +1,8 @@
+2004-07-19  Zoran Vasiljevic <vasiljevic@users.sf.net>
+
+	* win/tclwinThrd.c: redefined MASTER_LOCK to call
+	TclpMasterLock. Fixes Bug #987967
+
 2004-07-16  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclIOCmd.c (Tcl_FcopyObjCmd): Corrected a typo in the
