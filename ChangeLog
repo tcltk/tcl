@@ -1,9 +1,15 @@
+2005-01-12  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* unix/tcl.m4 (SC_PATH_{TCL,TK}CONFIG): Added code to detect the
+	case when the --with-tcl/--with-tk arguments point to the config
+	scripts themselves and not their directory. If this is the case,
+	they now complain but keep working. [FRQ 951247]
+
 2005-01-10  Joe English  <jenglish@users.sourceforge.net>
 
 	* unix/Makefile.in, unix/configure.in, unix/tcl.m4,
-	unix/tclConfig.sh.in, unix/dltest/Makefile.in:
-	Remove ${DBGX}, ${TCL_DBGX} from Tcl build system
-	[Patch 1081595].
+	* unix/tclConfig.sh.in, unix/dltest/Makefile.in:
+	Remove ${DBGX}, ${TCL_DBGX} from Tcl build system [Patch 1081595].
 	* unix/configure: regenerated
 
 2005-01-10  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
