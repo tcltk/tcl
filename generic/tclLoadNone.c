@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoadNone.c,v 1.6.2.1 2002/02/05 02:22:00 wolfsuit Exp $
+ * RCS: @(#) $Id: tclLoadNone.c,v 1.6.2.2 2002/08/20 20:25:26 das Exp $
  */
 
 #include "tclInt.h"
@@ -18,7 +18,7 @@
 /*
  *----------------------------------------------------------------------
  *
- * TclpLoadFile --
+ * TclpDlopen --
  *
  *	This procedure is called to carry out dynamic loading of binary
  *	code;  it is intended for use only on systems that don't support
@@ -35,24 +35,46 @@
  */
 
 int
-TclpLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr, clientDataPtr, unloadProcPtr)
+TclpDlopen(interp, pathPtr, loadHandle, unloadProcPtr)
     Tcl_Interp *interp;		/* Used for error reporting. */
     Tcl_Obj *pathPtr;		/* Name of the file containing the desired
-				 * code. */
-    CONST char *sym1, *sym2;	/* Names of two procedures to look up in
-				 * the file's symbol table. */
-    Tcl_PackageInitProc **proc1Ptr, **proc2Ptr;
-				/* Where to return the addresses corresponding
-				 * to sym1 and sym2. */
-    ClientData *clientDataPtr;	/* Filled with token for dynamically loaded
+				 * code (UTF-8). */
+    Tcl_LoadHandle *loadHandle;	/* Filled with token for dynamically loaded
 				 * file which will be passed back to 
-				 * TclpUnloadFile() to unload the file. */
-    Tcl_FSUnloadFileProc **unloadProcPtr;
+				 * (*unloadProcPtr)() to unload the file. */
+    Tcl_FSUnloadFileProc **unloadProcPtr;	
+				/* Filled with address of Tcl_FSUnloadFileProc
+				 * function which should be used for
+				 * this file. */
 {
     Tcl_SetResult(interp,
 	    "dynamic loading is not currently available on this system",
 	    TCL_STATIC);
     return TCL_ERROR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpFindSymbol --
+ *
+ *	Looks up a symbol, by name, through a handle associated with
+ *	a previously loaded piece of code (shared library).
+ *
+ * Results:
+ *	Returns a pointer to the function associated with 'symbol' if
+ *	it is found.  Otherwise returns NULL and may leave an error
+ *	message in the interp's result.
+ *
+ *----------------------------------------------------------------------
+ */
+Tcl_PackageInitProc*
+TclpFindSymbol(interp, loadHandle, symbol) 
+    Tcl_Interp *interp;
+    Tcl_LoadHandle loadHandle;
+    CONST char *symbol;
+{
+    return NULL;
 }
 
 /*
@@ -104,10 +126,10 @@ TclGuessPackageName(fileName, bufPtr)
  */
 
 void
-TclpUnloadFile(clientData)
-    ClientData clientData;    /* ClientData returned by a previous call
-			       * to TclpLoadFile().  The clientData is 
-			       * a token that represents the loaded 
-			       * file. */
+TclpUnloadFile(loadHandle)
+    Tcl_LoadHandle loadHandle;	/* loadHandle returned by a previous call
+				 * to TclpDlopen().  The loadHandle is 
+				 * a token that represents the loaded 
+				 * file. */
 {
 }

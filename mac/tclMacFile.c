@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacFile.c,v 1.12.8.2 2002/06/10 05:33:14 wolfsuit Exp $
+ * RCS: @(#) $Id: tclMacFile.c,v 1.12.8.3 2002/08/20 20:25:27 das Exp $
  */
 
 /*
@@ -686,7 +686,8 @@ TclpReadlink(
      * Remove ending colons if they exist.
      */
      
-    while ((Tcl_DStringLength(&ds) != 0) && (Tcl_DStringValue(&ds)[Tcl_DStringLength(&ds) - 1] == ':')) {
+    while ((Tcl_DStringLength(&ds) != 0) 
+	   && (Tcl_DStringValue(&ds)[Tcl_DStringLength(&ds) - 1] == ':')) {
 	Tcl_DStringSetLength(&ds, Tcl_DStringLength(&ds) - 1);
     }
 
@@ -705,7 +706,8 @@ TclpReadlink(
      */
 
     if (end != NULL) {
-	err = FSpLocationFromPath(Tcl_DStringLength(&ds), Tcl_DStringValue(&ds), &fileSpec);
+	err = FSpLocationFromPath(Tcl_DStringLength(&ds), 
+				  Tcl_DStringValue(&ds), &fileSpec);
 	if (err != noErr) {
 	    Tcl_DStringFree(&ds);
 	    errno = EINVAL;
@@ -774,7 +776,8 @@ TclpReadlink(
 }
 
 static int 
-TclpObjStatAlias _ANSI_ARGS_((Tcl_Obj *pathPtr, Tcl_StatBuf *bufPtr, Boolean resolveLink));
+TclpObjStatAlias _ANSI_ARGS_((Tcl_Obj *pathPtr, Tcl_StatBuf *bufPtr, 
+			      Boolean resolveLink));
 
 
 /*
@@ -1145,14 +1148,55 @@ TclpTempFileName()
 #ifdef S_IFLNK
 
 Tcl_Obj* 
-TclpObjLink(pathPtr, toPtr)
+TclpObjLink(pathPtr, toPtr, linkAction)
     Tcl_Obj *pathPtr;
     Tcl_Obj *toPtr;
+    int linkAction;
 {
     Tcl_Obj* link = NULL;
 
     if (toPtr != NULL) {
-	return NULL;
+	if (TclpObjAccess(pathPtr, F_OK) != -1) {
+	    /* src exists */
+	    errno = EEXIST;
+	    return NULL;
+	}
+	if (TclpObjAccess(toPtr, F_OK) == -1) {
+	    /* target doesn't exist */
+	    errno = ENOENT;
+	    return NULL;
+	}
+
+	if (linkAction & TCL_CREATE_SYMBOLIC_LINK) {
+	    /* Needs to create a new link */
+	    FSSpec spec;
+	    FSSpec linkSpec;
+	    OSErr err;
+	    char *path;
+	    AliasHandle alias;
+	    
+	    err = FspLocationFromFsPath(toPtr, &spec);
+	    if (err != noErr) {
+		errno = ENOENT;
+		return NULL;
+	    }
+
+	    path = Tcl_FSGetNativePath(pathPtr);
+	    err = FSpLocationFromPath(strlen(path), path, &linkSpec);
+	    if (err == noErr) {
+		err = dupFNErr;		/* EEXIST. */
+	    } else {
+		err = NewAlias(&spec, &linkSpec, &alias);
+	    }
+	    if (err != noErr) {
+		errno = TclMacOSErrorToPosixError(err);
+		return NULL;
+	    }
+	    return toPtr;
+	} else {
+	    errno = ENODEV;
+	    return NULL;
+	}
     } else {
 	Tcl_DString ds;
 	Tcl_Obj *transPtr = Tcl_FSGetTranslatedPath(NULL, pathPtr);

@@ -8,18 +8,18 @@
 # See the file "license.terms" for information on usage and redistribution 
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES. 
 # 
-# RCS: @(#) $Id: ioUtil.test,v 1.10 2001/09/06 23:04:30 hobbs Exp $
+# RCS: @(#) $Id: ioUtil.test,v 1.10.8.1 2002/08/20 20:25:28 das Exp $
  
 if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest
+    package require tcltest 2
     namespace import -force ::tcltest::*
 }
 
-set ::tcltest::testConstraints(testopenfilechannelproc) \
+::tcltest::testConstraint testopenfilechannelproc \
 	[llength [info commands testopenfilechannelproc]]
-set ::tcltest::testConstraints(testaccessproc) \
+::tcltest::testConstraint testaccessproc \
 	[llength [info commands testaccessproc]]
-set ::tcltest::testConstraints(teststatproc) \
+::tcltest::testConstraint teststatproc \
 	[llength [info commands teststatproc]]
 
 set unsetScript {
@@ -53,7 +53,7 @@ test ioUtil-1.3 {TclStat: Use "file stat ?" to invoke each procedure.} {teststat
 
 eval $unsetScript
 
-test ioUtil-1.4 {TclStatDeleteProc: "TclpStat" function should not be deletedable.} {
+test ioUtil-1.4 {TclStatDeleteProc: "TclpStat" function should not be deletable.} {teststatproc} {
     catch {teststatproc delete TclpStat} err2
     set err2
 } {"TclpStat": could not be deleteed}
@@ -134,7 +134,7 @@ test ioUtil-2.3 {TclAccess: Use "file access ?" to invoke each procedure.} {test
 	    [file exists testAccess3%.fil]
 } {1 1 1}
 
-test ioUtil-2.4 {TclAccessDeleteProc: "TclpAccess" function should not be deletedable.} {
+test ioUtil-2.4 {TclAccessDeleteProc: "TclpAccess" function should not be deletable.} {testaccessproc} {
     catch {testaccessproc delete TclpAccess} err2
     set err2
 } {"TclpAccess": could not be deleteed}
@@ -186,6 +186,10 @@ test ioUtil-2.8 {TclAccessDeleteProc: Verify that all procs have been deleted.} 
     list $err9 $err10 $err11
 } {{"TestAccessProc1": could not be deleteed} {"TestAccessProc2": could not be deleteed} {"TestAccessProc3": could not be deleteed}}
 
+# Some of the following tests require a writable current directory
+set oldpwd [pwd]
+cd [temporaryDirectory]
+
 test ioUtil-3.1 {TclOpenFileChannel: Check that none of the test procs are there.} {testopenfilechannelproc} {
     catch {eval [list file delete -force] [glob *testOpenFileChannel*]}
     catch {file exists testOpenFileChannel1%.fil} err1
@@ -223,12 +227,12 @@ test ioUtil-3.3 {TclOpenFileChannel: Use "file openfilechannel ?" to invoke each
     set err
 } {}
 
-test ioUtil-3.4 {TclOpenFileChannelDeleteProc: "TclpOpenFileChannel" function should not be deletedable.} {testopenfilechannelproc} {
+test ioUtil-3.4 {TclOpenFileChannelDeleteProc: "TclpOpenFileChannel" function should not be deletable.} {testopenfilechannelproc} {
     catch {testopenfilechannelproc delete TclpOpenFileChannel} err2
     set err2
 } {"TclpOpenFileChannel": could not be deleteed}
 
-test openfilechannelt-1.5 {TclOpenFileChannelDeleteProc: Delete the 2nd TclOpenFileChannel procedure.} {testopenfilechannelproc} {
+test ioUtil-3.5 {TclOpenFileChannelDeleteProc: Delete the 2nd TclOpenFileChannel procedure.} {testopenfilechannelproc} {
     # Delete the 2nd procedure and test that it longer exists but that
     #   the others do actually return a result.
 
@@ -299,18 +303,8 @@ test ioUtil-3.8 {TclOpenFileChannelDeleteProc: Verify that all procs have been d
     list $err9 $err10 $err11
 } {{"TestOpenFileChannelProc1": could not be deleteed} {"TestOpenFileChannelProc2": could not be deleteed} {"TestOpenFileChannelProc3": could not be deleteed}}
 
+cd $oldpwd
+
 # cleanup
 ::tcltest::cleanupTests
 return
-
-
-
-
-
-
-
-
-
-
-
-

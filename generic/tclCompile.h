@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.16.4.2 2002/06/10 05:33:10 wolfsuit Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.16.4.3 2002/08/20 20:25:25 das Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -29,14 +29,6 @@
  * tclExecute.c, tclBasic.c, and their clients.
  *------------------------------------------------------------------------
  */
-
-/*
- * Variable that denotes the command name Tcl object type. Objects of this
- * type cache the Command pointer that results from looking up command names
- * in the command hashtable.
- */
-
-extern Tcl_ObjType	tclCmdNameType;
 
 #ifdef TCL_COMPILE_DEBUG
 /*
@@ -392,11 +384,11 @@ typedef struct ByteCode {
 } ByteCode;
 
 /*
- * Opcodes for the Tcl bytecode instructions. These must correspond to the
- * entries in the table of instruction descriptions, instructionTable, in
- * tclCompile.c. Also, the order and number of the expression opcodes
- * (e.g., INST_LOR) must match the entries in the array operatorStrings in
- * tclExecute.c.
+ * Opcodes for the Tcl bytecode instructions. These must correspond to
+ * the entries in the table of instruction descriptions,
+ * tclInstructionTable, in tclCompile.c. Also, the order and number of
+ * the expression opcodes (e.g., INST_LOR) must match the entries in
+ * the array operatorStrings in tclExecute.c.
  */
 
 /* Opcodes 0 to 9 */
@@ -566,12 +558,12 @@ typedef struct InstructionDesc {
 				/* The type of each operand. */
 } InstructionDesc;
 
-extern InstructionDesc instructionTable[];
+extern InstructionDesc tclInstructionTable[];
 
 /*
  * Definitions of the values of the INST_CALL_BUILTIN_FUNC instruction's
  * operand byte. Each value denotes a builtin Tcl math function. These
- * values must correspond to the entries in the builtinFuncTable array
+ * values must correspond to the entries in the tclBuiltinFuncTable array
  * below and to the values stored in the tclInt.h MathFunc structure's
  * builtinFuncIndex field.
  */
@@ -624,7 +616,7 @@ typedef struct {
 				 * function when invoking it. */
 } BuiltinFunc;
 
-extern BuiltinFunc builtinFuncTable[];
+extern BuiltinFunc tclBuiltinFuncTable[];
 
 /*
  * Compilation of some Tcl constructs such as if commands and the logical or
@@ -724,7 +716,7 @@ extern AuxDataType		tclForeachInfoType;
  */
 
 EXTERN int		TclEvalObjvInternal _ANSI_ARGS_((Tcl_Interp *interp, int objc,
-			    Tcl_Obj *CONST objv[], char *command, int length,
+			    Tcl_Obj *CONST objv[], CONST char *command, int length,
 			    int flags));
 EXTERN int              TclInterpReady _ANSI_ARGS_((Tcl_Interp *interp));
 
@@ -750,13 +742,13 @@ EXTERN int		TclCompileCmdWord _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr, int count,
 			    CompileEnv *envPtr));
 EXTERN int		TclCompileExpr _ANSI_ARGS_((Tcl_Interp *interp,
-			    char *script, int numBytes,
+			    CONST char *script, int numBytes,
 			    CompileEnv *envPtr));
 EXTERN int		TclCompileExprWords _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr, int numWords,
 			    CompileEnv *envPtr));
 EXTERN int		TclCompileScript _ANSI_ARGS_((Tcl_Interp *interp,
-			    char *script, int numBytes, int nested,
+			    CONST char *script, int numBytes, int nested,
 			    CompileEnv *envPtr));
 EXTERN int		TclCompileTokens _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr, int count,
@@ -836,6 +828,15 @@ EXTERN void		TclVerifyLocalLiteralTable _ANSI_ARGS_((
  */
 
 /*
+ * Form of TclRegisterLiteral with onHeap == 0.
+ * In that case, it is safe to cast away CONSTness, and it
+ * is cleanest to do that here, all in one place.
+ */
+
+#define TclRegisterNewLiteral(envPtr, bytes, length) \
+	TclRegisterLiteral(envPtr, (char *)(bytes), length, /*onHeap*/ 0)
+
+/*
  * Macro used to update the stack requirements.
  * It is called by the macros TclEmitOpCode, TclEmitInst1 and
  * TclEmitInst4.
@@ -846,7 +847,7 @@ EXTERN void		TclVerifyLocalLiteralTable _ANSI_ARGS_((
 
 #define TclUpdateStackReqs(op, i, envPtr) \
     {\
-	int delta = instructionTable[(op)].stackEffect;\
+	int delta = tclInstructionTable[(op)].stackEffect;\
 	if (delta) {\
 	    if (delta < 0) {\
 		if((envPtr)->maxStackDepth < (envPtr)->currStackDepth) {\
@@ -932,10 +933,13 @@ EXTERN void		TclVerifyLocalLiteralTable _ANSI_ARGS_((
  */
 
 #define TclEmitPush(objIndex, envPtr) \
-    if ((objIndex) <= 255) { \
-	TclEmitInstInt1(INST_PUSH1, (objIndex), (envPtr)); \
-    } else { \
-	TclEmitInstInt4(INST_PUSH4, (objIndex), (envPtr)); \
+    {\
+        register int objIndexCopy = (objIndex);\
+        if (objIndexCopy <= 255) { \
+	    TclEmitInstInt1(INST_PUSH1, objIndexCopy, (envPtr)); \
+        } else { \
+	    TclEmitInstInt4(INST_PUSH4, objIndexCopy, (envPtr)); \
+	}\
     }
 
 /*

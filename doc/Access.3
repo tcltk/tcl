@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Access.3,v 1.4.8.2 2002/06/10 05:33:08 wolfsuit Exp $
+'\" RCS: @(#) $Id: Access.3,v 1.4.8.3 2002/08/20 20:25:24 das Exp $
 '\" 
 .so man.macros
 .TH Tcl_Access 3 8.1 Tcl "Tcl Library Procedures"
@@ -44,7 +44,7 @@ rather than calling system level functions \fBaccess\fR and \fBstat\fR
 directly.  First, the Windows implementation of both functions fixes
 some bugs in the system level calls.  Second, both \fBTcl_Access\fR
 and \fBTcl_Stat\fR (as well as \fBTcl_OpenFileChannelProc\fR) hook
-into a linked list of functions.  This allows the possibity to reroute
+into a linked list of functions.  This allows the possibility to reroute
 file access to alternative media or access methods.
 .PP
 \fBTcl_Access\fR checks whether the process would be allowed to read,
@@ -62,7 +62,7 @@ about the specified file.  You do not need any access rights to the
 file to get this information but you need search rights to all
 directories named in the path leading to the file.  The stat structure
 includes info regarding device, inode (always 0 on Windows),
-priviledge mode, nlink (always 1 on Windows), user id (always 0 on
+privilege mode, nlink (always 1 on Windows), user id (always 0 on
 Windows), group id (always 0 on Windows), rdev (same as device on
 Windows), size, last access time, last modification time, and creation
 time.

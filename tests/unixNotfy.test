@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: unixNotfy.test,v 1.9 2000/04/10 17:19:05 ericm Exp $
+# RCS: @(#) $Id: unixNotfy.test,v 1.9.18.1 2002/08/20 20:25:29 das Exp $
 
 # The tests should not be run if you have a notifier which is unable to
 # detect infinite vwaits, as the tests below will hang. The presence of
@@ -36,7 +36,7 @@ set ::tcltest::testConstraints(testthread) \
 
 test unixNotfy-1.1 {Tcl_DeleteFileHandler} {unixOnly && !testthread} {
     catch {vwait x}
-    set f [open foo w]
+    set f [open [makeFile "" foo] w]
     fileevent $f writable {set x 1}
     vwait x
     close $f
@@ -44,8 +44,8 @@ test unixNotfy-1.1 {Tcl_DeleteFileHandler} {unixOnly && !testthread} {
 } {1 {can't wait for variable "x":  would wait forever}}
 test unixNotfy-1.2 {Tcl_DeleteFileHandler} {unixOnly && !testthread} {
     catch {vwait x}
-    set f1 [open foo w]
-    set f2 [open foo2 w]
+    set f1 [open [makeFile "" foo] w]
+    set f2 [open [makeFile "" foo2] w]
     fileevent $f1 writable {set x 1}
     fileevent $f2 writable {set y 1}
     vwait x
@@ -58,7 +58,7 @@ test unixNotfy-1.2 {Tcl_DeleteFileHandler} {unixOnly && !testthread} {
 
 test unixNotfy-2.1 {Tcl_DeleteFileHandler} {unixOnly testthread} {
     update
-    set f [open foo w]
+    set f [open [makeFile "" foo] w]
     fileevent $f writable {set x 1}
     vwait x
     close $f
@@ -68,10 +68,10 @@ test unixNotfy-2.1 {Tcl_DeleteFileHandler} {unixOnly testthread} {
     vwait x
     set x
 } {ok}
-test unixNotfy-1.2 {Tcl_DeleteFileHandler} {unixOnly testthread} {
+test unixNotfy-2.2 {Tcl_DeleteFileHandler} {unixOnly testthread} {
     update
-    set f1 [open foo w]
-    set f2 [open foo2 w]
+    set f1 [open [makeFile "" foo] w]
+    set f2 [open [makeFile "" foo2] w]
     fileevent $f1 writable {set x 1}
     fileevent $f2 writable {set y 1}
     vwait x
@@ -86,21 +86,6 @@ test unixNotfy-1.2 {Tcl_DeleteFileHandler} {unixOnly testthread} {
 } {ok}
 
 
-
 # cleanup
-file delete foo
-file delete foo2
 ::tcltest::cleanupTests
 return
-
-
-
-
-
-
-
-
-
-
-
-

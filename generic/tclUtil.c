@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.24.2.2 2002/06/10 05:33:13 wolfsuit Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.24.2.3 2002/08/20 20:25:26 das Exp $
  */
 
 #include "tclInt.h"
@@ -1878,7 +1878,7 @@ char *
 TclPrecTraceProc(clientData, interp, name1, name2, flags)
     ClientData clientData;	/* Not used. */
     Tcl_Interp *interp;		/* Interpreter containing variable. */
-    char *name1;		/* Name of variable. */
+    CONST char *name1;		/* Name of variable. */
     CONST char *name2;		/* Second part of variable name. */
     int flags;			/* Information about what happened. */
 {
@@ -2124,38 +2124,28 @@ TclLooksLikeInt(bytes, length)
 				 * considered (if they may appear in an 
 				 * integer). */
 {
-    register CONST char *p, *end;
+    register CONST char *p;
+
+    if ((bytes == NULL) && (length > 0)) {
+	Tcl_Panic("TclLooksLikeInt: cannot scan %d bytes from NULL", length);
+    }
 
     if (length < 0) {
-	length = (bytes? strlen(bytes) : 0);
+        length = (bytes? strlen(bytes) : 0);
     }
-    end = (bytes + length);
 
     p = bytes;
-    while ((p < end) && isspace(UCHAR(*p))) { /* INTL: ISO space. */
-	p++;
+    while (length && isspace(UCHAR(*p))) { /* INTL: ISO space. */
+	length--; p++;
     }
-    if (p == end) {
-	return 0;
+    if (length == 0) {
+        return 0;
     }
-    
     if ((*p == '+') || (*p == '-')) {
-	p++;
+        p++; length--;
     }
-    if ((p == end) || !isdigit(UCHAR(*p))) { /* INTL: digit */
-	return 0;
-    }
-    p++;
-    while ((p < end) && isdigit(UCHAR(*p))) { /* INTL: digit */
-	p++;
-    }
-    if (p == end) {
-	return 1;
-    }
-    if ((*p != '.') && (*p != 'e') && (*p != 'E')) {
-	return 1;
-    }
-    return 0;
+
+    return (0 != TclParseInteger(p, length));
 }
 
 /*
@@ -2197,7 +2187,7 @@ TclGetIntForIndex(interp, objPtr, endValue, indexPtr)
 				 * representing an index. */
 {
     char *bytes;
-    int length, offset;
+    int offset;
 #ifndef TCL_WIDE_INT_IS_LONG
     Tcl_WideInt wideOffset;
 #endif
@@ -2267,8 +2257,14 @@ TclGetIntForIndex(interp, objPtr, endValue, indexPtr)
 	 * Report a parse error.
 	 */
 
-	if ((Interp *)interp != NULL) {
-	    bytes = Tcl_GetStringFromObj(objPtr, &length);
+	if (interp != NULL) {
+	    bytes = Tcl_GetString(objPtr);
+	    /*
+	     * The result might not be empty; this resets it which
+	     * should be both a cheap operation, and of little problem
+	     * because this is an error-generation path anyway.
+	     */
+	    Tcl_ResetResult(interp);
 	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
 				   "bad index \"", bytes,
 				   "\": must be integer or end?-integer?",
@@ -2365,6 +2361,7 @@ SetEndOffsetFromAny(interp, objPtr)
     if ((*bytes != 'e') || (strncmp(bytes, "end",
 	    (size_t)((length > 3) ? 3 : length)) != 0)) {
 	if (interp != NULL) {
+	    Tcl_ResetResult(interp);
 	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
 				   "bad index \"", bytes,
 				   "\": must be end?-integer?",
@@ -2390,6 +2387,7 @@ SetEndOffsetFromAny(interp, objPtr)
 	 * Conversion failed.  Report the error.
 	 */
 	if (interp != NULL) {
+	    Tcl_ResetResult(interp);
 	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
 				   "bad index \"", bytes,
 				   "\": must be integer or end?-integer?",

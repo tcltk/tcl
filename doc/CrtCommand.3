@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: CrtCommand.3,v 1.4 2001/04/24 20:59:17 kennykb Exp $
+'\" RCS: @(#) $Id: CrtCommand.3,v 1.4.12.1 2002/08/20 20:25:24 das Exp $
 '\" 
 .so man.macros
 .TH Tcl_CreateCommand 3 "" Tcl "Tcl Library Procedures"
@@ -84,7 +84,7 @@ typedef int Tcl_CmdProc(
 	ClientData \fIclientData\fR,
 	Tcl_Interp *\fIinterp\fR,
 	int \fIargc\fR,
-	char *\fIargv\fR[]);
+	CONST char *\fIargv\fR[]);
 .CE
 When \fIproc\fR is invoked the \fIclientData\fR and \fIinterp\fR
 parameters will be copies of the \fIclientData\fR and \fIinterp\fR

@@ -402,24 +402,28 @@ install-libraries:
 	-@copy "$(ROOT)\library\http1.0\pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)\http1.0"
 	@echo installing http2.4
 	-@$(MKDIR) "$(SCRIPT_INSTALL_DIR)\http2.4"
-	-@copy "$(ROOT)\library\http2.4\http.tcl"     "$(SCRIPT_INSTALL_DIR)\http2.4"
-	-@copy "$(ROOT)\library\http2.4\pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)\http2.4"
+	-@copy "$(ROOT)\library\http\http.tcl"     "$(SCRIPT_INSTALL_DIR)\http2.4"
+	-@copy "$(ROOT)\library\http\pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)\http2.4"
 	@echo installing opt0.4
 	-@$(MKDIR) "$(SCRIPT_INSTALL_DIR)\opt0.4"
-	-@copy "$(ROOT)\library\opt0.4\optparse.tcl" "$(SCRIPT_INSTALL_DIR)\opt0.4"
-	-@copy "$(ROOT)\library\opt0.4\pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)\opt0.4"
-	@echo installing msgcat1.0
-	-@$(MKDIR) "$(SCRIPT_INSTALL_DIR)\msgcat1.0"
-	-@copy "$(ROOT)\library\msgcat1.0\msgcat.tcl"   "$(SCRIPT_INSTALL_DIR)\msgcat1.0"
-	-@copy "$(ROOT)\library\msgcat1.0\pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)\msgcat1.0"
+	-@copy "$(ROOT)\library\opt\optparse.tcl" "$(SCRIPT_INSTALL_DIR)\opt0.4"
+	-@copy "$(ROOT)\library\opt\pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)\opt0.4"
+	@echo installing msgcat1.3
+	-@$(MKDIR) "$(SCRIPT_INSTALL_DIR)\msgcat1.3"
+	-@copy "$(ROOT)\library\msgcat\msgcat.tcl"   "$(SCRIPT_INSTALL_DIR)\msgcat1.3"
+	-@copy "$(ROOT)\library\msgcat\pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)\msgcat1.3"
+	@echo installing tcltest2.2
+	-@$(MKDIR) "$(SCRIPT_INSTALL_DIR)\tcltest2.2"
+	-@copy "$(ROOT)\library\tcltest\tcltest.tcl"   "$(SCRIPT_INSTALL_DIR)\tcltest2.2"
+	-@copy "$(ROOT)\library\tcltest\pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)\tcltest2.2"
 	@echo installing $(TCLDDEDLLNAME)
 	-@$(MKDIR) "$(SCRIPT_INSTALL_DIR)\dde1.1"
 	-@copy "$(TCLDDEDLL)" "$(SCRIPT_INSTALL_DIR)\dde1.1"
-	-@copy "$(ROOT)\library\dde1.1\pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)\dde1.1"
+	-@copy "$(ROOT)\library\dde\pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)\dde1.1"
 	@echo installing $(TCLREGDLLNAME)
 	-@$(MKDIR) "$(SCRIPT_INSTALL_DIR)\reg1.0"
 	-@copy "$(TCLREGDLL)" "$(SCRIPT_INSTALL_DIR)\reg1.0"
-	-@copy "$(ROOT)\library\reg1.0\pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)\reg1.0"
+	-@copy "$(ROOT)\library\reg\pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)\reg1.0"
 	@echo installing encoding files
 	-@$(MKDIR) "$(SCRIPT_INSTALL_DIR)\encoding"
 	-@copy "$(ROOT)\library\encoding\*.enc" "$(SCRIPT_INSTALL_DIR)\encoding"

@@ -11,7 +11,7 @@
  *
  * Serial functionality implemented by Rolf.Schroedter@dlr.de
  *
- * RCS: @(#) $Id: tclWinSerial.c,v 1.13.8.1 2002/06/10 05:33:20 wolfsuit Exp $
+ * RCS: @(#) $Id: tclWinSerial.c,v 1.13.8.2 2002/08/20 20:25:31 das Exp $
  */
 
 #include "tclWinInt.h"
@@ -147,7 +147,11 @@ typedef struct SerialEvent {
                              * pointer. */
 } SerialEvent;
 
-COMMTIMEOUTS no_timeout  = {   /* We don't use timeouts */
+/*
+ * We don't use timeouts.
+ */
+
+static COMMTIMEOUTS no_timeout = {
     0,               /* ReadIntervalTimeout */
     0,               /* ReadTotalTimeoutMultiplier */
     0,               /* ReadTotalTimeoutConstant */

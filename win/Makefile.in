@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.55.2.2 2002/06/10 05:33:19 wolfsuit Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.55.2.3 2002/08/20 20:25:31 das Exp $
 
 VERSION = @TCL_VERSION@
 
@@ -486,7 +486,7 @@ install-libraries: libraries
 		else true; \
 		fi; \
 	    done;
-	@for i in http1.0 http2.4 opt0.4 encoding msgcat1.2 tcltest2.0; \
+	@for i in http1.0 http2.4 opt0.4 encoding msgcat1.3 tcltest2.2; \
 	    do \
 	    if [ ! -d $(SCRIPT_INSTALL_DIR)/$$i ] ; then \
 		echo "Making directory $(SCRIPT_INSTALL_DIR)/$$i"; \
@@ -520,15 +520,15 @@ install-libraries: libraries
 	    do \
 	    $(COPY) "$$j" "$(SCRIPT_INSTALL_DIR)/opt0.4"; \
 	    done;
-	@echo "Installing library msgcat1.2 directory";
+	@echo "Installing library msgcat1.3 directory";
 	@for j in $(ROOT_DIR)/library/msgcat/*.tcl; \
 	    do \
-	    $(COPY) "$$j" "$(SCRIPT_INSTALL_DIR)/msgcat1.2"; \
+	    $(COPY) "$$j" "$(SCRIPT_INSTALL_DIR)/msgcat1.3"; \
 	    done;
-	@echo "Installing library tcltest2.0 directory";
+	@echo "Installing library tcltest2.2 directory";
 	@for j in $(ROOT_DIR)/library/tcltest/*.tcl; \
 	    do \
-	    $(COPY) "$$j" "$(SCRIPT_INSTALL_DIR)/tcltest2.0"; \
+	    $(COPY) "$$j" "$(SCRIPT_INSTALL_DIR)/tcltest2.2"; \
 	    done;
 	@echo "Installing encodings";
 	@for i in $(ROOT_DIR)/library/encoding/*.enc ; do \
@@ -586,7 +586,9 @@ distclean: clean
 
 $(GENERIC_DIR)/tclStubInit.c: $(GENERIC_DIR)/tcl.decls \
 		$(GENERIC_DIR)/tclInt.decls
-	@echo "Warning: run \"make genstubs\" to regenerate tclStubInit.c"
+	@echo "Warning: tclStubInit.c may be out of date."
+	@echo "Developers may want to run \"make genstubs\" to regenerate."
+	@echo "This warning can be safely ignored, do not report as a bug!"
 
 genstubs:
 	$(TCL_EXE) "$(ROOT_DIR_NATIVE)\tools\genStubs.tcl" \

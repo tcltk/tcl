@@ -1,6 +1,6 @@
 README -- Tcl test suite design document.
 
-RCS: @(#) $Id: README,v 1.8 1999/08/31 21:49:27 jenn Exp $
+RCS: @(#) $Id: README,v 1.8.18.1 2002/08/20 20:25:27 das Exp $
 
 Contents:
 ---------
@@ -20,78 +20,22 @@ file.
 
 You can run the tests in three ways:
 
-    (a) type "make test" in ../unix; this will run all of the tests.
+    (a) type "make test" in ../unix; this will create the tcltest
+	executable and run all of the tests.  At least "make tcltest"
+	must be run to create the tcltest executable for the other
+	options.
 
     (b) type "tcltest <testFile> ?<option> <value>?
-	Command line options include:
 
-	-help                display usage information
-
-	-verbose <level>     set the level of verbosity to a substring
-			     of "bps".  See the "Test output" section
-			     of the tcltest man page for an
-			     explanation of this option. 
-
-	-match <matchList>   only run tests that match one or more of
-			     the glob patterns in <matchList>
-
-	-skip <skipList>     do not run tests that match one or more
-			     of the glob patterns in <skipList>
-
-	-file <globPatternList>  
-		             only source test files that match one or
-		             more of the glob patterns in
-		             <globPatternList> (relative to the
-		             "tests" directory).  This option only
-		             applies when you run the test suite with
-		             the "all.tcl" file.
-
-	-notfile <globPatternList>  
-	                     do not source test files that match one
-	                     or more of the patterns in
-	                     <globPatternList> (relative to the
-	                     "tests" directory).  This option only
-	                     applies when you run the test suite with
-	                     the "all.tcl" file.
-
-	-constraints <list>  tests with any constraints in <list> will
-			     not be skipped.  Not that elements of
-			     <list> must exactly match the existing
-			     constraints.
-
-        -limitconstraints <bool>
-                             If 1, limit test runs to those tests that
-                             match the constraints listed using the
-                             -constraints flag.  Use of this flag
-                             requires use of the -constraints flag.
-                             The default value is 0.
-
-        -tmpdir <dirname>    put temporary files created by
-                             ::tcltest::makeFile and
-                             ::tcltest::makeDirectory in the named
-                             directory.  The default location is
-                             ::tcltest::workingDirectory.
-
-        -preservecore <level>
-                             check for core files.  If level is 0,
-                             check for core files only when
-                             cleanupTests is called from an all.tcl
-                             file.  If 1, also check at the end of
-                             every test command.  If 2, also save core
-                             files in ::tcltest::temporaryDirectory.
-                             The default level is 0.
+	where the options and values are the configuration options
+	of the tcltest package.
  
     (c) start up tcltest in this directory, then "source" the test
         file (for example, type "source parse.test").  To run all
 	of the tests, type "source all.tcl".  To use the options in
-	interactive mode, you can set their corresponding tcltest
-	namespace variables after loading the tcltest package.
-	For example, some of the tcltest variables are:
-		  ::tcltest::match
-		  ::tcltest::skip
-		  ::tcltest::testConstraints(nonPortable)
-		  ::tcltest::testConstraints(knownBug)
-		  ::tcltest::testConstraints(userInteractive)
+	interactive mode, you can set them with the tcltest::configure
+	command.  Set constraints with the tcltest::testConstraints
+	command.
 
 Please see the tcltest man page for more information regarding how to
 write and run tests.
@@ -108,25 +52,25 @@ correspond to any Tcl or C code file so they should match the pattern
 Be sure your new test file can be run from any working directory.
 
 Be sure no temporary files are left behind by your test file.
+Use [tcltest::makeFile], [tcltest::removeFile], and [tcltest::cleanupTests]
+properly to be sure of this.
 
 Be sure your tests can run cross-platform in both a build environment
 as well as an installation environment.  If your test file contains
 tests that should not be run in one or more of those cases, please use
 the constraints mechanism to skip those tests.
 
-2. Incompatibilities with prior Tcl versions:
----------------------------------------------
+2. Incompatibilities of package tcltest 2.1 with 
+   testing machinery of very old versions of Tcl:
+------------------------------------------------
 
-1) Global variables such as VERBOSE, TESTS, and testConfig are now
-   renamed to use the new "tcltest" namespace.
+1) Global variables such as VERBOSE, TESTS, and testConfig of the
+   old machinery correspond to the [configure -verbose], 
+   [configure -match], and [testConstraint] commands of tcltest 2.1,
+   respectively.
 
-   old name   new name
-   --------   --------
-   VERBOSE    ::tcltest::verbose
-   TESTS      ::tcltest::match
-   testConfig ::tcltest::testConstraints
-
-2) VERBOSE values are no longer numeric.  
+2) VERBOSE values were longer numeric.  [configure -verbose] values
+   are lists of keywords.
 
 3) When you run "make test", the working dir for the test suite is now
    the one from which you called "make test", rather than the "tests"
@@ -135,13 +79,12 @@ the constraints mechanism to skip those tests.
    other or with existing files.  All tests must now run independently
    of their working directory.
 
-4) The "all" and "visual" files are now called "all.tcl" and
-   "visual_bb.test".
+4) The "all" file is now called "all.tcl"
 
-5) The "defs" file no longer exists.
+5) The "defs" and "defs.tcl" files no longer exist.
 
 6) Instead of creating a doAllTests file in the tests directory, to
    run all nonPortable tests, just use the "-constraints nonPortable"
-   command line flag.  If you are running interactively, you can set
-   the ::tcltest::testConstraints(nonPortable) variable to 1 (after
-   loading the tcltest package).
+   command line flag.  If you are running interactively, you can run
+   [tcltest::testConstraint nonPortable 1] (after loading the tcltest
+   package).

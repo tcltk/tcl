@@ -9,12 +9,17 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: unixFCmd.test,v 1.12 2001/07/31 19:12:07 vincentdarley Exp $
+# RCS: @(#) $Id: unixFCmd.test,v 1.12.8.1 2002/08/20 20:25:29 das Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
     namespace import -force ::tcltest::*
 }
+
+# These tests really need to be run from a writable directory, which
+# it is assumed [temporaryDirectory] is.
+set oldcwd [pwd]
+cd [temporaryDirectory]
 
 # Several tests require need to match results against the unix username
 set user {}
@@ -57,9 +62,9 @@ proc cleanup {args} {
 test unixFCmd-1.1 {TclpRenameFile: EACCES} {unixOnly notRoot} {
     cleanup
     file mkdir td1/td2/td3
-    exec chmod 000 td1/td2
+    file attributes td1/td2 -permissions 0000
     set msg [list [catch {file rename td1/td2/td3 td2} msg] $msg]
-    exec chmod 755 td1/td2
+    file attributes td1/td2 -permissions 0755
     set msg
 } {1 {error renaming "td1/td2/td3": permission denied}}
 test unixFCmd-1.2 {TclpRenameFile: EEXIST} {unixOnly notRoot} {
@@ -118,13 +123,23 @@ test unixFCmd-1.9 {Checking EINTR Bug} {unixOnly notRoot nonPortable} {
 test unixFCmd-2.1 {TclpCopyFile: target exists: lstat(dst) == 0} \
 	{unixOnly notRoot} {
     cleanup
-    exec touch tf1
-    exec touch tf2
+    close [open tf1 a]
+    close [open tf2 a]
     file copy -force tf1 tf2
 } {}
-test unixFCmd-2.2 {TclpCopyFile: src is symlink} {unixOnly notRoot} {
+test unixFCmd-2.2.1 {TclpCopyFile: src is symlink} {unixOnly notRoot dontCopyLinks} {
+    # copying links should end up with real files
     cleanup
-    exec ln -s tf1 tf2
+    close [open tf1 a]
+    file link -symbolic tf2 tf1
+    file copy tf2 tf3
+    file type tf3
+} {file}
+test unixFCmd-2.2.2 {TclpCopyFile: src is symlink} {unixOnly notRoot} {
+    # copying links should end up with the links copied
+    cleanup
+    close [open tf1 a]
+    file link -symbolic tf2 tf1
     file copy tf2 tf3
     file type tf3
 } {link}
@@ -147,11 +162,11 @@ test unixFCmd-2.4 {TclpCopyFile: src is fifo} {unixOnly notRoot} {
 } {1}
 test unixFCmd-2.5 {TclpCopyFile: copy attributes} {unixOnly notRoot} {
     cleanup
-    exec touch tf1
-    exec chmod 472 tf1
+    close [open tf1 a]
+    file attributes tf1 -permissions 0472
     file copy tf1 tf2
-    string range [exec ls -l tf2] 0 9
-} {-r--rwx-w-}
+    file attributes tf2 -permissions
+} 00472 ;# i.e. perms field of [exec ls -l tf2] is -r--rwx-w-
 
 test unixFCmd-3.1 {CopyFile not done} {emptyTest unixOnly notRoot} {
 } {}
@@ -277,22 +292,20 @@ test unixFCmd-17.3 {SetPermissionsAttribute} {unixOnly notRoot} {
 
 close [open foo.test w]
 set ::i 4
-proc permcheck {permstr expected} {
-    test unixFCmd-17.[incr ::i] {SetPermissionsAttribute} {unixOnly notRoot} \
-	    [subst {
+proc permcheck {testnum permstr expected} {
+    test $testnum {SetPermissionsAttribute} {unixOnly notRoot} {
 	file attributes foo.test -permissions $permstr
 	file attributes foo.test -permissions
-    }
-    ] $expected
+    } $expected
 }
-permcheck rwxrwxrwx	00777
-permcheck r--r---w-	00442
-permcheck 0		00000
-permcheck u+rwx,g+r	00740
-permcheck u-w		00540
-permcheck o+rwx		00547
-permcheck --x--x--x	00111
-permcheck a+rwx		00777
+permcheck unixFCmd-17.4   rwxrwxrwx	00777
+permcheck unixFCmd-17.5   r--r---w-	00442
+permcheck unixFCmd-17.6   0		00000
+permcheck unixFCmd-17.7   u+rwx,g+r	00740
+permcheck unixFCmd-17.8   u-w		00540
+permcheck unixFCmd-17.9   o+rwx		00547
+permcheck unixFCmd-17.10  --x--x--x	00111
+permcheck unixFCmd-17.11  a+rwx		00777
 file delete -force -- foo.test
 
 test unixFCmd-18.1 {Unix pwd} {nonPortable unixOnly notRoot} {
@@ -302,27 +315,16 @@ test unixFCmd-18.1 {Unix pwd} {nonPortable unixOnly notRoot} {
     set nd $cd/tstdir
     file mkdir $nd
     cd $nd
-    exec chmod 000 $nd
+    file attributes $nd -permissions 0000
     set r [list [catch {pwd} res] [string range $res 0 36]];
     cd $cd;
-    exec chmod 755 $nd
+    file attributes $nd -permissions 0755
     file delete $nd
     set r
 } {1 {error getting working directory name:}}
 
 # cleanup
 cleanup
+cd $oldcwd
 ::tcltest::cleanupTests
 return
-
-
-
-
-
-
-
-
-
-
-
-

@@ -3,14 +3,15 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.72.8.5 2002/06/10 05:33:18 wolfsuit Exp $
+# RCS: @(#) $Id: configure.in,v 1.72.8.6 2002/08/20 20:25:30 das Exp $
 
 AC_INIT(../generic/tcl.h)
+AC_PREREQ(2.13)
 
 TCL_VERSION=8.4
 TCL_MAJOR_VERSION=8
 TCL_MINOR_VERSION=4
-TCL_PATCH_LEVEL="a5"
+TCL_PATCH_LEVEL="b3"
 VERSION=${TCL_VERSION}
 
 #------------------------------------------------------------------------
@@ -28,6 +29,11 @@ eval libdir="$libdir"
 TCL_SRC_DIR=`cd $srcdir/..; pwd`
 
 #------------------------------------------------------------------------
+# Compress and/or soft link the manpages?
+#------------------------------------------------------------------------
+SC_CONFIG_MANPAGES
+
+#------------------------------------------------------------------------
 # Standard compiler checks
 #------------------------------------------------------------------------
 
@@ -38,7 +44,6 @@ if test "${CFLAGS+set}" != "set" ; then
 fi
 
 AC_PROG_CC
-AC_PROG_RANLIB
 AC_HAVE_HEADERS(unistd.h limits.h)
 
 #------------------------------------------------------------------------
@@ -262,6 +267,22 @@ AC_TYPE_PID_T
 AC_TYPE_SIZE_T
 AC_TYPE_UID_T
 
+AC_MSG_CHECKING([for socklen_t])
+AC_CACHE_VAL(ac_cv_type_socklen_t,
+[AC_EGREP_CPP(changequote(<<,>>)dnl
+<<(^|[^a-zA-Z_0-9])socklen_t[^a-zA-Z_0-9]>>dnl
+changequote([,]),[#include <sys/types.h>
+#include <sys/socket.h>
+#if STDC_HEADERS
+#include <stdlib.h>
+#include <stddef.h>
+#endif], ac_cv_type_socklen_t=yes, ac_cv_type_socklen_t=no)
+AC_MSG_RESULT($ac_cv_type_socklen_t)
+if test $ac_cv_type_socklen_t = no; then
+  AC_DEFINE(socklen_t, unsigned)
+fi
+])
+
 #--------------------------------------------------------------------
 #	If a system doesn't have an opendir function (man, that's old!)
 #	then we have to supply a different version of dirent.h which
@@ -367,6 +388,8 @@ SC_TCL_LINK_LIBS
 
 LIBS="$LIBS$THREADS_LIBS"
 
+SC_ENABLE_SHARED
+
 #--------------------------------------------------------------------
 # The statements below define a collection of compile flags.  This
 # macro depends on the value of SHARED_BUILD, and should be called
@@ -395,35 +418,9 @@ SC_BLOCKING_STYLE
 
 TCL_UNSHARED_LIB_SUFFIX=${UNSHARED_LIB_SUFFIX}
 TCL_SHARED_LIB_SUFFIX=${SHARED_LIB_SUFFIX}
+eval "TCL_LIB_FILE=libtcl${LIB_SUFFIX}"
 
-SC_ENABLE_SHARED
 SC_ENABLE_FRAMEWORK
-
-TCL_LD_SEARCH_FLAGS="${LD_SEARCH_FLAGS}"
-if test "${SHARED_BUILD}" = "1" -a "${SHLIB_SUFFIX}" != "" ; then
-    TCL_SHLIB_CFLAGS="${SHLIB_CFLAGS}"
-    eval "TCL_LIB_FILE=libtcl${TCL_SHARED_LIB_SUFFIX}"
-    if test "x$DL_OBJS" = "xtclLoadAout.o"; then
-	MAKE_LIB="\${STLIB_LD} \[$]@ \${OBJS}"
-    else
-	MAKE_LIB="\${SHLIB_LD} ${TCL_SHLIB_LD_EXTRAS} -o \[$]@ \${OBJS} ${SHLIB_LD_LIBS}"
-    fi
-else
-    case $system in
-        BSD/OS*)
-	    ;;
-
-	AIX-[[1-4]].*)
-            ;;
-
-        *)
-	    SHLIB_LD_LIBS=""
-	    ;;
-    esac
-    TCL_SHLIB_CFLAGS=""
-    eval "TCL_LIB_FILE=libtcl${TCL_UNSHARED_LIB_SUFFIX}"
-    MAKE_LIB="\${STLIB_LD} \[$]@ \${OBJS}"
-fi
 
 # tclConfig.sh needs a version of the _LIB_SUFFIX that has been eval'ed
 # so that the backslashes quoting the DBX braces are dropped.
@@ -441,7 +438,7 @@ if test "$FRAMEWORK_BUILD" = "1" ; then
     TCL_BUILD_LIB_SPEC="-F`pwd` -framework Tcl"
     TCL_LIB_SPEC="-framework Tcl"
     TCL_LIB_FILE="Tcl"
-elif test "$SHARED_BUILD" = "0" -o $TCL_NEEDS_EXP_FILE = 0; then
+elif test "$SHARED_BUILD" = "0" || test "$TCL_NEEDS_EXP_FILE" = "0"; then
     if test "${TCL_LIB_VERSIONS_OK}" = "ok"; then
         TCL_LIB_FLAG="-ltcl${TCL_VERSION}\${TCL_DBGX}"
     else
@@ -478,15 +475,11 @@ VERSION=${TCL_VERSION}
 #--------------------------------------------------------------------
 
 if test "$FRAMEWORK_BUILD" = "1" ; then
-    TCL_PACKAGE_PATH="${prefix}/Tcl.framework/Versions/${TCL_VERSION}/Resources/Scripts"
+    TCL_PACKAGE_PATH="${libdir}/Resources/Scripts"
 elif test "$prefix" != "$exec_prefix"; then
     TCL_PACKAGE_PATH="${libdir} ${prefix}/lib"
 else
-    if test "$prefix" != "$exec_prefix"; then
-        TCL_PACKAGE_PATH="${exec_prefix}/lib ${prefix}/lib"
-    else
-        TCL_PACKAGE_PATH="${prefix}/lib"
-    fi
+    TCL_PACKAGE_PATH="${prefix}/lib"
 fi
 
 #--------------------------------------------------------------------
@@ -499,8 +492,6 @@ eval "TCL_STUB_LIB_FILE=libtclstub${TCL_UNSHARED_LIB_SUFFIX}"
 # Replace DBGX with TCL_DBGX
 eval "TCL_STUB_LIB_FILE=\"${TCL_STUB_LIB_FILE}\""
 
-MAKE_STUB_LIB="\${STLIB_LD} \[$]@ \${STUB_LIB_OBJS}"
-
 if test "${TCL_LIB_VERSIONS_OK}" = "ok"; then
     TCL_STUB_LIB_FLAG="-ltclstub${TCL_VERSION}\${TCL_DBGX}"
 else
@@ -508,16 +499,9 @@ else
 fi
 
 TCL_BUILD_STUB_LIB_SPEC="-L`pwd` ${TCL_STUB_LIB_FLAG}"
-if test "$FRAMEWORK_BUILD" = "1" ; then
-    TCL_STUB_LIB_SPEC="-L${exec_prefix}/Tcl.framework/Versions/${TCL_VERSION} ${TCL_STUB_LIB_FLAG}"
-    TCL_STUB_LIB_PATH="${exec_prefix}/Tcl.framework/Versions/${TCL_VERSION}/${TCL_STUB_LIB_FILE}"
-else
-    TCL_STUB_LIB_SPEC="-L${libdir} ${TCL_STUB_LIB_FLAG}"
-    TCL_STUB_LIB_PATH="${libdir}/${TCL_STUB_LIB_FILE}"
-
-fi
-
+TCL_STUB_LIB_SPEC="-L${libdir} ${TCL_STUB_LIB_FLAG}"
 TCL_BUILD_STUB_LIB_PATH="`pwd`/${TCL_STUB_LIB_FILE}"
+TCL_STUB_LIB_PATH="${libdir}/${TCL_STUB_LIB_FILE}"
 
 # Install time header dir can be set via --includedir
 eval "TCL_INCLUDE_SPEC=\"-I${includedir}\""
@@ -545,49 +529,25 @@ AC_SUBST(TCL_BUILD_STUB_LIB_SPEC)
 AC_SUBST(TCL_BUILD_STUB_LIB_PATH)
 
 AC_SUBST(TCL_SRC_DIR)
-AC_SUBST(TCL_BIN_DIR)
 AC_SUBST(TCL_DBGX)
 AC_SUBST(CFG_TCL_SHARED_LIB_SUFFIX)
 AC_SUBST(CFG_TCL_UNSHARED_LIB_SUFFIX)
 AC_SUBST(CFG_TCL_EXPORT_FILE_SUFFIX)
-AC_SUBST(TCL_DBGX)
-AC_SUBST(DL_OBJS)
-AC_SUBST(PLAT_OBJS)
 
-AC_SUBST(CFLAGS)
-AC_SUBST(CFLAGS_DEFAULT)
-AC_SUBST(EXTRA_CFLAGS)
+AC_SUBST(TCL_SHARED_BUILD)
 AC_SUBST(LD_LIBRARY_PATH_VAR)
 
-AC_SUBST(LDFLAGS)
-AC_SUBST(LDFLAGS_DEFAULT)
-AC_SUBST(LDFLAGS_DEBUG)
-AC_SUBST(LDFLAGS_OPTIMIZE)
-AC_SUBST(AR)
-AC_SUBST(RANLIB)
-
-AC_SUBST(STLIB_LD)
-AC_SUBST(SHLIB_LD)
-AC_SUBST(SHLIB_LD_LIBS)
-AC_SUBST(SHLIB_CFLAGS)
-AC_SUBST(SHLIB_SUFFIX)
-AC_SUBST(TCL_SHARED_BUILD)
-
 AC_SUBST(TCL_BUILD_LIB_SPEC)
-AC_SUBST(TCL_LD_SEARCH_FLAGS)
 AC_SUBST(TCL_NEEDS_EXP_FILE)
 AC_SUBST(TCL_BUILD_EXP_FILE)
 AC_SUBST(TCL_EXP_FILE)
 
 AC_SUBST(TCL_LIB_VERSIONS_OK)
 AC_SUBST(TCL_SHARED_LIB_SUFFIX)
-AC_SUBST(TCL_SHLIB_CFLAGS)
 AC_SUBST(TCL_UNSHARED_LIB_SUFFIX)
 
 AC_SUBST(TCL_HAS_LONGLONG)
 
-AC_SUBST(MAKE_LIB)
-AC_SUBST(MAKE_STUB_LIB)
 AC_SUBST(BUILD_DLTEST)
 AC_SUBST(TCL_PACKAGE_PATH)
 

@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: tclvars.n,v 1.9.4.2 2002/06/10 05:33:08 wolfsuit Exp $
+'\" RCS: @(#) $Id: tclvars.n,v 1.9.4.3 2002/08/20 20:25:24 das Exp $
 '\" 
 .so man.macros
 .TH tclvars n 8.0 Tcl "Tcl Built-In Commands"
@@ -46,7 +46,7 @@ support many special cases.  All other environment variables inherited by
 Tcl are left unmodified.  Setting an env array variable to blank is the
 same as unsetting it as this is the behavior of the underlying Windows OS.
 It should be noted that relying on an existing and empty environment variable
-won't work on windows and is discoraged for cross-platform usage.
+won't work on windows and is discouraged for cross-platform usage.
 .VE
 .RE
 .RS
@@ -258,7 +258,7 @@ The native byte order of this machine: either \fBlittleEndian\fR or
 .TP
 \fBdebug\fR
 If this variable exists, then the interpreter
-was compiled with debugging symbols enabled.  This varible will only
+was compiled with debugging symbols enabled.  This variable will only
 exist on Windows so extension writers can specify which package to load
 depending on the C run-time library that is loaded.
 .TP

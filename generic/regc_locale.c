@@ -9,111 +9,111 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: regc_locale.c,v 1.6.10.2 2002/06/10 05:33:08 wolfsuit Exp $
+ * RCS: @(#) $Id: regc_locale.c,v 1.6.10.3 2002/08/20 20:25:24 das Exp $
  */
 
 /* ASCII character-name table */
 
 static struct cname {
-	char *name;
-	char code;
+    char *name;
+    char code;
 } cnames[] = {
-	{"NUL",	'\0'},
-	{"SOH",	'\001'},
-	{"STX",	'\002'},
-	{"ETX",	'\003'},
-	{"EOT",	'\004'},
-	{"ENQ",	'\005'},
-	{"ACK",	'\006'},
-	{"BEL",	'\007'},
-	{"alert",	'\007'},
-	{"BS",		'\010'},
-	{"backspace",	'\b'},
-	{"HT",		'\011'},
-	{"tab",		'\t'},
-	{"LF",		'\012'},
-	{"newline",	'\n'},
-	{"VT",		'\013'},
-	{"vertical-tab",	'\v'},
-	{"FF",		'\014'},
-	{"form-feed",	'\f'},
-	{"CR",		'\015'},
-	{"carriage-return",	'\r'},
-	{"SO",	'\016'},
-	{"SI",	'\017'},
-	{"DLE",	'\020'},
-	{"DC1",	'\021'},
-	{"DC2",	'\022'},
-	{"DC3",	'\023'},
-	{"DC4",	'\024'},
-	{"NAK",	'\025'},
-	{"SYN",	'\026'},
-	{"ETB",	'\027'},
-	{"CAN",	'\030'},
-	{"EM",	'\031'},
-	{"SUB",	'\032'},
-	{"ESC",	'\033'},
-	{"IS4",	'\034'},
-	{"FS",	'\034'},
-	{"IS3",	'\035'},
-	{"GS",	'\035'},
-	{"IS2",	'\036'},
-	{"RS",	'\036'},
-	{"IS1",	'\037'},
-	{"US",	'\037'},
-	{"space",		' '},
-	{"exclamation-mark",	'!'},
-	{"quotation-mark",	'"'},
-	{"number-sign",		'#'},
-	{"dollar-sign",		'$'},
-	{"percent-sign",		'%'},
-	{"ampersand",		'&'},
-	{"apostrophe",		'\''},
-	{"left-parenthesis",	'('},
-	{"right-parenthesis",	')'},
-	{"asterisk",	'*'},
-	{"plus-sign",	'+'},
-	{"comma",	','},
-	{"hyphen",	'-'},
-	{"hyphen-minus",	'-'},
-	{"period",	'.'},
-	{"full-stop",	'.'},
-	{"slash",	'/'},
-	{"solidus",	'/'},
-	{"zero",		'0'},
-	{"one",		'1'},
-	{"two",		'2'},
-	{"three",	'3'},
-	{"four",		'4'},
-	{"five",		'5'},
-	{"six",		'6'},
-	{"seven",	'7'},
-	{"eight",	'8'},
-	{"nine",		'9'},
-	{"colon",	':'},
-	{"semicolon",	';'},
-	{"less-than-sign",	'<'},
-	{"equals-sign",		'='},
-	{"greater-than-sign",	'>'},
-	{"question-mark",	'?'},
-	{"commercial-at",	'@'},
-	{"left-square-bracket",	'['},
-	{"backslash",		'\\'},
-	{"reverse-solidus",	'\\'},
-	{"right-square-bracket",	']'},
-	{"circumflex",		'^'},
-	{"circumflex-accent",	'^'},
-	{"underscore",		'_'},
-	{"low-line",		'_'},
-	{"grave-accent",		'`'},
-	{"left-brace",		'{'},
-	{"left-curly-bracket",	'{'},
-	{"vertical-line",	'|'},
-	{"right-brace",		'}'},
-	{"right-curly-bracket",	'}'},
-	{"tilde",		'~'},
-	{"DEL",	'\177'},
-	{NULL,	0}
+    {"NUL",		'\0'},
+    {"SOH",		'\001'},
+    {"STX",		'\002'},
+    {"ETX",		'\003'},
+    {"EOT",		'\004'},
+    {"ENQ",		'\005'},
+    {"ACK",		'\006'},
+    {"BEL",		'\007'},
+    {"alert",		'\007'},
+    {"BS",		'\010'},
+    {"backspace",	'\b'},
+    {"HT",		'\011'},
+    {"tab",		'\t'},
+    {"LF",		'\012'},
+    {"newline",		'\n'},
+    {"VT",		'\013'},
+    {"vertical-tab",	'\v'},
+    {"FF",		'\014'},
+    {"form-feed",	'\f'},
+    {"CR",		'\015'},
+    {"carriage-return",	'\r'},
+    {"SO",		'\016'},
+    {"SI",		'\017'},
+    {"DLE",		'\020'},
+    {"DC1",		'\021'},
+    {"DC2",		'\022'},
+    {"DC3",		'\023'},
+    {"DC4",		'\024'},
+    {"NAK",		'\025'},
+    {"SYN",		'\026'},
+    {"ETB",		'\027'},
+    {"CAN",		'\030'},
+    {"EM",		'\031'},
+    {"SUB",		'\032'},
+    {"ESC",		'\033'},
+    {"IS4",		'\034'},
+    {"FS",		'\034'},
+    {"IS3",		'\035'},
+    {"GS",		'\035'},
+    {"IS2",		'\036'},
+    {"RS",		'\036'},
+    {"IS1",		'\037'},
+    {"US",		'\037'},
+    {"space",		' '},
+    {"exclamation-mark",'!'},
+    {"quotation-mark",	'"'},
+    {"number-sign",	'#'},
+    {"dollar-sign",	'$'},
+    {"percent-sign",	'%'},
+    {"ampersand",	'&'},
+    {"apostrophe",	'\''},
+    {"left-parenthesis",'('},
+    {"right-parenthesis", ')'},
+    {"asterisk",	'*'},
+    {"plus-sign",	'+'},
+    {"comma",		','},
+    {"hyphen",		'-'},
+    {"hyphen-minus",	'-'},
+    {"period",		'.'},
+    {"full-stop",	'.'},
+    {"slash",		'/'},
+    {"solidus",		'/'},
+    {"zero",		'0'},
+    {"one",		'1'},
+    {"two",		'2'},
+    {"three",		'3'},
+    {"four",		'4'},
+    {"five",		'5'},
+    {"six",		'6'},
+    {"seven",		'7'},
+    {"eight",		'8'},
+    {"nine",		'9'},
+    {"colon",		':'},
+    {"semicolon",	';'},
+    {"less-than-sign",	'<'},
+    {"equals-sign",	'='},
+    {"greater-than-sign", '>'},
+    {"question-mark",	'?'},
+    {"commercial-at",	'@'},
+    {"left-square-bracket", '['},
+    {"backslash",	'\\'},
+    {"reverse-solidus",	'\\'},
+    {"right-square-bracket", ']'},
+    {"circumflex",	'^'},
+    {"circumflex-accent", '^'},
+    {"underscore",	'_'},
+    {"low-line",	'_'},
+    {"grave-accent",	'`'},
+    {"left-brace",	'{'},
+    {"left-curly-bracket", '{'},
+    {"vertical-line",	'|'},
+    {"right-brace",	'}'},
+    {"right-curly-bracket", '}'},
+    {"tilde",		'~'},
+    {"DEL",		'\177'},
+    {NULL,		0}
 };
 
 /* Unicode character-class tables */
@@ -526,9 +526,12 @@ static chr graphCharTable[] = {
  */
 static int
 nmcces(v)
-struct vars *v;
+    struct vars *v;			/* context */
 {
-	return 0;
+    /*
+     * No multi-character collating elements defined at the moment.
+     */
+    return 0;
 }
 
 /*
@@ -537,9 +540,9 @@ struct vars *v;
  */
 static int
 nleaders(v)
-struct vars *v;
+    struct vars *v;			/* context */
 {
-	return 0;
+    return 0;
 }
 
 /*
@@ -548,10 +551,10 @@ struct vars *v;
  */
 static struct cvec *
 allmcces(v, cv)
-struct vars *v;
-struct cvec *cv;		/* this is supposed to have enough room */
+    struct vars *v;			/* context */
+    struct cvec *cv;			/* this is supposed to have enough room */
 {
-	return clearcvec(cv);
+    return clearcvec(cv);
 }
 
 /*
@@ -560,36 +563,40 @@ struct cvec *cv;		/* this is supposed to have enough room */
  */
 static celt
 element(v, startp, endp)
-struct vars *v;
-chr *startp;			/* points to start of name */
-chr *endp;			/* points just past end of name */
+    struct vars *v;			/* context */
+    chr *startp;			/* points to start of name */
+    chr *endp;				/* points just past end of name */
 {
-	struct cname *cn;
-	size_t len;
-	Tcl_DString ds;
-	CONST char *np;
+    struct cname *cn;
+    size_t len;
+    Tcl_DString ds;
+    CONST char *np;
 
-	/* generic:  one-chr names stand for themselves */
-	assert(startp < endp);
-	len = endp - startp;
-	if (len == 1)
-		return *startp;
+    /* generic:  one-chr names stand for themselves */
+    assert(startp < endp);
+    len = endp - startp;
+    if (len == 1) {
+	return *startp;
+    }
 
-	NOTE(REG_ULOCALE);
+    NOTE(REG_ULOCALE);
 
-	/* search table */
-	Tcl_DStringInit(&ds);
-	np = Tcl_UniCharToUtfDString(startp, (int)len, &ds);
-	for (cn = cnames; cn->name != NULL; cn++)
-		if (strlen(cn->name) == len && strncmp(cn->name, np, len) == 0)
-			break;		/* NOTE BREAK OUT */
-	Tcl_DStringFree(&ds);
-	if (cn->name != NULL)
-		return CHR(cn->code);
+    /* search table */
+    Tcl_DStringInit(&ds);
+    np = Tcl_UniCharToUtfDString(startp, (int)len, &ds);
+    for (cn=cnames; cn->name!=NULL; cn++) {
+	if (strlen(cn->name)==len && strncmp(cn->name, np, len)==0) {
+	    break;			/* NOTE BREAK OUT */
+	}
+    }
+    Tcl_DStringFree(&ds);
+    if (cn->name != NULL) {
+	return CHR(cn->code);
+    }
 
-	/* couldn't find it */
-	ERR(REG_ECOLLATE);
-	return 0;
+    /* couldn't find it */
+    ERR(REG_ECOLLATE);
+    return 0;
 }
 
 /*
@@ -598,71 +605,71 @@ chr *endp;			/* points just past end of name */
  */
 static struct cvec *
 range(v, a, b, cases)
-struct vars *v;
-celt a;
-celt b;				/* might equal a */
-int cases;			/* case-independent? */
+    struct vars *v;			/* context */
+    celt a;				/* range start */
+    celt b;				/* range end, might equal a */
+    int cases;				/* case-independent? */
 {
-	int nchrs;
-	struct cvec *cv;
-	celt c, lc, uc, tc;
+    int nchrs;
+    struct cvec *cv;
+    celt c, lc, uc, tc;
 
-	if (a != b && !before(a, b)) {
-		ERR(REG_ERANGE);
-		return NULL;
-	}
+    if (a != b && !before(a, b)) {
+	ERR(REG_ERANGE);
+	return NULL;
+    }
 
-	if (!cases) {		/* easy version */
-		cv = getcvec(v, 0, 1, 0);
-		NOERRN();
-		addrange(cv, a, b);
-		return cv;
-	}
-
-	/*
-	 * When case-independent, it's hard to decide when cvec ranges are
-	 * usable, so for now at least, we won't try.  We allocate enough
-	 * space for two case variants plus a little extra for the two
-	 * title case variants.
-	 */
-
-	nchrs = (b - a + 1)*2 + 4;
-
-	cv = getcvec(v, nchrs, 0, 0);
+    if (!cases) {			/* easy version */
+	cv = getcvec(v, 0, 1, 0);
 	NOERRN();
-
-	for (c = a; c <= b; c++) {
-		addchr(cv, c);
-		lc = Tcl_UniCharToLower((chr)c);
-		uc = Tcl_UniCharToUpper((chr)c);
-		tc = Tcl_UniCharToTitle((chr)c);
-		if (c != lc) {
-			addchr(cv, lc);
-		}
-		if (c != uc) {
-			addchr(cv, uc);
-		}
-		if (c != tc && tc != uc) {
-			addchr(cv, tc);
-		}
-	}
-
+	addrange(cv, a, b);
 	return cv;
+    }
+
+    /*
+     * When case-independent, it's hard to decide when cvec ranges are
+     * usable, so for now at least, we won't try.  We allocate enough
+     * space for two case variants plus a little extra for the two
+     * title case variants.
+     */
+
+    nchrs = (b - a + 1)*2 + 4;
+
+    cv = getcvec(v, nchrs, 0, 0);
+    NOERRN();
+
+    for (c=a; c<=b; c++) {
+	addchr(cv, c);
+	lc = Tcl_UniCharToLower((chr)c);
+	uc = Tcl_UniCharToUpper((chr)c);
+	tc = Tcl_UniCharToTitle((chr)c);
+	if (c != lc) {
+	    addchr(cv, lc);
+	}
+	if (c != uc) {
+	    addchr(cv, uc);
+	}
+	if (c != tc && tc != uc) {
+	    addchr(cv, tc);
+	}
+    }
+
+    return cv;
 }
 
 /*
  - before - is celt x before celt y, for purposes of range legality?
  ^ static int before(celt, celt);
  */
-static int			/* predicate */
+static int				/* predicate */
 before(x, y)
-celt x;
-celt y;
+    celt x, y;				/* collating elements */
 {
-	/* trivial because no MCCEs */
-	if (x < y)
-		return 1;
-	return 0;
+    /* trivial because no MCCEs */
+    if (x < y) {
+	return 1;
+    }
+    return 0;
 }
 
 /*
@@ -672,31 +679,33 @@ celt y;
  */
 static struct cvec *
 eclass(v, c, cases)
-struct vars *v;
-celt c;
-int cases;			/* all cases? */
+    struct vars *v;			/* context */
+    celt c;				/* Collating element representing
+					 * the equivalence class. */
+    int cases;				/* all cases? */
 {
-	struct cvec *cv;
+    struct cvec *cv;
 
-	/* crude fake equivalence class for testing */
-	if ((v->cflags&REG_FAKE) && c == 'x') {
-		cv = getcvec(v, 4, 0, 0);
-		addchr(cv, (chr)'x');
-		addchr(cv, (chr)'y');
-		if (cases) {
-			addchr(cv, (chr)'X');
-			addchr(cv, (chr)'Y');
-		}
-		return cv;
+    /* crude fake equivalence class for testing */
+    if ((v->cflags&REG_FAKE) && c == 'x') {
+	cv = getcvec(v, 4, 0, 0);
+	addchr(cv, (chr)'x');
+	addchr(cv, (chr)'y');
+	if (cases) {
+	    addchr(cv, (chr)'X');
+	    addchr(cv, (chr)'Y');
 	}
-
-	/* otherwise, none */
-	if (cases)
-		return allcases(v, c);
-	cv = getcvec(v, 1, 0, 0);
-	assert(cv != NULL);
-	addchr(cv, (chr)c);
 	return cv;
+    }
+
+    /* otherwise, none */
+    if (cases) {
+	return allcases(v, c);
+    }
+    cv = getcvec(v, 1, 0, 0);
+    assert(cv != NULL);
+    addchr(cv, (chr)c);
+    return cv;
 }
 
 /*
@@ -706,10 +715,10 @@ int cases;			/* all cases? */
  */
 static struct cvec *
 cclass(v, startp, endp, cases)
-struct vars *v;
-chr *startp;			/* where the name starts */
-chr *endp;			/* just past the end of the name */
-int cases;			/* case-independent? */
+    struct vars *v;			/* context */
+    chr *startp;			/* where the name starts */
+    chr *endp;				/* just past the end of the name */
+    int cases;				/* case-independent? */
 {
     size_t len;
     struct cvec *cv = NULL;
@@ -755,7 +764,7 @@ int cases;			/* case-independent? */
      */
 
     index = -1;
-    for (namePtr = classNames, i = 0; *namePtr != NULL; namePtr++, i++) {
+    for (namePtr=classNames,i=0 ; *namePtr!=NULL ; namePtr++,i++) {
 	if ((strlen(*namePtr) == len) && (strncmp(*namePtr, np, len) == 0)) {
 	    index = i;
 	    break;
@@ -772,129 +781,137 @@ int cases;			/* case-independent? */
      */
 
     switch((enum classes) index) {
-	case CC_PRINT:
-	case CC_ALNUM:
-	    cv = getcvec(v, NUM_ALPHA_CHAR,
-		    NUM_DIGIT_RANGE + NUM_ALPHA_RANGE, 0);
-	    if (cv) {
-		for (i = 0; i < NUM_ALPHA_CHAR; i++) {
-		    addchr(cv, alphaCharTable[i]);
-		}
-		for (i = 0; i < NUM_ALPHA_RANGE; i++) {
-		    addrange(cv, alphaRangeTable[i].start,
-			     alphaRangeTable[i].end);
-		}
-		for (i = 0; i < NUM_DIGIT_RANGE; i++) {
-		    addrange(cv, digitRangeTable[i].start,
-			    digitRangeTable[i].end);
-		}
+    case CC_PRINT:
+    case CC_ALNUM:
+	cv = getcvec(v, NUM_ALPHA_CHAR, NUM_DIGIT_RANGE + NUM_ALPHA_RANGE, 0);
+	if (cv) {
+	    for (i=0 ; i<NUM_ALPHA_CHAR ; i++) {
+		addchr(cv, alphaCharTable[i]);
 	    }
-	    break;
-	case CC_ALPHA:
-	    cv = getcvec(v, NUM_ALPHA_CHAR, NUM_ALPHA_RANGE, 0);
-	    if (cv) {
-		for (i = 0; i < NUM_ALPHA_RANGE; i++) {
-		    addrange(cv, alphaRangeTable[i].start,
-			     alphaRangeTable[i].end);
-		}
-		for (i = 0; i < NUM_ALPHA_CHAR; i++) {
-		    addchr(cv, alphaCharTable[i]);
-		}
+	    for (i=0 ; i<NUM_ALPHA_RANGE ; i++) {
+		addrange(cv, alphaRangeTable[i].start,
+			alphaRangeTable[i].end);
 	    }
-	    break;
-	case CC_ASCII:
-	    cv = getcvec(v, 0, 1, 0);
-	    if (cv) {
-		addrange(cv, 0, 0x7f);
+	    for (i=0 ; i<NUM_DIGIT_RANGE ; i++) {
+		addrange(cv, digitRangeTable[i].start,
+			digitRangeTable[i].end);
 	    }
-	    break;
-	case CC_BLANK:
-	    cv = getcvec(v, 2, 0, 0);
-	    addchr(cv, '\t');
-	    addchr(cv, ' ');
-	    break;
-	case CC_CNTRL:
-	    cv = getcvec(v, 0, 2, 0);
-	    addrange(cv, 0x0, 0x1f);
-	    addrange(cv, 0x7f, 0x9f);
-	    break;
-	case CC_DIGIT:
-	    cv = getcvec(v, 0, NUM_DIGIT_RANGE, 0);
-	    if (cv) {	
-		for (i = 0; i < NUM_DIGIT_RANGE; i++) {
-		    addrange(cv, digitRangeTable[i].start,
-			    digitRangeTable[i].end);
-		}
+	}
+	break;
+    case CC_ALPHA:
+	cv = getcvec(v, NUM_ALPHA_CHAR, NUM_ALPHA_RANGE, 0);
+	if (cv) {
+	    for (i=0 ; i<NUM_ALPHA_RANGE ; i++) {
+		addrange(cv, alphaRangeTable[i].start,
+			alphaRangeTable[i].end);
 	    }
-	    break;
-	case CC_PUNCT:
-	    cv = getcvec(v, NUM_PUNCT_CHAR, NUM_PUNCT_RANGE, 0);
-	    if (cv) {
-		for (i = 0; i < NUM_PUNCT_RANGE; i++) {
-		    addrange(cv, punctRangeTable[i].start,
-			     punctRangeTable[i].end);
-		}
-		for (i = 0; i < NUM_PUNCT_CHAR; i++) {
-		    addchr(cv, punctCharTable[i]);
-		}
+	    for (i=0 ; i<NUM_ALPHA_CHAR ; i++) {
+		addchr(cv, alphaCharTable[i]);
 	    }
-	    break;
-	case CC_XDIGIT:
-	    cv = getcvec(v, 0, NUM_DIGIT_RANGE+2, 0);
-	    if (cv) {	
-		addrange(cv, '0', '9');
-		addrange(cv, 'a', 'f');
-		addrange(cv, 'A', 'F');
+	}
+	break;
+    case CC_ASCII:
+	cv = getcvec(v, 0, 1, 0);
+	if (cv) {
+	    addrange(cv, 0, 0x7f);
+	}
+	break;
+    case CC_BLANK:
+	cv = getcvec(v, 2, 0, 0);
+	addchr(cv, '\t');
+	addchr(cv, ' ');
+	break;
+    case CC_CNTRL:
+	cv = getcvec(v, 0, 2, 0);
+	addrange(cv, 0x0, 0x1f);
+	addrange(cv, 0x7f, 0x9f);
+	break;
+    case CC_DIGIT:
+	cv = getcvec(v, 0, NUM_DIGIT_RANGE, 0);
+	if (cv) {	
+	    for (i=0 ; i<NUM_DIGIT_RANGE ; i++) {
+		addrange(cv, digitRangeTable[i].start,
+			digitRangeTable[i].end);
 	    }
-	    break;
-	case CC_SPACE:
-	    cv = getcvec(v, NUM_SPACE_CHAR, NUM_SPACE_RANGE, 0);
-	    if (cv) {
-		for (i = 0; i < NUM_SPACE_RANGE; i++) {
-		    addrange(cv, spaceRangeTable[i].start,
-			     spaceRangeTable[i].end);
-		}
-		for (i = 0; i < NUM_SPACE_CHAR; i++) {
-		    addchr(cv, spaceCharTable[i]);
-		}
+	}
+	break;
+    case CC_PUNCT:
+	cv = getcvec(v, NUM_PUNCT_CHAR, NUM_PUNCT_RANGE, 0);
+	if (cv) {
+	    for (i=0 ; i<NUM_PUNCT_RANGE ; i++) {
+		addrange(cv, punctRangeTable[i].start,
+			punctRangeTable[i].end);
 	    }
-	    break;
-	case CC_LOWER:
-	    cv  = getcvec(v, NUM_LOWER_CHAR, NUM_LOWER_RANGE, 0);
-	    if (cv) {
-		for (i = 0; i < NUM_LOWER_RANGE; i++) {
-		    addrange(cv, lowerRangeTable[i].start,
-			     lowerRangeTable[i].end);
-		}
-		for (i = 0; i < NUM_LOWER_CHAR; i++) {
-		    addchr(cv, lowerCharTable[i]);
-		}
+	    for (i=0 ; i<NUM_PUNCT_CHAR ; i++) {
+		addchr(cv, punctCharTable[i]);
 	    }
-	    break;
-	case CC_UPPER:
-	    cv  = getcvec(v, NUM_UPPER_CHAR, NUM_UPPER_RANGE, 0);
-	    if (cv) {
-		for (i = 0; i < NUM_UPPER_RANGE; i++) {
-		    addrange(cv, upperRangeTable[i].start,
-			     upperRangeTable[i].end);
-		}
-		for (i = 0; i < NUM_UPPER_CHAR; i++) {
-		    addchr(cv, upperCharTable[i]);
-		}
+	}
+	break;
+    case CC_XDIGIT:
+	/*
+	 * This is a 3 instead of (NUM_DIGIT_RANGE+2) because I've no
+	 * idea how to define the digits 'a' through 'f' in
+	 * non-western locales.  The concept is quite possibly non
+	 * portable, or only used in contextx where the characters
+	 * used would be the western ones anyway!  Whatever is
+	 * actually the case, the number of ranges is fixed (until
+	 * someone comes up with a better arrangement!)
+	 */
+	cv = getcvec(v, 0, 3, 0);
+	if (cv) {	
+	    addrange(cv, '0', '9');
+	    addrange(cv, 'a', 'f');
+	    addrange(cv, 'A', 'F');
+	}
+	break;
+    case CC_SPACE:
+	cv = getcvec(v, NUM_SPACE_CHAR, NUM_SPACE_RANGE, 0);
+	if (cv) {
+	    for (i=0 ; i<NUM_SPACE_RANGE ; i++) {
+		addrange(cv, spaceRangeTable[i].start,
+			spaceRangeTable[i].end);
 	    }
-	    break;
-	case CC_GRAPH:
-	    cv  = getcvec(v, NUM_GRAPH_CHAR, NUM_GRAPH_RANGE, 0);
-	    if (cv) {
-		for (i = 0; i < NUM_GRAPH_RANGE; i++) {
-		    addrange(cv, graphRangeTable[i].start,
-			     graphRangeTable[i].end);
-		}
-		for (i = 0; i < NUM_GRAPH_CHAR; i++) {
-		    addchr(cv, graphCharTable[i]);
-		}
+	    for (i=0 ; i<NUM_SPACE_CHAR ; i++) {
+		addchr(cv, spaceCharTable[i]);
 	    }
-	    break;
+	}
+	break;
+    case CC_LOWER:
+	cv  = getcvec(v, NUM_LOWER_CHAR, NUM_LOWER_RANGE, 0);
+	if (cv) {
+	    for (i=0 ; i<NUM_LOWER_RANGE ; i++) {
+		addrange(cv, lowerRangeTable[i].start,
+			lowerRangeTable[i].end);
+	    }
+	    for (i=0 ; i<NUM_LOWER_CHAR ; i++) {
+		addchr(cv, lowerCharTable[i]);
+	    }
+	}
+	break;
+    case CC_UPPER:
+	cv  = getcvec(v, NUM_UPPER_CHAR, NUM_UPPER_RANGE, 0);
+	if (cv) {
+	    for (i=0 ; i<NUM_UPPER_RANGE ; i++) {
+		addrange(cv, upperRangeTable[i].start,
+			upperRangeTable[i].end);
+	    }
+	    for (i=0 ; i<NUM_UPPER_CHAR ; i++) {
+		addchr(cv, upperCharTable[i]);
+	    }
+	}
+	break;
+    case CC_GRAPH:
+	cv  = getcvec(v, NUM_GRAPH_CHAR, NUM_GRAPH_RANGE, 0);
+	if (cv) {
+	    for (i=0 ; i<NUM_GRAPH_RANGE ; i++) {
+		addrange(cv, graphRangeTable[i].start,
+			graphRangeTable[i].end);
+	    }
+	    for (i=0 ; i<NUM_GRAPH_CHAR ; i++) {
+		addchr(cv, graphCharTable[i]);
+	    }
+	}
+	break;
     }
     if (cv == NULL) {
 	ERR(REG_ESPACE);
@@ -910,28 +927,28 @@ int cases;			/* case-independent? */
  */
 static struct cvec *
 allcases(v, pc)
-struct vars *v;
-pchr pc;
+    struct vars *v;			/* context */
+    pchr pc;				/* character to get case equivs of */
 {
-	struct cvec *cv;
-	chr c = (chr)pc;
-	chr lc, uc, tc;
+    struct cvec *cv;
+    chr c = (chr)pc;
+    chr lc, uc, tc;
 
-	lc = Tcl_UniCharToLower((chr)c);
-	uc = Tcl_UniCharToUpper((chr)c);
-	tc = Tcl_UniCharToTitle((chr)c);
+    lc = Tcl_UniCharToLower((chr)c);
+    uc = Tcl_UniCharToUpper((chr)c);
+    tc = Tcl_UniCharToTitle((chr)c);
 
-	if (tc != uc) {
-	    cv = getcvec(v, 3, 0, 0);
-	    addchr(cv, tc);
-	} else {
-	    cv = getcvec(v, 2, 0, 0);
-	}
-	addchr(cv, lc);
-	if (lc != uc) {
-	    addchr(cv, uc);
-	}
-	return cv;
+    if (tc != uc) {
+	cv = getcvec(v, 3, 0, 0);
+	addchr(cv, tc);
+    } else {
+	cv = getcvec(v, 2, 0, 0);
+    }
+    addchr(cv, lc);
+    if (lc != uc) {
+	addchr(cv, uc);
+    }
+    return cv;
 }
 
 /*
@@ -942,13 +959,12 @@ pchr pc;
  * stop at embedded NULs!
  ^ static int cmp(CONST chr *, CONST chr *, size_t);
  */
-static int			/* 0 for equal, nonzero for unequal */
+static int				/* 0 for equal, nonzero for unequal */
 cmp(x, y, len)
-CONST chr *x;
-CONST chr *y;
-size_t len;			/* exact length of comparison */
+    CONST chr *x, *y;			/* strings to compare */
+    size_t len;				/* exact length of comparison */
 {
-	return memcmp(VS(x), VS(y), len*sizeof(chr));
+    return memcmp(VS(x), VS(y), len*sizeof(chr));
 }
 
 /*
@@ -959,14 +975,15 @@ size_t len;			/* exact length of comparison */
  * stop at embedded NULs!
  ^ static int casecmp(CONST chr *, CONST chr *, size_t);
  */
-static int			/* 0 for equal, nonzero for unequal */
+static int				/* 0 for equal, nonzero for unequal */
 casecmp(x, y, len)
-CONST chr *x;
-CONST chr *y;
-size_t len;			/* exact length of comparison */
+    CONST chr *x, *y;			/* strings to compare */
+    size_t len;				/* exact length of comparison */
 {
-    for ( ; len > 0; len--, x++, y++)
-	if ((*x != *y) && (Tcl_UniCharToLower(*x) != Tcl_UniCharToLower(*y)))
+    for (; len > 0; len--, x++, y++) {
+	if ((*x!=*y) && (Tcl_UniCharToLower(*x) != Tcl_UniCharToLower(*y))) {
 	    return 1;
+	}
+    }
     return 0;
 }

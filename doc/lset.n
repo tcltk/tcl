@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: lset.n,v 1.2.4.1 2002/02/05 02:21:58 wolfsuit Exp $
+'\" RCS: @(#) $Id: lset.n,v 1.2.4.2 2002/08/20 20:25:24 das Exp $
 '\" 
 .so man.macros
 .TH lset n 8.4 Tcl "Tcl Built-In Commands"
@@ -23,7 +23,7 @@ It also accepts zero or more \fIindices\fP into
 the list.  The indices may be presented either consecutively on the
 command line, or grouped in a
 Tcl list and presented as a single argument.
-Finally, it acccepts a new value for an element of \fIlist\fP.
+Finally, it accepts a new value for an element of \fIlist\fP.
 .PP
 If no indices are presented, the command takes the form:
 .CS
@@ -76,7 +76,8 @@ of a list.  If an index is outside the permitted range, an error is reported.
 .SH EXAMPLES
 In each of these examples, the initial value of \fIx\fP is:
 .CS
-{a b c} {d e f} {g h i}
+set x [list [list a b c] [list d e f] [list g h i]]
+  => {a b c} {d e f} {g h i}
 .CE
 The indicated return value also becomes the new value of \fIx\fP.
 .CS
@@ -92,7 +93,9 @@ lset x {2 3} j
 .CE
 In the following examples, the initial value of \fIx\fP is:
 .CS
-{{a b} {c d}} {{e f} {g h}}
+set x [list [list [list a b] [list c d]] \e
+            [list [list e f] [list g h]]]
+ => {{a b} {c d}} {{e f} {g h}}
 .CE
 The indicated return value also becomes the new value of \fIx\fP.
 .CS
@@ -105,4 +108,3 @@ lsort(n), lrange(n), lreplace(n)
 
 .SH KEYWORDS
 element, index, list, replace, set
-.VE

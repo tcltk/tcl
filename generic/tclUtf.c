@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUtf.c,v 1.17.4.2 2002/06/10 05:33:13 wolfsuit Exp $
+ * RCS: @(#) $Id: tclUtf.c,v 1.17.4.3 2002/08/20 20:25:26 das Exp $
  */
 
 #include "tclInt.h"
@@ -61,8 +61,8 @@
  * The following structures are used when mapping between Unicode (UCS-2)
  * and UTF-8.
  */
- 
-CONST unsigned char totalBytes[256] = {
+
+static CONST unsigned char totalBytes[256] = {
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
@@ -778,129 +778,19 @@ Tcl_UtfBackslash(src, readPtr, dst)
     char *dst;			/* Filled with the bytes represented by the
 				 * backslash sequence. */
 {
-    register CONST char *p = src+1;
-    Tcl_UniChar result;
-    int count, n;
-    char buf[TCL_UTF_MAX];
+#define LINE_LENGTH 128
+    int numRead;
+    int result;
 
-    if (dst == NULL) {
-	dst = buf;
+    result = TclParseBackslash(src, LINE_LENGTH, &numRead, dst);
+    if (numRead == LINE_LENGTH) {
+	/* We ate a whole line.  Pay the price of a strlen() */
+	result = TclParseBackslash(src, (int)strlen(src), &numRead, dst);
     }
-
-    count = 2;
-    switch (*p) {
-	/*
-         * Note: in the conversions below, use absolute values (e.g.,
-         * 0xa) rather than symbolic values (e.g. \n) that get converted
-         * by the compiler.  It's possible that compilers on some
-         * platforms will do the symbolic conversions differently, which
-         * could result in non-portable Tcl scripts.
-         */
-
-        case 'a':
-            result = 0x7;
-            break;
-        case 'b':
-            result = 0x8;
-            break;
-        case 'f':
-            result = 0xc;
-            break;
-        case 'n':
-            result = 0xa;
-            break;
-        case 'r':
-            result = 0xd;
-            break;
-        case 't':
-            result = 0x9;
-            break;
-        case 'v':
-            result = 0xb;
-            break;
-        case 'x':
-            if (isxdigit(UCHAR(p[1]))) { /* INTL: digit */
-                char *end;
-
-                result = (unsigned char) strtoul(p+1, &end, 16);
-                count = end - src;
-            } else {
-                count = 2;
-                result = 'x';
-            }
-            break;
-	case 'u':
-	    result = 0;
-	    for (count = 0; count < 4; count++) {
-		p++;
-		if (!isxdigit(UCHAR(*p))) { /* INTL: digit */
-		    break;
-		}
-		n = *p - '0';
-		if (n > 9) {
-		    n = n + '0' + 10 - 'A';
-		}
-		if (n > 16) {
-		    n = n + 'A' - 'a';
-		}
-		result = (result << 4) + n;
-	    }
-	    if (count == 0) {
-		result = 'u';
-	    }
-	    count += 2;
-	    break;
-		    
-        case '\n':
-            do {
-                p++;
-            } while ((*p == ' ') || (*p == '\t'));
-            result = ' ';
-            count = p - src;
-            break;
-        case 0:
-            result = '\\';
-            count = 1;
-            break;
-	default:
-	    /*
-	     * Check for an octal number \oo?o?
-	     */
-	    if (isdigit(UCHAR(*p)) && (UCHAR(*p) < '8')) { /* INTL: digit */
-		result = (unsigned char)(*p - '0');
-		p++;
-		if (!isdigit(UCHAR(*p)) || (UCHAR(*p) >= '8')) { /* INTL: digit */
-		    break;
-		}
-		count = 3;
-		result = (unsigned char)((result << 3) + (*p - '0'));
-		p++;
-		if (!isdigit(UCHAR(*p)) || (UCHAR(*p) >= '8')) { /* INTL: digit */
-		    break;
-		}
-		count = 4;
-		result = (unsigned char)((result << 3) + (*p - '0'));
-		break;
-	    }
-	    if (UCHAR(*p) < UNICODE_SELF) {
-		result = *p;
-		count = 2;
-	    } else {
-		/*
-		 * We have to convert here because the user has put a
-		 * backslash in front of a multi-byte utf-8 character.
-		 * While this means nothing special, we shouldn't break up
-		 * a correct utf-8 character. [Bug #217987] test subst-3.2
-		 */
-		count = Tcl_UtfToUniChar(p, &result) + 1; /* +1 for '\' */
-	    }
-	    break;
-    }
-
     if (readPtr != NULL) {
-	*readPtr = count;
+	*readPtr = numRead;
     }
-    return Tcl_UniCharToUtf((int) result, dst);
+    return result;
 }
 
 /*

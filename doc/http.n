@@ -5,14 +5,14 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: http.n,v 1.14.8.1 2002/06/10 05:33:08 wolfsuit Exp $
+'\" RCS: @(#) $Id: http.n,v 1.14.8.2 2002/08/20 20:25:24 das Exp $
 '\" 
 .so man.macros
-.TH "Http" n 8.3 Tcl "Tcl Built-In Commands"
+.TH "http" n 2.4 http "Tcl Bundled Packages"
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
-Http \- Client-side implementation of the HTTP/1.0 protocol.
+http \- Client-side implementation of the HTTP/1.0 protocol.
 .SH SYNOPSIS
 \fBpackage require http ?2.4?\fR
 .sp
@@ -52,7 +52,7 @@ protocol.  The package implements the GET, POST, and HEAD operations
 of HTTP/1.0.  It allows configuration of a proxy host to get through
 firewalls.  The package is compatible with the \fBSafesock\fR security
 policy, so it can be used by untrusted applets to do URL fetching from
-a restricted set of hosts. This package can be extened to support
+a restricted set of hosts. This package can be extended to support
 additional HTTP transport protocols, such as HTTPS, by providing
 a custom \fBsocket\fR command, via \fBhttp::register\fR.
 .PP
@@ -110,7 +110,7 @@ non-empty.
 .TP
 \fB\-useragent\fP \fIstring\fP
 The value of the User-Agent header in the HTTP request.  The default
-is \fB"Tcl http client package 2.2."\fR
+is \fB"Tcl http client package 2.4."\fR
 .RE
 .TP
 \fB::http::geturl\fP \fIurl\fP ?\fIoptions\fP? 
@@ -352,7 +352,7 @@ HTTP reply headers or data, no exception is thrown.  This is because
 after writing the HTTP headers, \fB::http::geturl\fP returns, and the
 rest of the HTTP transaction occurs in the background.  The command
 callback can check if any error occurred during the read by calling
-\fB::http::status\fP to check the status and if it's \fIerror\fP,
+\fB::http::status\fP to check the status and if its \fIerror\fP,
 calling \fB::http::error\fP to get the error message.
 .PP
 Alternatively, if the main program flow reaches a point where it needs

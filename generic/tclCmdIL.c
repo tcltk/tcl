@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.35.2.2 2002/06/10 05:33:10 wolfsuit Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.35.2.3 2002/08/20 20:25:25 das Exp $
  */
 
 #include "tclInt.h"
@@ -1387,7 +1387,8 @@ AppendLocals(interp, listPtr, pattern, includeLinks)
 	 * Skip nameless (temporary) variables and undefined variables
 	 */
 
-	if (!TclIsVarTemporary(localPtr) && !TclIsVarUndefined(varPtr)) {
+	if (!TclIsVarTemporary(localPtr) && !TclIsVarUndefined(varPtr)
+	        && (includeLinks || !TclIsVarLink(varPtr))) {
 	    varName = varPtr->name;
 	    if ((pattern == NULL) || Tcl_StringMatch(varName, pattern)) {
 		Tcl_ListObjAppendElement(interp, listPtr,

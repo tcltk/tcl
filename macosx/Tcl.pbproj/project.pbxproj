@@ -6,7 +6,7 @@
 	objectVersion = 38;
 	objects = {
 		00530A0D0173C8270ACA28DC = {
-			buildActionMask = 2147483647;
+			buildActionMask = 12;
 			files = (
 			);
 			generatedFileNames = (
@@ -14,12 +14,11 @@
 			isa = PBXShellScriptBuildPhase;
 			neededFileNames = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "cp \"${OBJROOT}/${PRODUCT_NAME}\" \"${SYMROOT}/${PRODUCT_NAME}.${WRAPPER_EXTENSION}/Versions/${FRAMEWORK_VERSION}\"";
+			shellScript = "# install to ${INSTALL_ROOT} with optional stripping\ncd ${TEMP_DIR}/..\nif test \"${INSTALL_STRIP}\" = \"YES\"; then\nexport INSTALL_PROGRAM='${INSTALL} ${INSTALL_STRIP_PROGRAM}'\nexport INSTALL_LIBRARY='${INSTALL} ${INSTALL_STRIP_LIBRARY}'\nelse\nexport INSTALL_PROGRAM='${INSTALL}'\nexport INSTALL_LIBRARY='${INSTALL}'\nfi\ngnumake install-binaries install-libraries TCL_LIBRARY=\"@TCL_IN_FRAMEWORK@\" INSTALL_ROOT=${INSTALL_ROOT} SCRIPT_INSTALL_DIR=${INSTALL_ROOT}${LIBDIR}/Resources/Scripts INSTALL_PROGRAM=\"${INSTALL_PROGRAM}\" INSTALL_LIBRARY=\"${INSTALL_LIBRARY}\"";
 		};
 		00530A0E0173CC960ACA28DC = {
-			buildActionMask = 2147483647;
+			buildActionMask = 12;
 			files = (
 			);
 			generatedFileNames = (
@@ -27,9 +26,8 @@
 			isa = PBXShellScriptBuildPhase;
 			neededFileNames = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "cp \"${OBJROOT}/tclConfig.sh\" \"${SYMROOT}/${PRODUCT_NAME}.${WRAPPER_EXTENSION}/Versions/${FRAMEWORK_VERSION}/Headers\"";
+			shellScript = "# fixup Framework structure\ncd ${INSTALL_ROOT}${LIBDIR}\nln -fs Versions/Current/Headers ../..\nmv -f tclConfig.sh Resources\nif test \"${INSTALL_STRIP}\" = \"NO\"; then\n\t# assume this is a Development build, keep copy of debug library\n\t# so that Deployment build can be installed alongside subsequently\n\tcp -f ${PRODUCT_NAME} ${PRODUCT_NAME}_debug\nfi";
 		};
 		00E2F845016E82EB0ACA28DC = {
 			buildStyles = (
@@ -63,8 +61,8 @@
 			buildRules = (
 			);
 			buildSettings = {
-				COPY_PHASE_STRIP = NO;
-				STRIP_BY_HAND = NO;
+				EXTRA_CONFIGURE_FLAGS = "--enable-symbols";
+				INSTALL_STRIP = NO;
 			};
 			isa = PBXBuildStyle;
 			name = Development;
@@ -73,9 +71,7 @@
 			buildRules = (
 			);
 			buildSettings = {
-				CFLAGS = "-Os";
-				COPY_PHASE_STRIP = NO;
-				STRIP_BY_HAND = YES;
+				INSTALL_STRIP = YES;
 			};
 			isa = PBXBuildStyle;
 			name = Deployment;
@@ -89,20 +85,18 @@
 			refType = 4;
 		};
 		00E2F84B016E8A830ACA28DC = {
-			buildArgumentsString = "$SRCROOT/../unix/configure --enable-threads=yes --enable-shared=yes --enable-symbols=no --enable-framework=yes --prefix=/Library/Frameworks";
+			buildArgumentsString = "-c \"${SRCROOT}/../unix/configure --prefix=/usr --mandir=/usr/share/man --libdir=${LIBDIR} --includedir=${LIBDIR}/Headers --enable-threads --enable-framework ${EXTRA_CONFIGURE_FLAGS};\\\nmkdir -p Tcl.framework; ln -fs ../Tcl Tcl.framework/Tcl\"";
 			buildPhases = (
 			);
 			buildSettings = {
-				DSTROOT = /usr/local/lib;
-				OTHER_CFLAGS = "";
-				OTHER_LDFLAGS = "";
-				OTHER_REZFLAGS = "";
+				EXTRA_CONFIGURE_FLAGS = "";
+				FRAMEWORK_VERSION = 8.4;
+				INSTALL_PATH = /Library/Frameworks;
+				LIBDIR = "/Library/Frameworks/Tcl.framework/Versions/${FRAMEWORK_VERSION}";
 				PRODUCT_NAME = Configure;
-				SECTORDER_FLAGS = "";
-				WARNING_CFLAGS = "-Wmost -Wno-four-char-constants -Wno-unknown-pragmas";
 			};
 			buildToolPath = /bin/sh;
-			buildWorkingDirectory = $OBJROOT;
+			buildWorkingDirectory = "${TEMP_DIR}/..";
 			dependencies = (
 			);
 			isa = PBXLegacyTarget;
@@ -114,23 +108,18 @@
 			shouldUseHeadermap = 0;
 		};
 		00E2F84C016E8B780ACA28DC = {
-			buildArgumentsString = "Tcl libtclstub${FRAMEWORK_VERSION}.a CFLAGS=\"${CFLAGS}\" SHLIB_LD=\"${SHLIB_LD}\" TCL_LIBRARY=\"@TCL_IN_FRAMEWORK@\"";
+			buildArgumentsString = "TCL_LIBRARY=\"@TCL_IN_FRAMEWORK@\" ${EXTRA_MAKE_FLAGS}";
 			buildPhases = (
 			);
 			buildSettings = {
-				CFLAGS = "-g";
-				DSTROOT = /Library;
+				EXTRA_MAKE_FLAGS = "";
 				FRAMEWORK_VERSION = 8.4;
-				OTHER_CFLAGS = "";
-				OTHER_LDFLAGS = "";
-				OTHER_REZFLAGS = "";
+				INSTALL_PATH = /Library/Frameworks;
+				LIBDIR = "/Library/Frameworks/Tcl.framework/Versions/${FRAMEWORK_VERSION}";
 				PRODUCT_NAME = Tcl;
-				SECTORDER_FLAGS = "";
-				SHLIB_LD = "cc -framework CoreFoundation -dynamiclib -seg1addr 0xb0000 -prebind -install_name /Library/Frameworks/Tcl.framework/Versions/${FRAMEWORK_VERSION}/Tcl";
-				WARNING_CFLAGS = "-Wmost -Wno-four-char-constants -Wno-unknown-pragmas";
 			};
 			buildToolPath = /usr/bin/gnumake;
-			buildWorkingDirectory = $OBJROOT;
+			buildWorkingDirectory = "${TEMP_DIR}/..";
 			dependencies = (
 			);
 			isa = PBXLegacyTarget;
@@ -152,28 +141,18 @@
 				F50DC367017033D701DC9062,
 				F50DC3680170344801DC9062,
 				00E2F84F016E92110ACA28DC,
+				F5BE9BBF02FB5974016F146B,
 				00530A0D0173C8270ACA28DC,
 				00530A0E0173CC960ACA28DC,
-				F5C1D51801B8730B01DC9062,
-				F5F2500E016ED0E001DC9062,
-				F56570CE0172204201DC9062,
 				F59AE5E3017AC67A01DC9062,
 			);
 			buildSettings = {
-				DYLIB_COMPATIBILITY_VERSION = 8.4;
-				DYLIB_CURRENT_VERSION = 8.4;
+				DSTROOT = "${TEMP_DIR}";
+				EXTRA_MAKE_INSTALL_FLAGS = "";
 				FRAMEWORK_VERSION = 8.4;
 				INSTALL_PATH = /Library/Frameworks;
-				LIBRARY_SEARCH_PATHS = "$(OBJROOT)/Tcl.build";
-				OPTIMIZATION_CFLAGS = "-O0";
-				OTHER_CFLAGS = "";
-				OTHER_LDFLAGS = "";
-				OTHER_LIBTOOL_FLAGS = "";
-				OTHER_REZFLAGS = "";
-				PRINCIPAL_CLASS = "";
+				LIBDIR = "/Library/Frameworks/Tcl.framework/Versions/${FRAMEWORK_VERSION}";
 				PRODUCT_NAME = Tcl;
-				SECTORDER_FLAGS = "";
-				WARNING_CFLAGS = "-Wmost -Wno-four-char-constants -Wno-unknown-pragmas";
 				WRAPPER_EXTENSION = framework;
 			};
 			dependencies = (
@@ -200,15 +179,15 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>Tcl Library 8.4a4</string>
+	<string>Tcl Library 8.4b2</string>
 	<key>CFBundlePackageType</key>
 	<string>FMWK</string>
 	<key>CFBundleShortVersionString</key>
-	<string>libtcl8.4a4</string>
+	<string>libtcl8.4b2</string>
 	<key>CFBundleSignature</key>
 	<string>Tcl </string>
 	<key>CFBundleVersion</key>
-	<string>8.4a4</string>
+	<string>8.4b2</string>
 </dict>
 </plist>
 ";
@@ -217,23 +196,8 @@
 		00E2F84F016E92110ACA28DC = {
 			buildActionMask = 2147483647;
 			files = (
-				F5F24F79016ECAA401DC9062,
-				F5F24F7A016ECAA401DC9062,
-				F5F24F7B016ECAA401DC9062,
-				F5F24F7C016ECAA401DC9062,
-				F5F24F7D016ECAA401DC9062,
-				F5F24F7E016ECAA401DC9062,
-				F5F24F7F016ECAA401DC9062,
-				F5F24F80016ECAA401DC9062,
-				F5F24F81016ECAA401DC9062,
-				F5F24F82016ECAA401DC9062,
-				F5F24F83016ECAA401DC9062,
-				F5F24F84016ECAA401DC9062,
-				F5F24F85016ECAA401DC9062,
-				F5F24F86016ECAA401DC9062,
 			);
 			isa = PBXHeadersBuildPhase;
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		00E2F854016E922C0ACA28DC = {
 			children = (
@@ -396,7 +360,6 @@
 			children = (
 				F5F24FD8016ECC0F01DC9062,
 				F5F24FD9016ECC0F01DC9062,
-				F5F24FDA016ECC0F01DC9062,
 				F5F24FDB016ECC0F01DC9062,
 				F5F24FDC016ECC0F01DC9062,
 				F5F24FDD016ECC0F01DC9062,
@@ -463,37 +426,21 @@
 			files = (
 			);
 			isa = PBXFrameworksBuildPhase;
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		F50DC3680170344801DC9062 = {
 			buildActionMask = 2147483647;
 			files = (
 			);
 			isa = PBXResourcesBuildPhase;
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		F50DC36A01703B7301DC9062 = {
 			buildActionMask = 2147483647;
 			files = (
 			);
 			isa = PBXSourcesBuildPhase;
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		F56570CE0172204201DC9062 = {
-			buildActionMask = 2147483647;
-			files = (
-			);
-			generatedFileNames = (
-			);
-			isa = PBXShellScriptBuildPhase;
-			neededFileNames = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "rm -rf \"${SYMROOT}/${PRODUCT_NAME}.${WRAPPER_EXTENSION}/Versions/A\"";
 		};
 		F59AE5E3017AC67A01DC9062 = {
-			buildActionMask = 2147483647;
+			buildActionMask = 8;
 			files = (
 			);
 			generatedFileNames = (
@@ -501,16 +448,15 @@
 			isa = PBXShellScriptBuildPhase;
 			neededFileNames = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "if test \"${STRIP_BY_HAND}\" = \"YES\"; then \n    strip -x \"${SYMROOT}/${PRODUCT_NAME}.${WRAPPER_EXTENSION}/Versions/${FRAMEWORK_VERSION}/${PRODUCT_NAME}\"\nfi";
+			shellScript = "# build html documentation\ncd ${TEMP_DIR}/..\nmake html DISTDIR=${INSTALL_ROOT}${LIBDIR}/Resources/English.lproj/Documentation/Reference\ncd ${INSTALL_ROOT}${LIBDIR}/Resources/English.lproj/Documentation/Reference\nln -fs contents.htm html/index.html\nrm -f  ${PRODUCT_NAME}; ln -fs html ${PRODUCT_NAME}";
 		};
 		F5A1836F018242A501DC9062 = {
 			isa = PBXFileReference;
 			path = tclMacOSXBundle.c;
 			refType = 4;
 		};
-		F5C1D51801B8730B01DC9062 = {
+		F5BE9BBF02FB5974016F146B = {
 			buildActionMask = 2147483647;
 			files = (
 			);
@@ -519,9 +465,8 @@
 			isa = PBXShellScriptBuildPhase;
 			neededFileNames = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "cp \"${OBJROOT}/libtclstub${FRAMEWORK_VERSION}.a\" \"${SYMROOT}/${PRODUCT_NAME}.${WRAPPER_EXTENSION}/Versions/${FRAMEWORK_VERSION}\"";
+			shellScript = "# symolic link hackery to enable 'make install INSTALL_ROOT=${TEMP_DIR}'\n# to build Tcl.framework and tclsh in ${SYMROOT}\ncd ${TEMP_DIR}\nmkdir -p Library; rm -f Library/Frameworks; ln -fs ${SYMROOT} Library/Frameworks\nmkdir -p usr; rm -f usr/bin; ln -fs ${SYMROOT} usr/bin";
 		};
 		F5C88655017D604601DC9062 = {
 			children = (
@@ -536,20 +481,20 @@
 		F5C88656017D604601DC9062 = {
 			isa = PBXFileReference;
 			name = genStubs.tcl;
-			path = /Volumes/CodeBits/jingham/Tcl/source/tcl/tools/genStubs.tcl;
-			refType = 0;
+			path = ../tools/genStubs.tcl;
+			refType = 2;
 		};
 		F5C88657017D60C901DC9062 = {
 			isa = PBXFileReference;
 			name = tcl.decls;
-			path = /Volumes/CodeBits/jingham/Tcl/source/tcl/generic/tcl.decls;
-			refType = 0;
+			path = ../generic/tcl.decls;
+			refType = 2;
 		};
 		F5C88658017D60C901DC9062 = {
 			isa = PBXFileReference;
 			name = tclInt.decls;
-			path = /Volumes/CodeBits/jingham/Tcl/source/tcl/generic/tclInt.decls;
-			refType = 0;
+			path = ../generic/tclInt.decls;
+			refType = 2;
 		};
 		F5F24F6B016ECAA401DC9062 = {
 			isa = PBXFileReference;
@@ -634,108 +579,6 @@
 			name = tclRegexp.h;
 			path = ../generic/tclRegexp.h;
 			refType = 2;
-		};
-		F5F24F79016ECAA401DC9062 = {
-			fileRef = F5F24F6B016ECAA401DC9062;
-			isa = PBXBuildFile;
-			settings = {
-			};
-		};
-		F5F24F7A016ECAA401DC9062 = {
-			fileRef = F5F24F6C016ECAA401DC9062;
-			isa = PBXBuildFile;
-			settings = {
-			};
-		};
-		F5F24F7B016ECAA401DC9062 = {
-			fileRef = F5F24F6D016ECAA401DC9062;
-			isa = PBXBuildFile;
-			settings = {
-			};
-		};
-		F5F24F7C016ECAA401DC9062 = {
-			fileRef = F5F24F6E016ECAA401DC9062;
-			isa = PBXBuildFile;
-			settings = {
-				ATTRIBUTES = (
-					Public,
-				);
-			};
-		};
-		F5F24F7D016ECAA401DC9062 = {
-			fileRef = F5F24F6F016ECAA401DC9062;
-			isa = PBXBuildFile;
-			settings = {
-			};
-		};
-		F5F24F7E016ECAA401DC9062 = {
-			fileRef = F5F24F70016ECAA401DC9062;
-			isa = PBXBuildFile;
-			settings = {
-				ATTRIBUTES = (
-					Public,
-				);
-			};
-		};
-		F5F24F7F016ECAA401DC9062 = {
-			fileRef = F5F24F71016ECAA401DC9062;
-			isa = PBXBuildFile;
-			settings = {
-			};
-		};
-		F5F24F80016ECAA401DC9062 = {
-			fileRef = F5F24F72016ECAA401DC9062;
-			isa = PBXBuildFile;
-			settings = {
-				ATTRIBUTES = (
-					Private,
-				);
-			};
-		};
-		F5F24F81016ECAA401DC9062 = {
-			fileRef = F5F24F73016ECAA401DC9062;
-			isa = PBXBuildFile;
-			settings = {
-				ATTRIBUTES = (
-					Private,
-				);
-			};
-		};
-		F5F24F82016ECAA401DC9062 = {
-			fileRef = F5F24F74016ECAA401DC9062;
-			isa = PBXBuildFile;
-			settings = {
-				ATTRIBUTES = (
-					Private,
-				);
-			};
-		};
-		F5F24F83016ECAA401DC9062 = {
-			fileRef = F5F24F75016ECAA401DC9062;
-			isa = PBXBuildFile;
-			settings = {
-			};
-		};
-		F5F24F84016ECAA401DC9062 = {
-			fileRef = F5F24F76016ECAA401DC9062;
-			isa = PBXBuildFile;
-			settings = {
-			};
-		};
-		F5F24F85016ECAA401DC9062 = {
-			fileRef = F5F24F77016ECAA401DC9062;
-			isa = PBXBuildFile;
-			settings = {
-				ATTRIBUTES = (
-					Private,
-				);
-			};
-		};
-		F5F24F86016ECAA401DC9062 = {
-			fileRef = F5F24F78016ECAA401DC9062;
-			isa = PBXBuildFile;
-			settings = {
-			};
 		};
 		F5F24F87016ECAFC01DC9062 = {
 			isa = PBXFileReference;
@@ -1223,12 +1066,6 @@
 			path = ../unix/tclLoadDyld.c;
 			refType = 2;
 		};
-		F5F24FDA016ECC0F01DC9062 = {
-			isa = PBXFileReference;
-			name = tclMtherr.c;
-			path = ../unix/tclMtherr.c;
-			refType = 2;
-		};
 		F5F24FDB016ECC0F01DC9062 = {
 			isa = PBXFileReference;
 			name = tclUnixChan.c;
@@ -1311,31 +1148,20 @@
 			children = (
 				F5F24FEF016ED0DF01DC9062,
 				F5F24FF0016ED0DF01DC9062,
-				F5F24FF1016ED0DF01DC9062,
-				F5F24FF2016ED0DF01DC9062,
 				F5F24FF3016ED0DF01DC9062,
 				F5F24FF4016ED0DF01DC9062,
 				F5F24FF5016ED0DF01DC9062,
 				F5F24FF6016ED0DF01DC9062,
-				F5F24FF7016ED0DF01DC9062,
-				F5F24FF8016ED0DF01DC9062,
-				F5F24FF9016ED0DF01DC9062,
 				F5F24FFA016ED0DF01DC9062,
 				F5F24FFB016ED0DF01DC9062,
 				F5F24FFC016ED0DF01DC9062,
-				F5F24FFD016ED0DF01DC9062,
 				F5F24FFE016ED0DF01DC9062,
-				F5F24FFF016ED0DF01DC9062,
-				F5F25000016ED0DF01DC9062,
 				F5F25001016ED0DF01DC9062,
 				F5F25002016ED0DF01DC9062,
 				F5F25003016ED0DF01DC9062,
-				F5F25004016ED0DF01DC9062,
 				F5F25005016ED0DF01DC9062,
-				F5F25006016ED0DF01DC9062,
 				F5F25007016ED0DF01DC9062,
 				F5F25008016ED0DF01DC9062,
-				F5F25009016ED0DF01DC9062,
 				F5F2500A016ED0DF01DC9062,
 			);
 			isa = PBXGroup;
@@ -1353,20 +1179,6 @@
 			isa = PBXFolderReference;
 			name = dde;
 			path = ../library/dde;
-			refType = 2;
-		};
-		F5F24FF1016ED0DF01DC9062 = {
-			includeInIndex = 0;
-			isa = PBXFolderReference;
-			name = dde1.0;
-			path = ../library/dde1.0;
-			refType = 2;
-		};
-		F5F24FF2016ED0DF01DC9062 = {
-			includeInIndex = 0;
-			isa = PBXFolderReference;
-			name = dde1.1;
-			path = ../library/dde1.1;
 			refType = 2;
 		};
 		F5F24FF3016ED0DF01DC9062 = {
@@ -1396,27 +1208,6 @@
 			path = ../library/http1.0;
 			refType = 2;
 		};
-		F5F24FF7016ED0DF01DC9062 = {
-			includeInIndex = 0;
-			isa = PBXFolderReference;
-			name = http2.0;
-			path = ../library/http2.0;
-			refType = 2;
-		};
-		F5F24FF8016ED0DF01DC9062 = {
-			includeInIndex = 0;
-			isa = PBXFolderReference;
-			name = http2.1;
-			path = ../library/http2.1;
-			refType = 2;
-		};
-		F5F24FF9016ED0DF01DC9062 = {
-			includeInIndex = 0;
-			isa = PBXFolderReference;
-			name = http2.3;
-			path = ../library/http2.3;
-			refType = 2;
-		};
 		F5F24FFA016ED0DF01DC9062 = {
 			isa = PBXFileReference;
 			name = init.tcl;
@@ -1436,32 +1227,11 @@
 			path = ../library/msgcat;
 			refType = 2;
 		};
-		F5F24FFD016ED0DF01DC9062 = {
-			includeInIndex = 0;
-			isa = PBXFolderReference;
-			name = msgcat1.0;
-			path = ../library/msgcat1.0;
-			refType = 2;
-		};
 		F5F24FFE016ED0DF01DC9062 = {
 			includeInIndex = 0;
 			isa = PBXFolderReference;
 			name = opt;
 			path = ../library/opt;
-			refType = 2;
-		};
-		F5F24FFF016ED0DF01DC9062 = {
-			includeInIndex = 0;
-			isa = PBXFolderReference;
-			name = opt0.1;
-			path = ../library/opt0.1;
-			refType = 2;
-		};
-		F5F25000016ED0DF01DC9062 = {
-			includeInIndex = 0;
-			isa = PBXFolderReference;
-			name = opt0.4;
-			path = ../library/opt0.4;
 			refType = 2;
 		};
 		F5F25001016ED0DF01DC9062 = {
@@ -1483,24 +1253,10 @@
 			path = ../library/reg;
 			refType = 2;
 		};
-		F5F25004016ED0DF01DC9062 = {
-			includeInIndex = 0;
-			isa = PBXFolderReference;
-			name = reg1.0;
-			path = ../library/reg1.0;
-			refType = 2;
-		};
 		F5F25005016ED0DF01DC9062 = {
 			isa = PBXFileReference;
 			name = safe.tcl;
 			path = ../library/safe.tcl;
-			refType = 2;
-		};
-		F5F25006016ED0DF01DC9062 = {
-			includeInIndex = 0;
-			isa = PBXFolderReference;
-			name = struct1.0;
-			path = ../library/struct1.0;
 			refType = 2;
 		};
 		F5F25007016ED0DF01DC9062 = {
@@ -1516,139 +1272,11 @@
 			path = ../library/tcltest;
 			refType = 2;
 		};
-		F5F25009016ED0DF01DC9062 = {
-			includeInIndex = 0;
-			isa = PBXFolderReference;
-			name = tcltest1.0;
-			path = ../library/tcltest1.0;
-			refType = 2;
-		};
 		F5F2500A016ED0DF01DC9062 = {
 			isa = PBXFileReference;
 			name = word.tcl;
 			path = ../library/word.tcl;
 			refType = 2;
-		};
-		F5F2500E016ED0E001DC9062 = {
-			buildActionMask = 2147483647;
-			dstPath = "../../$(FRAMEWORK_VERSION)/Resources/Scripts";
-			dstSubfolderSpec = 7;
-			files = (
-				F5F2500F016ED0E001DC9062,
-				F5F25010016ED0E001DC9062,
-				F5F25013016ED0E001DC9062,
-				F5F25014016ED0E001DC9062,
-				F5F25015016ED0E001DC9062,
-				F5F2501A016ED0E001DC9062,
-				F5F2501B016ED0E001DC9062,
-				F5F2501C016ED0E001DC9062,
-				F5F2501E016ED0E001DC9062,
-				F5F25021016ED0E001DC9062,
-				F5F25022016ED0E001DC9062,
-				F5F25023016ED0E001DC9062,
-				F5F25025016ED0E001DC9062,
-				F5F25027016ED0E001DC9062,
-				F5F25028016ED0E001DC9062,
-				F5F2502A016ED0E001DC9062,
-			);
-			isa = PBXCopyFilesBuildPhase;
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		F5F2500F016ED0E001DC9062 = {
-			fileRef = F5F24FEF016ED0DF01DC9062;
-			isa = PBXBuildFile;
-			settings = {
-			};
-		};
-		F5F25010016ED0E001DC9062 = {
-			fileRef = F5F24FF0016ED0DF01DC9062;
-			isa = PBXBuildFile;
-			settings = {
-			};
-		};
-		F5F25013016ED0E001DC9062 = {
-			fileRef = F5F24FF3016ED0DF01DC9062;
-			isa = PBXBuildFile;
-			settings = {
-			};
-		};
-		F5F25014016ED0E001DC9062 = {
-			fileRef = F5F24FF4016ED0DF01DC9062;
-			isa = PBXBuildFile;
-			settings = {
-			};
-		};
-		F5F25015016ED0E001DC9062 = {
-			fileRef = F5F24FF5016ED0DF01DC9062;
-			isa = PBXBuildFile;
-			settings = {
-			};
-		};
-		F5F2501A016ED0E001DC9062 = {
-			fileRef = F5F24FFA016ED0DF01DC9062;
-			isa = PBXBuildFile;
-			settings = {
-			};
-		};
-		F5F2501B016ED0E001DC9062 = {
-			fileRef = F5F24FFB016ED0DF01DC9062;
-			isa = PBXBuildFile;
-			settings = {
-			};
-		};
-		F5F2501C016ED0E001DC9062 = {
-			fileRef = F5F24FFC016ED0DF01DC9062;
-			isa = PBXBuildFile;
-			settings = {
-			};
-		};
-		F5F2501E016ED0E001DC9062 = {
-			fileRef = F5F24FFE016ED0DF01DC9062;
-			isa = PBXBuildFile;
-			settings = {
-			};
-		};
-		F5F25021016ED0E001DC9062 = {
-			fileRef = F5F25001016ED0DF01DC9062;
-			isa = PBXBuildFile;
-			settings = {
-			};
-		};
-		F5F25022016ED0E001DC9062 = {
-			fileRef = F5F25002016ED0DF01DC9062;
-			isa = PBXBuildFile;
-			settings = {
-			};
-		};
-		F5F25023016ED0E001DC9062 = {
-			fileRef = F5F25003016ED0DF01DC9062;
-			isa = PBXBuildFile;
-			settings = {
-			};
-		};
-		F5F25025016ED0E001DC9062 = {
-			fileRef = F5F25005016ED0DF01DC9062;
-			isa = PBXBuildFile;
-			settings = {
-			};
-		};
-		F5F25027016ED0E001DC9062 = {
-			fileRef = F5F25007016ED0DF01DC9062;
-			isa = PBXBuildFile;
-			settings = {
-			};
-		};
-		F5F25028016ED0E001DC9062 = {
-			fileRef = F5F25008016ED0DF01DC9062;
-			isa = PBXBuildFile;
-			settings = {
-			};
-		};
-		F5F2502A016ED0E001DC9062 = {
-			fileRef = F5F2500A016ED0DF01DC9062;
-			isa = PBXBuildFile;
-			settings = {
-			};
 		};
 	};
 	rootObject = 00E2F845016E82EB0ACA28DC;

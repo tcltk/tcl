@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEvent.c,v 1.15.2.2 2002/06/10 05:33:11 wolfsuit Exp $
+ * RCS: @(#) $Id: tclEvent.c,v 1.15.2.3 2002/08/20 20:25:25 das Exp $
  */
 
 #include "tclInt.h"
@@ -111,8 +111,8 @@ static void		BgErrorDeleteProc _ANSI_ARGS_((ClientData clientData,
 			    Tcl_Interp *interp));
 static void		HandleBgErrors _ANSI_ARGS_((ClientData clientData));
 static char *		VwaitVarProc _ANSI_ARGS_((ClientData clientData,
-			    Tcl_Interp *interp, char *name1, CONST char *name2,
-			    int flags));
+			    Tcl_Interp *interp, CONST char *name1, 
+			    CONST char *name2, int flags));
 
 /*
  *----------------------------------------------------------------------
@@ -222,7 +222,7 @@ HandleBgErrors(clientData)
     ClientData clientData;	/* Pointer to ErrAssocData structure. */
 {
     Tcl_Interp *interp;
-    char *argv[2];
+    CONST char *argv[2];
     int code;
     BgError *errPtr;
     ErrAssocData *assocPtr = (ErrAssocData *) clientData;
@@ -1012,7 +1012,7 @@ static char *
 VwaitVarProc(clientData, interp, name1, name2, flags)
     ClientData clientData;	/* Pointer to integer to set to 1. */
     Tcl_Interp *interp;		/* Interpreter containing variable. */
-    char *name1;		/* Name of variable. */
+    CONST char *name1;		/* Name of variable. */
     CONST char *name2;		/* Second part of variable name. */
     int flags;			/* Information about what happened. */
 {

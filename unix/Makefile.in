@@ -5,9 +5,12 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.83.6.4 2002/06/10 05:33:17 wolfsuit Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.83.6.5 2002/08/20 20:25:29 das Exp $
 
 VERSION 		= @TCL_VERSION@
+MAJOR_VERSION		= @TCL_MAJOR_VERSION@
+MINOR_VERSION		= @TCL_MINOR_VERSION@
+PATCH_LEVEL		= @TCL_PATCH_LEVEL@
 
 #----------------------------------------------------------------
 # Things you can change to personalize the Makefile for your own
@@ -137,11 +140,11 @@ NOTIFY_OBJS = tclUnixNotfy.o
 MEM_DEBUG_FLAGS		=
 #MEM_DEBUG_FLAGS	= -DTCL_MEM_DEBUG
 
-# To enable support for stubs in Tcl.
-STUB_LIB_FILE		= @TCL_STUB_LIB_FILE@
-
 TCL_STUB_LIB_FILE	= @TCL_STUB_LIB_FILE@
 #TCL_STUB_LIB_FILE	= libtclstub.a
+
+# Generic stub lib name used in rules that apply to tcl and tk
+STUB_LIB_FILE		= ${TCL_STUB_LIB_FILE}
 
 TCL_STUB_LIB_FLAG	= @TCL_STUB_LIB_FLAG@
 #TCL_STUB_LIB_FLAG	= -ltclstub
@@ -190,11 +193,19 @@ TCL_EXE			= tclsh
 STLIB_LD		= @STLIB_LD@
 SHLIB_LD		= @SHLIB_LD@
 SHLIB_CFLAGS		= @SHLIB_CFLAGS@
-
+SHLIB_LD_FLAGS		= @SHLIB_LD_FLAGS@
+SHLIB_LD_LIBS		= @SHLIB_LD_LIBS@
+TCL_SHLIB_LD_EXTRAS = @TCL_SHLIB_LD_EXTRAS@
 SHLIB_SUFFIX		= @SHLIB_SUFFIX@
 #SHLIB_SUFFIX		=
 
-DLTEST_TARGETS		= dlpkgs
+DLTEST_TARGETS		= dltest.marker
+
+# Additional search flags needed to find the various shared libraries
+# at run-time.  The first symbol is for use when creating a binary
+# with cc, and the second is for use when running ld directly.
+CC_SEARCH_FLAGS	= @CC_SEARCH_FLAGS@
+LD_SEARCH_FLAGS	= @LD_SEARCH_FLAGS@
 
 # The following symbol is defined to "$(DLTEST_TARGETS)" if dynamic
 # loading is available;  this causes everything in the "dltest"
@@ -206,6 +217,9 @@ BUILD_DLTEST		= @BUILD_DLTEST@
 
 TCL_LIB_FILE		= @TCL_LIB_FILE@
 #TCL_LIB_FILE		= libtcl.a
+
+# Generic lib name used in rules that apply to tcl and tk
+LIB_FILE		= ${TCL_LIB_FILE}
 
 TCL_LIB_FLAG		= @TCL_LIB_FLAG@
 #TCL_LIB_FLAG		= -ltcl
@@ -231,7 +245,6 @@ COMPAT_DIR		= $(TOP_DIR)/compat
 TOOL_DIR		= $(TOP_DIR)/tools
 UNIX_DIR		= $(TOP_DIR)/unix
 MAC_OSX_DIR		= $(TOP_DIR)/macosx
-
 # Must be absolute because of the cd dltest $(DLTEST_DIR)/configure below.
 DLTEST_DIR		= @TCL_SRC_DIR@/unix/dltest
 # Must be absolute to so the corresponding tcltest's tcl_library is absolute.
@@ -239,6 +252,19 @@ TCL_BUILDTIME_LIBRARY	= @TCL_SRC_DIR@/library
 
 CC			= @CC@
 #CC			= purify -best-effort @CC@ -DPURIFY
+
+# Flags to be passed to mkLinks to control whether the manpages
+# should be compressed and linked with softlinks
+MKLINKS_FLAGS           = @MKLINKS_FLAGS@
+
+#----------------------------------------------------------------
+# The information below is usually usable as is.  The configure
+# script won't modify it and it only exists to make working
+# around selected rare system configurations easier.
+#----------------------------------------------------------------
+
+GDB			= gdb
+DDD			= ddd
 
 #----------------------------------------------------------------
 # The information below should be usable as is.  The configure
@@ -404,8 +430,8 @@ DL_SRCS = \
 	$(UNIX_DIR)/tclLoadOSF.c \
 	$(UNIX_DIR)/tclLoadShl.c
 
-MACOSX_SRCS =
-
+MACOSX_SRCS = \
+	$(MAC_OSX_DIR)/tclMacOSXBundle.c
 
 # Note: don't include DL_SRCS or MACOSX_SRCS in SRCS: most of those
 # files won't compile on the current machine, and they will cause
@@ -415,7 +441,7 @@ SRCS = $(GENERIC_SRCS) $(UNIX_SRCS) $(STUB_SRCS)
 
 all: binaries libraries doc
 
-binaries: ${TCL_LIB_FILE} $(TCL_STUB_LIB_FILE) $(TCL_BUILD_EXP_FILE) tclsh
+binaries: ${LIB_FILE} $(STUB_LIB_FILE) $(TCL_BUILD_EXP_FILE) tclsh
 
 libraries:
 
@@ -423,17 +449,13 @@ doc:
 
 # The following target is configured by autoconf to generate either
 # a shared library or non-shared library for Tcl.
-${TCL_LIB_FILE}: ${OBJS} ${STUB_LIB_FILE}
-	rm -f ${TCL_LIB_FILE}
+${LIB_FILE}: ${OBJS} ${STUB_LIB_FILE}
+	rm -f $@
 	@MAKE_LIB@
-	if test "x@DL_OBJS@" = "xtclLoadAout.o"; then \
-		$(RANLIB) ${TCL_LIB_FILE}; \
-	fi
 
 ${STUB_LIB_FILE}: ${STUB_LIB_OBJS}
-	rm -f ${STUB_LIB_FILE}
+	rm -f $@
 	@MAKE_STUB_LIB@
-	$(RANLIB) ${STUB_LIB_FILE}
 
 # Make target which outputs the list of the .o contained in the Tcl lib
 # usefull to build a single big shared library containing Tcl and other
@@ -449,7 +471,12 @@ objs: ${OBJS}
 
 tclsh: ${TCLSH_OBJS} ${TCL_LIB_FILE}
 	${CC} ${LDFLAGS} ${TCLSH_OBJS} @TCL_BUILD_LIB_SPEC@ ${LIBS} \
-		@TCL_LD_SEARCH_FLAGS@ -o tclsh
+		${CC_SEARCH_FLAGS} -o tclsh
+
+# Resetting the LIB_RUNTIME_DIR below is required so that
+# the generated tcltest executable gets the build directory
+# burned into its ld search path. This keeps tcltest from
+# picking up an already installed version of the Tcl library.
 
 # Resetting the LIB_RUNTIME_DIR below is required so that
 # the generated tcltest executable gets the build directory
@@ -461,7 +488,7 @@ tcltest: ${TCLTEST_OBJS} ${TCL_LIB_FILE} ${BUILD_DLTEST}
 
 tcltest-real:
 	${CC} ${LDFLAGS} ${TCLTEST_OBJS} @TCL_BUILD_LIB_SPEC@ ${LIBS} \
-		@TCL_LD_SEARCH_FLAGS@ -o tcltest
+		${CC_SEARCH_FLAGS} -o tcltest
 
 # Note, in the target below TCL_LIBRARY needs to be set or else
 # "make test" won't work in the case where the compilation directory
@@ -485,6 +512,16 @@ runtest: tcltest
 	TCL_LIBRARY="${TCL_BUILDTIME_LIBRARY}"; export TCL_LIBRARY; \
 	./tcltest
 
+# Useful target for running the test suite with an unwritable current
+# directory...
+ro-test: tcltest
+	LD_LIBRARY_PATH=`pwd`:${LD_LIBRARY_PATH}; export LD_LIBRARY_PATH; \
+	DYLD_LIBRARY_PATH=`pwd`:${DYLD_LIBRARY_PATH}; export DYLD_LIBRARY_PATH; \
+	LIBPATH=`pwd`:${LIBPATH}; export LIBPATH; \
+	SHLIB_PATH=`pwd`:${SHLIB_PATH}; export SHLIB_PATH; \
+	TCL_LIBRARY="${TCL_BUILDTIME_LIBRARY}"; export TCL_LIBRARY; \
+	echo 'exec chmod -w .;package require tcltest;tcltest::temporaryDirectory /tmp;source ../tests/all.tcl;exec chmod +w .' | ./tcltest
+
 # This target can be used to run tclsh from the build directory
 # via `make shell SCRIPT=/tmp/foo.tcl`
 shell: tclsh
@@ -496,11 +533,20 @@ shell: tclsh
 
 # This target can be used to run tclsh inside either gdb or insight
 gdb: tclsh
-	@echo "set env LD_LIBRARY_PATH=`pwd`:${LD_LIBRARY_PATH}" > gdb.run
+	@echo "set env @LD_LIBRARY_PATH_VAR@=`pwd`:${@LD_LIBRARY_PATH_VAR@}" > gdb.run
 	@echo "set env LIBPATH=`pwd`:${LIBPATH}" >> gdb.run
 	@echo "set env SHLIB_PATH=`pwd`:${SHLIB_PATH}" >> gdb.run
 	@echo "set env TCL_LIBRARY=${TCL_BUILDTIME_LIBRARY}" >> gdb.run
-	gdb ./tclsh --command=gdb.run
+	$(GDB) ./tclsh --command=gdb.run
+	rm gdb.run
+
+# This target can be used to run tclsh inside ddd
+ddd: tclsh
+	@echo "set env @LD_LIBRARY_PATH_VAR@=`pwd`:${@LD_LIBRARY_PATH_VAR@}" > gdb.run
+	@echo "set env LIBPATH=`pwd`:${LIBPATH}" >> gdb.run
+	@echo "set env SHLIB_PATH=`pwd`:${SHLIB_PATH}" >> gdb.run
+	@echo "set env TCL_LIBRARY=${TCL_BUILDTIME_LIBRARY}" >> gdb.run
+	$(DDD) -command=gdb.run ./tclsh
 	rm gdb.run
 
 # The following target outputs the name of the top-level source directory
@@ -529,12 +575,13 @@ gendate:
 	    <y.tab.c >$(GENERIC_DIR)/tclDate.c
 	rm y.tab.c
 
-# The following targets generate the shared libraries in dltest/ that
+# The following target generates the shared libraries in dltest/ that
 # are used for testing;  they are included as part of the "tcltest"
 # target (via the BUILD_DLTEST variable) if dynamic loading is supported
-# on this platform.
+# on this platform. The Makefile in the dltest subdirectory creates
+# the dltest.marker file in this directory after a successful build.
 
-dlpkgs:
+dltest.marker:
 	cd dltest ; $(MAKE)
 
 install: install-binaries install-libraries install-doc
@@ -561,12 +608,9 @@ install-binaries: binaries
 	@if test ! -x $(SRC_DIR)/install-sh; then \
 	    chmod +x $(SRC_DIR)/install-sh; \
 	    fi
-	@echo "Installing $(TCL_LIB_FILE) to $(LIB_INSTALL_DIR)/"
-	@$(INSTALL_LIBRARY) $(TCL_LIB_FILE) $(LIB_INSTALL_DIR)/$(TCL_LIB_FILE)
-	@if test "x@DL_OBJS@" = "xtclLoadAout.o"; then \
-	    (cd $(LIB_INSTALL_DIR); $(RANLIB) $(TCL_LIB_FILE)); \
-	    fi
-	@chmod 555 $(LIB_INSTALL_DIR)/$(TCL_LIB_FILE)
+	@echo "Installing $(LIB_FILE) to $(LIB_INSTALL_DIR)/"
+	@@INSTALL_LIB@
+	@chmod 555 $(LIB_INSTALL_DIR)/$(LIB_FILE)
 	@if test "$(TCL_BUILD_EXP_FILE)" != ""; then \
 	    echo "Installing $(TCL_EXP_FILE) to $(LIB_INSTALL_DIR)/"; \
 	    $(INSTALL_DATA) $(TCL_BUILD_EXP_FILE) \
@@ -576,11 +620,10 @@ install-binaries: binaries
 	@$(INSTALL_PROGRAM) tclsh $(BIN_INSTALL_DIR)/tclsh$(VERSION)
 	@echo "Installing tclConfig.sh to $(LIB_INSTALL_DIR)/"
 	@$(INSTALL_DATA) tclConfig.sh $(LIB_INSTALL_DIR)/tclConfig.sh
-	@if test "$(TCL_STUB_LIB_FILE)" != "" ; then \
-	    echo "Installing $(TCL_STUB_LIB_FILE) to $(LIB_INSTALL_DIR)/"; \
-	    $(INSTALL_LIBRARY) $(STUB_LIB_FILE) \
-			 $(LIB_INSTALL_DIR)/$(TCL_STUB_LIB_FILE); \
-	    fi
+	@if test "$(STUB_LIB_FILE)" != "" ; then \
+	    echo "Installing $(STUB_LIB_FILE) to $(LIB_INSTALL_DIR)/"; \
+	    @INSTALL_STUB_LIB@ ; \
+	fi
 
 install-libraries: libraries
 	@for i in $(INCLUDE_INSTALL_DIR) $(SCRIPT_INSTALL_DIR); \
@@ -592,7 +635,7 @@ install-libraries: libraries
 		else true; \
 		fi; \
 	    done;
-	@for i in http2.4 http1.0 opt0.4 encoding msgcat1.2 tcltest2.0; \
+	@for i in http2.4 http1.0 opt0.4 encoding msgcat1.3 tcltest2.2; \
 	    do \
 	    if [ ! -d $(SCRIPT_INSTALL_DIR)/$$i ] ; then \
 		echo "Making directory $(SCRIPT_INSTALL_DIR)/$$i"; \
@@ -630,15 +673,15 @@ install-libraries: libraries
 	    do \
 	    $(INSTALL_DATA) $$j $(SCRIPT_INSTALL_DIR)/opt0.4; \
 	    done;
-	@echo "Installing library msgcat1.2 directory";
+	@echo "Installing library msgcat1.3 directory";
 	@for j in $(TOP_DIR)/library/msgcat/*.tcl ; \
 	    do \
-	    $(INSTALL_DATA) $$j $(SCRIPT_INSTALL_DIR)/msgcat1.2; \
+	    $(INSTALL_DATA) $$j $(SCRIPT_INSTALL_DIR)/msgcat1.3; \
 	    done;
-	@echo "Installing library tcltest2.0 directory";
+	@echo "Installing library tcltest2.2 directory";
 	@for j in $(TOP_DIR)/library/tcltest/*.tcl ; \
 	    do \
-	    $(INSTALL_DATA) $$j $(SCRIPT_INSTALL_DIR)/tcltest2.0; \
+	    $(INSTALL_DATA) $$j $(SCRIPT_INSTALL_DIR)/tcltest2.2; \
 	    done;
 	@echo "Installing library encoding directory";
 	@for i in $(TOP_DIR)/library/encoding/*.enc ; do \
@@ -667,7 +710,7 @@ install-doc: doc
 	    chmod 444 $(MAN1_INSTALL_DIR)/$$i; \
 	    done;
 	@echo "Cross-linking top-level (.1) docs";
-	@$(UNIX_DIR)/mkLinks $(MAN1_INSTALL_DIR)
+	@$(UNIX_DIR)/mkLinks $(MKLINKS_FLAGS) $(MAN1_INSTALL_DIR)
 	@echo "Installing C API (.3) docs";
 	@cd $(TOP_DIR)/doc; for i in *.3; \
 	    do \
@@ -677,7 +720,7 @@ install-doc: doc
 	    chmod 444 $(MAN3_INSTALL_DIR)/$$i; \
 	    done;
 	@echo "Cross-linking C API (.3) docs";
-	@$(UNIX_DIR)/mkLinks $(MAN3_INSTALL_DIR)
+	@$(UNIX_DIR)/mkLinks $(MKLINKS_FLAGS) $(MAN3_INSTALL_DIR)
 	@echo "Installing command (.n) docs";
 	@cd $(TOP_DIR)/doc; for i in *.n; \
 	    do \
@@ -687,7 +730,7 @@ install-doc: doc
 	    chmod 444 $(MANN_INSTALL_DIR)/$$i; \
 	    done;
 	@echo "Cross-linking command (.n) docs";
-	@$(UNIX_DIR)/mkLinks $(MANN_INSTALL_DIR)
+	@$(UNIX_DIR)/mkLinks $(MKLINKS_FLAGS) $(MANN_INSTALL_DIR)
 
 Makefile: $(UNIX_DIR)/Makefile.in $(DLTEST_DIR)/Makefile.in
 	$(SHELL) config.status
@@ -1022,7 +1065,7 @@ xttest:  ${XTTEST_OBJS} ${GENERIC_OBJS} ${UNIX_OBJS} ${COMPAT_OBJS} \
 	@DL_OBJS@ ${BUILD_DLTEST}
 	${CC} ${XTTEST_OBJS} ${GENERIC_OBJS} ${UNIX_OBJS} ${COMPAT_OBJS} \
 		@DL_OBJS@ @TCL_BUILD_LIB_SPEC@ ${LIBS} \
-		@TCL_LD_SEARCH_FLAGS@ -L/usr/openwin/lib -lXt -o xttest
+		${CC_SEARCH_FLAGS} -L/usr/openwin/lib -lXt -o xttest
 
 tclXtNotify.o: $(UNIX_DIR)/tclXtNotify.c
 	$(CC) -c $(CC_SWITCHES) -I/usr/openwin/include \
@@ -1089,7 +1132,9 @@ tclStubLib.o: $(GENERIC_DIR)/tclStubLib.c
 
 $(GENERIC_DIR)/tclStubInit.c: $(GENERIC_DIR)/tcl.decls \
 		$(GENERIC_DIR)/tclInt.decls
-	@echo "Warning: run \"make genstubs\" to regenerate tclStubInit.c"
+	@echo "Warning: tclStubInit.c may be out of date."
+	@echo "Developers may want to run \"make genstubs\" to regenerate."
+	@echo "This warning can be safely ignored, do not report as a bug!"
 
 genstubs:
 	$(TCL_EXE) $(TOOL_DIR)/genStubs.tcl $(GENERIC_DIR) \
@@ -1172,8 +1217,8 @@ mklinks:
 #
 
 DISTROOT = /tmp/dist
-DISTNAME = tcl@TCL_VERSION@@TCL_PATCH_LEVEL@
-ZIPNAME	 = tcl@TCL_MAJOR_VERSION@@TCL_MINOR_VERSION@@TCL_PATCH_LEVEL@.zip
+DISTNAME = tcl${VERSION}${PATCH_LEVEL}
+ZIPNAME	 = tcl${MAJOR_VERSION}${MINOR_VERSION}${PATCH_LEVEL}.zip
 DISTDIR	 = $(DISTROOT)/$(DISTNAME)
 $(UNIX_DIR)/configure: $(UNIX_DIR)/configure.in
 	autoconf $(UNIX_DIR)/configure.in > $(UNIX_DIR)/configure
@@ -1223,9 +1268,6 @@ dist: $(UNIX_DIR)/configure mklinks
 	cp -p $(TOP_DIR)/tests/*.test $(TOP_DIR)/tests/README \
 		$(TOP_DIR)/tests/httpd $(TOP_DIR)/tests/*.tcl \
 		$(DISTDIR)/tests
-	mkdir $(DISTDIR)/tests/pkg
-	cp -p $(TOP_DIR)/license.terms $(DISTDIR)/tests/pkg
-	cp -p $(TOP_DIR)/tests/pkg/*.tcl $(DISTDIR)/tests/pkg
 	mkdir $(DISTDIR)/win
 	cp $(TOP_DIR)/win/Makefile.in $(DISTDIR)/win
 	cp $(TOP_DIR)/win/configure.in $(TOP_DIR)/win/configure \

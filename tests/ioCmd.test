@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: ioCmd.test,v 1.11.2.1 2002/06/10 05:33:16 wolfsuit Exp $
+# RCS: @(#) $Id: ioCmd.test,v 1.11.2.2 2002/08/20 20:25:28 das Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -21,8 +21,6 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 
 removeFile test1
 removeFile pipe
-
-set executable [list [info nameofexecutable]]
 
 test iocmd-1.1 {puts command} {
    list [catch {puts} msg] $msg
@@ -39,26 +37,29 @@ test iocmd-1.4 {puts command} {
 test iocmd-1.5 {puts command} {
    list [catch {puts stdin hello} msg] $msg
 } {1 {channel "stdin" wasn't opened for writing}}
+
+set path(test1) [makeFile {} test1]
+
 test iocmd-1.6 {puts command} {
-    set f [open test1 w]
+    set f [open $path(test1) w]
     fconfigure $f -translation lf -eofchar {}
     puts -nonewline $f foobar
     close $f
-    file size test1
+    file size $path(test1)
 } 6
 test iocmd-1.7 {puts command} {
-    set f [open test1 w]
+    set f [open $path(test1) w]
     fconfigure $f -translation lf -eofchar {}
     puts $f foobar
     close $f
-    file size test1
+    file size $path(test1)
 } 7
 test iocmd-1.8 {puts command} {
-    set f [open test1 w]
+    set f [open $path(test1) w]
     fconfigure $f -translation lf -eofchar {}
     puts -nonewline $f [binary format a4a5 foo bar]
     close $f
-    file size test1
+    file size $path(test1)
 } 9
 
 
@@ -88,10 +89,10 @@ test iocmd-3.4 {gets command} {
    list [catch {gets stdout} msg] $msg
 } {1 {channel "stdout" wasn't opened for reading}}
 test iocmd-3.5 {gets command} {
-    set f [open test1 w]
+    set f [open $path(test1) w]
     puts $f [binary format a4a5 foo bar]
     close $f
-    set f [open test1 r]
+    set f [open $path(test1) r]
     set result [gets $f]
     close $f
     set x foo\x00
@@ -122,11 +123,11 @@ test iocmd-4.7 {read command} {
 } {1 {channel "stdout" wasn't opened for reading}}
 test iocmd-4.8 {read command with incorrect combination of arguments} {
     removeFile test1
-    set f [open test1 w]
+    set f [open $path(test1) w]
     puts $f "Two lines: this one"
     puts $f "and this one"
     close $f
-    set f [open test1]
+    set f [open $path(test1)]
     set x [list [catch {read -nonewline $f 20 z} msg] $msg $errorCode]
     close $f
     set x
@@ -137,15 +138,18 @@ test iocmd-4.9 {read command} {
 test iocmd-4.10 {read command} {
     list [catch {read file107} msg] $msg $errorCode
 } {1 {can not find channel named "file107"} NONE}
+
+set path(test3) [makeFile {} test3]
+
 test iocmd-4.11 {read command} {
-    set f [open test3 w]
+    set f [open $path(test3) w]
     set x [list [catch {read $f} msg] $msg $errorCode]
     close $f
     string compare [string tolower $x] \
 	[list 1 [format "channel \"%s\" wasn't opened for reading" $f] none]
 } 0
 test iocmd-4.12 {read command} {
-    set f [open test1]
+    set f [open $path(test1)]
     set x [list [catch {read $f 12z} msg] $msg $errorCode]
     close $f
     set x
@@ -195,7 +199,7 @@ test iocmd-8.3 {fconfigure command} {
 } {1 {can not find channel named "a"}}
 test iocmd-8.4 {fconfigure command} {
     removeFile test1
-    set f1 [open test1 w]
+    set f1 [open $path(test1) w]
     set x [list [catch {fconfigure $f1 froboz} msg] $msg]
     close $f1
     set x
@@ -208,7 +212,7 @@ test iocmd-8.6 {fconfigure command} {
 } {1 {bad value for -translation: must be one of auto, binary, cr, lf, crlf, or platform}}
 test iocmd-8.7 {fconfigure command} {
     removeFile test1
-    set f1 [open test1 w]
+    set f1 [open $path(test1) w]
     fconfigure $f1 -translation lf -eofchar {} -encoding unicode
     set x [fconfigure $f1]
     close $f1
@@ -216,7 +220,7 @@ test iocmd-8.7 {fconfigure command} {
 } {-blocking 1 -buffering full -buffersize 4096 -encoding unicode -eofchar {} -translation lf}
 test iocmd-8.8 {fconfigure command} {
     removeFile test1
-    set f1 [open test1 w]
+    set f1 [open $path(test1) w]
     fconfigure $f1 -translation lf -buffering line -buffersize 3030 \
 		-eofchar {} -encoding unicode
     set x ""
@@ -227,7 +231,7 @@ test iocmd-8.8 {fconfigure command} {
 } {line {-blocking 1 -buffering line -buffersize 3030 -encoding unicode -eofchar {} -translation lf}}
 test iocmd-8.9 {fconfigure command} {
     removeFile test1
-    set f1 [open test1 w]
+    set f1 [open $path(test1) w]
     fconfigure $f1 -translation binary -buffering none -buffersize 4040 \
 		-eofchar {} -encoding binary
     set x [fconfigure $f1]
@@ -238,24 +242,24 @@ test iocmd-8.10 {fconfigure command} {
     list [catch {fconfigure a b} msg] $msg
 } {1 {can not find channel named "a"}}
 
-makeFile {} fconfigure.dummy
+set path(fconfigure.dummy) [makeFile {} fconfigure.dummy]
 
 test iocmd-8.11 {fconfigure command} {
-    set chan [open fconfigure.dummy r]
+    set chan [open $path(fconfigure.dummy) r]
     set res [list [catch {fconfigure $chan -froboz blarfo} msg] $msg]
     close $chan
     set res
 } {1 {bad option "-froboz": should be one of -blocking, -buffering, -buffersize, -encoding, -eofchar, or -translation}}
 
 test iocmd-8.12 {fconfigure command} {
-    set chan [open fconfigure.dummy r]
+    set chan [open $path(fconfigure.dummy) r]
     set res [list [catch {fconfigure $chan -b blarfo} msg] $msg]
     close $chan
     set res
 } {1 {bad option "-b": should be one of -blocking, -buffering, -buffersize, -encoding, -eofchar, or -translation}}
 
 test iocmd-8.13 {fconfigure command} {
-    set chan [open fconfigure.dummy r]
+    set chan [open $path(fconfigure.dummy) r]
     set res [list [catch {fconfigure $chan -buffer blarfo} msg] $msg]
     close $chan
     set res
@@ -358,26 +362,29 @@ test iocmd-10.5 {fblocked command} {
     fblocked stdin
 } 0
 
+set path(test4) [makeFile {} test4]
+set path(test5) [makeFile {} test5]
+
 removeFile test5
 test iocmd-11.1 {I/O to command pipelines} {unixOrPc unixExecs} {
-    set f [open test4 w]
+    set f [open $path(test4) w]
     close $f
-    list [catch {open "| cat < test4 > test5" w} msg] $msg $errorCode
+    list [catch {open "| cat < $path(test4) > $path(test5)" w} msg] $msg $errorCode
 } {1 {can't write input to command: standard input was redirected} NONE}
 test iocmd-11.2 {I/O to command pipelines} {unixOrPc unixExecs} {
-    list [catch {open "| echo > test5" r} msg] $msg $errorCode
+    list [catch {open "| echo > $path(test5)" r} msg] $msg $errorCode
 } {1 {can't read output from command: standard output was redirected} NONE}
 test iocmd-11.3 {I/O to command pipelines} {unixOrPc unixExecs} {
-    list [catch {open "| echo > test5" r+} msg] $msg $errorCode
+    list [catch {open "| echo > $path(test5)" r+} msg] $msg $errorCode
 } {1 {can't read output from command: standard output was redirected} NONE}
 
 test iocmd-12.1 {POSIX open access modes: RDONLY} {
     removeFile test1
-    set f [open test1 w]
+    set f [open $path(test1) w]
     puts $f "Two lines: this one"
     puts $f "and this one"
     close $f
-    set f [open test1 RDONLY]
+    set f [open $path(test1) RDONLY]
     set x [list [gets $f] [catch {puts $f Test} msg] $msg]
     close $f
     string compare $x \
@@ -385,14 +392,14 @@ test iocmd-12.1 {POSIX open access modes: RDONLY} {
 } 0
 test iocmd-12.2 {POSIX open access modes: RDONLY} {
     removeFile test3
-    set msg [list [catch {open test3 RDONLY} msg] $msg]
-    regsub [file join {} test3] $msg "test3" msg
+    set msg [list [catch {open $path(test3) RDONLY} msg] $msg]
+    regsub [file join {} $path(test3)] $msg "test3" msg
 	string tolower $msg
 } {1 {couldn't open "test3": no such file or directory}}
 test iocmd-12.3 {POSIX open access modes: WRONLY} {
     removeFile test3
-    set msg [list [catch {open test3 WRONLY} msg] $msg]
-    regsub [file join {} test3] $msg "test3" msg
+    set msg [list [catch {open $path(test3) WRONLY} msg] $msg]
+    regsub [file join {} $path(test3)] $msg "test3" msg
 	string tolower $msg
 } {1 {couldn't open "test3": no such file or directory}}
 #
@@ -400,17 +407,17 @@ test iocmd-12.3 {POSIX open access modes: WRONLY} {
 #
 test iocmd-12.4 {POSIX open access modes: WRONLY} {unixOnly} {
     removeFile test3
-    set f [open test3 w]
+    set f [open $path(test3) w]
     fconfigure $f -eofchar {}
     puts $f xyzzy
     close $f
-    set f [open test3 WRONLY]
+    set f [open $path(test3) WRONLY]
     fconfigure $f -eofchar {}
     puts -nonewline $f "ab"
     seek $f 0 current
     set x [list [catch {gets $f} msg] $msg]
     close $f
-    set f [open test3 r]
+    set f [open $path(test3) r]
     fconfigure $f -eofchar {}
     lappend x [gets $f]
     close $f
@@ -419,22 +426,22 @@ test iocmd-12.4 {POSIX open access modes: WRONLY} {unixOnly} {
 } 0
 test iocmd-12.5 {POSIX open access modes: RDWR} {
     removeFile test3
-    set msg [list [catch {open test3 RDWR} msg] $msg]
-    regsub [file join {} test3] $msg "test3" msg
+    set msg [list [catch {open $path(test3) RDWR} msg] $msg]
+    regsub [file join {} $path(test3)] $msg "test3" msg
 	string tolower $msg
 } {1 {couldn't open "test3": no such file or directory}}
 test iocmd-12.6 {POSIX open access modes: errors} {
-    concat [catch {open test3 "FOO \{BAR BAZ"} msg] $msg\n$errorInfo
+    concat [catch {open $path(test3) "FOO \{BAR BAZ"} msg] $msg\n$errorInfo
 } "1 unmatched open brace in list
 unmatched open brace in list
     while processing open access modes \"FOO {BAR BAZ\"
     invoked from within
-\"open test3 \"FOO \\{BAR BAZ\"\""
+\"open \$path(test3) \"FOO \\{BAR BAZ\"\""
 test iocmd-12.7 {POSIX open access modes: errors} {
-  list [catch {open test3 {FOO BAR BAZ}} msg] $msg
+  list [catch {open $path(test3) {FOO BAR BAZ}} msg] $msg
 } {1 {invalid access mode "FOO": must be RDONLY, WRONLY, RDWR, APPEND, CREAT EXCL, NOCTTY, NONBLOCK, or TRUNC}}
 test iocmd-12.8 {POSIX open access modes: errors} {
-    list [catch {open test3 {TRUNC CREAT}} msg] $msg
+    list [catch {open $path(test3) {TRUNC CREAT}} msg] $msg
 } {1 {access mode must include either RDONLY, WRONLY, or RDWR}}
 
 test iocmd-13.1 {errors in open command} {
@@ -444,13 +451,13 @@ test iocmd-13.2 {errors in open command} {
     list [catch {open a b c d} msg] $msg
 } {1 {wrong # args: should be "open fileName ?access? ?permissions?"}}
 test iocmd-13.3 {errors in open command} {
-    list [catch {open test1 x} msg] $msg
+    list [catch {open $path(test1) x} msg] $msg
 } {1 {illegal access mode "x"}}
 test iocmd-13.4 {errors in open command} {
-    list [catch {open test1 rw} msg] $msg
+    list [catch {open $path(test1) rw} msg] $msg
 } {1 {illegal access mode "rw"}}
 test iocmd-13.5 {errors in open command} {
-    list [catch {open test1 r+1} msg] $msg
+    list [catch {open $path(test1) r+1} msg] $msg
 } {1 {illegal access mode "r+1"}}
 test iocmd-13.6 {errors in open command} {
     set msg [list [catch {open _non_existent_} msg] $msg $errorCode]
@@ -485,8 +492,10 @@ test iocmd-14.8 {file id parsing errors} {
 test iocmd-14.9 {file id parsing errors} {
     list [catch {eof stderr1} msg] $msg
 } {1 {can not find channel named "stderr1"}}
-set f [open test1 w]
+
+set f [open $path(test1) w]
 close $f
+
 set expect "1 {can not find channel named \"$f\"}"
 test iocmd-14.10 {file id parsing errors} {
     list [catch {eof $f} msg] $msg
@@ -507,10 +516,15 @@ test iocmd-15.4 {Tcl_FcopyObjCmd} {
 test iocmd-15.5 {Tcl_FcopyObjCmd} {
     list [catch {fcopy 1 2 3 4 5} msg] $msg
 } {1 {wrong # args: should be "fcopy input output ?-size size? ?-command callback?"}}
-set f [open test1 w]
+
+set path(test2) [makeFile {} test2]
+
+set f [open $path(test1) w]
 close $f
-set rfile [open test1 r]
-set wfile [open test2 w]
+
+set rfile [open $path(test1) r]
+set wfile [open $path(test2) w]
+
 test iocmd-15.6 {Tcl_FcopyObjCmd} {
     list [catch {fcopy foo $wfile} msg] $msg
 } {1 {can not find channel named "foo"}}

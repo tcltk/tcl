@@ -15,22 +15,16 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: basic.test,v 1.12.4.2 2002/06/10 05:33:15 wolfsuit Exp $
+# RCS: @(#) $Id: basic.test,v 1.12.4.3 2002/08/20 20:25:27 das Exp $
 #
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest
-    namespace import -force ::tcltest::*
-}
+package require tcltest 2
+namespace import -force ::tcltest::*
 
-set ::tcltest::testConstraints(testcmdtoken) \
-	[llength [info commands testcmdtoken]]
-set ::tcltest::testConstraints(testcmdtrace) \
-	[llength [info commands testcmdtrace]]
-set ::tcltest::testConstraints(testcreatecommand) \
-	[llength [info commands testcreatecommand]]
-set ::tcltest::testConstraints(exec) \
-	[llength [info commands exec]]
+testConstraint testcmdtoken [llength [info commands testcmdtoken]]
+testConstraint testcmdtrace [llength [info commands testcmdtrace]]
+testConstraint testcreatecommand [llength [info commands testcreatecommand]]
+testConstraint exec [llength [info commands exec]]
 
 # This variable needs to be changed when the major or minor version number for
 # Tcl changes.
@@ -426,12 +420,13 @@ test basic-26.1 {Tcl_EvalObj: preserve object while evaling it} {
     # message.
 
     proc bgerror {args} {set ::x $::errorInfo}
-    set f [open test1 w]
+    set fName [makeFile {} test1]
+    set f [open $fName w]
     fileevent $f writable "fileevent $f writable {}; error foo"
     set x {}
     vwait x
     close $f
-    file delete test1
+    removeFile test1
     rename bgerror {}
     set x
 } "foo\n    while executing\n\"error foo\""
@@ -560,10 +555,10 @@ test basic-44.1 {Tcl_GlobalEval} {emptyTest} {
 test basic-45.1 {Tcl_SetRecursionLimit: see interp.test} {emptyTest} {
 } {}
 
-test basic-46.1 {Tcl_AllowExceptions: exception return not allowed} {exec} {
+test basic-46.1 {Tcl_AllowExceptions: exception return not allowed} {stdio} {
     catch {close $f}
     set res [catch {
-	set f [open |[list [info nameofexecutable]] w+]
+	set f [open |[list [interpreter]] w+]
 	fconfigure $f -buffering line
 	puts $f {fconfigure stdout -buffering line}
 	puts $f continue
@@ -586,12 +581,13 @@ DONE
 }}
 
 test basic-46.2 {Tcl_AllowExceptions: exception return not allowed} {exec} {
-    makeFile {
+    set fName [makeFile {
 	puts hello
 	break
-    } BREAKtest
-    set res [list [catch {exec [info nameofexecutable] BREAKtest} msg] $msg]
+    } BREAKtest]
+    set res [list [catch {exec [interpreter] $fName} msg] $msg]
     removeFile BREAKtest
+    regsub {"[^ ]*BREAKtest"} $res {"BREAKtest"} res
     set res
 } {1 {hello
 invoked "break" outside of a loop
@@ -600,13 +596,14 @@ invoked "break" outside of a loop
     (file "BREAKtest" line 3)}}    
 
 test basic-46.3 {Tcl_AllowExceptions: exception return not allowed} {exec} {
-    makeFile {
+    set fName [makeFile {
 	interp alias {} patch {} info patchlevel
 	patch
 	break
-    } BREAKtest
-    set res [list [catch {exec [info nameofexecutable] BREAKtest} msg] $msg]
+    } BREAKtest]
+    set res [list [catch {exec [interpreter] $fName} msg] $msg]
     removeFile BREAKtest
+    regsub {"[^ ]*BREAKtest"} $res {"BREAKtest"} res
     set res
 } {1 {invoked "break" outside of a loop
     while executing
@@ -614,11 +611,12 @@ test basic-46.3 {Tcl_AllowExceptions: exception return not allowed} {exec} {
     (file "BREAKtest" line 4)}}    
 
 test basic-46.4 {Tcl_AllowExceptions: exception return not allowed} {exec} {
-    makeFile {
+    set fName [makeFile {
 	foo [set a 1] [break]
-    } BREAKtest
-    set res [list [catch {exec [info nameofexecutable] BREAKtest} msg] $msg]
+    } BREAKtest]
+    set res [list [catch {exec [interpreter] $fName} msg] $msg]
     removeFile BREAKtest
+    regsub {"[^ ]*BREAKtest"} $res {"BREAKtest"} res
     set res
 } {1 {invoked "break" outside of a loop
     while executing
@@ -628,11 +626,12 @@ test basic-46.4 {Tcl_AllowExceptions: exception return not allowed} {exec} {
     (file "BREAKtest" line 2)}}
 
 test basic-46.5 {Tcl_AllowExceptions: exception return not allowed} {exec} {
-    makeFile {
+    set fName [makeFile {
 	return -code return
-    } BREAKtest
-    set res [list [catch {exec [info nameofexecutable] BREAKtest} msg] $msg]
+    } BREAKtest]
+    set res [list [catch {exec [interpreter] $fName} msg] $msg]
     removeFile BREAKtest
+    regsub {"[^ ]*BREAKtest"} $res {"BREAKtest"} res
     set res
 } {1 {command returned bad code: 2
     while executing

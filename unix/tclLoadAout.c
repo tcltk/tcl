@@ -14,7 +14,7 @@
  * and Design Engineering (MADE) Initiative through ARPA contract
  * F33615-94-C-4400.
  *
- * RCS: @(#) $Id: tclLoadAout.c,v 1.7.2.2 2002/06/10 05:33:18 wolfsuit Exp $
+ * RCS: @(#) $Id: tclLoadAout.c,v 1.7.2.3 2002/08/20 20:25:30 das Exp $
  */
 
 #include "tclInt.h"
@@ -102,17 +102,14 @@ static void UnlinkSymbolTable _ANSI_ARGS_((void));
 /*
  *----------------------------------------------------------------------
  *
- * TclpLoadFile --
+ * TclpDlopen --
  *
  *	Dynamically loads a binary code file into memory and returns
- *	the addresses of two procedures within that file, if they
- *	are defined.
+ *	a handle to the new code.
  *
  * Results:
  *	A standard Tcl completion code.  If an error occurs, an error
- *	message is left in the interp's result.  *proc1Ptr and *proc2Ptr
- *	are filled in with the addresses of the symbols given by
- *	*sym1 and *sym2, or NULL if those symbols can't be found.
+ *	message is left in the interp's result. 
  *
  * Side effects:
  *	New code suddenly appears in memory.
@@ -141,17 +138,11 @@ static void UnlinkSymbolTable _ANSI_ARGS_((void));
  */
 
 int
-TclpLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr, 
-	     clientDataPtr, unloadProcPtr)
+TclpDlopen(interp, pathPtr, loadHandle, unloadProcPtr)
     Tcl_Interp *interp;		/* Used for error reporting. */
     Tcl_Obj *pathPtr;		/* Name of the file containing the desired
 				 * code (UTF-8). */
-    CONST char *sym1, *sym2;	/* Names of two procedures to look up in
-				 * the file's symbol table. */
-    Tcl_PackageInitProc **proc1Ptr, **proc2Ptr;
-				/* Where to return the addresses corresponding
-				 * to sym1 and sym2. */
-    ClientData *clientDataPtr;	/* Filled with token for dynamically loaded
+    Tcl_LoadHandle *loadHandle;	/* Filled with token for dynamically loaded
 				 * file which will be passed back to 
 				 * (*unloadProcPtr)() to unload the file. */
     Tcl_FSUnloadFileProc **unloadProcPtr;	
@@ -172,12 +163,9 @@ TclpLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr,
   struct exec relocatedHead;	/* Header of the relocated text */
   unsigned long relocatedSize;	/* Size of the relocated text */
   char * startAddress;		/* Starting address of the module */
-  DictFn dictionary;		/* Dictionary function in the load module */
   int status;			/* Status return from Tcl_ calls */
   char * p;
 
-  *clientDataPtr = NULL;
-  
   /* Find the file that contains the symbols for the run-time link. */
 
   if (SymbolTableFile != NULL) {
@@ -317,14 +305,36 @@ TclpLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr,
   SymbolTableFile = ckalloc (strlen (relocatedFileName) + 1);
   strcpy (SymbolTableFile, relocatedFileName);
   
-  /* Look up the entry points in the load module's dictionary. */
-
-  dictionary = (DictFn) startAddress;
-  *proc1Ptr = dictionary (sym1);
-  *proc2Ptr = dictionary (sym2);
-
+  *loadHandle = startAddress;
   return TCL_OK;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpFindSymbol --
+ *
+ *	Looks up a symbol, by name, through a handle associated with
+ *	a previously loaded piece of code (shared library).
+ *
+ * Results:
+ *	Returns a pointer to the function associated with 'symbol' if
+ *	it is found.  Otherwise returns NULL and may leave an error
+ *	message in the interp's result.
+ *
+ *----------------------------------------------------------------------
+ */
+Tcl_PackageInitProc*
+TclpFindSymbol(interp, loadHandle, symbol) 
+    Tcl_Interp *interp;
+    Tcl_LoadHandle loadHandle;
+    CONST char *symbol;
+{
+    /* Look up the entry point in the load module's dictionary. */
+    DictFn dictionary = (DictFn) loadHandle;
+    return (Tcl_PackageInitProc*) dictionary(sym1);
+}
+
 
 /*
  *------------------------------------------------------------------------
@@ -451,9 +461,9 @@ UnlinkSymbolTable ()
  */
 
 void
-TclpUnloadFile(clientData)
-    ClientData clientData;	/* ClientData returned by a previous call
-				 * to TclpLoadFile().  The clientData is 
+TclpUnloadFile(loadHandle)
+    Tcl_LoadHandle loadHandle;	/* loadHandle returned by a previous call
+				 * to TclpDlopen().  The loadHandle is 
 				 * a token that represents the loaded 
 				 * file. */
 {

@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: CrtInterp.3,v 1.5.18.1 2002/02/05 02:21:57 wolfsuit Exp $
+'\" RCS: @(#) $Id: CrtInterp.3,v 1.5.18.2 2002/08/20 20:25:24 das Exp $
 '\" 
 .so man.macros
 .TH Tcl_CreateInterp 3 7.5 Tcl "Tcl Library Procedures"
@@ -103,8 +103,6 @@ has been called. To ensure that the interpreter is properly deleted when
 it is no longer needed, call \fBTcl_InterpDeleted\fR to test if some other
 code already called \fBTcl_DeleteInterp\fR; if not, call
 \fBTcl_DeleteInterp\fR before calling \fBTcl_Release\fR in your own code.
-Do not call \fBTcl_DeleteInterp\fR on an interpreter for which
-\fBTcl_InterpDeleted\fR returns nonzero.
 .TP
 Retrieving An Interpreter From A Data Structure
 When an interpreter is retrieved from a data structure (e.g. the client

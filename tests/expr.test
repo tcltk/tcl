@@ -10,20 +10,16 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: expr.test,v 1.12.12.1 2002/02/05 02:22:03 wolfsuit Exp $
+# RCS: @(#) $Id: expr.test,v 1.12.12.2 2002/08/20 20:25:27 das Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
     namespace import -force ::tcltest::*
 }
 
-if {([catch {expr T1()} msg] == 1) && ($msg == {unknown math function "T1"})} {
-    set gotT1 0
-    puts "This application hasn't been compiled with the \"T1\" and"
-    puts "\"T2\" math functions, so I'll skip some of the expr tests."
-} else {
-    set gotT1 1
-}
+testConstraint registeredMathFuncs [expr {
+    ([catch {expr T1()} msg] != 1) || ($msg ne {unknown math function "T1"})
+}]
 
 # procedures used below
 
@@ -630,24 +626,36 @@ test expr-15.6 {CompileMathFuncCall: missing ')'} {
 } {syntax error in expression "sin(1": missing close parenthesis at end of function call
     while compiling
 "expr sin(1"}
-if $gotT1 {
-    test expr-15.7 {CompileMathFuncCall: call registered math function} {
-	expr 2*T1()
-    } 246
-    test expr-15.8 {CompileMathFuncCall: call registered math function} {
-	expr T2()*3
-    } 1035
-
-    test expr-15.9 {CompileMathFuncCall: call registered math function} {
-	expr T3(21, 37)
-    } 37
-    test expr-15.10 {CompileMathFuncCall: call registered math function} {
-	expr T3(21.2, 37)
-    } 37.0
-    test expr-15.11 {CompileMathFuncCall: call registered math function} {
-	expr T3(-21.2, -17.5)
-    } -17.5
-}
+test expr-15.7 {CompileMathFuncCall: call registered math function} {registeredMathFuncs} {
+    expr 2*T1()
+} 246
+test expr-15.8 {CompileMathFuncCall: call registered math function} {registeredMathFuncs} {
+    expr T2()*3
+} 1035
+test expr-15.9 {CompileMathFuncCall: call registered math function} {registeredMathFuncs} {
+    expr T3(21, 37)
+} 37
+test expr-15.10 {CompileMathFuncCall: call registered math function} {registeredMathFuncs} {
+    expr T3(21.2, 37)
+} 37.0
+test expr-15.11 {CompileMathFuncCall: call registered math function} {registeredMathFuncs} {
+    expr T3(-21.2, -17.5)
+} -17.5
+test expr-15.12 {ExprCallMathFunc: call registered math function} {registeredMathFuncs} {
+    expr T3(21, wide(37))
+} 37
+test expr=15.13 {ExprCallMathFunc: call registered math function} {registeredMathFuncs} {
+    expr T3(wide(21), 37)
+} 37
+test expr=15.14 {ExprCallMathFunc: call registered math function} {registeredMathFuncs} {
+    expr T3(wide(21), wide(37))
+} 37
+test expr-15.15 {ExprCallMathFunc: call registered math function} {registeredMathFuncs} {
+    expr T3(21.0, wide(37))
+} 37.0
+test expr=15.16 {ExprCallMathFunc: call registered math function} {registeredMathFuncs} {
+    expr T3(wide(21), 37.0)
+} 37.0
 
 test expr-16.1 {GetToken: checks whether integer token starting with "0x" (e.g., "0x$") is invalid} {
     catch {unset a}
@@ -766,6 +774,37 @@ test expr-21.9 	{non-numeric boolean literals} {expr !off  } 1
 test expr-21.10 {non-numeric boolean literals} {expr !on   } 0
 test expr-21.11 {non-numeric boolean literals} {expr !no   } 1
 test expr-21.12 {non-numeric boolean literals} {expr !yes  } 0
+
+# Test for non-numeric float handling.
+#
+# These are non-portable because strtod()-support for "Inf" and "NaN"
+# is so wildly variable.  This sucks...
+test expr-22.1 {non-numeric floats} nonPortable {
+    list [catch {expr {NaN + 1}} msg] $msg
+} {1 {can't use non-numeric floating-point value as operand of "+"}}
+test expr-22.2 {non-numeric floats} nonPortable {
+    list [catch {expr {Inf + 1}} msg] $msg
+} {1 {can't use infinite floating-point value as operand of "+"}}
+test expr-22.3 {non-numeric floats} nonPortable {
+    set nan NaN
+    list [catch {expr {$nan + 1}} msg] $msg
+} {1 {can't use non-numeric floating-point value as operand of "+"}}
+test expr-22.4 {non-numeric floats} nonPortable {
+    set inf Inf
+    list [catch {expr {$inf + 1}} msg] $msg
+} {1 {can't use infinite floating-point value as operand of "+"}}
+test expr-22.5 {non-numeric floats} nonPortable {
+    list [catch {expr NaN} msg] $msg
+} {1 {domain error: argument not in valid range}}
+test expr-22.6 {non-numeric floats} nonPortable {
+    list [catch {expr Inf} msg] $msg
+} {1 {floating-point value too large to represent}}
+test expr-22.7 {non-numeric floats} nonPortable {
+    list [catch {expr {1 / NaN}} msg] $msg
+} {1 {can't use non-numeric floating-point value as operand of "/"}}
+test expr-22.8 {non-numeric floats} nonPortable {
+    list [catch {expr {1 / Inf}} msg] $msg
+} {1 {can't use infinite floating-point value as operand of "/"}}
 
 # cleanup
 if {[info exists a]} {

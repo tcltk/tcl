@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPort.h,v 1.18.8.1 2002/06/10 05:33:19 wolfsuit Exp $
+ * RCS: @(#) $Id: tclUnixPort.h,v 1.18.8.2 2002/08/20 20:25:30 das Exp $
  */
 
 #ifndef _TCLUNIXPORT
@@ -59,30 +59,30 @@
 
 #ifdef HAVE_STRUCT_DIRENT64
 typedef struct dirent64	Tcl_DirEntry;
-#   define Tcl_PlatformReaddir		readdir64
-#   define Tcl_PlatformReaddir_r	readdir64_r
+#   define TclOSreaddir		readdir64
+#   define TclOSreaddir_r	readdir64_r
 #else
 typedef struct dirent	Tcl_DirEntry;
-#   define Tcl_PlatformReaddir		readdir
-#   define Tcl_PlatformReaddir_r	readdir_r
+#   define TclOSreaddir		readdir
+#   define TclOSreaddir_r	readdir_r
 #endif
 
 #ifdef HAVE_TYPE_OFF64_T
 typedef off64_t		Tcl_SeekOffset;
-#   define Tcl_PlatformSeek		lseek64
-#   define Tcl_PlatformOpen		open64
+#   define TclOSseek		lseek64
+#   define TclOSopen		open64
 #else
 typedef off_t		Tcl_SeekOffset;
-#   define Tcl_PlatformSeek		lseek
-#   define Tcl_PlatformOpen		open
+#   define TclOSseek		lseek
+#   define TclOSopen		open
 #endif
 
 #ifdef HAVE_STRUCT_STAT64
-#   define Tcl_PlatformStat		stat64
-#   define Tcl_PlatformLStat		lstat64
+#   define TclOSstat		stat64
+#   define TclOSlstat		lstat64
 #else
-#   define Tcl_PlatformStat		stat
-#   define Tcl_PlatformLStat		lstat
+#   define TclOSstat		stat
+#   define TclOSlstat		lstat
 #endif
 
 #if !HAVE_STRTOLL && defined(TCL_WIDE_INT_TYPE) && !TCL_WIDE_INT_IS_LONG
@@ -324,9 +324,10 @@ EXTERN int		gettimeofday _ANSI_ARGS_((struct timeval *tp,
  */
 
 #ifndef S_IFLNK
+#   undef TclOSlstat
 #   define lstat	stat
 #   define lstat64	stat64
-#   define Tcl_PlatformLStat	Tcl_PlatformStat
+#   define TclOSlstat	TclOSstat
 #endif
 
 /*
@@ -560,8 +561,8 @@ EXTERN char *          	TclpInetNtoa(struct in_addr);
 #define localtime(x)	TclpLocaltime(x)
 #define gmtime(x)	TclpGmtime(x)
 #define inet_ntoa(x)	TclpInetNtoa(x)
-#undef Tcl_PlatformReaddir
-#define Tcl_PlatformReaddir(x) TclpReaddir(x)
+#undef TclOSreaddir
+#define TclOSreaddir(x) TclpReaddir(x)
 #else
 typedef int TclpMutex;
 #define	TclpMutexInit(a)

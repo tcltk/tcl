@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.16.4.2 2002/06/10 05:33:10 wolfsuit Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.16.4.3 2002/08/20 20:25:25 das Exp $
  */
 
 #include "tclInt.h"
@@ -791,8 +791,8 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	"atime",	"attributes",	"channels",	"copy",
 	"delete",
 	"dirname",	"executable",	"exists",	"extension",
-	"isdirectory",	"isfile",	"join",		"lstat",
-	"mtime",	"mkdir",	"nativename",	
+	"isdirectory",	"isfile",	"join",		"link",
+	"lstat",        "mtime",	"mkdir",	"nativename",	
 	"normalize",    "owned",
 	"pathtype",	"readable",	"readlink",	"rename",
 	"rootname",	"separator",    "size",		"split",	
@@ -804,8 +804,8 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	FILE_ATIME,	FILE_ATTRIBUTES, FILE_CHANNELS,	FILE_COPY,
 	FILE_DELETE,
 	FILE_DIRNAME,	FILE_EXECUTABLE, FILE_EXISTS,	FILE_EXTENSION,
-	FILE_ISDIRECTORY, FILE_ISFILE,	FILE_JOIN,	FILE_LSTAT,
-	FILE_MTIME,	FILE_MKDIR,	FILE_NATIVENAME, 
+	FILE_ISDIRECTORY, FILE_ISFILE,	FILE_JOIN,	FILE_LINK, 
+	FILE_LSTAT,     FILE_MTIME,	FILE_MKDIR,	FILE_NATIVENAME, 
 	FILE_NORMALIZE, FILE_OWNED,
 	FILE_PATHTYPE,	FILE_READABLE,	FILE_READLINK,	FILE_RENAME,
 	FILE_ROOTNAME,	FILE_SEPARATOR, FILE_SIZE,	FILE_SPLIT,	
@@ -955,6 +955,96 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    Tcl_SetObjResult(interp, resObj);
 	    return TCL_OK;
 	}
+	case FILE_LINK: {
+	    Tcl_Obj *contents;
+	    int index;
+	    
+	    if (objc < 3 || objc > 5) {
+		Tcl_WrongNumArgs(interp, 2, objv, 
+				 "?-linktype? linkname ?target?");
+		return TCL_ERROR;
+	    }
+	    
+	    /* Index of the 'source' argument */
+	    if (objc == 5) {
+		index = 3;
+	    } else {
+		index = 2;
+	    }
+	    
+	    if (objc > 3) {
+		int linkAction;
+		if (objc == 5) {
+		    /* We have a '-linktype' argument */
+		    static CONST char *linkTypes[] = {
+			"-symbolic", "-hard", NULL
+		    };
+		    if (Tcl_GetIndexFromObj(interp, objv[2], linkTypes, 
+				     "switch", 0, &linkAction) != TCL_OK) {
+			return TCL_ERROR;
+		    }
+		    if (linkAction == 0) {
+		        linkAction = TCL_CREATE_SYMBOLIC_LINK;
+		    } else {
+			linkAction = TCL_CREATE_HARD_LINK;
+		    }
+		} else {
+		    linkAction = TCL_CREATE_SYMBOLIC_LINK|TCL_CREATE_HARD_LINK;
+		}
+		if (Tcl_FSConvertToPathType(interp, objv[index]) != TCL_OK) {
+		    return TCL_ERROR;
+		}
+		/* Create link from source to target */
+		contents = Tcl_FSLink(objv[index], objv[index+1], linkAction);
+		if (contents == NULL) {
+		    /* 
+		     * We handle two common error cases specially, and
+		     * for all other errors, we use the standard posix
+		     * error message.
+		     */
+		    if (errno == EEXIST) {
+			Tcl_AppendResult(interp, "could not create new link \"", 
+				Tcl_GetString(objv[index]), 
+				"\": that path already exists", (char *) NULL);
+		    } else if (errno == ENOENT) {
+			Tcl_AppendResult(interp, "could not create new link \"", 
+				Tcl_GetString(objv[index]), 
+				"\" since target \"", 
+				Tcl_GetString(objv[index+1]), 
+				"\" doesn't exist", 
+				(char *) NULL);
+		    } else {
+			Tcl_AppendResult(interp, "could not create new link \"", 
+				Tcl_GetString(objv[index]), "\" pointing to \"", 
+				Tcl_GetString(objv[index+1]), "\": ", 
+				Tcl_PosixError(interp), (char *) NULL);
+		    }
+		    return TCL_ERROR;
+		}
+	    } else {
+		if (Tcl_FSConvertToPathType(interp, objv[index]) != TCL_OK) {
+		    return TCL_ERROR;
+		}
+		/* Read link */
+		contents = Tcl_FSLink(objv[index], NULL, 0);
+		if (contents == NULL) {
+		    Tcl_AppendResult(interp, "could not read link \"", 
+			    Tcl_GetString(objv[index]), "\": ", 
+			    Tcl_PosixError(interp), (char *) NULL);
+		    return TCL_ERROR;
+		}
+	    }
+	    Tcl_SetObjResult(interp, contents);
+	    if (objc == 3) {
+		/* 
+		 * If we are reading a link, we need to free this
+		 * result refCount.  If we are creating a link, this
+		 * will just be objv[index+1], and so we don't own it.
+		 */
+		Tcl_DecrRefCount(contents);
+	    }
+	    return TCL_OK;
+	}
     	case FILE_LSTAT: {
 	    char *varName;
 	    Tcl_StatBuf buf;
@@ -1101,7 +1191,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 		return TCL_ERROR;
 	    }
 
-	    contents = Tcl_FSLink(objv[2], NULL);
+	    contents = Tcl_FSLink(objv[2], NULL, 0);
 
 	    if (contents == NULL) {
 	    	Tcl_AppendResult(interp, "could not readlink \"", 

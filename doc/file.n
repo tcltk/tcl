@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: file.n,v 1.8.8.2 2002/06/10 05:33:08 wolfsuit Exp $
+'\" RCS: @(#) $Id: file.n,v 1.8.8.3 2002/08/20 20:25:24 das Exp $
 '\" 
 .so man.macros
 .TH file n 8.3 Tcl "Tcl Built-In Commands"
@@ -36,9 +36,9 @@ doesn't exist or its access time cannot be queried or set then an error is
 generated.  On Windows, FAT file systems do not support access time.
 .TP
 \fBfile attributes \fIname\fR
-.br
+.TP
 \fBfile attributes \fIname\fR ?\fBoption\fR?
-.br
+.TP
 \fBfile attributes \fIname\fR ?\fBoption value option value...\fR?
 .RS
 This subcommand returns or sets platform specific values associated
@@ -88,7 +88,7 @@ is determined using the same rules as for \fBstring match\fR.
 .VE
 .TP
 \fBfile copy \fR?\fB\-force\fR? ?\fB\-\|\-\fR? \fIsource\fR \fItarget\fR
-.br
+.TP
 \fBfile copy \fR?\fB\-force\fR? ?\fB\-\|\-\fR? \fIsource\fR ?\fIsource\fR ...? \fItargetDir\fR
 .RS
 The first form makes a copy of the file or directory \fIsource\fR under
@@ -191,6 +191,37 @@ is always canonical for the current platform: \fB/\fR for Unix and
 Windows, and \fB:\fR for Macintosh.
 .RE
 .TP
+\fBfile link ?\fI-linktype\fR? \fIlinkName\fR ?\fItarget\fR?
+.
+If only one argument is given, that argument is assumed to be
+\fIlinkName\fR, and this command returns the value of the link given by
+\fIlinkName\fR (i.e. the name of the file it points to).  If
+\fIlinkName\fR isn't a link or its value cannot be read (as, for example,
+seems to be the case with hard links, which look just like ordinary
+files), then an error is returned.
+.
+If 2 arguments are given, then these are assumed to be \fIlinkName\fR and
+\fItarget\fR. If \fIlinkName\fR already exists, or if \fItarget\fR
+doesn't exist, an error will be returned.  Otherwise, Tcl creates a new
+link called \fIlinkName\fR which points to the existing filesystem object
+at \fItarget\fR, where the type of the link is platform-specific (on Unix
+a symbolic link will be the default).  This is useful for the case where
+the user wishes to create a link in a cross-platform way, and doesn't
+care what type of link is created.
+.
+If the user wishes to make a link of a specific type only, (and signal an
+error if for some reason that is not possible), then the optional
+\fI-linktype\fR argument should be given.  Accepted values for
+\fI-linktype\fR are "-symbolic" and "-hard".
+.
+When creating links on filesystems that either do not support any links,
+or do not support the specific type requested, an error message will be
+returned.  In particular Windows 95, 98 and ME do not support any links
+at present, but most Unix platforms support both symbolic and hard links
+(the latter for files only), MacOS supports symbolic links and Windows
+NT/2000/XP (on NTFS drives) support symbolic directory links and hard
+file links.
+.TP
 \fBfile lstat \fIname varName\fR
 .
 Same as \fBstat\fR option (see below) except uses the \fIlstat\fR
@@ -226,25 +257,21 @@ under Windows or AppleScript on the Macintosh.
 .TP
 \fBfile normalize \fIname\fR
 .
-Returns a unique normalised path representation for the file-system 
-object (file, directory, link, etc), whose string value can be used as 
-a unique identifier for it.  A normalized path is one which has all '../', './' 
-removed.  Also it is one which is in the ``standard'' format for the native 
-platform.  On MacOS, Unix, this means the segments leading up to the path 
-must be free of symbolic links/aliases (but the very last path component 
-may be a symbolic link), and on Windows it also means means we want the
-long form (when running Win NT/2000/XP) or the short form (when running Win
-95/98) with that form's case-dependence (which gives us a unique,
-case-dependent path).  The one exception concerning the last link in the
-path is necessary, because Tcl or the user may wish to operate on the
-actual symbolic link itself (for example 'file delete', 'file rename', 'file copy'
-are defined to operate on symbolic links, not on the things that they point to).
-.PP
-Note that this means normalized paths are different on old Windows
-operating systems (95/98) and new Windows operating systems
-(NT/2000/XP).  This is necessary because the APIs  
-to produce a long normalized path in older operating systems are 
-unfortunately very slow.
+.RS
+Returns a unique normalised path representation for the file-system
+object (file, directory, link, etc), whose string value can be used as a
+unique identifier for it.  A normalized path is one which has all '../',
+'./' removed.  Also it is one which is in the ``standard'' format for the
+native platform.  On MacOS, Unix, this means the segments leading up to
+the path must be free of symbolic links/aliases (but the very last path
+component may be a symbolic link), and on Windows it also means means we
+want the long form with that form's case-dependence (which gives us a
+unique, case-dependent path).  The one exception concerning the last link
+in the path is necessary, because Tcl or the user may wish to operate on
+the actual symbolic link itself (for example 'file delete', 'file
+rename', 'file copy' are defined to operate on symbolic links, not on the
+things that they point to).
+.RE
 .TP
 \fBfile owned \fIname\fR 
 .
@@ -299,7 +326,7 @@ Returns all of the characters in \fIname\fR up to but not including the
 last ``.'' character in the last component of name.  If the last
 component of \fIname\fR doesn't contain a dot, then returns \fIname\fR.
 .TP
-\fBfile separator ?\fIname\fR?
+\fBfile separator\fR ?\fIname\fR?
 .
 If no argument is given, returns the character which is used to separate 
 path segments for native files on this platform.  If a path is given,
@@ -322,7 +349,7 @@ unless they are needed ensure that an element is unambiguously relative.
 For example, under Unix
 .RS
 .CS
-\fBfile split /foo/~bar/baz\fR
+file split /foo/~bar/baz
 .CE
 returns \fB/\0\0foo\0\0./~bar\0\0baz\fR to ensure that later commands
 that use the third component do not attempt to perform tilde

@@ -6,7 +6,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclPlatDecls.h,v 1.12.6.3 2002/06/10 05:33:13 wolfsuit Exp $
+ * RCS: @(#) $Id: tclPlatDecls.h,v 1.12.6.4 2002/08/20 20:25:26 das Exp $
  */
 
 #ifndef _TCLPLATDECLS
@@ -75,10 +75,9 @@ EXTERN int		strcasecmp _ANSI_ARGS_((CONST char * s1,
 				CONST char * s2));
 #endif /* MAC_TCL */
 #ifdef MAC_OSX_TCL
-/* Slot 0 is reserved */
-/* 1 */
+/* 0 */
 EXTERN int		Tcl_MacOSXOpenBundleResources _ANSI_ARGS_((
-				Tcl_Interp * interp, char * bundleName, 
+				Tcl_Interp * interp, CONST char * bundleName, 
 				int hasResourceFile, int maxPathLen, 
 				char * libraryPath));
 #endif /* MAC_OSX_TCL */
@@ -103,8 +102,7 @@ typedef struct TclPlatStubs {
     int (*strcasecmp) _ANSI_ARGS_((CONST char * s1, CONST char * s2)); /* 8 */
 #endif /* MAC_TCL */
 #ifdef MAC_OSX_TCL
-    void *reserved0;
-    int (*tcl_MacOSXOpenBundleResources) _ANSI_ARGS_((Tcl_Interp * interp, char * bundleName, int hasResourceFile, int maxPathLen, char * libraryPath)); /* 1 */
+    int (*tcl_MacOSXOpenBundleResources) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * bundleName, int hasResourceFile, int maxPathLen, char * libraryPath)); /* 0 */
 #endif /* MAC_OSX_TCL */
 } TclPlatStubs;
 
@@ -171,10 +169,9 @@ extern TclPlatStubs *tclPlatStubsPtr;
 #endif
 #endif /* MAC_TCL */
 #ifdef MAC_OSX_TCL
-/* Slot 0 is reserved */
 #ifndef Tcl_MacOSXOpenBundleResources
 #define Tcl_MacOSXOpenBundleResources \
-	(tclPlatStubsPtr->tcl_MacOSXOpenBundleResources) /* 1 */
+	(tclPlatStubsPtr->tcl_MacOSXOpenBundleResources) /* 0 */
 #endif
 #endif /* MAC_OSX_TCL */
 

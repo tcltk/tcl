@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: fconfigure.n,v 1.5.4.1 2002/02/05 02:21:58 wolfsuit Exp $
+'\" RCS: @(#) $Id: fconfigure.n,v 1.5.4.2 2002/08/20 20:25:24 das Exp $
 '\"
 .so man.macros
 .TH fconfigure n 8.3 Tcl "Tcl Built-In Commands"
@@ -66,7 +66,7 @@ automatically after every output operation.  The default is for
 \fB\-buffering\fR to be set to \fBfull\fR except for channels that
 connect to terminal-like devices; for these channels the initial setting
 is \fBline\fR.  Additionally, \fBstdin\fR and \fBstdout\fR are
-intially set to \fBline\fR, and \fBstderr\fR is set to \fBnone\fR.
+initially set to \fBline\fR, and \fBstderr\fR is set to \fBnone\fR.
 .TP
 \fB\-buffersize\fR \fInewSize\fR
 .
@@ -231,7 +231,7 @@ system. The \fItype\fR parameter is case-independent.
 
 If \fItype\fR is \fBnone\fR then any handshake is switched off.
 \fBrtscts\fR activates hardware handshake. Hardware handshake signals
-are decribed below.
+are described below.
 For software handshake \fBxonxoff\fR the handshake characters can be redefined
 with \fB-xchar\fR.
 An additional hardware handshake \fBdtrdsr\fR is available only under Windows.
@@ -251,7 +251,7 @@ of bytes in the input and output queue respectively.
 .
 (Windows and Unix). This option is used to set the timeout for blocking
 read operations. It specifies the maximum interval between the
-receiption of two bytes in milliseconds.
+reception of two bytes in milliseconds.
 For Unix systems the granularity is 100 milliseconds.
 The \fB-timeout\fR option does not affect write operations or
 nonblocking reads.
@@ -357,9 +357,9 @@ a "Carrier" signal.
 A BREAK condition is not a hardware signal line, but a logical zero on the
 TXD or RXD lines for a long period of time, usually 250 to 500
 milliseconds.  Normally a receive or transmit data signal stays at the mark
-(on=1) voltage until the next character is tranferred. A BREAK is sometimes
+(on=1) voltage until the next character is transferred. A BREAK is sometimes
 used to reset the communications line or change the operating mode of
-cummunications hardware.
+communications hardware.
 .RE
 
 .SH "ERROR CODES (Windows only)"

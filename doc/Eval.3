@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Eval.3,v 1.9.14.1 2002/02/05 02:21:57 wolfsuit Exp $
+'\" RCS: @(#) $Id: Eval.3,v 1.9.14.2 2002/08/20 20:25:24 das Exp $
 '\" 
 .so man.macros
 .TH Tcl_Eval 3 8.1 Tcl "Tcl Library Procedures"
@@ -66,10 +66,8 @@ value of a single word in the command to execute.
 The number of bytes in \fIscript\fR, not including any
 null terminating character.  If \-1, then all characters up to the
 first null byte are used.
-.AP char *script in
+.AP "CONST char" *script in
 Points to first byte of script to execute (NULL terminated and UTF-8).
-This script must be in writable memory: temporary modifications are made
-to it during parsing.
 .AP char *string in
 String forming part of a Tcl script.
 .AP va_list argList in
@@ -119,7 +117,7 @@ a completion code and result just like \fBTcl_EvalObjEx\fR.
 be executed is supplied as a string instead of an object and no compilation
 occurs.  The string should be a proper UTF-8 string as converted by
 \fBTcl_ExternalToUtfDString\fR or \fBTcl_ExternalToUtf\fR when it is known
-to possibly contain upper ascii characters who's possible combinations
+to possibly contain upper ASCII characters who's possible combinations
 might be a UTF-8 special code.  The string is parsed and executed directly
 (using \fBTcl_EvalObjv\fR) instead of compiling it and executing the
 bytecodes.  In situations where it is known that the script will never be

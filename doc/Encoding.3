@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Encoding.3,v 1.7.18.2 2002/06/10 05:33:08 wolfsuit Exp $
+'\" RCS: @(#) $Id: Encoding.3,v 1.7.18.3 2002/08/20 20:25:24 das Exp $
 '\" 
 .so man.macros
 .TH Tcl_GetEncoding 3 "8.1" Tcl "Tcl Library Procedures"
@@ -244,7 +244,7 @@ encoding of NULL (the current system encoding).  On the other hand,
 if you planned to use the Unicode interface when running on Windows NT
 and the "char" interfaces when running on Windows 95, you would have
 to perform the following type of test over and over in your program
-(as represented in psuedo-code):
+(as represented in pseudo-code):
 .CS
 if (running NT) {
     encoding <- Tcl_GetEncoding("unicode");

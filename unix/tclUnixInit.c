@@ -7,7 +7,7 @@
  * Copyright (c) 1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclUnixInit.c,v 1.24.8.4 2002/06/10 05:33:18 wolfsuit Exp $
+ * RCS: @(#) $Id: tclUnixInit.c,v 1.24.8.5 2002/08/20 20:25:30 das Exp $
  */
 
 #if defined(HAVE_CFBUNDLE)
@@ -139,6 +139,9 @@ static CONST LocaleTable localeTable[] = {
 
     {NULL, NULL}
 };
+
+static int Tcl_MacOSXGetLibraryPath(Tcl_Interp *interp, int maxPathLen, char *tclLibPath);
+
 
 /*
  *---------------------------------------------------------------------------
@@ -397,10 +400,21 @@ CONST char *path;		/* Path to the executable in native
      * is different from the prtefix.
      */
 			      
-    str = defaultLibraryDir;
+    {
+#ifdef HAVE_CFBUNDLE
+    char tclLibPath[1024];
+    
+    if (Tcl_MacOSXGetLibraryPath(NULL, 1024, tclLibPath) == TCL_OK) {
+        str = tclLibPath;
+    } else
+#endif /* HAVE_CFBUNDLE */  
+    {
+        str = defaultLibraryDir;
+    }
     if (str[0] != '\0') {
         objPtr = Tcl_NewStringObj(str, -1);
         Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
+    }
     }
 
     TclSetLibraryPath(pathPtr);    
@@ -684,36 +698,20 @@ TclpSetVariables(interp)
     Tcl_DString ds;
 
 #ifdef HAVE_CFBUNDLE
-    /*
-     * If we have a bundle structure for the Tcl installation,
-     * then check there first to see if we can find the libraries
-     * there.
-     */
-     
-    int foundInFramework = 0;
     char tclLibPath[1024];
     
-    if (strcmp(defaultLibraryDir, "@TCL_IN_FRAMEWORK@") == 0) {
-    
-        foundInFramework = Tcl_MacOSXOpenBundleResources(interp, 
-                "com.tcltk.tcllibrary",
-                0, 1024, tclLibPath);
-    }
-    
-    if (foundInFramework == TCL_OK) {
+    if (Tcl_MacOSXGetLibraryPath(interp, 1024, tclLibPath) == TCL_OK) {
         Tcl_SetVar(interp, "tclDefaultLibrary", tclLibPath, 
                 TCL_GLOBAL_ONLY);
         Tcl_SetVar(interp, "tcl_pkgPath", tclLibPath, TCL_GLOBAL_ONLY);
-    } else {
-#endif /* HAVE_CFBUNDLE */    
-
+    } else
+#endif /* HAVE_CFBUNDLE */
+    {
         Tcl_SetVar(interp, "tclDefaultLibrary", defaultLibraryDir, 
                 TCL_GLOBAL_ONLY);
         Tcl_SetVar(interp, "tcl_pkgPath", pkgPath, TCL_GLOBAL_ONLY);
-        
-#ifdef HAVE_CFBUNDLE
     }
-#endif /* HAVE_CFBUNDLE */
+
 #ifdef DJGPP
     Tcl_SetVar2(interp, "tcl_platform", "platform", "dos", TCL_GLOBAL_ONLY);
 #else
@@ -962,3 +960,35 @@ TclpCheckStackSpace()
 
     return 1;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_MacOSXGetLibraryPath --
+ *
+ *	If we have a bundle structure for the Tcl installation,
+ *	then check there first to see if we can find the libraries
+ *	there.
+ *
+ * Results:
+ *	TCL_OK if we have found the tcl library; TCL_ERROR otherwise.
+ *
+ * Side effects:
+ *	Same as for Tcl_MacOSXOpenBundleResources.
+ *
+ *----------------------------------------------------------------------
+ */
+int Tcl_MacOSXGetLibraryPath(Tcl_Interp *interp, int maxPathLen, char *tclLibPath)
+{
+	int foundInFramework = TCL_ERROR;
+#ifdef HAVE_CFBUNDLE
+    if (strcmp(defaultLibraryDir, "@TCL_IN_FRAMEWORK@") == 0) {
+    
+        foundInFramework = Tcl_MacOSXOpenBundleResources(interp, 
+                "com.tcltk.tcllibrary",
+                0, maxPathLen, tclLibPath);
+    }
+#endif	
+	return foundInFramework;
+}
+

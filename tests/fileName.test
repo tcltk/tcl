@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fileName.test,v 1.14.8.2 2002/06/10 05:33:15 wolfsuit Exp $
+# RCS: @(#) $Id: fileName.test,v 1.14.8.3 2002/08/20 20:25:27 das Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -312,6 +312,7 @@ if {[tcltest::testConstraint testsetplatform]} {
 test filename-4.19 {Tcl_SplitPath} {
     set oldDir [pwd]
     set res [catch {
+	cd [temporaryDirectory]
 	file mkdir tildetmp
 	set nastydir [file join tildetmp ./~tilde]
 	file mkdir $nastydir
@@ -1125,7 +1126,9 @@ test filename-11.13 {Tcl_GlobCmd} {
     list [catch {file join [lindex [glob ~] 0]} msg] $msg
 } [list 0 [file join $env(HOME)]]
 
+set oldpwd [pwd]
 set oldhome $env(HOME)
+cd [temporaryDirectory]
 set env(HOME) [pwd]
 file delete -force globTest
 file mkdir globTest/a1/b1
@@ -1172,12 +1175,22 @@ test filename-11.17.1 {Tcl_GlobCmd} {pcOnly macOnly} {
 	[file join $globname x,z1.c]\
 	[file join $globname x1.c]\
 	[file join $globname y1.c] [file join $globname z1.c]]]]
-test filename-11.17.2 {Tcl_GlobCmd} {unixOnly notRoot} {
+if {[string equal $tcl_platform(platform) "windows"]} {
+    if {[string index $tcl_platform(osVersion) 0] >= 5 \
+      && ([lindex [file system [temporaryDirectory]] 1] == "NTFS")} {
+	tcltest::testConstraint linkDirectory 1
+    } else {
+	tcltest::testConstraint linkDirectory 0
+    }
+} else {
+    tcltest::testConstraint linkDirectory 1
+}
+test filename-11.17.2 {Tcl_GlobCmd} {notRoot linkDirectory} {
     set dir [pwd]
     set ret "error in test"
     if {[catch {
 	cd $globname
-	exec ln -s a1 link
+	file link -symbolic link a1
 	cd $dir
 	set ret [list [catch {
 	    lsort [glob -directory $globname -join * b1]
@@ -1190,12 +1203,12 @@ test filename-11.17.2 {Tcl_GlobCmd} {unixOnly notRoot} {
 } [list 0 [lsort [list [file join $globname a1 b1] \
   [file join $globname link b1]]]]
 # Simpler version of the above test to illustrate a given bug.
-test filename-11.17.3 {Tcl_GlobCmd} {unixOnly notRoot} {
+test filename-11.17.3 {Tcl_GlobCmd} {notRoot linkDirectory} {
     set dir [pwd]
     set ret "error in test"
     if {[catch {
 	cd $globname
-	exec ln -s a1 link
+	file link -symbolic link a1
 	cd $dir
 	set ret [list [catch {
 	    lsort [glob -directory $globname -type d *]
@@ -1211,12 +1224,12 @@ test filename-11.17.3 {Tcl_GlobCmd} {unixOnly notRoot} {
   [file join $globname link]]]]
 # Make sure the bugfix isn't too simple.  We don't want
 # to break 'glob -type l'.
-test filename-11.17.4 {Tcl_GlobCmd} {unixOnly notRoot} {
+test filename-11.17.4 {Tcl_GlobCmd} {notRoot linkDirectory} {
     set dir [pwd]
     set ret "error in test"
     if {[catch {
 	cd $globname
-	exec ln -s a1 link
+	file link -symbolic link a1
 	cd $dir
 	set ret [list [catch {
 	    lsort [glob -directory $globname -type l *]
@@ -1487,9 +1500,9 @@ test filename-12.3 {simple globbing} {
 } {0 {}}
 
 if {$tcl_platform(platform) == "macintosh"} {
-  set globPreResult :globTest:
+    set globPreResult :globTest:
 } else {
-  set globPreResult globTest/
+    set globPreResult globTest/
 }
 set x1 x1.c
 set y1 y1.c
@@ -1582,12 +1595,25 @@ test filename-14.3 {asterisks, question marks, and brackets} {unixOrPc} {
 test filename-14.4 {asterisks, question marks, and brackets} {macOnly} {
     lsort [glob globTest/?1.c]
 } {:globTest:x1.c :globTest:y1.c :globTest:z1.c}
+
+# The current directory could be anywhere; do this to stop spurious matches
+file mkdir globTestContext
+file rename globTest [file join globTestContext globTest]
+set savepwd [pwd]
+cd globTestContext
+
 test filename-14.5 {asterisks, question marks, and brackets} {unixOrPc} {
     lsort [glob */*/*/*.c]
 } {globTest/a1/b1/x2.c globTest/a1/b2/y2.c}
 test filename-14.6 {asterisks, question marks, and brackets} {macOnly} {
     lsort [glob */*/*/*.c]
 } {:globTest:a1:b1:x2.c :globTest:a1:b2:y2.c}
+
+# Reset to where we were
+cd $savepwd
+file rename [file join globTestContext globTest] globTest
+file delete globTestContext
+
 test filename-14.7 {asterisks, question marks, and brackets} {unixOnly} {
     lsort [glob globTest/*]
 } {globTest/a1 globTest/a2 globTest/a3 {globTest/weird name.c} globTest/x,z1.c globTest/x1.c globTest/y1.c globTest/z1.c}
@@ -1675,7 +1701,7 @@ unset globname
 # On some systems, like AFS, "000" protection doesn't prevent
 # access by owner, so the following test is not portable.
 
-catch {exec chmod 000 globTest/a1}
+catch {file attributes globTest/a1 -permissions 0000}
 test filename-15.1 {unix specific globbing} {unixOnly nonPortable} {
     string tolower [list [catch {glob globTest/a1/*} msg]  $msg $errorCode]
 } {1 {couldn't read directory "globtest/a1": permission denied} {posix eacces {permission denied}}}
@@ -1689,7 +1715,7 @@ test filename-15.3 {unix specific no complain: no errors, good result} \
     glob -nocomplain globTest/a2 globTest/a1/* globTest/a3
 } {globTest/a2 globTest/a3}
 
-catch {exec chmod 755 globTest/a1}
+catch {file attributes globTest/a1 -permissions 0755}
 test filename-15.4 {unix specific no complain: no errors, good result} \
 	{unixOnly nonPortable} {
     # test fails because if an error occurs, the interp's result
@@ -1715,7 +1741,7 @@ test filename-15.6 {unix specific globbing} {unixOnly} {
     set env(HOME) $temp
     set result
 } [list 0 [list [lindex [glob ~] 0]/globTest/odd\\\[\]*?\{\}name]]
-catch {exec rm -f globTest/odd\\\[\]*?\{\}name}
+catch {file delete -force globTest/odd\\\[\]*?\{\}name}
 
 # The following tests are only valid for Windows systems.
 set oldDir [pwd]
@@ -1792,8 +1818,8 @@ test filename-16.16 {windows specific globbing} {pcOnly} {
 
 # cleanup
 catch {file delete -force C:/globTest}
-cd $oldDir
 file delete -force globTest
+cd $oldpwd
 set env(HOME) $oldhome
 if {[tcltest::testConstraint testsetplatform]} {
     testsetplatform $platform

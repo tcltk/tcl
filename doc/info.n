@@ -7,7 +7,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: info.n,v 1.7 2001/05/30 08:57:06 dkf Exp $
+'\" RCS: @(#) $Id: info.n,v 1.7.10.1 2002/08/20 20:25:24 das Exp $
 '\" 
 .so man.macros
 .TH info n 8.4 Tcl "Tcl Built-In Commands"
@@ -140,8 +140,8 @@ an empty string for the \fIinterp\fR argument.
 If \fIpattern\fR isn't specified, returns a list of all the names
 of currently-defined local variables, including arguments to the
 current procedure, if any.
-Variables defined with the \fBglobal\fR and \fBupvar\fR commands
-will not be returned.
+Variables defined with the \fBglobal\fR, \fBupvar\fR  and
+\fBvariable\fR commands will not be returned.
 If \fIpattern\fR is specified, only those names matching \fIpattern\fR
 are returned.  Matching is determined using the same rules as for
 \fBstring match\fR.

@@ -1,6 +1,6 @@
 # This file contains a collection of tests for generic/tclMain.c.
 #
-# RCS: @(#) $Id: main.test,v 1.4.2.2 2002/06/10 05:33:16 wolfsuit Exp $
+# RCS: @(#) $Id: main.test,v 1.4.2.3 2002/08/20 20:25:28 das Exp $
 
 if {[catch {package require tcltest 2.0.2}]} {
     puts stderr "Skipping tests in [info script]. tcltest 2.0.2 required."
@@ -15,6 +15,8 @@ namespace eval ::tcl::test::main {
     namespace import ::tcltest::cleanupTests
     namespace import ::tcltest::makeFile
     namespace import ::tcltest::removeFile
+    namespace import ::tcltest::temporaryDirectory
+    namespace import ::tcltest::workingDirectory
 
     # Is [exec] defined?
     testConstraint exec [llength [info commands exec]]
@@ -40,6 +42,7 @@ namespace eval ::tcl::test::main {
 	}
     }
 
+    cd [temporaryDirectory]
     # Tests Tcl_Main-1.*: variable initializations
 
     test Tcl_Main-1.1 {
@@ -1168,6 +1171,8 @@ namespace eval ::tcl::test::main {
 	close $f
 	file delete result
     } -result "1\nfoo\n"
+
+    cd [workingDirectory]
 
     cleanupTests
 }

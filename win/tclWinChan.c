@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinChan.c,v 1.15.8.2 2002/06/10 05:33:19 wolfsuit Exp $
+ * RCS: @(#) $Id: tclWinChan.c,v 1.15.8.3 2002/08/20 20:25:31 das Exp $
  */
 
 #include "tclWinInt.h"
@@ -744,18 +744,17 @@ FileGetHandleProc(instanceData, direction, handlePtr)
  */
 
 Tcl_Channel
-TclpOpenFileChannel(interp, pathPtr, modeString, permissions)
+TclpOpenFileChannel(interp, pathPtr, mode, permissions)
     Tcl_Interp *interp;			/* Interpreter for error reporting;
                                          * can be NULL. */
     Tcl_Obj *pathPtr;			/* Name of file to open. */
-    CONST char *modeString;		/* A list of POSIX open modes or
-                                         * a string such as "rw". */
+    int mode;				/* POSIX mode. */
     int permissions;			/* If the open involves creating a
                                          * file, with what modes to create
                                          * it? */
 {
     Tcl_Channel channel = 0;
-    int seekFlag, mode, channelPermissions;
+    int channelPermissions;
     DWORD accessMode, createMode, shareMode, flags, consoleParams, type;
     CONST TCHAR *nativeName;
     DCB dcb;
@@ -763,11 +762,6 @@ TclpOpenFileChannel(interp, pathPtr, modeString, permissions)
     char channelName[16 + TCL_INTEGER_SPACE];
     TclFile readFile = NULL;
     TclFile writeFile = NULL;
-
-    mode = TclGetOpenMode(interp, modeString, &seekFlag);
-    if (mode == -1) {
-        return NULL;
-    }
 
     nativeName = (TCHAR*) Tcl_FSGetNativePath(pathPtr);
     if (nativeName == NULL) {
@@ -937,20 +931,6 @@ TclpOpenFileChannel(interp, pathPtr, modeString, permissions)
 	break;
     }
 
-    if (channel != NULL) {
-	if (seekFlag) {
-	    if (Tcl_Seek(channel, 0, SEEK_END) < 0) {
-		if (interp != (Tcl_Interp *) NULL) {
-		    Tcl_AppendResult(interp,
-			    "could not seek to end of file on \"",
-			    channelName, "\": ", Tcl_PosixError(interp),
-			    (char *) NULL);
-		}
-		Tcl_Close(NULL, channel);
-		return NULL;
-	    }
-	}
-    }
     return channel;
 }
 

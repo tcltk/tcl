@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: expr.n,v 1.5.14.2 2002/06/10 05:33:08 wolfsuit Exp $
+'\" RCS: @(#) $Id: expr.n,v 1.5.14.3 2002/08/20 20:25:24 das Exp $
 '\" 
 .so man.macros
 .TH expr n 8.4 Tcl "Tcl Built-In Commands"
@@ -302,7 +302,7 @@ Returns the square root of \fIarg\fR.  \fIArg\fR must be non-negative.
 \fBsrand(\fIarg\fB)\fR
 The \fIarg\fR, which must be an integer, is used to reset the seed for
 the random number generator.  Returns the first random number from
-that seed.  Each interpreter has it's own seed.
+that seed.  Each interpreter has its own seed.
 .TP
 \fBtan(\fIarg\fB)\fR
 Returns the tangent of \fIarg\fR, measured in radians.

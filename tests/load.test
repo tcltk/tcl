@@ -10,10 +10,10 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: load.test,v 1.7.18.1 2002/06/10 05:33:16 wolfsuit Exp $
+# RCS: @(#) $Id: load.test,v 1.7.18.2 2002/08/20 20:25:28 das Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest
+    package require tcltest 2
     namespace import -force ::tcltest::*
 }
 
@@ -31,12 +31,12 @@ set ext [info sharedlibextension]
 set testDir [file join [file dirname [info nameofexecutable]] dltest]
 set x [file join $testDir pkga$ext]
 set dll "[file tail $x]Required"
-set ::tcltest::testConstraints($dll) [file readable $x]
+::tcltest::testConstraint $dll [file readable $x]
 
 # Tests also require that this DLL has not already been loaded.
 set loaded "[file tail $x]Loaded"
 set alreadyLoaded [info loaded]
-set ::tcltest::testConstraints($loaded) \
+::tcltest::testConstraint $loaded \
 	[expr {![string match *pkga* $alreadyLoaded]}]
 
 set alreadyTotalLoaded [info loaded]

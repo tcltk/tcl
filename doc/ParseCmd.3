@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: ParseCmd.3,v 1.7.4.1 2002/02/05 02:21:57 wolfsuit Exp $
+'\" RCS: @(#) $Id: ParseCmd.3,v 1.7.4.2 2002/08/20 20:25:24 das Exp $
 '\" 
 .so man.macros
 .TH Tcl_ParseCommand 3 8.3 Tcl "Tcl Library Procedures"
@@ -49,7 +49,7 @@ if NULL, then no error messages are left after errors.
 For \fBTcl_EvalTokens\fR and \fBTcl_EvalTokensStandard\fR,
 determines the context for evaluating the
 script and also is used for error reporting; must not be NULL.
-.AP char *string in
+.AP "CONST char" *string in
 Pointer to first character in string to parse.
 .AP int numBytes in
 Number of bytes in \fIstring\fR, not including any terminating null
@@ -71,7 +71,7 @@ Any previous information in this structure
 is ignored, unless \fIappend\fR is non-zero in a call to
 \fBTcl_ParseBraces\fR, \fBTcl_ParseQuotedString\fR,
 or \fBTcl_ParseVarName\fR.
-.AP char **termPtr out
+.AP "CONST char" **termPtr out
 If not NULL, points to a location where
 \fBTcl_ParseBraces\fR, \fBTcl_ParseQuotedString\fR, and
 \fBTcl_ParseVar\fR will store a pointer to the character
@@ -129,7 +129,7 @@ with information about the structure of the string
 (see below for details),
 and stores a pointer to the character just after the terminating \fB}\fR
 in the location given by \fI*termPtr\fR.
-If an error occurrs while parsing the string
+If an error occurs while parsing the string
 then \fBTCL_ERROR\fR is returned,
 an error message is left in \fIinterp\fR's result,
 and no information is left at \fI*parsePtr\fR or \fI*termPtr\fR.
@@ -145,7 +145,7 @@ with information about the structure of the string
 (see below for details),
 and stores a pointer to the character just after the terminating \fB"\fR
 in the location given by \fI*termPtr\fR.
-If an error occurrs while parsing the string
+If an error occurs while parsing the string
 then \fBTCL_ERROR\fR is returned,
 an error message is left in \fIinterp\fR's result,
 and no information is left at \fI*parsePtr\fR or \fI*termPtr\fR.
@@ -158,7 +158,7 @@ If a variable name was parsed successfully, \fBTcl_ParseVarName\fR
 returns \fBTCL_OK\fR and fills in the structure pointed to by
 \fIparsePtr\fR with information about the structure of the variable name
 (see below for details).  If an error
-occurrs while parsing the command then \fBTCL_ERROR\fR is returned, an
+occurs while parsing the command then \fBTCL_ERROR\fR is returned, an
 error message is left in \fIinterp\fR's result (if \fIinterp\fR isn't
 NULL), and no information is left at \fI*parsePtr\fR.
 .PP
@@ -345,7 +345,7 @@ this includes the sub-tokens for any nested \fBTCL_TOKEN_SUB_EXPR\fR tokens.
 \fBTCL_TOKEN_OPERATOR\fR
 The token describes one operator of an expression
 such as \fB&&\fR or \fBhypot\fR.
-An \fBTCL_TOKEN_OPERATOR\fR token is always preceeded by a
+An \fBTCL_TOKEN_OPERATOR\fR token is always preceded by a
 \fBTCL_TOKEN_SUB_EXPR\fR token
 that describes the operator and its operands;
 the \fBTCL_TOKEN_SUB_EXPR\fR token's \fInumComponents\fR field

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFCmd.c,v 1.13.2.3 2002/06/28 22:34:39 wolfsuit Exp $
+ * RCS: @(#) $Id: tclUnixFCmd.c,v 1.13.2.4 2002/08/20 20:25:30 das Exp $
  *
  * Portions of this code were derived from NetBSD source code which has
  * the following copyright notice:
@@ -260,7 +260,7 @@ DoRenameFile(src, dst)
 	    dirPtr = opendir(dst);			/* INTL: Native. */
 	    if (dirPtr != NULL) {
 		while (1) {
-		    dirEntPtr = Tcl_PlatformReaddir(dirPtr); /* INTL: Native. */
+		    dirEntPtr = TclOSreaddir(dirPtr); /* INTL: Native. */
 		    if (dirEntPtr == NULL) {
 			break;
 		    }
@@ -344,7 +344,7 @@ DoCopyFile(src, dst)
      * Have to do a stat() to determine the filetype.
      */
     
-    if (Tcl_PlatformLStat(src, &srcStatBuf) != 0) {	/* INTL: Native. */
+    if (TclOSlstat(src, &srcStatBuf) != 0) {		/* INTL: Native. */
 	return TCL_ERROR;
     }
     if (S_ISDIR(srcStatBuf.st_mode)) {
@@ -357,7 +357,7 @@ DoCopyFile(src, dst)
      * exists, so we remove it first
      */
     
-    if (Tcl_PlatformLStat(dst, &dstStatBuf) == 0) {	/* INTL: Native. */
+    if (TclOSlstat(dst, &dstStatBuf) == 0) {		/* INTL: Native. */
 	if (S_ISDIR(dstStatBuf.st_mode)) {
 	    errno = EISDIR;
 	    return TCL_ERROR;
@@ -438,12 +438,12 @@ CopyFile(src, dst, statBufPtr)
     char *buffer;      /* Data buffer for copy */
     size_t nread;
 
-    if ((srcFd = Tcl_PlatformOpen(src, O_RDONLY, 0)) < 0) { /* INTL: Native. */
+    if ((srcFd = TclOSopen(src, O_RDONLY, 0)) < 0) {	/* INTL: Native. */
 	return TCL_ERROR;
     }
 
-    dstFd = Tcl_PlatformOpen(dst,			/* INTL: Native. */
-	    O_CREAT | O_TRUNC | O_WRONLY, statBufPtr->st_mode);
+    dstFd = TclOSopen(dst, O_CREAT|O_TRUNC|O_WRONLY,	/* INTL: Native. */
+	    statBufPtr->st_mode);
     if (dstFd < 0) {
 	close(srcFd); 
 	return TCL_ERROR;
@@ -718,7 +718,7 @@ DoRemoveDirectory(pathPtr, recursive, errorPtr)
 	Tcl_StatBuf statBuf;
 	int newPerm;
 
-	if (Tcl_PlatformStat(path, &statBuf) == 0) {
+	if (TclOSstat(path, &statBuf) == 0) {
 	    oldPerm = (mode_t) (statBuf.st_mode & 0x00007FFF);
 	}
 	
@@ -803,7 +803,7 @@ TraverseUnixTree(traverseProc, sourcePtr, targetPtr, errorPtr)
     targetLen = 0;		/* lint. */
 
     source = Tcl_DStringValue(sourcePtr);
-    if (Tcl_PlatformLStat(source, &statBuf) != 0) {	/* INTL: Native. */
+    if (TclOSlstat(source, &statBuf) != 0) {		/* INTL: Native. */
 	errfile = source;
 	goto end;
     }
@@ -838,8 +838,8 @@ TraverseUnixTree(traverseProc, sourcePtr, targetPtr, errorPtr)
 	Tcl_DStringAppend(targetPtr, "/", 1);
 	targetLen = Tcl_DStringLength(targetPtr);
     }
-				  
-    while ((dirEntPtr = Tcl_PlatformReaddir(dirPtr)) != NULL) {	/* INTL: Native. */
+
+    while ((dirEntPtr = TclOSreaddir(dirPtr)) != NULL) { /* INTL: Native. */
 	if ((strcmp(dirEntPtr->d_name, ".") == 0)
 	        || (strcmp(dirEntPtr->d_name, "..") == 0)) {
 	    continue;
@@ -904,8 +904,8 @@ TraverseUnixTree(traverseProc, sourcePtr, targetPtr, errorPtr)
  *
  * TraversalCopy
  *
- *      Called from TraverseUnixTree in order to execute a recursive copy of a 
- *      directory. 
+ *      Called from TraverseUnixTree in order to execute a recursive copy
+ *      of a directory.
  *
  * Results:
  *      Standard Tcl result.
@@ -931,7 +931,7 @@ TraversalCopy(srcPtr, dstPtr, statBufPtr, type, errorPtr)
     switch (type) {
 	case DOTREE_F:
 	    if (DoCopyFile(Tcl_DStringValue(srcPtr), 
-			   Tcl_DStringValue(dstPtr)) == TCL_OK) {
+		    Tcl_DStringValue(dstPtr)) == TCL_OK) {
 		return TCL_OK;
 	    }
 	    break;
@@ -1675,7 +1675,7 @@ TclpObjNormalizePath(interp, pathPtr, nextCheckpoint)
     while (1) {
 	cur = *currentPathEndPosition;
 	if ((cur == '/') && (path != currentPathEndPosition)) {
-	    /* Reached directory separator, or end of string */
+	    /* Reached directory separator */
 	    Tcl_DString ds;
 	    CONST char *nativePath;
 	    int accessOk;
@@ -1691,6 +1691,7 @@ TclpObjNormalizePath(interp, pathPtr, nextCheckpoint)
 	    /* Update the acceptable point */
 	    nextCheckpoint = currentPathEndPosition - path;
 	} else if (cur == 0) {
+	    /* Reached end of string */
 	    break;
 	}
 	currentPathEndPosition++;
@@ -1709,10 +1710,8 @@ TclpObjNormalizePath(interp, pathPtr, nextCheckpoint)
      * platforms, passing an empty string to 'Realpath' will give us the
      * normalized pwd, which is not what we want at all!
      */
-    if (nextCheckpoint == 0) {
-        return 0;
-    }
-
+    if (nextCheckpoint == 0) return 0;
+    
     nativePath = Tcl_UtfToExternalDString(NULL, path, nextCheckpoint, &ds);
     if (Realpath(nativePath, normPath) != NULL) {
 	/* 

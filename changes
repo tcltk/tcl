@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.62.8.1 2002/06/10 05:33:07 wolfsuit Exp $
+RCS: @(#) $Id: changes,v 1.62.8.2 2002/08/20 20:25:24 das Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -5438,3 +5438,112 @@ related to the handling of iso2022 text and finalization of escape-based
 encodings. (taguchi, takahashi, hobbs)
 
 --- Released 8.4a4, March 5, 2002 --- See ChangeLog for details ---
+
+2002-03-06 (new feature)[TIP 80] expanded [lsearch] options (wilkason, fellows)
+
+2002-03-07 (new feature)[TIP 87] [interp recursionlimit] (trier)
+
+2002-03-08 (platform feature) mingw 1.1 build favored (dejong)
+
+2002-03-20 (new feature)[TIP 27] CONST-ified variable access functions (porter)
+
+2002-03-24 (bug fix)[511666,511658,523217,530960] expanded
+Tcl_FSMatchInDirectory to handle assorted [glob] bugs in VFS. (darley)
+        *** POTENTIAL INCOMPATIBILITY with prior 8.4a releases ***
+
+2002-03-25 (bug fix)[495726] stopped tcltest disabling of auto-loading (porter)
+
+2002-03-25 (bug fix)[495977] allow \n in test constraints (porter)
+
+2002-03-27 (platform support)[527941,533862] VC/winhelp/W9X (spjuth,
+gravereaux)
+
+2002-03-28 (bug fix)[219181] exception at level 0 issues (sofer)
+
+2002-03-28 (bug fix)[219362] command termination; Tcl_CreateTrace (knoll,sofer)
+
+2002-04-05 (bug fix)[536879] exceptions during variable subst (porter)
+
+2002-04-15 (bug fix)[497446,513983] tcltest syntax errors now raised (porter)
+	***POTENTIAL INCOMPATIBILITY with prior tcltest 2.0.* (8.4aX)***
+
+2002-04-17 (bug fix)[495660] [(save|restore)state] deprecated (porter)
+
+2002-04-17 (bug fix)[526524] escape-based encodings corrected (yamamoto, hobbs)
+
+2002-04-18 (bug fix)[542588] [expr] error msgs improved (ehrens, sofer)
+
+2002-04-18 (bug fix)[545325] [info level $level] now returns [namespace eval]
+as documented (suchenwirth,sofer)
+
+2002-04-19 (bug fix)[544727] export [mcload]; ns context of [mcmax] (porter)
+=> msgcat 1.2.3
+
+2002-04-22 (performance enhancement) threaded memory allocator (AOL, hobbs)
+
+2002-04-24 (new feature) TCLTK_NO_LIBRARY_TEXT_RESOURCES #define disables
+inclusion of tcl library code in resource fork on Mac.  (steffen)
+
+2002-05-21 (platform support) static libs on OSF (dejong)
+
+2002-05-24 (bug fix)[557878] set encoding on listening socket (staplin,
+kupries)
+
+2002-05-24 (new feature)[TIP 91] Tcl_Seek compatibility (fellows)
+
+2002-05-28 (bug fix)[545579] VFS [load] left temp file (darley)
+
+2002-05-28 (bug fix)[559376] plug timezone env leak on Windows (hobbs)
+
+2002-05-29 (performance enhancement) [string compare] optimized (hobbs,fellows)
+
+2002-05-31 (bug fix)[550534] plug interp leak in [pkg_mkIndex] (helmut)
+
+2002-05-31 (dead code)[474335,555635] removed all use of matherr() (english)
+        *** POTENTIAL INCOMPATIBILITY ***
+
+2002-06-04 (new feature)[TIP 85,521362] custom result match in tcltest
+(markus, porter)
+=> tcltest 2.1
+
+2002-06-06 (bug fix)[524352] encoding, threading, and environment issues on
+MacOSX (steffen)
+
+2002-06-06 (bug fix)[512214,558742,512214,461000] lazy initialization of
+tcltest constraints (porter)
+
+2002-06-07 (bug fix)[563122,564595] EOVERFLOW definitions (fellows)
+
+2002-06-11 (bug fix)[567386] [info locals] corrections (sofer)
+
+2002-06-14 (new feature)[TIP 102] [trace list] renamed [trace info] (fellows)
+
+2002-06-17 (new feature)[525522,525525] msgcat support for XPG4 locales;
+examination of LC_ALL, LC_MESSAGES environment variables (haible, porter)
+=> msgcat 1.3
+
+2002-06-17 (new feature)[565088] header files assume modern C compiler by
+default; older compilers may need configuration (english)
+        *** POTENTIAL INCOMPATIBILITY ***
+
+2002-06-17 (bug fix)[554068] [exec] argument quoting on Windows (darley)
+
+2002-06-17 (new feature)[TIP 62,462580] command execution traces (lavana)
+
+2002-06-19 (bug fix)[558324] regexp sets a linked variable (watson)
+
+ * (performance enhancment) optimizations of bytecode execution (sofer)
+
+2002-06-21 (new feature)[TIP 99,562970] new [file link] command (darley)
+
+2002-06-24 (new feature)[TIP 101] new [tcltest::configure] command (porter)
+
+2002-06-25 (new feature) --enable-man-symlinks and --enable-man-compression
+options to configure (max)
+
+2002-06-26 (bug fix)[565880] [clock format] now respects locale (max)
+        *** POTENTIAL INCOMPATIBILITY ***
+
+2002-07-03 (bug fix)[577015] [catch] catches even compile errors (sofer)
+
+--- Released 8.4b1, July 5, 2002 --- See ChangeLog for details ---

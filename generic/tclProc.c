@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.29.2.2 2002/06/10 05:33:13 wolfsuit Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.29.2.3 2002/08/20 20:25:26 das Exp $
  */
 
 #include "tclInt.h"
@@ -798,7 +798,7 @@ TclProcInterpProc(clientData, interp, argc, argv)
 				 * invoked. */
     int argc;			/* Count of number of arguments to this
 				 * procedure. */
-    register char **argv;	/* Argument values. */
+    register CONST char **argv;	/* Argument values. */
 {
     register Tcl_Obj *objPtr;
     register int i;
@@ -1007,19 +1007,19 @@ TclObjInterpProc(clientData, interp, objc, objv)
 	    Tcl_Obj *listPtr = Tcl_NewListObj(argCt, &(objv[i]));
 	    varPtr->value.objPtr = listPtr;
 	    Tcl_IncrRefCount(listPtr); /* local var is a reference */
-	    varPtr->flags &= ~VAR_UNDEFINED;
+	    TclClearVarUndefined(varPtr);
 	    argCt = 0;
 	    break;		/* done processing args */
 	} else if (argCt > 0) {
 	    Tcl_Obj *objPtr = objv[i];
 	    varPtr->value.objPtr = objPtr;
-	    varPtr->flags &= ~VAR_UNDEFINED;
+	    TclClearVarUndefined(varPtr);
 	    Tcl_IncrRefCount(objPtr);  /* since the local variable now has
 					* another reference to object. */
 	} else if (localPtr->defValuePtr != NULL) {
 	    Tcl_Obj *objPtr = localPtr->defValuePtr;
 	    varPtr->value.objPtr = objPtr;
-	    varPtr->flags &= ~VAR_UNDEFINED;
+	    TclClearVarUndefined(varPtr);
 	    Tcl_IncrRefCount(objPtr);  /* since the local variable now has
 					* another reference to object. */
 	} else {
@@ -1071,7 +1071,7 @@ TclObjInterpProc(clientData, interp, objc, objv)
 
     iPtr->returnCode = TCL_OK;
     procPtr->refCount++;
-    result = Tcl_EvalObjEx(interp, procPtr->bodyPtr, 0);
+    result = TclCompEvalObj(interp, procPtr->bodyPtr);
     procPtr->refCount--;
     if (procPtr->refCount <= 0) {
 	TclProcCleanupProc(procPtr);
@@ -1421,17 +1421,20 @@ TclUpdateReturnInfo(iPtr)
 				 * exception is being processed. */
 {
     int code;
+    char *errorCode;
 
     code = iPtr->returnCode;
     iPtr->returnCode = TCL_OK;
     if (code == TCL_ERROR) {
-	Tcl_SetVar2((Tcl_Interp *) iPtr, "errorCode", (char *) NULL,
-		(iPtr->errorCode != NULL) ? iPtr->errorCode : "NONE",
+	errorCode = ((iPtr->errorCode != NULL) ? iPtr->errorCode : "NONE");
+	Tcl_ObjSetVar2((Tcl_Interp *) iPtr, iPtr->execEnvPtr->errorCode,
+	        NULL, Tcl_NewStringObj(errorCode, -1),
 		TCL_GLOBAL_ONLY);
 	iPtr->flags |= ERROR_CODE_SET;
 	if (iPtr->errorInfo != NULL) {
-	    Tcl_SetVar2((Tcl_Interp *) iPtr, "errorInfo", (char *) NULL,
-		    iPtr->errorInfo, TCL_GLOBAL_ONLY);
+	    Tcl_ObjSetVar2((Tcl_Interp *) iPtr, iPtr->execEnvPtr->errorInfo,
+	            NULL, Tcl_NewStringObj(iPtr->errorInfo, -1),
+		    TCL_GLOBAL_ONLY);
 	    iPtr->flags |= ERR_IN_PROGRESS;
 	}
     }

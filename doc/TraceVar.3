@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: TraceVar.3,v 1.4.18.2 2002/06/10 05:33:08 wolfsuit Exp $
+'\" RCS: @(#) $Id: TraceVar.3,v 1.4.18.3 2002/08/20 20:25:24 das Exp $
 '\" 
 .so man.macros
 .TH Tcl_TraceVar 3 7.4 Tcl "Tcl Library Procedures"
@@ -35,13 +35,10 @@ ClientData
 .AS Tcl_VarTraceProc prevClientData
 .AP Tcl_Interp *interp in
 Interpreter containing variable.
-.AP char *varName in
+.AP "CONST char" *varName in
 Name of variable.  May refer to a scalar variable, to
 an array variable with no index, or to an array variable
 with a parenthesized index.
-If the name references an element of an array, then it
-must be in writable memory:  Tcl will make temporary modifications 
-to it while looking up the name.
 .AP int flags in
 OR-ed combination of the values TCL_TRACE_READS, TCL_TRACE_WRITES, 
 TCL_TRACE_UNSETS, TCL_TRACE_ARRAY, TCL_GLOBAL_ONLY, TCL_NAMESPACE_ONLY,
@@ -52,7 +49,7 @@ procedures.  See below for more information.
 Procedure to invoke whenever one of the traced operations occurs.
 .AP ClientData clientData in
 Arbitrary one-word value to pass to \fIproc\fR.
-.AP char *name1 in
+.AP "CONST char" *name1 in
 Name of scalar or array variable (without array index).
 .AP "CONST char" *name2 in
 For a trace on an element of an array, gives the index of the

@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: uplevel.test,v 1.6 2000/04/10 17:19:05 ericm Exp $
+# RCS: @(#) $Id: uplevel.test,v 1.6.18.1 2002/08/20 20:25:29 das Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -111,6 +111,21 @@ proc a3 {} {
 a2
 test uplevel-5.1 {info level} {set x} 1
 test uplevel-5.2 {info level} {set y} a3
+
+namespace eval ns1 {
+    proc set args {return ::ns1}
+}
+proc a2 {} {
+    uplevel {set x ::}
+}
+test uplevel-6.1 {uplevel and shadowed cmds} {
+    set res [namespace eval ns1 a2]
+    lappend res [namespace eval ns2 a2]
+    lappend res [namespace eval ns1 a2]
+    namespace eval ns1 {rename set {}}
+    lappend res [namespace eval ns1 a2]
+} {::ns1 :: ::ns1 ::}
+
 
 # cleanup
 ::tcltest::cleanupTests

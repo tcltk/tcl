@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: genStubs.tcl,v 1.9.8.3 2001/11/11 17:58:00 wolfsuit Exp $
+# RCS: @(#) $Id: genStubs.tcl,v 1.9.8.4 2002/08/20 20:25:29 das Exp $
 
 package require Tcl 8
 
@@ -122,7 +122,7 @@ proc genStubs::hooks {names} {
 # Arguments:
 #	index		The index number of the interface.
 #	platform	The platform the interface belongs to.  Should be one
-#			of generic, win, unix, or mac, or macosx or aqua.
+#			of generic, win, unix, or mac, or macosx or aqua or x11.
 #	decl		The C function declaration, or {} for an undefined
 #			entry.
 #
@@ -221,7 +221,7 @@ proc genStubs::addPlatformGuard {plat text} {
 	    return "#ifdef __WIN32__\n${text}#endif /* __WIN32__ */\n"
 	}
 	unix {
-	    return "#if !(defined(__WIN32__) || defined(MAC_TCL) || defined(MAC_OSX_TK))/* UNIX */\n${text}#endif /* UNIX */\n"
+	    return "#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */\n${text}#endif /* UNIX */\n"
 	}		    
 	mac {
 	    return "#ifdef MAC_TCL\n${text}#endif /* MAC_TCL */\n"
@@ -229,8 +229,11 @@ proc genStubs::addPlatformGuard {plat text} {
 	macosx {
 	    return "#ifdef MAC_OSX_TCL\n${text}#endif /* MAC_OSX_TCL */\n"
 	}
-        aqua {
+	aqua {
 	    return "#ifdef MAC_OSX_TK\n${text}#endif /* MAC_OSX_TK */\n"
+	}
+	x11 {
+	    return "#if !(defined(__WIN32__) || defined(MAC_TCL) || defined(MAC_OSX_TK)) /* X11 */\n${text}#endif /* X11 */\n"
 	}
     }
     return "$text"
@@ -622,8 +625,9 @@ proc genStubs::forAllStubs {name slotProc onAll textVar \
 		    }
 		}
                 #
-                # "aqua" and "macosx" a special cases, since "macosx" always implies
-                # "unix" and "aqua", "macosx", so we need to be careful not to 
+                # "aqua" and "macosx" and "x11" are special cases, 
+                # since "macosx" always implies "unix" and "aqua", 
+                # "macosx", so we need to be careful not to 
                 # emit duplicate stubs entries for the two.
                 #
 		if {[info exists stubs($name,aqua,$i)]
@@ -638,11 +642,18 @@ proc genStubs::forAllStubs {name slotProc onAll textVar \
 			    [$slotProc $name $stubs($name,macosx,$i) $i]]
 		    set emit 1
 		}
+		if {[info exists stubs($name,x11,$i)]
+                        && ![info exists stubs($name,unix,$i)]} {
+		    append text [addPlatformGuard x11 \
+			    [$slotProc $name $stubs($name,x11,$i) $i]]
+		    set emit 1
+		}
 	    }
 	    if {$emit == 0} {
 		eval {append text} $skipString
 	    }
 	}
+	
     } else {
 	# Emit separate stubs blocks per platform
 	foreach plat {unix win mac} {
@@ -687,8 +698,21 @@ proc genStubs::forAllStubs {name slotProc onAll textVar \
 		}
 		append text [addPlatformGuard macosx $temp]
 	    }
+        # Again, make sure you don't duplicate entries for x11 & unix.
+	if {[info exists stubs($name,x11,lastNum)]
+                && ![info exists stubs($name,unix,lastNum)]} {
+	    set lastNum $stubs($name,x11,lastNum)
+	    set temp {}
+	    for {set i 0} {$i <= $lastNum} {incr i} {
+		if {![info exists stubs($name,x11,$i)]} {
+		    eval {append temp} $skipString
+		} else {
+			append temp [$slotProc $name $stubs($name,x11,$i) $i]
+		    }
+		}
+		append text [addPlatformGuard x11 $temp]
+	    }
     }
-
 }
 
 # genStubs::emitDeclarations --

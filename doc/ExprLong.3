@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: ExprLong.3,v 1.4.12.1 2002/02/05 02:21:57 wolfsuit Exp $
+'\" RCS: @(#) $Id: ExprLong.3,v 1.4.12.2 2002/08/20 20:25:24 das Exp $
 '\" 
 .so man.macros
 .TH Tcl_ExprLong 3 7.0 Tcl "Tcl Library Procedures"
@@ -34,9 +34,7 @@ Interpreter in whose context to evaluate \fIstring\fR or \fIobjPtr\fR.
 .VS 8.4
 .AP "CONST char" *string in
 .VE
-Expression to be evaluated.  Must be in writable memory (the expression
-parser makes temporary modifications to the string during parsing, which
-it undoes before returning).
+Expression to be evaluated.  
 .AP long *longPtr out
 Pointer to location in which to store the integer value of the
 expression.

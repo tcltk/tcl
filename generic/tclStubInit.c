@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.61.4.4 2002/06/10 05:33:13 wolfsuit Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.61.4.5 2002/08/20 20:25:26 das Exp $
  */
 
 #include "tclInt.h"
@@ -52,7 +52,7 @@ TclIntStubs tclIntStubs = {
     TclAccessInsertProc, /* 2 */
     TclAllocateFreeObjects, /* 3 */
     NULL, /* 4 */
-#if !(defined(__WIN32__) || defined(MAC_TCL) || defined(MAC_OSX_TK))/* UNIX */
+#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
     TclCleanupChildren, /* 5 */
 #endif /* UNIX */
 #ifdef __WIN32__
@@ -64,7 +64,7 @@ TclIntStubs tclIntStubs = {
     TclCleanupCommand, /* 6 */
     TclCopyAndCollapse, /* 7 */
     TclCopyChannel, /* 8 */
-#if !(defined(__WIN32__) || defined(MAC_TCL) || defined(MAC_OSX_TK))/* UNIX */
+#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
     TclCreatePipeline, /* 9 */
 #endif /* UNIX */
 #ifdef __WIN32__
@@ -92,13 +92,13 @@ TclIntStubs tclIntStubs = {
     NULL, /* 26 */
     TclGetDate, /* 27 */
     TclpGetDefaultStdChannel, /* 28 */
-    TclGetElementOfIndexedArray, /* 29 */
+    NULL, /* 29 */
     NULL, /* 30 */
     TclGetExtension, /* 31 */
     TclGetFrame, /* 32 */
     TclGetInterpProc, /* 33 */
     TclGetIntForIndex, /* 34 */
-    TclGetIndexedScalar, /* 35 */
+    NULL, /* 35 */
     TclGetLong, /* 36 */
     TclGetLoadedPackages, /* 37 */
     TclGetNamespaceForQualName, /* 38 */
@@ -110,8 +110,8 @@ TclIntStubs tclIntStubs = {
     TclGuessPackageName, /* 44 */
     TclHideUnsafeCommands, /* 45 */
     TclInExit, /* 46 */
-    TclIncrElementOfIndexedArray, /* 47 */
-    TclIncrIndexedScalar, /* 48 */
+    NULL, /* 47 */
+    NULL, /* 48 */
     TclIncrVar2, /* 49 */
     TclInitCompiledLocals, /* 50 */
     TclInterpInit, /* 51 */
@@ -162,9 +162,9 @@ TclIntStubs tclIntStubs = {
     TclRenameCommand, /* 96 */
     TclResetShadowedCmdRefs, /* 97 */
     TclServiceIdle, /* 98 */
-    TclSetElementOfIndexedArray, /* 99 */
-    TclSetIndexedScalar, /* 100 */
-#if !(defined(__WIN32__) || defined(MAC_TCL) || defined(MAC_OSX_TK))/* UNIX */
+    NULL, /* 99 */
+    NULL, /* 100 */
+#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
     TclSetPreInitScript, /* 101 */
 #endif /* UNIX */
 #ifdef __WIN32__
@@ -175,7 +175,7 @@ TclIntStubs tclIntStubs = {
 #endif /* MAC_TCL */
     TclSetupEnv, /* 102 */
     TclSockGetPort, /* 103 */
-#if !(defined(__WIN32__) || defined(MAC_TCL) || defined(MAC_OSX_TK))/* UNIX */
+#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
     TclSockMinimumBuffers, /* 104 */
 #endif /* UNIX */
 #ifdef __WIN32__
@@ -249,12 +249,14 @@ TclIntStubs tclIntStubs = {
     TclSetStartupScriptPath, /* 167 */
     TclGetStartupScriptPath, /* 168 */
     TclpUtfNcmp2, /* 169 */
+    TclCheckInterpTraces, /* 170 */
+    TclCheckExecutionTraces, /* 171 */
 };
 
 TclIntPlatStubs tclIntPlatStubs = {
     TCL_STUB_MAGIC,
     NULL,
-#if !(defined(__WIN32__) || defined(MAC_TCL) || defined(MAC_OSX_TK))/* UNIX */
+#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
     TclGetAndDetachPids, /* 0 */
     TclpCloseFile, /* 1 */
     TclpCreateCommandChannel, /* 2 */
@@ -265,6 +267,10 @@ TclIntPlatStubs tclIntPlatStubs = {
     TclpOpenFile, /* 7 */
     TclUnixWaitForFile, /* 8 */
     TclpCreateTempFile, /* 9 */
+    TclpReaddir, /* 10 */
+    TclpLocaltime, /* 11 */
+    TclpGmtime, /* 12 */
+    TclpInetNtoa, /* 13 */
 #endif /* UNIX */
 #ifdef __WIN32__
     TclWinConvertError, /* 0 */
@@ -346,8 +352,7 @@ TclPlatStubs tclPlatStubs = {
     strcasecmp, /* 8 */
 #endif /* MAC_TCL */
 #ifdef MAC_OSX_TCL
-    NULL, /* 0 */
-    Tcl_MacOSXOpenBundleResources, /* 1 */
+    Tcl_MacOSXOpenBundleResources, /* 0 */
 #endif /* MAC_OSX_TCL */
 };
 
@@ -369,7 +374,7 @@ TclStubs tclStubs = {
     Tcl_DbCkalloc, /* 6 */
     Tcl_DbCkfree, /* 7 */
     Tcl_DbCkrealloc, /* 8 */
-#if !(defined(__WIN32__) || defined(MAC_TCL) || defined(MAC_OSX_TK))/* UNIX */
+#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
     Tcl_CreateFileHandler, /* 9 */
 #endif /* UNIX */
 #ifdef __WIN32__
@@ -378,7 +383,7 @@ TclStubs tclStubs = {
 #ifdef MAC_TCL
     NULL, /* 9 */
 #endif /* MAC_TCL */
-#if !(defined(__WIN32__) || defined(MAC_TCL) || defined(MAC_OSX_TK))/* UNIX */
+#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
     Tcl_DeleteFileHandler, /* 10 */
 #endif /* UNIX */
 #ifdef __WIN32__
@@ -487,7 +492,7 @@ TclStubs tclStubs = {
     Tcl_DeleteHashEntry, /* 108 */
     Tcl_DeleteHashTable, /* 109 */
     Tcl_DeleteInterp, /* 110 */
-#if !(defined(__WIN32__) || defined(MAC_TCL) || defined(MAC_OSX_TK))/* UNIX */
+#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
     Tcl_DetachPids, /* 111 */
 #endif /* UNIX */
 #ifdef __WIN32__
@@ -551,7 +556,7 @@ TclStubs tclStubs = {
     Tcl_GetMaster, /* 164 */
     Tcl_GetNameOfExecutable, /* 165 */
     Tcl_GetObjResult, /* 166 */
-#if !(defined(__WIN32__) || defined(MAC_TCL) || defined(MAC_OSX_TK))/* UNIX */
+#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
     Tcl_GetOpenFile, /* 167 */
 #endif /* UNIX */
 #ifdef __WIN32__
@@ -589,7 +594,7 @@ TclStubs tclStubs = {
     Tcl_NotifyChannel, /* 194 */
     Tcl_ObjGetVar2, /* 195 */
     Tcl_ObjSetVar2, /* 196 */
-#if !(defined(__WIN32__) || defined(MAC_TCL) || defined(MAC_OSX_TK))/* UNIX */
+#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
     Tcl_OpenCommandChannel, /* 197 */
 #endif /* UNIX */
 #ifdef __WIN32__
@@ -607,7 +612,7 @@ TclStubs tclStubs = {
     Tcl_PosixError, /* 204 */
     Tcl_QueueEvent, /* 205 */
     Tcl_Read, /* 206 */
-#if !(defined(__WIN32__) || defined(MAC_TCL) || defined(MAC_OSX_TK))/* UNIX */
+#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
     Tcl_ReapDetachedProcs, /* 207 */
 #endif /* UNIX */
 #ifdef __WIN32__

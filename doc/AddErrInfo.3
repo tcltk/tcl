@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: AddErrInfo.3,v 1.5.14.1 2002/02/05 02:21:57 wolfsuit Exp $
+'\" RCS: @(#) $Id: AddErrInfo.3,v 1.5.14.2 2002/08/20 20:25:24 das Exp $
 '\" 
 .so man.macros
 .TH Tcl_AddErrorInfo 3 8.0 Tcl "Tcl Library Procedures"
@@ -53,7 +53,7 @@ This variable \fBerrorCode\fR will be set to this value.
 String to record as one element of \fBerrorCode\fR variable.
 Last \fIelement\fR argument must be NULL.
 .AP va_list argList in
-An argument list which must have been initialised using
+An argument list which must have been initialized using
 \fBTCL_VARARGS_START\fR, and cleared using \fBva_end\fR.
 .AP "CONST char" *script in
 Pointer to first character in script containing command (must be <= command)
@@ -155,7 +155,7 @@ the interpreter's result.
 .PP
 \fBTcl_LogCommandInfo\fR is invoked after an error occurs in an
 interpreter.  It adds information about the command that was being
-executed when the error occured to the \fBerrorInfo\fR variable, and
+executed when the error occurred to the \fBerrorInfo\fR variable, and
 the line number stored internally in the interpreter is set.  On the
 first call to \fBTcl_LogCommandInfo\fR or \fBTcl_AddObjErrorInfo\fR
 since an error occurred, the old information in \fBerrorInfo\fR is

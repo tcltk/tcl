@@ -9,20 +9,97 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: autoMkindex.test,v 1.12 2001/05/03 22:38:20 dgp Exp $
+# RCS: @(#) $Id: autoMkindex.test,v 1.12.12.1 2002/08/20 20:25:27 das Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest
+    package require tcltest 2
     namespace import -force ::tcltest::*
 }
 
-# temporarily copy the autoMkindex.tcl file from testsDirectory to
-# temporaryDirectory 
-set origMkindexFile [file join $::tcltest::testsDirectory autoMkindex.tcl]
-set newMkindexFile [file join $::tcltest::temporaryDirectory autoMkindex.tcl]
-if {![catch {file copy $origMkindexFile $newMkindexFile}]} {
-    set removeAutoMkindex 1
+makeFile {# Test file for:
+#   auto_mkindex
+#
+# This file provides example cases for testing the Tcl autoloading
+# facility.  Things are much more complicated with namespaces and classes.
+# The "auto_mkindex" facility can no longer be built on top of a simple
+# regular expression parser.  It must recognize constructs like this:
+#
+#   namespace eval foo {
+#       proc test {x y} { ... }
+#       namespace eval bar {
+#           proc another {args} { ... }
+#       }
+#   }
+#
+# Note that procedures and itcl class definitions can be nested inside
+# of namespaces.
+#
+# Copyright (c) 1993-1998  Lucent Technologies, Inc.
+
+# This shouldn't cause any problems
+namespace import -force blt::*
+
+# Should be able to handle "proc" definitions, even if they are
+# preceded by white space.
+
+proc normal {x y} {return [expr $x+$y]}
+  proc indented {x y} {return [expr $x+$y]}
+
+#
+# Should be able to handle proc declarations within namespaces,
+# even if they have explicit namespace paths.
+#
+namespace eval buried {
+    proc inside {args} {return "inside: $args"}
+
+    namespace export pub_*
+    proc pub_one {args} {return "one: $args"}
+    proc pub_two {args} {return "two: $args"}
 }
+proc buried::within {args} {return "within: $args"}
+
+namespace eval buried {
+    namespace eval under {
+        proc neath {args} {return "neath: $args"}
+    }
+    namespace eval ::buried {
+        proc relative {args} {return "relative: $args"}
+        proc ::top {args} {return "top: $args"}
+        proc ::buried::explicit {args} {return "explicit: $args"}
+    }
+}
+
+# With proper hooks, we should be able to support other commands
+# that create procedures
+
+proc buried::myproc {name body args} {
+    ::proc $name $body $args
+}
+namespace eval ::buried {
+    proc mycmd1 args {return "mycmd"}
+    myproc mycmd2 args {return "mycmd"}
+}
+::buried::myproc mycmd3 args {return "another"}
+
+proc {buried::my proc} {name body args} {
+    ::proc $name $body $args
+}
+namespace eval ::buried {
+    proc mycmd4 args {return "mycmd"}
+    {my proc} mycmd5 args {return "mycmd"}
+}
+{::buried::my proc} mycmd6 args {return "another"}
+
+# A correctly functioning [auto_import] won't choke when a child
+# namespace [namespace import]s from its parent.
+#
+namespace eval ::parent::child {
+    namespace import ::parent::*
+}
+proc ::parent::child::test {} {}
+
+} autoMkindex.tcl
+
 
 # Save initial state of auto_mkindex_parser
 
@@ -42,7 +119,7 @@ proc AutoMkindexTestReset {} {
 set result ""
 
 set origDir [pwd]
-cd $::tcltest::testsDirectory
+cd $::tcltest::temporaryDirectory
 
 test autoMkindex-1.1 {remove any existing tclIndex file} {
     file delete tclIndex
@@ -176,6 +253,37 @@ test autoMkindex-3.3 {auto_mkindex_parser::command} {knownBug} {
     list [lvalue $::result *mycmd4*] [lvalue $::result *mycmd5*] [lvalue $::result *mycmd6*]
 } "{::buried::mycmd4 $element} {::buried::mycmd5 $element} {mycmd6 $element}"
 
+
+makeDirectory pkg
+makeFile {
+package provide football 1.0
+    
+namespace eval ::pro:: {
+    #
+    # export only public functions.
+    #
+    namespace export {[a-z]*}
+}
+namespace eval ::college:: {
+    #
+    # export only public functions.
+    #
+    namespace export {[a-z]*}
+}
+
+proc ::pro::team {} {
+    puts "go packers!"
+    return true
+}
+
+proc ::college::team {} {
+    puts "go badgers!"
+    return true
+}
+
+} [file join pkg samename.tcl]
+
+
 test autoMkindex-4.1 {platform indenpendant source commands} {
     file delete tclIndex
     auto_mkindex . pkg/samename.tcl
@@ -186,6 +294,17 @@ test autoMkindex-4.1 {platform indenpendant source commands} {
     close $f
     set result
 } {{set auto_index(::college::team) [list source [file join $dir pkg samename.tcl]]} {set auto_index(::pro::team) [list source [file join $dir pkg samename.tcl]]}}
+
+removeFile [file join pkg samename.tcl]
+
+makeFile {
+set dollar1 "this string contains an unescaped dollar sign -> \\$foo"
+set dollar2 "this string contains an escaped dollar sign -> \$foo \\\$foo"
+set bracket1 "this contains an unescaped bracket [NoSuchProc]"
+set bracket2 "this contains an escaped bracket \[NoSuchProc\]"
+set bracket3 "this contains nested unescaped brackets [[NoSuchProc]]"
+proc testProc {} {}
+} [file join pkg magicchar.tcl]
 
 test autoMkindex-5.1 {escape magic tcl chars in general code} {
     file delete tclIndex
@@ -198,6 +317,13 @@ test autoMkindex-5.1 {escape magic tcl chars in general code} {
     }
     set result
 } {set auto_index(testProc) [list source [file join $dir pkg magicchar.tcl]]}
+
+removeFile [file join pkg magicchar.tcl]
+
+makeFile {
+proc {[magic mojo proc]} {} {}
+} [file join pkg magicchar2.tcl]
+
 test autoMkindex-5.2 {correctly locate auto loaded procs with []} {
     file delete tclIndex
     set res {}
@@ -211,6 +337,9 @@ test autoMkindex-5.2 {correctly locate auto loaded procs with []} {
     set res
 } 0
 
+removeFile [file join pkg magicchar2.tcl]
+removeDirectory pkg
+
 # Clean up.
 
 unset result
@@ -220,9 +349,7 @@ if {[info exist saveCommands]} {
 }
 rename AutoMkindexTestReset ""
 
-if {[info exists removeAutoMkindex]} {
-    catch {file delete $newMkindexFile}
-}
+removeFile autoMkindex.tcl
 if {[file exists tclIndex]} {
     file delete -force tclIndex
 }

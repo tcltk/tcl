@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.23.8.2 2002/06/10 05:33:12 wolfsuit Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.23.8.3 2002/08/20 20:25:26 das Exp $
  */
 
 #include "tclInt.h"
@@ -156,7 +156,7 @@ Tcl_HashKeyType tclObjHashKeyType = {
  * name") argument in a Tcl command.
  */
 
-Tcl_ObjType tclCmdNameType = {
+static Tcl_ObjType tclCmdNameType = {
     "cmdName",				/* name */
     FreeCmdNameInternalRep,		/* freeIntRepProc */
     DupCmdNameInternalRep,		/* dupIntRepProc */
@@ -516,28 +516,11 @@ Tcl_NewObj()
     register Tcl_Obj *objPtr;
 
     /*
-     * Allocate the object using the list of free Tcl_Obj structs
-     * we maintain.
+     * Use the macro defined in tclInt.h - it will use the
+     * correct allocator.
      */
 
-    Tcl_MutexLock(&tclObjMutex);
-#ifdef PURIFY
-    objPtr = (Tcl_Obj *) Tcl_Ckalloc(sizeof(Tcl_Obj));
-#else
-    if (tclFreeObjList == NULL) {
-	TclAllocateFreeObjects();
-    }
-    objPtr = tclFreeObjList;
-    tclFreeObjList = (Tcl_Obj *) tclFreeObjList->internalRep.otherValuePtr;
-#endif
-    objPtr->refCount = 0;
-    objPtr->bytes    = tclEmptyStringRep;
-    objPtr->length   = 0;
-    objPtr->typePtr  = NULL;
-#ifdef TCL_COMPILE_STATS
-    tclObjsAlloced++;
-#endif /* TCL_COMPILE_STATS */
-    Tcl_MutexUnlock(&tclObjMutex);
+    TclNewObj(objPtr);
     return objPtr;
 }
 #endif /* TCL_MEM_DEBUG */
@@ -581,24 +564,13 @@ Tcl_DbNewObj(file, line)
     register Tcl_Obj *objPtr;
 
     /*
-     * If debugging Tcl's memory usage, allocate the object using ckalloc.
-     * Otherwise, allocate it using the list of free Tcl_Obj structs we
-     * maintain.
+     * Use the macro defined in tclInt.h - it will use the
+     * correct allocator.
      */
 
-    objPtr = (Tcl_Obj *) Tcl_DbCkalloc(sizeof(Tcl_Obj), file, line);
-    objPtr->refCount = 0;
-    objPtr->bytes    = tclEmptyStringRep;
-    objPtr->length   = 0;
-    objPtr->typePtr  = NULL;
-#ifdef TCL_COMPILE_STATS
-    Tcl_MutexLock(&tclObjMutex);
-    tclObjsAlloced++;
-    Tcl_MutexUnlock(&tclObjMutex);
-#endif /* TCL_COMPILE_STATS */
+    TclDbNewObj(objPtr, file, line);
     return objPtr;
 }
-
 #else /* if not TCL_MEM_DEBUG */
 
 Tcl_Obj *
@@ -1072,7 +1044,12 @@ Tcl_GetBooleanFromObj(interp, objPtr, boolPtr)
 {
     register int result;
 
-    result = SetBooleanFromAny(interp, objPtr);
+    if (objPtr->typePtr == &tclBooleanType) {
+	result = TCL_OK;
+    } else {
+	result = SetBooleanFromAny(interp, objPtr);
+    }
+
     if (result == TCL_OK) {
 	*boolPtr = (int) objPtr->internalRep.longValue;
     }
@@ -1114,123 +1091,138 @@ SetBooleanFromAny(interp, objPtr)
     /*
      * Get the string representation. Make it up-to-date if necessary.
      */
-
+    
     string = Tcl_GetStringFromObj(objPtr, &length);
 
     /*
-     * Copy the string converting its characters to lower case.
+     * Use the obvious shortcuts for numerical values; if objPtr is not
+     * of numerical type, parse its string rep.
      */
-
-    for (i = 0;  (i < 9) && (i < length);  i++) {
-	c = string[i];
-	/*
-	 * Weed out international characters so we can safely operate
-	 * on single bytes.
-	 */
-
-	if (c & 0x80) {
-	    goto badBoolean;
-	}
-	if (Tcl_UniCharIsUpper(UCHAR(c))) {
-	    c = (char) Tcl_UniCharToLower(UCHAR(c));
-	}
-	lowerCase[i] = c;
-    }
-    lowerCase[i] = 0;
-
-    /*
-     * Parse the string as a boolean. We use an implementation here that
-     * doesn't report errors in interp if interp is NULL.
-     */
-
-    c = lowerCase[0];
-    if ((c == '0') && (lowerCase[1] == '\0')) {
-	newBool = 0;
-    } else if ((c == '1') && (lowerCase[1] == '\0')) {
-	newBool = 1;
-    } else if ((c == 'y') && (strncmp(lowerCase, "yes", (size_t) length) == 0)) {
-	newBool = 1;
-    } else if ((c == 'n') && (strncmp(lowerCase, "no", (size_t) length) == 0)) {
-	newBool = 0;
-    } else if ((c == 't') && (strncmp(lowerCase, "true", (size_t) length) == 0)) {
-	newBool = 1;
-    } else if ((c == 'f') && (strncmp(lowerCase, "false", (size_t) length) == 0)) {
-	newBool = 0;
-    } else if ((c == 'o') && (length >= 2)) {
-	if (strncmp(lowerCase, "on", (size_t) length) == 0) {
-	    newBool = 1;
-	} else if (strncmp(lowerCase, "off", (size_t) length) == 0) {
-	    newBool = 0;
-	} else {
-	    goto badBoolean;
-	}
-    } else {
-	double dbl;
-	/*
-	 * Boolean values can be extracted from ints or doubles.  Note
-	 * that we don't use strtoul or strtoull here because we don't
-	 * care about what the value is, just whether it is equal to
-	 * zero or not.
-	 */
-#ifdef TCL_WIDE_INT_IS_LONG
-	newBool = strtol(string, &end, 0);
-	if (end != string) {
-	    /*
-	     * Make sure the string has no garbage after the end of
-	     * the int.
-	     */
-	    while ((end < (string+length))
-		   && isspace(UCHAR(*end))) { /* INTL: ISO only */
-		end++;
-	    }
-	    if (end == (string+length)) {
-		newBool = (newBool != 0);
-		goto goodBoolean;
-	    }
-	}
-#else /* !TCL_WIDE_INT_IS_LONG */
-	Tcl_WideInt wide = strtoll(string, &end, 0);
-	if (end != string) {
-	    /*
-	     * Make sure the string has no garbage after the end of
-	     * the wide int.
-	     */
-	    while ((end < (string+length))
-		   && isspace(UCHAR(*end))) { /* INTL: ISO only */
-		end++;
-	    }
-	    if (end == (string+length)) {
-		newBool = (wide != Tcl_LongAsWide(0));
-		goto goodBoolean;
-	    }
-	}
+	
+    if (objPtr->typePtr == &tclIntType) {
+	newBool = (objPtr->internalRep.longValue != 0);
+    } else if (objPtr->typePtr == &tclDoubleType) {
+	newBool = (objPtr->internalRep.doubleValue != 0.0);
+#ifndef TCL_WIDE_INT_IS_LONG
+    } else if (objPtr->typePtr == &tclWideIntType) {
+	newBool = (objPtr->internalRep.wideValue != Tcl_LongAsWide(0));
 #endif /* TCL_WIDE_INT_IS_LONG */
-        /*
-         * Still might be a string containing the characters representing an
-         * int or double that wasn't handled above. This would be a string
-         * like "27" or "1.0" that is non-zero and not "1". Such a string
-         * whould result in the boolean value true. We try converting to
-         * double. If that succeeds and the resulting double is non-zero, we
-         * have a "true". Note that numbers can't have embedded NULLs.
-	 */
-
-	dbl = strtod(string, &end);
-	if (end == string) {
-	    goto badBoolean;
-	}
-
+    } else {
 	/*
-	 * Make sure the string has no garbage after the end of the double.
+	 * Copy the string converting its characters to lower case.
 	 */
 	
-	while ((end < (string+length))
-		&& isspace(UCHAR(*end))) { /* INTL: ISO only */
-	    end++;
+	for (i = 0;  (i < 9) && (i < length);  i++) {
+	    c = string[i];
+	    /*
+	     * Weed out international characters so we can safely operate
+	     * on single bytes.
+	     */
+	    
+	    if (c & 0x80) {
+		goto badBoolean;
+	    }
+	    if (Tcl_UniCharIsUpper(UCHAR(c))) {
+		c = (char) Tcl_UniCharToLower(UCHAR(c));
+	    }
+	    lowerCase[i] = c;
 	}
-	if (end != (string+length)) {
-	    goto badBoolean;
+	lowerCase[i] = 0;
+	
+	/*
+	 * Parse the string as a boolean. We use an implementation here that
+	 * doesn't report errors in interp if interp is NULL.
+	 */
+	
+	c = lowerCase[0];
+	if ((c == '0') && (lowerCase[1] == '\0')) {
+	    newBool = 0;
+	} else if ((c == '1') && (lowerCase[1] == '\0')) {
+	    newBool = 1;
+	} else if ((c == 'y') && (strncmp(lowerCase, "yes", (size_t) length) == 0)) {
+	    newBool = 1;
+	} else if ((c == 'n') && (strncmp(lowerCase, "no", (size_t) length) == 0)) {
+	    newBool = 0;
+	} else if ((c == 't') && (strncmp(lowerCase, "true", (size_t) length) == 0)) {
+	    newBool = 1;
+	} else if ((c == 'f') && (strncmp(lowerCase, "false", (size_t) length) == 0)) {
+	    newBool = 0;
+	} else if ((c == 'o') && (length >= 2)) {
+	    if (strncmp(lowerCase, "on", (size_t) length) == 0) {
+		newBool = 1;
+	    } else if (strncmp(lowerCase, "off", (size_t) length) == 0) {
+		newBool = 0;
+	    } else {
+		goto badBoolean;
+	    }
+	} else {
+	    double dbl;
+	    /*
+	     * Boolean values can be extracted from ints or doubles.  Note
+	     * that we don't use strtoul or strtoull here because we don't
+	     * care about what the value is, just whether it is equal to
+	     * zero or not.
+	     */
+#ifdef TCL_WIDE_INT_IS_LONG
+	    newBool = strtol(string, &end, 0);
+	    if (end != string) {
+		/*
+		 * Make sure the string has no garbage after the end of
+		 * the int.
+		 */
+		while ((end < (string+length))
+		       && isspace(UCHAR(*end))) { /* INTL: ISO only */
+		    end++;
+		}
+		if (end == (string+length)) {
+		    newBool = (newBool != 0);
+		    goto goodBoolean;
+		}
+	    }
+#else /* !TCL_WIDE_INT_IS_LONG */
+	    Tcl_WideInt wide = strtoll(string, &end, 0);
+	    if (end != string) {
+		/*
+		 * Make sure the string has no garbage after the end of
+		 * the wide int.
+		 */
+		while ((end < (string+length))
+		       && isspace(UCHAR(*end))) { /* INTL: ISO only */
+		    end++;
+		}
+		if (end == (string+length)) {
+		    newBool = (wide != Tcl_LongAsWide(0));
+		    goto goodBoolean;
+		}
+	    }
+#endif /* TCL_WIDE_INT_IS_LONG */
+	    /*
+	     * Still might be a string containing the characters representing an
+	     * int or double that wasn't handled above. This would be a string
+	     * like "27" or "1.0" that is non-zero and not "1". Such a string
+	     * would result in the boolean value true. We try converting to
+	     * double. If that succeeds and the resulting double is non-zero, we
+	     * have a "true". Note that numbers can't have embedded NULLs.
+	     */
+	    
+	    dbl = strtod(string, &end);
+	    if (end == string) {
+		goto badBoolean;
+	    }
+	    
+	    /*
+	     * Make sure the string has no garbage after the end of the double.
+	     */
+	    
+	    while ((end < (string+length))
+		   && isspace(UCHAR(*end))) { /* INTL: ISO only */
+		end++;
+	    }
+	    if (end != (string+length)) {
+		goto badBoolean;
+	    }
+	    newBool = (dbl != 0.0);
 	}
-	newBool = (dbl != 0.0);
     }
 
     /*
@@ -2852,9 +2844,8 @@ Tcl_GetCommandFromObj(interp, objPtr)
     register Tcl_Obj *objPtr;	/* The object containing the command's
 				 * name. If the name starts with "::", will
 				 * be looked up in global namespace. Else,
-				 * looked up first in the current namespace
-				 * if contextNsPtr is NULL, then in global
-				 * namespace. */
+				 * looked up first in the current namespace,
+				 * then in global namespace. */
 {
     Interp *iPtr = (Interp *) interp;
     register ResolvedCmdName *resPtr;

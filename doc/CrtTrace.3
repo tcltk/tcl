@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: CrtTrace.3,v 1.2.34.1 2002/06/10 05:33:08 wolfsuit Exp $
+'\" RCS: @(#) $Id: CrtTrace.3,v 1.2.34.2 2002/08/20 20:25:24 das Exp $
 '\" 
 .so man.macros
 .TH Tcl_CreateTrace 3 "" Tcl "Tcl Library Procedures"
@@ -29,10 +29,12 @@ Tcl_Trace
 .AP Tcl_Interp *interp in
 Interpreter containing command to be traced or untraced.
 .AP int level in
-Only commands at or below this nesting level will be traced.  1 means
+Only commands at or below this nesting level will be traced unless
+0 is specified.  1 means
 top-level commands only, 2 means top-level commands or those that are
 invoked as immediate consequences of executing top-level commands
 (procedure bodies, bracketed commands, etc.) and so on.
+A value of 0 means that commands at any level are traced.
 .AP int flags in
 Flags governing the trace execution.  See below for details.
 .AP Tcl_CmdObjTraceProc *objProc in
@@ -163,7 +165,7 @@ typedef void Tcl_CmdTraceProc(
 	Tcl_CmdProc *\fIcmdProc\fR,
 	ClientData \fIcmdClientData\fR,
 	int \fIargc\fR,
-	char *\fIargv\fR[]);
+	CONST char *\fIargv\fR[]);
 .CE
 The parameters to the \fIproc\fR callback are similar to those of the
 \fIobjProc\fR callback above. The \fIcommandToken\fR is

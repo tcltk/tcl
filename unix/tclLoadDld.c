@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoadDld.c,v 1.6.2.1 2002/02/05 02:22:05 wolfsuit Exp $
+ * RCS: @(#) $Id: tclLoadDld.c,v 1.6.2.2 2002/08/20 20:25:30 das Exp $
  */
 
 #include "tclInt.h"
@@ -30,17 +30,14 @@
 /*
  *----------------------------------------------------------------------
  *
- * TclpLoadFile --
+ * TclpDlopen --
  *
  *	Dynamically loads a binary code file into memory and returns
- *	the addresses of two procedures within that file, if they
- *	are defined.
+ *	a handle to the new code.
  *
  * Results:
  *	A standard Tcl completion code.  If an error occurs, an error
- *	message is left in the interp's result.  *proc1Ptr and *proc2Ptr
- *	are filled in with the addresses of the symbols given by
- *	*sym1 and *sym2, or NULL if those symbols can't be found.
+ *	message is left in the interp's result.
  *
  * Side effects:
  *	New code suddenly appears in memory.
@@ -49,17 +46,11 @@
  */
 
 int
-TclpLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr, 
-	     clientDataPtr, unloadProcPtr)
+TclpDlopen(interp, pathPtr, loadHandle, unloadProcPtr)
     Tcl_Interp *interp;		/* Used for error reporting. */
     Tcl_Obj *pathPtr;		/* Name of the file containing the desired
-				 * code. */
-    CONST char *sym1, *sym2;	/* Names of two procedures to look up in
-				 * the file's symbol table. */
-    Tcl_PackageInitProc **proc1Ptr, **proc2Ptr;
-				/* Where to return the addresses corresponding
-				 * to sym1 and sym2. */
-    ClientData *clientDataPtr;	/* Filled with token for dynamically loaded
+				 * code (UTF-8). */
+    Tcl_LoadHandle *loadHandle;	/* Filled with token for dynamically loaded
 				 * file which will be passed back to 
 				 * (*unloadProcPtr)() to unload the file. */
     Tcl_FSUnloadFileProc **unloadProcPtr;	
@@ -73,7 +64,7 @@ TclpLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr,
     
     /*
      *  The dld package needs to know the pathname to the tcl binary.
-     *  If that's not know, return an error.
+     *  If that's not known, return an error.
      */
 
     if (firstTime) {
@@ -99,12 +90,34 @@ TclpLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr,
 			 "\": ", dld_strerror(returnCode), (char *) NULL);
 	return TCL_ERROR;
     }
-    *proc1Ptr = (Tcl_PackageInitProc *) dld_get_func(sym1);
-    *proc2Ptr = (Tcl_PackageInitProc *) dld_get_func(sym2);
-    *clientDataPtr = strcpy(
+    *loadHandle = strcpy(
 	    (char *) ckalloc((unsigned) (strlen(fileName) + 1)), fileName);
     *unloadProcPtr = &TclpUnloadFile;
     return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpFindSymbol --
+ *
+ *	Looks up a symbol, by name, through a handle associated with
+ *	a previously loaded piece of code (shared library).
+ *
+ * Results:
+ *	Returns a pointer to the function associated with 'symbol' if
+ *	it is found.  Otherwise returns NULL and may leave an error
+ *	message in the interp's result.
+ *
+ *----------------------------------------------------------------------
+ */
+Tcl_PackageInitProc*
+TclpFindSymbol(interp, loadHandle, symbol) 
+    Tcl_Interp *interp;
+    Tcl_LoadHandle loadHandle;
+    CONST char *symbol;
+{
+    return (Tcl_PackageInitProc *) dld_get_func(symbol);
 }
 
 /*
@@ -126,15 +139,15 @@ TclpLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr,
  */
 
 void
-TclpUnloadFile(clientData)
-    ClientData clientData;	/* ClientData returned by a previous call
-				 * to TclpLoadFile().  The clientData is 
+TclpUnloadFile(loadHandle)
+    Tcl_LoadHandle loadHandle;	/* loadHandle returned by a previous call
+				 * to TclpDlopen().  The loadHandle is 
 				 * a token that represents the loaded 
 				 * file. */
 {
     char *fileName;
 
-    handle = (char *) clientData;
+    handle = (char *) loadHandle;
     dld_unlink_by_file(handle, 0);
     ckfree(handle);
 }

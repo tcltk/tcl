@@ -8,9 +8,11 @@
 #	on it.  If your code does rely on this package you
 #	may directly incorporate this code into your application.
 #
-# RCS: @(#) $Id: optparse.tcl,v 1.6 2001/08/09 01:06:42 dgp Exp $
+# RCS: @(#) $Id: optparse.tcl,v 1.6.8.1 2002/08/20 20:25:27 das Exp $
 
 package require Tcl 8
+# When this version number changes, update the pkgIndex.tcl file
+# and the install directory in the Makefiles.
 package provide opt 0.4.3
 
 namespace eval ::tcl {

@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: winDde.test,v 1.11 2001/08/22 23:56:14 hobbs Exp $
+# RCS: @(#) $Id: winDde.test,v 1.11.8.1 2002/08/20 20:25:29 das Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -59,7 +59,7 @@ proc createChildProcess { ddeServerName } {
     }
     close $f
     
-    set f [open |[list $tcltest::tcltest $::scriptName] r]
+    set f [open |[list [interpreter] $::scriptName] r]
     gets $f
     return $f
 }
@@ -112,7 +112,7 @@ test winDde-3.5 {DDE request locally} {pcOnly} {
     dde request -binary TclEval self a
 } "foo\x00"
 
-test winDde-4.1 {DDE execute remotely} {pcOnly} {
+test winDde-4.1 {DDE execute remotely} {stdio pcOnly} {
     set a ""
     set child [createChildProcess child]
     dde execute TclEval child {set a "foo"}
@@ -121,7 +121,7 @@ test winDde-4.1 {DDE execute remotely} {pcOnly} {
     set a
 } ""
 
-test winDde-4.2 {DDE execute remotely} {pcOnly} {
+test winDde-4.2 {DDE execute remotely} {stdio pcOnly} {
     set a ""
     set child [createChildProcess child]
     dde execute -async TclEval child {set a "foo"}
@@ -130,7 +130,7 @@ test winDde-4.2 {DDE execute remotely} {pcOnly} {
     set a
 } ""
 
-test winDde-4.3 {DDE request locally} {pcOnly} {
+test winDde-4.3 {DDE request locally} {stdio pcOnly} {
     set a ""
     set child [createChildProcess child]
     dde execute TclEval child {set a "foo"}
@@ -140,7 +140,7 @@ test winDde-4.3 {DDE request locally} {pcOnly} {
     set a
 } foo
 
-test winDde-4.4 {DDE eval locally} {pcOnly} {
+test winDde-4.4 {DDE eval locally} {stdio pcOnly} {
     set a ""
     set child [createChildProcess child]
     set a [dde eval child set a "foo"]

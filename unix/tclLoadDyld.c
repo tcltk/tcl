@@ -11,27 +11,34 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoadDyld.c,v 1.5.2.3 2002/02/25 15:22:30 das Exp $
+ * RCS: @(#) $Id: tclLoadDyld.c,v 1.5.2.4 2002/08/20 20:25:30 das Exp $
  */
 
 #include "tclInt.h"
 #include "tclPort.h"
 #include <mach-o/dyld.h>
 
+typedef struct Tcl_DyldModuleHandle {
+    struct Tcl_DyldModuleHandle *nextModuleHandle;
+    NSModule module;
+} Tcl_DyldModuleHandle;
+
+typedef struct Tcl_DyldLoadHandle {
+    const struct mach_header *dyld_lib;
+    Tcl_DyldModuleHandle *firstModuleHandle;
+} Tcl_DyldLoadHandle;
+
 /*
  *----------------------------------------------------------------------
  *
- * TclpLoadFile --
+ * TclpDlopen --
  *
- *     Dynamically loads a binary code file into memory and returns
- *     the addresses of two procedures within that file, if they
- *     are defined.
+ *	Dynamically loads a binary code file into memory and returns
+ *	a handle to the new code.
  *
  * Results:
  *     A standard Tcl completion code.  If an error occurs, an error
- *     message is left in the interpreter's result.  *proc1Ptr and *proc2Ptr
- *     are filled in with the addresses of the symbols given by
- *     *sym1 and *sym2, or NULL if those symbols can't be found.
+ *     message is left in the interpreter's result. 
  *
  * Side effects:
  *     New code suddenly appears in memory.
@@ -40,17 +47,11 @@
  */
 
 int
-TclpLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr, 
-	     clientDataPtr, unloadProcPtr)
+TclpDlopen(interp, pathPtr, loadHandle, unloadProcPtr)
     Tcl_Interp *interp;		/* Used for error reporting. */
     Tcl_Obj *pathPtr;		/* Name of the file containing the desired
-				 * code. */
-    CONST char *sym1, *sym2;	/* Names of two procedures to look up in
-				 * the file's symbol table. */
-    Tcl_PackageInitProc **proc1Ptr, **proc2Ptr;
-				/* Where to return the addresses corresponding
-				 * to sym1 and sym2. */
-    ClientData *clientDataPtr;	/* Filled with token for dynamically loaded
+				 * code (UTF-8). */
+    Tcl_LoadHandle *loadHandle;	/* Filled with token for dynamically loaded
 				 * file which will be passed back to 
 				 * (*unloadProcPtr)() to unload the file. */
     Tcl_FSUnloadFileProc **unloadProcPtr;	
@@ -58,10 +59,9 @@ TclpLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr,
 				 * function which should be used for
 				 * this file. */
 {
-    NSSymbol symbol;
+    Tcl_DyldLoadHandle *dyldLoadHandle;
     const struct mach_header *dyld_lib;
-    Tcl_DString newName, ds;
-    char *native;
+    CONST char *native;
 
     native = Tcl_FSGetNativePath(pathPtr);
     dyld_lib = NSAddImage(native, 
@@ -75,46 +75,66 @@ TclpLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr,
         Tcl_AppendResult(interp, msg, (char *) NULL);
         return TCL_ERROR;
     }
-
+    dyldLoadHandle = (Tcl_DyldLoadHandle *) ckalloc(sizeof(Tcl_DyldLoadHandle));
+    if (!dyldLoadHandle) return TCL_ERROR;
+    dyldLoadHandle->dyld_lib = dyld_lib;
+    dyldLoadHandle->firstModuleHandle = NULL;
+    *loadHandle = (Tcl_LoadHandle) dyldLoadHandle;
     *unloadProcPtr = &TclpUnloadFile;
-
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpFindSymbol --
+ *
+ *	Looks up a symbol, by name, through a handle associated with
+ *	a previously loaded piece of code (shared library).
+ *
+ * Results:
+ *	Returns a pointer to the function associated with 'symbol' if
+ *	it is found.  Otherwise returns NULL and may leave an error
+ *	message in the interp's result.
+ *
+ *----------------------------------------------------------------------
+ */
+Tcl_PackageInitProc*
+TclpFindSymbol(interp, loadHandle, symbol) 
+    Tcl_Interp *interp;
+    Tcl_LoadHandle loadHandle;
+    CONST char *symbol;
+{
+    NSSymbol nsSymbol;
+    CONST char *native;
+    Tcl_DString newName, ds;
+    Tcl_PackageInitProc* proc = NULL;
+    Tcl_DyldLoadHandle *dyldLoadHandle = (Tcl_DyldLoadHandle *) loadHandle;
     /* 
      * dyld adds an underscore to the beginning of symbol names.
      */
 
-    native = Tcl_UtfToExternalDString(NULL, sym1, -1, &ds);
+    native = Tcl_UtfToExternalDString(NULL, symbol, -1, &ds);
     Tcl_DStringInit(&newName);
     Tcl_DStringAppend(&newName, "_", 1);
     native = Tcl_DStringAppend(&newName, native, -1);
-    symbol = NSLookupSymbolInImage(dyld_lib, native, 
-        NSLOOKUPSYMBOLINIMAGE_OPTION_BIND_NOW | 
-        NSLOOKUPSYMBOLINIMAGE_OPTION_RETURN_ON_ERROR);
-    if(symbol) {
-        *proc1Ptr = NSAddressOfSymbol(symbol);
-        *clientDataPtr = NSModuleForSymbol(symbol);
-    } else {
-        *proc1Ptr=NULL;
-        *clientDataPtr=NULL;
+    nsSymbol = NSLookupSymbolInImage(dyldLoadHandle->dyld_lib, native, 
+	NSLOOKUPSYMBOLINIMAGE_OPTION_BIND_NOW | 
+	NSLOOKUPSYMBOLINIMAGE_OPTION_RETURN_ON_ERROR);
+    if(nsSymbol) {
+	Tcl_DyldModuleHandle *dyldModuleHandle;
+	proc = NSAddressOfSymbol(nsSymbol);
+	dyldModuleHandle = (Tcl_DyldModuleHandle *) ckalloc(sizeof(Tcl_DyldModuleHandle));
+	if (dyldModuleHandle) {
+	    dyldModuleHandle->module = NSModuleForSymbol(nsSymbol);
+	    dyldModuleHandle->nextModuleHandle = dyldLoadHandle->firstModuleHandle;
+	    dyldLoadHandle->firstModuleHandle = dyldModuleHandle;
+	}
     }
     Tcl_DStringFree(&newName);
     Tcl_DStringFree(&ds);
-
-    native = Tcl_UtfToExternalDString(NULL, sym2, -1, &ds);
-    Tcl_DStringInit(&newName);
-    Tcl_DStringAppend(&newName, "_", 1);
-    native = Tcl_DStringAppend(&newName, native, -1);
-    symbol = NSLookupSymbolInImage(dyld_lib, native, 
-        NSLOOKUPSYMBOLINIMAGE_OPTION_BIND_NOW | 
-        NSLOOKUPSYMBOLINIMAGE_OPTION_RETURN_ON_ERROR);
-    if(symbol) {
-        *proc2Ptr = NSAddressOfSymbol(symbol);
-    } else {
-        *proc2Ptr=NULL;
-    }
-    Tcl_DStringFree(&newName);
-    Tcl_DStringFree(&ds);
-
-    return TCL_OK;
+    
+    return proc;
 }
 
 /*
@@ -137,13 +157,23 @@ TclpLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr,
  */
 
 void
-TclpUnloadFile(clientData)
-    ClientData clientData;	/* ClientData returned by a previous call
-				 * to TclpLoadFile().  The clientData is 
+TclpUnloadFile(loadHandle)
+    Tcl_LoadHandle loadHandle;	/* loadHandle returned by a previous call
+				 * to TclpDlopen().  The loadHandle is 
 				 * a token that represents the loaded 
 				 * file. */
 {
-    NSUnLinkModule(clientData, FALSE);
+    Tcl_DyldLoadHandle *dyldLoadHandle = (Tcl_DyldLoadHandle *) loadHandle;
+    Tcl_DyldModuleHandle *dyldModuleHandle = dyldLoadHandle->firstModuleHandle;
+    void *ptr;
+
+    while (dyldModuleHandle) {
+	NSUnLinkModule(dyldModuleHandle->module, NSUNLINKMODULE_OPTION_NONE);
+	ptr = dyldModuleHandle;
+	dyldModuleHandle = dyldModuleHandle->nextModuleHandle;
+	ckfree(ptr);
+    }
+    ckfree(dyldLoadHandle);
 }
 
 /*

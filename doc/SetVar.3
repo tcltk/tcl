@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: SetVar.3,v 1.3.28.2 2002/06/10 05:33:08 wolfsuit Exp $
+'\" RCS: @(#) $Id: SetVar.3,v 1.3.28.3 2002/08/20 20:25:24 das Exp $
 '\" 
 .so man.macros
 .TH Tcl_SetVar 3 8.1 Tcl "Tcl Library Procedures"
@@ -53,7 +53,7 @@ int
 .AS Tcl_Interp *newValuePtr
 .AP Tcl_Interp *interp in
 Interpreter containing variable.
-.AP char *name1 in
+.AP "CONST char" *name1 in
 Contains the name of an array variable (if \fIname2\fR is non-NULL)
 or (if \fIname2\fR is NULL) either the name of a scalar variable
 or a complete name including both variable name and index.
@@ -69,15 +69,12 @@ Points to a Tcl object containing the new value for the variable.
 .AP int flags in
 OR-ed combination of bits providing additional information. See below
 for valid values.
-.AP char *varName in
+.AP "CONST char" *varName in
 Name of variable.
 May include \fB::\fR namespace qualifiers
 to specify a variable in a particular namespace.
 May refer to a scalar variable or an element of
 an array.
-If the name references an element of an array, then the name
-must be in writable memory:  Tcl will make temporary modifications 
-to it while looking up the name.
 .AP "CONST char" *newValue in
 New value for variable, specified as a NULL-terminated string.
 A copy of this value is stored in the variable.

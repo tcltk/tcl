@@ -3,7 +3,7 @@
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-'\" RCS: @(#) $Id: resource.n,v 1.6 2000/09/07 14:27:51 poenitz Exp $
+'\" RCS: @(#) $Id: resource.n,v 1.6.14.1 2002/08/20 20:25:24 das Exp $
 '\" 
 .so man.macros
 .TH resource n 8.0 Tcl "Tcl Built-In Commands"
@@ -121,7 +121,7 @@ name.
 \fB\-file\fR \fIresourceRef\fR
 If the \fB-file\fR option is specified then the resource will be
 written in the file pointed to by \fIresourceRef\fR, otherwise the
-most resently open resource will be used.
+most recently open resource will be used.
 .TP
 \fB\-force\fR
 If the target resource already exists, then by default Tcl will not

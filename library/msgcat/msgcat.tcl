@@ -10,25 +10,155 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: msgcat.tcl,v 1.11.8.1 2002/06/10 05:33:14 wolfsuit Exp $
+# RCS: @(#) $Id: msgcat.tcl,v 1.11.8.2 2002/08/20 20:25:27 das Exp $
 
 package require Tcl 8.2
-package provide msgcat 1.2.3
+# When the version number changes, be sure to update the pkgIndex.tcl file,
+# and the installation directory in the Makefiles.
+package provide msgcat 1.3
 
 namespace eval msgcat {
     namespace export mc mcload mclocale mcmax mcmset mcpreferences mcset \
 	    mcunknown
 
     # Records the current locale as passed to mclocale
-    variable locale ""
+    variable Locale ""
 
     # Records the list of locales to search
-    variable loclist {}
+    variable Loclist {}
 
     # Records the mapping between source strings and translated strings.  The
     # array key is of the form "<locale>,<namespace>,<src>" and the value is
     # the translated string.
-    array set msgs {}
+    array set Msgs {}
+
+    # Map of language codes used in Windows registry to those of ISO-639
+    array set WinRegToISO639 {
+        01 ar 0401 ar_SA 0801 ar_IQ 0c01 ar_EG 1001 ar_LY 1401 ar_DZ
+              1801 ar_MA 1c01 ar_TN 2001 ar_OM 2401 ar_YE 2801 ar_SY
+              2c01 ar_JO 3001 ar_LB 3401 ar_KW 3801 ar_AE 3c01 ar_BH
+              4001 ar_QA
+        02 bg 0402 bg_BG
+        03 ca 0403 ca_ES
+        04 zh 0404 zh_TW 0804 zh_CN 0c04 zh_HK 1004 zh_SG 1404 zh_MO
+        05 cs 0405 cs_CZ
+        06 da 0406 da_DK
+        07 de 0407 de_DE 0807 de_CH 0c07 de_AT 1007 de_LU 1407 de_LI
+        08 el 0408 el_GR
+        09 en 0409 en_US 0809 en_GB 0c09 en_AU 1009 en_CA 1409 en_NZ
+              1809 en_IE 1c09 en_ZA 2009 en_JM 2409 en_GD 2809 en_BZ
+              2c09 en_TT 3009 en_ZW 3409 en_PH
+        0a es 040a es_ES 080a es_MX 0c0a es_ES@modern 100a es_GT 140a es_CR
+              180a es_PA 1c0a es_DO 200a es_VE 240a es_CO 280a es_PE
+              2c0a es_AR 300a es_EC 340a es_CL 380a es_UY 3c0a es_PY
+              400a es_BO 440a es_SV 480a es_HN 4c0a es_NI 500a es_PR
+        0b fi 040b fi_FI
+        0c fr 040c fr_FR 080c fr_BE 0c0c fr_CA 100c fr_CH 140c fr_LU
+              180c fr_MC
+        0d he 040d he_IL
+        0e hu 040e hu_HU
+        0f is 040f is_IS
+        10 it 0410 it_IT 0810 it_CH
+        11 ja 0411 ja_JP
+        12 ko 0412 ko_KR
+        13 nl 0413 nl_NL 0813 nl_BE
+        14 no 0414 no_NO 0814 nn_NO
+        15 pl 0415 pl_PL
+        16 pt 0416 pt_BR 0816 pt_PT
+        17 rm 0417 rm_CH
+        18 ro 0418 ro_RO
+        19 ru
+        1a hr 041a hr_HR 081a sr_YU 0c1a sr_YU@cyrillic
+        1b sk 041b sk_SK
+        1c sq 041c sq_AL
+        1d sv 041d sv_SE 081d sv_FI
+        1e th 041e th_TH
+        1f tr 041f tr_TR
+        20 ur 0420 ur_PK 0820 ur_IN
+        21 id 0421 id_ID
+        22 uk 0422 uk_UA
+        23 be 0423 be_BY
+        24 sl 0424 sl_SI
+        25 et 0425 et_EE
+        26 lv 0426 lv_LV
+        27 lt 0427 lt_LT
+        28 tg 0428 tg_TJ
+        29 fa 0429 fa_IR
+        2a vi 042a vi_VN
+        2b hy 042b hy_AM
+        2c az 042c az_AZ@latin 082c az_AZ@cyrillic
+        2d eu
+        2e wen 042e wen_DE
+        2f mk 042f mk_MK
+        30 bnt 0430 bnt_TZ
+        31 ts 0431 ts_ZA
+        33 ven 0433 ven_ZA
+        34 xh 0434 xh_ZA
+        35 zu 0435 zu_ZA
+        36 af 0436 af_ZA
+        37 ka 0437 ka_GE
+        38 fo 0438 fo_FO
+        39 hi 0439 hi_IN
+        3a mt 043a mt_MT
+        3b se 043b se_NO
+        043c gd_UK 083c ga_IE
+        3d yi 043d yi_IL
+        3e ms 043e ms_MY 083e ms_BN
+        3f kk 043f kk_KZ
+        40 ky 0440 ky_KG
+        41 sw 0441 sw_KE
+        42 tk 0442 tk_TM
+        43 uz 0443 uz_UZ@latin 0843 uz_UZ@cyrillic
+        44 tt 0444 tt_RU
+        45 bn 0445 bn_IN
+        46 pa 0446 pa_IN
+        47 gu 0447 gu_IN
+        48 or 0448 or_IN
+        49 ta
+        4a te 044a te_IN
+        4b kn 044b kn_IN
+        4c ml 044c ml_IN
+        4d as 044d as_IN
+        4e mr 044e mr_IN
+        4f sa 044f sa_IN
+        50 mn
+        51 bo 0451 bo_CN
+        52 cy 0452 cy_GB
+        53 km 0453 km_KH
+        54 lo 0454 lo_LA
+        55 my 0455 my_MM
+        56 gl 0456 gl_ES
+        57 kok 0457 kok_IN
+        58 mni 0458 mni_IN
+        59 sd
+        5a syr 045a syr_TR
+        5b si 045b si_LK
+        5c chr 045c chr_US
+        5d iu 045d iu_CA
+        5e am 045e am_ET
+        5f ber 045f ber_MA
+        60 ks 0460 ks_PK 0860 ks_IN
+        61 ne 0461 ne_NP 0861 ne_IN
+        62 fy 0462 fy_NL
+        63 ps
+        64 tl 0464 tl_PH
+        65 div 0465 div_MV
+        66 bin 0466 bin_NG
+        67 ful 0467 ful_NG
+        68 ha 0468 ha_NG
+        69 nic 0469 nic_NG
+        6a yo 046a yo_NG
+        70 ibo 0470 ibo_NG
+        71 kau 0471 kau_NG
+        72 om 0472 om_ET
+        73 ti 0473 ti_ET
+        74 gn 0474 gn_PY
+        75 cpe 0475 cpe_US
+        76 la 0476 la_VA
+        77 so 0477 so_SO
+        78 sit 0478 sit_CN
+        79 pap 0479 pap_AN
+    }
 }
 
 # msgcat::mc --
@@ -51,20 +181,20 @@ proc msgcat::mc {src args} {
     # Check for the src in each namespace starting from the local and
     # ending in the global.
 
-    variable msgs
-    variable loclist
-    variable locale
+    variable Msgs
+    variable Loclist
+    variable Locale
 
     set ns [uplevel 1 [list ::namespace current]]
     
     while {$ns != ""} {
-	foreach loc $loclist {
-	    if {[info exists msgs($loc,$ns,$src)]} {
+	foreach loc $Loclist {
+	    if {[info exists Msgs($loc,$ns,$src)]} {
 		if {[llength $args] == 0} {
-		    return $msgs($loc,$ns,$src)
+		    return $Msgs($loc,$ns,$src)
 		} else {
 		    return [uplevel 1 \
-			    [linsert $args 0 ::format $msgs($loc,$ns,$src)]]
+			    [linsert $args 0 ::format $Msgs($loc,$ns,$src)]]
 		}
 	    }
 	}
@@ -72,7 +202,7 @@ proc msgcat::mc {src args} {
     }
     # we have not found the translation
     return [uplevel 1 \
-	    [linsert $args 0 [::namespace origin mcunknown] $locale $src]]
+	    [linsert $args 0 [::namespace origin mcunknown] $Locale $src]]
 }
 
 # msgcat::mclocale --
@@ -88,8 +218,8 @@ proc msgcat::mc {src args} {
 #	Returns the current locale.
 
 proc msgcat::mclocale {args} {
-    variable loclist
-    variable locale
+    variable Loclist
+    variable Locale
     set len [llength $args]
 
     if {$len > 1} {
@@ -97,15 +227,15 @@ proc msgcat::mclocale {args} {
     }
 
     if {$len == 1} {
-	set locale [string tolower [lindex $args 0]]
-	set loclist {}
+	set Locale [string tolower [lindex $args 0]]
+	set Loclist {}
 	set word ""
-	foreach part [split $locale _] {
+	foreach part [split $Locale _] {
 	    set word [string trimleft "${word}_${part}" _]
-	    set loclist [linsert $loclist 0 $word]
+	    set Loclist [linsert $Loclist 0 $word]
 	}
     }
-    return $locale
+    return $Locale
 }
 
 # msgcat::mcpreferences --
@@ -120,8 +250,8 @@ proc msgcat::mclocale {args} {
 #	Returns an ordered list of the locales preferred by the user.
 
 proc msgcat::mcpreferences {} {
-    variable loclist
-    return $loclist
+    variable Loclist
+    return $Loclist
 }
 
 # msgcat::mcload --
@@ -164,14 +294,14 @@ proc msgcat::mcload {langdir} {
 #	Returns the new locale.
 
 proc msgcat::mcset {locale src {dest ""}} {
-    variable msgs
+    variable Msgs
     if {[string equal $dest ""]} {
 	set dest $src
     }
 
     set ns [uplevel 1 [list ::namespace current]]
 
-    set msgs([string tolower $locale],$ns,$src) $dest
+    set Msgs([string tolower $locale],$ns,$src) $dest
     return $dest
 }
 
@@ -187,7 +317,7 @@ proc msgcat::mcset {locale src {dest ""}} {
 #	Returns the number of pairs processed
 
 proc msgcat::mcmset {locale pairs } {
-    variable msgs
+    variable Msgs
 
     set length [llength $pairs]
     if {$length % 2} {
@@ -198,7 +328,7 @@ proc msgcat::mcmset {locale pairs } {
     set ns [uplevel 1 [list ::namespace current]]
     
     foreach {src dest} $pairs {
-        set msgs($locale,$ns,$src) $dest
+        set Msgs($locale,$ns,$src) $dest
     }
     
     return $length
@@ -252,61 +382,76 @@ proc msgcat::mcmax {args} {
     return $max
 }
 
-# Initialize the default locale
-
-namespace eval msgcat {
-    # set default locale, try to get from environment
-    if {[info exists ::env(LANG)]} {
-        mclocale $::env(LANG)
-    } else {
-        if { $tcl_platform(platform) == "windows" } {
-            # try to set locale depending on registry settings
-            #
-            set key {HKEY_CURRENT_USER\Control Panel\International}
-            if {[catch {package require registry}] || \
-		    [catch {registry get $key "locale"} locale]} {
-                mclocale "C"
-            } else {
-		
-                #
-                # Clean up registry value for translating LCID value
-                # by using only the last 2 digits, since first
-                # 2 digits appear to be the country...  For example
-                #     0409 - English - United States
-                #     0809 - English - United Kingdom
-                #
-                set locale [string trimleft $locale "0"]
-                set locale [string range $locale end-1 end]
-                set locale [string tolower $locale]
-                switch -- $locale {
-		    01      { mclocale "ar" }
-		    02      { mclocale "bg" }
-		    03      { mclocale "ca" }
-		    04      { mclocale "zh" }
-		    05      { mclocale "cs" }
-		    06      { mclocale "da" }
-		    07      { mclocale "de" }
-		    08      { mclocale "el" }
-		    09      { mclocale "en" }
-		    0a      { mclocale "es" }
-		    0b      { mclocale "fi" }
-		    0c      { mclocale "fr" }
-		    0d      { mclocale "he" }
-		    0e      { mclocale "hu" }
-		    0f      { mclocale "is" }
-		    10      { mclocale "it" }
-		    11      { mclocale "ja" }
-		    12      { mclocale "ko" }
-		    13      { mclocale "da" }
-		    14      { mclocale "no" }
-		    15      { mclocale "pl" }
-		    16      { mclocale "pt" }
-		    
-		    default  { mclocale "C" }
-		}
-            }
-        } else {
-            mclocale "C"
-        }
+# Convert the locale values stored in environment variables to a form
+# suitable for passing to [mclocale]
+proc msgcat::ConvertLocale {value} {
+    # Assume $value is of form: $language[_$territory][.$codeset][@modifier]
+    # Convert to form: $language[_$territory][_$modifier]
+    #
+    # Comment out expanded RE version -- bugs alleged
+    # regexp -expanded {
+    #	^		# Match all the way to the beginning
+    #	([^_.@]*)	# Match "lanugage"; ends with _, ., or @
+    #	(_([^.@]*))?	# Match (optional) "territory"; starts with _
+    #	([.]([^@]*))?	# Match (optional) "codeset"; starts with .
+    #	(@(.*))?	# Match (optional) "modifier"; starts with @
+    #	$		# Match all the way to the end
+    # } $value -> language _ territory _ codeset _ modifier
+    regexp {^([^_.@]*)(_([^.@]*))?([.]([^@]*))?(@(.*))?$} $value \
+	    -> language _ territory _ codeset _ modifier
+    set ret $language
+    if {[string length $territory]} {
+	append ret _$territory
     }
+    if {[string length $modifier]} {
+	append ret _$modifier
+    }
+    return $ret
 }
+
+# Initialize the default locale
+proc msgcat::Init {} {
+    #
+    # set default locale, try to get from environment
+    #
+    foreach varName {LC_ALL LC_MESSAGES LANG} {
+	if {[info exists ::env($varName)] 
+		&& ![string equal "" $::env($varName)]} {
+            mclocale [ConvertLocale $::env($varName)]
+	    return
+	}
+    }
+    #
+    # On Windows, try to set locale depending on registry settings,
+    # or fall back on locale of "C".  Other platforms will return
+    # when they fail to load the registry package.
+    #
+    set key {HKEY_CURRENT_USER\Control Panel\International}
+    if {[catch {package require registry}] \
+	    || [catch {registry get $key "locale"} locale]} {
+        mclocale C
+	return
+    }
+    #
+    # Keep trying to match against smaller and smaller suffixes
+    # of the registry value, since the latter hexadigits appear
+    # to determine general language and earlier hexadigits determine
+    # more precise information, such as territory.  For example,
+    #     0409 - English - United States
+    #     0809 - English - United Kingdom
+    # Add more translations to the WinRegToISO639 array above.
+    #
+    variable WinRegToISO639
+    set locale [string tolower $locale]
+    while {[string length $locale]} {
+        if {![catch {mclocale [ConvertLocale $WinRegToISO639($locale)]}]} {
+	    return
+	}
+	set locale [string range $locale 1 end]
+    }
+    #
+    # No translation known.  Fall back on "C" locale
+    #
+    mclocale C
+}
+msgcat::Init

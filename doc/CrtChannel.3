@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: CrtChannel.3,v 1.11.4.2 2002/06/10 05:33:08 wolfsuit Exp $
+'\" RCS: @(#) $Id: CrtChannel.3,v 1.11.4.3 2002/08/20 20:25:24 das Exp $
 .so man.macros
 .TH Tcl_CreateChannel 3 8.3 Tcl "Tcl Library Procedures"
 .BS
@@ -274,11 +274,11 @@ buffers for the stack of channels the supplied channel is part of.
 \fIchannel\fR and returns whether the \fIchannel\fR was shared among
 multiple interpreters (result == 1) or not (result == 0).
 .PP
-\fBTcl_IsChannelRegistered\fR checks wether the specified \fIchannel\fR is
+\fBTcl_IsChannelRegistered\fR checks whether the specified \fIchannel\fR is
 registered in the given \fIinterp\fRreter (result == 1) or not
 (result == 0).
 .PP
-\fBTcl_IsChannelExisting\fR checks wether a channel with the specified
+\fBTcl_IsChannelExisting\fR checks whether a channel with the specified
 name is registered in the (thread)-global list of all channels (result
 == 1) or not (result == 0).
 .PP
@@ -760,7 +760,7 @@ a pointer to the function.
 .SH HANDLERPROC
 .PP
 The \fIhandlerProc\fR field contains the address of a function called by
-the generic layer to notify the channel that an event occured.  It should
+the generic layer to notify the channel that an event occurred.  It should
 be defined for stacked channel drivers that wish to be notified of events
 that occur on the underlying (stacked) channel.
 \fIHandlerProc\fR should match the following prototype:
@@ -774,7 +774,7 @@ typedef int Tcl_DriverHandlerProc(
 \fIInstanceData\fR is the same as the value passed to \fBTcl_CreateChannel\fR
 when this channel was created.  The \fIinterestMask\fR is an OR-ed
 combination of \fBTCL_READABLE\fR or \fBTCL_WRITABLE\fR; it indicates what
-type of event occured on this channel.
+type of event occurred on this channel.
 .PP
 This value can be retrieved with \fBTcl_ChannelHandlerProc\fR, which returns
 a pointer to the function.

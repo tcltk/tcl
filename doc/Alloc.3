@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Alloc.3,v 1.5.12.1 2002/06/10 05:33:08 wolfsuit Exp $
+'\" RCS: @(#) $Id: Alloc.3,v 1.5.12.2 2002/08/20 20:25:24 das Exp $
 '\" 
 .so man.macros
 .TH Tcl_Alloc 3 7.5 Tcl "Tcl Library Procedures"
@@ -79,7 +79,7 @@ allocation fails, these functions will return NULL.
 .PP
 The procedures \fBckalloc\fR, \fBckfree\fR, \fBckrealloc\fR,
 \fBattemptckalloc\fR, and \fBattemptckrealloc\fR are implemented
-as macros.  Normally, they are synonyms for the correponding
+as macros.  Normally, they are synonyms for the corresponding
 procedures documented on this page.  When Tcl and all modules
 calling Tcl are compiled with \fBTCL_MEM_DEBUG\fR defined, however,
 these macros are redefined to be special debugging versions of 

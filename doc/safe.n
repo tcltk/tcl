@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: safe.n,v 1.3 1999/04/16 00:46:36 stanton Exp $
+'\" RCS: @(#) $Id: safe.n,v 1.3.28.1 2002/08/20 20:25:24 das Exp $
 '\" 
 .so man.macros
 .TH "Safe Tcl" n 8.0 Tcl "Tcl Built-In Commands"
@@ -246,7 +246,7 @@ subcommands. For more details on what these subcommands do see the manual
 page for the \fBfile\fR command.
 .TP
 \fBencoding\fR ?\fIsubCmd args...\fR?
-The \fBenconding\fR alias provides access to a safe subset of the
+The \fBencoding\fR alias provides access to a safe subset of the
 subcommands of the \fBencoding\fR command;  it disallows setting of
 the system encoding, but allows all other subcommands including
 \fBsystem\fR to check the current encoding.

@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Thread.3,v 1.13 2000/07/24 00:03:03 jenglish Exp $
+'\" RCS: @(#) $Id: Thread.3,v 1.13.14.1 2002/08/20 20:25:24 das Exp $
 '\" 
 .so man.macros
 .TH Threads 3 "8.1" Tcl "Tcl Library Procedures"
@@ -60,7 +60,7 @@ The size of the thread local storage block.  This amount of data
 is allocated and initialized to zero the first time each thread
 calls \fBTcl_GetThreadData\fR.
 .AP Tcl_ThreadId *idPtr out
-The refered storage will contain the id of the newly created thread as
+The referred storage will contain the id of the newly created thread as
 returned by the operating system.
 .AP Tcl_ThreadId id in
 Id of the thread waited upon.
@@ -75,7 +75,7 @@ The size of the stack given to the new thread.
 Bitmask containing flags allowing the caller to modify behaviour of
 the new thread.
 .AP int *result out
-The refered storage is used to place the exit code of the thread
+The referred storage is used to place the exit code of the thread
 waited upon into it.
 .BE
 .SH INTRODUCTION
@@ -85,7 +85,7 @@ customizing the Tcl core.  To enable Tcl multithreading support,
 you must include the \fB--enable-threads\fR option to \fBconfigure\fR
 when you configure and compile your Tcl core.
 .PP
-An important contstraint of the Tcl threads implementation is that
+An important constraint of the Tcl threads implementation is that
 \fIonly the thread that created a Tcl interpreter can use that
 interpreter\fR.  In other words, multiple threads can not access
 the same Tcl interpreter.  (However, as was the case in previous
@@ -101,7 +101,7 @@ the default size as specified by the operating system is to be used
 for the new thread. As for the flags, currently are only the values
 \fBTCL_THREAD_NOFLAGS\fR and \fBTCL_THREAD_JOINABLE\fR defined. The
 first of them invokes the default behaviour with no
-specialities. Using the second value marks the new thread as
+specialties. Using the second value marks the new thread as
 \fIjoinable\fR. This means that another thread can wait for the such
 marked thread to exit and join it.
 .PP

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinLoad.c,v 1.9.2.1 2002/02/05 02:22:05 wolfsuit Exp $
+ * RCS: @(#) $Id: tclWinLoad.c,v 1.9.2.2 2002/08/20 20:25:31 das Exp $
  */
 
 #include "tclWinInt.h"
@@ -19,11 +19,10 @@
 /*
  *----------------------------------------------------------------------
  *
- * TclpLoadFile --
+ * TclpDlopen --
  *
  *	Dynamically loads a binary code file into memory and returns
- *	the addresses of two procedures within that file, if they
- *	are defined.
+ *	a handle to the new code.
  *
  * Results:
  *	A standard Tcl completion code.  If an error occurs, an error
@@ -36,17 +35,11 @@
  */
 
 int
-TclpLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr, 
-	     clientDataPtr, unloadProcPtr)
+TclpDlopen(interp, pathPtr, loadHandle, unloadProcPtr)
     Tcl_Interp *interp;		/* Used for error reporting. */
     Tcl_Obj *pathPtr;		/* Name of the file containing the desired
-				 * code. */
-    CONST char *sym1, *sym2;	/* Names of two procedures to look up in
-				 * the file's symbol table. */
-    Tcl_PackageInitProc **proc1Ptr, **proc2Ptr;
-				/* Where to return the addresses corresponding
-				 * to sym1 and sym2. */
-    ClientData *clientDataPtr;	/* Filled with token for dynamically loaded
+				 * code (UTF-8). */
+    Tcl_LoadHandle *loadHandle;	/* Filled with token for dynamically loaded
 				 * file which will be passed back to 
 				 * (*unloadProcPtr)() to unload the file. */
     Tcl_FSUnloadFileProc **unloadProcPtr;	
@@ -63,7 +56,7 @@ TclpLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr,
     handle = (*tclWinProcs->loadLibraryProc)(nativeName);
     Tcl_DStringFree(&ds);
 
-    *clientDataPtr = (ClientData) handle;
+    *loadHandle = (Tcl_LoadHandle) handle;
     
     if (handle == NULL) {
 	DWORD lastError = GetLastError();
@@ -117,27 +110,48 @@ TclpLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr,
     } else {
 	*unloadProcPtr = &TclpUnloadFile;
     }
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpFindSymbol --
+ *
+ *	Looks up a symbol, by name, through a handle associated with
+ *	a previously loaded piece of code (shared library).
+ *
+ * Results:
+ *	Returns a pointer to the function associated with 'symbol' if
+ *	it is found.  Otherwise returns NULL and may leave an error
+ *	message in the interp's result.
+ *
+ *----------------------------------------------------------------------
+ */
+Tcl_PackageInitProc*
+TclpFindSymbol(interp, loadHandle, symbol) 
+    Tcl_Interp *interp;
+    Tcl_LoadHandle loadHandle;
+    CONST char *symbol;
+{
+    Tcl_PackageInitProc *proc = NULL;
+    HINSTANCE handle = (HINSTANCE)loadHandle;
+
     /*
      * For each symbol, check for both Symbol and _Symbol, since Borland
      * generates C symbols with a leading '_' by default.
      */
 
-    *proc1Ptr = (Tcl_PackageInitProc *) GetProcAddress(handle, sym1);
-    if (*proc1Ptr == NULL) {
+    proc = (Tcl_PackageInitProc *) GetProcAddress(handle, symbol);
+    if (proc == NULL) {
+	Tcl_DString ds;
+	Tcl_DStringInit(&ds);
 	Tcl_DStringAppend(&ds, "_", 1);
-	sym1 = Tcl_DStringAppend(&ds, sym1, -1);
-	*proc1Ptr = (Tcl_PackageInitProc *) GetProcAddress(handle, sym1);
+	symbol = Tcl_DStringAppend(&ds, symbol, -1);
+	proc = (Tcl_PackageInitProc *) GetProcAddress(handle, symbol);
 	Tcl_DStringFree(&ds);
     }
-    
-    *proc2Ptr = (Tcl_PackageInitProc *) GetProcAddress(handle, sym2);
-    if (*proc2Ptr == NULL) {
-	Tcl_DStringAppend(&ds, "_", 1);
-	sym2 = Tcl_DStringAppend(&ds, sym2, -1);
-	*proc2Ptr = (Tcl_PackageInitProc *) GetProcAddress(handle, sym2);
-	Tcl_DStringFree(&ds);
-    }
-    return TCL_OK;
+    return proc;
 }
 
 /*
@@ -159,15 +173,15 @@ TclpLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr,
  */
 
 void
-TclpUnloadFile(clientData)
-    ClientData clientData;	/* ClientData returned by a previous call
-				 * to TclpLoadFile().  The clientData is 
+TclpUnloadFile(loadHandle)
+    Tcl_LoadHandle loadHandle;	/* loadHandle returned by a previous call
+				 * to TclpDlopen().  The loadHandle is 
 				 * a token that represents the loaded 
 				 * file. */
 {
     HINSTANCE handle;
 
-    handle = (HINSTANCE) clientData;
+    handle = (HINSTANCE) loadHandle;
     FreeLibrary(handle);
 }
 

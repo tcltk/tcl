@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFile.c,v 1.12.8.2 2002/06/10 05:33:18 wolfsuit Exp $
+ * RCS: @(#) $Id: tclUnixFile.c,v 1.12.8.3 2002/08/20 20:25:30 das Exp $
  */
 
 #include "tclInt.h"
@@ -118,8 +118,8 @@ TclpFindExecutable(argv0)
 	 * strings directly.
 	 */
 
-	if ((access(name, X_OK) == 0)			   /* INTL: Native. */
-		&& (Tcl_PlatformStat(name, &statBuf) == 0) /* INTL: Native. */
+	if ((access(name, X_OK) == 0)			/* INTL: Native. */
+		&& (TclOSstat(name, &statBuf) == 0)	/* INTL: Native. */
 		&& S_ISREG(statBuf.st_mode)) {
 	    goto gotName;
 	}
@@ -273,7 +273,7 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 
 	native = Tcl_UtfToExternalDString(NULL, dirName, -1, &ds);
 
-	if ((Tcl_PlatformStat(native, &statBuf) != 0)		/* INTL: UTF-8. */
+	if ((TclOSstat(native, &statBuf) != 0)		/* INTL: Native. */
 		|| !S_ISDIR(statBuf.st_mode)) {
 	    Tcl_DStringFree(&dsOrig);
 	    Tcl_DStringFree(&ds);
@@ -313,7 +313,7 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 	    CONST char *utf;
 	    Tcl_DirEntry *entryPtr;
 	    
-	    entryPtr = Tcl_PlatformReaddir(d);		/* INTL: Native. */
+	    entryPtr = TclOSreaddir(d);			/* INTL: Native. */
 	    if (entryPtr == NULL) {
 		break;
 	    }
@@ -378,12 +378,12 @@ NativeMatchType(
 	 * doesn't exist (since that case would not show up
 	 * if we used 'access' or 'stat')
 	 */
-	if (Tcl_PlatformLStat(nativeEntry, &buf) != 0) {
+	if (TclOSlstat(nativeEntry, &buf) != 0) {
 	    return 0;
 	}
     } else {
 	if (types->perm != 0) {
-	    if (Tcl_PlatformStat(nativeEntry, &buf) != 0) {
+	    if (TclOSstat(nativeEntry, &buf) != 0) {
 		/* 
 		 * Either the file has disappeared between the
 		 * 'readdir' call and the 'stat' call, or
@@ -417,7 +417,7 @@ NativeMatchType(
 	if (types->type != 0) {
 	    if (types->perm == 0) {
 		/* We haven't yet done a stat on the file */
-		if (Tcl_PlatformStat(nativeEntry, &buf) != 0) {
+		if (TclOSstat(nativeEntry, &buf) != 0) {
 		    /* Posix error occurred */
 		    return 0;
 		}
@@ -436,22 +436,22 @@ NativeMatchType(
 			S_ISFIFO(buf.st_mode)) ||
 		((types->type & TCL_GLOB_TYPE_FILE) &&
 			S_ISREG(buf.st_mode))
-    #ifdef S_ISSOCK
+#ifdef S_ISSOCK
 		|| ((types->type & TCL_GLOB_TYPE_SOCK) &&
 			S_ISSOCK(buf.st_mode))
-    #endif
+#endif /* S_ISSOCK */
 		) {
 		/* Do nothing -- this file is ok */
 	    } else {
-    #ifdef S_ISLNK
+#ifdef S_ISLNK
 		if (types->type & TCL_GLOB_TYPE_LINK) {
-		    if (Tcl_PlatformLStat(nativeEntry, &buf) == 0) {
+		    if (TclOSlstat(nativeEntry, &buf) == 0) {
 			if (S_ISLNK(buf.st_mode)) {
 			    return 1;
 			}
 		    }
 		}
-    #endif
+#endif /* S_ISLNK */
 		return 0;
 	    }
 	}
@@ -581,7 +581,7 @@ TclpObjLstat(pathPtr, bufPtr)
     Tcl_Obj *pathPtr;		/* Path of file to stat */
     Tcl_StatBuf *bufPtr;	/* Filled with results of stat call. */
 {
-    return Tcl_PlatformLStat(Tcl_FSGetNativePath(pathPtr), bufPtr);
+    return TclOSlstat(Tcl_FSGetNativePath(pathPtr), bufPtr);
 }
 
 /*
@@ -687,7 +687,7 @@ TclpReadlink(path, linkPtr)
     Tcl_ExternalToUtfDString(NULL, link, length, linkPtr);
     return Tcl_DStringValue(linkPtr);
 #else
-	return NULL;
+    return NULL;
 #endif
 }
 
@@ -716,7 +716,7 @@ TclpObjStat(pathPtr, bufPtr)
     if (path == NULL) {
 	return -1;
     } else {
-	return Tcl_PlatformStat(path, bufPtr);
+	return TclOSstat(path, bufPtr);
     }
 }
 
@@ -724,19 +724,49 @@ TclpObjStat(pathPtr, bufPtr)
 #ifdef S_IFLNK
 
 Tcl_Obj* 
-TclpObjLink(pathPtr, toPtr)
+TclpObjLink(pathPtr, toPtr, linkAction)
     Tcl_Obj *pathPtr;
     Tcl_Obj *toPtr;
+    int linkAction;
 {
-    Tcl_Obj* linkPtr = NULL;
-
     if (toPtr != NULL) {
-        return NULL;
+	CONST char *src = Tcl_FSGetNativePath(pathPtr);
+	CONST char *target = Tcl_FSGetNativePath(toPtr);
+	
+	if (src == NULL || target == NULL) {
+	    return NULL;
+	}
+	if (access(src, F_OK) != -1) {
+	    /* src exists */
+	    errno = EEXIST;
+	    return NULL;
+	}
+	if (access(target, F_OK) == -1) {
+	    /* target doesn't exist */
+	    errno = ENOENT;
+	    return NULL;
+	}
+	/* 
+	 * Check symbolic link flag first, since we prefer to
+	 * create these.
+	 */
+	if (linkAction & TCL_CREATE_SYMBOLIC_LINK) {
+	    if (symlink(target, src) != 0) return NULL;
+	} else if (linkAction & TCL_CREATE_HARD_LINK) {
+	    if (link(target, src) != 0) return NULL;
+	} else {
+	    errno = ENODEV;
+	    return NULL;
+	}
+	return toPtr;
     } else {
+	Tcl_Obj* linkPtr = NULL;
+
 	char link[MAXPATHLEN];
 	int length;
 	char *native;
-
+	Tcl_DString ds;
+	
 	if (Tcl_FSGetTranslatedPath(NULL, pathPtr) == NULL) {
 	    return NULL;
 	}
@@ -753,10 +783,15 @@ TclpObjLink(pathPtr, toPtr)
 	strncpy(native, link, (unsigned)length);
 	native[length] = '\0';
 	
-	linkPtr = Tcl_FSNewNativePath(pathPtr, native);
-	Tcl_IncrRefCount(linkPtr);
+	Tcl_ExternalToUtfDString(NULL, native, length, &ds);
+	linkPtr = Tcl_NewStringObj(Tcl_DStringValue(&ds), 
+				   Tcl_DStringLength(&ds));
+	Tcl_DStringFree(&ds);
+	if (linkPtr != NULL) {
+	    Tcl_IncrRefCount(linkPtr);
+	}
+	return linkPtr;
     }
-    return linkPtr;
 }
 
 #endif

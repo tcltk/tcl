@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLink.c,v 1.3.28.2 2002/06/10 05:33:12 wolfsuit Exp $
+ * RCS: @(#) $Id: tclLink.c,v 1.3.28.3 2002/08/20 20:25:26 das Exp $
  */
 
 #include "tclInt.h"
@@ -60,8 +60,8 @@ typedef struct Link {
  */
 
 static char *		LinkTraceProc _ANSI_ARGS_((ClientData clientData,
-			    Tcl_Interp *interp, char *name1, CONST char *name2,
-			    int flags));
+			    Tcl_Interp *interp, CONST char *name1, 
+                            CONST char *name2, int flags));
 static Tcl_Obj *	ObjValue _ANSI_ARGS_((Link *linkPtr));
 
 /*
@@ -88,7 +88,7 @@ static Tcl_Obj *	ObjValue _ANSI_ARGS_((Link *linkPtr));
 int
 Tcl_LinkVar(interp, varName, addr, type)
     Tcl_Interp *interp;		/* Interpreter in which varName exists. */
-    char *varName;		/* Name of a global variable in interp. */
+    CONST char *varName;	/* Name of a global variable in interp. */
     char *addr;			/* Address of a C variable to be linked
 				 * to varName. */
     int type;			/* Type of C variable: TCL_LINK_INT, etc. 
@@ -149,7 +149,7 @@ Tcl_LinkVar(interp, varName, addr, type)
 void
 Tcl_UnlinkVar(interp, varName)
     Tcl_Interp *interp;		/* Interpreter containing variable to unlink. */
-    char *varName;		/* Global variable in interp to unlink. */
+    CONST char *varName;	/* Global variable in interp to unlink. */
 {
     Link *linkPtr;
 
@@ -187,7 +187,7 @@ Tcl_UnlinkVar(interp, varName)
 void
 Tcl_UpdateLinkedVar(interp, varName)
     Tcl_Interp *interp;		/* Interpreter containing variable. */
-    char *varName;		/* Name of global variable that is linked. */
+    CONST char *varName;	/* Name of global variable that is linked. */
 {
     Link *linkPtr;
     int savedFlag;
@@ -229,7 +229,7 @@ static char *
 LinkTraceProc(clientData, interp, name1, name2, flags)
     ClientData clientData;	/* Contains information about the link. */
     Tcl_Interp *interp;		/* Interpreter containing Tcl variable. */
-    char *name1;		/* First part of variable name. */
+    CONST char *name1;		/* First part of variable name. */
     CONST char *name2;		/* Second part of variable name. */
     int flags;			/* Miscellaneous additional information. */
 {

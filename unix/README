@@ -1,7 +1,7 @@
 Tcl UNIX README
 ---------------
 
-RCS: @(#) $Id: README,v 1.17.8.2 2002/06/10 05:33:17 wolfsuit Exp $
+RCS: @(#) $Id: README,v 1.17.8.3 2002/08/20 20:25:29 das Exp $
 
 This is the directory where you configure, compile, test, and install
 UNIX versions of Tcl.  This directory also contains source files for Tcl
@@ -73,6 +73,10 @@ How To Compile And Install Tcl:
 				default on platforms where nl_langinfo is
 				found.
 	--disable-langinfo	Specifically disables use of nl_langinfo.
+	--enable-man-symlinks	Use symlinks for linking the manpages that
+				should be reachable under several names.
+	--enable-man-compression=PROG
+				Compress the manpages using PROG.
 
     Note: by default gcc will be used if it can be located on the PATH.
     if you want to use cc instead of gcc, set the CC environment variable

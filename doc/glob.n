@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: glob.n,v 1.11 2001/08/24 16:43:25 vincentdarley Exp $
+'\" RCS: @(#) $Id: glob.n,v 1.11.8.1 2002/08/20 20:25:24 das Exp $
 '\" 
 .so man.macros
 .TH glob n 8.3 Tcl "Tcl Built-In Commands"
@@ -87,7 +87,7 @@ Macintosh, MacOS types and creators are also supported, where any item
 which is four characters long is assumed to be a MacOS type
 (e.g. \fBTEXT\fR).  Items which are of the form \fI{macintosh type XXXX}\fR
 or \fI{macintosh creator XXXX}\fR will match types or creators
-respectively.  Unrecognised types, or specifications of multiple MacOS
+respectively.  Unrecognized types, or specifications of multiple MacOS
 types/creators will signal an error.
 .PP
 The two forms may be mixed, so \fB\-types {d f r w}\fR will find all
@@ -170,7 +170,7 @@ like ``.../'' and ``..../'' for successively higher up parent directories.
 .
 Since the backslash character has a special meaning to the glob 
 command, glob patterns containing Windows style path separators need 
-special care. The pattern \fIC:\e\efoo\e\e*\fR is interepreted as 
+special care. The pattern \fIC:\e\efoo\e\e*\fR is interpreted as 
 \fIC:\efoo\e*\fR where \fI\ef\fR will match the single character \fIf\fR 
 and \fI\e*\fR will match the single character \fI*\fR and will not be 
 interpreted as a wildcard character. One solution to this problem is 

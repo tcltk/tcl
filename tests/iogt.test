@@ -10,10 +10,10 @@
 # Copyright (c) 2000 Andreas Kupries.
 # All rights reserved.
 # 
-# RCS: @(#) $Id: iogt.test,v 1.2.14.2 2002/06/10 05:33:16 wolfsuit Exp $
+# RCS: @(#) $Id: iogt.test,v 1.2.14.3 2002/08/20 20:25:28 das Exp $
 
-if {[catch {package require tcltest 2}]} {
-    puts stderr "Skipping tests in [info script].  tcltest 2 required."
+if {[catch {package require tcltest 2.1}]} {
+    puts stderr "Skipping tests in [info script].  tcltest 2.1 required."
     return
 }
 namespace eval ::tcl::test::iogt {
@@ -26,13 +26,14 @@ namespace eval ::tcl::test::iogt {
 
     testConstraint testchannel [llength [info commands testchannel]]
 
-makeFile {abcdefghijklmnopqrstuvwxyz0123456789,./?><;'\|":[]\}\{`~!@#$%^&*()_+-=} dummy
+set path(dummy) [makeFile {abcdefghijklmnopqrstuvwxyz0123456789,./?><;'\|":[]\}\{`~!@#$%^&*()_+-=
+} dummy]
 
 # " capture coloring of quotes
 
-makeFile {} dummyout
+set path(dummyout) [makeFile {} dummyout]
 
-makeFile {
+set path(__echo_srv__.tcl) [makeFile {
 #!/usr/local/bin/tclsh
 # -*- tcl -*-
 # echo server
@@ -132,7 +133,7 @@ proc echoPut {c sock} {
 # main
 socket -server newconn $port
 vwait forever
-} __echo_srv__.tcl
+} __echo_srv__.tcl]
 
 
 ########################################################################
@@ -410,22 +411,21 @@ proc asort {alist} {
 
 ########################################################################
 
-
 test iogt-1.1 {stack/unstack} testchannel {
-    set fh [open dummy r]
+    set fh [open $path(dummy) r]
     identity -attach $fh
     testchannel unstack $fh
     close   $fh
 } {}
 
 test iogt-1.2 {stack/close} testchannel {
-    set fh [open dummy r]
+    set fh [open $path(dummy) r]
     identity -attach $fh
     close   $fh
 } {}
 
 test iogt-1.3 {stack/unstack, configuration, options} testchannel {
-    set fh [open dummy r]
+    set fh [open $path(dummy) r]
     set ca [asort [fconfigure $fh]]
     identity -attach $fh
     set cb [asort [fconfigure $fh]]
@@ -443,7 +443,7 @@ test iogt-1.3 {stack/unstack, configuration, options} testchannel {
 } {1 1 1}
 
 test iogt-1.4 {stack/unstack, configuration} testchannel {
-    set fh [open dummy r]
+    set fh [open $path(dummy) r]
     set ca [asort [fconfigure $fh]]
     identity -attach $fh
     fconfigure $fh \
@@ -465,8 +465,8 @@ test iogt-1.4 {stack/unstack, configuration} testchannel {
 } {0 line cr shiftjis}
 
 test iogt-2.0 {basic I/O going through transform} testchannel {
-    set fin  [open dummy    r]
-    set fout [open dummyout w]
+    set fin  [open $path(dummy)    r]
+    set fout [open $path(dummyout) w]
 
     identity -attach $fin
     identity -attach $fout
@@ -476,8 +476,8 @@ test iogt-2.0 {basic I/O going through transform} testchannel {
     close $fin
     close $fout
 
-    set fin  [open dummy    r]
-    set fout [open dummyout r]
+    set fin  [open $path(dummy)    r]
+    set fout [open $path(dummyout) r]
 
     set res     [string equal [set in [read $fin]] [set out [read $fout]]]
     lappend res [string length $in] [string length $out]
@@ -490,8 +490,8 @@ test iogt-2.0 {basic I/O going through transform} testchannel {
 
 
 test iogt-2.1 {basic I/O, operation trail} {testchannel unixOnly} {
-    set fin  [open dummy    r]
-    set fout [open dummyout w]
+    set fin  [open $path(dummy)    r]
+    set fout [open $path(dummyout) w]
 
     set ain [list] ; set aout [list]
     audit_ops ain  -attach $fin
@@ -540,8 +540,8 @@ flush/write
 delete/write}
 
 test iogt-2.2 {basic I/O, data trail} {testchannel unixOnly} {
-    set fin  [open dummy    r]
-    set fout [open dummyout w]
+    set fin  [open $path(dummy)    r]
+    set fout [open $path(dummyout) w]
 
     set ain [list] ; set aout [list]
     audit_flow ain  -attach $fin
@@ -595,8 +595,8 @@ delete/write {} *ignored*}
 
 
 test iogt-2.3 {basic I/O, mixed trail} {testchannel unixOnly} {
-    set fin  [open dummy    r]
-    set fout [open dummyout w]
+    set fin  [open $path(dummy)    r]
+    set fout [open $path(dummyout) w]
 
     set trail [list]
     audit_flow trail -attach $fin
@@ -655,7 +655,7 @@ test iogt-3.0 {Tcl_Channel valid after stack/unstack, fevent handling} \
 	variable copy ; set copy 1
     }
 
-    set fin  [open dummy    r]
+    set fin  [open $path(dummy) r]
 
     fevent 1000 500 {20 20 20 10 1 1} {
 	close $fin
@@ -683,8 +683,8 @@ test iogt-3.0 {Tcl_Channel valid after stack/unstack, fevent handling} \
 
     # Check result of copy.
 
-    set fin  [open dummy    r]
-    set fout [open dummyout r]
+    set fin  [open $path(dummy)    r]
+    set fout [open $path(dummyout) r]
 
     set res [string equal [read $fin] [read $fout]]
 
@@ -696,7 +696,7 @@ test iogt-3.0 {Tcl_Channel valid after stack/unstack, fevent handling} \
 
 
 test iogt-4.0 {fileevent readable, after transform} {testchannel unknownFailure} {
-    set fin  [open dummy    r]
+    set fin  [open $path(dummy) r]
     set data [read $fin]
     close $fin
 
@@ -827,8 +827,8 @@ delete/read {} *ignored*}  ; # catch unescaped quote "
 
 
 test iogt-5.0 {EOF simulation} {testchannel unknownFailure} {
-    set fin  [open dummy    r]
-    set fout [open dummyout w]
+    set fin  [open $path(dummy)    r]
+    set fout [open $path(dummyout) w]
 
     set trail [list]
 
@@ -906,7 +906,7 @@ proc constx {-attach channel} {
 }
 
 test iogt-6.0 {Push back} testchannel {
-    set f [open dummy r]
+    set f [open $path(dummy) r]
 
     # contents of dummy = "abcdefghi..."
     read $f 3 ; # skip behind "abc"
@@ -927,7 +927,7 @@ test iogt-6.0 {Push back} testchannel {
 } {xxx}
 
 test iogt-6.1 {Push back and up} {testchannel knownBug} {
-    set f [open dummy r]
+    set f [open $path(dummy) r]
 
     # contents of dummy = "abcdefghi..."
     read $f 3 ; # skip behind "abc"

@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: subst.test,v 1.9.8.1 2002/06/10 05:33:17 wolfsuit Exp $
+# RCS: @(#) $Id: subst.test,v 1.9.8.2 2002/08/20 20:25:29 das Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -94,6 +94,20 @@ test subst-5.7 {command substitutions} {
     set a 0
     list [catch {subst {0[set a 1; set a 2}} msg] $a $msg 
 } {1 1 {missing close-bracket}}
+
+# repeat the tests above simulating cmd line input
+test subst-5.8 {command substitutions} {
+    set script {[subst {[set a 1}]}
+    list [catch {exec [info nameofexecutable] << $script} msg] $msg 
+} {1 {missing close-bracket}}
+test subst-5.9 {command substitutions} {
+    set script {[subst {0[set a 1}]}
+    list [catch {exec [info nameofexecutable] << $script} msg] $msg 
+} {1 {missing close-bracket}}
+test subst-5.10 {command substitutions} {
+    set script {[subst {0[set a 1; set a 2}]}
+    list [catch {exec [info nameofexecutable] << $script} msg] $msg 
+} {1 {missing close-bracket}}
 
 test subst-6.1 {clear the result after command substitution} {
     catch {unset a}

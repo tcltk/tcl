@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: OpenFileChnl.3,v 1.13.4.1 2002/02/05 02:21:57 wolfsuit Exp $
+'\" RCS: @(#) $Id: OpenFileChnl.3,v 1.13.4.2 2002/08/20 20:25:24 das Exp $
 .so man.macros
 .TH Tcl_OpenFileChannel 3 8.3 Tcl "Tcl Library Procedures"
 .BS
@@ -325,7 +325,7 @@ names of the registered channels to the interpreter's result as a
 list object.  \fBTcl_GetChannelNamesEx\fR will filter these names
 according to the \fIpattern\fR.  If \fIpattern\fR is NULL, then it
 will not do any filtering.  The return value is \fBTCL_OK\fR if no
-errors occured writing to the result, otherwise it is \fBTCL_ERROR\fR,
+errors occurred writing to the result, otherwise it is \fBTCL_ERROR\fR,
 and the error message is left in the interpreter's result.
 
 .SH TCL_REGISTERCHANNEL
@@ -672,7 +672,7 @@ platforms.  On the Macintosh platform, the handle is a file reference
 number as returned from \fBHOpenDF\fR.
 
 .SH "SEE ALSO"
-DString(3), fconfigure(n), filename(n), fopen(2), Tcl_CreateChannel(3)
+DString(3), fconfigure(n), filename(n), fopen(3), Tcl_CreateChannel(3)
 
 .SH KEYWORDS
 access point, blocking, buffered I/O, channel, channel driver, end of file,

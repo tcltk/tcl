@@ -2,7 +2,7 @@
 '\" Copyright (c) 1998-2000 by Scriptics Corporation.
 '\" All rights reserved.
 '\" 
-'\" RCS: @(#) $Id: packagens.n,v 1.3 2000/09/07 14:27:50 poenitz Exp $
+'\" RCS: @(#) $Id: packagens.n,v 1.3.14.1 2002/08/20 20:25:24 das Exp $
 '\" 
 .so man.macros
 .TH pkg::create n 8.3 Tcl "Tcl Built-In Commands"
@@ -46,7 +46,7 @@ specifies a Tcl library that must be loaded with the
 \fBsource\fR command.  Any number of \fB\-source\fR parameters may be
 specified.
 .PP
-At least one \fB\-load\fR or \fB\-source\fR paramter must be given.
+At least one \fB\-load\fR or \fB\-source\fR parameter must be given.
 
 .SH "SEE ALSO"
 package(n)

@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Tcl_Main.3,v 1.4.6.2 2002/06/10 05:33:08 wolfsuit Exp $
+'\" RCS: @(#) $Id: Tcl_Main.3,v 1.4.6.3 2002/08/20 20:25:24 das Exp $
 '\" 
 .so man.macros
 .TH Tcl_Main 3 8.4 Tcl "Tcl Library Procedures"
@@ -104,7 +104,7 @@ When the \fIappInitProc\fR is finished, \fBTcl_Main\fR enters one
 of its two modes.  If a startup script has been provided, \fBTcl_Main\fR
 attempts to evaluate it.  Otherwise, interactive mode begins with
 examination of the variable \fItcl_rcFileName\fR in the master
-interperter.  If that variable exists and holds the name of a readable
+interpreter.  If that variable exists and holds the name of a readable
 file, the contents of that file are evaluated in the master interpreter.
 Then interactive operations begin,
 with prompts and command evaluation results written to the standard

@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: regexp.test,v 1.17.4.1 2002/06/10 05:33:16 wolfsuit Exp $
+# RCS: @(#) $Id: regexp.test,v 1.17.4.2 2002/08/20 20:25:28 das Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -433,11 +433,11 @@ test regexp-14.2 {CompileRegexp: regexp cache, different flags} {
     regexp -nocase $x bbba
 } 1
 
-# There is no exec on the Mac ...
-
-test regexp-14.3 {CompileRegexp: regexp cache, empty regexp and empty cache} {unixOrPc} {
-    makeFile {puts [regexp {} foo]} junk.tcl
-    exec $::tcltest::tcltest junk.tcl
+testConstraint exec [llength [info commands exec]]
+test regexp-14.3 {CompileRegexp: regexp cache, empty regexp and empty cache} {
+	exec
+} {
+    exec [interpreter] [makeFile {puts [regexp {} foo]} junk.tcl]
 } 1
 
 test regexp-15.1 {regexp -start} {

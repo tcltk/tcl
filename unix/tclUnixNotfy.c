@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixNotfy.c,v 1.10.18.1 2001/10/15 09:13:49 wolfsuit Exp $
+ * RCS: @(#) $Id: tclUnixNotfy.c,v 1.10.18.2 2002/08/20 20:25:30 das Exp $
  */
 
 #include "tclInt.h"

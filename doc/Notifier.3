@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Notifier.3,v 1.8 2000/07/24 00:03:02 jenglish Exp $
+'\" RCS: @(#) $Id: Notifier.3,v 1.8.14.1 2002/08/20 20:25:24 das Exp $
 '\" 
 .so man.macros
 .TH Notifier 3 8.1 Tcl "Tcl Library Procedures"
@@ -101,7 +101,7 @@ What types of events to service.  These flags are the same as those
 passed to \fBTcl_DoOneEvent\fR.
 .VS 8.1
 .AP int mode in
-Inidicates whether events should be serviced by \fBTcl_ServiceAll\fR.
+Indicates whether events should be serviced by \fBTcl_ServiceAll\fR.
 Must be one of \fBTCL_SERVICE_NONE\fR or \fBTCL_SERVICE_ALL\fR.
 .VE
 .BE
@@ -466,7 +466,7 @@ procedures.
 .PP
 \fBTcl_InitNotifier\fR initializes the notifier state and returns
 a handle to the notifier state.  Tcl calls this
-procedure when intializing a Tcl interpreter.  Similarly,
+procedure when initializing a Tcl interpreter.  Similarly,
 \fBTcl_FinalizeNotifier\fR shuts down the notifier, and is
 called by \fBTcl_Finalize\fR when shutting down a Tcl interpreter.
 .PP

@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Utf.3,v 1.9.12.2 2002/06/10 05:33:08 wolfsuit Exp $
+'\" RCS: @(#) $Id: Utf.3,v 1.9.12.3 2002/08/20 20:25:24 das Exp $
 '\" 
 .so man.macros
 .TH Utf 3 "8.1" Tcl "Tcl Library Procedures"
@@ -155,7 +155,7 @@ The return value is a pointer to the UTF-8 representation of the
 Unicode string.  Storage for the return value is appended to the
 end of the \fBTcl_DString\fR.
 .PP
-\fBTcl_UtfToUniCharDString\fR coverts the given UTF-8 string to Unicode,
+\fBTcl_UtfToUniCharDString\fR converts the given UTF-8 string to Unicode,
 storing the result in the previously-initialized \fBTcl_DString\fR.
 you may either specify the length of the given UTF-8 string or "-1",
 in which case \fBTcl_UtfToUniCharDString\fR uses \fBstrlen\fR to
@@ -212,12 +212,12 @@ returns the number of Tcl_UniChars that are represented by the UTF-8 string
 length is negative, all bytes up to the first NULL byte are used.
 .PP
 \fBTcl_UtfFindFirst\fR corresponds to \fBstrchr\fR for UTF-8 strings.  It
-returns a pointer to the first occurance of the Tcl_UniChar \fIch\fR
+returns a pointer to the first occurrence of the Tcl_UniChar \fIch\fR
 in the NULL-terminated UTF-8 string \fIsrc\fR.  The NULL terminator is
 considered part of the UTF-8 string.  
 .PP
 \fBTcl_UtfFindLast\fR corresponds to \fBstrrchr\fR for UTF-8 strings.  It
-returns a pointer to the last occurance of the Tcl_UniChar \fIch\fR
+returns a pointer to the last occurrence of the Tcl_UniChar \fIch\fR
 in the NULL terminated UTF-8 string \fIsrc\fR.  The NULL terminator is
 considered part of the UTF-8 string.  
 .PP

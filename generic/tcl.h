@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.103.2.3 2002/06/10 05:33:09 wolfsuit Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.103.2.4 2002/08/20 20:25:24 das Exp $
  */
 
 #ifndef _TCL
@@ -44,35 +44,23 @@ extern "C" {
  * win/configure.in	(as above)
  * win/tcl.m4		(not patchlevel)
  * win/makefile.vc	(not patchlevel) 2 LOC
- * library/reg/pkgIndex.tcl	(not patchlevel, for tclregNN.dll)
- * library/dde/pkgIndex.tcl	(not patchlevel, for tclddeNN.dll)
  * README		(sections 0 and 2)
  * mac/README		(2 LOC, not patchlevel)
  * win/README.binary	(sections 0-4)
  * win/README		(not patchlevel) (sections 0 and 2)
- * unix/README		(not patchlevel) (part (h))
  * unix/tcl.spec	(2 LOC Major/Minor, 1 LOC patch)
- * tests/basic.test	(1 LOC M/M)
+ * tests/basic.test	(1 LOC M/M, not patchlevel)
  * tools/tcl.hpj.in	(not patchlevel, for windows installer)
  * tools/tcl.wse.in	(for windows installer)
  * tools/tclSplash.bmp	(not patchlevel)
  */
 #define TCL_MAJOR_VERSION   8
 #define TCL_MINOR_VERSION   4
-#define TCL_RELEASE_LEVEL   TCL_ALPHA_RELEASE
-#define TCL_RELEASE_SERIAL  5
+#define TCL_RELEASE_LEVEL   TCL_BETA_RELEASE
+#define TCL_RELEASE_SERIAL  3
 
 #define TCL_VERSION	    "8.4"
-#define TCL_PATCH_LEVEL	    "8.4a5"
-
-/* 
- * A special definition used to allow this header file to be included 
- * in resource files so that they can get obtain version information from
- * this file.  Resource compilers don't like all the C stuff, like typedefs
- * and procedure declarations, that occur below.
- */
-
-#ifndef RESOURCE_INCLUDED
+#define TCL_PATCH_LEVEL	    "8.4b3"
 
 /*
  * The following definitions set up the proper options for Windows
@@ -88,20 +76,13 @@ extern "C" {
 #   endif
 #endif
 
+/*
+ * STRICT: See MSDN Article Q83456
+ */
 #ifdef __WIN32__
 #   ifndef STRICT
 #	define STRICT
 #   endif
-#   ifndef USE_PROTOTYPE
-#	define USE_PROTOTYPE 1
-#   endif
-#   ifndef HAS_STDARG
-#	define HAS_STDARG 1
-#   endif
-#   ifndef USE_PROTOTYPE
-#	define USE_PROTOTYPE 1
-#   endif
-
 #endif /* __WIN32__ */
 
 /*
@@ -111,9 +92,6 @@ extern "C" {
 
 #ifdef MAC_TCL
 #include <ConditionalMacros.h>
-#   ifndef HAS_STDARG
-#	define HAS_STDARG 1
-#   endif
 #   ifndef USE_TCLALLOC
 #	define USE_TCLALLOC 1
 #   endif
@@ -123,33 +101,39 @@ extern "C" {
 #   define INLINE 
 #endif
 
+
 /*
  * Utility macros: STRINGIFY takes an argument and wraps it in "" (double
  * quotation marks), JOIN joins two arguments.
  */
-
-#define VERBATIM(x) x
-#ifdef _MSC_VER
-# define STRINGIFY(x) STRINGIFY1(x)
-# define STRINGIFY1(x) #x
-# define JOIN(a,b) JOIN1(a,b)
-# define JOIN1(a,b) a##b
-#else
-# ifdef RESOURCE_INCLUDED
+#ifndef STRINGIFY
 #  define STRINGIFY(x) STRINGIFY1(x)
 #  define STRINGIFY1(x) #x
+#endif
+#ifndef JOIN
 #  define JOIN(a,b) JOIN1(a,b)
 #  define JOIN1(a,b) a##b
-# else
-#  ifdef __STDC__
-#   define STRINGIFY(x) #x
-#   define JOIN(a,b) a##b
-#  else
-#   define STRINGIFY(x) "x"
-#   define JOIN(a,b) VERBATIM(a)VERBATIM(b)
-#  endif
-# endif
 #endif
+
+/* 
+ * A special definition used to allow this header file to be included
+ * from windows resource files so that they can obtain version
+ * information.  RC_INVOKED is defined by default by the RC tool.
+ * Resource compilers don't like all the C stuff, like typedefs and
+ * procedure declarations, that occur below, so block them out.
+ */
+
+#ifndef RC_INVOKED
+
+/* 
+ * A special definition for Macintosh used to allow this header file
+ * to be included in resource files so that they can get obtain
+ * version information from this file.  Resource compilers don't like
+ * all the C stuff, like typedefs and procedure declarations, that
+ * occur below.  
+*/
+
+#ifndef RESOURCE_INCLUDED
 
 /*
  * Special macro to define mutexes, that doesn't do anything
@@ -176,6 +160,7 @@ extern "C" {
 #define Tcl_ConditionFinalize(condPtr)
 #endif /* TCL_THREADS */
 
+
 #ifndef BUFSIZ
 #   include <stdio.h>
 #endif
@@ -190,24 +175,18 @@ extern "C" {
  * string for use in the function definition.  TCL_VARARGS_START
  * initializes the va_list data structure and returns the first argument.
  */
-#if defined(__STDC__) || defined(HAS_STDARG)
+#if !defined(NO_STDARG)
 #   include <stdarg.h>
 #   define TCL_VARARGS(type, name) (type name, ...)
 #   define TCL_VARARGS_DEF(type, name) (type name, ...)
 #   define TCL_VARARGS_START(type, name, list) (va_start(list, name), name)
 #else
 #   include <varargs.h>
-#   ifdef __cplusplus
-#      define TCL_VARARGS(type, name) (type name, ...)
-#      define TCL_VARARGS_DEF(type, name) (type va_alist, ...)
-#   else
 #      define TCL_VARARGS(type, name) ()
 #      define TCL_VARARGS_DEF(type, name) (va_alist)
-#   endif
 #   define TCL_VARARGS_START(type, name, list) \
 	(va_start(list), va_arg(list, type))
 #endif
-
 
 /*
  * Macros used to declare a function to be exported by a DLL.
@@ -267,19 +246,32 @@ extern "C" {
 #   define INLINE
 #endif
 
-#if ((defined(__STDC__) || defined(SABER)) && !defined(NO_PROTOTYPE)) || defined(__cplusplus) || defined(USE_PROTOTYPE)
-#   define _USING_PROTOTYPES_ 1
-#   define _ANSI_ARGS_(x)	x
+#ifndef NO_CONST
 #   define CONST const
 #else
-#   define _ANSI_ARGS_(x)	()
 #   define CONST
 #endif
 
-#ifdef USE_NON_CONST
-#   define CONST84
+#ifndef NO_PROTOTYPES
+#   define _ANSI_ARGS_(x)	x
 #else
-#   define CONST84 CONST
+#   define _ANSI_ARGS_(x)	()
+#endif
+
+#ifdef USE_NON_CONST
+#   ifdef USE_COMPAT_CONST
+#      error define at most one of USE_NON_CONST and USE_COMPAT_CONST
+#   endif
+#   define CONST84
+#   define CONST84_RETURN
+#else
+#   ifdef USE_COMPAT_CONST
+#      define CONST84 
+#      define CONST84_RETURN CONST
+#   else
+#      define CONST84 CONST
+#      define CONST84_RETURN CONST
+#   endif
 #endif
 
 
@@ -298,30 +290,30 @@ extern "C" {
 
 
 /*
+ * The following code is copied from winnt.h.
+ * If we don't replicate it here, then <windows.h> can't be included 
+ * after tcl.h, since tcl.h also defines VOID.
+ */
+#ifdef __WIN32__
+#ifndef VOID
+#define VOID void
+typedef char CHAR;
+typedef short SHORT;
+typedef long LONG;
+#endif
+#endif /* __WIN32__ */
+
+/*
  * Macro to use instead of "void" for arguments that must have
  * type "void *" in ANSI C;  maps them to type "char *" in
  * non-ANSI systems.
  */
-#ifndef __WIN32__
-#   ifndef VOID
-#      ifdef __STDC__
-#         define VOID void
-#      else
-#         define VOID char
-#      endif
-#   endif
-#else /* __WIN32__ */
-/*
- * The following code is copied from winnt.h
- */
-#   ifndef VOID
-#      define VOID void
-typedef char CHAR;
-typedef short SHORT;
-typedef long LONG;
-#   endif
-#endif /* __WIN32__ */
 
+#ifndef NO_VOID
+#         define VOID void
+#else
+#         define VOID char
+#endif
 
 /*
  * Miscellaneous declarations.
@@ -331,14 +323,13 @@ typedef long LONG;
 #endif
 
 #ifndef _CLIENTDATA
-#   if defined(__STDC__) || defined(__cplusplus) || defined(__BORLANDC__)
-typedef void *ClientData;
+#   ifndef NO_VOID
+	typedef void *ClientData;
 #   else
-typedef int *ClientData;
-#   endif /* __STDC__ */
+	typedef int *ClientData;
+#   endif
 #   define _CLIENTDATA
 #endif
-
 
 /*
  * Define Tcl_WideInt to be a type that is (at least) 64-bits wide,
@@ -366,6 +357,7 @@ typedef int *ClientData;
  * backwards) so any changes you make will need to be done
  * cautiously...
  */
+
 #if !defined(TCL_WIDE_INT_TYPE)&&!defined(TCL_WIDE_INT_IS_LONG)
 #   ifdef __WIN32__
 #      define TCL_WIDE_INT_TYPE __int64
@@ -404,9 +396,6 @@ typedef TCL_WIDE_INT_TYPE		Tcl_WideInt;
 typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 
 #ifdef TCL_WIDE_INT_IS_LONG
-#   ifndef MAC_TCL
-#   include <sys/types.h>
-#   endif
 typedef struct stat	Tcl_StatBuf;
 #   define Tcl_WideAsLong(val)		((long)(val))
 #   define Tcl_LongAsWide(val)		((long)(val))
@@ -414,9 +403,6 @@ typedef struct stat	Tcl_StatBuf;
 #   define Tcl_DoubleAsWide(val)	((long)((double)(val)))
 #else /* TCL_WIDE_INT_IS_LONG */
 #   ifndef __WIN32__
-#      ifndef MAC_TCL
-#      include <sys/types.h>
-#      endif
 #      ifdef HAVE_STRUCT_STAT64
 typedef struct stat64	Tcl_StatBuf;
 #      else
@@ -493,7 +479,7 @@ typedef struct Tcl_TimerToken_ *Tcl_TimerToken;
 typedef struct Tcl_Trace_ *Tcl_Trace;
 typedef struct Tcl_Var_ *Tcl_Var;
 typedef struct Tcl_ChannelTypeVersion_ *Tcl_ChannelTypeVersion;
-
+typedef struct Tcl_LoadHandle_ *Tcl_LoadHandle;
 
 /*
  * Definition of the interface to procedures implementing threads.
@@ -670,10 +656,10 @@ typedef void (Tcl_ChannelProc) _ANSI_ARGS_((ClientData clientData, int mask));
 typedef void (Tcl_CloseProc) _ANSI_ARGS_((ClientData data));
 typedef void (Tcl_CmdDeleteProc) _ANSI_ARGS_((ClientData clientData));
 typedef int (Tcl_CmdProc) _ANSI_ARGS_((ClientData clientData,
-	Tcl_Interp *interp, int argc, char *argv[]));
+	Tcl_Interp *interp, int argc, CONST84 char *argv[]));
 typedef void (Tcl_CmdTraceProc) _ANSI_ARGS_((ClientData clientData,
 	Tcl_Interp *interp, int level, char *command, Tcl_CmdProc *proc,
-	ClientData cmdClientData, int argc, char *argv[]));
+	ClientData cmdClientData, int argc, CONST84 char *argv[]));
 typedef int (Tcl_CmdObjTraceProc) _ANSI_ARGS_((ClientData clientData,
 	Tcl_Interp *interp, int level, CONST char *command,
 	Tcl_Command commandInfo, int objc, struct Tcl_Obj * CONST * objv));
@@ -714,7 +700,7 @@ typedef int (Tcl_SetFromAnyProc) _ANSI_ARGS_((Tcl_Interp *interp,
 	struct Tcl_Obj *objPtr));
 typedef void (Tcl_UpdateStringProc) _ANSI_ARGS_((struct Tcl_Obj *objPtr));
 typedef char *(Tcl_VarTraceProc) _ANSI_ARGS_((ClientData clientData,
-	Tcl_Interp *interp, char *part1, CONST84 char *part2, int flags));
+	Tcl_Interp *interp, CONST84 char *part1, CONST84 char *part2, int flags));
 typedef void (Tcl_CommandTraceProc) _ANSI_ARGS_((ClientData clientData,
 	Tcl_Interp *interp, CONST char *oldName, CONST char *newName,
 	int flags));
@@ -722,8 +708,8 @@ typedef void (Tcl_CreateFileHandlerProc) _ANSI_ARGS_((int fd, int mask,
 	Tcl_FileProc *proc, ClientData clientData));
 typedef void (Tcl_DeleteFileHandlerProc) _ANSI_ARGS_((int fd));
 typedef void (Tcl_AlertNotifierProc) _ANSI_ARGS_((ClientData clientData));
-typedef void (Tcl_ServiceModeHookProc) _ANSI_ARGS_(());
-typedef ClientData (Tcl_InitNotifierProc) _ANSI_ARGS_(());
+typedef void (Tcl_ServiceModeHookProc) _ANSI_ARGS_((int mode));
+typedef ClientData (Tcl_InitNotifierProc) _ANSI_ARGS_((VOID));
 typedef void (Tcl_FinalizeNotifierProc) _ANSI_ARGS_((ClientData clientData));
 typedef void (Tcl_MainLoopProc) _ANSI_ARGS_((void));
 
@@ -1022,6 +1008,7 @@ typedef struct Tcl_DString {
 #define TCL_NO_EVAL		0x10000
 #define TCL_EVAL_GLOBAL		0x20000
 #define TCL_EVAL_DIRECT		0x40000
+#define TCL_EVAL_INVOKE	        0x80000
 
 /*
  * Special freeProc values that may be passed to Tcl_SetResult (see
@@ -1061,6 +1048,14 @@ typedef struct Tcl_DString {
 #define TCL_TRACE_DELETE 0x4000
 
 #define TCL_ALLOW_INLINE_COMPILATION 0x20000
+
+/*
+ * Flag values passed to Tcl_CreateObjTrace, and used internally
+ * by command execution traces.  Slots 4,8,16 and 32 are
+ * used internally by execution traces (see tclCmdMZ.c)
+ */
+#define TCL_TRACE_ENTER_EXEC		1
+#define TCL_TRACE_LEAVE_EXEC		2
 
 /*
  * The TCL_PARSE_PART1 flag is deprecated and has no effect. 
@@ -1610,9 +1605,9 @@ typedef int (Tcl_FSStatProc) _ANSI_ARGS_((Tcl_Obj *pathPtr, Tcl_StatBuf *buf));
 typedef int (Tcl_FSAccessProc) _ANSI_ARGS_((Tcl_Obj *pathPtr, int mode));
 typedef Tcl_Channel (Tcl_FSOpenFileChannelProc) 
 	_ANSI_ARGS_((Tcl_Interp *interp, Tcl_Obj *pathPtr, 
-	CONST84 char *modeString, int permissions));
+	int mode, int permissions));
 typedef int (Tcl_FSMatchInDirectoryProc) _ANSI_ARGS_((Tcl_Interp* interp, 
-	Tcl_Obj *result, Tcl_Obj *pathPtr, CONST84 char *pattern, 
+	Tcl_Obj *result, Tcl_Obj *pathPtr, CONST char *pattern, 
 	Tcl_GlobTypeData * types));
 typedef Tcl_Obj* (Tcl_FSGetCwdProc) _ANSI_ARGS_((Tcl_Interp *interp));
 typedef int (Tcl_FSChdirProc) _ANSI_ARGS_((Tcl_Obj *pathPtr));
@@ -1628,7 +1623,7 @@ typedef int (Tcl_FSRemoveDirectoryProc) _ANSI_ARGS_((Tcl_Obj *pathPtr,
 			    int recursive, Tcl_Obj **errorPtr));
 typedef int (Tcl_FSRenameFileProc) _ANSI_ARGS_((Tcl_Obj *srcPathPtr,
 			    Tcl_Obj *destPathPtr));
-typedef void (Tcl_FSUnloadFileProc) _ANSI_ARGS_((ClientData clientData));
+typedef void (Tcl_FSUnloadFileProc) _ANSI_ARGS_((Tcl_LoadHandle loadHandle));
 typedef Tcl_Obj* (Tcl_FSListVolumesProc) _ANSI_ARGS_((void));
 /* We have to declare the utime structure here. */
 struct utimbuf;
@@ -1639,19 +1634,16 @@ typedef int (Tcl_FSNormalizePathProc) _ANSI_ARGS_((Tcl_Interp *interp,
 typedef int (Tcl_FSFileAttrsGetProc) _ANSI_ARGS_((Tcl_Interp *interp,
 			    int index, Tcl_Obj *pathPtr,
 			    Tcl_Obj **objPtrRef));
-typedef CONST84 char** (Tcl_FSFileAttrStringsProc) _ANSI_ARGS_((Tcl_Obj *pathPtr, 
+typedef CONST char** (Tcl_FSFileAttrStringsProc) _ANSI_ARGS_((Tcl_Obj *pathPtr, 
 			    Tcl_Obj** objPtrRef));
 typedef int (Tcl_FSFileAttrsSetProc) _ANSI_ARGS_((Tcl_Interp *interp,
 			    int index, Tcl_Obj *pathPtr,
 			    Tcl_Obj *objPtr));
 typedef Tcl_Obj* (Tcl_FSLinkProc) _ANSI_ARGS_((Tcl_Obj *pathPtr, 
-					       Tcl_Obj *toPtr));
+					       Tcl_Obj *toPtr, int linkType));
 typedef int (Tcl_FSLoadFileProc) _ANSI_ARGS_((Tcl_Interp * interp, 
 			    Tcl_Obj *pathPtr,
-			    CONST char * sym1, CONST char * sym2, 
-			    Tcl_PackageInitProc ** proc1Ptr, 
-			    Tcl_PackageInitProc ** proc2Ptr, 
-			    ClientData * clientDataPtr,
+			    Tcl_LoadHandle *handlePtr,
 			    Tcl_FSUnloadFileProc **unloadProcPtr));
 typedef int (Tcl_FSPathInFilesystemProc) _ANSI_ARGS_((Tcl_Obj *pathPtr, 
 			    ClientData *clientDataPtr));
@@ -1867,6 +1859,17 @@ typedef struct Tcl_Filesystem {
 			     */
 } Tcl_Filesystem;
 
+/*
+ * The following definitions are used as values for the 'linkAction' flag
+ * to Tcl_FSLink, or the linkProc of any filesystem.  Any combination
+ * of flags can be given.  For link creation, the linkProc should create
+ * a link which matches any of the types given.
+ * 
+ * TCL_CREATE_SYMBOLIC_LINK:  Create a symbolic or soft link.
+ * TCL_CREATE_HARD_LINK:      Create a hard link.
+ */
+#define TCL_CREATE_SYMBOLIC_LINK   0x01
+#define TCL_CREATE_HARD_LINK       0x02
 
 /*
  * The following structure represents the Notifier functions that
@@ -1959,7 +1962,7 @@ typedef struct Tcl_EncodingType {
 typedef struct Tcl_Token {
     int type;			/* Type of token, such as TCL_TOKEN_WORD;
 				 * see below for valid types. */
-    char *start;		/* First character in token. */
+    CONST char *start;		/* First character in token. */
     int size;			/* Number of bytes in token. */
     int numComponents;		/* If this token is composed of other
 				 * tokens, this field tells how many of
@@ -2073,14 +2076,14 @@ typedef struct Tcl_Token {
 #define NUM_STATIC_TOKENS 20
 
 typedef struct Tcl_Parse {
-    char *commentStart;		/* Pointer to # that begins the first of
+    CONST char *commentStart;	/* Pointer to # that begins the first of
 				 * one or more comments preceding the
 				 * command. */
     int commentSize;		/* Number of bytes in comments (up through
 				 * newline character that terminates the
 				 * last comment).  If there were no
 				 * comments, this field is 0. */
-    char *commandStart;		/* First character in first word of command. */
+    CONST char *commandStart;	/* First character in first word of command. */
     int commandSize;		/* Number of bytes in command, including
 				 * first character of first word, up
 				 * through the terminating newline,
@@ -2104,13 +2107,13 @@ typedef struct Tcl_Parse {
      * Tcl_ParseCommand.
      */
 
-    char *string;		/* The original command string passed to
+    CONST char *string;		/* The original command string passed to
 				 * Tcl_ParseCommand. */
-    char *end;			/* Points to the character just after the
+    CONST char *end;		/* Points to the character just after the
 				 * last one in the command string. */
     Tcl_Interp *interp;		/* Interpreter to use for error reporting,
 				 * or NULL. */
-    char *term;			/* Points to character in string that
+    CONST char *term;		/* Points to character in string that
 				 * terminated most recent token.  Filled in
 				 * by ParseTokens.  If an error occurs,
 				 * points to beginning of region where the
@@ -2279,10 +2282,12 @@ EXTERN void Tcl_Main _ANSI_ARGS_((int argc, char **argv,
 
 EXTERN int		Tcl_AppInit _ANSI_ARGS_((Tcl_Interp *interp));
 
-#endif /* RESOURCE_INCLUDED */
+#endif /* RC_INVOKED */
 
 #undef TCL_STORAGE_CLASS
 #define TCL_STORAGE_CLASS DLLIMPORT
+
+#endif /* RESOURCE_INCLUDED */
 
 /*
  * end block for C++

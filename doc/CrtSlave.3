@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: CrtSlave.3,v 1.5.12.1 2002/02/05 02:21:57 wolfsuit Exp $
+'\" RCS: @(#) $Id: CrtSlave.3,v 1.5.12.2 2002/08/20 20:25:24 das Exp $
 '\" 
 .so man.macros
 .TH Tcl_CreateSlave 3 7.6 Tcl "Tcl Library Procedures"
@@ -73,13 +73,13 @@ Interpreter that contains the target command for an alias.
 Name of target command for alias in \fItargetInterp\fR.
 .AP int argc in
 Count of additional arguments to pass to the alias command.
-.AP "char * CONST" *argv in
+.AP "CONST char * CONST" *argv in
 Vector of strings, the additional arguments to pass to the alias command.
 This storage is owned by the caller.
 .AP int objc in
 Count of additional object arguments to pass to the alias object command.
 .AP Tcl_Object **objv in
-Vector of Tcl_Obj structures, the additional object argumenst to pass to
+Vector of Tcl_Obj structures, the additional object arguments to pass to
 the alias object command.
 This storage is owned by the caller.
 .AP Tcl_Interp **targetInterpPtr in
@@ -91,7 +91,7 @@ for an alias.
 .AP int *argcPtr out
 Pointer to location to store count of additional arguments to be passed to
 the alias. The location is in storage owned by the caller.
-.AP char ***argvPtr out
+.AP "CONST char" ***argvPtr out
 Pointer to location to store a vector of strings, the additional arguments
 to pass to an alias. The location is in storage owned by the caller, the
 vector of strings is owned by the called function.
@@ -231,5 +231,4 @@ interp
 
 .SH KEYWORDS
 alias, command, exposed commands, hidden commands, interpreter, invoke,
-master, slave, 
-
+master, slave

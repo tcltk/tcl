@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.7.6.2 2002/06/10 05:33:12 wolfsuit Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.7.6.3 2002/08/20 20:25:26 das Exp $
  */
 
 #include "tclInt.h"
@@ -35,12 +35,6 @@ typedef struct Alias {
     Tcl_Obj *namePtr;		/* Name of alias command in slave interp. */
     Tcl_Interp *targetInterp;	/* Interp in which target command will be
 				 * invoked. */
-    Tcl_Obj *prefixPtr;		/* Tcl list making up the prefix of the
-				 * target command to be invoked in the target
-				 * interpreter.  Additional arguments
-				 * specified when calling the alias in the
-				 * slave interp will be appended to the prefix
-				 * before the command is invoked. */
     Tcl_Command slaveCmd;	/* Source command in slave interpreter,
 				 * bound to command that invokes the target
 				 * command in the target interpreter. */
@@ -56,6 +50,16 @@ typedef struct Alias {
                                  * redirecting to it. Random access to this
                                  * hash table is never required - we are using
                                  * a hash table only for convenience. */
+    int objc;                   /* Count of Tcl_Obj in the prefix of the
+				 * target command to be invoked in the
+				 * target interpreter. Additional arguments
+				 * specified when calling the alias in the
+				 * slave interp will be appended to the prefix
+				 * before the command is invoked. */
+    Tcl_Obj *objPtr;            /* The first actual prefix object - the target
+				 * command name; this has to be at the end of the 
+				 * structure, which will be extended to accomodate 
+				 * the remaining objects in the prefix. */
 } Alias;
 
 /*
@@ -831,7 +835,7 @@ Tcl_CreateAlias(slaveInterp, slaveCmd, targetInterp, targetCmd, argc, argv)
     Tcl_Interp *targetInterp;	/* Interpreter for target command. */
     CONST char *targetCmd;	/* Name of target command. */
     int argc;			/* How many additional arguments? */
-    char * CONST *argv;		/* These are the additional args. */
+    CONST char * CONST *argv;	/* These are the additional args. */
 {
     Tcl_Obj *slaveObjPtr, *targetObjPtr;
     Tcl_Obj **objv;
@@ -929,7 +933,7 @@ Tcl_GetAlias(interp, aliasName, targetInterpPtr, targetNamePtr, argcPtr,
     Tcl_Interp **targetInterpPtr;	/* (Return) target interpreter. */
     CONST char **targetNamePtr;		/* (Return) name of target command. */
     int *argcPtr;			/* (Return) count of addnl args. */
-    char ***argvPtr;			/* (Return) additional arguments. */
+    CONST char ***argvPtr;		/* (Return) additional arguments. */
 {
     InterpInfo *iiPtr;
     Tcl_HashEntry *hPtr;
@@ -945,7 +949,8 @@ Tcl_GetAlias(interp, aliasName, targetInterpPtr, targetNamePtr, argcPtr,
 	return TCL_ERROR;
     }
     aliasPtr = (Alias *) Tcl_GetHashValue(hPtr);
-    Tcl_ListObjGetElements(NULL, aliasPtr->prefixPtr, &objc, &objv);
+    objc = aliasPtr->objc;
+    objv = &aliasPtr->objPtr;
 
     if (targetInterpPtr != NULL) {
 	*targetInterpPtr = aliasPtr->targetInterp;
@@ -957,7 +962,8 @@ Tcl_GetAlias(interp, aliasName, targetInterpPtr, targetNamePtr, argcPtr,
 	*argcPtr = objc - 1;
     }
     if (argvPtr != NULL) {
-        *argvPtr = (char **) ckalloc((unsigned) sizeof(char *) * (objc - 1));
+        *argvPtr = (CONST char **) 
+		ckalloc((unsigned) sizeof(CONST char *) * (objc - 1));
         for (i = 1; i < objc; i++) {
             *argvPtr[i - 1] = Tcl_GetString(objv[i]);
         }
@@ -1005,7 +1011,8 @@ Tcl_GetAliasObj(interp, aliasName, targetInterpPtr, targetNamePtr, objcPtr,
         return TCL_ERROR;
     }
     aliasPtr = (Alias *) Tcl_GetHashValue(hPtr);
-    Tcl_ListObjGetElements(NULL, aliasPtr->prefixPtr, &objc, &objv);
+    objc = aliasPtr->objc;
+    objv = &aliasPtr->objPtr;
 
     if (targetInterpPtr != (Tcl_Interp **) NULL) {
         *targetInterpPtr = aliasPtr->targetInterp;
@@ -1075,17 +1082,16 @@ TclPreventAliasLoop(interp, cmdInterp, cmd)
     aliasPtr = (Alias *) cmdPtr->objClientData;
     nextAliasPtr = aliasPtr;
     while (1) {
-	int objc;
-	Tcl_Obj **objv;
+	Tcl_Obj *cmdNamePtr;
 
         /*
          * If the target of the next alias in the chain is the same as
          * the source alias, we have a loop.
 	 */
 
-	Tcl_ListObjGetElements(NULL, nextAliasPtr->prefixPtr, &objc, &objv);
+	cmdNamePtr = nextAliasPtr->objPtr;
 	aliasCmd = Tcl_FindCommand(nextAliasPtr->targetInterp,
-                Tcl_GetString(objv[0]),
+                Tcl_GetString(cmdNamePtr),
 		Tcl_GetGlobalNamespace(nextAliasPtr->targetInterp),
 		/*flags*/ 0);
         if (aliasCmd == (Tcl_Command) NULL) {
@@ -1151,14 +1157,24 @@ AliasCreate(interp, slaveInterp, masterInterp, namePtr, targetNamePtr,
     Target *targetPtr;
     Slave *slavePtr;
     Master *masterPtr;
+    int i;
+    Tcl_Obj **prefv;
 
-    aliasPtr = (Alias *) ckalloc((unsigned) sizeof(Alias));
+    aliasPtr = (Alias *) ckalloc((unsigned) (sizeof(Alias) 
+            + objc * sizeof(Tcl_Obj *)));
     aliasPtr->namePtr		= namePtr;
     Tcl_IncrRefCount(aliasPtr->namePtr);
     aliasPtr->targetInterp	= masterInterp;
-    aliasPtr->prefixPtr		= Tcl_NewListObj(1, &targetNamePtr);
-    Tcl_ListObjReplace(NULL, aliasPtr->prefixPtr, 1, 0, objc, objv);
-    Tcl_IncrRefCount(aliasPtr->prefixPtr);
+
+    aliasPtr->objc = objc + 1;
+    prefv = &aliasPtr->objPtr;
+
+    *prefv = targetNamePtr;
+    Tcl_IncrRefCount(targetNamePtr);
+    for (i = 0; i < objc; i++) {
+	*(++prefv) = objv[i];
+	Tcl_IncrRefCount(objv[i]);
+    }
 
     aliasPtr->slaveCmd = Tcl_CreateObjCommand(slaveInterp,
 	    Tcl_GetString(namePtr), AliasObjCmd, (ClientData) aliasPtr,
@@ -1175,7 +1191,9 @@ AliasCreate(interp, slaveInterp, masterInterp, namePtr, targetNamePtr,
 	Command *cmdPtr;
 	
 	Tcl_DecrRefCount(aliasPtr->namePtr);
-	Tcl_DecrRefCount(aliasPtr->prefixPtr);
+	for (i = 0; i < objc; i++) {
+	    Tcl_DecrRefCount(objv[i]);
+	}
 	
         cmdPtr = (Command *) aliasPtr->slaveCmd;
         cmdPtr->clientData = NULL;
@@ -1264,7 +1282,7 @@ static int
 AliasDelete(interp, slaveInterp, namePtr)
     Tcl_Interp *interp;		/* Interpreter for result & errors. */
     Tcl_Interp *slaveInterp;	/* Interpreter containing alias. */
-    Tcl_Obj *namePtr;		/* Name of alias to describe. */
+    Tcl_Obj *namePtr;		/* Name of alias to delete. */
 {
     Slave *slavePtr;
     Alias *aliasPtr;
@@ -1316,6 +1334,7 @@ AliasDescribe(interp, slaveInterp, namePtr)
     Slave *slavePtr;
     Tcl_HashEntry *hPtr;
     Alias *aliasPtr;	
+    Tcl_Obj *prefixPtr;
 
     /*
      * If the alias has been renamed in the slave, the master can still use
@@ -1329,7 +1348,8 @@ AliasDescribe(interp, slaveInterp, namePtr)
         return TCL_OK;
     }
     aliasPtr = (Alias *) Tcl_GetHashValue(hPtr);
-    Tcl_SetObjResult(interp, aliasPtr->prefixPtr);
+    prefixPtr = Tcl_NewListObj(aliasPtr->objc, &aliasPtr->objPtr);
+    Tcl_SetObjResult(interp, prefixPtr);
     return TCL_OK;
 }
 
@@ -1400,84 +1420,51 @@ AliasObjCmd(clientData, interp, objc, objv)
     int objc;			/* Number of arguments. */
     Tcl_Obj *CONST objv[];	/* Argument vector. */	
 {
+#define ALIAS_CMDV_PREALLOC 10
     Tcl_Interp *targetInterp;	
     Alias *aliasPtr;		
     int result, prefc, cmdc;
-    Tcl_Obj *cmdPtr;
     Tcl_Obj **prefv, **cmdv;
-    
+    Tcl_Obj *cmdArr[ALIAS_CMDV_PREALLOC];
     aliasPtr = (Alias *) clientData;
     targetInterp = aliasPtr->targetInterp;
-
-    Tcl_Preserve((ClientData) targetInterp);
-
-    ((Interp *) targetInterp)->numLevels++;
-
-    Tcl_ResetResult(targetInterp);
-    Tcl_AllowExceptions(targetInterp);
-
-    /*
-     * Check depth of nested calls with AliasObjCmd: if this gets too large,
-     * it's probably because of an infinite loop somewhere.
-     */
-
-    if (((Interp *) targetInterp)->numLevels >
-	    ((Interp *) targetInterp)->maxNestingDepth) {
-	Tcl_AppendToObj(Tcl_GetObjResult(targetInterp),
-		"too many nested calls to AliasObjCmd (infinite loop using alias?)", -1);
-	result = TCL_ERROR;
-	goto done;
-    }
 
     /*
      * Append the arguments to the command prefix and invoke the command
      * in the target interp's global namespace.
      */
      
-    Tcl_ListObjGetElements(NULL, aliasPtr->prefixPtr, &prefc, &prefv);
-    cmdPtr = Tcl_NewListObj(prefc, prefv);
-    Tcl_ListObjReplace(NULL, cmdPtr, prefc, 0, objc - 1, objv + 1);
-    Tcl_ListObjGetElements(NULL, cmdPtr, &cmdc, &cmdv);
-    result = TclObjInvoke(targetInterp, cmdc, cmdv,
-	    TCL_INVOKE_NO_TRACEBACK);
-    Tcl_DecrRefCount(cmdPtr);
-
-    /*
-     * Check if we are at the bottom of the stack for the target interpreter.
-     * If so, check for special return codes.
-     */
-    
-    if (((Interp *) targetInterp)->numLevels == 0) {
-	if (result == TCL_RETURN) {
-	    result = TclUpdateReturnInfo((Interp *) targetInterp);
-	}
-	if ((result != TCL_OK) && (result != TCL_ERROR)) {
-	    Tcl_ResetResult(targetInterp);
-	    if (result == TCL_BREAK) {
-                Tcl_SetObjResult(targetInterp,
-                        Tcl_NewStringObj("invoked \"break\" outside of a loop",
-                                -1));
-	    } else if (result == TCL_CONTINUE) {
-                Tcl_SetObjResult(targetInterp,
-                        Tcl_NewStringObj(
-                            "invoked \"continue\" outside of a loop",
-                            -1));
-	    } else {
-                char buf[32 + TCL_INTEGER_SPACE];
-
-                sprintf(buf, "command returned bad code: %d", result);
-                Tcl_SetObjResult(targetInterp, Tcl_NewStringObj(buf, -1));
-	    }
-	    result = TCL_ERROR;
-	}
+    prefc = aliasPtr->objc;
+    prefv = &aliasPtr->objPtr;
+    cmdc = prefc + objc - 1;
+    if (cmdc <= ALIAS_CMDV_PREALLOC) {
+	cmdv = cmdArr;
+    } else {
+	cmdv = (Tcl_Obj **) ckalloc((unsigned) (cmdc * sizeof(Tcl_Obj *)));
     }
-    done:
-    ((Interp *) targetInterp)->numLevels--;
-    
-    TclTransferResult(targetInterp, result, interp);
 
-    Tcl_Release((ClientData) targetInterp);
+    prefv = &aliasPtr->objPtr;
+    memcpy((VOID *) cmdv, (VOID *) prefv, 
+            (size_t) (prefc * sizeof(Tcl_Obj *)));
+    memcpy((VOID *) (cmdv+prefc), (VOID *) (objv+1), 
+	    (size_t) ((objc-1) * sizeof(Tcl_Obj *)));
+
+    Tcl_ResetResult(targetInterp);
+
+    if (targetInterp != interp) {
+	Tcl_Preserve((ClientData) targetInterp);
+	result = Tcl_EvalObjv(targetInterp, cmdc, cmdv, TCL_EVAL_INVOKE);
+	TclTransferResult(targetInterp, result, interp);	
+	Tcl_Release((ClientData) targetInterp);
+    } else {
+	result = Tcl_EvalObjv(targetInterp, cmdc, cmdv, TCL_EVAL_INVOKE);
+    }
+
+    if (cmdv != cmdArr) {
+	ckfree((char *) cmdv);
+    }
     return result;        
+#undef ALIAS_CMDV_PREALLOC
 }
 
 /*
@@ -1504,11 +1491,16 @@ AliasObjCmdDeleteProc(clientData)
 {
     Alias *aliasPtr;		
     Target *targetPtr;		
+    int i;
+    Tcl_Obj **objv;
 
     aliasPtr = (Alias *) clientData;
     
     Tcl_DecrRefCount(aliasPtr->namePtr);
-    Tcl_DecrRefCount(aliasPtr->prefixPtr);
+    objv = &aliasPtr->objPtr;
+    for (i = 0; i < aliasPtr->objc; i++) {
+	Tcl_DecrRefCount(objv[i]);
+    }
     Tcl_DeleteHashEntry(aliasPtr->aliasEntryPtr);
 
     targetPtr = (Target *) Tcl_GetHashValue(aliasPtr->targetEntryPtr);

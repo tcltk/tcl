@@ -11,13 +11,14 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: source.test,v 1.7 2000/05/11 00:16:53 hobbs Exp $
+# RCS: @(#) $Id: source.test,v 1.7.14.1 2002/08/20 20:25:29 das Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
     namespace import -force ::tcltest::*
 }
 
+set sourcefile [makeFile "" source.file]
 test source-1.1 {source command} {
     set x "old x value"
     set y "old y value"
@@ -27,24 +28,24 @@ test source-1.1 {source command} {
 	set y 33
 	set z 44
     } source.file
-    source source.file
+    source $sourcefile
     list $x $y $z
 } {22 33 44}
 test source-1.2 {source command} {
     makeFile {list result} source.file
-    source source.file
+    source $sourcefile
 } result
 test source-1.3 {source command} {
     set y {\ }
 
-    set fd [open source.file w]
+    set fd [open $sourcefile w]
     fconfigure $fd -translation lf
     puts -nonewline $fd "list a b c "
     puts $fd [string index $y 0]
     puts $fd "d e f"
     close $fd
 
-    source source.file
+    source $sourcefile
 } {a b c d e f}
 
 test source-2.3 {source error conditions} {
@@ -53,20 +54,20 @@ test source-2.3 {source error conditions} {
 	error "error in sourced file"
 	set y $x
     } source.file
-    list [catch {source source.file} msg] $msg $errorInfo
-} {1 {error in sourced file} {error in sourced file
+    list [catch {source $sourcefile} msg] $msg $errorInfo
+} [list 1 {error in sourced file} "error in sourced file
     while executing
-"error "error in sourced file""
-    (file "source.file" line 3)
+\"error \"error in sourced file\"\"
+    (file \"$sourcefile\" line 3)
     invoked from within
-"source source.file"}}
+\"source \$sourcefile\""]
 test source-2.4 {source error conditions} {
     makeFile {break} source.file
-    catch {source source.file}
+    catch {source $sourcefile}
 } 3
 test source-2.5 {source error conditions} {
     makeFile {continue} source.file
-    catch {source source.file}
+    catch {source $sourcefile}
 } 4
 test source-2.6 {source error conditions} {
     normalizeMsg [list [catch {source _non_existent_} msg] $msg $errorCode]
@@ -80,7 +81,7 @@ test source-3.1 {return in middle of source file} {
     } source.file
     set x old-x
     set y old-y
-    set z [source source.file]
+    set z [source $sourcefile]
     list $x $y $z
 } {new-x old-y allDone}
 test source-3.2 {return with special code etc.} {
@@ -89,7 +90,7 @@ test source-3.2 {return with special code etc.} {
 	return -code break "Silly result"
 	set y new-y
     } source.file
-    list [catch {source source.file} msg] $msg
+    list [catch {source $sourcefile} msg] $msg
 } {3 {Silly result}}
 test source-3.3 {return with special code etc.} {
     makeFile {
@@ -97,20 +98,20 @@ test source-3.3 {return with special code etc.} {
 	return -code error "Simulated error"
 	set y new-y
     } source.file
-    list [catch {source source.file} msg] $msg $errorInfo $errorCode
+    list [catch {source $sourcefile} msg] $msg $errorInfo $errorCode
 } {1 {Simulated error} {Simulated error
     while executing
-"source source.file"} NONE}
+"source $sourcefile"} NONE}
 test source-3.4 {return with special code etc.} {
     makeFile {
 	set x new-x
 	return -code error -errorinfo "Simulated errorInfo stuff"
 	set y new-y
     } source.file
-    list [catch {source source.file} msg] $msg $errorInfo $errorCode
+    list [catch {source $sourcefile} msg] $msg $errorInfo $errorCode
 } {1 {} {Simulated errorInfo stuff
     invoked from within
-"source source.file"} NONE}
+"source $sourcefile"} NONE}
 test source-3.5 {return with special code etc.} {
     makeFile {
 	set x new-x
@@ -118,10 +119,10 @@ test source-3.5 {return with special code etc.} {
 		-errorcode {a b c}
 	set y new-y
     } source.file
-    list [catch {source source.file} msg] $msg $errorInfo $errorCode
+    list [catch {source $sourcefile} msg] $msg $errorInfo $errorCode
 } {1 {} {Simulated errorInfo stuff
     invoked from within
-"source source.file"} {a b c}}
+"source $sourcefile"} {a b c}}
 
 # Test for the Macintosh specfic features of the source command
 test source-4.1 {source error conditions} {macOnly} {
@@ -144,8 +145,8 @@ test source-5.1 {source resource files} {macOnly} {
 } [list 1 "Error finding the file: \"bad_file\"."]
 test source-5.2 {source resource files} {macOnly} {
     makeFile {return} source.file
-    list [catch {source -rsrc rsrcName source.file} msg] $msg
-} [list 1 "Error reading the file: \"source.file\"."]
+    list [catch {source -rsrc rsrcName $sourcefile} msg] $msg
+} [list 1 "Error reading the file: \"$sourcefile\"."]
 test source-5.3 {source resource files} {macOnly} {
     testWriteTextResource -rsrc rsrcName -file rsrc.file {set msg2 ok; return}
     set result [catch {source -rsrc rsrcName rsrc.file} msg]
@@ -176,13 +177,13 @@ test source-5.6 {source resource files} {macOnly} {
 test source-6.1 {source is binary ok} {
     set x {}
     makeFile [list set x "a b\0c"] source.file
-    source source.file
+    source $sourcefile
     string length $x
 } 5
 test source-6.2 {source skips everything after Ctrl-Z: Bug 2040} {
     set x {}
     makeFile [list set x "ab\32c"] source.file
-    source source.file
+    source $sourcefile
     string length $x
 } 2
 
@@ -190,15 +191,3 @@ test source-6.2 {source skips everything after Ctrl-Z: Bug 2040} {
 catch {::tcltest::removeFile source.file}
 ::tcltest::cleanupTests
 return
-
-
-
-
-
-
-
-
-
-
-
-

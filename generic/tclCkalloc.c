@@ -13,7 +13,7 @@
  *
  * This code contributed by Karl Lehenbauer and Mark Diekhans
  *
- * RCS: @(#) $Id: tclCkalloc.c,v 1.12.14.1 2002/02/05 02:21:58 wolfsuit Exp $
+ * RCS: @(#) $Id: tclCkalloc.c,v 1.12.14.2 2002/08/20 20:25:25 das Exp $
  */
 
 #include "tclInt.h"
@@ -128,9 +128,9 @@ static int ckallocInit = 0;
  */
 
 static int		CheckmemCmd _ANSI_ARGS_((ClientData clientData,
-			    Tcl_Interp *interp, int argc, char *argv[]));
+			    Tcl_Interp *interp, int argc, CONST char *argv[]));
 static int		MemoryCmd _ANSI_ARGS_((ClientData clientData,
-			    Tcl_Interp *interp, int argc, char **argv));
+			    Tcl_Interp *interp, int argc, CONST char **argv));
 static void		ValidateMemory _ANSI_ARGS_((
 			    struct mem_header *memHeaderP, CONST char *file,
 			    int line, int nukeGuards));
@@ -378,7 +378,7 @@ Tcl_DbCkalloc(size, file, line)
     if (result == NULL) {
         fflush(stdout);
         TclDumpMemoryInfo(stderr);
-        panic("unable to alloc %d bytes, %s line %d", size, file, line);
+        panic("unable to alloc %ud bytes, %s line %d", size, file, line);
     }
 
     /*
@@ -422,7 +422,7 @@ Tcl_DbCkalloc(size, file, line)
     }
 
     if (alloc_tracing)
-        fprintf(stderr,"ckalloc %lx %d %s %d\n",
+        fprintf(stderr,"ckalloc %lx %ud %s %d\n",
 		(long unsigned int) result->body, size, file, line);
 
     if (break_on_malloc && (total_mallocs >= break_on_malloc)) {
@@ -507,7 +507,7 @@ Tcl_AttemptDbCkalloc(size, file, line)
     }
 
     if (alloc_tracing)
-        fprintf(stderr,"ckalloc %lx %d %s %d\n",
+        fprintf(stderr,"ckalloc %lx %ud %s %d\n",
 		(long unsigned int) result->body, size, file, line);
 
     if (break_on_malloc && (total_mallocs >= break_on_malloc)) {
@@ -781,7 +781,7 @@ MemoryCmd (clientData, interp, argc, argv)
     ClientData  clientData;
     Tcl_Interp *interp;
     int         argc;
-    char      **argv;
+    CONST char  **argv;
 {
     CONST char *fileName;
     Tcl_DString buffer;
@@ -933,7 +933,7 @@ CheckmemCmd(clientData, interp, argc, argv)
     ClientData clientData;		/* Not used. */
     Tcl_Interp *interp;			/* Interpreter for evaluation. */
     int argc;				/* Number of arguments. */
-    char *argv[];			/* String values of arguments. */
+    CONST char *argv[];			/* String values of arguments. */
 {
     if (argc != 2) {
 	Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
@@ -1010,7 +1010,7 @@ Tcl_Alloc (size)
      * a special pointer on failure, but we only check for NULL
      */
     if ((result == NULL) && size) {
-	panic("unable to alloc %d bytes", size);
+	panic("unable to alloc %ud bytes", size);
     }
     return result;
 }
@@ -1027,7 +1027,7 @@ Tcl_DbCkalloc(size, file, line)
 
     if ((result == NULL) && size) {
         fflush(stdout);
-        panic("unable to alloc %d bytes, %s line %d", size, file, line);
+        panic("unable to alloc %ud bytes, %s line %d", size, file, line);
     }
     return result;
 }
@@ -1085,7 +1085,7 @@ Tcl_Realloc(ptr, size)
     result = TclpRealloc(ptr, size);
 
     if ((result == NULL) && size) {
-	panic("unable to realloc %d bytes", size);
+	panic("unable to realloc %ud bytes", size);
     }
     return result;
 }
@@ -1103,7 +1103,7 @@ Tcl_DbCkrealloc(ptr, size, file, line)
 
     if ((result == NULL) && size) {
         fflush(stdout);
-        panic("unable to realloc %d bytes, %s line %d", size, file, line);
+        panic("unable to realloc %ud bytes, %s line %d", size, file, line);
     }
     return result;
 }
@@ -1232,12 +1232,12 @@ void
 TclFinalizeMemorySubsystem()
 {
 #ifdef TCL_MEM_DEBUG
-    Tcl_MutexLock(ckallocMutexPtr);
     if (tclMemDumpFileName != NULL) {
 	Tcl_DumpActiveMemory(tclMemDumpFileName);
     } else if (onExitMemDumpFileName != NULL) {
 	Tcl_DumpActiveMemory(onExitMemDumpFileName);
     }
+    Tcl_MutexLock(ckallocMutexPtr);
     if (curTagPtr != NULL) {
 	TclpFree((char *) curTagPtr);
 	curTagPtr = NULL;

@@ -12,7 +12,7 @@
 # Copyright (c) 2001-2002 David Gravereaux.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.66.2.1 2002/06/10 05:33:19 wolfsuit Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.66.2.2 2002/08/20 20:25:31 das Exp $
 #------------------------------------------------------------------------------
 
 !if "$(MSVCDIR)" == ""
@@ -731,9 +731,12 @@ install-libraries:
 	@echo installing opt0.4
 	@xcopy /i /y "$(ROOT)\library\opt\*.tcl" \
 		"$(SCRIPT_INSTALL_DIR)\opt0.4\"
-	@echo installing msgcat1.2
+	@echo installing msgcat1.3
 	@xcopy /i /y "$(ROOT)\library\msgcat\*.tcl" \
-	    "$(SCRIPT_INSTALL_DIR)\msgcat1.2\"
+	    "$(SCRIPT_INSTALL_DIR)\msgcat1.3\"
+	@echo installing tcltest2.2 
+	@xcopy /i /y "$(ROOT)\library\tcltest\*.tcl" \
+	    "$(SCRIPT_INSTALL_DIR)\tcltest2.2\"
 	@echo installing $(TCLDDELIBNAME)
 !if $(STATIC_BUILD)
 	@xcopy /i /y "$(TCLDDELIB)" "$(LIB_INSTALL_DIR)\"

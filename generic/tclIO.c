@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.38.2.2 2002/06/10 05:33:11 wolfsuit Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.38.2.3 2002/08/20 20:25:26 das Exp $
  */
 
 #include "tclInt.h"
@@ -3055,6 +3055,7 @@ WriteChars(chanPtr, src, srcLen)
     char *dst, *stage;
     int saved, savedLF, sawLF, total, dstLen, stageMax, dstWrote;
     int stageLen, toWrite, stageRead, endEncoding, result;
+    int consumedSomething;
     Tcl_Encoding encoding;
     char safe[BUFFER_PADDING];
     
@@ -3075,7 +3076,9 @@ WriteChars(chanPtr, src, srcLen)
      * with proper EOL translation.
      */
 
-    while (srcLen + savedLF + endEncoding > 0) {
+    consumedSomething = 1;
+    while (consumedSomething && (srcLen + savedLF + endEncoding > 0)) {
+        consumedSomething = 0;
 	stage = statePtr->outputStage;
 	stageMax = statePtr->bufSize;
 	stageLen = stageMax;
@@ -3199,6 +3202,8 @@ WriteChars(chanPtr, src, srcLen)
 	    stageLen -= stageRead;
 	    sawLF = 0;
 
+	    consumedSomething = 1;
+
 	    /*
 	     * If all translated characters are written to the buffer,
 	     * endEncoding is set to 0 because the escape sequence may be
@@ -3209,6 +3214,15 @@ WriteChars(chanPtr, src, srcLen)
 		endEncoding = 0;
 	    }
 	}
+    }
+
+    /* If nothing was written and it happened because there was no progress
+     * in the UTF conversion, we throw an error.
+     */
+
+    if (!consumedSomething && (total == 0)) {
+        Tcl_SetErrno (EINVAL);
+        return -1;
     }
     return total;
 }

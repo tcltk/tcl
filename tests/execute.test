@@ -14,10 +14,10 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: execute.test,v 1.9.14.1 2002/06/10 05:33:15 wolfsuit Exp $
+# RCS: @(#) $Id: execute.test,v 1.9.14.2 2002/08/20 20:25:27 das Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest
+    package require tcltest 2
     namespace import -force ::tcltest::*
 }
 
@@ -27,13 +27,13 @@ catch {unset x}
 catch {unset y}
 catch {unset msg}
 
-set ::tcltest::testConstraints(testobj) \
+::tcltest::testConstraint testobj \
 	[expr {[info commands testobj] != {} \
 	&& [info commands testdoubleobj] != {} \
 	&& [info commands teststringobj] != {} \
 	&& [info commands testobj] != {}}]
 
-set ::tcltest::testConstraints(longIs32bit) \
+::tcltest::testConstraint longIs32bit \
 	[expr {int(0x80000000) < 0}]
 
 # Tests for the omnibus TclExecuteByteCode function:

@@ -9,19 +9,19 @@
 #
 # Copyright (c) 1998, 1999 Henry Spencer.  All rights reserved.
 #
-# RCS: @(#) $Id: reg.test,v 1.13 2000/04/10 17:19:03 ericm Exp $
+# RCS: @(#) $Id: reg.test,v 1.13.18.1 2002/08/20 20:25:28 das Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest
+    package require tcltest 2
     namespace import -force ::tcltest::*
 }
 
 # All tests require the testregexp command, return if this
 # command doesn't exist
 
-set ::tcltest::testConstraints(testregexp) \
+::tcltest::testConstraint testregexp \
 	[expr {[info commands testregexp] != {}}]
-set ::tcltest::testConstraints(localeRegexp) 0
+::tcltest::testConstraint localeRegexp 0
 
 # This file uses some custom procedures, defined below, for regexp regression
 # testing.  The name of the procedure indicates the general nature of the
@@ -267,7 +267,7 @@ proc matchexpected {opts testid flags re target args} {
 
     if {[info exists regBug] && $regBug} {
 	# This will register as a skipped test
-	test $prefix.[tno $testid] [desc $testid] knownBug {} {}
+	test $prefix.[tno $testid] [desc $testid] knownBug {format 0} {1}
 	return
     }
 
@@ -987,8 +987,14 @@ m  9	HLP	{(?n)^(?![t#])\S+}	"tk\n\n#\n#\nit0"	it0
 # flush any leftover complaints
 doing 0 "flush"
 
+# Tests resulting from bugs reported by users
+test reg-31.1 {[[:xdigit:]] behaves correctly when followed by [[:space:]]} {
+    set str {2:::DebugWin32}
+    set re {([[:xdigit:]])([[:space:]]*)}
+    list [regexp $re $str match xdigit spaces] $match $xdigit $spaces
+    # Code used to produce {1 2:::DebugWin32 2 :::DebugWin32} !!!
+} {1 2 2 {}}
+
 # cleanup
 ::tcltest::cleanupTests
 return
-
-

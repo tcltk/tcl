@@ -8,12 +8,10 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: encoding.test,v 1.8.18.1 2002/06/10 05:33:15 wolfsuit Exp $
+# RCS: @(#) $Id: encoding.test,v 1.8.18.2 2002/08/20 20:25:27 das Exp $
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest
-    namespace import -force ::tcltest::*
-}
+package require tcltest 2
+namespace import -force ::tcltest::*
 
 proc toutf {args} {
     global x
@@ -25,12 +23,8 @@ proc fromutf {args} {
 }
 
 # Some tests require the testencoding command
-
-set ::tcltest::testConstraints(testencoding) \
-	[expr {[info commands testencoding] != {}}]
-set ::tcltest::testConstraints(exec) \
-	[llength [info commands exec]]
-
+testConstraint testencoding [llength [info commands testencoding]]
+testConstraint exec [llength [info commands exec]]
 
 # TclInitEncodingSubsystem is tested by the rest of this file
 # TclFinalizeEncodingSubsystem is not currently tested
@@ -90,10 +84,10 @@ test encoding-3.2 {Tcl_GetEncodingName, non-null} {
 } {jis0208}
 
 test encoding-4.1 {Tcl_GetEncodingNames} {testencoding} {
-    file mkdir tmp/encoding
-    close [open tmp/encoding/junk.enc w]
-    close [open tmp/encoding/junk2.enc w]
-    cd tmp
+    cd [makeDirectory tmp]
+    makeDirectory [file join tmp encoding]
+    makeFile {} [file join tmp encoding junk.enc]
+    makeFile {} [file join tmp encoding junk2.enc]
     set path [testencoding path]
     testencoding path {}
     catch {unset encodings}
@@ -108,8 +102,11 @@ test encoding-4.1 {Tcl_GetEncodingNames} {testencoding} {
 	}
     }
     testencoding path $path
-    cd ..
-    file delete -force tmp
+    cd [workingDirectory]
+    removeFile [file join tmp encoding junk2.enc]
+    removeFile [file join tmp encoding junk.enc]
+    removeDirectory [file join tmp encoding]
+    removeDirectory tmp
     lsort $x
 } {junk junk2}
 
@@ -158,15 +155,15 @@ test encoding-7.2 {Tcl_UtfToExternalDString: big buffer} {
 } "512 \u4e4e"
 
 test encoding-8.1 {Tcl_ExternalToUtf} {
-    set f [open dummy w]
+    set f [open [file join [temporaryDirectory] dummy] w]
     fconfigure $f -translation binary -encoding iso8859-1
     puts -nonewline $f "ab\x8c\xc1g"
     close $f
-    set f [open dummy r]
+    set f [open [file join [temporaryDirectory] dummy] r]
     fconfigure $f -translation binary -encoding shiftjis    
     set x [read $f]
     close $f
-    file delete dummy
+    file delete [file join [temporaryDirectory] dummy]
     set x
 } "ab\u4e4eg"
 
@@ -186,15 +183,15 @@ test encoding-9.2 {Tcl_UtfToExternalDString: big buffer} {
 } "1024 8C"
 
 test encoding-10.1 {Tcl_UtfToExternal} {
-    set f [open dummy w]
+    set f [open [file join [temporaryDirectory] dummy] w]
     fconfigure $f -translation binary -encoding shiftjis
     puts -nonewline $f "ab\u4e4eg"
     close $f
-    set f [open dummy r]
+    set f [open [file join [temporaryDirectory] dummy] r]
     fconfigure $f -translation binary -encoding iso8859-1
     set x [read $f]
     close $f
-    file delete dummy
+    file delete [file join [temporaryDirectory] dummy]
     set x
 } "ab\x8c\xc1g"
 
@@ -239,15 +236,19 @@ test encoding-11.6 {LoadEncodingFile: invalid file} {testencoding} {
     set system [encoding system]
     set path [testencoding path]
     encoding system identity
+    cd [temporaryDirectory]
     testencoding path tmp
-    file mkdir tmp/encoding
-    set f [open tmp/encoding/splat.enc w]
+    makeDirectory tmp
+    makeDirectory [file join tmp encoding]
+    set f [open [file join tmp encoding splat.enc] w]
     fconfigure $f -translation binary 
     puts $f "abcdefghijklmnop"
     close $f
     set x [list [catch {encoding convertto splat \u4e4e} msg] $msg]
-    file delete -force tmp
-    catch {file delete encoding}
+    file delete [file join [temporaryDirectory] tmp encoding splat.enc]
+    removeDirectory [file join tmp encoding]
+    removeDirectory tmp
+    cd [workingDirectory]
     testencoding path $path
     encoding system $system
     set x
@@ -325,6 +326,7 @@ set ::iso2022uniData2 "\u79c1\u3069\u3082\u3067\u306f\u3001\u30c1\u30c3\u30d7\u3
 \u0063\u0061\u0073\u0069\u006e\u006f\u005f\u006a\u0061\u0070\u0061\u006e\u0065\u0073\u0065\u0040\u005f\u005f\u005f\u002e\u0063\u006f\u006d\u0020\uff09\u307e\u3067\u3054\u4f4f\u6240\u5909\u66f4\u6e08\u306e\u9023\u7d61\u3092\u3044\u305f\u3060\u3051\u306a\u3044\u3067
 \u3057\u3087\u3046\u304b\uff1f"
 
+cd [temporaryDirectory]
 set fid [open iso2022.txt w]
 fconfigure $fid -encoding binary
 puts -nonewline $fid $::iso2022encData
@@ -362,50 +364,55 @@ test encoding-23.3 {iso2022-jp escape encoding test} {
     close $fid
     set data
 } [string range $::iso2022uniData 0 49] ; # 0 .. 49 inclusive == 50
+cd [workingDirectory]
 
-test encoding-24.1 {EscapeFreeProc on open channels} {exec} {
+test encoding-24.1 {EscapeFreeProc on open channels} -constraints {
+	exec
+} -setup {
     # Bug #524674 input
-    set f [open iso2022.tcl w]
-    puts $f {
-	set f [open iso2022.txt]
+    set file [makeFile {
+	set f [open [file join [file dirname [info script]] iso2022.txt]]
 	fconfigure $f -encoding iso2022-jp
 	gets $f
-    }
-    close $f
-    exec $::tcltest::tcltest iso2022.tcl
-} {}
+    } iso2022.tcl]
+} -body {
+    exec [interpreter] $file
+} -cleanup {
+    removeFile iso2022.tcl
+} -result {}
 
-test encoding-24.2 {EscapeFreeProc on open channels} {exec} {
+test encoding-24.2 {EscapeFreeProc on open channels} -constraints {
+	exec
+} -setup {
     # Bug #524674 output
-    set f [open iso2022.tcl w]
-    puts $f {
+    set file [makeFile {
 	fconfigure stdout -encoding iso2022-jp
 	puts ab\u4e4e\u68d9g
 	exit
-    }
-    close $f
-    viewable [exec $::tcltest::tcltest iso2022.tcl]
-} "ab\x1b\$B8C\x1b\$(DD%\x1b(Bg (ab\\u001b\$B8C\\u001b\$(DD%\\u001b(Bg)"
+    } iso2022.tcl]
+} -body {
+    viewable [exec [interpreter] $file]
+} -cleanup {
+    removeFile iso2022.tcl
+} -result "ab\x1b\$B8C\x1b\$(DD%\x1b(Bg (ab\\u001b\$B8C\\u001b\$(DD%\\u001b(Bg)"
 
-test encoding-24.3 {EscapeFreeProc on open channels} {exec} {
+test encoding-24.3 {EscapeFreeProc on open channels} {stdio} {
     # Bug #219314 - if we don't free escape encodings correctly on
     # channel closure, we go boom
-    set f [open iso2022.tcl w]
-    puts $f {
+    set file [makeFile {
 	encoding system iso2022-jp
 	set a "\u4e4e\u4e5e\u4e5f"; # 3 Japanese Kanji letters
 	puts $a
-    }
-    close $f
-    set f [open "|[list $::tcltest::tcltest iso2022.tcl]"]
+    } iso2022.tcl]
+    set f [open "|[list [interpreter] $file]"]
     fconfigure $f -encoding iso2022-jp
     set count [gets $f line]
     close $f
+    removeFile iso2022.tcl
     list $count [viewable $line]
 } [list 3 "\u4e4e\u4e5e\u4e5f (\\u4e4e\\u4e5e\\u4e5f)"]
 
-::tcltest::removeFile iso2022.txt
-::tcltest::removeFile iso2022.tcl
+file delete [file join [temporaryDirectory] iso2022.txt]
 
 # EscapeFreeProc, GetTableEncoding, unilen
 # are fully tested by the rest of this file

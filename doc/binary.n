@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: binary.n,v 1.7.2.1 2002/06/10 05:33:08 wolfsuit Exp $
+'\" RCS: @(#) $Id: binary.n,v 1.7.2.2 2002/08/20 20:25:24 das Exp $
 '\" 
 .so man.macros
 .TH binary n 8.0 Tcl "Tcl Built-In Commands"
@@ -283,7 +283,7 @@ will return \fBdghi\fR.
 Moves the cursor to the absolute location in the output string
 specified by \fIcount\fR.  Position 0 refers to the first byte in the
 output string.  If \fIcount\fR refers to a position beyond the last
-byte stored so far, then null bytes will be placed in the unitialized
+byte stored so far, then null bytes will be placed in the uninitialized
 locations and the cursor will be placed at the specified location.  If
 \fIcount\fR is \fB*\fR, then the cursor is moved to the current end of
 the output string.  If \fIcount\fR is omitted, then an error will be

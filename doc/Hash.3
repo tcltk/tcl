@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Hash.3,v 1.8.14.1 2002/02/05 02:21:57 wolfsuit Exp $
+'\" RCS: @(#) $Id: Hash.3,v 1.8.14.2 2002/08/20 20:25:24 das Exp $
 '\" 
 .so man.macros
 .TH Tcl_Hash 3 "" Tcl "Tcl Library Procedures"
@@ -60,7 +60,7 @@ TCL_STRING_KEYS, TCL_ONE_WORD_KEYS, TCL_CUSTOM_TYPE_KEYS,
 TCL_CUSTOM_PTR_KEYS, or an integer value greater than 1.
 .AP Tcl_HashKeyType *typePtr in
 Address of structure which defines the behaviour of the hash table.
-.AP char *key in
+.AP "CONST char" *key in
 Key to use for probe into table.  Exact form depends on
 \fIkeyType\fR used to create table.
 .AP int *newPtr out

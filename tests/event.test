@@ -9,19 +9,14 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: event.test,v 1.13.8.1 2002/02/05 02:22:03 wolfsuit Exp $
+# RCS: @(#) $Id: event.test,v 1.13.8.2 2002/08/20 20:25:27 das Exp $
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest
-    namespace import -force ::tcltest::*
-}
+package require tcltest 2
+namespace import -force ::tcltest::*
 
-set ::tcltest::testConstraints(testfilehandler) \
-	[expr {[info commands testfilehandler] != {}}]
-set ::tcltest::testConstraints(testexithandler) \
-	[expr {[info commands testexithandler] != {}}]
-set ::tcltest::testConstraints(testfilewait) \
-	[expr {[info commands testfilewait] != {}}]
+testConstraint testfilehandler [llength [info commands testfilehandler]]
+testConstraint testexithandler [llength [info commands testexithandler]]
+testConstraint testfilewait [llength [info commands testfilewait]]
 
 test event-1.1 {Tcl_CreateFileHandler, reading} {testfilehandler} {
     testfilehandler close
@@ -197,10 +192,12 @@ test event-5.2 {Tcl_BackgroundError, HandleBgErrors procedures} {
 test event-6.1 {BgErrorDeleteProc procedure} {
     catch {interp delete foo}
     interp create foo
+    set erroutfile [makeFile Unmodified err.out]
+    foo eval [list set erroutfile $erroutfile]
     foo eval {
 	proc bgerror args {
-	    global errorInfo
-	    set f [open err.out r+]
+	    global errorInfo erroutfile
+	    set f [open $erroutfile r+]
 	    seek $f 0 end
 	    puts $f "$args $errorInfo"
 	    close $f
@@ -208,14 +205,13 @@ test event-6.1 {BgErrorDeleteProc procedure} {
 	after 100 {error "first error"}
 	after 100 {error "second error"}
     }
-    makeFile Unmodified err.out
     after 100 {interp delete foo}
     after 200
     update
-    set f [open err.out r]
+    set f [open $erroutfile r]
     set result [read $f]
     close $f
-    removeFile err.out
+    removeFile $erroutfile
     set result
 } {Unmodified
 }
@@ -285,7 +281,7 @@ test event-7.5 {correct behaviour when there is no bgerror [Bug 219142]} {exec} 
 	vwait a
     }
 
-    list [catch {exec [info nameofexecutable] << $script} errMsg] $errMsg
+    list [catch {exec [interpreter] << $script} errMsg] $errMsg
 } {1 {hello
     while executing
 "error hello"
@@ -304,7 +300,7 @@ catch {rename bgerror {}}
 
 
 test event-8.1 {Tcl_CreateExitHandler procedure} {stdio testexithandler} {
-    set child [open |[list [info nameofexecutable]] r+]
+    set child [open |[list [interpreter]] r+]
     puts $child "testexithandler create 41; testexithandler create 4"
     puts $child "testexithandler create 6; exit"
     flush $child
@@ -317,7 +313,7 @@ odd 41
 }
 
 test event-9.1 {Tcl_DeleteExitHandler procedure} {stdio testexithandler} {
-    set child [open |[list [info nameofexecutable]] r+]
+    set child [open |[list [interpreter]] r+]
     puts $child "testexithandler create 41; testexithandler create 4"
     puts $child "testexithandler create 6; testexithandler delete 41"
     puts $child "testexithandler create 16; exit"
@@ -330,7 +326,7 @@ even 6
 even 4
 }
 test event-9.2 {Tcl_DeleteExitHandler procedure} {stdio testexithandler} {
-    set child [open |[list [info nameofexecutable]] r+]
+    set child [open |[list [interpreter]] r+]
     puts $child "testexithandler create 41; testexithandler create 4"
     puts $child "testexithandler create 6; testexithandler delete 4"
     puts $child "testexithandler create 16; exit"
@@ -343,7 +339,7 @@ even 6
 odd 41
 }
 test event-9.3 {Tcl_DeleteExitHandler procedure} {stdio testexithandler} {
-    set child [open |[list [info nameofexecutable]] r+]
+    set child [open |[list [interpreter]] r+]
     puts $child "testexithandler create 41; testexithandler create 4"
     puts $child "testexithandler create 6; testexithandler delete 6"
     puts $child "testexithandler create 16; exit"
@@ -356,7 +352,7 @@ even 4
 odd 41
 }
 test event-9.4 {Tcl_DeleteExitHandler procedure} {stdio testexithandler} {
-    set child [open |[list [info nameofexecutable]] r+]
+    set child [open |[list [interpreter]] r+]
     puts $child "testexithandler create 41; testexithandler delete 41"
     puts $child "testexithandler create 16; exit"
     flush $child
@@ -367,7 +363,7 @@ test event-9.4 {Tcl_DeleteExitHandler procedure} {stdio testexithandler} {
 }
 
 test event-10.1 {Tcl_Exit procedure} {stdio} {
-    set child [open |[list [info nameofexecutable]] r+]
+    set child [open |[list [interpreter]] r+]
     puts $child "exit 3"
     list [catch {close $child} msg] $msg [lindex $errorCode 0] \
         [lindex $errorCode 2]
@@ -405,7 +401,8 @@ foreach i [after info] {
 }
 
 test event-11.5 {Tcl_VwaitCmd procedure: round robin scheduling, 2 sources} {socket} {
-    set f1 [open test1 w]
+    set test1file [makeFile "" test1]
+    set f1 [open $test1file w]
     proc accept {s args} {
 	puts $s foobar
 	close $s
@@ -417,30 +414,32 @@ test event-11.5 {Tcl_VwaitCmd procedure: round robin scheduling, 2 sources} {soc
     set x 0
     set y 0
     set z 0
-    fileevent $s2 readable { incr z }
+    fileevent $s2 readable {incr z}
     vwait z
-    fileevent $f1 writable { incr x; if { $y == 3 } { set z done } }
-    fileevent $s2 readable { incr y; if { $x == 3 } { set z done } }
+    fileevent $f1 writable {incr x; if {$y == 3} {set z done}}
+    fileevent $s2 readable {incr y; if {$x == 3} {set z done}}
     vwait z
     close $f1
     close $s2
-    file delete test1 test2
+    removeFile $test1file
     list $x $y $z
 } {3 3 done}
 test event-11.6 {Tcl_VwaitCmd procedure: round robin scheduling, same source} {
-    file delete test1 test2
-    set f1 [open test1 w]
-    set f2 [open test2 w]
+    set test1file [makeFile "" test1]
+    set test2file [makeFile "" test2]
+    set f1 [open $test1file w]
+    set f2 [open $test2file w]
     set x 0
     set y 0
     set z 0
     update
-    fileevent $f1 writable { incr x; if { $y == 3 } { set z done } }
-    fileevent $f2 writable { incr y; if { $x == 3 } { set z done } }
+    fileevent $f1 writable {incr x; if {$y == 3} {set z done}}
+    fileevent $f2 writable {incr y; if {$x == 3} {set z done}}
     vwait z
     close $f1
     close $f2
-    file delete test1 test2
+    removeFile $test1file
+    removeFile $test2file
     list $x $y $z
 } {3 3 done}
 
@@ -593,15 +592,3 @@ foreach i [after info] {
 }
 ::tcltest::cleanupTests
 return
-
-
-
-
-
-
-
-
-
-
-
-

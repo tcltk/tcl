@@ -13,16 +13,16 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: cmdInfo.test,v 1.6 2001/09/20 01:02:20 hobbs Exp $
+# RCS: @(#) $Id: cmdInfo.test,v 1.6.4.1 2002/08/20 20:25:27 das Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest
+    package require tcltest 2
     namespace import -force ::tcltest::*
 }
 
-set ::tcltest::testConstraints(testcmdinfo) \
+::tcltest::testConstraint testcmdinfo \
 	[llength [info commands testcmdinfo]]
-set ::tcltest::testConstraints(testcmdtoken) \
+::tcltest::testConstraint testcmdtoken \
 	[llength [info commands testcmdtoken]]
 
 test cmdinfo-1.1 {command procedure and clientData} {testcmdinfo} {

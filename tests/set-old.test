@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: set-old.test,v 1.14 2001/03/15 14:36:32 dkf Exp $
+# RCS: @(#) $Id: set-old.test,v 1.14.14.1 2002/08/20 20:25:29 das Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -547,7 +547,7 @@ test set-old-8.37.5 {array command, set with non-existent namespace} {
 } {1 {can't set "bogusnamespace::var": parent namespace doesn't exist}}
 test set-old-8.37.6 {array command, set with non-existent namespace} {
     list [catch {array set bogusnamespace::var {a b}} msg] $msg
-} {1 {can't set "bogusnamespace::var(a)": parent namespace doesn't exist}}
+} {1 {can't set "bogusnamespace::var": parent namespace doesn't exist}}
 test set-old-8.37.7 {array command, set with non-existent namespace} {
     list [catch {array set bogusnamespace::var(0) {a b}} msg] $msg
 } {1 {can't set "bogusnamespace::var(0)": variable isn't array}}

@@ -4,10 +4,10 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: registry.n,v 1.4 1999/04/16 00:46:35 stanton Exp $
+'\" RCS: @(#) $Id: registry.n,v 1.4.28.1 2002/08/20 20:25:24 das Exp $
 '\" 
 .so man.macros
-.TH registry n 8.0 Tcl "Tcl Built-In Commands"
+.TH registry n 1.0 registry "Tcl Bundled Packages"
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
@@ -55,7 +55,7 @@ are:
 If the optional \fIvalueName\fR argument is present, the specified
 value under \fIkeyName\fR will be deleted from the registry.  If the
 optional \fIvalueName\fR is omitted, the specified key and any subkeys
-or values beneath it in the registry heirarchy will be deleted.  If
+or values beneath it in the registry hierarchy will be deleted.  If
 the key could not be deleted then an error is generated.  If the key
 did not exist, the command has no effect.
 .TP

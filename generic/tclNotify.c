@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNotify.c,v 1.7.18.2 2002/06/10 05:33:12 wolfsuit Exp $
+ * RCS: @(#) $Id: tclNotify.c,v 1.7.18.3 2002/08/20 20:25:26 das Exp $
  */
 
 #include "tclInt.h"
@@ -116,11 +116,7 @@ TclInitNotifier()
     Tcl_MutexLock(&listLock);
 
     tsdPtr->threadId = Tcl_GetCurrentThread();
-    if (tclStubs.tcl_InitNotifier == Tcl_InitNotifier) {
-        tsdPtr->clientData = Tcl_InitNotifier();
-    } else {
-        tsdPtr->clientData = tclStubs.tcl_InitNotifier();
-    }
+    tsdPtr->clientData = tclStubs.tcl_InitNotifier();
     tsdPtr->nextPtr = firstNotifierPtr;
     firstNotifierPtr = tsdPtr;
 
@@ -164,12 +160,7 @@ TclFinalizeNotifier()
 
     Tcl_MutexLock(&listLock);
 
-    if (tclStubs.tcl_FinalizeNotifier == Tcl_FinalizeNotifier) {
-        Tcl_FinalizeNotifier(tsdPtr->clientData);
-    } else {
-        tclStubs.tcl_FinalizeNotifier(tsdPtr->clientData);
-    }
-
+    tclStubs.tcl_FinalizeNotifier(tsdPtr->clientData);
     Tcl_MutexFinalize(&(tsdPtr->queueMutex));
     for (prevPtrPtr = &firstNotifierPtr; *prevPtrPtr != NULL;
 	 prevPtrPtr = &((*prevPtrPtr)->nextPtr)) {

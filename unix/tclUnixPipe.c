@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPipe.c,v 1.15.8.2 2002/06/10 05:33:19 wolfsuit Exp $
+ * RCS: @(#) $Id: tclUnixPipe.c,v 1.15.8.3 2002/08/20 20:25:30 das Exp $
  */
 
 #include "tclInt.h"
@@ -140,7 +140,7 @@ TclpOpenFile(fname, mode)
     Tcl_DString ds;
 
     native = Tcl_UtfToExternalDString(NULL, fname, -1, &ds);
-    fd = Tcl_PlatformOpen(native, mode, 0666);		/* INTL: Native. */
+    fd = TclOSopen(native, mode, 0666);			/* INTL: Native. */
     Tcl_DStringFree(&ds);
     if (fd != -1) {
         fcntl(fd, F_SETFD, FD_CLOEXEC);
@@ -151,7 +151,7 @@ TclpOpenFile(fname, mode)
 	 */
 
 	if (mode & O_WRONLY) {
-	    Tcl_PlatformSeek(fd, (Tcl_SeekOffset) 0, SEEK_END);
+	    TclOSseek(fd, (Tcl_SeekOffset) 0, SEEK_END);
 	}
 
 	/*
@@ -215,7 +215,7 @@ TclpCreateTempFile(contents)
 	    return NULL;
 	}
 	Tcl_DStringFree(&dstring);
-	Tcl_PlatformSeek(fd, (Tcl_SeekOffset) 0, SEEK_SET);
+	TclOSseek(fd, (Tcl_SeekOffset) 0, SEEK_SET);
     }
     return MakeFile(fd);
 }

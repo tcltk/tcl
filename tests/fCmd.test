@@ -10,11 +10,11 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fCmd.test,v 1.11 2001/09/04 18:06:34 vincentdarley Exp $
+# RCS: @(#) $Id: fCmd.test,v 1.11.8.1 2002/08/20 20:25:27 das Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest
+    package require tcltest 2
     namespace import -force ::tcltest::*
 }
 
@@ -433,7 +433,7 @@ test fCmd-6.6 {CopyRenameOneFile: errno != ENOENT} {unixOnly notRoot testchmod} 
     testchmod 755 td1
     set msg
 } {1 {error renaming "tf1" to "td1/tf1": permission denied}}
-test fCmd-6.7 {CopyRenameOneFile: errno != ENOENT} {95} {
+test fCmd-6.7 {CopyRenameOneFile: errno != ENOENT} {pcOnly 95} {
     cleanup
     createfile tf1
     list [catch {file rename tf1 $long} msg] $msg
@@ -544,18 +544,19 @@ test fCmd-6.23 {CopyRenameOneFile: TclpCopyDirectory failed} \
 	{unixOnly notRoot xdev} {
     cleanup /tmp
     file mkdir td1/td2/td3
-    exec chmod 000 td1
+    file attributes td1 -permissions 0000
     set msg [list [catch {file rename td1 /tmp} msg] $msg]
-    exec chmod 755 td1
+    file attributes td1 -permissions 0755
     set msg 
 } {1 {error renaming "td1": permission denied}}
 test fCmd-6.24 {CopyRenameOneFile: error uses original name} \
 	{unixOnly notRoot} {
     cleanup
     file mkdir ~/td1/td2
-    exec chmod 000 [file join [file dirname ~] [file tail ~] td1]
+    set td1name [file join [file dirname ~] [file tail ~] td1]
+    file attributes $td1name -permissions 0000
     set msg [list [catch {file copy ~/td1 td1} msg] $msg]
-    exec chmod 755 [file join [file dirname ~] [file tail ~] td1]
+    file attributes $td1name -permissions 0755
     file delete -force ~/td1
     set msg
 } {1 {error copying "~/td1": permission denied}}
@@ -564,9 +565,10 @@ test fCmd-6.25 {CopyRenameOneFile: error uses original name} \
     cleanup
     file mkdir td2
     file mkdir ~/td1
-    exec chmod 000 [file join [file dirname ~] [file tail ~] td1]
+    set td1name [file join [file dirname ~] [file tail ~] td1]
+    file attributes $td1name -permissions 0000
     set msg [list [catch {file copy td2 ~/td1} msg] $msg]
-    exec chmod 755 [file join [file dirname ~] [file tail ~] td1]
+    file attributes $td1name -permissions 0755
     file delete -force ~/td1
     set msg
 } {1 {error copying "td2" to "~/td1/td2": permission denied}}
@@ -574,9 +576,10 @@ test fCmd-6.26 {CopyRenameOneFile: doesn't use original name} \
 	{unixOnly notRoot} {
     cleanup
     file mkdir ~/td1/td2
-    exec chmod 000 [file join [file dirname ~] [file tail ~] td1 td2]
+    set td2name [file join [file dirname ~] [file tail ~] td1 td2]
+    file attributes $td2name -permissions 0000
     set msg [list [catch {file copy ~/td1 td1} msg] $msg]
-    exec chmod 755 [file join [file dirname ~] [file tail ~] td1 td2]
+    file attributes $td2name -permissions 0755
     file delete -force ~/td1
     set msg
 } "1 {error copying \"~/td1\" to \"td1\": \"[file join [file dirname ~] [file tail ~] td1 td2]\": permission denied}"
@@ -592,9 +595,9 @@ test fCmd-6.28 {CopyRenameOneFile: TclpCopyDirectory failed} \
 	{unixOnly notRoot xdev} {
     cleanup /tmp
     file mkdir td1/td2/td3
-    exec chmod 000 td1/td2/td3 
+    file attributes td1/td2/td3 -permissions 0000
     set msg [list [catch {file rename td1 /tmp} msg] $msg]
-    exec chmod 755 td1/td2/td3 
+    file attributes td1/td2/td3 -permissions 0755
     set msg
 } {1 {error renaming "td1" to "/tmp/td1": "td1/td2/td3": permission denied}}
 test fCmd-6.29 {CopyRenameOneFile: TclpCopyDirectory passed} \
@@ -1155,9 +1158,9 @@ test fCmd-12.8 {renamefile: generic error} {unixOnly notRoot} {
     catch {file delete -force -- tfa}
     file mkdir tfa
     file mkdir tfa/dir
-    exec chmod 555 tfa
+    file attributes tfa -permissions 0555
     set result [catch {file rename tfa/dir tfa2}]
-    exec chmod 777 tfa
+    file attributes tfa -permissions 0777
     file delete -force tfa
     set result
 } {1}
@@ -1356,9 +1359,9 @@ test fCmd-14.7 {copyfile: copy directory succeeding} {notRoot} {
 test fCmd-14.8 {copyfile: copy directory failing} {unixOnly notRoot} {
     catch {file delete -force -- tfa}
     file mkdir tfa/dir/a/b/c
-    exec chmod 000 tfa/dir
+    file attributes tfa/dir -permissions 0000
     set r1 [catch {file copy tfa tfa2}]
-    exec chmod 777 tfa/dir
+    file attributes tfa/dir -permissions 0777
     set result $r1
     file delete -force tfa tfa2
     set result
@@ -1399,9 +1402,9 @@ test fCmd-15.4 {TclMakeDirsCmd - stat failing} {unixOnly notRoot} {
     catch {file delete -force -- tfa}
     file mkdir tfa
     createfile tfa/file
-    exec chmod 000 tfa
+    file attributes tfa -permissions 0000
     set result [catch {file mkdir tfa/file}]
-    exec chmod 777 tfa
+    file attributes tfa -permissions 0777
     file delete -force tfa
     set result
 } {1}
@@ -1445,21 +1448,21 @@ test fCmd-15.8 {TclFileMakeDirsCmd: trying to create an existing dir} {notRoot} 
 
 
 # Coverage tests for TclDeleteFilesCommand()
-test fCmd-16.1 { test the -- argument } {notRoot} {
+test fCmd-16.1 {test the -- argument} {notRoot} {
     catch {file delete -force -- tfa}
     createfile tfa
     file delete -- tfa
     file exists tfa
 } {0}
 
-test fCmd-16.2 { test the -force and -- arguments } {notRoot} {
+test fCmd-16.2 {test the -force and -- arguments} {notRoot} {
     catch {file delete -force -- tfa}
     createfile tfa
     file delete -force -- tfa
     file exists tfa
 } {0}
 
-test fCmd-16.3 { test bad option } {notRoot} {
+test fCmd-16.3 {test bad option} {notRoot} {
     catch {file delete -force -- tfa}
     createfile tfa
     set result [catch {file delete -dog tfa}]
@@ -1467,11 +1470,11 @@ test fCmd-16.3 { test bad option } {notRoot} {
     set result
 } {1}
 
-test fCmd-16.4 { test not enough args } {notRoot} {
+test fCmd-16.4 {test not enough args} {notRoot} {
     catch {file delete}
 } {1}
 
-test fCmd-16.5 { test not enough args with options } {notRoot} {
+test fCmd-16.5 {test not enough args with options} {notRoot} {
     catch {file delete --}
 } {1}
 
@@ -1506,14 +1509,14 @@ test fCmd-16.9 {error while deleting file } {unixOnly notRoot} {
     catch {file delete -force -- tfa}
     file mkdir tfa
     createfile tfa/a
-    exec chmod 555 tfa
+    file attributes tfa -permissions 0555
     set result [catch  {file delete tfa/a }]
     #######
     #######  If any directory in a tree that is being removed does not 
     #######  have write permission, the process will fail!
     #######  This is also the case with "rm -rf"
     #######
-    exec chmod 777 tfa
+    file attributes tfa -permissions 0777
     file delete -force tfa
     set result
 } {1}
@@ -1526,7 +1529,7 @@ test fCmd-16.10 {deleting multiple files} {notRoot} {
     expr ![file exists tfa1] && ![file exists tfa2]
 } {1}
 
-test fCmd-16.11 { TclFileDeleteCmd: removing a nonexistant file} {notRoot} {
+test fCmd-16.11 {TclFileDeleteCmd: removing a nonexistant file} {notRoot} {
     catch {file delete -force -- tfa}
     file delete tfa
     set result 1
@@ -1536,9 +1539,9 @@ test fCmd-16.11 { TclFileDeleteCmd: removing a nonexistant file} {notRoot} {
  test fCmd-17.1 {mkdir stat failing on target but not ENOENT} {unixOnly notRoot} {
      catch {file delete -force -- tfa1}
      file mkdir tfa1
-     exec chmod 555 tfa1
+     file attributes tfa1 -permissions 0555
      set result [catch {file mkdir tfa1/tfa2}]
-     exec chmod 777 tfa1
+     file attributes tfa1 -permissions 0777
      file delete -force tfa1
      set result
 } {1}
@@ -1694,10 +1697,10 @@ test fCmd-18.12 {TclFileRenameCmd : rename a symbolic link to file} \
     catch {file delete -force -- tfa1 tfa2 tfa3}
 	
     set s [createfile tfa1]
-    exec ln -s tfa1 tfa2
+    file link -symbolic tfa2 tfa1
     file rename tfa2 tfa3
     set t [file type tfa3]
-    set result [expr { $t == "link" }]
+    set result [expr {$t eq "link"}]
     file delete tfa1 tfa3
     set result
 } {1}
@@ -1707,10 +1710,10 @@ test fCmd-18.13 {TclFileRenameCmd : rename a symbolic link to dir} \
     catch {file delete -force -- tfa1 tfa2 tfa3}
 	
     file mkdir tfa1
-    exec ln -s tfa1 tfa2
+    file link -symbolic tfa2 tfa1
     file rename tfa2 tfa3
     set t [file type tfa3]
-    set result [expr { $t == "link" }]
+    set result [expr {$t eq "link"}]
     file delete tfa1 tfa3
     set result
 } {1}
@@ -1723,7 +1726,7 @@ test fCmd-18.14 {TclFileRenameCmd : rename a path with sym link} \
     file mkdir tfa2
     set f [file join [pwd] tfa1/a/b] 
     set f2 [file join [pwd] {tfa2/b alias}]
-    exec ln -s $f $f2
+    file link -symbolic $f2 $f
     file rename {tfa2/b alias/c} tfa3
     set r1 [file isdir tfa3]
     set r2 [file exists tfa1/a/b/c]
@@ -1738,7 +1741,7 @@ test fCmd-18.15 {TclFileRenameCmd : rename a file to a symlink dir} \
 	
     file mkdir tfa1
     set s [createfile tfa2]
-    exec ln -s tfa1 tfalink
+    file link -symbolic tfalink tfa1
 
     file rename tfa2 tfalink
     set result [checkcontent tfa1/tfa2 $s ]
@@ -1750,7 +1753,7 @@ test fCmd-18.16 {TclFileRenameCmd: rename a dangling symlink} {unixOnly notRoot}
     catch {file delete -force -- tfa1 tfalink}
 	
     file mkdir tfa1
-    exec ln -s tfa1 tfalink
+    file link -symbolic tfalink tfa1
     file delete tfa1 
     file rename tfalink tfa2
     set result [expr [string compare [file type tfa2] "link"] == 0]
@@ -1762,25 +1765,25 @@ test fCmd-18.16 {TclFileRenameCmd: rename a dangling symlink} {unixOnly notRoot}
 #
 # Coverage tests for TclUnixRmdir
 #
-test fCmd-19.1 { remove empty directory } {notRoot} {
+test fCmd-19.1 {remove empty directory} {notRoot} {
     catch {file delete -force -- tfa}
     file mkdir tfa
     file delete tfa
     file exists tfa
 } {0}
 
-test fCmd-19.2 { rmdir error besides EEXIST} {unixOnly notRoot} {
+test fCmd-19.2 {rmdir error besides EEXIST} {unixOnly notRoot} {
     catch {file delete -force -- tfa}
     file mkdir tfa
     file mkdir tfa/a
-    exec chmod 555 tfa
+    file attributes tfa -permissions 0555
     set result [catch {file delete tfa/a}]
-    exec chmod 777 tfa
+    file attributes tfa -permissions 0777
     file delete -force tfa
     set result
 } {1}
 
-test fCmd-19.3 { recursive remove } {notRoot} {
+test fCmd-19.3 {recursive remove} {notRoot} {
     catch {file delete -force -- tfa}
     file mkdir tfa
     file mkdir tfa/a
@@ -1803,9 +1806,9 @@ test fCmd-20.1 {TraverseUnixTree : failure opening a subdirectory directory } \
     catch {file delete -force -- tfa}
     file mkdir tfa
     file mkdir tfa/a
-    exec chmod 000 tfa/a
+    file attributes tfa/a -permissions 0000
     set result [catch {file delete -force tfa}]
-    exec chmod 777 tfa/a
+    file attributes tfa/a -permissions 0777
     file delete -force tfa
     set result
 } {1}
@@ -1882,9 +1885,17 @@ test fCmd-21.6 {copy: mixed dirs and files into directory} \
     set result
 } {1}
 
-test fCmd-21.7 {TclCopyFilesCmd: copy a dangling link} {unixOnly notRoot} {
+test fCmd-21.7.1 {TclCopyFilesCmd: copy a dangling link} {unixOnly notRoot dontCopyLinks} {
     file mkdir tfad1
-    exec ln -s tfad1 tfalink
+    file link -symbolic tfalink tfad1
+    file delete tfad1
+    set result [list [catch {file copy tfalink tfalink2} msg] $msg]
+    file delete -force tfalink tfalink2 
+    set result
+} {1 {error copying "tfalink": the target of this link doesn't exist}}
+test fCmd-21.7.2 {TclCopyFilesCmd: copy a dangling link} {unixOnly notRoot} {
+    file mkdir tfad1
+    file link -symbolic tfalink tfad1
     file delete tfad1
     file copy tfalink tfalink2
     set result [string match [file type tfalink2] link]
@@ -1892,21 +1903,32 @@ test fCmd-21.7 {TclCopyFilesCmd: copy a dangling link} {unixOnly notRoot} {
     set result
 } {1}
 
-test fCmd-21.8 {TclCopyFilesCmd : copy a link } {unixOnly notRoot} {
+test fCmd-21.8.1 {TclCopyFilesCmd: copy a link } {unixOnly notRoot dontCopyLinks} {
     file mkdir tfad1
-    exec ln -s tfad1 tfalink
+    file link -symbolic tfalink tfad1
     file copy tfalink tfalink2
-    set r1 [file type tfalink]
-    set r2 [file type tfalink2]
-    set r3 [file isdir tfad1]
-    set result [expr {("$r1" == "link" ) && ("$r2" == "link" ) && $r3}]
-    file delete tfad1 tfalink tfalink2
+    set r1 [file type tfalink]; # link
+    set r2 [file type tfalink2]; # directory
+    set r3 [file isdir tfad1]; # 1
+    set result [expr {("$r1" == "link") && ("$r2" == "directory") && $r3}]
+    file delete -force tfad1 tfalink tfalink2
+    set result
+} {1}
+test fCmd-21.8.2 {TclCopyFilesCmd: copy a link } {unixOnly notRoot} {
+    file mkdir tfad1
+    file link -symbolic tfalink tfad1
+    file copy tfalink tfalink2
+    set r1 [file type tfalink]; # link
+    set r2 [file type tfalink2]; # link
+    set r3 [file isdir tfad1]; # 1
+    set result [expr {("$r1" == "link") && ("$r2" == "link") && $r3}]
+    file delete -force tfad1 tfalink tfalink2
     set result
 } {1}
 
 test fCmd-21.9 {TclCopyFilesCmd: copy dir with a link in it} {unixOnly notRoot} {
     file mkdir tfad1
-    exec ln -s "[pwd]/tfad1" tfad1/tfalink
+    file link -symbolic tfad1/tfalink "[pwd]/tfad1"
     file copy tfad1 tfad2
     set result [string match [file type tfad2/tfalink] link]
     file delete -force tfad1 tfad2
@@ -1941,7 +1963,7 @@ test fCmd-21.12 {TclFileCopyCmd: copy dir on top of a non-empty dir w/ -force} \
     file delete -force tfa tfad
     set result
 } {1}
-   
+
 #
 # Coverage testing for TclpRenameFile
 #
@@ -1966,7 +1988,7 @@ test fCmd-22.2 {TclpRenameFile: attempt to overwrite itself} {macOrUnix notRoot}
     set result
 } {1}
 
-test fCmd-22.3 { TclpRenameFile : rename dir to existing dir } {notRoot} {
+test fCmd-22.3 {TclpRenameFile: rename dir to existing dir} {notRoot} {
     catch {file delete -force -- d1 tfad}
     file mkdir d1 [file join tfad d1]
     set r1 [catch {file rename d1 tfad}]
@@ -2036,8 +2058,7 @@ test fCmd-24.1 {TclMacDeleteFile: deleting a normal file} {notRoot} {
 # TclMacCopyDirectory
 # Error cases are not covered.
 #
-test fCmd-25.1 { TclMacCopyDirectory : copying a normal directory} \
-	{notRoot notFileSharing} {
+test fCmd-25.1 {TclMacCopyDirectory: copying a normal directory} {notRoot notFileSharing} {
     catch {file delete -force -- tfad1 tfad2}
 		
     file mkdir [file join tfad1 a b c]
@@ -2047,8 +2068,7 @@ test fCmd-25.1 { TclMacCopyDirectory : copying a normal directory} \
     set result
 } {1}
 
-test fCmd-25.2 { TclMacCopyDirectory : copying a short path normal directory} \
-	{notRoot notFileSharing} {
+test fCmd-25.2 {TclMacCopyDirectory: copying a short path normal directory} {notRoot notFileSharing} {
     catch {file delete -force -- tfad1 tfad2}
 		
     file mkdir tfad1
@@ -2058,8 +2078,7 @@ test fCmd-25.2 { TclMacCopyDirectory : copying a short path normal directory} \
     set result
 } {1}
 
-test fCmd-25.3 { TclMacCopyDirectory : copying dirs between different dirs} \
-	{notRoot notFileSharing} {
+test fCmd-25.3 {TclMacCopyDirectory: copying dirs between different dirs} {notRoot notFileSharing} {
     catch {file delete -force -- tfad1 tfad2}
 		
     file mkdir [file join tfad1 x y z]
@@ -2074,11 +2093,11 @@ test fCmd-25.3 { TclMacCopyDirectory : copying dirs between different dirs} \
 # Functionality tests for TclDeleteFilesCmd
 #
 
-test fCmd-26.1 { TclDeleteFilesCmd : delete symlink} {unixOnly notRoot} {
+test fCmd-26.1 {TclDeleteFilesCmd: delete symlink} {unixOnly notRoot} {
     catch {file delete -force -- tfad1 tfad2}
 		
     file mkdir tfad1
-    exec ln -s tfad1 tfalink
+    file link -symbolic tfalink tfad1
     file delete tfalink
 
     set r1 [file isdir tfad1]
@@ -2089,12 +2108,12 @@ test fCmd-26.1 { TclDeleteFilesCmd : delete symlink} {unixOnly notRoot} {
     set result
 } {1}
 
-test fCmd-26.2 { TclDeleteFilesCmd : delete dir with symlink} {unixOnly notRoot} {
+test fCmd-26.2 {TclDeleteFilesCmd: delete dir with symlink} {unixOnly notRoot} {
     catch {file delete -force -- tfad1 tfad2}
 		
     file mkdir tfad1
     file mkdir tfad2
-    exec ln -s tfad1 [file join tfad2 link]
+    file link -symbolic [file join tfad2 link] tfad1
     file delete -force tfad2
 
     set r1 [file isdir tfad1]
@@ -2105,11 +2124,11 @@ test fCmd-26.2 { TclDeleteFilesCmd : delete dir with symlink} {unixOnly notRoot}
     set result
 } {1}
 
-test fCmd-26.3 { TclDeleteFilesCmd : delete dangling symlink} {unixOnly notRoot} {
+test fCmd-26.3 {TclDeleteFilesCmd: delete dangling symlink} {unixOnly notRoot} {
     catch {file delete -force -- tfad1 tfad2}
 		
     file mkdir tfad1
-    exec ln -s tfad1 tfad2
+    file link -symbolic tfad2 tfad1
     file delete tfad1
     file delete tfad2
 
@@ -2140,14 +2159,14 @@ test fCmd-27.4 {TclFileAttrsCmd - getting one option} {
 # Find a group that exists on this Unix system, or else skip tests that
 # require Unix groups.
 if {$tcl_platform(platform) == "unix"} {
-    set ::tcltest::testConstraints(foundGroup) 0
+    ::tcltest::testConstraint foundGroup 0
     catch {
 	set groupList [exec groups]
 	set group [lindex $groupList 0]
-	set ::tcltest::testConstraints(foundGroup) 1
+	::tcltest::testConstraint foundGroup 1
     }
 } else {
-    set ::tcltest::testConstraints(foundGroup) 1
+    ::tcltest::testConstraint foundGroup 1
 }
 
 test fCmd-27.5 {TclFileAttrsCmd - setting one option} {foundGroup} {
@@ -2163,19 +2182,204 @@ test fCmd-27.6 {TclFileAttrsCmd - setting more than one option} {foundGroup} {
     list [catch {eval file attributes foo.tmp [lrange $attrs 0 3]} msg] $msg [file delete -force -- foo.tmp]
 } {0 {} {}}
 
+if {[string equal $tcl_platform(platform) "windows"]} {
+    if {[string index $tcl_platform(osVersion) 0] >= 5 \
+      && ([lindex [file system [temporaryDirectory]] 1] == "NTFS")} {
+	tcltest::testConstraint linkDirectory 1
+	tcltest::testConstraint linkFile 1
+    } else {
+	tcltest::testConstraint linkDirectory 0
+	tcltest::testConstraint linkFile 0
+    }
+} else {
+    tcltest::testConstraint linkFile 1
+    tcltest::testConstraint linkDirectory 1
+}
+
+test fCmd-28.1 {file link} {
+    list [catch {file link} msg] $msg
+} {1 {wrong # args: should be "file link ?-linktype? linkname ?target?"}}
+
+test fCmd-28.2 {file link} {
+    list [catch {file link a b c d} msg] $msg
+} {1 {wrong # args: should be "file link ?-linktype? linkname ?target?"}}
+
+test fCmd-28.3 {file link} {
+    list [catch {file link abc b c} msg] $msg
+} {1 {bad switch "abc": must be -symbolic or -hard}}
+
+test fCmd-28.4 {file link} {
+    list [catch {file link -abc b c} msg] $msg
+} {1 {bad switch "-abc": must be -symbolic or -hard}}
+
+makeDirectory abc.dir
+makeDirectory abc2.dir
+makeFile contents abc.file
+makeFile contents abc2.file
+
+cd [temporaryDirectory]
+test fCmd-28.5 {file link: source already exists} {linkDirectory} {
+    cd [temporaryDirectory]
+    set res [list [catch {file link abc.dir abc2.dir} msg] $msg]
+    cd [workingDirectory]
+    set res
+} {1 {could not create new link "abc.dir": that path already exists}}
+
+test fCmd-28.6 {file link: unsupported operation} {linkDirectory macOrWin} {
+    cd [temporaryDirectory]
+    set res [list [catch {file link -hard abc.link abc.dir} msg] $msg]
+    cd [workingDirectory]
+    set res
+} {1 {could not create new link "abc.link" pointing to "abc.dir": illegal operation on a directory}}
+
+test fCmd-28.7 {file link: source already exists} {linkFile} {
+    cd [temporaryDirectory]
+    set res [list [catch {file link abc.file abc2.file} msg] $msg]
+    cd [workingDirectory]
+    set res
+} {1 {could not create new link "abc.file": that path already exists}}
+
+test fCmd-28.8 {file link} {linkFile winOnly} {
+    cd [temporaryDirectory]
+    set res [list [catch {file link -symbolic abc.link abc.file} msg] $msg]
+    cd [workingDirectory]
+    set res
+} {1 {could not create new link "abc.link" pointing to "abc.file": not a directory}}
+
+test fCmd-28.9 {file link: success with file} {linkFile} {
+    cd [temporaryDirectory]
+    file delete -force abc.link
+    set res [list [catch {file link abc.link abc.file} msg] $msg]
+    cd [workingDirectory]
+    set res
+} {0 abc.file}
+
+cd [temporaryDirectory]
+catch {file delete -force abc.link}
+cd [workingDirectory]
+
+test fCmd-28.10 {file link: linking to nonexistent path} {linkDirectory} {
+    cd [temporaryDirectory]
+    file delete -force abc.link
+    set res [list [catch {file link abc.link abc2.doesnt} msg] $msg]
+    cd [workingDirectory]
+    set res
+} {1 {could not create new link "abc.link" since target "abc2.doesnt" doesn't exist}}
+
+test fCmd-28.11 {file link: success with directory} {linkDirectory} {
+    cd [temporaryDirectory]
+    file delete -force abc.link
+    set res [list [catch {file link abc.link abc.dir} msg] $msg]
+    cd [workingDirectory]
+    set res
+} {0 abc.dir}
+
+test fCmd-28.12 {file link: cd into a link} {linkDirectory} {
+    cd [temporaryDirectory]
+    file delete -force abc.link
+    file link abc.link abc.dir
+    set orig [pwd]
+    cd abc.link
+    set dir [pwd]
+    cd ..
+    set up [pwd]
+    cd $orig
+    # now '$up' should be either $orig or [file dirname abc.dir],
+    # depending on whether 'cd' actually moves to the destination
+    # of a link, or simply treats the link as a directory.
+    # (on windows the former, on unix the latter, I believe)
+    if {([file normalize $up] != [file normalize $orig]) \
+      && ([file normalize $up] != [file normalize [file dirname abc.dir]])} {
+	set res "wrong directory with 'cd $link ; cd ..'"
+    } else {
+	set res "ok"
+    }
+    cd [workingDirectory]
+    set res
+} {ok}
+
+test fCmd-28.13 {file link} {linkDirectory} {
+    # duplicate link throws error
+    cd [temporaryDirectory]
+    set res [list [catch {file link abc.link abc.dir} msg] $msg]
+    cd [workingDirectory]
+    set res
+} {1 {could not create new link "abc.link": that path already exists}}
+
+test fCmd-28.14 {file link: deletes link not dir} {linkDirectory} {
+    cd [temporaryDirectory]
+    file delete -force abc.link
+    set res [list [file exists abc.link] [file exists abc.dir]]
+    cd [workingDirectory]
+    set res
+} {0 1}
+
+test fCmd-28.15.1 {file link: copies link not dir} {linkDirectory dontCopyLinks} {
+    cd [temporaryDirectory]
+    file delete -force abc.link
+    file link abc.link abc.dir
+    file copy abc.link abc2.link
+    # abc2.linkdir was a copy of a link to a dir, so it should end up as
+    # a directory, not a link (links trace to endpoint).
+    set res [list [file type abc2.link] [file tail [file link abc.link]]]
+    cd [workingDirectory]
+    set res
+} {directory abc.dir}
+test fCmd-28.15.2 {file link: copies link not dir} {linkDirectory} {
+    cd [temporaryDirectory]
+    file delete -force abc.link
+    file link abc.link abc.dir
+    file copy abc.link abc2.link
+    set res [list [file type abc2.link] [file tail [file link abc2.link]]]
+    cd [workingDirectory]
+    set res
+} {link abc.dir}
+
+cd [temporaryDirectory]
+file delete -force abc.link
+file delete -force abc2.link
+
+file copy abc.file abc.dir
+file copy abc2.file abc.dir
+cd [workingDirectory]
+
+test fCmd-28.16 {file link: glob inside link} {linkDirectory} {
+    cd [temporaryDirectory]
+    file delete -force abc.link
+    file link abc.link abc.dir
+    set res [glob -dir abc.link -tails *]
+    cd [workingDirectory]
+    set res
+} {abc.file abc2.file}
+
+test fCmd-28.17 {file link: glob -type l} {linkDirectory} {
+    cd [temporaryDirectory]
+    set res [glob -dir [pwd] -type l -tails abc*]
+    cd [workingDirectory]
+    set res
+} {abc.link}
+
+test fCmd-28.18 {file link: glob -type d} {linkDirectory} {
+    cd [temporaryDirectory]
+    set res [lsort [glob -dir [pwd] -type d -tails abc*]]
+    cd [workingDirectory]
+    set res
+} [lsort [list abc.link abc.dir abc2.dir]]
+
+test fCmd-29.1 {weird memory corruption fault} {
+    catch {set res [open [file join ~a_totally_bogus_user_id/foo bar]]}
+} 1
+
+cd [temporaryDirectory]
+file delete -force abc.link
+cd [workingDirectory]
+
+removeFile abc2.file
+removeFile abc.file
+removeDirectory abc2.dir
+removeDirectory abc.dir
+
 # cleanup
 cleanup
 ::tcltest::cleanupTests
 return
-
-
-
-
-
-
-
-
-
-
-
-

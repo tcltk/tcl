@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: winFile.test,v 1.6.18.1 2002/06/10 05:33:17 wolfsuit Exp $
+# RCS: @(#) $Id: winFile.test,v 1.6.18.2 2002/08/20 20:25:29 das Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -20,12 +20,12 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 test winFile-1.1 {TclpGetUserHome} {pcOnly} {
     list [catch {glob ~nosuchuser} msg] $msg
 } {1 {user "nosuchuser" doesn't exist}}
-test winFile-1.2 {TclpGetUserHome} {nt nonPortable} {
+test winFile-1.2 {TclpGetUserHome} {pcOnly nt nonPortable} {
     # The administrator account should always exist.
 
     catch {glob ~administrator}
 } {0}
-test winFile-1.2 {TclpGetUserHome} {95} {
+test winFile-1.2 {TclpGetUserHome} {pcOnly 95} {
     # Find some user in system.ini and then see if they have a home.
 
     set f [open $::env(windir)/system.ini]
@@ -44,7 +44,7 @@ test winFile-1.2 {TclpGetUserHome} {95} {
     close $f
     set x
 } {0}
-test winFile-1.3 {TclpGetUserHome} {nt nonPortable} {
+test winFile-1.3 {TclpGetUserHome} {pcOnly nt nonPortable} {
     catch {glob ~stanton@workgroup}
 } {0}
 
@@ -65,10 +65,14 @@ test winFile-2.2 {TclpMatchFiles: case sensitivity} {pcOnly} {
 test winFile-3.1 {file system} {pcOnly} {
     set res "volume types ok"
     foreach vol [file volumes] {
-	if {![string equal [lindex [file system $vol] 1] [testvolumetype $vol]]} {
-	    set res "For $vol, we found [file system $vol]\
-	      and [testvolumetype $vol] are different"
-	    break
+	# Have to catch in case there is a removable drive (CDROM, floppy)
+	# with nothing in it.
+	catch {
+	    if {![string equal [lindex [file system $vol] 1] [testvolumetype $vol]]} {
+		set res "For $vol, we found [file system $vol]\
+		  and [testvolumetype $vol] are different"
+		break
+	    }
 	}
     }
     set res

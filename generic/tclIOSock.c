@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOSock.c,v 1.5.18.1 2002/02/05 02:22:00 wolfsuit Exp $
+ * RCS: @(#) $Id: tclIOSock.c,v 1.5.18.2 2002/08/20 20:25:26 das Exp $
  */
 
 #include "tclInt.h"
@@ -91,10 +91,7 @@ TclSockMinimumBuffers(sock, size)
     int size;			/* Minimum buffer size */
 {
     int current;
-    /*
-     * Should be socklen_t, but HP10.20 (g)cc chokes
-     */
-    size_t len;
+    socklen_t len;
 
     len = sizeof(int);
     getsockopt(sock, SOL_SOCKET, SO_SNDBUF, (char *)&current, &len);

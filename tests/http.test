@@ -12,10 +12,10 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
 #
-# RCS: @(#) $Id: http.test,v 1.25 2001/10/12 19:44:56 hobbs Exp $
+# RCS: @(#) $Id: http.test,v 1.25.2.1 2002/08/20 20:25:27 das Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest
+    package require tcltest 2
     namespace import -force ::tcltest::*
 }
 
@@ -27,6 +27,7 @@ if {[catch {package require http 2} version]} {
 	catch {puts "Running http 2.* tests in slave interp"}
 	set interp [interp create http2]
 	$interp eval [list set http2 "running"]
+	$interp eval [list set argv $argv]
 	$interp eval [list source [info script]]
 	interp delete $interp
 	return
@@ -47,16 +48,17 @@ catch {unset data}
 # Ensure httpd file exists
 
 set origFile [file join $::tcltest::testsDirectory httpd]
-set newFile [file join $::tcltest::workingDirectory httpd]
-if {![file exists $newFile]} {
-    file copy $origFile $newFile
+set httpdFile [file join [temporaryDirectory] httpd_[pid]]
+if {![file exists $httpdFile]} {
+    makeFile "" $httpdFile
+    file delete $httpdFile
+    file copy $origFile $httpdFile
     set removeHttpd 1
 }
-set httpdFile [file join $::tcltest::workingDirectory httpd]
 
 if {[info commands testthread] == "testthread" && [file exists $httpdFile]} {
     set httpthread [testthread create "
-	source $httpdFile
+	source [list $httpdFile]
 	testthread wait
     "]
     testthread send $httpthread [list set port $port]
@@ -64,16 +66,19 @@ if {[info commands testthread] == "testthread" && [file exists $httpdFile]} {
     testthread send $httpthread {httpd_init $port}
     puts "Running httpd in thread $httpthread"
 } else {
-    if ![file exists $httpdFile] {
+    if {![file exists $httpdFile]} {
 	puts "Cannot read $httpdFile script, http test skipped"
 	unset port
 	return
     }
     source $httpdFile
-    if [catch {httpd_init $port} listen] {
+    # Let the OS pick the port; that's much more flexible
+    if {[catch {httpd_init 0} listen]} {
 	puts "Cannot start http server, http test skipped"
 	unset port
 	return
+    } else {
+	set port [lindex [fconfigure $listen -sockname] 2]
     }
 }
 
@@ -222,8 +227,8 @@ test http-3.11 {http::geturl querychannel with -command} {
 	append query $sep$query
 	set sep &
     }
-    ::tcltest::makeFile $query outdata
-    set fp [open outdata]
+    set file [makeFile $query outdata]
+    set fp [open $file]
 
     proc asyncCB {token} {
 	global postResult
@@ -237,12 +242,13 @@ test http-3.11 {http::geturl querychannel with -command} {
     # Now do async
     http::cleanup $t
     close $fp
-    set fp [open outdata]
+    set fp [open $file]
     set t [http::geturl $posturl -querychannel $fp -command asyncCB]
     set postResult [list PostStart]
     http::wait $t
 
     lappend testRes [http::status $t] $postResult
+    removeFile outdata
     set testRes
 } {ok 122879 {Got 122880 bytes} ok {PostStart {Got 122880 bytes}}}
 
@@ -263,8 +269,8 @@ test http-3.12 {http::geturl querychannel with aborted request} {nonPortable} {
 	append query $sep$query
 	set sep &
     }
-    ::tcltest::makeFile $query outdata
-    set fp [open outdata]
+    set file [makeFile $query outdata]
+    set fp [open $file]
 
     proc asyncCB {token} {
 	global postResult
@@ -287,6 +293,7 @@ test http-3.12 {http::geturl querychannel with aborted request} {nonPortable} {
 	error $err
     }
 
+    removeFile outdata
     list [http::status $t] [http::code $t]
 } {ok {HTTP/1.0 200 Data follows}}
 
@@ -320,13 +327,14 @@ test http-4.3 {http::Event} {
 } {HTTP/1.0 200 Data follows}
 
 test http-4.4 {http::Event} {
-    set out [open testfile w]
+    set testfile [makeFile "" testfile]
+    set out [open $testfile w]
     set token [http::geturl $url -channel $out]
     close $out
-    set in [open testfile]
+    set in [open $testfile]
     set x [read $in]
     close $in
-    file delete testfile
+    removeFile $testfile
     set x
 } "<html><head><title>HTTP/1.0 TEST</title></head><body>
 <h1>Hello, World!</h1>
@@ -334,23 +342,25 @@ test http-4.4 {http::Event} {
 </body></html>"
 
 test http-4.5 {http::Event} {
-    set out [open testfile w]
+    set testfile [makeFile "" testfile]
+    set out [open $testfile w]
     set token [http::geturl $url -channel $out]
     close $out
     upvar #0 $token data
-    file delete testfile
+    removeFile $testfile
     expr $data(currentsize) == $data(totalsize)
 } 1
 
 test http-4.6 {http::Event} {
-    set out [open testfile w]
+    set testfile [makeFile "" testfile]
+    set out [open $testfile w]
     set token [http::geturl $binurl -channel $out]
     close $out
-    set in [open testfile]
+    set in [open $testfile]
     fconfigure $in -translation binary
     set x [read $in]
     close $in
-    file delete testfile
+    removeFile $testfile
     set x
 } "$bindata$binurl"
 
@@ -485,9 +495,6 @@ if {[info exists httpthread]} {
 
 if {[info exist removeHttpd]} {
     removeFile $httpdFile
-}
-foreach file [list outdata] {
-    catch {::tcltest::removeFile $file}
 }
 
 ::tcltest::cleanupTests

@@ -3,7 +3,7 @@
 # Default system startup file for Tcl-based applications.  Defines
 # "unknown" procedure and auto-load facilities.
 #
-# RCS: @(#) $Id: init.tcl,v 1.49.8.1 2002/02/05 02:22:01 wolfsuit Exp $
+# RCS: @(#) $Id: init.tcl,v 1.49.8.2 2002/08/20 20:25:27 das Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
@@ -30,8 +30,9 @@ package require -exact Tcl 8.4
 # The parent directory of tcl_library. Adding the parent
 # means that packages in peer directories will be found automatically.
 #
-# Also add the directory where the executable is located, plus ../lib
-# relative to that path.
+# Also add the directory ../lib relative to the directory where the
+# executable is located.  This is meant to find binary packages for the
+# same architecture as the current executable.
 #
 # tcl_pkgPath, which is set by the platform-specific initialization routines
 #	On UNIX it is compiled in
@@ -45,66 +46,66 @@ if {![info exists auto_path]} {
 	set auto_path ""
     }
 }
-if {[string compare [info library] {}]} {
-    foreach __dir [list [info library] [file dirname [info library]]] {
-	if {[lsearch -exact $auto_path $__dir] < 0} {
-	    lappend auto_path $__dir
+namespace eval tcl {
+    variable Dir
+    if {[string compare [info library] {}]} {
+	foreach Dir [list [info library] [file dirname [info library]]] {
+	    if {[lsearch -exact $::auto_path $Dir] < 0} {
+		lappend ::auto_path $Dir
+	    }
 	}
     }
-}
-set __dir [file join [file dirname [file dirname \
-	[info nameofexecutable]]] lib]
-if {[lsearch -exact $auto_path $__dir] < 0} {
-    lappend auto_path $__dir
-}
-if {[info exist tcl_pkgPath]} {
-    foreach __dir $tcl_pkgPath {
-	if {[lsearch -exact $auto_path $__dir] < 0} {
-	    lappend auto_path $__dir
+    set Dir [file join [file dirname [file dirname \
+	    [info nameofexecutable]]] lib]
+    if {[lsearch -exact $::auto_path $Dir] < 0} {
+	lappend ::auto_path $Dir
+    }
+    if {[info exist ::tcl_pkgPath]} {
+	foreach Dir $::tcl_pkgPath {
+	    if {[lsearch -exact $::auto_path $Dir] < 0} {
+		lappend ::auto_path $Dir
+	    }
 	}
     }
-}
-if {[info exists __dir]} {
-    unset __dir
 }
   
 # Windows specific end of initialization
 
 if {(![interp issafe]) && [string equal $tcl_platform(platform) "windows"]} {
     namespace eval tcl {
-	proc envTraceProc {lo n1 n2 op} {
+	proc EnvTraceProc {lo n1 n2 op} {
 	    set x $::env($n2)
 	    set ::env($lo) $x
 	    set ::env([string toupper $lo]) $x
 	}
-    }
-    foreach p [array names env] {
-	set u [string toupper $p]
-	if {[string compare $u $p]} {
-	    switch -- $u {
-		COMSPEC -
-		PATH {
-		    if {![info exists env($u)]} {
-			set env($u) $env($p)
+	proc InitWinEnv {} {
+	    global env tcl_platform
+	    foreach p [array names env] {
+		set u [string toupper $p]
+		if {[string compare $u $p]} {
+		    switch -- $u {
+			COMSPEC -
+			PATH {
+			    if {![info exists env($u)]} {
+				set env($u) $env($p)
+			    }
+			    trace variable env($p) w \
+				    [namespace code [list EnvTraceProc $p]]
+			    trace variable env($u) w \
+				    [namespace code [list EnvTraceProc $p]]
+			}
 		    }
-		    trace variable env($p) w [list tcl::envTraceProc $p]
-		    trace variable env($u) w [list tcl::envTraceProc $p]
+		}
+	    }
+	    if {![info exists env(COMSPEC)]} {
+		if {[string equal $tcl_platform(os) "Windows NT"]} {
+		    set env(COMSPEC) cmd.exe
+		} else {
+		    set env(COMSPEC) command.com
 		}
 	    }
 	}
-    }
-    if {[info exists p]} {
-	unset p
-    }
-    if {[info exists u]} {
-	unset u
-    }
-    if {![info exists env(COMSPEC)]} {
-	if {[string equal $tcl_platform(os) "Windows NT"]} {
-	    set env(COMSPEC) cmd.exe
-	} else {
-	    set env(COMSPEC) command.com
-	}
+	InitWinEnv
     }
 }
 
@@ -634,8 +635,6 @@ proc auto_execok name {
 
 }
 
-namespace eval tcl {}
-
 # ::tcl::CopyDirectory --
 #
 # This procedure is called by Tcl's core when attempts to call the
@@ -650,7 +649,7 @@ namespace eval tcl {}
 # action -              "renaming" or "copying" 
 # src -			source directory
 # dest -		destination directory
-proc ::tcl::CopyDirectory {action src dest} {
+proc tcl::CopyDirectory {action src dest} {
     set nsrc [file normalize $src]
     set ndest [file normalize $dest]
     if {[string equal $action "renaming"]} {

@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: interp.n,v 1.7.8.1 2002/06/10 05:33:08 wolfsuit Exp $
+'\" RCS: @(#) $Id: interp.n,v 1.7.8.2 2002/08/20 20:25:24 das Exp $
 '\" 
 .so man.macros
 .TH interp n 7.6 Tcl "Tcl Built-In Commands"
@@ -177,7 +177,7 @@ it back under a new \fIexposedCmdName\fR name (this name is currently
 accepted only if it is a valid global name space name without any ::),
 in the interpreter
 denoted by \fIpath\fR.
-If an exposed command with the targetted name already exists, this command
+If an exposed command with the targeted name already exists, this command
 fails.
 Hidden commands are explained in more detail in HIDDEN COMMANDS, below.
 .TP
@@ -186,7 +186,7 @@ Makes the exposed command \fIexposedCmdName\fR hidden, renaming
 it to the hidden command \fIhiddenCmdName\fR, or keeping the same name if
 \fIhiddenCmdName\fR is not given, in the interpreter denoted 
 by \fIpath\fR.
-If a hidden command with the targetted name already exists, this command
+If a hidden command with the targeted name already exists, this command
 fails.
 Currently both \fIexposedCmdName\fR and \fIhiddenCmdName\fR can 
 not contain namespace qualifiers, or an error is raised.
@@ -326,7 +326,7 @@ This command exposes the hidden command \fIhiddenName\fR, eventually bringing
 it back under a new \fIexposedCmdName\fR name (this name is currently
 accepted only if it is a valid global name space name without any ::),
 in \fIslave\fR.
-If an exposed command with the targetted name already exists, this command
+If an exposed command with the targeted name already exists, this command
 fails.
 For more details on hidden commands, see HIDDEN COMMANDS, below.
 .TP
@@ -334,7 +334,7 @@ For more details on hidden commands, see HIDDEN COMMANDS, below.
 This command hides the exposed command \fIexposedCmdName\fR, renaming it to 
 the hidden command \fIhiddenCmdName\fR, or keeping the same name if the
 the argument is not given, in the \fIslave\fR interpreter.
-If a hidden command with the targetted name already exists, this command
+If a hidden command with the targeted name already exists, this command
 fails.
 Currently both \fIexposedCmdName\fR and \fIhiddenCmdName\fR can 
 not contain namespace qualifiers, or an error is raised.
@@ -584,7 +584,7 @@ interpreter using \fBinterp expose\fR and \fBinterp hide\fR. The \fBinterp
 expose\fR command moves a hidden command to the
 set of exposed commands in the interpreter identified by \fIpath\fR,
 potentially renaming the command in the process. If an exposed command by
-the targetted name already exists, the operation fails. Similarly,
+the targeted name already exists, the operation fails. Similarly,
 \fBinterp hide\fR moves an exposed command to the set of hidden commands in
 that interpreter. Safe interpreters are not allowed to move commands
 between the set of hidden and exposed commands, in either themselves or

@@ -11,13 +11,124 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.17.2.2 2002/06/10 05:33:19 wolfsuit Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.17.2.3 2002/08/20 20:25:31 das Exp $
  */
 
+//#define _WIN32_WINNT  0x0500
+
 #include "tclWinInt.h"
+#include <winioctl.h>
 #include <sys/stat.h>
 #include <shlobj.h>
 #include <lmaccess.h>		/* For TclpGetUserHome(). */
+
+/*
+ * Declarations for 'link' related information.  This information
+ * should come with VC++ 6.0, but is not in some older SDKs.
+ * In any case it is not well documented.
+ */
+#ifndef IO_REPARSE_TAG_RESERVED_ONE
+#  define IO_REPARSE_TAG_RESERVED_ONE 0x000000001
+#endif
+#ifndef IO_REPARSE_TAG_RESERVED_RANGE
+#  define IO_REPARSE_TAG_RESERVED_RANGE 0x000000001
+#endif
+#ifndef IO_REPARSE_TAG_VALID_VALUES
+#  define IO_REPARSE_TAG_VALID_VALUES 0x0E000FFFF
+#endif
+#ifndef IO_REPARSE_TAG_HSM
+#  define IO_REPARSE_TAG_HSM 0x0C0000004
+#endif
+#ifndef IO_REPARSE_TAG_NSS
+#  define IO_REPARSE_TAG_NSS 0x080000005
+#endif
+#ifndef IO_REPARSE_TAG_NSSRECOVER
+#  define IO_REPARSE_TAG_NSSRECOVER 0x080000006
+#endif
+#ifndef IO_REPARSE_TAG_SIS
+#  define IO_REPARSE_TAG_SIS 0x080000007
+#endif
+#ifndef IO_REPARSE_TAG_DFS
+#  define IO_REPARSE_TAG_DFS 0x080000008
+#endif
+
+#ifndef IO_REPARSE_TAG_RESERVED_ZERO
+#  define IO_REPARSE_TAG_RESERVED_ZERO 0x00000000
+#endif
+#ifndef FILE_FLAG_OPEN_REPARSE_POINT
+#  define FILE_FLAG_OPEN_REPARSE_POINT 0x00200000
+#endif
+#ifndef IO_REPARSE_TAG_MOUNT_POINT
+#  define IO_REPARSE_TAG_MOUNT_POINT 0xA0000003
+#endif
+#ifndef IsReparseTagValid
+#  define IsReparseTagValid(x) (!((x)&~IO_REPARSE_TAG_VALID_VALUES)&&((x)>IO_REPARSE_TAG_RESERVED_RANGE))
+#endif
+#ifndef IO_REPARSE_TAG_SYMBOLIC_LINK
+#  define IO_REPARSE_TAG_SYMBOLIC_LINK IO_REPARSE_TAG_RESERVED_ZERO
+#endif
+#ifndef FILE_SPECIAL_ACCESS
+#  define FILE_SPECIAL_ACCESS         (FILE_ANY_ACCESS)
+#endif
+#ifndef FSCTL_SET_REPARSE_POINT
+#  define FSCTL_SET_REPARSE_POINT    CTL_CODE(FILE_DEVICE_FILE_SYSTEM, 41, METHOD_BUFFERED, FILE_SPECIAL_ACCESS)
+#  define FSCTL_GET_REPARSE_POINT    CTL_CODE(FILE_DEVICE_FILE_SYSTEM, 42, METHOD_BUFFERED, FILE_ANY_ACCESS) 
+#  define FSCTL_DELETE_REPARSE_POINT CTL_CODE(FILE_DEVICE_FILE_SYSTEM, 43, METHOD_BUFFERED, FILE_SPECIAL_ACCESS) 
+#endif
+
+/* 
+ * Maximum reparse buffer info size. The max user defined reparse
+ * data is 16KB, plus there's a header.
+ */
+
+#define MAX_REPARSE_SIZE	17000
+
+/*
+ * Undocumented REPARSE_MOUNTPOINT_HEADER_SIZE structure definition.
+ * This is found in winnt.h.
+ * 
+ * IMPORTANT: caution when using this structure, since the actual
+ * structures used will want to store a full path in the 'PathBuffer'
+ * field, but there isn't room (there's only a single WCHAR!).  Therefore
+ * one must artificially create a larger space of memory and then cast it
+ * to this type.  We use the 'DUMMY_REPARSE_BUFFER' struct just below to
+ * deal with this problem.
+ */
+
+#define REPARSE_MOUNTPOINT_HEADER_SIZE   8
+#ifndef REPARSE_DATA_BUFFER_HEADER_SIZE
+typedef struct _REPARSE_DATA_BUFFER {
+    DWORD  ReparseTag;
+    WORD   ReparseDataLength;
+    WORD   Reserved;
+    union {
+        struct {
+            WORD   SubstituteNameOffset;
+            WORD   SubstituteNameLength;
+            WORD   PrintNameOffset;
+            WORD   PrintNameLength;
+            WCHAR PathBuffer[1];
+        } SymbolicLinkReparseBuffer;
+        struct {
+            WORD   SubstituteNameOffset;
+            WORD   SubstituteNameLength;
+            WORD   PrintNameOffset;
+            WORD   PrintNameLength;
+            WCHAR PathBuffer[1];
+        } MountPointReparseBuffer;
+        struct {
+            BYTE   DataBuffer[1];
+        } GenericReparseBuffer;
+    };
+} REPARSE_DATA_BUFFER;
+#endif
+
+typedef struct {
+    REPARSE_DATA_BUFFER dummy;
+    WCHAR  dummyBuf[MAX_PATH*3];
+} DUMMY_REPARSE_BUFFER;
+
+/* Other typedefs required by this code */
 
 static time_t		ToCTime(FILETIME fileTime);
 
@@ -30,13 +141,446 @@ typedef NET_API_STATUS NET_API_FUNCTION NETAPIBUFFERFREEPROC
 typedef NET_API_STATUS NET_API_FUNCTION NETGETDCNAMEPROC
 	(LPWSTR servername, LPWSTR domainname, LPBYTE *bufptr);
 
+/*
+ * Declarations for local procedures defined in this file:
+ */
+
 static int NativeAccess(CONST TCHAR *path, int mode);
-static int NativeStat(CONST TCHAR *path, Tcl_StatBuf *statPtr);
+static int NativeStat(CONST TCHAR *path, Tcl_StatBuf *statPtr, int checkLinks);
 static int NativeIsExec(CONST TCHAR *path);
-static int WinIsDrive(CONST char *name, int nameLen);
+static int NativeReadReparse(CONST TCHAR* LinkDirectory, 
+			     REPARSE_DATA_BUFFER* buffer);
+static int NativeWriteReparse(CONST TCHAR* LinkDirectory, 
+			      REPARSE_DATA_BUFFER* buffer);
 static int NativeMatchType(CONST char *name, int nameLen, 
 			   CONST TCHAR* nativeName, Tcl_GlobTypeData *types);
+static int WinIsDrive(CONST char *name, int nameLen);
+static Tcl_Obj* WinReadLink(CONST TCHAR* LinkSource);
+static Tcl_Obj* WinReadLinkDirectory(CONST TCHAR* LinkDirectory);
+static int WinLink(CONST TCHAR* LinkSource, CONST TCHAR* LinkTarget, 
+		   int linkAction);
+static int WinSymLinkDirectory(CONST TCHAR* LinkDirectory, 
+			       CONST TCHAR* LinkTarget);
 
+
+/*
+ *--------------------------------------------------------------------
+ *
+ * WinLink
+ *
+ * Make a link from source to target. 
+ *--------------------------------------------------------------------
+ */
+static int 
+WinLink(LinkSource, LinkTarget, linkAction)
+    CONST TCHAR* LinkSource;
+    CONST TCHAR* LinkTarget;
+    int linkAction;
+{
+    WCHAR	tempFileName[MAX_PATH];
+    TCHAR*	tempFilePart;
+    int         attr;
+    
+    /* Get the full path referenced by the target */
+    if (!(*tclWinProcs->getFullPathNameProc)(LinkTarget, 
+			  MAX_PATH, tempFileName, &tempFilePart)) {
+	/* Invalid file */
+	TclWinConvertError(GetLastError());
+	return -1;
+    }
+
+    /* Make sure source file doesn't exist */
+    attr = (*tclWinProcs->getFileAttributesProc)(LinkSource);
+    if (attr != 0xffffffff) {
+	Tcl_SetErrno(EEXIST);
+	return -1;
+    }
+
+    /* Get the full path referenced by the directory */
+    if (!(*tclWinProcs->getFullPathNameProc)(LinkSource, 
+			  MAX_PATH, tempFileName, &tempFilePart)) {
+	/* Invalid file */
+	TclWinConvertError(GetLastError());
+	return -1;
+    }
+    /* Check the target */
+    attr = (*tclWinProcs->getFileAttributesProc)(LinkTarget);
+    if (attr == 0xffffffff) {
+	/* The target doesn't exist */
+	TclWinConvertError(GetLastError());
+	return -1;
+    } else if ((attr & FILE_ATTRIBUTE_DIRECTORY) == 0) {
+	/* It is a file */
+	if (tclWinProcs->createHardLinkProc == NULL) {
+	    Tcl_SetErrno(ENOTDIR);
+	    return -1;
+	}
+	if (linkAction & TCL_CREATE_HARD_LINK) {
+	    if (!(*tclWinProcs->createHardLinkProc)(LinkSource, LinkTarget, NULL)) {
+		TclWinConvertError(GetLastError());
+		return -1;
+	    }
+	    return 0;
+	} else if (linkAction & TCL_CREATE_SYMBOLIC_LINK) {
+	    /* Can't symlink files */
+	    Tcl_SetErrno(ENOTDIR);
+	    return -1;
+	} else {
+	    Tcl_SetErrno(ENODEV);
+	    return -1;
+	}
+    } else {
+	if (linkAction & TCL_CREATE_SYMBOLIC_LINK) {
+	    return WinSymLinkDirectory(LinkSource, LinkTarget);
+	} else if (linkAction & TCL_CREATE_HARD_LINK) {
+	    /* Can't hard link directories */
+	    Tcl_SetErrno(EISDIR);
+	    return -1;
+	} else {
+	    Tcl_SetErrno(ENODEV);
+	    return -1;
+	}
+    }
+}
+
+/*
+ *--------------------------------------------------------------------
+ *
+ * WinReadLink
+ *
+ * What does 'LinkSource' point to?  We need the original 'pathPtr'
+ * just so we can construct a path object in the correct filesystem.
+ *--------------------------------------------------------------------
+ */
+static Tcl_Obj* 
+WinReadLink(LinkSource)
+    CONST TCHAR* LinkSource;
+{
+    WCHAR	tempFileName[MAX_PATH];
+    TCHAR*	tempFilePart;
+    int         attr;
+    
+    /* Get the full path referenced by the target */
+    if (!(*tclWinProcs->getFullPathNameProc)(LinkSource, 
+			  MAX_PATH, tempFileName, &tempFilePart)) {
+	/* Invalid file */
+	TclWinConvertError(GetLastError());
+	return NULL;
+    }
+
+    /* Make sure source file does exist */
+    attr = (*tclWinProcs->getFileAttributesProc)(LinkSource);
+    if (attr == 0xffffffff) {
+	/* The source doesn't exist */
+	TclWinConvertError(GetLastError());
+	return NULL;
+    } else if ((attr & FILE_ATTRIBUTE_DIRECTORY) == 0) {
+	/* It is a file - this is not yet supported */
+	Tcl_SetErrno(ENOTDIR);
+	return NULL;
+    } else {
+	return WinReadLinkDirectory(LinkSource);
+    }
+}
+
+/*
+ *--------------------------------------------------------------------
+ *
+ * WinSymLinkDirectory
+ *
+ * This routine creates a NTFS junction, using the undocumented
+ * FSCTL_SET_REPARSE_POINT structure Win2K uses for mount points
+ * and junctions.
+ *
+ * Assumption that LinkTarget is a valid, existing directory.
+ * 
+ * Returns zero on success.
+ *--------------------------------------------------------------------
+ */
+static int 
+WinSymLinkDirectory(LinkDirectory, LinkTarget)
+    CONST TCHAR* LinkDirectory;
+    CONST TCHAR* LinkTarget;
+{
+    DUMMY_REPARSE_BUFFER dummy;
+    REPARSE_DATA_BUFFER *reparseBuffer = (REPARSE_DATA_BUFFER*)&dummy;
+    int         len;
+    WCHAR       nativeTarget[MAX_PATH];
+    WCHAR       *loop;
+    
+    /* Make the native target name */
+    memcpy((VOID*)nativeTarget, (VOID*)L"\\??\\", 4*sizeof(WCHAR));
+    memcpy((VOID*)(nativeTarget + 4), (VOID*)LinkTarget, 
+	   sizeof(WCHAR)*(1+wcslen((WCHAR*)LinkTarget)));
+    len = wcslen(nativeTarget);
+    /* 
+     * We must have backslashes only.  This is VERY IMPORTANT.
+     * If we have any forward slashes everything appears to work,
+     * but the resulting symlink is useless!
+     */
+    for (loop = nativeTarget; *loop != 0; loop++) {
+	if (*loop == L'/') *loop = L'\\';
+    }
+    if ((nativeTarget[len-1] == L'\\') && (nativeTarget[len-2] != L':')) {
+	nativeTarget[len-1] = 0;
+    }
+    
+    /* Build the reparse info */
+    memset(reparseBuffer, 0, sizeof(DUMMY_REPARSE_BUFFER));
+    reparseBuffer->ReparseTag = IO_REPARSE_TAG_MOUNT_POINT;
+    reparseBuffer->SymbolicLinkReparseBuffer.SubstituteNameLength = 
+      wcslen(nativeTarget) * sizeof(WCHAR);
+    reparseBuffer->Reserved = 0;
+    reparseBuffer->SymbolicLinkReparseBuffer.PrintNameLength = 0;
+    reparseBuffer->SymbolicLinkReparseBuffer.PrintNameOffset = 
+      reparseBuffer->SymbolicLinkReparseBuffer.SubstituteNameLength 
+      + sizeof(WCHAR);
+    memcpy(reparseBuffer->SymbolicLinkReparseBuffer.PathBuffer, nativeTarget, 
+      sizeof(WCHAR) 
+      + reparseBuffer->SymbolicLinkReparseBuffer.SubstituteNameLength);
+    reparseBuffer->ReparseDataLength = 
+      reparseBuffer->SymbolicLinkReparseBuffer.SubstituteNameLength + 12;
+	
+    return NativeWriteReparse(LinkDirectory, reparseBuffer);
+}
+
+/*
+ *--------------------------------------------------------------------
+ *
+ * TclWinSymLinkCopyDirectory
+ *
+ * Copy a Windows NTFS junction.  This function assumes that
+ * LinkOriginal exists and is a valid junction point, and that
+ * LinkCopy does not exist.
+ * 
+ * Returns zero on success.
+ *--------------------------------------------------------------------
+ */
+int 
+TclWinSymLinkCopyDirectory(LinkOriginal, LinkCopy)
+    CONST TCHAR* LinkOriginal;  /* Existing junction - reparse point */
+    CONST TCHAR* LinkCopy;      /* Will become a duplicate junction */
+{
+    DUMMY_REPARSE_BUFFER dummy;
+    REPARSE_DATA_BUFFER *reparseBuffer = (REPARSE_DATA_BUFFER*)&dummy;
+    
+    if (NativeReadReparse(LinkOriginal, reparseBuffer)) {
+	return -1;
+    }
+    return NativeWriteReparse(LinkCopy, reparseBuffer);
+}
+
+/*
+ *--------------------------------------------------------------------
+ *
+ * TclWinSymLinkDelete
+ *
+ * Delete a Windows NTFS junction.  Once the junction information
+ * is deleted, the filesystem object becomes an ordinary directory.
+ * Unless 'linkOnly' is given, that directory is also removed.
+ * 
+ * Assumption that LinkOriginal is a valid, existing junction.
+ * 
+ * Returns zero on success.
+ *--------------------------------------------------------------------
+ */
+int 
+TclWinSymLinkDelete(LinkOriginal, linkOnly)
+    CONST TCHAR* LinkOriginal;
+    int linkOnly;
+{
+    /* It is a symbolic link -- remove it */
+    DUMMY_REPARSE_BUFFER dummy;
+    REPARSE_DATA_BUFFER *reparseBuffer = (REPARSE_DATA_BUFFER*)&dummy;
+    HANDLE hFile;
+    int returnedLength;
+    memset(reparseBuffer, 0, sizeof(DUMMY_REPARSE_BUFFER));
+    reparseBuffer->ReparseTag = IO_REPARSE_TAG_MOUNT_POINT;
+    hFile = (*tclWinProcs->createFileProc)(LinkOriginal, GENERIC_WRITE, 0,
+	NULL, OPEN_EXISTING, 
+	FILE_FLAG_OPEN_REPARSE_POINT|FILE_FLAG_BACKUP_SEMANTICS, NULL);
+    if (hFile != INVALID_HANDLE_VALUE) {
+	if (!DeviceIoControl(hFile, FSCTL_DELETE_REPARSE_POINT, reparseBuffer, 
+			     REPARSE_MOUNTPOINT_HEADER_SIZE,
+			     NULL, 0, &returnedLength, NULL)) {	
+	    /* Error setting junction */
+	    TclWinConvertError(GetLastError());
+	    CloseHandle(hFile);
+	} else {
+	    CloseHandle(hFile);
+	    if (!linkOnly) {
+	        (*tclWinProcs->removeDirectoryProc)(LinkOriginal);
+	    }
+	    return 0;
+	}
+    }
+    return -1;
+}
+
+/*
+ *--------------------------------------------------------------------
+ *
+ * WinReadLinkDirectory
+ *
+ * This routine reads a NTFS junction, using the undocumented
+ * FSCTL_GET_REPARSE_POINT structure Win2K uses for mount points
+ * and junctions.
+ *
+ * Assumption that LinkDirectory is a valid, existing directory.
+ * 
+ * Returns a Tcl_Obj with refCount of 1 (i.e. owned by the caller).
+ *--------------------------------------------------------------------
+ */
+static Tcl_Obj* 
+WinReadLinkDirectory(LinkDirectory)
+    CONST TCHAR* LinkDirectory;
+{
+    int attr;
+    DUMMY_REPARSE_BUFFER dummy;
+    REPARSE_DATA_BUFFER *reparseBuffer = (REPARSE_DATA_BUFFER*)&dummy;
+    
+    attr = (*tclWinProcs->getFileAttributesProc)(LinkDirectory);
+    if (!(attr & FILE_ATTRIBUTE_REPARSE_POINT)) {
+	Tcl_SetErrno(EINVAL);
+	return NULL;
+    }
+    if (NativeReadReparse(LinkDirectory, reparseBuffer)) {
+        return NULL;
+    }
+    
+    switch (reparseBuffer->ReparseTag) {
+	case 0x80000000|IO_REPARSE_TAG_SYMBOLIC_LINK: 
+	case IO_REPARSE_TAG_SYMBOLIC_LINK: 
+	case IO_REPARSE_TAG_MOUNT_POINT: {
+	    Tcl_Obj *retVal;
+	    Tcl_DString ds;
+	    CONST char *copy;
+	    int len;
+	    
+	    Tcl_WinTCharToUtf( 
+		(CONST char*)reparseBuffer->SymbolicLinkReparseBuffer.PathBuffer, 
+		(int)reparseBuffer->SymbolicLinkReparseBuffer.SubstituteNameLength, 
+		&ds);
+	
+	    copy = Tcl_DStringValue(&ds);
+	    len = Tcl_DStringLength(&ds);
+	    /* 
+	     * Certain native path representations on Windows have this special
+	     * prefix to indicate that they are to be treated specially.  For
+	     * example extremely long paths, or symlinks 
+	     */
+	    if (*copy == '\\') {
+		if (0 == strncmp(copy,"\\??\\",4)) {
+		    copy += 4;
+		    len -= 4;
+		} else if (0 == strncmp(copy,"\\\\?\\",4)) {
+		    copy += 4;
+		    len -= 4;
+		}
+	    }
+	    retVal = Tcl_NewStringObj(copy,len);
+	    Tcl_IncrRefCount(retVal);
+	    Tcl_DStringFree(&ds);
+	    return retVal;
+	}
+    }
+    Tcl_SetErrno(EINVAL);
+    return NULL;
+}
+
+/*
+ *--------------------------------------------------------------------
+ *
+ * NativeReadReparse
+ *
+ * Read the junction/reparse information from a given NTFS directory.
+ *
+ * Assumption that LinkDirectory is a valid, existing directory.
+ * 
+ * Returns zero on success.
+ *--------------------------------------------------------------------
+ */
+static int 
+NativeReadReparse(LinkDirectory, buffer)
+    CONST TCHAR* LinkDirectory;   /* The junction to read */
+    REPARSE_DATA_BUFFER* buffer;  /* Pointer to buffer. Cannot be NULL */
+{
+    HANDLE hFile;
+    int returnedLength;
+   
+    hFile = (*tclWinProcs->createFileProc)(LinkDirectory, GENERIC_READ, 0,
+	NULL, OPEN_EXISTING, 
+	FILE_FLAG_OPEN_REPARSE_POINT|FILE_FLAG_BACKUP_SEMANTICS, NULL);
+    if (hFile == INVALID_HANDLE_VALUE) {
+	/* Error creating directory */
+	TclWinConvertError(GetLastError());
+	return -1;
+    }
+    /* Get the link */
+    if (!DeviceIoControl(hFile, FSCTL_GET_REPARSE_POINT, NULL, 
+			 0, buffer, sizeof(DUMMY_REPARSE_BUFFER), 
+			 &returnedLength, NULL)) {	
+	/* Error setting junction */
+	TclWinConvertError(GetLastError());
+	CloseHandle(hFile);
+	return -1;
+    }
+    CloseHandle(hFile);
+    
+    if (!IsReparseTagValid(buffer->ReparseTag)) {
+	Tcl_SetErrno(EINVAL);
+	return -1;
+    }
+    return 0;
+}
+
+/*
+ *--------------------------------------------------------------------
+ *
+ * NativeWriteReparse
+ *
+ * Write the reparse information for a given directory.
+ * 
+ * Assumption that LinkDirectory does not exist.
+ *--------------------------------------------------------------------
+ */
+static int 
+NativeWriteReparse(LinkDirectory, buffer)
+    CONST TCHAR* LinkDirectory;
+    REPARSE_DATA_BUFFER* buffer;
+{
+    HANDLE hFile;
+    int returnedLength;
+    
+    /* Create the directory - it must not already exist */
+    if ((*tclWinProcs->createDirectoryProc)(LinkDirectory, NULL) == 0) {
+	/* Error creating directory */
+	TclWinConvertError(GetLastError());
+	return -1;
+    }
+    hFile = (*tclWinProcs->createFileProc)(LinkDirectory, GENERIC_WRITE, 0,
+	NULL, OPEN_EXISTING, 
+	FILE_FLAG_OPEN_REPARSE_POINT|FILE_FLAG_BACKUP_SEMANTICS, NULL);
+    if (hFile == INVALID_HANDLE_VALUE) {
+	/* Error creating directory */
+	TclWinConvertError(GetLastError());
+	return -1;
+    }
+    /* Set the link */
+    if (!DeviceIoControl(hFile, FSCTL_SET_REPARSE_POINT, buffer, 
+			 buffer->ReparseDataLength 
+			 + REPARSE_MOUNTPOINT_HEADER_SIZE,
+			 NULL, 0, &returnedLength, NULL)) {	
+	/* Error setting junction */
+	TclWinConvertError(GetLastError());
+	CloseHandle(hFile);
+	(*tclWinProcs->removeDirectoryProc)(LinkDirectory);
+	return -1;
+    }
+    CloseHandle(hFile);
+    /* We succeeded */
+    return 0;
+}
 
 /*
  *---------------------------------------------------------------------------
@@ -492,7 +1036,7 @@ NativeMatchType(
 	if (types->type != 0) {
 	    Tcl_StatBuf buf;
 	    
-	    if (NativeStat(nativeName, &buf) != 0) {
+	    if (NativeStat(nativeName, &buf, 0) != 0) {
 		/* 
 		 * Posix error occurred, either the file
 		 * has disappeared, or there is some other
@@ -524,11 +1068,7 @@ NativeMatchType(
 	    } else {
 #ifdef S_ISLNK
 		if (types->type & TCL_GLOB_TYPE_LINK) {
-		    /* 
-		     * We should use 'lstat' but it is the
-		     * same as 'stat' on windows.
-		     */
-		    if (NativeStat(nativeName, &buf) == 0) {
+		    if (NativeStat(nativeName, &buf, 1) == 0) {
 			if (S_ISLNK(buf.st_mode)) {
 			    return 1;
 			}
@@ -838,7 +1378,7 @@ TclpReadlink(path, linkPtr)
     Tcl_DStringFree(&ds);
     
     if (length < 0) {
-       return NULL;
+	return NULL;
     }
 
     Tcl_ExternalToUtfDString(NULL, link, length, linkPtr);
@@ -949,7 +1489,7 @@ TclpObjStat(pathPtr, statPtr)
 
     TclWinFlushDirtyChannels ();
 
-    return NativeStat((CONST TCHAR*) Tcl_FSGetNativePath(pathPtr), statPtr);
+    return NativeStat((CONST TCHAR*) Tcl_FSGetNativePath(pathPtr), statPtr, 0);
 }
 
 /*
@@ -976,9 +1516,10 @@ TclpObjStat(pathPtr, statPtr)
  */
 
 static int 
-NativeStat(nativePath, statPtr)
+NativeStat(nativePath, statPtr, checkLinks)
     CONST TCHAR *nativePath;   /* Path of file to stat */
     Tcl_StatBuf *statPtr;      /* Filled with results of stat call. */
+    int checkLinks;            /* If non-zero, behave like 'lstat' */
 {
     Tcl_DString ds;
     DWORD attr;
@@ -1134,12 +1675,17 @@ NativeStat(nativePath, statPtr)
 	statPtr->st_ctime = ToCTime(data.ftCreationTime);
     }
 
-    mode  = (attr & FILE_ATTRIBUTE_DIRECTORY) ? S_IFDIR | S_IEXEC : S_IFREG;
+    if (checkLinks && (attr & FILE_ATTRIBUTE_REPARSE_POINT)) {
+	/* It is a link */
+	mode = S_IFLNK;
+    } else {
+	mode  = (attr & FILE_ATTRIBUTE_DIRECTORY) ? S_IFDIR | S_IEXEC : S_IFREG;
+    }
     mode |= (attr & FILE_ATTRIBUTE_READONLY) ? S_IREAD : S_IREAD | S_IWRITE;
     if (NativeIsExec(nativePath)) {
 	mode |= S_IEXEC;
     }
-
+    
     /*
      * Propagate the S_IREAD, S_IWRITE, S_IEXEC bits to the group and 
      * other positions.
@@ -1312,34 +1858,49 @@ TclpObjAccess(pathPtr, mode)
 }
 
 int 
-TclpObjLstat(pathPtr, buf)
+TclpObjLstat(pathPtr, statPtr)
     Tcl_Obj *pathPtr;
-    Tcl_StatBuf *buf; 
+    Tcl_StatBuf *statPtr; 
 {
-    return TclpObjStat(pathPtr,buf);
+    /*
+     * Ensure correct file sizes by forcing the OS to write any
+     * pending data to disk. This is done only for channels which are
+     * dirty, i.e. have been written to since the last flush here.
+     */
+
+    TclWinFlushDirtyChannels ();
+
+    return NativeStat((CONST TCHAR*) Tcl_FSGetNativePath(pathPtr), statPtr, 1);
 }
 
 #ifdef S_IFLNK
 
 Tcl_Obj* 
-TclpObjLink(pathPtr, toPtr)
+TclpObjLink(pathPtr, toPtr, linkAction)
     Tcl_Obj *pathPtr;
     Tcl_Obj *toPtr;
+    int linkAction;
 {
-    Tcl_Obj* link = NULL;
-
     if (toPtr != NULL) {
-	return NULL;
-    } else {
-	Tcl_DString ds;
-	if (TclpReadlink(Tcl_FSGetTranslatedStringPath(NULL, pathPtr), &ds) 
-	  != NULL) {
-	    link = Tcl_NewStringObj(Tcl_DStringValue(&ds), -1);
-	    Tcl_IncrRefCount(link);
-	    Tcl_DStringFree(&ds);
+	int res;
+	TCHAR* LinkTarget = (TCHAR*)Tcl_FSGetNativePath(toPtr);
+	TCHAR* LinkSource = (TCHAR*)Tcl_FSGetNativePath(pathPtr);
+	if (LinkSource == NULL || LinkTarget == NULL) {
+	    return NULL;
 	}
+	res = WinLink(LinkSource, LinkTarget, linkAction);
+	if (res == 0) {
+	    return toPtr;
+	} else {
+	    return NULL;
+	}
+    } else {
+	TCHAR* LinkSource = (TCHAR*)Tcl_FSGetNativePath(pathPtr);
+	if (LinkSource == NULL) {
+	    return NULL;
+	}
+	return WinReadLink(LinkSource);
     }
-    return link;
 }
 
 #endif
@@ -1403,4 +1964,261 @@ TclpFilesystemPathType(pathObjPtr)
 	return objPtr;
     }
 #undef VOL_BUF_SIZE
+}
+
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * TclpObjNormalizePath --
+ *
+ *	This function scans through a path specification and replaces it,
+ *	in place, with a normalized version.  This means using the
+ *	'longname', and expanding any symbolic links contained within the
+ *	path.
+ *
+ * Results:
+ *	The new 'nextCheckpoint' value, giving as far as we could
+ *	understand in the path.
+ *
+ * Side effects:
+ *	The pathPtr string, which must contain a valid path, is
+ *	possibly modified in place.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+int
+TclpObjNormalizePath(interp, pathPtr, nextCheckpoint)
+    Tcl_Interp *interp;
+    Tcl_Obj *pathPtr;
+    int nextCheckpoint;
+{
+    char *lastValidPathEnd = NULL;
+    /* This will hold the normalized string */
+    Tcl_DString dsNorm;
+    char *path;
+    char *currentPathEndPosition;
+
+    Tcl_DStringInit(&dsNorm);
+    path = Tcl_GetString(pathPtr);
+
+    if (TclWinGetPlatformId() == VER_PLATFORM_WIN32_WINDOWS) {
+	/* 
+	 * We're on Win95, 98 or ME.  There are two assumptions
+	 * in this block of code.  First that the native (NULL)
+	 * encoding is basically ascii, and second that symbolic
+	 * links are not possible.  Both of these assumptions
+	 * appear to be true of these operating systems.
+	 */
+	Tcl_Obj *temp = NULL;
+	int isDrive = 1;
+	Tcl_DString ds;
+
+	currentPathEndPosition = path + nextCheckpoint;
+	while (1) {
+	    char cur = *currentPathEndPosition;
+	    if ((cur == '/' || cur == 0) && (path != currentPathEndPosition)) {
+		/* Reached directory separator, or end of string */
+		CONST char *nativePath = Tcl_UtfToExternalDString(NULL, path, 
+			    currentPathEndPosition - path, &ds);
+
+		/*
+		 * Now we convert the tail of the current path to its
+		 * 'long form', and append it to 'dsNorm' which holds
+		 * the current normalized path, if the file exists.
+		 */
+		if (isDrive) {
+		    if (GetFileAttributesA(nativePath) 
+			== 0xffffffff) {
+			/* File doesn't exist */
+			Tcl_DStringFree(&ds);
+			break;
+		    }
+		    if (nativePath[0] >= 'a') {
+			((char*)nativePath)[0] -= ('a' - 'A');
+		    }
+		    Tcl_DStringAppend(&dsNorm,nativePath,Tcl_DStringLength(&ds));
+		} else {
+		    WIN32_FIND_DATA fData;
+		    HANDLE handle;
+		    
+		    handle = FindFirstFileA(nativePath, &fData);
+		    if (handle == INVALID_HANDLE_VALUE) {
+			if (GetFileAttributesA(nativePath) 
+			    == 0xffffffff) {
+			    /* File doesn't exist */
+			    Tcl_DStringFree(&ds);
+			    break;
+			}
+			/* This is usually the '/' in 'c:/' at end of string */
+			Tcl_DStringAppend(&dsNorm,"/", 1);
+		    } else {
+			char *nativeName;
+			if (fData.cFileName[0] != '\0') {
+			    nativeName = fData.cFileName;
+			} else {
+			    nativeName = fData.cAlternateFileName;
+			}
+			FindClose(handle);
+			Tcl_DStringAppend(&dsNorm,"/", 1);
+			Tcl_DStringAppend(&dsNorm,nativeName,-1);
+		    }
+		}
+		Tcl_DStringFree(&ds);
+		lastValidPathEnd = currentPathEndPosition;
+		if (cur == 0) {
+		    break;
+		}
+		/* 
+		 * If we get here, we've got past one directory
+		 * delimiter, so we know it is no longer a drive 
+		 */
+		isDrive = 0;
+	    }
+	    currentPathEndPosition++;
+	}
+    } else {
+	/* We're on WinNT or 2000 or XP */
+	Tcl_Obj *temp = NULL;
+	int isDrive = 1;
+	Tcl_DString ds;
+
+	currentPathEndPosition = path + nextCheckpoint;
+	while (1) {
+	    char cur = *currentPathEndPosition;
+	    if ((cur == '/' || cur == 0) && (path != currentPathEndPosition)) {
+		/* Reached directory separator, or end of string */
+		WIN32_FILE_ATTRIBUTE_DATA data;
+		CONST char *nativePath = Tcl_WinUtfToTChar(path, 
+			    currentPathEndPosition - path, &ds);
+		if ((*tclWinProcs->getFileAttributesExProc)(nativePath,
+		    GetFileExInfoStandard, &data) != TRUE) {
+		    /* File doesn't exist */
+		    Tcl_DStringFree(&ds);
+		    break;
+		}
+
+		/* 
+		 * File 'nativePath' does exist if we get here.  We
+		 * now want to check if it is a symlink and otherwise
+		 * continue with the rest of the path.
+		 */
+		
+		/* 
+		 * Check for symlinks, except at last component
+		 * of path (we don't follow final symlinks). Also
+		 * a drive (C:/) for example, may sometimes have
+		 * the reparse flag set for some reason I don't
+		 * understand.  We therefore don't perform this
+		 * check for drives.
+		 */
+		if (cur != 0 && !isDrive && (data.dwFileAttributes 
+				 & FILE_ATTRIBUTE_REPARSE_POINT)) {
+		    Tcl_Obj *to = WinReadLinkDirectory(nativePath);
+		    if (to != NULL) {
+			/* Read the reparse point ok */
+			/* Tcl_GetStringFromObj(to, &pathLen); */
+			nextCheckpoint = 0; /* pathLen */
+			Tcl_AppendToObj(to, currentPathEndPosition, -1);
+			/* Convert link to forward slashes */
+			for (path = Tcl_GetString(to); *path != 0; path++) {
+			    if (*path == '\\') *path = '/';
+			}
+			path = Tcl_GetString(to);
+			currentPathEndPosition = path + nextCheckpoint;
+			if (temp != NULL) {
+			    Tcl_DecrRefCount(temp);
+			}
+			temp = to;
+			/* Reset variables so we can restart normalization */
+			isDrive = 1;
+			Tcl_DStringFree(&dsNorm);
+			Tcl_DStringInit(&dsNorm);
+			Tcl_DStringFree(&ds);
+			continue;
+		    }
+		}
+		/*
+		 * Now we convert the tail of the current path to its
+		 * 'long form', and append it to 'dsNorm' which holds
+		 * the current normalized path
+		 */
+		if (isDrive) {
+		    WCHAR drive = ((WCHAR*)nativePath)[0];
+		    if (drive >= L'a') {
+		        drive -= (L'a' - L'A');
+			((WCHAR*)nativePath)[0] = drive;
+		    }
+		    Tcl_DStringAppend(&dsNorm,nativePath,Tcl_DStringLength(&ds));
+		} else {
+		    WIN32_FIND_DATAW fData;
+		    HANDLE handle;
+		    
+		    handle = FindFirstFileW((WCHAR*)nativePath, &fData);
+		    if (handle == INVALID_HANDLE_VALUE) {
+			/* This is usually the '/' in 'c:/' at end of string */
+			Tcl_DStringAppend(&dsNorm,(CONST char*)L"/", 
+					  sizeof(WCHAR));
+		    } else {
+			WCHAR *nativeName;
+			if (fData.cFileName[0] != '\0') {
+			    nativeName = fData.cFileName;
+			} else {
+			    nativeName = fData.cAlternateFileName;
+			}
+			FindClose(handle);
+			Tcl_DStringAppend(&dsNorm,(CONST char*)L"/", 
+					  sizeof(WCHAR));
+			Tcl_DStringAppend(&dsNorm,(TCHAR*)nativeName, 
+					  wcslen(nativeName)*sizeof(WCHAR));
+		    }
+		}
+		Tcl_DStringFree(&ds);
+		lastValidPathEnd = currentPathEndPosition;
+		if (cur == 0) {
+		    break;
+		}
+		/* 
+		 * If we get here, we've got past one directory
+		 * delimiter, so we know it is no longer a drive 
+		 */
+		isDrive = 0;
+	    }
+	    currentPathEndPosition++;
+	}
+    }
+    /* Common code path for all Windows platforms */
+    nextCheckpoint = currentPathEndPosition - path;
+    if (lastValidPathEnd != NULL) {
+	/* 
+	 * Concatenate the normalized string in dsNorm with the
+	 * tail of the path which we didn't recognise.  The
+	 * string in dsNorm is in the native encoding, so we
+	 * have to convert it to Utf.
+	 */
+	Tcl_DString dsTemp;
+	Tcl_WinTCharToUtf(Tcl_DStringValue(&dsNorm), 
+			  Tcl_DStringLength(&dsNorm), &dsTemp);
+	nextCheckpoint = Tcl_DStringLength(&dsTemp);
+	if (*lastValidPathEnd != 0) {
+	    /* Not the end of the string */
+	    int len;
+	    char *path;
+	    Tcl_Obj *tmpPathPtr;
+	    tmpPathPtr = Tcl_NewStringObj(Tcl_DStringValue(&dsTemp), 
+					  nextCheckpoint);
+	    Tcl_AppendToObj(tmpPathPtr, lastValidPathEnd, -1);
+	    path = Tcl_GetStringFromObj(tmpPathPtr, &len);
+	    Tcl_SetStringObj(pathPtr, path, len);
+	    Tcl_DecrRefCount(tmpPathPtr);
+	} else {
+	    /* End of string was reached above */
+	    Tcl_SetStringObj(pathPtr, Tcl_DStringValue(&dsTemp),
+			     nextCheckpoint);
+	}
+	Tcl_DStringFree(&dsTemp);
+    }
+    Tcl_DStringFree(&dsNorm);
+    return nextCheckpoint;
 }

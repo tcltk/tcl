@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" CVS: @(#) $Id: TraceCmd.3,v 1.4.2.1 2002/06/10 04:15:50 wolfsuit Exp $
+'\" CVS: @(#) $Id: TraceCmd.3,v 1.4.2.2 2002/08/20 20:25:24 das Exp $
 '\" 
 .so man.macros
 .TH Tcl_TraceCommand 3 7.4 Tcl "Tcl Library Procedures"
@@ -106,7 +106,7 @@ associated with a particular trace.
 The trace must be on the command specified by the \fIinterp\fR,
 \fIcmdName\fR, and \fIflags\fR arguments (note that currently the
 flags are ignored; \fIflags\fR should be set to 0 for future
-compatability) and its trace procedure must the same as the \fIproc\fR
+compatibility) and its trace procedure must the same as the \fIproc\fR
 argument.
 If the \fIprevClientData\fR argument is NULL then the return
 value corresponds to the first (most recently created) matching
@@ -125,7 +125,7 @@ traces for a given command that have the same \fIproc\fR.
 During rename traces, the command being renamed is visible with both
 names simultaneously, and the command still exists during delete
 traces (if TCL_INTERP_DESTROYED is not set).  However, there is no
-mechanism for signalling that an error occurred in a trace procedure,
+mechanism for signaling that an error occurred in a trace procedure,
 so great care should be taken that errors do not get silently lost.
 
 .SH "MULTIPLE TRACES"

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.6.14.2 2002/06/10 05:33:10 wolfsuit Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.6.14.3 2002/08/20 20:25:25 das Exp $
  */
 
 #include "tclInt.h"
@@ -51,9 +51,9 @@ typedef struct ExprInfo {
     Tcl_Interp *interp;		/* Used for error reporting. */
     Tcl_Parse *parsePtr;	/* Structure filled with information about
 				 * the parsed expression. */
-    char *expr;			/* The expression that was originally passed
+    CONST char *expr;		/* The expression that was originally passed
 				 * to TclCompileExpr. */
-    char *lastChar;		/* Points just after last byte of expr. */
+    CONST char *lastChar;	/* Points just after last byte of expr. */
     int hasOperators;		/* Set 1 if the expr has operators; 0 if
 				 * expr is only a primary. If 1 after
 				 * compiling an expr, a tryCvtToNumeric
@@ -110,7 +110,7 @@ typedef struct OperatorDesc {
 				 * Ignored if numOperands is 0. */
 } OperatorDesc;
 
-OperatorDesc operatorTable[] = {
+static OperatorDesc operatorTable[] = {
     {"*",   2,  INST_MULT},
     {"/",   2,  INST_DIV},
     {"%",   2,  INST_MOD},
@@ -156,7 +156,7 @@ static int		CompileLandOrLorExpr _ANSI_ARGS_((
 			    ExprInfo *infoPtr, CompileEnv *envPtr,
 			    Tcl_Token **endPtrPtr));
 static int		CompileMathFuncCall _ANSI_ARGS_((
-			    Tcl_Token *exprTokenPtr, char *funcName,
+			    Tcl_Token *exprTokenPtr, CONST char *funcName,
 			    ExprInfo *infoPtr, CompileEnv *envPtr,
 			    Tcl_Token **endPtrPtr));
 static int		CompileSubExpr _ANSI_ARGS_((
@@ -203,7 +203,7 @@ static void		LogSyntaxError _ANSI_ARGS_((ExprInfo *infoPtr));
 int
 TclCompileExpr(interp, script, numBytes, envPtr)
     Tcl_Interp *interp;		/* Used for error reporting. */
-    char *script;		/* The source script to compile. */
+    CONST char *script;		/* The source script to compile. */
     int numBytes;		/* Number of bytes in script. If < 0, the
 				 * string consists of all bytes up to the
 				 * first null character. */
@@ -343,8 +343,8 @@ CompileSubExpr(exprTokenPtr, infoPtr, envPtr)
     Tcl_Token *tokenPtr, *endPtr, *afterSubexprPtr;
     OperatorDesc *opDescPtr;
     Tcl_HashEntry *hPtr;
-    char *operator;
-    char savedChar;
+    CONST char *operator;
+    Tcl_DString opBuf;
     int objIndex, opIndex, length, code;
     char buffer[TCL_UTF_MAX];
 
@@ -375,10 +375,10 @@ CompileSubExpr(exprTokenPtr, infoPtr, envPtr)
 	    
         case TCL_TOKEN_TEXT:
 	    if (tokenPtr->size > 0) {
-		objIndex = TclRegisterLiteral(envPtr, tokenPtr->start,
-	                tokenPtr->size, /*onHeap*/ 0);
+		objIndex = TclRegisterNewLiteral(envPtr, tokenPtr->start,
+	                tokenPtr->size);
 	    } else {
-		objIndex = TclRegisterLiteral(envPtr, "", 0, /*onHeap*/ 0);
+		objIndex = TclRegisterNewLiteral(envPtr, "", 0);
 	    }
 	    TclEmitPush(objIndex, envPtr);
 	    tokenPtr += 1;
@@ -388,10 +388,9 @@ CompileSubExpr(exprTokenPtr, infoPtr, envPtr)
 	    length = Tcl_UtfBackslash(tokenPtr->start, (int *) NULL,
 		    buffer);
 	    if (length > 0) {
-		objIndex = TclRegisterLiteral(envPtr, buffer, length,
-	                /*onHeap*/ 0);
+		objIndex = TclRegisterNewLiteral(envPtr, buffer, length);
 	    } else {
-		objIndex = TclRegisterLiteral(envPtr, "", 0, /*onHeap*/ 0);
+		objIndex = TclRegisterNewLiteral(envPtr, "", 0);
 	    }
 	    TclEmitPush(objIndex, envPtr);
 	    tokenPtr += 1;
@@ -424,33 +423,24 @@ CompileSubExpr(exprTokenPtr, infoPtr, envPtr)
 	    
         case TCL_TOKEN_OPERATOR:
 	    /*
-	     * Look up the operator. Temporarily overwrite the character
-	     * just after the end of the operator with a 0 byte. If the
-	     * operator isn't found, treat it as a math function.
+	     * Look up the operator.  If the operator isn't found, treat it
+	     * as a math function.
 	     */
-
-	    /*
-	     * TODO: Note that the string is modified in place.  This is unsafe
-	     * and will break if any of the routines called while the string is
-	     * modified have side effects that depend on the original string
-	     * being unmodified (e.g. adding an entry to the literal table).
-	     */
-
-	    operator = tokenPtr->start;
-	    savedChar = operator[tokenPtr->size];
-	    operator[tokenPtr->size] = 0;
+	    Tcl_DStringInit(&opBuf);
+	    operator = Tcl_DStringAppend(&opBuf, 
+		    tokenPtr->start, tokenPtr->size);
 	    hPtr = Tcl_FindHashEntry(&opHashTable, operator);
 	    if (hPtr == NULL) {
 		code = CompileMathFuncCall(exprTokenPtr, operator, infoPtr,
 			envPtr, &endPtr);
-		operator[tokenPtr->size] = (char) savedChar;
+		Tcl_DStringFree(&opBuf);
 		if (code != TCL_OK) {
 		    goto done;
 		}
 		tokenPtr = endPtr;
 		break;
 	    }
-	    operator[tokenPtr->size] = (char) savedChar;
+	    Tcl_DStringFree(&opBuf);
 	    opIndex = (int) Tcl_GetHashValue(hPtr);
 	    opDescPtr = &(operatorTable[opIndex]);
 
@@ -627,7 +617,7 @@ CompileLandOrLorExpr(exprTokenPtr, opIndex, infoPtr, envPtr, endPtrPtr)
      */
     
     TclEmitForwardJump(envPtr, TCL_TRUE_JUMP, &lhsTrueFixup);
-    TclEmitPush(TclRegisterLiteral(envPtr, "0", 1, /*onHeap*/ 0), envPtr);
+    TclEmitPush(TclRegisterNewLiteral(envPtr, "0", 1), envPtr);
     TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, &lhsEndFixup);
     dist = (envPtr->codeNext - envPtr->codeStart) - lhsTrueFixup.codeOffset;
     if (TclFixupForwardJump(envPtr, &lhsTrueFixup, dist, 127)) {
@@ -635,7 +625,7 @@ CompileLandOrLorExpr(exprTokenPtr, opIndex, infoPtr, envPtr, endPtrPtr)
 	panic("CompileLandOrLorExpr: bad jump distance %d\n", dist);
     }
     envPtr->currStackDepth = savedStackDepth;
-    TclEmitPush(TclRegisterLiteral(envPtr, "1", 1, /*onHeap*/ 0), envPtr);
+    TclEmitPush(TclRegisterNewLiteral(envPtr, "1", 1), envPtr);
     dist = (envPtr->codeNext - envPtr->codeStart) - lhsEndFixup.codeOffset;
     if (TclFixupForwardJump(envPtr, &lhsEndFixup, dist, 127)) {
 	goto badDist;
@@ -836,7 +826,7 @@ static int
 CompileMathFuncCall(exprTokenPtr, funcName, infoPtr, envPtr, endPtrPtr)
     Tcl_Token *exprTokenPtr;	/* Points to TCL_TOKEN_SUB_EXPR token
 				 * containing the math function call. */
-    char *funcName;		/* Name of the math function. */
+    CONST char *funcName;	/* Name of the math function. */
     ExprInfo *infoPtr;		/* Describes the compilation state for the
 				 * expression being compiled. */
     CompileEnv *envPtr;		/* Holds resulting instructions. */
@@ -870,8 +860,7 @@ CompileMathFuncCall(exprTokenPtr, funcName, infoPtr, envPtr, endPtrPtr)
      */
 
     if (mathFuncPtr->builtinFuncIndex < 0) {
-	TclEmitPush(TclRegisterLiteral(envPtr, funcName, -1, /*onHeap*/ 0),
-	        envPtr);
+	TclEmitPush(TclRegisterNewLiteral(envPtr, funcName, -1), envPtr);
     }
 
     /*
@@ -968,6 +957,7 @@ LogSyntaxError(infoPtr)
 
     sprintf(buffer, "syntax error in expression \"%.*s\"",
 	    ((numBytes > 60)? 60 : numBytes), infoPtr->expr);
+    Tcl_ResetResult(infoPtr->interp);
     Tcl_AppendStringsToObj(Tcl_GetObjResult(infoPtr->interp),
 	    buffer, (char *) NULL);
 }

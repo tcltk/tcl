@@ -9,10 +9,10 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: stack.test,v 1.11.4.2 2002/06/10 05:33:17 wolfsuit Exp $
+# RCS: @(#) $Id: stack.test,v 1.11.4.3 2002/08/20 20:25:29 das Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest
+    package require tcltest 2
     namespace import -force ::tcltest::*
 }
 
@@ -30,12 +30,12 @@ if {[string equal $::tcl_platform(platform) "unix"]} {
                 may cause Tcl to\ncrash due to stack overflow before the\
                 recursion limit is reached.\nA minimum stacksize of 2400\
                 kbytes is recommended.\nSkipping infinite recursion test."
-        set ::tcltest::testConstraints(minStack2400) 0
+        ::tcltest::testConstraint minStack2400 0
     } else {
-        set ::tcltest::testConstraints(minStack2400) 1
+        ::tcltest::testConstraint minStack2400 1
     }
 } else {
-    set ::tcltest::testConstraints(minStack2400) 1
+    ::tcltest::testConstraint minStack2400 1
 }
 
 test stack-1.1 {maxNestingDepth reached on infinite recursion} {minStack2400} {
@@ -43,7 +43,7 @@ test stack-1.1 {maxNestingDepth reached on infinite recursion} {minStack2400} {
     catch {recurse} rv
     rename recurse {}
     set rv
-} {too many nested calls to Tcl_Eval (infinite loop?)}
+} {too many nested evaluations (infinite loop?)}
 
 test stack-2.1 {maxNestingDepth reached on infinite recursion} {minStack2400} {
     # do this in a slave to not mess with parent
@@ -53,7 +53,7 @@ test stack-2.1 {maxNestingDepth reached on infinite recursion} {minStack2400} {
     set msg [$slave eval { catch {foo} msg ; set msg }]
     interp delete $slave
     set msg
-} {too many nested calls to AliasObjCmd (infinite loop using alias?)}
+} {too many nested evaluations (infinite loop?)}
 
 # cleanup
 ::tcltest::cleanupTests

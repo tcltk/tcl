@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: interp.test,v 1.12.14.2 2002/06/10 05:33:16 wolfsuit Exp $
+# RCS: @(#) $Id: interp.test,v 1.12.14.3 2002/08/20 20:25:28 das Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -280,7 +280,7 @@ test interp-8.3 {testing basic alias invocation} {
    list [catch {a alias} msg] $msg
 } {1 {wrong # args: should be "a alias aliasName ?targetName? ?args..?"}}
 
-# Part 8: Testing aliases for non-existent targets
+# Part 8: Testing aliases for non-existent or hidden targets
 test interp-9.1 {testing aliases for non-existent targets} {
     catch {interp create a}
     a alias zop nonexistent-command-in-master
@@ -292,6 +292,30 @@ test interp-9.2 {testing aliases for non-existent targets} {
     proc nonexistent-command-in-master {} {return i_exist!}
     a eval zop
 } i_exist!
+test interp-9.3 {testing aliases for hidden commands} {
+    catch {interp create a}
+    a eval {proc p {} {return ENTER_A}}
+    interp alias {} p a p
+    lappend res [list [catch p msg] $msg]
+    interp hide a p
+    lappend res [list [catch p msg] $msg]
+    rename p {}
+    interp delete a
+    set res
+ } {{0 ENTER_A} {1 {invalid command name "p"}}}
+test interp-9.4 {testing aliases and namespace commands} {
+    proc p {} {return GLOBAL}
+    namespace eval tst {
+	proc p {} {return NAMESPACE}
+    }
+    interp alias {} a {} p
+    set res [a]
+    lappend res [namespace eval tst a]
+    rename p {}
+    rename a {}
+    namespace delete tst
+    set res
+ } {GLOBAL GLOBAL}
 
 if {[info command nonexistent-command-in-master] != ""} {
     rename nonexistent-command-in-master {}
@@ -481,74 +505,74 @@ test interp-15.1 {testing file sharing} {
     z eval close stdout
     list [catch {z eval puts hello} msg] $msg
 } {1 {can not find channel named "stdout"}}
-catch {removeFile file-15.2}
-test interp-15.2 {testing file sharing} {
+test interp-15.2 {testing file sharing} -body {
     catch {interp delete z}
     interp create z
-    set f [open file-15.2 w]
+    set f [open [makeFile {} file-15.2] w]
     interp share "" $f z
     z eval puts $f hello
     z eval close $f
     close $f
-} ""
-catch {removeFile file-15.2}
+} -cleanup {
+    removeFile file-15.2
+} -result ""
 test interp-15.3 {testing file sharing} {
     catch {interp delete xsafe}
     interp create xsafe -safe
     list [catch {xsafe eval puts hello} msg] $msg
 } {1 {can not find channel named "stdout"}}
-catch {removeFile file-15.4}
-test interp-15.4 {testing file sharing} {
+test interp-15.4 {testing file sharing} -body {
     catch {interp delete xsafe}
     interp create xsafe -safe
-    set f [open file-15.4 w]
+    set f [open [makeFile {} file-15.4] w]
     interp share "" $f xsafe
     xsafe eval puts $f hello
     xsafe eval close $f
     close $f
-} ""
-catch {removeFile file-15.4}
+} -cleanup {
+    removeFile file-15.4
+} -result ""
 test interp-15.5 {testing file sharing} {
     catch {interp delete xsafe}
     interp create xsafe -safe
     interp share "" stdout xsafe
     list [catch {xsafe eval gets stdout} msg] $msg
 } {1 {channel "stdout" wasn't opened for reading}}
-catch {removeFile file-15.6}
-test interp-15.6 {testing file sharing} {
+test interp-15.6 {testing file sharing} -body {
     catch {interp delete xsafe}
     interp create xsafe -safe
-    set f [open file-15.6 w]
+    set f [open [makeFile {} file-15.6] w]
     interp share "" $f xsafe
     set x [list [catch [list xsafe eval gets $f] msg] $msg]
     xsafe eval close $f
     close $f
     string compare [string tolower $x] \
 		[list 1 [format "channel \"%s\" wasn't opened for reading" $f]]
-} 0
-catch {removeFile file-15.6}
-catch {removeFile file-15.7}
-test interp-15.7 {testing file transferring} {
+} -cleanup {
+    removeFile file-15.6
+} -result 0
+test interp-15.7 {testing file transferring} -body {
     catch {interp delete xsafe}
     interp create xsafe -safe
-    set f [open file-15.7 w]
+    set f [open [makeFile {} file-15.7] w]
     interp transfer "" $f xsafe
     xsafe eval puts $f hello
     xsafe eval close $f
-} ""
-catch {removeFile file-15.7}
-catch {removeFile file-15.8}
-test interp-15.8 {testing file transferring} {
+} -cleanup {
+    removeFile file-15.7
+} -result ""
+test interp-15.8 {testing file transferring} -body {
     catch {interp delete xsafe}
     interp create xsafe -safe
-    set f [open file-15.8 w]
+    set f [open [makeFile {} file-15.8] w]
     interp transfer "" $f xsafe
     xsafe eval close $f
     set x [list [catch {close $f} msg] $msg]
     string compare [string tolower $x] \
 		[list 1 [format "can not find channel named \"%s\"" $f]]
-} 0
-catch {removeFile file-15.8}
+} -cleanup {
+    removeFile file-15.8
+} -result 0
 
 #
 # Torture tests for interpreter deletion order
@@ -2433,7 +2457,7 @@ test interp-29.3.1 {recursion limit} {
     }]
     interp delete $i
     set r
-} {1 {too many nested calls to Tcl_Eval (infinite loop?)} 48}
+} {1 {too many nested evaluations (infinite loop?)} 48}
 
 test interp-29.3.2 {recursion limit} {
     set i [interp create]
@@ -2445,7 +2469,7 @@ test interp-29.3.2 {recursion limit} {
     }]
    interp delete $i
    set r
-} {1 {too many nested calls to Tcl_Eval (infinite loop?)} 48}
+} {1 {too many nested evaluations (infinite loop?)} 48}
 
 test interp-29.3.3 {recursion limit} {
     set i [interp create]
@@ -2457,7 +2481,7 @@ test interp-29.3.3 {recursion limit} {
     }]
    interp delete $i
    set r
-} {1 {too many nested calls to Tcl_Eval (infinite loop?)} 48}
+} {1 {too many nested evaluations (infinite loop?)} 48}
 
 test interp-29.3.4 {recursion limit error reporting} {
     interp create slave
@@ -2542,7 +2566,7 @@ test interp-29.3.7 {recursion limit error reporting} {
     set r2 [slave eval { set msg }]
     interp delete slave
     list $r1 $r2
-} {1 {too many nested calls to Tcl_Eval (infinite loop?)}}
+} {1 {too many nested evaluations (infinite loop?)}}
 
 test interp-29.3.8 {recursion limit error reporting} {
     interp create slave
@@ -2564,7 +2588,7 @@ test interp-29.3.8 {recursion limit error reporting} {
     set r2 [slave eval { set msg }]
     interp delete slave
     list $r1 $r2
-} {1 {too many nested calls to Tcl_Eval (infinite loop?)}}
+} {1 {too many nested evaluations (infinite loop?)}}
 
 test interp-29.3.9 {recursion limit error reporting} {
     interp create slave
@@ -2608,7 +2632,7 @@ test interp-29.3.10 {recursion limit error reporting} {
     set r2 [slave eval { set msg }]
     interp delete slave
     list $r1 $r2
-} {1 {too many nested calls to Tcl_Eval (infinite loop?)}}
+} {1 {too many nested evaluations (infinite loop?)}}
 
 test interp-29.3.11 {recursion limit error reporting} {
     interp create slave
@@ -2630,7 +2654,7 @@ test interp-29.3.11 {recursion limit error reporting} {
     set r2 [slave eval { set msg }]
     interp delete slave
     list $r1 $r2
-} {1 {too many nested calls to Tcl_Eval (infinite loop?)}}
+} {1 {too many nested evaluations (infinite loop?)}}
 
 test interp-29.3.12 {recursion limit error reporting} {
     interp create slave
@@ -2868,6 +2892,7 @@ test interp-31.1 {alias invocation scope} {
 
 test interp-32.1 { parent's working directory should
                    be inherited by a child interp } {
+    cd [temporaryDirectory]
     set parent [pwd]
     set i [interp create]
     set child [$i eval pwd]
@@ -2880,6 +2905,7 @@ test interp-32.1 { parent's working directory should
     cd ..
     file delete cwd_test
     interp delete $i
+    cd [workingDirectory]
     expr {[string equal $parent $child] ? 1 :
              "\{$parent\} != \{$child\}"}
 } 1

@@ -8,11 +8,12 @@
  *
  * Copyright (c) 1997 Sun Microsystems, Inc.
  * Copyright (c) 1998-2000 by Scriptics Corporation.
+ * Contributions from Don Porter, NIST, 2002.  (not subject to US copyright)
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParseExpr.c,v 1.9.2.2 2002/06/10 05:33:12 wolfsuit Exp $
+ * RCS: @(#) $Id: tclParseExpr.c,v 1.9.2.3 2002/08/20 20:25:26 das Exp $
  */
 
 #include "tclInt.h"
@@ -55,16 +56,16 @@ typedef struct ParseInfo {
     int lexeme;			/* Type of last lexeme scanned in expr.
 				 * See below for definitions. Corresponds to
 				 * size characters beginning at start. */
-    char *start;		/* First character in lexeme. */
+    CONST char *start;		/* First character in lexeme. */
     int size;			/* Number of bytes in lexeme. */
-    char *next;			/* Position of the next character to be
+    CONST char *next;		/* Position of the next character to be
 				 * scanned in the expression string. */
-    char *prevEnd;		/* Points to the character just after the
+    CONST char *prevEnd;	/* Points to the character just after the
 				 * last one in the previous lexeme. Used to
 				 * compute size of subexpression tokens. */
-    char *originalExpr;		/* Points to the start of the expression
+    CONST char *originalExpr;	/* Points to the start of the expression
 				 * originally passed to Tcl_ParseExpr. */
-    char *lastChar;		/* Points just after last byte of expr. */
+    CONST char *lastChar;	/* Points just after last byte of expr. */
 } ParseInfo;
 
 /*
@@ -148,7 +149,7 @@ static char *lexemeStrings[] = {
 
 static int		GetLexeme _ANSI_ARGS_((ParseInfo *infoPtr));
 static void		LogSyntaxError _ANSI_ARGS_((ParseInfo *infoPtr,
-				char *extraInfo));
+				CONST char *extraInfo));
 static int		ParseAddExpr _ANSI_ARGS_((ParseInfo *infoPtr));
 static int		ParseBitAndExpr _ANSI_ARGS_((ParseInfo *infoPtr));
 static int		ParseBitOrExpr _ANSI_ARGS_((ParseInfo *infoPtr));
@@ -157,13 +158,15 @@ static int		ParseCondExpr _ANSI_ARGS_((ParseInfo *infoPtr));
 static int		ParseEqualityExpr _ANSI_ARGS_((ParseInfo *infoPtr));
 static int		ParseLandExpr _ANSI_ARGS_((ParseInfo *infoPtr));
 static int		ParseLorExpr _ANSI_ARGS_((ParseInfo *infoPtr));
+static int		ParseMaxDoubleLength _ANSI_ARGS_((CONST char *string,
+				CONST char *end));
 static int		ParseMultiplyExpr _ANSI_ARGS_((ParseInfo *infoPtr));
 static int		ParsePrimaryExpr _ANSI_ARGS_((ParseInfo *infoPtr));
 static int		ParseRelationalExpr _ANSI_ARGS_((ParseInfo *infoPtr));
 static int		ParseShiftExpr _ANSI_ARGS_((ParseInfo *infoPtr));
 static int		ParseUnaryExpr _ANSI_ARGS_((ParseInfo *infoPtr));
-static void		PrependSubExprTokens _ANSI_ARGS_((char *op,
-				int opBytes, char *src, int srcBytes,
+static void		PrependSubExprTokens _ANSI_ARGS_((CONST char *op,
+				int opBytes, CONST char *src, int srcBytes,
 				int firstIndex, ParseInfo *infoPtr));
 
 /*
@@ -190,7 +193,8 @@ static void		PrependSubExprTokens _ANSI_ARGS_((char *op,
  *	Given a string, this procedure parses the first Tcl expression
  *	in the string and returns information about the structure of
  *	the expression. This procedure is the top-level interface to the
- *	the expression parsing module.
+ *	the expression parsing module.  No more that numBytes bytes will
+ *	be scanned.
  *
  * Results:
  *	The return value is TCL_OK if the command was parsed successfully
@@ -212,7 +216,7 @@ static void		PrependSubExprTokens _ANSI_ARGS_((char *op,
 int
 Tcl_ParseExpr(interp, string, numBytes, parsePtr)
     Tcl_Interp *interp;		/* Used for error reporting. */
-    char *string;		/* The source string to parse. */
+    CONST char *string;		/* The source string to parse. */
     int numBytes;		/* Number of bytes in string. If < 0, the
 				 * string consists of all bytes up to the
 				 * first null character. */
@@ -223,7 +227,6 @@ Tcl_ParseExpr(interp, string, numBytes, parsePtr)
 {
     ParseInfo info;
     int code;
-    char savedChar;
 
     if (numBytes < 0) {
 	numBytes = (string? strlen(string) : 0);
@@ -248,17 +251,6 @@ Tcl_ParseExpr(interp, string, numBytes, parsePtr)
     parsePtr->interp = interp;
     parsePtr->term = string;
     parsePtr->incomplete = 0;
-
-    /*
-     * Temporarily overwrite the character just after the end of the
-     * string with a 0 byte.  This acts as a sentinel and reduces the
-     * number of places where we have to check for the end of the
-     * input string.  The original value of the byte is restored at
-     * the end of the parse.
-     */
-
-    savedChar = string[numBytes];
-    string[numBytes] = 0;
 
     /*
      * Initialize the ParseInfo structure that holds state while parsing
@@ -290,11 +282,9 @@ Tcl_ParseExpr(interp, string, numBytes, parsePtr)
 	LogSyntaxError(&info, "extra tokens at end of expression");
 	goto error;
     }
-    string[numBytes] = (char) savedChar;
     return TCL_OK;
     
     error:
-    string[numBytes] = (char) savedChar;
     if (parsePtr->tokenPtr != parsePtr->staticTokens) {
 	ckfree((char *) parsePtr->tokenPtr);
     }
@@ -310,7 +300,7 @@ Tcl_ParseExpr(interp, string, numBytes, parsePtr)
  *	condExpr ::= lorExpr ['?' condExpr ':' condExpr]
  *
  *	Note that this is the topmost recursive-descent parsing routine used
- *	by TclParseExpr to parse expressions. This avoids an extra procedure
+ *	by Tcl_ParseExpr to parse expressions. This avoids an extra procedure
  *	call since such a procedure would only return the result of calling
  *	ParseCondExpr. Other recursive-descent procedures that need to parse
  *	complete expressions also call ParseCondExpr.
@@ -336,7 +326,7 @@ ParseCondExpr(infoPtr)
     Tcl_Parse *parsePtr = infoPtr->parsePtr;
     Tcl_Token *tokenPtr, *firstTokenPtr, *condTokenPtr;
     int firstIndex, numToMove, code;
-    char *srcStart;
+    CONST char *srcStart;
     
     HERE("condExpr", 1);
     srcStart = infoPtr->start;
@@ -449,7 +439,7 @@ ParseLorExpr(infoPtr)
 {
     Tcl_Parse *parsePtr = infoPtr->parsePtr;
     int firstIndex, code;
-    char *srcStart, *operator;
+    CONST char *srcStart, *operator;
     
     HERE("lorExpr", 2);
     srcStart = infoPtr->start;
@@ -509,7 +499,7 @@ ParseLandExpr(infoPtr)
 {
     Tcl_Parse *parsePtr = infoPtr->parsePtr;
     int firstIndex, code;
-    char *srcStart, *operator;
+    CONST char *srcStart, *operator;
 
     HERE("landExpr", 3);
     srcStart = infoPtr->start;
@@ -569,7 +559,7 @@ ParseBitOrExpr(infoPtr)
 {
     Tcl_Parse *parsePtr = infoPtr->parsePtr;
     int firstIndex, code;
-    char *srcStart, *operator;
+    CONST char *srcStart, *operator;
 
     HERE("bitOrExpr", 4);
     srcStart = infoPtr->start;
@@ -630,7 +620,7 @@ ParseBitXorExpr(infoPtr)
 {
     Tcl_Parse *parsePtr = infoPtr->parsePtr;
     int firstIndex, code;
-    char *srcStart, *operator;
+    CONST char *srcStart, *operator;
 
     HERE("bitXorExpr", 5);
     srcStart = infoPtr->start;
@@ -691,7 +681,7 @@ ParseBitAndExpr(infoPtr)
 {
     Tcl_Parse *parsePtr = infoPtr->parsePtr;
     int firstIndex, code;
-    char *srcStart, *operator;
+    CONST char *srcStart, *operator;
 
     HERE("bitAndExpr", 6);
     srcStart = infoPtr->start;
@@ -752,7 +742,7 @@ ParseEqualityExpr(infoPtr)
 {
     Tcl_Parse *parsePtr = infoPtr->parsePtr;
     int firstIndex, lexeme, code;
-    char *srcStart, *operator;
+    CONST char *srcStart, *operator;
 
     HERE("equalityExpr", 7);
     srcStart = infoPtr->start;
@@ -816,7 +806,7 @@ ParseRelationalExpr(infoPtr)
 {
     Tcl_Parse *parsePtr = infoPtr->parsePtr;
     int firstIndex, lexeme, operatorSize, code;
-    char *srcStart, *operator;
+    CONST char *srcStart, *operator;
 
     HERE("relationalExpr", 8);
     srcStart = infoPtr->start;
@@ -884,7 +874,7 @@ ParseShiftExpr(infoPtr)
 {
     Tcl_Parse *parsePtr = infoPtr->parsePtr;
     int firstIndex, lexeme, code;
-    char *srcStart, *operator;
+    CONST char *srcStart, *operator;
 
     HERE("shiftExpr", 9);
     srcStart = infoPtr->start;
@@ -946,7 +936,7 @@ ParseAddExpr(infoPtr)
 {
     Tcl_Parse *parsePtr = infoPtr->parsePtr;
     int firstIndex, lexeme, code;
-    char *srcStart, *operator;
+    CONST char *srcStart, *operator;
 
     HERE("addExpr", 10);
     srcStart = infoPtr->start;
@@ -1008,7 +998,7 @@ ParseMultiplyExpr(infoPtr)
 {
     Tcl_Parse *parsePtr = infoPtr->parsePtr;
     int firstIndex, lexeme, code;
-    char *srcStart, *operator;
+    CONST char *srcStart, *operator;
 
     HERE("multiplyExpr", 11);
     srcStart = infoPtr->start;
@@ -1070,7 +1060,7 @@ ParseUnaryExpr(infoPtr)
 {
     Tcl_Parse *parsePtr = infoPtr->parsePtr;
     int firstIndex, lexeme, code;
-    char *srcStart, *operator;
+    CONST char *srcStart, *operator;
 
     HERE("unaryExpr", 12);
     srcStart = infoPtr->start;
@@ -1135,7 +1125,7 @@ ParsePrimaryExpr(infoPtr)
     Tcl_Interp *interp = parsePtr->interp;
     Tcl_Token *tokenPtr, *exprTokenPtr;
     Tcl_Parse nested;
-    char *dollarPtr, *stringStart, *termPtr, *src;
+    CONST char *dollarPtr, *stringStart, *termPtr, *src;
     int lexeme, exprIndex, firstIndex, numToMove, code;
 
     /*
@@ -1394,17 +1384,20 @@ ParsePrimaryExpr(infoPtr)
 	     * serious as this is only done when generating an error.
 	     */
 	    Interp *iPtr = (Interp *) infoPtr->parsePtr->interp;
-	    char savedChar;
+	    Tcl_DString functionName;
 	    Tcl_HashEntry *hPtr;
 
 	    /*
-	     * Look up the name as a function name; note that this
-	     * requires the expression to be in writable memory.
+	     * Look up the name as a function name.  We need a writable
+	     * copy (DString) so we can terminate it with a NULL for
+	     * the benefit of Tcl_FindHashEntry which operates on
+	     * NULL-terminated string keys.
 	     */
-	    savedChar = tokenPtr->start[tokenPtr->size];
-	    tokenPtr->start[tokenPtr->size] = '\0';
-	    hPtr = Tcl_FindHashEntry(&iPtr->mathFuncTable, tokenPtr->start);
-	    tokenPtr->start[tokenPtr->size] = savedChar;
+	    Tcl_DStringInit(&functionName);
+	    hPtr = Tcl_FindHashEntry(&iPtr->mathFuncTable, 
+	    	Tcl_DStringAppend(&functionName, tokenPtr->start,
+		tokenPtr->size));
+	    Tcl_DStringFree(&functionName);
 
 	    /*
 	     * Assume that we have an attempted variable reference
@@ -1525,11 +1518,9 @@ GetLexeme(infoPtr)
     ParseInfo *infoPtr;		/* Holds state needed to parse the expr,
 				 * including the resulting lexeme. */
 {
-    register char *src;		/* Points to current source char. */
-    char *termPtr;		/* Points to char terminating a literal. */
-    double doubleValue;		/* Value of a scanned double literal. */
+    register CONST char *src;	/* Points to current source char. */
     char c;
-    int startsWithDigit, offset;
+    int offset, length, numBytes;
     Tcl_Parse *parsePtr = infoPtr->parsePtr;
     Tcl_Interp *interp = parsePtr->interp;
     Tcl_UniChar ch;
@@ -1543,26 +1534,18 @@ GetLexeme(infoPtr)
     infoPtr->prevEnd = infoPtr->next;
 
     /*
-     * Scan over leading white space at the start of a lexeme. Note that a
-     * backslash-newline is treated as a space.
+     * Scan over leading white space at the start of a lexeme. 
      */
 
     src = infoPtr->next;
-    c = *src;
-    while (isspace(UCHAR(c)) || (c == '\\')) { /* INTL: ISO space */
-	if (c == '\\') {
-	    if (src[1] == '\n') {
-		src += 2;
-	    } else {
-		break;	/* no longer white space */
-	    }
-	} else {
-	    src++;
-	}
-	c = *src;
-    }
+    numBytes = parsePtr->end - src;
+    do {
+	char type;
+	int scanned = TclParseWhiteSpace(src, numBytes, parsePtr, &type);
+	src += scanned; numBytes -= scanned;
+    } while  (numBytes && (*src == '\n') && (src++,numBytes--));
     parsePtr->term = src;
-    if (src >= infoPtr->lastChar) {
+    if (numBytes == 0) {
 	infoPtr->lexeme = END;
 	infoPtr->next = src;
 	return TCL_OK;
@@ -1575,63 +1558,48 @@ GetLexeme(infoPtr)
      * by mistake, which would eventually cause a syntax error.
      */
 
+    c = *src;
     if ((c != '+') && (c != '-')) {
-	startsWithDigit = isdigit(UCHAR(c)); /* INTL: digit */
-	if (startsWithDigit && TclLooksLikeInt(src, -1)) {
-	    errno = 0;
-#ifdef TCL_WIDE_INT_IS_LONG
-	    (void) strtoul(src, &termPtr, 0);
-#else
-	    (void) strtoull(src, &termPtr, 0);
-#endif
-	    if (errno == ERANGE) {
-		if (interp != NULL) {
-		    char *s = "integer value too large to represent";
-		    Tcl_ResetResult(interp);
-		    Tcl_AppendToObj(Tcl_GetObjResult(interp), s, -1);
-		    Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s,
-			    (char *) NULL);
-		}
+	CONST char *end = infoPtr->lastChar;
+	if ((length = TclParseInteger(src, (end - src)))) {
+	    /*
+	     * First length bytes look like an integer.  Verify by
+	     * attempting the conversion to the largest integer we have.
+	     */
+	    int code;
+	    Tcl_WideInt wide;
+	    Tcl_Obj *value = Tcl_NewStringObj(src, length);
+
+	    Tcl_IncrRefCount(value);
+	    code = Tcl_GetWideIntFromObj(interp, value, &wide);
+	    Tcl_DecrRefCount(value);
+	    if (code == TCL_ERROR) {
 		parsePtr->errorType = TCL_PARSE_BAD_NUMBER;
 		return TCL_ERROR;
 	    }
- 	    if (termPtr != src) {
-                /*
-                 * src was the start of a valid integer, but was it
-		 * a bad octal?  Stopping at a digit would cause that.
-                 */
-		if (isdigit(UCHAR(*termPtr))) {	/* INTL: digit. */
-		    /*
-		     * We only want to report an error for the number,
-		     * but we may have something like "08+1"
-		     */
-		    if (interp != NULL) {
-			while (isdigit(UCHAR(*(++termPtr)))) {} /* INTL: digit. */
-			Tcl_ResetResult(interp);
-			offset = termPtr - src;
-			c = src[offset];
-			src[offset] = 0;
-			Tcl_AppendResult(interp, "\"", src,
-				"\" is an invalid octal number",
-				(char *) NULL);
-			src[offset] = c;
-		    }
-		    parsePtr->errorType = TCL_PARSE_BAD_NUMBER;
-		    return TCL_ERROR;
-		}
+            infoPtr->lexeme = LITERAL;
+	    infoPtr->start = src;
+	    infoPtr->size = length;
+            infoPtr->next = (src + length);
+	    parsePtr->term = infoPtr->next;
+            return TCL_OK;
+	} else if ((length = ParseMaxDoubleLength(src, end))) {
+	    /*
+	     * There are length characters that could be a double.
+	     * Let strtod() tells us for sure.  Need a writable copy
+	     * so we can set an terminating NULL to keep strtod from
+	     * scanning too far.
+	     */
+	    char *startPtr, *termPtr;
+	    double doubleValue;
+	    Tcl_DString toParse;
 
-                infoPtr->lexeme = LITERAL;
-		infoPtr->start = src;
-		infoPtr->size = (termPtr - src);
-                infoPtr->next = termPtr;
-		parsePtr->term = termPtr;
-                return TCL_OK;
-	    }
-	} else if (startsWithDigit || (c == '.')
-	        || (c == 'n') || (c == 'N')) {
 	    errno = 0;
-	    doubleValue = strtod(src, &termPtr);
-	    if (termPtr != src) {
+	    Tcl_DStringInit(&toParse);
+	    startPtr = Tcl_DStringAppend(&toParse, src, length);
+	    doubleValue = strtod(startPtr, &termPtr);
+	    Tcl_DStringFree(&toParse);
+	    if (termPtr != startPtr) {
 		if (errno != 0) {
 		    if (interp != NULL) {
 			TclExprFloatError(interp, doubleValue);
@@ -1641,14 +1609,19 @@ GetLexeme(infoPtr)
 		}
 		
 		/*
-                 * src was the start of a valid double.
+                 * startPtr was the start of a valid double, copied
+		 * from src.
                  */
 		
 		infoPtr->lexeme = LITERAL;
 		infoPtr->start = src;
-		infoPtr->size = (termPtr - src);
-		infoPtr->next = termPtr;
-		parsePtr->term = termPtr;
+		if ((termPtr - startPtr) > length) {
+		    infoPtr->size = length;
+		} else {
+		    infoPtr->size = (termPtr - startPtr);
+		}
+		infoPtr->next = src + infoPtr->size;
+		parsePtr->term = infoPtr->next;
 		return TCL_OK;
 	    }
 	}
@@ -1722,72 +1695,69 @@ GetLexeme(infoPtr)
 	    return TCL_OK;
 
 	case '<':
-	    switch (src[1]) {
-		case '<':
-		    infoPtr->lexeme = LEFT_SHIFT;
-		    infoPtr->size = 2;
-		    infoPtr->next = src+2;
-		    break;
-		case '=':
-		    infoPtr->lexeme = LEQ;
-		    infoPtr->size = 2;
-		    infoPtr->next = src+2;
-		    break;
-		default:
-		    infoPtr->lexeme = LESS;
-		    break;
+	    infoPtr->lexeme = LESS;
+	    if ((infoPtr->lastChar - src) > 1) {
+		switch (src[1]) {
+		    case '<':
+			infoPtr->lexeme = LEFT_SHIFT;
+			infoPtr->size = 2;
+			infoPtr->next = src+2;
+			break;
+		    case '=':
+			infoPtr->lexeme = LEQ;
+			infoPtr->size = 2;
+			infoPtr->next = src+2;
+			break;
+		}
 	    }
 	    parsePtr->term = infoPtr->next;
 	    return TCL_OK;
 
 	case '>':
-	    switch (src[1]) {
-		case '>':
-		    infoPtr->lexeme = RIGHT_SHIFT;
-		    infoPtr->size = 2;
-		    infoPtr->next = src+2;
-		    break;
-		case '=':
-		    infoPtr->lexeme = GEQ;
-		    infoPtr->size = 2;
-		    infoPtr->next = src+2;
-		    break;
-		default:
-		    infoPtr->lexeme = GREATER;
-		    break;
+	    infoPtr->lexeme = GREATER;
+	    if ((infoPtr->lastChar - src) > 1) {
+		switch (src[1]) {
+		    case '>':
+			infoPtr->lexeme = RIGHT_SHIFT;
+			infoPtr->size = 2;
+			infoPtr->next = src+2;
+			break;
+		    case '=':
+			infoPtr->lexeme = GEQ;
+			infoPtr->size = 2;
+			infoPtr->next = src+2;
+			break;
+		}
 	    }
 	    parsePtr->term = infoPtr->next;
 	    return TCL_OK;
 
 	case '=':
-	    if (src[1] == '=') {
+	    infoPtr->lexeme = UNKNOWN;
+	    if ((src[1] == '=') && ((infoPtr->lastChar - src) > 1)) {
 		infoPtr->lexeme = EQUAL;
 		infoPtr->size = 2;
 		infoPtr->next = src+2;
-	    } else {
-		infoPtr->lexeme = UNKNOWN;
 	    }
 	    parsePtr->term = infoPtr->next;
 	    return TCL_OK;
 
 	case '!':
-	    if (src[1] == '=') {
+	    infoPtr->lexeme = NOT;
+	    if ((src[1] == '=') && ((infoPtr->lastChar - src) > 1)) {
 		infoPtr->lexeme = NEQ;
 		infoPtr->size = 2;
 		infoPtr->next = src+2;
-	    } else {
-		infoPtr->lexeme = NOT;
 	    }
 	    parsePtr->term = infoPtr->next;
 	    return TCL_OK;
 
 	case '&':
-	    if (src[1] == '&') {
+	    infoPtr->lexeme = BIT_AND;
+	    if ((src[1] == '&') && ((infoPtr->lastChar - src) > 1)) {
 		infoPtr->lexeme = AND;
 		infoPtr->size = 2;
 		infoPtr->next = src+2;
-	    } else {
-		infoPtr->lexeme = BIT_AND;
 	    }
 	    parsePtr->term = infoPtr->next;
 	    return TCL_OK;
@@ -1797,12 +1767,11 @@ GetLexeme(infoPtr)
 	    return TCL_OK;
 
 	case '|':
-	    if (src[1] == '|') {
+	    infoPtr->lexeme = BIT_OR;
+	    if ((src[1] == '|') && ((infoPtr->lastChar - src) > 1)) {
 		infoPtr->lexeme = OR;
 		infoPtr->size = 2;
 		infoPtr->next = src+2;
-	    } else {
-		infoPtr->lexeme = BIT_OR;
 	    }
 	    parsePtr->term = infoPtr->next;
 	    return TCL_OK;
@@ -1812,7 +1781,7 @@ GetLexeme(infoPtr)
 	    return TCL_OK;
 
 	case 'e':
-	    if (src[1] == 'q') {
+	    if ((src[1] == 'q') && ((infoPtr->lastChar - src) > 1)) {
 		infoPtr->lexeme = STREQ;
 		infoPtr->size = 2;
 		infoPtr->next = src+2;
@@ -1823,7 +1792,7 @@ GetLexeme(infoPtr)
 	    }
 
 	case 'n':
-	    if (src[1] == 'e') {
+	    if ((src[1] == 'e') && ((infoPtr->lastChar - src) > 1)) {
 		infoPtr->lexeme = STRNEQ;
 		infoPtr->size = 2;
 		infoPtr->next = src+2;
@@ -1835,13 +1804,28 @@ GetLexeme(infoPtr)
 
 	default:
 	checkFuncName:
-	    offset = Tcl_UtfToUniChar(src, &ch);
+	    length = (infoPtr->lastChar - src);
+	    if (Tcl_UtfCharComplete(src, length)) {
+		offset = Tcl_UtfToUniChar(src, &ch);
+	    } else {
+		char utfBytes[TCL_UTF_MAX];
+		memcpy(utfBytes, src, (size_t) length);
+		utfBytes[length] = '\0';
+		offset = Tcl_UtfToUniChar(utfBytes, &ch);
+	    }
 	    c = UCHAR(ch);
 	    if (isalpha(UCHAR(c))) {	/* INTL: ISO only. */
 		infoPtr->lexeme = FUNC_NAME;
 		while (isalnum(UCHAR(c)) || (c == '_')) { /* INTL: ISO only. */
-		    src += offset;
-		    offset = Tcl_UtfToUniChar(src, &ch);
+		    src += offset; length -= offset;
+		    if (Tcl_UtfCharComplete(src, length)) {
+			offset = Tcl_UtfToUniChar(src, &ch);
+		    } else {
+			char utfBytes[TCL_UTF_MAX];
+			memcpy(utfBytes, src, (size_t) length);
+			utfBytes[length] = '\0';
+			offset = Tcl_UtfToUniChar(utfBytes, &ch);
+		    }
 		    c = UCHAR(ch);
 		}
 		infoPtr->size = (src - infoPtr->start);
@@ -1901,6 +1885,107 @@ GetLexeme(infoPtr)
 /*
  *----------------------------------------------------------------------
  *
+ * TclParseInteger --
+ *
+ *	Scans up to numBytes bytes starting at src, and checks whether
+ *	the leading bytes look like an integer's string representation.
+ *
+ * Results:
+ *	Returns 0 if the leading bytes do not look like an integer.
+ *	Otherwise, returns the number of bytes examined that look
+ *	like an integer.  This may be less than numBytes if the integer
+ *	is only the leading part of the string.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclParseInteger(string, numBytes)
+    register CONST char *string;/* The string to examine. */
+    register int numBytes;	/* Max number of bytes to scan. */
+{
+    register CONST char *p = string;
+
+    /* Take care of introductory "0x" */
+    if ((numBytes > 1) && (p[0] == '0') && ((p[1] == 'x') || (p[1] == 'X'))) {
+	int scanned;
+	Tcl_UniChar ch;
+	p+=2; numBytes -= 2;
+ 	scanned = TclParseHex(p, numBytes, &ch);
+	if (scanned) {
+	    return scanned + 2;
+	}
+	return 0;
+    }
+    while (numBytes && isdigit(UCHAR(*p))) {	/* INTL: digit */
+	numBytes--; p++;
+    }
+    if (numBytes == 0) {
+        return (p - string);
+    }
+    if ((*p != '.') && (*p != 'e') && (*p != 'E')) {
+        return (p - string);
+    }
+    return 0;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ParseMaxDoubleLength --
+ *
+ *      Scans a sequence of bytes checking that the characters could
+ *	be in a string rep of a double.
+ *
+ * Results:
+ *	Returns the number of bytes starting with string, runing to, but
+ *	not including end, all of which could be part of a string rep.
+ *	of a double.  Only character identity is used, no actual
+ *	parsing is done.
+ *
+ *	The legal bytes are '0' - '9', 'A' - 'F', 'a' - 'f', 
+ *	'.', '+', '-', 'i', 'I', 'n', 'N', 'p', 'P', 'x',  and 'X'.
+ *	This covers the values "Inf" and "Nan" as well as the
+ *	decimal and hexadecimal representations recognized by a
+ *	C99-compliant strtod().
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+ParseMaxDoubleLength(string, end)
+    register CONST char *string;/* The string to examine. */
+    CONST char *end;		/* Point to the first character past the end
+				 * of the string we are examining. */
+{
+    CONST char *p = string;
+    while (p < end) {
+	switch (*p) {
+	    case '0': case '1': case '2': case '3': case '4': case '5':
+	    case '6': case '7': case '8': case '9': case 'A': case 'B':
+	    case 'C': case 'D': case 'E': case 'F': case 'I': case 'N':
+	    case 'P': case 'X': case 'a': case 'b': case 'c': case 'd':
+	    case 'e': case 'f': case 'i': case 'n': case 'p': case 'x':
+	    case '.': case '+': case '-':
+		p++;
+		break;
+	    default:
+		goto done;
+	}
+    }
+    done:
+    return (p - string);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * PrependSubExprTokens --
  *
  *	This procedure is called after the operands of an subexpression have
@@ -1920,10 +2005,10 @@ GetLexeme(infoPtr)
 
 static void
 PrependSubExprTokens(op, opBytes, src, srcBytes, firstIndex, infoPtr)
-    char *op;			/* Points to first byte of the operator
+    CONST char *op;		/* Points to first byte of the operator
 				 * in the source script. */
     int opBytes;		/* Number of bytes in the operator. */
-    char *src;			/* Points to first byte of the subexpression
+    CONST char *src;		/* Points to first byte of the subexpression
 				 * in the source script. */
     int srcBytes;		/* Number of bytes in subexpression's
 				 * source. */
@@ -1983,7 +2068,7 @@ static void
 LogSyntaxError(infoPtr, extraInfo)
     ParseInfo *infoPtr;		/* Holds the parse state for the
 				 * expression being parsed. */
-    char *extraInfo;		/* String to provide extra information
+    CONST char *extraInfo;	/* String to provide extra information
 				 * about the syntax error. */
 {
     int numBytes = (infoPtr->lastChar - infoPtr->originalExpr);
@@ -1993,9 +2078,10 @@ LogSyntaxError(infoPtr, extraInfo)
 	sprintf(buffer, "syntax error in expression \"%.60s...\"",
 		infoPtr->originalExpr);
     } else {
-	sprintf(buffer, "syntax error in expression \"%s\"",
-		infoPtr->originalExpr);
+	sprintf(buffer, "syntax error in expression \"%.*s\"",
+		numBytes, infoPtr->originalExpr);
     }
+    Tcl_ResetResult(infoPtr->parsePtr->interp);
     Tcl_AppendStringsToObj(Tcl_GetObjResult(infoPtr->parsePtr->interp),
 	    buffer, ": ", extraInfo, (char *) NULL);
     infoPtr->parsePtr->errorType = TCL_PARSE_SYNTAX;

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinInt.h,v 1.11.6.2 2002/06/10 05:33:19 wolfsuit Exp $
+ * RCS: @(#) $Id: tclWinInt.h,v 1.11.6.3 2002/08/20 20:25:31 das Exp $
  */
 
 #ifndef _TCLWININT
@@ -91,7 +91,8 @@ typedef struct TclWinProcs {
     BOOL (WINAPI *setFileAttributesProc)(CONST TCHAR *, DWORD);
     BOOL (WINAPI *getFileAttributesExProc)(CONST TCHAR *, 
 	    GET_FILEEX_INFO_LEVELS, LPVOID);
-
+    BOOL (WINAPI *createHardLinkProc)(CONST TCHAR*, CONST TCHAR*, 
+				      LPSECURITY_ATTRIBUTES);
 } TclWinProcs;
 
 EXTERN TclWinProcs *tclWinProcs;
@@ -102,6 +103,10 @@ EXTERN TclWinProcs *tclWinProcs;
  */
 
 EXTERN void		TclWinInit(HINSTANCE hInst);
+EXTERN int              TclWinSymLinkCopyDirectory(CONST TCHAR* LinkOriginal,
+						   CONST TCHAR* LinkCopy);
+EXTERN int              TclWinSymLinkDelete(CONST TCHAR* LinkOriginal, 
+					    int linkOnly);
 #if defined(TCL_THREADS) && defined(USE_THREAD_ALLOC)
 EXTERN void		TclWinFreeAllocCache(void);
 EXTERN void		TclFreeAllocCache(void *);
@@ -109,6 +114,11 @@ EXTERN Tcl_Mutex	*TclpNewAllocMutex(void);
 EXTERN void		*TclpGetAllocCache(void);
 EXTERN void		TclpSetAllocCache(void *);
 #endif /* TCL_THREADS */
+
+/* Needed by tclWinFile.c and tclWinFCmd.c */
+#ifndef FILE_ATTRIBUTE_REPARSE_POINT
+#define FILE_ATTRIBUTE_REPARSE_POINT 0x00000400
+#endif
 
 #include "tclIntPlatDecls.h"
 
