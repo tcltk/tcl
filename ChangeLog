@@ -1,3 +1,12 @@
+1998-12-10    <stanton@GASPODE>
+
+	* Fixed lots of files that used TCL_THREAD instead of TCL_THREADS.
+	
+	* generic/tclEncoding.c (Tcl_FreeEncoding): Moved most of the code
+	into a static FreeEncoding routine that does not grab the
+	encodingMutex to avoid deadlocks/races when called from other
+	routines that already have the mutex.
+
 1998-12-09    <stanton@GASPODE>
 
 	* library/msgcat1.0/msgcat.tcl: Fixed bad export list, fixed so

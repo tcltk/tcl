@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEncoding.c,v 1.1.2.4 1998/11/11 04:54:12 stanton Exp $
+ * RCS: @(#) $Id: tclEncoding.c,v 1.1.2.5 1998/12/10 21:21:41 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -141,7 +141,7 @@ typedef struct EscapeEncodingData {
  */
  
 static Tcl_HashTable encodingTable;
-#ifdef TCL_THREAD
+#ifdef TCL_THREADS
 static Tcl_Mutex encodingMutex;
 #endif
 
@@ -181,6 +181,7 @@ static int		EscapeToUtfProc _ANSI_ARGS_((ClientData clientData,
 			    Tcl_EncodingState *statePtr, char *dst, int dstLen,
 			    int *srcReadPtr, int *dstWrotePtr,
 			    int *dstCharsPtr));
+static void		FreeEncoding _ANSI_ARGS_((Tcl_Encoding encoding));
 static Encoding *	GetTableEncoding _ANSI_ARGS_((
 			    EscapeEncodingData *dataPtr, int state));
 static Tcl_Encoding	LoadEncodingFile _ANSI_ARGS_((Tcl_Interp *interp,
@@ -392,13 +393,39 @@ void
 Tcl_FreeEncoding(encoding)
     Tcl_Encoding encoding;
 {
+    Tcl_MutexLock(&encodingMutex);
+    FreeEncoding(encoding);
+    Tcl_MutexUnlock(&encodingMutex);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FreeEncoding --
+ *
+ *	This procedure is called to release an encoding by procedures
+ *	that already have the encodingMutex.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The reference count associated with the encoding is decremented
+ *	and the encoding may be deleted if nothing is using it anymore.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+FreeEncoding(encoding)
+    Tcl_Encoding encoding;
+{
     Encoding *encodingPtr;
     
     encodingPtr = (Encoding *) encoding;
     if (encodingPtr == NULL) {
 	return;
     }
-    Tcl_MutexLock(&encodingMutex);
     encodingPtr->refCount--;
     if (encodingPtr->refCount == 0) {
 	if (encodingPtr->freeProc != NULL) {
@@ -410,7 +437,6 @@ Tcl_FreeEncoding(encoding)
 	ckfree((char *) encodingPtr->name);
 	ckfree((char *) encodingPtr);
     }
-    Tcl_MutexUnlock(&encodingMutex);
 }
 
 /*
@@ -599,7 +625,7 @@ Tcl_SetSystemEncoding(interp, name)
     }
 
     Tcl_MutexLock(&encodingMutex);
-    Tcl_FreeEncoding(systemEncoding);
+    FreeEncoding(systemEncoding);
     systemEncoding = encoding;
     Tcl_MutexUnlock(&encodingMutex);
 
@@ -2458,14 +2484,7 @@ EscapeFreeProc(clientData)
     }
     subTablePtr = dataPtr->subTables;
     for (i = 0; i < dataPtr->numSubTables; i++) {
-	/*
-	 * This is unlocked to avoid deadlock.  There is surely an
-	 * obscure race by doing this, except that encodings are
-	 * really only freed during finalization and by the test suite.
-	 */
-	Tcl_MutexUnlock(&encodingMutex);
-	Tcl_FreeEncoding((Tcl_Encoding) subTablePtr->encodingPtr);
-	Tcl_MutexLock(&encodingMutex);
+	FreeEncoding((Tcl_Encoding) subTablePtr->encodingPtr);
 	subTablePtr++;
     }
     ckfree((char *) dataPtr);

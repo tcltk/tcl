@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoad.c,v 1.1.2.2 1998/09/24 23:58:55 stanton Exp $
+ * RCS: @(#) $Id: tclLoad.c,v 1.1.2.3 1998/12/10 21:21:49 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -53,7 +53,7 @@ typedef struct LoadedPackage {
 } LoadedPackage;
 
 /*
- * TCL_THREAD
+ * TCL_THREADS
  * There is a global list of packages that is anchored at firstPackagePtr.
  * Access to this list is governed by a mutex.
  */

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.1.2.4 1998/12/03 23:59:33 stanton Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.1.2.5 1998/12/10 21:21:55 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -59,7 +59,7 @@ static char precisionString[10] = "12";
 static char precisionFormat[10] = "%.12g";
 				/* The format string actually used in calls
 				 * to sprintf. */
-#ifdef TCL_THREAD
+#ifdef TCL_THREADS
 static Tcl_Mutex precisionMutex;
 #endif
 

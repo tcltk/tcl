@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixTime.c,v 1.1.2.3 1998/11/11 04:54:22 stanton Exp $
+ * RCS: @(#) $Id: tclUnixTime.c,v 1.1.2.4 1998/12/10 21:21:58 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -165,7 +165,7 @@ TclpGetTimeZone (currentTime)
 #if defined(HAVE_TIMEZONE_VAR) && !defined (TCL_GOT_TIMEZONE)
 #   define TCL_GOT_TIMEZONE
     static int setTZ = 0;
-#ifdef TCL_THREAD
+#ifdef TCL_THREADS
     static Tcl_Mutex tzMutex;
 #endif
     int        timeZone;

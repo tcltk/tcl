@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.1.2.5 1998/12/02 20:08:04 welch Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.1.2.6 1998/12/10 21:21:43 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -48,7 +48,7 @@ int errno;
  */
 
 static int execInitialized = 0;
-#ifdef TCL_THREAD
+#ifdef TCL_THREADS
 static Tcl_Mutex execMutex;
 #endif
 

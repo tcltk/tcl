@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.1.2.5 1998/11/11 04:54:15 stanton Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.1.2.6 1998/12/10 21:21:46 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -46,7 +46,7 @@ static int initialized = 0;
 
 static Tcl_Obj *winRootPatternPtr = NULL;
 static Tcl_Obj *macRootPatternPtr = NULL;
-#ifdef TCL_THREAD
+#ifdef TCL_THREADS
 static Tcl_Mutex nameMutex;
 #endif
 
