@@ -1,32 +1,43 @@
+2002-02-27  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
+
+	* unix/tclUnixChan.c (TclpOpenFileChannel): Added code to regonize
+	  "/dev/tty" (by name) and to not handle it as tty / serial
+	  line. This is the controlling terminal and is special. Setting
+	  it into raw mode as is done for other tty's is a bad idea. This
+	  is a hackish fix for expect SGF Bug #520624. The fix has
+	  limitation: Tcl_MakeFileChannel handles tty's specially too, but
+	  is unable to recognize /dev/tty as it only gets a file
+	  descriptor, and no name for it.
+
 2002-02-26  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclCmdAH.c (StoreStatData): corrected mem leak.
 
 	* generic/tclCmdMZ.c (Tcl_RegsubObjCmd): prevent obj leak in
-	remedial regsub case.
+	  remedial regsub case.
 
 	* generic/tclFileName.c (Tcl_TranslateFileName): decr refcount for
-	error case to prevent mem leak.
+	  error case to prevent mem leak.
 
 	* generic/tclVar.c (Tcl_ArrayObjCmd): removed extra obj allocation.
 
 	* unix/tclUnixSock.c (Tcl_GetHostName): added an extra
-	gethostbyname check to guard against failure with truncated names
-	returned by uname.
+	  gethostbyname check to guard against failure with truncated
+	  names returned by uname.
 
 	* unix/configure:
 	* unix/tcl.m4 (SC_SERIAL_PORT): added sys/modem.h check and defined
-	_XOPEN_SOURCE_EXTENDED for HP-11 to get updated header decls.
+	  _XOPEN_SOURCE_EXTENDED for HP-11 to get updated header decls.
 
 	* unix/tclUnixChan.c: added Unix implementation of TIP #35, serial
-	port support. [Patch #438509] (schroedter)
+	  port support. [Patch #438509] (schroedter)
 
 2002-02-26  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* generic/tclCmpCmds.c: (bugfix to the bugfix, hopefully the last)
-	Bugfix to the new [for]	compiling code: was setting a exceptArray
-	parameter using another param which wasn't yet initialised, thus
-	filling it with noise.
+	  Bugfix to the new [for] compiling code: was setting a
+	  exceptArray parameter using another param which wasn't yet
+	  initialised, thus filling it with noise.
 
 2002-02-25  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
 
