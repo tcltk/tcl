@@ -1,3 +1,9 @@
+2000-09-19  David Gravereaux  <davygrvy@ajubasolutions.com>
+
+	* doc/Eval.3:  Added a note about the script argument to Tcl_Eval()
+	should be in UTF-8 or risk implied conversion errors when possible
+	combinations of upper ascii can be valid UTF-8 special codes.
+
 2000-09-17  Eric Melski  <ericm@ajubasolutions.com>
 
 	* tests/cmdIL.test: Added a test for fix for [Bug: 6212].
