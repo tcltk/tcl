@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubLib.c,v 1.1 1999/03/03 00:38:43 stanton Exp $
+ * RCS: @(#) $Id: tclStubLib.c,v 1.2 1999/03/04 00:54:07 stanton Exp $
  */
 
 /*
@@ -35,6 +35,8 @@
 
 TclStubs *tclStubsPtr;
 TclPlatStubs *tclPlatStubsPtr;
+TclIntStubs *tclIntStubsPtr;
+TclIntPlatStubs *tclIntPlatStubsPtr;
 
 static TclStubs *	HasStubSupport _ANSI_ARGS_((Tcl_Interp *interp));
 
@@ -96,8 +98,12 @@ Tcl_InitStubs (interp, version, exact)
 
     if (tclStubsPtr->hooks) {
 	tclPlatStubsPtr = tclStubsPtr->hooks->tclPlatStubs;
+	tclIntStubsPtr = tclStubsPtr->hooks->tclIntStubs;
+	tclIntPlatStubsPtr = tclStubsPtr->hooks->tclIntPlatStubs;
     } else {
 	tclPlatStubsPtr = NULL;
+	tclIntStubsPtr = NULL;
+	tclIntPlatStubsPtr = NULL;
     }
     
     return actualVersion;
