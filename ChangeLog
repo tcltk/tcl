@@ -3,6 +3,13 @@
 	* win/.cvsignore: changed the glob patterns a bit to exclude VC++
 	project conversion backups.
 
+	* win/tclWinPipe.c: Stage-1 bug fix for TR#2460 "exec leaks memory".
+	Added more logic around the close-down of the pipe reader thread so
+	as to avoid, at all cost, a TerminateThread.  Most cases with exec
+	are fixed, but I don't consider 2460 done yet.  Closing down the
+	read side of a pipe before the child process, doesn't really fit
+	the windows model.  [BUG: 2460]
+
 2000-09-07  Jeff Hobbs  <hobbs@scriptics.com>
 
 	* doc/trace.n: minor doc cleanup
