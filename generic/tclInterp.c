@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.5 1999/04/16 00:46:49 stanton Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.6 2001/04/04 07:11:01 dgp Exp $
  */
 
 #include <stdio.h>
@@ -949,7 +949,7 @@ Tcl_GetAlias(interp, aliasName, targetInterpPtr, targetNamePtr, argcPtr,
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_ObjGetAlias --
+ * Tcl_GetAliasObj --
  *
  *	Object version: Gets information about an alias.
  *
