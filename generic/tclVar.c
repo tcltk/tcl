@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.15 2000/01/15 02:52:32 ericm Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.16 2000/01/21 03:29:14 ericm Exp $
  */
 
 #include "tclInt.h"
@@ -33,6 +33,7 @@ static char *danglingElement =  "upvar refers to element in deleted array";
 static char *danglingVar =     "upvar refers to variable in deleted namespace";
 static char *badNamespace =	"parent namespace doesn't exist";
 static char *missingName =	"missing variable name";
+static char *isArrayElement =   "name refers to an element in an array";
 
 /*
  * Forward references to procedures defined later in this file:
@@ -3854,6 +3855,16 @@ Tcl_VariableObjCmd(dummy, interp, objc, objv)
 	varPtr = TclLookupVar(interp, varName, (char *) NULL,
                 (TCL_NAMESPACE_ONLY | TCL_LEAVE_ERR_MSG), "define",
                 /*createPart1*/ 1, /*createPart2*/ 0, &arrayPtr);
+	
+        if (arrayPtr != NULL) {
+            /*
+             * Variable cannot be an element in an array.  If arrayPtr is
+             * non-null, it is, so throw up an error and return.
+             */
+            VarErrMsg(interp, varName, NULL, "define", isArrayElement);
+            return TCL_ERROR;
+        }
+
 	if (varPtr == NULL) {
 	    return TCL_ERROR;
 	}

@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: upvar.n,v 1.2 1998/09/14 18:39:56 stanton Exp $
+'\" RCS: @(#) $Id: upvar.n,v 1.3 2000/01/21 03:29:13 ericm Exp $
 '\" 
 .so man.macros
 .TH upvar n "" Tcl "Tcl Built-In Commands"
@@ -76,8 +76,28 @@ by exiting the procedure in which it is defined.  However, it is
 possible to retarget an upvar variable by executing another \fBupvar\fR
 command.
 
-.SH BUGS
+.SH Traces and upvar
 .PP
+Upvar interacts with traces in a straightforward but possibly
+unexpected manner.  If a variable trace is defined on \fIotherVar\fR, that
+trace will be triggered by actions involving \fImyVar\fR.  However,
+the trace procedure will be passed the name of \fImyVar\fR, rather
+than the name of \fIotherVar\fR.  Thus, the output of the following code
+will be \fBlocalVar\fR rather than \fBoriginalVar\fR:
+.CS
+\fBproc traceproc { name index op } {
+	puts $name
+}
+proc setByUpvar { name value } {
+	upvar $name localVar
+	set localVar $value
+}
+set originalVar 1
+trace variable originalVar w traceproc
+setByUpvar originalVar 2
+}\fR
+.CE
+
 If \fIotherVar\fR refers to an element of an array, then variable
 traces set for the entire array will not be invoked when \fImyVar\fR
 is accessed (but traces on the particular element will still be
