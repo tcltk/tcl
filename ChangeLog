@@ -1,3 +1,32 @@
+2001-03-30  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
+
+	* All of the changes below belong to TIP #10 [Tcl I/O Enhancement:
+	  Thread-Aware Channels]. See also [Patch #403358] at SF.
+
+	* generic/tclIO.h (struct ChannelState, line 236f): Extended the
+ 	  structure with a new field of type 'Tcl_ThreadId' to hold the id
+ 	  of the thread currently managing all channels with this state.
+
+	  Note: This structure is shared by all channels in a stack of
+ 	  transformations.
+
+	* generic/tclIO.c (Tcl_CreateChannel, lines 1058-1065): Modified
+ 	  to store the Id of the current thread in the 'ChannelState' of
+ 	  the new channel.
+
+	* generic/tclIO.c (Tcl_SpliceChannel, lines 2265-2270): Modified
+ 	  in the same manner as 'Tcl_CreateChannel' as the channel will be
+ 	  managed by the current thread afterward.
+
+	* generic/tclIO.c   (Tcl_GetChannelThread, lines 1478-1503):
+	* generic/tcl.decls (Tcl_GetChannelThread, lines 1504-1506): New
+ 	  API function to retrieve the Id of the managing thread from a
+ 	  channel. Implementation and declaration.
+
+	* generic/tclTest.c (TestChannelCmd, lines 4520-4532): Added
+ 	  subcommand 'mthread' to query a channel about its managing
+ 	  thread.
+
 2001-03-29  Mo DeJong  <mdejong@redhat.com>
 
 	* tests/interp.test: Print out warning when

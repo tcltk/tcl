@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.h,v 1.2 2000/09/28 06:38:21 hobbs Exp $
+ * RCS: @(#) $Id: tclIO.h,v 1.3 2001/03/30 23:06:40 andreas_kupries Exp $
  */
 
 /*
@@ -233,6 +233,8 @@ typedef struct ChannelState {
 				 * long as the channel state. Never NULL. */
     struct ChannelState *nextCSPtr;
 				/* Next in list of channels currently open. */
+    Tcl_ThreadId managingThread; /* TIP #10: Id of the thread managing
+				  * this stack of channels. */
 } ChannelState;
     
 /*
