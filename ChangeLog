@@ -1,3 +1,13 @@
+2005-02-03  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tclStrToD.tcl (TclStrToD, RefineResult, SafeLdExp):
+	    Added code to ensure that 'ldexp' is never called with
+	    a value that will underflow.
+	* tests/expr.test: Added tests for the smallest representible
+	    value, and rounding between it and zero. (The tests reflect
+	    current behaviour; plan is to change the specification of
+	    Tcl so that input conversion of doubles underflows silently.)
+	
 2005-02-01  Kevin B. Kenny  <kennykb@acm.org>
 
 	[kennykb-numerics-branch]  Merged with HEAD as of today.
@@ -6,7 +16,8 @@
 	    Changed numbers of new stubs to resolve a conflict.
 	* generic/tclInt.h:
 	    Added new TclStrToD routine that replaces the native
-	    'strtod' throughout Tcl.
+	    'strtod' thro
+	ughout Tcl.
 	* generic/tclCmdMZ (Tcl_StringObjCmd):
 	* generic/tclGet.c (Tcl_GetDouble):
 	* generic/tclObj.c (SetBooleanFromAny, SetDoubleFromAny):

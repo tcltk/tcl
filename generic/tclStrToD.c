@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStrToD.c,v 1.1.2.2 2005/02/02 16:58:57 kennykb Exp $
+ * RCS: @(#) $Id: tclStrToD.c,v 1.1.2.3 2005/02/03 23:56:14 kennykb Exp $
  *
  *----------------------------------------------------------------------
  */
@@ -90,6 +90,7 @@ static double RefineResult _ANSI_ARGS_((double approx, CONST char* start,
 					int nDigits, long exponent));
 static double BignumToDouble _ANSI_ARGS_(( mp_int* a ));
 static double ParseNaN _ANSI_ARGS_(( int signum, CONST char** end ));
+static double SafeLdExp _ANSI_ARGS_(( double fraction, int exponent ));
 
 /*
  *----------------------------------------------------------------------
@@ -387,6 +388,7 @@ TclStrToD( CONST char* s,
     if ( nSigDigs + exponent - 1
 	 < floor ( ( DBL_MIN_EXP - DBL_MANT_DIG )
 		   * log( (double) FLT_RADIX ) / log( 10. ) ) ) {
+	errno = ERANGE;
 	v = 0.;
 	goto returnValue;
     }
@@ -428,6 +430,8 @@ TclStrToD( CONST char* s,
      * A first approximation is that the result will be v * 2 ** machexp.
      * v is greater than or equal to 0.5 and less than 1.
      * If machexp > DBL_MAX_EXP * log2(FLT_RADIX), there is an overflow.
+     * If the result of SafeLdExp is zero, there may be an underflow; start
+     * from the smallest representible number in that case.
      */
 
     if ( machexp > DBL_MAX_EXP * log2FLT_RADIX ) {
@@ -436,13 +440,8 @@ TclStrToD( CONST char* s,
 	goto returnValue;
     }
 	
-    v = ldexp( v, machexp );
-    if ( v == 0 ) {
-	/* DBL_MIN is known to be incorrect on MSVC6, and ldexp
-	 * doesn't work with denormals. */
-	v = ldexp( 1.0, DBL_MIN_EXP * log2FLT_RADIX );
-	v *= ldexp( 1.0, (-DBL_MANT_DIG) * log2FLT_RADIX );
-    }
+    v = SafeLdExp( v, machexp );
+    if ( v == 0.0 ) v = DBL_MIN;
 
     /* 
      * We have a first approximation in v. Now we need to refine it.
@@ -641,11 +640,11 @@ RefineResult( double approxResult,
     mp_init_size( &twoMv, nDigits );
     i = ( msb % DIGIT_BIT + 1 ); 
     twoMv.used = nDigits;
-    significand *= ldexp( 1.0, i );
+    significand *= SafeLdExp( 1.0, i );
     while ( -- nDigits >= 0 ) {
 	twoMv.dp[nDigits] = (mp_digit) significand;
 	significand -= (mp_digit) significand;
-	significand = ldexp( significand, DIGIT_BIT );
+	significand = SafeLdExp( significand, DIGIT_BIT );
     }
     for ( i = 0; i <= 8; ++i ) {
 	if ( M5 & ( 1 << i ) ) {
@@ -717,19 +716,9 @@ RefineResult( double approxResult,
     num = BignumToDouble( &twoMd );
     den = BignumToDouble( &twoMv );
 
-    /* 
-     * MSVC's ldexp underflows suddenly; avoid sudden underflow by
-     * doing ldexp in two steps.
-     */
+    quot = SafeLdExp( num/den, scale );
+    minincr = SafeLdExp( 1.0, binExponent - mantBits );
 
-    if ( scale < DBL_MIN_EXP * log2FLT_RADIX ) {
-	quot = ldexp( 1., DBL_MIN_EXP * log2FLT_RADIX + mantBits )
-	    * ldexp( num/den, scale - DBL_MIN_EXP * log2FLT_RADIX - mantBits );
-    } else {
-	quot = ldexp( num/den, scale );
-    }
-
-    minincr = ldexp( 1.0, binExponent - mantBits );
     if ( quot < 0. && quot > -minincr ) {
 	quot = -minincr;
     } else if ( quot > 0. && quot < minincr ) {
@@ -895,4 +884,36 @@ ParseNaN( int signum,		/* Flag == 1 if minus sign has been
 
     *endPtr = p;
     return theNaN.dv;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SafeLdExp --
+ *
+ *	Do an 'ldexp' operation, but handle denormals gracefully.
+ *
+ * Results:
+ *	Returns the appropriately scaled value.
+ *
+ * On some platforms, 'ldexp' fails when presented with a number
+ * too small to represent as a normalized double.  This routine
+ * does 'ldexp' in two steps for those numbers, to return correctly
+ * denormalized values.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static double
+SafeLdExp( double fract, int expt )
+{
+    int minexpt = DBL_MIN_EXP * log2FLT_RADIX;
+    double retval;
+    if ( expt < minexpt ) {
+	retval = ldexp( fract, expt - mantBits - minexpt );
+	retval *= ldexp( 1.0, mantBits + minexpt );
+    } else {
+	retval = ldexp( fract, expt );
+    }
+    return retval;
 }
