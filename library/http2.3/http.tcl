@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and
 # redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: http.tcl,v 1.8 1999/07/20 00:11:52 hershey Exp $
+# RCS: @(#) $Id: http.tcl,v 1.9 1999/08/05 16:57:48 hobbs Exp $
 
 package provide http 2.1	;# This uses Tcl namespaces
 
@@ -27,7 +27,8 @@ namespace eval http {
     variable formMap
     set alphanumeric	a-zA-Z0-9
 
-    for {set i 1} {$i <= 256} {incr i} {
+    variable i 0
+    for {} {$i <= 256} {incr i} {
 	set c [format %c $i]
 	if {![string match \[$alphanumeric\] $c]} {
 	    set formMap($c) %[format %.2x $i]
