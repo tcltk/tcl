@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fileName.test,v 1.30 2003/02/12 18:57:51 vincentdarley Exp $
+# RCS: @(#) $Id: fileName.test,v 1.30.2.1 2003/04/29 11:45:24 vincentdarley Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -1332,6 +1332,13 @@ test filename-11.20 {Tcl_GlobCmd} {
 test filename-11.21 {Tcl_GlobCmd} {
     list [catch {lsort [glob -type d -path $globname *]} msg] $msg
 } [list 0 [lsort [list $globname]]]
+
+test filename-11.21.1 {Tcl_GlobCmd} {
+    close [open {[tcl].testremains} w]
+    set res [list [catch {lsort [glob -path {[tcl]} *]} msg] $msg]
+    file delete -force {[tcl].testremains}
+    set res
+} [list 0 {{[tcl].testremains}}]
 
 # Get rid of file/dir if it exists, since it will have
 # been left behind by a previous failed run.
