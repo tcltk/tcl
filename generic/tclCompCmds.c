@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.59.4.11 2005/03/23 16:51:02 msofer Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.59.4.12 2005/03/24 17:16:30 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1168,7 +1168,6 @@ TclCompileIncrCmd(interp, parsePtr, envPtr)
 	if (incrTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
 	    CONST char *word = incrTokenPtr[1].start;
 	    int numBytes = incrTokenPtr[1].size;
-	    int validLength = TclParseInteger(word, numBytes);
 	    int n;
 
 	    /*
