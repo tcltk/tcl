@@ -1,3 +1,11 @@
+2002-08-16  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* generic/tclIOUtil.c (SetFsPathFromAny): Objects should only have
+	their old representation deleted when we know that we are about to
+	install a new one.  This stops a weird TclX bug under Linux with
+	certain kinds of memory debugging enabled which essentally came
+	down to a double-free of a string.
+
 2002-08-14  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* generic/tclInt.h:
