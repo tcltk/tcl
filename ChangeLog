@@ -1,3 +1,12 @@
+2001-03-30  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* win/tcl.m4: added imm32.lib to LIBS_GUI for Tk IME support.
+
+	* win/Makefile.in (install-libraries): removed extra \s that broke
+	the target.
+	(install-doc): improved install-* targets to use their base build
+	dependency.
+
 2001-03-30  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
 
 	* All of the changes below belong to TIP #10 [Tcl I/O Enhancement:
