@@ -1,3 +1,9 @@
+1999-11-29  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* tests/scan.test:
+	* generic/tclScan.c: fixed scan where %[..] didn't match anything
+	and added test case [Bug: 3700]
+
 1999-11-24  Jeff Hobbs  <hobbs@scriptics.com>
 
 	* doc/open.n:

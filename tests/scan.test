@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: scan.test,v 1.8 1999/11/19 06:35:01 hobbs Exp $
+# RCS: @(#) $Id: scan.test,v 1.9 1999/11/30 01:43:00 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -42,6 +42,10 @@ test scan-1.7 {BuildCharSet, CharInSet} {
 test scan-1.8 {BuildCharSet, CharInSet} {
     list [scan def-abc {%[^c-a]} x] $x
 } {1 def-}
+test scan-1.9 {BuildCharSet, CharInSet no match} {
+    catch {unset x}
+    list [scan {= f} {= %[TF]} x] [info exists x]
+} {0 0}
 
 test scan-2.1 {ReleaseCharSet} {
     list [scan abcde {%[abc]} x] $x
