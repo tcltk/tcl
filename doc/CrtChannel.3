@@ -5,13 +5,13 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: CrtChannel.3,v 1.13 2002/01/15 17:55:29 dgp Exp $
+'\" RCS: @(#) $Id: CrtChannel.3,v 1.14 2002/01/23 21:22:06 andreas_kupries Exp $
 .so man.macros
 .TH Tcl_CreateChannel 3 8.3 Tcl "Tcl Library Procedures"
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
-Tcl_CreateChannel, Tcl_GetChannelInstanceData, Tcl_GetChannelType, Tcl_GetChannelName, Tcl_GetChannelHandle, Tcl_GetChannelMode, Tcl_GetChannelBufferSize, Tcl_SetChannelBufferSize, Tcl_NotifyChannel, Tcl_BadChannelOption, Tcl_ChannelName, Tcl_ChannelVersion, Tcl_ChannelBlockModeProc, Tcl_ChannelCloseProc, Tcl_ChannelClose2Proc, Tcl_ChannelInputProc, Tcl_ChannelOutputProc, Tcl_ChannelSeekProc, Tcl_ChannelSetOptionProc, Tcl_ChannelGetOptionProc, Tcl_ChannelWatchProc, Tcl_ChannelGetHandleProc, Tcl_ChannelFlushProc, Tcl_ChannelHandlerProc, Tcl_IsChannelShared, Tcl_IsChannelRegistered, Tcl_CutChannel, Tcl_SpliceChannel, Tcl_IsChannelExisting, Tcl_ClearChannelHandlers, Tcl_GetChannelThread, Tcl_ChannelBuffered, Tcl_GetTopChannel \- procedures for creating and manipulating channels
+Tcl_CreateChannel, Tcl_GetChannelInstanceData, Tcl_GetChannelType, Tcl_GetChannelName, Tcl_GetChannelHandle, Tcl_GetChannelMode, Tcl_GetChannelBufferSize, Tcl_SetChannelBufferSize, Tcl_NotifyChannel, Tcl_BadChannelOption, Tcl_ChannelName, Tcl_ChannelVersion, Tcl_ChannelBlockModeProc, Tcl_ChannelCloseProc, Tcl_ChannelClose2Proc, Tcl_ChannelInputProc, Tcl_ChannelOutputProc, Tcl_ChannelSeekProc, Tcl_ChannelSetOptionProc, Tcl_ChannelGetOptionProc, Tcl_ChannelWatchProc, Tcl_ChannelGetHandleProc, Tcl_ChannelFlushProc, Tcl_ChannelHandlerProc, Tcl_IsChannelShared, Tcl_IsChannelRegistered, Tcl_CutChannel, Tcl_SpliceChannel, Tcl_IsChannelExisting, Tcl_ClearChannelHandlers, Tcl_GetChannelThread, Tcl_ChannelBuffered \- procedures for creating and manipulating channels
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -69,9 +69,6 @@ void
 .sp
 int
 \fBTcl_ChannelBuffered\fR(\fIchannel\fR)
-.sp
-Tcl_Channel
-\fBTcl_GetTopChannel\fR(\fIchannel\fR)
 .sp
 CONST char *
 \fBTcl_ChannelName\fR(\fItypePtr\fR)
@@ -266,9 +263,6 @@ procs to generate a complete error message.
 .VE
 .PP
 .VS 8.3.2
-\fBTcl_GetTopChannel\fR returns the top channel in the stack of
-channels the supplied channel is part of.
-.PP
 \fBTcl_ChannelBuffered\fR returns the number of bytes of input
 currently buffered in the internal buffer (push back area) of the
 channel itself. It does not report about the data in the overall
