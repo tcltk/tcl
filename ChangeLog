@@ -1,5 +1,24 @@
 2001-06-27  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	* generic/tclInt.h:
+	* generic/tclObj.c:
+	* unix/Makefile.in: added a -DPURIFY mode that makes Tcl_Obj's
+	allocated and free singularly (instead of in alloc in blocks and
+	never free) to allow checkers like Purify to operate better.
+
+	* library/encoding/koi8-u.enc: added koi8-u (Ukranian variant)
+	encoding.
+
+	* tests/subst.test:
+	* generic/tclUtf.c (Tcl_UtfBackslash): Corrected backslash
+	handling of multibyte utf-8 chars. [Bug #217987]
+
+	* generic/tclCmdIL.c (InfoProcsCmd): fixed potential mem leak in
+	info procs that created objects without using them.
+
+	* generic/tclCompCmds.c (TclCompileStringCmd): fixed mem leak when
+	string command failed to parse the subcommand.
+
 	* doc/interp.n:
 	* doc/unknown.n: updated notes about what is in a safe interp.
 	[Bug #218605]
