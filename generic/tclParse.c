@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.6 1999/04/30 22:45:02 stanton Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.7 1999/05/04 01:32:12 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -278,7 +278,9 @@ Tcl_ParseCommand(interp, string, numBytes, nested, parsePtr)
      */
 
     savedChar = string[numBytes];
-    string[numBytes] = 0;
+    if (savedChar != 0) {
+	string[numBytes] = 0;
+    }
 
     /*
      * Parse any leading space and comments before the first word of the
@@ -478,11 +480,15 @@ Tcl_ParseCommand(interp, string, numBytes, nested, parsePtr)
 
 
     parsePtr->commandSize = src - parsePtr->commandStart;
-    string[numBytes] = (char) savedChar;
+    if (savedChar != 0) {
+	string[numBytes] = (char) savedChar;
+    }
     return TCL_OK;
 
     error:
-    string[numBytes] = (char) savedChar;
+    if (savedChar != 0) {
+	string[numBytes] = (char) savedChar;
+    }
     Tcl_FreeParse(parsePtr);
     if (parsePtr->commandStart == NULL) {
 	parsePtr->commandStart = string;
