@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFile.c,v 1.32.2.1 2003/10/03 17:45:37 vincentdarley Exp $
+ * RCS: @(#) $Id: tclUnixFile.c,v 1.32.2.2 2003/10/31 08:46:41 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -221,6 +221,7 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 	if (NativeMatchType(native, types)) {
 	    Tcl_ListObjAppendElement(interp, resultPtr, pathPtr);
 	}
+	Tcl_DecrRefCount(fileNamePtr);
 	return TCL_OK;
     } else {
 	DIR *d;
