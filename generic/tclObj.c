@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.49 2003/07/24 18:16:31 mdejong Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.50 2003/09/29 14:37:14 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -263,6 +263,7 @@ TclInitObjSubsystem()
     Tcl_RegisterObjType(&tclArraySearchType);
     Tcl_RegisterObjType(&tclIndexType);
     Tcl_RegisterObjType(&tclNsNameType);
+    Tcl_RegisterObjType(&tclEnsembleCmdType);
     Tcl_RegisterObjType(&tclCmdNameType);
 
 #ifdef TCL_COMPILE_STATS
