@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: unixNotfy.test,v 1.14 2004/05/19 20:15:32 dkf Exp $
+# RCS: @(#) $Id: unixNotfy.test,v 1.15 2004/06/22 13:09:02 vasiljevic Exp $
 
 # The tests should not be run if you have a notifier which is unable to
 # detect infinite vwaits, as the tests below will hang. The presence of
@@ -74,10 +74,9 @@ test unixNotfy-2.1 {Tcl_DeleteFileHandler} \
 	fileevent $f writable {set x 1}
 	vwait x
 	close $f
-	testthread create "after 500
-    testthread send [testthread id] {set x ok}
-    testthread exit"
+   	testthread create "testthread send [testthread id] {set x ok}"
 	vwait x
+	threadReap
 	set x
     } \
     -result {ok} \
@@ -97,11 +96,10 @@ test unixNotfy-2.2 {Tcl_DeleteFileHandler} \
 	close $f1
 	vwait y
 	close $f2
-	testthread create "after 500
-            testthread send [testthread id] {set x ok}
-            testthread exit"
-        vwait x
-        set x
+   	testthread create "testthread send [testthread id] {set x ok}"
+	vwait x
+	threadReap
+	set x
     } \
     -result {ok} \
     -cleanup { 
