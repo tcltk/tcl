@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.37 2002/03/24 11:41:50 vincentdarley Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.38 2002/03/24 18:09:19 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -1757,7 +1757,7 @@ Tcl_FSMatchInDirectory(interp, result, pathPtr, pattern, types)
 		switch (tclPlatform) {
 		    case TCL_PLATFORM_UNIX:
 			if (cwdStr[cwdLen-1] != '/') {
-			    sep == '/';
+			    sep = '/';
 			}
 			break;
 		    case TCL_PLATFORM_WINDOWS:
