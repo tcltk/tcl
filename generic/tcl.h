@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.91 2001/06/08 20:06:11 dgp Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.92 2001/07/12 13:15:09 dkf Exp $
  */
 
 #ifndef _TCL
@@ -533,6 +533,15 @@ typedef struct stat *Tcl_Stat_;
 #define TCL_CONTINUE	4
 
 #define TCL_RESULT_SIZE 200
+
+/*
+ * Flags to control what substitutions are performed by Tcl_SubstObj():
+ */
+
+#define TCL_SUBST_COMMANDS	001
+#define TCL_SUBST_VARIABLES	002
+#define TCL_SUBST_BACKSLASHES	004
+#define TCL_SUBST_ALL		007
 
 /*
  * Argument descriptors for math function callbacks in expressions:

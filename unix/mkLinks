@@ -234,7 +234,11 @@ if test -r CrtInterp.3; then
 fi
 if test -r CrtMathFnc.3; then
     rm -f Tcl_CreateMathFunc.3
+    rm -f Tcl_GetMathFuncInfo.3
+    rm -f Tcl_ListMathFuncs.3
     ln CrtMathFnc.3 Tcl_CreateMathFunc.3
+    ln CrtMathFnc.3 Tcl_GetMathFuncInfo.3
+    ln CrtMathFnc.3 Tcl_ListMathFuncs.3
 fi
 if test -r CrtObjCmd.3; then
     rm -f Tcl_CreateObjCommand.3
@@ -927,6 +931,10 @@ if test -r StringObj.3; then
     ln StringObj.3 Tcl_SetObjLength.3
     ln StringObj.3 Tcl_ConcatObj.3
     ln StringObj.3 Tcl_AttemptSetObjLength.3
+fi
+if test -r SubstObj.3; then
+    rm -f Tcl_SubstObj.3
+    ln SubstObj.3 Tcl_SubstObj.3
 fi
 if test -r Tcl_Main.3; then
     rm -f Tcl_SetMainLoop.3

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.49 2001/06/08 20:06:11 dgp Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.50 2001/07/12 13:15:09 dkf Exp $
 
 library tcl
 
@@ -1527,7 +1527,9 @@ declare 435 generic {
 declare 436 generic {
     Tcl_Obj * Tcl_ListMathFuncs(Tcl_Interp *interp, CONST char *pattern)
 }
-
+declare 437 generic {
+    Tcl_Obj * Tcl_SubstObj(Tcl_Interp *interp, Tcl_Obj *objPtr, int flags)
+}
 
 ##############################################################################
 
