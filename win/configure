@@ -1147,7 +1147,7 @@ echo "configure:1128: checking compiler flags" >&5
 	RC_INCLUDE=--include
 	RC_DEFINE=--define
 	RES=res.o
-	MAKE_LIB="\${AR} crv \$@"
+	MAKE_LIB="\${AR} cr \$@"
 	POST_MAKE_LIB="\${RANLIB} \$@"
 	MAKE_EXE="\${CC} -o \$@"
 	LIBPREFIX="lib"

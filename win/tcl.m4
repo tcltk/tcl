@@ -349,7 +349,7 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	RC_INCLUDE=--include
 	RC_DEFINE=--define
 	RES=res.o
-	MAKE_LIB="\${AR} crv \[$]@"
+	MAKE_LIB="\${AR} cr \[$]@"
 	POST_MAKE_LIB="\${RANLIB} \[$]@"
 	MAKE_EXE="\${CC} -o \[$]@"
 	LIBPREFIX="lib"
