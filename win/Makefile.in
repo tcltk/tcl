@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.5 1999/06/11 01:53:04 surles Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.6 1999/06/11 02:06:27 surles Exp $
 
 VERSION = @TCL_VERSION@
 
@@ -86,21 +86,21 @@ CFLAGS_OPTIMIZE	= @CFLAGS_OPTIMIZE@
 #CFLAGS = 		$(CFLAGS_DEBUG) $(CFLAGS_OPTIMIZE)
 CFLAGS = 		@CFLAGS@
 
-SRC_DIR		= @srcdir@
-ROOT_DIR	= @srcdir@/..
-GENERIC_DIR	= @srcdir@/../generic
-WIN_DIR		= @srcdir@
-COMPAT_DIR	= @srcdir@/../compat
+SRC_DIR			= @srcdir@
+ROOT_DIR		= @srcdir@/..
+GENERIC_DIR		= @srcdir@/../generic
+WIN_DIR			= @srcdir@
+COMPAT_DIR		= @srcdir@/../compat
 
-PATHTYPE	= @PATHTYPE@
+PATHTYPE		= @PATHTYPE@
 
-GENERIC_DIR_NATIVE = $(shell cygpath $(PATHTYPE) '$(GENERIC_DIR)')
-WIN_DIR_NATIVE	   = $(shell cygpath $(PATHTYPE) '$(WIN_DIR)')
-ROOT_DIR_NATIVE	   = $(shell cygpath $(PATHTYPE) '$(ROOT_DIR)')
+GENERIC_DIR_NATIVE 	= $(shell cygpath $(PATHTYPE) '$(GENERIC_DIR)')
+WIN_DIR_NATIVE	   	= $(shell cygpath $(PATHTYPE) '$(WIN_DIR)')
+ROOT_DIR_NATIVE	   	= $(shell cygpath $(PATHTYPE) '$(ROOT_DIR)')
 
-DLLSUFFIX	= @DLLSUFFIX@
-LIBSUFFIX	= @LIBSUFFIX@
-EXESUFFIX	= @EXESUFFIX@
+DLLSUFFIX		= @DLLSUFFIX@
+LIBSUFFIX		= @LIBSUFFIX@
+EXESUFFIX		= @EXESUFFIX@
 
 TCL_STUB_LIB_FILE	= tclstub$(VER)${LIBSUFFIX}
 TCL_DLL_FILE		= tcl$(VER)${DLLSUFFIX}
@@ -109,12 +109,12 @@ DDE_DLL_FILE		= tcldde$(VER)${DLLSUFFIX}
 REG_DLL_FILE		= tclreg$(VER)${DLLSUFFIX}
 PIPE_DLL_FILE		= tclpip$(VER)${DLLSUFFIX}
 
-SHARED_LIBRARIES = $(TCL_DLL_FILE) $(TCL_STUB_LIB_FILE) $(DDE_DLL_FILE) \
-	           $(REG_DLL_FILE) $(PIPE_DLL_FILE)
-STATIC_LIBRARIES = $(TCL_LIB_FILE)
+SHARED_LIBRARIES 	= $(TCL_DLL_FILE) $(TCL_STUB_LIB_FILE) \
+			  $(DDE_DLL_FILE) $(REG_DLL_FILE) $(PIPE_DLL_FILE)
+STATIC_LIBRARIES	= $(TCL_LIB_FILE)
 
-TCLSH		= tclsh$(VER)${EXESUFFIX}
-TCLTEST		= tcltest${EXEEXT}
+TCLSH			= tclsh$(VER)${EXESUFFIX}
+TCLTEST			= tcltest${EXEEXT}
 
 @SET_MAKE@
 
