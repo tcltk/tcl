@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: lsearch.n,v 1.11 2002/07/01 18:24:39 jenglish Exp $
+'\" RCS: @(#) $Id: lsearch.n,v 1.12 2002/08/08 22:11:13 hobbs Exp $
 '\" 
 .so man.macros
 .TH lsearch n 8.4 Tcl "Tcl Built-In Commands"
@@ -116,9 +116,9 @@ precedence.
 .CS
 lsearch {a b c d e} c => 2
 lsearch -all {a b c a b c} c => 2 5
-lsearch -data {a20 b35 c47} b* => b35
-lsearch -data -not {a20 b35 c47} b* => a20
-lsearch -all -data -not {a20 b35 c47} b* => a20 c47
+lsearch -inline {a20 b35 c47} b* => b35
+lsearch -inline -not {a20 b35 c47} b* => a20
+lsearch -all -inline -not {a20 b35 c47} b* => a20 c47
 lsearch -all -not {a20 b35 c47} b* => 0 2
 lsearch -start 3 {a b c a b c} c => 5
 .CE
