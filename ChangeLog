@@ -1,7 +1,8 @@
 2004-06-14  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
+	* tests/winDde.test: Fixed -async test
 	* win/tclWinDde.c: Backported the fix from 8.5 to avoid hanging in
-	the presence of applications that dont process Window messages.
+	the presence of applications that do not process Window messages.
 
 2004-06-10  Andreas Kupries  <andreask@activestate.com>
 
