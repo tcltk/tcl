@@ -1,3 +1,7 @@
+2004-09-02  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* win/makefile.vc: clock.tcl needs to be installed.
+
 2004-09-01  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* win/tclWinReg.c (BroadcastValue): WIN64 cast corrections
