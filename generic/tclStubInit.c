@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.35 2000/04/09 16:04:18 kupries Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.35.4.1 2000/07/07 03:31:41 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -791,6 +791,8 @@ TclStubs tclStubs = {
     Tcl_ConditionFinalize, /* 391 */
     Tcl_MutexFinalize, /* 392 */
     Tcl_CreateThread, /* 393 */
+    Tcl_ReadRaw, /* 394 */
+    Tcl_WriteRaw, /* 395 */
 };
 
 /* !END!: Do not edit above this line. */

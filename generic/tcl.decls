@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.33 2000/04/09 16:04:17 kupries Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.33.4.1 2000/07/07 03:31:36 hobbs Exp $
 
 library tcl
 
@@ -987,7 +987,7 @@ declare 281 generic {
 	    int mask, Tcl_Channel prevChan)
 }
 declare 282 generic {
-    void Tcl_UnstackChannel(Tcl_Interp *interp, Tcl_Channel chan)
+    int Tcl_UnstackChannel(Tcl_Interp *interp, Tcl_Channel chan)
 }
 declare 283 generic {
     Tcl_Channel Tcl_GetStackedChannel(Tcl_Channel chan)
@@ -1356,6 +1356,13 @@ declare 392 generic {
 declare 393 generic {
     int Tcl_CreateThread (Tcl_ThreadId *idPtr, Tcl_ThreadCreateProc proc, \
 	    ClientData clientData, int stackSize, int flags)
+}
+
+declare 394 generic {
+    int Tcl_ReadRaw (Tcl_Channel chan, char *dst, int bytesToRead)
+}
+declare 395 generic {
+    int Tcl_WriteRaw (Tcl_Channel chan, char *src, int srcLen)
 }
 
 ##############################################################################

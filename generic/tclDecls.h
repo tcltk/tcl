@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.34 2000/04/09 16:04:17 kupries Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.34.4.1 2000/07/07 03:31:37 hobbs Exp $
  */
 
 #ifndef _TCLDECLS
@@ -909,7 +909,7 @@ EXTERN Tcl_Channel	Tcl_StackChannel _ANSI_ARGS_((Tcl_Interp * interp,
 				ClientData instanceData, int mask, 
 				Tcl_Channel prevChan));
 /* 282 */
-EXTERN void		Tcl_UnstackChannel _ANSI_ARGS_((Tcl_Interp * interp, 
+EXTERN int		Tcl_UnstackChannel _ANSI_ARGS_((Tcl_Interp * interp, 
 				Tcl_Channel chan));
 /* 283 */
 EXTERN Tcl_Channel	Tcl_GetStackedChannel _ANSI_ARGS_((Tcl_Channel chan));
@@ -1228,6 +1228,12 @@ EXTERN int		Tcl_CreateThread _ANSI_ARGS_((Tcl_ThreadId * idPtr,
 				Tcl_ThreadCreateProc proc, 
 				ClientData clientData, int stackSize, 
 				int flags));
+/* 394 */
+EXTERN int		Tcl_ReadRaw _ANSI_ARGS_((Tcl_Channel chan, 
+				char * dst, int bytesToRead));
+/* 395 */
+EXTERN int		Tcl_WriteRaw _ANSI_ARGS_((Tcl_Channel chan, 
+				char * src, int srcLen));
 
 typedef struct TclStubHooks {
     struct TclPlatStubs *tclPlatStubs;
@@ -1577,7 +1583,7 @@ typedef struct TclStubs {
     void (*tcl_GetVersion) _ANSI_ARGS_((int * major, int * minor, int * patchLevel, int * type)); /* 279 */
     void (*tcl_InitMemory) _ANSI_ARGS_((Tcl_Interp * interp)); /* 280 */
     Tcl_Channel (*tcl_StackChannel) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_ChannelType * typePtr, ClientData instanceData, int mask, Tcl_Channel prevChan)); /* 281 */
-    void (*tcl_UnstackChannel) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Channel chan)); /* 282 */
+    int (*tcl_UnstackChannel) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Channel chan)); /* 282 */
     Tcl_Channel (*tcl_GetStackedChannel) _ANSI_ARGS_((Tcl_Channel chan)); /* 283 */
     void *reserved284;
     void *reserved285;
@@ -1689,6 +1695,8 @@ typedef struct TclStubs {
     void (*tcl_ConditionFinalize) _ANSI_ARGS_((Tcl_Condition * condPtr)); /* 391 */
     void (*tcl_MutexFinalize) _ANSI_ARGS_((Tcl_Mutex * mutex)); /* 392 */
     int (*tcl_CreateThread) _ANSI_ARGS_((Tcl_ThreadId * idPtr, Tcl_ThreadCreateProc proc, ClientData clientData, int stackSize, int flags)); /* 393 */
+    int (*tcl_ReadRaw) _ANSI_ARGS_((Tcl_Channel chan, char * dst, int bytesToRead)); /* 394 */
+    int (*tcl_WriteRaw) _ANSI_ARGS_((Tcl_Channel chan, char * src, int srcLen)); /* 395 */
 } TclStubs;
 
 #ifdef __cplusplus
@@ -3309,6 +3317,14 @@ extern TclStubs *tclStubsPtr;
 #ifndef Tcl_CreateThread
 #define Tcl_CreateThread \
 	(tclStubsPtr->tcl_CreateThread) /* 393 */
+#endif
+#ifndef Tcl_ReadRaw
+#define Tcl_ReadRaw \
+	(tclStubsPtr->tcl_ReadRaw) /* 394 */
+#endif
+#ifndef Tcl_WriteRaw
+#define Tcl_WriteRaw \
+	(tclStubsPtr->tcl_WriteRaw) /* 395 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */
