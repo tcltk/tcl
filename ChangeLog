@@ -1,5 +1,13 @@
 2001-04-04  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	* mac/MW_TclBuildLibHeader.h:
+	* mac/MW_TclBuildLibHeader.pch:
+	* mac/MW_TclHeaderCommon.h:
+	* mac/MW_TclStaticHeader.h:
+	* mac/MW_TclStaticHeader.pch:
+	* mac/tcltkMacBuildSupport.sea.hqx: new files for improved mac build
+	* mac/tclMacProjects.sea.hqx: new mac build project files.  (steffen)
+
 	* unix/configure:
 	* unix/tcl.m4: extended test of termios vs. termio vs. sgtty to
 	better detect result on Linux and when certain configure
