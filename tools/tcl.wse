@@ -45,15 +45,19 @@ item: End Block
 end
 item: Set Variable
   Variable=VER
+  Value=8.1
+end
+item: Set Variable
+  Variable=PATCHLEVEL
   Value=8.1b2
 end
 item: Set Variable
   Variable=APPTITLE
-  Value=Tcl/Tk %VER% for Windows
+  Value=Tcl/Tk %PATCHLEVEL% for Windows
 end
 item: Set Variable
   Variable=URL
-  Value=http://www.scriptics.com/registration/%VER%.html
+  Value=http://www.scriptics.com/registration/%PATCHLEVEL%.html
 end
 item: Set Variable
   Variable=GROUP
@@ -163,35 +167,36 @@ item: Custom Dialog Set
     Title Norwegian=Velkommen
     Title Swedish=Välkommen
     Width=273
-    Height=226
+    Height=250
     Font Name=Helv
     Font Size=8
     item: Push Button
-      Rectangle=165 182 207 196
+      Rectangle=166 214 208 228
       Variable=DIRECTION
       Value=N
       Create Flags=01010000000000010000000000000001
       Text=&Next >
     end
     item: Push Button
-      Rectangle=211 182 253 196
+      Rectangle=212 214 254 228
       Action=3
       Create Flags=01010000000000010000000000000000
       Text=Cancel
     end
     item: Static
-      Rectangle=0 0 269 213
+      Rectangle=0 0 268 233
       Action=2
       Enabled Color=00000000000000001111111111111111
       Create Flags=01010000000000000000000000001011
-      Pathname=D:\ws\core8.1\tcl8.1b2\tools\white.bmp
+      Pathname=Z:\cvs\tcl8.1b2\tools\white.bmp
     end
     item: Static
-      Rectangle=34 13 242 184
+      Rectangle=5 5 268 215
+      Destination Dialog=1
       Action=2
       Enabled Color=00000000000000001111111111111111
       Create Flags=01010000000000000000000000001011
-      Pathname=D:\ws\core8.1\tcl8.1b2\tools\tclSplash.bmp
+      Pathname=Z:\cvs\tcl8.1\tools\tclSplash.bmp
     end
   end
 end
@@ -943,12 +948,12 @@ item: Check Disk Space
   Component=COMPONENTS
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\license.terms
+  Source=Z:\cvs\tcl8.1b2\license.terms
   Destination=%MAINDIR%\license.txt
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\win\Readme.binary
+  Source=Z:\cvs\tcl8.1b2\win\Readme.binary
   Destination=%MAINDIR%\Readme.txt
   Flags=0000000000000010
 end
@@ -958,63 +963,83 @@ item: If/While Statement
   Flags=00001010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\win\release\tk81.lib
+  Source=Z:\cvs\tk8.1b2\win\release\tk81.lib
   Destination=%MAINDIR%\lib\tk81.lib
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\win\release\tcl81.lib
+  Source=Z:\cvs\tk8.1b2\win\release\tkstub81.lib
+  Destination=%MAINDIR%\lib\tkstub81.lib
+  Flags=0000000000000010
+end
+item: Install File
+  Source=Z:\cvs\tcl8.1b2\win\release\tcl81.lib
   Destination=%MAINDIR%\lib\tcl81.lib
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\xlib\X11\Xutil.h
+  Source=Z:\cvs\tcl8.1b2\win\release\tclstub81.lib
+  Destination=%MAINDIR%\lib\tclstub81.lib
+  Flags=0000000000000010
+end
+item: Install File
+  Source=Z:\cvs\tk8.1b2\xlib\X11\Xutil.h
   Destination=%MAINDIR%\include\X11\Xutil.h
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\xlib\X11\Xlib.h
+  Source=Z:\cvs\tk8.1b2\xlib\X11\Xlib.h
   Destination=%MAINDIR%\include\X11\Xlib.h
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\xlib\X11\Xfuncproto.h
+  Source=Z:\cvs\tk8.1b2\xlib\X11\Xfuncproto.h
   Destination=%MAINDIR%\include\X11\Xfuncproto.h
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\xlib\X11\Xatom.h
+  Source=Z:\cvs\tk8.1b2\xlib\X11\Xatom.h
   Destination=%MAINDIR%\include\X11\Xatom.h
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\xlib\X11\X.h
+  Source=Z:\cvs\tk8.1b2\xlib\X11\X.h
   Destination=%MAINDIR%\include\X11\X.h
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\xlib\X11\keysymdef.h
+  Source=Z:\cvs\tk8.1b2\xlib\X11\keysymdef.h
   Destination=%MAINDIR%\include\X11\keysymdef.h
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\xlib\X11\keysym.h
+  Source=Z:\cvs\tk8.1b2\xlib\X11\keysym.h
   Destination=%MAINDIR%\include\X11\keysym.h
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\xlib\X11\cursorfont.h
+  Source=Z:\cvs\tk8.1b2\xlib\X11\cursorfont.h
   Destination=%MAINDIR%\include\X11\cursorfont.h
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\generic\tk.h
+  Source=Z:\cvs\tk8.1b2\generic\tk.h
   Destination=%MAINDIR%\include\tk.h
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\generic\tcl.h
+  Source=Z:\cvs\tk8.1b2\generic\tkDecls.h
+  Destination=%MAINDIR%\include\tkDecls.h
+  Flags=0000000000000010
+end
+item: Install File
+  Source=Z:\cvs\tcl8.1b2\generic\tcl.h
   Destination=%MAINDIR%\include\tcl.h
+  Flags=0000000000000010
+end
+item: Install File
+  Source=Z:\cvs\tcl8.1b2\generic\tclDecls.h
+  Destination=%MAINDIR%\include\tclDecls.h
   Flags=0000000000000010
 end
 item: End Block
@@ -1025,502 +1050,502 @@ item: If/While Statement
   Flags=00001010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\msgcat1.0\pkgIndex.tcl
+  Source=Z:\cvs\tcl8.1b2\library\msgcat1.0\pkgIndex.tcl
   Destination=%MAINDIR%\lib\tcl%VER%\msgcat1.0\pkgIndex.tcl
   Flags=0000000010000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\msgcat1.0\msgcat.tcl
+  Source=Z:\cvs\tcl8.1b2\library\msgcat1.0\msgcat.tcl
   Destination=%MAINDIR%\lib\tcl%VER%\msgcat1.0\msgcat.tcl
   Flags=0000000010000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\encoding\ksc5601.enc
+  Source=Z:\cvs\tcl8.1b2\library\encoding\ksc5601.enc
   Destination=%MAINDIR%\lib\tcl%VER%\encoding\ksc5601.enc
   Flags=0000000010000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\encoding\euc-kr.enc
+  Source=Z:\cvs\tcl8.1b2\library\encoding\euc-kr.enc
   Destination=%MAINDIR%\lib\tcl%VER%\encoding\euc-kr.enc
   Flags=0000000010000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\encoding\symbol.enc
+  Source=Z:\cvs\tcl8.1b2\library\encoding\symbol.enc
   Destination=%MAINDIR%\lib\tcl%VER%\encoding\symbol.enc
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\encoding\shiftjis.enc
+  Source=Z:\cvs\tcl8.1b2\library\encoding\shiftjis.enc
   Destination=%MAINDIR%\lib\tcl%VER%\encoding\shiftjis.enc
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\encoding\macUkraine.enc
+  Source=Z:\cvs\tcl8.1b2\library\encoding\macUkraine.enc
   Destination=%MAINDIR%\lib\tcl%VER%\encoding\macUkraine.enc
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\encoding\macTurkish.enc
+  Source=Z:\cvs\tcl8.1b2\library\encoding\macTurkish.enc
   Destination=%MAINDIR%\lib\tcl%VER%\encoding\macTurkish.enc
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\encoding\macThai.enc
+  Source=Z:\cvs\tcl8.1b2\library\encoding\macThai.enc
   Destination=%MAINDIR%\lib\tcl%VER%\encoding\macThai.enc
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\encoding\macRomania.enc
+  Source=Z:\cvs\tcl8.1b2\library\encoding\macRomania.enc
   Destination=%MAINDIR%\lib\tcl%VER%\encoding\macRomania.enc
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\encoding\macRoman.enc
+  Source=Z:\cvs\tcl8.1b2\library\encoding\macRoman.enc
   Destination=%MAINDIR%\lib\tcl%VER%\encoding\macRoman.enc
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\encoding\macJapan.enc
+  Source=Z:\cvs\tcl8.1b2\library\encoding\macJapan.enc
   Destination=%MAINDIR%\lib\tcl%VER%\encoding\macJapan.enc
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\encoding\macIceland.enc
+  Source=Z:\cvs\tcl8.1b2\library\encoding\macIceland.enc
   Destination=%MAINDIR%\lib\tcl%VER%\encoding\macIceland.enc
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\encoding\macGreek.enc
+  Source=Z:\cvs\tcl8.1b2\library\encoding\macGreek.enc
   Destination=%MAINDIR%\lib\tcl%VER%\encoding\macGreek.enc
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\encoding\macDingbats.enc
+  Source=Z:\cvs\tcl8.1b2\library\encoding\macDingbats.enc
   Destination=%MAINDIR%\lib\tcl%VER%\encoding\macDingbats.enc
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\encoding\macCyrillic.enc
+  Source=Z:\cvs\tcl8.1b2\library\encoding\macCyrillic.enc
   Destination=%MAINDIR%\lib\tcl%VER%\encoding\macCyrillic.enc
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\encoding\macCroatian.enc
+  Source=Z:\cvs\tcl8.1b2\library\encoding\macCroatian.enc
   Destination=%MAINDIR%\lib\tcl%VER%\encoding\macCroatian.enc
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\encoding\macCentEuro.enc
+  Source=Z:\cvs\tcl8.1b2\library\encoding\macCentEuro.enc
   Destination=%MAINDIR%\lib\tcl%VER%\encoding\macCentEuro.enc
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\encoding\jis0212.enc
+  Source=Z:\cvs\tcl8.1b2\library\encoding\jis0212.enc
   Destination=%MAINDIR%\lib\tcl%VER%\encoding\jis0212.enc
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\encoding\jis0208.enc
+  Source=Z:\cvs\tcl8.1b2\library\encoding\jis0208.enc
   Destination=%MAINDIR%\lib\tcl%VER%\encoding\jis0208.enc
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\encoding\jis0201.enc
+  Source=Z:\cvs\tcl8.1b2\library\encoding\jis0201.enc
   Destination=%MAINDIR%\lib\tcl%VER%\encoding\jis0201.enc
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\encoding\iso8859-9.enc
+  Source=Z:\cvs\tcl8.1b2\library\encoding\iso8859-9.enc
   Destination=%MAINDIR%\lib\tcl%VER%\encoding\iso8859-9.enc
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\encoding\iso8859-8.enc
+  Source=Z:\cvs\tcl8.1b2\library\encoding\iso8859-8.enc
   Destination=%MAINDIR%\lib\tcl%VER%\encoding\iso8859-8.enc
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\encoding\iso8859-7.enc
+  Source=Z:\cvs\tcl8.1b2\library\encoding\iso8859-7.enc
   Destination=%MAINDIR%\lib\tcl%VER%\encoding\iso8859-7.enc
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\encoding\iso8859-6.enc
+  Source=Z:\cvs\tcl8.1b2\library\encoding\iso8859-6.enc
   Destination=%MAINDIR%\lib\tcl%VER%\encoding\iso8859-6.enc
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\encoding\iso8859-5.enc
+  Source=Z:\cvs\tcl8.1b2\library\encoding\iso8859-5.enc
   Destination=%MAINDIR%\lib\tcl%VER%\encoding\iso8859-5.enc
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\encoding\iso8859-4.enc
+  Source=Z:\cvs\tcl8.1b2\library\encoding\iso8859-4.enc
   Destination=%MAINDIR%\lib\tcl%VER%\encoding\iso8859-4.enc
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\encoding\iso8859-3.enc
+  Source=Z:\cvs\tcl8.1b2\library\encoding\iso8859-3.enc
   Destination=%MAINDIR%\lib\tcl%VER%\encoding\iso8859-3.enc
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\encoding\iso8859-2.enc
+  Source=Z:\cvs\tcl8.1b2\library\encoding\iso8859-2.enc
   Destination=%MAINDIR%\lib\tcl%VER%\encoding\iso8859-2.enc
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\encoding\iso8859-1.enc
+  Source=Z:\cvs\tcl8.1b2\library\encoding\iso8859-1.enc
   Destination=%MAINDIR%\lib\tcl%VER%\encoding\iso8859-1.enc
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\encoding\iso2022.enc
+  Source=Z:\cvs\tcl8.1b2\library\encoding\iso2022.enc
   Destination=%MAINDIR%\lib\tcl%VER%\encoding\iso2022.enc
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\encoding\iso2022-kr.enc
+  Source=Z:\cvs\tcl8.1b2\library\encoding\iso2022-kr.enc
   Destination=%MAINDIR%\lib\tcl%VER%\encoding\iso2022-kr.enc
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\encoding\iso2022-jp.enc
+  Source=Z:\cvs\tcl8.1b2\library\encoding\iso2022-jp.enc
   Destination=%MAINDIR%\lib\tcl%VER%\encoding\iso2022-jp.enc
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\encoding\gb2312.enc
+  Source=Z:\cvs\tcl8.1b2\library\encoding\gb2312.enc
   Destination=%MAINDIR%\lib\tcl%VER%\encoding\gb2312.enc
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\encoding\gb1988.enc
+  Source=Z:\cvs\tcl8.1b2\library\encoding\gb1988.enc
   Destination=%MAINDIR%\lib\tcl%VER%\encoding\gb1988.enc
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\encoding\gb12345.enc
+  Source=Z:\cvs\tcl8.1b2\library\encoding\gb12345.enc
   Destination=%MAINDIR%\lib\tcl%VER%\encoding\gb12345.enc
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\encoding\euc-jp.enc
+  Source=Z:\cvs\tcl8.1b2\library\encoding\euc-jp.enc
   Destination=%MAINDIR%\lib\tcl%VER%\encoding\euc-jp.enc
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\encoding\dingbats.enc
+  Source=Z:\cvs\tcl8.1b2\library\encoding\dingbats.enc
   Destination=%MAINDIR%\lib\tcl%VER%\encoding\dingbats.enc
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\encoding\cp950.enc
+  Source=Z:\cvs\tcl8.1b2\library\encoding\cp950.enc
   Destination=%MAINDIR%\lib\tcl%VER%\encoding\cp950.enc
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\encoding\cp949.enc
+  Source=Z:\cvs\tcl8.1b2\library\encoding\cp949.enc
   Destination=%MAINDIR%\lib\tcl%VER%\encoding\cp949.enc
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\encoding\cp936.enc
+  Source=Z:\cvs\tcl8.1b2\library\encoding\cp936.enc
   Destination=%MAINDIR%\lib\tcl%VER%\encoding\cp936.enc
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\encoding\cp932.enc
+  Source=Z:\cvs\tcl8.1b2\library\encoding\cp932.enc
   Destination=%MAINDIR%\lib\tcl%VER%\encoding\cp932.enc
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\encoding\cp874.enc
+  Source=Z:\cvs\tcl8.1b2\library\encoding\cp874.enc
   Destination=%MAINDIR%\lib\tcl%VER%\encoding\cp874.enc
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\encoding\cp869.enc
+  Source=Z:\cvs\tcl8.1b2\library\encoding\cp869.enc
   Destination=%MAINDIR%\lib\tcl%VER%\encoding\cp869.enc
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\encoding\cp866.enc
+  Source=Z:\cvs\tcl8.1b2\library\encoding\cp866.enc
   Destination=%MAINDIR%\lib\tcl%VER%\encoding\cp866.enc
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\encoding\cp865.enc
+  Source=Z:\cvs\tcl8.1b2\library\encoding\cp865.enc
   Destination=%MAINDIR%\lib\tcl%VER%\encoding\cp865.enc
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\encoding\cp864.enc
+  Source=Z:\cvs\tcl8.1b2\library\encoding\cp864.enc
   Destination=%MAINDIR%\lib\tcl%VER%\encoding\cp864.enc
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\encoding\cp863.enc
+  Source=Z:\cvs\tcl8.1b2\library\encoding\cp863.enc
   Destination=%MAINDIR%\lib\tcl%VER%\encoding\cp863.enc
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\encoding\cp862.enc
+  Source=Z:\cvs\tcl8.1b2\library\encoding\cp862.enc
   Destination=%MAINDIR%\lib\tcl%VER%\encoding\cp862.enc
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\encoding\cp861.enc
+  Source=Z:\cvs\tcl8.1b2\library\encoding\cp861.enc
   Destination=%MAINDIR%\lib\tcl%VER%\encoding\cp861.enc
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\encoding\cp860.enc
+  Source=Z:\cvs\tcl8.1b2\library\encoding\cp860.enc
   Destination=%MAINDIR%\lib\tcl%VER%\encoding\cp860.enc
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\encoding\cp857.enc
+  Source=Z:\cvs\tcl8.1b2\library\encoding\cp857.enc
   Destination=%MAINDIR%\lib\tcl%VER%\encoding\cp857.enc
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\encoding\cp855.enc
+  Source=Z:\cvs\tcl8.1b2\library\encoding\cp855.enc
   Destination=%MAINDIR%\lib\tcl%VER%\encoding\cp855.enc
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\encoding\cp852.enc
+  Source=Z:\cvs\tcl8.1b2\library\encoding\cp852.enc
   Destination=%MAINDIR%\lib\tcl%VER%\encoding\cp852.enc
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\encoding\cp850.enc
+  Source=Z:\cvs\tcl8.1b2\library\encoding\cp850.enc
   Destination=%MAINDIR%\lib\tcl%VER%\encoding\cp850.enc
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\encoding\cp775.enc
+  Source=Z:\cvs\tcl8.1b2\library\encoding\cp775.enc
   Destination=%MAINDIR%\lib\tcl%VER%\encoding\cp775.enc
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\encoding\cp737.enc
+  Source=Z:\cvs\tcl8.1b2\library\encoding\cp737.enc
   Destination=%MAINDIR%\lib\tcl%VER%\encoding\cp737.enc
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\encoding\cp437.enc
+  Source=Z:\cvs\tcl8.1b2\library\encoding\cp437.enc
   Destination=%MAINDIR%\lib\tcl%VER%\encoding\cp437.enc
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\encoding\cp1258.enc
+  Source=Z:\cvs\tcl8.1b2\library\encoding\cp1258.enc
   Destination=%MAINDIR%\lib\tcl%VER%\encoding\cp1258.enc
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\encoding\cp1257.enc
+  Source=Z:\cvs\tcl8.1b2\library\encoding\cp1257.enc
   Destination=%MAINDIR%\lib\tcl%VER%\encoding\cp1257.enc
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\encoding\cp1256.enc
+  Source=Z:\cvs\tcl8.1b2\library\encoding\cp1256.enc
   Destination=%MAINDIR%\lib\tcl%VER%\encoding\cp1256.enc
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\encoding\cp1255.enc
+  Source=Z:\cvs\tcl8.1b2\library\encoding\cp1255.enc
   Destination=%MAINDIR%\lib\tcl%VER%\encoding\cp1255.enc
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\encoding\cp1254.enc
+  Source=Z:\cvs\tcl8.1b2\library\encoding\cp1254.enc
   Destination=%MAINDIR%\lib\tcl%VER%\encoding\cp1254.enc
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\encoding\cp1253.enc
+  Source=Z:\cvs\tcl8.1b2\library\encoding\cp1253.enc
   Destination=%MAINDIR%\lib\tcl%VER%\encoding\cp1253.enc
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\encoding\cp1252.enc
+  Source=Z:\cvs\tcl8.1b2\library\encoding\cp1252.enc
   Destination=%MAINDIR%\lib\tcl%VER%\encoding\cp1252.enc
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\encoding\cp1251.enc
+  Source=Z:\cvs\tcl8.1b2\library\encoding\cp1251.enc
   Destination=%MAINDIR%\lib\tcl%VER%\encoding\cp1251.enc
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\encoding\cp1250.enc
+  Source=Z:\cvs\tcl8.1b2\library\encoding\cp1250.enc
   Destination=%MAINDIR%\lib\tcl%VER%\encoding\cp1250.enc
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\encoding\big5.enc
+  Source=Z:\cvs\tcl8.1b2\library\encoding\big5.enc
   Destination=%MAINDIR%\lib\tcl%VER%\encoding\big5.enc
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\encoding\ascii.enc
+  Source=Z:\cvs\tcl8.1b2\library\encoding\ascii.enc
   Destination=%MAINDIR%\lib\tcl%VER%\encoding\ascii.enc
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\opt0.4\pkgIndex.tcl
+  Source=Z:\cvs\tcl8.1b2\library\opt0.4\pkgIndex.tcl
   Destination=%MAINDIR%\lib\tcl%VER%\opt0.4\pkgIndex.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\opt0.4\optparse.tcl
+  Source=Z:\cvs\tcl8.1b2\library\opt0.4\optparse.tcl
   Destination=%MAINDIR%\lib\tcl%VER%\opt0.4\optparse.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\http2.0\pkgIndex.tcl
+  Source=Z:\cvs\tcl8.1b2\library\http2.0\pkgIndex.tcl
   Destination=%MAINDIR%\lib\tcl%VER%\http2.0\pkgIndex.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\http2.0\http.tcl
+  Source=Z:\cvs\tcl8.1b2\library\http2.0\http.tcl
   Destination=%MAINDIR%\lib\tcl%VER%\http2.0\http.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\msgbox.tcl
+  Source=Z:\cvs\tk8.1b2\library\msgbox.tcl
   Destination=%MAINDIR%\lib\tk%VER%\msgbox.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\optMenu.tcl
+  Source=Z:\cvs\tk8.1b2\library\optMenu.tcl
   Destination=%MAINDIR%\lib\tk%VER%\optMenu.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\clrpick.tcl
+  Source=Z:\cvs\tk8.1b2\library\clrpick.tcl
   Destination=%MAINDIR%\lib\tk%VER%\clrpick.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\entry.tcl
+  Source=Z:\cvs\tk8.1b2\library\entry.tcl
   Destination=%MAINDIR%\lib\tk%VER%\entry.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\comdlg.tcl
+  Source=Z:\cvs\tk8.1b2\library\comdlg.tcl
   Destination=%MAINDIR%\lib\tk%VER%\comdlg.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\bgerror.tcl
+  Source=Z:\cvs\tk8.1b2\library\bgerror.tcl
   Destination=%MAINDIR%\lib\tk%VER%\bgerror.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\obsolete.tcl
+  Source=Z:\cvs\tk8.1b2\library\obsolete.tcl
   Destination=%MAINDIR%\lib\tk%VER%\obsolete.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\button.tcl
+  Source=Z:\cvs\tk8.1b2\library\button.tcl
   Destination=%MAINDIR%\lib\tk%VER%\button.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\xmfbox.tcl
+  Source=Z:\cvs\tk8.1b2\library\xmfbox.tcl
   Destination=%MAINDIR%\lib\tk%VER%\xmfbox.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\console.tcl
+  Source=Z:\cvs\tk8.1b2\library\console.tcl
   Destination=%MAINDIR%\lib\tk%VER%\console.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\listbox.tcl
+  Source=Z:\cvs\tk8.1b2\library\listbox.tcl
   Destination=%MAINDIR%\lib\tk%VER%\listbox.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\menu.tcl
+  Source=Z:\cvs\tk8.1b2\library\menu.tcl
   Destination=%MAINDIR%\lib\tk%VER%\menu.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\dialog.tcl
+  Source=Z:\cvs\tk8.1b2\library\dialog.tcl
   Destination=%MAINDIR%\lib\tk%VER%\dialog.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\focus.tcl
+  Source=Z:\cvs\tk8.1b2\library\focus.tcl
   Destination=%MAINDIR%\lib\tk%VER%\focus.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\palette.tcl
+  Source=Z:\cvs\tk8.1b2\library\palette.tcl
   Destination=%MAINDIR%\lib\tk%VER%\palette.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\tkfbox.tcl
+  Source=Z:\cvs\tk8.1b2\library\tkfbox.tcl
   Destination=%MAINDIR%\lib\tk%VER%\tkfbox.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\tk.tcl
+  Source=Z:\cvs\tk8.1b2\library\tk.tcl
   Destination=%MAINDIR%\lib\tk%VER%\tk.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\text.tcl
+  Source=Z:\cvs\tk8.1b2\library\text.tcl
   Destination=%MAINDIR%\lib\tk%VER%\text.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\tearoff.tcl
+  Source=Z:\cvs\tk8.1b2\library\tearoff.tcl
   Destination=%MAINDIR%\lib\tk%VER%\tearoff.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\tclIndex
+  Source=Z:\cvs\tk8.1b2\library\tclIndex
   Destination=%MAINDIR%\lib\tk%VER%\tclIndex
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\scrlbar.tcl
+  Source=Z:\cvs\tk8.1b2\library\scrlbar.tcl
   Destination=%MAINDIR%\lib\tk%VER%\scrlbar.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\scale.tcl
+  Source=Z:\cvs\tk8.1b2\library\scale.tcl
   Destination=%MAINDIR%\lib\tk%VER%\scale.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\safetk.tcl
+  Source=Z:\cvs\tk8.1b2\library\safetk.tcl
   Destination=%MAINDIR%\lib\tk%VER%\safetk.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\http1.0\pkgIndex.tcl
+  Source=Z:\cvs\tcl8.1b2\library\http1.0\pkgIndex.tcl
   Destination=%MAINDIR%\lib\tcl%VER%\http1.0\pkgIndex.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\http1.0\http.tcl
+  Source=Z:\cvs\tcl8.1b2\library\http1.0\http.tcl
   Destination=%MAINDIR%\lib\tcl%VER%\http1.0\http.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\win\pkgIndex.tcl
+  Source=Z:\cvs\tcl8.1b2\win\pkgIndex.tcl
   Destination=%MAINDIR%\lib\tcl%VER%\reg1.0\pkgIndex.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\win\release\tclreg81.dll
+  Source=Z:\cvs\tcl8.1b2\win\release\tclreg81.dll
   Destination=%MAINDIR%\lib\tcl%VER%\reg1.0\tclreg81.dll
   Flags=0000000000000010
 end
@@ -1530,67 +1555,67 @@ item: Install File
   Flags=0010001000000011
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\win\release\wish81.exe
+  Source=Z:\cvs\tk8.1b2\win\release\wish81.exe
   Destination=%MAINDIR%\bin\wish81.exe
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\win\release\tclsh81.exe
+  Source=Z:\cvs\tcl8.1b2\win\release\tclsh81.exe
   Destination=%MAINDIR%\bin\tclsh81.exe
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\win\release\tclpip81.dll
+  Source=Z:\cvs\tcl8.1b2\win\release\tclpip81.dll
   Destination=%MAINDIR%\bin\tclpip81.dll
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\win\release\tcl81.dll
+  Source=Z:\cvs\tcl8.1b2\win\release\tcl81.dll
   Destination=%MAINDIR%\bin\tcl81.dll
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\win\release\tk81.dll
+  Source=Z:\cvs\tk8.1b2\win\release\tk81.dll
   Destination=%MAINDIR%\bin\tk81.dll
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\auto.tcl
+  Source=Z:\cvs\tcl8.1b2\library\auto.tcl
   Destination=%MAINDIR%\lib\tcl%VER%\auto.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\history.tcl
+  Source=Z:\cvs\tcl8.1b2\library\history.tcl
   Destination=%MAINDIR%\lib\tcl%VER%\history.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\init.tcl
+  Source=Z:\cvs\tcl8.1b2\library\init.tcl
   Destination=%MAINDIR%\lib\tcl%VER%\init.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\package.tcl
+  Source=Z:\cvs\tcl8.1b2\library\package.tcl
   Destination=%MAINDIR%\lib\tcl%VER%\package.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\parray.tcl
+  Source=Z:\cvs\tcl8.1b2\library\parray.tcl
   Destination=%MAINDIR%\lib\tcl%VER%\parray.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\safe.tcl
+  Source=Z:\cvs\tcl8.1b2\library\safe.tcl
   Destination=%MAINDIR%\lib\tcl%VER%\safe.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\tclIndex
+  Source=Z:\cvs\tcl8.1b2\library\tclIndex
   Destination=%MAINDIR%\lib\tcl%VER%\tclIndex
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tcl8.1b2\library\word.tcl
+  Source=Z:\cvs\tcl8.1b2\library\word.tcl
   Destination=%MAINDIR%\lib\tcl%VER%\word.tcl
   Flags=0000000000000010
 end
@@ -1602,347 +1627,347 @@ item: If/While Statement
   Flags=00001010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\images\tai-ku.gif
+  Source=Z:\cvs\tk8.1b2\library\images\tai-ku.gif
   Destination=%MAINDIR%\lib\tk%VER%\images\tai-ku.gif
   Flags=0000000010000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\demos\images\teapot.ppm
+  Source=Z:\cvs\tk8.1b2\library\demos\images\teapot.ppm
   Destination=%MAINDIR%\lib\tk%VER%\demos\images\teapot.ppm
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\demos\images\tcllogo.gif
+  Source=Z:\cvs\tk8.1b2\library\demos\images\tcllogo.gif
   Destination=%MAINDIR%\lib\tk%VER%\demos\images\tcllogo.gif
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\demos\images\pattern.bmp
+  Source=Z:\cvs\tk8.1b2\library\demos\images\pattern.bmp
   Destination=%MAINDIR%\lib\tk%VER%\demos\images\pattern.bmp
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\demos\images\noletter.bmp
+  Source=Z:\cvs\tk8.1b2\library\demos\images\noletter.bmp
   Destination=%MAINDIR%\lib\tk%VER%\demos\images\noletter.bmp
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\demos\images\letters.bmp
+  Source=Z:\cvs\tk8.1b2\library\demos\images\letters.bmp
   Destination=%MAINDIR%\lib\tk%VER%\demos\images\letters.bmp
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\demos\images\gray25.bmp
+  Source=Z:\cvs\tk8.1b2\library\demos\images\gray25.bmp
   Destination=%MAINDIR%\lib\tk%VER%\demos\images\gray25.bmp
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\demos\images\flagup.bmp
+  Source=Z:\cvs\tk8.1b2\library\demos\images\flagup.bmp
   Destination=%MAINDIR%\lib\tk%VER%\demos\images\flagup.bmp
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\demos\images\flagdown.bmp
+  Source=Z:\cvs\tk8.1b2\library\demos\images\flagdown.bmp
   Destination=%MAINDIR%\lib\tk%VER%\demos\images\flagdown.bmp
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\demos\images\face.bmp
+  Source=Z:\cvs\tk8.1b2\library\demos\images\face.bmp
   Destination=%MAINDIR%\lib\tk%VER%\demos\images\face.bmp
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\demos\images\earthris.gif
+  Source=Z:\cvs\tk8.1b2\library\demos\images\earthris.gif
   Destination=%MAINDIR%\lib\tk%VER%\demos\images\earthris.gif
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\demos\images\earth.gif
+  Source=Z:\cvs\tk8.1b2\library\demos\images\earth.gif
   Destination=%MAINDIR%\lib\tk%VER%\demos\images\earth.gif
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\demos\vscale.tcl
+  Source=Z:\cvs\tk8.1b2\library\demos\vscale.tcl
   Destination=%MAINDIR%\lib\tk%VER%\demos\vscale.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\demos\twind.tcl
+  Source=Z:\cvs\tk8.1b2\library\demos\twind.tcl
   Destination=%MAINDIR%\lib\tk%VER%\demos\twin\released.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\demos\text.tcl
+  Source=Z:\cvs\tk8.1b2\library\demos\text.tcl
   Destination=%MAINDIR%\lib\tk%VER%\demos\text.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\demos\style.tcl
+  Source=Z:\cvs\tk8.1b2\library\demos\style.tcl
   Destination=%MAINDIR%\lib\tk%VER%\demos\style.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\demos\states.tcl
+  Source=Z:\cvs\tk8.1b2\library\demos\states.tcl
   Destination=%MAINDIR%\lib\tk%VER%\demos\states.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\demos\search.tcl
+  Source=Z:\cvs\tk8.1b2\library\demos\search.tcl
   Destination=%MAINDIR%\lib\tk%VER%\demos\search.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\demos\sayings.tcl
+  Source=Z:\cvs\tk8.1b2\library\demos\sayings.tcl
   Destination=%MAINDIR%\lib\tk%VER%\demos\sayings.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\demos\ruler.tcl
+  Source=Z:\cvs\tk8.1b2\library\demos\ruler.tcl
   Destination=%MAINDIR%\lib\tk%VER%\demos\ruler.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\demos\radio.tcl
+  Source=Z:\cvs\tk8.1b2\library\demos\radio.tcl
   Destination=%MAINDIR%\lib\tk%VER%\demos\radio.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\demos\puzzle.tcl
+  Source=Z:\cvs\tk8.1b2\library\demos\puzzle.tcl
   Destination=%MAINDIR%\lib\tk%VER%\demos\puzzle.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\demos\plot.tcl
+  Source=Z:\cvs\tk8.1b2\library\demos\plot.tcl
   Destination=%MAINDIR%\lib\tk%VER%\demos\plot.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\demos\msgbox.tcl
+  Source=Z:\cvs\tk8.1b2\library\demos\msgbox.tcl
   Destination=%MAINDIR%\lib\tk%VER%\demos\msgbox.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\demos\menubu.tcl
+  Source=Z:\cvs\tk8.1b2\library\demos\menubu.tcl
   Destination=%MAINDIR%\lib\tk%VER%\demos\menubu.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\demos\menu.tcl
+  Source=Z:\cvs\tk8.1b2\library\demos\menu.tcl
   Destination=%MAINDIR%\lib\tk%VER%\demos\menu.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\demos\label.tcl
+  Source=Z:\cvs\tk8.1b2\library\demos\label.tcl
   Destination=%MAINDIR%\lib\tk%VER%\demos\label.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\demos\items.tcl
+  Source=Z:\cvs\tk8.1b2\library\demos\items.tcl
   Destination=%MAINDIR%\lib\tk%VER%\demos\items.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\demos\image2.tcl
+  Source=Z:\cvs\tk8.1b2\library\demos\image2.tcl
   Destination=%MAINDIR%\lib\tk%VER%\demos\image2.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\demos\image1.tcl
+  Source=Z:\cvs\tk8.1b2\library\demos\image1.tcl
   Destination=%MAINDIR%\lib\tk%VER%\demos\image1.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\demos\icon.tcl
+  Source=Z:\cvs\tk8.1b2\library\demos\icon.tcl
   Destination=%MAINDIR%\lib\tk%VER%\demos\icon.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\demos\hscale.tcl
+  Source=Z:\cvs\tk8.1b2\library\demos\hscale.tcl
   Destination=%MAINDIR%\lib\tk%VER%\demos\hscale.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\demos\form.tcl
+  Source=Z:\cvs\tk8.1b2\library\demos\form.tcl
   Destination=%MAINDIR%\lib\tk%VER%\demos\form.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\demos\ixset
+  Source=Z:\cvs\tk8.1b2\library\demos\ixset
   Destination=%MAINDIR%\lib\tk%VER%\demos\ixset.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\demos\rolodex
+  Source=Z:\cvs\tk8.1b2\library\demos\rolodex
   Destination=%MAINDIR%\lib\tk%VER%\demos\rolodex.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\demos\square
+  Source=Z:\cvs\tk8.1b2\library\demos\square
   Destination=%MAINDIR%\lib\tk%VER%\demos\square.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\demos\Readme
+  Source=Z:\cvs\tk8.1b2\library\demos\Readme
   Destination=%MAINDIR%\lib\tk%VER%\demos\Readme
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\demos\hello
+  Source=Z:\cvs\tk8.1b2\library\demos\hello
   Destination=%MAINDIR%\lib\tk%VER%\demos\hello.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\demos\tclIndex
+  Source=Z:\cvs\tk8.1b2\library\demos\tclIndex
   Destination=%MAINDIR%\lib\tk%VER%\demos\tclIndex
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\demos\browse
+  Source=Z:\cvs\tk8.1b2\library\demos\browse
   Destination=%MAINDIR%\lib\tk%VER%\demos\browse.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\demos\timer
+  Source=Z:\cvs\tk8.1b2\library\demos\timer
   Destination=%MAINDIR%\lib\tk%VER%\demos\timer.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\demos\widget
+  Source=Z:\cvs\tk8.1b2\library\demos\widget
   Destination=%MAINDIR%\lib\tk%VER%\demos\widget.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\demos\tcolor
+  Source=Z:\cvs\tk8.1b2\library\demos\tcolor
   Destination=%MAINDIR%\lib\tk%VER%\demos\tcolor.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\demos\rmt
+  Source=Z:\cvs\tk8.1b2\library\demos\rmt
   Destination=%MAINDIR%\lib\tk%VER%\demos\rmt.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\demos\floor.tcl
+  Source=Z:\cvs\tk8.1b2\library\demos\floor.tcl
   Destination=%MAINDIR%\lib\tk%VER%\demos\floor.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\demos\filebox.tcl
+  Source=Z:\cvs\tk8.1b2\library\demos\filebox.tcl
   Destination=%MAINDIR%\lib\tk%VER%\demos\filebox.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\images\pwrdLogo75.gif
+  Source=Z:\cvs\tk8.1b2\library\images\pwrdLogo75.gif
   Destination=%MAINDIR%\lib\tk%VER%\images\pwrdLogo75.gif
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\images\pwrdLogo200.gif
+  Source=Z:\cvs\tk8.1b2\library\images\pwrdLogo200.gif
   Destination=%MAINDIR%\lib\tk%VER%\images\pwrdLogo200.gif
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\images\pwrdLogo175.gif
+  Source=Z:\cvs\tk8.1b2\library\images\pwrdLogo175.gif
   Destination=%MAINDIR%\lib\tk%VER%\images\pwrdLogo175.gif
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\images\pwrdLogo150.gif
+  Source=Z:\cvs\tk8.1b2\library\images\pwrdLogo150.gif
   Destination=%MAINDIR%\lib\tk%VER%\images\pwrdLogo150.gif
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\images\pwrdLogo100.gif
+  Source=Z:\cvs\tk8.1b2\library\images\pwrdLogo100.gif
   Destination=%MAINDIR%\lib\tk%VER%\images\pwrdLogo100.gif
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\images\logoMed.gif
+  Source=Z:\cvs\tk8.1b2\library\images\logoMed.gif
   Destination=%MAINDIR%\lib\tk%VER%\images\logoMed.gif
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\images\logoLarge.gif
+  Source=Z:\cvs\tk8.1b2\library\images\logoLarge.gif
   Destination=%MAINDIR%\lib\tk%VER%\images\logoLarge.gif
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\images\logo64.gif
+  Source=Z:\cvs\tk8.1b2\library\images\logo64.gif
   Destination=%MAINDIR%\lib\tk%VER%\images\logo64.gif
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\images\logo100.gif
+  Source=Z:\cvs\tk8.1b2\library\images\logo100.gif
   Destination=%MAINDIR%\lib\tk%VER%\images\logo100.gif
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\images\Readme
+  Source=Z:\cvs\tk8.1b2\library\images\Readme
   Destination=%MAINDIR%\lib\tk%VER%\images\Readme
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\demos\arrow.tcl
+  Source=Z:\cvs\tk8.1b2\library\demos\arrow.tcl
   Destination=%MAINDIR%\lib\tk%VER%\demos\arrow.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\demos\bind.tcl
+  Source=Z:\cvs\tk8.1b2\library\demos\bind.tcl
   Destination=%MAINDIR%\lib\tk%VER%\demos\bind.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\demos\bitmap.tcl
+  Source=Z:\cvs\tk8.1b2\library\demos\bitmap.tcl
   Destination=%MAINDIR%\lib\tk%VER%\demos\bitmap.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\demos\button.tcl
+  Source=Z:\cvs\tk8.1b2\library\demos\button.tcl
   Destination=%MAINDIR%\lib\tk%VER%\demos\button.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\demos\check.tcl
+  Source=Z:\cvs\tk8.1b2\library\demos\check.tcl
   Destination=%MAINDIR%\lib\tk%VER%\demos\check.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\demos\clrpick.tcl
+  Source=Z:\cvs\tk8.1b2\library\demos\clrpick.tcl
   Destination=%MAINDIR%\lib\tk%VER%\demos\clrpick.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\demos\colors.tcl
+  Source=Z:\cvs\tk8.1b2\library\demos\colors.tcl
   Destination=%MAINDIR%\lib\tk%VER%\demos\colors.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\demos\cscroll.tcl
+  Source=Z:\cvs\tk8.1b2\library\demos\cscroll.tcl
   Destination=%MAINDIR%\lib\tk%VER%\demos\cscroll.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\demos\ctext.tcl
+  Source=Z:\cvs\tk8.1b2\library\demos\ctext.tcl
   Destination=%MAINDIR%\lib\tk%VER%\demos\ctext.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\demos\dialog1.tcl
+  Source=Z:\cvs\tk8.1b2\library\demos\dialog1.tcl
   Destination=%MAINDIR%\lib\tk%VER%\demos\dialog1.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\demos\dialog2.tcl
+  Source=Z:\cvs\tk8.1b2\library\demos\dialog2.tcl
   Destination=%MAINDIR%\lib\tk%VER%\demos\dialog2.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\demos\entry1.tcl
+  Source=Z:\cvs\tk8.1b2\library\demos\entry1.tcl
   Destination=%MAINDIR%\lib\tk%VER%\demos\entry1.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=d:\ws\core8.1\tk8.1b2\library\demos\entry2.tcl
+  Source=Z:\cvs\tk8.1b2\library\demos\entry2.tcl
   Destination=%MAINDIR%\lib\tk%VER%\demos\entry2.tcl
   Flags=0000000000000010
 end
@@ -1954,12 +1979,12 @@ item: If/While Statement
   Flags=00001010
 end
 item: Install File
-  Source=z:\ws\tcl8.1\tools\tcl81.cnt
+  Source=z:\cvs\tcl8.1\tools\tcl81.cnt
   Destination=%MAINDIR%\doc\tcl81.cnt
   Flags=0000000000000010
 end
 item: Install File
-  Source=z:\ws\tcl8.1\tools\tcl81.hlp
+  Source=z:\cvs\tcl8.1\tools\tcl.hlp
   Destination=%MAINDIR%\doc\tcl81.hlp
   Flags=0000000000000010
 end
