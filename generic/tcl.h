@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: %Z% $Id: tcl.h,v 1.20 1998/08/04 10:15:50 escoffon Exp $ 
+ * SCCS: %Z% $Id: tcl.h,v 1.21 1998/08/04 11:19:03 escoffon Exp $ 
  */
 
 #ifndef _TCL
@@ -186,13 +186,13 @@
 # define DLLEXPORT
 #endif
 
-#ifdef TCLSTORAGECLASS
-# undef TCLSTORAGECLASS
+#ifdef TCL_STORAGE_CLASS
+# undef TCL_STORAGE_CLASS
 #endif
 #ifdef BUILD_tcl
-# define TCLSTORAGECLASS DLLEXPORT
+# define TCL_STORAGE_CLASS DLLEXPORT
 #else
-# define TCLSTORAGECLASS DLLIMPORT
+# define TCL_STORAGE_CLASS DLLIMPORT
 #endif
 
 /*
