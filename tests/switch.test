@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: switch.test,v 1.8 2003/03/05 22:31:24 dkf Exp $
+# RCS: @(#) $Id: switch.test,v 1.9 2003/04/28 10:05:28 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -331,7 +331,26 @@ test switch-10.9 {comparison of compiled and interpreted behaviour of switch, ex
 test switch-10.10 {comparison of compiled and interpreted behaviour of switch, glob matching with default} {
     expr {[cswtest2-glob abcb] eq [iswtest2-glob abcb]}
 } 1
-
+proc cswtest-default-exact {x} {
+    switch -- $x {
+	a* {return b}
+	aa {return c}
+	default {return d}
+    }
+}
+test switch-10.11 {default to exact matching when compiled} {
+    cswtest-default-exact a
+} d
+test switch-10.12 {default to exact matching when compiled} {
+    cswtest-default-exact aa
+} c
+test switch-10.13 {default to exact matching when compiled} {
+    cswtest-default-exact a*
+} b
+test switch-10.14 {default to exact matching when compiled} {
+    cswtest-default-exact a**
+} d
+rename cswtest-default-exact {}
 rename cswtest-glob {}
 rename iswtest-glob {}
 rename cswtest2-glob {}
