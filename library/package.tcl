@@ -3,7 +3,7 @@
 # utility procs formerly in init.tcl which can be loaded on demand
 # for package management.
 #
-# RCS: @(#) $Id: package.tcl,v 1.2 1999/04/16 00:46:56 stanton Exp $
+# RCS: @(#) $Id: package.tcl,v 1.3 1999/04/20 02:08:38 surles Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1998 Sun Microsystems, Inc.
@@ -443,11 +443,11 @@ proc tclPkgUnknown {name version {exact {}}} {
 	    foreach file [glob -nocomplain [file join [lindex $auto_path $i] \
 		    * pkgIndex.tcl]] {
 		set dir [file dirname $file]
-		if {[catch {source $file} msg]} {
+		if {[file readable $file] && [catch {source $file} msg]} {
 		    tclLog "error reading package index file $file: $msg"
 		}
 	    }
-        }
+	}
 	set dir [lindex $auto_path $i]
 	set file [file join $dir pkgIndex.tcl]
 	# safe interps usually don't have "file readable", nor stderr channel
