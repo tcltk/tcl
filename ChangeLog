@@ -1,5 +1,9 @@
 2001-08-06  Don Porter <dgp@users.sourceforge.net>
 
+	* doc/tclsh.1:  Added note that the tclsh program is frequently
+	installed with the Tcl version numer as part of the name.
+	[Patch 402725]
+
 	* generic/tclPkg.c:
 	* tests/pkg.test:  [package forget] now forgets all of the
 	package arguments it receives, not stopping when a package is
