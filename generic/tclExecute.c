@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.94.2.8 2004/09/10 15:30:02 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.94.2.9 2004/09/18 19:17:12 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -3058,11 +3058,42 @@ TclExecuteByteCode(interp, codePtr)
 #ifdef TCL_COMPILE_DEBUG
 		w2 = Tcl_LongAsWide(i2);
 #endif /* TCL_COMPILE_DEBUG */
-		wResult = w << i2;
+		wResult = w;
+		/*
+		 * Shift in steps when the shift gets large to prevent
+		 * annoying compiler/processor bugs. [Bug 868467]
+		 */
+		if (i2 >= 64) {
+		    wResult = Tcl_LongAsWide(0);
+		} else if (i2 > 60) {
+		    wResult = w << 30;
+		    wResult <<= 30;
+		    wResult <<= i2-60;
+		} else if (i2 > 30) {
+		    wResult = w << 30;
+		    wResult <<= i2-30;
+		} else {
+		    wResult = w << i2;
+		}
 		doWide = 1;
 		break;
 	    }
-	    iResult = i << i2;
+	    /*
+	     * Shift in steps when the shift gets large to prevent
+	     * annoying compiler/processor bugs. [Bug 868467]
+	     */
+	    if (i2 >= 64) {
+		iResult = 0;
+	    } else if (i2 > 60) {
+		iResult = i << 30;
+		iResult <<= 30;
+		iResult <<= i2-60;
+	    } else if (i2 > 30) {
+		iResult = i << 30;
+		iResult <<= i2-30;
+	    } else {
+		iResult = i << i2;
+	    }
 	    break;
 	case INST_RSHIFT:
 	    /*
@@ -3079,17 +3110,55 @@ TclExecuteByteCode(interp, codePtr)
 		w2 = Tcl_LongAsWide(i2);
 #endif /* TCL_COMPILE_DEBUG */
 		if (w < 0) {
-		    wResult = ~((~w) >> i2);
+		    wResult = ~w;
 		} else {
-		    wResult = w >> i2;
+		    wResult = w;
+		}
+		/*
+		 * Shift in steps when the shift gets large to prevent
+		 * annoying compiler/processor bugs. [Bug 868467]
+		 */
+		if (i2 >= 64) {
+		    wResult = Tcl_LongAsWide(0);
+		} else if (i2 > 60) {
+		    wResult >>= 30;
+		    wResult >>= 30;
+		    wResult >>= i2-60;
+		} else if (i2 > 30) {
+		    wResult >>= 30;
+		    wResult >>= i2-30;
+		} else {
+		    wResult >>= i2;
+		}
+		if (w < 0) {
+		    wResult = ~wResult;
 		}
 		doWide = 1;
 		break;
 	    }
 	    if (i < 0) {
-		iResult = ~((~i) >> i2);
+		iResult = ~i;
 	    } else {
-		iResult = i >> i2;
+		iResult = i;
+	    }
+	    /*
+	     * Shift in steps when the shift gets large to prevent
+	     * annoying compiler/processor bugs. [Bug 868467]
+	     */
+	    if (i2 >= 64) {
+		iResult = 0;
+	    } else if (i2 > 60) {
+		iResult >>= 30;
+		iResult >>= 30;
+		iResult >>= i2-60;
+	    } else if (i2 > 30) {
+		iResult >>= 30;
+		iResult >>= i2-30;
+	    } else {
+		iResult >>= i2;
+	    }
+	    if (i < 0) {
+		iResult = ~iResult;
 	    }
 	    break;
 	case INST_BITOR:
