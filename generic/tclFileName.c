@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.12 2000/03/03 02:57:48 hobbs Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.13 2000/04/19 23:24:52 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -445,6 +445,19 @@ SplitUnixPath(path, bufPtr)
     /*
      * Deal with the root directory as a special case.
      */
+
+#ifdef __QNX__
+    /*
+     * Check for QNX //<node id> prefix
+     */
+    if ((path[0] == '/') && (path[1] == '/')
+	    && isdigit(UCHAR(path[2]))) { /* INTL: digit */
+	path += 3;
+	while (isdigit(UCHAR(*path))) { /* INTL: digit */
+	    ++path;
+	}
+    }
+#endif
 
     if (path[0] == '/') {
 	Tcl_DStringAppend(bufPtr, "/", 2);
