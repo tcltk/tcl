@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixSock.c,v 1.6 2002/02/27 01:16:43 hobbs Exp $
+ * RCS: @(#) $Id: tclUnixSock.c,v 1.7 2003/04/22 23:20:43 andreas_kupries Exp $
  */
 
 #include "tcl.h"
@@ -147,4 +147,50 @@ TclpHasSockets(interp)
     Tcl_Interp *interp;		/* Not used. */
 {
     return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpCutSockChannel --
+ *
+ *	Remove any thread local refs to this channel. See
+ *	Tcl_CutChannel for more info. Dummy definition.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclpCutSockChannel(chan)
+    Tcl_Channel chan;
+{
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpSpliceSockChannel --
+ *
+ *	Insert thread local ref for this channel.
+ *	Tcl_SpliceChannel for more info. Dummy definition.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclpSpliceSockChannel(chan)
+    Tcl_Channel chan;
+{
 }
