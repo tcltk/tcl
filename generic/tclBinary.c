@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBinary.c,v 1.20 2004/10/06 00:24:16 dgp Exp $
+ * RCS: @(#) $Id: tclBinary.c,v 1.21 2004/10/06 05:52:21 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -575,7 +575,7 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
 				 * character. */
     char *format;		/* Pointer to current position in format
 				 * string. */
-    Tcl_Obj *resultPtr;		/* Object holding result buffer. */
+    Tcl_Obj *resultPtr = NULL;	/* Object holding result buffer. */
     unsigned char *buffer;	/* Start of result buffer. */
     unsigned char *cursor;	/* Current position within result buffer. */
     unsigned char *maxPos;	/* Greatest position within result buffer that

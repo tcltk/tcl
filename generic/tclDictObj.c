@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDictObj.c,v 1.20 2004/10/02 17:12:34 dkf Exp $
+ * RCS: @(#) $Id: tclDictObj.c,v 1.21 2004/10/06 05:52:21 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -646,8 +646,7 @@ TraceDictPath(interp, dictPtr, keyc, keyv, flags)
 	    if ((flags & DICT_PATH_CREATE) != DICT_PATH_CREATE) {
 		if (interp != NULL) {
 		    Tcl_ResetResult(interp);
-		    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-			    "key \"", TclGetString(keyv[i]),
+		    Tcl_AppendResult(interp, "key \"", TclGetString(keyv[i]),
 			    "\" not known in dictionary", NULL);
 		}
 		return NULL;
@@ -1432,8 +1431,7 @@ DictGetCmd(interp, objc, objv)
     }
     if (valuePtr == NULL) {
 	Tcl_ResetResult(interp);
-	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		"key \"", TclGetString(objv[objc-1]),
+	Tcl_AppendResult(interp, "key \"", TclGetString(objv[objc-1]),
 		"\" not known in dictionary", NULL);
 	return TCL_ERROR;
     }
@@ -2259,8 +2257,8 @@ DictForCmd(interp, objc, objv)
 	return TCL_ERROR;
     }
     if (varc != 2) {
-	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		"must have exactly two variable names", NULL);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"must have exactly two variable names", -1));
 	return TCL_ERROR;
     }
     keyVarObj = varv[0];
@@ -2295,8 +2293,7 @@ DictForCmd(interp, objc, objv)
 	Tcl_IncrRefCount(valueObj);
 	if (Tcl_ObjSetVar2(interp, keyVarObj, NULL, keyObj, 0) == NULL) {
 	    Tcl_ResetResult(interp);
-	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		    "couldn't set key variable: \"",
+	    Tcl_AppendResult(interp, "couldn't set key variable: \"",
 		    TclGetString(keyVarObj), "\"", (char *) NULL);
 	    Tcl_DecrRefCount(valueObj);
 	    result = TCL_ERROR;
@@ -2305,8 +2302,7 @@ DictForCmd(interp, objc, objv)
 	Tcl_DecrRefCount(valueObj);
 	if (Tcl_ObjSetVar2(interp, valueVarObj, NULL, valueObj, 0) == NULL) {
 	    Tcl_ResetResult(interp);
-	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		    "couldn't set value variable: \"",
+	    Tcl_AppendResult(interp, "couldn't set value variable: \"",
 		    TclGetString(valueVarObj), "\"", (char *) NULL);
 	    result = TCL_ERROR;
 	    goto doneFor;
@@ -2581,9 +2577,8 @@ DictFilterCmd(interp, objc, objv)
 	    return TCL_ERROR;
 	}
 	if (varc != 2) {
-	    Tcl_ResetResult(interp);
-	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		    "must have exactly two variable names", NULL);
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "must have exactly two variable names", -1));
 	    return TCL_ERROR;
 	}
 	keyVarObj = varv[0];
@@ -2626,8 +2621,7 @@ DictFilterCmd(interp, objc, objv)
 	    if (Tcl_ObjSetVar2(interp, keyVarObj, NULL, keyObj,
 		    TCL_LEAVE_ERR_MSG) == NULL) {
 		Tcl_ResetResult(interp);
-		Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-			"couldn't set key variable: \"",
+		Tcl_AppendResult(interp, "couldn't set key variable: \"",
 			TclGetString(keyVarObj), "\"", (char *) NULL);
 		result = TCL_ERROR;
 		goto abnormalResult;
@@ -2635,8 +2629,7 @@ DictFilterCmd(interp, objc, objv)
 	    if (Tcl_ObjSetVar2(interp, valueVarObj, NULL, valueObj,
 		    TCL_LEAVE_ERR_MSG) == NULL) {
 		Tcl_ResetResult(interp);
-		Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-			"couldn't set value variable: \"",
+		Tcl_AppendResult(interp, "couldn't set value variable: \"",
 			TclGetString(valueVarObj), "\"", (char *) NULL);
 		goto abnormalResult;
 	    }
