@@ -1,3 +1,12 @@
+2001-10-19  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* doc/GetIndex.3: Added note that table of strings must be ASCII
+	strings, which they seem to be in all currrent uses.  Things break
+	horribly otherwise since the matching code is not UTF-8 aware.
+	* generic/tclIndexObj.c: Assorted changes to make
+	Tcl_GetIndexFromObj() more likely to work on platforms like a Cray
+	PVP following feedback from Len Makin <len@hpc.csiro.au>
+
 2001-09-24  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* tools/encoding/cp1252.txt: File was missing part of the encoding
