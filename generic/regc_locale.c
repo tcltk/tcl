@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: regc_locale.c,v 1.4 1999/06/24 03:27:56 stanton Exp $
+ * RCS: @(#) $Id: regc_locale.c,v 1.5 1999/10/13 02:22:17 hobbs Exp $
  */
 
 /* ASCII character-name table */
@@ -634,7 +634,7 @@ int cases;			/* all cases? */
 	struct cvec *cv;
 
 	/* crude fake equivalence class for testing */
-	if ((v->cflags&REG_FAKEEC) && c == 'x') {
+	if ((v->cflags&REG_FAKE) && c == 'x') {
 		cv = getcvec(v, 4, 0, 0);
 		addchr(cv, (chr)'x');
 		addchr(cv, (chr)'y');

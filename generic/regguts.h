@@ -1,5 +1,5 @@
 /*
- * Internal interface definitions, etc., for the regex package
+ * Internal interface definitions, etc., for the reg package
  *
  * Copyright (c) 1998, 1999 Henry Spencer.  All rights reserved.
  * 
@@ -75,6 +75,11 @@
 #endif
 #ifndef NOPARMS
 #define	NOPARMS	VOID			/* for empty parm lists */
+#endif
+
+/* const */
+#ifndef CONST
+#define	CONST	const			/* for old compilers, might be empty */
 #endif
 
 /* function-pointer declarator */
@@ -410,5 +415,4 @@ struct guts {
 	int FUNCPTR(compare, (CONST chr *, CONST chr *, size_t));
 	struct subre *lacons;	/* lookahead-constraint vector */
 	int nlacons;		/* size of lacons */
-	int usedshorter;	/* used non-greedy quantifiers? */
 };

@@ -26,11 +26,10 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* headers (which also pick up the standard ones, or equivalents) */
+/* headers if any */
 #include "tclInt.h"
 
-/* overrides for regguts.h definitions */
-/* function-pointer declarations */
+/* overrides for regguts.h definitions, if any */
 #define	FUNCPTR(name, args)	(*name) _ANSI_ARGS_(args)
 #define	MALLOC(n)		ckalloc(n)
 #define	FREE(p)			ckfree(VS(p))
@@ -62,6 +61,12 @@
 #ifdef __REG_CONST
 #undef __REG_CONST
 #endif
+#ifdef __REG_NOFRONT
+#undef __REG_NOFRONT
+#endif
+#ifdef __REG_NOCHAR
+#undef __REG_NOCHAR
+#endif
 /* interface types */
 #define	__REG_WIDE_T	Tcl_UniChar
 #define	__REG_REGOFF_T	long	/* not really right, but good enough... */
@@ -70,12 +75,8 @@
 /* names and declarations */
 #define	__REG_WIDE_COMPILE	TclReComp
 #define	__REG_WIDE_EXEC		TclReExec
-#ifndef __REG_NOFRONT
 #define	__REG_NOFRONT		/* don't want regcomp() and regexec() */
-#endif
-#ifndef __REG_NOCHAR
 #define	__REG_NOCHAR		/* or the char versions */
-#endif
 #define	regfree		TclReFree
 #define	regerror	TclReError
 /* --- end --- */
@@ -105,7 +106,7 @@ typedef int celt;		/* type to hold chr, MCCE number, or NOCELT */
 #define	exec		TclReExec
 
 /* enable/disable debugging code (by whether REG_DEBUG is defined or not) */
-#ifdef notdef
+#if 0		/* no debug unless requested by makefile */
 #define	REG_DEBUG	/* */
 #endif
 

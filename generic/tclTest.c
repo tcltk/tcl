@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.16 1999/08/13 17:53:19 redman Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.17 1999/10/13 02:22:18 hobbs Exp $
  */
 
 #define TCL_TEST
@@ -2788,7 +2788,7 @@ TestregexpXflags(string, length, cflagsPtr, eflagsPtr)
 		break;
 	    }
 	    case '+': {
-		cflags |= REG_FAKEEC;
+		cflags |= REG_FAKE;
 		break;
 	    }
 	    case ',': {
@@ -2815,7 +2815,7 @@ TestregexpXflags(string, length, cflagsPtr, eflagsPtr)
 		eflags |= REG_NOTEOL;
 		break;
 	    }
-	    case '?': {
+	    case 't': {
 		cflags |= REG_EXPECT;
 		break;
 	    }

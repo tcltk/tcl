@@ -33,29 +33,6 @@
 
 
 
-/* internal variables, bundled for easy passing around */
-struct vars {
-	regex_t *re;
-	struct guts *g;
-	int eflags;		/* copies of arguments */
-	size_t nmatch;
-	regmatch_t *pmatch;
-	rm_detail_t *details;
-	chr *start;		/* start of string */
-	chr *stop;		/* just past end of string */
-	int err;		/* error code if any (0 none) */
-	regoff_t *mem;		/* memory vector for backtracking */
-};
-#define	VISERR(vv)	((vv)->err != 0)	/* have we seen an error yet? */
-#define	ISERR()	VISERR(v)
-#define	VERR(vv,e)	(((vv)->err) ? (vv)->err : ((vv)->err = (e)))
-#define	ERR(e)	VERR(v, e)		/* record an error */
-#define	NOERR()	{if (ISERR()) return;}	/* if error seen, return */
-#define	OFF(p)	((p) - v->start)
-#define	LOFF(p)	((long)OFF(p))
-
-
-
 /* lazy-DFA representation */
 struct arcp {			/* "pointer" to an outarc */
 	struct sset *ss;
@@ -111,7 +88,32 @@ struct smalldfa {
 	struct sset *outsarea[FEWSTATES*2 * FEWCOLORS];
 	struct arcp incarea[FEWSTATES*2 * FEWCOLORS];
 };
+#define	DOMALLOC	((struct smalldfa *)NULL)	/* force malloc */
 
+
+
+/* internal variables, bundled for easy passing around */
+struct vars {
+	regex_t *re;
+	struct guts *g;
+	int eflags;		/* copies of arguments */
+	size_t nmatch;
+	regmatch_t *pmatch;
+	rm_detail_t *details;
+	chr *start;		/* start of string */
+	chr *stop;		/* just past end of string */
+	int err;		/* error code if any (0 none) */
+	regoff_t *mem;		/* memory vector for backtracking */
+	struct smalldfa dfa1;
+	struct smalldfa dfa2;
+};
+#define	VISERR(vv)	((vv)->err != 0)	/* have we seen an error yet? */
+#define	ISERR()	VISERR(v)
+#define	VERR(vv,e)	(((vv)->err) ? (vv)->err : ((vv)->err = (e)))
+#define	ERR(e)	VERR(v, e)		/* record an error */
+#define	NOERR()	{if (ISERR()) return v->err;}	/* if error seen, return it */
+#define	OFF(p)	((p) - v->start)
+#define	LOFF(p)	((long)OFF(p))
 
 
 
@@ -196,8 +198,8 @@ int flags;
 	if (v->g->cflags&REG_NOSUB)
 		nmatch = 0;		/* override client */
 	v->nmatch = nmatch;
-	if (backref && v->nmatch < v->g->nsub + 1) {
-		/* need work area bigger than what user gave us */
+	if (backref) {
+		/* need work area */
 		if (v->g->nsub + 1 <= LOCALMAT)
 			v->pmatch = mat;
 		else
@@ -260,10 +262,8 @@ struct vars *v;
 struct cnfa *cnfa;
 struct colormap *cm;
 {
-	struct smalldfa da;
-	struct dfa *d = newdfa(v, cnfa, cm, &da);
-	struct smalldfa sa;
-	struct dfa *s = newdfa(v, &v->g->search, cm, &sa);
+	struct dfa *s;
+	struct dfa *d;
 	chr *begin;
 	chr *end;
 	chr *cold;
@@ -272,19 +272,15 @@ struct colormap *cm;
 	int hitend;
 	int shorter = (v->g->tree->flags&SHORTER) ? 1 : 0;
 
-	if (ISERR()) {		/* should be newdfa() failure */
-		if (d != NULL)
-			freedfa(d);
-		if (s != NULL)
-			freedfa(s);
-		return v->err;
-	}
-
 	/* first, a shot with the search RE */
+	s = newdfa(v, &v->g->search, cm, &v->dfa1);
+	assert(!(ISERR() && s != NULL));
+	NOERR();
 	MDEBUG(("\nsearch at %ld\n", LOFF(v->start)));
 	cold = NULL;
 	close = shortest(v, s, v->start, v->start, v->stop, &cold, (int *)NULL);
 	freedfa(s);
+	NOERR();
 	if (v->g->cflags&REG_EXPECT) {
 		assert(v->details != NULL);
 		if (cold != NULL)
@@ -293,22 +289,19 @@ struct colormap *cm;
 			v->details->rm_extend.rm_so = OFF(v->stop);
 		v->details->rm_extend.rm_eo = OFF(v->stop);	/* unknown */
 	}
-	if (close == NULL) {		/* not found */
-		freedfa(d);
-		if (ISERR())
-			return v->err;
+	if (close == NULL)		/* not found */
 		return REG_NOMATCH;
-	}
-	if (v->nmatch == 0) {		/* found, don't need exact location */
-		freedfa(d);
+	if (v->nmatch == 0)		/* found, don't need exact location */
 		return REG_OKAY;
-	}
 
-	/* find starting point */
+	/* find starting point and match */
 	assert(cold != NULL);
 	open = cold;
 	cold = NULL;
 	MDEBUG(("between %ld and %ld\n", LOFF(open), LOFF(close)));
+	d = newdfa(v, cnfa, cm, &v->dfa1);
+	assert(!(ISERR() && d != NULL));
+	NOERR();
 	for (begin = open; begin <= close; begin++) {
 		MDEBUG(("\nfind trying at %ld\n", LOFF(begin)));
 		if (shorter)
@@ -316,6 +309,7 @@ struct colormap *cm;
 							(chr **)NULL, &hitend);
 		else
 			end = longest(v, d, begin, v->stop, &hitend);
+		NOERR();
 		if (hitend && cold == NULL)
 			cold = begin;
 		if (end != NULL)
@@ -335,13 +329,12 @@ struct colormap *cm;
 			v->details->rm_extend.rm_so = OFF(v->stop);
 		v->details->rm_extend.rm_eo = OFF(v->stop);	/* unknown */
 	}
-	if (v->nmatch > 1) {
-		zapsubs(v->pmatch, v->nmatch);
-		return dissect(v, v->g->tree, begin, end);
-	}
-	if (ISERR())
-		return v->err;
-	return REG_OKAY;
+	if (v->nmatch == 1)		/* no need for submatches */
+		return REG_OKAY;
+
+	/* submatches */
+	zapsubs(v->pmatch, v->nmatch);
+	return dissect(v, v->g->tree, begin, end);
 }
 
 /*
@@ -354,17 +347,17 @@ struct vars *v;
 struct cnfa *cnfa;
 struct colormap *cm;
 {
-	struct smalldfa da;
-	struct dfa *d = newdfa(v, cnfa, cm, &da);
-	struct smalldfa sa;
-	struct dfa *s = newdfa(v, &v->g->search, cm, &sa);
+	struct dfa *s;
+	struct dfa *d;
 	chr *cold;
 	int ret;
 
-	if (d == NULL)
-		return v->err;
-	if (s == NULL) {
-		freedfa(d);
+	s = newdfa(v, &v->g->search, cm, &v->dfa1);
+	NOERR();
+	d = newdfa(v, cnfa, cm, &v->dfa2);
+	if (ISERR()) {
+		assert(d == NULL);
+		freedfa(s);
 		return v->err;
 	}
 
@@ -372,8 +365,7 @@ struct colormap *cm;
 
 	freedfa(d);
 	freedfa(s);
-	if (ISERR())
-		return v->err;
+	NOERR();
 	if (v->g->cflags&REG_EXPECT) {
 		assert(v->details != NULL);
 		if (cold != NULL)
@@ -589,9 +581,7 @@ struct subre *t;
 chr *begin;			/* beginning of relevant substring */
 chr *end;			/* end of same */
 {
-	struct smalldfa da;
 	struct dfa *d;
-	struct smalldfa d2a;
 	struct dfa *d2;
 	chr *mid;
 	int i;
@@ -602,11 +592,11 @@ chr *end;			/* end of same */
 	assert(t->left != NULL && t->left->cnfa.nstates > 0);
 	assert(t->right != NULL && t->right->cnfa.nstates > 0);
 
-	d = newdfa(v, &t->left->cnfa, &v->g->cmap, &da);
-	if (ISERR())
-		return v->err;
-	d2 = newdfa(v, &t->right->cnfa, &v->g->cmap, &d2a);
+	d = newdfa(v, &t->left->cnfa, &v->g->cmap, &v->dfa1);
+	NOERR();
+	d2 = newdfa(v, &t->right->cnfa, &v->g->cmap, &v->dfa2);
 	if (ISERR()) {
+		assert(d2 == NULL);
 		freedfa(d);
 		return v->err;
 	}
@@ -670,7 +660,6 @@ struct subre *t;
 chr *begin;			/* beginning of relevant substring */
 chr *end;			/* end of same */
 {
-	struct smalldfa da;
 	struct dfa *d;
 	int i;
 
@@ -680,7 +669,7 @@ chr *end;			/* end of same */
 	for (i = 0; t != NULL; t = t->right, i++) {
 		MDEBUG(("trying %dth\n", i));
 		assert(t->left != NULL && t->left->cnfa.nstates > 0);
-		d = newdfa(v, &t->left->cnfa, &v->g->cmap, &da);
+		d = newdfa(v, &t->left->cnfa, &v->g->cmap, &v->dfa1);
 		if (ISERR())
 			return v->err;
 		if (longest(v, d, begin, end, (int *)NULL) == end) {
@@ -755,9 +744,7 @@ struct subre *t;
 chr *begin;			/* beginning of relevant substring */
 chr *end;			/* end of same */
 {
-	struct smalldfa da;
 	struct dfa *d;
-	struct smalldfa d2a;
 	struct dfa *d2;
 	chr *mid;
 	int er;
@@ -769,10 +756,10 @@ chr *end;			/* end of same */
 	if (t->left->flags&SHORTER)		/* reverse scan */
 		return crevdissect(v, t, begin, end);
 
-	d = newdfa(v, &t->left->cnfa, &v->g->cmap, &da);
+	d = newdfa(v, &t->left->cnfa, &v->g->cmap, DOMALLOC);
 	if (ISERR())
 		return v->err;
-	d2 = newdfa(v, &t->right->cnfa, &v->g->cmap, &d2a);
+	d2 = newdfa(v, &t->right->cnfa, &v->g->cmap, DOMALLOC);
 	if (ISERR()) {
 		freedfa(d);
 		return v->err;
@@ -839,7 +826,7 @@ chr *end;			/* end of same */
 }
 
 /*
- - crevdissect - determine shortest-first subexpression matches
+ - crevdissect - determine backref shortest-first subexpression matches
  * The retry memory stores the offset of the trial midpoint from begin, 
  * plus 1 so that 0 uniquely means "clean slate".
  ^ static int crevdissect(struct vars *, struct subre *, chr *, chr *);
@@ -851,9 +838,7 @@ struct subre *t;
 chr *begin;			/* beginning of relevant substring */
 chr *end;			/* end of same */
 {
-	struct smalldfa da;
 	struct dfa *d;
-	struct smalldfa d2a;
 	struct dfa *d2;
 	chr *mid;
 	int er;
@@ -864,10 +849,10 @@ chr *end;			/* end of same */
 	assert(t->left->flags&SHORTER);
 
 	/* concatenation -- need to split the substring between parts */
-	d = newdfa(v, &t->left->cnfa, &v->g->cmap, &da);
+	d = newdfa(v, &t->left->cnfa, &v->g->cmap, DOMALLOC);
 	if (ISERR())
 		return v->err;
-	d2 = newdfa(v, &t->right->cnfa, &v->g->cmap, &d2a);
+	d2 = newdfa(v, &t->right->cnfa, &v->g->cmap, DOMALLOC);
 	if (ISERR()) {
 		freedfa(d);
 		return v->err;
@@ -1011,7 +996,6 @@ struct subre *t;
 chr *begin;			/* beginning of relevant substring */
 chr *end;			/* end of same */
 {
-	struct smalldfa da;
 	struct dfa *d;
 	int er;
 #	define	UNTRIED	0	/* not yet tried at all */
@@ -1028,7 +1012,7 @@ chr *end;			/* end of same */
 	assert(t->left != NULL);
 
 	if (v->mem[t->retry] == UNTRIED) {
-		d = newdfa(v, &t->left->cnfa, &v->g->cmap, &da);
+		d = newdfa(v, &t->left->cnfa, &v->g->cmap, DOMALLOC);
 		if (ISERR())
 			return v->err;
 		if (longest(v, d, begin, end, (int *)NULL) != end) {

@@ -614,8 +614,6 @@ struct arc *a;
 	a->colorchain = NULL;	/* paranoia */
 }
 
-#ifdef NOTDEF			/* This isn't used currently. */
-
 /*
  - singleton - is this character in its own color?
  ^ static int singleton(struct colormap *, pchr c);
@@ -632,8 +630,6 @@ pchr c;
 		return 1;
 	return 0;
 }
-
-#endif /* NOTDEF */
 
 /*
  - rainbow - add arcs of all full colors (but one) between specified states

@@ -105,9 +105,7 @@ static VOID subblock _ANSI_ARGS_((struct vars *, pchr, struct state *, struct st
 static VOID okcolors _ANSI_ARGS_((struct nfa *, struct colormap *));
 static VOID colorchain _ANSI_ARGS_((struct colormap *, struct arc *));
 static VOID uncolorchain _ANSI_ARGS_((struct colormap *, struct arc *));
-#ifdef NOTDEF			/* Avoid compiler warnings. */
 static int singleton _ANSI_ARGS_((struct colormap *, pchr c));
-#endif
 static VOID rainbow _ANSI_ARGS_((struct nfa *, struct colormap *, int, pcolor, struct state *, struct state *));
 static VOID colorcomplement _ANSI_ARGS_((struct nfa *, struct colormap *, int, struct state *, struct state *, struct state *));
 #ifdef REG_DEBUG
@@ -173,9 +171,7 @@ static struct cvec *newcvec _ANSI_ARGS_((int, int, int));
 static struct cvec *clearcvec _ANSI_ARGS_((struct cvec *));
 static VOID addchr _ANSI_ARGS_((struct cvec *, pchr));
 static VOID addrange _ANSI_ARGS_((struct cvec *, pchr, pchr));
-#ifdef NOTDEF			/* Avoid compiler warnings. */
 static VOID addmcce _ANSI_ARGS_((struct cvec *, chr *, chr *));
-#endif
 static int haschr _ANSI_ARGS_((struct cvec *, pchr));
 static struct cvec *getcvec _ANSI_ARGS_((struct vars *, int, int, int));
 static VOID freecvec _ANSI_ARGS_((struct cvec *));
@@ -229,7 +225,6 @@ struct vars {
 	struct state *mccepend;	/* in nfa, end of MCCE prototypes */
 	struct subre *lacons;	/* lookahead-constraint vector */
 	int nlacons;		/* size of lacons */
-	int usedshorter;	/* used short-preferring quantifiers */
 };
 
 /* parsing macros; most know that `v' is the struct vars pointer */
@@ -362,6 +357,7 @@ int flags;
 		CNOERR();
 		v->mcces = allmcces(v, v->mcces);
 		leaders(v, v->mcces);
+		addmcce(v->mcces, (chr *)NULL, (chr *)NULL);	/* dummy */
 	}
 	CNOERR();
 
@@ -386,18 +382,16 @@ int flags;
 		dumpnfa(v->nfa, debug);
 		dumpst(v->tree, debug, 1);
 	}
-	v->usedshorter = 0;
 	optst(v, v->tree);
 	v->ntree = numst(v->tree, 1);
 	markst(v->tree);
 	cleanst(v);
 	if (debug != NULL) {
 		fprintf(debug, "\n\n\n========= TREE FIXED ==========\n");
-		fprintf(debug, "-->\n");
 		dumpst(v->tree, debug, 1);
 	}
 
-	/* build compacted NFAs for tree, lacons, fast search */
+	/* build compacted NFAs for tree and lacons */
 	re->re_info |= nfatree(v, v->tree, debug);
 	CNOERR();
 	assert(v->nlacons == 0 || v->lacons != NULL);
@@ -407,6 +401,10 @@ int flags;
 		nfanode(v, &v->lacons[i], debug);
 	}
 	CNOERR();
+	if (v->tree->flags&SHORTER)
+		NOTE(REG_USHORTEST);
+
+	/* build compacted NFAs for tree, lacons, fast search */
 	if (debug != NULL)
 		fprintf(debug, "\n\n\n========= SEARCH ==========\n");
 	/* can sacrifice main NFA now, so use it as work area */
@@ -431,7 +429,6 @@ int flags;
 	g->lacons = v->lacons;
 	v->lacons = NULL;
 	g->nlacons = v->nlacons;
-	g->usedshorter = v->usedshorter;
 
 	if (flags&REG_DUMP)
 		dump(re, stdout);
@@ -507,7 +504,7 @@ int err;
 }
 
 /*
- - makesearch - turn an NFA into a fast-scan NFA (implicit prepend of .*?)
+ - makesearch - turn an NFA into a search NFA (implicit prepend of .*?)
  * NFA must have been optimize()d already.
  ^ static VOID makesearch(struct vars *, struct nfa *);
  */
@@ -1653,6 +1650,10 @@ struct state *rp;
 	for (i = 0; i < cv->nmcces; i++) {
 		p = cv->mcces[i];
 		assert(singleton(v->cm, *p));
+		if (!singleton(v->cm, *p)) {
+			ERR(REG_ASSERT);
+			return;
+		}
 		ch = *p++;
 		co = GETCOLOR(v->cm, ch);
 		a = findarc(lp, PLAIN, co);
@@ -1835,10 +1836,6 @@ struct subre *t;
 	if (t == NULL)
 		return;
 
-	/* preference cleanup and analysis */
-	if (t->flags&SHORTER)
-		v->usedshorter = 1;
-
 	/* recurse through children */
 	if (t->left != NULL)
 		optst(v, t->left);
@@ -1937,7 +1934,7 @@ FILE *f;			/* for debug output */
 {
 	struct nfa *nfa;
 	long ret = 0;
- 	char idbuf[50];
+	char idbuf[50];
 
 	assert(t->begin != NULL);
 
@@ -2066,9 +2063,8 @@ FILE *f;
 								GUTSMAGIC);
 
 	fprintf(f, "\n\n\n========= DUMP ==========\n");
-	fprintf(f, "nsub %d, info 0%lo, csize %d, ntree %d, usedshort %d\n", 
-		re->re_nsub, re->re_info, re->re_csize, g->ntree,
-		g->usedshorter);
+	fprintf(f, "nsub %d, info 0%lo, csize %d, ntree %d\n", 
+		re->re_nsub, re->re_info, re->re_csize, g->ntree);
 
 	dumpcolors(&g->cmap, f);
 	if (!NULLCNFA(g->search)) {
