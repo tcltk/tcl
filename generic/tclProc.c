@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.37 2002/04/15 17:45:06 msofer Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.38 2002/07/11 12:39:16 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1007,19 +1007,19 @@ TclObjInterpProc(clientData, interp, objc, objv)
 	    Tcl_Obj *listPtr = Tcl_NewListObj(argCt, &(objv[i]));
 	    varPtr->value.objPtr = listPtr;
 	    Tcl_IncrRefCount(listPtr); /* local var is a reference */
-	    varPtr->flags &= ~VAR_UNDEFINED;
+	    TclClearVarUndefined(varPtr);
 	    argCt = 0;
 	    break;		/* done processing args */
 	} else if (argCt > 0) {
 	    Tcl_Obj *objPtr = objv[i];
 	    varPtr->value.objPtr = objPtr;
-	    varPtr->flags &= ~VAR_UNDEFINED;
+	    TclClearVarUndefined(varPtr);
 	    Tcl_IncrRefCount(objPtr);  /* since the local variable now has
 					* another reference to object. */
 	} else if (localPtr->defValuePtr != NULL) {
 	    Tcl_Obj *objPtr = localPtr->defValuePtr;
 	    varPtr->value.objPtr = objPtr;
-	    varPtr->flags &= ~VAR_UNDEFINED;
+	    TclClearVarUndefined(varPtr);
 	    Tcl_IncrRefCount(objPtr);  /* since the local variable now has
 					* another reference to object. */
 	} else {

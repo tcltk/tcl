@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.37 2002/06/17 22:52:51 hobbs Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.38 2002/07/11 12:39:16 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1770,7 +1770,7 @@ TclFindCompiledLocal(name, nameBytes, create, flags, procPtr)
 	localPtr->nextPtr = NULL;
 	localPtr->nameLength = nameBytes;
 	localPtr->frameIndex = localVar;
-	localPtr->flags = flags;
+	localPtr->flags = flags | VAR_UNDEFINED;
 	if (name == NULL) {
 	    localPtr->flags |= VAR_TEMPORARY;
 	}
@@ -1894,7 +1894,7 @@ TclInitCompiledLocals(interp, framePtr, nsPtr)
 	    varPtr->refCount = 0;
 	    varPtr->tracePtr = NULL;
 	    varPtr->searchPtr = NULL;
-	    varPtr->flags = (localPtr->flags | VAR_UNDEFINED);
+	    varPtr->flags = localPtr->flags;
         }
 	varPtr++;
     }
