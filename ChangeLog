@@ -1,3 +1,23 @@
+2002-06-13  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* tests/fCmd.test:
+	* tests/winFile.test:
+	* tests/fileSystem.test:
+	* generic/tclTest.c:
+	* generic/tclCmdAH.c:
+	* generic/tclIOUtil.c:
+	* doc/FileSystem.3:
+	* mac/tclMacFile.c:
+	* unix/tclUnixFile.c:
+	* win/tclWinFile.c: fixed up further so both compiles and
+	actually works with VC++ 5 or 6.
+	* win/tclWinInt.h: 
+	* win/tclWin32Dll.c: cleaned up code and vfs tests and
+	added tests for the internal changes of 2002-06-12, to see
+	whether WinTcl on NTFS can coexist peacefully with links
+	in the filesystem.  Added new test command 'testfilelink'
+	to enable the newer code to be tested.
+
 2002-06-12  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* tclBasic.c (Tcl_DeleteTrace): fixed [Bug 568123] (thanks to
