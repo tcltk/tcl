@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: ioCmd.test,v 1.8 2000/04/10 17:19:01 ericm Exp $
+# RCS: @(#) $Id: ioCmd.test,v 1.8.2.1 2001/09/13 19:10:51 andreas_kupries Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -237,15 +237,32 @@ test iocmd-8.9 {fconfigure command} {
 test iocmd-8.10 {fconfigure command} {
     list [catch {fconfigure a b} msg] $msg
 } {1 {can not find channel named "a"}}
+
+makeFile {} fconfigure.dummy
+
 test iocmd-8.11 {fconfigure command} {
-    list [catch {fconfigure stdout -froboz blarfo} msg] $msg
+    set chan [open fconfigure.dummy r]
+    set res [list [catch {fconfigure $chan -froboz blarfo} msg] $msg]
+    close $chan
+    set res
 } {1 {bad option "-froboz": should be one of -blocking, -buffering, -buffersize, -encoding, -eofchar, or -translation}}
+
 test iocmd-8.12 {fconfigure command} {
-    list [catch {fconfigure stdout -b blarfo} msg] $msg
+    set chan [open fconfigure.dummy r]
+    set res [list [catch {fconfigure $chan -b blarfo} msg] $msg]
+    close $chan
+    set res
 } {1 {bad option "-b": should be one of -blocking, -buffering, -buffersize, -encoding, -eofchar, or -translation}}
+
 test iocmd-8.13 {fconfigure command} {
-    list [catch {fconfigure stdout -buffer blarfo} msg] $msg
+    set chan [open fconfigure.dummy r]
+    set res [list [catch {fconfigure $chan -buffer blarfo} msg] $msg]
+    close $chan
+    set res
 } {1 {bad option "-buffer": should be one of -blocking, -buffering, -buffersize, -encoding, -eofchar, or -translation}}
+
+removeFile fconfigure.dummy
+
 test iocmd-8.14 {fconfigure command} {
     fconfigure stdin -buffers
 } 4096

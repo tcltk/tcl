@@ -1,3 +1,12 @@
+2001-09-13  Andreas Kupries <andreas_kupries@users.sourceforge.net>
+
+	* tests/ioCmd.test: Changed the computation of the result for
+	  iocmd-8.1[123] so that the tests work for single- and
+	  multi-process execution of the testsuite. Depending on the
+	  choice of the user stdout is a tty or not and thus reports
+	  different channel options. Fixes [460993] reported by Don
+	  Porter.
+
 2001-09-12  Don Porter <msofer@users.sourceforge.net>
 
         * tests/rename.test:
