@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubs.c,v 1.5 1999/03/10 23:45:51 redman Exp $
+ * RCS: @(#) $Id: tclStubs.c,v 1.6 1999/03/11 02:49:34 stanton Exp $
  */
 
 #include "tcl.h"
@@ -2701,7 +2701,7 @@ Tcl_GetVersion(major, minor, patchLevel, type)
     int * major;
     int * minor;
     int * patchLevel;
-    Tcl_ReleaseType * type;
+    int * type;
 {
     (tclStubsPtr->tcl_GetVersion)(major, minor, patchLevel, type);
 }

@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.18 1999/03/10 05:52:52 stanton Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.19 1999/03/11 02:49:35 stanton Exp $
 
 # Current Tcl version;  used in various names.
 
@@ -260,7 +260,7 @@ GENERIC_OBJS = regexp.o tclAlloc.o tclAsync.o tclBasic.o tclBinary.o \
 	tclStubInit.o tclTimer.o tclUtil.o tclVar.o
 
 STUB_LIB_OBJS = tclIntPlatStubs.o tclIntStubs.o tclPlatStubs.o tclStubLib.o \
-	tclStubs.o
+	tclStubs.o ${COMPAT_OBJS}
 
 OBJS = ${GENERIC_OBJS} ${UNIX_OBJS} ${NOTIFY_OBJS} ${COMPAT_OBJS} \
 	@DL_OBJS@
@@ -643,10 +643,10 @@ tclAppInit.o: $(UNIX_DIR)/tclAppInit.c
 	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclAppInit.c
 
 # On unix we want to use the normal malloc/free implementation, so we
-# specifically set the USE_NATIVE_MALLOC flag.
+# specifically set the USE_TCL_ALLOC flag.
 
 tclAlloc.o: $(GENERIC_DIR)/tclAlloc.c
-	$(CC) -c $(CC_SWITCHES) -DUSE_NATIVE_MALLOC $(GENERIC_DIR)/tclAlloc.c
+	$(CC) -c $(CC_SWITCHES) -DUSE_TCL_ALLOC=0 $(GENERIC_DIR)/tclAlloc.c
 
 tclAsync.o: $(GENERIC_DIR)/tclAsync.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclAsync.c
@@ -851,37 +851,40 @@ tclUnixInit.o: $(UNIX_DIR)/tclUnixInit.c tclConfig.sh
 		-DTCL_PACKAGE_PATH="\"${TCL_PACKAGE_PATH}\"" \
 		$(UNIX_DIR)/tclUnixInit.c
 
-# compat binaries
+# compat binaries, these must be compiled for use in a shared library
+# even though they may be placed in a static executable or library.  Since
+# they are included in both the tcl library and the stub library, they
+# need to be relocatable.
 
 fixstrtod.o: $(COMPAT_DIR)/fixstrtod.c
-	$(CC) -c $(CC_SWITCHES) $(COMPAT_DIR)/fixstrtod.c
+	$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/fixstrtod.c
 
 getcwd.o: $(COMPAT_DIR)/getcwd.c
-	$(CC) -c $(CC_SWITCHES) $(COMPAT_DIR)/getcwd.c
+	$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/getcwd.c
 
 opendir.o: $(COMPAT_DIR)/opendir.c
-	$(CC) -c $(CC_SWITCHES) $(COMPAT_DIR)/opendir.c
+	$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/opendir.c
 
 strncasecmp.o: $(COMPAT_DIR)/strncasecmp.c
-	$(CC) -c $(CC_SWITCHES) $(COMPAT_DIR)/strncasecmp.c
+	$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/strncasecmp.c
 
 strstr.o: $(COMPAT_DIR)/strstr.c
-	$(CC) -c $(CC_SWITCHES) $(COMPAT_DIR)/strstr.c
+	$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/strstr.c
 
 strtod.o: $(COMPAT_DIR)/strtod.c
-	$(CC) -c $(CC_SWITCHES) $(COMPAT_DIR)/strtod.c
+	$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/strtod.c
 
 strtol.o: $(COMPAT_DIR)/strtol.c
-	$(CC) -c $(CC_SWITCHES) $(COMPAT_DIR)/strtol.c
+	$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/strtol.c
 
 strtoul.o: $(COMPAT_DIR)/strtoul.c
-	$(CC) -c $(CC_SWITCHES) $(COMPAT_DIR)/strtoul.c
+	$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/strtoul.c
 
 tmpnam.o: $(COMPAT_DIR)/tmpnam.c
-	$(CC) -c $(CC_SWITCHES) $(COMPAT_DIR)/tmpnam.c
+	$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/tmpnam.c
 
 waitpid.o: $(COMPAT_DIR)/waitpid.c
-	$(CC) -c $(CC_SWITCHES) $(COMPAT_DIR)/waitpid.c
+	$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/waitpid.c
 
 
 # Stub library binaries, these must be compiled for use in a shared library

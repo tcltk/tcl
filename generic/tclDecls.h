@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.5 1999/03/10 23:45:51 redman Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.6 1999/03/11 02:49:34 stanton Exp $
  */
 
 #ifndef _TCLDECLS
@@ -871,7 +871,7 @@ EXTERN Tcl_Pid		Tcl_WaitPid _ANSI_ARGS_((Tcl_Pid pid, int * statPtr,
 EXTERN void		panicVA _ANSI_ARGS_((char * format, va_list argList));
 /* 279 */
 EXTERN void		Tcl_GetVersion _ANSI_ARGS_((int * major, int * minor, 
-				int * patchLevel, Tcl_ReleaseType * type));
+				int * patchLevel, int * type));
 
 typedef struct TclStubHooks {
     struct TclPlatStubs *tclPlatStubs;
@@ -1186,7 +1186,7 @@ typedef struct TclStubs {
     int (*tcl_VarEvalVA) _ANSI_ARGS_((Tcl_Interp * interp, va_list argList)); /* 276 */
     Tcl_Pid (*tcl_WaitPid) _ANSI_ARGS_((Tcl_Pid pid, int * statPtr, int options)); /* 277 */
     void (*panicVA) _ANSI_ARGS_((char * format, va_list argList)); /* 278 */
-    void (*tcl_GetVersion) _ANSI_ARGS_((int * major, int * minor, int * patchLevel, Tcl_ReleaseType * type)); /* 279 */
+    void (*tcl_GetVersion) _ANSI_ARGS_((int * major, int * minor, int * patchLevel, int * type)); /* 279 */
 } TclStubs;
 
 extern TclStubs *tclStubsPtr;

@@ -1,3 +1,18 @@
+1999-03-10    <stanton@GASPODE>
+
+	* generic/tclAlloc.c: Changed TCL_NATIVE_MALLOC to USE_TCLALLOC so
+	it matches 8.1.
+	
+	* generic/tclBasic.c:
+	* generic/tcl.h: 
+	* generic/tcl.decls: Changed Tcl_ReleaseType from an enum to
+	macros so it can be used in .rc files.
+	Added Tcl_GetString.
+
+	* unix/Makefile.in: Added compat binaries to the stub library.
+	Changed compat binaries to always compile with shared flags since
+	they need to be shared for the stub library.
+
 1999-03-10    <redman@scriptics.com>
 
 	* generic/tcl.h:

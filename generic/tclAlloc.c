@@ -14,13 +14,13 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclAlloc.c,v 1.4 1999/03/10 05:52:46 stanton Exp $
+ * RCS: @(#) $Id: tclAlloc.c,v 1.5 1999/03/11 02:49:34 stanton Exp $
  */
 
 #include "tclInt.h"
 #include "tclPort.h"
 
-#ifndef USE_NATIVE_MALLOC
+#if USE_TCLALLOC
 
 #ifdef TCL_DEBUG
 #   define DEBUG
@@ -457,7 +457,7 @@ mstats(
 }
 #endif
 
-#else /* USE_NATIVE_MALLOC */
+#else /* !USE_TCLALLOC */
 
 
 /*
@@ -531,4 +531,4 @@ TclpRealloc(
     return (char*) realloc(cp, nbytes);
 }
 
-#endif /* USE_NATIVE_MALLOC */
+#endif /* !USE_TCLALLOC */
