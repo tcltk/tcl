@@ -1,5 +1,11 @@
 2002-02-28  Miguel Sofer  <msofer@users.sourceforge.net>
 
+	* generic/tclNamesp.c: allow cached fully-qualified namespace
+	names to be usable from different namespaces within the same
+	interpreter without forcing a new lookup [Patch 458872]. 
+
+2002-02-28  Miguel Sofer  <msofer@users.sourceforge.net>
+
 	* generic/tclExecute.c: Replaced a few direct stack accesses 
 	with the POP_OBJECT() macro [Bug 507181] (Don Porter).
 
