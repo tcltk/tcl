@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Async.3,v 1.6 2004/10/07 14:44:31 dkf Exp $
+'\" RCS: @(#) $Id: Async.3,v 1.7 2004/11/20 00:17:31 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_AsyncCreate 3 7.0 Tcl "Tcl Library Procedures"
@@ -152,12 +152,11 @@ This sort of behavior can disrupt the execution of scripts in
 subtle ways and result in bugs that are extremely difficult
 to track down.
 If an asynchronous event handler needs to evaluate Tcl scripts
-then it should first save the interpreter's result plus the values
-of the variables \fBerrorInfo\fR and \fBerrorCode\fR (this can
-be done, for example, by storing them in dynamic strings).
+then it should first save the interpreter's state by calling
+\fBTcl_SaveInterpState\fR, passing in the \fIcode\fR argument.
 When the asynchronous handler is finished it should restore
-the interpreter's result, \fBerrorInfo\fR, and \fBerrorCode\fR,
-and return the \fIcode\fR argument.
+the interpreter's state by calling \fBTcl_RestoreInterpState\fR,
+and then returning the \fIcode\fR argument.
 
 .SH KEYWORDS
-asynchronous event, handler, signal
+asynchronous event, handler, signal, Tcl_SaveInterpState
