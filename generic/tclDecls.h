@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.27 1999/08/10 17:35:18 redman Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.27.2.1 1999/08/10 22:42:45 redman Exp $
  */
 
 #ifndef _TCLDECLS
@@ -164,7 +164,7 @@ EXTERN int		Tcl_ListObjAppendElement _ANSI_ARGS_((
 /* 45 */
 EXTERN int		Tcl_ListObjGetElements _ANSI_ARGS_((
 				Tcl_Interp * interp, Tcl_Obj * listPtr, 
-				int * objcPtr, Tcl_Obj * CONST ** objvPtr));
+				int * objcPtr, Tcl_Obj *** objvPtr));
 /* 46 */
 EXTERN int		Tcl_ListObjIndex _ANSI_ARGS_((Tcl_Interp * interp, 
 				Tcl_Obj * listPtr, int index, 
@@ -1284,7 +1284,7 @@ typedef struct TclStubs {
     void (*tcl_InvalidateStringRep) _ANSI_ARGS_((Tcl_Obj * objPtr)); /* 42 */
     int (*tcl_ListObjAppendList) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * listPtr, Tcl_Obj * elemListPtr)); /* 43 */
     int (*tcl_ListObjAppendElement) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * listPtr, Tcl_Obj * objPtr)); /* 44 */
-    int (*tcl_ListObjGetElements) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * listPtr, int * objcPtr, Tcl_Obj * CONST ** objvPtr)); /* 45 */
+    int (*tcl_ListObjGetElements) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * listPtr, int * objcPtr, Tcl_Obj *** objvPtr)); /* 45 */
     int (*tcl_ListObjIndex) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * listPtr, int index, Tcl_Obj ** objPtrPtr)); /* 46 */
     int (*tcl_ListObjLength) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * listPtr, int * intPtr)); /* 47 */
     int (*tcl_ListObjReplace) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * listPtr, int first, int count, int objc, Tcl_Obj *CONST objv[])); /* 48 */

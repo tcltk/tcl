@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.26 1999/08/10 17:35:17 redman Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.26.2.1 1999/08/10 22:42:45 redman Exp $
 
 library tcl
 
@@ -181,7 +181,7 @@ declare 44 generic {
 }
 declare 45 generic {
     int Tcl_ListObjGetElements(Tcl_Interp *interp, Tcl_Obj *listPtr, \
-	    int *objcPtr, Tcl_Obj * CONST **objvPtr)
+	    int *objcPtr, Tcl_Obj ***objvPtr)
 }
 declare 46 generic {
     int Tcl_ListObjIndex(Tcl_Interp *interp, Tcl_Obj *listPtr, int index, \
