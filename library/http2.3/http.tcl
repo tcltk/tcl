@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and
 # redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: http.tcl,v 1.31 2000/04/22 00:37:33 welch Exp $
+# RCS: @(#) $Id: http.tcl,v 1.32 2000/04/22 07:07:59 sandeep Exp $
 
 # Rough version history:
 # 1.0	Old http_get interface
@@ -136,13 +136,17 @@ proc http::config {args} {
 #	Clean up the socket and eval close time callbacks
 #
 # Arguments:
-#	token	Connection token.
-#	errormsg	If set, forces status to error.
+#	token	    Connection token.
+#	errormsg    (optional) If set, forces status to error.
+#       skipCB      (optional) If set, don't call the -command callback.  This
+#                   is useful when geturl wants to throw an exception instead
+#                   of calling the callback.  That way, the same error isn't
+#                   reported to two places.
 #
 # Side Effects:
 #        Closes the socket
 
- proc http::Finish { token {errormsg ""} } {
+proc http::Finish { token {errormsg ""} {skipCB 0}} {
     variable $token
     upvar 0 $token state
     global errorInfo errorCode
@@ -152,7 +156,7 @@ proc http::config {args} {
     }
     catch {close $state(sock)}
     catch {after cancel $state(after)}
-    if {[info exists state(-command)]} {
+    if {[info exists state(-command)] && !$skipCB} {
 	if {[catch {eval $state(-command) {$token}} err]} {
 	    if {[string length $errormsg] == 0} {
 		set state(error) [list $err $errorInfo $errorCode]
@@ -327,8 +331,10 @@ proc http::geturl { url args } {
     if {$conStat} {
 
 	# something went wrong while trying to establish the connection
-
-	Finish $token
+	# Clean up after events and such, but DON'T call the command callback
+	# (if available) because we're going to throw an exception from here
+	# instead.
+	Finish $token "" 1
 	cleanup $token
 	return -code error $s
     }
@@ -448,7 +454,11 @@ proc http::geturl { url args } {
 	# The socket probably was never connected,
 	# or the connection dropped later.
 
-	Finish $token $err
+	# Clean up after events and such, but DON'T call the command callback
+	# (if available) because we're going to throw an exception from here
+	# instead.
+
+	Finish $token $err 1
 	cleanup $token
 	return -code error $err
     }
@@ -480,7 +490,7 @@ proc http::code {token} {
 proc http::ncode {token} {
     variable $token
     upvar 0 $token state
-    if {[regexp {[0-9]+} $state(http) numeric_code]} {
+    if {[regexp {[0-9]{3}} $state(http) numeric_code]} {
 	return $numeric_code
     } else {
 	return $state(http)

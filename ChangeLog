@@ -1,3 +1,14 @@
+2000-04-21  Sandeep Tamhankar <sandeep@scriptics.com>
+
+	* library/http2.1/http.tcl: Fixed a newly introduced bug where if
+	there's a -command callback and something goes wrong, geturl threw
+	an exception, called the callback, and unset the token.  I changed
+	it so that it will not call the callback when throwing an
+	exception (so the caller only finds out about a given error from
+	one place).  Also, fixed http::ncode so that it actually gives you
+	back the http return code (i.e. 200, 404, etc.) instead of the
+	first digit of the version of HTTP being used (i.e. 1).
+
 2000-04-21  Brent Welch <welch@scriptics.com>
 
 	* library/http2.1/http.tcl: More thrashing with the "server closes

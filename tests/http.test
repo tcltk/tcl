@@ -12,7 +12,7 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
 #
-# RCS: @(#) $Id: http.test,v 1.18 2000/04/10 17:18:59 ericm Exp $
+# RCS: @(#) $Id: http.test,v 1.19 2000/04/22 07:07:59 sandeep Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -475,4 +475,3 @@ if {[info exist removeHttpd]} {
 }
 
 ::tcltest::cleanupTests
-return
