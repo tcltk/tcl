@@ -34,7 +34,8 @@
 
 ROOT		= ..
 TMPDIR		= .
-TOOLS32		= c:\msdev
+TOOLS32		= c:\progra~1\devstudio\vc
+TOOLS32_rc	= c:\progra~1\devstudio\sharedide
 TOOLS16		= c:\msvc
 
 # Set this to the appropriate value of /MACHINE: for your platform
@@ -141,7 +142,7 @@ TCLOBJS = \
 
 cc32		= $(TOOLS32)\bin\cl.exe
 link32		= $(TOOLS32)\bin\link.exe
-rc32		= $(TOOLS32)\bin\rc.exe
+rc32		= $(TOOLS32_rc)\bin\rc.exe
 include32	= -I$(TOOLS32)\include
 
 cc16		= $(TOOLS16)\bin\cl.exe
@@ -177,7 +178,7 @@ lcommon = /NODEFAULTLIB /RELEASE /NOLOGO
 # declarations for use on Intel i386, i486, and Pentium systems
 !IF "$(MACHINE)" == "IX86"
 DLLENTRY = @12
-lflags   = $(lcommon) -align:0x1000 /MACHINE:$(MACHINE)
+lflags   = $(lcommon) /MACHINE:$(MACHINE)
 !ELSE
 lflags   = $(lcommon) /MACHINE:$(MACHINE)
 !ENDIF

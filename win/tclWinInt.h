@@ -30,9 +30,10 @@
 #define VER_PLATFORM_WIN32_WINDOWS 1
 #endif
 
+EXTERN int		TclWinGetPlatformId(void);
+EXTERN void		TclWinInit(HINSTANCE hInst);
 EXTERN int		TclWinSynchSpawn(void *args, int type, void **trans,
 				      Tcl_Pid *pidPtr);
-EXTERN int		TclWinGetPlatformId(void);
 
 
 #endif	/* _TCLWININT */
