@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.61 2001/09/27 00:19:57 dgp Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.62 2001/09/27 20:32:35 dgp Exp $
 
 library tcl
 
@@ -903,12 +903,12 @@ declare 257 generic {
     void Tcl_UpdateLinkedVar(Tcl_Interp *interp, char *varName)
 }
 declare 258 generic {
-    int Tcl_UpVar(Tcl_Interp *interp, char *frameName, char *varName, \
-	    char *localName, int flags)
+    int Tcl_UpVar(Tcl_Interp *interp, CONST char *frameName, char *varName, \
+	    CONST char *localName, int flags)
 }
 declare 259 generic {
-    int Tcl_UpVar2(Tcl_Interp *interp, char *frameName, char *part1, \
-	    char *part2, char *localName, int flags)
+    int Tcl_UpVar2(Tcl_Interp *interp, CONST char *frameName, char *part1, \
+	    char *part2, CONST char *localName, int flags)
 }
 declare 260 generic {
     int Tcl_VarEval(Tcl_Interp *interp, ...)

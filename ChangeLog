@@ -1,3 +1,16 @@
+2001-09-27  Don Porter  <dgp@users.sourceforge.net>
+
+	* doc/UpVar.3 (Tcl_UpVar*):
+	* generic/tcl{Int}.decls (Tcl_UpVar*,TclFindProc,TclGetFrame):
+	* generic/tclInt.h
+	  (Tcl{FindProc,GetFrame,LookupVar,PrecTraceProc,ProcInterpProc}):
+	* generic/tclProc.c (TclGetFrame,TclFindProc):
+	* generic/tclVar.c (Tcl_UpVar*,MakeUpvar):  Updated APIs in
+	generic/tclProc.c and generic/tclVar.c according to the guidelines
+	of TIP 27.  [Patch 465442]
+
+	* generic/tcl{Int}Decls.h: make genstubs
+
 2001-09-26  Andreas Kupries  <andreas_kupries@users.sourceforge.net> 
 
 	* doc/fileevent.n: Accepted [Patch #465279] adding an example to
