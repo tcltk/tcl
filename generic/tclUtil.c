@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.38 2003/07/16 21:24:12 hobbs Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.39 2003/08/27 17:57:03 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2001,44 +2001,58 @@ TclNeedSpace(start, end)
     CONST char *end;		/* End of string (place where space will
 				 * be added, if appropriate). */
 {
-    Tcl_UniChar ch;
+    /*
+     * Direct char comparisons to the character literals '{' and '\\'
+     * below are safe because these literals are characters in the
+     * ASCII subset, and so single-byte in UTF8.
+     */
 
     /*
      * A space is needed unless either
      * (a) we're at the start of the string, or
-     * (b) the trailing characters of the string consist of one or more
-     *     open curly braces preceded by a space or extending back to
-     *     the beginning of the string.
-     * (c) the trailing characters of the string consist of a space
-     *	   preceded by a character other than backslash.
      */
 
     if (end == start) {
 	return 0;
     }
+
     end = Tcl_UtfPrev(end, start);
     if (*end != '{') {
+	Tcl_UniChar ch;
 	Tcl_UtfToUniChar(end, &ch);
-	/*
-	 * Direct char comparison on next line is safe as it is with
-	 * a character in the ASCII subset, and so single-byte in UTF8.
-	 */
-	if (Tcl_UniCharIsSpace(ch) && ((end == start) || (end[-1] != '\\'))) {
-	    return 0;
-	}
-	return 1;
+
+    /*
+     * (b) the trailing characters of the string consist of a
+     *     list-element-separating space ( space, tab, carriage return,
+     *     newline ) preceded by a character other than backslash, or
+     */
+
+    /* NOTE: (Bug 411825) The non-breaking space \u00a0 is not
+     * recognized by Tcl's script parser, nor its list element
+     * parser as a word separating character (Fits well with
+     * "non-breaking" doesn't it?), so the non-breaking space
+     * should not suppress the need of a space.  Any other 
+     * whitespace Unicode characters outside the ASCII subset are
+     * treated likewise.
+     */
+	return (!Tcl_UniCharIsSpace(ch) || (*end >= 0x80) 
+		|| ((end > start) && (end[-1] == '\\')));
     }
+
+    /*
+     * (c) the trailing characters of the string consist of one or more
+     *     open curly braces, and the beginning of the sequence of
+     *     open curly braces represents the beginning of a list element
+     *     (as tested by a recursive call to TclNeedSpace).
+     */
+
     do {
 	if (end == start) {
 	    return 0;
 	}
-	end = Tcl_UtfPrev(end, start);
+        end--;
     } while (*end == '{');
-    Tcl_UtfToUniChar(end, &ch);
-    if (Tcl_UniCharIsSpace(ch)) {
-	return 0;
-    }
-    return 1;
+    return TclNeedSpace(start,end+1);
 }
 
 /*
