@@ -1,5 +1,8 @@
 2001-03-13  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
+	* generic/tclCmdMZ.c (Tcl_StringObjCmd): A missing
+	{return TCL_OK;} was causing memory corruption.  [Bug #408002]
+
 	* generic/tclExecute.c (TclDeleteExecEnv, GrowEvaluationStack,
 	TclExecuteByteCode): Added some casts to ClientData that are
 	apparently needed on some architectures.
