@@ -1022,7 +1022,7 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS=""
 	    LDFLAGS="-export-dynamic"
-	    LD_SEARCH_FLAGS=""
+	    LD_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
 	    if test "${TCL_THREADS}" = "1" ; then
 		EXTRA_CFLAGS="-pthread"
 	    	LDFLAGS="$LDFLAGS -pthread"
