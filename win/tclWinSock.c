@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinSock.c,v 1.16 1999/07/31 01:24:25 redman Exp $
+ * RCS: @(#) $Id: tclWinSock.c,v 1.17 1999/08/01 22:09:29 redman Exp $
  */
 
 #include "tclWinInt.h"
@@ -82,6 +82,7 @@ static struct {
 
 #define SOCKET_MESSAGE	WM_USER+1
 #define SOCKET_SELECT	WM_USER+2
+#define SOCKET_TERMINATE WM_USER+3
 #define SELECT          TRUE
 #define UNSELECT	FALSE
 
@@ -585,19 +586,18 @@ SocketThreadExitHandler(clientData)
 
     if (tsdPtr->socketThread != NULL) {
 
-	WaitForSingleObject(tsdPtr->socketListLock, INFINITE);
-	Tcl_MutexLock(&socketMutex);
-	TerminateThread(tsdPtr->socketThread, 0);
+	PostMessage(tsdPtr->hwnd, SOCKET_TERMINATE, 0, 0);
 
-	/*
+        /*
 	 * Wait for the thread to terminate.  This ensures that we are
 	 * completely cleaned up before we leave this function. 
 	 */
-	
+
 	WaitForSingleObject(tsdPtr->socketThread, INFINITE);
+	CloseHandle(tsdPtr->socketThread);
 	CloseHandle(tsdPtr->readyEvent);
 	CloseHandle(tsdPtr->socketListLock);
-	Tcl_MutexUnlock(&socketMutex);
+
     }
     if (tsdPtr->hwnd != NULL) {
 	DestroyWindow(tsdPtr->hwnd);
@@ -2122,6 +2122,22 @@ TcpGetHandleProc(instanceData, direction, handlePtr)
     return TCL_OK;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * SocketThread --
+ *
+ *	Helper thread used to manage the socket event handling window.
+ *
+ * Results:
+ *	1 if unable to create socket event window, 0 otherwise.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
 static DWORD WINAPI
 SocketThread(LPVOID arg)
 {
@@ -2210,7 +2226,7 @@ SocketProc(hwnd, message, wParam, lParam)
 	     * Find the specified socket on the socket list and update its
 	     * eventState flag.
 	     */
-	    
+
 	    WaitForSingleObject(tsdPtr->socketListLock, INFINITE);
 	    for (infoPtr = tsdPtr->socketList; infoPtr != NULL; 
 		 infoPtr = infoPtr->nextPtr) {
@@ -2286,6 +2302,9 @@ SocketProc(hwnd, message, wParam, lParam)
 		(void) (*winSock.WSAAsyncSelect)(infoPtr->socket, hwnd,
 			0, 0);
 	    }
+	    break;
+	case SOCKET_TERMINATE:
+	    ExitThread(0);
 	    break;
     }
 

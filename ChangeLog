@@ -1,3 +1,10 @@
+1999-08-01    <redman@scriptics.com>
+
+	* win/tclWinSock.c: Added comment block to SocketThread()
+	function.  Added code to avoid calling TerminateThread(), but
+	instead to send a message to the socket event window to tell it to
+	terminate its thread.
+
 1999-07-30  Jeff Hobbs  <hobbs@scriptics.com>
 
 	* generic/tclInt.decls: added declaractions necessary for the
