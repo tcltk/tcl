@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.65 2004/06/24 01:29:03 mistachkin Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.66 2004/07/03 02:03:37 msofer Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -1043,6 +1043,12 @@ EXTERN void		TclFinalizeThreadStorageData _ANSI_ARGS_((
 EXTERN void		TclFinalizeThreadStorageDataKey _ANSI_ARGS_((
 				Tcl_ThreadDataKey * keyPtr));
 #endif
+#ifndef TclCompEvalObj_TCL_DECLARED
+#define TclCompEvalObj_TCL_DECLARED
+/* 197 */
+EXTERN int		TclCompEvalObj _ANSI_ARGS_((Tcl_Interp * interp, 
+				Tcl_Obj * objPtr));
+#endif
 
 typedef struct TclIntStubs {
     int magic;
@@ -1260,6 +1266,7 @@ typedef struct TclIntStubs {
     void (*tclFinalizeThreadStorage) _ANSI_ARGS_((void)); /* 194 */
     void (*tclFinalizeThreadStorageData) _ANSI_ARGS_((Tcl_ThreadDataKey * keyPtr)); /* 195 */
     void (*tclFinalizeThreadStorageDataKey) _ANSI_ARGS_((Tcl_ThreadDataKey * keyPtr)); /* 196 */
+    int (*tclCompEvalObj) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * objPtr)); /* 197 */
 } TclIntStubs;
 
 #ifdef __cplusplus
@@ -1955,6 +1962,10 @@ extern TclIntStubs *tclIntStubsPtr;
 #ifndef TclFinalizeThreadStorageDataKey
 #define TclFinalizeThreadStorageDataKey \
 	(tclIntStubsPtr->tclFinalizeThreadStorageDataKey) /* 196 */
+#endif
+#ifndef TclCompEvalObj
+#define TclCompEvalObj \
+	(tclIntStubsPtr->tclCompEvalObj) /* 197 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */
