@@ -42,14 +42,18 @@
 
 1998-10-05    <stanton@GASPODE>
 
+	* auto.tcl, package.tcl: fixed SCCS strings
+
+	* tclIndex: updated index to reflect 8.1 files
+
 	* tclCompile.c (TclCompileScript): changed to avoid modifying the
 	input string in place because name lookup operations could have
 	arbitrary side effects
 
 	* tclInterp.c: added guard against deleting current interpreter
 
-	* tclFileName.c: added warnings around code that modifies strings
-	in place
+	* tclMacFile.c, tclUnixFile.c, tclWinFile.c, tclFileName.c: added
+	warnings around code that modifies strings in place
 
 	* tclExecute.c: fixed off-by-one copying error, fixed merge bugs
 
@@ -58,3 +62,12 @@
 
 	* tclCompCmds.c: replaced SCCS strings, added warnings around code
 	that modifies strings in place
+
+	* interp.test: added test for interp deleting itself
+
+1998-09-30    <stanton@GASPODE>
+
+	* makefile.vc: fixed so TCL_LIBRARY is set before running tcltest
+
+	* tclWin32Dll.c: removed TclpFinalize, cleanup of merges
+
