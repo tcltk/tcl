@@ -21,7 +21,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.47 2004/08/27 11:04:26 dkf Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.48 2004/08/27 13:59:28 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -3851,39 +3851,33 @@ NamespaceWhichCmd(dummy, interp, objc, objv)
     int objc;                           /* Number of arguments. */
     Tcl_Obj *CONST objv[];              /* Argument objects. */
 {
-    int argIndex, lookup;
+    static CONST char *opts[] = {
+	"-command", "-variable", NULL
+    };
+    int lookupType = 0;
 
-    if (objc < 3) {
-        badArgs:
-        Tcl_WrongNumArgs(interp, 2, objv,
-	        "?-command? ?-variable? name");
+    if (objc < 3 || objc > 4) {
+      badArgs:
+        Tcl_WrongNumArgs(interp, 2, objv, "?-command? ?-variable? name");
         return TCL_ERROR;
-    }
+    } else if (objc == 4) {
+	/*
+	 * Look for a flag controlling the lookup.
+	 */
 
-    /*
-     * Look for a flag controlling the lookup.
-     */
-
-    argIndex = 2;
-    lookup = 0;			/* assume command lookup by default */
-    arg = TclGetString(objv[2]);
-    if (*arg == '-') {
-	if (strncmp(arg, "-command", 8) == 0) {
-	    lookup = 0;
-	} else if (strncmp(arg, "-variable", 9) == 0) {
-	    lookup = 1;
-	} else {
+	if (Tcl_GetIndexFromObj(interp, objv[2], opts, "option", 0,
+		&lookupType) != TCL_OK) {
+	    /*
+	     * Preserve old style of error message!
+	     */
+	    Tcl_ResetResult(interp);
 	    goto badArgs;
 	}
-	argIndex = 3;
-    }
-    if (objc != (argIndex + 1)) {
-	goto badArgs;
     }
 
-    switch (lookup) {
+    switch (lookupType) {
     case 0: {			/* -command */
-	Tcl_Command cmd = Tcl_GetCommandFromObj(interp, objv[argIndex]);
+	Tcl_Command cmd = Tcl_GetCommandFromObj(interp, objv[objc-1]);
         if (cmd == (Tcl_Command) NULL) {	
             return TCL_OK;	/* cmd not found, just return (no error) */
         }
@@ -3892,7 +3886,7 @@ NamespaceWhichCmd(dummy, interp, objc, objv)
     }
     case 1: {			/* -variable */
 	Tcl_Var var = Tcl_FindNamespaceVar(interp,
-		TclGetString(objv[argIndex]), NULL, /*flags*/ 0);
+		TclGetString(objv[objc-1]), NULL, /*flags*/ 0);
         if (var != (Tcl_Var) NULL) {
             Tcl_GetVariableFullName(interp, var, Tcl_GetObjResult(interp));
         }
