@@ -1,5 +1,8 @@
 2002-09-24  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
+	* unix/tcl.m4 (SC_TCL_64BIT_FLAGS): Yet more robust 64-bit value
+	detection to close [Bug 613117] on more systems.
+
 	* generic/tclCompile.c (TclPrintSource): More CONSTifying.
 	* generic/tclExecute.c (EvalStatsCmd): Object-ify to reduce
 	warnings.  Thanks to 'CoderX2' on the chat for bringing this to my
