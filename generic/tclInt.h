@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.158 2004/05/06 04:41:53 msofer Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.159 2004/05/13 12:59:22 dkf Exp $
  */
 
 #ifndef _TCLINT
@@ -1126,6 +1126,12 @@ typedef struct ResolverScheme {
 } ResolverScheme;
 
 /*
+ * Forward declaration of the TIP#143 limit handler structure.
+ */
+
+typedef struct LimitHandler LimitHandler;
+
+/*
  *----------------------------------------------------------------
  * This structure defines an interpreter, which is a collection of
  * commands plus other state information related to interpreting
@@ -1325,6 +1331,39 @@ typedef struct Interp {
     Tcl_Obj *returnOptionsKey;	/* holds "-options" */
 
     /*
+     * Resource limiting framework support (TIP#143).
+     */
+
+    struct {
+	int active;		/* Flag values defining which limits have
+				 * been set. */
+	int granularityTicker;	/* Counter used to determine how often to
+				 * check the limits. */
+	int exceeded;		/* Which limits have been exceeded, described
+				 * as flag values the same as the 'active'
+				 * field. */
+
+	int cmdCount;		/* Limit for how many commands to execute
+				 * in the interpreter. */
+	LimitHandler *cmdHandlers; /* Handlers to execute when the limit
+				    * is reached. */
+	int cmdGranularity;	/* Mod factor used to determine how often
+				 * to evaluate the limit check. */
+
+	Tcl_Time time;		/* Time limit for execution within the
+				 * interpreter (in seconds from epoch). */
+	LimitHandler *timeHandlers; /* Handlers to execute when the limit
+				     * is reached. */
+	int timeGranularity;	/* Mod factor used to determine how often
+				 * to evaluate the limit check. */
+
+	Tcl_HashTable callbacks; /* Mapping from (interp,type) pair to data
+				  * used to install a limit handler callback
+				  * to run in _this_ interp when the limit
+				  * is exceeded. */
+    } limit;
+
+    /*
      * Statistical information about the bytecode compiler and interpreter's
      * operation.
      */
@@ -1401,6 +1440,32 @@ typedef struct Interp {
  */
 
 #define MAX_NESTING_DEPTH	1000
+
+/*
+ * TIP#143 limit handler internal representation.
+ */
+
+struct LimitHandler {
+    int flags;			/* The state of this particular handler. */
+    Tcl_LimitHandlerProc *handlerProc; /* The handler callback. */
+    ClientData clientData;	/* Opaque argument to the handler callback. */
+    Tcl_LimitHandlerDeleteProc *deleteProc; /* How to delete the clientData */
+    LimitHandler *prevPtr;	/* Previous item in linked list of handlers */
+    LimitHandler *nextPtr;	/* Next item in linked list of handlers */
+};
+
+/*
+ * Values for the LimitHandler flags field.
+ *	LIMIT_HANDLER_ACTIVE - Whether the handler is currently being
+ *		processed; handlers are never to be entered reentrantly.
+ *	LIMIT_HANDLER_DELETED - Whether the handler has been deleted.  This
+ *		should not normally be observed because when a handler is
+ *		deleted it is also spliced out of the list of handlers, but
+ *		even so we will be careful.
+ */
+
+#define LIMIT_HANDLER_ACTIVE	0x01
+#define LIMIT_HANDLER_DELETED	0x02
 
 /*
  * The macro below is used to modify a "char" value (e.g. by casting
@@ -1694,6 +1759,7 @@ EXTERN int		TclIsLocalScalar _ANSI_ARGS_((CONST char *src,
 			    int len));
 EXTERN int              TclJoinThread _ANSI_ARGS_((Tcl_ThreadId id,
 			    int* result));
+EXTERN void		TclInitLimitSupport _ANSI_ARGS_((Tcl_Interp *interp));
 EXTERN Tcl_Obj *	TclLindexList _ANSI_ARGS_((Tcl_Interp* interp,
 						   Tcl_Obj* listPtr,
 						   Tcl_Obj* argPtr ));
