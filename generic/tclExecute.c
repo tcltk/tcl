@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.63 2002/06/13 21:07:26 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.64 2002/06/13 21:37:15 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1004,6 +1004,7 @@ TclExecuteByteCode(interp, codePtr)
     int storeFlags;
 #ifdef TCL_COMPILE_DEBUG
     int traceInstructions = (tclTraceExec == 3);
+    char cmdNameBuf[21];
 #endif
     Tcl_Obj *valuePtr, *value2Ptr, *objPtr, *elemPtr;
     char *bytes;
@@ -1203,9 +1204,6 @@ TclExecuteByteCode(interp, codePtr)
 				 /* Reference to memory block containing
 				  * objv array (must be kept live throughout
 				  * trace and command invokations.) */
-#ifdef TCL_COMPILE_DEBUG
-		char cmdNameBuf[21];
-#endif
 		objv = &(stackPtr[stackTop - (objc-1)]);
 
 #ifdef TCL_COMPILE_DEBUG
@@ -3902,11 +3900,13 @@ TclExecuteByteCode(interp, codePtr)
 	}
 	    
 #else /* TCL_COMPILE_DEBUG is set! */
+
 	/*
 	 * Error messages depend on the instruction.
 	 */
-
+	
 	switch(*pc) {
+	    int newPcOffset;
 	    case INST_INVOKE_STK1:
 	    case INST_INVOKE_STK4:
 		/*
@@ -3929,34 +3929,34 @@ TclExecuteByteCode(interp, codePtr)
 			    codePtr);
 		    if (rangePtr == NULL) {
 		        TRACE(("%u => ... after \"%.20s\", no encl. loop or catch, returning %s\n",
-		                objc, cmdNameBuf,
+		                opnd, cmdNameBuf,
 			        StringForResultCode(result)));
 			goto abnormalReturn; /* no catch exists to check */
 		    }
-		    newPcOffset = 0;
 		    switch (rangePtr->type) {
 		    case LOOP_EXCEPTION_RANGE:
 			if (result == TCL_BREAK) {
 			    newPcOffset = rangePtr->breakOffset;
 			} else if (rangePtr->continueOffset == -1) {
 			    TRACE(("%u => ... after \"%.20s\", %s, loop w/o continue, checking for catch\n",
-				   objc, cmdNameBuf,
+				   opnd, cmdNameBuf,
 				   StringForResultCode(result)));
 			    goto checkForCatch;
 			} else {
 			    newPcOffset = rangePtr->continueOffset;
 			}
 			TRACE(("%u => ... after \"%.20s\", %s, range at %d, new pc %d\n",
-			       objc, cmdNameBuf,
+			       opnd, cmdNameBuf,
 			       StringForResultCode(result),
 			       rangePtr->codeOffset, newPcOffset));
 			break;
 		    case CATCH_EXCEPTION_RANGE:
 			TRACE(("%u => ... after \"%.20s\", %s...\n",
-			       objc, cmdNameBuf,
+			       opnd, cmdNameBuf,
 			       StringForResultCode(result)));
 			goto processCatch; /* it will use rangePtr */
 		    default:
+			newPcOffset = 0; /* avoid compiler warning */
 			panic("TclExecuteByteCode: bad ExceptionRange type\n");
 		    }
 		    result = TCL_OK;
@@ -3969,7 +3969,7 @@ TclExecuteByteCode(interp, codePtr)
 		     * enclosing catch exception range, if any.
 		     */
 		    TRACE_WITH_OBJ(("%u => ... after \"%.20s\", TCL_ERROR ",
-		            objc, cmdNameBuf), Tcl_GetObjResult(interp));
+		            opnd, cmdNameBuf), Tcl_GetObjResult(interp));
 		    goto checkForCatch;
 
 		case TCL_RETURN:
@@ -3979,12 +3979,12 @@ TclExecuteByteCode(interp, codePtr)
 		     * for an enclosing catch exception range, if any.
 		     */
 		    TRACE(("%u => ... after \"%.20s\", TCL_RETURN\n",
-		            objc, cmdNameBuf));
+		            opnd, cmdNameBuf));
 		    goto checkForCatch;
 
 		default:
 		    TRACE_WITH_OBJ(("%u => ... after \"%.20s\", OTHER RETURN CODE %d ",
-		            objc, cmdNameBuf, result),
+		            opnd, cmdNameBuf, result),
 			    Tcl_GetObjResult(interp));
 		    goto checkForCatch;
 		}
