@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.23 2001/09/19 08:52:46 dkf Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.24 2001/09/24 21:10:32 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -318,11 +318,11 @@ TclFindElement(interp, list, listLength, elementPtr, nextPtr, sizePtr,
  *	Copy a string and eliminate any backslashes that aren't in braces.
  *
  * Results:
- *	There is no return value. Count characters get copied from src to
- *	dst. Along the way, if backslash sequences are found outside braces,
- *	the backslashes are eliminated in the copy. After scanning count
- *	chars from source, a null character is placed at the end of dst.
- *	Returns the number of characters that got copied.
+ *	Count characters get copied from src to	dst. Along the way, if
+ *	backslash sequences are found outside braces, the backslashes are
+ *	eliminated in the copy. After scanning count chars from source, a
+ *	null character is placed at the end of dst.  Returns the number
+ *	of characters that got copied.
  *
  * Side effects:
  *	None.
@@ -822,7 +822,7 @@ Tcl_ConvertCountedElement(src, length, dst, flags)
 char *
 Tcl_Merge(argc, argv)
     int argc;			/* How many strings to merge. */
-    char **argv;		/* Array of string values. */
+    char * CONST *argv;		/* Array of string values. */
 {
 #   define LOCAL_SIZE 20
     int localFlags[LOCAL_SIZE], *flagPtr;
@@ -925,7 +925,7 @@ Tcl_Backslash(src, readPtr)
 char *
 Tcl_Concat(argc, argv)
     int argc;			/* Number of strings to concatenate. */
-    char **argv;		/* Array of strings to concatenate. */
+    char * CONST *argv;		/* Array of strings to concatenate. */
 {
     int totalSize, i;
     char *p;
@@ -940,7 +940,7 @@ Tcl_Concat(argc, argv)
 	return result;
     }
     for (p = result, i = 0; i < argc; i++) {
-	char *element;
+	CONST char *element;
 	int length;
 
 	/*
@@ -1373,7 +1373,7 @@ Tcl_DStringInit(dsPtr)
  *----------------------------------------------------------------------
  */
 
-char *
+CONST char *
 Tcl_DStringAppend(dsPtr, string, length)
     Tcl_DString *dsPtr;		/* Structure describing dynamic string. */
     CONST char *string;		/* String to append.  If length is -1 then
@@ -1444,7 +1444,7 @@ Tcl_DStringAppend(dsPtr, string, length)
  *----------------------------------------------------------------------
  */
 
-char *
+CONST char *
 Tcl_DStringAppendElement(dsPtr, string)
     Tcl_DString *dsPtr;		/* Structure describing dynamic string. */
     CONST char *string;		/* String to append.  Must be
@@ -1927,8 +1927,8 @@ TclPrecTraceProc(clientData, interp, name1, name2, flags)
 
 int
 TclNeedSpace(start, end)
-    char *start;		/* First character in string. */
-    char *end;			/* End of string (place where space will
+    CONST char *start;		/* First character in string. */
+    CONST char *end;			/* End of string (place where space will
 				 * be added, if appropriate). */
 {
     Tcl_UniChar ch;
@@ -2079,13 +2079,13 @@ TclFormatInt(buffer, n)
 
 int
 TclLooksLikeInt(bytes, length)
-    register char *bytes;	/* Points to first byte of the string. */
+    register CONST char *bytes;	/* Points to first byte of the string. */
     int length;			/* Number of bytes in the string. If < 0
 				 * bytes up to the first null byte are
 				 * considered (if they may appear in an 
 				 * integer). */
 {
-    register char *p, *end;
+    register CONST char *p, *end;
 
     if (length < 0) {
 	length = (bytes? strlen(bytes) : 0);
@@ -2222,9 +2222,9 @@ TclCheckBadOctal(interp, value)
     Tcl_Interp *interp;		/* Interpreter to use for error reporting. 
 				 * If NULL, then no error message is left
 				 * after errors. */
-    char *value;		/* String to check. */
+    CONST char *value;		/* String to check. */
 {
-    register char *p = value;
+    register CONST char *p = value;
 
     /*
      * A frequent mistake is invalid octal values due to an unwanted

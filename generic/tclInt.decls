@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.31 2001/09/10 17:17:41 andreas_kupries Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.32 2001/09/24 21:10:32 dgp Exp $
 
 library tcl
 
@@ -243,7 +243,7 @@ declare 58 generic {
 #	    Tcl_DString *dirPtr, char *pattern, char *tail)
 #}
 declare 60 generic {
-    int TclNeedSpace(char *start, char *end)
+    int TclNeedSpace(CONST char *start, CONST char *end)
 }
 declare 61 generic {
     Tcl_Obj * TclNewProcBodyObj(Proc *procPtr)
@@ -532,7 +532,7 @@ declare 138 generic {
 #	    Tcl_PackageInitProc **proc2Ptr, ClientData *clientDataPtr)
 #}
 declare 140 generic {
-    int TclLooksLikeInt(char *bytes, int length)
+    int TclLooksLikeInt(CONST char *bytes, int length)
 }
 # This is used by TclX, but should otherwise be considered private
 declare 141 generic {

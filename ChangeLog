@@ -1,3 +1,17 @@
+2001-09-24  Don Porter  <dgp@users.sourceforge.net>
+
+	* doc/{Concat,DString,SplitList}.3:
+	* generic/tclInt.h (TclCheckBadOctal):
+	* generic/tcl{,Int}.decls:
+	* generic/tclEncoding.c (OpenEncodingFile):
+	* generic/tclMain.c (Tcl_Main):
+	* generic/tclUtil.c:
+	* unix/tclLoadDl.c (TclpLoadFile):  Updated APIs in 
+	generic/tclUtil.c according to the guidelines of TIP 27.
+	[Patch 464553]
+
+	* generic/tcl{Int}Decls.h: make genstubs
+
 2001-09-24  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
 
 	* The change below fixes [Bug #464380]. The bug was reported by

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.64 2001/09/08 14:05:09 vincentdarley Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.65 2001/09/24 21:10:32 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -1617,7 +1617,7 @@ EXTERN void		TclAllocateFreeObjects _ANSI_ARGS_((void));
 EXTERN int		TclArraySet _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *arrayNameObj, Tcl_Obj *arrayElemObj));
 EXTERN int		TclCheckBadOctal _ANSI_ARGS_((Tcl_Interp *interp,
-			    char *value));
+			    CONST char *value));
 EXTERN int		TclCleanupChildren _ANSI_ARGS_((Tcl_Interp *interp,
 			    int numPids, Tcl_Pid *pidPtr,
 			    Tcl_Channel errorChan));
@@ -1753,7 +1753,6 @@ EXTERN Var *		TclLookupVar _ANSI_ARGS_((Tcl_Interp *interp,
 			    int createPart1, int createPart2,
 			    Var **arrayPtrPtr));
 EXTERN int		TclMathInProgress _ANSI_ARGS_((void));
-EXTERN int		TclNeedSpace _ANSI_ARGS_((char *start, char *end));
 EXTERN Tcl_Obj *	TclNewProcBodyObj _ANSI_ARGS_((Proc *procPtr));
 EXTERN int		TclObjCommandComplete _ANSI_ARGS_((Tcl_Obj *cmdPtr));
 EXTERN int		TclObjInterpProc _ANSI_ARGS_((ClientData clientData,

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoadDl.c,v 1.5 2001/09/04 18:06:34 vincentdarley Exp $
+ * RCS: @(#) $Id: tclLoadDl.c,v 1.6 2001/09/24 21:10:32 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -77,7 +77,7 @@ TclpLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr,
 {
     VOID *handle;
     Tcl_DString newName, ds;
-    char *native;
+    CONST char *native;
 
     native = Tcl_FSGetNativePath(pathPtr);
     handle = dlopen(native, RTLD_NOW | RTLD_GLOBAL);	/* INTL: Native. */
