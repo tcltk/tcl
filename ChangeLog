@@ -1,3 +1,8 @@
+1999-05-14    <redman@scriptics.com>
+
+	* generic/tclDate.c: Applied patch to fix 100-year and 400-year
+	boundaries in leap year code, from Isaac Hollander.  [Bug: 2066]
+
 1999-05-13    <stanton@scriptics.com>
 
 	* unix/Makefile.in:
