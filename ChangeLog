@@ -1,3 +1,11 @@
+2002-10-10  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* README: fixed minor nits [Bug #607776] (virden)
+
+	* win/configure:
+	* win/tcl.m4: enable USE_THREAD_ALLOC (new threaded allocator) by
+	default in cygwin configure on Windows.
+
 2002-10-10  Don Porter  <dgp@users.sourceforge.net>
 
 	* doc/Tcl.n:	Clarified that namespace separators are legal in
