@@ -1,5 +1,8 @@
 1999-08-02  Scott Redman  <redman@scriptics.com>
 
+	* unix/configure.in:
+	* win/configure.in: Change beta level to b2.
+	
 	* generic/tcl.h:
 	* generic/tcl.decls:
 	* generic/tclDecls.h:
