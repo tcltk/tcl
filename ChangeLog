@@ -1,3 +1,10 @@
+2003-02-25  Don Porter  <dgp@users.sourceforge.net>
+
+	* doc/pkgMkIndex.n:	Modified [pkg_mkIndex] to use -nocase matching
+	* library/package.tcl:	of -load patterns, to better accomodate
+	common user errors due to confusion between [package names] names
+	and [info loaded] names.
+
 2003-02-25  Andreas Kupries  <andreask@pliers.activestate.com>
 
 	* tests/pid.test: See below [Bug #678412].

@@ -3,7 +3,7 @@
 # utility procs formerly in init.tcl which can be loaded on demand
 # for package management.
 #
-# RCS: @(#) $Id: package.tcl,v 1.22 2003/02/21 05:30:18 dgp Exp $
+# RCS: @(#) $Id: package.tcl,v 1.23 2003/02/25 23:58:09 dgp Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1998 Sun Microsystems, Inc.
@@ -176,7 +176,7 @@ proc pkg_mkIndex {args} {
 	    }
 	}
 	foreach pkg [info loaded] {
-	    if {! [string match $loadPat [lindex $pkg 1]]} {
+	    if {! [string match -nocase $loadPat [lindex $pkg 1]]} {
 		continue
 	    }
 	    if {$doVerbose} {
