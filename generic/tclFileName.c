@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.23 2001/10/15 17:36:29 hobbs Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.24 2001/10/16 05:10:34 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -382,7 +382,7 @@ TclpGetNativePathType(pathObjPtr, driveNameLengthPtr, driveNameRef)
 		    if (!Tcl_RegExpExec(NULL, re, path, path)) {
 			type = TCL_PATH_RELATIVE;
 		    } else {
-			char *root, *end;
+			CONST char *root, *end;
 			Tcl_RegExpRange(re, 2, &root, &end);
 			if (root != NULL) {
 			    type = TCL_PATH_RELATIVE;
@@ -814,7 +814,7 @@ SplitMacPath(path)
     re = Tcl_GetRegExpFromObj(NULL, tsdPtr->macRootPatternPtr, REG_ADVANCED);
 
     if (Tcl_RegExpExec(NULL, re, path, path) == 1) {
-	char *start, *end;
+	CONST char *start, *end;
 	Tcl_Obj *nextElt;
 
 	/*
