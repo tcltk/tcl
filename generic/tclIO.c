@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.20.2.11 2001/09/28 16:30:12 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.20.2.12 2001/11/07 04:48:14 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -4219,13 +4219,23 @@ ReadChars(statePtr, objPtr, charsToRead, offsetPtr, factorPtr)
 	
 	nextPtr = bufPtr->nextPtr;
 	if (nextPtr == NULL) {
-	    /*
-	     * There isn't enough data in the buffers to complete the next
-	     * character, so we need to wait for more data before the next
-	     * file event can be delivered.
-	     */
+	    if (srcLen > 0) {
+	        /*
+		 * There isn't enough data in the buffers to complete the next
+		 * character, so we need to wait for more data before the next
+		 * file event can be delivered.
+		 *
+		 * SF #478856.
+		 *
+		 * The exception to this is if the input buffer was
+		 * completely empty before we tried to convert its
+		 * contents. Nothing in, nothing out, and no incomplete
+		 * character data. The conversion before the current one
+		 * was complete.
+		 */
 
-	    statePtr->flags |= CHANNEL_NEED_MORE_DATA;
+	        statePtr->flags |= CHANNEL_NEED_MORE_DATA;
+	    }
 	    return -1;
 	}
 	nextPtr->nextRemoved -= srcLen;
