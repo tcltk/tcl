@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: binary.n,v 1.16 2003/07/14 18:25:42 hobbs Exp $
+'\" RCS: @(#) $Id: binary.n,v 1.17 2004/05/13 10:12:56 dkf Exp $
 '\" 
 .so man.macros
 .TH binary n 8.0 Tcl "Tcl Built-In Commands"
@@ -27,7 +27,6 @@ architecture, it might produce an 8-byte binary string consisting of
 two 4-byte integers, one for each of the numbers.  The second form of
 the command, \fBbinary scan\fR, does the opposite: it extracts data
 from a binary string and returns it as ordinary Tcl string values.
-
 .SH "BINARY FORMAT"
 .PP
 The \fBbinary format\fR command generates a binary string whose layout
@@ -193,6 +192,14 @@ example,
 will return a string equivalent to 
 \fB\\x00\\x03\\xff\\xfd\\x01\\x02\fR.
 .RE
+.IP \fBt\fR 5
+.VS 8.5
+This form (mnemonically \fItiny\fR) is the same as \fBs\fR and \fBS\fR
+except that it stores the 16-bit integers in the output string in the
+native byte order of the machine where the Tcl script is running.
+To determine what the native byte order of the machine is, refer to
+the \fBbyteOrder\fR element of the \fBtcl_platform\fR array.
+.VE 8.5
 .IP \fBi\fR 5
 This form is the same as \fBc\fR except that it stores one or more
 32-bit integers in little-endian byte order in the output string.  The
@@ -217,8 +224,16 @@ For example,
 will return a string equivalent to 
 \fB\\x00\\x00\\x00\\x03\\xff\\xff\\xff\\xfd\\x00\\x01\\x00\\x00\fR
 .RE
+.IP \fBn\fR 5
+.VS 8.5
+This form (mnemonically \fInumber\fR or \fInormal\fR) is the same as
+\fBi\fR and \fBI\fR except that it stores the 32-bit integers in the
+output string in the native byte order of the machine where the Tcl
+script is running.
+To determine what the native byte order of the machine is, refer to
+the \fBbyteOrder\fR element of the \fBtcl_platform\fR array.
+.VE 8.5
 .IP \fBw\fR 5
-.VS 8.4
 This form is the same as \fBc\fR except that it stores one or more
 64-bit integers in little-endian byte order in the output string.  The
 low-order 64-bits of each integer are stored as an eight-byte value at
@@ -239,11 +254,19 @@ For example,
 \fBbinary format Wc 4785469626960341345 110\fR
 .CE
 will return the string \fBBigEndian\fR
-.VE
 .RE
+.IP \fBm\fR 5
+.VS 8.5
+This form (mnemonically the mirror of \fBw\fR) is the same as \fBw\fR
+and \fBW\fR except that it stores the 64-bit integers in the output
+string in the native byte order of the machine where the Tcl script is
+running.
+To determine what the native byte order of the machine is, refer to
+the \fBbyteOrder\fR element of the \fBtcl_platform\fR array.
+.VE 8.5
 .IP \fBf\fR 5
 This form is the same as \fBc\fR except that it stores one or more one
-or more single-precision floating in the machine's native
+or more single-precision floating point numbers in the machine's native
 representation in the output string.  This representation is not
 portable across architectures, so it should not be used to communicate
 floating point numbers across the network.  The size of a floating
@@ -251,7 +274,7 @@ point number may vary across architectures, so the number of bytes
 that are generated may vary.  If the value overflows the
 machine's native representation, then the value of FLT_MAX
 as defined by the system will be used instead.  Because Tcl uses
-double-precision floating-point numbers internally, there may be some
+double-precision floating point numbers internally, there may be some
 loss of precision in the conversion to single-precision.  For example,
 on a Windows system running on an Intel Pentium processor,
 .RS
@@ -261,9 +284,22 @@ on a Windows system running on an Intel Pentium processor,
 will return a string equivalent to 
 \fB\\xcd\\xcc\\xcc\\x3f\\x9a\\x99\\x59\\x40\fR.
 .RE
+.IP \fBr\fR 5
+.VS 8.5
+This form (mnemonically \fIreal\fR) is the same as \fBf\fR except that
+it stores the single-precision floating point numbers in little-endian
+order.  This conversion only produces meaningful output when used on
+machines which use the IEEE floating point representation (very
+common, but not universal.)
+.VE 8.5
+.IP \fBR\fR 5
+.VS 8.5
+This form is the same as \fBr\fR except that it stores the
+single-precision floating point numbers in big-endian order.
+.VE 8.5
 .IP \fBd\fR 5
 This form is the same as \fBf\fR except that it stores one or more one
-or more double-precision floating in the machine's native
+or more double-precision floating point numbers in the machine's native
 representation in the output string.  For example, on a
 Windows system running on an Intel Pentium processor,
 .RS
@@ -273,6 +309,19 @@ Windows system running on an Intel Pentium processor,
 will return a string equivalent to 
 \fB\\x9a\\x99\\x99\\x99\\x99\\x99\\xf9\\x3f\fR.
 .RE
+.IP \fBq\fR 5
+.VS 8.5
+This form (mnemonically the mirror of \fBd\fR) is the same as \fBd\fR
+except that it stores the double-precision floating point numbers in
+little-endian order.  This conversion only produces meaningful output
+when used on machines which use the IEEE floating point representation
+(very common, but not universal.)
+.VE 8.5
+.IP \fBQ\fR 5
+.VS 8.5
+This form is the same as \fBq\fR except that it stores the
+double-precision floating point numbers in big-endian order.
+.VE 8.5
 .IP \fBx\fR 5
 Stores \fIcount\fR null bytes in the output string.  If \fIcount\fR is
 not specified, stores one null byte.  If \fIcount\fR is \fB*\fR,
@@ -312,7 +361,6 @@ generated.  This type does not consume an argument. For example,
 .CE
 will return \fBabfdeghi\\000\\000j\fR.
 .RE
-
 .SH "BINARY SCAN"
 .PP
 The \fBbinary scan\fR command parses fields from a binary string,
@@ -509,6 +557,14 @@ order.  For example,
 will return \fB2\fR with \fB5 7\fR stored in \fBvar1\fR and \fB-16\fR
 stored in \fBvar2\fR. 
 .RE
+.IP \fBt\fR 5
+.VS 8.5
+The data is interpreted as \fIcount\fR 16-bit signed integers
+represented in the native byte order of the machine running the Tcl
+script.  It is otherwise identical to \fBs\fR and \fBS\fR.
+To determine what the native byte order of the machine is, refer to
+the \fBbyteOrder\fR element of the \fBtcl_platform\fR array.
+.VE 8.5
 .IP \fBi\fR 5
 The data is interpreted as \fIcount\fR 32-bit signed integers
 represented in little-endian byte order.  The integers are stored in
@@ -535,8 +591,15 @@ order.  For example,
 will return \fB2\fR with \fB5 7\fR stored in \fBvar1\fR and \fB-16\fR
 stored in \fBvar2\fR.
 .RE
+.IP \fBn\fR 5
+.VS 8.5
+The data is interpreted as \fIcount\fR 32-bit signed integers
+represented in the native byte order of the machine running the Tcl
+script.  It is otherwise identical to \fBi\fR and \fBI\fR.
+To determine what the native byte order of the machine is, refer to
+the \fBbyteOrder\fR element of the \fBtcl_platform\fR array.
+.VE 8.5
 .IP \fBw\fR 5
-.VS 8.4
 The data is interpreted as \fIcount\fR 64-bit signed integers
 represented in little-endian byte order.  The integers are stored in
 the corresponding variable as a list.  If \fIcount\fR is \fB*\fR, then
@@ -561,8 +624,15 @@ order.  For example,
 .CE
 will return \fB2\fR with \fB21474836487\fR stored in \fBvar1\fR and \fB-16\fR
 stored in \fBvar2\fR.
-.VE
 .RE
+.IP \fBm\fR 5
+.VS 8.5
+The data is interpreted as \fIcount\fR 64-bit signed integers
+represented in the native byte order of the machine running the Tcl
+script.  It is otherwise identical to \fBw\fR and \fBW\fR.
+To determine what the native byte order of the machine is, refer to
+the \fBbyteOrder\fR element of the \fBtcl_platform\fR array.
+.VE 8.5
 .IP \fBf\fR 5
 The data is interpreted as \fIcount\fR single-precision floating point
 numbers in the machine's native representation.  The floating point
@@ -582,6 +652,20 @@ Intel Pentium processor,
 will return \fB1\fR with \fB1.6000000238418579\fR stored in
 \fBvar1\fR.
 .RE
+.IP \fBr\fR 5
+.VS 8.5
+This form is the same as \fBf\fR except that the data is interpreted
+as \fIcount\fR single-precision floating point number in little-endian
+order.  This conversion is not portable to systems not using IEEE
+floating point representations.
+.VE 8.5
+.IP \fBR\fR 5
+.VS 8.5
+This form is the same as \fBf\fR except that the data is interpreted
+as \fIcount\fR single-precision floating point number in big-endian
+order.  This conversion is not portable to systems not using IEEE
+floating point representations.
+.VE 8.5
 .IP \fBd\fR 5
 This form is the same as \fBf\fR except that the data is interpreted
 as \fIcount\fR double-precision floating point numbers in the
@@ -594,6 +678,20 @@ running on an Intel Pentium processor,
 will return \fB1\fR with \fB1.6000000000000001\fR
 stored in \fBvar1\fR.
 .RE
+.IP \fBq\fR 5
+.VS 8.5
+This form is the same as \fBd\fR except that the data is interpreted
+as \fIcount\fR double-precision floating point number in little-endian
+order.  This conversion is not portable to systems not using IEEE
+floating point representations.
+.VE 8.5
+.IP \fBQ\fR 5
+.VS 8.5
+This form is the same as \fBd\fR except that the data is interpreted
+as \fIcount\fR double-precision floating point number in big-endian
+order.  This conversion is not portable to systems not using IEEE
+floating point representations.
+.VE 8.5
 .IP \fBx\fR 5
 Moves the cursor forward \fIcount\fR bytes in \fIstring\fR.  If
 \fIcount\fR is \fB*\fR or is larger than the number of bytes after the
@@ -634,12 +732,13 @@ by \fIcount\fR.  Note that position 0 refers to the first byte in
 will return \fB2\fR with \fB1 2\fR stored in \fBvar1\fR and \fB020304\fR
 stored in \fBvar2\fR.
 .RE
-
-.SH "PLATFORM ISSUES"
-Sometimes it is desirable to format or scan integer values in the
-native byte order for the machine.  Refer to the \fBbyteOrder\fR
-element of the \fBtcl_platform\fR array to decide which type character
-to use when formatting or scanning integers.
+.SH "PORTABILITY ISSUES"
+The \fBr\fR, \fBR\fR, \fBq\fR and \fBQ\fR conversions will only work
+reliably for transferring data between computers which are all using
+IEEE floating point representations.  This is very common, but not
+universal.  To transfer floating-point numbers portably between all
+architectures, use their textual representation (as produced by
+\fBformat\fR) instead.
 
 .SH "SEE ALSO"
 format(n), scan(n), tclvars(n)
