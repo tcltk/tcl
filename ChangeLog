@@ -5,7 +5,8 @@
 	* generic/tcl.h (line 342): A bit more explanation about the
 	  default value for TCL_PRESERVE_BINARY_COMPATABILITY.
 
-	* generic/tcl.h (line 1208): Removed the macro 'Tcl_InitHashTable'
+	* generic/tcl.h (line 1208): Define the macro 'Tcl_InitHashTable'
+	  only when TCL_PRESERVE_BINARY_COMPATIBILITY is not set
 	  as it kills binary compatibility to 8.3 and earlier
 	  versions. This is the main part of the patch/change.
 
