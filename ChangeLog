@@ -1,3 +1,12 @@
+2003-04-24  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* generic/tclFileName.c: fix to bug reported privately by
+	Jeff where, for example, 'glob -path {[tcl]} *' gets confused
+	by the leading special character (which is escaped internally),
+	and instead lists files in '/'.  Bug only occurs on Windows 
+	where '\' is also a directory separator.
+	* tests/fileName.test: added test for the above bug.
+	
 2003-04-22  Andreas Kupries  <andreask@activestate.com>
 
 	* The changes below fix SF bugs [593810], and [718045].
