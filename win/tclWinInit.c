@@ -7,12 +7,13 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclWinInit.c,v 1.38 2003/02/04 17:06:53 vincentdarley Exp $
+ * RCS: @(#) $Id: tclWinInit.c,v 1.39 2003/02/13 23:49:48 kennykb Exp $
  */
 
 #include "tclWinInt.h"
 #include <winnt.h>
 #include <winbase.h>
+#include <lmcons.h>
 
 /*
  * The following declaration is a workaround for some Microsoft brain damage.
@@ -597,6 +598,8 @@ TclpSetVariables(interp)
     OemId *oemId;
     OSVERSIONINFOA osInfo;
     Tcl_DString ds;
+    TCHAR szUserName[ UNLEN+1 ];
+    DWORD dwUserNameLen;
 
     osInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFOA);
     GetVersionExA(&osInfo);
@@ -663,11 +666,12 @@ TclpSetVariables(interp)
      * faster than asking the system.
      */
 
-    Tcl_DStringSetLength(&ds, 100);
+    Tcl_DStringInit( &ds );
     if (TclGetEnv("USERNAME", &ds) == NULL) {
-	if (GetUserName(Tcl_DStringValue(&ds), (LPDWORD) &Tcl_DStringLength(&ds)) == 0) {
-	    Tcl_DStringSetLength(&ds, 0);
-	}
+
+	if ( GetUserName( szUserName, &dwUserNameLen ) != 0 ) {
+	    Tcl_WinTCharToUtf( szUserName, dwUserNameLen, &ds );
+	}	
     }
     Tcl_SetVar2(interp, "tcl_platform", "user", Tcl_DStringValue(&ds),
 	    TCL_GLOBAL_ONLY);
