@@ -1,3 +1,13 @@
+2001-08-23  Andreas Kupries <andreas_kupries@users.sourceforge.net>
+
+	* win/tclWinPipe.c (BuildCommandLine): Fixed tcl Bug
+	  [432499]. Part of the code used the non-absolute path to the
+	  executable to determine quoting. This failed if the absolute
+	  path cotained spaces, but the application name itselfl not. This
+	  bug caused no trouble on Win NT 5, but does for other variants
+	  in the Win* family. Report and fix due to Ken Poole
+	  <kenpoole@users.sourceforge.net>.
+
 2001-08-23  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* unix/configure:
