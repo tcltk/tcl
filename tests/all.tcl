@@ -7,15 +7,17 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 # 
-# RCS: @(#) $Id: all.tcl,v 1.4 1999/04/21 21:50:30 rjohnson Exp $
+# RCS: @(#) $Id: all.tcl,v 1.5 1999/06/26 03:54:09 jenn Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
-    source [file join [pwd] [file dirname [info script]] defs.tcl]
+    package require tcltest
+    namespace import ::tcltest::*
 }
+info commands
 set ::tcltest::testSingleFile false
 
 puts stdout "Tcl $tcl_patchLevel tests running in interp:  [info nameofexecutable]"
-puts stdout "Tests running in working dir:  $::tcltest::workingDir"
+puts stdout "Tests running in working dir:  $::tcltest::workingDirectory"
 if {[llength $::tcltest::skip] > 0} {
     puts stdout "Skipping tests that match:  $::tcltest::skip"
 }
@@ -33,10 +35,10 @@ if {($fileIndex < 1) || ($fIndex > $fileIndex)} {
     set fileIndex $fIndex
 }
 if {$fileIndex > 0} {
-    set globPattern [file join $::tcltest::testsDir [lindex $argv $fileIndex]]
+    set globPattern [file join $::tcltest::testsDirectory [lindex $argv $fileIndex]]
     puts stdout "Sourcing files that match:  $globPattern"
 } else {
-    set globPattern [file join $::tcltest::testsDir *.test]
+    set globPattern [file join $::tcltest::testsDirectory *.test]
 }
 set fileList [glob -nocomplain $globPattern]
 if {[llength $fileList] < 1} {

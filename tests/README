@@ -1,19 +1,12 @@
 README -- Tcl test suite design document.
 
-RCS: @(#) $Id: README,v 1.5 1999/04/21 21:50:29 rjohnson Exp $
+RCS: @(#) $Id: README,v 1.6 1999/06/26 03:54:09 jenn Exp $
 
 Contents:
 ---------
 
     1. Introduction
-    2. Definitions file
-    3. Writing a new test
-    4. Constraints
-    5. Adding a New Test File
-    6. Test output
-    7. Selecting tests for execution within a file
-    8. Selecting files to be sourced by all.tcl
-    9. Incompatibilities with prior Tcl versions
+    2. Incompatibilities with prior Tcl versions
 
 1. Introduction:
 ----------------
@@ -64,229 +57,17 @@ You can run the tests in three ways:
 		  ::tcltest::testConfig(knownBug)
 		  ::tcltest::testConfig(userInteractive)
 
-In all cases, no output will be generated if all goes well, except for
-a listing of the test files and a statistical summary.  If there are
-errors, then additional messages will appear in the format described
-below.  Note that some tests will be skipped if you run as superuser.
+Please see the tcltest man page for more information regarding how to
+write and run tests.
 
-This approach to testing was designed and initially implemented by
-Mary Ann May-Pumphrey of Sun Microsystems in the early 1990's.  Many
-thanks to her for donating her work back to the public Tcl release.
-
-
-2. Definitions file:
---------------------
-
-The file "defs.tcl" defines the "tcltest" namespace which contains a
-collection of procedures and variables used to run the tests.  It is
-read in automatically by each of the .test files if needed, but once
-it has been read once it will not be read again by the .test files.
-Currently, the following procedures are exported from the "tcltest"
-namespace and automatically imported:
-
-    test	      Run a test script.
-
-    cleanupTests      Print stats and remove files created by tests.
-
-    dotests	      Source a test file and run tests of the
-		      specified pattern.
-
-    makeFile	      Create a file--the file will automatically
-		      be removed by cleanupTests.
-
-    removeFile	      Force a file to be removed.
-
-    makeDirectory     Create a directory--the directory will
-		      automatically be removed by cleanupTests.
-
-    removeDirectory   Force a directory to be removed.
-
-    viewFile	      Returns the contents of a file.
-
-    normalizeMsg      Remove extra newlines from a string.
-
-    bytestring	      Construct a string that consists of the
-		      requested sequence of bytes, as opposed to a
-		      string of properly formed UTF-8 characters.
-
-    set_iso8859_1_locale    Set the locale to iso8859_1.
-
-    restore_locale    Restore the locale to its original setting.
-
-    saveState	      Save the procedure and global variable names.
-
-    restoreState      Restore the procedure and global variable names.
-
-    threadReap	      Kill all threads except for the main thread.
-
-Please refer to the defs.tcl file for more documentation on these
-procedures.
-
-
-3. Writing a new test:
-----------------------
-
-The test procedure runs a test script and prints an error message if
-the script's result does not match the expected result.  The following
-is the spec for the "test" command:
-
-    test <name> <description> ?<constraint>? <script> <expectedAnswer>
-
-The <name> argument should follow the pattern,
-"<target>-<majorNum>.<minorNum>".  For white-box (regression) tests,
-the target should be the name of the c function or Tcl procedure being
-tested.  For black-box tests, the target should be the name of the
-feature being tested.  Related tests should share a major number.
-
-The <description> argument is a short textual description of the test,
-to help humans understand what it does.
-
-The optional <constraints> argument is list of one or more keywords,
-each of which must be the name of an element in the array
-"::tcltest::testConfig".  If any of these elements is false or does
-not exist, the test is skipped.  Add appropriate constraints (e.g.,
-unixOnly) to any tests that should not always be run.  For example, a
-test that should only be run on Unix should look like the following:
-
-    test getAttribute-1.1 {testing file permissions} {unixOnly} {
-        lindex [file attributes foo.tcl] 5
-    } {00644}
-
-See the "Constraints" section for a list of built-in
-constraints and information on how to add your own constraints.
-
-The <script> argument contains the script to run to carry out the
-test.  It must return a result that can be checked for correctness.
-If your script requires that a file be created on the fly, please use
-the ::tcltest::makeFile procedure.  If your test requires that a small
-file (<50 lines) be checked in, please consider creating the file on
-the fly using the ::tcltest::makeFile procedure.  Files created by the
-::tcltest::makeFile procedure will automatically be removed by the
-::tcltest::cleanupTests call at the end of each test file.
-
-The <expectedAnswer> argument will be compared against the result of
-evaluating the <script> argument.  If they match, the test passes,
-otherwise the test fails.
-
-
-4. Constraints:
----------------
-
-Constraints are used to determine whether a test should be skipped.
-Each constraint is stored as an index in the array
-::tcltest::testConfig.  For example, the unixOnly constraint is
-defined as the following:
-
-    set ::tcltest::testConfig(unixOnly) \
-	[expr {$tcl_platform(platform) == "unix"}]
-
-If a test is constrained by "unixOnly", then it will only be run if
-the value of ::tcltest::testConfig(unixOnly) is true.
-
-The following is a list of constraints defined in the defs.tcl file:
-
-unix            test can only be run on any UNIX platform
-pc	        test can only be run on any Windows platform
-nt	        test can only be run on any Windows NT platform
-95	        test can only be run on any Windows 95 platform
-mac	        test can only be run on any Mac platform
-unixOrPc        test can only be run on a UNIX or PC platform
-macOrPc	        test can only be run on a Mac or PC platform
-macOrUnix       test can only be run on a Mac or UNIX platform
-tempNotPc	test can not be run on Windows.  This flag is used
-		to temporarily disable a test.
-tempNotMac	test can not be run on a Mac.  This flag is used
-		to temporarily disable a test.
-unixCrash       test crashes if it's run on UNIX.  This flag is used
-		to temporarily disable a test.
-pcCrash 	test crashes if it's run on Windows.  This flag is
-		used to temporarily disable a test.
-macCrash 	test crashes if it's run on a Mac.  This flag is used
-		to temporarily disable a test.
-
-emptyTest	test is empty, and so not worth running, but
-                it remains as a place-holder for a test to be
-                written in the future.  This constraint always
-                causes tests to be skipped.
-
-knownBug	test is known to fail and the bug is not yet
-                fixed.  This constraint always causes tests to be
-                skipped unless the user specifies otherwise.  See the
-                "Introduction" section for more details.
-
-nonPortable	test can only be run in the master Tcl/Tk
-		development environment.  Some tests are inherently
-		non-portable because they depend on things like word
-		length, file system configuration, window manager,
-		etc.  These tests are only run in the main Tcl
-		development directory where the configuration is
-		well known.  This constraint always causes tests to be
-		skipped unless the user specifies otherwise.  See the
-		"Introduction" section for more details.
-
-userInteraction test requires interaction from the user.  This
-                constraint always causes tests to be skipped unless
-                the user specifies otherwise.  See the "Introduction"
-                section for more details. 
-
-interactive	test can only be run in if the interpreter is in
-		interactive mode, that is the global tcl_interactive
-		variable is set to 1.
-
-nonBlockFiles	test can only be run if platform supports setting
-		files into nonblocking mode
-
-asyncPipeClose	test can only be run if platform supports async
-		flush and async close on a pipe
-
-unixExecs	test can only be run if this machine has commands
-		such as 'cat', 'echo', etc. available.
-
-hasIsoLocale	test can only be run if can switch to an ISO locale
-
-fonts		test can only be run if the wish app's fonts can
-		be controlled by Tk.
-
-root		test can only run if Unix user is root
-
-notRoot		test can only run if Unix user is not root
-
-eformat		test can only run if app has a working version of
-		sprintf with respect to the "e" format of
-		floating-point numbers.
-
-stdio		test can only be run if the current app can be
-		spawned via a pipe
-
-
-5. Adding a new test file:
---------------------------
-
-Tests files should begin by sourcing the defs.tcl file:
-
-    if {[lsearch [namespace children] ::tcltest] == -1} {
-        source [file join [pwd] [file dirname [info script]] defs.tcl]
-    }
-
-Test files sould end by cleaning up after themselves and calling
-::tcltest::cleanupTests.  The ::tcltest::cleanupTests procedure prints
-statistics about the number of tests that passed, skipped, and failed,
-and removes all files that were created using the ::tcltest::makeFile
-and ::tcltest::makeDirectory procedures.
-
-    # Remove files created by these tests
-    # Change to original working directory
-    # Unset global arrays
-    ::tcltest::cleanupTests
-    return
-
-The all.tcl file will source your new test file if the filename
-matches the tests/*.test pattern (as it should).  The names of test
-files that contain regression (or glass-box) tests should correspond
-to the Tcl or C code file that they are testing.  For example, the
-test file for the C file "tclCmdAH.c" is "cmdAH.test".  Test files
-that contain black-box tests may not correspond to any Tcl or C code
-file so they should match the pattern "*_bb.test".
+Please note that the all.tcl file will source your new test file if
+the filename matches the tests/*.test pattern (as it should).  The
+names of test files that contain regression (or glass-box) tests
+should correspond to the Tcl or C code file that they are testing.
+For example, the test file for the C file "tclCmdAH.c" is
+"cmdAH.test".  Test files that contain black-box tests may not
+correspond to any Tcl or C code file so they should match the pattern
+"*_bb.test". 
 
 Be sure your new test file can be run from any working directory.
 
@@ -297,99 +78,7 @@ as well as an installation environment.  If your test file contains
 tests that should not be run in one or more of those cases, please use
 the constraints mechanism to skip those tests.
 
-
-6. Test output:
----------------
-
-After all specified test files are sourced, the number of tests
-passed, skipped, and failed is printed to stdout.  Aside from this
-statistical information, output can be controlled on a per-test basis
-by the ::tcltest::verbose variable.
-
-::tcltest::verbose can be set to any substring or permutation of "bps".
-In the string "bps", the 'b' stands for a test's "body", the 'p'
-stands for "passed" tests, and the 's' stands for "skipped" tests.
-The default value of ::tcltest::verbose is "b".  If 'b' is present, then
-the entire body of the test is printed for each failed test, otherwise
-only the test's name, desired output, and actual output, are printed
-for each failed test.  If 'p' is present, then a line is printed for
-each passed test, otherwise no line is printed for passed tests.  If
-'s' is present, then a line (containing the consraints that cause the
-test to be skipped) is printed for each skipped test, otherwise no
-line is printed for skipped tests.
-
-You can set ::tcltest::verbose either interactively (after the defs.tcl
-file has been sourced) or by the command line argument -verbose, for
-example:
-
-      tcltest socket.test -verbose bps
-
-
-7. Selecting tests for execution within a file:
------------------------------------------------
-
-Normally, all the tests in a file are run whenever the file is
-sourced.  An individual test will be skipped if one of the following
-conditions is met:
-
-    1) the "name" of the tests does not match (using glob style
-       matching) one or more elements in the ::tcltest::match
-       variable
-
-    2) the "name" of the tests matches (using glob style matching) one
-       or more elements in the ::tcltest::skip variable
-
-    3) the "constraints" argument to the "test" call, if given,
-       contains one or more false elements.
-
-You can set ::tcltest::match and/or ::tcltest::skip
-either interactively (after the defs.tcl file has been sourced), or by
-the command line arguments -match and -skip, for example:
-
-       tcltest info.test -match '*-5.* *-7.*' -skip '*-7.1*'
-
-Be sure to use the proper quoting convention so that your shell does
-not perform the glob substitution on the match or skip patterns you
-specify.
-
-The two predefined constraints (knownBug and nonPortable) can be
-overridden either interactively (after the defs.tcl file has been
-sourced) by setting the ::tcltest::testConfig(<constraint>) variable,
-or by using the -constraints command line option with the name of the
-constraint in the argument.  The following example shows how to run
-tests that are constrained by the knownBug and nonPortable
-restricions:
-
-	tcltest all.tcl -constraints "knownBug nonPortable"
-
-See the defs.tcl file for information about each of these constraints.
-Other constraints can be added at any time.  See the "Writing a new
-test" section below for more details about using built-in constraints
-and adding new ones.
-
-
-8. Selecting files to be sourced by all.tcl:
---------------------------------------------
-
-You can specify the files you want all.tcl to source on the command
-line with the -file options.  For example, if you call the
-following:
-
-     tcltest all.tcl -file 'unix*.test'
-
-all files in "tests" directory that match the pattern unix*.test will
-be sourced by the all.tcl file.  Another useful example is if a
-particular test hangs, say "get.test", and you just want to run the
-remaining tests, then you can call the following:
-
-     tcltest all.tcl -file '[h-z]*.test'
-
-Note that the argument to -file will be substituted relative to the
-"tests" directory.  Be sure to use the proper quoting convention so
-that your shell does not perform the glob substitution.
-
-
-9. Incompatibilities with prior Tcl versions:
+2. Incompatibilities with prior Tcl versions:
 ---------------------------------------------
 
 1) Global variables such as VERBOSE, TESTS, and testConfig are now
@@ -415,10 +104,12 @@ that your shell does not perform the glob substitution.
    other or with existing files.  All tests must now run independently
    of their working directory.
 
-4) The "all", "defs", and "visual" files are now called "all.tcl",
-   "defs.tcl", and "visual_bb.test", respectively.
+4) The "all" and "visual" files are now called "all.tcl" ane
+   "visual_bb.test".
 
-5) Instead of creating a doAllTests file in the tests directory, to
+5) The "defs" file no longer exists.
+
+6) Instead of creating a doAllTests file in the tests directory, to
    run all nonPortable tests, just use the "-constraints nonPortable"
    command line flag.  If you are running interactively, you can set
    the ::tcltest::testConfig(nonPortable) variable to 1 (after

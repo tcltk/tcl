@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: socket.test,v 1.9 1999/04/21 21:50:31 rjohnson Exp $
+# RCS: @(#) $Id: socket.test,v 1.10 1999/06/26 03:54:26 jenn Exp $
 
 # Running socket tests with a remote server:
 # ------------------------------------------
@@ -63,7 +63,8 @@
 # using the remote server are not performed.
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
-    source [file join [pwd] [file dirname [info script]] defs.tcl]
+    package require tcltest
+	namespace import ::tcltest::*
 }
 
 # Some tests require the testthread command
@@ -123,7 +124,7 @@ if {$doTestsWithRemoteServer} {
 	    set remoteServerIP 127.0.0.1
 	    set remoteFile [file join [pwd] remote.tcl]
 	    if {[catch {set remoteProcChan \
-				[open "|[list $tcltest $remoteFile \
+				[open "|[list $::tcltest::tcltest $remoteFile \
 					-serverIsSilent \
 					-port $remoteServerPort \
 					-address $remoteServerIP]" \
@@ -138,7 +139,7 @@ if {$doTestsWithRemoteServer} {
 		    set doTestsWithRemoteServer 0
 		}
 	    } else {
-		set noRemoteTestReason "$msg $tcltest"
+		set noRemoteTestReason "$msg $::tcltest::tcltest"
 		set doTestsWithRemoteServer 0
 	    }
 	}
@@ -261,7 +262,7 @@ test socket-2.1 {tcp connection} {socket stdio} {
 	puts $x
     }
     close $f
-    set f [open "|[list $tcltest script]" r]
+    set f [open "|[list $::tcltest::tcltest script]" r]
     gets $f x
     if {[catch {socket 127.0.0.1 2828} msg]} {
         set x $msg
@@ -297,7 +298,7 @@ test socket-2.2 {tcp connection with client port specified} {socket stdio} {
 	close $f
     }
     close $f
-    set f [open "|[list $tcltest script]" r]
+    set f [open "|[list $::tcltest::tcltest script]" r]
     gets $f x
     global port
     if {[catch {socket -myport $port 127.0.0.1 2829} sock]} {
@@ -331,7 +332,7 @@ test socket-2.3 {tcp connection with client interface specified} {socket stdio} 
 	close $f
     }
     close $f
-    set f [open "|[list $tcltest script]" r]
+    set f [open "|[list $::tcltest::tcltest script]" r]
     gets $f x
     if {[catch {socket -myaddr 127.0.0.1 127.0.0.1 2830} sock]} {
         set x $sock
@@ -362,7 +363,7 @@ test socket-2.4 {tcp connection with server interface specified} {socket stdio} 
 	close $f
     }
     close $f
-    set f [open "|[list $tcltest script]" r]
+    set f [open "|[list $::tcltest::tcltest script]" r]
     gets $f x
     if {[catch {socket [info hostname] 2831} sock]} {
         set x $sock
@@ -393,7 +394,7 @@ test socket-2.5 {tcp connection with redundant server port} {socket stdio} {
 	close $f
     }
     close $f
-    set f [open "|[list $tcltest script]" r]
+    set f [open "|[list $::tcltest::tcltest script]" r]
     gets $f x
     if {[catch {socket 127.0.0.1 2832} sock]} {
         set x $sock
@@ -443,7 +444,7 @@ test socket-2.7 {echo server, one line} {socket stdio} {
 	puts done
     }
     close $f
-    set f [open "|[list $tcltest script]" r]
+    set f [open "|[list $::tcltest::tcltest script]" r]
     gets $f
     set s [socket 127.0.0.1 2834]
     fconfigure $s -buffering line -translation lf
@@ -482,7 +483,7 @@ test socket-2.8 {echo server, loop 50 times, single connection} {socket stdio} {
 	close $f
 	puts "done $i"
     } script
-    set f [open "|[list $tcltest script]" r]
+    set f [open "|[list $::tcltest::tcltest script]" r]
     gets $f
     set s [socket 127.0.0.1 2835]
     fconfigure $s -buffering line
@@ -503,7 +504,7 @@ test socket-2.9 {socket conflict} {socket stdio} {
     set f [open script w]
     puts -nonewline $f {socket -server accept 2828}
     close $f
-    set f [open "|[list $tcltest script]" r]
+    set f [open "|[list $::tcltest::tcltest script]" r]
     gets $f
     after 100
     set x [list [catch {close $f} msg] $msg]
@@ -575,7 +576,7 @@ test socket-3.1 {socket conflict} {socket stdio} {
 	close $f
     }
     close $f
-    set f [open "|[list $tcltest script]" r+]
+    set f [open "|[list $::tcltest::tcltest script]" r+]
     gets $f
     set x [list [catch {socket -server accept 2828} msg] \
 		$msg]
@@ -617,7 +618,7 @@ test socket-3.2 {server with several clients} {socket stdio} {
 	puts $x
     }
     close $f
-    set f [open "|[list $tcltest script]" r+]
+    set f [open "|[list $::tcltest::tcltest script]" r+]
     set x [gets $f]
     set s1 [socket 127.0.0.1 2828]
     fconfigure $s1 -buffering line
@@ -657,11 +658,11 @@ test socket-4.1 {server with several clients} {socket stdio} {
 	gets stdin
     }
     close $f
-    set p1 [open "|[list $tcltest script]" r+]
+    set p1 [open "|[list $::tcltest::tcltest script]" r+]
     fconfigure $p1 -buffering line
-    set p2 [open "|[list $tcltest script]" r+]
+    set p2 [open "|[list $::tcltest::tcltest script]" r+]
     fconfigure $p2 -buffering line
-    set p3 [open "|[list $tcltest script]" r+]
+    set p3 [open "|[list $::tcltest::tcltest script]" r+]
     fconfigure $p3 -buffering line
     proc accept {s a p} {
 	fconfigure $s -buffering line
@@ -748,7 +749,7 @@ test socket-6.1 {accept callback error} {socket stdio} {
 	socket 127.0.0.1 2848
     }
     close $f
-    set f [open "|[list $tcltest script]" r+]
+    set f [open "|[list $::tcltest::tcltest script]" r+]
     proc bgerror args {
 	global x
 	set x $args
@@ -780,7 +781,7 @@ test socket-7.1 {testing socket specific options} {socket stdio} {
 	after cancel $timer
     }
     close $f
-    set f [open "|[list $tcltest script]" r]
+    set f [open "|[list $::tcltest::tcltest script]" r]
     gets $f
     set s [socket 127.0.0.1 2820]
     set p [fconfigure $s -peername]
@@ -806,7 +807,7 @@ test socket-7.2 {testing socket specific options} {socket stdio} {
 	after cancel $timer
     }
     close $f
-    set f [open "|[list $tcltest script]" r]
+    set f [open "|[list $::tcltest::tcltest script]" r]
     gets $f
     set s [socket 127.0.0.1 2821]
     set p [fconfigure $s -sockname]
@@ -1382,13 +1383,13 @@ test socket-12.1 {testing inheritance of server sockets} \
     # be closed unless script1 inherited it.
 
     set f [open script2 w]
-    puts $f [list set tcltest $tcltest]
+    puts $f [list set tcltest $::tcltest::tcltest]
     puts $f {
 	set f [socket -server accept 2828]
 	proc accept { file addr port } {
 	    close $file
 	}
-	exec $tcltest script1 &
+	exec $::tcltest::tcltest script1 &
 	close $f
 	after 1000 exit
 	vwait forever
@@ -1397,7 +1398,7 @@ test socket-12.1 {testing inheritance of server sockets} \
 	
     # Launch script2 and wait 5 seconds
 
-    exec $tcltest script2 &
+    exec $::tcltest::tcltest script2 &
     after 5000 { set ok_to_proceed 1 }
     vwait ok_to_proceed
 
@@ -1434,10 +1435,10 @@ test socket-12.2 {testing inheritance of client sockets} \
     # client socket, the socket will still be open.
 
     set f [open script2 w]
-    puts $f [list set tcltest $tcltest]
+    puts $f [list set tcltest $::tcltest::tcltest]
     puts $f {
 	set f [socket 127.0.0.1 2829]
-	exec $tcltest script1 &
+	exec $::tcltest::tcltest script1 &
 	puts $f testing
 	flush $f
 	after 1000 exit
@@ -1490,7 +1491,7 @@ test socket-12.2 {testing inheritance of client sockets} \
 
     # Launch the script2 process
 
-    exec $tcltest script2 &
+    exec $::tcltest::tcltest script2 &
 
     vwait x
     if {!$failed} {
@@ -1513,13 +1514,13 @@ test socket-12.3 {testing inheritance of accepted sockets} \
     close $f
 
     set f [open script2 w]
-    puts $f [list set tcltest $tcltest]
+    puts $f [list set tcltest $::tcltest::tcltest]
     puts $f {
 	set server [socket -server accept 2930]
 	proc accept { file host port } {
 	    global tcltest
 	    puts $file {test data on socket}
-	    exec $tcltest script1 &
+	    exec $::tcltest::tcltest script1 &
 	    after 1000 exit
 	}
 	vwait forever
@@ -1529,7 +1530,7 @@ test socket-12.3 {testing inheritance of accepted sockets} \
     # Launch the script2 process and connect to it.  See how long
     # the socket stays open
 
-    exec $tcltest script2 &
+    exec $::tcltest::tcltest script2 &
 
     after 1000 set ok_to_proceed 1
     vwait ok_to_proceed

@@ -9,10 +9,11 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: event.test,v 1.6 1999/04/21 21:50:30 rjohnson Exp $
+# RCS: @(#) $Id: event.test,v 1.7 1999/06/26 03:54:12 jenn Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
-    source [file join [pwd] [file dirname [info script]] defs.tcl]
+    package require tcltest
+    namespace import ::tcltest::*
 }
 
 set ::tcltest::testConfig(testfilehandler) \

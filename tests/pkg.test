@@ -10,17 +10,18 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: pkg.test,v 1.4 1999/04/16 00:47:32 stanton Exp $
+# RCS: @(#) $Id: pkg.test,v 1.5 1999/06/26 03:54:20 jenn Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
-    source [file join [pwd] [file dirname [info script]] defs.tcl]
+    package require tcltest
+	namespace import ::tcltest::*
 }
 
 # Do all this in a slave interp to avoid garbaging the
 # package list
 set i [interp create]
 interp eval $i [list set argv $argv]
-interp eval $i [list source [file join $::tcltest::testsDir defs.tcl]]
+interp eval $i [list source [file join $::tcltest::testsDirectory defs.tcl]]
 interp eval $i {
 
 eval package forget [package names]

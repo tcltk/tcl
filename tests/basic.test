@@ -15,11 +15,12 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: basic.test,v 1.6 1999/06/25 23:29:53 welch Exp $
+# RCS: @(#) $Id: basic.test,v 1.7 1999/06/26 03:54:10 jenn Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
-    source [file join [pwd] [file dirname [info script]] defs.tcl]
+    package require tcltest
+    namespace import ::tcltest::*
 }
 
 catch {namespace delete test_ns_basic}

@@ -12,10 +12,11 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
 #
-# RCS: @(#) $Id: http.test,v 1.8 1999/06/08 18:06:51 hershey Exp $
+# RCS: @(#) $Id: http.test,v 1.9 1999/06/26 03:54:14 jenn Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
-    source [file join [pwd] [file dirname [info script]] defs.tcl]
+    package require tcltest
+    namespace import ::tcltest::*
 }
 
 if {[catch {package require http 2.0}]} {
@@ -39,13 +40,13 @@ catch {unset data}
 
 # Ensure httpd file exists
 
-set origFile [file join $::tcltest::testsDir httpd]
-set newFile [file join $::tcltest::workingDir httpd]
+set origFile [file join $::tcltest::testsDirectory httpd]
+set newFile [file join $::tcltest::workingDirectory httpd]
 if {![file exists $newFile]} {
     file copy $origFile $newFile
     set removeHttpd 1
 }
-set httpdFile [file join $::tcltest::workingDir httpd]
+set httpdFile [file join $::tcltest::workingDirectory httpd]
 
 if {[info commands testthread] == "testthread" && [file exists $httpdFile]} {
     set httpthread [testthread create "

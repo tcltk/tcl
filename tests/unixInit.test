@@ -10,10 +10,11 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: unixInit.test,v 1.5 1999/04/24 01:46:53 stanton Exp $
+# RCS: @(#) $Id: unixInit.test,v 1.6 1999/06/26 03:54:31 jenn Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
-    source [file join [pwd] [file dirname [info script]] defs.tcl]
+    package require tcltest
+	namespace import ::tcltest::*
 }
 
 catch {set oldlibrary $env(TCL_LIBRARY); unset env(TCL_LIBRARY)}
@@ -23,7 +24,7 @@ set env(LANG) C
 # Some tests will fail if they are run on a machine that doesn't have
 # this Tcl version installed (as opposed to built) on it.
 if {[catch {
-    set f [open "|[list $tcltest]" w+]
+    set f [open "|[list $::tcltest::tcltest]" w+]
     exec kill -PIPE [pid $f]
     close $f
 }]} {
@@ -37,14 +38,14 @@ test unixInit-1.1 {TclpInitPlatform: ignore SIGPIPE} {unixOnly installedTcl} {
     # Watch out for a race condition here.  If tcltest is too slow to start
     # then we'll kill it before it has a chance to set up its signal handler.
     
-    set f [open "|[list $tcltest]" w+]
+    set f [open "|[list $::tcltest::tcltest]" w+]
     puts $f "puts hi"
     flush $f
     gets $f
     exec kill -PIPE [pid $f]
     lappend x [catch {close $f}]
 
-    set f [open "|[list $tcltest]" w+]
+    set f [open "|[list $::tcltest::tcltest]" w+]
     puts $f "puts hi"
     flush $f
     gets $f
@@ -54,7 +55,7 @@ test unixInit-1.1 {TclpInitPlatform: ignore SIGPIPE} {unixOnly installedTcl} {
     set x
 } {0 1}
 
-proc getlibpath "{program [list $tcltest]}" {
+proc getlibpath "{program [list $::tcltest::tcltest]}" {
     set f [open "|$program" w+]
     fconfigure $f -buffering none
     puts $f {puts $tcl_libPath; exit}
@@ -86,7 +87,7 @@ test unixInit-2.1 {TclpInitLibraryPath: value of installLib, developLib} \
     } else {
         set developLib tcl[info tclversion]/library
     }
-    set prefix [file dirname [file dirname $tcltest]]
+    set prefix [file dirname [file dirname $::tcltest::tcltest]]
 
     set x {}
     lappend x [string compare [lindex $path 0] $prefix/$installLib]
@@ -131,7 +132,7 @@ test unixInit-2.6 {TclpInitLibraryPath: executable relative} \
 	{unixOnly installedTcl} {
     file delete -force /tmp/sparkly
     file mkdir /tmp/sparkly/bin
-    file copy $tcltest /tmp/sparkly/bin/tcltest
+    file copy $::tcltest::tcltest /tmp/sparkly/bin/tcltest
 
     file mkdir /tmp/sparkly/lib/tcl[info tclversion]
     close [open /tmp/sparkly/lib/tcl[info tclversion]/init.tcl w]
@@ -148,7 +149,7 @@ test unixInit-2.7 {TclpInitLibraryPath: compiled-in library path} \
 test unixInit-3.1 {TclpSetInitialEncodings} {unixOnly installedTcl} {
     set env(LANG) C
 
-    set f [open "|[list $tcltest]" w+]
+    set f [open "|[list $::tcltest::tcltest]" w+]
     fconfigure $f -buffering none
     puts $f {puts [encoding system]; exit}
     set enc [gets $f]
@@ -160,7 +161,7 @@ test unixInit-3.1 {TclpSetInitialEncodings} {unixOnly installedTcl} {
 test unixInit-3.2 {TclpSetInitialEncodings} {unixOnly installedTcl} {
     set env(LANG) japanese
 
-    set f [open "|[list $tcltest]" w+]
+    set f [open "|[list $::tcltest::tcltest]" w+]
     fconfigure $f -buffering none
     puts $f {puts [encoding system]; exit}
     set enc [gets $f]

@@ -12,10 +12,11 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: winPipe.test,v 1.7 1999/05/21 19:05:04 redman Exp $
+# RCS: @(#) $Id: winPipe.test,v 1.8 1999/06/26 03:54:35 jenn Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
-    source [file join [pwd] [file dirname [info script]] defs.tcl]
+    package require tcltest
+	namespace import ::tcltest::*
 }
 
 set bindir [file join [pwd] [file dirname [info nameofexecutable]]]
@@ -71,11 +72,11 @@ test winpipe-1.2 {32 bit comprehensive tests: from big file} {pcOnly stdio cat32
     list [contents stdout] [contents stderr]
 } "{$big} stderr32"
 test winpipe-1.3 {32 bit comprehensive tests: a little from pipe} {nt stdio cat32} {
-    exec $tcltest more < little | $cat32 > stdout 2> stderr
+    exec $::tcltest::tcltest more < little | $cat32 > stdout 2> stderr
     list [contents stdout] [contents stderr]
 } {little stderr32}
 test winpipe-1.4 {32 bit comprehensive tests: a lot from pipe} {nt stdio cat32} {
-    exec $tcltest more < big | $cat32 > stdout 2> stderr
+    exec $::tcltest::tcltest more < big | $cat32 > stdout 2> stderr
     list [contents stdout] [contents stderr]
 } "{$big} stderr32"
 test winpipe-1.5 {32 bit comprehensive tests: a lot from pipe} {95 stdio cat32} {
@@ -124,12 +125,12 @@ test winpipe-1.13 {32 bit comprehensive tests: a lot to file} \
 } "{$big} stderr32"
 test winpipe-1.14 {32 bit comprehensive tests: a little to pipe} \
 	{pcOnly stdio cat32} {
-    exec $cat32 < little | $tcltest more > stdout 2> stderr
+    exec $cat32 < little | $::tcltest::tcltest more > stdout 2> stderr
     list [contents stdout] [contents stderr]
 } {little stderr32}
 test winpipe-1.15 {32 bit comprehensive tests: a lot to pipe} \
 	{pcOnly stdio cat32} {
-    exec $cat32 < big | $tcltest more > stdout 2> stderr
+    exec $cat32 < big | $::tcltest::tcltest more > stdout 2> stderr
     list [contents stdout] [contents stderr]
 } "{$big} stderr32"
 test winpipe-1.16 {32 bit comprehensive tests: to console} {pcOnly stdio cat32} {
@@ -185,7 +186,7 @@ test winpipe-2.2 {16 bit comprehensive tests: from big file} {pcOnly stdio cat16
     list [contents stdout] [contents stderr] 
 } "{$big} stderr16"
 test winpipe-2.3 {16 bit comprehensive tests: a little from pipe} {pcOnly stdio cat16} {
-    exec $tcltest more < little | $cat16 > stdout 2> stderr
+    exec $::tcltest::tcltest more < little | $cat16 > stdout 2> stderr
     list [contents stdout] [contents stderr]
 } {little stderr16}
 test winpipe-2.4 {16 bit comprehensive tests: a lot from pipe} {nt stdio cat16} {
@@ -193,7 +194,7 @@ test winpipe-2.4 {16 bit comprehensive tests: a lot from pipe} {nt stdio cat16} 
     list [contents stdout] [contents stderr] 
 } "{$big} stderr16stderr16"
 test winpipe-2.5 {16 bit comprehensive tests: a lot from pipe} {95 stdio cat16} {
-    exec $tcltest more < big | $cat16 > stdout 2> stderr
+    exec $::tcltest::tcltest more < big | $cat16 > stdout 2> stderr
     list [contents stdout] [contents stderr] 
 } "{$big} stderr16"
 test winpipe-2.6 {16 bit comprehensive tests: from console} \
@@ -232,11 +233,11 @@ test winpipe-2.13 {16 bit comprehensive tests: a lot to file} {pcOnly stdio cat1
     list [contents stdout] [contents stderr]
 } "{$big} stderr16"
 test winpipe-2.14 {16 bit comprehensive tests: a little to pipe} {pcOnly stdio cat16} {
-    exec $cat16 < little | $tcltest more > stdout 2> stderr
+    exec $cat16 < little | $::tcltest::tcltest more > stdout 2> stderr
     list [contents stdout] [contents stderr]
 } {little stderr16}
 test winpipe-2.15 {16 bit comprehensive tests: a lot to pipe} {pcOnly stdio cat16} {
-    exec $cat16 < big | $tcltest more > stdout 2> stderr
+    exec $cat16 < big | $::tcltest::tcltest more > stdout 2> stderr
     list [contents stdout] [contents stderr]
 } "{$big} stderr16"
 test winpipe-2.16 {16 bit comprehensive tests: to console} {pcOnly stdio cat16} {
@@ -308,7 +309,7 @@ set env(TEMP) c:/
 test winpipe-4.1 {TclpCreateTempFile: cleanup temp files} {pcOnly stdio} {
     set x {}
     set existing [glob -nocomplain c:/tcl*.tmp]
-    exec $tcltest < nothing 
+    exec $::tcltest::tcltest < nothing 
     foreach p [glob -nocomplain c:/tcl*.tmp] {
 	if {[lsearch $existing $p] == -1} {
 	    lappend x $p
@@ -321,7 +322,7 @@ test winpipe-4.2 {TclpCreateTempFile: TMP and TEMP not defined} {pcOnly stdio} {
     set temp $env(TEMP)
     unset env(TMP)
     unset env(TEMP)
-    exec $tcltest < nothing
+    exec $::tcltest::tcltest < nothing
     set env(TMP) $tmp
     set env(TEMP) $temp
     set x {}
@@ -330,7 +331,7 @@ test winpipe-4.3 {TclpCreateTempFile: TMP specifies non-existent directory} \
 	{pcOnly stdio} {
     set tmp $env(TMP)
     set env(TMP) snarky
-    exec $tcltest < nothing
+    exec $::tcltest::tcltest < nothing
     set env(TMP) $tmp
     set x {}
 } {}
@@ -340,7 +341,7 @@ test winpipe-4.4 {TclpCreateTempFile: TEMP specifies non-existent directory} \
     set temp $env(TEMP)
     unset env(TMP)
     set env(TEMP) snarky
-    exec $tcltest < nothing
+    exec $::tcltest::tcltest < nothing
     set env(TMP) $tmp
     set env(TEMP) $temp
     set x {}
@@ -385,10 +386,10 @@ makeFile {
 } echoArgs.tcl
 
 test winpipe-4.1 {BuildCommandLine: null arguments} {pcOnly stdio} {
-    exec $tcltest echoArgs.tcl foo "" bar
+    exec $::tcltest::tcltest echoArgs.tcl foo "" bar
 } {echoArgs.tcl {foo {} bar}}
 test winpipe-4.1 {BuildCommandLine: null arguments} {pcOnly stdio} {
-    exec $tcltest echoArgs.tcl foo \" bar
+    exec $::tcltest::tcltest echoArgs.tcl foo \" bar
 } {echoArgs.tcl {foo {"} bar}}
 
 # restore old values for env(TMP) and env(TEMP)

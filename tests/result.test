@@ -13,7 +13,8 @@
 # SCCS: @(#) result.test 1.4 97/12/08 15:07:49
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
-    source [file join [pwd] [file dirname [info script]] defs.tcl]
+    package require tcltest
+	namespace import ::tcltest::*
 }
 
 # Some tests require the testsaveresult command

@@ -8,19 +8,20 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 #
-# RCS: @(#) $Id: pkgMkIndex.test,v 1.8 1999/04/21 21:50:31 rjohnson Exp $
+# RCS: @(#) $Id: pkgMkIndex.test,v 1.9 1999/06/26 03:54:20 jenn Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
-    source [file join [pwd] [file dirname [info script]] defs.tcl]
+    package require tcltest
+	namespace import ::tcltest::*
 }
 
-set fullPkgPath [file join $::tcltest::testsDir pkg]
+set fullPkgPath [file join $::tcltest::testsDirectory pkg]
 
 # Add the pkg1 directory to auto_path, so that its packages can be found.
 # packages in pkg1 are used to test indexing of packages in pkg.
 # Make sure that the path to pkg1 is absolute.
 
-lappend auto_path [file join $::tcltest::testsDir pkg1]
+lappend auto_path [file join $::tcltest::testsDirectory pkg1]
 
 namespace eval pkgtest {
     # Namespace for procs we can discard

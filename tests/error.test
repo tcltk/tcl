@@ -11,10 +11,11 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: error.test,v 1.5 1999/05/06 18:46:43 stanton Exp $
+# RCS: @(#) $Id: error.test,v 1.6 1999/06/26 03:54:12 jenn Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
-    source [file join [pwd] [file dirname [info script]] defs.tcl]
+    package require tcltest
+    namespace import ::tcltest::*
 }
 
 proc foo {} {

@@ -12,7 +12,8 @@
 # RCS: @(#) 
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
-    source [file join [pwd] [file dirname [info script]] defs.tcl]
+    package require tcltest
+	namespace import ::tcltest::*
 }
 
 test platform-1.1 {TclpSetVariables: tcl_platform} {
