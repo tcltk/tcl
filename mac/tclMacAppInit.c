@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacAppInit.c,v 1.6 2001/06/08 20:06:11 dgp Exp $
+ * RCS: @(#) $Id: tclMacAppInit.c,v 1.7 2001/06/14 00:48:51 dgp Exp $
  */
 
 #include "tcl.h"
@@ -64,7 +64,6 @@ main(
 {
     char *newArgv[2];
     
-    TclMacSetPanic();
     if (MacintoshInit()  != TCL_OK) {
 	Tcl_Exit(1);
     }
@@ -205,6 +204,8 @@ MacintoshInit()
     InitCursor();
 		
 #endif
+
+    TclMacSetPanic();
 
     Tcl_MacSetEventProc((Tcl_MacConvertEventPtr) SIOUXHandleOneEvent);
     

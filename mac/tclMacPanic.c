@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacPanic.c,v 1.3 2001/06/08 20:06:11 dgp Exp $
+ * RCS: @(#) $Id: tclMacPanic.c,v 1.4 2001/06/14 00:48:51 dgp Exp $
  */
 
 
@@ -26,6 +26,9 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+#include "tclInt.h"
+#include "tclMacInt.h"
 
 /*
  * constants for panic dialog
@@ -59,7 +62,7 @@ static void		MacPanic _ANSI_ARGS_(TCL_VARARGS(CONST char *, format));
 
         /* VARARGS ARGSUSED */
 static void
-MacPanic TCL_VARARGS_DEF(CONST char *, arg1)
+MacPanic TCL_VARARGS_DEF(CONST char *, format)
 {
     va_list varg;
     char msg[256];
