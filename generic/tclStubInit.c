@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.44 2000/09/14 18:42:32 ericm Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.45 2000/09/28 06:38:22 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -240,7 +240,8 @@ TclIntStubs tclIntStubs = {
     TclSetStartupScriptFileName, /* 158 */
     TclGetStartupScriptFileName, /* 159 */
     TclpMatchFilesTypes, /* 160 */
-    TclChannelEventScriptInvoker, /* 161 */
+    TclChannelTransform, /* 161 */
+    TclChannelEventScriptInvoker, /* 162 */
 };
 
 TclIntPlatStubs tclIntPlatStubs = {
@@ -796,27 +797,45 @@ TclStubs tclStubs = {
     Tcl_ConditionFinalize, /* 391 */
     Tcl_MutexFinalize, /* 392 */
     Tcl_CreateThread, /* 393 */
-    Tcl_JoinThread, /* 394 */
-    Tcl_IsChannelShared, /* 395 */
-    Tcl_IsChannelRegistered, /* 396 */
-    Tcl_CutChannel, /* 397 */
-    Tcl_SpliceChannel, /* 398 */
-    Tcl_ClearChannelHandlers, /* 399 */
-    Tcl_IsChannelExisting, /* 400 */
-    Tcl_UniCharNcasecmp, /* 401 */
-    Tcl_UniCharCaseMatch, /* 402 */
-    Tcl_FindHashEntry, /* 403 */
-    Tcl_CreateHashEntry, /* 404 */
-    Tcl_InitHashTableEx, /* 405 */
-    Tcl_InitObjHashTable, /* 406 */
-    Tcl_CommandTraceInfo, /* 407 */
-    Tcl_TraceCommand, /* 408 */
-    Tcl_UntraceCommand, /* 409 */
-    Tcl_AttemptAlloc, /* 410 */
-    Tcl_AttemptDbCkalloc, /* 411 */
-    Tcl_AttemptRealloc, /* 412 */
-    Tcl_AttemptDbCkrealloc, /* 413 */
-    Tcl_AttemptSetObjLength, /* 414 */
+    Tcl_ReadRaw, /* 394 */
+    Tcl_WriteRaw, /* 395 */
+    Tcl_GetTopChannel, /* 396 */
+    Tcl_ChannelBuffered, /* 397 */
+    Tcl_ChannelName, /* 398 */
+    Tcl_ChannelVersion, /* 399 */
+    Tcl_ChannelBlockModeProc, /* 400 */
+    Tcl_ChannelCloseProc, /* 401 */
+    Tcl_ChannelClose2Proc, /* 402 */
+    Tcl_ChannelInputProc, /* 403 */
+    Tcl_ChannelOutputProc, /* 404 */
+    Tcl_ChannelSeekProc, /* 405 */
+    Tcl_ChannelSetOptionProc, /* 406 */
+    Tcl_ChannelGetOptionProc, /* 407 */
+    Tcl_ChannelWatchProc, /* 408 */
+    Tcl_ChannelGetHandleProc, /* 409 */
+    Tcl_ChannelFlushProc, /* 410 */
+    Tcl_ChannelHandlerProc, /* 411 */
+    Tcl_JoinThread, /* 412 */
+    Tcl_IsChannelShared, /* 413 */
+    Tcl_IsChannelRegistered, /* 414 */
+    Tcl_CutChannel, /* 415 */
+    Tcl_SpliceChannel, /* 416 */
+    Tcl_ClearChannelHandlers, /* 417 */
+    Tcl_IsChannelExisting, /* 418 */
+    Tcl_UniCharNcasecmp, /* 419 */
+    Tcl_UniCharCaseMatch, /* 420 */
+    Tcl_FindHashEntry, /* 421 */
+    Tcl_CreateHashEntry, /* 422 */
+    Tcl_InitHashTableEx, /* 423 */
+    Tcl_InitObjHashTable, /* 424 */
+    Tcl_CommandTraceInfo, /* 425 */
+    Tcl_TraceCommand, /* 426 */
+    Tcl_UntraceCommand, /* 427 */
+    Tcl_AttemptAlloc, /* 428 */
+    Tcl_AttemptDbCkalloc, /* 429 */
+    Tcl_AttemptRealloc, /* 430 */
+    Tcl_AttemptDbCkrealloc, /* 431 */
+    Tcl_AttemptSetObjLength, /* 432 */
 };
 
 /* !END!: Do not edit above this line. */
