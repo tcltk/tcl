@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.40.2.1 2003/04/29 11:45:24 vincentdarley Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.40.2.2 2003/07/16 15:28:29 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1680,7 +1680,6 @@ Tcl_GlobObjCmd(dummy, interp, objc, objv)
 	    case GLOB_LAST:				/* -- */
 	        i++;
 		goto endOfForLoop;
-		break;
 	}
     }
     endOfForLoop:
