@@ -768,8 +768,6 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 		DL_OBJS="tclLoadDl.o"
 		DL_LIBS=""
 		LDFLAGS=""
-		LD_SEARCH_FLAGS=""
-		SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}\$\{DBGX\}.so.1.0'
 		LD_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
 		AC_MSG_CHECKING(for ELF)
 		AC_EGREP_CPP(yes, [
@@ -857,15 +855,21 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	    DL_LIBS=""
 	    LDFLAGS=""
 	    LD_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
+	    if test "$using_gcc" = "no" ; then
+		EXTRA_CFLAGS="-DHAVE_TZSET -std1"
+	    fi
 	    # see pthread_intro(3) for pthread support on osf1, k.furukawa
 	    if test "${TCL_THREADS}" = "1" ; then
+		EXTRA_CFLAGS="${EXTRA_CFLAGS} -DTCL_THREAD_STACK_MIN=PTHREAD_STACK_MIN*64"
 		if test "$using_gcc" = "no" ; then
-		    EXTRA_CFLAGS="-std1 -pthread"
+		    EXTRA_CFLAGS="${EXTRA_CFLAGS} -pthread"
 		    LDFLAGS="-pthread"
+		    THREADS_LIBS=""
 		else
-		    THREADS_LIBS=" -lpthread -lmach -lexc -lc"
+		    THREADS_LIBS=" -lpthread -lmach -lexc"
 		fi
 	    fi
+
 	    ;;
 	RISCos-*)
 	    SHLIB_CFLAGS="-G 0"
@@ -981,6 +985,9 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	    DL_LIBS=""
 	    LDFLAGS="-Wl,-D,08000000"
 	    LD_SEARCH_FLAGS='-L${LIB_RUNTIME_DIR}'
+	    if test "$using_gcc" = "no" ; then
+		EXTRA_CFLAGS="-DHAVE_TZSET -std1"
+	    fi
 	    ;;
 	UNIX_SV* | UnixWare-5*)
 	    SHLIB_CFLAGS="-KPIC"
