@@ -1,3 +1,20 @@
+2002-11-26  David Gravereaux  <davygrvy@pobox.com>
+
+	* win/tclWinConsole.c:
+	* win/tclWinPipe.c:
+	* win/tclWinSerial.c:
+	* win/tclWinSock.c:
+	* win/tclWinThrd.c:
+	* win/tclWinTime.c:  General cleanup of all worker threads used
+	by the channel drivers.  Eliminates the normal case where the
+	worker thread is terminated ('cept the winsock one).  Instead,
+	use kernel events to signal a clean exit.  Only when the worker
+	thread is blocked on an I/O call is the thread terminated.
+	Essentially, this makes all other channel worker threads behave
+	like the PipeReaderThread() function for it's cleaner exit
+	behavior.  This appears to fix [Bug 597924] but needs 3rd party
+	confirmation to close the issue.
+
 2002-11-26  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* win/README: Update msys build env URL. This
