@@ -993,7 +993,7 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 	    SHLIB_LD_LIBS=""
 	    SHLIB_SUFFIX=".dylib"
 	    DL_OBJS="tclLoadDyld.o"
-            PLAT_OBJS=""
+            PLAT_OBJS="tclMacOSXBundle.o"
 	    DL_LIBS=""
 	    LDFLAGS=""
 	    LD_SEARCH_FLAGS=""

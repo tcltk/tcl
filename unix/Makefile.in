@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.83.6.1 2001/10/15 09:13:49 wolfsuit Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.83.6.2 2001/12/02 01:03:46 wolfsuit Exp $
 
 VERSION 		= @TCL_VERSION@
 
@@ -226,7 +226,7 @@ GENERIC_DIR		= $(TOP_DIR)/generic
 COMPAT_DIR		= $(TOP_DIR)/compat
 TOOL_DIR		= $(TOP_DIR)/tools
 UNIX_DIR		= $(TOP_DIR)/unix
-MACOSX_DIR		= $(TOP_DIR)/macosx
+MAC_OSX_DIR		= $(TOP_DIR)/macosx
 
 # Must be absolute because of the cd dltest $(DLTEST_DIR)/configure below.
 DLTEST_DIR		= @TCL_SRC_DIR@/unix/dltest
@@ -993,6 +993,9 @@ tclUnixInit.o: $(UNIX_DIR)/tclUnixInit.c $(GENERIC_DIR)/tclInitScript.h tclConfi
 		-DTCL_PACKAGE_PATH="\"${TCL_PACKAGE_PATH}\"" \
 		$(UNIX_DIR)/tclUnixInit.c
 
+# This is the CFBundle interface.  It is only used on Mac OS X.
+tclMacOSXBundle.o: $(MAC_OSX_DIR)/tclMacOSXBundle.c
+	$(CC) -c $(CC_SWITCHES) $(MAC_OSX_DIR)/tclMacOSXBundle.c
 
 # The following targets are not completely general.  They are provide
 # purely for documentation purposes so people who are interested in

@@ -5392,7 +5392,7 @@ fi
 	    SHLIB_LD_LIBS=""
 	    SHLIB_SUFFIX=".dylib"
 	    DL_OBJS="tclLoadDyld.o"
-            PLAT_OBJS=""
+            PLAT_OBJS="tclMacOSXBundle.o"
 	    DL_LIBS=""
 	    LDFLAGS=""
 	    LD_SEARCH_FLAGS=""
@@ -6198,10 +6198,14 @@ VERSION=${TCL_VERSION}
 #	another for platform-independent scripts.
 #--------------------------------------------------------------------
 
-if test "$prefix" != "$exec_prefix"; then
-    TCL_PACKAGE_PATH="${exec_prefix}/lib ${prefix}/lib"
+if test "$FRAMEWORK_BUILD" = "1" ; then
+    TCL_PACKAGE_PATH="${prefix}/Tcl.framework/Versions/${TCL_VERSION}/Resources/Scripts"
 else
-    TCL_PACKAGE_PATH="${prefix}/lib"
+    if test "$prefix" != "$exec_prefix"; then
+        TCL_PACKAGE_PATH="${exec_prefix}/lib ${prefix}/lib"
+    else
+        TCL_PACKAGE_PATH="${prefix}/lib"
+    fi
 fi
 
 #--------------------------------------------------------------------
@@ -6223,9 +6227,14 @@ else
 fi
 
 TCL_BUILD_STUB_LIB_SPEC="-L`pwd` ${TCL_STUB_LIB_FLAG}"
-TCL_STUB_LIB_SPEC="-L${exec_prefix}/lib ${TCL_STUB_LIB_FLAG}"
+if test "$FRAMEWORK_BUILD" = "1" ; then
+    TCL_STUB_LIB_SPEC="-L${exec_prefix}/Tcl.framework/Versions/${TCL_VERSION} ${TCL_STUB_LIB_FLAG}"
+    TCL_STUB_LIB_PATH="${exec_prefix}/Tcl.framework/Versions/${TCL_VERSION}/${TCL_STUB_LIB_FILE}"
+else
+    TCL_STUB_LIB_SPEC="-L${exec_prefix}/lib ${TCL_STUB_LIB_FLAG}"
+    TCL_STUB_LIB_PATH="${exec_prefix}/lib/${TCL_STUB_LIB_FILE}"
+fi
 TCL_BUILD_STUB_LIB_PATH="`pwd`/${TCL_STUB_LIB_FILE}"
-TCL_STUB_LIB_PATH="${exec_prefix}/lib/${TCL_STUB_LIB_FILE}"
 
 #------------------------------------------------------------------------
 # tclConfig.sh refers to this by a different name

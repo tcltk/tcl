@@ -7,7 +7,7 @@
  * Copyright (c) 1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclUnixInit.c,v 1.24.8.1 2001/10/15 09:13:49 wolfsuit Exp $
+ * RCS: @(#) $Id: tclUnixInit.c,v 1.24.8.2 2001/12/02 01:03:46 wolfsuit Exp $
  */
 
 #if defined(HAVE_CFBUNDLE)
@@ -568,54 +568,38 @@ TclpSetVariables(interp)
     char *user;
     Tcl_DString ds;
 
+#ifdef HAVE_CFBUNDLE
     /*
-     * This is a hack for now, we really need to make this a function, 
-     * and export it from Tcl, but I am not sure how to get it into
-     * the stubs table properly.
+     * If we have a bundle structure for the Tcl installation,
+     * then check there first to see if we can find the libraries
+     * there.
      */
      
-#ifdef HAVE_CFBUNDLE
     int foundInFramework = 0;
+    char tclLibPath[1024];
     
     if (strcmp(defaultLibraryDir, "@TCL_IN_FRAMEWORK@") == 0) {
-        CFBundleRef bundleRef;
-        CFURLRef libURL;
-        char tclLibPath[1024];
-            
-        bundleRef = CFBundleGetBundleWithIdentifier(CFSTR("com.tcltk.tcllibrary"));
-            
-        if (bundleRef != NULL) {
-            libURL = CFBundleCopyResourceURL(bundleRef, 
-                    CFSTR("Scripts"), 
-                    NULL, 
-                    NULL);
-            if (libURL != NULL) {
-                /* 
-                * FIXME: This is a quick fix, it is probably not right 
-                * for internationalization. 
-                */
-                
-                if (CFURLGetFileSystemRepresentation (libURL, true,
-                        tclLibPath, 1024)) {
-                    Tcl_SetVar(interp, "tclDefaultLibrary", tclLibPath, 
-                            TCL_GLOBAL_ONLY);
-                    Tcl_SetVar(interp, "tcl_pkgPath", tclLibPath, 
-                            TCL_GLOBAL_ONLY);
-                    foundInFramework = 1;
-                }
-                CFRelease(libURL);
-            }
-        }
-    }    
-    if (!foundInFramework) {
+    
+        foundInFramework = Tcl_MacOSXOpenBundleResources(interp, 
+                "com.tcltk.tcllibrary",
+                0, 1024, tclLibPath);
+    }
+    
+    if (foundInFramework == TCL_OK) {
+        Tcl_SetVar(interp, "tclDefaultLibrary", tclLibPath, 
+                TCL_GLOBAL_ONLY);
+        Tcl_SetVar(interp, "tcl_pkgPath", tclLibPath, TCL_GLOBAL_ONLY);
+    } else {
 #endif /* HAVE_CFBUNDLE */    
 
-    Tcl_SetVar(interp, "tclDefaultLibrary", defaultLibraryDir, 
-            TCL_GLOBAL_ONLY);
-    Tcl_SetVar(interp, "tcl_pkgPath", pkgPath, TCL_GLOBAL_ONLY);
-#if HAVE_CFBUNDLE
+        Tcl_SetVar(interp, "tclDefaultLibrary", defaultLibraryDir, 
+                TCL_GLOBAL_ONLY);
+        Tcl_SetVar(interp, "tcl_pkgPath", pkgPath, TCL_GLOBAL_ONLY);
+        
+#ifdef HAVE_CFBUNDLE
     }
 #endif /* HAVE_CFBUNDLE */
+
     Tcl_SetVar2(interp, "tcl_platform", "platform", "unix", TCL_GLOBAL_ONLY);
     unameOK = 0;
 #ifndef NO_UNAME
