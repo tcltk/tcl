@@ -1,3 +1,10 @@
+2003-03-27  Miguel Sofer <msofer@users.sf.net>
+
+	* tests/encoding.test:
+	* tests/proc-old.test:
+	* tests/set-old.test: Altered test numers to eliminate duplicates,
+	[Bugs 710313, 710320, 710352]
+
 2003-03-27  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* tests/parseOld.test:	Altered test numers to eliminate duplicates.
