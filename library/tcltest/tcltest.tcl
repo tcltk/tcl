@@ -13,7 +13,7 @@
 # Copyright (c) 2000 by Ajuba Solutions
 # All rights reserved.
 # 
-# RCS: @(#) $Id: tcltest.tcl,v 1.40 2002/03/25 20:55:16 dgp Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.41 2002/03/25 21:34:34 dgp Exp $
 
 # create the "tcltest" namespace for all testing variables and procedures
 
@@ -40,6 +40,17 @@ namespace eval tcltest {
 	if {![info exists $varName]} {
 	    variable $varName $value
 	}
+    }
+    proc ArrayDefault {varName value} {
+	variable $varName
+	if {[array exists $varName]} {
+	    return
+	}
+	if {[info exists $varName]} {
+	    # Pre-initialized value is a scalar: destroy it!
+	    unset $varName
+	}
+	array set $varName $value
     }
 
     # tcltest::verbose defaults to {body}
@@ -99,20 +110,11 @@ namespace eval tcltest {
 
     # tcltest::numTests will store test files as indices and the list
     # of files (that should not have been) left behind by the test files.
-
-    if {![info exists [namespace current]::createdNewFiles]} {
-	variable createdNewFiles
-	array set tcltest::createdNewFiles {}
-    }
+    ArrayDefault createdNewFiles {}
 
     # initialize tcltest::numTests array to keep track fo the number of
     # tests that pass, fail, and are skipped.
-
-    if {![info exists [namespace current]::numTests]} {
-	variable numTests
-	array set tcltest::numTests \
-		[list Total 0 Passed 0 Skipped 0 Failed	0] 
-    }
+    ArrayDefault numTests [list Total 0 Passed 0 Skipped 0 Failed 0] 
 
     # initialize tcltest::skippedBecause array to keep track of
     # constraints that kept tests from running; a constraint name of
@@ -121,20 +123,12 @@ namespace eval tcltest {
     # means that the test didn't match the argument given to the -match flag;
     # both of these constraints are counted only if tcltest::debug is set to
     # true. 
-
-    if {![info exists [namespace current]::skippedBecause]} {
-	variable skippedBecause
-	array set tcltest::skippedBecause {}
-    }
+    ArrayDefault skippedBecause {}
 
     # initialize the tcltest::testConstraints array to keep track of valid
     # predefined constraints (see the explanation for the
     # tcltest::initConstraints proc for more details).
-
-    if {![info exists [namespace current]::testConstraints]} {
-	variable testConstraints
-	array set tcltest::testConstraints {}
-    }
+    ArrayDefault testConstraints {}
     Default constraintsSpecified {}
 
     # Don't run only the constrained tests by default
@@ -148,26 +142,19 @@ namespace eval tcltest {
     Default loadFile {}
 
     # tests that use threads need to know which is the main thread
-
-    if {![info exists [namespace current]::mainThread]} {
-	variable mainThread 1
-	if {[info commands thread::id] != {}} {
-	    set mainThread [thread::id]
-	} elseif {[info commands testthread] != {}} {
-	    set mainThread [testthread id]
-	}
+    Default mainThread 1
+    variable mainThread
+    if {[info commands thread::id] != {}} {
+	set mainThread [thread::id]
+    } elseif {[info commands testthread] != {}} {
+	set mainThread [testthread id]
     }
 
     # save the original environment so that it can be restored later
-    
-    if {![info exists [namespace current]::originalEnv]} {
-	variable originalEnv
-	array set tcltest::originalEnv [array get ::env]
-    }
+    ArrayDefault originalEnv [array get ::env]
 
     # Set tcltest::workingDirectory to [pwd]. The default output directory
     # for Tcl tests is the working directory.
-
     Default workingDirectory [pwd]
     Default temporaryDirectory $workingDirectory
 
@@ -176,7 +163,7 @@ namespace eval tcltest {
     # tcltest::testsDirectory.
 
     if {![info exists [namespace current]::testsDirectory]} {
-	set oldpwd [pwd]
+	variable oldpwd [pwd]
 	catch {cd [file join [file dirname [info script]] .. .. tests]}
 	variable testsDirectory [pwd]
 	cd $oldpwd
@@ -192,11 +179,8 @@ namespace eval tcltest {
 
     # Internationalization support -- used in tcltest::set_iso8859_1_locale
     # and tcltest::restore_locale. Those commands are used in cmdIL.test.
-    if {![info exists previousLocale]} {
-	variable previousLocale
-    }
 
-    if {![info exists isoLocale]} {
+    if {![info exists [namespace current]::isoLocale]} {
 	variable isoLocale fr
 	switch -- $tcl_platform(platform) {
 	    "unix" {
@@ -205,14 +189,14 @@ namespace eval tcltest {
 
 		switch -exact -- $tcl_platform(os) {
 		    "FreeBSD" {
-			set tcltest::isoLocale fr_FR.ISO_8859-1
+			set isoLocale fr_FR.ISO_8859-1
 		    }
 		    HP-UX {
-			set tcltest::isoLocale fr_FR.iso88591
+			set isoLocale fr_FR.iso88591
 		    }
 		    Linux -
 		    IRIX {
-			set tcltest::isoLocale fr
+			set isoLocale fr
 		    }
 		    default {
 
@@ -220,12 +204,12 @@ namespace eval tcltest {
 			# define it to something else on your system
 			#if you want to test those.
 
-			set tcltest::isoLocale iso_8859_1
+			set isoLocale iso_8859_1
 		    }
 		}
 	    }
 	    "windows" {
-		set tcltest::isoLocale French
+		set isoLocale French
 	    }
 	}
     }
@@ -237,11 +221,10 @@ namespace eval tcltest {
     Default originalTclPlatform [array get tcl_platform]
 
     # If a core file exists, save its modification time.
-    if {![info exists coreModificationTime]} {
-	if {[file exists [file join $tcltest::workingDirectory core]]} {
-	    variable coreModificationTime [file mtime [file join \
-		    $tcltest::workingDirectory core]]
-	}
+    variable workingDirectory
+    if {[file exists [file join $workingDirectory core]]} {
+	Default coreModificationTime \
+		[file mtime [file join $workingDirectory core]]
     }
 
     # stdout and stderr buffers for use when we want to store them
@@ -3303,8 +3286,9 @@ proc tcltest::leakfiles {old} {
 #	None.
 
 proc tcltest::set_iso8859_1_locale {} {
+    variable previousLocale
     if {[info commands testlocale] != ""} {
-	set tcltest::previousLocale [testlocale ctype]
+	set previousLocale [testlocale ctype]
 	testlocale ctype $tcltest::isoLocale
     }
     return
@@ -3324,8 +3308,9 @@ proc tcltest::set_iso8859_1_locale {} {
 #	None.
 
 proc tcltest::restore_locale {} {
+    variable previousLocale
     if {[info commands testlocale] != ""} {
-	testlocale ctype $tcltest::previousLocale
+	testlocale ctype $previousLocale
     }
     return
 }
