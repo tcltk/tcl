@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: eof.n,v 1.4 2001/09/14 19:20:40 andreas_kupries Exp $
+'\" RCS: @(#) $Id: eof.n,v 1.5 2004/05/28 12:09:59 dkf Exp $
 '\" 
 .so man.macros
 .TH eof n 7.5 Tcl "Tcl Built-In Commands"
@@ -29,6 +29,34 @@ Tcl standard channel (\fBstdin\fR, \fBstdout\fR, or \fBstderr\fR),
 the return value from an invocation of \fBopen\fR or \fBsocket\fR, or
 the result of a channel creation command provided by a Tcl extension.
 .VE
+.SH EXAMPLES
+Read and print out the contents of a file line-by-line:
+.CS
+set f [open somefile.txt]
+while {1} {
+    set line [gets $f]
+    if {[eof $f]} {
+        close $f
+        break
+    }
+    puts "Read line: $line"
+}
+.CE
+.PP
+Read and print out the contents of a file by fixed-size records:
+.CS
+set f [open somefile.dat]
+fconfigure $f -translation binary
+set recordSize 40
+while {1} {
+    set record [read $f $recordSize]
+    if {[eof $f]} {
+        close $f
+        break
+    }
+    puts "Read record: $record"
+}
+.CE
 
 .SH "SEE ALSO"
 file(n), open(n), close(n), fblocked(n), Tcl_StandardChannels(3)
