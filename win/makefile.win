@@ -9,7 +9,7 @@
 #   Tool specific syntax is NOT allowed in this file.
 #
 #==============================================================================
-# RCS: @(#) $Id: makefile.win,v 1.1.2.4 2001/09/11 03:52:13 davygrvy Exp $
+# RCS: @(#) $Id: makefile.win,v 1.1.2.5 2001/09/15 14:09:51 davygrvy Exp $
 #==============================================================================
 
 ### Remove all '!' for MinGW..  Sorry, could find another way to do this.
@@ -45,6 +45,8 @@
 !endif
 !endif
 !endif
+
+!ifndef BAILOUT
 
 #==============================================
 #  Targets.
@@ -91,3 +93,4 @@ cvsupdate : $(SYM)
 	cd ..
 	set CVS_RSH=$(CVS_RSH)
 	$(CVSCMD) update $(CVS_OPTS)
+!endif

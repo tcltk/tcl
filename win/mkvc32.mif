@@ -6,7 +6,7 @@
 #   NMAKE specific syntax is allowed in this file.
 #
 #==============================================================================
-# RCS: @(#) $Id: mkvc32.mif,v 1.1.2.3 2001/09/15 01:56:54 davygrvy Exp $
+# RCS: @(#) $Id: mkvc32.mif,v 1.1.2.4 2001/09/15 14:09:51 davygrvy Exp $
 #==============================================================================
 
 !ifndef _MKVC32_MIF
@@ -35,8 +35,8 @@ TOOLSET	    = vc32
 MAKECMD	    = nmake.exe -nologo /$(MAKEFLAGS) -f makefile.vc32
 SYM	    =
 
-rc32	    = rc
-cc32	    = cl
+rc32	    = $(RC)
+cc32	    = $(CC)
 link32	    = link
 lib32	    = lib
 cvtres32    = cvtres
@@ -63,12 +63,15 @@ vcvars	    = "$(TOOLSETvc32)\vc98\bin\vcvars32.bat"
 !message +++ Microsoft Visual C++ tools are NOT in the path and
 !message +++    $(vcvars) will be used.
 
-!if [ $(vcvars) ] != 0
+
+### We now need to recurse back into ourseLves, then baiL.
+!if [ $(vcvars) & nmake -nologo /$(MAKEFLAGS) -f makefile.win ] != 0
 !endif
 
+BAILOUT = 1
+
 !else
-!message +++ Microsoft Visual C++ tools are in the path.
-!endif
+#!message +++ Microsoft Visual C++ tools are in the path.
 
 
 #==============================================
@@ -136,7 +139,6 @@ _NMAKE_VER  = $(_NMAKE_VER:6.00.8168.0=600)
 #        $(ObjDir)\*.dll \
 #        $(ObjDir)\*.map \
 #        $(ObjDir)\*.res \
-#        $(ObjDir)\*.rc  \
 #        $(ObjDir)\*.bin \
 #        $(ObjDir)\*.lst \
 #        $(ObjDir)\*.blt \
@@ -155,7 +157,6 @@ _NMAKE_VER  = $(_NMAKE_VER:6.00.8168.0=600)
 # erase  $(ObjDir)\*.dll >NUL
 # erase  $(ObjDir)\*.map >NUL
 # erase  $(ObjDir)\*.res >NUL
-# erase  $(ObjDir)\*.rc  >NUL
 # erase  $(ObjDir)\*.bin >NUL
 # erase  $(ObjDir)\*.lst >NUL
 # erase  $(ObjDir)\*.blt >NUL
@@ -164,4 +165,5 @@ _NMAKE_VER  = $(_NMAKE_VER:6.00.8168.0=600)
 # erase  $(ObjDir)\*.exp >NUL
 #!endif  # OS == Windows_NT
 
+!endif
 !endif  # _MKVC32_MIF
