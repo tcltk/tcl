@@ -1,3 +1,9 @@
+2004-09-09  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclNamesp.c (Tcl_ForgetImport):	Corrected faulty
+	* tests/namespace.test:	logic that relied exclusively on string
+	matching and failed in the presence of [rename]s.  [Bug 560297]
+
 2004-09-08  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclBasic.c (Tcl_CreateInterp):	Removed obsolete
