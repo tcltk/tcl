@@ -1,3 +1,18 @@
+2005-03-04  Kevin B. Kenny  <kennykb@acm.org>
+
+	[kennykb-numerics-branch]
+	
+	* generic/tclCmdMZ.c: Changed [scan] to treat out-of-range
+	floating point values as infinities and zeroes.
+	* generic/tclExecute.c: Changed [expr] to be permissive about
+	infinities, allowing them to propagate.
+	* generic/tclGet.c: Changed Tcl_GetDouble to be permissive about
+	over/underflow.
+	* generic/tclObj.c: Changed SetDoubleFromAny to be permissive
+	about over/underflow.
+	* generic/tclParseExpr.c: Made [expr] permissive about input
+	numbers out of range.
+	
 2005-03-03  Kevin B. Kenny  <kennykb@acm.org>
 
 	[kennykb-numerics-branch]

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.72.2.7 2005/03/02 23:31:15 kennykb Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.72.2.8 2005/03/04 20:43:46 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -1751,12 +1751,6 @@ SetDoubleFromAny(interp, objPtr)
 	    TclAppendLimitedToObj(msg, string, length, 50, "");
 	    Tcl_AppendToObj(msg, "\"", -1);
 	    Tcl_SetObjResult(interp, msg);
-	}
-	return TCL_ERROR;
-    }
-    if (errno != 0) {
-	if (interp != NULL) {
-	    TclExprFloatError(interp, newDouble);
 	}
 	return TCL_ERROR;
     }

@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParseExpr.c,v 1.23.2.4 2005/03/03 21:54:09 kennykb Exp $
+ * RCS: @(#) $Id: tclParseExpr.c,v 1.23.2.5 2005/03/04 20:43:46 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -1677,13 +1677,6 @@ GetLexeme(infoPtr)
 	    doubleValue = TclStrToD(startPtr, &termPtr);
 	    Tcl_DStringFree(&toParse);
 	    if (termPtr != startPtr) {
-		if (errno != 0) {
-		    if (interp != NULL) {
-			TclExprFloatError(interp, doubleValue);
-		    }
-		    parsePtr->errorType = TCL_PARSE_BAD_NUMBER;
-		    return TCL_ERROR;
-		}
 		
 		/*
                  * startPtr was the start of a valid double, copied

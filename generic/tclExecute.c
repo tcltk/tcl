@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.167.2.4 2005/03/02 23:30:52 kennykb Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.167.2.5 2005/03/04 20:43:44 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -4011,7 +4011,7 @@ TclExecuteByteCode(interp, codePtr)
 	     * Check now for IEEE floating-point error.
 	     */
 		    
-	    if (IS_NAN(dResult) || IS_INF(dResult)) {
+	    if (IS_NAN(dResult)) {
 		TRACE(("%.20s %.20s => IEEE FLOATING PT ERROR\n",
 		        O2S(valuePtr), O2S(value2Ptr)));
 		TclExprFloatError(interp, dResult);
@@ -4548,7 +4548,7 @@ TclExecuteByteCode(interp, codePtr)
 		
 	    if (tPtr == &tclDoubleType) {
 		d = objResultPtr->internalRep.doubleValue;
-		if (IS_NAN(d) || IS_INF(d)) {
+		if (IS_NAN(d)) {
 		    TRACE(("\"%.20s\" => IEEE FLOATING PT ERROR\n",
 		            O2S(objResultPtr)));
 		    TclExprFloatError(interp, d);
@@ -5662,9 +5662,11 @@ ExprUnaryFunc(interp, tosPtr, clientData)
 
     errno = 0;
     dResult = (*func)(d);
-    if ((errno != 0) || IS_NAN(dResult) || IS_INF(dResult)) {
-	TclExprFloatError(interp, dResult);
-	return TCL_ERROR;
+    if ((errno != 0 ) || IS_NAN(dResult)) {
+	if ( errno != ERANGE || ( dResult != 0.0 && !IS_INF(dResult) )) {
+	    TclExprFloatError(interp, dResult);
+	    return TCL_ERROR;
+	}
     }
     
     /*
@@ -5709,9 +5711,11 @@ ExprBinaryFunc(interp, tosPtr, clientData)
 
     errno = 0;
     dResult = (*func)(d1, d2);
-    if ((errno != 0) || IS_NAN(dResult) || IS_INF(dResult)) {
-	TclExprFloatError(interp, dResult);
-	return TCL_ERROR;
+    if ((errno != 0) || IS_NAN(dResult)) {
+	if ( errno != ERANGE || ( dResult != 0.0 && !IS_INF( dResult ) ) ) {
+	    TclExprFloatError(interp, dResult);
+	    return TCL_ERROR;
+	}
     }
 
     /*
@@ -5786,7 +5790,7 @@ ExprAbsFunc(interp, tosPtr, clientData)
 	} else {
 	    dResult = d;
 	}
-	if (IS_NAN(dResult) || IS_INF(dResult)) {
+	if (IS_NAN(dResult)) {
 	    TclExprFloatError(interp, dResult);
 	    return TCL_ERROR;
 	}
@@ -5870,7 +5874,7 @@ ExprIntFunc(interp, tosPtr, clientData)
 		goto tooLarge;
 	    }
 	}
-	if (IS_NAN(d) || IS_INF(d)) {
+	if (IS_NAN(d)) {
 	    TclExprFloatError(interp, d);
 	    return TCL_ERROR;
 	}
@@ -5927,7 +5931,7 @@ ExprWideFunc(interp, tosPtr, clientData)
 		goto tooLarge;
 	    }
 	}
-	if (IS_NAN(d) || IS_INF(d)) {
+	if (IS_NAN(d)) {
 	    TclExprFloatError(interp, d);
 	    return TCL_ERROR;
 	}
@@ -6300,7 +6304,7 @@ ExprCallMathFunc(interp, objc, objv)
 	objv[0] = Tcl_NewWideIntObj(funcResult.wideValue);
     } else {
 	d = funcResult.doubleValue;
-	if (IS_NAN(d) || IS_INF(d)) {
+	if (IS_NAN(d)) {
 	    TclExprFloatError(interp, d);
 	    return TCL_ERROR;
 	}

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclGet.c,v 1.9.2.1 2005/02/02 15:53:24 kennykb Exp $
+ * RCS: @(#) $Id: tclGet.c,v 1.9.2.2 2005/03/04 20:43:46 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -231,12 +231,6 @@ Tcl_GetDouble(interp, string, doublePtr)
             Tcl_AppendResult(interp,
                     "expected floating-point number but got \"",
                     string, "\"", (char *) NULL);
-        }
-	return TCL_ERROR;
-    }
-    if (errno != 0 && (d == HUGE_VAL || d == -HUGE_VAL || d == 0)) {
-        if (interp != (Tcl_Interp *) NULL) {
-            TclExprFloatError(interp, d); 
         }
 	return TCL_ERROR;
     }
