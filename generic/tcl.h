@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.1.2.6 1998/12/02 01:46:06 stanton Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.1.2.7 1998/12/03 02:06:33 welch Exp $
  */
 
 #ifndef _TCL
@@ -25,7 +25,6 @@
  * README
  * library/init.tcl	(only if major.minor changes, not patchlevel)
  * unix/configure.in
- * unix/pkginfo
  * win/makefile.bc	(only if major.minor changes, not patchlevel)
  * win/makefile.vc	(only if major.minor changes, not patchlevel)
  * win/pkgIndex.tcl (for tclregNN.dll)
@@ -45,11 +44,11 @@
 
 #define TCL_MAJOR_VERSION   8
 #define TCL_MINOR_VERSION   1
-#define TCL_RELEASE_LEVEL   0
-#define TCL_RELEASE_SERIAL  2
+#define TCL_RELEASE_LEVEL   1
+#define TCL_RELEASE_SERIAL  1
 
 #define TCL_VERSION	    "8.1"
-#define TCL_PATCH_LEVEL	    "8.1a2"
+#define TCL_PATCH_LEVEL	    "8.1b1"
 
 /*
  * The following definitions set up the proper options for Windows

@@ -1,4 +1,4 @@
-Tcl 8.1a2 for Macintosh
+Tcl 8.1b1 for Macintosh
 
 by Ray Johnson
 Scriptics Corporation
@@ -8,7 +8,7 @@ Jim Ingham
 Cygnus Solutions
 jingham@cygnus.com
 
-RCS: @(#) $Id: README,v 1.1.2.2 1998/09/24 23:59:08 stanton Exp $
+RCS: @(#) $Id: README,v 1.1.2.3 1998/12/03 02:06:34 welch Exp $
 
 1. Introduction
 ---------------
@@ -77,7 +77,7 @@ Macintosh Tcl is distributed in three different forms.  This
 should make it easier to only download what you need.  The 
 packages are as follows:
 
-mactk8.1a2.sea.hqx
+mactk8.1b1.sea.hqx
 
     This distribution is a "binary" only release.  It contains an
     installer program that will install a 68k, PowerPC, or Fat
@@ -85,15 +85,15 @@ mactk8.1a2.sea.hqx
     it installs the Tcl & Tk libraries in the Extensions folder inside
     your System Folder.
 
-mactcltk-full-8.1a2.sea.hqx
+mactcltk-full-8.1b1.sea.hqx
 
     This release contains the full release of Tcl and Tk for the
     Macintosh plus the More Files packages which Macintosh Tcl and Tk
     rely on.
 
-mactcl-source-8.1a2.sea.hqx
+mactcl-source-8.1b1.sea.hqx
 
-    This release contains the complete source for Tcl 8.0.  In
+    This release contains the complete source for Tcl 8.1.  In
     addition, Metrowerks CodeWarrior libraries and project files
     are included.  However, you must already have the More Files
     package to compile this code.
@@ -132,7 +132,7 @@ following items:
 There are two sets of project files included with the package. The ones
 we use for the release are for CodeWarrior Pro 3, and are not compatible
 with CodeWarrior Gold release 11 and earlier. We have included the files
-for earlier versions of CodeWarrior in the folder tcl8.0:mac:CW11 Projects,
+for earlier versions of CodeWarrior in the folder tcl8.1:mac:CW11 Projects,
 but they are unsupported, and a little out of date.
 
 As of Tcl8.0p2, the code will also build under CW Pro 2.  The only

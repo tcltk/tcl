@@ -1,3 +1,7 @@
+1998-12-02    <welch@SAGE>
+
+	* Updated patchlevel to 8.1b1
+
 1998-12-02    <stanton@GASPODE>
 
 	* generic/regc_color.c (subcolor): Added check for error case to
