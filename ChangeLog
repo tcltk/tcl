@@ -1,3 +1,9 @@
+2001-08-23  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* unix/tclUnixFCmd.c:
+	* generic/tclIOUtil.c:
+	* generic/tclFileName.c: corrected minor compiler warnings.
+
 2001-08-24 Vince Darley <vincentdarley@users.sourceforge.net>
 
 	Variety of small filesystem and vfs issues fixed or improved.
