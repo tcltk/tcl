@@ -7,7 +7,7 @@
  * Copyright (c) 1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclUnixInit.c,v 1.51 2004/11/19 06:28:31 das Exp $
+ * RCS: @(#) $Id: tclUnixInit.c,v 1.52 2004/11/22 22:13:40 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -335,7 +335,7 @@ CONST char *path;		/* Path to the executable in native
     Tcl_DString buffer, ds;
     int pathc;
     CONST char **pathv;
-    char installLib[LIBRARY_SIZE], developLib[LIBRARY_SIZE];
+    char installLib[LIBRARY_SIZE];
 
     Tcl_DStringInit(&ds);
     pathPtr = Tcl_NewObj();
@@ -343,12 +343,10 @@ CONST char *path;		/* Path to the executable in native
     /*
      * Initialize the substrings used when locating an executable.  The
      * installLib variable computes the path as though the executable
-     * is installed.  The developLib computes the path as though the
-     * executable is run from a develpment directory.
+     * is installed.
      */
 
     sprintf(installLib, "lib/tcl%s", TCL_VERSION);
-    sprintf(developLib, "tcl%s/library", TCL_PATCH_LEVEL);
 
     /*
      * Look for the library relative to default encoding dir.
@@ -395,109 +393,6 @@ CONST char *path;		/* Path to the executable in native
 	    Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
 	    Tcl_DStringFree(&ds);
 	}
-	ckfree((char *) pathv);
-    }
-
-    /*
-     * Look for the library relative to the executable.  This algorithm
-     * should be the same as the one in the tcl_findLibrary procedure.
-     *
-     * This code looks in the following directories:
-     *
-     *	<bindir>/../<installLib>
-     *	  (e.g. /usr/local/bin/../lib/tcl8.4)
-     *	<bindir>/../../<installLib>
-     *	  (e.g. /usr/local/TclPro/solaris-sparc/bin/../../lib/tcl8.4)
-     *	<bindir>/../library
-     *	  (e.g. /usr/src/tcl8.4.0/unix/../library)
-     *	<bindir>/../../library
-     *	  (e.g. /usr/src/tcl8.4.0/unix/solaris-sparc/../../library)
-     *	<bindir>/../../<developLib>
-     *	  (e.g. /usr/src/tcl8.4.0/unix/../../tcl8.4.0/library)
-     *	<bindir>/../../../<developLib>
-     *	  (e.g. /usr/src/tcl8.4.0/unix/solaris-sparc/../../../tcl8.4.0/library)
-     */
-
-     /*
-      * The variable path holds an absolute path.  Take care not to
-      * overwrite pathv[0] since that might produce a relative path.
-      */
-
-    if (0 && path != NULL) {
-	int i, origc;
-	CONST char **origv;
-
-	Tcl_SplitPath(path, &origc, &origv);
-	pathc = 0;
-	pathv = (CONST char **) ckalloc((unsigned int)(origc * sizeof(char *)));
-	for (i=0; i< origc; i++) {
-	    if (origv[i][0] == '.') {
-		if (strcmp(origv[i], ".") == 0) {
-		    /* do nothing */
-		} else if (strcmp(origv[i], "..") == 0) {
-		    pathc--;
-		} else {
-		    pathv[pathc++] = origv[i];
-		}
-	    } else {
-		pathv[pathc++] = origv[i];
-	    }
-	}
-	if (pathc > 2) {
-	    str = pathv[pathc - 2];
-	    pathv[pathc - 2] = installLib;
-	    path = Tcl_JoinPath(pathc - 1, pathv, &ds);
-	    pathv[pathc - 2] = str;
-	    objPtr = Tcl_NewStringObj(path, Tcl_DStringLength(&ds));
-	    Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
-	    Tcl_DStringFree(&ds);
-	}
-	if (pathc > 3) {
-	    str = pathv[pathc - 3];
-	    pathv[pathc - 3] = installLib;
-	    path = Tcl_JoinPath(pathc - 2, pathv, &ds);
-	    pathv[pathc - 3] = str;
-	    objPtr = Tcl_NewStringObj(path, Tcl_DStringLength(&ds));
-	    Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
-	    Tcl_DStringFree(&ds);
-	}
-	if (pathc > 2) {
-	    str = pathv[pathc - 2];
-	    pathv[pathc - 2] = "library";
-	    path = Tcl_JoinPath(pathc - 1, pathv, &ds);
-	    pathv[pathc - 2] = str;
-	    objPtr = Tcl_NewStringObj(path, Tcl_DStringLength(&ds));
-	    Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
-	    Tcl_DStringFree(&ds);
-	}
-	if (pathc > 3) {
-	    str = pathv[pathc - 3];
-	    pathv[pathc - 3] = "library";
-	    path = Tcl_JoinPath(pathc - 2, pathv, &ds);
-	    pathv[pathc - 3] = str;
-	    objPtr = Tcl_NewStringObj(path, Tcl_DStringLength(&ds));
-	    Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
-	    Tcl_DStringFree(&ds);
-	}
-	if (pathc > 3) {
-	    str = pathv[pathc - 3];
-	    pathv[pathc - 3] = developLib;
-	    path = Tcl_JoinPath(pathc - 2, pathv, &ds);
-	    pathv[pathc - 3] = str;
-	    objPtr = Tcl_NewStringObj(path, Tcl_DStringLength(&ds));
-	    Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
-	    Tcl_DStringFree(&ds);
-	}
-	if (pathc > 4) {
-	    str = pathv[pathc - 4];
-	    pathv[pathc - 4] = developLib;
-	    path = Tcl_JoinPath(pathc - 3, pathv, &ds);
-	    pathv[pathc - 4] = str;
-	    objPtr = Tcl_NewStringObj(path, Tcl_DStringLength(&ds));
-	    Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
-	    Tcl_DStringFree(&ds);
-	}
-	ckfree((char *) origv);
 	ckfree((char *) pathv);
     }
 
