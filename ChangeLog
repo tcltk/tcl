@@ -1,3 +1,8 @@
+2004-10-17  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclResult.c: removed unused variable [Bug 1048588]. 
+	Thanks to Daniel South.
+
 2004-10-15  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclCmdMZ.c (TclProcessReturn):	Now that primary
