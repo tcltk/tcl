@@ -10,7 +10,7 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.test,v 1.7 1999/08/27 01:17:06 jenn Exp $
+# RCS: @(#) $Id: tcltest.test,v 1.8 1999/08/27 21:45:18 jenn Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -29,7 +29,7 @@ makeFile {
     test c-1.0 {test c} {knownBug} {
     } {}
     ::tcltest::cleanupTests
-    return
+    exit
 } test.tcl
 
 # test -help
@@ -158,6 +158,7 @@ makeFile {
     ::tcltest::PrintError "a really really long string containing a \
 	    \"Really/Long/Path/that/contains/no/spaces/and/is/longer/than/eighty/characters/to/see/what/happens\"" 
     ::tcltest::PrintError "Problem renaming file: error renaming \"Z:/ws/tcl8.2/win32-ix86/tests/core\" to \"Z:/ws/tcl8.2/win32-ix86/tests/movecore-core\""
+    exit
 } printerror.tcl
 
 # -outfile, -errfile
@@ -217,7 +218,7 @@ makeFile {
     package require tcltest
     namespace import ::tcltest::*
     makeFile {} a.tmp
-    return
+    exit
 } a.tcl
 
 makeFile {} thisdirectoryisafile
@@ -327,7 +328,7 @@ makeFile {
     package require tcltest
     namespace import ::tcltest::*
     puts "=$::tcltest::parameters="
-    return
+    exit
 } args.tcl
 
 # -args

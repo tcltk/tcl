@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: io.test,v 1.11 1999/08/27 01:17:05 jenn Exp $
+# RCS: @(#) $Id: io.test,v 1.12 1999/08/27 21:45:17 jenn Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -26,14 +26,6 @@ if {"[info commands testchannel]" != "testchannel"} {
 }
 
 ::tcltest::saveState
-
-set ::tcltest::testConstraints(knownBugThreadedLinux) [expr \
-	{($tcl_platform(os) != "Linux") \
-	&& ([info commands testthread] != {})}]
-
-set ::tcltest::testConstraints(knownBugThreadedSolaris) [expr \
-	{($tcl_platform(os) != "SunOS") \
-	&& ([info commands testthread] != {})}]
 
 removeFile test1
 removeFile pipe
@@ -1033,7 +1025,7 @@ test io-6.55 {Tcl_GetsObj: overconverted} {
     close $f
     set x
 } [list 8 "there\u4e00ok" 11 "\u4e01more bytes" 4 "here"]
-test io-6.56 {Tcl_GetsObj: incomplete lines should disable file events} {stdio knownBugThreadedSolaris knownBugThreadedLinux} {
+test io-6.56 {Tcl_GetsObj: incomplete lines should disable file events} {stdio} {
     update
     set f [open "|[list $::tcltest::tcltest cat]" w+]
     fconfigure $f -buffering none
@@ -1427,7 +1419,7 @@ test io-12.5 {ReadChars: fileevents on partial characters} {stdio} {
     set x
 } "{} timeout {} timeout \u7266 {} eof 0 {}"
 
-test io-13.1 {TranslateInputEOL: cr mode} {knownBugThreadedLinux} {
+test io-13.1 {TranslateInputEOL: cr mode} {} {
     set f [open test1 w]
     fconfigure $f -translation lf
     puts -nonewline $f "abcd\rdef\r"
@@ -1488,7 +1480,7 @@ test io-13.5 {TranslateInputEOL: crlf mode: naked lf} {
     close $f
     set x
 } "abcd\ndef\nfgh"
-test io-13.6 {TranslateInputEOL: auto mode: saw cr in last segment} {stdio knownBugThreadedSolaris knownBugThreadedLinux} {
+test io-13.6 {TranslateInputEOL: auto mode: saw cr in last segment} {stdio} {
     # (chanPtr->flags & INPUT_SAW_CR)
     # This test may fail on slower machines.
 
@@ -2048,7 +2040,7 @@ test io-27.5 {FlushChannel, implicit flush when buffer fills and on close} \
     set l
 } {0 60 72}
 test io-27.6 {FlushChannel, async flushing, async close} \
-	{stdio asyncPipeClose knownBugThreadedLinux} {
+	{stdio asyncPipeClose } {
     removeFile pipe
     removeFile output
     set f [open pipe w]
@@ -5463,7 +5455,7 @@ test io-45.3 {DeleteFileEvent, cleanup on close} {
 
 if {[info commands testfevent] == "testfevent"} {
 
-    test io-46.1 {Tcl event loop vs multiple interpreters} {knownBugThreadedLinux} {
+    test io-46.1 {Tcl event loop vs multiple interpreters} {} {
     testfevent create
     testfevent cmd {
         set f [open foo r]
@@ -6118,7 +6110,7 @@ test io-49.5 {testing crlf reading, leftover cr disgorgment} {
     set l
 } [list 7 a\rb\rc 7 {} 7 1]
     
-test io-50.1 {testing handler deletion} {knownBugThreadedSolaris knownBugThreadedLinux} {
+test io-50.1 {testing handler deletion} {} {
     removeFile test1
     set f [open test1 w]
     close $f
@@ -6134,7 +6126,7 @@ test io-50.1 {testing handler deletion} {knownBugThreadedSolaris knownBugThreade
     close $f
     set z
 } called
-test io-50.2 {testing handler deletion with multiple handlers} {knownBugThreadedSolaris knownBugThreadedLinux} {
+test io-50.2 {testing handler deletion with multiple handlers} {} {
     removeFile test1
     set f [open test1 w]
     close $f
@@ -6152,7 +6144,7 @@ test io-50.2 {testing handler deletion with multiple handlers} {knownBugThreaded
     string compare [string tolower $z] \
 	[list [list called delhandler $f 0] [list called delhandler $f 1]]
 } 0
-test io-50.3 {testing handler deletion with multiple handlers} {knownBugThreadedSolaris knownBugThreadedLinux} {
+test io-50.3 {testing handler deletion with multiple handlers} {} {
     removeFile test1
     set f [open test1 w]
     close $f
@@ -6178,7 +6170,7 @@ test io-50.3 {testing handler deletion with multiple handlers} {knownBugThreaded
 	[list [list delhandler $f 0 called] \
 	      [list delhandler $f 0 deleted myself]]
 } 0
-test io-50.4 {testing handler deletion vs reentrant calls} {knownBugThreadedSolaris knownBugThreadedLinux} {
+test io-50.4 {testing handler deletion vs reentrant calls} {} {
     removeFile test1
     set f [open test1 w]
     close $f
@@ -6202,7 +6194,7 @@ test io-50.4 {testing handler deletion vs reentrant calls} {knownBugThreadedSola
     string compare [string tolower $z] \
 	{{delrecursive calling recursive} {delrecursive deleting recursive}}
 } 0
-test io-50.5 {testing handler deletion vs reentrant calls} {knownBugThreadedSolaris knownBugThreadedLinux} {
+test io-50.5 {testing handler deletion vs reentrant calls} {} {
     removeFile test1
     set f [open test1 w]
     close $f
@@ -6235,7 +6227,7 @@ test io-50.5 {testing handler deletion vs reentrant calls} {knownBugThreadedSola
 	[list {del calling recursive} {del deleted notcalled} \
 	      {del deleted myself} {del after update}]
 } 0
-test io-50.6 {testing handler deletion vs reentrant calls} {knownBugThreadedSolaris knownBugThreadedLinux} {
+test io-50.6 {testing handler deletion vs reentrant calls} {} {
     removeFile test1
     set f [open test1 w]
     close $f

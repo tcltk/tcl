@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: event.test,v 1.9 1999/08/27 01:17:05 jenn Exp $
+# RCS: @(#) $Id: event.test,v 1.10 1999/08/27 21:45:17 jenn Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -23,15 +23,7 @@ set ::tcltest::testConstraints(testexithandler) \
 set ::tcltest::testConstraints(testfilewait) \
 	[expr {[info commands testfilewait] != {}}]
 
-set ::tcltest::testConstraints(knownBugThreadedLinux) [expr \
-	{($tcl_platform(os) != "Linux") \
-	&& ([info commands testthread] != {})}]
-
-set ::tcltest::testConstraints(knownBugThreadedSolaris) [expr \
-	{($tcl_platform(os) != "SunOS") \
-	&& ([info commands testthread] != {})}]
-
-test event-1.1 {Tcl_CreateFileHandler, reading} {testfilehandler knownBugThreadedLinux knownBugThreadedSolaris} {
+test event-1.1 {Tcl_CreateFileHandler, reading} {testfilehandler} {
     testfilehandler close
     testfilehandler create 0 readable off
     testfilehandler clear 0
@@ -375,7 +367,7 @@ test event-11.3 {Tcl_VwaitCmd procedure} {
     set x 1
     list [catch {vwait x(1)} msg] $msg
 } {1 {can't trace "x(1)": variable isn't array}}
-test event-11.4 {Tcl_VwaitCmd procedure} {knownBugThreadedLinux} {
+test event-11.4 {Tcl_VwaitCmd procedure} {} {
     foreach i [after info] {
 	after cancel $i
     }
