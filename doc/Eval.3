@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Eval.3,v 1.12 2002/08/05 03:24:39 dgp Exp $
+'\" RCS: @(#) $Id: Eval.3,v 1.12.2.1 2003/03/19 20:06:50 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_Eval 3 8.1 Tcl "Tcl Library Procedures"
@@ -91,7 +91,8 @@ can be skipped if the object is evaluated again in the future.
 The return value from \fBTcl_EvalObjEx\fR (and all the other procedures
 described here) is a Tcl completion code with
 one of the values \fBTCL_OK\fR, \fBTCL_ERROR\fR, \fBTCL_RETURN\fR,
-\fBTCL_BREAK\fR, or \fBTCL_CONTINUE\fR.
+\fBTCL_BREAK\fR, or \fBTCL_CONTINUE\fR, or possibly some other
+integer value originating in an extension.
 In addition, a result value or error message is left in \fIinterp\fR's
 result; it can be retrieved using \fBTcl_GetObjResult\fR.
 .PP
