@@ -19,10 +19,11 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 # 
-# RCS: @(#) $Id: checkLibraryDoc.tcl,v 1.2 1999/04/16 00:47:38 stanton Exp $
+# RCS: @(#) $Id: checkLibraryDoc.tcl,v 1.3 1999/04/16 18:48:25 surles Exp $
 
 
 #lappend auto_path "c:/program\ files/tclpro1.2/win32-ix86/bin"
+lappend auto_path "/home/surles/cvs/tclx8.0/tcl/unix"
 if {[catch {package require Tclx}]} {
     puts "error: could not load TclX.  Please set TCL_LIBRARY."
     exit 1
@@ -55,6 +56,37 @@ set StructList {
     Tcl_Value \
     Tcl_ValueType \
     Tcl_Var \
+    Tk_3DBorder \
+    Tk_ArgvInfo \
+    Tk_BindingTable \
+    Tk_Canvas \
+    Tk_CanvasTextInfo \
+    Tk_ConfigSpec \
+    Tk_ConfigTypes \
+    Tk_Cursor \
+    Tk_CustomOption \
+    Tk_ErrorHandler \
+    Tk_FakeWin \
+    Tk_Font \
+    Tk_FontMetrics \
+    Tk_GeomMgr \
+    Tk_Image \
+    Tk_ImageMaster \
+    Tk_ImageType \
+    Tk_Item \
+    Tk_ItemType \
+    Tk_OptionSpec\
+    Tk_OptionTable \
+    Tk_OptionType \
+    Tk_PhotoHandle \
+    Tk_PhotoImageBlock \
+    Tk_PhotoImageFormat \
+    Tk_PostscriptInfo \
+    Tk_SavedOption \
+    Tk_SavedOptions \
+    Tk_SegType \
+    Tk_TextLayout \
+    Tk_Window \
 }
 
 # Misc junk that appears in the comments of the source.  This just 
@@ -64,6 +96,7 @@ set CommentList {
     Tcl_Create\[Obj\]Command \
     Tcl_DecrRefCount\\n \
     Tcl_NewObj\\n \
+    Tk_GetXXX \
 }
 
 # Main entry point to this script.
@@ -109,6 +142,8 @@ proc compare {list1 list2} {
 # the results to the file.
 
 proc filter {code docs dir pkg {outFile stdout}} {
+    set apis  {}
+
     # A list of Tcl command APIs.  These are not documented.
     # This list should just be verified for accuracy.
 
@@ -129,14 +164,20 @@ proc filter {code docs dir pkg {outFile stdout}} {
 
     set misc [grepMisc $dir $pkg]
 
+    set pat1 ".*(${pkg}_\[A-z0-9]+).*$"
+    
     # A list of APIs in the source, not in the docs.
     # This list should just be verified for accuracy.
 
     foreach x $code {
 	if {[string match *Cmd $x]} {
-	    lappend cmds $x
+	    if {[string match ${pkg}* $x]} {
+		lappend cmds $x
+	    }
 	} elseif {[string match *Proc $x]} {
-	    lappend procs $x
+	    if {[string match ${pkg}* $x]} {
+		lappend procs $x
+	    }
 	} elseif {[lsearch -exact $decls $x] >= 0} {
 	    # No Op.
 	} elseif {[lsearch -exact $misc $x] >= 0} {
@@ -172,10 +213,10 @@ proc dump {list title file} {
 # (e.g., Tcl_Exit).  Return a list of APIs.
 
 proc grepCode {dir pkg} {
-    set apis [exec grep "${pkg}_\.\*" "${dir}/\*/\*\.\[ch\]" | cat]
-    set pat1 ".*(Tcl_\[A-z0-9]+).*$"
- 
-    foreach a [split $apis "\n"] {
+    set apis [myGrep "${pkg}_\.\*" "${dir}/\*/\*\.\[ch\]"]
+    set pat1 ".*(${pkg}_\[A-z0-9]+).*$"
+
+    foreach a $apis {
 	if {[regexp --  $pat1 $a main n1]} {
 	    set result([string trim $n1]) 1
 	}
@@ -187,8 +228,8 @@ proc grepCode {dir pkg} {
 # (e.g., Tcl_Exit).  Return a list of APIs.
 
 proc grepDocs {dir pkg} {
-    set apis [exec grep "\\fB${pkg}_\.\*\\fR" "${dir}/doc/\*\.3" | cat]
-    set pat1 ".*(Tcl_\[A-z0-9]+).*$"
+    set apis [myGrep "\\fB${pkg}_\.\*\\fR" "${dir}/doc/\*\.3"]
+    set pat1 ".*(${pkg}_\[A-z0-9]+)\\\\fR.*$"
 
     foreach a $apis {
 	if {[regexp -- $pat1 $a main n1]} {
@@ -203,8 +244,8 @@ proc grepDocs {dir pkg} {
 
 proc grepDecl {dir pkg} {
     set file [file join $dir generic "[string tolower $pkg]IntDecls.h"] 
-    set apis [exec grep "^EXTERN.*\[ \t\]Tcl_.*" $file | cat]
-    set pat1 ".*(Tcl_\[A-z0-9]+).*$"
+    set apis [myGrep "^EXTERN.*\[ \t\]${pkg}_.*" $file]
+    set pat1 ".*(${pkg}_\[A-z0-9]+).*$"
 
     foreach a $apis {
 	if {[regexp -- $pat1 $a main n1]} {
@@ -221,9 +262,8 @@ proc grepMisc {dir pkg} {
     global CommentList
     global StructList
     
-    set apis [exec grep "^EXTERN.*\[ \t\]Tcl_Db.*" "${dir}/\*/\*\.\[ch\]" \
-	    | cat]
-    set pat1 ".*(Tcl_\[A-z0-9]+).*$"
+    set apis [myGrep "^EXTERN.*\[ \t\]${pkg}_Db.*" "${dir}/\*/\*\.\[ch\]"]
+    set pat1 ".*(${pkg}_\[A-z0-9]+).*$"
 
     foreach a $apis {
 	if {[regexp -- $pat1 $a main n1]} {
@@ -238,5 +278,19 @@ proc grepMisc {dir pkg} {
     return $result
 }
 
+proc myGrep {searchPat globPat} {
+    set result {}
+    foreach file [glob -nocomplain $globPat] {
+	set file [open $file r]
+	set data [read $file]
+	close $file
+	foreach line [split $data "\n"] {
+	    if {[regexp "^.*${searchPat}.*\$" $line]} {
+		lappend result $line
+	    }
+	}
+    }
+    return $result
+}
 main
 
