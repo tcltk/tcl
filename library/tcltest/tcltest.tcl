@@ -16,7 +16,7 @@
 # Contributions from Don Porter, NIST, 2002.  (not subject to US copyright)
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.tcl,v 1.86 2004/02/04 06:15:18 dgp Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.87 2004/02/18 01:41:42 dgp Exp $
 
 package require Tcl 8.3		;# uses [glob -directory]
 namespace eval tcltest {
@@ -630,7 +630,7 @@ namespace eval tcltest {
     }
 
     # Default verbosity is to show bodies of failed tests
-    Option -verbose body {
+    Option -verbose {body error} {
 	Takes any combination of the values 'p', 's', 'b', 't' and 'e'.
 	Test suite will display all passed tests if 'p' is specified, all
 	skipped tests if 's' is specified, the bodies of failed tests if
