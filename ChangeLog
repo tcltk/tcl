@@ -1,5 +1,9 @@
 1999-07-21    <redman@scriptics.com>
 	
+	* unix/Makefile.in: Added the Windows configure script to the
+	distribution file list, already shipping configure.in and the .m4
+	files, but needed the configure script itself.
+	
 	* win/makefile.vc: Changed version number of DDE package in VC++
 	makefile to use 1.1 instead of 1.0.
 
