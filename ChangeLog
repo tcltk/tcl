@@ -1,3 +1,10 @@
+2003-03-26  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* unix/configure: Regen.
+	* unix/tcl.m4 (SC_CONFIG_CFLAGS, SC_TCL_LINK_LIBS):
+	Add BeOS system to SC_CONFIG_CFLAGS. Check for
+	inet_ntoa in -lbind, needed for BeOS.
+
 2003-03-26  Don Porter  <dgp@users.sourceforge.net>
 
 	* doc/tcltest.n:
