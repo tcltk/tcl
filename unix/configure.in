@@ -3,7 +3,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.77 2001/12/19 11:03:20 mdejong Exp $
+# RCS: @(#) $Id: configure.in,v 1.78 2002/01/11 20:46:34 mdejong Exp $
 
 AC_INIT(../generic/tcl.h)
 
@@ -23,6 +23,8 @@ fi
 if test "${exec_prefix}" = "NONE"; then
     exec_prefix=$prefix
 fi
+# libdir must be a fully qualified path and (not ${exec_prefix}/lib)
+eval libdir="$libdir"
 TCL_SRC_DIR=`cd $srcdir/..; pwd`
 
 #------------------------------------------------------------------------
@@ -430,7 +432,7 @@ if test "$SHARED_BUILD" = "0" -o $TCL_NEEDS_EXP_FILE = 0; then
         TCL_LIB_FLAG="-ltcl`echo ${TCL_VERSION} | tr -d .`\${TCL_DBGX}"
     fi
     TCL_BUILD_LIB_SPEC="-L`pwd` ${TCL_LIB_FLAG}"
-    TCL_LIB_SPEC="-L${exec_prefix}/lib ${TCL_LIB_FLAG}"
+    TCL_LIB_SPEC="-L${libdir} ${TCL_LIB_FLAG}"
 else
     TCL_BUILD_EXP_FILE="lib.exp"
     eval "TCL_EXP_FILE=libtcl${TCL_EXPORT_FILE_SUFFIX}"
@@ -440,10 +442,10 @@ else
     
     if test "$GCC" = "yes" ; then
 	TCL_BUILD_LIB_SPEC="-Wl,-bI:`pwd`/${TCL_BUILD_EXP_FILE} -L`pwd`"
-	TCL_LIB_SPEC="-Wl,-bI:${exec_prefix}/lib/${TCL_EXP_FILE} -L`pwd`"    
+	TCL_LIB_SPEC="-Wl,-bI:${libdir}/${TCL_EXP_FILE} -L`pwd`"    
     else
 	TCL_BUILD_LIB_SPEC="-bI:`pwd`/${TCL_BUILD_EXP_FILE}"
-	TCL_LIB_SPEC="-bI:${exec_prefix}/lib/${TCL_EXP_FILE}"    
+	TCL_LIB_SPEC="-bI:${libdir}/${TCL_EXP_FILE}"    
     fi
 fi
 VERSION='${VERSION}'
@@ -460,7 +462,7 @@ VERSION=${TCL_VERSION}
 #--------------------------------------------------------------------
 
 if test "$prefix" != "$exec_prefix"; then
-    TCL_PACKAGE_PATH="${exec_prefix}/lib ${prefix}/lib"
+    TCL_PACKAGE_PATH="${libdir} ${prefix}/lib"
 else
     TCL_PACKAGE_PATH="${prefix}/lib"
 fi
@@ -484,9 +486,9 @@ else
 fi
 
 TCL_BUILD_STUB_LIB_SPEC="-L`pwd` ${TCL_STUB_LIB_FLAG}"
-TCL_STUB_LIB_SPEC="-L${exec_prefix}/lib ${TCL_STUB_LIB_FLAG}"
+TCL_STUB_LIB_SPEC="-L${libdir} ${TCL_STUB_LIB_FLAG}"
 TCL_BUILD_STUB_LIB_PATH="`pwd`/${TCL_STUB_LIB_FILE}"
-TCL_STUB_LIB_PATH="${exec_prefix}/lib/${TCL_STUB_LIB_FILE}"
+TCL_STUB_LIB_PATH="${libdir}/${TCL_STUB_LIB_FILE}"
 
 # Install time header dir can be set via --includedir
 eval "TCL_INCLUDE_SPEC=\"-I${includedir}\""
