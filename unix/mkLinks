@@ -15,6 +15,8 @@
 # The script takes one argument, which is the name of the directory
 # where the manual entries have been installed.
 
+S=""
+
 ZIP=true
 while true; do
     case $1 in
