@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.77.2.11 2003/10/22 22:35:46 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.77.2.12 2003/11/20 19:05:44 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -5572,15 +5572,22 @@ Tcl_FSGetNormalizedPath(interp, pathObjPtr)
 		    }
 		    if (drive[0] == drive_c) {
 			absolutePath = Tcl_DuplicateObj(useThisCwd);
-			Tcl_IncrRefCount(absolutePath);
-			Tcl_AppendToObj(absolutePath, "/", 1);
-			Tcl_AppendToObj(absolutePath, path+2, -1);
 			/* We have a refCount on the cwd */
 		    } else {
-			/* We just can't handle it correctly here */
 			Tcl_DecrRefCount(useThisCwd);
 			useThisCwd = NULL;
+			/* 
+			 * The path is not in the current drive, but
+			 * is volume-relative.  The way Tcl 8.3 handles
+			 * this is that it treats such a path as
+			 * relative to the root of the drive.  We
+			 * therefore behave the same here.
+			 */
+			absolutePath = Tcl_NewStringObj(path, 2);
 		    }
+		    Tcl_IncrRefCount(absolutePath);
+		    Tcl_AppendToObj(absolutePath, "/", 1);
+		    Tcl_AppendToObj(absolutePath, path+2, -1);
 		}
 #endif /* __WIN32__ */
 	    }
