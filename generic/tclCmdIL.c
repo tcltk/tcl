@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.47 2003/02/27 16:01:55 dkf Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.47.2.1 2003/04/16 23:31:43 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -323,12 +323,10 @@ Tcl_IncrObjCmd(dummy, interp, objc, objv)
     if (objc == 2) {
 	incrAmount = 1;
     } else {
-#ifdef TCL_WIDE_INT_IS_LONG
 	if (Tcl_GetLongFromObj(interp, objv[2], &incrAmount) != TCL_OK) {
 	    Tcl_AddErrorInfo(interp, "\n    (reading increment)");
 	    return TCL_ERROR;
 	}
-#else
 	/*
 	 * Need to be a bit cautious to ensure that [expr]-like rules
 	 * are enforced for interpretation of wide integers, despite
@@ -337,7 +335,7 @@ Tcl_IncrObjCmd(dummy, interp, objc, objv)
 	if (objv[2]->typePtr == &tclIntType) {
 	    incrAmount = objv[2]->internalRep.longValue;
 	} else if (objv[2]->typePtr == &tclWideIntType) {
-	    incrAmount = Tcl_WideAsLong(objv[2]->internalRep.wideValue);
+	    TclGetLongFromWide(incrAmount,objv[2]);
 	} else {
 	    Tcl_WideInt wide;
 
@@ -352,7 +350,6 @@ Tcl_IncrObjCmd(dummy, interp, objc, objv)
 		objv[2]->internalRep.longValue = incrAmount;
 	    }
 	}
-#endif
     }
     
     /*
