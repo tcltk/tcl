@@ -13,7 +13,7 @@
  *
  * This code contributed by Karl Lehenbauer and Mark Diekhans
  *
- * RCS: @(#) $Id: tclCkalloc.c,v 1.9 2000/09/14 18:42:30 ericm Exp $
+ * RCS: @(#) $Id: tclCkalloc.c,v 1.10 2000/12/08 04:22:43 ericm Exp $
  */
 
 #include "tclInt.h"
@@ -445,6 +445,92 @@ Tcl_DbCkalloc(size, file, line)
 
     return result->body;
 }
+
+char *
+Tcl_AttemptDbCkalloc(size, file, line)
+    unsigned int size;
+    char        *file;
+    int          line;
+{
+    struct mem_header *result;
+
+    if (validate_memory)
+        Tcl_ValidateAllMemory (file, line);
+
+    result = (struct mem_header *) TclpAlloc((unsigned)size + 
+                              sizeof(struct mem_header) + HIGH_GUARD_SIZE);
+    if (result == NULL) {
+        fflush(stdout);
+        TclDumpMemoryInfo(stderr);
+	return NULL;
+    }
+
+    /*
+     * Fill in guard zones and size.  Also initialize the contents of
+     * the block with bogus bytes to detect uses of initialized data.
+     * Link into allocated list.
+     */
+    if (init_malloced_bodies) {
+        memset ((VOID *) result, GUARD_VALUE,
+		size + sizeof(struct mem_header) + HIGH_GUARD_SIZE);
+    } else {
+	memset ((char *) result->low_guard, GUARD_VALUE, LOW_GUARD_SIZE);
+	memset (result->body + size, GUARD_VALUE, HIGH_GUARD_SIZE);
+    }
+    if (!ckallocInit) {
+	TclInitDbCkalloc();
+    }
+    Tcl_MutexLock(ckallocMutexPtr);
+    result->length = size;
+    result->tagPtr = curTagPtr;
+    if (curTagPtr != NULL) {
+	curTagPtr->refCount++;
+    }
+    result->file = file;
+    result->line = line;
+    result->flink = allocHead;
+    result->blink = NULL;
+
+    if (allocHead != NULL)
+        allocHead->blink = result;
+    allocHead = result;
+
+    total_mallocs++;
+    if (trace_on_at_malloc && (total_mallocs >= trace_on_at_malloc)) {
+        (void) fflush(stdout);
+        fprintf(stderr, "reached malloc trace enable point (%d)\n",
+                total_mallocs);
+        fflush(stderr);
+        alloc_tracing = TRUE;
+        trace_on_at_malloc = 0;
+    }
+
+    if (alloc_tracing)
+        fprintf(stderr,"ckalloc %lx %d %s %d\n",
+		(long unsigned int) result->body, size, file, line);
+
+    if (break_on_malloc && (total_mallocs >= break_on_malloc)) {
+        break_on_malloc = 0;
+        (void) fflush(stdout);
+        fprintf(stderr,"reached malloc break limit (%d)\n", 
+                total_mallocs);
+        fprintf(stderr, "program will now enter C debugger\n");
+        (void) fflush(stderr);
+	abort();
+    }
+
+    current_malloc_packets++;
+    if (current_malloc_packets > maximum_malloc_packets)
+        maximum_malloc_packets = current_malloc_packets;
+    current_bytes_malloced += size;
+    if (current_bytes_malloced > maximum_bytes_malloced)
+        maximum_bytes_malloced = current_bytes_malloced;
+
+    Tcl_MutexUnlock(ckallocMutexPtr);
+
+    return result->body;
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -567,6 +653,41 @@ Tcl_DbCkrealloc(ptr, size, file, line)
 	copySize = memp->length;
     }
     new = Tcl_DbCkalloc(size, file, line);
+    memcpy((VOID *) new, (VOID *) ptr, (size_t) copySize);
+    Tcl_DbCkfree(ptr, file, line);
+    return new;
+}
+
+char *
+Tcl_AttemptDbCkrealloc(ptr, size, file, line)
+    char *ptr;
+    unsigned int size;
+    char *file;
+    int line;
+{
+    char *new;
+    unsigned int copySize;
+    struct mem_header *memp;
+
+    if (ptr == NULL) {
+	return Tcl_AttemptDbCkalloc(size, file, line);
+    }
+
+    /*
+     * See comment from Tcl_DbCkfree before you change the following
+     * line.
+     */
+
+    memp = (struct mem_header *) (((unsigned long) ptr) - BODY_OFFSET);
+
+    copySize = size;
+    if (copySize > (unsigned int) memp->length) {
+	copySize = memp->length;
+    }
+    new = Tcl_AttemptDbCkalloc(size, file, line);
+    if (new == NULL) {
+	return NULL;
+    }
     memcpy((VOID *) new, (VOID *) ptr, (size_t) copySize);
     Tcl_DbCkfree(ptr, file, line);
     return new;

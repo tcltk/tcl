@@ -7,6 +7,16 @@
 	the makefile.  Should probably be updated to use its real version
 	at some point. [Patch #102560, Bug #119421]
 
+2000-12-06  eric melski  <ericm@ajubasolutions.com>
+
+	* generic/tcl.h (attemptckalloc): Fixed typo for #define of
+	attemptckalloc (was defined to Tcl_AttempDbCkalloc, should have
+	been Tcl_AttemptDbCkalloc). [Bug: 124384]
+
+	* generic/tclCkalloc.c: Added
+	TCL_MEM_DEBUG versions of Tcl_AttemptDbCkrealloc and
+	Tcl_AttemptDbCkalloc. [Bug: 124384].
+
 2000-11-24  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* generic/tclExecute.c (TclExecuteByteCode): Logical negation "!"
