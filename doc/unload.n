@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: unload.n,v 1.1 2004/02/24 22:58:45 dkf Exp $
+'\" RCS: @(#) $Id: unload.n,v 1.2 2004/03/03 23:58:14 hobbs Exp $
 '\" 
 .so man.macros
 .TH unload n 8.5 Tcl "Tcl Built-In Commands"
@@ -93,7 +93,7 @@ library is to be unloaded.  The unload procedure must return
 successfully;  in the event of an error it should set the interpreter's result
 to point to an error message.  In this case, the result of the
 \fBunload\fR command will be the result returned by the unload procedure.
-.CE
+.PP
 The \fIflags\fR argument can be either \fBTCL_UNLOAD_DETACH_FROM_INTERPRETER\fR
 or \fBTCL_UNLOAD_DETACH_FROM_PROCESS\fR. In case the library will remain
 attached to the process after the unload procedure returns (i.e. because
