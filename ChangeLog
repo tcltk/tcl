@@ -1,8 +1,12 @@
 2001-08-06  Andreas Kupries <andreas_kupries@users.sourceforge.net>
 
 	* generic/tclIOCmd.c (Tcl_GetsObjCmd): Applied patch from SF item
-	  [442665] to fix the bug reported by it.
-
+	  [442665] to fix the bug reported by it. The function can corrupt
+	  a freed object if it is called with objc == 3. This is because
+	  it retrieves resultPtr and does not increment its reference
+	  count, but then calls Tcl_ObjSetVar2, which causes the retrieved
+	  resultPtr object to be released.
+	
 2001-08-06  Don Porter <dgp@users.sourceforge.net>
 
 	* doc/tclsh.1:  Added note that the tclsh program is frequently
