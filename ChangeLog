@@ -1,5 +1,10 @@
 2003-06-24  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
+	* doc/encoding.n: Corrected the docs to say that [source] uses the
+	system encoding, which it always did anyway (since 8.1) [Bug 742100]
+
+2003-06-24  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
 	* generic/tclHash.c (Tcl_HashStats): Prevented occurrence of
 	division-by-zero problems.  [Bug 759749]
 
