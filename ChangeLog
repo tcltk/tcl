@@ -1,3 +1,9 @@
+2001-11-10  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* unix/Makefile.in:
+	* win/Makefile.in: Add "make gdb" target. This target
+	can run tclsh inside either gdb or insight.
+
 2001-11-10  David Gravereaux <davygrvy@pobox.com>
 
 	* win/makefile.vc:  Added a check to make sure one runs the makefile
