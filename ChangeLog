@@ -1,3 +1,12 @@
+2001-09-28  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* doc/lsort.n: Improved doc...
+	* generic/tclCmdIL.c (Tcl_LsortObjCmd, SortCompare): Made
+	offset-from-end indexing work, and factored out some "magic
+	numbers" for easier understanding.  [Bug #465674]
+	* tests/cmdIL.test (cmdIL-1.26): Added test for offset-from-end
+	indexing for lsort.
+
 2001-09-28  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* win/tclWinFCmd.c:
