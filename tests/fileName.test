@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fileName.test,v 1.27 2002/11/13 22:11:41 vincentdarley Exp $
+# RCS: @(#) $Id: fileName.test,v 1.28 2003/02/04 17:06:52 vincentdarley Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -1825,6 +1825,7 @@ test filename-17.1 {windows specific special files} {testsetplatform} {
 
 # cleanup
 catch {file delete -force C:/globTest}
+cd [temporaryDirectory]
 file delete -force globTest
 cd $oldpwd
 set env(HOME) $oldhome
@@ -1832,6 +1833,6 @@ if {[tcltest::testConstraint testsetplatform]} {
     testsetplatform $platform
     catch {unset platform}
 }
-catch {unset oldhome temp result}
+catch {unset oldhome temp result globPreResult}
 ::tcltest::cleanupTests
 return
