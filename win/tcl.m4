@@ -428,8 +428,8 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	CFLAGS_DEBUG=-g
 	CFLAGS_OPTIMIZE=-O
 	CFLAGS_WARNING="-Wall -Wconversion"
-	LDFLAGS_DEBUG=-g
-	LDFLAGS_OPTIMIZE=-O
+	LDFLAGS_DEBUG=
+	LDFLAGS_OPTIMIZE=
 
 	# Specify the CC output file names based on the target name
 	CC_OBJNAME="-o \[$]@"
