@@ -1,5 +1,10 @@
 2001-06-22  Mo DeJong  <mdejong@redhat.com>
 
+	* win/configure: Regen.
+	* win/tcl.m4: Fix silly typo in last checkin.
+
+2001-06-22  Mo DeJong  <mdejong@redhat.com>
+
 	* unix/Makefile.in: Set CFLAGS to @CFLAGS@ and @CFLAGS_DEFAULT@.
 	Set LDFLAGS to @LDFLAGS@ and @LDFLAGS_DEFAULT@. Add LDFLAGS_DEBUG
 	and LDFLAGS_OPTIMIZE to match the way CFLAGS_DEFAULT works.
