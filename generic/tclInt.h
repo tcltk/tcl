@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.1.2.11 1999/02/10 23:31:17 stanton Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.1.2.12 1999/03/10 06:49:17 stanton Exp $
  */
 
 #ifndef _TCLINT
@@ -49,15 +49,16 @@
 #else
 #include <string.h>
 #endif
-#if defined(__STDC__) || defined(HAS_STDARG)
-#   include <stdarg.h>
-#else
-#   include <varargs.h>
-#endif
 
+#undef TCL_STORAGE_CLASS
 #ifdef BUILD_tcl
-# undef TCL_STORAGE_CLASS
 # define TCL_STORAGE_CLASS DLLEXPORT
+#else
+# ifdef USE_TCL_STUBS
+#  define TCL_STORAGE_CLASS
+# else
+#  define TCL_STORAGE_CLASS DLLIMPORT
+# endif
 #endif
 
 /*
@@ -775,16 +776,6 @@ typedef struct MathFunc {
 } MathFunc;
 
 /*
- * Threads support.
- * These routines are used to implement Tcl_GetThreadData.
- */
-
-#ifdef TCL_THREADS
-EXTERN void TclpConditionNotify _ANSI_ARGS_((Tcl_Condition *condPtr));
-EXTERN void TclpConditionWait _ANSI_ARGS_((Tcl_Condition *condPtr, Tcl_Mutex *mutexPtr, Tcl_Time *timePtr));
-#endif
-
-/*
  * These are a thin layer over TclpThreadKeyDataGet and TclpThreadKeyDataSet
  * when threads are used, or an emulation if there are no threads.  These
  * are really internal and Tcl clients should use Tcl_GetThreadData.
@@ -1114,9 +1105,13 @@ typedef struct Interp {
     int errorLine;		/* When TCL_ERROR is returned, this gives
 				 * the line number in the command where the
 				 * error occurred (1 means first line). */
-    Tcl_Obj *objResultPtr;	/* If the last command returned an object
-				 * result, this points to it. Should not be
-				 * accessed directly; see comment above. */
+    struct TclStubs *stubTable;
+				/* Pointer to the exported Tcl stub table.
+				 * On previous versions of Tcl this is a
+				 * pointer to the objResultPtr or a pointer
+				 * to a buckets array in a hash table. We
+				 * therefore have to do some careful checking
+				 * before we can use this. */
 
     TclHandle handle;		/* Handle used to keep track of when this
 				 * interp is deleted. */
@@ -1267,6 +1262,9 @@ typedef struct Interp {
 				 * gross way. */
     char resultSpace[TCL_RESULT_SIZE+1];
 				/* Static space holding small results. */
+    Tcl_Obj *objResultPtr;	/* If the last command returned an object
+				 * result, this points to it. Should not be
+				 * accessed directly; see comment above. */
     Tcl_ThreadId threadId;	/* ID of thread that owns the interpreter */
 
     /*
@@ -1681,6 +1679,12 @@ typedef int (*TclObjCmdProcType) _ANSI_ARGS_((ClientData clientData,
 	Tcl_Interp *interp, int objc, struct Tcl_Obj * CONST objv[]));
 
 /*
+ * Opaque names for platform specific types.
+ */
+
+typedef struct TclpTime_t_ *TclpTime_t;
+
+/*
  *----------------------------------------------------------------
  * Variables shared among Tcl modules but not used by the outside world.
  *----------------------------------------------------------------
@@ -1700,6 +1704,7 @@ extern CONST TclFileAttrProcs	tclpFileAttrProcs[];
  */
 
 extern Tcl_ObjType	tclBooleanType;
+extern Tcl_ObjType	tclByteArrayType;
 extern Tcl_ObjType	tclByteCodeType;
 extern Tcl_ObjType	tclDoubleType;
 extern Tcl_ObjType	tclIntType;
@@ -1734,7 +1739,6 @@ extern char *		tclEmptyStringRep;
  *----------------------------------------------------------------
  */
 
-EXTERN void		panic _ANSI_ARGS_(TCL_VARARGS(char *,format));
 EXTERN int		TclAccess _ANSI_ARGS_((CONST char *path,
 			    int mode));
 EXTERN int		TclAccessDeleteProc _ANSI_ARGS_((TclAccessProc_ *proc));
@@ -1744,8 +1748,6 @@ EXTERN int		TclCleanupChildren _ANSI_ARGS_((Tcl_Interp *interp,
 			    int numPids, Tcl_Pid *pidPtr,
 			    Tcl_Channel errorChan));
 EXTERN void		TclCleanupCommand _ANSI_ARGS_((Command *cmdPtr));
-EXTERN int		TclCopyAndCollapse _ANSI_ARGS_((int count,
-			    CONST char *src, char *dst));
 EXTERN int		TclCopyChannel _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Channel inChan, Tcl_Channel outChan,
 			    int toRead, Tcl_Obj *cmdPtr));
@@ -1796,9 +1798,6 @@ EXTERN void		TclFinalizeMutex _ANSI_ARGS_((Tcl_Mutex *mutex));
 EXTERN void		TclFinalizeNotifier _ANSI_ARGS_((void));
 EXTERN void		TclFinalizeSynchronization _ANSI_ARGS_((void));
 EXTERN void		TclFinalizeThreadData _ANSI_ARGS_((void));
-EXTERN int		TclFindElement _ANSI_ARGS_((Tcl_Interp *interp,
-			    CONST char *list, int listLength, CONST char **elementPtr,
-			    CONST char **nextPtr, int *sizePtr, int *bracePtr));
 EXTERN Proc *		TclFindProc _ANSI_ARGS_((Interp *iPtr,
 			    char *procName));
 EXTERN int		TclFormatInt _ANSI_ARGS_((char *buffer, long n));
@@ -1811,8 +1810,6 @@ EXTERN int		TclGetDate _ANSI_ARGS_((char *p,
 EXTERN Tcl_Obj *	TclGetElementOfIndexedArray _ANSI_ARGS_((
 			    Tcl_Interp *interp, int localIndex,
 			    Tcl_Obj *elemPtr, int leaveErrorMsg));
-EXTERN char *		TclGetEnv _ANSI_ARGS_((CONST char *name,
-			    Tcl_DString *valuePtr));
 EXTERN char *		TclGetExtension _ANSI_ARGS_((char *name));
 EXTERN int		TclGetFrame _ANSI_ARGS_((Tcl_Interp *interp,
 			    char *string, CallFrame **framePtrPtr));
@@ -1866,7 +1863,6 @@ EXTERN void		TclInitNamespaceSubsystem _ANSI_ARGS_((void));
 EXTERN void		TclInitNotifier _ANSI_ARGS_((void));
 EXTERN void		TclInitObjSubsystem _ANSI_ARGS_((void));
 EXTERN void		TclInitSubsystems _ANSI_ARGS_((CONST char *argv0));
-EXTERN void		TclInterpInit _ANSI_ARGS_((Tcl_Interp *interp));
 EXTERN int		TclInvoke _ANSI_ARGS_((Tcl_Interp *interp,
 			    int argc, char **argv, int flags));
 EXTERN int		TclInvokeObjectCommand _ANSI_ARGS_((
@@ -1878,8 +1874,6 @@ EXTERN int		TclInvokeStringCommand _ANSI_ARGS_((
 EXTERN int		TclIsLocalScalar _ANSI_ARGS_((CONST char *src,
 			    int len));
 EXTERN Proc *		TclIsProc _ANSI_ARGS_((Command *cmdPtr));
-EXTERN int		TclLooksLikeInt _ANSI_ARGS_((char *bytes,
-			    int length));
 EXTERN Var *		TclLookupVar _ANSI_ARGS_((Tcl_Interp *interp,
 			    char *part1, char *part2, int flags, char *msg,
 			    int createPart1, int createPart2,
@@ -1902,7 +1896,6 @@ EXTERN int		TclOpenFileChannelInsertProc _ANSI_ARGS_((
 EXTERN int		TclpAccess _ANSI_ARGS_((CONST char *filename,
 			    int mode));
 EXTERN char *		TclpAlloc _ANSI_ARGS_((unsigned int size));
-EXTERN int		TclpChdir _ANSI_ARGS_((CONST char *dirName));
 EXTERN int		TclpCheckStackSpace _ANSI_ARGS_((void));
 EXTERN int		TclpCloseFile _ANSI_ARGS_((TclFile file));
 EXTERN int		TclpCopyFile _ANSI_ARGS_((CONST char *source,
@@ -1947,11 +1940,6 @@ EXTERN void		TclpInitLock _ANSI_ARGS_((void));
 EXTERN void		TclpInitPlatform _ANSI_ARGS_((void));
 EXTERN void		TclpInitUnlock _ANSI_ARGS_((void));
 EXTERN int		TclpListVolumes _ANSI_ARGS_((Tcl_Interp *interp));
-EXTERN int		TclpLoadFile _ANSI_ARGS_((Tcl_Interp *interp,
-			    char *fileName, char *sym1, char *sym2,
-			    Tcl_PackageInitProc **proc1Ptr,
-			    Tcl_PackageInitProc **proc2Ptr, 
-			    ClientData *clientDataPtr));
 EXTERN TclFile		TclpMakeFile _ANSI_ARGS_((Tcl_Channel channel,
 			    int direction));
 EXTERN void		TclpMasterLock _ANSI_ARGS_((void));
@@ -2051,20 +2039,6 @@ char *			TclUniCharToUtfDString _ANSI_ARGS_((
 			    Tcl_DString *dsPtr));
 Tcl_UniChar *		TclUtfToUniCharDString _ANSI_ARGS_((CONST char *string,
 			    int length, Tcl_DString *dsPtr));
-
-
-/*
- * The following macros denote malloc and free as the system calls
- * used to allocate new memory, rather than using Tcl's suballocation
- * scheme in tclAlloc.c.  These defines are used only in the files 
- * tclCkalloc.c and tclAlloc.c
- */
-
-#if USE_TCLALLOC == 0
-#   define TclpAlloc		malloc
-#   define TclpRealloc		realloc
-#   define TclpFree		free
-#endif
 
 /*
  *----------------------------------------------------------------
@@ -2417,73 +2391,7 @@ extern Tcl_Mutex tclObjMutex;
 #define TclGetString(objPtr) \
     ((objPtr)->bytes? (objPtr)->bytes : Tcl_GetString((objPtr)))
 
-/*
- *----------------------------------------------------------------
- * Procedures used in conjunction with Tcl namespaces. They are
- * defined here instead of in tcl.h since they are not stable yet.
- *----------------------------------------------------------------
- */
-
-EXTERN void		Tcl_AddInterpResolvers _ANSI_ARGS_((Tcl_Interp *interp,
-			    char *name, Tcl_ResolveCmdProc *cmdProc,
-			    Tcl_ResolveVarProc *varProc,
-			    Tcl_ResolveCompiledVarProc *compiledVarProc));
-EXTERN int		Tcl_AppendExportList _ANSI_ARGS_((
-			    Tcl_Interp *interp, Tcl_Namespace *nsPtr,
-			    Tcl_Obj *objPtr));
-EXTERN Tcl_Namespace *	Tcl_CreateNamespace _ANSI_ARGS_((Tcl_Interp *interp,
-			    char *name, ClientData clientData,
-			    Tcl_NamespaceDeleteProc *deleteProc));
-EXTERN void		Tcl_DeleteNamespace _ANSI_ARGS_((
-			    Tcl_Namespace *nsPtr));
-EXTERN int		Tcl_Export _ANSI_ARGS_((Tcl_Interp *interp,
-			    Tcl_Namespace *nsPtr, char *pattern,
-			    int resetListFirst));
-EXTERN Tcl_Command	Tcl_FindCommand _ANSI_ARGS_((Tcl_Interp *interp,
-			    char *name, Tcl_Namespace *contextNsPtr,
-			    int flags));
-EXTERN Tcl_Namespace *	Tcl_FindNamespace _ANSI_ARGS_((Tcl_Interp *interp,
-			    char *name, Tcl_Namespace *contextNsPtr,
-			    int flags));
-EXTERN int		Tcl_GetInterpResolvers _ANSI_ARGS_((Tcl_Interp *interp,
-			    char *name, Tcl_ResolverInfo *resInfo));
-EXTERN int		Tcl_GetNamespaceResolvers _ANSI_ARGS_((
-			    Tcl_Namespace *namespacePtr,
-			    Tcl_ResolverInfo *resInfo));
-EXTERN void		Tcl_GetVariableFullName _ANSI_ARGS_((
-			    Tcl_Interp *interp, Tcl_Var variable,
-			    Tcl_Obj *objPtr));
-EXTERN Tcl_Var		Tcl_FindNamespaceVar _ANSI_ARGS_((
-			    Tcl_Interp *interp, char *name,
-			    Tcl_Namespace *contextNsPtr, int flags));
-EXTERN int		Tcl_ForgetImport _ANSI_ARGS_((Tcl_Interp *interp,
-			    Tcl_Namespace *nsPtr, char *pattern));
-EXTERN Tcl_Command	Tcl_GetCommandFromObj _ANSI_ARGS_((
-			    Tcl_Interp *interp, Tcl_Obj *objPtr));
-EXTERN void		Tcl_GetCommandFullName _ANSI_ARGS_((
-			    Tcl_Interp *interp, Tcl_Command command,
-			    Tcl_Obj *objPtr));
-EXTERN Tcl_Namespace *	Tcl_GetCurrentNamespace _ANSI_ARGS_((
-			    Tcl_Interp *interp));
-EXTERN Tcl_Namespace *	Tcl_GetGlobalNamespace _ANSI_ARGS_((
-			    Tcl_Interp *interp));
-EXTERN void		Tcl_GetVariableFullName _ANSI_ARGS_((
-			    Tcl_Interp *interp, Tcl_Var variable,
-			    Tcl_Obj *objPtr));
-EXTERN int		Tcl_Import _ANSI_ARGS_((Tcl_Interp *interp,
-			    Tcl_Namespace *nsPtr, char *pattern,
-			    int allowOverwrite));
-EXTERN void		Tcl_PopCallFrame _ANSI_ARGS_((Tcl_Interp* interp));
-EXTERN int		Tcl_PushCallFrame _ANSI_ARGS_((Tcl_Interp* interp,
-			    Tcl_CallFrame *framePtr, Tcl_Namespace *nsPtr,
-			    int isProcCallFrame)); 
-EXTERN int		Tcl_RemoveInterpResolvers _ANSI_ARGS_((
-			    Tcl_Interp *interp, char *name));
-EXTERN void		Tcl_SetNamespaceResolvers _ANSI_ARGS_((
-			    Tcl_Namespace *namespacePtr,
-			    Tcl_ResolveCmdProc *cmdProc,
-			    Tcl_ResolveVarProc *varProc,
-			    Tcl_ResolveCompiledVarProc *compiledVarProc));
+#include "tclIntDecls.h"
 
 # undef TCL_STORAGE_CLASS
 # define TCL_STORAGE_CLASS DLLIMPORT

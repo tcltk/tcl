@@ -74,7 +74,9 @@ static VOID subblock _ANSI_ARGS_((struct vars *, pchr, struct state *, struct st
 static VOID okcolors _ANSI_ARGS_((struct nfa *, struct colormap *));
 static VOID colorchain _ANSI_ARGS_((struct colormap *, struct arc *));
 static VOID uncolorchain _ANSI_ARGS_((struct colormap *, struct arc *));
+#if 0
 static int singleton _ANSI_ARGS_((struct colormap *, pchr c));
+#endif
 static VOID rainbow _ANSI_ARGS_((struct nfa *, struct colormap *, int, pcolor, struct state *, struct state *));
 static VOID colorcomplement _ANSI_ARGS_((struct nfa *, struct colormap *, int, struct state *, struct state *, struct state *));
 #ifdef REG_DEBUG

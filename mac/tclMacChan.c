@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacChan.c,v 1.1.2.2 1998/09/24 23:59:10 stanton Exp $
+ * RCS: @(#) $Id: tclMacChan.c,v 1.1.2.3 1999/03/10 06:49:24 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -920,6 +920,35 @@ OpenFileChannel(
     }
     
     return chan;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_MakeFileChannel --
+ *
+ *	Makes a Tcl_Channel from an existing OS level file handle.
+ *
+ * Results:
+ *	The Tcl_Channel created around the preexisting OS level file handle.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Channel
+Tcl_MakeFileChannel(handle, mode)
+    ClientData handle;		/* OS level handle. */
+    int mode;			/* ORed combination of TCL_READABLE and
+                                 * TCL_WRITABLE to indicate file mode. */
+{
+    /*
+     * Not implemented yet.
+     */
+
+    return NULL;
 }
 
 /*

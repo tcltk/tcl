@@ -9,7 +9,7 @@
 #
 # The information in this file is specific to a single platform.
 #
-# RCS: @(#) $Id: tclConfig.sh.in,v 1.1.2.2 1998/11/11 04:08:38 stanton Exp $
+# RCS: @(#) $Id: tclConfig.sh.in,v 1.1.2.3 1999/03/10 06:49:28 stanton Exp $
 
 # Tcl's version number.
 TCL_VERSION='@TCL_VERSION@'
@@ -36,6 +36,15 @@ TCL_SHARED_BUILD=@TCL_SHARED_BUILD@
 
 # The name of the Tcl library (may be either a .a file or a shared library):
 TCL_LIB_FILE='@TCL_LIB_FILE@'
+
+# Flag to indicate whether shared libraries need export files.
+TCL_NEEDS_EXP_FILE=@TCL_NEEDS_EXP_FILE@
+
+# String that can be evaluated to generate the part of the export file
+# name that comes after the "libxxx" (includes version number, if any,
+# extension, and anything else needed).  May depend on the variables
+# VERSION.  On most UNIX systems this is ${VERSION}.exp.
+TCL_EXPORT_FILE_SUFFIX='@CFG_TCL_EXPORT_FILE_SUFFIX@'
 
 # Additional libraries to use when linking Tcl.
 TCL_LIBS='@DL_LIBS@ @LIBS@ @MATH_LIBS@'
@@ -128,3 +137,26 @@ TCL_SRC_DIR='@TCL_SRC_DIR@'
 # "package require" commands.  Contains the "prefix" directory plus also
 # the "exec_prefix" directory, if it is different.
 TCL_PACKAGE_PATH='@TCL_PACKAGE_PATH@'
+
+# Tcl supports stub.
+TCL_SUPPORTS_STUBS=@TCL_SUPPORTS_STUBS@
+
+# The name of the Tcl stub library (.a):
+TCL_STUB_LIB_FILE='@TCL_STUB_LIB_FILE@'
+
+# -l flag to pass to the linker to pick up the Tcl stub library
+TCL_STUB_LIB_FLAG='@TCL_STUB_LIB_FLAG@'
+
+# String to pass to linker to pick up the Tcl stub library from its
+# build directory.
+TCL_BUILD_STUB_LIB_SPEC='@TCL_BUILD_STUB_LIB_SPEC@'
+
+# String to pass to linker to pick up the Tcl stub library from its
+# installed directory.
+TCL_STUB_LIB_SPEC='@TCL_STUB_LIB_SPEC@'
+
+# Path to the Tcl stub library in the build directory.
+TCL_BUILD_STUB_LIB_PATH='@TCL_BUILD_STUB_LIB_PATH@'
+
+# Path to the Tcl stub library in the install directory.
+TCL_STUB_LIB_PATH='@TCL_STUB_LIB_PATH@'

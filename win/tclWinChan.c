@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinChan.c,v 1.1.2.4 1999/02/26 02:19:23 redman Exp $
+ * RCS: @(#) $Id: tclWinChan.c,v 1.1.2.5 1999/03/10 06:49:29 stanton Exp $
  */
 
 #include "tclWinInt.h"
@@ -443,7 +443,8 @@ FileSeekProc(instanceData, offset, mode, errorCodePtr)
     newPos = SetFilePointer(infoPtr->handle, offset, NULL, moveMethod);
     if (newPos == 0xFFFFFFFF) {
         TclWinConvertError(GetLastError());
-        return -1;
+        *errorCodePtr = errno;
+	return -1;
     }
     return newPos;
 }

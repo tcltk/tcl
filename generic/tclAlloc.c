@@ -8,13 +8,14 @@
  *
  * Copyright (c) 1983 Regents of the University of California.
  * Copyright (c) 1996-1997 Sun Microsystems, Inc.
+ * Copyright (c) 1998-1999 by Scriptics Corporation.
  *
  * Portions contributed by Chris Kingsley, Jack Jansen and Ray Johnson.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclAlloc.c,v 1.1.2.5 1999/01/29 00:20:44 stanton Exp $
+ * RCS: @(#) $Id: tclAlloc.c,v 1.1.2.6 1999/03/10 06:49:13 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -242,9 +243,6 @@ char *
 TclpAlloc(
     unsigned int nbytes)	/* Number of bytes to allocate. */
 {
-#ifdef USE_NATIVEMALLOC
-    return (char*) malloc(nbytes);
-#else
     register union overhead *op;
     register long bucket;
     register unsigned amt;
@@ -347,7 +345,6 @@ TclpAlloc(
 #endif
     TclpMutexUnlock(&allocMutex);
     return ((char *)(op + 1));
-#endif /* USE_NATIVEMALLOC */
 }
 
 /*
@@ -432,10 +429,6 @@ void
 TclpFree(
     char *cp)		/* Pointer to memory to free. */
 {   
-#ifdef USE_NATIVEMALLOC
-    free(cp);
-    return;
-#else
     register long size;
     register union overhead *op;
     struct block *bigBlockPtr;
@@ -475,7 +468,6 @@ TclpFree(
     nmalloc[size]--;
 #endif
     TclpMutexUnlock(&allocMutex);
-#endif /* USE_NATIVEMALLOC */
 }
 
 /*
@@ -499,9 +491,6 @@ TclpRealloc(
     char *cp,			/* Pointer to alloced block. */
     unsigned int nbytes)	/* New size of memory. */
 {   
-#ifdef USE_NATIVEMALLOC
-    return (char*) realloc(cp, nbytes);
-#else
     int i;
     union overhead *op;
     struct block *bigBlockPtr;
@@ -602,7 +591,6 @@ TclpRealloc(
 #endif
     TclpMutexUnlock(&allocMutex);
     return(cp);
-#endif /* USE_NATIVEMALLOC */
 }
 
 /*
@@ -653,13 +641,77 @@ mstats(
 }
 #endif
 
-#else	/* USE_TCLALLOC */
-
-/* 
- * Put something in here so compiler and/or linker doesn't complain about 
- * empty file.
+#else  /* !USE_TCLALLOC */
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpAlloc --
+ *
+ *	Allocate more memory.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
  */
 
-static int i;
+char *
+TclpAlloc(
+    unsigned int nbytes)	/* Number of bytes to allocate. */
+{
+    return (char*) malloc(nbytes);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpFree --
+ *
+ *	Free memory.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
 
-#endif
+void
+TclpFree(
+    char *cp)		/* Pointer to memory to free. */
+{   
+    free(cp);
+    return;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpRealloc --
+ *
+ *	Reallocate memory.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+char *
+TclpRealloc(
+    char *cp,			/* Pointer to alloced block. */
+    unsigned int nbytes)	/* New size of memory. */
+{   
+    return (char*) realloc(cp, nbytes);
+}
+
+#endif /* !USE_TCLALLOC */

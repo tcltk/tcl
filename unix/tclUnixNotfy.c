@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixNotfy.c,v 1.1.2.6 1998/12/12 01:37:04 lfb Exp $
+ * RCS: @(#) $Id: tclUnixNotfy.c,v 1.1.2.7 1999/03/10 06:49:28 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -216,7 +216,7 @@ Tcl_InitNotifier()
      */
 
     while (triggerPipe < 0) {
-	TclpConditionWait(&notifierCV, &notifierMutex, NULL);
+	Tcl_ConditionWait(&notifierCV, &notifierMutex, NULL);
     }
 
     Tcl_MutexUnlock(&notifierMutex);
@@ -262,7 +262,7 @@ Tcl_FinalizeNotifier(clientData)
 	    panic("Tcl_FinalizeNotifier: notifier pipe not initialized");
 	}
 	close(triggerPipe);
-	TclpConditionWait(&notifierCV, &notifierMutex, NULL);
+	Tcl_ConditionWait(&notifierCV, &notifierMutex, NULL);
     }
 
     /*
@@ -304,7 +304,7 @@ Tcl_AlertNotifier(clientData)
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *) clientData;
     Tcl_MutexLock(&notifierMutex);
     tsdPtr->eventReady = 1;
-    TclpConditionNotify(&tsdPtr->waitCV);
+    Tcl_ConditionNotify(&tsdPtr->waitCV);
     Tcl_MutexUnlock(&notifierMutex);
 #endif
 }
@@ -604,7 +604,6 @@ Tcl_WaitForEvent(timePtr)
     struct timeval timeout, *timeoutPtr;
     int bit, index, mask;
 #ifdef TCL_THREADS
-    Tcl_Time polltime;
     int waitForFiles;
 #else
     int numFound;
@@ -682,7 +681,7 @@ Tcl_WaitForEvent(timePtr)
     memset((VOID *) tsdPtr->readyMasks, 0, 3*MASK_SIZE*sizeof(fd_mask));
 
     if (!tsdPtr->eventReady) {
-        TclpConditionWait(&tsdPtr->waitCV, &notifierMutex, timePtr);
+        Tcl_ConditionWait(&tsdPtr->waitCV, &notifierMutex, timePtr);
     }
     tsdPtr->eventReady = 0;
 
@@ -838,7 +837,7 @@ NotifierThreadProc(clientData)
      * Signal any threads that are waiting.
      */
 
-    TclpConditionNotify(&notifierCV);
+    Tcl_ConditionNotify(&notifierCV);
     Tcl_MutexUnlock(&notifierMutex);
 
     /*
@@ -908,7 +907,7 @@ NotifierThreadProc(clientData)
 	    }
             if (found || (tsdPtr->pollState & POLL_DONE)) {
                 tsdPtr->eventReady = 1;
-		TclpConditionNotify(&tsdPtr->waitCV);
+		Tcl_ConditionNotify(&tsdPtr->waitCV);
 		if (tsdPtr->onList) {
 		    /*
 		     * Remove the ThreadSpecificData structure of this thread
@@ -957,7 +956,7 @@ NotifierThreadProc(clientData)
     close(receivePipe);
     Tcl_MutexLock(&notifierMutex);
     triggerPipe = -1;
-    TclpConditionNotify(&notifierCV);
+    Tcl_ConditionNotify(&notifierCV);
     Tcl_MutexUnlock(&notifierMutex);
 }
 #endif

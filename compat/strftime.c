@@ -8,7 +8,7 @@
  * source.  See the copyright notice below for details on redistribution
  * restrictions.  The "license.terms" file does not apply to this file.
  *
- * RCS: @(#) $Id: strftime.c,v 1.1.2.2 1998/09/24 23:58:17 stanton Exp $
+ * RCS: @(#) $Id: strftime.c,v 1.1.2.3 1999/03/10 06:49:09 stanton Exp $
  */
 
 /*
@@ -45,7 +45,7 @@
  */
 
 #if defined(LIBC_SCCS)
-static char *rcsid = "$Id: strftime.c,v 1.1.2.2 1998/09/24 23:58:17 stanton Exp $";
+static char *rcsid = "$Id: strftime.c,v 1.1.2.3 1999/03/10 06:49:09 stanton Exp $";
 #endif /* LIBC_SCCS */
 
 #include <time.h>
@@ -105,7 +105,7 @@ static size_t		_fmt _ANSI_ARGS_((const char *format,
 			    const struct tm *t));
 
 size_t
-TclStrftime(s, maxsize, format, t)
+TclpStrftime(s, maxsize, format, t)
     char *s;
     size_t maxsize;
     const char *format;

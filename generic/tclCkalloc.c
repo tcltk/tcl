@@ -6,13 +6,14 @@
  *
  * Copyright (c) 1991-1994 The Regents of the University of California.
  * Copyright (c) 1994-1997 Sun Microsystems, Inc.
+ * Copyright (c) 1998-1999 by Scriptics Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
  * This code contributed by Karl Lehenbauer and Mark Diekhans
  *
- * RCS: @(#) $Id: tclCkalloc.c,v 1.1.2.3 1998/12/01 05:01:01 stanton Exp $
+ * RCS: @(#) $Id: tclCkalloc.c,v 1.1.2.4 1999/03/10 06:49:14 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -921,6 +922,12 @@ void
 Tcl_ValidateAllMemory(file, line)
     char  *file;
     int    line;
+{
+}
+
+void
+TclDumpMemoryInfo(outFile) 
+    FILE *outFile;
 {
 }
 

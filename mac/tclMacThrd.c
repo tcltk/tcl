@@ -706,7 +706,7 @@ RemoveThreadDataStruct(keyVal)
 /*
  *----------------------------------------------------------------------
  *
- * TclpConditionWait --
+ * Tcl_ConditionWait --
  *
  *	This procedure is invoked to wait on a condition variable.
  *	On the Mac, mutexes are no-ops, and we just yield.  After
@@ -724,7 +724,7 @@ RemoveThreadDataStruct(keyVal)
  */
 
 void
-TclpConditionWait(condPtr, mutexPtr, timePtr)
+Tcl_ConditionWait(condPtr, mutexPtr, timePtr)
     Tcl_Condition *condPtr;	/* Really (pthread_cond_t **) */
     Tcl_Mutex *mutexPtr;	/* Really (pthread_mutex_t **) */
     Tcl_Time *timePtr;		/* Timeout on waiting period */
@@ -737,7 +737,7 @@ TclpConditionWait(condPtr, mutexPtr, timePtr)
 /*
  *----------------------------------------------------------------------
  *
- * TclpConditionNotify --
+ * Tcl_ConditionNotify --
  *
  *	This procedure is invoked to signal a condition variable.
  *
@@ -754,7 +754,7 @@ TclpConditionWait(condPtr, mutexPtr, timePtr)
  */
 
 void
-TclpConditionNotify(condPtr)
+Tcl_ConditionNotify(condPtr)
     Tcl_Condition *condPtr;
 {
     if (TclMacHaveThreads()) {

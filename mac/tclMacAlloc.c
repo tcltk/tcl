@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacAlloc.c,v 1.1.2.2 1998/09/24 23:59:09 stanton Exp $
+ * RCS: @(#) $Id: tclMacAlloc.c,v 1.1.2.3 1999/03/10 06:49:24 stanton Exp $
  */
 
 #include "tclMacInt.h"
@@ -22,6 +22,7 @@
 #include <Memory.h>
 #include <stdlib.h>
 #include <string.h>
+
 
 /*
  * Flags that are used by ConfigureMemory to define how the allocator
@@ -137,7 +138,7 @@ TclpSysAlloc(
     ListEl * newMemoryRecord;
 
     if (!(memoryFlags & MEMORY_ALL_SYS)) {
-    
+
     	/*
     	 * If the guard handle has been purged, throw it away and try
     	 * to allocate it again.
@@ -273,7 +274,7 @@ CleanUpExitProc()
     while (systemMemory != NULL) {
 	memRecord = systemMemory;
 	systemMemory = memRecord->next;
-	if (*(memRecord->memoryHandle) != NULL) {
+        if (*(memRecord->memoryHandle) != NULL) {
             DisposeHandle(memRecord->memoryHandle);
         }
 	DisposePtr((void *) memRecord);

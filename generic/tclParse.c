@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.1.2.9 1999/02/10 23:31:18 stanton Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.1.2.10 1999/03/10 06:49:20 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -1498,6 +1498,41 @@ Tcl_Eval(interp, string)
 /*
  *----------------------------------------------------------------------
  *
+ * Tcl_EvalObj, Tcl_GlobalEvalObj --
+ *
+ *	These functions are deprecated but we keep them around for backwards
+ *	compatibility reasons.
+ *
+ * Results:
+ *	See the functions they call.
+ *
+ * Side effects:
+ *	See the functions they call.
+ *
+ *----------------------------------------------------------------------
+ */
+
+#undef Tcl_EvalObj
+int
+Tcl_EvalObj(interp, objPtr)
+    Tcl_Interp * interp;
+    Tcl_Obj * objPtr;
+{
+    return Tcl_EvalObjEx(interp, objPtr, 0);
+}
+
+#undef Tcl_GlobalEvalObj
+int
+Tcl_GlobalEvalObj(interp, objPtr)
+    Tcl_Interp * interp;
+    Tcl_Obj * objPtr;
+{
+    return Tcl_EvalObjEx(interp, objPtr, TCL_EVAL_GLOBAL);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_ParseVarName --
  *
  *	Given a string starting with a $ sign, parse off a variable
@@ -1636,7 +1671,7 @@ Tcl_ParseVarName(interp, string, numBytes, parsePtr, append)
 	while (src != end) {
 	    offset = Tcl_UtfToUniChar(src, &ch);
 	    c = UCHAR(ch);
-	    if (isalnum(c) || (c == '_')) { /* INTL: ISO only. */
+	    if (isalnum(c) || (c == '_')) { /* INTL: ISO only, UCHAR. */
 		src += offset;
 		continue;
 	    }

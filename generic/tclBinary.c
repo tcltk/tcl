@@ -5,11 +5,12 @@
  *	command and the Tcl binary data object.
  *
  * Copyright (c) 1997 by Sun Microsystems, Inc.
+ * Copyright (c) 1998-1999 by Scriptics Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBinary.c,v 1.1.2.3 1999/02/10 23:31:13 stanton Exp $
+ * RCS: @(#) $Id: tclBinary.c,v 1.1.2.4 1999/03/10 06:49:14 stanton Exp $
  */
 
 #include <math.h>
@@ -118,6 +119,22 @@ typedef struct ByteArray {
  *---------------------------------------------------------------------------
  */
 
+#ifdef TCL_MEM_DEBUG
+#undef Tcl_NewByteArrayObj
+
+
+Tcl_Obj *
+Tcl_NewByteArrayObj(bytes, length)
+    unsigned char *bytes;	/* The array of bytes used to initialize
+				 * the new object. */
+    int length;			/* Length of the array of bytes, which must
+				 * be >= 0. */
+{
+    return Tcl_DbNewByteArrayObj(bytes, length, "unknown", 0);
+}
+
+#else /* if not TCL_MEM_DEBUG */
+
 Tcl_Obj *
 Tcl_NewByteArrayObj(bytes, length)
     unsigned char *bytes;	/* The array of bytes used to initialize
@@ -131,7 +148,71 @@ Tcl_NewByteArrayObj(bytes, length)
     Tcl_SetByteArrayObj(objPtr, bytes, length);
     return objPtr;
 }
+#endif /* TCL_MEM_DEBUG */
 
+/*
+ *---------------------------------------------------------------------------
+ *
+ * Tcl_DbNewByteArrayObj --
+ *
+ *	This procedure is normally called when debugging: i.e., when
+ *	TCL_MEM_DEBUG is defined. It is the same as the Tcl_NewByteArrayObj
+ *	above except that it calls Tcl_DbCkalloc directly with the file name
+ *	and line number from its caller. This simplifies debugging since then
+ *	the checkmem command will report the correct file name and line number
+ *	when reporting objects that haven't been freed.
+ *
+ *	When TCL_MEM_DEBUG is not defined, this procedure just returns the
+ *	result of calling Tcl_NewByteArrayObj.
+ *
+ * Results:
+ *	The newly create object is returned.  This object will have no
+ *	initial string representation.  The returned object has a ref count
+ *	of 0.
+ *
+ * Side effects:
+ *	Memory allocated for new object and copy of byte array argument.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+#ifdef TCL_MEM_DEBUG
+
+Tcl_Obj *
+Tcl_DbNewByteArrayObj(bytes, length, file, line)
+    unsigned char *bytes;	/* The array of bytes used to initialize
+				 * the new object. */
+    int length;			/* Length of the array of bytes, which must
+				 * be >= 0. */
+    char *file;			/* The name of the source file calling this
+				 * procedure; used for debugging. */
+    int line;			/* Line number in the source file; used
+				 * for debugging. */
+{
+    Tcl_Obj *objPtr;
+
+    TclDbNewObj(objPtr, file, line);
+    Tcl_SetByteArrayObj(objPtr, bytes, length);
+    return objPtr;
+}
+
+#else /* if not TCL_MEM_DEBUG */
+
+Tcl_Obj *
+Tcl_DbNewByteArrayObj(bytes, length, file, line)
+    unsigned char *bytes;	/* The array of bytes used to initialize
+				 * the new object. */
+    int length;			/* Length of the array of bytes, which must
+				 * be >= 0. */
+    char *file;			/* The name of the source file calling this
+				 * procedure; used for debugging. */
+    int line;			/* Line number in the source file; used
+				 * for debugging. */
+{
+    return Tcl_NewByteArrayObj(bytes, length);
+}
+#endif /* TCL_MEM_DEBUG */
+
 /*
  *---------------------------------------------------------------------------
  *

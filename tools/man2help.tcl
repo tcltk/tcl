@@ -6,7 +6,7 @@
 #
 # Copyright (c) 1996 by Sun Microsystems, Inc.
 #
-# RCS: @(#) $Id: man2help.tcl,v 1.1.2.3 1998/12/02 20:08:09 welch Exp $
+# RCS: @(#) $Id: man2help.tcl,v 1.1.2.4 1999/03/10 06:49:26 stanton Exp $
 # 
 
 #
@@ -23,6 +23,7 @@ proc generateContents {basename version files} {
 	doFile $f
     }
     set fd [open "$basename$version.cnt" w]
+    fconfigure $fd -translation crlf
     puts $fd ":Base $basename$version.hlp"
     foreach package [getPackages] {
 	foreach section [getSections $package] {
@@ -56,6 +57,7 @@ proc generateHelp {basename files} {
     }
 	    
     set file [open "$basename.rtf" w]
+    fconfigure $file -translation crlf
     puts $file "\{\\rtf1\\ansi \\deff0\\deflang1033\{\\fonttbl\{\\f0\\froman\\fcharset0\\fprq2 Times New Roman\;\}\}"
     foreach f $files {
 	regsub -all -- {-} [file tail $f] {} curFile

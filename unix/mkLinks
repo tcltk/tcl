@@ -988,6 +988,10 @@ if test -r SetErrno.3; then
     ln SetErrno.3 Tcl_SetErrno.3
 fi
 if test -r AddErrInfo.3; then
+    rm -f Tcl_SetErrorCodeVA.3
+    ln AddErrInfo.3 Tcl_SetErrorCodeVA.3
+fi
+if test -r AddErrInfo.3; then
     rm -f Tcl_SetErrorCode.3
     ln AddErrInfo.3 Tcl_SetErrorCode.3
 fi

@@ -4,13 +4,13 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: StringObj.3,v 1.1.2.2 1998/09/24 23:58:27 stanton Exp $
+'\" RCS: @(#) $Id: StringObj.3,v 1.1.2.3 1999/03/10 06:49:10 stanton Exp $
 '\" 
 .so man.macros
 .TH Tcl_StringObj 3 8.1 Tcl "Tcl Library Procedures"
 .BS
 .SH NAME
-Tcl_NewStringObj, Tcl_SetStringObj, Tcl_GetStringFromObj, Tcl_GetString, Tcl_AppendToObj, Tcl_AppendStringsToObj, Tcl_AppendObjToObj, Tcl_SetObjLength, Tcl_ConcatObj \- manipulate Tcl objects as strings
+Tcl_NewStringObj, Tcl_SetStringObj, Tcl_GetStringFromObj, Tcl_GetString, Tcl_AppendToObj, Tcl_AppendStringsToObj, Tcl_AppendStringsToObjVA, Tcl_AppendObjToObj, Tcl_SetObjLength, Tcl_ConcatObj \- manipulate Tcl objects as strings
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -33,6 +33,8 @@ char *
 .VE
 .sp
 \fBTcl_AppendStringsToObj\fR(\fIobjPtr, string, string, ... \fB(char *) NULL\fR)
+.sp
+\fBTcl_AppendStringsToObjVA\fR(\fIobjPtr, argList\fR)
 .sp
 \fBTcl_SetObjLength\fR(\fIobjPtr, newLength\fR)
 .sp
@@ -60,6 +62,9 @@ If non-NULL, the location where \fBTcl_GetStringFromObj\fR will store
 the the length of an object's string representation.
 .AP char *string in
 Null-terminated string value to append to \fIobjPtr\fR.
+.AP va_list argList in
+An argument list which must have been initialised using
+\fBTCL_VARARGS_START\fR, and cleared using \fBva_end\fR.
 .AP int newLength in
 New length for the string value of \fIobjPtr\fR, not including the
 final NULL character.
@@ -118,6 +123,10 @@ each value must be a null-terminated string (i.e. none of the
 values may contain internal null characters).  Any number of
 \fIstring\fR arguments may be provided, but the last argument
 must be a NULL pointer to indicate the end of the list.
+.PP
+\fBTcl_AppendStringsToObjVA\fR is the same as \fBTcl_AppendStringsToObj\fR
+except that instead of taking a variable number of arguments it takes an
+argument list.
 .PP
 The \fBTcl_SetObjLength\fR procedure changes the length of the
 string value of its \fIobjPtr\fR argument.  If the \fInewLength\fR

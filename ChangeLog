@@ -1,10 +1,38 @@
+1999-03-09    <stanton@GASPODE>
+
+	* Integrated changes from Tcl 8.0 including:
+		stubs mechanism
+		configure patches from Jan Nijtmans
+		rename of panic to Tcl_Panic
+	
 1999-03-08    <lfb@scriptics.com>
 
 	* win/tclWin32Dll.c: Removed Dll instance from thread-local
 	storage.
 
+1999-03-08    <stanton@GASPODE>
 	
+	* generic/tcl.h: Moved Tcl_Mutex, etc. macros above the inclusion
+	of tclDecls.h to avoid macro conflicts.
 
+	* generic/tclInt.h:
+	* generic/regc_color.c: 
+	* generic/regcomp.c:
+	* generic/tclCmdIL.c:
+	* generic/tclCmdAH.c:
+	* generic/tclIOCmd.c:
+	* generic/tclParse.c:
+	* generic/tclStringObj.c:
+	* unix/tclUnixNotfy.c: Cleaned up various compiler warnings,
+	eliminated UCHAR bugs.
+	
+	* unix/tclUnixNotfy.c:
+	* unix/tclUnixThrd.c:
+	* generic/tclThreadTest.c:
+	* mac/tclMacThrd.c: Changed TclpCondition*() to Tcl_Condition*().
+	
+	* Integrated stubs mechanism from Tcl 8.0.
+	
 1999-02-25    <redman@scriptics.com>
 
 	* win/makefile.vc: Added tclWinConsole.c and tclWinSerial.c

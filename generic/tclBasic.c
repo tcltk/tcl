@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.1.2.8 1999/02/10 23:31:12 stanton Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.1.2.9 1999/03/10 06:49:13 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -240,6 +240,35 @@ static CmdInfo builtInCmds[] = {
 /*
  *----------------------------------------------------------------------
  *
+ * Tcl_InitStubs --
+ *
+ *	Ensures that the correct version of Tcl is loaded.  This is
+ *	a trivial implementation of the stubs library initializer
+ *	that will get called if a stubs aware extension is directly
+ *	linked with the Tcl library.
+ *
+ * Results:
+ *	The actual version of Tcl that satisfies the request, or
+ *	NULL to indicate that an error occurred.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+char *
+Tcl_InitStubs (interp, version, exact)
+    Tcl_Interp *interp;
+    char *version;
+    int exact;
+{
+    return Tcl_PkgRequire(interp, "Tcl", version, exact);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_CreateInterp --
  *
  *	Create a new TCL command interpreter.
@@ -396,6 +425,12 @@ Tcl_CreateInterp()
 #endif /* TCL_COMPILE_STATS */    
 
     /*
+     * Initialise the stub table pointer.
+     */
+
+    iPtr->stubTable = tclStubsPtr;
+    
+    /*
      * Create the core commands. Do it here, rather than calling
      * Tcl_CreateCommand, because it's faster (there's no need to check for
      * a pre-existing command by the same name). If a command has a
@@ -528,7 +563,7 @@ Tcl_CreateInterp()
      * Register Tcl's version number.
      */
 
-    Tcl_PkgProvide(interp, "Tcl", TCL_VERSION);
+    Tcl_PkgProvideEx(interp, "Tcl", TCL_VERSION, (ClientData) tclStubsPtr);
     
     return interp;
 }
@@ -3989,7 +4024,7 @@ Tcl_AddObjErrorInfo(interp, message, length)
 /*
  *---------------------------------------------------------------------------
  *
- * Tcl_VarEval --
+ * Tcl_VarEvalVA --
  *
  *	Given a variable number of string arguments, concatenate them
  *	all together and execute the result as a Tcl command.
@@ -4003,14 +4038,14 @@ Tcl_AddObjErrorInfo(interp, message, length)
  *
  *---------------------------------------------------------------------------
  */
-	/* VARARGS2 */ /* ARGSUSED */
+
 int
-Tcl_VarEval TCL_VARARGS_DEF(Tcl_Interp *,arg1)
+Tcl_VarEvalVA (interp, argList)
+    Tcl_Interp *interp;		/* Interpreter in which to evaluate command. */
+    va_list argList;		/* Variable argument list. */
 {
-    va_list argList;
     Tcl_DString buf;
     char *string;
-    Tcl_Interp *interp;
     int result;
 
     /*
@@ -4020,7 +4055,6 @@ Tcl_VarEval TCL_VARARGS_DEF(Tcl_Interp *,arg1)
      * space.
      */
 
-    interp = TCL_VARARGS_START(Tcl_Interp *,arg1,argList);
     Tcl_DStringInit(&buf);
     while (1) {
 	string = va_arg(argList, char *);
@@ -4029,10 +4063,41 @@ Tcl_VarEval TCL_VARARGS_DEF(Tcl_Interp *,arg1)
 	}
 	Tcl_DStringAppend(&buf, string, -1);
     }
-    va_end(argList);
 
     result = Tcl_Eval(interp, Tcl_DStringValue(&buf));
     Tcl_DStringFree(&buf);
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_VarEval --
+ *
+ *	Given a variable number of string arguments, concatenate them
+ *	all together and execute the result as a Tcl command.
+ *
+ * Results:
+ *	A standard Tcl return result.  An error message or other
+ *	result may be left in interp->result.
+ *
+ * Side effects:
+ *	Depends on what was done by the command.
+ *
+ *----------------------------------------------------------------------
+ */
+	/* VARARGS2 */ /* ARGSUSED */
+int
+Tcl_VarEval TCL_VARARGS_DEF(Tcl_Interp *,arg1)
+{
+    Tcl_Interp *interp;
+    va_list argList;
+    int result;
+
+    interp = TCL_VARARGS_START(Tcl_Interp *,arg1,argList);
+    result = Tcl_VarEvalVA(interp, argList);
+    va_end(argList);
+
     return result;
 }
 
