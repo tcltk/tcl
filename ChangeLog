@@ -1,3 +1,8 @@
+2002-02-25  Daniel Steffen  <das@users.sourceforge.net>
+
+	* unix/tclLoadDyld.c: updated to use Mac OS X 10.1 dyld APIs that
+	have more libdl-like semantics. (bug #514392)
+
 2002-02-25  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* generic/tclCompCmds: fixing a bug in patch dated 2002-02-22, in
