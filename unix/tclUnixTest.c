@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixTest.c,v 1.14 2003/02/15 22:30:29 kennykb Exp $
+ * RCS: @(#) $Id: tclUnixTest.c,v 1.14.2.1 2003/10/13 01:00:38 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -647,10 +647,7 @@ TestalarmCmd(clientData, interp, argc, argv)
 	Tcl_AppendResult(interp, "sigaction: ", Tcl_PosixError(interp), NULL);
 	return TCL_ERROR;
     }
-    if (alarm(sec) < 0) {
-	Tcl_AppendResult(interp, "alarm: ", Tcl_PosixError(interp), NULL);
-	return TCL_ERROR;
-    }
+    (void)alarm(sec);
     return TCL_OK;
 #else
     Tcl_AppendResult(interp, "warning: sigaction SA_RESTART not support on this platform", NULL);
