@@ -13,6 +13,10 @@
 .SH NAME
 msgcat \- Tcl message catalog
 .SH SYNOPSIS
+\fBpackage require Tcl 8.2\fR
+.sp
+\fBpackage require msgcat 1.1\fR
+.sp
 \fB::msgcat::mc \fIsrc-string\fR
 .sp
 \fB::msgcat::mclocale \fR?\fInewLocale\fR?

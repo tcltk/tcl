@@ -1,3 +1,7 @@
+2002-04-18  Don Porter  <dgp@users.sourceforge.net>
+
+	* doc/msgcat.n: Added "package require"s to msgcat documentation.
+
 2002-04-18  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* generic/tclExecute.c:
