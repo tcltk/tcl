@@ -1,3 +1,8 @@
+2003-05-10  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclCmdMZ.c (Tcl_StringObjCmd): prevent string repeat
+	crash when overflow sizes were given (throws error). [Bug #714106]
+
 2003-05-09  Joe Mistachkin <joe@mistachkin.com>
 
 	* generic/tclThreadAlloc.c (TclFreeAllocCache): Fixed memory leak
