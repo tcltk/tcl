@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.47 2002/02/15 14:28:48 dkf Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.48 2002/02/25 23:17:21 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -3478,8 +3478,15 @@ Tcl_EvalEx(interp, script, numBytes, flags)
     Tcl_Obj *staticObjArray[NUM_STATIC_OBJS], **objv;
     Tcl_Token *tokenPtr;
     int i, code, commandLength, bytesLeft, nested;
-    CallFrame *savedVarFramePtr;	/* Saves old copy of iPtr->varFramePtr
-					 * in case TCL_EVAL_GLOBAL was set. */
+    CallFrame *savedVarFramePtr;   /* Saves old copy of iPtr->varFramePtr
+				    * in case TCL_EVAL_GLOBAL was set. */
+    
+    /* For nested scripts, this variable will be set to point to the first 
+     * char after the end of the script - needed only to compare pointers,
+     * nothing will be read nor written there. 
+     */
+
+    char *onePast = NULL;
 
     /*
      * The variables below keep track of how much state has been
@@ -3509,6 +3516,7 @@ Tcl_EvalEx(interp, script, numBytes, flags)
     bytesLeft = numBytes;
     if (iPtr->evalFlags & TCL_BRACKET_TERM) {
 	nested = 1;
+	onePast = script + numBytes;
     } else {
 	nested = 0;
     }
@@ -3520,6 +3528,19 @@ Tcl_EvalEx(interp, script, numBytes, flags)
 	    goto error;
 	}
 	gotParse = 1; 
+
+	/*
+	 * A nested script can only terminate in ']'. If the script is not 
+	 * nested, onePast is NULL and the second test is not performed.
+	 */
+
+	next = parse.commandStart + parse.commandSize;
+	if ((next == onePast) && (onePast[-1] != ']')) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj("missing close-bracket", -1));
+	    code = TCL_ERROR;
+	    goto error;
+	}
+
 	if (parse.numWords > 0) {
 	    /*
 	     * Generate an array of objects for the words of the command.
@@ -3572,7 +3593,6 @@ Tcl_EvalEx(interp, script, numBytes, flags)
 	 * Advance to the next command in the script.
 	 */
 
-	next = parse.commandStart + parse.commandSize;
 	bytesLeft -= next - p;
 	p = next;
 	Tcl_FreeParse(&parse);

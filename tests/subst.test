@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: subst.test,v 1.9 2001/07/12 13:15:09 dkf Exp $
+# RCS: @(#) $Id: subst.test,v 1.10 2002/02/25 23:17:21 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -82,6 +82,18 @@ test subst-5.3 {command substitutions} {
 test subst-5.4 {command substitutions} {
     list [catch {subst {$long [set long] [bogus_command]}} msg] $msg
 } {1 {invalid command name "bogus_command"}}
+test subst-5.5 {command substitutions} {
+    set a 0
+    list [catch {subst {[set a 1}} msg] $a $msg 
+} {1 0 {missing close-bracket}}
+test subst-5.6 {command substitutions} {
+    set a 0
+    list [catch {subst {0[set a 1}} msg] $a $msg 
+} {1 0 {missing close-bracket}}
+test subst-5.7 {command substitutions} {
+    set a 0
+    list [catch {subst {0[set a 1; set a 2}} msg] $a $msg 
+} {1 1 {missing close-bracket}}
 
 test subst-6.1 {clear the result after command substitution} {
     catch {unset a}
