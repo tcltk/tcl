@@ -12,7 +12,7 @@
 # Copyright (c) 2001-2004 David Gravereaux.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.130 2004/08/18 20:59:36 kennykb Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.131 2004/08/19 00:13:16 andreas_kupries Exp $
 #------------------------------------------------------------------------------
 
 !if !defined(MSDEVDIR) && !defined(MSVCDIR)
@@ -906,6 +906,7 @@ install-libraries: tclConfig install-msgs install-tzdata
 	@$(CPY) "$(GENERICDIR)\tclPlatDecls.h" "$(INCLUDE_INSTALL_DIR)\"
 	@$(CPY) "$(ROOT)\library\history.tcl"  "$(SCRIPT_INSTALL_DIR)\"
 	@$(CPY) "$(ROOT)\library\init.tcl"     "$(SCRIPT_INSTALL_DIR)\"
+	@$(CPY) "$(ROOT)\library\tm.tcl"       "$(SCRIPT_INSTALL_DIR)\"
 	@$(CPY) "$(ROOT)\library\ldAout.tcl"   "$(SCRIPT_INSTALL_DIR)\"
 	@$(CPY) "$(ROOT)\library\parray.tcl"   "$(SCRIPT_INSTALL_DIR)\"
 	@$(CPY) "$(ROOT)\library\safe.tcl"     "$(SCRIPT_INSTALL_DIR)\"
