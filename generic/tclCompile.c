@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.43 2003/02/19 14:33:39 msofer Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.44 2003/03/13 02:48:52 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -348,14 +348,16 @@ TclSetByteCodeFromAny(interp, objPtr, hookProc, clientData)
     CompileHookProc *hookProc;	/* Procedure to invoke after compilation. */
     ClientData clientData;	/* Hook procedure private data. */
 {
+#ifdef TCL_COMPILE_DEBUG
     Interp *iPtr = (Interp *) interp;
+#endif /*TCL_COMPILE_DEBUG*/
     CompileEnv compEnv;		/* Compilation environment structure
 				 * allocated in frame. */
     LiteralTable *localTablePtr = &(compEnv.localLitTable);
     register AuxData *auxDataPtr;
     LiteralEntry *entryPtr;
     register int i;
-    int length, nested, result;
+    int length, result;
     char *string;
 
 #ifdef TCL_COMPILE_DEBUG
@@ -368,21 +370,15 @@ TclSetByteCodeFromAny(interp, objPtr, hookProc, clientData)
     }
 #endif
 
-    if (iPtr->evalFlags & TCL_BRACKET_TERM) {
-	nested = 1;
-    } else {
-	nested = 0;
-    }
     string = Tcl_GetStringFromObj(objPtr, &length);
     TclInitCompileEnv(interp, &compEnv, string, length);
-    result = TclCompileScript(interp, string, length, nested, &compEnv);
+    result = TclCompileScript(interp, string, length, &compEnv);
 
     if (result == TCL_OK) {
 	/*
 	 * Successful compilation. Add a "done" instruction at the end.
 	 */
 
-	compEnv.numSrcBytes = iPtr->termOffset;
 	TclEmitOpcode(INST_DONE, &compEnv);
 
 	/*
@@ -786,10 +782,6 @@ TclFreeCompileEnv(envPtr)
  *	on failure. If TCL_ERROR is returned, then the interpreter's result
  *	contains an error message.
  *
- *	interp->termOffset is set to the offset of the character in the
- *	script just after the last one successfully processed; this will be
- *	the offset of the ']' if (flags & TCL_BRACKET_TERM).
- *
  * Side effects:
  *	Adds instructions to envPtr to evaluate the script at runtime.
  *
@@ -797,7 +789,7 @@ TclFreeCompileEnv(envPtr)
  */
 
 int
-TclCompileScript(interp, script, numBytes, nested, envPtr)
+TclCompileScript(interp, script, numBytes, envPtr)
     Tcl_Interp *interp;		/* Used for error and status reporting.
 				 * Also serves as context for finding and
 				 * compiling commands.  May not be NULL. */
@@ -805,10 +797,6 @@ TclCompileScript(interp, script, numBytes, nested, envPtr)
     int numBytes;		/* Number of bytes in script. If < 0, the
 				 * script consists of all bytes up to the
 				 * first null character. */
-    int nested;			/* Non-zero means this is a nested command:
-				 * close bracket ']' should be considered a
-				 * command terminator. If zero, close
-				 * bracket has no special meaning. */
     CompileEnv *envPtr;		/* Holds resulting instructions. */
 {
     Interp *iPtr = (Interp *) interp;
@@ -845,55 +833,11 @@ TclCompileScript(interp, script, numBytes, nested, envPtr)
     bytesLeft = numBytes;
     gotParse = 0;
     do {
-	if (Tcl_ParseCommand(interp, p, bytesLeft, nested, &parse) != TCL_OK) {
+	if (Tcl_ParseCommand(interp, p, bytesLeft, 0, &parse) != TCL_OK) {
 	    code = TCL_ERROR;
 	    goto error;
 	}
 	gotParse = 1;
-	if (nested) {
-	    /*
-	     * This is an unusual situation where the caller has passed us
-	     * a non-zero value for "nested".  How unusual?  Well, this
-	     * procedure, TclCompileScript, is internal to Tcl, so all
-	     * callers should be within Tcl itself.  All but one of those
-	     * callers explicitly pass in (nested = 0).  The exceptional
-	     * caller is TclSetByteCodeFromAny, which will pass in
-	     * (nested = 1) if and only if the flag TCL_BRACKET_TERM
-	     * is set in the evalFlags field of interp.
-	     *
-	     * It appears that the TCL_BRACKET_TERM flag is only ever set
-	     * by Tcl_SubstObj, and it immediately calls Tcl_EvalEx
-	     * which clears the flag before passing the interp along.
-	     * So, I don't think this procedure, TclCompileScript, is
-	     * **ever** called with (nested != 0). 
-	     * (The testsuite indeed doesn't exercise this code. MS)
-	     *
-	     * This means that the branches in this procedure that are
-	     * only active when (nested != 0) are probably never exercised.
-	     * This means that any bugs in them go unnoticed, and any bug
-	     * fixes in them have a semi-theoretical nature.
-	     *
-	     * All that said, the spec for this procedure says it should
-	     * handle the (nested != 0) case, so here's an attempt to fix
-	     * bugs (Tcl Bug 681841) in that case.  Just in case some
-	     * callers eventually come along and expect it to work...
-	     */
-
-	    if (parse.term == (script + numBytes)) {
-		/* 
-		 * The (nested != 0) case is meant to indicate that the
-		 * caller found an open bracket ([) and asked us to
-		 * parse and compile Tcl commands up to the matching
-		 * close bracket (]).  We have to detect and handle
-		 * the case where the close bracket is missing.
-		 */
-
-		Tcl_SetObjResult(interp,
-			Tcl_NewStringObj("missing close-bracket", -1));
-		code = TCL_ERROR;
-		goto error;
-	    }
-	}
 	if (parse.numWords > 0) {
 	    /*
 	     * If not the first command, pop the previous command's result
@@ -903,11 +847,8 @@ TclCompileScript(interp, script, numBytes, nested, envPtr)
 
 	    if (!isFirstCmd) {
 		TclEmitOpcode(INST_POP, envPtr);
-		if (!nested) {
-		    envPtr->cmdMapPtr[lastTopLevelCmdIndex].numCodeBytes =
-			   (envPtr->codeNext - envPtr->codeStart)
-			   - startCodeOffset;
-		}
+		envPtr->cmdMapPtr[lastTopLevelCmdIndex].numCodeBytes =
+			(envPtr->codeNext - envPtr->codeStart) - startCodeOffset;
 	    }
 
 	    /*
@@ -931,8 +872,7 @@ TclCompileScript(interp, script, numBytes, nested, envPtr)
              * If tracing, print a line for each top level command compiled.
              */
 
-	    if ((tclTraceCompile >= 1)
-		    && !nested && (envPtr->procPtr == NULL)) {
+	    if ((tclTraceCompile >= 1) && (envPtr->procPtr == NULL)) {
 		fprintf(stdout, "  Compiling: ");
 		TclPrintSource(stdout, parse.commandStart,
 			TclMin(commandLength, 55));
@@ -946,9 +886,7 @@ TclCompileScript(interp, script, numBytes, nested, envPtr)
 	    
 	    envPtr->numCommands++;
 	    currCmdIndex = (envPtr->numCommands - 1);
-	    if (!nested) {
-		lastTopLevelCmdIndex = currCmdIndex;
-	    }
+	    lastTopLevelCmdIndex = currCmdIndex;
 	    startCodeOffset = (envPtr->codeNext - envPtr->codeStart);
 	    EnterCmdStartData(envPtr, currCmdIndex,
 	            (parse.commandStart - envPtr->source), startCodeOffset);
@@ -1071,16 +1009,6 @@ TclCompileScript(interp, script, numBytes, nested, envPtr)
 	p = next;
 	Tcl_FreeParse(&parse);
 	gotParse = 0;
-	if (nested && (*parse.term == ']')) {
-	    /*
-	     * We get here in the special case where TCL_BRACKET_TERM was
-	     * set in the interpreter and the latest parsed command was
-	     * terminated by the matching close-bracket we were looking for.
-	     * Stop compilation.
-	     */
-	    
-	    break;
-	}
     } while (bytesLeft > 0);
 
     /*
@@ -1093,17 +1021,7 @@ TclCompileScript(interp, script, numBytes, nested, envPtr)
 	        envPtr);
     }
     
-    if (nested) {
-	/*
-	 * When (nested != 0) back up 1 character to have 
-	 * iPtr->termOffset indicate the offset to the matching
-	 * close-bracket.
-	 */
-
-	iPtr->termOffset = (p - 1) - script;
-    } else {
-	iPtr->termOffset = (p - script);
-    }
+    envPtr->numSrcBytes = (p - script);
     Tcl_DStringFree(&ds);
     return TCL_OK;
 	
@@ -1132,7 +1050,7 @@ TclCompileScript(interp, script, numBytes, nested, envPtr)
     if (gotParse) {
 	Tcl_FreeParse(&parse);
     }
-    iPtr->termOffset = (p - script);
+    envPtr->numSrcBytes = (p - script);
     Tcl_DStringFree(&ds);
     return code;
 }
@@ -1207,7 +1125,7 @@ TclCompileTokens(interp, tokenPtr, count, envPtr)
 		}
 		
 		code = TclCompileScript(interp, tokenPtr->start+1,
-			tokenPtr->size-2, /*nested*/ 0,	envPtr);
+			tokenPtr->size-2, envPtr);
 		if (code != TCL_OK) {
 		    goto error;
 		}
@@ -1396,8 +1314,7 @@ TclCompileCmdWord(interp, tokenPtr, count, envPtr)
      */
     
     if ((count == 1) && (tokenPtr->type == TCL_TOKEN_TEXT)) {
-	code = TclCompileScript(interp, tokenPtr->start, tokenPtr->size,
-	        /*nested*/ 0, envPtr);
+	code = TclCompileScript(interp, tokenPtr->start, tokenPtr->size, envPtr);
 	return code;
     }
 

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.34 2003/03/05 22:31:23 dkf Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.35 2003/03/13 02:48:53 dgp Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -748,8 +748,7 @@ EXTERN int		TclCompileExprWords _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr, int numWords,
 			    CompileEnv *envPtr));
 EXTERN int		TclCompileScript _ANSI_ARGS_((Tcl_Interp *interp,
-			    CONST char *script, int numBytes, int nested,
-			    CompileEnv *envPtr));
+			    CONST char *script, int numBytes, CompileEnv *envPtr));
 EXTERN int		TclCompileTokens _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr, int count,
 			    CompileEnv *envPtr));

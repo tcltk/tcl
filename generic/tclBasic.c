@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.76 2003/03/05 22:31:22 dkf Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.77 2003/03/13 02:48:52 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -346,7 +346,6 @@ Tcl_CreateInterp()
     Tcl_InitHashTable(&iPtr->packageTable, TCL_STRING_KEYS);
     iPtr->packageUnknown = NULL;
     iPtr->cmdCount = 0;
-    iPtr->termOffset = 0;
     TclInitLiteralTable(&(iPtr->literalTable));
     iPtr->compileEpoch = 0;
     iPtr->compiledProcPtr = NULL;
@@ -3347,143 +3346,7 @@ Tcl_EvalTokensStandard(interp, tokenPtr, count)
     int count;			/* Number of tokens to consider at tokenPtr.
 				 * Must be at least 1. */
 {
-    Tcl_Obj *resultPtr, *indexPtr, *valuePtr;
-    char buffer[TCL_UTF_MAX];
-#ifdef TCL_MEM_DEBUG
-#   define  MAX_VAR_CHARS 5
-#else
-#   define  MAX_VAR_CHARS 30
-#endif
-    char nameBuffer[MAX_VAR_CHARS+1];
-    char *varName, *index;
-    CONST char *p = NULL;	/* Initialized to avoid compiler warning. */
-    int length, code;
-
-    /*
-     * The only tricky thing about this procedure is that it attempts to
-     * avoid object creation and string copying whenever possible.  For
-     * example, if the value is just a nested command, then use the
-     * command's result object directly.
-     */
-
-    code = TCL_OK;
-    resultPtr = NULL;
-    Tcl_ResetResult(interp);
-    for ( ; count > 0; count--, tokenPtr++) {
-	valuePtr = NULL;
-
-	/*
-	 * The switch statement below computes the next value to be
-	 * concat to the result, as either a range of text or an
-	 * object.
-	 */
-
-	switch (tokenPtr->type) {
-	    case TCL_TOKEN_TEXT:
-		p = tokenPtr->start;
-		length = tokenPtr->size;
-		break;
-
-	    case TCL_TOKEN_BS:
-		length = Tcl_UtfBackslash(tokenPtr->start, (int *) NULL,
-			buffer);
-		p = buffer;
-		break;
-
-	    case TCL_TOKEN_COMMAND:
-		code = Tcl_EvalEx(interp, tokenPtr->start+1, tokenPtr->size-2,
-			0);
-		if (code != TCL_OK) {
-		    goto done;
-		}
-		valuePtr = Tcl_GetObjResult(interp);
-		break;
-
-	    case TCL_TOKEN_VARIABLE:
-		if (tokenPtr->numComponents == 1) {
-		    indexPtr = NULL;
-		    index = NULL;
-		} else {
-		    code = Tcl_EvalTokensStandard(interp, tokenPtr+2,
-			    tokenPtr->numComponents - 1);
-		    if (code != TCL_OK) {
-			goto done;
-		    }
-		    indexPtr = Tcl_GetObjResult(interp);
-		    Tcl_IncrRefCount(indexPtr);
-		    index = Tcl_GetString(indexPtr);
-		}
-
-		/*
-		 * We have to make a copy of the variable name in order
-		 * to have a null-terminated string.  We can't make a
-		 * temporary modification to the script to null-terminate
-		 * the name, because a trace callback might potentially
-		 * reuse the script and be affected by the null character.
-		 */
-
-		if (tokenPtr[1].size <= MAX_VAR_CHARS) {
-		    varName = nameBuffer;
-		} else {
-		    varName = ckalloc((unsigned) (tokenPtr[1].size + 1));
-		}
-		strncpy(varName, tokenPtr[1].start, (size_t) tokenPtr[1].size);
-		varName[tokenPtr[1].size] = 0;
-		valuePtr = Tcl_GetVar2Ex(interp, varName, index,
-			TCL_LEAVE_ERR_MSG);
-		if (varName != nameBuffer) {
-		    ckfree(varName);
-		}
-		if (indexPtr != NULL) {
-		    Tcl_DecrRefCount(indexPtr);
-		}
-		if (valuePtr == NULL) {
-		    code = TCL_ERROR;
-		    goto done;
-		}
-		count -= tokenPtr->numComponents;
-		tokenPtr += tokenPtr->numComponents;
-		break;
-
-	    default:
-		panic("unexpected token type in Tcl_EvalTokensStandard");
-	}
-
-	/*
-	 * If valuePtr isn't NULL, the next piece of text comes from that
-	 * object; otherwise, take length bytes starting at p.
-	 */
-
-	if (resultPtr == NULL) {
-	    if (valuePtr != NULL) {
-		resultPtr = valuePtr;
-	    } else {
-		resultPtr = Tcl_NewStringObj(p, length);
-	    }
-	    Tcl_IncrRefCount(resultPtr);
-	} else {
-	    if (Tcl_IsShared(resultPtr)) {
-		Tcl_DecrRefCount(resultPtr);
-		resultPtr = Tcl_DuplicateObj(resultPtr);
-		Tcl_IncrRefCount(resultPtr);
-	    }
-	    if (valuePtr != NULL) {
-		p = Tcl_GetStringFromObj(valuePtr, &length);
-	    }
-	    Tcl_AppendToObj(resultPtr, p, length);
-	}
-    }
-    if (resultPtr != NULL) {
-	Tcl_SetObjResult(interp, resultPtr);
-    } else {
-	code = TCL_ERROR;
-    }
-
-    done:
-    if (resultPtr != NULL) {
-	Tcl_DecrRefCount(resultPtr);
-    }
-    return code;
+    return TclSubstTokens(interp, tokenPtr, count, /* numLeftPtr */ NULL);
 }
 
 
@@ -3579,7 +3442,7 @@ Tcl_EvalEx(interp, script, numBytes, flags)
 #define NUM_STATIC_OBJS 20
     Tcl_Obj *staticObjArray[NUM_STATIC_OBJS], **objv;
     Tcl_Token *tokenPtr;
-    int i, code, commandLength, bytesLeft, nested;
+    int i, code, commandLength, bytesLeft;
     CallFrame *savedVarFramePtr;   /* Saves old copy of iPtr->varFramePtr
 				    * in case TCL_EVAL_GLOBAL was set. */
     int allowExceptions = (iPtr->evalFlags & TCL_ALLOW_EXCEPTIONS);
@@ -3610,31 +3473,14 @@ Tcl_EvalEx(interp, script, numBytes, flags)
     objv = staticObjArray;
     p = script;
     bytesLeft = numBytes;
-    if (iPtr->evalFlags & TCL_BRACKET_TERM) {
-	nested = 1;
-    } else {
-	nested = 0;
-    }
     iPtr->evalFlags = 0;
     do {
-	if (Tcl_ParseCommand(interp, p, bytesLeft, nested, &parse)
+	if (Tcl_ParseCommand(interp, p, bytesLeft, 0, &parse)
 	        != TCL_OK) {
 	    code = TCL_ERROR;
 	    goto error;
 	}
 	gotParse = 1; 
-
-	if (nested && parse.term == (script + numBytes)) {
-	    /*
-	     * A nested script can only terminate in ']'. If
-	     * the parsing got terminated at the end of the script,
-	     * there was no closing ']'.  Report the syntax error.
-	     */
-
-	    code = TCL_ERROR;
-	    goto error;
-	}
-
 	if (parse.numWords > 0) {
 	    /*
 	     * Generate an array of objects for the words of the command.
@@ -3649,8 +3495,8 @@ Tcl_EvalEx(interp, script, numBytes, flags)
 	    for (objectsUsed = 0, tokenPtr = parse.tokenPtr;
 		    objectsUsed < parse.numWords;
 		    objectsUsed++, tokenPtr += (tokenPtr->numComponents + 1)) {
-		code = Tcl_EvalTokensStandard(interp, tokenPtr+1, 
-		            tokenPtr->numComponents);
+		code = TclSubstTokens(interp, tokenPtr+1, 
+		            tokenPtr->numComponents, NULL);
 		if (code == TCL_OK) {
 		    objv[objectsUsed] = Tcl_GetObjResult(interp);
 		    Tcl_IncrRefCount(objv[objectsUsed]);
@@ -3703,20 +3549,7 @@ Tcl_EvalEx(interp, script, numBytes, flags)
 	p = next;
 	Tcl_FreeParse(&parse);
 	gotParse = 0;
-	if (nested && (*parse.term == ']')) {
-	    /*
-	     * We get here in the special case where the TCL_BRACKET_TERM
-	     * flag was set in the interpreter and the latest parsed command
-	     * was terminated by the matching close-bracket we seek.
-	     * Return immediately.
-	     */
-
-	    iPtr->termOffset = (p - 1) - script;
-	    iPtr->varFramePtr = savedVarFramePtr;
-	    return TCL_OK;
-	}
     } while (bytesLeft > 0);
-    iPtr->termOffset = p - script;
     iPtr->varFramePtr = savedVarFramePtr;
     return TCL_OK;
 
@@ -3753,85 +3586,6 @@ Tcl_EvalEx(interp, script, numBytes, flags)
 	ckfree((char *) objv);
     }
     iPtr->varFramePtr = savedVarFramePtr;
-
-    /*
-     * All that's left to do before returning is to set iPtr->termOffset
-     * to point past the end of the script we just evaluated.
-     */
-
-    next = parse.commandStart + parse.commandSize;
-    bytesLeft -= next - p;
-    p = next;
-
-    if (!nested) {
-	iPtr->termOffset = p - script;
-	return code;
-    }
-
-    /*
-     * When we are nested (the TCL_BRACKET_TERM flag was set in the
-     * interpreter), we must find the matching close-bracket to
-     * end the script we are evaluating.
-     *
-     * When our return code is TCL_CONTINUE or TCL_RETURN, we want
-     * to correctly set iPtr->termOffset to point to that matching
-     * close-bracket so our caller can move to the part of the
-     * string beyond the script we were asked to evaluate.
-     * So we try to parse past the rest of the commands.
-     */
-
-    next = NULL;
-    while (bytesLeft && (*parse.term != ']')) {
-	if (TCL_OK != Tcl_ParseCommand(NULL, p, bytesLeft, 1, &parse)) {
-	    /*
-	     * Syntax error.  Set the termOffset to the beginning of
-	     * the last command parsed.
-	     */
-
-	    if (next == NULL) {
-	        iPtr->termOffset = (parse.commandStart - 1) - script;
-	    } else {
-	        iPtr->termOffset = (next - 1) - script;
-	    }
-	    return code;
-	}
-	next = parse.commandStart + parse.commandSize;
-	bytesLeft -= next - p;
-	p = next;
-	next = parse.commandStart;
-	Tcl_FreeParse(&parse);
-    }
-
-    if (bytesLeft) {
-	/* 
-	 * parse.term points to the close-bracket.
-	 */
-
-	iPtr->termOffset = parse.term - script;
-    } else if (parse.term == script + numBytes) {
-	/*
-	 * There was no close-bracket.  Syntax error.
-	 */
-
-	iPtr->termOffset = parse.term - script;
-	Tcl_SetObjResult(interp,
-		Tcl_NewStringObj("missing close-bracket", -1));
-	return TCL_ERROR;
-    } else if (*parse.term != ']') {
-	/*
-	 * There was no close-bracket.  Syntax error.
-	 */
-
-	iPtr->termOffset = (parse.term + 1) - script;
-	Tcl_SetObjResult(interp,
-		Tcl_NewStringObj("missing close-bracket", -1));
-	return TCL_ERROR;
-    } else {
-	/* 
-	 * parse.term points to the close-bracket.
-	 */
-	iPtr->termOffset = parse.term - script;
-    }
     return code;
 }
 
@@ -3932,9 +3686,6 @@ Tcl_GlobalEvalObj(interp, objPtr)
  *	holds the bytecode instructions for the commands. Executing the
  *	commands will almost certainly have side effects that depend
  *	on those commands.
- *
- *	Just as in Tcl_Eval, interp->termOffset is set to the offset of the
- *	last character executed in the objPtr's string.
  *
  *----------------------------------------------------------------------
  */

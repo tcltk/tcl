@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.94 2003/02/19 14:33:39 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.95 2003/03/13 02:48:53 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -831,7 +831,6 @@ Tcl_ExprObj(interp, objPtr, resultPtrPtr)
 	 * and aux data items is given to the ByteCode object.
 	 */
 
-	compEnv.numSrcBytes = iPtr->termOffset;
 	TclEmitOpcode(INST_DONE, &compEnv);
 	TclInitByteCodeObj(objPtr, &compEnv);
 	TclFreeCompileEnv(&compEnv);
@@ -1037,16 +1036,7 @@ TclCompEvalObj(interp, objPtr)
 	}
     }
 
-    /*
-     * Set the interpreter's termOffset member to the offset of the
-     * character just after the last one executed. We approximate the offset
-     * of the last character executed by using the number of characters
-     * compiled. 
-     */
-
-    iPtr->termOffset = numSrcBytes;
     iPtr->flags &= ~ERR_ALREADY_LOGGED;
-
     return result;
 }
 
