@@ -1038,6 +1038,7 @@ if test -r StringObj.3; then
     rm -f Tcl_SetUnicodeObj.3
     rm -f Tcl_GetStringFromObj.3
     rm -f Tcl_GetString.3
+    rm -f Tcl_GetUnicodeFromObj.3
     rm -f Tcl_GetUnicode.3
     rm -f Tcl_GetUniChar.3
     rm -f Tcl_GetCharLength.3
@@ -1056,6 +1057,7 @@ if test -r StringObj.3; then
     ln StringObj.3 Tcl_SetUnicodeObj.3
     ln StringObj.3 Tcl_GetStringFromObj.3
     ln StringObj.3 Tcl_GetString.3
+    ln StringObj.3 Tcl_GetUnicodeFromObj.3
     ln StringObj.3 Tcl_GetUnicode.3
     ln StringObj.3 Tcl_GetUniChar.3
     ln StringObj.3 Tcl_GetCharLength.3
