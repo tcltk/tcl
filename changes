@@ -3555,7 +3555,7 @@ the TCL_LIBRARY value can be safely patched in binaries. (BW)
 can support the [incr Tcl] class structures.  This version will index
 all procedures in a source file, not just those where "proc" starts
 at the beginning of the line.  If you want the old behavior, use the
-auto_mkindex_old procedure. (MMC)
+auto_mkindex_old procedure. (MM)
 
 7/24/98 (feature change) Changed the Windows registry key to be
 HKEY_LOCAL_MACHINE\Software\Scriptics\Tcl\8.0, and to store the path
@@ -3577,6 +3577,23 @@ generic/tclInitScript.h for more details. (SS)
 and the makefile to be TCL_DBGX.  Users of tclConfig.sh may need to pass
 this through their configure files with AC_SUBST. (BW)
 
+729/98 (bug fix) Changed [info body] to return a copy of the body of a
+compiled procedure instead of the body itself, to avoid invalidation
+of the internal rep and loss of the byte-codes. (EMS)
+
 8/5/98 (bug fix) The platform init code could walk off the end of a
 buffer when reading the PkgPath registry value on Windows. (SS)
 
+8/5/98 (Windows makefile change) Introduced a set of macros to deal with
+exporting symbols when compiling DLLS on Windows. See win/README for
+details. (EMS)
+
+8/5/98 (addendum) Added a second Windows registry key under
+HKEY_LOCAL_MACHINE\Software\Scriptics\Tcl\8.0, named "pkgPath".
+This is a multi-string value used to initialize the tcl_pkgPath
+variable. This is required if extension DLLs are in architecture specific
+subdirectories. (SS)
+
+8/6/98 (new feature) Added tcl_findLibrary to init.tcl for use by
+extensions, including Tk.  This searches in a canonical way for
+an extensions library directory and initialization file. (BW)
