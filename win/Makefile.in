@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.12 1999/06/26 22:41:53 redman Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.13 1999/06/30 22:35:10 redman Exp $
 
 VERSION = @TCL_VERSION@
 
@@ -466,5 +466,8 @@ distclean: clean
 #
 
 genstubs:
-	tclsh$(VERSION) $(ROOT)\tools\genStubs.tcl $(GENERICDIR) \
-		$(GENERICDIR)\tcl.decls $(GENERICDIR)\tclInt.decls
+	@TCL_LIBRARY="$(ROOT_DIR_NATIVE)/library"; export TCL_LIBRARY; \
+	$(TCLSH) "$(ROOT_DIR_NATIVE)\tools\genStubs.tcl" \
+	    "$(GENERIC_DIR_NATIVE)" \
+	    "$(GENERIC_DIR_NATIVE)\tcl.decls" \
+            "$(GENERIC_DIR_NATIVE)\tclInt.decls"
