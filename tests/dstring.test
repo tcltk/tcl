@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: dstring.test,v 1.7 2004/05/19 12:08:07 dkf Exp $
+# RCS: @(#) $Id: dstring.test,v 1.8 2004/06/24 10:34:12 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -323,6 +323,8 @@ test dstring-6.5 {Tcl_DStringGetResult} testdstring {
 } {{} {This is a specially-allocated stringz}}
 
 # cleanup
-testdstring free
+if {[testConstraint testdstring]} {
+    testdstring free
+}
 ::tcltest::cleanupTests
 return
