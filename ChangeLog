@@ -1,5 +1,9 @@
 1999-02-10    <stanton@GASPODE>
 
+	* library/auto.tcl: Fixed auto_mkindex so it handles .tbc files.
+	Did some general cleanup to handle bad eval statements that didn't
+	use "list".
+
 	* unix/mkLinks:
 	* doc/SetVar.3:
 	* generic/tcl.h:
