@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.74 2004/11/30 19:34:49 dgp Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.75 2004/12/01 23:18:52 dgp Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -1102,6 +1102,22 @@ EXTERN int		TclSetEncodingSearchPath _ANSI_ARGS_((
 EXTERN CONST char *	TclpGetEncodingNameFromEnvironment _ANSI_ARGS_((
 				Tcl_DString * bufPtr));
 #endif
+#ifndef TclpFindExecutable_TCL_DECLARED
+#define TclpFindExecutable_TCL_DECLARED
+/* 212 */
+EXTERN void		TclpFindExecutable _ANSI_ARGS_((CONST char * argv0));
+#endif
+#ifndef TclGetObjNameOfExecutable_TCL_DECLARED
+#define TclGetObjNameOfExecutable_TCL_DECLARED
+/* 213 */
+EXTERN Tcl_Obj *	TclGetObjNameOfExecutable _ANSI_ARGS_((void));
+#endif
+#ifndef TclSetObjNameOfExecutable_TCL_DECLARED
+#define TclSetObjNameOfExecutable_TCL_DECLARED
+/* 214 */
+EXTERN void		TclSetObjNameOfExecutable _ANSI_ARGS_((
+				Tcl_Obj * name, Tcl_Encoding encoding));
+#endif
 
 typedef struct TclIntStubs {
     int magic;
@@ -1334,6 +1350,9 @@ typedef struct TclIntStubs {
     Tcl_Obj * (*tclGetEncodingSearchPath) _ANSI_ARGS_((void)); /* 209 */
     int (*tclSetEncodingSearchPath) _ANSI_ARGS_((Tcl_Obj * searchPath)); /* 210 */
     CONST char * (*tclpGetEncodingNameFromEnvironment) _ANSI_ARGS_((Tcl_DString * bufPtr)); /* 211 */
+    void (*tclpFindExecutable) _ANSI_ARGS_((CONST char * argv0)); /* 212 */
+    Tcl_Obj * (*tclGetObjNameOfExecutable) _ANSI_ARGS_((void)); /* 213 */
+    void (*tclSetObjNameOfExecutable) _ANSI_ARGS_((Tcl_Obj * name, Tcl_Encoding encoding)); /* 214 */
 } TclIntStubs;
 
 #ifdef __cplusplus
@@ -2068,6 +2087,18 @@ extern TclIntStubs *tclIntStubsPtr;
 #ifndef TclpGetEncodingNameFromEnvironment
 #define TclpGetEncodingNameFromEnvironment \
 	(tclIntStubsPtr->tclpGetEncodingNameFromEnvironment) /* 211 */
+#endif
+#ifndef TclpFindExecutable
+#define TclpFindExecutable \
+	(tclIntStubsPtr->tclpFindExecutable) /* 212 */
+#endif
+#ifndef TclGetObjNameOfExecutable
+#define TclGetObjNameOfExecutable \
+	(tclIntStubsPtr->tclGetObjNameOfExecutable) /* 213 */
+#endif
+#ifndef TclSetObjNameOfExecutable
+#define TclSetObjNameOfExecutable \
+	(tclIntStubsPtr->tclSetObjNameOfExecutable) /* 214 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */

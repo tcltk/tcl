@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFile.c,v 1.43 2004/11/30 19:34:51 dgp Exp $
+ * RCS: @(#) $Id: tclUnixFile.c,v 1.44 2004/12/01 23:18:55 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -27,17 +27,10 @@ static int NativeMatchType(CONST char* nativeName, Tcl_GlobTypeData *types);
  *	application, given its argv[0] value.
  *
  * Results:
- *	A dirty UTF string that is the path to the executable.  At this
- *	point we may not know the system encoding.  Convert the native
- *	string value to UTF using the default encoding.  The assumption
- *	is that we will still be able to parse the path given the path
- *	name contains ASCII string and '/' chars do not conflict with
- *	other UTF chars.
+ *	None.
  *
  * Side effects:
- *	The variable tclNativeExecutableName gets filled in with the file
- *	name for the application, if we figured it out.  If we couldn't
- *	figure it out, tclNativeExecutableName is set to NULL.
+ *	The computed path name is stored as a ProcessGlobalValue.
  *
  *---------------------------------------------------------------------------
  */
@@ -49,17 +42,12 @@ TclpFindExecutable(argv0)
 {
     CONST char *name, *p;
     Tcl_StatBuf statBuf;
-    int length;
-    Tcl_DString buffer, nameString, cwd;
+    Tcl_DString buffer, nameString, cwd, utfName;
+    Tcl_Encoding encoding;
 
     if (argv0 == NULL) {
 	return;
     }
-    if (tclFindExecutableSearchDone) {
-	return;
-    }
-    tclFindExecutableSearchDone = 1;
-
     Tcl_DStringInit(&buffer);
 
     name = argv0;
@@ -132,10 +120,11 @@ TclpFindExecutable(argv0)
 	    p++;
 	}
     }
+    TclSetObjNameOfExecutable(Tcl_NewObj(), NULL);
     goto done;
 
     /*
-     * If the name starts with "/" then just copy it to tclNativeExecutableName.
+     * If the name starts with "/" then just store it
      */
 
 gotName:
@@ -144,9 +133,11 @@ gotName:
 #else
     if (name[0] == '/')  {
 #endif
-	tclNativeExecutableName = (char *)
-		ckalloc((unsigned int) strlen(name) + 1);
-	strcpy(tclNativeExecutableName, name);
+	encoding = Tcl_GetEncoding(NULL, NULL);
+	Tcl_ExternalToUtfDString(encoding, name, -1, &utfName);
+	TclSetObjNameOfExecutable(
+		Tcl_NewStringObj(Tcl_DStringValue(&utfName), -1), encoding);
+	Tcl_DStringFree(&utfName);
 	goto done;
     }
 
@@ -176,13 +167,14 @@ gotName:
 	    Tcl_DStringLength(&nameString));
     Tcl_DStringFree(&nameString);
 
-    length = Tcl_DStringLength(&buffer) + 1;
-    tclNativeExecutableName = (char *) ckalloc((unsigned) length);
-    strcpy(tclNativeExecutableName, Tcl_DStringValue(&buffer));
+    encoding = Tcl_GetEncoding(NULL, NULL);
+    Tcl_ExternalToUtfDString(encoding, Tcl_DStringValue(&buffer), -1, &utfName);
+    TclSetObjNameOfExecutable(
+	    Tcl_NewStringObj(Tcl_DStringValue(&utfName), -1), encoding);
+    Tcl_DStringFree(&utfName);
     
 done:
     Tcl_DStringFree(&buffer);
-    Tcl_GetNameOfExecutable();
 }
 
 /*

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.108 2004/11/30 19:34:49 dgp Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.109 2004/12/01 23:18:53 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -296,6 +296,9 @@ TclIntStubs tclIntStubs = {
     TclGetEncodingSearchPath, /* 209 */
     TclSetEncodingSearchPath, /* 210 */
     TclpGetEncodingNameFromEnvironment, /* 211 */
+    TclpFindExecutable, /* 212 */
+    TclGetObjNameOfExecutable, /* 213 */
+    TclSetObjNameOfExecutable, /* 214 */
 };
 
 TclIntPlatStubs tclIntPlatStubs = {
