@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.54 2002/03/11 20:43:10 mdejong Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.55 2002/04/18 01:51:20 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -2522,6 +2522,16 @@ Tcl_Close(interp, chan)
         panic("called Tcl_Close on channel with refCount > 0");
     }
 
+    /*
+     * When the channel has an escape sequence driven encoding such as
+     * iso2022, the terminated escape sequence must write to the buffer.
+     */
+    if ((statePtr->encoding != NULL) && (statePtr->curOutPtr != NULL)
+	    && (CheckChannelErrors(statePtr, TCL_WRITABLE) == 0)) {
+        statePtr->outputEncodingFlags |= TCL_ENCODING_END;
+        WriteChars(chanPtr, "", 0);
+    }
+
     Tcl_ClearChannelHandlers(chan);
 
     /*
@@ -3041,8 +3051,8 @@ WriteChars(chanPtr, src, srcLen)
     ChannelState *statePtr = chanPtr->state;	/* state info for channel */
     ChannelBuffer *bufPtr;
     char *dst, *stage;
-    int saved, savedLF, sawLF, total, flags, dstLen, stageMax, dstWrote;
-    int stageLen, toWrite, stageRead;
+    int saved, savedLF, sawLF, total, dstLen, stageMax, dstWrote;
+    int stageLen, toWrite, stageRead, endEncoding, result;
     Tcl_Encoding encoding;
     char safe[BUFFER_PADDING];
     
@@ -3053,11 +3063,17 @@ WriteChars(chanPtr, src, srcLen)
     encoding = statePtr->encoding;
 
     /*
+     * Write the terminated escape sequence even if srcLen is 0.
+     */
+
+    endEncoding = ((statePtr->outputEncodingFlags & TCL_ENCODING_END) != 0);
+
+    /*
      * Loop over all UTF-8 characters in src, storing them in staging buffer
      * with proper EOL translation.
      */
 
-    while (srcLen + savedLF > 0) {
+    while (srcLen + savedLF + endEncoding > 0) {
 	stage = statePtr->outputStage;
 	stageMax = statePtr->bufSize;
 	stageLen = stageMax;
@@ -3092,17 +3108,12 @@ WriteChars(chanPtr, src, srcLen)
 	src += toWrite;
 	srcLen -= toWrite;
 
-	flags = statePtr->outputEncodingFlags;
-	if (srcLen == 0) {
-	    flags |= TCL_ENCODING_END;
-	}
-
 	/*
 	 * Loop over all UTF-8 characters in staging buffer, converting them
 	 * to external encoding, storing them in output buffer.
 	 */
 
-	while (stageLen + saved > 0) {
+	while (stageLen + saved + endEncoding > 0) {
 	    bufPtr = statePtr->curOutPtr;
 	    if (bufPtr == NULL) {
 		bufPtr = AllocChannelBuffer(statePtr->bufSize);
@@ -3125,28 +3136,31 @@ WriteChars(chanPtr, src, srcLen)
 		saved = 0;
 	    }
 
-	    Tcl_UtfToExternal(NULL, encoding, stage, stageLen, flags,
+	    result = Tcl_UtfToExternal(NULL, encoding, stage, stageLen,
+		    statePtr->outputEncodingFlags,
 		    &statePtr->outputEncodingState, dst,
 		    dstLen + BUFFER_PADDING, &stageRead, &dstWrote, NULL);
 
-	    /* Fix for SF #506297, reported by Martin Forssen <ruric@users.sourceforge.net>.
+	    /* Fix for SF #506297, reported by Martin Forssen
+	     * <ruric@users.sourceforge.net>.
 	     *
-	     * The encoding chosen in the script exposing the bug
-	     * writes out three intro characters when
-	     * TCL_ENCODING_START is set, but does not consume any
-	     * input as TCL_ENCODING_END is cleared. As some output
-	     * was generated the enclosing loop calls UtfToExternal
-	     * again, again with START set. Three more characters in
-	     * the out and still no use of input ... To break this
-	     * infinite loop we remove TCL_ENCODING_START from the set
-	     * of flags after the first call (no condition is
-	     * required, the later calls remove an unset flag, which
-	     * is a no-op). This causes the subsequent calls to
+	     * The encoding chosen in the script exposing the bug writes out
+	     * three intro characters when TCL_ENCODING_START is set, but does
+	     * not consume any input as TCL_ENCODING_END is cleared. As some
+	     * output was generated the enclosing loop calls UtfToExternal
+	     * again, again with START set. Three more characters in the out
+	     * and still no use of input ... To break this infinite loop we
+	     * remove TCL_ENCODING_START from the set of flags after the first
+	     * call (no condition is required, the later calls remove an unset
+	     * flag, which is a no-op). This causes the subsequent calls to
 	     * UtfToExternal to consume and convert the actual input.
 	     */
 
-	    flags &= ~TCL_ENCODING_START;
-	    if (stageRead + dstWrote == 0) {
+	    statePtr->outputEncodingFlags &= ~TCL_ENCODING_START;
+	    /*
+	     * The following code must be executed only when result is not 0.
+	     */
+	    if (result && ((stageRead + dstWrote) == 0)) {
 		/*
 		 * We have an incomplete UTF-8 character at the end of the
 		 * staging buffer.  It will get moved to the beginning of the
@@ -3182,6 +3196,16 @@ WriteChars(chanPtr, src, srcLen)
 	    stage += stageRead;
 	    stageLen -= stageRead;
 	    sawLF = 0;
+
+	    /*
+	     * If all translated characters are written to the buffer,
+	     * endEncoding is set to 0 because the escape sequence may be
+	     * output.
+	     */
+
+	    if ((stageLen + saved == 0) && (result == 0)) {
+		endEncoding = 0;
+	    }
 	}
     }
     return total;
@@ -5650,7 +5674,7 @@ CheckChannelErrors(statePtr, flags)
 	 * reading beyond the eofChar). Also, always clear the BLOCKED bit.
 	 * We want to discover these conditions anew in each operation.
 	 */
-	
+
 	if ((statePtr->flags & CHANNEL_STICKY_EOF) == 0) {
 	    statePtr->flags &= ~CHANNEL_EOF;
 	}
@@ -6334,6 +6358,15 @@ Tcl_SetChannelOption(interp, chan, optionName, newValue)
 	    if (encoding == NULL) {
 		return TCL_ERROR;
 	    }
+	}
+	/*
+	 * When the channel has an escape sequence driven encoding such as
+	 * iso2022, the terminated escape sequence must write to the buffer.
+	 */
+	if ((statePtr->encoding != NULL) && (statePtr->curOutPtr != NULL)
+		&& (CheckChannelErrors(statePtr, TCL_WRITABLE) == 0)) {
+	    statePtr->outputEncodingFlags |= TCL_ENCODING_END;
+	    WriteChars(chanPtr, "", 0);
 	}
 	Tcl_FreeEncoding(statePtr->encoding);
 	statePtr->encoding = encoding;
