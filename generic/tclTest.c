@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.1.2.5 1998/11/11 04:08:22 stanton Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.1.2.6 1998/11/11 04:54:19 stanton Exp $
  */
 
 #define TCL_TEST
@@ -154,8 +154,6 @@ static int              NoopObjCmd _ANSI_ARGS_((ClientData clientData,
 			    Tcl_Obj *CONST objv[]));
 static void		PrintParse _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr));
-static int		RegGetCompFlags _ANSI_ARGS_((char *s));
-static int		RegGetExecFlags _ANSI_ARGS_((char *s));
 static void		SpecialFree _ANSI_ARGS_((char *blockPtr));
 static int		StaticInitProc _ANSI_ARGS_((Tcl_Interp *interp));
 static int		TestaccessprocCmd _ANSI_ARGS_((ClientData dummy,

@@ -977,19 +977,6 @@ newline()
 }
 
 /*
- - ch - return the chr sequence for locale.c's fake collating element ch
- * This helps confine use of CHR to this source file.
- ^ static chr *ch(NOPARMS);
- */
-static chr *
-ch()
-{
-	static chr chstr[] = { CHR('c'), CHR('h'), CHR('\0') };
-
-	return chstr;
-}
-
-/*
  - chrnamed - return the chr known by a given (chr string) name
  * The code is a bit clumsy, but this routine gets only such specialized
  * use that it hardly matters.

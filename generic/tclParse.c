@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.1.2.3 1998/09/30 20:46:26 stanton Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.1.2.4 1998/11/11 04:54:18 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -55,7 +55,7 @@
 #define TYPE_CLOSE_BRACK	0x20
 #define TYPE_BRACE		0x40
 
-#define CHAR_TYPE(c) (typeTable+128)[c]
+#define CHAR_TYPE(c) (typeTable+128)[(int)(c)]
 
 char typeTable[] = {
     /*

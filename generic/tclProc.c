@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.1.2.4 1998/10/06 02:59:05 stanton Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.1.2.5 1998/11/11 04:54:19 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -189,7 +189,7 @@ TclCreateProc(interp, nsPtr, procName, argsPtr, bodyPtr, procPtrPtr)
     register Proc *procPtr;
     int i, length, result, numArgs;
     char *args, *bytes, *p;
-    register CompiledLocal *localPtr;
+    register CompiledLocal *localPtr = NULL;
     Tcl_Obj *defPtr;
     int precompiled = 0;
     

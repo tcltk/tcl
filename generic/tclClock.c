@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclClock.c,v 1.1.2.2 1998/09/24 23:58:41 stanton Exp $
+ * RCS: @(#) $Id: tclClock.c,v 1.1.2.3 1998/11/11 04:54:07 stanton Exp $
  */
 
 #include "tcl.h"
@@ -21,7 +21,10 @@
 /*
  * The date parsing stuff uses lexx and has tons o statics.
  */
+
+#ifdef TCL_THREAD
 static Tcl_Mutex clockMutex;
+#endif
 
 /*
  * Function prototypes for local procedures in this file:

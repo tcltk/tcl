@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixNotfy.c,v 1.1.2.2 1998/09/24 23:59:45 stanton Exp $
+ * RCS: @(#) $Id: tclUnixNotfy.c,v 1.1.2.3 1998/11/11 04:54:22 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -166,7 +166,9 @@ static Tcl_ThreadId notifierThread;
  * Static routines defined in this file.
  */
 
+#ifdef TCL_THREAD
 static void	NotifierThreadProc _ANSI_ARGS_((ClientData clientData));
+#endif
 static int	FileHandlerEventProc _ANSI_ARGS_((Tcl_Event *evPtr,
 		    int flags));
 

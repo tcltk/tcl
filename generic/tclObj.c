@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.1.2.3 1998/10/06 02:59:04 stanton Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.1.2.4 1998/11/11 04:54:17 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -21,7 +21,9 @@
 
 static Tcl_HashTable typeTable;
 static int typeTableInitialized = 0;    /* 0 means not yet initialized. */
+#ifdef TCL_THREAD
 static Tcl_Mutex tableMutex;
+#endif
 
 /*
  * Head of the list of free Tcl_Objs we maintain.
@@ -34,7 +36,9 @@ Tcl_Obj *tclFreeObjList = NULL;
  * by the TclNewObj macro, however, so must be visible.
  */
 
+#ifdef TCL_THREAD
 Tcl_Mutex tclObjMutex;
+#endif
 
 /*
  * Pointer to a heap-allocated string of length zero that the Tcl core uses

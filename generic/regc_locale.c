@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: regc_locale.c,v 1.1.2.3 1998/11/11 01:44:49 stanton Exp $
+ * RCS: @(#) $Id: regc_locale.c,v 1.1.2.4 1998/11/11 04:54:06 stanton Exp $
  */
 
 /* ASCII character-name table */
@@ -572,7 +572,7 @@ chr *endp;			/* just past the end of the name */
 int cases;			/* case-independent? */
 {
     size_t len;
-    struct cvec *cv;
+    struct cvec *cv = NULL;
     Tcl_DString ds;
     char *np, **namePtr;
     int i, index;

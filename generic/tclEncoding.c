@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEncoding.c,v 1.1.2.3 1998/10/21 20:40:05 stanton Exp $
+ * RCS: @(#) $Id: tclEncoding.c,v 1.1.2.4 1998/11/11 04:54:12 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -141,7 +141,9 @@ typedef struct EscapeEncodingData {
  */
  
 static Tcl_HashTable encodingTable;
+#ifdef TCL_THREAD
 static Tcl_Mutex encodingMutex;
+#endif
 
 /*
  * The following are used to hold the default and current system encodings.  
@@ -1177,8 +1179,8 @@ LoadTableEncoding(interp, name, type, chan)
     TableEncodingData *dataPtr;
     unsigned short *pageMemPtr;
     Tcl_EncodingType encType;
-    unsigned char *hex;
-    static unsigned char staticHex[] = {
+    char *hex;
+    static char staticHex[] = {
 	0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 0, 0, 0, 0, 0, 0,
 	10, 11, 12, 13, 14, 15
     };
@@ -1232,15 +1234,15 @@ LoadTableEncoding(interp, name, type, chan)
 
 	Tcl_ReadChars(chan, objPtr, 3 + 16 * (16 * 4 + 1), 0);
 	p = Tcl_GetString(objPtr);
-	hi = (hex[p[0]] << 4) + hex[p[1]];
+	hi = (hex[(int)p[0]] << 4) + hex[(int)p[1]];
 	dataPtr->toUnicode[hi] = pageMemPtr;
 	p += 2;
 	for (lo = 0; lo < 256; lo++) {
 	    if ((lo & 0x0f) == 0) {
 		p++;
 	    }
-	    ch = (hex[p[0]] << 12) + (hex[p[1]] << 8) + (hex[p[2]] << 4)
-		    + hex[p[3]];
+	    ch = (hex[(int)p[0]] << 12) + (hex[(int)p[1]] << 8)
+		+ (hex[(int)p[2]] << 4) + hex[(int)p[3]];
 	    if (ch != 0) {
 		used[ch >> 8] = 1;
 	    }

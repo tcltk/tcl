@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.1.2.5 1998/11/10 02:40:58 stanton Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.1.2.6 1998/11/11 04:54:07 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -2211,7 +2211,7 @@ Tcl_FormatObjCmd(dummy, interp, objc, objv)
 
 		    size = Tcl_UtfAtIndex(ptrValue, stringLen) - ptrValue; 
 		    if (size) {
-			memcpy(ptr, ptrValue, size);
+			memcpy(ptr, ptrValue, (size_t) size);
 			ptr += size;
 		    }
 		    while (pad > 0) {

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.1.2.3 1998/10/06 00:42:45 stanton Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.1.2.4 1998/11/11 04:54:09 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -108,7 +108,10 @@ typedef struct ExprInfo {
  */
 
 static int opTableInitialized = 0; /* 0 means not yet initialized. */
+
+#ifdef TCL_THREAD
 static Tcl_Mutex opMutex;
+#endif
 
 typedef struct OperatorDesc {
     char *name;			/* Name of the operator. */

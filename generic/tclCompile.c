@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.1.2.5 1998/11/11 00:15:55 stanton Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.1.2.6 1998/11/11 04:54:09 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -22,7 +22,10 @@
  
 static Tcl_HashTable auxDataTypeTable;
 static int auxDataTypeTableInitialized; /* 0 means not yet initialized. */
+
+#ifdef TCL_THREAD
 static Tcl_Mutex tableMutex;
+#endif
 
 /*
  * Variable that controls whether compilation tracing is enabled and, if so,

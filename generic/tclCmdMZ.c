@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.1.2.5 1998/11/11 01:44:52 stanton Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.1.2.6 1998/11/11 04:54:08 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -112,7 +112,7 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
     Tcl_Obj *CONST objv[];		/* Argument objects. */
 {
     int i, result, indices, stringLength, wLen, match, about;
-    int hasxflags, cflags, eflags;
+    int cflags, eflags;
     Tcl_RegExp regExpr;
     char *string;
     Tcl_DString stringBuffer, valueBuffer;
@@ -120,29 +120,18 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
     static char *options[] = {
 	"-indices",	"-nocase",	"-about",	"-expanded",
 	"-line",	"-linestop",	"-lineanchor",
-#ifdef REGEXP_TEST
-	"-xflags",
-#endif
 	"--",		(char *) NULL
     };
     enum options {
 	REGEXP_INDICES, REGEXP_NOCASE,	REGEXP_ABOUT,	REGEXP_EXPANDED,
 	REGEXP_MULTI,	REGEXP_NOCROSS,	REGEXP_NEWL,
-#ifdef REGEXP_TEST
-	REGEXP_XFLAGS,
-#endif
 	REGEXP_LAST
     };
-#ifndef REGEXP_TEST
-#   define REGEXP_XFLAGS	-1	/* impossible value */
-#   define TclRegXflags(a,b,c,d)	/* do nothing */
-#endif
 
     indices = 0;
     about = 0;
     cflags = REG_ADVANCED;
     eflags = 0;
-    hasxflags = 0;
     
     for (i = 1; i < objc; i++) {
 	char *name;
@@ -185,10 +174,6 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
 		cflags |= REG_NLANCH;
 		break;
 	    }
-	    case REGEXP_XFLAGS: {
-		hasxflags = 1;
-		break;
-	    }
 	    case REGEXP_LAST: {
 		i++;
 		goto endOfForLoop;
@@ -197,20 +182,13 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
     }
 
     endOfForLoop:
-    if (objc - i < hasxflags + 2 - about) {
+    if (objc - i < 2 - about) {
 	Tcl_WrongNumArgs(interp, 1, objv,
 		"?switches? exp string ?matchVar? ?subMatchVar subMatchVar ...?");
 	return TCL_ERROR;
     }
     objc -= i;
     objv += i;
-
-    if (hasxflags) {
-	string = Tcl_GetStringFromObj(objv[0], &stringLength);
-	TclRegXflags(string, stringLength, &cflags, &eflags);
-	objc--;
-	objv++;
-    }
 
     regExpr = TclRegCompObj(interp, objv[0], cflags);
     if (regExpr == NULL) {

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.1.2.4 1998/10/21 20:40:02 stanton Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.1.2.5 1998/11/11 04:54:07 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -599,7 +599,9 @@ Tcl_CallWhenDeleted(interp, proc, clientData)
 {
     Interp *iPtr = (Interp *) interp;
     static int assocDataCounter = 0;
+#ifdef TCL_THREAD
     static Tcl_Mutex assocMutex;
+#endif
     int new;
     char buffer[32 + TCL_INTEGER_SPACE];
     AssocData *dPtr = (AssocData *) ckalloc(sizeof(AssocData));

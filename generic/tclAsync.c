@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclAsync.c,v 1.1.2.2 1998/09/24 23:58:40 stanton Exp $
+ * RCS: @(#) $Id: tclAsync.c,v 1.1.2.3 1998/11/11 04:54:06 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -41,7 +41,10 @@ typedef struct AsyncHandler {
 static AsyncHandler *firstHandler;	/* First handler defined for process,
 					 * or NULL if none. */
 static AsyncHandler *lastHandler;	/* Last handler or NULL. */
+
+#ifdef TCL_THREAD
 static Tcl_Mutex asyncMutex;		/* Process-wide async handler lock */
+#endif
 
 /*
  * The variable below is set to 1 whenever a handler becomes ready and

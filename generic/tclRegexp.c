@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclRegexp.c,v 1.1.2.4 1998/11/11 01:44:53 stanton Exp $
+ * RCS: @(#) $Id: tclRegexp.c,v 1.1.2.5 1998/11/11 04:54:19 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -545,20 +545,20 @@ TclRegAbout(interp, re)
 	int bit;
 	char *text;
     } infonames[] = {
-	REG_UBACKREF,		"REG_UBACKREF",
-	REG_ULOOKAHEAD,		"REG_ULOOKAHEAD",
-	REG_UBOUNDS,		"REG_UBOUNDS",
-	REG_UBRACES,		"REG_UBRACES",
-	REG_UBSALNUM,		"REG_UBSALNUM",
-	REG_UPBOTCH,		"REG_UPBOTCH",
-	REG_UBBS,		"REG_UBBS",
-	REG_UNONPOSIX,		"REG_UNONPOSIX",
-	REG_UUNSPEC,		"REG_UUNSPEC",
-	REG_UUNPORT,		"REG_UUNPORT",
-	REG_ULOCALE,		"REG_ULOCALE",
-	REG_UEMPTYMATCH,	"REG_UEMPTYMATCH",
-	REG_UIMPOSSIBLE,	"REG_UIMPOSSIBLE",
-	0,			"",
+	{REG_UBACKREF,		"REG_UBACKREF"},
+	{REG_ULOOKAHEAD,	"REG_ULOOKAHEAD"},
+	{REG_UBOUNDS,		"REG_UBOUNDS"},
+	{REG_UBRACES,		"REG_UBRACES"},
+	{REG_UBSALNUM,		"REG_UBSALNUM"},
+	{REG_UPBOTCH,		"REG_UPBOTCH"},
+	{REG_UBBS,		"REG_UBBS"},
+	{REG_UNONPOSIX,		"REG_UNONPOSIX"},
+	{REG_UUNSPEC,		"REG_UUNSPEC"},
+	{REG_UUNPORT,		"REG_UUNPORT"},
+	{REG_ULOCALE,		"REG_ULOCALE"},
+	{REG_UEMPTYMATCH,	"REG_UEMPTYMATCH"},
+	{REG_UIMPOSSIBLE,	"REG_UIMPOSSIBLE"},
+	 {0,			""}
     };
     struct infoname *inf;
     int n;

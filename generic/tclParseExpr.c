@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParseExpr.c,v 1.1.2.2 1998/10/03 01:56:41 stanton Exp $
+ * RCS: @(#) $Id: tclParseExpr.c,v 1.1.2.3 1998/11/11 04:54:18 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -1714,9 +1714,9 @@ GetLexeme(infoPtr)
 	default:
 	    offset = Tcl_UtfToUniChar(src, &ch);
 	    c = UCHAR(ch);
-	    if (isalpha(c)) {	/* INTL: ISO only. */
+	    if (isalpha(UCHAR(c))) {	/* INTL: ISO only. */
 		infoPtr->lexeme = FUNC_NAME;
-		while (isalnum(c) || (c == '_')) { /* INTL: ISO only. */
+		while (isalnum(UCHAR(c)) || (c == '_')) { /* INTL: ISO only. */
 		    src += offset;
 		    offset = Tcl_UtfToUniChar(src, &ch);
 		    c = UCHAR(ch);
