@@ -1,5 +1,8 @@
 2004-06-23  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
+	* tests/winFCmd.test: Added a cleanup to winFCmd-16.11 to avoid a
+	failure in 16.12.
+
 	* tests/eofchar.data: Added -kb option to ensure a binary checkout
 	to win32 systems. This fixes a failure in io-61.1
 
