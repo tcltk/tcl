@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: RegConfig.3,v 1.2 2003/06/09 22:49:13 andreas_kupries Exp $
+'\" RCS: @(#) $Id: RegConfig.3,v 1.3 2004/09/01 09:50:45 dkf Exp $
 .so man.macros
 .TH Tcl_RegisterConfig 3 8.4 Tcl "Tcl Library Procedures"
 .BS
@@ -80,7 +80,7 @@ array. This means that the caller has to make sure that the memory
 holding this array is never released. This is the meaning behind the
 word \fBnon-volatile\fR used earlier. The easiest way to accomplish
 this is to define a global static array of Tcl_Config entries. See the
-file "generic/tclPkgConfig.c" in the sources of the tcl core for an
+file "generic/tclPkgConfig.c" in the sources of the Tcl core for an
 example.
 .PP
 When called \fBTcl_RegisterConfig\fR will

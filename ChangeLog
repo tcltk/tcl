@@ -1,3 +1,8 @@
+2004-09-01  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* doc/regsub.n, doc/RegConfig.3, doc/Environment.3: 
+	* doc/CrtChannel.3, doc/safe.n: Use correct abbreviations.
+
 2004-08-31  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* doc/trace.n, doc/socket.n, doc/registry.n, doc/pid.n: 
