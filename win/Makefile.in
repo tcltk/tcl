@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.33.2.2 2000/07/27 01:39:23 hobbs Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.33.2.3 2000/07/28 07:58:28 mo Exp $
 
 VERSION = @TCL_VERSION@
 
@@ -47,7 +47,7 @@ LIB_RUNTIME_DIR		= $(libdir)
 # Directory in which to install the program tclsh:
 BIN_INSTALL_DIR		= $(INSTALL_ROOT)$(bindir)
 
-# Directory in which to install libtcl.so or libtcl.a:
+# Directory in which to install the .a or .so binary for the Tcl library:
 LIB_INSTALL_DIR		= $(INSTALL_ROOT)$(libdir)
 
 # Path name to use when installing library scripts.
@@ -130,7 +130,7 @@ DDE_DLL_FILE		= tcldde$(VER)${DLLSUFFIX}
 DDE_LIB_FILE		= tcldde$(VER)${LIBSUFFIX}
 REG_DLL_FILE		= tclreg$(VER)${DLLSUFFIX}
 REG_LIB_FILE		= tclreg$(VER)${LIBSUFFIX}
-PIPE_DLL_FILE		= tclpip$(VER).dll
+PIPE_DLL_FILE		= tclpip$(VER)${DLLSUFFIX}
 
 SHARED_LIBRARIES 	= $(TCL_DLL_FILE) $(TCL_STUB_LIB_FILE) \
 			  $(DDE_DLL_FILE) $(REG_DLL_FILE) $(PIPE_DLL_FILE)
@@ -156,8 +156,10 @@ DEPARG = "$(shell $(CYGPATH) $(PATHTYPE) $<)"
 VPATH = $(GENERIC_DIR)@VPSEP@$(WIN_DIR)@VPSEP@$(COMPAT_DIR) # : 
 
 AR		= @AR@
+RANLIB		= @RANLIB@
 CC		= @CC@
 RC		= @RC@
+RES		= @RES@
 AC_FLAGS	= @EXTRA_CFLAGS@ @DEFS@
 CPPFLAGS	= @CPPFLAGS@
 LDFLAGS		= @LDFLAGS@
@@ -167,7 +169,7 @@ EXEEXT		= @EXEEXT@
 OBJEXT		= @OBJEXT@
 STLIB_LD	= @STLIB_LD@
 SHLIB_LD	= @SHLIB_LD@
-SHLIB_LD_LIBS	= @SHLIB_LD_LIBS@
+SHLIB_LD_LIBS	= @SHLIB_LD_LIBS@ $(LIBS)
 SHLIB_CFLAGS	= @SHLIB_CFLAGS@
 SHLIB_SUFFIX	= @SHLIB_SUFFIX@
 VER		= @TCL_MAJOR_VERSION@@TCL_MINOR_VERSION@
@@ -176,6 +178,7 @@ LIBS		= @LIBS@
 
 RMDIR		= rm -rf
 MKDIR		= mkdir -p
+SHELL		= @SHELL@
 RM		= rm -f
 COPY		= cp
 
@@ -299,7 +302,7 @@ all: binaries libraries doc
 
 tcltest: $(TCLTEST)
 
-binaries: @LIBRARIES@ $(STATIC_LIBRARIES) $(TCLSH)
+binaries: @LIBRARIES@ $(TCLSH)
 
 libraries:
 
@@ -313,19 +316,19 @@ winhelp: $(ROOT_DIR)/tools/man2help.tcl $(MAN2TCL)
 $(MAN2TCL): $(ROOT_DIR)/tools/man2tcl.c
 	$(CC) $(CFLAGS_OPTIMIZE) $(MAN2TCLFLAGS) -o $(MAN2TCL) "$(ROOT_DIR_NATIVE)"/tools/man2tcl.c
 
-$(TCLSH): $(TCL_LIB_FILE) $(TCLSH_OBJS) tclsh.res
+$(TCLSH): $(TCL_LIB_FILE) $(TCLSH_OBJS) tclsh.$(RES)
 	$(CC) $(CFLAGS) $(TCLSH_OBJS) $(TCL_LIB_FILE) $(LIBS) \
-        tclsh.res $(CC_EXENAME) 
+        tclsh.$(RES) $(CC_EXENAME) 
 
-$(TCLTEST): $(TCL_LIB_FILE) $(TCLTEST_OBJS) $(CAT32) tclsh.res
+$(TCLTEST): $(TCL_LIB_FILE) $(TCLTEST_OBJS) $(CAT32) tclsh.$(RES)
 	$(CC) $(CFLAGS) $(TCLTEST_OBJS) $(TCL_LIB_FILE) $(LIBS) \
-        tclsh.res $(CC_EXENAME) 
+        tclsh.$(RES) $(CC_EXENAME) 
 
-cat32.${OBJEXT}: cat.c
+cat32.$(OBJEXT): cat.c
 	$(CC) -c $(CC_SWITCHES) $(DEPARG) $(CC_OBJNAME)
 
-$(CAT32): cat32.${OBJEXT}
-	$(CC) $(CFLAGS) cat32.obj $(CC_EXENAME) -link $(LDFLAGS_CONSOLE)
+$(CAT32): cat32.$(OBJEXT)
+	$(CC) $(CFLAGS) cat32.$(OBJEXT) $(CC_EXENAME) $(LDFLAGS_CONSOLE)
 
 # The following targets are configured by autoconf to generate either
 # a shared library or static library
@@ -333,18 +336,20 @@ $(CAT32): cat32.${OBJEXT}
 ${TCL_STUB_LIB_FILE}: ${STUB_OBJS}
 	@$(RM) ${TCL_STUB_LIB_FILE}
 	@MAKE_LIB@ ${STUB_OBJS}
+	@POST_MAKE_LIB@
 
-${TCL_DLL_FILE}: ${TCL_OBJS} tcl.res
+${TCL_DLL_FILE}: ${TCL_OBJS} tcl.$(RES)
 	@$(RM) ${TCL_DLL_FILE}
-	@MAKE_DLL@ ${TCL_OBJS} tcl.res
+	@MAKE_DLL@ ${TCL_OBJS} tcl.$(RES) $(SHLIB_LD_LIBS)
 
 ${TCL_LIB_FILE}: ${TCL_OBJS}
 	@$(RM) ${TCL_LIB_FILE}
 	@MAKE_LIB@ ${TCL_OBJS}
+	@POST_MAKE_LIB@
 
 ${DDE_DLL_FILE}: ${DDE_OBJS} ${TCL_STUB_LIB_FILE}
 	@$(RM) ${DDE_DLL_FILE}
-	@MAKE_DLL@ ${DDE_OBJS} ${TCL_STUB_LIB_FILE}
+	@MAKE_DLL@ ${DDE_OBJS} $(TCL_STUB_LIB_FILE) $(SHLIB_LD_LIBS)
 
 ${DDE_LIB_FILE}: ${DDE_OBJS} ${TCL_LIB_FILE}
 	@$(RM) ${DDE_LIB_FILE}
@@ -352,7 +357,7 @@ ${DDE_LIB_FILE}: ${DDE_OBJS} ${TCL_LIB_FILE}
 
 ${REG_DLL_FILE}: ${REG_OBJS} ${TCL_STUB_LIB_FILE}
 	@$(RM) ${REG_DLL_FILE}
-	@MAKE_DLL@ ${REG_OBJS} ${TCL_STUB_LIB_FILE}
+	@MAKE_DLL@ ${REG_OBJS} ${TCL_STUB_LIB_FILE} $(SHLIB_LD_LIBS)
 
 ${REG_LIB_FILE}: ${REG_OBJS} ${TCL_LIB_FILE}
 	@$(RM) ${REG_LIB_FILE}
@@ -363,13 +368,13 @@ ${REG_LIB_FILE}: ${REG_OBJS} ${TCL_LIB_FILE}
 
 ${PIPE_DLL_FILE}: ${PIPE_OBJS}
 	@$(RM) ${PIPE_DLL_FILE}
-	$(CC) $(CFLAGS) ${PIPE_OBJS} $(LIBS) -Fe$(PIPE_DLL_FILE) 
+	@MAKE_EXE@ $(CFLAGS) ${PIPE_OBJS} $(LIBS)
 
 # Add the object extension to the implicit rules.  By default .obj is not
 # automatically added.
 
 .SUFFIXES: .${OBJEXT}
-.SUFFIXES: .res
+.SUFFIXES: .$(RES)
 .SUFFIXES: .rc
 
 # Special case object targets
@@ -412,9 +417,8 @@ tclStubLib.${OBJEXT}: tclStubLib.c
 .c.${OBJEXT}:
 	$(CC) -c $(CC_SWITCHES) -DBUILD_tcl ${DEPARG} $(CC_OBJNAME)
 
-.rc.res:
-	$(RC) -fo $@ -r -i "$(GENERIC_DIR_NATIVE)" $(DEPARG)
-
+.rc.$(RES):
+	$(RC) @RC_OUT@ $@ @RC_TYPE@ @RC_INCLUDE@ "$(GENERIC_DIR_NATIVE)" @RC_INCLUDE@ "$(WIN_DIR_NATIVE)" $(DEPARG)
 
 install: all install-binaries install-libraries install-doc
 
@@ -518,14 +522,14 @@ runtest: tcltest
 
 depend:
 
-Makefile: Makefile.in
+Makefile: $(SRC_DIR)/Makefile.in
 	./config.status
 
 cleanhelp:
 	$(RM) *.hlp *.cnt *.GID *.rtf man2tcl.exe
 
 clean: cleanhelp
-	$(RM) *.lib *.exp *.dll *.res *.${OBJEXT} *~ \#* TAGS a.out
+	$(RM) *.lib *.a *.exp *.dll *.$(RES) *.${OBJEXT} *~ \#* TAGS a.out
 	$(RM) $(TCLSH) $(TCLTEST) $(CAT32)
 	$(RM) *.pch *.ilk *.pdb
 

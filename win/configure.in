@@ -2,7 +2,7 @@
 # generate the file "configure", which is run during Tcl installation
 # to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.20.2.1 2000/07/27 01:39:24 hobbs Exp $
+# RCS: @(#) $Id: configure.in,v 1.20.2.2 2000/07/28 07:58:28 mo Exp $
 
 AC_INIT(../generic/tcl.h)
 
@@ -11,6 +11,13 @@ TCL_MAJOR_VERSION=8
 TCL_MINOR_VERSION=3
 TCL_PATCH_LEVEL=".2"
 VER=$TCL_MAJOR_VERSION$TCL_MINOR_VERSION
+
+if test "${prefix}" = "NONE"; then
+    prefix=/usr/local
+fi
+if test "${exec_prefix}" = "NONE"; then
+    exec_prefix=$prefix
+fi
 
 #--------------------------------------------------------------------
 # Check whether --enable-gcc or --disable-gcc was given.  Do this 
@@ -79,6 +86,12 @@ TCL_DBGX=${DBGX}
 AC_CHECK_HEADER(errno.h, , MAN2TCLFLAGS="-DNO_ERRNO_H")
 AC_SUBST(MAN2TCLFLAGS)
 
+#------------------------------------------------------------------------
+# tclConfig.sh refers to this by a different name
+#------------------------------------------------------------------------
+
+TCL_SHARED_BUILD=${SHARED_BUILD}
+
 #--------------------------------------------------------------------
 # Perform final evaluations of variables with possible substitutions.
 #--------------------------------------------------------------------
@@ -87,10 +100,23 @@ TCL_SHARED_LIB_SUFFIX="\${NODOT_VERSION}${DLLSUFFIX}"
 TCL_UNSHARED_LIB_SUFFIX="\${NODOT_VERSION}${LIBSUFFIX}"
 TCL_EXPORT_FILE_SUFFIX="\${NODOT_VERSION}${LIBSUFFIX}"
 
-eval "TCL_SRC_DIR=`cd $srcdir; pwd`"
-eval "TCL_STUB_LIB_FILE=${LIBPREFIX}tclstub$VER${LIBSUFFIX}"
-eval "TCL_DLL_FILE=tcl$VER${DLLSUFFIX}"
+eval "TCL_SRC_DIR=\"`cd $srcdir/..; pwd`\""
+
+eval "TCL_DLL_FILE=tcl${VER}${DLLSUFFIX}"
+
 eval "TCL_LIB_FILE=${LIBPREFIX}tcl$VER${LIBSUFFIX}"
+# FIMXE: These variables decls are missing
+#TCL_LIB_FLAG
+#TCL_BUILD_LIB_SPEC
+#TCL_LIB_SPEC
+
+eval "TCL_STUB_LIB_FILE=\"${LIBPREFIX}tclstub${VER}${LIBSUFFIX}\""
+eval "TCL_STUB_LIB_FLAG=\"-ltclstub${VER}${TCL_DBGX}\""
+eval "TCL_BUILD_STUB_LIB_SPEC=\"-L`pwd` ${TCL_STUB_LIB_FLAG}\""
+eval "TCL_STUB_LIB_SPEC=\"-L${exec_prefix}/lib ${TCL_STUB_LIB_FLAG}\""
+eval "TCL_BUILD_STUB_LIB_PATH=\"`pwd`/${TCL_STUB_LIB_FILE}\""
+eval "TCL_STUB_LIB_PATH=\"${exec_prefix}/lib/${TCL_STUB_LIB_FILE}\""
+
 eval "DLLSUFFIX=${DLLSUFFIX}"
 eval "LIBPREFIX=${LIBPREFIX}"
 eval "LIBSUFFIX=${LIBSUFFIX}"
@@ -105,14 +131,22 @@ AC_SUBST(TCL_MAJOR_VERSION)
 AC_SUBST(TCL_MINOR_VERSION)
 AC_SUBST(TCL_PATCH_LEVEL)
 AC_SUBST(TCL_LIB_FILE)
+AC_SUBST(TCL_LIB_FLAG)
 AC_SUBST(TCL_DLL_FILE)
 AC_SUBST(TCL_STUB_LIB_FILE)
+AC_SUBST(TCL_STUB_LIB_FLAG)
+AC_SUBST(TCL_BUILD_STUB_LIB_SPEC)
+AC_SUBST(TCL_STUB_LIB_SPEC)
+AC_SUBST(TCL_BUILD_STUB_LIB_PATH)
+AC_SUBST(TCL_STUB_LIB_PATH)
+
 AC_SUBST(TCL_SRC_DIR)
 AC_SUBST(TCL_BIN_DIR)
 AC_SUBST(TCL_DBGX)
 AC_SUBST(CFG_TCL_SHARED_LIB_SUFFIX)
 AC_SUBST(CFG_TCL_UNSHARED_LIB_SUFFIX)
 AC_SUBST(CFG_TCL_EXPORT_FILE_SUFFIX)
+AC_SUBST(TCL_SHARED_BUILD)
 
 AC_SUBST(PATHTYPE)
 AC_SUBST(CYGPATH)
@@ -134,13 +168,22 @@ AC_SUBST(LDFLAGS_OPTIMIZE)
 AC_SUBST(LDFLAGS_CONSOLE)
 AC_SUBST(LDFLAGS_WINDOW)
 AC_SUBST(AR)
+AC_SUBST(RANLIB)
 AC_SUBST(RC)
+AC_SUBST(RC_OUT)
+AC_SUBST(RC_TYPE)
+AC_SUBST(RC_INCLUDE)
+AC_SUBST(RES)
+AC_SUBST(LIBS)
+AC_SUBST(LIBS_GUI)
 AC_SUBST(DLLSUFFIX)
 AC_SUBST(LIBPREFIX)
 AC_SUBST(LIBSUFFIX)
 AC_SUBST(EXESUFFIX)
 AC_SUBST(LIBRARIES)
 AC_SUBST(MAKE_LIB)
+AC_SUBST(POST_MAKE_LIB)
 AC_SUBST(MAKE_DLL)
+AC_SUBST(MAKE_EXE)
 
 AC_OUTPUT(Makefile tclConfig.sh tcl.hpj)
