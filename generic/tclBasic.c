@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.75.2.5 2003/07/18 23:35:38 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.75.2.6 2003/09/29 22:03:44 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2560,6 +2560,9 @@ CallCommandTraces(iPtr, cmdPtr, oldName, newName, flags)
     ActiveCommandTrace active;
     char *result;
     Tcl_Obj *oldNamePtr = NULL;
+    int mask = (TCL_TRACE_DELETE | TCL_TRACE_RENAME);	/* Safety */
+
+    flags &= mask;
 
     if (cmdPtr->flags & CMD_TRACE_ACTIVE) {
 	/* 
@@ -2595,11 +2598,13 @@ CallCommandTraces(iPtr, cmdPtr, oldName, newName, flags)
     
     for (tracePtr = cmdPtr->tracePtr; tracePtr != NULL;
 	 tracePtr = active.nextTracePtr) {
+	int traceFlags = (tracePtr->flags & mask);
+
 	active.nextTracePtr = tracePtr->nextPtr;
-	if (!(tracePtr->flags & flags)) {
+	if (!(traceFlags & flags)) {
 	    continue;
 	}
-	cmdPtr->flags |= tracePtr->flags;
+	cmdPtr->flags |= traceFlags;
 	if (oldName == NULL) {
 	    TclNewObj(oldNamePtr);
 	    Tcl_IncrRefCount(oldNamePtr);
@@ -2610,7 +2615,7 @@ CallCommandTraces(iPtr, cmdPtr, oldName, newName, flags)
 	tracePtr->refCount++;
 	(*tracePtr->traceProc)(tracePtr->clientData,
 		(Tcl_Interp *) iPtr, oldName, newName, flags);
-	cmdPtr->flags &= ~tracePtr->flags;
+	cmdPtr->flags &= ~traceFlags;
 	if ((--tracePtr->refCount) <= 0) {
 	    ckfree((char*)tracePtr);
 	}
