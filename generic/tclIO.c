@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.20.2.2 2000/06/02 05:20:09 hobbs Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.20.2.3 2000/06/02 20:04:06 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -2653,7 +2653,6 @@ CloseChannel(interp, chanPtr, errorCode)
 
 	chanPtr->channelName	= chanDownPtr->channelName;
 	chanPtr->flags		= chanDownPtr->flags | CHANNEL_CLOSED;
-	chanPtr->flags		&= (~(TCL_READABLE|TCL_WRITABLE));
 
 	Tcl_FreeEncoding(chanDownPtr->encoding);
 	chanDownPtr->encoding	= NULL;

@@ -1,3 +1,10 @@
+2000-06-02  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* generic/tclIO.c (CloseChannel): removed the &ing out of
+	(TCL_READABLE|TCL_WRITABLE) from the flags, as CloseChannel does
+	this on the next pass through for the top channel, and it appeared
+	to be causing hangs by not allowing the final flush.
+
 2000-06-01  Jeff Hobbs  <hobbs@scriptics.com>
 
 	* generic/tclIO.c (CloseChannel): Rewrote CloseChannel code to
