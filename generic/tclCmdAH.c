@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.12.2.2.2.2 2001/12/03 18:23:13 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.12.2.2.2.3 2001/12/04 21:52:08 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -1972,15 +1972,15 @@ Tcl_FormatObjCmd(dummy, interp, objc, objv)
 #   define PTR_VALUE 2
 #   define DOUBLE_VALUE 3
 #   define STRING_VALUE 4
-#   define MAX_FLOAT_SIZE TCL_FMT_STATIC_FLOATBUFFER_SZ
+#   define MAX_FLOAT_SIZE 320
     
     Tcl_Obj *resultPtr;  	/* Where result is stored finally. */
-    char staticBuf[MAX_FLOAT_SIZE + 1];
+    char staticBuf[TCL_FMT_STATIC_FLOATBUFFER_SZ + 1];
                                 /* A static buffer to copy the format results 
 				 * into */
     char *dst = staticBuf;      /* The buffer that sprintf writes into each
 				 * time the format processes a specifier */
-    int dstSize = MAX_FLOAT_SIZE;
+    int dstSize = TCL_FMT_STATIC_FLOATBUFFER_SZ;
                                 /* The size of the dst buffer */
     int noPercent;		/* Special case for speed:  indicates there's
 				 * no field specifier, just a string to copy.*/

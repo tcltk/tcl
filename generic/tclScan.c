@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclScan.c,v 1.6.2.2.2.1 2001/12/03 18:23:14 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclScan.c,v 1.6.2.2.2.2 2001/12/04 21:52:09 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -551,13 +551,18 @@ Tcl_ScanObjCmd(dummy, interp, objc, objv)
     Tcl_UniChar ch, sch;
     Tcl_Obj **objs = NULL, *objPtr = NULL;
     int flags;
-    char buf[513];			  /* Temporary buffer to hold scanned
+
+#define BUF_SZ 513
+    STRING (BUF_SZ,buf);    		  /* Temporary buffer to hold scanned
 					   * number strings before they are
 					   * passed to strtoul. */
+
+    NEWSTR (BUF_SZ,buf);
 
     if (objc < 3) {
         Tcl_WrongNumArgs(interp, 1, objv,
 		"string format ?varName varName ...?");
+	RELTEMP (buf);
 	return TCL_ERROR;
     }
 
@@ -569,6 +574,7 @@ Tcl_ScanObjCmd(dummy, interp, objc, objv)
      */
     
     if (ValidateFormat(interp, format, numVars, &totalVars) == TCL_ERROR) {
+	RELTEMP (buf);
 	return TCL_ERROR;
     }
 
@@ -845,8 +851,8 @@ Tcl_ScanObjCmd(dummy, interp, objc, objv)
 		 * Scan an unsigned or signed integer.
 		 */
 
-		if ((width == 0) || (width > sizeof(buf) - 1)) {
-		    width = sizeof(buf) - 1;
+		if ((width == 0) || (width > BUF_SZ - 1)) {
+		    width = BUF_SZ - 1;
 		}
 		flags |= SCAN_SIGNOK | SCAN_NODIGITS | SCAN_NOZERO;
 		for (end = buf; width > 0; width--) {
@@ -978,8 +984,8 @@ Tcl_ScanObjCmd(dummy, interp, objc, objv)
 		 * Scan a floating point number
 		 */
 
-		if ((width == 0) || (width > sizeof(buf) - 1)) {
-		    width = sizeof(buf) - 1;
+		if ((width == 0) || (width > BUF_SZ - 1)) {
+		    width = BUF_SZ - 1;
 		}
 		flags |= SCAN_SIGNOK | SCAN_NODIGITS | SCAN_PTOK | SCAN_EXPOK;
 		for (end = buf; width > 0; width--) {
@@ -1135,5 +1141,7 @@ Tcl_ScanObjCmd(dummy, interp, objc, objv)
 	}
 	Tcl_SetObjResult(interp, objPtr);
     }
+    RELTEMP (buf);
     return code;
 }
+#undef BUF_SZ

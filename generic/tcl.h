@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.70.2.9.2.2 2001/12/03 18:23:13 andreas_kupries Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.70.2.9.2.3 2001/12/04 21:52:08 andreas_kupries Exp $
  */
 
 #ifndef _TCL
@@ -24,95 +24,6 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
-
-/* The following are
- * - a clause to activate all macros cutting features out of the core.
- * - feature dependencies
- */
-
-#ifdef MODULAR_TCL
-#define TCL_NO_SOCKETS         /* Disable "tcp"  channel driver */
-#define TCL_NO_TTY             /* Disable "tty"  channel driver */
-#define TCL_NO_PIPES           /* Disable "pipe" channel driver */
-#define TCL_NO_PIDCMD          /* Disable "pid" command */
-#define TCL_NO_NONSTDCHAN      /* Disable creation of channels beyond std* */
-#define TCL_NO_CHANNELCOPY     /* Disable channel copying, C/Tcl [fcopy] */
-#define TCL_NO_CHANNEL_READ    /* Disable Tcl_ReadChars, [read] */
-#define TCL_NO_CHANNEL_EOF     /* Disable [eof] */
-#define TCL_NO_CHANNEL_CONFIG  /* Disable [fconfigure] and Tcl_GetChannelOption */
-#define TCL_NO_CHANNEL_BLOCKED /* Disable [fblocked] */
-#define TCL_NO_FILEEVENTS      /* Disable [fileevent] and underlying APIs */
-#define TCL_NO_FILESYSTEM      /* Disable everything related to the filesystem */
-#define TCL_NO_LOADCMD         /* Disable [load] and machinery below */
-#define TCL_NO_SLAVEINTERP     /* No slave interp's */
-#define TCL_NO_CMDALIASES      /* No command aliases */
-#define TCL_STRUCT_ON_HEAP     /* Allocate temp. big structures off the heap */
-#endif
-
-#ifdef TCL_NO_NONSTDCHAN
-#define TCL_NO_SOCKETS    /* Disable "tcp"  channel driver */
-#define TCL_NO_TTY        /* Disable "tty"  channel driver */
-#define TCL_NO_PIPES      /* Disable "pipe" channel driver */
-#endif
-
-
-#ifdef TCL_STRUCT_ON_HEAP
-#define TYPE(t)          t *
-#define ITEM(var,item)   var -> item
-#define REF(var)         (var)
-#define NEWSTRUCT(t,var) (var) = (t *) Tcl_Alloc(sizeof(t))
-#define RELSTRUCT(var)   Tcl_Free((void*)(var))
-#else
-#define TYPE(t)         t
-#define ITEM(var,item)  var . item
-#define REF(var)        &(var)
-#define NEWSTRUCT(t,var) 
-#define RELSTRUCT(var) 
-#endif
-
-/*
- * Additional macros to control the sizes of various data placed on the stack.
- */
-
-#ifndef TCL_FMT_STATIC_FLOATBUFFER_SZ
-#define TCL_FMT_STATIC_FLOATBUFFER_SZ    320
-#endif
-#ifndef TCL_FMT_STATIC_VALIDATE_LIST
-#define TCL_FMT_STATIC_VALIDATE_LIST      16
-#endif
-#ifndef TCL_FOREACH_STATIC_ARGS
-#define TCL_FOREACH_STATIC_ARGS            9
-#endif
-#ifndef TCL_FOREACH_STATIC_LIST_SZ
-#define TCL_FOREACH_STATIC_LIST_SZ         4
-#endif
-#ifndef TCL_FOREACH_STATIC_VARLIST_SZ
-#define TCL_FOREACH_STATIC_VARLIST_SZ      5
-#endif
-#ifndef TCL_RESULT_APPEND_STATIC_LIST_SZ
-#define TCL_RESULT_APPEND_STATIC_LIST_SZ  16
-#endif
-#ifndef TCL_MERGE_STATIC_LIST_SZ
-#define TCL_MERGE_STATIC_LIST_SZ          20
-#endif
-#ifndef TCL_PROC_STATIC_CLOCALS
-#define TCL_PROC_STATIC_CLOCALS           20
-#endif
-#ifndef TCL_PROC_STATIC_ARGS
-#define TCL_PROC_STATIC_ARGS              20
-#endif
-#ifndef TCL_INVOKE_STATIC_ARGS
-#define TCL_INVOKE_STATIC_ARGS            20
-#endif
-#ifndef TCL_EVAL_STATIC_VARCHARS
-#define TCL_EVAL_STATIC_VARCHARS          30
-#endif
-#ifndef TCL_STATS_COUNTERS
-#define TCL_STATS_COUNTERS                10
-#endif
-#ifndef TCL_LSORT_STATIC_MERGE_BUCKETS
-#define TCL_LSORT_STATIC_MERGE_BUCKETS    30
 #endif
 
 /*

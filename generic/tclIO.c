@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.20.2.12.2.1 2001/11/28 17:58:36 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.20.2.12.2.2 2001/12/04 21:52:08 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -5498,7 +5498,7 @@ Tcl_BadChannelOption(interp, optionName, optionList)
 					 */
 {
     if (interp) {
-	CONST char *genericopt = 
+	static CONST char *genericopt = 
 	    "blocking buffering buffersize encoding eofchar translation";
 	char **argv;
 	int  argc, i;

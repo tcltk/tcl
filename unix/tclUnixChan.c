@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.17.2.1.2.1 2001/11/28 17:58:37 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.17.2.1.2.2 2001/12/04 21:52:09 andreas_kupries Exp $
  */
 
 #include	"tclInt.h"	/* Internal definitions for Tcl. */
@@ -2678,10 +2678,15 @@ TclUnixWaitForFile(fd, mask, timeout)
     Tcl_Time abortTime, now;
     struct timeval blockTime, *timeoutPtr;
     int index, bit, numFound, result = 0;
-    fd_mask readyMasks[3*MASK_SIZE];
-				/* This array reflects the readable/writable
+
+    struct rdm {
+      fd_mask m[3*MASK_SIZE];
+    };
+    TEMP (struct rdm) readyMasks; /* This array reflects the readable/writable
 				 * conditions that were found to exist by the
 				 * last call to select. */
+
+    NEWTEMP (struct rdm,readyMasks);
 
     /*
      * If there is a non-zero finite timeout, compute the time when
@@ -2712,7 +2717,7 @@ TclUnixWaitForFile(fd, mask, timeout)
     if (fd >= FD_SETSIZE) {
 	panic("TclWaitForFile can't handle file id %d", fd);
     }
-    memset((VOID *) readyMasks, 0, 3*MASK_SIZE*sizeof(fd_mask));
+    memset((VOID *) & ITEM (readyMasks,m), 0, 3*MASK_SIZE*sizeof(fd_mask));
     index = fd/(NBBY*sizeof(fd_mask));
     bit = 1 << (fd%(NBBY*sizeof(fd_mask)));
     
@@ -2740,30 +2745,30 @@ TclUnixWaitForFile(fd, mask, timeout)
 	 */
 
 	if (mask & TCL_READABLE) {
-	    readyMasks[index] |= bit;
+	    ITEM (readyMasks,m)[index] |= bit;
 	}
 	if (mask & TCL_WRITABLE) {
-	    (readyMasks+MASK_SIZE)[index] |= bit;
+	    (ITEM (readyMasks,m)+MASK_SIZE)[index] |= bit;
 	}
 	if (mask & TCL_EXCEPTION) {
-	    (readyMasks+2*(MASK_SIZE))[index] |= bit;
+	    (ITEM (readyMasks,m)+2*(MASK_SIZE))[index] |= bit;
 	}
 
 	/*
 	 * Wait for the event or a timeout.
 	 */
 
-	numFound = select(fd+1, (SELECT_MASK *) &readyMasks[0],
-		(SELECT_MASK *) &readyMasks[MASK_SIZE],
-		(SELECT_MASK *) &readyMasks[2*MASK_SIZE], timeoutPtr);
+	numFound = select(fd+1, (SELECT_MASK *) &ITEM (readyMasks,m)[0],
+		(SELECT_MASK *) &ITEM (readyMasks,m)[MASK_SIZE],
+		(SELECT_MASK *) &ITEM (readyMasks,m)[2*MASK_SIZE], timeoutPtr);
 	if (numFound == 1) {
-	    if (readyMasks[index] & bit) {
+	    if (ITEM (readyMasks,m)[index] & bit) {
 		result |= TCL_READABLE;
 	    }
-	    if ((readyMasks+MASK_SIZE)[index] & bit) {
+	    if ((ITEM (readyMasks,m)+MASK_SIZE)[index] & bit) {
 		result |= TCL_WRITABLE;
 	    }
-	    if ((readyMasks+2*(MASK_SIZE))[index] & bit) {
+	    if ((ITEM (readyMasks,m)+2*(MASK_SIZE))[index] & bit) {
 		result |= TCL_EXCEPTION;
 	    }
 	    result &= mask;
@@ -2786,5 +2791,6 @@ TclUnixWaitForFile(fd, mask, timeout)
 	    break;
 	}
     }
+    RELTEMP (readyMasks);
     return result;
 }

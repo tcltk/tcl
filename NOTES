@@ -249,3 +249,11 @@ On Heap
 	@ TclCompileIncrCmd ../../src/tcl834_stkr/unix/../generic/tclCompCmds.c 1356 = 264
 
 -----------------------------------------------------------------------------------------------
+
+TclObjInterpProc
+	832, 792, 752
+	=> STATIC_CLOCALS 20 ==> 716 bytes accounted for.
+	=> STATIC_CLOCALS is of help and changing it does not crash the interp.
+
+TclInvokeStringCommand
+	TCL_INVOKE_STATIC_ARGS => 20 x char* = 80

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.10.2.2.2.1 2001/12/03 18:23:13 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.10.2.2.2.2 2001/12/04 21:52:08 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -5921,7 +5921,7 @@ TclCompileByteCodesForExpr(interp, objPtr)
     Tcl_Obj *objPtr;
 {
     Interp *iPtr = (Interp *) interp;
-    TYPE (CompileEnv) compEnv;	/* Compilation environment structure
+    TEMP (CompileEnv) compEnv;	/* Compilation environment structure
 				 * allocated in frame. */
     LiteralTable *localTablePtr;
     register ByteCode *codePtr = NULL;
@@ -5932,7 +5932,7 @@ TclCompileByteCodesForExpr(interp, objPtr)
     char *string;
     int length, i, result;
 
-    NEWSTRUCT(CompileEnv,compEnv);
+    NEWTEMP(CompileEnv,compEnv);
     localTablePtr = &(ITEM(compEnv,localLitTable));
 
     string = Tcl_GetStringFromObj(objPtr, &length);
@@ -6003,7 +6003,7 @@ TclCompileByteCodesForExpr(interp, objPtr)
 		auxDataPtr++;
 	    }
 	    TclFreeCompileEnv(REF(compEnv));
-	    RELSTRUCT(compEnv);
+	    RELTEMP(compEnv);
 	    return result;
 	}
 
@@ -6027,7 +6027,7 @@ TclCompileByteCodesForExpr(interp, objPtr)
 	TclEmitOpcode(INST_DONE, REF(compEnv));
 	TclInitByteCodeObj(objPtr, REF(compEnv));
 	TclFreeCompileEnv(REF(compEnv));
-	RELSTRUCT(compEnv);
+	RELTEMP(compEnv);
 	codePtr = (ByteCode *) objPtr->internalRep.otherValuePtr;
 #ifdef TCL_COMPILE_DEBUG
 	if (tclTraceCompile == 2) {

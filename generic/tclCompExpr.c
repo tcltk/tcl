@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.4.6.1 2001/12/03 18:23:13 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.4.6.2 2001/12/04 21:52:08 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -230,11 +230,11 @@ TclCompileExpr(interp, script, numBytes, envPtr)
     CompileEnv *envPtr;		/* Holds resulting instructions. */
 {
     ExprInfo info;
-    TYPE (Tcl_Parse) parse;
+    TEMP (Tcl_Parse) parse;
     Tcl_HashEntry *hPtr;
     int maxDepth, new, i, code;
 
-    NEWSTRUCT(Tcl_Parse,parse);
+    NEWTEMP(Tcl_Parse,parse);
 
     /*
      * If this is the first time we've been called, initialize the table
@@ -303,7 +303,7 @@ TclCompileExpr(interp, script, numBytes, envPtr)
     Tcl_FreeParse(REF (parse));
 
     done:
-    RELSTRUCT (parse);
+    RELTEMP (parse);
     envPtr->maxStackDepth = maxDepth;
     envPtr->exprIsJustVarRef = info.exprIsJustVarRef;
     envPtr->exprIsComparison = info.exprIsComparison;

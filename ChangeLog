@@ -1,3 +1,27 @@
+2001-12-04  Andreas Kupries  <andreas_kupries@users.sourceforge.net> 
+
+	* NOTES:
+	* tcl.h:
+	* tclInt.h: Moved the macros to control feature exclusion and
+	  stack manipulation into the private area of the tcl
+	  headers. Renamed the macros for TCL_STRUCT_ON_HEAP to make their
+	  names more sensible.
+
+	* tclCmdAH.c:
+	* tclCompCmds.c:
+	* tclCompExpr.c:
+	* tclCompile.c:
+	* tclExecute.c:
+	* tclIO.c:
+	* tclParse.c:
+	* tclParseExpr.c:
+	* tclScan.c:
+	* tclUnixChan.c: Adapted to changed macro names, added some more
+	  places their structures go on the heap instead of the stacke
+	  stack.  Fixed a problem with TCL_FMT_STATIC_FLOATBUFFER_SZ which
+	  caused the interp to crash when actually used to reduce the
+	  usage of the stack.
+
 2001-12-03  Andreas Kupries  <andreas_kupries@users.sourceforge.net> 
 
 	* NOTES:

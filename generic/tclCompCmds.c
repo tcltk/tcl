@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.5.6.1 2001/12/03 18:23:13 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.5.6.2 2001/12/04 21:52:08 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -1022,10 +1022,10 @@ TclCompileIfCmd(interp, parsePtr, envPtr)
 				 * command created by Tcl_ParseCommand. */
     CompileEnv *envPtr;		/* Holds resulting instructions. */
 {
-    JumpFixupArray jumpFalseFixupArray;
+    TEMP (JumpFixupArray) jumpFalseFixupArray;
     				/* Used to fix the ifFalse jump after each
 				 * test when its target PC is determined. */
-    JumpFixupArray jumpEndFixupArray;
+    TEMP (JumpFixupArray) jumpEndFixupArray;
 				/* Used to fix the jump after each "then"
 				 * body to the end of the "if" when that PC
 				 * is determined. */
@@ -1033,10 +1033,14 @@ TclCompileIfCmd(interp, parsePtr, envPtr)
     int jumpDist, jumpFalseDist, jumpIndex;
     int numWords, wordIdx, numBytes, maxDepth, j, code;
     char *word;
-    char buffer[100];
+    STRING (100,buffer);
 
-    TclInitJumpFixupArray(&jumpFalseFixupArray);
-    TclInitJumpFixupArray(&jumpEndFixupArray);
+    NEWTEMP(JumpFixupArray,jumpFalseFixupArray);
+    NEWTEMP(JumpFixupArray,jumpEndFixupArray);
+    NEWSTR(100,buffer);
+
+    TclInitJumpFixupArray(REF (jumpFalseFixupArray));
+    TclInitJumpFixupArray(REF (jumpEndFixupArray));
     maxDepth = 0;
     code = TCL_OK;
 
@@ -1091,13 +1095,13 @@ TclCompileIfCmd(interp, parsePtr, envPtr)
 	    goto done;
 	}
 	maxDepth = TclMax(envPtr->maxStackDepth, maxDepth);
-	if (jumpFalseFixupArray.next >= jumpFalseFixupArray.end) {
-	    TclExpandJumpFixupArray(&jumpFalseFixupArray);
+	if (ITEM (jumpFalseFixupArray,next) >= ITEM (jumpFalseFixupArray,end)) {
+	    TclExpandJumpFixupArray(REF (jumpFalseFixupArray));
 	}
-	jumpIndex = jumpFalseFixupArray.next;
-	jumpFalseFixupArray.next++;
+	jumpIndex = ITEM (jumpFalseFixupArray,next);
+	ITEM (jumpFalseFixupArray,next)++;
 	TclEmitForwardJump(envPtr, TCL_FALSE_JUMP,
-		&(jumpFalseFixupArray.fixup[jumpIndex]));
+		&(ITEM (jumpFalseFixupArray,fixup)[jumpIndex]));
 	
 	/*
 	 * Skip over the optional "then" before the then clause.
@@ -1149,12 +1153,12 @@ TclCompileIfCmd(interp, parsePtr, envPtr)
 	 * jumpEndFixupArray are indexed by "jumpIndex".
 	 */
 
-	if (jumpEndFixupArray.next >= jumpEndFixupArray.end) {
-	    TclExpandJumpFixupArray(&jumpEndFixupArray);
+	if (ITEM (jumpEndFixupArray,next) >= ITEM (jumpEndFixupArray,end)) {
+	    TclExpandJumpFixupArray(REF (jumpEndFixupArray));
 	}
-	jumpEndFixupArray.next++;
+	ITEM (jumpEndFixupArray,next)++;
 	TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP,
-		&(jumpEndFixupArray.fixup[jumpIndex]));
+		&(ITEM (jumpEndFixupArray,fixup)[jumpIndex]));
 
  	/*
 	 * Fix the target of the jumpFalse after the test. Generate a 4 byte
@@ -1165,15 +1169,15 @@ TclCompileIfCmd(interp, parsePtr, envPtr)
 	 */
 
 	jumpDist = (envPtr->codeNext - envPtr->codeStart)
-	        - jumpFalseFixupArray.fixup[jumpIndex].codeOffset;
+	        - ITEM (jumpFalseFixupArray,fixup)[jumpIndex].codeOffset;
 	if (TclFixupForwardJump(envPtr,
-	        &(jumpFalseFixupArray.fixup[jumpIndex]), jumpDist, 120)) {
+	        &(ITEM (jumpFalseFixupArray,fixup)[jumpIndex]), jumpDist, 120)) {
 	    /*
 	     * Adjust the code offset for the proceeding jump to the end
 	     * of the "if" command.
 	     */
 
-	    jumpEndFixupArray.fixup[jumpIndex].codeOffset += 3;
+	    ITEM (jumpEndFixupArray,fixup)[jumpIndex].codeOffset += 3;
 	}
 
 	tokenPtr += (tokenPtr->numComponents + 1);
@@ -1245,19 +1249,19 @@ TclCompileIfCmd(interp, parsePtr, envPtr)
      * Fix the unconditional jumps to the end of the "if" command.
      */
     
-    for (j = jumpEndFixupArray.next;  j > 0;  j--) {
+    for (j = ITEM (jumpEndFixupArray,next);  j > 0;  j--) {
 	jumpIndex = (j - 1);	/* i.e. process the closest jump first */
 	jumpDist = (envPtr->codeNext - envPtr->codeStart)
-	        - jumpEndFixupArray.fixup[jumpIndex].codeOffset;
+	        - ITEM (jumpEndFixupArray,fixup)[jumpIndex].codeOffset;
 	if (TclFixupForwardJump(envPtr,
-	        &(jumpEndFixupArray.fixup[jumpIndex]), jumpDist, 127)) {
+	        &(ITEM (jumpEndFixupArray,fixup)[jumpIndex]), jumpDist, 127)) {
 	    /*
 	     * Adjust the immediately preceeding "ifFalse" jump. We moved
 	     * it's target (just after this jump) down three bytes.
 	     */
 
 	    unsigned char *ifFalsePc = envPtr->codeStart
-	            + jumpFalseFixupArray.fixup[jumpIndex].codeOffset;
+	            + ITEM (jumpFalseFixupArray,fixup)[jumpIndex].codeOffset;
 	    unsigned char opCode = *ifFalsePc;
 	    if (opCode == INST_JUMP_FALSE1) {
 		jumpFalseDist = TclGetInt1AtPtr(ifFalsePc + 1);
@@ -1278,9 +1282,12 @@ TclCompileIfCmd(interp, parsePtr, envPtr)
      */
 
     done:
-    TclFreeJumpFixupArray(&jumpFalseFixupArray);
-    TclFreeJumpFixupArray(&jumpEndFixupArray);
+    TclFreeJumpFixupArray(REF (jumpFalseFixupArray));
+    TclFreeJumpFixupArray(REF (jumpEndFixupArray));
     envPtr->maxStackDepth = maxDepth;
+    RELTEMP(jumpFalseFixupArray);
+    RELTEMP(jumpEndFixupArray);
+    RELTEMP(buffer);
     return code;
 }
 
@@ -1318,21 +1325,21 @@ TclCompileIncrCmd(interp, parsePtr, envPtr)
     CompileEnv *envPtr;		/* Holds resulting instructions. */
 {
     Tcl_Token *varTokenPtr, *incrTokenPtr;
-    TYPE (Tcl_Parse) elemParse;
+    TEMP (Tcl_Parse) elemParse;
     int gotElemParse = 0;
     char *name, *elName, *p;
     int nameChars, elNameChars, haveImmValue, immValue, localIndex, i, code;
     int maxDepth = 0;
     char buffer[160];
 
-    NEWSTRUCT (Tcl_Parse,elemParse);
+    NEWTEMP (Tcl_Parse,elemParse);
 
     envPtr->maxStackDepth = 0;
     if ((parsePtr->numWords != 2) && (parsePtr->numWords != 3)) {
 	Tcl_ResetResult(interp);
 	Tcl_AppendToObj(Tcl_GetObjResult(interp),
 	        "wrong # args: should be \"incr varName ?increment?\"", -1);
-	RELSTRUCT(elemParse);
+	RELTEMP(elemParse);
 	return TCL_ERROR;
     }
     
@@ -1539,7 +1546,7 @@ TclCompileIncrCmd(interp, parsePtr, envPtr)
     if (gotElemParse) {
         Tcl_FreeParse(REF (elemParse));
     }
-    RELSTRUCT (elemParse);
+    RELTEMP (elemParse);
     envPtr->maxStackDepth = maxDepth;
     return code;
 }
@@ -1578,7 +1585,7 @@ TclCompileSetCmd(interp, parsePtr, envPtr)
     CompileEnv *envPtr;		/* Holds resulting instructions. */
 {
     Tcl_Token *varTokenPtr, *valueTokenPtr;
-    TYPE (Tcl_Parse) elemParse;
+    TEMP (Tcl_Parse) elemParse;
     int gotElemParse = 0;
     register char *p;
     char *name, *elName;
@@ -1588,7 +1595,7 @@ TclCompileSetCmd(interp, parsePtr, envPtr)
     int maxDepth = 0;
     int code = TCL_OK;
 
-    NEWSTRUCT (Tcl_Parse,elemParse);
+    NEWTEMP (Tcl_Parse,elemParse);
 
     envPtr->maxStackDepth = 0;
     numWords = parsePtr->numWords;
@@ -1596,7 +1603,7 @@ TclCompileSetCmd(interp, parsePtr, envPtr)
 	Tcl_ResetResult(interp);
 	Tcl_AppendToObj(Tcl_GetObjResult(interp),
 	        "wrong # args: should be \"set varName ?newValue?\"", -1);
-	RELSTRUCT(elemParse);
+	RELTEMP(elemParse);
         return TCL_ERROR;
     }
     isAssignment = (numWords == 3);
@@ -1840,7 +1847,7 @@ TclCompileSetCmd(interp, parsePtr, envPtr)
     if (gotElemParse) {
         Tcl_FreeParse(REF (elemParse));
     }
-    RELSTRUCT (elemParse);
+    RELTEMP (elemParse);
     envPtr->maxStackDepth = maxDepth;
     return code;
 }

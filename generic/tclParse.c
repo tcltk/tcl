@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.13.2.1.2.1 2001/12/03 18:23:14 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.13.2.1.2.2 2001/12/04 21:52:09 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -540,9 +540,9 @@ ParseTokens(src, mask, parsePtr)
     int type, originalTokens, varToken;
     char utfBytes[TCL_UTF_MAX];
     Tcl_Token *tokenPtr;
-    TYPE (Tcl_Parse) nested;
+    TEMP (Tcl_Parse) nested;
 
-    NEWSTRUCT (Tcl_Parse,nested);
+    NEWTEMP (Tcl_Parse,nested);
 
     /*
      * Each iteration through the following loop adds one token of
@@ -589,7 +589,7 @@ ParseTokens(src, mask, parsePtr)
 	    varToken = parsePtr->numTokens;
 	    if (Tcl_ParseVarName(parsePtr->interp, src, parsePtr->end - src,
 		    parsePtr, 1) != TCL_OK) {
-	      RELSTRUCT(nested);
+	      RELTEMP(nested);
 		return TCL_ERROR;
 	    }
 	    src += parsePtr->tokenPtr[varToken].size;
@@ -607,7 +607,7 @@ ParseTokens(src, mask, parsePtr)
 		    parsePtr->errorType = ITEM(nested,errorType);
 		    parsePtr->term = ITEM(nested,term);
 		    parsePtr->incomplete = ITEM(nested,incomplete);
-		    RELSTRUCT(nested);
+		    RELTEMP(nested);
 		    return TCL_ERROR;
 		}
 		src = ITEM (nested,commandStart) + ITEM (nested,commandSize);
@@ -625,7 +625,7 @@ ParseTokens(src, mask, parsePtr)
 		    parsePtr->errorType = TCL_PARSE_MISSING_BRACKET;
 		    parsePtr->term = tokenPtr->start;
 		    parsePtr->incomplete = 1;
-		    RELSTRUCT(nested);
+		    RELTEMP(nested);
 		    return TCL_ERROR;
 		}
 	    }
@@ -687,7 +687,7 @@ ParseTokens(src, mask, parsePtr)
 	parsePtr->numTokens++;
     }
     parsePtr->term = src;
-    RELSTRUCT(nested);
+    RELTEMP(nested);
     return TCL_OK;
 }
 
@@ -1325,7 +1325,7 @@ Tcl_EvalEx(interp, script, numBytes, flags)
 {
     Interp *iPtr = (Interp *) interp;
     char *p, *next;
-    TYPE (Tcl_Parse) parse;
+    TEMP (Tcl_Parse) parse;
 #define NUM_STATIC_OBJS TCL_INVOKE_STATIC_ARGS
     Tcl_Obj *staticObjArray[NUM_STATIC_OBJS], **objv;
     Tcl_Token *tokenPtr;
@@ -1339,7 +1339,7 @@ Tcl_EvalEx(interp, script, numBytes, flags)
      */
     int gotParse = 0, objectsUsed = 0;
 
-    NEWSTRUCT(Tcl_Parse,parse);
+    NEWTEMP(Tcl_Parse,parse);
 
     if (numBytes < 0) {
 	numBytes = strlen(script);
@@ -1430,11 +1430,11 @@ Tcl_EvalEx(interp, script, numBytes, flags)
 
 	    iPtr->termOffset = (p - 1) - script;
 	    iPtr->varFramePtr = savedVarFramePtr;
-	    RELSTRUCT(parse);
+	    RELTEMP(parse);
 		    return TCL_OK;
 	}
     } while (bytesLeft > 0);
-    RELSTRUCT(parse);
+    RELTEMP(parse);
     iPtr->termOffset = p - script;
     iPtr->varFramePtr = savedVarFramePtr;
     return TCL_OK;
@@ -1519,7 +1519,7 @@ Tcl_EvalEx(interp, script, numBytes, flags)
     if (objv != staticObjArray) {
 	ckfree((char *) objv);
     }
-    RELSTRUCT(parse);
+    RELTEMP(parse);
     iPtr->varFramePtr = savedVarFramePtr;
     return code;
 }
@@ -1854,13 +1854,13 @@ Tcl_ParseVar(interp, string, termPtr)
 					 * one in the variable specifier. */
 
 {
-    TYPE (Tcl_Parse) parse;
+    TEMP (Tcl_Parse) parse;
     register Tcl_Obj *objPtr;
 
-    NEWSTRUCT(Tcl_Parse,parse);
+    NEWTEMP(Tcl_Parse,parse);
 
     if (Tcl_ParseVarName(interp, string, -1, REF(parse), 0) != TCL_OK) {
-	RELSTRUCT(parse);
+	RELTEMP(parse);
 	return NULL;
     }
 
@@ -1872,13 +1872,13 @@ Tcl_ParseVar(interp, string, termPtr)
 	 * There isn't a variable name after all: the $ is just a $.
 	 */
 
-	RELSTRUCT(parse);
+	RELTEMP(parse);
 	return "$";
     }
 
     objPtr = Tcl_EvalTokens(interp, ITEM (parse,tokenPtr), ITEM (parse,numTokens));
     if (objPtr == NULL) {
-	RELSTRUCT(parse);
+	RELTEMP(parse);
 	return NULL;
     }
 
@@ -1893,7 +1893,7 @@ Tcl_ParseVar(interp, string, termPtr)
     }
 #endif /*TCL_COMPILE_DEBUG*/    
     TclDecrRefCount(objPtr);
-    RELSTRUCT(parse);
+    RELTEMP(parse);
     return TclGetString(objPtr);
 }
 
@@ -2218,11 +2218,11 @@ CommandComplete(script, length)
     char *script;			/* Script to check. */
     int length;				/* Number of bytes in script. */
 {
-    TYPE (Tcl_Parse) parse;
+    TEMP (Tcl_Parse) parse;
     char *p, *end;
     int result;
 
-    NEWSTRUCT(Tcl_Parse,parse);
+    NEWTEMP(Tcl_Parse,parse);
 
     p = script;
     end = p + length;
@@ -2240,7 +2240,7 @@ CommandComplete(script, length)
 	result = 1;
     }
     Tcl_FreeParse(REF(parse));
-    RELSTRUCT(parse);
+    RELTEMP(parse);
     return result;
 }
 
