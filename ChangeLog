@@ -1,3 +1,12 @@
+2004-03-01  Don Porter	<dgp@users.sourceforge.net>
+
+	* generic/tclCmdMZ.c (TclCheckInterpTraces):	The TIP 62
+	* generic/tclTest.c (TestcmdtraceCmd):	implementation introduced a
+	* tests/basic.test (basic-39.10):	bug by testing the CallFrame
+	level instead of the iPtr->numLevels level when deciding what traces
+	created by Tcl_Create(Obj)Trace to call.  Added test to expose the
+	error, and made fix.  [Request 462580]
+
 2004-02-26  Daniel Steffen  <das@users.sourceforge.net>
 
 	*** 8.4.6 TAGGED FOR RELEASE ***
