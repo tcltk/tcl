@@ -1,3 +1,9 @@
+2003-03-19  Don Porter  <dgp@users.sourceforge.net>
+
+	* doc/Eval.3 (Tcl_EvalObjEx):			Corrected CONST and
+	* doc/ParseCmd.3 (Tcl_EvalTokensStandard):	return type errors
+	in documentation.  [Bug 683994]
+
 2003-03-18  Kevin Kenny  <kennykb@users.sourceforge.net>
 
 	* tests/registry.test: Changed the conditionals to avoid an
