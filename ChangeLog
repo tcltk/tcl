@@ -1,3 +1,9 @@
+2001-11-19  Kevin B. Kenny  <kennykb@users.sourceforge.net>
+	
+	* generic/tclCmdMZ.c (Tcl_TimeObjCmd): Corrected bug in [time]
+	when dealing with test sequences that run more than 2**31
+	microseconds. [Bug 478847]
+	
 2001-11-09  Don Porter  <dgp@users.sourceforge.net>
 
         * tests/var.test:
