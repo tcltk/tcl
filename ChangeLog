@@ -1,3 +1,9 @@
+2000-11-15  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* generic/tclVar.c (TclLookupVar): Changed references to part2 to
+	use elName instead in various error message generating spots, so
+	as to fix Bug-119192.
+
 2000-11-03  David Gravereaux  <davygrvy@ajubasolutions.com>
 
 	* win/.cvsignore: Removed 'configure' from the glob list now
