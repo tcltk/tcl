@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: expr.test,v 1.30.2.3 2005/02/03 23:56:14 kennykb Exp $
+# RCS: @(#) $Id: expr.test,v 1.30.2.4 2005/02/06 03:43:42 kennykb Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -5130,17 +5130,17 @@ test expr-28.1014 {input floating-point conversion} {ieeeFloatingPoint} {
 test expr-29.1 {smallest representible number} {ieeeFloatingPoint} {
     list [catch {convertToDouble 4.9406564584124654e-324} result] \
 	$result \
-	[catch {convertToDouble 2.4703282292062325e-324} result] \
+	[catch {convertToDouble 2.4703282292062327e-324} result] \
 	$result \
-	[catch {convertToDouble 2.4703282292062307e-324} result] \
+	[catch {convertToDouble 2.47032822920623e-324} result] \
 	$result
 } {0 0x0000000000000001 0 0x0000000000000001 1 {floating-point value too small to represent}}
 test expr-29.2 {smallest representible number} {ieeeFloatingPoint} {
     list [catch {convertToDouble -4.9406564584124654e-324} result] \
 	$result \
-	[catch {convertToDouble -2.4703282292062325e-324} result] \
+	[catch {convertToDouble -2.4703282292062327e-324} result] \
 	$result \
-	[catch {convertToDouble -2.4703282292062307e-324} result] \
+	[catch {convertToDouble -2.47032822920623e-324} result] \
 	$result
 } {0 0x8000000000000001 0 0x8000000000000001 1 {floating-point value too small to represent}}
 

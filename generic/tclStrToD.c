@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStrToD.c,v 1.1.2.3 2005/02/03 23:56:14 kennykb Exp $
+ * RCS: @(#) $Id: tclStrToD.c,v 1.1.2.4 2005/02/06 03:43:42 kennykb Exp $
  *
  *----------------------------------------------------------------------
  */
@@ -43,6 +43,18 @@ extern int errno;			/* Use errno from tclExecute.c. */
 
 #if ( FLT_RADIX == 2 ) && ( DBL_MANT_DIG == 53 ) && ( DBL_MAX_EXP == 1024 )
 #define IEEE_FLOATING_POINT
+#endif
+
+/*
+ * gcc on x86 needs access to rounding controls.  It is tempting to
+ * include fpu_control.h, but that file exists only on Linux; it is
+ * missing on Cygwin and MinGW.
+ */
+
+#if defined(__GNUC__) && defined(__i386)
+typedef unsigned int fpu_control_t __attribute__ ((__mode__ (__HI__)));
+#define _FPU_GETCW(cw) __asm__ ("fnstcw %0" : "=m" (*&cw))
+#define _FPU_SETCW(cw) __asm__ ("fldcw %0" : : "m" (*&cw))
 #endif
 
 TCL_DECLARE_MUTEX( initMutex );
@@ -141,18 +153,38 @@ TclStrToD( CONST char* s,
 
     static int mmaxpow = 0;	/* Largest power of ten that can be
 				 * represented exactly in a 'double'. */
-    double v;			/* Scanned value */
+
+    /* 
+     * v must be 'volatile double' on gc-ix86 to force correct rounding
+     * to IEEE double and not Intel double-extended.
+     */
+
+    volatile double v;		/* Scanned value */
     int machexp;		/* Exponent of the machine rep of the
 				 * scanned value */
     int expt2;			/* Exponent for computing first
 				 * approximation to the true value */
     int i, j;
 
+    /*
+     * With gcc on x86, the floating point rounding mode is double-extended.
+     * This causes the result of double-precision calculations to be rounded
+     * twice: once to the precision of double-extended and then again to the
+     * precision of double.  Double-rounding introduces gratuitous errors of
+     * 1 ulp, so we need to change rounding mode to 53-bits.
+     */
+
+#if defined(__GNUC__) && defined(__i386)
+    fpu_control_t roundTo53Bits = 0x027f;
+    fpu_control_t oldRoundingMode;
+    _FPU_GETCW( oldRoundingMode );
+    _FPU_SETCW( roundTo53Bits );
+#endif
+
     InitializeConstants();
 
     if ( mmaxpow == 0 ) {
-	int x = (int) (DBL_MANT_DIG * log((double) FLT_RADIX) / log( 5.0 ))
-	    - 1;
+	int x = (int) (DBL_MANT_DIG * log((double) FLT_RADIX) / log( 5.0 ));
 	if ( x < MAXPOW ) {
 	    mmaxpow = x;
 	} else {
@@ -311,6 +343,11 @@ TclStrToD( CONST char* s,
 		    *endPtr = p;
 		}
 		
+		/* Restore FPU mode word */
+
+#if defined(__GNUC__) && defined(__i386)
+		_FPU_SETCW( oldRoundingMode );
+#endif
 		return ParseNaN( signum, endPtr );
 
 	    }
@@ -339,13 +376,13 @@ TclStrToD( CONST char* s,
     /*
      * The easy cases are where we have an exact significand and
      * the exponent is small enough that we can compute the value
-     * with only one roundoff.  The code below that is surrounded
-     * with #if 0 corresponds to cases that Gay and Clinger claim
-     * function correctly. but have been observed to fail on mingw,
-     * returning some results that are off by 1 ulp.
-     * (Oddly enough, they function correctly on VC++6 on the same
-     * machine - and they pretty obviously are computing the products
-     * and quotients of exact floating point numbers.)
+     * with only one roundoff.  In addition to the cases where we
+     * can multiply or divide an exact-integer significand by an
+     * exact-integer power of 10, there is also David Gay's case
+     * where we can scale the significand by a power of 10 (still
+     * keeping it exact) and then multiply by an exact power of 10.
+     * The last case enables combinations like 83e25 that would
+     * otherwise require high precision arithmetic.
      */
 
     if ( nSigDigs <= DBL_DIG ) {
@@ -354,22 +391,18 @@ TclStrToD( CONST char* s,
 		v = exactSignificand * pow10[ exponent ];
 		goto returnValue;
 	    } else {
-#if 0
 		int diff = DBL_DIG - nSigDigs;
 		if ( exponent - diff <= mmaxpow ) {
 		    volatile double factor = exactSignificand * pow10[ diff ];
 		    v = factor * pow10[ exponent - diff ];
 		    goto returnValue;
 		}
-#endif
 	    }
 	} else {
-#if 0
 	    if ( exponent >= -mmaxpow ) {
 		v = exactSignificand / pow10[ -exponent ];
 		goto returnValue;
 	    }
-#endif
 	}
     }
 
@@ -441,11 +474,11 @@ TclStrToD( CONST char* s,
     }
 	
     v = SafeLdExp( v, machexp );
-    if ( v == 0.0 ) v = DBL_MIN;
+    if ( v == 0.0 ) {
+	v = SafeLdExp( 1.0, DBL_MIN_EXP * log2FLT_RADIX - mantBits );
+    }
 
-    /* 
-     * We have a first approximation in v. Now we need to refine it.
-     */
+    /* We have a first approximation in v. Now we need to refine it. */
 
     v = RefineResult( v, startOfSignificand, nSigDigs, exponent );
 
@@ -463,11 +496,16 @@ TclStrToD( CONST char* s,
     /* Return a number with correct sign */
 
     if ( signum ) {
-	return -v;
-    } else {
-	return v;
+	v = -v;
     }
-	
+
+    /* Restore FPU mode word */
+    
+#if defined(__GNUC__) && defined(__i386)
+    _FPU_SETCW( oldRoundingMode );
+#endif
+
+    return v;	
     
     /* Come here on an invalid input */
 
@@ -475,7 +513,14 @@ TclStrToD( CONST char* s,
     if ( endPtr != NULL ) {
 	*endPtr = s;
     }
+
+    /* Restore FPU mode word */
+    
+#if defined(__GNUC__) && defined(__i386)
+    _FPU_SETCW( oldRoundingMode );
+#endif
     return 0.0;
+
 }
 
 /*
@@ -866,7 +911,7 @@ ParseNaN( int signum,		/* Flag == 1 if minus sign has been
     }
 
     /* 
-     * Mask the hex number down to the least significant 52 bits.
+     * Mask the hex number down to the least significant 51 bits.
      *
      * If the result is zero, make it 1 so that we don't return Inf
      * instead of NaN 
@@ -908,7 +953,7 @@ static double
 SafeLdExp( double fract, int expt )
 {
     int minexpt = DBL_MIN_EXP * log2FLT_RADIX;
-    double retval;
+    volatile double retval;
     if ( expt < minexpt ) {
 	retval = ldexp( fract, expt - mantBits - minexpt );
 	retval *= ldexp( 1.0, mantBits + minexpt );

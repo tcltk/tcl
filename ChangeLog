@@ -1,6 +1,15 @@
+2005-02-06  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tclStrToD.c (TclStrToD, SafeLdExp):
+	    Added code to manage the FPU precision on gcc+x86.
+	    Enabled fast conversion of floats with small exponents
+	    now that precision is correct.
+	* tests/expr.test: Corrected test for the smallest representible
+	    value to the right IEEE values.
+	
 2005-02-03  Kevin B. Kenny  <kennykb@acm.org>
 
-	* generic/tclStrToD.tcl (TclStrToD, RefineResult, SafeLdExp):
+	* generic/tclStrToD.c (TclStrToD, RefineResult, SafeLdExp):
 	    Added code to ensure that 'ldexp' is never called with
 	    a value that will underflow.
 	* tests/expr.test: Added tests for the smallest representible
