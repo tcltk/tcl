@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacLoad.c,v 1.15 2002/07/18 16:26:04 vincentdarley Exp $
+ * RCS: @(#) $Id: tclMacLoad.c,v 1.16 2002/10/09 11:54:26 das Exp $
  */
 
 #include <CodeFragments.h>
@@ -92,8 +92,8 @@ typedef struct TclMacLoadInfo {
     FSSpec fileSpec;
 } TclMacLoadInfo;
 
-static int TryToLoad(Tcl_Interp *interp, TclMacLoadInfo *loadInfo, 
-		     CONST char *sym /* native */) 
+static int TryToLoad(Tcl_Interp *interp, TclMacLoadInfo *loadInfo, Tcl_Obj *pathPtr, 
+		     CONST char *sym /* native */);
 
 
 /*
@@ -123,14 +123,13 @@ TclpDlopen(interp, pathPtr, loadHandle, unloadProcPtr)
     Tcl_LoadHandle *loadHandle;	/* Filled with token for dynamically loaded
 				 * file which will be passed back to 
 				 * (*unloadProcPtr)() to unload the file. */
-    Tcl_FSUnloadFileProc **unloadProcPtr)
+    Tcl_FSUnloadFileProc **unloadProcPtr;
 				/* Filled with address of Tcl_FSUnloadFileProc
 				 * function which should be used for
 				 * this file. */
 {
     OSErr err;
     FSSpec fileSpec;
-    Tcl_DString ds;
     CONST char *native;
     TclMacLoadInfo *loadInfo;
     
@@ -147,8 +146,8 @@ TclpDlopen(interp, pathPtr, loadHandle, unloadProcPtr)
     loadInfo->fileSpec = fileSpec;
     loadInfo->connID = NULL;
     
-    if (TryToLoad(interp, loadInfo, NULL) != TCL_OK) {
-	ckfree(loadInfo);
+    if (TryToLoad(interp, loadInfo, pathPtr, NULL) != TCL_OK) {
+	ckfree((char*) loadInfo);
 	return TCL_ERROR;
     }
 
@@ -163,9 +162,10 @@ TclpDlopen(interp, pathPtr, loadHandle, unloadProcPtr)
  * loaded.
  */
 static int
-TryToLoad(Tcl_Interp *interp, TclMacLoadInfo *loadInfo, 
+TryToLoad(Tcl_Interp *interp, TclMacLoadInfo *loadInfo, Tcl_Obj *pathPtr,
 	  CONST char *sym /* native */) 
 {
+    OSErr err;
     CFragConnectionID connID;
     Ptr dummy;
     short fragFileRef, saveFileRef;
@@ -189,7 +189,7 @@ TryToLoad(Tcl_Interp *interp, TclMacLoadInfo *loadInfo,
      
     saveFileRef = CurResFile();
     SetResLoad(false);
-    fragFileRef = FSpOpenResFile(&fileSpec, fsRdPerm);
+    fragFileRef = FSpOpenResFile(&loadInfo->fileSpec, fsRdPerm);
     SetResLoad(true);
     if (fragFileRef != -1) {
 	if (sym != NULL) {
@@ -237,14 +237,20 @@ TryToLoad(Tcl_Interp *interp, TclMacLoadInfo *loadInfo,
      * as we are going to search for specific entry points passed to us.
      */
     
-    err = GetDiskFragment(&fileSpec, offset, length, fragName,
+    err = GetDiskFragment(&loadInfo->fileSpec, offset, length, fragName,
 	    kLoadCFrag, &connID, &dummy, errName);
     
     if (err != fragNoErr) {
 	p2cstr(errName);
+	if(pathPtr) {
 	Tcl_AppendResult(interp, "couldn't load file \"", 
 			 Tcl_GetString(pathPtr),
 			 "\": ", errName, (char *) NULL);
+	} else if(sym) {
+	Tcl_AppendResult(interp, "couldn't load library \"", 
+			 sym,
+			 "\": ", errName, (char *) NULL);
+	}
 	return TCL_ERROR;
     }
 
@@ -290,7 +296,7 @@ TclpFindSymbol(interp, loadHandle, symbol)
 	 */
 	Tcl_UtfToExternalDString(NULL, symbol, -1, &ds);
 	Tcl_DStringSetLength(&ds, Tcl_DStringLength(&ds) - 5);
-	res = TryToLoad(interp, loadInfo, Tcl_DStringValue(&ds));
+	res = TryToLoad(interp, loadInfo, NULL, Tcl_DStringValue(&ds));
 	Tcl_DStringFree(&ds);
 	if (res != TCL_OK) {
 	    return NULL;
@@ -340,7 +346,7 @@ TclpUnloadFile(loadHandle)
     if (loadInfo->loaded) {
 	CloseConnection((CFragConnectionID*) &(loadInfo->connID));
     }
-    ckfree(loadInfo);
+    ckfree((char*)loadInfo);
 }
 
 /*
