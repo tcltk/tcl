@@ -3,7 +3,7 @@
 # utility procs formerly in init.tcl which can be loaded on demand
 # for package management.
 #
-# RCS: @(#) $Id: package.tcl,v 1.16 2000/11/24 13:56:40 dkf Exp $
+# RCS: @(#) $Id: package.tcl,v 1.17 2001/03/14 18:25:40 dgp Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1998 Sun Microsystems, Inc.
@@ -165,9 +165,22 @@ proc pkg_mkIndex {args} {
 	# Load into the child any packages currently loaded in the parent
 	# interpreter that match the -load pattern.
 
+	if {[string length $loadPat]} {
+	    if {$doVerbose} {
+		tclLog "currently loaded packages: '[info loaded]'"
+		tclLog "trying to load all packages matching $loadPat"
+	    }
+	    if {![llength [info loaded]]} {
+		tclLog "warning: no packages are currently loaded, nothing"
+		tclLog "can possibly match '$loadPat'"
+	    }
+	}
 	foreach pkg [info loaded] {
 	    if {! [string match $loadPat [lindex $pkg 1]]} {
 		continue
+	    }
+	    if {$doVerbose} {
+		tclLog "package [lindex $pkg 1] matches '$loadPat'"
 	    }
 	    if {[catch {
 		load [lindex $pkg 0] [lindex $pkg 1] $c
@@ -345,9 +358,17 @@ proc pkg_mkIndex {args} {
 		tclLog "warning: error while $what $file: $msg"
 	    }
 	} else {
+	    set what [$c eval set ::tcl::debug]
+	    if {$doVerbose} {
+		tclLog "successful $what of $file"
+	    }
 	    set type [$c eval set ::tcl::type]
 	    set cmds [lsort [$c eval array names ::tcl::newCmds]]
 	    set pkgs [$c eval set ::tcl::newPkgs]
+	    if {$doVerbose} {
+		tclLog "commands provided were $cmds"
+		tclLog "packages provided were $pkgs"
+	    }
 	    if {[llength $pkgs] > 1} {
 		tclLog "warning: \"$file\" provides more than one package ($pkgs)"
 	    }
