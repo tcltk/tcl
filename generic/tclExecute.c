@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.150 2004/09/21 21:14:03 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.151 2004/09/21 22:45:41 dgp Exp $
  */
 
 #ifdef STDC_HEADERS
@@ -907,12 +907,8 @@ TclCompEvalObj(interp, objPtr)
 {
     register Interp *iPtr = (Interp *) interp;
     register ByteCode* codePtr;		/* Tcl Internal type of bytecode. */
-    int oldCount = iPtr->cmdCount;	/* Used to tell whether any commands
-					 * at all were executed. */
-    char *script;
     int result;
     Namespace *namespacePtr;
-
 
     /*
      * Check that the interpreter is ready to execute scripts
@@ -1006,7 +1002,6 @@ TclCompEvalObj(interp, objPtr)
 	TclCleanupByteCode(codePtr);
     }
     iPtr->numLevels--;
-    iPtr->flags &= ~ERR_ALREADY_LOGGED;
     return result;
 }
 

@@ -21,7 +21,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.53 2004/09/13 10:49:19 dkf Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.54 2004/09/21 22:45:42 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -515,6 +515,7 @@ Tcl_PopCallFrame(interp)
     }
 
     iPtr->flags |= saveErrFlag;
+    iPtr->flags &= ~ERR_ALREADY_LOGGED;
 
     /*
      * Decrement the namespace's count of active call frames. If the
