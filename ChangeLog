@@ -1,3 +1,8 @@
+2003-07-18  Daniel Steffen  <das@users.sourceforge.net>
+
+	* macosx/Makefile: added option to allow installing manpages
+	in addition to default html help.
+
 2003-07-18  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* doc/Utf.3: Tightened up documentation of Tcl_UtfNext and
