@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.13.2.1 2001/10/09 19:03:16 hobbs Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.13.2.2 2001/10/10 00:47:41 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -223,7 +223,7 @@ ExtractWinRoot(path, resultPtr, offset, typePtr)
 	    char *tail = (char*)&path[3];
 
 	    /* Skip separators */
-	    while (*tail && tail[0] == '/' || tail[0] == '\\') tail++;
+	    while (*tail && (tail[0] == '/' || tail[0] == '\\')) tail++;
 
 	    *typePtr = TCL_PATH_ABSOLUTE;
 	    Tcl_DStringAppend(resultPtr, path, 2);
