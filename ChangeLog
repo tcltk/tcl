@@ -1,4 +1,10 @@
-2002-06-14  Miguel Sofer  <msofer@users.sourceforge.net>
+2002-06-16  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* generic/tclCompile.c (TclCompileTokens): 
+	* tests/compile.test: [Bug 569438] in the processing of dollar
+	variables; report by Georgios Petasis. 
+	
+2002-06-16  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* generic/tclExecute.c: bug in the consolidation of the
 	INCR_..._STK instructions; the bug could not be exercised as the
