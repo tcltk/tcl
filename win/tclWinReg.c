@@ -11,10 +11,13 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinReg.c,v 1.24 2003/11/10 22:55:48 dgp Exp $
+ * RCS: @(#) $Id: tclWinReg.c,v 1.25 2004/01/15 22:20:38 davygrvy Exp $
  */
 
 #include <tclPort.h>
+#ifdef _MSC_VER
+#   pragma comment (lib, "advapi32.lib")
+#endif
 #include <stdlib.h>
 
 /*
@@ -212,7 +215,7 @@ int
 Registry_Init(
     Tcl_Interp *interp)
 {
-    if (!Tcl_InitStubs(interp, "8.0", 0)) {
+    if (Tcl_InitStubs(interp, "8.1", 0) == NULL) {
 	return TCL_ERROR;
     }
 
