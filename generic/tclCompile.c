@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.56 2004/01/13 23:15:02 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.57 2004/01/18 16:19:04 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -269,7 +269,7 @@ InstructionDesc tclInstructionTable[] = {
 	 * stacked objs: stktop is old value, next is new element value, next 
 	 * come (operand-2) indices; pushes the new value.
 	 */
-    {"return",		  1,   -2,          2,   {OPERAND_INT4, OPERAND_UINT4}},
+    {"return",		  9,   -2,          2,   {OPERAND_INT4, OPERAND_UINT4}},
 	/* Compiled [return], code, level are operands; options and result
 	 * are on the stack. */
     {"expon",		  1,   -1,	    0,	 {OPERAND_NONE}},
@@ -278,6 +278,10 @@ InstructionDesc tclInstructionTable[] = {
 	/* Test that top of stack is a valid list; error if not */
     {"invokeExp",   INT_MIN,   INT_MIN,    2, {OPERAND_UINT4, OPERAND_ULIST1}},
 	/* Invoke with expansion: <objc,objv> = expanded <op1,top op1> */
+    {"listIndexImm",	  5,	0,	    1,	 {OPERAND_IDX4}},
+	/* List Index:	push (lindex stktop op4) */
+    {"listRangeImm",	  9,	0,	    2,	 {OPERAND_IDX4, OPERAND_IDX4}},
+	/* List Range:	push (lrange stktop op4 op4) */
     {0}
 };
 
@@ -3390,6 +3394,17 @@ TclPrintInstruction(codePtr, pc)
 	        opnd = TclGetUInt1AtPtr(pc+numBytes); numBytes++;
 	    }
 	    fprintf(stdout, "0}");
+	    break;
+
+	case OPERAND_IDX4:
+	    opnd = TclGetInt4AtPtr(pc+numBytes); numBytes += 4;
+	    if (opnd >= -1) {
+		fprintf(stdout, "%d ", opnd);
+	    } else if (opnd == -2) {
+		fprintf(stdout, "end ");
+	    } else {
+		fprintf(stdout, "end-%d ", -2-opnd);
+            }
 	    break;
 
 	case OPERAND_NONE:

@@ -1,3 +1,17 @@
+2004-01-18  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclCompile.c, generic/tclCompile.h: Two new opcodes,
+	INST_LIST_INDEX_IMM and INST_LIST_RANGE_IMM, that have operand(s)
+	of new type OPERAND_IDX4 which represents indexes into things like
+	lists (and perhaps other things eventually.)
+	* generic/tclExecute.c (TclExecuteByteCode): Implementation of the
+	new opcodes.  INST_LIST_INDEX_IMM does a simple [lindex] with
+	either front- or end-based simple indexing.  INST_LIST_RANGE_IMM
+	does an [lrange] with front- or end-based simple indexing for both
+	the reference to the first and last items in the range.
+	* generic/tclCompCmds.c (TclCompileLassignCmd): Generate bytecode
+	for the [lassign] command.
+
 2004-01-17  David Gravereaux <davygrvy@pobox.com>
 
 	* win/tclWinInit.c:  added #pragma comment(lib, "advapi32.lib")
@@ -8,8 +22,6 @@
 
 	* generic/tclCmdIL.c (Tcl_LassignObjCmd): Add more shimmering
 	protection for when the list is also one of the variables.
-
-2004-01-17  Donal K. Fellows  <dkf@users.sf.net>
 
 	BASIC IMPLEMENTATION OF TIP#57
 	* generic/tclCmdIL.c (Tcl_LassignObjCmd): Implementation of the
