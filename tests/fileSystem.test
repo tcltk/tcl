@@ -387,7 +387,7 @@ test filesystem-1.38 {file normalisation with volume relative} \
 } "[lindex $drives 0]foo"
 
 test filesystem-1.39 {file normalisation with volume relative} {winOnly} {
-    set drv [lindex [file volumes] 0]
+    set drv C:/
     set dir [lindex [glob -type d -dir $drv *] 0]
     set old [pwd]
     cd $dir
