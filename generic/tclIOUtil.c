@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.26 2001/11/23 01:27:00 das Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.27 2002/01/03 21:52:15 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1137,16 +1137,16 @@ TclGetOpenMode(interp, string, seekFlagPtr)
  * Side effects:
  *	Depends on the commands in the file.  During the evaluation
  *	of the contents of the file, iPtr->scriptFile is made to
- *	point to fileName (the old value is cached and replaced when
+ *	point to pathPtr (the old value is cached and replaced when
  *	this function returns).
  *
  *----------------------------------------------------------------------
  */
 
 int
-Tcl_FSEvalFile(interp, fileName)
+Tcl_FSEvalFile(interp, pathPtr)
     Tcl_Interp *interp;		/* Interpreter in which to process file. */
-    Tcl_Obj *fileName;		/* Name of file to process.  Tilde-substitution
+    Tcl_Obj *pathPtr;		/* Path of file to process.  Tilde-substitution
 				 * will be performed on this name. */
 {
     int result, length;
@@ -1157,25 +1157,25 @@ Tcl_FSEvalFile(interp, fileName)
     Tcl_Channel chan;
     Tcl_Obj *objPtr;
 
-    if (Tcl_FSGetTranslatedPath(interp, fileName) == NULL) {
+    if (Tcl_FSGetTranslatedPath(interp, pathPtr) == NULL) {
 	return TCL_ERROR;
     }
 
     result = TCL_ERROR;
     objPtr = Tcl_NewObj();
 
-    if (Tcl_FSStat(fileName, &statBuf) == -1) {
+    if (Tcl_FSStat(pathPtr, &statBuf) == -1) {
         Tcl_SetErrno(errno);
 	Tcl_AppendResult(interp, "couldn't read file \"", 
-		Tcl_GetString(fileName),
+		Tcl_GetString(pathPtr),
 		"\": ", Tcl_PosixError(interp), (char *) NULL);
 	goto end;
     }
-    chan = Tcl_FSOpenFileChannel(interp, fileName, "r", 0644);
+    chan = Tcl_FSOpenFileChannel(interp, pathPtr, "r", 0644);
     if (chan == (Tcl_Channel) NULL) {
         Tcl_ResetResult(interp);
 	Tcl_AppendResult(interp, "couldn't read file \"", 
-		Tcl_GetString(fileName),
+		Tcl_GetString(pathPtr),
 		"\": ", Tcl_PosixError(interp), (char *) NULL);
 	goto end;
     }
@@ -1188,7 +1188,7 @@ Tcl_FSEvalFile(interp, fileName)
     if (Tcl_ReadChars(chan, objPtr, -1, 0) < 0) {
         Tcl_Close(interp, chan);
 	Tcl_AppendResult(interp, "couldn't read file \"", 
-		Tcl_GetString(fileName),
+		Tcl_GetString(pathPtr),
 		"\": ", Tcl_PosixError(interp), (char *) NULL);
 	goto end;
     }
@@ -1198,14 +1198,14 @@ Tcl_FSEvalFile(interp, fileName)
 
     iPtr = (Interp *) interp;
     oldScriptFile = iPtr->scriptFile;
-    iPtr->scriptFile = fileName;
+    iPtr->scriptFile = pathPtr;
     Tcl_IncrRefCount(iPtr->scriptFile);
     string = Tcl_GetStringFromObj(objPtr, &length);
     result = Tcl_EvalEx(interp, string, length, 0);
     /* 
      * Now we have to be careful; the script may have changed the
      * iPtr->scriptFile value, so we must reset it without
-     * assuming it still points to 'fileName'.
+     * assuming it still points to 'pathPtr'.
      */
     if (iPtr->scriptFile != NULL) {
 	Tcl_DecrRefCount(iPtr->scriptFile);
@@ -1221,7 +1221,7 @@ Tcl_FSEvalFile(interp, fileName)
 	 * Record information telling where the error occurred.
 	 */
 
-	sprintf(msg, "\n    (file \"%.150s\" line %d)", Tcl_GetString(fileName),
+	sprintf(msg, "\n    (file \"%.150s\" line %d)", Tcl_GetString(pathPtr),
 		interp->errorLine);
 	Tcl_AddErrorInfo(interp, msg);
     }
@@ -1970,14 +1970,14 @@ NativeFileAttrStrings(pathPtr, objPtrRef)
  */
 
 static int
-NativeFileAttrsGet(interp, index, fileName, objPtrRef)
+NativeFileAttrsGet(interp, index, pathPtr, objPtrRef)
     Tcl_Interp *interp;		/* The interpreter for error reporting. */
     int index;			/* index of the attribute command. */
-    Tcl_Obj *fileName;		/* filename we are operating on. */
+    Tcl_Obj *pathPtr;		/* path of file we are operating on. */
     Tcl_Obj **objPtrRef;	/* for output. */
 {
     return (*tclpFileAttrProcs[index].getProc)(interp, index, 
-					       fileName, objPtrRef);
+					       pathPtr, objPtrRef);
 }
 
 /*
@@ -2001,14 +2001,14 @@ NativeFileAttrsGet(interp, index, fileName, objPtrRef)
  */
 
 static int
-NativeFileAttrsSet(interp, index, fileName, objPtr)
+NativeFileAttrsSet(interp, index, pathPtr, objPtr)
     Tcl_Interp *interp;		/* The interpreter for error reporting. */
     int index;			/* index of the attribute command. */
-    Tcl_Obj *fileName;		/* filename we are operating on. */
+    Tcl_Obj *pathPtr;		/* path of file we are operating on. */
     Tcl_Obj *objPtr;		/* set to this value. */
 {
     return (*tclpFileAttrProcs[index].setProc)(interp, index,
-					       fileName, objPtr);
+					       pathPtr, objPtr);
 }
 
 /*
