@@ -1,8 +1,15 @@
+2003-03-06  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* tests/io.test: Define an openpipe constraint and add
+	it to the constraint list of any test that creates
+	a pipe using the open command. This is only useful to
+	Jacl which does not support pipes.
+
 2003-03-06  Don Porter  <dgp@users.sourceforge.net>
 
-        * generic/TclUtf.c (Tcl_UniCharNcasecmp):       Corrected failure to
-        * tests/utf.test (utf-25.*):    properly compare Unicode strings of
-        different case in a case insensitive manner.  [Bug 699042]
+	* generic/TclUtf.c (Tcl_UniCharNcasecmp):       Corrected failure to
+	* tests/utf.test (utf-25.*):    properly compare Unicode strings of
+	different case in a case insensitive manner.  [Bug 699042]
 
 2003-03-06  Kevin Kenny  <kennykb@users.sourceforge.net>
 
