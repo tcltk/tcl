@@ -1,3 +1,9 @@
+2001-06-28  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* tests/unixInit.test (unixInit-1.2): Modified so as not to
+	require a local echo service, which fails on many systems which
+	have that turned off for security reasons...
+
 2001-06-27  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclInt.h:

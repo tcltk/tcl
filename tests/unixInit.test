@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: unixInit.test,v 1.15 2001/06/18 13:13:23 dkf Exp $
+# RCS: @(#) $Id: unixInit.test,v 1.16 2001/06/28 09:54:32 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -63,14 +63,39 @@ test unixInit-1.1 {TclpInitPlatform: ignore SIGPIPE} {unixOnly installedTcl} {
 # channels are set up as part of initialisation of the interpreter so
 # the test seems to me to fit here as well as anywhere else.
 test unixInit-1.2 {initialisation: channel type deduction} {unixOnly installedTcl} {
-    set sock [socket localhost echo]
-    set pipe [open |[list $::tcltest::tcltest >@$sock] w]
-    puts $pipe {puts [fconfigure stdout -peername]; exit}
-    close $pipe
-    gets $sock channeltype
-    close $sock
-    set channeltype
-} {127.0.0.1 localhost 7}
+    set pipe1 [open |[list $::tcltest::tcltest] r+]
+    puts $pipe1 {
+	proc accept {channel host port} {
+	    puts $channel {
+		puts [fconfigure stdin -peername]
+		flush stdout
+		exit
+	    }
+	    flush $channel
+	    close $channel
+	    exit
+	}
+	set server [socket -server accept 0]
+	puts stdout [fconfigure $server -sockname]
+	flush stdout
+	update
+	vwait forever \
+	    }
+    flush $pipe1
+    set port [lindex [gets $pipe1] 2]
+    set sock [socket localhost $port]
+    set pipe2 [open |[list $::tcltest::tcltest <@$sock] r]
+    set result [gets $pipe2]
+    close $pipe2
+    close $pipe1
+    catch {close $sock}
+    set expected [list 127.0.0.1 localhost $port]
+    if {[string equal $expected $result]} {
+	subst "OK"
+    } else {
+	subst "Expected: $expected, Got $result"
+    }
+} {OK}
 
 proc getlibpath "{program [list $::tcltest::tcltest]}" {
     set f [open "|$program" w+]
