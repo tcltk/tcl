@@ -1,11 +1,17 @@
 2004-03-29  Don Porter  <dgp@users.sourceforge.net>
 
 	* doc/msgcat.n:	Clarified message catalog file encodings. [Bug 811457]
-	* library/msgcat/msgcat.tcl:	Updated internals to make use of
-	* library/msgcat/pkgIndex.tcl:	[dict]s to store message catalog
+	* library/msgcat/msgcat.tcl:	
+	Updated internals to make use of [dict]s to store message catalog
 	data and to use [source -encoding utf-8] to access catalog files.
-	Thanks to Michael Sclenker.  Also corrects bug to allow
-	translation to an empty string.  Bump to msgcat 1.4.1.  [Patch 875055]
+	Thanks to Michael Sclenker.  [Patch 875055, RFE 811459]
+        Corrected [mcset] to be able to successfully set a translation to
+        the empty string.  [mcset $loc $src {}] was incorrectly set the
+        $loc translation of $src back to $src.  Also changed [ConvertLocale]
+        to minimally require a non-empty "language" part in the locale value.
+        If not, an error raised prompts [Init] to keep looking for a valid
+        locale value, or ultimately fall back on the "C" locale. [Bug 811461].
+	* library/msgcat/pkgIndex.tcl:	Bump to msgcat 1.4.1.  
 
 2004-03-30  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
