@@ -1,3 +1,4 @@
+Executing ssh-askpass to query the password...
 /* 
  * tclExecute.c --
  *
@@ -17,7 +18,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.21.2.2 2001/04/27 23:04:40 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.21.2.3 2001/04/30 20:52:33 msofer Exp $
  */
 
 #include "tclInt.h"

@@ -7,7 +7,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.h,v 1.1.2.4 2001/04/27 23:04:41 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.h,v 1.1.2.5 2001/04/30 20:52:34 msofer Exp $
  */
 
 
@@ -31,19 +31,14 @@
  * 2.  GCC     uses a gcc extension to jump directly from the end
  *                 of an instruction to the start of the next one, using
  *                 a jump table and the "labels as values" extension
- * 3.  MSVC    "tricks" msvc into compiling similar code to gcc: avoids
- *                 the bounds check and performs 0-padding (by storing the 
- *                 opcode in an int variable) before jumping to the switch 
- *                 statement. The optimiser *should* combine both jumps,
- *                 i.e., eliminate the first jump to a *known* location
- *                 from where the code jumps to an *unkown at CT* location. 
+ * 3.  MSVC    directs msvc to omit checking the bounds of the switch
  *
+ ********************************************************************
  * FOR DEBUGGING PURPOSES
  * If you need the functionality triggered by tcl_traceExec >= 2, then 
  * uncomment the following line:
  */
 /* #define TCL_BYTECODE_DEBUG 1 */
-
 
 
 #define SWITCH 0
@@ -55,8 +50,6 @@
  * TCL_BYTECODE_DEBUG is set, fallback to SWITCH for any compiler
  */
 
-#ifndef JUMP_version
-
 #ifdef  __GNUC__
 #define    JUMP_version GCC
 #elif defined( _MSC_VER ) && ( _MSC_VER >= 1200 ) && defined( _MSC_EXTENSIONS )
@@ -66,74 +59,68 @@
 #define    JUMP_version SWITCH
 #endif  /* choice of method */
 
+
 #ifdef TCL_BYTECODE_DEBUG 
 # undef JUMP_version
 # define JUMP_version SWITCH
-#endif
-
-#endif /* JUMP_version */
-
-/*
- * Define the macros
- */
-
-/**** SWITCH ****/
-
-#if JUMP_version == SWITCH
-#define _CASE(instruction) case instruction
-#define _CASE_DECLS
-#define _CASE_END \
-      default: \
-          panic("TclExecuteByteCode: unrecognized opCode %u", *pc);\
-      } /* end of switch on opCode */
-#define CHECK_OPCODES 0
-#define NEXT_INSTR goto instructions_start 
-#ifndef TCL_BYTECODE_DEBUG /* not debugging */
-#  define _CASE_START \
-    instructions_start: \
-    switch (*pc) {
-#else /* debugging */
-#  define _CASE_START \
-    instructions_start: \
+#  define INIT_TRACE_CHECK \
       if (tclTraceExec == 3) {\
           fprintf(stdout, "%2d: %2d ", iPtr->numLevels, tosPtr - eePtr->stackPtr);\
           TclPrintInstruction(codePtr, pc);\
           fflush(stdout);\
-      } \
+      } 
+#else /* not debugging */
+#  define INIT_TRACE_CHECK
+#endif /* debugging code */ 
+
+
+/*
+ * Define the macros for the different threading methods
+ */
+
+/**** SWITCH ****/
+#if JUMP_version == SWITCH
+#define _CASE_DECLS
+#define CHECK_OPCODES 0
+#  define _CASE_START \
+    instructions_start: \
+    INIT_TRACE_CHECK \
     switch (*pc) {
-#endif /*TCL_BYTECODE_DEBUG */
+#define _CASE(instruction) case instruction
+#define NEXT_INSTR goto instructions_start 
+#define _CASE_END \
+      default: \
+          panic("TclExecuteByteCode: unrecognized opCode %u", *pc);\
+      } /* end of switch on opCode */
 #endif /* SWITCH methods */
 
 
-/**** MSVC ****/
 
+/**** MSVC ****/
 #if JUMP_version == MSVC
-#define _CASE(instruction) case instruction
-#define _CASE_DECLS int intInst = (int) *pc;
+#define _CASE_DECLS
+#define CHECK_OPCODES 1
 #define _CASE_START \
-    intInst = (int) *pc;\
     instructions_start: \
-    switch (intInst) {
+    switch (*pc) {
+#define _CASE(instruction) case instruction
+#define NEXT_INSTR goto instructions_start 
 #define _CASE_END \
       default: \
 	  __assume(0); /* do not check bounds of switch! */ \
       } /* end of switch on opCode */
-#define CHECK_OPCODES 1
-#define NEXT_INSTR \
-      intInst = (int) *pc; goto instructions_start 
 #endif /* MSVC methods */
 
 
 /**** GCC ****/
-
 #if JUMP_version == GCC
-#define _CASE(instruction) _CASE_ ## instruction
-#define CHECK_OPCODES 1
-#define NEXT_INSTR goto *jumpTable[*pc]
-#define _CASE_START  NEXT_INSTR;
-#define _CASE_END /* end of switch on opCode */
 #define _CASE_DECLS \
     static const void *jumpTable[] = _JUMP_TABLE;
+#define CHECK_OPCODES 1
+#define _CASE_START  NEXT_INSTR;
+#define _CASE(instruction) _CASE_ ## instruction
+#define NEXT_INSTR goto *jumpTable[*pc]
+#define _CASE_END /* end of switch on opCode */
 /* _CASE_DECLS uses the following jump table
  * IT HAS TO BE IN THE CORRECT ORDER, of course */
 #define _JUMP_TABLE {\

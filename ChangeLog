@@ -1,3 +1,7 @@
+2001-04-30  Miguel Sofer <msofer@users.sourceforge.net>
+
+	* generic/tclExecute.h: cleanup, modif of MSVC code
+
 2001-04-27  Miguel Sofer <msofer@users.sourceforge.net>
 
 	* generic/tclExecute.c: small bugfix
