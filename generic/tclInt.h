@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.125 2003/04/22 23:20:43 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.126 2003/04/28 12:34:27 dkf Exp $
  */
 
 #ifndef _TCLINT
@@ -2040,6 +2040,9 @@ EXTERN Tcl_Obj *TclPtrSetVar _ANSI_ARGS_((Tcl_Interp *interp, Var *varPtr,
 EXTERN Tcl_Obj *TclPtrIncrVar _ANSI_ARGS_((Tcl_Interp *interp, Var *varPtr,
 		    Var *arrayPtr, CONST char *part1, CONST char *part2,
 		    CONST long i, CONST int flags));
+EXTERN Tcl_Obj *TclPtrIncrWideVar _ANSI_ARGS_((Tcl_Interp *interp, Var *varPtr,
+		    Var *arrayPtr, CONST char *part1, CONST char *part2,
+		    CONST Tcl_WideInt i, CONST int flags));
 
 /*
  *----------------------------------------------------------------
