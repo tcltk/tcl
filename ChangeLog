@@ -1,3 +1,13 @@
+2004-02-12  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* README:           update patchlevel to 8.4.6
+	* generic/tcl.h:
+	* tools/tcl.wse.in:
+	* unix/configure, unix/configure.in, unix/tcl.spec:
+	* win/README.binary, win/configure, win/configure.in:
+
+	* unix/tcl.m4: update HP-11 build libs setup
+
 2004-02-06  Don Porter	<dgp@users.sourceforge.net>
 
 	* doc/clock.n:	Removed reference to non-existent [file ctime].
@@ -7,24 +17,24 @@
 	* library/tcltest/tcltest.tcl:	Corrected references to
 	non-existent $name variable in [cleanupTests]. [Bug 833637]
  
-2004-02-03  Don Porter  <dgp@users.sourceforge.net>
+2004-02-03  Don Porter	<dgp@users.sourceforge.net>
 
-        * library/tcltest/tcltest.tcl:  Corrected parsing of single
-        command line argument (option with missing value) [Bug 833910]
-        * library/tcltest/pkgIndex.tcl: Bump to version 2.2.5.
+	* library/tcltest/tcltest.tcl:	Corrected parsing of single
+	command line argument (option with missing value) [Bug 833910]
+	* library/tcltest/pkgIndex.tcl: Bump to version 2.2.5.
 
 2004-02-02  David Gravereaux <davygrvy@pobox.com>
 
 	* generic/tclIO.c (Tcl_Ungets): fixes improper filling of the
 	channel buffer. [Bug 405995]
 
-2004-01-13  Don Porter  <dgp@users.sourceforge.net>
+2004-01-13  Don Porter	<dgp@users.sourceforge.net>
 
-        * generic/tclFileName.c (Tcl_GlobObjCmd):  Latest changes to
-        management of the interp result by Tcl_GetIndexFromObj() exposed
-        improper interp result management in the [glob] command procedure.
-        Corrected by adopting the Tcl_SetObjResult(Tcl_NewStringObj) pattern.
-        This stopped a segfault in test filename-11.36.
+	* generic/tclFileName.c (Tcl_GlobObjCmd):  Latest changes to
+	management of the interp result by Tcl_GetIndexFromObj() exposed
+	improper interp result management in the [glob] command procedure.
+	Corrected by adopting the Tcl_SetObjResult(Tcl_NewStringObj) pattern.
+	This stopped a segfault in test filename-11.36.
 
 2004-01-13  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
@@ -46,8 +56,8 @@
 
 2003-12-17  Zoran Vasiljevic  <zv@archiware.com>
 
-        * generic/tclIOUtil.c: fixed 2 memory (object) leaks.
-        This fixes Tcl Bug #839519.
+	* generic/tclIOUtil.c: fixed 2 memory (object) leaks.
+	This fixes Tcl Bug #839519.
 
 2003-12-12  Vince Darley  <vincentdarley@users.sourceforge.net>
 
