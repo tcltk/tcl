@@ -1,3 +1,44 @@
+1999-12-03  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* doc/load.n: added note about NT's buggy handling of './' with
+	LoadLibrary
+
+	* library/http2.1/http.tcl: fixed error handling in http::Event
+	[Bug: 3752]
+
+	* tests/env.test: removed knownBug limitation from working test
+	* tests/all.tcl: ensured that ::tcltest::testsDirectory would be
+	set to an absolute path
+
+	* tests/expr-old.test:
+	* tests/parseExpr.test:
+	* tests/string.test:
+	* generic/tclGet.c:
+	* generic/tclInt.h:
+	* generic/tclObj.c:
+	* generic/tclParseExpr.c:
+	* generic/tclUtil.c:
+	* generic/tclExecute.c: added TclCheckBadOctal routine to enhance
+	error message checking for when users use invalid octal numbers
+	(like 08), as well as replumbed the Expr*Funcs with a new
+	VerifyExprObjType to simplify type handling.
+
+	* tests/expr.test:
+	* generic/tclCompile.c: fixed 'bad code length' error for
+	'expr + {[incr]}' case, with new test case [Bug: 3736]
+	and seg fault on 'expr + {[error]}' (different cause) that
+	was caused by a correct optimization that didn't correctly
+	track how it was modifying the source string in the opt.
+	The optimization was removed, which means that:
+		expr 1 + {[string length abc]}
+	will be not be compiled inline as before, but this should be
+	written:
+		expr {1 + [string length abc]}
+	which will be compiled inline for speed.  This prevents
+		expr 1 + {[mindless error]}
+	from seg faulting, and only affects optimizations for
+	degenerate cases [Bug: 3737]
+
 1999-12-01  Scott Redman <redman@scriptics.com>
 
 	* generic/tcl.decls :
@@ -12,7 +53,6 @@
 	* generic/tclEncoding.c:
 	* generic/tclEvent.c:  Moved encoding-related startup code from
 	tclEvent.c into the more appropriate tclEncoding.c.
-
 	
 1999-11-30  Jeff Hobbs  <hobbs@scriptics.com>
 
