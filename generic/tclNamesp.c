@@ -21,7 +21,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.37 2004/03/24 21:54:32 dkf Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.38 2004/05/23 22:53:20 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -2324,6 +2324,23 @@ Tcl_FindNamespaceVar(interp, name, contextNsPtr, flags)
 		    simpleName);
             if (entryPtr != NULL) {
                 varPtr = (Var *) Tcl_GetHashValue(entryPtr);
+		
+		/* Fix for [Bug 959052].
+		 * When a varName is looked from a namespace different from the
+		 * global one, there is no corresponding variable in the namespace and
+		 * there is a "zombie" variable in the global namespace (ie, the
+		 * varName is in the hash table, but the variable is unset), this code
+		 * returns a reference to the zombie. Except when the zombie was
+		 * created by a [variable] call, it should instead create a
+		 * variable in the namespace.
+		 * In particular, zombies created by [trace], [upvar], [global] or
+		 * a reference in a tclNsVarNameType obj should never be found.
+		 */
+		if (TclIsVarUndefined(varPtr)
+			&& !(varPtr->flags & VAR_NAMESPACE_VAR)		    
+			&& !(flags & (TCL_GLOBAL_ONLY|TCL_NAMESPACE_ONLY))) {
+		    varPtr = NULL;
+		}		
             }
         }
     }
