@@ -1,5 +1,7 @@
 2002-07-31  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
+	* unix/tcl.m4 (SC_BUGGY_STRTOD): Enabled caching of test results.
+
 	* unix/tcl.m4 (SC_BUGGY_STRTOD): Solaris 2.8 still has a buggy
 	strtod() implementation; make sure we detect it.
 
