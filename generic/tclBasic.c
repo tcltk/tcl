@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.58 2002/06/11 15:42:19 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.59 2002/06/12 19:36:14 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -4970,7 +4970,7 @@ Tcl_DeleteTrace(interp, trace)
     while ( (*tracePtr2) != NULL && (*tracePtr2) != tracePtr ) {
 	tracePtr2 = &((*tracePtr2)->nextPtr);
     }
-    if ( tracePtr2 == NULL ) {
+    if ( *tracePtr2 == NULL ) {
 	return;
     }
     (*tracePtr2) = (*tracePtr2)->nextPtr;
