@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: if.test,v 1.1.2.2 1998/09/24 23:59:26 stanton Exp $
+# RCS: @(#) $Id: if.test,v 1.1.2.3 1998/10/06 20:27:21 stanton Exp $
 
 if {[string compare test [info procs test]] == 1} then {source defs}
 
@@ -1001,5 +1001,9 @@ test if-8.5 {if cmd with computed command names: return value} {
     set z if
     $z 0 then {set a 22; concat abc} elseif 1 {concat def} {concat ghi}
 } def
+
+test if-9.1 {if cmd with namespace qualifiers} {
+    ::if {1} {set x 4}
+} 4
 
 return
