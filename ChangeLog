@@ -1,3 +1,7 @@
+2002-07-05  Don Porter  <dgp@users.sourceforge.net>
+
+	* changes: added recent changes
+
 2002-07-05  Reinhard Max  <max@suse.de>
 
 	* generic/tclClock.c (FormatClock): Convert the format string to
