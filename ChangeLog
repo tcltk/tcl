@@ -1,3 +1,9 @@
+2003-12-14  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclCmdMZ.c (Tcl_SwitchObjCmd): TIP#75 Implementation
+	* tests/switch.test:	Can now get submatch information when
+	* doc/switch.n:		using -regexp matching in [switch].
+
 2003-12-14  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* generic/tclPathObj.c: complete rewrite of generic file 
