@@ -1,47 +1,7 @@
 Tcl
 
-SCCS: %Z% $Id: README,v 1.8 1998/08/04 23:22:52 welch Exp $ 
+SCCS: %Z% $Id: README,v 1.9 1998/08/06 15:18:30 welch Exp $ 
 
-0. Preface
-----------
-This is the last pre-release of 8.0.3, tcl_patchLevel "8.0.3-5"
-This is very close, but not final.  We plan code freeze on
-Thursday, and so I'll be doing the 8.0.3 release then.  But, please
-try your compiles against this version to flush out any problems.
-
-This release is being made early to help
-with the Consortium CD project.  Please do not advertise or
-circulate this release widely.  If you have problems, please figure
-out a fix and include a patch or a lot of detail, then send 
-email to <bugs@scriptics.com>
-Brent Welch
-
-Summary of changes:
-1. Scriptics changes to support TclPro Wrapper, which is similar in
-spirit to the stand-alone applications built by the plus-patch, but
-goes farther by putting more hooks into the file system access routines.
-2. Scriptics changes to support TclPro Compiler, which lets you
-save and reload compiled byte-codes.
-3. Miscellaneous bug fixes to windows socket code.
-4. Various bug fixes derived from Victor Dukhovni's "jumbo" patch described
-on http://www.scriptics.com/resource/download/patches/tcl80p2/
-5. Patches to support [incr Tcl].
-6. More enhancements, including a new implementation of pkg_mkIndex.
-7. A new implementation of auto_mkindex to support [incr Tcl] classes.
-8. New IMPORT/EXPORT macros to facilitate building DLL's on windows.
-
-Bug fixes relative to previous pre-releases
-	Undid damage to the origninal EXPORT that appeared in 8.0.3-4
-	Resolved use of TCL_DBGX in configure scripts.
-	Fixed EINTR bug so system calls are retried after signals.
-	Fixed reverse vidio bitmaps
-	Several fixes to windows alt-keys and menus:
-	    fixed bug in menus where bgerrors were not generated during menu callbacks
-	    fixed memory leak in menu code
-	    fixed Alt-key handling
-	    fixed bug in menubar handling so menubar doesn't get destroyed when a
-		window is destroyed
- 
 1. Introduction
 ---------------
 
@@ -58,7 +18,8 @@ incompatibilities are relatively obscure but may require modifications
 to some old scripts before they can run with this version. The compiler
 introduces many new C-level APIs, but the old APIs are still supported.
 See below for more details.  This patch release fixes various bugs in
-Tcl 8.0; there are no feature changes relative to Tcl 8.0.
+Tcl 8.0, plus it adds a few minor features to support the TclPro 1.0
+tool set and [incr Tcl] 3.0.  Please check the changes file for details.
 
 2. Documentation
 ----------------
@@ -74,6 +35,10 @@ books on Tcl:
 
     Exploring Expect, by Don Libes,
     O'Reilly and Associates, 1995, ISBN 1-56592-090-2
+
+Other books are listed at
+http://www.scriptics.com/resource/doc/books/
+http://www.tclconsortium.org/resources/books.html
 
 The "doc" subdirectory in this release contains a complete set of reference
 manual entries for Tcl.  Files with extension ".1" are for programs (for
@@ -138,7 +103,7 @@ Before trying to compile Tcl you should do the following things:
 	applied to Tcl8.0p1 to produce Tcl 8.0p2, and so on. To apply an
 	uncompressed patch file such as tcl8.0p1.patch, invoke a shell
 	command like the following from the directory containing this
-	file:
+	file (some versions of patch require "-p0"):
 	    patch -p < tcl8.0p1.patch
 	If the patch file has a .gz extension, invoke a command like the
 	following:
@@ -315,7 +280,16 @@ in the directory "/pub/tcl".  The archive also contains several FAQ
 ("frequently asked questions") documents that provide solutions to problems
 that are commonly encountered by TCL newcomers.
 
-7. Mailing lists
+7. Tcl Resource Center
+----------------------
+Visit http://www.scritics.com/resource/ to see an annotated index of
+many Tcl resources available on the World Wide Web.  This includes
+papers, books, and FAQs, as well as extensions, applications, binary
+releases, and patches.  You can contribute patches by sending them
+to <patches@scriptics.com>.  You can also recommend more URLs for the
+resource center using the forms labeled "Add a Resource".
+
+8. Mailing lists
 ----------------
 
 A couple of  Mailing List have been set up to discuss Macintosh or
@@ -338,7 +312,7 @@ subscribing put the line:
 	
 in the body instead (or wintcl).
 
-8. Support and bug fixes
+9. Support and bug fixes
 ------------------------
 
 We're very interested in receiving bug reports and suggestions for
@@ -373,7 +347,7 @@ Scriptics (info@scriptics.com), NeoSoft (info@neosoft.com),
 Computerized Processes Unlimited (gwl@cpu.com),
 and Data Kinetics (education@dkl.com).
 
-9. Tcl version numbers
+10. Tcl version numbers
 ----------------------
 
 You can test the current version of Tcl by examining the
@@ -411,6 +385,10 @@ a major problem turns up then we'll fix it even if it introduces an
 incompatibility.  Once the official release is made then there won't
 be any more incompatibilities until the next release with a new major
 version number.
+
+(Note: This compatibility is true for Tcl scripts, but historically the Tcl
+C APIs have changed enough between releases that you may need to work a bit to
+upgrade extensions.)
 
 Patch releases have a suffix such as p1 or p2.  These releases contain
 bug fixes only.  A patch release (e.g Tcl 7.6p2) should be completely
