@@ -20,6 +20,11 @@
 	
 2004-11-24  Don Porter  <dgp@users.sourceforge.net>
 
+	* unix/tcl.m4 (SC_ENABLE_THREADS):	Corrected failure to determine
+	the number of arguments for readdir_r on SunOS systems.  [Bug 1071701]
+
+	* unix/configure:	autoconf-2.57
+
 	* generic/tclCmdIL.c (InfoVarsCmd):	Corrected segfault in new
 	* tests/info.test (info-19.6):	trivial matching branch [Bug 1072654]
 
