@@ -1,0 +1,5 @@
+# created by ../tools/tclZIC.tcl - do not edit
+if {![info exists TZData(America/Cordoba)]} {
+    loadTimeZoneFile America/Cordoba
+}
+set tzdata(:America/Rosario) $TZData(:America/Cordoba)

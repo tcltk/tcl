@@ -1,0 +1,5 @@
+# created by ../tools/tclZIC.tcl - do not edit
+if {![info exists TZData(Australia/Broken_Hill)]} {
+    loadTimeZoneFile Australia/Broken_Hill
+}
+set tzdata(:Australia/Yancowinna) $TZData(:Australia/Broken_Hill)

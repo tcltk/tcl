@@ -1,0 +1,5 @@
+# created by ../tools/tclZIC.tcl - do not edit
+if {![info exists TZData(Europe/Lisbon)]} {
+    loadTimeZoneFile Europe/Lisbon
+}
+set tzdata(:Portugal) $TZData(:Europe/Lisbon)

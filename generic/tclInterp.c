@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.43 2004/08/02 20:55:37 dgp Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.44 2004/08/18 19:59:00 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -2003,6 +2003,8 @@ SlaveCreate(interp, pathPtr, safe)
     char *path;
     int new, objc;
     Tcl_Obj **objv;
+    Tcl_Obj* clockObj;
+    int status;
 
     if (Tcl_ListObjGetElements(interp, pathPtr, &objc, &objv) != TCL_OK) {
 	return NULL;
@@ -2071,10 +2073,23 @@ SlaveCreate(interp, pathPtr, safe)
      */
     InheritLimitsFromMaster(slaveInterp, masterInterp);
 
+    if ( safe ) {
+	clockObj = Tcl_NewStringObj( "clock", -1 );
+	Tcl_IncrRefCount( clockObj );
+	status = AliasCreate( interp, slaveInterp, masterInterp,
+			      clockObj, clockObj, 0, (Tcl_Obj *CONST *) NULL );
+	Tcl_DecrRefCount( clockObj );
+	if ( status != TCL_OK ) {
+	    goto error2;
+	}
+    }
+    
+
     return slaveInterp;
 
-    error:
+ error:
     TclTransferResult(slaveInterp, TCL_ERROR, interp);
+ error2:
     Tcl_DeleteInterp(slaveInterp);
 
     return NULL;

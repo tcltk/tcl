@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.111 2004/08/02 20:55:36 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.112 2004/08/18 19:58:58 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -71,8 +71,6 @@ static CmdInfo builtInCmds[] = {
         (CompileProc *) NULL,		1},
     {"catch",		(Tcl_CmdProc *) NULL,	Tcl_CatchObjCmd,	
         TclCompileCatchCmd,		1},
-    {"clock",		(Tcl_CmdProc *) NULL,	Tcl_ClockObjCmd,
-        (CompileProc *) NULL,		1},
     {"concat",		(Tcl_CmdProc *) NULL,	Tcl_ConcatObjCmd,
         (CompileProc *) NULL,		1},
     {"continue",	(Tcl_CmdProc *) NULL,	Tcl_ContinueObjCmd,
@@ -231,6 +229,30 @@ static CmdInfo builtInCmds[] = {
     {NULL,		(Tcl_CmdProc *) NULL,	(Tcl_ObjCmdProc *) NULL,
         (CompileProc *) NULL,		0}
 };
+
+static const CmdInfo clockCmds [] = {
+    /*
+     * Commands in the '::tcl::clock' namespace that support the
+     * 'clock' ensemble
+     */
+    
+    { "::tcl::clock::clicks",		(Tcl_CmdProc*) NULL,
+      TclClockClicksObjCmd,		(CompileProc*) NULL,	0 },
+    { "::tcl::clock::microseconds",	(Tcl_CmdProc*) NULL,
+      TclClockMicrosecondsObjCmd,	(CompileProc*) NULL,	0 },
+    { "::tcl::clock::milliseconds",	(Tcl_CmdProc*) NULL,
+      TclClockMillisecondsObjCmd,	(CompileProc*) NULL,	0 },
+    { "::tcl::clock::seconds",		(Tcl_CmdProc*) NULL,
+      TclClockSecondsObjCmd,		(CompileProc*) NULL,	0 },
+    { "::tcl::clock::Localtime",	(Tcl_CmdProc*) NULL,
+      TclClockLocaltimeObjCmd,		(CompileProc*) NULL,	0 },
+    { "::tcl::clock::Mktime",		(Tcl_CmdProc*) NULL,
+      TclClockMktimeObjCmd,		(CompileProc*) NULL,	0 },
+    { "::tcl::clock::Oldscan",		(Tcl_CmdProc*) NULL,
+      TclClockOldscanObjCmd,		(CompileProc*) NULL,	0 },
+    { NULL,				(Tcl_CmdProc *) NULL,
+     (Tcl_ObjCmdProc *) NULL,           (CompileProc *) NULL,	0 }
+};
 
 /*
  *----------------------------------------------------------------------
@@ -260,7 +282,7 @@ Tcl_CreateInterp()
     BuiltinFunc *builtinFuncPtr;
     MathFunc *mathFuncPtr;
     Tcl_HashEntry *hPtr;
-    CmdInfo *cmdInfoPtr;
+    const CmdInfo *cmdInfoPtr;
     int i;
     union {
 	char c[sizeof(short)];
@@ -472,6 +494,24 @@ Tcl_CreateInterp()
     }
 
     /*
+     * Register the clock commands.  These *do* go through 
+     * Tcl_CreateObjCommand, since they aren't in the global namespace.
+     */
+
+    for ( cmdInfoPtr = clockCmds; cmdInfoPtr->name != NULL; cmdInfoPtr++) {
+	if ( cmdInfoPtr->objProc == NULL ) {
+	    Tcl_CreateCommand( interp, cmdInfoPtr->name,
+			       cmdInfoPtr->proc, (ClientData) NULL,
+			       (Tcl_CmdDeleteProc*) NULL );
+	} else {
+	    Tcl_CreateObjCommand( interp, cmdInfoPtr->name,
+				  cmdInfoPtr->objProc, (ClientData) NULL,
+				  (Tcl_CmdDeleteProc*) NULL );
+	}
+    }
+	
+
+    /*
      * Register the builtin math functions.
      */
 
@@ -605,12 +645,17 @@ int
 TclHideUnsafeCommands(interp)
     Tcl_Interp *interp;		/* Hide commands in this interpreter. */
 {
-    register CmdInfo *cmdInfoPtr;
+    register const CmdInfo *cmdInfoPtr;
 
     if (interp == (Tcl_Interp *) NULL) {
         return TCL_ERROR;
     }
     for (cmdInfoPtr = builtInCmds; cmdInfoPtr->name != NULL; cmdInfoPtr++) {
+        if (!cmdInfoPtr->isSafe) {
+            Tcl_HideCommand(interp, cmdInfoPtr->name, cmdInfoPtr->name);
+        }
+    }
+    for (cmdInfoPtr = clockCmds; cmdInfoPtr->name != NULL; cmdInfoPtr++) {
         if (!cmdInfoPtr->isSafe) {
             Tcl_HideCommand(interp, cmdInfoPtr->name, cmdInfoPtr->name);
         }

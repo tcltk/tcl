@@ -1,0 +1,5 @@
+# created by ../tools/tclZIC.tcl - do not edit
+if {![info exists TZData(Asia/Makassar)]} {
+    loadTimeZoneFile Asia/Makassar
+}
+set tzdata(:Asia/Ujung_Pandang) $TZData(:Asia/Makassar)

@@ -1,0 +1,5 @@
+# created by ../tools/tclZIC.tcl - do not edit
+if {![info exists TZData(America/Havana)]} {
+    loadTimeZoneFile America/Havana
+}
+set tzdata(:Cuba) $TZData(:America/Havana)

@@ -1,0 +1,5 @@
+# created by ../tools/tclZIC.tcl - do not edit
+if {![info exists TZData(Asia/Jerusalem)]} {
+    loadTimeZoneFile Asia/Jerusalem
+}
+set tzdata(:Israel) $TZData(:Asia/Jerusalem)
