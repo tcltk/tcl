@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.19 1999/12/21 23:58:03 hobbs Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.20 2000/04/05 19:00:41 kupries Exp $
  */
 
 #include "tclInt.h"
@@ -1828,6 +1828,7 @@ Tcl_UnstackChannel (interp, chan)
 	    chanPtr->interestMask = 0;
 	    (chanPtr->typePtr->watchProc) (chanPtr->instanceData,
 		interest);
+	    chanPtr->interestMask = interest;
 	}
 
     } else {

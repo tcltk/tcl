@@ -1,3 +1,11 @@
+2000-04-05  Andreas Kupries <a.kupries@westend.com>
+
+	* generic/tclIO.c (Tcl_UnstackChannel, line 1831): Force interest
+	  mask to the correct value after an unstack and re-initializing
+	  the notifier via the watchProc. Without this the first fileevent
+	  after an unstack will come through and be processed, but no
+	  more. [Bug: ??].
+
 2000-03-04  Brent Welch  <welch@scriptics.com>
 
 	* {win,unix}/Makefile.in: added dependency of tclStubInit.c on tcl.decls
