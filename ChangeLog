@@ -1,3 +1,9 @@
+2003-10-06  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* generic/tclFileName.c:
+	* generic/tclIOUtil.c: backport of volumerelative file normalization
+	and 'file join' inconsistency fixes [Bug 767834, 813273].
+
 2003-10-04  Chengye Mao <chengye.geo@yahoo.com>
 
 	* win/tclWinPipe.c: fixed a bug in BuildCommandLine.
