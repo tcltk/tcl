@@ -15,7 +15,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: basic.test,v 1.27.2.1 2003/06/27 15:10:11 dgp Exp $
+# RCS: @(#) $Id: basic.test,v 1.27.2.2 2003/08/07 21:36:04 dgp Exp $
 #
 
 package require tcltest 2
@@ -317,6 +317,11 @@ test basic-20.2 {Tcl_GetCommandInfo, names for commands created outside namespac
          [rename test_ns_basic::test_ns_basic2::p q] \
          [testcmdtoken name $x]
 } {{p ::test_ns_basic::test_ns_basic2::p} {} {q ::q}}
+test basic-20.3 {Tcl_GetCommandInfo, #-quoting} {
+    catch {rename \# ""}
+    set x [testcmdtoken create \#]
+    testcmdtoken name $x
+} {{#} ::#}
 
 test basic-21.1 {Tcl_GetCommandName} {emptyTest} {
 } {}

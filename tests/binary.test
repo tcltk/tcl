@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: binary.test,v 1.11 2003/02/21 21:54:11 dkf Exp $
+# RCS: @(#) $Id: binary.test,v 1.11.4.1 2003/08/07 21:36:04 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -1493,6 +1493,28 @@ test binary-45.2 {Tcl_BinaryObjCmd: combined wide int handling} {
     binary scan [binary format sWs 16450 0x7fffffff 19521] c* x
     set x
 } {66 64 0 0 0 0 127 -1 -1 -1 65 76}
+
+test binary-46.1 {Tcl_BinaryObjCmd: handling of non-ISO8859-1 chars} {
+    binary format a* \u20ac
+} \u00ac
+test binary-46.2 {Tcl_BinaryObjCmd: handling of non-ISO8859-1 chars} {
+    list [binary scan [binary format a* \u20ac\u20bd] s x] $x
+} {1 -16980}
+test binary-46.3 {Tcl_BinaryObjCmd: handling of non-ISO8859-1 chars} {
+    set x {}
+    set y {}
+    set z {}
+    list [binary scan [binary format a* \u20ac\u20bd] aaa x y z] $x $y $z
+} "2 \u00ac \u00bd {}"
+test binary-46.4 {Tcl_BinaryObjCmd: handling of non-ISO8859-1 chars} {
+    set x [encoding convertto iso8859-15 \u20ac]
+    set y [binary format a* $x]
+    list $x $y
+} "\u00a4 \u00a4"
+test binary-46.5 {Tcl_BinaryObjCmd: handling of non-ISO8859-1 chars} {
+    set x [binary scan \u00a4 a* y]
+    list $x $y [encoding convertfrom iso8859-15 $y]
+} "1 \u00a4 \u20ac"
 
 # cleanup
 ::tcltest::cleanupTests

@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: util.test,v 1.10 2002/01/02 13:52:04 dkf Exp $
+# RCS: @(#) $Id: util.test,v 1.10.6.1 2003/08/07 21:36:04 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -43,10 +43,43 @@ test util-3.1 {Tcl_ScanCountedElement procedure - don't leave unmatched braces} 
     # Tcl_DStringStartSublist doesn't work.
 
     set x {}
-    lappend x " \\\{ \\"
+    lappend x "# \\\{ \\"
     concat $x [llength "{$x}"]
-} {\ \\\{\ \\ 1}
-
+} {\#\ \\\{\ \\ 1}
+test util-3.2 {Tcl_ConverCountedElement procedure - quote leading '#'} {
+    list # # a
+} {{#} # a}
+test util-3.3 {Tcl_ConverCountedElement procedure - quote leading '#'} {
+    list #\{ # a
+} {\#\{ # a}
+test util-3.4 {Tcl_ConverCountedElement procedure - quote leading '#'} {
+    proc # {} {return #}
+    set result [eval [list #]]
+    rename # {}
+    set result
+} {#}
+test util-3.4.1 {Tcl_ConverCountedElement procedure - quote leading '#'} {
+    proc # {} {return #}
+    set cmd [list #]
+    append cmd ""	;# force string rep generation
+    set result [eval $cmd]
+    rename # {}
+    set result
+} {#}
+test util-3.5 {Tcl_ConverCountedElement procedure - quote leading '#'} {
+    proc #\{ {} {return #}
+    set result [eval [list #\{]]
+    rename #\{ {}
+    set result
+} {#}
+test util-3.5.1 {Tcl_ConverCountedElement procedure - quote leading '#'} {
+    proc #\{ {} {return #}
+    set cmd [list #\{]
+    append cmd ""	;# force string rep generation
+    set result [eval $cmd]
+    rename #\{ {}
+    set result
+} {#}
 test util-4.1 {Tcl_ConcatObj - backslash-space at end of argument} {
     concat a {b\ } c
 } {a b\  c}

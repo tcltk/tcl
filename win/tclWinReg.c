@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinReg.c,v 1.21 2003/03/03 17:12:49 dgp Exp $
+ * RCS: @(#) $Id: tclWinReg.c,v 1.21.4.1 2003/08/07 21:36:05 dgp Exp $
  */
 
 #include <tclPort.h>
@@ -228,7 +228,7 @@ Registry_Init(
     }
 
     Tcl_CreateObjCommand(interp, "registry", RegistryObjCmd, NULL, NULL);
-    return Tcl_PkgProvide(interp, "registry", "1.1.1");
+    return Tcl_PkgProvide(interp, "registry", "1.1.2");
 }
 
 /*
@@ -982,7 +982,7 @@ OpenSubKey(
     keyName = (char *) Tcl_WinUtfToTChar(keyName, -1, &buf);
     if (flags & REG_CREATE) {
 	DWORD create;
-	result = (*regWinProcs->regCreateKeyExProc)(rootKey, keyName, 0, "",
+	result = (*regWinProcs->regCreateKeyExProc)(rootKey, keyName, 0, NULL,
 		REG_OPTION_NON_VOLATILE, mode, NULL, keyPtr, &create);
     } else {
 	if (rootKey == HKEY_PERFORMANCE_DATA) {

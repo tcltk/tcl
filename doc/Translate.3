@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Translate.3,v 1.6 2002/02/08 02:52:54 dgp Exp $
+'\" RCS: @(#) $Id: Translate.3,v 1.6.4.1 2003/08/07 21:35:58 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_TranslateFileName 3 8.1 Tcl "Tcl Library Procedures"
@@ -33,9 +33,18 @@ anything stored here.
 
 .SH DESCRIPTION
 .PP
-This utility procedure translates a file name to a form suitable for
-passing to the local operating system.  It converts network names into
-native form and does tilde substitution.
+This utility procedure translates a file name to a platform-specific form
+which, after being converted to the appropriate encoding, is suitable for
+passing to the local operating system.  In particular, it converts
+network names into native form and does tilde substitution.  
+.PP
+However, with the advent of the newer \fBTcl_FSGetNormalizedPath\fR and
+\fBTcl_GetNativePath\fR, there is no longer any need to use this
+procedure.  In particular, \fBTcl_GetNativePath\fR performs all the
+necessary translation and encoding conversion, is virtual-filesystem
+aware, and caches the native result for faster repeated calls.
+Finally \fBTcl_GetNativePath\fR does not require you to free anything
+afterwards.
 .PP
 If
 \fBTcl_TranslateFileName\fR has to do tilde substitution or translate

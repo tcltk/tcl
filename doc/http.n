@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: http.n,v 1.18 2002/07/23 18:17:12 jenglish Exp $
+'\" RCS: @(#) $Id: http.n,v 1.18.4.1 2003/08/07 21:35:58 dgp Exp $
 '\" 
 .so man.macros
 .TH "http" n 2.4 http "Tcl Bundled Packages"
@@ -20,9 +20,9 @@ http \- Client-side implementation of the HTTP/1.0 protocol.
 .sp
 \fB::http::geturl \fIurl ?options?\fR
 .sp
-\fB::http::formatQuery \fIlist\fR
+\fB::http::formatQuery\fP \fIkey value\fP ?\fIkey value\fP ...?
 .sp
-\fB::http::reset \fItoken\fR
+\fB::http::reset\fP \fItoken\fP ?\fIwhy\fP?
 .sp
 \fB::http::wait \fItoken\fR
 .sp

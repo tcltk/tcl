@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.101.2.3 2003/06/30 16:08:00 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.101.2.4 2003/08/07 21:35:59 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1433,7 +1433,16 @@ TclExecuteByteCode(interp, codePtr)
 		        objc, cmdNameBuf), Tcl_GetObjResult(interp));
 
 		objResultPtr = Tcl_GetObjResult(interp);
-		NEXT_INST_V(pcAdjustment, opnd, 1);
+
+		/*
+		 * Reset the interp's result to avoid possible duplications
+		 * of large objects [Bug 781585]; be careful to increase its
+		 * refCount before resetting the result.
+		 */
+
+		Tcl_IncrRefCount(objResultPtr);
+		Tcl_ResetResult(interp);
+		NEXT_INST_V(pcAdjustment, opnd, -1);
 	    } else {
 		cleanup = opnd;
 		goto processExceptionReturn;
@@ -1459,7 +1468,16 @@ TclExecuteByteCode(interp, codePtr)
 	    objResultPtr = Tcl_GetObjResult(interp);
 	    TRACE_WITH_OBJ(("\"%.30s\" => ", O2S(objPtr)),
 			   Tcl_GetObjResult(interp));
-	    NEXT_INST_F(1, 1, 1);
+
+	    /*
+	     * Reset the interp's result to avoid possible duplications
+	     * of large objects [Bug 781585]; be careful to increase its
+	     * refCount before resetting the result.
+	     */
+	    
+	    Tcl_IncrRefCount(objResultPtr);
+	    Tcl_ResetResult(interp);
+	    NEXT_INST_F(1, 1, -1);
 	} else {
 	    cleanup = 1;
 	    goto processExceptionReturn;
@@ -4000,7 +4018,15 @@ TclExecuteByteCode(interp, codePtr)
     case INST_PUSH_RESULT:
 	objResultPtr = Tcl_GetObjResult(interp);
 	TRACE_WITH_OBJ(("=> "), Tcl_GetObjResult(interp));
-	NEXT_INST_F(1, 0, 1);
+	/*
+	 * Reset the interp's result to avoid possible duplications
+	 * of large objects [Bug 781585]; be careful to increase its
+	 * refCount before resetting the result.
+	 */
+
+	Tcl_IncrRefCount(objResultPtr);
+	Tcl_ResetResult(interp);
+	NEXT_INST_F(1, 0, -1);
 
     case INST_PUSH_RETURN_CODE:
 	objResultPtr = Tcl_NewLongObj(result);

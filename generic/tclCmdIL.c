@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.50 2003/04/29 20:23:38 dgp Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.50.2.1 2003/08/07 21:35:59 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3703,7 +3703,7 @@ SortCompare(objPtr1, objPtr2, infoPtr)
 		Tcl_GetObjResult(infoPtr->interp), &order) != TCL_OK) {
 	    Tcl_ResetResult(infoPtr->interp);
 	    Tcl_AppendToObj(Tcl_GetObjResult(infoPtr->interp),
-		    "-compare command returned non-numeric result", -1);
+		    "-compare command returned non-integer result", -1);
 	    infoPtr->resultCode = TCL_ERROR;
 	    return order;
 	}

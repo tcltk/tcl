@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: cmdAH.test,v 1.33.2.1 2003/07/07 20:23:38 dgp Exp $
+# RCS: @(#) $Id: cmdAH.test,v 1.33.2.2 2003/08/07 21:36:04 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -1186,7 +1186,12 @@ catch {file attributes $gorpfile -permissions 0765}
 
 # atime
 
-set file [makeFile "data" touch.me]
+# avoid problems with non-local filesystems
+if {$::tcl_platform(platform) == "unix" && [file exists /tmp]} {
+    set file [makeFile "data" touch.me /tmp]
+} else {
+    set file [makeFile "data" touch.me]
+}
 
 test cmdAH-20.1 {Tcl_FileObjCmd: atime} {
     list [catch {file atime a b c} msg] $msg
@@ -1228,7 +1233,12 @@ test cmdAH-20.6 {Tcl_FileObjCmd: atime touch} {winOnly testvolumetype} {
     expr {$newatime == $modatime ? 1 : "$newatime != $modatime"}
 } 1
 
-removeFile touch.me
+if {$::tcl_platform(platform) == "unix" && [file exists /tmp]} {
+    removeFile touch.me /tmp
+} else {
+    removeFile touch.me
+}
+
 # isdirectory
 
 test cmdAH-21.1 {Tcl_FileObjCmd: isdirectory} {

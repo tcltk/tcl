@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Hash.3,v 1.10 2002/07/11 15:40:19 dgp Exp $
+'\" RCS: @(#) $Id: Hash.3,v 1.10.4.1 2003/08/07 21:35:58 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_Hash 3 "" Tcl "Tcl Library Procedures"
@@ -119,7 +119,7 @@ caller, not by the hash module.  The value of \fIkeyType\fR indicates
 what kinds of keys will be used for all entries in the table.
 \fIKeyType\fR must have one of the following values:
 .IP \fBTCL_STRING_KEYS\fR 25
-Keys are null-terminated ASCII strings.
+Keys are null-terminated strings.
 They are passed to hashing routines using the address of the
 first character of the string.
 .IP \fBTCL_ONE_WORD_KEYS\fR 25

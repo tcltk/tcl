@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: parse.test,v 1.15 2003/04/01 17:08:16 dgp Exp $
+# RCS: @(#) $Id: parse.test,v 1.15.2.1 2003/08/07 21:36:04 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -58,10 +58,10 @@ test parse-2.2 {Tcl_ParseCommand procedure, several comments} {
 } foo 1 simple foo 1 text foo 0 {}}
 test parse-2.3 {Tcl_ParseCommand procedure, backslash-newline in comments} {
     testparser " # foo bar\\\ncomment on continuation line\nfoo" 0
-} {#\ foo\ bar\\\ncomment\ on\ continuation\ line\n foo 1 simple foo 1 text foo 0 {}}
+} {\#\ foo\ bar\\\ncomment\ on\ continuation\ line\n foo 1 simple foo 1 text foo 0 {}}
 test parse-2.4 {Tcl_ParseCommand procedure, missing continuation line in comment} {
     testparser "#   \\\n" 0
-} {#\ \ \ \\\n {} 0 {}}
+} {\#\ \ \ \\\n {} 0 {}}
 test parse-2.5 {Tcl_ParseCommand procedure, eof in comment} {
     testparser " # foo bar\nfoo" 8
 } {{# foo b} {} 0 {ar

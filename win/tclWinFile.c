@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.50.2.1 2003/06/24 17:27:42 dgp Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.50.2.2 2003/08/07 21:36:05 dgp Exp $
  */
 
 //#define _WIN32_WINNT  0x0500
@@ -1422,9 +1422,24 @@ TclpObjChdir(pathPtr)
 {
     int result;
     CONST TCHAR *nativePath;
+#ifdef __CYGWIN__
+    extern int cygwin_conv_to_posix_path 
+	_ANSI_ARGS_((CONST char *, char *));
+    char posixPath[MAX_PATH+1];
+    CONST char *path;
+    Tcl_DString ds;
+#endif /* __CYGWIN__ */
 
     nativePath = (CONST TCHAR *) Tcl_FSGetNativePath(pathPtr);
+#ifdef __CYGWIN__
+    /* Cygwin chdir only groks POSIX path. */
+    path = Tcl_WinTCharToUtf(nativePath, -1, &ds);
+    cygwin_conv_to_posix_path(path, posixPath);
+    result = (chdir(posixPath) == 0 ? 1 : 0);
+    Tcl_DStringFree(&ds);
+#else /* __CYGWIN__ */
     result = (*tclWinProcs->setCurrentDirectoryProc)(nativePath);
+#endif /* __CYGWIN__ */
 
     if (result == 0) {
 	TclWinConvertError(GetLastError());

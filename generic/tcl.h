@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.157.2.1 2003/06/18 19:47:59 dgp Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.157.2.2 2003/08/07 21:35:59 dgp Exp $
  */
 
 #ifndef _TCL
@@ -47,8 +47,7 @@ extern "C" {
  * win/makefile.bc	(not patchlevel) 2 LOC
  * README		(sections 0 and 2)
  * mac/README		(2 LOC, not patchlevel)
- * macosx/Tcl.pbproj/project.pbxproj
- * 			(7 LOC total, 2 LOC patch)
+ * macosx/Tcl.pbproj/project.pbxproj (not patchlevel) 2 LOC
  * win/README.binary	(sections 0-4)
  * win/README		(not patchlevel) (sections 0 and 2)
  * unix/tcl.spec	(2 LOC Major/Minor, 1 LOC patch)
@@ -2186,15 +2185,32 @@ typedef struct Tcl_Parse {
 
 /*
  * The maximum number of bytes that are necessary to represent a single
- * Unicode character in UTF-8.
+ * Unicode character in UTF-8.  The valid values should be 3 or 6 (or
+ * perhaps 1 if we want to support a non-unicode enabled core).
+ * If 3, then Tcl_UniChar must be 2-bytes in size (UCS-2). (default)
+ * If 6, then Tcl_UniChar must be 4-bytes in size (UCS-4).
+ * At this time UCS-2 mode is the default and recommended mode.
+ * UCS-4 is experimental and not recommended.  It works for the core,
+ * but most extensions expect UCS-2.
  */
+#ifndef TCL_UTF_MAX
 #define TCL_UTF_MAX		3
+#endif
 
 /*
  * This represents a Unicode character.  Any changes to this should
  * also be reflected in regcustom.h.
  */
+#if TCL_UTF_MAX > 3
+    /*
+     * unsigned int isn't 100% accurate as it should be a strict 4-byte
+     * value (perhaps wchar_t).  64-bit systems may have troubles.  The
+     * size of this value must be reflected correctly in regcustom.h.
+     */
+typedef unsigned int Tcl_UniChar;
+#else
 typedef unsigned short Tcl_UniChar;
+#endif
 
 /* TIP #59: The following structure is used in calls
  * 'Tcl_RegisterConfig' to provide the system with the embedded

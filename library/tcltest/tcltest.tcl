@@ -16,7 +16,7 @@
 # Contributions from Don Porter, NIST, 2002.  (not subject to US copyright)
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.tcl,v 1.82 2003/05/05 20:54:40 dgp Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.82.2.1 2003/08/07 21:36:03 dgp Exp $
 
 package require Tcl 8.3		;# uses [glob -directory]
 namespace eval tcltest {
@@ -24,7 +24,7 @@ namespace eval tcltest {
     # When the version number changes, be sure to update the pkgIndex.tcl file,
     # and the install directory in the Makefiles.  When the minor version
     # changes (new feature) be sure to update the man page as well.
-    variable Version 2.2.3
+    variable Version 2.2.4
 
     # Compatibility support for dumb variables defined in tcltest 1
     # Do not use these.  Call [package provide Tcl] and [info patchlevel]
@@ -1431,7 +1431,7 @@ proc tcltest::ProcessFlags {flagArray} {
 		    # but keep going
 		    if {[llength $moreOptions]} {
 			append msg ", "
-			append msg [join [lrange $moreOptions 0 end -1] ", "]
+			append msg [join [lrange $moreOptions 0 end-1] ", "]
 			append msg "or [lindex $moreOptions end]"
 		    }
 		    Warn $msg
@@ -1605,26 +1605,16 @@ proc tcltest::Eval {script {ignoreOutput 1}} {
     if {!$ignoreOutput} {
 	set outData {}
 	set errData {}
-	set callerHasPuts [llength [uplevel 1 {
-		::info commands [::namespace current]::puts
-	}]]
-	if {$callerHasPuts} {
-	    uplevel 1 [list ::rename puts [namespace current]::Replace::Puts]
-	} else {
-	    interp alias {} [namespace current]::Replace::Puts {} ::puts
-	}
-	uplevel 1 [list ::namespace import [namespace origin Replace::puts]]
+	rename ::puts [namespace current]::Replace::Puts
+	namespace eval :: \
+		[list namespace import [namespace origin Replace::puts]]
 	namespace import Replace::puts
     }
     set result [uplevel 1 $script]
     if {!$ignoreOutput} {
 	namespace forget puts
-	uplevel 1 ::namespace forget puts
-	if {$callerHasPuts} {
-	    uplevel 1 [list ::rename [namespace current]::Replace::Puts puts]
-	} else {
-	    interp alias {} [namespace current]::Replace::Puts {}
-	}
+	namespace eval :: namespace forget puts
+	rename [namespace current]::Replace::Puts ::puts
     }
     return $result
 }

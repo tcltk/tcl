@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: async.test,v 1.5 2000/04/10 17:18:56 ericm Exp $
+# RCS: @(#) $Id: async.test,v 1.5.26.1 2003/08/07 21:36:03 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -42,10 +42,17 @@ proc async3 {result code} {
     set aresult "test pattern"
     return -code $code $result
 }
+proc \# {result code} {
+    global aresult acode
+    set aresult $result
+    set acode $code
+    return "comment quoting"
+}
 
 set handler1 [testasync create async1]
 set handler2 [testasync create async2]
 set handler3 [testasync create async3]
+set handler4 [testasync create #]
 test async-1.1 {basic async handlers} {
     set aresult xxx
     set acode yyy
@@ -78,6 +85,12 @@ test async-1.6 {basic async handlers} {
     set aresult xxx
     list [catch {testasync mark $handler3 "foobar" 1} msg] $msg $aresult
 } {1 foobar {test pattern}}
+test async-1.7 {basic async handlers} {
+    set aresult xxx
+    set acode yyy
+    list [catch {testasync mark $handler4 "original" 0} msg] $msg \
+	   $acode $aresult
+} {0 {comment quoting} 0 original}
 
 proc mult1 {result code} {
     global x

@@ -10,12 +10,12 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: msgcat.tcl,v 1.17 2002/08/20 15:33:32 dgp Exp $
+# RCS: @(#) $Id: msgcat.tcl,v 1.17.4.1 2003/08/07 21:36:02 dgp Exp $
 
 package require Tcl 8.2
 # When the version number changes, be sure to update the pkgIndex.tcl file,
 # and the installation directory in the Makefiles.
-package provide msgcat 1.3
+package provide msgcat 1.3.1
 
 namespace eval msgcat {
     namespace export mc mcload mclocale mcmax mcmset mcpreferences mcset \
@@ -422,9 +422,16 @@ proc msgcat::Init {} {
 	}
     }
     #
+    # The rest of this routine is special processing for Windows;
+    # all other platforms, get out now.
+    #
+    if { ![string equal $::tcl_platform(platform) windows] } {
+	mclocale C
+	return
+    }
+    #
     # On Windows, try to set locale depending on registry settings,
-    # or fall back on locale of "C".  Other platforms will return
-    # when they fail to load the registry package.
+    # or fall back on locale of "C".  
     #
     set key {HKEY_CURRENT_USER\Control Panel\International}
     if {[catch {package require registry}] \

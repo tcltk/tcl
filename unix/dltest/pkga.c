@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: pkga.c,v 1.5 2003/03/26 20:02:18 dgp Exp $
+ * RCS: @(#) $Id: pkga.c,v 1.5.2.1 2003/08/07 21:36:05 dgp Exp $
  */
 #include "tcl.h"
 
@@ -48,13 +48,21 @@ Pkga_EqObjCmd(dummy, interp, objc, objv)
     Tcl_Obj * CONST objv[];	/* Argument objects. */
 {
     int result;
+    CONST char *str1, *str2;
+    int len1, len2, n;
 
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv,  "string1 string2");
 	return TCL_ERROR;
     }
 
-    result = !strcmp(Tcl_GetString(objv[1]), Tcl_GetString(objv[2]));
+    str1 = Tcl_GetStringFromObj(objv[1], &len1);
+    str2 = Tcl_GetStringFromObj(objv[2], &len2);
+    if (len1 == len2) {
+	result = (Tcl_UtfNcmp(str1, str2, len1) == 0);
+    } else {
+	result = 0;
+    }
     Tcl_SetObjResult(interp, Tcl_NewIntObj(result));
     return TCL_OK;
 }

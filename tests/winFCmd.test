@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: winFCmd.test,v 1.20 2002/10/04 08:25:14 dkf Exp $
+# RCS: @(#) $Id: winFCmd.test,v 1.20.4.1 2003/08/07 21:36:04 dgp Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -206,10 +206,14 @@ test winFCmd-1.13 {TclpRenameFile: errno: EACCES} {pcOnly win2000orXP} {
     cleanup
     list [catch {testfile mv nul tf1} msg] $msg
 } {1 EINVAL}
-test winFCmd-1.13.1 {TclpRenameFile: errno: EACCES} {pcOnly winOlderThan2000} {
+test winFCmd-1.13.1 {TclpRenameFile: errno: EACCES} {pcOnly nt winOlderThan2000} {
     cleanup
     list [catch {testfile mv nul tf1} msg] $msg
 } {1 EACCES}
+test winFCmd-1.13.2 {TclpRenameFile: errno: ENOENT} {pcOnly 95} {
+    cleanup
+    list [catch {testfile mv nul tf1} msg] $msg
+} {1 ENOENT}
 test winFCmd-1.14 {TclpRenameFile: errno: EACCES} {pcOnly 95} {
     cleanup
     createfile tf1
@@ -238,10 +242,14 @@ test winFCmd-1.19 {TclpRenameFile: errno == EACCES} {pcOnly win2000orXP} {
     cleanup
     list [catch {testfile mv nul tf1} msg] $msg
 } {1 EINVAL}
-test winFCmd-1.19.1 {TclpRenameFile: errno == EACCES} {pcOnly winOlderThan2000} {
+test winFCmd-1.19.1 {TclpRenameFile: errno == EACCES} {pcOnly nt winOlderThan2000} {
     cleanup
     list [catch {testfile mv nul tf1} msg] $msg
 } {1 EACCES}
+test winFCmd-1.19.2 {TclpRenameFile: errno == ENOENT} {pcOnly 95} {
+    cleanup
+    list [catch {testfile mv nul tf1} msg] $msg
+} {1 ENOENT}
 test winFCmd-1.20 {TclpRenameFile: src is dir} {pcOnly nt} {
     # under 95, this would actually succeed and move the current dir out from 
     # under the current process!
@@ -603,7 +611,10 @@ test winFCmd-6.11 {TclpRemoveDirectory: attr == -1} {pcOnly nt} {
 test winFCmd-6.12 {TclpRemoveDirectory: errno == EACCES} {pcOnly 95} {
     cleanup
     createfile tf1
-    list [catch {testfile rmdir tf1} msg] $msg
+    set res [catch {testfile rmdir tf1} msg]
+    # get rid of path
+    set msg [list [file tail [lindex $msg 0]] [lindex $msg 1]]
+    list $res $msg
 } {1 {tf1 ENOTDIR}}
 test winFCmd-6.13 {TclpRemoveDirectory: write-protected} {pcOnly} {
     cleanup
@@ -615,7 +626,10 @@ test winFCmd-6.13 {TclpRemoveDirectory: write-protected} {pcOnly} {
 test winFCmd-6.14 {TclpRemoveDirectory: check if empty dir} {pcOnly 95} {
     cleanup
     file mkdir td1/td2
-    list [catch {testfile rmdir td1} msg] $msg
+    set res [catch {testfile rmdir td1} msg]
+    # get rid of path
+    set msg [list [file tail [lindex $msg 0]] [lindex $msg 1]]
+    list $res $msg
 } {1 {td1 EEXIST}}
 test winFCmd-6.15 {TclpRemoveDirectory: !recursive} {pcOnly} {
     cleanup
@@ -681,7 +695,7 @@ test winFCmd-7.7 {TraverseWinTree: append \ to source if necessary} {pcOnly} {
 test winFCmd-7.8 {TraverseWinTree: append \ to source if necessary} {pcOnly 95 cdrom} {
     # cdrom can return either d:\ or D:/, but we only care about the errcode
     list [catch {testfile rmdir $cdrom/} msg] [lindex $msg 1]
-} {1 EEXIST}
+} {1 EACCES} ; # was EEXIST, but changed for win98.
 test winFCmd-7.9 {TraverseWinTree: append \ to source if necessary} {pcOnly nt cdrom} {
     list [catch {testfile rmdir $cdrom/} msg]  [lindex $msg 1]
 } {1 EACCES}

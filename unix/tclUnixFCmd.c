@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFCmd.c,v 1.29 2003/05/14 19:21:30 das Exp $
+ * RCS: @(#) $Id: tclUnixFCmd.c,v 1.29.2.1 2003/08/07 21:36:04 dgp Exp $
  *
  * Portions of this code were derived from NetBSD source code which has
  * the following copyright notice:
@@ -91,7 +91,7 @@ static int		SetPermissionsAttribute _ANSI_ARGS_((
 static int		GetModeFromPermString _ANSI_ARGS_((
 			    Tcl_Interp *interp, char *modeStringPtr,
 			    mode_t *modePtr));
-#ifdef HAVE_CHFLAGS
+#if defined(HAVE_CHFLAGS) && defined(UF_IMMUTABLE)
 static int		GetReadOnlyAttribute _ANSI_ARGS_((Tcl_Interp *interp,
 			    int objIndex, Tcl_Obj *fileName,
 			    Tcl_Obj **attributePtrPtr));
@@ -116,7 +116,7 @@ enum {
     UNIX_GROUP_ATTRIBUTE,
     UNIX_OWNER_ATTRIBUTE,
     UNIX_PERMISSIONS_ATTRIBUTE,
-#ifdef HAVE_CHFLAGS
+#if defined(HAVE_CHFLAGS) && defined(UF_IMMUTABLE)
     UNIX_READONLY_ATTRIBUTE,
 #endif
 #ifdef MAC_OSX_TCL
@@ -131,7 +131,7 @@ CONST char *tclpFileAttrStrings[] = {
     "-group",
     "-owner",
     "-permissions",
-#ifdef HAVE_CHFLAGS
+#if defined(HAVE_CHFLAGS) && defined(UF_IMMUTABLE)
     "-readonly",
 #endif
 #ifdef MAC_OSX_TCL
@@ -147,7 +147,7 @@ CONST TclFileAttrProcs tclpFileAttrProcs[] = {
     {GetGroupAttribute,		SetGroupAttribute},
     {GetOwnerAttribute,		SetOwnerAttribute},
     {GetPermissionsAttribute,	SetPermissionsAttribute},
-#ifdef HAVE_CHFLAGS
+#if defined(HAVE_CHFLAGS) && defined(UF_IMMUTABLE)
     {GetReadOnlyAttribute,	SetReadOnlyAttribute},
 #endif
 #ifdef MAC_OSX_TCL
@@ -1624,7 +1624,6 @@ GetModeFromPermString(interp, modeStringPtr, modePtr)
 			continue;
 		    default  :
 			return TCL_ERROR;
-			break;
 		}
 	    }
 	    /* what */
@@ -1648,7 +1647,6 @@ GetModeFromPermString(interp, modeStringPtr, modePtr)
 		    break;
 		default  :
 		    return TCL_ERROR;
-		    break;
 	    }
 	    if (*(modeStringPtr+n+i) == ',') {
 		i++;
@@ -1819,7 +1817,7 @@ TclpObjNormalizePath(interp, pathPtr, nextCheckpoint)
     return nextCheckpoint;
 }
 
-#ifdef HAVE_CHFLAGS
+#if defined(HAVE_CHFLAGS) && defined(UF_IMMUTABLE)
 /*
  *----------------------------------------------------------------------
  *
@@ -1919,4 +1917,4 @@ SetReadOnlyAttribute(interp, objIndex, fileName, attributePtr)
     }
     return TCL_OK;
 }
-#endif /* HAVE_CHFLAGS */
+#endif /* defined(HAVE_CHFLAGS) && defined(UF_IMMUTABLE) */

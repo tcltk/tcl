@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: AddErrInfo.3,v 1.8 2002/07/01 18:24:38 jenglish Exp $
+'\" RCS: @(#) $Id: AddErrInfo.3,v 1.8.4.1 2003/08/07 21:35:57 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_AddErrorInfo 3 8.0 Tcl "Tcl Library Procedures"
@@ -60,7 +60,7 @@ Pointer to first character in script containing command (must be <= command)
 .AP "CONST char" *command in
 Pointer to first character in command that generated the error
 .AP int commandLength in
-Number of bytes in command; -1 means use all bytes up to first NULL byte
+Number of bytes in command; -1 means use all bytes up to first null byte
 .BE
 
 .SH DESCRIPTION

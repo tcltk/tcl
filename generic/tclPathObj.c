@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPathObj.c,v 1.3 2003/04/16 08:16:23 vincentdarley Exp $
+ * RCS: @(#) $Id: tclPathObj.c,v 1.3.2.1 2003/08/07 21:36:00 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -528,6 +528,7 @@ Tcl_FSConvertToPathType(interp, objPtr)
 	 * This code is intentionally never reached.  Once fs-optimisation
 	 * is complete, it will be removed/replaced
 	 */
+#if 0
 	if (fsPathPtr->cwdPtr == NULL) {
 	    return TCL_OK;
 	} else {
@@ -542,6 +543,7 @@ Tcl_FSConvertToPathType(interp, objPtr)
 		return Tcl_ConvertToType(interp, objPtr, &tclFsPathType);
 	    }
 	}
+#endif
     } else {
 	return Tcl_ConvertToType(interp, objPtr, &tclFsPathType);
     }
@@ -1587,6 +1589,26 @@ SetFsPathFromAny(interp, objPtr)
     } else {
 	transPtr = Tcl_FSJoinToPath(objPtr,0,NULL);
     }
+
+#if defined(__CYGWIN__) && defined(__WIN32__)
+    {
+    extern int cygwin_conv_to_win32_path 
+	_ANSI_ARGS_((CONST char *, char *));
+    char winbuf[MAX_PATH+1];
+
+    /*
+     * In the Cygwin world, call conv_to_win32_path in order to use the
+     * mount table to translate the file name into something Windows will
+     * understand.  Take care when converting empty strings!
+     */
+    name = Tcl_GetStringFromObj(transPtr, &len);
+    if (len > 0) {
+	cygwin_conv_to_win32_path(name, winbuf);
+	TclWinNoBackslash(winbuf);
+	Tcl_SetStringObj(transPtr, winbuf, -1);
+    }
+    }
+#endif /* __CYGWIN__ && __WIN32__ */
 
     /* 
      * Now we have a translated filename in 'transPtr'.  This will have

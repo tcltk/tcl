@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: list.test,v 1.6 2003/03/27 13:19:15 dkf Exp $
+# RCS: @(#) $Id: list.test,v 1.6.2.1 2003/08/07 21:36:04 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -44,6 +44,8 @@ test list-1.21 {basic tests} {list a b c\\\nd} "a b c\\\\\\nd"
 test list-1.22 {basic tests} {list "{ab}\\"} \\{ab\\}\\\\
 test list-1.23 {basic tests} {list \{} "\\{"
 test list-1.24 {basic tests} {list} {}
+test list-1.25 {basic tests} {list # #} {{#} #}
+test list-1.26 {basic tests} {list #\{ #\{} {\#\{ #\{}
 
 # For the next round of tests create a list and then pick it apart
 # with "index" to make sure that we get back exactly what went in.

@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: dstring.test,v 1.5 2000/04/10 17:18:58 ericm Exp $
+# RCS: @(#) $Id: dstring.test,v 1.5.26.1 2003/08/07 21:36:04 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -113,6 +113,37 @@ test dstring-2.8 {appending list elements} {
     testdstring element abc
     testdstring get
 } {x abc}
+test dstring-2.9 {appending list elements} {
+    testdstring free
+    testdstring element #
+    testdstring get
+} {{#}}
+test dstring-2.10 {appending list elements} {
+    testdstring free
+    testdstring append " " -1
+    testdstring element #
+    testdstring get
+} { {#}}
+test dstring-2.11 {appending list elements} {
+    testdstring free
+    testdstring append \t -1
+    testdstring element #
+    testdstring get
+} \t{#}
+test dstring-2.12 {appending list elements} {
+    testdstring free
+    testdstring append x -1
+    testdstring element #
+    testdstring get
+} {x #}
+test dstring-2.13 {appending list elements} {
+    # This test shows lack of sophistication in Tcl_DStringAppendElement's
+    # decision about whether #-quoting can be disabled.
+    testdstring free
+    testdstring append "x " -1
+    testdstring element #
+    testdstring get
+} {x {#}}
 
 test dstring-3.1 {nested sublists} {
     testdstring free
@@ -167,6 +198,52 @@ test dstring-3.5 {nested sublists} {
     testdstring end
     testdstring get
 } {\{ {first second}}
+test dstring-3.6 {appending list elements} {
+    testdstring free
+    testdstring append x -1
+    testdstring start
+    testdstring element #
+    testdstring end
+    testdstring get
+} {x {{#}}}
+test dstring-3.7 {appending list elements} {
+    testdstring free
+    testdstring append x -1
+    testdstring start
+    testdstring append " " -1
+    testdstring element #
+    testdstring end
+    testdstring get
+} {x { {#}}}
+test dstring-3.8 {appending list elements} {
+    testdstring free
+    testdstring append x -1
+    testdstring start
+    testdstring append \t -1
+    testdstring element #
+    testdstring end
+    testdstring get
+} "x {\t{#}}"
+test dstring-3.9 {appending list elements} {
+    testdstring free
+    testdstring append x -1
+    testdstring start
+    testdstring append x -1
+    testdstring element #
+    testdstring end
+    testdstring get
+} {x {x #}}
+test dstring-3.10 {appending list elements} {
+    # This test shows lack of sophistication in Tcl_DStringAppendElement's
+    # decision about whether #-quoting can be disabled.
+    testdstring free
+    testdstring append x -1
+    testdstring start
+    testdstring append "x " -1
+    testdstring element #
+    testdstring end
+    testdstring get
+} {x {x {#}}}
 
 test dstring-4.1 {truncation} {
     testdstring free

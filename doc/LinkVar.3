@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: LinkVar.3,v 1.6 2002/08/05 03:24:39 dgp Exp $
+'\" RCS: @(#) $Id: LinkVar.3,v 1.6.4.1 2003/08/07 21:35:58 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_LinkVar 3 7.5 Tcl "Tcl Library Procedures"
@@ -95,13 +95,13 @@ Tcl errors.
 \fBTCL_LINK_STRING\fR
 The C variable is of type \fBchar *\fR.
 .VS
-If its value is not null then it must be a pointer to a string
+If its value is not NULL then it must be a pointer to a string
 allocated with \fBTcl_Alloc\fR or \fBckalloc\fR.
 .VE
 Whenever the Tcl variable is modified the current C string will be
 freed and new memory will be allocated to hold a copy of the variable's
 new value.
-If the C variable contains a null pointer then the Tcl variable
+If the C variable contains a NULL pointer then the Tcl variable
 will read as ``NULL''.
 .PP
 If the TCL_LINK_READ_ONLY flag is present in \fItype\fR then the

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.37 2003/04/16 23:33:44 dgp Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.37.2.1 2003/08/07 21:36:00 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1744,8 +1744,7 @@ Tcl_DStringGetResult(interp, dsPtr)
 
     dsPtr->length = strlen(iPtr->result);
     if (iPtr->freeProc != NULL) {
-	if ((iPtr->freeProc == TCL_DYNAMIC)
-		|| (iPtr->freeProc == (Tcl_FreeProc *) free)) {
+	if (iPtr->freeProc == TCL_DYNAMIC) {
 	    dsPtr->string = iPtr->result;
 	    dsPtr->spaceAvl = dsPtr->length+1;
 	} else {

@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: cmdIL.test,v 1.14 2001/09/28 15:32:17 dkf Exp $
+# RCS: @(#) $Id: cmdIL.test,v 1.14.8.1 2003/08/07 21:36:04 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -207,7 +207,7 @@ test cmdIL-3.17 {SortCompare procedure, -command option, non-integer result} {
 	return foow
     }
     list [catch {lsort -command cmp {48 6}} msg] $msg
-} {1 {-compare command returned non-numeric result}}
+} {1 {-compare command returned non-integer result}}
 test cmdIL-3.18 {SortCompare procedure, -command option} {
     proc cmp {a b} {
 	expr {$b - $a}

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixNotfy.c,v 1.12 2003/03/21 03:23:24 dgp Exp $
+ * RCS: @(#) $Id: tclUnixNotfy.c,v 1.12.2.1 2003/08/07 21:36:05 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -862,7 +862,8 @@ NotifierThreadProc(clientData)
     fd_mask masks[3*MASK_SIZE];
     long *maskPtr = (long *)masks;	/* masks[] cast to type long[] */
     int fds[2];
-    int i, status, index, bit, numFdBits, found, receivePipe, word;
+    int i, status, index, bit, numFdBits, receivePipe;
+    long found, word;
     struct timeval poll = {0., 0.}, *timePtr;
     int maskSize = 3 * ((MASK_SIZE) / sizeof(long)) * sizeof(fd_mask);
     char buf[2];

@@ -8,7 +8,7 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 #
-# RCS: @(#) $Id: pkgMkIndex.test,v 1.23 2002/07/06 18:19:46 dgp Exp $
+# RCS: @(#) $Id: pkgMkIndex.test,v 1.23.4.1 2003/08/07 21:36:04 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -284,6 +284,14 @@ test pkgMkIndex-2.2 {simple package - use -direct} {
 test pkgMkIndex-2.3 {simple package - direct loading is default} {
     pkgtest::runIndex $fullPkgPath simple.tcl
 } "0 {{simple:1.0 {[list source [file join $fullPkgPath simple.tcl]]}}}"
+
+test pkgMkIndex-2.4 {simple package - use -verbose} -body {
+    pkgtest::runIndex -verbose $fullPkgPath simple.tcl
+} -result "0 {{simple:1.0 {[list source [file join $fullPkgPath simple.tcl]]}}}" \
+    -errorOutput {successful sourcing of simple.tcl
+packages provided were {simple 1.0}
+processed simple.tcl
+}
 
 removeFile [file join pkg simple.tcl]
 

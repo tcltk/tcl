@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.127.2.2 2003/06/27 15:10:11 dgp Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.127.2.3 2003/08/07 21:36:04 dgp Exp $
 
 VERSION 		= @TCL_VERSION@
 MAJOR_VERSION		= @TCL_MAJOR_VERSION@
@@ -1342,6 +1342,7 @@ dist: $(UNIX_DIR)/configure mklinks
 		$(DISTDIR)/macosx
 	mkdir $(DISTDIR)/macosx/Tcl.pbproj
 	cp -p $(TOP_DIR)/macosx/Tcl.pbproj/*.pbx* $(DISTDIR)/macosx/Tcl.pbproj
+	cp -p $(TOP_DIR)/macosx/README $(DISTDIR)/macosx
 	mkdir $(DISTDIR)/unix/dltest
 	cp -p $(UNIX_DIR)/dltest/*.c $(UNIX_DIR)/dltest/Makefile.in \
 		$(UNIX_DIR)/dltest/README \
@@ -1391,7 +1392,14 @@ allpatch: dist
 # TOOL_DIR.
 #
 
-html: 
+html:
+	$(BUILD_HTML)
+html-tcl:
+	$(BUILD_HTML) --tcl
+html-tk:
+	$(BUILD_HTML) --tk
+
+BUILD_HTML = \
 	$(TCL_EXE) $(TOOL_DIR)/tcltk-man2html.tcl --htmldir=$(DISTDIR)/html \
 		--srcdir=$(TOP_DIR)/..
 
