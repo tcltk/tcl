@@ -1,3 +1,9 @@
+2002-05-28  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* generic/tclIOUtil.c: fixes to Tcl_FSLoadFile when called on
+	a file inside a vfs.  This should avoid leaving temporary 
+	files sitting around on exit. [Bug #545579]
+	
 2002-05-27  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* win/tclWinError.c: Added comment on conversion of
@@ -92,7 +98,7 @@
 	filesystem, via introduction of 'TclFinalizeFilesystem'.
 	Move TclFinalizeLoad into TclFinalizeFilesystem so we can
 	be sure it is called at just the right time.
-	Fix bad comment also.  [Fixes 555078 and 'fs' part of 543549]
+	Fix bad comment also.  [Bug #555078 and 'fs' part of #543549]
 	* win/tclWinChan.c: fix comment referring to wrong function.
 	
 2002-05-10  Don Porter  <dgp@users.sourceforge.net>
