@@ -749,6 +749,7 @@ if test -r OpenFileChnl.3; then
     rm -f Tcl_Eof.3
     rm -f Tcl_InputBlocked.3
     rm -f Tcl_InputBuffered.3
+    rm -f Tcl_OutputBuffered.3
     rm -f Tcl_Ungets.3
     rm -f Tcl_ReadRaw.3
     rm -f Tcl_WriteRaw.3
@@ -778,6 +779,7 @@ if test -r OpenFileChnl.3; then
     ln OpenFileChnl.3 Tcl_Eof.3
     ln OpenFileChnl.3 Tcl_InputBlocked.3
     ln OpenFileChnl.3 Tcl_InputBuffered.3
+    ln OpenFileChnl.3 Tcl_OutputBuffered.3
     ln OpenFileChnl.3 Tcl_Ungets.3
     ln OpenFileChnl.3 Tcl_ReadRaw.3
     ln OpenFileChnl.3 Tcl_WriteRaw.3
