@@ -1,3 +1,16 @@
+2002-04-22  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* win/tclWinFCmd.c (DoDeleteFile): check return of setattr API
+	calls in file deletion for correct Win32 API handling.
+
+	* win/Makefile.in: correct dependencies for shell, gdb, runtest
+	targets.
+
+	* doc/clock.n:
+	* compat/strftime.c (_fmt): change strftime to correctly handle
+	localized %c, %x and %X on Windows.  Added some notes about how
+	the other values could be further localized.
+
 2002-04-19  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclMain.c (Tcl_Main):  Free the memory allocated for the
@@ -62,6 +75,13 @@
 	* tests/expr-old.test: fix for [Bug #542588] (Phil Ehrens), where
 	"too large integers" were reported as "floating-point value" in
 	[expr] error messages.
+
+2002-04-17  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclEncoding.c (EscapeFromUtfProc): 
+	* generic/tclIO.c (WriteChars, Tcl_Close): corrected the handling
+	of outputting end escapes for escape-based encodings.
+	[Bug #526524] (yamamoto)
 
 2002-04-17  Don Porter  <dgp@users.sourceforge.net>
 
