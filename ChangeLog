@@ -1,3 +1,16 @@
+2001-09-10  Andreas Kupries <andreas_kupries@users.sourceforge.net>
+
+	* doc/tclsh.1:
+	* doc/Tcl_Main.3: 
+	* doc/CrtChannel.3: 
+	* doc/OpenFileChnl.3: 
+	* doc/GetStdChan.3: Enhanced the manpages with cross-references to
+	  the new manpage and more explanations how these functions deal
+	  with the standard channels in various situations.
+
+	* doc/StdChannels.3: New manpage describing handling of the
+	  standard channels by the Tcl library [402725].
+
 2001-09-10  Don Porter <dgp@users.sourceforge.net>
 
 	* unix/tclLoadShl.c:  Added #include of tclInt.h; access to Tcl

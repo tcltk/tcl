@@ -476,6 +476,7 @@ if test -r FileSystem.3; then
     rm -f Tcl_FSConvertToPathType.3
     rm -f Tcl_FSGetInternalRep.3
     rm -f Tcl_FSGetTranslatedPath.3
+    rm -f Tcl_FSGetTranslatedStringPath.3
     rm -f Tcl_FSNewNativePath.3
     rm -f Tcl_FSGetNativePath.3
     rm -f Tcl_FSFileSystemInfo.3
@@ -512,6 +513,7 @@ if test -r FileSystem.3; then
     ln FileSystem.3 Tcl_FSConvertToPathType.3
     ln FileSystem.3 Tcl_FSGetInternalRep.3
     ln FileSystem.3 Tcl_FSGetTranslatedPath.3
+    ln FileSystem.3 Tcl_FSGetTranslatedStringPath.3
     ln FileSystem.3 Tcl_FSNewNativePath.3
     ln FileSystem.3 Tcl_FSGetNativePath.3
     ln FileSystem.3 Tcl_FSFileSystemInfo.3
@@ -965,6 +967,10 @@ fi
 if test -r StaticPkg.3; then
     rm -f Tcl_StaticPackage.3
     ln StaticPkg.3 Tcl_StaticPackage.3
+fi
+if test -r StdChannels.3; then
+    rm -f Tcl_StandardChannels.3
+    ln StdChannels.3 Tcl_StandardChannels.3
 fi
 if test -r StrMatch.3; then
     rm -f Tcl_StringMatch.3
