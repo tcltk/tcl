@@ -150,6 +150,20 @@ test filesystem-4.3 {testfilesystem} {
     -result {* {matchindirectory *}*}
 }
 
+test filesystem-5.1 {cache and ~} {
+    -body {
+	set orig $env(HOME)
+	set ::env(HOME) /foo/bar/blah
+	set testdir ~
+	set res1 "Parent of ~ (/foo/bar/blah) is [file dirname $testdir]"
+	set ::env(HOME) /a/b/c
+	set res2 "Parent of ~ (/a/b/c) is [file dirname $testdir]"
+	list $res1 $res2
+    }
+    -result {{Parent of ~ (/foo/bar/blah) is /foo/bar} {Parent of ~ (/a/b/c) is /a/b}}
+}
+
+	
 # cleanup
 catch {unset filesystemReport}
 # Make sure the testfilesystem hasn't been registered.
