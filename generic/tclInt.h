@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: %Z% $Id: tclInt.h,v 1.11 1998/07/24 15:50:19 stanton Exp $ 
+ * SCCS: %Z% $Id: tclInt.h,v 1.12 1998/07/29 13:12:12 escoffon Exp $ 
  */
 
 #ifndef _TCLINT
@@ -1304,6 +1304,11 @@ typedef Tcl_Channel (TclOpenFileChannelProc_) _ANSI_ARGS_((Tcl_Interp *interp,
 	char *fileName, char *modeString,
 	int permissions));
 
+typedef int (*TclCmdProcType) _ANSI_ARGS_((ClientData clientData,
+	Tcl_Interp *interp, int argc, char *argv[]));
+typedef int (*TclObjCmdProcType) _ANSI_ARGS_((ClientData clientData,
+	Tcl_Interp *interp, int objc, struct Tcl_Obj * CONST objv[]));
+
 /*
  *----------------------------------------------------------------
  * Variables shared among Tcl modules but not used by the outside world.
@@ -1436,6 +1441,7 @@ EXTERN char *		TclGetExtension _ANSI_ARGS_((char *name));
 EXTERN int		TclGetFrame _ANSI_ARGS_((Tcl_Interp *interp,
 			    char *string, CallFrame **framePtrPtr));
 EXTERN int		TclGetIdleGeneration _ANSI_ARGS_((void));
+EXTERN TclCmdProcType	TclGetInterpProc _ANSI_ARGS_((void));
 EXTERN int		TclGetIntForIndex _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *objPtr, int endValue, int *indexPtr));
 EXTERN Tcl_Obj *	TclGetIndexedScalar _ANSI_ARGS_((Tcl_Interp *interp,
@@ -1450,6 +1456,7 @@ EXTERN int		TclGetNamespaceForQualName _ANSI_ARGS_((
 			    Namespace **nsPtrPtr, Namespace **altNsPtrPtr,
 			    Namespace **actualCxtPtrPtr,
 			    char **simpleNamePtr));
+EXTERN TclObjCmdProcType TclGetObjInterpProc _ANSI_ARGS_((void));
 EXTERN int		TclGetOpenMode _ANSI_ARGS_((Tcl_Interp *interp,
         		    char *string, int *seekFlagPtr));
 EXTERN Tcl_Command	TclGetOriginalCommand _ANSI_ARGS_((
