@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.2.4.2 1999/03/09 02:37:15 stanton Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.2.4.3 1999/03/10 06:41:50 stanton Exp $
 
 library tcl
 
@@ -496,82 +496,37 @@ declare 131 generic {
 	    Tcl_ResolveCmdProc *cmdProc, Tcl_ResolveVarProc *varProc, \
 	    Tcl_ResolveCompiledVarProc *compiledVarProc)
 }
-
-# Compilation procedures for commands in the generic core:
-
-# Signature changed in 8.1:
-#  declare 132 generic {
-#      int TclCompileBreakCmd(Tcl_Interp *interp, char *string, char *lastChar, \
-#  	    int compileFlags, struct CompileEnv *compileEnvPtr)
-#  }
-#  declare 133 generic {
-#      int TclCompileCatchCmd(Tcl_Interp *interp, char *string, char *lastChar, \
-#  	    int compileFlags, struct CompileEnv *compileEnvPtr)
-#  }
-#  declare 134 generic {
-#      int TclCompileContinueCmd(Tcl_Interp *interp, char *string, \
-#  	    char *lastChar, int compileFlags, struct CompileEnv *compileEnvPtr)
-#  }
-#  declare 135 generic {
-#      int TclCompileExprCmd(Tcl_Interp *interp, char *string, char *lastChar, \
-#  	    int compileFlags, struct CompileEnv *compileEnvPtr)
-#  }
-#  declare 136 generic {
-#      int TclCompileForCmd(Tcl_Interp *interp, char *string, char *lastChar, \
-#  	    int compileFlags, struct CompileEnv *compileEnvPtr)
-#  }
-#  declare 137 generic {
-#      int TclCompileForeachCmd(Tcl_Interp *interp, char *string, \
-#  	    char *lastChar, int compileFlags, struct CompileEnv *compileEnvPtr)
-#  }
-#  declare 138 generic {
-#      int TclCompileIfCmd(Tcl_Interp *interp, char *string, char *lastChar, \
-#  	    int compileFlags, struct CompileEnv *compileEnvPtr)
-#  }
-#  declare 139 generic {
-#      int TclCompileIncrCmd(Tcl_Interp *interp, char *string, char *lastChar, \
-#  	    int compileFlags, struct CompileEnv *compileEnvPtr)
-#  }
-#  declare 140 generic {
-#      int TclCompileSetCmd(Tcl_Interp *interp, char *string, char *lastChar, \
-#  	    int compileFlags, struct CompileEnv *compileEnvPtr)
-#  }
-#  declare 141 generic {
-#      int TclCompileWhileCmd(Tcl_Interp *interp, char *string, char *lastChar, \
-#  	    int compileFlags, struct CompileEnv *compileEnvPtr)
-#  }
-
-declare 142 generic {
+declare 132 generic {
     int TclpHasSockets(Tcl_Interp *interp)
 }
-declare 143 generic {
+declare 133 generic {
     struct tm *	TclpGetDate(TclpTime_t time, int useGMT)
 }
-declare 144 generic {
+declare 134 generic {
     size_t TclpStrftime(char *s, size_t maxsize, const char *format, \
 	    const struct tm *t)
 }
-declare 145 generic {
+declare 135 generic {
     int TclpCheckStackSpace(void)
 }
 
 # Added in 8.1:
 
-declare 146 generic {
+declare 136 generic {
     char * Tcl_GetString(Tcl_Obj *objPtr)
 }
-declare 147 generic {
+declare 137 generic {
     int TclpChdir(CONST char *dirName)
 }
-declare 148 generic {
+declare 138 generic {
     char * TclGetEnv(CONST char *name, Tcl_DString *valuePtr)
 }
-declare 149 generic {
+declare 139 generic {
     int TclpLoadFile(Tcl_Interp *interp, char *fileName, char *sym1, \
 	    char *sym2, Tcl_PackageInitProc **proc1Ptr, \
 	    Tcl_PackageInitProc **proc2Ptr, ClientData *clientDataPtr)
 }
-declare 150 generic {
+declare 140 generic {
     int TclLooksLikeInt(char *bytes, int length)
 }
 
@@ -769,6 +724,15 @@ declare 20 win {
 }
 declare 21 win {
     char * TclpGetTZName(int isdst)
+}
+declare 22 win {
+    char * TclWinNoBackslash(char *path)
+}
+declare 23 win {
+    TCHAR * Tcl_WinUtfToTChar(CONST char *string, int len, Tcl_DString *dsPtr)
+}
+declare 24 win {
+    char * Tcl_WinTCharToUtf(CONST TCHAR *string, int len, Tcl_DString *dsPtr)
 }
 
 #########################

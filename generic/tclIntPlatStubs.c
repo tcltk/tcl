@@ -7,7 +7,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclIntPlatStubs.c,v 1.2.2.2 1999/03/09 02:37:16 stanton Exp $
+ * RCS: @(#) $Id: tclIntPlatStubs.c,v 1.2.2.3 1999/03/10 06:41:51 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -25,6 +25,97 @@
  * Exported stub functions:
  */
 
+#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
+/* Slot 0 */
+void
+TclGetAndDetachPids(interp, chan)
+    Tcl_Interp * interp;
+    Tcl_Channel chan;
+{
+    (tclIntPlatStubsPtr->tclGetAndDetachPids)(interp, chan);
+}
+
+/* Slot 1 */
+int
+TclpCloseFile(file)
+    TclFile file;
+{
+    return (tclIntPlatStubsPtr->tclpCloseFile)(file);
+}
+
+/* Slot 2 */
+Tcl_Channel
+TclpCreateCommandChannel(readFile, writeFile, errorFile, numPids, pidPtr)
+    TclFile readFile;
+    TclFile writeFile;
+    TclFile errorFile;
+    int numPids;
+    Tcl_Pid * pidPtr;
+{
+    return (tclIntPlatStubsPtr->tclpCreateCommandChannel)(readFile, writeFile, errorFile, numPids, pidPtr);
+}
+
+/* Slot 3 */
+int
+TclpCreatePipe(readPipe, writePipe)
+    TclFile * readPipe;
+    TclFile * writePipe;
+{
+    return (tclIntPlatStubsPtr->tclpCreatePipe)(readPipe, writePipe);
+}
+
+/* Slot 4 */
+int
+TclpCreateProcess(interp, argc, argv, inputFile, outputFile, errorFile, pidPtr)
+    Tcl_Interp * interp;
+    int argc;
+    char ** argv;
+    TclFile inputFile;
+    TclFile outputFile;
+    TclFile errorFile;
+    Tcl_Pid * pidPtr;
+{
+    return (tclIntPlatStubsPtr->tclpCreateProcess)(interp, argc, argv, inputFile, outputFile, errorFile, pidPtr);
+}
+
+/* Slot 5 is reserved */
+/* Slot 6 */
+TclFile
+TclpMakeFile(channel, direction)
+    Tcl_Channel channel;
+    int direction;
+{
+    return (tclIntPlatStubsPtr->tclpMakeFile)(channel, direction);
+}
+
+/* Slot 7 */
+TclFile
+TclpOpenFile(fname, mode)
+    CONST char * fname;
+    int mode;
+{
+    return (tclIntPlatStubsPtr->tclpOpenFile)(fname, mode);
+}
+
+/* Slot 8 */
+int
+TclUnixWaitForFile(fd, mask, timeout)
+    int fd;
+    int mask;
+    int timeout;
+{
+    return (tclIntPlatStubsPtr->tclUnixWaitForFile)(fd, mask, timeout);
+}
+
+/* Slot 9 */
+TclFile
+TclpCreateTempFile(contents)
+    CONST char * contents;
+{
+    return (tclIntPlatStubsPtr->tclpCreateTempFile)(contents);
+}
+
+#endif /* UNIX */
 #ifdef __WIN32__
 /* Slot 0 */
 void
@@ -205,98 +296,35 @@ TclpGetTZName(isdst)
     return (tclIntPlatStubsPtr->tclpGetTZName)(isdst);
 }
 
+/* Slot 22 */
+char *
+TclWinNoBackslash(path)
+    char * path;
+{
+    return (tclIntPlatStubsPtr->tclWinNoBackslash)(path);
+}
+
+/* Slot 23 */
+TCHAR *
+Tcl_WinUtfToTChar(string, len, dsPtr)
+    CONST char * string;
+    int len;
+    Tcl_DString * dsPtr;
+{
+    return (tclIntPlatStubsPtr->tcl_WinUtfToTChar)(string, len, dsPtr);
+}
+
+/* Slot 24 */
+char *
+Tcl_WinTCharToUtf(string, len, dsPtr)
+    CONST TCHAR * string;
+    int len;
+    Tcl_DString * dsPtr;
+{
+    return (tclIntPlatStubsPtr->tcl_WinTCharToUtf)(string, len, dsPtr);
+}
+
 #endif /* __WIN32__ */
-#if !defined(__WIN32__) && !defined(MAC_TCL)
-/* Slot 0 */
-void
-TclGetAndDetachPids(interp, chan)
-    Tcl_Interp * interp;
-    Tcl_Channel chan;
-{
-    (tclIntPlatStubsPtr->tclGetAndDetachPids)(interp, chan);
-}
-
-/* Slot 1 */
-int
-TclpCloseFile(file)
-    TclFile file;
-{
-    return (tclIntPlatStubsPtr->tclpCloseFile)(file);
-}
-
-/* Slot 2 */
-Tcl_Channel
-TclpCreateCommandChannel(readFile, writeFile, errorFile, numPids, pidPtr)
-    TclFile readFile;
-    TclFile writeFile;
-    TclFile errorFile;
-    int numPids;
-    Tcl_Pid * pidPtr;
-{
-    return (tclIntPlatStubsPtr->tclpCreateCommandChannel)(readFile, writeFile, errorFile, numPids, pidPtr);
-}
-
-/* Slot 3 */
-int
-TclpCreatePipe(readPipe, writePipe)
-    TclFile * readPipe;
-    TclFile * writePipe;
-{
-    return (tclIntPlatStubsPtr->tclpCreatePipe)(readPipe, writePipe);
-}
-
-/* Slot 4 */
-int
-TclpCreateProcess(interp, argc, argv, inputFile, outputFile, errorFile, pidPtr)
-    Tcl_Interp * interp;
-    int argc;
-    char ** argv;
-    TclFile inputFile;
-    TclFile outputFile;
-    TclFile errorFile;
-    Tcl_Pid * pidPtr;
-{
-    return (tclIntPlatStubsPtr->tclpCreateProcess)(interp, argc, argv, inputFile, outputFile, errorFile, pidPtr);
-}
-
-/* Slot 5 is reserved */
-/* Slot 6 */
-TclFile
-TclpMakeFile(channel, direction)
-    Tcl_Channel channel;
-    int direction;
-{
-    return (tclIntPlatStubsPtr->tclpMakeFile)(channel, direction);
-}
-
-/* Slot 7 */
-TclFile
-TclpOpenFile(fname, mode)
-    CONST char * fname;
-    int mode;
-{
-    return (tclIntPlatStubsPtr->tclpOpenFile)(fname, mode);
-}
-
-/* Slot 8 */
-int
-TclUnixWaitForFile(fd, mask, timeout)
-    int fd;
-    int mask;
-    int timeout;
-{
-    return (tclIntPlatStubsPtr->tclUnixWaitForFile)(fd, mask, timeout);
-}
-
-/* Slot 9 */
-TclFile
-TclpCreateTempFile(contents)
-    CONST char * contents;
-{
-    return (tclIntPlatStubsPtr->tclpCreateTempFile)(contents);
-}
-
-#endif /* UNIX */
 #ifdef MAC_TCL
 /* Slot 0 */
 VOID *

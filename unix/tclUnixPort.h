@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPort.h,v 1.1.2.4.2.1 1999/03/08 20:14:17 stanton Exp $
+ * RCS: @(#) $Id: tclUnixPort.h,v 1.1.2.4.2.2 1999/03/10 06:41:54 stanton Exp $
  */
 
 #ifndef _TCLUNIXPORT
@@ -469,8 +469,6 @@ EXTERN int		TclpLstat _ANSI_ARGS_((CONST char *path,
 EXTERN int		TclpStat _ANSI_ARGS_((CONST char *path, 
 			    struct stat *buf));
 
-#include "tclIntPlatDecls.h"
-
 /*
  * Platform specific mutex definition used by memory allocators.
  * These mutexes are statically allocated and explicitly initialized.
@@ -490,5 +488,8 @@ typedef int TclpMutex;
 #define	TclpMutexLock(a)
 #define	TclpMutexUnlock(a)
 #endif /* TCL_THREADS */
+
+#include "tclPlatDecls.h"
+#include "tclIntPlatDecls.h"
 
 #endif /* _TCLUNIXPORT */

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.1.2.13.2.2 1999/03/09 02:37:13 stanton Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.1.2.13.2.3 1999/03/10 06:41:48 stanton Exp $
  */
 
 #ifndef _TCL
@@ -1297,7 +1297,9 @@ typedef unsigned short Tcl_UniChar;
 /*
  * The following function is required to be defined in all stubs aware
  * extensions.  The function is actually implemented in the stub
- * library, not the main Tcl library.
+ * library, not the main Tcl library, although there is a trivial
+ * implementation in the main library in case an extension is statically
+ * linked into an application.
  */
 
 EXTERN char *		Tcl_InitStubs _ANSI_ARGS_((Tcl_Interp *interp,
@@ -1311,19 +1313,10 @@ EXTERN char *		Tcl_InitStubs _ANSI_ARGS_((Tcl_Interp *interp,
 #include "tclDecls.h"
 
 /*
- * For backwards compatibility reasons, we include the platform specific
- * public function declarations on Unix.  This will bring in the old
- * file handler interfaces.
- */
-
-#if !defined(__WIN32__) && !defined(MAC_TCL)
-#include "tclPlatDecls.h"
-#endif
-
-/*
  * Public functions that are not accessible via the stubs table.
  */
 
+EXTERN void		Tcl_InitMemory _ANSI_ARGS_((Tcl_Interp *interp));
 EXTERN void		Tcl_Main _ANSI_ARGS_((int argc, char **argv,
 			    Tcl_AppInitProc *appInitProc));
 

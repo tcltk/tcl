@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.2.2.2 1999/03/09 02:37:16 stanton Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.2.2.3 1999/03/10 06:41:50 stanton Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -416,39 +416,29 @@ EXTERN void		Tcl_SetNamespaceResolvers _ANSI_ARGS_((
 				Tcl_ResolveCmdProc * cmdProc, 
 				Tcl_ResolveVarProc * varProc, 
 				Tcl_ResolveCompiledVarProc * compiledVarProc));
-/* Slot 132 is reserved */
-/* Slot 133 is reserved */
-/* Slot 134 is reserved */
-/* Slot 135 is reserved */
-/* Slot 136 is reserved */
-/* Slot 137 is reserved */
-/* Slot 138 is reserved */
-/* Slot 139 is reserved */
-/* Slot 140 is reserved */
-/* Slot 141 is reserved */
-/* 142 */
+/* 132 */
 EXTERN int		TclpHasSockets _ANSI_ARGS_((Tcl_Interp * interp));
-/* 143 */
+/* 133 */
 EXTERN struct tm *	TclpGetDate _ANSI_ARGS_((TclpTime_t time, int useGMT));
-/* 144 */
+/* 134 */
 EXTERN size_t		TclpStrftime _ANSI_ARGS_((char * s, size_t maxsize, 
 				const char * format, const struct tm * t));
-/* 145 */
+/* 135 */
 EXTERN int		TclpCheckStackSpace _ANSI_ARGS_((void));
-/* 146 */
+/* 136 */
 EXTERN char *		Tcl_GetString _ANSI_ARGS_((Tcl_Obj * objPtr));
-/* 147 */
+/* 137 */
 EXTERN int		TclpChdir _ANSI_ARGS_((CONST char * dirName));
-/* 148 */
+/* 138 */
 EXTERN char *		TclGetEnv _ANSI_ARGS_((CONST char * name, 
 				Tcl_DString * valuePtr));
-/* 149 */
+/* 139 */
 EXTERN int		TclpLoadFile _ANSI_ARGS_((Tcl_Interp * interp, 
 				char * fileName, char * sym1, char * sym2, 
 				Tcl_PackageInitProc ** proc1Ptr, 
 				Tcl_PackageInitProc ** proc2Ptr, 
 				ClientData * clientDataPtr));
-/* 150 */
+/* 140 */
 EXTERN int		TclLooksLikeInt _ANSI_ARGS_((char * bytes, 
 				int length));
 
@@ -588,25 +578,15 @@ typedef struct TclIntStubs {
     int (*tcl_PushCallFrame) _ANSI_ARGS_((Tcl_Interp* interp, Tcl_CallFrame * framePtr, Tcl_Namespace * nsPtr, int isProcCallFrame)); /* 129 */
     int (*tcl_RemoveInterpResolvers) _ANSI_ARGS_((Tcl_Interp * interp, char * name)); /* 130 */
     void (*tcl_SetNamespaceResolvers) _ANSI_ARGS_((Tcl_Namespace * namespacePtr, Tcl_ResolveCmdProc * cmdProc, Tcl_ResolveVarProc * varProc, Tcl_ResolveCompiledVarProc * compiledVarProc)); /* 131 */
-    void *reserved132;
-    void *reserved133;
-    void *reserved134;
-    void *reserved135;
-    void *reserved136;
-    void *reserved137;
-    void *reserved138;
-    void *reserved139;
-    void *reserved140;
-    void *reserved141;
-    int (*tclpHasSockets) _ANSI_ARGS_((Tcl_Interp * interp)); /* 142 */
-    struct tm * (*tclpGetDate) _ANSI_ARGS_((TclpTime_t time, int useGMT)); /* 143 */
-    size_t (*tclpStrftime) _ANSI_ARGS_((char * s, size_t maxsize, const char * format, const struct tm * t)); /* 144 */
-    int (*tclpCheckStackSpace) _ANSI_ARGS_((void)); /* 145 */
-    char * (*tcl_GetString) _ANSI_ARGS_((Tcl_Obj * objPtr)); /* 146 */
-    int (*tclpChdir) _ANSI_ARGS_((CONST char * dirName)); /* 147 */
-    char * (*tclGetEnv) _ANSI_ARGS_((CONST char * name, Tcl_DString * valuePtr)); /* 148 */
-    int (*tclpLoadFile) _ANSI_ARGS_((Tcl_Interp * interp, char * fileName, char * sym1, char * sym2, Tcl_PackageInitProc ** proc1Ptr, Tcl_PackageInitProc ** proc2Ptr, ClientData * clientDataPtr)); /* 149 */
-    int (*tclLooksLikeInt) _ANSI_ARGS_((char * bytes, int length)); /* 150 */
+    int (*tclpHasSockets) _ANSI_ARGS_((Tcl_Interp * interp)); /* 132 */
+    struct tm * (*tclpGetDate) _ANSI_ARGS_((TclpTime_t time, int useGMT)); /* 133 */
+    size_t (*tclpStrftime) _ANSI_ARGS_((char * s, size_t maxsize, const char * format, const struct tm * t)); /* 134 */
+    int (*tclpCheckStackSpace) _ANSI_ARGS_((void)); /* 135 */
+    char * (*tcl_GetString) _ANSI_ARGS_((Tcl_Obj * objPtr)); /* 136 */
+    int (*tclpChdir) _ANSI_ARGS_((CONST char * dirName)); /* 137 */
+    char * (*tclGetEnv) _ANSI_ARGS_((CONST char * name, Tcl_DString * valuePtr)); /* 138 */
+    int (*tclpLoadFile) _ANSI_ARGS_((Tcl_Interp * interp, char * fileName, char * sym1, char * sym2, Tcl_PackageInitProc ** proc1Ptr, Tcl_PackageInitProc ** proc2Ptr, ClientData * clientDataPtr)); /* 139 */
+    int (*tclLooksLikeInt) _ANSI_ARGS_((char * bytes, int length)); /* 140 */
 } TclIntStubs;
 
 extern TclIntStubs *tclIntStubsPtr;
@@ -1106,51 +1086,41 @@ extern TclIntStubs *tclIntStubsPtr;
 #define Tcl_SetNamespaceResolvers(namespacePtr, cmdProc, varProc, compiledVarProc) \
 	(tclIntStubsPtr->tcl_SetNamespaceResolvers)(namespacePtr, cmdProc, varProc, compiledVarProc) /* 131 */
 #endif
-/* Slot 132 is reserved */
-/* Slot 133 is reserved */
-/* Slot 134 is reserved */
-/* Slot 135 is reserved */
-/* Slot 136 is reserved */
-/* Slot 137 is reserved */
-/* Slot 138 is reserved */
-/* Slot 139 is reserved */
-/* Slot 140 is reserved */
-/* Slot 141 is reserved */
 #ifndef TclpHasSockets
 #define TclpHasSockets(interp) \
-	(tclIntStubsPtr->tclpHasSockets)(interp) /* 142 */
+	(tclIntStubsPtr->tclpHasSockets)(interp) /* 132 */
 #endif
 #ifndef TclpGetDate
 #define TclpGetDate(time, useGMT) \
-	(tclIntStubsPtr->tclpGetDate)(time, useGMT) /* 143 */
+	(tclIntStubsPtr->tclpGetDate)(time, useGMT) /* 133 */
 #endif
 #ifndef TclpStrftime
 #define TclpStrftime(s, maxsize, format, t) \
-	(tclIntStubsPtr->tclpStrftime)(s, maxsize, format, t) /* 144 */
+	(tclIntStubsPtr->tclpStrftime)(s, maxsize, format, t) /* 134 */
 #endif
 #ifndef TclpCheckStackSpace
 #define TclpCheckStackSpace() \
-	(tclIntStubsPtr->tclpCheckStackSpace)() /* 145 */
+	(tclIntStubsPtr->tclpCheckStackSpace)() /* 135 */
 #endif
 #ifndef Tcl_GetString
 #define Tcl_GetString(objPtr) \
-	(tclIntStubsPtr->tcl_GetString)(objPtr) /* 146 */
+	(tclIntStubsPtr->tcl_GetString)(objPtr) /* 136 */
 #endif
 #ifndef TclpChdir
 #define TclpChdir(dirName) \
-	(tclIntStubsPtr->tclpChdir)(dirName) /* 147 */
+	(tclIntStubsPtr->tclpChdir)(dirName) /* 137 */
 #endif
 #ifndef TclGetEnv
 #define TclGetEnv(name, valuePtr) \
-	(tclIntStubsPtr->tclGetEnv)(name, valuePtr) /* 148 */
+	(tclIntStubsPtr->tclGetEnv)(name, valuePtr) /* 138 */
 #endif
 #ifndef TclpLoadFile
 #define TclpLoadFile(interp, fileName, sym1, sym2, proc1Ptr, proc2Ptr, clientDataPtr) \
-	(tclIntStubsPtr->tclpLoadFile)(interp, fileName, sym1, sym2, proc1Ptr, proc2Ptr, clientDataPtr) /* 149 */
+	(tclIntStubsPtr->tclpLoadFile)(interp, fileName, sym1, sym2, proc1Ptr, proc2Ptr, clientDataPtr) /* 139 */
 #endif
 #ifndef TclLooksLikeInt
 #define TclLooksLikeInt(bytes, length) \
-	(tclIntStubsPtr->tclLooksLikeInt)(bytes, length) /* 150 */
+	(tclIntStubsPtr->tclLooksLikeInt)(bytes, length) /* 140 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */

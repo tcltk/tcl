@@ -7,7 +7,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclIntStubs.c,v 1.2.2.2 1999/03/09 02:37:17 stanton Exp $
+ * RCS: @(#) $Id: tclIntStubs.c,v 1.2.2.3 1999/03/10 06:41:51 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -1180,17 +1180,7 @@ Tcl_SetNamespaceResolvers(namespacePtr, cmdProc, varProc, compiledVarProc)
     (tclIntStubsPtr->tcl_SetNamespaceResolvers)(namespacePtr, cmdProc, varProc, compiledVarProc);
 }
 
-/* Slot 132 is reserved */
-/* Slot 133 is reserved */
-/* Slot 134 is reserved */
-/* Slot 135 is reserved */
-/* Slot 136 is reserved */
-/* Slot 137 is reserved */
-/* Slot 138 is reserved */
-/* Slot 139 is reserved */
-/* Slot 140 is reserved */
-/* Slot 141 is reserved */
-/* Slot 142 */
+/* Slot 132 */
 int
 TclpHasSockets(interp)
     Tcl_Interp * interp;
@@ -1198,7 +1188,7 @@ TclpHasSockets(interp)
     return (tclIntStubsPtr->tclpHasSockets)(interp);
 }
 
-/* Slot 143 */
+/* Slot 133 */
 struct tm *
 TclpGetDate(time, useGMT)
     TclpTime_t time;
@@ -1207,7 +1197,7 @@ TclpGetDate(time, useGMT)
     return (tclIntStubsPtr->tclpGetDate)(time, useGMT);
 }
 
-/* Slot 144 */
+/* Slot 134 */
 size_t
 TclpStrftime(s, maxsize, format, t)
     char * s;
@@ -1218,14 +1208,14 @@ TclpStrftime(s, maxsize, format, t)
     return (tclIntStubsPtr->tclpStrftime)(s, maxsize, format, t);
 }
 
-/* Slot 145 */
+/* Slot 135 */
 int
 TclpCheckStackSpace()
 {
     return (tclIntStubsPtr->tclpCheckStackSpace)();
 }
 
-/* Slot 146 */
+/* Slot 136 */
 char *
 Tcl_GetString(objPtr)
     Tcl_Obj * objPtr;
@@ -1233,7 +1223,7 @@ Tcl_GetString(objPtr)
     return (tclIntStubsPtr->tcl_GetString)(objPtr);
 }
 
-/* Slot 147 */
+/* Slot 137 */
 int
 TclpChdir(dirName)
     CONST char * dirName;
@@ -1241,7 +1231,7 @@ TclpChdir(dirName)
     return (tclIntStubsPtr->tclpChdir)(dirName);
 }
 
-/* Slot 148 */
+/* Slot 138 */
 char *
 TclGetEnv(name, valuePtr)
     CONST char * name;
@@ -1250,7 +1240,7 @@ TclGetEnv(name, valuePtr)
     return (tclIntStubsPtr->tclGetEnv)(name, valuePtr);
 }
 
-/* Slot 149 */
+/* Slot 139 */
 int
 TclpLoadFile(interp, fileName, sym1, sym2, proc1Ptr, proc2Ptr, clientDataPtr)
     Tcl_Interp * interp;
@@ -1264,7 +1254,7 @@ TclpLoadFile(interp, fileName, sym1, sym2, proc1Ptr, proc2Ptr, clientDataPtr)
     return (tclIntStubsPtr->tclpLoadFile)(interp, fileName, sym1, sym2, proc1Ptr, proc2Ptr, clientDataPtr);
 }
 
-/* Slot 150 */
+/* Slot 140 */
 int
 TclLooksLikeInt(bytes, length)
     char * bytes;
