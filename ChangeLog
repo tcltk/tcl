@@ -1,3 +1,10 @@
+2001-12-11  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* generic/tclCompCmds.c (TclCompileLindexCmd):
+	* generic/tclCompExpr.c (CompileMathFuncCall): removed the last
+	two overestimates of the necessary stack depth for bytecodes in
+	the fix of [Bug 483611]. 
+
 2001-12-10  Andreas Kupries  <andreas_kupries@users.sourceforge.net> 
 
 	* unix/tclUnixPipe.c (TclpCreateProcess): Applied Don Porter's
