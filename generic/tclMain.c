@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMain.c,v 1.12 2001/04/04 23:26:03 dgp Exp $
+ * RCS: @(#) $Id: tclMain.c,v 1.13 2001/09/24 21:10:32 dgp Exp $
  */
 
 #include "tcl.h"
@@ -459,7 +459,8 @@ StdinProc(clientData, mask)
 
     (void) Tcl_DStringAppend(&tsdPtr->command, Tcl_DStringValue(
             &tsdPtr->line), -1);
-    cmd = Tcl_DStringAppend(&tsdPtr->command, "\n", -1);
+    Tcl_DStringAppend(&tsdPtr->command, "\n", -1);
+    cmd = Tcl_DStringValue(&tsdPtr->command);
     Tcl_DStringFree(&tsdPtr->line);
     if (!Tcl_CommandComplete(cmd)) {
         gotPartial = 1;

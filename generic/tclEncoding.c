@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEncoding.c,v 1.7 2001/07/31 19:12:06 vincentdarley Exp $
+ * RCS: @(#) $Id: tclEncoding.c,v 1.8 2001/09/24 21:10:32 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1282,7 +1282,7 @@ OpenEncodingFile(dir, name)
 {
     char *argv[3];
     Tcl_DString pathString;
-    char *path;
+    CONST char *path;
     Tcl_Channel chan;
     Tcl_Obj *pathPtr;
     
