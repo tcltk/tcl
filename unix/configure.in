@@ -7,7 +7,7 @@ AC_INIT(../generic/tcl.h)
 TCL_VERSION=8.0
 TCL_MAJOR_VERSION=8
 TCL_MINOR_VERSION=0
-TCL_PATCH_LEVEL="p2"
+TCL_PATCH_LEVEL=".3"
 VERSION=${TCL_VERSION}
 
 if test "${prefix}" = "NONE"; then
