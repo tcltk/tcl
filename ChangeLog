@@ -1,3 +1,8 @@
+2002-06-21  Don Porter  <dgp@users.sourceforge.net>
+
+	* library/init.tcl:  Corrected comments and namespace style
+        issues.  Thanks to Bruce Stephens. [Bug 572025]
+
 2002-06-21  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* tests/cmdAH.test:          Added TIP#99 implementation
