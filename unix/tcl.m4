@@ -438,6 +438,10 @@ AC_DEFUN(SC_ENABLE_THREADS, [
 	AC_DEFINE(USE_THREAD_STORAGE, 1,
 	    [Use the generic thread storage subsystem?])
 	AC_DEFINE(_REENTRANT, 1, [Do we want the reentrant OS API?])
+	if test "`uname -s`" = "SunOS" ; then
+	    AC_DEFINE(_POSIX_PTHREAD_SEMANTICS, 1,
+		    [Do we really want to follow the standard? Yes we do!])
+	fi
 	AC_DEFINE(_THREAD_SAFE, 1, [Do we want the thread-safe OS API?])
 	AC_CHECK_LIB(pthread,pthread_mutex_init,tcl_ok=yes,tcl_ok=no)
 	if test "$tcl_ok" = "no"; then
@@ -518,12 +522,24 @@ AC_DEFUN(SC_ENABLE_THREADS, [
 	    AC_CACHE_VAL(tcl_cv_two_arg_readdir_r,
 	        AC_TRY_COMPILE([#include <stdlib.h>
 #include <sys/types.h>
-#include <sys/dir.h>], [readdir_r(NULL, NULL);],
+#ifdef NO_DIRENT_H
+# include <sys/dir.h>  /* logic from tcl/compat/dirent.h *
+# define dirent direct  *                                */
+#else
+# include <dirent.h>
+#endif
+], [readdir_r(NULL, NULL);],
 	        tcl_cv_two_arg_readdir_r=yes, tcl_cv_two_arg_readdir_r=no))
 	    AC_CACHE_VAL(tcl_cv_three_arg_readdir_r,
 	        AC_TRY_COMPILE([#include <stdlib.h>
 #include <sys/types.h>
-#include <sys/dir.h>], [readdir_r(NULL, NULL, NULL);],
+#ifdef NO_DIRENT_H
+# include <sys/dir.h>  /* logic from tcl/compat/dirent.h *
+# define dirent direct  *                                */
+#else
+# include <dirent.h>
+#endif
+], [readdir_r(NULL, NULL, NULL);],
 	        tcl_cv_three_arg_readdir_r=yes, tcl_cv_three_arg_readdir_r=no))
 	    if test "x$tcl_cv_two_arg_readdir_r" = "xyes" ; then
                 AC_MSG_RESULT([2])
