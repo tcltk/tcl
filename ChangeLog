@@ -4,6 +4,9 @@
 	* generic/tclBinary.c:
 	* generic/tclCmdAH.c:
 	* generic/tclCmdIL.c:
+	* generic/tclCmdMZ.c:
+	* generic/tclCompExpr.c:
+	* generic/tclDictObj.c:
 	It is a poor practice to directly set or append to the value
 	of the objResult of an interp, because that value might be
 	shared, and in that circumstance a Tcl_Panic() will be the
