@@ -1,5 +1,15 @@
 2001-11-08  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	Enable thread support under FreeBSD. [Tcl bug 473708]
+
+	* unix/configure: Regen.
+	* unix/tcl.m4 (SC_ENABLE_THREADS): Check for pthread functions
+	in libc_r and enable thread support if found.
+	* unix/dltest/Makefile.in: Set SHLIB_LD_LIBS and use it in
+	the Makefile to properly link a shared library.
+
+2001-11-08  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* unix/Makefile.in:
 	* unix/dltest/Makefile.in:
 	Avoid adding libc to the LIBS variable since it
