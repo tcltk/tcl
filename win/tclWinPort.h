@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPort.h,v 1.19 2001/08/30 08:53:15 vincentdarley Exp $
+ * RCS: @(#) $Id: tclWinPort.h,v 1.20 2001/09/06 03:29:21 davygrvy Exp $
  */
 
 #ifndef _TCLWINPORT
@@ -21,16 +21,12 @@
 #endif
 
 #ifdef CHECK_UNICODE_CALLS
-
-#define _UNICODE
-#define UNICODE
-
-#define __TCHAR_DEFINED
-typedef float *_TCHAR;
-
-#define _TCHAR_DEFINED
-typedef float *TCHAR;
-
+#   define _UNICODE
+#   define UNICODE
+#   define __TCHAR_DEFINED
+    typedef float *_TCHAR;
+#   define _TCHAR_DEFINED
+    typedef float *TCHAR;
 #endif
 
 /*
@@ -60,7 +56,11 @@ typedef float *TCHAR;
 #ifndef __MWERKS__
 #include <sys/stat.h>
 #include <sys/timeb.h>
-#include <sys/utime.h>
+#   ifdef __BORLANDC__
+#	include <utime.h>
+#   else
+#	include <sys/utime.h>
+#   endif
 #endif
 
 #include <time.h>
@@ -71,8 +71,8 @@ typedef float *TCHAR;
 #undef WIN32_LEAN_AND_MEAN
 
 #ifdef BUILD_tcl
-# undef TCL_STORAGE_CLASS
-# define TCL_STORAGE_CLASS DLLEXPORT
+#   undef TCL_STORAGE_CLASS
+#   define TCL_STORAGE_CLASS DLLEXPORT
 #endif
 
 /*
@@ -343,6 +343,15 @@ typedef float *TCHAR;
 #    endif
 #endif /* _MSC_VER || __MINGW32__ */
 
+/*
+ * Borland's timezone and environ functions.
+ */
+
+#ifdef  __BORLANDC__
+#   define timezone _timezone
+#   define environ  _environ
+#endif
+
 #ifdef __CYGWIN__
 /* On cygwin32, the environment is imported from the cygwin32 DLL. */
      DLLIMPORT extern char **__cygwin_environ;
@@ -458,7 +467,7 @@ typedef int TclpMutex;
 #include "tclPlatDecls.h"
 #include "tclIntPlatDecls.h"
 
-# undef TCL_STORAGE_CLASS
-# define TCL_STORAGE_CLASS DLLIMPORT
+#undef TCL_STORAGE_CLASS
+#define TCL_STORAGE_CLASS DLLIMPORT
 
 #endif /* _TCLWINPORT */
