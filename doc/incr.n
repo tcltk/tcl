@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: incr.n,v 1.4 2004/04/30 22:45:56 dkf Exp $
+'\" RCS: @(#) $Id: incr.n,v 1.5 2004/10/27 12:53:22 dkf Exp $
 '\" 
 .so man.macros
 .TH incr n "" Tcl "Tcl Built-In Commands"
@@ -29,25 +29,25 @@ and also returned as result.
 .SH EXAMPLES
 Add one to the contents of the variable \fIx\fR:
 .CS
-incr x
+\fBincr\fR x
 .CE
-
+.PP
 Add 42 to the contents of the variable \fIx\fR:
 .CS
-incr x 42
+\fBincr\fR x 42
 .CE
-
+.PP
 Add the contents of the variable \fIy\fR to the contents of the
 variable \fIx\fR:
 .CS
-incr x $y
+\fBincr\fR x $y
 .CE
-
+.PP
 Add nothing at all to the variable \fIx\fR (often useful for checking
 whether an argument to a procedure is actually numeric and generating
 an error if it is not):
 .CS
-incr x 0
+\fBincr\fR x 0
 .CE
 
 .SH "SEE ALSO"
