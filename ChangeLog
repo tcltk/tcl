@@ -1,3 +1,14 @@
+2000-05-18  Eric Melski  <ericm@scriptics.com>
+
+	* tests/clock.test: Added test for "2 days 2 hours ago" style
+	specifications.
+
+	* generic/tclDate.c: Regenerated from tclGetDate.y.
+
+	* generic/tclGetDate.y: Tweaked grammar to properly handle the
+	"ago" keyword when it follows multiple relative unit specifiers,
+	as in "2 days 2 hours ago".  [Bug: 5497].
+
 2000-05-18  Jeff Hobbs  <hobbs@scriptics.com>
 
 	* win/{tcl.m4,Makefile.in,configure.in}: added support for mingw
