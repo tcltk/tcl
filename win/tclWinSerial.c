@@ -10,7 +10,7 @@
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  * Changes by Rolf.Schroedter@dlr.de June 25-27, 1999
  *
- * RCS: @(#) $Id: tclWinSerial.c,v 1.7 1999/08/12 17:38:49 redman Exp $
+ * RCS: @(#) $Id: tclWinSerial.c,v 1.7.2.1 1999/09/24 22:49:14 hobbs Exp $
  */
 
 #include "tclWinInt.h"
@@ -130,10 +130,10 @@ static int      SerialOutputProc(ClientData instanceData, char *buf,
 static void     SerialSetupProc(ClientData clientData, int flags);
 static void     SerialWatchProc(ClientData instanceData, int mask);
 static void     ProcExitHandler(ClientData clientData);
-static int       SerialGetOptionProc _ANSI_ARGS_((ClientData instanceData,
+static int	SerialGetOptionProc _ANSI_ARGS_((ClientData instanceData,
                 Tcl_Interp *interp, char *optionName,
                 Tcl_DString *dsPtr));
-static int       SerialSetOptionProc _ANSI_ARGS_((ClientData instanceData,
+static int	SerialSetOptionProc _ANSI_ARGS_((ClientData instanceData,
                 Tcl_Interp *interp, char *optionName,
                 char *value));
 
@@ -1008,7 +1008,7 @@ SerialSetOptionProc(instanceData, interp, optionName, value)
 	return Tcl_BadChannelOption(interp, optionName,
 		"mode pollinterval");
     }
-    return TCL_ERROR;
+    return TCL_OK;
 }
 
 /*

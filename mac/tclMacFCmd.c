@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacFCmd.c,v 1.5 1999/05/11 07:12:00 jingham Exp $
+ * RCS: @(#) $Id: tclMacFCmd.c,v 1.5.6.1 1999/09/24 22:49:12 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -1194,15 +1194,19 @@ static int
 GetFileFinderAttributes(
     Tcl_Interp *interp,		/* The interp to report errors with. */
     int objIndex,		/* The index of the attribute option. */
-    CONST char *fileName,	/* The name of the file. */
+    CONST char *fileName,	/* The name of the file (UTF-8). */
     Tcl_Obj **attributePtrPtr)	/* A pointer to return the object with. */
 {
     OSErr err;
     FSSpec fileSpec;
     FInfo finfo;
-    
-    err = FSpLocationFromPath(strlen(fileName), fileName, &fileSpec);
-    
+    Tcl_DString pathString;
+
+    Tcl_UtfToExternalDString(NULL, path, -1, &pathString);
+    err = FSpLocationFromPath(Tcl_DStringLength(&pathString),
+	    Tcl_DStringValue(&pathString), &fileSpec);
+    Tcl_DStringFree(&pathString);
+
     if (err == noErr) {
     	err = FSpGetFInfo(&fileSpec, &finfo);
     }
@@ -1269,14 +1273,18 @@ static int
 GetFileReadOnly(
     Tcl_Interp *interp,		/* The interp to report errors with. */
     int objIndex,		/* The index of the attribute. */
-    CONST char *fileName,	/* The name of the file. */
+    CONST char *fileName,	/* The name of the file (UTF-8). */
     Tcl_Obj **readOnlyPtrPtr)	/* A pointer to return the object with. */
 {
     OSErr err;
     FSSpec fileSpec;
     CInfoPBRec paramBlock;
-    
-    err = FSpLocationFromPath(strlen(fileName), fileName, &fileSpec);
+    Tcl_DString pathString;
+
+    Tcl_UtfToExternalDString(NULL, path, -1, &pathString);
+    err = FSpLocationFromPath(Tcl_DStringLength(&pathString),
+	    Tcl_DStringValue(&pathString), &fileSpec);
+    Tcl_DStringFree(&pathString);
     
     if (err == noErr) {
     	if (err == noErr) {
@@ -1330,14 +1338,18 @@ static int
 SetFileFinderAttributes(
     Tcl_Interp *interp,		/* The interp to report errors with. */
     int objIndex,		/* The index of the attribute. */
-    CONST char *fileName,	/* The name of the file. */
+    CONST char *fileName,	/* The name of the file (UTF-8). */
     Tcl_Obj *attributePtr)	/* The command line object. */
 {
     OSErr err;
     FSSpec fileSpec;
     FInfo finfo;
-    
-    err = FSpLocationFromPath(strlen(fileName), fileName, &fileSpec);
+    Tcl_DString pathString;
+
+    Tcl_UtfToExternalDString(NULL, path, -1, &pathString);
+    err = FSpLocationFromPath(Tcl_DStringLength(&pathString),
+	    Tcl_DStringValue(&pathString), &fileSpec);
+    Tcl_DStringFree(&pathString);
     
     if (err == noErr) {
     	err = FSpGetFInfo(&fileSpec, &finfo);
@@ -1418,15 +1430,19 @@ static int
 SetFileReadOnly(
     Tcl_Interp *interp,		/* The interp to report errors with. */
     int objIndex,		/* The index of the attribute. */
-    CONST char *fileName,	/* The name of the file. */
+    CONST char *fileName,	/* The name of the file (UTF-8). */
     Tcl_Obj *readOnlyPtr)	/* The command line object. */
 {
     OSErr err;
     FSSpec fileSpec;
     HParamBlockRec paramBlock;
     int hidden;
-    
-    err = FSpLocationFromPath(strlen(fileName), fileName, &fileSpec);
+    Tcl_DString pathString;
+
+    Tcl_UtfToExternalDString(NULL, path, -1, &pathString);
+    err = FSpLocationFromPath(Tcl_DStringLength(&pathString),
+	    Tcl_DStringValue(&pathString), &fileSpec);
+    Tcl_DStringFree(&pathString);
     
     if (err == noErr) {
     	if (Tcl_GetBooleanFromObj(interp, readOnlyPtr, &hidden) != TCL_OK) {

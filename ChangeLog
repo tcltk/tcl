@@ -1,3 +1,10 @@
+1999-09-24  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* mac/tclMacFCmd.c: fixed filename stuff to support UTF-8 [Bug: 2869]
+
+	* win/tclWinSerial.c: changed SerialSetOptionProc to return
+	TCL_OK by default. (patch from Rolf Schroedter)
+
 1999-09-23  Jeff Hobbs  <hobbs@scriptics.com>
 
 	* README:
