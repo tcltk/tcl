@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: httpold.test,v 1.1.2.7 1999/04/02 23:44:38 stanton Exp $
+# RCS: @(#) $Id: httpold.test,v 1.1.2.8 1999/04/05 23:34:44 welch Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     source [file join [pwd] [file dirname [info script]] defs.tcl]
@@ -389,9 +389,11 @@ test http-4.11 {httpEvent} {
 } {reset}
 test http-4.12 {httpEvent} {
     update
-    after 1000 {set x 1}
     set token [http_get $url -timeout 1 -command {#}]
-    vwait x
+    # This combo of update and after 10 is an effort
+    # to let enough events get through the event loop.
+    update
+    after 10
     http_status $token
 } {timeout}
 
