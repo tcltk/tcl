@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.78 2004/03/05 16:36:56 kennykb Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.79 2004/03/08 16:34:23 dgp Exp $
  */
 
 #define TCL_TEST
@@ -3067,6 +3067,10 @@ TestexprparserObjCmd(clientData, interp, objc, objv)
     if (length == 0) {
 	length = dummy;
     }
+    parse.commentStart = NULL;
+    parse.commentSize = 0;
+    parse.commandStart = NULL;
+    parse.commandSize = 0;
     if (Tcl_ParseExpr(interp, script, length, &parse) != TCL_OK) {
 	Tcl_AddErrorInfo(interp, "\n    (remainder of expr: \"");
 	Tcl_AddErrorInfo(interp, parse.term);
