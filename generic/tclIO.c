@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.45 2002/01/15 21:19:07 dgp Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.46 2002/01/17 03:03:12 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -4707,7 +4707,7 @@ ReadChars(statePtr, objPtr, charsToRead, offsetPtr, factorPtr)
 	 * Got too many chars.
 	 */
 
-	char *eof;
+	CONST char *eof;
 
 	eof = Tcl_UtfAtIndex(dst, toRead);
 	statePtr->inputEncodingState = oldState;

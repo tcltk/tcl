@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUtf.c,v 1.20 2002/01/02 13:52:04 dkf Exp $
+ * RCS: @(#) $Id: tclUtf.c,v 1.21 2002/01/17 03:03:12 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -231,7 +231,7 @@ Tcl_UniCharToUtf(ch, str)
  *---------------------------------------------------------------------------
  */
  
-char *
+CONST char *
 Tcl_UniCharToUtfDString(wString, numChars, dsPtr)
     CONST Tcl_UniChar *wString;	/* Unicode string to convert to UTF-8. */
     int numChars;		/* Length of Unicode string in Tcl_UniChars
@@ -393,7 +393,7 @@ Tcl_UtfToUniChar(str, chPtr)
  *---------------------------------------------------------------------------
  */
 
-Tcl_UniChar *
+CONST Tcl_UniChar *
 Tcl_UtfToUniCharDString(string, length, dsPtr)
     CONST char *string;		/* UTF-8 string to convert to Unicode. */
     int length;			/* Length of UTF-8 string in bytes, or -1
@@ -536,7 +536,7 @@ Tcl_NumUtfChars(str, len)
  *
  *---------------------------------------------------------------------------
  */
-char *
+CONST char *
 Tcl_UtfFindFirst(string, ch)
     CONST char *string;		/* The UTF-8 string to be searched. */
     int ch;			/* The Tcl_UniChar to search for. */
@@ -547,7 +547,7 @@ Tcl_UtfFindFirst(string, ch)
     while (1) {
 	len = Tcl_UtfToUniChar(string, &find);
 	if (find == ch) {
-	    return (char *) string;
+	    return string;
 	}
 	if (*string == '\0') {
 	    return NULL;
@@ -576,7 +576,7 @@ Tcl_UtfFindFirst(string, ch)
  *---------------------------------------------------------------------------
  */
 
-char *
+CONST char *
 Tcl_UtfFindLast(string, ch)
     CONST char *string;		/* The UTF-8 string to be searched. */
     int ch;			/* The Tcl_UniChar to search for. */
@@ -596,7 +596,7 @@ Tcl_UtfFindLast(string, ch)
 	}
 	string += len;
     }
-    return (char *) last;
+    return last;
 }
 
 /*
@@ -619,13 +619,13 @@ Tcl_UtfFindLast(string, ch)
  *---------------------------------------------------------------------------
  */
  
-char *
+CONST char *
 Tcl_UtfNext(str) 
     CONST char *str;		    /* The current location in the string. */
 {
     Tcl_UniChar ch;
 
-    return (char *) str + Tcl_UtfToUniChar(str, &ch);
+    return str + Tcl_UtfToUniChar(str, &ch);
 }
 
 /*
@@ -649,7 +649,7 @@ Tcl_UtfNext(str)
  *---------------------------------------------------------------------------
  */
 
-char *
+CONST char *
 Tcl_UtfPrev(str, start)
     CONST char *str;		    /* The current location in the string. */
     CONST char *start;		    /* Pointer to the beginning of the
@@ -677,7 +677,7 @@ Tcl_UtfPrev(str, start)
 	}
 	look--;
     }
-    return (char *) str;
+    return str;
 }
 	
 /*
@@ -728,7 +728,7 @@ Tcl_UniCharAtIndex(src, index)
  *---------------------------------------------------------------------------
  */
 
-char *
+CONST char *
 Tcl_UtfAtIndex(src, index)
     register CONST char *src;	/* The UTF-8 string. */
     register int index;		/* The position of the desired character. */
@@ -739,7 +739,7 @@ Tcl_UtfAtIndex(src, index)
 	index--;
 	src += Tcl_UtfToUniChar(src, &ch);
     }
-    return (char *) src;
+    return src;
 }
 
 /*
@@ -1272,7 +1272,7 @@ Tcl_UniCharToTitle(ch)
 
 int
 Tcl_UniCharLen(str)
-    Tcl_UniChar *str;		/* Unicode string to find length of. */
+    CONST Tcl_UniChar *str;	/* Unicode string to find length of. */
 {
     int len = 0;
     
