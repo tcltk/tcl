@@ -1,3 +1,16 @@
+2004-05-26  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* unix/Makefile.in:  Rework configure ordering to TCL_LINK_LIBS,
+	* unix/tcl.m4:       ENABLE_SHARED, CONFIG_CFLAGS, & ENABLE_SYMBOLS
+	* unix/configure:    before TCL_EARLY_FLAGS and TCL_64BIT_FLAGS
+	* unix/configure.in: (about 400 lines earlier) in configure.in.
+	This forces CFLAGS configuration to be done before many tests,
+	which is needed for 64-bit builds and may affect other builds.
+	Also make CONFIG_CFLAGS append to CFLAGS directly instead of using
+	EXTRA_CFLAGS, and have LDFLAGS append to any existing value.
+	[Bug #874058]
+	* unix/dltest/Makefile.in: change EXTRA_CFLAGS to DEFS
+
 2004-05-26  Don Porter  <dgp@users.sourceforge.net>
 
 	* library/tcltest/tcltest.tcl:	Correction to debug prints and testing
