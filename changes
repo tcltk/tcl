@@ -3552,3 +3552,5 @@ the file generic/tclIOUtils.c for more details. (SKS)
  Tcl_Init() prior to the built-in initialization script defined in the
  file generic/tclInitScript.h.  (SKS)
 
+7/6/98 (bug fix) Removed dead code in PlatformInitExitHandler so that
+the TCL_LIBRARY value can be safely patched in binaries. (BW)
