@@ -2389,6 +2389,7 @@ AC_DEFUN(SC_TCL_64BIT_FLAGS, [
 		int main() {exit(!(sizeof(long long) > sizeof(long)));}
 		], tcl_cv_type_64bit="long long"))])
     if test "${tcl_cv_type_64bit}" = none ; then
+	AC_DEFINE(TCL_WIDE_INT_IS_LONG)
 	AC_MSG_RESULT(using long)
     else
 	AC_DEFINE_UNQUOTED(TCL_WIDE_INT_TYPE,${tcl_cv_type_64bit})

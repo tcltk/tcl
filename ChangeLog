@@ -1,5 +1,8 @@
 2002-09-24  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
+	* unix/tcl.m4: Forgot to define TCL_WIDE_INT_IS_LONG at the
+	appropriate moment.  I believe this is the cause of [Bug 613117]
+
 	* doc/lset.n: Changed 'list' to 'varName' for consistency with
 	lappend documentation.  Thanks to Glenn Jackman [Bug 611719]
 
