@@ -12,7 +12,7 @@
 # Copyright (c) 2001-2002 David Gravereaux.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.89 2002/03/29 22:29:26 davygrvy Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.90 2002/05/08 04:25:35 davygrvy Exp $
 #------------------------------------------------------------------------------
 
 !if "$(MSVCDIR)" == ""
@@ -153,7 +153,6 @@ Please `cd` to its location first.
 PROJECT	= tcl
 !include "rules.vc"
 
-
 STUBPREFIX = $(PROJECT)stub
 DOTVERSION = 8.4
 VERSION = $(DOTVERSION:.=)
@@ -188,11 +187,13 @@ TCLDDELIB	= $(OUT_DIR)\$(TCLDDELIBNAME)
 TCLTEST		= $(OUT_DIR)\$(PROJECT)test.exe
 CAT32		= $(OUT_DIR)\cat32.exe
 
-LIB_INSTALL_DIR		= $(INSTALLDIR)\lib
-BIN_INSTALL_DIR		= $(INSTALLDIR)\bin
-DOC_INSTALL_DIR		= $(INSTALLDIR)\doc
-SCRIPT_INSTALL_DIR	= $(INSTALLDIR)\lib\tcl$(DOTVERSION)
-INCLUDE_INSTALL_DIR	= $(INSTALLDIR)\include
+### Make sure we use backslash only.
+_INSTALLDIR		= $(INSTALLDIR:/=\)
+LIB_INSTALL_DIR		= $(_INSTALLDIR)\lib
+BIN_INSTALL_DIR		= $(_INSTALLDIR)\bin
+DOC_INSTALL_DIR		= $(_INSTALLDIR)\doc
+SCRIPT_INSTALL_DIR	= $(_INSTALLDIR)\lib\tcl$(DOTVERSION)
+INCLUDE_INSTALL_DIR	= $(_INSTALLDIR)\include
 
 TCLSHOBJS = \
 	$(TMP_DIR)\tclAppInit.obj \
@@ -315,19 +316,19 @@ WINDIR		= $(ROOT)\win
 
 !if !$(DEBUG)
 !if $(OPTIMIZING)
-# This cranks the optimization level to maximize speed
+### This cranks the optimization level to maximize speed
 cdebug	= -O2 -Op -Gs
 !else
 cdebug	=
 !endif
 !else if "$(MACHINE)" == "IA64"
-# Warnings are too many, can't support warnings into errors.
+### Warnings are too many, can't support warnings into errors.
 cdebug	= -Z7 -Od
 !else
 cdebug	= -Z7 -WX -Od
 !endif
 
-# declarations common to all compiler options
+### Declarations common to all compiler options
 cflags = -nologo -c -W3 -YX -Fp$(TMP_DIR)^\
 
 !if $(PENT_0F_ERRATA)
@@ -360,7 +361,7 @@ ldebug	= -debug:full -debugtype:cv
 ldebug	= -release -opt:ref -opt:icf,3
 !endif
 
-# declarations common to all linker options
+### Declarations common to all linker options
 lflags	= -nologo -machine:$(MACHINE) $(ldebug)
 
 !if $(PROFILE)
@@ -368,10 +369,10 @@ lflags	= $(lflags) -profile
 !endif
 
 !if $(ALIGN98_HACK) && !$(STATIC_BUILD)
-# align sections for PE size savings.
+### Align sections for PE size savings.
 lflags	= $(lflags) -opt:nowin98
 !else if !$(ALIGN98_HACK) && $(STATIC_BUILD)
-# align sections for speed in loading by choosing the virtual page size.
+### Align sections for speed in loading by choosing the virtual page size.
 lflags	= $(lflags) -align:4096
 !endif
 
@@ -416,6 +417,10 @@ test: setup $(TCLTEST) dlls $(CAT32)
 	$(TCLTEST) $(ROOT)/tests/all.tcl $(TESTFLAGS) > tests.log
 	type tests.log | more
 !endif
+
+runtest: setup $(TCLTEST) dlls $(CAT32)
+       set TCL_LIBRARY=$(ROOT)/library
+       $(TCLTEST)
 
 setup:
 	@if not exist $(OUT_DIR)\nul mkdir $(OUT_DIR)
@@ -563,7 +568,7 @@ CreateButton(4, "FAQ", ExecFile("http://www.purl.org/NET/Tcl-FAQ/"))
 $(MAN2TCL): $(TOOLSDIR)\$$(@B).c
 	$(cc32) -nologo -G4 -ML -O2 -Fo$(@D)\ $(TOOLSDIR)\$(@B).c -link -out:$@
 
-$(HELPRTF): $(MAN2TCL) $(MAN2HELP) $(MAN2HELP2) $(INDEX)
+$(HELPRTF): $(MAN2TCL) $(MAN2HELP) $(MAN2HELP2) $(INDEX) $(DOCDIR)\*
 	$(TCLSH) $(MAN2HELP:\=/) -bitmap $(BMP_NOPATH) $(PROJECT) $(VERSION) $(DOCDIR:\=/)
 
 install-docs:
