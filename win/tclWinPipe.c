@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPipe.c,v 1.33.2.5 2003/10/21 22:57:18 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclWinPipe.c,v 1.33.2.6 2004/02/25 07:56:21 davygrvy Exp $
  */
 
 #include "tclWinInt.h"
@@ -1577,9 +1577,8 @@ BuildCommandLine(
 	    arg = executable;
 	} else {
 	    arg = argv[i];
+	    Tcl_DStringAppend(&ds, " ", 1);
 	}
-
-	if(Tcl_DStringLength(&ds) > 0) Tcl_DStringAppend(&ds, " ", 1);
 
 	quote = 0;
 	if (arg[0] == '\0') {
@@ -1598,39 +1597,34 @@ BuildCommandLine(
 	if (quote) {
 	    Tcl_DStringAppend(&ds, "\"", 1);
 	}
-
 	start = arg;	    
 	for (special = arg; ; ) {
 	    if ((*special == '\\') && 
-		    (special[1] == '\\' || special[1] == '"')) {
-		Tcl_DStringAppend(&ds, start, special - start);
+		    (special[1] == '\\' || special[1] == '"' || (quote && special[1] == '\0'))) {
+		Tcl_DStringAppend(&ds, start, (int) (special - start));
 		start = special;
 		while (1) {
 		    special++;
-		    if (*special == '"') {
+		    if (*special == '"' || (quote && *special == '\0')) {
 			/* 
 			 * N backslashes followed a quote -> insert 
 			 * N * 2 + 1 backslashes then a quote.
 			 */
 
-			Tcl_DStringAppend(&ds, start, special - start);
+			Tcl_DStringAppend(&ds, start,
+				(int) (special - start));
 			break;
 		    }
 		    if (*special != '\\') {
 			break;
 		    }
 		}
-		Tcl_DStringAppend(&ds, start, special - start);
+		Tcl_DStringAppend(&ds, start, (int) (special - start));
 		start = special;
 	    }
 	    if (*special == '"') {
-		Tcl_DStringAppend(&ds, start, special - start);
+		Tcl_DStringAppend(&ds, start, (int) (special - start));
 		Tcl_DStringAppend(&ds, "\\\"", 2);
-		start = special + 1;
-	    }
-	    if (*special == '{') {
-		Tcl_DStringAppend(&ds, start, special - start);
-		Tcl_DStringAppend(&ds, "\\{", 2);
 		start = special + 1;
 	    }
 	    if (*special == '\0') {
@@ -1638,7 +1632,7 @@ BuildCommandLine(
 	    }
 	    special++;
 	}
-	Tcl_DStringAppend(&ds, start, special - start);
+	Tcl_DStringAppend(&ds, start, (int) (special - start));
 	if (quote) {
 	    Tcl_DStringAppend(&ds, "\"", 1);
 	}
