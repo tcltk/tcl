@@ -1,5 +1,15 @@
 2001-11-07  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* unix/Makefile.in:
+	* win/Makefile.in:
+	Print a message indicating that the user should
+	run "make genstubs" when the generated tclStubInit.c
+	file is out of date. We can't regenerate automatically
+	since there may be no tclsh on the system and that
+	would cause bootstrap problems. [Tcl bug 465874]
+
+2001-11-07  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	Define TCL_INCLUDE_SPEC in tclConfig.sh. It should be
 	included by extensions that need to find Tcl include
 	headers in the install location. The user can override
