@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.76 2004/01/29 10:28:20 vincentdarley Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.77 2004/03/01 17:33:45 dgp Exp $
  */
 
 #define TCL_TEST
@@ -1200,6 +1200,18 @@ TestcmdtraceCmd(dummy, interp, argc, argv)
 	cmdTrace = Tcl_CreateTrace(interp, 50000,
 	        (Tcl_CmdTraceProc *) CmdTraceDeleteProc, (ClientData) NULL);
 	Tcl_Eval(interp, argv[2]);
+    } else if (strcmp(argv[1], "leveltest") == 0) {
+	Interp *iPtr = (Interp *) interp;
+	Tcl_DStringInit(&buffer);
+	cmdTrace = Tcl_CreateTrace(interp, iPtr->numLevels + 4,
+		(Tcl_CmdTraceProc *) CmdTraceProc, (ClientData) &buffer);
+	result = Tcl_Eval(interp, argv[2]);
+	if (result == TCL_OK) {
+	    Tcl_ResetResult(interp);
+	    Tcl_AppendResult(interp, Tcl_DStringValue(&buffer), NULL);
+	}
+	Tcl_DeleteTrace(interp, cmdTrace);
+	Tcl_DStringFree(&buffer);
     } else if ( strcmp(argv[1], "resulttest" ) == 0 ) {
 	/* Create an object-based trace, then eval a script. This is used
 	 * to test return codes other than TCL_OK from the trace engine.
