@@ -6,6 +6,18 @@
 	(predecessor of [Bug 959052]) removed.
 	* tests/namespace.test: added tests 17.10-12 
 
+	***POTENTIAL INCOMPATIBILITY***
+	The patch modifies non-documented behaviour, and passes every test
+	in the testsuite. However, scripts relying on the old behaviour
+	may break.
+	Note that the only behaviour change concerns the creative writing
+	of unset variables. More precisely, which variable will be created
+	when neither a namespace variable nor a global variable by that
+	name exists, as defined by [info vars]. The new behaviour is that
+	the namespace resolution process deems a variable to exist exactly
+	when [info vars] finds it - ie, either it has value, or else it
+	was "fixed" by a call to [variable].
+
 2004-05-22  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclVar.c (TclObjLookupVar, TclObjUnsetVar2): fix for new
