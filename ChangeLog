@@ -1,3 +1,9 @@
+2004-06-02  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* win/tclWinFile.c (TclpFindExecutable): when using
+	GetModuleFileNameA (Win9x), convert from CP_ACP to WCHAR then
+	convert back to utf8.  Adjunct to 2004-04-07 fix.
+
 2004-06-02  David Gravereaux <davygrvy@pobox.com>
 
 	* tests/winPipe.c (winpipe-6.1): blocking set to 1 before

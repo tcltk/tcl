@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.64 2004/05/19 22:41:22 kennykb Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.65 2004/06/02 23:29:30 hobbs Exp $
  */
 
 //#define _WIN32_WINNT  0x0500
@@ -702,10 +702,12 @@ TclpFindExecutable(argv0)
 
     if (GetModuleFileNameW(NULL, wName, MAX_PATH) == 0) {
 	GetModuleFileNameA(NULL, name, sizeof(name));
-    } else {
-	WideCharToMultiByte(CP_UTF8, 0, wName, -1, 
-		name, sizeof(name), NULL, NULL);
+	/*
+	 * Convert to WCHAR to get out of ANSI codepage
+	 */
+	MultiByteToWideChar(CP_ACP, 0, name, -1, wName, MAX_PATH);
     }
+    WideCharToMultiByte(CP_UTF8, 0, wName, -1, name, sizeof(name), NULL, NULL);
 
     tclNativeExecutableName = ckalloc((unsigned) (strlen(name) + 1));
     strcpy(tclNativeExecutableName, name);
