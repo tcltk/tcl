@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: binary.n,v 1.13.2.6 2004/12/09 23:00:28 dgp Exp $
+'\" RCS: @(#) $Id: binary.n,v 1.13.2.7 2005/02/24 19:53:22 dgp Exp $
 '\" 
 .so man.macros
 .TH binary n 8.0 Tcl "Tcl Built-In Commands"
@@ -431,7 +431,7 @@ If you want to produce an unsigned value, then you can mask the return
 value to the desired size.  For example, to produce an unsigned short 
 value:
 .CS
-set val [expr {$val & 0xFFFF}]; \fI# val == 0x8000\fR
+set val [expr { $val & 0xFFFF }]; \fI# val == 0x8000\fR
 .CE
 .PP
 Each type-count pair moves an imaginary cursor through the binary data,
@@ -529,7 +529,7 @@ stored in \fIvar2\fR.  Note that the integers returned are signed, but
 they can be converted to unsigned 8-bit quantities using an expression
 like:
 .CS
-expr { ( $num + 0x100 ) % 0x100 }
+set num [expr { $num & 0xff }]
 .CE
 .RE
 .IP \fBs\fR 5
@@ -548,7 +548,7 @@ stored in \fIvar2\fR.  Note that the integers returned are signed, but
 they can be converted to unsigned 16-bit quantities using an expression
 like:
 .CS
-expr { ( $num + 0x10000 ) % 0x10000 }
+set num [expr { $num & 0xffff }]
 .CE
 .RE
 .IP \fBS\fR 5
@@ -583,8 +583,12 @@ set str \\x05\\x00\\x00\\x00\\x07\\x00\\x00\\x00\\xf0\\xff\\xff\\xff
 \fBbinary scan\fR $str i2i* var1 var2
 .CE
 will return \fB2\fR with \fB5 7\fR stored in \fIvar1\fR and \fB-16\fR
-stored in \fIvar2\fR.  Note that the integers returned are signed and
-cannot be represented by Tcl as unsigned values.
+stored in \fIvar2\fR.  Note that the integers returned are signed, but
+they can be converted to unsigned 32-bit quantities using an expression
+like:
+.CS
+set num [expr { $num & 0xffffffff }]
+.CE
 .RE
 .IP \fBI\fR 5
 This form is the same as \fBI\fR except that the data is interpreted

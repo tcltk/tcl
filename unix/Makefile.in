@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.127.2.13 2005/01/12 21:36:45 dgp Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.127.2.14 2005/02/24 19:53:36 dgp Exp $
 
 VERSION 		= @TCL_VERSION@
 MAJOR_VERSION		= @TCL_MAJOR_VERSION@
@@ -186,7 +186,6 @@ TCL_EXE			= tclsh
 STLIB_LD		= @STLIB_LD@
 SHLIB_LD		= @SHLIB_LD@
 SHLIB_CFLAGS		= @SHLIB_CFLAGS@
-SHLIB_LD_FLAGS		= @SHLIB_LD_FLAGS@
 SHLIB_LD_LIBS		= @SHLIB_LD_LIBS@
 TCL_SHLIB_LD_EXTRAS	= @TCL_SHLIB_LD_EXTRAS@
 
@@ -671,8 +670,8 @@ install-libraries: libraries install-tzdata install-msgs
 	    done;
 	@echo "Installing package msgcat 1.4.1 as a Tcl Module";
 	@$(INSTALL_DATA) $(TOP_DIR)/library/msgcat/msgcat.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.5/msgcat-1.4.1.tm;
-	@echo "Installing package tcltest 2.2.7 as a Tcl Module";
-	@$(INSTALL_DATA) $(TOP_DIR)/library/tcltest/tcltest.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.3/tcltest-2.2.7.tm;
+	@echo "Installing package tcltest 2.2.8 as a Tcl Module";
+	@$(INSTALL_DATA) $(TOP_DIR)/library/tcltest/tcltest.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.3/tcltest-2.2.8.tm;
 	@echo "Installing library encoding directory";
 	@for i in $(TOP_DIR)/library/encoding/*.enc ; do \
 		$(INSTALL_DATA) $$i $(SCRIPT_INSTALL_DIR)/encoding; \

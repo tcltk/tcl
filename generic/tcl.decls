@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.97.2.9 2005/01/24 21:43:50 dgp Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.97.2.10 2005/02/24 19:53:22 dgp Exp $
 
 library tcl
 
@@ -1984,7 +1984,10 @@ declare 553 generic {
 	    Tcl_ScaleTimeProc** scaleProc,
 	    ClientData* clientData)
 }
-
+# TIP#218 (Driver Thread Actions) davygrvy/akupries ChannelType ver 4
+declare 554 generic {
+    Tcl_DriverThreadActionProc *Tcl_ChannelThreadActionProc(Tcl_ChannelType *chanTypePtr)
+}
 
 ##############################################################################
 

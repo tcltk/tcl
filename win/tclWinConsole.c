@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinConsole.c,v 1.11.4.1 2004/09/21 23:10:30 dgp Exp $
+ * RCS: @(#) $Id: tclWinConsole.c,v 1.11.4.2 2005/02/24 19:53:50 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -148,7 +148,7 @@ static int		ConsoleEventProc(Tcl_Event *evPtr, int flags);
 static void		ConsoleExitHandler(ClientData clientData);
 static int		ConsoleGetHandleProc(ClientData instanceData,
 			    int direction, ClientData *handlePtr);
-static ThreadSpecificData *ConsoleInit(void);
+static void             ConsoleInit(void);
 static int		ConsoleInputProc(ClientData instanceData, char *buf,
 			    int toRead, int *errorCode);
 static int		ConsoleOutputProc(ClientData instanceData,
@@ -160,6 +160,9 @@ static DWORD WINAPI	ConsoleWriterThread(LPVOID arg);
 static void		ProcExitHandler(ClientData clientData);
 static int		WaitForRead(ConsoleInfo *infoPtr, int blocking);
 
+static void             ConsoleThreadActionProc _ANSI_ARGS_ ((
+			   ClientData instanceData, int action));
+
 /*
  * This structure describes the channel type structure for command console
  * based IO.
@@ -167,7 +170,7 @@ static int		WaitForRead(ConsoleInfo *infoPtr, int blocking);
 
 static Tcl_ChannelType consoleChannelType = {
     "console",			/* Type name. */
-    TCL_CHANNEL_VERSION_2,	/* v2 channel */
+    TCL_CHANNEL_VERSION_4,	/* v4 channel */
     ConsoleCloseProc,		/* Close proc. */
     ConsoleInputProc,		/* Input proc. */
     ConsoleOutputProc,		/* Output proc. */
@@ -180,6 +183,8 @@ static Tcl_ChannelType consoleChannelType = {
     ConsoleBlockModeProc,	/* Set blocking or non-blocking mode.*/
     NULL,			/* flush proc. */
     NULL,			/* handler proc. */
+    NULL,                       /* wide seek proc */
+    ConsoleThreadActionProc,    /* thread action proc */
 };
 
 /*
@@ -198,7 +203,7 @@ static Tcl_ChannelType consoleChannelType = {
  *----------------------------------------------------------------------
  */
 
-static ThreadSpecificData *
+static void
 ConsoleInit()
 {
     ThreadSpecificData *tsdPtr;
@@ -224,7 +229,6 @@ ConsoleInit()
 	Tcl_CreateEventSource(ConsoleSetupProc, ConsoleCheckProc, NULL);
 	Tcl_CreateThreadExitHandler(ConsoleExitHandler, NULL);
     }
-    return tsdPtr;
 }
 
 /*
@@ -1169,7 +1173,10 @@ ConsoleReaderThread(LPVOID arg)
 	 */
 
 	Tcl_MutexLock(&consoleMutex);
-	Tcl_ThreadAlert(infoPtr->threadId);
+	if (infoPtr->threadId != NULL) {
+	    /* TIP #218. When in flight ignore the event, no one will receive it anyway */
+	    Tcl_ThreadAlert(infoPtr->threadId);
+	}
 	Tcl_MutexUnlock(&consoleMutex);
     }
 
@@ -1255,7 +1262,10 @@ ConsoleWriterThread(LPVOID arg)
 	 */
 
 	Tcl_MutexLock(&consoleMutex);
-	Tcl_ThreadAlert(infoPtr->threadId);
+	if (infoPtr->threadId != NULL) {
+	    /* TIP #218. When in flight ignore the event, no one will receive it anyway */
+	    Tcl_ThreadAlert(infoPtr->threadId);
+	}
 	Tcl_MutexUnlock(&consoleMutex);
     }
 
@@ -1290,10 +1300,9 @@ TclWinOpenConsoleChannel(handle, channelName, permissions)
 {
     char encoding[4 + TCL_INTEGER_SPACE];
     ConsoleInfo *infoPtr;
-    ThreadSpecificData *tsdPtr;
     DWORD id, modes;
 
-    tsdPtr = ConsoleInit();
+    ConsoleInit();
 
     /*
      * See if a channel with this handle already exists.
@@ -1304,8 +1313,11 @@ TclWinOpenConsoleChannel(handle, channelName, permissions)
 
     infoPtr->validMask = permissions;
     infoPtr->handle = handle;
+    infoPtr->channel = (Tcl_Channel) NULL;
 
     wsprintfA(encoding, "cp%d", GetConsoleCP());
+
+    infoPtr->threadId = Tcl_GetCurrentThread();
 
     /*
      * Use the pointer for the name of the result channel.
@@ -1317,8 +1329,6 @@ TclWinOpenConsoleChannel(handle, channelName, permissions)
     
     infoPtr->channel = Tcl_CreateChannel(&consoleChannelType, channelName,
             (ClientData) infoPtr, permissions);
-
-    infoPtr->threadId = Tcl_GetCurrentThread();
 
     if (permissions & TCL_READABLE) {
 	/*
@@ -1359,4 +1369,52 @@ TclWinOpenConsoleChannel(handle, channelName, permissions)
     Tcl_SetChannelOption(NULL, infoPtr->channel, "-encoding", encoding);
 
     return infoPtr->channel;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ConsoleThreadActionProc --
+ *
+ *	Insert or remove any thread local refs to this channel.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Changes thread local list of valid channels.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+ConsoleThreadActionProc (instanceData, action)
+     ClientData instanceData;
+     int action;
+{
+    ConsoleInfo *infoPtr = (ConsoleInfo *) instanceData;
+
+    /* We do not access firstConsolePtr in the thread structures. This is
+     * not for all serials managed by the thread, but only those we are
+     * watching. Removal of the filevent handlers before transfer thus
+     * takes care of this structure.
+     */
+
+    Tcl_MutexLock(&consoleMutex);
+    if (action == TCL_CHANNEL_THREAD_INSERT) {
+        /* We can't copy the thread information from the channel when
+	 * the channel is created. At this time the channel back
+	 * pointer has not been set yet. However in that case the
+	 * threadId has already been set by TclpCreateCommandChannel
+	 * itself, so the structure is still good.
+	 */
+
+        ConsoleInit ();
+        if (infoPtr->channel != NULL) {
+	    infoPtr->threadId = Tcl_GetChannelThread (infoPtr->channel);
+	}
+    } else {
+	infoPtr->threadId = NULL;
+    }
+    Tcl_MutexUnlock(&consoleMutex);
 }

@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.67.2.10 2005/01/12 21:36:33 dgp Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.67.2.11 2005/02/24 19:53:33 dgp Exp $
  */
 
 #define TCL_TEST
@@ -2277,9 +2277,14 @@ TestexprlongCmd(clientData, interp, argc, argv)
     long exprResult;
     char buf[4 + TCL_INTEGER_SPACE];
     int result;
-    
+
+    if (argc != 2) {
+        Tcl_AppendResult(interp, "wrong # arguments: should be \"", argv[0],
+                " expression\"", (char *) NULL);
+        return TCL_ERROR;
+    }
     Tcl_SetResult(interp, "This is a result", TCL_STATIC);
-    result = Tcl_ExprLong(interp, "4+1", &exprResult);
+    result = Tcl_ExprLong(interp, argv[1], &exprResult);
     if (result != TCL_OK) {
         return result;
     }

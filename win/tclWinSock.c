@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinSock.c,v 1.37.2.5 2004/10/28 18:47:41 dgp Exp $
+ * RCS: @(#) $Id: tclWinSock.c,v 1.37.2.6 2005/02/24 19:53:51 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -265,6 +265,10 @@ static int		    WaitForSocketEvent _ANSI_ARGS_((
 				int *errorCodePtr));
 static DWORD WINAPI	    SocketThread _ANSI_ARGS_((LPVOID arg));
 
+static void             TcpThreadActionProc _ANSI_ARGS_ ((
+			   ClientData instanceData, int action));
+
+
 /*
  * This structure describes the channel type structure for TCP socket
  * based IO.
@@ -272,7 +276,7 @@ static DWORD WINAPI	    SocketThread _ANSI_ARGS_((LPVOID arg));
 
 static Tcl_ChannelType tcpChannelType = {
     "tcp",		    /* Type name. */
-    TCL_CHANNEL_VERSION_2,  /* v2 channel */
+    TCL_CHANNEL_VERSION_4,  /* v4 channel */
     TcpCloseProc,	    /* Close proc. */
     TcpInputProc,	    /* Input proc. */
     TcpOutputProc,	    /* Output proc. */
@@ -285,6 +289,8 @@ static Tcl_ChannelType tcpChannelType = {
     TcpBlockProc,	    /* Set socket into (non-)blocking mode. */
     NULL,		    /* flush proc. */
     NULL,		    /* handler proc. */
+    NULL,                   /* wide seek proc */
+    TcpThreadActionProc,    /* thread action proc */
 };
 
 
@@ -970,7 +976,7 @@ TcpCloseProc(instanceData, interp)
     Tcl_Interp *interp;		/* Unused. */
 {
     SocketInfo *infoPtr = (SocketInfo *) instanceData;
-    SocketInfo **nextPtrPtr;
+    /* TIP #218 */
     int errorCode = 0;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
@@ -995,20 +1001,12 @@ TcpCloseProc(instanceData, interp)
         }
     }
 
-    /*
-     * Remove the socket from socketList.
+    /* TIP #218. Removed the code removing the structure
+     * from the global socket list. This is now done by
+     * the thread action callbacks, and only there. This
+     * happens before this code is called. We can free
+     * without fear of damaging the list.
      */
-
-    WaitForSingleObject(tsdPtr->socketListLock, INFINITE);
-    for (nextPtrPtr = &(tsdPtr->socketList); (*nextPtrPtr) != NULL;
-	 nextPtrPtr = &((*nextPtrPtr)->nextPtr)) {
-	if ((*nextPtrPtr) == infoPtr) {
-	    (*nextPtrPtr) = infoPtr->nextPtr;
-	    break;
-	}
-    }
-    
-    SetEvent(tsdPtr->socketListLock);
     ckfree((char *) infoPtr);
     return errorCode;
 }
@@ -1025,7 +1023,7 @@ TcpCloseProc(instanceData, interp)
  *	Returns a newly allocated SocketInfo.
  *
  * Side effects:
- *	Adds the socket to the global socket list.
+ *	None, except for allocation of memory.
  *
  *----------------------------------------------------------------------
  */
@@ -1049,11 +1047,12 @@ NewSocketInfo(socket)
     infoPtr->acceptProcData = NULL;
     infoPtr->lastError = 0;
 
-    WaitForSingleObject(tsdPtr->socketListLock, INFINITE);
-    infoPtr->nextPtr = tsdPtr->socketList;
-    tsdPtr->socketList = infoPtr;
-    SetEvent(tsdPtr->socketListLock);
-    
+    /* TIP #218. Removed the code inserting the new structure
+     * into the global list. This is now handled in the thread
+     * action callbacks, and only there.
+     */
+    infoPtr->nextPtr = NULL;
+
     return infoPtr;
 }
 
@@ -1069,7 +1068,7 @@ NewSocketInfo(socket)
  *	Returns a new SocketInfo, or NULL with an error in interp.
  *
  * Side effects:
- *	Adds a new socket to the socketList.
+ *	None, except for allocation of memory.
  *
  *----------------------------------------------------------------------
  */
@@ -2665,16 +2664,13 @@ TclWinGetServByName(const char * name, const char * proto)
 
     return winSock.getservbyname(name, proto);
 }
-
-
 
 /*
  *----------------------------------------------------------------------
  *
- * TclpCutSockChannel --
+ * TcpThreadActionProc --
  *
- *	Remove any thread local refs to this channel. See
- *	Tcl_CutChannel for more info.
+ *	Insert or remove any thread local refs to this channel.
  *
  * Results:
  *	None.
@@ -2685,116 +2681,68 @@ TclWinGetServByName(const char * name, const char * proto)
  *----------------------------------------------------------------------
  */
 
-void
-TclpCutSockChannel(chan)
-    Tcl_Channel chan;			/* The channel being removed. Must
-                                         * not be referenced in any
-                                         * interpreter. */
+static void
+TcpThreadActionProc (instanceData, action)
+     ClientData instanceData;
+     int action;
 {
     ThreadSpecificData *tsdPtr;
-    SocketInfo *infoPtr;
-    SocketInfo **nextPtrPtr;
-    int removed = 0;
+    SocketInfo *infoPtr = (SocketInfo *) instanceData;
+    int      notifyCmd;
 
-    if (Tcl_GetChannelType(chan) != &tcpChannelType) {
-        return;
-    }
+    if (action == TCL_CHANNEL_THREAD_INSERT) {
+        /*
+	 * Ensure that socket subsystem is initialized in this thread, or
+	 * else sockets will not work.
+	 */
 
-    /*
-     * The initializtion of tsdPtr _after_ we have determined that we
-     * are dealing with socket is necessary. Doing it before causes
-     * the module to access th tdsPtr when it is not initialized yet,
-     * causing a lockup.
-     */
+        Tcl_MutexLock(&socketMutex);
+	InitSockets();
+	Tcl_MutexUnlock(&socketMutex);
 
-    tsdPtr  = TCL_TSD_INIT(&dataKey);
-    infoPtr = (SocketInfo *) Tcl_GetChannelInstanceData (chan);
+	tsdPtr = TCL_TSD_INIT(&dataKey);
 
-    for (nextPtrPtr = &(tsdPtr->socketList); (*nextPtrPtr) != NULL;
-	 nextPtrPtr = &((*nextPtrPtr)->nextPtr)) {
-	if ((*nextPtrPtr) == infoPtr) {
-	    (*nextPtrPtr) = infoPtr->nextPtr;
-	    removed = 1;
-	    break;
+	WaitForSingleObject(tsdPtr->socketListLock, INFINITE);
+	infoPtr->nextPtr = tsdPtr->socketList;
+	tsdPtr->socketList = infoPtr;
+	SetEvent(tsdPtr->socketListLock);
+
+	notifyCmd = SELECT;
+    } else {
+        SocketInfo **nextPtrPtr;
+	int removed = 0;
+
+	tsdPtr  = TCL_TSD_INIT(&dataKey);
+
+	/* TIP #218, Bugfix: All access to socketList has to be protected by the lock */
+	WaitForSingleObject(tsdPtr->socketListLock, INFINITE);
+	for (nextPtrPtr = &(tsdPtr->socketList); (*nextPtrPtr) != NULL;
+	     nextPtrPtr = &((*nextPtrPtr)->nextPtr)) {
+	    if ((*nextPtrPtr) == infoPtr) {
+	        (*nextPtrPtr) = infoPtr->nextPtr;
+		removed = 1;
+		break;
+	    }
 	}
+	SetEvent(tsdPtr->socketListLock);
+
+	/*
+	 * This could happen if the channel was created in one thread
+	 * and then moved to another without updating the thread
+	 * local data in each thread.
+	 */
+
+	if (!removed) {
+	    Tcl_Panic("file info ptr not on thread channel list");
+	}
+
+	notifyCmd = UNSELECT;
     }
 
     /*
-     * This could happen if the channel was created in one thread
-     * and then moved to another without updating the thread
-     * local data in each thread.
-     */
-
-    if (!removed) {
-        Tcl_Panic("file info ptr not on thread channel list");
-    }
-
-    /*
-     * Stop notifications for the socket to occur in this thread.
+     * Ensure that, or stop, notifications for the socket occur in this thread.
      */
 
     SendMessage(tsdPtr->hwnd, SOCKET_SELECT,
-		(WPARAM) UNSELECT, (LPARAM) infoPtr);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclpSpliceSockChannel --
- *
- *	Insert thread local ref for this channel.
- *	Tcl_SpliceChannel for more info.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Changes thread local list of valid channels.
- *
- *----------------------------------------------------------------------
- */
-
-void
-TclpSpliceSockChannel(chan)
-    Tcl_Channel chan;			/* The channel being removed. Must
-                                         * not be referenced in any
-                                         * interpreter. */
-{
-    ThreadSpecificData *tsdPtr;
-    SocketInfo *infoPtr;
-
-    if (Tcl_GetChannelType(chan) != &tcpChannelType) {
-        return;
-    }
-
-    /*
-     * Ensure that socket subsystem is initialized in this thread, or
-     * else sockets will not work.
-     */
-
-    Tcl_MutexLock(&socketMutex);
-    InitSockets();
-    Tcl_MutexUnlock(&socketMutex);
-
-    /*
-     * The initializtion of tsdPtr _after_ we have determined that we
-     * are dealing with socket is necessary. Doing it before causes
-     * the module to access th tdsPtr when it is not initialized yet,
-     * causing a lockup.
-     */
-
-    tsdPtr  = TCL_TSD_INIT(&dataKey);
-    infoPtr = (SocketInfo *) Tcl_GetChannelInstanceData (chan);
-
-    WaitForSingleObject(tsdPtr->socketListLock, INFINITE);
-    infoPtr->nextPtr = tsdPtr->socketList;
-    tsdPtr->socketList = infoPtr;
-    SetEvent(tsdPtr->socketListLock);
-
-    /*
-     * Ensure that notifications for the socket occur in this thread.
-     */
-
-    SendMessage(tsdPtr->hwnd, SOCKET_SELECT,
-		(WPARAM) SELECT, (LPARAM) infoPtr);
+		(WPARAM) notifyCmd, (LPARAM) infoPtr);
 }

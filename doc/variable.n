@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: variable.n,v 1.4.20.2 2004/10/28 18:46:17 dgp Exp $
+'\" RCS: @(#) $Id: variable.n,v 1.4.20.3 2005/02/24 19:53:22 dgp Exp $
 '\" 
 .so man.macros
 .TH variable n 8.0 Tcl "Tcl Built-In Commands"
@@ -43,7 +43,7 @@ command, but not to the \fBinfo exists\fR command.
 If the \fBvariable\fR command is executed inside a Tcl procedure,
 it creates local variables
 linked to the corresponding namespace variables (and therefore these
-variables are listed by \fBinfo locals\fR.)
+variables are listed by \fBinfo vars\fR.)
 In this way the \fBvariable\fR command resembles the \fBglobal\fR command,
 although the \fBglobal\fR command
 only links to variables in the global namespace.

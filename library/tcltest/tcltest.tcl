@@ -16,7 +16,7 @@
 # Contributions from Don Porter, NIST, 2002.  (not subject to US copyright)
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.tcl,v 1.82.2.5 2004/12/09 23:00:59 dgp Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.82.2.6 2005/02/24 19:53:34 dgp Exp $
 
 package require Tcl 8.3		;# uses [glob -directory]
 namespace eval tcltest {
@@ -24,7 +24,7 @@ namespace eval tcltest {
     # When the version number changes, be sure to update the pkgIndex.tcl file,
     # and the install directory in the Makefiles.  When the minor version
     # changes (new feature) be sure to update the man page as well.
-    variable Version 2.2.7
+    variable Version 2.2.8
 
     # Compatibility support for dumb variables defined in tcltest 1
     # Do not use these.  Call [package provide Tcl] and [info patchlevel]
@@ -2569,14 +2569,16 @@ proc tcltest::GetMatchingFiles { args } {
 	set matchFileList [list]
 	foreach match [matchFiles] {
 	    set matchFileList [concat $matchFileList \
-		    [glob -directory $directory -nocomplain -- $match]]
+		    [glob -directory $directory -types {b c f p s} \
+		    -nocomplain -- $match]]
 	}
 
 	# List files in $directory that match patterns to skip.
 	set skipFileList [list]
 	foreach skip [skipFiles] {
 	    set skipFileList [concat $skipFileList \
-		    [glob -directory $directory -nocomplain -- $skip]]
+		    [glob -directory $directory -types {b c f p s} \
+		    -nocomplain -- $skip]]
 	}
 
 	# Add to result list all files in match list and not in skip list
@@ -2618,25 +2620,20 @@ proc tcltest::GetMatchingDirectories {rootdir} {
     # comes up to avoid infinite loops.
     set skipDirs [list $rootdir]
     foreach pattern [skipDirectories] {
-	foreach path [glob -directory $rootdir -nocomplain -- $pattern] {
-	    if {[file isdirectory $path]} {
-		lappend skipDirs $path
-	    }
-	}
+	set skipDirs [concat $skipDirs [glob -directory $rootdir -types d \
+		-nocomplain -- $pattern]]
     }
 
     # Now step through the matching directories, prune out the skipped ones
     # as you go.
     set matchDirs [list]
     foreach pattern [matchDirectories] {
-	foreach path [glob -directory $rootdir -nocomplain -- $pattern] {
-	    if {[file isdirectory $path]} {
-		if {[lsearch -exact $skipDirs $path] == -1} {
-		    set matchDirs [concat $matchDirs \
-			    [GetMatchingDirectories $path]]
-		    if {[file exists [file join $path all.tcl]]} {
-			lappend matchDirs $path
-		    }
+	foreach path [glob -directory $rootdir -types d -nocomplain -- \
+		$pattern] {
+	    if {[lsearch -exact $skipDirs $path] == -1} {
+		set matchDirs [concat $matchDirs [GetMatchingDirectories $path]]
+		if {[file exists [file join $path all.tcl]]} {
+		    lappend matchDirs $path
 		}
 	    }
 	}

@@ -6,7 +6,7 @@
 # Copyright (c) 2000 by Ajuba Solutions
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.test,v 1.37.4.7 2004/12/09 23:01:11 dgp Exp $
+# RCS: @(#) $Id: tcltest.test,v 1.37.4.8 2005/02/24 19:53:36 dgp Exp $
 
 # Note that there are several places where the value of 
 # tcltest::currentFailure is stored/reset in the -setup/-cleanup
@@ -703,7 +703,7 @@ test tcltest-9.1 {-file a*.tcl} -constraints {unixOrPc} -setup {
     set old [testsDirectory]
     testsDirectory [file dirname [info script]]
 } -body {
-    slave msg [file join [testsDirectory] all.tcl] -file a*.test
+    slave msg [file join [testsDirectory] all.tcl] -file as*.test
     set msg
 } -cleanup {
     testsDirectory $old
@@ -714,7 +714,7 @@ test tcltest-9.2 {-file a*.tcl} -constraints {unixOrPc} -setup {
     testsDirectory [file dirname [info script]]
 } -body {
     slave msg [file join [testsDirectory] all.tcl] \
-	    -file a*.test -notfile assocd*
+	    -file as*.test -notfile assocd*
     regexp {assocd\.test} $msg
 } -cleanup {
     testsDirectory $old
@@ -745,6 +745,19 @@ test tcltest-9.4 {skipFiles} {
     } 
     -result {foo bar}
 }
+
+test tcltest-9.5 {GetMatchingFiles: Bug 1119798} -setup {
+    file copy [file join [file dirname [info script]] all.tcl] [temporaryDirectory] 
+    makeDirectory foo
+    makeFile {} fee
+} -body {
+    slave msg [file join [temporaryDirectory] all.tcl] -file f*
+    regexp {exiting with errors:} $msg
+} -cleanup {
+    removeFile fee
+    removeDirectory foo
+    file delete [file join [temporaryDirectory] all.tcl]
+} -result 0
 
 # -preservecore, [preserveCore]
 set mc [makeFile {

@@ -1,3 +1,153 @@
+2005-02-24  Don Porter  <dgp@users.sourceforge.net>
+
+        * library/tcltest/tcltest.tcl:  Better use of [glob -types] to avoid
+        * tests/tcltest.test:   failed attempts to [source] a directory, and
+        similar matters.  Thanks to "mpettigr".  [Bug 1119798]
+
+        * library/tcltest/pkgIndex.tcl: Bump to tcltest 2.2.8
+	* unix/Makefile.in:
+	* win/Makefile.in:
+
+2005-02-23  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* doc/CrtChannel.3 (THREADACTIONPROC): Formatting fix. [Bug 1149605]
+
+2005-02-17  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* win/tclWinFCmd.c (TraverseWinTree): use wcslen on wchar, not
+	Tcl_UniCharLen.
+
+2005-02-16  Miguel Sofer <msofer@users.sf.net>
+
+	* doc/variable.n: fix for [Bug 1124160], variables are detected
+	by [info vars] but not by [info locals].
+	
+2005-02-11  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* unix/Makefile.in: remove SHLIB_LD_FLAGS (only for AIX, inlined
+	* unix/tcl.m4:      into SHLIB_LD).  Combine AIX-* and AIX-5
+	* unix/configure:   branches in SC_CONFIG_CFLAGS.
+	Correct gcc builds for AIX-4+ and HP-UX-11.  autoconf-2.59 gen'd.
+
+2005-02-11  Miguel Sofer <msofer@users.sf.net>
+
+	* tests/basic.test (basic-26.3): new test
+
+2005-02-10  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclBasic.c (Tcl_EvalObjEx):
+	* tests/basic.test (basic-26.2): preserve the arguments passed to
+	TEOV in the pure-list branch, in case the list shimmers away. Fix
+	for [Bug 1119369], reported by Peter MacDonald.
+
+2005-02-10  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* generic/tclFileName.c: fix for test failures introduced 
+	on 2005-01-17 [Bug 1119092]
+
+2005-02-10  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* doc/binary.n: Made the documentation of sign bit masking and
+	[binary scan] consistent. [Bug 1117017]
+
+2005-02-08  David N. Welton  <davidw@dedasys.com>
+
+	* doc/CrtChannel.3: Typo: return->returns.
+
+2005-02-06  David N. Welton  <davidw@dedasys.com>
+
+	* doc/Thread.3: One-word grammar fix.
+
+2005-02-05  David N. Welton  <davidw@dedasys.com>
+
+	* doc/Thread.3: Fixed sentence describing flags for
+	Tcl_CreateThread.
+
+	* doc/FileSystem.3: Cleaned up typo in Tcl_FSNewNativePath
+	documentation.
+
+	* generic/tclPathObj.c: Cleaned up typo in comment.
+
+2005-02-02  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* generic/tclProc.c (TclInitCompiledLocals):
+	Add check for type of the framePtr->procPtr->bodyPtr
+	passed to TclInitCompiledLocals and panic if
+	it is not the correct type. If the body of the proc
+	is not of the compiled byte code type then the
+	code will crash. This was discovered while tracking
+	down a crash in Itcl, that crash is fixed by
+	Itcl patch 1115085.
+
+2005-02-01  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclExecute.c (TclCompEvalObj): Removed stray statement
+	left behind in prior code reorganization.
+
+2005-01-31  Don Porter  <dgp@users.sourceforge.net>
+
+	* unix/configure:	autoconf-2.57
+
+2005-01-30  Joe English  <jenglish@users.sourceforge.net>
+
+	* unix/configure.in: Restored two double-evals that were
+	removed in the DBGX purge; these are still needed on some
+	platforms to account for TCL_TRIM_DOTS.  [Bug 1112654]
+
+	* unix/configure: NOT REGENERATED: only have autoconf 2.59 here,
+	need to find someone with autoconf 2.57.
+
+2005-01-28  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* unix/configure, unix/tcl.m4: add solaris 64-bit gcc build
+	support. [Bug 1021871]
+
+2005-01-28  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* tests/expr-old.test (expr-old-37.2): Added test for [Bug 1109484]
+
+2005-01-27  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclBasic.c (Tcl_ExprBoolean, Tcl_ExprDouble) 
+	(Tcl_ExprLong): Fix to recognize Tcl_WideInt type. [Bug 1109484]
+
+2005-01-26  Andreas Kupries <andreask@activestate.com>
+
+	TIP#218 IMPLEMENTATION
+
+	* generic/tclDecls.h:	Regenerated from tcl.decls.
+	* generic/tclStubInit.c:	
+
+	* doc/CrtChannel.3:	Documentation of extended API,
+	* generic/tcl.decls:	extended testsuite, and
+	* generic/tcl.h:	implementation. Removal of old
+	* generic/tclIO.c:	driver-specific TclpCut/Splice
+	* generic/tclInt.h:	functions. Replaced with generic
+	* tests/io.test:	thread-action calls through the
+	* unix/tclUnixChan.c:	new hooks. Update of all builtin
+	* unix/tclUnixPipe.c:	channel drivers to version 4.
+	* unix/tclUnixSock.c:	Windows drivers extended to 
+	* win/tclWinChan.c:	manage thread state in a thread
+	* win/tclWinConsole.c:	action handler.
+	* win/tclWinPipe.c:	
+	* win/tclWinSerial.c:	
+	* win/tclWinSock.c:	
+
+2005-01-25  Don Porter  <dgp@users.sourceforge.net>
+
+	* library/auto.tcl:	Updated [auto_reset] to clear auto-loaded
+	commands in namespaces other than :: and to clear auto-loaded commands
+	that do not happen to be procs.  [Bug 1101670]
+	***POTENTIAL INCOMPATIBILITY***
+
+2005-01-25  Daniel Steffen  <das@users.sourceforge.net>
+
+	* unix/tcl.m4 (Darwin): fixed bug with static build linking to
+	dynamic library in /usr/lib etc instead of linking to static library
+	earlier in search path. [Tcl Bug 956908]
+	Removed obsolete references to Rhapsody. 
+	* unix/configure: autoconf-2.57
+
 2005-01-21  Andreas Kupries <andreask@activestate.com>
 
 	* generic/tclStubInit.c: Regenerated the stubs support code from

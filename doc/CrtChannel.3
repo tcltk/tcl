@@ -5,13 +5,13 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: CrtChannel.3,v 1.16.4.4 2004/12/09 23:00:28 dgp Exp $
+'\" RCS: @(#) $Id: CrtChannel.3,v 1.16.4.5 2005/02/24 19:53:22 dgp Exp $
 .so man.macros
-.TH Tcl_CreateChannel 3 8.3 Tcl "Tcl Library Procedures"
+.TH Tcl_CreateChannel 3 8.4 Tcl "Tcl Library Procedures"
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
-Tcl_CreateChannel, Tcl_GetChannelInstanceData, Tcl_GetChannelType, Tcl_GetChannelName, Tcl_GetChannelHandle, Tcl_GetChannelMode, Tcl_GetChannelBufferSize, Tcl_SetChannelBufferSize, Tcl_NotifyChannel, Tcl_BadChannelOption, Tcl_ChannelName, Tcl_ChannelVersion, Tcl_ChannelBlockModeProc, Tcl_ChannelCloseProc, Tcl_ChannelClose2Proc, Tcl_ChannelInputProc, Tcl_ChannelOutputProc, Tcl_ChannelSeekProc, Tcl_ChannelWideSeekProc, Tcl_ChannelSetOptionProc, Tcl_ChannelGetOptionProc, Tcl_ChannelWatchProc, Tcl_ChannelGetHandleProc, Tcl_ChannelFlushProc, Tcl_ChannelHandlerProc, Tcl_IsChannelShared, Tcl_IsChannelRegistered, Tcl_CutChannel, Tcl_SpliceChannel, Tcl_IsChannelExisting, Tcl_ClearChannelHandlers, Tcl_GetChannelThread, Tcl_ChannelBuffered \- procedures for creating and manipulating channels
+Tcl_CreateChannel, Tcl_GetChannelInstanceData, Tcl_GetChannelType, Tcl_GetChannelName, Tcl_GetChannelHandle, Tcl_GetChannelMode, Tcl_GetChannelBufferSize, Tcl_SetChannelBufferSize, Tcl_NotifyChannel, Tcl_BadChannelOption, Tcl_ChannelName, Tcl_ChannelVersion, Tcl_ChannelBlockModeProc, Tcl_ChannelCloseProc, Tcl_ChannelClose2Proc, Tcl_ChannelInputProc, Tcl_ChannelOutputProc, Tcl_ChannelSeekProc, Tcl_ChannelWideSeekProc, Tcl_ChannelSetOptionProc, Tcl_ChannelGetOptionProc, Tcl_ChannelWatchProc, Tcl_ChannelGetHandleProc, Tcl_ChannelFlushProc, Tcl_ChannelHandlerProc, Tcl_ChannelThreadActionProc, Tcl_IsChannelShared, Tcl_IsChannelRegistered, Tcl_CutChannel, Tcl_SpliceChannel, Tcl_IsChannelExisting, Tcl_ClearChannelHandlers, Tcl_GetChannelThread, Tcl_ChannelBuffered \- procedures for creating and manipulating channels
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -99,6 +99,9 @@ Tcl_DriverSeekProc *
 .VS 8.4
 Tcl_DriverWideSeekProc *
 \fBTcl_ChannelWideSeekProc\fR(\fItypePtr\fR)
+.sp
+Tcl_DriverThreadActionProc *
+\fBTcl_ChannelThreadActionProc\fR(\fItypePtr\fR)
 .VE 8.4
 .sp
 Tcl_DriverSetOptionProc *
@@ -290,10 +293,20 @@ name is registered in the (thread)-global list of all channels (result
 (thread)global list of all channels (of the current thread).
 Application to a channel still registered in some interpreter
 is not allowed.
+.VS 8.5
+Also notifies the driver if the \fBTcl_ChannelType\fR version is
+\fBTCL_CHANNEL_VERSION_4\fR (or higher), and
+\fBTcl_DriverThreadActionProc\fR is defined for it.
+.VE 8.5
 .PP
 \fBTcl_SpliceChannel\fR adds the specified \fIchannel\fR to the
 (thread)global list of all channels (of the current thread).
 Application to a channel registered in some interpreter is not allowed.
+.VS 8.5
+Also notifies the driver if the \fBTcl_ChannelType\fR version is
+\fBTCL_CHANNEL_VERSION_4\fR (or higher), and
+\fBTcl_DriverThreadActionProc\fR is defined for it.
+.VE 8.5
 .PP
 \fBTcl_ClearChannelHandlers\fR removes all channelhandlers and event
 scripts associated with the specified \fIchannel\fR, thus shutting
@@ -311,21 +324,22 @@ details about the old structure.
 The \fBTcl_ChannelType\fR structure contains the following fields:
 .CS
 typedef struct Tcl_ChannelType {
-        char *\fItypeName\fR;
-        Tcl_ChannelTypeVersion \fIversion\fR;
-        Tcl_DriverCloseProc *\fIcloseProc\fR;
-        Tcl_DriverInputProc *\fIinputProc\fR;
-        Tcl_DriverOutputProc *\fIoutputProc\fR;
-        Tcl_DriverSeekProc *\fIseekProc\fR;
-        Tcl_DriverSetOptionProc *\fIsetOptionProc\fR;
-        Tcl_DriverGetOptionProc *\fIgetOptionProc\fR;
-        Tcl_DriverWatchProc *\fIwatchProc\fR;
-        Tcl_DriverGetHandleProc *\fIgetHandleProc\fR;
-        Tcl_DriverClose2Proc *\fIclose2Proc\fR;
-        Tcl_DriverBlockModeProc *\fIblockModeProc\fR;
-        Tcl_DriverFlushProc *\fIflushProc\fR;
-        Tcl_DriverHandlerProc *\fIhandlerProc\fR;
-        Tcl_DriverWideSeekProc *\fIwideSeekProc\fR;
+	char *\fItypeName\fR;
+	Tcl_ChannelTypeVersion \fIversion\fR;
+	Tcl_DriverCloseProc *\fIcloseProc\fR;
+	Tcl_DriverInputProc *\fIinputProc\fR;
+	Tcl_DriverOutputProc *\fIoutputProc\fR;
+	Tcl_DriverSeekProc *\fIseekProc\fR;
+	Tcl_DriverSetOptionProc *\fIsetOptionProc\fR;
+	Tcl_DriverGetOptionProc *\fIgetOptionProc\fR;
+	Tcl_DriverWatchProc *\fIwatchProc\fR;
+	Tcl_DriverGetHandleProc *\fIgetHandleProc\fR;
+	Tcl_DriverClose2Proc *\fIclose2Proc\fR;
+	Tcl_DriverBlockModeProc *\fIblockModeProc\fR;
+	Tcl_DriverFlushProc *\fIflushProc\fR;
+	Tcl_DriverHandlerProc *\fIhandlerProc\fR;
+	Tcl_DriverWideSeekProc *\fIwideSeekProc\fR;
+	Tcl_DriverThreadActionProc *\fIthreadActionProc\fR;
 } Tcl_ChannelType;
 .CE
 .PP
@@ -346,6 +360,7 @@ structure, the following functions should be used to obtain the values:
 \fBTcl_ChannelOutputProc\fR, \fBTcl_ChannelSeekProc\fR,
 .VS 8.4
 \fBTcl_ChannelWideSeekProc\fR,
+\fBTcl_ChannelThreadActionProc\fR,
 .VE 8.4
 \fBTcl_ChannelSetOptionProc\fR, \fBTcl_ChannelGetOptionProc\fR,
 \fBTcl_ChannelWatchProc\fR, \fBTcl_ChannelGetHandleProc\fR,
@@ -365,16 +380,25 @@ This value can be retrieved with \fBTcl_ChannelName\fR, which returns
 a pointer to the string.
 .SS VERSION
 .PP
-The \fIversion\fR field should be set to \fBTCL_CHANNEL_VERSION_2\fR.
-If it is not set to this value \fBTCL_CHANNEL_VERSION_3\fR, then this
-\fBTcl_ChannelType\fR is assumed to have the older structure.  See
+
+The \fIversion\fR field should be set to the version of the structure
+that you require. \fBTCL_CHANNEL_VERSION_2\fR is the minimum recommended.
+.VS 8.4
+\fBTCL_CHANNEL_VERSION_3\fR must be set to specifiy the \fIwideSeekProc\fR member.
+.VE 8.4
+.VS 8.5
+\fBTCL_CHANNEL_VERSION_4\fR must be set to specifiy the
+\fIthreadActionProc\fR member (includes \fIwideSeekProc\fR).
+.VE 8.5
+If it is not set to any of these, then this
+\fBTcl_ChannelType\fR is assumed to have the original structure.  See
 \fBOLD CHANNEL TYPES\fR for more details.  While Tcl will recognize
-and function with either structure, stacked channels must be of at
+and function with either structures, stacked channels must be of at
 least \fBTCL_CHANNEL_VERSION_2\fR to function correctly.
 .PP
 This value can be retrieved with \fBTcl_ChannelVersion\fR, which returns
 .VS 8.4
-one of \fBTCL_CHANNEL_VERSION_3\fR,
+one of \fBTCL_CHANNEL_VERSION_4\fR, \fBTCL_CHANNEL_VERSION_3\fR,
 .VE 8.4
 \fBTCL_CHANNEL_VERSION_2\fR or \fBTCL_CHANNEL_VERSION_1\fR.
 .SS BLOCKMODEPROC
@@ -775,6 +799,36 @@ type of event occurred on this channel.
 .PP
 This value can be retrieved with \fBTcl_ChannelHandlerProc\fR, which returns
 a pointer to the function.
+
+.VS 8.4
+.SS "THREADACTIONPROC"
+.PP
+The \fIthreadActionProc\fR field contains the address of the function
+called by the generic layer when a channel is created, closed, or
+going to move to a different thread, i.e. whenever thread-specific
+driver state might have to initialized or updated. It can be NULL.
+The action \fITCL_CHANNEL_THREAD_REMOVE\fR is used to notify the
+driver that it should update or remove any thread-specific data it
+might be maintaining for the channel.
+.PP
+The action \fITCL_CHANNEL_THREAD_INSERT\fR is used to notify the
+driver that it should update or initialize any thread-specific data it
+might be maintaining using the calling thread as the associate. See
+\fBTcl_CutChannel\fR and \fBTcl_SpliceChannel\fR for more detail.
+.PP
+.CS
+typedef void Tcl_DriverThreadActionProc(
+	ClientData \fIinstanceData\fR,
+      int        \fIaction\fR);
+.CE
+.PP
+\fIInstanceData\fR is the same as the value passed to
+\fBTcl_CreateChannel\fR when this channel was created.
+.PP
+These values can be retrieved with \fBTcl_ChannelThreadActionProc\fR,
+which returns a pointer to the function.
+.VE 8.4
+
 .SH TCL_BADCHANNELOPTION
 .PP
 This procedure generates a "bad option" error message in an
@@ -783,7 +837,7 @@ an invalid Set/Get option is requested. Its purpose is to concatenate
 the generic options list to the specific ones and factorize
 the generic options error message string.
 .PP
-It always return \fBTCL_ERROR\fR
+It always returns \fBTCL_ERROR\fR
 .PP
 An error message is generated in \fIinterp\fR's result object to
 indicate that a command was invoked with a bad option.

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.95.2.12 2005/01/24 21:44:32 dgp Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.95.2.13 2005/02/24 19:53:25 dgp Exp $
  */
 
 #ifndef _TCLDECLS
@@ -3452,6 +3452,12 @@ EXTERN void		Tcl_QueryTimeProc _ANSI_ARGS_((
 				Tcl_ScaleTimeProc** scaleProc, 
 				ClientData* clientData));
 #endif
+#ifndef Tcl_ChannelThreadActionProc_TCL_DECLARED
+#define Tcl_ChannelThreadActionProc_TCL_DECLARED
+/* 554 */
+EXTERN Tcl_DriverThreadActionProc * Tcl_ChannelThreadActionProc _ANSI_ARGS_((
+				Tcl_ChannelType * chanTypePtr));
+#endif
 
 typedef struct TclStubHooks {
     struct TclPlatStubs *tclPlatStubs;
@@ -4047,6 +4053,7 @@ typedef struct TclStubs {
     int (*tcl_GetEnsembleNamespace) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Command token, Tcl_Namespace ** namespacePtrPtr)); /* 551 */
     void (*tcl_SetTimeProc) _ANSI_ARGS_((Tcl_GetTimeProc* getProc, Tcl_ScaleTimeProc* scaleProc, ClientData clientData)); /* 552 */
     void (*tcl_QueryTimeProc) _ANSI_ARGS_((Tcl_GetTimeProc** getProc, Tcl_ScaleTimeProc** scaleProc, ClientData* clientData)); /* 553 */
+    Tcl_DriverThreadActionProc * (*tcl_ChannelThreadActionProc) _ANSI_ARGS_((Tcl_ChannelType * chanTypePtr)); /* 554 */
 } TclStubs;
 
 #ifdef __cplusplus
@@ -6302,6 +6309,10 @@ extern TclStubs *tclStubsPtr;
 #ifndef Tcl_QueryTimeProc
 #define Tcl_QueryTimeProc \
 	(tclStubsPtr->tcl_QueryTimeProc) /* 553 */
+#endif
+#ifndef Tcl_ChannelThreadActionProc
+#define Tcl_ChannelThreadActionProc \
+	(tclStubsPtr->tcl_ChannelThreadActionProc) /* 554 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPathObj.c,v 1.3.2.13 2004/12/09 23:00:41 dgp Exp $
+ * RCS: @(#) $Id: tclPathObj.c,v 1.3.2.14 2005/02/24 19:53:32 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1416,7 +1416,7 @@ TclFSMakePathFromNormalized(interp, pathPtr, nativeRep)
  *
  * Tcl_FSNewNativePath --
  *
- *      This function performs the something like that reverse of the 
+ *      This function performs the something like the reverse of the 
  *      usual obj->path->nativerep conversions.  If some code retrieves
  *      a path in native form (from, e.g. readlink or a native dialog),
  *      and that path is to be used at the Tcl level, then calling

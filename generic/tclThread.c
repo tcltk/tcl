@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThread.c,v 1.6.4.3 2005/01/24 21:45:11 dgp Exp $
+ * RCS: @(#) $Id: tclThread.c,v 1.6.4.4 2005/02/24 19:53:33 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -93,7 +93,7 @@ Tcl_GetThreadData(keyPtr, size)
 	TclThreadStorageDataKeyInit(keyPtr);
 #else
 	TclpThreadDataKeyInit(keyPtr);
-#endif
+#endif /* USE_THREAD_STORAGE */
     }
 
     /*
@@ -103,18 +103,18 @@ Tcl_GetThreadData(keyPtr, size)
     result = TclThreadStorageDataKeyGet(keyPtr);
 #else
     result = TclpThreadDataKeyGet(keyPtr);
-#endif
+#endif /* USE_THREAD_STORAGE */
 
     if (result == NULL) {
 	result  = (VOID *)ckalloc((size_t)size);
 	memset(result, 0, (size_t)size);
 #ifdef USE_THREAD_STORAGE
-  TclThreadStorageDataKeySet(keyPtr, result);
+	TclThreadStorageDataKeySet(keyPtr, result);
 #else
 	TclpThreadDataKeySet(keyPtr, result);
-#endif
+#endif /* USE_THREAD_STORAGE */
     }
-#else
+#else /* TCL_THREADS */
     if (*keyPtr == NULL) {
 	result = (VOID *)ckalloc((size_t)size);
 	memset((char *)result, 0, (size_t)size);
@@ -122,7 +122,7 @@ Tcl_GetThreadData(keyPtr, size)
 	TclRememberDataKey(keyPtr);
     }
     result = *(VOID **)keyPtr;
-#endif
+#endif /* TCL_THREADS */
     return result;
 }
 
@@ -153,8 +153,8 @@ TclThreadDataKeyGet(keyPtr)
     return (VOID *)TclThreadStorageDataKeyGet(keyPtr);
 #else
     return (VOID *)TclpThreadDataKeyGet(keyPtr);
-#endif
-#else
+#endif /* USE_THREAD_STORAGE */
+#else /* TCL_THREADS */
     char *result = *(char **)keyPtr;
     return (VOID *)result;
 #endif /* TCL_THREADS */
@@ -189,19 +189,17 @@ TclThreadDataKeySet(keyPtr, data)
 	TclThreadStorageDataKeyInit(keyPtr);
 #else
 	TclpThreadDataKeyInit(keyPtr);
-#endif
+#endif /* USE_THREAD_STORAGE */
     }
 #ifdef USE_THREAD_STORAGE
     TclThreadStorageDataKeySet(keyPtr, data);
 #else
     TclpThreadDataKeySet(keyPtr, data);
-#endif
-#else
+#endif /* USE_THREAD_STORAGE */
+#else /* TCL_THREADS */
     *keyPtr = (Tcl_ThreadDataKey)data;
 #endif /* TCL_THREADS */
 }
-
-
 
 /*
  *----------------------------------------------------------------------
@@ -434,16 +432,16 @@ TclFinalizeThreadData()
 	keyPtr = (Tcl_ThreadDataKey *) keyRecord.list[i];
 #ifdef TCL_THREADS
 #ifdef USE_THREAD_STORAGE
-  TclFinalizeThreadStorageData(keyPtr);
+	TclFinalizeThreadStorageData(keyPtr);
 #else
 	TclpFinalizeThreadData(keyPtr);
-#endif
-#else
+#endif /* USE_THREAD_STORAGE */
+#else /* TCL_THREADS */
 	if (*keyPtr != NULL) {
 	    ckfree((char *)*keyPtr);
 	    *keyPtr = NULL;
 	}
-#endif
+#endif /* TCL_THREADS */
     }
     TclpMasterUnlock();
 }
@@ -478,10 +476,10 @@ TclFinalizeSynchronization()
     for (i=0 ; i<keyRecord.num ; i++) {
 	keyPtr = (Tcl_ThreadDataKey *)keyRecord.list[i];
 #ifdef USE_THREAD_STORAGE
-  TclFinalizeThreadStorageDataKey(keyPtr);
+	TclFinalizeThreadStorageDataKey(keyPtr);
 #else
 	TclpFinalizeThreadDataKey(keyPtr);
-#endif
+#endif /* USE_THREAD_STORAGE */
     }
     if (keyRecord.list != NULL) {
 	ckfree((char *)keyRecord.list);
@@ -490,10 +488,13 @@ TclFinalizeSynchronization()
     keyRecord.max = 0;
     keyRecord.num = 0;
 
+    /*
+     * Call platform specific thread storage master cleanup.
+     */
+
 #ifdef USE_THREAD_STORAGE
-    /* call platform specific thread storage master cleanup */
     TclFinalizeThreadStorage();
-#endif
+#endif /* USE_THREAD_STORAGE */
 
     for (i=0 ; i<mutexRecord.num ; i++) {
 	mutexPtr = (Tcl_Mutex *)mutexRecord.list[i];
@@ -522,14 +523,14 @@ TclFinalizeSynchronization()
     condRecord.num = 0;
 
     TclpMasterUnlock();
-#else
+#else /* TCL_THREADS */
     if (keyRecord.list != NULL) {
 	ckfree((char *)keyRecord.list);
 	keyRecord.list = NULL;
     }
     keyRecord.max = 0;
     keyRecord.num = 0;
-#endif
+#endif /* TCL_THREADS */
 }
 
 
@@ -611,4 +612,4 @@ Tcl_MutexUnlock(mutexPtr)
     Tcl_Mutex *mutexPtr;
 {
 }
-#endif
+#endif /* !TCL_THREADS */

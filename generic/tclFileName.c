@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.41.2.10 2005/01/24 21:44:36 dgp Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.41.2.11 2005/02/24 19:53:29 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2288,11 +2288,20 @@ DoGlob(interp, matchesObj, separators, pathPtr, flags, pattern, types)
     } else {
 	joinedPtr = Tcl_DuplicateObj(pathPtr);
 	if (strchr(separators, pattern[0]) == NULL) {
-	    /* The current prefix must end in a separator */
+	    /* 
+	     * The current prefix must end in a separator, unless
+	     * this is a volume-relative path.  In particular
+	     * globbing in Windows shares, when not using -dir
+	     * or -path, e.g. 'glob //machine/share/subdir/*'
+ 	     * requires adding a separator here.  This behaviour
+ 	     * is not currently tested for in the test suite.
+	     */
 	    int len;
 	    CONST char *joined = Tcl_GetStringFromObj(joinedPtr,&len);
 	    if (strchr(separators, joined[len-1]) == NULL) {
-		Tcl_AppendToObj(joinedPtr, "/", 1);
+		if (Tcl_FSGetPathType(pathPtr) != TCL_PATH_VOLUME_RELATIVE) {
+		    Tcl_AppendToObj(joinedPtr, "/", 1);
+		}
 	    }
 	}
 	Tcl_AppendToObj(joinedPtr, pattern, p-pattern);

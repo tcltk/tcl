@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.20 2005/01/24 21:44:07 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.21 2005/02/24 19:53:24 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3793,6 +3793,7 @@ Tcl_EvalObjEx(interp, objPtr, flags)
 					 * TCL_EVAL_DIRECT. */
 {
     Interp *iPtr = (Interp *) interp;
+    int result = TCL_OK;
 
     /*
      * Check for the special case where objPtr holds a "pure list"
@@ -3809,11 +3810,26 @@ Tcl_EvalObjEx(interp, objPtr, flags)
 	    && (objPtr->bytes == NULL)	/* ...without a string rep.          */
 	    ) {
 	List *listRepPtr = (List *) objPtr->internalRep.twoPtrValue.ptr1;
-	return Tcl_EvalObjv(interp, listRepPtr->elemCount,
-		listRepPtr->elements, flags);
+	int i, objc = listRepPtr->elemCount;
+	Tcl_Obj **objv;
+
+	/*
+	 * Copy the list elements here, to avoid a segfault if objPtr
+	 * loses its List internal rep [Bug 1119369]
+	 */
+
+	objv = (Tcl_Obj **) TclStackAlloc(interp, objc*sizeof(Tcl_Obj *));
+	for (i=0; i < objc; i++) {
+	    objv[i] = listRepPtr->elements[i];
+	    Tcl_IncrRefCount(objv[i]);
+	}
+	result = Tcl_EvalObjv(interp, objc, objv, flags);
+	for (i=0; i < objc; i++) {
+	    Tcl_DecrRefCount(objv[i]);
+	}
+	TclStackFree(interp);
     } else {
 	int allowExceptions = (iPtr->evalFlags & TCL_ALLOW_EXCEPTIONS);
-	int result = TCL_OK;
 /*
 	int numSrcBytes = 0;
 	CONST char *script = NULL;
@@ -3941,11 +3957,29 @@ Tcl_ExprLong(interp, string, ptr)
 	    /*
 	     * Store an integer based on the expression result.
 	     */
-	    
+
 	    if (resultPtr->typePtr == &tclIntType) {
 		*ptr = resultPtr->internalRep.longValue;
 	    } else if (resultPtr->typePtr == &tclDoubleType) {
 		*ptr = (long) resultPtr->internalRep.doubleValue;
+	    } else if (resultPtr->typePtr == &tclWideIntType) {
+#ifndef TCL_WIDE_INT_IS_LONG
+		/*
+		 * See Tcl_GetIntFromObj for conversion comments.
+		 */
+		Tcl_WideInt w = resultPtr->internalRep.wideValue;
+		if ((w >= -(Tcl_WideInt)(ULONG_MAX))
+			&& (w <= (Tcl_WideInt)(ULONG_MAX))) {
+		    *ptr = Tcl_WideAsLong(w);
+		} else {
+		    Tcl_SetResult(interp,
+			    "integer value too large to represent as non-long integer",
+			    TCL_STATIC);
+		    result = TCL_ERROR;
+		}
+#else
+		*ptr = resultPtr->internalRep.longValue;
+#endif
 	    } else {
 		Tcl_SetResult(interp,
 		        "expression didn't have numeric value", TCL_STATIC);
@@ -3991,11 +4025,29 @@ Tcl_ExprDouble(interp, string, ptr)
 	    /*
 	     * Store a double  based on the expression result.
 	     */
-	    
+
 	    if (resultPtr->typePtr == &tclIntType) {
 		*ptr = (double) resultPtr->internalRep.longValue;
 	    } else if (resultPtr->typePtr == &tclDoubleType) {
 		*ptr = resultPtr->internalRep.doubleValue;
+	    } else if (resultPtr->typePtr == &tclWideIntType) {
+#ifndef TCL_WIDE_INT_IS_LONG
+		/*
+		 * See Tcl_GetIntFromObj for conversion comments.
+		 */
+		Tcl_WideInt w = resultPtr->internalRep.wideValue;
+		if ((w >= -(Tcl_WideInt)(ULONG_MAX))
+			&& (w <= (Tcl_WideInt)(ULONG_MAX))) {
+		    *ptr = (double) Tcl_WideAsLong(w);
+		} else {
+		    Tcl_SetResult(interp,
+			    "integer value too large to represent as non-long integer",
+			    TCL_STATIC);
+		    result = TCL_ERROR;
+		}
+#else
+		*ptr = (double) resultPtr->internalRep.longValue;
+#endif
 	    } else {
 		Tcl_SetResult(interp,
 		        "expression didn't have numeric value", TCL_STATIC);
@@ -4041,11 +4093,17 @@ Tcl_ExprBoolean(interp, string, ptr)
 	    /*
 	     * Store a boolean based on the expression result.
 	     */
-	    
+
 	    if (resultPtr->typePtr == &tclIntType) {
 		*ptr = (resultPtr->internalRep.longValue != 0);
 	    } else if (resultPtr->typePtr == &tclDoubleType) {
 		*ptr = (resultPtr->internalRep.doubleValue != 0.0);
+	    } else if (resultPtr->typePtr == &tclWideIntType) {
+#ifndef TCL_WIDE_INT_IS_LONG
+		*ptr = (resultPtr->internalRep.wideValue != 0);
+#else
+		*ptr = (resultPtr->internalRep.longValue != 0);
+#endif
 	    } else {
 		result = Tcl_GetBooleanFromObj(interp, resultPtr, ptr);
 	    }
