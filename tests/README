@@ -1,6 +1,6 @@
 README -- Tcl test suite design document.
 
-RCS: @(#) $Id: README,v 1.10 2002/08/08 08:55:24 hobbs Exp $
+RCS: @(#) $Id: README,v 1.11 2002/08/08 14:50:51 dgp Exp $
 
 Contents:
 ---------
@@ -81,7 +81,7 @@ the constraints mechanism to skip those tests.
 
 4) The "all" file is now called "all.tcl"
 
-5) The "defs" file no longer exists.
+5) The "defs" and "defs.tcl" files no longer exist.
 
 6) Instead of creating a doAllTests file in the tests directory, to
    run all nonPortable tests, just use the "-constraints nonPortable"
