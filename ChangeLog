@@ -1,3 +1,8 @@
+2004-11-15  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* doc/tclvars.n: Added section to documentation on global
+	variables that are specific to tclsh and wish. [Patch 1065732]
+
 2004-11-12  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclEncoding.c (TableFromUtfProc): correct crash
