@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.60 2003/04/28 12:34:27 dkf Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.61 2003/05/14 19:21:22 das Exp $
 
 library tcl
 
@@ -993,3 +993,26 @@ declare 12 unix {
 declare 13 unix {
     char *TclpInetNtoa(struct in_addr addr)
 }
+
+# Added in 8.5:
+
+declare 14 unix {
+    int TclUnixCopyFile (CONST char *src, CONST char *dst,
+	    CONST Tcl_StatBuf *statBufPtr, int dontCopyAtts)
+}
+
+declare 15 macosx {
+    int TclMacOSXGetFileAttribute(Tcl_Interp *interp, int objIndex,
+	    Tcl_Obj *fileName, Tcl_Obj **attributePtrPtr)
+}
+
+declare 16 macosx {
+    int TclMacOSXSetFileAttribute(Tcl_Interp *interp, int objIndex,
+	    Tcl_Obj *fileName, Tcl_Obj *attributePtr)
+}
+
+declare 17 macosx {
+    int TclMacOSXCopyFileAttributes(CONST char *src, CONST char *dst,
+	    CONST Tcl_StatBuf *statBufPtr)
+}
+

@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: genStubs.tcl,v 1.14 2003/03/19 21:58:01 dgp Exp $
+# RCS: @(#) $Id: genStubs.tcl,v 1.15 2003/05/14 19:21:25 das Exp $
 
 package require Tcl 8
 
@@ -631,7 +631,8 @@ proc genStubs::forAllStubs {name slotProc onAll textVar \
                 # emit duplicate stubs entries for the two.
                 #
 		if {[info exists stubs($name,aqua,$i)]
-                        && ![info exists stubs($name,macosx,$i)]} {
+                        && ![info exists stubs($name,macosx,$i)]
+                        && ![info exists stubs($name,unix,$i)]} {
 		    append text [addPlatformGuard aqua \
 			    [$slotProc $name $stubs($name,aqua,$i) $i]]
 		    set emit 1
@@ -670,48 +671,52 @@ proc genStubs::forAllStubs {name slotProc onAll textVar \
 		append text [addPlatformGuard $plat $temp]
 	    }
 	}
-        # Again, make sure you don't duplicate entries for macosx & aqua.
-	if {[info exists stubs($name,aqua,lastNum)]
-                && ![info exists stubs($name,macosx,lastNum)]} {
+	if {[info exists stubs($name,unix,lastNum)]} {
+	    set afterUnixNum [expr $stubs($name,unix,lastNum) + 1]
+	} else {
+	    set afterUnixNum 0
+	}
+	if {[info exists stubs($name,aqua,lastNum)]} {
 	    set lastNum $stubs($name,aqua,lastNum)
 	    set temp {}
-	    for {set i 0} {$i <= $lastNum} {incr i} {
-		if {![info exists stubs($name,aqua,$i)]} {
-		    eval {append temp} $skipString
-		} else {
+	    # Again, make sure you don't duplicate entries for macosx & unix & aqua.
+	    for {set i $afterUnixNum} {$i <= $lastNum} {incr i} {
+		if {![info exists stubs($name,macosx,$i)]} {
+		    if {![info exists stubs($name,aqua,$i)]} {
+			eval {append temp} $skipString
+		    } else {
 			append temp [$slotProc $name $stubs($name,aqua,$i) $i]
 		    }
 		}
-		append text [addPlatformGuard aqua $temp]
 	    }
-        # Again, make sure you don't duplicate entries for macosx & unix.
-	if {[info exists stubs($name,macosx,lastNum)]
-                && ![info exists stubs($name,unix,lastNum)]} {
+	    append text [addPlatformGuard aqua $temp]
+	}
+	if {[info exists stubs($name,macosx,lastNum)]} {
 	    set lastNum $stubs($name,macosx,lastNum)
 	    set temp {}
-	    for {set i 0} {$i <= $lastNum} {incr i} {
+	    # Again, make sure you don't duplicate entries for macosx & unix.
+	    for {set i $afterUnixNum} {$i <= $lastNum} {incr i} {
 		if {![info exists stubs($name,macosx,$i)]} {
 		    eval {append temp} $skipString
 		} else {
-			append temp [$slotProc $name $stubs($name,macosx,$i) $i]
-		    }
+		    append temp [$slotProc $name $stubs($name,macosx,$i) $i]
 		}
-		append text [addPlatformGuard macosx $temp]
 	    }
-        # Again, make sure you don't duplicate entries for x11 & unix.
-	if {[info exists stubs($name,x11,lastNum)]
-                && ![info exists stubs($name,unix,lastNum)]} {
+	    append text [addPlatformGuard macosx $temp]
+	}
+	if {[info exists stubs($name,x11,lastNum)]} {
 	    set lastNum $stubs($name,x11,lastNum)
 	    set temp {}
-	    for {set i 0} {$i <= $lastNum} {incr i} {
+	    # Again, make sure you don't duplicate entries for x11 & unix.
+	    for {set i $afterUnixNum} {$i <= $lastNum} {incr i} {
 		if {![info exists stubs($name,x11,$i)]} {
 		    eval {append temp} $skipString
 		} else {
-			append temp [$slotProc $name $stubs($name,x11,$i) $i]
-		    }
+		    append temp [$slotProc $name $stubs($name,x11,$i) $i]
 		}
-		append text [addPlatformGuard x11 $temp]
 	    }
+	    append text [addPlatformGuard x11 $temp]
+	}
     }
 }
 

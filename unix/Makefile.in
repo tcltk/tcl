@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.124 2003/04/11 16:09:51 vincentdarley Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.125 2003/05/14 19:21:25 das Exp $
 
 VERSION 		= @TCL_VERSION@
 MAJOR_VERSION		= @TCL_MAJOR_VERSION@
@@ -435,7 +435,8 @@ DL_SRCS = \
 	$(UNIX_DIR)/tclLoadShl.c
 
 MAC_OSX_SRCS = \
-	$(MAC_OSX_DIR)/tclMacOSXBundle.c
+	$(MAC_OSX_DIR)/tclMacOSXBundle.c \
+	$(MAC_OSX_DIR)/tclMacOSXFCmd.c
 
 # Note: don't include DL_SRCS or MAC_OSX_SRCS in SRCS: most of those
 # files won't compile on the current machine, and they will cause
@@ -1053,6 +1054,9 @@ tclUnixInit.o: $(UNIX_DIR)/tclUnixInit.c $(GENERIC_DIR)/tclInitScript.h tclConfi
 # This is the CFBundle interface.  It is only used on Mac OS X.
 tclMacOSXBundle.o: $(MAC_OSX_DIR)/tclMacOSXBundle.c
 	$(CC) -c $(CC_SWITCHES) $(MAC_OSX_DIR)/tclMacOSXBundle.c
+
+tclMacOSXFCmd.o: $(MAC_OSX_DIR)/tclMacOSXFCmd.c
+	$(CC) -c $(CC_SWITCHES) $(MAC_OSX_DIR)/tclMacOSXFCmd.c
 
 # The following targets are not completely general.  They are provide
 # purely for documentation purposes so people who are interested in

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacResource.c,v 1.14 2002/06/05 11:59:49 das Exp $
+ * RCS: @(#) $Id: tclMacResource.c,v 1.15 2003/05/14 19:21:24 das Exp $
  */
 
 #include <Errors.h>
@@ -1711,24 +1711,29 @@ SetOSTypeFromAny(
     Tcl_ObjType *oldTypePtr = objPtr->typePtr;
     char *string;
     int length;
-    long newOSType;
+    OSType newOSType = 0UL;
+    Tcl_DString ds;
 
     /*
      * Get the string representation. Make it up-to-date if necessary.
      */
 
     string = Tcl_GetStringFromObj(objPtr, &length);
+    Tcl_UtfToExternalDString(NULL, string, length, &ds);
 
-    if (length != 4) {
+    if (Tcl_DStringLength(&ds) > sizeof(OSType)) {
 	if (interp != NULL) {
 	    Tcl_ResetResult(interp);
 	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
 		    "expected Macintosh OS type but got \"", string, "\"",
 		    (char *) NULL);
 	}
+	Tcl_DStringFree(&ds);
 	return TCL_ERROR;
     }
-    newOSType =  *((long *) string);
+    memcpy(&newOSType, Tcl_DStringValue(&ds),
+            (size_t) Tcl_DStringLength(&ds));
+    Tcl_DStringFree(&ds);
     
     /*
      * The conversion to resource type succeeded. Free the old internalRep 
@@ -1767,9 +1772,16 @@ static void
 UpdateStringOfOSType(
     register Tcl_Obj *objPtr)	/* Int object whose string rep to update. */
 {
-    objPtr->bytes = ckalloc(5);
-    sprintf(objPtr->bytes, "%-4.4s", &(objPtr->internalRep.longValue));
-    objPtr->length = 4;
+    char string[sizeof(OSType)+1];
+    Tcl_DString ds;
+    
+    memcpy(string, &(objPtr->internalRep.longValue), sizeof(OSType));
+    string[sizeof(OSType)] = '\0';
+    Tcl_ExternalToUtfDString(NULL, string, -1, &ds);
+    objPtr->bytes = ckalloc(Tcl_DStringLength(&ds) + 1);
+    memcpy(objPtr->bytes, Tcl_DStringValue(&ds), Tcl_DStringLength(&ds) + 1);
+    objPtr->length = Tcl_DStringLength(&ds);
+    Tcl_DStringFree(&ds);
 }
 
 /*
