@@ -2580,10 +2580,17 @@ AC_DEFUN(SC_TCL_64BIT_FLAGS, [
 	    AC_TRY_COMPILE([#include <sys/types.h>],[off64_t offset;
 ],
 		tcl_cv_type_off64_t=yes,tcl_cv_type_off64_t=no)])
-	if test "x${tcl_cv_type_off64_t}" = "xyes" ; then
+	AC_CHECK_FUNCS(open64 lseek64)
+	dnl Define HAVE_TYPE_OFF64_T only when the off64_t type and the
+	dnl functions lseek64 and open64 are defined.
+	if test "x${tcl_cv_type_off64_t}" = "xyes" && \
+	        test "x${ac_cv_func_lseek64}" = "xyes" && \
+	        test "x${ac_cv_func_open64}" = "xyes" ; then
 	    AC_DEFINE(HAVE_TYPE_OFF64_T, 1, [Is off64_t in <sys/types.h>?])
+	    AC_MSG_RESULT(yes)
+	else
+	    AC_MSG_RESULT(no)
 	fi
-	AC_MSG_RESULT(${tcl_cv_type_off64_t})
     fi])
 
 #--------------------------------------------------------------------
