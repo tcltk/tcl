@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.3.2.1 1999/03/10 06:49:16 stanton Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.3.2.2 1999/03/10 23:24:46 redman Exp $
  */
 
 #ifndef _TCLDECLS
@@ -871,167 +871,182 @@ EXTERN Tcl_Pid		Tcl_WaitPid _ANSI_ARGS_((Tcl_Pid pid, int * statPtr,
 /* 278 */
 EXTERN void		panicVA _ANSI_ARGS_((char * format, va_list argList));
 /* 279 */
+EXTERN void		Tcl_GetVersion _ANSI_ARGS_((int * major, int * minor, 
+				int * patchLevel, Tcl_ReleaseType * type));
+/* 280 */
+EXTERN # Reserved for future use _ANSI_ARGS_((8.0.x vs. 8.1));
+/* 281 */
+EXTERN # Reserved for future use _ANSI_ARGS_((8.0.x vs. 8.1));
+/* 282 */
+EXTERN # Reserved for future use _ANSI_ARGS_((8.0.x vs. 8.1));
+/* 283 */
+EXTERN # Reserved for future use _ANSI_ARGS_((8.0.x vs. 8.1));
+/* 284 */
+EXTERN # Reserved for future use _ANSI_ARGS_((8.0.x vs. 8.1));
+/* 285 */
+EXTERN # Reserved for future use _ANSI_ARGS_((8.0.x vs. 8.1));
+/* 286 */
 EXTERN void		Tcl_AppendObjToObj _ANSI_ARGS_((Tcl_Obj * objPtr, 
 				Tcl_Obj * appendObjPtr));
-/* 280 */
+/* 287 */
 EXTERN void		Tcl_AlertNotifier _ANSI_ARGS_((ClientData clientData));
-/* 281 */
+/* 288 */
 EXTERN Tcl_Encoding	Tcl_CreateEncoding _ANSI_ARGS_((
 				Tcl_EncodingType * typePtr));
-/* 282 */
+/* 289 */
 EXTERN void		Tcl_CreateThreadExitHandler _ANSI_ARGS_((
 				Tcl_ExitProc * proc, ClientData clientData));
-/* 283 */
+/* 290 */
 EXTERN void		Tcl_DeleteThreadExitHandler _ANSI_ARGS_((
 				Tcl_ExitProc * proc, ClientData clientData));
-/* 284 */
+/* 291 */
 EXTERN void		Tcl_DiscardResult _ANSI_ARGS_((
 				Tcl_SavedResult * statePtr));
-/* 285 */
+/* 292 */
 EXTERN int		Tcl_EvalEx _ANSI_ARGS_((Tcl_Interp * interp, 
 				char * script, int numBytes, int flags));
-/* 286 */
+/* 293 */
 EXTERN int		Tcl_EvalObjv _ANSI_ARGS_((Tcl_Interp * interp, 
 				int objc, Tcl_Obj *CONST objv[], int flags));
-/* 287 */
+/* 294 */
 EXTERN int		Tcl_EvalObjEx _ANSI_ARGS_((Tcl_Interp * interp, 
 				Tcl_Obj * objPtr, int flags));
-/* 288 */
+/* 295 */
 EXTERN void		Tcl_ExitThread _ANSI_ARGS_((int status));
-/* 289 */
+/* 296 */
 EXTERN int		Tcl_ExternalToUtf _ANSI_ARGS_((Tcl_Interp * interp, 
 				Tcl_Encoding encoding, CONST char * src, 
 				int srcLen, int flags, 
 				Tcl_EncodingState * statePtr, char * dst, 
 				int dstLen, int * srcReadPtr, 
 				int * dstWrotePtr, int * dstCharsPtr));
-/* 290 */
+/* 297 */
 EXTERN char *		Tcl_ExternalToUtfDString _ANSI_ARGS_((
 				Tcl_Encoding encoding, CONST char * src, 
 				int srcLen, Tcl_DString * dsPtr));
-/* 291 */
+/* 298 */
 EXTERN void		Tcl_FinalizeThread _ANSI_ARGS_((void));
-/* 292 */
+/* 299 */
 EXTERN void		Tcl_FinalizeNotifier _ANSI_ARGS_((
 				ClientData clientData));
-/* 293 */
+/* 300 */
 EXTERN void		Tcl_FreeEncoding _ANSI_ARGS_((Tcl_Encoding encoding));
-/* 294 */
+/* 301 */
 EXTERN Tcl_ThreadId	Tcl_GetCurrentThread _ANSI_ARGS_((void));
-/* 295 */
+/* 302 */
 EXTERN Tcl_Encoding	Tcl_GetEncoding _ANSI_ARGS_((Tcl_Interp * interp, 
 				CONST char * name));
-/* 296 */
+/* 303 */
 EXTERN char *		Tcl_GetEncodingName _ANSI_ARGS_((
 				Tcl_Encoding encoding));
-/* 297 */
+/* 304 */
 EXTERN void		Tcl_GetEncodingNames _ANSI_ARGS_((
 				Tcl_Interp * interp));
-/* 298 */
+/* 305 */
 EXTERN int		Tcl_GetIndexFromObjStruct _ANSI_ARGS_((
 				Tcl_Interp * interp, Tcl_Obj * objPtr, 
 				char ** tablePtr, int offset, char * msg, 
 				int flags, int * indexPtr));
-/* 299 */
+/* 306 */
 EXTERN VOID *		Tcl_GetThreadData _ANSI_ARGS_((
 				Tcl_ThreadDataKey * keyPtr, int size));
-/* 300 */
+/* 307 */
 EXTERN Tcl_Obj *	Tcl_GetVar2Ex _ANSI_ARGS_((Tcl_Interp * interp, 
 				char * part1, char * part2, int flags));
-/* 301 */
+/* 308 */
 EXTERN ClientData	Tcl_InitNotifier _ANSI_ARGS_((void));
-/* 302 */
+/* 309 */
 EXTERN void		Tcl_MutexLock _ANSI_ARGS_((Tcl_Mutex * mutexPtr));
-/* 303 */
+/* 310 */
 EXTERN void		Tcl_MutexUnlock _ANSI_ARGS_((Tcl_Mutex * mutexPtr));
-/* 304 */
+/* 311 */
 EXTERN void		Tcl_ConditionNotify _ANSI_ARGS_((
 				Tcl_Condition * condPtr));
-/* 305 */
+/* 312 */
 EXTERN void		Tcl_ConditionWait _ANSI_ARGS_((
 				Tcl_Condition * condPtr, 
 				Tcl_Mutex * mutexPtr, Tcl_Time * timePtr));
-/* 306 */
+/* 313 */
 EXTERN int		Tcl_NumUtfChars _ANSI_ARGS_((CONST char * src, 
 				int len));
-/* 307 */
+/* 314 */
 EXTERN int		Tcl_ReadChars _ANSI_ARGS_((Tcl_Channel channel, 
 				Tcl_Obj * objPtr, int charsToRead, 
 				int appendFlag));
-/* 308 */
+/* 315 */
 EXTERN void		Tcl_RestoreResult _ANSI_ARGS_((Tcl_Interp * interp, 
 				Tcl_SavedResult * statePtr));
-/* 309 */
+/* 316 */
 EXTERN void		Tcl_SaveResult _ANSI_ARGS_((Tcl_Interp * interp, 
 				Tcl_SavedResult * statePtr));
-/* 310 */
+/* 317 */
 EXTERN int		Tcl_SetSystemEncoding _ANSI_ARGS_((
 				Tcl_Interp * interp, CONST char * name));
-/* 311 */
+/* 318 */
 EXTERN Tcl_Obj *	Tcl_SetVar2Ex _ANSI_ARGS_((Tcl_Interp * interp, 
 				char * part1, char * part2, 
 				Tcl_Obj * newValuePtr, int flags));
-/* 312 */
+/* 319 */
 EXTERN void		Tcl_ThreadAlert _ANSI_ARGS_((Tcl_ThreadId threadId));
-/* 313 */
+/* 320 */
 EXTERN void		Tcl_ThreadQueueEvent _ANSI_ARGS_((
 				Tcl_ThreadId threadId, Tcl_Event* evPtr, 
 				Tcl_QueuePosition position));
-/* 314 */
+/* 321 */
 EXTERN Tcl_UniChar	Tcl_UniCharAtIndex _ANSI_ARGS_((CONST char * src, 
 				int index));
-/* 315 */
+/* 322 */
 EXTERN Tcl_UniChar	Tcl_UniCharToLower _ANSI_ARGS_((int ch));
-/* 316 */
+/* 323 */
 EXTERN Tcl_UniChar	Tcl_UniCharToTitle _ANSI_ARGS_((int ch));
-/* 317 */
+/* 324 */
 EXTERN Tcl_UniChar	Tcl_UniCharToUpper _ANSI_ARGS_((int ch));
-/* 318 */
+/* 325 */
 EXTERN int		Tcl_UniCharToUtf _ANSI_ARGS_((int ch, char * buf));
-/* 319 */
+/* 326 */
 EXTERN char *		Tcl_UtfAtIndex _ANSI_ARGS_((CONST char * src, 
 				int index));
-/* 320 */
+/* 327 */
 EXTERN int		Tcl_UtfCharComplete _ANSI_ARGS_((CONST char * src, 
 				int len));
-/* 321 */
+/* 328 */
 EXTERN int		Tcl_UtfBackslash _ANSI_ARGS_((CONST char * src, 
 				int * readPtr, char * dst));
-/* 322 */
+/* 329 */
 EXTERN char *		Tcl_UtfFindFirst _ANSI_ARGS_((CONST char * src, 
 				int ch));
-/* 323 */
+/* 330 */
 EXTERN char *		Tcl_UtfFindLast _ANSI_ARGS_((CONST char * src, 
 				int ch));
-/* 324 */
+/* 331 */
 EXTERN char *		Tcl_UtfNext _ANSI_ARGS_((CONST char * src));
-/* 325 */
+/* 332 */
 EXTERN char *		Tcl_UtfPrev _ANSI_ARGS_((CONST char * src, 
 				CONST char * start));
-/* 326 */
+/* 333 */
 EXTERN int		Tcl_UtfToExternal _ANSI_ARGS_((Tcl_Interp * interp, 
 				Tcl_Encoding encoding, CONST char * src, 
 				int srcLen, int flags, 
 				Tcl_EncodingState * statePtr, char * dst, 
 				int dstLen, int * srcReadPtr, 
 				int * dstWrotePtr, int * dstCharsPtr));
-/* 327 */
+/* 334 */
 EXTERN char *		Tcl_UtfToExternalDString _ANSI_ARGS_((
 				Tcl_Encoding encoding, CONST char * src, 
 				int srcLen, Tcl_DString * dsPtr));
-/* 328 */
+/* 335 */
 EXTERN int		Tcl_UtfToLower _ANSI_ARGS_((char * src));
-/* 329 */
+/* 336 */
 EXTERN int		Tcl_UtfToTitle _ANSI_ARGS_((char * src));
-/* 330 */
+/* 337 */
 EXTERN int		Tcl_UtfToUniChar _ANSI_ARGS_((CONST char * src, 
 				Tcl_UniChar * chPtr));
-/* 331 */
+/* 338 */
 EXTERN int		Tcl_UtfToUpper _ANSI_ARGS_((char * src));
-/* 332 */
+/* 339 */
 EXTERN int		Tcl_WriteChars _ANSI_ARGS_((Tcl_Channel chan, 
 				CONST char * src, int srcLen));
-/* 333 */
+/* 340 */
 EXTERN int		Tcl_WriteObj _ANSI_ARGS_((Tcl_Channel chan, 
 				Tcl_Obj * objPtr));
 
@@ -1348,61 +1363,68 @@ typedef struct TclStubs {
     int (*tcl_VarEvalVA) _ANSI_ARGS_((Tcl_Interp * interp, va_list argList)); /* 276 */
     Tcl_Pid (*tcl_WaitPid) _ANSI_ARGS_((Tcl_Pid pid, int * statPtr, int options)); /* 277 */
     void (*panicVA) _ANSI_ARGS_((char * format, va_list argList)); /* 278 */
-    void (*tcl_AppendObjToObj) _ANSI_ARGS_((Tcl_Obj * objPtr, Tcl_Obj * appendObjPtr)); /* 279 */
-    void (*tcl_AlertNotifier) _ANSI_ARGS_((ClientData clientData)); /* 280 */
-    Tcl_Encoding (*tcl_CreateEncoding) _ANSI_ARGS_((Tcl_EncodingType * typePtr)); /* 281 */
-    void (*tcl_CreateThreadExitHandler) _ANSI_ARGS_((Tcl_ExitProc * proc, ClientData clientData)); /* 282 */
-    void (*tcl_DeleteThreadExitHandler) _ANSI_ARGS_((Tcl_ExitProc * proc, ClientData clientData)); /* 283 */
-    void (*tcl_DiscardResult) _ANSI_ARGS_((Tcl_SavedResult * statePtr)); /* 284 */
-    int (*tcl_EvalEx) _ANSI_ARGS_((Tcl_Interp * interp, char * script, int numBytes, int flags)); /* 285 */
-    int (*tcl_EvalObjv) _ANSI_ARGS_((Tcl_Interp * interp, int objc, Tcl_Obj *CONST objv[], int flags)); /* 286 */
-    int (*tcl_EvalObjEx) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * objPtr, int flags)); /* 287 */
-    void (*tcl_ExitThread) _ANSI_ARGS_((int status)); /* 288 */
-    int (*tcl_ExternalToUtf) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Encoding encoding, CONST char * src, int srcLen, int flags, Tcl_EncodingState * statePtr, char * dst, int dstLen, int * srcReadPtr, int * dstWrotePtr, int * dstCharsPtr)); /* 289 */
-    char * (*tcl_ExternalToUtfDString) _ANSI_ARGS_((Tcl_Encoding encoding, CONST char * src, int srcLen, Tcl_DString * dsPtr)); /* 290 */
-    void (*tcl_FinalizeThread) _ANSI_ARGS_((void)); /* 291 */
-    void (*tcl_FinalizeNotifier) _ANSI_ARGS_((ClientData clientData)); /* 292 */
-    void (*tcl_FreeEncoding) _ANSI_ARGS_((Tcl_Encoding encoding)); /* 293 */
-    Tcl_ThreadId (*tcl_GetCurrentThread) _ANSI_ARGS_((void)); /* 294 */
-    Tcl_Encoding (*tcl_GetEncoding) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * name)); /* 295 */
-    char * (*tcl_GetEncodingName) _ANSI_ARGS_((Tcl_Encoding encoding)); /* 296 */
-    void (*tcl_GetEncodingNames) _ANSI_ARGS_((Tcl_Interp * interp)); /* 297 */
-    int (*tcl_GetIndexFromObjStruct) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * objPtr, char ** tablePtr, int offset, char * msg, int flags, int * indexPtr)); /* 298 */
-    VOID * (*tcl_GetThreadData) _ANSI_ARGS_((Tcl_ThreadDataKey * keyPtr, int size)); /* 299 */
-    Tcl_Obj * (*tcl_GetVar2Ex) _ANSI_ARGS_((Tcl_Interp * interp, char * part1, char * part2, int flags)); /* 300 */
-    ClientData (*tcl_InitNotifier) _ANSI_ARGS_((void)); /* 301 */
-    void (*tcl_MutexLock) _ANSI_ARGS_((Tcl_Mutex * mutexPtr)); /* 302 */
-    void (*tcl_MutexUnlock) _ANSI_ARGS_((Tcl_Mutex * mutexPtr)); /* 303 */
-    void (*tcl_ConditionNotify) _ANSI_ARGS_((Tcl_Condition * condPtr)); /* 304 */
-    void (*tcl_ConditionWait) _ANSI_ARGS_((Tcl_Condition * condPtr, Tcl_Mutex * mutexPtr, Tcl_Time * timePtr)); /* 305 */
-    int (*tcl_NumUtfChars) _ANSI_ARGS_((CONST char * src, int len)); /* 306 */
-    int (*tcl_ReadChars) _ANSI_ARGS_((Tcl_Channel channel, Tcl_Obj * objPtr, int charsToRead, int appendFlag)); /* 307 */
-    void (*tcl_RestoreResult) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_SavedResult * statePtr)); /* 308 */
-    void (*tcl_SaveResult) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_SavedResult * statePtr)); /* 309 */
-    int (*tcl_SetSystemEncoding) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * name)); /* 310 */
-    Tcl_Obj * (*tcl_SetVar2Ex) _ANSI_ARGS_((Tcl_Interp * interp, char * part1, char * part2, Tcl_Obj * newValuePtr, int flags)); /* 311 */
-    void (*tcl_ThreadAlert) _ANSI_ARGS_((Tcl_ThreadId threadId)); /* 312 */
-    void (*tcl_ThreadQueueEvent) _ANSI_ARGS_((Tcl_ThreadId threadId, Tcl_Event* evPtr, Tcl_QueuePosition position)); /* 313 */
-    Tcl_UniChar (*tcl_UniCharAtIndex) _ANSI_ARGS_((CONST char * src, int index)); /* 314 */
-    Tcl_UniChar (*tcl_UniCharToLower) _ANSI_ARGS_((int ch)); /* 315 */
-    Tcl_UniChar (*tcl_UniCharToTitle) _ANSI_ARGS_((int ch)); /* 316 */
-    Tcl_UniChar (*tcl_UniCharToUpper) _ANSI_ARGS_((int ch)); /* 317 */
-    int (*tcl_UniCharToUtf) _ANSI_ARGS_((int ch, char * buf)); /* 318 */
-    char * (*tcl_UtfAtIndex) _ANSI_ARGS_((CONST char * src, int index)); /* 319 */
-    int (*tcl_UtfCharComplete) _ANSI_ARGS_((CONST char * src, int len)); /* 320 */
-    int (*tcl_UtfBackslash) _ANSI_ARGS_((CONST char * src, int * readPtr, char * dst)); /* 321 */
-    char * (*tcl_UtfFindFirst) _ANSI_ARGS_((CONST char * src, int ch)); /* 322 */
-    char * (*tcl_UtfFindLast) _ANSI_ARGS_((CONST char * src, int ch)); /* 323 */
-    char * (*tcl_UtfNext) _ANSI_ARGS_((CONST char * src)); /* 324 */
-    char * (*tcl_UtfPrev) _ANSI_ARGS_((CONST char * src, CONST char * start)); /* 325 */
-    int (*tcl_UtfToExternal) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Encoding encoding, CONST char * src, int srcLen, int flags, Tcl_EncodingState * statePtr, char * dst, int dstLen, int * srcReadPtr, int * dstWrotePtr, int * dstCharsPtr)); /* 326 */
-    char * (*tcl_UtfToExternalDString) _ANSI_ARGS_((Tcl_Encoding encoding, CONST char * src, int srcLen, Tcl_DString * dsPtr)); /* 327 */
-    int (*tcl_UtfToLower) _ANSI_ARGS_((char * src)); /* 328 */
-    int (*tcl_UtfToTitle) _ANSI_ARGS_((char * src)); /* 329 */
-    int (*tcl_UtfToUniChar) _ANSI_ARGS_((CONST char * src, Tcl_UniChar * chPtr)); /* 330 */
-    int (*tcl_UtfToUpper) _ANSI_ARGS_((char * src)); /* 331 */
-    int (*tcl_WriteChars) _ANSI_ARGS_((Tcl_Channel chan, CONST char * src, int srcLen)); /* 332 */
-    int (*tcl_WriteObj) _ANSI_ARGS_((Tcl_Channel chan, Tcl_Obj * objPtr)); /* 333 */
+    void (*tcl_GetVersion) _ANSI_ARGS_((int * major, int * minor, int * patchLevel, Tcl_ReleaseType * type)); /* 279 */
+    # Reserved for future (*use) _ANSI_ARGS_((8.0.x vs. 8.1)); /* 280 */
+    # Reserved for future (*use) _ANSI_ARGS_((8.0.x vs. 8.1)); /* 281 */
+    # Reserved for future (*use) _ANSI_ARGS_((8.0.x vs. 8.1)); /* 282 */
+    # Reserved for future (*use) _ANSI_ARGS_((8.0.x vs. 8.1)); /* 283 */
+    # Reserved for future (*use) _ANSI_ARGS_((8.0.x vs. 8.1)); /* 284 */
+    # Reserved for future (*use) _ANSI_ARGS_((8.0.x vs. 8.1)); /* 285 */
+    void (*tcl_AppendObjToObj) _ANSI_ARGS_((Tcl_Obj * objPtr, Tcl_Obj * appendObjPtr)); /* 286 */
+    void (*tcl_AlertNotifier) _ANSI_ARGS_((ClientData clientData)); /* 287 */
+    Tcl_Encoding (*tcl_CreateEncoding) _ANSI_ARGS_((Tcl_EncodingType * typePtr)); /* 288 */
+    void (*tcl_CreateThreadExitHandler) _ANSI_ARGS_((Tcl_ExitProc * proc, ClientData clientData)); /* 289 */
+    void (*tcl_DeleteThreadExitHandler) _ANSI_ARGS_((Tcl_ExitProc * proc, ClientData clientData)); /* 290 */
+    void (*tcl_DiscardResult) _ANSI_ARGS_((Tcl_SavedResult * statePtr)); /* 291 */
+    int (*tcl_EvalEx) _ANSI_ARGS_((Tcl_Interp * interp, char * script, int numBytes, int flags)); /* 292 */
+    int (*tcl_EvalObjv) _ANSI_ARGS_((Tcl_Interp * interp, int objc, Tcl_Obj *CONST objv[], int flags)); /* 293 */
+    int (*tcl_EvalObjEx) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * objPtr, int flags)); /* 294 */
+    void (*tcl_ExitThread) _ANSI_ARGS_((int status)); /* 295 */
+    int (*tcl_ExternalToUtf) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Encoding encoding, CONST char * src, int srcLen, int flags, Tcl_EncodingState * statePtr, char * dst, int dstLen, int * srcReadPtr, int * dstWrotePtr, int * dstCharsPtr)); /* 296 */
+    char * (*tcl_ExternalToUtfDString) _ANSI_ARGS_((Tcl_Encoding encoding, CONST char * src, int srcLen, Tcl_DString * dsPtr)); /* 297 */
+    void (*tcl_FinalizeThread) _ANSI_ARGS_((void)); /* 298 */
+    void (*tcl_FinalizeNotifier) _ANSI_ARGS_((ClientData clientData)); /* 299 */
+    void (*tcl_FreeEncoding) _ANSI_ARGS_((Tcl_Encoding encoding)); /* 300 */
+    Tcl_ThreadId (*tcl_GetCurrentThread) _ANSI_ARGS_((void)); /* 301 */
+    Tcl_Encoding (*tcl_GetEncoding) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * name)); /* 302 */
+    char * (*tcl_GetEncodingName) _ANSI_ARGS_((Tcl_Encoding encoding)); /* 303 */
+    void (*tcl_GetEncodingNames) _ANSI_ARGS_((Tcl_Interp * interp)); /* 304 */
+    int (*tcl_GetIndexFromObjStruct) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * objPtr, char ** tablePtr, int offset, char * msg, int flags, int * indexPtr)); /* 305 */
+    VOID * (*tcl_GetThreadData) _ANSI_ARGS_((Tcl_ThreadDataKey * keyPtr, int size)); /* 306 */
+    Tcl_Obj * (*tcl_GetVar2Ex) _ANSI_ARGS_((Tcl_Interp * interp, char * part1, char * part2, int flags)); /* 307 */
+    ClientData (*tcl_InitNotifier) _ANSI_ARGS_((void)); /* 308 */
+    void (*tcl_MutexLock) _ANSI_ARGS_((Tcl_Mutex * mutexPtr)); /* 309 */
+    void (*tcl_MutexUnlock) _ANSI_ARGS_((Tcl_Mutex * mutexPtr)); /* 310 */
+    void (*tcl_ConditionNotify) _ANSI_ARGS_((Tcl_Condition * condPtr)); /* 311 */
+    void (*tcl_ConditionWait) _ANSI_ARGS_((Tcl_Condition * condPtr, Tcl_Mutex * mutexPtr, Tcl_Time * timePtr)); /* 312 */
+    int (*tcl_NumUtfChars) _ANSI_ARGS_((CONST char * src, int len)); /* 313 */
+    int (*tcl_ReadChars) _ANSI_ARGS_((Tcl_Channel channel, Tcl_Obj * objPtr, int charsToRead, int appendFlag)); /* 314 */
+    void (*tcl_RestoreResult) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_SavedResult * statePtr)); /* 315 */
+    void (*tcl_SaveResult) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_SavedResult * statePtr)); /* 316 */
+    int (*tcl_SetSystemEncoding) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * name)); /* 317 */
+    Tcl_Obj * (*tcl_SetVar2Ex) _ANSI_ARGS_((Tcl_Interp * interp, char * part1, char * part2, Tcl_Obj * newValuePtr, int flags)); /* 318 */
+    void (*tcl_ThreadAlert) _ANSI_ARGS_((Tcl_ThreadId threadId)); /* 319 */
+    void (*tcl_ThreadQueueEvent) _ANSI_ARGS_((Tcl_ThreadId threadId, Tcl_Event* evPtr, Tcl_QueuePosition position)); /* 320 */
+    Tcl_UniChar (*tcl_UniCharAtIndex) _ANSI_ARGS_((CONST char * src, int index)); /* 321 */
+    Tcl_UniChar (*tcl_UniCharToLower) _ANSI_ARGS_((int ch)); /* 322 */
+    Tcl_UniChar (*tcl_UniCharToTitle) _ANSI_ARGS_((int ch)); /* 323 */
+    Tcl_UniChar (*tcl_UniCharToUpper) _ANSI_ARGS_((int ch)); /* 324 */
+    int (*tcl_UniCharToUtf) _ANSI_ARGS_((int ch, char * buf)); /* 325 */
+    char * (*tcl_UtfAtIndex) _ANSI_ARGS_((CONST char * src, int index)); /* 326 */
+    int (*tcl_UtfCharComplete) _ANSI_ARGS_((CONST char * src, int len)); /* 327 */
+    int (*tcl_UtfBackslash) _ANSI_ARGS_((CONST char * src, int * readPtr, char * dst)); /* 328 */
+    char * (*tcl_UtfFindFirst) _ANSI_ARGS_((CONST char * src, int ch)); /* 329 */
+    char * (*tcl_UtfFindLast) _ANSI_ARGS_((CONST char * src, int ch)); /* 330 */
+    char * (*tcl_UtfNext) _ANSI_ARGS_((CONST char * src)); /* 331 */
+    char * (*tcl_UtfPrev) _ANSI_ARGS_((CONST char * src, CONST char * start)); /* 332 */
+    int (*tcl_UtfToExternal) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Encoding encoding, CONST char * src, int srcLen, int flags, Tcl_EncodingState * statePtr, char * dst, int dstLen, int * srcReadPtr, int * dstWrotePtr, int * dstCharsPtr)); /* 333 */
+    char * (*tcl_UtfToExternalDString) _ANSI_ARGS_((Tcl_Encoding encoding, CONST char * src, int srcLen, Tcl_DString * dsPtr)); /* 334 */
+    int (*tcl_UtfToLower) _ANSI_ARGS_((char * src)); /* 335 */
+    int (*tcl_UtfToTitle) _ANSI_ARGS_((char * src)); /* 336 */
+    int (*tcl_UtfToUniChar) _ANSI_ARGS_((CONST char * src, Tcl_UniChar * chPtr)); /* 337 */
+    int (*tcl_UtfToUpper) _ANSI_ARGS_((char * src)); /* 338 */
+    int (*tcl_WriteChars) _ANSI_ARGS_((Tcl_Channel chan, CONST char * src, int srcLen)); /* 339 */
+    int (*tcl_WriteObj) _ANSI_ARGS_((Tcl_Channel chan, Tcl_Obj * objPtr)); /* 340 */
 } TclStubs;
 
 extern TclStubs *tclStubsPtr;
@@ -2532,225 +2554,253 @@ extern TclStubs *tclStubsPtr;
 #define panicVA(format, argList) \
 	(tclStubsPtr->panicVA)(format, argList) /* 278 */
 #endif
+#ifndef Tcl_GetVersion
+#define Tcl_GetVersion(major, minor, patchLevel, type) \
+	(tclStubsPtr->tcl_GetVersion)(major, minor, patchLevel, type) /* 279 */
+#endif
+#ifndef use
+#define use(8.1) \
+	(tclStubsPtr->use)(8.1) /* 280 */
+#endif
+#ifndef use
+#define use(8.1) \
+	(tclStubsPtr->use)(8.1) /* 281 */
+#endif
+#ifndef use
+#define use(8.1) \
+	(tclStubsPtr->use)(8.1) /* 282 */
+#endif
+#ifndef use
+#define use(8.1) \
+	(tclStubsPtr->use)(8.1) /* 283 */
+#endif
+#ifndef use
+#define use(8.1) \
+	(tclStubsPtr->use)(8.1) /* 284 */
+#endif
+#ifndef use
+#define use(8.1) \
+	(tclStubsPtr->use)(8.1) /* 285 */
+#endif
 #ifndef Tcl_AppendObjToObj
 #define Tcl_AppendObjToObj(objPtr, appendObjPtr) \
-	(tclStubsPtr->tcl_AppendObjToObj)(objPtr, appendObjPtr) /* 279 */
+	(tclStubsPtr->tcl_AppendObjToObj)(objPtr, appendObjPtr) /* 286 */
 #endif
 #ifndef Tcl_AlertNotifier
 #define Tcl_AlertNotifier(clientData) \
-	(tclStubsPtr->tcl_AlertNotifier)(clientData) /* 280 */
+	(tclStubsPtr->tcl_AlertNotifier)(clientData) /* 287 */
 #endif
 #ifndef Tcl_CreateEncoding
 #define Tcl_CreateEncoding(typePtr) \
-	(tclStubsPtr->tcl_CreateEncoding)(typePtr) /* 281 */
+	(tclStubsPtr->tcl_CreateEncoding)(typePtr) /* 288 */
 #endif
 #ifndef Tcl_CreateThreadExitHandler
 #define Tcl_CreateThreadExitHandler(proc, clientData) \
-	(tclStubsPtr->tcl_CreateThreadExitHandler)(proc, clientData) /* 282 */
+	(tclStubsPtr->tcl_CreateThreadExitHandler)(proc, clientData) /* 289 */
 #endif
 #ifndef Tcl_DeleteThreadExitHandler
 #define Tcl_DeleteThreadExitHandler(proc, clientData) \
-	(tclStubsPtr->tcl_DeleteThreadExitHandler)(proc, clientData) /* 283 */
+	(tclStubsPtr->tcl_DeleteThreadExitHandler)(proc, clientData) /* 290 */
 #endif
 #ifndef Tcl_DiscardResult
 #define Tcl_DiscardResult(statePtr) \
-	(tclStubsPtr->tcl_DiscardResult)(statePtr) /* 284 */
+	(tclStubsPtr->tcl_DiscardResult)(statePtr) /* 291 */
 #endif
 #ifndef Tcl_EvalEx
 #define Tcl_EvalEx(interp, script, numBytes, flags) \
-	(tclStubsPtr->tcl_EvalEx)(interp, script, numBytes, flags) /* 285 */
+	(tclStubsPtr->tcl_EvalEx)(interp, script, numBytes, flags) /* 292 */
 #endif
 #ifndef Tcl_EvalObjv
 #define Tcl_EvalObjv(interp, objc, objv, flags) \
-	(tclStubsPtr->tcl_EvalObjv)(interp, objc, objv, flags) /* 286 */
+	(tclStubsPtr->tcl_EvalObjv)(interp, objc, objv, flags) /* 293 */
 #endif
 #ifndef Tcl_EvalObjEx
 #define Tcl_EvalObjEx(interp, objPtr, flags) \
-	(tclStubsPtr->tcl_EvalObjEx)(interp, objPtr, flags) /* 287 */
+	(tclStubsPtr->tcl_EvalObjEx)(interp, objPtr, flags) /* 294 */
 #endif
 #ifndef Tcl_ExitThread
 #define Tcl_ExitThread(status) \
-	(tclStubsPtr->tcl_ExitThread)(status) /* 288 */
+	(tclStubsPtr->tcl_ExitThread)(status) /* 295 */
 #endif
 #ifndef Tcl_ExternalToUtf
 #define Tcl_ExternalToUtf(interp, encoding, src, srcLen, flags, statePtr, dst, dstLen, srcReadPtr, dstWrotePtr, dstCharsPtr) \
-	(tclStubsPtr->tcl_ExternalToUtf)(interp, encoding, src, srcLen, flags, statePtr, dst, dstLen, srcReadPtr, dstWrotePtr, dstCharsPtr) /* 289 */
+	(tclStubsPtr->tcl_ExternalToUtf)(interp, encoding, src, srcLen, flags, statePtr, dst, dstLen, srcReadPtr, dstWrotePtr, dstCharsPtr) /* 296 */
 #endif
 #ifndef Tcl_ExternalToUtfDString
 #define Tcl_ExternalToUtfDString(encoding, src, srcLen, dsPtr) \
-	(tclStubsPtr->tcl_ExternalToUtfDString)(encoding, src, srcLen, dsPtr) /* 290 */
+	(tclStubsPtr->tcl_ExternalToUtfDString)(encoding, src, srcLen, dsPtr) /* 297 */
 #endif
 #ifndef Tcl_FinalizeThread
 #define Tcl_FinalizeThread() \
-	(tclStubsPtr->tcl_FinalizeThread)() /* 291 */
+	(tclStubsPtr->tcl_FinalizeThread)() /* 298 */
 #endif
 #ifndef Tcl_FinalizeNotifier
 #define Tcl_FinalizeNotifier(clientData) \
-	(tclStubsPtr->tcl_FinalizeNotifier)(clientData) /* 292 */
+	(tclStubsPtr->tcl_FinalizeNotifier)(clientData) /* 299 */
 #endif
 #ifndef Tcl_FreeEncoding
 #define Tcl_FreeEncoding(encoding) \
-	(tclStubsPtr->tcl_FreeEncoding)(encoding) /* 293 */
+	(tclStubsPtr->tcl_FreeEncoding)(encoding) /* 300 */
 #endif
 #ifndef Tcl_GetCurrentThread
 #define Tcl_GetCurrentThread() \
-	(tclStubsPtr->tcl_GetCurrentThread)() /* 294 */
+	(tclStubsPtr->tcl_GetCurrentThread)() /* 301 */
 #endif
 #ifndef Tcl_GetEncoding
 #define Tcl_GetEncoding(interp, name) \
-	(tclStubsPtr->tcl_GetEncoding)(interp, name) /* 295 */
+	(tclStubsPtr->tcl_GetEncoding)(interp, name) /* 302 */
 #endif
 #ifndef Tcl_GetEncodingName
 #define Tcl_GetEncodingName(encoding) \
-	(tclStubsPtr->tcl_GetEncodingName)(encoding) /* 296 */
+	(tclStubsPtr->tcl_GetEncodingName)(encoding) /* 303 */
 #endif
 #ifndef Tcl_GetEncodingNames
 #define Tcl_GetEncodingNames(interp) \
-	(tclStubsPtr->tcl_GetEncodingNames)(interp) /* 297 */
+	(tclStubsPtr->tcl_GetEncodingNames)(interp) /* 304 */
 #endif
 #ifndef Tcl_GetIndexFromObjStruct
 #define Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr, offset, msg, flags, indexPtr) \
-	(tclStubsPtr->tcl_GetIndexFromObjStruct)(interp, objPtr, tablePtr, offset, msg, flags, indexPtr) /* 298 */
+	(tclStubsPtr->tcl_GetIndexFromObjStruct)(interp, objPtr, tablePtr, offset, msg, flags, indexPtr) /* 305 */
 #endif
 #ifndef Tcl_GetThreadData
 #define Tcl_GetThreadData(keyPtr, size) \
-	(tclStubsPtr->tcl_GetThreadData)(keyPtr, size) /* 299 */
+	(tclStubsPtr->tcl_GetThreadData)(keyPtr, size) /* 306 */
 #endif
 #ifndef Tcl_GetVar2Ex
 #define Tcl_GetVar2Ex(interp, part1, part2, flags) \
-	(tclStubsPtr->tcl_GetVar2Ex)(interp, part1, part2, flags) /* 300 */
+	(tclStubsPtr->tcl_GetVar2Ex)(interp, part1, part2, flags) /* 307 */
 #endif
 #ifndef Tcl_InitNotifier
 #define Tcl_InitNotifier() \
-	(tclStubsPtr->tcl_InitNotifier)() /* 301 */
+	(tclStubsPtr->tcl_InitNotifier)() /* 308 */
 #endif
 #ifndef Tcl_MutexLock
 #define Tcl_MutexLock(mutexPtr) \
-	(tclStubsPtr->tcl_MutexLock)(mutexPtr) /* 302 */
+	(tclStubsPtr->tcl_MutexLock)(mutexPtr) /* 309 */
 #endif
 #ifndef Tcl_MutexUnlock
 #define Tcl_MutexUnlock(mutexPtr) \
-	(tclStubsPtr->tcl_MutexUnlock)(mutexPtr) /* 303 */
+	(tclStubsPtr->tcl_MutexUnlock)(mutexPtr) /* 310 */
 #endif
 #ifndef Tcl_ConditionNotify
 #define Tcl_ConditionNotify(condPtr) \
-	(tclStubsPtr->tcl_ConditionNotify)(condPtr) /* 304 */
+	(tclStubsPtr->tcl_ConditionNotify)(condPtr) /* 311 */
 #endif
 #ifndef Tcl_ConditionWait
 #define Tcl_ConditionWait(condPtr, mutexPtr, timePtr) \
-	(tclStubsPtr->tcl_ConditionWait)(condPtr, mutexPtr, timePtr) /* 305 */
+	(tclStubsPtr->tcl_ConditionWait)(condPtr, mutexPtr, timePtr) /* 312 */
 #endif
 #ifndef Tcl_NumUtfChars
 #define Tcl_NumUtfChars(src, len) \
-	(tclStubsPtr->tcl_NumUtfChars)(src, len) /* 306 */
+	(tclStubsPtr->tcl_NumUtfChars)(src, len) /* 313 */
 #endif
 #ifndef Tcl_ReadChars
 #define Tcl_ReadChars(channel, objPtr, charsToRead, appendFlag) \
-	(tclStubsPtr->tcl_ReadChars)(channel, objPtr, charsToRead, appendFlag) /* 307 */
+	(tclStubsPtr->tcl_ReadChars)(channel, objPtr, charsToRead, appendFlag) /* 314 */
 #endif
 #ifndef Tcl_RestoreResult
 #define Tcl_RestoreResult(interp, statePtr) \
-	(tclStubsPtr->tcl_RestoreResult)(interp, statePtr) /* 308 */
+	(tclStubsPtr->tcl_RestoreResult)(interp, statePtr) /* 315 */
 #endif
 #ifndef Tcl_SaveResult
 #define Tcl_SaveResult(interp, statePtr) \
-	(tclStubsPtr->tcl_SaveResult)(interp, statePtr) /* 309 */
+	(tclStubsPtr->tcl_SaveResult)(interp, statePtr) /* 316 */
 #endif
 #ifndef Tcl_SetSystemEncoding
 #define Tcl_SetSystemEncoding(interp, name) \
-	(tclStubsPtr->tcl_SetSystemEncoding)(interp, name) /* 310 */
+	(tclStubsPtr->tcl_SetSystemEncoding)(interp, name) /* 317 */
 #endif
 #ifndef Tcl_SetVar2Ex
 #define Tcl_SetVar2Ex(interp, part1, part2, newValuePtr, flags) \
-	(tclStubsPtr->tcl_SetVar2Ex)(interp, part1, part2, newValuePtr, flags) /* 311 */
+	(tclStubsPtr->tcl_SetVar2Ex)(interp, part1, part2, newValuePtr, flags) /* 318 */
 #endif
 #ifndef Tcl_ThreadAlert
 #define Tcl_ThreadAlert(threadId) \
-	(tclStubsPtr->tcl_ThreadAlert)(threadId) /* 312 */
+	(tclStubsPtr->tcl_ThreadAlert)(threadId) /* 319 */
 #endif
 #ifndef Tcl_ThreadQueueEvent
 #define Tcl_ThreadQueueEvent(threadId, evPtr, position) \
-	(tclStubsPtr->tcl_ThreadQueueEvent)(threadId, evPtr, position) /* 313 */
+	(tclStubsPtr->tcl_ThreadQueueEvent)(threadId, evPtr, position) /* 320 */
 #endif
 #ifndef Tcl_UniCharAtIndex
 #define Tcl_UniCharAtIndex(src, index) \
-	(tclStubsPtr->tcl_UniCharAtIndex)(src, index) /* 314 */
+	(tclStubsPtr->tcl_UniCharAtIndex)(src, index) /* 321 */
 #endif
 #ifndef Tcl_UniCharToLower
 #define Tcl_UniCharToLower(ch) \
-	(tclStubsPtr->tcl_UniCharToLower)(ch) /* 315 */
+	(tclStubsPtr->tcl_UniCharToLower)(ch) /* 322 */
 #endif
 #ifndef Tcl_UniCharToTitle
 #define Tcl_UniCharToTitle(ch) \
-	(tclStubsPtr->tcl_UniCharToTitle)(ch) /* 316 */
+	(tclStubsPtr->tcl_UniCharToTitle)(ch) /* 323 */
 #endif
 #ifndef Tcl_UniCharToUpper
 #define Tcl_UniCharToUpper(ch) \
-	(tclStubsPtr->tcl_UniCharToUpper)(ch) /* 317 */
+	(tclStubsPtr->tcl_UniCharToUpper)(ch) /* 324 */
 #endif
 #ifndef Tcl_UniCharToUtf
 #define Tcl_UniCharToUtf(ch, buf) \
-	(tclStubsPtr->tcl_UniCharToUtf)(ch, buf) /* 318 */
+	(tclStubsPtr->tcl_UniCharToUtf)(ch, buf) /* 325 */
 #endif
 #ifndef Tcl_UtfAtIndex
 #define Tcl_UtfAtIndex(src, index) \
-	(tclStubsPtr->tcl_UtfAtIndex)(src, index) /* 319 */
+	(tclStubsPtr->tcl_UtfAtIndex)(src, index) /* 326 */
 #endif
 #ifndef Tcl_UtfCharComplete
 #define Tcl_UtfCharComplete(src, len) \
-	(tclStubsPtr->tcl_UtfCharComplete)(src, len) /* 320 */
+	(tclStubsPtr->tcl_UtfCharComplete)(src, len) /* 327 */
 #endif
 #ifndef Tcl_UtfBackslash
 #define Tcl_UtfBackslash(src, readPtr, dst) \
-	(tclStubsPtr->tcl_UtfBackslash)(src, readPtr, dst) /* 321 */
+	(tclStubsPtr->tcl_UtfBackslash)(src, readPtr, dst) /* 328 */
 #endif
 #ifndef Tcl_UtfFindFirst
 #define Tcl_UtfFindFirst(src, ch) \
-	(tclStubsPtr->tcl_UtfFindFirst)(src, ch) /* 322 */
+	(tclStubsPtr->tcl_UtfFindFirst)(src, ch) /* 329 */
 #endif
 #ifndef Tcl_UtfFindLast
 #define Tcl_UtfFindLast(src, ch) \
-	(tclStubsPtr->tcl_UtfFindLast)(src, ch) /* 323 */
+	(tclStubsPtr->tcl_UtfFindLast)(src, ch) /* 330 */
 #endif
 #ifndef Tcl_UtfNext
 #define Tcl_UtfNext(src) \
-	(tclStubsPtr->tcl_UtfNext)(src) /* 324 */
+	(tclStubsPtr->tcl_UtfNext)(src) /* 331 */
 #endif
 #ifndef Tcl_UtfPrev
 #define Tcl_UtfPrev(src, start) \
-	(tclStubsPtr->tcl_UtfPrev)(src, start) /* 325 */
+	(tclStubsPtr->tcl_UtfPrev)(src, start) /* 332 */
 #endif
 #ifndef Tcl_UtfToExternal
 #define Tcl_UtfToExternal(interp, encoding, src, srcLen, flags, statePtr, dst, dstLen, srcReadPtr, dstWrotePtr, dstCharsPtr) \
-	(tclStubsPtr->tcl_UtfToExternal)(interp, encoding, src, srcLen, flags, statePtr, dst, dstLen, srcReadPtr, dstWrotePtr, dstCharsPtr) /* 326 */
+	(tclStubsPtr->tcl_UtfToExternal)(interp, encoding, src, srcLen, flags, statePtr, dst, dstLen, srcReadPtr, dstWrotePtr, dstCharsPtr) /* 333 */
 #endif
 #ifndef Tcl_UtfToExternalDString
 #define Tcl_UtfToExternalDString(encoding, src, srcLen, dsPtr) \
-	(tclStubsPtr->tcl_UtfToExternalDString)(encoding, src, srcLen, dsPtr) /* 327 */
+	(tclStubsPtr->tcl_UtfToExternalDString)(encoding, src, srcLen, dsPtr) /* 334 */
 #endif
 #ifndef Tcl_UtfToLower
 #define Tcl_UtfToLower(src) \
-	(tclStubsPtr->tcl_UtfToLower)(src) /* 328 */
+	(tclStubsPtr->tcl_UtfToLower)(src) /* 335 */
 #endif
 #ifndef Tcl_UtfToTitle
 #define Tcl_UtfToTitle(src) \
-	(tclStubsPtr->tcl_UtfToTitle)(src) /* 329 */
+	(tclStubsPtr->tcl_UtfToTitle)(src) /* 336 */
 #endif
 #ifndef Tcl_UtfToUniChar
 #define Tcl_UtfToUniChar(src, chPtr) \
-	(tclStubsPtr->tcl_UtfToUniChar)(src, chPtr) /* 330 */
+	(tclStubsPtr->tcl_UtfToUniChar)(src, chPtr) /* 337 */
 #endif
 #ifndef Tcl_UtfToUpper
 #define Tcl_UtfToUpper(src) \
-	(tclStubsPtr->tcl_UtfToUpper)(src) /* 331 */
+	(tclStubsPtr->tcl_UtfToUpper)(src) /* 338 */
 #endif
 #ifndef Tcl_WriteChars
 #define Tcl_WriteChars(chan, src, srcLen) \
-	(tclStubsPtr->tcl_WriteChars)(chan, src, srcLen) /* 332 */
+	(tclStubsPtr->tcl_WriteChars)(chan, src, srcLen) /* 339 */
 #endif
 #ifndef Tcl_WriteObj
 #define Tcl_WriteObj(chan, objPtr) \
-	(tclStubsPtr->tcl_WriteObj)(chan, objPtr) /* 333 */
+	(tclStubsPtr->tcl_WriteObj)(chan, objPtr) /* 340 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.3.2.1 1999/03/10 06:49:12 stanton Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.3.2.2 1999/03/10 23:24:45 redman Exp $
 
 library tcl
 
@@ -961,187 +961,210 @@ declare 277 generic {
 declare 278 generic {
     void panicVA(char *format, va_list argList)
 }
+declare 279 generic {
+    void Tcl_GetVersion(int *major, int *minor, int *patchLevel, \
+	    Tcl_ReleaseType *type)
+}
+declare 280 generic {
+    # Reserved for future use (8.0.x vs. 8.1)
+}
+declare 281 generic {
+    # Reserved for future use (8.0.x vs. 8.1)
+}
+declare 282 generic {
+    # Reserved for future use (8.0.x vs. 8.1)
+}
+declare 283 generic {
+    # Reserved for future use (8.0.x vs. 8.1)
+}
+declare 284 generic {
+    # Reserved for future use (8.0.x vs. 8.1)
+}
+declare 285 generic {
+    # Reserved for future use (8.0.x vs. 8.1)
+}
+
 
 # Added in 8.1:
 
-declare 279 generic {
+declare 286 generic {
     void Tcl_AppendObjToObj(Tcl_Obj *objPtr, Tcl_Obj *appendObjPtr)
 }
-declare 280 generic {
+declare 287 generic {
     void Tcl_AlertNotifier(ClientData clientData)
 }
-declare 281 generic {
+declare 288 generic {
     Tcl_Encoding Tcl_CreateEncoding(Tcl_EncodingType *typePtr)
 }
-declare 282 generic {
+declare 289 generic {
     void Tcl_CreateThreadExitHandler(Tcl_ExitProc *proc, ClientData clientData)
 }
-declare 283 generic {
+declare 290 generic {
     void Tcl_DeleteThreadExitHandler(Tcl_ExitProc *proc, ClientData clientData)
 }
-declare 284 generic {
+declare 291 generic {
     void Tcl_DiscardResult(Tcl_SavedResult *statePtr)
 }
-declare 285 generic {
+declare 292 generic {
     int Tcl_EvalEx(Tcl_Interp *interp, char *script, int numBytes, int flags)
 }
-declare 286 generic {
+declare 293 generic {
     int Tcl_EvalObjv(Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[], \
 	    int flags)
 }
-declare 287 generic {
+declare 294 generic {
     int Tcl_EvalObjEx(Tcl_Interp *interp, Tcl_Obj *objPtr, int flags)
 }
-declare 288 generic {
+declare 295 generic {
     void Tcl_ExitThread(int status)
 }
-declare 289 generic {
+declare 296 generic {
     int Tcl_ExternalToUtf(Tcl_Interp *interp, Tcl_Encoding encoding, \
 	    CONST char *src, int srcLen, int flags, \
 	    Tcl_EncodingState *statePtr, char *dst, int dstLen, \
 	    int *srcReadPtr, int *dstWrotePtr, int *dstCharsPtr)
 }
-declare 290 generic {
+declare 297 generic {
     char * Tcl_ExternalToUtfDString(Tcl_Encoding encoding, CONST char *src, \
 	    int srcLen, Tcl_DString *dsPtr)
 }
-declare 291 generic {
+declare 298 generic {
     void Tcl_FinalizeThread(void)
 }
-declare 292 generic {
+declare 299 generic {
     void Tcl_FinalizeNotifier(ClientData clientData)
 }
-declare 293 generic {
+declare 300 generic {
     void Tcl_FreeEncoding(Tcl_Encoding encoding)
 }
-declare 294 generic {
+declare 301 generic {
     Tcl_ThreadId Tcl_GetCurrentThread(void)
 }
-declare 295 generic {
+declare 302 generic {
     Tcl_Encoding Tcl_GetEncoding(Tcl_Interp *interp, CONST char *name)
 }
-declare 296 generic {
+declare 303 generic {
     char * Tcl_GetEncodingName(Tcl_Encoding encoding)
 }
-declare 297 generic {
+declare 304 generic {
     void Tcl_GetEncodingNames(Tcl_Interp *interp)
 }
-declare 298 generic {
+declare 305 generic {
     int Tcl_GetIndexFromObjStruct(Tcl_Interp *interp, Tcl_Obj *objPtr, \
 	    char **tablePtr, int offset, char *msg, int flags, int *indexPtr)
 }
-declare 299 generic {
+declare 306 generic {
     VOID * Tcl_GetThreadData(Tcl_ThreadDataKey *keyPtr, int size)
 }
-declare 300 generic {
+declare 307 generic {
     Tcl_Obj * Tcl_GetVar2Ex(Tcl_Interp *interp, char *part1, char *part2, \
 	    int flags)
 }
-declare 301 generic {
+declare 308 generic {
     ClientData Tcl_InitNotifier(void)
 }
-declare 302 generic {
+declare 309 generic {
     void Tcl_MutexLock(Tcl_Mutex *mutexPtr)
 }
-declare 303 generic {
+declare 310 generic {
     void Tcl_MutexUnlock(Tcl_Mutex *mutexPtr)
 }
-declare 304 generic {
+declare 311 generic {
     void Tcl_ConditionNotify(Tcl_Condition *condPtr)
 }
-declare 305 generic {
+declare 312 generic {
     void Tcl_ConditionWait(Tcl_Condition *condPtr, Tcl_Mutex *mutexPtr, \
 	    Tcl_Time *timePtr)
 }
-declare 306 generic {
+declare 313 generic {
     int Tcl_NumUtfChars(CONST char *src, int len)
 }
-declare 307 generic {
+declare 314 generic {
     int Tcl_ReadChars(Tcl_Channel channel, Tcl_Obj *objPtr, int charsToRead, \
 	    int appendFlag)
 }
-declare 308 generic {
+declare 315 generic {
     void Tcl_RestoreResult(Tcl_Interp *interp, Tcl_SavedResult *statePtr)
 }
-declare 309 generic {
+declare 316 generic {
     void Tcl_SaveResult(Tcl_Interp *interp, Tcl_SavedResult *statePtr)
 }
-declare 310 generic {
+declare 317 generic {
     int Tcl_SetSystemEncoding(Tcl_Interp *interp, CONST char *name)
 }
-declare 311 generic {
+declare 318 generic {
     Tcl_Obj * Tcl_SetVar2Ex(Tcl_Interp *interp, char *part1, char *part2, \
 	    Tcl_Obj *newValuePtr, int flags)
 }
-declare 312 generic {
+declare 319 generic {
     void Tcl_ThreadAlert(Tcl_ThreadId threadId)
 }
-declare 313 generic {
+declare 320 generic {
     void Tcl_ThreadQueueEvent(Tcl_ThreadId threadId, Tcl_Event* evPtr, \
 	    Tcl_QueuePosition position)
 }
-declare 314 generic {
+declare 321 generic {
     Tcl_UniChar Tcl_UniCharAtIndex(CONST char *src, int index)
 }
-declare 315 generic {
+declare 322 generic {
     Tcl_UniChar Tcl_UniCharToLower(int ch)
 }
-declare 316 generic {
+declare 323 generic {
     Tcl_UniChar Tcl_UniCharToTitle(int ch)
 }
-declare 317 generic {
+declare 324 generic {
     Tcl_UniChar Tcl_UniCharToUpper(int ch)
 }
-declare 318 generic {
+declare 325 generic {
     int Tcl_UniCharToUtf(int ch, char *buf)
 }
-declare 319 generic {
+declare 326 generic {
     char * Tcl_UtfAtIndex(CONST char *src, int index)
 }
-declare 320 generic {
+declare 327 generic {
     int Tcl_UtfCharComplete(CONST char *src, int len)
 }
-declare 321 generic {
+declare 328 generic {
     int Tcl_UtfBackslash(CONST char *src, int *readPtr, char *dst)
 }
-declare 322 generic {
+declare 329 generic {
     char * Tcl_UtfFindFirst(CONST char *src, int ch)
 }
-declare 323 generic {
+declare 330 generic {
     char * Tcl_UtfFindLast(CONST char *src, int ch)
 }
-declare 324 generic {
+declare 331 generic {
     char * Tcl_UtfNext(CONST char *src)
 }
-declare 325 generic {
+declare 332 generic {
     char * Tcl_UtfPrev(CONST char *src, CONST char *start)
 }
-declare 326 generic {
+declare 333 generic {
     int Tcl_UtfToExternal(Tcl_Interp *interp, Tcl_Encoding encoding, \
 	    CONST char *src, int srcLen, int flags, \
 	    Tcl_EncodingState *statePtr, char *dst, int dstLen, \
 	    int *srcReadPtr, int *dstWrotePtr, int *dstCharsPtr)
 }
-declare 327 generic {
+declare 334 generic {
     char * Tcl_UtfToExternalDString(Tcl_Encoding encoding, CONST char *src, \
 	    int srcLen, Tcl_DString *dsPtr)
 }
-declare 328 generic {
+declare 335 generic {
     int Tcl_UtfToLower(char *src)
 }
-declare 329 generic {
+declare 336 generic {
     int Tcl_UtfToTitle(char *src)
 }
-declare 330 generic {
+declare 337 generic {
     int Tcl_UtfToUniChar(CONST char *src, Tcl_UniChar *chPtr)
 }
-declare 331 generic {
+declare 338 generic {
     int Tcl_UtfToUpper(char *src)
 }
-declare 332 generic {
+declare 339 generic {
     int Tcl_WriteChars(Tcl_Channel chan, CONST char *src, int srcLen)
 }
-declare 333 generic {
+declare 340 generic {
     int Tcl_WriteObj(Tcl_Channel chan, Tcl_Obj *objPtr)
 }
 

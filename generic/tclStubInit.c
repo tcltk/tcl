@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.3.2.1 1999/03/10 06:49:22 stanton Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.3.2.2 1999/03/10 23:24:47 redman Exp $
  */
 
 #include "tclInt.h"
@@ -348,61 +348,68 @@ TclStubs tclStubs = {
     Tcl_VarEvalVA, /* 276 */
     Tcl_WaitPid, /* 277 */
     panicVA, /* 278 */
-    Tcl_AppendObjToObj, /* 279 */
-    Tcl_AlertNotifier, /* 280 */
-    Tcl_CreateEncoding, /* 281 */
-    Tcl_CreateThreadExitHandler, /* 282 */
-    Tcl_DeleteThreadExitHandler, /* 283 */
-    Tcl_DiscardResult, /* 284 */
-    Tcl_EvalEx, /* 285 */
-    Tcl_EvalObjv, /* 286 */
-    Tcl_EvalObjEx, /* 287 */
-    Tcl_ExitThread, /* 288 */
-    Tcl_ExternalToUtf, /* 289 */
-    Tcl_ExternalToUtfDString, /* 290 */
-    Tcl_FinalizeThread, /* 291 */
-    Tcl_FinalizeNotifier, /* 292 */
-    Tcl_FreeEncoding, /* 293 */
-    Tcl_GetCurrentThread, /* 294 */
-    Tcl_GetEncoding, /* 295 */
-    Tcl_GetEncodingName, /* 296 */
-    Tcl_GetEncodingNames, /* 297 */
-    Tcl_GetIndexFromObjStruct, /* 298 */
-    Tcl_GetThreadData, /* 299 */
-    Tcl_GetVar2Ex, /* 300 */
-    Tcl_InitNotifier, /* 301 */
-    Tcl_MutexLock, /* 302 */
-    Tcl_MutexUnlock, /* 303 */
-    Tcl_ConditionNotify, /* 304 */
-    Tcl_ConditionWait, /* 305 */
-    Tcl_NumUtfChars, /* 306 */
-    Tcl_ReadChars, /* 307 */
-    Tcl_RestoreResult, /* 308 */
-    Tcl_SaveResult, /* 309 */
-    Tcl_SetSystemEncoding, /* 310 */
-    Tcl_SetVar2Ex, /* 311 */
-    Tcl_ThreadAlert, /* 312 */
-    Tcl_ThreadQueueEvent, /* 313 */
-    Tcl_UniCharAtIndex, /* 314 */
-    Tcl_UniCharToLower, /* 315 */
-    Tcl_UniCharToTitle, /* 316 */
-    Tcl_UniCharToUpper, /* 317 */
-    Tcl_UniCharToUtf, /* 318 */
-    Tcl_UtfAtIndex, /* 319 */
-    Tcl_UtfCharComplete, /* 320 */
-    Tcl_UtfBackslash, /* 321 */
-    Tcl_UtfFindFirst, /* 322 */
-    Tcl_UtfFindLast, /* 323 */
-    Tcl_UtfNext, /* 324 */
-    Tcl_UtfPrev, /* 325 */
-    Tcl_UtfToExternal, /* 326 */
-    Tcl_UtfToExternalDString, /* 327 */
-    Tcl_UtfToLower, /* 328 */
-    Tcl_UtfToTitle, /* 329 */
-    Tcl_UtfToUniChar, /* 330 */
-    Tcl_UtfToUpper, /* 331 */
-    Tcl_WriteChars, /* 332 */
-    Tcl_WriteObj, /* 333 */
+    Tcl_GetVersion, /* 279 */
+    use, /* 280 */
+    use, /* 281 */
+    use, /* 282 */
+    use, /* 283 */
+    use, /* 284 */
+    use, /* 285 */
+    Tcl_AppendObjToObj, /* 286 */
+    Tcl_AlertNotifier, /* 287 */
+    Tcl_CreateEncoding, /* 288 */
+    Tcl_CreateThreadExitHandler, /* 289 */
+    Tcl_DeleteThreadExitHandler, /* 290 */
+    Tcl_DiscardResult, /* 291 */
+    Tcl_EvalEx, /* 292 */
+    Tcl_EvalObjv, /* 293 */
+    Tcl_EvalObjEx, /* 294 */
+    Tcl_ExitThread, /* 295 */
+    Tcl_ExternalToUtf, /* 296 */
+    Tcl_ExternalToUtfDString, /* 297 */
+    Tcl_FinalizeThread, /* 298 */
+    Tcl_FinalizeNotifier, /* 299 */
+    Tcl_FreeEncoding, /* 300 */
+    Tcl_GetCurrentThread, /* 301 */
+    Tcl_GetEncoding, /* 302 */
+    Tcl_GetEncodingName, /* 303 */
+    Tcl_GetEncodingNames, /* 304 */
+    Tcl_GetIndexFromObjStruct, /* 305 */
+    Tcl_GetThreadData, /* 306 */
+    Tcl_GetVar2Ex, /* 307 */
+    Tcl_InitNotifier, /* 308 */
+    Tcl_MutexLock, /* 309 */
+    Tcl_MutexUnlock, /* 310 */
+    Tcl_ConditionNotify, /* 311 */
+    Tcl_ConditionWait, /* 312 */
+    Tcl_NumUtfChars, /* 313 */
+    Tcl_ReadChars, /* 314 */
+    Tcl_RestoreResult, /* 315 */
+    Tcl_SaveResult, /* 316 */
+    Tcl_SetSystemEncoding, /* 317 */
+    Tcl_SetVar2Ex, /* 318 */
+    Tcl_ThreadAlert, /* 319 */
+    Tcl_ThreadQueueEvent, /* 320 */
+    Tcl_UniCharAtIndex, /* 321 */
+    Tcl_UniCharToLower, /* 322 */
+    Tcl_UniCharToTitle, /* 323 */
+    Tcl_UniCharToUpper, /* 324 */
+    Tcl_UniCharToUtf, /* 325 */
+    Tcl_UtfAtIndex, /* 326 */
+    Tcl_UtfCharComplete, /* 327 */
+    Tcl_UtfBackslash, /* 328 */
+    Tcl_UtfFindFirst, /* 329 */
+    Tcl_UtfFindLast, /* 330 */
+    Tcl_UtfNext, /* 331 */
+    Tcl_UtfPrev, /* 332 */
+    Tcl_UtfToExternal, /* 333 */
+    Tcl_UtfToExternalDString, /* 334 */
+    Tcl_UtfToLower, /* 335 */
+    Tcl_UtfToTitle, /* 336 */
+    Tcl_UtfToUniChar, /* 337 */
+    Tcl_UtfToUpper, /* 338 */
+    Tcl_WriteChars, /* 339 */
+    Tcl_WriteObj, /* 340 */
 };
 
 TclStubs *tclStubsPtr = &tclStubs;
