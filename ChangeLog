@@ -596,7 +596,7 @@
 	* generic/tclBinary.c (DeleteScanNumberCache, ScanNumber): Made
 	the numeric scan-value cache have proper references to the objects
 	within it so strange patterns of writes won't cause references to
-	freed objects. [Bug 851747]
+	freed objects. Thanks to Paul Obermeir for the report.  [Bug 851747]
 
 2003-12-01  Miguel Sofer <msofer@users.sf.net>
 
