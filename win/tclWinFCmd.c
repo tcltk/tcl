@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFCmd.c,v 1.23 2002/03/08 01:45:52 mdejong Exp $
+ * RCS: @(#) $Id: tclWinFCmd.c,v 1.24 2002/03/08 23:46:27 hobbs Exp $
  */
 
 #include "tclWinInt.h"
@@ -472,7 +472,7 @@ DoCopyFile(
     
     __try {
 	if ((*tclWinProcs->copyFileProc)(nativeSrc, nativeDst, 0) != FALSE) {
-	    retval = -1;
+	    retval = TCL_OK;
 	}
     } __except (EXCEPTION_CONTINUE_EXECUTION) {}
 
