@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.49 2004/11/13 00:19:09 dgp Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.50 2004/11/18 19:22:12 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -624,7 +624,7 @@ Tcl_InterpObjCmd(clientData, interp, objc, objv)
 	    Tcl_Interp *slaveInterp;
 
 	    if (objc != 3 && objc != 4) {
-		Tcl_WrongNumArgs(interp, 2, objv, "path ?newlimit?");
+		Tcl_WrongNumArgs(interp, 2, objv, "path ?cmdPrefix?");
 		return TCL_ERROR;
 	    }
 	    slaveInterp = GetInterp(interp, objv[2]);
