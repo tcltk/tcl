@@ -7,10 +7,10 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# Copyright (c) 2001 Tomasoft Engineering.
+# Copyright (c) 2001-2002 David Gravereaux.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: rules.vc,v 1.6 2002/02/21 18:37:27 davygrvy Exp $
+# RCS: @(#) $Id: rules.vc,v 1.7 2002/03/27 21:15:43 davygrvy Exp $
 #------------------------------------------------------------------------------
 
 !ifndef _RULES_VC
@@ -31,19 +31,22 @@ MACHINE		= IX86
 
 !message ===============================================================================
 
+#----------------------------------------------------------
+# build the helper app we need to overcome nmake's limiting
+# environment.
+#----------------------------------------------------------
+
+!if !exist(nmakehlp.exe)
+!if [$(cc32) -nologo -ML nmakehlp.c -link -subsystem:console > nul]
+!endif
+!endif
 
 #----------------------------------------------------------
 # Test for compiler features
 #----------------------------------------------------------
 
-### Just display the compiler and linker versions to the output
-!if [$(cc32) 2>&1 | find "(R)"]
-!endif
-!if [$(link32) 2>&1 | find "(R)"]
-!endif
-
 ### test for optimizations
-!if [$(cc32) -Ox -nologo -c -Zs -TC -Fdtemp nul 2>&1 | find "D4002" > nul]
+!if [nmakehlp -c -Ox]
 !message *** Compiler has 'Optimizations'
 OPTIMIZING	= 1
 !else
@@ -51,16 +54,17 @@ OPTIMIZING	= 1
 OPTIMIZING	= 0
 !endif
 
-### test for pentium errata
 !if "$(MACHINE)" == "IX86"
-!if [$(cc32) -QI0f -nologo -c -Zs -TC -Fdtemp nul 2>&1 | find "D4002" > nul]
+### test for pentium errata
+!if [nmakehlp -c -QI0f]
 !message *** Compiler has 'Pentium 0x0f fix'
 PENT_0F_ERRATA	= 1
 !else
 !message *** Compiler doesn't have 'Pentium 0x0f fix'
 PENT_0F_ERRATA	= 0
 !endif
-!if [$(link32) -nologo -opt:nowin98 2>&1 | find "LNK1117" > nul]
+### test for -align:4096, when align:512 will do.
+!if [nmakehlp -l -opt:nowin98]
 !message *** Linker has 'Win98 alignment problem'
 ALIGN98_HACK	= 1
 !else
@@ -72,9 +76,9 @@ PENT_0F_ERRATA	= 0
 ALIGN98_HACK	= 0
 !endif
 
-### test for Itanium errata
 !if "$(MACHINE)" == "IA64"
-!if [$(cc32) -QIA64_Bx -nologo -c -Zs -TC -Fdtemp nul 2>&1 | find "D4002" > nul]
+### test for Itanium errata
+!if [nmakehlp -c -QIA64_Bx]
 !message *** Compiler has 'B-stepping errata workarounds'
 ITAN_B_ERRATA	= 1
 !else
@@ -85,16 +89,11 @@ ITAN_B_ERRATA	= 0
 ITAN_B_ERRATA	= 0
 !endif
 
-### Clean-up temp files after tests.
-!if [@for %d in (temp.idb temp.pdb) do @if exist %d del %d]
-!endif
-
-
 #----------------------------------------------------------
 # Decode the options requested.
 #----------------------------------------------------------
 
-!if "$(OPTS)" == "" || ![echo "$(OPTS)" | find /i "none" > nul]
+!if "$(OPTS)" == "" || [nmakehlp -f "$(OPTS)" "none"]
 STATIC_BUILD	= 0
 TCL_THREADS	= 0
 DEBUG		= 0
@@ -103,43 +102,43 @@ MSVCRT		= 0
 LOIMPACT	= 0
 TCL_LINKWITHEXTENSIONS	= 0
 !else
-!if ![echo $(OPTS) | find /i "static" > nul]
+!if [nmakehlp -f $(OPTS) "static"]
 !message *** Doing static
 STATIC_BUILD	= 1
 !else
 STATIC_BUILD	= 0
 !endif
-!if ![echo $(OPTS) | find /i "msvcrt" > nul]
+!if [nmakehlp -f $(OPTS) "msvcrt"]
 !message *** Doing msvcrt
 MSVCRT		= 1
 !else
 MSVCRT		= 0
 !endif
-!if ![echo $(OPTS) | find /i "linkexten" > nul]
+!if [nmakehlp -f $(OPTS) "linkexten"]
 !message *** Doing linkexten
 TCL_LINKWITHEXTENSIONS	= 1
 !else
 TCL_LINKWITHEXTENSIONS	= 0
 !endif
-!if ![echo $(OPTS) | find /i "threads" > nul]
+!if [nmakehlp -f $(OPTS) "threads"]
 !message *** Doing threads
 TCL_THREADS	= 1
 !else
 TCL_THREADS	= 0
 !endif
-!if ![echo $(OPTS) | find /i "symbols" > nul]
+!if [nmakehlp -f $(OPTS) "symbols"]
 !message *** Doing symbols
 DEBUG		= 1
 !else
 DEBUG		= 0
 !endif
-!if ![echo $(OPTS) | find /i "profile" > nul]
+!if [nmakehlp -f $(OPTS) "profile"]
 !message *** Doing profile
 PROFILE		= 1
 !else
 PROFILE		= 0
 !endif
-!if ![echo $(OPTS) | find /i "loimpact" > nul]
+!if [nmakehlp -f $(OPTS) "loimpact"]
 !message *** Doing loimpact
 LOIMPACT	= 1
 !else
@@ -213,17 +212,17 @@ OUT_DIR	    = $(TMP_DIR)
 # Decode the statistics requested.
 #----------------------------------------------------------
 
-!if "$(STATS)" == "" || ![echo "$(STATS)" | find /i "none" > nul]
+!if "$(STATS)" == "" || [nmakehlp -f "$(STATS)" "none"]
 TCL_MEM_DEBUG	    = 0
 TCL_COMPILE_DEBUG   = 0
 !else
-!if ![echo $(STATS) | find /i "memdbg" > nul]
+!if [nmakehlp -f $(STATS) "memdbg"]
 !message *** Doing memdbg
 TCL_MEM_DEBUG	    = 1
 !else
 TCL_MEM_DEBUG	    = 0
 !endif
-!if ![echo $(STATS) | find /i "compdbg" > nul]
+!if [nmakehlp -f $(STATS) "compdbg"]
 !message *** Doing compdbg
 TCL_COMPILE_DEBUG   = 1
 !else
@@ -259,6 +258,5 @@ OPTDEFINES	= $(OPTDEFINES) -DSTATIC_BUILD
 !message *** Output directory will be '$(OUT_DIR)'
 !message *** Suffix for binaries will be '$(SUFX)'
 !message *** Optional defines are '$(OPTDEFINES)'
-!message
 
 !endif

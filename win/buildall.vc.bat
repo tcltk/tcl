@@ -4,13 +4,13 @@
 ::  edit this (or make your own) for your needs and wants using
 ::  the instructions for calling makefile.vc found in makefile.vc
 ::
-::  RCS: @(#) $Id: buildall.vc.bat,v 1.3 2002/02/20 19:06:53 davygrvy Exp $
+::  RCS: @(#) $Id: buildall.vc.bat,v 1.4 2002/03/27 21:15:43 davygrvy Exp $
 
-echo Sit back and have a couple cups of coffee while this grinds through ;)
+echo Sit back and have a cup of coffee while this grinds through ;)
 echo You asked for *everything*, remember?
 echo.
 
-if "%MSVCDir%" == "" call C:\progra~1\micros~4\vc98\bin\vcvars32.bat
+if "%MSVCDir%" == "" call C:\dev\devstudio60\vc98\bin\vcvars32.bat
 set INSTALLDIR=C:\progra~1\tcl
 
 nmake -nologo -f makefile.vc release winhelp OPTS=none
@@ -28,7 +28,8 @@ if errorlevel 1 goto error
 goto end
 
 :error
-echo **BOOM!**
+echo *** BOOM! ***
 
 :end
+echo done!
 pause
