@@ -13,14 +13,12 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacLibrary.c,v 1.3 1999/08/15 04:03:52 jingham Exp $
+ * RCS: @(#) $Id: tclMacLibrary.c,v 1.4 2000/02/10 09:59:10 jingham Exp $
  */
 
 /*
  * Here is another place that we are using the old routine names...
  */
- 
-#define OLDROUTINENAMES 1
 
 #include <CodeFragments.h>
 #include <Errors.h>
@@ -171,9 +169,9 @@ OpenLibraryResource(
     OSErr err = noErr;
     
 
-    if (realInitBlkPtr->fragLocator.where == kOnDiskFlat) {
+    if (realInitBlkPtr->fragLocator.where == kDataForkCFragLocator) {
     	fileSpec = realInitBlkPtr->fragLocator.u.onDisk.fileSpec;
-    } else if (realInitBlkPtr->fragLocator.where == kOnDiskSegmented) {
+    } else if (realInitBlkPtr->fragLocator.where == kResourceCFragLocator) {
     	fileSpec = realInitBlkPtr->fragLocator.u.inSegs.fileSpec;
     } else {
     	err = resFNotFound;
