@@ -841,6 +841,10 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 
     do64bit_ok=no
     LDFLAGS_ORIG="$LDFLAGS"
+    # When ld needs options to work in 64-bit mode, put them in
+    # LDFLAGS_ARCH so they eventually end up in LDFLAGS even if [load]
+    # is disabled by the user. [Bug 1016796]
+    LDFLAGS_ARCH=""
     TCL_EXPORT_FILE_SUFFIX=""
     UNSHARED_LIB_SUFFIX=""
     TCL_TRIM_DOTS='`echo ${VERSION} | tr -d .`'
@@ -893,7 +897,7 @@ dnl AC_CHECK_TOOL(AR, ar)
 		else 
 		    do64bit_ok=yes
 		    CFLAGS="$CFLAGS -q64"
-		    LDFLAGS="$LDFLAGS -q64"
+		    LDFLAGS_ARCH="-q64"
 		    RANLIB="${RANLIB} -X64"
 		    AR="${AR} -X64"
 		    SHLIB_LD_FLAGS="-b64"
@@ -953,7 +957,7 @@ dnl AC_CHECK_TOOL(AR, ar)
 		else 
 		    do64bit_ok=yes
 		    CFLAGS="$CFLAGS -q64"
-		    LDFLAGS="$LDFLAGS -q64"
+		    LDFLAGS_ARCH="-q64"
 		    RANLIB="${RANLIB} -X64"
 		    AR="${AR} -X64"
 		    SHLIB_LD_FLAGS="-b64"
@@ -1074,7 +1078,7 @@ dnl AC_CHECK_TOOL(AR, ar)
 		else
 		    do64bit_ok=yes
 		    CFLAGS="$CFLAGS +DD64"
-		    LDFLAGS="$LDFLAGS +DD64"
+		    LDFLAGS_ARCH="+DD64"
 		fi
 	    fi
 	    ;;
@@ -1159,7 +1163,7 @@ dnl AC_CHECK_TOOL(AR, ar)
 	            do64bit_ok=yes
 	            SHLIB_LD="ld -64 -shared -rdata_shared"
 	            CFLAGS="$CFLAGS -64"
-	            LDFLAGS="$LDFLAGS -64"
+	            LDFLAGS_ARCH="-64"
 	        fi
 	    fi
 	    ;;
@@ -1561,10 +1565,10 @@ dnl AC_CHECK_TOOL(AR, ar)
 			    do64bit_ok=yes
 			    if test "$do64bitVIS" = "yes" ; then
 				CFLAGS="$CFLAGS -xarch=v9a"
-			    	LDFLAGS="$LDFLAGS -xarch=v9a"
+			    	LDFLAGS_ARCH="-xarch=v9a"
 			    else
 				CFLAGS="$CFLAGS -xarch=v9"
-			    	LDFLAGS="$LDFLAGS -xarch=v9"
+			    	LDFLAGS_ARCH="-xarch=v9"
 			    fi
 			fi
 		else
@@ -1734,6 +1738,7 @@ dnl AC_CHECK_TOOL(AR, ar)
 	LD_SEARCH_FLAGS=""
 	BUILD_DLTEST=""
     fi
+    LDFLAGS="$LDFLAGS $LDFLAGS_ARCH"
 
     # If we're running gcc, then change the C flags for compiling shared
     # libraries to the right flags for gcc, instead of those for the

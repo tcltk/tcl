@@ -1,3 +1,8 @@
+2004-11-16  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* unix/tcl.m4 (SC_CONFIG_CFLAGS): Stop architecture flags to 'ld'
+	from getting lost when [load] is disabled. [Bug 1016796]
+
 2004-11-16  Daniel Steffen  <das@users.sourceforge.net>
 
 	* generic/tcl.h:
