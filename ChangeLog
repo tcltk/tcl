@@ -1,7 +1,11 @@
 2000-11-24  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
+	* generic/tclExecute.c (TclExecuteByteCode): Logical negation "!"
+	  can now handle string booleans, provided those values are placed
+	  in variables.
+
 	* tests/expr.test (expr-13.17): Check that [expr {!$var}] can
-	negate the string-versions of booleans "yes", "false", etc.
+	  negate the string-versions of booleans "yes", "false", etc.
 
 	* library/tcltest/tcltest.tcl (getMatchingFiles,
 	  getMatchingDirectories):
