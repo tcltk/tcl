@@ -960,11 +960,26 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 		LD_LIBRARY_PATH_VAR="SHLIB_PATH"
 	    fi
 
+	    # Users may want PA-RISC 1.1/2.0 portable code - needs HP cc
+	    #EXTRA_CFLAGS="+DAportable"
+
 	    # Check to enable 64-bit flags for compiler/linker
 	    if test "$do64bit" = "yes" ; then
 		if test "$GCC" = "yes" ; then
-		    AC_MSG_WARN("64bit mode not supported with GCC on $system")
-		else 
+		    hpux_arch='`gcc -dumpmachine`'
+		    case $hpux_arch in
+			hppa64*)
+			    # 64-bit gcc in use.  Fix flags for GNU ld.
+			    do64bit_ok=yes
+			    SHLIB_LD="gcc -shared"
+			    SHLIB_LD_LIBS=""
+			    LD_SEARCH_FLAGS=''
+			    ;;
+			*)
+			    AC_MSG_WARN("64bit mode not supported with GCC on $system")
+			    ;;
+		    esac
+		else
 		    do64bit_ok=yes
 		    EXTRA_CFLAGS="+DA2.0W"
 		    LDFLAGS="+DA2.0W $LDFLAGS"
