@@ -6,7 +6,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclPlatDecls.h,v 1.10 2001/09/06 00:39:59 davygrvy Exp $
+ * RCS: @(#) $Id: tclPlatDecls.h,v 1.11 2001/09/06 00:41:58 davygrvy Exp $
  */
 
 #ifndef _TCLPLATDECLS
@@ -17,7 +17,7 @@
  *  of the core are matching against your project build for these
  *  public functions.  BE AWARE.
  */
-#if defined(__WIN32__) && (!defined(_TCHAR_DEFINED) && !defined(__TCHAR_DEFINED))
+#if defined(__WIN32__) && !defined(_TCHAR_DEFINED)
 #   include <tchar.h>
 #   ifndef _TCHAR_DEFINED
 	/* Borland seems to forget to set this. */
@@ -34,42 +34,42 @@
 
 #ifdef __WIN32__
 /* 0 */
-EXTERN(TCHAR *)		Tcl_WinUtfToTChar _ANSI_ARGS_((CONST char * str, 
+EXTERN TCHAR *		Tcl_WinUtfToTChar _ANSI_ARGS_((CONST char * str, 
 				int len, Tcl_DString * dsPtr));
 /* 1 */
-EXTERN(char *)		Tcl_WinTCharToUtf _ANSI_ARGS_((CONST TCHAR * str, 
+EXTERN char *		Tcl_WinTCharToUtf _ANSI_ARGS_((CONST TCHAR * str, 
 				int len, Tcl_DString * dsPtr));
 #endif /* __WIN32__ */
 #ifdef MAC_TCL
 /* 0 */
-EXTERN(void)		Tcl_MacSetEventProc _ANSI_ARGS_((
+EXTERN void		Tcl_MacSetEventProc _ANSI_ARGS_((
 				Tcl_MacConvertEventPtr procPtr));
 /* 1 */
-EXTERN(char *)		Tcl_MacConvertTextResource _ANSI_ARGS_((
+EXTERN char *		Tcl_MacConvertTextResource _ANSI_ARGS_((
 				Handle resource));
 /* 2 */
-EXTERN(int)		Tcl_MacEvalResource _ANSI_ARGS_((Tcl_Interp * interp, 
+EXTERN int		Tcl_MacEvalResource _ANSI_ARGS_((Tcl_Interp * interp, 
 				char * resourceName, int resourceNumber, 
 				char * fileName));
 /* 3 */
-EXTERN(Handle)		Tcl_MacFindResource _ANSI_ARGS_((Tcl_Interp * interp, 
+EXTERN Handle		Tcl_MacFindResource _ANSI_ARGS_((Tcl_Interp * interp, 
 				long resourceType, char * resourceName, 
 				int resourceNumber, char * resFileRef, 
 				int * releaseIt));
 /* 4 */
-EXTERN(int)		Tcl_GetOSTypeFromObj _ANSI_ARGS_((
+EXTERN int		Tcl_GetOSTypeFromObj _ANSI_ARGS_((
 				Tcl_Interp * interp, Tcl_Obj * objPtr, 
 				OSType * osTypePtr));
 /* 5 */
-EXTERN(void)		Tcl_SetOSTypeObj _ANSI_ARGS_((Tcl_Obj * objPtr, 
+EXTERN void		Tcl_SetOSTypeObj _ANSI_ARGS_((Tcl_Obj * objPtr, 
 				OSType osType));
 /* 6 */
-EXTERN(Tcl_Obj *)	Tcl_NewOSTypeObj _ANSI_ARGS_((OSType osType));
+EXTERN Tcl_Obj *	Tcl_NewOSTypeObj _ANSI_ARGS_((OSType osType));
 /* 7 */
-EXTERN(int)		strncasecmp _ANSI_ARGS_((CONST char * s1, 
+EXTERN int		strncasecmp _ANSI_ARGS_((CONST char * s1, 
 				CONST char * s2, size_t n));
 /* 8 */
-EXTERN(int)		strcasecmp _ANSI_ARGS_((CONST char * s1, 
+EXTERN int		strcasecmp _ANSI_ARGS_((CONST char * s1, 
 				CONST char * s2));
 #endif /* MAC_TCL */
 
