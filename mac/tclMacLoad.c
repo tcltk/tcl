@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacLoad.c,v 1.3 1999/04/16 00:47:20 stanton Exp $
+ * RCS: @(#) $Id: tclMacLoad.c,v 1.3.6.1 1999/10/30 11:07:33 hobbs Exp $
  */
 
 #include <CodeFragments.h>
@@ -135,7 +135,7 @@ TclpLoadFile(
     *(Tcl_UtfAtIndex(packageName, Tcl_NumUtfChars(packageName, -1) - 5)) = 0;
     
     native = Tcl_UtfToExternalDString(NULL, fileName, -1, &ds);
-    err = FSpLocationFromPath(strlen(fileName), fileName, &fileSpec);
+    err = FSpLocationFromPath(strlen(native), native, &fileSpec);
     Tcl_DStringFree(&ds);
     
     if (err != noErr) {

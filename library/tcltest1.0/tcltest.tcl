@@ -12,7 +12,7 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 # 
-# RCS: @(#) $Id: tcltest.tcl,v 1.9.4.3 1999/10/20 01:21:15 jenn Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.9.4.4 1999/10/30 11:07:05 hobbs Exp $
 
 package provide tcltest 1.0
 
@@ -1656,9 +1656,12 @@ proc ::tcltest::threadReap {} {
 	    foreach tid [testthread names] {
 		if {$tid != $::tcltest::mainThread} {
 		    catch {testthread send -async $tid {testthread exit}}
-		    update
 		}
 	    }
+	    ## Enter a bit a sleep to give the threads enough breathing
+	    ## room to kill themselves off, otherwise the end up with a
+	    ## massive queue of repeated events
+	    after 1
 	}
 	testthread errorproc ThreadError
 	return [llength [testthread names]]

@@ -8,7 +8,7 @@ Jim Ingham
 Cygnus Solutions
 jingham@cygnus.com
 
-RCS: @(#) $Id: README,v 1.8 1999/06/25 23:29:53 welch Exp $
+RCS: @(#) $Id: README,v 1.8.4.1 1999/10/30 11:07:32 hobbs Exp $
 
 1. Introduction
 ---------------
@@ -64,7 +64,7 @@ In order to compile Macintosh Tcl you must have the
 following items:
 
 	CodeWarrior Pro 2 or 3
-	Mac Tcl 8.1 (source)
+	Mac Tcl (source)
 	More Files 1.4.3
 
 The included project files should work fine.  However, for
