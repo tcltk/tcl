@@ -12,75 +12,75 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: lindex.test,v 1.10 2002/04/19 13:08:56 dkf Exp $
+# RCS: @(#) $Id: lindex.test,v 1.10.4.1 2004/02/07 05:48:03 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
     namespace import -force ::tcltest::*
 }
 
-set lindex lindex
 set minus -
+testConstraint testevalex [llength [info commands testevalex]]
 
 # Tests of Tcl_LindexObjCmd, NOT COMPILED
 
-test lindex-1.1 {wrong # args} {
-    list [catch {eval $lindex} result] $result
+test lindex-1.1 {wrong # args} testevalex {
+    list [catch {testevalex lindex} result] $result
 } "1 {wrong # args: should be \"lindex list ?index...?\"}"
 
 # Indices that are lists or convertible to lists
 
-test lindex-2.1 {empty index list} {
+test lindex-2.1 {empty index list} testevalex {
     set x {}
-    list [eval [list $lindex {a b c} $x]] [eval [list $lindex {a b c} $x]]
+    list [testevalex {lindex {a b c} $x}] [testevalex {lindex {a b c} $x}]
 } {{a b c} {a b c}}
 
-test lindex-2.2 {singleton index list} {
+test lindex-2.2 {singleton index list} testevalex {
     set x { 1 }
-    list [eval [list $lindex {a b c} $x]] [eval [list $lindex {a b c} $x]]
+    list [testevalex {lindex {a b c} $x}] [testevalex {lindex {a b c} $x}]
 } {b b}
 
-test lindex-2.3 {multiple indices in list} {
+test lindex-2.3 {multiple indices in list} testevalex {
     set x {1 2}
-    list [eval [list $lindex {{a b c} {d e f}} $x]] \
-	[eval [list $lindex {{a b c} {d e f}} $x]]
+    list [testevalex {lindex {{a b c} {d e f}} $x}] \
+	[testevalex {lindex {{a b c} {d e f}} $x}]
 } {f f}
 
-test lindex-2.4 {malformed index list} {
+test lindex-2.4 {malformed index list} testevalex {
     set x \{
-    list [catch { eval [list $lindex {a b c} $x] } result] $result
+    list [catch { testevalex {lindex {a b c} $x} } result] $result
 } {1 bad\ index\ \"\{\":\ must\ be\ integer\ or\ end?-integer?}
 
 # Indices that are integers or convertible to integers
 
-test lindex-3.1 {integer -1} {
+test lindex-3.1 {integer -1} testevalex {
     set x ${minus}1
-    list [eval [list $lindex {a b c} $x]] [eval [list $lindex {a b c} $x]]
+    list [testevalex {lindex {a b c} $x}] [testevalex {lindex {a b c} $x}]
 } {{} {}}
 
-test lindex-3.2 {integer 0} {
+test lindex-3.2 {integer 0} testevalex {
     set x [string range 00 0 0]
-    list [eval [list $lindex {a b c} $x]] [eval [list $lindex {a b c} $x]]
+    list [testevalex {lindex {a b c} $x}] [testevalex {lindex {a b c} $x}]
 } {a a}
 
-test lindex-3.3 {integer 2} {
+test lindex-3.3 {integer 2} testevalex {
     set x [string range 22 0 0]
-    list [eval [list $lindex {a b c} $x]] [eval [list $lindex {a b c} $x]]
+    list [testevalex {lindex {a b c} $x}] [testevalex {lindex {a b c} $x}]
 } {c c}
 
-test lindex-3.4 {integer 3} {
+test lindex-3.4 {integer 3} testevalex {
     set x [string range 33 0 0]
-    list [eval [list $lindex {a b c} $x]] [eval [list $lindex {a b c} $x]]
+    list [testevalex {lindex {a b c} $x}] [testevalex {lindex {a b c} $x}]
 } {{} {}}
 
-test lindex-3.5 {bad octal} {
+test lindex-3.5 {bad octal} testevalex {
     set x 08
-    list [catch { eval [list $lindex {a b c} $x] } result] $result
+    list [catch { testevalex {lindex {a b c} $x} } result] $result
 } "1 {bad index \"08\": must be integer or end?-integer? (looks like invalid octal number)}"
 
-test lindex-3.6 {bad octal} {
+test lindex-3.6 {bad octal} testevalex {
     set x -09
-    list [catch { eval [list $lindex {a b c} $x] } result] $result
+    list [catch { testevalex {lindex {a b c} $x} } result] $result
 } "1 {bad index \"-09\": must be integer or end?-integer? (looks like invalid octal number)}"
 
 test lindex-3.7 {indexes don't shimmer wide ints} {
@@ -90,122 +90,122 @@ test lindex-3.7 {indexes don't shimmer wide ints} {
 
 # Indices relative to end
 
-test lindex-4.1 {index = end} {
+test lindex-4.1 {index = end} testevalex {
     set x end
-    list [eval [list $lindex {a b c} $x]] [eval [list $lindex {a b c} $x]]
+    list [testevalex {lindex {a b c} $x}] [testevalex {lindex {a b c} $x}]
 } {c c}
 
-test lindex-4.2 {index = end--1} {
+test lindex-4.2 {index = end--1} testevalex {
     set x end--1
-    list [eval [list $lindex {a b c} $x]] [eval [list $lindex {a b c} $x]]
+    list [testevalex {lindex {a b c} $x}] [testevalex {lindex {a b c} $x}]
 } {{} {}}
 
-test lindex-4.3 {index = end-0} {
+test lindex-4.3 {index = end-0} testevalex {
     set x end-0
-    list [eval [list $lindex {a b c} $x]] [eval [list $lindex {a b c} $x]]
+    list [testevalex {lindex {a b c} $x}] [testevalex {lindex {a b c} $x}]
 } {c c}
 
-test lindex-4.4 {index = end-2} {
+test lindex-4.4 {index = end-2} testevalex {
     set x end-2
-    list [eval [list $lindex {a b c} $x]] [eval [list $lindex {a b c} $x]]
+    list [testevalex {lindex {a b c} $x}] [testevalex {lindex {a b c} $x}]
 } {a a}
 
-test lindex-4.5 {index = end-3} {
+test lindex-4.5 {index = end-3} testevalex {
     set x end-3
-    list [eval [list $lindex {a b c} $x]] [eval [list $lindex {a b c} $x]]
+    list [testevalex {lindex {a b c} $x}] [testevalex {lindex {a b c} $x}]
 } {{} {}}
 
-test lindex-4.6 {bad octal} {
+test lindex-4.6 {bad octal} testevalex {
     set x end-08
-    list [catch { eval [list $lindex {a b c} $x] } result] $result
+    list [catch { testevalex {lindex {a b c} $x} } result] $result
 } "1 {bad index \"end-08\": must be integer or end?-integer? (looks like invalid octal number)}"
 
-test lindex-4.7 {bad octal} {
+test lindex-4.7 {bad octal} testevalex {
     set x end--09
-    list [catch { eval [list $lindex {a b c} $x] } result] $result
+    list [catch { testevalex {lindex {a b c} $x} } result] $result
 } "1 {bad index \"end--09\": must be integer or end?-integer?}"
 
-test lindex-4.8 {bad integer, not octal} {
+test lindex-4.8 {bad integer, not octal} testevalex {
     set x end-0a2
-    list [catch { eval [list $lindex {a b c} $x] } result] $result
+    list [catch { testevalex {lindex {a b c} $x} } result] $result
 } "1 {bad index \"end-0a2\": must be integer or end?-integer?}"
 
-test lindex-4.9 {incomplete end} {
+test lindex-4.9 {incomplete end} testevalex {
     set x en
-    list [eval [list $lindex {a b c} $x]] [eval [list $lindex {a b c} $x]]
+    list [testevalex {lindex {a b c} $x}] [testevalex {lindex {a b c} $x}]
 } {c c}
 
-test lindex-4.10 {incomplete end-} {
+test lindex-4.10 {incomplete end-} testevalex {
     set x end-
-    list [catch { eval [list $lindex {a b c} $x] } result] $result
+    list [catch { testevalex {lindex {a b c} $x} } result] $result
 } "1 {bad index \"end-\": must be integer or end?-integer?}"
 
-test lindex-5.1 {bad second index} {
-    list [catch { eval [list $lindex {a b c} 0 0a2] } result] $result
+test lindex-5.1 {bad second index} testevalex {
+    list [catch { testevalex {lindex {a b c} 0 0a2} } result] $result
 } "1 {bad index \"0a2\": must be integer or end?-integer?}"
 
-test lindex-5.2 {good second index} {
-    eval [list $lindex {{a b c} {d e f} {g h i}} 1 2]
+test lindex-5.2 {good second index} testevalex {
+    testevalex {lindex {{a b c} {d e f} {g h i}} 1 2}
 } f
 
-test lindex-5.3 {three indices} {
-    eval [list $lindex {{{a b} {c d}} {{e f} {g h}}} 1 0 1]
+test lindex-5.3 {three indices} testevalex {
+    testevalex {lindex {{{a b} {c d}} {{e f} {g h}}} 1 0 1}
 } f
-test lindex-6.1 {error conditions in parsing list} {
-    list [catch {eval [list $lindex "a \{" 2]} msg] $msg
+test lindex-6.1 {error conditions in parsing list} testevalex {
+    list [catch {testevalex {lindex "a \{" 2}} msg] $msg
 } {1 {unmatched open brace in list}}
-test lindex-6.2 {error conditions in parsing list} {
-    list [catch {eval [list $lindex {a {b c}d e} 2]} msg] $msg
+test lindex-6.2 {error conditions in parsing list} testevalex {
+    list [catch {testevalex {lindex {a {b c}d e} 2}} msg] $msg
 } {1 {list element in braces followed by "d" instead of space}}
-test lindex-6.3 {error conditions in parsing list} {
-    list [catch {eval [list $lindex {a "b c"def ghi} 2]} msg] $msg
+test lindex-6.3 {error conditions in parsing list} testevalex {
+    list [catch {testevalex {lindex {a "b c"def ghi} 2}} msg] $msg
 } {1 {list element in quotes followed by "def" instead of space}}
 
-test lindex-7.1 {quoted elements} {
-    eval [list $lindex {a "b c" d} 1]
+test lindex-7.1 {quoted elements} testevalex {
+    testevalex {lindex {a "b c" d} 1}
 } {b c}
-test lindex-7.2 {quoted elements} {
-    eval [list $lindex {"{}" b c} 0]
+test lindex-7.2 {quoted elements} testevalex {
+    testevalex {lindex {"{}" b c} 0}
 } {{}}
-test lindex-7.3 {quoted elements} {
-    eval [list $lindex {ab "c d \" x" y} 1]
+test lindex-7.3 {quoted elements} testevalex {
+    testevalex {lindex {ab "c d \" x" y} 1}
 } {c d " x}
 test lindex-7.4 {quoted elements} {
     lindex {a b {c d "e} {f g"}} 2
 } {c d "e}
 
-test lindex-8.1 {data reuse} {
+test lindex-8.1 {data reuse} testevalex {
     set x 0
-    eval [list $lindex $x $x]
+    testevalex {lindex $x $x}
 } {0}
 
-test lindex-8.2 {data reuse} {
+test lindex-8.2 {data reuse} testevalex {
     set a 0
-    eval [list $lindex $a $a $a]
+    testevalex {lindex $a $a $a}
 } 0
-test lindex-8.3 {data reuse} {
+test lindex-8.3 {data reuse} testevalex {
     set a 1
-    eval [list $lindex $a $a $a]
+    testevalex {lindex $a $a $a}
 } {}
 
-test lindex-8.4 {data reuse} {
+test lindex-8.4 {data reuse} testevalex {
     set x [list 0 0]
-    eval [list $lindex $x $x]
+    testevalex {lindex $x $x}
 } {0}
 
-test lindex-8.5 {data reuse} {
+test lindex-8.5 {data reuse} testevalex {
     set x 0
-    eval [list $lindex $x [list $x $x]]
+    testevalex {lindex $x [list $x $x]}
 } {0}
 
-test lindex-8.6 {data reuse} {
+test lindex-8.6 {data reuse} testevalex {
     set x [list 1 1]
-    eval [list $lindex $x $x]
+    testevalex {lindex $x $x}
 } {}
 
-test lindex-8.7 {data reuse} {
+test lindex-8.7 {data reuse} testevalex {
     set x 1
-    eval [list lindex $x [list $x $x]]
+    testevalex {lindex $x [list $x $x]}
 } {}
 
 #----------------------------------------------------------------------
@@ -469,7 +469,6 @@ test lindex-16.7 {data reuse} {
     set result
 } {}
 
-catch { unset lindex}
 catch { unset minus }
 
 # cleanup

@@ -9,23 +9,27 @@
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
  * ----------------------------------------------------------------------------
- * RCS: @(#) $Id: nmakehlp.c,v 1.1 2002/03/27 21:15:43 davygrvy Exp $
+ * RCS: @(#) $Id: nmakehlp.c,v 1.1.6.1 2004/02/07 05:48:12 dgp Exp $
  * ----------------------------------------------------------------------------
  */
 #include <windows.h>
 #pragma comment (lib, "user32.lib")
 #pragma comment (lib, "kernel32.lib")
+#include <stdio.h>
 
 /* protos */
 int CheckForCompilerFeature (const char *option);
 int CheckForLinkerFeature (const char *option);
 int IsIn (const char *string, const char *substring);
+int GrepForDefine (const char *file, const char *string);
 DWORD WINAPI ReadFromPipe (LPVOID args);
 
 /* globals */
+#define CHUNK	25
+#define STATICBUFFERSIZE    1000
 typedef struct {
     HANDLE pipe;
-    char buffer[1000];
+    char buffer[STATICBUFFERSIZE];
 } pipeinfo;
 
 pipeinfo Out = {INVALID_HANDLE_VALUE, '\0'};
@@ -40,6 +44,13 @@ main (int argc, char *argv[])
     char msg[300];
     DWORD dwWritten;
     int chars;
+
+    /* make sure children (cl.exe and link.exe) are kept quiet. */
+    SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOOPENFILEERRORBOX);
+
+    /* Make sure the compiler and linker aren't effected by the outside world. */
+    SetEnvironmentVariable("CL", "");
+    SetEnvironmentVariable("LINK", "");
 
     if (argc > 1 && *argv[1] == '-') {
 	switch (*(argv[1]+1)) {
@@ -74,6 +85,15 @@ main (int argc, char *argv[])
 	    } else {
 		return IsIn(argv[2], argv[3]);
 	    }
+	case 'g':
+	    if (argc == 2) {
+		chars = wsprintf(msg, "usage: %s -g <file> <string>\n"
+		    "grep for a #define\n"
+		    "exitcodes: integer of the found string (no decimals)\n", argv[0]);
+		WriteFile(GetStdHandle(STD_ERROR_HANDLE), msg, chars, &dwWritten, NULL);
+		return 2;
+	    }
+	    return GrepForDefine(argv[2], argv[3]);
 	}
     }
     chars = wsprintf(msg, "usage: %s -c|-l|-f ...\n"
@@ -122,11 +142,11 @@ CheckForCompilerFeature (const char *option)
 	    0, TRUE, DUPLICATE_SAME_ACCESS | DUPLICATE_CLOSE_SOURCE);
 
     /* base command line */
-    strcpy(cmdline, "cl.exe -nologo -c -TC -Fdtemp ");
+    strcpy(cmdline, "cl.exe -nologo -c -TC -Zs -X ");
     /* append our option for testing */
     strcat(cmdline, option);
     /* filename to compile, which exists, but is nothing and empty. */
-    strcat(cmdline, " nul");
+    strcat(cmdline, " .\\nul");
 
     ok = CreateProcess(
 	    NULL,	    /* Module name. */
@@ -165,10 +185,6 @@ CheckForCompilerFeature (const char *option)
     /* block waiting for the process to end. */
     WaitForSingleObject(pi.hProcess, INFINITE);
     CloseHandle(pi.hProcess);
-
-    /* clean up temporary files before returning */
-    DeleteFile("temp.idb");
-    DeleteFile("temp.pdb");
 
     /* wait for our pipe to get done reading, should it be a little slow. */
     WaitForMultipleObjects(2, pipeThreads, TRUE, 500);
@@ -220,8 +236,6 @@ CheckForLinkerFeature (const char *option)
     strcpy(cmdline, "link.exe -nologo ");
     /* append our option for testing */
     strcat(cmdline, option);
-    /* filename to compile, which exists, but is nothing and empty. */
-//    strcat(cmdline, " nul");
 
     ok = CreateProcess(
 	    NULL,	    /* Module name. */
@@ -279,7 +293,11 @@ ReadFromPipe (LPVOID args)
     BOOL ok;
 
 again:
-    ok = ReadFile(pi->pipe, lastBuf, 25, &dwRead, 0L);
+    if (lastBuf - pi->buffer + CHUNK > STATICBUFFERSIZE) {
+	CloseHandle(pi->pipe);
+	return -1;
+    }
+    ok = ReadFile(pi->pipe, lastBuf, CHUNK, &dwRead, 0L);
     if (!ok || dwRead == 0) {
 	CloseHandle(pi->pipe);
 	return 0;
@@ -294,4 +312,44 @@ int
 IsIn (const char *string, const char *substring)
 {
     return (strstr(string, substring) != NULL);
+}
+
+/*
+ *  Find a specified #define by name.
+ *
+ *  If the line is '#define TCL_VERSION "8.5"', it returns
+ *  85 as the result.
+ */
+
+int
+GrepForDefine (const char *file, const char *string)
+{
+    FILE *f;
+    char s1[51], s2[51], s3[51];
+    int r = 0;
+    double d1;
+
+    f = fopen(file, "rt");
+    if (f == NULL) {
+	return 0;
+    }
+
+    do {
+	r = fscanf(f, "%50s", s1);
+	if (r == 1 && !strcmp(s1, "#define")) {
+	    /* get next two words */
+	    r = fscanf(f, "%50s %50s", s2, s3);
+	    if (r != 2) continue;
+	    /* is the first word what we're looking for? */
+	    if (!strcmp(s2, string)) {
+		fclose(f);
+		/* add 1 past first double quote char. "8.5" */
+		d1 = atof(s3 + 1);		  /*    8.5  */
+		return ((int) (d1 * 10) & 0xFF);  /*    85   */
+	    }
+	}
+    } while (!feof(f));
+
+    fclose(f);
+    return 0;
 }

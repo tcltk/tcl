@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclConfig.c,v 1.3.2.1 2003/06/18 19:48:00 dgp Exp $
+ * RCS: @(#) $Id: tclConfig.c,v 1.3.2.2 2004/02/07 05:48:00 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -189,26 +189,23 @@ Tcl_RegisterConfig (interp, pkgName, configuration, valEncoding)
  */
 
 static int
-QueryConfigObjCmd (clientData, interp, objc, objv)
+QueryConfigObjCmd(clientData, interp, objc, objv)
      ClientData clientData;
      Tcl_Interp *interp;
      int objc;
-     struct Tcl_Obj * CONST * objv;
+     struct Tcl_Obj * CONST *objv;
 {
-    Tcl_Obj* pkgName = (Tcl_Obj*) clientData;
-    Tcl_Obj* pDB;
-    Tcl_Obj* pkgDict;
-    Tcl_Obj* val;
+    Tcl_Obj *pkgName = (Tcl_Obj*) clientData;
+    Tcl_Obj *pDB, *pkgDict, *val;
     Tcl_DictSearch s;
     int n, i, res, done, index;
-    Tcl_Obj* key;
-    Tcl_Obj** vals;
+    Tcl_Obj *key, **vals;
 
     static CONST char *subcmdStrings[] = {
 	"get", "list", NULL
     };
     enum subcmds {
-      CFG_GET, CFG_LIST
+	CFG_GET, CFG_LIST
     };
 
     if ((objc < 2) || (objc > 3)) {
@@ -220,61 +217,55 @@ QueryConfigObjCmd (clientData, interp, objc, objv)
 	return TCL_ERROR;
     }
 
-    pDB = GetConfigDict (interp);
-    res = Tcl_DictObjGet (interp, pDB, pkgName, &pkgDict);
-    if ((res != TCL_OK) || (pkgDict == NULL)) {
-        /* Maybe a panic is better, because the package data has to be present */
-        Tcl_SetObjResult (interp, Tcl_NewStringObj ("package not known", -1));
+    pDB = GetConfigDict(interp);
+    res = Tcl_DictObjGet(interp, pDB, pkgName, &pkgDict);
+    if (res!=TCL_OK || pkgDict==NULL) {
+        /* Maybe a Tcl_Panic is better, because the package data has to be present */
+        Tcl_SetObjResult(interp, Tcl_NewStringObj("package not known", -1));
 	return TCL_ERROR;
     }
 
     switch ((enum subcmds) index) {
-        case CFG_GET:
-	    if (objc != 3) {
-	        Tcl_WrongNumArgs (interp, 0, NULL, "get key");
-		return TCL_ERROR;
-	    }
+    case CFG_GET:
+	if (objc != 3) {
+	    Tcl_WrongNumArgs(interp, 0, NULL, "get key");
+	    return TCL_ERROR;
+	}
 
-	    res = Tcl_DictObjGet (interp, pkgDict, objv [2], &val);
-	    if ((res != TCL_OK) || (val == NULL)) {
-	        Tcl_SetObjResult (interp, Tcl_NewStringObj ("key not known", -1));
-		return TCL_ERROR;
-	    }
+	res = Tcl_DictObjGet(interp, pkgDict, objv [2], &val);
+	if (res!=TCL_OK || val==NULL) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj("key not known", -1));
+	    return TCL_ERROR;
+	}
 
-	    Tcl_SetObjResult (interp, val);
+	Tcl_SetObjResult(interp, val);
+	return TCL_OK;
+
+    case CFG_LIST:
+	if (objc != 2) {
+	    Tcl_WrongNumArgs(interp, 0, NULL, "list");
+	    return TCL_ERROR;
+	}
+
+	Tcl_DictObjSize(interp, pkgDict, &n);
+	if (n == 0) {
+	    Tcl_SetObjResult(interp, Tcl_NewListObj(0, NULL));
 	    return TCL_OK;
+	}
 
+	vals = (Tcl_Obj**) ckalloc(n * sizeof(Tcl_Obj*));
 
-        case CFG_LIST:
-	    if (objc != 2) {
-	        Tcl_WrongNumArgs (interp, 0, NULL, "list");
-		return TCL_ERROR;
-	    }
+	for (i=0, Tcl_DictObjFirst(interp, pkgDict, &s, &key, NULL, &done);
+		!done; Tcl_DictObjNext(&s, &key, NULL, &done), i++) {
+	    vals[i] = key;
+	}
 
-	    Tcl_DictObjSize (interp, pkgDict, &n);
-	    if (n == 0) {
-	        Tcl_SetObjResult (interp, Tcl_NewListObj (0, NULL));
-	        return TCL_OK;
-	    }
+	Tcl_SetObjResult(interp, TclNewListObjDirect(n, vals));
+	return TCL_OK;
 
-	    vals = (Tcl_Obj**) ckalloc (n * sizeof (Tcl_Obj*));
-
-	    for (i = 0, Tcl_DictObjFirst(interp, pkgDict, &s, &key, NULL, &done);
-		 !done;
-		 Tcl_DictObjNext (&s, &key, NULL, &done), i++) {
-	        if (done) break;
-		vals [i] = key;
-	    }
-	    Tcl_DictObjDone (&s);
-
-	    Tcl_SetObjResult (interp, Tcl_NewListObj (n, vals));
-	    ckfree ((char*) vals);
-
-	    return TCL_OK;
-
-        default:
-	    Tcl_Panic ("QueryConfigObjCmd: Unknown subcommand to 'pkgconfig'. This can't happen");
-	    break;
+    default:
+	Tcl_Panic("QueryConfigObjCmd: Unknown subcommand to 'pkgconfig'. This can't happen");
+	break;
     }
     return TCL_ERROR;
 }

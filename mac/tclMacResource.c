@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacResource.c,v 1.15.2.2 2003/10/16 02:28:03 dgp Exp $
+ * RCS: @(#) $Id: tclMacResource.c,v 1.15.2.3 2004/02/07 05:48:02 dgp Exp $
  */
 
 #include <Errors.h>
@@ -478,7 +478,14 @@ resourceRef? resourceType");
 		    } else {
 			objPtr = Tcl_NewIntObj(id);
 		    }
-		    ReleaseResource(resource);
+		    /*
+		     * If the Master Pointer of the  returned handle is
+		     * null, then resource was not in memory, and it is
+		     * safe to release it. Otherwise, it is not.
+		     */
+		    if (*resource == NULL) {
+			ReleaseResource(resource);
+		    }
 		    result = Tcl_ListObjAppendElement(interp, resultPtr,
 			    objPtr);
 		    if (result != TCL_OK) {
@@ -540,7 +547,7 @@ resourceRef? resourceType");
 			macPermision = fsRdWrShPerm;
 			break;
 		    default:
-			panic("Tcl_ResourceObjCmd: invalid mode value");
+			Tcl_Panic("Tcl_ResourceObjCmd: invalid mode value");
 		    break;
 		}
 	    } else {
@@ -784,7 +791,7 @@ resourceRef? resourceType");
 	        if (resource == NULL) {
 	            resource = NewHandleSys(length);
 	            if (resource == NULL) {
-	                panic("could not allocate memory to write resource");
+	                Tcl_Panic("could not allocate memory to write resource");
 	            }
 	        }
 	        HLock(resource);
@@ -855,7 +862,7 @@ resourceRef? resourceType");
                      
                     SetHandleSize(resource, length);
                     if ( MemError() != noErr ) {
-                        panic("could not allocate memory to write resource");
+                        Tcl_Panic("could not allocate memory to write resource");
                     }
 
                     HLock(resource);
@@ -909,7 +916,7 @@ resourceRef? resourceType");
 
 	    return result;
 	default:
-	    panic("Tcl_GetIndexFromObj returned unrecognized option");
+	    Tcl_Panic("Tcl_GetIndexFromObj returned unrecognized option");
 	    return TCL_ERROR;	/* Should never be reached. */
     }
 }
@@ -2035,7 +2042,7 @@ TclMacRegisterResourceFork(
 
     nameHashPtr = Tcl_CreateHashEntry(&nameTable, resourceId, &new);
     if (!new) {
-	panic("resource id has repeated itself");
+	Tcl_Panic("resource id has repeated itself");
     }
     
     resourceRef = (OpenResourceFork *) ckalloc(sizeof(OpenResourceFork));
@@ -2138,7 +2145,7 @@ TclMacUnRegisterResourceFork(
 	}
     }
     if (!match) {
-        panic("the resource Fork List is out of synch!");
+	Tcl_Panic("the resource Fork List is out of synch!");
     }
     
     Tcl_ListObjReplace(NULL, resourceForkList, index, 1, 0, NULL);
@@ -2146,7 +2153,7 @@ TclMacUnRegisterResourceFork(
     resourceHashPtr = Tcl_FindHashEntry(&resourceTable, (char *) fileRef);
     
     if (resourceHashPtr == NULL) {
-	panic("Resource & Name tables are out of synch in resource command.");
+	Tcl_Panic("Resource & Name tables are out of synch in resource command.");
     }
     ckfree(Tcl_GetHashValue(resourceHashPtr));
     Tcl_DeleteHashEntry(resourceHashPtr);

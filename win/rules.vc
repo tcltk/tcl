@@ -7,10 +7,10 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# Copyright (c) 2001-2002 David Gravereaux.
+# Copyright (c) 2001-2003 David Gravereaux.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: rules.vc,v 1.12.2.2 2003/08/07 21:36:05 dgp Exp $
+# RCS: @(#) $Id: rules.vc,v 1.12.2.3 2004/02/07 05:48:12 dgp Exp $
 #------------------------------------------------------------------------------
 
 !ifndef _RULES_VC
@@ -266,6 +266,29 @@ TCL_COMPILE_DEBUG   = 0
 
 
 #----------------------------------------------------------
+# Decode the checks requested.
+#----------------------------------------------------------
+
+!if "$(CHECKS)" == "" || [nmakehlp -f "$(CHECKS)" "none"]
+TCL_NO_DEPRECATED	    = 0
+FULLWARNINGS		    = 0
+!else
+!if [nmakehlp -f $(CHECKS) "nodep"]
+!message *** Doing nodep check
+TCL_NO_DEPRECATED	    = 1
+!else
+TCL_NO_DEPRECATED	    = 0
+!endif
+!if [nmakehlp -f $(CHECKS) "fullwarn"]
+!message *** Doing full warnings check
+FULLWARNINGS		    = 1
+!else
+FULLWARNINGS		    = 0
+!endif
+!endif
+
+
+#----------------------------------------------------------
 # Set our defines now armed with our options.
 #----------------------------------------------------------
 
@@ -285,6 +308,9 @@ OPTDEFINES	= $(OPTDEFINES) -DUSE_THREAD_ALLOC=1
 !endif
 !if $(STATIC_BUILD)
 OPTDEFINES	= $(OPTDEFINES) -DSTATIC_BUILD
+!endif
+!if $(TCL_NO_DEPRECATED)
+OPTDEFINES	= $(OPTDEFINES) -DTCL_NO_DEPRECATED
 !endif
 
 !if $(DEBUG)
@@ -308,6 +334,7 @@ OPTDEFINES	= $(OPTDEFINES) -DTCL_CFG_DO64BIT
 
 !if !defined(TCLDIR)
 !if exist("$(_INSTALLDIR)\include\tcl.h")
+TCLH		= "$(_INSTALLDIR)\include\tcl.h"
 TCLINSTALL	= 1
 _TCLDIR		= $(_INSTALLDIR)
 !else
@@ -318,8 +345,10 @@ Don't know where tcl.h is.  Set the TCLDIR macro.
 !else
 _TCLDIR	= $(TCLDIR:/=\)
 !if exist("$(_TCLDIR)\include\tcl.h")
+TCLH		= "$(_TCLDIR)\include\tcl.h"
 TCLINSTALL	= 1
 !elseif exist("$(_TCLDIR)\generic\tcl.h")
+TCLH		= "$(_TCLDIR)\generic\tcl.h"
 TCLINSTALL	= 0
 !else
 MSG =^
@@ -328,18 +357,42 @@ Don't know where tcl.h is.  The TCLDIR macro doesn't appear correct.
 !endif
 !endif
 
-### TODO: add a command to nmakehlp.c to grep for Tcl's version from tcl.h.
-### Because nmake can't return a string, we'll need to play games with return
-### codes.  It might look something like this:
-#!if [nmakehlp -g $(TCL.H)] == 81
-#TCL_DOTVERSION	= 8.1
-#!elseif [nmakehlp -g $(TCL.H)] == 82
-#TCL_DOTVERSION	= 8.2
-#...
-#!endif
+#----------------------------------------------------------
+# Get the version from the header file.  Try all possibles
+# even though some aren't fully valid.
+#----------------------------------------------------------
 
+!if [nmakehlp -g $(TCLH) TCL_VERSION] == 76
+TCL_DOTVERSION	= 7.6
+!elseif [nmakehlp -g $(TCLH) TCL_VERSION] == 80
+TCL_DOTVERSION	= 8.0
+!elseif [nmakehlp -g $(TCLH) TCL_VERSION] == 81
+TCL_DOTVERSION	= 8.1
+!elseif [nmakehlp -g $(TCLH) TCL_VERSION] == 82
+TCL_DOTVERSION	= 8.2
+!elseif [nmakehlp -g $(TCLH) TCL_VERSION] == 83
+TCL_DOTVERSION	= 8.3
+!elseif [nmakehlp -g $(TCLH) TCL_VERSION] == 84
+TCL_DOTVERSION	= 8.4
+!elseif [nmakehlp -g $(TCLH) TCL_VERSION] == 85
 TCL_DOTVERSION	= 8.5
+!elseif [nmakehlp -g $(TCLH) TCL_VERSION] == 86
+TCL_DOTVERSION	= 8.6
+!elseif [nmakehlp -g $(TCLH) TCL_VERSION] == 90
+TCL_DOTVERSION	= 9.0
+!elseif [nmakehlp -g $(TCLH) TCL_VERSION] == 0
+MSG =^
+Can't get version string from $(TCLH)
+!error $(MSG)
+!endif
+
 TCL_VERSION	= $(TCL_DOTVERSION:.=)
+
+!if $(TCL_VERSION) < 81
+TCL_DOES_STUBS	= 0
+!else
+TCL_DOES_STUBS	= 1
+!endif
 
 !if $(TCLINSTALL)
 TCLSH		= "$(_INSTALLDIR)\bin\tclsh$(TCL_VERSION)$(SUFX).exe"

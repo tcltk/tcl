@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.97.2.4 2003/10/16 02:28:01 dgp Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.97.2.5 2004/02/07 05:47:59 dgp Exp $
 
 library tcl
 
@@ -1639,14 +1639,14 @@ declare 462 generic {
     int Tcl_FSEqualPaths(Tcl_Obj* firstPtr, Tcl_Obj* secondPtr)
 }
 declare 463 generic {
-    Tcl_Obj* Tcl_FSGetNormalizedPath(Tcl_Interp *interp, Tcl_Obj* pathObjPtr)
+    Tcl_Obj* Tcl_FSGetNormalizedPath(Tcl_Interp *interp, Tcl_Obj* pathPtr)
 }
 declare 464 generic {
-    Tcl_Obj* Tcl_FSJoinToPath(Tcl_Obj *basePtr, int objc,
+    Tcl_Obj* Tcl_FSJoinToPath(Tcl_Obj *pathPtr, int objc,
 	    Tcl_Obj *CONST objv[])
 }
 declare 465 generic {
-    ClientData Tcl_FSGetInternalRep(Tcl_Obj* pathObjPtr,
+    ClientData Tcl_FSGetInternalRep(Tcl_Obj* pathPtr,
 	    Tcl_Filesystem *fsPtr)
 }
 declare 466 generic {
@@ -1660,13 +1660,13 @@ declare 468 generic {
 	    ClientData clientData)
 }
 declare 469 generic {
-    CONST char* Tcl_FSGetNativePath(Tcl_Obj* pathObjPtr)
+    CONST char* Tcl_FSGetNativePath(Tcl_Obj* pathPtr)
 }
 declare 470 generic {
-    Tcl_Obj* Tcl_FSFileSystemInfo(Tcl_Obj* pathObjPtr)
+    Tcl_Obj* Tcl_FSFileSystemInfo(Tcl_Obj* pathPtr)
 }
 declare 471 generic {
-    Tcl_Obj* Tcl_FSPathSeparator(Tcl_Obj* pathObjPtr)
+    Tcl_Obj* Tcl_FSPathSeparator(Tcl_Obj* pathPtr)
 }
 declare 472 generic {
     Tcl_Obj* Tcl_FSListVolumes(void)
@@ -1685,10 +1685,10 @@ declare 476 generic {
 	    Tcl_Obj* pathPtr)
 }
 declare 477 generic {
-    Tcl_Filesystem* Tcl_FSGetFileSystemForPath(Tcl_Obj* pathObjPtr)
+    Tcl_Filesystem* Tcl_FSGetFileSystemForPath(Tcl_Obj* pathPtr)
 }
 declare 478 generic {
-    Tcl_PathType Tcl_FSGetPathType(Tcl_Obj *pathObjPtr)
+    Tcl_PathType Tcl_FSGetPathType(Tcl_Obj *pathPtr)
 }
 # New function due to TIP#49
 declare 479 generic {

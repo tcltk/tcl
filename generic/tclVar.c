@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.73.2.2 2003/07/07 20:23:38 dgp Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.73.2.3 2004/02/07 05:48:01 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -603,8 +603,12 @@ TclObjLookupVar(interp, part1Ptr, part2, flags, msg, createPart1, createPart2,
  *   - Bug #696893 - variable is either proc-local or in the current
  *     namespace; never follow the second (global) resolution path 
  *   - Bug #631741 - do not use special namespace or interp resolvers
+ *
+ * It should also not collide with the (deprecated) TCL_PARSE_PART1 flag
+ * (Bug #835020)
  */
-#define LOOKUP_FOR_UPVAR 0x400
+
+#define LOOKUP_FOR_UPVAR 0x40000
 
 /*
  *----------------------------------------------------------------------
@@ -3341,7 +3345,7 @@ ObjMakeUpvar(interp, framePtr, otherP1Ptr, otherP2, otherFlags, myName, myFlags,
 
     if (index >= 0) {
 	if (!varFramePtr->isProcCallFrame) {
-	    panic("ObjMakeUpvar called with an index outside from a proc.\n");
+	    Tcl_Panic("ObjMakeUpvar called with an index outside from a proc.\n");
 	}
 	varPtr = &(varFramePtr->compiledLocals[index]);
     } else {
@@ -4682,7 +4686,7 @@ UpdateParsedVarName(objPtr)
 	 * This is a parsed scalar name: what is it
 	 * doing here?
 	 */
-	panic("ERROR: scalar parsedVarName without a string rep.\n");
+	Tcl_Panic("ERROR: scalar parsedVarName without a string rep.\n");
     }
     part1 = Tcl_GetStringFromObj(arrayPtr, &len1);
     len2 = strlen(part2);

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.22.2.1 2003/10/16 02:28:02 dgp Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.22.2.2 2004/02/07 05:48:01 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -285,7 +285,7 @@ InterpInfoDeleteProc(clientData, interp)
 
     masterPtr = &interpInfoPtr->master;
     if (masterPtr->slaveTable.numEntries != 0) {
-	panic("InterpInfoDeleteProc: still exist commands");
+	Tcl_Panic("InterpInfoDeleteProc: still exist commands");
     }
     Tcl_DeleteHashTable(&masterPtr->slaveTable);
 
@@ -323,7 +323,7 @@ InterpInfoDeleteProc(clientData, interp)
      */
 
     if (slavePtr->aliasTable.numEntries != 0) {
-	panic("InterpInfoDeleteProc: still exist aliases");
+	Tcl_Panic("InterpInfoDeleteProc: still exist aliases");
     }
     Tcl_DeleteHashTable(&slavePtr->aliasTable);
 
@@ -1887,7 +1887,7 @@ SlaveObjCmd(clientData, interp, objc, objv)
     
     slaveInterp = (Tcl_Interp *) clientData;
     if (slaveInterp == NULL) {
-	panic("SlaveObjCmd: interpreter has been deleted");
+	Tcl_Panic("SlaveObjCmd: interpreter has been deleted");
     }
 
     if (objc < 2) {

@@ -16,7 +16,7 @@
 # Contributions from Don Porter, NIST, 2002.  (not subject to US copyright)
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.tcl,v 1.82.2.1 2003/08/07 21:36:03 dgp Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.82.2.2 2004/02/07 05:48:02 dgp Exp $
 
 package require Tcl 8.3		;# uses [glob -directory]
 namespace eval tcltest {
@@ -24,7 +24,7 @@ namespace eval tcltest {
     # When the version number changes, be sure to update the pkgIndex.tcl file,
     # and the install directory in the Makefiles.  When the minor version
     # changes (new feature) be sure to update the man page as well.
-    variable Version 2.2.4
+    variable Version 2.2.5
 
     # Compatibility support for dumb variables defined in tcltest 1
     # Do not use these.  Call [package provide Tcl] and [info patchlevel]
@@ -1419,7 +1419,7 @@ proc tcltest::ProcessFlags {flagArray} {
 	RemoveAutoConfigureTraces
     } else {
 	set args $flagArray
-	while {[llength $args] && [catch {eval configure $args} msg]} {
+	while {[llength $args]>1 && [catch {eval configure $args} msg]} {
 
 	    # Something went wrong parsing $args for tcltest options
 	    # Check whether the problem is "unknown option"
@@ -1449,6 +1449,11 @@ proc tcltest::ProcessFlags {flagArray} {
 		set args [lrange $args 2 end]
 	    }
 	    set args [lrange $args 2 end]
+	}
+	if {[llength $args] == 1} {
+	    puts [errorChannel] \
+		    "missing value for option [lindex $args 0]"
+	    exit 1
 	}
     }
 
@@ -2474,10 +2479,10 @@ proc tcltest::cleanupTests {{calledFromAllFile 0}} {
 		puts "rename core file (> 1)"
 		puts [outputChannel] "produced core file! \
 			Moving file to: \
-			[file join [temporaryDirectory] core-$name]"
+			[file join [temporaryDirectory] core-$testFileName]"
 		catch {file rename -force \
 			[file join [workingDirectory] core] \
-			[file join [temporaryDirectory] core-$name]
+			[file join [temporaryDirectory] core-$testFileName]
 		} msg
 		if {[string length $msg] > 0} {
 		    PrintError "Problem renaming file: $msg"

@@ -9,12 +9,15 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: dict.test,v 1.2.2.2 2003/10/16 02:28:03 dgp Exp $
+# RCS: @(#) $Id: dict.test,v 1.2.2.3 2004/02/07 05:48:02 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
     namespace import -force ::tcltest::*
 }
+
+# Used for constraining memory leak tests
+testConstraint memory [llength [info commands memory]]
 
 # Procedure to help check the contents of a dictionary.  Note that we
 # can't just compare the string version because the order of the
@@ -64,11 +67,11 @@ test dict-2.5 {dict create command} {
 } {1 {wrong # args: should be "dict create ?key value ...?"}}
 test dict-2.6 {dict create command - initialse refcount field!} {
     # Bug 715751 will show up in memory debuggers like purify
-    for {set i 0} {$i<10} {incr i} { 
-	set dictv [dict create a 0] 
-	set share [dict values $dictv] 
-	list [dict incr dictv a] 
-    } 
+    for {set i 0} {$i<10} {incr i} {
+	set dictv [dict create a 0]
+	set share [dict values $dictv]
+	list [dict incr dictv a]
+    }
 } {}
 test dict-2.7 {dict create command - #-quoting in string rep} {
     dict create # #comment
@@ -136,6 +139,7 @@ test dict-4.8 {dict replace command} {
     list [catch {dict replace [list a a a] a b} msg] $msg
 } {1 {missing value to go with key}}
 test dict-4.9 {dict replace command} {dict replace [list a a] a b} {a b}
+test dict-4.10 {dict replace command} {dict replace [list a a] a b a c} {a c}
 
 test dict-5.1 {dict remove command} {dict remove {a b c d} a} {c d}
 test dict-5.2 {dict remove command} {dict remove {a b c d} c} {a b}
@@ -200,9 +204,7 @@ test dict-9.1 {dict exists command} {dict exists {a b} a} 1
 test dict-9.2 {dict exists command} {dict exists {a b} b} 0
 test dict-9.3 {dict exists command} {dict exists {a {b c}} a b} 1
 test dict-9.4 {dict exists command} {dict exists {a {b c}} a c} 0
-test dict-9.5 {dict exists command} {
-    list [catch {dict exists {a {b c}} b c} msg] $msg
-} {1 {key "b" not known in dictionary}}
+test dict-9.5 {dict exists command} {dict exists {a {b c}} b c} 0
 test dict-9.6 {dict exists command} {
     list [catch {dict exists {a {b c d}} a c} msg] $msg
 } {1 {missing value to go with key}}
@@ -710,6 +712,156 @@ test dict-17.22 {dict filter command} {
 test dict-17.23 {dict filter command} {
     list [catch {dict filter a key *} msg] $msg
 } {1 {missing value to go with key}}
+
+test dict-18.1 {dict-list relationship} {
+    -body {
+        # Test that any internal conversion between list and dict
+        # does not change the object
+        set l [list 1 2 3 4 5 6 7 8 9 0 q w e r t y]
+        dict values $l
+        set l
+    }
+    -result {1 2 3 4 5 6 7 8 9 0 q w e r t y}
+}
+test dict-18.2 {dict-list relationship} {
+    -body {
+        # Test that the dictionary is a valid list
+        set d [dict create "abc def" 0 "a\{b" 1 "c\}d" 2]
+        for {set t 0} {$t < 5} {incr t} {
+            llength $d
+            dict lappend d "abc def" "\}\{"
+            dict append  d "a\{b" "\}"
+            dict incr    d "c\}d" 1
+        }
+        llength $d
+    }
+    -result 6
+}
+
+# This is a test for a specific bug.
+# It shows a bad ref counter when running with memdebug on.
+test dict-19.1 {memory bug} -setup {
+    proc xxx {} {
+        set successors [dict create x {c d}]
+        dict set successors x a b
+        dict get $successors x
+    }
+} -body {
+    xxx
+} -cleanup {
+    rename xxx {}
+} -result [dict create c d a b]
+test dict-19.2 {dict: testing for leaks} -setup {
+    proc getbytes {} {
+        set lines [split [memory info] "\n"]
+        lindex [lindex $lines 3] 3
+    }
+    # This test is made to stress object reference management
+    proc stress {} {
+        # A shared invalid dictinary
+        set apa {a {}b c d}
+        set bepa $apa
+        catch {dict replace $apa e f}
+        catch {dict remove  $apa c d}
+        catch {dict incr    apa  a 5}
+        catch {dict lappend apa  a 5}
+        catch {dict append  apa  a 5}
+        catch {dict set     apa  a 5}
+        catch {dict unset   apa  a}
+
+        # A shared valid dictionary, invalid incr
+        set apa {a b c d}
+        set bepa $apa
+        catch {dict incr bepa a 5}
+
+        # An error during write to an unshared object, incr
+        set apa {a 1 b 2}
+        set bepa [lrange $apa 0 end]
+        trace add variable bepa write {error hej}
+        catch {dict incr bepa a 5}
+        unset bepa
+
+        # An error during write to a shared object, incr
+        set apa {a 1 b 2}
+        set bepa $apa
+        trace add variable bepa write {error hej}
+        catch {dict incr bepa a 5}
+        unset bepa
+
+        # A shared valid dictionary, invalid lappend
+        set apa [list a {{}b} c d]
+        set bepa $apa
+        catch {dict lappend bepa a 5}
+
+        # An error during write to an unshared object, lappend
+        set apa {a 1 b 2}
+        set bepa [lrange $apa 0 end]
+        trace add variable bepa write {error hej}
+        catch {dict lappend bepa a 5}
+        unset bepa
+
+        # An error during write to a shared object, lappend
+        set apa {a 1 b 2}
+        set bepa $apa
+        trace add variable bepa write {error hej}
+        catch {dict lappend bepa a 5}
+        unset bepa
+
+        # An error during write to an unshared object, append
+        set apa {a 1 b 2}
+        set bepa [lrange $apa 0 end]
+        trace add variable bepa write {error hej}
+        catch {dict append bepa a 5}
+        unset bepa
+
+        # An error during write to a shared object, append
+        set apa {a 1 b 2}
+        set bepa $apa
+        trace add variable bepa write {error hej}
+        catch {dict append bepa a 5}
+        unset bepa
+
+        # An error during write to an unshared object, set
+        set apa {a 1 b 2}
+        set bepa [lrange $apa 0 end]
+        trace add variable bepa write {error hej}
+        catch {dict set bepa a 5}
+        unset bepa
+
+        # An error during write to a shared object, set
+        set apa {a 1 b 2}
+        set bepa $apa
+        trace add variable bepa write {error hej}
+        catch {dict set bepa a 5}
+        unset bepa
+
+        # An error during write to an unshared object, unset
+        set apa {a 1 b 2}
+        set bepa [lrange $apa 0 end]
+        trace add variable bepa write {error hej}
+        catch {dict unset bepa a}
+        unset bepa
+
+        # An error during write to a shared object, unset
+        set apa {a 1 b 2}
+        set bepa $apa
+        trace add variable bepa write {error hej}
+        catch {dict unset bepa a}
+        unset bepa
+    }
+} -constraints memory -body {
+    set end [getbytes]
+    for {set i 0} {$i < 5} {incr i} {
+        stress
+        set tmp $end
+        set end [getbytes]
+    }
+    expr {$end - $tmp}
+} -cleanup {
+    unset -nocomplain end i tmp
+    rename getbytes {}
+    rename stress {}
+} -result 0
 
 # cleanup
 ::tcltest::cleanupTests

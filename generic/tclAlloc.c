@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclAlloc.c,v 1.16 2002/04/23 17:03:34 hobbs Exp $
+ * RCS: @(#) $Id: tclAlloc.c,v 1.16.4.1 2004/02/07 05:48:00 dgp Exp $
  */
 
 /*
@@ -140,8 +140,8 @@ static	unsigned int nmalloc[NBUCKETS+1];
 #endif
 
 #if defined(DEBUG) || defined(RCHECK)
-#define	ASSERT(p)   if (!(p)) panic(# p)
-#define RANGE_ASSERT(p) if (!(p)) panic(# p)
+#define	ASSERT(p)   if (!(p)) Tcl_Panic(# p)
+#define RANGE_ASSERT(p) if (!(p)) Tcl_Panic(# p)
 #else
 #define	ASSERT(p)
 #define RANGE_ASSERT(p)

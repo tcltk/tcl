@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFile.c,v 1.32.4.1 2003/10/16 02:28:03 dgp Exp $
+ * RCS: @(#) $Id: tclUnixFile.c,v 1.32.4.2 2004/02/07 05:48:09 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -210,6 +210,11 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
     CONST char *native;
     Tcl_Obj *fileNamePtr;
 
+    if (types != NULL && types->type == TCL_GLOB_TYPE_MOUNT) {
+	/* The native filesystem never adds mounts */
+	return TCL_OK;
+    }
+
     fileNamePtr = Tcl_FSGetTranslatedPath(interp, pathPtr);
     if (fileNamePtr == NULL) {
 	return TCL_ERROR;
@@ -267,6 +272,7 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 		|| !S_ISDIR(statBuf.st_mode)) {
 	    Tcl_DStringFree(&dsOrig);
 	    Tcl_DStringFree(&ds);
+	    Tcl_DecrRefCount(fileNamePtr);
 	    return TCL_OK;
 	}
 
@@ -570,10 +576,58 @@ TclpObjLstat(pathPtr, bufPtr)
 /*
  *---------------------------------------------------------------------------
  *
- * TclpObjGetCwd --
+ * TclpGetNativeCwd --
  *
  *	This function replaces the library version of getcwd().
  *
+ * Results:
+ *	The input and output are filesystem paths in native form.  The
+ *	result is either the given clientData, if the working directory
+ *	hasn't changed, or a new clientData (owned by our caller),
+ *	giving the new native path, or NULL if the current directory
+ *	could not be determined.  If NULL is returned, the caller can
+ *	examine the standard posix error codes to determine the cause of
+ *	the problem.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ClientData
+TclpGetNativeCwd(clientData)
+    ClientData clientData;
+{
+    char buffer[MAXPATHLEN+1];
+
+#ifdef USEGETWD
+    if (getwd(buffer) == NULL) {			/* INTL: Native. */
+#else
+    if (getcwd(buffer, MAXPATHLEN + 1) == NULL) {	/* INTL: Native. */
+#endif
+	return NULL;
+    }
+    if ((clientData != NULL) && strcmp(buffer, (CONST char*)clientData) == 0) {
+	/* No change to pwd */
+	return clientData;
+    } else {
+	char *newCd = (char *) ckalloc((unsigned) 
+				       (strlen(buffer) + 1));
+	strcpy(newCd, buffer);
+	return (ClientData) newCd;
+    }
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * TclpGetCwd --
+ *
+ *	This function replaces the library version of getcwd().
+ *      (Obsolete function, only retained for old extensions which
+ *      may call it directly).
+ *      
  * Results:
  *	The result is a pointer to a string specifying the current
  *	directory, or NULL if the current directory could not be
@@ -588,22 +642,6 @@ TclpObjLstat(pathPtr, bufPtr)
  *----------------------------------------------------------------------
  */
 
-Tcl_Obj* 
-TclpObjGetCwd(interp)
-    Tcl_Interp *interp;
-{
-    Tcl_DString ds;
-    if (TclpGetCwd(interp, &ds) != NULL) {
-	Tcl_Obj *cwdPtr = Tcl_NewStringObj(Tcl_DStringValue(&ds), -1);
-	Tcl_IncrRefCount(cwdPtr);
-	Tcl_DStringFree(&ds);
-	return cwdPtr;
-    } else {
-	return NULL;
-    }
-}
-
-/* Older string based version */
 CONST char *
 TclpGetCwd(interp, bufferPtr)
     Tcl_Interp *interp;		/* If non-NULL, used for error reporting. */
@@ -714,19 +752,55 @@ TclpObjLink(pathPtr, toPtr, linkAction)
 {
     if (toPtr != NULL) {
 	CONST char *src = Tcl_FSGetNativePath(pathPtr);
-	CONST char *target = Tcl_FSGetNativePath(toPtr);
+	CONST char *target = NULL;
+	if (src == NULL) return NULL;
 	
-	if (src == NULL || target == NULL) {
-	    return NULL;
+	/* 
+	 * If we're making a symbolic link and the path is relative,
+	 * then we must check whether it exists _relative_ to the
+	 * directory in which the src is found (not relative to the
+	 * current cwd which is just not relevant in this case).
+	 * 
+	 * If we're making a hard link, then a relative path is
+	 * just converted to absolute relative to the cwd.
+	 */
+	if ((linkAction & TCL_CREATE_SYMBOLIC_LINK)
+	  && (Tcl_FSGetPathType(toPtr) == TCL_PATH_RELATIVE)) {
+	    Tcl_Obj *dirPtr, *absPtr;
+	    dirPtr = TclPathPart(NULL, pathPtr, TCL_PATH_DIRNAME);
+	    if (dirPtr == NULL) {
+	        return NULL;
+	    }
+	    absPtr = Tcl_FSJoinToPath(dirPtr, 1, &toPtr);
+	    Tcl_IncrRefCount(absPtr);
+	    if (Tcl_FSAccess(absPtr, F_OK) == -1) {
+		Tcl_DecrRefCount(absPtr);
+		Tcl_DecrRefCount(dirPtr);
+		/* target doesn't exist */
+		errno = ENOENT;
+	        return NULL;
+	    }
+	    /* 
+	     * Target exists; we'll construct the relative
+	     * path we want below.
+	     */
+	    Tcl_DecrRefCount(absPtr);
+	    Tcl_DecrRefCount(dirPtr);
+	} else {
+	    target = Tcl_FSGetNativePath(toPtr);
+	    if (access(target, F_OK) == -1) {
+		/* target doesn't exist */
+		errno = ENOENT;
+		return NULL;
+	    }
+	    if (target == NULL) {
+		return NULL;
+	    }
 	}
+	
 	if (access(src, F_OK) != -1) {
 	    /* src exists */
 	    errno = EEXIST;
-	    return NULL;
-	}
-	if (access(target, F_OK) == -1) {
-	    /* target doesn't exist */
-	    errno = ENOENT;
 	    return NULL;
 	}
 	/* 
@@ -734,9 +808,30 @@ TclpObjLink(pathPtr, toPtr, linkAction)
 	 * create these.
 	 */
 	if (linkAction & TCL_CREATE_SYMBOLIC_LINK) {
-	    if (symlink(target, src) != 0) return NULL;
+	    int targetLen;
+	    Tcl_DString ds;
+	    Tcl_Obj *transPtr;
+	    /* 
+	     * Now we don't want to link to the absolute, normalized path.
+	     * Relative links are quite acceptable (but links to ~user
+	     * are not -- these must be expanded first).
+	     */
+	    transPtr = Tcl_FSGetTranslatedPath(NULL, toPtr);
+	    if (transPtr == NULL) {
+		return NULL;
+	    }
+	    target = Tcl_GetStringFromObj(transPtr, &targetLen);
+	    target = Tcl_UtfToExternalDString(NULL, target, targetLen, &ds);
+	    Tcl_DecrRefCount(transPtr);
+	    
+	    if (symlink(target, src) != 0) {
+	        toPtr = NULL;
+	    }
+	    Tcl_DStringFree(&ds);
 	} else if (linkAction & TCL_CREATE_HARD_LINK) {
-	    if (link(target, src) != 0) return NULL;
+	    if (link(target, src) != 0) {
+		return NULL;
+	    }
 	} else {
 	    errno = ENODEV;
 	    return NULL;
@@ -794,8 +889,8 @@ TclpObjLink(pathPtr, toPtr, linkAction)
  *---------------------------------------------------------------------------
  */
 Tcl_Obj*
-TclpFilesystemPathType(pathObjPtr)
-    Tcl_Obj* pathObjPtr;
+TclpFilesystemPathType(pathPtr)
+    Tcl_Obj* pathPtr;
 {
     /* All native paths are of the same type */
     return NULL;

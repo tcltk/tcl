@@ -7,13 +7,20 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclWinInit.c,v 1.41.2.1 2003/08/07 21:36:05 dgp Exp $
+ * RCS: @(#) $Id: tclWinInit.c,v 1.41.2.2 2004/02/07 05:48:12 dgp Exp $
  */
 
 #include "tclWinInt.h"
 #include <winnt.h>
 #include <winbase.h>
 #include <lmcons.h>
+
+/*
+ * GetUserName() is found in advapi32.dll
+ */
+#ifdef _MSC_VER
+#   pragma comment(lib, "advapi32.lib")
+#endif
 
 /*
  * The following declaration is a workaround for some Microsoft brain damage.
@@ -197,7 +204,7 @@ TclpInitLibraryPath(path)
      */
 
     sprintf(installLib, "lib/tcl%s", TCL_VERSION);
-    sprintf(developLib, "../tcl%s/library", TCL_PATCH_LEVEL);
+    sprintf(developLib, "tcl%s/library", TCL_PATCH_LEVEL);
 
     /*
      * Look for the library relative to default encoding dir.
@@ -252,7 +259,25 @@ TclpInitLibraryPath(path)
      */
 
     if (path != NULL) {
-	Tcl_SplitPath(path, &pathc, &pathv);
+	int i, origc;
+	CONST char **origv;
+
+	Tcl_SplitPath(path, &origc, &origv);
+	pathc = 0;
+	pathv = (CONST char **) ckalloc((unsigned int)(origc * sizeof(char *)));
+	for (i=0; i< origc; i++) {
+	    if (origv[i][0] == '.') {
+		if (strcmp(origv[i], ".") == 0) {
+		    /* do nothing */
+		} else if (strcmp(origv[i], "..") == 0) {
+		    pathc--;
+		} else {
+		    pathv[pathc++] = origv[i];
+		}
+	    } else {
+		pathv[pathc++] = origv[i];
+	    }
+	}
 	if (pathc > 2) {
 	    str = pathv[pathc - 2];
 	    pathv[pathc - 2] = installLib;
@@ -307,6 +332,7 @@ TclpInitLibraryPath(path)
 	    Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
 	    Tcl_DStringFree(&ds);
 	}
+	ckfree((char *) origv);
 	ckfree((char *) pathv);
     }
 

@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: safe.tcl,v 1.10.2.1 2003/08/07 21:36:01 dgp Exp $
+# RCS: @(#) $Id: safe.tcl,v 1.10.2.2 2004/02/07 05:48:02 dgp Exp $
 
 #
 # The implementation is based on namespaces. These naming conventions
@@ -525,7 +525,7 @@ proc ::safe::interpDelete {slave} {
 		# remove the hook now, otherwise if the hook
 		# calls us somehow, we'll loop
 		Unset $hookname
-		if {[catch {eval $hook [list $slave]} err]} {
+		if {[catch {{expand}$hook $slave} err]} {
 		    Log $slave "Delete hook error ($err)"
 		}
 	    }
@@ -636,15 +636,15 @@ proc ::safe::setLogCmd {args} {
     }
     # set/get values
     proc Set {args} {
-	eval [list Toplevel set] $args
+	Toplevel set {expand}$args
     }
     # lappend on toplevel vars
     proc Lappend {args} {
-	eval [list Toplevel lappend] $args
+	Toplevel lappend {expand}$args
     }
     # unset a var/token (currently just an global level eval)
     proc Unset {args} {
-	eval [list Toplevel unset] $args
+	Toplevel unset {expand}$args
     }
     # test existance 
     proc Exists {varname} {
@@ -691,7 +691,7 @@ proc ::safe::setLogCmd {args} {
     proc Log {slave msg {type ERROR}} {
 	variable Log
 	if {[info exists Log] && [llength $Log]} {
-	    eval $Log [list "$type for slave $slave : $msg"]
+	    {expand}$Log "$type for slave $slave : $msg"
 	}
     }
 
@@ -856,7 +856,7 @@ proc ::safe::setLogCmd {args} {
     proc Subset {slave command okpat args} {
 	set subcommand [lindex $args 0]
 	if {[regexp $okpat $subcommand]} {
-	    return [eval [list $command $subcommand] [lrange $args 1 end]]
+	    return [$command $subcommand {expand}[lrange $args 1 end]]
 	}
 	set msg "not allowed to invoke subcommand $subcommand of $command"
 	Log $slave $msg
@@ -891,8 +891,8 @@ proc ::safe::setLogCmd {args} {
 	set subcommand [lindex $args 0]
 
 	if {[regexp $okpat $subcommand]} {
-	    return [eval ::interp invokehidden $slave encoding $subcommand \
-		    [lrange $args 1 end]]
+	    return [::interp invokehidden $slave encoding $subcommand \
+		    {expand}[lrange $args 1 end]]
 	}
 
 	if {[string match $subcommand system]} {

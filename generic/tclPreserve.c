@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPreserve.c,v 1.3.36.1 2003/08/07 21:36:00 dgp Exp $
+ * RCS: @(#) $Id: tclPreserve.c,v 1.3.36.2 2004/02/07 05:48:01 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -251,7 +251,7 @@ Tcl_Release(clientData)
      * Reference not found.  This is a bug in the caller.
      */
 
-    panic("Tcl_Release couldn't find reference for 0x%x", clientData);
+    Tcl_Panic("Tcl_Release couldn't find reference for 0x%x", clientData);
 }
 
 /*
@@ -292,7 +292,7 @@ Tcl_EventuallyFree(clientData, freeProc)
 	    continue;
 	}
 	if (refPtr->mustFree) {
-	    panic("Tcl_EventuallyFree called twice for 0x%x\n", clientData);
+	    Tcl_Panic("Tcl_EventuallyFree called twice for 0x%x\n", clientData);
         }
         refPtr->mustFree = 1;
 	refPtr->freeProc = freeProc;
@@ -387,10 +387,10 @@ TclHandleFree(handle)
     handlePtr = (HandleStruct *) handle;
 #ifdef TCL_MEM_DEBUG
     if (handlePtr->refCount == 0x61616161) {
-	panic("using previously disposed TclHandle %x", handlePtr);
+	Tcl_Panic("using previously disposed TclHandle %x", handlePtr);
     }
     if (handlePtr->ptr2 != handlePtr->ptr) {
-	panic("someone has changed the block referenced by the handle %x\nfrom %x to %x",
+	Tcl_Panic("someone has changed the block referenced by the handle %x\nfrom %x to %x",
 		handlePtr, handlePtr->ptr2, handlePtr->ptr);
     }
 #endif
@@ -430,11 +430,11 @@ TclHandlePreserve(handle)
     handlePtr = (HandleStruct *) handle;
 #ifdef TCL_MEM_DEBUG
     if (handlePtr->refCount == 0x61616161) {
-	panic("using previously disposed TclHandle %x", handlePtr);
+	Tcl_Panic("using previously disposed TclHandle %x", handlePtr);
     }
     if ((handlePtr->ptr != NULL)
 	    && (handlePtr->ptr != handlePtr->ptr2)) {
-	panic("someone has changed the block referenced by the handle %x\nfrom %x to %x",
+	Tcl_Panic("someone has changed the block referenced by the handle %x\nfrom %x to %x",
 		handlePtr, handlePtr->ptr2, handlePtr->ptr);
     }
 #endif
@@ -472,11 +472,11 @@ TclHandleRelease(handle)
     handlePtr = (HandleStruct *) handle;
 #ifdef TCL_MEM_DEBUG
     if (handlePtr->refCount == 0x61616161) {
-	panic("using previously disposed TclHandle %x", handlePtr);
+	Tcl_Panic("using previously disposed TclHandle %x", handlePtr);
     }
     if ((handlePtr->ptr != NULL)
 	    && (handlePtr->ptr != handlePtr->ptr2)) {
-	panic("someone has changed the block referenced by the handle %x\nfrom %x to %x",
+	Tcl_Panic("someone has changed the block referenced by the handle %x\nfrom %x to %x",
 		handlePtr, handlePtr->ptr2, handlePtr->ptr);
     }
 #endif

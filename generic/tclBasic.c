@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.5 2003/10/16 02:28:01 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.6 2004/02/07 05:48:00 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -114,6 +114,8 @@ static CmdInfo builtInCmds[] = {
         (CompileProc *) NULL,		1},
     {"lappend",		(Tcl_CmdProc *) NULL,	Tcl_LappendObjCmd,
         TclCompileLappendCmd,		1},
+    {"lassign",		(Tcl_CmdProc *) NULL,	Tcl_LassignObjCmd,
+        TclCompileLassignCmd,		1},
     {"lindex",		(Tcl_CmdProc *) NULL,	Tcl_LindexObjCmd,
         TclCompileLindexCmd,		1},
     {"linsert",		(Tcl_CmdProc *) NULL,	Tcl_LinsertObjCmd,
@@ -293,7 +295,7 @@ Tcl_CreateInterp()
 
     if (sizeof(Tcl_CallFrame) != sizeof(CallFrame)) {
 	/*NOTREACHED*/
-        panic("Tcl_CallFrame and CallFrame are not the same size");
+        Tcl_Panic("Tcl_CallFrame and CallFrame are not the same size");
     }
 
     /*
@@ -371,7 +373,7 @@ Tcl_CreateInterp()
     iPtr->globalNsPtr = (Namespace *) Tcl_CreateNamespace(interp, "",
 	    (ClientData) NULL, (Tcl_NamespaceDeleteProc *) NULL);
     if (iPtr->globalNsPtr == NULL) {
-        panic("Tcl_CreateInterp: can't create global namespace");
+        Tcl_Panic("Tcl_CreateInterp: can't create global namespace");
     }
 
     /*
@@ -445,7 +447,7 @@ Tcl_CreateInterp()
 	if ((cmdInfoPtr->proc == (Tcl_CmdProc *) NULL)
 	        && (cmdInfoPtr->objProc == (Tcl_ObjCmdProc *) NULL)
 	        && (cmdInfoPtr->compileProc == (CompileProc *) NULL)) {
-	    panic("Tcl_CreateInterp: builtin command with NULL string and object command procs and a NULL compile proc\n");
+	    Tcl_Panic("Tcl_CreateInterp: builtin command with NULL string and object command procs and a NULL compile proc\n");
 	}
 	
 	hPtr = Tcl_CreateHashEntry(&iPtr->globalNsPtr->cmdTable,
@@ -493,7 +495,7 @@ Tcl_CreateInterp()
 	hPtr = Tcl_FindHashEntry(&iPtr->mathFuncTable,
 		builtinFuncPtr->name);
 	if (hPtr == NULL) {
-	    panic("Tcl_CreateInterp: Tcl_CreateMathFunc incorrectly registered '%s'", builtinFuncPtr->name);
+	    Tcl_Panic("Tcl_CreateInterp: Tcl_CreateMathFunc incorrectly registered '%s'", builtinFuncPtr->name);
 	    return NULL;
 	}
 	mathFuncPtr = (MathFunc *) Tcl_GetHashValue(hPtr);
@@ -975,7 +977,7 @@ DeleteInterpProc(interp)
      */
     
     if (iPtr->numLevels > 0) {
-        panic("DeleteInterpProc called with active evals");
+        Tcl_Panic("DeleteInterpProc called with active evals");
     }
 
     /*
@@ -984,7 +986,7 @@ DeleteInterpProc(interp)
      */
 
     if (!(iPtr->flags & DELETED)) {
-        panic("DeleteInterpProc called on interpreter not marked deleted");
+        Tcl_Panic("DeleteInterpProc called on interpreter not marked deleted");
     }
 
     TclHandleFree(iPtr->handle);
@@ -1364,7 +1366,7 @@ Tcl_ExposeCommand(interp, hiddenCmdToken, cmdName)
     if ( cmdPtr->nsPtr != iPtr->globalNsPtr ) {
 	/* 
 	 * This case is theoritically impossible,
-	 * we might rather panic() than 'nicely' erroring out ?
+	 * we might rather Tcl_Panic() than 'nicely' erroring out ?
 	 */
         Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
                 "trying to expose a non global command name space command",

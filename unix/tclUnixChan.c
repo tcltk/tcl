@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.42 2003/02/21 02:36:27 hobbs Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.42.4.1 2004/02/07 05:48:04 dgp Exp $
  */
 
 #include "tclInt.h"	/* Internal definitions for Tcl. */
@@ -1777,7 +1777,7 @@ TclpOpenFileChannel(interp, pathPtr, mode, permissions)
 	    /*
 	     * This may occurr if modeString was "", for example.
 	     */
-	    panic("TclpOpenFileChannel: invalid mode value");
+	    Tcl_Panic("TclpOpenFileChannel: invalid mode value");
 	    return NULL;
     }
 
@@ -1785,6 +1785,9 @@ TclpOpenFileChannel(interp, pathPtr, mode, permissions)
     if (native == NULL) {
 	return NULL;
     }
+#ifdef DJGPP
+	mode |= O_BINARY;
+#endif		
     fd = TclOSopen(native, mode, permissions);
 #ifdef SUPPORTS_TTY
     ctl_tty = (strcmp (native, "/dev/tty") == 0);
@@ -1889,8 +1892,8 @@ Tcl_MakeFileChannel(handle, mode)
 #ifdef DEPRECATED
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 #endif /* DEPRECATED */
-    int socketType = 0;
-    socklen_t argLength = sizeof(int);
+    struct sockaddr sockaddr;
+    socklen_t sockaddrLen = sizeof(sockaddr);
 
     if (mode == 0) {
 	return NULL;
@@ -1911,6 +1914,8 @@ Tcl_MakeFileChannel(handle, mode)
     }
 #endif /* DEPRECATED */
 
+    sockaddr.sa_family = AF_UNSPEC;
+
 #ifdef SUPPORTS_TTY
     if (isatty(fd)) {
 	fsPtr = TtyInit(fd, 0);
@@ -1918,8 +1923,9 @@ Tcl_MakeFileChannel(handle, mode)
 	sprintf(channelName, "serial%d", fd);
     } else
 #endif /* SUPPORTS_TTY */
-    if (getsockopt(fd, SOL_SOCKET, SO_TYPE, (VOID *)&socketType,
-		   &argLength) == 0  &&	 socketType == SOCK_STREAM) {
+    if (getsockname(fd, (struct sockaddr *)&sockaddr, &sockaddrLen) == 0
+            && sockaddrLen > 0
+            && sockaddr.sa_family == AF_INET) {
 	return MakeTcpClientChannelMode((ClientData) fd, mode);
     } else {
 	channelTypePtr = &fileChannelType;
@@ -2996,7 +3002,7 @@ TclpGetDefaultStdChannel(type)
 	    bufMode = "none";
 	    break;
 	default:
-	    panic("TclGetDefaultStdChannel: Unexpected channel type");
+	    Tcl_Panic("TclGetDefaultStdChannel: Unexpected channel type");
 	    break;
     }
 
@@ -3188,7 +3194,7 @@ TclUnixWaitForFile(fd, mask, timeout)
      */
 
     if (fd >= FD_SETSIZE) {
-	panic("TclWaitForFile can't handle file id %d", fd);
+	Tcl_Panic("TclWaitForFile can't handle file id %d", fd);
     }
     memset((VOID *) readyMasks, 0, 3*MASK_SIZE*sizeof(fd_mask));
     index = fd/(NBBY*sizeof(fd_mask));
@@ -3317,8 +3323,9 @@ TclpCutFileChannel(chan)
      * local data in each thread.
      */
 
-    if (!removed)
-        panic("file info ptr not on thread channel list");
+    if (!removed) {
+        Tcl_Panic("file info ptr not on thread channel list");
+    }
 
 #endif /* DEPRECATED */
 }

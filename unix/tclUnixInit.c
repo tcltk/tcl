@@ -7,7 +7,7 @@
  * Copyright (c) 1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclUnixInit.c,v 1.35 2003/05/13 08:40:31 das Exp $
+ * RCS: @(#) $Id: tclUnixInit.c,v 1.35.2.1 2004/02/07 05:48:10 dgp Exp $
  */
 
 #if defined(HAVE_CFBUNDLE)
@@ -167,7 +167,11 @@ static int Tcl_MacOSXGetLibraryPath(Tcl_Interp *interp, int maxPathLen, char *tc
 void
 TclpInitPlatform()
 {
+#ifdef DJGPP
+    tclPlatform = TCL_PLATFORM_WINDOWS;
+#else		
     tclPlatform = TCL_PLATFORM_UNIX;
+#endif
 
     /*
      * The code below causes SIGPIPE (broken pipe) errors to
@@ -338,7 +342,25 @@ CONST char *path;		/* Path to the executable in native
       */
 
     if (path != NULL) {
-	Tcl_SplitPath(path, &pathc, &pathv);
+	int i, origc;
+	CONST char **origv;
+
+	Tcl_SplitPath(path, &origc, &origv);
+	pathc = 0;
+	pathv = (CONST char **) ckalloc((unsigned int)(origc * sizeof(char *)));
+	for (i=0; i< origc; i++) {
+	    if (origv[i][0] == '.') {
+		if (strcmp(origv[i], ".") == 0) {
+		    /* do nothing */
+		} else if (strcmp(origv[i], "..") == 0) {
+		    pathc--;
+		} else {
+		    pathv[pathc++] = origv[i];
+		}
+	    } else {
+		pathv[pathc++] = origv[i];
+	    }
+	}
 	if (pathc > 2) {
 	    str = pathv[pathc - 2];
 	    pathv[pathc - 2] = installLib;
@@ -393,6 +415,7 @@ CONST char *path;		/* Path to the executable in native
 	    Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
 	    Tcl_DStringFree(&ds);
 	}
+	ckfree((char *) origv);
 	ckfree((char *) pathv);
     }
 

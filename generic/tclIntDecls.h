@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.50.2.4 2003/09/05 23:10:05 dgp Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.50.2.5 2004/02/07 05:48:01 dgp Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -124,13 +124,7 @@ EXTERN void		TclDeleteCompiledLocalVars _ANSI_ARGS_((
 EXTERN void		TclDeleteVars _ANSI_ARGS_((Interp * iPtr, 
 				Tcl_HashTable * tablePtr));
 #endif
-#ifndef TclDoGlob_TCL_DECLARED
-#define TclDoGlob_TCL_DECLARED
-/* 13 */
-EXTERN int		TclDoGlob _ANSI_ARGS_((Tcl_Interp * interp, 
-				char * separators, Tcl_DString * headPtr, 
-				char * tail, Tcl_GlobTypeData * types));
-#endif
+/* Slot 13 is reserved */
 #ifndef TclDumpMemoryInfo_TCL_DECLARED
 #define TclDumpMemoryInfo_TCL_DECLARED
 /* 14 */
@@ -190,7 +184,7 @@ EXTERN Tcl_Channel	TclpGetDefaultStdChannel _ANSI_ARGS_((int type));
 #ifndef TclGetExtension_TCL_DECLARED
 #define TclGetExtension_TCL_DECLARED
 /* 31 */
-EXTERN char *		TclGetExtension _ANSI_ARGS_((char * name));
+EXTERN CONST char *	TclGetExtension _ANSI_ARGS_((CONST char * name));
 #endif
 #ifndef TclGetFrame_TCL_DECLARED
 #define TclGetFrame_TCL_DECLARED
@@ -706,11 +700,7 @@ EXTERN size_t		TclpStrftime _ANSI_ARGS_((char * s, size_t maxsize,
 				CONST char * format, CONST struct tm * t, 
 				int useGMT));
 #endif
-#ifndef TclpCheckStackSpace_TCL_DECLARED
-#define TclpCheckStackSpace_TCL_DECLARED
-/* 135 */
-EXTERN int		TclpCheckStackSpace _ANSI_ARGS_((void));
-#endif
+/* Slot 135 is reserved */
 /* Slot 136 is reserved */
 /* Slot 137 is reserved */
 #ifndef TclGetEnv_TCL_DECLARED
@@ -949,6 +939,18 @@ EXTERN void		Tcl_SetStartupScript _ANSI_ARGS_((Tcl_Obj * pathPtr,
 EXTERN Tcl_Obj *	Tcl_GetStartupScript _ANSI_ARGS_((
 				CONST char ** encodingNamePtr));
 #endif
+#ifndef TclNewListObjDirect_TCL_DECLARED
+#define TclNewListObjDirect_TCL_DECLARED
+/* 180 */
+EXTERN Tcl_Obj *	TclNewListObjDirect _ANSI_ARGS_((int objc, 
+				Tcl_Obj ** objv));
+#endif
+#ifndef TclDbNewListObjDirect_TCL_DECLARED
+#define TclDbNewListObjDirect_TCL_DECLARED
+/* 181 */
+EXTERN Tcl_Obj *	TclDbNewListObjDirect _ANSI_ARGS_((int objc, 
+				Tcl_Obj ** objv, CONST char * file, int line));
+#endif
 
 typedef struct TclIntStubs {
     int magic;
@@ -983,7 +985,7 @@ typedef struct TclIntStubs {
     int (*tclCreateProc) _ANSI_ARGS_((Tcl_Interp * interp, Namespace * nsPtr, CONST char * procName, Tcl_Obj * argsPtr, Tcl_Obj * bodyPtr, Proc ** procPtrPtr)); /* 10 */
     void (*tclDeleteCompiledLocalVars) _ANSI_ARGS_((Interp * iPtr, CallFrame * framePtr)); /* 11 */
     void (*tclDeleteVars) _ANSI_ARGS_((Interp * iPtr, Tcl_HashTable * tablePtr)); /* 12 */
-    int (*tclDoGlob) _ANSI_ARGS_((Tcl_Interp * interp, char * separators, Tcl_DString * headPtr, char * tail, Tcl_GlobTypeData * types)); /* 13 */
+    void *reserved13;
     void (*tclDumpMemoryInfo) _ANSI_ARGS_((FILE * outFile)); /* 14 */
     void *reserved15;
     void (*tclExprFloatError) _ANSI_ARGS_((Tcl_Interp * interp, double value)); /* 16 */
@@ -1001,7 +1003,7 @@ typedef struct TclIntStubs {
     Tcl_Channel (*tclpGetDefaultStdChannel) _ANSI_ARGS_((int type)); /* 28 */
     void *reserved29;
     void *reserved30;
-    char * (*tclGetExtension) _ANSI_ARGS_((char * name)); /* 31 */
+    CONST char * (*tclGetExtension) _ANSI_ARGS_((CONST char * name)); /* 31 */
     int (*tclGetFrame) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * str, CallFrame ** framePtrPtr)); /* 32 */
     TclCmdProcType (*tclGetInterpProc) _ANSI_ARGS_((void)); /* 33 */
     int (*tclGetIntForIndex) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * objPtr, int endValue, int * indexPtr)); /* 34 */
@@ -1113,7 +1115,7 @@ typedef struct TclIntStubs {
     int (*tclpHasSockets) _ANSI_ARGS_((Tcl_Interp * interp)); /* 132 */
     struct tm * (*tclpGetDate) _ANSI_ARGS_((TclpTime_t time, int useGMT)); /* 133 */
     size_t (*tclpStrftime) _ANSI_ARGS_((char * s, size_t maxsize, CONST char * format, CONST struct tm * t, int useGMT)); /* 134 */
-    int (*tclpCheckStackSpace) _ANSI_ARGS_((void)); /* 135 */
+    void *reserved135;
     void *reserved136;
     void *reserved137;
     CONST84_RETURN char * (*tclGetEnv) _ANSI_ARGS_((CONST char * name, Tcl_DString * valuePtr)); /* 138 */
@@ -1158,6 +1160,8 @@ typedef struct TclIntStubs {
     void (*tclVarErrMsg) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * part1, CONST char * part2, CONST char * operation, CONST char * reason)); /* 177 */
     void (*tcl_SetStartupScript) _ANSI_ARGS_((Tcl_Obj * pathPtr, CONST char* encodingName)); /* 178 */
     Tcl_Obj * (*tcl_GetStartupScript) _ANSI_ARGS_((CONST char ** encodingNamePtr)); /* 179 */
+    Tcl_Obj * (*tclNewListObjDirect) _ANSI_ARGS_((int objc, Tcl_Obj ** objv)); /* 180 */
+    Tcl_Obj * (*tclDbNewListObjDirect) _ANSI_ARGS_((int objc, Tcl_Obj ** objv, CONST char * file, int line)); /* 181 */
 } TclIntStubs;
 
 #ifdef __cplusplus
@@ -1236,10 +1240,7 @@ extern TclIntStubs *tclIntStubsPtr;
 #define TclDeleteVars \
 	(tclIntStubsPtr->tclDeleteVars) /* 12 */
 #endif
-#ifndef TclDoGlob
-#define TclDoGlob \
-	(tclIntStubsPtr->tclDoGlob) /* 13 */
-#endif
+/* Slot 13 is reserved */
 #ifndef TclDumpMemoryInfo
 #define TclDumpMemoryInfo \
 	(tclIntStubsPtr->tclDumpMemoryInfo) /* 14 */
@@ -1630,10 +1631,7 @@ extern TclIntStubs *tclIntStubsPtr;
 #define TclpStrftime \
 	(tclIntStubsPtr->tclpStrftime) /* 134 */
 #endif
-#ifndef TclpCheckStackSpace
-#define TclpCheckStackSpace \
-	(tclIntStubsPtr->tclpCheckStackSpace) /* 135 */
-#endif
+/* Slot 135 is reserved */
 /* Slot 136 is reserved */
 /* Slot 137 is reserved */
 #ifndef TclGetEnv
@@ -1791,6 +1789,14 @@ extern TclIntStubs *tclIntStubsPtr;
 #ifndef Tcl_GetStartupScript
 #define Tcl_GetStartupScript \
 	(tclIntStubsPtr->tcl_GetStartupScript) /* 179 */
+#endif
+#ifndef TclNewListObjDirect
+#define TclNewListObjDirect \
+	(tclIntStubsPtr->tclNewListObjDirect) /* 180 */
+#endif
+#ifndef TclDbNewListObjDirect
+#define TclDbNewListObjDirect \
+	(tclIntStubsPtr->tclDbNewListObjDirect) /* 181 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */

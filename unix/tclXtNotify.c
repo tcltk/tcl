@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclXtNotify.c,v 1.4 1999/07/02 06:05:34 welch Exp $
+ * RCS: @(#) $Id: tclXtNotify.c,v 1.4.34.1 2004/02/07 05:48:11 dgp Exp $
  */
 
 #include <X11/Intrinsic.h>
@@ -135,7 +135,7 @@ TclSetAppContext(appContext)
              * after initialization, so we panic.
              */
         
-            panic("TclSetAppContext:  multiple application contexts");
+            Tcl_Panic("TclSetAppContext:  multiple application contexts");
 
         }
     } else {

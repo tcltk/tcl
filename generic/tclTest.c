@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.67.2.1 2003/10/16 02:28:02 dgp Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.67.2.2 2004/02/07 05:48:01 dgp Exp $
  */
 
 #define TCL_TEST
@@ -129,6 +129,9 @@ typedef struct TestEvent {
 int			Tcltest_Init _ANSI_ARGS_((Tcl_Interp *interp));
 static int		AsyncHandlerProc _ANSI_ARGS_((ClientData clientData,
 			    Tcl_Interp *interp, int code));
+#ifdef TCL_THREADS
+static Tcl_ThreadCreateType AsyncThreadProc _ANSI_ARGS_((ClientData));
+#endif
 static void		CleanupTestSetassocdataTests _ANSI_ARGS_((
 			    ClientData clientData, Tcl_Interp *interp));
 static void		CmdDelProc1 _ANSI_ARGS_((ClientData clientData));
@@ -362,7 +365,7 @@ static void             TestReport _ANSI_ARGS_ ((CONST char* cmd, Tcl_Obj* arg1,
 			    Tcl_Obj* arg2));
 
 static Tcl_Obj*         TestReportGetNativePath _ANSI_ARGS_ ((
-			    Tcl_Obj* pathObjPtr));
+			    Tcl_Obj* pathPtr));
 
 static int		TestReportStat _ANSI_ARGS_ ((Tcl_Obj *path,
 			    Tcl_StatBuf *buf));
@@ -419,8 +422,15 @@ static Tcl_Channel	SimpleOpenFileChannel _ANSI_ARGS_ ((
 static Tcl_Obj*         SimpleListVolumes _ANSI_ARGS_ ((void));
 static int              SimplePathInFilesystem _ANSI_ARGS_ ((
 			    Tcl_Obj *pathPtr, ClientData *clientDataPtr));
-static Tcl_Obj*         SimpleCopy _ANSI_ARGS_ ((Tcl_Obj *pathPtr));
+static Tcl_Obj*         SimpleRedirect _ANSI_ARGS_ ((Tcl_Obj *pathPtr));
+static int		SimpleMatchInDirectory _ANSI_ARGS_ ((
+			    Tcl_Interp *interp, Tcl_Obj *resultPtr,
+			    Tcl_Obj *dirPtr, CONST char *pattern,
+			    Tcl_GlobTypeData *types));
 static int              TestNumUtfCharsCmd _ANSI_ARGS_((ClientData clientData,
+                            Tcl_Interp *interp, int objc,
+			    Tcl_Obj *CONST objv[]));
+static int              TestHashSystemHashCmd _ANSI_ARGS_((ClientData clientData,
                             Tcl_Interp *interp, int objc,
 			    Tcl_Obj *CONST objv[]));
 
@@ -479,7 +489,7 @@ static Tcl_Filesystem simpleFilesystem = {
     &SimpleStat,
     &SimpleAccess,
     &SimpleOpenFileChannel,
-    NULL,
+    &SimpleMatchInDirectory,
     NULL,
     /* We choose not to support symbolic links inside our vfs's */
     NULL,
@@ -620,6 +630,9 @@ Tcltest_Init(interp)
             (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
     Tcl_CreateObjCommand(interp, "testfile", TestfileCmd,
             (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
+    Tcl_CreateObjCommand(interp, "testhashsystemhash",
+	    TestHashSystemHashCmd, (ClientData) 0, 
+	    (Tcl_CmdDeleteProc *) NULL);
     Tcl_CreateCommand(interp, "testgetassocdata", TestgetassocdataCmd,
             (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
     Tcl_CreateCommand(interp, "testgetplatform", TestgetplatformCmd,
@@ -834,11 +847,39 @@ TestasyncCmd(dummy, interp, argc, argv)
 	}
 	Tcl_SetResult(interp, (char *)argv[3], TCL_VOLATILE);
 	return code;
+#ifdef TCL_THREADS
+    } else if (strcmp(argv[1], "marklater") == 0) {
+	if (argc != 3) {
+	    goto wrongNumArgs;
+	}
+	if (Tcl_GetInt(interp, argv[2], &id) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	for (asyncPtr = firstHandler; asyncPtr != NULL;
+		asyncPtr = asyncPtr->nextPtr) {
+	    if (asyncPtr->id == id) {
+		Tcl_ThreadId threadID;
+		if (Tcl_CreateThread(&threadID, AsyncThreadProc,
+			(ClientData) asyncPtr, TCL_THREAD_STACK_DEFAULT,
+			TCL_THREAD_NOFLAGS) != TCL_OK) {
+		    Tcl_SetResult(interp, "can't create thread", TCL_STATIC);
+		    return TCL_ERROR;
+		}
+		break;
+	    }
+	}
+    } else {
+	Tcl_AppendResult(interp, "bad option \"", argv[1],
+		"\": must be create, delete, int, mark, or marklater",
+		(char *) NULL);
+	return TCL_ERROR;
+#else /* !TCL_THREADS */
     } else {
 	Tcl_AppendResult(interp, "bad option \"", argv[1],
 		"\": must be create, delete, int, or mark",
 		(char *) NULL);
 	return TCL_ERROR;
+#endif
     }
     return TCL_OK;
 }
@@ -872,6 +913,36 @@ AsyncHandlerProc(clientData, interp, code)
     ckfree((char *)cmd);
     return code;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * AsyncThreadProc --
+ *
+ *	Delivers an asynchronous event to a handler in another thread.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Invokes Tcl_AsyncMark on the handler
+ *
+ *----------------------------------------------------------------------
+ */
+
+#ifdef TCL_THREADS
+static Tcl_ThreadCreateType
+AsyncThreadProc(clientData)
+    ClientData clientData;	/* Parameter is a pointer to a
+				 * TestAsyncHandler, defined above. */
+{
+    TestAsyncHandler* asyncPtr = clientData;
+    Tcl_Sleep(1);
+    Tcl_AsyncMark(asyncPtr->handler);
+    Tcl_ExitThread(TCL_OK);
+    TCL_THREAD_CREATE_RETURN;
+}
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -3045,6 +3116,9 @@ PrintParse(interp, parsePtr)
     for (i = 0; i < parsePtr->numTokens; i++) {
 	tokenPtr = &parsePtr->tokenPtr[i];
 	switch (tokenPtr->type) {
+	    case TCL_TOKEN_EXPAND_WORD:
+		typeString = "expand";
+		break;
 	    case TCL_TOKEN_WORD:
 		typeString = "word";
 		break;
@@ -3940,7 +4014,7 @@ TestpanicCmd(dummy, interp, argc, argv)
      */
 
     argString = Tcl_Merge(argc-1, argv+1);
-    panic(argString);
+    Tcl_Panic(argString);
     ckfree((char *)argString);
  
     return TCL_OK;
@@ -5697,7 +5771,7 @@ TestChannelEventCmd(dummy, interp, argc, argv)
                 /* Empty loop body. */
             }
             if (prevEsPtr == (EventScriptRecord *) NULL) {
-                panic("TestChannelEventCmd: damaged event script list");
+                Tcl_Panic("TestChannelEventCmd: damaged event script list");
             }
             prevEsPtr->nextPtr = esPtr->nextPtr;
         }
@@ -5984,8 +6058,8 @@ TestReportInFilesystem(Tcl_Obj *pathPtr, ClientData *clientDataPtr)
  * path object, or NULL if no such representation exists.
  */
 static Tcl_Obj* 
-TestReportGetNativePath(Tcl_Obj* pathObjPtr) {
-    return (Tcl_Obj*) Tcl_FSGetInternalRep(pathObjPtr, &testReportingFilesystem);
+TestReportGetNativePath(Tcl_Obj* pathPtr) {
+    return (Tcl_Obj*) Tcl_FSGetInternalRep(pathPtr, &testReportingFilesystem);
 }
 
 static void 
@@ -6250,34 +6324,22 @@ SimplePathInFilesystem(Tcl_Obj *pathPtr, ClientData *clientDataPtr) {
 }
 
 /* 
- * Since TclCopyChannel insists on an interpreter, we use this
- * to simplify our test scripts.  Would be better if it could
- * copy without an interp
- */
-static Tcl_Interp *simpleInterpPtr = NULL;
-/* We use this to ensure we clean up after ourselves */
-static Tcl_Obj *tempFile = NULL;
-
-/* 
- * This is a very 'hacky' filesystem which is used just to 
- * test two important features of the vfs code: (1) that
- * you can load a shared library from a vfs, (2) that when
- * copying files from one fs to another, the 'mtime' is
- * preserved.
+ * This is a slightly 'hacky' filesystem which is used just to test a
+ * few important features of the vfs code: (1) that you can load a
+ * shared library from a vfs, (2) that when copying files from one fs to
+ * another, the 'mtime' is preserved.  (3) that recursive
+ * cross-filesystem directory copies have the correct behaviour
+ * with/without -force.
  * 
- * It treats any file in 'simplefs:/' as a file, and
- * artificially creates a real file on the fly which it uses
- * to extract information from.  The real file it uses is
+ * It treats any file in 'simplefs:/' as a file, which it
+ * routes to the current directory.  The real file it uses is
  * whatever follows the trailing '/' (e.g. 'foo' in 'simplefs:/foo'),
- * and that file is assumed to exist in the native pwd, and is
- * copied over to the native temporary directory where it is
- * accessed.
+ * and that file exists or not according to what is in the native
+ * pwd.
  * 
  * Please do not consider this filesystem a model of how
  * things are to be done.  It is quite the opposite!  But, it
- * does allow us to test two important features.
- * 
- * Finally: this fs can only be used from one interpreter.
+ * does allow us to test some important features.
  */
 static int
 TestSimpleFilesystemObjCmd(dummy, interp, objc, objv)
@@ -6299,54 +6361,81 @@ TestSimpleFilesystemObjCmd(dummy, interp, objc, objv)
     if (boolVal) {
 	res = Tcl_FSRegister((ClientData)interp, &simpleFilesystem);
 	msg = (res == TCL_OK) ? "registered" : "failed";
-	simpleInterpPtr = interp;
     } else {
-	if (tempFile != NULL) {
-	    Tcl_FSDeleteFile(tempFile);
-	    Tcl_DecrRefCount(tempFile);
-	    tempFile = NULL;
-	}
 	res = Tcl_FSUnregister(&simpleFilesystem);
 	msg = (res == TCL_OK) ? "unregistered" : "failed";
-	simpleInterpPtr = NULL;
     }
     Tcl_SetResult(interp, msg, TCL_VOLATILE);
     return res;
 }
 
 /* 
- * Treats a file name 'simplefs:/foo' by copying the file 'foo'
- * in the current (native) directory to a temporary native file,
- * and then returns that native file.
+ * Treats a file name 'simplefs:/foo' by using the file 'foo'
+ * in the current (native) directory.
  */
 static Tcl_Obj*
-SimpleCopy(pathPtr)
+SimpleRedirect(pathPtr)
     Tcl_Obj *pathPtr;                   /* Name of file to copy. */
 {
-    int res;
+    int len;
     CONST char *str;
     Tcl_Obj *origPtr;
-    Tcl_Obj *tempPtr;
-
-    tempPtr = TclpTempFileName();
-    Tcl_IncrRefCount(tempPtr);
 
     /* 
      * We assume the same name in the current directory is ok.
      */
-    str = Tcl_GetString(pathPtr);
+    str = Tcl_GetStringFromObj(pathPtr, &len);
+    if (len < 10 || strncmp(str, "simplefs:/", 10)) {
+	/* Probably shouldn't ever reach here */
+	Tcl_IncrRefCount(pathPtr);
+	return pathPtr;
+    } 
     origPtr = Tcl_NewStringObj(str+10,-1);
     Tcl_IncrRefCount(origPtr);
+    return origPtr;
+}
 
-    res = TclCrossFilesystemCopy(simpleInterpPtr, origPtr, tempPtr);
-    Tcl_DecrRefCount(origPtr);
+static int
+SimpleMatchInDirectory(interp, resultPtr, dirPtr, pattern, types)
+    Tcl_Interp *interp;		/* Interpreter for error
+				 * messages. */
+    Tcl_Obj *resultPtr;		/* Object to lappend results. */
+    Tcl_Obj *dirPtr;	        /* Contains path to directory to search. */
+    CONST char *pattern;	/* Pattern to match against. */
+    Tcl_GlobTypeData *types;	/* Object containing list of acceptable types.
+				 * May be NULL. */
+{
+    int res;
+    Tcl_Obj *origPtr;
+    Tcl_Obj *resPtr;
 
-    if (res != TCL_OK) {
-	Tcl_FSDeleteFile(tempPtr);
-	Tcl_DecrRefCount(tempPtr);
-	return NULL;
+    /* We only provide a new volume, therefore no mounts at all */
+    if (types != NULL && types->type & TCL_GLOB_TYPE_MOUNT) {
+	return TCL_OK;
     }
-    return tempPtr;
+    
+    /* 
+     * We assume the same name in the current directory is ok.
+     */
+    resPtr = Tcl_NewObj();
+    Tcl_IncrRefCount(resPtr);
+    origPtr = SimpleRedirect(dirPtr);
+    Tcl_IncrRefCount(origPtr);
+    res = Tcl_FSMatchInDirectory(interp, resPtr, origPtr, pattern, types);
+    if (res == TCL_OK) {
+	int gLength, j;
+	Tcl_ListObjLength(NULL, resPtr, &gLength);
+	for (j = 0; j < gLength; j++) {
+	    Tcl_Obj *gElt, *nElt;
+	    Tcl_ListObjIndex(NULL, resPtr, j, &gElt);
+	    nElt = Tcl_NewStringObj("simplefs:/",10);
+	    Tcl_AppendObjToObj(nElt, gElt);
+	    Tcl_ListObjAppendElement(NULL, resultPtr, nElt);
+	}
+    }
+    Tcl_DecrRefCount(origPtr);
+    Tcl_DecrRefCount(resPtr);
+    return res;
 }
 
 static Tcl_Channel
@@ -6368,24 +6457,11 @@ SimpleOpenFileChannel(interp, pathPtr, mode, permissions)
 	return NULL;
     }
     
-    tempPtr = SimpleCopy(pathPtr);
-    
-    if (tempPtr == NULL) {
-	return NULL;
-    }
+    tempPtr = SimpleRedirect(pathPtr);
     
     chan = Tcl_FSOpenFileChannel(interp, tempPtr, "r", permissions);
 
-    if (tempFile != NULL) {
-        Tcl_FSDeleteFile(tempFile);
-	Tcl_DecrRefCount(tempFile);
-	tempFile = NULL;
-    }
-    /* 
-     * Store file pointer in this global variable so we can delete
-     * it later 
-     */
-    tempFile = tempPtr;
+    Tcl_DecrRefCount(tempPtr);
     return chan;
 }
 
@@ -6394,8 +6470,11 @@ SimpleAccess(pathPtr, mode)
     Tcl_Obj *pathPtr;		/* Path of file to access (in current CP). */
     int mode;                   /* Permission setting. */
 {
-    /* All files exist */
-    return TCL_OK;
+    int res;
+    Tcl_Obj *tempPtr = SimpleRedirect(pathPtr);
+    res = Tcl_FSAccess(tempPtr, mode);
+    Tcl_DecrRefCount(tempPtr);
+    return res;
 }
 
 static int
@@ -6403,16 +6482,11 @@ SimpleStat(pathPtr, bufPtr)
     Tcl_Obj *pathPtr;		/* Path of file to stat (in current CP). */
     Tcl_StatBuf *bufPtr;	/* Filled with results of stat call. */
 {
-    Tcl_Obj *tempPtr = SimpleCopy(pathPtr);
-    if (tempPtr == NULL) {
-	/* We just pretend the file exists anyway */
-	return TCL_OK;
-    } else {
-	int res = Tcl_FSStat(tempPtr, bufPtr);
-	Tcl_FSDeleteFile(tempPtr);
-	Tcl_DecrRefCount(tempPtr);
-	return res;
-    }
+    int res;
+    Tcl_Obj *tempPtr = SimpleRedirect(pathPtr);
+    res = Tcl_FSStat(tempPtr, bufPtr);
+    Tcl_DecrRefCount(tempPtr);
+    return res;
 }
 
 static Tcl_Obj*
@@ -6444,5 +6518,80 @@ TestNumUtfCharsCmd(clientData, interp, objc, objv)
 	len = Tcl_NumUtfChars(Tcl_GetString(objv[1]), len);
 	Tcl_SetObjResult(interp, Tcl_NewIntObj(len));
     }
+    return TCL_OK;
+}
+
+/*
+ * Used to do basic checks of the TCL_HASH_KEY_SYSTEM_HASH flag
+ */
+static int
+TestHashSystemHashCmd(clientData, interp, objc, objv)
+    ClientData clientData;
+    Tcl_Interp *interp;
+    int objc;
+    Tcl_Obj *CONST objv[];
+{
+    static Tcl_HashKeyType hkType = {
+	TCL_HASH_KEY_TYPE_VERSION, TCL_HASH_KEY_SYSTEM_HASH,
+	NULL, NULL, NULL, NULL
+    };
+    Tcl_HashTable hash;
+    Tcl_HashEntry *hPtr;
+    int i, isNew, limit = 100;
+
+    if (objc>1 && Tcl_GetIntFromObj(interp, objv[1], &limit)!=TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    Tcl_InitCustomHashTable(&hash, TCL_CUSTOM_TYPE_KEYS, &hkType);
+
+    if (hash.numEntries != 0) {
+	Tcl_AppendResult(interp, "non-zero initial size", NULL);
+	Tcl_DeleteHashTable(&hash);
+	return TCL_ERROR;
+    }
+
+    for (i=0 ; i<limit ; i++) {
+	hPtr = Tcl_CreateHashEntry(&hash, (char *)i, &isNew);
+	if (!isNew) {
+	    Tcl_SetObjResult(interp, Tcl_NewIntObj(i));
+	    Tcl_AppendToObj(Tcl_GetObjResult(interp)," creation problem",-1);
+	    Tcl_DeleteHashTable(&hash);
+	    return TCL_ERROR;
+	}
+	Tcl_SetHashValue(hPtr, (ClientData) (i+42));
+    }
+
+    if (hash.numEntries != limit) {
+	Tcl_AppendResult(interp, "unexpected maximal size", NULL);
+	Tcl_DeleteHashTable(&hash);
+	return TCL_ERROR;
+    }
+
+    for (i=0 ; i<limit ; i++) {
+	hPtr = Tcl_FindHashEntry(&hash, (char *)i);
+	if (hPtr == NULL) {
+	    Tcl_SetObjResult(interp, Tcl_NewIntObj(i));
+	    Tcl_AppendToObj(Tcl_GetObjResult(interp)," lookup problem",-1);
+	    Tcl_DeleteHashTable(&hash);
+	    return TCL_ERROR;
+	}
+	if ((int)(Tcl_GetHashValue(hPtr)) != i+42) {
+	    Tcl_SetObjResult(interp, Tcl_NewIntObj(i));
+	    Tcl_AppendToObj(Tcl_GetObjResult(interp)," value problem",-1);
+	    Tcl_DeleteHashTable(&hash);
+	    return TCL_ERROR;
+	}
+	Tcl_DeleteHashEntry(hPtr);
+    }
+
+    if (hash.numEntries != 0) {
+	Tcl_AppendResult(interp, "non-zero final size", NULL);
+	Tcl_DeleteHashTable(&hash);
+	return TCL_ERROR;
+    }
+
+    Tcl_DeleteHashTable(&hash);
+    Tcl_AppendResult(interp, "OK", NULL);
     return TCL_OK;
 }

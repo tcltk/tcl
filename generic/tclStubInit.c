@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.84.2.7 2003/10/16 02:29:16 dgp Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.84.2.8 2004/02/07 05:48:01 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -99,7 +99,7 @@ TclIntStubs tclIntStubs = {
     TclCreateProc, /* 10 */
     TclDeleteCompiledLocalVars, /* 11 */
     TclDeleteVars, /* 12 */
-    TclDoGlob, /* 13 */
+    NULL, /* 13 */
     TclDumpMemoryInfo, /* 14 */
     NULL, /* 15 */
     TclExprFloatError, /* 16 */
@@ -229,7 +229,7 @@ TclIntStubs tclIntStubs = {
     TclpHasSockets, /* 132 */
     TclpGetDate, /* 133 */
     TclpStrftime, /* 134 */
-    TclpCheckStackSpace, /* 135 */
+    NULL, /* 135 */
     NULL, /* 136 */
     NULL, /* 137 */
     TclGetEnv, /* 138 */
@@ -274,6 +274,8 @@ TclIntStubs tclIntStubs = {
     TclVarErrMsg, /* 177 */
     Tcl_SetStartupScript, /* 178 */
     Tcl_GetStartupScript, /* 179 */
+    TclNewListObjDirect, /* 180 */
+    TclDbNewListObjDirect, /* 181 */
 };
 
 TclIntPlatStubs tclIntPlatStubs = {

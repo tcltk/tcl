@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.127.2.5 2003/10/16 02:28:02 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.127.2.6 2004/02/07 05:48:01 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -1483,6 +1483,22 @@ typedef struct List {
     Tcl_Obj **elements;		/* Array of pointers to element objects. */
 } List;
 
+/*
+ *----------------------------------------------------------------
+ * Data structures related to the filesystem internals
+ *----------------------------------------------------------------
+ */
+
+
+/* 
+ * The version_2 filesystem is private to Tcl.  As and when these
+ * changes have been thoroughly tested and investigated a new public
+ * filesystem interface will be released.  The aim is more versatile
+ * virtual filesystem interfaces, more efficiency in 'path' manipulation
+ * and usage, and cleaner filesystem code internally.
+ */
+#define TCL_FILESYSTEM_VERSION_2	((Tcl_FSVersion) 0x2)
+typedef ClientData (TclFSGetCwdProc2) _ANSI_ARGS_((ClientData clientData));
 
 /*
  * The following types are used for getting and storing platform-specific
@@ -1524,6 +1540,13 @@ typedef struct TclpTime_t_    *TclpTime_t;
 #define TCL_GLOBMODE_JOIN             2
 #define TCL_GLOBMODE_DIR              4
 #define TCL_GLOBMODE_TAILS            8
+
+typedef enum Tcl_PathPart {
+    TCL_PATH_DIRNAME,
+    TCL_PATH_TAIL,	
+    TCL_PATH_EXTENSION,
+    TCL_PATH_ROOT
+} Tcl_PathPart;
 
 /*
  *----------------------------------------------------------------
@@ -1767,6 +1790,13 @@ EXTERN Tcl_Obj *	TclLindexFlat _ANSI_ARGS_((Tcl_Interp* interp,
 						   int indexCount,
 						   Tcl_Obj *CONST indexArray[]
 						   ));
+EXTERN int              TclLoadFile _ANSI_ARGS_((Tcl_Interp* interp,
+			    Tcl_Obj *pathPtr, int symc,
+			    CONST char *symbols[],
+			    Tcl_PackageInitProc **procPtrs[],
+			    Tcl_LoadHandle *handlePtr,
+			    ClientData *clientDataPtr,
+			    Tcl_FSUnloadFileProc **unloadProcPtr));
 EXTERN Tcl_Obj *	TclLsetList _ANSI_ARGS_((Tcl_Interp* interp,
 						 Tcl_Obj* listPtr,
 						 Tcl_Obj* indexPtr,
@@ -1778,6 +1808,10 @@ EXTERN Tcl_Obj *	TclLsetFlat _ANSI_ARGS_((Tcl_Interp* interp,
 						 Tcl_Obj *CONST indexArray[],
 						 Tcl_Obj* valuePtr
 						 ));
+EXTERN int		TclMergeReturnOptions _ANSI_ARGS_((Tcl_Interp *interp,
+			    int objc, Tcl_Obj *CONST objv[],
+			    Tcl_Obj **optionsPtrPtr, int *codePtr,
+			    int *levelPtr));
 EXTERN int              TclParseBackslash _ANSI_ARGS_((CONST char *src,
                             int numBytes, int *readPtr, char *dst));
 EXTERN int              TclParseExpr _ANSI_ARGS_((Tcl_Interp *interp,
@@ -1792,6 +1826,8 @@ Tcl_Token *		TclParseScript _ANSI_ARGS_((CONST char *script,
 			    Tcl_Token **lastTokenPtrPtr, CONST char **termPtr));
 EXTERN int		TclParseWhiteSpace _ANSI_ARGS_((CONST char *src,
 			    int numBytes, Tcl_Parse *parsePtr, char *typePtr));
+EXTERN int		TclProcessReturn _ANSI_ARGS_((Tcl_Interp *interp,
+			    int code, int level, Tcl_Obj *returnOpts));
 EXTERN int		TclpObjAccess _ANSI_ARGS_((Tcl_Obj *filename,
 			    int mode));
 EXTERN int              TclpObjLstat _ANSI_ARGS_((Tcl_Obj *pathPtr, 
@@ -1836,7 +1872,7 @@ EXTERN void             TclpNativeJoinPath _ANSI_ARGS_((Tcl_Obj *prefix,
 							char *joining));
 EXTERN Tcl_Obj*         TclpNativeSplitPath _ANSI_ARGS_((Tcl_Obj *pathPtr, 
 							 int *lenPtr));
-EXTERN Tcl_PathType     TclpGetNativePathType _ANSI_ARGS_((Tcl_Obj *pathObjPtr,
+EXTERN Tcl_PathType     TclpGetNativePathType _ANSI_ARGS_((Tcl_Obj *pathPtr,
 			    int *driveNameLengthPtr, Tcl_Obj **driveNameRef));
 EXTERN int 		TclCrossFilesystemCopy _ANSI_ARGS_((Tcl_Interp *interp, 
 			    Tcl_Obj *source, Tcl_Obj *target));
@@ -1852,13 +1888,15 @@ EXTERN int		TclpObjRenameFile _ANSI_ARGS_((Tcl_Obj *srcPathPtr,
 EXTERN int		TclpMatchInDirectory _ANSI_ARGS_((Tcl_Interp *interp, 
 			        Tcl_Obj *resultPtr, Tcl_Obj *pathPtr, 
 				CONST char *pattern, Tcl_GlobTypeData *types));
-EXTERN Tcl_Obj*		TclpObjGetCwd _ANSI_ARGS_((Tcl_Interp *interp));
+EXTERN ClientData	TclpGetNativeCwd _ANSI_ARGS_((ClientData clientData));
+EXTERN Tcl_FSDupInternalRepProc TclNativeDupInternalRep;
 EXTERN Tcl_Obj*		TclpObjLink _ANSI_ARGS_((Tcl_Obj *pathPtr, 
 				Tcl_Obj *toPtr, int linkType));
 EXTERN int		TclpObjChdir _ANSI_ARGS_((Tcl_Obj *pathPtr));
-EXTERN Tcl_Obj*         TclFileDirname _ANSI_ARGS_((Tcl_Interp *interp, 
-						    Tcl_Obj*pathPtr));
-EXTERN int		TclpObjStat _ANSI_ARGS_((Tcl_Obj *pathPtr, Tcl_StatBuf *buf));
+EXTERN Tcl_Obj*         TclPathPart _ANSI_ARGS_((Tcl_Interp *interp, 
+				Tcl_Obj *pathPtr, Tcl_PathPart portion));
+EXTERN int		TclpObjStat _ANSI_ARGS_((Tcl_Obj *pathPtr, 
+						 Tcl_StatBuf *buf));
 EXTERN Tcl_Channel	TclpOpenFileChannel _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *pathPtr, int mode,
 			    int permissions));
@@ -1894,7 +1932,7 @@ EXTERN void		TclTransferResult _ANSI_ARGS_((Tcl_Interp *sourceInterp,
 EXTERN Tcl_Obj*         TclpNativeToNormalized 
                             _ANSI_ARGS_((ClientData clientData));
 EXTERN Tcl_Obj*	        TclpFilesystemPathType
-					_ANSI_ARGS_((Tcl_Obj* pathObjPtr));
+					_ANSI_ARGS_((Tcl_Obj* pathPtr));
 EXTERN Tcl_PackageInitProc* TclpFindSymbol _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_LoadHandle loadHandle, CONST char *symbol));
 EXTERN int              TclpDlopen _ANSI_ARGS_((Tcl_Interp *interp, 
@@ -1985,6 +2023,8 @@ EXTERN int	Tcl_InterpObjCmd _ANSI_ARGS_((ClientData clientData,
 EXTERN int	Tcl_JoinObjCmd _ANSI_ARGS_((ClientData clientData,
 		    Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]));
 EXTERN int	Tcl_LappendObjCmd _ANSI_ARGS_((ClientData clientData,
+		    Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]));
+EXTERN int	Tcl_LassignObjCmd _ANSI_ARGS_((ClientData clientData,
 		    Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]));
 EXTERN int	Tcl_LindexObjCmd _ANSI_ARGS_((ClientData clientData,
 		    Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]));
@@ -2114,6 +2154,8 @@ EXTERN int	TclCompileIncrCmd _ANSI_ARGS_((Tcl_Interp *interp,
 		    Tcl_Parse *parsePtr, struct CompileEnv *envPtr));
 EXTERN int	TclCompileLappendCmd _ANSI_ARGS_((Tcl_Interp *interp,
 		    Tcl_Parse *parsePtr, struct CompileEnv *envPtr));
+EXTERN int	TclCompileLassignCmd _ANSI_ARGS_((Tcl_Interp *interp,
+		    Tcl_Parse *parsePtr, struct CompileEnv *envPtr));
 EXTERN int	TclCompileLindexCmd _ANSI_ARGS_((Tcl_Interp *interp,
 		    Tcl_Parse *parsePtr, struct CompileEnv *envPtr));
 EXTERN int	TclCompileListCmd _ANSI_ARGS_((Tcl_Interp *interp,
@@ -2232,6 +2274,9 @@ EXTERN void	TclDbInitNewObj _ANSI_ARGS_((Tcl_Obj *objPtr));
 # define TclDecrRefCount(objPtr) \
     Tcl_DbDecrRefCount(objPtr, __FILE__, __LINE__)
 
+# define TclNewListObjDirect(objc, objv) \
+    TclDbNewListObjDirect(objc, objv, __FILE__, __LINE__)
+
 #elif defined(PURIFY)
 
 /*
@@ -2242,7 +2287,7 @@ EXTERN void	TclDbInitNewObj _ANSI_ARGS_((Tcl_Obj *objPtr));
  */
 
 #  define TclAllocObjStorage(objPtr) \
-       (objPtr) = (Tcl_Obj *) Tcl_Ckalloc(sizeof(Tcl_Obj))
+       (objPtr) = (Tcl_Obj *) Tcl_Alloc(sizeof(Tcl_Obj))
 
 #  define TclFreeObjStorage(objPtr) \
        ckfree((char *) (objPtr))

@@ -10,7 +10,7 @@
 # Copyright (c) 2000 Andreas Kupries.
 # All rights reserved.
 # 
-# RCS: @(#) $Id: iogt.test,v 1.7 2002/07/04 15:46:55 andreas_kupries Exp $
+# RCS: @(#) $Id: iogt.test,v 1.7.4.1 2004/02/07 05:48:03 dgp Exp $
 
 if {[catch {package require tcltest 2.1}]} {
     puts stderr "Skipping tests in [info script].  tcltest 2.1 required."
@@ -147,8 +147,8 @@ proc fevent {fdelay idelay blocks script data} {
     # fixed port, not so good. lets hope for the best, for now.
     set port 4000
 
-    eval exec tclsh __echo_srv__.tcl \
-	    $port $fdelay $idelay $blocks >@stdout &
+    exec tclsh __echo_srv__.tcl \
+	    $port $fdelay $idelay {expand}$blocks >@stdout &
 
     after 500
 

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEncoding.c,v 1.16 2003/02/21 02:40:58 hobbs Exp $
+ * RCS: @(#) $Id: tclEncoding.c,v 1.16.4.1 2004/02/07 05:48:00 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2764,7 +2764,7 @@ GetTableEncoding(dataPtr, state)
 	encodingPtr = (Encoding *) Tcl_GetEncoding(NULL, subTablePtr->name);
 	if ((encodingPtr == NULL) 
 		|| (encodingPtr->toUtfProc != TableToUtfProc)) {
-	    panic("EscapeToUtfProc: invalid sub table");
+	    Tcl_Panic("EscapeToUtfProc: invalid sub table");
 	}
 	subTablePtr->encodingPtr = encodingPtr;
     }

@@ -14,7 +14,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: namespace-old.test,v 1.6 2001/04/07 02:11:19 msofer Exp $
+# RCS: @(#) $Id: namespace-old.test,v 1.6.20.1 2004/02/07 05:48:03 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -22,7 +22,7 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 }
 
 # Clear out any namespaces called test_ns_*
-catch {eval namespace delete [namespace children :: test_ns_*]}
+catch {namespace delete {expand}[namespace children :: test_ns_*]}
 
 test namespace-old-1.1 {usage for "namespace" command} {
     list [catch {namespace} msg] $msg
@@ -251,8 +251,8 @@ test namespace-old-4.3 {command "namespace delete" doesn't support patterns} {
 test namespace-old-4.4 {command "namespace delete" handles multiple args} {
     set cmd {
         namespace eval test_ns_delete {
-            eval namespace delete \
-                [namespace children [namespace current] ns?]
+            namespace delete \
+                {expand}[namespace children [namespace current] ns?]
         }
     }
     list [catch $cmd msg] $msg [namespace children test_ns_delete]

@@ -12,15 +12,15 @@
 # Note that after running these tests, entries will be left behind in the
 # message catalogs for locales foo, foo_BAR, and foo_BAR_baz.
 #
-# RCS: @(#) $Id: msgcat.test,v 1.12 2003/03/26 22:55:44 dgp Exp $
+# RCS: @(#) $Id: msgcat.test,v 1.12.2.1 2004/02/07 05:48:03 dgp Exp $
 
 package require Tcl 8.2
 if {[catch {package require tcltest 2}]} {
     puts stderr "Skipping tests in [info script].  tcltest 2 required."
     return
 }
-if {[catch {package require msgcat 1.3}]} {
-    puts stderr "Skipping tests in [info script].  No msgcat 1.3 found to test."
+if {[catch {package require msgcat 1.4}]} {
+    puts stderr "Skipping tests in [info script].  No msgcat 1.4 found to test."
     return
 }
 
@@ -111,7 +111,7 @@ namespace eval ::msgcat::test {
 	mclocale $locale
     } -body {
 	mcpreferences
-    } -result en
+    } -result {en {}}
 
     test msgcat-1.6 {mclocale set, two elements} -setup {
 	variable locale [mclocale]
@@ -137,7 +137,7 @@ namespace eval ::msgcat::test {
 	mclocale $locale
     } -body {
 	mcpreferences
-    } -result {en_us en}
+    } -result {en_us en {}}
 
     test msgcat-1.9 {mclocale set, three elements} -setup {
 	variable locale [mclocale]
@@ -163,7 +163,7 @@ namespace eval ::msgcat::test {
 	mclocale $locale
     } -body {
 	mcpreferences
-    } -result {en_us_funky en_us en}
+    } -result {en_us_funky en_us en {}}
 
     # Tests msgcat-2.*: [mcset], [mcmset], namespace partitioning
 
@@ -246,12 +246,13 @@ namespace eval ::msgcat::test {
     # (e.g. en_UK) will search less specific locales
     # (e.g. en) for translation strings.
     #
-    # Do this for the 12 permutations of
+    # Do this for the 15 permutations of
     #     locales: {foo foo_BAR foo_BAR_baz}
-    #     strings: {ov1 ov2 ov3 ov4}
-    #     locale foo         defines ov1, ov2, ov3
-    #     locale foo_BAR     defines      ov2, ov3
-    #     locale foo_BAR_BAZ defines           ov3
+    #     strings: {ov0 ov1 ov2 ov3 ov4}
+    #	  locale ROOT        defines ov0, ov1, ov2, ov3
+    #     locale foo         defines      ov1, ov2, ov3
+    #     locale foo_BAR     defines           ov2, ov3
+    #     locale foo_BAR_BAZ defines                ov3
     #     (ov4 is defined in none)
     # So,
     #     ov3 should be resolved in foo, foo_BAR, foo_BAR_baz
@@ -264,16 +265,23 @@ namespace eval ::msgcat::test {
     variable count 2
     variable result
     array set result {
-	foo,ov1 ov1_foo foo,ov2 ov2_foo foo,ov3 ov3_foo foo,ov4 ov4
-	foo_BAR,ov1 ov1_foo foo_BAR,ov2 ov2_foo_BAR foo_BAR,ov3 ov3_foo_BAR
-	foo_BAR,ov4 ov4 foo_BAR_baz,ov1 ov1_foo foo_BAR_baz,ov2 ov2_foo_BAR
+	foo,ov0 ov0_ROOT foo,ov1 ov1_foo foo,ov2 ov2_foo 
+        foo,ov3 ov3_foo foo,ov4 ov4
+	foo_BAR,ov0 ov0_ROOT foo_BAR,ov1 ov1_foo foo_BAR,ov2 ov2_foo_BAR 
+        foo_BAR,ov3 ov3_foo_BAR	foo_BAR,ov4 ov4 
+        foo_BAR_baz,ov0 ov0_ROOT foo_BAR_baz,ov1 ov1_foo 
+        foo_BAR_baz,ov2 ov2_foo_BAR
 	foo_BAR_baz,ov3 ov3_foo_BAR_baz foo_BAR_baz,ov4 ov4
     }
     variable loc
     variable string
     foreach loc {foo foo_BAR foo_BAR_baz} {
-	foreach string {ov1 ov2 ov3 ov4} {
+	foreach string {ov0 ov1 ov2 ov3 ov4} {
 	    test msgcat-3.$count {mcset, overlap} -setup {
+		mcset {} ov0 ov0_ROOT
+		mcset {} ov1 ov1_ROOT
+		mcset {} ov2 ov2_ROOT
+		mcset {} ov3 ov3_ROOT
 		mcset foo ov1 ov1_foo
 		mcset foo ov2 ov2_foo
 		mcset foo ov3 ov3_foo
@@ -364,11 +372,15 @@ namespace eval ::msgcat::test {
 
     # Tests msgcat-5.*: [mcload]
 
-    variable locales {foo foo_BAR foo_BAR_baz}
-    makeDirectory msgdir
+    variable locales {{} foo foo_BAR foo_BAR_baz}
+    set msgdir [makeDirectory msgdir]
     foreach loc $locales {
-	makeFile "::msgcat::mcset $loc abc abc-$loc" \
-		[string tolower [file join msgdir $loc.msg]]
+	if { $loc eq {} } {
+	    set msg ROOT
+        } else {
+	    set msg [string tolower $loc]
+	}
+	makeFile [list ::msgcat::mcset $loc abc abc-$loc] $msg.msg msgdir
     }
     variable count 1
     foreach loc {foo foo_BAR foo_BAR_baz} {
@@ -378,21 +390,21 @@ namespace eval ::msgcat::test {
 	} -cleanup {
 	    mclocale $locale
 	} -body {
-	    mcload [file join [temporaryDirectory] msgdir]
-	} -result $count
+	    mcload $msgdir
+	} -result [expr { $count+1 }]
 	incr count
     }
 
     # Even though foo_BAR_notexist does not exist,
-    # foo_BAR and foo should be loaded.
+    # foo_BAR, foo and the root should be loaded.
 	test msgcat-5.4 {mcload} -setup {
 	    variable locale [mclocale]
 	    mclocale foo_BAR_notexist
 	} -cleanup {
 	    mclocale $locale
 	} -body {
-	    mcload [file join [temporaryDirectory] msgdir]
-	} -result 2
+	    mcload $msgdir
+	} -result 3
 
 	test msgcat-5.5 {mcload} -setup {
 	    variable locale [mclocale]
@@ -400,12 +412,13 @@ namespace eval ::msgcat::test {
 	} -cleanup {
 	    mclocale $locale
 	} -body {
-	    mcload [file join [temporaryDirectory] msgdir]
-	} -result 0
+	    mcload $msgdir
+	} -result 1
 
 	test msgcat-5.6 {mcload} -setup {
 	    variable locale [mclocale]
 	    mclocale foo
+	    mcload $msgdir
 	} -cleanup {
 	    mclocale $locale
 	} -body {
@@ -415,6 +428,7 @@ namespace eval ::msgcat::test {
 	test msgcat-5.7 {mcload} -setup {
 	    variable locale [mclocale]
 	    mclocale foo_BAR
+	    mcload $msgdir
 	} -cleanup {
 	    mclocale $locale
 	} -body {
@@ -424,6 +438,7 @@ namespace eval ::msgcat::test {
 	test msgcat-5.8 {mcload} -setup {
 	    variable locale [mclocale]
 	    mclocale foo_BAR_baz
+	    mcload $msgdir
 	} -cleanup {
 	    mclocale $locale
 	} -body {
@@ -431,23 +446,38 @@ namespace eval ::msgcat::test {
 	} -result abc-foo_BAR_baz
 
 	test msgcat-5.9 {mcload} -setup {
+	    variable locale [mclocale]
+	    mclocale no_FI_notexist
+	    mcload $msgdir
+	} -cleanup {
+	    mclocale $locale
+	} -body {
+	    mc abc
+	} -result abc-
+
+	test msgcat-5.10 {mcload} -setup {
 	    rename ::msgcat::mcunknown SavedMcunknown
 	    proc ::msgcat::mcunknown {dom s} {
 		return unknown:$dom:$s
 	    }
 	    variable locale [mclocale]
 	    mclocale no_FI_notexist
+	    mcload $msgdir
 	} -cleanup {
 	    mclocale $locale
 	    rename ::msgcat::mcunknown {}
 	    rename SavedMcunknown ::msgcat::mcunknown
 	} -body {
-	    mc abc
-	} -result unknown:no_fi_notexist:abc
-
+	    mc def
+	} -result unknown:no_fi_notexist:def
 
     foreach loc $locales {
-	removeFile [string tolower [file join msgdir $loc.msg]]
+	if { $loc eq {} } {
+	    set msg ROOT
+        } else {
+	    set msg [string tolower $loc]
+	}
+	removeFile $msg.msg msgdir
     }
     removeDirectory msgdir
 

@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.27.2.1 2003/05/22 19:12:07 dgp Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.27.2.2 2004/02/07 05:48:01 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -607,6 +607,8 @@ ParseCommand(interp, string, numBytes, flags, parsePtr)
 
     parsePtr->commandStart = src;
     while (1) {
+	int expandWord = 0;
+
 	/*
 	 * Create the token for the word.
 	 */
@@ -637,11 +639,12 @@ ParseCommand(interp, string, numBytes, flags, parsePtr)
 	parsePtr->numWords++;
 
 	/*
-	 * At this point the word can have one of three forms: something
-	 * enclosed in quotes, something enclosed in braces, or an
-	 * unquoted word (anything else).
+	 * At this point the word can have one of four forms: something
+	 * enclosed in quotes, something enclosed in braces, and
+	 * expanding word, or an unquoted word (anything else).
 	 */
 
+parseWord:
 	if (*src == '"') {
 	    if (ParseQuotedString(interp, src, numBytes,
 		    parsePtr, flags | PARSE_APPEND, &termPtr) != TCL_OK) {
@@ -649,11 +652,41 @@ ParseCommand(interp, string, numBytes, flags, parsePtr)
 	    }
 	    src = termPtr; numBytes = parsePtr->end - src;
 	} else if (*src == '{') {
+	    static char expPfx[] = "expand";
+	    CONST size_t expPfxLen = sizeof(expPfx) - 1;
+	    int expIdx = wordIndex + 1;
+	    Tcl_Token *expPtr;
+
 	    if (ParseBraces(interp, src, numBytes,
 		    parsePtr, flags | PARSE_APPEND, &termPtr) != TCL_OK) {
 		goto error;
 	    }
 	    src = termPtr; numBytes = parsePtr->end - src;
+
+	    /* 
+	     * Check whether the braces contained
+	     * the word expansion prefix.
+	     */
+
+	    expPtr = &parsePtr->tokenPtr[expIdx];
+	    if ( (expPfxLen == (size_t) expPtr->size)
+					/* Same length as prefix */
+		    && (0 == expandWord)
+		    			/* Haven't seen prefix already */
+		    && (1 == parsePtr->numTokens - expIdx)
+	    				/* Only one token */
+		    && (0 == strncmp(expPfx,expPtr->start,expPfxLen))
+					/* Is the prefix */
+		    && (numBytes > 0)
+		    && (TclParseWhiteSpace(termPtr, numBytes, parsePtr, &type)
+			    == 0)
+		    && (type != TYPE_COMMAND_END)
+					/* Non-whitespace follows */
+		    ) {
+		expandWord = 1;
+		parsePtr->numTokens--;
+		goto parseWord;
+	    }
 	} else {
 	    /*
 	     * This is an unquoted word.  Call ParseTokens and let it do
@@ -679,6 +712,9 @@ ParseCommand(interp, string, numBytes, flags, parsePtr)
 	if ((tokenPtr->numComponents == 1)
 		&& (tokenPtr[1].type == TCL_TOKEN_TEXT)) {
 	    tokenPtr->type = TCL_TOKEN_SIMPLE_WORD;
+	}
+	if (expandWord) {
+	    tokenPtr->type = TCL_TOKEN_EXPAND_WORD;
 	}
 
 	/*
@@ -1307,7 +1343,7 @@ ParseTokens(src, numBytes, mask, flags, parsePtr)
 	    parsePtr->numTokens++;
 	    src++; numBytes--;
 	} else {
-	    panic("ParseTokens encountered unknown character");
+	    Tcl_Panic("ParseTokens encountered unknown character");
 	}
     }
     if (parsePtr->numTokens == originalTokens) {
@@ -2316,9 +2352,9 @@ TclSubstTokens(interp, tokenPtr, count, tokensLeftPtr, flags)
  *
  * CommandComplete --
  *
- *      This procedure is shared by TclCommandComplete and
- *      Tcl_ObjCommandcoComplete; it does all the real work of seeing
- *      whether a script is complete
+ *	This procedure is shared by TclCommandComplete and
+ *	Tcl_ObjCommandComplete; it does all the real work of seeing
+ *	whether a script is complete
  *
  * Results:
  *      1 is returned if the script is complete, 0 if there are open

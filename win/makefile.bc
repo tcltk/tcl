@@ -127,8 +127,8 @@ STUBPREFIX	= $(NAMEPREFIX)stub
 DOTVERSION	= 8.5
 VERSION		= 85
 
-DDEVERSION = 12
-DDEDOTVERSION = 1.2
+DDEVERSION = 13
+DDEDOTVERSION = 1.3
 
 REGVERSION = 11
 REGDOTVERSION = 1.1
@@ -433,18 +433,18 @@ install-libraries:
 	-@$(MKDIR) "$(SCRIPT_INSTALL_DIR)\opt0.4"
 	-@copy "$(ROOT)\library\opt\optparse.tcl" "$(SCRIPT_INSTALL_DIR)\opt0.4"
 	-@copy "$(ROOT)\library\opt\pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)\opt0.4"
-	@echo installing msgcat1.3
-	-@$(MKDIR) "$(SCRIPT_INSTALL_DIR)\msgcat1.3"
-	-@copy "$(ROOT)\library\msgcat\msgcat.tcl"   "$(SCRIPT_INSTALL_DIR)\msgcat1.3"
-	-@copy "$(ROOT)\library\msgcat\pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)\msgcat1.3"
+	@echo installing msgcat1.4
+	-@$(MKDIR) "$(SCRIPT_INSTALL_DIR)\msgcat1.4"
+	-@copy "$(ROOT)\library\msgcat\msgcat.tcl"   "$(SCRIPT_INSTALL_DIR)\msgcat1.4"
+	-@copy "$(ROOT)\library\msgcat\pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)\msgcat1.4"
 	@echo installing tcltest2.2
 	-@$(MKDIR) "$(SCRIPT_INSTALL_DIR)\tcltest2.2"
 	-@copy "$(ROOT)\library\tcltest\tcltest.tcl"   "$(SCRIPT_INSTALL_DIR)\tcltest2.2"
 	-@copy "$(ROOT)\library\tcltest\pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)\tcltest2.2"
 	@echo installing $(TCLDDEDLLNAME)
-	-@$(MKDIR) "$(SCRIPT_INSTALL_DIR)\dde1.1"
-	-@copy "$(TCLDDEDLL)" "$(SCRIPT_INSTALL_DIR)\dde1.1"
-	-@copy "$(ROOT)\library\dde\pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)\dde1.1"
+	-@$(MKDIR) "$(SCRIPT_INSTALL_DIR)\dde1.3"
+	-@copy "$(TCLDDEDLL)" "$(SCRIPT_INSTALL_DIR)\dde1.3"
+	-@copy "$(ROOT)\library\dde\pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)\dde1.3"
 	@echo installing $(TCLREGDLLNAME)
 	-@$(MKDIR) "$(SCRIPT_INSTALL_DIR)\reg1.1"
 	-@copy "$(TCLREGDLL)" "$(SCRIPT_INSTALL_DIR)\reg1.1"

@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: FileSystem.3,v 1.32.4.3 2003/09/05 23:08:05 dgp Exp $
+'\" RCS: @(#) $Id: FileSystem.3,v 1.32.4.4 2004/02/07 05:47:59 dgp Exp $
 '\" 
 .so man.macros
 .TH Filesystem 3 8.4 Tcl "Tcl Library Procedures"
@@ -163,10 +163,10 @@ file identified by \fBpathPtr\fR and to be evaluted.
 .AP "CONST char" *pattern in
 Only files or directories matching this pattern will be returned by
 \fBTcl_FSMatchInDirectory\fR.
-.AP GlobTypeData *types in
+.AP Tcl_GlobTypeData *types in
 Only files or directories matching the type descriptions contained in
 this structure will be returned by \fBTcl_FSMatchInDirectory\fR.  It
-is very important that the 'directory' flag is properly handled.
+is very important that the 'directory' and 'mount' flags are properly handled.
 This parameter may be NULL.
 .AP Tcl_Interp *interp in
 Interpreter to use either for results, evaluation, or reporting error 
@@ -499,12 +499,16 @@ part of the path).
 The separator is returned as a Tcl_Obj containing a string of length
 1.  If the path is invalid, NULL is returned.
 .PP
-\fBTcl_FSJoinPath\fR takes the given Tcl_Obj, which should be a valid list,
-and returns the path object given by considering the first 'elements'
-elements as valid path segments.  If elements < 0, we use the entire
-list.
+\fBTcl_FSJoinPath\fR takes the given Tcl_Obj, which should be a valid
+list (which is allowed to have a refCount of zero), and returns the path
+object given by considering the first 'elements' elements as valid path
+segments.  If elements < 0, we use the entire list.
 .PP
-Returns object with refCount of zero, containing the joined path.
+Returns object, typically with refCount of zero (but it could be shared
+under some conditions) , containing the joined path.  The caller must
+add a refCount to the object before using it.  In particular, the
+returned object could be an element of the given list, so freeing the
+list might free the object prematurely if no refCount has been taken.
 .PP
 \fBTcl_FSSplitPath\fR takes the given Tcl_Obj, which should be a valid path,
 and returns a Tcl List object containing each segment of that path as
@@ -524,19 +528,26 @@ either path is NULL, 0 is always returned.
 from the given Tcl_Obj a unique normalized path representation, whose
 string value can be used as a unique identifier for the file.
 .PP
-It returns the normalized path object, with refCount of zero, or NULL 
-if the path was invalid or could otherwise not be successfully
-converted.  Extraction of absolute, normalized paths is very
-efficient (because the filesystem operates on these representations
-internally), although the result when the filesystem contains
-numerous symbolic links may not be the most user-friendly
-version of a path.
+It returns the normalized path object, owned by Tcl, or NULL if the path
+was invalid or could otherwise not be successfully converted.
+Extraction of absolute, normalized paths is very efficient (because the
+filesystem operates on these representations internally), although the
+result when the filesystem contains numerous symbolic links may not be
+the most user-friendly version of a path.  The return value is owned by
+Tcl and has a lifetime equivalent to that of the \fIpathPtr\fR passed in
+(unless that is a relative path, in which case the normalized path
+object may be freed any time the cwd changes) - the caller can of
+course increment the refCount if it wishes to maintain a copy for longer.
 .PP
 \fBTcl_FSJoinToPath\fR takes the given object, which should usually be a
 valid path or NULL, and joins onto it the array of paths segments
 given.
 .PP
-Returns object with refCount of zero, containing the joined path.
+Returns object, typically with refCount of zero (but it could be shared
+under some conditions), containing the joined path.  The caller must
+add a refCount to the object before using it.  If any of the objects
+passed into this function (pathPtr or path elements) have a refCount
+of zero, they will be freed when this function returns.
 .PP
 \fBTcl_FSConvertToPathType\fR tries to convert the given Tcl_Obj to a valid
 Tcl path type, taking account of the fact that the cwd may have changed
@@ -562,19 +573,22 @@ not require additional conversions.
 \fBTcl_FSGetTranslatedPath\fR attempts to extract the translated path
 from the given Tcl_Obj.  
 .PP
-If the translation succeeds (i.e. the object is a valid path), then it
-is returned.  Otherwise NULL will be returned, and an error message may
-be left in the interpreter.  A "translated" path is one which
-contains no "~" or "~user" sequences (these have been expanded to
-their current representation in the filesystem).  This function is of
-little practical use, and \fBTcl_FSGetNormalizedPath\fR or
-\fBTcl_GetNativePath\fR are usually better functions to use for most
-purposes.
+If the translation succeeds (i.e. the object is a valid path), then it is
+returned.  Otherwise NULL will be returned, and an error message may be
+left in the interpreter.  A "translated" path is one which contains no
+"~" or "~user" sequences (these have been expanded to their current
+representation in the filesystem).  The object returned is owned by the
+caller, which must store it or call Tcl_DecrRefCount to ensure memory is
+freed.  This function is of little practical use, and
+\fBTcl_FSGetNormalizedPath\fR or \fBTcl_GetNativePath\fR are usually
+better functions to use for most purposes.
 .PP
-\fBTcl_FSGetTranslatedStringPath\fR does the same as 
+\fBTcl_FSGetTranslatedStringPath\fR does the same as
 \fBTcl_FSGetTranslatedPath\fR, but returns a character string or NULL.
-Again, \fBTcl_FSGetNormalizedPath\fR or \fBTcl_GetNativePath\fR are
-usually better functions to use for most purposes.
+The string returned is dynamically allocated and owned by the caller,
+which must store it or call ckfree to ensure it is freed.  Again,
+\fBTcl_FSGetNormalizedPath\fR or \fBTcl_GetNativePath\fR are usually
+better functions to use for most purposes.
 .PP
 \fBTcl_FSNewNativePath\fR performs something like that reverse of the
 usual obj->path->nativerep conversions.  If some code retrieves a path
@@ -589,16 +603,25 @@ a Utf-8 string representation if that is required by some Tcl code.
 filesystems, so that they can easily retrieve the native (char* or
 TCHAR*) representation of a path.  This function is a convenience
 wrapper around \fBTcl_FSGetInternalRep\fR, and assumes the native
-representation is string-based.  It may be desirable in the future
-to have non-string-based native representations (for example, on
-MacOS, a representation using a fileSpec of FSRef structure would
-probably be more efficient).  On Windows a full Unicode
-representation would allow for paths of unlimited length.  Currently
-the representation is simply a character string containing the
-complete, absolute path in the native encoding.
+representation is string-based.  It may be desirable in the future to
+have non-string-based native representations (for example, on MacOS, a
+representation using a fileSpec of FSRef structure would probably be
+more efficient).  On Windows a full Unicode representation would allow
+for paths of unlimited length.  Currently the representation is simply a
+character string which may contain either the relative path or a
+complete, absolute normalized path in the native encoding (complex
+conditions dictate which of these will be provided, so neither can be
+relied upon, unless the path is known to be absolute).  If you need a
+native path which must be absolute, then you should ask for the native
+version of a normalized path.  If for some reason a non-absolute,
+non-normalized version of the path is needed, that must be constructed
+separately (e.g. using \fBTcl_FSGetTranslatedPath\fR).
 .PP
 The native representation is cached so that repeated calls to this
-function will not require additional conversions.
+function will not require additional conversions.  The return value is
+owned by Tcl and has a lifetime equivalent to that of the \fIpathPtr\fR
+passed in (unless that is a relative path, in which case the native
+representation may be freed any time the cwd changes).
 .PP
 \fBTcl_FSFileSystemInfo\fR returns a list of two elements.  The first
 element is the name of the filesystem (e.g. "native" or "vfs" or "zip"
@@ -1046,6 +1069,19 @@ to \fIresult\fR should include any path prefix given in \fIpathPtr\fR
 Note that if no matches are found, that simply leads to an empty 
 result --- errors are only signaled for actual file or filesystem
 problems which may occur during the matching process.
+.PP
+There are two specific cases which it is important to handle correctly,
+both when \fItypes\fR is non-NULL. The two cases are when \fItypes->types
+& TCL_GLOB_TYPE_DIR\fR or \fItypes->types & TCL_GLOB_TYPE_MOUNT\fR are
+true (and in particular when the other flags are false).  In the first of
+these cases, the function must list the contained directories.  Tcl uses
+this to implement recursive globbing, so it is critical that filesystems
+implement directory matching correctly.  In the second of these cases,
+with \fITCL_GLOB_TYPE_MOUNT\fR, the filesystem must list the mount points
+which lie within the given \fIpathPtr\fR (and in this case, \fIpathPtr\fR
+need not lie within the same filesystem - different to all other cases in
+which this function is called).  Support for this is critical if Tcl is
+to have seamless transitions between from one filesystem to another.
 .SH UTIMEPROC       
 .PP
 Function to process a \fBTcl_FSUtime()\fR call.  Required to allow setting
@@ -1312,13 +1348,16 @@ typedef int Tcl_FSLoadFileProc(
 .CE
 .PP
 Returns a standard Tcl completion code.  If an error occurs, an error
-message is left in the interp's result.  The function dynamically loads
-a binary code file into memory.  On a successful
-load, the \fIhandlePtr\fR should be filled with a token for 
-the dynamically loaded file, and the \fIunloadProcPtr\fR should be
-filled in with the address of a procedure.  The procedure will be
-called with the given Tcl_LoadHandle as its only parameter when Tcl 
-needs to unload the file.
+message is left in the interp's result.  The function dynamically loads a
+binary code file into memory.  On a successful load, the \fIhandlePtr\fR
+should be filled with a token for the dynamically loaded file, and the
+\fIunloadProcPtr\fR should be filled in with the address of a procedure.
+The unload procedure will be called with the given Tcl_LoadHandle as its
+only parameter when Tcl needs to unload the file.  For example, for the
+native filesystem, the \fBTcl_LoadHandle\fR returned is currently a token
+which can be used in the private \fBTclpFindSymbol\fR to access functions
+in the new code.  Each filesystem is free to define the
+\fBTcl_LoadHandle\fR as it requires.
 .SH UNLOADFILEPROC	    
 .PP
 Function to unload a previously successfully loaded file.  If load was

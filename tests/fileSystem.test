@@ -24,23 +24,43 @@ namespace eval ::tcl::test::fileSystem {
     catch {
 	file delete -force link.file
 	file delete -force dir.link
-	file delete -force [file join dir.file linkinside.file]
+	file delete -force [file join dir.dir linkinside.file]
     }
 
 makeFile "test file" gorp.file
-makeDirectory dir.file
-makeFile "test file in directory" [file join dir.file inside.file]
+makeDirectory dir.dir
+makeDirectory [file join dir.dir dirinside.dir]
+makeFile "test file in directory" [file join dir.dir inside.file]
+
+proc testPathEqual {one two} {
+    if {[string equal $one $two]} {
+	return 1
+    } else {
+	return "not equal: $one $two"
+    }
+}
 
 if {[catch {
-    file link link.file gorp.file 
+    file link link.file gorp.file
+    cd dir.dir
     file link \
-      [file join dir.file linkinside.file] \
-      [file join dir.file inside.file]
-    file link dir.link dir.file
+      [file join linkinside.file] \
+      [file join inside.file]
+    cd ..
+    file link dir.link dir.dir
+    cd dir.dir
+    file link [file join dirinside.link] \
+      [file join dirinside.dir]
+    cd ..
 }]} {
     tcltest::testConstraint hasLinks 0
 } else {
     tcltest::testConstraint hasLinks 1
+}
+
+tcltest::testConstraint testsetplatform [string equal testsetplatform [info commands testsetplatform]]
+if {[tcltest::testConstraint testsetplatform]} {
+    set platform [testgetplatform]
 }
 
 tcltest::testConstraint testsimplefilesystem \
@@ -51,62 +71,62 @@ test filesystem-1.0 {link normalisation} {hasLinks} {
 } {0}
 
 test filesystem-1.1 {link normalisation} {hasLinks} {
-   string equal [file normalize dir.file] [file normalize dir.link]
+   string equal [file normalize dir.dir] [file normalize dir.link]
 } {0}
 
 test filesystem-1.2 {link normalisation} {hasLinks macOrUnix} {
-   string equal [file normalize [file join gorp.file foo]] \
+    testPathEqual [file normalize [file join gorp.file foo]] \
      [file normalize [file join link.file foo]]
 } {1}
 
 test filesystem-1.3 {link normalisation} {hasLinks} {
-   string equal [file normalize [file join dir.file foo]] \
+    testPathEqual [file normalize [file join dir.dir foo]] \
      [file normalize [file join dir.link foo]]
 } {1}
 
 test filesystem-1.4 {link normalisation} {hasLinks} {
-   string equal [file normalize [file join dir.file inside.file]] \
+    testPathEqual [file normalize [file join dir.dir inside.file]] \
      [file normalize [file join dir.link inside.file]]
 } {1}
 
 test filesystem-1.5 {link normalisation} {hasLinks} {
-   string equal [file normalize [file join dir.file linkinside.file]] \
-     [file normalize [file join dir.file linkinside.file]]
+    testPathEqual [file normalize [file join dir.dir linkinside.file]] \
+     [file normalize [file join dir.dir linkinside.file]]
 } {1}
 
 test filesystem-1.6 {link normalisation} {hasLinks} {
-   string equal [file normalize [file join dir.file linkinside.file]] \
+   string equal [file normalize [file join dir.dir linkinside.file]] \
      [file normalize [file join dir.link inside.file]]
 } {0}
 
 test filesystem-1.7 {link normalisation} {hasLinks macOrUnix} {
-   string equal [file normalize [file join dir.link linkinside.file foo]] \
-     [file normalize [file join dir.file inside.file foo]]
+    testPathEqual [file normalize [file join dir.link linkinside.file foo]] \
+     [file normalize [file join dir.dir inside.file foo]]
 } {1}
 
 test filesystem-1.8 {link normalisation} {hasLinks} {
-   string equal [file normalize [file join dir.file linkinside.filefoo]] \
+   string equal [file normalize [file join dir.dir linkinside.filefoo]] \
      [file normalize [file join dir.link inside.filefoo]]
 } {0}
 
 test filesystem-1.9 {link normalisation} {macOrUnix hasLinks} {
     file delete -force dir.link
-    file link dir.link [file nativename dir.file]
-    string equal [file normalize [file join dir.file linkinside.file foo]] \
+    file link dir.link [file nativename dir.dir]
+    testPathEqual [file normalize [file join dir.dir linkinside.file foo]] \
       [file normalize [file join dir.link inside.file foo]]
 } {1}
 
 test filesystem-1.10 {link normalisation: double link} {macOrUnix hasLinks} {
     file link dir2.link dir.link
-    string equal [file normalize [file join dir.file linkinside.file foo]] \
+    testPathEqual [file normalize [file join dir.dir linkinside.file foo]] \
       [file normalize [file join dir2.link inside.file foo]]
 } {1}
 
 makeDirectory dir2.file
 
 test filesystem-1.11 {link normalisation: double link, back in tree} {macOrUnix hasLinks} {
-    file link [file join dir2.file dir2.link] dir2.link
-    string equal [file normalize [file join dir.file linkinside.file foo]] \
+    file link [file join dir2.file dir2.link] [file join .. dir2.link]
+    testPathEqual [file normalize [file join dir.dir linkinside.file foo]] \
       [file normalize [file join dir2.file dir2.link inside.file foo]]
 } {1}
 
@@ -130,11 +150,198 @@ test filesystem-1.14 {file normalisation} {winOnly} {
     file normalize c:/
 } {C:/}
 
+test filesystem-1.15 {file normalisation} {winOnly} {
+    file normalize c:/../
+} {C:/}
+
+test filesystem-1.16 {file normalisation} {winOnly} {
+    file normalize c:/.
+} {C:/}
+
+test filesystem-1.17 {file normalisation} {winOnly} {
+    file normalize c:/..
+} {C:/}
+
+test filesystem-1.17.1 {file normalisation} {winOnly} {
+    file normalize c:\\..
+} {C:/}
+
+test filesystem-1.18 {file normalisation} {winOnly} {
+    file normalize c:/./
+} {C:/}
+
+test filesystem-1.19 {file normalisation} {winOnly} {
+    file normalize w:/./../../..
+} {w:/}
+
+test filesystem-1.20 {file normalisation} {winOnly} {
+    file normalize //name/foo/../
+} {//name/foo}
+
+test filesystem-1.21 {file normalisation} {winOnly} {
+    file normalize C:///foo/./
+} {C:/foo}
+
+test filesystem-1.22 {file normalisation} {winOnly} {
+    file normalize //name/foo/.
+} {//name/foo}
+
+test filesystem-1.23 {file normalisation} {winOnly} {
+    file normalize c:/./foo
+} {C:/foo}
+
+test filesystem-1.24 {file normalisation} {winOnly} {
+    file normalize w:/./../../../a
+} {w:/a}
+
+test filesystem-1.25 {file normalisation} {winOnly} {
+    file normalize w:/./.././../../a
+} {w:/a}
+
+test filesystem-1.25.1 {file normalisation} {winOnly} {
+    file normalize w:/./.././..\\..\\a\\bb
+} {w:/a/bb}
+
+test filesystem-1.26 {link normalisation: link and ..} {hasLinks} {
+    file delete -force dir2.link
+    set dir [file join dir2 foo bar]
+    file mkdir $dir
+    file link dir2.link [file join dir2 foo bar]
+    set res [list [file normalize [file join dir2 foo x]] \
+      [file normalize [file join dir2.link .. x]]]
+    if {![string equal [lindex $res 0] [lindex $res 1]]} {
+	set res "$res not equal"
+    } else {
+	set res "ok"
+    }
+} {ok}
+
+test filesystem-1.27 {file normalisation: up and down with ..} {
+    set dir [file join dir2 foo bar]
+    file mkdir $dir
+    set dir2 [file join dir2 .. dir2 foo .. foo bar]
+    set res [list [file normalize $dir] \
+      [file normalize $dir2]]
+    set res2 [list [file exists $dir] [file exists $dir2]]
+    if {![string equal [lindex $res 0] [lindex $res 1]]} {
+	set res "exists: $res2, $res not equal"
+    } else {
+	set res "ok: $res2"
+    }
+} {ok: 1 1}
+
+test filesystem-1.28 {link normalisation: link with .. and ..} {hasLinks} {
+    file delete -force dir2.link
+    set dir [file join dir2 foo bar]
+    file mkdir $dir
+    set to [file join dir2 .. dir2 foo .. foo bar]
+    file link dir2.link $to
+    set res [list [file normalize [file join dir2 foo x]] \
+      [file normalize [file join dir2.link .. x]]]
+    if {![string equal [lindex $res 0] [lindex $res 1]]} {
+	set res "$res not equal"
+    } else {
+	set res "ok"
+    }
+} {ok}
+
+test filesystem-1.29 {link normalisation: link with ..} {hasLinks} {
+    file delete -force dir2.link
+    set dir [file join dir2 foo bar]
+    file mkdir $dir
+    set to [file join dir2 .. dir2 foo .. foo bar]
+    file link dir2.link $to
+    set res [file normalize [file join dir2.link x yyy z]]
+    if {[string first ".." $res] != -1} {
+	set res "$res must not contain '..'"
+    } else {
+	set res "ok"
+    }
+} {ok}
+
+test filesystem-1.29.1 {link normalisation with two consecutive links} {hasLinks} {
+    testPathEqual [file normalize [file join dir.link dirinside.link abc]] \
+      [file normalize [file join dir.dir dirinside.dir abc]]
+} {1}
+
 file delete -force dir2.file
 file delete -force dir2.link
 file delete -force link.file dir.link
-removeFile [file join dir.file inside.file]
-removeDirectory dir.file
+file delete -force dir2
+file delete -force [file join dir.dir dirinside.link]
+removeFile [file join dir.dir inside.file]
+removeDirectory [file join dir.dir dirinside.dir]
+removeDirectory dir.dir
+
+test filesystem-1.30 {normalisation of nonexistent user} {
+    list [catch {file normalize ~noonewiththisname} err] $err
+} {1 {user "noonewiththisname" doesn't exist}}
+
+test filesystem-1.31 {link normalisation: link near filesystem root} {testsetplatform} {
+    testsetplatform unix
+    file normalize /foo/../bar
+} {/bar}
+
+test filesystem-1.32 {link normalisation: link near filesystem root} {testsetplatform} {
+    testsetplatform unix
+    file normalize /../bar
+} {/bar}
+
+test filesystem-1.33 {link normalisation: link near filesystem root} {testsetplatform} {
+    testsetplatform windows
+    set res [file normalize C:/../bar]
+    if {$::tcl_platform(platform) == "unix"} {
+	# Some unices go further in normalizing this -- not really
+	# a problem since this is a Windows test
+	regexp {C:/bar$} $res res
+    }
+    set res
+} {C:/bar}
+
+if {[tcltest::testConstraint testsetplatform]} {
+    testsetplatform $platform
+}
+
+test filesystem-1.34 {file normalisation with '/./'} {
+    set res [file normalize /foo/bar/anc/./.tml]
+    if {[string first "/./" $res] != -1} {
+	set res "normalization of /foo/bar/anc/./.tml is: $res"
+    } else {
+	set res "ok"
+    }
+    set res
+} {ok}
+
+test filesystem-1.35 {file normalisation with '/./'} {
+    set res [file normalize /ffo/bar/anc/./foo/.tml]
+    if {[string first "/./" $res] != -1 || ([regsub -all "foo" $res "" reg] == 2)} {
+	set res "normalization of /ffo/bar/anc/./foo/.tml is: $res"
+    } else {
+	set res "ok"
+    }
+    set res
+} {ok}
+
+test filesystem-1.36 {file normalisation with '/./'} {
+    set res [file normalize /foo/bar/anc/././asdasd/.tml]
+    if {[string first "/./" $res] != -1 || ([regsub -all "asdasd" $res "" reg] == 2) } {
+	set res "normalization of /foo/bar/anc/././asdasd/.tml is: $res"
+    } else {
+	set res "ok"
+    }
+    set res
+} {ok}
+
+test filesystem-1.37 {file normalisation with '/./'} {
+    set fname "/abc/./def/./ghi/./asda/.././.././asd/x/../../../../....."
+    set res [file norm $fname]
+    if {[string first "//" $res] != -1} {
+	set res "normalization of $fname is: $res"
+    } else {
+	set res "ok"
+    }
+    set res
+} {ok}
 
 test filesystem-2.0 {new native path} {unixOnly} {
    foreach f [lsort [glob -nocomplain /usr/bin/c*]] {
@@ -198,7 +405,7 @@ test filesystem-4.0 {testfilesystem} {
 	testfilesystem 0
 	set filesystemReport
     }
-    -result {* {access foo}}
+    -result {*{access foo}}
 }
 
 test filesystem-4.1 {testfilesystem} {
@@ -211,7 +418,7 @@ test filesystem-4.1 {testfilesystem} {
 	testfilesystem 0
 	set filesystemReport
     }
-    -result {* {stat foo}}
+    -result {*{stat foo}}
 }
 
 test filesystem-4.2 {testfilesystem} {
@@ -224,7 +431,7 @@ test filesystem-4.2 {testfilesystem} {
 	testfilesystem 0
 	set filesystemReport
     }
-    -result {* {lstat foo}}
+    -result {*{lstat foo}}
 }
 
 test filesystem-4.3 {testfilesystem} {
@@ -237,7 +444,7 @@ test filesystem-4.3 {testfilesystem} {
 	testfilesystem 0
 	set filesystemReport
     }
-    -result {* {matchindirectory *}*}
+    -result {*{matchindirectory *}*}
 }
 
 test filesystem-5.1 {cache and ~} {
@@ -412,15 +619,147 @@ test filesystem-7.2 {cross-filesystem copy from vfs maintains mtime} \
     cd [tcltest::temporaryDirectory]
     # We created this file several tests ago.
     set origtime [file mtime gorp.file]
-    testsimplefilesystem 1
-    file delete -force theCopy
-    file copy simplefs:/gorp.file theCopy
-    testsimplefilesystem 0
-    set newtime [file mtime theCopy]
-    file delete theCopy
+    set res [file exists gorp.file]
+    if {[catch {
+	testsimplefilesystem 1
+	file delete -force theCopy
+	file copy simplefs:/gorp.file theCopy
+	testsimplefilesystem 0
+	set newtime [file mtime theCopy]
+	file delete theCopy
+    } err]} {
+	lappend res $err
+	set newtime ""
+    }
     cd $dir
-    expr {$origtime == $newtime}
-} {1}
+    lappend res [expr {$origtime == $newtime}]
+} {1 1}
+
+test filesystem-7.3 {glob in simplefs} \
+  {testsimplefilesystem} {
+    set dir [pwd]
+    cd [tcltest::temporaryDirectory]
+    file mkdir simpledir
+    close [open [file join simpledir simplefile] w]
+    testsimplefilesystem 1
+    set res [glob -nocomplain -dir simplefs:/simpledir *]
+    testsimplefilesystem 0
+    file delete -force simpledir
+    cd $dir
+    set res
+} {simplefs:/simpledir/simplefile}
+
+test filesystem-7.4 {cross-filesystem file copy with -force} \
+  {testsimplefilesystem} {
+    set dir [pwd]
+    cd [tcltest::temporaryDirectory]
+    set fout [open [file join simplefile] w]
+    puts -nonewline $fout "1234567890"
+    close $fout
+    testsimplefilesystem 1
+    # First copy should succeed
+    set res [catch {file copy simplefs:/simplefile file2} err]
+    lappend res $err
+    # Second copy should fail (no -force)
+    lappend res [catch {file copy simplefs:/simplefile file2} err]
+    lappend res $err
+    # Third copy should succeed (-force)
+    lappend res [catch {file copy -force simplefs:/simplefile file2} err]
+    lappend res $err
+    lappend res [file exists file2]
+    testsimplefilesystem 0
+    file delete -force simplefile
+    file delete -force file2
+    cd $dir
+    set res
+} {0 10 1 {error copying "simplefs:/simplefile" to "file2": file already exists} 0 10 1}
+
+test filesystem-7.5 {cross-filesystem file copy with -force} \
+  {testsimplefilesystem unixOnly} {
+    set dir [pwd]
+    cd [tcltest::temporaryDirectory]
+    set fout [open [file join simplefile] w]
+    puts -nonewline $fout "1234567890"
+    close $fout
+    testsimplefilesystem 1
+    # First copy should succeed
+    set res [catch {file copy simplefs:/simplefile file2} err]
+    lappend res $err
+    file attributes file2 -permissions 0000
+    # Second copy should fail (no -force)
+    lappend res [catch {file copy simplefs:/simplefile file2} err]
+    lappend res $err
+    # Third copy should succeed (-force)
+    lappend res [catch {file copy -force simplefs:/simplefile file2} err]
+    lappend res $err
+    lappend res [file exists file2]
+    testsimplefilesystem 0
+    file delete -force simplefile
+    file delete -force file2
+    cd $dir
+    set res
+} {0 10 1 {error copying "simplefs:/simplefile" to "file2": file already exists} 0 10 1}
+
+test filesystem-7.6 {cross-filesystem dir copy with -force} \
+  {testsimplefilesystem} {
+    set dir [pwd]
+    cd [tcltest::temporaryDirectory]
+    file delete -force simpledir
+    file mkdir simpledir
+    file mkdir dir2
+    set fout [open [file join simpledir simplefile] w]
+    puts -nonewline $fout "1234567890"
+    close $fout
+    testsimplefilesystem 1
+    # First copy should succeed
+    set res [catch {file copy simplefs:/simpledir dir2} err]
+    lappend res $err
+    # Second copy should fail (no -force)
+    lappend res [catch {file copy simplefs:/simpledir dir2} err]
+    lappend res $err
+    # Third copy should succeed (-force)
+    lappend res [catch {file copy -force simplefs:/simpledir dir2} err]
+    lappend res $err
+    lappend res [file exists [file join dir2 simpledir]] \
+      [file exists [file join dir2 simpledir simplefile]]
+    testsimplefilesystem 0
+    file delete -force simpledir
+    file delete -force dir2
+    cd $dir
+    set res
+} {0 {} 1 {error copying "simplefs:/simpledir" to "dir2/simpledir": file already exists} 0 {} 1 1}
+
+test filesystem-7.7 {cross-filesystem dir copy with -force} \
+  {testsimplefilesystem unixOnly} {
+    set dir [pwd]
+    cd [tcltest::temporaryDirectory]
+    file delete -force simpledir
+    file mkdir simpledir
+    file mkdir dir2
+    set fout [open [file join simpledir simplefile] w]
+    puts -nonewline $fout "1234567890"
+    close $fout
+    testsimplefilesystem 1
+    # First copy should succeed
+    set res [catch {file copy simplefs:/simpledir dir2} err]
+    lappend res $err
+    # Second copy should fail (no -force)
+    lappend res [catch {file copy simplefs:/simpledir dir2} err]
+    lappend res $err
+    # Third copy should succeed (-force)
+    # I've noticed on some Unices that this only succeeds
+    # intermittently (some runs work, some fail).  This needs
+    # examining further.
+    lappend res [catch {file copy -force simplefs:/simpledir dir2} err]
+    lappend res $err
+    lappend res [file exists [file join dir2 simpledir]] \
+      [file exists [file join dir2 simpledir simplefile]]
+    testsimplefilesystem 0
+    file delete -force simpledir
+    file delete -force dir2
+    cd $dir
+    set res
+} {0 {} 1 {error copying "simplefs:/simpledir" to "dir2/simpledir": file already exists} 0 {} 1 1}
 
 removeFile gorp.file
 

@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.50.2.3 2003/10/16 02:28:01 dgp Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.50.2.4 2004/02/07 05:48:00 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2024,6 +2024,111 @@ Tcl_JoinObjCmd(dummy, interp, objc, objv)
 /*
  *----------------------------------------------------------------------
  *
+ * Tcl_LassignObjCmd --
+ *
+ *	This object-based procedure is invoked to process the "lassign" Tcl
+ *	command. See the user documentation for details on what it does.
+ *
+ * Results:
+ *	A standard Tcl object result.
+ *
+ * Side effects:
+ *	See the user documentation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+    /* ARGSUSED */
+int
+Tcl_LassignObjCmd(dummy, interp, objc, objv)
+    ClientData dummy;		/* Not used. */
+    Tcl_Interp *interp;		/* Current interpreter. */
+    int objc;			/* Number of arguments. */
+    Tcl_Obj *CONST objv[];	/* Argument objects. */
+{
+    Tcl_Obj *valueObj;		/* Value to assign to variable, as read from
+				 * the list object or created in the emptyObj
+				 * variable. */
+    Tcl_Obj *emptyObj = NULL;	/* If non-NULL, an empty object created for
+				 * being assigned to variables once we have
+				 * run out of values from the list object. */
+    Tcl_Obj **listObjv;		/* The contents of the list. */
+    int listObjc;		/* The length of the list. */
+    int i;
+
+    if (objc < 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "list varname ?varname ...?");
+	return TCL_ERROR;
+    }
+
+    /*
+     * First assign values out of the list to variables.
+     */
+
+    for (i=0 ; i+2<objc ; i++) {
+	/*
+	 * We do this each time round the loop because that is robust
+	 * against shimmering nasties.
+	 */
+	if (Tcl_ListObjIndex(interp, objv[1], i, &valueObj) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	if (valueObj == NULL) {
+	    if (emptyObj == NULL) {
+		TclNewObj(emptyObj);
+		Tcl_IncrRefCount(emptyObj);
+	    }
+	    valueObj = emptyObj;
+	}
+	/*
+	 * Make sure the reference count for the value being assigned
+	 * is greater than one (other reference minimally in the list)
+	 * so we can't get hammered by shimmering.
+	 */
+	Tcl_IncrRefCount(valueObj);
+	if (Tcl_ObjSetVar2(interp, objv[i+2], NULL, valueObj,
+		TCL_LEAVE_ERR_MSG) == NULL) {
+	    Tcl_DecrRefCount(valueObj);
+	    if (emptyObj != NULL) {
+		Tcl_DecrRefCount(emptyObj);
+	    }
+	    return TCL_ERROR;
+	}
+	Tcl_DecrRefCount(valueObj);
+    }
+    if (emptyObj != NULL) {
+	Tcl_DecrRefCount(emptyObj);
+    }
+
+    /*
+     * Now place a list of any values left over into the interpreter
+     * result.
+     *
+     * First, figure out how many values were not assigned by getting
+     * the length of the list.  Note that I do not expect this
+     * operation to fail.
+     */
+
+    if (Tcl_ListObjGetElements(interp, objv[1],
+	    &listObjc, &listObjv) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    if (listObjc > objc-2) {
+	/*
+	 * OK, there were left-overs.  Make a list of them and slap
+	 * that back in the interpreter result.
+	 */
+	Tcl_SetObjResult(interp,
+		Tcl_NewListObj(listObjc - objc + 2, listObjv + objc - 2));
+    }
+
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_LindexObjCmd --
  *
  *	This object-based procedure is invoked to process the "lindex" Tcl
@@ -2650,7 +2755,7 @@ Tcl_LrepeatObjCmd(dummy, interp, objc, objv)
     register int objc;			/* Number of arguments. */
     register Tcl_Obj *CONST objv[];	/* The argument objects. */
 {
-    int elementCount, i, j, k, result;
+    int elementCount, i, result;
     Tcl_Obj **dataArray;
 
     /* 
@@ -2685,22 +2790,50 @@ Tcl_LrepeatObjCmd(dummy, interp, objc, objv)
      * elementCount times.  Note that we don't bother with stack
      * allocation for this, as we expect this function to be used
      * mainly when stack allocation would be inappropriate anyway.
+     * First check to see if we'd overflow and try to allocate an
+     * object larger than our memory allocator allows.  Note that this
+     * is actually a fairly small value when you're on a serious
+     * 64-bit machine, but that requires API changes to fix.
      *
-     * POSSIBLE FUTURE ENHANCEMENT: Build the resulting list object
-     * directly and avoid a copy.
+     * We allocate using attemptckalloc() because if we ask for
+     * something big but can't get it, we've still got a high chance
+     * of having a proper failover strategy.  If *that* fails to get
+     * memory, Tcl_Panic() will happen just a few lines lower...
      */
 
-    dataArray = (Tcl_Obj **) ckalloc(elementCount * objc * sizeof(Tcl_Obj));
+    if ((unsigned)elementCount > INT_MAX/sizeof(Tcl_Obj *)/objc) {
+	Tcl_AppendResult(interp, "overflow of maximum list length", NULL);
+	return TCL_ERROR;
+    }
+
+    dataArray = (Tcl_Obj **)
+	    attemptckalloc(elementCount * objc * sizeof(Tcl_Obj *));
+
+    if (dataArray == NULL) {
+	Tcl_AppendResult(interp, "insufficient memory to create list", NULL);
+	return TCL_ERROR;
+    }
 
     /*
-     * Set the elements.  Note that this ends up setting k to the
-     * total number of elements.
+     * Set the elements.  Note that we handle the common degenerate
+     * case of a single value being repeated separately to permit the
+     * compiler as much room as possible to optimize a loop that might
+     * be run a very large number of times.
      */
 
-    k = 0;
-    for (i=0 ; i<elementCount ; i++) {
-	for (j=0 ; j<objc ; j++) {
-	    dataArray[k++] = objv[j];
+    if (objc == 1) {
+	register Tcl_Obj *tmpPtr = objv[0];
+
+	for (i=0 ; i<elementCount ; i++) {
+	    dataArray[i] = tmpPtr;
+	}
+    } else {
+	int j, k = 0;
+
+	for (i=0 ; i<elementCount ; i++) {
+	    for (j=0 ; j<objc ; j++) {
+		dataArray[k++] = objv[j];
+	    }
 	}
     }
 
@@ -2708,8 +2841,7 @@ Tcl_LrepeatObjCmd(dummy, interp, objc, objv)
      * Build the result list, clean up and return.
      */
 
-    Tcl_SetObjResult(interp, Tcl_NewListObj(k, dataArray));
-    ckfree((char*) dataArray);
+    Tcl_SetObjResult(interp, TclNewListObjDirect(elementCount*objc,dataArray));
     return TCL_OK;
 }
 

@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPort.h,v 1.28.2.1 2003/06/24 17:27:41 dgp Exp $
+ * RCS: @(#) $Id: tclUnixPort.h,v 1.28.2.2 2004/02/07 05:48:11 dgp Exp $
  */
 
 #ifndef _TCLUNIXPORT
@@ -464,7 +464,9 @@ EXTERN int		gettimeofday _ANSI_ARGS_((struct timeval *tp,
  * isn't generally declared in a header file anywhere.
  */
 
+#ifdef NO_ERRNO
 extern int errno;
+#endif /* NO_ERRNO */
 
 /*
  * Not all systems declare all the errors that Tcl uses!  Provide some
@@ -518,6 +520,7 @@ extern double strtod();
 
 #ifdef DJGPP
 #define	TCL_PLATFORM_TRANSLATION	TCL_TRANSLATE_CRLF
+typedef int socklen_t;
 #else
 #define	TCL_PLATFORM_TRANSLATION	TCL_TRANSLATE_LF
 #endif
@@ -531,15 +534,12 @@ extern double strtod();
 #define TclpReleaseFile(file)	/* Nothing. */
 
 /*
- * The following defines wrap the system memory allocation routines for
- * use by tclAlloc.c.  By default off unused on Unix.
+ * The following defines wrap the system memory allocation routines.
  */
 
-#if USE_TCLALLOC
-#   define TclpSysAlloc(size, isBin)	malloc((size_t)size)
-#   define TclpSysFree(ptr)		free((char*)ptr)
-#   define TclpSysRealloc(ptr, size)	realloc((char*)ptr, (size_t)size)
-#endif
+#define TclpSysAlloc(size, isBin)	malloc((size_t)size)
+#define TclpSysFree(ptr)		free((char*)ptr)
+#define TclpSysRealloc(ptr, size)	realloc((char*)ptr, (size_t)size)
 
 /*
  * The following macros and declaration wrap the C runtime library

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFCmd.c,v 1.35.4.2 2003/10/16 02:28:04 dgp Exp $
+ * RCS: @(#) $Id: tclWinFCmd.c,v 1.35.4.3 2004/02/07 05:48:12 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -22,6 +22,7 @@
 #define DOTREE_PRED   1     /* pre-order directory  */
 #define DOTREE_POSTD  2     /* post-order directory */
 #define DOTREE_F      3     /* regular file */
+#define DOTREE_LINK   4     /* symbolic link */
 
 /*
  * Callbacks for file attributes code.
@@ -237,11 +238,11 @@ DoRenameFile(
               "=r"(RESTORED_HANDLER) );
 
     if (INITIAL_ESP != RESTORED_ESP)
-        panic("ESP restored incorrectly");
+        Tcl_Panic("ESP restored incorrectly");
     if (INITIAL_EBP != RESTORED_EBP)
-        panic("EBP restored incorrectly");
+        Tcl_Panic("EBP restored incorrectly");
     if (INITIAL_HANDLER != RESTORED_HANDLER)
-        panic("HANDLER restored incorrectly");
+        Tcl_Panic("HANDLER restored incorrectly");
 # endif /* TCL_MEM_DEBUG */
 #else
     } __except (EXCEPTION_EXECUTE_HANDLER) {}
@@ -599,11 +600,11 @@ DoCopyFile(
               "=r"(RESTORED_HANDLER) );
 
     if (INITIAL_ESP != RESTORED_ESP)
-        panic("ESP restored incorrectly");
+        Tcl_Panic("ESP restored incorrectly");
     if (INITIAL_EBP != RESTORED_EBP)
-        panic("EBP restored incorrectly");
+        Tcl_Panic("EBP restored incorrectly");
     if (INITIAL_HANDLER != RESTORED_HANDLER)
-        panic("HANDLER restored incorrectly");
+        Tcl_Panic("HANDLER restored incorrectly");
 # endif /* TCL_MEM_DEBUG */
 #else
     } __except (EXCEPTION_EXECUTE_HANDLER) {}
@@ -969,6 +970,7 @@ DoRemoveJustDirectory(
 				 * DString filled with UTF-8 name of file
 				 * causing error. */
 {
+    DWORD attr;
     /*
      * The RemoveDirectory API acts differently under Win95/98 and NT
      * WRT NULL and "". Avoid passing these values.
@@ -979,13 +981,24 @@ DoRemoveJustDirectory(
 	goto end;
     }
 
-    if ((*tclWinProcs->removeDirectoryProc)(nativePath) != FALSE) {
-	return TCL_OK;
+    attr = (*tclWinProcs->getFileAttributesProc)(nativePath);
+
+    if (attr & FILE_ATTRIBUTE_REPARSE_POINT) {
+	/* It is a symbolic link -- remove it */
+	if (TclWinSymLinkDelete(nativePath, 0) == 0) {
+	    return TCL_OK;
+	}
+    } else {
+	/* Ordinary directory */
+	if ((*tclWinProcs->removeDirectoryProc)(nativePath) != FALSE) {
+	    return TCL_OK;
+	}
     }
+    
     TclWinConvertError(GetLastError());
 
     if (Tcl_GetErrno() == EACCES) {
-	DWORD attr = (*tclWinProcs->getFileAttributesProc)(nativePath);
+	attr = (*tclWinProcs->getFileAttributesProc)(nativePath);
 	if (attr != 0xffffffff) {
 	    if ((attr & FILE_ATTRIBUTE_DIRECTORY) == 0) {
 		/* 
@@ -1021,6 +1034,7 @@ DoRemoveJustDirectory(
 	     * Windows 95 and Win32s report removing a non-empty directory 
 	     * as EACCES, not EEXIST.  If the directory is not empty,
 	     * change errno so caller knows what's going on.
+
 	     */
 
 	    if (TclWinGetPlatformId() != VER_PLATFORM_WIN32_NT) {
@@ -1166,6 +1180,16 @@ TraverseWinTree(
 	nativeErrfile = nativeSource;
 	goto end;
     }
+    
+    if (sourceAttr & FILE_ATTRIBUTE_REPARSE_POINT) {
+	/*
+	 * Process the symbolic link
+	 */
+
+	return (*traverseProc)(nativeSource, nativeTarget, 
+			       DOTREE_LINK, errorPtr);
+    }
+    
     if ((sourceAttr & FILE_ATTRIBUTE_DIRECTORY) == 0) {
 	/*
 	 * Process the regular file
@@ -1344,10 +1368,17 @@ TraversalCopy(
 	    }
 	    break;
 	}
+	case DOTREE_LINK: {
+	    if (TclWinSymLinkCopyDirectory(nativeSrc, nativeDst) == TCL_OK) {
+		return TCL_OK;
+	    }
+	    break;
+	}
 	case DOTREE_PRED: {
 	    if (DoCreateDirectory(nativeDst) == TCL_OK) {
 		DWORD attr = (*tclWinProcs->getFileAttributesProc)(nativeSrc);
-		if ((*tclWinProcs->setFileAttributesProc)(nativeDst, attr) != FALSE) {
+		if ((*tclWinProcs->setFileAttributesProc)(nativeDst, attr) 
+		  != FALSE) {
 		    return TCL_OK;
 		}
 		TclWinConvertError(GetLastError());
@@ -1402,6 +1433,12 @@ TraversalDelete(
     switch (type) {
 	case DOTREE_F: {
 	    if (TclpDeleteFile(nativeSrc) == TCL_OK) {
+		return TCL_OK;
+	    }
+	    break;
+	}
+	case DOTREE_LINK: {
+	    if (DoRemoveJustDirectory(nativeSrc, 0, NULL) == TCL_OK) {
 		return TCL_OK;
 	    }
 	    break;
@@ -1556,10 +1593,9 @@ ConvertFileNameFormat(
 {
     int pathc, i;
     Tcl_Obj *splitPath;
-    int result = TCL_OK;
 
     splitPath = Tcl_FSSplitPath(fileName, &pathc);
-
+    
     if (splitPath == NULL || pathc == 0) {
 	if (interp != NULL) {
 	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), 
@@ -1567,10 +1603,16 @@ ConvertFileNameFormat(
 		"\": no such file or directory", 
 		(char *) NULL);
 	}
-	result = TCL_ERROR;
 	goto cleanup;
     }
     
+    /*
+     * We will decrement this again at the end.  It is safer to
+     * do this in case any of the calls below retain a reference
+     * to splitPath.
+     */
+    Tcl_IncrRefCount(splitPath);
+
     for (i = 0; i < pathc; i++) {
 	Tcl_Obj *elt;
 	char *pathv;
@@ -1635,7 +1677,6 @@ ConvertFileNameFormat(
 		if (interp != NULL) {
 		    StatError(interp, fileName);
 		}
-		result = TCL_ERROR;
 		goto cleanup;
 	    }
 	    if (tclWinProcs->useWide) {
@@ -1693,13 +1734,27 @@ ConvertFileNameFormat(
     }
 
     *attributePtrPtr = Tcl_FSJoinPath(splitPath, -1);
+    
+    if (splitPath != NULL) {
+	/* 
+	 * Unfortunately, the object we will return may have its only
+	 * refCount as part of the list splitPath.  This means if
+	 * we free splitPath, the object will disappear.  So, we
+	 * have to be very careful here.  Unfortunately this means
+	 * we must manipulate the object's refCount directly.
+	 */
+	Tcl_IncrRefCount(*attributePtrPtr);
+	Tcl_DecrRefCount(splitPath);
+	--(*attributePtrPtr)->refCount;
+    }
+    return TCL_OK;
 
-cleanup:
+  cleanup:
     if (splitPath != NULL) {
 	Tcl_DecrRefCount(splitPath);
     }
   
-    return result;
+    return TCL_ERROR;
 }
 
 /*

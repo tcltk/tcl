@@ -15,12 +15,13 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: basic.test,v 1.27.2.2 2003/08/07 21:36:04 dgp Exp $
+# RCS: @(#) $Id: basic.test,v 1.27.2.3 2004/02/07 05:48:02 dgp Exp $
 #
 
 package require tcltest 2
 namespace import -force ::tcltest::*
 
+testConstraint testevalex [llength [info commands testevalex]]
 testConstraint testcmdtoken [llength [info commands testcmdtoken]]
 testConstraint testcreatecommand [llength [info commands testcreatecommand]]
 testConstraint exec [llength [info commands exec]]
@@ -201,13 +202,13 @@ test basic-13.2 {Tcl_ExposeCommand, invalidate cached refs to cmd now being expo
 } {42 {} {} Hello {} {} 42}
 
 test basic-14.1 {Tcl_CreateCommand, new cmd goes into a namespace specified in its name, if any} {testcreatecommand} {
-    catch {eval namespace delete [namespace children :: test_ns_*]}
+    catch {namespace delete {expand}[namespace children :: test_ns_*]}
     list [testcreatecommand create] \
 	 [test_ns_basic::createdcommand] \
 	 [testcreatecommand delete]
 } {{} {CreatedCommandProc in ::test_ns_basic} {}}
 test basic-14.2 {Tcl_CreateCommand, namespace code ignore single ":"s in middle or end of names} {testcreatecommand} {
-    catch {eval namespace delete [namespace children :: test_ns_*]}
+    catch {namespace delete {expand}[namespace children :: test_ns_*]}
     catch {rename value:at: ""}
     list [testcreatecommand create2] \
 	 [value:at:] \
@@ -215,7 +216,7 @@ test basic-14.2 {Tcl_CreateCommand, namespace code ignore single ":"s in middle 
 } {{} {CreatedCommandProc2 in ::} {}}
 
 test basic-15.1 {Tcl_CreateObjCommand, new cmd goes into a namespace specified in its name, if any} {
-    catch {eval namespace delete [namespace children :: test_ns_*]}
+    catch {namespace delete {expand}[namespace children :: test_ns_*]}
     namespace eval test_ns_basic {}
     proc test_ns_basic::cmd {} {  ;# proc requires that ns already exist
         return [namespace current]
@@ -231,7 +232,7 @@ test basic-17.1 {TclInvokeObjCommand} {emptyTest} {
 } {}
 
 test basic-18.1 {TclRenameCommand, name of existing cmd can have namespace qualifiers} {
-    catch {eval namespace delete [namespace children :: test_ns_*]}
+    catch {namespace delete {expand}[namespace children :: test_ns_*]}
     catch {rename cmd ""}
     namespace eval test_ns_basic {
         proc p {} {
@@ -243,11 +244,11 @@ test basic-18.1 {TclRenameCommand, name of existing cmd can have namespace quali
          [test_ns_basic::q] 
 } {{p in ::test_ns_basic} {} {p in ::test_ns_basic}}
 test basic-18.2 {TclRenameCommand, existing cmd must be found} {
-    catch {eval namespace delete [namespace children :: test_ns_*]}
+    catch {namespace delete {expand}[namespace children :: test_ns_*]}
     list [catch {rename test_ns_basic::p test_ns_basic::q} msg] $msg
 } {1 {can't rename "test_ns_basic::p": command doesn't exist}}
 test basic-18.3 {TclRenameCommand, delete cmd if new name is empty} {
-    catch {eval namespace delete [namespace children :: test_ns_*]}
+    catch {namespace delete {expand}[namespace children :: test_ns_*]}
     namespace eval test_ns_basic {
         proc p {} {
             return "p in [namespace current]"
@@ -258,7 +259,7 @@ test basic-18.3 {TclRenameCommand, delete cmd if new name is empty} {
          [info commands test_ns_basic::*]
 } {::test_ns_basic::p {} {}}
 test basic-18.4 {TclRenameCommand, bad new name} {
-    catch {eval namespace delete [namespace children :: test_ns_*]}
+    catch {namespace delete {expand}[namespace children :: test_ns_*]}
     namespace eval test_ns_basic {
         proc p {} {
             return "p in [namespace current]"
@@ -275,7 +276,7 @@ test basic-18.5 {TclRenameCommand, new name must not already exist} {
     list [catch {rename test_ns_basic::q :::george::martha} msg] $msg
 } {1 {can't rename to ":::george::martha": command already exists}}
 test basic-18.6 {TclRenameCommand, check for command shadowing by newly renamed cmd} {
-    catch {eval namespace delete [namespace children :: test_ns_*]}
+    catch {namespace delete {expand}[namespace children :: test_ns_*]}
     catch {rename p ""}
     catch {rename q ""}
     proc p {} {
@@ -298,7 +299,7 @@ test basic-19.1 {Tcl_SetCommandInfo} {emptyTest} {
 } {}
 
 test basic-20.1 {Tcl_GetCommandInfo, names for commands created inside namespaces} {testcmdtoken} {
-    catch {eval namespace delete [namespace children :: test_ns_*]}
+    catch {namespace delete {expand}[namespace children :: test_ns_*]}
     catch {rename p ""}
     catch {rename q ""}
     catch {unset x}
@@ -317,7 +318,7 @@ test basic-20.2 {Tcl_GetCommandInfo, names for commands created outside namespac
          [rename test_ns_basic::test_ns_basic2::p q] \
          [testcmdtoken name $x]
 } {{p ::test_ns_basic::test_ns_basic2::p} {} {q ::q}}
-test basic-20.3 {Tcl_GetCommandInfo, #-quoting} {
+test basic-20.3 {Tcl_GetCommandInfo, #-quoting} testcmdtoken {
     catch {rename \# ""}
     set x [testcmdtoken create \#]
     testcmdtoken name $x
@@ -327,7 +328,7 @@ test basic-21.1 {Tcl_GetCommandName} {emptyTest} {
 } {}
 
 test basic-22.1 {Tcl_GetCommandFullName} {
-    catch {eval namespace delete [namespace children :: test_ns_*]}
+    catch {namespace delete {expand}[namespace children :: test_ns_*]}
     namespace eval test_ns_basic1 {
         namespace export cmd*
         proc cmd1 {} {}
@@ -373,7 +374,7 @@ test basic-24.1 {Tcl_DeleteCommandFromToken, invalidate all compiled code if cmd
          [interp delete test_interp]
 } {123 {set called with a 123} {}}
 test basic-24.2 {Tcl_DeleteCommandFromToken, deleting commands changes command epoch} {
-    catch {eval namespace delete [namespace children :: test_ns_*]}
+    catch {namespace delete {expand}[namespace children :: test_ns_*]}
     catch {rename p ""}
     proc p {} {
         return "global p"
@@ -391,7 +392,7 @@ test basic-24.2 {Tcl_DeleteCommandFromToken, deleting commands changes command e
          [test_ns_basic::callP]
 } {{namespace p} {} {global p}}
 test basic-24.3 {Tcl_DeleteCommandFromToken, delete imported cmds that refer to a deleted cmd} {
-    catch {eval namespace delete [namespace children :: test_ns_*]}
+    catch {namespace delete {expand}[namespace children :: test_ns_*]}
     catch {rename p ""}
     namespace eval test_ns_basic {
         namespace export p
@@ -459,7 +460,7 @@ test basic-35.1 {TclObjInvokeGlobal} {emptyTest} {
 } {}
 
 test basic-36.1 {TclObjInvoke, lookup of "unknown" command} {
-    catch {eval namespace delete [namespace children :: test_ns_*]}
+    catch {namespace delete {expand}[namespace children :: test_ns_*]}
     catch {interp delete test_interp}
     interp create test_interp
     interp eval test_interp {
@@ -587,9 +588,315 @@ test basic-47.1 {Tcl_EvalEx: check for missing close-bracket} -body {
     subst {a[set b [format cd]}
 } -returnCodes error -result {missing close-bracket}
 
+# Some lists for expansion tests to work with
+set l1 [list a {b b} c d]
+set l2 [list e f {g g} h]
+proc l3 {} {
+    list i j k {l l}
+}
 
-# cleanup
-catch {eval namespace delete [namespace children :: test_ns_*]}
+# Do all tests once byte compiled and once with direct string evaluation
+for {set noComp 0} {$noComp <= 1} {incr noComp} {
+
+if $noComp {
+    interp alias {} run {} testevalex
+    set constraints testevalex
+} else {
+    interp alias {} run {} if 1
+    set constraints {}
+}
+
+test basic-47.2.$noComp {Tcl_EvalEx: error during word expansion} -body {
+    run {{expand}\{}
+} -constraints $constraints -returnCodes error -result {unmatched open brace in list}
+
+test basic-47.3.$noComp {Tcl_EvalEx, error during substitution} -body {
+    run {{expand}[error foo]}
+} -constraints $constraints -returnCodes error -result foo
+
+test basic-47.4.$noComp {Tcl_EvalEx: no expansion} $constraints {
+    run {list {expand} {expand}	{expand}}
+} {expand expand expand}
+
+test basic-47.5.$noComp {Tcl_EvalEx: expansion} $constraints {
+    run {list {expand}{} {expand}	{expand}x {expand}"y z"}
+} {expand x y z}
+
+test basic-47.6.$noComp {Tcl_EvalEx: expansion to zero args} $constraints {
+    run {list {expand}{}}
+} {}
+
+test basic-47.7.$noComp {Tcl_EvalEx: expansion to one arg} $constraints {
+    run {list {expand}x}
+} x
+
+test basic-47.8.$noComp {Tcl_EvalEx: expansion to many args} $constraints {
+    run {list {expand}"y z"}
+} {y z}
+
+test basic-47.9.$noComp {Tcl_EvalEx: expansion and subst order} $constraints {
+    set x 0
+    run {list [incr x] {expand}[incr x] [incr x] \
+		{expand}[list [incr x] [incr x]] [incr x]}
+} {1 2 3 4 5 6}
+
+test basic-47.10.$noComp {Tcl_EvalEx: expand and memory management} $constraints {
+    run {concat {expand}{} a b c d e f g h i j k l m n o p q r}
+} {a b c d e f g h i j k l m n o p q r}
+
+test basic-47.11.$noComp {Tcl_EvalEx: expand and memory management} $constraints {
+    run {concat {expand}1 a b c d e f g h i j k l m n o p q r}
+} {1 a b c d e f g h i j k l m n o p q r}
+
+test basic-47.12.$noComp {Tcl_EvalEx: expand and memory management} $constraints {
+    run {concat {expand}{1 2} a b c d e f g h i j k l m n o p q r}
+} {1 2 a b c d e f g h i j k l m n o p q r}
+
+test basic-47.13.$noComp {Tcl_EvalEx: expand and memory management} $constraints {
+    run {concat {expand}{} {expand}{1 2} a b c d e f g h i j k l m n o p q}
+} {1 2 a b c d e f g h i j k l m n o p q}
+
+test basic-47.14.$noComp {Tcl_EvalEx: expand and memory management} $constraints {
+    run {concat {expand}{} a b c d e f g h i j k l m n o p q r s}
+} {a b c d e f g h i j k l m n o p q r s}
+
+test basic-47.15.$noComp {Tcl_EvalEx: expand and memory management} $constraints {
+    run {concat {expand}1 a b c d e f g h i j k l m n o p q r s}
+} {1 a b c d e f g h i j k l m n o p q r s}
+
+test basic-47.16.$noComp {Tcl_EvalEx: expand and memory management} $constraints {
+    run {concat {expand}{1 2} a b c d e f g h i j k l m n o p q r s}
+} {1 2 a b c d e f g h i j k l m n o p q r s}
+
+test basic-47.17.$noComp {Tcl_EvalEx: expand and memory management} $constraints {
+    run {concat {expand}{} {expand}{1 2} a b c d e f g h i j k l m n o p q r}
+} {1 2 a b c d e f g h i j k l m n o p q r}
+
+test basic-48.1.$noComp {expansion: parsing} $constraints {
+	run { # A comment
+
+		# Another comment
+		list 1  2\
+			3   {expand}$::l1
+            
+		# Comment again
+	}
+} {1 2 3 a {b b} c d}
+
+test basic-48.2.$noComp {no expansion} $constraints {
+        run {list $::l1 $::l2 [l3]}
+} {{a {b b} c d} {e f {g g} h} {i j k {l l}}}
+
+test basic-48.3.$noComp {expansion} $constraints {
+        run {list {expand}$::l1 $::l2 {expand}[l3]}
+} {a {b b} c d {e f {g g} h} i j k {l l}}
+
+test basic-48.4.$noComp {expansion: really long cmd} $constraints {
+        set cmd [list list]
+        for {set t 0} {$t < 500} {incr t} {
+            lappend cmd {{expand}$::l1}
+        }
+        llength [run [join $cmd]]
+} 2000
+
+test basic-48.5.$noComp {expansion: error detection} -setup {
+	set l "a {a b}x y"
+} -constraints $constraints -body {
+	run {list $::l1 {expand}$l}
+} -cleanup {
+	unset l
+} -returnCodes 1 -result {list element in braces followed by "x" instead of space}
+
+test basic-48.6.$noComp {expansion: odd usage} $constraints {
+        run {list {expand}$::l1$::l2}
+} {a {b b} c de f {g g} h}
+
+test basic-48.7.$noComp {expansion: odd usage} -constraints $constraints -body {
+        run {list {expand}[l3]$::l1}
+} -returnCodes 1 -result {list element in braces followed by "a" instead of space}
+
+test basic-48.8.$noComp {expansion: odd usage} $constraints {
+        run {list {expand}hej$::l1}
+} {heja {b b} c d}
+
+test basic-48.9.$noComp {expansion: Not all {expand} should trigger} $constraints {
+	run {list {expand}$::l1 \{expand\}$::l2 "{expand}$::l1" {{expand} i j k}}
+} {a {b b} c d {{expand}e f {g g} h} {{expand}a {b b} c d} {{expand} i j k}}
+
+test basic-48.10.$noComp {expansion: expansion of command word} -setup {
+	set cmd [list string range jultomte]
+} -constraints $constraints -body {
+	run {{expand}$cmd 2 6}
+} -cleanup {
+	unset cmd
+} -result ltomt
+
+test basic-48.11.$noComp {expansion: expansion into nothing} -setup {
+        set cmd {}
+        set bar {}
+} -constraints $constraints -body {
+        run {{expand}$cmd {expand}$bar}
+} -cleanup {
+	unset cmd bar
+} -result {}
+
+test basic-48.12.$noComp {expansion: odd usage} $constraints {
+	run {list {expand}$::l1 {expand}"hej hopp" {expand}$::l2}
+} {a {b b} c d hej hopp e f {g g} h}
+
+test basic-48.13.$noComp {expansion: odd usage} $constraints {
+	run {list {expand}$::l1 {expand}{hej hopp} {expand}$::l2}
+} {a {b b} c d hej hopp e f {g g} h}
+
+test basic-48.14.$noComp {expansion: hash command} -setup {
+        catch {rename \# ""}
+        set cmd "#"
+    } -constraints $constraints -body { 
+           run { {expand}$cmd apa bepa }
+    } -cleanup {
+	unset cmd
+} -returnCodes 1 -result {invalid command name "#"}
+
+test basic-48.15.$noComp {expansion: complex words} -setup {
+            set a(x) [list a {b c} d e]
+            set b x
+            set c [list {f\ g h\ i j k} x y]
+            set d {0\ 1 2 3}
+    } -constraints $constraints -body {
+            run { lappend d {expand}$a($b) {expand}[lindex $c 0] }
+    } -cleanup {
+	unset a b c d
+} -result {{0 1} 2 3 a {b c} d e {f g} {h i} j k}
+
+testConstraint memory [llength [info commands memory]]
+test basic-48.16.$noComp {expansion: testing for leaks} -setup {
+        proc getbytes {} {
+            set lines [split [memory info] "\n"]
+            lindex [lindex $lines 3] 3
+        }
+        # This test is made to stress the allocation, reallocation and
+        # object reference management in Tcl_EvalEx.
+        proc stress {} {
+            set a x
+            # Create free objects that should disappear
+            set l [list 1$a 2$a 3$a 4$a 5$a 6$a 7$a]
+            # A short number of words and a short result (8)
+            set l [run {list {expand}$l $a$a}]
+            # A short number of words and a longer result (27)
+            set l [run {list {expand}$l $a$a {expand}$l $a$a {expand}$l $a$a}]
+            # A short number of words and a longer result, with an error
+            # This is to stress the cleanup in the error case
+            if {![catch {run {_moo_ {expand}$l $a$a {expand}$l $a$a {expand}$l}}]} {
+                error "An error was expected in the previous statement"
+            }
+            # Many words
+            set l [run {list {expand}$l $a$a {expand}$l $a$a \
+                                 {expand}$l $a$a {expand}$l $a$a \
+                                 {expand}$l $a$a {expand}$l $a$a \
+                                 {expand}$l $a$a {expand}$l $a$a \
+                                 {expand}$l $a$a {expand}$l $a$a \
+                                 {expand}$l $a$a {expand}$l $a$a \
+                                 {expand}$l $a$a {expand}$l $a$a \
+                                 {expand}$l $a$a {expand}$l $a$a \
+                                 {expand}$l $a$a {expand}$l $a$a \
+                                 {expand}$l $a$a}]
+
+            if {[llength $l] != 19*28} {
+                error "Bad Length: [llength $l] should be [expr {19*28}]"
+            }
+        }
+    } -constraints [linsert $constraints 0 memory] -body {
+        set end [getbytes]
+        for {set i 0} {$i < 5} {incr i} {
+            stress
+            set tmp $end
+            set end [getbytes]
+        }    
+        set leak [expr {$end - $tmp}]
+    } -cleanup {
+	unset end i tmp
+	rename getbytes {}
+	rename stress {}
+} -result 0
+
+test basic-48.17.$noComp {expansion: object safety} -setup {
+        set old_precision $::tcl_precision
+        set ::tcl_precision 4
+    } -constraints $constraints -body { 
+            set third [expr {1.0/3.0}]
+            set l [list $third $third]
+            set x [run {list $third {expand}$l $third}]
+	    set res [list]
+            foreach t $x {
+                lappend res [expr {$t * 3.0}]
+            }
+            set res
+    } -cleanup {
+        set ::tcl_precision $old_precision
+        unset old_precision res t l x third
+} -result {1.0 1.0 1.0 1.0}
+
+test basic-48.18.$noComp {expansion: list semantics} -constraints $constraints -body {
+        set badcmd {
+            list a b
+            set apa 10
+        }
+        set apa 0
+        list [llength [run { {expand}$badcmd }]] $apa
+    } -cleanup {
+	unset apa badcmd
+} -result {5 0}
+
+test basic-48.19.$noComp {expansion: error checking order} -body {
+        set badlist "a {}x y"
+        set a 0
+        set b 0
+        catch {run {list [incr a] {expand}$badlist [incr b]}}
+        list $a $b
+    } -constraints $constraints -cleanup {
+	unset badlist a b
+} -result {1 0}
+
+test basic-48.20.$noComp {expansion: odd case with word boundaries} $constraints {
+    run {list {expand}$::l1 {expand}"hej hopp" {expand}$::l2}
+} {a {b b} c d hej hopp e f {g g} h}
+
+test basic-48.21.$noComp {expansion: odd case with word boundaries} $constraints {
+    run {list {expand}$::l1 {expand}{hej hopp} {expand}$::l2}
+} {a {b b} c d hej hopp e f {g g} h}
+
+test basic-48.22.$noComp {expansion: odd case with word boundaries} -body {
+    run {list {expand}$::l1 {expand}"hej hopp {expand}$::l2}
+} -constraints $constraints -returnCodes error -result {missing "}
+
+test basic-48.23.$noComp {expansion: handle return codes} -constraints $constraints -body {
+        set res {}
+        for {set t 0} {$t < 10} {incr t} {
+            run { {expand}break }
+        }
+        lappend res $t
+
+        for {set t 0} {$t < 10} {incr t} {
+            run { {expand}continue }
+            set t 20
+        }
+        lappend res $t
+
+        lappend res [catch { run { {expand}{error Hejsan} } } err]
+        lappend res $err
+    } -cleanup {
+	unset res t
+} -result {0 10 1 Hejsan}
+
+} ;# End of noComp loop
+
+# Clean up after expand tests
+unset noComp l1 l2 constraints
+rename l3 {}
+rename run {}
+
+ #cleanup
+catch {namespace delete {expand}[namespace children :: test_ns_*]}
 catch {namespace delete george}
 catch {interp delete test_interp}
 catch {rename p ""}

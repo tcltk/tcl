@@ -3,7 +3,7 @@
 # Default system startup file for Tcl-based applications.  Defines
 # "unknown" procedure and auto-load facilities.
 #
-# RCS: @(#) $Id: init.tcl,v 1.56.2.1 2003/10/16 02:28:02 dgp Exp $
+# RCS: @(#) $Id: init.tcl,v 1.56.2.2 2004/02/07 05:48:01 dgp Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
@@ -668,6 +668,7 @@ proc auto_execok name {
 proc tcl::CopyDirectory {action src dest} {
     set nsrc [file normalize $src]
     set ndest [file normalize $dest]
+
     if {[string equal $action "renaming"]} {
 	# Can't rename volumes.  We could give a more precise
 	# error message here, but that would break the test suite.
@@ -684,8 +685,14 @@ proc tcl::CopyDirectory {action src dest} {
 	      into itself"
 	}
 	if {[string equal $action "copying"]} {
-	    return -code error "error $action \"$src\" to\
-	      \"$dest\": file already exists"
+	    # We used to throw an error here, but, looking more closely
+	    # at the core copy code in tclFCmd.c, if the destination
+	    # exists, then we should only call this function if -force
+	    # is true, which means we just want to over-write.  So,
+	    # the following code is now commented out.
+	    # 
+	    # return -code error "error $action \"$src\" to\
+	    # \"$dest\": file already exists"
 	} else {
 	    # Depending on the platform, and on the current
 	    # working directory, the directories '.', '..'
@@ -721,10 +728,10 @@ proc tcl::CopyDirectory {action src dest} {
     # or filesystems hidden files may have other interpretations.
     set filelist [concat [glob -nocomplain -directory $src *] \
       [glob -nocomplain -directory $src -types hidden *]]
-    
+
     foreach s [lsort -unique $filelist] {
 	if {([file tail $s] != ".") && ([file tail $s] != "..")} {
-	    file copy $s [file join $dest [file tail $s]]
+	    file copy -force $s [file join $dest [file tail $s]]
 	}
     }
     return

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPipe.c,v 1.35.2.2 2003/10/16 02:28:04 dgp Exp $
+ * RCS: @(#) $Id: tclWinPipe.c,v 1.35.2.3 2004/02/07 05:48:12 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -874,7 +874,7 @@ TclpCloseFile(
 	    break;
 
 	default:
-	    panic("TclpCloseFile: unexpected file type");
+	    Tcl_Panic("TclpCloseFile: unexpected file type");
     }
 
     ckfree((char *) filePtr);
@@ -905,6 +905,8 @@ TclpGetPid(
     Tcl_Pid pid)		/* The HANDLE of the child process. */
 {
     ProcInfo *infoPtr;
+
+    PipeInit();
 
     Tcl_MutexLock(&pipeMutex);
     for (infoPtr = procList; infoPtr != NULL; infoPtr = infoPtr->nextPtr) {
@@ -1215,17 +1217,19 @@ TclpCreateProcess(
 		    if (*end == '/')
 		        break;
 		}
-		if (*end != '/')
-		    panic("no / in executable path name");
+		if (*end != '/') {
+		    Tcl_Panic("no / in executable path name");
+		}
 		i = (end - start) + 1;
 		pipeDllPtr = Tcl_NewStringObj(start, i);
 		Tcl_AppendToObj(pipeDllPtr, Tcl_DStringValue(&pipeDll), -1);
 		Tcl_IncrRefCount(pipeDllPtr);
-		if (Tcl_FSConvertToPathType(interp, pipeDllPtr) != TCL_OK)
-		    panic("Tcl_FSConvertToPathType failed");
+		if (Tcl_FSConvertToPathType(interp, pipeDllPtr) != TCL_OK) {
+		    Tcl_Panic("Tcl_FSConvertToPathType failed");
+		}
 		fileExists = (Tcl_FSAccess(pipeDllPtr, F_OK) == 0);
 		if (!fileExists) {
-		    panic("Tcl pipe dll \"%s\" not found",
+		    Tcl_Panic("Tcl pipe dll \"%s\" not found",
 		        Tcl_DStringValue(&pipeDll));
 		}
 		Tcl_DStringAppend(&cmdLine, Tcl_DStringValue(&pipeDll), -1);
@@ -1577,16 +1581,18 @@ BuildCommandLine(
 	    arg = executable;
 	} else {
 	    arg = argv[i];
+	    Tcl_DStringAppend(&ds, " ", 1);
 	}
-
-	if(Tcl_DStringLength(&ds) > 0) Tcl_DStringAppend(&ds, " ", 1);
 
 	quote = 0;
 	if (arg[0] == '\0') {
 	    quote = 1;
 	} else {
-	    for (start = arg; *start != '\0'; start++) {
-		if (isspace(*start)) { /* INTL: ISO space. */
+	    int count;
+	    Tcl_UniChar ch;
+	    for (start = arg; *start != '\0'; start += count) {
+	        count = Tcl_UtfToUniChar(start, &ch);
+		if (Tcl_UniCharIsSpace(ch)) { /* INTL: ISO space. */
 		    quote = 1;
 		    break;
 		}
@@ -1595,39 +1601,34 @@ BuildCommandLine(
 	if (quote) {
 	    Tcl_DStringAppend(&ds, "\"", 1);
 	}
-
 	start = arg;	    
 	for (special = arg; ; ) {
 	    if ((*special == '\\') && 
-		    (special[1] == '\\' || special[1] == '"')) {
-		Tcl_DStringAppend(&ds, start, special - start);
+		    (special[1] == '\\' || special[1] == '"' || (quote && special[1] == '\0'))) {
+		Tcl_DStringAppend(&ds, start, (int) (special - start));
 		start = special;
 		while (1) {
 		    special++;
-		    if (*special == '"') {
+		    if (*special == '"' || (quote && *special == '\0')) {
 			/* 
 			 * N backslashes followed a quote -> insert 
 			 * N * 2 + 1 backslashes then a quote.
 			 */
 
-			Tcl_DStringAppend(&ds, start, special - start);
+			Tcl_DStringAppend(&ds, start,
+				(int) (special - start));
 			break;
 		    }
 		    if (*special != '\\') {
 			break;
 		    }
 		}
-		Tcl_DStringAppend(&ds, start, special - start);
+		Tcl_DStringAppend(&ds, start, (int) (special - start));
 		start = special;
 	    }
 	    if (*special == '"') {
-		Tcl_DStringAppend(&ds, start, special - start);
+		Tcl_DStringAppend(&ds, start, (int) (special - start));
 		Tcl_DStringAppend(&ds, "\\\"", 2);
-		start = special + 1;
-	    }
-	    if (*special == '{') {
-		Tcl_DStringAppend(&ds, start, special - start);
-		Tcl_DStringAppend(&ds, "\\{", 2);
 		start = special + 1;
 	    }
 	    if (*special == '\0') {
@@ -1635,7 +1636,7 @@ BuildCommandLine(
 	    }
 	    special++;
 	}
-	Tcl_DStringAppend(&ds, start, special - start);
+	Tcl_DStringAppend(&ds, start, (int) (special - start));
 	if (quote) {
 	    Tcl_DStringAppend(&ds, "\"", 1);
 	}
@@ -2480,7 +2481,7 @@ Tcl_WaitPid(
     int *statPtr,
     int options)
 {
-    ProcInfo *infoPtr, **prevPtrPtr;
+    ProcInfo *infoPtr = NULL, **prevPtrPtr;
     DWORD flags;
     Tcl_Pid result;
     DWORD ret, exitCode;
@@ -2497,7 +2498,7 @@ Tcl_WaitPid(
     }
 
     /*
-     * Find the process on the process list.
+     * Find the process and cut it from the process list.
      */
 
     Tcl_MutexLock(&pipeMutex);
@@ -2505,6 +2506,7 @@ Tcl_WaitPid(
     for (infoPtr = procList; infoPtr != NULL;
 	    prevPtrPtr = &infoPtr->nextPtr, infoPtr = infoPtr->nextPtr) {
 	 if (infoPtr->hProcess == (HANDLE) pid) {
+	    *prevPtrPtr = infoPtr->nextPtr;
 	    break;
 	}
     }
@@ -2534,6 +2536,13 @@ Tcl_WaitPid(
     if (ret == WAIT_TIMEOUT) {
 	*statPtr = 0;
 	if (options & WNOHANG) {
+	    /*
+	     * Re-insert this infoPtr back on the list.
+	     */
+	    Tcl_MutexLock(&pipeMutex);
+	    infoPtr->nextPtr = procList;
+	    procList = infoPtr;
+	    Tcl_MutexUnlock(&pipeMutex);
 	    return 0;
 	} else {
 	    result = 0;
@@ -2596,11 +2605,10 @@ Tcl_WaitPid(
     }
 
     /*
-     * Remove the process from the process list and close the process handle.
+     * Officially close the process handle.
      */
 
     CloseHandle(infoPtr->hProcess);
-    *prevPtrPtr = infoPtr->nextPtr;
     ckfree((char*)infoPtr);
 
     return result;

@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.157.2.5 2003/10/16 02:28:01 dgp Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.157.2.6 2004/02/07 05:48:00 dgp Exp $
  */
 
 #ifndef _TCL
@@ -43,7 +43,6 @@ extern "C" {
  * unix/configure.in	(2 LOC Major, 2 LOC minor, 1 LOC patch)
  * win/configure.in	(as above)
  * win/tcl.m4		(not patchlevel)
- * win/makefile.vc	(not patchlevel) 2 LOC
  * win/makefile.bc	(not patchlevel) 2 LOC
  * README		(sections 0 and 2)
  * mac/README		(2 LOC, not patchlevel)
@@ -1169,8 +1168,13 @@ struct Tcl_HashEntry {
  *				hash table will attempt to rectify this by
  *				randomising the bits and then using the upper
  *				N bits as the index into the table.
+ * TCL_HASH_KEY_SYSTEM_HASH:
+ *				If this flag is set then all memory internally
+ *                              allocated for the hash table that is not for an
+ *                              entry will use the system heap.
  */
 #define TCL_HASH_KEY_RANDOMIZE_HASH 0x1
+#define TCL_HASH_KEY_SYSTEM_HASH    0x2
 
 /*
  * Structure definition for the methods associated with a hash table
@@ -2078,6 +2082,7 @@ typedef struct Tcl_Token {
 #define TCL_TOKEN_VARIABLE	32
 #define TCL_TOKEN_SUB_EXPR	64
 #define TCL_TOKEN_OPERATOR	128
+#define TCL_TOKEN_EXPAND_WORD	256
 
 /*
  * Parsing error types.  On any parsing error, one of these values
@@ -2234,28 +2239,30 @@ typedef struct Tcl_Config {
 } Tcl_Config;
 
 
-/*
- * Deprecated Tcl procedures:
- */
 #ifndef TCL_NO_DEPRECATED
+
+    /*
+     * Deprecated Tcl procedures:
+     */
+
 #   define Tcl_EvalObj(interp,objPtr) \
 	Tcl_EvalObjEx((interp),(objPtr),0)
 #   define Tcl_GlobalEvalObj(interp,objPtr) \
 	Tcl_EvalObjEx((interp),(objPtr),TCL_EVAL_GLOBAL)
+
+    /*
+     * These function have been renamed. The old names are deprecated, but
+     * we define these macros for backwards compatibilty.
+     */
+
+#   define Tcl_Ckalloc Tcl_Alloc
+#   define Tcl_Ckfree Tcl_Free
+#   define Tcl_Ckrealloc Tcl_Realloc
+#   define Tcl_Return Tcl_SetResult
+#   define Tcl_TildeSubst Tcl_TranslateFileName
+#   define panic Tcl_Panic
+#   define panicVA Tcl_PanicVA
 #endif
-
-
-/*
- * These function have been renamed. The old names are deprecated, but we
- * define these macros for backwards compatibilty.
- */
-#define Tcl_Ckalloc Tcl_Alloc
-#define Tcl_Ckfree Tcl_Free
-#define Tcl_Ckrealloc Tcl_Realloc
-#define Tcl_Return Tcl_SetResult
-#define Tcl_TildeSubst Tcl_TranslateFileName
-#define panic Tcl_Panic
-#define panicVA Tcl_PanicVA
 
 
 /*

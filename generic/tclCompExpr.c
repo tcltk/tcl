@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.14.2.2 2003/10/16 02:28:01 dgp Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.14.2.3 2004/02/07 05:48:00 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -351,7 +351,7 @@ CompileSubExpr(exprTokenPtr, infoPtr, envPtr)
     char buffer[TCL_UTF_MAX];
 
     if (exprTokenPtr->type != TCL_TOKEN_SUB_EXPR) {
-	panic("CompileSubExpr: token type %d not TCL_TOKEN_SUB_EXPR\n",
+	Tcl_Panic("CompileSubExpr: token type %d not TCL_TOKEN_SUB_EXPR\n",
 	        exprTokenPtr->type);
     }
     code = TCL_OK;
@@ -549,14 +549,14 @@ CompileSubExpr(exprTokenPtr, infoPtr, envPtr)
 		    break;
 		    
 		default:
-		    panic("CompileSubExpr: unexpected operator %d requiring special treatment\n",
+		    Tcl_Panic("CompileSubExpr: unexpected operator %d requiring special treatment\n",
 		        opIndex);
 	    } /* end switch on operator requiring special treatment */
 	    infoPtr->hasOperators = 1;
 	    break;
 
         default:
-	    panic("CompileSubExpr: unexpected token type %d\n",
+	    Tcl_Panic("CompileSubExpr: unexpected token type %d\n",
 	            tokenPtr->type);
     }
 
@@ -612,11 +612,11 @@ CompileLandOrLorExpr(exprTokenPtr, opIndex, infoPtr, envPtr, endPtrPtr)
 {
     JumpFixup shortCircuitFixup; /* Used to fix up the short circuit jump
 				  * after the first subexpression. */
-    JumpFixup lhsTrueFixup, lhsEndFixup;
-    				 /* Used to fix up jumps used to convert the
-				  * first operand to 0 or 1. */
+    JumpFixup shortCircuitFixup2;/* Used to fix up the second jump to the
+				  * short-circuit target. */
+    JumpFixup endFixup;          /* Used to fix up jump to the end. */
     Tcl_Token *tokenPtr;
-    int dist, code;
+    int code;
     int savedStackDepth = envPtr->currStackDepth;
 
     /*
@@ -631,32 +631,9 @@ CompileLandOrLorExpr(exprTokenPtr, opIndex, infoPtr, envPtr, endPtrPtr)
     tokenPtr += (tokenPtr->numComponents + 1);
 
     /*
-     * Convert the first operand to the result that Tcl requires:
-     * "0" or "1". Eventually we'll use a new instruction for this.
-     */
-    
-    TclEmitForwardJump(envPtr, TCL_TRUE_JUMP, &lhsTrueFixup);
-    TclEmitPush(TclRegisterNewLiteral(envPtr, "0", 1), envPtr);
-    TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, &lhsEndFixup);
-    dist = (envPtr->codeNext - envPtr->codeStart) - lhsTrueFixup.codeOffset;
-    if (TclFixupForwardJump(envPtr, &lhsTrueFixup, dist, 127)) {
-        badDist:
-	panic("CompileLandOrLorExpr: bad jump distance %d\n", dist);
-    }
-    envPtr->currStackDepth = savedStackDepth;
-    TclEmitPush(TclRegisterNewLiteral(envPtr, "1", 1), envPtr);
-    dist = (envPtr->codeNext - envPtr->codeStart) - lhsEndFixup.codeOffset;
-    if (TclFixupForwardJump(envPtr, &lhsEndFixup, dist, 127)) {
-	goto badDist;
-    }
-
-    /*
-     * Emit the "short circuit" jump around the rest of the expression.
-     * Duplicate the "0" or "1" on top of the stack first to keep the
-     * jump from consuming it.
+     * Emit the short-circuit jump.
      */
 
-    TclEmitOpcode(INST_DUP, envPtr);
     TclEmitForwardJump(envPtr,
 	    ((opIndex==OP_LAND)? TCL_FALSE_JUMP : TCL_TRUE_JUMP),
 	    &shortCircuitFixup);
@@ -670,23 +647,45 @@ CompileLandOrLorExpr(exprTokenPtr, opIndex, infoPtr, envPtr, endPtrPtr)
 	goto done;
     }
     tokenPtr += (tokenPtr->numComponents + 1);
-
+	    
     /*
-     * Emit a "logical and" or "logical or" instruction. This does not try
-     * to "short- circuit" the evaluation of both operands, but instead
-     * ensures that we either have a "1" or a "0" result.
+     * The result is the boolean value of the second operand. We 
+     * code this in a somewhat contorted manner to be able to reuse
+     * the shortCircuit value and save one INST_JUMP.
      */
 
-    TclEmitOpcode(((opIndex==OP_LAND)? INST_LAND : INST_LOR), envPtr);
+    TclEmitForwardJump(envPtr,
+	    ((opIndex==OP_LAND)? TCL_FALSE_JUMP : TCL_TRUE_JUMP),
+	    &shortCircuitFixup2);
+
+    if (opIndex == OP_LAND) {
+	TclEmitPush(TclRegisterNewLiteral(envPtr, "1", 1), envPtr);
+    } else {
+	TclEmitPush(TclRegisterNewLiteral(envPtr, "0", 1), envPtr);
+    }
+    TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, &endFixup);
 
     /*
-     * Now that we know the target of the forward jump, update it with the
-     * correct distance.
+     * Fixup the short-circuit jumps and push the shortCircuit value.
+     * Note that shortCircuitFixup2 is always a short jump.
      */
 
-    dist = (envPtr->codeNext - envPtr->codeStart)
-	    - shortCircuitFixup.codeOffset;
-    TclFixupForwardJump(envPtr, &shortCircuitFixup, dist, 127);
+    TclFixupForwardJumpToHere(envPtr, &shortCircuitFixup2, 127);
+    if (TclFixupForwardJumpToHere(envPtr, &shortCircuitFixup, 127)) {
+	/*
+	 * shortCircuit jump grown by 3 bytes: update endFixup.
+	 */
+	    
+	 endFixup.codeOffset += 3;
+    }
+
+    if (opIndex == OP_LAND) {
+	TclEmitPush(TclRegisterNewLiteral(envPtr, "0", 1), envPtr);
+    } else {
+	TclEmitPush(TclRegisterNewLiteral(envPtr, "1", 1), envPtr);
+    }
+
+    TclFixupForwardJumpToHere(envPtr, &endFixup, 127);
     *endPtrPtr = tokenPtr;
 
     done:

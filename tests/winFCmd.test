@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: winFCmd.test,v 1.20.4.2 2003/10/16 02:28:03 dgp Exp $
+# RCS: @(#) $Id: winFCmd.test,v 1.20.4.3 2004/02/07 05:48:03 dgp Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -39,7 +39,7 @@ proc cleanup {args} {
 	    set x [glob -directory $p tf* td*]
 	}
 	if {$x != ""} {
-	    catch {eval file delete -force -- $x}
+	    catch {file delete -force -- {expand}$x}
 	}
     }
 }
@@ -610,7 +610,7 @@ test winFCmd-6.11 {TclpRemoveDirectory: attr == -1} {pcOnly nt} {
     # WinXP returns EEXIST, WinNT seems to return EACCES.  No policy
     # decision has been made as to which is correct.
     regsub {E(ACCES|EXIST)} $res "EACCES or EEXIST"
-} {1 {C:/ EACCES or EEXIST}}
+} [list 1 [list / EACCES or EEXIST]]
 test winFCmd-6.12 {TclpRemoveDirectory: errno == EACCES} {pcOnly 95} {
     cleanup
     createfile tf1
@@ -1016,12 +1016,21 @@ test winFCmd-16.8 {Windows file normalization} {pcOnly} {
 test winFCmd-16.9 {Windows file normalization} {pcOnly} {
     file norm /bar/foo
 } "${d}:/bar/foo"
-test winFCmd-16.10 {Windows file normalization} {pcOnly knownBug} {
-    if {$d eq "C"} { set dd "D" } else { set dd "C" }
+if {$d eq "C"} { set dd "D" } else { set dd "C" }
+test winFCmd-16.10 {Windows file normalization} {pcOnly} {
     file norm ${dd}:foo
-} {Tcl doesn't know about a drive-specific cwd}
+} "${dd}:/foo"
+test winFCmd-16.11 {Windows file normalization} {pcOnly cdrom} {
+    cd ${d}:
+    cd $cdrom
+    cd ${d}:
+    cd $cdrom
+    # Must not crash
+    set result "no crash"
+} {no crash}
 
-unset d pwd
+cd $pwd
+unset d dd pwd
 
 # This block of code used to occur after the "return" call, so I'm
 # commenting it out and assuming that this code is still under construction.

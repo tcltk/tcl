@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.49.2.2 2003/10/16 02:28:01 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.49.2.3 2004/02/07 05:48:00 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -54,13 +54,13 @@ static int traceInitialized = 0;
 
 InstructionDesc tclInstructionTable[] = {
    /* Name	      Bytes stackEffect #Opnds Operand types	Stack top, next	  */
-    {"done",		  1,   -1,        0,   {OPERAND_NONE}},
+    {"done",		  1,   -1,         0,   {OPERAND_NONE}},
 	/* Finish ByteCode execution and return stktop (top stack item) */
     {"push1",		  2,   +1,         1,   {OPERAND_UINT1}},
 	/* Push object at ByteCode objArray[op1] */
     {"push4",		  5,   +1,         1,   {OPERAND_UINT4}},
 	/* Push object at ByteCode objArray[op4] */
-    {"pop",		  1,   -1,        0,   {OPERAND_NONE}},
+    {"pop",		  1,   -1,         0,   {OPERAND_NONE}},
 	/* Pop the topmost stack object */
     {"dup",		  1,   +1,         0,   {OPERAND_NONE}},
 	/* Duplicate the topmost stack object and push the result */
@@ -97,7 +97,7 @@ InstructionDesc tclInstructionTable[] = {
 	/* Store scalar; value is stktop, scalar name is stknext */
     {"storeArray1",	  2,   -1,         1,   {OPERAND_UINT1}},
 	/* Store array element; array at op1<=255, value is top then elem */
-    {"storeArray4",	  5,   -1,          1,   {OPERAND_UINT4}},
+    {"storeArray4",	  5,   -1,         1,   {OPERAND_UINT4}},
 	/* Store array element; array at op1>=256, value is top then elem */
     {"storeArrayStk",	  1,   -2,         0,   {OPERAND_NONE}},
 	/* Store array element; value is stktop, then elem, array names */
@@ -118,12 +118,12 @@ InstructionDesc tclInstructionTable[] = {
 	/* Incr scalar at slot op1 <= 255; amount is 2nd operand byte */
     {"incrScalarStkImm",  2,   0,          1,   {OPERAND_INT1}},
 	/* Incr scalar; scalar name is stktop; incr amount is op1 */
-    {"incrArray1Imm",	  3,   0,         2,   {OPERAND_UINT1, OPERAND_INT1}},
+    {"incrArray1Imm",	  3,   0,          2,   {OPERAND_UINT1, OPERAND_INT1}},
 	/* Incr array elem; array at slot op1 <= 255, elem is stktop,
 	 * amount is 2nd operand byte */
     {"incrArrayStkImm",	  2,   -1,         1,   {OPERAND_INT1}},
 	/* Incr array element; elem is top then array name, amount is op1 */
-    {"incrStkImm",	  2,   0,         1,   {OPERAND_INT1}},
+    {"incrStkImm",	  2,   0,	   1,   {OPERAND_INT1}},
 	/* Incr general variable; unparsed name is top, amount is op1 */
     
     {"jump1",		  2,   0,          1,   {OPERAND_INT1}},
@@ -227,9 +227,9 @@ InstructionDesc tclInstructionTable[] = {
 	/* Str Match:	push (strmatch stknext stktop) opnd == nocase */
     {"list",		  5,   INT_MIN,    1,   {OPERAND_UINT4}},
 	/* List:	push (stk1 stk2 ... stktop) */
-    {"listindex",	  1,   -1,         0,   {OPERAND_NONE}},
+    {"listIndex",	  1,   -1,         0,   {OPERAND_NONE}},
 	/* List Index:	push (listindex stknext stktop) */
-    {"listlength",	  1,   0,          0,   {OPERAND_NONE}},
+    {"listLength",	  1,   0,          0,   {OPERAND_NONE}},
 	/* List Len:	push (listlength stktop) */
     {"appendScalar1",	  2,   0,          1,   {OPERAND_UINT1}},
 	/* Append scalar variable at op1<=255 in frame; value is stktop */
@@ -255,7 +255,7 @@ InstructionDesc tclInstructionTable[] = {
 	/* Lappend array element; value is stktop, then elem, array names */
     {"lappendStk",	  1,   -1,         0,   {OPERAND_NONE}},
 	/* Lappend general variable; value is stktop, then unparsed name */
-    {"lindexMulti",	  5,   INT_MIN,   1,   {OPERAND_UINT4}},
+    {"lindexMulti",	  5,   INT_MIN,    1,   {OPERAND_UINT4}},
         /* Lindex with generalized args, operand is number of stacked objs 
 	 * used: (operand-1) entries from stktop are the indices; then list 
 	 * to process. */
@@ -264,15 +264,24 @@ InstructionDesc tclInstructionTable[] = {
     {"lsetList",          1,   -2,         0,   {OPERAND_NONE}},
         /* Four-arg version of 'lset'. stktop is old value; next is
          * new element value, next is the index list; pushes new value */
-    {"lsetFlat",          5,   INT_MIN,   1,   {OPERAND_UINT4}},
+    {"lsetFlat",          5,   INT_MIN,    1,   {OPERAND_UINT4}},
         /* Three- or >=5-arg version of 'lset', operand is number of 
 	 * stacked objs: stktop is old value, next is new element value, next 
 	 * come (operand-2) indices; pushes the new value.
 	 */
-    {"return",		  1,   -1,          0,   {OPERAND_NONE}},
-	/* return TCL_RETURN code. */
-    {"expon",		  1,   -1,	    0,	 {OPERAND_NONE}},
+    {"return",		  9,   -2,         2,   {OPERAND_INT4, OPERAND_UINT4}},
+	/* Compiled [return], code, level are operands; options and result
+	 * are on the stack. */
+    {"expon",		  1,   -1,	   0,	{OPERAND_NONE}},
 	/* Binary exponentiation operator: push (stknext ** stktop) */
+    {"listverify",	  1,    0,	   0,   {OPERAND_NONE}},
+	/* Test that top of stack is a valid list; error if not */
+    {"invokeExp",   INT_MIN,   INT_MIN,    2, {OPERAND_UINT4, OPERAND_ULIST1}},
+	/* Invoke with expansion: <objc,objv> = expanded <op1,top op1> */
+    {"listIndexImm",	  5,	0,	   1,	{OPERAND_IDX4}},
+	/* List Index:	push (lindex stktop op4) */
+    {"listRangeImm",	  9,	0,	   2,	{OPERAND_IDX4, OPERAND_IDX4}},
+	/* List Range:	push (lrange stktop op4 op4) */
     {0}
 };
 
@@ -365,7 +374,7 @@ TclSetByteCodeFromAny(interp, objPtr, hookProc, clientData)
     if (!traceInitialized) {
         if (Tcl_LinkVar(interp, "tcl_traceCompile",
 	            (char *) &tclTraceCompile,  TCL_LINK_INT) != TCL_OK) {
-            panic("SetByteCodeFromAny: unable to create link for tcl_traceCompile variable");
+            Tcl_Panic("SetByteCodeFromAny: unable to create link for tcl_traceCompile variable");
         }
         traceInitialized = 1;
     }
@@ -769,6 +778,85 @@ TclFreeCompileEnv(envPtr)
     if (envPtr->mallocedAuxDataArray) {
 	ckfree((char *) envPtr->auxDataArrayPtr);
     }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclWordKnownAtCompileTime --
+ *
+ *	Test whether the value of a token is completely known at compile
+ *	time.
+ *
+ * Results:
+ *	Returns true if the tokenPtr argument points to a word value that
+ *	is completely known at compile time.  Generally, values that are
+ *	known at compile time can be compiled to their values, while values
+ *	that cannot be	known until substitution at runtime must be compiled
+ *	to bytecode instructions that perform that substitution.  For several
+ *	commands, whether or not arguments are known at compile time determine
+ *	whether it is worthwhile to compile at all.
+ *
+ * Side effects:
+ *	When returning true, appends the known value of the word to
+ *	the unshared Tcl_Obj (*valuePtr), unless valuePtr is NULL.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclWordKnownAtCompileTime(tokenPtr, valuePtr)
+    Tcl_Token *tokenPtr;	/* Points to Tcl_Token we should check */
+    Tcl_Obj *valuePtr;		/* If not NULL, points to an unshared Tcl_Obj
+				 * to which we should append the known value
+				 * of the word. */
+{
+    int numComponents = tokenPtr->numComponents;
+    Tcl_Obj *tempPtr = NULL;
+
+    if (tokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
+	if (valuePtr != NULL) {
+	    Tcl_AppendToObj(valuePtr, tokenPtr->start, tokenPtr->size);
+	}
+	return 1;
+    }
+    if (tokenPtr->type != TCL_TOKEN_WORD) {
+	return 0;
+    }
+    tokenPtr++;
+    if (valuePtr != NULL) {
+	tempPtr = Tcl_NewObj();
+	Tcl_IncrRefCount(tempPtr);
+    }
+    while (numComponents--) {
+	switch (tokenPtr->type) {
+	    case TCL_TOKEN_TEXT:
+		if (tempPtr != NULL) {
+		    Tcl_AppendToObj(tempPtr, tokenPtr->start, tokenPtr->size);
+		}
+		continue;
+
+	    case TCL_TOKEN_BS:
+		if (tempPtr != NULL) {
+		    char utfBuf[TCL_UTF_MAX];
+		    int length = 
+			    Tcl_UtfBackslash(tokenPtr->start, NULL, utfBuf);
+		    Tcl_AppendToObj(tempPtr, utfBuf, length);
+		}
+		continue;
+	    
+	    default:
+		if (tempPtr != NULL) {
+		    Tcl_DecrRefCount(tempPtr);
+		}
+		return 0;
+	}
+    }
+    if (valuePtr != NULL) {
+	Tcl_AppendObjToObj(valuePtr, tempPtr);
+	Tcl_DecrRefCount(tempPtr);
+    }
+    return 1;
 }
 
 /*
@@ -1211,8 +1299,8 @@ TclCompileTokens(interp, tokenPtr, count, envPtr)
 		break;
 
 	    default:
-		panic("Unexpected token type in TclCompileTokens: %d; %.*s",
-				tokenPtr->type, tokenPtr->size, tokenPtr->start);
+		Tcl_Panic("Unexpected token type in TclCompileTokens: %d; %.*s",
+			tokenPtr->type, tokenPtr->size, tokenPtr->start);
 	}
     }
 
@@ -1517,7 +1605,7 @@ TclInitByteCodeObj(objPtr, envPtr)
     nextPtr = EncodeCmdLocMap(envPtr, codePtr, (unsigned char *) p);
 #ifdef TCL_COMPILE_DEBUG
     if (((size_t)(nextPtr - p)) != cmdLocBytes) {	
-	panic("TclInitByteCodeObj: encoded cmd location bytes %d != expected size %d\n", (nextPtr - p), cmdLocBytes);
+	Tcl_Panic("TclInitByteCodeObj: encoded cmd location bytes %d != expected size %d\n", (nextPtr - p), cmdLocBytes);
     }
 #endif
     
@@ -1911,7 +1999,7 @@ EnterCmdStartData(envPtr, cmdIndex, srcOffset, codeOffset)
     CmdLocation *cmdLocPtr;
     
     if ((cmdIndex < 0) || (cmdIndex >= envPtr->numCommands)) {
-	panic("EnterCmdStartData: bad command index %d\n", cmdIndex);
+	Tcl_Panic("EnterCmdStartData: bad command index %d\n", cmdIndex);
     }
     
     if (cmdIndex >= envPtr->cmdMapEnd) {
@@ -1943,7 +2031,7 @@ EnterCmdStartData(envPtr, cmdIndex, srcOffset, codeOffset)
 
     if (cmdIndex > 0) {
 	if (codeOffset < envPtr->cmdMapPtr[cmdIndex-1].codeOffset) {
-	    panic("EnterCmdStartData: cmd map not sorted by code offset");
+	    Tcl_Panic("EnterCmdStartData: cmd map not sorted by code offset");
 	}
     }
 
@@ -1988,11 +2076,11 @@ EnterCmdExtentData(envPtr, cmdIndex, numSrcBytes, numCodeBytes)
     CmdLocation *cmdLocPtr;
 
     if ((cmdIndex < 0) || (cmdIndex >= envPtr->numCommands)) {
-	panic("EnterCmdExtentData: bad command index %d\n", cmdIndex);
+	Tcl_Panic("EnterCmdExtentData: bad command index %d\n", cmdIndex);
     }
     
     if (cmdIndex > envPtr->cmdMapEnd) {
-	panic("EnterCmdExtentData: missing start data for command %d\n",
+	Tcl_Panic("EnterCmdExtentData: missing start data for command %d\n",
 	        cmdIndex);
     }
 
@@ -2425,7 +2513,7 @@ TclFixupForwardJump(envPtr, jumpFixupPtr, jumpDist, distThreshold)
 	    rangePtr->catchOffset += 3;
 	    break;
 	default:
-	    panic("TclFixupForwardJump: bad ExceptionRange type %d\n",
+	    Tcl_Panic("TclFixupForwardJump: bad ExceptionRange type %d\n",
 	            rangePtr->type);
 	}
     }
@@ -2651,7 +2739,7 @@ GetCmdLocEncodingSize(envPtr)
     for (i = 0;  i < numCmds;  i++) {
 	codeDelta = (mapPtr[i].codeOffset - prevCodeOffset);
 	if (codeDelta < 0) {
-	    panic("GetCmdLocEncodingSize: bad code offset");
+	    Tcl_Panic("GetCmdLocEncodingSize: bad code offset");
 	} else if (codeDelta <= 127) {
 	    codeDeltaNext++;
 	} else {
@@ -2661,7 +2749,7 @@ GetCmdLocEncodingSize(envPtr)
 
 	codeLen = mapPtr[i].numCodeBytes;
 	if (codeLen < 0) {
-	    panic("GetCmdLocEncodingSize: bad code length");
+	    Tcl_Panic("GetCmdLocEncodingSize: bad code length");
 	} else if (codeLen <= 127) {
 	    codeLengthNext++;
 	} else {
@@ -2678,7 +2766,7 @@ GetCmdLocEncodingSize(envPtr)
 
 	srcLen = mapPtr[i].numSrcBytes;
 	if (srcLen < 0) {
-	    panic("GetCmdLocEncodingSize: bad source length");
+	    Tcl_Panic("GetCmdLocEncodingSize: bad source length");
 	} else if (srcLen <= 127) {
 	    srcLengthNext++;
 	} else {
@@ -2736,7 +2824,7 @@ EncodeCmdLocMap(envPtr, codePtr, startPtr)
     for (i = 0;  i < numCmds;  i++) {
 	codeDelta = (mapPtr[i].codeOffset - prevOffset);
 	if (codeDelta < 0) {
-	    panic("EncodeCmdLocMap: bad code offset");
+	    Tcl_Panic("EncodeCmdLocMap: bad code offset");
 	} else if (codeDelta <= 127) {
 	    TclStoreInt1AtPtr(codeDelta, p);
 	    p++;
@@ -2757,7 +2845,7 @@ EncodeCmdLocMap(envPtr, codePtr, startPtr)
     for (i = 0;  i < numCmds;  i++) {
 	codeLen = mapPtr[i].numCodeBytes;
 	if (codeLen < 0) {
-	    panic("EncodeCmdLocMap: bad code length");
+	    Tcl_Panic("EncodeCmdLocMap: bad code length");
 	} else if (codeLen <= 127) {
 	    TclStoreInt1AtPtr(codeLen, p);
 	    p++;
@@ -2797,7 +2885,7 @@ EncodeCmdLocMap(envPtr, codePtr, startPtr)
     for (i = 0;  i < numCmds;  i++) {
 	srcLen = mapPtr[i].numSrcBytes;
 	if (srcLen < 0) {
-	    panic("EncodeCmdLocMap: bad source length");
+	    Tcl_Panic("EncodeCmdLocMap: bad source length");
 	} else if (srcLen <= 127) {
 	    TclStoreInt1AtPtr(srcLen, p);
 	    p++;
@@ -2940,7 +3028,7 @@ TclPrintByteCodeObj(interp, objPtr)
 		fprintf(stdout,	"catch %d\n", rangePtr->catchOffset);
 		break;
 	    default:
-		panic("TclPrintByteCodeObj: bad ExceptionRange type %d\n",
+		Tcl_Panic("TclPrintByteCodeObj: bad ExceptionRange type %d\n",
 		        rangePtr->type);
 	    }
 	}
@@ -3114,13 +3202,13 @@ TclPrintInstruction(codePtr, pc)
     register InstructionDesc *instDesc = &tclInstructionTable[opCode];
     unsigned char *codeStart = codePtr->codeStart;
     unsigned int pcOffset = (pc - codeStart);
-    int opnd, i, j;
+    int opnd, i, j, numBytes = 1;
     
     fprintf(stdout, "(%u) %s ", pcOffset, instDesc->name);
     for (i = 0;  i < instDesc->numOperands;  i++) {
 	switch (instDesc->opTypes[i]) {
 	case OPERAND_INT1:
-	    opnd = TclGetInt1AtPtr(pc+1+i);
+	    opnd = TclGetInt1AtPtr(pc+numBytes); numBytes++;
 	    if ((i == 0) && ((opCode == INST_JUMP1)
 			     || (opCode == INST_JUMP_TRUE1)
 		             || (opCode == INST_JUMP_FALSE1))) {
@@ -3130,7 +3218,7 @@ TclPrintInstruction(codePtr, pc)
 	    }
 	    break;
 	case OPERAND_INT4:
-	    opnd = TclGetInt4AtPtr(pc+1+i);
+	    opnd = TclGetInt4AtPtr(pc+numBytes); numBytes += 4;
 	    if ((i == 0) && ((opCode == INST_JUMP4)
 			     || (opCode == INST_JUMP_TRUE4)
 		             || (opCode == INST_JUMP_FALSE4))) {
@@ -3140,7 +3228,7 @@ TclPrintInstruction(codePtr, pc)
 	    }
 	    break;
 	case OPERAND_UINT1:
-	    opnd = TclGetUInt1AtPtr(pc+1+i);
+	    opnd = TclGetUInt1AtPtr(pc+numBytes); numBytes++;
 	    if ((i == 0) && (opCode == INST_PUSH1)) {
 		fprintf(stdout, "%u  	# ", (unsigned int) opnd);
 		TclPrintObject(stdout, codePtr->objArrayPtr[opnd], 40);
@@ -3151,9 +3239,8 @@ TclPrintInstruction(codePtr, pc)
 		int localCt = procPtr->numCompiledLocals;
 		CompiledLocal *localPtr = procPtr->firstLocalPtr;
 		if (opnd >= localCt) {
-		    panic("TclPrintInstruction: bad local var index %u (%u locals)\n",
+		    Tcl_Panic("TclPrintInstruction: bad local var index %u (%u locals)\n",
 			     (unsigned int) opnd, localCt);
-		    return instDesc->numBytes;
 		}
 		for (j = 0;  j < opnd;  j++) {
 		    localPtr = localPtr->nextPtr;
@@ -3170,7 +3257,7 @@ TclPrintInstruction(codePtr, pc)
 	    }
 	    break;
 	case OPERAND_UINT4:
-	    opnd = TclGetUInt4AtPtr(pc+1+i);
+	    opnd = TclGetUInt4AtPtr(pc+numBytes); numBytes += 4;
 	    if (opCode == INST_PUSH4) {
 		fprintf(stdout, "%u  	# ", opnd);
 		TclPrintObject(stdout, codePtr->objArrayPtr[opnd], 40);
@@ -3181,9 +3268,8 @@ TclPrintInstruction(codePtr, pc)
 		int localCt = procPtr->numCompiledLocals;
 		CompiledLocal *localPtr = procPtr->firstLocalPtr;
 		if (opnd >= localCt) {
-		    panic("TclPrintInstruction: bad local var index %u (%u locals)\n",
+		    Tcl_Panic("TclPrintInstruction: bad local var index %u (%u locals)\n",
 			     (unsigned int) opnd, localCt);
-		    return instDesc->numBytes;
 		}
 		for (j = 0;  j < opnd;  j++) {
 		    localPtr = localPtr->nextPtr;
@@ -3199,13 +3285,35 @@ TclPrintInstruction(codePtr, pc)
 		fprintf(stdout, "%u ", (unsigned int) opnd);
 	    }
 	    break;
+
+	case OPERAND_ULIST1:
+	    opnd = TclGetUInt1AtPtr(pc+numBytes); numBytes++;
+	    fprintf(stdout, "{");
+	    while (opnd) {
+		fprintf(stdout, "%u ", opnd);
+	        opnd = TclGetUInt1AtPtr(pc+numBytes); numBytes++;
+	    }
+	    fprintf(stdout, "0}");
+	    break;
+
+	case OPERAND_IDX4:
+	    opnd = TclGetInt4AtPtr(pc+numBytes); numBytes += 4;
+	    if (opnd >= -1) {
+		fprintf(stdout, "%d ", opnd);
+	    } else if (opnd == -2) {
+		fprintf(stdout, "end ");
+	    } else {
+		fprintf(stdout, "end-%d ", -2-opnd);
+            }
+	    break;
+
 	case OPERAND_NONE:
 	default:
 	    break;
 	}
     }
     fprintf(stdout, "\n");
-    return instDesc->numBytes;
+    return numBytes;
 }
 
 /*

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fCmd.test,v 1.27.2.3 2003/10/16 02:28:03 dgp Exp $
+# RCS: @(#) $Id: fCmd.test,v 1.27.2.4 2004/02/07 05:48:02 dgp Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -513,7 +513,7 @@ test fCmd-6.19 {CopyRenameOneFile: errno == EXDEV} {unixOnly notRoot} {
     cleanup /tmp
     createfile tf1
     file rename tf1 /tmp
-    glob tf* /tmp/tf1
+    glob -nocomplain tf* /tmp/tf1
 } {/tmp/tf1}
 test fCmd-6.20 {CopyRenameOneFile: errno == EXDEV} {pcOnly} {
     catch {file delete -force c:/tcl8975@ d:/tcl8975@}
@@ -532,14 +532,14 @@ test fCmd-6.21 {CopyRenameOneFile: copy/rename: S_ISDIR(source)} \
     cleanup /tmp
     file mkdir td1
     file rename td1 /tmp
-    glob td* /tmp/td*
+    glob -nocomplain td* /tmp/td*
 } {/tmp/td1}
 test fCmd-6.22 {CopyRenameOneFile: copy/rename: !S_ISDIR(source)} \
 	{unixOnly notRoot} {
     cleanup /tmp
     createfile tf1
     file rename tf1 /tmp
-    glob tf* /tmp/tf*
+    glob -nocomplain tf* /tmp/tf*
 } {/tmp/tf1}
 test fCmd-6.23 {CopyRenameOneFile: TclpCopyDirectory failed} \
 	{unixOnly notRoot xdev} {
@@ -869,7 +869,7 @@ test fCmd-9.14.1 {file rename: comprehensive: dir into self} {notRoot} {
     file rename td1x td1
     set msg "ok"
 } {ok}
-test fCmd-9.14.2 {file rename: comprehensive: dir into self} {notRoot} {
+test fCmd-9.14.2 {file rename: comprehensive: dir into self} {nonPortable notRoot} {
     cleanup
     file mkdir td1
     set dir [pwd]
@@ -2154,7 +2154,7 @@ test fCmd-26.2 {TclDeleteFilesCmd: delete dir with symlink} {unixOnly notRoot} {
 		
     file mkdir tfad1
     file mkdir tfad2
-    file link -symbolic [file join tfad2 link] tfad1
+    file link -symbolic [file join tfad2 link] [file join .. tfad1]
     file delete -force tfad2
 
     set r1 [file isdir tfad1]
@@ -2194,7 +2194,7 @@ test fCmd-27.4 {TclFileAttrsCmd - getting one option} {
     catch {file delete -force -- foo.tmp}
     createfile foo.tmp
     set attrs [file attributes foo.tmp]
-    list [catch {eval file attributes foo.tmp [lindex $attrs 0]}] [file delete -force -- foo.tmp]
+    list [catch {file attributes foo.tmp {expand}[lindex $attrs 0]}] [file delete -force -- foo.tmp]
 } {0 {}}
 
 # Find a group that exists on this Unix system, or else skip tests that
@@ -2214,13 +2214,13 @@ test fCmd-27.5 {TclFileAttrsCmd - setting one option} {foundGroup} {
     catch {file delete -force -- foo.tmp}
     createfile foo.tmp
     set attrs [file attributes foo.tmp]
-    list [catch {eval file attributes foo.tmp [lrange $attrs 0 1]} msg] $msg [file delete -force -- foo.tmp]
+    list [catch {file attributes foo.tmp {expand}[lrange $attrs 0 1]} msg] $msg [file delete -force -- foo.tmp]
 } {0 {} {}}
 test fCmd-27.6 {TclFileAttrsCmd - setting more than one option} {foundGroup} {
     catch {file delete -force -- foo.tmp}
     createfile foo.tmp
     set attrs [file attributes foo.tmp]
-    list [catch {eval file attributes foo.tmp [lrange $attrs 0 3]} msg] $msg [file delete -force -- foo.tmp]
+    list [catch {file attributes foo.tmp {expand}[lrange $attrs 0 3]} msg] $msg [file delete -force -- foo.tmp]
 } {0 {} {}}
 
 if {[string equal $tcl_platform(platform) "windows"]} {
@@ -2306,7 +2306,15 @@ test fCmd-28.10 {file link: linking to nonexistent path} {linkDirectory} {
     set res [list [catch {file link abc.link abc2.doesnt} msg] $msg]
     cd [workingDirectory]
     set res
-} {1 {could not create new link "abc.link" since target "abc2.doesnt" doesn't exist}}
+} {1 {could not create new link "abc.link": target "abc2.doesnt" doesn't exist}}
+
+test fCmd-28.10.1 {file link: linking to nonexistent path} {linkDirectory} {
+    cd [temporaryDirectory]
+    file delete -force abc.link
+    set res [list [catch {file link doesnt/abc.link abc.dir} msg] $msg]
+    cd [workingDirectory]
+    set res
+} {1 {could not create new link "doesnt/abc.link": no such file or directory}}
 
 test fCmd-28.11 {file link: success with directory} {linkDirectory} {
     cd [temporaryDirectory]
@@ -2332,7 +2340,9 @@ test fCmd-28.12 {file link: cd into a link} {linkDirectory} {
     # (on windows the former, on unix the latter, I believe)
     if {([file normalize $up] != [file normalize $orig]) \
       && ([file normalize $up] != [file normalize [file dirname abc.dir]])} {
-	set res "wrong directory with 'cd $link ; cd ..'"
+	set res "wrong directory with 'cd abc.link ; cd ..': \
+	  \"[file normalize $up]\" should be \"[file normalize $orig]\" or\
+	  \"[file normalize [file dirname abc.dir]]\""
     } else {
 	set res "ok"
     }
@@ -2380,7 +2390,10 @@ test fCmd-28.15.2 {file link: copies link not dir} {linkDirectory} {
 cd [temporaryDirectory]
 file delete -force abc.link
 file delete -force abc2.link
-
+cd abc.dir
+file delete -force abc.file
+file delete -force abc2.file
+cd ..
 file copy abc.file abc.dir
 file copy abc2.file abc.dir
 cd [workingDirectory]
@@ -2408,12 +2421,40 @@ test fCmd-28.18 {file link: glob -type d} {linkDirectory} {
     set res
 } [lsort [list abc.link abc.dir abc2.dir]]
 
+test fCmd-28.19 {file link: relative paths} {winOnly linkDirectory} {
+    cd [temporaryDirectory]
+    file mkdir d1/d2/d3
+    set res [list [catch {file link d1/l2 d1/d2} err] $err]
+    lappend res [catch {file delete -force d1} err] $err
+} {0 d1/d2 0 {}}
+
+test fCmd-28.20 {file link: relative paths} {unixOnly linkDirectory} {
+    cd [temporaryDirectory]
+    file mkdir d1/d2/d3
+    list [catch {file link d1/l2 d1/d2} res] $res
+} {1 {could not create new link "d1/l2": target "d1/d2" doesn't exist}}
+
+test fCmd-28.21 {file link: relative paths} {unixOnly linkDirectory} {
+    cd [temporaryDirectory]
+    file mkdir d1/d2/d3
+    list [catch {file link d1/l2 d2} res] $res
+} {0 d2}
+
+test fCmd-28.22 {file link: relative paths} {unixOnly linkDirectory} {
+    cd [temporaryDirectory]
+    file mkdir d1/d2/d3
+    catch {file delete -force d1/l2}
+    list [catch {file link d1/l2 d2/d3} res] $res
+} {0 d2/d3}
+
 test fCmd-29.1 {weird memory corruption fault} {
     catch {set res [open [file join ~a_totally_bogus_user_id/foo bar]]}
 } 1
 
 cd [temporaryDirectory]
 file delete -force abc.link
+file delete -force d1/d2
+file delete -force d1
 cd [workingDirectory]
 
 removeFile abc2.file

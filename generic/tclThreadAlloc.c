@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThreadAlloc.c,v 1.6 2003/05/10 04:28:59 mistachkin Exp $
+ * RCS: @(#) $Id: tclThreadAlloc.c,v 1.6.2.1 2004/02/07 05:48:01 dgp Exp $
  */
 
 #if defined(TCL_THREADS) && defined(USE_THREAD_ALLOC)
@@ -117,7 +117,7 @@ typedef struct Cache {
  * to avoid calculating them repeatedly.
  */
 
-struct binfo {
+static struct {
     size_t blocksize;	/* Bucket blocksize. */
     int maxblocks;	/* Max blocks before move to share. */
     int nmove;		/* Num blocks to move to share. */
@@ -209,7 +209,7 @@ GetCache(void)
     if (cachePtr == NULL) {
     	cachePtr = calloc(1, sizeof(Cache));
     	if (cachePtr == NULL) {
-	    panic("alloc: could not allocate new cache");
+	    Tcl_Panic("alloc: could not allocate new cache");
     	}
     	Tcl_MutexLock(listLockPtr);
     	cachePtr->nextPtr = firstCachePtr;
@@ -535,7 +535,7 @@ TclThreadAllocObj(void)
 	    cachePtr->nobjs = nmove = NOBJALLOC;
 	    newObjsPtr = malloc(sizeof(Tcl_Obj) * nmove);
 	    if (newObjsPtr == NULL) {
-		panic("alloc: could not allocate %d new objects", nmove);
+		Tcl_Panic("alloc: could not allocate %d new objects", nmove);
 	    }
 	    while (--nmove >= 0) {
 		objPtr = &newObjsPtr[nmove];
@@ -742,7 +742,7 @@ Ptr2Block(char *ptr)
 	|| ((unsigned char *) ptr)[blockPtr->b_reqsize] != MAGIC
 #endif
 	|| blockPtr->b_magic2 != MAGIC) {
-	panic("alloc: invalid block: %p: %x %x %x\n",
+	Tcl_Panic("alloc: invalid block: %p: %x %x %x\n",
 	    blockPtr, blockPtr->b_magic1, blockPtr->b_magic2,
 	    ((unsigned char *) ptr)[blockPtr->b_reqsize]);
     }

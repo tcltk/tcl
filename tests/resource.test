@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: resource.test,v 1.7.26.1 2003/10/16 02:28:03 dgp Exp $
+# RCS: @(#) $Id: resource.test,v 1.7.26.2 2004/02/07 05:48:03 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -148,6 +148,10 @@ test resource-5.4 {resource types tests} {macOnly} {
     resource close $id
     set result
 } {TEXT}
+test resource-5.5 {resource types lists} {macOnly} {
+    # This should not crash
+    catch {foreach f [resource types] { resource list $f }}
+} {0}
 
 # resource write tests
 test resource-6.1 {resource write tests} {macOnly} {

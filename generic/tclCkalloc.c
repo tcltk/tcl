@@ -13,7 +13,7 @@
  *
  * This code contributed by Karl Lehenbauer and Mark Diekhans
  *
- * RCS: @(#) $Id: tclCkalloc.c,v 1.19 2003/01/19 07:21:18 hobbs Exp $
+ * RCS: @(#) $Id: tclCkalloc.c,v 1.19.4.1 2004/02/07 05:48:00 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -231,7 +231,7 @@ ValidateMemory(memHeaderP, file, line, nukeGuards)
         fflush(stderr);  /* In case name pointer is bad. */
         fprintf(stderr, "%ld bytes allocated at (%s %d)\n", memHeaderP->length,
 		memHeaderP->file, memHeaderP->line);
-        panic ("Memory validation failure");
+        Tcl_Panic("Memory validation failure");
     }
 
     hiPtr = (unsigned char *)memHeaderP->body + memHeaderP->length;
@@ -254,7 +254,7 @@ ValidateMemory(memHeaderP, file, line, nukeGuards)
         fprintf(stderr, "%ld bytes allocated at (%s %d)\n",
 		memHeaderP->length, memHeaderP->file,
 		memHeaderP->line);
-        panic("Memory validation failure");
+        Tcl_Panic("Memory validation failure");
     }
 
     if (nukeGuards) {
@@ -378,7 +378,7 @@ Tcl_DbCkalloc(size, file, line)
     if (result == NULL) {
         fflush(stdout);
         TclDumpMemoryInfo(stderr);
-        panic("unable to alloc %u bytes, %s line %d", size, file, line);
+        Tcl_Panic("unable to alloc %u bytes, %s line %d", size, file, line);
     }
 
     /*
@@ -539,7 +539,7 @@ Tcl_AttemptDbCkalloc(size, file, line)
  * Tcl_DbCkfree - debugging ckfree
  *
  *        Verify that the low and high guards are intact, and if so
- *        then free the buffer else panic.
+ *        then free the buffer else Tcl_Panic.
  *
  *        The guards are erased after being checked to catch duplicate
  *        frees.
@@ -1010,7 +1010,7 @@ Tcl_Alloc (size)
      * a special pointer on failure, but we only check for NULL
      */
     if ((result == NULL) && size) {
-	panic("unable to alloc %u bytes", size);
+	Tcl_Panic("unable to alloc %u bytes", size);
     }
     return result;
 }
@@ -1027,7 +1027,7 @@ Tcl_DbCkalloc(size, file, line)
 
     if ((result == NULL) && size) {
         fflush(stdout);
-        panic("unable to alloc %u bytes, %s line %d", size, file, line);
+        Tcl_Panic("unable to alloc %u bytes, %s line %d", size, file, line);
     }
     return result;
 }
@@ -1085,7 +1085,7 @@ Tcl_Realloc(ptr, size)
     result = TclpRealloc(ptr, size);
 
     if ((result == NULL) && size) {
-	panic("unable to realloc %u bytes", size);
+	Tcl_Panic("unable to realloc %u bytes", size);
     }
     return result;
 }
@@ -1103,7 +1103,7 @@ Tcl_DbCkrealloc(ptr, size, file, line)
 
     if ((result == NULL) && size) {
         fflush(stdout);
-        panic("unable to realloc %u bytes, %s line %d", size, file, line);
+        Tcl_Panic("unable to realloc %u bytes, %s line %d", size, file, line);
     }
     return result;
 }

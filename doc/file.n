@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: file.n,v 1.24.2.1 2003/07/07 20:23:38 dgp Exp $
+'\" RCS: @(#) $Id: file.n,v 1.24.2.2 2004/02/07 05:47:59 dgp Exp $
 '\" 
 .so man.macros
 .TH file n 8.3 Tcl "Tcl Built-In Commands"
@@ -103,11 +103,13 @@ then the second form is used.  The second form makes a copy inside
 \fItargetDir\fR of each \fIsource\fR file listed.  If a directory is
 specified as a \fIsource\fR, then the contents of the directory will be
 recursively copied into \fItargetDir\fR. Existing files will not be
-overwritten unless the \fB\-force\fR option is specified.  When copying
+overwritten unless the \fB\-force\fR option is specified (when Tcl will
+also attempt to adjust permissions on the destination file or directory
+if that is necessary to allow the copy to proceed).  When copying
 within a single filesystem, \fIfile copy\fR will copy soft links (i.e.
 the links themselves are copied, not the things they point to).  Trying
 to overwrite a non-empty directory, overwrite a directory with a file,
-or a file with a directory will all result in errors even if
+or overwrite a file with a directory will all result in errors even if
 \fI\-force\fR was specified.  Arguments are processed in the order
 specified, halting at the first error, if any.  A \fB\-\|\-\fR marks
 the end of switches; the argument following the \fB\-\|\-\fR will be
@@ -206,27 +208,34 @@ If only one argument is given, that argument is assumed to be
 seems to be the case with hard links, which look just like ordinary
 files), then an error is returned.
 .
-If 2 arguments are given, then these are assumed to be \fIlinkName\fR and
-\fItarget\fR. If \fIlinkName\fR already exists, or if \fItarget\fR
+If 2 arguments are given, then these are assumed to be \fIlinkName\fR
+and \fItarget\fR. If \fIlinkName\fR already exists, or if \fItarget\fR
 doesn't exist, an error will be returned.  Otherwise, Tcl creates a new
-link called \fIlinkName\fR which points to the existing filesystem object
-at \fItarget\fR, where the type of the link is platform-specific (on Unix
-a symbolic link will be the default).  This is useful for the case where
-the user wishes to create a link in a cross-platform way, and doesn't
-care what type of link is created.
+link called \fIlinkName\fR which points to the existing filesystem
+object at \fItarget\fR (which is also the returned value), where the
+type of the link is platform-specific (on Unix a symbolic link will be
+the default).  This is useful for the case where the user wishes to
+create a link in a cross-platform way, and doesn't care what type of
+link is created.
 .
 If the user wishes to make a link of a specific type only, (and signal an
 error if for some reason that is not possible), then the optional
 \fI-linktype\fR argument should be given.  Accepted values for
 \fI-linktype\fR are "-symbolic" and "-hard".
 .
-When creating links on filesystems that either do not support any links,
-or do not support the specific type requested, an error message will be
-returned.  In particular Windows 95, 98 and ME do not support any links
-at present, but most Unix platforms support both symbolic and hard links
-(the latter for files only), MacOS supports symbolic links and Windows
-NT/2000/XP (on NTFS drives) support symbolic directory links and hard
-file links.
+On Unix, symbolic links can be made to relative paths, and those paths
+must be relative to the actual \fIlinkName\fR's location (not to the
+cwd), but on all other platforms where relative links are not supported,
+target paths will always be converted to absolute, normalized form
+before the link is created (and therefore relative paths are interpreted
+as relative to the cwd).  Furthermore, "~user" paths are always expanded
+to absolute form.  When creating links on filesystems that either do not
+support any links, or do not support the specific type requested, an
+error message will be returned.  In particular Windows 95, 98 and ME do
+not support any links at present, but most Unix platforms support both
+symbolic and hard links (the latter for files only), MacOS supports
+symbolic links and Windows NT/2000/XP (on NTFS drives) support symbolic
+directory links and hard file links.
 .TP
 \fBfile lstat \fIname varName\fR
 .
@@ -378,16 +387,15 @@ empty string.
 .TP
 \fBfile system \fIname\fR
 .
-Returns a list of two elements, the first of which is the name of the
-filesystem to use for the file, and the second an arbitrary string
-representing the filesystem-specific nature or type of the location
-within that filesystem.  If a filesystem only supports one type of file,
-the second element may be null.  For example the native files have a
-first element 'native', and a second element which is a platform-specific
-type name for the file's system (e.g. 'NTFS', 'FAT', etc), or possibly
-the empty string if no further information is available or if this
-is not implemented.  A generic virtual file system might return the
-list 'vfs ftp' to represent a file on a remote ftp site mounted as a
+Returns a list of one or two elements, the first of which is the name of
+the filesystem to use for the file, and the second, if given, an
+arbitrary string representing the filesystem-specific nature or type of
+the location within that filesystem.  If a filesystem only supports one
+type of file, the second element may not be supplied.  For example the
+native files have a first element 'native', and a second element which
+when given is a platform-specific type name for the file's system (e.g.
+'NTFS', 'FAT', on Windows).  A generic virtual file system might return
+the list 'vfs ftp' to represent a file on a remote ftp site mounted as a
 virtual filesystem through an extension called 'vfs'.  If the file does
 not belong to any filesystem, an error is generated.
 .TP

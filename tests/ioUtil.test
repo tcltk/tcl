@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution 
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES. 
 # 
-# RCS: @(#) $Id: ioUtil.test,v 1.14 2003/04/11 16:00:00 vincentdarley Exp $
+# RCS: @(#) $Id: ioUtil.test,v 1.14.2.1 2004/02/07 05:48:03 dgp Exp $
  
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -191,7 +191,7 @@ set oldpwd [pwd]
 cd [temporaryDirectory]
 
 test ioUtil-3.1 {TclOpenFileChannel: Check that none of the test procs are there.} {testopenfilechannelproc} {
-    catch {eval [list file delete -force] [glob *testOpenFileChannel*]}
+    catch {file delete -force {expand}[glob *testOpenFileChannel*]}
     catch {file exists testOpenFileChannel1%.fil} err1
     catch {file exists testOpenFileChannel2%.fil} err2
     catch {file exists testOpenFileChannel3%.fil} err3

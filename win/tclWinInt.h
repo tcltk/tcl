@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinInt.h,v 1.22.2.1 2003/10/16 02:28:04 dgp Exp $
+ * RCS: @(#) $Id: tclWinInt.h,v 1.22.2.2 2004/02/07 05:48:12 dgp Exp $
  */
 
 #ifndef _TCLWININT
@@ -111,6 +111,7 @@ typedef struct TclWinProcs {
 					 LPVOID, UINT,
 					 LPVOID, DWORD);
     BOOL (WINAPI *getVolumeNameForVMPProc)(CONST TCHAR*, TCHAR*, DWORD);
+    DWORD (WINAPI *getLongPathNameProc)(CONST TCHAR*, TCHAR*, DWORD);
     /* 
      * These six are for the security sdk to get correct file
      * permissions on NT, 2000, XP, etc.  On 95,98,ME they are

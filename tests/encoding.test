@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: encoding.test,v 1.18 2003/03/27 21:44:05 msofer Exp $
+# RCS: @(#) $Id: encoding.test,v 1.18.2.1 2004/02/07 05:48:02 dgp Exp $
 
 package require tcltest 2
 namespace import -force ::tcltest::*
@@ -541,7 +541,7 @@ foreach from {cp932 shiftjis euc-jp iso2022-jp} {
     }
 }
 
-eval [list file delete] [glob -directory [temporaryDirectory] *.chars *.tcltestout]
+file delete {expand}[glob -directory [temporaryDirectory] *.chars *.tcltestout]
 # ===> Cut here <===
 
 # EscapeFreeProc, GetTableEncoding, unilen

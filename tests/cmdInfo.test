@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: cmdInfo.test,v 1.7 2002/06/22 04:19:47 dgp Exp $
+# RCS: @(#) $Id: cmdInfo.test,v 1.7.4.1 2004/02/07 05:48:02 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -71,7 +71,7 @@ test cmdinfo-4.1 {Tcl_GetCommandName/Tcl_GetCommandFullName procedures} \
     rename x1 newName
     set y [testcmdtoken name $x]
     rename newName x1
-    eval lappend y [testcmdtoken name $x]
+    lappend y {expand}[testcmdtoken name $x]
 } {newName ::newName x1 ::x1}
 
 catch {rename newTestCmd {}}
@@ -88,7 +88,7 @@ test cmdinfo-5.1 {Names for commands created when inside namespaces} \
     }]
     set y [testcmdtoken name $x]
     rename ::testCmd newTestCmd
-    eval lappend y [testcmdtoken name $x]
+    lappend y {expand}[testcmdtoken name $x]
 } {testCmd ::testCmd newTestCmd ::newTestCmd}
 
 test cmdinfo-6.1 {Names for commands created when outside namespaces} \
@@ -96,7 +96,7 @@ test cmdinfo-6.1 {Names for commands created when outside namespaces} \
     set x [testcmdtoken create cmdInfoNs1::cmdInfoNs2::testCmd]
     set y [testcmdtoken name $x]
     rename cmdInfoNs1::cmdInfoNs2::testCmd newTestCmd2
-    eval lappend y [testcmdtoken name $x]
+    lappend y {expand}[testcmdtoken name $x]
 } {testCmd ::cmdInfoNs1::cmdInfoNs2::testCmd newTestCmd2 ::newTestCmd2}
 
 # cleanup

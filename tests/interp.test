@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: interp.test,v 1.22.2.2 2003/09/05 23:08:07 dgp Exp $
+# RCS: @(#) $Id: interp.test,v 1.22.2.3 2004/02/07 05:48:02 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -2084,7 +2084,7 @@ test interp-26.6 {result code transmission: all combined--bug 1637} \
     proc MyTestAlias {interp args} {
 	global aliasTrace;
 	lappend aliasTrace $args;
-	eval interp invokehidden [list $interp] $args
+	interp invokehidden $interp {expand}$args
     }
     foreach c {return} {
 	interp hide $interp  $c;

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIndexObj.c,v 1.16 2002/02/28 05:11:25 dgp Exp $
+ * RCS: @(#) $Id: tclIndexObj.c,v 1.16.4.1 2004/02/07 05:48:01 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -271,7 +271,9 @@ Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr, offset, msg, flags,
 	 * Produce a fancy error message.
 	 */
 	int count;
-	resultPtr = Tcl_GetObjResult(interp);
+
+	TclNewObj(resultPtr);
+	Tcl_SetObjResult(interp, resultPtr);
 	Tcl_AppendStringsToObj(resultPtr,
 		(numAbbrev > 1) ? "ambiguous " : "bad ", msg, " \"",
 		key, "\": must be ", STRING_AT(tablePtr,offset,0), (char*)NULL);
@@ -450,7 +452,8 @@ Tcl_WrongNumArgs(interp, objc, objv, message)
     int i;
     register IndexRep *indexRep;
 
-    objPtr = Tcl_GetObjResult(interp);
+    TclNewObj(objPtr);
+    Tcl_SetObjResult(interp, objPtr);
     Tcl_AppendToObj(objPtr, "wrong # args: should be \"", -1);
     for (i = 0; i < objc; i++) {
 	/*
