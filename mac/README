@@ -8,7 +8,7 @@ Jim Ingham
 Cygnus Solutions
 jingham@cygnus.com
 
-RCS: @(#) $Id: README,v 1.4 1999/01/04 19:25:03 rjohnson Exp $
+RCS: @(#) $Id: README,v 1.4.2.1 1999/03/22 05:42:10 jingham Exp $
 
 1. Introduction
 ---------------
@@ -49,6 +49,14 @@ useful Tcl code. We will eventually provide Tcl libraries for
 accessing the most common resources.
 
 See the main Tcl README for other features new to Tcl 8.0.
+
+New in 8.0.5:
+  There is support for reading and writing to the serial port on the
+  Mac.  The code was contributed by Sean Woods, (yoda@drexel.edu).  It
+  supports setting baud rate, stop bits, blocking & non-blocking modes.  It 
+  does not support various flow control mechanisms yet. You can get to 
+  it through the "open" command, using the special cookies: MODEM:,
+  PRINTER:, COM1: and COM2: for the file name.
 
 3. Mac specific features
 ------------------------
@@ -181,7 +189,7 @@ Special notes:
 
 * There is a small bug in More Files 1.4.3.  Also you should not use
   MoreFiles 1.4.4 - 1.4.6.  Look in the file named morefiles.doc for
-  more details.
+  more details.  Tcl 8.0.5 is compiled with MoreFiles 1.4.9.
 
 * You may not have the libmoto library which will cause a compile 
   error.  You don't REALLY need it - it can be removed.  Look at the
