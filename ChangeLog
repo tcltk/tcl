@@ -1,3 +1,7 @@
+2001-11-19  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* tests/compile.test: added a test for bug [Bug 483309]
+
 2001-11-19  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* win/tclWinFile.c:
