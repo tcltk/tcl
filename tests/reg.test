@@ -6,11 +6,11 @@
 #
 # Copyright (c) 1998, 1999 Henry Spencer.  All rights reserved.
 #
-# RCS: @(#) $Id: reg.test,v 1.6 1999/06/26 03:54:22 jenn Exp $
+# RCS: @(#) $Id: reg.test,v 1.7 1999/06/26 20:55:10 rjohnson Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
-	namespace import ::tcltest::*
+    namespace import ::tcltest::*
 }
 
 # All tests require the testregexp command, return if this

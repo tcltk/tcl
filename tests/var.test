@@ -14,12 +14,12 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: var.test,v 1.6 1999/06/26 03:54:33 jenn Exp $
+# RCS: @(#) $Id: var.test,v 1.7 1999/06/26 20:55:17 rjohnson Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
-	namespace import ::tcltest::*
+    namespace import ::tcltest::*
 }
 
 catch {rename p ""}
@@ -124,7 +124,7 @@ test var-1.15 {TclLookupVar, resurrect variable via upvar to deleted namespace: 
     proc p {} {
 	variable ::test_ns_var::foo
 	lappend result [catch {set foo} msg] $msg
-	namespace delete ::test_ns_var
+        namespace delete ::test_ns_var
 	lappend result [catch {set foo 3} msg] $msg
 	lappend result [catch {set foo(3) 3} msg] $msg
     }
@@ -133,15 +133,15 @@ test var-1.15 {TclLookupVar, resurrect variable via upvar to deleted namespace: 
 test var-1.16 {TclLookupVar, resurrect variable via upvar to deleted namespace: uncompiled code path} {
     namespace eval test_ns_var {
 	variable result
-	namespace eval subns {
+        namespace eval subns {
 	    variable foo 2
 	}
 	upvar 0 subns::foo foo
 	lappend result [catch {set foo} msg] $msg
-	namespace delete subns
+        namespace delete subns
 	lappend result [catch {set foo 3} msg] $msg
 	lappend result [catch {set foo(3) 3} msg] $msg
-	namespace delete [namespace current]
+        namespace delete [namespace current]
 	set result
     }
 } {0 2 1 {can't set "foo": upvar refers to variable in deleted namespace} 1 {can't set "foo(3)": upvar refers to variable in deleted namespace}}
@@ -156,7 +156,7 @@ test var-1.17 {TclLookupVar, resurrect array element via upvar to deleted array:
 	    lappend result [catch {set foo 3} msg] $msg
 	}
 	set result [p]
-	namespace delete [namespace current]
+        namespace delete [namespace current]
 	set result
     }
 } {0 2 1 {can't set "foo": upvar refers to element in deleted array}}
@@ -169,7 +169,7 @@ test var-1.18 {TclLookupVar, resurrect array element via upvar to deleted array:
 	lappend result [catch {set foo} msg] $msg
 	unset x
 	lappend result [catch {set foo 3} msg] $msg
-	namespace delete [namespace current]
+        namespace delete [namespace current]
 	set result
     }
 } {0 2 1 {can't set "foo": upvar refers to element in deleted array}}

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: unixNotfy.test,v 1.5 1999/06/26 03:54:32 jenn Exp $
+# RCS: @(#) $Id: unixNotfy.test,v 1.6 1999/06/26 20:55:16 rjohnson Exp $
 
 # The tests should not be run if you have a notifier which is unable to
 # detect infinite vwaits, as the tests below will hang. The presence of
@@ -18,7 +18,7 @@
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
-	namespace import ::tcltest::*
+    namespace import ::tcltest::*
 }
 
 set ::tcltest::testConfig(testthread) \

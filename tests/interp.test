@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: interp.test,v 1.8 1999/06/26 03:54:15 jenn Exp $
+# RCS: @(#) $Id: interp.test,v 1.9 1999/06/26 20:55:08 rjohnson Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -1444,7 +1444,7 @@ test interp-20.45 {interp hide vs namespaces} {
     catch {interp delete a}
     interp create a
     a eval {
-	namespace eval foo {}
+        namespace eval foo {}
 	proc foo::x {} {}
     }
     set l [list [catch {interp hide a foo::x} msg] $msg]
@@ -1455,7 +1455,7 @@ test interp-20.46 {interp hide vs namespaces} {
     catch {interp delete a}
     interp create a
     a eval {
-	namespace eval foo {}
+        namespace eval foo {}
 	proc foo::x {} {}
     }
     set l [list [catch {interp hide a foo::x x} msg] $msg]
@@ -1476,7 +1476,7 @@ test interp-20.48 {interp hide vs namespaces} {
     catch {interp delete a}
     interp create a
     a eval {
-	namespace eval foo {}
+        namespace eval foo {}
 	proc foo::x {} {}
     }
     set l [list [catch {interp hide a foo::x bar::x} msg] $msg]
@@ -2149,7 +2149,7 @@ test interp-27.4 {interp aliases & namespaces} {
 # test interp-27.5 {interp hidden & namespaces} {
 #    set i [interp create];
 #    interp eval $i {
-#	namespace eval foo {
+#        namespace eval foo {
 #	    proc bar {args} {
 #		return "bar called ([namespace current]) ($args)"
 #	    }
@@ -2174,7 +2174,7 @@ test interp-27.4 {interp aliases & namespaces} {
 # 	}
 #     }
 #     interp eval $i {
-# 	namespace eval foo {
+#        namespace eval foo {
 # 	    namespace export *
 # 	    variable v foo-slave;
 # 	    proc bar {args} {
@@ -2188,7 +2188,7 @@ test interp-27.4 {interp aliases & namespaces} {
 #     $i alias foo::bar foo::bar $i;
 #     set res [concat $res [interp eval $i {
 # 	set v root-slave;
-# 	namespace eval test {
+#         namespace eval test {
 # 	    variable v foo-test;
 # 	    namespace import ::foo::*;
 # 	    bar test2
@@ -2212,7 +2212,7 @@ test interp-27.4 {interp aliases & namespaces} {
 # 	}
 #     }
 #     interp eval $i {
-# 	namespace eval foo {
+#       namespace eval foo {
 # 	    namespace export *
 # 	    variable v foo-slave;
 # 	    proc bar {args} {
@@ -2221,7 +2221,7 @@ test interp-27.4 {interp aliases & namespaces} {
 # 	    }
 # 	}
 # 	set v root-slave;
-# 	namespace eval test {
+#       namespace eval test {
 # 	    variable v foo-test;
 # 	    namespace import ::foo::*;
 #         }
@@ -2252,7 +2252,7 @@ test interp-28.1 {getting fooled by slave's namespace ?} {
     proc master {interp args} {interp hide $interp list}
     $i alias master master $i;
     set r [interp eval $i {
-	namespace eval foo {
+        namespace eval foo {
 	    proc list {args} {
 		return "dummy foo::list";
 	    }

@@ -8,11 +8,11 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 #
-# RCS: @(#) $Id: pkgMkIndex.test,v 1.9 1999/06/26 03:54:20 jenn Exp $
+# RCS: @(#) $Id: pkgMkIndex.test,v 1.10 1999/06/26 20:55:09 rjohnson Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
-	namespace import ::tcltest::*
+    namespace import ::tcltest::*
 }
 
 set fullPkgPath [file join $::tcltest::testsDirectory pkg]

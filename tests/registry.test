@@ -10,11 +10,11 @@
 # Copyright (c) 1997 by Sun Microsystems, Inc.  All rights reserved.
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 #
-# RCS: @(#) $Id: registry.test,v 1.6 1999/06/26 03:54:23 jenn Exp $
+# RCS: @(#) $Id: registry.test,v 1.7 1999/06/26 20:55:10 rjohnson Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
-	namespace import ::tcltest::*
+    namespace import ::tcltest::*
 }
 
 if {$tcl_platform(platform) == "windows"} {
