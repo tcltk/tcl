@@ -6,7 +6,7 @@
 # Copyright (c) 2004 by Donal K. Fellows.
 # All rights reserved.
 #
-# RCS: @(#) $Id: tm.test,v 1.2 2004/10/25 15:37:16 dkf Exp $
+# RCS: @(#) $Id: tm.test,v 1.3 2004/10/27 17:01:46 andreas_kupries Exp $
 
 package require Tcl 8.5
 if {"::tcltest" ni [namespace children]} {
@@ -42,11 +42,201 @@ test tm-2.3 {tm: roots command syntax} -returnCodes error -body {
     ::tcl::tm::roots foo bar
 } -result "wrong # args: should be \"::tcl::tm::roots paths\""
 
-test tm-3.1 {tm: module path management} {
-    # Andreas Kupries needs to write some tests here...
-    error FIXME
-} {}
 
+test tm-3.1 {tm: module path management, input validation} -setup {
+    # Save and clear the list
+    set defaults [::tcl::tm::path list]
+    foreach p $defaults {::tcl::tm::path remove $p}
+} -cleanup {
+    # Restore old contents of path list.
+    foreach p [::tcl::tm::path list] {::tcl::tm::path remove $p}
+    foreach p $defaults {::tcl::tm::path add $p}
+} -returnCodes error -body {
+    ::tcl::tm::path add foo/bar
+    ::tcl::tm::path add foo
+} -result {foo is ancestor of existing module path foo/bar.}
+
+test tm-3.2 {tm: module path management, input validation} -setup {
+    # Save and clear the list
+    set defaults [::tcl::tm::path list]
+    foreach p $defaults {::tcl::tm::path remove $p}
+} -cleanup {
+    # Restore old contents of path list.
+    foreach p [::tcl::tm::path list] {::tcl::tm::path remove $p}
+    foreach p $defaults {::tcl::tm::path add $p}
+} -returnCodes error -body {
+    ::tcl::tm::path add foo
+    ::tcl::tm::path add foo/bar
+} -result {foo/bar is subdirectory of existing module path foo.}
+
+test tm-3.3 {tm: module path management, add/list interaction} -setup {
+    # Save and clear the list
+    set defaults [::tcl::tm::path list]
+    foreach p $defaults {::tcl::tm::path remove $p}
+} -cleanup {
+    # Restore old contents of path list.
+    foreach p [::tcl::tm::path list] {::tcl::tm::path remove $p}
+    foreach p $defaults {::tcl::tm::path add $p}
+} -body {
+    ::tcl::tm::path add foo
+    ::tcl::tm::path add bar
+    ::tcl::tm::path list
+} -result {bar foo}
+
+test tm-3.4 {tm: module path management, add/list interaction} -setup {
+    # Save and clear the list
+    set defaults [::tcl::tm::path list]
+    foreach p $defaults {::tcl::tm::path remove $p}
+} -cleanup {
+    # Restore old contents of path list.
+    foreach p [::tcl::tm::path list] {::tcl::tm::path remove $p}
+    foreach p $defaults {::tcl::tm::path add $p}
+} -body {
+    ::tcl::tm::path add foo bar baz
+    ::tcl::tm::path list
+} -result {baz bar foo}
+
+test tm-3.5 {tm: module path management, input validation/list interaction} -setup {
+    # Save and clear the list
+    set defaults [::tcl::tm::path list]
+    foreach p $defaults {::tcl::tm::path remove $p}
+} -cleanup {
+    # Restore old contents of path list.
+    foreach p [::tcl::tm::path list] {::tcl::tm::path remove $p}
+    foreach p $defaults {::tcl::tm::path add $p}
+} -body {
+    catch {::tcl::tm::path add snarf foo geode foo/bar}
+    # Nothing is added if a problem was found.
+    ::tcl::tm::path list
+} -result {}
+
+test tm-3.6 {tm: module path management, input validation/list interaction} -setup {
+    # Save and clear the list
+    set defaults [::tcl::tm::path list]
+    foreach p $defaults {::tcl::tm::path remove $p}
+} -cleanup {
+    # Restore old contents of path list.
+    foreach p [::tcl::tm::path list] {::tcl::tm::path remove $p}
+    foreach p $defaults {::tcl::tm::path add $p}
+} -body {
+    catch {::tcl::tm::path add snarf foo/bar geode foo}
+    # Nothing is added if a problem was found.
+    ::tcl::tm::path list
+} -result {}
+
+test tm-3.7 {tm: module path management, input validation/list interaction} -setup {
+    # Save and clear the list
+    set defaults [::tcl::tm::path list]
+    foreach p $defaults {::tcl::tm::path remove $p}
+} -cleanup {
+    # Restore old contents of path list.
+    foreach p [::tcl::tm::path list] {::tcl::tm::path remove $p}
+    foreach p $defaults {::tcl::tm::path add $p}
+} -body {
+    catch {
+	::tcl::tm::path add foo/bar
+	::tcl::tm::path add snarf geode foo
+    }
+    # Nothing is added if a problem was found.
+    ::tcl::tm::path list
+} -result {foo/bar}
+
+test tm-3.8 {tm: module path management, input validation, ignore duplicates} -setup {
+    # Save and clear the list
+    set defaults [::tcl::tm::path list]
+    foreach p $defaults {::tcl::tm::path remove $p}
+} -cleanup {
+    # Restore old contents of path list.
+    foreach p [::tcl::tm::path list] {::tcl::tm::path remove $p}
+    foreach p $defaults {::tcl::tm::path add $p}
+} -body {
+    # Ignore path if present
+    ::tcl::tm::path add foo
+    ::tcl::tm::path add snarf geode foo
+    ::tcl::tm::path list
+} -result {geode snarf foo}
+
+test tm-3.9 {tm: module path management, input validation, ignore duplicates} -setup {
+    # Save and clear the list
+    set defaults [::tcl::tm::path list]
+    foreach p $defaults {::tcl::tm::path remove $p}
+} -cleanup {
+    # Restore old contents of path list.
+    foreach p [::tcl::tm::path list] {::tcl::tm::path remove $p}
+    foreach p $defaults {::tcl::tm::path add $p}
+} -body {
+    # Ignore path if present
+    ::tcl::tm::path add foo snarf geode foo
+    ::tcl::tm::path list
+} -result {geode snarf foo}
+
+test tm-3.10 {tm: module path management, remove} -setup {
+    # Save and clear the list
+    set defaults [::tcl::tm::path list]
+    foreach p $defaults {::tcl::tm::path remove $p}
+} -cleanup {
+    # Restore old contents of path list.
+    foreach p [::tcl::tm::path list] {::tcl::tm::path remove $p}
+    foreach p $defaults {::tcl::tm::path add $p}
+} -body {
+    ::tcl::tm::path add snarf geode foo
+    ::tcl::tm::path remove foo
+    ::tcl::tm::path list
+} -result {geode snarf}
+
+test tm-3.11 {tm: module path management, remove ignores unknown path} -setup {
+    # Save and clear the list
+    set defaults [::tcl::tm::path list]
+    foreach p $defaults {::tcl::tm::path remove $p}
+} -cleanup {
+    # Restore old contents of path list.
+    foreach p [::tcl::tm::path list] {::tcl::tm::path remove $p}
+    foreach p $defaults {::tcl::tm::path add $p}
+} -body {
+    ::tcl::tm::path add foo snarf geode
+    ::tcl::tm::path remove fox
+    ::tcl::tm::path list
+} -result {geode snarf foo}
+
+
+proc genpaths {base} {
+    foreach {major minor} [split [info tclversion] .] break
+    set results {}
+    lappend results [file join $base site-tcl]
+    set base [file join $base tcl$major]
+    for {set i 0} {$i <= $minor} {incr i} {
+	lappend results [file join $base ${major}.$i]
+    }
+    return $results
+}
+
+test tm-3.12 {tm: module path management, roots} -setup {
+    # Save and clear the list
+    set defaults [::tcl::tm::path list]
+    foreach p $defaults {::tcl::tm::path remove $p}
+} -cleanup {
+    # Restore old contents of path list.
+    foreach p [::tcl::tm::path list] {::tcl::tm::path remove $p}
+    foreach p $defaults {::tcl::tm::path add $p}
+} -body {
+    ::tcl::tm::roots /FOO
+    ::tcl::tm::path list
+} -result [genpaths /FOO]
+
+test tm-3.13 {tm: module path management, roots} -setup {
+    # Save and clear the list
+    set defaults [::tcl::tm::path list]
+    foreach p $defaults {::tcl::tm::path remove $p}
+} -cleanup {
+    # Restore old contents of path list.
+    foreach p [::tcl::tm::path list] {::tcl::tm::path remove $p}
+    foreach p $defaults {::tcl::tm::path add $p}
+} -body {
+    ::tcl::tm::roots [list /FOO /BAR]
+    ::tcl::tm::path list
+} -result [concat [genpaths /BAR] [genpaths /FOO]]
+
+rename genpaths {}
 ::tcltest::cleanupTests
 return
 
