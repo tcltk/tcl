@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.20.2.5 2000/08/08 00:57:40 hobbs Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.20.2.6 2001/04/03 22:54:37 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -41,18 +41,6 @@ typedef struct ThreadSpecificData {
      * as only one ChannelState exists per set of stacked channels.
      */
     ChannelState *firstCSPtr;
-#ifdef oldcode
-    /*
-     * Has a channel exit handler been created yet?
-     */
-    int channelExitHandlerCreated;
-
-    /*
-     * Has the channel event source been created and registered with the
-     * notifier?
-     */
-    int channelEventSourceCreated;
-#endif
     /*
      * Static variables to hold channels for stdin, stdout and stderr.
      */
@@ -2059,20 +2047,6 @@ CloseChannel(interp, chanPtr, errorCode)
         c = (char) statePtr->outEofChar;
         (chanPtr->typePtr->outputProc) (chanPtr->instanceData, &c, 1, &dummy);
     }
-#if 0
-    /*
-     * Remove TCL_READABLE and TCL_WRITABLE from statePtr->flags, so
-     * that close callbacks can not do input or output (assuming they
-     * squirreled the channel away in their clientData). This also
-     * prevents infinite loops if the callback calls any C API that
-     * could call FlushChannel.
-     */
-
-    /*
-     * This prevents any data from being flushed from stacked channels.
-     */
-    statePtr->flags &= (~(TCL_READABLE|TCL_WRITABLE));
-#endif
 
     /*
      * Splice this channel out of the list of all channels.
@@ -2148,23 +2122,6 @@ CloseChannel(interp, chanPtr, errorCode)
      */
 
     if (chanPtr->downChanPtr != (Channel *) NULL) {
-#if 0
-	int code = TCL_OK;
-
-	while (chanPtr->downChanPtr != (Channel *) NULL) {
-	    /*
-	     * Unwind the state of the transformation, and then restore the
-	     * state of (unstack) the underlying channel into the TOP channel
-	     * structure.
-	     */
-	    code = Tcl_UnstackChannel(interp, (Tcl_Channel) chanPtr);
-	    if (code == TCL_ERROR) {
-		errorCode = Tcl_GetErrno();
-		break;
-	    }
-	    chanPtr = chanPtr->downChanPtr;
-	}
-#else
 	Channel *downChanPtr = chanPtr->downChanPtr;
 
 	statePtr->nextCSPtr	= tsdPtr->firstCSPtr;
@@ -2176,7 +2133,6 @@ CloseChannel(interp, chanPtr, errorCode)
 
 	Tcl_EventuallyFree((ClientData) chanPtr, TCL_DYNAMIC);
 	return Tcl_Close(interp, (Tcl_Channel) downChanPtr);
-#endif
     }
 
     /*
@@ -2185,6 +2141,7 @@ CloseChannel(interp, chanPtr, errorCode)
      */
     chanPtr->typePtr = NULL;
 
+    Tcl_EventuallyFree((ClientData) statePtr, TCL_DYNAMIC);
     Tcl_EventuallyFree((ClientData) chanPtr, TCL_DYNAMIC);
 
     return errorCode;
@@ -5932,7 +5889,7 @@ Tcl_SetChannelOption(interp, chan, optionName, newValue)
 		 * coded later.
 		 */
 
-		if (strcmp(chanPtr->typePtr->typeName, "tcp") == 0) {
+		if (strcmp(Tcl_ChannelName(chanPtr->typePtr), "tcp") == 0) {
 		    statePtr->outputTranslation = TCL_TRANSLATE_CRLF;
 		} else {
 		    statePtr->outputTranslation = TCL_PLATFORM_TRANSLATION;
@@ -6090,7 +6047,6 @@ Tcl_NotifyChannel(channel, mask)
     ChannelHandler *chPtr;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     NextChannelHandler nh;
-#ifdef TCL_CHANNEL_VERSION_2
     Channel* upChanPtr;
     Tcl_ChannelType* upTypePtr;
 
@@ -6148,6 +6104,7 @@ Tcl_NotifyChannel(channel, mask)
      */
      
     Tcl_Preserve((ClientData) channel);
+    Tcl_Preserve((ClientData) statePtr);
 
     /*
      * If we are flushing in the background, be sure to call FlushChannel
@@ -6196,82 +6153,10 @@ Tcl_NotifyChannel(channel, mask)
         UpdateInterest(chanPtr);
     }
 
+    Tcl_Release((ClientData) statePtr);
     Tcl_Release((ClientData) channel);
 
     tsdPtr->nestedHandlerPtr = nh.nestedHandlerPtr;
-#else
-    /* Walk all channels in a stack ! and notify them in order.
-     */
-
-    while (chanPtr != (Channel *) NULL) {
-        /*
-	 * Preserve the channel struct in case the script closes it.
-	 */
-     
-        Tcl_Preserve((ClientData) channel);
-
-	/*
-	 * If we are flushing in the background, be sure to call FlushChannel
-	 * for writable events.  Note that we have to discard the writable
-	 * event so we don't call any write handlers before the flush is
-	 * complete.
-	 */
-
-	if ((statePtr->flags & BG_FLUSH_SCHEDULED) && (mask & TCL_WRITABLE)) {
-	    FlushChannel(NULL, chanPtr, 1);
-	    mask &= ~TCL_WRITABLE;
-	}
-
-	/*
-	 * Add this invocation to the list of recursive invocations of
-	 * ChannelHandlerEventProc.
-	 */
-    
-	nh.nextHandlerPtr = (ChannelHandler *) NULL;
-	nh.nestedHandlerPtr = tsdPtr->nestedHandlerPtr;
-	tsdPtr->nestedHandlerPtr = &nh;
-
-	for (chPtr = statePtr->chPtr; chPtr != (ChannelHandler *) NULL; ) {
-
-	    /*
-	     * If this channel handler is interested in any of the events that
-	     * have occurred on the channel, invoke its procedure.
-	     */
-        
-	    if ((chPtr->mask & mask) != 0) {
-		nh.nextHandlerPtr = chPtr->nextPtr;
-		(*(chPtr->proc))(chPtr->clientData, mask);
-		chPtr = nh.nextHandlerPtr;
-	    } else {
-		chPtr = chPtr->nextPtr;
-	    }
-	}
-
-	/*
-	 * Update the notifier interest, since it may have changed after
-	 * invoking event handlers. Skip that if the channel was deleted
-	 * in the call to the channel handler.
-	 */
-
-	if (chanPtr->typePtr != NULL) {
-	    UpdateInterest(chanPtr);
-
-	    /* Walk down the stack.
-	     */
-	    chanPtr = chanPtr->downChanPtr;
-	} else {
-	    /* Stop walking the chain, the whole stack was destroyed!
-	     */
-	    chanPtr = (Channel *) NULL;
-	}
-
-	Tcl_Release((ClientData) channel);
-
-	tsdPtr->nestedHandlerPtr = nh.nestedHandlerPtr;
-
-	channel = (Tcl_Channel) chanPtr;
-    }
-#endif
 }
 
 /*
@@ -7052,6 +6937,18 @@ CopyData(csPtr, mask)
 	}
 
 	/*
+	 * Update the current byte count.  Do it now so the count is
+	 * valid before a return or break takes us out of the loop.
+	 * The invariant at the top of the loop should be that 
+	 * csPtr->toRead holds the number of bytes left to copy.
+	 */
+
+	if (csPtr->toRead != -1) {
+	    csPtr->toRead -= size;
+	}
+	csPtr->total += size;
+
+	/*
 	 * Check to see if the write is happening in the background.  If so,
 	 * stop copying and wait for the channel to become writable again.
 	 */
@@ -7059,7 +6956,7 @@ CopyData(csPtr, mask)
 	if (outStatePtr->flags & BG_FLUSH_SCHEDULED) {
 	    if (!(mask & TCL_WRITABLE)) {
 		if (mask & TCL_READABLE) {
-		    Tcl_DeleteChannelHandler(outChan, CopyEventProc,
+		    Tcl_DeleteChannelHandler(inChan, CopyEventProc,
 			    (ClientData) csPtr);
 		}
 		Tcl_CreateChannelHandler(outChan, TCL_WRITABLE,
@@ -7067,15 +6964,6 @@ CopyData(csPtr, mask)
 	    }
 	    return TCL_OK;
 	}
-
-	/*
-	 * Update the current byte count if we care.
-	 */
-
-	if (csPtr->toRead != -1) {
-	    csPtr->toRead -= size;
-	}
-	csPtr->total += size;
 
 	/*
 	 * For background copies, we only do one buffer per invocation so
@@ -7769,6 +7657,7 @@ StopCopy(csPtr)
 		nonBlocking ? TCL_MODE_NONBLOCKING : TCL_MODE_BLOCKING);
     }
     if (csPtr->readPtr != csPtr->writePtr) {
+	nonBlocking = (csPtr->writeFlags & CHANNEL_NONBLOCKING);
 	if (nonBlocking != (outStatePtr->flags & CHANNEL_NONBLOCKING)) {
 	    SetBlockMode(NULL, csPtr->writePtr,
 		    nonBlocking ? TCL_MODE_NONBLOCKING : TCL_MODE_BLOCKING);
@@ -7928,15 +7817,30 @@ Tcl_GetChannelNamesEx(interp, pattern)
     Tcl_Interp *interp;		/* Interp for error reporting. */
     char *pattern;		/* pattern to filter on. */
 {
-    ChannelState *statePtr;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-    char *name;
-    Tcl_Obj *resultPtr;
+    ChannelState *statePtr;
+    char *name;			/* name for channel */
+    Tcl_Obj *resultPtr;		/* pointer to result object */
+    Tcl_HashTable *hTblPtr;	/* Hash table of channels. */
+    Tcl_HashEntry *hPtr;	/* Search variable. */
+    Tcl_HashSearch hSearch;	/* Search variable. */
 
-    resultPtr = Tcl_GetObjResult(interp);
-    for (statePtr = tsdPtr->firstCSPtr;
-	 statePtr != NULL;
-	 statePtr = statePtr->nextCSPtr) {
+    if (interp == (Tcl_Interp *) NULL) {
+	return TCL_OK;
+    }
+
+    /*
+     * Get the channel table that stores the channels registered
+     * for this interpreter.
+     */
+    hTblPtr	= GetChannelTable(interp);
+    resultPtr	= Tcl_GetObjResult(interp);
+
+    for (hPtr = Tcl_FirstHashEntry(hTblPtr, &hSearch);
+	 hPtr != (Tcl_HashEntry *) NULL;
+	 hPtr = Tcl_NextHashEntry(&hSearch)) {
+
+	statePtr = ((Channel *) Tcl_GetHashValue(hPtr))->state;
         if (statePtr->topChanPtr == (Channel *) tsdPtr->stdinChannel) {
 	    name = "stdin";
 	} else if (statePtr->topChanPtr == (Channel *) tsdPtr->stdoutChannel) {
@@ -7944,8 +7848,13 @@ Tcl_GetChannelNamesEx(interp, pattern)
 	} else if (statePtr->topChanPtr == (Channel *) tsdPtr->stderrChannel) {
 	    name = "stderr";
 	} else {
+	    /*
+	     * This is also stored in Tcl_GetHashKey(hTblPtr, hPtr),
+	     * but it's simpler to just grab the name from the statePtr.
+	     */
 	    name = statePtr->channelName;
 	}
+
 	if (((pattern == NULL) || Tcl_StringMatch(name, pattern)) &&
 		(Tcl_ListObjAppendElement(interp, resultPtr,
 			Tcl_NewStringObj(name, -1)) != TCL_OK)) {

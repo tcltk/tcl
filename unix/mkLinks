@@ -297,8 +297,10 @@ fi
 if test -r DetachPids.3; then
     rm -f Tcl_DetachPids.3
     rm -f Tcl_ReapDetachedProcs.3
+    rm -f Tcl_WaitPid.3
     ln DetachPids.3 Tcl_DetachPids.3
     ln DetachPids.3 Tcl_ReapDetachedProcs.3
+    ln DetachPids.3 Tcl_WaitPid.3
 fi
 if test -r DoOneEvent.3; then
     rm -f Tcl_DoOneEvent.3

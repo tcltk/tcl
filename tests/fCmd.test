@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fCmd.test,v 1.8 2000/04/10 17:18:59 ericm Exp $
+# RCS: @(#) $Id: fCmd.test,v 1.8.2.1 2001/04/03 22:54:38 hobbs Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -509,12 +509,13 @@ test fCmd-6.20 {CopyRenameOneFile: errno == EXDEV} {pcOnly} {
     catch {file delete -force c:/tcl8975@ d:/tcl8975@}
     file mkdir c:/tcl8975@
     if [catch {file rename c:/tcl8975@ d:/}] {
-	list d:/tcl8975@
+	set msg d:/tcl8975@
     } else {
 	set msg [glob c:/tcl8975@ d:/tcl8975@]
 	file delete -force d:/tcl8975@
-	set msg
     }
+    file delete -force c:/tcl8975@
+    set msg
 } {d:/tcl8975@}
 test fCmd-6.21 {CopyRenameOneFile: copy/rename: S_ISDIR(source)} \
 	{unixOnly notRoot} {

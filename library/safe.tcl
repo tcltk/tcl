@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: safe.tcl,v 1.6 1999/08/19 02:59:40 hobbs Exp $
+# RCS: @(#) $Id: safe.tcl,v 1.6.2.1 2001/04/03 22:54:38 hobbs Exp $
 
 #
 # The implementation is based on namespaces. These naming conventions
@@ -496,7 +496,7 @@ proc ::safe::interpAddToAccessPath {slave path} {
 		if {[lsearch -exact $res $dir]<0} {
 		    lappend res $dir
 		}
-		foreach sub [glob -nocomplain -- [file join $dir *]] {
+		foreach sub [glob -directory $dir -nocomplain *] {
 		    if {([file isdirectory $sub]) \
 			    && ([lsearch -exact $res $sub]<0) } {
 			# new sub dir, add it !

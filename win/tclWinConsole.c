@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinConsole.c,v 1.3.10.1 2000/07/27 01:39:25 hobbs Exp $
+ * RCS: @(#) $Id: tclWinConsole.c,v 1.3.10.2 2001/04/03 22:54:39 hobbs Exp $
  */
 
 #include "tclWinInt.h"
@@ -135,14 +135,6 @@ typedef struct ConsoleEvent {
  * Declarations for functions used only in this file.
  */
 
-static int		ApplicationType(Tcl_Interp *interp,
-			    const char *fileName, char *fullName);
-static void		BuildCommandLine(const char *executable, int argc, 
-			    char **argv, Tcl_DString *linePtr);
-static void		CopyChannel(HANDLE dst, HANDLE src);
-static BOOL		HasConsole(void);
-static TclFile		MakeFile(HANDLE handle);
-static char *		MakeTempFile(Tcl_DString *namePtr);
 static int		ConsoleBlockModeProc(ClientData instanceData, int mode);
 static void		ConsoleCheckProc(ClientData clientData, int flags);
 static int		ConsoleCloseProc(ClientData instanceData,
@@ -161,7 +153,6 @@ static void		ConsoleSetupProc(ClientData clientData, int flags);
 static void		ConsoleWatchProc(ClientData instanceData, int mask);
 static DWORD WINAPI	ConsoleWriterThread(LPVOID arg);
 static void		ProcExitHandler(ClientData clientData);
-static int		TempFileName(WCHAR name[MAX_PATH]);
 static int		WaitForRead(ConsoleInfo *infoPtr, int blocking);
 
 /*
@@ -636,11 +627,11 @@ ConsoleInputProc(
 	 */
 
 	if (bufSize < (infoPtr->bytesRead - infoPtr->offset)) {
-	    memcpy(buf, &infoPtr->buffer[infoPtr->offset], bufSize);
+	    memcpy(buf, &infoPtr->buffer[infoPtr->offset], (size_t) bufSize);
 	    bytesRead = bufSize;
 	    infoPtr->offset += bufSize;
 	} else {
-	    memcpy(buf, &infoPtr->buffer[infoPtr->offset], bufSize);
+	    memcpy(buf, &infoPtr->buffer[infoPtr->offset], (size_t) bufSize);
 	    bytesRead = infoPtr->bytesRead - infoPtr->offset;
 
 	    /*
@@ -734,9 +725,9 @@ ConsoleOutputProc(
 		ckfree(infoPtr->writeBuf);
 	    }
 	    infoPtr->writeBufLen = toWrite;
-	    infoPtr->writeBuf = ckalloc(toWrite);
+	    infoPtr->writeBuf = ckalloc((unsigned int) toWrite);
 	}
-	memcpy(infoPtr->writeBuf, buf, toWrite);
+	memcpy(infoPtr->writeBuf, buf, (size_t) toWrite);
 	infoPtr->toWrite = toWrite;
 	ResetEvent(infoPtr->writable);
 	SetEvent(infoPtr->startWriter);
@@ -1086,7 +1077,7 @@ ConsoleReaderThread(LPVOID arg)
 	 * that are not KEY_EVENTs 
 	 */
 	if (ReadConsole(handle, infoPtr->buffer, CONSOLE_BUFFER_SIZE,
-		&infoPtr->bytesRead, NULL) != FALSE) {
+		(LPDWORD) &infoPtr->bytesRead, NULL) != FALSE) {
 	    /*
 	     * Data was stored in the buffer.
 	     */

@@ -307,6 +307,13 @@ AC_DEFUN(SC_ENABLE_THREADS, [
 #------------------------------------------------------------------------
 
 AC_DEFUN(SC_ENABLE_SYMBOLS, [
+
+    # Step 0: Enable 64 bit support?
+
+    AC_MSG_CHECKING([if 64bit support is requested])
+    AC_ARG_ENABLE(64bit,[  --enable-64bit          enable 64bit support (where applicable)], [do64bit=$enableval], [do64bit=no])
+    AC_MSG_RESULT($do64bit)
+
     AC_MSG_CHECKING([for build with symbols])
     AC_ARG_ENABLE(symbols, [  --enable-symbols        build with debugging symbols [--disable-symbols]],    [tcl_ok=$enableval], [tcl_ok=no])
 
@@ -384,6 +391,9 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
     # set various compiler flags depending on whether we are using gcc or cl
     
     if test "${GCC}" = "yes" ; then
+	if test "$do64bit" = "yes" ; then
+	    AC_MSG_WARN("64bit mode not supported with GCC on Windows")
+	fi
 	SHLIB_LD=""
 	SHLIB_LD_LIBS=""
 	LIBS=""
@@ -536,6 +546,10 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	# built -- Console vs. Window.
 	LDFLAGS_CONSOLE="-link -subsystem:console"
 	LDFLAGS_WINDOW="-link -subsystem:windows"
+
+	if test "$do64bit" = "yes" ; then
+	    EXTRA_CFLAGS="$EXTRA_CFLAGS -DUSE_TCLALLOC=0"
+	fi
     fi
 ])
 

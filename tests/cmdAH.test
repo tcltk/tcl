@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: cmdAH.test,v 1.10 2000/04/10 17:18:57 ericm Exp $
+# RCS: @(#) $Id: cmdAH.test,v 1.10.2.1 2001/04/03 22:54:38 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -1491,23 +1491,78 @@ test cmdAH-30.8 {Tcl_FileObjCmd: error conditions} {
 } {1 {user "woohgy" doesn't exist}}
 
 # channels
+# In testing 'file channels', we need to make sure that a channel
+# created in one interp isn't visible in another.
+
+interp create simpleInterp
+interp create -safe safeInterp
+interp c
+safeInterp expose file file
 
 test cmdAH-31.1 {Tcl_FileObjCmd: channels, too many args} {
     list [catch {file channels a b} msg] $msg
 } {1 {wrong # args: should be "file channels ?pattern?"}}
 test cmdAH-31.2 {Tcl_FileObjCmd: channels, too many args} {
-    file chan
-} {stderr stdout stdin}
-test cmdAH-31.3 {Tcl_FileObjCmd: channels, too many args} {
+    # Normal interps start out with only the standard channels
+    lsort [simpleInterp eval [list file chan]]
+} [lsort {stderr stdout stdin}]
+test cmdAH-31.3 {Tcl_FileObjCmd: channels, globbing} {
     string equal [file channels] [file channels *]
 } {1}
-test cmdAH-31.4 {Tcl_FileObjCmd: channels} {
-    set old [file channels gorp.file]
-    set f [open gorp.file w]
-    set new [file channels file*]
-    close $f
-    string equal $f $new
+test cmdAH-31.4 {Tcl_FileObjCmd: channels, globbing} {
+    lsort [file channels std*]
+} [lsort {stdout stderr stdin}]
+
+set newFileId [open gorp.file w]
+
+test cmdAH-31.5 {Tcl_FileObjCmd: channels} {
+    set res [file channels $newFileId]
+    string equal $newFileId $res
 } {1}
+test cmdAH-31.6 {Tcl_FileObjCmd: channels in other interp} {
+    # Safe interps start out with no channels
+    safeInterp eval [list file channels]
+} {}
+test cmdAH-31.7 {Tcl_FileObjCmd: channels in other interp} {
+    list [catch {safeInterp eval [list puts $newFileId "hello"]} msg] $msg
+} [list 1 "can not find channel named \"$newFileId\""]
+
+interp share {} $newFileId safeInterp
+interp share {} stdout safeInterp
+
+test cmdAH-31.8 {Tcl_FileObjCmd: channels in other interp} {
+    # $newFileId should now be visible in both interps
+    list [file channels $newFileId] \
+	    [safeInterp eval [list file channels $newFileId]]
+} [list $newFileId $newFileId]
+test cmdAH-31.9 {Tcl_FileObjCmd: channels in other interp} {
+    lsort [safeInterp eval [list file channels]]
+} [lsort [list stdout $newFileId]]
+test cmdAH-31.10 {Tcl_FileObjCmd: channels in other interp} {
+    # we can now write to $newFileId from slave
+    safeInterp eval [list puts $newFileId "hello"]
+} {}
+
+interp transfer {} $newFileId safeInterp
+
+test cmdAH-31.11 {Tcl_FileObjCmd: channels in other interp} {
+    # $newFileId should now be visible only in safeInterp
+    list [file channels $newFileId] \
+	    [safeInterp eval [list file channels $newFileId]]
+} [list {} $newFileId]
+test cmdAH-31.12 {Tcl_FileObjCmd: channels in other interp} {
+    lsort [safeInterp eval [list file channels]]
+} [lsort [list stdout $newFileId]]
+test cmdAH-31.13 {Tcl_FileObjCmd: channels in other interp} {
+    safeInterp eval [list close $newFileId]
+    safeInterp eval [list file channels]
+} {stdout}
+
+# This shouldn't work, but just in case a test above failed...
+catch {close $newFileId}
+
+interp delete safeInterp
+interp delete simpleInterp
 
 # cleanup
 catch {testsetplatform $platform}

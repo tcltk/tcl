@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.26 2000/04/10 21:08:26 ericm Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.26.2.1 2001/04/03 22:54:36 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -402,6 +402,7 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
 	}
 	offset += info.matches[0].end;
 	all++;
+	eflags |= TCL_REG_NOTBOL;
 	if (offset >= stringLength) {
 	    break;
 	}
@@ -908,15 +909,34 @@ Tcl_SplitObjCmd(dummy, interp, objc, objv)
 	 * Do nothing.
 	 */
     } else if (splitCharLen == 0) {
+	Tcl_HashTable charReuseTable;
+	Tcl_HashEntry *hPtr;
+	int isNew;
+
 	/*
 	 * Handle the special case of splitting on every character.
+	 *
+	 * Uses a hash table to ensure that each kind of character has
+	 * only one Tcl_Obj instance (multiply-referenced) in the
+	 * final list.  This is a *major* win when splitting on a long
+	 * string (especially in the megabyte range!) - DKF
 	 */
 
+	Tcl_InitHashTable(&charReuseTable, TCL_ONE_WORD_KEYS);
 	for ( ; string < end; string += len) {
 	    len = Tcl_UtfToUniChar(string, &ch);
-	    objPtr = Tcl_NewStringObj(string, len);
+	    /* Assume Tcl_UniChar is an integral type... */
+	    hPtr = Tcl_CreateHashEntry(&charReuseTable, (char*)0 + ch, &isNew);
+	    if (isNew) {
+		objPtr = Tcl_NewStringObj(string, len);
+		/* Don't need to fiddle with refcount... */
+		Tcl_SetHashValue(hPtr, (ClientData) objPtr);
+	    } else {
+		objPtr = (Tcl_Obj*) Tcl_GetHashValue(hPtr);
+	    }
 	    Tcl_ListObjAppendElement(NULL, listPtr, objPtr);
 	}
+	Tcl_DeleteHashTable(&charReuseTable);
     } else {
 	char *element, *p, *splitEnd;
 	int splitLen;
@@ -1021,10 +1041,10 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	    for (i = 2; i < objc-2; i++) {
 		string2 = Tcl_GetStringFromObj(objv[i], &length2);
 		if ((length2 > 1)
-			&& strncmp(string2, "-nocase", (size_t) length2) == 0) {
+			&& strncmp(string2, "-nocase", (size_t)length2) == 0) {
 		    nocase = 1;
 		} else if ((length2 > 1)
-			&& strncmp(string2, "-length", (size_t) length2) == 0) {
+			&& strncmp(string2, "-length", (size_t)length2) == 0) {
 		    if (i+1 >= objc-2) {
 			goto str_cmp_args;
 		    }
@@ -1201,25 +1221,26 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	     */
 
 	    if (objv[2]->typePtr == &tclByteArrayType) {
-
 		string1 = (char *)Tcl_GetByteArrayFromObj(objv[2], &length1);
 
 		if (TclGetIntForIndex(interp, objv[3], length1 - 1,
 			&index) != TCL_OK) {
 		    return TCL_ERROR;
 		}
-		Tcl_SetByteArrayObj(resultPtr,
-			(unsigned char *)(&string1[index]), 1);
+		if ((index >= 0) && (index < length1)) {
+		    Tcl_SetByteArrayObj(resultPtr,
+			    (unsigned char *)(&string1[index]), 1);
+		}
 	    } else {
 		string1 = Tcl_GetStringFromObj(objv[2], &length1);
-		
+
 		/*
 		 * convert to Unicode internal rep to calulate what
 		 * 'end' really means.
 		 */
 
 		length2 = Tcl_GetCharLength(objv[2]);
-    
+
 		if (TclGetIntForIndex(interp, objv[3], length2 - 1,
 			&index) != TCL_OK) {
 		    return TCL_ERROR;
@@ -1645,6 +1666,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		 * empty charMap, just return whatever string was given
 		 */
 		Tcl_SetObjResult(interp, objv[objc-1]);
+		return TCL_OK;
 	    } else if (mapElemc & 1) {
 		/*
 		 * The charMap must be an even number of key/value items

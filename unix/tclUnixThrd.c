@@ -649,8 +649,17 @@ Tcl_ConditionWait(condPtr, mutexPtr, timePtr)
     if (timePtr == NULL) {
 	pthread_cond_wait(pcondPtr, pmutexPtr);
     } else {
-	ptime.tv_sec = timePtr->sec + TclpGetSeconds();
-	ptime.tv_nsec = 1000 * timePtr->usec;
+	Tcl_Time now;
+
+	/*
+	 * Make sure to take into account the microsecond component of the
+	 * current time, including possible overflow situations. [Bug #411603]
+	 */
+
+	TclpGetTime(&now);
+	ptime.tv_sec = timePtr->sec + now.sec +
+	    (timePtr->usec + now.usec) / 1000000;
+	ptime.tv_nsec = 1000 * ((timePtr->usec + now.usec) % 1000000);
 	pthread_cond_timedwait(pcondPtr, pmutexPtr, &ptime);
     }
 }

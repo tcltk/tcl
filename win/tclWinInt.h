@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinInt.h,v 1.8 1999/08/03 18:07:15 redman Exp $
+ * RCS: @(#) $Id: tclWinInt.h,v 1.8.10.1 2001/04/03 22:54:39 hobbs Exp $
  */
 
 #ifndef _TCLWININT
@@ -92,7 +92,6 @@ typedef struct TclWinProcs {
 } TclWinProcs;
 
 EXTERN TclWinProcs *tclWinProcs;
-EXTERN Tcl_Encoding tclWinTCharEncoding;
 
 /*
  * Declarations of functions that are not accessible by way of the

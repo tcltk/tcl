@@ -9,7 +9,7 @@
 #
 # The information in this file is specific to a single platform.
 #
-# RCS: @(#) $Id: tclConfig.sh.in,v 1.13 1999/07/29 19:21:32 wart Exp $
+# RCS: @(#) $Id: tclConfig.sh.in,v 1.13.10.1 2001/04/03 22:54:39 hobbs Exp $
 
 # Tcl's version number.
 TCL_VERSION='@TCL_VERSION@'
@@ -73,7 +73,7 @@ TCL_EXTRA_CFLAGS='@EXTRA_CFLAGS@'
 # Base command to use for combining object files into a shared library:
 TCL_SHLIB_LD='@SHLIB_LD@'
 
-# Base command to use for combining object files into a shared library:
+# Base command to use for combining object files into a static library:
 TCL_STLIB_LD='@STLIB_LD@'
 
 # Either '$LIBS' (if dependent libraries should be included when linking

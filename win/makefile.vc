@@ -1,12 +1,12 @@
-# Visual C++ 2.x and 4.0 makefile
+# Visual C++ makefile
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
 # Copyright (c) 1995-1996 Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright (c) 1998-2000 Ajuba Solutions.
 #
-# RCS: @(#) $Id: makefile.vc,v 1.50.2.1 2000/07/27 01:39:24 hobbs Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.50.2.2 2001/04/03 22:54:39 hobbs Exp $
 
 # Does not depend on the presence of any environment variables in
 # order to compile tcl; all needed information is derived from 
@@ -27,18 +27,44 @@
 #
 
 # Set this to the appropriate value of /MACHINE: for your platform
+# Choices: IX86, IA64, ALPHA
 MACHINE		= IX86
 
 ROOT		= ..
-INSTALLDIR	= c:\Progra~1\Tcl
+INSTALLDIR	= C:\Progra~1\Tcl
 
 !IF "$(MACHINE)" == "IA64"
-TOOLS32		= c:\ia64sdk17
-TOOLS32_rc	= c:\ia64sdk17
+
+# IA64 support is based on the standard setup with v2 of the
+# Microsoft Platform SDK for Whistler, build 2267
+
+TOOLS32		= C:\Progra~1\Microsoft Platform SDK
+TOOLS32_rc	= C:\Progra~1\Microsoft Platform SDK
+
+cc32		= "$(TOOLS32)\bin\Win64\cl.exe"
+link32		= "$(TOOLS32)\bin\Win64\link.exe"
+libpath32	= /LIBPATH:"$(TOOLS32)\lib\IA64"
+lib32		= "$(TOOLS32)\bin\Win64\lib.exe"
+
 !ELSE
-TOOLS32		= c:\Progra~1\devstudio\vc
-TOOLS32_rc	= c:\Progra~1\devstudio\sharedide
+
+# Visual Studio 5 default
+#TOOLS32		= C:\Progra~1\devstudio\vc
+#TOOLS32_rc	= C:\Progra~1\devstudio\sharedide
+
+# Visual Studio 6 default
+TOOLS32		= C:\Progra~1\Microsoft Visual Studio\VC98
+TOOLS32_rc	= C:\Progra~1\Microsoft Visual Studio\common\MSDev98
+
+cc32		= "$(TOOLS32)\bin\cl.exe"
+link32		= "$(TOOLS32)\bin\link.exe"
+libpath32	= /LIBPATH:"$(TOOLS32)\lib"
+lib32		= "$(TOOLS32)\bin\lib.exe"
+
 !ENDIF
+
+rc32		= "$(TOOLS32_rc)\bin\rc.exe"
+include32	= -I"$(TOOLS32)\include"
 
 # Uncomment the following line to compile with thread support
 #THREADDEFINES = -DTCL_THREADS=1
@@ -54,10 +80,15 @@ NODEBUG = 1
 #	-DTCL_COMPILE_STATS	Enables byte compilation statistics gathering.
 #	-DUSE_TCLALLOC=0	Disables the Tcl memory allocator in favor
 #				of the native malloc implementation.  This is
-#				needed when using Purify.
+#				needed when using Purify.  For IA64, we do
+#				want to use the native allocator.
 #
 #DEBUGDEFINES = -DTCL_MEM_DEBUG -DTCL_COMPILE_DEBUG -DTCL_COMPILE_STATS
+!IF "$(MACHINE)" == "IA64"
+DEBUGDEFINES = -DUSE_TCLALLOC=0
+!ELSE
 #DEBUGDEFINES = -DUSE_TCLALLOC=0
+!ENDIF
 
 ######################################################################
 # Do not modify below this line
@@ -201,13 +232,6 @@ TCLOBJS = \
 
 TCLSTUBOBJS = $(TMPDIR)\tclStubLib.obj \
 
-cc32		= "$(TOOLS32)\bin\cl.exe"
-link32		= "$(TOOLS32)\bin\link.exe"
-rc32		= "$(TOOLS32_rc)\bin\rc.exe"
-include32	= -I"$(TOOLS32)\include"
-libpath32	= /LIBPATH:"$(TOOLS32)\lib"
-lib32		= "$(TOOLS32)\bin\lib.exe"
-
 WINDIR		= $(ROOT)\win
 GENERICDIR	= $(ROOT)\generic
 
@@ -221,12 +245,10 @@ TCL_DEFINES	= $(DEBUGDEFINES) $(THREADDEFINES)
 !IF "$(NODEBUG)" == "1"
 # This cranks the optimization level to maximize speed
 cdebug = -O2 -Gs -GD
-!ELSE
-!IF "$(MACHINE)" == "IA64"
+!ELSE IF "$(MACHINE)" == "IA64"
 cdebug = -Od -Zi
 !ELSE
 cdebug = -Z7 -Od -WX
-!ENDIF
 !ENDIF
 
 # declarations common to all compiler options
@@ -254,13 +276,11 @@ lflags	= /NODEFAULTLIB /NOLOGO /MACHINE:$(MACHINE) $(libpath32)
 !IF "$(MACHINE)" == "IX86"
 DLLENTRY = @12
 dlllflags = $(lflags) -entry:_DllMainCRTStartup$(DLLENTRY) -dll
-!ELSE
-!IF "$(MACHINE)" == "IA64"
+!ELSE IF "$(MACHINE)" == "IA64"
 DLLENTRY = @12
 dlllflags = $(lflags) -dll
 !ELSE
 dlllflags = $(lflags) -entry:_DllMainCRTStartup$(DLLENTRY) -dll
-!ENDIF
 !ENDIF
 
 conlflags = $(lflags) -subsystem:console -entry:mainCRTStartup
@@ -370,16 +390,16 @@ install-libraries:
 	-@copy "$(ROOT)\library\http1.0\pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)\http1.0"
 	@echo installing http2.3
 	-@$(MKDIR) "$(SCRIPT_INSTALL_DIR)\http2.3"
-	-@copy "$(ROOT)\library\http2.3\http.tcl"     "$(SCRIPT_INSTALL_DIR)\http2.3"
-	-@copy "$(ROOT)\library\http2.3\pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)\http2.3"
+	-@copy "$(ROOT)\library\http\http.tcl"     "$(SCRIPT_INSTALL_DIR)\http2.3"
+	-@copy "$(ROOT)\library\http\pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)\http2.3"
 	@echo installing opt0.4
 	-@$(MKDIR) "$(SCRIPT_INSTALL_DIR)\opt0.4"
-	-@copy "$(ROOT)\library\opt0.4\optparse.tcl" "$(SCRIPT_INSTALL_DIR)\opt0.4"
-	-@copy "$(ROOT)\library\opt0.4\pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)\opt0.4"
-	@echo installing msgcat1.0
-	-@$(MKDIR) "$(SCRIPT_INSTALL_DIR)\msgcat1.0"
-	-@copy "$(ROOT)\library\msgcat1.0\msgcat.tcl"   "$(SCRIPT_INSTALL_DIR)\msgcat1.0"
-	-@copy "$(ROOT)\library\msgcat1.0\pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)\msgcat1.0"
+	-@copy "$(ROOT)\library\opt\optparse.tcl" "$(SCRIPT_INSTALL_DIR)\opt0.4"
+	-@copy "$(ROOT)\library\opt\pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)\opt0.4"
+	@echo installing msgcat1.1
+	-@$(MKDIR) "$(SCRIPT_INSTALL_DIR)\msgcat1.1"
+	-@copy "$(ROOT)\library\msgcat\msgcat.tcl"   "$(SCRIPT_INSTALL_DIR)\msgcat1.1"
+	-@copy "$(ROOT)\library\msgcat\pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)\msgcat1.1"
 	@echo installing $(TCLDDEDLLNAME)
 	-@$(MKDIR) "$(SCRIPT_INSTALL_DIR)\dde1.1"
 	-@copy "$(TCLDDEDLL)" "$(SCRIPT_INSTALL_DIR)\dde1.1"
@@ -392,17 +412,18 @@ install-libraries:
 	-@$(MKDIR) "$(SCRIPT_INSTALL_DIR)\encoding"
 	-@copy "$(ROOT)\library\encoding\*.enc" "$(SCRIPT_INSTALL_DIR)\encoding"
 	@echo installing library files
-	-@copy "$(GENERICDIR)\tcl.h"         "$(INCLUDE_INSTALL_DIR)"
-	-@copy "$(GENERICDIR)\tclDecls.h"    "$(INCLUDE_INSTALL_DIR)"
-	-@copy "$(ROOT)\library\history.tcl" "$(SCRIPT_INSTALL_DIR)"
-	-@copy "$(ROOT)\library\init.tcl"    "$(SCRIPT_INSTALL_DIR)"
-	-@copy "$(ROOT)\library\ldAout.tcl"  "$(SCRIPT_INSTALL_DIR)"
-	-@copy "$(ROOT)\library\parray.tcl"  "$(SCRIPT_INSTALL_DIR)"
-	-@copy "$(ROOT)\library\safe.tcl"    "$(SCRIPT_INSTALL_DIR)"
-	-@copy "$(ROOT)\library\tclIndex"    "$(SCRIPT_INSTALL_DIR)"
-	-@copy "$(ROOT)\library\package.tcl" "$(SCRIPT_INSTALL_DIR)"
-	-@copy "$(ROOT)\library\word.tcl"    "$(SCRIPT_INSTALL_DIR)"
-	-@copy "$(ROOT)\library\auto.tcl"    "$(SCRIPT_INSTALL_DIR)"
+	-@copy "$(GENERICDIR)\tcl.h"          "$(INCLUDE_INSTALL_DIR)"
+	-@copy "$(GENERICDIR)\tclDecls.h"     "$(INCLUDE_INSTALL_DIR)"
+	-@copy "$(GENERICDIR)\tclPlatDecls.h" "$(INCLUDE_INSTALL_DIR)"
+	-@copy "$(ROOT)\library\history.tcl"  "$(SCRIPT_INSTALL_DIR)"
+	-@copy "$(ROOT)\library\init.tcl"     "$(SCRIPT_INSTALL_DIR)"
+	-@copy "$(ROOT)\library\ldAout.tcl"   "$(SCRIPT_INSTALL_DIR)"
+	-@copy "$(ROOT)\library\parray.tcl"   "$(SCRIPT_INSTALL_DIR)"
+	-@copy "$(ROOT)\library\safe.tcl"     "$(SCRIPT_INSTALL_DIR)"
+	-@copy "$(ROOT)\library\tclIndex"     "$(SCRIPT_INSTALL_DIR)"
+	-@copy "$(ROOT)\library\package.tcl"  "$(SCRIPT_INSTALL_DIR)"
+	-@copy "$(ROOT)\library\word.tcl"     "$(SCRIPT_INSTALL_DIR)"
+	-@copy "$(ROOT)\library\auto.tcl"     "$(SCRIPT_INSTALL_DIR)"
 
 #
 # Regenerate the stubs files.
@@ -508,7 +529,11 @@ $(GENERICDIR)\regguts.h: $(GENERICDIR)\regcustom.h
 
 {$(WINDIR)}.rc{$(TMPDIR)}.res:
 	$(rc32) -fo $@ -r -i $(GENERICDIR) -i $(WINDIR) -D__WIN32__ \
-		$(TCL_DEFINES) $<
+		$(TCL_DEFINES) \
+!if "$(NODEBUG)" == "0"
+		-d DEBUG \
+!endif
+		$<
 
 clean:
 	-@$(RM) $(OUTDIR)\*.exp 

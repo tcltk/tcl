@@ -10,7 +10,7 @@
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  * Changes by Rolf.Schroedter@dlr.de June 25-27, 1999
  *
- * RCS: @(#) $Id: tclWinSerial.c,v 1.9.2.1 2000/07/27 01:39:26 hobbs Exp $
+ * RCS: @(#) $Id: tclWinSerial.c,v 1.9.2.2 2001/04/03 22:54:40 hobbs Exp $
  */
 
 #include "tclWinInt.h"
@@ -1047,7 +1047,7 @@ SerialSetOptionProc(instanceData, interp, optionName, value)
 {
     SerialInfo *infoPtr;
     DCB dcb;
-    int len;
+    size_t len;
     BOOL result;
     Tcl_DString ds;
     TCHAR *native;
@@ -1123,7 +1123,7 @@ SerialGetOptionProc(instanceData, interp, optionName, dsPtr)
 {
     SerialInfo *infoPtr;
     DCB dcb;
-    int len;
+    size_t len;
     int valid = 0;  /* flag if valid option parsed */
 
     infoPtr = (SerialInfo *) instanceData;
@@ -1157,7 +1157,7 @@ SerialGetOptionProc(instanceData, interp, optionName, dsPtr)
             char buf[2 * TCL_INTEGER_SPACE + 16];
 
             parity = 'n';
-            if (dcb.Parity < 4) {
+            if (dcb.Parity <= 4) {
                 parity = "noems"[dcb.Parity];
             }
 

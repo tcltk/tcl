@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: string.test,v 1.23 2000/04/10 17:19:04 ericm Exp $
+# RCS: @(#) $Id: string.test,v 1.23.2.1 2001/04/03 22:54:38 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -255,6 +255,12 @@ test string-5.17 {string index, bad integer} {
 test string-5.18 {string index, bad integer} {
     list [catch {string index "abc" end-00289} msg] $msg
 } {1 {expected integer but got "-00289" (looks like invalid octal number)}}
+test string-5.19 {string index, bytearray object out of bounds} {
+    string index [binary format I* {0x50515253 0x52}] -1
+} {}
+test string-5.20 {string index, bytearray object out of bounds} {
+    string index [binary format I* {0x50515253 0x52}] 20
+} {}
 
 
 proc largest_int {} {
@@ -680,6 +686,15 @@ test string-10.13 {string map, -nocase unicode} {
 test string-10.14 {string map, -nocase null arguments} {
     string map -nocase {{} abc} foo
 } foo
+test string-10.15 {string map, one pair case} {
+    string map -nocase {abc 32} aAbCaBaAbAbcAb
+} {a32aBaAb32Ab}
+test string-10.16 {string map, one pair case} {
+    string map -nocase {ab 4321} aAbCaBaAbAbcAb
+} {a4321C4321a43214321c4321}
+test string-10.17 {string map, one pair case} {
+    string map {Ab 4321} aAbCaBaAbAbcAb
+} {a4321CaBa43214321c4321}
 
 test string-11.1 {string match, too few args} {
     list [catch {string match a} msg] $msg
@@ -798,6 +813,43 @@ test string-11.37 {string match nocase} {
 test string-11.38 {string match case, reverse range} {
     string match {[A-fh-Z]} g
 } 1
+test string-11.39 {string match, *\ case} {
+    string match {*\abc} abc
+} 1
+test string-11.40 {string match, *special case} {
+    string match {*[ab]} abc
+} 0
+test string-11.41 {string match, *special case} {
+    string match {*[ab]*} abc
+} 1
+test string-11.42 {string match, *special case} {
+    string match "*\\" "\\"
+} 0
+test string-11.43 {string match, *special case} {
+    string match "*\\\\" "\\"
+} 1
+test string-11.44 {string match, *special case} {
+    string match "*???" "12345"
+} 1
+test string-11.45 {string match, *special case} {
+    string match "*???" "12"
+} 0
+test string-11.46 {string match, *special case} {
+    string match "*\\*" "abc*"
+} 1
+test string-11.47 {string match, *special case} {
+    string match "*\\*" "*"
+} 1
+test string-11.48 {string match, *special case} {
+    string match "*\\*" "*abc"
+} 0
+test string-11.49 {string match, *special case} {
+    string match "?\\*" "a*"
+} 1
+test string-11.50 {string match, *special case} {
+    string match "\\" "\\"
+} 0
+
 
 test string-12.1 {string range} {
     list [catch {string range} msg] $msg
@@ -884,6 +936,28 @@ test string-13.6 {string repeat} {
 test string-13.7 {string repeat} {
     list [catch {string repeat abc end} msg] $msg
 } {1 {expected integer but got "end"}}
+test string-13.8 {string repeat} {
+    string repeat {} -1000
+} {}
+test string-13.9 {string repeat} {
+    string repeat {} 0
+} {}
+test string-13.10 {string repeat} {
+    string repeat def 0
+} {}
+test string-13.11 {string repeat} {
+    string repeat def 1
+} def
+test string-13.12 {string repeat} {
+    string repeat ab\u7266cd 3
+} ab\u7266cdab\u7266cdab\u7266cd
+test string-13.13 {string repeat} {
+    string repeat \x00 3
+} \x00\x00\x00
+test string-13.14 {string repeat} {
+    # The string range will ensure us that string repeat gets a unicode string
+    string repeat [string range ab\u7266cd 2 3] 3
+} \u7266c\u7266c\u7266c
 
 test string-14.1 {string replace} {
     list [catch {string replace} msg] $msg
@@ -1163,9 +1237,3 @@ test string-22.13 {string wordstart, unicode} {
 # cleanup
 ::tcltest::cleanupTests
 return
-
-
-
-
-
-

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclScan.c,v 1.6 1999/11/30 01:42:59 hobbs Exp $
+ * RCS: @(#) $Id: tclScan.c,v 1.6.2.1 2001/04/03 22:54:38 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -694,12 +694,12 @@ Tcl_ScanObjCmd(dummy, interp, objc, objv)
 	    case 'o':
 		op = 'i';
 		base = 8;
-		fn = (long (*)())strtol;
+		fn = (long (*)())strtoul;
 		break;
 	    case 'x':
 		op = 'i';
 		base = 16;
-		fn = (long (*)())strtol;
+		fn = (long (*)())strtoul;
 		break;
 	    case 'u':
 		op = 'i';

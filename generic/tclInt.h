@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.42 2000/04/09 16:04:18 kupries Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.42.2.1 2001/04/03 22:54:37 hobbs Exp $
  */
 
 #ifndef _TCLINT
@@ -1549,6 +1549,8 @@ extern Tcl_Obj *	tclFreeObjList;
 #ifdef TCL_COMPILE_STATS
 extern long		tclObjsAlloced;
 extern long		tclObjsFreed;
+#define TCL_MAX_SHARED_OBJ_STATS 5
+extern long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS];
 #endif /* TCL_COMPILE_STATS */
 
 /*

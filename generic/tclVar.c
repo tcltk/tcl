@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.16 2000/01/21 03:29:14 ericm Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.16.2.1 2001/04/03 22:54:38 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -2870,11 +2870,10 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
     Interp *iPtr = (Interp *) interp;
     Var *varPtr, *arrayPtr;
     Tcl_HashEntry *hPtr;
-    Tcl_Obj *resultPtr = Tcl_GetObjResult(interp);
+    Tcl_Obj *resultPtr;
     int notArray;
     char *varName, *msg;
     int index, result;
-
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "option arrayName ?arg ...?");
@@ -2914,6 +2913,13 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
 	    return TCL_ERROR;
 	}
     }
+
+    /*
+     * We have to wait to get the resultPtr until here because
+     * CallTraces can affect the result.
+     */
+
+    resultPtr = Tcl_GetObjResult(interp);
 
     switch (index) {
         case ARRAY_ANYMORE: {
@@ -4769,7 +4775,6 @@ TclVarTraceExists(interp, varName)
 {
     Var *varPtr;
     Var *arrayPtr;
-    char *msg;
 
     /*
      * The choice of "create" flag values is delicate here, and
@@ -4782,27 +4787,27 @@ TclVarTraceExists(interp, varName)
      */
 
     varPtr = TclLookupVar(interp, varName, (char *) NULL,
-            0, "access",
-            /*createPart1*/ 0, /*createPart2*/ 1, &arrayPtr);
+            0, "access", /*createPart1*/ 0, /*createPart2*/ 1, &arrayPtr);
+
     if (varPtr == NULL) {
 	return NULL;
     }
-    if ((varPtr != NULL) &&
-	    ((varPtr->tracePtr != NULL)
-	    || ((arrayPtr != NULL) && (arrayPtr->tracePtr != NULL)))) {
-	msg = CallTraces((Interp *)interp, arrayPtr, varPtr, varName,
-		(char *) NULL, TCL_TRACE_READS);
-	if (msg != NULL) {
-	    /*
-	     * If the variable doesn't exist anymore and no-one's using
-	     * it, then free up the relevant structures and hash table entries.
-	     */
 
-	    if (TclIsVarUndefined(varPtr)) {
-		CleanupVar(varPtr, arrayPtr);
-	    }
-	    return NULL;
-	}
+    if ((varPtr->tracePtr != NULL)
+	    || ((arrayPtr != NULL) && (arrayPtr->tracePtr != NULL))) {
+	CallTraces((Interp *)interp, arrayPtr, varPtr, varName,
+		(char *) NULL, TCL_TRACE_READS);
     }
+
+    /*
+     * If the variable doesn't exist anymore and no-one's using
+     * it, then free up the relevant structures and hash table entries.
+     */
+
+    if (TclIsVarUndefined(varPtr)) {
+	CleanupVar(varPtr, arrayPtr);
+	return NULL;
+    }
+
     return varPtr;
 }

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEnv.c,v 1.7.2.1 2000/08/07 21:33:02 hobbs Exp $
+ * RCS: @(#) $Id: tclEnv.c,v 1.7.2.2 2001/04/03 22:54:37 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -356,7 +356,7 @@ TclUnsetEnv(name)
     CONST char *name;		/* Name of variable to remove (UTF-8). */
 {
     char *oldValue;
-    unsigned int length;
+    int length;
     int index;
 #ifdef USE_PUTENV
     Tcl_DString envString;

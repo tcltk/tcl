@@ -6,12 +6,12 @@
 #
 # Copyright (c) 1994 The Regents of the University of California.
 # Copyright (c) 1994 Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright (c) 1998-2000 Ajuba Solutions.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: subst.test,v 1.6 2000/04/10 17:19:05 ericm Exp $
+# RCS: @(#) $Id: subst.test,v 1.6.2.1 2001/04/03 22:54:38 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -109,18 +109,70 @@ test subst-7.7 {switches} {
     subst -nov -nob -noc {abc $x [expr 1+2] \\\x41}
 } {abc $x [expr 1+2] \\\x41}
 
+test subst-8.1 {return in a subst} {
+    subst {foo [return {x}; bogus code] bar}
+} {foo x bar}
+test subst-8.2 {return in a subst} {
+    subst {foo [return x ; bogus code] bar}
+} {foo x bar}
+test subst-8.3 {return in a subst} {
+    subst {foo [if 1 { return {x}; bogus code }] bar}
+} {foo x bar}
+test subst-8.4 {return in a subst} {
+    subst {[eval {return hi}] there}
+} {hi there}
+test subst-8.5 {return in a subst} {
+    subst {foo [return {]}; bogus code] bar}
+} {foo ] bar}
+test subst-8.6 {return in a subst} {
+    subst {foo [return {x}; bogus code bar}
+} {foo x}
+test subst-8.7 {return in a subst, parse error} {
+    subst {foo [return {x} ; set a {}" ; stuff] bar}
+} {foo xset a {}" ; stuff] bar}
+test subst-8.8 {return in a subst, parse error} {
+    subst {foo [return {x} ; set bar baz ; set a {}" ; stuff] bar}
+} {foo xset bar baz ; set a {}" ; stuff] bar}
+
+test subst-9.1 {error in a subst} {
+    list [catch {subst {[error foo; bogus code]bar}} msg] $msg
+} {1 foo}
+test subst-9.2 {error in a subst} {
+    list [catch {subst {[if 1 { error foo; bogus code}]bar}} msg] $msg
+} {1 foo}
+
+test subst-10.1 {break in a subst} {
+    subst {foo [break; bogus code] bar}
+} {foo  bar}
+test subst-10.2 {break in a subst} {
+    subst {foo [break; return x; bogus code] bar}
+} {foo  bar}
+test subst-10.3 {break in a subst} {
+    subst {foo [if 1 { break; bogus code}] bar}
+} {foo  bar}
+test subst-10.4 {break in a subst, parse error} {
+    subst {foo [break ; set a {}{} ; stuff] bar}
+} {foo set a {}{} ; stuff] bar}
+test subst-10.5 {break in a subst, parse error} {
+    subst {foo [break ;set bar baz ;set a {}{} ; stuff] bar}
+} {foo set bar baz ;set a {}{} ; stuff] bar}
+
+test subst-11.1 {continue in a subst} {
+    subst {foo [continue; bogus code] bar}
+} {foo  bar}
+test subst-11.2 {continue in a subst} {
+    subst {foo [continue; return x; bogus code] bar}
+} {foo  bar}
+test subst-11.3 {continue in a subst} {
+    subst {foo [if 1 { continue; bogus code}] bar}
+} {foo  bar}
+test subst-11.4 {continue in a subst, parse error} {
+    subst {foo [continue ; set a {}{} ; stuff] bar}
+} {foo set a {}{} ; stuff] bar}
+test subst-11.5 {continue in a subst, parse error} {
+    subst {foo [continue ;set bar baz ;set a {}{} ; stuff] bar}
+} {foo set bar baz ;set a {}{} ; stuff] bar}
+
 # cleanup
 ::tcltest::cleanupTests
 return
-
-
-
-
-
-
-
-
-
-
-
-

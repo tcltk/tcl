@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEncoding.c,v 1.5 2000/01/21 02:25:26 hobbs Exp $
+ * RCS: @(#) $Id: tclEncoding.c,v 1.5.2.1 2001/04/03 22:54:36 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -1328,13 +1328,30 @@ LoadTableEncoding(interp, name, type, chan)
     TableEncodingData *dataPtr;
     unsigned short *pageMemPtr;
     Tcl_EncodingType encType;
-    char *hex;
-    static char staticHex[] = {
-	0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 0, 0, 0, 0, 0, 0,
-	10, 11, 12, 13, 14, 15
-    };
 
-    hex = staticHex - '0';
+    /*
+     * Speed over memory. Use a full 256 character table to decode hex
+     * sequences in the encoding files.
+     */
+
+    static char staticHex[] = {
+      0,  0,  0,  0,  0,  0,  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /*   0 ...  15 */
+      0,  0,  0,  0,  0,  0,  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /*  16 ...  31 */
+      0,  0,  0,  0,  0,  0,  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /*  32 ...  47 */
+      0,  1,  2,  3,  4,  5,  6, 7, 8, 9, 0, 0, 0, 0, 0, 0, /*  48 ...  63 */
+      0, 10, 11, 12, 13, 14, 15, 0, 0, 0, 0, 0, 0, 0, 0, 0, /*  64 ...  79 */
+      0,  0,  0,  0,  0,  0,  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /*  80 ...  95 */
+      0, 10, 11, 12, 13, 14, 15, 0, 0, 0, 0, 0, 0, 0, 0, 0, /*  96 ... 111 */
+      0,  1,  2,  3,  4,  5,  6, 7, 8, 9, 0, 0, 0, 0, 0, 0, /* 112 ... 127 */
+      0,  0,  0,  0,  0,  0,  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /* 128 ... 143 */
+      0,  0,  0,  0,  0,  0,  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /* 144 ... 159 */
+      0,  0,  0,  0,  0,  0,  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /* 160 ... 175 */
+      0,  0,  0,  0,  0,  0,  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /* 176 ... 191 */
+      0,  0,  0,  0,  0,  0,  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /* 192 ... 207 */
+      0,  0,  0,  0,  0,  0,  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /* 208 ... 223 */
+      0,  0,  0,  0,  0,  0,  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /* 224 ... 239 */
+      0,  0,  0,  0,  0,  0,  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /* 240 ... 255 */
+    };
 
     Tcl_DStringInit(&lineString);
     Tcl_Gets(chan, &lineString);
@@ -1383,15 +1400,15 @@ LoadTableEncoding(interp, name, type, chan)
 
 	Tcl_ReadChars(chan, objPtr, 3 + 16 * (16 * 4 + 1), 0);
 	p = Tcl_GetString(objPtr);
-	hi = (hex[(int)p[0]] << 4) + hex[(int)p[1]];
+	hi = (staticHex[(unsigned int)p[0]] << 4) + staticHex[(unsigned int)p[1]];
 	dataPtr->toUnicode[hi] = pageMemPtr;
 	p += 2;
 	for (lo = 0; lo < 256; lo++) {
 	    if ((lo & 0x0f) == 0) {
 		p++;
 	    }
-	    ch = (hex[(int)p[0]] << 12) + (hex[(int)p[1]] << 8)
-		+ (hex[(int)p[2]] << 4) + hex[(int)p[3]];
+	    ch = (staticHex[(unsigned int)p[0]] << 12) + (staticHex[(unsigned int)p[1]] << 8)
+		+ (staticHex[(unsigned int)p[2]] << 4) + staticHex[(unsigned int)p[3]];
 	    if (ch != 0) {
 		used[ch >> 8] = 1;
 	    }
@@ -1510,7 +1527,6 @@ LoadTableEncoding(interp, name, type, chan)
     encType.nullSize	    = (type == ENCODING_DOUBLEBYTE) ? 2 : 1;
     encType.clientData	    = (ClientData) dataPtr;
     return Tcl_CreateEncoding(&encType);
-
 }
 
 /*

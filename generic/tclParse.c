@@ -9,12 +9,12 @@
  *	allow scripts to be evaluated directly, without compiling.
  *
  * Copyright (c) 1997 Sun Microsystems, Inc.
- * Copyright (c) 1998 by Scriptics Corporation.
+ * Copyright (c) 1998-2000 Ajuba Solutions.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.13 1999/11/10 02:51:57 hobbs Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.13.2.1 2001/04/03 22:54:38 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -1456,15 +1456,51 @@ Tcl_EvalEx(interp, script, numBytes, flags)
 	Tcl_DecrRefCount(objv[i]);
     }
     if (gotParse) {
-	p = parse.commandStart + parse.commandSize;
+	next = parse.commandStart + parse.commandSize;
+	bytesLeft -= next - p;
+	p = next;
 	Tcl_FreeParse(&parse);
-	if ((nested != 0) && (p > script) && (p[-1] == ']')) {
+
+	if ((nested != 0) && (p > script)) {
+	    char *nextCmd = NULL;	/* pointer to start of next command */
+
 	    /*
 	     * We get here in the special case where the TCL_BRACKET_TERM
-	     * flag was set in the interpreter and we reached a close
-	     * bracket in the script.  Return immediately.
+	     * flag was set in the interpreter.
+	     *
+	     * At this point, we want to find the end of the script
+	     * (either end of script or the closing ']').
 	     */
 
+	    while ((p[-1] != ']') && bytesLeft) {
+		if (Tcl_ParseCommand(NULL, p, bytesLeft, nested, &parse)
+			!= TCL_OK) {
+		    /*
+		     * We were looking for the ']' to close the script.
+		     * But if we find a syntax error, it is ok to quit
+		     * early since in that case we no longer need to know
+		     * where the ']' is (if there was one).  We reset the
+		     * pointer to the start of the command that after the
+		     * one causing the return.  -- hobbs
+		     */
+
+		    p = (nextCmd == NULL) ? parse.commandStart : nextCmd;
+		    break;
+		}
+
+		if (nextCmd == NULL) {
+		    nextCmd = parse.commandStart;
+		}
+
+		/*
+		 * Advance to the next command in the script.
+		 */
+
+		next = parse.commandStart + parse.commandSize;
+		bytesLeft -= next - p;
+		p = next;
+		Tcl_FreeParse(&parse);
+	    }
 	    iPtr->termOffset = (p - 1) - script;
 	} else {
 	    iPtr->termOffset = p - script;

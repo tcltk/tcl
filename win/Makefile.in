@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.33.2.3 2000/07/28 07:58:28 mo Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.33.2.4 2001/04/03 22:54:39 hobbs Exp $
 
 VERSION = @TCL_VERSION@
 
@@ -357,7 +357,7 @@ ${DDE_LIB_FILE}: ${DDE_OBJS} ${TCL_LIB_FILE}
 
 ${REG_DLL_FILE}: ${REG_OBJS} ${TCL_STUB_LIB_FILE}
 	@$(RM) ${REG_DLL_FILE}
-	@MAKE_DLL@ ${REG_OBJS} ${TCL_STUB_LIB_FILE} $(SHLIB_LD_LIBS)
+	@MAKE_DLL@ ${REG_OBJS} $(TCL_STUB_LIB_FILE) $(SHLIB_LD_LIBS)
 
 ${REG_LIB_FILE}: ${REG_OBJS} ${TCL_LIB_FILE}
 	@$(RM) ${REG_LIB_FILE}
@@ -418,11 +418,11 @@ tclStubLib.${OBJEXT}: tclStubLib.c
 	$(CC) -c $(CC_SWITCHES) -DBUILD_tcl ${DEPARG} $(CC_OBJNAME)
 
 .rc.$(RES):
-	$(RC) @RC_OUT@ $@ @RC_TYPE@ @RC_INCLUDE@ "$(GENERIC_DIR_NATIVE)" @RC_INCLUDE@ "$(WIN_DIR_NATIVE)" $(DEPARG)
+	$(RC) @RC_OUT@ $@ @RC_TYPE@ @RC_DEFINES@ @RC_INCLUDE@ "$(GENERIC_DIR_NATIVE)" @RC_INCLUDE@ "$(WIN_DIR_NATIVE)" $(DEPARG)
 
 install: all install-binaries install-libraries install-doc
 
-install-binaries:
+install-binaries: binaries
 	@$(MKDIR) -p "$(BIN_INSTALL_DIR)"
 	@$(MKDIR) -p "$(LIB_INSTALL_DIR)"
 	$(COPY) tclConfig.sh $(LIB_INSTALL_DIR)/tclConfig.sh
@@ -467,7 +467,7 @@ install-binaries:
 	    $(COPY) $(REG_LIB_FILE) $(LIB_INSTALL_DIR)/reg1.0; \
 	    fi
 
-install-libraries:
+install-libraries: libraries
 	@for i in $(prefix)/lib $(INCLUDE_INSTALL_DIR) \
 		$(SCRIPT_INSTALL_DIR); \
 	    do \
@@ -477,7 +477,7 @@ install-libraries:
 		else true; \
 		fi; \
 	    done;
-	@for i in http1.0 http2.3 opt0.4 encoding msgcat1.0 tcltest1.0; \
+	@for i in http1.0 http2.3 opt0.4 encoding msgcat1.1 tcltest1.0; \
 	    do \
 	    if [ ! -d $(SCRIPT_INSTALL_DIR)/$$i ] ; then \
 		echo "Making directory $(SCRIPT_INSTALL_DIR)/$$i"; \
@@ -486,7 +486,8 @@ install-libraries:
 		fi; \
 	    done;
 	@echo "Installing header files";
-	@for i in "$(GENERIC_DIR)/tcl.h" "$(GENERIC_DIR)/tclDecls.h" ; \
+	@for i in "$(GENERIC_DIR)/tcl.h" "$(GENERIC_DIR)/tclDecls.h" \
+		"$(GENERIC_DIR)/tclPlatDecls.h" ; \
 	    do \
 	    $(COPY) "$$i" "$(INCLUDE_INSTALL_DIR)"; \
 	    done;
@@ -495,20 +496,41 @@ install-libraries:
 	    do \
 	    $(COPY) "$$i" "$(SCRIPT_INSTALL_DIR)"; \
 	    done;
-	@for i in http2.3 http1.0 opt0.4 msgcat1.0 tcltest1.0; \
+	@echo "Installing library http1.0 directory";
+	@for j in $(ROOT_DIR)/library/http1.0/*.tcl; \
 	    do \
-	    echo "Installing library $$i directory"; \
-	    for j in $(ROOT_DIR)/library/$$i/*.tcl; \
-		do \
-		$(COPY) "$$j" "$(SCRIPT_INSTALL_DIR)/$$i"; \
-		done; \
+	    $(COPY) "$$j" "$(SCRIPT_INSTALL_DIR)/http1.0"; \
 	    done;
-	@echo "Installing encodings"
+	@echo "Installing library http2.3 directory";
+	@for j in $(ROOT_DIR)/library/http/*.tcl; \
+	    do \
+	    $(COPY) "$$j" "$(SCRIPT_INSTALL_DIR)/http2.3"; \
+	    done;
+	@echo "Installing library opt0.4 directory";
+	@for j in $(ROOT_DIR)/library/opt/*.tcl; \
+	    do \
+	    $(COPY) "$$j" "$(SCRIPT_INSTALL_DIR)/opt0.4"; \
+	    done;
+	@echo "Installing library msgcat1.1 directory";
+	@for j in $(ROOT_DIR)/library/msgcat/*.tcl; \
+	    do \
+	    $(COPY) "$$j" "$(SCRIPT_INSTALL_DIR)/msgcat1.1"; \
+	    done;
+	@echo "Installing library tcltest1.0 directory";
+	@for j in $(ROOT_DIR)/library/tcltest1.0/*.tcl; \
+	    do \
+	    $(COPY) "$$j" "$(SCRIPT_INSTALL_DIR)/tcltest1.0"; \
+	    done;
+	@echo "Installing encodings";
 	@for i in $(ROOT_DIR)/library/encoding/*.enc ; do \
 		$(COPY) "$$i" "$(SCRIPT_INSTALL_DIR)/encoding"; \
 	done;
 
-install-doc:
+install-doc: doc
+
+# Specifying TESTFLAGS on the command line is the standard way to pass
+# args to tcltest, ie:
+#	% make test TESTFLAGS="-verbose bps -file fileName.test"
 
 test: binaries $(TCLTEST)
 	TCL_LIBRARY="$(LIBRARY_DIR)"; export TCL_LIBRARY; \

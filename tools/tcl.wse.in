@@ -12,7 +12,7 @@ item: Global
   Log Pathname=%MAINDIR%\INSTALL.LOG
   Message Font=MS Sans Serif
   Font Size=8
-  Disk Label=tcl8.3.2
+  Disk Label=tcl8.3.3
   Disk Filename=setup
   Patch Flags=0000000000000001
   Patch Threshold=85
@@ -1030,6 +1030,11 @@ item: Install File
   Flags=0000000000000010
 end
 item: Install File
+  Source=${__TKBASEDIR__}\generic\tkPlatDecls.h
+  Destination=%MAINDIR%\include\tkPlatDecls.h
+  Flags=0000000000000010
+end
+item: Install File
   Source=${__TKBASEDIR__}\generic\tkIntXlibDecls.h
   Destination=%MAINDIR%\include\tkIntXlibDecls.h
   Flags=0000000000000010
@@ -1044,6 +1049,11 @@ item: Install File
   Destination=%MAINDIR%\include\tclDecls.h
   Flags=0000000000000010
 end
+item: Install File
+  Source=${__TCLBASEDIR__}\generic\tclPlatDecls.h
+  Destination=%MAINDIR%\include\tclPlatDecls.h
+  Flags=0000000000000010
+end
 item: End Block
 end
 item: If/While Statement
@@ -1052,13 +1062,13 @@ item: If/While Statement
   Flags=00001010
 end
 item: Install File
-  Source=${__TCLBASEDIR__}\library\msgcat1.0\pkgIndex.tcl
-  Destination=%MAINDIR%\lib\tcl%VER%\msgcat1.0\pkgIndex.tcl
+  Source=${__TCLBASEDIR__}\library\msgcat\pkgIndex.tcl
+  Destination=%MAINDIR%\lib\tcl%VER%\msgcat1.1\pkgIndex.tcl
   Flags=0000000010000010
 end
 item: Install File
-  Source=${__TCLBASEDIR__}\library\msgcat1.0\msgcat.tcl
-  Destination=%MAINDIR%\lib\tcl%VER%\msgcat1.0\msgcat.tcl
+  Source=${__TCLBASEDIR__}\library\msgcat\msgcat.tcl
+  Destination=%MAINDIR%\lib\tcl%VER%\msgcat1.1\msgcat.tcl
   Flags=0000000010000010
 end
 item: Install File
@@ -1417,22 +1427,22 @@ item: Install File
   Flags=0000000000000010
 end
 item: Install File
-  Source=${__TCLBASEDIR__}\library\opt0.4\pkgIndex.tcl
+  Source=${__TCLBASEDIR__}\library\opt\pkgIndex.tcl
   Destination=%MAINDIR%\lib\tcl%VER%\opt0.4\pkgIndex.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=${__TCLBASEDIR__}\library\opt0.4\optparse.tcl
+  Source=${__TCLBASEDIR__}\library\opt\optparse.tcl
   Destination=%MAINDIR%\lib\tcl%VER%\opt0.4\optparse.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=${__TCLBASEDIR__}\library\http2.3\pkgIndex.tcl
+  Source=${__TCLBASEDIR__}\library\http\pkgIndex.tcl
   Destination=%MAINDIR%\lib\tcl%VER%\http2.3\pkgIndex.tcl
   Flags=0000000000000010
 end
 item: Install File
-  Source=${__TCLBASEDIR__}\library\http2.3\http.tcl
+  Source=${__TCLBASEDIR__}\library\http\http.tcl
   Destination=%MAINDIR%\lib\tcl%VER%\http2.3\http.tcl
   Flags=0000000000000010
 end

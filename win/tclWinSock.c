@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinSock.c,v 1.18.2.1 2000/07/27 01:39:26 hobbs Exp $
+ * RCS: @(#) $Id: tclWinSock.c,v 1.18.2.2 2001/04/03 22:54:40 hobbs Exp $
  */
 
 #include "tclWinInt.h"
@@ -226,7 +226,7 @@ static Tcl_ChannelType tcpChannelType = {
     TcpWatchProc,		/* Set up notifier to watch this channel. */
     TcpGetHandleProc,		/* Get an OS handle from channel. */
     NULL,			/* close2proc. */
-    TcpBlockProc,		/* Set blocking/non-blocking mode. */
+    TcpBlockProc,		/* Set socket into (non-)blocking mode. */
     NULL,			/* flush proc. */
     NULL,			/* handler proc. */
 };
@@ -836,9 +836,9 @@ SocketEventProc(evPtr, flags)
 	if ((*winSock.select)(0, &readFds, NULL, NULL, &timeout) != 0) {
 	    mask |= TCL_READABLE;
 	} else {
+	    infoPtr->readyEvents &= ~(FD_READ);
 	    SendMessage(tsdPtr->hwnd, SOCKET_SELECT,
 		    (WPARAM) SELECT, (LPARAM) infoPtr);
-	    infoPtr->readyEvents &= ~(FD_READ);
 	}
     }
     if (events & (FD_WRITE | FD_CONNECT)) {

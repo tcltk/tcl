@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinDde.c,v 1.5 1999/06/26 22:41:53 redman Exp $
+ * RCS: @(#) $Id: tclWinDde.c,v 1.5.10.1 2001/04/03 22:54:39 hobbs Exp $
  */
 
 #include "tclPort.h"
@@ -733,7 +733,6 @@ MakeDdeConnection(
 {
     HSZ ddeTopic, ddeService;
     HCONV ddeConv;
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     
     ddeService = DdeCreateStringHandle(ddeInstance, "TclEval", 0);
     ddeTopic = DdeCreateStringHandle(ddeInstance, name, 0);

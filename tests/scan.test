@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: scan.test,v 1.10 2000/04/10 17:19:04 ericm Exp $
+# RCS: @(#) $Id: scan.test,v 1.10.2.1 2001/04/03 22:54:38 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -324,6 +324,35 @@ test scan-4.61 {Tcl_ScanObjCmd, set errors} {
     set result
 } {1 {couldn't set variable "z"couldn't set variable "y"} abc}
 
+# procedure that returns the range of integers
+
+proc int_range {} {
+    for { set MIN_INT 1 } { $MIN_INT > 0 } {} {
+	set MIN_INT [expr { $MIN_INT << 1 }]
+    }
+    set MAX_INT [expr { ~ $MIN_INT }]
+    return [list $MIN_INT $MAX_INT]
+}
+
+test scan-4.62 {scanning of large and negative octal integers} {
+    foreach { MIN_INT MAX_INT } [int_range] {}
+    set scanstring [format {%o %o %o} -1 $MIN_INT $MAX_INT]
+    list [scan $scanstring {%o %o %o} a b c] \
+	[expr { $a == -1 }] [expr { $b == $MIN_INT }] [expr { $c == $MAX_INT }]
+} {3 1 1 1}
+test scan-4.63 {scanning of large and negative hex integers} {
+    foreach { MIN_INT MAX_INT } [int_range] {}
+    set scanstring [format {%x %x %x} -1 $MIN_INT $MAX_INT]
+    list [scan $scanstring {%x %x %x} a b c] \
+	[expr { $a == -1 }] [expr { $b == $MIN_INT }] [expr { $c == $MAX_INT }]
+} {3 1 1 1}
+
+# clean up from last two tests
+
+catch {
+    rename int_range {}
+}
+
 test scan-5.1 {integer scanning} {
     set a {}; set b {}; set c {}; set d {}
     list [scan "-20 1476 \n33 0" "%d %d %d %d" a b c d] $a $b $c $d
@@ -630,17 +659,3 @@ test scan-13.8 {Tcl_ScanObjCmd, inline XPG case lots of arguments} {
 # cleanup
 ::tcltest::cleanupTests
 return
-
-
-
-
-
-
-
-
-
-
-
-
-
-

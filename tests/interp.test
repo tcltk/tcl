@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: interp.test,v 1.11 2000/04/10 17:19:00 ericm Exp $
+# RCS: @(#) $Id: interp.test,v 1.11.2.1 2001/04/03 22:54:38 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -635,7 +635,10 @@ test interp-17.5 {alias loop prevention} {
 # the bugs as a core dump.
 #
 
-if {[info commands testinterpdelete] != ""} {
+if {[info commands testinterpdelete] == ""} {
+    puts "This application hasn't been compiled with the \"testinterpdelete\""
+    puts "command, so I can't test slave delete calls"
+} else {
     test interp-18.1 {testing Tcl_DeleteInterp vs slaves} {
 	list [catch {testinterpdelete} msg] $msg
     } {1 {wrong # args: should be "testinterpdelete path"}}
@@ -2352,6 +2355,24 @@ test interp-31.1 {alias invocation scope} {
     rename myNewSet {}
     set result
 } ok
+
+test interp-32.1 { parent's working directory should
+                   be inherited by a child interp } {
+    set parent [pwd]
+    set i [interp create]
+    set child [$i eval pwd]
+    interp delete $i
+    file mkdir cwd_test
+    cd cwd_test
+    lappend parent [pwd]
+    set i [interp create]
+    lappend child [$i eval pwd]
+    cd ..
+    file delete cwd_test
+    interp delete $i
+    expr {[string equal $parent $child] ? 1 :
+             "\{$parent\} != \{$child\}"}
+} 1
 
 # cleanup
 foreach i [interp slaves] {

@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: regexp.test,v 1.13 2000/04/10 21:08:27 ericm Exp $
+# RCS: @(#) $Id: regexp.test,v 1.13.2.1 2001/04/03 22:54:38 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -526,21 +526,15 @@ test regexp-18.10 {regexp -all} {
     # Go to index 3; this is past the end of the string, so stop.
     regexp -all -inline {a*} aba
 } {a {} a}
+test regexp-18.11 {regexp -all} {
+    regexp -all -inline {^a} aaaa
+} {a}
+
+test regexp-19.1 {regsub null replacement} {
+    regsub -all {@} {@hel@lo@} "\0a\0" result
+    list $result [string length $result]
+} "\0a\0hel\0a\0lo\0a\0 14"
 
 # cleanup
 ::tcltest::cleanupTests
 return
-
-
-
-
-
-
-
-
-
-
-
-
-
-

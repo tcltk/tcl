@@ -7,7 +7,7 @@
  * Copyright (c) 1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclUnixInit.c,v 1.18.2.1 2000/08/07 21:31:12 hobbs Exp $
+ * RCS: @(#) $Id: tclUnixInit.c,v 1.18.2.2 2001/04/03 22:54:39 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -58,6 +58,7 @@ typedef struct LocaleTable {
 static CONST LocaleTable localeTable[] = {
     {"ja_JP.SJIS",	"shiftjis"},
     {"ja_JP.EUC",	"euc-jp"},
+    {"ja_JP.eucJP",     "euc-jp"},
     {"ja_JP.JIS",	"iso2022-jp"},
     {"ja_JP.mscode",	"shiftjis"},
     {"ja_JP.ujis",	"euc-jp"},
@@ -280,44 +281,50 @@ CONST char *path;		/* Path to the executable in native
      *		(e.g. /usr/src/tcl8.2/unix/solaris-sparc/../../../tcl8.2/library)
      */
      
+
+     /*
+      * The variable path holds an absolute path.  Take care not to
+      * overwrite pathv[0] since that might produce a relative path.
+      */
+
     if (path != NULL) {
 	Tcl_SplitPath(path, &pathc, &pathv);
-	if (pathc > 1) {
+	if (pathc > 2) {
 	    pathv[pathc - 2] = installLib;
 	    path = Tcl_JoinPath(pathc - 1, pathv, &ds);
 	    objPtr = Tcl_NewStringObj(path, Tcl_DStringLength(&ds));
 	    Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
 	    Tcl_DStringFree(&ds);
 	}
-	if (pathc > 2) {
+	if (pathc > 3) {
 	    pathv[pathc - 3] = installLib;
 	    path = Tcl_JoinPath(pathc - 2, pathv, &ds);
 	    objPtr = Tcl_NewStringObj(path, Tcl_DStringLength(&ds));
 	    Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
 	    Tcl_DStringFree(&ds);
 	}
-	if (pathc > 1) {
+	if (pathc > 2) {
 	    pathv[pathc - 2] = "library";
 	    path = Tcl_JoinPath(pathc - 1, pathv, &ds);
 	    objPtr = Tcl_NewStringObj(path, Tcl_DStringLength(&ds));
 	    Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
 	    Tcl_DStringFree(&ds);
 	}
-	if (pathc > 2) {
+	if (pathc > 3) {
 	    pathv[pathc - 3] = "library";
 	    path = Tcl_JoinPath(pathc - 2, pathv, &ds);
 	    objPtr = Tcl_NewStringObj(path, Tcl_DStringLength(&ds));
 	    Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
 	    Tcl_DStringFree(&ds);
 	}
-	if (pathc > 1) {
+	if (pathc > 3) {
 	    pathv[pathc - 3] = developLib;
 	    path = Tcl_JoinPath(pathc - 2, pathv, &ds);
 	    objPtr = Tcl_NewStringObj(path, Tcl_DStringLength(&ds));
 	    Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
 	    Tcl_DStringFree(&ds);
 	}
-	if (pathc > 3) {
+	if (pathc > 4) {
 	    pathv[pathc - 4] = developLib;
 	    path = Tcl_JoinPath(pathc - 3, pathv, &ds);
 	    objPtr = Tcl_NewStringObj(path, Tcl_DStringLength(&ds));

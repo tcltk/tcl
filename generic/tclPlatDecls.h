@@ -6,11 +6,20 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclPlatDecls.h,v 1.5 1999/04/30 22:45:02 stanton Exp $
+ * RCS: @(#) $Id: tclPlatDecls.h,v 1.5.12.1 2001/04/03 22:54:38 hobbs Exp $
  */
 
 #ifndef _TCLPLATDECLS
 #define _TCLPLATDECLS
+
+/*
+ *  Pull in the definition of TCHAR.  Hopefully the compile flags
+ *  of the core are matching against your project build for these
+ *  public functions.  BE AWARE.
+ */
+#if defined(__WIN32__) && !defined(_INC_TCHAR)
+#include <tchar.h>
+#endif
 
 /* !BEGIN!: Do not edit below this line. */
 

@@ -3,7 +3,7 @@
 # utility procs formerly in init.tcl which can be loaded on demand
 # for package management.
 #
-# RCS: @(#) $Id: package.tcl,v 1.14 2000/04/23 03:36:51 jingham Exp $
+# RCS: @(#) $Id: package.tcl,v 1.14.2.1 2001/04/03 22:54:38 hobbs Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1998 Sun Microsystems, Inc.
@@ -33,13 +33,30 @@ namespace eval ::pkg {
 
 proc pkg_compareExtension { fileName {ext {}} } {
     global tcl_platform
-    if {[string length $ext] == 0} {
-	set ext [info sharedlibextension]
-    }
+    if {![string length $ext]} {set ext [info sharedlibextension]}
     if {[string equal $tcl_platform(platform) "windows"]} {
-	return [string equal -nocase [file extension $fileName] $ext]
+        return [string equal -nocase [file extension $fileName] $ext]
     } else {
-	return [string equal [file extension $fileName] $ext]
+        # Some unices add trailing numbers after the .so, so
+        # we could have something like '.so.1.2'.
+        set root $fileName
+        while {1} {
+            set currExt [file extension $root]
+            if {[string equal $currExt $ext]} {
+                return 1
+            } 
+
+	    # The current extension does not match; if it is not a numeric
+	    # value, quit, as we are only looking to ignore version number
+	    # extensions.  Otherwise we might return 1 in this case:
+	    #		pkg_compareExtension foo.so.bar .so
+	    # which should not match.
+
+	    if { ![string is integer -strict [string range $currExt 1 end]] } {
+		return 0
+	    }
+            set root [file rootname $root]
+	}
     }
 }
 
@@ -148,9 +165,22 @@ proc pkg_mkIndex {args} {
 	# Load into the child any packages currently loaded in the parent
 	# interpreter that match the -load pattern.
 
+	if {[string length $loadPat]} {
+	    if {$doVerbose} {
+		tclLog "currently loaded packages: '[info loaded]'"
+		tclLog "trying to load all packages matching $loadPat"
+	    }
+	    if {![llength [info loaded]]} {
+		tclLog "warning: no packages are currently loaded, nothing"
+		tclLog "can possibly match '$loadPat'"
+	    }
+	}
 	foreach pkg [info loaded] {
 	    if {! [string match $loadPat [lindex $pkg 1]]} {
 		continue
+	    }
+	    if {$doVerbose} {
+		tclLog "package [lindex $pkg 1] matches '$loadPat'"
 	    }
 	    if {[catch {
 		load [lindex $pkg 0] [lindex $pkg 1] $c
@@ -328,9 +358,17 @@ proc pkg_mkIndex {args} {
 		tclLog "warning: error while $what $file: $msg"
 	    }
 	} else {
+	    set what [$c eval set ::tcl::debug]
+	    if {$doVerbose} {
+		tclLog "successful $what of $file"
+	    }
 	    set type [$c eval set ::tcl::type]
 	    set cmds [lsort [$c eval array names ::tcl::newCmds]]
 	    set pkgs [$c eval set ::tcl::newPkgs]
+	    if {$doVerbose} {
+		tclLog "commands provided were $cmds"
+		tclLog "packages provided were $pkgs"
+	    }
 	    if {[llength $pkgs] > 1} {
 		tclLog "warning: \"$file\" provides more than one package ($pkgs)"
 	    }
@@ -420,7 +458,7 @@ proc tclPkgSetup {dir pkg version files} {
 # interpreter to setup the package database.
 
 proc tclMacPkgSearch {dir} {
-    foreach x [glob -nocomplain [file join $dir *.shlb]] {
+    foreach x [glob -directory $dir -nocomplain *.shlb] {
 	if {[file isfile $x]} {
 	    set res [resource open $x]
 	    foreach y [resource list TEXT $res] {
@@ -460,7 +498,8 @@ proc tclPkgUnknown {name version {exact {}}} {
 	# in a catch statement, where we get the pkgIndex files out
 	# of the subdirectories
 	catch {
-	    foreach file [glob -nocomplain [file join $dir * pkgIndex.tcl]] {
+	    foreach file [glob -directory $dir -join -nocomplain \
+		    * pkgIndex.tcl] {
 		set dir [file dirname $file]
 		if {[file readable $file] && ![info exists procdDirs($dir)]} {
 		    if {[catch {source $file} msg]} {
@@ -492,7 +531,7 @@ proc tclPkgUnknown {name version {exact {}}} {
 		tclMacPkgSearch $dir
 		set procdDirs($dir) 1
 	    }
-	    foreach x [glob -nocomplain [file join $dir *]] {
+	    foreach x [glob -directory $dir -nocomplain *] {
 		if {[file isdirectory $x] && ![info exists procdDirs($x)]} {
 		    set dir $x
 		    tclMacPkgSearch $dir
