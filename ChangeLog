@@ -1,3 +1,8 @@
+2004-12-09  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* doc/Async.3: Reword for better grammar, better nroff and get the
+	flag name right. (Reported by David Welton.)
+
 2004-12-07  Don Porter  <dgp@users.sourceforge.net>
 
 	* tests/unixInit.test (2.1-4):	Added constraints so that when a
