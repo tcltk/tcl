@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThreadTest.c,v 1.1.2.7 1999/04/03 01:19:48 stanton Exp $
+ * RCS: @(#) $Id: tclThreadTest.c,v 1.1.2.8 1999/04/03 01:35:19 welch Exp $
  */
 
 #include "tclInt.h"
@@ -726,10 +726,28 @@ TclThreadSend(interp, id, script, wait)
 
     Tcl_ResetResult(interp);
     Tcl_MutexLock(&threadMutex);
-    if (resultPtr->result == NULL) {
+    while (resultPtr->result == NULL) {
         Tcl_ConditionWait(&resultPtr->done, &threadMutex, NULL);
     }
+
+    /*
+     * Unlink result from the result list.
+     */
+
+    if (resultPtr->prevPtr) {
+	resultPtr->prevPtr->nextPtr = resultPtr->nextPtr;
+    } else {
+	resultList = resultPtr->nextPtr;
+    }
+    if (resultPtr->nextPtr) {
+	resultPtr->nextPtr->prevPtr = resultPtr->prevPtr;
+    }
+    resultPtr->eventPtr = NULL;
+    resultPtr->nextPtr = NULL;
+    resultPtr->prevPtr = NULL;
+
     Tcl_MutexUnlock(&threadMutex);
+
     if (resultPtr->code != TCL_OK) {
 	if (resultPtr->errorCode) {
 	    Tcl_SetErrorCode(interp, resultPtr->errorCode, NULL);
@@ -743,18 +761,6 @@ TclThreadSend(interp, id, script, wait)
     Tcl_SetResult(interp, resultPtr->result, TCL_DYNAMIC);
     TclFinalizeCondition(&resultPtr->done);
     code = resultPtr->code;
-
-    if (resultPtr->prevPtr) {
-	resultPtr->prevPtr->nextPtr = resultPtr->nextPtr;
-    } else {
-	resultList = resultPtr->nextPtr;
-    }
-    if (resultPtr->nextPtr) {
-	resultPtr->nextPtr->prevPtr = resultPtr->prevPtr;
-    }
-    resultPtr->eventPtr = NULL;
-    resultPtr->nextPtr = NULL;
-    resultPtr->prevPtr = NULL;
 
     ckfree((char *) resultPtr);
 

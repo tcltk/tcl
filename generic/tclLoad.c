@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoad.c,v 1.1.2.4 1999/03/30 22:29:03 stanton Exp $
+ * RCS: @(#) $Id: tclLoad.c,v 1.1.2.5 1999/04/03 01:35:19 welch Exp $
  */
 
 #include "tclInt.h"
@@ -633,7 +633,15 @@ TclFinalizeLoad()
 {
     LoadedPackage *pkgPtr;
 
-    Tcl_MutexLock(&packageMutex);
+    /*
+     * No synchronization here because there should just be
+     * one thread alive at this point.  Logically, 
+     * packageMutex should be grabbed at this point, but
+     * the Mutexes get finalized before the call to this routine.
+     * The only subsystem left alive at this point is the
+     * memory allocator.
+     */
+
     while (firstPackagePtr != NULL) {
 	pkgPtr = firstPackagePtr;
 	firstPackagePtr = pkgPtr->nextPtr;
@@ -644,5 +652,4 @@ TclFinalizeLoad()
 	ckfree(pkgPtr->packageName);
 	ckfree((char *) pkgPtr);
     }
-    Tcl_MutexUnlock(&packageMutex);
 }
