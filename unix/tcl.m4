@@ -560,15 +560,6 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	fi
     fi
 
-    AC_MSG_CHECKING([if gcc is being used])
-    if test "$CC" = "gcc" -o `$CC -v 2>&1 | grep -c gcc` != "0" ; then
-	using_gcc="yes"
-    else
-	using_gcc="no"
-    fi
-
-    AC_MSG_RESULT([$using_gcc ($CC)])
-
     # Step 2: check for existence of -ldl library.  This is needed because
     # Linux can use either -ldl or -ldld for dynamic loading.
 
@@ -586,7 +577,7 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
     TCL_LIB_VERSIONS_OK=ok
     CFLAGS_DEBUG=-g
     CFLAGS_OPTIMIZE=-O
-    if test "$using_gcc" = "yes" ; then
+    if test "$GCC" = "yes" ; then
 	CFLAGS_WARNING="-Wall -Wconversion -Wno-implicit-int"
     else
 	CFLAGS_WARNING=""
@@ -600,7 +591,7 @@ dnl AC_CHECK_TOOL(AR, ar, :)
     STLIB_LD='${AR} cr'
     case $system in
 	AIX-5.*)
-	    if test "${TCL_THREADS}" = "1" -a "$using_gcc" = "no" ; then
+	    if test "${TCL_THREADS}" = "1" -a "$GCC" = "no" ; then
 		# AIX requires the _r compiler when gcc isn't being used
 		if test "${CC}" != "cc_r" ; then
 		    CC=${CC}_r
@@ -620,14 +611,14 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 	    # AIX-5 has dl* in libc.so
 	    DL_LIBS=""
 	    LDFLAGS=""
-	    if test "$using_gcc" = "yes" ; then
+	    if test "$GCC" = "yes" ; then
 		LD_SEARCH_FLAGS='-Wl,-R,${LIB_RUNTIME_DIR}'
 	    else
 		LD_SEARCH_FLAGS='-R${LIB_RUNTIME_DIR}'
 	    fi
 
 	    if test "$do64bit" = "yes" ; then
-		if test "$using_gcc" = "no" ; then
+		if test "$GCC" = "no" ; then
 		    do64bit_ok=yes
 		    EXTRA_CFLAGS="-q64"
 		    LDFLAGS="-q64"
@@ -637,7 +628,7 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 	    fi
 	    ;;
 	AIX-*)
-	    if test "${TCL_THREADS}" = "1" -a "$using_gcc" = "no" ; then
+	    if test "${TCL_THREADS}" = "1" -a "$GCC" = "no" ; then
 		# AIX requires the _r compiler when gcc isn't being used
 		if test "${CC}" != "cc_r" ; then
 		    CC=${CC}_r
@@ -752,7 +743,7 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS=""
 	    LD_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
-	    if test "$using_gcc" = "yes" ; then
+	    if test "$GCC" = "yes" ; then
 		EXTRA_CFLAGS="-mabi=n32"
 		LDFLAGS="-mabi=n32"
 	    else
@@ -948,13 +939,13 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 	    DL_LIBS=""
 	    LDFLAGS=""
 	    LD_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
-	    if test "$using_gcc" = "no" ; then
+	    if test "$GCC" = "no" ; then
 		EXTRA_CFLAGS="-DHAVE_TZSET -std1"
 	    fi
 	    # see pthread_intro(3) for pthread support on osf1, k.furukawa
 	    if test "${TCL_THREADS}" = "1" ; then
 		EXTRA_CFLAGS="${EXTRA_CFLAGS} -DTCL_THREAD_STACK_MIN=PTHREAD_STACK_MIN*64"
-		if test "$using_gcc" = "no" ; then
+		if test "$GCC" = "no" ; then
 		    EXTRA_CFLAGS="${EXTRA_CFLAGS} -pthread"
 		    LDFLAGS="-pthread"
 		else
@@ -978,7 +969,7 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 	    # Note, dlopen is available only on SCO 3.2.5 and greater. However,
 	    # this test works, since "uname -s" was non-standard in 3.2.4 and
 	    # below.
-	    if test "$using_gcc" = "yes" ; then
+	    if test "$GCC" = "yes" ; then
 	    	SHLIB_CFLAGS="-fPIC -melf"
 	    	LDFLAGS="-melf -Wl,-Bexport"
 	    else
@@ -1055,7 +1046,7 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 	    if test "$do64bit" = "yes" ; then
 		arch=`isainfo`
 		if test "$arch" = "sparcv9 sparc" ; then
-			if test "$using_gcc" = "no" ; then
+			if test "$GCC" = "no" ; then
 			    do64bit_ok=yes
 			    if test "$do64bitVIS" = "yes" ; then
 				EXTRA_CFLAGS="-xarch=v9a"
@@ -1079,7 +1070,7 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS="-ldl"
-	    if test "$using_gcc" = "yes" ; then
+	    if test "$GCC" = "yes" ; then
 		LD_SEARCH_FLAGS='-Wl,-R,${LIB_RUNTIME_DIR}'
 	    else
 		LD_SEARCH_FLAGS='-R ${LIB_RUNTIME_DIR}'
@@ -1094,7 +1085,7 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 	    DL_LIBS=""
 	    LDFLAGS="-Wl,-D,08000000"
 	    LD_SEARCH_FLAGS='-L${LIB_RUNTIME_DIR}'
-	    if test "$using_gcc" = "no" ; then
+	    if test "$GCC" = "no" ; then
 		EXTRA_CFLAGS="-DHAVE_TZSET -std1"
 	    fi
 	    ;;
@@ -1231,7 +1222,7 @@ dnl AC_CHECK_TOOL(AR, ar, :)
     # standard manufacturer compiler.
 
     if test "$DL_OBJS" != "tclLoadNone.o" ; then
-	if test "$using_gcc" = "yes" ; then
+	if test "$GCC" = "yes" ; then
 	    case $system in
 		AIX-*)
 		    ;;
