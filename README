@@ -1,9 +1,9 @@
 README:  Tcl
-    This is the Tcl 8.2b2 source distribution.
+    This is the Tcl 8.2.0 source distribution.
     You can get this release from:
-        http://www.scriptics.com/registration/8.2b2.tml
+        http://www.scriptics.com/registration/8.2.0.tml
 
-RCS: @(#) $Id: README,v 1.22 1999/07/22 21:50:53 redman Exp $
+RCS: @(#) $Id: README,v 1.23 1999/08/10 23:16:25 redman Exp $
 
 Contents
 --------
@@ -50,7 +50,7 @@ Information about new features in 8.2 can be found at
     http://www.scriptics.com/software/whatsnew82.html
 
 Detailed release notes can be found at
-    http://www.scriptics.com/software/relnotes/tcl8.2b2
+    http://www.scriptics.com/software/relnotes/tcl8.2.0
 
 Information about Tcl itself can be found at
     http://www.scriptics.com/scripting/
