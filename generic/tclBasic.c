@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.52 2002/03/24 19:05:46 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.53 2002/03/25 16:35:14 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -4963,7 +4963,9 @@ Tcl_DeleteTrace(interp, trace)
      * Execute any delete callback.
      */
 
-    ( tracePtr->delProc )( tracePtr->clientData );
+    if ( tracePtr->delProc != NULL ) {
+	( tracePtr->delProc )( tracePtr->clientData );
+    }
 
     /* Delete the trace object */
 
