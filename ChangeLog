@@ -1,3 +1,13 @@
+========
+2005-03-08 Miguel Sofer <msofer@users.sf.net>
+
+	*** Branching off the HEAD ***
+
+	msofer-wcodes-branch created to develop a compiler/engine based on
+	wordsized instructions and operands.
+	
+========
+
 2005-03-08  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* win/makefile.vc: clarify necessary defined vars that can come
