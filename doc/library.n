@@ -18,6 +18,7 @@ library \- standard library of Tcl procedures
 \fBauto_mkindex \fIdir pattern pattern ...\fR
 \fBauto_mkindex_old \fIdir pattern pattern ...\fR
 \fBauto_reset\fR
+\fBtcl_findLibrary \fIbasename version patch initScript enVarName varName\fR
 \fBparray \fIarrayName\fR
 .VS
 \fBtcl_endOfWord \fIstr start\fR
@@ -147,6 +148,26 @@ needed.
 \fBAuto_reset\fR also deletes any procedures listed in the auto-load
 index, so that fresh copies of them will be loaded the next time
 that they're used.
+.TP
+\fBtcl_findLibrary \fIbasename version patch initScript enVarName varName\fR
+This is a standard search procedure for use by extensions during
+their initialization.  They call this procedure to look for their
+script library in several standard directories.
+The last component of the name of the library directory is 
+normally \fIbasenameversion\fP
+(e.g., tk8.0), but it might be "library" when in the build hierarchies.
+The \fIinitScript\fR file will be sourced into the interpreter
+once it is found.  The directory in which this file is found is
+stored into the global variable \fIvarName\fP.
+If this variable is already defined (e.g., by C code during
+application initialization) then no searching is done.
+Otherwise the search looks in these directories:
+the directory named by the environment variable \fIenVarName\fP;
+relative to the Tcl library directory;
+relative to the executable file in the standard installation
+bin or bin/\fIarch\fP directory;
+relative to the executable file in the current build tree;
+relative to the executable file in a parallel build tree.
 .TP
 \fBparray \fIarrayName\fR
 Prints on standard output the names and values of all the elements
