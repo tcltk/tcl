@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWin32Dll.c,v 1.24.2.2 2004/05/06 01:04:32 davygrvy Exp $
+ * RCS: @(#) $Id: tclWin32Dll.c,v 1.24.2.3 2004/06/05 17:25:40 kennykb Exp $
  */
 
 #include "tclWinInt.h"
@@ -946,3 +946,152 @@ Tcl_WinTCharToUtf(string, len, dsPtr)
     return Tcl_ExternalToUtfDString(tclWinTCharEncoding, 
 	    (CONST char *) string, len, dsPtr);
 }
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * TclWinCPUID --
+ *
+ *	Get CPU ID information on an Intel box under Windows
+ *
+ * Results:
+ *	Returns TCL_OK if successful, TCL_ERROR if CPUID is not
+ *	supported or fails.
+ *
+ * Side effects:
+ *	If successful, stores EAX, EBX, ECX and EDX registers after 
+ *      the CPUID instruction in the four integers designated by 'regsPtr'
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclWinCPUID( unsigned int index, /* Which CPUID value to retrieve */
+	     register unsigned int * regsPtr ) /* Registers after the CPUID */
+{
+
+    int status = TCL_ERROR;
+
+#if defined(__GNUC__)
+
+    /* Establish structured exception handling */
+
+# ifdef HAVE_NO_SEH
+    __asm__ __volatile__ (
+	"pushl %ebp" "\n\t"
+	"pushl $__except_TclWinCPUID_detach_handler" "\n\t"
+	"pushl %fs:0" "\n\t"
+	"movl %esp, %fs:0" );
+#  else
+    __try {
+#  endif
+
+	/* 
+	 * Execute the CPUID instruction with the given index, and
+	 * store results off 'regPtr'.
+	 */
+
+	__asm__ __volatile__ (
+	    "movl %4, %%eax" "\n\t"
+            "cpuid" "\n\t"
+	    "movl %%eax, %0" "\n\t"
+	    "movl %%ebx, %1" "\n\t"
+	    "movl %%ecx, %2" "\n\t"
+	    "movl %%edx, %3"
+	    : 
+	    "=m"(regsPtr[0]),
+	    "=m"(regsPtr[1]),
+	    "=m"(regsPtr[2]),
+	    "=m"(regsPtr[3])
+	    : "m"(index)
+	    : "%eax", "%ebx", "%ecx", "%edx" );
+	status = TCL_OK;
+
+	/* End the structured exception handler */
+
+#  ifndef HAVE_NO_SEH
+    } __except( EXCEPTION_EXECUTE_HANDLER ) {
+	/* do nothing */
+    }
+#  else
+    __asm __volatile__ (
+	    "jmp  TclWinCPUID_detach_pop" "\n"
+        "TclWinCPUID_detach_reentry:" "\n\t"
+	    "movl %%fs:0, %%eax" "\n\t"
+	    "movl 0x8(%%eax), %%esp" "\n\t"
+	    "movl 0x8(%%esp), %%ebp" "\n"
+	"TclWinCPUID_detach_pop:" "\n\t"
+	    "movl (%%esp), %%eax" "\n\t"
+	    "movl %%eax, %%fs:0" "\n\t"
+	    "add  $12, %%esp" "\n\t"
+	:
+	:
+	: "%eax");
+#  endif
+
+
+#elif defined(_MSC_VER)
+
+    /* Define a structure in the stack frame to hold the registers */
+
+    struct {
+	DWORD dw0;
+	DWORD dw1;
+	DWORD dw2;
+	DWORD dw3;
+    } regs;
+    regs.dw0 = index;
+    
+    /* Execute the CPUID instruction and save regs in the stack frame */
+
+    _try {
+	_asm {
+	    push    ebx
+	    push    ecx
+	    push    edx
+	    mov     eax, regs.dw0
+            cpuid
+	    mov     regs.dw0, eax
+	    mov     regs.dw1, ebx
+	    mov     regs.dw2, ecx
+	    mov     regs.dw3, edx
+            pop     edx
+            pop     ecx
+            pop     ebx
+	}
+	
+	/* Copy regs back out to the caller */
+
+	regsPtr[0]=regs.dw0;
+	regsPtr[1]=regs.dw1;
+	regsPtr[2]=regs.dw2;
+	regsPtr[3]=regs.dw3;
+
+	status = TCL_OK;
+    } __except( EXCEPTION_EXECUTE_HANDLER ) {
+    }
+
+#else
+				/* Don't know how to do assembly code for
+				 * this compiler */
+#endif
+    return status;
+}
+
+#if defined( __GNUC__ ) && defined( HAVE_NO_SEH )
+static __attribute__((cdecl)) EXCEPTION_DISPOSITION
+_except_TclWinCPUID_detach_handler(
+    struct _EXCEPTION_RECORD *ExceptionRecord,
+    void *EstablisherFrame,
+    struct _CONTEXT *ContextRecord,
+    void *DispatcherContext)
+{
+    __asm__ __volatile__ (
+	"jmp TclWinCPUID_detach_reentry" );
+    /* Nuke compiler warning about unused static function */
+    _except_TclWinCPUID_detach_handler(NULL, NULL, NULL, NULL);
+    return 0; /* Function does not return */
+}
+#endif
+
+
