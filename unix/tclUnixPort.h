@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPort.h,v 1.31 2003/11/14 23:21:02 dkf Exp $
+ * RCS: @(#) $Id: tclUnixPort.h,v 1.32 2003/12/09 15:27:48 dkf Exp $
  */
 
 #ifndef _TCLUNIXPORT
@@ -464,7 +464,9 @@ EXTERN int		gettimeofday _ANSI_ARGS_((struct timeval *tp,
  * isn't generally declared in a header file anywhere.
  */
 
+#ifdef NO_ERRNO
 extern int errno;
+#endif /* NO_ERRNO */
 
 /*
  * Not all systems declare all the errors that Tcl uses!  Provide some
