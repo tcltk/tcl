@@ -1,4 +1,22 @@
-2003-02-14  Kevin Kenny  <kennykb@users.sourceforge.net
+2003-02-14  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* README:		Bumped to version 8.4.2.
+	* generic/tcl.h:
+	* tools/tcl.wse.in:
+	* unix/configure:
+	* unix/configure.in:
+	* unix/tcl.m4:
+	* unix/tcl.spec:
+	* win/README.binary:
+	* win/configure:
+	* win/configure.in:
+	* macosx/Tcl.pbproj/project.pbxproj:
+
+	* generic/tclStringObj.c (Tcl_GetCharLength): perf tweak
+
+	* unix/tcl.m4: correct HP-UX ia64 --enable-64bit build flags
+
+2003-02-14  Kevin Kenny  <kennykb@users.sourceforge.net>
 
 	* win/tclWinTime.c: Added code to test and compensate for
 	forward leaps of the performance counter. See the MSDN Knowledge
