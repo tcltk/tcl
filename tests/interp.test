@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: interp.test,v 1.28 2004/05/13 12:59:23 dkf Exp $
+# RCS: @(#) $Id: interp.test,v 1.29 2004/05/14 15:38:56 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -2916,6 +2916,134 @@ test interp-34.3 {basic test of limits - pure bytecode loop} knownBug {
     interp delete $i
     set msg
 } {1 {command count limit exceeded}}
+
+test interp-35.1 {interp limit syntax} -body {
+    interp limit
+} -returnCodes error -result {wrong # args: should be "interp limit path limitType ?options?"}
+test interp-35.2 {interp limit syntax} -body {
+    interp limit {}
+} -returnCodes error -result {wrong # args: should be "interp limit path limitType ?options?"}
+test interp-35.3 {interp limit syntax} -body {
+    interp limit {} foo
+} -returnCodes error -result {bad limit type "foo": must be commands or time}
+test interp-35.4 {interp limit syntax} -body {
+    set i [interp create]
+    set dict [interp limit $i commands]
+    set result {}
+    foreach key [lsort [dict keys $dict]] {
+	lappend result $key [dict get $dict $key]
+    }
+    set result
+} -cleanup {
+    interp delete $i
+} -result {-command {} -granularity 1 -value {}}
+test interp-35.5 {interp limit syntax} -body {
+    set i [interp create]
+    interp limit $i commands -granularity
+} -cleanup {
+    interp delete $i
+} -result 1
+test interp-35.6 {interp limit syntax} -body {
+    set i [interp create]
+    interp limit $i commands -granularity 2
+} -cleanup {
+    interp delete $i
+} -result {}
+test interp-35.7 {interp limit syntax} -body {
+    set i [interp create]
+    interp limit $i commands -foobar
+} -cleanup {
+    interp delete $i
+} -returnCodes error -result {bad option "-foobar": must be -command, -granularity, or -value}
+test interp-35.8 {interp limit syntax} -body {
+    set i [interp create]
+    interp limit $i commands -granularity foobar
+} -cleanup {
+    interp delete $i
+} -returnCodes error -result {expected integer but got "foobar"}
+test interp-35.9 {interp limit syntax} -body {
+    set i [interp create]
+    interp limit $i commands -granularity 0
+} -cleanup {
+    interp delete $i
+} -returnCodes error -result {granularity must be at least 1}
+test interp-35.10 {interp limit syntax} -body {
+    set i [interp create]
+    interp limit $i commands -value foobar
+} -cleanup {
+    interp delete $i
+} -returnCodes error -result {expected integer but got "foobar"}
+test interp-35.11 {interp limit syntax} -body {
+    set i [interp create]
+    interp limit $i commands -value -1
+} -cleanup {
+    interp delete $i
+} -returnCodes error -result {command limit value must be at least 0}
+test interp-35.12 {interp limit syntax} -body {
+    set i [interp create]
+    set dict [interp limit $i time]
+    set result {}
+    foreach key [lsort [dict keys $dict]] {
+	lappend result $key [dict get $dict $key]
+    }
+    set result
+} -cleanup {
+    interp delete $i
+} -result {-command {} -granularity 10 -milliseconds {} -seconds {}}
+test interp-35.13 {interp limit syntax} -body {
+    set i [interp create]
+    interp limit $i time -granularity
+} -cleanup {
+    interp delete $i
+} -result 10
+test interp-35.14 {interp limit syntax} -body {
+    set i [interp create]
+    interp limit $i time -granularity 2
+} -cleanup {
+    interp delete $i
+} -result {}
+test interp-35.15 {interp limit syntax} -body {
+    set i [interp create]
+    interp limit $i time -foobar
+} -cleanup {
+    interp delete $i
+} -returnCodes error -result {bad option "-foobar": must be -command, -granularity, -milliseconds, or -seconds}
+test interp-35.16 {interp limit syntax} -body {
+    set i [interp create]
+    interp limit $i time -granularity foobar
+} -cleanup {
+    interp delete $i
+} -returnCodes error -result {expected integer but got "foobar"}
+test interp-35.17 {interp limit syntax} -body {
+    set i [interp create]
+    interp limit $i time -granularity 0
+} -cleanup {
+    interp delete $i
+} -returnCodes error -result {granularity must be at least 1}
+test interp-35.18 {interp limit syntax} -body {
+    set i [interp create]
+    interp limit $i time -seconds foobar
+} -cleanup {
+    interp delete $i
+} -returnCodes error -result {expected integer but got "foobar"}
+test interp-35.19 {interp limit syntax} -body {
+    set i [interp create]
+    interp limit $i time -seconds -1
+} -cleanup {
+    interp delete $i
+} -returnCodes error -result {seconds must be at least 0}
+test interp-35.20 {interp limit syntax} -body {
+    set i [interp create]
+    interp limit $i time -millis foobar
+} -cleanup {
+    interp delete $i
+} -returnCodes error -result {expected integer but got "foobar"}
+test interp-35.21 {interp limit syntax} -body {
+    set i [interp create]
+    interp limit $i time -millis -1
+} -cleanup {
+    interp delete $i
+} -returnCodes error -result {milliseconds must be at least 0}
 
 # cleanup
 foreach i [interp slaves] {
