@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.48 2004/10/25 17:24:37 dgp Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.49 2004/11/13 00:19:09 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -287,6 +287,9 @@ static Tcl_Interp *	GetInterp2 _ANSI_ARGS_((Tcl_Interp *interp, int objc,
 			    Tcl_Obj *CONST objv[]));
 static void		InterpInfoDeleteProc _ANSI_ARGS_((
 			    ClientData clientData, Tcl_Interp *interp));
+static int		SlaveBgerror _ANSI_ARGS_((Tcl_Interp *interp,
+			    Tcl_Interp *slaveInterp, int objc,
+			    Tcl_Obj *CONST objv[]));
 static Tcl_Interp *	SlaveCreate _ANSI_ARGS_((Tcl_Interp *interp,
 		            Tcl_Obj *pathPtr, int safe));
 static int		SlaveEval _ANSI_ARGS_((Tcl_Interp *interp,
@@ -548,19 +551,19 @@ Tcl_InterpObjCmd(clientData, interp, objc, objv)
 {
     int index;
     static CONST char *options[] = {
-        "alias",	"aliases",	"create",	"delete", 
-	"eval",		"exists",	"expose",	"hide", 
-	"hidden",	"issafe",	"invokehidden",	"limit",
-	"marktrusted",	"recursionlimit","slaves",	"share",
-	"target",	"transfer",
+        "alias",	"aliases",	"bgerror",	"create",
+	"delete",	"eval",		"exists",	"expose",
+	"hide",		"hidden",	"issafe",	"invokehidden",
+	"limit",	"marktrusted",	"recursionlimit","slaves",
+	"share",	"target",	"transfer",
         NULL
     };
     enum option {
-	OPT_ALIAS,	OPT_ALIASES,	OPT_CREATE,	OPT_DELETE,
-	OPT_EVAL,	OPT_EXISTS,	OPT_EXPOSE,	OPT_HIDE,
-	OPT_HIDDEN,	OPT_ISSAFE,	OPT_INVOKEHID,	OPT_LIMIT,
-	OPT_MARKTRUSTED,OPT_RECLIMIT,	OPT_SLAVES,	OPT_SHARE,
-	OPT_TARGET,	OPT_TRANSFER
+	OPT_ALIAS,	OPT_ALIASES,	OPT_BGERROR,	OPT_CREATE,
+	OPT_DELETE,	OPT_EVAL,	OPT_EXISTS,	OPT_EXPOSE,
+	OPT_HIDE,	OPT_HIDDEN,	OPT_ISSAFE,	OPT_INVOKEHID,
+	OPT_LIMIT,	OPT_MARKTRUSTED,OPT_RECLIMIT,	OPT_SLAVES,
+	OPT_SHARE,	OPT_TARGET,	OPT_TRANSFER
     };
 
 
@@ -616,6 +619,19 @@ Tcl_InterpObjCmd(clientData, interp, objc, objv)
 		return TCL_ERROR;
 	    }
 	    return AliasList(interp, slaveInterp);
+	}
+	case OPT_BGERROR: {
+	    Tcl_Interp *slaveInterp;
+
+	    if (objc != 3 && objc != 4) {
+		Tcl_WrongNumArgs(interp, 2, objv, "path ?newlimit?");
+		return TCL_ERROR;
+	    }
+	    slaveInterp = GetInterp(interp, objv[2]);
+	    if (slaveInterp == NULL) {
+		return TCL_ERROR;
+	    }
+	    return SlaveBgerror(interp, slaveInterp, objc - 3, objv + 3);
 	}
 	case OPT_CREATE: {
 	    int i, last, safe;
@@ -1988,6 +2004,48 @@ GetInterp(interp, pathPtr)
 /*
  *----------------------------------------------------------------------
  *
+ * SlaveBgerror --
+ *
+ *	Helper function to set/query the background error handling
+ *	command prefix of an interp
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *      When (objc == 1), slaveInterp will be set to a new background
+ *	handler of objv[0].
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+SlaveBgerror(interp, slaveInterp, objc, objv)
+    Tcl_Interp *interp;		/* Interp for error return. */
+    Tcl_Interp	*slaveInterp;	/* Interp in which limit is set/queried. */
+    int objc;			/* Set or Query. */
+    Tcl_Obj *CONST objv[];	/* Argument strings. */
+{
+    if (objc) {
+	int length;
+
+	if (TCL_ERROR == Tcl_ListObjLength(interp, objv[0], &length)) {
+	    return TCL_ERROR;
+	}
+	if (length < 1) {
+	    Tcl_AppendResult(interp, "cmdPrefix must be list of length >= 1",
+		    (char *) NULL);
+	    return TCL_ERROR;
+	}
+	TclSetBgErrorHandler(interp, objv[0]);
+    }
+    Tcl_SetObjResult(interp, TclGetBgErrorHandler(interp));
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * SlaveCreate --
  *
  *	Helper function to do the actual work of creating a slave interp
@@ -2135,14 +2193,14 @@ SlaveObjCmd(clientData, interp, objc, objv)
     Tcl_Interp *slaveInterp;
     int index;
     static CONST char *options[] = {
-	"alias",	"aliases",	"eval",		"expose",
-	"hide",		"hidden",	"issafe",	"invokehidden",
-	"limit",	"marktrusted",	"recursionlimit", NULL
+	"alias",	"aliases",	"bgerror",	"eval",
+	"expose",	"hide",		"hidden",	"issafe",
+	"invokehidden",	"limit",	"marktrusted",	"recursionlimit", NULL
     };
     enum options {
-	OPT_ALIAS,	OPT_ALIASES,	OPT_EVAL,	OPT_EXPOSE,
-	OPT_HIDE,	OPT_HIDDEN,	OPT_ISSAFE,	OPT_INVOKEHIDDEN,
-	OPT_LIMIT,	OPT_MARKTRUSTED, OPT_RECLIMIT
+	OPT_ALIAS,	OPT_ALIASES,	OPT_BGERROR,	OPT_EVAL,
+	OPT_EXPOSE,	OPT_HIDE,	OPT_HIDDEN,	OPT_ISSAFE,
+	OPT_INVOKEHIDDEN, OPT_LIMIT,	OPT_MARKTRUSTED, OPT_RECLIMIT
     };
     
     slaveInterp = (Tcl_Interp *) clientData;
@@ -2184,6 +2242,13 @@ SlaveObjCmd(clientData, interp, objc, objv)
 		return TCL_ERROR;
 	    }
 	    return AliasList(interp, slaveInterp);
+	}
+	case OPT_BGERROR: {
+	    if (objc != 2 && objc != 3) {
+		Tcl_WrongNumArgs(interp, 2, objv, "?cmdPrefix?");
+		return TCL_ERROR;
+	    }
+	    return SlaveBgerror(interp, slaveInterp, objc - 2, objv + 2);
 	}
 	case OPT_EVAL: {
 	    if (objc < 3) {

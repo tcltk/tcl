@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.197 2004/11/12 20:27:28 das Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.198 2004/11/13 00:19:09 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -1480,8 +1480,6 @@ typedef struct Interp {
 #define SAFE_INTERP			 0x80
 #define INTERP_TRACE_IN_PROGRESS	0x200
 
-typedef struct TclInterpState_ *TclInterpState;
-
 /*
  * Maximum number of levels of nesting permitted in Tcl commands (used
  * to catch infinite recursion).
@@ -1768,8 +1766,6 @@ MODULE_SCOPE int	TclCheckBadOctal _ANSI_ARGS_((Tcl_Interp *interp,
 			    CONST char *value));
 MODULE_SCOPE void	TclCleanupLiteralTable _ANSI_ARGS_((
 			    Tcl_Interp* interp, LiteralTable* tablePtr));
-MODULE_SCOPE void	TclDiscardInterpState _ANSI_ARGS_ ((
-			    TclInterpState state));
 MODULE_SCOPE void	TclExpandTokenArray _ANSI_ARGS_((
 			    Tcl_Parse *parsePtr));
 MODULE_SCOPE int	TclFileAttrsCmd _ANSI_ARGS_((Tcl_Interp *interp,
@@ -1798,8 +1794,7 @@ MODULE_SCOPE void	TclFinalizeAsync _ANSI_ARGS_((void));
 MODULE_SCOPE void	TclFinalizeSynchronization _ANSI_ARGS_((void));
 MODULE_SCOPE void	TclFinalizeLock _ANSI_ARGS_((void));
 MODULE_SCOPE void	TclFinalizeThreadData _ANSI_ARGS_((void));
-MODULE_SCOPE Tcl_Obj *	TclGetReturnOptions _ANSI_ARGS_((Tcl_Interp *interp,
-			    int result));
+MODULE_SCOPE Tcl_Obj *	TclGetBgErrorHandler _ANSI_ARGS_((Tcl_Interp *interp));
 MODULE_SCOPE int	TclGlob _ANSI_ARGS_((Tcl_Interp *interp,
 			    char *pattern, Tcl_Obj *unquotedPrefix, 
 			    int globFlags, Tcl_GlobTypeData* types));
@@ -1947,12 +1942,8 @@ MODULE_SCOPE VOID	TclRememberJoinableThread _ANSI_ARGS_((
 MODULE_SCOPE void	TclRememberMutex _ANSI_ARGS_((Tcl_Mutex *mutex));
 MODULE_SCOPE void	TclRemoveScriptLimitCallbacks _ANSI_ARGS_((
 			    Tcl_Interp *interp));
-MODULE_SCOPE int	TclRestoreInterpState _ANSI_ARGS_ ((
-			    Tcl_Interp *interp, TclInterpState state));
-MODULE_SCOPE TclInterpState TclSaveInterpState _ANSI_ARGS_ ((
-			    Tcl_Interp *interp, int status));
-MODULE_SCOPE int	TclSetReturnOptions _ANSI_ARGS_((Tcl_Interp *interp,
-			    Tcl_Obj *options));
+MODULE_SCOPE void	TclSetBgErrorHandler _ANSI_ARGS_((Tcl_Interp *interp,
+			    Tcl_Obj *cmdPrefix));
 MODULE_SCOPE VOID	TclSignalExitThread _ANSI_ARGS_((Tcl_ThreadId id,
 			    int result));
 MODULE_SCOPE int	TclSubstTokens _ANSI_ARGS_((Tcl_Interp *interp,
@@ -2038,6 +2029,9 @@ MODULE_SCOPE int	Tcl_ConcatObjCmd _ANSI_ARGS_((ClientData clientData,
 MODULE_SCOPE int	Tcl_ContinueObjCmd _ANSI_ARGS_((ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *CONST objv[]));
+MODULE_SCOPE int	TclDefaultBgErrorHandlerObjCmd _ANSI_ARGS_((
+			    ClientData clientData, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *CONST objv[]));
 MODULE_SCOPE int	Tcl_DictObjCmd _ANSI_ARGS_((ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *CONST objv[]));

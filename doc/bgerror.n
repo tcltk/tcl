@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: bgerror.n,v 1.7 2004/11/12 23:27:58 dkf Exp $
+'\" RCS: @(#) $Id: bgerror.n,v 1.8 2004/11/13 00:19:05 dgp Exp $
 '\" 
 .so man.macros
 .TH bgerror n 7.5 Tcl "Tcl Built-In Commands"
@@ -18,6 +18,19 @@ bgerror \- Command invoked to process background errors
 .BE
 
 .SH DESCRIPTION
+.VS 8.5
+Release 8.5 of Tcl supports the \fBinterp bgerror\fR command,
+which allows applications to register in an interpreter the command
+that will handle background errors in that interpreter.  In older
+releases of Tcl, this level of control was not available, and applications
+could control the handling of background errors only by creating
+a command with the particular command name \fBbgerror\fR in the
+global namespace of an interpreter.  The following documentation
+describes the interface requirements of the \fBbgerror\fR command
+an application might define to retain compatibility with pre-8.5
+releases of Tcl.  Applications intending to support only
+Tcl releases 8.5 and later should simply make use of \fBinterp bgerror\fR.
+.VE 8.5
 .PP
 The \fBbgerror\fR command doesn't exist as built-in part of Tcl.  Instead,
 individual applications or users can define a \fBbgerror\fR
