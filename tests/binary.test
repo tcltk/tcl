@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: binary.test,v 1.15 2004/05/13 10:12:56 dkf Exp $
+# RCS: @(#) $Id: binary.test,v 1.16 2004/05/19 20:03:46 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -1572,7 +1572,7 @@ test binary-48.18 {Tcl_BinaryObjCmd: format} bigEndian {
     set a {0x50 0x51}
     binary format t1 $a
 } \x00P
-test binary-48.18 {Tcl_BinaryObjCmd: format} littleEndian {
+test binary-48.19 {Tcl_BinaryObjCmd: format} littleEndian {
     set a {0x50 0x51}
     binary format t1 $a
 } P\x00
