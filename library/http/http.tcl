@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and
 # redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: http.tcl,v 1.46 2003/09/15 14:24:50 patthoyts Exp $
+# RCS: @(#) $Id: http.tcl,v 1.47 2003/09/29 10:01:33 dkf Exp $
 
 # Rough version history:
 # 1.0	Old http_get interface
@@ -238,7 +238,7 @@ proc http::geturl { url args } {
 	-binary		false
 	-blocksize 	8192
 	-queryblocksize 8192
-	-validate 	0
+	-validate 	false
 	-headers 	{}
 	-timeout 	0
 	-type           application/x-www-form-urlencoded
@@ -255,6 +255,14 @@ proc http::geturl { url args } {
 	status		""
 	http            ""
     }
+    # These flags have their types verified [Bug 811170]
+    array set type {
+	-binary		boolean
+	-blocksize	integer
+	-queryblocksize integer
+	-validate	boolean
+	-timeout	integer
+    }	
     set state(charset)	$defaultCharset
     set options {-binary -blocksize -channel -command -handler -headers \
 	    -progress -query -queryblocksize -querychannel -queryprogress\
@@ -264,12 +272,11 @@ proc http::geturl { url args } {
     set pat ^-([join $options |])$
     foreach {flag value} $args {
 	if {[regexp $pat $flag]} {
-	    # Validate numbers
-	    if {[info exists state($flag)] && \
-		    [string is integer -strict $state($flag)] && \
-		    ![string is integer -strict $value]} {
+	    # Validate numbers and booleans
+	    if {[info exists type($flag)] && \
+		    ![string is $type($flag) -strict $value]} {
 		unset $token
-		return -code error "Bad value for $flag ($value), must be integer"
+		return -code error "Bad value for $flag ($value), must be $type($flag)"
 	    }
 	    set state($flag) $value
 	} else {
