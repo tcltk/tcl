@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: library.n,v 1.16 2001/08/24 06:03:15 dgp Exp $
+'\" RCS: @(#) $Id: library.n,v 1.17 2004/06/16 21:20:42 dgp Exp $
 .so man.macros
 .TH library n "8.0" Tcl "Tcl Built-In Commands"
 .BS
@@ -22,13 +22,11 @@ auto_execok, auto_import, auto_load, auto_mkindex, auto_mkindex_old, auto_qualif
 \fBauto_reset\fR
 \fBtcl_findLibrary \fIbasename version patch initScript enVarName varName\fR
 \fBparray \fIarrayName\fR
-.VS
 \fBtcl_endOfWord \fIstr start\fR
 \fBtcl_startOfNextWord \fIstr start\fR
 \fBtcl_startOfPreviousWord \fIstr start\fR
 \fBtcl_wordBreakAfter \fIstr start\fR
 \fBtcl_wordBreakBefore \fIstr start\fR
-.VE
 .BE
 
 .SH INTRODUCTION
@@ -197,7 +195,6 @@ in the array \fIarrayName\fR.
 It may be either local or global.
 .TP
 \fBtcl_endOfWord \fIstr start\fR
-.VS
 Returns the index of the first end-of-word location that occurs after
 a starting index \fIstart\fR in the string \fIstr\fR.  An end-of-word
 location is defined to be the first non-word character following the
@@ -233,7 +230,6 @@ Returns the index of the first word boundary before the starting index
 boundaries before the starting point in the given string.  The index
 returned refers to the second character of the pair that comprises a
 boundary.
-.VE
 
 .SH "VARIABLES"
 .PP
@@ -279,7 +275,6 @@ Tcl format, using "/" as the path separator, regardless of platform.
 This variable is only used when initializing the \fBauto_path\fR variable.
 .TP
 \fBtcl_nonwordchars\fR
-.VS
 This variable contains a regular expression that is used by routines
 like \fBtcl_endOfWord\fR to identify whether a character is part of a
 word or not.  If the pattern matches a character, the character is
@@ -295,14 +290,6 @@ word or not.  If the pattern matches a character, the character is
 considered to be a word character.  On Windows platforms, words are
 comprised of any character that is not a space, tab, or newline.  Under
 Unix, words are comprised of numbers, letters or underscores.
-.VE
-.TP
-\fBunknown_pending\fR
-Used by \fBunknown\fR to record the command(s) for which it is
-searching.
-It is used to detect errors where \fBunknown\fR recurses on itself
-infinitely.
-The variable is unset before \fBunknown\fR returns.
 
 .SH "SEE ALSO"
 info(n), re_syntax(n)

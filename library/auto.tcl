@@ -3,7 +3,7 @@
 # utility procs formerly in init.tcl dealing with auto execution
 # of commands and can be auto loaded themselves.
 #
-# RCS: @(#) $Id: auto.tcl,v 1.15 2004/03/17 18:14:14 das Exp $
+# RCS: @(#) $Id: auto.tcl,v 1.16 2004/06/16 21:20:42 dgp Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1998 Sun Microsystems, Inc.
@@ -23,7 +23,8 @@
 # None.
 
 proc auto_reset {} {
-    global auto_execs auto_index auto_oldpath
+    variable ::tcl::auto_oldpath
+    global auto_execs auto_index 
     foreach p [info procs] {
 	if {[info exists auto_index($p)] && ![string match auto_* $p]
 		&& ([lsearch -exact {unknown pkg_mkIndex tclPkgSetup
