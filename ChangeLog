@@ -1,3 +1,11 @@
+2003-06-25  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* unix/configure: Regen.
+	* unix/tcl.m4 (SC_CONFIG_CFLAGS): Add -ieee when
+	compiling with cc and add -mieee when compiling
+	with gcc under OSF1-V5 "Tru64" systems.
+	[Bug 748957]
+
 2003-06-24  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* doc/encoding.n: Corrected the docs to say that [source] uses the
