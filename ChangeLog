@@ -1,3 +1,8 @@
+2004-02-23  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/regc_locale.c (cclass): Buffer was having its size reset
+	instead of being released => memleak. [Bug 902562]
+
 2004-02-21  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclLoad.c (Tcl_LoadObjCmd): Fixed memory leak due to

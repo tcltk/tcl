@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: regc_locale.c,v 1.10 2002/07/29 12:27:51 dkf Exp $
+ * RCS: @(#) $Id: regc_locale.c,v 1.11 2004/02/23 10:43:23 dkf Exp $
  */
 
 /* ASCII character-name table */
@@ -770,7 +770,7 @@ cclass(v, startp, endp, cases)
 	    break;
 	}
     }
-    Tcl_DStringInit(&ds);
+    Tcl_DStringFree(&ds);
     if (index == -1) {
 	ERR(REG_ECTYPE);
 	return NULL;
