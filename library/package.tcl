@@ -3,7 +3,7 @@
 # utility procs formerly in init.tcl which can be loaded on demand
 # for package management.
 #
-# RCS: @(#) $Id: package.tcl,v 1.11 2000/02/07 22:33:17 ericm Exp $
+# RCS: @(#) $Id: package.tcl,v 1.12 2000/03/03 02:58:00 hobbs Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1998 Sun Microsystems, Inc.
@@ -436,7 +436,8 @@ proc tclMacPkgSearch {dir} {
 # the auto_path directories and their immediate children looking for
 # pkgIndex.tcl files and sources any such files that are found to setup
 # the package database.  (On the Macintosh we also search for pkgIndex
-# TEXT resources in all files.)
+# TEXT resources in all files.)  As it searches, it will recognize changes
+# to the auto_path and scan any new directories.
 #
 # Arguments:
 # name -		Name of desired package.  Not used.
@@ -449,26 +450,35 @@ proc tclPkgUnknown {name version {exact {}}} {
     if {![info exists auto_path]} {
 	return
     }
-    for {set i [expr {[llength $auto_path] - 1}]} {$i >= 0} {incr i -1} {
+    # Cache the auto_path, because it may change while we run through
+    # the first set of pkgIndex.tcl files
+    set old_path [set use_path $auto_path]
+    while {[llength $use_path]} {
+	set dir [lindex $use_path end]
 	# we can't use glob in safe interps, so enclose the following
-	# in a catch statement
+	# in a catch statement, where we get the pkgIndex files out
+	# of the subdirectories
 	catch {
-	    foreach file [glob -nocomplain [file join [lindex $auto_path $i] \
-		    * pkgIndex.tcl]] {
+	    foreach file [glob -nocomplain [file join $dir * pkgIndex.tcl]] {
 		set dir [file dirname $file]
-		if {[file readable $file]} {
+		if {[file readable $file] && ![info exists procdDirs($dir)]} {
 		    if {[catch {source $file} msg]} {
 			tclLog "error reading package index file $file: $msg"
+		    } else {
+			set procdDirs($dir) 1
 		    }
 		}
 	    }
 	}
-	set dir [lindex $auto_path $i]
+	set dir [lindex $use_path end]
 	set file [file join $dir pkgIndex.tcl]
 	# safe interps usually don't have "file readable", nor stderr channel
-	if {[interp issafe] || [file readable $file]} {
+	if {([interp issafe] || [file readable $file]) && \
+		![info exists procdDirs($dir)]} {
 	    if {[catch {source $file} msg] && ![interp issafe]}  {
 		tclLog "error reading package index file $file: $msg"
+	    } else {
+		set procdDirs($dir) 1
 	    }
 	}
 	# On the Macintosh we also look in the resource fork 
@@ -476,14 +486,25 @@ proc tclPkgUnknown {name version {exact {}}} {
 	# We can't use tclMacPkgSearch in safe interps because it uses glob
 	if {(![interp issafe]) && \
 		[string equal $tcl_platform(platform) "macintosh"]} {
-	    set dir [lindex $auto_path $i]
-	    tclMacPkgSearch $dir
+	    set dir [lindex $use_path end]
+	    if {![info exists procdDirs($x)]} {
+		tclMacPkgSearch $dir
+		set procdDirs($dir) 1
+	    }
 	    foreach x [glob -nocomplain [file join $dir *]] {
-		if {[file isdirectory $x]} {
+		if {[file isdirectory $x] && ![info exists procdDirs($x)]} {
 		    set dir $x
 		    tclMacPkgSearch $dir
+		    set procdDirs($dir) 1
 		}
 	    }
+	}
+	set use_path [lrange $use_path 0 end-1]
+	if {[string compare $old_path $auto_path]} {
+	    foreach dir $auto_path {
+		lappend use_path $dir
+	    }
+	    set old_path $auto_path
 	}
     }
 }
