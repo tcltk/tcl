@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPort.h,v 1.22.2.1 2001/10/18 09:03:59 dkf Exp $
+ * RCS: @(#) $Id: tclWinPort.h,v 1.22.2.2 2001/10/22 10:15:02 dkf Exp $
  */
 
 #ifndef _TCLWINPORT
@@ -470,6 +470,10 @@ EXTERN Tcl_WideInt	strtoll _ANSI_ARGS_((char *string,  char **endPtr,
 EXTERN Tcl_WideUInt	strtoull _ANSI_ARGS_((char *string,  char **endPtr,
 					      int base));
 #endif /* TCL_WIDE_INT_TYPE */
+
+#ifndef INVALID_SET_FILE_POINTER
+#define INVALID_SET_FILE_POINTER 0xFFFFFFFF
+#endif
 
 #include "tclPlatDecls.h"
 #include "tclIntPlatDecls.h"
