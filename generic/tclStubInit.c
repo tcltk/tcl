@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.45 2000/09/28 06:38:22 hobbs Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.46 2000/11/03 18:46:12 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -687,7 +687,7 @@ TclStubs tclStubs = {
     Tcl_StackChannel, /* 281 */
     Tcl_UnstackChannel, /* 282 */
     Tcl_GetStackedChannel, /* 283 */
-    NULL, /* 284 */
+    Tcl_SetMainLoop, /* 284 */
     NULL, /* 285 */
     Tcl_AppendObjToObj, /* 286 */
     Tcl_CreateEncoding, /* 287 */
