@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.56 2002/01/21 16:15:03 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.57 2002/02/02 00:20:54 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -250,6 +250,17 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
     }
 
     /*
+     * Handle the odd about case separately.
+     */
+    if (about) {
+	regExpr = Tcl_GetRegExpFromObj(interp, objv[0], cflags);
+	if ((regExpr == NULL) || (TclRegAbout(interp, regExpr) < 0)) {
+	    return TCL_ERROR;
+	}
+	return TCL_OK;
+    }
+
+    /*
      * Get the length of the string that we are matching against so
      * we can do the termination test for -all matches.  Do this before
      * getting the regexp to avoid shimmering problems.
@@ -260,13 +271,6 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
     regExpr = Tcl_GetRegExpFromObj(interp, objv[0], cflags);
     if (regExpr == NULL) {
 	return TCL_ERROR;
-    }
-
-    if (about) {
-	if (TclRegAbout(interp, regExpr) < 0) {
-	    return TCL_ERROR;
-	}
-	return TCL_OK;
     }
 
     if (offset > 0) {
