@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFCmd.c,v 1.42 2004/10/06 14:14:30 dkf Exp $
+ * RCS: @(#) $Id: tclWinFCmd.c,v 1.43 2004/10/06 16:37:18 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -1548,10 +1548,8 @@ StatError(
 				 * error. */
 {
     TclWinConvertError(GetLastError());
-    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), 
-			   "could not read \"", Tcl_GetString(fileName), 
-			   "\": ", Tcl_PosixError(interp), 
-			   (char *) NULL);
+    Tcl_AppendResult(interp, "could not read \"", Tcl_GetString(fileName), 
+	    "\": ", Tcl_PosixError(interp), (char *) NULL);
 }
 
 /*
@@ -1662,10 +1660,9 @@ ConvertFileNameFormat(
     
     if (splitPath == NULL || pathc == 0) {
 	if (interp != NULL) {
-	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), 
-		"could not read \"", Tcl_GetString(fileName),
-		"\": no such file or directory", 
-		(char *) NULL);
+	    Tcl_AppendResult(interp, "could not read \"",
+		    Tcl_GetString(fileName), "\": no such file or directory", 
+		    (char *) NULL);
 	}
 	goto cleanup;
     }
@@ -1957,10 +1954,9 @@ CannotSetAttribute(
     Tcl_Obj *fileName,	        /* The name of the file. */
     Tcl_Obj *attributePtr)	/* The new value of the attribute. */
 {
-    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), 
-	    "cannot set attribute \"", tclpFileAttrStrings[objIndex],
-	    "\" for file \"", Tcl_GetString(fileName), 
-	    "\": attribute is readonly", 
+    Tcl_AppendResult(interp, "cannot set attribute \"",
+	    tclpFileAttrStrings[objIndex], "\" for file \"",
+	    Tcl_GetString(fileName), "\": attribute is readonly",
 	    (char *) NULL);
     return TCL_ERROR;
 }
