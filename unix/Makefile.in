@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.56 2000/02/05 03:20:21 ericm Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.57 2000/02/07 21:35:03 ericm Exp $
 
 VERSION 		= @TCL_VERSION@
 
@@ -460,7 +460,7 @@ topDirName:
 gendate:
 	yacc -l $(GENERIC_DIR)/tclGetDate.y
 	sed -e 's/yy/TclDate/g' -e '/^#include <values.h>/d' \
-	    -e 's?SCCSID?RCS: @(#) $$Id: Makefile.in,v 1.56 2000/02/05 03:20:21 ericm Exp $$?' \
+	    -e 's?SCCSID?RCS: @(#) $$Id: Makefile.in,v 1.57 2000/02/07 21:35:03 ericm Exp $$?' \
 	    -e '/#ifdef __STDC__/,/#endif/d' -e '/TclDateerrlab:/d' \
 	    -e '/TclDatenewstate:/d' -e '/#pragma/d' \
 	    -e '/#include <inttypes.h>/d' -e 's/const /CONST /g' \
@@ -534,7 +534,7 @@ install-libraries: libraries
 		else true; \
 		fi; \
 	    done;
-	@for i in http2.1 http1.0 opt0.4 encoding msgcat1.0 tcltest1.0 struct1.0; \
+	@for i in http2.1 http1.0 opt0.4 encoding msgcat1.0 tcltest1.0; \
 	    do \
 	    if [ ! -d $(SCRIPT_INSTALL_DIR)/$$i ] ; then \
 		echo "Making directory $(SCRIPT_INSTALL_DIR)/$$i"; \
@@ -556,7 +556,7 @@ install-libraries: libraries
 	    do \
 	    $(INSTALL_DATA) $$i $(SCRIPT_INSTALL_DIR); \
 	    done;
-	@for i in http2.1 http1.0 opt0.4 msgcat1.0 tcltest1.0 struct1.0; \
+	@for i in http2.1 http1.0 opt0.4 msgcat1.0 tcltest1.0; \
 	    do \
 	    echo "Installing library $$i directory"; \
 	    for j in $(TOP_DIR)/library/$$i/*.tcl ; \
@@ -1077,7 +1077,7 @@ dist: $(UNIX_DIR)/configure
 	mkdir $(DISTDIR)/library
 	cp -p $(TOP_DIR)/license.terms $(TOP_DIR)/library/*.tcl \
 		$(TOP_DIR)/library/tclIndex $(DISTDIR)/library
-	for i in http2.1 http1.0 opt0.4 msgcat1.0 reg1.0 dde1.1 tcltest1.0 struct1.0; \
+	for i in http2.1 http1.0 opt0.4 msgcat1.0 reg1.0 dde1.1 tcltest1.0; \
 	    do \
 		mkdir $(DISTDIR)/library/$$i ;\
 		cp -p $(TOP_DIR)/library/$$i/*.tcl $(DISTDIR)/library/$$i; \
