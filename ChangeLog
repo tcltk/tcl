@@ -1,5 +1,9 @@
 2004-01-12  Miguel Sofer <msofer@users.sf.net>
 
+	* generic/tclCompExpr.c (CompileLandOrLorExpr): cosmetic changes. 
+
+2004-01-12  Miguel Sofer <msofer@users.sf.net>
+
 	* generic/tclCompExpr.c (CompileLandOrLorExpr): new logic, fewer
 	instructions. As a side effect, the instructions INST_LOR and
 	INST_LAND are now never used.
