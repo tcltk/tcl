@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.73 2002/09/10 09:31:52 hobbs Exp $
+RCS: @(#) $Id: changes,v 1.74 2002/10/22 19:17:19 hobbs Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -5601,3 +5601,66 @@ Considerable cleanup of the test suite.
 2002-09-02 (platfrom support) 64-bit compile on HP-11 (martin)
 
 --- Released 8.4.0, September 10, 2002 --- See ChangeLog for details ---
+
+2002-09-18 (platform support) Updated support for compiling with Cygwin and
+either mingw or gcc. (khan, howell, dejong)
+
+2002-09-22 (bug fix)[612786, 611922] Corrected [puts -nonewline] within
+test bodies. Also corrected reporting of body return code.  Updated tcltest
+to v2.2.1.
+
+2002-09-24 (bug fix)[613117] More robust 64-bit wide integer value
+detection (fellows)
+
+2002-09-26 (bug fix) correct overeager optimization of noop proc to handle
+the precompiled case. (sofer, hobbs)
+
+2002-09-26 (bug fix)[615115] removed extraneous spaces in koi8-u.enc that
+confused encoding reader.
+
+2002-09-29 (bug fix)[219355] Added proper exiting conditions using Win32
+console signals.  This handles the existing lack of a Ctrl+C exit to call
+exit handlers when built for thread support.  Also, properly handles exits
+from other conditions such as CTRL_CLOSE_EVENT, CTRL_LOGOFF_EVENT, and
+CTRL_SHUTDOWN_EVENT signals.  In all cases, exit handlers will be called.
+(gravereaux)
+
+2002-09-30 (bug fix) improve the checking for bad regular expressions
+during regexp compilation.  Resultant compiles were correct, but much
+slower than necessary. (hobbs)
+
+2002-10-01 (bug fix) fix precompiled locals to support 8.3 precompiled
+code. (hobbs)
+
+2002-10-09 (bug fix)[620735] Added code to set an exit handler on Windows
+that terminates the thread that calibrates the performance counter, so that
+the thread won't outlive unloading the Tcl DLL. (kenny)
+
+2002-10-09 (build support) all --enable-symbols to take the enhanced
+options yes|no|mem|compile|all. (hobbs)
+
+2002-10-10 (build support) enable USE_THREAD_ALLOC (new threaded allocator)
+by default on Windows. (hobbs, gravereaux)
+
+2002-10-14 (bug fix)[623269] correct possible mem leak in
+Tcl_PutEnv. (brouwers)
+
+2002-10-15 (bug fix)[615043] fix in execution traces with idle tasks
+firing. (lavana)
+
+2002-10-15 (platform support) Correct AIX-5 ppc and 4/5 64-bit build flags.
+Correct HP 11 64-bit gcc building. (martin, hobbs)
+
+2002-10-17 (bug fix)[624755] Fixed code that check for proper # of args to
+[array names] (porter)
+
+2002-10-18 (feature enhancement)[625453] Added support for broadcasting
+changes to the registry Environment on Windows.  Updated registry package
+to v1.1. (hobbs)
+
+2002-10-22 (platform support)[624509] On macosx, add embedded framework
+dirs to tcl_pkgPath: @executable_path/../Frameworks and
+@executable_path/../PrivateFrameworks (if they exist), as well as the dirs
+in DYLD_FRAMEWORK_PATH (if set). (steffen)
+
+--- Released 8.4.1, October 22, 2002 --- See ChangeLog for details ---

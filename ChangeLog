@@ -1,3 +1,15 @@
+2002-10-22  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	*** 8.4.1 TAGGED FOR RELEASE ***
+
+	* changes: updated for 8.4.1 release
+
+	* win/Makefile.in: removed @MEM_DEBUG_FLAGS@ subst.
+	* win/configure: regen
+	* win/configure.in: removed SC_ENABLE_MEMDEBUG call
+	* win/tcl.m4: replaced SC_ENABLE_MEMDEBUG with a more intelligent
+	SC_ENABLE_SYMBOLS that takes yes|no|mem|compile|all as options now.
+
 2002-10-22  Daniel Steffen  <das@users.sourceforge.net>
 
 	* library/auto.tcl (tcl_findLibrary):
@@ -101,7 +113,7 @@
 	to be specified when loading files (the latter will be looked
 	up by the OS on your PATH/LD_LIBRARY_PATH as appropriate).
 	Fixes [Bug 611108]
-	
+
 2002-10-09  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* unix/README: doc'ed --enable-symbols options.
@@ -117,7 +129,7 @@
 	terminates the thread that calibrates the performance counter, so
 	that the thread won't outlive unloading the Tcl DLL. [Tcl bug
 	620735].
-	
+
 2002-10-09  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* doc/binary.n: More clarification of [binary scan]'s behaviour.
