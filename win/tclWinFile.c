@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.6 1999/04/21 21:50:34 rjohnson Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.7 1999/12/12 22:46:51 hobbs Exp $
  */
 
 #include "tclWinInt.h"
@@ -89,7 +89,7 @@ TclpFindExecutable(argv0)
 /*
  *----------------------------------------------------------------------
  *
- * TclpMatchFiles --
+ * TclpMatchFilesTypes --
  *
  *	This routine is used by the globbing code to search a
  *	directory for all files which match a given pattern.
@@ -107,14 +107,16 @@ TclpFindExecutable(argv0)
  *---------------------------------------------------------------------- */
 
 int
-TclpMatchFiles(interp, separators, dirPtr, pattern, tail)
-    Tcl_Interp *interp;		/* Interpreter to receive results. */
-    char *separators;		/* Directory separators to pass to TclDoGlob. */
-    Tcl_DString *dirPtr;	/* Contains path to directory to search. */
-    char *pattern;		/* Pattern to match against. */
-    char *tail;			/* Pointer to end of pattern.  Tail must
-				 * point to a location in pattern. Must not
-				 * point to a static string. */
+TclpMatchFilesTypes(
+    Tcl_Interp *interp,		/* Interpreter to receive results. */
+    char *separators,		/* Directory separators to pass to TclDoGlob. */
+    Tcl_DString *dirPtr,	/* Contains path to directory to search. */
+    char *pattern,		/* Pattern to match against. */
+    char *tail,			/* Pointer to end of pattern.  Tail must
+				 * point to a location in pattern and must
+				 * not be static.*/
+    GlobTypeData *types)	/* Object containing list of acceptable types.
+				 * May be NULL. */
 {
     char drivePat[] = "?:\\";
     const char *message;
@@ -128,6 +130,7 @@ TclpMatchFiles(interp, separators, dirPtr, pattern, tail)
     BOOL found;
     Tcl_DString ds;
     TCHAR *nativeName;
+    Tcl_Obj *resultPtr;
 
     /*
      * Convert the path to normalized form since some interfaces only
@@ -270,10 +273,11 @@ TclpMatchFiles(interp, separators, dirPtr, pattern, tail)
      * Now iterate over all of the files in the directory.
      */
 
+    resultPtr = Tcl_GetObjResult(interp);
     for (found = 1; found != 0; 
 	    found = (*tclWinProcs->findNextFileProc)(handle, &data)) {
 	TCHAR *nativeMatchResult;
-	char *name;
+	char *name, *fname;
 
 	if (tclWinProcs->useWide) {
 	    nativeName = (TCHAR *) data.w.cFileName;
@@ -320,20 +324,76 @@ TclpMatchFiles(interp, separators, dirPtr, pattern, tail)
 	Tcl_DStringAppend(dirPtr, name, -1);
 	Tcl_DStringFree(&ds);
 
-	if (tail == NULL) {
-	    Tcl_AppendElement(interp, Tcl_DStringValue(dirPtr));
-	} else {
-	    nativeName = Tcl_WinUtfToTChar(Tcl_DStringValue(dirPtr), 
-		    Tcl_DStringLength(dirPtr), &ds);
-	    attr = (*tclWinProcs->getFileAttributesProc)(nativeName);
-	    Tcl_DStringFree(&ds);
+	fname = Tcl_DStringValue(dirPtr);
+	nativeName = Tcl_WinUtfToTChar(fname, Tcl_DStringLength(dirPtr), &ds);
+	attr = (*tclWinProcs->getFileAttributesProc)(nativeName);
+	Tcl_DStringFree(&ds);
 
-	    if (attr & FILE_ATTRIBUTE_DIRECTORY) {
-		Tcl_DStringAppend(dirPtr, "/", 1);
-		result = TclDoGlob(interp, separators, dirPtr, tail);
-		if (result != TCL_OK) {
-		    break;
+	if (tail == NULL) {
+	    int typeOk = 1;
+	    if (types != NULL) {
+		if (types->perm != 0) {
+		    if (
+			((types->perm & TCL_GLOB_PERM_RONLY) &&
+				!(attr & FILE_ATTRIBUTE_READONLY)) ||
+			((types->perm & TCL_GLOB_PERM_HIDDEN) &&
+				!(attr & FILE_ATTRIBUTE_HIDDEN)) ||
+			((types->perm & TCL_GLOB_PERM_R) &&
+				(TclpAccess(fname, R_OK) != 0)) ||
+			((types->perm & TCL_GLOB_PERM_W) &&
+				(TclpAccess(fname, W_OK) != 0)) ||
+			((types->perm & TCL_GLOB_PERM_X) &&
+				(TclpAccess(fname, X_OK) != 0))
+			) {
+			typeOk = 0;
+		    }
 		}
+		if (typeOk && types->type != 0) {
+		    struct stat buf;
+		    /*
+		     * We must match at least one flag to be listed
+		     */
+		    typeOk = 0;
+		    if (TclpLstat(fname, &buf) >= 0) {
+			/*
+			 * In order bcdpfls as in 'find -t'
+			 */
+			if (
+			    ((types->type & TCL_GLOB_TYPE_BLOCK) &&
+				    S_ISBLK(buf.st_mode)) ||
+			    ((types->type & TCL_GLOB_TYPE_CHAR) &&
+				    S_ISCHR(buf.st_mode)) ||
+			    ((types->type & TCL_GLOB_TYPE_DIR) &&
+				    S_ISDIR(buf.st_mode)) ||
+			    ((types->type & TCL_GLOB_TYPE_PIPE) &&
+				    S_ISFIFO(buf.st_mode)) ||
+			    ((types->type & TCL_GLOB_TYPE_FILE) &&
+				    S_ISREG(buf.st_mode))
+#ifdef S_ISLNK
+			    || ((types->type & TCL_GLOB_TYPE_LINK) &&
+				    S_ISLNK(buf.st_mode))
+#endif
+#ifdef S_ISSOCK
+			    || ((types->type & TCL_GLOB_TYPE_SOCK) &&
+				    S_ISSOCK(buf.st_mode))
+#endif
+			    ) {
+			    typeOk = 1;
+			}
+		    } else {
+			/* Posix error occurred */
+		    }
+		}		
+	    } 
+	    if (typeOk) {
+		Tcl_ListObjAppendElement(interp, resultPtr, 
+			Tcl_NewStringObj(fname, Tcl_DStringLength(dirPtr)));
+	    }
+	} else if (attr & FILE_ATTRIBUTE_DIRECTORY) {
+	    Tcl_DStringAppend(dirPtr, "/", 1);
+	    result = TclDoGlob(interp, separators, dirPtr, tail, types);
+	    if (result != TCL_OK) {
+		break;
 	    }
 	}
 	Tcl_DStringSetLength(dirPtr, dirLength);
@@ -352,6 +412,25 @@ TclpMatchFiles(interp, separators, dirPtr, pattern, tail)
     Tcl_AppendResult(interp, message, Tcl_DStringValue(dirPtr), "\": ", 
 	    Tcl_PosixError(interp), (char *) NULL);
     return TCL_ERROR;
+}
+
+/* 
+ * TclpMatchFiles --
+ * 
+ * This function is now obsolete.  Call the above function 
+ * 'TclpMatchFilesTypes' instead.
+ */
+int
+TclpMatchFiles(
+    Tcl_Interp *interp,		/* Interpreter to receive results. */
+    char *separators,		/* Directory separators to pass to TclDoGlob. */
+    Tcl_DString *dirPtr,	/* Contains path to directory to search. */
+    char *pattern,		/* Pattern to match against. */
+    char *tail)			/* Pointer to end of pattern.  Tail must
+				 * point to a location in pattern and must
+				 * not be static.*/
+{
+    return TclpMatchFilesTypes(interp,separators,dirPtr,pattern,tail,NULL);
 }
 
 /*

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.6 1999/04/16 00:46:46 stanton Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.7 1999/12/12 22:46:42 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -52,6 +52,15 @@ static Tcl_ThreadDataKey dataKey;
  */
 
 TclPlatformType tclPlatform = TCL_PLATFORM_UNIX;
+
+/*
+ * The "globParameters" argument of the globbing functions is an 
+ * or'ed combination of the following values:
+ */
+
+#define GLOBMODE_NO_COMPLAIN      1
+#define GLOBMODE_JOIN             2
+#define GLOBMODE_DIR              4
 
 /*
  * Prototypes for local procedures defined in this file:
@@ -1173,56 +1182,381 @@ Tcl_GlobObjCmd(dummy, interp, objc, objv)
     int objc;				/* Number of arguments. */
     Tcl_Obj *CONST objv[];		/* Argument objects. */
 {
-    int index, i, noComplain, skip, length;
-    char *string;
-    static char *options[] = {"-nocomplain", "--", NULL};
-    enum options {GLOB_NOCOMPLAIN, GLOB_LAST};
+    int index, i, globFlags, pathlength, length, join, dir, result;
+    char *string, *pathOrDir, *separators;
+    Tcl_Obj *typePtr, *resultPtr, *look;
+    Tcl_DString prefix, directory;
+    static char *options[] = {
+	"-directory", "-join", "-nocomplain", "-path", "-types", "--", NULL
+    };
+    enum options {
+	GLOB_DIR, GLOB_JOIN, GLOB_NOCOMPLAIN, GLOB_PATH, GLOB_TYPE, GLOB_LAST
+    };
+    enum pathDirOptions {PATH_NONE = -1 , PATH_GENERAL = 0, PATH_DIR = 1};
+    GlobTypeData *globTypes = NULL;
 
-    noComplain = 0;
-    for (skip = 1; skip < objc; skip++) {
-	string = Tcl_GetString(objv[skip]);
-	if (string[0] != '-') {
-	    break;
+    globFlags = 0;
+    join = 0;
+    dir = PATH_NONE;
+    pathOrDir = NULL;
+    typePtr = NULL;
+    resultPtr = Tcl_GetObjResult(interp);
+    for (i = 1; i < objc; i++) {
+	if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", 0, &index)
+		!= TCL_OK) {
+	    string = Tcl_GetStringFromObj(objv[i], &length);
+	    if (string[0] == '-') {
+		/*
+		 * It looks like the command contains an option so signal
+		 * an error
+		 */
+		return TCL_ERROR;
+	    } else {
+		/*
+		 * This clearly isn't an option; assume it's the first
+		 * glob pattern.  We must clear the error
+		 */
+		Tcl_ResetResult(interp);
+		break;
+	    }
 	}
-	if (Tcl_GetIndexFromObj(interp, objv[skip], options, "switch",
-		TCL_EXACT, &index) != TCL_OK) {
-	    return TCL_ERROR;
-	}
-	if (index == GLOB_NOCOMPLAIN) {
-	    noComplain = 1;
-	} else {
-	    skip++;
-	    break;
+	switch (index) {
+	    case GLOB_NOCOMPLAIN:			/* -nocomplain */
+	        globFlags |= GLOBMODE_NO_COMPLAIN;
+		break;
+	    case GLOB_DIR:				/* -dir */
+		if (i == (objc-1)) {
+		    Tcl_AppendToObj(resultPtr,
+			    "missing argument to \"-directory\"", -1);
+		    return TCL_ERROR;
+		}
+		if (dir != -1) {
+		    Tcl_AppendToObj(resultPtr,
+			    "\"-directory\" cannot be used with \"-path\"",
+			    -1);
+		    return TCL_ERROR;
+		}
+		dir = PATH_DIR;
+		globFlags |= GLOBMODE_DIR;
+		pathOrDir = Tcl_GetStringFromObj(objv[i+1], &pathlength);
+		i++;
+		break;
+	    case GLOB_JOIN:				/* -join */
+		join = 1;
+		break;
+	    case GLOB_PATH:				/* -path */
+	        if (i == (objc-1)) {
+		    Tcl_AppendToObj(resultPtr,
+			    "missing argument to \"-path\"", -1);
+		    return TCL_ERROR;
+		}
+		if (dir != -1) {
+		    Tcl_AppendToObj(resultPtr,
+			    "\"-path\" cannot be used with \"-directory\"",
+			    -1);
+		    return TCL_ERROR;
+		}
+		dir = PATH_GENERAL;
+		pathOrDir = Tcl_GetStringFromObj(objv[i+1], &pathlength);
+		i++;
+		break;
+	    case GLOB_TYPE:				/* -types */
+	        if (i == (objc-1)) {
+		    Tcl_AppendToObj(resultPtr,
+			    "missing argument to \"-types\"", -1);
+		    return TCL_ERROR;
+		}
+		typePtr = objv[i+1];
+		if (Tcl_ListObjLength(interp, typePtr, &length) != TCL_OK) {
+		    return TCL_ERROR;
+		}
+		i++;
+		break;
+	    case GLOB_LAST:				/* -- */
+	        i++;
+		goto endOfForLoop;
+		break;
 	}
     }
-    if (skip >= objc) {
+    endOfForLoop:
+    if (objc - i < 1) {
         Tcl_WrongNumArgs(interp, 1, objv, "?switches? name ?name ...?");
 	return TCL_ERROR;
     }
 
-    for (i = skip; i < objc; i++) {
-	string = Tcl_GetString(objv[i]);
-	if (TclGlob(interp, string, noComplain) != TCL_OK) {
-	    return TCL_ERROR;
+    separators = NULL;		/* lint. */
+    switch (tclPlatform) {
+	case TCL_PLATFORM_UNIX:
+	    separators = "/";
+	    break;
+	case TCL_PLATFORM_WINDOWS:
+	    separators = "/\\:";
+	    break;
+	case TCL_PLATFORM_MAC:
+	    if ((pathOrDir != NULL) && (strchr(pathOrDir, ':') == NULL)) {
+		separators = "/";
+	    } else {
+		separators = ":";
+	    }
+	    break;
+    }
+    if (dir == PATH_GENERAL) {
+	char *last;
+
+	/*
+	 * Find the last path separator in the path
+	 */
+	last = pathOrDir + pathlength;
+	for (; last != pathOrDir; last--) {
+	    if (strchr(separators, *(last-1)) != NULL) {
+		break;
+	    }
+	}
+	if (last == pathOrDir + pathlength) {
+	    /* It's really a directory */
+	    dir = 1;
+	} else {
+	    Tcl_DString pref;
+	    char *search, *find;
+	    Tcl_DStringInit(&pref);
+	    Tcl_DStringInit(&directory);
+	    if (last == pathOrDir) {
+		/* The whole thing is a prefix */
+		Tcl_DStringAppend(&pref, pathOrDir, -1);
+		pathOrDir = NULL;
+	    } else {
+		/* Have to split off the end */
+		Tcl_DStringAppend(&pref, last, pathOrDir+pathlength-last);
+		Tcl_DStringAppend(&directory, pathOrDir, last-pathOrDir-1);
+		pathOrDir = Tcl_DStringValue(&directory);
+	    }
+	    /* Need to quote 'prefix' */
+	    Tcl_DStringInit(&prefix);
+	    search = Tcl_DStringValue(&pref);
+	    while ((find = (strpbrk(search, "\\[]*?{}"))) != NULL) {
+	        Tcl_DStringAppend(&prefix, search, find-search);
+	        Tcl_DStringAppend(&prefix, "\\", 1);
+	        Tcl_DStringAppend(&prefix, find, 1);
+	        search = find+1;
+	        if (*search == '\0') {
+	            break;
+	        }
+	    }
+	    if (*search != '\0') {
+		Tcl_DStringAppend(&prefix, search, -1);
+	    }
+	    Tcl_DStringFree(&pref);
 	}
     }
-    if (noComplain == 0) {
-	Tcl_GetStringFromObj(Tcl_GetObjResult(interp), &length);
-	if (length == 0) {
-	    char *sep = "";
 
-	    Tcl_AppendResult(interp, "no files matched glob pattern",
-		    (objc == 2) ? " \"" : "s \"", (char *) NULL);
-	    for (i = skip; i < objc; i++) {
+    if (typePtr != NULL) {
+	/* 
+	 * The rest of the possible type arguments (except 'd') are
+	 * platform specific.  We don't complain when they are used
+	 * on an incompatible platform.
+	 */
+	Tcl_ListObjLength(interp, typePtr, &length);
+	globTypes = (GlobTypeData*) ckalloc(sizeof(GlobTypeData));
+	globTypes->type = 0;
+	globTypes->perm = 0;
+	globTypes->macType = NULL;
+	globTypes->macCreator = NULL;
+	while(--length >= 0) {
+	    int len;
+	    char *str;
+	    Tcl_ListObjIndex(interp, typePtr, length, &look);
+	    str = Tcl_GetStringFromObj(look, &len);
+	    if (strcmp("readonly", str) == 0) {
+		globTypes->perm |= TCL_GLOB_PERM_RONLY;
+	    } else if (strcmp("hidden", str) == 0) {
+		globTypes->perm |= TCL_GLOB_PERM_HIDDEN;
+	    } else if (len == 1) {
+		switch (str[0]) {
+		  case 'r':
+		    globTypes->perm |= TCL_GLOB_PERM_R;
+		    break;
+		  case 'w':
+		    globTypes->perm |= TCL_GLOB_PERM_W;
+		    break;
+		  case 'x':
+		    globTypes->perm |= TCL_GLOB_PERM_X;
+		    break;
+		  case 'b':
+		    globTypes->type |= TCL_GLOB_TYPE_BLOCK;
+		    break;
+		  case 'c':
+		    globTypes->type |= TCL_GLOB_TYPE_CHAR;
+		    break;
+		  case 'd':
+		    globTypes->type |= TCL_GLOB_TYPE_DIR;
+		    break;
+		  case 'p':
+		    globTypes->type |= TCL_GLOB_TYPE_PIPE;
+		    break;
+		  case 'f':
+		    globTypes->type |= TCL_GLOB_TYPE_FILE;
+		    break;
+	          case 'l':
+		    globTypes->type |= TCL_GLOB_TYPE_LINK;
+		    break;
+		  case 's':
+		    globTypes->type |= TCL_GLOB_TYPE_SOCK;
+		    break;
+		  default:
+		    goto badTypesArg;
+		}
+	    } else if (len == 4) {
+		/* This is assumed to be a MacOS file type */
+		if (globTypes->macType != NULL) {
+		    goto badMacTypesArg;
+		}
+		globTypes->macType = look;
+		Tcl_IncrRefCount(look);
+	    } else {
+		Tcl_Obj* item;
+		if ((Tcl_ListObjLength(NULL, look, &len) == TCL_OK) &&
+			(len == 3)) {
+		    Tcl_ListObjIndex(interp, look, 0, &item);
+		    if (!strcmp("macintosh", Tcl_GetString(item))) {
+			Tcl_ListObjIndex(interp, look, 1, &item);
+			if (!strcmp("type", Tcl_GetString(item))) {
+			    Tcl_ListObjIndex(interp, look, 2, &item);
+			    if (globTypes->macType != NULL) {
+				goto badMacTypesArg;
+			    }
+			    globTypes->macType = item;
+			    Tcl_IncrRefCount(item);
+			    continue;
+			} else if (!strcmp("creator", Tcl_GetString(item))) {
+			    Tcl_ListObjIndex(interp, look, 2, &item);
+			    if (globTypes->macCreator != NULL) {
+				goto badMacTypesArg;
+			    }
+			    globTypes->macCreator = item;
+			    Tcl_IncrRefCount(item);
+			    continue;
+			}
+		    }
+		}
+		/*
+		 * Error cases
+		 */
+		badTypesArg:
+		Tcl_AppendToObj(resultPtr, "bad argument to \"-types\": ", -1);
+		Tcl_AppendObjToObj(resultPtr, look);
+		result = TCL_ERROR;
+		goto endOfGlob;
+		badMacTypesArg:
+		Tcl_AppendToObj(resultPtr,
+			"only one MacOS type or creator argument to \"-types\" allowed", -1);
+		result = TCL_ERROR;
+		goto endOfGlob;
+	    }
+	}
+    }
+
+    /* 
+     * Now we perform the actual glob below.  This may involve joining
+     * together the pattern arguments, dealing with particular file types
+     * etc.  We use a 'goto' to ensure we free any memory allocated along
+     * the way.
+     */
+    objc -= i;
+    objv += i;
+    /* 
+     * We re-retrieve this, in case it was changed in 
+     * the Tcl_ResetResult above 
+     */
+    resultPtr = Tcl_GetObjResult(interp);
+    result = TCL_OK;
+    if (join) {
+	if (dir != PATH_GENERAL) {
+	    Tcl_DStringInit(&prefix);
+	}
+	for (i = 0; i < objc; i++) {
+	    string = Tcl_GetStringFromObj(objv[i], &length);
+	    Tcl_DStringAppend(&prefix, string, length);
+	    if (i != objc -1) {
+		Tcl_DStringAppend(&prefix, separators, 1);
+	    }
+	}
+	if (TclGlob(interp, Tcl_DStringValue(&prefix), pathOrDir,
+		globFlags, globTypes) != TCL_OK) {
+	    result = TCL_ERROR;
+	    goto endOfGlob;
+	}
+    } else {
+	if (dir == PATH_GENERAL) {
+	    Tcl_DString str;
+	    for (i = 0; i < objc; i++) {
+		Tcl_DStringInit(&str);
+		if (dir == PATH_GENERAL) {
+		    Tcl_DStringAppend(&str, Tcl_DStringValue(&prefix),
+			    Tcl_DStringLength(&prefix));
+		}
+		string = Tcl_GetStringFromObj(objv[i], &length);
+		Tcl_DStringAppend(&str, string, length);
+		if (TclGlob(interp, Tcl_DStringValue(&str), pathOrDir,
+			globFlags, globTypes) != TCL_OK) {
+		    result = TCL_ERROR;
+		    Tcl_DStringFree(&str);
+		    goto endOfGlob;
+		}
+	    }
+	    Tcl_DStringFree(&str);
+	} else {
+	    for (i = 0; i < objc; i++) {
 		string = Tcl_GetString(objv[i]);
-		Tcl_AppendResult(interp, sep, string, (char *) NULL);
-		sep = " ";
+		if (TclGlob(interp, string, pathOrDir,
+			globFlags, globTypes) != TCL_OK) {
+		    result = TCL_ERROR;
+		    goto endOfGlob;
+		}
+	    }
+	}
+    }
+    if ((globFlags & GLOBMODE_NO_COMPLAIN) == 0) {
+	if (Tcl_ListObjLength(interp, Tcl_GetObjResult(interp),
+		&length) != TCL_OK) {
+	    /* This should never happen.  Maybe we should be more dramatic */
+	    result = TCL_ERROR;
+	    goto endOfGlob;
+	}
+	if (length == 0) {
+	    Tcl_AppendResult(interp, "no files matched glob pattern",
+		    (join || (objc == 1)) ? " \"" : "s \"", (char *) NULL);
+	    if (join) {
+		Tcl_AppendResult(interp, Tcl_DStringValue(&prefix),
+			(char *) NULL);
+	    } else {
+		char *sep = "";
+		for (i = 0; i < objc; i++) {
+		    string = Tcl_GetString(objv[i]);
+		    Tcl_AppendResult(interp, sep, string, (char *) NULL);
+		    sep = " ";
+		}
 	    }
 	    Tcl_AppendResult(interp, "\"", (char *) NULL);
-	    return TCL_ERROR;
+	    result = TCL_ERROR;
 	}
     }
-    return TCL_OK;
+  endOfGlob:
+    if (join || (dir == PATH_GENERAL)) {
+	Tcl_DStringFree(&prefix);
+	if (dir == PATH_GENERAL) {
+	    Tcl_DStringFree(&directory);
+	}
+    }
+    if (globTypes != NULL) {
+	if (globTypes->macType != NULL) {
+	    Tcl_DecrRefCount(globTypes->macType);
+	}
+	if (globTypes->macCreator != NULL) {
+	    Tcl_DecrRefCount(globTypes->macCreator);
+	}
+	ckfree((char *) globTypes);
+    }
+    return result;
 }
 
 /*
@@ -1249,16 +1583,19 @@ Tcl_GlobObjCmd(dummy, interp, objc, objv)
 
 	/* ARGSUSED */
 int
-TclGlob(interp, pattern, noComplain)
+TclGlob(interp, pattern, unquotedPrefix, globFlags, types)
     Tcl_Interp *interp;		/* Interpreter for returning error message
 				 * or appending list of matching file names. */
     char *pattern;		/* Glob pattern to match. Must not refer
 				 * to a static string. */
-    int noComplain;		/* Flag to turn off storing error messages
-				 * in interp. */
+    char *unquotedPrefix;	/* Prefix to glob pattern, if non-null, which
+                             	 * is considered literally.  May be static. */
+    int globFlags;		/* Stores or'ed combination of flags */
+    GlobTypeData *types;	/* Struct containing acceptable types.
+				 * May be NULL. */
 {
     char *separators;
-    char *head, *tail;
+    char *head, *tail, *start;
     char c;
     int result;
     Tcl_DString buffer;
@@ -1278,19 +1615,22 @@ TclGlob(interp, pattern, noComplain)
     }
 
     Tcl_DStringInit(&buffer);
+    if (unquotedPrefix != NULL) {
+	start = unquotedPrefix;
+    } else {
+	start = pattern;
+    }
 
     /*
      * Perform tilde substitution, if needed.
      */
 
-    if (pattern[0] == '~') {
-	char *p;
-
+    if (start[0] == '~') {
+	
 	/*
 	 * Find the first path separator after the tilde.
 	 */
-
-	for (tail = pattern; *tail != '\0'; tail++) {
+	for (tail = start; *tail != '\0'; tail++) {
 	    if (*tail == '\\') {
 		if (strchr(separators, tail[1]) != NULL) {
 		    break;
@@ -1307,20 +1647,29 @@ TclGlob(interp, pattern, noComplain)
 	
 	c = *tail;
 	*tail = '\0';
-	p = strpbrk(pattern+1, "\\[]*?{}");
-	if (p == NULL) {
-	    head = DoTildeSubst(interp, pattern+1, &buffer);
+	/*
+	 * I don't think we need to worry about special characters in
+	 * the user name anymore (Vince Darley, June 1999), since the
+	 * new code is designed to handle special chars.
+	 */
+	#ifndef NOT_NEEDED_ANYMORE
+	head = DoTildeSubst(interp, start+1, &buffer);
+	#else
+	
+	if (strpbrk(start+1, "\\[]*?{}") == NULL) {
+	    head = DoTildeSubst(interp, start+1, &buffer);
 	} else {
-	    if (!noComplain) {
+	    if (!(globFlags & GLOBMODE_NO_COMPLAIN)) {
 		Tcl_ResetResult(interp);
 		Tcl_AppendResult(interp, "globbing characters not ",
 			"supported in user names", (char *) NULL);
 	    }
 	    head = NULL;
 	}
+	#endif
 	*tail = c;
 	if (head == NULL) {
-	    if (noComplain) {
+	    if (globFlags & GLOBMODE_NO_COMPLAIN) {
 		/*
 		 * We should in fact pass down the nocomplain flag 
 		 * or save the interp result or use another mechanism
@@ -1338,14 +1687,33 @@ TclGlob(interp, pattern, noComplain)
 	if (head != Tcl_DStringValue(&buffer)) {
 	    Tcl_DStringAppend(&buffer, head, -1);
 	}
+	if (unquotedPrefix != NULL) {
+	    Tcl_DStringAppend(&buffer, tail, -1);
+	    tail = pattern;
+	}
     } else {
 	tail = pattern;
+	if (unquotedPrefix != NULL) {
+	    Tcl_DStringAppend(&buffer,unquotedPrefix,-1);
+	}
+    }
+    /* 
+     * If the prefix is a directory, make sure it ends in a directory
+     * separator.
+     */
+    if (unquotedPrefix != NULL) {
+	if (globFlags & GLOBMODE_DIR) {
+	    c = Tcl_DStringValue(&buffer)[Tcl_DStringLength(&buffer)-1];
+	    if (strchr(separators, c) == NULL) {
+		Tcl_DStringAppend(&buffer,separators,1);
+	    }
+	}
     }
 
-    result = TclDoGlob(interp, separators, &buffer, tail);
+    result = TclDoGlob(interp, separators, &buffer, tail, types);
     Tcl_DStringFree(&buffer);
     if (result != TCL_OK) {
-	if (noComplain) {
+	if (globFlags & GLOBMODE_NO_COMPLAIN) {
 	    Tcl_ResetResult(interp);
 	    return TCL_OK;
 	}
@@ -1413,7 +1781,11 @@ SkipToChar(stringPtr, match)
  *	This recursive procedure forms the heart of the globbing
  *	code.  It performs a depth-first traversal of the tree
  *	given by the path name to be globbed.  The directory and
- *	remainder are assumed to be native format paths.
+ *	remainder are assumed to be native format paths.  The prefix 
+ *	contained in 'headPtr' is not used as a glob pattern, simply
+ *	as a path specifier, so it can contain unquoted glob-sensitive
+ *	characters (if the directories to which it points contain
+ *	such strange characters).
  *
  * Results:
  *	The return value is a standard Tcl result indicating whether
@@ -1429,7 +1801,7 @@ SkipToChar(stringPtr, match)
  */
 
 int
-TclDoGlob(interp, separators, headPtr, tail)
+TclDoGlob(interp, separators, headPtr, tail, types)
     Tcl_Interp *interp;		/* Interpreter to use for error reporting
 				 * (e.g. unmatched brace). */
     char *separators;		/* String containing separator characters
@@ -1438,11 +1810,14 @@ TclDoGlob(interp, separators, headPtr, tail)
     Tcl_DString *headPtr;	/* Completely expanded prefix. */
     char *tail;			/* The unexpanded remainder of the path.
 				 * Must not be a pointer to a static string. */
+    GlobTypeData *types;	/* List object containing list of acceptable types.
+				 * May be NULL. */
 {
     int baseLength, quoted, count;
     int result = TCL_OK;
     char *name, *p, *openBrace, *closeBrace, *firstSpecialChar, savedChar;
     char lastChar = 0;
+    
     int length = Tcl_DStringLength(headPtr);
 
     if (length > 0) {
@@ -1594,7 +1969,7 @@ TclDoGlob(interp, separators, headPtr, tail)
 	    Tcl_DStringAppend(&newName, element, p-element);
 	    Tcl_DStringAppend(&newName, closeBrace+1, -1);
 	    result = TclDoGlob(interp, separators,
-		    headPtr, Tcl_DStringValue(&newName));
+		    headPtr, Tcl_DStringValue(&newName), types);
 	    if (result != TCL_OK) {
 		break;
 	    }
@@ -1636,11 +2011,11 @@ TclDoGlob(interp, separators, headPtr, tail)
 	 * are more characters to be processed.
 	 */
 
-	return TclpMatchFiles(interp, separators, headPtr, tail, p);
+	return TclpMatchFilesTypes(interp, separators, headPtr, tail, p, types);
     }
     Tcl_DStringAppend(headPtr, tail, p-tail);
     if (*p != '\0') {
-	return TclDoGlob(interp, separators, headPtr, p);
+	return TclDoGlob(interp, separators, headPtr, p, types);
     }
 
     /*
@@ -1657,9 +2032,11 @@ TclDoGlob(interp, separators, headPtr, tail)
 	    name = Tcl_DStringValue(headPtr);
 	    if (TclpAccess(name, F_OK) == 0) {
 		if ((name[1] != '\0') && (strchr(name+1, ':') == NULL)) {
-		    Tcl_AppendElement(interp, name + 1);
+		    Tcl_ListObjAppendElement(interp, Tcl_GetObjResult(interp), 
+					     Tcl_NewStringObj(name + 1,-1));
 		} else {
-		    Tcl_AppendElement(interp, name);
+		    Tcl_ListObjAppendElement(interp, Tcl_GetObjResult(interp), 
+					     Tcl_NewStringObj(name,-1));
 		}
 	    }
 	    break;
@@ -1696,7 +2073,8 @@ TclDoGlob(interp, separators, headPtr, tail)
 		}
 	    }
 	    if (exists) {
-		Tcl_AppendElement(interp, name);
+		Tcl_ListObjAppendElement(interp, Tcl_GetObjResult(interp), 
+					 Tcl_NewStringObj(name,-1));
 	    }
 	    break;
 	}
@@ -1710,7 +2088,8 @@ TclDoGlob(interp, separators, headPtr, tail)
 	    }
 	    name = Tcl_DStringValue(headPtr);
 	    if (TclpAccess(name, F_OK) == 0) {
-		Tcl_AppendElement(interp, name);
+		Tcl_ListObjAppendElement(interp, Tcl_GetObjResult(interp), 
+					 Tcl_NewStringObj(name,-1));
 	    }
 	    break;
 	}

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFile.c,v 1.6 1999/04/16 00:48:05 stanton Exp $
+ * RCS: @(#) $Id: tclUnixFile.c,v 1.7 1999/12/12 22:46:50 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -176,7 +176,7 @@ TclpFindExecutable(argv0)
 /*
  *----------------------------------------------------------------------
  *
- * TclpMatchFiles --
+ * TclpMatchFilesTypes --
  *
  *	This routine is used by the globbing code to search a
  *	directory for all files which match a given pattern.
@@ -195,15 +195,18 @@ TclpFindExecutable(argv0)
  */
 
 int
-TclpMatchFiles(interp, separators, dirPtr, pattern, tail)
-    Tcl_Interp *interp;		/* Interpreter to receive results. */
-    char *separators;		/* Path separators to pass to TclDoGlob. */
-    Tcl_DString *dirPtr;	/* Contains path to directory to search. */
-    char *pattern;		/* Pattern to match against. */
-    char *tail;			/* Pointer to end of pattern. Must not
-				 * refer to a static string. */
+TclpMatchFilesTypes(
+    Tcl_Interp *interp,		/* Interpreter to receive results. */
+    char *separators,		/* Directory separators to pass to TclDoGlob. */
+    Tcl_DString *dirPtr,	/* Contains path to directory to search. */
+    char *pattern,		/* Pattern to match against. */
+    char *tail,			/* Pointer to end of pattern.  Tail must
+				 * point to a location in pattern and must
+				 * not be static.*/
+    GlobTypeData *types)	/* Object containing list of acceptable types.
+				 * May be NULL. */
 {
-    char *native, *dirName, *patternEnd = tail;
+    char *native, *fname, *dirName, *patternEnd = tail;
     char savedChar = 0;		/* lint. */
     DIR *d;
     Tcl_DString ds;
@@ -211,6 +214,7 @@ TclpMatchFiles(interp, separators, dirPtr, pattern, tail)
     int matchHidden;
     int result = TCL_OK;
     int baseLength = Tcl_DStringLength(dirPtr);
+    Tcl_Obj *resultPtr;
 
     /*
      * Make sure that the directory part of the name really is a
@@ -289,6 +293,7 @@ TclpMatchFiles(interp, separators, dirPtr, pattern, tail)
     savedChar = *patternEnd;
     *patternEnd = '\0';
 
+    resultPtr = Tcl_GetObjResult(interp);
     while (1) {
 	char *utf;
 	struct dirent *entryPtr;
@@ -298,12 +303,19 @@ TclpMatchFiles(interp, separators, dirPtr, pattern, tail)
 	    break;
 	}
 
-	/*
-	 * Don't match names starting with "." unless the "." is
-	 * present in the pattern.
-	 */
-
-	if (!matchHidden && (*entryPtr->d_name == '.')) {
+	if (types != NULL && (types->perm & TCL_GLOB_PERM_HIDDEN)) {
+	    /* 
+	     * We explicitly asked for hidden files, so turn around
+	     * and ignore any file which isn't hidden.
+	     */
+	    if (*entryPtr->d_name != '.') {
+	        continue;
+	    }
+	} else if (!matchHidden && (*entryPtr->d_name == '.')) {
+	    /*
+	     * Don't match names starting with "." unless the "." is
+	     * present in the pattern.
+	     */
 	    continue;
 	}
 
@@ -318,12 +330,79 @@ TclpMatchFiles(interp, separators, dirPtr, pattern, tail)
 	if (Tcl_StringMatch(utf, pattern) != 0) {
 	    Tcl_DStringSetLength(dirPtr, baseLength);
 	    Tcl_DStringAppend(dirPtr, utf, -1);
+	    fname = Tcl_DStringValue(dirPtr);
 	    if (tail == NULL) {
-		Tcl_AppendElement(interp, Tcl_DStringValue(dirPtr));
-	    } else if ((TclpStat(Tcl_DStringValue(dirPtr), &statBuf) == 0)
+		int typeOk = 1;
+		if (types != NULL) {
+		    if (types->perm != 0) {
+			struct stat buf;
+
+			if (TclpStat(fname, &buf) != 0) {
+			    panic("stat failed on known file\n");
+			}
+			/* 
+			 * readonly means that there are NO write permissions
+			 * (even for user), but execute is OK for anybody
+			 */
+			if (
+			    ((types->perm & TCL_GLOB_PERM_RONLY) &&
+				    (buf.st_mode & (S_IWOTH|S_IWGRP|S_IWUSR))) ||
+			    ((types->perm & TCL_GLOB_PERM_R) &&
+				    (TclpAccess(fname, R_OK) != 0)) ||
+			    ((types->perm & TCL_GLOB_PERM_W) &&
+				    (TclpAccess(fname, W_OK) != 0)) ||
+			    ((types->perm & TCL_GLOB_PERM_X) &&
+				    (TclpAccess(fname, X_OK) != 0))
+			    ) {
+			    typeOk = 0;
+			}
+		    }
+		    if (typeOk && (types->type != 0)) {
+			struct stat buf;
+			/*
+			 * We must match at least one flag to be listed
+			 */
+			typeOk = 0;
+			if (TclpLstat(fname, &buf) >= 0) {
+			    /*
+			     * In order bcdpfls as in 'find -t'
+			     */
+			    if (
+				((types->type & TCL_GLOB_TYPE_BLOCK) &&
+					S_ISBLK(buf.st_mode)) ||
+				((types->type & TCL_GLOB_TYPE_CHAR) &&
+					S_ISCHR(buf.st_mode)) ||
+				((types->type & TCL_GLOB_TYPE_DIR) &&
+					S_ISDIR(buf.st_mode)) ||
+				((types->type & TCL_GLOB_TYPE_PIPE) &&
+					S_ISFIFO(buf.st_mode)) ||
+				((types->type & TCL_GLOB_TYPE_FILE) &&
+					S_ISREG(buf.st_mode))
+#ifdef S_ISLNK
+				|| ((types->type & TCL_GLOB_TYPE_LINK) &&
+					S_ISLNK(buf.st_mode))
+#endif
+#ifdef S_ISSOCK
+				|| ((types->type & TCL_GLOB_TYPE_SOCK) &&
+					S_ISSOCK(buf.st_mode))
+#endif
+				) {
+				typeOk = 1;
+			    }
+			} else {
+			    /* Posix error occurred */
+			}
+		    }
+		}
+		if (typeOk) {
+		    Tcl_ListObjAppendElement(interp, resultPtr, 
+			    Tcl_NewStringObj(fname,
+				    Tcl_DStringLength(dirPtr)));
+		}
+	    } else if ((TclpStat(fname, &statBuf) == 0)
 		    && S_ISDIR(statBuf.st_mode)) {
 		Tcl_DStringAppend(dirPtr, "/", 1);
-		result = TclDoGlob(interp, separators, dirPtr, tail);
+		result = TclDoGlob(interp, separators, dirPtr, tail, types);
 		if (result != TCL_OK) {
 		    Tcl_DStringFree(&ds);
 		    break;
@@ -336,6 +415,25 @@ TclpMatchFiles(interp, separators, dirPtr, pattern, tail)
 
     closedir(d);
     return result;
+}
+
+/* 
+ * TclpMatchFiles --
+ * 
+ * This function is now obsolete.  Call the above function 
+ * 'TclpMatchFilesTypes' instead.
+ */
+int
+TclpMatchFiles(
+    Tcl_Interp *interp,		/* Interpreter to receive results. */
+    char *separators,		/* Directory separators to pass to TclDoGlob. */
+    Tcl_DString *dirPtr,	/* Contains path to directory to search. */
+    char *pattern,		/* Pattern to match against. */
+    char *tail)			/* Pointer to end of pattern.  Tail must
+				 * point to a location in pattern and must
+				 * not be static.*/
+{
+    return TclpMatchFilesTypes(interp,separators,dirPtr,pattern,tail,NULL);
 }
 
 /*

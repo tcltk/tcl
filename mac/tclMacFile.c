@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacFile.c,v 1.8 1999/08/10 04:21:35 jingham Exp $
+ * RCS: @(#) $Id: tclMacFile.c,v 1.9 1999/12/12 22:46:45 hobbs Exp $
  */
 
 /*
@@ -102,7 +102,7 @@ TclpFindExecutable(
 /*
  *----------------------------------------------------------------------
  *
- * TclpMatchFiles --
+ * TclpMatchFilesTypes --
  *
  *	This routine is used by the globbing code to search a
  *	directory for all files which match a given pattern.
@@ -120,18 +120,20 @@ TclpFindExecutable(
  *---------------------------------------------------------------------- */
 
 int
-TclpMatchFiles(
+TclpMatchFilesTypes(
     Tcl_Interp *interp,		/* Interpreter to receive results. */
     char *separators,		/* Directory separators to pass to TclDoGlob. */
     Tcl_DString *dirPtr,	/* Contains path to directory to search. */
     char *pattern,		/* Pattern to match against. */
-    char *tail)			/* Pointer to end of pattern.  Tail must
+    char *tail,			/* Pointer to end of pattern.  Tail must
 				 * point to a location in pattern and must
 				 * not be static.*/
+    GlobTypeData *types)	/* Object containing list of acceptable types.
+				 * May be NULL. */
 {
-    char *patternEnd = tail;
+    char *fname, *patternEnd = tail;
     char savedChar;
-    int result = TCL_OK;
+    int fnameLen, result = TCL_OK;
     int baseLength = Tcl_DStringLength(dirPtr);
     CInfoPBRec pb;
     OSErr err;
@@ -141,17 +143,21 @@ TclpMatchFiles(
     short itemIndex;
     Str255 fileName;
     Tcl_DString fileString;    
+    Tcl_Obj *resultPtr;
+    OSType okType = 0;
+    OSType okCreator = 0;
 
     /*
      * Make sure that the directory part of the name really is a
      * directory.
      */
 
-    Tcl_UtfToExternalDString(NULL, dirPtr->string, dirPtr->length, &fileString);
-    
+    Tcl_UtfToExternalDString(NULL, Tcl_DStringValue(dirPtr),
+	    Tcl_DStringLength(dirPtr), &fileString);
+
     FSpLocationFromPath(fileString.length, fileString.string, &dirSpec);
     Tcl_DStringFree(&fileString);
-    
+
     err = FSpGetDirectoryID(&dirSpec, &dirID, &isDirectory);
     if ((err != noErr) || !isDirectory) {
 	return TCL_OK;
@@ -165,7 +171,7 @@ TclpMatchFiles(
     pb.hFileInfo.ioDirID = dirID;
     pb.hFileInfo.ioNamePtr = (StringPtr) fileName;
     pb.hFileInfo.ioFDirIndex = itemIndex = 1;
-    
+
     /*
      * Clean up the end of the pattern and the tail pointer.  Leave
      * the tail pointing to the first character after the path separator
@@ -183,6 +189,16 @@ TclpMatchFiles(
     }
     savedChar = *patternEnd;
     *patternEnd = '\0';
+
+    resultPtr = Tcl_GetObjResult(interp);
+    if (types != NULL) {
+	if (types->macType != NULL) {
+	    Tcl_GetOSTypeFromObj(NULL, types->macType, &okType);
+	}
+	if (types->macCreator != NULL) {
+	    Tcl_GetOSTypeFromObj(NULL, types->macCreator, &okCreator);
+	}
+    }
 
     while (1) {
 	pb.hFileInfo.ioFDirIndex = itemIndex;
@@ -204,16 +220,84 @@ TclpMatchFiles(
 	if (Tcl_StringMatch(Tcl_DStringValue(&fileString), pattern)) {
 	    Tcl_DStringSetLength(dirPtr, baseLength);
 	    Tcl_DStringAppend(dirPtr, Tcl_DStringValue(&fileString), -1);
+	    fname = Tcl_DStringValue(dirPtr);
+	    fnameLen = Tcl_DStringLength(dirPtr);
 	    if (tail == NULL) {
-		if ((dirPtr->length > 1) &&
-			(strchr(dirPtr->string+1, ':') == NULL)) {
-		    Tcl_AppendElement(interp, dirPtr->string+1);
-		} else {
-		    Tcl_AppendElement(interp, dirPtr->string);
+		int typeOk = 1;
+		if (types != NULL) {
+		    if (types->perm != 0) {
+			if (
+			    ((types->perm & TCL_GLOB_PERM_RONLY) &&
+				    !(pb.hFileInfo.ioFlAttrib & 1)) ||
+			    ((types->perm & TCL_GLOB_PERM_HIDDEN) &&
+				    !(pb.hFileInfo.ioFlFndrInfo.fdFlags &
+					    kIsInvisible)) ||
+			    ((types->perm & TCL_GLOB_PERM_R) &&
+				    (TclpAccess(fname, R_OK) != 0)) ||
+			    ((types->perm & TCL_GLOB_PERM_W) &&
+				    (TclpAccess(fname, W_OK) != 0)) ||
+			    ((types->perm & TCL_GLOB_PERM_X) &&
+				    (TclpAccess(fname, X_OK) != 0))
+			    ) {
+			    typeOk = 0;
+			}
+		    }
+		    if (typeOk == 1 && types->type != 0) {
+			struct stat buf;
+			/*
+			 * We must match at least one flag to be listed
+			 */
+			typeOk = 0;
+			if (TclpLstat(fname, &buf) >= 0) {
+			    /*
+			     * In order bcdpfls as in 'find -t'
+			     */
+			    if (
+				((types->type & TCL_GLOB_TYPE_BLOCK) &&
+					S_ISBLK(buf.st_mode)) ||
+				((types->type & TCL_GLOB_TYPE_CHAR) &&
+					S_ISCHR(buf.st_mode)) ||
+				((types->type & TCL_GLOB_TYPE_DIR) &&
+					S_ISDIR(buf.st_mode)) ||
+				((types->type & TCL_GLOB_TYPE_PIPE) &&
+					S_ISFIFO(buf.st_mode)) ||
+				((types->type & TCL_GLOB_TYPE_FILE) &&
+					S_ISREG(buf.st_mode))
+#ifdef S_ISLNK
+				|| ((types->type & TCL_GLOB_TYPE_LINK) &&
+					S_ISLNK(buf.st_mode))
+#endif
+#ifdef S_ISSOCK
+				|| ((types->type & TCL_GLOB_TYPE_SOCK) &&
+					S_ISSOCK(buf.st_mode))
+#endif
+				) {
+				typeOk = 1;
+			    }
+			} else {
+			    /* Posix error occurred */
+			}
+		    }
+		    if (typeOk && (
+			((okType != 0) && (okType !=
+				pb.hFileInfo.ioFlFndrInfo.fdType)) ||
+			((okCreator != 0) && (okCreator !=
+				pb.hFileInfo.ioFlFndrInfo.fdCreator)))) {
+			typeOk = 0;
+		    }
+		} 
+		if (typeOk) {
+		    if ((fnameLen > 1) && (strchr(fname+1, ':') == NULL)) {
+			Tcl_ListObjAppendElement(interp, resultPtr, 
+				Tcl_NewStringObj(fname+1, fnameLen-1));
+		    } else {
+			Tcl_ListObjAppendElement(interp, resultPtr, 
+				Tcl_NewStringObj(fname, fnameLen));
+		    }
 		}
 	    } else if ((pb.hFileInfo.ioFlAttrib & ioDirMask) != 0) {
 		Tcl_DStringAppend(dirPtr, ":", 1);
-		result = TclDoGlob(interp, separators, dirPtr, tail);
+		result = TclDoGlob(interp, separators, dirPtr, tail, types);
 		if (result != TCL_OK) {
 		    Tcl_DStringFree(&fileString);
 		    break;
@@ -221,12 +305,30 @@ TclpMatchFiles(
 	    }
 	}
 	Tcl_DStringFree(&fileString);
-	
 	itemIndex++;
     }
     *patternEnd = savedChar;
 
     return result;
+}
+
+/* 
+ * TclpMatchFiles --
+ * 
+ * This function is now obsolete.  Call the above function 
+ * 'TclpMatchFilesTypes' instead.
+ */
+int
+TclpMatchFiles(
+    Tcl_Interp *interp,		/* Interpreter to receive results. */
+    char *separators,		/* Directory separators to pass to TclDoGlob. */
+    Tcl_DString *dirPtr,	/* Contains path to directory to search. */
+    char *pattern,		/* Pattern to match against. */
+    char *tail)			/* Pointer to end of pattern.  Tail must
+				 * point to a location in pattern and must
+				 * not be static.*/
+{
+    return TclpMatchFilesTypes(interp,separators,dirPtr,pattern,tail,NULL);
 }
 
 /*

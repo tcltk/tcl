@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.18 1999/12/02 02:03:25 redman Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.19 1999/12/12 22:46:42 hobbs Exp $
 
 library tcl
 
@@ -73,7 +73,7 @@ declare 12 generic {
 }
 declare 13 generic {
     int TclDoGlob(Tcl_Interp *interp, char *separators, \
-	    Tcl_DString *headPtr, char *tail)
+	    Tcl_DString *headPtr, char *tail, GlobTypeData *types)
 }
 declare 14 generic {
     void TclDumpMemoryInfo(FILE *outFile)
@@ -597,6 +597,10 @@ declare 158 generic {
 }
 declare 159 generic {
     char *TclGetStartupScriptFileName(void)
+}
+declare 160 generic {
+    int TclpMatchFilesTypes(Tcl_Interp *interp, char *separators, \
+	    Tcl_DString *dirPtr, char *pattern, char *tail, GlobTypeData *types)
 }
 
 ##############################################################################

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.29 1999/12/02 02:03:27 redman Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.30 1999/12/12 22:46:43 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -235,6 +235,7 @@ TclIntStubs tclIntStubs = {
     TclVarTraceExists, /* 157 */
     TclSetStartupScriptFileName, /* 158 */
     TclGetStartupScriptFileName, /* 159 */
+    TclpMatchFilesTypes, /* 160 */
 };
 
 TclIntPlatStubs tclIntPlatStubs = {

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.38 1999/12/04 06:15:41 hobbs Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.39 1999/12/12 22:46:42 hobbs Exp $
  */
 
 #ifndef _TCLINT
@@ -1480,6 +1480,41 @@ typedef int (*TclObjCmdProcType) _ANSI_ARGS_((ClientData clientData,
 
 typedef struct TclpTime_t_ *TclpTime_t;
 
+/* 
+ * The following structure is used to pass glob type data amongst
+ * the various glob routines and TclpMatchFilesTypes.  Currently
+ * most of the fields are ignored.  However they will be used in
+ * a future release to implement glob's ability to find files
+ * of particular types/permissions/etc only.
+ */
+typedef struct GlobTypeData {
+    /* Corresponds to bcdpfls as in 'find -t' */
+    int type;
+    /* Corresponds to file permissions */
+    int perm;
+    /* Acceptable mac type */
+    Tcl_Obj* macType;
+    /* Acceptable mac creator */
+    Tcl_Obj* macCreator;
+} GlobTypeData;
+
+/*
+ * type and permission definitions for glob command
+ */
+#define TCL_GLOB_TYPE_BLOCK		(1<<0)
+#define TCL_GLOB_TYPE_CHAR		(1<<1)
+#define TCL_GLOB_TYPE_DIR		(1<<2)
+#define TCL_GLOB_TYPE_PIPE		(1<<3)
+#define TCL_GLOB_TYPE_FILE		(1<<4)
+#define TCL_GLOB_TYPE_LINK		(1<<5)
+#define TCL_GLOB_TYPE_SOCK		(1<<6)
+
+#define TCL_GLOB_PERM_RONLY		(1<<0)
+#define TCL_GLOB_PERM_HIDDEN		(1<<1)
+#define TCL_GLOB_PERM_R			(1<<2)
+#define TCL_GLOB_PERM_W			(1<<3)
+#define TCL_GLOB_PERM_X			(1<<4)
+
 /*
  *----------------------------------------------------------------
  * Variables shared among Tcl modules but not used by the outside world.
@@ -1570,7 +1605,7 @@ EXTERN void		TclDeleteVars _ANSI_ARGS_((Interp *iPtr,
 			    Tcl_HashTable *tablePtr));
 EXTERN int		TclDoGlob _ANSI_ARGS_((Tcl_Interp *interp,
 			    char *separators, Tcl_DString *headPtr,
-			    char *tail));
+			    char *tail, GlobTypeData *types));
 EXTERN void		TclDumpMemoryInfo _ANSI_ARGS_((FILE *outFile));
 EXTERN void		TclExpandTokenArray _ANSI_ARGS_((
 			    Tcl_Parse *parsePtr));
@@ -1636,7 +1671,8 @@ EXTERN int		TclGetOpenMode _ANSI_ARGS_((Tcl_Interp *interp,
 EXTERN Tcl_Command	TclGetOriginalCommand _ANSI_ARGS_((
 			    Tcl_Command command));
 EXTERN int		TclGlob _ANSI_ARGS_((Tcl_Interp *interp,
-			    char *pattern, int noComplain));
+			    char *pattern, char *unquotedPrefix, 
+			    int globFlags, GlobTypeData* types));
 EXTERN int		TclGlobalInvoke _ANSI_ARGS_((Tcl_Interp *interp,
 			    int argc, char **argv, int flags));
 EXTERN int		TclGuessPackageName _ANSI_ARGS_((char *fileName,

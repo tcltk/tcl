@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.18 1999/12/02 02:03:26 redman Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.19 1999/12/12 22:46:42 hobbs Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -89,7 +89,7 @@ EXTERN void		TclDeleteVars _ANSI_ARGS_((Interp * iPtr,
 /* 13 */
 EXTERN int		TclDoGlob _ANSI_ARGS_((Tcl_Interp * interp, 
 				char * separators, Tcl_DString * headPtr, 
-				char * tail));
+				char * tail, GlobTypeData * types));
 /* 14 */
 EXTERN void		TclDumpMemoryInfo _ANSI_ARGS_((FILE * outFile));
 /* Slot 15 is reserved */
@@ -524,6 +524,11 @@ EXTERN void		TclSetStartupScriptFileName _ANSI_ARGS_((
 				char * filename));
 /* 159 */
 EXTERN char *		TclGetStartupScriptFileName _ANSI_ARGS_((void));
+/* 160 */
+EXTERN int		TclpMatchFilesTypes _ANSI_ARGS_((Tcl_Interp * interp, 
+				char * separators, Tcl_DString * dirPtr, 
+				char * pattern, char * tail, 
+				GlobTypeData * types));
 
 typedef struct TclIntStubs {
     int magic;
@@ -558,7 +563,7 @@ typedef struct TclIntStubs {
     int (*tclCreateProc) _ANSI_ARGS_((Tcl_Interp * interp, Namespace * nsPtr, char * procName, Tcl_Obj * argsPtr, Tcl_Obj * bodyPtr, Proc ** procPtrPtr)); /* 10 */
     void (*tclDeleteCompiledLocalVars) _ANSI_ARGS_((Interp * iPtr, CallFrame * framePtr)); /* 11 */
     void (*tclDeleteVars) _ANSI_ARGS_((Interp * iPtr, Tcl_HashTable * tablePtr)); /* 12 */
-    int (*tclDoGlob) _ANSI_ARGS_((Tcl_Interp * interp, char * separators, Tcl_DString * headPtr, char * tail)); /* 13 */
+    int (*tclDoGlob) _ANSI_ARGS_((Tcl_Interp * interp, char * separators, Tcl_DString * headPtr, char * tail, GlobTypeData * types)); /* 13 */
     void (*tclDumpMemoryInfo) _ANSI_ARGS_((FILE * outFile)); /* 14 */
     void *reserved15;
     void (*tclExprFloatError) _ANSI_ARGS_((Tcl_Interp * interp, double value)); /* 16 */
@@ -721,6 +726,7 @@ typedef struct TclIntStubs {
     Var * (*tclVarTraceExists) _ANSI_ARGS_((Tcl_Interp * interp, char * varName)); /* 157 */
     void (*tclSetStartupScriptFileName) _ANSI_ARGS_((char * filename)); /* 158 */
     char * (*tclGetStartupScriptFileName) _ANSI_ARGS_((void)); /* 159 */
+    int (*tclpMatchFilesTypes) _ANSI_ARGS_((Tcl_Interp * interp, char * separators, Tcl_DString * dirPtr, char * pattern, char * tail, GlobTypeData * types)); /* 160 */
 } TclIntStubs;
 
 #ifdef __cplusplus
@@ -1369,6 +1375,10 @@ extern TclIntStubs *tclIntStubsPtr;
 #ifndef TclGetStartupScriptFileName
 #define TclGetStartupScriptFileName \
 	(tclIntStubsPtr->tclGetStartupScriptFileName) /* 159 */
+#endif
+#ifndef TclpMatchFilesTypes
+#define TclpMatchFilesTypes \
+	(tclIntStubsPtr->tclpMatchFilesTypes) /* 160 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fileName.test,v 1.5 1999/07/01 17:36:18 jenn Exp $
+# RCS: @(#) $Id: fileName.test,v 1.6 1999/12/12 22:46:47 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -1048,10 +1048,10 @@ test filename-11.1 {Tcl_GlobCmd} {
 } {1 {wrong # args: should be "glob ?switches? name ?name ...?"}}
 test filename-11.2 {Tcl_GlobCmd} {
     list [catch {glob -gorp} msg] $msg
-} {1 {bad switch "-gorp": must be -nocomplain or --}}
+} {1 {bad option "-gorp": must be -directory, -join, -nocomplain, -path, -types, or --}}
 test filename-11.3 {Tcl_GlobCmd} {
     list [catch {glob -nocomplai} msg] $msg
-} {1 {bad switch "-nocomplai": must be -nocomplain or --}}
+} {1 {wrong # args: should be "glob ?switches? name ?name ...?"}}
 test filename-11.4 {Tcl_GlobCmd} {
     list [catch {glob -nocomplain} msg] $msg
 } {1 {wrong # args: should be "glob ?switches? name ?name ...?"}}
@@ -1063,14 +1063,14 @@ test filename-11.6 {Tcl_GlobCmd} {
 } {1 {user "xyqrszzz" doesn't exist}}
 test filename-11.7 {Tcl_GlobCmd} {
     list [catch {glob -- -nocomplain} msg] $msg
-} {1 {no files matched glob patterns "-nocomplain"}}
+} {1 {no files matched glob pattern "-nocomplain"}}
 test filename-11.8 {Tcl_GlobCmd} {
     list [catch {glob -nocomplain -- -nocomplain} msg] $msg
 } {0 {}}
 test filename-11.9 {Tcl_GlobCmd} {
     testsetplatform unix
     list [catch {glob ~\\xyqrszzz/bar} msg] $msg
-} {1 {globbing characters not supported in user names}}
+} {1 {user "\xyqrszzz" doesn't exist}}
 test filename-11.10 {Tcl_GlobCmd} {
     testsetplatform unix
     list [catch {glob -nocomplain ~\\xyqrszzz/bar} msg] $msg
@@ -1120,6 +1120,112 @@ test filename-11.15 {Tcl_GlobCmd} {
 test filename-11.16 {Tcl_GlobCmd} {
     list [catch {glob globTest} msg] $msg
 } {0 globTest}
+
+set globname "globTest"
+set horribleglobname "glob\[\{Test"
+
+test filename-11.17 {Tcl_GlobCmd} {
+    list [catch {lsort [glob -directory $globname *]} msg] $msg
+} [list 0 [lsort [list [file join $globname a1] [file join $globname a2]\
+	[file join $globname a3]\
+	[file join $globname "weird name.c"]\
+	[file join $globname x,z1.c]\
+	[file join $globname x1.c]\
+	[file join $globname y1.c] [file join $globname z1.c]]]]
+test filename-11.18 {Tcl_GlobCmd} {
+    list [catch {lsort [glob -path $globname/ *]} msg] $msg
+} [list 0 [lsort [list [file join $globname a1] [file join $globname a2]\
+	[file join $globname a3]\
+	[file join $globname "weird name.c"]\
+	[file join $globname x,z1.c]\
+	[file join $globname x1.c]\
+	[file join $globname y1.c] [file join $globname z1.c]]]]
+test filename-11.19 {Tcl_GlobCmd} {
+    list [catch {lsort [glob -join -path \
+	    [string range $globname 0 5] * *]} msg] $msg
+} [list 0 [lsort [list [file join $globname a1] [file join $globname a2]\
+	[file join $globname a3]\
+	[file join $globname "weird name.c"]\
+	[file join $globname x,z1.c]\
+	[file join $globname x1.c]\
+	[file join $globname y1.c] [file join $globname z1.c]]]]
+test filename-11.20 {Tcl_GlobCmd} {
+    list [catch {lsort [glob -type d -dir $globname *]} msg] $msg
+} [list 0 [lsort [list [file join $globname a1]\
+	[file join $globname a2]\
+	[file join $globname a3]]]]
+test filename-11.21 {Tcl_GlobCmd} {
+    list [catch {lsort [glob -type d -path $globname *]} msg] $msg
+} [list 0 [lsort [list $globname]]]
+
+file rename globTest $horribleglobname
+set globname $horribleglobname
+
+test filename-11.22 {Tcl_GlobCmd} {
+    list [catch {lsort [glob -dir $globname *]} msg] $msg
+} [list 0 [lsort [list [file join $globname a1] [file join $globname a2]\
+	[file join $globname a3]\
+	[file join $globname "weird name.c"]\
+	[file join $globname x,z1.c]\
+	[file join $globname x1.c]\
+	[file join $globname y1.c] [file join $globname z1.c]]]]
+test filename-11.23 {Tcl_GlobCmd} {
+    list [catch {lsort [glob -path $globname/ *]} msg] $msg
+} [list 0 [lsort [list [file join $globname a1] [file join $globname a2]\
+	[file join $globname a3]\
+	[file join $globname "weird name.c"]\
+	[file join $globname x,z1.c]\
+	[file join $globname x1.c]\
+	[file join $globname y1.c] [file join $globname z1.c]]]]
+test filename-11.24 {Tcl_GlobCmd} {
+    list [catch {lsort [glob -join -path \
+	    [string range $globname 0 5] * *]} msg] $msg
+} [list 0 [lsort [list [file join $globname a1] [file join $globname a2]\
+	[file join $globname a3]\
+	[file join $globname "weird name.c"]\
+	[file join $globname x,z1.c]\
+	[file join $globname x1.c]\
+	[file join $globname y1.c] [file join $globname z1.c]]]]
+test filename-11.25 {Tcl_GlobCmd} {
+    list [catch {lsort [glob -type d -dir $globname *]} msg] $msg
+} [list 0 [lsort [list [file join $globname a1]\
+	[file join $globname a2]\
+	[file join $globname a3]]]]
+test filename-11.26 {Tcl_GlobCmd} {
+    list [catch {glob -type d -path $globname *} msg] $msg
+} [list 0 [list $globname]]
+test filename-11.27 {Tcl_GlobCmd} {
+    list [catch {glob -types abcde *} msg] $msg
+} {1 {bad argument to "-types": abcde}}
+test filename-11.28 {Tcl_GlobCmd} {
+    list [catch {glob -types z *} msg] $msg
+} {1 {bad argument to "-types": z}}
+test filename-11.29 {Tcl_GlobCmd} {
+    list [catch {glob -types {abcd efgh} *} msg] $msg
+} {1 {only one MacOS type or creator argument to "-types" allowed}}
+test filename-11.30 {Tcl_GlobCmd} {
+    list [catch {glob -types {{macintosh type TEXT} \
+	    {macintosh creator ALFA} efgh} *} msg] $msg
+} {1 {only one MacOS type or creator argument to "-types" allowed}}
+test filename-11.31 {Tcl_GlobCmd} {
+    list [catch {glob -types} msg] $msg
+} {1 {missing argument to "-types"}}
+test filename-11.32 {Tcl_GlobCmd} {
+    list [catch {glob -path hello -dir hello *} msg] $msg
+} {1 {"-directory" cannot be used with "-path"}}
+test filename-11.33 {Tcl_GlobCmd} {
+    list [catch {glob -path} msg] $msg
+} {1 {missing argument to "-path"}}
+test filename-11.34 {Tcl_GlobCmd} {
+    list [catch {glob -direct} msg] $msg
+} {1 {missing argument to "-directory"}}
+test filename-11.35 {Tcl_GlobCmd} {
+    list [catch {glob -paths *} msg] $msg
+} {1 {bad option "-paths": must be -directory, -join, -nocomplain, -path, -types, or --}}
+
+file rename $horribleglobname globTest
+set globname globTest
+unset horribleglobname
 
 test filename-12.1 {simple globbing} {unixOrPc} {
     list [catch {glob {}} msg] $msg
@@ -1292,6 +1398,18 @@ test filename-14.23 {slash globbing} {unixOrPc} {
 test filename-14.24 {slash globbing} {pcOnly} {
     glob {\\}
 } /
+test filename-14.25 {type specific globbing} {
+    list [catch {lsort [glob -dir globTest -types f *]} msg] $msg
+} [list 0 [lsort [list \
+	[file join $globname "weird name.c"]\
+	[file join $globname x,z1.c]\
+	[file join $globname x1.c]\
+	[file join $globname y1.c] [file join $globname z1.c]]]]
+test filename-14.26 {type specific globbing} {
+    list [catch {glob -nocomplain -dir globTest -types {readonly} *} msg] $msg
+} [list 0 {}]
+
+unset globname
 
 # The following tests are only valid for Unix systems.
 # On some systems, like AFS, "000" protection doesn't prevent
