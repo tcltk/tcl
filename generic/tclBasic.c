@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.65 2002/07/19 12:31:09 dkf Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.66 2002/07/29 00:25:49 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -2876,7 +2876,7 @@ TclInterpReady(interp)
     if (((iPtr->numLevels) >= iPtr->maxNestingDepth) 
 	    || (TclpCheckStackSpace() == 0)) {
 	Tcl_AppendToObj(Tcl_GetObjResult(interp),
-		"too many nested calls to Tcl_Eval (infinite loop?)", -1); 
+		"too many nested evaluations (infinite loop?)", -1); 
 	return TCL_ERROR;
     }
 
@@ -3101,8 +3101,8 @@ Tcl_EvalObjv(interp, objc, objv, flags)
 				 * the words that make up the command. */
     int flags;			/* Collection of OR-ed bits that control
 				 * the evaluation of the script.  Only
-				 * TCL_EVAL_GLOBAL is currently
-				 * supported. */
+				 * TCL_EVAL_GLOBAL and TCL_EVAL_NO_TRACEBACK
+				 * are  currently supported. */
 {
     Interp *iPtr = (Interp *)interp;
     Trace *tracePtr;
@@ -3158,7 +3158,7 @@ Tcl_EvalObjv(interp, objc, objv, flags)
 	}
     }
 	    
-    if (code == TCL_ERROR) {
+    if ((code == TCL_ERROR) && !(flags & TCL_EVAL_NO_TRACEBACK)) {
 
 	/* 
 	 * If there was an error, a command string will be needed for the 
