@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.62 2002/07/21 17:03:00 dgp Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.63 2002/07/22 16:51:48 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -372,8 +372,15 @@ Tcl_FSUnloadFileProc TclpUnloadFile;
 Tcl_FSLinkProc TclpObjLink; 
 Tcl_FSListVolumesProc TclpObjListVolumes;	    
 
-/* Define the native filesystem dispatch table */
-Tcl_Filesystem tclNativeFilesystem = {
+/* 
+ * Define the native filesystem dispatch table.  If necessary, it
+ * is ok to make this non-static, but it should only be accessed
+ * by the functions actually listed within it (or perhaps other
+ * helper functions of them).  Anything which is not part of this
+ * 'native filesystem implementation' should not be delving inside
+ * here!
+ */
+static Tcl_Filesystem tclNativeFilesystem = {
     "native",
     sizeof(Tcl_Filesystem),
     TCL_FILESYSTEM_VERSION_1,
@@ -406,7 +413,7 @@ Tcl_Filesystem tclNativeFilesystem = {
     &TclpObjRenameFile,
     &TclpObjCopyDirectory, 
     &TclpObjLstat,
-    &TclpLoadFile,
+    &TclpDlopen,
     &TclpObjGetCwd,
     &TclpObjChdir
 };
@@ -578,7 +585,7 @@ FsReleaseIterator(void) {
  *	Clean up the filesystem.  After this, calls to all Tcl_FS...
  *	functions will fail.
  *	
- *	Note that, since 'TclFinalizedLoad' may unload extensions
+ *	Note that, since 'TclFinalizeLoad' may unload extensions
  *	which implement other filesystems, and which may therefore
  *	contain a 'freeProc' for those filesystems, at this stage
  *	we _must_ have freed all objects of "path" type, or we may
@@ -2491,7 +2498,7 @@ Tcl_FSChdir(pathPtr)
 
 int
 Tcl_FSLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr, 
-	       clientDataPtr, unloadProcPtr)
+	       handlePtr, unloadProcPtr)
     Tcl_Interp *interp;		/* Used for error reporting. */
     Tcl_Obj *pathPtr;		/* Name of the file containing the desired
 				 * code. */
@@ -2500,7 +2507,7 @@ Tcl_FSLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr,
     Tcl_PackageInitProc **proc1Ptr, **proc2Ptr;
 				/* Where to return the addresses corresponding
 				 * to sym1 and sym2. */
-    ClientData *clientDataPtr;	/* Filled with token for dynamically loaded
+    Tcl_LoadHandle *handlePtr;	/* Filled with token for dynamically loaded
 				 * file which will be passed back to 
 				 * (*unloadProcPtr)() to unload the file. */
     Tcl_FSUnloadFileProc **unloadProcPtr;	
@@ -2512,9 +2519,15 @@ Tcl_FSLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr,
     if (fsPtr != NULL) {
 	Tcl_FSLoadFileProc *proc = fsPtr->loadFileProc;
 	if (proc != NULL) {
-	    int retVal = (*proc)(interp, pathPtr, sym1, sym2,
-			     proc1Ptr, proc2Ptr, clientDataPtr, 
-			     unloadProcPtr);
+	    int retVal = (*proc)(interp, pathPtr, handlePtr, unloadProcPtr);
+	    if (retVal != TCL_OK) {
+		return retVal;
+	    }
+	    if (*handlePtr == NULL) {
+		return TCL_ERROR;
+	    }
+	    *proc1Ptr = TclpFindSymbol(interp, *handlePtr, sym1);
+	    *proc2Ptr = TclpFindSymbol(interp, *handlePtr, sym2);
 	    return retVal;
 	} else {
 	    Tcl_Filesystem *copyFsPtr;
@@ -2573,7 +2586,7 @@ Tcl_FSLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr,
 		
 		retVal = Tcl_FSLoadFile(interp, copyToPtr, sym1, sym2,
 					proc1Ptr, proc2Ptr, 
-					(ClientData*)&newLoadHandle,
+					&newLoadHandle,
 					&newUnloadProcPtr);
 	        if (retVal != TCL_OK) {
 		    /* The file didn't load successfully */
@@ -2588,7 +2601,7 @@ Tcl_FSLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr,
 		 */
 		if (Tcl_FSDeleteFile(copyToPtr) == TCL_OK) {
 		    Tcl_DecrRefCount(copyToPtr);
-		    (*clientDataPtr) = NULL;
+		    (*handlePtr) = NULL;
 		    (*unloadProcPtr) = NULL;
 		    return TCL_OK;
 		}
@@ -2621,7 +2634,7 @@ Tcl_FSLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr,
 		tvdlPtr->divertedFileNativeRep = Tcl_FSGetInternalRep(copyToPtr,
 								      copyFsPtr);
 		copyToPtr = NULL;
-		(*clientDataPtr) = (ClientData) tvdlPtr;
+		(*handlePtr) = (Tcl_LoadHandle) tvdlPtr;
 		(*unloadProcPtr) = &FSUnloadTempFile;
 		
 		return retVal;

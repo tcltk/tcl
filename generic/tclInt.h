@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.107 2002/07/19 12:31:10 dkf Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.108 2002/07/22 16:51:48 vincentdarley Exp $
  */
 
 #ifndef _TCLINT
@@ -1613,7 +1613,6 @@ extern char *			tclDefaultEncodingDir;
 extern Tcl_ChannelType		tclFileChannelType;
 extern char *			tclMemDumpFileName;
 extern TclPlatformType		tclPlatform;
-extern Tcl_Filesystem		tclNativeFilesystem;
 
 /*
  * Variables denoting the Tcl object types defined in the core.
