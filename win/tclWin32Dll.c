@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWin32Dll.c,v 1.9 2000/03/31 08:52:30 hobbs Exp $
+ * RCS: @(#) $Id: tclWin32Dll.c,v 1.10 2001/10/29 15:02:44 vincentdarley Exp $
  */
 
 #include "tclWinInt.h"
@@ -78,6 +78,8 @@ static TclWinProcs asciiProcs = {
 	    WCHAR *, TCHAR **)) SearchPathA,
     (BOOL (WINAPI *)(CONST TCHAR *)) SetCurrentDirectoryA,
     (BOOL (WINAPI *)(CONST TCHAR *, DWORD)) SetFileAttributesA,
+    (BOOL (WINAPI *)(CONST TCHAR *, GET_FILEEX_INFO_LEVELS, 
+		LPVOID)) GetFileAttributesExA,
 };
 
 static TclWinProcs unicodeProcs = {
@@ -115,6 +117,8 @@ static TclWinProcs unicodeProcs = {
 	    WCHAR *, TCHAR **)) SearchPathW,
     (BOOL (WINAPI *)(CONST TCHAR *)) SetCurrentDirectoryW,
     (BOOL (WINAPI *)(CONST TCHAR *, DWORD)) SetFileAttributesW,
+    (BOOL (WINAPI *)(CONST TCHAR *, GET_FILEEX_INFO_LEVELS, 
+	    LPVOID)) GetFileAttributesExW,
 };
 
 TclWinProcs *tclWinProcs;
