@@ -1,3 +1,9 @@
+2003-03-19  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclCompile.c:
+	* tests/compile.test: bad command count on TCL_OUT_LINE_COMPILE
+	[Bug 705406] (Don Porter).
+
 2003-03-19  Don Porter  <dgp@users.sourceforge.net>
 
 	* library/auto.tcl:		Replaced [regexp] and [regsub] with

@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: compile.test,v 1.25 2003/03/19 16:51:43 dgp Exp $
+# RCS: @(#) $Id: compile.test,v 1.26 2003/03/19 22:24:15 msofer Exp $
 
 package require tcltest 2
 namespace import -force ::tcltest::*
@@ -114,6 +114,16 @@ test compile-3.4 {TclCompileCatchCmd: bcc'ed [return] is caught} {
     }
     foo
 } {2}
+test compile-3.5 {TclCompileCatchCmd: recover from error, [Bug 705406]} {
+    proc foo {} {
+	catch {
+	    if {[a]} {
+		if b {}
+	    }   
+	}   
+    }
+    list [catch foo msg] $msg
+} {1 {invalid command name "a"}}
 
 test compile-4.1 {TclCompileForCmd: command substituted test expression} {
     set i 0
