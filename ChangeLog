@@ -1,5 +1,10 @@
 2004-07-16  Andreas Kupries  <andreask@activestate.com>
 
+	* doc/ChnlStack.3: Removed the declaration that the interp
+	  argument to Tcl_(un)StackChannel can be NULL. This fixes [Tcl SF
+	  Bug 881220], reported by Marco Maggi
+	  <marcomaggi@users.sourceforge.net>.
+
 	* tests/socket.test: Accepted two new testcases by Stuart Casoff
 	  <stwo@users.sourceforge.net> checking that -server and -async
 	  don't go together [Tcl SF Bug 796534].
