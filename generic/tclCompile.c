@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.43.2.2 2003/04/18 21:54:24 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.43.2.3 2003/07/18 23:35:38 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1726,6 +1726,14 @@ LogCompilationInfo(interp, script, command, length)
     if (length > 150) {
 	length = 150;
 	ellipsis = "...";
+    }
+    while ( (command[length] & 0xC0) == 0x80 ) {
+        /*
+	 * Back up truncation point so that we don't truncate in the
+	 * middle of a multi-byte character (in UTF-8)
+	 */
+	 length--;
+	 ellipsis = "...";
     }
     sprintf(buffer, "\n    while compiling\n\"%.*s%s\"",
 	    length, command, ellipsis);
