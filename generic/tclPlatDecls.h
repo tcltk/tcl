@@ -6,7 +6,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclPlatDecls.h,v 1.11 2001/09/06 00:41:58 davygrvy Exp $
+ * RCS: @(#) $Id: tclPlatDecls.h,v 1.12 2001/09/09 22:45:13 davygrvy Exp $
  */
 
 #ifndef _TCLPLATDECLS
@@ -21,7 +21,7 @@
 #   include <tchar.h>
 #   ifndef _TCHAR_DEFINED
 	/* Borland seems to forget to set this. */
-	typedef wchar_t     TCHAR;
+        typedef _TCHAR TCHAR;
 #	define _TCHAR_DEFINED
 #   endif
 #endif
