@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFCmd.c,v 1.36 2003/06/02 15:58:47 vincentdarley Exp $
+ * RCS: @(#) $Id: tclWinFCmd.c,v 1.37 2003/10/13 16:48:07 vincentdarley Exp $
  */
 
 #include "tclWinInt.h"
@@ -862,12 +862,13 @@ TclpObjCopyDirectory(srcPathPtr, destPathPtr, errorPtr)
 {
     Tcl_DString ds;
     Tcl_DString srcString, dstString;
+    Tcl_Obj *normSrcPtr, *normDestPtr;
     int ret;
 
-    Tcl_WinUtfToTChar(Tcl_FSGetTranslatedStringPath(NULL,srcPathPtr), 
-		      -1, &srcString);
-    Tcl_WinUtfToTChar(Tcl_FSGetTranslatedStringPath(NULL,destPathPtr), 
-		      -1, &dstString);
+    normSrcPtr = Tcl_FSGetNormalizedPath(NULL,srcPathPtr);
+    Tcl_WinUtfToTChar(Tcl_GetString(normSrcPtr), -1, &srcString);
+    normDestPtr = Tcl_FSGetNormalizedPath(NULL,destPathPtr);
+    Tcl_WinUtfToTChar(Tcl_GetString(normDestPtr), -1, &dstString);
 
     ret = TraverseWinTree(TraversalCopy, &srcString, &dstString, &ds);
 
@@ -875,7 +876,13 @@ TclpObjCopyDirectory(srcPathPtr, destPathPtr, errorPtr)
     Tcl_DStringFree(&dstString);
 
     if (ret != TCL_OK) {
-	*errorPtr = Tcl_NewStringObj(Tcl_DStringValue(&ds), -1);
+	if (!strcmp(Tcl_DStringValue(&ds), Tcl_GetString(normSrcPtr))) {
+	    *errorPtr = srcPathPtr;
+	} else if (!strcmp(Tcl_DStringValue(&ds), Tcl_GetString(normDestPtr))) {
+	    *errorPtr = destPathPtr;
+	} else {
+	    *errorPtr = Tcl_NewStringObj(Tcl_DStringValue(&ds), -1);
+	}
 	Tcl_DStringFree(&ds);
 	Tcl_IncrRefCount(*errorPtr);
     }
@@ -918,6 +925,7 @@ TclpObjRemoveDirectory(pathPtr, recursive, errorPtr)
     Tcl_Obj **errorPtr;
 {
     Tcl_DString ds;
+    Tcl_Obj *normPtr = NULL;
     int ret;
     if (recursive) {
 	/* 
@@ -926,8 +934,8 @@ TclpObjRemoveDirectory(pathPtr, recursive, errorPtr)
 	 * optimize this case easily.
 	 */
 	Tcl_DString native;
-	Tcl_WinUtfToTChar(Tcl_FSGetTranslatedStringPath(NULL, pathPtr), 
-			  -1, &native);
+	normPtr = Tcl_FSGetNormalizedPath(NULL, pathPtr);
+	Tcl_WinUtfToTChar(Tcl_GetString(normPtr), -1, &native);
 	ret = DoRemoveDirectory(&native, recursive, &ds);
 	Tcl_DStringFree(&native);
     } else {
@@ -937,7 +945,12 @@ TclpObjRemoveDirectory(pathPtr, recursive, errorPtr)
     if (ret != TCL_OK) {
 	int len = Tcl_DStringLength(&ds);
 	if (len > 0) {
-	    *errorPtr = Tcl_NewStringObj(Tcl_DStringValue(&ds), -1);
+	    if (normPtr != NULL 
+	      && !strcmp(Tcl_DStringValue(&ds), Tcl_GetString(normPtr))) {
+		*errorPtr = pathPtr;
+	    } else {
+		*errorPtr = Tcl_NewStringObj(Tcl_DStringValue(&ds), -1);
+	    }
 	    Tcl_IncrRefCount(*errorPtr);
 	}
 	Tcl_DStringFree(&ds);
