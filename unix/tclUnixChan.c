@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.38 2002/07/29 16:54:41 rmax Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.39 2002/09/03 02:01:25 hobbs Exp $
  */
 
 #include "tclInt.h"	/* Internal definitions for Tcl. */
@@ -2774,6 +2774,7 @@ Tcl_MakeTcpClientChannel(sock)
 
     statePtr = (TcpState *) ckalloc((unsigned) sizeof(TcpState));
     statePtr->fd = (int) sock;
+    statePtr->flags = 0;
     statePtr->acceptProc = NULL;
     statePtr->acceptProcData = (ClientData) NULL;
 
