@@ -1,4 +1,4 @@
-2002-04-15  Miguel Sofer  <msofer@users.sourceforge.net>
+2002-04-18  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* generic/tclExecute.c:
 	* tests/expr-old.test: fix for [Bug #542588] (Phil Ehrens), where
