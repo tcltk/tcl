@@ -1,3 +1,13 @@
+2003-03-18  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* tests/cmdAH.test: fix test suite problem if /home is a symlink
+	* generic/tclIOUtil.c: fix bad error message with 'cd ""'
+	* win/tclWinFile.c: allow Tcl to differentiate between reparse
+	points which are symlinks and mounted drives.
+	
+	These changes fix [Bug #703264], [Bug #704917], [Bug #697862]
+	respectively.
+
 2003-03-17  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* doc/lsearch.n:	Altered documentation of -ascii options so
