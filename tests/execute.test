@@ -14,7 +14,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: execute.test,v 1.16 2003/11/14 20:44:46 dgp Exp $
+# RCS: @(#) $Id: execute.test,v 1.17 2004/04/29 20:40:14 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -721,14 +721,19 @@ test execute-8.1 {Stack protection} {
     catch {expr {1+9/0}}
 } 1
 
-test execute-8.2 {Stack restoration} {
+test execute-8.2 {Stack restoration} -body {
     # Test for [Bug #816641], correct restoration
     # of the stack top after the stack is grown
      proc f {args} { f bee bop }
      catch f msg
      set msg
- } {too many nested evaluations (infinite loop?)}
-
+ } -setup {
+    # Avoid crashes when system stack size is limited (thread-enabled!)
+     set limit [interp recursionlimit {}]
+     interp recursionlimit {} 100
+ } -cleanup {
+     interp recursionlimit {} $limit
+ } -result {too many nested evaluations (infinite loop?)}
 
 # cleanup
 if {[info commands testobj] != {}} {
