@@ -1,3 +1,10 @@
+2004-10-21  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tclBasic.c: Various changes to [clock format] that,
+	* generic/tclClock.c: together, make it roughly twice as fast
+	* generic/tclInt.h:   while all tests in the test suite
+	* library/clock.tcl:  continue to pass.
+	
 2004-10-20  Andreas Kupries <andreask@activestate.com>
 
 	* win/Makefile.in (install-msgs):   Fixed a problem with the
