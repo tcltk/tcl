@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: io.test,v 1.39 2003/02/09 02:50:25 hobbs Exp $
+# RCS: @(#) $Id: io.test,v 1.40 2003/02/25 22:03:38 andreas_kupries Exp $
 
 if {[catch {package require tcltest 2}]} {
     puts stderr "Skipping tests in [info script].  tcltest 2 required."
@@ -53,7 +53,7 @@ close $f
 set path(cat) [makeFile {
     set f stdin
     if {$argv != ""} {
-	set f [open $argv]
+	set f [open [lindex $argv 0]]
     }
     fconfigure $f -encoding binary -translation lf -blocking 0 -eofchar \x1a
     fconfigure stdout -encoding binary -translation lf -buffering none
@@ -2628,15 +2628,15 @@ test io-29.32 {Tcl_WriteChars, background flush to slow reader} \
     catch {removeFile pipe}
     catch {removeFile output}
     set f [open $path(pipe) w]
-    puts $f [format {set f [open "%s" w]} $path(output)]
+    puts $f [format {set f [open {%s} w]} $path(output)]
     puts $f {fconfigure $f -translation lf}
     set x [list while {![eof stdin]}]
-    set x "$x {"
+    set x "$x \{"
     puts $f $x
     puts $f {  after 20}
     puts $f {  puts -nonewline $f [read stdin 1024]}
     puts $f {  flush $f}
-    puts $f "}"
+    puts $f "\}"
     puts $f {close $f}
     close $f
     set x 01234567890123456789012345678901
@@ -5748,7 +5748,7 @@ test io-48.3 {testing readability conditions} {stdio unixOnly nonBlockFiles} {
     }
     close $f
     set f [open "|[list [interpreter]]" r+]
-    fileevent $f readable [namespace code [list consume $f]]
+    fileevent  $f readable [namespace code [list consume $f]]
     fconfigure $f -buffering line
     fconfigure $f -blocking off
     proc consume {f} {
@@ -5765,8 +5765,8 @@ test io-48.3 {testing readability conditions} {stdio unixOnly nonBlockFiles} {
     }
     set l ""
     variable x not_done
-    puts $f [format {source %s}         $path(my_script)]
-    puts $f [format {set f [open %s r]} $path(bar)]
+    puts $f [format {source {%s}}         $path(my_script)]
+    puts $f [format {set f [open {%s} r]} $path(bar)]
     puts $f {copy_slowly $f}
     puts $f {exit}
     vwait [namespace which -variable x]
