@@ -1,3 +1,10 @@
+2004-03-12  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	IMPLEMENTATION OF TIP#163
+	* generic/tclDictObj.c (DictMergeCmd):	This is based on work by Joe
+	* tests/dict.test (dict-20.*):		English in Tcl [FRQ 745851]
+	* doc/dict.n:				but not exactly.
+
 2004-03-10  Kevin B. Kenny <kennykb@acm.org>
 
 	* generic/tclGetDate.y (TclGetDate): Fix so that 
