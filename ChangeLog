@@ -1,3 +1,9 @@
+2004-10-22  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclNamesp.c (NsEnsembleImplementationCmd): Make
+	ensembles cut their implementations out of error traces. This is
+	the right thing to do more often than not.
+
 2004-10-22  Kevin B. Kenny  <kennykb@acm.org>
 
 	* library/clock.tcl: Fixed a typo where the fallback time zone
