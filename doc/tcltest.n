@@ -8,7 +8,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: tcltest.n,v 1.32 2002/07/08 20:43:49 dgp Exp $
+'\" RCS: @(#) $Id: tcltest.n,v 1.33 2002/09/06 01:05:38 dgp Exp $
 '\" 
 .so man.macros
 .TH "tcltest" n 2.1 tcltest "Tcl Bundled Packages"
@@ -411,7 +411,7 @@ release 3.5.''
 During evaluation of [\fBtest\fR], the \fIname\fR will be compared
 to the lists of string matching patterns returned by
 [\fBconfigure -match\fR], and [\fBconfigure -skip\fR].  The test
-will be run only if \fIname\fR matches one of the patterns from
+will be run only if \fIname\fR matches any of the patterns from
 [\fBconfigure -match\fR] and matches none of the patterns
 from [\fBconfigure -skip\fR].
 .PP
