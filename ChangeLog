@@ -4,6 +4,10 @@
 	TclX didn't like it.  Even though the core doesn't use the
 	prototypes, do offer them.
 
+	* win/tclWinSock.c:  Removed shutdown() from the function
+	table as it wasn't referenced anywhere and cleaned-up some
+	casting that that wasn't needed.
+
 2002-11-26  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclEncoding.c (TclFinalizeEncodingSubsystem): properly
