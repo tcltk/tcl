@@ -1,6 +1,11 @@
+2005-02-17  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* win/tclWinFCmd.c (TraverseWinTree): use wcslen on wchar, not
+	Tcl_UniCharLen.
+
 2005-02-16  Miguel Sofer <msofer@users.sf.net>
 
-	* /doc/variable.n: fix for [Bug 1124160], variables are detected
+	* doc/variable.n: fix for [Bug 1124160], variables are detected
 	by [info vars] but not by [info locals].
 
 2005-02-10  Jeff Hobbs  <jeffh@ActiveState.com>
@@ -62,8 +67,8 @@
 
 2005-01-25  Don Porter  <dgp@users.sourceforge.net>
 
-        * library/auto.tcl:     Updated [auto_reset] to clear auto-loaded
-        procs in namespaces other than :: [Bug 1101670].
+	* library/auto.tcl:	Updated [auto_reset] to clear auto-loaded
+	procs in namespaces other than :: [Bug 1101670].
 
 2005-01-25  Daniel Steffen  <das@users.sourceforge.net>
 
