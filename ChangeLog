@@ -1,3 +1,8 @@
+2004-06-29  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* library/safe.tcl: Make sure that the temporary variable is
+	local to the namespace and not inadvertently global. [Bug 981733]
+
 2004-06-24  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* tests/unixNotfy.test: Modified constraints so that testing with
