@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixNotfy.c,v 1.18 2004/11/24 20:12:19 kennykb Exp $
+ * RCS: @(#) $Id: tclUnixNotfy.c,v 1.18.2.1 2004/12/08 18:24:37 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -863,7 +863,7 @@ NotifierThreadProc(clientData)
     fd_set writableMask;
     fd_set exceptionalMask;
     int fds[2];
-    int i, status, numFdBits, receivePipe;
+    int i, status, numFdBits = 0, receivePipe;
     long found;
     struct timeval poll = {0., 0.}, *timePtr;
     char buf[2];

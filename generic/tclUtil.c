@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.51 2004/12/02 00:09:40 dgp Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.51.2.1 2004/12/08 18:24:36 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -2705,13 +2705,14 @@ TclSetProcessGlobalValue(pgvPtr, newValue, encoding)
 
     /*
      * Fill the local thread copy directly with the Tcl_Obj
-     * value to avoid loss of the intrep 
+     * value to avoid loss of the intrep.  Increment newValue
+     * refCount early to handle case where we set a PGV to itself.
      */
+    Tcl_IncrRefCount(newValue);
     cacheMap = GetThreadHash(&pgvPtr->key);
     ClearHash(cacheMap);
     hPtr = Tcl_CreateHashEntry(cacheMap, (char *)pgvPtr->epoch, &dummy);
     Tcl_SetHashValue(hPtr, (ClientData) newValue);
-    Tcl_IncrRefCount(newValue);
     Tcl_MutexUnlock(&pgvPtr->mutex);
 }
 

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEvent.c,v 1.54 2004/12/01 23:18:50 dgp Exp $
+ * RCS: @(#) $Id: tclEvent.c,v 1.54.2.1 2004/12/08 18:24:36 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -801,6 +801,7 @@ TclInitSubsystems()
     	    TclInitObjSubsystem(); /* register obj types, create mutexes */
 	    TclInitIOSubsystem(); /* inits a tsd key (noop) */
 	    TclInitEncodingSubsystem(); /* process wide encoding init */
+	    TclpSetInterfaces();
     	    TclInitNamespaceSubsystem(); /* register ns obj type (mutexed) */
 	}
 	TclpInitUnlock();

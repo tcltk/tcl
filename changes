@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.92 2004/11/18 18:34:10 dgp Exp $
+RCS: @(#) $Id: changes,v 1.92.2.1 2004/12/08 18:24:35 kennykb Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -6199,11 +6199,13 @@ tables to avoid system limits (mistachkin)
 
 2004-09-09 (bug fix)[560297] fixed broken [namespace forget] logic (porter)
 
-2004-09-09 (bug fix)[1017299] fixed [namespace import] cycle prevention (porter)
+2004-09-09 (bug fix)[1017299] fixed [namespace import] cycle prevention
+(porter)
 
 2004-09-10 (performance) $x[set x {}] is now fast [K $x [set x {}]] (sofer)
 
-2004-09-10 (bug fix)[868489] better control over int <-> wideInt (fellows,kenny)
+2004-09-10 (bug fix)[868489] better control over int <-> wideInt
+(fellows,kenny)
 
 2004-09-10 (bug fix)[1025359] POSIX errorCode from wide seeks (kupries,fellows)
 
@@ -6217,11 +6219,13 @@ tables to avoid system limits (mistachkin)
 2004-09-22 (feature change) syntax errors not reported at compile time;
 		deferred to runtime.  Support [return -errorline]. (porter)
 
-2004-09-23 (bug fix)[1016726] fix `make clean` in static config (leitgeb,dejong)
+2004-09-23 (bug fix)[1016726] fix `make clean` in static config
+(leitgeb,dejong)
 
 2004-09-22 (feature change) report all compile errors at runtime (porter)
 
-2004-09-29 (bug fix)[1036649] syntax error in [subst] => buffer overflow (sofer)
+2004-09-29 (bug fix)[1036649] syntax error in [subst] => buffer overflow
+(sofer)
 
 2004-09-30 (bug fix)[1038021] save/restore error state: var traces (porter)
 
@@ -6234,7 +6238,8 @@ tables to avoid system limits (mistachkin)
 2004-10-05 (reform) errorInfo, errorCode management (porter)
 	*** POTENTIAL INCOMPATIBILITY for traces on those vars ***
 
-2004-10-06 (feature change)[1041072] re-bless and enhance Tcl_AppendResult (dkf)
+2004-10-06 (feature change)[1041072] re-bless and enhance Tcl_AppendResult
+(dkf)
 
 2004-10-06 (reform) more robust interp result appends (porter)
 => dde 1.3.1
@@ -6248,7 +6253,8 @@ tables to avoid system limits (mistachkin)
 
 2004-10-08 (new feature)[TIP 212] [dict update]; [dict with] (fellows)
 
-2004-10-08 (bug fix)[954263] case insensitive [file exec] for Win (hobbs,darley)
+2004-10-08 (bug fix)[954263] case insensitive [file exec] for Win
+(hobbs,darley)
 
 2004-10-14 (performance) [info commands/globals/procs/vars $pattern] faster
                 when $pattern is trivial (fellows)
@@ -6258,16 +6264,18 @@ tables to avoid system limits (mistachkin)
 2004-10-24 (reform) replaced bit flag values with macros for Var handling
 	*** POTENTIAL INCOMPATIBILITY for accesses to Var internals ***
 
-2004-10-26 (new feature)[1054370] install msgcat, http, tcltest as TM's (porter)
+2004-10-26 (new feature)[1054370] install msgcat, http, tcltest as TM's
+(porter)
 
 2004-10-26 (bug fix)[767676] negative PIDs with pipes (giese,gravereaux)
 
-2004-10-27 (bug fix)[731778] stop critical section leaks (mistachkin,gravereaux)
+2004-10-27 (bug fix)[731778] stop critical section leaks
+(mistachkin,gravereaux)
 
 2004-10-27 (bug fix)[926088] -load option to find tested packages (gravereaux)
 
 2004-10-28 (bug fix)[1030548] restore the --enable-symbols --enable-threads
-                build on Win (mistachkin,kenny,kupries)
+build on Win (mistachkin,kenny,kupries)
 
 2004-10-29 (bug fix)[1055673] fix command line syntax error message (porter)
 => tcltest 2.2.7
@@ -6283,17 +6291,15 @@ tables to avoid system limits (mistachkin)
 2004-11-03 (bug fix)[527164] preserve errorinfo from var traces (porter)
 
 2004-11-08 (bug fix){947693] Made -blocking option of channel during [close]
-	consistent on Windows with Unix (gravereaux)
+consistent on Windows with Unix (gravereaux)
 	*** POTENTIAL INCOMPATIBILITY ***
 
 2004-11-11 (bug fix)[1034337] recursive file delete, MacOSX (steffen)
 
-2004-11-12 (feature)[TIP 34] make use of a configuration header file (fellows)
-	*** POTENTIAL INCOMPATIBILITY ***
-
 2004-11-12 (new feature)[TIP 221] [interp bgerror] (porter)
 
-2004-11-12 (new feature)[TIP 226] Tcl_(Save|Restore|Discard)InterpState (porter)
+2004-11-12 (new feature)[TIP 226] Tcl_(Save|Restore|Discard)InterpState
+(porter)
 
 2004-11-12 (new feature)[TIP 227] Tcl_(Get|Set)ReturnOptions (porter)
 
@@ -6305,7 +6311,41 @@ tables to avoid system limits (mistachkin)
 
 2004-11-18 (new feature) configure options --enable-man-suffix (max)
 
+2004-11-22 (bug fix)[1030465] Improve HAVE_TYPE_OFF64_T check (dejong)
+
+2004-11-22 (bug fix)[1043129] Fixed the treatment of backslashes in file
+join on Windows (darley)
+
+2004-11-22 (bug fix)[976438] Move init.tcl search path construction to
+tclInit (porter)
+
+2004-11-24 (bug fix)[1072654] Fixed segfault in info vars trivial
+matching branch (new in 8.4.8) (porter)
+
+2004-11-24 (bug fix)[1001325, 1071701] Fixed readdir_r detection and usage
+(dejong, kenny, porter)
+
+2004-11-24 (bug fix)[1071807] Fixed all uses of 'select' to use standard
+macros rather than older bit-whacking style (kenny)
+
+2004-11-26 (bug fix)[1073524] Simplify the code to check for correctness of
+strstr, strtoul and strtod on unix (fellows)
+
+2004-11-26 (bug fix)[1072136] Remove file normalize on tcl_findLibrary
+search path uniqification added in 8.4.8 (porter)
+
+2004-11-30 (bug fix)[976520] Rework startup/initialization of the Tcl
+library, encoding search initialization, and Tcl_FindExecutable structure.
+[tclInit] no longer driven by the value of $::tcl_libPath (TCLLIBPATH).
+(porter)
+	*** POTENTIAL INCOMPATIBILITY : makes encoding names case sensitive
+	    on Windows, where they have been case insensitive ***
+
+2004-12-02 (bug fix)[1074671] Ensure tilde paths are not returned specially
+by 'glob' (darley)
+
 Doc improvements [759545,926590,935853,1017072,1018486,1022527,1027849,
-			1032243,1047928,1048005,1058446,1062647,1065732,etc.]
+	1032243,1047928,1048005,1058446,1062647,1065732,1073334,etc.]
 Test suite expansion [1036649,1001997,etc.]
 
+--- Released 8.5a2, December 7, 2004 --- See ChangeLog for details ---

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.202 2004/12/01 23:18:51 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.202.2.1 2004/12/08 18:24:36 kennykb Exp $
  */
 
 #ifndef _TCLINT
@@ -1962,6 +1962,7 @@ MODULE_SCOPE void	TclpPanic _ANSI_ARGS_(TCL_VARARGS(CONST char *,
 MODULE_SCOPE char *	TclpReadlink _ANSI_ARGS_((CONST char *fileName,
 			    Tcl_DString *linkPtr));
 MODULE_SCOPE void	TclpReleaseFile _ANSI_ARGS_((TclFile file));
+MODULE_SCOPE void	TclpSetInterfaces ();
 MODULE_SCOPE void	TclpSetVariables _ANSI_ARGS_((Tcl_Interp *interp));
 MODULE_SCOPE void	TclpUnloadFile _ANSI_ARGS_((
 			    Tcl_LoadHandle loadHandle));

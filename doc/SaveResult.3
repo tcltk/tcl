@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: SaveResult.3,v 1.4 2004/11/20 00:17:31 dgp Exp $
+'\" RCS: @(#) $Id: SaveResult.3,v 1.4.2.1 2004/12/08 18:24:35 kennykb Exp $
 '\" 
 .so man.macros
 .TH Tcl_SaveResult 3 8.1 Tcl "Tcl Library Procedures"
@@ -17,18 +17,18 @@ Tcl_SaveInterpState, Tcl_RestoreInterpState, Tcl_DiscardInterpState, Tcl_SaveRes
 \fB#include <tcl.h>\fR
 .sp
 Tcl_InterpState
-\fBTcl_SaveInterpState(\fIinterp, status\fB)\fR
+\fBTcl_SaveInterpState\fR(\fIinterp, status\fR)
 .sp
 int
-\fBTcl_RestoreInterpState(\fIinterp, state\fB)\fR
+\fBTcl_RestoreInterpState\fR(\fIinterp, state\fR)
 .sp
-\fBTcl_DiscardInterpState(\fIstate\fB)\fR
+\fBTcl_DiscardInterpState\fR(\fIstate\fR)
 .sp
-\fBTcl_SaveResult(\fIinterp, savedPtr\fB)\fR
+\fBTcl_SaveResult\fR(\fIinterp, savedPtr\fR)
 .sp
-\fBTcl_RestoreResult(\fIinterp, savedPtr\fB)\fR
+\fBTcl_RestoreResult\fR(\fIinterp, savedPtr\fR)
 .sp
-\fBTcl_DiscardResult(\fIsavedPtr\fB)\fR
+\fBTcl_DiscardResult\fR(\fIsavedPtr\fR)
 .SH ARGUMENTS
 .AS Tcl_InterpState savedPtr
 .AP Tcl_Interp *interp in
@@ -66,11 +66,11 @@ information in the interpreter (e.g. the \fB-errorcode\fR or
 \fB-errorinfo\fR return options, when an error is in progress).
 .PP
 Because the routines \fBTcl_SaveInterpState\fR,
-\fBTcl_RestoreInterpState\fB, and \fBTcl_DiscardInterpState\fR perform
+\fBTcl_RestoreInterpState\fR, and \fBTcl_DiscardInterpState\fR perform
 a superset of the functions provided by the other routines,
 any new code should only make use of the more powerful routines.
-The older, weaker routines \fBTcl_SaveResult\fB, \fBTcl_RestoreResult\fB,
-and \fBTcl_DiscardResult\fB continue to exist only for the sake
+The older, weaker routines \fBTcl_SaveResult\fR, \fBTcl_RestoreResult\fR,
+and \fBTcl_DiscardResult\fR continue to exist only for the sake
 of existing programs that may already be using them.  
 .PP
 \fBTcl_SaveInterpState\fR takes a snapshot of those portions of

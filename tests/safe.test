@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: safe.test,v 1.17 2004/08/18 19:59:08 kennykb Exp $
+# RCS: @(#) $Id: safe.test,v 1.17.2.1 2004/12/08 18:24:36 kennykb Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -20,6 +20,9 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 foreach i [interp slaves] {
     interp delete $i
 }
+
+set saveAutoPath $::auto_path
+set ::auto_path [info library]
 
 # Force actual loading of the safe package 
 # because we use un exported (and thus un-autoindexed) APIs
@@ -478,6 +481,7 @@ test safe-11.8 {testing safe encoding} {
 } {1 {wrong # args: should be "encoding convertto ?encoding? data"} {}}
 
 
+set ::auto_path $saveAutoPath
 # cleanup
 ::tcltest::cleanupTests
 return

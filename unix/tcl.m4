@@ -2575,6 +2575,11 @@ AC_DEFUN(SC_TCL_64BIT_FLAGS, [
 	    [What type should be used to define wide integers?])
 	AC_MSG_RESULT(${tcl_cv_type_64bit})
 
+	AC_CHECK_SIZEOF(TCL_WIDE_INT_TYPE)
+	AC_CHECK_SIZEOF(long)
+	AC_CHECK_SIZEOF(int)
+	AC_CHECK_SIZEOF(short)
+
 	# Now check for auxiliary declarations
 	AC_MSG_CHECKING([for struct dirent64])
 	AC_CACHE_VAL(tcl_cv_struct_dirent64,[

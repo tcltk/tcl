@@ -1,3 +1,54 @@
+2004-12-07  Don Porter  <dgp@users.sourceforge.net>
+
+	* tests/unixInit.test (2.1-4):	Added constraints so that when a
+	value of TCL_LIBRARY is required for process initialization, we skip
+	the tests that mess with that value.
+
+2004-12-07  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	*** 8.5a2 TAGGED FOR RELEASE ***
+
+	* unix/Makefile.in: add library/{tzdata,msgs} to dist target (kbk)
+
+	* doc/foreach.n: Adjust tabs to be friendlier to some HTML
+	converters. [Bug 1078760]
+
+2004-12-06  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* unix/tclUnixNotfy.c (NotifierThreadProc): init numFdBits
+	[Bug 1079286]
+
+	* doc/error.n, doc/SaveResult.3, doc/Thread.3: minor nroff typos
+
+2004-12-06  Don Porter  <dgp@users.sourceforge.net>
+
+	* tests/safe.test:	Trim auto_path to improve performance [1080039]
+
+	* tests/msgcat.test:	makeFile/removeFile cleanup [1079117]
+
+2004-12-04  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclEncoding.c:	Different fix for [Bug 1077005].
+	* generic/tclEvent.c:	Broke apart TclpSetInitialEncodings() on
+	* generic/tclInt.h:	Windows into TclpSetInterfaces(), that is
+	* unix/tclUnixInit.c:	fundamentally essential, and the initialization
+	* win/tclWinInit.c:	of the system encoding, which is not.  Made
+	the TclpSetInterfaces call part of TclInitSubsystems so it cannot be
+	overlooked.
+
+2004-12-03  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* changes: updated for 8.5a2 release
+
+2004-12-02  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclUtil.c (TclSetProcessGlobalValue):  Handle the case
+	where a ProcessGlobalValue might be assigned to itself.
+
+	* generic/tclEncoding.c (MakeFileMap):	Correct refcounting errors
+	managing values returned by TclPathPart (with refCount of 1!) that
+	led to a memory leak.  [Bug 1077474].
+
 2004-12-02  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* generic/tclPathObj.c: fix and new tests for [Bug 1074671] to
@@ -9,7 +60,7 @@
 	* win/Makefile.in: Added a 'sed' in the setting of ROOT_DIR_NATIVE
 	to compensate for a bug in cygpath (at least version 1.36) that
 	leaves a trailing backslash on the end of the converted path.
-	
+
 2004-12-02  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclInterp.c (Alias,Target,Master): Rewrote these so that

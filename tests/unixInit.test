@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: unixInit.test,v 1.44 2004/11/30 19:34:51 dgp Exp $
+# RCS: @(#) $Id: unixInit.test,v 1.44.2.1 2004/12/08 18:24:36 kennykb Exp $
 
 package require tcltest 2
 namespace import -force ::tcltest::*
@@ -105,6 +105,16 @@ proc getlibpath [list [list program [interpreter]]] {
 
 testConstraint testgetdefenc [llength [info commands testgetdefenc]]
 
+unset -nocomplain oldlibrary
+catch {
+    set oldlibrary $env(TCL_LIBRARY)
+    unset env(TCL_LIBRARY)
+}
+testConstraint canInitWithoutEnvTclLibrary [expr {[catch getlibpath] == 0}]
+if {[info exists oldlibrary]} {
+    set env(TCL_LIBRARY) $oldlibrary
+}
+
 test unixInit-2.0 {TclpInitLibraryPath: setting tclDefaultEncodingDir} \
 	{unix testgetdefenc} {
     set origDir [testgetdefenc]
@@ -114,7 +124,7 @@ test unixInit-2.0 {TclpInitLibraryPath: setting tclDefaultEncodingDir} \
     set path
 } {slappy}
 test unixInit-2.1 {TclpInitLibraryPath: value of installLib, developLib} -constraints {
-    unix stdio
+    unix stdio canInitWithoutEnvTclLibrary
 } -setup {
     unset -nocomplain oldlibrary
     if {[info exists env(TCL_LIBRARY)]} {
@@ -139,7 +149,7 @@ test unixInit-2.1 {TclpInitLibraryPath: value of installLib, developLib} -constr
     }
 } -result {0 0}
 test unixInit-2.2 {TclpInitLibraryPath: TCL_LIBRARY} -constraints {
-    unix stdio 
+    unix stdio canInitWithoutEnvTclLibrary 
 } -setup {
     unset -nocomplain oldlibrary
     if {[info exists env(TCL_LIBRARY)]} {
@@ -160,7 +170,7 @@ test unixInit-2.2 {TclpInitLibraryPath: TCL_LIBRARY} -constraints {
     }
 } -result "sparkly"
 test unixInit-2.3 {TclpInitLibraryPath: TCL_LIBRARY wrong version} -constraints {
-    unix stdio 
+    unix stdio canInitWithoutEnvTclLibrary 
 } -setup {
     unset -nocomplain oldlibrary
     if {[info exists env(TCL_LIBRARY)]} {
@@ -181,7 +191,7 @@ test unixInit-2.3 {TclpInitLibraryPath: TCL_LIBRARY wrong version} -constraints 
     }
 } -result [list /a/b/tcl1.7 /a/b/tcl[info tclversion]]
 test unixInit-2.4 {TclpInitLibraryPath: TCL_LIBRARY: INTL} -constraints {
-    unix stdio knownBug
+    unix stdio canInitWithoutEnvTclLibrary knownBug
 } -setup {
     if {[info exists env(TCL_LIBRARY)]} {
 	set oldlibrary $env(TCL_LIBRARY)

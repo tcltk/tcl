@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEncoding.c,v 1.29 2004/12/01 23:18:50 dgp Exp $
+ * RCS: @(#) $Id: tclEncoding.c,v 1.29.2.1 2004/12/08 18:24:35 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -410,10 +410,10 @@ MakeFileMap()
 	    Tcl_Obj *encodingName, *file;
 
 	    file = TclPathPart(NULL, filev[j], TCL_PATH_TAIL);
-	    Tcl_IncrRefCount(file);
 	    encodingName = TclPathPart(NULL, file, TCL_PATH_ROOT);
-	    Tcl_IncrRefCount(encodingName);
 	    Tcl_DictObjPut(NULL, map, encodingName, directory);
+	    Tcl_DecrRefCount(file);
+	    Tcl_DecrRefCount(encodingName);
 	}
 	Tcl_DecrRefCount(matchFileList);
 	Tcl_DecrRefCount(directory);
@@ -513,7 +513,6 @@ TclInitEncodingSubsystem()
     Tcl_CreateEncoding(&type);
 
     encodingsInitialized = 1;
-    TclpSetInitialEncodings();
 }
 
 /*
@@ -1303,6 +1302,7 @@ Tcl_FindExecutable(argv0)
 				 * (native). */
 {
     TclInitSubsystems();
+    TclpSetInitialEncodings();
     TclpFindExecutable(argv0);
 }
 

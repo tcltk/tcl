@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.157 2004/11/24 00:10:30 dkf Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.157.2.1 2004/12/08 18:24:36 kennykb Exp $
 
 VERSION 		= @TCL_VERSION@
 MAJOR_VERSION		= @TCL_MAJOR_VERSION@
@@ -1315,6 +1315,12 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in
 	    done;
 	mkdir $(DISTDIR)/library/encoding
 	cp -p $(TOP_DIR)/library/encoding/*.enc $(DISTDIR)/library/encoding
+	mkdir $(DISTDIR)/library/msgs
+	cp -p $(TOP_DIR)/library/msgs/*.msg $(DISTDIR)/library/msgs
+	( cd $(TOP_DIR); \
+	  find library/tzdata -name CVS -prune -o -type f -print ) \
+	    | ( cd $(TOP_DIR) ; xargs tar cf - ) \
+	    | ( cd $(DISTDIR) ; tar xfp - )
 	mkdir $(DISTDIR)/doc
 	cp -p $(TOP_DIR)/license.terms $(TOP_DIR)/doc/*.[13n] \
 		$(TOP_DIR)/doc/man.macros $(DISTDIR)/doc
