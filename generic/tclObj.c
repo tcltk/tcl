@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.72.2.2 2005/01/20 19:13:35 kennykb Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.72.2.3 2005/01/20 21:19:44 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -92,19 +92,20 @@ PendingObjData tclPendingObjData = { 0, NULL };
 
 #define PACK_BIGNUM( bignum, objPtr ) \
   do { \
-    objPtr->internalRep.bignumValue.digits = (void*) bignum.dp; \
-    objPtr->internalRep.bignumValue.misc = ( \
-      ( bignum.sign << 30 ) \
-      | ( bignum.alloc << 15 ) \
-      | ( bignum.used ) ); \
+    (objPtr)->internalRep.bignumValue.digits = (void*) (bignum).dp; \
+    (objPtr)->internalRep.bignumValue.misc = ( \
+      ( (bignum).sign << 30 ) \
+      | ( (bignum).alloc << 15 ) \
+      | ( (bignum).used ) ); \
   } while ( 0 )
 
 #define UNPACK_BIGNUM( objPtr, bignum ) \
   do { \
-    (bignum).dp = (mp_digit*) objPtr->internalRep.bignumValue.digits; \
-    (bignum).sign = objPtr->internalRep.bignumValue.misc >> 30; \
-    (bignum).alloc = ( objPtr->internalRep.bignumValue.misc >> 15 ) & 0x7fff; \
-    (bignum).used = objPtr->internalRep.bignumValue.misc & 0x7fff; \
+    (bignum).dp = (mp_digit*) (objPtr)->internalRep.bignumValue.digits; \
+    (bignum).sign = (objPtr)->internalRep.bignumValue.misc >> 30; \
+    (bignum).alloc = ( (objPtr)->internalRep.bignumValue.misc >> 15 ) \
+                     & 0x7fff; \
+    (bignum).used = (objPtr)->internalRep.bignumValue.misc & 0x7fff; \
   } while ( 0 )
 
 /*
@@ -2988,9 +2989,8 @@ UpdateStringOfBignum( Tcl_Obj* objPtr )
  *	Returns the newly created object.
  *
  * Side effects:
- *	The bignum is copied into newly allocated memory, so the
- *	caller is still responsible for clearing the bignum that is
- *	passed as a parameter.
+ *	The bignum value is cleared, since ownership has transferred
+ *	to Tcl.
  *
  *----------------------------------------------------------------------
  */
@@ -3006,15 +3006,16 @@ Tcl_NewBignumObj( mp_int* bignumValue )
 Tcl_Obj *
 Tcl_NewBignumObj( mp_int* bignumValue )
 {
-    mp_int valueCopy;
     Tcl_Obj* objPtr;
     TclNewObj( objPtr );
-    if ( mp_init_copy( &valueCopy, bignumValue ) != MP_OKAY ) {
-	Tcl_Panic( "initialization failure in Tcl_NewBignumObj" );
-    }
-    PACK_BIGNUM( valueCopy, objPtr );
+    PACK_BIGNUM( *bignumValue, objPtr );
     objPtr->typePtr=&tclBignumType;
     objPtr->bytes = NULL;
+
+    /* Clear with mp_init; mp_clear would overwrite the digit array. */
+
+    mp_init( bignumValue );
+
     return objPtr;
 }
 #endif
@@ -3028,6 +3029,13 @@ Tcl_NewBignumObj( mp_int* bignumValue )
  *	TCL_MEM_DEBUG is defined.  It constructs a bignum object, recording
  *	the creation point so that [memory active] can report it.
  *
+ * Results:
+ *	Returns the newly created object.
+ *
+ * Side effects:
+ *	The bignum value is cleared, since ownership has transferred
+ *	to Tcl.
+ *
  *----------------------------------------------------------------------
  */
 
@@ -3036,15 +3044,16 @@ Tcl_Obj*
 Tcl_DbNewBignumObj( mp_int* bignumValue, CONST char* file, int line )
 {
     Tcl_Obj* objPtr;
-    mp_int valueCopy;
     TclDbNewObj( objPtr, file, line );
     objPtr->bytes = NULL;
-    if ( mp_init_copy( &valueCopy, bignumValue ) != MP_OKAY ) {
-	Tcl_Panic( "initialization failure in Tcl_NewBignumObj" );
-    }
-    PACK_BIGNUM( valueCopy, objPtr );
+    PACK_BIGNUM( bignumValue, objPtr );
     objPtr->typePtr=&tclBignumType;
     objPtr->bytes = NULL;
+
+    /* Clear with mp_init; mp_clear would overwrite the digit array. */
+
+    mp_init( bignumValue );
+
     return objPtr;
 }
 #else
@@ -3067,7 +3076,8 @@ Tcl_DbNewBignumObj( mp_int* bignumValue, CONST char* file, int line )
  *	Returns TCL_OK if the conversion is successful, TCL_ERROR otherwise.
  *
  * Side effects:
- *	The bignum is stored in *bignumValue. If conversion fails, an
+ *	A copy of bignum is stored in *bignumValue, which is expected
+ *	to be uninitialized or cleared.  If conversion fails, an
  *	the 'interp' argument is not NULL, an error message is stored
  *	in the interpreter result.
  *
@@ -3087,13 +3097,14 @@ Tcl_GetBignumFromObj( Tcl_Interp* interp,
 		      mp_int* bignumValue )
 				/* Returned bignum value. */
 {
-
+    mp_int temp;
     if ( objPtr -> typePtr != &tclBignumType ) {
 	if ( SetBignumFromAny( interp, objPtr ) != TCL_OK ) {
 	    return TCL_ERROR;
 	}
     }
-    UNPACK_BIGNUM( objPtr, *bignumValue );
+    UNPACK_BIGNUM( objPtr, temp );
+    mp_init_copy( bignumValue, &temp );
     return TCL_OK;
 }
 
@@ -3108,10 +3119,8 @@ Tcl_GetBignumFromObj( Tcl_Interp* interp,
  *	None.
  *
  * Side effects:
- *	Object value is stored.
- *
- * The value is copied when being stored in the object, so the caller
- * is still expected to call mp_clear on the original.
+ *	Object value is stored.  The bignum value is cleared, since
+ *	ownership has transferred to Tcl.
  *
  *----------------------------------------------------------------------
  */
@@ -3122,17 +3131,17 @@ Tcl_SetBignumObj( Tcl_Obj* objPtr,
 		  mp_int* bignumValue )
 				/* Value to store */
 {
-    mp_int valueCopy;
-    if ( mp_init_copy( &valueCopy, bignumValue ) != MP_OKAY ) {
-	Tcl_Panic( "initialization error in Tcl_SetBignumObj" );
-    }
     if ( Tcl_IsShared( objPtr ) ) {
 	Tcl_Panic( "Tcl_SetBignumObj called with shared object" );
     }
     TclFreeIntRep( objPtr );
     objPtr->typePtr = &tclBignumType;
-    PACK_BIGNUM( valueCopy, objPtr );
+    PACK_BIGNUM( *bignumValue, objPtr );
     Tcl_InvalidateStringRep( objPtr );
+
+    /* Clear the value with mp_init; mp_clear overwrites the digit array. */
+
+    mp_init( bignumValue );
 }
 
 /*

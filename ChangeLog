@@ -55,6 +55,14 @@
 	change the string argument to 'mp_read_radix' from 'char*' to
 	'const char*'.
 
+	* libtommath/bn_mp_radix_size.c:
+	Local patch to ensure that sufficient memory is requested
+	even if the number has a single digit.
+	
+	* libtommath/bn_mp_read_radix.c:
+	Local patch to return MP_VAL if the input string contains
+	an invalid character.
+
 	* generic/tclObj.c: Added accessor functions for bignums.
 	* generic/tclTestObj.c: Added a 'testbignumobj' command to
 	exercise the accessor functions for bignums.
