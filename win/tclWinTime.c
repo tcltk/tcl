@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinTime.c,v 1.14.2.4 2004/05/17 14:26:50 kennykb Exp $
+ * RCS: @(#) $Id: tclWinTime.c,v 1.14.2.5 2004/06/05 17:25:40 kennykb Exp $
  */
 
 #include "tclWinInt.h"
@@ -311,7 +311,37 @@ Tcl_GetTime(timePtr)
 		  * && timeInfo.nominalFreq.QuadPart != (Tcl_WideInt) 3579545
 		  */
 		 && timeInfo.nominalFreq.QuadPart > (Tcl_WideInt) 15000000 ) {
+
+		/*
+		 * As an exception, if every logical processor on the system
+		 * is on the same chip, we use the performance counter anyway,
+		 * presuming that everyone's TSC is locked to the same
+		 * oscillator.
+		 */
+
+		SYSTEM_INFO systemInfo;
+		unsigned int regs[4];
+		GetSystemInfo( &systemInfo );
+		if ( TclWinCPUID( 0, regs ) == TCL_OK
+
+		     && regs[1] == 0x756e6547 /* "Genu" */
+		     && regs[3] == 0x49656e69 /* "ineI" */
+		     && regs[2] == 0x6c65746e /* "ntel" */
+
+		     && TclWinCPUID( 1, regs ) == TCL_OK 
+
+		     && ( (regs[0] & 0x00000F00) == 0x00000F00 /* Pentium 4 */
+			  || ( (regs[0] & 0x00F00000)    /* Extended family */
+			       && (regs[3] & 0x10000000) ) ) /* Hyperthread */
+		     && ( ( ( regs[1] & 0x00FF0000 ) >> 16 ) /* CPU count */
+			  == systemInfo.dwNumberOfProcessors ) 
+
+		    ) {
+		    timeInfo.perfCounterAvailable = TRUE;
+		} else {
 		timeInfo.perfCounterAvailable = FALSE;
+	    }
+
 	    }
 
 	    /*

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinTest.c,v 1.8.2.1 2003/04/12 20:11:34 kennykb Exp $
+ * RCS: @(#) $Id: tclWinTest.c,v 1.8.2.2 2004/06/05 17:25:40 kennykb Exp $
  */
 
 #define USE_COMPAT_CONST
@@ -32,6 +32,10 @@ static int      TestwinsleepCmd _ANSI_ARGS_(( ClientData dummy,
 					      int objc,
 					      Tcl_Obj *CONST objv[] ));
 static Tcl_ObjCmdProc TestExceptionCmd;
+static int	TestwincpuidCmd _ANSI_ARGS_(( ClientData dummy,
+					      Tcl_Interp* interp,
+					      int objc,
+					      Tcl_Obj *CONST objv[] ));
 
 
 /*
@@ -65,6 +69,8 @@ TclplatformtestInit(interp)
             (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
     Tcl_CreateObjCommand(interp, "testwinclock", TestwinclockCmd,
             (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
+    Tcl_CreateObjCommand(interp, "testwincpuid", TestwincpuidCmd,
+			 (ClientData) 0, (Tcl_CmdDeleteProc*) NULL );
     Tcl_CreateObjCommand( interp,
 			  "testwinsleep",
 			  TestwinsleepCmd,
@@ -290,7 +296,63 @@ TestwinclockCmd( ClientData dummy,
 /*
  *----------------------------------------------------------------------
  *
- * Testwinsleepcmd --
+ * TestwincpuidCmd --
+ *
+ *	Retrieves CPU ID information.
+ *
+ * Usage:
+ *	testwincpuid <eax>
+ *
+ * Parameters:
+ *	eax - The value to pass in the EAX register to a CPUID instruction.
+ *
+ * Results:
+ *	Returns a four-element list containing the values from the
+ *	EAX, EBX, ECX and EDX registers returned from the CPUID instruction.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TestwincpuidCmd( ClientData dummy,
+		 Tcl_Interp* interp, /* Tcl interpreter */
+		 int objc,	/* Parameter count */
+		 Tcl_Obj *CONST * objv ) /* Parameter vector */
+{
+    int status;
+    int index;
+    unsigned int regs[4];
+    Tcl_Obj * regsObjs[4];
+    int i;
+
+    if ( objc != 2 ) {
+	Tcl_WrongNumArgs( interp, 1, objv, "eax" );
+	return TCL_ERROR;
+    }
+    if ( Tcl_GetIntFromObj( interp, objv[1], &index ) != TCL_OK ) {
+	return TCL_ERROR;
+    }
+    status = TclWinCPUID( (unsigned int) index, regs );
+    if ( status != TCL_OK ) {
+	Tcl_SetObjResult( interp, Tcl_NewStringObj( "operation not available", 
+						    -1 ) );
+	return status;
+    }
+    for ( i = 0; i < 4; ++i ) {
+	regsObjs[i] = Tcl_NewIntObj( (int) regs[i] );
+    }
+    Tcl_SetObjResult( interp, Tcl_NewListObj( 4, regsObjs ) );
+    return TCL_OK;
+       
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TestwinsleepCmd --
  *
  *	Causes this process to wait for the given number of milliseconds
  *	by means of a direct call to Sleep.

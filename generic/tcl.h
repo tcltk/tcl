@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.153.2.11 2004/02/13 01:38:00 hobbs Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.153.2.12 2004/06/05 17:25:39 kennykb Exp $
  */
 
 #ifndef _TCL
@@ -352,11 +352,16 @@ typedef long LONG;
  */
 
 #if !defined(TCL_WIDE_INT_TYPE)&&!defined(TCL_WIDE_INT_IS_LONG)
-#   if defined(__CYGWIN__)
+#   if defined(__GNUC__)
 #      define TCL_WIDE_INT_TYPE long long
+#      if defined(__WIN32__) && !defined(__CYGWIN__)
+#         define TCL_LL_MODIFIER        "I64"
+#         define TCL_LL_MODIFIER_SIZE   3
+#      else
 #      define TCL_LL_MODIFIER	"L"
-typedef struct stat	Tcl_StatBuf;
 #      define TCL_LL_MODIFIER_SIZE	1
+#      endif
+typedef struct stat	Tcl_StatBuf;
 #   elif defined(__WIN32__)
 #      define TCL_WIDE_INT_TYPE __int64
 #      ifdef __BORLANDC__
