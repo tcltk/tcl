@@ -3,7 +3,7 @@
 # utility procs formerly in init.tcl dealing with auto execution
 # of commands and can be auto loaded themselves.
 #
-# RCS: @(#) $Id: auto.tcl,v 1.19 2004/10/25 17:24:39 dgp Exp $
+# RCS: @(#) $Id: auto.tcl,v 1.20 2004/11/26 19:49:14 dgp Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1998 Sun Microsystems, Inc.
@@ -130,7 +130,7 @@ proc tcl_findLibrary {basename version patch initScript enVarName varName} {
 	}
 	if {[info exists seen($norm)]} { continue }
 	set seen($norm) ""
-	lappend uniqdirs $norm
+	lappend uniqdirs $i
     }
     set dirs $uniqdirs
     foreach i $dirs {
