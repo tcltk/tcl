@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: global.n,v 1.5 2004/04/28 13:11:33 msofer Exp $
+'\" RCS: @(#) $Id: global.n,v 1.6 2004/05/17 22:23:42 dkf Exp $
 '\" 
 .so man.macros
 .TH global n "" Tcl "Tcl Built-In Commands"
@@ -31,7 +31,18 @@ will refer to the global variable by the same name.
 \fIvarname\fR is always treated as the name of a variable, not an
 array element.  An error is returned if the name looks like an array element,
 such as \fBa(b)\fR.
-
+.SH EXAMPLE
+This procedure accumulates the strings passed to it in a global
+buffer, separated by newlines.  It is useful for situations when you
+want to build a message piece-by-piece (as if with \fBputs\fR) but
+send that full message in a single piece (e.g. over a connection
+opened with \fBsocket\fR or as part of a counted HTTP response).
+.CS
+proc accum {string} {
+    global accumulator
+    append accumulator $string \\n
+}
+.CE
 
 .SH "SEE ALSO"
 namespace(n), upvar(n), variable(n)
