@@ -12,19 +12,19 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
 #
-# RCS: @(#) $Id: http.test,v 1.12 1999/07/20 00:11:53 hershey Exp $
+# RCS: @(#) $Id: http.test,v 1.12.4.1 1999/11/19 23:32:28 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
     namespace import ::tcltest::*
 }
 
-if {[catch {package require http 2.1}]} {
+if {[catch {package require http 2.2}]} {
     if {[info exist http2]} {
-	catch {puts "Cannot load http 2.1 package"}
+	catch {puts "Cannot load http 2.2 package"}
 	return
     } else {
-	catch {puts "Running http 2.1 tests in slave interp"}
+	catch {puts "Running http 2.2 tests in slave interp"}
 	set interp [interp create http2]
 	$interp eval [list set http2 "running"]
 	$interp eval [list source [info script]]
@@ -74,7 +74,7 @@ if {[info commands testthread] == "testthread" && [file exists $httpdFile]} {
 
 test http-1.1 {http::config} {
     http::config
-} {-accept */* -proxyfilter http::ProxyRequired -proxyhost {} -proxyport {} -useragent {Tcl http client package 2.1}}
+} {-accept */* -proxyfilter http::ProxyRequired -proxyhost {} -proxyport {} -useragent {Tcl http client package 2.2}}
 
 test http-1.2 {http::config} {
     http::config -proxyfilter

@@ -9,9 +9,9 @@
 # See the file "license.terms" for information on usage and
 # redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: http.tcl,v 1.9.4.2 1999/10/30 11:06:30 hobbs Exp $
+# RCS: @(#) $Id: http.tcl,v 1.9.4.3 1999/11/19 23:32:24 hobbs Exp $
 
-package provide http 2.1	;# This uses Tcl namespaces
+package provide http 2.2	;# This uses Tcl namespaces
 
 namespace eval http {
     variable http
@@ -19,7 +19,7 @@ namespace eval http {
 	-accept */*
 	-proxyhost {}
 	-proxyport {}
-	-useragent {Tcl http client package 2.1}
+	-useragent {Tcl http client package 2.2}
 	-proxyfilter http::ProxyRequired
     }
 
@@ -38,8 +38,48 @@ namespace eval http {
 	" " +   \n %0d%0a
     }
 
-    namespace export geturl config reset wait formatQuery 
+    variable urlTypes
+    array set urlTypes {
+	http	{80 ::socket}
+    }
+
+    namespace export geturl config reset wait formatQuery register unregister
     # Useful, but not exported: data size status code
+}
+
+# http::register --
+#
+#     See documentaion for details.
+#
+# Arguments:
+#     proto           URL protocol prefix, e.g. https
+#     port            Default port for protocol
+#     command         Command to use to create socket
+# Results:
+#     list of port and command that was registered.
+
+proc http::register {proto port command} {
+    variable urlTypes
+    set urlTypes($proto) [list $port $command]
+}
+
+# http::unregister --
+#
+#     Unregisters URL protocol handler
+#
+# Arguments:
+#     proto           URL protocol prefix, e.g. https
+# Results:
+#     list of port and command that was unregistered.
+
+proc http::unregister {proto} {
+    variable urlTypes
+    if {![info exists urlTypes($proto)]} {
+	return -code error "unsupported url type \"$proto\""
+    }
+    set old $urlTypes($proto)
+    unset urlTypes($proto)
+    return $old
 }
 
 # http::config --
@@ -82,6 +122,17 @@ proc http::config {args} {
     }
 }
 
+# http::Finish --
+#
+#	Clean up the socket and eval close time callbacks
+#
+# Arguments:
+#	token	Connection token.
+#	errormsg	If set, forces status to error.
+#
+# Side Effects:
+#        Closes the socket
+
  proc http::Finish { token {errormsg ""} } {
     variable $token
     upvar 0 $token state
@@ -113,8 +164,9 @@ proc http::config {args} {
 # Arguments:
 #	token	Connection token.
 #	why	Status info.
-# Results:
-#        TODO
+#
+# Side Effects:
+#       See Finish
 
 proc http::reset { token {why reset} } {
     variable $token
@@ -144,6 +196,7 @@ proc http::reset { token {why reset} } {
 
 proc http::geturl { url args } {
     variable http
+    variable urlTypes
 
     # Initialize the state variable, an array.  We'll return the
     # name of this array as the token for the transaction.
@@ -163,6 +216,7 @@ proc http::geturl { url args } {
 	-validate 	0
 	-headers 	{}
 	-timeout 	0
+	-type           application/x-www-form-urlencoded
 	state		header
 	meta		{}
 	currentsize	0
@@ -172,7 +226,7 @@ proc http::geturl { url args } {
 	status		""
     }
     set options {-blocksize -channel -command -handler -headers \
-		-progress -query -validate -timeout}
+		-progress -query -validate -timeout -type}
     set usage [join $options ", "]
     regsub -all -- - $options {} options
     set pat ^-([join $options |])$
@@ -189,12 +243,22 @@ proc http::geturl { url args } {
 	    return -code error "Unknown option $flag, can be: $usage"
 	}
     }
-    if {![regexp -nocase {^(http://)?([^/:]+)(:([0-9]+))?(/.*)?$} $url \
-	    x proto host y port srvurl]} {
+    if {![regexp -nocase {^(([^:]*)://)?([^/:]+)(:([0-9]+))?(/.*)?$} $url \
+	    x prefix proto host y port srvurl]} {
 	error "Unsupported URL: $url"
     }
+    if {[string length $proto] == 0} {
+	set proto http
+	set url ${proto}://$url
+    }
+    if {![info exists urlTypes($proto)]} {
+	return -code error "unsupported url type \"$proto\""
+    }
+    set defport [lindex $urlTypes($proto) 0]
+    set defcmd [lindex $urlTypes($proto) 1]
+
     if {[string length $port] == 0} {
-	set port 80
+	set port $defport
     }
     if {[string length $srvurl] == 0} {
 	set srvurl /
@@ -224,9 +288,9 @@ proc http::geturl { url args } {
 
     if {[info exists phost] && [string length $phost]} {
 	set srvurl $url
-	set s [eval socket $async {$phost $pport}]
+	set s [eval $defcmd $async {$phost $pport}]
     } else {
-	set s [eval socket $async {$host $port}]
+	set s [eval $defcmd $async {$host $port}]
     }
     set state(sock) $s
 
@@ -235,8 +299,8 @@ proc http::geturl { url args } {
     if {$state(-timeout) > 0} {
 	fileevent $s writable [list http::Connect $token]
 	http::wait $token
-	if {[string equal $state(status) "timeout"]} {
-	    return
+	if {![string equal $state(status) "connect"]} {
+	    return $token
 	}
 	fileevent $s writable {}
 	set state(status) ""
@@ -260,28 +324,37 @@ proc http::geturl { url args } {
     } elseif {$state(-validate)} {
 	set how HEAD
     }
-    puts $s "$how $srvurl HTTP/1.0"
-    puts $s "Accept: $http(-accept)"
-    puts $s "Host: $host"
-    puts $s "User-Agent: $http(-useragent)"
-    foreach {key value} $state(-headers) {
-	regsub -all \[\n\r\]  $value {} value
-	set key [string trim $key]
-	if {[string length $key]} {
-	    puts $s "$key: $value"
+    if {[catch {
+	puts $s "$how $srvurl HTTP/1.0"
+	puts $s "Accept: $http(-accept)"
+	puts $s "Host: $host"
+	puts $s "User-Agent: $http(-useragent)"
+	foreach {key value} $state(-headers) {
+	    regsub -all \[\n\r\]  $value {} value
+	    set key [string trim $key]
+	    if {[string length $key]} {
+		puts $s "$key: $value"
+	    }
 	}
+	if {$len > 0} {
+	    puts $s "Content-Length: $len"
+	    puts $s "Content-Type: $state(-type)"
+	    puts $s ""
+	    fconfigure $s -translation {auto binary}
+	    puts $s $state(-query)
+	} else {
+	    puts $s ""
+	}
+	flush $s
+	fileevent $s readable [list http::Event $token]
+    } err]} {
+	# The socket probably was never connected, or the connection
+	# dropped later.
+
+	reset $token ioerror
+	return $token
     }
-    if {$len > 0} {
-	puts $s "Content-Length: $len"
-	puts $s "Content-Type: application/x-www-form-urlencoded"
-	puts $s ""
-	fconfigure $s -translation {auto binary}
-	puts $s $state(-query)
-    } else {
-	puts $s ""
-    }
-    flush $s
-    fileevent $s readable [list http::Event $token]
+
     if {! [info exists state(-command)]} {
 	wait $token
     }
@@ -332,11 +405,37 @@ proc http::cleanup {token} {
 	unset state
     }
 }
+
+# http::Connect
+#
+#	Wait for an asynchronous connection to complete
+#
+# Arguments
+#	token	The token returned from http::geturl
+#
+# Side Effects
+#	Sets the status of the connection, which unblocks
+# 	the waiting geturl call
+
  proc http::Connect {token} {
     variable $token
     upvar 0 $token state
-    set state(status) connect
+    if {[eof $state(sock)]} {
+	set state(status) ioerror
+    } else {
+	set state(status) connect
+    }
  }
+
+# http::Event
+#
+#	Handle input on the socket
+#
+# Arguments
+#	token	The token returned from http::geturl
+#
+# Side Effects
+#	Read the socket and handle callbacks.
 
  proc http::Event {token} {
     variable $token
@@ -402,6 +501,18 @@ proc http::cleanup {token} {
 	}
     }
 }
+
+# http::CopyStart
+#
+#	Error handling wrapper around fcopy
+#
+# Arguments
+#	s	The socket to copy from
+#	token	The token returned from http::geturl
+#
+# Side Effects
+#	This closes the connection upon error
+
  proc http::CopyStart {s token} {
     variable $token
     upvar 0 $token state
@@ -412,6 +523,18 @@ proc http::cleanup {token} {
 	Finish $token $err
     }
 }
+
+# http::CopyDone
+#
+#	fcopy completion callback
+#
+# Arguments
+#	token	The token returned from http::geturl
+#	count	The amount transfered
+#
+# Side Effects
+#	Invokes callbacks
+
  proc http::CopyDone {token count {error {}}} {
     variable $token
     upvar 0 $token state
@@ -429,6 +552,17 @@ proc http::cleanup {token} {
 	CopyStart $s $token
     }
 }
+
+# http::Eof
+#
+#	Handle eof on the socket
+#
+# Arguments
+#	token	The token returned from http::geturl
+#
+# Side Effects
+#	Clean up the socket
+
  proc http::Eof {token} {
     variable $token
     upvar 0 $token state
@@ -493,15 +627,25 @@ proc http::formatQuery {args} {
     return $result
 }
 
-# do x-www-urlencoded character mapping
-# The spec says: "non-alphanumeric characters are replaced by '%HH'"
-# 1 leave alphanumerics characters alone
-# 2 Convert every other character to an array lookup
-# 3 Escape constructs that are "special" to the tcl parser
-# 4 "subst" the result, doing all the array substitutions
- 
+# http::mapReply --
+#
+#	Do x-www-urlencoded character mapping
+#
+# Arguments:
+#	string	The string the needs to be encoded
+#
+# Results:
+#       The encoded string
+
  proc http::mapReply {string} {
     variable formMap
+
+    # The spec says: "non-alphanumeric characters are replaced by '%HH'"
+    # 1 leave alphanumerics characters alone
+    # 2 Convert every other character to an array lookup
+    # 3 Escape constructs that are "special" to the tcl parser
+    # 4 "subst" the result, doing all the array substitutions
+
     set alphanumeric	a-zA-Z0-9
     regsub -all \[^$alphanumeric\] $string {$formMap(&)} string
     regsub -all \n $string {\\n} string
@@ -510,7 +654,15 @@ proc http::formatQuery {args} {
     return [subst $string]
 }
 
-# Default proxy filter. 
+# http::ProxyRequired --
+#	Default proxy filter. 
+#
+# Arguments:
+#	host	The destination host
+#
+# Results:
+#       The current proxy settings
+
  proc http::ProxyRequired {host} {
     variable http
     if {[info exists http(-proxyhost)] && [string length $http(-proxyhost)]} {
