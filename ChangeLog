@@ -1,3 +1,7 @@
+2002-03-22  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* win/tclWinInt.h: moved undef of TCL_STORAGE_CLASS. [Bug #478579]
+
 2002-03-22  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* generic/tclBasic.c (Tcl_EvalObjEx):
