@@ -1,3 +1,12 @@
+2003-11-15  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclTest.c (TestHashSystemHashCmd): Removed 'const'
+	modifier from hash type structure; it should be const and the hash
+	code assumes it behaves like const, but that's not how the API is
+	defined. Like this, we are following in the same footsteps as
+	Tcl_RegisterObjType() which has the same conditions on its
+	argument. Stops VC++5.2 warning.  [Bug 842511]
+
 2003-11-14  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclHash.c (Tcl_DeleteHashTable,Tcl_HashStats,RebuildTable): 

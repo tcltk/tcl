@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.71 2003/11/14 23:21:02 dkf Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.72 2003/11/15 23:42:42 dkf Exp $
  */
 
 #define TCL_TEST
@@ -6466,7 +6466,7 @@ TestHashSystemHashCmd(clientData, interp, objc, objv)
     int objc;
     Tcl_Obj *CONST objv[];
 {
-    static const Tcl_HashKeyType hkType = {
+    static Tcl_HashKeyType hkType = {
 	TCL_HASH_KEY_TYPE_VERSION, TCL_HASH_KEY_SYSTEM_HASH,
 	NULL, NULL, NULL, NULL
     };
