@@ -6,19 +6,28 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclPlatDecls.h,v 1.5.12.1 2001/04/03 22:54:38 hobbs Exp $
+ * RCS: @(#) $Id: tclPlatDecls.h,v 1.5.12.2 2002/10/15 20:23:18 hobbs Exp $
  */
 
 #ifndef _TCLPLATDECLS
 #define _TCLPLATDECLS
 
 /*
- *  Pull in the definition of TCHAR.  Hopefully the compile flags
- *  of the core are matching against your project build for these
- *  public functions.  BE AWARE.
+ *  Pull in the typedef of TCHAR for windows.
  */
-#if defined(__WIN32__) && !defined(_INC_TCHAR)
-#include <tchar.h>
+#if defined(__CYGWIN__)
+    typedef char TCHAR;
+#elif defined(__WIN32__) && !defined(_TCHAR_DEFINED)
+#   include <tchar.h>
+#   ifndef _TCHAR_DEFINED
+	/* Borland seems to forget to set this. */
+        typedef _TCHAR TCHAR;
+#	define _TCHAR_DEFINED
+#   endif
+#   if defined(_MSC_VER) && defined(__STDC__)
+	/* MSVC++ misses this. */
+	typedef _TCHAR TCHAR;
+#   endif
 #endif
 
 /* !BEGIN!: Do not edit below this line. */
