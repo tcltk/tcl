@@ -1,3 +1,8 @@
+1999-03-12    <stanton@GASPODE>
+
+	* generic/tcl.h: Changed magic number so it doesn't match the plus
+	patch, at Jan's request.
+
 1999-03-11    <stanton@GASPODE>
 
 	* unix/tclConfig.sh.in:

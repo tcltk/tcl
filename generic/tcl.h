@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.37 1999/03/11 02:49:33 stanton Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.38 1999/03/12 23:03:51 stanton Exp $
  */
 
 #ifndef _TCL
@@ -1075,7 +1075,7 @@ typedef enum Tcl_PathType {
  * in the stubs tables.
  */
 
-#define TCL_STUB_MAGIC 0xFCA1BACF
+#define TCL_STUB_MAGIC 0xFCA3BACF
 
 /*
  * The following function is required to be defined in all stubs aware
