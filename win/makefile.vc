@@ -12,7 +12,7 @@
 # Copyright (c) 2001 Tomasoft Engineering.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.74 2001/11/15 00:19:40 davygrvy Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.75 2001/11/28 01:05:53 davygrvy Exp $
 #------------------------------------------------------------------------------
 
 !if "$(MSVCDIR)" == ""
@@ -594,8 +594,7 @@ $(MAN2TCL).exe: $(MAN2TCL).obj
 
 $(TCLRTF): $(MAN2TCL).exe $(TCLSH)
 	cd $(TOOLSDIR)
-	..\win\$(TCLSH) $(MAN2HELP) $(PROJECT) $(VERSION) $(ROOT)/doc \
-		../../tk$(DOTVERSION)/doc
+	..\win\$(TCLSH) $(MAN2HELP) $(PROJECT) $(VERSION) $(ROOT)/doc
 	cd $(MAKEDIR)
 
 
