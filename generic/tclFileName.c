@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.8 2000/01/11 22:08:59 hobbs Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.9 2000/01/24 02:29:58 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -1293,11 +1293,7 @@ Tcl_GlobObjCmd(dummy, interp, objc, objv)
 	    separators = "/\\:";
 	    break;
 	case TCL_PLATFORM_MAC:
-	    if ((pathOrDir != NULL) && (strchr(pathOrDir, ':') == NULL)) {
-		separators = "/";
-	    } else {
-		separators = ":";
-	    }
+	    separators = ":";
 	    break;
     }
     if (dir == PATH_GENERAL) {
@@ -1609,8 +1605,11 @@ TclGlob(interp, pattern, unquotedPrefix, globFlags, types)
 	    separators = "/\\:";
 	    break;
 	case TCL_PLATFORM_MAC:
-	    separators = (strchr(pattern, ':') == NULL)
-		? "/" : ":";
+	    if (unquotedPrefix == NULL) {
+		separators = (strchr(pattern, ':') == NULL) ? "/" : ":";
+	    } else {
+		separators = ":";
+	    }
 	    break;
     }
 

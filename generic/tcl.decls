@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.28 1999/08/19 02:59:08 hobbs Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.29 2000/01/24 02:29:57 hobbs Exp $
 
 library tcl
 
@@ -1324,7 +1324,7 @@ declare 383 generic {
     Tcl_Obj * Tcl_GetRange (Tcl_Obj *objPtr, int first, int last)
 }
 declare 384 generic {
-    void Tcl_AppendUnicodeToObj (register Tcl_Obj *objPtr, \
+    void Tcl_AppendUnicodeToObj (Tcl_Obj *objPtr, \
 	    Tcl_UniChar *unicode, int length)
 }
 declare 385 generic {
@@ -1343,7 +1343,10 @@ declare 388 generic {
 declare 389 generic {
     int Tcl_GetChannelNamesEx(Tcl_Interp *interp, char *pattern)
 }
-
+declare 390 generic {
+    int Tcl_ProcObjCmd(ClientData clientData, Tcl_Interp *interp, \
+	    int objc, Tcl_Obj *CONST objv[])
+}
 
 
 ##############################################################################

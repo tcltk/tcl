@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.29 1999/08/19 02:59:09 hobbs Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.30 2000/01/24 02:29:57 hobbs Exp $
  */
 
 #ifndef _TCLDECLS
@@ -1199,8 +1199,7 @@ EXTERN Tcl_UniChar *	Tcl_GetUnicode _ANSI_ARGS_((Tcl_Obj * objPtr));
 EXTERN Tcl_Obj *	Tcl_GetRange _ANSI_ARGS_((Tcl_Obj * objPtr, 
 				int first, int last));
 /* 384 */
-EXTERN void		Tcl_AppendUnicodeToObj _ANSI_ARGS_((
-				register Tcl_Obj * objPtr, 
+EXTERN void		Tcl_AppendUnicodeToObj _ANSI_ARGS_((Tcl_Obj * objPtr, 
 				Tcl_UniChar * unicode, int length));
 /* 385 */
 EXTERN int		Tcl_RegExpMatchObj _ANSI_ARGS_((Tcl_Interp * interp, 
@@ -1215,6 +1214,10 @@ EXTERN int		Tcl_GetChannelNames _ANSI_ARGS_((Tcl_Interp * interp));
 /* 389 */
 EXTERN int		Tcl_GetChannelNamesEx _ANSI_ARGS_((
 				Tcl_Interp * interp, char * pattern));
+/* 390 */
+EXTERN int		Tcl_ProcObjCmd _ANSI_ARGS_((ClientData clientData, 
+				Tcl_Interp * interp, int objc, 
+				Tcl_Obj *CONST objv[]));
 
 typedef struct TclStubHooks {
     struct TclPlatStubs *tclPlatStubs;
@@ -1666,12 +1669,13 @@ typedef struct TclStubs {
     Tcl_UniChar (*tcl_GetUniChar) _ANSI_ARGS_((Tcl_Obj * objPtr, int index)); /* 381 */
     Tcl_UniChar * (*tcl_GetUnicode) _ANSI_ARGS_((Tcl_Obj * objPtr)); /* 382 */
     Tcl_Obj * (*tcl_GetRange) _ANSI_ARGS_((Tcl_Obj * objPtr, int first, int last)); /* 383 */
-    void (*tcl_AppendUnicodeToObj) _ANSI_ARGS_((register Tcl_Obj * objPtr, Tcl_UniChar * unicode, int length)); /* 384 */
+    void (*tcl_AppendUnicodeToObj) _ANSI_ARGS_((Tcl_Obj * objPtr, Tcl_UniChar * unicode, int length)); /* 384 */
     int (*tcl_RegExpMatchObj) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * stringObj, Tcl_Obj * patternObj)); /* 385 */
     void (*tcl_SetNotifier) _ANSI_ARGS_((Tcl_NotifierProcs * notifierProcPtr)); /* 386 */
     Tcl_Mutex * (*tcl_GetAllocMutex) _ANSI_ARGS_((void)); /* 387 */
     int (*tcl_GetChannelNames) _ANSI_ARGS_((Tcl_Interp * interp)); /* 388 */
     int (*tcl_GetChannelNamesEx) _ANSI_ARGS_((Tcl_Interp * interp, char * pattern)); /* 389 */
+    int (*tcl_ProcObjCmd) _ANSI_ARGS_((ClientData clientData, Tcl_Interp * interp, int objc, Tcl_Obj *CONST objv[])); /* 390 */
 } TclStubs;
 
 #ifdef __cplusplus
@@ -3276,6 +3280,10 @@ extern TclStubs *tclStubsPtr;
 #ifndef Tcl_GetChannelNamesEx
 #define Tcl_GetChannelNamesEx \
 	(tclStubsPtr->tcl_GetChannelNamesEx) /* 389 */
+#endif
+#ifndef Tcl_ProcObjCmd
+#define Tcl_ProcObjCmd \
+	(tclStubsPtr->tcl_ProcObjCmd) /* 390 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */
