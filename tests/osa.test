@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: osa.test,v 1.4 1999/06/26 03:54:18 jenn Exp $
+# RCS: @(#) $Id: osa.test,v 1.5 1999/07/01 17:36:19 jenn Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -18,7 +18,7 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 }
 
 # Only run the test if we can load the AppleScript command
-set ::tcltest::testConfig(appleScript) [expr {[info commands AppleScript] != ""}]
+set ::tcltest::testConstraints(appleScript) [expr {[info commands AppleScript] != ""}]
 
 test osa-1.1 {Tcl_OSAComponentCmd} {macOnly appleScript} {
     list [catch AppleScript msg] $msg

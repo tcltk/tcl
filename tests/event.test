@@ -9,18 +9,18 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: event.test,v 1.7 1999/06/26 03:54:12 jenn Exp $
+# RCS: @(#) $Id: event.test,v 1.8 1999/07/01 17:36:17 jenn Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
     namespace import ::tcltest::*
 }
 
-set ::tcltest::testConfig(testfilehandler) \
+set ::tcltest::testConstraints(testfilehandler) \
 	[expr {[info commands testfilehandler] != {}}]
-set ::tcltest::testConfig(testexithandler) \
+set ::tcltest::testConstraints(testexithandler) \
 	[expr {[info commands testexithandler] != {}}]
-set ::tcltest::testConfig(testfilewait) \
+set ::tcltest::testConstraints(testfilewait) \
 	[expr {[info commands testfilewait] != {}}]
 
 

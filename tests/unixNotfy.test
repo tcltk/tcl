@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: unixNotfy.test,v 1.6 1999/06/26 20:55:16 rjohnson Exp $
+# RCS: @(#) $Id: unixNotfy.test,v 1.7 1999/07/01 17:36:20 jenn Exp $
 
 # The tests should not be run if you have a notifier which is unable to
 # detect infinite vwaits, as the tests below will hang. The presence of
@@ -21,7 +21,7 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
     namespace import ::tcltest::*
 }
 
-set ::tcltest::testConfig(testthread) \
+set ::tcltest::testConstraints(testthread) \
 	[expr {[info commands testthread] != {}}]
 
 # The next two tests will hang if threads are enabled because the notifier

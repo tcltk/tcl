@@ -6,7 +6,7 @@
 #
 # Copyright (c) 1998, 1999 Henry Spencer.  All rights reserved.
 #
-# RCS: @(#) $Id: reg.test,v 1.7 1999/06/26 20:55:10 rjohnson Exp $
+# RCS: @(#) $Id: reg.test,v 1.8 1999/07/01 17:36:19 jenn Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -16,7 +16,7 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 # All tests require the testregexp command, return if this
 # command doesn't exist
 
-set ::tcltest::testConfig(testregexp) \
+set ::tcltest::testConstraints(testregexp) \
 	[expr {[info commands testregexp] != {}}]
 
 # This file uses some custom procedures, defined below, for regexp regression

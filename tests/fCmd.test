@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fCmd.test,v 1.5 1999/06/26 03:54:13 jenn Exp $
+# RCS: @(#) $Id: fCmd.test,v 1.6 1999/07/01 17:36:18 jenn Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -103,27 +103,27 @@ proc contents {file} {
     set r
 }
 
-set ::tcltest::testConfig(fileSharing) 0
-set ::tcltest::testConfig(notFileSharing) 1
+set ::tcltest::testConstraints(fileSharing) 0
+set ::tcltest::testConstraints(notFileSharing) 1
 
 if {$tcl_platform(platform) == "macintosh"} {
     catch {file delete -force foo.dir}
     file mkdir foo.dir
     if {[catch {file attributes foo.dir -readonly 1}] == 0} {
-    	set ::tcltest::testConfig(fileSharing) 1
-    	set ::tcltest::testConfig(notFileSharing) 0
+    	set ::tcltest::testConstraints(fileSharing) 1
+    	set ::tcltest::testConstraints(notFileSharing) 0
     }
     file delete -force foo.dir
 }
 
-set ::tcltest::testConfig(xdev) 0
+set ::tcltest::testConstraints(xdev) 0
 
 if {$tcl_platform(platform) == "unix"} {
     if {[catch {set m1 [exec df .]; set m2 [exec df /tmp]}] == 0} {
 	set m1 [string range $m1 0 [expr [string first " " $m1]-1]]
 	set m2 [string range $m2 0 [expr [string first " " $m2]-1]]
 	if {$m1 != "" && $m2 != "" && $m1 != $m2 && [file exists $m1] && [file exists $m2]} {
-	    set ::tcltest::testConfig(xdev) 1
+	    set ::tcltest::testConstraints(xdev) 1
 	}
     }
 }
@@ -2124,14 +2124,14 @@ test fCmd-27.4 {TclFileAttrsCmd - getting one option} {
 # Find a group that exists on this Unix system, or else skip tests that
 # require Unix groups.
 if {$tcl_platform(platform) == "unix"} {
-    set ::tcltest::testConfig(foundGroup) 0
+    set ::tcltest::testConstraints(foundGroup) 0
     catch {
 	set groupList [exec groups]
 	set group [lindex $groupList 0]
-	set ::tcltest::testConfig(foundGroup) 1
+	set ::tcltest::testConstraints(foundGroup) 1
     }
 } else {
-    set ::tcltest::testConfig(foundGroup) 1
+    set ::tcltest::testConstraints(foundGroup) 1
 }
 
 test fCmd-27.5 {TclFileAttrsCmd - setting one option} {foundGroup} {

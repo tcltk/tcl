@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: msgcat.test,v 1.5 1999/06/26 03:54:17 jenn Exp $
+# RCS: @(#) $Id: msgcat.test,v 1.6 1999/07/01 17:36:18 jenn Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -38,9 +38,9 @@ set oldlocale [::msgcat::mclocale]
 # some tests fail in tne environment variable LANG exists and is not C
 
 if {[info exists env(LANG)] && ($env(LANG) != "C")} {
-    set ::tcltest::testConfig(LANGisC) 0
+    set ::tcltest::testConstraints(LANGisC) 0
 } else {
-    set ::tcltest::testConfig(LANGisC) 1
+    set ::tcltest::testConstraints(LANGisC) 1
 }
 
 #

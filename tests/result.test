@@ -19,7 +19,7 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 
 # Some tests require the testsaveresult command
 
-set ::tcltest::testConfig(testsaveresult) \
+set ::tcltest::testConstraints(testsaveresult) \
 	[expr {[info commands testsaveresult] != {}}]
 
 test result-1.1 {Tcl_SaveInterpResult} {testsaveresult} {

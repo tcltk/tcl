@@ -8,7 +8,7 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 #
-# RCS: @(#) $Id: pkgMkIndex.test,v 1.10 1999/06/26 20:55:09 rjohnson Exp $
+# RCS: @(#) $Id: pkgMkIndex.test,v 1.11 1999/07/01 17:36:19 jenn Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -323,7 +323,7 @@ test pkgMkIndex-9.1 {circular packages} {
 set x [file join [file dirname [info nameofexecutable]] dltest \
 	pkga[info sharedlibextension]]
 set dll "[file tail $x]Required"
-set ::tcltest::testConfig($dll) [file exists $x]
+set ::tcltest::testConstraints($dll) [file exists $x]
 
 test pkgMkIndex-10.1 {package in DLL and script} $dll {
     file copy -force $x $fullPkgPath

@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: unixFCmd.test,v 1.8 1999/06/26 20:55:15 rjohnson Exp $
+# RCS: @(#) $Id: unixFCmd.test,v 1.9 1999/07/01 17:36:20 jenn Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -214,11 +214,11 @@ test unixFCmd-14.2 {GetPermissionsAttribute} {unixOnly notRoot} {
 
 # Find a group that exists on this system, or else skip tests that require
 # groups
-set ::tcltest::testConfig(foundGroup) 0
+set ::tcltest::testConstraints(foundGroup) 0
 catch {
     set groupList [exec groups]
     set group [lindex $groupList 0]
-    set ::tcltest::testConfig(foundGroup) 1
+    set ::tcltest::testConstraints(foundGroup) 1
 }
 
 #groups hard to test

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fileName.test,v 1.4 1999/06/26 03:54:13 jenn Exp $
+# RCS: @(#) $Id: fileName.test,v 1.5 1999/07/01 17:36:18 jenn Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -1383,9 +1383,9 @@ test filename-16.11 {windows specific globbing} {pcOnly} {
 # some tests require a shared C drive
 
 if {[catch {cd //[info hostname]/c}]} {
-    set ::tcltest::testConfig(sharedCdrive) 0
+    set ::tcltest::testConstraints(sharedCdrive) 0
 } else {
-    set ::tcltest::testConfig(sharedCdrive) 1
+    set ::tcltest::testConstraints(sharedCdrive) 1
 }
 
 test filename-16.12 {windows specific globbing} {pcOnly sharedCdrive} {

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: macFCmd.test,v 1.4 1999/06/26 03:54:17 jenn Exp $
+# RCS: @(#) $Id: macFCmd.test,v 1.5 1999/07/01 17:36:18 jenn Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -21,11 +21,11 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 catch {file delete -force foo.dir}
 file mkdir foo.dir
 if {[catch {file attributes foo.dir -readonly 1}]} {
-    set ::tcltest::testConfig(fileSharing) 0
-    set ::tcltest::testConfig(notFileSharing) 1
+    set ::tcltest::testConstraints(fileSharing) 0
+    set ::tcltest::testConstraints(notFileSharing) 1
 } else {
-    set ::tcltest::testConfig(fileSharing) 1
-    set ::tcltest::testConfig(notFileSharing) 0
+    set ::tcltest::testConstraints(fileSharing) 1
+    set ::tcltest::testConstraints(notFileSharing) 0
 }
 file delete -force foo.dir
 

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: unixInit.test,v 1.7 1999/06/26 20:55:16 rjohnson Exp $
+# RCS: @(#) $Id: unixInit.test,v 1.8 1999/07/01 17:36:20 jenn Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -28,9 +28,9 @@ if {[catch {
     exec kill -PIPE [pid $f]
     close $f
 }]} {
-    set ::tcltest::testConfig(installedTcl) 0
+    set ::tcltest::testConstraints(installedTcl) 0
 } else {
-    set ::tcltest::testConfig(installedTcl) 1
+    set ::tcltest::testConstraints(installedTcl) 1
 }
 test unixInit-1.1 {TclpInitPlatform: ignore SIGPIPE} {unixOnly installedTcl} {
     set x {}
@@ -66,7 +66,7 @@ proc getlibpath "{program [list $::tcltest::tcltest]}" {
 
 # Some tests require the testgetdefenc command
 
-set ::tcltest::testConfig(testgetdefenc) \
+set ::tcltest::testConstraints(testgetdefenc) \
 	[expr {[info commands testgetdefenc] != {}}]
 
 test unixInit-2.0 {TclpInitLibraryPath: setting tclDefaultEncodingDir} \
