@@ -2,7 +2,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run to configure the
 dnl	Makefile in this directory.
 AC_INIT(pkga.c)
-# RCS: @(#) $Id: configure.in,v 1.1.2.1 1998/09/24 23:59:47 stanton Exp $
+# RCS: @(#) $Id: configure.in,v 1.1.2.2 1998/12/10 19:13:46 stanton Exp $
 
 # Recover information that Tcl computed with its configure script.
 
@@ -12,6 +12,8 @@ CC=$TCL_CC
 AC_SUBST(CC)
 SHLIB_CFLAGS=$TCL_SHLIB_CFLAGS
 AC_SUBST(SHLIB_CFLAGS)
+EXTRA_CFLAGS=$TCL_EXTRA_CFLAGS
+AC_SUBST(EXTRA_CFLAGS)
 SHLIB_LD=$TCL_SHLIB_LD
 AC_SUBST(SHLIB_LD)
 SHLIB_LD_LIBS=$TCL_SHLIB_LD_LIBS
