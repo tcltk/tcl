@@ -1,5 +1,9 @@
 2004-06-11  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclInterp.c:	Updated [tclInit] to make $env(TCL_LIBRARY) an
+	absolute path, and to include the scriptdir,runtime configuration value
+	on the search path for init.tcl.
+
 	* unix/tclUnixInit.c:	The routines Tcl_Init() and TclSourceRCFile()
 	* win/tclWinInit.c:	had identical implementations for both win and
 	* generic/tclInterp.c:	unix.  Moved to a single generic implementation.
