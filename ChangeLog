@@ -1,3 +1,9 @@
+2003-09-19  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclExecute.c: adding (DE)CACHE_STACK_INFO() pairs to
+	protect all calls that may cause traces on ::errorInfo or
+	::errorCode to corrupt the stack [Bug 804681]
+
 2003-09-17  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* tclPathObj.c: fix to test-suite problem introduced by the bug 
@@ -223,7 +229,7 @@
 
 2003-08-05  Miguel Sofer <msofer@users.sf.net>
 
-	* generic/tclexecute.c (INST_INVOKE, INST_EVAL, INST_PUSH_RESULT):
+	* generic/tclExecute.c (INST_INVOKE, INST_EVAL, INST_PUSH_RESULT):
 	added a Tcl_ResetResult(interp) at each point where the interp's
 	result is pushed onto the stack, to avoid keeping an extra
 	reference that may cause costly Tcl_Obj duplication [Bug 781585]
