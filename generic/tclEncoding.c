@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEncoding.c,v 1.18 2004/04/06 22:25:50 dgp Exp $
+ * RCS: @(#) $Id: tclEncoding.c,v 1.19 2004/04/07 22:04:28 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -226,6 +226,7 @@ static int		UtfToUtfProc _ANSI_ARGS_((ClientData clientData,
 			    Tcl_EncodingState *statePtr, char *dst, int dstLen,
 			    int *srcReadPtr, int *dstWrotePtr,
 			    int *dstCharsPtr));
+static int		TclFindEncodings _ANSI_ARGS_((CONST char *argv0));
 
 
 /*
@@ -1110,6 +1111,7 @@ Tcl_FindExecutable(argv0)
     CONST char *argv0;		/* The value of the application's argv[0]
 				 * (native). */
 {
+    int mustCleanUtf;
     CONST char *name;
     Tcl_DString buffer, nameString;
 
@@ -1128,32 +1130,40 @@ Tcl_FindExecutable(argv0)
 
     /*
      * The value returned from TclpNameOfExecutable is a UTF string that
-     * is possibly dirty depending on when it was initialized.  To assure
-     * that the UTF string is a properly encoded native string for this
-     * system, convert the UTF string to the default native encoding
-     * before the default encoding is initialized.  Then, convert it back
-     * to UTF after the system encoding is loaded.
+     * is possibly dirty depending on when it was initialized.
+     * TclFindEncodings will indicate whether we must "clean" the UTF (as
+     * reported by the underlying system).  To assure that the UTF string
+     * is a properly encoded native string for this system, convert the
+     * UTF string to the default native encoding before the default
+     * encoding is initialized.  Then, convert it back to UTF after the
+     * system encoding is loaded.
      */
     
     Tcl_UtfToExternalDString(NULL, name, -1, &buffer);
-    TclFindEncodings(argv0);
+    mustCleanUtf = TclFindEncodings(argv0);
 
     /*
      * Now it is OK to convert the native string back to UTF and set
      * the value of the tclExecutableName.
      */
     
-    Tcl_ExternalToUtfDString(NULL, Tcl_DStringValue(&buffer), -1, &nameString);
-    tclExecutableName = (char *)
-	ckalloc((unsigned) (Tcl_DStringLength(&nameString) + 1));
-    strcpy(tclExecutableName, Tcl_DStringValue(&nameString));
+    if (mustCleanUtf) {
+	Tcl_ExternalToUtfDString(NULL, Tcl_DStringValue(&buffer), -1,
+		&nameString);
+	tclExecutableName = (char *)
+	    ckalloc((unsigned) (Tcl_DStringLength(&nameString) + 1));
+	strcpy(tclExecutableName, Tcl_DStringValue(&nameString));
 
+	Tcl_DStringFree(&nameString);
+    } else {
+	tclExecutableName = (char *) ckalloc((unsigned) (strlen(name) + 1));
+	strcpy(tclExecutableName, name);
+    }
     Tcl_DStringFree(&buffer);
-    Tcl_DStringFree(&nameString);
     return;
 	
     done:
-    TclFindEncodings(argv0);
+    (void) TclFindEncodings(argv0);
 }
 
 /*
@@ -2813,7 +2823,8 @@ unilen(src)
  *	assured.
  *
  * Results:
- *	None.
+ *	Return result of TclpInitLibraryPath, which reports whether the
+ *	path is clean (0) or dirty (1) UTF.
  *
  * Side effects:
  *	Varied, see the respective initialization routines.
@@ -2821,14 +2832,12 @@ unilen(src)
  *-------------------------------------------------------------------------
  */
 
-void
+int
 TclFindEncodings(argv0)
     CONST char *argv0;		/* Name of executable from argv[0] to main()
 				 * in native multi-byte encoding. */
 {
-    char *native;
-    Tcl_Obj *pathPtr;
-    Tcl_DString libPath, buffer;
+    int mustCleanUtf = 0;
 
     if (encodingsInitialized == 0) {
 	/* 
@@ -2838,6 +2847,10 @@ TclFindEncodings(argv0)
 
 	TclpInitLock();
 	if (encodingsInitialized == 0) {
+	    char *native;
+	    Tcl_Obj *pathPtr;
+	    Tcl_DString libPath, buffer;
+
 	    /*
 	     * Have to set this bit here to avoid deadlock with the
 	     * routines below us that call into TclInitSubsystems.
@@ -2846,7 +2859,7 @@ TclFindEncodings(argv0)
 	    encodingsInitialized = 1;
 
 	    native = TclpFindExecutable(argv0);
-	    TclpInitLibraryPath(native);
+	    mustCleanUtf = TclpInitLibraryPath(native);
 
 	    /*
 	     * The library path was set in the TclpInitLibraryPath routine.
@@ -2856,7 +2869,7 @@ TclFindEncodings(argv0)
 	     */
 	    
 	    pathPtr = TclGetLibraryPath();
-	    if (pathPtr != NULL) {
+	    if ((pathPtr != NULL) && mustCleanUtf) {
 		Tcl_UtfToExternalDString(NULL, Tcl_GetString(pathPtr), -1,
 			&libPath);
 	    }
@@ -2867,7 +2880,7 @@ TclFindEncodings(argv0)
 	     * Now convert the native string back to UTF.
 	     */
 	     
-	    if (pathPtr != NULL) {
+	    if ((pathPtr != NULL) && mustCleanUtf) {
 		Tcl_ExternalToUtfDString(NULL, Tcl_DStringValue(&libPath), -1,
 			&buffer);
 		pathPtr = Tcl_NewStringObj(Tcl_DStringValue(&buffer), -1);
@@ -2879,5 +2892,7 @@ TclFindEncodings(argv0)
 	}
 	TclpInitUnlock();
     }
+
+    return mustCleanUtf;
 }
 	
