@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.52 2001/11/27 13:30:54 dkf Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.53 2001/12/20 23:33:27 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2321,9 +2321,9 @@ Tcl_SubstObjCmd(dummy, interp, objc, objv)
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_SubstObjCmd --
+ * Tcl_SubstObj --
  *
- *	This function performs the substitutions specificed on the
+ *	This function performs the substitutions specified on the
  *	given string as described in the user documentation for the
  *	"subst" Tcl command.  This code is heavily based on an
  *	implementation by Andrew Payne.  Note that if a command
