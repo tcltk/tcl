@@ -1,3 +1,9 @@
+2003-03-26  Don Porter  <dgp@users.sourceforge.net>
+
+	* unix/dltest/pkg?.c:  Changed all Tcl_InitStubs calls to pass
+	argument exact = 0, so that rebuilds are not required when Tcl
+	bumps to a new version.  [Bug 701926]
+
 2003-03-24  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclVar.c:
