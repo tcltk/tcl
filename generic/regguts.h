@@ -225,6 +225,9 @@ struct cvec {
 	int nchrs;		/* number of chrs */
 	int chrspace;		/* number of chrs possible */
 	chr *chrs;		/* pointer to vector of chrs */
+	int nranges;		/* number of ranges (chr pairs) */
+	int rangespace;		/* number of chrs possible */
+	chr *ranges;		/* pointer to vector of chr pairs */
 	int nmcces;		/* number of MCCEs */
 	int mccespace;		/* number of MCCEs possible */
 	int nmccechrs;		/* number of chrs used for MCCEs */

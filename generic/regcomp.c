@@ -127,12 +127,13 @@ static VOID dumparc _ANSI_ARGS_((struct arc *, struct state *, FILE *));
 static VOID dumpcnfa _ANSI_ARGS_((struct cnfa *, FILE *));
 static VOID dumpcstate _ANSI_ARGS_((int, struct carc *, struct cnfa *, FILE *));
 /* === regc_cvec.c === */
-static struct cvec *newcvec _ANSI_ARGS_((int, int));
+static struct cvec *newcvec _ANSI_ARGS_((int, int, int));
 static struct cvec *clearcvec _ANSI_ARGS_((struct cvec *));
 static VOID addchr _ANSI_ARGS_((struct cvec *, pchr));
+static VOID addrange _ANSI_ARGS_((struct cvec *, pchr, pchr));
 static VOID addmcce _ANSI_ARGS_((struct cvec *, chr *, chr *));
 static int haschr _ANSI_ARGS_((struct cvec *, pchr));
-static struct cvec *getcvec _ANSI_ARGS_((struct vars *, int, int));
+static struct cvec *getcvec _ANSI_ARGS_((struct vars *, int, int, int));
 static VOID freecvec _ANSI_ARGS_((struct cvec *));
 /* === regc_locale.c === */
 static int nmcces _ANSI_ARGS_((struct vars *));
@@ -176,7 +177,8 @@ struct vars {
 	struct rtree *treechain;	/* all tree nodes allocated */
 	struct rtree *treefree;		/* any free tree nodes */
 	int ntree;		/* number of tree nodes */
-	struct cvec *cv;	/* utility cvec */
+	struct cvec *cv;	/* interface cvec */
+	struct cvec *cv2;	/* utility cvec */
 	struct cvec *mcces;	/* collating-element information */
 #		define	ISCELEADER(v,c)	(v->mcces != NULL && haschr(v->mcces, (c)))
 	struct state *mccepbegin;	/* in nfa, start of MCCE prototypes */
@@ -284,6 +286,7 @@ int flags;
 	v->treechain = NULL;
 	v->treefree = NULL;
 	v->cv = NULL;
+	v->cv2 = NULL;
 	v->mcces = NULL;
 	v->lacons = NULL;
 	v->nlacons = 0;
@@ -307,12 +310,12 @@ int flags;
 	g->cm = NULL;
 	g->lacons = NULL;
 	g->nlacons = 0;
-	v->cv = newcvec(100, 10);
+	v->cv = newcvec(100, 20, 10);
 	if (v->cv == NULL)
 		return freev(v, REG_ESPACE);
 	i = nmcces(v);
 	if (i > 0) {
-		v->mcces = newcvec(nleaders(v), i);
+		v->mcces = newcvec(nleaders(v), 0, i);
 		CNOERR();
 		v->mcces = allmcces(v, v->mcces);
 		leaders(v, v->mcces);
@@ -452,6 +455,8 @@ int err;
 		cleanrt(v);
 	if (v->cv != NULL)
 		freecvec(v->cv);
+	if (v->cv2 != NULL)
+		freecvec(v->cv2);
 	if (v->mcces != NULL)
 		freecvec(v->mcces);
 	if (v->lacons != NULL)
@@ -1432,32 +1437,65 @@ struct cvec *cv;
 struct state *lp;
 struct state *rp;
 {
+	chr ch, from, to;
 	chr *p;
-	chr *np;
 	int i;
 	color co;
+	struct cvec *leads;
 	struct arc *a;
 	struct arc *pa;		/* arc in prototype */
 	struct state *s;
 	struct state *ps;	/* state in prototype */
 
+	/* need a place to store leaders, if any */
+	if (nmcces(v) > 0) {
+		assert(v->mcces != NULL);
+		if (v->cv2 == NULL || v->cv2->nchrs < v->mcces->nchrs) {
+			if (v->cv2 != NULL)
+				free(v->cv2);
+			v->cv2 = newcvec(v->mcces->nchrs, 0, v->mcces->nmcces);
+			NOERR();
+			leads = v->cv2;
+		} else
+			leads = clearcvec(v->cv2);
+	} else
+		leads = NULL;
+
 	/* first, get the ordinary characters out of the way */
-	np = cv->chrs;
-	for (p = np, i = cv->nchrs; i > 0; p++, i--)
-		if (!ISCELEADER(v, *p)) {
-			newarc(v->nfa, PLAIN, subcolor(v->cm, *p), lp, rp);
-			*p = 0;
-		} else {
-			assert(singleton(v->cm, *p));
-			*np++ = *p;
+	for (p = cv->chrs, i = cv->nchrs; i > 0; p++, i--) {
+		ch = *p;
+		if (!ISCELEADER(v, ch))
+			newarc(v->nfa, PLAIN, subcolor(v->cm, ch), lp, rp);
+		else {
+			assert(singleton(v->cm, ch));
+			assert(leads != NULL);
+			if (!haschr(leads, ch))
+				addchr(leads, ch);
 		}
-	cv->nchrs = np - cv->chrs;	/* only MCCE leaders remain */
-	if (cv->nchrs == 0 && cv->nmcces == 0)
+	}
+
+	/* and the ranges */
+	for (p = cv->ranges, i = cv->nranges; i > 0; p += 2, i--) {
+		from = *p;
+		to = *(p+1);
+		for (ch = from; ch <= to; ch++)
+			if (!ISCELEADER(v, ch))
+				newarc(v->nfa, PLAIN, subcolor(v->cm, ch), lp,
+									rp);
+			else {
+				assert(singleton(v->cm, ch));
+				assert(leads != NULL);
+				if (!haschr(leads, ch))
+					addchr(leads, ch);
+			}
+	}
+
+	if ((leads == NULL || leads->nchrs == 0) && cv->nmcces == 0)
 		return;
 
 	/* deal with the MCCE leaders */
 	NOTE(REG_ULOCALE);
-	for (p = cv->chrs, i = cv->nchrs; i > 0; p++, i--) {
+	for (p = leads->chrs, i = leads->nchrs; i > 0; p++, i--) {
 		co = getcolor(v->cm, *p);
 		a = findarc(lp, PLAIN, co);
 		if (a != NULL)

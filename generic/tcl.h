@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.1.2.3 1998/10/06 20:39:30 rjohnson Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.1.2.4 1998/11/04 04:39:52 stanton Exp $
  */
 
 #ifndef _TCL
@@ -1667,11 +1667,11 @@ EXTERN int		Tcl_RecordAndEvalObj _ANSI_ARGS_((Tcl_Interp *interp,
 EXTERN Tcl_RegExp	Tcl_RegExpCompile _ANSI_ARGS_((Tcl_Interp *interp,
 			    char *string));
 EXTERN int		Tcl_RegExpExec _ANSI_ARGS_((Tcl_Interp *interp,
-			    Tcl_RegExp regexp, CONST char *string,
+			    Tcl_RegExp re, CONST char *string,
 			    CONST char *start));
 EXTERN int		Tcl_RegExpMatch _ANSI_ARGS_((Tcl_Interp *interp,
 			    char *string, char *pattern));
-EXTERN void		Tcl_RegExpRange _ANSI_ARGS_((Tcl_RegExp regexp,
+EXTERN void		Tcl_RegExpRange _ANSI_ARGS_((Tcl_RegExp re,
 			    int index, char **startPtr, char **endPtr));
 EXTERN void		Tcl_RegisterChannel _ANSI_ARGS_((Tcl_Interp *interp,
 	        	    Tcl_Channel chan));

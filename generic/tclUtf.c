@@ -8,11 +8,16 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUtf.c,v 1.1.2.4 1998/10/21 20:57:08 stanton Exp $
+ * RCS: @(#) $Id: tclUtf.c,v 1.1.2.5 1998/11/04 04:39:53 stanton Exp $
  */
 
 #include "tclInt.h"
-#include "tclUtf.h"
+
+/*
+ * Include the static character classification tables and macros.
+ */
+
+#include "tclUniData.c"
 
 /*
  * The following macros are used for fast character category tests.  The

@@ -5,18 +5,19 @@
 
 /*
  - newcvec - allocate a new cvec
- ^ static struct cvec *newcvec(int, int);
+ ^ static struct cvec *newcvec(int, int, int);
  */
 static struct cvec *
-newcvec(nchrs, nmcces)
+newcvec(nchrs, nranges, nmcces)
 int nchrs;			/* to hold this many chrs... */
+int nranges;			/* ... and this many ranges... */
 int nmcces;			/* ... and this many MCCEs */
 {
 	size_t n;
 	size_t nc;
 	struct cvec *cv;
 
-	nc = (size_t)nchrs + (size_t)nmcces*(MAXMCCE+1);
+	nc = (size_t)nchrs + (size_t)nmcces*(MAXMCCE+1) + (size_t)nranges*2;
 	n = sizeof(struct cvec) + (size_t)(nmcces-1)*sizeof(chr *) +
 								nc*sizeof(chr);
 	cv = (struct cvec *)MALLOC(n);
@@ -25,6 +26,8 @@ int nmcces;			/* ... and this many MCCEs */
 	cv->chrspace = nc;
 	cv->chrs = (chr *)&cv->mcces[nmcces];	/* chrs just after MCCE ptrs */
 	cv->mccespace = nmcces;
+	cv->ranges = cv->chrs + nchrs + nmcces*(MAXMCCE+1);
+	cv->rangespace = nranges;
 	return clearcvec(cv);
 }
 
@@ -44,6 +47,7 @@ struct cvec *cv;
 	assert(cv->chrs == (chr *)&cv->mcces[cv->mccespace]);
 	cv->nmcces = 0;
 	cv->nmccechrs = 0;
+	cv->nranges = 0;
 	for (i = 0; i < cv->mccespace; i++)
 		cv->mcces[i] = NULL;
 
@@ -61,6 +65,22 @@ pchr c;
 {
 	assert(cv->nchrs < cv->chrspace - cv->nmccechrs);
 	cv->chrs[cv->nchrs++] = (chr)c;
+}
+
+/*
+ - addrange - add a range to a cvec
+ ^ static VOID addrange(struct cvec *, pchr, pchr);
+ */
+static VOID
+addrange(cv, from, to)
+struct cvec *cv;
+pchr from;
+pchr to;
+{
+	assert(cv->nranges < cv->rangespace);
+	cv->ranges[cv->nranges*2] = (chr)from;
+	cv->ranges[cv->nranges*2 + 1] = (chr)to;
+	cv->nranges++;
 }
 
 /*
@@ -105,26 +125,31 @@ pchr c;
 	for (p = cv->chrs, i = cv->nchrs; i > 0; p++, i--)
 		if (*p == c)
 			return 1;
+	for (p = cv->ranges, i = cv->nranges; i > 0; p += 2, i--)
+		if (*p <= c && c <= *(p+1))
+			return 1;
 	return 0;
 }
 
 /*
  - getcvec - get a cvec, remembering it as v->cv
- ^ static struct cvec *getcvec(struct vars *, int, int);
+ ^ static struct cvec *getcvec(struct vars *, int, int, int);
  */
 static struct cvec *
-getcvec(v, nchrs, nmcces)
+getcvec(v, nchrs, nranges, nmcces)
 struct vars *v;
 int nchrs;			/* to hold this many chrs... */
+int nranges;			/* ... and this many ranges... */
 int nmcces;			/* ... and this many MCCEs */
 {
 	if (v->cv != NULL && nchrs <= v->cv->chrspace &&
-						nmcces <= v->cv->mccespace)
+					nranges <= v->cv->rangespace &&
+					nmcces <= v->cv->mccespace)
 		return clearcvec(v->cv);
 
 	if (v->cv != NULL)
 		freecvec(v->cv);
-	v->cv = newcvec(nchrs, nmcces);
+	v->cv = newcvec(nchrs, nranges, nmcces);
 	if (v->cv == NULL)
 		ERR(REG_ESPACE);
 
