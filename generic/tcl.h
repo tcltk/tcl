@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.52 1999/07/16 01:52:24 redman Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.53 1999/07/21 21:28:59 redman Exp $
  */
 
 #ifndef _TCL
@@ -178,6 +178,8 @@ extern "C" {
 #include <stdio.h>
 #endif
 
+#include <sys/types.h>
+    
 /*
  * Definitions that allow Tcl functions with variable numbers of
  * arguments to be used with either varargs.h or stdarg.h.  TCL_VARARGS

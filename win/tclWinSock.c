@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinSock.c,v 1.11 1999/06/08 19:02:15 stanton Exp $
+ * RCS: @(#) $Id: tclWinSock.c,v 1.12 1999/07/21 21:28:59 redman Exp $
  */
 
 #include "tclWinInt.h"
@@ -80,6 +80,9 @@ static struct {
  */
 
 #define SOCKET_MESSAGE	WM_USER+1
+#define SOCKET_SELECT	WM_USER+2
+#define SELECT          TRUE
+#define UNSELECT	FALSE
 
 /*
  * The following structure is used to store the data associated with
@@ -101,6 +104,8 @@ typedef struct SocketInfo {
                                     * FD_CLOSE, FD_ACCEPT and FD_CONNECT that
 				    * indicate which events are currently
 				    * being selected. */
+    int acceptEventCount;          /* Count of the current number of FD_ACCEPTs
+				    * that have arrived and not processed. */
     Tcl_TcpAcceptProc *acceptProc; /* Proc to call on accept. */
     ClientData acceptProcData;	   /* The data for the accept proc. */
     int lastError;		   /* Error code from last message. */
@@ -146,11 +151,17 @@ typedef struct ThreadSpecificData {
      * Every open socket has an entry on the following list.
      */
     
-    HWND hwnd;			/* Handle to window for socket messages. */
+    HWND hwnd;		    /* Handle to window for socket messages. */
+    HANDLE socketThread;    /* Thread handling the window */
+    Tcl_ThreadId threadId;  /* Parent thread. */
+    HANDLE readyEvent;      /* Event indicating that a socket event is ready.
+			     * Also used to indicate that the socketThread has
+			     * been initialized and has started. */
     SocketInfo *socketList;
 } ThreadSpecificData;
 
 static Tcl_ThreadDataKey dataKey;
+static WNDCLASSA windowClass;
 
 /*
  * Static functions defined in this file.
@@ -193,6 +204,7 @@ static int		TcpGetHandleProc _ANSI_ARGS_((ClientData instanceData,
 		            int direction, ClientData *handlePtr));
 static int		WaitForSocketEvent _ANSI_ARGS_((SocketInfo *infoPtr,
 		            int events, int *errorCodePtr));
+static DWORD WINAPI     SocketThread _ANSI_ARGS_((LPVOID arg));
 
 /*
  * This structure describes the channel type structure for TCP socket
@@ -243,9 +255,9 @@ static Tcl_ChannelType tcpChannelType = {
 static void
 InitSockets()
 {
+    DWORD id;
     WSADATA wsaData;
     OSVERSIONINFO info;
-    static WNDCLASSA class;
     ThreadSpecificData *tsdPtr = 
 	(ThreadSpecificData *)TclThreadDataKeyGet(&dataKey);
 
@@ -394,18 +406,18 @@ InitSockets()
 	 * message window is a subclass of a static control.
 	 */
     
-	class.style = 0;
-	class.cbClsExtra = 0;
-	class.cbWndExtra = 0;
-	class.hInstance = TclWinGetTclInstance();
-	class.hbrBackground = NULL;
-	class.lpszMenuName = NULL;
-	class.lpszClassName = "TclSocket";
-	class.lpfnWndProc = SocketProc;
-	class.hIcon = NULL;
-	class.hCursor = NULL;
+	windowClass.style = 0;
+	windowClass.cbClsExtra = 0;
+	windowClass.cbWndExtra = 0;
+	windowClass.hInstance = TclWinGetTclInstance();
+	windowClass.hbrBackground = NULL;
+	windowClass.lpszMenuName = NULL;
+	windowClass.lpszClassName = "TclSocket";
+	windowClass.lpfnWndProc = SocketProc;
+	windowClass.hIcon = NULL;
+	windowClass.hCursor = NULL;
 
-	if (!RegisterClassA(&class)) {
+	if (!RegisterClassA(&windowClass)) {
 	    TclWinConvertError(GetLastError());
 	    (*winSock.WSACleanup)();
 	    goto unloadLibrary;
@@ -431,20 +443,53 @@ InitSockets()
     if (tsdPtr == NULL) {
 	tsdPtr = TCL_TSD_INIT(&dataKey);
 	tsdPtr->socketList = NULL;
-    
-	tsdPtr->hwnd = CreateWindowA("TclSocket", "TclSocket", 
-		WS_TILED, 0, 0, 0, 0, NULL, NULL, class.hInstance, NULL);
+	tsdPtr->hwnd = NULL;
+
+	tsdPtr->threadId = Tcl_GetCurrentThread();
+	
+	tsdPtr->readyEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+	tsdPtr->socketThread = CreateThread(NULL, 8000, SocketThread,
+		tsdPtr, 0, &id);
+	SetThreadPriority(tsdPtr->socketThread, THREAD_PRIORITY_HIGHEST); 
+
+	if (tsdPtr->socketThread == NULL) {
+	    goto unloadLibrary;
+	}
+	
+
+	/*
+	 * Wait for the thread to signal that the window has
+	 * been created and is ready to go.  Timeout after twenty
+	 * seconds.
+	 */
+	
+	Tcl_MutexUnlock(&socketMutex);
+	if (WaitForSingleObject(tsdPtr->readyEvent, 20000) == WAIT_TIMEOUT) {
+	    Tcl_MutexLock(&socketMutex);
+	    goto unloadLibrary;
+	}
+	Tcl_MutexLock(&socketMutex);
 
 	if (tsdPtr->hwnd == NULL) {
 	    goto unloadLibrary;
 	}
-	    
+	
 	Tcl_CreateEventSource(SocketSetupProc, SocketCheckProc, NULL);
 	Tcl_CreateThreadExitHandler(SocketThreadExitHandler, NULL);
     }
     return;
 
 unloadLibrary:
+    if (tsdPtr != NULL) {
+	if (tsdPtr->hwnd != NULL) {
+	    DestroyWindow(tsdPtr->hwnd);
+	}
+	if (tsdPtr->socketThread != NULL) {
+	    TerminateThread(tsdPtr->socketThread, 0);
+	    tsdPtr->socketThread = NULL;
+	}
+	CloseHandle(tsdPtr->readyEvent);
+    }
     FreeLibrary(winSock.hInstance);
     winSock.hInstance = NULL;
     return;
@@ -537,8 +582,13 @@ SocketThreadExitHandler(clientData)
     ThreadSpecificData *tsdPtr = 
 	(ThreadSpecificData *)TclThreadDataKeyGet(&dataKey);
 
-    DestroyWindow(tsdPtr->hwnd);
-
+    if (tsdPtr->socketThread != NULL) {
+	TerminateThread(tsdPtr->socketThread, 0);
+    }
+    if (tsdPtr->hwnd != NULL) {
+	DestroyWindow(tsdPtr->hwnd);
+    }
+    
     Tcl_DeleteEventSource(SocketSetupProc, SocketCheckProc, NULL);
 }
 
@@ -772,7 +822,8 @@ SocketEventProc(evPtr, flags)
 	 * async select handler and keep waiting.
 	 */
 
-	(void) (*winSock.WSAAsyncSelect)(infoPtr->socket, tsdPtr->hwnd, 0, 0);
+	SendMessage(tsdPtr->hwnd, SOCKET_SELECT,
+		(WPARAM) UNSELECT, (LPARAM) infoPtr);
 
 	FD_ZERO(&readFds);
 	FD_SET(infoPtr->socket, &readFds);
@@ -782,8 +833,8 @@ SocketEventProc(evPtr, flags)
 	if ((*winSock.select)(0, &readFds, NULL, NULL, &timeout) != 0) {
 	    mask |= TCL_READABLE;
 	} else {
-	    (void) (*winSock.WSAAsyncSelect)(infoPtr->socket, tsdPtr->hwnd,
-		    SOCKET_MESSAGE, infoPtr->selectEvents);
+	    SendMessage(tsdPtr->hwnd, SOCKET_SELECT,
+		    (WPARAM) SELECT, (LPARAM) infoPtr);
 	    infoPtr->readyEvents &= ~(FD_READ);
 	}
     }
@@ -925,6 +976,7 @@ NewSocketInfo(socket)
     infoPtr->watchEvents = 0;
     infoPtr->readyEvents = 0;
     infoPtr->selectEvents = 0;
+    infoPtr->acceptEventCount = 0;
     infoPtr->acceptProc = NULL;
     infoPtr->lastError = 0;
 
@@ -1115,8 +1167,8 @@ CreateSocket(interp, port, host, server, myaddr, myport, async)
      */
 
     (*winSock.ioctlsocket)(sock, FIONBIO, &flag);
-    (void) (*winSock.WSAAsyncSelect)(infoPtr->socket, tsdPtr->hwnd,
-	    SOCKET_MESSAGE, infoPtr->selectEvents);
+    SendMessage(tsdPtr->hwnd, SOCKET_SELECT,
+	    (WPARAM) SELECT, (LPARAM) infoPtr);
 
     return infoPtr;
 
@@ -1230,7 +1282,6 @@ WaitForSocketEvent(infoPtr, events, errorCodePtr)
     int events;			/* Events to look for. */
     int *errorCodePtr;		/* Where to store errors? */
 {
-    MSG msg;
     int result = 1;
     int oldMode;
     ThreadSpecificData *tsdPtr = 
@@ -1246,19 +1297,14 @@ WaitForSocketEvent(infoPtr, events, errorCodePtr)
      * Reset WSAAsyncSelect so we have a fresh set of events pending.
      */
 
-    (void) (*winSock.WSAAsyncSelect)(infoPtr->socket, tsdPtr->hwnd, 0, 0);
-    (void) (*winSock.WSAAsyncSelect)(infoPtr->socket, tsdPtr->hwnd,
-	    SOCKET_MESSAGE, infoPtr->selectEvents);
+    SendMessage(tsdPtr->hwnd, SOCKET_SELECT,
+	    (WPARAM) UNSELECT, (LPARAM) infoPtr);
+
+    SendMessage(tsdPtr->hwnd, SOCKET_SELECT,
+	    (WPARAM) SELECT, (LPARAM) infoPtr);
 
     while (1) {
-	/*
-	 * Process all outstanding messages on the socket window.
-	 */
 
-	while (PeekMessage(&msg, tsdPtr->hwnd, 0, 0, PM_REMOVE)) {
-	    DispatchMessage(&msg);
-	}
-	
 	if (infoPtr->lastError) {
 	    *errorCodePtr = infoPtr->lastError;
 	    result = 0;
@@ -1274,11 +1320,9 @@ WaitForSocketEvent(infoPtr, events, errorCodePtr)
 	/*
 	 * Wait until something happens.
 	 */
-
-	WaitMessage();
+	WaitForSingleObject(tsdPtr->readyEvent, INFINITE);
     }
     
-
     (void) Tcl_SetServiceMode(oldMode);
     return result;
 }
@@ -1387,8 +1431,8 @@ Tcl_MakeTcpClientChannel(sock)
      */
 
     infoPtr->selectEvents = FD_READ | FD_CLOSE | FD_WRITE;
-    (void) (*winSock.WSAAsyncSelect)(infoPtr->socket, tsdPtr->hwnd,
-	    SOCKET_MESSAGE, infoPtr->selectEvents);
+    SendMessage(tsdPtr->hwnd, SOCKET_SELECT,
+	    (WPARAM) SELECT, (LPARAM) infoPtr);
 
     wsprintfA(channelName, "sock%d", infoPtr->socket);
     infoPtr->channel = Tcl_CreateChannel(&tcpChannelType, channelName,
@@ -1490,62 +1534,77 @@ TcpAccept(infoPtr)
      */
 
     len = sizeof(struct sockaddr_in);
-    newSocket = (*winSock.accept)(infoPtr->socket, (struct sockaddr *)&addr,
-	    &len);
 
+    newSocket = (*winSock.accept)(infoPtr->socket,
+	    (struct sockaddr *)&addr,
+	    &len);
+    
     /*
      * Clear the ready mask so we can detect the next connection request.
      * Note that connection requests are level triggered, so if there is
      * a request already pending, a new event will be generated.
      */
-
-    infoPtr->readyEvents &= ~(FD_ACCEPT);
-
+    
     if (newSocket == INVALID_SOCKET) {
-        return;
+	infoPtr->acceptEventCount = 0;
+	infoPtr->readyEvents &= ~(FD_ACCEPT);
+	return;
+    } 
+
+    /*
+     * It is possible that more than one FD_ACCEPT has been sent, so an extra
+     * count must be kept.  Decrement the count, and reset the readyEvent bit
+     * if the count is no longer > 0.
+     */
+    
+    infoPtr->acceptEventCount--;
+
+    if (infoPtr->acceptEventCount <= 0) {
+	infoPtr->readyEvents &= ~(FD_ACCEPT);
     }
 
     /*
      * Win-NT has a misfeature that sockets are inherited in child
      * processes by default.  Turn off the inherit bit.
      */
-
+    
     SetHandleInformation( (HANDLE) newSocket, HANDLE_FLAG_INHERIT, 0 );
-	
+    
     /*
      * Add this socket to the global list of sockets.
      */
-
+    
     newInfoPtr = NewSocketInfo(newSocket);
-
+    
     /*
      * Select on read/write events and create the channel.
      */
-
+    
     newInfoPtr->selectEvents = (FD_READ | FD_WRITE | FD_CLOSE);
-    (void) (*winSock.WSAAsyncSelect)(newInfoPtr->socket, tsdPtr->hwnd, 
-	    SOCKET_MESSAGE, newInfoPtr->selectEvents);
-
+    SendMessage(tsdPtr->hwnd, SOCKET_SELECT,
+	    (WPARAM) SELECT, (LPARAM) newInfoPtr);
+    
     wsprintfA(channelName, "sock%d", newInfoPtr->socket);
     newInfoPtr->channel = Tcl_CreateChannel(&tcpChannelType, channelName,
 	    (ClientData) newInfoPtr, (TCL_READABLE | TCL_WRITABLE));
     if (Tcl_SetChannelOption(NULL, newInfoPtr->channel, "-translation",
 	    "auto crlf") == TCL_ERROR) {
-        Tcl_Close((Tcl_Interp *) NULL, newInfoPtr->channel);
-        return;
+	Tcl_Close((Tcl_Interp *) NULL, newInfoPtr->channel);
+	return;
     }
     if (Tcl_SetChannelOption(NULL, newInfoPtr->channel, "-eofchar", "")
 	    == TCL_ERROR) {
-        Tcl_Close((Tcl_Interp *) NULL, newInfoPtr->channel);
-        return;
+	Tcl_Close((Tcl_Interp *) NULL, newInfoPtr->channel);
+	return;
     }
-
+    
     /*
      * Invoke the accept callback procedure.
      */
-
+    
     if (infoPtr->acceptProc != NULL) {
-	(infoPtr->acceptProc) (infoPtr->acceptProcData, newInfoPtr->channel,
+	(infoPtr->acceptProc) (infoPtr->acceptProcData,
+		newInfoPtr->channel,
 		(*winSock.inet_ntoa)(addr.sin_addr),
 		(*winSock.ntohs)(addr.sin_port));
     }
@@ -1622,8 +1681,8 @@ TcpInputProc(instanceData, buf, toRead, errorCodePtr)
      */
 
     while (1) {
-	(void) (*winSock.WSAAsyncSelect)(infoPtr->socket, tsdPtr->hwnd,
-		0, 0);
+	SendMessage(tsdPtr->hwnd, SOCKET_SELECT,
+		(WPARAM) UNSELECT, (LPARAM) infoPtr);
 	bytesRead = (*winSock.recv)(infoPtr->socket, buf, toRead, 0);
 	infoPtr->readyEvents &= ~(FD_READ);
   
@@ -1672,8 +1731,9 @@ TcpInputProc(instanceData, buf, toRead, errorCodePtr)
   	}
     }
     
-    (void) (*winSock.WSAAsyncSelect)(infoPtr->socket, tsdPtr->hwnd,
- 	    SOCKET_MESSAGE, infoPtr->selectEvents);
+    SendMessage(tsdPtr->hwnd, SOCKET_SELECT,
+	    (WPARAM) SELECT, (LPARAM) infoPtr);
+    
     return bytesRead;
 }
 
@@ -1731,8 +1791,9 @@ TcpOutputProc(instanceData, buf, toWrite, errorCodePtr)
     }
 
     while (1) {
-	(void) (*winSock.WSAAsyncSelect)(infoPtr->socket, tsdPtr->hwnd,
-		0, 0);
+	SendMessage(tsdPtr->hwnd, SOCKET_SELECT,
+		(WPARAM) UNSELECT, (LPARAM) infoPtr);
+
 	bytesWritten = (*winSock.send)(infoPtr->socket, buf, toWrite, 0);
 	if (bytesWritten != SOCKET_ERROR) {
 	    /*
@@ -1781,8 +1842,9 @@ TcpOutputProc(instanceData, buf, toWrite, errorCodePtr)
 	}
     }
 
-    (void) (*winSock.WSAAsyncSelect)(infoPtr->socket, tsdPtr->hwnd,
-	    SOCKET_MESSAGE, infoPtr->selectEvents);
+    SendMessage(tsdPtr->hwnd, SOCKET_SELECT,
+	    (WPARAM) SELECT, (LPARAM) infoPtr);
+    
     return bytesWritten;
 }
 
@@ -2035,6 +2097,48 @@ TcpGetHandleProc(instanceData, direction, handlePtr)
     return TCL_OK;
 }
 
+static DWORD WINAPI
+SocketThread(LPVOID arg)
+{
+    MSG msg;
+    ThreadSpecificData *tsdPtr = (ThreadSpecificData *)(arg);
+    
+    Tcl_MutexLock(&socketMutex);
+    tsdPtr->hwnd = CreateWindowA("TclSocket", "TclSocket", 
+	    WS_TILED, 0, 0, 0, 0, NULL, NULL, windowClass.hInstance, NULL);
+    Tcl_MutexUnlock(&socketMutex);
+
+    /*
+     * Signal the main thread that the window has been created
+     * and that the socket thread is ready to go.
+     */
+    
+    SetEvent(tsdPtr->readyEvent);
+    
+    if (tsdPtr->hwnd == NULL) {
+	return 1;
+    } else {
+	/*
+	 * store the tsdPtr, it's from a different thread, so it's
+	 * not directly accessible, but needed.
+	 */
+	
+	SetWindowLong(tsdPtr->hwnd, GWL_USERDATA, (LONG) tsdPtr);
+    }
+
+    while (1) {
+	/*
+	 * Process all outstanding messages on the socket window.
+	 */
+
+	while (PeekMessage(&msg, tsdPtr->hwnd, 0, 0, PM_REMOVE)) {
+	    DispatchMessage(&msg);
+	}
+	WaitMessage();
+    }
+}
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -2064,68 +2168,104 @@ SocketProc(hwnd, message, wParam, lParam)
     int event, error;
     SOCKET socket;
     SocketInfo *infoPtr;
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+    ThreadSpecificData *tsdPtr =
+	(ThreadSpecificData *) GetWindowLong(hwnd, GWL_USERDATA);
 
-    if (message != SOCKET_MESSAGE) {
-	return DefWindowProc(hwnd, message, wParam, lParam);
-    }
 
-    event = WSAGETSELECTEVENT(lParam);
-    error = WSAGETSELECTERROR(lParam);
-    socket = (SOCKET) wParam;
+    switch (message) {
 
-    /*
-     * Find the specified socket on the socket list and update its
-     * eventState flag.
-     */
-
-    for (infoPtr = tsdPtr->socketList; infoPtr != NULL; 
-	    infoPtr = infoPtr->nextPtr) {
-	if (infoPtr->socket == socket) {
-	    /*
-	     * Update the socket state.
-	     */
-
-	    if (event & FD_CLOSE) {
-		infoPtr->readyEvents &= ~(FD_WRITE|FD_ACCEPT);
-	    }
-	    if (event & FD_CONNECT) {
-		/*
-		 * The socket is now connected, so clear the async connect
-		 * flag.
-		 */
-
-		infoPtr->flags &= ~(SOCKET_ASYNC_CONNECT);
-
-		/*
-		 * Remember any error that occurred so we can report
-		 * connection failures.
-		 */
-
-		if (error != ERROR_SUCCESS) {
-		    TclWinConvertWSAError(error);
-		    infoPtr->lastError = Tcl_GetErrno();
-		}
-
-	    } 
-	    if(infoPtr->flags & SOCKET_ASYNC_CONNECT) {
-		infoPtr->flags &= ~(SOCKET_ASYNC_CONNECT);
-		if (error != ERROR_SUCCESS) {
-		    TclWinConvertWSAError(error);
-		    infoPtr->lastError = Tcl_GetErrno();
-		}
-		infoPtr->readyEvents |= FD_WRITE;
-	    }
-	    infoPtr->readyEvents |= event;
+	default:
+	    return DefWindowProc(hwnd, message, wParam, lParam);
 	    break;
-	}
+	    
+	case SOCKET_MESSAGE:
+	    event = WSAGETSELECTEVENT(lParam);
+	    error = WSAGETSELECTERROR(lParam);
+	    socket = (SOCKET) wParam;
+
+	    Tcl_MutexLock(&socketMutex);
+	    
+	    /*
+	     * Find the specified socket on the socket list and update its
+	     * eventState flag.
+	     */
+	    
+	    for (infoPtr = tsdPtr->socketList; infoPtr != NULL; 
+		 infoPtr = infoPtr->nextPtr) {
+		if (infoPtr->socket == socket) {
+		    /*
+		     * Update the socket state.
+		     */
+
+		    /*
+		     * A count of FD_ACCEPTS is stored, so if an FD_CLOSE event
+		     * happens, then clear the FD_ACCEPT count.  Otherwise,
+		     * increment the count if the current event is and
+		     * FD_ACCEPT.
+		     */
+		    
+		    if (event & FD_CLOSE) {
+			infoPtr->acceptEventCount = 0;
+			infoPtr->readyEvents &= ~(FD_WRITE|FD_ACCEPT);
+		    } else if (event & FD_ACCEPT) {
+			infoPtr->acceptEventCount++;
+		    }
+
+		    if (event & FD_CONNECT) {
+			/*
+			 * The socket is now connected,
+			 * clear the async connect flag.
+			 */
+			
+			infoPtr->flags &= ~(SOCKET_ASYNC_CONNECT);
+			
+			/*
+			 * Remember any error that occurred so we can report
+			 * connection failures.
+			 */
+			
+			if (error != ERROR_SUCCESS) {
+			    TclWinConvertWSAError(error);
+			    infoPtr->lastError = Tcl_GetErrno();
+			}
+			
+		    } 
+		    if(infoPtr->flags & SOCKET_ASYNC_CONNECT) {
+			infoPtr->flags &= ~(SOCKET_ASYNC_CONNECT);
+			if (error != ERROR_SUCCESS) {
+			    TclWinConvertWSAError(error);
+			    infoPtr->lastError = Tcl_GetErrno();
+			}
+			infoPtr->readyEvents |= FD_WRITE;
+		    }
+		    infoPtr->readyEvents |= event;
+
+		    /*
+		     * Wake up the Main Thread.
+		     */
+		    SetEvent(tsdPtr->readyEvent);
+		    Tcl_ThreadAlert(tsdPtr->threadId);
+		    break;
+		}
+	    }
+	    Tcl_MutexUnlock(&socketMutex);
+	    break;
+	case SOCKET_SELECT:
+	    infoPtr = (SocketInfo *) lParam;
+	    if (wParam == SELECT) {
+
+		(void) (*winSock.WSAAsyncSelect)(infoPtr->socket, hwnd,
+			SOCKET_MESSAGE, infoPtr->selectEvents);
+	    } else {
+		/*
+		 * Clear the selection mask
+		 */
+		
+		(void) (*winSock.WSAAsyncSelect)(infoPtr->socket, hwnd,
+			0, 0);
+	    }
+	    break;
     }
-
-    /*
-     * Flush the Tcl event queue before returning to the event loop.
-     */
-
-    Tcl_ServiceAll();
 
     return 0;
 }
@@ -2277,3 +2417,5 @@ TclWinGetServByName(const char * name, const char * proto)
 
     return (*winSock.getservbyname)(name, proto);
 }
+
+

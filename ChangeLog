@@ -1,3 +1,13 @@
+1999-07-21    <redman@scriptics.com>
+
+	* win/tclWinSock.c: Modified 8.1.0 version of the Win32 socket
+	driver to move the handling of the socket event window in a
+	separate thread.  It also turned out that Win95 & Win98 were, in
+	some cases, getting multiple FD_ACCEPTs but only handling one.
+	Added a count for the FD_ACCEPT to take care of this.  Tested on
+	NT4 SP3, NT4 SP4, Win95, and Win98.
+	[Bug: 2178 2256 2259 2329 2323 2355]
+
 1999-07-21    <jpeek@scriptics.com>
 
 	* README: Small tweaks to clean up typos and wording.
