@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.26 2002/01/17 04:37:33 dgp Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.27 2002/01/23 20:46:01 dgp Exp $
  */
 
 #include	"tclInt.h"	/* Internal definitions for Tcl. */
@@ -175,11 +175,11 @@ typedef struct TcpState {
  */
 
 static TcpState *	CreateSocket _ANSI_ARGS_((Tcl_Interp *interp,
-			    int port, char *host, int server,
-			    char *myaddr, int myport, int async));
+			    int port, CONST char *host, int server,
+			    CONST char *myaddr, int myport, int async));
 static int		CreateSocketAddress _ANSI_ARGS_(
 			    (struct sockaddr_in *sockaddrPtr,
-			    char *host, int port));
+			    CONST char *host, int port));
 static int		FileBlockModeProc _ANSI_ARGS_((
     			    ClientData instanceData, int mode));
 static int		FileCloseProc _ANSI_ARGS_((ClientData instanceData,
@@ -2024,11 +2024,11 @@ static TcpState *
 CreateSocket(interp, port, host, server, myaddr, myport, async)
     Tcl_Interp *interp;		/* For error reporting; can be NULL. */
     int port;			/* Port number to open. */
-    char *host;			/* Name of host on which to open port.
+    CONST char *host;		/* Name of host on which to open port.
 				 * NULL implies INADDR_ANY */
     int server;			/* 1 if socket should be a server socket,
 				 * else 0 for a client socket. */
-    char *myaddr;		/* Optional client-side address */
+    CONST char *myaddr;		/* Optional client-side address */
     int myport;			/* Optional client-side port */
     int async;			/* If nonzero and creating a client socket,
                                  * attempt to do an async connect. Otherwise
@@ -2205,7 +2205,7 @@ addressError:
 static int
 CreateSocketAddress(sockaddrPtr, host, port)
     struct sockaddr_in *sockaddrPtr;	/* Socket address */
-    char *host;				/* Host.  NULL implies INADDR_ANY */
+    CONST char *host;			/* Host.  NULL implies INADDR_ANY */
     int port;				/* Port number */
 {
     struct hostent *hostent;		/* Host database entry */
@@ -2287,8 +2287,8 @@ Tcl_Channel
 Tcl_OpenTcpClient(interp, port, host, myaddr, myport, async)
     Tcl_Interp *interp;			/* For error reporting; can be NULL. */
     int port;				/* Port number to open. */
-    char *host;				/* Host on which to open port. */
-    char *myaddr;			/* Client-side address */
+    CONST char *host;			/* Host on which to open port. */
+    CONST char *myaddr;			/* Client-side address */
     int myport;				/* Client-side port */
     int async;				/* If nonzero, attempt to do an
                                          * asynchronous connect. Otherwise
@@ -2384,7 +2384,7 @@ Tcl_OpenTcpServer(interp, port, myHost, acceptProc, acceptProcData)
     Tcl_Interp *interp;			/* For error reporting - may be
                                          * NULL. */
     int port;				/* Port number to open. */
-    char *myHost;			/* Name of local host. */
+    CONST char *myHost;			/* Name of local host. */
     Tcl_TcpAcceptProc *acceptProc;	/* Callback for accepting connections
                                          * from new clients. */
     ClientData acceptProcData;		/* Data for the callback. */
@@ -2585,7 +2585,7 @@ TclpGetDefaultStdChannel(type)
 int
 Tcl_GetOpenFile(interp, string, forWriting, checkUsage, filePtr)
     Tcl_Interp *interp;		/* Interpreter in which to find file. */
-    char *string;		/* String that identifies file. */
+    CONST char *string;		/* String that identifies file. */
     int forWriting;		/* 1 means the file is going to be used
 				 * for writing, 0 means for reading. */
     int checkUsage;		/* 1 means verify that the file was opened
