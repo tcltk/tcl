@@ -1,3 +1,12 @@
+2002-03-07  Don Porter  <dgp@users.sourceforge.net>
+
+	* doc/interp.n:
+	* generic/tclInterp.c(Tcl_InterpObjCmd,SlaveObjCmd,SlaveRecursionLimit):
+	* generic/tclTest.c:
+	* tests/interp.test: Added the [interp recursionlimit] command to
+	set/query the recursion limit of an interpreter.  Proposal and
+	implementation from Stephen Trier. [TIP 87, Patch 522849]
+
 2002-03-06  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* generic/tcl.h, tools/tcl.wse.in, unix/configure.in,
@@ -86,8 +95,8 @@
 
 2002-02-28  Miguel Sofer  <msofer@users.sourceforge.net>
 
-	* generic/tclExecute.c: Replaced a few direct stack accesses 
 	with the POP_OBJECT() macro [Bug 507181] (Don Porter).
+	* generic/tclExecute.c: Replaced a few direct stack accesses 
 
 2002-02-27  Don Porter  <dgp@users.sourceforge.net>
 
