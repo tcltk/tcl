@@ -1030,6 +1030,11 @@ item: Install File
   Flags=0000000000000010
 end
 item: Install File
+  Source=${__TKBASEDIR__}\generic\tkIntXlibDecls.h
+  Destination=%MAINDIR%\include\tkIntXlibDecls.h
+  Flags=0000000000000010
+end
+item: Install File
   Source=${__TCLBASEDIR__}\generic\tcl.h
   Destination=%MAINDIR%\include\tcl.h
   Flags=0000000000000010
