@@ -11,7 +11,7 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 # 
-# RCS: @(#) $Id: defs.tcl,v 1.1.2.9 1999/04/02 18:57:07 hershey Exp $
+# RCS: @(#) $Id: defs.tcl,v 1.1.2.10 1999/04/03 03:02:47 hershey Exp $
 
 # Initialize wish shell
 if {[info exists tk_version]} {
@@ -812,14 +812,9 @@ catch {
     }
     close $f
 
-    # The following 2 lines cannot be run on Windows in Tk8.1b2
-    # This bug is logged as a pipe bug (bugID 1495).
-
-    if {($tcl_platform(platform) != "windows") || \
-	    (![info exists tk_version])} {
-	set f [open "|[list $tcltest tmp]" r]
-	close $f
-    }
+    set f [open "|[list $tcltest tmp]" r]
+    close $f
+    
     set ::tcltest::testConfig(stdio) 1
 }
 catch {file delete -force tmp}
