@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPipe.c,v 1.19 2001/08/23 21:15:59 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclWinPipe.c,v 1.20 2001/09/06 01:38:02 davygrvy Exp $
  */
 
 #include "tclWinInt.h"
@@ -2739,8 +2739,11 @@ PipeReaderThread(LPVOID arg)
     HANDLE *handle = ((WinFile *) infoPtr->readFile)->handle;
     DWORD count, err;
     int done = 0;
-    HANDLE wEvents[2] = {infoPtr->stopReader, infoPtr->startReader};
+    HANDLE wEvents[2];
     DWORD dwWait;
+
+    wEvents[0] = infoPtr->stopReader;
+    wEvents[1] = infoPtr->startReader;
 
     while (!done) {
 	/*
