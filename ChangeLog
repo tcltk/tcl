@@ -1,3 +1,8 @@
+2003-04-28  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* generic/tclCompCmds.c (TclCompileSwitchCmd): Default mode of
+	operation of [switch] is exact matching.  [Bug 727563]
+
 2003-04-25  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclBasic.c:  Tcl_EvalObjv() failed to honor the

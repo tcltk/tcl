@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.46 2003/04/07 20:00:47 dgp Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.47 2003/04/28 10:05:27 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2902,7 +2902,7 @@ TclCompileSwitchCmd(interp, parsePtr, envPtr)
 	     * If no control flag present, use glob matching.  We end up
 	     * re-checking this word, but that's the way things are...
 	     */
-	    mode = Switch_Glob;
+	    mode = Switch_Exact;
 	} else {
 	    return TCL_OUT_LINE_COMPILE;
 	}
