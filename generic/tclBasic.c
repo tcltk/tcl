@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.128 2004/10/18 21:15:34 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.129 2004/10/19 21:54:06 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3059,17 +3059,6 @@ TclEvalObjvInternal(interp, objc, objv, command, length, flags)
      * Call 'leave' command traces
      */
     if (!(cmdPtr->flags & CMD_IS_DELETED)) {
-	int saveErrFlags = iPtr->flags & ERR_ALREADY_LOGGED;
-	Tcl_Obj *saveOptions = iPtr->returnOpts;
-	Tcl_Obj *saveErrInfo = iPtr->errorInfo;
-	Tcl_Obj *saveErrCode = iPtr->errorCode;
-	if (saveErrInfo) {
-	    Tcl_IncrRefCount(saveErrInfo);
-	}
-	if (saveErrCode) {
-	    Tcl_IncrRefCount(saveErrCode);
-	}
-	Tcl_IncrRefCount(saveOptions);
         if ((cmdPtr->flags & CMD_HAS_EXEC_TRACES) && (traceCode == TCL_OK)) {
             traceCode = TclCheckExecutionTraces(interp, command, length,
                    cmdPtr, code, TCL_TRACE_LEAVE_EXEC, objc, objv);
@@ -3078,28 +3067,6 @@ TclEvalObjvInternal(interp, objc, objv, command, length, flags)
             traceCode = TclCheckInterpTraces(interp, command, length,
                    cmdPtr, code, TCL_TRACE_LEAVE_EXEC, objc, objv);
         }
-	if (traceCode == TCL_OK) {
-	    Tcl_DecrRefCount(iPtr->returnOpts);
-	    iPtr->returnOpts = saveOptions;
-	    Tcl_IncrRefCount(iPtr->returnOpts);
-	    iPtr->flags |= saveErrFlags;
-	    if (iPtr->errorCode) {
-		Tcl_DecrRefCount(iPtr->errorCode);
-	    }
-	    iPtr->errorCode = saveErrCode;
-	    if (iPtr->errorInfo) {
-		Tcl_DecrRefCount(iPtr->errorInfo);
-	    }
-	    iPtr->errorInfo = saveErrInfo;
-	} else {
-	    if (saveErrCode) {
-		Tcl_DecrRefCount(saveErrCode);
-	    }
-	    if (saveErrInfo) {
-		Tcl_DecrRefCount(saveErrInfo);
-	    }
-	}
-	Tcl_DecrRefCount(saveOptions);
     }
     TclCleanupCommand(cmdPtr);
 

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclResult.c,v 1.16 2004/10/17 14:22:08 msofer Exp $
+ * RCS: @(#) $Id: tclResult.c,v 1.17 2004/10/19 21:54:07 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -21,6 +21,159 @@ static void             ResetObjResult _ANSI_ARGS_((Interp *iPtr));
 static void		SetupAppendBuffer _ANSI_ARGS_((Interp *iPtr,
 			    int newSpace));
 
+/*
+ *  This structure is used to take a snapshot of the interpreter
+ *  state in TclSaveInterpState.  You can snapshot the state,
+ *  execute a command, and then back up to the result or the
+ *  error that was previously in progress.
+ */
+typedef struct InterpState {
+    int status;			/* return code status */
+    int flags;			/* Each remaining field saves */
+    int returnLevel;		/* the corresponding field of */
+    int returnCode;		/* the Interp struct.  These */
+    Tcl_Obj *errorInfo;		/* fields take together are the */
+    Tcl_Obj *errorCode;		/* "state" of the interp. */
+    Tcl_Obj *returnOpts;
+    Tcl_Obj *objResult;
+} InterpState;
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclSaveInterpState --
+ *
+ *      Fills a token with a snapshot of the current state of the
+ *      interpreter.  The snapshot can be restored at any point by
+ *      TclRestoreInterpState. 
+ *
+ *      The token returned must be eventally passed to one of the
+ *      routines TclRestoreInterpState or TclDiscardInterpState,
+ *      or there will be a memory leak.
+ *
+ * Results:
+ *	Returns a token representing the interp state.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+TclInterpState
+TclSaveInterpState(interp, status)
+    Tcl_Interp* interp;     /* Interpreter's state to be saved */
+    int status;             /* status code for current operation */
+{
+    Interp *iPtr = (Interp *)interp;
+    InterpState *statePtr = (InterpState *)ckalloc(sizeof(InterpState));
+
+    statePtr->status = status;
+    statePtr->flags = iPtr->flags & ERR_ALREADY_LOGGED;
+    statePtr->returnLevel = iPtr->returnLevel;
+    statePtr->returnCode = iPtr->returnCode;
+    statePtr->errorInfo = iPtr->errorInfo;
+    if (statePtr->errorInfo) {
+	Tcl_IncrRefCount(statePtr->errorInfo);
+    }
+    statePtr->errorCode = iPtr->errorCode;
+    if (statePtr->errorCode) {
+	Tcl_IncrRefCount(statePtr->errorCode);
+    }
+    statePtr->returnOpts = iPtr->returnOpts;
+    if (statePtr->returnOpts) {
+	Tcl_IncrRefCount(statePtr->returnOpts);
+    }
+    statePtr->objResult = Tcl_GetObjResult(interp);
+    Tcl_IncrRefCount(statePtr->objResult);
+    return (TclInterpState) statePtr;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclRestoreInterpState --
+ *
+ *      Accepts an interp and a token previously returned by
+ *      TclSaveInterpState.  Restore the state of the interp
+ *      to what it was at the time of the TclSaveInterpState call.
+ *
+ * Results:
+ *	Returns the status value originally passed in to TclSaveInterpState.
+ *
+ * Side effects:
+ *	Restores the interp state and frees memory held by token.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclRestoreInterpState(interp, state)
+    Tcl_Interp* interp;		/* Interpreter's state to be restored*/
+    TclInterpState state;	/* saved interpreter state */
+{
+    Interp *iPtr = (Interp *)interp;
+    InterpState *statePtr = (InterpState *)state;
+    int status = statePtr->status;
+
+    iPtr->flags &= ~ERR_ALREADY_LOGGED;
+    iPtr->flags |= (statePtr->flags & ERR_ALREADY_LOGGED);
+
+    iPtr->returnLevel = statePtr->returnLevel;
+    iPtr->returnCode = statePtr->returnCode;
+    iPtr->errorInfo = statePtr->errorInfo;
+    if (iPtr->errorInfo) {
+	Tcl_IncrRefCount(iPtr->errorInfo);
+    }
+    iPtr->errorCode = statePtr->errorCode;
+    if (iPtr->errorCode) {
+	Tcl_IncrRefCount(iPtr->errorCode);
+    }
+    iPtr->returnOpts = statePtr->returnOpts;
+    if (iPtr->returnOpts) {
+	Tcl_IncrRefCount(iPtr->returnOpts);
+    }
+    Tcl_SetObjResult(interp, statePtr->objResult);
+    TclDiscardInterpState(state);
+    return status;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclDiscardInterpState --
+ *
+ *      Accepts a token previously returned by TclSaveInterpState.
+ *      Frees the memory it uses.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Frees memory.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclDiscardInterpState(state)
+    TclInterpState state;	/* saved interpreter state */
+{
+    InterpState *statePtr = (InterpState *)state;
+
+    if (statePtr->errorInfo) {
+        Tcl_DecrRefCount(statePtr->errorInfo);
+    }
+    if (statePtr->errorCode) {
+        Tcl_DecrRefCount(statePtr->errorCode);
+    }
+    if (statePtr->returnOpts) {
+        Tcl_DecrRefCount(statePtr->returnOpts);
+    }
+    Tcl_DecrRefCount(statePtr->objResult);
+    ckfree((char*) statePtr);
+}
 
 /*
  *----------------------------------------------------------------------
@@ -739,7 +892,7 @@ Tcl_ResetResult(interp)
 	iPtr->errorCode = NULL;
     }
     if (iPtr->errorInfo) {
-	/* Legacy support*/
+	/* Legacy support */
 	Tcl_ObjSetVar2(interp, iPtr->eiVar, NULL,
 		iPtr->errorInfo, TCL_GLOBAL_ONLY);
 	Tcl_DecrRefCount(iPtr->errorInfo);
