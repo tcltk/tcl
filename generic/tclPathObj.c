@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPathObj.c,v 1.23 2004/01/29 13:01:24 vincentdarley Exp $
+ * RCS: @(#) $Id: tclPathObj.c,v 1.24 2004/03/09 12:59:05 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -460,7 +460,7 @@ TclFSGetPathType(pathPtr, filesystemPtrPtr, driveNameLengthPtr)
  *
  * TclPathPart
  *
- *	This procedure calculates the requested part of the the given
+ *	This procedure calculates the requested part of the given
  *	path, which can be:
  *	
  *	- the directory above ('file dirname')
@@ -1713,7 +1713,7 @@ Tcl_FSGetNormalizedPath(interp, pathPtr)
 	    } else if (type == TCL_PATH_VOLUME_RELATIVE) {
 		/* 
 		 * Only Windows has volume-relative paths.  These
-		 * paths are rather rare, but is is nice if Tcl can
+		 * paths are rather rare, but it is nice if Tcl can
 		 * handle them.  It is much better if we can
 		 * handle them here, rather than in the native fs code,
 		 * because we really need to have a real absolute path
