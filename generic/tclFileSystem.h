@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileSystem.h,v 1.4 2003/09/29 22:38:20 dkf Exp $
+ * RCS: @(#) $Id: tclFileSystem.h,v 1.5 2003/10/10 15:50:35 dkf Exp $
  */
 
 /* 
@@ -82,8 +82,7 @@ Tcl_Obj* TclFSNormalizeAbsolutePath _ANSI_ARGS_((Tcl_Interp* interp,
  * Private shared variables for use by tclIOUtil.c and tclPathObj.c
  */
 extern Tcl_Filesystem tclNativeFilesystem;
-extern int theFilesystemEpoch;
-extern Tcl_ThreadDataKey fsDataKey;
+extern Tcl_ThreadDataKey tclFsDataKey;
 
 /* 
  * Private shared functions for use by tclIOUtil.c and tclPathObj.c
