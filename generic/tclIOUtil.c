@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.20.6.7 2001/11/26 23:10:30 dkf Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.20.6.8 2001/11/27 09:48:25 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -109,6 +109,7 @@ Tcl_Stat(path, oldStyleBuf)
 	}
 
 #   undef OUT_OF_RANGE
+#   undef OUT_OF_URANGE
 #endif /* !TCL_WIDE_INT_IS_LONG */
 
 	/*
