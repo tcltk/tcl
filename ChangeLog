@@ -1,3 +1,10 @@
+2004-06-17  Don Porter  <dgp@users.sourceforge.net>
+
+	* win/tclWinInit.c:	Inform [tclInit] about the default library
+	directory via the ::tclDefaultLibrary variable.  This should correct
+	a problem with my 2004-06-11 commit.  Better solutions still in the
+	works.  Thanks to Joe Mistachkin for pointing out the breakage.
+
 2004-06-16  Don Porter  <dgp@users.sourceforge.net>
 
 	* doc/library.n:	Moved variables ::auto_oldpath and
