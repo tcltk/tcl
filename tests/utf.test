@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: utf.test,v 1.10 2003/03/27 13:19:15 dkf Exp $
+# RCS: @(#) $Id: utf.test,v 1.11 2003/10/08 14:24:41 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -59,14 +59,29 @@ test utf-3.1 {Tcl_UtfCharComplete} {
 } {}
 
 test utf-4.1 {Tcl_NumUtfChars: zero length} {
-    string length ""
+    testnumutfchars ""
 } {0}
 test utf-4.2 {Tcl_NumUtfChars: length 1} {
-    string length [bytestring "\xC2\xA2"]
+    testnumutfchars [bytestring "\xC2\xA2"]
 } {1}
 test utf-4.3 {Tcl_NumUtfChars: long string} {
-    string length [bytestring "abc\xC2\xA2\xe4\xb9\x8e\uA2\u4e4e"]
+    testnumutfchars [bytestring "abc\xC2\xA2\xe4\xb9\x8e\uA2\u4e4e"]
 } {7}
+test utf-4.4 {Tcl_NumUtfChars: #u0000} {
+    testnumutfchars [bytestring "\xC0\x80"]
+} {1}
+test utf-4.5 {Tcl_NumUtfChars: zero length, calc len} {
+    testnumutfchars "" 1
+} {0}
+test utf-4.6 {Tcl_NumUtfChars: length 1, calc len} {
+    testnumutfchars [bytestring "\xC2\xA2"] 1
+} {1}
+test utf-4.7 {Tcl_NumUtfChars: long string, calc len} {
+    testnumutfchars [bytestring "abc\xC2\xA2\xe4\xb9\x8e\uA2\u4e4e"] 1
+} {7}
+test utf-4.8 {Tcl_NumUtfChars: #u0000, calc len} {
+    testnumutfchars [bytestring "\xC0\x80"] 1
+} {1}
 
 test utf-5.1 {Tcl_UtfFindFirsts} {
 } {}

@@ -1,3 +1,11 @@
+2003-10-08  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* generic/tclTest.c (TestNumUtfCharsCmd): Command to allow finer
+	access to Tcl_NumUtfChars for testing.
+	* generic/tclUtf.c (Tcl_NumUtfChars): Corrected string length
+	determining when the length parameter is negative; the terminator
+	is a zero byte, not (necessarily) a \u0000 character. [Bug 769812]
+
 2003-10-07  Don Porter  <dgp@users.sourceforge.net>
 
 	* tests/cmdAH.test:
