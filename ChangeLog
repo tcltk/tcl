@@ -1,5 +1,9 @@
 2003-05-20  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	*** 8.4.3 TAGGED FOR RELEASE ***
+
+	* changes: updated for 8.4.3
+
 	* unix/Makefile.in: do not run autoconf during 'make dist' as the
 	configure is now a CVS-maintained file and should be up-to-date.
 
