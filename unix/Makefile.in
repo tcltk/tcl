@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.90 2001/12/19 11:03:20 mdejong Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.91 2001/12/19 20:11:55 mdejong Exp $
 
 VERSION 		= @TCL_VERSION@
 
@@ -194,7 +194,7 @@ SHLIB_CFLAGS		= @SHLIB_CFLAGS@
 SHLIB_SUFFIX		= @SHLIB_SUFFIX@
 #SHLIB_SUFFIX		=
 
-DLTEST_TARGETS		= dltest
+DLTEST_TARGETS		= dlpkgs
 
 # The following symbol is defined to "$(DLTEST_TARGETS)" if dynamic
 # loading is available;  this causes everything in the "dltest"
@@ -520,7 +520,7 @@ gendate:
 # target (via the BUILD_DLTEST variable) if dynamic loading is supported
 # on this platform.
 
-dltest:
+dlpkgs:
 	cd dltest ; $(MAKE)
 
 install: install-binaries install-libraries install-doc
