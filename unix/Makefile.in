@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.107 2002/07/16 23:13:07 mdejong Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.108 2002/07/19 15:15:51 vincentdarley Exp $
 
 VERSION 		= @TCL_VERSION@
 
@@ -434,6 +434,9 @@ ${TCL_LIB_FILE}: ${OBJS} ${STUB_LIB_FILE}
 	rm -f ${TCL_LIB_FILE}
 	@MAKE_LIB@
 	if test "x@DL_OBJS@" = "xtclLoadAout.o"; then \
+		$(RANLIB) ${TCL_LIB_FILE}; \
+	fi
+	if test "x@DL_OBJS@" = "xtclLoadDyld.o"; then \
 		$(RANLIB) ${TCL_LIB_FILE}; \
 	fi
 
