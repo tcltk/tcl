@@ -198,7 +198,7 @@ Hidden commands are explained in more detail in HIDDEN COMMANDS, below.
 Returns a list of the names of all hidden commands in the interpreter
 identified by \fIpath\fR.
 .TP
-\fBinterp\fR \fBinvokehidden\fR \fIpath\fR ?\fB-global\fR \fIhiddenCmdName\fR ?\fIarg ...\fR?
+\fBinterp\fR \fBinvokehidden\fR \fIpath\fR ?\fB-global\fR? \fIhiddenCmdName\fR ?\fIarg ...\fR?
 Invokes the hidden command \fIhiddenCmdName\fR with the arguments supplied
 in the interpreter denoted by \fIpath\fR. No substitutions or evaluation
 are applied to the arguments.
