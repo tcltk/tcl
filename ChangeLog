@@ -1,3 +1,15 @@
+2004-05-16  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclCompile.h:
+	* generic/tclCompile.c:
+	* generic/tclExecute.c: changed implementation of {expand}, last
+	chance while in alpha as ...
+
+	***POTENTIAL INCOMPATIBILITY***
+	Scripts precompiled with ProComp under previous tcl8.5a versions
+	may malfunction due to changed instruction numbers for
+	INST_LIST_INDEX_IMM, INST_LIST_RANGE_IMM and INST_START_CMD. 
+	
 2004-05-14  Kevin B. Kenny  <kennykb@acm.org>
 
 	* generic/tclInt.decls:      Promoted TclpLocaltime and TclpGmtime
