@@ -1,3 +1,13 @@
+2002-07-29  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* generic/regc_locale.c (cclass): [[:xdigit:]] is only a defined
+	concept on western characters, so should not allow any unicode
+	digit, and hence number of ranges in [[:xdigit:]] is fixed.
+	* tests/reg.test: Added test to detect the bug.
+	* generic/regc_cvec.c (newcvec): Corrected initial size value in
+	character vector structure.  [Bug 578363]  Many thanks to
+	pvgoran@users.sf.net for tracking this down.
+
 2002-07-28  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* generic/tcl.h: 
