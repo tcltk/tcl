@@ -1,3 +1,9 @@
+2000-08-14  Eric Melski  <ericm@ajubasolutions.com>
+
+	* README: Updated link for instructions on compiling Tcl from sources to
+	point to correct location (http://dev.scriptics.com/doc/... instead of
+	http://dev.scriptics.com/support/...).
+
 2000-08-11  Eric Melski  <ericm@ajubasolutions.com>
 
 	* generic/tclEnv.c (TclUnsetEnv): Changed declaration of length
