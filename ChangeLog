@@ -1,3 +1,14 @@
+2004-11-19  Daniel Steffen  <das@users.sourceforge.net>
+
+	* macosx/Makefile: 
+	* unix/configure.in: 
+	* unix/tclUnixInit.c (MacOSXGetLibraryPath): changed detection
+	of tcl framework build when determining tclLibPath from overloaded
+	TCL_LIBRARY to configuration define TCL_FRAMEWORK. [Bug 1068088]
+
+	* unix/configure: autoconf-2.57
+	* unix/tclConfig.h.in: autoheader-2.57
+
 2004-11-18  Don Porter  <dgp@users.sourceforge.net>
 
 	* doc/SaveResult.3:	Documentation for Tcl_*InterpState (TIP 226).
