@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.90 2004/08/31 15:24:48 dkf Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.91 2004/08/31 16:25:50 dgp Exp $
  */
 
 #ifdef STDC_HEADERS
@@ -2832,7 +2832,7 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
 	     * Store the array names in a new object.
 	     */
 
-	    nameLstPtr = TclNewObj();
+	    nameLstPtr = Tcl_NewObj();
 	    Tcl_IncrRefCount(nameLstPtr);
 
 	    for (hPtr = Tcl_FirstHashEntry(varPtr->value.tablePtr, &search);
@@ -2850,8 +2850,8 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
 		result = Tcl_ListObjAppendElement(interp, nameLstPtr,
 		        namePtr);
 		if (result != TCL_OK) {
-		    TclDecrRefCount(namePtr); /* free unneeded name obj */
-		    TclDecrRefCount(nameLstPtr);
+		    Tcl_DecrRefCount(namePtr); /* free unneeded name obj */
+		    Tcl_DecrRefCount(nameLstPtr);
 		    return result;
 		}
 	    }
@@ -2867,7 +2867,7 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
 	     * Get the array values corresponding to each element name 
 	     */
 
-	    tmpResPtr = TclNewObj();
+	    tmpResPtr = Tcl_NewObj();
 	    result = Tcl_ListObjGetElements(interp, nameLstPtr,
 		    &count, &namePtrPtr);
 	    if (result != TCL_OK) {
@@ -2904,13 +2904,13 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
 	    }
 	    varPtr->refCount--;
 	    Tcl_SetObjResult(interp, tmpResPtr);
-	    TclDecrRefCount(nameLstPtr);
+	    Tcl_DecrRefCount(nameLstPtr);
 	    break;
 
 	    errorInArrayGet:
 	    varPtr->refCount--;
-	    TclDecrRefCount(nameLstPtr);
-	    TclDecrRefCount(tmpResPtr); /* free unneeded temp result obj */
+	    Tcl_DecrRefCount(nameLstPtr);
+	    Tcl_DecrRefCount(tmpResPtr); /* free unneeded temp result obj */
 	    return result;
 	}
         case ARRAY_NAMES: {
@@ -2975,7 +2975,7 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
 		namePtr = Tcl_NewStringObj(name, -1);
 		result = Tcl_ListObjAppendElement(interp, resultPtr, namePtr);
 		if (result != TCL_OK) {
-		    TclDecrRefCount(namePtr); /* free unneeded name obj */
+		    Tcl_DecrRefCount(namePtr); /* free unneeded name obj */
 		    return result;
 		}
 	    }
