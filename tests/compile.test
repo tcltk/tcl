@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: compile.test,v 1.23 2002/08/26 17:38:54 msofer Exp $
+# RCS: @(#) $Id: compile.test,v 1.24 2003/01/08 00:34:59 dgp Exp $
 
 package require tcltest 2
 namespace import -force ::tcltest::*
@@ -331,7 +331,37 @@ test compile-14.1 {testing errors in element name; segfault?} {} {
      list $msg1 $msg2
 } {{wrong # args: should be "error message ?errorInfo? ?errorCode?"} {can't read "abba": no such variable}}
 
-
+# Next 4 tests cover Tcl Bug 633204
+test compile-15.1 {proper TCL_RETURN code from [return]} {
+    proc p {} {catch return}
+    set result [p]
+    rename p {}
+    set result
+} 2
+test compile-15.2 {proper TCL_RETURN code from [return]} {
+    proc p {} {catch {return foo}}
+    set result [p]
+    rename p {}
+    set result
+} 2
+test compile-15.3 {proper TCL_RETURN code from [return]} {
+    proc p {} {catch {return $::tcl_library}}
+    set result [p]
+    rename p {}
+    set result
+} 2
+test compile-15.4 {proper TCL_RETURN code from [return]} {
+    proc p {} {catch {return [info library]}}
+    set result [p]
+    rename p {}
+    set result
+} 2
+test compile-15.5 {proper TCL_RETURN code from [return]} {
+    proc p {} {catch {set a 1}; return}
+    set result [p]
+    rename p {}
+    set result
+} ""
 
 
 # cleanup
