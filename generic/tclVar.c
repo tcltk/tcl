@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.51 2002/03/29 00:02:42 dgp Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.52 2002/06/13 19:47:58 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1243,11 +1243,17 @@ Tcl_SetVar2Ex(interp, part1, part2, newValuePtr, flags)
     }
 
     /*
-     * At this point, if we were appending, we used to call read traces: we
-     * treated append as a read-modify-write. However, it seemed unlikely to
-     * us that a real program would be interested in such reads being done
-     * during a set operation.
+     * Invoke any read traces that have been set for the variable if it
+     * is requested; this is only done in the core when lappending.
      */
+
+    if ((flags & TCL_TRACE_READS) && ((varPtr->tracePtr != NULL) 
+	    || ((arrayPtr != NULL) && (arrayPtr->tracePtr != NULL)))) {
+	if (TCL_ERROR == CallTraces(iPtr, arrayPtr, varPtr, part1, part2,
+		TCL_TRACE_READS, (flags & TCL_LEAVE_ERR_MSG))) {
+	    return NULL;
+	}
+    }
 
     /*
      * Set the variable's new value. If appending, append the new value to
@@ -1448,12 +1454,11 @@ TclSetIndexedScalar(interp, localIndex, newValuePtr, flags)
     }
 
     /*
-     * Invoke any read traces that have been set for the variable if we
-     * are appending, but only in the lappend case.
+     * Invoke any read traces that have been set for the variable if it
+     * is requested; this is only done in the core when lappending.
      */
 
-    if ((flags & TCL_APPEND_VALUE) && (flags & TCL_LIST_ELEMENT)
-	    && (varPtr->tracePtr != NULL)) {
+    if ((flags & TCL_TRACE_READS) && (varPtr->tracePtr != NULL)) {
 	if (TCL_ERROR == CallTraces(iPtr, /*arrayPtr*/ NULL, varPtr, varName,
 		NULL, TCL_TRACE_READS, (flags & TCL_LEAVE_ERR_MSG))) {
 	    return NULL;
@@ -1749,12 +1754,11 @@ TclSetElementOfIndexedArray(interp, localIndex, elemPtr, newValuePtr, flags)
     }
 
     /*
-     * Invoke any read traces that have been set for the element variable if
-     * we are appending, but only in the lappend case.
+     * Invoke any read traces that have been set for the variable if it
+     * is requested; this is only done in the core when lappending.
      */
 
-    if ((flags & TCL_APPEND_VALUE) && (flags & TCL_LIST_ELEMENT)
-	    && ((varPtr->tracePtr != NULL)
+    if ((flags & TCL_TRACE_READS) && ((varPtr->tracePtr != NULL)
 		    || ((arrayPtr != NULL) && (arrayPtr->tracePtr != NULL)))) {
 	if (TCL_ERROR == CallTraces(iPtr, arrayPtr, varPtr, arrayName, elem,
 		TCL_TRACE_READS, (flags & TCL_LEAVE_ERR_MSG))) {

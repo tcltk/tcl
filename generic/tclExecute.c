@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.61 2002/06/11 12:38:22 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.62 2002/06/13 19:47:58 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1001,6 +1001,7 @@ TclExecuteByteCode(interp, codePtr)
 				 * instructions and processCatch to
 				 * process break, continue, and errors. */
     int result = TCL_OK;	/* Return code returned after execution. */
+    int storeFlags;
 #ifdef TCL_COMPILE_DEBUG
     int traceInstructions = (tclTraceExec == 3);
 #endif
@@ -1507,21 +1508,42 @@ TclExecuteByteCode(interp, codePtr)
 	    TRACE_WITH_OBJ(("%u => ", opnd), valuePtr);
 	    ADJUST_PC(5);
 
+	case INST_LOAD_ARRAY_STK:
+	    elemPtr = POP_OBJECT();
+	    goto doLoadStk;
+
 	case INST_LOAD_STK:
 	case INST_LOAD_SCALAR_STK:
+	    elemPtr = NULL;
+
+	    doLoadStk:
 	    objPtr = POP_OBJECT(); /* scalar / variable name */
 	    DECACHE_STACK_INFO();
-	    valuePtr = Tcl_ObjGetVar2(interp, objPtr, NULL, TCL_LEAVE_ERR_MSG);
+	    valuePtr = Tcl_ObjGetVar2(interp, objPtr, elemPtr, TCL_LEAVE_ERR_MSG);
 	    CACHE_STACK_INFO();
 	    if (valuePtr == NULL) {
-		TRACE_WITH_OBJ(("\"%.30s\" => ERROR: ", O2S(objPtr)),
-		        Tcl_GetObjResult(interp));
+		if (elemPtr != NULL) {
+		    TRACE_WITH_OBJ(("\"%.30s(%.30s)\" => ERROR: ",
+			    O2S(objPtr), O2S(elemPtr)),
+			    Tcl_GetObjResult(interp));
+		    TclDecrRefCount(elemPtr);
+		
+		} else {
+		    TRACE_WITH_OBJ(("\"%.30s\" => ERROR: ", O2S(objPtr)),
+		            Tcl_GetObjResult(interp));
+		}
 		TclDecrRefCount(objPtr);
 		result = TCL_ERROR;
 		goto checkForCatch;
             }
 	    PUSH_OBJECT(valuePtr);
-	    TRACE_WITH_OBJ(("\"%.30s\" => ", O2S(objPtr)), valuePtr);
+	    if (elemPtr != NULL) {
+		TRACE_WITH_OBJ(("\"%.30s(%.30s)\" => ",
+		        O2S(objPtr), O2S(elemPtr)), valuePtr);
+		TclDecrRefCount(elemPtr);
+	    } else {
+		TRACE_WITH_OBJ(("\"%.30s\" => ", O2S(objPtr)), valuePtr);
+	    }
 	    TclDecrRefCount(objPtr);
 	    ADJUST_PC(1);
 
@@ -1554,43 +1576,46 @@ TclExecuteByteCode(interp, codePtr)
 	    TclDecrRefCount(elemPtr);
 	    ADJUST_PC(pcAdjustment);
 
-	case INST_LOAD_ARRAY_STK:
-	    elemPtr = POP_OBJECT();
-	    objPtr = POP_OBJECT();	/* array name */
-	    DECACHE_STACK_INFO();
-	    valuePtr = Tcl_ObjGetVar2(interp, objPtr, elemPtr,
-		    TCL_LEAVE_ERR_MSG);
-	    CACHE_STACK_INFO();
-	    if (valuePtr == NULL) {
-		TRACE_WITH_OBJ(("\"%.30s(%.30s)\" => ERROR: ",
-			O2S(objPtr), O2S(elemPtr)),
-			Tcl_GetObjResult(interp));
-		TclDecrRefCount(objPtr);
-		TclDecrRefCount(elemPtr);
-		result = TCL_ERROR;
-		goto checkForCatch;
-	    }
-	    PUSH_OBJECT(valuePtr);
-	    TRACE_WITH_OBJ(("\"%.30s(%.30s)\" => ",
-		    O2S(objPtr), O2S(elemPtr)), valuePtr);
-	    TclDecrRefCount(objPtr);
-	    TclDecrRefCount(elemPtr);
-	    ADJUST_PC(1);
+	case INST_LAPPEND_SCALAR4:
+	    opnd = TclGetUInt4AtPtr(pc+1);
+	    pcAdjustment = 5;
+	    storeFlags = (TCL_LEAVE_ERR_MSG | TCL_APPEND_VALUE | TCL_LIST_ELEMENT | TCL_TRACE_READS);
+	    goto doStoreScalar;
+
+	case INST_LAPPEND_SCALAR1:
+	    opnd = TclGetUInt1AtPtr(pc+1);
+	    pcAdjustment = 2;	    
+	    storeFlags = (TCL_LEAVE_ERR_MSG | TCL_APPEND_VALUE | TCL_LIST_ELEMENT | TCL_TRACE_READS);
+	    goto doStoreScalar;
+
+	case INST_APPEND_SCALAR4:
+	    opnd = TclGetUInt4AtPtr(pc+1);
+	    pcAdjustment = 5;
+	    storeFlags = (TCL_LEAVE_ERR_MSG | TCL_APPEND_VALUE);
+	    goto doStoreScalar;
+
+	case INST_APPEND_SCALAR1:
+	    opnd = TclGetUInt1AtPtr(pc+1);
+	    pcAdjustment = 2;	    
+	    storeFlags = (TCL_LEAVE_ERR_MSG | TCL_APPEND_VALUE);
+	    goto doStoreScalar;
 
 	case INST_STORE_SCALAR4:
 	    opnd = TclGetUInt4AtPtr(pc+1);
 	    pcAdjustment = 5;
+	    storeFlags = TCL_LEAVE_ERR_MSG;
 	    goto doStoreScalar;
 
 	case INST_STORE_SCALAR1:
 	    opnd = TclGetUInt1AtPtr(pc+1);
 	    pcAdjustment = 2;
+	    storeFlags = TCL_LEAVE_ERR_MSG;
 
 	  doStoreScalar:
 	    valuePtr = POP_OBJECT();
 	    DECACHE_STACK_INFO();
 	    value2Ptr = TclSetIndexedScalar(interp, opnd, valuePtr,
-	            TCL_LEAVE_ERR_MSG);
+	            storeFlags);
 	    CACHE_STACK_INFO();
 	    if (value2Ptr == NULL) {
 		TRACE_WITH_OBJ(("%u <- \"%.30s\" => ERROR: ",
@@ -1605,45 +1630,119 @@ TclExecuteByteCode(interp, codePtr)
 	    TclDecrRefCount(valuePtr);
 	    ADJUST_PC(pcAdjustment);
 
+	case INST_LAPPEND_STK:
+	    valuePtr = POP_OBJECT(); /* value to append */
+	    elemPtr = NULL;
+	    storeFlags = (TCL_LEAVE_ERR_MSG | TCL_APPEND_VALUE | TCL_LIST_ELEMENT | TCL_TRACE_READS);
+	    goto doStoreStk;
+
+	case INST_LAPPEND_ARRAY_STK:
+	    valuePtr = POP_OBJECT(); /* value to append */
+	    elemPtr = POP_OBJECT();
+	    storeFlags = (TCL_LEAVE_ERR_MSG | TCL_APPEND_VALUE | TCL_LIST_ELEMENT | TCL_TRACE_READS);
+	    goto doStoreStk;
+
+	case INST_APPEND_STK:
+	    valuePtr = POP_OBJECT(); /* value to append */
+	    elemPtr = NULL;
+	    storeFlags = (TCL_LEAVE_ERR_MSG | TCL_APPEND_VALUE);
+	    goto doStoreStk;
+
+	case INST_APPEND_ARRAY_STK:
+	    valuePtr = POP_OBJECT(); /* value to append */
+	    elemPtr = POP_OBJECT();
+	    storeFlags = (TCL_LEAVE_ERR_MSG | TCL_APPEND_VALUE);
+	    goto doStoreStk;
+
+	case INST_STORE_ARRAY_STK:
+	    valuePtr = POP_OBJECT();
+	    elemPtr = POP_OBJECT();
+	    storeFlags = TCL_LEAVE_ERR_MSG;
+	    goto doStoreStk;
+
 	case INST_STORE_STK:
 	case INST_STORE_SCALAR_STK:
 	    valuePtr = POP_OBJECT();
-	    objPtr = POP_OBJECT(); /* scalar / variable name */
+	    elemPtr = NULL;
+	    storeFlags = TCL_LEAVE_ERR_MSG;
+
+	    doStoreStk:
+	    objPtr = POP_OBJECT(); /* scalar or array variable name */
 	    DECACHE_STACK_INFO();
-	    value2Ptr = Tcl_ObjSetVar2(interp, objPtr, NULL, valuePtr,
-		    TCL_LEAVE_ERR_MSG);
+	    value2Ptr = Tcl_ObjSetVar2(interp, objPtr, elemPtr, valuePtr,
+		    storeFlags);
 	    CACHE_STACK_INFO();
 	    if (value2Ptr == NULL) {
-		TRACE_WITH_OBJ(("\"%.30s\" <- \"%.30s\" => ERROR: ",
-		        O2S(objPtr), O2S(valuePtr)),
-			Tcl_GetObjResult(interp));
+		if (elemPtr != NULL) {
+		    TRACE_WITH_OBJ(("\"%.30s(%.30s)\" <- \"%.30s\" => ERROR: ",
+			    O2S(objPtr), O2S(elemPtr), O2S(valuePtr)),
+			    Tcl_GetObjResult(interp));
+		    TclDecrRefCount(elemPtr);
+		} else {
+		    TRACE_WITH_OBJ(("\"%.30s\" <- \"%.30s\" => ERROR: ",
+		            O2S(objPtr), O2S(valuePtr)),
+			    Tcl_GetObjResult(interp));
+		}
 		TclDecrRefCount(objPtr);
 		TclDecrRefCount(valuePtr);
 		result = TCL_ERROR;
 		goto checkForCatch;
 	    }
 	    PUSH_OBJECT(value2Ptr);
-	    TRACE_WITH_OBJ(("\"%.30s\" <- \"%.30s\" => ",
-		    O2S(objPtr), O2S(valuePtr)), value2Ptr);
+	    if (elemPtr != NULL) {
+		TRACE_WITH_OBJ(("\"%.30s(%.30s)\" <- \"%.30s\" => ",
+		        O2S(objPtr), O2S(elemPtr), O2S(valuePtr)),
+		        value2Ptr);
+		TclDecrRefCount(elemPtr);
+	    } else {
+		TRACE_WITH_OBJ(("\"%.30s\" <- \"%.30s\" => ",
+		        O2S(objPtr), O2S(valuePtr)), value2Ptr);
+	    }
 	    TclDecrRefCount(objPtr);
 	    TclDecrRefCount(valuePtr);
 	    ADJUST_PC(1);
 
+	case INST_LAPPEND_ARRAY4:
+	    opnd = TclGetUInt4AtPtr(pc+1);
+	    pcAdjustment = 5;
+	    storeFlags = (TCL_LEAVE_ERR_MSG | TCL_APPEND_VALUE | TCL_LIST_ELEMENT | TCL_TRACE_READS);
+	    goto doStoreArray;
+
+	case INST_LAPPEND_ARRAY1:
+	    opnd = TclGetUInt1AtPtr(pc+1);
+	    pcAdjustment = 2;
+	    storeFlags = (TCL_LEAVE_ERR_MSG | TCL_APPEND_VALUE | TCL_LIST_ELEMENT | TCL_TRACE_READS);
+	    goto doStoreArray;
+
+	case INST_APPEND_ARRAY4:
+	    opnd = TclGetUInt4AtPtr(pc+1);
+	    pcAdjustment = 5;
+	    storeFlags = (TCL_LEAVE_ERR_MSG | TCL_APPEND_VALUE);
+	    goto doStoreArray;
+
+	case INST_APPEND_ARRAY1:
+	    opnd = TclGetUInt1AtPtr(pc+1);
+	    pcAdjustment = 2;
+	    storeFlags = (TCL_LEAVE_ERR_MSG | TCL_APPEND_VALUE);
+	    goto doStoreArray;
+
 	case INST_STORE_ARRAY4:
 	    opnd = TclGetUInt4AtPtr(pc+1);
 	    pcAdjustment = 5;
+	    storeFlags = TCL_LEAVE_ERR_MSG;
 	    goto doStoreArray;
 
 	case INST_STORE_ARRAY1:
 	    opnd = TclGetUInt1AtPtr(pc+1);
 	    pcAdjustment = 2;
+	    storeFlags = TCL_LEAVE_ERR_MSG;
 	    
 	    doStoreArray:
 	    valuePtr = POP_OBJECT();
 	    elemPtr = POP_OBJECT();
 	    DECACHE_STACK_INFO();
 	    value2Ptr = TclSetElementOfIndexedArray(interp, opnd,
-		    elemPtr, valuePtr, TCL_LEAVE_ERR_MSG);
+		    elemPtr, valuePtr, storeFlags);
 	    CACHE_STACK_INFO();
 	    if (value2Ptr == NULL) {
 		TRACE_WITH_OBJ(("%u \"%.30s\" <- \"%.30s\" => ERROR: ",
@@ -1661,145 +1760,6 @@ TclExecuteByteCode(interp, codePtr)
 	    TclDecrRefCount(valuePtr);
 	    ADJUST_PC(pcAdjustment);
 
-	case INST_STORE_ARRAY_STK:
-	    valuePtr = POP_OBJECT();
-	    elemPtr = POP_OBJECT();
-	    objPtr = POP_OBJECT();	/* array name */
-	    DECACHE_STACK_INFO();
-	    value2Ptr = Tcl_ObjSetVar2(interp, objPtr, elemPtr, valuePtr,
-		    TCL_LEAVE_ERR_MSG);
-	    CACHE_STACK_INFO();
-	    if (value2Ptr == NULL) {
-		TRACE_WITH_OBJ(("\"%.30s(%.30s)\" <- \"%.30s\" => ERROR: ",
-			O2S(objPtr), O2S(elemPtr), O2S(valuePtr)),
-			Tcl_GetObjResult(interp));
-		TclDecrRefCount(objPtr);
-		TclDecrRefCount(elemPtr);
-		TclDecrRefCount(valuePtr);
-		result = TCL_ERROR;
-		goto checkForCatch;
-	    }
-	    PUSH_OBJECT(value2Ptr);
-	    TRACE_WITH_OBJ(("\"%.30s(%.30s)\" <- \"%.30s\" => ",
-		    O2S(objPtr), O2S(elemPtr), O2S(valuePtr)),
-		    value2Ptr);
-	    TclDecrRefCount(objPtr);
-	    TclDecrRefCount(elemPtr);
-	    TclDecrRefCount(valuePtr);
-	    ADJUST_PC(1);
-
-	    /*
-	     * START APPEND INSTRUCTIONS
-	     */
-
-	case INST_APPEND_SCALAR4:
-	    opnd = TclGetUInt4AtPtr(pc+1);
-	    pcAdjustment = 5;
-	    goto doAppendScalar;
-
-	case INST_APPEND_SCALAR1:
-	    opnd = TclGetUInt1AtPtr(pc+1);
-	    pcAdjustment = 2;
-
-	  doAppendScalar:
-	    valuePtr = POP_OBJECT();
-	    DECACHE_STACK_INFO();
-	    value2Ptr = TclSetIndexedScalar(interp, opnd, valuePtr,
-	            TCL_LEAVE_ERR_MSG | TCL_APPEND_VALUE);
-	    CACHE_STACK_INFO();
-	    if (value2Ptr == NULL) {
-		TRACE_WITH_OBJ(("%u <- \"%.30s\" => ERROR: ",
-			opnd, O2S(valuePtr)), Tcl_GetObjResult(interp));
-		TclDecrRefCount(valuePtr);
-		result = TCL_ERROR;
-		goto checkForCatch;
-	    }
-	    PUSH_OBJECT(value2Ptr);
-	    TRACE_WITH_OBJ(("%u <- \"%.30s\" => ",
-		    opnd, O2S(valuePtr)), value2Ptr);
-	    TclDecrRefCount(valuePtr);
-	    ADJUST_PC(pcAdjustment);
-
-	case INST_APPEND_STK:
-	case INST_APPEND_ARRAY_STK:
-	    valuePtr = POP_OBJECT(); /* value to append */
-	    if (*pc == INST_APPEND_ARRAY_STK) {
-		elemPtr = POP_OBJECT();
-	    } else {
-		elemPtr = NULL;
-	    }
-	    objPtr = POP_OBJECT(); /* scalar name */
-
-	    DECACHE_STACK_INFO();
-	    value2Ptr = Tcl_ObjSetVar2(interp, objPtr, elemPtr, valuePtr,
-		    TCL_LEAVE_ERR_MSG | TCL_APPEND_VALUE);
-	    CACHE_STACK_INFO();
-	    if (value2Ptr == NULL) {
-		if (elemPtr) {
-		    TRACE_WITH_OBJ(("\"%.30s(%.30s)\" <-+ \"%.30s\" => ERROR: ",
-			    O2S(objPtr), O2S(elemPtr), O2S(valuePtr)),
-			    Tcl_GetObjResult(interp));
-		    TclDecrRefCount(elemPtr);
-		} else {
-		    TRACE_WITH_OBJ(("\"%.30s\" <-+ \"%.30s\" => ERROR: ",
-			    O2S(objPtr), O2S(valuePtr)),
-			    Tcl_GetObjResult(interp));
-		}
-		TclDecrRefCount(objPtr);
-		TclDecrRefCount(valuePtr);
-		result = TCL_ERROR;
-		goto checkForCatch;
-	    }
-	    PUSH_OBJECT(value2Ptr);
-	    if (elemPtr) {
-		TRACE_WITH_OBJ(("\"%.30s(%.30s)\" <-+ \"%.30s\" => ",
-			O2S(objPtr), O2S(elemPtr), O2S(valuePtr)),
-			value2Ptr);
-		TclDecrRefCount(elemPtr);
-	    } else {
-		TRACE_WITH_OBJ(("\"%.30s\" <-+ \"%.30s\" => ",
-			O2S(objPtr), O2S(valuePtr)), value2Ptr);
-	    }
-	    TclDecrRefCount(objPtr);
-	    TclDecrRefCount(valuePtr);
-	    ADJUST_PC(1);
-
-	case INST_APPEND_ARRAY4:
-	    opnd = TclGetUInt4AtPtr(pc+1);
-	    pcAdjustment = 5;
-	    goto doAppendArray;
-
-	case INST_APPEND_ARRAY1:
-	    opnd = TclGetUInt1AtPtr(pc+1);
-	    pcAdjustment = 2;
-
-	    doAppendArray:
-	    valuePtr = POP_OBJECT();
-	    elemPtr = POP_OBJECT();
-	    DECACHE_STACK_INFO();
-	    value2Ptr = TclSetElementOfIndexedArray(interp, opnd,
-		    elemPtr, valuePtr, TCL_LEAVE_ERR_MSG|TCL_APPEND_VALUE);
-	    CACHE_STACK_INFO();
-	    if (value2Ptr == NULL) {
-		TRACE_WITH_OBJ(("%u \"%.30s\" <-+ \"%.30s\" => ERROR: ",
-			opnd, O2S(elemPtr), O2S(valuePtr)),
-			Tcl_GetObjResult(interp));
-		TclDecrRefCount(elemPtr);
-		TclDecrRefCount(valuePtr);
-		result = TCL_ERROR;
-		goto checkForCatch;
-	    }
-	    PUSH_OBJECT(value2Ptr);
-	    TRACE_WITH_OBJ(("%u \"%.30s\" <-+ \"%.30s\" => ",
-		    opnd, O2S(elemPtr), O2S(valuePtr)), value2Ptr);
-	    TclDecrRefCount(elemPtr);
-	    TclDecrRefCount(valuePtr);
-	    ADJUST_PC(pcAdjustment);
-
-	    /*
-	     * END APPEND INSTRUCTIONS
-	     */
-
 	case INST_LIST:
 	    /*
 	     * Pop the opnd (objc) top stack elements into a new list obj
@@ -1815,172 +1775,6 @@ TclExecuteByteCode(interp, codePtr)
 	    PUSH_OBJECT(valuePtr);
 	    TRACE_WITH_OBJ(("%u => ", opnd), valuePtr);
 	    ADJUST_PC(5);
-
-	    /*
-	     * START LAPPEND INSTRUCTIONS
-	     */
-
-	case INST_LAPPEND_SCALAR4:
-	    opnd = TclGetUInt4AtPtr(pc+1);
-	    pcAdjustment = 5;
-	    goto doLappendScalar;
-
-	case INST_LAPPEND_SCALAR1:
-	    opnd = TclGetUInt1AtPtr(pc+1);
-	    pcAdjustment = 2;
-
-	  doLappendScalar:
-	    valuePtr = POP_OBJECT();
-	    DECACHE_STACK_INFO();
-	    value2Ptr = TclSetIndexedScalar(interp, opnd, valuePtr,
-	            TCL_LEAVE_ERR_MSG|TCL_APPEND_VALUE|TCL_LIST_ELEMENT);
-	    CACHE_STACK_INFO();
-	    if (value2Ptr == NULL) {
-		TRACE_WITH_OBJ(("%u <- \"%.30s\" => ERROR: ",
-			opnd, O2S(valuePtr)), Tcl_GetObjResult(interp));
-		TclDecrRefCount(valuePtr);
-		result = TCL_ERROR;
-		goto checkForCatch;
-	    }
-	    PUSH_OBJECT(value2Ptr);
-	    TRACE_WITH_OBJ(("%u <- \"%.30s\" => ",
-		    opnd, O2S(valuePtr)), value2Ptr);
-	    TclDecrRefCount(valuePtr);
-	    ADJUST_PC(pcAdjustment);
-
-	case INST_LAPPEND_STK:
-	case INST_LAPPEND_ARRAY_STK:
-	{
-	    /*
-	     * This compile function for this should be refactored
-	     * to make better use of existing LOAD/STORE instructions.
-	     */
-	    Tcl_Obj *newValuePtr;
-	    int createdNewObj = 0;
-
-	    value2Ptr = POP_OBJECT(); /* value to append */
-	    if (*pc == INST_LAPPEND_ARRAY_STK) {
-		elemPtr = POP_OBJECT();
-	    } else {
-		elemPtr = NULL;
-	    }
-	    objPtr = POP_OBJECT(); /* scalar name */
-
-	    DECACHE_STACK_INFO();
-	    /*
-	     * Currently value of the list.
-	     * Use the TCL_TRACE_READS flag to ensure that if we have an
-	     * array with no elements set yet, but with a read trace on it,
-	     * we will create the variable and get read traces triggered.
-	     */
-	    valuePtr = Tcl_ObjGetVar2(interp, objPtr, elemPtr,
-		    TCL_TRACE_READS);
-	    CACHE_STACK_INFO();
-	    if (valuePtr == NULL) {
-		TclNewObj(valuePtr);
-		createdNewObj = 1;
-	    } else if (Tcl_IsShared(valuePtr)) {
-		valuePtr = Tcl_DuplicateObj(valuePtr);
-		createdNewObj = 1;
-	    }
-
-	    DECACHE_STACK_INFO();
-	    result = Tcl_ListObjAppendElement(interp, valuePtr, value2Ptr);
-	    CACHE_STACK_INFO();
-	    if (result != TCL_OK) {
-		if (elemPtr) {
-		    TRACE_WITH_OBJ(("\"%.30s(%.30s)\" <- \"%.30s\" => ERROR: ",
-			    O2S(objPtr), O2S(elemPtr), O2S(valuePtr)),
-			    Tcl_GetObjResult(interp));
-		    TclDecrRefCount(elemPtr);
-		} else {
-		    TRACE_WITH_OBJ(("\"%.30s\" <-+ \"%.30s\" => ERROR: ",
-			    O2S(objPtr), O2S(value2Ptr)),
-			    Tcl_GetObjResult(interp));
-		}
-		TclDecrRefCount(objPtr);
-		TclDecrRefCount(value2Ptr);
-		if (createdNewObj) {
-		    TclDecrRefCount(valuePtr);
-		}
-		result = TCL_ERROR;
-		goto checkForCatch;
-	    }
-
-	    DECACHE_STACK_INFO();
-	    newValuePtr = Tcl_ObjSetVar2(interp, objPtr, elemPtr, valuePtr,
-		    TCL_LEAVE_ERR_MSG);
-	    CACHE_STACK_INFO();
-	    if (newValuePtr == NULL) {
-		if (elemPtr) {
-		    TRACE_WITH_OBJ(("\"%.30s(%.30s)\" <- \"%.30s\" => ERROR: ",
-			    O2S(objPtr), O2S(elemPtr), O2S(valuePtr)),
-			    Tcl_GetObjResult(interp));
-		    TclDecrRefCount(elemPtr);
-		} else {
-		    TRACE_WITH_OBJ(("\"%.30s\" <-+ \"%.30s\" => ERROR: ",
-			    O2S(objPtr), O2S(value2Ptr)),
-			    Tcl_GetObjResult(interp));
-		}
-		TclDecrRefCount(objPtr);
-		TclDecrRefCount(value2Ptr);
-		if (createdNewObj) {
-		    TclDecrRefCount(valuePtr);
-		}
-		result = TCL_ERROR;
-		goto checkForCatch;
-	    }
-	    PUSH_OBJECT(newValuePtr);
-	    if (elemPtr) {
-		TRACE_WITH_OBJ(("\"%.30s(%.30s)\" <- \"%.30s\" => ",
-			O2S(objPtr), O2S(elemPtr), O2S(valuePtr)),
-			value2Ptr);
-		TclDecrRefCount(elemPtr);
-	    } else {
-		TRACE_WITH_OBJ(("\"%.30s\" <-+ \"%.30s\" => ",
-			O2S(objPtr), O2S(valuePtr)), value2Ptr);
-	    }
-	    TclDecrRefCount(objPtr);
-	    TclDecrRefCount(value2Ptr);
-	    ADJUST_PC(1);
-	}
-
-	case INST_LAPPEND_ARRAY4:
-	    opnd = TclGetUInt4AtPtr(pc+1);
-	    pcAdjustment = 5;
-	    goto doLappendArray;
-
-	case INST_LAPPEND_ARRAY1:
-	    opnd = TclGetUInt1AtPtr(pc+1);
-	    pcAdjustment = 2;
-
-	    doLappendArray:
-	    valuePtr = POP_OBJECT();
-	    elemPtr = POP_OBJECT();
-	    DECACHE_STACK_INFO();
-	    value2Ptr = TclSetElementOfIndexedArray(interp, opnd,
-		    elemPtr, valuePtr,
-		    TCL_LEAVE_ERR_MSG|TCL_APPEND_VALUE|TCL_LIST_ELEMENT);
-	    CACHE_STACK_INFO();
-	    if (value2Ptr == NULL) {
-		TRACE_WITH_OBJ(("%u \"%.30s\" <-+ \"%.30s\" => ERROR: ",
-			opnd, O2S(elemPtr), O2S(valuePtr)),
-			Tcl_GetObjResult(interp));
-		TclDecrRefCount(elemPtr);
-		TclDecrRefCount(valuePtr);
-		result = TCL_ERROR;
-		goto checkForCatch;
-	    }
-	    PUSH_OBJECT(value2Ptr);
-	    TRACE_WITH_OBJ(("%u \"%.30s\" <-+ \"%.30s\" => ",
-		    opnd, O2S(elemPtr), O2S(valuePtr)), value2Ptr);
-	    TclDecrRefCount(elemPtr);
-	    TclDecrRefCount(valuePtr);
-	    ADJUST_PC(pcAdjustment);
-
-	    /*
-	     * END (L)APPEND INSTRUCTIONS
-	     */
 
 	case INST_INCR_SCALAR1:
 	    opnd = TclGetUInt1AtPtr(pc+1);
@@ -2001,152 +1795,16 @@ TclExecuteByteCode(interp, codePtr)
 		}
 		FORCE_LONG(valuePtr, i, w);
 	    }
-	    DECACHE_STACK_INFO();
-	    value2Ptr = TclIncrIndexedScalar(interp, opnd, i);
-	    CACHE_STACK_INFO();
-	    if (value2Ptr == NULL) {
-		TRACE_WITH_OBJ(("%u (by %ld) => ERROR: ", opnd, i),
-			Tcl_GetObjResult(interp));
-		TclDecrRefCount(valuePtr);
-		result = TCL_ERROR;
-		goto checkForCatch;
-	    }
-	    PUSH_OBJECT(value2Ptr);
-	    TRACE_WITH_OBJ(("%u (by %ld) => ", opnd, i), value2Ptr);
 	    TclDecrRefCount(valuePtr);
-	    ADJUST_PC(2);
+	    pcAdjustment = 2;
+	    goto doIncrScalarImm;
 
-	case INST_INCR_SCALAR_STK:
-	case INST_INCR_STK:
-	    valuePtr = POP_OBJECT();
-	    objPtr = POP_OBJECT(); /* scalar name */
-	    if (valuePtr->typePtr == &tclIntType) {
-		i = valuePtr->internalRep.longValue;
-#ifndef TCL_WIDE_INT_IS_LONG
-	    } else if (valuePtr->typePtr == &tclWideIntType) {
-		i = Tcl_WideAsLong(valuePtr->internalRep.wideValue);
-#endif /* TCL_WIDE_INT_IS_LONG */
-	    } else {
-		REQUIRE_WIDE_OR_INT(result, valuePtr, i, w);
-		if (result != TCL_OK) {
-		    TRACE_WITH_OBJ(("\"%.30s\" (by %s) => ERROR converting increment amount to int: ",
-		            O2S(objPtr), O2S(valuePtr)),
-			    Tcl_GetObjResult(interp));
-		    TclDecrRefCount(objPtr);
-		    TclDecrRefCount(valuePtr);
-		    goto checkForCatch;
-		}
-		FORCE_LONG(valuePtr, i, w);
-	    }
-	    DECACHE_STACK_INFO();
-	    value2Ptr = TclIncrVar2(interp, objPtr, (Tcl_Obj *) NULL, i,
-		    TCL_LEAVE_ERR_MSG);
-	    CACHE_STACK_INFO();
-	    if (value2Ptr == NULL) {
-		TRACE_WITH_OBJ(("\"%.30s\" (by %ld) => ERROR: ",
-		        O2S(objPtr), i), Tcl_GetObjResult(interp));
-		TclDecrRefCount(objPtr);
-		TclDecrRefCount(valuePtr);
-		result = TCL_ERROR;
-		goto checkForCatch;
-	    }
-	    PUSH_OBJECT(value2Ptr);
-	    TRACE_WITH_OBJ(("\"%.30s\" (by %ld) => ", O2S(objPtr), i),
-		    value2Ptr);
-	    TclDecrRefCount(objPtr);
-	    TclDecrRefCount(valuePtr);
-	    ADJUST_PC(1);
-
-	case INST_INCR_ARRAY1:
-	    opnd = TclGetUInt1AtPtr(pc+1);
-	    valuePtr = POP_OBJECT();
-	    elemPtr = POP_OBJECT();
-	    if (valuePtr->typePtr == &tclIntType) {
-		i = valuePtr->internalRep.longValue;
-#ifndef TCL_WIDE_INT_IS_LONG
-	    } else if (valuePtr->typePtr == &tclWideIntType) {
-		i = Tcl_WideAsLong(valuePtr->internalRep.wideValue);
-#endif /* TCL_WIDE_INT_IS_LONG */
-	    } else {
-		REQUIRE_WIDE_OR_INT(result, valuePtr, i, w);
-		if (result != TCL_OK) {
-		    TRACE_WITH_OBJ(("%u \"%.30s\" (by %s) => ERROR converting increment amount to int: ",
-			    opnd, O2S(elemPtr), O2S(valuePtr)),
-			    Tcl_GetObjResult(interp));
-		    TclDecrRefCount(elemPtr);
-		    TclDecrRefCount(valuePtr);
-		    goto checkForCatch;
-		}
-		FORCE_LONG(valuePtr, i, w);
-	    }
-	    DECACHE_STACK_INFO();
-	    value2Ptr = TclIncrElementOfIndexedArray(interp, opnd,
-		    elemPtr, i);
-	    CACHE_STACK_INFO();
-	    if (value2Ptr == NULL) {
-		TRACE_WITH_OBJ(("%u \"%.30s\" (by %ld) => ERROR: ",
-			opnd, O2S(elemPtr), i),
-			Tcl_GetObjResult(interp));
-		TclDecrRefCount(elemPtr);
-		TclDecrRefCount(valuePtr);
-		result = TCL_ERROR;
-		goto checkForCatch;
-	    }
-	    PUSH_OBJECT(value2Ptr);
-	    TRACE_WITH_OBJ(("%u \"%.30s\" (by %ld) => ",
-		    opnd, O2S(elemPtr), i), value2Ptr);
-	    TclDecrRefCount(elemPtr);
-	    TclDecrRefCount(valuePtr);
-	    ADJUST_PC(2);
-	    
-	case INST_INCR_ARRAY_STK:
-	    valuePtr = POP_OBJECT();
-	    elemPtr = POP_OBJECT();
-	    objPtr = POP_OBJECT();	/* array name */
-	    if (valuePtr->typePtr == &tclIntType) {
-		i = valuePtr->internalRep.longValue;
-#ifndef TCL_WIDE_INT_IS_LONG
-	    } else if (valuePtr->typePtr == &tclWideIntType) {
-		i = Tcl_WideAsLong(valuePtr->internalRep.wideValue);
-#endif /* TCL_WIDE_INT_IS_LONG */
-	    } else {
-		REQUIRE_WIDE_OR_INT(result, valuePtr, i, w);
-		if (result != TCL_OK) {
-		    TRACE_WITH_OBJ(("\"%.30s(%.30s)\" (by %s) => ERROR converting increment amount to int: ",
-			    O2S(objPtr), O2S(elemPtr), O2S(valuePtr)),
-			    Tcl_GetObjResult(interp));
-		    TclDecrRefCount(objPtr);
-		    TclDecrRefCount(elemPtr);
-		    TclDecrRefCount(valuePtr);
-		    goto checkForCatch;
-		}
-		FORCE_LONG(valuePtr, i, w);
-	    }
-	    DECACHE_STACK_INFO();
-	    value2Ptr = TclIncrVar2(interp, objPtr, elemPtr, i,
-		    TCL_LEAVE_ERR_MSG);
-	    CACHE_STACK_INFO();
-	    if (value2Ptr == NULL) {
-		TRACE_WITH_OBJ(("\"%.30s(%.30s)\" (by %ld) => ERROR: ",
-			O2S(objPtr), O2S(elemPtr), i),
-			Tcl_GetObjResult(interp));
-		TclDecrRefCount(objPtr);
-		TclDecrRefCount(elemPtr);
-		TclDecrRefCount(valuePtr);
-		result = TCL_ERROR;
-		goto checkForCatch;
-	    }
-	    PUSH_OBJECT(value2Ptr);
-	    TRACE_WITH_OBJ(("\"%.30s(%.30s)\" (by %ld) => ",
-		    O2S(objPtr), O2S(elemPtr), i), value2Ptr);
-	    TclDecrRefCount(objPtr);
-	    TclDecrRefCount(elemPtr);
-	    TclDecrRefCount(valuePtr);
-	    ADJUST_PC(1);
-	    
 	case INST_INCR_SCALAR1_IMM:
 	    opnd = TclGetUInt1AtPtr(pc+1);
 	    i = TclGetInt1AtPtr(pc+2);
+	    pcAdjustment = 3;
+
+	    doIncrScalarImm:
 	    DECACHE_STACK_INFO();
 	    value2Ptr = TclIncrIndexedScalar(interp, opnd, i);
 	    CACHE_STACK_INFO();
@@ -2158,32 +1816,124 @@ TclExecuteByteCode(interp, codePtr)
 	    }
 	    PUSH_OBJECT(value2Ptr);
 	    TRACE_WITH_OBJ(("%u %ld => ", opnd, i), value2Ptr);
-	    ADJUST_PC(3);
+	    ADJUST_PC(pcAdjustment);
+
+	case INST_INCR_ARRAY_STK:
+	    elemPtr = POP_OBJECT();
+	    goto doIncrStkGetIncr;
+
+	case INST_INCR_SCALAR_STK:
+	case INST_INCR_STK:
+	    elemPtr = NULL;
+
+	    doIncrStkGetIncr:
+	    valuePtr = POP_OBJECT();
+	    if (valuePtr->typePtr == &tclIntType) {
+		i = valuePtr->internalRep.longValue;
+#ifndef TCL_WIDE_INT_IS_LONG
+	    } else if (valuePtr->typePtr == &tclWideIntType) {
+		i = Tcl_WideAsLong(valuePtr->internalRep.wideValue);
+#endif /* TCL_WIDE_INT_IS_LONG */
+	    } else {
+		REQUIRE_WIDE_OR_INT(result, valuePtr, i, w);
+		if (result != TCL_OK) {
+		    objPtr = POP_OBJECT(); /* scalar name */
+		    if (elemPtr != NULL) {
+			TRACE_WITH_OBJ(("\"%.30s(%.30s)\" (by %s) => ERROR converting increment amount to int: ",
+			        O2S(objPtr), O2S(elemPtr), O2S(valuePtr)),
+			        Tcl_GetObjResult(interp));
+			TclDecrRefCount(elemPtr);
+		    } else {
+			TRACE_WITH_OBJ(("\"%.30s\" (by %s) => ERROR converting increment amount to int: ",
+		                O2S(objPtr), O2S(valuePtr)),
+			        Tcl_GetObjResult(interp));
+		    }
+		    TclDecrRefCount(objPtr);
+		    TclDecrRefCount(valuePtr);
+		    goto checkForCatch;
+		}
+		FORCE_LONG(valuePtr, i, w);
+	    }
+	    TclDecrRefCount(valuePtr);
+	    pcAdjustment = 1;
+	    goto doIncrStk;
+
+	case INST_INCR_ARRAY_STK_IMM:
+	    elemPtr = POP_OBJECT();
+	    goto doIncrStkImm;
 
 	case INST_INCR_SCALAR_STK_IMM:
 	case INST_INCR_STK_IMM:
-	    objPtr = POP_OBJECT(); /* variable name */
+	    elemPtr = NULL;
+
+	    doIncrStkImm:
 	    i = TclGetInt1AtPtr(pc+1);
+	    pcAdjustment = 2;
+	    
+	    doIncrStk:
+	    objPtr = POP_OBJECT(); /* variable name */
 	    DECACHE_STACK_INFO();
-	    value2Ptr = TclIncrVar2(interp, objPtr, (Tcl_Obj *) NULL, i,
+	    value2Ptr = TclIncrVar2(interp, objPtr, elemPtr, i,
 		    TCL_LEAVE_ERR_MSG);
 	    CACHE_STACK_INFO();
 	    if (value2Ptr == NULL) {
-		TRACE_WITH_OBJ(("\"%.30s\" %ld => ERROR: ",
-		        O2S(objPtr), i), Tcl_GetObjResult(interp));
+		if (elemPtr != NULL) {
+		    TRACE_WITH_OBJ(("\"%.30s(%.30s)\" (by %ld) => ERROR: ",
+			    O2S(objPtr), O2S(elemPtr), i),
+			    Tcl_GetObjResult(interp));
+		    TclDecrRefCount(elemPtr);
+		} else {
+		    TRACE_WITH_OBJ(("\"%.30s\" %ld => ERROR: ",
+		            O2S(objPtr), i), Tcl_GetObjResult(interp));
+		}
 		result = TCL_ERROR;
 		TclDecrRefCount(objPtr);
 		goto checkForCatch;
 	    }
 	    PUSH_OBJECT(value2Ptr);
-	    TRACE_WITH_OBJ(("\"%.30s\" %ld => ", O2S(objPtr), i),
-		    value2Ptr);
+	    if (elemPtr != NULL) {
+		TRACE_WITH_OBJ(("\"%.30s(%.30s)\" (by %ld) => ",
+		        O2S(objPtr), O2S(elemPtr), i), value2Ptr);
+		TclDecrRefCount(elemPtr);
+	    } else {
+		TRACE_WITH_OBJ(("\"%.30s\" %ld => ", O2S(objPtr), i),
+		        value2Ptr);
+	    }
 	    TclDecrRefCount(objPtr);
-	    ADJUST_PC(2);
+	    ADJUST_PC(pcAdjustment);
+
+	case INST_INCR_ARRAY1:
+	    opnd = TclGetUInt1AtPtr(pc+1);
+	    valuePtr = POP_OBJECT();
+	    if (valuePtr->typePtr == &tclIntType) {
+		i = valuePtr->internalRep.longValue;
+#ifndef TCL_WIDE_INT_IS_LONG
+	    } else if (valuePtr->typePtr == &tclWideIntType) {
+		i = Tcl_WideAsLong(valuePtr->internalRep.wideValue);
+#endif /* TCL_WIDE_INT_IS_LONG */
+	    } else {
+		REQUIRE_WIDE_OR_INT(result, valuePtr, i, w);
+		if (result != TCL_OK) {
+		    elemPtr = POP_OBJECT();
+		    TRACE_WITH_OBJ(("%u \"%.30s\" (by %s) => ERROR converting increment amount to int: ",
+			    opnd, O2S(elemPtr), O2S(valuePtr)),
+			    Tcl_GetObjResult(interp));
+		    TclDecrRefCount(elemPtr);
+		    TclDecrRefCount(valuePtr);
+		    goto checkForCatch;
+		}
+		FORCE_LONG(valuePtr, i, w);
+	    }
+	    TclDecrRefCount(valuePtr);
+	    pcAdjustment = 2;
+	    goto doIncrArrayImm;
 
 	case INST_INCR_ARRAY1_IMM:
 	    opnd = TclGetUInt1AtPtr(pc+1);
 	    i = TclGetInt1AtPtr(pc+2);
+	    pcAdjustment = 3;
+
+	    doIncrArrayImm:
 	    elemPtr = POP_OBJECT();
 	    DECACHE_STACK_INFO();
 	    value2Ptr = TclIncrElementOfIndexedArray(interp, opnd,
@@ -2201,32 +1951,8 @@ TclExecuteByteCode(interp, codePtr)
 	    TRACE_WITH_OBJ(("%u \"%.30s\" (by %ld) => ",
 		    opnd, O2S(elemPtr), i), value2Ptr);
 	    TclDecrRefCount(elemPtr);
-	    ADJUST_PC(3);
-	    
-	case INST_INCR_ARRAY_STK_IMM:
-	    i = TclGetInt1AtPtr(pc+1);
-	    elemPtr = POP_OBJECT();
-	    objPtr = POP_OBJECT();	/* array name */
-	    DECACHE_STACK_INFO();
-	    value2Ptr = TclIncrVar2(interp, objPtr, elemPtr, i,
-		    TCL_LEAVE_ERR_MSG);
-	    CACHE_STACK_INFO();
-	    if (value2Ptr == NULL) {
-		TRACE_WITH_OBJ(("\"%.30s(%.30s)\" (by %ld) => ERROR: ",
-			O2S(objPtr), O2S(elemPtr), i),
-			Tcl_GetObjResult(interp));
-		TclDecrRefCount(objPtr);
-		TclDecrRefCount(elemPtr);
-		result = TCL_ERROR;
-		goto checkForCatch;
-	    }
-	    PUSH_OBJECT(value2Ptr);
-	    TRACE_WITH_OBJ(("\"%.30s(%.30s)\" (by %ld) => ",
-		    O2S(objPtr), O2S(elemPtr), i), value2Ptr);
-	    TclDecrRefCount(objPtr);
-	    TclDecrRefCount(elemPtr);
-	    ADJUST_PC(2);
-
+	    ADJUST_PC(pcAdjustment);
+	    	    
 	    /*
 	     * END INCR INSTRUCTIONS
 	     */
