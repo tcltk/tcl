@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.79 2002/01/25 21:36:09 dgp Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.80 2002/01/31 04:39:43 dgp Exp $
 
 library tcl
 
@@ -154,7 +154,7 @@ declare 35 generic {
 }
 declare 36 generic {
     int Tcl_GetIndexFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, \
-	    CONST char **tablePtr, CONST char *msg, int flags, int *indexPtr)
+	    CONST84 char **tablePtr, CONST char *msg, int flags, int *indexPtr)
 }
 declare 37 generic {
     int Tcl_GetInt(Tcl_Interp *interp, CONST char *str, int *intPtr)
@@ -306,7 +306,7 @@ declare 82 generic {
     int Tcl_CommandComplete(char *cmd)
 }
 declare 83 generic {
-    char * Tcl_Concat(int argc, CONST char * CONST *argv)
+    char * Tcl_Concat(int argc, CONST84 char * CONST *argv)
 }
 declare 84 generic {
     int Tcl_ConvertElement(CONST char *src, char *dst, int flags)
@@ -531,12 +531,12 @@ declare 147 generic {
 }
 declare 148 generic {
     int Tcl_GetAlias(Tcl_Interp *interp, CONST char *slaveCmd, \
-	    Tcl_Interp **targetInterpPtr, CONST char **targetCmdPtr, \
+	    Tcl_Interp **targetInterpPtr, CONST84 char **targetCmdPtr, \
 	    int *argcPtr, char ***argvPtr)
 }
 declare 149 generic {
     int Tcl_GetAliasObj(Tcl_Interp *interp, CONST char *slaveCmd, \
-	    Tcl_Interp **targetInterpPtr, CONST char **targetCmdPtr, \
+	    Tcl_Interp **targetInterpPtr, CONST84 char **targetCmdPtr, \
 	    int *objcPtr, Tcl_Obj ***objv)
 }
 declare 150 generic {
@@ -663,7 +663,7 @@ declare 185 generic {
 }
 # Obsolete, use Tcl_FSJoinPath
 declare 186 generic {
-    CONST char * Tcl_JoinPath(int argc, CONST char * CONST *argv,
+    CONST char * Tcl_JoinPath(int argc, CONST84 char * CONST *argv,
 	    Tcl_DString *resultPtr)
 }
 declare 187 generic {
@@ -685,7 +685,7 @@ declare 191 generic {
     Tcl_Channel Tcl_MakeTcpClientChannel(ClientData tcpSocket)
 }
 declare 192 generic {
-    char * Tcl_Merge(int argc, CONST char * CONST *argv)
+    char * Tcl_Merge(int argc, CONST84 char * CONST *argv)
 }
 declare 193 generic {
     Tcl_HashEntry * Tcl_NextHashEntry(Tcl_HashSearch *searchPtr)
@@ -703,7 +703,7 @@ declare 196 generic {
 }
 declare 197 {unix win} {
     Tcl_Channel Tcl_OpenCommandChannel(Tcl_Interp *interp, int argc, \
-	    CONST char **argv, int flags)
+	    CONST84 char **argv, int flags)
 }
 # This is obsolete, use Tcl_FSOpenFileChannel
 declare 198 generic {
@@ -853,11 +853,11 @@ declare 241 generic {
 }
 declare 242 generic {
     int Tcl_SplitList(Tcl_Interp *interp, CONST char *listStr, int *argcPtr, \
-	    CONST char ***argvPtr)
+	    CONST84 char ***argvPtr)
 }
 # Obsolete, use Tcl_FSSplitPath
 declare 243 generic {
-    void Tcl_SplitPath(CONST char *path, int *argcPtr, CONST char ***argvPtr)
+    void Tcl_SplitPath(CONST char *path, int *argcPtr, CONST84 char ***argvPtr)
 }
 declare 244 generic {
     void Tcl_StaticPackage(Tcl_Interp *interp, CONST char *pkgName, \
