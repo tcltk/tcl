@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: CrtSlave.3,v 1.3 1999/08/21 19:40:47 hobbs Exp $
+'\" RCS: @(#) $Id: CrtSlave.3,v 1.4 2000/07/24 00:03:02 jenglish Exp $
 '\" 
 .so man.macros
 .TH Tcl_CreateSlave 3 7.6 Tcl "Tcl Library Procedures"
@@ -220,9 +220,10 @@ If the operation succeeds, it returns \fBTCL_OK\fR.
 After executing this command, attempts to use \fIcmdName\fR in a call to
 \fBTcl_Eval\fR or with the Tcl \fBeval\fR command will fail.
 .PP
-.SH "SEE ALSO"
 For a description of the Tcl interface to multiple interpreters, see
 \fIinterp(n)\fR.
+.SH "SEE ALSO"
+interp
 
 .SH KEYWORDS
 alias, command, exposed commands, hidden commands, interpreter, invoke,
