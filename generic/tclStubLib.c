@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubLib.c,v 1.3 1999/03/10 05:52:50 stanton Exp $
+ * RCS: @(#) $Id: tclStubLib.c,v 1.4 1999/05/25 01:00:27 stanton Exp $
  */
 
 /*
@@ -75,6 +75,10 @@ HasStubSupport (interp)
  *
  *----------------------------------------------------------------------
  */
+
+#ifdef Tcl_InitStubs
+#undef Tcl_InitStubs
+#endif
 
 char *
 Tcl_InitStubs (interp, version, exact)

@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.9 1999/05/22 01:20:12 stanton Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.10 1999/05/25 01:00:25 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -1385,7 +1385,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	    }
 
 	    if ((enum options) index == STR_BYTELENGTH) {
-		string1 = Tcl_GetStringFromObj(objv[2], &length1);
+		(void) Tcl_GetStringFromObj(objv[2], &length1);
 		Tcl_SetIntObj(resultPtr, length1);
 	    } else {
 		/*
@@ -1395,7 +1395,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		 */
 
 		if (objv[2]->typePtr == &tclByteArrayType) {
-		    string1 = Tcl_GetByteArrayFromObj(objv[2], &length1);
+		    (void) Tcl_GetByteArrayFromObj(objv[2], &length1);
 		    Tcl_SetIntObj(resultPtr, length1);
 		} else {
 		    string1 = Tcl_GetStringFromObj(objv[2], &length1);

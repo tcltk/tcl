@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.15 1999/05/23 16:37:14 surles Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.16 1999/05/25 01:00:27 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -48,11 +48,27 @@ TclIntStubs tclIntStubs = {
     TclAccessInsertProc, /* 2 */
     TclAllocateFreeObjects, /* 3 */
     NULL, /* 4 */
+#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
     TclCleanupChildren, /* 5 */
+#endif /* UNIX */
+#ifdef __WIN32__
+    TclCleanupChildren, /* 5 */
+#endif /* __WIN32__ */
+#ifdef MAC_TCL
+    NULL, /* 5 */
+#endif /* MAC_TCL */
     TclCleanupCommand, /* 6 */
     TclCopyAndCollapse, /* 7 */
     TclCopyChannel, /* 8 */
+#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
     TclCreatePipeline, /* 9 */
+#endif /* UNIX */
+#ifdef __WIN32__
+    TclCreatePipeline, /* 9 */
+#endif /* __WIN32__ */
+#ifdef MAC_TCL
+    NULL, /* 9 */
+#endif /* MAC_TCL */
     TclCreateProc, /* 10 */
     TclDeleteCompiledLocalVars, /* 11 */
     TclDeleteVars, /* 12 */
@@ -144,10 +160,26 @@ TclIntStubs tclIntStubs = {
     TclServiceIdle, /* 98 */
     TclSetElementOfIndexedArray, /* 99 */
     TclSetIndexedScalar, /* 100 */
+#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
     TclSetPreInitScript, /* 101 */
+#endif /* UNIX */
+#ifdef __WIN32__
+    TclSetPreInitScript, /* 101 */
+#endif /* __WIN32__ */
+#ifdef MAC_TCL
+    NULL, /* 101 */
+#endif /* MAC_TCL */
     TclSetupEnv, /* 102 */
     TclSockGetPort, /* 103 */
+#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
     TclSockMinimumBuffers, /* 104 */
+#endif /* UNIX */
+#ifdef __WIN32__
+    TclSockMinimumBuffers, /* 104 */
+#endif /* __WIN32__ */
+#ifdef MAC_TCL
+    NULL, /* 104 */
+#endif /* MAC_TCL */
     TclStat, /* 105 */
     TclStatDeleteProc, /* 106 */
     TclStatInsertProc, /* 107 */
@@ -419,7 +451,15 @@ TclStubs tclStubs = {
     Tcl_DeleteHashEntry, /* 108 */
     Tcl_DeleteHashTable, /* 109 */
     Tcl_DeleteInterp, /* 110 */
+#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
     Tcl_DetachPids, /* 111 */
+#endif /* UNIX */
+#ifdef __WIN32__
+    Tcl_DetachPids, /* 111 */
+#endif /* __WIN32__ */
+#ifdef MAC_TCL
+    NULL, /* 111 */
+#endif /* MAC_TCL */
     Tcl_DeleteTimerHandler, /* 112 */
     Tcl_DeleteTrace, /* 113 */
     Tcl_DontCallWhenDeleted, /* 114 */
@@ -513,7 +553,15 @@ TclStubs tclStubs = {
     Tcl_NotifyChannel, /* 194 */
     Tcl_ObjGetVar2, /* 195 */
     Tcl_ObjSetVar2, /* 196 */
+#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
     Tcl_OpenCommandChannel, /* 197 */
+#endif /* UNIX */
+#ifdef __WIN32__
+    Tcl_OpenCommandChannel, /* 197 */
+#endif /* __WIN32__ */
+#ifdef MAC_TCL
+    NULL, /* 197 */
+#endif /* MAC_TCL */
     Tcl_OpenFileChannel, /* 198 */
     Tcl_OpenTcpClient, /* 199 */
     Tcl_OpenTcpServer, /* 200 */
@@ -523,7 +571,15 @@ TclStubs tclStubs = {
     Tcl_PosixError, /* 204 */
     Tcl_QueueEvent, /* 205 */
     Tcl_Read, /* 206 */
+#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
     Tcl_ReapDetachedProcs, /* 207 */
+#endif /* UNIX */
+#ifdef __WIN32__
+    Tcl_ReapDetachedProcs, /* 207 */
+#endif /* __WIN32__ */
+#ifdef MAC_TCL
+    NULL, /* 207 */
+#endif /* MAC_TCL */
     Tcl_RecordAndEval, /* 208 */
     Tcl_RecordAndEvalObj, /* 209 */
     Tcl_RegisterChannel, /* 210 */
@@ -594,7 +650,15 @@ TclStubs tclStubs = {
     Tcl_SetErrorCodeVA, /* 275 */
     Tcl_VarEvalVA, /* 276 */
     Tcl_WaitPid, /* 277 */
+#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
     Tcl_PanicVA, /* 278 */
+#endif /* UNIX */
+#ifdef __WIN32__
+    Tcl_PanicVA, /* 278 */
+#endif /* __WIN32__ */
+#ifdef MAC_TCL
+    NULL, /* 278 */
+#endif /* MAC_TCL */
     Tcl_GetVersion, /* 279 */
     Tcl_InitMemory, /* 280 */
     NULL, /* 281 */

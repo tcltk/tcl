@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.13 1999/05/22 01:20:12 stanton Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.14 1999/05/25 01:00:25 stanton Exp $
  */
 
 #ifndef _TCLDECLS
@@ -370,9 +370,16 @@ EXTERN void		Tcl_DeleteHashTable _ANSI_ARGS_((
 				Tcl_HashTable * tablePtr));
 /* 110 */
 EXTERN void		Tcl_DeleteInterp _ANSI_ARGS_((Tcl_Interp * interp));
+#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
 /* 111 */
 EXTERN void		Tcl_DetachPids _ANSI_ARGS_((int numPids, 
 				Tcl_Pid * pidPtr));
+#endif /* UNIX */
+#ifdef __WIN32__
+/* 111 */
+EXTERN void		Tcl_DetachPids _ANSI_ARGS_((int numPids, 
+				Tcl_Pid * pidPtr));
+#endif /* __WIN32__ */
 /* 112 */
 EXTERN void		Tcl_DeleteTimerHandler _ANSI_ARGS_((
 				Tcl_TimerToken token));
@@ -613,10 +620,18 @@ EXTERN Tcl_Obj *	Tcl_ObjGetVar2 _ANSI_ARGS_((Tcl_Interp * interp,
 EXTERN Tcl_Obj *	Tcl_ObjSetVar2 _ANSI_ARGS_((Tcl_Interp * interp, 
 				Tcl_Obj * part1Ptr, Tcl_Obj * part2Ptr, 
 				Tcl_Obj * newValuePtr, int flags));
+#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
 /* 197 */
 EXTERN Tcl_Channel	Tcl_OpenCommandChannel _ANSI_ARGS_((
 				Tcl_Interp * interp, int argc, char ** argv, 
 				int flags));
+#endif /* UNIX */
+#ifdef __WIN32__
+/* 197 */
+EXTERN Tcl_Channel	Tcl_OpenCommandChannel _ANSI_ARGS_((
+				Tcl_Interp * interp, int argc, char ** argv, 
+				int flags));
+#endif /* __WIN32__ */
 /* 198 */
 EXTERN Tcl_Channel	Tcl_OpenFileChannel _ANSI_ARGS_((Tcl_Interp * interp, 
 				char * fileName, char * modeString, 
@@ -645,8 +660,14 @@ EXTERN void		Tcl_QueueEvent _ANSI_ARGS_((Tcl_Event * evPtr,
 /* 206 */
 EXTERN int		Tcl_Read _ANSI_ARGS_((Tcl_Channel chan, 
 				char * bufPtr, int toRead));
+#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
 /* 207 */
 EXTERN void		Tcl_ReapDetachedProcs _ANSI_ARGS_((void));
+#endif /* UNIX */
+#ifdef __WIN32__
+/* 207 */
+EXTERN void		Tcl_ReapDetachedProcs _ANSI_ARGS_((void));
+#endif /* __WIN32__ */
 /* 208 */
 EXTERN int		Tcl_RecordAndEval _ANSI_ARGS_((Tcl_Interp * interp, 
 				char * cmd, int flags));
@@ -867,9 +888,16 @@ EXTERN int		Tcl_VarEvalVA _ANSI_ARGS_((Tcl_Interp * interp,
 /* 277 */
 EXTERN Tcl_Pid		Tcl_WaitPid _ANSI_ARGS_((Tcl_Pid pid, int * statPtr, 
 				int options));
+#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
 /* 278 */
 EXTERN void		Tcl_PanicVA _ANSI_ARGS_((char * format, 
 				va_list argList));
+#endif /* UNIX */
+#ifdef __WIN32__
+/* 278 */
+EXTERN void		Tcl_PanicVA _ANSI_ARGS_((char * format, 
+				va_list argList));
+#endif /* __WIN32__ */
 /* 279 */
 EXTERN void		Tcl_GetVersion _ANSI_ARGS_((int * major, int * minor, 
 				int * patchLevel, int * type));
@@ -1278,7 +1306,15 @@ typedef struct TclStubs {
     void (*tcl_DeleteHashEntry) _ANSI_ARGS_((Tcl_HashEntry * entryPtr)); /* 108 */
     void (*tcl_DeleteHashTable) _ANSI_ARGS_((Tcl_HashTable * tablePtr)); /* 109 */
     void (*tcl_DeleteInterp) _ANSI_ARGS_((Tcl_Interp * interp)); /* 110 */
+#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
     void (*tcl_DetachPids) _ANSI_ARGS_((int numPids, Tcl_Pid * pidPtr)); /* 111 */
+#endif /* UNIX */
+#ifdef __WIN32__
+    void (*tcl_DetachPids) _ANSI_ARGS_((int numPids, Tcl_Pid * pidPtr)); /* 111 */
+#endif /* __WIN32__ */
+#ifdef MAC_TCL
+    void *reserved111;
+#endif /* MAC_TCL */
     void (*tcl_DeleteTimerHandler) _ANSI_ARGS_((Tcl_TimerToken token)); /* 112 */
     void (*tcl_DeleteTrace) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Trace trace)); /* 113 */
     void (*tcl_DontCallWhenDeleted) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_InterpDeleteProc * proc, ClientData clientData)); /* 114 */
@@ -1372,7 +1408,15 @@ typedef struct TclStubs {
     void (*tcl_NotifyChannel) _ANSI_ARGS_((Tcl_Channel channel, int mask)); /* 194 */
     Tcl_Obj * (*tcl_ObjGetVar2) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * part1Ptr, Tcl_Obj * part2Ptr, int flags)); /* 195 */
     Tcl_Obj * (*tcl_ObjSetVar2) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * part1Ptr, Tcl_Obj * part2Ptr, Tcl_Obj * newValuePtr, int flags)); /* 196 */
+#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
     Tcl_Channel (*tcl_OpenCommandChannel) _ANSI_ARGS_((Tcl_Interp * interp, int argc, char ** argv, int flags)); /* 197 */
+#endif /* UNIX */
+#ifdef __WIN32__
+    Tcl_Channel (*tcl_OpenCommandChannel) _ANSI_ARGS_((Tcl_Interp * interp, int argc, char ** argv, int flags)); /* 197 */
+#endif /* __WIN32__ */
+#ifdef MAC_TCL
+    void *reserved197;
+#endif /* MAC_TCL */
     Tcl_Channel (*tcl_OpenFileChannel) _ANSI_ARGS_((Tcl_Interp * interp, char * fileName, char * modeString, int permissions)); /* 198 */
     Tcl_Channel (*tcl_OpenTcpClient) _ANSI_ARGS_((Tcl_Interp * interp, int port, char * address, char * myaddr, int myport, int async)); /* 199 */
     Tcl_Channel (*tcl_OpenTcpServer) _ANSI_ARGS_((Tcl_Interp * interp, int port, char * host, Tcl_TcpAcceptProc * acceptProc, ClientData callbackData)); /* 200 */
@@ -1382,7 +1426,15 @@ typedef struct TclStubs {
     char * (*tcl_PosixError) _ANSI_ARGS_((Tcl_Interp * interp)); /* 204 */
     void (*tcl_QueueEvent) _ANSI_ARGS_((Tcl_Event * evPtr, Tcl_QueuePosition position)); /* 205 */
     int (*tcl_Read) _ANSI_ARGS_((Tcl_Channel chan, char * bufPtr, int toRead)); /* 206 */
+#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
     void (*tcl_ReapDetachedProcs) _ANSI_ARGS_((void)); /* 207 */
+#endif /* UNIX */
+#ifdef __WIN32__
+    void (*tcl_ReapDetachedProcs) _ANSI_ARGS_((void)); /* 207 */
+#endif /* __WIN32__ */
+#ifdef MAC_TCL
+    void *reserved207;
+#endif /* MAC_TCL */
     int (*tcl_RecordAndEval) _ANSI_ARGS_((Tcl_Interp * interp, char * cmd, int flags)); /* 208 */
     int (*tcl_RecordAndEvalObj) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * cmdPtr, int flags)); /* 209 */
     void (*tcl_RegisterChannel) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Channel chan)); /* 210 */
@@ -1453,7 +1505,15 @@ typedef struct TclStubs {
     void (*tcl_SetErrorCodeVA) _ANSI_ARGS_((Tcl_Interp * interp, va_list argList)); /* 275 */
     int (*tcl_VarEvalVA) _ANSI_ARGS_((Tcl_Interp * interp, va_list argList)); /* 276 */
     Tcl_Pid (*tcl_WaitPid) _ANSI_ARGS_((Tcl_Pid pid, int * statPtr, int options)); /* 277 */
+#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
     void (*tcl_PanicVA) _ANSI_ARGS_((char * format, va_list argList)); /* 278 */
+#endif /* UNIX */
+#ifdef __WIN32__
+    void (*tcl_PanicVA) _ANSI_ARGS_((char * format, va_list argList)); /* 278 */
+#endif /* __WIN32__ */
+#ifdef MAC_TCL
+    void *reserved278;
+#endif /* MAC_TCL */
     void (*tcl_GetVersion) _ANSI_ARGS_((int * major, int * minor, int * patchLevel, int * type)); /* 279 */
     void (*tcl_InitMemory) _ANSI_ARGS_((Tcl_Interp * interp)); /* 280 */
     void *reserved281;
@@ -2015,10 +2075,18 @@ extern TclStubs *tclStubsPtr;
 #define Tcl_DeleteInterp \
 	(tclStubsPtr->tcl_DeleteInterp) /* 110 */
 #endif
+#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
 #ifndef Tcl_DetachPids
 #define Tcl_DetachPids \
 	(tclStubsPtr->tcl_DetachPids) /* 111 */
 #endif
+#endif /* UNIX */
+#ifdef __WIN32__
+#ifndef Tcl_DetachPids
+#define Tcl_DetachPids \
+	(tclStubsPtr->tcl_DetachPids) /* 111 */
+#endif
+#endif /* __WIN32__ */
 #ifndef Tcl_DeleteTimerHandler
 #define Tcl_DeleteTimerHandler \
 	(tclStubsPtr->tcl_DeleteTimerHandler) /* 112 */
@@ -2358,10 +2426,18 @@ extern TclStubs *tclStubsPtr;
 #define Tcl_ObjSetVar2 \
 	(tclStubsPtr->tcl_ObjSetVar2) /* 196 */
 #endif
+#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
 #ifndef Tcl_OpenCommandChannel
 #define Tcl_OpenCommandChannel \
 	(tclStubsPtr->tcl_OpenCommandChannel) /* 197 */
 #endif
+#endif /* UNIX */
+#ifdef __WIN32__
+#ifndef Tcl_OpenCommandChannel
+#define Tcl_OpenCommandChannel \
+	(tclStubsPtr->tcl_OpenCommandChannel) /* 197 */
+#endif
+#endif /* __WIN32__ */
 #ifndef Tcl_OpenFileChannel
 #define Tcl_OpenFileChannel \
 	(tclStubsPtr->tcl_OpenFileChannel) /* 198 */
@@ -2398,10 +2474,18 @@ extern TclStubs *tclStubsPtr;
 #define Tcl_Read \
 	(tclStubsPtr->tcl_Read) /* 206 */
 #endif
+#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
 #ifndef Tcl_ReapDetachedProcs
 #define Tcl_ReapDetachedProcs \
 	(tclStubsPtr->tcl_ReapDetachedProcs) /* 207 */
 #endif
+#endif /* UNIX */
+#ifdef __WIN32__
+#ifndef Tcl_ReapDetachedProcs
+#define Tcl_ReapDetachedProcs \
+	(tclStubsPtr->tcl_ReapDetachedProcs) /* 207 */
+#endif
+#endif /* __WIN32__ */
 #ifndef Tcl_RecordAndEval
 #define Tcl_RecordAndEval \
 	(tclStubsPtr->tcl_RecordAndEval) /* 208 */
@@ -2682,10 +2766,18 @@ extern TclStubs *tclStubsPtr;
 #define Tcl_WaitPid \
 	(tclStubsPtr->tcl_WaitPid) /* 277 */
 #endif
+#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
 #ifndef Tcl_PanicVA
 #define Tcl_PanicVA \
 	(tclStubsPtr->tcl_PanicVA) /* 278 */
 #endif
+#endif /* UNIX */
+#ifdef __WIN32__
+#ifndef Tcl_PanicVA
+#define Tcl_PanicVA \
+	(tclStubsPtr->tcl_PanicVA) /* 278 */
+#endif
+#endif /* __WIN32__ */
 #ifndef Tcl_GetVersion
 #define Tcl_GetVersion \
 	(tclStubsPtr->tcl_GetVersion) /* 279 */
