@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.49 2002/01/25 20:40:55 dgp Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.50 2002/01/25 23:06:58 mdejong Exp $
  */
 
 #include "tclInt.h"
@@ -6096,6 +6096,10 @@ Tcl_GetChannelOption(interp, chan, optionName, dsPtr)
                 Tcl_DStringAppendElement(dsPtr, buf);
             }
         }
+        if ( !(flags & (TCL_READABLE|TCL_WRITABLE))) {
+            /* Not readable or writable (server socket) */
+            Tcl_DStringAppendElement(dsPtr, "");
+        }
         if (((flags & (TCL_READABLE|TCL_WRITABLE)) ==
                 (TCL_READABLE|TCL_WRITABLE)) && (len == 0)) {
             Tcl_DStringEndSublist(dsPtr);
@@ -6135,6 +6139,10 @@ Tcl_GetChannelOption(interp, chan, optionName, dsPtr)
             } else {
                 Tcl_DStringAppendElement(dsPtr, "lf");
             }
+        }
+        if ( !(flags & (TCL_READABLE|TCL_WRITABLE))) {
+            /* Not readable or writable (server socket) */
+            Tcl_DStringAppendElement(dsPtr, "auto");
         }
         if (((flags & (TCL_READABLE|TCL_WRITABLE)) ==
                 (TCL_READABLE|TCL_WRITABLE)) && (len == 0)) {
@@ -6305,8 +6313,8 @@ Tcl_SetChannelOption(interp, chan, optionName, newValue)
         } else if (argc != 2) {
             if (interp) {
                 Tcl_AppendResult(interp,
-                        "bad value for -eofchar: should be a list of one or",
-                        " two elements", (char *) NULL);
+                        "bad value for -eofchar: should be a list of zero,",
+                        " one, or two elements", (char *) NULL);
             }
             ckfree((char *) argv);
             return TCL_ERROR;
