@@ -8,20 +8,22 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 #
-# RCS: @(#) $Id: pkgMkIndex.test,v 1.4.2.2 1999/03/11 18:50:01 hershey Exp $
+# RCS: @(#) $Id: pkgMkIndex.test,v 1.4.2.3 1999/03/12 19:51:31 hershey Exp $
 
 if {[lsearch [namespace children] ::test] == -1} {
     source [file join [pwd] [file dirname [info script]] defs.tcl]
 }
 
 # temporarily copy the pkg and pkg1 dirs from testsDir to tmpDir
-set origPkgDir [file join $::test::testsDir pkg]
-set newPkgDir [file join $::test::tmpDir pkg]
-if {![catch {file copy $origPkgDir $newPkgDir}]} {
-    set removePkgDir 1
-}
-if {![catch {file copy "${origPkgDir}1" "${newPkgDir}1"}]} {
-    set removePkg1Dir 1
+if {"$::test::testsDir" != "$::test::tmpDir"} {
+    set origPkgDir [file join $::test::testsDir pkg]
+    set newPkgDir [file join $::test::tmpDir pkg]
+    if {![catch {file copy $origPkgDir $newPkgDir}]} {
+	set removePkgDir 1
+    }
+    if {![catch {file copy "${origPkgDir}1" "${newPkgDir}1"}]} {
+	set removePkg1Dir 1
+    }
 }
 
 # Add the pkg1 directory to auto_path, so that its packages can be found.

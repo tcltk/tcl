@@ -7,11 +7,13 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 # 
-# RCS: @(#) $Id: all.tcl,v 1.1.2.2 1999/03/11 23:50:38 hershey Exp $
+# RCS: @(#) $Id: all.tcl,v 1.1.2.3 1999/03/12 19:51:30 hershey Exp $
 
 if {[lsearch ::test [namespace children]] == -1} {
     source [file join [pwd] [file dirname [info script]] defs.tcl]
 }
+set ::test::testSingleFile false
+
 puts stdout "Tcl 8.1 tests running in interp:  [info nameofexecutable]"
 puts stdout "Tests running in working dir:  $::test::tmpDir"
 if {[llength $::test::skippingTests] > 0} {
@@ -44,9 +46,10 @@ if {[llength $fileList] < 1} {
     puts "Error: no files found matching $globPattern"
     exit
 }
-
 set timeCmd {clock format [clock seconds]}
 puts stdout "Tests began at [eval $timeCmd]"
+
+# source each of the specified tests
 foreach file [lsort $fileList] {
     set tail [file tail $file]
     if {[string match l.*.test $tail]} {
@@ -58,4 +61,8 @@ foreach file [lsort $fileList] {
 	puts stdout $msg
     }
 }
+
+# cleanup
 puts stdout "\nTests ended at [eval $timeCmd]"
+::test::cleanupTests 1
+return

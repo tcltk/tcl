@@ -11,7 +11,7 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 # 
-# RCS: @(#) $Id: defs.tcl,v 1.1.2.1 1999/03/11 18:49:31 hershey Exp $
+# RCS: @(#) $Id: defs.tcl,v 1.1.2.2 1999/03/12 19:51:30 hershey Exp $
 
 # Ensure that we have a minimal auto_path so we don't pick up extra junk.
 set auto_path [list [info library]]
@@ -44,6 +44,18 @@ namespace eval test {
     variable testsDir [pwd]
     cd $originalDir
 
+    # Count the number of files tested (0 if all.tcl wasn't called).
+    # The all.tcl file will set testSingleFile to false, so stats will
+    # not be printed until all.tcl calls the cleanupTests proc.
+    # The currentFailure var stores the boolean value of whether the
+    # current test file has had any failures.  The failFiles list
+    # stores the names of test files that had failures.
+
+    variable numTestFiles 0
+    variable testSingleFile true
+    variable currentFailure false
+    variable failFiles {}
+
     # Tests should remove all files they create.  The test suite will
     # check tmpDir for files created by the tests.  ::test::filesMade
     # keeps track of such files created using the test::makeFile and
@@ -56,8 +68,6 @@ namespace eval test {
     # initialize ::test::numTests array to keep track fo the number of
     # tests that pass, fial, and are skipped.
     array set numTests [list Total 0 Passed 0 Skipped 0 Failed 0]
-    #array set originalEnv [array get env]
-
 }
 
 # If there is no "memory" command (because memory debugging isn't
@@ -395,24 +405,17 @@ if {($::test::testConfig(unixExecs) == 1) && ($tcl_platform(platform) == "window
 
 # ::test::cleanupTests --
 #
-# Print the number tests (total, passed, failed, and skipped) since the
-# last time this procedure was invoked.
-#
 # Remove files and dirs created using the makeFile and makeDirectory
 # commands since the last time this proc was invoked.
 #
 # Print the names of the files created without the makeFile command
-# since the last time this proc was invoked.
+# since the tests were invoked.
+#
+# Print the number tests (total, passed, failed, and skipped) since the
+# tests were invoked.
 #
 
-proc ::test::cleanupTests {} {
-    # print stats
-    puts -nonewline stdout "[file tail [info script]]:"
-    foreach index [list "Total" "Passed" "Skipped" "Failed"] {
-	puts -nonewline stdout "\t$index\t$::test::numTests($index)"
-    }
-    puts stdout ""
-
+proc ::test::cleanupTests {{all 0}} {
     # remove files and directories created by the tests
     foreach file $::test::filesMade {
 	if {[file exists $file]} {
@@ -420,27 +423,58 @@ proc ::test::cleanupTests {} {
 	}
     }
 
-    # report the names of files in ::test::tmpDir that were not pre-existing.
-    set currentFiles {}
-    foreach file [glob -nocomplain [file join $::test::tmpDir *]] {
-	lappend currentFiles [file tail $file]
-    }
-    set filesNew {}
-    foreach file $currentFiles {
-	if {[lsearch $::test::filesExisted $file] == -1} {
-	    lappend filesNew $file
+    set tail [file tail [info script]]
+    if {$all || $::test::testSingleFile} {
+	# print stats
+	puts -nonewline stdout "$tail:"
+	foreach index [list "Total" "Passed" "Skipped" "Failed"] {
+	    puts -nonewline stdout "\t$index\t$::test::numTests($index)"
 	}
-    }
-    if {[llength $filesNew] > 0} {
-	puts stdout "\t\tFiles created:\t$filesNew"
-    }
+	puts stdout ""
 
-    # reset filesMade, filesExisted, and numTests
-    foreach index [list "Total" "Passed" "Skipped" "Failed"] {
-	set ::test::numTests($index) 0
+	# print number test files sourced
+	# print names of files that ran tests which failed
+	if {$all} {
+	    puts stdout "Sourced $::test::numTestFiles Test Files."
+	    set ::test::numTestFiles 0
+	    if {[llength $::test::failFiles] > 0} {
+		puts stdout "Files with failing tests: $::test::failFiles"
+		set ::test::failFiles {}
+	    }
+	}
+
+	# report the names of files in ::test::tmpDir that were not pre-existing.
+	set currentFiles {}
+	foreach file [glob -nocomplain [file join $::test::tmpDir *]] {
+	    lappend currentFiles [file tail $file]
+	}
+	set filesNew {}
+	foreach file $currentFiles {
+	    if {[lsearch $::test::filesExisted $file] == -1} {
+		lappend filesNew $file
+	    }
+	}
+	if {[llength $filesNew] > 0} {
+	    puts stdout "Warning: created files:\t$filesNew"
+	}
+
+	# reset filesMade, filesExisted, and numTests
+	set ::test::filesMade {}
+	set ::test::filesExisted $currentFiles
+	foreach index [list "Total" "Passed" "Skipped" "Failed"] {
+	    set ::test::numTests($index) 0
+	}
+    } else {
+	# if we're deferring stat-reporting until all files are sourced,
+	# then add current file to failFile list if any tests in this file
+	# failed
+	incr ::test::numTestFiles
+	if {($::test::currentFailure) && \
+		([lsearch $::test::failFiles $tail] == -1)} {
+	    lappend ::test::failFiles $tail
+	}
+	set ::test::currentFailure false
     }
-    set ::test::filesMade {}
-    set ::test::filesExisted $currentFiles
 }
 
 
@@ -538,6 +572,7 @@ proc ::test::test {name description script expectedAnswer args} {
     set code [catch {uplevel $script} actualAnswer]
     if {$code != 0 || [string compare $actualAnswer $expectedAnswer] != 0} {
 	incr ::test::numTests(Failed)
+	set ::test::currentFailure true
 	if {[string first b $::test::verbose] == -1} {
 	    set script ""
 	}

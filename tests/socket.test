@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: socket.test,v 1.1.2.5 1999/03/11 18:50:08 hershey Exp $
+# RCS: @(#) $Id: socket.test,v 1.1.2.6 1999/03/12 19:51:32 hershey Exp $
 
 # Running socket tests with a remote server:
 # ------------------------------------------
@@ -124,9 +124,9 @@ if {$doTestsWithRemoteServer} {
 	    set doTestsWithRemoteServer 0
 	} else {
 	    set remoteServerIP 127.0.0.1
-	    #set remoteFile [file join $::test::testsDir remote.tcl]
+	    set remoteFile [file join [pwd] remote.tcl]
 	    if {[catch {set remoteProcChan \
-				[open "|[list $tcltest remote.tcl \
+				[open "|[list $tcltest $remoteFile \
 					-serverIsSilent \
 					-port $remoteServerPort \
 					-address $remoteServerIP]" \
@@ -1583,12 +1583,12 @@ test socket-12.3 {testing inheritance of accepted sockets} {doTestsWithRemoteSer
 } {accepted socket was not inherited}
 
 # cleanup
-catch {close $commandSocket}
-catch {close $remoteProcChan}
 if {[string match sock* $commandSocket] == 1} {
    puts $commandSocket exit
    flush $commandSocket
 }
+catch {close $commandSocket}
+catch {close $remoteProcChan}
 ::test::cleanupTests
 flush stdout
 
