@@ -50,3 +50,24 @@ namespace eval buried {
         proc ::buried::explicit {args} {return "explicit: $args"}
     }
 }
+
+# With proper hooks, we should be able to support other commands
+# that create procedures
+
+proc buried::myproc {name body args} {
+    ::proc $name $body $args
+}
+namespace eval ::buried {
+    proc mycmd1 args {return "mycmd"}
+    myproc mycmd2 args {return "mycmd"}
+}
+::buried::myproc mycmd3 args {return "another"}
+
+proc {buried::my proc} {name body args} {
+    ::proc $name $body $args
+}
+namespace eval ::buried {
+    proc mycmd4 args {return "mycmd"}
+    {my proc} mycmd5 args {return "mycmd"}
+}
+{::buried::my proc} mycmd6 args {return "another"}
