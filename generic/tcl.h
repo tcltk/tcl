@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.39.2.1 1999/04/21 01:57:22 rjohnson Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.39.2.2 1999/04/21 18:40:51 surles Exp $
  */
 
 #ifndef _TCL
@@ -1328,6 +1328,23 @@ typedef struct Tcl_Token {
 #define TCL_TOKEN_OPERATOR	128
 
 /*
+ * Parsing error types.  On any parsing error, one of these values
+ * will be stored in the error field of the Tcl_Parse structure
+ * defined below.
+ */
+
+#define TCL_PARSE_SUCCESS		0
+#define TCL_PARSE_QUOTE_EXTRA		1
+#define TCL_PARSE_BRACE_EXTRA		2
+#define TCL_PARSE_MISSING_BRACE		3
+#define TCL_PARSE_MISSING_BRACKET	4
+#define TCL_PARSE_MISSING_PAREN		5
+#define TCL_PARSE_MISSING_QUOTE		6
+#define TCL_PARSE_MISSING_VAR_BRACE	7
+#define TCL_PARSE_SYNTAX		8
+#define TCL_PARSE_BAD_NUMBER		9
+
+/*
  * A structure of the following type is filled in by Tcl_ParseCommand.
  * It describes a single command parsed from an input string.
  */
@@ -1357,6 +1374,8 @@ typedef struct Tcl_Parse {
     int numTokens;		/* Total number of tokens in command. */
     int tokensAvailable;	/* Total number of tokens available at
 				 * *tokenPtr. */
+    int errorType;		/* One of the parsing error types defined
+				 * above. */
 
     /*
      * The fields below are intended only for the private use of the
