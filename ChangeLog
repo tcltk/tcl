@@ -1,3 +1,12 @@
+2002-07-22  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* tests/expr.test (expr-22.*): Added tests to help detect the
+	corrected handling.
+	* generic/tclExecute.c (IllegalExprOperandType): Improved error
+	message generated when attempting to manipulate Inf and NaN values.
+	* generic/tclParseExpr.c (GetLexeme): Allowed parser to recognise
+	'Inf' as a floating-point number. [Bug 218000]
+
 2002-07-21  Don Porter  <dgp@users.sourceforge.net>
 
 	* tclIOUtil.c: Silence compiler warning. [Bug 584408].
