@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacFile.c,v 1.9.2.1 2001/10/17 19:29:25 das Exp $
+ * RCS: @(#) $Id: tclMacFile.c,v 1.9.2.2 2001/10/19 19:39:46 das Exp $
  */
 
 /*
@@ -322,7 +322,7 @@ TclpMatchFilesTypes(
 				Tcl_NewStringObj(fname, fnameLen));
 		    }
 		}
-	    } else if ((pb.hFileInfo.ioFlAttrib & ioDirMask) != 0) {
+	    } else {
 		Tcl_DStringAppend(&dsOrig, ":", 1);
 		result = TclDoGlob(interp, separators, &dsOrig, tail, types);
 		if (result != TCL_OK) {

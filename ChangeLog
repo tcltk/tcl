@@ -1,8 +1,18 @@
-2001-10-18  Jeff Hobbs  <jeffh@ActiveState.com>
+2001-10-19  Daniel Steffen <das@users.sourceforge.net>
 
 	************************
 	****  8.3.4 TAGGED  ****
 	************************
+
+	* mac/tclMacFile.c: fix to glob -join, wasn't traversing aliased
+	folders
+	
+	* mac/tclMacLoad.c: : corrected utf8 handling, comparison of
+	package names to code fragment names changed to only match on the
+	length of package name, this allows for fragment names with version
+	numbers appended (backport from 8.4)
+
+2001-10-18  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* unix/configure: regend
 	* unix/tcl.m4 (SC_ENABLE_GCC): enabled better recognition of gcc.
