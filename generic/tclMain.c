@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMain.c,v 1.9 2000/11/03 20:01:16 hobbs Exp $
+ * RCS: @(#) $Id: tclMain.c,v 1.10 2000/11/03 20:07:00 hobbs Exp $
  */
 
 #include "tcl.h"
@@ -349,7 +349,7 @@ Tcl_Main(argc, argv, appInitProc)
 	    Tcl_DStringInit(&tsdPtr->command);
 	    Tcl_DStringInit(&tsdPtr->line);
 
-	    mainLoopProc();
+	    (*mainLoopProc)();
 	    mainLoopProc = NULL;
 	    break;
 	}
@@ -376,7 +376,7 @@ Tcl_Main(argc, argv, appInitProc)
 	 * events at this point.
 	 */
 
-	mainLoopProc();
+	(*mainLoopProc)();
     }
     if (commandPtr != NULL) {
 	Tcl_DecrRefCount(commandPtr);
