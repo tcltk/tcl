@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.64 2002/08/20 15:33:34 dgp Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.65 2002/08/22 00:52:33 andreas_kupries Exp $
 
 VERSION = @TCL_VERSION@
 
@@ -85,7 +85,7 @@ CFLAGS_OPTIMIZE	= @CFLAGS_OPTIMIZE@
 #CFLAGS = 		$(CFLAGS_DEBUG)
 #CFLAGS = 		$(CFLAGS_OPTIMIZE)
 #CFLAGS = 		$(CFLAGS_DEBUG) $(CFLAGS_OPTIMIZE)
-CFLAGS = 		@CFLAGS@ @CFLAGS_DEFAULT@
+CFLAGS = 		@CFLAGS@ @CFLAGS_DEFAULT@ @MEM_DEBUG_FLAGS@
 
 # To enable compilation debugging reverse the comment characters on
 # one of the following lines.
