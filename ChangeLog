@@ -1,3 +1,8 @@
+2003-04-16  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* doc/CrtMathFnc.3: Functions also have to deal with wide ints,
+	but this was not documented. [Bug 709720]
+
 2003-04-16  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* generic/tclPathObj.c: removed undesired 'static' for function
