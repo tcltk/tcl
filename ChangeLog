@@ -1,3 +1,8 @@
+2004-04-22  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* doc/exec.n: Added some examples, Windows ones from Arjen Markus
+	and Unix ones by myself.
+
 2004-04-21  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* doc/Hash.3: Added note to Tcl_{First,Next}HashEntry docs that

@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: exec.n,v 1.7 2004/03/17 18:14:12 das Exp $
+'\" RCS: @(#) $Id: exec.n,v 1.8 2004/04/22 12:48:25 dkf Exp $
 '\" 
 .so man.macros
 .TH exec n 7.6 Tcl "Tcl Built-In Commands"
@@ -167,7 +167,6 @@ reachable from the current directory.
 No ``glob'' expansion or other shell-like substitutions
 are performed on the arguments to commands.
 
-.VS
 .SH "PORTABILITY ISSUES"
 .TP
 \fBWindows\fR (all versions)
@@ -318,6 +317,87 @@ console window is not available to them.
 .TP
 \fBUnix\fR\0\0\0\0\0\0\0
 The \fBexec\fR command is fully functional and works as described.
+
+.SH "UNIX EXAMPLES"
+Here are some examples of the use of the \fBexec\fR command on Unix.
+
+To execute a simple program and get its result:
+.CS
+exec uname -a
+.CE
+
+To execute a program that can return a non-zero result, you should
+wrap the call to \fBexec\fR in \fBcatch\fR and check what the contents
+of the global \fBerrorCode\fR variable is if you have an error:
+.CS
+set status 0
+if {[catch {exec grep foo bar.txt} results]} {
+   if {[lindex $::errorCode 0] eq "CHILDSTATUS"} {
+      set status [lindex $::errorCode 2]
+   } else {
+      # Some kind of unexpected failure
+   }
+}
+.CE
+
+When translating a command from a Unix shell invokation, care should
+be taken over the fact that single quote characters have no special
+significance to Tcl.  Thus:
+.CS
+awk '{sum += $1} END {print sum}' numbers.list
+.CE
+would be translated into something like:
+.CS
+exec awk {{sum += $1} END {print sum}} numbers.list
+.CE
+
+If you are converting invokations involving shell globbing, you should
+remember that Tcl does not handle globbing or expand things into
+multiple arguments by default.  Instead you should write things like
+this:
+.CS
+exec ls -l {expand}[glob *.tcl]
+.CE
+
+.SH "WINDOWS EXAMPLES"
+Here are some examples of the use of the \fBexec\fR command on Windows.
+
+To start an instance of \fInotepad\fR editing a file without waiting
+for the user to finish editing the file:
+.CS
+exec notepad myfile.txt &
+.CE
+
+To print a text file using \fInotepad\fR:
+.CS
+exec notepad /p myfile.txt
+.CE
+
+If a program calls other programs, such as is common with compilers,
+then you may need to resort to batch files to hide the console windows
+that sometimes pop up:
+.CS
+exec cmp.bat somefile.c -o somefile
+.CE
+With the file \fIcmp.bat\fR looking something like:
+.CS
+@gcc %1 %2 %3 %4 %5 %6 %7 %8 %9
+.CE
+
+Sometimes you need to be careful, as different programs may have the
+same name and be in the path. It can then happen that typing a command
+at the DOS prompt finds \fIa different program\fR than the same
+command run via \fBexec\fR. This is because of the (documented)
+differences in behaviour between \fBexec\fR and DOS batch files.
+
+When in doubt, use the command \fBauto_execok\fR: it will return the
+complete path to the program as seen by the \fBexec\fR command.  This
+applies especially when you want to run "internal" commands like
+\fIdir\fR from a Tcl script (if you just want to list filenames, use
+the \fBglob\fR command.)  To do that, use this:
+.CS
+exec {expand}[auto_execok dir] *.tcl
+.CE
 
 .SH "SEE ALSO"
 error(n), open(n)
