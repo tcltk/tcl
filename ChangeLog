@@ -1,3 +1,8 @@
+2004-01-21  David Gravereaux <davygrvy@pobox.com>
+
+	* doc/Panic.3:  Mentions of 'panic' and 'panicVA' removed from
+	the documentation.
+
 2004-01-21  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* doc/FileSystem.3: 
