@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoadNone.c,v 1.7 2002/01/09 19:09:28 kennykb Exp $
+ * RCS: @(#) $Id: tclLoadNone.c,v 1.8 2002/01/21 22:47:52 davygrvy Exp $
  */
 
 #include "tclInt.h"
@@ -35,7 +35,7 @@
  */
 
 int
-TclpLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr, clientDataPtr)
+TclpLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr, clientDataPtr, unloadProcPtr)
     Tcl_Interp *interp;		/* Used for error reporting. */
     Tcl_Obj *pathPtr;		/* Name of the file containing the desired
 				 * code. */
@@ -47,6 +47,7 @@ TclpLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr, clientDataPtr)
     ClientData *clientDataPtr;	/* Filled with token for dynamically loaded
 				 * file which will be passed back to 
 				 * TclpUnloadFile() to unload the file. */
+    Tcl_FSUnloadFileProc **unloadProcPtr;
 {
     Tcl_SetResult(interp,
 	    "dynamic loading is not currently available on this system",
