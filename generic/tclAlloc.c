@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclAlloc.c,v 1.10 2001/07/17 02:01:23 mdejong Exp $
+ * RCS: @(#) $Id: tclAlloc.c,v 1.11 2001/09/06 10:16:45 davygrvy Exp $
  */
 
 #include "tclInt.h"
@@ -33,7 +33,7 @@
  * We should really make use of AC_CHECK_TYPE(caddr_t)
  * here, but it can wait until Tcl uses config.h properly.
  */
-#if defined(MAC_TCL) || defined(_MSC_VER) || defined(__MINGW32__)
+#if defined(MAC_TCL) || defined(_MSC_VER) || defined(__MINGW32__) || defined(__BORLANDC__)
 typedef unsigned long caddr_t;
 #endif
 
