@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: stack.test,v 1.16 2004/05/03 17:04:31 kennykb Exp $
+# RCS: @(#) $Id: stack.test,v 1.17 2004/06/22 19:41:25 kennykb Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -62,7 +62,6 @@ test stack-3.1 {enough room for regexp near recursion limit} \
     -constraints { win } \
     -setup {
 	set ::limit [interp recursionlimit {} 10000]
-	set ::depth 0
 	proc a { max } {
 	    if { [info level] < $max } {
 		set ::depth [info level]
@@ -71,15 +70,16 @@ test stack-3.1 {enough room for regexp near recursion limit} \
 		regexp {^ ?} x
 	    }
 	}
-	catch { a 10001 }
-	incr depth -2
-	set depth2 $depth
     } -body {
-	list [catch { a $::depth } result] \
-	    $result [expr { $::depth2 - $::depth }]
+	set ::depth 0
+	catch { a 10001 }
+	set depth2 $depth
+	catch { a $::depth }
+	expr { $depth2 - $depth }
     } -cleanup {
 	interp recursionlimit {} $::limit
-    } -result {0 1 1}
+	rename a {}
+    } -result {1}
 
 # cleanup
 ::tcltest::cleanupTests

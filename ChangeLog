@@ -1,3 +1,11 @@
+2004-06-22  Kevin Kenny  <kennykb@acm.org>
+
+	* generic/tclEvent.c (NewThreadProc): Fixed broken build on
+	Windows caused by missing TCL_THREAD_CREATE_RETURN.
+
+	* tests/stack.test (stack-3.1): Corrected nuisance error in
+	threaded builds.
+	
 2004-06-22  Zoran Vasiljevic <vasiljevic@users.sf.net>
 
 	* generic/tclEvent.c:
