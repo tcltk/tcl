@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: cmdAH.test,v 1.21 2002/06/21 14:22:29 vincentdarley Exp $
+# RCS: @(#) $Id: cmdAH.test,v 1.22 2002/06/27 12:27:35 vincentdarley Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -197,6 +197,14 @@ test cmdAH-6.4 {Tcl_FileObjCmd: volumes} {pcOnly} {
     set volumeList [string tolower [file volumes]]
     list [catch {lsearch $volumeList "c:/"} element] [expr $element != -1] [catch {list glob -nocomplain [lindex $volumeList $element]*}]
 } {0 1 0}
+
+test cmdAH-6.5 {cd} {unixOnly nonPortable} {
+    set dir [pwd]
+    cd /
+    set res [pwd]
+    cd $dir
+    set res
+} {/}
 
 # attributes
 
