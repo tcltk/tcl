@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: genStubs.tcl,v 1.2.2.1 1999/03/10 06:49:26 stanton Exp $
+# RCS: @(#) $Id: genStubs.tcl,v 1.2.2.2 1999/03/25 23:29:19 stanton Exp $
 
 namespace eval genStubs {
     # libraryName --
@@ -832,7 +832,7 @@ proc genStubs::emitInits {} {
 #	None.
 
 proc genStubs::init {} {
-    global argv
+    global argv argv0
     variable outDir
     variable interfaces
 
