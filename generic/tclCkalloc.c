@@ -12,7 +12,7 @@
  *
  * This code contributed by Karl Lehenbauer and Mark Diekhans
  *
- * RCS: @(#) $Id: tclCkalloc.c,v 1.1.2.2 1998/09/24 23:58:41 stanton Exp $
+ * RCS: @(#) $Id: tclCkalloc.c,v 1.1.2.3 1998/12/01 05:01:01 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -468,12 +468,12 @@ Tcl_DbCkfree(ptr, file, line)
     if (validate_memory)
         Tcl_ValidateAllMemory(file, line);
 
+    TclpMutexLock(&ckallocMutex);
     ValidateMemory(memp, file, line, TRUE);
     if (init_malloced_bodies) {
 	memset((VOID *) ptr, GUARD_VALUE, (size_t) memp->length);
     }
 
-    TclpMutexLock(&ckallocMutex);
     total_frees++;
     current_malloc_packets--;
     current_bytes_malloced -= memp->length;

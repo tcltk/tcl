@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixNotfy.c,v 1.1.2.3 1998/11/11 04:54:22 stanton Exp $
+ * RCS: @(#) $Id: tclUnixNotfy.c,v 1.1.2.4 1998/12/01 05:01:03 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -84,9 +84,12 @@ typedef struct ThreadSpecificData {
                                  * from these pointers.  You must hold the
                                  * notifierMutex lock before accessing these
                                  * fields. */
-    Tcl_Condition waitCV;	/* The notifier thread alerts a notifier
+    Tcl_Condition waitCV;     /* Any other thread alerts a notifier
 				 * that an event is ready to be processed
 				 * by signaling this condition variable. */
+    int eventReady;           /* True if an event is ready to be processed.
+                               * Used as condition flag together with
+                               * waitCV above. */
 #endif
 } ThreadSpecificData;
 
@@ -194,6 +197,8 @@ Tcl_InitNotifier()
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
 #ifdef TCL_THREADS
+    tsdPtr->eventReady = 0;
+
     /*
      * Start the Notifier thread if necessary.
      */
@@ -298,6 +303,7 @@ Tcl_AlertNotifier(clientData)
 #ifdef TCL_THREADS
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *) clientData;
     Tcl_MutexLock(&notifierMutex);
+    tsdPtr->eventReady = 1;
     TclpConditionNotify(&tsdPtr->waitCV);
     Tcl_MutexUnlock(&notifierMutex);
 #endif
@@ -365,7 +371,7 @@ Tcl_CreateFileHandler(fd, mask, proc, clientData)
     int index, bit;
 
     for (filePtr = tsdPtr->firstFileHandlerPtr; filePtr != NULL;
-	    filePtr = filePtr->nextPtr) {
+	 filePtr = filePtr->nextPtr) {
 	if (filePtr->fd == fd) {
 	    break;
 	}
@@ -438,7 +444,7 @@ Tcl_DeleteFileHandler(fd)
      */
 
     for (prevPtr = NULL, filePtr = tsdPtr->firstFileHandlerPtr; ;
-	    prevPtr = filePtr, filePtr = filePtr->nextPtr) {
+	 prevPtr = filePtr, filePtr = filePtr->nextPtr) {
 	if (filePtr == NULL) {
 	    return;
 	}
@@ -543,7 +549,7 @@ FileHandlerEventProc(evPtr, flags)
 
     tsdPtr = TCL_TSD_INIT(&dataKey);
     for (filePtr = tsdPtr->firstFileHandlerPtr; filePtr != NULL;
-	    filePtr = filePtr->nextPtr) {
+	 filePtr = filePtr->nextPtr) {
 	if (filePtr->fd != fileEvPtr->fd) {
 	    continue;
 	}
@@ -675,14 +681,17 @@ Tcl_WaitForEvent(timePtr)
 
     memset((VOID *) tsdPtr->readyMasks, 0, 3*MASK_SIZE*sizeof(fd_mask));
 
-    TclpConditionWait(&tsdPtr->waitCV, &notifierMutex, timePtr);
+    if (!tsdPtr->eventReady) {
+        TclpConditionWait(&tsdPtr->waitCV, &notifierMutex, timePtr);
+    }
+    tsdPtr->eventReady = 0;
 
     if (waitForFiles && tsdPtr->onList) {
 	/*
 	 * Remove the ThreadSpecificData structure of this thread from the
-	 * waiting list.  Don't bother to alert the notifier thread since
-	 * we haven't added anything and it will notice the next time it
-	 * wakes up.
+	 * waiting list.  Alert the notifier thread to recompute its select
+	 * masks - skipping this caused a hang when trying to close a pipe
+	 * which the notifier thread was still doing a select on.
 	 */
 
         if (tsdPtr->prevPtr) {
@@ -695,6 +704,7 @@ Tcl_WaitForEvent(timePtr)
         }
         tsdPtr->nextPtr = tsdPtr->prevPtr = NULL;
 	tsdPtr->onList = 0;
+	write(triggerPipe, "", 1);
     }
 
     
@@ -721,7 +731,7 @@ Tcl_WaitForEvent(timePtr)
      */
 
     for (filePtr = tsdPtr->firstFileHandlerPtr; (filePtr != NULL);
-	    filePtr = filePtr->nextPtr) {
+	 filePtr = filePtr->nextPtr) {
 	index = filePtr->fd / (NBBY*sizeof(fd_mask));
 	bit = 1 << (filePtr->fd % (NBBY*sizeof(fd_mask)));
 	mask = 0;
@@ -897,6 +907,7 @@ NotifierThreadProc(clientData)
                 (((long*)(tsdPtr->readyMasks))[i]) = word;
 	    }
             if (found || (tsdPtr->pollState & POLL_DONE)) {
+                tsdPtr->eventReady = 1;
 		TclpConditionNotify(&tsdPtr->waitCV);
 		if (tsdPtr->onList) {
 		    /*

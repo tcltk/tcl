@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThreadTest.c,v 1.1.2.2 1998/10/03 01:56:42 stanton Exp $
+ * RCS: @(#) $Id: tclThreadTest.c,v 1.1.2.3 1998/12/01 05:01:02 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -62,11 +62,11 @@ typedef struct ThreadCtrl {
                        * ThreadSpecificData structure for the new thread.
                        * Might contain TP_Detached or TP_TclThread. */
     Tcl_Condition condWait;
-                      /* This condition variable is used to synchronize
-                       * the parent and child threads.  The child won't run
-                       * until it acquires threadMutex, and the parent function
-                       * won't complete until signaled on this condition
-                       * variable. */
+    /* This condition variable is used to synchronize
+     * the parent and child threads.  The child won't run
+     * until it acquires threadMutex, and the parent function
+     * won't complete until signaled on this condition
+     * variable. */
 } ThreadCtrl;
 
 /*
@@ -113,12 +113,12 @@ static Tcl_Mutex threadMutex;
 
 EXTERN int	TclThread_Init(Tcl_Interp *interp);
 EXTERN int	Tcl_ThreadObjCmd _ANSI_ARGS_((ClientData clientData,
-		    Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]));
+	Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]));
 EXTERN int	TclCreateThread _ANSI_ARGS_((Tcl_Interp *interp,
-		    CONST char *script));
+	CONST char *script));
 EXTERN int	TclThreadList _ANSI_ARGS_((Tcl_Interp *interp));
 EXTERN int	TclThreadSend _ANSI_ARGS_((Tcl_Interp *interp, Tcl_ThreadId id,
-		    char *script, int wait));
+	char *script, int wait));
 #ifdef MAC_TCL
 static pascal void *NewThread _ANSI_ARGS_((ClientData clientData));
 #else
@@ -149,7 +149,7 @@ static void	ThreadExitProc _ANSI_ARGS_((ClientData clientData));
 
 int
 TclThread_Init(interp)
-         Tcl_Interp *interp; /* The current Tcl interpreter */
+    Tcl_Interp *interp; /* The current Tcl interpreter */
 {
     
     Tcl_CreateObjCommand(interp,"testthread", Tcl_ThreadObjCmd, 
@@ -197,9 +197,9 @@ Tcl_ThreadObjCmd(dummy, interp, objc, objv)
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     int option;
     static char *threadOptions[] = {"create", "exit", "id", "names",
-	"send", "wait", "errorproc", (char *) NULL};
+				    "send", "wait", "errorproc", (char *) NULL};
     enum options {THREAD_CREATE, THREAD_EXIT, THREAD_ID, THREAD_NAMES,
-	THREAD_SEND, THREAD_WAIT, THREAD_ERRORPROC};
+		  THREAD_SEND, THREAD_WAIT, THREAD_ERRORPROC};
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "option ?args?");
@@ -719,7 +719,9 @@ TclThreadSend(interp, id, script, wait)
 
     Tcl_ResetResult(interp);
     Tcl_MutexLock(&threadMutex);
-    TclpConditionWait(&resultPtr->done, &threadMutex, NULL);
+    if (resultPtr->result == NULL) {
+        TclpConditionWait(&resultPtr->done, &threadMutex, NULL);
+    }
     Tcl_MutexUnlock(&threadMutex);
     if (resultPtr->code != TCL_OK) {
 	if (resultPtr->errorCode) {
@@ -731,7 +733,7 @@ TclThreadSend(interp, id, script, wait)
 	    ckfree(resultPtr->errorInfo);
 	}
     }
-    Tcl_SetResult(interp, resultPtr->result, TCL_VOLATILE);
+    Tcl_SetResult(interp, resultPtr->result, TCL_DYNAMIC);
     TclFinalizeCondition(&resultPtr->done);
     code = resultPtr->code;
 

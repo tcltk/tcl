@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTestObj.c,v 1.1.2.2 1998/09/24 23:59:03 stanton Exp $
+ * RCS: @(#) $Id: tclTestObj.c,v 1.1.2.3 1998/12/01 05:01:01 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -851,7 +851,7 @@ TeststringobjCmd(clientData, interp, objc, objv)
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
     int varIndex, option, i, length;
-#define MAX_STRINGS 10
+#define MAX_STRINGS 11
     char *index, *string, *strings[MAX_STRINGS+1];
     static char *options[] = {
 	"append", "appendstrings", "get", "get2", "length", "length2",

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFCmd.c,v 1.1.2.3 1998/09/28 20:24:20 stanton Exp $
+ * RCS: @(#) $Id: tclUnixFCmd.c,v 1.1.2.4 1998/12/01 05:01:03 stanton Exp $
  *
  * Portions of this code were derived from NetBSD source code which has
  * the following copyright notice:
@@ -1166,7 +1166,7 @@ GetPermissionsAttribute(interp, objIndex, fileName, attributePtrPtr)
     Tcl_Obj **attributePtrPtr;	    /* A pointer to return the object with. */
 {
     struct stat statBuf;
-    char returnString[6];
+    char returnString[7];
     int result;
 
     result = TclStat(fileName, &statBuf);
