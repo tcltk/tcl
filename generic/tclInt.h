@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.149 2004/04/01 15:07:20 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.150 2004/04/02 20:07:06 msofer Exp $
  */
 
 #ifndef _TCLINT
@@ -1410,19 +1410,6 @@ typedef struct Interp {
 
 #define UCHAR(c) ((unsigned char) (c))
 
-/*
- * This macro is used to determine the offset needed to safely allocate any
- * data structure in memory. Given a starting offset or size, it "rounds up"
- * or "aligns" the offset to the next 8-byte boundary so that any data
- * structure can be placed at the resulting offset without fear of an
- * alignment error.
- *
- * WARNING!! DO NOT USE THIS MACRO TO ALIGN POINTERS: it will produce
- * the wrong result on platforms that allocate addresses that are divisible
- * by 4 or 2. Only use it for offsets or sizes.
- */
-
-#define TCL_ALIGN(x) (((int)(x) + 7) & ~7)
 
 /*
  * The following enum values are used to specify the runtime platform
