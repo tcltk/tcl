@@ -1,5 +1,10 @@
 2001-12-05  Andreas Kupries  <andreas_kupries@users.sourceforge.net> 
 
+	* stack.base.html:
+	* stack.full.html: Reports from the local version of the core
+	  instrumented to record stack usage. 'base' - Baseline.
+	  'full' - stack controlling macros engaged in full.
+
 	* NOTES: Updated to explain the usage of the various macros
 	  upfront. The original contents remain and are declared to be the
 	  scratchpad.
