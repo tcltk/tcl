@@ -1,3 +1,9 @@
+2002-11-27  David Gravereaux  <davygrvy@pobox.com>
+
+	* win/tclWinPort.h:  Don't turn off winsock prototypes!
+	TclX didn't like it.  Even though the core doesn't use the
+	prototypes, do offer them.
+
 2002-11-26  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclEncoding.c (TclFinalizeEncodingSubsystem): properly
