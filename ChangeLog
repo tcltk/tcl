@@ -1,5 +1,8 @@
 2004-11-01  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
+	* generic/tclExecute.c (TclExecuteByteCode): Make INST_EQ and
+	friends handle NaN correctly in all cases. [Bug 761471]
+
 	* generic/tclNamesp.c (NamespaceInscopeCmd): Make the error
 	message generation the same as in NamespaceEvalCmd().
 	(Tcl_Import): Rationalized to use Tcl_EvalObjv().
