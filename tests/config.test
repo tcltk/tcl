@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: config.test,v 1.2 2003/06/09 22:49:44 andreas_kupries Exp $
+# RCS: @(#) $Id: config.test,v 1.3 2004/05/19 12:22:13 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -22,11 +22,9 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 test pkgconfig-1.1 {query keys} {
     lsort [::tcl::pkgconfig list]
 } {64bit bindir,install bindir,runtime compile_debug compile_stats debug docdir,install docdir,runtime includedir,install includedir,runtime libdir,install libdir,runtime mem_debug optimized profiled scriptdir,install scriptdir,runtime threaded}
-
 test pkgconfig-1.2 {query keys multiple times} {
     string compare [::tcl::pkgconfig list] [::tcl::pkgconfig list]
 } 0
-
 test pkgconfig-1.3 {query value multiple times} {
     string compare \
 	    [::tcl::pkgconfig get bindir,install] \
@@ -38,27 +36,22 @@ test pkgconfig-2.0 {error: missing subcommand} {
     catch {::tcl::pkgconfig} msg
     set msg
 } {wrong # args: should be "list | get key"}
-
 test pkgconfig-2.1 {error: illegal subcommand} {
     catch {::tcl::pkgconfig foo} msg
     set msg
 } {bad subcommand "foo": must be get or list}
-
 test pkgconfig-2.2 {error: list with arguments} {
     catch {::tcl::pkgconfig list foo} msg
     set msg
 } {wrong # args: should be "list"}
-
 test pkgconfig-2.3 {error: get without arguments} {
     catch {::tcl::pkgconfig get} msg
     set msg
 } {wrong # args: should be "get key"}
-
 test pkgconfig-2.4 {error: query unknown key} {
     catch {::tcl::pkgconfig get foo} msg
     set msg
 } {key not known}
-
 test pkgconfig-2.5 {error: query with to many arguments} {
     catch {::tcl::pkgconfig get foo bar} msg
     set msg
@@ -67,15 +60,3 @@ test pkgconfig-2.5 {error: query with to many arguments} {
 # cleanup
 ::tcltest::cleanupTests
 return
-
-
-
-
-
-
-
-
-
-
-
-
