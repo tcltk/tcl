@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.81 2003/05/13 22:59:49 hobbs Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.81.2.1 2003/05/22 19:12:06 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1365,27 +1365,22 @@ Tcl_FSEvalFile(interp, pathPtr)
     Tcl_Obj *pathPtr;		/* Path of file to process.  Tilde-substitution
 				 * will be performed on this name. */
 {
-    int result, length;
+    int result;
     Tcl_StatBuf statBuf;
     Tcl_Obj *oldScriptFile;
     Interp *iPtr;
-    char *string;
     Tcl_Channel chan;
     Tcl_Obj *objPtr;
 
     if (Tcl_FSGetNormalizedPath(interp, pathPtr) == NULL) {
 	return TCL_ERROR;
     }
-
-    result = TCL_ERROR;
-    objPtr = Tcl_NewObj();
-
     if (Tcl_FSStat(pathPtr, &statBuf) == -1) {
         Tcl_SetErrno(errno);
 	Tcl_AppendResult(interp, "couldn't read file \"", 
 		Tcl_GetString(pathPtr),
 		"\": ", Tcl_PosixError(interp), (char *) NULL);
-	goto end;
+	return TCL_ERROR;
     }
     chan = Tcl_FSOpenFileChannel(interp, pathPtr, "r", 0644);
     if (chan == (Tcl_Channel) NULL) {
@@ -1393,13 +1388,18 @@ Tcl_FSEvalFile(interp, pathPtr)
 	Tcl_AppendResult(interp, "couldn't read file \"", 
 		Tcl_GetString(pathPtr),
 		"\": ", Tcl_PosixError(interp), (char *) NULL);
-	goto end;
+	return TCL_ERROR;
     }
+
+    result = TCL_ERROR;
+    objPtr = Tcl_NewObj();
+    Tcl_IncrRefCount(objPtr);
     /*
      * The eofchar is \32 (^Z).  This is the usual on Windows, but we
      * effect this cross-platform to allow for scripted documents.
      * [Bug: 2040]
      */
+
     Tcl_SetChannelOption(interp, chan, "-eofchar", "\32");
     if (Tcl_ReadChars(chan, objPtr, -1, 0) < 0) {
         Tcl_Close(interp, chan);
@@ -1416,8 +1416,9 @@ Tcl_FSEvalFile(interp, pathPtr)
     oldScriptFile = iPtr->scriptFile;
     iPtr->scriptFile = pathPtr;
     Tcl_IncrRefCount(iPtr->scriptFile);
-    string = Tcl_GetStringFromObj(objPtr, &length);
-    result = Tcl_EvalEx(interp, string, length, 0);
+
+    result = Tcl_EvalObjEx(interp, objPtr, TCL_EVAL_DIRECT);
+
     /* 
      * Now we have to be careful; the script may have changed the
      * iPtr->scriptFile value, so we must reset it without

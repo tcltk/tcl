@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.27 2003/04/02 19:31:23 dgp Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.27.2.1 2003/05/22 19:12:07 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -170,17 +170,317 @@ static CONST char charTypeTable[] = {
     TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,      TYPE_NORMAL,
 };
 
+/* Set of parsing error messages */
+
+CONST char *tclParseErrorMsg[] = {
+    "",
+    "extra characters after close-quote",
+    "extra characters after close-brace",
+    "missing close-brace",
+    "missing close-bracket",
+    "missing )",
+    "missing \"",
+    "missing close-brace for variable name",
+    "syntax error in expression",
+    "bad number in expression"
+};
+
 /*
  * Prototypes for local procedures defined in this file:
  */
 
-static int		CommandComplete _ANSI_ARGS_((CONST char *script,
-			    int numBytes));
+static int		ParseBraces _ANSI_ARGS_((Tcl_Interp *interp,
+			    CONST char *string, int numBytes,
+			    Tcl_Parse *parsePtr, int flags,
+			    CONST char **termPtr));
+static int		ParseCommand _ANSI_ARGS_((Tcl_Interp *interp,
+			    CONST char *string, int numBytes, int flags,
+			    Tcl_Parse *parsePtr));
 static int		ParseComment _ANSI_ARGS_((CONST char *src, int numBytes,
 			    Tcl_Parse *parsePtr));
+static int		ParseQuotedString _ANSI_ARGS_((Tcl_Interp *interp,
+			    CONST char *string, int numBytes,
+			    Tcl_Parse *parsePtr, int flags,
+			    CONST char **termPtr));
 static int		ParseTokens _ANSI_ARGS_((CONST char *src, int numBytes,
 			    int mask, int flags, Tcl_Parse *parsePtr));
+static int		ParseVarName _ANSI_ARGS_((Tcl_Interp *interp,
+			    CONST char *string, int numBytes,
+			    Tcl_Parse *parsePtr, int flags));
 
+/*
+ * Prototypes for the Tokens object type.
+ */
+
+static void             DupTokensInternalRep _ANSI_ARGS_((Tcl_Obj *objPtr,
+                            Tcl_Obj *copyPtr));
+static void             FreeTokensInternalRep _ANSI_ARGS_((
+                            Tcl_Obj *objPtr));
+static int              SetTokensFromAny _ANSI_ARGS_((Tcl_Interp *interp,
+                            Tcl_Obj *objPtr));
+
+/*
+ * The structure below defines the "tokens" Tcl object type.
+ */
+
+Tcl_ObjType tclTokensType = {
+    "tokens",                           /* name */
+    FreeTokensInternalRep,              /* freeIntRepProc */
+    DupTokensInternalRep,               /* dupIntRepProc */
+    (Tcl_UpdateStringProc *) NULL,      /* updateStringProc */
+    SetTokensFromAny                   /* setFromAnyProc */
+};
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FreeTokensInternalRep --
+ *
+ *      Frees the resources associated with a tokens object's internal
+ *      representation.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Frees the cached Tcl_Token array.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+FreeTokensInternalRep(objPtr)
+    Tcl_Obj *objPtr;
+{
+    /* Free the Tcl_Token array */
+    ckfree((char *) objPtr->internalRep.twoPtrValue.ptr1);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DupTokensInternalRep --
+ *
+ *      Do not copy the internal Tcl_Token array, because it contains
+ *      pointers into the original string rep.  Instead, leave the copied
+ *      Tcl_Obj untyped with only the string value.  If the new copied
+ *      value gets used as a script, new parsing will be done to produce
+ *      a new Tcl_Token array intrep tied to the copied string.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+DupTokensInternalRep(srcPtr, dupPtr)
+    Tcl_Obj *srcPtr;            /* Object with internal rep to copy. */
+    Tcl_Obj *dupPtr;            /* Object with internal rep to set. */
+{
+    return;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SetTokensFromAny --
+ *
+ *      Generates an internal representation, an array of Tcl_Token's,
+ *      by parsing the string representation as a Tcl script.
+ *
+ * Results:
+ *      Returns TCL_OK.  (Parsing always succeeds, in the sense that
+ *      a sequence of Tcl_Token's is always generated.  Parse errors
+ *      get represented by a special Tcl_Token type.)
+ *
+ * Side effects:
+ *      Frees the old internal representation.  Sets the first pointer
+ *      of the twoPtrValue field of the internal rep to a (Tcl_Token *)
+ *      pointing to an array of Tcl_Token's from the parse, and the
+ *      second pointer to point to the last token in the array.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+SetTokensFromAny (interp, objPtr)
+    Tcl_Interp *interp;	/* Not used. */
+    Tcl_Obj *objPtr;	/* Value for which to generate Tcl_Token array by
+			 * parsing the string value */
+{
+    int numBytes;
+    CONST char *script = Tcl_GetStringFromObj(objPtr, &numBytes);
+
+    /*
+     * Free the old internal rep, parse the string as a Tcl script, and
+     * save the Tcl_Token array as the new internal rep
+     */
+
+    if ((objPtr->typePtr != NULL) 
+	    && (objPtr->typePtr->freeIntRepProc != NULL)) {
+	(*objPtr->typePtr->freeIntRepProc)(objPtr);
+    }
+    objPtr->internalRep.twoPtrValue.ptr1 = 
+	    (VOID *) TclParseScript(script, numBytes, 0, 
+	    (Tcl_Token **) &(objPtr->internalRep.twoPtrValue.ptr2), NULL);
+    objPtr->typePtr = &tclTokensType;
+    return TCL_OK;
+}
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * TclGetTokensFromObj --
+ *
+ *      Returns a Tcl_Token sequence derived from parsing a Tcl_Obj.
+ *
+ * Results:
+ *      Parses the string rep of the Tcl_Obj, if not already done.
+ *
+ * Side effects:
+ *      Initializes the table of defined object types "typeTable" with
+ *      builtin object types defined in this file.
+ *
+ *-------------------------------------------------------------------------
+ */
+
+Tcl_Token *
+TclGetTokensFromObj(objPtr,lastTokenPtrPtr)
+    Tcl_Obj *objPtr;   		 /* Value to parse and return tokens for */
+    Tcl_Token **lastTokenPtrPtr; /* If not NULL, fill with pointer to last
+				  * token in the token array */
+{
+    if (objPtr->typePtr != &tclTokensType) {
+	SetTokensFromAny(NULL, objPtr);
+    }
+    if (lastTokenPtrPtr != NULL) {
+	*lastTokenPtrPtr = (Tcl_Token *) objPtr->internalRep.twoPtrValue.ptr2;
+    }
+    return (Tcl_Token *) objPtr->internalRep.twoPtrValue.ptr1;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclParseScript --
+ *
+ * Results:
+ *
+ * Side effects:
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Token *
+TclParseScript(script, numBytes, flags, lastTokenPtrPtr, termPtr)
+    CONST char *script;		/* The string to parse */
+    int numBytes;		/* Length of string in bytes */
+    int flags;			/* Bit flags that control parsing details. */
+    Tcl_Token **lastTokenPtrPtr;/* Return pointer to last token */
+    CONST char **termPtr;	/* Return the terminating character in string */
+{
+    Tcl_Token tokens[NUM_STATIC_TOKENS];
+    int tokensAvailable = NUM_STATIC_TOKENS;
+    Tcl_Token *tokensPtr = tokens;
+    Tcl_Token *result;
+    int numTokens = 0;
+    Tcl_Parse parse;
+    CONST char *p, *end;
+    int nested = (flags & PARSE_NESTED);
+    if (numBytes < 0) {
+	numBytes = strlen(script);
+    }
+
+    tokens[0].type = TCL_TOKEN_SCRIPT;
+    tokens[0].start = script;
+    tokens[0].size = numBytes;
+    tokens[0].numComponents = 0;
+    numTokens++;
+
+    p = script;
+    end = p + numBytes;
+    parse.term = end;
+    parse.tokenPtr = parse.staticTokens;
+    parse.errorType = nested ? TCL_PARSE_MISSING_BRACKET : TCL_PARSE_SUCCESS;
+    while ((p < end) && (TCL_OK == ParseCommand((Tcl_Interp *)NULL, p, end - p,
+		flags | PARSE_USE_INTERNAL_TOKENS, &parse))) {
+
+	/*
+	 * Check for missing close-brace for nested script substitution.
+	 * If close-brace is missing, blame it on the last command parsed,
+	 * and do not add it to the token array.
+	 */
+
+	if (nested && (parse.term >= end)) {
+	    parse.errorType = TCL_PARSE_MISSING_BRACKET;
+	    break;
+	}
+
+	/*
+	 * Copy the Tcl_Tokens for the parsed command into the
+	 * Tcl_Token array.  Expand as needed.
+	 */
+
+	tokensPtr[0].numComponents++;	/* Another command parsed */
+
+	TclGrowTokenArray(tokensPtr, numTokens, tokensAvailable,
+		parse.numTokens+1, tokens);
+	tokensPtr[numTokens].type = TCL_TOKEN_CMD;
+	tokensPtr[numTokens].start = parse.commandStart;
+	if (parse.commandStart + parse.commandSize == parse.term) {
+	    tokensPtr[numTokens].size = parse.commandSize;
+	} else {
+	    tokensPtr[numTokens].size = parse.commandSize - 1;
+	}
+	tokensPtr[numTokens].numComponents = parse.numWords;
+	numTokens++;
+
+	memcpy(&(tokensPtr[numTokens]), parse.tokenPtr,
+		(size_t) (parse.numTokens * sizeof(Tcl_Token)));
+	numTokens += parse.numTokens;
+
+	p = parse.commandStart + parse.commandSize;
+	Tcl_FreeParse(&parse);
+
+	if (nested && (*parse.term == ']') && (parse.term < end)) {
+	    break;
+	}
+    }
+
+    if ((parse.errorType != TCL_PARSE_SUCCESS)) {
+	Tcl_FreeParse(&parse);
+	TclGrowTokenArray(tokensPtr, numTokens, tokensAvailable, 1, tokens);
+	tokensPtr[numTokens].type = TCL_TOKEN_ERROR;
+	tokensPtr[numTokens].start = parse.commandStart;
+	tokensPtr[numTokens].size = end - parse.commandStart;
+	tokensPtr[numTokens].numComponents = parse.errorType;
+	numTokens++;
+    }
+
+    if (termPtr != NULL) {
+	*termPtr = parse.term;
+    }
+    if (tokensPtr != tokens) {
+	result = (Tcl_Token *) ckrealloc((VOID *)tokensPtr,
+		(unsigned int) (numTokens * sizeof(Tcl_Token)));
+    } else {
+	result = (Tcl_Token *)
+		ckalloc((unsigned int) (numTokens * sizeof(Tcl_Token)));
+	memcpy(result, tokensPtr, (size_t) (numTokens * sizeof(Tcl_Token)));
+    }
+
+    if (lastTokenPtrPtr != NULL) {
+	*lastTokenPtrPtr = &(result[numTokens - 1]);
+    }
+    return result;
+}
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -209,6 +509,26 @@ static int		ParseTokens _ANSI_ARGS_((CONST char *src, int numBytes,
 
 int
 Tcl_ParseCommand(interp, string, numBytes, nested, parsePtr)
+    Tcl_Interp *interp;		/* See ParseCommand */
+    CONST char *string;		/* See ParseCommand */
+    register int numBytes;	/* See ParseCommand */
+    int nested;			/* Non-zero means this is a nested command:
+				 * close bracket should be considered
+				 * a command terminator. If zero, then close
+				 * bracket has no special meaning. */
+    register Tcl_Parse *parsePtr;
+    				/* See ParseCommand */
+{
+    int code = ParseCommand(interp, string, numBytes,
+	    (nested != 0) ? PARSE_NESTED : 0, parsePtr);
+    if (code == TCL_ERROR) {
+	Tcl_FreeParse(parsePtr);
+    }
+    return code;
+}
+
+int
+ParseCommand(interp, string, numBytes, flags, parsePtr)
     Tcl_Interp *interp;		/* Interpreter to use for error reporting;
 				 * if NULL, then no error message is
 				 * provided. */
@@ -217,10 +537,9 @@ Tcl_ParseCommand(interp, string, numBytes, nested, parsePtr)
     register int numBytes;	/* Total number of bytes in string.  If < 0,
 				 * the script consists of all bytes up to 
 				 * the first null character. */
-    int nested;			/* Non-zero means this is a nested command:
-				 * close bracket should be considered
-				 * a command terminator. If zero, then close
-				 * bracket has no special meaning. */
+    int flags;			/* Bit flags to control details of the parsing.
+				 * Only the PARSE_NESTED flag has an effect
+				 * here.  Other flags are passed along. */
     register Tcl_Parse *parsePtr;
     				/* Structure to fill in with information
 				 * about the parsed command; any previous
@@ -237,6 +556,7 @@ Tcl_ParseCommand(interp, string, numBytes, nested, parsePtr)
     CONST char *termPtr;	/* Set by Tcl_ParseBraces/QuotedString to
 				 * point to char after terminating one. */
     int scanned;
+    int nested = (flags & PARSE_NESTED);
     
     if ((string == NULL) && (numBytes>0)) {
 	if (interp != NULL) {
@@ -291,9 +611,7 @@ Tcl_ParseCommand(interp, string, numBytes, nested, parsePtr)
 	 * Create the token for the word.
 	 */
 
-	if (parsePtr->numTokens == parsePtr->tokensAvailable) {
-	    TclExpandTokenArray(parsePtr);
-	}
+	TclGrowParseTokenArray(parsePtr,1);
 	wordIndex = parsePtr->numTokens;
 	tokenPtr = &parsePtr->tokenPtr[wordIndex];
 	tokenPtr->type = TCL_TOKEN_WORD;
@@ -325,14 +643,14 @@ Tcl_ParseCommand(interp, string, numBytes, nested, parsePtr)
 	 */
 
 	if (*src == '"') {
-	    if (Tcl_ParseQuotedString(interp, src, numBytes,
-		    parsePtr, 1, &termPtr) != TCL_OK) {
+	    if (ParseQuotedString(interp, src, numBytes,
+		    parsePtr, flags | PARSE_APPEND, &termPtr) != TCL_OK) {
 		goto error;
 	    }
 	    src = termPtr; numBytes = parsePtr->end - src;
 	} else if (*src == '{') {
-	    if (Tcl_ParseBraces(interp, src, numBytes,
-		    parsePtr, 1, &termPtr) != TCL_OK) {
+	    if (ParseBraces(interp, src, numBytes,
+		    parsePtr, flags | PARSE_APPEND, &termPtr) != TCL_OK) {
 		goto error;
 	    }
 	    src = termPtr; numBytes = parsePtr->end - src;
@@ -343,7 +661,7 @@ Tcl_ParseCommand(interp, string, numBytes, nested, parsePtr)
 	     */
 
 	    if (ParseTokens(src, numBytes, TYPE_SPACE|terminators,
-		    TCL_SUBST_ALL, parsePtr) != TCL_OK) {
+		    flags | TCL_SUBST_ALL, parsePtr) != TCL_OK) {
 		goto error;
 	    }
 	    src = parsePtr->term; numBytes = parsePtr->end - src;
@@ -406,7 +724,6 @@ Tcl_ParseCommand(interp, string, numBytes, nested, parsePtr)
     return TCL_OK;
 
     error:
-    Tcl_FreeParse(parsePtr);
     if (parsePtr->commandStart == NULL) {
 	parsePtr->commandStart = string;
     }
@@ -473,7 +790,7 @@ TclParseWhiteSpace(src, numBytes, parsePtr, typePtr)
     *typePtr = type;
     return (p - src);
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -529,7 +846,7 @@ TclParseHex(src, numBytes, resultPtr)
     *resultPtr = result;
     return (p - src);
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -690,7 +1007,7 @@ TclParseBackslash(src, numBytes, readPtr, dst)
     }
     return Tcl_UniCharToUtf((int) result, dst);
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -805,6 +1122,7 @@ ParseTokens(src, numBytes, mask, flags, parsePtr)
     int noSubstCmds = !(flags & TCL_SUBST_COMMANDS);
     int noSubstVars = !(flags & TCL_SUBST_VARIABLES);
     int noSubstBS = !(flags & TCL_SUBST_BACKSLASHES);
+    int useInternalTokens = (flags & PARSE_USE_INTERNAL_TOKENS);
     Tcl_Token *tokenPtr;
     Tcl_Parse nested;
 
@@ -817,9 +1135,7 @@ ParseTokens(src, numBytes, mask, flags, parsePtr)
 
     originalTokens = parsePtr->numTokens;
     while (numBytes && !((type = CHAR_TYPE(*src)) & mask)) {
-	if (parsePtr->numTokens == parsePtr->tokensAvailable) {
-	    TclExpandTokenArray(parsePtr);
-	}
+	TclGrowParseTokenArray(parsePtr,1);
 	tokenPtr = &parsePtr->tokenPtr[parsePtr->numTokens];
 	tokenPtr->start = src;
 	tokenPtr->numComponents = 0;
@@ -846,13 +1162,13 @@ ParseTokens(src, numBytes, mask, flags, parsePtr)
 		continue;
 	    }
 	    /*
-	     * This is a variable reference.  Call Tcl_ParseVarName to do
+	     * This is a variable reference.  Call ParseVarName to do
 	     * all the dirty work of parsing the name.
 	     */
 
 	    varToken = parsePtr->numTokens;
-	    if (Tcl_ParseVarName(parsePtr->interp, src, numBytes,
-		    parsePtr, 1) != TCL_OK) {
+	    if (ParseVarName(parsePtr->interp, src, numBytes,
+		    parsePtr, flags | PARSE_APPEND) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    src += parsePtr->tokenPtr[varToken].size;
@@ -867,14 +1183,47 @@ ParseTokens(src, numBytes, mask, flags, parsePtr)
 	    }
 	    /*
 	     * Command substitution.  Call Tcl_ParseCommand recursively
-	     * (and repeatedly) to parse the nested command(s), then
-	     * throw away the parse information.
+	     * (and repeatedly) to parse the nested command(s).  If
+	     * internal tokens are acceptable, keep all the parsing
+	     * information; otherwise, throw away the nested parse information.
 	     */
 
 	    src++; numBytes--;
+	    if (useInternalTokens) {
+		CONST char *term;
+		Tcl_Token *lastTokenPtr;
+		Tcl_Token *appendTokens = TclParseScript(src, numBytes,
+			flags | PARSE_NESTED, &lastTokenPtr, &term);
+		int numTokens = 1 + (int)(lastTokenPtr - appendTokens);
+
+		TclGrowParseTokenArray(parsePtr,numTokens+1);
+		tokenPtr = &parsePtr->tokenPtr[parsePtr->numTokens];
+		tokenPtr->type = TCL_TOKEN_SCRIPT_SUBST;
+		tokenPtr->size = term - src + 2;
+		tokenPtr->numComponents = numTokens;
+
+		memcpy(tokenPtr+1, appendTokens, 
+			(size_t) (numTokens * sizeof(Tcl_Token)));
+		parsePtr->numTokens += (numTokens + 1);
+	
+		if (lastTokenPtr->type == TCL_TOKEN_ERROR) {
+
+		    parsePtr->errorType = lastTokenPtr->numComponents;
+		    parsePtr->term = term;
+		    parsePtr->incomplete = 1;
+
+		    ckfree((char *) appendTokens);
+		    return TCL_ERROR;
+		}
+		ckfree((char *) appendTokens);
+		src = term + 1;
+		numBytes = parsePtr->end - src;
+		continue;
+	    }
+
 	    while (1) {
-		if (Tcl_ParseCommand(parsePtr->interp, src,
-			numBytes, 1, &nested) != TCL_OK) {
+		if (ParseCommand(parsePtr->interp, src,
+			numBytes, flags | PARSE_NESTED, &nested) != TCL_OK) {
 		    parsePtr->errorType = nested.errorType;
 		    parsePtr->term = nested.term;
 		    parsePtr->incomplete = nested.incomplete;
@@ -882,15 +1231,7 @@ ParseTokens(src, numBytes, mask, flags, parsePtr)
 		}
 		src = nested.commandStart + nested.commandSize;
 		numBytes = parsePtr->end - src;
-
-		/*
-		 * This is equivalent to Tcl_FreeParse(&nested), but
-		 * presumably inlined here for sake of runtime optimization
-		 */
-
-		if (nested.tokenPtr != nested.staticTokens) {
-		    ckfree((char *) nested.tokenPtr);
-		}
+		Tcl_FreeParse(&nested);
 
 		/*
 		 * Check for the closing ']' that ends the command
@@ -975,9 +1316,7 @@ ParseTokens(src, numBytes, mask, flags, parsePtr)
 	 * for the empty range, so that there is always at least one
 	 * token added.
 	 */
-	if (parsePtr->numTokens == parsePtr->tokensAvailable) {
-	    TclExpandTokenArray(parsePtr);
-	}
+	TclGrowParseTokenArray(parsePtr,1);
 	tokenPtr = &parsePtr->tokenPtr[parsePtr->numTokens];
 	tokenPtr->start = src;
 	tokenPtr->numComponents = 0;
@@ -1023,44 +1362,6 @@ Tcl_FreeParse(parsePtr)
 /*
  *----------------------------------------------------------------------
  *
- * TclExpandTokenArray --
- *
- *	This procedure is invoked when the current space for tokens in
- *	a Tcl_Parse structure fills up; it allocates memory to grow the
- *	token array
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Memory is allocated for a new larger token array; the memory
- *	for the old array is freed, if it had been dynamically allocated.
- *
- *----------------------------------------------------------------------
- */
-
-void
-TclExpandTokenArray(parsePtr)
-    Tcl_Parse *parsePtr;	/* Parse structure whose token space
-				 * has overflowed. */
-{
-    int newCount;
-    Tcl_Token *newPtr;
-
-    newCount = parsePtr->tokensAvailable*2;
-    newPtr = (Tcl_Token *) ckalloc((unsigned) (newCount * sizeof(Tcl_Token)));
-    memcpy((VOID *) newPtr, (VOID *) parsePtr->tokenPtr,
-	    (size_t) (parsePtr->tokensAvailable * sizeof(Tcl_Token)));
-    if (parsePtr->tokenPtr != parsePtr->staticTokens) {
-	ckfree((char *) parsePtr->tokenPtr);
-    }
-    parsePtr->tokenPtr = newPtr;
-    parsePtr->tokensAvailable = newCount;
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * Tcl_ParseVarName --
  *
  *	Given a string starting with a $ sign, parse off a variable
@@ -1089,6 +1390,25 @@ TclExpandTokenArray(parsePtr)
 
 int
 Tcl_ParseVarName(interp, string, numBytes, parsePtr, append)
+    Tcl_Interp *interp;		/* See ParseVarName */
+    CONST char *string;		/* See ParseVarName */
+    register int numBytes;	/* See ParseVarName */
+    Tcl_Parse *parsePtr;	/* See ParseVarName */
+    int append;			/* Non-zero means append tokens to existing
+				 * information in parsePtr; zero means ignore
+				 * existing tokens in parsePtr and reinitialize
+				 * it. */
+{
+    int code = ParseVarName(interp, string, numBytes, parsePtr,
+	    (append != 0) ? PARSE_APPEND : 0);
+    if (code == TCL_ERROR) {
+	Tcl_FreeParse(parsePtr);
+    }
+    return code;
+}
+
+int
+ParseVarName(interp, string, numBytes, parsePtr, flags)
     Tcl_Interp *interp;		/* Interpreter to use for error reporting;
 				 * if NULL, then no error message is
 				 * provided. */
@@ -1099,10 +1419,9 @@ Tcl_ParseVarName(interp, string, numBytes, parsePtr, append)
 				 * first null character. */
     Tcl_Parse *parsePtr;	/* Structure to fill in with information
 				 * about the variable name. */
-    int append;			/* Non-zero means append tokens to existing
-				 * information in parsePtr; zero means ignore
-				 * existing tokens in parsePtr and reinitialize
-				 * it. */
+    int flags;			/* Bit flags to control details of the parsing.
+				 * Only the PARSE_APPEND flag has an effect
+				 * here.  Other flags are passed along. */
 {
     Tcl_Token *tokenPtr;
     register CONST char *src;
@@ -1110,6 +1429,7 @@ Tcl_ParseVarName(interp, string, numBytes, parsePtr, append)
     int varIndex, offset;
     Tcl_UniChar ch;
     unsigned array;
+    int append = (flags & PARSE_APPEND);
 
     if ((numBytes == 0) || (string == NULL)) {
 	return TCL_ERROR;
@@ -1137,9 +1457,7 @@ Tcl_ParseVarName(interp, string, numBytes, parsePtr, append)
      */
 
     src = string;
-    if ((parsePtr->numTokens + 2) > parsePtr->tokensAvailable) {
-	TclExpandTokenArray(parsePtr);
-    }
+    TclGrowParseTokenArray(parsePtr,2);
     tokenPtr = &parsePtr->tokenPtr[parsePtr->numTokens];
     tokenPtr->type = TCL_TOKEN_VARIABLE;
     tokenPtr->start = src;
@@ -1188,6 +1506,7 @@ Tcl_ParseVarName(interp, string, numBytes, parsePtr, append)
 	    parsePtr->errorType = TCL_PARSE_MISSING_VAR_BRACE;
 	    parsePtr->term = tokenPtr->start-1;
 	    parsePtr->incomplete = 1;
+
 	    goto error;
 	}
 	tokenPtr->size = src - tokenPtr->start;
@@ -1239,7 +1558,7 @@ Tcl_ParseVarName(interp, string, numBytes, parsePtr, append)
 	     */
 
 	    if (TCL_OK != ParseTokens(src+1, numBytes-1, TYPE_CLOSE_PAREN,
-		    TCL_SUBST_ALL, parsePtr)) {
+		    flags | TCL_SUBST_ALL, parsePtr)) {
 		goto error;
 	    }
 	    if ((parsePtr->term == (src + numBytes)) 
@@ -1275,7 +1594,11 @@ Tcl_ParseVarName(interp, string, numBytes, parsePtr, append)
     return TCL_OK;
 
     error:
-    Tcl_FreeParse(parsePtr);
+    /* Convert variable substitution token to error token */
+    tokenPtr = &parsePtr->tokenPtr[varIndex];
+    tokenPtr->type = TCL_TOKEN_ERROR;
+    tokenPtr->numComponents = parsePtr->errorType;
+    tokenPtr->size = parsePtr->end - tokenPtr->start;
     return TCL_ERROR;
 }
 
@@ -1309,7 +1632,6 @@ Tcl_ParseVar(interp, string, termPtr)
     CONST char **termPtr;		/* If non-NULL, points to word to fill
 					 * in with character just after last
 					 * one in the variable specifier. */
-
 {
     Tcl_Parse parse;
     register Tcl_Obj *objPtr;
@@ -1330,7 +1652,7 @@ Tcl_ParseVar(interp, string, termPtr)
 	return "$";
     }
 
-    code = TclSubstTokens(interp, parse.tokenPtr, parse.numTokens, NULL);
+    code = TclSubstTokens(interp, parse.tokenPtr, parse.numTokens, NULL,0);
     if (code != TCL_OK) {
 	return NULL;
     }
@@ -1385,10 +1707,32 @@ Tcl_ParseVar(interp, string, termPtr)
 
 int
 Tcl_ParseBraces(interp, string, numBytes, parsePtr, append, termPtr)
+    Tcl_Interp *interp;		/* See ParseBraces */
+    CONST char *string;		/* See ParseBraces */
+    register int numBytes;	/* See ParseBraces */
+    register Tcl_Parse *parsePtr;
+    				/* See ParseBraces */
+    int append;			/* Non-zero means append tokens to existing
+				 * information in parsePtr; zero means
+				 * ignore existing tokens in parsePtr and
+				 * reinitialize it. */
+    CONST char **termPtr;	/* See ParseBraces */
+
+{
+    int code = ParseBraces(interp, string, numBytes, parsePtr,
+	    (append != 0) ? PARSE_APPEND : 0, termPtr);
+    if (code == TCL_ERROR) {
+	Tcl_FreeParse(parsePtr);
+    }
+    return code;
+}
+
+static int
+ParseBraces(interp, string, numBytes, parsePtr, flags, termPtr)
     Tcl_Interp *interp;		/* Interpreter to use for error reporting;
 				 * if NULL, then no error message is
 				 * provided. */
-    CONST char *string;		/* String containing the string in braces.
+    CONST char *string;		/* String containing the string in braces. 
 				 * The first character must be '{'. */
     register int numBytes;	/* Total number of bytes in string. If < 0,
 				 * the string consists of all bytes up to
@@ -1396,19 +1740,18 @@ Tcl_ParseBraces(interp, string, numBytes, parsePtr, append, termPtr)
     register Tcl_Parse *parsePtr;
     				/* Structure to fill in with information
 				 * about the string. */
-    int append;			/* Non-zero means append tokens to existing
-				 * information in parsePtr; zero means
-				 * ignore existing tokens in parsePtr and
-				 * reinitialize it. */
+    int flags;			/* Bit flags to control details of the parsing.
+				 * Only the PARSE_APPEND flag has an effect
+				 * here.  Other flags are passed along. */
     CONST char **termPtr;	/* If non-NULL, points to word in which to
 				 * store a pointer to the character just
 				 * after the terminating '}' if the parse
 				 * was successful. */
-
 {
     Tcl_Token *tokenPtr;
     register CONST char *src;
     int startIndex, level, length;
+    int append = (flags & PARSE_APPEND);
 
     if ((numBytes == 0) || (string == NULL)) {
 	return TCL_ERROR;
@@ -1431,9 +1774,7 @@ Tcl_ParseBraces(interp, string, numBytes, parsePtr, append, termPtr)
     src = string;
     startIndex = parsePtr->numTokens;
 
-    if (parsePtr->numTokens == parsePtr->tokensAvailable) {
-	TclExpandTokenArray(parsePtr);
-    }
+    TclGrowParseTokenArray(parsePtr,1);
     tokenPtr = &parsePtr->tokenPtr[startIndex];
     tokenPtr->type = TCL_TOKEN_TEXT;
     tokenPtr->start = src+1;
@@ -1489,7 +1830,6 @@ Tcl_ParseBraces(interp, string, numBytes, parsePtr, append, termPtr)
 	    }
 
 	    error:
-	    Tcl_FreeParse(parsePtr);
 	    return TCL_ERROR;
 	}
 	switch (*src) {
@@ -1540,9 +1880,7 @@ Tcl_ParseBraces(interp, string, numBytes, parsePtr, append, termPtr)
 		    if (tokenPtr->size != 0) {
 			parsePtr->numTokens++;
 		    }
-		    if ((parsePtr->numTokens+1) >= parsePtr->tokensAvailable) {
-			TclExpandTokenArray(parsePtr);
-		    }
+		    TclGrowParseTokenArray(parsePtr,2);
 		    tokenPtr = &parsePtr->tokenPtr[parsePtr->numTokens];
 		    tokenPtr->type = TCL_TOKEN_BS;
 		    tokenPtr->start = src;
@@ -1596,6 +1934,27 @@ Tcl_ParseBraces(interp, string, numBytes, parsePtr, append, termPtr)
 
 int
 Tcl_ParseQuotedString(interp, string, numBytes, parsePtr, append, termPtr)
+    Tcl_Interp *interp;		/* See ParseQuotedString */
+    CONST char *string;		/* See ParseQuotedString */
+    int numBytes;		/* See ParseQuotedString */
+    Tcl_Parse *parsePtr;
+    				/* See ParseQuotedString */
+    int append;			/* Non-zero means append tokens to existing
+				 * information in parsePtr; zero means
+				 * ignore existing tokens in parsePtr and
+				 * reinitialize it. */
+    CONST char **termPtr;	/* See ParseQuotedString */
+{
+    int code = ParseQuotedString(interp, string, numBytes, parsePtr,
+	    (append != 0) ? PARSE_APPEND : 0, termPtr);
+    if (code == TCL_ERROR) {
+	Tcl_FreeParse(parsePtr);
+    }
+    return code;
+}
+
+int
+ParseQuotedString(interp, string, numBytes, parsePtr, flags, termPtr)
     Tcl_Interp *interp;		/* Interpreter to use for error reporting;
 				 * if NULL, then no error message is
 				 * provided. */
@@ -1607,15 +1966,16 @@ Tcl_ParseQuotedString(interp, string, numBytes, parsePtr, append, termPtr)
     register Tcl_Parse *parsePtr;
     				/* Structure to fill in with information
 				 * about the string. */
-    int append;			/* Non-zero means append tokens to existing
-				 * information in parsePtr; zero means
-				 * ignore existing tokens in parsePtr and
-				 * reinitialize it. */
+    int flags;			/* Bit flags to control details of the parsing.
+				 * Only the PARSE_APPEND flag has an effect
+				 * here.  Other flags are passed along. */
     CONST char **termPtr;	/* If non-NULL, points to word in which to
 				 * store a pointer to the character just
 				 * after the quoted string's terminating
 				 * close-quote if the parse succeeds. */
 {
+    int append = (flags * PARSE_APPEND);
+
     if ((numBytes == 0) || (string == NULL)) {
 	return TCL_ERROR;
     }
@@ -1635,7 +1995,7 @@ Tcl_ParseQuotedString(interp, string, numBytes, parsePtr, append, termPtr)
     }
     
     if (TCL_OK != ParseTokens(string+1, numBytes-1, TYPE_QUOTE,
-	    TCL_SUBST_ALL, parsePtr)) {
+	    flags | TCL_SUBST_ALL, parsePtr)) {
 	goto error;
     }
     if (*parsePtr->term != '"') {
@@ -1653,7 +2013,6 @@ Tcl_ParseQuotedString(interp, string, numBytes, parsePtr, append, termPtr)
     return TCL_OK;
 
     error:
-    Tcl_FreeParse(parsePtr);
     return TCL_ERROR;
 }
 
@@ -1705,157 +2064,15 @@ Tcl_SubstObj(interp, objPtr, flags)
      * selectively inhibit types of substitution.
      */
 
-    if (TCL_OK != ParseTokens(p, length, /* mask */ 0, flags, &parse)) {
-
-	/*
-	 * There was a parse error.  Save the error message for
-	 * possible reporting later.
-	 */
-
-	errMsg = Tcl_GetObjResult(interp);
-	Tcl_IncrRefCount(errMsg);
-
-	/*
-	 * We need to re-parse to get the portion of the string we can
-	 * [subst] before the parse error.  Sadly, all the Tcl_Token's
-	 * created by the first parse attempt are gone, freed according to the
-	 * public spec for the Tcl_Parse* routines.  The only clue we have
-	 * is parse.term, which points to either the unmatched opener, or
-	 * to characters that follow a close brace or close quote.
-	 *
-	 * Call ParseTokens again, working on the string up to parse.term.
-	 * Keep repeating until we get a good parse on a prefix.
-	 */
-
-	do {
-	    parse.numTokens = 0;
-	    parse.tokensAvailable = NUM_STATIC_TOKENS;
-	    parse.end = parse.term;
-	    parse.incomplete = 0;
-	    parse.errorType = TCL_PARSE_SUCCESS;
-	} while (TCL_OK != ParseTokens(p, parse.end - p, 0, flags, &parse));
-
-	/* The good parse will have to be followed by {, (, or [. */
-	switch (*parse.term) {
-	    case '{':
-		/*
-		 * Parse error was a missing } in a ${varname} variable
-		 * substitution at the toplevel.  We will subst everything
-		 * up to that broken variable substitution before reporting
-		 * the parse error.  Substituting the leftover '$' will
-		 * have no side-effects, so the current token stream is fine.
-		 */
-		break;
-	    case '(':
-		/*
-		 * Parse error was during the parsing of the index part of
-		 * an array variable substitution at the toplevel.  
-		 */
-		if (*(parse.term - 1) == '$') {
-		    /*
-		     * Special case where removing the array index left
-		     * us with just a dollar sign (array variable with
-		     * name the empty string as its name), instead of
-		     * with a scalar variable reference.  
-		     *
-		     * As in the previous case, existing token stream is OK.
-		     */
-		} else {
-		   /* The current parse includes a successful parse of a
-		    * scalar variable substitution where there should have
-		    * been an array variable substitution.  We remove that
-		    * mistaken part of the parse before moving on.  A scalar
-		    * variable substitution is two tokens.
-		    */
-		    Tcl_Token *varTokenPtr =
-			    parse.tokenPtr + parse.numTokens - 2;
-
-		    if (varTokenPtr->type != TCL_TOKEN_VARIABLE) {
-			Tcl_Panic("Tcl_SubstObj: programming error");
-		    }
-		    if (varTokenPtr[1].type != TCL_TOKEN_TEXT) {
-			Tcl_Panic("Tcl_SubstObj: programming error");
-		    }
-		    parse.numTokens -= 2;
-		}
-		break;
-	    case '[':
-		/*
-		 * Parse error occurred during parsing of a toplevel
-		 * command substitution.  
-		 */
-
-		parse.end = p + length;
-		p = parse.term + 1;
-		length = parse.end - p;
-		if (length == 0) {
-		    /*
-		     * No commands, just an unmatched [.  
-		     * As in previous cases, existing token stream is OK.
-		     */
-		} else {
-		    /* 
-		     * We want to add the parsing of as many commands as we
-		     * can within that substitution until we reach the
-		     * actual parse error.  We'll do additional parsing to
-		     * determine what length to claim for the final
-		     * TCL_TOKEN_COMMAND token.
-		     */
-		    Tcl_Token *tokenPtr;
-		    Tcl_Parse nested;
-		    CONST char *lastTerm = parse.term;
-
-		    while (TCL_OK == 
-			    Tcl_ParseCommand(NULL, p, length, 0, &nested)) {
-			Tcl_FreeParse(&nested);
-			p = nested.term + (nested.term < nested.end);
-			length = nested.end - p;
-			if (length == 0) {
-			    /*
-			     * If we run out of string, blame the missing
-			     * close bracket on the last command, and do
-			     * not evaluate it during substitution.
-			     */
-			    break;
-			}
-			lastTerm = nested.term;
-		    }
-
-		    if (lastTerm == parse.term) {
-			/*
-			 * Parse error in first command.  No commands
-			 * to subst, add no more tokens.
-			 */
-			break;
-		    }
-
-		    /*
-		     * Create a command substitution token for whatever
-		     * commands got parsed.
-		     */
-
-		    if (parse.numTokens == parse.tokensAvailable) {
-			TclExpandTokenArray(&parse);
-		    }
-		    tokenPtr = &parse.tokenPtr[parse.numTokens];
-		    tokenPtr->start = parse.term;
-		    tokenPtr->numComponents = 0;
-		    tokenPtr->type = TCL_TOKEN_COMMAND;
-		    tokenPtr->size = lastTerm - tokenPtr->start + 1;
-		    parse.numTokens++;
-		}
-		break;
-
-	    default:
-		Tcl_Panic("bad parse in Tcl_SubstObj: %c", p[length]);
-	}
-    }
+    flags &= TCL_SUBST_ALL;
+    flags |= PARSE_USE_INTERNAL_TOKENS;
+    ParseTokens(p, length, /* mask */ 0, flags, &parse);
 
     /* Next, substitute the parsed tokens just as in normal Tcl evaluation */
     endTokenPtr = parse.tokenPtr + parse.numTokens;
     tokensLeft = parse.numTokens;
     code = TclSubstTokens(interp, endTokenPtr - tokensLeft, tokensLeft,
-	    &tokensLeft);
+	    &tokensLeft,0);
     if (code == TCL_OK) {
 	Tcl_FreeParse(&parse);
 	if (errMsg != NULL) {
@@ -1895,7 +2112,7 @@ Tcl_SubstObj(interp, objPtr, flags)
 	}
 
 	code = TclSubstTokens(interp, endTokenPtr - tokensLeft, tokensLeft,
-		&tokensLeft);
+		&tokensLeft,0);
     }
 }
 
@@ -1923,7 +2140,7 @@ Tcl_SubstObj(interp, objPtr, flags)
  */
 
 int
-TclSubstTokens(interp, tokenPtr, count, tokensLeftPtr)
+TclSubstTokens(interp, tokenPtr, count, tokensLeftPtr, flags)
     Tcl_Interp *interp;         /* Interpreter in which to lookup
                                  * variables, execute nested commands,
                                  * and report errors. */
@@ -1972,17 +2189,20 @@ TclSubstTokens(interp, tokenPtr, count, tokensLeftPtr)
 
 	    case TCL_TOKEN_COMMAND:
 		code = Tcl_EvalEx(interp, tokenPtr->start+1, tokenPtr->size-2,
-			0);
+			flags);
 		appendObj = Tcl_GetObjResult(interp);
 		break;
 
 	    case TCL_TOKEN_VARIABLE: {
 		Tcl_Obj *arrayIndex = NULL;
 		Tcl_Obj *varName = NULL;
+		if (count <= tokenPtr->numComponents) {
+		    Tcl_Panic("token components overflow token array");
+		}
 		if (tokenPtr->numComponents > 1) {
 		    /* Subst the index part of an array variable reference */
 		    code = TclSubstTokens(interp, tokenPtr+2,
-			    tokenPtr->numComponents - 1, NULL);
+			    tokenPtr->numComponents - 1, NULL,flags);
 		    arrayIndex = Tcl_GetObjResult(interp);
 		    Tcl_IncrRefCount(arrayIndex);
 		}
@@ -2017,6 +2237,26 @@ TclSubstTokens(interp, tokenPtr, count, tokensLeftPtr)
 		tokenPtr += tokenPtr->numComponents;
 		break;
 	    }
+
+	    case TCL_TOKEN_SCRIPT_SUBST:
+		if (count <= tokenPtr->numComponents) {
+		    Tcl_Panic("token components overflow token array");
+		}
+		code = TclEvalScriptTokens(interp, tokenPtr+1,
+			tokenPtr->numComponents,flags);
+		appendObj = Tcl_GetObjResult(interp);
+		count -= tokenPtr->numComponents;
+		tokenPtr += tokenPtr->numComponents;
+		if (tokenPtr->type == TCL_TOKEN_ERROR) {
+		    count++; tokenPtr--;
+		}
+		break;
+
+	    case TCL_TOKEN_ERROR:
+		Tcl_SetResult(interp, (char *)
+			tclParseErrorMsg[tokenPtr->numComponents], TCL_STATIC);
+		code = TCL_ERROR;
+		break;
 
 	    default:
 		Tcl_Panic("unexpected token type in TclSubstTokens: %d",
@@ -2076,47 +2316,45 @@ TclSubstTokens(interp, tokenPtr, count, tokensLeftPtr)
  *
  * CommandComplete --
  *
- *	This procedure is shared by TclCommandComplete and
- *	Tcl_ObjCommandcoComplete; it does all the real work of seeing
- *	whether a script is complete
+ *      This procedure is shared by TclCommandComplete and
+ *      Tcl_ObjCommandcoComplete; it does all the real work of seeing
+ *      whether a script is complete
  *
  * Results:
- *	1 is returned if the script is complete, 0 if there are open
- *	delimiters such as " or (. 1 is also returned if there is a
- *	parse error in the script other than unmatched delimiters.
+ *      1 is returned if the script is complete, 0 if there are open
+ *      delimiters such as " or (. 1 is also returned if there is a
+ *      parse error in the script other than unmatched delimiters.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
 
 static int
 CommandComplete(script, numBytes)
-    CONST char *script;			/* Script to check. */
-    int numBytes;			/* Number of bytes in script. */
+    CONST char *script;                 /* Script to check. */
+    int numBytes;                       /* Number of bytes in script. */
 {
     Tcl_Parse parse;
     CONST char *p, *end;
-    int result;
+
+    /*
+     * NOTE: This set of routines should not be converted to make use of
+     * TclParseScript, because [info complete] is defined to operate only
+     * one parsing level deep, while TclParseScript digs out parsing errors
+     * in nested script substitutions.  See test parse-6.8, etc.
+     */
 
     p = script;
     end = p + numBytes;
-    while (Tcl_ParseCommand((Tcl_Interp *) NULL, p, end - p, 0, &parse)
-	    == TCL_OK) {
-	p = parse.commandStart + parse.commandSize;
-	if (p >= end) {
-	    break;
-	}
-	Tcl_FreeParse(&parse);
+    parse.incomplete = 0;
+    while ((p < end) && (TCL_OK == 
+	    Tcl_ParseCommand((Tcl_Interp *) NULL, p, end - p, 0, &parse))) {
+        p = parse.commandStart + parse.commandSize;
+        Tcl_FreeParse(&parse);
     }
-    if (parse.incomplete) {
-	result = 0;
-    } else {
-	result = 1;
-    }
-    Tcl_FreeParse(&parse);
-    return result;
+    return (parse.incomplete == 0);
 }
 
 /*

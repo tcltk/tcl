@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: incr.test,v 1.9 2003/04/28 12:34:33 dkf Exp $
+# RCS: @(#) $Id: incr.test,v 1.9.2.1 2003/05/22 19:12:08 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -179,10 +179,8 @@ test incr-1.19 {TclCompileIncrCmd: increment given, but erroneous} {
     catch {incr i [set]} msg
     set errorInfo
 } {wrong # args: should be "set varName ?newValue?"
-    while compiling
-"set"
-    while compiling
-"incr i [set]"}
+    while executing
+"set"}
 test incr-1.20 {TclCompileIncrCmd: increment given, in quotes} {
     set i 25
     incr i "-100"
@@ -221,10 +219,8 @@ test incr-1.26 {TclCompileIncrCmd: runtime error, bad variable name} {
 test incr-1.27 {TclCompileIncrCmd: runtime error, bad variable name} {
     list [catch {incr [set]} msg] $msg $errorInfo
 } {1 {wrong # args: should be "set varName ?newValue?"} {wrong # args: should be "set varName ?newValue?"
-    while compiling
-"set"
-    while compiling
-"incr [set]"}}
+    while executing
+"set"}}
 test incr-1.28 {TclCompileIncrCmd: runtime error, readonly variable} {
     proc readonly args {error "variable is read-only"}
     set x 123
@@ -432,10 +428,8 @@ test incr-2.19 {incr command (not compiled): increment given, but erroneous} {
     catch {$z i [set]} msg
     set errorInfo
 } {wrong # args: should be "set varName ?newValue?"
-    while compiling
-"set"
-    while compiling
-"$z i [set]"}
+    while executing
+"set"}
 test incr-2.20 {incr command (not compiled): increment given, in quotes} {
     set z incr
     set i 25
@@ -482,10 +476,8 @@ test incr-2.27 {incr command (not compiled): runtime error, bad variable name} {
     set z incr
     list [catch {$z [set]} msg] $msg $errorInfo
 } {1 {wrong # args: should be "set varName ?newValue?"} {wrong # args: should be "set varName ?newValue?"
-    while compiling
-"set"
-    while compiling
-"$z [set]"}}
+    while executing
+"set"}}
 test incr-2.28 {incr command (not compiled): runtime error, readonly variable} {
     set z incr
     proc readonly args {error "variable is read-only"}

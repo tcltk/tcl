@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: compExpr.test,v 1.6 2001/12/06 10:59:17 dkf Exp $
+# RCS: @(#) $Id: compExpr.test,v 1.6.6.1 2003/05/22 19:12:08 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -89,7 +89,7 @@ test compExpr-2.13 {CompileSubExpr procedure, error in TCL_TOKEN_SUB_EXPR parse 
     catch {unset a}
     set a 15
     list [catch {expr {27 || "$a[expr 1+]00"}} msg] $msg
-} {1 {syntax error in expression "1+": premature end of expression}}
+} {0 1}
 test compExpr-2.14 {CompileSubExpr procedure, TCL_TOKEN_OPERATOR token, op found} {
     expr {5*6}
 } 30
@@ -182,7 +182,7 @@ test compExpr-2.42 {CompileSubExpr procedure, error in TCL_TOKEN_SUB_EXPR parse 
     catch {unset a}
     set a 15
     list [catch {expr {27 || "$a[expr 1+]00"}} msg] $msg
-} {1 {syntax error in expression "1+": premature end of expression}}
+} {0 1}
 test compExpr-2.43 {CompileSubExpr procedure, TCL_TOKEN_OPERATOR token, special operator} {
     catch {unset a}
     set a false
@@ -197,7 +197,7 @@ test compExpr-2.45 {CompileSubExpr procedure, error in TCL_TOKEN_SUB_EXPR parse 
     catch {unset a}
     set a 15
     list [catch {expr {1? 54 : "$a[expr 1+]00"}} msg] $msg
-} {1 {syntax error in expression "1+": premature end of expression}}
+} {0 54}
 
 test compExpr-3.1 {CompileLandOrLorExpr procedure, numeric 1st operand} {
     catch {unset a}
@@ -286,7 +286,7 @@ test compExpr-4.8 {CompileCondExpr procedure, convert "false" clause to numeric}
 } 83
 test compExpr-4.9 {CompileCondExpr procedure, error in "false" clause} {
     list [catch {expr {1? 15 : [expr *2]}} msg] $msg
-} {1 {syntax error in expression "*2": unexpected operator *}}
+} {0 15}
 
 test compExpr-5.1 {CompileMathFuncCall procedure, math function found} {
     format %.6g [expr atan2(1.0, 2.0)]

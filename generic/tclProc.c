@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.46 2003/05/08 00:44:29 dgp Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.46.2.1 2003/05/22 19:12:07 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1077,7 +1077,7 @@ TclObjInterpProc(clientData, interp, objc, objv)
 #endif /*TCL_COMPILE_DEBUG*/
 
     procPtr->refCount++;
-    result = TclCompEvalObj(interp, procPtr->bodyPtr);
+    result = TclCompEvalObj(interp, procPtr->bodyPtr,0);
     procPtr->refCount--;
     if (procPtr->refCount <= 0) {
 	TclProcCleanupProc(procPtr);

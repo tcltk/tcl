@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: if.test,v 1.7 2001/12/04 15:36:29 dkf Exp $
+# RCS: @(#) $Id: if.test,v 1.7.6.1 2003/05/22 19:12:08 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -29,8 +29,7 @@ test if-1.2 {TclCompileIfCmd: error in if/elseif test} {
 test if-1.3 {TclCompileIfCmd: error in if/elseif test} {
     list [catch {if {1+}} msg] $msg $errorInfo
 } {1 {syntax error in expression "1+": premature end of expression} {syntax error in expression "1+": premature end of expression
-    ("if" test expression)
-    while compiling
+    while executing
 "if {1+}"}}
 test if-1.4 {TclCompileIfCmd: if/elseif test in braces} {
     set a {}
@@ -67,11 +66,8 @@ test if-1.10 {TclCompileIfCmd: error in "then" body} {
     set a {}
     list [catch {if {$a!="xxx"} then {set}} msg] $msg $errorInfo
 } {1 {wrong # args: should be "set varName ?newValue?"} {wrong # args: should be "set varName ?newValue?"
-    while compiling
-"set"
-    ("if" then script line 1)
-    while compiling
-"if {$a!="xxx"} then {set}"}}
+    while executing
+"set"}}
 test if-1.11 {TclCompileIfCmd: error in "then" body} {
     list [catch {if 2 then {[error "error in then clause"]}} msg] $msg
 } {1 {error in then clause}}
@@ -181,8 +177,7 @@ test if-2.4 {TclCompileIfCmd: error in expression after "elseif"} {
     set a {}
     list [catch {if 3>4 {set a 1} elseif {1>}} msg] $msg $errorInfo
 } {1 {syntax error in expression "1>": premature end of expression} {syntax error in expression "1>": premature end of expression
-    ("if" test expression)
-    while compiling
+    while executing
 "if 3>4 {set a 1} elseif {1>}"}}
 test if-2.5 {TclCompileIfCmd: test jumpFalse instruction replacement after long "elseif" body} {
     catch {unset i}
@@ -309,11 +304,8 @@ test if-3.4 {TclCompileIfCmd: error compiling body after "else"} {
     catch {if 2<1 {set a 1} else {set}} msg 
     set errorInfo
 } {wrong # args: should be "set varName ?newValue?"
-    while compiling
-"set"
-    ("if" else script line 1)
-    while compiling
-"if 2<1 {set a 1} else {set}"}
+    while executing
+"set"}
 test if-3.5 {TclCompileIfCmd: extra arguments after "else" argument} {
     set a {}
     catch {if 2<1 {set a 1} else {set a 2} or something} msg 
@@ -557,7 +549,7 @@ test if-5.10 {if cmd with computed command names: error in "then" body} {
     set a {}
     list [catch {$z {$a!="xxx"} then {set}} msg] $msg $errorInfo
 } {1 {wrong # args: should be "set varName ?newValue?"} {wrong # args: should be "set varName ?newValue?"
-    while compiling
+    while executing
 "set"
     invoked from within
 "$z {$a!="xxx"} then {set}"}}
@@ -813,7 +805,7 @@ test if-7.4 {if cmd with computed command names: error compiling body after "els
     catch {$z 2<1 {set a 1} else {set}} msg 
     set errorInfo
 } {wrong # args: should be "set varName ?newValue?"
-    while compiling
+    while executing
 "set"
     invoked from within
 "$z 2<1 {set a 1} else {set}"}

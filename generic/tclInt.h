@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.127 2003/05/05 20:54:40 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.127.2.1 2003/05/22 19:12:06 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -1539,6 +1539,46 @@ typedef Tcl_ObjCmdProc *TclObjCmdProcType;
 
 /*
  *----------------------------------------------------------------
+ * Internal definitions related to parsing, substitution, evaluation
+ *----------------------------------------------------------------
+ */
+
+/*
+ * New internal Tcl_Token types.
+ *
+ * TCL_TOKEN_SCRIPT -           Leading Tcl_Token type for an entire script.
+ *                              The numComponents field stores the number of
+ *                              commands in the script.
+ * TCL_TOKEN_SCRIPT_SUBST -     So-called "command substituion" in Tcl is
+ *                              really "script substitution" and this internal
+ *                              Tcl_Token type indicates it.  Unlike
+ *                              the TCL_TOKEN_COMMAND type, which also denotes
+ *                              "command substitution", the numComponents field
+ *                              is *not* always 0, so we can store the results
+ *                              of nested parsing, and avoid reparsing the
+ *                              same string again and again.  The numComponents
+ *                              field stores the number of following Tcl_Tokens
+ *                              that are parsed from the nested script.  The
+ *                              numComponents value is always at least 1, for
+ *                              the TCL_TOKEN_SCRIPT token that follows.
+ * TCL_TOKEN_CMD -              Leading Tcl_Token type for a parsed Tcl command. *                              There will be one of these tokens for each
+ *                              command in a script.  The numComponents field
+ *                              stores the number of words in the command.
+ * TCL_TOKEN_ERROR -            This Tcl_Token type is used to represent a
+ *                              parse error.  It may appear following all
+ *                              the commands that follow a TCL_TOKEN_SCRIPT
+ *                              token.  The TCL_TOKEN_ERROR token represents
+ *                              the remainder of the original string that
+ *                              could not be parsed into commands.
+ */
+
+#define TCL_TOKEN_SCRIPT        256
+#define TCL_TOKEN_SCRIPT_SUBST  512
+#define TCL_TOKEN_CMD           1024
+#define TCL_TOKEN_ERROR         2048
+
+/*
+ *----------------------------------------------------------------
  * Variables shared among Tcl modules but not used by the outside world.
  *----------------------------------------------------------------
  */
@@ -1571,6 +1611,7 @@ extern Tcl_ObjType	tclArraySearchType;
 extern Tcl_ObjType	tclIndexType;
 extern Tcl_ObjType	tclNsNameType;
 extern Tcl_ObjType	tclWideIntType;
+extern Tcl_ObjType	tclTokensType;
 
 /*
  * Variables denoting the hash key types defined in the core.
@@ -1604,6 +1645,46 @@ extern long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS];
 extern char *		tclEmptyStringRep;
 extern char		tclEmptyString;
 
+/* The set of parsing error messages, defined in tclParse.c */
+
+extern CONST char *tclParseErrorMsg[];
+
+/*
+ * Flags used to control details of parsing.
+ * The first three are #define'd in tcl.h, so that may be set by callers
+ * of Tcl_SubstObj().  See the docs for what they do.
+ *
+ * #define TCL_SUBST_COMMANDS           001
+ * #define TCL_SUBST_VARIABLES          002
+ * #define TCL_SUBST_BACKSLASHES        004
+ *
+ * tcl.h also #define's their combination for brevity:
+ *
+ * #define TCL_SUBST_ALL                007
+ *
+ * The other flag values that control parsing are:
+ *
+ * PARSE_NESTED -               Passed to ParseCommand to indicate that the
+ *                              close bracket character should be treated as
+ *                              a command terminator, as well as newlines,
+ *                              semi-colons, and end of string.
+ *
+ * PARSE_APPEND -               Passed throughout the Parse routines to 
+ *                              indicate that parsing should append to the
+ *                              Tcl_Parse structure passed in (by reference).
+ *                              If this flag is not set, some routines will
+ *                              re-initialize the Tcl_Parse structure.
+ *
+ * PARSE_USE_INTERNAL_TOKENS -  Passed throughout the Parse routines to
+ *                              indicate the parse is being done for Tcl's
+ *                              internal use, so it is acceptable to use
+ *                              Tcl_Token types that are known only internally.
+ */
+
+#define PARSE_NESTED                    010
+#define PARSE_APPEND                    020
+#define PARSE_USE_INTERNAL_TOKENS       040
+
 /*
  *----------------------------------------------------------------
  * Procedures shared among Tcl modules but not used by the outside
@@ -1615,8 +1696,8 @@ EXTERN int		TclArraySet _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *arrayNameObj, Tcl_Obj *arrayElemObj));
 EXTERN int		TclCheckBadOctal _ANSI_ARGS_((Tcl_Interp *interp,
 			    CONST char *value));
-EXTERN void		TclExpandTokenArray _ANSI_ARGS_((
-			    Tcl_Parse *parsePtr));
+EXTERN int		TclEvalScriptTokens _ANSI_ARGS_((Tcl_Interp *interp,
+			    Tcl_Token *tokenPtr, int length, int flags));
 EXTERN int		TclFileAttrsCmd _ANSI_ARGS_((Tcl_Interp *interp,
 			    int objc, Tcl_Obj *CONST objv[]));
 EXTERN int		TclFileCopyCmd _ANSI_ARGS_((Tcl_Interp *interp, 
@@ -1643,6 +1724,8 @@ EXTERN void		TclFinalizeAsync _ANSI_ARGS_((void));
 EXTERN void		TclFinalizeSynchronization _ANSI_ARGS_((void));
 EXTERN void		TclFinalizeThreadData _ANSI_ARGS_((void));
 EXTERN void		TclFindEncodings _ANSI_ARGS_((CONST char *argv0));
+EXTERN Tcl_Token *	TclGetTokensFromObj _ANSI_ARGS_((Tcl_Obj *objPtr,
+			    Tcl_Token **lastTokenPtrPtr));
 EXTERN int		TclGlob _ANSI_ARGS_((Tcl_Interp *interp,
 			    char *pattern, Tcl_Obj *unquotedPrefix, 
 			    int globFlags, Tcl_GlobTypeData* types));
@@ -1679,10 +1762,16 @@ EXTERN Tcl_Obj *	TclLsetFlat _ANSI_ARGS_((Tcl_Interp* interp,
 						 ));
 EXTERN int              TclParseBackslash _ANSI_ARGS_((CONST char *src,
                             int numBytes, int *readPtr, char *dst));
+EXTERN int              TclParseExpr _ANSI_ARGS_((Tcl_Interp *interp,
+			    CONST char *string, int numBytes,
+			    int useInternalTokens, Tcl_Parse *parsePtr));
 EXTERN int		TclParseHex _ANSI_ARGS_((CONST char *src, int numBytes,
                             Tcl_UniChar *resultPtr));
 EXTERN int		TclParseInteger _ANSI_ARGS_((CONST char *string,
 			    int numBytes));
+Tcl_Token *		TclParseScript _ANSI_ARGS_((CONST char *script,
+			    int numBytes, int flags,
+			    Tcl_Token **lastTokenPtrPtr, CONST char **termPtr));
 EXTERN int		TclParseWhiteSpace _ANSI_ARGS_((CONST char *src,
 			    int numBytes, Tcl_Parse *parsePtr, char *typePtr));
 EXTERN int		TclpObjAccess _ANSI_ARGS_((Tcl_Obj *filename,
@@ -1781,7 +1870,7 @@ EXTERN VOID             TclSignalExitThread _ANSI_ARGS_((Tcl_ThreadId id,
 			    int result));
 EXTERN int		TclSubstTokens _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr, int count,
-			    int *tokensLeftPtr));
+			    int *tokensLeftPtr, int flags));
 EXTERN void		TclTransferResult _ANSI_ARGS_((Tcl_Interp *sourceInterp,
 			    int result, Tcl_Interp *targetInterp));
 EXTERN Tcl_Obj*         TclpNativeToNormalized 
@@ -2244,6 +2333,52 @@ extern Tcl_Mutex tclObjMutex;
 #    define TclGetLongFromWide(resultVar, objPtr) \
 	(resultVar) = Tcl_WideAsLong((objPtr)->internalRep.wideValue)
 #endif
+
+/*
+ *----------------------------------------------------------------
+ * Macros used by the Tcl core to grow Tcl_Token arrays.  They use
+ * the same growth algorithm as used in tclStringObj.c for growing
+ * strings.  The ANSI C "prototype" for this macro is:
+ *
+ * EXTERN void	TclGrowTokenArray _ANSI_ARGS_((Tcl_Token *tokenPtr,
+ *		    int used, int available, int append,
+ *		    Tcl_Token *staticPtr));
+ * EXTERN void	TclGrowParseTokenArray _ANSI_ARGS_((Tcl_Parse *parsePtr,
+ *		    int append));
+ *----------------------------------------------------------------
+ */
+
+#define TCL_MIN_TOKEN_GROWTH 50
+#define TclGrowTokenArray(tokenPtr, used, available, append, staticPtr)  \
+    {                                                                    \
+	int needed = (used) + (append);                                  \
+        if (needed > (available)) {                                      \
+            int allocated = 2 * needed;                                  \
+            Tcl_Token *oldPtr = (tokenPtr);                              \
+            Tcl_Token *newPtr;                                           \
+            if (oldPtr == (staticPtr)) {                                 \
+                oldPtr = NULL;                                           \
+            }                                                            \
+            newPtr = (Tcl_Token *) attemptckrealloc( (char *) oldPtr,    \
+	            (unsigned int) (allocated * sizeof(Tcl_Token)) );    \
+            if (newPtr == NULL) {                                        \
+                allocated = needed + (append) + TCL_MIN_TOKEN_GROWTH;    \
+                newPtr = (Tcl_Token *) ckrealloc( (char *) oldPtr,       \
+                        (unsigned int) (allocated * sizeof(Tcl_Token)) );\
+            }                                                            \
+            (available) = allocated;                                     \
+            if (oldPtr == NULL) {					 \
+                memcpy((VOID *) newPtr, (VOID *) staticPtr,              \
+                    (size_t) ((used) * sizeof(Tcl_Token)));              \
+            }                                                            \
+            (tokenPtr) = newPtr;                                         \
+        }                                                                \
+    }
+
+#define TclGrowParseTokenArray(parsePtr, append)			\
+    TclGrowTokenArray((parsePtr)->tokenPtr, (parsePtr)->numTokens,	\
+	    (parsePtr)->tokensAvailable, (append),			\
+	    (parsePtr)->staticTokens)
 
 /*
  *----------------------------------------------------------------

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.49 2003/05/09 13:53:42 msofer Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.49.2.1 2003/05/22 19:12:03 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -293,9 +293,6 @@ static void		FreeByteCodeInternalRep _ANSI_ARGS_((
     			    Tcl_Obj *objPtr));
 static int		GetCmdLocEncodingSize _ANSI_ARGS_((
 			    CompileEnv *envPtr));
-static void		LogCompilationInfo _ANSI_ARGS_((Tcl_Interp *interp,
-        		    CONST char *script, CONST char *command,
-			    int length));
 #ifdef TCL_COMPILE_STATS
 static void		RecordByteCodeStats _ANSI_ARGS_((
 			    ByteCode *codePtr));
@@ -801,8 +798,32 @@ TclCompileScript(interp, script, numBytes, envPtr)
 				 * first null character. */
     CompileEnv *envPtr;		/* Holds resulting instructions. */
 {
-    Interp *iPtr = (Interp *) interp;
-    Tcl_Parse parse;
+    Tcl_Token *lastTokenPtr;
+    Tcl_Token *tokens = TclParseScript(script, numBytes, /* flags */ 0,
+	    &lastTokenPtr, NULL);
+    int code = TclCompileScriptTokens(interp, tokens, lastTokenPtr, envPtr);
+    if ((code == TCL_OK) && (lastTokenPtr->type == TCL_TOKEN_ERROR)) {
+        code = TclSubstTokens(interp, lastTokenPtr, 1, NULL, /* flags */ 0);
+	TclLogCompilationInfo(interp, script, lastTokenPtr->start,
+		lastTokenPtr->size);
+    }
+    ckfree((char *) tokens);
+    return code;
+}
+
+int
+TclCompileScriptTokens(interp, tokens, lastTokenPtr, envPtr)
+    Tcl_Interp *interp;		/* Used for error and status reporting.
+				 * Also serves as context for finding and
+				 * compiling commands.  May not be NULL. */
+    Tcl_Token *tokens;
+    Tcl_Token *lastTokenPtr;
+    CompileEnv *envPtr;		/* Holds resulting instructions. */
+{
+    Tcl_Token *tokenPtr;
+    Tcl_Token *commandTokenPtr;
+    int numCommands = tokens[0].numComponents;
+    int isFirstCmd = 1;
     int lastTopLevelCmdIndex = -1;
     				/* Index of most recent toplevel command in
  				 * the command location table. Initialized
@@ -810,217 +831,166 @@ TclCompileScript(interp, script, numBytes, envPtr)
     int startCodeOffset = -1;	/* Offset of first byte of current command's
                                  * code. Init. to avoid compiler warning. */
     unsigned char *entryCodeNext = envPtr->codeNext;
-    CONST char *p, *next;
-    Namespace *cmdNsPtr;
-    Command *cmdPtr;
-    Tcl_Token *tokenPtr;
-    int bytesLeft, isFirstCmd, gotParse, wordIdx, currCmdIndex;
-    int commandLength, objIndex, code;
-    Tcl_DString ds;
 
-    Tcl_DStringInit(&ds);
-
-    if (numBytes < 0) {
-	numBytes = strlen(script);
+    if (lastTokenPtr < tokens) {
+	Tcl_Panic("TclCompileScriptTokens: parse produced no tokens");
     }
-    Tcl_ResetResult(interp);
-    isFirstCmd = 1;
+    if (tokens[0].type != TCL_TOKEN_SCRIPT) {
+        Tcl_Panic("TclCompileScriptTokens: invalid token array, expected script");
+    }	 
+    commandTokenPtr = tokens;
+    tokenPtr = &(tokens[1]);
+    
+    while (numCommands--) {
+	int numWords = tokenPtr->numComponents;
+	int commandLength = tokenPtr->size;
+	CONST char * commandStart = tokenPtr->start;
+	int cmdIndex = envPtr->numCommands;
+	int wordIndex = 0;
 
-    /*
-     * Each iteration through the following loop compiles the next
-     * command from the script.
-     */
-
-    p = script;
-    bytesLeft = numBytes;
-    gotParse = 0;
-    do {
-	if (Tcl_ParseCommand(interp, p, bytesLeft, 0, &parse) != TCL_OK) {
-	    code = TCL_ERROR;
-	    goto error;
+	if (tokenPtr > lastTokenPtr) {
+	    Tcl_Panic("TclCompileScriptTokens: overran token array");
 	}
-	gotParse = 1;
-	if (parse.numWords > 0) {
-	    /*
-	     * If not the first command, pop the previous command's result
-	     * and, if we're compiling a top level command, update the last
-	     * command's code size to account for the pop instruction.
-	     */
+        if (tokenPtr->type != TCL_TOKEN_CMD) {
+            Tcl_Panic("TclCompileScriptTokens: invalid token array, expected cmd: %d: %.*s", tokenPtr->type, tokenPtr->size, tokenPtr->start);
+        }
+	commandTokenPtr = tokenPtr;
+	tokenPtr++;
 
-	    if (!isFirstCmd) {
-		TclEmitOpcode(INST_POP, envPtr);
-		envPtr->cmdMapPtr[lastTopLevelCmdIndex].numCodeBytes =
-			(envPtr->codeNext - envPtr->codeStart) - startCodeOffset;
-	    }
+	if (numWords == 0) continue;
+	
+	/*
+	 * If not the first command, pop the previous command's result
+	 * and, if we're compiling a top level command, update the last
+	 * command's code size to account for the pop instruction.
+	 */
 
-	    /*
-	     * Determine the actual length of the command.
-	     */
-
-	    commandLength = parse.commandSize;
-	    if (parse.term == parse.commandStart + commandLength - 1) {
-		/*
-		 * The command terminator character (such as ; or ]) is
-		 * the last character in the parsed command.  Reduce the
-		 * length by one so that the trace message doesn't include
-		 * the terminator character.
-		 */
-		
-		commandLength -= 1;
-	    }
+	if (!isFirstCmd) {
+	    TclEmitOpcode(INST_POP, envPtr);
+	    envPtr->cmdMapPtr[lastTopLevelCmdIndex].numCodeBytes =
+		    (envPtr->codeNext - envPtr->codeStart) - startCodeOffset;
+	}
+	lastTopLevelCmdIndex = cmdIndex;
 
 #ifdef TCL_COMPILE_DEBUG
-	    /*
-             * If tracing, print a line for each top level command compiled.
-             */
+	/*
+         * If tracing, print a line for each top level command compiled.
+         */
 
-	    if ((tclTraceCompile >= 1) && (envPtr->procPtr == NULL)) {
-		fprintf(stdout, "  Compiling: ");
-		TclPrintSource(stdout, parse.commandStart,
-			TclMin(commandLength, 55));
-		fprintf(stdout, "\n");
-	    }
+	if ((tclTraceCompile >= 1) && (envPtr->procPtr == NULL)) {
+	    fprintf(stdout, "  Compiling: ");
+	    TclPrintSource(stdout, commandStart, TclMin(commandLength, 55));
+	    fprintf(stdout, "\n");
+	}
 #endif
-	    /*
-	     * Each iteration of the following loop compiles one word
-	     * from the command.
-	     */
-	    
-	    envPtr->numCommands++;
-	    currCmdIndex = (envPtr->numCommands - 1);
-	    lastTopLevelCmdIndex = currCmdIndex;
-	    startCodeOffset = (envPtr->codeNext - envPtr->codeStart);
-	    EnterCmdStartData(envPtr, currCmdIndex,
-	            (parse.commandStart - envPtr->source), startCodeOffset);
-	    
-	    for (wordIdx = 0, tokenPtr = parse.tokenPtr;
-		    wordIdx < parse.numWords;
-		    wordIdx++, tokenPtr += (tokenPtr->numComponents + 1)) {
-		if (tokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
-		    /*
-		     * If this is the first word and the command has a
-		     * compile procedure, let it compile the command.
-		     */
 
-		    if (wordIdx == 0) {
-			if (envPtr->procPtr != NULL) {
-			    cmdNsPtr = envPtr->procPtr->cmdPtr->nsPtr;
-			} else {
-			    cmdNsPtr = NULL; /* use current NS */
-			}
+	envPtr->numCommands++;
+	startCodeOffset = (envPtr->codeNext - envPtr->codeStart);
+	EnterCmdStartData(envPtr, cmdIndex, (commandStart - envPtr->source),
+		startCodeOffset);
 
-			/*
-			 * We copy the string before trying to find the command
-			 * by name.  We used to modify the string in place, but
-			 * this is not safe because the name resolution
-			 * handlers could have side effects that rely on the
-			 * unmodified string.
-			 */
-
-			Tcl_DStringSetLength(&ds, 0);
-			Tcl_DStringAppend(&ds, tokenPtr[1].start,
-				tokenPtr[1].size);
-
-			cmdPtr = (Command *) Tcl_FindCommand(interp,
-				Tcl_DStringValue(&ds),
-			        (Tcl_Namespace *) cmdNsPtr, /*flags*/ 0);
-
-			if ((cmdPtr != NULL)
-			        && (cmdPtr->compileProc != NULL)
-			        && !(cmdPtr->flags & CMD_HAS_EXEC_TRACES)
-			        && !(iPtr->flags & DONT_COMPILE_CMDS_INLINE)) {
-			    int savedNumCmds = envPtr->numCommands;
-			    unsigned char *savedCodeNext = envPtr->codeNext;
-
-			    code = (*(cmdPtr->compileProc))(interp, &parse,
-			            envPtr);
-			    if (code == TCL_OK) {
-				goto finishCommand;
-			    } else if (code == TCL_OUT_LINE_COMPILE) {
-				/*
-				 * Restore numCommands and codeNext to their correct 
-				 * values, removing any commands compiled before 
-				 * TCL_OUT_LINE_COMPILE [Bugs 705406 and 735055]
-				 */
-				envPtr->numCommands = savedNumCmds;
-				envPtr->codeNext = savedCodeNext;
-			    } else { /* an error */
-				/*
-				 * There was a compilation error, the last
-				 * command did not get compiled into (*envPtr).
-				 * Decrement the number of commands
-				 * claimed to be in (*envPtr).
-				 */
-				envPtr->numCommands--;
-				goto log;
-			    }
-			}
-
-			/*
-			 * No compile procedure so push the word. If the
-			 * command was found, push a CmdName object to
-			 * reduce runtime lookups.
-			 */
-
-			objIndex = TclRegisterNewLiteral(envPtr,
-				tokenPtr[1].start, tokenPtr[1].size);
-			if (cmdPtr != NULL) {
-			    TclSetCmdNameObj(interp,
-			           envPtr->literalArrayPtr[objIndex].objPtr,
-				   cmdPtr);
-			}
-		    } else {
-			objIndex = TclRegisterNewLiteral(envPtr,
-				tokenPtr[1].start, tokenPtr[1].size);
-		    }
-		    TclEmitPush(objIndex, envPtr);
-		} else {
-		    /*
-		     * The word is not a simple string of characters.
-		     */
-		    
-		    code = TclCompileTokens(interp, tokenPtr+1,
-			    tokenPtr->numComponents, envPtr);
-		    if (code != TCL_OK) {
-			goto log;
-		    }
-		}
-	    }
-
-	    /*
-	     * Emit an invoke instruction for the command. We skip this
-	     * if a compile procedure was found for the command.
-	     */
-	    
-	    if (wordIdx > 0) {
-		if (wordIdx <= 255) {
-		    TclEmitInstInt1(INST_INVOKE_STK1, wordIdx, envPtr);
-		} else {
-		    TclEmitInstInt4(INST_INVOKE_STK4, wordIdx, envPtr);
-		}
-	    }
-
-	    /*
-	     * Update the compilation environment structure and record the
-	     * offsets of the source and code for the command.
-	     */
-
-	    finishCommand:
-	    EnterCmdExtentData(envPtr, currCmdIndex, commandLength,
-		    (envPtr->codeNext-envPtr->codeStart) - startCodeOffset);
-	    isFirstCmd = 0;
-	} /* end if parse.numWords > 0 */
+	if (lastTokenPtr < tokenPtr + tokenPtr->numComponents) {
+	    Tcl_Panic("TclCompileScript: overran token array");
+	}
 
 	/*
-	 * Advance to the next command in the script.
+	 * If we have a simple word, attempt to call compile procedure
+	 * for that command.
 	 */
-	
-	next = parse.commandStart + parse.commandSize;
-	bytesLeft -= (next - p);
-	p = next;
-	Tcl_FreeParse(&parse);
-	gotParse = 0;
-    } while (bytesLeft > 0);
+
+	if (tokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
+	    Interp *iPtr = (Interp *) interp;
+	    int objIndex = TclRegisterNewLiteral(envPtr, tokenPtr[1].start,
+		    tokenPtr[1].size);
+	    Tcl_Obj *cmdName = envPtr->literalArrayPtr[objIndex].objPtr;
+	    Command *cmdPtr = 
+		    (Command *) Tcl_GetCommandFromObj(interp, cmdName);
+	    int savedNumCmds = envPtr->numCommands;
+	    unsigned char *savedCodeNext = envPtr->codeNext;
+	    int code = TCL_OUT_LINE_COMPILE;
+
+	    if ((cmdPtr != NULL) && (cmdPtr->compileProc != NULL)
+		    && !(cmdPtr->flags & CMD_HAS_EXEC_TRACES)
+		    && !(iPtr->flags & DONT_COMPILE_CMDS_INLINE)) {
+		Tcl_Parse parse;
+		parse.numWords = numWords;
+		parse.tokenPtr = tokenPtr;
+		code = (*(cmdPtr->compileProc))(interp, &parse, envPtr);
+	    }
+
+	    if (code == TCL_OK) {
+		/*
+		 * The compileProc took care of compiling the command,
+		 * so skip past the tokens for its arguments
+		 */
+		while (wordIndex < numWords) {
+		    wordIndex++;
+		    tokenPtr += (tokenPtr->numComponents + 1);
+		}
+		/* 
+		 * Set numWords to zero as a signal not to emit
+		 * an "INVOKE STACK" opcode later.
+		 */
+		numWords = 0;
+	    } else {
+		/*
+		 * Restore numCommands and codeNext to their correct
+		 * values, removing any commands compiled by the
+		 * compileProc call.  [Bugs 705406 and 735055]
+		 * Compile procedure not found or not successful,
+		 * so push the simple cmdName word.
+		 */
+		envPtr->numCommands = savedNumCmds;
+		envPtr->codeNext = savedCodeNext;
+		TclEmitPush(objIndex, envPtr);
+		wordIndex++;
+		tokenPtr += (tokenPtr->numComponents + 1);
+	    }
+	}
+
+	for (; wordIndex < numWords;
+		wordIndex++, tokenPtr += (tokenPtr->numComponents + 1)) {
+
+	    if (tokenPtr > lastTokenPtr) {
+		Tcl_Panic("TclCompileScript: overran token array");
+	    }
+            if (!(tokenPtr->type & (TCL_TOKEN_WORD | TCL_TOKEN_SIMPLE_WORD))) {
+        	Tcl_Panic("TclCompileScript: invalid token array, expected word: %d: %.*s", tokenPtr->type, tokenPtr->size, tokenPtr->start);
+            }
+	    if (lastTokenPtr < tokenPtr + tokenPtr->numComponents) {
+		Tcl_Panic("TclCompileScript: overran token array");
+	    }
+
+	    if (TCL_OK != TclCompileTokens(interp, tokenPtr+1,
+		    tokenPtr->numComponents, envPtr)) {
+		envPtr->numCommands--;
+		TclLogCompilationInfo(interp, tokens[0].start,
+			commandTokenPtr->start, commandTokenPtr->size);
+		return TCL_ERROR;
+	    }
+	}
+
+	/*
+	 * Emit an invoke instruction for the command. We skip this
+	 * if a compile procedure was found for the command.
+	 */
+	    
+	if (numWords > 0) {
+	    if (numWords <= 255) {
+		TclEmitInstInt1(INST_INVOKE_STK1, numWords, envPtr);
+	    } else {
+		TclEmitInstInt4(INST_INVOKE_STK4, numWords, envPtr);
+	    }
+	}
+
+	/*
+	 * Update the compilation environment structure and record the
+	 * offsets of the source and code for the command.
+	 */
+	EnterCmdExtentData(envPtr, cmdIndex, commandLength,
+		(envPtr->codeNext-envPtr->codeStart) - startCodeOffset);
+	isFirstCmd = 0;
+    }
 
     /*
      * If the source script yielded no instructions (e.g., if it was empty),
@@ -1028,42 +998,9 @@ TclCompileScript(interp, script, numBytes, envPtr)
      */
     
     if (envPtr->codeNext == entryCodeNext) {
-	TclEmitPush(TclRegisterLiteral(envPtr, "", 0, /*onHeap*/ 0),
-	        envPtr);
+	TclEmitPush(TclRegisterLiteral(envPtr, "", 0, /*onHeap*/ 0), envPtr);
     }
-    
-    envPtr->numSrcBytes = (p - script);
-    Tcl_DStringFree(&ds);
     return TCL_OK;
-	
-    error:
-    /*
-     * Generate various pieces of error information, such as the line
-     * number where the error occurred and information to add to the
-     * errorInfo variable. Then free resources that had been allocated
-     * to the command.
-     */
-
-    commandLength = parse.commandSize;
-    if (parse.term == parse.commandStart + commandLength - 1) {
-	/*
-	 * The terminator character (such as ; or ]) of the command where
-	 * the error occurred is the last character in the parsed command.
-	 * Reduce the length by one so that the error message doesn't
-	 * include the terminator character.
-	 */
-
-	commandLength -= 1;
-    }
-
-    log:
-    LogCompilationInfo(interp, script, parse.commandStart, commandLength);
-    if (gotParse) {
-	Tcl_FreeParse(&parse);
-    }
-    envPtr->numSrcBytes = (p - script);
-    Tcl_DStringFree(&ds);
-    return code;
 }
 
 /*
@@ -1241,8 +1178,39 @@ TclCompileTokens(interp, tokenPtr, count, envPtr)
 		tokenPtr += tokenPtr->numComponents;
 		break;
 
+	    case TCL_TOKEN_SCRIPT_SUBST:
+		/*
+		 * Push any accumulated chars appearing before the command.
+		 */
+		
+		if (Tcl_DStringLength(&textBuffer) > 0) {
+		    int literal;
+		    
+		    literal = TclRegisterLiteral(envPtr,
+			    Tcl_DStringValue(&textBuffer),
+			    Tcl_DStringLength(&textBuffer), /*onHeap*/ 0);
+		    TclEmitPush(literal, envPtr);
+		    numObjsToConcat++;
+		    Tcl_DStringFree(&textBuffer);
+		}
+
+		if (count <= tokenPtr->numComponents) {
+		    Tcl_Panic("token components overflow token array");
+	        }
+		
+		code = TclCompileScriptTokens(interp, tokenPtr+1,
+			tokenPtr + (tokenPtr->numComponents), envPtr);
+		if (code != TCL_OK) {
+		    goto error;
+		}
+		numObjsToConcat++;
+		count -= tokenPtr->numComponents;
+		tokenPtr += tokenPtr->numComponents;
+		break;
+
 	    default:
-		panic("Unexpected token type in TclCompileTokens");
+		panic("Unexpected token type in TclCompileTokens: %d; %.*s",
+				tokenPtr->type, tokenPtr->size, tokenPtr->start);
 	}
     }
 
@@ -1581,7 +1549,7 @@ TclInitByteCodeObj(objPtr, envPtr)
 /*
  *----------------------------------------------------------------------
  *
- * LogCompilationInfo --
+ * TclLogCompilationInfo --
  *
  *	This procedure is invoked after an error occurs during compilation.
  *	It adds information to the "errorInfo" variable to describe the
@@ -1600,8 +1568,8 @@ TclInitByteCodeObj(objPtr, envPtr)
  *----------------------------------------------------------------------
  */
 
-static void
-LogCompilationInfo(interp, script, command, length)
+void
+TclLogCompilationInfo(interp, script, command, length)
     Tcl_Interp *interp;		/* Interpreter in which to log the
 				 * information. */
     CONST char *script;		/* First character in script containing

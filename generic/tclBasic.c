@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82 2003/05/12 20:15:28 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.1 2003/05/22 19:12:03 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2954,10 +2954,7 @@ TclInterpReady(interp)
  * TclEvalObjvInternal --
  *
  *	This procedure evaluates a Tcl command that has already been
- *	parsed into words, with one Tcl_Obj holding each word. The caller
- *      is responsible for checking that the interpreter is ready to
- *      evaluate (by calling TclInterpReady), and also to manage the
- *      iPtr->numLevels.
+ *	parsed into words, with one Tcl_Obj holding each word. 
  *
  * Results:
  *	The return value is a standard Tcl completion code such as
@@ -2971,6 +2968,78 @@ TclInterpReady(interp)
  *----------------------------------------------------------------------
  */
 
+static int
+TEOVI(interp, objc, objv, command, length, flags)
+    Tcl_Interp *interp;		/* Interpreter in which to evaluate the
+				 * command.  Also used for error
+				 * reporting. */
+    int objc;			/* Number of words in command. */
+    Tcl_Obj *CONST objv[];	/* An array of pointers to objects that are
+				 * the words that make up the command. */
+    CONST char *command;	/* Points to the beginning of the string
+				 * representation of the command; this
+				 * is used for traces.  If the string
+				 * representation of the command is
+				 * unknown, an empty string should be
+				 * supplied. If it is NULL, no traces will
+				 * be called. */
+    int length;			/* Number of bytes in command; if -1, all
+				 * characters up to the first null byte are
+				 * used. */
+    int flags;			/* Collection of OR-ed bits that control
+				 * the evaluation of the script.  Only
+				 * TCL_EVAL_GLOBAL and TCL_EVAL_INVOKE are
+				 * currently supported. */
+{
+    Interp *iPtr = (Interp *) interp;
+    int code = TCL_OK;
+
+    if (TclInterpReady(interp) == TCL_ERROR) {
+	return TCL_ERROR;
+    }
+    if (objc == 0) {
+	return code;
+    }
+
+    iPtr->numLevels++;
+    code = TclEvalObjvInternal(interp, objc, objv, command, length, flags);
+    iPtr->numLevels--;
+    return code;
+}
+
+static int
+TEOVICount(interp, objc, objv, command, length, flags)
+    Tcl_Interp *interp;		/* Interpreter in which to evaluate the
+				 * command.  Also used for error
+				 * reporting. */
+    int objc;			/* Number of words in command. */
+    Tcl_Obj *CONST objv[];	/* An array of pointers to objects that are
+				 * the words that make up the command. */
+    CONST char *command;	/* Points to the beginning of the string
+				 * representation of the command; this
+				 * is used for traces.  If the string
+				 * representation of the command is
+				 * unknown, an empty string should be
+				 * supplied. If it is NULL, no traces will
+				 * be called. */
+    int length;			/* Number of bytes in command; if -1, all
+				 * characters up to the first null byte are
+				 * used. */
+    int flags;			/* Collection of OR-ed bits that control
+				 * the evaluation of the script.  Only
+				 * TCL_EVAL_GLOBAL and TCL_EVAL_INVOKE are
+				 * currently supported. */
+{
+    int i, code = TCL_OK;
+    for (i=0; i<objc; i++) {
+	Tcl_IncrRefCount(objv[i]);
+    }
+    code = TEOVI(interp, objc, objv, command, length, flags);
+    for (i=0; i<objc; i++) {
+	Tcl_DecrRefCount(objv[i]);
+    }
+    return code;
+}
 int
 TclEvalObjvInternal(interp, objc, objv, command, length, flags)
     Tcl_Interp *interp;		/* Interpreter in which to evaluate the
@@ -2999,22 +3068,19 @@ TclEvalObjvInternal(interp, objc, objv, command, length, flags)
     Interp *iPtr = (Interp *) interp;
     Tcl_Obj **newObjv;
     int i;
-    CallFrame *savedVarFramePtr;	/* Saves old copy of iPtr->varFramePtr
-					 * in case TCL_EVAL_GLOBAL was set. */
     int code = TCL_OK;
     int traceCode = TCL_OK;
     int checkTraces = 1;
 
-    if (objc == 0) {
-	return TCL_OK;
-    }
 
     /*
      * If any execution traces rename or delete the current command,
      * we may need (at most) two passes here.
      */
     while (1) {
-    
+	CallFrame *savedVarFramePtr = iPtr->varFramePtr;
+					/* Save old copy of iPtr->varFramePtr
+					 * in case TCL_EVAL_GLOBAL was set. */
         /*
          * Find the procedure to execute this command. If there isn't one,
          * then see if there is a command "unknown".  If so, create a new
@@ -3027,7 +3093,6 @@ TclEvalObjvInternal(interp, objc, objv, command, length, flags)
 	 * name resolution in the global namespace.
          */
 
-	savedVarFramePtr = iPtr->varFramePtr;
 	if (flags & (TCL_EVAL_INVOKE | TCL_EVAL_GLOBAL)) {
 	    iPtr->varFramePtr = NULL;
 	}
@@ -3035,10 +3100,19 @@ TclEvalObjvInternal(interp, objc, objv, command, length, flags)
 	iPtr->varFramePtr = savedVarFramePtr;
 
         if (cmdPtr == NULL) {
+	    Tcl_Obj *fqCommand = NULL;
+
 	    newObjv = (Tcl_Obj **) ckalloc((unsigned)
 		((objc + 1) * sizeof (Tcl_Obj *)));
 	    for (i = objc-1; i >= 0; i--) {
 	        newObjv[i+1] = objv[i];
+	    }
+	    if ((flags & TCL_EVAL_INVOKE) && (iPtr->varFramePtr != NULL)) {
+		/* Be sure alias targets are resolved in :: */
+		fqCommand = Tcl_NewStringObj("::",-1);
+		Tcl_IncrRefCount(fqCommand);
+		Tcl_AppendObjToObj(fqCommand,newObjv[1]);
+		newObjv[1] = fqCommand;
 	    }
 	    newObjv[0] = Tcl_NewStringObj("::unknown", -1);
 	    Tcl_IncrRefCount(newObjv[0]);
@@ -3048,14 +3122,13 @@ TclEvalObjvInternal(interp, objc, objv, command, length, flags)
 		    "invalid command name \"", Tcl_GetString(objv[0]), "\"",
 		    (char *) NULL);
 	        code = TCL_ERROR;
-	    } else if (TclInterpReady(interp) == TCL_ERROR) {
-	        code = TCL_ERROR;
 	    } else {
-	        iPtr->numLevels++;
-	        code = TclEvalObjvInternal(interp, objc+1, newObjv, command, length, 0);
-	        iPtr->numLevels--;
+	        code = TEOVI(interp, objc+1, newObjv, command, length, 0);
 	    }
 	    Tcl_DecrRefCount(newObjv[0]);
+	    if (fqCommand != NULL) {
+		Tcl_DecrRefCount(fqCommand);
+	    }
 	    ckfree((char *) newObjv);
 	    goto done;
         }
@@ -3096,7 +3169,7 @@ TclEvalObjvInternal(interp, objc, objv, command, length, flags)
     cmdPtr->refCount++;
     iPtr->cmdCount++;
     if ( code == TCL_OK && traceCode == TCL_OK) {
-	savedVarFramePtr = iPtr->varFramePtr;
+	CallFrame *savedVarFramePtr = iPtr->varFramePtr;
 	if (flags & TCL_EVAL_GLOBAL) {
 	    iPtr->varFramePtr = NULL;
 	}
@@ -3210,13 +3283,7 @@ Tcl_EvalObjv(interp, objc, objv, flags)
 	}
     }
 
-    code = TclInterpReady(interp);
-    if (code == TCL_OK) {
-	iPtr->numLevels++;
-	code = TclEvalObjvInternal(interp, objc, objv, cmdString, cmdLen,
-		flags);
-	iPtr->numLevels--;
-    }
+    code = TEOVICount(interp, objc, objv, cmdString, cmdLen, flags);
 
     /*
      * If we are again at the top level, process any unusual 
@@ -3355,7 +3422,7 @@ Tcl_LogCommandInfo(interp, script, command, length)
  *
  * Side effects:
  *	Depends on the array of tokens being evaled.
-  *
+ *
  *----------------------------------------------------------------------
  */
 
@@ -3369,7 +3436,7 @@ Tcl_EvalTokensStandard(interp, tokenPtr, count)
     int count;			/* Number of tokens to consider at tokenPtr.
 				 * Must be at least 1. */
 {
-    return TclSubstTokens(interp, tokenPtr, count, /* numLeftPtr */ NULL);
+    return TclSubstTokens(interp, tokenPtr, count, /* numLeftPtr */ NULL, 0);
 }
 
 
@@ -3423,7 +3490,108 @@ Tcl_EvalTokens(interp, tokenPtr, count)
 	return NULL;
     }
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclEvalScriptTokens --
+ *
+ * 
+ * Results:
+ *
+ * Side effects:
+ *
+ *----------------------------------------------------------------------
+ */
 
+int
+TclEvalScriptTokens(interp, tokenPtr, length, flags)
+    Tcl_Interp *interp;
+    Tcl_Token *tokenPtr;
+    int length;
+    int flags;
+{
+    int numCommands = tokenPtr->numComponents;
+    Tcl_Token *scriptTokenPtr = tokenPtr;
+    Interp *iPtr = (Interp *) interp;
+    int code = TCL_OK;
+#define NUM_STATIC_OBJS 20
+    int objLength = NUM_STATIC_OBJS;
+    Tcl_Obj *staticObjArray[NUM_STATIC_OBJS];
+    Tcl_Obj **objv = staticObjArray;
+
+    if (length == 0) {
+        Tcl_Panic("EvalScriptTokens: can't eval zero tokens");
+    }
+    if (tokenPtr->type != TCL_TOKEN_SCRIPT) {
+        Tcl_Panic("EvalScriptTokens: invalid token array, expected script");
+    }
+    tokenPtr++; length--;
+
+    if (numCommands == 0) {
+	return TclInterpReady(interp);
+    }
+    while (numCommands-- && (code == TCL_OK)) {
+        int objc;
+        int numWords = tokenPtr->numComponents;
+        Tcl_Token *commandTokenPtr = tokenPtr;
+
+        if (length == 0) {
+            Tcl_Panic("EvalScriptTokens: overran token array");
+        }
+        if (tokenPtr->type != TCL_TOKEN_CMD) {
+            Tcl_Panic("EvalScriptTokens: invalid token array, expected cmd");
+        }
+        tokenPtr++; length--;
+
+        if (numWords == 0) continue;
+	if (numWords > objLength) {
+	    if (objv != staticObjArray) {
+		ckfree((char *) objv);
+	    }
+            objv = (Tcl_Obj **)
+                    ckalloc((unsigned int) (numWords * sizeof(Tcl_Obj *)));
+	    objLength = numWords;
+	}
+
+        for (objc = 0; objc < numWords;
+                objc++, length -= (tokenPtr->numComponents + 1),
+                tokenPtr += (tokenPtr->numComponents + 1)) {
+            if (length == 0) {
+                Tcl_Panic("EvalScriptTokens: overran token array");
+            }
+            if (!(tokenPtr->type & (TCL_TOKEN_WORD | TCL_TOKEN_SIMPLE_WORD))) {
+                Tcl_Panic("EvalScriptTokens: invalid token array, expected word: %d: %.*s", tokenPtr->type, tokenPtr->size, tokenPtr->start);
+            }
+            if (length < tokenPtr->numComponents + 1) {
+                Tcl_Panic("EvalScriptTokens: overran token array");
+            }
+            code = TclSubstTokens(interp, tokenPtr+1, tokenPtr->numComponents,
+                    NULL,flags);
+            if (code == TCL_OK) {
+                objv[objc] = Tcl_GetObjResult(interp);
+		Tcl_IncrRefCount(objv[objc]);
+            } else {
+                goto error;
+            }
+        }
+        code = TEOVI(interp, objc, objv,
+                commandTokenPtr->start, commandTokenPtr->size, flags);
+	while (--objc >= 0) {
+	    Tcl_DecrRefCount(objv[objc]);
+	}
+
+        error:
+        if ((code == TCL_ERROR) && !(iPtr->flags & ERR_ALREADY_LOGGED)) {
+            Tcl_LogCommandInfo(interp, scriptTokenPtr->start,
+                    commandTokenPtr->start, commandTokenPtr->size);
+        }
+    }
+    if (objv != staticObjArray) {
+        ckfree((char *) objv);
+    }
+    return code;
+}
 
 /*
  *----------------------------------------------------------------------
@@ -3460,155 +3628,44 @@ Tcl_EvalEx(interp, script, numBytes, flags)
 				 * supported. */
 {
     Interp *iPtr = (Interp *) interp;
-    CONST char *p, *next;
-    Tcl_Parse parse;
-#define NUM_STATIC_OBJS 20
-    Tcl_Obj *staticObjArray[NUM_STATIC_OBJS], **objv;
-    Tcl_Token *tokenPtr;
-    int i, code, commandLength, bytesLeft;
-    CallFrame *savedVarFramePtr;   /* Saves old copy of iPtr->varFramePtr
-				    * in case TCL_EVAL_GLOBAL was set. */
-    int allowExceptions = (iPtr->evalFlags & TCL_ALLOW_EXCEPTIONS);
-    
-    /*
-     * The variables below keep track of how much state has been
-     * allocated while evaluating the script, so that it can be freed
-     * properly if an error occurs.
-     */
-
-    int gotParse = 0, objectsUsed = 0;
-
-    if (numBytes < 0) {
-	numBytes = strlen(script);
-    }
-    Tcl_ResetResult(interp);
-
-    savedVarFramePtr = iPtr->varFramePtr;
-    if (flags & TCL_EVAL_GLOBAL) {
-	iPtr->varFramePtr = NULL;
-    }
-
-    /*
-     * Each iteration through the following loop parses the next
-     * command from the script and then executes it.
-     */
-
-    objv = staticObjArray;
-    p = script;
-    bytesLeft = numBytes;
+    int allowExceptions = iPtr->evalFlags & TCL_ALLOW_EXCEPTIONS;
+    Tcl_Token *lastTokenPtr;
+    Tcl_Token *tokensPtr;
+    int code = TCL_OK;
     iPtr->evalFlags = 0;
-    do {
-	if (Tcl_ParseCommand(interp, p, bytesLeft, 0, &parse)
-	        != TCL_OK) {
+    tokensPtr = TclParseScript(script, numBytes, /* flags */ 0,
+	&lastTokenPtr, NULL);
+    code = TclEvalScriptTokens(interp, tokensPtr,
+	    1 + (int)(lastTokenPtr - tokensPtr), flags);
+
+    /* Take care of any parse error */
+    if ((code == TCL_OK) && (lastTokenPtr->type == TCL_TOKEN_ERROR)) {
+	code = TclSubstTokens(interp, lastTokenPtr, 1, NULL, flags);
+	Tcl_LogCommandInfo(interp, script,
+		lastTokenPtr->start, lastTokenPtr->size);
+    }
+
+    if (iPtr->numLevels == 0) {
+        if (code == TCL_RETURN) {
+	    code = TclUpdateReturnInfo(iPtr);
+        }
+        if ((code != TCL_OK) && (code != TCL_ERROR)
+		&& !allowExceptions) {
+	    ProcessUnexpectedResult(interp, code );
 	    code = TCL_ERROR;
-	    goto error;
-	}
-	gotParse = 1; 
-	if (parse.numWords > 0) {
-	    /*
-	     * Generate an array of objects for the words of the command.
-	     */
-    
-	    if (parse.numWords <= NUM_STATIC_OBJS) {
-		objv = staticObjArray;
-	    } else {
-		objv = (Tcl_Obj **) ckalloc((unsigned)
-		    (parse.numWords * sizeof (Tcl_Obj *)));
-	    }
-	    for (objectsUsed = 0, tokenPtr = parse.tokenPtr;
-		    objectsUsed < parse.numWords;
-		    objectsUsed++, tokenPtr += (tokenPtr->numComponents + 1)) {
-		code = TclSubstTokens(interp, tokenPtr+1, 
-		            tokenPtr->numComponents, NULL);
-		if (code == TCL_OK) {
-		    objv[objectsUsed] = Tcl_GetObjResult(interp);
-		    Tcl_IncrRefCount(objv[objectsUsed]);
-		} else {
-		    goto error;
-		}
-	    }
-    
-	    /*
-	     * Execute the command and free the objects for its words.
+
+            /*
+	     * If an error was created here, record information about 
+	     * what was being executed when the error occurred.
 	     */
 
-	    if (TclInterpReady(interp) == TCL_ERROR) {
-		code = TCL_ERROR;
-	    } else {
-		iPtr->numLevels++;    
-		code = TclEvalObjvInternal(interp, objectsUsed, objv, 
-		        parse.commandStart, parse.commandSize, 0);
-		iPtr->numLevels--;
+            if (!(iPtr->flags & ERR_ALREADY_LOGGED)) {
+	        Tcl_LogCommandInfo(interp, script, script, numBytes);
+	        iPtr->flags &= ~ERR_ALREADY_LOGGED;
 	    }
-	    if (code != TCL_OK) {
-		if (iPtr->numLevels == 0) {
-		    if (code == TCL_RETURN) {
-			code = TclUpdateReturnInfo(iPtr);
-		    }
-		    if ((code != TCL_OK) && (code != TCL_ERROR) 
-			&& !allowExceptions) {
-			ProcessUnexpectedResult(interp, code);
-			code = TCL_ERROR;
-		    }
-		}
-		goto error;
-	    }
-	    for (i = 0; i < objectsUsed; i++) {
-		Tcl_DecrRefCount(objv[i]);
-	    }
-	    objectsUsed = 0;
-	    if (objv != staticObjArray) {
-		ckfree((char *) objv);
-		objv = staticObjArray;
-	    }
-	}
-
-	/*
-	 * Advance to the next command in the script.
-	 */
-
-	next = parse.commandStart + parse.commandSize;
-	bytesLeft -= next - p;
-	p = next;
-	Tcl_FreeParse(&parse);
-	gotParse = 0;
-    } while (bytesLeft > 0);
-    iPtr->varFramePtr = savedVarFramePtr;
-    return TCL_OK;
-
-    error:
-    /*
-     * Generate various pieces of error information, such as the line
-     * number where the error occurred and information to add to the
-     * errorInfo variable.  Then free resources that had been allocated
-     * to the command.
-     */
-
-    if ((code == TCL_ERROR) && !(iPtr->flags & ERR_ALREADY_LOGGED)) { 
-	commandLength = parse.commandSize;
-	if (parse.term == parse.commandStart + commandLength - 1) {
-	    /*
-	     * The terminator character (such as ; or ]) of the command where
-	     * the error occurred is the last character in the parsed command.
-	     * Reduce the length by one so that the error message doesn't
-	     * include the terminator character.
-	     */
-	    
-	    commandLength -= 1;
-	}
-	Tcl_LogCommandInfo(interp, script, parse.commandStart, commandLength);
+        }
     }
-    
-    for (i = 0; i < objectsUsed; i++) {
-	Tcl_DecrRefCount(objv[i]);
-    }
-    if (gotParse) {
-	Tcl_FreeParse(&parse);
-    }
-    if (objv != staticObjArray) {
-	ckfree((char *) objv);
-    }
-    iPtr->varFramePtr = savedVarFramePtr;
+    ckfree((char *) tokensPtr);
     return code;
 }
 
@@ -3726,53 +3783,61 @@ Tcl_EvalObjEx(interp, objPtr, flags)
 					 * TCL_EVAL_GLOBAL and
 					 * TCL_EVAL_DIRECT. */
 {
-    register Interp *iPtr = (Interp *) interp;
-    char *script;
-    int numSrcBytes;
-    int result;
-    CallFrame *savedVarFramePtr;	/* Saves old copy of iPtr->varFramePtr
-					 * in case TCL_EVAL_GLOBAL was set. */
-    int allowExceptions = (iPtr->evalFlags & TCL_ALLOW_EXCEPTIONS);
+    Interp *iPtr = (Interp *) interp;
 
-    Tcl_IncrRefCount(objPtr);
+    /*
+     * Check for the special case where objPtr holds a "pure list"
+     * (no string representation), and the caller has requested
+     * direct evaluation.  In that case, it's wasteful to create a
+     * string, parse it into token, and eval the tokens, because
+     * those tokens will just give us back the elements of the list
+     * we already have.  Instead, we can just call Tcl_EvalObjv
+     * directly to evaluate the single command.
+     */
 
-    if ((iPtr->flags & USE_EVAL_DIRECT) || (flags & TCL_EVAL_DIRECT)) {
-	/*
-	 * We're not supposed to use the compiler or byte-code interpreter.
-	 * Let Tcl_EvalEx evaluate the command directly (and probably
-	 * more slowly).
-	 *
-	 * Pure List Optimization (no string representation).  In this
-	 * case, we can safely use Tcl_EvalObjv instead and get an
-	 * appreciable improvement in execution speed.  This is because it
-	 * allows us to avoid a setFromAny step that would just pack
-	 * everything into a string and back out again.
-	 *
-	 * USE_EVAL_DIRECT is a special flag used for testing purpose only
-	 * (ensure we go into the TCL_EVAL_DIRECT path, avoiding opt)
-	 */
-	if (!(iPtr->flags & USE_EVAL_DIRECT) &&
-		(objPtr->typePtr == &tclListType) && /* is a list... */
-		(objPtr->bytes == NULL) /* ...without a string rep */) {
-	    register List *listRepPtr =
-		(List *) objPtr->internalRep.twoPtrValue.ptr1;
-	    result = Tcl_EvalObjv(interp, listRepPtr->elemCount,
-		    listRepPtr->elements, flags);
-	} else {
-	    script = Tcl_GetStringFromObj(objPtr, &numSrcBytes);
-	    result = Tcl_EvalEx(interp, script, numSrcBytes, flags);
-	}
+    if ((flags & TCL_EVAL_DIRECT)	/* Caller requested no bytecompile   */
+	    && !(iPtr->flags & USE_EVAL_DIRECT)
+	    				/* and interp is not forcing a parse */
+	    && (objPtr->typePtr == &tclListType) /* and we have a list...    */
+	    && (objPtr->bytes == NULL)	/* ...without a string rep.          */
+	    ) {
+	List *listRepPtr = (List *) objPtr->internalRep.twoPtrValue.ptr1;
+	return Tcl_EvalObjv(interp, listRepPtr->elemCount,
+		listRepPtr->elements, flags);
     } else {
-	/*
-	 * Let the compiler/engine subsystem do the evaluation.
-	 */
+	int allowExceptions = (iPtr->evalFlags & TCL_ALLOW_EXCEPTIONS);
+	int result = TCL_OK;
+/*
+	int numSrcBytes = 0;
+	CONST char *script = NULL;
+ * Need mechanism to retrieve from evaluators the command string in
+ * which the error happens.
+ */
 
-	savedVarFramePtr = iPtr->varFramePtr;
-	if (flags & TCL_EVAL_GLOBAL) {
-	    iPtr->varFramePtr = NULL;
+	iPtr->evalFlags = 0;
+	Tcl_IncrRefCount(objPtr);
+	if ((iPtr->flags & USE_EVAL_DIRECT)  /* Interp forces no bytecode   */
+		|| (flags & TCL_EVAL_DIRECT) /* Caller requests no bytecode */
+		) {
+	    /* Parse the script into tokens, and eval the tokens */
+
+	    Tcl_Token *lastTokenPtr;
+	    Tcl_Token *tokensPtr = TclGetTokensFromObj(objPtr, &lastTokenPtr);
+	    result = TclEvalScriptTokens(interp, tokensPtr,
+		    1 + (int)(lastTokenPtr - tokensPtr), flags);
+
+	    /* Take care of any parse error */
+	    if ((result == TCL_OK) && (lastTokenPtr->type == TCL_TOKEN_ERROR)) {
+		result = TclSubstTokens(interp, lastTokenPtr, 1, NULL, flags);
+		Tcl_LogCommandInfo(interp, Tcl_GetString(objPtr),
+			lastTokenPtr->start, lastTokenPtr->size);
+	    }
+
+	} else {
+	    /* Let the compiler/engine subsystem do the evaluation. */
+
+	    result = TclCompEvalObj(interp, objPtr, flags);
 	}
-
-	result = TclCompEvalObj(interp, objPtr);
 
 	/*
 	 * If we are again at the top level, process any unusual 
@@ -3784,7 +3849,7 @@ Tcl_EvalObjEx(interp, objPtr, flags)
 		result = TclUpdateReturnInfo(iPtr);
 	    }
 	    if ((result != TCL_OK) && (result != TCL_ERROR) 
-	        && !allowExceptions) {
+		    && !allowExceptions) {
 		ProcessUnexpectedResult(interp, result);
 		result = TCL_ERROR;
 
@@ -3794,18 +3859,16 @@ Tcl_EvalObjEx(interp, objPtr, flags)
 		 */
 
 		if (!(iPtr->flags & ERR_ALREADY_LOGGED)) {
-		    script = Tcl_GetStringFromObj(objPtr, &numSrcBytes);
+		    int numSrcBytes;
+		    char *script = Tcl_GetStringFromObj(objPtr, &numSrcBytes);
 		    Tcl_LogCommandInfo(interp, script, script, numSrcBytes);
 		    iPtr->flags &= ~ERR_ALREADY_LOGGED;
 		}
 	    }
 	}
-	iPtr->evalFlags = 0;
-	iPtr->varFramePtr = savedVarFramePtr; 
+	Tcl_DecrRefCount(objPtr);
+	return result;
     }
-
-    TclDecrRefCount(objPtr);
-    return result;
 }
 
 /*
@@ -4344,14 +4407,10 @@ TclObjInvoke(interp, objc, objv, flags)
     int length, result;
     char *bytes;
 
-    if (interp == (Tcl_Interp *) NULL) {
-        return TCL_ERROR;
-    }
+    /* make whole thing a call to TEOVICount */
 
-    if ((objc < 1) || (objv == (Tcl_Obj **) NULL)) {
-        Tcl_AppendToObj(Tcl_GetObjResult(interp),
-	        "illegal argument vector", -1);
-        return TCL_ERROR;
+    if (objc == 0) {
+	return TCL_OK;
     }
 
     cmdName = Tcl_GetString(objv[0]);

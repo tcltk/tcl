@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: while.test,v 1.8 2001/12/04 15:36:29 dkf Exp $
+# RCS: @(#) $Id: while.test,v 1.8.6.1 2003/05/22 19:12:08 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -31,8 +31,7 @@ test while-1.2 {TclCompileWhileCmd: error in test expression} {
     catch {while {$i<} break} msg
     set errorInfo
 } {syntax error in expression "$i<": premature end of expression
-    ("while" test expression)
-    while compiling
+    while executing
 "while {$i<} break"}
 test while-1.3 {TclCompileWhileCmd: error in test expression} {
     set err [catch {while {"a"+"b"} {error "loop aborted"}} msg]
@@ -71,11 +70,8 @@ test while-1.8 {TclCompileWhileCmd: error compiling command body} {
     catch {while {$i < 5} {set}} msg
     set errorInfo
 } {wrong # args: should be "set varName ?newValue?"
-    while compiling
-"set"
-    ("while" body line 1)
-    while compiling
-"while {$i < 5} {set}"}
+    while executing
+"set"}
 test while-1.9 {TclCompileWhileCmd: simple command body} {
     set a {}
     set i 1
@@ -356,7 +352,7 @@ test while-4.9 {while (not compiled): error compiling command body} {
     catch {$z {$i < 5} {set}} msg
     set errorInfo
 } {wrong # args: should be "set varName ?newValue?"
-    while compiling
+    while executing
 "set"
     ("while" body line 1)
     invoked from within

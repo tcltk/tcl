@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.101 2003/05/05 20:54:39 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.101.2.1 2003/05/22 19:12:04 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -876,9 +876,10 @@ Tcl_ExprObj(interp, objPtr, resultPtrPtr)
  */
 
 int
-TclCompEvalObj(interp, objPtr)
+TclCompEvalObj(interp, objPtr,flags)
     Tcl_Interp *interp;
     Tcl_Obj *objPtr;
+    int flags;
 {
     register Interp *iPtr = (Interp *) interp;
     register ByteCode* codePtr;		/* Tcl Internal type of bytecode. */
@@ -960,6 +961,10 @@ TclCompEvalObj(interp, objPtr)
 		goto recompileObj;
 	    }
 	}
+/*
+fprintf(stdout,"BCINFO:\n");
+PrintByteCodeInfo(codePtr);
+*/
     }
 
     /*
@@ -1441,7 +1446,7 @@ TclExecuteByteCode(interp, codePtr)
 
 	objPtr = stackPtr[stackTop];
 	DECACHE_STACK_INFO();
-	result = TclCompEvalObj(interp, objPtr);
+	result = TclCompEvalObj(interp, objPtr, 0);
 	CACHE_STACK_INFO();
 	if (result == TCL_OK) {
 	    /*
