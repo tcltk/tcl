@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclResult.c,v 1.17 2004/10/19 21:54:07 dgp Exp $
+ * RCS: @(#) $Id: tclResult.c,v 1.18 2004/10/21 15:19:47 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -122,13 +122,22 @@ TclRestoreInterpState(interp, state)
 
     iPtr->returnLevel = statePtr->returnLevel;
     iPtr->returnCode = statePtr->returnCode;
+    if (iPtr->errorInfo) {
+	Tcl_DecrRefCount(iPtr->errorInfo);
+    }
     iPtr->errorInfo = statePtr->errorInfo;
     if (iPtr->errorInfo) {
 	Tcl_IncrRefCount(iPtr->errorInfo);
     }
+    if (iPtr->errorCode) {
+	Tcl_DecrRefCount(iPtr->errorCode);
+    }
     iPtr->errorCode = statePtr->errorCode;
     if (iPtr->errorCode) {
 	Tcl_IncrRefCount(iPtr->errorCode);
+    }
+    if (iPtr->returnOpts) {
+	Tcl_DecrRefCount(iPtr->returnOpts);
     }
     iPtr->returnOpts = statePtr->returnOpts;
     if (iPtr->returnOpts) {
@@ -1052,6 +1061,326 @@ Tcl_SetObjErrorCode(interp, errorObjPtr)
 }
 
 /*
+ *----------------------------------------------------------------------
+ *
+ * TclProcessReturn --
+ *
+ *	Does the work of the [return] command based on the code,
+ *	level, and returnOpts arguments.  Note that the code argument
+ *	must agree with the -code entry in returnOpts and the level
+ *	argument must agree with the -level entry in returnOpts, as
+ *	is the case for values returned from TclMergeReturnOptions.
+ *
+ * Results:
+ *	Returns the return code the [return] command should return.
+ *
+ * Side effects:
+ * 	None.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+TclProcessReturn(interp, code, level, returnOpts)
+    Tcl_Interp *interp;
+    int code;
+    int level;
+    Tcl_Obj *returnOpts;
+{
+    Interp *iPtr = (Interp *) interp;
+    Tcl_Obj *valuePtr;
+
+    /* Store the merged return options */
+    if (iPtr->returnOpts != returnOpts) {
+	if (iPtr->returnOpts) {
+	    Tcl_DecrRefCount(iPtr->returnOpts);
+	}
+	iPtr->returnOpts = returnOpts;
+	Tcl_IncrRefCount(iPtr->returnOpts);
+    }
+
+    if (code == TCL_ERROR) {
+	Tcl_DictObjGet(NULL, iPtr->returnOpts,
+		iPtr->returnErrorinfoKey, &valuePtr);
+	if (valuePtr != NULL) {
+	    int infoLen;
+	    (void) Tcl_GetStringFromObj(valuePtr, &infoLen);
+	    if (infoLen) {
+		if (iPtr->errorInfo) {
+		    Tcl_DecrRefCount(iPtr->errorInfo);
+		}
+		iPtr->errorInfo = valuePtr;
+		Tcl_IncrRefCount(iPtr->errorInfo);
+		iPtr->flags |= ERR_ALREADY_LOGGED;
+	    }
+	}
+	Tcl_DictObjGet(NULL, iPtr->returnOpts,
+		iPtr->returnErrorcodeKey, &valuePtr);
+	if (valuePtr != NULL) {
+	    Tcl_SetObjErrorCode(interp, valuePtr);
+	} else {
+	    Tcl_SetErrorCode(interp, "NONE", NULL);
+	}
+
+	Tcl_DictObjGet(NULL, iPtr->returnOpts,
+		iPtr->returnErrorlineKey, &valuePtr);
+	if (valuePtr != NULL) {
+	    Tcl_GetIntFromObj(NULL, valuePtr, &iPtr->errorLine);
+	}
+    }
+    if (level != 0) {
+	iPtr->returnLevel = level;
+	iPtr->returnCode = code;
+	return TCL_RETURN;
+    }
+    return code;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclMergeReturnOptions --
+ *
+ *	Parses, checks, and stores the options to the [return] command.
+ *
+ * Results:
+ *	Returns TCL_ERROR is any of the option values are invalid.
+ *	Otherwise, returns TCL_OK, and writes the returnOpts, code,
+ *	and level values to the pointers provided.
+ *
+ * Side effects:
+ * 	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclMergeReturnOptions(interp, objc, objv, optionsPtrPtr, codePtr, levelPtr)
+    Tcl_Interp *interp;		/* Current interpreter. */
+    int objc;			/* Number of arguments. */
+    Tcl_Obj *CONST objv[];	/* Argument objects. */
+    Tcl_Obj **optionsPtrPtr;	/* If not NULL, points to space for a
+				 * (Tcl_Obj *) where the pointer to the
+				 * merged return options dictionary should
+				 * be written */
+    int *codePtr;		/* If not NULL, points to space where the
+				 * -code value should be written */
+    int *levelPtr;		/* If not NULL, points to space where the
+				 * -level value should be written */
+{
+    Interp *iPtr = (Interp *) interp;
+    int code=TCL_OK;
+    int level = 1;
+    Tcl_Obj *valuePtr;
+    Tcl_Obj *returnOpts = Tcl_NewObj();
+
+    for (;  objc > 1;  objv += 2, objc -= 2) {
+	int optLen;
+	CONST char *opt = Tcl_GetStringFromObj(objv[0], &optLen);
+	int compareLen;
+	CONST char *compare = Tcl_GetStringFromObj(
+		iPtr->returnOptionsKey, &compareLen);
+
+	if ((optLen == compareLen) && (strcmp(opt, compare) == 0)) {
+	    Tcl_DictSearch search;
+	    int done = 0;
+	    Tcl_Obj *keyPtr;
+	    Tcl_Obj *dict = objv[1];
+
+	    nestedOptions:
+	    if (TCL_ERROR == Tcl_DictObjFirst(NULL, dict,
+		    &search, &keyPtr, &valuePtr, &done)) {
+		/* Value is not a legal dictionary */
+		Tcl_ResetResult(interp);
+		Tcl_AppendResult(interp, "bad ",
+			compare, " value: expected dictionary but got \"",
+			TclGetString(objv[1]), "\"", (char *) NULL);
+		goto error;
+	    }
+
+	    while (!done) {
+		Tcl_DictObjPut(NULL, returnOpts, keyPtr, valuePtr);
+		Tcl_DictObjNext(&search, &keyPtr, &valuePtr, &done);
+	    }
+
+	    Tcl_DictObjGet(NULL, returnOpts, iPtr->returnOptionsKey, &valuePtr);
+	    if (valuePtr != NULL) {
+		dict = valuePtr;
+		Tcl_DictObjRemove(NULL, returnOpts, iPtr->returnOptionsKey);
+		goto nestedOptions;
+	    }
+
+	} else {
+	    Tcl_DictObjPut(NULL, returnOpts, objv[0], objv[1]);
+	}
+    }
+
+    /* Check for bogus -code value */
+    Tcl_DictObjGet(NULL, returnOpts, iPtr->returnCodeKey, &valuePtr);
+    if ((valuePtr != NULL) 
+	    && (TCL_ERROR == Tcl_GetIntFromObj(NULL, valuePtr, &code))) {
+	static CONST char *returnCodes[] = {
+	    "ok", "error", "return", "break", "continue", NULL
+	};
+
+	if (TCL_ERROR == Tcl_GetIndexFromObj(NULL, valuePtr, returnCodes,
+		NULL, TCL_EXACT, &code)) {
+	    /* Value is not a legal return code */
+	    Tcl_ResetResult(interp);
+	    Tcl_AppendResult(interp, "bad completion code \"",
+		    TclGetString(valuePtr),
+		    "\": must be ok, error, return, break, ",
+		    "continue, or an integer", (char *) NULL);
+	    goto error;
+	}
+	Tcl_DictObjRemove(NULL, returnOpts, iPtr->returnCodeKey);
+    }
+
+    /* Check for bogus -level value */
+    Tcl_DictObjGet(NULL, returnOpts, iPtr->returnLevelKey, &valuePtr);
+    if (valuePtr != NULL) {
+	if ((TCL_ERROR == Tcl_GetIntFromObj(NULL, valuePtr, &level)) 
+		|| (level < 0)) {
+	    /* Value is not a legal level */
+	    Tcl_ResetResult(interp);
+	    Tcl_AppendResult(interp, "bad -level value: ",
+		"expected non-negative integer but got \"",
+		TclGetString(valuePtr), "\"", (char *) NULL);
+	    goto error;
+	}
+	Tcl_DictObjRemove(NULL, returnOpts, iPtr->returnLevelKey);
+    }
+
+    /* 
+     * Convert [return -code return -level X] to
+     * [return -code ok -level X+1]
+     */
+    if (code == TCL_RETURN) {
+	level++;
+	code = TCL_OK;
+    }
+
+    if (codePtr != NULL) {
+	*codePtr = code;
+    }
+    if (levelPtr != NULL) {
+	*levelPtr = level;
+    }
+    if (optionsPtrPtr == NULL) {
+	/* Not passing back the options (?!), so clean them up */
+	Tcl_DecrRefCount(returnOpts);
+    } else {
+	*optionsPtrPtr = returnOpts;
+    }
+    return TCL_OK;
+
+error:
+    Tcl_DecrRefCount(returnOpts);
+    return TCL_ERROR;
+}
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * TclGetReturnOptions --
+ *
+ *	Packs up the interp state into a dictionary of return options.
+ *
+ * Results:
+ *	A dictionary of return options.
+ *
+ * Side effects:
+ *	None.
+ *
+ *-------------------------------------------------------------------------
+ */
+
+Tcl_Obj *
+TclGetReturnOptions(interp, result)
+    Tcl_Interp *interp;
+    int result;
+{
+    Interp *iPtr = (Interp *) interp;
+    Tcl_Obj *options;
+
+    if (iPtr->returnOpts) {
+	options = Tcl_DuplicateObj(iPtr->returnOpts);
+    } else {
+	options = Tcl_NewObj();
+    }
+
+    if (result == TCL_RETURN) {
+	Tcl_DictObjPut(NULL, options,
+		iPtr->returnCodeKey, Tcl_NewIntObj(iPtr->returnCode));
+	Tcl_DictObjPut(NULL, options,
+		iPtr->returnLevelKey, Tcl_NewIntObj(iPtr->returnLevel));
+    } else {
+	Tcl_DictObjPut(NULL, options,
+		iPtr->returnCodeKey, Tcl_NewIntObj(result));
+	Tcl_DictObjPut(NULL, options,
+		iPtr->returnLevelKey, Tcl_NewIntObj(0));
+    }
+
+    if (result == TCL_ERROR) {
+	/*
+	 * When result was an error, fill in any missing values
+	 * for -errorinfo, -errorcode, and -errorline
+	 */
+	Tcl_DictObjPut(NULL, options,
+		iPtr->returnErrorinfoKey, iPtr->errorInfo);
+	Tcl_DictObjPut(NULL, options,
+		iPtr->returnErrorcodeKey, iPtr->errorCode);
+	Tcl_DictObjPut(NULL, options, iPtr->returnErrorlineKey,
+		Tcl_NewIntObj(iPtr->errorLine));
+    }
+    return options;
+}
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * TclSetReturnOptions --
+ *
+ *	Accepts an interp and a  dictionary of return options, and sets
+ *	the return options of the interp to match the dictionary.
+ *
+ * Results:
+ *	A standard status code.  Usually TCL_OK, but TCL_ERROR if an
+ *	invalid option value was found in the dictionary.  If a -level
+ *	value of 0 is in the dictionary, then the -code value in the
+ *	dictionary will be returned (TCL_OK default).
+ *
+ * Side effects:
+ *	Sets the state of the interp.
+ *
+ *-------------------------------------------------------------------------
+ */
+
+int
+TclSetReturnOptions(interp, options)
+    Tcl_Interp *interp;
+    Tcl_Obj *options;
+{
+    int objc, level, code;
+    Tcl_Obj **objv, *mergedOpts;
+
+    if (TCL_ERROR == Tcl_ListObjGetElements(interp, options, &objc, &objv)
+	    || (objc % 2)) {
+	Tcl_ResetResult(interp);
+	Tcl_AppendResult(interp, "expected dict but got \"",
+		Tcl_GetString(options), "\"", NULL);
+	code = TCL_ERROR;
+    } else if (TCL_ERROR == TclMergeReturnOptions(interp, objc, objv,
+	    &mergedOpts, &code, &level)) {
+	code = TCL_ERROR;
+    } else {
+	code = TclProcessReturn(interp, code, level, mergedOpts);
+    }
+
+    Tcl_DecrRefCount(options);
+    return code;
+}
+
+/*
  *-------------------------------------------------------------------------
  *
  * TclTransferResult --
@@ -1093,7 +1422,8 @@ TclTransferResult(sourceInterp, result, targetInterp)
 				 * should be stored.  If source and target
 				 * are the same, nothing is done. */
 {
-    Interp *iPtr;
+    Interp *siPtr = (Interp *) sourceInterp;
+    Interp *tiPtr = (Interp *) targetInterp;
 
     if (sourceInterp == targetInterp) {
 	return;
@@ -1107,29 +1437,31 @@ TclTransferResult(sourceInterp, result, targetInterp)
 	 * chain, not just a simple error message.
 	 */
 
-	iPtr = (Interp *) sourceInterp;
-        if ((iPtr->flags & ERR_ALREADY_LOGGED) == 0) {
+        if ((siPtr->flags & ERR_ALREADY_LOGGED) == 0) {
             Tcl_AddErrorInfo(sourceInterp, "");
         }
-        iPtr->flags &= ~(ERR_ALREADY_LOGGED);
+        siPtr->flags &= ~(ERR_ALREADY_LOGGED);
         
         Tcl_ResetResult(targetInterp);
         
-	if (iPtr->errorInfo) {
-	    ((Interp *) targetInterp)->errorInfo = iPtr->errorInfo;
-	    Tcl_IncrRefCount(((Interp *) targetInterp)->errorInfo);
+	if (siPtr->errorInfo) {
+	    tiPtr->errorInfo = siPtr->errorInfo;
+	    Tcl_IncrRefCount(tiPtr->errorInfo);
 	}
 
-	if (iPtr->errorCode) {
-	    Tcl_SetObjErrorCode(targetInterp, iPtr->errorCode);
+	if (siPtr->errorCode) {
+	    Tcl_SetObjErrorCode(targetInterp, siPtr->errorCode);
 	}
     }
 
     /* This may need examination for safety */
-    Tcl_DecrRefCount( ((Interp *) targetInterp)->returnOpts );
-    ((Interp *) targetInterp)->returnOpts = 
-	    ((Interp *) sourceInterp)->returnOpts;
-    Tcl_IncrRefCount( ((Interp *) targetInterp)->returnOpts );
+    if (tiPtr->returnOpts ) {
+	Tcl_DecrRefCount(tiPtr->returnOpts );
+    }
+    tiPtr->returnOpts = siPtr->returnOpts;
+    if (tiPtr->returnOpts ) {
+	Tcl_IncrRefCount(tiPtr->returnOpts );
+    }
 
     Tcl_SetObjResult(targetInterp, Tcl_GetObjResult(sourceInterp));
     Tcl_ResetResult(sourceInterp);

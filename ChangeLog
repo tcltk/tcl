@@ -1,3 +1,26 @@
+2004-10-21  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCmdAH.c (Tcl_CatchObjCmd, Tcl_ErrorObjCmd):
+	Updated to call the new TclGet/SetReturnOptions routines to do
+	much of their work.
+
+	* generic/tclInt.h (TclGetReturnOptions,TclSetReturnOptions):
+	* generic/tclResult.c (TclGetReturnOptions,TclSetReturnOptions):
+	New utility routines to get/set the return options of an interp.
+	Intent is that these routines will be converted to public routines
+	after TIP approval.
+
+	* generic/tclCmdMZ.c (TclProcessReturn,TclMergeReturnOptions):
+	* generic/tclResult.c (TclProcessReturn,TclMergeReturnOptions):
+	Move internal utility routines from tclCmdMZ.c to tclResult.c.
+
+	* generic/tclBasic.c (Tcl_CreateInterp, Tcl_DeleteInterp):
+	* generic/tclResult.c (TclTransferResult):	Rework so that
+	iPtr->returnOpts can be NULL when there are no special options.
+
+	* generic/tclResult.c (TclRestoreInterpState):  Plug potential
+	memory leak.
+
 2004-10-21  Kevin B. Kenny  <kennykb@acm.org>
 
 	* generic/tclBasic.c: Various changes to [clock format] that,

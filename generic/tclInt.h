@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.184 2004/10/21 03:53:04 kennykb Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.185 2004/10/21 15:19:46 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -1740,6 +1740,8 @@ EXTERN void		TclFinalizeAsync _ANSI_ARGS_((void));
 EXTERN void		TclFinalizeSynchronization _ANSI_ARGS_((void));
 EXTERN void		TclFinalizeLock _ANSI_ARGS_((void));
 EXTERN void		TclFinalizeThreadData _ANSI_ARGS_((void));
+EXTERN Tcl_Obj *	TclGetReturnOptions _ANSI_ARGS_((Tcl_Interp *interp,
+			    int result));
 EXTERN int		TclGlob _ANSI_ARGS_((Tcl_Interp *interp,
 			    char *pattern, Tcl_Obj *unquotedPrefix, 
 			    int globFlags, Tcl_GlobTypeData* types));
@@ -1912,6 +1914,8 @@ EXTERN int		TclRestoreInterpState _ANSI_ARGS_ ((
 			    Tcl_Interp *interp, TclInterpState state));
 EXTERN TclInterpState	TclSaveInterpState _ANSI_ARGS_ ((
 			    Tcl_Interp *interp, int status));
+EXTERN int		TclSetReturnOptions _ANSI_ARGS_((Tcl_Interp *interp,
+			    Tcl_Obj *options));
 EXTERN VOID             TclSignalExitThread _ANSI_ARGS_((Tcl_ThreadId id,
 			    int result));
 EXTERN int		TclSubstTokens _ANSI_ARGS_((Tcl_Interp *interp,
