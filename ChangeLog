@@ -1,3 +1,16 @@
+2002-02-21  David Gravereaux <davygrvy@pobox.com>
+
+	* win/makefile.vc:
+	* win/rules.vc:  Added a new "loimpact" option that sets the
+	-ws:aggressive linker option.  Off by default.  It's said to
+	keep the heap use low at the expense of alloc speed.
+
+	* win/tclAppInit.c: Changed #include "tcl.h" to be tclPort.h to
+	remove the raw windows.h include.  tclPort.h brings in windows.h
+	already and lessens the pre-compiled-header mush and the randomly
+	useless	#pragma comment (lib,...) references throughout the big
+	windows.h tree (as observed at high linker warning levels).
+
 2002-02-21  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* generic/tcl.h: Better guessing of LP64/ILP32 architecture, but
