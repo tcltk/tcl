@@ -2,9 +2,9 @@
 
 	* README:				Bumped version number of
 	* generic/tcl.h:			Tcl to 8.5a0.
-	* library.init.tcl:
+	* library/init.tcl:
 	* mac/README:
-	* macosx/Tcl.pbproj/project.pbxproc:
+	* macosx/Tcl.pbproj/project.pbxproj:
 	* tests/basic.test:
 	* tools/configure.in:
 	* tools/tcl.hpj.in:
