@@ -54,7 +54,7 @@ item: Set Variable
 end
 item: Set Variable
   Variable=URL
-  Value=http://dev.scriptics.com/registration/%PATCHLEVEL%.html
+  Value=http://www.tcl.tk/
 end
 item: Set Variable
   Variable=GROUP
