@@ -12,7 +12,7 @@ ac_help=
 ac_default_prefix=/usr/local
 # Any additions from configure.in:
 ac_help="$ac_help
-  --with-tcl=DIR          use Tcl 8.3 binaries from DIR"
+  --with-tcl=DIR          use Tcl $DEF_VER binaries from DIR"
 
 # Initialize some variables set by options.
 # The variables have the same names as the options, with
@@ -523,7 +523,7 @@ else
 fi
 
 
-# RCS: @(#) $Id: configure,v 1.1 2000/11/03 01:13:01 hobbs Exp $
+# RCS: @(#) $Id: configure,v 1.2 2001/10/04 20:18:09 hobbs Exp $
 
 # Recover information that Tcl computed with its configure script.
 
@@ -532,12 +532,14 @@ fi
 #       not, assume that its top-level directory is a sibling of ours.
 #--------------------------------------------------------------------
 
+DEF_VER=8.4
+
 # Check whether --with-tcl or --without-tcl was given.
 if test "${with_tcl+set}" = set; then
   withval="$with_tcl"
   TCL_BIN_DIR=$withval
 else
-  TCL_BIN_DIR=`cd ../../tcl8.3$TCL_PATCH_LEVEL/unix; pwd`
+  TCL_BIN_DIR=`cd ../../tcl$DEF_VER$TCL_PATCH_LEVEL/unix; pwd`
 fi
 
 if test ! -d $TCL_BIN_DIR; then
