@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.106 2004/10/27 17:13:58 davygrvy Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.107 2004/11/13 00:19:10 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -941,6 +941,11 @@ TclStubs tclStubs = {
     Tcl_LimitGetCommands, /* 532 */
     Tcl_LimitGetTime, /* 533 */
     Tcl_LimitGetGranularity, /* 534 */
+    Tcl_SaveInterpState, /* 535 */
+    Tcl_RestoreInterpState, /* 536 */
+    Tcl_DiscardInterpState, /* 537 */
+    Tcl_SetReturnOptions, /* 538 */
+    Tcl_GetReturnOptions, /* 539 */
 };
 
 /* !END!: Do not edit above this line. */

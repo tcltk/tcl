@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.134 2004/10/29 15:39:04 dkf Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.135 2004/11/13 00:19:06 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -397,6 +397,12 @@ Tcl_CreateInterp()
 	    (Tcl_CmdDeleteProc*) NULL );
     Tcl_CreateObjCommand( interp,	"::tcl::clock::Oldscan",
 	    TclClockOldscanObjCmd,	(ClientData) NULL,
+	    (Tcl_CmdDeleteProc*) NULL );
+
+    /* Register the default [interp bgerror] handler. */
+
+    Tcl_CreateObjCommand( interp,	"::tcl::Bgerror",
+	    TclDefaultBgErrorHandlerObjCmd,	(ClientData) NULL,
 	    (Tcl_CmdDeleteProc*) NULL );
 
     /*

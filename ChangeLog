@@ -9,6 +9,33 @@
 
 2004-11-12  Don Porter  <dgp@users.sourceforge.net>
 
+	TIP #221 IMPLEMENTATION
+	* generic/tclBasic.c:	Define [::tcl::Bgerror] in new interps.
+	* generic/tclEvent.c:	Update Tcl_BackgroundError to make use
+				of the registered [interp bgerror] command.
+	* generic/tclInterp.c:	New [interp bgerror] subcommand.
+	* tests/interp.test:	syntax tests updated.
+
+	TIP #226 IMPLEMENTATION
+	* generic/tcl.decls:	Stubs for Tcl_(Save|Restore|Discard)InterpState
+	* generic/tcl.h:	New public opaque type, Tcl_InterpState.
+	* generic/tclInt.h:	Drop old private declarations.  Add
+				Tcl(Get|Set)BgErrorHandler
+	* generic/tclResult.c:	Tcl_*InterpState implementations.
+	* generic/tclDictObj.c:	Update callers.
+	* generic/tclIOGT.c:
+	* generic/tclTrace.c:
+
+	TIP #227 IMPLEMENTATION
+	* generic/tcl.decls:	Stubs for Tcl_(Get|Set)ReturnOptions.
+	* generic/tclInt.h:	Drop old private declarations.
+	* generic/tclResult.c:	Tcl_*ReturnOptions implementations.
+	* generic/tclCmdAH.c:	Update callers.
+	* generic/tclMain.c:
+
+	* generic/tclDecls.h:	make genstubs
+	* generic/tclStubInit.c:
+
 	* unix/tclAppInit.c:	Removed tclConfig.h #include, now that tcl.h
 				takes care of it for us.
 
