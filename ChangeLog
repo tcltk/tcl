@@ -1,4 +1,4 @@
-2003-10-28  David Gravereaux <davygrvy@pobox.com>
+2003-09-28  David Gravereaux <davygrvy@pobox.com>
 
 	* win/tclWinPipe.c: The windows port of expect can call
 	TclWinAddProcess before any of the other pipe functions.
