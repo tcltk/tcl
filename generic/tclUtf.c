@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUtf.c,v 1.21 2002/01/17 03:03:12 dgp Exp $
+ * RCS: @(#) $Id: tclUtf.c,v 1.22 2002/01/26 01:10:08 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -673,7 +673,7 @@ Tcl_UtfPrev(str, start)
 	    break;
 	} 
 	if (byte >= 0xC0) {
-	    return (char *) look;
+	    return look;
 	}
 	look--;
     }

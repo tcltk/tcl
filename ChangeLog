@@ -16,6 +16,22 @@
 
 2002-01-25  Don Porter <dgp@users.sourceforge.net>
 
+	* compat/strstr.c (strstr):
+	* generic/tclCmdAH.c (Tcl_FormatObjCmd):
+	* generic/tclCmdIL.c (InfoNameOfExecutableCmd):
+	* generic/tclEnv.c (ReplaceString):
+	* generic/tclFileName.c (ExtractWinRoot):
+	* generic/tclIO.c (FlushChannel,Tcl_BadChannelOption):
+	* generic/tclStringObj.c (AppendUnicodeToUtfRep):
+	* generic/tclThreadTest.c (TclCreateThread):
+	* generic/tclUtf.c (Tcl_UtfPrev):
+	* mac/tclMacFCmd.c (TclpObjListVolumes):
+	* mac/tclMacResource.c (TclMacRegisterResourceFork,
+	  BuildResourceForkList):
+	* win/tclWinInit.c (AppendEnvironment):  Sought out and eliminated
+	instances of CONST-casting that are no longer needed after the
+	TIP 27 effort.
+
 	* Following is [Patch 501006]
 	* generic/tclInt.decls (Tcl_AddInterpResolvers, Tcl_Export,
 	  Tcl_FindNamespace, Tcl_GetInterpResolvers, Tcl_ForgetImport,

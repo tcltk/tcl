@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacResource.c,v 1.10 2002/01/25 20:40:56 dgp Exp $
+ * RCS: @(#) $Id: tclMacResource.c,v 1.11 2002/01/26 01:10:08 dgp Exp $
  */
 
 #include <Errors.h>
@@ -1974,7 +1974,7 @@ TclMacRegisterResourceFork(
     if (tokenPtr != NULL) {
         char *tokenVal;
         int length;
-        tokenVal = (char *) Tcl_GetStringFromObj(tokenPtr, &length);
+        tokenVal = Tcl_GetStringFromObj(tokenPtr, &length);
         if (length > 0) {
             nameHashPtr = Tcl_FindHashEntry(&nameTable, tokenVal);
             if (nameHashPtr == NULL) {
@@ -2191,7 +2191,7 @@ BuildResourceForkList()
              Tcl_SetStringObj(nameObj, "ROM Map", -1);
         } else {
             p2cstr((StringPtr) fileName);
-            if (strcmp(fileName,(char *) appName) == 0) {
+            if (strcmp(fileName,appName) == 0) {
                 Tcl_SetStringObj(nameObj, "application", -1);
             } else {
                 Tcl_SetStringObj(nameObj, fileName, -1);

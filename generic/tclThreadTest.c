@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThreadTest.c,v 1.15 2002/01/25 20:40:56 dgp Exp $
+ * RCS: @(#) $Id: tclThreadTest.c,v 1.16 2002/01/26 01:10:08 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -118,7 +118,7 @@ EXTERN int	TclThread_Init _ANSI_ARGS_((Tcl_Interp *interp));
 EXTERN int	Tcl_ThreadObjCmd _ANSI_ARGS_((ClientData clientData,
 	Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]));
 EXTERN int	TclCreateThread _ANSI_ARGS_((Tcl_Interp *interp,
-	CONST char *script, int joinable));
+	char *script, int joinable));
 EXTERN int	TclThreadList _ANSI_ARGS_((Tcl_Interp *interp));
 EXTERN int	TclThreadSend _ANSI_ARGS_((Tcl_Interp *interp, Tcl_ThreadId id,
 	char *script, int wait));
@@ -405,13 +405,13 @@ Tcl_ThreadObjCmd(dummy, interp, objc, objv)
 int
 TclCreateThread(interp, script, joinable)
     Tcl_Interp *interp;			/* Current interpreter. */
-    CONST char *script;			/* Script to execute */
+    char *script;			/* Script to execute */
     int         joinable;		/* Flag, joinable thread or not */
 {
     ThreadCtrl ctrl;
     Tcl_ThreadId id;
 
-    ctrl.script = (char *) script;
+    ctrl.script = script;
     ctrl.condWait = NULL;
     ctrl.flags = 0;
 
