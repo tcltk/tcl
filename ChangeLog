@@ -1,3 +1,14 @@
+2004-10-26  Kevin B. Kenny <kennykb@acm.org>
+
+	* library/clock.tcl (FreeScan): Fixed a bug that caused relative
+	days of the week in free-form [clock scan] to be evaluated in the
+	wrong time zone.
+	* tests/clock.test (clock-31.[456]): Made sure that there
+	isn't an env(TZ) or env(TCL_TZ) lying around that will
+	override the time zone that we're trying to establish with
+	the simulated registry.
+	Both problems reported as [Bug 1054101].
+	
 2004-10-25  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* doc/string.n (map): Rewrote to clarify that we don't just map
