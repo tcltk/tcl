@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinInit.c,v 1.11 1998/10/20 17:27:47 suresh Exp $
+ * RCS: @(#) $Id: tclWinInit.c,v 1.12 1999/02/02 18:36:31 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -220,6 +220,8 @@ TclPlatformInit(interp)
 	    Tcl_SetVar(interp, "tcl_pkgPath", Tcl_JoinPath(2, argv, &ds),
 		    TCL_GLOBAL_ONLY|TCL_LIST_ELEMENT);
 	}
+    } else {
+	Tcl_SetVar(interp, "tcl_pkgPath", "", TCL_GLOBAL_ONLY);
     }
 
     /*
@@ -249,7 +251,7 @@ TclPlatformInit(interp)
      */
 
     Tcl_SetVar2(interp, "tcl_platform", "debug", "1",
-		TCL_GLOBAL_ONLY);
+	    TCL_GLOBAL_ONLY);
 #endif
 
     /*
