@@ -1,3 +1,9 @@
+2002-08-22  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* generic/tclBasic.c:
+	* generic/tclCmdMZ.c: fix for freed memory r/w in delete traces
+	[Bug 589863], patch by Hemang Lavana.
+
 2002-08-20  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
 
 	* win/Makefile.in (CFLAGS): 
