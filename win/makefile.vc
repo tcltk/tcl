@@ -6,7 +6,7 @@
 # Copyright (c) 1995-1996 Sun Microsystems, Inc.
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 #
-# RCS: @(#) $Id: makefile.vc,v 1.52 2000/05/03 00:15:11 hobbs Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.53 2000/07/19 18:27:45 ericm Exp $
 
 # Does not depend on the presence of any environment variables in
 # order to compile tcl; all needed information is derived from 
@@ -28,6 +28,7 @@
 
 # Set this to the appropriate value of /MACHINE: for your platform
 MACHINE		= IX86
+#MACHINE		= ALPHA
 
 ROOT		= ..
 INSTALLDIR	= c:\Progra~1\Tcl
@@ -35,6 +36,9 @@ INSTALLDIR	= c:\Progra~1\Tcl
 !IF "$(MACHINE)" == "IA64"
 TOOLS32		= c:\ia64sdk17
 TOOLS32_rc	= c:\ia64sdk17
+!ELSE IF "$(MACHINE)" == "ALPHA"
+TOOLS32		= C:\Progra~1\Micros~2\vc98
+TOOLS32_rc	= C:\Progra~1\Micros~2\common\MSDev98
 !ELSE
 TOOLS32		= c:\Progra~1\devstudio\vc
 TOOLS32_rc	= c:\Progra~1\devstudio\sharedide

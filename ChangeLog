@@ -1,10 +1,14 @@
+2000-07-19  Eric Melski  <ericm@ajubasolutions.com>
+
+	* win/makefile.vc: Applied patch from Don Porter to provide better
+	nmake support for NT/Alpha [RFE: 5938].
+
 2000-07-18  Mo DeJong  <mdejong@redhat.com>
 
 	* unix/configure.in:
 	* unix/tcl.m4:
-	* win/tcl.m4: Properly quote arguments to m4
-	macros. This allows Tcl to work with the new
-	version of autoconf.
+	* win/tcl.m4: Properly quote arguments to m4 macros. This allows
+	Tcl to work with the new version of autoconf.
 
 2000-07-18  Eric Melski  <ericm@ajubasolutions.com>
 
