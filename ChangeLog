@@ -1,3 +1,10 @@
+2004-10-04  Kevin B. Kenny  <kennykb@acm.org>
+
+	* tests/clock.test (clock-34.*): Removed an antibug that forced
+	comparison of [clock scan] results with the :localtime time zone.
+	Now that [clock scan] uses the current time zone instead, the
+	antibug caused several tests to fail. [Bug 1038554]
+	
 2004-10-04  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclParseExpr.c (GetLexeme): Ensure that the 'eq' and
