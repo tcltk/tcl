@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.test,v 1.22.2.1 2003/04/12 20:11:34 kennykb Exp $
+# RCS: @(#) $Id: clock.test,v 1.22.2.2 2004/05/14 21:41:11 kennykb Exp $
 
 set env(LC_TIME) POSIX
 
@@ -128,6 +128,28 @@ test clock-3.13 {clock format with non-ASCII character in the format string} {
     unset oldenc
     set res
 } "\u00c4"
+
+# Bug 942078
+
+test clock-3.14 {change of time zone} -setup {
+    catch { unset oldTZ }
+    if { [info exists env(TZ)] } {
+	set oldTZ $env(TZ)
+    }
+} -body {
+    set env(TZ) PST8PDT
+    set s [clock format 0 -format %H%M]
+    set env(TZ) GMT0
+    append s -[clock format 0 -format %H%M]
+} -cleanup {
+    if { [info exists oldTZ] } {
+	set env(TZ) $oldTZ
+	unset oldTZ
+    } else {
+	unset env(TZ)
+    }
+} -result {1600-0000}
+    
 
 # clock scan
 test clock-4.1 {clock scan tests} {
