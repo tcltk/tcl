@@ -13,7 +13,7 @@
  *
  * This code contributed by Karl Lehenbauer and Mark Diekhans
  *
- * RCS: @(#) $Id: tclCkalloc.c,v 1.7 1999/11/19 06:34:23 hobbs Exp $
+ * RCS: @(#) $Id: tclCkalloc.c,v 1.8 2000/04/27 01:47:01 ericm Exp $
  */
 
 #include "tclInt.h"
@@ -179,20 +179,34 @@ TclDumpMemoryInfo(outFile)
 	    maximum_bytes_malloced);
 }
 
+
 /*
  *----------------------------------------------------------------------
  *
  * ValidateMemory --
- *     Procedure to validate allocted memory guard zones.
+ *
+ *	Validate memory guard zones for a particular chunk of allocated
+ *	memory.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Prints validation information about the allocated memory to stderr.
  *
  *----------------------------------------------------------------------
  */
+
 static void
 ValidateMemory(memHeaderP, file, line, nukeGuards)
-    struct mem_header *memHeaderP;
-    char              *file;
-    int                line;
-    int                nukeGuards;
+    struct mem_header *memHeaderP;	/* Memory chunk to validate */
+    char              *file;		/* File containing the call to
+					 * Tcl_ValidateAllMemory */
+    int                line;		/* Line number of call to
+					 * Tcl_ValidateAllMemory */
+    int                nukeGuards;	/* If non-zero, indicates that the
+					 * memory guards are to be reset to 0
+					 * after they have been printed */
 {
     unsigned char *hiPtr;
     int   idx;
@@ -253,14 +267,21 @@ ValidateMemory(memHeaderP, file, line, nukeGuards)
  *----------------------------------------------------------------------
  *
  * Tcl_ValidateAllMemory --
- *     Validates guard regions for all allocated memory.
+ *
+ *	Validate memory guard regions for all allocated memory.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Displays memory validation information to stderr.
  *
  *----------------------------------------------------------------------
  */
 void
 Tcl_ValidateAllMemory (file, line)
-    char  *file;
-    int    line;
+    char  *file;	/* File from which Tcl_ValidateAllMemory was called */
+    int    line;	/* Line number of call to Tcl_ValidateAllMemory */
 {
     struct mem_header *memScanP;
 
@@ -278,16 +299,18 @@ Tcl_ValidateAllMemory (file, line)
  *----------------------------------------------------------------------
  *
  * Tcl_DumpActiveMemory --
- *     Displays all allocated memory to stderr.
+ *
+ *	Displays all allocated memory to a file; if no filename is given,
+ *	information will be written to stderr.
  *
  * Results:
- *     Return TCL_ERROR if an error accessing the file occures, `errno' 
- *     will have the file error number left in it.
+ *	Return TCL_ERROR if an error accessing the file occures, `errno' 
+ *	will have the file error number left in it.
  *----------------------------------------------------------------------
  */
 int
 Tcl_DumpActiveMemory (fileName)
-    char *fileName;
+    char *fileName;		/* Name of the file to write info to */
 {
     FILE              *fileP;
     struct mem_header *memScanP;
@@ -597,13 +620,14 @@ Tcl_Realloc(ptr, size)
  *----------------------------------------------------------------------
  *
  * MemoryCmd --
- *     Implements the TCL memory command:
- *       memory info
- *       memory display
- *       break_on_malloc count
- *       trace_on_at_malloc count
- *       trace on|off
- *       validate on|off
+ *	Implements the Tcl "memory" command, which provides Tcl-level
+ *	control of Tcl memory debugging information.
+ *		memory info
+ *		memory display
+ *		memory break_on_malloc count
+ *		memory trace_on_at_malloc count
+ *		memory trace on|off
+ *		memory validate on|off
  *
  * Results:
  *     Standard TCL results.
@@ -769,13 +793,22 @@ CheckmemCmd(clientData, interp, argc, argv)
  *----------------------------------------------------------------------
  *
  * Tcl_InitMemory --
- *     Initialize the memory command.
+ *
+ *	Create the "memory" and "checkmem" commands in the given
+ *	interpreter.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	New commands are added to the interpreter.
  *
  *----------------------------------------------------------------------
  */
+
 void
 Tcl_InitMemory(interp)
-    Tcl_Interp *interp;
+    Tcl_Interp *interp;	/* Interpreter in which commands should be added */
 {
     TclInitDbCkalloc();
     Tcl_CreateCommand (interp, "memory", MemoryCmd, (ClientData) NULL, 

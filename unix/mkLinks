@@ -286,6 +286,14 @@ if test -r DoubleObj.3; then
     ln DoubleObj.3 Tcl_SetDoubleObj.3
     ln DoubleObj.3 Tcl_GetDoubleFromObj.3
 fi
+if test -r DumpActiveMemory.3; then
+    rm -f Tcl_DumpActiveMemory.3
+    rm -f Tcl_InitMemory.3
+    rm -f Tcl_ValidateAllMemory.3
+    ln DumpActiveMemory.3 Tcl_DumpActiveMemory.3
+    ln DumpActiveMemory.3 Tcl_InitMemory.3
+    ln DumpActiveMemory.3 Tcl_ValidateAllMemory.3
+fi
 if test -r Encoding.3; then
     rm -f Tcl_GetEncoding.3
     rm -f Tcl_FreeEncoding.3
