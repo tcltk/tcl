@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixTime.c,v 1.14 2002/06/26 13:42:23 rmax Exp $
+ * RCS: @(#) $Id: tclUnixTime.c,v 1.15 2002/07/19 12:31:10 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -24,7 +24,7 @@
  * The 'tmKey' variable is the key to this buffer.
  */
 
-Tcl_ThreadDataKey tmKey;
+static Tcl_ThreadDataKey tmKey;
 
 /*
  * If we fall back on the thread-unsafe versions of gmtime and localtime,
@@ -32,7 +32,7 @@ Tcl_ThreadDataKey tmKey;
  */
 
 #if !defined(HAVE_GMTIME_R) || !defined(HAVE_LOCALTIME_R)
-TCL_DECLARE_MUTEX( tmMutex )
+TCL_DECLARE_MUTEX(tmMutex)
 #endif
 
 /*
@@ -355,25 +355,24 @@ TclpStrftime(s, maxsize, format, t, useGMT)
  */
 
 static struct tm *
-ThreadSafeGMTime( timePtr )
+ThreadSafeGMTime(timePtr)
     CONST time_t *timePtr;	/* Pointer to the number of seconds
 				 * since the local system's epoch
 				 */
 
 {
-
     /*
      * Get a thread-local buffer to hold the returned time.
      */
 
-    struct tm * tmPtr = (struct tm*) Tcl_GetThreadData( &tmKey,
-							sizeof( struct tm ) );
+    struct tm *tmPtr = (struct tm *)
+	    Tcl_GetThreadData(&tmKey, sizeof(struct tm));
 #ifdef HAVE_GMTIME_R
-    gmtime_r( timePtr, tmPtr );
+    gmtime_r(timePtr, tmPtr);
 #else
-    Tcl_MutexLock( & tmMutex );
-    memcpy( (VOID *) tmPtr, (VOID *) gmtime( timePtr ), sizeof ( struct tm ) );
-    Tcl_MutexUnlock( &tmMutex );
+    Tcl_MutexLock(&tmMutex);
+    memcpy((VOID *) tmPtr, (VOID *) gmtime(timePtr), sizeof(struct tm));
+    Tcl_MutexUnlock(&tmMutex);
 #endif    
     return tmPtr;
 }
@@ -396,27 +395,24 @@ ThreadSafeGMTime( timePtr )
  */
 
 static struct tm *
-ThreadSafeLocalTime( timePtr )
+ThreadSafeLocalTime(timePtr)
     CONST time_t *timePtr;	/* Pointer to the number of seconds
 				 * since the local system's epoch
 				 */
 
 {
-
     /*
      * Get a thread-local buffer to hold the returned time.
      */
 
-    struct tm * tmPtr = (struct tm*) Tcl_GetThreadData( &tmKey,
-							sizeof( struct tm ) );
+    struct tm *tmPtr = (struct tm *)
+	    Tcl_GetThreadData(&tmKey, sizeof(struct tm));
 #ifdef HAVE_LOCALTIME_R
-    localtime_r( timePtr, tmPtr );
+    localtime_r(timePtr, tmPtr);
 #else
-    Tcl_MutexLock( & tmMutex );
-    memcpy( (VOID *) (tmPtr),
-	    (VOID *) ( localtime( timePtr ) ),
-	    sizeof (struct tm) );
-    Tcl_MutexUnlock( &tmMutex );
+    Tcl_MutexLock(&tmMutex);
+    memcpy((VOID *) tmPtr, (VOID *) localtime(timePtr), sizeof(struct tm));
+    Tcl_MutexUnlock(&tmMutex);
 #endif    
     return tmPtr;
 }
