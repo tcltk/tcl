@@ -10,12 +10,13 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: winFile.test,v 1.11 2003/12/09 14:57:18 vincentdarley Exp $
+# RCS: @(#) $Id: winFile.test,v 1.12 2003/12/09 16:03:42 vincentdarley Exp $
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest
-    namespace import -force ::tcltest::*
+if {[catch {package require tcltest 2.0.2}]} {
+    puts stderr "Skipping tests in [info script]. tcltest 2.0.2 required."
+    return
 }
+namespace import -force ::tcltest::*
 
 if {[info commands ::testvolumetype] == ""} {
     tcltest::testConstraint notNTFS 0
@@ -150,48 +151,80 @@ proc test_access {fname read writ} {
 }
 
 # Create the test file
+# NOTE: [tcltest::makeFile] not used.  Presumably to force file
+# creation in a particular filesystem?  If not, try [makeFile]
+# in a -setup script.
 set fname test.dat
 file delete $fname
 close [open $fname w]
-set owner [getuser $fname]
-set user $::env(USERDOMAIN)\\$::env(USERNAME)
 
-test winFile-4.0 {Enhanced NTFS user/group permissions: test no acccess} {notNTFS pcOnly nt} {
+test winFile-4.0 {
+    Enhanced NTFS user/group permissions: test no acccess
+} -constraints {
+    notNTFS pcOnly nt
+} -setup {
+    set owner [getuser $fname]
+    set user $::env(USERDOMAIN)\\$::env(USERNAME)
+} -body {
     # Clean out all well-known ACLs
     catch {cacls $fname /E /R "Everyone"} result
     catch {cacls $fname /E /R $user} result
     catch {cacls $fname /E /R $owner} result
     cacls $fname /E /P $user:N
     test_access $fname 0 0
-} {}
+} -result {}
 
-test winFile-4.1 {Enhanced NTFS user/group permissions: test readable only} {notNTFS pcOnly nt} {
+test winFile-4.1 {
+    Enhanced NTFS user/group permissions: test readable only
+} -constraints {
+    notNTFS pcOnly nt
+} -setup {
+    set user $::env(USERDOMAIN)\\$::env(USERNAME)
+} -body {
     cacls $fname /E /P $user:N
     cacls $fname /E /G $user:R
     test_access $fname 1 0
-} {}
+} -result {}
 
-test winFile-4.2 {Enhanced NTFS user/group permissions: test writable only} {notNTFS pcOnly nt} {
+test winFile-4.2 {
+    Enhanced NTFS user/group permissions: test writable only
+} -constraints {
+    notNTFS pcOnly nt
+} -setup {
+    set user $::env(USERDOMAIN)\\$::env(USERNAME)
+} -body {
     catch {cacls $fname /E /R $user} result
     cacls $fname /E /P $user:N
     cacls $fname /E /G $user:W
     test_access $fname 0 1
-} {}
+} -result {}
 
-test winFile-4.3 {Enhanced NTFS user/group permissions: test read+write} {notNTFS pcOnly nt} {
+test winFile-4.3 {
+    Enhanced NTFS user/group permissions: test read+write
+} -constraints {
+    notNTFS pcOnly nt
+} -setup {
+    set user $::env(USERDOMAIN)\\$::env(USERNAME)
+} -body {
     catch {cacls $fname /E /R $user} result
     cacls $fname /E /P $user:N
     cacls $fname /E /G $user:R
     cacls $fname /E /G $user:W
     test_access $fname 1 1
-} {}
+} -result {}
 
-test winFile-4.4 {Enhanced NTFS user/group permissions: test full access} {notNTFS pcOnly nt} {
+test winFile-4.4 {
+    Enhanced NTFS user/group permissions: test full access
+} -constraints {
+    notNTFS pcOnly nt
+} -setup {
+    set user $::env(USERDOMAIN)\\$::env(USERNAME)
+} -body {
     catch {cacls $fname /E /R $user} result
     cacls $fname /E /P $user:N
     cacls $fname /E /G $user:F
     test_access $fname 1 1
-} {}
+} -result {}
 
 file delete $fname
 
