@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.38 2004/06/11 21:55:53 dgp Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.39 2004/06/11 22:39:29 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -21,18 +21,33 @@
  * is invoked by Tcl_Init().  It looks in several different directories:
  *
  *	$tcl_library		- can specify a primary location, if set
- *				  no other locations will be checked
+ *				  no other locations will be checked.  This
+ *				  is the recommended way for a program that
+ *				  embeds Tcl to specifically tell Tcl where
+ *				  to find an init.tcl file.
  *
  *	$env(TCL_LIBRARY)	- highest priority so user can always override
  *				  the search path unless the application has
  *				  specified an exact directory above
  *
- *	$tclDefaultLibrary	- this value is initialized by TclPlatformInit
- *				  from a static C variable that was set at
- *				  compile time
+ *	$tclDefaultLibrary	- INTERNAL:  This variable is set by Tcl
+ *				  only on the Mac OSX platform, and in time
+ *				  we expect to disable it altogether.  Any
+ *				  program that embeds Tcl that is using
+ *				  this variable to customize [tclInit] should
+ *				  migrate to use of tcl_library instead.
  *
- *	$tcl_libPath		- this value is initialized by a call to
- *				  TclGetLibraryPath called from Tcl_Init.
+ *	$tcl_libPath		- OBSOLETE:  This variable is no longer
+ *				  set by Tcl itself, but [tclInit] examines
+ *				  it in case some program that embeds Tcl
+ *				  is customizing [tclInit] by setting this
+ *				  variable to a list of directories in which
+ *				  to search.
+ *
+ *      [tcl::pkgconfig get scriptdir,runtime]
+ *      			- the directory determined by configure to 
+ *      			  be the place where Tcl's script library
+ *      			  is to be installed. 
  *
  * The first directory on this path that contains a valid init.tcl script
  * will be set as the value of tcl_library.
@@ -362,19 +377,11 @@ int
 Tcl_Init(interp)
     Tcl_Interp *interp;         /* Interpreter to initialize. */
 {
-    Tcl_Obj *pathPtr;
-
     if (tclPreInitScript != NULL) {
 	if (Tcl_Eval(interp, tclPreInitScript) == TCL_ERROR) {
 	    return (TCL_ERROR);
 	};
     }
-
-    pathPtr = TclGetLibraryPath();
-    if (pathPtr == NULL) {
-	pathPtr = Tcl_NewObj();
-    }
-    Tcl_SetVar2Ex(interp, "tcl_libPath", NULL, pathPtr, TCL_GLOBAL_ONLY);
     return Tcl_Eval(interp, initScript);
 }
 

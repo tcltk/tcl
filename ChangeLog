@@ -1,5 +1,19 @@
 2004-06-11  Don Porter  <dgp@users.sourceforge.net>
 
+	* doc/Encoding.3:	Removed bogus claims about tcl_libPath.
+
+	* generic/tclInterp.c (Tcl_Init):	Stopped setting the
+	tcl_libPath variable.  [tclInit] can get all its directories
+	without it.
+
+	* tests/unixInit.test:	Modified test code that made use of
+	tcl_libPath variable.
+
+	* unix/tclUnixInit.c:	Stopped setting the tclDefaultLibrary variable,
+	execept on the Mac OS X platform with HAVE_CFBUNDLE.  In that configuration
+	we should seek some way to make use of the TIP 59 facilities and
+	get rid of that usage of tclDefaultLibrary as well.
+
 	* generic/tclInterp.c:	Updated [tclInit] to make $env(TCL_LIBRARY) an
 	absolute path, and to include the scriptdir,runtime configuration value
 	on the search path for init.tcl.
