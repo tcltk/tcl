@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.17 2000/05/26 08:52:17 hobbs Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.18 2000/08/30 01:43:00 ericm Exp $ */
 
 #include "tclInt.h"
 
@@ -107,6 +107,51 @@ typedef struct String {
 		((String *) (objPtr)->internalRep.otherValuePtr)
 #define SET_STRING(objPtr, stringPtr) \
 		(objPtr)->internalRep.otherValuePtr = (VOID *) (stringPtr)
+
+/*
+ * TCL STRING GROWTH ALGORITHM
+ *
+ * When growing strings (during an append, for example), the following growth
+ * algorithm is used:
+ *	if (oldSpace + appendLength < TCL_GROWTH_LARGE_STRING) {
+ *	    newSpace = 2 * (oldSpace + appendLength)
+ *	} else {
+ *	    newSpace = (2 * appendLength) + TCL_GROWTH_MIN_ALLOC + oldSpace
+ *	}
+ *
+ * This allows more efficient use of memory for large strings; if the
+ * doubling algorithm were used after TCL_GROWTH_LARGE_STRING, the
+ * maximum string size in Tcl would be about 1/2 the size of available
+ * memory.  With this adaptive algorithm, effectively all of available memory
+ * can be allocated.
+ *
+ * The addition of TCL_GROWTH_MIN_ALLOC allows for efficient handling
+ * of very small appends.  Without this extra slush factor, a sequence
+ * of several small appends would cause several memory allocations.
+ * As long as TCL_GROWTH_MIN_ALLOC is a reasonable size, we can
+ * avoid that behavior.
+ *
+ * We do NOT use TCL_GROWTH_MIN_ALLOC for strings smaller than
+ * TCL_GROWTH_LARGE_STRING simply because we want our small strings
+ * to stay small; an allocation of TCL_GROWTH_MIN_ALLOC for a string
+ * that is only a few bytes long is wasteful.
+ *
+ * The growth algorithm can be tuned by adjusting the following parameters:
+ *
+ * TCL_GROWTH_LARGE_STRING	Cutoff point, in bytes, at which to switch
+ *				from the doubling algorithm to the adaptive.
+ *				algorithm.  Default is 1048576 (1 megabyte)
+ * TCL_GROWTH_MIN_ALLOC		Additional space, in bytes, to allocate with
+ *				each allocation for strings larger than
+ *				TCL_GROWTH_LARGE_STRING.
+ *				Default is 1024 (1 kilobyte).
+ */
+#ifndef TCL_GROWTH_LARGE_STRING
+#define TCL_GROWTH_LARGE_STRING	1048576
+#endif
+#ifndef TCL_GROWTH_MIN_ALLOC
+#define TCL_GROWTH_MIN_ALLOC	1024
+#endif
 
 
 /*
@@ -667,12 +712,19 @@ Tcl_SetObjLength(objPtr, length)
 	 * Not enough space in current string. Reallocate the string
 	 * space and free the old string.
 	 */
-
-	new = (char *) ckalloc((unsigned) (length+1));
-	if (objPtr->bytes != NULL) {
-	    memcpy((VOID *) new, (VOID *) objPtr->bytes,
-		    (size_t) objPtr->length);
-	    Tcl_InvalidateStringRep(objPtr);
+ 	if (objPtr->bytes != tclEmptyStringRep) {
+	    new = (char *) ckrealloc((char *)objPtr->bytes,
+		    (unsigned)(length+1));
+ 	} else {
+	    new = NULL;
+ 	}
+ 	if (new == NULL) {
+	    new = (char *) ckalloc((unsigned) (length+1));
+	    if (objPtr->bytes != NULL && objPtr->length != 0) {
+ 	    	memcpy((VOID *) new, (VOID *) objPtr->bytes,
+ 		    	(size_t) objPtr->length);
+ 	    	Tcl_InvalidateStringRep(objPtr);
+	    }
 	}
 	objPtr->bytes = new;
 	stringPtr->allocated = length;
@@ -982,15 +1034,17 @@ AppendUnicodeToUnicodeRep(objPtr, unicode, appendNumChars)
 
     /*
      * If not enough space has been allocated for the unicode rep,
-     * reallocate the internal rep object with double the amount of
-     * space needed, so the unicode string can grow without being
-     * reallocated.
+     * reallocate the internal rep object with additional space.  See the
+     * "TCL STRING GROWTH ALGORITHM" comment at the top of this file for an
+     * explanation of the growth algorithm.
      */
 
     numChars = stringPtr->numChars + appendNumChars;
 
     if (numChars >= stringPtr->uallocated) {
-	stringPtr->uallocated = numChars * 2;
+ 	stringPtr->uallocated = numChars +
+	    (numChars >= TCL_GROWTH_LARGE_STRING ?
+		    (2 * appendNumChars) + TCL_GROWTH_MIN_ALLOC : numChars);
 	stringPtr = (String *) ckrealloc((char*)stringPtr,
 		STRING_SIZE(stringPtr->uallocated));
 	SET_STRING(objPtr, stringPtr);
@@ -1138,13 +1192,15 @@ AppendUtfToUtfRep(objPtr, bytes, numBytes)
     if (newLength > (int) stringPtr->allocated) {
 
 	/*
-	 * There isn't currently enough space in the string
-	 * representation so allocate additional space.  Overallocate the
-	 * space by doubling it so that we won't have to do as much
-	 * reallocation in the future.
+	 * There isn't currently enough space in the string representation
+	 * so allocate additional space.  See the "TCL STRING GROWTH ALGORITHM"
+	 * comment at the top of this file for an explanation of the growth
+	 * algorithm.
 	 */
 
-	Tcl_SetObjLength(objPtr, 2*newLength);
+	Tcl_SetObjLength(objPtr, newLength +
+		(newLength >= TCL_GROWTH_LARGE_STRING ?
+			(2 * numBytes) + TCL_GROWTH_MIN_ALLOC : newLength));
     } else {
 
 	/*
@@ -1207,7 +1263,8 @@ Tcl_AppendStringsToObjVA (objPtr, argList)
      */
 
     nargs = 0;
-    newLength = oldLength = objPtr->length;
+    newLength = 0;
+    oldLength = objPtr->length;
     while (1) {
 	string = va_arg(argList, char *);
 	if (string == NULL) {
@@ -1231,23 +1288,31 @@ Tcl_AppendStringsToObjVA (objPtr, argList)
 	newLength += strlen(string);
 	args[nargs++] = string;
     }
-    if (newLength == oldLength) {
+    if (newLength == 0) {
 	goto done;
     }
 
     stringPtr = GET_STRING(objPtr);
-    if (newLength > (int) stringPtr->allocated) {
+    if (oldLength + newLength > (int) stringPtr->allocated) {
 
 	/*
 	 * There isn't currently enough space in the string
-	 * representation so allocate additional space.  If the current
+	 * representation, so allocate additional space.  If the current
 	 * string representation isn't empty (i.e. it looks like we're
-	 * doing a series of appends) then overallocate the space so
-	 * that we won't have to do as much reallocation in the future.
+	 * doing a series of appends) then the growth algorithm described in
+	 * the "TCL STRING GROWTH ALGORITHM" comment at the top of this file is
+	 * used to determine how much memory to allocate.  Otherwise, exactly
+	 * enough memory is allocated.
 	 */
 
-	Tcl_SetObjLength(objPtr,
-		(objPtr->length == 0) ? newLength : 2*newLength);
+	if (oldLength == 0) {
+	    Tcl_SetObjLength(objPtr, newLength);
+	} else if (oldLength < TCL_GROWTH_LARGE_STRING) {
+	    Tcl_SetObjLength(objPtr, 2 * (oldLength + newLength));
+	} else {
+	    Tcl_SetObjLength(objPtr,
+		    oldLength + (2 * newLength) + TCL_GROWTH_MIN_ALLOC);
+	}
     }
 
     /*
@@ -1278,7 +1343,7 @@ Tcl_AppendStringsToObjVA (objPtr, argList)
     if (dst != NULL) {
 	*dst = 0;
     }
-    objPtr->length = newLength;
+    objPtr->length = oldLength + newLength;
 
     done:
     /*

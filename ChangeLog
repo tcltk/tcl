@@ -1,3 +1,10 @@
+2000-08-29  Eric Melski  <ericm@ajubasolutions.com>
+
+	* generic/tclStringObj.c: Applied patch from Gerhard Hintermayer
+	to provide a more conservative string growth algorithm for strings
+	larger than one megabyte; this allows more efficient use of memory
+	for very large strings.
+
 2000-08-25  Eric Melski  <ericm@ajubasolutions.com>
 
 	* tests/trace.test: Extended array tracing tests.
