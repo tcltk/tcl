@@ -300,6 +300,15 @@ EXTERN int		gettimeofday _ANSI_ARGS_((struct timeval *tp,
 #endif
 
 /*
+ * On UNIX, there's no platform specific implementation of "TclpStat(...)"
+ * or "TclpAccess(...)".  Simply call "stat(...)' and "access(...)"
+ * respectively.
+ */
+
+#define TclpStat	stat
+#define TclpAccess	access
+
+/*
  * On systems without symbolic links (i.e. S_IFLNK isn't defined)
  * define "lstat" to use "stat" instead.
  */
