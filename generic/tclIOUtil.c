@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.72 2003/02/10 10:26:25 vincentdarley Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.73 2003/02/10 12:50:31 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -3954,10 +3954,9 @@ UpdateStringOfFsPath(objPtr)
 	    break;
 	case TCL_PLATFORM_WINDOWS:
 	    /* 
-	     * We need the cwdLen > 2 because a volume
-	     * relative path doesn't get a '/'.  For
-	     * example 'glob C:*cat*.exe' will return
-	     * 'C:cat32.exe'
+	     * We need the extra 'cwdLen != 2', and ':' checks because 
+	     * a volume relative path doesn't get a '/'.  For example 
+	     * 'glob C:*cat*.exe' will return 'C:cat32.exe'
 	     */
 	    if (cwdStr[cwdLen-1] != '/' 
 	      && cwdStr[cwdLen-1] != '\\') {
@@ -4547,6 +4546,9 @@ Tcl_FSGetTranslatedPath(interp, pathPtr)
     }
     srcFsPathPtr = (FsPath*) pathPtr->internalRep.otherValuePtr;
     if (srcFsPathPtr->translatedPathPtr == NULL) {
+        if (srcFsPathPtr->flags != 0) {
+	    return Tcl_FSGetNormalizedPath(interp, pathPtr);
+        }
         /* 
          * It is a pure absolute, normalized path object.
          * This is something like being a 'pure list'.  The
@@ -4956,43 +4958,6 @@ Tcl_FSGetNativePath(pathObjPtr)
     return (CONST char *)Tcl_FSGetInternalRep(pathObjPtr, &tclNativeFilesystem);
 }
 
-static Tcl_Obj*
-FsGetValidObjRep(interp, objPtr)
-    Tcl_Interp *interp;		/* Interpreter in which to store error
-				 * message (if necessary). */
-    Tcl_Obj *objPtr;		/* Object to convert to a valid, current
-				 * path type. */
-{
-    FsPath *fsPathPtr;
-    if (objPtr->typePtr != &tclFsPathType) {
-	if (Tcl_ConvertToType(interp, objPtr, &tclFsPathType) != TCL_OK) {
-	    return NULL;
-	}
-    }
-    fsPathPtr = (FsPath*) objPtr->internalRep.otherValuePtr;
-    
-    if (fsPathPtr->filesystemEpoch != theFilesystemEpoch) {
-	if (objPtr->bytes == NULL) {
-	    UpdateStringOfFsPath(objPtr);
-	}
-	FreeFsPathInternalRep(objPtr);
-	objPtr->typePtr = NULL;
-	if (Tcl_ConvertToType(interp, objPtr, &tclFsPathType) != TCL_OK) {
-	    return NULL;
-	}
-	fsPathPtr = (FsPath*) objPtr->internalRep.otherValuePtr;
-    }
-    
-    if (fsPathPtr->cwdPtr != NULL) {
-	if (FsCwdPointerEquals(fsPathPtr->cwdPtr)) {
-          /* This causes a few minor test failures with links */
-          /* Once these are resolved, this would improve efficiency */
-	  /* return objPtr; */
-	}
-    }
-    return Tcl_FSGetNormalizedPath(interp, objPtr);
-}
-
 /*
  *---------------------------------------------------------------------------
  *
@@ -5019,7 +4984,7 @@ NativeCreateNativeRep(pathObjPtr)
     char *str;
 
     /* Make sure the normalized path is set */
-    validPathObjPtr = FsGetValidObjRep(NULL, pathObjPtr);
+    validPathObjPtr = Tcl_FSGetNormalizedPath(NULL, pathObjPtr);
 
     str = Tcl_GetStringFromObj(validPathObjPtr, &len);
 #ifdef __WIN32__

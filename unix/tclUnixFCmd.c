@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFCmd.c,v 1.27 2003/02/10 10:26:26 vincentdarley Exp $
+ * RCS: @(#) $Id: tclUnixFCmd.c,v 1.28 2003/02/10 12:50:31 vincentdarley Exp $
  *
  * Portions of this code were derived from NetBSD source code which has
  * the following copyright notice:
@@ -1673,7 +1673,10 @@ TclpObjNormalizePath(interp, pathPtr, nextCheckpoint)
      * that '/' exists, and if it isn't zero, it must point at
      * a directory separator which we also know exists.
      */
-    currentPathEndPosition = path + nextCheckpoint + 1;
+    currentPathEndPosition = path + nextCheckpoint;
+    if (*currentPathEndPosition == '/') {
+	currentPathEndPosition++;
+    }
 
 #ifndef NO_REALPATH
     /* For speed, try to get the entire path in one go */

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.43 2003/02/10 10:26:26 vincentdarley Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.44 2003/02/10 12:50:32 vincentdarley Exp $
  */
 
 //#define _WIN32_WINNT  0x0500
@@ -699,7 +699,6 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 	}
 	return TCL_OK;
     } else {
-	char drivePat[] = "?:\\";
 	DWORD attr;
 	HANDLE handle;
 	WIN32_FIND_DATAT data;
@@ -2026,7 +2025,10 @@ TclpObjNormalizePath(interp, pathPtr, nextCheckpoint)
 	int isDrive = 1;
 	Tcl_DString ds;
 
-	currentPathEndPosition = path + nextCheckpoint + 1;
+	currentPathEndPosition = path + nextCheckpoint;
+        if (*currentPathEndPosition == '/') {
+	    currentPathEndPosition++;
+        }
 	while (1) {
 	    char cur = *currentPathEndPosition;
 	    if ((cur == '/' || cur == 0) && (path != currentPathEndPosition)) {
@@ -2095,7 +2097,10 @@ TclpObjNormalizePath(interp, pathPtr, nextCheckpoint)
 	int isDrive = 1;
 	Tcl_DString ds;
 
-	currentPathEndPosition = path + nextCheckpoint + 1;
+	currentPathEndPosition = path + nextCheckpoint;
+	if (*currentPathEndPosition == '/') {
+	    currentPathEndPosition++;
+	}
 	while (1) {
 	    char cur = *currentPathEndPosition;
 	    if ((cur == '/' || cur == 0) && (path != currentPathEndPosition)) {
