@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: upvar.n,v 1.5.18.1 2004/10/27 14:43:15 dkf Exp $
+'\" RCS: @(#) $Id: upvar.n,v 1.5.18.2 2004/11/12 09:02:30 das Exp $
 '\" 
 .so man.macros
 .TH upvar n "" Tcl "Tcl Built-In Commands"
@@ -46,12 +46,12 @@ procedure calling and also makes it easier to build new control constructs
 as Tcl procedures.
 For example, consider the following procedure:
 .CS
-\fBproc add2 name {
+proc add2 name {
    \fBupvar\fR $name x
    set x [expr $x+2]
-}\fR
+}
 .CE
-\fBAdd2\fR is invoked with an argument giving the name of a variable,
+\fBadd2\fR is invoked with an argument giving the name of a variable,
 and it adds two to the value of that variable.
 Although \fBadd2\fR could have been implemented using \fBuplevel\fR
 instead of \fBupvar\fR, \fBupvar\fR makes it simpler for \fBadd2\fR
@@ -84,17 +84,17 @@ the trace procedure will be passed the name of \fImyVar\fR, rather
 than the name of \fIotherVar\fR.  Thus, the output of the following code
 will be \fBlocalVar\fR rather than \fBoriginalVar\fR:
 .CS
-\fBproc traceproc { name index op } {
+proc \fBtraceproc\fR { name index op } {
    puts $name
 }
-proc setByUpvar { name value } {
+proc \fBsetByUpvar\fR { name value } {
    \fBupvar\fR $name localVar
    set localVar $value
 }
 set originalVar 1
-trace variable originalVar w traceproc
-setByUpvar originalVar 2
-}\fR
+trace variable originalVar w \fBtraceproc\fR
+\fBsetByUpvar\fR originalVar 2
+}
 .CE
 .PP
 If \fIotherVar\fR refers to an element of an array, then variable
