@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinInit.c,v 1.15 1999/04/21 22:00:29 stanton Exp $
+ * RCS: @(#) $Id: tclWinInit.c,v 1.16 1999/04/23 01:57:32 stanton Exp $
  */
 
 #include "tclWinInt.h"
@@ -140,6 +140,16 @@ TclpInitPlatform()
      */
 
     mainThreadId = GetCurrentThreadId();
+
+#ifdef STATIC_BUILD
+    /*
+     * If we are in a statically linked executable, then we need to
+     * explicitly initialize the Windows function tables here since
+     * DllMain() will not be invoked.
+     */
+
+    TclWinInit(GetModuleHandle(NULL));
+#endif
 }
 
 /*
