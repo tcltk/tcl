@@ -306,7 +306,7 @@ TclLookupVar(interp, part1, part2, flags, msg, createPart1, createPart2,
 	int part1Len = strlen(part1);
 	
 	for (i = 0;  i < localCt;  i++) {
-	    if (!localPtr->isTemp) {
+	    if (!TclIsVarTemporary(localPtr)) {
 		char *localName = localVarPtr->name;
 		if ((part1[0] == localName[0])
 		        && (part1Len == localPtr->nameLength)
@@ -3352,7 +3352,7 @@ MakeUpvar(iPtr, framePtr, otherP1, otherP2, otherFlags, myName, myFlags)
 
 	varPtr = NULL;
 	for (i = 0;  i < localCt;  i++) {
-	    if (!localPtr->isTemp) {
+	    if (!TclIsVarTemporary(localPtr)) {
 		char *localName = localVarPtr->name;
 		if ((myName[0] == localName[0])
 		        && (nameLen == localPtr->nameLength)
