@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEvent.c,v 1.37 2004/05/13 12:59:21 dkf Exp $
+ * RCS: @(#) $Id: tclEvent.c,v 1.38 2004/06/22 13:08:57 vasiljevic Exp $
  */
 
 #include "tclInt.h"
@@ -110,6 +110,17 @@ static Tcl_ThreadDataKey dataKey;
  * This is ckalloc'd and cleared in Tcl_Finalize.
  */
 static char *tclLibraryPathStr = NULL;
+
+
+#ifdef TCL_THREADS
+
+typedef struct {
+    Tcl_ThreadCreateProc *proc;	/* Main() function of the thread */
+    ClientData clientData;	/* The one argument to Main() */
+} ThreadClientData;
+static Tcl_ThreadCreateType NewThreadProc _ANSI_ARGS_((
+           ClientData clientData));
+#endif
 
 /*
  * Prototypes for procedures referenced only in this file:
@@ -1215,4 +1226,82 @@ Tcl_UpdateObjCmd(clientData, interp, objc, objv)
 
     Tcl_ResetResult(interp);
     return TCL_OK;
+}
+
+#ifdef TCL_THREADS
+/*
+ *-----------------------------------------------------------------------------
+ *
+ *  NewThreadProc --
+ *
+ * 	Bootstrap function of a new Tcl thread.
+ *
+ * Results:
+ *	None.
+ *
+ * Side Effects:
+ *	Initializes Tcl notifier for the current thread.
+ *
+ *-----------------------------------------------------------------------------
+ */
+
+static Tcl_ThreadCreateType
+NewThreadProc(ClientData clientData)
+{
+    ThreadClientData *cdPtr;
+    ClientData threadClientData;
+    Tcl_ThreadCreateProc *threadProc;
+
+    TCL_TSD_INIT(&dataKey);
+
+    cdPtr = (ThreadClientData*)clientData;
+    threadProc = cdPtr->proc;
+    threadClientData = cdPtr->clientData;
+    Tcl_Free((char*)clientData); /* Allocated in Tcl_CreateThread() */
+
+    TclInitNotifier();
+
+    (*threadProc)(threadClientData);
+}
+#endif
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_CreateThread --
+ *
+ *	This procedure creates a new thread. This actually belongs
+ *	to the tclThread.c file but since we use some private 
+ *	data structures local to this file, it is placed here.
+ *
+ * Results:
+ *	TCL_OK if the thread could be created.  The thread ID is
+ *	returned in a parameter.
+ *
+ * Side effects:
+ *	A new thread is created.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_CreateThread(idPtr, proc, clientData, stackSize, flags)
+    Tcl_ThreadId *idPtr;		/* Return, the ID of the thread */
+    Tcl_ThreadCreateProc proc;		/* Main() function of the thread */
+    ClientData clientData;		/* The one argument to Main() */
+    int stackSize;			/* Size of stack for the new thread */
+    int flags;				/* Flags controlling behaviour of
+					 * the new thread */
+{
+#ifdef TCL_THREADS
+    ThreadClientData *cdPtr;
+
+    cdPtr = (ThreadClientData*)Tcl_Alloc(sizeof(ThreadClientData));
+    cdPtr->proc = proc;
+    cdPtr->clientData = clientData;
+
+    return TclpThreadCreate(idPtr, NewThreadProc, (ClientData)cdPtr,
+                           stackSize, flags);
+#else
+    return TCL_ERROR;
+#endif /* TCL_THREADS */
 }

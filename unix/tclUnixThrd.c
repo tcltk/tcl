@@ -65,7 +65,7 @@ static pthread_mutex_t *allocLockPtr = &allocLock;
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_CreateThread --
+ * TclpThreadCreaet --
  *
  *	This procedure creates a new thread.
  *
@@ -80,7 +80,7 @@ static pthread_mutex_t *allocLockPtr = &allocLock;
  */
 
 int
-Tcl_CreateThread(idPtr, proc, clientData, stackSize, flags)
+TclpThreadCreate(idPtr, proc, clientData, stackSize, flags)
     Tcl_ThreadId *idPtr;		/* Return, the ID of the thread */
     Tcl_ThreadCreateProc proc;		/* Main() function of the thread */
     ClientData clientData;		/* The one argument to Main() */

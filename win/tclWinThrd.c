@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinThrd.c,v 1.30 2004/04/27 17:17:37 davygrvy Exp $
+ * RCS: @(#) $Id: tclWinThrd.c,v 1.31 2004/06/22 13:09:01 vasiljevic Exp $
  */
 
 #include "tclWinInt.h"
@@ -115,7 +115,7 @@ typedef struct WinCondition {
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_CreateThread --
+ * TclpThreadCreate --
  *
  *	This procedure creates a new thread.
  *
@@ -130,7 +130,7 @@ typedef struct WinCondition {
  */
 
 int
-Tcl_CreateThread(idPtr, proc, clientData, stackSize, flags)
+TclpThreadCreate(idPtr, proc, clientData, stackSize, flags)
     Tcl_ThreadId *idPtr;		/* Return, the ID of the thread */
     Tcl_ThreadCreateProc proc;		/* Main() function of the thread */
     ClientData clientData;		/* The one argument to Main() */
