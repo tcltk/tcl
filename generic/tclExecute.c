@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.155 2004/10/06 20:09:37 dkf Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.156 2004/10/08 15:39:53 dkf Exp $
  */
 
 #ifdef STDC_HEADERS
@@ -2911,6 +2911,71 @@ TclExecuteByteCode(interp, codePtr)
 	TRACE_WITH_OBJ(("\"%.30s\" %d %d => ", O2S(valuePtr),
 		TclGetInt4AtPtr(pc+1), TclGetInt4AtPtr(pc+5)), objResultPtr);
 	NEXT_INST_F(9, 1, 1);
+    }
+
+    case INST_LIST_IN:
+    case INST_LIST_NOT_IN: {
+	/*
+	 * Basic list containment operators.
+	 */
+	int found, s1len, s2len, llen, i;
+	Tcl_Obj *valuePtr, *value2Ptr, *o;
+	char *s1, *s2;
+
+	value2Ptr = *tosPtr;
+	valuePtr = *(tosPtr - 1);
+
+	s1 = Tcl_GetStringFromObj(valuePtr, &s1len);
+	result = Tcl_ListObjLength(interp, value2Ptr, &llen);
+	if (result != TCL_OK) {
+	    TRACE_WITH_OBJ(("\"%.30s\" \"%.30s\" => ERROR: ", O2S(valuePtr),
+		    O2S(value2Ptr)), Tcl_GetObjResult(interp));
+	    goto checkForCatch;
+	}
+	found = 0;
+	if (llen > 0) {
+	    /* An empty list doesn't match anything */
+	    i = 0;
+	    do {
+		Tcl_ListObjIndex(NULL, value2Ptr, i, &o);
+		if (o != NULL) {
+		    s2 = Tcl_GetStringFromObj(o, &s2len);
+		} else {
+		    s2 = "";
+		}
+		if (s1len == s2len) {
+		    found = (strcmp(s1, s2) == 0);
+		}
+		i++;
+	    } while (i < llen && found == 0);
+	}
+
+	if (*pc == INST_LIST_NOT_IN) {
+	    found = !found;
+	}
+
+	TRACE(("%.20s %.20s => %d\n", O2S(valuePtr), O2S(value2Ptr), found));
+
+	/*
+	 * Peep-hole optimisation: if you're about to jump, do jump
+	 * from here.
+	 */
+
+	pc++;
+#ifndef TCL_COMPILE_DEBUG
+	switch (*pc) {
+	case INST_JUMP_FALSE1:
+	    NEXT_INST_F((found ? 2 : TclGetInt1AtPtr(pc+1)), 2, 0);
+	case INST_JUMP_TRUE1:
+	    NEXT_INST_F((found ? TclGetInt1AtPtr(pc+1) : 2), 2, 0);
+	case INST_JUMP_FALSE4:
+	    NEXT_INST_F((found ? 5 : TclGetInt4AtPtr(pc+1)), 2, 0);
+	case INST_JUMP_TRUE4:
+	    NEXT_INST_F((found ? TclGetInt4AtPtr(pc+1) : 5), 2, 0);
+	}
+#endif
+	objResultPtr = Tcl_NewBooleanObj(found);
+	NEXT_INST_F(0, 2, 1);
     }
 
     /*
