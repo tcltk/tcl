@@ -10,6 +10,18 @@
 	ClientData was properly typed as a void* and TCHAR would not be
 	defined twice.
 
+	* generic/tcl.h:  Removed a small mistake from before.  Changes to
+	the EXTERN macro for proper Borland compatibility will have to see
+	a TIP.  What's this with the MS compiler:
+
+		__declspec(dllexport) int func (int a, int b);
+
+	will have to be this with Borland:
+
+		int __cdecl __export func (int a, int b);
+
+	The order of the attribute needs to be after the return type.
+
 2001-09-04  Don Porter  <dgp@users.sourceforge.net>
 
 	* compat/strtod.c (strtod):  Fixed failure to handle expressions
