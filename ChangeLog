@@ -1,18 +1,18 @@
 2001-11-23  Daniel Steffen <das@users.sourceforge.net>
 
-	*unix/Makefile.in:
-	*unix/configure.in:
-	*unix/install-sh:
-	*unix/mkLinks:
-	*unix/mkLinks.tcl:
-	*unix/tclLoadDyld.c:
-	*unix/tclMtherr.c: Mac OSX support: build system, dynamic code loading
+	* unix/Makefile.in:
+	* unix/configure.in:
+	* unix/install-sh:
+	* unix/mkLinks:
+	* unix/mkLinks.tcl:
+	* unix/tclLoadDyld.c:
+	* unix/tclMtherr.c: Mac OSX support: build system, dynamic code loading
 	and support for case-insensitive filesystems in mkLinks (patch #435258)
 
 2001-11-23  Daniel Steffen <das@users.sourceforge.net>
 
-	**  upport to 8.4 of mac code changes for 8.3.3 & various new
-	**  changes for 8.4, some already backported to 8.3.4 (patch #435658)
+	Up-port to 8.4 of mac code changes for 8.3.3 & various new
+	changes for 8.4, some already backported to 8.3.4 (patch #435658)
 
 	* generic/tclObj.c: added #include to fix missing prototype errors
 
@@ -64,31 +64,31 @@
 
 	* mac/tcltkMacBuildSupport.sea.hqx: new archive of mac build support
 	files & suggested build environment directory hierarchy: 
-	- 'Building MacTclTk' & 'CW Pro6 changes' readme's.
-	- projects for MoreFiles 1.5.2 static & shared libraries.
-	- project & sources for 'pseudoCarbonSupport', see below.
-	- included XML versions of the projects for CW Pro5 or Pro7 users.
+	'Building MacTclTk' & 'CW Pro6 changes' readme's.
+	projects for MoreFiles 1.5.2 static & shared libraries.
+	project & sources for 'pseudoCarbonSupport', see below.
+	included XML versions of the projects for CW Pro5 or Pro7 users.
 
 	* mac/tclMacProjects.sea.hqx: updated mac build project files:
-	- build support for CodeWarrior Pro6, UnivIntf 3.4 & shared runtime
+	build support for CodeWarrior Pro6, UnivIntf 3.4 & shared runtime
 	libraries: the MSL libraries and MoreFiles are no longer compiled into
 	Tcl.shlb, all non-static binaries now use the Pro6 shared runtime
 	libraries and MoreFiles.shlb.  These shlbs are merged into the standard
 	Wish and TclShell, but 3rd party applications linking with Tcl.shlb or
 	Tk.shlb need to setup access to them.  (see the "(sh-ppc)" targets
 	for how to do this.)
-	- included XML versions of the projects for CW Pro5 or Pro7 users.
-	- use compat/strtod.c instead of MSL's strtod()
-	- use WASTE versions of MSL for tcl test target to avoid text buffer
+	included XML versions of the projects for CW Pro5 or Pro7 users.
+	use compat/strtod.c instead of MSL's strtod()
+	use WASTE versions of MSL for tcl test target to avoid text buffer
 	cutoff at 32k.
-	- Merging the full MSL.shlb and the other shlbs into Wish & TclShell
+	Merging the full MSL.shlb and the other shlbs into Wish & TclShell
 	makes them a bit larger than before, use unmerged binaries to avoid
 	copying the shared code with every application, e.g. when deploying
 	numerous Wish based droplets.
-	- Note that using CW Pro5 to compile extensions is in principle still
+	Note that using CW Pro5 to compile extensions is in principle still
 	possible, but need to link with Pro6 runtime libraries.
-	- Tclapplescript now loads and runs on CFM68k.
-	- Highly experimental "pseudoCarbon" support for Tcl only on OS 8/9:
+	Tclapplescript now loads and runs on CFM68k.
+	Highly experimental "pseudoCarbon" support for Tcl only on OS 8/9:
 	binaries in "Build:(Carbon):" link against CarbonLib instead of
 	InterfaceLib, however the actual code has not been carbonized! i.e. it
 	will not run on OSX and may not even run properly with CarbonLib. 
@@ -141,11 +141,11 @@
 	* mac/tclMacUtil.c:
 	* generic/tclThreadTest.c: renamed routines conflicting with standard
 	Apple or MoreFiles headers (at compile or link time):
-	    GetGlobalMouse         -> GetGlobalMouseTcl
+	GetGlobalMouse         -> GetGlobalMouseTcl
     	FSpGetDirectoryID      -> FSpGetDirectoryIDTcl
     	FSpOpenResFileCompat   -> FSpOpenResFileCompatTcl
     	FSpCreateResFileCompat -> FSpCreateResFileCompatTcl
-		NewThread              -> NewTestThread
+	NewThread              -> NewTestThread
 	the renamed MoreFiles *Tcl routines are just wrappers calling into the
 	MoreFiles DLL.
 
