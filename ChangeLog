@@ -1,6 +1,6 @@
 2004-05-17  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
-	* doc/global.n: Added an example.
+	* doc/global.n, doc/uplevel.n: Added an example.
 
 	* tests/info.test (info-3.1): Corrected test result back to what
 	it used to be in Tcl 7.* now that command counts are being
