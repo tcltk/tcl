@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFCmd.c,v 1.34 2003/02/04 17:06:53 vincentdarley Exp $
+ * RCS: @(#) $Id: tclWinFCmd.c,v 1.35 2003/02/07 15:29:33 vincentdarley Exp $
  */
 
 #include "tclWinInt.h"
@@ -1136,7 +1136,8 @@ TraverseWinTree(
     oldTargetLen = 0;		/* lint. */
 
     nativeSource = (TCHAR *) Tcl_DStringValue(sourcePtr);
-    nativeTarget = (TCHAR *) (targetPtr == NULL ? NULL : Tcl_DStringValue(targetPtr));
+    nativeTarget = (TCHAR *) (targetPtr == NULL 
+			      ? NULL : Tcl_DStringValue(targetPtr));
     
     oldSourceLen = Tcl_DStringLength(sourcePtr);
     sourceAttr = (*tclWinProcs->getFileAttributesProc)(nativeSource);

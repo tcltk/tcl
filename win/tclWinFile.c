@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.41 2003/01/16 19:01:59 mdejong Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.42 2003/02/07 15:29:34 vincentdarley Exp $
  */
 
 //#define _WIN32_WINNT  0x0500
@@ -147,13 +147,14 @@ typedef NET_API_STATUS NET_API_FUNCTION NETGETDCNAMEPROC
 
 static int NativeAccess(CONST TCHAR *path, int mode);
 static int NativeStat(CONST TCHAR *path, Tcl_StatBuf *statPtr, int checkLinks);
+static unsigned short NativeStatMode(DWORD attr, int checkLinks, int isExec);
 static int NativeIsExec(CONST TCHAR *path);
 static int NativeReadReparse(CONST TCHAR* LinkDirectory, 
 			     REPARSE_DATA_BUFFER* buffer);
 static int NativeWriteReparse(CONST TCHAR* LinkDirectory, 
 			      REPARSE_DATA_BUFFER* buffer);
-static int NativeMatchType(CONST char *name, int nameLen, 
-			   CONST TCHAR* nativeName, Tcl_GlobTypeData *types);
+static int NativeMatchType(int isDrive, DWORD attr, CONST TCHAR* nativeName, 
+			   Tcl_GlobTypeData *types);
 static int WinIsDrive(CONST char *name, int nameLen);
 static Tcl_Obj* WinReadLink(CONST TCHAR* LinkSource);
 static Tcl_Obj* WinReadLinkDirectory(CONST TCHAR* LinkDirectory);
@@ -671,11 +672,29 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
     if (pattern == NULL || (*pattern == '\0')) {
 	Tcl_Obj *norm = Tcl_FSGetNormalizedPath(NULL, pathPtr);
 	if (norm != NULL) {
+	    /* Match a single file directly */
 	    int len;
-	    char *str = Tcl_GetStringFromObj(norm,&len);
-	    /* Match a file directly */
+	    DWORD attr;
+	    CONST char *str = Tcl_GetStringFromObj(norm,&len);
+
 	    nativeName = (CONST TCHAR*) Tcl_FSGetNativePath(pathPtr);
-	    if (NativeMatchType(str, len, nativeName, types)) {
+	    
+	    if (tclWinProcs->getFileAttributesExProc == NULL) {
+		attr = (*tclWinProcs->getFileAttributesProc)(nativeName);
+		if (attr == 0xffffffff) {
+		    return TCL_OK;
+		}
+	    } else {
+		WIN32_FILE_ATTRIBUTE_DATA data;
+		if((*tclWinProcs->getFileAttributesExProc)(nativeName,
+							   GetFileExInfoStandard,
+							   &data) != TRUE) {
+		    return TCL_OK;
+		}
+		attr = data.dwFileAttributes;
+	    }
+	    if (NativeMatchType(WinIsDrive(str,len), attr, 
+				nativeName, types)) {
 		Tcl_ListObjAppendElement(interp, resultPtr, pathPtr);
 	    }
 	}
@@ -684,10 +703,9 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 	char drivePat[] = "?:\\";
 	const char *message;
 	CONST char *dir;
-	char *root;
 	int dirLength;
 	Tcl_DString dirString;
-	DWORD attr, volFlags;
+	DWORD attr;
 	HANDLE handle;
 	WIN32_FIND_DATAT data;
 	BOOL found;
@@ -710,6 +728,7 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 	Tcl_DStringAppend(&dsOrig, Tcl_GetString(fileNamePtr), -1);
 
 	dirLength = Tcl_DStringLength(&dsOrig);
+	
 	Tcl_DStringInit(&dirString);
 	if (dirLength == 0) {
 	    Tcl_DStringAppend(&dirString, ".\\", 2);
@@ -744,54 +763,6 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 	if ((attr == 0xffffffff) || ((attr & FILE_ATTRIBUTE_DIRECTORY) == 0)) {
 	    Tcl_DStringFree(&dirString);
 	    return TCL_OK;
-	}
-
-	/*
-	 * Next check the volume information for the directory to see
-	 * whether comparisons should be case sensitive or not.  If the
-	 * root is null, then we use the root of the current directory.
-	 * If the root is just a drive specifier, we use the root
-	 * directory of the given drive.
-	 */
-
-	switch (Tcl_GetPathType(dir)) {
-	    case TCL_PATH_RELATIVE:
-		found = GetVolumeInformationA(NULL, NULL, 0, NULL, NULL, 
-			&volFlags, NULL, 0);
-		break;
-	    case TCL_PATH_VOLUME_RELATIVE:
-		if (dir[0] == '\\') {
-		    root = NULL;
-		} else {
-		    root = drivePat;
-		    *root = dir[0];
-		}
-		found = GetVolumeInformationA(root, NULL, 0, NULL, NULL, 
-			&volFlags, NULL, 0);
-		break;
-	    case TCL_PATH_ABSOLUTE:
-		if (dir[1] == ':') {
-		    root = drivePat;
-		    *root = dir[0];
-		    found = GetVolumeInformationA(root, NULL, 0, NULL, NULL, 
-			    &volFlags, NULL, 0);
-		} else if (dir[1] == '\\') {
-		    char *p;
-
-		    p = strchr(dir + 2, '\\');
-		    p = strchr(p + 1, '\\');
-		    p++;
-		    nativeName = Tcl_WinUtfToTChar(dir, p - dir, &ds);
-		    found = (*tclWinProcs->getVolumeInformationProc)(nativeName, 
-			    NULL, 0, NULL, NULL, &volFlags, NULL, 0);
-		    Tcl_DStringFree(&ds);
-		}
-		break;
-	}
-
-	if (found == 0) {
-	    message = "couldn't read volume information for \"";
-	    goto error;
 	}
 
 	/*
@@ -831,14 +802,19 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 
 	for (found = 1; found != 0; 
 		found = (*tclWinProcs->findNextFileProc)(handle, &data)) {
-	    CONST TCHAR *nativeMatchResult;
-	    CONST char *name, *fname;
+	    CONST char *name, *fullname;
+	    int checkDrive = 0;
+	    int isDrive;
+	    DWORD attr;
 	    
 	    if (tclWinProcs->useWide) {
 		nativeName = (CONST TCHAR *) data.w.cFileName;
+		attr = data.w.dwFileAttributes;
 	    } else {
 		nativeName = (CONST TCHAR *) data.a.cFileName;
+		attr = data.a.dwFileAttributes;
 	    }
+	    
 	    name = Tcl_WinTCharToUtf(nativeName, -1, &ds);
 
 	    if (!matchSpecialDots) {
@@ -846,8 +822,18 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 		if (name[0] == '.') {
 		    if (name[1] == '\0' 
 		      || (name[1] == '.' && name[2] == '\0')) {
+			Tcl_DStringFree(&ds);
 			continue;
 		    }
+		}
+	    } else {
+		if (name[0] == '.' && name[1] == '.' && name[2] == '\0') {
+		    /* 
+		     * Have to check if this is a drive below, so
+		     * we can correctly match 'hidden' and not hidden
+		     * files.
+		     */
+		    checkDrive = 1;
 		}
 	    }
 	    
@@ -863,14 +849,8 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 	     * the system.
 	     */
 
-	    nativeMatchResult = NULL;
-
-	    if (Tcl_StringCaseMatch(name, pattern, 1) != 0) {
-		nativeMatchResult = nativeName;
-	    }
-	    Tcl_DStringFree(&ds);
-
-	    if (nativeMatchResult == NULL) {
+	    if (Tcl_StringCaseMatch(name, pattern, 1) == 0) {
+		Tcl_DStringFree(&ds);
 		continue;
 	    }
 
@@ -879,18 +859,21 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 	     * of the path.
 	     */
 
-	    name = Tcl_WinTCharToUtf(nativeMatchResult, -1, &ds);
 	    Tcl_DStringAppend(&dsOrig, name, -1);
 	    Tcl_DStringFree(&ds);
 
-	    fname = Tcl_DStringValue(&dsOrig);
-	    nativeName = Tcl_WinUtfToTChar(fname, Tcl_DStringLength(&dsOrig), 
-					   &ds);
+	    fullname = Tcl_DStringValue(&dsOrig);
+	    nativeName = Tcl_WinUtfToTChar(fullname, 
+					   Tcl_DStringLength(&dsOrig), &ds);
 	    
-	    if (NativeMatchType(fname, Tcl_DStringLength(&dsOrig), 
-				nativeName, types)) {
+	    if (checkDrive) {
+		isDrive = WinIsDrive(fullname, Tcl_DStringLength(&dsOrig));
+	    } else {
+		isDrive = 0;
+	    }
+	    if (NativeMatchType(isDrive, attr, nativeName, types)) {
 		Tcl_ListObjAppendElement(interp, resultPtr, 
-			Tcl_NewStringObj(fname, Tcl_DStringLength(&dsOrig)));
+		  Tcl_NewStringObj(fullname, Tcl_DStringLength(&dsOrig)));
 	    }
 	    /*
 	     * Free ds here to ensure that nativeName is valid above.
@@ -971,17 +954,32 @@ WinIsDrive(
     }
     return 0;
 }
-	   
 
-/* 
+/*
+ *----------------------------------------------------------------------
+ * 
+ * NativeMatchType --
+ * 
  * This function needs a special case for a path which is a root
  * volume, because for NTFS root volumes, the getFileAttributesProc
  * returns a 'hidden' attribute when it should not.
+ * 
+ * We only ever make one call to a 'get attributes' routine here,
+ * so that this function is as fast as possible.  Unfortunately,
+ * it still means we have to make the call for every single file
+ * we return from 'glob', which is not ideal.
+ * 
+ * Results:
+ *  0 = file doesn't match
+ *  1 = file matches
+ * 
+ *----------------------------------------------------------------------
  */
 static int 
 NativeMatchType(
-    CONST char *name,         /* Name */
-    int nameLen,              /* Length of name */
+    int isDrive,              /* Is this a drive */
+    DWORD attr,               /* We already know the attributes 
+                               * for the file */
     CONST TCHAR* nativeName,  /* Native path to check */
     Tcl_GlobTypeData *types)  /* Type description to match against */
 {
@@ -990,23 +988,15 @@ NativeMatchType(
      * want to retrieve this info if it is absolutely necessary
      * because it is an expensive call.  Unfortunately, to deal
      * with hidden files properly, we must always retrieve it.
-     * There are more modern Win32 APIs available which we should
-     * look into.
      */
 
-    DWORD attr = (*tclWinProcs->getFileAttributesProc)(nativeName);
-    if (attr == 0xffffffff) {
-	/* File doesn't exist */
-	return 0;
-    }
-    
     if (types == NULL) {
 	/* If invisible, don't return the file */
-	if (attr & FILE_ATTRIBUTE_HIDDEN && !WinIsDrive(name, nameLen)) {
+	if (attr & FILE_ATTRIBUTE_HIDDEN && !isDrive) {
 	    return 0;
 	}
     } else {
-	if (attr & FILE_ATTRIBUTE_HIDDEN && !WinIsDrive(name, nameLen)) {
+	if (attr & FILE_ATTRIBUTE_HIDDEN && !isDrive) {
 	    /* If invisible */
 	    if ((types->perm == 0) || 
 	      !(types->perm & TCL_GLOB_PERM_HIDDEN)) {
@@ -1024,54 +1014,52 @@ NativeMatchType(
 		((types->perm & TCL_GLOB_PERM_RONLY) &&
 			!(attr & FILE_ATTRIBUTE_READONLY)) ||
 		((types->perm & TCL_GLOB_PERM_R) &&
-			(NativeAccess(nativeName, R_OK) != 0)) ||
+			(0 /* File exists => R_OK on Windows */)) ||
 		((types->perm & TCL_GLOB_PERM_W) &&
-			(NativeAccess(nativeName, W_OK) != 0)) ||
+			(attr & FILE_ATTRIBUTE_READONLY)) ||
 		((types->perm & TCL_GLOB_PERM_X) &&
-			(NativeAccess(nativeName, X_OK) != 0))
+			(!(attr & FILE_ATTRIBUTE_DIRECTORY)
+			 && !NativeIsExec(nativeName)))
 		) {
 		return 0;
 	    }
 	}
-	if (types->type != 0) {
-	    Tcl_StatBuf buf;
+	if ((types->type & TCL_GLOB_TYPE_DIR) 
+	    && (attr & FILE_ATTRIBUTE_DIRECTORY)) {
+	    /* Quicker test for directory, which is a common case */
+	    return 1;
+	} else if (types->type != 0) {
+	    unsigned short st_mode;
+	    int isExec = NativeIsExec(nativeName);
 	    
-	    if (NativeStat(nativeName, &buf, 0) != 0) {
-		/* 
-		 * Posix error occurred, either the file
-		 * has disappeared, or there is some other
-		 * strange error.  In any case we don't
-		 * return this file.
-		 */
-		return 0;
-	    }
+	    st_mode = NativeStatMode(attr, 0, isExec);
+
 	    /*
 	     * In order bcdpfls as in 'find -t'
 	     */
 	    if (
 		((types->type & TCL_GLOB_TYPE_BLOCK) &&
-			S_ISBLK(buf.st_mode)) ||
+			S_ISBLK(st_mode)) ||
 		((types->type & TCL_GLOB_TYPE_CHAR) &&
-			S_ISCHR(buf.st_mode)) ||
+			S_ISCHR(st_mode)) ||
 		((types->type & TCL_GLOB_TYPE_DIR) &&
-			S_ISDIR(buf.st_mode)) ||
+			S_ISDIR(st_mode)) ||
 		((types->type & TCL_GLOB_TYPE_PIPE) &&
-			S_ISFIFO(buf.st_mode)) ||
+			S_ISFIFO(st_mode)) ||
 		((types->type & TCL_GLOB_TYPE_FILE) &&
-			S_ISREG(buf.st_mode))
+			S_ISREG(st_mode))
 #ifdef S_ISSOCK
 		|| ((types->type & TCL_GLOB_TYPE_SOCK) &&
-			S_ISSOCK(buf.st_mode))
+			S_ISSOCK(st_mode))
 #endif
 		) {
 		/* Do nothing -- this file is ok */
 	    } else {
 #ifdef S_ISLNK
 		if (types->type & TCL_GLOB_TYPE_LINK) {
-		    if (NativeStat(nativeName, &buf, 1) == 0) {
-			if (S_ISLNK(buf.st_mode)) {
-			    return 1;
-			}
+		    st_mode = NativeStatMode(attr, 1, isExec);
+		    if (S_ISLNK(st_mode)) {
+			return 1;
 		    }
 		}
 #endif
@@ -1206,7 +1194,6 @@ TclpGetUserHome(name, bufferPtr)
 
     return result;
 }
-
 
 /*
  *---------------------------------------------------------------------------
@@ -1272,39 +1259,67 @@ NativeAccess(
     return 0;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * NativeIsExec --
+ *
+ *	Determines if a path is executable.  On windows this is 
+ *	simply defined by whether the path ends in any of ".exe",
+ *	".com", or ".bat"
+ *
+ * Results:
+ *	1 = executable, 0 = not.
+ *
+ *----------------------------------------------------------------------
+ */
 static int
 NativeIsExec(nativePath)
     CONST TCHAR *nativePath;
 {
-    CONST char *p, *path;
-    Tcl_DString ds;
-    
-    /* 
-     * This is really not efficient.  We should be able to examine
-     * the native path directly without converting to UTF.
-     */
-    Tcl_DStringInit(&ds);
-    path = Tcl_WinTCharToUtf(nativePath, -1, &ds);
-    
-    p = strrchr(path, '.');
-    if (p != NULL) {
-	p++;
-	/* 
-	 * Note: in the old code, stat considered '.pif' files as
-	 * executable, whereas access did not.
-	 */
-	if ((stricmp(p, "exe") == 0)
-		|| (stricmp(p, "com") == 0)
-		|| (stricmp(p, "bat") == 0)) {
-	    /*
-	     * File that ends with .exe, .com, or .bat is executable.
-	     */
-
-	    Tcl_DStringFree(&ds);
+    if (tclWinProcs->useWide) {
+	CONST WCHAR *path;
+	int len;
+	
+	path = (CONST WCHAR*)nativePath;
+	len = wcslen(path);
+	
+	if (len < 5) {
+	    return 0;
+	}
+	
+	if (path[len-4] != L'.') {
+	    return 0;
+	}
+	
+	if ((memcmp((char*)(path+len-3),L"exe",3*sizeof(WCHAR)) == 0)
+	    || (memcmp((char*)(path+len-3),L"com",3*sizeof(WCHAR)) == 0)
+	    || (memcmp((char*)(path+len-3),L"bat",3*sizeof(WCHAR)) == 0)) {
 	    return 1;
 	}
+    } else {
+	CONST char *p;
+	
+	/* We are only looking for pure ascii */
+	
+	p = strrchr((CONST char*)nativePath, '.');
+	if (p != NULL) {
+	    p++;
+	    /* 
+	     * Note: in the old code, stat considered '.pif' files as
+	     * executable, whereas access did not.
+	     */
+	    if ((stricmp(p, "exe") == 0)
+		    || (stricmp(p, "com") == 0)
+		    || (stricmp(p, "bat") == 0)) {
+		/*
+		 * File that ends with .exe, .com, or .bat is executable.
+		 */
+
+		return 1;
+	    }
+	}
     }
-    Tcl_DStringFree(&ds);
     return 0;
 }
 
@@ -1526,7 +1541,8 @@ NativeStat(nativePath, statPtr, checkLinks)
     WCHAR nativeFullPath[MAX_PATH];
     TCHAR *nativePart;
     CONST char *fullPath;
-    int dev, mode;
+    int dev;
+    unsigned short mode;
     
     if (tclWinProcs->getFileAttributesExProc == NULL) {
         /* 
@@ -1675,6 +1691,31 @@ NativeStat(nativePath, statPtr, checkLinks)
 	statPtr->st_ctime = ToCTime(data.ftCreationTime);
     }
 
+    mode = NativeStatMode(attr, checkLinks, NativeIsExec(nativePath));
+    
+    statPtr->st_dev	= (dev_t) dev;
+    statPtr->st_ino	= 0;
+    statPtr->st_mode	= mode;
+    statPtr->st_nlink	= 1;
+    statPtr->st_uid	= 0;
+    statPtr->st_gid	= 0;
+    statPtr->st_rdev	= (dev_t) dev;
+    return 0;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NativeStatMode --
+ *
+ *	Calculate just the 'st_mode' field of a 'stat' structure.
+ *
+ *----------------------------------------------------------------------
+ */
+static unsigned short
+NativeStatMode(DWORD attr, int checkLinks, int isExec) 
+{
+    int mode;
     if (checkLinks && (attr & FILE_ATTRIBUTE_REPARSE_POINT)) {
 	/* It is a link */
 	mode = S_IFLNK;
@@ -1682,7 +1723,7 @@ NativeStat(nativePath, statPtr, checkLinks)
 	mode  = (attr & FILE_ATTRIBUTE_DIRECTORY) ? S_IFDIR | S_IEXEC : S_IFREG;
     }
     mode |= (attr & FILE_ATTRIBUTE_READONLY) ? S_IREAD : S_IREAD | S_IWRITE;
-    if (NativeIsExec(nativePath)) {
+    if (isExec) {
 	mode |= S_IEXEC;
     }
     
@@ -1693,17 +1734,9 @@ NativeStat(nativePath, statPtr, checkLinks)
 
     mode |= (mode & 0x0700) >> 3;
     mode |= (mode & 0x0700) >> 6;
-    
-    statPtr->st_dev	= (dev_t) dev;
-    statPtr->st_ino	= 0;
-    statPtr->st_mode	= (unsigned short) mode;
-    statPtr->st_nlink	= 1;
-    statPtr->st_uid	= 0;
-    statPtr->st_gid	= 0;
-    statPtr->st_rdev	= (dev_t) dev;
-    return 0;
+    return (unsigned short)mode;
 }
-
+
 static time_t
 ToCTime(
     FILETIME fileTime)		/* UTC Time to convert to local time_t. */
