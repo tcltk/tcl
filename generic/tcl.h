@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.31 1999/01/05 01:18:34 rjohnson Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.32 1999/01/06 21:08:50 stanton Exp $
  */
 
 #ifndef _TCL
@@ -71,6 +71,12 @@
 #   ifndef USE_PROTOTYPE
 #	define USE_PROTOTYPE 1
 #   endif
+
+/*
+ * Under Windows we need to call Tcl_Alloc in all cases to avoid competing
+ * C run-time library issues.
+ */
+
 #   ifndef USE_TCLALLOC
 #	define USE_TCLALLOC 1
 #   endif
@@ -742,6 +748,14 @@ EXTERN void		Tcl_ValidateAllMemory _ANSI_ARGS_((char *file,
 			    int line));
 
 #else
+
+/*
+ * If USE_TCLALLOC is true, then we need to call Tcl_Alloc instead of
+ * the native malloc/free.  The only time USE_TCLALLOC should not be
+ * true is when compiling the Tcl/Tk libraries on Unix systems.  In this
+ * case we can safely call the native malloc/free directly as a performance
+ * optimization.
+ */
 
 #  if USE_TCLALLOC
 #     define ckalloc(x) Tcl_Alloc(x)
