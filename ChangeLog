@@ -1,3 +1,8 @@
+2003-07-23  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* win/tclWinReg.c (OpenSubKey): Backported fix for bug 775976
+	which causes the registry set command to fail when built with VC7.
+
 2003-07-21  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	*** 8.4.4 TAGGED FOR RELEASE ***
