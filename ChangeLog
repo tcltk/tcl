@@ -1,3 +1,11 @@
+2004-06-10  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclDecls.h:        Regenerated on a unix box.
+	* generic/tclIntDecls.h:     The Win/DOS EOLs from the
+	* generic/tclIntPlatDecls.h: last regen screwed up compilation
+	* generic/tclPlatDecls.h:    with an older gcc.
+	* generic/tclStubInit.c:
+
 2004-06-10  Zoran Vasiljevic <vasiljevic@users.sf.net>
 
         * generic/tclIOUtil.c: partially corrected [Bug 932314].
