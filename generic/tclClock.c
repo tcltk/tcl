@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclClock.c,v 1.19 2003/02/01 19:48:23 kennykb Exp $
+ * RCS: @(#) $Id: tclClock.c,v 1.20 2003/02/01 21:27:55 kennykb Exp $
  */
 
 #include "tcl.h"
@@ -66,6 +66,7 @@ Tcl_ClockObjCmd (client, interp, objc, objv)
     long zone;
     Tcl_Obj *baseObjPtr = NULL;
     char *scanStr;
+    int n;
     
     static CONST char *switches[] =
 	{"clicks", "format", "scan", "seconds", (char *) NULL};
@@ -90,9 +91,10 @@ Tcl_ClockObjCmd (client, interp, objc, objv)
 	    int forceMilli = 0;
 
 	    if (objc == 3) {
-		format = Tcl_GetStringFromObj(objv[2], &index);
-		if (strncmp(format, "-milliseconds",
-			(unsigned int) index) == 0) {
+		format = Tcl_GetStringFromObj(objv[2], &n);
+		if ( ( n >= 2 ) 
+		     && ( strncmp( format, "-milliseconds",
+				   (unsigned int) n) == 0 ) ) {
 		    forceMilli = 1;
 		} else {
 		    Tcl_AppendStringsToObj(resultPtr,
