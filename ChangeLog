@@ -1,3 +1,8 @@
+2001-09-04  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* generic/tclProc.c: made [proc] check that formal args have
+	simple names [Bug: 458548] 
+
 2001-09-04 Vince Darley <vincentdarley@users.sourceforge.net>
 
 	Minor bug fixes in filesystem, plus small vfs changes as a 
@@ -42,7 +47,7 @@
 	
 2001-09-04  Miguel Sofer  <msofer@users.sourceforge.net>
 
-	* generic/tclCompile.c: fixed incorrect opreands for INST_LIST
+	* generic/tclCompile.c: fixed incorrect operands for INST_LIST
 	[Bug: 458241] (David Cuthbert, dacut@users.sourceforge.net)
 
 2001-09-03  Jeff Hobbs  <jeffh@ActiveState.com>
