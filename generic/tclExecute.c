@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.49 2002/02/28 13:03:53 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.50 2002/03/22 22:54:35 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -353,11 +353,6 @@ static void		InitByteCodeExecution _ANSI_ARGS_((
 			    Tcl_Interp *interp));
 #ifdef TCL_COMPILE_DEBUG
 static void		PrintByteCodeInfo _ANSI_ARGS_((ByteCode *codePtr));
-#endif
-static void		RecordTracebackInfo _ANSI_ARGS_((
-			    Tcl_Interp *interp, Tcl_Obj *objPtr,
-			    int numSrcBytes));
-#ifdef TCL_COMPILE_DEBUG
 static char *		StringForResultCode _ANSI_ARGS_((int result));
 static void		ValidatePcAndStackTop _ANSI_ARGS_((
 			    ByteCode *codePtr, unsigned char *pc,
@@ -836,6 +831,7 @@ TclCompEvalObj(interp, objPtr, engineCall)
     register ByteCode* codePtr;		/* Tcl Internal type of bytecode. */
     int oldCount = iPtr->cmdCount;	/* Used to tell whether any commands
 					 * at all were executed. */
+    char *script;
     int numSrcBytes;
     int result;
     Namespace *namespacePtr;
@@ -964,7 +960,8 @@ TclCompEvalObj(interp, objPtr, engineCall)
      */
 
     if ((result == TCL_ERROR) && !(iPtr->flags & ERR_ALREADY_LOGGED)) {
-	RecordTracebackInfo(interp, objPtr, numSrcBytes);
+	script = Tcl_GetStringFromObj(objPtr, &numSrcBytes);
+	Tcl_LogCommandInfo(interp, script, script, numSrcBytes);
     }
 
     /*
@@ -988,61 +985,6 @@ TclCompEvalObj(interp, objPtr, engineCall)
     }
 
     return result;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * RecordTracebackInfo --
- *
- *	Procedure called by Tcl_EvalObj to record information about what was
- *	being executed when the error occurred.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Appends information about the script being evaluated to the
- *	interpreter's "errorInfo" variable.
- *
- *----------------------------------------------------------------------
- */
-
-static void
-RecordTracebackInfo(interp, objPtr, numSrcBytes)
-    Tcl_Interp *interp;		/* The interpreter in which the error
-				 * occurred. */
-    Tcl_Obj *objPtr;		/* Points to object containing script whose
-				 * evaluation resulted in an error. */
-    int numSrcBytes;		/* Number of bytes compiled in script. */
-{
-    Interp *iPtr = (Interp *) interp;
-    char buf[200];
-    char *ellipsis, *bytes;
-    int length;
-
-    /*
-     * Decide how much of the command to print in the error message
-     * (up to a certain number of bytes).
-     */
-    
-    bytes = Tcl_GetStringFromObj(objPtr, &length);
-    length = TclMin(numSrcBytes, length);
-    
-    ellipsis = "";
-    if (length > 150) {
-	length = 150;
-	ellipsis = " ...";
-    }
-    
-    if (!(iPtr->flags & ERR_IN_PROGRESS)) {
-	sprintf(buf, "\n    while executing\n\"%.*s%s\"",
-		length, bytes, ellipsis);
-    } else {
-	sprintf(buf, "\n    invoked from within\n\"%.*s%s\"",
-		length, bytes, ellipsis);
-    }
-    Tcl_AddObjErrorInfo(interp, buf, -1);
 }
 
 /*
