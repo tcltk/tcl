@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.82 2004/05/23 22:53:20 msofer Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.83 2004/05/25 19:45:16 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -101,10 +101,21 @@ Tcl_ObjType tclLocalVarNameType = {
     FreeLocalVarName, DupLocalVarName, UpdateLocalVarName, NULL
 };
 
+/*
+ * Caching of namespace variables disabled: no simple way was found to
+ * avoid interfering with the resolver's idea of variable existence.
+ * A cached varName may keep a variable's name in the namespace's hash
+ * table, which is the resolver's criterion for existence (see test
+ * namespace-17.10).
+ */	
+#define ENABLE_NS_VARNAME_CACHING 0
+
+#if ENABLE_NS_VARNAME_CACHING
 Tcl_ObjType tclNsVarNameType = {
     "namespaceVarName",
     FreeNsVarName, DupNsVarName, NULL, NULL
 };
+#endif
 
 Tcl_ObjType tclParsedVarNameType = {
     "parsedVarName",
@@ -409,6 +420,7 @@ TclObjLookupVar(interp, part1Ptr, part2, flags, msg, createPart1, createPart2,
 	    }
 	}
 	goto doneParsing;
+#if ENABLE_NS_VARNAME_CACHING
     } else if (typePtr == &tclNsVarNameType) {
 	Namespace *cachedNsPtr;
 	int useGlobal, useReference;
@@ -444,6 +456,7 @@ TclObjLookupVar(interp, part1Ptr, part2, flags, msg, createPart1, createPart2,
 	    goto donePart1;
 	}
 	goto doneParsing;
+#endif
     }
 
     doParse:
@@ -542,6 +555,7 @@ TclObjLookupVar(interp, part1Ptr, part2, flags, msg, createPart1, createPart2,
 	procPtr->refCount++;
 	part1Ptr->internalRep.twoPtrValue.ptr1 = (VOID *) procPtr;
 	part1Ptr->internalRep.twoPtrValue.ptr2 = (VOID *) index;
+#if ENABLE_NS_VARNAME_CACHING
     } else if (index > -3) {
 	/*
 	 * A cacheable namespace or global variable.
@@ -553,6 +567,7 @@ TclObjLookupVar(interp, part1Ptr, part2, flags, msg, createPart1, createPart2,
 	part1Ptr->typePtr = &tclNsVarNameType;
 	part1Ptr->internalRep.twoPtrValue.ptr1 = (VOID *) nsPtr;
 	part1Ptr->internalRep.twoPtrValue.ptr2 = (VOID *) varPtr;
+#endif
     } else {
 	/*
 	 * At least mark part1Ptr as already parsed.
@@ -2271,6 +2286,7 @@ TclObjUnsetVar2(interp, part1Ptr, part2, flags)
 	}
     }
 
+#if ENABLE_NS_VARNAME_CACHING
     /*
      * Try to avoid keeping the Var struct allocated due to a tclNsVarNameType 
      * keeping a reference. This removes some additional exteriorisations of
@@ -2281,7 +2297,8 @@ TclObjUnsetVar2(interp, part1Ptr, part2, flags)
 	part1Ptr->typePtr->freeIntRepProc(part1Ptr);
 	part1Ptr->typePtr = NULL;
     }
-
+#endif
+    
     /*
      * Finally, if the variable is truly not in use then free up its Var
      * structure and remove it from its hash table, if any. The ref count of
@@ -4619,6 +4636,7 @@ UpdateLocalVarName(objPtr)
     objPtr->length = 0;
 }
 
+#if ENABLE_NS_VARNAME_CACHING
 /* 
  * nsVarName -
  *
@@ -4653,6 +4671,7 @@ DupNsVarName(srcPtr, dupPtr)
     varPtr->refCount++;
     dupPtr->typePtr = &tclNsVarNameType;
 }
+#endif
 
 /* 
  * parsedVarName -
