@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinTest.c,v 1.7 2002/08/05 03:24:41 dgp Exp $
+ * RCS: @(#) $Id: tclWinTest.c,v 1.8 2002/12/17 02:47:39 davygrvy Exp $
  */
 
 #define USE_COMPAT_CONST
@@ -27,6 +27,8 @@ static int      TestwinclockCmd _ANSI_ARGS_(( ClientData dummy,
 					      Tcl_Interp* interp,
 					      int objc,
 					      Tcl_Obj *CONST objv[] ));
+static Tcl_ObjCmdProc TestExceptionCmd;
+
 
 /*
  *----------------------------------------------------------------------
@@ -34,7 +36,7 @@ static int      TestwinclockCmd _ANSI_ARGS_(( ClientData dummy,
  * TclplatformtestInit --
  *
  *	Defines commands that test platform specific functionality for
- *	Unix platforms.
+ *	Windows platforms.
  *
  * Results:
  *	A standard Tcl result.
@@ -59,6 +61,7 @@ TclplatformtestInit(interp)
             (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
     Tcl_CreateObjCommand(interp, "testwinclock", TestwinclockCmd,
             (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
+    Tcl_CreateObjCommand(interp, "testexcept", TestExceptionCmd, NULL, NULL);
     return TCL_OK;
 }
 
@@ -264,5 +267,113 @@ TestwinclockCmd( ClientData dummy,
 
     Tcl_SetObjResult( interp, result );
 
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TestExceptionCmd --
+ *
+ *	Causes this process to end with the named exception. Used for
+ *	testing Tcl_WaitPid().
+ *
+ * Usage:
+ *	testexcept <type>
+ *
+ * Parameters:
+ *	Type of exception.
+ *
+ * Results:
+ *	None, this process closes now and doesn't return.
+ *
+ * Side effects:
+ *	This Tcl process closes, hard... Bang!
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TestExceptionCmd(
+    ClientData dummy,			/* Unused */
+    Tcl_Interp* interp,			/* Tcl interpreter */
+    int objc,				/* Argument count */
+    Tcl_Obj *CONST objv[])		/* Argument vector */
+{
+    static char *cmds[] = {
+	    "access_violation",
+	    "datatype_misalignment",
+	    "array_bounds",
+	    "float_denormal",
+	    "float_divbyzero",
+	    "float_inexact",
+	    "float_invalidop",
+	    "float_overflow",
+	    "float_stack",
+	    "float_underflow",
+	    "int_divbyzero",
+	    "int_overflow",
+	    "private_instruction",
+	    "inpageerror",
+	    "illegal_instruction",
+	    "noncontinue",
+	    "stack_overflow",
+	    "invalid_disp",
+	    "guard_page",
+	    "invalid_handle",
+	    "ctrl+c",
+	    NULL
+    };
+    static DWORD exceptions[] = {
+	    EXCEPTION_ACCESS_VIOLATION,
+	    EXCEPTION_DATATYPE_MISALIGNMENT,
+	    EXCEPTION_ARRAY_BOUNDS_EXCEEDED,
+	    EXCEPTION_FLT_DENORMAL_OPERAND,
+	    EXCEPTION_FLT_DIVIDE_BY_ZERO,
+	    EXCEPTION_FLT_INEXACT_RESULT,
+	    EXCEPTION_FLT_INVALID_OPERATION,
+	    EXCEPTION_FLT_OVERFLOW,
+	    EXCEPTION_FLT_STACK_CHECK,
+	    EXCEPTION_FLT_UNDERFLOW,
+	    EXCEPTION_INT_DIVIDE_BY_ZERO,
+	    EXCEPTION_INT_OVERFLOW,
+	    EXCEPTION_PRIV_INSTRUCTION,
+	    EXCEPTION_IN_PAGE_ERROR,
+	    EXCEPTION_ILLEGAL_INSTRUCTION,
+	    EXCEPTION_NONCONTINUABLE_EXCEPTION,
+	    EXCEPTION_STACK_OVERFLOW,
+	    EXCEPTION_INVALID_DISPOSITION,
+	    EXCEPTION_GUARD_PAGE,
+	    EXCEPTION_INVALID_HANDLE,
+	    CONTROL_C_EXIT
+    };
+    int cmd;
+
+    if ( objc != 2 ) {
+	Tcl_WrongNumArgs(interp, 0, objv, "<type-of-exception>");
+	return TCL_ERROR;
+    }
+    if (Tcl_GetIndexFromObj(interp, objv[1], cmds, "command", 0,
+	    &cmd) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * Make sure the GPF dialog doesn't popup.
+     */
+
+    SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX);
+
+    /*
+     * As Tcl does not handle structured exceptions, this falls all the way
+     * back up the instruction stack to the C run-time portion that called
+     * main() where the process will now be terminated with this exception
+     * code by the default handler the C run-time provides.
+     */
+
+    /* SMASH! */
+    RaiseException(exceptions[cmd], EXCEPTION_NONCONTINUABLE, 0, NULL);
+
+    /* NOTREACHED */
     return TCL_OK;
 }

@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: winPipe.test,v 1.21 2002/07/18 16:39:50 vincentdarley Exp $
+# RCS: @(#) $Id: winPipe.test,v 1.22 2002/12/17 02:47:39 davygrvy Exp $
 
 package require tcltest
 namespace import -force ::tcltest::*
@@ -198,6 +198,34 @@ test winpipe-4.1 {Tcl_WaitPid} {pcOnly nt exec cat32} {
     vwait x
     list $result $x [contents $path(stderr)]
 } "{$big} 1 stderr32"
+test winpipe-4.2 {Tcl_WaitPid: return of exception codes, SIGFPE} {pcOnly exec} {
+    set f [open "|[tcltest::interpreter]" w+]
+    set pid [pid $f]
+    puts $f "testexcept float_underflow"
+    set status [catch {close $f}]
+    list $status [expr {$pid == [lindex $::errorCode 1]}] [lindex $::errorCode 2]
+} {1 1 SIGFPE}
+test winpipe-4.3 {Tcl_WaitPid: return of exception codes, SIGSEGV} {pcOnly exec} {
+    set f [open "|[tcltest::interpreter]" w+]
+    set pid [pid $f]
+    puts $f "testexcept access_violation"
+    set status [catch {close $f}]
+    list $status [expr {$pid == [lindex $::errorCode 1]}] [lindex $::errorCode 2]
+} {1 1 SIGSEGV}
+test winpipe-4.4 {Tcl_WaitPid: return of exception codes, SIGILL} {pcOnly exec} {
+    set f [open "|[tcltest::interpreter]" w+]
+    set pid [pid $f]
+    puts $f "testexcept illegal_instruction"
+    set status [catch {close $f}]
+    list $status [expr {$pid == [lindex $::errorCode 1]}] [lindex $::errorCode 2]
+} {1 1 SIGILL}
+test winpipe-4.5 {Tcl_WaitPid: return of exception codes, SIGINT} {pcOnly exec} {
+    set f [open "|[tcltest::interpreter]" w+]
+    set pid [pid $f]
+    puts $f "testexcept ctrl+c"
+    set status [catch {close $f}]
+    list $status [expr {$pid == [lindex $::errorCode 1]}] [lindex $::errorCode 2]
+} {1 1 SIGINT}
 
 set path(nothing) [makeFile {} nothing]
 close [open $path(nothing) w]
