@@ -1,3 +1,27 @@
+1999-09-22  Jennifer Hom  <jenn@scriptics.com>
+
+	* tests/tcltest.test: Added 'exit' calls to the scripts that the
+	test creates and added tests for -tmpdir and -args.
+	
+	* tests/env.test:
+	* tests/exec.test: Added 'exit' calls to scripts that the tests
+	themselves write.
+
+	* tests/README: Cleaned up documentation in README so that it
+	refers to variables and documentation that actually exist.  Also
+	added missing documentation for flag usage.
+
+	* library/tcltest1.0/tcltest.tcl: Added a -args flag that sets a
+	variable named ::tcltest::parameters based on whatever's being
+	sent in as the argument to the -args flag.  Modified tcltest so
+	that tcltest namespace variables are only initialized to their
+	default values if they did not previously exist.  Modified the
+	::tcltest::testConstraints variable so that it isn't unset every
+	time ::tcltest::initConstraints is called.  Modified command line
+	processing so that they are only processed if ::tcltest doesn't
+	have a child namespace (if there is a child namespace, then the
+	command line arguments *must* be processed in that namespace).
+
 1999-09-21  Jeff Hobbs  <hobbs@scriptics.com>
 
 	* tests/env.test:
@@ -199,6 +223,13 @@
 	function.  Added code to avoid calling TerminateThread(), but
 	instead to send a message to the socket event window to tell it to
 	terminate its thread.
+
+1999-07-30  Jennifer Hom  <jenn@scriptics.com>
+
+	* tests/tcltest.test:
+	* library/tcltest1.0/tcltest.tcl: Exit with non-zero status if
+	there were problems with the way the test suite was started
+	(e.g. wrong # arguments).  
 
 1999-07-30  Jeff Hobbs  <hobbs@scriptics.com>
 
