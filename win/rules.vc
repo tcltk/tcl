@@ -10,7 +10,7 @@
 # Copyright (c) 2001-2002 David Gravereaux.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: rules.vc,v 1.9 2002/11/04 05:50:19 davygrvy Exp $
+# RCS: @(#) $Id: rules.vc,v 1.10 2003/01/05 00:44:24 davygrvy Exp $
 #------------------------------------------------------------------------------
 
 !ifndef _RULES_VC
@@ -36,10 +36,12 @@ MACHINE		= IX86
 
 #----------------------------------------------------------
 # Set the proper copy method to avoid overwrite questions
-# to the user when copying files.
+# to the user when copying files and selecting the right
+# "delete all" method.
 #----------------------------------------------------------
 
 !if "$(OS)" == "Windows_NT"
+RMDIR	= rmdir /S /Q
 !if ![ver | find "4.0" > nul]
 CPY	= echo y | xcopy /i
 !else
@@ -47,6 +49,7 @@ CPY	= xcopy /i /y
 !endif
 !else
 CPY	= xcopy /i
+RMDIR	= deltree /Y
 !endif
 
 
@@ -122,6 +125,7 @@ PROFILE		= 0
 MSVCRT		= 0
 LOIMPACT	= 0
 TCL_USE_STATIC_PACKAGES	= 0
+USE_THREAD_ALLOC = 0
 !else
 !if [nmakehlp -f $(OPTS) "static"]
 !message *** Doing static
@@ -135,8 +139,8 @@ MSVCRT		= 1
 !else
 MSVCRT		= 0
 !endif
-!if [nmakehlp -f $(OPTS) "linkexten"]
-!message *** Doing linkexten
+!if [nmakehlp -f $(OPTS) "staticpkg"]
+!message *** Doing staticpkg
 TCL_USE_STATIC_PACKAGES	= 1
 !else
 TCL_USE_STATIC_PACKAGES	= 0
@@ -164,6 +168,12 @@ PROFILE		= 0
 LOIMPACT	= 1
 !else
 LOIMPACT	= 0
+!endif
+!if [nmakehlp -f $(OPTS) "thrdalloc"]
+!message *** Doing thrdalloc
+USE_THREAD_ALLOC = 1
+!else
+USE_THREAD_ALLOC = 0
 !endif
 !endif
 
@@ -253,7 +263,7 @@ TCL_COMPILE_DEBUG   = 0
 
 
 #----------------------------------------------------------
-# Set our defines armed with our options.
+# Set our defines now armed with our options.
 #----------------------------------------------------------
 
 OPTDEFINES	=
@@ -265,6 +275,9 @@ OPTDEFINES	= $(OPTDEFINES) -DTCL_COMPILE_DEBUG -DTCL_COMPILE_STATS
 !endif
 !if $(TCL_THREADS)
 OPTDEFINES	= $(OPTDEFINES) -DTCL_THREADS=1
+!if $(USE_THREAD_ALLOC)
+OPTDEFINES	= $(OPTDEFINES) -DUSE_THREAD_ALLOC=1
+!endif
 !endif
 !if $(STATIC_BUILD)
 OPTDEFINES	= $(OPTDEFINES) -DSTATIC_BUILD
@@ -301,7 +314,7 @@ Don't know where tcl.h is.  The TCLDIR macro doesn't appear correct.
 
 ### TODO: add a command to nmakehlp.c to grep for Tcl's version from tcl.h.
 ### Because nmake can't return a string, we'll need to play games with return
-### codes :)  It might look something like this:
+### codes.  It might look something like this:
 #!if [nmakehlp -g $(TCL.H)] == 81
 #TCL_DOTVERSION	= 8.1
 #!elseif [nmakehlp -g $(TCL.H)] == 82
