@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.75.2.6 2003/09/29 22:03:44 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.75.2.7 2003/10/03 20:31:23 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2550,11 +2550,9 @@ CallCommandTraces(iPtr, cmdPtr, oldName, newName, flags)
                                  * must get the name from cmdPtr */
     CONST char *newName;        /* Command's new name, or NULL if
                                  * the command is not being renamed */
-    int flags;			/* Flags passed to trace procedures:
-				 * indicates what's happening to command,
-				 * plus other stuff like TCL_GLOBAL_ONLY,
-				 * TCL_NAMESPACE_ONLY, and
-				 * TCL_INTERP_DESTROYED. */
+    int flags;			/* Flags indicating the type of traces
+				 * to trigger, either TCL_TRACE_DELETE
+				 * or TCL_TRACE_RENAME. */
 {
     register CommandTrace *tracePtr;
     ActiveCommandTrace active;
