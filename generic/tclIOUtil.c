@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.60 2002/07/19 12:31:10 dkf Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.61 2002/07/20 01:01:41 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -4908,6 +4908,7 @@ GetFilesystemRecord(fromFilesystem, epoch)
 	    *epoch = theFilesystemEpoch;
 	    break;
 	}
+	fsRecPtr = fsRecPtr->nextPtr;
     }
     FsReleaseIterator();
     return fsRecPtr;
