@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.30 2004/05/18 10:13:51 dkf Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.31 2004/05/19 21:56:37 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2655,9 +2655,9 @@ Tcl_LimitCheck(interp)
 	    iPtr->limit.exceeded |= TCL_LIMIT_TIME;
 	    Tcl_Preserve(interp);
 	    RunLimitHandlers(iPtr->limit.timeHandlers, interp);
-	    if (iPtr->limit.time.sec < now.sec ||
+	    if (iPtr->limit.time.sec >= now.sec ||
 		    (iPtr->limit.time.sec == now.sec &&
-		    iPtr->limit.time.usec < now.usec)) {
+		    iPtr->limit.time.usec >= now.usec)) {
 		iPtr->limit.exceeded &= ~TCL_LIMIT_TIME;
 	    } else if (iPtr->limit.exceeded & TCL_LIMIT_TIME) {
 		Tcl_ResetResult(interp);
