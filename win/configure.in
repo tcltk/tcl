@@ -3,7 +3,7 @@
 # generate the file "configure", which is run during Tcl installation
 # to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.67 2003/02/15 02:16:33 hobbs Exp $
+# RCS: @(#) $Id: configure.in,v 1.68 2003/03/01 01:22:46 hobbs Exp $
 
 AC_INIT(../generic/tcl.h)
 AC_PREREQ(2.13)
@@ -340,13 +340,13 @@ CFG_TCL_EXPORT_FILE_SUFFIX=${TCL_EXPORT_FILE_SUFFIX}
 #--------------------------------------------------------------------
 
 if test ${SHARED_BUILD} = 0 ; then
-    if test "${DBGX}" = "d"; then
+    if test "${DBGX}" = "g"; then
         RC_DEFINES="${RC_DEFINE} STATIC_BUILD ${RC_DEFINE} DEBUG"
     else
         RC_DEFINES="${RC_DEFINE} STATIC_BUILD"
     fi
 else
-    if test "${DBGX}" = "d"; then
+    if test "${DBGX}" = "g"; then
         RC_DEFINES="${RC_DEFINE} DEBUG"
     else
         RC_DEFINES=""
