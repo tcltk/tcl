@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.83 2004/05/25 19:45:16 msofer Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.84 2004/05/27 13:18:53 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -69,8 +69,6 @@ int		TclObjUnsetVar2 _ANSI_ARGS_((Tcl_Interp *interp,
 static Tcl_FreeInternalRepProc FreeLocalVarName;
 static Tcl_DupInternalRepProc DupLocalVarName;
 static Tcl_UpdateStringProc UpdateLocalVarName;
-static Tcl_FreeInternalRepProc FreeNsVarName;
-static Tcl_DupInternalRepProc DupNsVarName;
 static Tcl_FreeInternalRepProc FreeParsedVarName;
 static Tcl_DupInternalRepProc DupParsedVarName;
 static Tcl_UpdateStringProc UpdateParsedVarName;
@@ -111,6 +109,9 @@ Tcl_ObjType tclLocalVarNameType = {
 #define ENABLE_NS_VARNAME_CACHING 0
 
 #if ENABLE_NS_VARNAME_CACHING
+static Tcl_FreeInternalRepProc FreeNsVarName;
+static Tcl_DupInternalRepProc DupNsVarName;
+
 Tcl_ObjType tclNsVarNameType = {
     "namespaceVarName",
     FreeNsVarName, DupNsVarName, NULL, NULL

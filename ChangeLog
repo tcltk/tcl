@@ -1,3 +1,24 @@
+2004-05-27  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclHash.c (CompareStringKeys): Added #ifdef to allow
+	people to instruct this function to use strcmp(). [FRQ 951168]
+
+	* generic/tclVar.c: Moved declarations into #if guards so they
+	only happen when required.
+	* unix/tclUnixPort.h: Guard declaration of strtod() so it is only
+	enabled when we don't have a declaration in stdlib.h
+	* unix/tclUnixThrd.c (Tcl_CreateThread):	Added declarations
+	* unix/tclUnixTest.c (AlarmHandler):		and casts so that
+	* unix/tclUnixChan.c (TtyModemStatusStr):	all functions are
+	* generic/tclScan.c (Tcl_ScanObjCmd):		defined before use
+	* generic/tclDictObj.c (InvalidateDictChain):	and no cross-type
+	* generic/tclCmdMZ.c (Tcl_StringObjCmd):	uses are performed.
+
+	The overall effect is to make building with gcc with the
+	additional flags -Wstrict-prototypes -Wmissing-prototypes produce
+	no increase in the total number of warnings (except for main(),
+	which is undeclared for traditional reasons.)
+
 2004-05-26  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* unix/Makefile.in:  Rework configure ordering to TCL_LINK_LIBS,
