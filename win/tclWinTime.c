@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinTime.c,v 1.14.2.3 2004/05/14 21:41:12 kennykb Exp $
+ * RCS: @(#) $Id: tclWinTime.c,v 1.14.2.4 2004/05/17 14:26:50 kennykb Exp $
  */
 
 #include "tclWinInt.h"
@@ -1072,11 +1072,12 @@ AccumulateSample( Tcl_WideInt perfCounter,
  */
 
 struct tm *
-TclpGmtime( timePtr )
-    CONST time_t *timePtr;	/* Pointer to the number of seconds
-				 * since the local system's epoch */
-
+TclpGmtime( tt )
+    TclpTime_t tt;
 {
+    CONST time_t *timePtr = (CONST time_t *) tt;
+				/* Pointer to the number of seconds
+				 * since the local system's epoch */
     /*
      * The MS implementation of gmtime is thread safe because
      * it returns the time in a block of thread-local storage,
@@ -1103,11 +1104,13 @@ TclpGmtime( timePtr )
  */
 
 struct tm *
-TclpLocaltime( timePtr )
-    CONST time_t *timePtr;	/* Pointer to the number of seconds
+TclpLocaltime( tt )
+    TclpTime_t tt;
+{
+    CONST time_t *timePtr = (CONST time_t *) tt;
+				/* Pointer to the number of seconds
 				 * since the local system's epoch */
 
-{
     /*
      * The MS implementation of localtime is thread safe because
      * it returns the time in a block of thread-local storage,
