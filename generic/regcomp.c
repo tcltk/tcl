@@ -2163,12 +2163,12 @@ char *buf;
 size_t bufsize;
 {
 	/* big enough for hex int or decimal t->retry? */
-	if (bufsize < sizeof(int)*2 + 3 || bufsize < sizeof(t->retry)*3 + 1)
+	if (bufsize < sizeof(void*)*2 + 3 || bufsize < sizeof(t->retry)*3 + 1)
 		return "unable";
 	if (t->retry != 0)
 		sprintf(buf, "%d", t->retry);
 	else
-		sprintf(buf, "0x%x", (int)t);	/* may lose bits, that's okay */
+		sprintf(buf, "%p", t);
 	return buf;
 }
 
