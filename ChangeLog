@@ -1,3 +1,12 @@
+1998-12-02    <stanton@GASPODE>
+
+	* generic/tclCmdAH.c (Tcl_EncodingObjCmd): Changed to avoid using
+	Tcl_DStringResult because it is not binary clean.
+
+	* generic/tclParse.c (Tcl_ParseCommand): Fixed bug in comment
+	parsing where a trailing comment looked like an incomplete
+	command. 
+
 1998-12-02    <welch@SAGE>
 
 	* Merged changes from 8.0.4, especially the new pkg_mkIndex
