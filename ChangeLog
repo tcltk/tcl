@@ -1,3 +1,10 @@
+2003-04-05  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* doc/DictObj.3:	New files containing dictionary
+	* doc/dict.n:		implementation, documentation and tests
+	* generic/tclDictObj.c:	as mandated by TIP #111.
+	* tests/dict.test:
+
 2003-04-03  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* unix/configure:
