@@ -1,3 +1,13 @@
+2004-06-01  David Gravereaux <davygrvy@pobox.com>
+
+	* win/makefile.vc: check for either MSDEVDIR or MSVCDIR being in
+	the environment, for VC7.  [Bug 942214]
+
+	* generic/tclIO.c (Tcl_SetChannelOption):  Invalid settings
+	for -buffersize weren't being reported as errors and were blindly
+	ignored.  Now reports conversion errors to an int and checks
+	ranges for validity.  atoi() swapped for Tcl_GetInt().
+
 2004-05-30  David Gravereaux <davygrvy@pobox.com>
 
 	* win/tclWinPipe.c:
