@@ -3,98 +3,83 @@
 '\" Copyright (c) 1994-1997 Sun Microsystems, Inc.
 '\" Copyright (c) 1998-1999 Scriptics Corporation
 '\" Copyright (c) 2000 Ajuba Solutions
+'\" Contributions from Don Porter, NIST, 2002. (not subject to US copyright)
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: tcltest.n,v 1.19 2002/06/06 20:54:03 dgp Exp $
+'\" RCS: @(#) $Id: tcltest.n,v 1.20 2002/06/27 22:29:08 dgp Exp $
 '\" 
 .so man.macros
-.TH "tcltest" n 8.4 Tcl "Tcl Built-In Commands"
+.TH "tcltest" n 2.1 tcltest "Tcl Bundled Packages"
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
 tcltest \- Test harness support code and utilities
 .SH SYNOPSIS
+.nf
 \fBpackage require tcltest ?2.1?\fR
 .sp
 \fBtcltest::test \fIname desc ?option value? ?option value? ...\fR
-.br
+\fBtcltest::test \fIname desc constraints body result\fR
 \fBtcltest::test \fIname desc {?option value? ?option value? ...}\fR
 .sp
+\fBtcltest::makeDirectory \fIname ?directory?\fR
+\fBtcltest::removeDirectory \fIname ?directory?\fR
+\fBtcltest::makeFile \fIcontents name ?directory?\fR
+\fBtcltest::removeFile \fIname ?directory?\fR
+\fBtcltest::viewFile \fIname ?directory?\fR
+\fBtcltest::loadTestedCommands\fR
 \fBtcltest::cleanupTests \fI?runningMultipleTests?\fR
-.sp
 \fBtcltest::runAllTests\fR
 .sp
+.VS 2.1
+\fBtcltest::configure \fI?option? ?value option value ...?\fR
+.VE
+\fBtcltest::testConstraint \fIconstraint ?value?\fR
+.VS 2.1
+\fBtcltest::customMatch \fImode command\fR
+.VE
+\fBtcltest::outputChannel \fI?channelID?\fR
+\fBtcltest::errorChannel \fI?channelID?\fR
 \fBtcltest::interpreter \fI?interp?\fR
 .sp
-\fBtcltest::singleProcess \fI?value?\fR
-.sp
 \fBtcltest::debug \fI?level?\fR
-.sp
+\fBtcltest::errorFile \fI?filename?\fR
+\fBtcltest::limitConstraints \fI?value?\fR
+\fBtcltest::loadFile \fI?filename?\fR
+\fBtcltest::loadScript \fI?script?\fR
+\fBtcltest::match \fI?patternList?\fR
+\fBtcltest::matchDirectories \fI?patternList?\fR
+\fBtcltest::matchFiles \fI?patternList?\fR
+\fBtcltest::outputFile \fI?filename?\fR
+\fBtcltest::preserveCore \fI?level?\fR
+\fBtcltest::singleProcess \fI?value?\fR
+\fBtcltest::skip \fI?patternList?\fR
+\fBtcltest::skipDirectories \fI?patternList?\fR
+\fBtcltest::skipFiles \fI?patternList?\fR
+\fBtcltest::temporaryDirectory \fI?dir?\fR
+\fBtcltest::testsDirectory \fI?dir?\fR
 \fBtcltest::verbose \fI?levelList?\fR
 .sp
-\fBtcltest::preserveCore \fI?level?\fR
-.sp
-\fBtcltest::customMatch \fImode command\fR
-.sp
-\fBtcltest::testConstraint \fIconstraint ?value?\fR
-.sp
-\fBtcltest::limitConstraints \fI?value?\fR
-.sp
-\fBtcltest::workingDirectory \fI?dir?\fR
-.sp
-\fBtcltest::temporaryDirectory \fI?dir?\fR
-.sp
-\fBtcltest::testsDirectory \fI?dir?\fR
-.sp
-\fBtcltest::match \fI?patternList?\fR
-.sp
-\fBtcltest::matchFiles \fI?patternList?\fR
-.sp
-\fBtcltest::matchDirectories \fI?patternList?\fR
-.sp
-\fBtcltest::skip \fI?patternList?\fR
-.sp
-\fBtcltest::skipFiles \fI?patternList?\fR
-.sp
-\fBtcltest::skipDirectories \fI?patternList?\fR
-.sp
-\fBtcltest::loadTestedCommands\fR
-.sp
-\fBtcltest::loadScript \fI?script?\fR
-.sp
-\fBtcltest::loadFile \fI?filename?\fR
-.sp
-\fBtcltest::outputChannel \fI?channelID?\fR
-.sp
-\fBtcltest::outputFile \fI?filename?\fR
-.sp
-\fBtcltest::errorChannel \fI?channelID?\fR
-.sp
-\fBtcltest::errorFile \fI?filename?\fR
-.sp
-\fBtcltest::makeFile \fIcontents name ?directory?\fR
-.sp
-\fBtcltest::removeFile \fIname ?directory?\fR
-.sp
-\fBtcltest::makeDirectory \fIname ?directory?\fR
-.sp
-\fBtcltest::removeDirectory \fIname ?directory?\fR
-.sp
-\fBtcltest::viewFile \fIname ?directory?\fR
-.sp
-\fBtcltest::normalizeMsg \fImsg\fR
-.sp
-\fBtcltest::normalizePath \fIpathVar\fR
-.sp
 \fBtcltest::bytestring \fIstring\fR
+\fBtcltest::normalizeMsg \fImsg\fR
+\fBtcltest::normalizePath \fIpathVar\fR
+\fBtcltest::workingDirectory \fI?dir?\fR
+.fi
 .BE
 .SH DESCRIPTION
 .PP
-The \fBtcltest\fR package provides the user with utility tools for
-writing and running tests in the Tcl test suite.  It can also be used
-to create a customized test harness for an extension. 
+The \fBtcltest\fR package provides several utility commands useful
+in the construction of test suites for code instrumented to be
+run by evaluation of Tcl commands.  Notably the built-in commands
+of the Tcl library itself are tested by a test suite using the
+tcltest package.
+
+
+
+
+
 .PP
 The Tcl test suite consists of multiple .test files, each of which
 contains multiple test cases.  Each test case consists of a call to
@@ -391,7 +376,7 @@ names.  This makes the behavior of the second form different from the
 first form in some cases.
 .PP
 The first form for the \fBtest\fR command:
-.DS
+.CS
 test \fIname\fR \fIdescription\fR
     ?-constraints \fIkeywordList|expression\fR
     ?-setup \fIsetupScript\fR?
@@ -402,10 +387,10 @@ test \fIname\fR \fIdescription\fR
     ?-errorOutput \fIexpectedError\fR?
     ?-returnCodes \fIcodeList\fR?
     ?-match \fImode\fR?
-.DE
+.CE
 .PP
 The second form for the \fBtest\fR command (adds brace grouping):
-.DS
+.CS
 test \fIname\fR \fIdescription\fR {
     ?-constraints \fIkeywordList|expression\fR
     ?-setup \fIsetupScript\fR?
@@ -417,11 +402,11 @@ test \fIname\fR \fIdescription\fR {
     ?-returnCodes \fIcodeList\fR?
     ?-match \fImode\fR?
 }
-.DE
+.CE
 The \fIname\fR argument should follow the pattern:
-.DS
+.CS
 <target>-<majorNum>.<minorNum>
-.DE
+.CE
 For white-box (regression) tests, the target should be the name of the
 C function or Tcl procedure being tested.  For black-box tests, the
 target should be the name of the feature being tested.  Related tests
@@ -622,9 +607,9 @@ test can only be run if the current app can be spawned via a pipe
 .SH "RUNNING TEST FILES"
 Use the following command to run a test file that uses package
 tcltest:
-.DS
+.CS
 <shell> <testFile> ?<option> ?<value>?? ...
-.DE
+.CE
 Command line options include (tcltest accessor procs that
 correspond to each flag are listed at the end of each flag description
 in parenthesis): 
@@ -794,27 +779,27 @@ match its expected return code.
 You can set \fBtcltest::verbose\fR either interactively (after the
 \fBtcltest\fR package has been loaded) or by using the command line
 argument \fB-verbose\fR, for example:
-.DS
+.CS
 tclsh socket.test -verbose 'body pass skip'
-.DE
+.CE
 .SH "CONTENTS OF A TEST FILE"
 Test files should begin by loading the \fBtcltest\fR package:
-.DS
+.CS
 package require tcltest
 namespace import -force tcltest::*
-.DE
+.CE
 Test files should end by cleaning up after themselves and calling
 \fBtcltest::cleanupTests\fR.  The \fBtcltest::cleanupTests\fR
 procedure prints statistics about the number of tests that passed,
 skipped, and failed, and removes all files that were created using the
 \fBtcltest::makeFile\fR and \fBtcltest::makeDirectory\fR procedures.
-.DS
+.CS
 # Remove files created by these tests
 # Change to original working directory
 # Unset global arrays
 tcltest::cleanupTests
 return
-.DE
+.CE
 When naming test files, file names should end with a .test extension.
 The names of test files that contain regression (or glass-box) tests
 should correspond to the Tcl or C code file that they are testing.
@@ -924,7 +909,7 @@ To add new flags to your customized test harness, redefine
 \fBtcltest::processCmdLineArgsAddFlagHook\fR to define additional flags to be
 parsed and \fBtcltest::processCmdLineArgsHook\fR to actually process them.
 For example:
-.DS
+.CS
 proc tcltest::processCmdLineArgsAddFlagHook {} {
     return [list -flag1 -flag2]
 }
@@ -942,7 +927,7 @@ proc tcltest::processCmdLineArgsHook {flagArray} {
 
     return
 }
-.DE
+.CE
 You may also want to add usage information for these flags.  This
 information would be displayed whenever the user specifies -help.  To
 define additional usage information, define your own
@@ -952,15 +937,15 @@ implemented.
 .PP
 Finally, if you want to add additional cleanup code to your harness
 you can define your own \fBtcltest::cleanupTestsHook\fR.  For example:
-.DS
+.CS
 proc tcltest::cleanupTestsHook {} {
     # Add your cleanup code here
 }
-.DE
+.CE
 .SH EXAMPLES
 .IP [1] 
 A simple test file (foo.test)
-.DS
+.CS
 package require tcltest
 namespace import -force ::tcltest::*
 
@@ -968,10 +953,10 @@ test foo-1.1 {save 1 in variable name foo} -body {set foo 1} -result 1
 
 tcltest::cleanupTests
 return
-.DE
+.CE
 .IP [2] 
 A simple all.tcl
-.DS
+.CS
 package require tcltest
 namespace import -force ::tcltest::*
 
@@ -979,21 +964,21 @@ tcltest::testsDirectory [file dir [info script]]
 tcltest::runAllTests
 
 return
-.DE
+.CE
 .IP [3] 
 Running a single test
-.DS
+.CS
 tclsh foo.test
-.DE
+.CE
 .IP [4] 
 Running multiple tests
-.DS
+.CS
 tclsh all.tcl -file 'foo*.test' -notfile 'foo2.test'
-.DE
+.CE
 .IP [5] 
 A test that uses the unixOnly constraint and should only be
 run on Unix
-.DS
+.CS
 test getAttribute-1.1 {testing file permissions} {
     -constraints {unixOnly}
     -body {
@@ -1001,10 +986,10 @@ test getAttribute-1.1 {testing file permissions} {
     }
     -result {00644}
 }
-.DE
+.CE
 .IP [6] 
 A test containing an constraint expression that evaluates to true (a case where the test would be run) if it is being run on unix and if threads are not being tested
-.DS
+.CS
 test testOnUnixWithoutThreads-1.1 {
     this test runs only on unix and only if we're not testing
     threads
@@ -1014,7 +999,7 @@ test testOnUnixWithoutThreads-1.1 {
         # some script goes here
     }
 }
-.DE
+.CE
 
 .SH "KNOWN ISSUES"
 There are two known issues related to nested test commands.  
@@ -1022,14 +1007,14 @@ The first issue relates to the stack level in which test scripts are
 executed.  Tests nested within other tests may be executed at the same
 stack level as the outermost test.  For example, in the following test
 code: 
-.DS
+.CS
 test level-1.1 {level 1} {
     -body {
         test level-2.1 {level 2} {
         }
     }
 }
-.DE
+.CE
 any script executed in level-2.1 may be executed at the same stack
 level as the script defined for level-1.1.  
 .PP
