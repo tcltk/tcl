@@ -1,3 +1,18 @@
+2000-02-09  Jim Ingham   <jingham@cygnus.com>
+
+        * mac/tclMacSock.c: Don't panic when you get an error closing an async 
+        socket.  This doesn't seem to hurt anything, and we return the error so
+        the caller can do the right thing.
+        
+        New Files:
+        * mac/MW_TclHeader.h:
+        * mac/MW_TclTestHeader.h:
+        * mac/MW_TclTestHeader.pch:
+        * mac/MW_TclAppleScriptHeader.h: More convenient to use .h prefix files
+        in the preference panels...
+        
+        The above are curtesy of Daniel Steffen (steffen@math.mq.edu.au)
+        
 2000-02-08  Eric Melski  <ericm@scriptics.com>
 
 	* tests/clock.test: Added tests for "next monthname" constructs.
