@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.10 1998/09/14 18:40:15 stanton Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.11 1998/09/23 20:13:41 suresh Exp $
 
 # Current Tcl version;  used in various names.
 
@@ -401,7 +401,7 @@ topDirName:
 gendate:
 	yacc -l $(GENERIC_DIR)/tclGetDate.y
 	sed -e 's/yy/TclDate/g' -e '/^#include <values.h>/d' \
-	    -e 's/SCCSID/RCS: @(#) $Id: Makefile.in,v 1.10 1998/09/14 18:40:15 stanton Exp $'
+	    -e 's/SCCSID/RCS: @(#) $Id: Makefile.in,v 1.11 1998/09/23 20:13:41 suresh Exp $'
 	    -e '/#ifdef __STDC__/,/#endif/d' -e '/TclDateerrlab:/d' \
 	    -e '/TclDatenewstate:/d' -e '/#pragma/d' \
 	    <y.tab.c >$(GENERIC_DIR)/tclDate.c
@@ -894,10 +894,7 @@ dist: $(UNIX_DIR)/configure
 	cp -p $(TOP_DIR)/win/pkgIndex.tcl $(DISTDIR)/win
 	cp -p $(TOP_DIR)/license.terms $(DISTDIR)/win
 	mkdir $(DISTDIR)/mac
-	sccs edit -s $(TOP_DIR)/mac/tclMacProjects.sea.hqx
-	cp -p tclMacProjects.sea.hqx $(DISTDIR)/mac
-	sccs unedit $(TOP_DIR)/mac/tclMacProjects.sea.hqx
-	rm -f tclMacProjects.sea.hqx
+	cp -p $(TOP_DIR)/mac/tclMacProjects.sea.hqx $(DISTDIR)/mac
 	cp -p $(TOP_DIR)/mac/*.c $(TOP_DIR)/mac/*.h $(TOP_DIR)/mac/*.r \
 		$(DISTDIR)/mac
 	cp -p $(TOP_DIR)/mac/porting.notes $(TOP_DIR)/mac/README $(DISTDIR)/mac
