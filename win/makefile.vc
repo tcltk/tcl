@@ -12,7 +12,7 @@
 # Copyright (c) 2001 Tomasoft Engineering.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.77.2.2 2002/02/05 23:05:17 davygrvy Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.77.2.3 2002/02/06 12:20:26 davygrvy Exp $
 #------------------------------------------------------------------------------
 
 !if "$(MSVCDIR)" == ""
@@ -320,7 +320,7 @@ TCL_DEFINES	= $(OPTDEFINES)
 #---------------------------------------------------------------------
 
 !if $(DEBUG)
-cdebug = -Z7 -WX -Ox
+cdebug = -Z7 -WX -Od
 !else
 !if $(OPTIMIZING)
 # This cranks the optimization level to maximize speed
@@ -393,6 +393,7 @@ test: setup $(TCLTEST) dlls $(CAT32)
 !if "$(OS)" == "Windows_NT"  || "$(MSVCDIR)" == "IDE"
 	$(TCLTEST) $(ROOT)/tests/all.tcl $(TESTFLAGS)
 !else
+	@echo Please wait while the tests are collected...
 	$(TCLTEST) $(ROOT)/tests/all.tcl $(TESTFLAGS) > tests.log
 	type tests.log | more
 !endif
@@ -446,7 +447,7 @@ $(TCLDDEDLL): $(TMP_DIR)\tclWinDde.obj
 !endif
 !else
 $(TCLDDEDLL): $(TMP_DIR)\tclWinDde.obj $(TCLSTUBLIB)
-	$(link32) $(ldebug) $(dlllflags) -out:$@ $** $(baselibs)
+	$(link32) $(dlllflags) $(ldebug) -out:$@ $** $(baselibs)
 	-@del $*.exp
 	-@del $*.lib
 !endif
@@ -639,7 +640,7 @@ $(TMP_DIR)\tclWinDde.obj: $(WINDIR)\tclWinDde.c
 # be built as DLL objects but none of the symbols should be exported
 
 $(TMP_DIR)\tclStubLib.obj: $(GENERICDIR)\tclStubLib.c
-	$(cc32) $(cdebug) $(cflags) -Zl -DSTATIC_BUILD $(TCL_INCLUDES) -Fo$@ $?
+	$(cc32) $(cflags) $(cdebug) -Zl -DSTATIC_BUILD $(TCL_INCLUDES) -Fo$@ $?
 
 
 #---------------------------------------------------------------------

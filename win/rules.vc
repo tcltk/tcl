@@ -10,7 +10,7 @@
 # Copyright (c) 2001 Tomasoft Engineering.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: rules.vc,v 1.4.2.2 2002/02/05 23:05:17 davygrvy Exp $
+# RCS: @(#) $Id: rules.vc,v 1.4.2.3 2002/02/06 12:20:26 davygrvy Exp $
 #------------------------------------------------------------------------------
 
 !ifndef _RULES_VC
@@ -173,6 +173,7 @@ TCL_COMPILE_DEBUG   = 0
 # Test for compiler features
 #----------------------------------------------------------
 
+!if !$(DEBUG)
 ### test for optimizations
 !if [ $(cc32) -nologo -Ox -c -Zs -TC -Fdtemp nul 2>&1 | find "D4002" ]
 !message *** Compiler has 'optimizations'
@@ -184,8 +185,9 @@ OPTIMIZING	= 0
 
 ### Clean-up temp files after tests.
 !if [ @for %d in (temp.idb temp.pdb) do @if exist %d erase %d ]
+!else
+OPTIMIZING	= 0
 !endif
-
 
 
 OPTDEFINES	= -DTCL_CFGVAL_ENCODING=$(CFG_ENCODING)
