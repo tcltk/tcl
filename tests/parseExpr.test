@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: parseExpr.test,v 1.3 1999/06/26 03:54:19 jenn Exp $
+# RCS: @(#) $Id: parseExpr.test,v 1.4 1999/12/04 06:16:49 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -497,7 +497,7 @@ test parseExpr-14.5 {GetLexeme procedure, integer lexeme too big} {nonPortable} 
 } {1 {integer value too large to represent}}
 test parseExpr-14.6 {GetLexeme procedure, bad integer lexeme} {
     list [catch {testexprparser {0999} -1} msg] $msg
-} {1 {syntax error in expression "0999"}}
+} {1 {"0999" is an invalid octal number}}
 test parseExpr-14.7 {GetLexeme procedure, double lexeme} {
     testexprparser {0.999} -1
 } {- {} 0 subexpr 0.999 1 text 0.999 0 {}}

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: expr.test,v 1.6 1999/08/19 03:00:13 hobbs Exp $
+# RCS: @(#) $Id: expr.test,v 1.7 1999/12/04 06:16:48 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -680,7 +680,7 @@ test expr-20.1 {wrong brace matching} {
     set cmd "expr $l$q|$q == $q$r$q$r"
     list [catch $cmd a] $a
 } {1 {extra characters after close-brace}}
-test expr-20.2 {double invocation of variable traces} {knownBug} {
+test expr-20.2 {double invocation of variable traces} {
     set exprtracecounter 0
     proc exprtraceproc {args} {
        upvar #0 exprtracecounter counter
@@ -711,6 +711,12 @@ test expr-20.5 {proper double evaluation compilation, working case} {
     set a yellow
     expr 1?{$a}:0
 } yellow
+test expr-20.6 {handling of compile error in trial compile} {
+    list [catch {expr + {[incr]}} msg] $msg
+} {1 {wrong # args: should be "incr varName ?increment?"}}
+test expr-20.7 {handling of compile error in runtime case} {
+    list [catch {expr + {[error foo]}} msg] $msg
+} {1 foo}
 
 # cleanup
 if {[info exists a]} {

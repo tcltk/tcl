@@ -7,7 +7,7 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 # 
-# RCS: @(#) $Id: all.tcl,v 1.7 1999/06/29 20:14:17 jenn Exp $
+# RCS: @(#) $Id: all.tcl,v 1.8 1999/12/04 06:16:48 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -16,6 +16,16 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 
 set ::tcltest::testSingleFile false
 set ::tcltest::testsDirectory [file dir [info script]]
+
+# We need to ensure that the testsDirectory is absolute
+#
+if {[string equal relative [file pathtype $::tcltest::testsDirectory]]} {
+    set cwd [pwd]
+    cd $::tcltest::testsDirectory
+    set ::tcltest::testsDirectory [pwd]
+    cd $cwd
+    unset cwd
+}
 
 puts stdout "Tcl $tcl_patchLevel tests running in interp:  [info nameofexecutable]"
 puts stdout "Tests running in working dir:  $::tcltest::testsDirectory"

@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: string.test,v 1.21 1999/10/21 02:17:57 hobbs Exp $
+# RCS: @(#) $Id: string.test,v 1.22 1999/12/04 06:16:49 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -249,6 +249,13 @@ test string-5.16 {string index, bytearray object with string obj shimmering} {
     binary scan $str H* dump
     string compare [string index $str 10] \x00
 } 0
+test string-5.17 {string index, bad integer} {
+    list [catch {string index "abc" 08} msg] $msg
+} {1 {bad index "08": must be integer or end?-integer? (looks like invalid octal number)}}
+test string-5.18 {string index, bad integer} {
+    list [catch {string index "abc" end-00289} msg] $msg
+} {1 {expected integer but got "-00289" (looks like invalid octal number)}}
+
 
 proc largest_int {} {
     # This will give us what the largest valid int on this machine is,

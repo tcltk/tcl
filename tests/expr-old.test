@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: expr-old.test,v 1.6 1999/06/26 03:54:13 jenn Exp $
+# RCS: @(#) $Id: expr-old.test,v 1.7 1999/12/04 06:16:48 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -790,7 +790,7 @@ test expr-old-32.48 {math functions in expressions} {
 } {1 {can't use floating-point value as argument to srand}}
 test expr-old-32.49 {math functions in expressions} {
     list [catch {expr srand("")} msg] $msg
-} {1 {can't use non-numeric string as argument to srand}}
+} {1 {argument to math function didn't have numeric value}}
 test expr-old-32.50 {math functions in expressions} {
     set result [expr round(srand(12345) * 1000)]
     for {set i 0} {$i < 10} {incr i} {
@@ -800,7 +800,7 @@ test expr-old-32.50 {math functions in expressions} {
 } {97 834 948 36 12 51 766 585 914 784 333}
 test expr-old-32.51 {math functions in expressions} {
     list [catch {expr {srand([lindex "6ty" 0])}} msg] $msg
-} {1 {can't use non-numeric string as argument to srand}}
+} {1 {argument to math function didn't have numeric value}}
 
 test expr-old-33.1 {conversions and fancy args to math functions} {
     expr hypot ( 3 , 4 )
@@ -871,11 +871,11 @@ if $gotT1 {
 
 test expr-old-36.1 {ExprLooksLikeInt procedure} {
     list [catch {expr 0289} msg] $msg
-} {1 {syntax error in expression "0289"}}
+} {1 {"0289" is an invalid octal number}}
 test expr-old-36.2 {ExprLooksLikeInt procedure} {
     set x 0289
     list [catch {expr {$x+1}} msg] $msg
-} {1 {can't use floating-point value as operand of "+"}}
+} {1 {can't use invalid octal number as operand of "+"}}
 test expr-old-36.3 {ExprLooksLikeInt procedure} {
     list [catch {expr 0289.1} msg] $msg
 } {0 289.1}
