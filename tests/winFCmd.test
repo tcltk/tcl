@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: winFCmd.test,v 1.19 2002/07/18 16:35:12 vincentdarley Exp $
+# RCS: @(#) $Id: winFCmd.test,v 1.20 2002/10/04 08:25:14 dkf Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -288,7 +288,7 @@ test winFCmd-1.28 {TclpRenameFile: errno == EEXIST} {pcOnly} {
     createfile tf1
     createfile tf2
     testfile mv tf1 tf2
-    list [file exist tf1] [file exist tf2]
+    list [file exists tf1] [file exists tf2]
 } {0 1}
 test winFCmd-1.29 {TclpRenameFile: src is dir} {pcOnly} {
     cleanup
@@ -313,7 +313,7 @@ test winFCmd-1.32 {TclpRenameFile: TclpRemoveDirectory succeeds} {pcOnly} {
     file mkdir td1/td2
     file mkdir td2
     testfile mv td1 td2
-    list [file exist td1] [file exist td2] [file exist td2/td2]
+    list [file exists td1] [file exists td2] [file exists td2/td2]
 } {0 1 1}
 test winFCmd-1.33 {TclpRenameFile: After removing dst dir, MoveFile fails} \
 	{pcOnly exdev} {
@@ -487,7 +487,7 @@ test winFCmd-3.7 {TclpDeleteFile: DeleteFile succeeds} {pcOnly} {
     cleanup
     createfile tf1
     testfile rm tf1
-    file exist tf1
+    file exists tf1
 } {0}
 test winFCmd-3.8 {TclpDeleteFile: DeleteFile fails} {pcOnly} {
     cleanup
@@ -550,7 +550,7 @@ test winFCmd-6.1 {TclpRemoveDirectory: errno: EACCES} {pcOnly} {
     file mkdir td1
     testchmod 000 td1
     testfile rmdir td1
-    file exist td1
+    file exists td1
 } {0}
 test winFCmd-6.2 {TclpRemoveDirectory: errno: EEXIST} {pcOnly} {
     cleanup
