@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEncoding.c,v 1.30 2004/12/02 23:24:57 dgp Exp $
+ * RCS: @(#) $Id: tclEncoding.c,v 1.31 2004/12/04 21:19:18 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -513,7 +513,6 @@ TclInitEncodingSubsystem()
     Tcl_CreateEncoding(&type);
 
     encodingsInitialized = 1;
-    TclpSetInitialEncodings();
 }
 
 /*
@@ -1303,6 +1302,7 @@ Tcl_FindExecutable(argv0)
 				 * (native). */
 {
     TclInitSubsystems();
+    TclpSetInitialEncodings();
     TclpFindExecutable(argv0);
 }
 
