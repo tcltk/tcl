@@ -1,3 +1,15 @@
+2005-03-15  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tclClock.c:
+	* generic/tclDate.c:
+	* generic/tclGetDate.y:
+	* generic/tclInt.decls:
+	* unix/tclUnixTime.c:
+	* win/tclWinTime.c:	Replaced 'unsigned long' variable holding
+	times with 'Tcl_WideInt', to cope with systems on which a time_t
+	is wider than a long (Win64) [Bug 1163422]
+	* generic/tclIntDecls.h: Regen
+	
 2005-03-15  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
 	* unix/tcl.m4: Make it work on OpenBSD again. Imported patch
