@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Encoding.3,v 1.18 2004/10/07 14:44:32 dkf Exp $
+'\" RCS: @(#) $Id: Encoding.3,v 1.19 2004/10/07 14:52:43 dkf Exp $
 '\" 
 .so man.macros
 .TH Tcl_GetEncoding 3 "8.1" Tcl "Tcl Library Procedures"
@@ -338,16 +338,16 @@ type \fBTcl_EncodingConvertProc\fR:
 .PP
 .CS
 typedef int Tcl_EncodingConvertProc(
-	ClientData \fIclientData\fR,
-	CONST char *\fIsrc\fR, 
-	int \fIsrcLen\fR, 
-	int \fIflags\fR, 
-	Tcl_EncodingState *\fIstatePtr\fR,
-	char *\fIdst\fR, 
-	int \fIdstLen\fR, 
-	int *\fIsrcReadPtr\fR,
-	int *\fIdstWrotePtr\fR,
-	int *\fIdstCharsPtr\fR);
+        ClientData \fIclientData\fR,
+        CONST char *\fIsrc\fR, 
+        int \fIsrcLen\fR, 
+        int \fIflags\fR, 
+        Tcl_EncodingState *\fIstatePtr\fR,
+        char *\fIdst\fR, 
+        int \fIdstLen\fR, 
+        int *\fIsrcReadPtr\fR,
+        int *\fIdstWrotePtr\fR,
+        int *\fIdstCharsPtr\fR);
 .CE
 .PP
 The \fItoUtfProc\fR and \fIfromUtfProc\fR procedures are called by the
@@ -369,7 +369,7 @@ The callback procedure \fIfreeProc\fR, if non-NULL, should match the type
 \fBTcl_EncodingFreeProc\fR:
 .CS
 typedef void Tcl_EncodingFreeProc(
-	ClientData \fIclientData\fR);
+        ClientData \fIclientData\fR);
 .CE
 .PP
 This \fIfreeProc\fR function is called when the encoding is deleted.  The

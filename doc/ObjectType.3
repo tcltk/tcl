@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: ObjectType.3,v 1.10 2004/10/07 14:44:33 dkf Exp $
+'\" RCS: @(#) $Id: ObjectType.3,v 1.11 2004/10/07 14:52:43 dkf Exp $
 '\" 
 .so man.macros
 .TH Tcl_ObjType 3 8.0 Tcl "Tcl Library Procedures"
@@ -92,11 +92,11 @@ and calling \fBTcl_RegisterObjType\fR.
 The \fBTcl_ObjType\fR structure is defined as follows:
 .CS
 typedef struct Tcl_ObjType {
-	char *\fIname\fR;
-	Tcl_FreeInternalRepProc *\fIfreeIntRepProc\fR;
-	Tcl_DupInternalRepProc *\fIdupIntRepProc\fR;
-	Tcl_UpdateStringProc *\fIupdateStringProc\fR;
-	Tcl_SetFromAnyProc *\fIsetFromAnyProc\fR;
+        char *\fIname\fR;
+        Tcl_FreeInternalRepProc *\fIfreeIntRepProc\fR;
+        Tcl_DupInternalRepProc *\fIdupIntRepProc\fR;
+        Tcl_UpdateStringProc *\fIupdateStringProc\fR;
+        Tcl_SetFromAnyProc *\fIsetFromAnyProc\fR;
 } Tcl_ObjType;
 .CE
 .PP
