@@ -3,7 +3,7 @@
 # Default system startup file for Tcl-based applications.  Defines
 # "unknown" procedure and auto-load facilities.
 #
-# SCCS: %Z% $Id: init.tcl,v 1.5 1998/07/11 13:07:06 welch Exp $ 
+# SCCS: %Z% $Id: init.tcl,v 1.6 1998/07/13 17:53:36 escoffon Exp $ 
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
@@ -591,6 +591,14 @@ proc auto_mkindex {dir args} {
 #			situations, for example when there is a circularity
 #			in package requires (package a requires package b,
 #			which in turns requires package a).
+# -verbose		(optional) Verbose output; the name of each file that
+#			was successfully rocessed is printed out. Additionally,
+#			if processing of a file failed a message is printed
+#			out; a file failure may not indicate that the indexing
+#			has failed, since pkg_mkIndex stores the list of failed
+#			files and tries again. The second time the processing
+#			may succeed, for example if a required package has been
+#			indexed by a previous pass.
 # dir -			Name of the directory in which to create the index.
 # args -		Any number of additional arguments, each giving
 #			a glob pattern that matches the names of one or
@@ -599,7 +607,7 @@ proc auto_mkindex {dir args} {
 
 proc pkg_mkIndex {args} {
     global errorCode errorInfo
-    set usage {"pkg_mkIndex ?-nopkgrequire? ?-direct? dir ?pattern ...?"};
+    set usage {"pkg_mkIndex ?-nopkgrequire? ?-direct? ?-verbose? dir ?pattern ...?"};
 
     set argCount [llength $args]
     if {$argCount < 1} {
@@ -609,6 +617,7 @@ proc pkg_mkIndex {args} {
     set more ""
     set direct 0
     set noPkgRequire 0
+    set doVerbose 0
     for {set idx 0} {$idx < $argCount} {incr idx} {
 	set flag [lindex $args $idx]
 	switch -glob -- $flag {
@@ -616,6 +625,10 @@ proc pkg_mkIndex {args} {
 		# done with the flags
 		incr idx
 		break
+	    }
+
+	    -vervose {
+		set doVerbose 1
 	    }
 
 	    -direct {
@@ -780,6 +793,13 @@ proc pkg_mkIndex {args} {
 			}
 			foreach __ns [__pkgGetAllNamespaces] {
 			    set __localIgnoreNs($__ns) 1
+
+			    # if the namespace is already in the __ignoreNs
+			    # array, its commands have already been imported
+
+			    if {[info exists ::__ignoreNs($__ns)] == 0} {
+				namespace import ${__ns}::*
+			    }
 			}
 			foreach __cmd [info commands] {
 			    set __localIgnoreCmds($__cmd) 1
@@ -831,7 +851,6 @@ proc pkg_mkIndex {args} {
 			}
 			return $__list
 		    }
-		    set ::__ignoreCmds [info commands]
 
 		    # initialize the list of packages to ignore; these are
 		    # packages that are present before the script/dll is loaded
@@ -850,6 +869,8 @@ proc pkg_mkIndex {args} {
 			set ::__ignoreNs($__ns) 1
 			namespace import ${__ns}::*
 		    }
+
+		    set ::__ignoreCmds [info commands]
 
 		    set dir ""		;# in case file is pkgIndex.tcl
 
@@ -923,7 +944,9 @@ proc pkg_mkIndex {args} {
 		}
 	    } msg] == 1} {
 		set what [$c eval set __doingWhat]
-		tclLog "warning: error while $what $file: $msg"
+		if {$doVerbose} {
+		    tclLog "warning: error while $what $file: $msg\nthis file will be retried in the next pass"
+		}
 	    } else {
 		set type [$c eval set __type]
 		set cmds [lsort [$c eval array names __cmds]]
@@ -938,6 +961,10 @@ proc pkg_mkIndex {args} {
 
 		incr processed
 		unset toProcess($file)
+
+		if {$doVerbose} {
+		    tclLog "processed $file"
+		}
 	    }
 	    interp delete $c
 	}
