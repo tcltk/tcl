@@ -1,3 +1,11 @@
+1999-04-02    <stanton@scriptics.com>
+
+	* tests/http.test: Fixed bad test initialization code.
+
+	* generic/tclThreadTest.c (ThreadExitProc): Fixed bug where static
+	memory was being returned instead of a dynamically allocated
+	result in error cases.
+
 1999-04-02    <redman@scriptics.com>
 
 	* doc/dde.n:
