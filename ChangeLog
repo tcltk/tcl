@@ -1,5 +1,8 @@
 2004-09-07  Kevin B. Kenny  <kennykb@acm.org>
 
+	* doc/clock.n: Documented the default -format, and changed
+	references to a (nonexistent) msgcat command to refer to
+	the msgcat package. [Bug 1023870]
 	* generic/tclTimer.c: Removed a premature optimisation that
 	attempted to store the assoc data in the client data; the
 	optimisation caused a bug that [after] would overwrite
