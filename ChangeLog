@@ -1,3 +1,8 @@
+2002-06-21  Don Porter  <dgp@users.sourceforge.net>
+
+	* library/init.tcl:  Corrected comments and namespace style
+	issues.  Thanks to Bruce Stephens. [Bug 572025]
+
 2002-06-06  Daniel Steffen  <das@users.sourceforge.net>
 
 	* unix/tclUnixInit.c (TclpSetInitialEncodings): 8.4 backport 
