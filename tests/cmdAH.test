@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: cmdAH.test,v 1.14 2001/07/31 19:12:07 vincentdarley Exp $
+# RCS: @(#) $Id: cmdAH.test,v 1.15 2001/09/09 17:32:16 mdejong Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -1193,7 +1193,8 @@ test cmdAH-20.5 {Tcl_FileObjCmd: atime touch} {
     set atime [file atime $file]
     after 1100; # pause a sec to notice change in atime
     set newatime [clock seconds]
-    expr {$newatime==[file atime $file $newatime]}
+    set modatime [file atime $file $newatime]
+    expr {$newatime == $modatime ? 1 : "$newatime != $modatime"}
 } 1
 
 # isdirectory
@@ -1332,7 +1333,8 @@ test cmdAH-24.8 {Tcl_FileObjCmd: mtime touch} {
     set mtime [file mtime $file]
     after 1100; # pause a sec to notice change in mtime
     set newmtime [clock seconds]
-    expr {$newmtime==[file mtime $file $newmtime]}
+    set modmtime [file mtime $file $newmtime]
+    expr {$newmtime == $modmtime ? 1 : "$newmtime != $modmtime"}
 } 1
 
 
