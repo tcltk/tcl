@@ -1,3 +1,8 @@
+2004-06-29  Don Porter  <dgp@users.sourceforge.net>
+
+	* win/tclWinInit.c:	Corrected reference counting flaw in
+	recent changes.  Thanks to Pat Thoyts. [Bug 981893].
+
 2004-06-29  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* win/tclWin32Dll.c: fix to compilation with VC++ 5.2

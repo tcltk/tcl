@@ -7,7 +7,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclWinInit.c,v 1.57 2004/06/18 13:42:42 dkf Exp $
+ * RCS: @(#) $Id: tclWinInit.c,v 1.58 2004/06/29 14:03:46 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -378,7 +378,7 @@ TclpInitLibraryPath(path)
     AppendDllPath(pathPtr, TclWinGetTclInstance(), installLib);
 
     Tcl_ListObjGetElements(NULL, pathPtr, &objc, &objv);
-    SetDefaultLibraryDir(objv[objc-1]);
+    SetDefaultLibraryDir(Tcl_DuplicateObj(objv[objc-1]));
 
     /*
      * Look for the library relative to the executable.  This algorithm
