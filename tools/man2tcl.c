@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: man2tcl.c,v 1.6 2002/05/08 12:20:15 davygrvy Exp $
+ * RCS: @(#) $Id: man2tcl.c,v 1.7 2002/05/08 23:48:13 davygrvy Exp $
  */
 
 static char sccsid[] = "@(#) man2tcl.c 1.3 95/08/12 17:34:08";
@@ -142,7 +142,7 @@ main(argc, argv)
 		exit(1);
 	    }
 
-	    if (line[0] == '.') {
+	    if ((line[0] == '.') || (line[0] == '\'')) {
 		/*
 		 * This line is a macro invocation.
 		 */
@@ -200,6 +200,11 @@ DoMacro(line)
 
     if (writeOutput) {
 	printf("macro");
+    }
+    if (*line != '.') {
+	if (writeOutput) {
+	    printf("2");
+	}
     }
 
     /*
