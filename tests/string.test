@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: string.test,v 1.27 2001/03/12 15:58:01 dkf Exp $
+# RCS: @(#) $Id: string.test,v 1.28 2001/04/06 10:50:00 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -119,12 +119,17 @@ test string-2.26 {string compare -nocase, null strings} {
 test string-2.27 {string compare -nocase, null strings} {
     string compare -nocase foo ""
 } 1
-test string-2.28 {string equal with length, unequal strings} {
+test string-2.28 {string compare with length, unequal strings} {
     string compare -length 2 abc abde
 } 0
-test string-2.29 {string equal with length, unequal strings} {
+test string-2.29 {string compare with length, unequal strings} {
     string compare -length 2 ab abde
 } 0
+test string-2.30 {string compare with NUL character vs. other ASCII} {
+    # Be careful here, since UTF-8 rep comparison with memcmp() of
+    # these puts chars in the wrong order
+    string compare \x00 \x01
+} -1
 
 # only need a few tests on equal, since it uses the same code as
 # string compare, but just modifies the return output

@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.34 2001/04/05 10:20:18 dkf Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.35 2001/04/06 10:50:00 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1091,33 +1091,81 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		}
 	    }
 
-	    string1 = Tcl_GetStringFromObj(objv[objc-2], &length1);
-	    string2 = Tcl_GetStringFromObj(objv[objc-1], &length2);
-	    /*
-	     * This is the min length IN BYTES of the two strings
-	     */
-	    length = (length1 < length2) ? length1 : length2;
-
 	    if (reqlength == 0) {
 		/*
 		 * Anything matches at 0 chars, right?
 		 */
 
 		match = 0;
-	    } else if (nocase || ((reqlength > 0) && (reqlength <= length))) {
-		/*
-		 * with -nocase or -length we have to check true char length
-		 * as it could be smaller than expected
-		 */
+		goto stringComparisonDone;
+	    }
 
-		length1 = Tcl_NumUtfChars(string1, length1);
-		length2 = Tcl_NumUtfChars(string2, length2);
+	    /*
+	     * From now on, we only access the two objects at the end
+	     * of the argument array.
+	     */
+	    objv += objc-2;
+
+	    /*
+	     * Use UNICODE versions of string comparisons since that
+	     * won't cause undue type conversions and we can work with
+	     * characters all of a fixed size (much faster.)  Also use
+	     * this code for untyped objects, since like that we'll
+	     * pick up many things that are used for comparison in
+	     * scripts and convert them (efficiently) to UNICODE
+	     * strings for comparison, but exclude case where both are
+	     * untyped as that is a little bit aggressive.
+	     */
+	    if ((objv[0]->typePtr == &tclStringType ||
+		 objv[0]->typePtr == NULL) &&
+		(objv[1]->typePtr == &tclStringType ||
+		 objv[1]->typePtr == NULL) &&
+		!(objv[0]->typePtr == NULL && objv[1]->typePtr == NULL)) {
+		Tcl_UniChar *uni1, *uni2;
+
+		length1 = Tcl_GetCharLength(objv[0]);
+		length2 = Tcl_GetCharLength(objv[1]);
 		length = (length1 < length2) ? length1 : length2;
+		uni1 = Tcl_GetUnicode(objv[0]);
+		uni2 = Tcl_GetUnicode(objv[1]);
 
-		/*
-		 * Do the reqlength check again, against 0 as well for
-		 * the benfit of nocase
-		 */
+		if (reqlength > 0 && reqlength < length) {
+		    length = reqlength;
+		} else if (reqlength < 0) {
+		    /*
+		     * The requested length is negative, so we ignore it by
+		     * setting it to the longer of the two lengths.
+		     */
+
+		    reqlength = (length1 < length2) ? length2 : length1;
+		}
+
+		if (nocase) {
+		    match = Tcl_UniCharNcasecmp(uni1, uni2, (unsigned)length);
+		} else {
+		    match = Tcl_UniCharNcmp(uni1, uni2, (unsigned)length);
+		}
+
+		if ((match == 0) && (reqlength > length)) {
+		    match = length1 - length2;
+		}
+		goto stringComparisonDone;
+	    }
+
+	    /*
+	     * Use binary versions of comparisons since that won't
+	     * cause undue type conversions and it is much faster.
+	     * Only do this if we're case-sensitive (which is all
+	     * that really makes sense with byte arrays anyway, and
+	     * we have no memcasecmp() for some reason... :^)
+	     */
+	    if (objv[0]->typePtr == &tclByteArrayType &&
+		objv[1]->typePtr == &tclByteArrayType && !nocase) {
+		unsigned char *bytes1, *bytes2;
+
+		bytes1 = Tcl_GetByteArrayFromObj(objv[0], &length1);
+		bytes2 = Tcl_GetByteArrayFromObj(objv[1], &length2);
+		length = (length1 < length2) ? length1 : length2;
 
 		if ((reqlength > 0) && (reqlength < length)) {
 		    length = reqlength;
@@ -1129,22 +1177,50 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 
 		    reqlength = (length1 > length2) ? length1 : length2;
 		}
-		if (nocase) {
-		    match = Tcl_UtfNcasecmp(string1, string2,
-			    (unsigned) length);
-		} else {
-		    match = Tcl_UtfNcmp(string1, string2, (unsigned) length);
-		}
+
+		match = memcmp(bytes1, bytes2, (unsigned)length);
 		if ((match == 0) && (reqlength > length)) {
 		    match = length1 - length2;
 		}
-	    } else {
-		match = memcmp(string1, string2, (unsigned) length);
-		if (match == 0) {
-		    match = length1 - length2;
-		}
+		goto stringComparisonDone;
 	    }
 
+	    /*
+	     * Strings to be compared are not both UNICODE or byte
+	     * arrays, so we will need to convert to UTF-8 and work
+	     * there (cannot use memcmp() as that is an unsafe
+	     * operation with any string containing \u0000 and the
+	     * safety test is equivalent in cost to the comparison
+	     * itself!)
+	     */
+	    string1 = Tcl_GetStringFromObj(objv[0], &length1);
+	    string2 = Tcl_GetStringFromObj(objv[1], &length2);
+	    length1 = Tcl_NumUtfChars(string1, length1);
+	    length2 = Tcl_NumUtfChars(string2, length2);
+	    length = (length1 < length2) ? length1 : length2;
+
+	    if ((reqlength > 0) && (reqlength < length)) {
+		length = reqlength;
+	    } else if (reqlength < 0) {
+		/*
+		 * The requested length is negative, so we ignore it by
+		 * setting it to the longer of the two lengths.
+		 */
+
+		reqlength = (length1 > length2) ? length1 : length2;
+	    }
+
+	    if (nocase) {
+		match = Tcl_UtfNcasecmp(string1, string2, (unsigned) length);
+	    } else {
+		match = Tcl_UtfNcmp(string1, string2, (unsigned) length);
+	    }
+
+	    if ((match == 0) && (reqlength > length)) {
+		match = length1 - length2;
+	    }
+
+	stringComparisonDone:
 	    if ((enum options) index == STR_EQUAL) {
 		Tcl_SetBooleanObj(resultPtr, (match) ? 0 : 1);
 	    } else {
