@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPort.h,v 1.24 2001/10/15 17:34:53 hobbs Exp $
+ * RCS: @(#) $Id: tclWinPort.h,v 1.25 2002/01/24 01:34:16 dgp Exp $
  */
 
 #ifndef _TCLWINPORT
@@ -436,7 +436,7 @@
  */
 
 EXTERN HANDLE	    TclWinSerialReopen _ANSI_ARGS_(( HANDLE handle,
-			char *name, DWORD access));
+			CONST TCHAR *name, DWORD access));
 
 EXTERN Tcl_Channel  TclWinOpenSerialChannel _ANSI_ARGS_((HANDLE handle,
                         char *channelName, int permissions));

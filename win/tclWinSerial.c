@@ -11,7 +11,7 @@
  *
  * Serial functionality implemented by Rolf.Schroedter@dlr.de
  *
- * RCS: @(#) $Id: tclWinSerial.c,v 1.18 2002/01/15 17:55:31 dgp Exp $
+ * RCS: @(#) $Id: tclWinSerial.c,v 1.19 2002/01/24 01:34:16 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -1327,7 +1327,7 @@ SerialWriterThread(LPVOID arg)
 HANDLE
 TclWinSerialReopen(handle, name, access)
     HANDLE handle;
-    char *name;
+    CONST TCHAR *name;
     DWORD access;
 {
     ThreadSpecificData *tsdPtr;
