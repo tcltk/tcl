@@ -1,3 +1,21 @@
+1999-02-25    <redman@scriptics.com>
+
+	* win/makefile.vc: Added tclWinConsole.c and tclWinSerial.c
+	
+	* win/tclWinConsole.c: New code to properly deal with fileevents
+	and nonblocking mode on consoles.
+	
+	* win/tclWinSerial.c: New code to properly deal with fileevents
+	and nonblocking mode on serial ports.
+
+	* win/tclWinPipe.c: 
+	* win/tclWinPort.h: Exported functions to allow creation of pipe
+	channels from tclWinChan.c
+
+	* win/tclWinChan.c: Check the type of a channel, including for the
+	standard (stdin/stdout/stderr), and use the correct channel type
+	to create the channel (file, serial, console, or pipe).
+
 1999-02-11    <stanton@GASPODE>
 
 	* README: 
