@@ -1,3 +1,7 @@
+1999-07-14    <jpeek@scriptics.com>
+
+	* doc/re_syntax.n: Deleted sentence as suggested by Scott S.
+
 1999-07-12    <jpeek@scriptics.com>
 
 	* doc/re_syntax.n: Removed two notes to myself (oops), cleaned
