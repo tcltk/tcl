@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: namespace.test,v 1.14 2001/04/07 02:12:30 msofer Exp $
+# RCS: @(#) $Id: namespace.test,v 1.14.2.1 2001/05/03 22:41:47 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -1124,6 +1124,17 @@ test namespace-39.2 {NamespaceExistsCmd error} {
 test namespace-39.3 {NamespaceExistsCmd error} {
     list [catch {namespace exists a b} msg] $msg
 } {1 {wrong # args: should be "namespace exists name"}}
+
+test namespace-40.1 {Ignoring namespace proc "unknown"} {
+    rename unknown _unknown
+    proc unknown args {return global}
+    namespace eval ns {proc unknown args {return local}}
+    set l [list [namespace eval ns aaa bbb] [namespace eval ns aaa]]
+    rename unknown {}   
+    rename _unknown unknown
+    namespace delete ns
+    set l
+} {global global}
 
 # cleanup
 catch {rename cmd1 {}}
