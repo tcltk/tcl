@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinConsole.c,v 1.1.2.4 1999/03/24 00:04:31 redman Exp $
+ * RCS: @(#) $Id: tclWinConsole.c,v 1.1.2.5 1999/03/27 00:39:31 redman Exp $
  */
 
 #include "tclWinInt.h"
@@ -503,11 +503,22 @@ ConsoleCloseProc(
     consolePtr->validMask &= ~TCL_WRITABLE;
 
 
-    if (CloseHandle(consolePtr->handle) == FALSE) {
-	TclWinConvertError(GetLastError());
-	errorCode = errno;
-    }
+    /*
+     * Don't close the Win32 handle if the handle is a standard channel
+     * during the exit process.  Otherwise, one thread may kill the stdio
+     * of another.
+     */
 
+    if (!TclInExit() 
+	    || ((GetStdHandle(STD_INPUT_HANDLE) != consolePtr->handle)
+		&& (GetStdHandle(STD_OUTPUT_HANDLE) != consolePtr->handle)
+		&& (GetStdHandle(STD_ERROR_HANDLE) != consolePtr->handle))) {
+	if (CloseHandle(consolePtr->handle) == FALSE) {
+	    TclWinConvertError(GetLastError());
+	    errorCode = errno;
+	}
+    }
+    
     consolePtr->watchMask &= consolePtr->validMask;
 
     /*

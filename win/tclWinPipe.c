@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPipe.c,v 1.1.2.8 1999/03/14 18:55:11 stanton Exp $
+ * RCS: @(#) $Id: tclWinPipe.c,v 1.1.2.9 1999/03/27 00:39:31 redman Exp $
  */
 
 #include "tclWinInt.h"
@@ -609,7 +609,7 @@ TclpOpenFile(path, mode)
     DWORD accessMode, createMode, shareMode, flags;
     Tcl_DString ds;
     TCHAR *nativePath;
-
+    
     /*
      * Map the access bits to the NT access mode.
      */
@@ -884,10 +884,21 @@ TclpCloseFile(
     switch (filePtr->type) {
 	case WIN_FILE:
 	case WIN32S_TMPFILE:
-	    if (CloseHandle(filePtr->handle) == FALSE) {
-		TclWinConvertError(GetLastError());
-		ckfree((char *) filePtr);
-		return -1;
+	    /*
+	     * Don't close the Win32 handle if the handle is a standard channel
+	     * during the exit process.  Otherwise, one thread may kill the stdio
+	     * of another.
+	     */
+
+	    if (!TclInExit() 
+		    || ((GetStdHandle(STD_INPUT_HANDLE) != filePtr->handle)
+			    && (GetStdHandle(STD_OUTPUT_HANDLE) != filePtr->handle)
+			    && (GetStdHandle(STD_ERROR_HANDLE) != filePtr->handle))) {
+		if (CloseHandle(filePtr->handle) == FALSE) {
+		    TclWinConvertError(GetLastError());
+		    ckfree((char *) filePtr);
+		    return -1;
+		}
 	    }
 	    /*
 	     * Simulate deleting the file on close for Win32s.
@@ -1605,7 +1616,7 @@ ApplicationType(interp, originalName, fullName)
 	    applType = APPL_DOS;
 	    break;
 	}
-
+	
 	hFile = (*tclWinProcs->createFileProc)((TCHAR *) nativeFullPath, 
 		GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 
 		FILE_ATTRIBUTE_NORMAL, NULL);

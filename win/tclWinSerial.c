@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinSerial.c,v 1.1.2.4 1999/03/25 00:34:17 redman Exp $
+ * RCS: @(#) $Id: tclWinSerial.c,v 1.1.2.5 1999/03/27 00:39:32 redman Exp $
  */
 
 #include "tclWinInt.h"
@@ -485,11 +485,22 @@ SerialCloseProc(
     }
     serialPtr->validMask &= ~TCL_WRITABLE;
 
-    if (CloseHandle(serialPtr->handle) == FALSE) {
-	TclWinConvertError(GetLastError());
-	errorCode = errno;
-    }
+    /*
+     * Don't close the Win32 handle if the handle is a standard channel
+     * during the exit process.  Otherwise, one thread may kill the stdio
+     * of another.
+     */
 
+    if (!TclInExit() 
+	    || ((GetStdHandle(STD_INPUT_HANDLE) != serialPtr->handle)
+		&& (GetStdHandle(STD_OUTPUT_HANDLE) != serialPtr->handle)
+		&& (GetStdHandle(STD_ERROR_HANDLE) != serialPtr->handle))) {
+	if (CloseHandle(serialPtr->handle) == FALSE) {
+	    TclWinConvertError(GetLastError());
+	    errorCode = errno;
+	}
+    }
+    
     serialPtr->watchMask &= serialPtr->validMask;
 
     /*

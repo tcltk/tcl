@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinChan.c,v 1.1.2.6 1999/03/19 04:01:26 stanton Exp $
+ * RCS: @(#) $Id: tclWinChan.c,v 1.1.2.7 1999/03/27 00:39:31 redman Exp $
  */
 
 #include "tclWinInt.h"
@@ -380,6 +380,12 @@ FileCloseProc(instanceData, interp)
      */
 
     FileWatchProc(instanceData, 0);
+
+    /*
+     * Don't close the Win32 handle if the handle is a standard channel
+     * during the exit process.  Otherwise, one thread may kill the stdio
+     * of another.
+     */
 
     if (!TclInExit() 
 	    || ((GetStdHandle(STD_INPUT_HANDLE) != fileInfoPtr->handle)
