@@ -18,7 +18,7 @@ SGI, as well as PCs running Linux, BSDI, and SCO UNIX.  To compile for
 a PC running Windows, see the README file in the directory ../win.  To
 compile for a Macintosh, see the README file in the directory ../mac.
 
-RCS: @(#) $Id: README,v 1.8 1999/10/05 22:46:40 hobbs Exp $
+RCS: @(#) $Id: README,v 1.9 2000/02/05 12:09:16 hobbs Exp $
 
 How To Compile And Install Tcl:
 -------------------------------
@@ -63,7 +63,11 @@ How To Compile And Install Tcl:
 				if your system supports it.
 	--enable-shared		If this switch is specified, Tcl will compile
 				itself as a shared library if it can figure
-				out how to do that on this platform.
+				out how to do that on this platform.  This
+				is the default on platforms where we know
+				how to build shared libraries.
+	--disable-shared	If this switch is specified, Tcl will compile
+				itself as a static library.
     Note: be sure to use only absolute path names (those starting with "/")
     in the --prefix and --exec_prefix options.
 
