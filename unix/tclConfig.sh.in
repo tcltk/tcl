@@ -9,7 +9,7 @@
 #
 # The information in this file is specific to a single platform.
 #
-# RCS: @(#) $Id: tclConfig.sh.in,v 1.12 1999/07/28 18:51:29 wart Exp $
+# RCS: @(#) $Id: tclConfig.sh.in,v 1.13 1999/07/29 19:21:32 wart Exp $
 
 # Tcl's version number.
 TCL_VERSION='@TCL_VERSION@'
@@ -31,7 +31,7 @@ TCL_DBGX=@TCL_DBGX@
 TCL_CFLAGS_DEBUG='@CFLAGS_DEBUG@'
 TCL_CFLAGS_OPTIMIZE='@CFLAGS_OPTIMIZE@'
 
-# Default flags used in an optimized and debuggable build, respectively.
+# Default linker flags used in an optimized and debuggable build, respectively.
 TCL_LDFLAGS_DEBUG='@LDFLAGS_DEBUG@'
 TCL_LDFLAGS_OPTIMIZE='@LDFLAGS_OPTIMIZE@'
 
@@ -64,11 +64,17 @@ TCL_EXEC_PREFIX='@exec_prefix@'
 # Flags to pass to cc when compiling the components of a shared library:
 TCL_SHLIB_CFLAGS='@SHLIB_CFLAGS@'
 
+# Flags to pass to cc to get warning messages
+TCL_CFLAGS_WARNING='@CFLAGS_WARNING@'
+
 # Extra flags to pass to cc:
 TCL_EXTRA_CFLAGS='@EXTRA_CFLAGS@'
 
 # Base command to use for combining object files into a shared library:
 TCL_SHLIB_LD='@SHLIB_LD@'
+
+# Base command to use for combining object files into a shared library:
+TCL_STLIB_LD='@STLIB_LD@'
 
 # Either '$LIBS' (if dependent libraries should be included when linking
 # shared libraries) or an empty string.  See Tcl's configure.in for more
