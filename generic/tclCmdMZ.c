@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.53 2001/12/20 23:33:27 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.54 2002/01/17 03:03:11 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2027,7 +2027,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		Tcl_SetObjLength(resultPtr, length1);
 	    } else {
 		int first, last;
-		char *start, *end;
+		CONST char *start, *end;
 
 		length1 = Tcl_NumUtfChars(string1, length1) - 1;
 		if (TclGetIntForIndex(interp, objv[3], length1,
@@ -2071,7 +2071,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 
 	case STR_TRIM: {
 	    Tcl_UniChar ch, trim;
-	    register char *p, *end;
+	    register CONST char *p, *end;
 	    char *check, *checkEnd;
 	    int offset;
 
@@ -2160,7 +2160,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	case STR_WORDEND: {
 	    int cur;
 	    Tcl_UniChar ch;
-	    char *p, *end;
+	    CONST char *p, *end;
 	    int numChars;
 	    
 	    if (objc != 4) {
@@ -2198,7 +2198,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	case STR_WORDSTART: {
 	    int cur;
 	    Tcl_UniChar ch;
-	    char *p;
+	    CONST char *p;
 	    int numChars;
 	    
 	    if (objc != 4) {

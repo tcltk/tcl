@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacLoad.c,v 1.9 2002/01/09 19:09:28 kennykb Exp $
+ * RCS: @(#) $Id: tclMacLoad.c,v 1.10 2002/01/17 03:03:12 dgp Exp $
  */
 
 #include <CodeFragments.h>
@@ -140,8 +140,9 @@ TclpLoadFile(
     
     /*
      * First thing we must do is infer the package name from the sym1
-     * variable.  This is kind of dumb since the caller actually knows
-     * this value, it just doesn't give it to us.
+     * variable (by removing the "_Init" suffix).  This is kind of dumb
+     * since the caller actually knows this value, it just doesn't give
+     * it to us.
      */
     native = Tcl_UtfToExternalDString(NULL, sym1, -1, &ds);
     native[strlen(native) - 5] = 0;
