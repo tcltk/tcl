@@ -1,7 +1,39 @@
+1999-08-18  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* doc/Eval.3: fixed doc on input args [Bug: 2114]
+
+	* doc/OpenFileChnl.3:
+	* doc/file.n:
+	* tests/cmdAH.test:
+	* tclIO.c:
+	* tclCmdAH.c: added "file channels ?pattern?" tcl command, with
+	associated Tcl_GetChannelNames and Tcl_GetChannelNamesEx public
+	C APIs (added to tcl.decls as well), with docs and tests.
+
+	* tests/expr.test:
+	* generic/tclCompile.c: add TCL_TOKEN_VARIABLE to the part types
+	that cause differed compilation for exprs, to correct the expr
+	double-evaluation problem for vars.  Added test cases.
+
+	* unix/Makefile.in: changed the dependency structure so that
+	install-* is dependent on * (ie - install-binaries is dependent
+	on binaries).
+	
+	* library/auto.tcl:
+	* library/init.tcl:
+	* library/ldAout.tcl:
+	* library/package.tcl:
+	* library/safe.tcl:
+	* library/word.tcl:
+	* library/http2.1/http.tcl:
+	* library/msgcat1.0/msgcat.tcl: updated libraries to better
+	Tcl style guide (no more string comparisons with == or !=, spacing
+	changes).
+
 1999-08-05  Jim Ingham  <jingham@cygnus.com>
 
-        * mac/tclMacProjects.sea.hqx: Rearrange the projects so that the build 
-        directory is separate from the sources.  Much more convenient! 
+	* mac/tclMacProjects.sea.hqx: Rearrange the projects so that the build
+	directory is separate from the sources.	 Much more convenient!
 
 1999-08-12  Scott Stanton  <stanton@scriptics.com>
 
