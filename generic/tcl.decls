@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.71 2002/01/15 21:19:06 dgp Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.72 2002/01/16 06:02:33 dgp Exp $
 
 library tcl
 
@@ -316,12 +316,13 @@ declare 85 generic {
 	    int flags)
 }
 declare 86 generic {
-    int Tcl_CreateAlias(Tcl_Interp *slave, char *slaveCmd, \
-	    Tcl_Interp *target, char *targetCmd, int argc, char **argv)
+    int Tcl_CreateAlias(Tcl_Interp *slave, CONST char *slaveCmd, \
+	    Tcl_Interp *target, CONST char *targetCmd, int argc, \
+	    char * CONST *argv)
 }
 declare 87 generic {
-    int Tcl_CreateAliasObj(Tcl_Interp *slave, char *slaveCmd, \
-	    Tcl_Interp *target, char *targetCmd, int objc, \
+    int Tcl_CreateAliasObj(Tcl_Interp *slave, CONST char *slaveCmd, \
+	    Tcl_Interp *target, CONST char *targetCmd, int objc, \
 	    Tcl_Obj *CONST objv[])
 }
 declare 88 generic {
@@ -363,7 +364,7 @@ declare 96 generic {
 	    Tcl_CmdDeleteProc *deleteProc)
 }
 declare 97 generic {
-    Tcl_Interp * Tcl_CreateSlave(Tcl_Interp *interp, char *slaveName, \
+    Tcl_Interp * Tcl_CreateSlave(Tcl_Interp *interp, CONST char *slaveName, \
 	    int isSafe)
 }
 declare 98 generic {
@@ -529,14 +530,14 @@ declare 147 generic {
     void Tcl_FreeResult(Tcl_Interp *interp)
 }
 declare 148 generic {
-    int Tcl_GetAlias(Tcl_Interp *interp, char *slaveCmd, \
-	    Tcl_Interp **targetInterpPtr, char **targetCmdPtr, int *argcPtr, \
-	    char ***argvPtr)
+    int Tcl_GetAlias(Tcl_Interp *interp, CONST char *slaveCmd, \
+	    Tcl_Interp **targetInterpPtr, CONST char **targetCmdPtr, \
+	    int *argcPtr, char ***argvPtr)
 }
 declare 149 generic {
-    int Tcl_GetAliasObj(Tcl_Interp *interp, char *slaveCmd, \
-	    Tcl_Interp **targetInterpPtr, char **targetCmdPtr, int *objcPtr, \
-	    Tcl_Obj ***objv)
+    int Tcl_GetAliasObj(Tcl_Interp *interp, CONST char *slaveCmd, \
+	    Tcl_Interp **targetInterpPtr, CONST char **targetCmdPtr, \
+	    int *objcPtr, Tcl_Obj ***objv)
 }
 declare 150 generic {
     ClientData Tcl_GetAssocData(Tcl_Interp *interp, CONST char *name, \
@@ -617,7 +618,7 @@ declare 171 generic {
     int Tcl_GetServiceMode(void)
 }
 declare 172 generic {
-    Tcl_Interp * Tcl_GetSlave(Tcl_Interp *interp, char *slaveName)
+    Tcl_Interp * Tcl_GetSlave(Tcl_Interp *interp, CONST char *slaveName)
 }
 declare 173 generic {
     Tcl_Channel Tcl_GetStdChannel(int type)
@@ -737,7 +738,7 @@ declare 207 {unix win} {
     void Tcl_ReapDetachedProcs(void)
 }
 declare 208 generic {
-    int Tcl_RecordAndEval(Tcl_Interp *interp, char *cmd, int flags)
+    int Tcl_RecordAndEval(Tcl_Interp *interp, CONST char *cmd, int flags)
 }
 declare 209 generic {
     int Tcl_RecordAndEvalObj(Tcl_Interp *interp, Tcl_Obj *cmdPtr, int flags)
