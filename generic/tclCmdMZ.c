@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.89 2003/05/09 13:08:19 dkf Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.90 2003/05/10 23:54:37 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -2180,8 +2180,17 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		     * Only build up a string that has data.  Instead of
 		     * building it up with repeated appends, we just allocate
 		     * the necessary space once and copy the string value in.
+		     * Check for overflow with back-division. [Bug #714106]
 		     */
 		    length2		= length1 * count;
+		    if ((length2 / count) != length1) {
+			char buf[TCL_INTEGER_SPACE+1];
+			sprintf(buf, "%d", INT_MAX);
+			Tcl_AppendStringsToObj(resultPtr,
+				"string size overflow, must be less than ",
+				buf, (char *) NULL);
+			return TCL_ERROR;
+		    }
 		    /*
 		     * Include space for the NULL
 		     */
