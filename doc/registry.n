@@ -1,20 +1,21 @@
 '\"
 '\" Copyright (c) 1997 Sun Microsystems, Inc.
+'\" Copyright (c) 2002 ActiveState Corporation.
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: registry.n,v 1.7 2002/10/18 23:58:18 hobbs Exp $
+'\" RCS: @(#) $Id: registry.n,v 1.8 2002/10/19 01:48:46 hobbs Exp $
 '\" 
 .so man.macros
-.TH registry n 1.0 registry "Tcl Bundled Packages"
+.TH registry n 1.1 registry "Tcl Bundled Packages"
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
 registry \- Manipulate the Windows registry
 .SH SYNOPSIS
 .sp
-\fBpackage require registry 1.0\fR
+\fBpackage require registry 1.1\fR
 .sp
 \fBregistry \fIoption\fR \fIkeyName\fR ?\fIarg arg ...\fR?
 .BE
