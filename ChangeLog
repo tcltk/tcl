@@ -1,3 +1,12 @@
+1999-08-05  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* doc/tclvars.n: Made it clear that tcl_pkgPath was not set
+	for Windows (already mentioned in init.tcl) [Bug: 2455]
+	* generic/tclLiteral.c: fixed reference to bytes that might
+	not be null terminated (using objPtr->bytes, which is) [Bug: 2496]
+	* library/http2.1/http.tcl: Made use of "i" in init section not
+	use global var. [Bug: 2502]
+
 1999-08-04  Scott Stanton  <stanton@scriptics.com>
 
 	* tests/reg.test: Added test for REG_EXPECT bug fixed by Henry's
