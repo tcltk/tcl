@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParseExpr.c,v 1.19 2003/10/14 15:44:53 dgp Exp $
+ * RCS: @(#) $Id: tclParseExpr.c,v 1.20 2004/03/04 23:25:15 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -245,19 +245,7 @@ Tcl_ParseExpr(interp, string, numBytes, parsePtr)
     }
 #endif /* TCL_COMPILE_DEBUG */
     
-    parsePtr->commentStart = NULL;
-    parsePtr->commentSize = 0;
-    parsePtr->commandStart = NULL;
-    parsePtr->commandSize = 0;
-    parsePtr->numWords = 0;
-    parsePtr->tokenPtr = parsePtr->staticTokens;
-    parsePtr->numTokens = 0;
-    parsePtr->tokensAvailable = NUM_STATIC_TOKENS;
-    parsePtr->string = string;
-    parsePtr->end = (string + numBytes);
-    parsePtr->interp = interp;
-    parsePtr->term = string;
-    parsePtr->incomplete = 0;
+    TclParseInit(interp, string, numBytes, parsePtr);
 
     /*
      * Initialize the ParseInfo structure that holds state while parsing
