@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDate.c,v 1.20 2001/10/18 20:20:28 hobbs Exp $
+ * RCS: @(#) 
  */
 
 #include "tclInt.h"
@@ -117,6 +117,88 @@ static int	TclDatelex _ANSI_ARGS_((void));
 
 int
 TclDateparse _ANSI_ARGS_((void));
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclDateCleanup --
+ *
+ *	Clean up allocated memory on process exit.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Frees the block of memory passed in as client data.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+TclDateCleanup( ClientData clientData )
+{
+    ckfree( (char*) clientData );
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclDateAlloc --
+ *
+ *	Special purpose allocator for the two YACC stacks.
+ *
+ * Results:
+ *	Returns a pointer to a block of memory.
+ *
+ * Side effects:
+ *	Allocates the requested number of bytes, and 
+ *	sets up to delete the allocated memory on process exit.
+ *
+ * The YACC system is set up to free memory in its stacks only by
+ * abandonment. This procedure sets up to free it explicitly on exit
+ * from Tcl, as when unloading.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static char*
+TclDateAlloc( size_t n )
+{
+    char* pointer = ckalloc( n );
+    Tcl_CreateExitHandler( TclDateCleanup, (ClientData) pointer );
+    return pointer;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclDateRealloc --
+ *
+ *	Special purpose allocator for the two YACC stacks.
+ *
+ * Results:
+ *	Returns a pointer to a block of memory.
+ *
+ * Side effects:
+ *	Allocates the requested number of bytes, and 
+ *	sets up to delete the allocated memory on process exit.
+ *
+ * The YACC system is set up to free memory in its stacks only by
+ * abandonment. This procedure sets up to free it explicitly on exit
+ * from Tcl, as when unloading.
+ *
+ *----------------------------------------------------------------------
+ */
+static char*
+TclDateRealloc( char* oldPointer, size_t n )
+{
+    char* newPointer;
+    Tcl_DeleteExitHandler( TclDateCleanup, (ClientData) oldPointer );
+    newPointer = ckrealloc( oldPointer, n );
+    Tcl_CreateExitHandler( TclDateCleanup, (ClientData) newPointer );
+    return newPointer;
+}
+
 typedef union
 #ifdef __cplusplus
 	YYSTYPE
@@ -1146,11 +1228,11 @@ char * TclDatereds[] =
 	goto TclDatenewstate;\
 }
 #define YYRECOVERING()	(!!TclDateerrflag)
-#define YYNEW(type)	malloc(sizeof(type) * TclDatenewmax)
+#define YYNEW(type)	TclDateAlloc(sizeof(type) * TclDatenewmax)
 #define YYCOPY(to, from, type) \
 	(type *) memcpy(to, (char *) from, TclDatemaxdepth * sizeof (type))
 #define YYENLARGE( from, type) \
-	(type *) realloc((char *) from, TclDatenewmax * sizeof(type))
+	(type *) TclDateRealloc((char *) from, TclDatenewmax * sizeof(type))
 #ifndef YYDEBUG
 #	define YYDEBUG	1	/* make debugging available */
 #endif
