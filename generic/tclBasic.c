@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.32 2001/05/17 02:13:02 hobbs Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.33 2001/05/30 08:57:06 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2601,6 +2601,120 @@ Tcl_CreateMathFunc(interp, name, numArgs, argTypes, proc, clientData)
     }
     mathFuncPtr->proc = proc;
     mathFuncPtr->clientData = clientData;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_GetMathFuncInfo --
+ *
+ *	Discovers how a particular math function was created in a given
+ *	interpreter.
+ *
+ * Results:
+ *	TCL_OK if it succeeds, TCL_ERROR else (leaving an error message
+ *	in the interpreter result if that happens.)
+ *
+ * Side effects:
+ *	If this function succeeds, the variables pointed to by the
+ *	numArgsPtr and argTypePtr arguments will be updated to detail the
+ *	arguments allowed by the function.  The variable pointed to by the
+ *	procPtr argument will be set to NULL if the function is a builtin
+ *	function, and will be set to the address of the C function used to
+ *	implement the math function otherwise (in which case the variable
+ *	pointed to by the clientDataPtr argument will also be updated.)
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_GetMathFuncInfo(interp, name, numArgsPtr, argTypesPtr, procPtr,
+		    clientDataPtr)
+    Tcl_Interp *interp;
+    CONST char *name;
+    int *numArgsPtr;
+    Tcl_ValueType **argTypesPtr;
+    Tcl_MathProc **procPtr;
+    ClientData *clientDataPtr;
+{
+    Interp *iPtr = (Interp *) interp;
+    Tcl_HashEntry *hPtr;
+    MathFunc *mathFuncPtr;
+    Tcl_ValueType *argTypes;
+    int i,numArgs;
+
+    hPtr = Tcl_FindHashEntry(&iPtr->mathFuncTable, name);
+    if (hPtr == NULL) {
+        Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
+                "math function \"", name, "\" not known in this interpreter",
+		(char *) NULL);
+	return TCL_ERROR;
+    }
+    mathFuncPtr = (MathFunc *) Tcl_GetHashValue(hPtr);
+
+    *numArgsPtr = numArgs = mathFuncPtr->numArgs;
+    if (numArgs == 0) {
+	/* Avoid doing zero-sized allocs... */
+	numArgs = 1;
+    }
+    *argTypesPtr = argTypes =
+	(Tcl_ValueType *)ckalloc(numArgs * sizeof(Tcl_ValueType));
+    for (i = 0; i < mathFuncPtr->numArgs; i++) {
+	argTypes[i] = mathFuncPtr->argTypes[i];
+    }
+
+    if (mathFuncPtr->builtinFuncIndex == -1) {
+	*procPtr = (Tcl_MathProc *) NULL;
+    } else {
+	*procPtr = mathFuncPtr->proc;
+	*clientDataPtr = mathFuncPtr->clientData;
+    }
+
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_ListMathFuncs --
+ *
+ *	Produces a list of all the math functions defined in a given
+ *	interpreter.
+ *
+ * Results:
+ *	A pointer to a Tcl_Obj structure with a reference count of zero,
+ *	or NULL in the case of an error (in which case a suitable error
+ *	message will be left in the interpreter result.)
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Obj *
+Tcl_ListMathFuncs(interp, pattern)
+    Tcl_Interp *interp;
+    CONST char *pattern;
+{
+    Interp *iPtr = (Interp *) interp;
+    Tcl_Obj *resultList = Tcl_NewObj();
+    register Tcl_HashEntry *hPtr;
+    Tcl_HashSearch hSearch;
+    CONST char *name;
+
+    for (hPtr = Tcl_FirstHashEntry(&iPtr->mathFuncTable, &hSearch);
+	 hPtr != NULL; hPtr = Tcl_NextHashEntry(&hSearch)) {
+        name = Tcl_GetHashKey(&iPtr->mathFuncTable, hPtr);
+	if ((pattern == NULL || Tcl_StringMatch(name, pattern)) &&
+	    /* I don't expect this to fail, but... */
+	    Tcl_ListObjAppendElement(interp, resultList,
+				     Tcl_NewStringObj(name,-1)) != TCL_OK) {
+	    Tcl_DecrRefCount(resultList);
+	    return NULL;
+	}
+    }
+    return resultList;
 }
 
 /*

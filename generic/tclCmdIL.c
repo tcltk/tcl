@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.30 2001/04/27 22:11:51 kennykb Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.31 2001/05/30 08:57:06 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -100,6 +100,9 @@ static int		InfoDefaultCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *CONST objv[]));
 static int		InfoExistsCmd _ANSI_ARGS_((ClientData dummy,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *CONST objv[]));
+static int		InfoFunctionsCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *CONST objv[]));
 static int		InfoGlobalsCmd _ANSI_ARGS_((ClientData dummy,
@@ -365,14 +368,14 @@ Tcl_InfoObjCmd(clientData, interp, objc, objv)
 {
     static char *subCmds[] = {
             "args", "body", "cmdcount", "commands",
-	     "complete", "default", "exists", "globals",
+	     "complete", "default", "exists", "functions", "globals",
 	     "hostname", "level", "library", "loaded",
 	     "locals", "nameofexecutable", "patchlevel", "procs",
 	     "script", "sharedlibextension", "tclversion", "vars",
 	     (char *) NULL};
     enum ISubCmdIdx {
 	    IArgsIdx, IBodyIdx, ICmdCountIdx, ICommandsIdx,
-	    ICompleteIdx, IDefaultIdx, IExistsIdx, IGlobalsIdx,
+	    ICompleteIdx, IDefaultIdx, IExistsIdx, IFunctionsIdx, IGlobalsIdx,
 	    IHostnameIdx, ILevelIdx, ILibraryIdx, ILoadedIdx,
 	    ILocalsIdx, INameOfExecutableIdx, IPatchLevelIdx, IProcsIdx,
 	    IScriptIdx, ISharedLibExtensionIdx, ITclVersionIdx, IVarsIdx
@@ -411,6 +414,9 @@ Tcl_InfoObjCmd(clientData, interp, objc, objv)
 	    break;
 	case IExistsIdx:
 	    result = InfoExistsCmd(clientData, interp, objc, objv);
+	    break;
+	case IFunctionsIdx:
+	    result = InfoFunctionsCmd(clientData, interp, objc, objv);
 	    break;
         case IGlobalsIdx:
 	    result = InfoGlobalsCmd(clientData, interp, objc, objv);
@@ -922,6 +928,54 @@ InfoExistsCmd(dummy, interp, objc, objv)
     } else {
         Tcl_SetIntObj(Tcl_GetObjResult(interp), 0);
     }
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * InfoFunctionsCmd --
+ *
+ *      Called to implement the "info functions" command that returns the
+ *      list of math functions matching an optional pattern. Handles the
+ *      following syntax:
+ *
+ *          info functions ?pattern?
+ *
+ * Results:
+ *      Returns TCL_OK if successful and TCL_ERROR if there is an error.
+ *
+ * Side effects:
+ *      Returns a result in the interpreter's result object. If there is
+ *	an error, the result is an error message.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+InfoFunctionsCmd(dummy, interp, objc, objv)
+    ClientData dummy;		/* Not used. */
+    Tcl_Interp *interp;		/* Current interpreter. */
+    int objc;			/* Number of arguments. */
+    Tcl_Obj *CONST objv[];	/* Argument objects. */
+{
+    char *pattern;
+    Tcl_Obj *listPtr;
+
+    if (objc == 2) {
+        pattern = NULL;
+    } else if (objc == 3) {
+        pattern = Tcl_GetString(objv[2]);
+    } else {
+        Tcl_WrongNumArgs(interp, 2, objv, "?pattern?");
+        return TCL_ERROR;
+    }
+
+    listPtr = Tcl_ListMathFuncs(interp, pattern);
+    if (listPtr == NULL) {
+	return TCL_ERROR;
+    }
+    Tcl_SetObjResult(interp, listPtr);
     return TCL_OK;
 }
 

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.47 2001/05/15 21:30:46 hobbs Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.48 2001/05/30 08:57:06 dkf Exp $
 
 library tcl
 
@@ -1518,6 +1518,14 @@ declare 433 generic {
 # introduced in 8.4a3
 declare 434 generic {
     Tcl_UniChar * Tcl_GetUnicodeFromObj (Tcl_Obj *objPtr, int *lengthPtr)
+}
+declare 435 generic {
+    int Tcl_GetMathFuncInfo(Tcl_Interp *interp, CONST char *name,
+	int *numArgsPtr, Tcl_ValueType **argTypesPtr,
+	Tcl_MathProc **procPtr, ClientData *clientDataPtr)
+}
+declare 436 generic {
+    Tcl_Obj * Tcl_ListMathFuncs(Tcl_Interp *interp, CONST char *pattern)
 }
 
 

@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: info.test,v 1.16 2000/05/27 23:58:01 hobbs Exp $
+# RCS: @(#) $Id: info.test,v 1.17 2001/05/30 08:57:06 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -591,21 +591,39 @@ test info-19.5 {info vars with temporary variables} {
     t1
 } {a}
 
-test info-20.1 {miscellaneous error conditions} {
+# Check whether the extra testing functions are defined...
+if {([catch {expr T1()} msg] == 1) && ($msg == {unknown math function "T1"})} {
+    set functions {abs acos asin atan atan2 ceil cos cosh double exp floor fmod hypot int log log10 pow rand round sin sinh sqrt srand tan tanh}
+} else {
+    set functions {T1 T2 T3 abs acos asin atan atan2 ceil cos cosh double exp floor fmod hypot int log log10 pow rand round sin sinh sqrt srand tan tanh}
+}
+test info-20.1 {info functions option} {info functions sin} sin
+test info-20.2 {info functions option} {lsort [info functions]} $functions
+test info-20.3 {info functions option} {
+    lsort [info functions a*]
+} {abs acos asin atan atan2}
+test info-20.4 {info functions option} {
+    lsort [info functions *tan*]
+} {atan atan2 tan tanh}
+test info-20.5 {info functions option} {
+    list [catch {info functions raise an error} msg] $msg
+} {1 {wrong # args: should be "info functions ?pattern?"}}
+
+test info-21.1 {miscellaneous error conditions} {
     list [catch {info} msg] $msg
 } {1 {wrong # args: should be "info option ?arg arg ...?"}}
-test info-20.2 {miscellaneous error conditions} {
+test info-21.2 {miscellaneous error conditions} {
     list [catch {info gorp} msg] $msg
-} {1 {bad option "gorp": must be args, body, cmdcount, commands, complete, default, exists, globals, hostname, level, library, loaded, locals, nameofexecutable, patchlevel, procs, script, sharedlibextension, tclversion, or vars}}
-test info-20.3 {miscellaneous error conditions} {
+} {1 {bad option "gorp": must be args, body, cmdcount, commands, complete, default, exists, functions, globals, hostname, level, library, loaded, locals, nameofexecutable, patchlevel, procs, script, sharedlibextension, tclversion, or vars}}
+test info-21.3 {miscellaneous error conditions} {
     list [catch {info c} msg] $msg
-} {1 {ambiguous option "c": must be args, body, cmdcount, commands, complete, default, exists, globals, hostname, level, library, loaded, locals, nameofexecutable, patchlevel, procs, script, sharedlibextension, tclversion, or vars}}
-test info-20.4 {miscellaneous error conditions} {
+} {1 {ambiguous option "c": must be args, body, cmdcount, commands, complete, default, exists, functions, globals, hostname, level, library, loaded, locals, nameofexecutable, patchlevel, procs, script, sharedlibextension, tclversion, or vars}}
+test info-21.4 {miscellaneous error conditions} {
     list [catch {info l} msg] $msg
-} {1 {ambiguous option "l": must be args, body, cmdcount, commands, complete, default, exists, globals, hostname, level, library, loaded, locals, nameofexecutable, patchlevel, procs, script, sharedlibextension, tclversion, or vars}}
-test info-20.5 {miscellaneous error conditions} {
+} {1 {ambiguous option "l": must be args, body, cmdcount, commands, complete, default, exists, functions, globals, hostname, level, library, loaded, locals, nameofexecutable, patchlevel, procs, script, sharedlibextension, tclversion, or vars}}
+test info-21.5 {miscellaneous error conditions} {
     list [catch {info s} msg] $msg
-} {1 {ambiguous option "s": must be args, body, cmdcount, commands, complete, default, exists, globals, hostname, level, library, loaded, locals, nameofexecutable, patchlevel, procs, script, sharedlibextension, tclversion, or vars}}
+} {1 {ambiguous option "s": must be args, body, cmdcount, commands, complete, default, exists, functions, globals, hostname, level, library, loaded, locals, nameofexecutable, patchlevel, procs, script, sharedlibextension, tclversion, or vars}}
 
 # cleanup
 catch {namespace delete test_ns_info1 test_ns_info2}
