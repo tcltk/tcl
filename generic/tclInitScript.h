@@ -8,7 +8,7 @@
  * Copyright (c) 1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclInitScript.h,v 1.10 1999/07/21 02:01:36 hershey Exp $
+ * RCS: @(#) $Id: tclInitScript.h,v 1.11 1999/07/21 17:43:21 hershey Exp $
  */
 
 /*
@@ -51,7 +51,7 @@ static char initScript[] = "if {[info proc tclInit]==\"\"} {\n\
 	}\n\
 	lappend dirs $tclDefaultLibrary\n\
 	unset tclDefaultLibrary\n\
-        set dirs [concat $dirs $tcl_libPath]
+        set dirs [concat $dirs $tcl_libPath]\n\
     }\n\
     foreach i $dirs {\n\
 	set tcl_library $i\n\
