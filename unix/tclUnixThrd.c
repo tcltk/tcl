@@ -19,6 +19,18 @@
 #include "tclPort.h"
 #include "pthread.h"
 
+typedef struct ThreadSpecificData {
+    char	    	nabuf[16];
+    struct tm   	gtbuf;
+    struct tm   	ltbuf;
+    struct {
+	struct dirent ent;
+	char name[PATH_MAX+1];
+    } rdbuf;
+} ThreadSpecificData;
+
+static Tcl_ThreadDataKey dataKey;
+
 /*
  * masterLock is used to serialize creation of mutexes, condition
  * variables, and thread local storage.
@@ -760,8 +772,65 @@ TclpFinalizeCondition(condPtr)
 	*condPtr = NULL;
     }
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpReaddir, TclpLocaltime, TclpGmtime, TclpInetNtoa --
+ *
+ *	These procedures replace core C versions to be used in a
+ *	threaded environment.
+ *
+ * Results:
+ *	See documentation of C functions.
+ *
+ * Side effects:
+ *	See documentation of C functions.
+ *
+ *----------------------------------------------------------------------
+ */
 
+struct dirent *
+TclpReaddir(DIR * dir)
+{
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+    struct dirent *ent;
 
+    ent = &tsdPtr->rdbuf.ent; 
+    if (readdir_r(dir, ent, &ent) != 0) {
+	ent = NULL;
+    }
+    return ent;
+}
+
+struct tm *
+TclpLocaltime(time_t * clock)
+{
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+
+    return localtime_r(clock, &tsdPtr->ltbuf);
+}
+
+struct tm *
+TclpGmtime(time_t * clock)
+{
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+
+    return gmtime_r(clock, &tsdPtr->gtbuf);
+}
+
+char *
+TclpInetNtoa(struct in_addr addr)
+{
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+    union {
+    	unsigned long l;
+    	unsigned char b[4];
+    } u;
+    
+    u.l = (unsigned long) addr.s_addr;
+    sprintf(tsdPtr->nabuf, "%u.%u.%u.%u", u.b[0], u.b[1], u.b[2], u.b[3]);
+    return tsdPtr->nabuf;
+}
 
 #endif /* TCL_THREADS */
-
