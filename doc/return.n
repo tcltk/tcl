@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: return.n,v 1.6 2003/09/02 18:51:31 dgp Exp $
+'\" RCS: @(#) $Id: return.n,v 1.7 2003/09/02 21:49:42 dgp Exp $
 '\" 
 .so man.macros
 .TH return n 8.5 Tcl "Tcl Built-In Commands"
@@ -289,8 +289,8 @@ proc myReturn {args} {
         set result [lindex $args end]
         set args [lrange $args 0 end-1]
     }
-    set options [dict create -level 1]
-    eval [list dict replace $options] $args
+    set options [eval \\
+            [list dict create -level 1] $args]
     dict incr options -level
     return -options $options $result
 }

@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: catch.n,v 1.7 2003/09/02 18:51:31 dgp Exp $
+'\" RCS: @(#) $Id: catch.n,v 1.8 2003/09/02 21:49:42 dgp Exp $
 '\" 
 .so man.macros
 .TH catch n "8.5" Tcl "Tcl Built-In Commands"
@@ -53,7 +53,7 @@ the return code from evaluation of \fIscript\fR is not TCL_RETURN,
 the value of the \fB-level\fR entry will be 0, and the value
 of the \fB-code\fR entry will be the same as the return code.
 Only when the return code is TCL_RETURN will the values of
-the \fB\level\fR and \fB-code\fR entries be something else, as
+the \fB-level\fR and \fB-code\fR entries be something else, as
 further described in the documentation for the \fBreturn\fR command.
 .PP
 When the return code from evaluation of \fIscript\fR is TCL_ERROR,
