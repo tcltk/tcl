@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.42 2002/05/13 12:31:32 vincentdarley Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.43 2002/05/13 13:20:00 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -409,6 +409,9 @@ static Tcl_Filesystem nativeFilesystem = {
  * uses of Tcl without a native filesystem, we may in the future wish
  * to modify the current approach of hard-coding the native filesystem
  * in the lookup list 'filesystemList' below.
+ * 
+ * We initialize the record so that it thinks one file uses it.  This
+ * means it will never be freed.
  */
 static FilesystemRecord nativeFilesystemRecord = {
     NULL,
@@ -554,12 +557,61 @@ FsReleaseIterator(void) {
 /*
  *----------------------------------------------------------------------
  *
+ * TclFinalizeFilesystem --
+ *
+ *	Clean up the filesystem.  After this, calls to all Tcl_FS...
+ *	functions will fail.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Frees any memory allocated by the filesystem.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclFinalizeFilesystem() {
+    /* 
+     * Assumption that only one thread is active now.  Otherwise
+     * we would need to put various mutexes around this code.
+     */
+    
+    if (cwdPathPtr != NULL) {
+	Tcl_DecrRefCount(cwdPathPtr);
+	cwdPathPtr = NULL;
+    }
+
+    /* Remove all filesystems, freeing any allocated memory */
+    while (filesystemList != NULL) {
+	FilesystemRecord *tmpFsRecPtr = filesystemList->nextPtr;
+	if (filesystemList->fileRefCount > 1) {
+	    /* 
+	     * We are freeing a filesystem which actually has
+	     * path objects still around which belong to it.
+	     * This is probably bad, but since we are exiting,
+	     * we don't do anything about it.
+	     */
+	}
+	/* The native filesystem is static, so we don't free it */
+	if (filesystemList != &nativeFilesystemRecord) {
+	    ckfree((char *)filesystemList);
+	}
+	filesystemList = tmpFsRecPtr;
+    }
+    /* Now filesystemList is NULL */
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_FSRegister --
  *
  *    Insert the filesystem function table at the head of the list of
  *    functions which are used during calls to all file-system
  *    operations.  The filesystem will be added even if it is 
- *    already in the list.  (You can use TclFilesystemData to
+ *    already in the list.  (You can use Tcl_FSData to
  *    check if it is in the list, provided the ClientData used was
  *    not NULL).
  *    

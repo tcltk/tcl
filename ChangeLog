@@ -1,3 +1,12 @@
+2002-05-13  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* generic/tclEvent.c: 
+	* generic/tclIOUtil.c:
+	* generic/tclInt.h: clean up all memory allocated by the
+	filesystem, via introduction of 'TclFinalizeFilesystem'.
+	Fix bad comment also.  [Fixes 555078 and 'fs' part of 543549]
+	* win/tclWinChan.c: fix comment referring to wrong function.
+	
 2002-05-10  Don Porter  <dgp@users.sourceforge.net>
 
 	* tests/load.test:

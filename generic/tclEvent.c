@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEvent.c,v 1.20 2002/03/20 22:47:36 dgp Exp $
+ * RCS: @(#) $Id: tclEvent.c,v 1.21 2002/05/13 13:20:00 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -843,6 +843,12 @@ Tcl_Finalize()
 	 */
 
 	TclFinalizeLoad();
+	
+	/**
+	 * Finalizing the filesystem must come after anything which
+	 * might conceivably interact with the 'Tcl_FS' API.
+	 */
+	TclFinalizeFilesystem();
 
 	/*
 	 * There shouldn't be any malloc'ed memory after this.
