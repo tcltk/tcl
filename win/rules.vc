@@ -10,7 +10,7 @@
 # Copyright (c) 2001 Tomasoft Engineering.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: rules.vc,v 1.4 2001/11/15 00:19:41 davygrvy Exp $
+# RCS: @(#) $Id: rules.vc,v 1.4.2.1 2002/01/25 01:47:02 andreas_kupries Exp $
 #------------------------------------------------------------------------------
 
 !ifndef _RULES_VC
@@ -29,6 +29,9 @@ INSTALLDIR	= C:\Progra~1\Tcl
 MACHINE		= IX86
 !endif
 
+!ifndef CFG_ENCODING
+CFG_ENCODING	= \"cp1252\"
+!endif
 
 #----------------------------------------------------------
 # Decode the options requested.
@@ -166,7 +169,7 @@ TCL_COMPILE_DEBUG   = 0
 !endif
 !endif
 
-OPTDEFINES	=
+OPTDEFINES	= -DTCL_CFGVAL_ENCODING=${CFG_ENCODING}
 !if $(TCL_MEM_DEBUG)
 OPTDEFINES	= -DTCL_MEM_DEBUG
 !endif
@@ -178,6 +181,18 @@ OPTDEFINES	= $(OPTDEFINES) -DTCL_THREADS=1
 !endif
 !if $(STATIC_BUILD)
 OPTDEFINES	= $(OPTDEFINES) -DSTATIC_BUILD
+!endif
+
+!if $(DEBUG)
+OPTDEFINES	= $(OPTDEFINES) -DTCL_CFG_DEBUG
+!else
+OPTDEFINES	= $(OPTDEFINES) -DTCL_CFG_OPTIMIZED
+!endif
+!if $(PROFILE)
+OPTDEFINES	= $(OPTDEFINES) -DTCL_CFG_PROFILED
+!endif
+!if "$(MACHINE)" == "IA64"
+OPTDEFINES	= $(OPTDEFINES) -DTCL_CFG_DO64BIT
 !endif
 
 !message *** Optional defines are '$(OPTDEFINES)'

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.77 2002/01/23 20:46:01 dgp Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.77.2.1 2002/01/25 01:47:01 andreas_kupries Exp $
 
 library tcl
 
@@ -1696,6 +1696,12 @@ declare 481 generic {
 # New export due to TIP#73 
 declare 482 generic {
     void Tcl_GetTime( Tcl_Time* timeBuf )
+}
+
+# New export due to TIP#59
+declare 483 generic {
+    void Tcl_RegisterConfig (Tcl_Interp* interp, CONST char* pkgName, Tcl_Config* configuration, \
+	CONST char* valEncoding)
 }
 
 ##############################################################################

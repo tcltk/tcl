@@ -265,11 +265,13 @@ AC_DEFUN(SC_ENABLE_SYMBOLS, [
 	LDFLAGS_DEFAULT='$(LDFLAGS_DEBUG)'
 	DBGX=d
 	AC_MSG_RESULT([yes])
+	AC_DEFINE(TCL_CFG_DEBUG)
     else
 	CFLAGS_DEFAULT='$(CFLAGS_OPTIMIZE)'
 	LDFLAGS_DEFAULT='$(LDFLAGS_OPTIMIZE)'
 	DBGX=""
 	AC_MSG_RESULT([no])
+	AC_DEFINE(TCL_CFG_OPTIMIZED)
     fi
 ])
 
@@ -517,6 +519,10 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	LDFLAGS_WINDOW="-link -subsystem:windows ${lflags}"
     fi
 
+    if test "$do64bit" = "yes" ; then
+	AC_DEFINE(TCL_CFG_DO64BIT)
+    fi
+
     # DL_LIBS is empty, but then we match the Unix version
     AC_SUBST(DL_LIBS)
     AC_SUBST(CFLAGS_DEBUG)
@@ -607,4 +613,32 @@ AC_DEFUN(SC_PROG_TCLSH, [
 	AC_MSG_ERROR(No tclsh found in PATH:  $search_path)
     fi
     AC_SUBST(TCLSH_PROG)
+])
+
+#--------------------------------------------------------------------
+# SC_TCL_CFG_ENCODING	TIP #59
+#
+#	Declare the encoding to use for embedded configuration information.
+#
+# Arguments:
+#	None.
+#
+# Results:
+#	Might append to the following vars:
+#		DEFS	(implicit)
+#
+#	Will define the following vars:
+#		TCL_CFGVAL_ENCODING
+#
+#--------------------------------------------------------------------
+
+AC_DEFUN(SC_TCL_CFG_ENCODING, [
+    AC_ARG_WITH(encoding, [  --with-encoding              encoding for configuration values], with_tcencoding=${withval})
+
+    if test x"${with_tcencoding}" != x ; then
+	AC_DEFINE_UNQUOTED(TCL_CFGVAL_ENCODING,"${with_tcencoding}")
+    else
+	# Default encoding on windows is not "iso8859-1"
+	AC_DEFINE(TCL_CFGVAL_ENCODING,"cp1252")
+    fi
 ])

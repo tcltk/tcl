@@ -422,11 +422,13 @@ AC_DEFUN(SC_ENABLE_SYMBOLS, [
 	LDFLAGS_DEFAULT='$(LDFLAGS_DEBUG)'
 	DBGX=g
 	AC_MSG_RESULT([yes])
+	AC_DEFINE(TCL_CFG_DEBUG)
     else
 	CFLAGS_DEFAULT='$(CFLAGS_OPTIMIZE)'
 	LDFLAGS_DEFAULT='$(LDFLAGS_OPTIMIZE)'
 	DBGX=""
 	AC_MSG_RESULT([no])
+	AC_DEFINE(TCL_CFG_OPTIMIZED)
     fi
 ])
 
@@ -1238,7 +1240,11 @@ dnl AC_CHECK_TOOL(AR, ar, :)
     esac
 
     if test "$do64bit" = "yes" -a "$do64bit_ok" = "no" ; then
-    AC_MSG_WARN("64bit support being disabled -- don\'t know magic for this platform")
+	AC_MSG_WARN("64bit support being disabled -- don\'t know magic for this platform")
+    fi
+
+    if test "$do64bit" = "yes" -a "$do64bit_ok" = "yes" ; then
+	AC_DEFINE(TCL_CFG_DO64BIT)
     fi
 
     # Step 4: If pseudo-static linking is in use (see K. B. Kenny, "Dynamic
@@ -1968,4 +1974,31 @@ AC_DEFUN(SC_TCL_LINK_LIBS, [
     TCL_LIBS='${DL_LIBS} ${LIBS} ${MATH_LIBS}'
     AC_SUBST(TCL_LIBS)
     AC_SUBST(MATH_LIBS)
+])
+
+#--------------------------------------------------------------------
+# SC_TCL_CFG_ENCODING	TIP #59
+#
+#	Declare the encoding to use for embedded configuration information.
+#
+# Arguments:
+#	None.
+#
+# Results:
+#	Might append to the following vars:
+#		DEFS	(implicit)
+#
+#	Will define the following vars:
+#		TCL_CFGVAL_ENCODING
+#
+#--------------------------------------------------------------------
+
+AC_DEFUN(SC_TCL_CFG_ENCODING, [
+    AC_ARG_WITH(encoding, [  --with-encoding              encoding for configuration values], with_tcencoding=${withval})
+
+    if test x"${with_tcencoding}" != x ; then
+	AC_DEFINE_UNQUOTED(TCL_CFGVAL_ENCODING,"${with_tcencoding}")
+    else
+	AC_DEFINE(TCL_CFGVAL_ENCODING,"iso8859-1")
+    fi
 ])

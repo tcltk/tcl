@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.58 2001/11/25 05:22:19 mdejong Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.58.2.1 2002/01/25 01:47:02 andreas_kupries Exp $
 
 VERSION = @TCL_VERSION@
 
@@ -69,6 +69,20 @@ MAN3_INSTALL_DIR = $(MAN_INSTALL_DIR)/man3
 # Directory in which to install manual entries for the built-in
 # Tcl commands:
 MANN_INSTALL_DIR = $(MAN_INSTALL_DIR)/mann
+
+# TIP #59, embedding of configuration information into the binary library.
+#
+# Part of Tcl's configuration information are the paths where it was
+# installed and where it will look for its libraries (which can be
+# different). We derive this information from the variables which can
+# be overridden by the user to produce this effect by slashing of the
+# subdirectory information contained in them. See "tclPkgConfig.o"
+# below for the transfer of this information into the binary library.
+
+INSTALL_PREFIX		= $(shell dirname $(INCLUDE_INSTALL_DIR))
+INSTALL_EXEC_PREFIX	= $(shell dirname $(LIB_INSTALL_DIR))
+RUNTIME_PREFIX		= $(shell dirname $(shell dirname $(TCL_LIBRARY)))
+RUNTIME_EXEC_PREFIX	= $(shell dirname $(LIB_RUNTIME_DIR))
 
 # Libraries built with optimization switches have this additional extension
 TCL_DBGX = @TCL_DBGX@
@@ -217,6 +231,7 @@ GENERIC_OBJS = \
 	tclCompCmds.$(OBJEXT) \
 	tclCompExpr.$(OBJEXT) \
 	tclCompile.$(OBJEXT) \
+	tclConfig.$(OBJEXT) \
 	tclDate.$(OBJEXT) \
 	tclEncoding.$(OBJEXT) \
 	tclEnv.$(OBJEXT) \
@@ -247,6 +262,7 @@ GENERIC_OBJS = \
 	tclParseExpr.$(OBJEXT) \
 	tclPipe.$(OBJEXT) \
 	tclPkg.$(OBJEXT) \
+	tclPkgConfig.$(OBJEXT) \
 	tclPosixStr.$(OBJEXT) \
 	tclPreserve.$(OBJEXT) \
 	tclProc.$(OBJEXT) \
@@ -404,6 +420,14 @@ tclWinReg.${OBJEXT} : tclWinReg.c
 
 tclWinDde.${OBJEXT} : tclWinDde.c
 	$(CC) -c $(CC_SWITCHES) -DUSE_TCL_STUBS @DEPARG@ $(CC_OBJNAME)
+
+tclPkgConfig.${OBJEXT}: tclPkgConfig.c
+	$(CC)	-c $(CC_SWITCHES)					\
+		-DCFG_INSTALL_EXEC_PREFIX=\"$(INSTALL_EXEC_PREFIX)\"	\
+		-DCFG_INSTALL_PREFIX=\"$(INSTALL_PREFIX)\"		\
+		-DCFG_RUNTIME_EXEC_PREFIX=\"$(RUNTIME_EXEC_PREFIX)\"	\
+		-DCFG_RUNTIME_PREFIX=\"$(RUNTIME_PREFIX)\"		\
+		-DUSE_TCL_STUBS @DEPARG@ $(CC_OBJNAME)
 
 # The following objects are part of the stub library and should not
 # be built as DLL objects but none of the symbols should be exported

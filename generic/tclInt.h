@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.75 2002/01/15 21:19:07 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.75.2.1 2002/01/25 01:47:01 andreas_kupries Exp $
  */
 
 #ifndef _TCLINT
@@ -1652,6 +1652,8 @@ EXTERN int		TclDoGlob _ANSI_ARGS_((Tcl_Interp *interp,
 			    char *separators, Tcl_DString *headPtr,
 			    char *tail, Tcl_GlobTypeData *types));
 EXTERN void		TclDumpMemoryInfo _ANSI_ARGS_((FILE *outFile));
+EXTERN void             TclInitEmbeddedConfigurationInformation 
+                            _ANSI_ARGS_((Tcl_Interp *interp));
 EXTERN void		TclExpandTokenArray _ANSI_ARGS_((
 			    Tcl_Parse *parsePtr));
 EXTERN void		TclExprFloatError _ANSI_ARGS_((Tcl_Interp *interp,
