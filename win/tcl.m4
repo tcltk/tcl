@@ -305,7 +305,7 @@ AC_DEFUN(SC_ENABLE_SYMBOLS, [
 	# Use result from SC_CONFIG_CFLAGS to determine if
 	# optimization is truly active.
 
-	if [ $OPTIMIZING -eq 1 ]; then
+	if test "$OPTIMIZING" = "1" ; then
 	    AC_DEFINE(TCL_CFG_OPTIMIZED)
 	fi
     else
