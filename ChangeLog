@@ -1,3 +1,10 @@
+2005-01-05  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclInt.h, generic/tclPort.h: Move the #include of
+	tclConfig.h *first* before any reference to tcl.h so that the
+	build configuration is loaded before the first reference to any
+	system headers. Issue reported by Art Haas on tcl-core.
+
 2005-01-04  Don Porter  <dgp@users.sourceforge.net>
 
 	* tests/fCmd.test (fCmd-18.10):	Added notNetworkFilesystem constraint.
