@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.28.2.2 2001/09/26 14:23:10 dkf Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.28.2.3 2001/09/27 14:51:01 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -26,7 +26,7 @@ static int	ProcBodySetFromAny _ANSI_ARGS_((Tcl_Interp *interp,
 		Tcl_Obj *objPtr));
 static void	ProcBodyUpdateString _ANSI_ARGS_((Tcl_Obj *objPtr));
 static  int	ProcessProcResultCode _ANSI_ARGS_((Tcl_Interp *interp,
-		    char *procName, Tcl_Length nameLen, int returnCode));
+		    char *procName, int nameLen, int returnCode));
 static int	TclCompileNoOp _ANSI_ARGS_((Tcl_Interp *interp,
 		    Tcl_Parse *parsePtr, struct CompileEnv *envPtr));
 
@@ -185,7 +185,7 @@ Tcl_ProcObjCmd(dummy, interp, objc, objv)
 
 	    txt = Tcl_GetString(objv[3]);
 	    while(*txt != '\0') {
-		if (!isspace(UCHAR(*txt))) {		/* INTL: ISO space. */
+		if (!isspace(UCHAR(*txt))) {		/* INTL: ISO-space */
 		    goto done;
 		}
 		txt++;
@@ -239,11 +239,11 @@ TclCreateProc(interp, nsPtr, procName, argsPtr, bodyPtr, procPtrPtr)
     char **argArray = NULL;
 
     register Proc *procPtr;
-    int i, result, numArgs, precompiled = 0;
-    Tcl_Length length;
+    int i, length, result, numArgs;
     char *args, *bytes, *p;
     register CompiledLocal *localPtr = NULL;
     Tcl_Obj *defPtr;
+    int precompiled = 0;
     
     if (bodyPtr->typePtr == &tclProcBodyType) {
         /*
@@ -281,7 +281,7 @@ TclCreateProc(interp, nsPtr, procName, argsPtr, bodyPtr, procPtrPtr)
 
         if (Tcl_IsShared(bodyPtr)) {
             bytes = Tcl_GetStringFromObj(bodyPtr, &length);
-            bodyPtr = Tcl_NewStringObj(bytes, (int)length);
+            bodyPtr = Tcl_NewStringObj(bytes, length);
         }
 
         /*
@@ -430,7 +430,7 @@ TclCreateProc(interp, nsPtr, procName, argsPtr, bodyPtr, procPtrPtr)
              */
 
             if (localPtr->defValuePtr != NULL) {
-                Tcl_Length tmpLength;
+                int tmpLength;
                 char *tmpPtr = Tcl_GetStringFromObj(localPtr->defValuePtr,
                         &tmpLength);
                 if ((valueLength != tmpLength)
@@ -902,8 +902,7 @@ TclObjInterpProc(clientData, interp, objc, objv)
     register Var *varPtr;
     register CompiledLocal *localPtr;
     char *procName;
-    Tcl_Length nameLen;
-    int localCt, numArgs, argCt, i, result;
+    int nameLen, localCt, numArgs, argCt, i, result;
     Tcl_Obj *objResult = Tcl_GetObjResult(interp);
 
     /*
@@ -1281,7 +1280,7 @@ ProcessProcResultCode(interp, procName, nameLen, returnCode)
 				 * was called and returned returnCode. */
     char *procName;		/* Name of the procedure. Used for error
 				 * messages and trace information. */
-    Tcl_Length nameLen;		/* Number of bytes in procedure's name. */
+    int nameLen;		/* Number of bytes in procedure's name. */
     int returnCode;		/* The unexpected result code. */
 {
     Interp *iPtr = (Interp *) interp;
@@ -1293,7 +1292,7 @@ ProcessProcResultCode(interp, procName, nameLen, returnCode)
 	char *ellipsis = "";
 	int numChars = nameLen;
 
-	if (nameLen > 60) {
+	if (numChars > 60) {
 	    numChars = 60;
 	    ellipsis = "...";
 	}

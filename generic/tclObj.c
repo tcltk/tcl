@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.23.6.2 2001/09/27 10:21:32 dkf Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.23.6.3 2001/09/27 14:52:26 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -769,12 +769,11 @@ Tcl_GetString(objPtr)
 
 char *
 Tcl_GetStringFromObj(objPtr, lengthPtr)
-    register Tcl_Obj *objPtr;	    /* Object whose string rep byte pointer
-				     * should be returned. */
-    register Tcl_Length *lengthPtr; /* If non-NULL, the location where the
-				     * string rep's byte array length should
-				     * be stored. If NULL, no length is
-				     * stored. */
+    register Tcl_Obj *objPtr;	/* Object whose string rep byte pointer should
+				 * be returned. */
+    register int *lengthPtr;	/* If non-NULL, the location where the string
+				 * rep's byte array length should * be stored.
+				 * If NULL, no length is stored. */
 {
     if (objPtr->bytes == NULL) {
 	if (objPtr->typePtr->updateStringProc == NULL) {
@@ -1034,8 +1033,7 @@ SetBooleanFromAny(interp, objPtr)
     char *string, *end;
     register char c;
     char lowerCase[10];
-    int newBool;
-    Tcl_Length length;
+    int newBool, length;
     register int i;
     double dbl;
 
@@ -1397,7 +1395,7 @@ SetDoubleFromAny(interp, objPtr)
     Tcl_ObjType *oldTypePtr = objPtr->typePtr;
     char *string, *end;
     double newDouble;
-    Tcl_Length length;
+    int length;
 
     /*
      * Get the string representation. Make it up-to-date if necessary.
@@ -1677,7 +1675,7 @@ SetIntFromAny(interp, objPtr)
 {
     Tcl_ObjType *oldTypePtr = objPtr->typePtr;
     char *string, *end;
-    Tcl_Length length;
+    int length;
     register char *p;
     long newLong;
 
@@ -2029,7 +2027,7 @@ SetWideIntFromAny(interp, objPtr)
 {
     Tcl_ObjType *oldTypePtr = objPtr->typePtr;
     char *string, *end;
-    Tcl_Length length;
+    int length;
     register char *p;
     Tcl_WideInt newWide;
 
