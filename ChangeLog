@@ -1,5 +1,18 @@
 2001-08-08  Don Porter <dgp@users.sourceforge.net>
 
+	* library/dde/pkgIndex.tcl:
+	* library/http/http.tcl:
+	* library/http/pkgIndex.tcl:
+	* library/msgcat/msgcat.tcl:
+	* library/msgcat/pkgIndex.tcl:
+	* library/opt/optparse.tcl:
+	* library/opt/pkgIndex.tcl:
+	* library/reg/pkgIndex.tcl:
+	* library/tcltest/tcltest.tcl:
+	* library/tcltest/pkgIndex.tcl: Added checks for package dependencies.
+	Bumped patchlevels of changed packages:  http 2.3.2, msgcat 1.2.2,
+	opt 0.4.3, tcltest 2.0.1.  [Patch 448931]
+
 	* README:
 	* generic/tcl.h:
 	* tools/tcl.wse.in:
