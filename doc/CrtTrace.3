@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: CrtTrace.3,v 1.8 2004/10/07 14:44:32 dkf Exp $
+'\" RCS: @(#) $Id: CrtTrace.3,v 1.9 2004/10/07 15:15:36 dkf Exp $
 '\" 
 .so man.macros
 .TH Tcl_CreateTrace 3 "" Tcl "Tcl Library Procedures"
@@ -70,10 +70,10 @@ typedef int \fBTcl_CmdObjTraceProc\fR(
         \fBClientData\fR \fIclientData\fR,
         \fBTcl_Interp\fR* \fIinterp\fR,
         int \fIlevel\fR,
-        CONST char* \fIcommand\fR,
+        const char *\fIcommand\fR,
         \fBTcl_Command\fR \fIcommandToken\fR,
         int \fIobjc\fR,
-        \fBTcl_Obj\fR *CONST \fIobjv\fR[] );
+        \fBTcl_Obj\fR *const \fIobjv\fR[] );
 .CE
 The \fIclientData\fR and \fIinterp\fR parameters are copies of the
 corresponding arguments given to \fBTcl_CreateTrace\fR.
@@ -164,7 +164,7 @@ typedef void Tcl_CmdTraceProc(
         Tcl_CmdProc *\fIcmdProc\fR,
         ClientData \fIcmdClientData\fR,
         int \fIargc\fR,
-        CONST char *\fIargv\fR[]);
+        const char *\fIargv\fR[]);
 .CE
 The parameters to the \fIproc\fR callback are similar to those of the
 \fIobjProc\fR callback above. The \fIcommandToken\fR is

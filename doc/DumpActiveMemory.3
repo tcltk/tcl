@@ -3,7 +3,7 @@
 '\" Copyright (c) 2000 by Scriptics Corporation.
 '\" All rights reserved.
 '\" 
-'\" RCS: @(#) $Id: DumpActiveMemory.3,v 1.7 2004/10/07 14:44:32 dkf Exp $
+'\" RCS: @(#) $Id: DumpActiveMemory.3,v 1.8 2004/10/07 15:15:36 dkf Exp $
 '\" 
 .so man.macros
 .TH "Tcl_DumpActiveMemory" 3 8.1 Tcl "Tcl Library Procedures"
@@ -27,7 +27,7 @@ void
 .AS Tcl_Interp *fileName
 .AP Tcl_Interp *interp in
 Tcl interpreter in which to add commands.
-.AP "CONST char" *fileName in
+.AP "const char" *fileName in
 For \fBTcl_DumpActiveMemory\fR, name of the file to which memory
 information will be written.  For \fBTcl_ValidateAllMemory\fR, name of
 the file from which the call is being made (normally \fB__FILE__\fR).
