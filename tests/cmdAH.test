@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: cmdAH.test,v 1.46 2004/10/31 17:07:12 dkf Exp $
+# RCS: @(#) $Id: cmdAH.test,v 1.47 2004/10/31 17:38:24 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -359,7 +359,7 @@ test cmdAH-8.44 {Tcl_FileObjCmd: dirname} testsetplatform {
     set result
 } {0 ~}
 test cmdAH-8.45 {Tcl_FileObjCmd: dirname} {
-    -constraints testsetplatform
+    -constraints {win testsetplatform}
     -match regexp
     -setup {
 	set temp $::env(HOME)
