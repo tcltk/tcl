@@ -16,7 +16,7 @@
 # Contributions from Don Porter, NIST, 2002.  (not subject to US copyright)
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.tcl,v 1.57 2002/06/26 01:11:09 dgp Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.58 2002/06/26 03:25:06 dgp Exp $
 
 package require Tcl 8.3		;# uses [glob -directory]
 namespace eval tcltest {
@@ -1477,12 +1477,12 @@ proc tcltest::Replace::puts {args} {
 	if {[string equal $channel [[namespace parent]::outputChannel]]
 		|| [string equal $channel stdout]} {
 	    append outData [lindex $args end]\n
+	    return
 	} elseif {[string equal $channel [[namespace parent]::errorChannel]]
 		|| [string equal $channel stderr]} {
 	    append errData [lindex $args end]\n
+	    return
 	}
-	return
-	# return [Puts [lindex $args 0] [lindex $args end]]
     }
 
     # If we haven't returned by now, we don't know how to handle the
@@ -2175,7 +2175,13 @@ proc tcltest::RunTest {
 	
 	if {$doTest == 0} {
 	    if {[IsVerbose skip]} {
-		puts [outputChannel] "++++ $name SKIPPED: $constraints"
+		if {[string equal [namespace current]::Replace::puts \
+			[namespace origin puts]]} {
+		    Replace::Puts [outputChannel] \
+			    "++++ $name SKIPPED: $constraints"
+		} else {
+		    puts [outputChannel] "++++ $name SKIPPED: $constraints"
+		}
 	    }
 
 	    if {$testLevel == 1} {
@@ -2208,7 +2214,12 @@ proc tcltest::RunTest {
     }
 
     if {[IsVerbose start]} {
-	puts [outputChannel] "---- $name start"
+	if {[string equal [namespace current]::Replace::puts \
+		[namespace origin puts]]} {
+	    Replace::Puts [outputChannel] "---- $name start"
+	} else {
+	    puts [outputChannel] "---- $name start"
+	}
 	flush [outputChannel]
     }
 
