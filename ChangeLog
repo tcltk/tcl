@@ -1,3 +1,8 @@
+2004-02-02  David Gravereaux <davygrvy@pobox.com>
+
+	* generic/tclIO.c (Tcl_Ungets): fixes improper filling of the
+	channel buffer. [Bug 405995]
+
 2004-01-13  Don Porter  <dgp@users.sourceforge.net>
 
         * generic/tclFileName.c (Tcl_GlobObjCmd):  Latest changes to
