@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: string.n,v 1.20 2004/06/30 12:34:35 dkf Exp $
+'\" RCS: @(#) $Id: string.n,v 1.21 2004/08/24 08:59:54 dkf Exp $
 '\" 
 .so man.macros
 .TH string n 8.1 Tcl "Tcl Built-In Commands"
@@ -194,6 +194,14 @@ will have no affect for later key matches.  For example,
 \fBstring map {abc 1 ab 2 a 3 1 0} 1abcaababcabababc\fR
 .CE
 will return the string \fB01321221\fR.
+.PP
+Note that if an earlier \fIkey\fR is a prefix of a later one, it will
+completely mask the later one.  So if the previous example is
+reordered like this,
+.CS
+\fBstring map {1 0 ab 2 a 3 abc 1} 1abcaababcabababc\fR
+.CE
+it will return the string \fB02c322c222c\fR.
 .RE
 .TP
 \fBstring match\fR ?\fB\-nocase\fR? \fIpattern\fR \fIstring\fR
