@@ -1,5 +1,10 @@
 1999-04-05    <stanton@scriptics.com>
 
+	* tests/winTime.test: 
+	* win/tclWinTime.c: Fixed crash in clock command that occurred
+	when manipulating negative time values in timezones east of
+	GMT. [Bug: 1142, 1458]
+	
 	* tests/platform.test: 
 	* tests/fileName.test: Fixed broken tests.
 	
