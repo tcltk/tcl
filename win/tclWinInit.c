@@ -7,7 +7,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclWinInit.c,v 1.47 2004/06/10 22:21:54 dgp Exp $
+ * RCS: @(#) $Id: tclWinInit.c,v 1.48 2004/06/11 21:30:08 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -96,13 +96,6 @@ static char* processors[NUMPROCESSORS] = {
 static Tcl_Encoding binaryEncoding = NULL;
 /* Has the basic library path encoding issue been fixed */
 static int libraryPathEncodingFixed = 0;
-
-/*
- * The Init script (common to Windows and Unix platforms) is
- * defined in tkInitScript.h
- */
-
-#include "tclInitScript.h"
 
 static void		AppendEnvironment(Tcl_Obj *listPtr, CONST char *lib);
 static void		AppendDllPath(Tcl_Obj *listPtr, HMODULE hModule,
@@ -817,105 +810,4 @@ TclpFindVariable(name, lengthPtr)
     Tcl_DStringFree(&envString);
     ckfree(nameUpper);
     return result;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_Init --
- *
- *	This procedure is typically invoked by Tcl_AppInit procedures
- *	to perform additional initialization for a Tcl interpreter,
- *	such as sourcing the "init.tcl" script.
- *
- * Results:
- *	Returns a standard Tcl completion code and sets the interp's
- *	result if there is an error.
- *
- * Side effects:
- *	Depends on what's in the init.tcl script.
- *
- *----------------------------------------------------------------------
- */
-
-int
-Tcl_Init(interp)
-    Tcl_Interp *interp;		/* Interpreter to initialize. */
-{
-    Tcl_Obj *pathPtr;
-
-    if (tclPreInitScript != NULL) {
-	if (Tcl_Eval(interp, tclPreInitScript) == TCL_ERROR) {
-	    return (TCL_ERROR);
-	};
-    }
-
-    pathPtr = TclGetLibraryPath();
-    if (pathPtr == NULL) {
-	pathPtr = Tcl_NewObj();
-    }
-    Tcl_SetVar2Ex(interp, "tcl_libPath", NULL, pathPtr, TCL_GLOBAL_ONLY);
-    return Tcl_Eval(interp, initScript);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_SourceRCFile --
- *
- *	This procedure is typically invoked by Tcl_Main of Tk_Main
- *	procedure to source an application specific rc file into the
- *	interpreter at startup time.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Depends on what's in the rc script.
- *
- *----------------------------------------------------------------------
- */
-
-void
-Tcl_SourceRCFile(interp)
-    Tcl_Interp *interp;		/* Interpreter to source rc file into. */
-{
-    Tcl_DString temp;
-    CONST char *fileName;
-    Tcl_Channel errChannel;
-
-    fileName = Tcl_GetVar(interp, "tcl_rcFileName", TCL_GLOBAL_ONLY);
-
-    if (fileName != NULL) {
-        Tcl_Channel c;
-	CONST char *fullName;
-
-        Tcl_DStringInit(&temp);
-	fullName = Tcl_TranslateFileName(interp, fileName, &temp);
-	if (fullName == NULL) {
-	    /*
-	     * Couldn't translate the file name (e.g. it referred to a
-	     * bogus user or there was no HOME environment variable).
-	     * Just do nothing.
-	     */
-	} else {
-
-	    /*
-	     * Test for the existence of the rc file before trying to read it.
-	     */
-
-            c = Tcl_OpenFileChannel(NULL, fullName, "r", 0);
-            if (c != (Tcl_Channel) NULL) {
-                Tcl_Close(NULL, c);
-		if (Tcl_EvalFile(interp, fullName) != TCL_OK) {
-		    errChannel = Tcl_GetStdChannel(TCL_STDERR);
-		    if (errChannel) {
-			Tcl_WriteObj(errChannel, Tcl_GetObjResult(interp));
-			Tcl_WriteChars(errChannel, "\n", 1);
-		    }
-		}
-	    }
-	}
-        Tcl_DStringFree(&temp);
-    }
 }
