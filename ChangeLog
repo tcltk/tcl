@@ -1,3 +1,57 @@
+2000-11-21  Andreas Kupries  <a.kupries@westend.com>
+
+	* All of the changes below are described in TIP #7 ~ Specification
+ 	  and result from the application of the patch contained
+ 	  therein. Creator of the patch is Kevin Kenny
+ 	  <kennykb@crd.ge.com>. The patch used here is actually a bit
+ 	  different. Two MS specific constant values (format FOOui64) were
+ 	  replaced with a more portable formatting of the values and an
+ 	  additional cast to LONGLONG. My cross-compiling gcc was unable to
+	  process the original form. The SF Id of the patch is 102459.
+
+       	* tclWinTime.c: Add to the static data a set of variables that
+ 	  manage the phase-locked techniques, including a
+ 	  ''CRITICAL_SECTION'' to guard them so that multi-threaded code
+ 	  is stable.
+
+	* tclWinTime.c: Modify ''TclpGetSeconds'' to call ''TclpGetTime''
+ 	  and return the 'seconds' portion of the result.  This change is
+ 	  necessary to make sure that the two times are consistent near
+ 	  the rollover from one second to another.
+
+	* tclWinTime.c: Modify ''TclpGetClicks'' to use TclpGetTime to
+ 	  determine the click count as a number of microseconds.
+
+	* tclWinTime.c: Modify ''TclpGetTime'' to return the time as
+ 	  M*Q+B, where Q is the result of ''QueryPerformanceCounter'', and
+ 	  M and B are variables maintained by the phase-locked loop to
+ 	  keep the result as close as possible to the system clock.  The
+ 	  ''TclpGetTime'' call will also launch the phase-lock management
+ 	  in a separate thread the first time that it is invoked.  If the
+ 	  performance counter is unavailable, or if its frequency is not
+ 	  one of the two common 8254-compatible rates, then
+ 	  ''TclpGetTime'' will return the result of ''ftime'' as it does
+ 	  in Tcl 8.3.2.
+
+	* tclWinTime.c: Add the clock calibration procedure.  The
+ 	  calibration is somewhat complex; to save space, the reader is
+ 	  referred to the reference implementation for the details of how
+ 	  the time base and frequency are maintained.
+
+	* tclWinNotify.c: Modify ''Tcl_Sleep'' to test that the process
+ 	  has, in fact, slept for the requisite time by calling
+ 	  ''TclpGetTime'' and comparing with the desired time.  Otherwise,
+ 	  roundoff errors may cause the process to awaken early.
+
+	* tclWinTest.c: Add a ''testwinclock'' command.  This command
+ 	  returns a four element list comprising the seconds and
+ 	  microseconds portions of the system clock and the seconds and
+ 	  microseconds portions of the Tcl clock.
+
+	* winTime.test: Add to the test suite a test that makes sure that
+ 	  the Tcl clock stays within 1.1 ms of the system clock over the
+ 	  duration of the test.
+
 2000-11-21  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* doc/global.n: 

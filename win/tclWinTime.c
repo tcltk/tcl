@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinTime.c,v 1.5 1999/12/01 00:08:43 hobbs Exp $
+ * RCS: @(#) $Id: tclWinTime.c,v 1.6 2000/11/21 21:33:43 andreas_kupries Exp $
  */
 
 #include "tclWinInt.h"
@@ -38,10 +38,77 @@ typedef struct ThreadSpecificData {
 static Tcl_ThreadDataKey dataKey;
 
 /*
+ * Calibration interval for the high-resolution timer, in msec
+ */
+
+static CONST unsigned long clockCalibrateWakeupInterval = 10000;
+				/* FIXME: 10 s -- should be about 10 min! */
+
+/*
+ * Data for managing high-resolution timers.
+ */
+
+typedef struct TimeInfo {
+
+    CRITICAL_SECTION cs;	/* Mutex guarding this structure */
+
+    int initialized;		/* Flag == 1 if this structure is
+				 * initialized. */
+
+    int perfCounterAvailable;	/* Flag == 1 if the hardware has a
+				 * performance counter */
+
+    HANDLE calibrationThread;	/* Handle to the thread that keeps the
+				 * virtual clock calibrated. */
+
+    HANDLE readyEvent;		/* System event used to
+				 * trigger the requesting thread
+				 * when the clock calibration procedure
+				 * is initialized for the first time */
+
+    /*
+     * The following values are used for calculating virtual time.
+     * Virtual time is always equal to:
+     *    lastFileTime + (current perf counter - lastCounter) 
+     *				* 10000000 / curCounterFreq
+     * and lastFileTime and lastCounter are updated any time that
+     * virtual time is returned to a caller.
+     */
+
+    ULARGE_INTEGER lastFileTime;
+    LARGE_INTEGER lastCounter;
+    LARGE_INTEGER curCounterFreq;
+
+    /* 
+     * The next two values are used only in the calibration thread, to track
+     * the frequency of the performance counter.
+     */
+
+    LONGLONG lastPerfCounter;	/* Performance counter the last time
+				 * that UpdateClockEachSecond was called */
+    LONGLONG lastSysTime;	/* System clock at the last time
+				 * that UpdateClockEachSecond was called */
+    LONGLONG estPerfCounterFreq;
+				/* Current estimate of the counter frequency
+				 * using the system clock as the standard */
+
+} TimeInfo;
+
+static TimeInfo timeInfo = {
+    NULL, 0, 0, NULL, NULL, 0, 0, 0, 0, 0
+};
+
+CONST static FILETIME posixEpoch = { 0xD53E8000, 0x019DB1DE };
+    
+/*
  * Declarations for functions defined later in this file.
  */
 
 static struct tm *	ComputeGMT _ANSI_ARGS_((const time_t *tp));
+
+static DWORD WINAPI     CalibrationThread _ANSI_ARGS_(( LPVOID arg ));
+
+static void 		UpdateTimeEachSecond _ANSI_ARGS_(( void ));
 
 /*
  *----------------------------------------------------------------------
@@ -63,7 +130,9 @@ static struct tm *	ComputeGMT _ANSI_ARGS_((const time_t *tp));
 unsigned long
 TclpGetSeconds()
 {
-    return (unsigned long) time((time_t *) NULL);
+    Tcl_Time t;
+    TclpGetTime( &t );
+    return t.sec;
 }
 
 /*
@@ -89,7 +158,18 @@ TclpGetSeconds()
 unsigned long
 TclpGetClicks()
 {
-    return GetTickCount();
+    /*
+     * Use the TclpGetTime abstraction to get the time in microseconds,
+     * as nearly as we can, and return it.
+     */
+
+    Tcl_Time now;		/* Current Tcl time */
+    unsigned long retval;	/* Value to return */
+
+    TclpGetTime( &now );
+    retval = ( now.sec * 1000000 ) + now.usec;
+    return retval;
+
 }
 
 /*
@@ -134,7 +214,13 @@ TclpGetTimeZone (currentTime)
  *	Returns the current time in timePtr.
  *
  * Side effects:
- *	None.
+ *	On the first call, initializes a set of static variables to
+ *	keep track of the base value of the performance counter, the
+ *	corresponding wall clock (obtained through ftime) and the
+ *	frequency of the performance counter.  Also spins a thread
+ *	whose function is to wake up periodically and monitor these
+ *	values, adjusting them as necessary to correct for drift
+ *	in the performance counter's oscillator.
  *
  *----------------------------------------------------------------------
  */
@@ -143,11 +229,114 @@ void
 TclpGetTime(timePtr)
     Tcl_Time *timePtr;		/* Location to store time information. */
 {
+	
     struct timeb t;
 
-    ftime(&t);
-    timePtr->sec = t.time;
-    timePtr->usec = t.millitm * 1000;
+    /* Initialize static storage on the first trip through. */
+
+    /*
+     * Note: Outer check for 'initialized' is a performance win
+     * since it avoids an extra mutex lock in the common case.
+     */
+
+    if ( !timeInfo.initialized ) { 
+	TclpInitLock();
+	if ( !timeInfo.initialized ) {
+	    timeInfo.perfCounterAvailable
+		= QueryPerformanceFrequency( &timeInfo.curCounterFreq );
+
+	    /*
+	     * Some hardware abstraction layers use the CPU clock
+	     * in place of the real-time clock as a performance counter
+	     * reference.  This results in:
+	     *    - inconsistent results among the processors on
+	     *      multi-processor systems.
+	     *    - unpredictable changes in performance counter frequency
+	     *      on "gearshift" processors such as Transmeta and
+	     *      SpeedStep.
+	     * There seems to be no way to test whether the performance
+	     * counter is reliable, but a useful heuristic is that
+	     * if its frequency is 1.193182 MHz or 3.579545 MHz, it's
+	     * derived from a colorburst crystal and is therefore
+	     * the RTC rather than the TSC.  If it's anything else, we
+	     * presume that the performance counter is unreliable.
+	     */
+
+	    if ( timeInfo.perfCounterAvailable
+		 && timeInfo.curCounterFreq.QuadPart != (LONGLONG) 1193182
+		 && timeInfo.curCounterFreq.QuadPart != (LONGLONG) 3579545 ) {
+		timeInfo.perfCounterAvailable = FALSE;
+	    }
+
+	    /*
+	     * If the performance counter is available, start a thread to
+	     * calibrate it.
+	     */
+
+	    if ( timeInfo.perfCounterAvailable ) {
+		DWORD id;
+		InitializeCriticalSection( &timeInfo.cs );
+		timeInfo.readyEvent = CreateEvent( NULL, FALSE, FALSE, NULL );
+		timeInfo.calibrationThread = CreateThread( NULL,
+							   8192,
+							   CalibrationThread,
+							   (LPVOID) NULL,
+							   0,
+							   &id );
+		SetThreadPriority( timeInfo.calibrationThread,
+				   THREAD_PRIORITY_HIGHEST );
+		WaitForSingleObject( timeInfo.readyEvent, INFINITE );
+		CloseHandle( timeInfo.readyEvent );
+	    }
+	    timeInfo.initialized = TRUE;
+	}
+	TclpInitUnlock();
+    }
+
+    if ( timeInfo.perfCounterAvailable ) {
+	
+	/*
+	 * Query the performance counter and use it to calculate the
+	 * current time.
+	 */
+
+	LARGE_INTEGER curCounter;
+				/* Current performance counter */
+
+	LONGLONG curFileTime;
+				/* Current estimated time, expressed
+				 * as 100-ns ticks since the Windows epoch */
+
+	static const LARGE_INTEGER posixEpoch = { 0xD53E8000, 0x019DB1DE };
+				/* Posix epoch expressed as 100-ns ticks
+				 * since the windows epoch */
+
+	LONGLONG usecSincePosixEpoch;
+				/* Current microseconds since Posix epoch */
+
+	EnterCriticalSection( &timeInfo.cs );
+
+	QueryPerformanceCounter( &curCounter );
+	curFileTime = timeInfo.lastFileTime.QuadPart
+	    + ( ( curCounter.QuadPart - timeInfo.lastCounter.QuadPart )
+		* 10000000 / timeInfo.curCounterFreq.QuadPart );
+	timeInfo.lastFileTime.QuadPart = curFileTime;
+	timeInfo.lastCounter.QuadPart = curCounter.QuadPart;
+	usecSincePosixEpoch = ( curFileTime - posixEpoch.QuadPart ) / 10;
+	timePtr->sec = (time_t) ( usecSincePosixEpoch / 1000000 );
+	timePtr->usec = (unsigned long ) ( usecSincePosixEpoch % 1000000 );
+	
+	LeaveCriticalSection( &timeInfo.cs );
+
+	
+    } else {
+	
+	/* High resolution timer is not available.  Just use ftime */
+	
+	ftime(&t);
+	timePtr->sec = t.time;
+	timePtr->usec = t.millitm * 1000;
+    }
 }
 
 /*
@@ -439,4 +628,216 @@ ComputeGMT(tp)
     }
 
     return tmPtr;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CalibrationThread --
+ *
+ *	Thread that manages calibration of the hi-resolution time
+ *	derived from the performance counter, to keep it synchronized
+ *	with the system clock.
+ *
+ * Parameters:
+ *	arg -- Client data from the CreateThread call.  This parameter
+ *             points to the static TimeInfo structure.
+ *
+ * Return value:
+ *	None.  This thread embeds an infinite loop.
+ *
+ * Side effects:
+ *	At an interval of clockCalibrateWakeupInterval ms, this thread
+ *	performs virtual time discipline.
+ *
+ * Note: When this thread is entered, TclpInitLock has been called
+ * to safeguard the static storage.  There is therefore no synchronization
+ * in the body of this procedure.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static DWORD WINAPI
+CalibrationThread( LPVOID arg )
+{
+    FILETIME curFileTime;
+
+    /* Get initial system time and performance counter */
+
+    GetSystemTimeAsFileTime( &curFileTime );
+    QueryPerformanceCounter( &timeInfo.lastCounter );
+    QueryPerformanceFrequency( &timeInfo.curCounterFreq );
+    timeInfo.lastFileTime.LowPart = curFileTime.dwLowDateTime;
+    timeInfo.lastFileTime.HighPart = curFileTime.dwHighDateTime;
+
+    /* Initialize the working storage for the calibration callback */
+
+    timeInfo.lastPerfCounter = timeInfo.lastCounter.QuadPart;
+    timeInfo.estPerfCounterFreq = timeInfo.curCounterFreq.QuadPart;
+
+    /*
+     * Wake up the calling thread.  When it wakes up, it will release the
+     * initialization lock.
+     */
+
+    SetEvent( timeInfo.readyEvent );
+
+    /* Run the calibration once a second */
+
+    for ( ; ; ) {
+
+	Sleep( 1000 );
+	UpdateTimeEachSecond();
+	
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * UpdateTimeEachSecond --
+ *
+ *	Callback from the waitable timer in the clock calibration thread
+ *	that updates system time.
+ *
+ * Parameters:
+ *	info -- Pointer to the static TimeInfo structure
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Performs virtual time calibration discipline.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+UpdateTimeEachSecond()
+{
+
+    LARGE_INTEGER curPerfCounter;
+				/* Current value returned from
+				 * QueryPerformanceCounter */
+
+    LONGLONG perfCounterDiff;	/* Difference between the current value
+				 * and the value of 1 second ago */
+
+    FILETIME curSysTime;	/* Current system time */
+
+    LARGE_INTEGER curFileTime;	/* File time at the time this callback
+				 * was scheduled. */
+
+    LONGLONG fileTimeDiff;	/* Elapsed time on the system clock
+				 * since the last time this procedure
+				 * was called */
+
+    LONGLONG instantFreq;	/* Instantaneous estimate of the
+				 * performance counter frequency */
+
+    LONGLONG delta;		/* Increment to add to the estimated
+				 * performance counter frequency in the
+				 * loop filter */
+
+    LONGLONG fuzz;		/* Tolerance for the perf counter frequency */
+
+    LONGLONG lowBound;		/* Lower bound for the frequency assuming
+				 * 1000 ppm tolerance */
+
+    LONGLONG hiBound;		/* Upper bound for the frequency */
+
+    /*
+     * Get current performance counter and system time.
+     */
+
+    QueryPerformanceCounter( &curPerfCounter );
+    GetSystemTimeAsFileTime( &curSysTime );
+    curFileTime.LowPart = curSysTime.dwLowDateTime;
+    curFileTime.HighPart = curSysTime.dwHighDateTime;
+
+    EnterCriticalSection( &timeInfo.cs );
+
+    /*
+     * Find out how many ticks of the performance counter and the
+     * system clock have elapsed since we got into this procedure.
+     * Estimate the current frequency.
+     */
+
+    perfCounterDiff = curPerfCounter.QuadPart - timeInfo.lastPerfCounter;
+    timeInfo.lastPerfCounter = curPerfCounter.QuadPart;
+    fileTimeDiff = curFileTime.QuadPart - timeInfo.lastSysTime;
+    timeInfo.lastSysTime = curFileTime.QuadPart;
+    instantFreq = ( 10000000 * perfCounterDiff / fileTimeDiff );
+
+    /*
+     * Consider this a timing glitch if instant frequency varies
+     * significantly from the current estimate.
+     */
+
+    fuzz = timeInfo.estPerfCounterFreq >> 10;
+    lowBound = timeInfo.estPerfCounterFreq - fuzz;
+    hiBound = timeInfo.estPerfCounterFreq + fuzz;
+    if ( instantFreq < lowBound || instantFreq > hiBound ) {
+	LeaveCriticalSection( &timeInfo.cs );
+	return;
+    }
+
+    /*
+     * Update the current estimate of performance counter frequency.
+     * This code is equivalent to the loop filter of a phase locked
+     * loop.
+     */
+
+    delta = ( instantFreq - timeInfo.estPerfCounterFreq ) >> 6;
+    timeInfo.estPerfCounterFreq += delta;
+
+    /*
+     * Update the current virtual time.
+     */
+
+    timeInfo.lastFileTime.QuadPart
+	+= ( ( curPerfCounter.QuadPart - timeInfo.lastCounter.QuadPart )
+	     * 10000000 / timeInfo.curCounterFreq.QuadPart );
+    timeInfo.lastCounter.QuadPart = curPerfCounter.QuadPart;
+
+    delta = curFileTime.QuadPart - timeInfo.lastFileTime.QuadPart;
+    if ( delta > 10000000 || delta < -10000000 ) {
+
+	/*
+	 * If the virtual time slip exceeds one second, then adjusting
+	 * the counter frequency is hopeless (it'll take over fifteen
+	 * minutes to line up with the system clock).  The most likely
+	 * cause of this large a slip is a sudden change to the system
+	 * clock, perhaps because it was being corrected by wristwatch
+	 * and eyeball.  Accept the system time, and set the performance
+	 * counter frequency to the current estimate.
+	 */
+
+	timeInfo.lastFileTime.QuadPart = curFileTime.QuadPart;
+	timeInfo.curCounterFreq.QuadPart = timeInfo.estPerfCounterFreq;
+
+    } else {
+
+	/*
+	 * Compute a counter frequency that will cause virtual time to line
+	 * up with system time one second from now, assuming that the
+	 * performance counter continues to tick at timeInfo.estPerfCounterFreq.
+	 */
+	
+	timeInfo.curCounterFreq.QuadPart
+	    = 10000000 * timeInfo.estPerfCounterFreq / ( delta + 10000000 );
+
+	/*
+	 * Limit frequency excursions to 1000 ppm from estimate
+	 */
+	
+	if ( timeInfo.curCounterFreq.QuadPart < lowBound ) {
+	    timeInfo.curCounterFreq.QuadPart = lowBound;
+	} else if ( timeInfo.curCounterFreq.QuadPart > hiBound ) {
+	    timeInfo.curCounterFreq.QuadPart = hiBound;
+	}
+    }
+
+    LeaveCriticalSection( &timeInfo.cs );
+
 }
