@@ -6,7 +6,7 @@
 # Copyright (c) 1995-1996 Sun Microsystems, Inc.
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 #
-# RCS: @(#) $Id: makefile.vc,v 1.47 2000/01/24 02:30:39 hobbs Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.48 2000/01/26 03:38:10 hobbs Exp $
 
 # Does not depend on the presence of any environment variables in
 # order to compile tcl; all needed information is derived from 
@@ -410,6 +410,29 @@ install-libraries:
 genstubs:
 	tclsh$(VERSION) $(ROOT)\tools\genStubs.tcl $(GENERICDIR) \
 		$(GENERICDIR)\tcl.decls $(GENERICDIR)\tclInt.decls
+
+#
+# Regenerate the windows help files.
+#
+
+TCLTOOLS	= $(ROOT)/tools
+MAN2TCL		= $(TCLTOOLS)/man2tcl
+TCLRTF		= $(TCLTOOLS)/tcl.rtf
+TCLHPJ		= $(TCLTOOLS)/tcl.hpj
+MAN2HELP	= $(TCLTOOLS)/man2help.tcl
+HCRTF		= $(TOOLS32)/bin/hcrtf.exe
+
+winhelp: $(TCLRTF)
+	cd $(TCLTOOLS)
+	start /wait $(HCRTF) -xn $(TCLHPJ)
+
+$(MAN2TCL).exe: $(MAN2TCL).obj 
+	cd $(TCLTOOLS)
+	$(cc32) /nologo /G4 /ML /O2 $(MAN2TCL).c
+
+$(TCLRTF): $(MAN2TCL).exe $(TCLSH)
+	cd $(TCLTOOLS)
+	..\win\$(TCLSH) $(MAN2HELP) $(NAMEPREFIX) $(VERSION) $(ROOT)/doc ../../tk$(DOTVERSION)/doc
 
 #
 # Special case object file targets
