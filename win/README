@@ -1,6 +1,6 @@
 Tcl 8.4 for Windows
 
-RCS: @(#) $Id: README,v 1.24 2001/11/15 00:19:41 davygrvy Exp $
+RCS: @(#) $Id: README,v 1.25 2002/03/04 23:26:03 hobbs Exp $
 
 1. Introduction
 ---------------
@@ -10,7 +10,7 @@ version of Tcl.  This directory also contains source files for Tcl
 that are specific to Microsoft Windows.
 
 The information in this file is maintained on the web at:
-	http://www.purl.org/tcl/home/doc/howto/compile.html#win
+	http://www.tcl.tk/doc/howto/compile.html#win
 
 The above URL includes a lengthy discussion of compiler macros necessary
 when compiling Tcl extensions that will be dynamically loaded.
