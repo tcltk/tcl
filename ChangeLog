@@ -1,3 +1,13 @@
+2002-07-14  Don Porter  <dgp@users.sourceforge.net>
+
+	* README:		Bumped HEAD to version 8.4b2 so we can
+	* generic/tcl.h:	distinguish it from the 8.4b1 release.
+	* tools/tcl.wse.in:
+	* unix/configure*:
+	* unix/tcl.spec:
+	* win/README.binary:
+	* win/configure*:
+
 2002-07-11  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* doc/file.n:

@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.131 2002/07/08 10:08:57 vincentdarley Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.132 2002/07/14 17:29:01 dgp Exp $
  */
 
 #ifndef _TCL
@@ -44,13 +44,10 @@ extern "C" {
  * win/configure.in	(as above)
  * win/tcl.m4		(not patchlevel)
  * win/makefile.vc	(not patchlevel) 2 LOC
- * library/reg/pkgIndex.tcl	(not patchlevel, for tclregNN.dll)
- * library/dde/pkgIndex.tcl	(not patchlevel, for tclddeNN.dll)
  * README		(sections 0 and 2)
  * mac/README		(2 LOC, not patchlevel)
  * win/README.binary	(sections 0-4)
  * win/README		(not patchlevel) (sections 0 and 2)
- * unix/README		(not patchlevel) (part (h))
  * unix/tcl.spec	(2 LOC Major/Minor, 1 LOC patch)
  * tests/basic.test	(1 LOC M/M, not patchlevel)
  * tools/tcl.hpj.in	(not patchlevel, for windows installer)
@@ -60,10 +57,10 @@ extern "C" {
 #define TCL_MAJOR_VERSION   8
 #define TCL_MINOR_VERSION   4
 #define TCL_RELEASE_LEVEL   TCL_BETA_RELEASE
-#define TCL_RELEASE_SERIAL  1
+#define TCL_RELEASE_SERIAL  2
 
 #define TCL_VERSION	    "8.4"
-#define TCL_PATCH_LEVEL	    "8.4b1"
+#define TCL_PATCH_LEVEL	    "8.4b2"
 
 /*
  * The following definitions set up the proper options for Windows

@@ -545,7 +545,7 @@ fi
 TCL_VERSION=8.4
 TCL_MAJOR_VERSION=8
 TCL_MINOR_VERSION=4
-TCL_PATCH_LEVEL="b1"
+TCL_PATCH_LEVEL="b2"
 VERSION=${TCL_VERSION}
 
 #------------------------------------------------------------------------
