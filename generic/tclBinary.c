@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBinary.c,v 1.8.6.3 2001/09/27 13:38:33 dkf Exp $
+ * RCS: @(#) $Id: tclBinary.c,v 1.8.6.4 2001/10/02 10:47:28 dkf Exp $
  */
 
 #include <math.h>
@@ -644,6 +644,11 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
 			size = 4;
 			goto doNumbers;
 		    }
+		    case 'w':
+		    case 'W': {
+			size = 8;
+			goto doNumbers;
+		    }
 		    case 'f': {
 			size = sizeof(float);
 			goto doNumbers;
@@ -924,6 +929,8 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
 		    case 'S':
 		    case 'i':
 		    case 'I':
+		    case 'w':
+		    case 'W':
 		    case 'd':
 		    case 'f': {
 			int listc, i;
@@ -1179,6 +1186,11 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
 			size = 4;
 			goto scanNumber;
 		    }
+		    case 'w':
+		    case 'W': {
+			size = 8;
+			goto scanNumber;
+		    }
 		    case 'f': {
 			size = sizeof(float);
 			goto scanNumber;
@@ -1395,8 +1407,11 @@ FormatNumber(interp, type, src, cursorPtr)
 {
     long value;
     double dvalue;
+    Tcl_WideInt wvalue;
 
-    if ((type == 'd') || (type == 'f')) {
+    switch (type) {
+    case 'd':
+    case 'f':
 	/*
 	 * For floating point types, we need to copy the data using
 	 * memcpy to avoid alignment issues.
@@ -1425,7 +1440,38 @@ FormatNumber(interp, type, src, cursorPtr)
 	    memcpy((VOID *) *cursorPtr, (VOID *) &fvalue, sizeof(float));
 	    *cursorPtr += sizeof(float);
 	}
-    } else {
+	return TCL_OK;
+
+	/*
+	 * Next cases separate from other integer cases because we
+	 * need a different API to get a wide.
+	 */
+    case 'w':
+    case 'W':
+	if (Tcl_GetWideIntFromObj(interp, src, &wvalue) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	if (type == 'w') {
+	    *(*cursorPtr)++ = (unsigned char) wvalue;
+	    *(*cursorPtr)++ = (unsigned char) (wvalue >> 8);
+	    *(*cursorPtr)++ = (unsigned char) (wvalue >> 16);
+	    *(*cursorPtr)++ = (unsigned char) (wvalue >> 24);
+	    *(*cursorPtr)++ = (unsigned char) (wvalue >> 32);
+	    *(*cursorPtr)++ = (unsigned char) (wvalue >> 40);
+	    *(*cursorPtr)++ = (unsigned char) (wvalue >> 48);
+	    *(*cursorPtr)++ = (unsigned char) (wvalue >> 56);
+	} else {
+	    *(*cursorPtr)++ = (unsigned char) (wvalue >> 56);
+	    *(*cursorPtr)++ = (unsigned char) (wvalue >> 48);
+	    *(*cursorPtr)++ = (unsigned char) (wvalue >> 40);
+	    *(*cursorPtr)++ = (unsigned char) (wvalue >> 32);
+	    *(*cursorPtr)++ = (unsigned char) (wvalue >> 24);
+	    *(*cursorPtr)++ = (unsigned char) (wvalue >> 16);
+	    *(*cursorPtr)++ = (unsigned char) (wvalue >> 8);
+	    *(*cursorPtr)++ = (unsigned char) wvalue;
+	}
+	return TCL_OK;
+    default:
 	if (Tcl_GetLongFromObj(interp, src, &value) != TCL_OK) {
 	    return TCL_ERROR;
 	}
@@ -1448,8 +1494,8 @@ FormatNumber(interp, type, src, cursorPtr)
 	    *(*cursorPtr)++ = (unsigned char) (value >> 8);
 	    *(*cursorPtr)++ = (unsigned char) value;
 	}
+	return TCL_OK;
     }
-    return TCL_OK;
 }
 
 /*
@@ -1476,6 +1522,7 @@ ScanNumber(buffer, type)
     int type;			/* Format character from "binary scan" */
 {
     long value;
+    Tcl_WideInt wvalue;
 
     /*
      * We cannot rely on the compiler to properly sign extend integer values
@@ -1536,6 +1583,26 @@ ScanNumber(buffer, type)
 	    }
 	    return Tcl_NewLongObj(value);
 	}
+        case 'w':
+	    value = (long) (buffer[4] 
+		    | (buffer[5] << 8)
+		    | (buffer[6] << 16)
+		    | (buffer[7] << 24));
+	    wvalue = ((Tcl_WideInt) value) << 32 | (buffer[0] 
+		    | (buffer[1] << 8)
+		    | (buffer[2] << 16)
+		    | (buffer[3] << 24));
+	    return Tcl_NewWideIntObj(wvalue);
+	case 'W':
+	    value = (long) (buffer[3] 
+		    | (buffer[2] << 8)
+		    | (buffer[1] << 16)
+		    | (buffer[0] << 24));
+	    wvalue = ((Tcl_WideInt) value) << 32 | (buffer[7] 
+		    | (buffer[6] << 8)
+		    | (buffer[5] << 16)
+		    | (buffer[4] << 24));
+	    return Tcl_NewWideIntObj(wvalue);
 	case 'f': {
 	    float fvalue;
 	    memcpy((VOID *) &fvalue, (VOID *) buffer, sizeof(float));
