@@ -4,10 +4,10 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Object.3,v 1.5 2000/07/24 00:03:02 jenglish Exp $
+'\" RCS: @(#) $Id: Object.3,v 1.6 2002/10/22 12:16:53 dkf Exp $
 '\" 
 .so man.macros
-.TH Tcl_Obj 3 8.0 Tcl "Tcl Library Procedures"
+.TH Tcl_Obj 3 8.1 Tcl "Tcl Library Procedures"
 .BS
 .SH NAME
 Tcl_NewObj, Tcl_DuplicateObj, Tcl_IncrRefCount, Tcl_DecrRefCount, Tcl_IsShared, Tcl_InvalidateStringRep \- manipulate Tcl objects
@@ -129,15 +129,17 @@ typedef struct Tcl_Obj {
 } Tcl_Obj;
 .CE
 The \fIbytes\fR and the \fIlength\fR members together hold
-an object's string representation,
-which is a \fIcounted\fR or \fIbinary string\fR
-that may contain binary data with embedded null bytes.
+.VS 8.1
+an object's UTF-8 string representation,
+which is a \fIcounted string\fR not containing null bytes (UTF-8 null
+characters should be encoded as a two byte sequence: 192, 128.)
 \fIbytes\fR points to the first byte of the string representation.
 The \fIlength\fR member gives the number of bytes.
-The byte array must always have a null after the last byte,
+The byte array must always have a null byte after the last data byte,
 at offset \fIlength\fR;
-this allows string representations that do not contain nulls
+this allows string representations
 to be treated as conventional null-terminated C strings.
+.VE 8.1
 C programs use \fBTcl_GetStringFromObj\fR and \fBTcl_GetString\fR to get
 an object's string representation.
 If \fIbytes\fR is NULL,

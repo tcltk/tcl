@@ -1,3 +1,9 @@
+2002-10-22  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* doc/StringObj.3, doc/Object.3: Documented that Tcl_Obj's
+	standard string form is a modified UTF-8; apparently, this was not
+	mentioned anywhere in the main docs, and lead to [Bug 624919].
+
 2002-10-21  Daniel Steffen  <das@users.sourceforge.net>
 
 	* macosx/Tcl.pbproj/project.pbxproj: bumped version to 8.4.1
