@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: safe.test,v 1.15 2004/07/30 16:54:04 dgp Exp $
+# RCS: @(#) $Id: safe.test,v 1.16 2004/08/04 09:00:25 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -51,7 +51,7 @@ test safe-1.3 {safe::interpInit syntax} {
     slave name () name of the slave}}
 
 
-test safe-2.1 {creating interpreters, should have no aliases} empty {
+test safe-2.1 {creating interpreters, should have no aliases} emptyTest {
     # Disabled this test.  It tests nothing sensible.  [Bug 999612]
     # interp aliases
 } ""
