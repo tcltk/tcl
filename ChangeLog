@@ -1,3 +1,19 @@
+1999-09-01  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* generic/tclParseExpr.c: changed '"' to '\"' to make FreeBSD
+	happy [Bug: 2625]
+	* generic/tclProc.c: moved static buf to better location and
+	changed static msg that would overflow in ProcessProcResultCode
+	[Bug: 2483] and added Tcl_DStringFree to Tcl_ProcObjCmd.
+	Also reworked size of static buffers.
+	* tests/stringObj.test: added test 9.11
+	* generic/tclStringObj.c: changed Tcl_AppendObjToObj to
+	properly handle the 1-byte dest and mixed src case where
+	both had had Unicode string len checks made on them.  [Bug: 2678]
+	* unix/aclocal.m4:
+	* unix/tcl.m4: adjusted fix from 8-21 to add -bnoentry to the
+	AIX-* case and readjusted the range
+
 1999-08-31  Jennifer Hom  <jenn@scriptics.com>
 
 	* library/tcltest1.0/tcltest.tcl:
