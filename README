@@ -1,25 +1,23 @@
 Tcl
 
-RCS: @(#) $Id: README,v 1.12 1999/01/04 19:25:00 rjohnson Exp $
+RCS: @(#) $Id: README,v 1.13 1999/02/09 03:31:55 stanton Exp $
 
 1. Introduction
 ---------------
 
 This directory and its descendants contain the sources and documentation
 for Tcl, an embeddable scripting language.  The information here
-corresponds to release 8.0.5, which is the fourth patch update for Tcl
-8.0. This patch provides compatibility with [incr Tcl] 3.0.
-Tcl 8.0 is a major new release that replaces the core of the
+corresponds to release 8.0.5, which is the fifth patch update for Tcl 8.0.
+This patch includes many bug fixes; see the "changes" file for a complete
+list.  Tcl 8.0 is a major new release that replaces the core of the
 interpreter with an on-the-fly bytecode compiler to improve execution
-speed.  It also includes several other new features such as namespaces
-and binary I/O, plus many bug fixes.  The compiler introduces a few
+speed.  It also includes several other new features such as namespaces and
+binary I/O, plus many bug fixes.  The compiler introduces a few
 incompatibilities that may affect existing Tcl scripts; the
-incompatibilities are relatively obscure but may require modifications
-to some old scripts before they can run with this version. The compiler
+incompatibilities are relatively obscure but may require modifications to
+some old scripts before they can run with this version. The compiler
 introduces many new C-level APIs, but the old APIs are still supported.
-See below for more details.  This patch release fixes various bugs in
-Tcl 8.0, plus it adds a few minor features to support the TclPro 1.0
-tool set and [incr Tcl] 3.0.  Please check the changes file for details.
+See below for more details.
 
 2. Documentation
 ----------------
@@ -87,34 +85,10 @@ Before trying to compile Tcl you should do the following things:
 	without changing any features, so you should normally use the
 	latest patch release for the version of Tcl that you want. 
 	Patch releases are available in two forms.  A file like
-	tcl8.0.5.tar.Z is a complete release for patch level 4 of Tcl
+	tcl8.0.5.tar.Z is a complete release for patch level 5 of Tcl
 	version 8.0.  If there is a file with a higher patch level than
 	this release, just fetch the file with the highest patch level
 	and use it.
-
-	Patches are also available in the form of patch files that just
-	contain the changes from one patch level to another.  These
-	files will have names like tcl8.0p1.patch, tcl8.0p2.patch, etc.  They
-	may also have .gz or .Z extensions to indicate compression.  To
-	use one of these files, you apply it to an existing release with
-	the "patch" program.  Patches must be applied in order:
-	tcl8.0p1.patch must be applied to an unpatched Tcl 8.0 release
-	to produce a Tcl 8.0p1 release;  tcl8.0p2.patch can then be
-	applied to Tcl8.0p1 to produce Tcl 8.0p2, and so on. To apply an
-	uncompressed patch file such as tcl8.0p1.patch, invoke a shell
-	command like the following from the directory containing this
-	file (some versions of patch require "-p0"):
-	    patch -p < tcl8.0p1.patch
-	If the patch file has a .gz extension, invoke a command like the
-	following:
-	    gunzip -c tcl8.0p1.patch.gz | patch -p
-	If the patch file has a .Z extension, it was compressed with
-	compress.  To apply it, invoke a command like the following:
-	    zcat tcl8.0p1.patch.Z | patch -p
-	If you're applying a patch to a release that has already been
-	compiled, then before applying the patch you should cd to the
-	"unix" subdirectory and type "make distclean" to restore the
-	directory to a pristine state.
 
 Once you've done this, change to the "unix" subdirectory if you're
 compiling under UNIX, "win" if you're compiling under Windows, or

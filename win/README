@@ -4,7 +4,7 @@ by Scott Stanton
 Scriptics Corporation
 scott.stanton@scriptics.com
 
-RCS: @(#) $Id: README,v 1.8 1999/01/04 19:25:05 rjohnson Exp $
+RCS: @(#) $Id: README,v 1.9 1999/02/09 03:31:55 stanton Exp $
 
 1. Introduction
 ---------------
@@ -22,12 +22,13 @@ common source release.  The binary distribution is a self-extracting
 archive with a built-in installation script.
 
 Look for the binary release in the same location as the source release
-(ftp.scriptics.com:/pub/tcl or any of the mirror sites).  For most users,
-the binary release will be much easier to install and use.  You only
-need the source release if you plan to modify the core of Tcl, or if
-you need to compile with a different compiler.  With the addition of
-the dynamic loading interface, it is no longer necessary to have the
-source distribution in order to build and use extensions.
+(http://www.scriptics.com/software/8.0.html or any of the mirror
+sites).  For most users, the binary release will be much easier to
+install and use.  You only need the source release if you plan to
+modify the core of Tcl, or if you need to compile with a different
+compiler.  With the addition of the dynamic loading interface, it is
+no longer necessary to have the source distribution in order to build
+and use extensions.
 
 3. Compiling Tcl
 ----------------
@@ -39,7 +40,6 @@ In order to compile Tcl for Windows, you need the following items:
 	Borland C++ 4.52 (both 16-bit and 32-bit compilers)
 	  or
 	Visual C++ 2.x/4.x/5.x
-	Visual C++ 1.5 (to build tcl1680.dll for Win32s support of exec)
 
 In practice, the 8.0.5 release is built with Visual C++ 5.0
 
@@ -60,25 +60,22 @@ find them.  Tcl looks in one of three places for the library files:
 	2) In the lib\tcl8.0 directory under the installation directory
 	   as specified in the registry:
 
-		For Windows NT & 95:
-		    HKEY_LOCAL_MACHINE\SOFTWARE\Scriptics\Tcl\8.0
-
-		For Win32s:
-		    HKEY_CLASSES_ROOT\SOFTWARE\Scriptics\Tcl\8.0\
+		HKEY_LOCAL_MACHINE\SOFTWARE\Scriptics\Tcl\8.0
 
 	3) Relative to the directory containing the current .exe.
 	    Tcl will look for a directory "..\lib\tcl8.0" relative to the
 	    directory containing the currently running .exe.
 
 Note that in order to run tclsh80.exe, you must ensure that tcl80.dll
-and tclpip80.dll (plus tcl1680.dll under Win32s) are on your path, in
-the system directory, or in the directory containing tclsh80.exe.
+and tclpip80.dll are on your path, in the system directory, or in the
+directory containing tclsh80.exe.
 
 4. Building Extensions
 ----------------------
 
 With the Windows compilers you have to worry about how you export symbols
 from DLLs.  tcl.h defines a few macros to help solve this problem:
+
 EXTERN - all Tcl_ function prototypes use this macro, which implies
 	they are exported.  You'll see this used in tcl.h and tk.h.
 	You should use this in your exported procedures.
@@ -105,7 +102,9 @@ EXPORT(type, func)
 	EXPORT because they had a different order.  Your declaration will
 	look like
 	EXTERN EXPORT(int, Foo_Init)(Tcl_Interp *interp);
+
 We have not defined EXPORT anywhere.  You can paste this into your C file:
+
 #ifndef STATIC_BUILD
 #if defined(_MSC_VER)
 #   define EXPORT(a,b) __declspec(dllexport) a b
@@ -181,8 +180,6 @@ Windows version of Tcl:
 - Background processes aren't properly detached on NT.
 - File events only work on sockets.
 - Pipes/files/console/serial ports don't support nonblocking I/O.
-- The library cannot be used by two processes at the same time under
-  Win32s.
 
 If you have comments or bug reports for the Windows version of Tcl,
 please direct them to:

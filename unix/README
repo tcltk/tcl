@@ -12,7 +12,7 @@ SGI, as well as PCs running Linux, BSDI, and SCO UNIX.  To compile for
 a PC running Windows, see the README file in the directory ../win.  To
 compile for a Macintosh, see the README file in the directory ../mac.
 
-RCS: @(#) $Id: README,v 1.2 1998/09/14 18:40:15 stanton Exp $
+RCS: @(#) $Id: README,v 1.3 1999/02/09 03:31:55 stanton Exp $
 
 How To Compile And Install Tcl:
 -------------------------------
@@ -79,16 +79,9 @@ How To Compile And Install Tcl:
     to use the installed versions, either specify the version number
     or create a symbolic link (e.g. from "tclsh" to "tclsh8.0").
 
-If you have trouble compiling Tcl, read through the file" porting.notes".
+If you have trouble compiling Tcl, read through the file "porting.notes".
 It contains information that people have provided about changes they had
-to make to compile Tcl in various environments.  Or, check out the
-following Web URL:
-    http://www.sunlabs.com/cgi-bin/tcl/info.8.0
-This is an on-line database of porting information.  We make no guarantees
-that this information is accurate, complete, or up-to-date, but you may
-find it useful.  If you get Tcl running on a new configuration, we would
-be happy to receive new information to add to "porting.notes".  You can
-also make a new entry into the on-line Web database.  We're also interested
+to make to compile Tcl in various environments.  We're also interested
 in hearing how to change the configuration setup so that Tcl compiles out
 of the box on more platforms.
 
