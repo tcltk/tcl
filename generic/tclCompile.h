@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.53.2.22 2005/03/30 17:06:21 msofer Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.53.2.23 2005/03/31 17:00:52 msofer Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -214,14 +214,9 @@ typedef struct AuxData {
 #endif /* Define TclHaldPSizedInt */
 #endif /* Not WIN */
 
-typedef union TclVMOpnd {
-    void *p;
-    TclPSizedInt  i;
-} TclVMOpnd;
-
 typedef struct TclVMWord {
     TclPSizedInt inst;
-    TclVMOpnd    opnd;
+    TclPSizedInt opnd;
 } TclVMWord;
 
 /*
@@ -252,11 +247,7 @@ typedef struct TclVMWord {
     (*(p)).inst = (TclPSizedInt) (instruction)
 
 #define TclVMStoreOpndAtPtr(operand, pc) \
-    (*(pc)).opnd.i = (TclPSizedInt) (operand)
-
-#define TclVMStorePOpndAtPtr(operand, pc) \
-    (*(pc)).opnd.p = (void *) (operand)
-
+    (*(pc)).opnd = (TclPSizedInt) (operand)
 
 #define TclVMGetInstAndOpAtPtr(p, instruction, operand) \
     (instruction) = TclVMGetInstAtPtr(p);\
@@ -264,7 +255,7 @@ typedef struct TclVMWord {
 
 #define TclVMStoreWordAtPtr(instruction, operand, p)\
     (*(p)).inst   = (TclPSizedInt) (instruction);\
-    (*(p)).opnd.i = (TclPSizedInt) (operand)
+    (*(p)).opnd   = (TclPSizedInt) (operand)
 
 #else /* USE_WORDCODES */
 /*
@@ -282,11 +273,6 @@ typedef struct TclVMWord {
 #else
 FIXME
 #endif
-
-typedef union TclVMOpnd {
-    void *p; /* unused, does not fit */
-    TclPSizedInt  i;
-} TclVMOpnd;
 
 #define TclVMWord TclPSizedInt 
 
@@ -329,7 +315,7 @@ typedef union TclVMOpnd {
 #define TclVMGetInstAtPtr(p) \
     (*((TclPSizedInt *)(p)) & P_MASK)
 #define TclVMGetOpndAtPtr(p) \
-    ((TclVMOpnd) (*((TclPSizedInt *)(p)) >> P_SHIFT))
+    (*((TclPSizedInt *)(p)) >> P_SHIFT)
 
 #define TclVMStoreInstAtPtr(instruction, p) \
     *(p) = ((*((TclPSizedInt *)(p)) & ~P_MASK)\
@@ -1134,7 +1120,7 @@ MODULE_SCOPE int	TclWordKnownAtCompileTime _ANSI_ARGS_((
 #else
 #define TclNegateInstAtPtr(p) (*(p)).inst^=1
 #define TclInstIsNoop(op) \
-    (((op).inst == INST_JUMP) && ((op).opnd.i == 1))
+    (((op).inst == INST_JUMP) && ((op).opnd == 1))
 #endif
 
 #define TclStoreNoopAtPtr(p) \
