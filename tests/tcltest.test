@@ -6,7 +6,7 @@
 # Copyright (c) 2000 by Ajuba Solutions
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.test,v 1.26 2002/06/07 19:48:41 dgp Exp $
+# RCS: @(#) $Id: tcltest.test,v 1.27 2002/06/25 01:13:38 dgp Exp $
 
 # Note that there are several places where the value of 
 # tcltest::currentFailure is stored/reset in the -setup/-cleanup
@@ -64,7 +64,7 @@ test tcltest-1.2 {tcltest -help -something} {unixOrPc} {
 test tcltest-1.3 {tcltest -h} {unixOrPc} {
     set result [catch {exec [interpreter] test.tcl -h} msg]
     list $result [regexp Usage $msg]
-} {0 0} 
+} {1 0} 
 
 # -verbose, implicit & explicit testing of [verbose]
 test tcltest-2.0 {tcltest (verbose default - 'b')} {unixOrPc} {
@@ -141,7 +141,7 @@ test tcltest-2.7 {tcltest::verbose}  {
 	verbose $oldVerbosity
 	list $currentVerbosity $newVerbosity 
     }
-    -result {{body a r} {f o o}}
+    -result {body {}}
 }
 
 test tcltest-2.8 {tcltest -verbose 'error'} {
@@ -497,12 +497,10 @@ test tcltest-8.2 {tcltest a.tcl -tmpdir thisdirectoryisafile} {
     -constraints unixOrPc
     -body {
 	catch {exec [interpreter] a.tcl -tmpdir thisdirectoryisafile} msg
-	# The join is necessary because the message can be split on multiple
-	# lines 
-	join $msg
+	set msg
     }
-    -result {not a directory}
-    -match regexp
+    -result {*not a directory*}
+    -match glob
 }
 
 # Test non-writeable directories, non-readable directories with directory flags
@@ -524,14 +522,12 @@ switch $tcl_platform(platform) {
 
 test tcltest-8.3 {tcltest a.tcl -tmpdir notReadableDir} {unixOnly} {
     catch {exec [interpreter] a.tcl -tmpdir $notReadableDir} msg 
-    # The join is necessary because the message can be split on multiple lines
-    list [regexp {not readable} [join $msg]]
+    string match {*not readable*} $msg
 } {1}
 
 test tcltest-8.4 {tcltest a.tcl -tmpdir notWriteableDir} {unixOrPc} {
     catch {exec [interpreter] a.tcl -tmpdir $notWriteableDir} msg
-    # The join is necessary because the message can be split on multiple lines
-    list [regexp {not writeable} [join $msg]]
+    string match {*not writeable*} $msg
 } {1}
 
 test tcltest-8.5 {tcltest a.tcl -tmpdir normaldirectory} {unixOrPc} {
@@ -576,19 +572,17 @@ test tcltest-8.6a {temporaryDirectory - test format 2} -setup {
 test tcltest-8.10 {tcltest a.tcl -testdir thisdirectorydoesnotexist} {unixOrPc} {
     file delete -force thisdirectorydoesnotexist
     catch {exec [interpreter] a.tcl -testdir thisdirectorydoesnotexist}  msg
-    list [regexp "does not exist" [join $msg]]
+    string match "*does not exist*" $msg
 } {1}
 
 test tcltest-8.11 {tcltest a.tcl -testdir thisdirectoryisafile} {unixOrPc} {
     catch {exec [interpreter] a.tcl -testdir thisdirectoryisafile} msg
-    # The join is necessary because the message can be split on multiple lines
-    list [regexp "not a directory" [join $msg]] 
+    string match "*not a directory*" $msg 
 } {1}
 
 test tcltest-8.12 {tcltest a.tcl -testdir notReadableDir} {unixOnly} {
     catch {exec [interpreter] a.tcl -testdir $notReadableDir} msg 
-    # The join is necessary because the message can be split on multiple lines
-    list [regexp {not readable} [join $msg]]
+    string match {*not readable*} $msg
 } {1}
 
 
@@ -733,16 +727,19 @@ test tcltest-10.4 {-preservecore 3} {unixOrPc} {
 	    [regexp "core-" $msg] [file delete core-makecore]
 } {1 1 1 {}}
 
-test tcltest-10.5 {preserveCore} {
-    -body {
-	set old [preserveCore]
-	set result [preserveCore foo]
-	set result2 [preserveCore]
-	preserveCore $old
-	list $result $result2
-    }
-    -result {foo foo}
-}
+# Removing this test.  It makes no sense to test the ability of
+# [preserveCore] to accept an invalid value that will cause errors
+# in other parts of tcltests' operation.
+#test tcltest-10.5 {preserveCore} {
+#    -body {
+#	set old [preserveCore]
+#	set result [preserveCore foo]
+#	set result2 [preserveCore]
+#	preserveCore $old
+#	list $result $result2
+#    }
+#    -result {foo foo}
+#}
 
 # -load, -loadfile, [loadScript], [loadFile]
 set loadfile [makeFile { 
@@ -1005,7 +1002,7 @@ test tcltest-15.7 {skipDirectories} {
 
 # TCLTEST_OPTIONS
 test tcltest-19.1 {TCLTEST_OPTIONS default} {
-    -constraints {unixOrPc}
+    -constraints {unixOrPc singleTestInterp}
     -setup {
 	if {[info exists ::env(TCLTEST_OPTIONS)]} {
 	    set oldoptions $::env(TCLTEST_OPTIONS)
