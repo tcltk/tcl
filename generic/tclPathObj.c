@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPathObj.c,v 1.36 2004/10/06 12:09:14 dkf Exp $
+ * RCS: @(#) $Id: tclPathObj.c,v 1.37 2004/10/07 14:50:23 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -1238,7 +1238,7 @@ TclNewFSPathObj(Tcl_Obj *dirPtr, CONST char *addStrRep, int len)
 Tcl_Obj*
 TclFSMakePathRelative(interp, pathPtr, cwdPtr)
     Tcl_Interp *interp;		/* Used for error reporting if not NULL. */
-    Tcl_Obj *pathPtr;		/* The object we have. */
+    Tcl_Obj *pathPtr;		/* The path we have. */
     Tcl_Obj *cwdPtr;		/* Make it relative to this. */
 {
     int cwdLen, len;
@@ -1789,85 +1789,11 @@ Tcl_FSGetNormalizedPath(interp, pathPtr)
 		/* We have a refCount on the cwd */
 #ifdef __WIN32__
 	    } else if (type == TCL_PATH_VOLUME_RELATIVE) {
-		/* 
-		 * Only Windows has volume-relative paths.  These
-		 * paths are rather rare, but it is nice if Tcl can
-		 * handle them.  It is much better if we can
-		 * handle them here, rather than in the native fs code,
-		 * because we really need to have a real absolute path
-		 * just below.
-		 * 
-		 * We do not let this block compile on non-Windows
-		 * platforms because the test suite's manual forcing
-		 * of tclPlatform can otherwise cause this code path
-		 * to be executed, causing various errors because
-		 * volume-relative paths really do not exist.
-		 */
-
-		useThisCwd = Tcl_FSGetCwd(interp);
-		if (useThisCwd == NULL) {
+		/* Only Windows has volume-relative paths */
+		absolutePath = TclWinVolumeRelativeNormalize(interp, path, 
+							     &useThisCwd);
+		if (absolutePath == NULL) {
 		    return NULL;
-		}
-		
-		if (path[0] == '/') {
-		    /* 
-		     * Path of form /foo/bar which is a path in the
-		     * root directory of the current volume.
-		     */
-
-		    CONST char *drive = TclGetString(useThisCwd);
-
-		    absolutePath = Tcl_NewStringObj(drive, 2);
-		    Tcl_AppendToObj(absolutePath, path, -1);
-		    Tcl_IncrRefCount(absolutePath);
-		    /* We have a refCount on the cwd */
-		} else {
-		    /* 
-		     * Path of form C:foo/bar, but this only makes
-		     * sense if the cwd is also on drive C.
-		     */
-
-		    int cwdLen;
-		    CONST char *drive =
-			    Tcl_GetStringFromObj(useThisCwd, &cwdLen);
-		    char drive_cur = path[0];
-
-		    if (drive_cur >= 'a') {
-			drive_cur -= ('a' - 'A');
-		    }
-		    if (drive[0] == drive_cur) {
-			absolutePath = Tcl_DuplicateObj(useThisCwd);
-			/* 
-			 * We have a refCount on the cwd, which we
-			 * will release later.
-			 */
-
-                        if (drive[cwdLen-1] != '/' && (path[2] != '\0')) {
-                            /* 
-                             * Only add a trailing '/' if needed, which
-                             * is if there isn't one already, and if we
-                             * are going to be adding some more
-                             * characters.
-                             */
-                            Tcl_AppendToObj(absolutePath, "/", 1);
-                        }
-		    } else {
-			TclDecrRefCount(useThisCwd);
-			useThisCwd = NULL;
-
-			/* 
-			 * The path is not in the current drive, but
-			 * is volume-relative.  The way Tcl 8.3 handles
-			 * this is that it treats such a path as
-			 * relative to the root of the drive.  We
-			 * therefore behave the same here.
-			 */
-
-			absolutePath = Tcl_NewStringObj(path, 2);
-                        Tcl_AppendToObj(absolutePath, "/", 1);
-		    }
-		    Tcl_IncrRefCount(absolutePath);
-		    Tcl_AppendToObj(absolutePath, path+2, -1);
 		}
 #endif /* __WIN32__ */
 	    }

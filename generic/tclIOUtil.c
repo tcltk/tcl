@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.110 2004/10/06 23:44:07 dkf Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.111 2004/10/07 14:50:22 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -296,7 +296,6 @@ TCL_DECLARE_MUTEX(obsoleteFsHookMutex)
  */
 static Tcl_FSFilesystemSeparatorProc NativeFilesystemSeparator;
 static Tcl_FSFreeInternalRepProc NativeFreeInternalRep;
-static Tcl_FSCreateInternalRepProc NativeCreateNativeRep;
 static Tcl_FSFileAttrStringsProc NativeFileAttrStrings;
 static Tcl_FSFileAttrsGetProc NativeFileAttrsGet;
 static Tcl_FSFileAttrsSetProc NativeFileAttrsSet;
@@ -344,7 +343,7 @@ Tcl_Filesystem tclNativeFilesystem = {
     &TclNativeDupInternalRep,
     &NativeFreeInternalRep,
     &TclpNativeToNormalized,
-    &NativeCreateNativeRep,
+    &TclNativeCreateNativeRep,
     &TclpObjNormalizePath,
     &TclpFilesystemPathType,
     &NativeFilesystemSeparator,
@@ -464,6 +463,18 @@ FsThrExitProc(cd)
 	    ckfree((char *)fsRecPtr);
 	}
 	fsRecPtr = tmpFsRecPtr;
+    }
+}
+
+int
+TclFSCwdIsNative() 
+{
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&tclFsDataKey);
+
+    if (tsdPtr->cwdClientData != NULL) {
+	return 1;
+    } else {
+	return 0;
     }
 }
 
@@ -4122,179 +4133,6 @@ Tcl_FSGetNativePath(pathPtr)
     Tcl_Obj *pathPtr;
 {
     return (CONST char *)Tcl_FSGetInternalRep(pathPtr, &tclNativeFilesystem);
-}
-
-/*
- *---------------------------------------------------------------------------
- *
- * NativeCreateNativeRep --
- *
- *      Create a native representation for the given path.
- *
- * Results:
- *      None.
- *
- * Side effects:
- *	None.
- *
- *---------------------------------------------------------------------------
- */
-static ClientData 
-NativeCreateNativeRep(pathPtr)
-    Tcl_Obj* pathPtr;
-{
-    char *nativePathPtr;
-    Tcl_DString ds;
-    Tcl_Obj* validPathPtr;
-    int len;
-    char *str;
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&tclFsDataKey);
-
-    if (tsdPtr->cwdClientData != NULL) {
-        /* The cwd is native */
-	validPathPtr = Tcl_FSGetTranslatedPath(NULL, pathPtr);
-    } else {
-	/* Make sure the normalized path is set */
-	validPathPtr = Tcl_FSGetNormalizedPath(NULL, pathPtr);
-	Tcl_IncrRefCount(validPathPtr);
-    }
-
-    str = Tcl_GetStringFromObj(validPathPtr, &len);
-#ifdef __WIN32__
-    Tcl_WinUtfToTChar(str, len, &ds);
-    if (tclWinProcs->useWide) {
-	len = Tcl_DStringLength(&ds) + sizeof(WCHAR);
-    } else {
-	len = Tcl_DStringLength(&ds) + sizeof(char);
-    }
-#else
-    Tcl_UtfToExternalDString(NULL, str, len, &ds);
-    len = Tcl_DStringLength(&ds) + sizeof(char);
-#endif
-    Tcl_DecrRefCount(validPathPtr);
-    nativePathPtr = ckalloc((unsigned) len);
-    memcpy((VOID*)nativePathPtr, (VOID*)Tcl_DStringValue(&ds), (size_t) len);
-	  
-    Tcl_DStringFree(&ds);
-    return (ClientData)nativePathPtr;
-}
-
-/*
- *---------------------------------------------------------------------------
- *
- * TclpNativeToNormalized --
- *
- *      Convert native format to a normalized path object, with refCount
- *      of zero.
- *      
- *      Currently assumes all native paths are actually normalized
- *      already, so if the path given is not normalized this will
- *      actually just convert to a valid string path, but not
- *      necessarily a normalized one.
- *
- * Results:
- *      A valid normalized path.
- *
- * Side effects:
- *	None.
- *
- *---------------------------------------------------------------------------
- */
-Tcl_Obj* 
-TclpNativeToNormalized(clientData)
-    ClientData clientData;
-{
-    Tcl_DString ds;
-    Tcl_Obj *objPtr;
-    int len;
-    
-#ifdef __WIN32__
-    char *copy;
-    char *p;
-    Tcl_WinTCharToUtf((CONST char*)clientData, -1, &ds);
-#else
-    CONST char *copy;
-    Tcl_ExternalToUtfDString(NULL, (CONST char*)clientData, -1, &ds);
-#endif
-    
-    copy = Tcl_DStringValue(&ds);
-    len = Tcl_DStringLength(&ds);
-
-#ifdef __WIN32__
-    /* 
-     * Certain native path representations on Windows have this special
-     * prefix to indicate that they are to be treated specially.  For
-     * example extremely long paths, or symlinks 
-     */
-    if (*copy == '\\') {
-        if (0 == strncmp(copy,"\\??\\",4)) {
-	    copy += 4;
-	    len -= 4;
-	} else if (0 == strncmp(copy,"\\\\?\\",4)) {
-	    copy += 4;
-	    len -= 4;
-	}
-    }
-    /* 
-     * Ensure we are using forward slashes only.
-     */
-    for (p = copy; *p != '\0'; p++) {
-	if (*p == '\\') {
-	    *p = '/';
-	}
-    }
-#endif
-
-    objPtr = Tcl_NewStringObj(copy,len);
-    Tcl_DStringFree(&ds);
-    
-    return objPtr;
-}
-
-
-/*
- *---------------------------------------------------------------------------
- *
- * TclNativeDupInternalRep --
- *
- *      Duplicate the native representation.
- *
- * Results:
- *      The copied native representation, or NULL if it is not possible
- *      to copy the representation.
- *
- * Side effects:
- *	None.
- *
- *---------------------------------------------------------------------------
- */
-ClientData 
-TclNativeDupInternalRep(clientData)
-    ClientData clientData;
-{
-    char *copy;
-    size_t len;
-
-    if (clientData == NULL) {
-	return NULL;
-    }
-
-#ifdef __WIN32__
-    if (tclWinProcs->useWide) {
-	/* unicode representation when running on NT/2K/XP */
-	len = sizeof(WCHAR) + (wcslen((CONST WCHAR*)clientData) * sizeof(WCHAR));
-    } else {
-	/* ansi representation when running on 95/98/ME */
-	len = sizeof(char) + (strlen((CONST char*)clientData) * sizeof(char));
-    }
-#else
-    /* ansi representation when running on Unix */
-    len = sizeof(char) + (strlen((CONST char*)clientData) * sizeof(char));
-#endif
-    
-    copy = (char *) ckalloc(len);
-    memcpy((VOID*)copy, (VOID*)clientData, len);
-    return (ClientData)copy;
 }
 
 /*
