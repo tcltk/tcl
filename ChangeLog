@@ -1,3 +1,8 @@
+2004-09-20  Don Porter  <dgp@users.sourceforge.net>
+
+	* tests/error.test (error-6.2,3):	Added more tests to verify
+	::errorCode setting by/after a [catch].
+
 2004-09-19  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclCmdAH.c: removed outdated comment [Bug 1029518].
