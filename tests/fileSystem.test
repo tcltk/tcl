@@ -420,6 +420,31 @@ test filesystem-7.2 {cross-filesystem copy from vfs maintains mtime} {
 
 removeFile gorp.file
 
+test filesystem-8.1 {relative path objects and caching of pwd} {
+    set dir [pwd]
+    cd [tcltest::temporaryDirectory]
+    # We created this file several tests ago.
+    makeDirectory abc
+    makeDirectory def
+    makeFile "contents" [file join abc foo]
+    cd abc
+    set f "foo"
+    set res {}
+    lappend res [file exists $f]
+    lappend res [file exists $f]
+    cd ..
+    cd def
+    # If we haven't cleared the object's cwd cache, Tcl 
+    # will think it still exists.
+    lappend res [file exists $f]
+    lappend res [file exists $f]
+    removeFile [file join abc foo]
+    removeDirectory abc
+    removeDirectory def
+    cd $dir
+    set res
+} {1 1 0 0}
+
 cleanupTests
 }
 namespace delete ::tcl::test::fileSystem
