@@ -1,5 +1,14 @@
 2005-03-15 Miguel Sofer <msofer@users.sf.net>
 
+	* generic/tclCompile.h:
+	Enabled new packed mode: (inst+opnd) are packed in 32 bits. To
+	enable, set the env var 
+	   CFLAGS_DEBUG="-DVM_PACKED" (resp "-g -DVM_PACKED")
+	for the call to 'make'. If the flag is not set uses the wordcodes,
+	where (inst+opnd) take the  size of 2 pointers.
+
+2005-03-15 Miguel Sofer <msofer@users.sf.net>
+
 	* generic/tclCompile.c:
 	* generic/tclCompile.h:
 	* generic/tclExecute.c:
