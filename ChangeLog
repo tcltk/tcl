@@ -1,5 +1,13 @@
 1999-03-24    <redman@scriptics.com>
 
+	* generic/tclAlloc.c:
+	* generic/tclEncoding.c:
+	* generic/tclProc.c:
+	* unix/tclUnixTime.c:
+	* win/tclWinSerial.c: Fixed compilation warnings/errors for VC++
+	5.0 and 6.0 and HP-UX native compiler without -Aa or -Ae. 
+	[Bug: 1323 1518 1324 1583 1585 1586]
+
 	* win/tclWinSock.c: Make sockets thread-safe on Windows. The
 	current implementation uses windows to handle events on the
 	socket, one for each thread (thread local storage). Previously,

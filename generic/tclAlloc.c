@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclAlloc.c,v 1.1.2.6 1999/03/10 06:49:13 stanton Exp $
+ * RCS: @(#) $Id: tclAlloc.c,v 1.1.2.7 1999/03/25 00:34:15 redman Exp $
  */
 
 #include "tclInt.h"
@@ -240,8 +240,8 @@ TclFinalizeAllocSubsystem()
  */
 
 char *
-TclpAlloc(
-    unsigned int nbytes)	/* Number of bytes to allocate. */
+TclpAlloc(nbytes)
+    unsigned int nbytes;	/* Number of bytes to allocate. */
 {
     register union overhead *op;
     register long bucket;
@@ -366,8 +366,8 @@ TclpAlloc(
  */
 
 static void
-MoreCore(
-    int bucket)		/* What bucket to allocat to. */
+MoreCore(bucket)
+    int bucket;		/* What bucket to allocat to. */
 {
     register union overhead *op;
     register long sz;		/* size of desired block */
@@ -426,8 +426,8 @@ MoreCore(
  */
 
 void
-TclpFree(
-    char *cp)		/* Pointer to memory to free. */
+TclpFree(cp)
+    char *cp;		/* Pointer to memory to free. */
 {   
     register long size;
     register union overhead *op;
@@ -487,9 +487,9 @@ TclpFree(
  */
 
 char *
-TclpRealloc(
-    char *cp,			/* Pointer to alloced block. */
-    unsigned int nbytes)	/* New size of memory. */
+TclpRealloc(cp, nbytes)
+    char *cp;			/* Pointer to alloced block. */
+    unsigned int nbytes;	/* New size of memory. */
 {   
     int i;
     union overhead *op;
@@ -613,8 +613,8 @@ TclpRealloc(
 
 #ifdef MSTATS
 void
-mstats(
-    char *s)	/* Where to write info. */
+mstats(s)
+    char *s;	/* Where to write info. */
 {
     register int i, j;
     register union overhead *p;
@@ -660,8 +660,8 @@ mstats(
  */
 
 char *
-TclpAlloc(
-    unsigned int nbytes)	/* Number of bytes to allocate. */
+TclpAlloc(nbytes)
+    unsigned int nbytes;	/* Number of bytes to allocate. */
 {
     return (char*) malloc(nbytes);
 }
@@ -683,8 +683,8 @@ TclpAlloc(
  */
 
 void
-TclpFree(
-    char *cp)		/* Pointer to memory to free. */
+TclpFree(cp)
+    char *cp;		/* Pointer to memory to free. */
 {   
     free(cp);
     return;
@@ -707,9 +707,9 @@ TclpFree(
  */
 
 char *
-TclpRealloc(
-    char *cp,			/* Pointer to alloced block. */
-    unsigned int nbytes)	/* New size of memory. */
+TclpRealloc(cp, nbytes)
+    char *cp;			/* Pointer to alloced block. */
+    unsigned int nbytes;	/* New size of memory. */
 {   
     return (char*) realloc(cp, nbytes);
 }

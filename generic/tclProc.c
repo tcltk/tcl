@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.1.2.7 1999/02/10 23:31:18 stanton Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.1.2.8 1999/03/25 00:34:16 redman Exp $
  */
 
 #include "tclInt.h"
@@ -1372,7 +1372,7 @@ TclUpdateReturnInfo(iPtr)
 TclCmdProcType
 TclGetInterpProc()
 {
-    return TclProcInterpProc;
+    return (TclCmdProcType) TclProcInterpProc;
 }
 
 /*
@@ -1397,7 +1397,7 @@ TclGetInterpProc()
 TclObjCmdProcType
 TclGetObjInterpProc()
 {
-    return TclObjInterpProc;
+    return (TclObjCmdProcType) TclObjInterpProc;
 }
 
 /*

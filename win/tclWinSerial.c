@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinSerial.c,v 1.1.2.3 1999/03/24 02:37:14 redman Exp $
+ * RCS: @(#) $Id: tclWinSerial.c,v 1.1.2.4 1999/03/25 00:34:17 redman Exp $
  */
 
 #include "tclWinInt.h"
@@ -448,7 +448,7 @@ SerialCloseProc(
     Tcl_Interp *interp)		/* For error reporting. */
 {
     SerialInfo *serialPtr = (SerialInfo *) instanceData;
-    int errorCode, result;
+    int errorCode, result = 0;
     SerialInfo *infoPtr, **nextPtrPtr;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 

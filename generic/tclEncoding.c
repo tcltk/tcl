@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEncoding.c,v 1.1.2.8 1999/03/12 23:47:49 surles Exp $
+ * RCS: @(#) $Id: tclEncoding.c,v 1.1.2.9 1999/03/25 00:34:15 redman Exp $
  */
 
 #include "tclInt.h"
@@ -339,7 +339,7 @@ TclFinalizeEncodingSubsystem()
  */
 
 char *
-Tcl_GetDefaultEncodingDir(void)
+Tcl_GetDefaultEncodingDir()
 {
     return tclDefaultEncodingDir;
 }
