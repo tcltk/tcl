@@ -1,5 +1,17 @@
 1999-07-21    <redman@scriptics.com>
 	
+	* doc/Utf.3:
+	* generic/tcl.decls:
+	* generic/tclInt.decls:
+	* generic/tclDecls.h:
+	* generic/tclIntDecls.h:
+	* generic/tclUtf.c:
+	* compat/strftime.c:
+	* unix/tclUnixTime.c: Changed function declarations in
+	non-platform-specific APIs to use "unsigned long" instead of
+	"size_t", which may not be defined on certain compilers (rather
+	than include sys/types.h, which may not exist).
+	
 	* unix/Makefile.in: Added the Windows configure script to the
 	distribution file list, already shipping configure.in and the .m4
 	files, but needed the configure script itself.

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.22 1999/07/16 21:56:38 redman Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.23 1999/07/22 01:08:04 redman Exp $
  */
 
 #ifndef _TCLDECLS
@@ -1105,7 +1105,7 @@ EXTERN int		Tcl_UniCharIsWordChar _ANSI_ARGS_((int ch));
 EXTERN int		Tcl_UniCharLen _ANSI_ARGS_((Tcl_UniChar * str));
 /* 353 */
 EXTERN int		Tcl_UniCharNcmp _ANSI_ARGS_((CONST Tcl_UniChar * cs, 
-				CONST Tcl_UniChar * ct, size_t n));
+				CONST Tcl_UniChar * ct, unsigned long n));
 /* 354 */
 EXTERN char *		Tcl_UniCharToUtfDString _ANSI_ARGS_((
 				CONST Tcl_UniChar * string, int numChars, 
@@ -1160,10 +1160,10 @@ EXTERN int		Tcl_Stat _ANSI_ARGS_((CONST char * path,
 				struct stat * bufPtr));
 /* 369 */
 EXTERN int		Tcl_UtfNcmp _ANSI_ARGS_((CONST char * s1, 
-				CONST char * s2, size_t n));
+				CONST char * s2, unsigned long n));
 /* 370 */
 EXTERN int		Tcl_UtfNcasecmp _ANSI_ARGS_((CONST char * s1, 
-				CONST char * s2, size_t n));
+				CONST char * s2, unsigned long n));
 /* 371 */
 EXTERN int		Tcl_StringCaseMatch _ANSI_ARGS_((CONST char * str, 
 				CONST char * pattern, int nocase));
@@ -1628,7 +1628,7 @@ typedef struct TclStubs {
     int (*tcl_UniCharIsUpper) _ANSI_ARGS_((int ch)); /* 350 */
     int (*tcl_UniCharIsWordChar) _ANSI_ARGS_((int ch)); /* 351 */
     int (*tcl_UniCharLen) _ANSI_ARGS_((Tcl_UniChar * str)); /* 352 */
-    int (*tcl_UniCharNcmp) _ANSI_ARGS_((CONST Tcl_UniChar * cs, CONST Tcl_UniChar * ct, size_t n)); /* 353 */
+    int (*tcl_UniCharNcmp) _ANSI_ARGS_((CONST Tcl_UniChar * cs, CONST Tcl_UniChar * ct, unsigned long n)); /* 353 */
     char * (*tcl_UniCharToUtfDString) _ANSI_ARGS_((CONST Tcl_UniChar * string, int numChars, Tcl_DString * dsPtr)); /* 354 */
     Tcl_UniChar * (*tcl_UtfToUniCharDString) _ANSI_ARGS_((CONST char * string, int length, Tcl_DString * dsPtr)); /* 355 */
     Tcl_RegExp (*tcl_GetRegExpFromObj) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * patObj, int flags)); /* 356 */
@@ -1644,8 +1644,8 @@ typedef struct TclStubs {
     int (*tcl_Chdir) _ANSI_ARGS_((CONST char * dirName)); /* 366 */
     int (*tcl_Access) _ANSI_ARGS_((CONST char * path, int mode)); /* 367 */
     int (*tcl_Stat) _ANSI_ARGS_((CONST char * path, struct stat * bufPtr)); /* 368 */
-    int (*tcl_UtfNcmp) _ANSI_ARGS_((CONST char * s1, CONST char * s2, size_t n)); /* 369 */
-    int (*tcl_UtfNcasecmp) _ANSI_ARGS_((CONST char * s1, CONST char * s2, size_t n)); /* 370 */
+    int (*tcl_UtfNcmp) _ANSI_ARGS_((CONST char * s1, CONST char * s2, unsigned long n)); /* 369 */
+    int (*tcl_UtfNcasecmp) _ANSI_ARGS_((CONST char * s1, CONST char * s2, unsigned long n)); /* 370 */
     int (*tcl_StringCaseMatch) _ANSI_ARGS_((CONST char * str, CONST char * pattern, int nocase)); /* 371 */
     int (*tcl_UniCharIsControl) _ANSI_ARGS_((int ch)); /* 372 */
     int (*tcl_UniCharIsGraph) _ANSI_ARGS_((int ch)); /* 373 */
