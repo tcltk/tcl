@@ -31,7 +31,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) chr.h 1.4 98/01/21 14:32:38
+ * RCS: @(#) $Id: chr.h,v 1.1.2.2 1998/10/03 01:56:40 stanton Exp $
  */
 
 typedef Tcl_UniChar chr;	/* internal character type */

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclRegexp.c 1.12 98/01/28 20:45:04
+ * RCS: @(#) $Id: tclRegexp.c,v 1.1.2.2 1998/10/03 01:56:41 stanton Exp $
  */
 
 #include "tclInt.h"

@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) nfa.c 1.10 98/02/17 18:42:41
+ * RCS: @(#) $Id: nfa.c,v 1.1.2.2 1998/10/03 01:56:41 stanton Exp $
  */
 
 #define	NISERR()	VISERR(nfa->v)
