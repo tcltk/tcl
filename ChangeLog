@@ -1,3 +1,10 @@
+2002-07-08  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+        * tests/cmdAH.test:
+	* tests/fCmd.test:
+	* tests/fileName.test: tests which rely on 'file link' need a
+	constraint so they don't run on older Windows OS. [Bug 578158]
+	
 2002-07-06  Don Porter  <dgp@users.sourceforge.net>
 
 	* tests/pkgMkIndex.test:  Constrained tests of [load] package indexing
