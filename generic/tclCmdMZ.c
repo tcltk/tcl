@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.10 1999/05/25 01:00:25 stanton Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.11 1999/06/02 01:53:31 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -107,9 +107,7 @@ Tcl_PwdObjCmd(dummy, interp, objc, objv)
  * Tcl_RegexpObjCmd --
  *
  *	This procedure is invoked to process the "regexp" Tcl command.
- *	See the user documentation for details on what it does.  The
- *	REGEXP_TEST stuff is to minimize code differences between this
- *	and the "testregexp" command.
+ *	See the user documentation for details on what it does.
  *
  * Results:
  *	A standard Tcl result.

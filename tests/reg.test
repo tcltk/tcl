@@ -4,10 +4,9 @@
 # built-in commands.  Sourcing this file into Tcl runs the tests and
 # generates output for errors.  No output means no errors were found.
 #
-# Copyright (c) 1998-1999 by Scriptics Corporation.
-# All rights reserved.
+# Copyright (c) 1998, 1999 Henry Spencer.  All rights reserved.
 #
-# RCS: @(#) $Id: reg.test,v 1.2 1999/04/16 00:47:33 stanton Exp $
+# RCS: @(#) $Id: reg.test,v 1.3 1999/06/02 01:53:32 stanton Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     source [file join [pwd] [file dirname [info script]] defs.tcl]
@@ -55,6 +54,7 @@ set ::tcltest::testConfig(testregexp) \
 #	%	force small state-set cache in matcher (to test cache replace)
 #	^	beginning of string is not beginning of line
 #	$	end of string is not end of line
+#	?	report information on partial and limited matches
 #
 #	&	test as both ARE and BRE
 #	b	BRE
@@ -117,7 +117,7 @@ proc doing {major desc} {
 
 	if {$testbypassed != 0} {
 		puts stdout "!!! bypassed $testbypassed tests in\
-					 $major, `$description'"
+					 $prefix, `$description'"
 	}
 
 	set prefix reg-$major
@@ -234,6 +234,8 @@ proc f {testid flags re target args} {
 # match expected, internal routine that does the work
 # parameters like the "real" routines except they don't have "opts",
 #  which is a possibly-empty list of switches for the regexp match attempt
+# The ! flag is used to indicate expected match failure (for REG_EXPECT,
+#  which wants argument testing even in the event of failure).
 proc matchexpected {opts testid flags re target args} {
 	global prefix description ask
 
@@ -270,9 +272,16 @@ proc matchexpected {opts testid flags re target args} {
 	if {[string first "o" $flags] >= 0} {	;# REG_NOSUB
 		set nsub 0		;# unsigned value cannot be -1
 	}
+	if {[string first "?" $flags] >= 0} {	;# REG_EXPECT
+		incr nsub -1		;# the extra does not count
+	}
 	set ecmd [concat $ecmd $names]
 	set erun "list \[$ecmd\] $refs"
-	set result [concat [list 1] $args]
+	set retcode [list 1]
+	if {[string first "!" $flags] >= 0} {
+		set retcode [list 0]
+	}
+	set result [concat $retcode $args]
 
 	set info [list $nsub $infoflags]
 	lappend testid "compile"
@@ -293,6 +302,15 @@ proc i {args} {
 	eval matchexpected [linsert $args 0 [list "-indices"]]
 }
 
+# partial match expected
+# p testno flags re target mat "" ...
+# Quirk:  number of ""s must be one more than number of subREs.
+proc p {args} {
+	set f [lindex $args 1]			;# add ! flag
+	set args [lreplace $args 1 1 "!$f"]
+	eval matchexpected [linsert $args 0 [list "-indices"]]
+}
+
 # test temporarily unimplemented
 proc xx {args} {
 	global testbypassed
@@ -309,7 +327,7 @@ proc xx {args} {
 # support functions and preliminary misc.
 # This is sensitive to changes in message wording, but we really have to
 # test the code->message expansion at least once.
-test regexp-0.1 "regexp error reporting" {
+test reg-0.1 "regexp error reporting" {
 	list [catch {regexp (*) ign} msg] $msg
 } {1 {couldn't compile regular expression pattern: quantifier operand invalid}}
 
@@ -431,8 +449,8 @@ e  7	-	"a{1"		EBRACE
 e  8	-	"a{1n}"		BADBR
 m  9	BS	"a{b"		"a\{b"	"a\{b"
 m 10	BS	"a{"		"a\{"	"a\{"
-m 11	bQ	{a\{0,1\}b}	cb	b
-e 12	b	{a\{0,1}	EBRACE
+m 11	bQ	"a\\{0,1\\}b"	cb	b
+e 12	b	"a\\{0,1"	EBRACE
 e 13	-	"a{0,1\\"	BADBR
 m 14	Q	"a{0}b"		ab	b
 m 15	Q	"a{0,0}b"	ab	b
@@ -836,8 +854,11 @@ m  8	PQ	"ab{2,4}?c"	abbbbc	abbbbc
 
 
 doing 25 "mixed quantifiers"
-xx to be done, actually
-xx should include |
+# should include |
+m  1	PN	{^(.*?)(a*)$}	xyza	xyza	xyz	a
+m  2	PN	{^(.*?)(a*)$}	xyzaa	xyzaa	xyz	aa
+m  3	PN	{^(.*?)(a*)$}	xyz	xyz	xyz	""
+xx lots more to be done
 
 
 
@@ -886,7 +907,25 @@ i 12	%LP	{\w+(abcdefghijklmnopqrst)?}	xyzabcdefghijklmnopqrs \
 
 
 
-doing 29 "misc. oddities and old bugs"
+doing 29 "incomplete matches"
+p  1	?	def		abc	{3 2} ""
+p  2	?	bcd		abc	{1 2} ""
+p  3	?	abc		abab	{0 3} ""
+p  4	?	abc		abdab	{3 4} ""
+i  5	?	abc		abc	{0 2} {0 2}
+i  6	?	abc		xyabc	{2 4} {2 4}
+p  7	?	abc+		xyab	{2 3} ""
+i  8	?	abc+		xyabc	{2 4} {2 4}
+p  9	?P	abc+?		xyab	{2 3} ""
+# the retain numbers in these two may look wrong, but they aren't
+i  10	?P	abc+?		xyabc	{2 4} {5 4}
+i  11	?P	abc+?		xyabcc	{2 4} {6 5}
+i  12	?P	abc+?		xyabcd	{2 4} {6 5}
+i  13	?	abcd|bc		xyabc	{3 4} {2 4}
+
+
+
+doing 30 "misc. oddities and old bugs"
 e  1	&	***		BADRPT
 m  2	N	a?b*		abb	abb
 m  3	N	a?b*		bb	bb

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclRegexp.c,v 1.5 1999/05/22 01:20:13 stanton Exp $
+ * RCS: @(#) $Id: tclRegexp.c,v 1.6 1999/06/02 01:53:31 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -287,13 +287,14 @@ TclRegExpExecUniChar(interp, re, wString, numChars, nmatches, flags)
 {
     int status;
     TclRegexp *regexpPtr = (TclRegexp *) re;
-    size_t nm = regexpPtr->re.re_nsub + 1;
+    size_t last = regexpPtr->re.re_nsub + 1;
+    size_t nm = last;
 
     if (nmatches >= 0 && (size_t) nmatches < nm)
 	nm = (size_t) nmatches;
 
     status = TclReExec(&regexpPtr->re, wString, (size_t) numChars,
-	    (rm_detail_t *)NULL, nm, regexpPtr->matches, flags);
+	    &regexpPtr->details, nm, regexpPtr->matches, flags);
 
     /*
      * Check for errors.
@@ -318,12 +319,13 @@ TclRegExpExecUniChar(interp, re, wString, numChars, nmatches, flags)
  * TclRegExpRangeUniChar --
  *
  *	Returns pointers describing the range of a regular expression match,
- *	or one of the subranges within the match.
+ *	or one of the subranges within the match, or the hypothetical range
+ *	represented by the rm_extend field of the rm_detail_t.
  *
  * Results:
  *	The variables at *startPtr and *endPtr are modified to hold the
- *	addresses of the endpoints of the range given by index.  If the
- *	specified range doesn't exist then NULLs are returned.
+ *	offsets of the endpoints of the range given by index.  If the
+ *	specified range doesn't exist then -1s are supplied.
  *
  * Side effects:
  *	None.
@@ -337,7 +339,8 @@ TclRegExpRangeUniChar(re, index, startPtr, endPtr)
 				 * been passed to Tcl_RegExpExec. */
     int index;			/* 0 means give the range of the entire
 				 * match, > 0 means give the range of
-				 * a matching subrange. */
+				 * a matching subrange, -1 means the
+				 * range of the rm_extend field. */
     int *startPtr;		/* Store address of first character in
 				 * (sub-) range here. */
     int *endPtr;		/* Store address of character just after last
@@ -345,7 +348,10 @@ TclRegExpRangeUniChar(re, index, startPtr, endPtr)
 {
     TclRegexp *regexpPtr = (TclRegexp *) re;
 
-    if ((size_t) index > regexpPtr->re.re_nsub) {
+    if ((regexpPtr->flags&REG_EXPECT) && index == -1) {
+	*startPtr = regexpPtr->details.rm_extend.rm_so;
+	*endPtr = regexpPtr->details.rm_extend.rm_eo;
+    } else if ((size_t) index > regexpPtr->re.re_nsub) {
 	*startPtr = -1;
 	*endPtr = -1;
     } else {

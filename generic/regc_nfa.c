@@ -2,6 +2,34 @@
  * NFA utilities.
  * This file is #included by regcomp.c.
  *
+ * Copyright (c) 1998, 1999 Henry Spencer.  All rights reserved.
+ * 
+ * Development of this software was funded, in part, by Cray Research Inc.,
+ * UUNET Communications Services Inc., Sun Microsystems Inc., and Scriptics
+ * Corporation, none of whom are responsible for the results.  The author
+ * thanks all of them. 
+ * 
+ * Redistribution and use in source and binary forms -- with or without
+ * modification -- are permitted for any purpose, provided that
+ * redistributions in source form retain this entire copyright notice and
+ * indicate the origin and nature of any modifications.
+ * 
+ * I'd appreciate being given credit for this package in the documentation
+ * of software which uses it, but that is not a requirement.
+ * 
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES,
+ * INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY
+ * AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL
+ * HENRY SPENCER BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+ * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+ * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ *
+ *
  * One or two things that technically ought to be in here
  * are actually in color.c, thanks to some incestuous relationships in
  * the color chains.
@@ -86,16 +114,14 @@ struct nfa *nfa;
 }
 
 /*
- - newfstate - allocate an NFA state, with specified flag value
- ^ static struct state *newfstate(struct nfa *, int flag);
+ - newstate - allocate an NFA state, with zero flag value
+ ^ static struct state *newstate(struct nfa *);
  */
 static struct state *		/* NULL on error */
-newfstate(nfa, flag)
+newstate(nfa)
 struct nfa *nfa;
-int flag;
 {
 	struct state *s;
-	int i;
 
 	if (nfa->free != NULL) {
 		s = nfa->free;
@@ -107,17 +133,13 @@ int flag;
 			return NULL;
 		}
 		s->oas.next = NULL;
-		s->free = &s->oas.a[0];
-		for (i = 0; i < ABSIZE; i++) {
-			s->oas.a[i].type = 0;
-			s->oas.a[i].freechain = &s->oas.a[i+1];
-		}
-		s->oas.a[ABSIZE-1].freechain = NULL;
+		s->free = NULL;
+		s->noas = 0;
 	}
 
 	assert(nfa->nstates >= 0);
 	s->no = nfa->nstates++;
-	s->flag = (char)flag;
+	s->flag = 0;
 	if (nfa->states == NULL)
 		nfa->states = s;
 	s->nins = 0;
@@ -136,14 +158,20 @@ int flag;
 }
 
 /*
- - newstate - allocate an ordinary NFA state
- ^ static struct state *newstate(struct nfa *);
+ - newfstate - allocate an NFA state with a specified flag value
+ ^ static struct state *newfstate(struct nfa *, int flag);
  */
 static struct state *		/* NULL on error */
-newstate(nfa)
+newfstate(nfa, flag)
 struct nfa *nfa;
+int flag;
 {
-	return newfstate(nfa, 0);
+	struct state *s;
+
+	s = newstate(nfa);
+	if (s != NULL)
+		s->flag = (char)flag;
+	return s;
 }
 
 /*
@@ -237,7 +265,7 @@ struct state *to;
 
 	/* check for duplicates */
 	for (a = from->outs; a != NULL; a = a->outchain)
-		if (a->type == t && a->co == co && a->to == to)
+		if (a->to == to && a->co == co && a->type == t)
 			return;
 
 	a = allocarc(nfa, from);
@@ -282,6 +310,13 @@ struct state *s;
 	struct arc *a;
 	struct arcbatch *new;
 	int i;
+
+	/* shortcut */
+	if (s->free == NULL && s->noas < ABSIZE) {
+		a = &s->oas.a[s->noas];
+		s->noas++;
+		return a;
+	}
 
 	/* if none at hand, get more */
 	if (s->free == NULL) {
@@ -1329,6 +1364,9 @@ FILE *f;
 }
 
 #ifdef REG_DEBUG		/* subordinates of dumpnfa */
+/*
+ ^ #ifdef REG_DEBUG
+ */
 
 /*
  - dumpstate - dump an NFA state in human-readable form
@@ -1458,6 +1496,9 @@ FILE *f;
 		fprintf(f, "?!?");	/* missing from in-chain */
 }
 
+/*
+ ^ #endif
+ */
 #endif				/* ifdef REG_DEBUG */
 
 /*
@@ -1491,6 +1532,9 @@ FILE *f;
 }
 
 #ifdef REG_DEBUG		/* subordinates of dumpcnfa */
+/*
+ ^ #ifdef REG_DEBUG
+ */
 
 /*
  - dumpcstate - dump a compacted-NFA state in human-readable form
@@ -1525,4 +1569,7 @@ FILE *f;
 	fflush(f);
 }
 
+/*
+ ^ #endif
+ */
 #endif				/* ifdef REG_DEBUG */

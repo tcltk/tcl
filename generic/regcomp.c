@@ -1,6 +1,33 @@
 /*
  * re_*comp and friends - compile REs
  * This file #includes several others (see the bottom).
+ *
+ * Copyright (c) 1998, 1999 Henry Spencer.  All rights reserved.
+ * 
+ * Development of this software was funded, in part, by Cray Research Inc.,
+ * UUNET Communications Services Inc., Sun Microsystems Inc., and Scriptics
+ * Corporation, none of whom are responsible for the results.  The author
+ * thanks all of them. 
+ * 
+ * Redistribution and use in source and binary forms -- with or without
+ * modification -- are permitted for any purpose, provided that
+ * redistributions in source form retain this entire copyright notice and
+ * indicate the origin and nature of any modifications.
+ * 
+ * I'd appreciate being given credit for this package in the documentation
+ * of software which uses it, but that is not a requirement.
+ * 
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES,
+ * INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY
+ * AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL
+ * HENRY SPENCER BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+ * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+ * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
  */
 
 #include "regguts.h"
@@ -57,6 +84,9 @@ static chr lexdigits _ANSI_ARGS_((struct vars *, int, int, int));
 static int brenext _ANSI_ARGS_((struct vars *, pchr));
 static VOID skip _ANSI_ARGS_((struct vars *));
 static chr newline _ANSI_ARGS_((NOPARMS));
+#ifdef REG_DEBUG
+static chr *ch _ANSI_ARGS_((NOPARMS));
+#endif
 static chr chrnamed _ANSI_ARGS_((struct vars *, chr *, chr *, pchr));
 /* === regc_color.c === */
 static VOID initcm _ANSI_ARGS_((struct vars *, struct colormap *));
@@ -74,7 +104,7 @@ static VOID subblock _ANSI_ARGS_((struct vars *, pchr, struct state *, struct st
 static VOID okcolors _ANSI_ARGS_((struct nfa *, struct colormap *));
 static VOID colorchain _ANSI_ARGS_((struct colormap *, struct arc *));
 static VOID uncolorchain _ANSI_ARGS_((struct colormap *, struct arc *));
-#if 0
+#ifdef NOTDEF			/* Avoid compiler warnings. */
 static int singleton _ANSI_ARGS_((struct colormap *, pchr c));
 #endif
 static VOID rainbow _ANSI_ARGS_((struct nfa *, struct colormap *, int, pcolor, struct state *, struct state *));
@@ -87,8 +117,8 @@ static VOID dumpchr _ANSI_ARGS_((pchr, FILE *));
 /* === regc_nfa.c === */
 static struct nfa *newnfa _ANSI_ARGS_((struct vars *, struct colormap *, struct nfa *));
 static VOID freenfa _ANSI_ARGS_((struct nfa *));
-static struct state *newfstate _ANSI_ARGS_((struct nfa *, int flag));
 static struct state *newstate _ANSI_ARGS_((struct nfa *));
+static struct state *newfstate _ANSI_ARGS_((struct nfa *, int flag));
 static VOID dropstate _ANSI_ARGS_((struct nfa *, struct state *));
 static VOID freestate _ANSI_ARGS_((struct nfa *, struct state *));
 static VOID destroystate _ANSI_ARGS_((struct nfa *, struct state *));
@@ -142,7 +172,7 @@ static struct cvec *newcvec _ANSI_ARGS_((int, int, int));
 static struct cvec *clearcvec _ANSI_ARGS_((struct cvec *));
 static VOID addchr _ANSI_ARGS_((struct cvec *, pchr));
 static VOID addrange _ANSI_ARGS_((struct cvec *, pchr, pchr));
-#ifdef USE_MCCE
+#ifdef NOTDEF			/* Avoid compiler warnings. */
 static VOID addmcce _ANSI_ARGS_((struct cvec *, chr *, chr *));
 #endif
 static int haschr _ANSI_ARGS_((struct cvec *, pchr));
@@ -430,7 +460,7 @@ int wanted;			/* want enough room for this one */
 			memcpy(VS(p), VS(v->subs),
 					v->nsubs * sizeof(struct subre *));
 	} else
-		p = (struct subre**)REALLOC(v->subs, n*sizeof(struct subre *));
+		p = (struct subre **)REALLOC(v->subs, n*sizeof(struct subre *));
 	if (p == NULL) {
 		ERR(REG_ESPACE);
 		return;
@@ -490,26 +520,26 @@ struct nfa *nfa;
 	struct arc *b;
 	struct state *pre = nfa->pre;
 	struct state *s;
-  	struct state *s2;
-  	struct state *slist;
-  
- 	/* no loops are needed if it's anchored */
- 	for (a = pre->outs; a != NULL; a = a->outchain) {
+	struct state *s2;
+	struct state *slist;
+
+	/* no loops are needed if it's anchored */
+	for (a = pre->outs; a != NULL; a = a->outchain) {
 		assert(a->type == PLAIN);
 		if (a->co != nfa->bos[0] && a->co != nfa->bos[1])
 			break;
- 	}
- 	if (a != NULL) {
+	}
+	if (a != NULL) {
 		/* add implicit .* in front */
 		rainbow(nfa, v->cm, PLAIN, COLORLESS, pre, pre);
 
 		/* and ^* and \Z* too -- not always necessary, but harmless */
 		newarc(nfa, PLAIN, nfa->bos[0], pre, pre);
 		newarc(nfa, PLAIN, nfa->bos[1], pre, pre);
- 	}
- 
- 	/*
-  	 * Now here's the subtle part.  Because many REs have no lookback
+	}
+
+	/*
+	 * Now here's the subtle part.  Because many REs have no lookback
 	 * constraints, often knowing when you were in the pre state tells
 	 * you little; it's the next state(s) that are informative.  But
 	 * some of them may have other inarcs, i.e. it may be possible to

@@ -2,6 +2,34 @@
  * colorings of characters
  * This file is #included by regcomp.c.
  *
+ * Copyright (c) 1998, 1999 Henry Spencer.  All rights reserved.
+ * 
+ * Development of this software was funded, in part, by Cray Research Inc.,
+ * UUNET Communications Services Inc., Sun Microsystems Inc., and Scriptics
+ * Corporation, none of whom are responsible for the results.  The author
+ * thanks all of them. 
+ * 
+ * Redistribution and use in source and binary forms -- with or without
+ * modification -- are permitted for any purpose, provided that
+ * redistributions in source form retain this entire copyright notice and
+ * indicate the origin and nature of any modifications.
+ * 
+ * I'd appreciate being given credit for this package in the documentation
+ * of software which uses it, but that is not a requirement.
+ * 
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES,
+ * INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY
+ * AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL
+ * HENRY SPENCER BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+ * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+ * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ *
+ *
  * Note that there are some incestuous relationships between this code and
  * NFA arc maintenance, which perhaps ought to be cleaned up sometime.
  */
@@ -271,7 +299,7 @@ pcolor co;
 	if ((size_t)co == cm->max) {
 		while (cm->max > WHITE && UNUSEDCOLOR(&cm->cd[cm->max]))
 			cm->max--;
-		assert(cm->max >= 0);
+		assert(cm->free >= 0);
 		while ((size_t)cm->free > cm->max)
 			cm->free = cm->cd[cm->free].sub;
 		if (cm->free > 0) {
@@ -327,9 +355,10 @@ pchr c;
 
 	co = GETCOLOR(cm, c);
 	sco = newsub(cm, co);
-	if (sco == COLORLESS) {
+	if (CISERR())
 		return COLORLESS;
-	}
+	assert(sco != COLORLESS);
+
 	if (co == sco)		/* already in an open subcolor */
 		return co;	/* rest is redundant */
 	cm->cd[co].nchrs--;
@@ -354,8 +383,10 @@ pcolor co;
 		if (cm->cd[co].nchrs == 1)	/* optimization */
 			return co;
 		sco = newcolor(cm);	/* must create subcolor */
-		if (sco == COLORLESS)
+		if (sco == COLORLESS) {
+			assert(CISERR());
 			return COLORLESS;
+		}
 		cm->cd[co].sub = sco;
 		cm->cd[sco].sub = sco;	/* open subcolor points to self */
 	}
@@ -583,11 +614,12 @@ struct arc *a;
 	a->colorchain = NULL;	/* paranoia */
 }
 
+#ifdef NOTDEF			/* This isn't used currently. */
+
 /*
  - singleton - is this character in its own color?
  ^ static int singleton(struct colormap *, pchr c);
  */
-#if 0
 static int			/* predicate */
 singleton(cm, c)
 struct colormap *cm;
@@ -600,7 +632,9 @@ pchr c;
 		return 1;
 	return 0;
 }
-#endif
+
+#endif /* NOTDEF */
+
 /*
  - rainbow - add arcs of all full colors (but one) between specified states
  ^ static VOID rainbow(struct nfa *, struct colormap *, int, pcolor,
@@ -654,6 +688,9 @@ struct state *to;
 
 
 #ifdef REG_DEBUG
+/*
+ ^ #ifdef REG_DEBUG
+ */
 
 /*
  - dumpcolors - debugging output
@@ -739,4 +776,7 @@ FILE *f;
 		fprintf(f, "\\u%04lx", (long)c);
 }
 
+/*
+ ^ #endif
+ */
 #endif				/* ifdef REG_DEBUG */

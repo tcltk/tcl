@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.12 1999/04/21 21:50:28 rjohnson Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.13 1999/06/02 01:53:31 stanton Exp $
  */
 
 #define TCL_TEST
@@ -2508,8 +2508,8 @@ TestparsevarnameObjCmd(clientData, interp, objc, objv)
  *
  *	This procedure implements the "testregexp" command. It is
  *	used to give a direct interface for regexp flags.  It's identical
- *	to Tcl_RegexpObjCmd except for the REGEXP_TEST define, which
- *	enables the -xflags option.
+ *	to Tcl_RegexpObjCmd except for the -xflags option, and the
+ *	consequences thereof (including the REG_EXPECT kludge).
  *
  * Results:
  *	A standard Tcl result.
@@ -2528,33 +2528,24 @@ TestregexpObjCmd(dummy, interp, objc, objv)
     int objc;				/* Number of arguments. */
     Tcl_Obj *CONST objv[];		/* Argument objects. */
 {
-    int i, result, indices, stringLength, wLen, match, about;
+    int i, ii, result, indices, stringLength, wLen, match, about;
     int hasxflags, cflags, eflags;
     Tcl_RegExp regExpr;
     char *string;
     Tcl_DString stringBuffer, valueBuffer;
     Tcl_UniChar *wStart;
-#   define	REGEXP_TEST	/* yes */
     static char *options[] = {
 	"-indices",	"-nocase",	"-about",	"-expanded",
 	"-line",	"-linestop",	"-lineanchor",
-#ifdef REGEXP_TEST
 	"-xflags",
-#endif
 	"--",		(char *) NULL
     };
     enum options {
 	REGEXP_INDICES, REGEXP_NOCASE,	REGEXP_ABOUT,	REGEXP_EXPANDED,
 	REGEXP_MULTI,	REGEXP_NOCROSS,	REGEXP_NEWL,
-#ifdef REGEXP_TEST
 	REGEXP_XFLAGS,
-#endif
 	REGEXP_LAST
     };
-#ifndef REGEXP_TEST
-#   define REGEXP_XFLAGS	-1	/* impossible value */
-#   define TestregexpXflags(a,b,c,d)	/* do nothing */
-#endif
 
     indices = 0;
     about = 0;
@@ -2662,6 +2653,21 @@ TestregexpObjCmd(dummy, interp, objc, objv)
 	 */
 	
 	Tcl_SetIntObj(Tcl_GetObjResult(interp), 0);
+	if (objc > 2 && (cflags&REG_EXPECT) && indices) {
+	    char *varName, *value;
+	    int start, end;
+	    char info[TCL_INTEGER_SPACE * 2];
+
+	    varName = Tcl_GetString(objv[2]);
+	    TclRegExpRangeUniChar(regExpr, -1, &start, &end);
+	    sprintf(info, "%d %d", start, end-1);
+	    value = Tcl_SetVar(interp, varName, info, 0);
+	    if (value == NULL) {
+		Tcl_AppendResult(interp, "couldn't set variable \"",
+			varName, "\"", (char *) NULL);
+		result = TCL_ERROR;
+	    }
+	}
 	goto done;
     }
 
@@ -2679,7 +2685,8 @@ TestregexpObjCmd(dummy, interp, objc, objv)
 	
 	varName = Tcl_GetString(objv[i]);
 
-	TclRegExpRangeUniChar(regExpr, i, &start, &end);
+	ii = ((cflags&REG_EXPECT) && i == objc-1) ? -1 : i;
+	TclRegExpRangeUniChar(regExpr, ii, &start, &end);
 	if (start < 0) {
 	    if (indices) {
 		value = Tcl_SetVar(interp, varName, "-1 -1", 0);
@@ -2689,7 +2696,7 @@ TestregexpObjCmd(dummy, interp, objc, objv)
 	} else {
 	    if (indices) {
 		char info[TCL_INTEGER_SPACE * 2];
-		
+
 		sprintf(info, "%d %d", start, end - 1);
 		value = Tcl_SetVar(interp, varName, info, 0);
 	    } else {
@@ -2736,7 +2743,7 @@ TestregexpObjCmd(dummy, interp, objc, objv)
  *----------------------------------------------------------------------
  */
 
-static void
+static VOID
 TestregexpXflags(string, length, cflagsPtr, eflagsPtr)
     char *string;		/* The string of flags. */
     int length;			/* The length of the string in bytes. */
@@ -2799,6 +2806,10 @@ TestregexpXflags(string, length, cflagsPtr, eflagsPtr)
 	    }
 	    case '$': {
 		eflags |= REG_NOTEOL;
+		break;
+	    }
+	    case '?': {
+		cflags |= REG_EXPECT;
 		break;
 	    }
 	    case '%': {

@@ -1,18 +1,46 @@
 /*
  * DFA routines
  * This file is #included by regexec.c.
+ *
+ * Copyright (c) 1998, 1999 Henry Spencer.  All rights reserved.
+ * 
+ * Development of this software was funded, in part, by Cray Research Inc.,
+ * UUNET Communications Services Inc., Sun Microsystems Inc., and Scriptics
+ * Corporation, none of whom are responsible for the results.  The author
+ * thanks all of them. 
+ * 
+ * Redistribution and use in source and binary forms -- with or without
+ * modification -- are permitted for any purpose, provided that
+ * redistributions in source form retain this entire copyright notice and
+ * indicate the origin and nature of any modifications.
+ * 
+ * I'd appreciate being given credit for this package in the documentation
+ * of software which uses it, but that is not a requirement.
+ * 
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES,
+ * INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY
+ * AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL
+ * HENRY SPENCER BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+ * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+ * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
  */
 
 /*
  - longest - longest-preferred matching engine
- ^ static chr *longest(struct vars *, struct dfa *, chr *, chr *);
+ ^ static chr *longest(struct vars *, struct dfa *, chr *, chr *, int *);
  */
 static chr *			/* endpoint, or NULL */
-longest(v, d, start, stop)
+longest(v, d, start, stop, hitstopp)
 struct vars *v;			/* used only for debug and exec flags */
 struct dfa *d;
 chr *start;			/* where the match should start */
 chr *stop;			/* match must end at or before here */
+int *hitstopp;			/* record whether hit v->stop, if non-NULL */
 {
 	chr *cp;
 	chr *realstop = (stop == v->stop) ? stop : stop + 1;
@@ -26,6 +54,8 @@ chr *stop;			/* match must end at or before here */
 	/* initialize */
 	css = initialize(v, d, start);
 	cp = start;
+	if (hitstopp != NULL)
+		*hitstopp = 0;
 
 	/* startup */
 	FDEBUG(("+++ startup +++\n"));
@@ -74,6 +104,8 @@ chr *stop;			/* match must end at or before here */
 	/* shutdown */
 	FDEBUG(("+++ shutdown at c%d +++\n", css - d->ssets));
 	if (cp == v->stop && stop == v->stop) {
+		if (hitstopp != NULL)
+			*hitstopp = 1;
 		co = d->cnfa->eos[(v->eflags&REG_NOTEOL) ? 0 : 1];
 		FDEBUG(("color %ld\n", (long)co));
 		ss = miss(v, d, css, co, cp, start);
@@ -86,7 +118,7 @@ chr *stop;			/* match must end at or before here */
 
 	/* find last match, if any */
 	post = d->lastpost;
-	for (ss = d->ssets, i = 0; i < d->nssused; ss++, i++)
+	for (ss = d->ssets, i = d->nssused; i > 0; ss++, i--)
 		if ((ss->flags&POSTSTATE) && post != ss->lastseen &&
 					(post == NULL || post < ss->lastseen))
 			post = ss->lastseen;
@@ -99,16 +131,17 @@ chr *stop;			/* match must end at or before here */
 /*
  - shortest - shortest-preferred matching engine
  ^ static chr *shortest(struct vars *, struct dfa *, chr *, chr *, chr *,
- ^ 	chr **);
+ ^ 	chr **, int *);
  */
 static chr *			/* endpoint, or NULL */
-shortest(v, d, start, min, max, coldp)
-struct vars *v;			/* used only for debug and exec flags */
+shortest(v, d, start, min, max, coldp, hitstopp)
+struct vars *v;
 struct dfa *d;
 chr *start;			/* where the match should start */
 chr *min;			/* match must end at or after here */
 chr *max;			/* match must end at or before here */
 chr **coldp;			/* store coldstart pointer here, if nonNULL */
+int *hitstopp;			/* record whether hit v->stop, if non-NULL */
 {
 	chr *cp;
 	chr *realmin = (min == v->stop) ? min : min + 1;
@@ -117,12 +150,12 @@ chr **coldp;			/* store coldstart pointer here, if nonNULL */
 	struct sset *css;
 	struct sset *ss;
 	struct colormap *cm = d->cm;
-	chr *nopr;
-	int i;
 
 	/* initialize */
 	css = initialize(v, d, start);
 	cp = start;
+	if (hitstopp != NULL)
+		*hitstopp = 0;
 
 	/* startup */
 	FDEBUG(("--- startup ---\n"));
@@ -175,7 +208,11 @@ chr **coldp;			/* store coldstart pointer here, if nonNULL */
 
 	if (ss == NULL)
 		return NULL;
-	else if (ss->flags&POSTSTATE) {
+
+	if (coldp != NULL)	/* report last no-progress state set, if any */
+		*coldp = lastcold(v, d);
+
+	if ((ss->flags&POSTSTATE) && cp > min) {
 		assert(cp >= realmin);
 		cp--;
 	} else if (cp == v->stop && max == v->stop) {
@@ -183,21 +220,36 @@ chr **coldp;			/* store coldstart pointer here, if nonNULL */
 		FDEBUG(("color %ld\n", (long)co));
 		ss = miss(v, d, css, co, cp, start);
 		/* match might have ended at eol */
+		if ((ss == NULL || !(ss->flags&POSTSTATE)) && hitstopp != NULL)
+			*hitstopp = 1;
 	}
 
 	if (ss == NULL || !(ss->flags&POSTSTATE))
 		return NULL;
 
-	/* find last no-progress state set, if any */
-	nopr = d->lastnopr;
-	for (ss = d->ssets, i = 0; i < d->nssused; ss++, i++)
-		if ((ss->flags&NOPROGRESS) && nopr != ss->lastseen &&
-					(nopr == NULL || nopr < ss->lastseen))
-			nopr = ss->lastseen;
-	assert(nopr != NULL);
-	if (coldp != NULL)
-		*coldp = (nopr == v->start) ? nopr : nopr-1;
 	return cp;
+}
+
+/*
+ - lastcold - determine last point at which no progress had been made
+ ^ static chr *lastcold(struct vars *, struct dfa *);
+ */
+static chr *			/* endpoint, or NULL */
+lastcold(v, d)
+struct vars *v;
+struct dfa *d;
+{
+	struct sset *ss;
+	chr *nopr;
+	int i;
+
+	nopr = d->lastnopr;
+	if (nopr == NULL)
+		nopr = v->start;
+	for (ss = d->ssets, i = d->nssused; i > 0; ss++, i--)
+		if ((ss->flags&NOPROGRESS) && nopr < ss->lastseen)
+			nopr = ss->lastseen;
+	return nopr;
 }
 
 /*
@@ -433,11 +485,6 @@ chr *start;			/* where the attempt got started */
 	/* next, is that in the cache? */
 	for (p = d->ssets, i = d->nssused; i > 0; p++, i--)
 		if (HIT(h, d->work, p, d->wordsper)) {
-#ifndef xxx
-p->hash == h && 
-memcmp(VS(d->work), VS(p->states),
-					d->wordsper*sizeof(unsigned)) == 0) {
-#endif
 			FDEBUG(("cached c%d\n", p - d->ssets));
 			break;			/* NOTE BREAK OUT */
 		}
@@ -488,7 +535,7 @@ pcolor co;			/* "color" of the lookahead constraint */
 		ERR(REG_ESPACE);
 		return 0;
 	}
-	end = longest(v, d, cp, v->stop);
+	end = longest(v, d, cp, v->stop, (int *)NULL);
 	freedfa(d);
 	FDEBUG(("=== lacon %d match %d\n", n, (end != NULL)));
 	return (sub->subno) ? (end != NULL) : (end == NULL);

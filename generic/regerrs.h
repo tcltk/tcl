@@ -1,6 +1,6 @@
 { REG_OKAY,	"REG_OKAY",	"no errors detected" },
 { REG_NOMATCH,	"REG_NOMATCH",	"failed to match" },
-{ REG_BADPAT,	"REG_BADPAT",	"invalid regexp (reg version 0.2)" },
+{ REG_BADPAT,	"REG_BADPAT",	"invalid regexp (reg version 0.4)" },
 { REG_ECOLLATE,	"REG_ECOLLATE",	"invalid collating element" },
 { REG_ECTYPE,	"REG_ECTYPE",	"invalid character class" },
 { REG_EESCAPE,	"REG_EESCAPE",	"invalid escape \\ sequence" },

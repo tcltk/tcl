@@ -1,5 +1,32 @@
 /*
  * re_*exec and friends - match REs
+ *
+ * Copyright (c) 1998, 1999 Henry Spencer.  All rights reserved.
+ * 
+ * Development of this software was funded, in part, by Cray Research Inc.,
+ * UUNET Communications Services Inc., Sun Microsystems Inc., and Scriptics
+ * Corporation, none of whom are responsible for the results.  The author
+ * thanks all of them. 
+ * 
+ * Redistribution and use in source and binary forms -- with or without
+ * modification -- are permitted for any purpose, provided that
+ * redistributions in source form retain this entire copyright notice and
+ * indicate the origin and nature of any modifications.
+ * 
+ * I'd appreciate being given credit for this package in the documentation
+ * of software which uses it, but that is not a requirement.
+ * 
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES,
+ * INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY
+ * AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL
+ * HENRY SPENCER BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+ * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+ * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
  */
 
 #include "regguts.h"
@@ -13,6 +40,7 @@ struct vars {
 	int eflags;		/* copies of arguments */
 	size_t nmatch;
 	regmatch_t *pmatch;
+	rm_detail_t *details;
 	chr *start;		/* start of string */
 	chr *stop;		/* just past end of string */
 	int err;		/* error code if any (0 none) */
@@ -108,8 +136,9 @@ static int crevdissect _ANSI_ARGS_((struct vars *, struct subre *, chr *, chr *)
 static int cbrdissect _ANSI_ARGS_((struct vars *, struct subre *, chr *, chr *));
 static int caltdissect _ANSI_ARGS_((struct vars *, struct subre *, chr *, chr *));
 /* === rege_dfa.c === */
-static chr *longest _ANSI_ARGS_((struct vars *, struct dfa *, chr *, chr *));
-static chr *shortest _ANSI_ARGS_((struct vars *, struct dfa *, chr *, chr *, chr *, chr **));
+static chr *longest _ANSI_ARGS_((struct vars *, struct dfa *, chr *, chr *, int *));
+static chr *shortest _ANSI_ARGS_((struct vars *, struct dfa *, chr *, chr *, chr *, chr **, int *));
+static chr *lastcold _ANSI_ARGS_((struct vars *, struct dfa *));
 static struct dfa *newdfa _ANSI_ARGS_((struct vars *, struct cnfa *, struct colormap *, struct smalldfa *));
 static VOID freedfa _ANSI_ARGS_((struct dfa *));
 static unsigned hash _ANSI_ARGS_((unsigned *, int));
@@ -133,7 +162,7 @@ exec(re, string, len, details, nmatch, pmatch, flags)
 regex_t *re;
 CONST chr *string;
 size_t len;
-rm_detail_t *details;		/* hook for future elaboration */
+rm_detail_t *details;
 size_t nmatch;
 regmatch_t pmatch[];
 int flags;
@@ -157,6 +186,8 @@ int flags;
 	/* setup */
 	v->re = re;
 	v->g = (struct guts *)re->re_guts;
+	if ((v->g->cflags&REG_EXPECT) && details == NULL)
+		return REG_INVARG;
 	if (v->g->unmatchable)
 		return REG_NOMATCH;
 	complications = (v->g->info&REG_UBACKREF) ? 1 : 0;
@@ -178,6 +209,7 @@ int flags;
 		v->nmatch = v->g->nsub + 1;
 	} else
 		v->pmatch = pmatch;
+	v->details = details;
 	v->start = (chr *)string;
 	v->stop = (chr *)string + len;
 	v->err = 0;
@@ -234,55 +266,77 @@ struct colormap *cm;
 	struct dfa *s = newdfa(v, &v->g->search, cm, &sa);
 	chr *begin;
 	chr *end;
+	chr *cold;
 	chr *open;		/* open and close of range of possible starts */
 	chr *close;
+	int hitend;
 
-	if (d == NULL)
-		return v->err;
-	if (s == NULL) {
-		freedfa(d);
+	if (ISERR()) {		/* should be newdfa() failure */
+		if (d != NULL)
+			freedfa(d);
+		if (s != NULL)
+			freedfa(s);
 		return v->err;
 	}
 
-	close = v->start;
-	do {
-		MDEBUG(("\nsearch at %ld\n", LOFF(close)));
-		close = shortest(v, s, close, close, v->stop, &open);
-		if (close == NULL)
-			break;				/* NOTE BREAK */
-		if (v->nmatch == 0) {
-			/* don't need exact location */
-			freedfa(d);
-			freedfa(s);
-			return REG_OKAY;
-		}
-		MDEBUG(("between %ld and %ld\n", LOFF(open), LOFF(close)));
-		for (begin = open; begin <= close; begin++) {
-			MDEBUG(("\nfind trying at %ld\n", LOFF(begin)));
-			end = longest(v, d, begin, v->stop);
-			if (end != NULL) {
-				assert(v->nmatch > 0);
- 				v->pmatch[0].rm_so = OFF(begin);
- 				v->pmatch[0].rm_eo = OFF(end);
-				freedfa(d);
-				freedfa(s);
-				if (v->nmatch > 1) {
-					zapsubs(v->pmatch, v->nmatch);
-					return dissect(v, v->g->tree, begin,
-									end);
-				}
-				if (ISERR())
-					return v->err;
-				return REG_OKAY;
-			}
-		}
-	} while (close < v->stop);
-
-	freedfa(d);
+	/* first, a shot with the search RE */
+	MDEBUG(("\nsearch at %ld\n", LOFF(v->start)));
+	cold = NULL;
+	close = shortest(v, s, v->start, v->start, v->stop, &cold, (int *)NULL);
 	freedfa(s);
+	if (v->g->cflags&REG_EXPECT) {
+		assert(v->details != NULL);
+		if (cold != NULL)
+			v->details->rm_extend.rm_so = OFF(cold);
+		else
+			v->details->rm_extend.rm_so = OFF(v->stop);
+		v->details->rm_extend.rm_eo = OFF(v->stop);	/* unknown */
+	}
+	if (close == NULL) {		/* not found */
+		freedfa(d);
+		if (ISERR())
+			return v->err;
+		return REG_NOMATCH;
+	}
+	if (v->nmatch == 0) {		/* found, don't need exact location */
+		freedfa(d);
+		return REG_OKAY;
+	}
+
+	/* find starting point */
+	assert(cold != NULL);
+	open = cold;
+	cold = NULL;
+	MDEBUG(("between %ld and %ld\n", LOFF(open), LOFF(close)));
+	for (begin = open; begin <= close; begin++) {
+		MDEBUG(("\nfind trying at %ld\n", LOFF(begin)));
+		end = longest(v, d, begin, v->stop, &hitend);
+		if (hitend && cold == NULL)
+			cold = begin;
+		if (end != NULL)
+			break;		/* NOTE BREAK OUT */
+	}
+	assert(end != NULL);		/* search RE succeeded so loop should */
+	freedfa(d);
+
+	/* and pin down details */
+	assert(v->nmatch > 0);
+	v->pmatch[0].rm_so = OFF(begin);
+	v->pmatch[0].rm_eo = OFF(end);
+	if (v->g->cflags&REG_EXPECT) {
+		if (cold != NULL)
+			v->details->rm_extend.rm_so = OFF(cold);
+		else
+			v->details->rm_extend.rm_eo = OFF(v->stop);
+		v->details->rm_extend.rm_eo = OFF(v->stop);	/* unknown */
+	}
+	if (v->nmatch > 1) {
+		zapsubs(v->pmatch, v->nmatch);
+		return dissect(v, v->g->tree, begin, end);
+	}
 	if (ISERR())
 		return v->err;
-	return REG_NOMATCH;
+	return REG_OKAY;
 }
 
 /*
@@ -301,12 +355,15 @@ struct colormap *cm;
 	struct dfa *s = newdfa(v, &v->g->search, cm, &sa);
 	chr *begin;
 	chr *end;
+	chr *cold;
 	chr *open;		/* open and close of range of possible starts */
 	chr *close;
 	chr *estart;
 	chr *estop;
 	int er;
 	int shorter = v->g->tree->flags&SHORTER;
+	int ret = REG_NOMATCH;
+	int hitend;
 
 	if (d == NULL)
 		return v->err;
@@ -315,12 +372,16 @@ struct colormap *cm;
 		return v->err;
 	}
 
+	cold = NULL;
 	close = v->start;
 	do {
 		MDEBUG(("\ncsearch at %ld\n", LOFF(close)));
-		close = shortest(v, s, close, close, v->stop, &open);
+		close = shortest(v, s, close, close, v->stop, &cold, (int *)NULL);
 		if (close == NULL)
 			break;				/* NOTE BREAK */
+		assert(cold != NULL);
+		open = cold;
+		cold = NULL;
 		MDEBUG(("cbetween %ld and %ld\n", LOFF(open), LOFF(close)));
 		for (begin = open; begin <= close; begin++) {
 			MDEBUG(("\ncfind trying at %ld\n", LOFF(begin)));
@@ -329,47 +390,39 @@ struct colormap *cm;
 			for (;;) {
 				if (shorter)
 					end = shortest(v, d, begin, estart,
-							estop, (chr **)NULL);
+						estop, (chr **)NULL, &hitend);
 				else
-					end = longest(v, d, begin, estop);
+					end = longest(v, d, begin, estop,
+								&hitend);
+				if (hitend && cold == NULL)
+					cold = begin;
 				if (end == NULL)
 					break;		/* NOTE BREAK OUT */
 				MDEBUG(("tentative end %ld\n", LOFF(end)));
 				zapsubs(v->pmatch, v->nmatch);
 				zapmem(v, v->g->tree);
 				er = cdissect(v, v->g->tree, begin, end);
-				switch (er) {
-				case REG_OKAY:
+				if (er == REG_OKAY) {
 					if (v->nmatch > 0) {
 						v->pmatch[0].rm_so = OFF(begin);
 						v->pmatch[0].rm_eo = OFF(end);
 					}
-					freedfa(d);
-					freedfa(s);
-					if (ISERR())
-						return v->err;
-					return REG_OKAY;
-					break;
-				case REG_NOMATCH:
-					/* go around and try again */
-					if ((shorter) ? end == estop :
-								end == begin) {
-						/* no point in trying again */
-						freedfa(s);
-						freedfa(d);
-						return REG_NOMATCH;
-					}
-					if (shorter)
-						estart = end + 1;
-					else
-						estop = end - 1;
-					break;
-				default:
-					freedfa(d);
-					freedfa(s);
-					return er;
-					break;
+					ret = REG_OKAY;
+					break;		/* NOTE BREAK OUT */
 				}
+				if (er != REG_NOMATCH) {
+					ERR(er);
+					break;		/* NOTE BREAK OUT */
+				}
+				if ((shorter) ? end == estop : end == begin) {
+					/* no point in trying again */
+					break;		/* NOTE BREAK OUT */
+				}
+				/* go around and try again */
+				if (shorter)
+					estart = end + 1;
+				else
+					estop = end - 1;
 			}
 		}
 	} while (close < v->stop);
@@ -378,7 +431,15 @@ struct colormap *cm;
 	freedfa(s);
 	if (ISERR())
 		return v->err;
-	return REG_NOMATCH;
+	if (v->g->cflags&REG_EXPECT) {
+		assert(v->details != NULL);
+		if (cold != NULL)
+			v->details->rm_extend.rm_so = OFF(cold);
+		else
+			v->details->rm_extend.rm_so = OFF(v->stop);
+		v->details->rm_extend.rm_eo = OFF(v->stop);	/* unknown */
+	}
+	return ret;
 }
 
 /*
@@ -520,7 +581,7 @@ chr *end;			/* end of same */
 	}
 
 	/* pick a tentative midpoint */
-	mid = longest(v, d, begin, end);
+	mid = longest(v, d, begin, end, (int *)NULL);
 	if (mid == NULL) {
 		freedfa(d);
 		freedfa(d2);
@@ -529,7 +590,7 @@ chr *end;			/* end of same */
 	MDEBUG(("tentative midpoint %ld\n", LOFF(mid)));
 
 	/* iterate until satisfaction or failure */
-	while (longest(v, d2, mid, end) != end) {
+	while (longest(v, d2, mid, end, (int *)NULL) != end) {
 		/* that midpoint didn't work, find a new one */
 		if (mid == begin) {
 			/* all possibilities exhausted! */
@@ -538,7 +599,7 @@ chr *end;			/* end of same */
 			freedfa(d2);
 			return REG_ASSERT;
 		}
-		mid = longest(v, d, begin, mid-1);
+		mid = longest(v, d, begin, mid-1, (int *)NULL);
 		if (mid == NULL) {
 			/* failed to find a new one! */
 			MDEBUG(("failed midpoint!\n"));
@@ -583,7 +644,7 @@ chr *end;			/* end of same */
 		d = newdfa(v, &t->left->cnfa, &v->g->cmap, &da);
 		if (ISERR())
 			return v->err;
-		if (longest(v, d, begin, end) == end) {
+		if (longest(v, d, begin, end, (int *)NULL) == end) {
 			MDEBUG(("success\n"));
 			freedfa(d);
 			return dissect(v, t->left, begin, end);
@@ -681,7 +742,7 @@ chr *end;			/* end of same */
 
 	/* pick a tentative midpoint */
 	if (v->mem[t->retry] == 0) {
-		mid = longest(v, d, begin, end);
+		mid = longest(v, d, begin, end, (int *)NULL);
 		if (mid == NULL) {
 			freedfa(d);
 			freedfa(d2);
@@ -698,7 +759,8 @@ chr *end;			/* end of same */
 	for (;;) {
 		/* try this midpoint on for size */
 		er = cdissect(v, t->left, begin, mid);
-		if (er == REG_OKAY && longest(v, d2, mid, end) == end &&
+		if (er == REG_OKAY &&
+				longest(v, d2, mid, end, (int *)NULL) == end &&
 				(er = cdissect(v, t->right, mid, end)) == 
 								REG_OKAY)
 			break;			/* NOTE BREAK OUT */
@@ -716,7 +778,7 @@ chr *end;			/* end of same */
 			freedfa(d2);
 			return REG_NOMATCH;
 		}
-		mid = longest(v, d, begin, mid-1);
+		mid = longest(v, d, begin, mid-1, (int *)NULL);
 		if (mid == NULL) {
 			/* failed to find a new one */
 			MDEBUG(("%d failed midpoint\n", t->retry));
@@ -775,7 +837,7 @@ chr *end;			/* end of same */
 
 	/* pick a tentative midpoint */
 	if (v->mem[t->retry] == 0) {
-		mid = shortest(v, d, begin, begin, end, (chr **)NULL);
+		mid = shortest(v, d, begin, begin, end, (chr **)NULL, (int *)NULL);
 		if (mid == NULL) {
 			freedfa(d);
 			freedfa(d2);
@@ -792,7 +854,8 @@ chr *end;			/* end of same */
 	for (;;) {
 		/* try this midpoint on for size */
 		er = cdissect(v, t->left, begin, mid);
-		if (er == REG_OKAY && longest(v, d2, mid, end) == end &&
+		if (er == REG_OKAY &&
+				longest(v, d2, mid, end, (int *)NULL) == end &&
 				(er = cdissect(v, t->right, mid, end)) == 
 								REG_OKAY)
 			break;			/* NOTE BREAK OUT */
@@ -810,7 +873,7 @@ chr *end;			/* end of same */
 			freedfa(d2);
 			return REG_NOMATCH;
 		}
-		mid = shortest(v, d, begin, mid+1, end, (chr **)NULL);
+		mid = shortest(v, d, begin, mid+1, end, (chr **)NULL, (int *)NULL);
 		if (mid == NULL) {
 			/* failed to find a new one */
 			MDEBUG(("%d failed midpoint\n", t->retry));
@@ -929,7 +992,7 @@ chr *end;			/* end of same */
 		d = newdfa(v, &t->left->cnfa, &v->g->cmap, &da);
 		if (ISERR())
 			return v->err;
-		if (longest(v, d, begin, end) != end) {
+		if (longest(v, d, begin, end, (int *)NULL) != end) {
 			freedfa(d);
 			v->mem[t->retry] = TRIED;
 			return caltdissect(v, t->right, begin, end);
