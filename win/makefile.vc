@@ -12,7 +12,7 @@
 # Copyright (c) 2001 Tomasoft Engineering.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.72 2001/11/10 10:38:47 davygrvy Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.73 2001/11/13 04:30:51 davygrvy Exp $
 #------------------------------------------------------------------------------
 
 !if "$(MSVCDIR)" == ""
@@ -421,9 +421,13 @@ $(TCLIMPLIB): $(TCLLIB)
 
 $(TCLLIB): $(TCLOBJS)
 !if $(STATIC_BUILD)
-	$(lib32) -nologo -out:$@ $**
+	$(lib32) -nologo -out:$@ @<<
+$**
+<<
 !else
-	$(link32) $(ldebug) $(dlllflags) -out:$@ $(winlibs) $**
+	$(link32) $(ldebug) $(dlllflags) -out:$@ $(winlibs) @<<
+$**
+<<
 	-@del $*.exp
 !endif
 
@@ -692,8 +696,17 @@ $<
 <<
 
 {$(WINDIR)}.rc{$(TMP_DIR)}.res:
-	$(rc32) -fo $@ -r -i $(GENERICDIR) $(include32) -D__WIN32__ \
-		$(TCL_DEFINES) -d DEBUG=$(DEBUG) $<
+	$(rc32) -fo $@ -r -i $(GENERICDIR) -D__WIN32__ \
+!if $(DEBUG)
+	-d DEBUG \
+!endif
+!if $(TCL_THREADS)
+	-d TCL_THREADS \
+!endif
+!if $(STATIC_BUILD)
+	-d STATIC_BUILD \
+!endif
+	$<
 
 
 #---------------------------------------------------------------------
