@@ -4,6 +4,7 @@
 	not surprisingly, doesn't have the MSVCRT specific _beginthreadex /
 	_endthreadex pair.  This might have to be revisited for proper
 	Borland, lcc32, Watcom and other support as well.
+	[Patch: 444255]
 
 2001-08-31  Jeff Hobbs  <jeffh@ActiveState.com>
 
