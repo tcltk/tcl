@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWin32Dll.c,v 1.24.2.1 2003/04/14 15:45:59 vincentdarley Exp $
+ * RCS: @(#) $Id: tclWin32Dll.c,v 1.24.2.2 2004/05/06 01:04:32 davygrvy Exp $
  */
 
 #include "tclWinInt.h"
@@ -239,18 +239,97 @@ DllMain(hInst, reason, reserved)
 {
     switch (reason) {
     case DLL_PROCESS_ATTACH:
+	DisableThreadLibraryCalls(hInst);
 	TclWinInit(hInst);
 	return TRUE;
 
     case DLL_PROCESS_DETACH:
-	if (hInst == hInstance) {
-	    Tcl_Finalize();
+	/*
+	 * Protect the call to Tcl_Finalize.  The OS could be unloading
+	 * us from an exception handler and the state of the stack might
+	 * be unstable.
+	 */
+#ifdef HAVE_NO_SEH
+# ifdef TCL_MEM_DEBUG
+    __asm__ __volatile__ (
+            "movl %%esp,  %0" "\n\t"
+            "movl %%ebp,  %1" "\n\t"
+            "movl %%fs:0, %2" "\n\t"
+            : "=m"(INITIAL_ESP),
+              "=m"(INITIAL_EBP),
+              "=r"(INITIAL_HANDLER) );
+# endif /* TCL_MEM_DEBUG */
+
+    __asm__ __volatile__ (
+            "pushl %ebp" "\n\t"
+            "pushl $__except_dllmain_detach_handler" "\n\t"
+            "pushl %fs:0" "\n\t"
+            "movl  %esp, %fs:0");
+#else
+	__try {
+#endif /* HAVE_NO_SEH */
+
+  	    Tcl_Finalize();
+
+#ifdef HAVE_NO_SEH
+    __asm__ __volatile__ (
+            "jmp  dllmain_detach_pop" "\n"
+        "dllmain_detach_reentry:" "\n\t"
+            "movl %%fs:0, %%eax" "\n\t"
+            "movl 0x8(%%eax), %%esp" "\n\t"
+            "movl 0x8(%%esp), %%ebp" "\n"
+        "dllmain_detach_pop:" "\n\t"
+            "movl (%%esp), %%eax" "\n\t"
+            "movl %%eax, %%fs:0" "\n\t"
+            "add  $12, %%esp" "\n\t"
+            :
+            :
+            : "%eax");
+
+# ifdef TCL_MEM_DEBUG
+    __asm__ __volatile__ (
+            "movl  %%esp,  %0" "\n\t"
+            "movl  %%ebp,  %1" "\n\t"
+            "movl  %%fs:0, %2" "\n\t"
+            : "=m"(RESTORED_ESP),
+              "=m"(RESTORED_EBP),
+              "=r"(RESTORED_HANDLER) );
+
+    if (INITIAL_ESP != RESTORED_ESP)
+        Tcl_Panic("ESP restored incorrectly");
+    if (INITIAL_EBP != RESTORED_EBP)
+        Tcl_Panic("EBP restored incorrectly");
+    if (INITIAL_HANDLER != RESTORED_HANDLER)
+        Tcl_Panic("HANDLER restored incorrectly");
+# endif /* TCL_MEM_DEBUG */
+#else
+	} __except (EXCEPTION_EXECUTE_HANDLER) {
+	    /* empty handler body. */
 	}
+#endif /* HAVE_NO_SEH */
 	break;
     }
 
     return TRUE; 
 }
+
+#ifdef HAVE_NO_SEH
+static
+__attribute__ ((cdecl))
+EXCEPTION_DISPOSITION
+_except_dllmain_detach_handler(
+    struct _EXCEPTION_RECORD *ExceptionRecord,
+    void *EstablisherFrame,
+    struct _CONTEXT *ContextRecord,
+    void *DispatcherContext)
+{
+    __asm__ __volatile__ (
+            "jmp dllmain_detach_reentry");
+    /* Nuke compiler warning about unused static function */
+    _except_dllmain_detach_handler(NULL, NULL, NULL, NULL);
+    return 0; /* Function does not return */
+}
+#endif /* HAVE_NO_SEH */
 
 #endif /* !STATIC_BUILD */
 #endif /* __WIN32__ */
