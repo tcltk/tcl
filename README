@@ -3,7 +3,7 @@ README:  Tcl
 	Tcl is maintained, enhanced, and distributed freely as a
 	service to the Tcl community by Scriptics Corporation.
 
-RCS: @(#) $Id: README,v 1.14 1999/02/17 02:05:53 hershey Exp $
+RCS: @(#) $Id: README,v 1.15 1999/02/26 22:25:04 hershey Exp $
 
 Contents
 --------
@@ -242,7 +242,9 @@ scripts that worked under Tcl 7.6 and earlier releases:
     2. The semantics of some Tcl commands have been changed slightly to
     maximize performance under the compiler.  These incompatibilities
     are documented on the Web so that we can keep the list up-to-date.
-    See the URL http://www.sunlabs.com/research/tcl/compiler.html.
+    See the following URL:
+
+	http://www.scriptics.com/doc/compiler.html
 
     3. 2-digit years are now parsed differently by the "clock" command
     to handle year 2000 issues better (years 00-38 are treated as
