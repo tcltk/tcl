@@ -1,5 +1,11 @@
 2002-03-27  Don Porter  <dgp@users.sourceforge.net>
 
+	* doc/tcltest.n ([mainThread]):
+	* library/tcltest/tcltest.tcl:
+	* tests/tcltest.test:  Major code cleanup to deal with whitespace,
+	coding conventions, and namespace issues, with several minor bugs
+	fixed in the process.
+
 	* tests/main.test: Added missing [after cancel]s.
 
 2002-03-25  Don Porter  <dgp@users.sourceforge.net>
