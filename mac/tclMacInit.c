@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacInit.c,v 1.4 1999/05/11 07:12:16 jingham Exp $
+ * RCS: @(#) $Id: tclMacInit.c,v 1.5 2001/07/31 19:12:07 vincentdarley Exp $
  */
 
 #include <AppleEvents.h>
@@ -131,6 +131,11 @@ static Map cyrillicMap[] = {
 };
 
 static int		GetFinderFont(int *finderID);
+
+/* Used to store the encoding used for binary files */
+static Tcl_Encoding binaryEncoding = NULL;
+/* Has the basic library path encoding issue been fixed */
+static int libraryPathEncodingFixed = 0;
 
 
 /*
@@ -393,13 +398,18 @@ TclpInitLibraryPath(argv0)
  *	Based on the locale, determine the encoding of the operating
  *	system and the default encoding for newly opened files.
  *
- *	Called at process initialization time.
+ *	Called at process initialization time, and part way through
+ *	startup, we verify that the initial encodings were correctly
+ *	setup.  Depending on Tcl's environment, there may not have been
+ *	enough information first time through (above).
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	The Tcl library path is converted from native encoding to UTF-8.
+ *	The Tcl library path is converted from native encoding to UTF-8,
+ *	on the first call, and the encodings may be changed on first or
+ *	second call.
  *
  *---------------------------------------------------------------------------
  */
@@ -419,7 +429,9 @@ TclpSetInitialEncodings()
     }
     
     Tcl_SetSystemEncoding(NULL, encoding);
-    
+
+    if (libraryPathEncodingFixed == 0) {
+	
     /*
      * Until the system encoding was actually set, the library path was
      * actually in the native multi-byte encoding, and not really UTF-8
@@ -461,13 +473,17 @@ TclpSetInitialEncodings()
 	    Tcl_DStringFree(&ds);
 	}
     }
-
-    /*
-     * Keep the iso8859-1 encoding preloaded.  The IO package uses it for
-     * gets on a binary channel.
-     */
-
-    Tcl_GetEncoding(NULL, "iso8859-1"); 
+	libraryPathEncodingFixed = 1;
+    }
+    
+    /* This is only ever called from the startup thread */
+    if (binaryEncoding == NULL) {
+	/*
+	 * Keep the iso8859-1 encoding preloaded.  The IO package uses
+	 * it for gets on a binary channel.
+	 */
+	binaryEncoding = Tcl_GetEncoding(NULL, "iso8859-1");
+    }
 }   
 
 /*

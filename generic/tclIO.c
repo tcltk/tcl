@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.32 2001/07/18 17:13:25 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.33 2001/07/31 19:12:06 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -104,6 +104,8 @@ static void		DeleteChannelTable _ANSI_ARGS_((
 				ClientData clientData, Tcl_Interp *interp));
 static void		DeleteScriptRecord _ANSI_ARGS_((Tcl_Interp *interp,
 				Channel *chanPtr, int mask));
+static int              DetachChannel _ANSI_ARGS_((Tcl_Interp *interp,
+				Tcl_Channel chan));
 static void		DiscardInputQueued _ANSI_ARGS_((ChannelState *statePtr,
 				int discardSavedBuffers));
 static void		DiscardOutputQueued _ANSI_ARGS_((
@@ -687,6 +689,38 @@ CheckForStdChannelsBeingClosed(chan)
 /*
  *----------------------------------------------------------------------
  *
+ * Tcl_IsStandardChannel --
+ *
+ *	Test if the given channel is a standard channel.  No attempt
+ *	is made to check if the channel or the standard channels
+ *	are initialized or otherwise valid.
+ *
+ * Results:
+ *	Returns 1 if true, 0 if false.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+int 
+Tcl_IsStandardChannel(chan)
+    Tcl_Channel chan;		/* Channel to check. */
+{
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+
+    if ((chan == tsdPtr->stdinChannel) 
+	|| (chan == tsdPtr->stdoutChannel)
+	|| (chan == tsdPtr->stderrChannel)) {
+	return 1;
+    } else {
+	return 0;
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_RegisterChannel --
  *
  *	Adds an already-open channel to the channel table of an interpreter.
@@ -747,13 +781,21 @@ Tcl_RegisterChannel(interp, chan)
  *
  *	Deletes the hash entry for a channel associated with an interpreter.
  *	If the interpreter given as argument is NULL, it only decrements the
- *	reference count.
+ *	reference count.  (This all happens in the Tcl_DetachChannel helper
+ *	function).
+ *	
+ *	Finally, if the reference count of the channel drops to zero,
+ *	it is deleted.
  *
  * Results:
  *	A standard Tcl result.
  *
  * Side effects:
- *	Deletes the hash entry for a channel associated with an interpreter.
+ *	Calls Tcl_DetachChannel which deletes the hash entry for a channel 
+ *	associated with an interpreter.
+ *	
+ *	May delete the channel, which can have a variety of consequences,
+ *	especially if we are forced to close the channel.
  *
  *----------------------------------------------------------------------
  */
@@ -763,46 +805,14 @@ Tcl_UnregisterChannel(interp, chan)
     Tcl_Interp *interp;		/* Interpreter in which channel is defined. */
     Tcl_Channel chan;		/* Channel to delete. */
 {
-    Tcl_HashTable *hTblPtr;	/* Hash table of channels. */
-    Tcl_HashEntry *hPtr;	/* Search variable. */
-    Channel *chanPtr;		/* The real IO channel. */
     ChannelState *statePtr;	/* State of the real channel. */
 
-    /*
-     * Always (un)register bottom-most channel in the stack.  This makes
-     * management of the channel list easier because no manipulation is
-     * necessary during (un)stack operation.
-     */
-    chanPtr = ((Channel *) chan)->state->bottomChanPtr;
-    statePtr = chanPtr->state;
-
-    if (interp != (Tcl_Interp *) NULL) {
-        hTblPtr = (Tcl_HashTable *) Tcl_GetAssocData(interp, "tclIO", NULL);
-        if (hTblPtr == (Tcl_HashTable *) NULL) {
-            return TCL_OK;
-        }
-        hPtr = Tcl_FindHashEntry(hTblPtr, statePtr->channelName);
-        if (hPtr == (Tcl_HashEntry *) NULL) {
-            return TCL_OK;
-        }
-        if ((Channel *) Tcl_GetHashValue(hPtr) != chanPtr) {
-            return TCL_OK;
-        }
-        Tcl_DeleteHashEntry(hPtr);
-
-        /*
-         * Remove channel handlers that refer to this interpreter, so that they
-         * will not be present if the actual close is delayed and more events
-         * happen on the channel. This may occur if the channel is shared
-         * between several interpreters, or if the channel has async
-         * flushing active.
-         */
-    
-        CleanupChannelHandlers(interp, chanPtr);
+    if (DetachChannel(interp, chan) != TCL_OK) {
+        return TCL_OK;
     }
-
-    statePtr->refCount--;
     
+    statePtr = ((Channel *) chan)->state->bottomChanPtr->state;
+
     /*
      * Perform special handling for standard channels being closed. If the
      * refCount is now 1 it means that the last reference to the standard
@@ -829,15 +839,141 @@ Tcl_UnregisterChannel(interp, chan)
                         statePtr->curOutPtr->nextRemoved)) {
             statePtr->flags |= BUFFER_READY;
         }
-        statePtr->flags |= CHANNEL_CLOSED;
+	Tcl_Preserve((ClientData)statePtr);
         if (!(statePtr->flags & BG_FLUSH_SCHEDULED)) {
-            if (Tcl_Close(interp, chan) != TCL_OK) {
-                return TCL_ERROR;
-            }
+	    /* We don't want to re-enter Tcl_Close */
+	    if (!(statePtr->flags & CHANNEL_CLOSED)) {
+		if (Tcl_Close(interp, chan) != TCL_OK) {
+		    statePtr->flags |= CHANNEL_CLOSED;
+		    Tcl_Release((ClientData)statePtr);
+		    return TCL_ERROR;
+		}
+	    }
         }
+        statePtr->flags |= CHANNEL_CLOSED;
+	Tcl_Release((ClientData)statePtr);
     }
     return TCL_OK;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_DetachChannel --
+ *
+ *	Deletes the hash entry for a channel associated with an interpreter.
+ *	If the interpreter given as argument is NULL, it only decrements the
+ *	reference count.  Even if the ref count drops to zero, the 
+ *	channel is NOT closed or cleaned up.  This allows a channel to
+ *	be detached from an interpreter and left in the same state it
+ *	was in when it was originally returned by 'Tcl_OpenFileChannel',
+ *	for example.
+ *	
+ *	This function cannot be used on the standard channels, and
+ *	will return TCL_ERROR if that is attempted.
+ *	
+ *	This function should only be necessary for special purposes
+ *	in which you need to generate a pristine channel from one
+ *	that has already been used.  All ordinary purposes will almost
+ *	always want to use Tcl_UnregisterChannel instead.
+ *
+ * Results:
+ *	A standard Tcl result.  If the channel is not currently registered
+ *	with the given interpreter, TCL_ERROR is returned, otherwise
+ *	TCL_OK.  However no error messages are left in the interp's result.
+ *
+ * Side effects:
+ *	Deletes the hash entry for a channel associated with an 
+ *	interpreter.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_DetachChannel(interp, chan)
+    Tcl_Interp *interp;		/* Interpreter in which channel is defined. */
+    Tcl_Channel chan;		/* Channel to delete. */
+{
+    if (Tcl_IsStandardChannel(chan)) {
+        return TCL_ERROR;
+    }
+    
+    return DetachChannel(interp, chan);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DetachChannel --
+ *
+ *	Deletes the hash entry for a channel associated with an interpreter.
+ *	If the interpreter given as argument is NULL, it only decrements the
+ *	reference count.  Even if the ref count drops to zero, the 
+ *	channel is NOT closed or cleaned up.  This allows a channel to
+ *	be detached from an interpreter and left in the same state it
+ *	was in when it was originally returned by 'Tcl_OpenFileChannel',
+ *	for example.
+ *
+ * Results:
+ *	A standard Tcl result.  If the channel is not currently registered
+ *	with the given interpreter, TCL_ERROR is returned, otherwise
+ *	TCL_OK.  However no error messages are left in the interp's result.
+ *
+ * Side effects:
+ *	Deletes the hash entry for a channel associated with an 
+ *	interpreter.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+DetachChannel(interp, chan)
+    Tcl_Interp *interp;		/* Interpreter in which channel is defined. */
+    Tcl_Channel chan;		/* Channel to delete. */
+{
+    Tcl_HashTable *hTblPtr;	/* Hash table of channels. */
+    Tcl_HashEntry *hPtr;	/* Search variable. */
+    Channel *chanPtr;		/* The real IO channel. */
+    ChannelState *statePtr;	/* State of the real channel. */
+
+    /*
+     * Always (un)register bottom-most channel in the stack.  This makes
+     * management of the channel list easier because no manipulation is
+     * necessary during (un)stack operation.
+     */
+    chanPtr = ((Channel *) chan)->state->bottomChanPtr;
+    statePtr = chanPtr->state;
+
+    if (interp != (Tcl_Interp *) NULL) {
+	hTblPtr = (Tcl_HashTable *) Tcl_GetAssocData(interp, "tclIO", NULL);
+	if (hTblPtr == (Tcl_HashTable *) NULL) {
+	    return TCL_ERROR;
+	}
+	hPtr = Tcl_FindHashEntry(hTblPtr, statePtr->channelName);
+	if (hPtr == (Tcl_HashEntry *) NULL) {
+	    return TCL_ERROR;
+	}
+	if ((Channel *) Tcl_GetHashValue(hPtr) != chanPtr) {
+	    return TCL_ERROR;
+	}
+	Tcl_DeleteHashEntry(hPtr);
+
+	/*
+	 * Remove channel handlers that refer to this interpreter, so that they
+	 * will not be present if the actual close is delayed and more events
+	 * happen on the channel. This may occur if the channel is shared
+	 * between several interpreters, or if the channel has async
+	 * flushing active.
+	 */
+    
+	CleanupChannelHandlers(interp, chanPtr);
+    }
+
+    statePtr->refCount--;
+    
+    return TCL_OK;
+}
+
 
 /*
  *---------------------------------------------------------------------------

@@ -12,18 +12,14 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: io.test,v 1.19 2001/07/17 18:46:47 andreas_kupries Exp $
+# RCS: @(#) $Id: io.test,v 1.20 2001/07/31 19:12:07 vincentdarley Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
     namespace import -force ::tcltest::*
 }
 
-if {"[info commands testchannel]" != "testchannel"} {
-    puts "Skipping io tests. This application does not seem to have the"
-    puts "testchannel command that is needed to run these tests."
-    return
-}
+tcltest::testConstraint testchannel [string equal testchannel [info commands testchannel]]
 
 ::tcltest::saveState
 
@@ -630,7 +626,7 @@ test io-6.29 {Tcl_GetsObj: crlf mode: several chars} {
     close $f
     set x
 } [list 14 "abcd\nefgh\rijkl" 4 "mnop" -1 ""]
-test io-6.30 {Tcl_GetsObj: crlf mode: buffer exhausted} {
+test io-6.30 {Tcl_GetsObj: crlf mode: buffer exhausted} {testchannel} {
     # if (eol >= dstEnd)
 
     set f [open test1 w]
@@ -643,7 +639,7 @@ test io-6.30 {Tcl_GetsObj: crlf mode: buffer exhausted} {
     close $f
     set x
 } [list 15 "123456789012345" 15]
-test io-6.31 {Tcl_GetsObj: crlf mode: buffer exhausted, blocked} {stdio} {
+test io-6.31 {Tcl_GetsObj: crlf mode: buffer exhausted, blocked} {stdio testchannel} {
     # (FilterInputBytes() != 0)
 
     set f [open "|[list $::tcltest::tcltest cat]" w+]
@@ -656,7 +652,7 @@ test io-6.31 {Tcl_GetsObj: crlf mode: buffer exhausted, blocked} {stdio} {
     close $f
     set x
 } [list "bbbbbbbbbbbbbb" -1 "" 1 16]
-test io-6.32 {Tcl_GetsObj: crlf mode: buffer exhausted, more data} {
+test io-6.32 {Tcl_GetsObj: crlf mode: buffer exhausted, more data} {testchannel} {
     # not (FilterInputBytes() != 0)
 
     set f [open test1 w]
@@ -782,7 +778,7 @@ test io-6.42 {Tcl_GetsObj: auto mode: several chars} {
     close $f
     set x
 } [list 4 "abcd" 4 "efgh" 4 "ijkl" 4 "mnop" -1 ""]
-test io-6.43 {Tcl_GetsObj: input saw cr} {stdio} {
+test io-6.43 {Tcl_GetsObj: input saw cr} {stdio testchannel} {
     # if (chanPtr->flags & INPUT_SAW_CR)
 
     set f [open "|[list $::tcltest::tcltest cat]" w+]
@@ -799,7 +795,7 @@ test io-6.43 {Tcl_GetsObj: input saw cr} {stdio} {
     close $f
     set x
 } [list "bbbbbbbbbbbbbbb" 15 "123456789abcdef" 1 4 "abcd" 0 3 "efg"]
-test io-6.44 {Tcl_GetsObj: input saw cr, not followed by cr} {stdio} {
+test io-6.44 {Tcl_GetsObj: input saw cr, not followed by cr} {stdio testchannel} {
     # not (*eol == '\n') 
 
     set f [open "|[list $::tcltest::tcltest cat]" w+]
@@ -816,7 +812,7 @@ test io-6.44 {Tcl_GetsObj: input saw cr, not followed by cr} {stdio} {
     close $f
     set x
 } [list "bbbbbbbbbbbbbbb" 15 "123456789abcdef" 1 4 "abcd" 0 3 "efg"]
-test io-6.45 {Tcl_GetsObj: input saw cr, skip right number of bytes} {stdio} {
+test io-6.45 {Tcl_GetsObj: input saw cr, skip right number of bytes} {stdio testchannel} {
     # Tcl_ExternalToUtf()
 
     set f [open "|[list $::tcltest::tcltest cat]" w+]
@@ -833,7 +829,7 @@ test io-6.45 {Tcl_GetsObj: input saw cr, skip right number of bytes} {stdio} {
     close $f
     set x
 } [list 15 "123456789abcdef" 1 4 "abcd" 0]
-test io-6.46 {Tcl_GetsObj: input saw cr, followed by just \n should give eof} {stdio} {
+test io-6.46 {Tcl_GetsObj: input saw cr, followed by just \n should give eof} {stdio testchannel} {
     # memmove()
 
     set f [open "|[list $::tcltest::tcltest cat]" w+]
@@ -849,7 +845,7 @@ test io-6.46 {Tcl_GetsObj: input saw cr, followed by just \n should give eof} {s
     close $f
     set x
 } [list 15 "123456789abcdef" 1 -1 "" 0]
-test io-6.47 {Tcl_GetsObj: auto mode: \r at end of buffer, peek for \n} {
+test io-6.47 {Tcl_GetsObj: auto mode: \r at end of buffer, peek for \n} {testchannel} {
     # (eol == dstEnd)
 
     set f [open test1 w]
@@ -862,7 +858,7 @@ test io-6.47 {Tcl_GetsObj: auto mode: \r at end of buffer, peek for \n} {
     close $f
     set x
 } [list "123456789012345" 15]    
-test io-6.48 {Tcl_GetsObj: auto mode: \r at end of buffer, no more avail} {
+test io-6.48 {Tcl_GetsObj: auto mode: \r at end of buffer, no more avail} {testchannel} {
     # PeekAhead() did not get any, so (eol >= dstEnd)
     
     set f [open test1 w]
@@ -875,7 +871,7 @@ test io-6.48 {Tcl_GetsObj: auto mode: \r at end of buffer, no more avail} {
     close $f
     set x
 } [list "123456789012345" 1]
-test io-6.49 {Tcl_GetsObj: auto mode: \r followed by \n} {
+test io-6.49 {Tcl_GetsObj: auto mode: \r followed by \n} {testchannel} {
     # if (*eol == '\n') {skip++}
     
     set f [open test1 w]
@@ -887,7 +883,7 @@ test io-6.49 {Tcl_GetsObj: auto mode: \r followed by \n} {
     close $f
     set x
 } [list "123456" 0 8 "78901"]
-test io-6.50 {Tcl_GetsObj: auto mode: \r not followed by \n} {
+test io-6.50 {Tcl_GetsObj: auto mode: \r not followed by \n} {testchannel} {
     # not (*eol == '\n') 
     
     set f [open test1 w]
@@ -911,7 +907,7 @@ test io-6.51 {Tcl_GetsObj: auto mode: \n} {
     close $f
     set x
 } [list "123456" 7 "78901"]
-test io-6.52 {Tcl_GetsObj: saw EOF character} {
+test io-6.52 {Tcl_GetsObj: saw EOF character} {testchannel} {
     # if (eof != NULL)
 
     set f [open test1 w]
@@ -1005,7 +1001,7 @@ test io-7.2 {FilterInputBytes: split up character in middle of buffer} {
     close $f
     set x
 } [list 10 "1234567890" 0]
-test io-7.3 {FilterInputBytes: split up character at EOF} {
+test io-7.3 {FilterInputBytes: split up character at EOF} {testchannel} {
     set f [open test1 w]
     fconfigure $f -encoding binary
     puts -nonewline $f "1234567890123\x82\x4f\x82\x50\x82"
@@ -1037,7 +1033,7 @@ test io-7.4 {FilterInputBytes: recover from split up character} {stdio} {
     set x
 } [list -1 "" 1 17 "1234567890123\uff10\uff11\uff12\uff13" 0]
 
-test io-8.1 {PeekAhead: only go to device if no more cached data} {
+test io-8.1 {PeekAhead: only go to device if no more cached data} {testchannel} {
     # (bufPtr->nextPtr == NULL)
 
     set f [open "test1" w]
@@ -1052,7 +1048,7 @@ test io-8.1 {PeekAhead: only go to device if no more cached data} {
     close $f
     set x
 } "7"
-test io-8.2 {PeekAhead: only go to device if no more cached data} {stdio} {
+test io-8.2 {PeekAhead: only go to device if no more cached data} {stdio testchannel} {
     # not (bufPtr->nextPtr == NULL)
 
     set f [open "|[list $::tcltest::tcltest cat]" w+]
@@ -1071,7 +1067,7 @@ test io-8.2 {PeekAhead: only go to device if no more cached data} {stdio} {
     close $f
     set x
 } [list -1 "" 42 15 "123456789012345" 25]
-test io-8.3 {PeekAhead: no cached data available} {stdio} {
+test io-8.3 {PeekAhead: no cached data available} {stdio testchannel} {
     # (bytesLeft == 0)
 
     set f [open "|[list $::tcltest::tcltest cat]" w+]
@@ -1104,7 +1100,7 @@ test io-8.4 {PeekAhead: cached data available in this buffer} {
     set x    
 } $a
 unset a
-test io-8.5 {PeekAhead: don't peek if last read was short} {stdio} {
+test io-8.5 {PeekAhead: don't peek if last read was short} {stdio testchannel} {
     # (bufPtr->nextAdded < bufPtr->length)
 
     set f [open "|[list $::tcltest::tcltest cat]" w+]
@@ -1116,7 +1112,7 @@ test io-8.5 {PeekAhead: don't peek if last read was short} {stdio} {
     close $f
     set x
 } {15 abcdefghijklmno 1}
-test io-8.6 {PeekAhead: change to non-blocking mode} {stdio} {
+test io-8.6 {PeekAhead: change to non-blocking mode} {stdio testchannel} {
     # ((chanPtr->flags & CHANNEL_NONBLOCKING) == 0) 
 
     set f [open "|[list $::tcltest::tcltest cat]" w+]
@@ -1128,7 +1124,7 @@ test io-8.6 {PeekAhead: change to non-blocking mode} {stdio} {
     close $f
     set x
 } {15 abcdefghijklmno 1}
-test io-8.7 {PeekAhead: cleanup} {stdio} {
+test io-8.7 {PeekAhead: cleanup} {stdio testchannel} {
     # Make sure bytes are removed from buffer.
 
     set f [open "|[list $::tcltest::tcltest cat]" w+]
@@ -1294,7 +1290,7 @@ test io-12.3 {ReadChars: allocate more space} {
     close $f
     set x
 } {abcdefghijklmnopqrstuvwxyz}
-test io-12.4 {ReadChars: split-up char} {stdio} {
+test io-12.4 {ReadChars: split-up char} {stdio testchannel} {
     # (srcRead == 0)
 
     set f [open "|[list $::tcltest::tcltest cat]" w+]
@@ -1413,7 +1409,7 @@ test io-13.5 {TranslateInputEOL: crlf mode: naked lf} {
     close $f
     set x
 } "abcd\ndef\nfgh"
-test io-13.6 {TranslateInputEOL: auto mode: saw cr in last segment} {stdio} {
+test io-13.6 {TranslateInputEOL: auto mode: saw cr in last segment} {stdio testchannel} {
     # (chanPtr->flags & INPUT_SAW_CR)
     # This test may fail on slower machines.
 
@@ -1437,7 +1433,7 @@ test io-13.6 {TranslateInputEOL: auto mode: saw cr in last segment} {stdio} {
     close $f
     set x
 } [list "abcdefghj\n" 1 "01234" 0]
-test io-13.7 {TranslateInputEOL: auto mode: naked \r} {
+test io-13.7 {TranslateInputEOL: auto mode: naked \r} {testchannel} {
     # (src >= srcMax)
 
     set f [open test1 w]
@@ -1518,12 +1514,18 @@ test io-13.12 {TranslateInputEOL: find EOF char in src} {
 # Tcl_SetStdChannel and Tcl_GetStdChannel. Incidentally we are
 # also testing channel table management.
 
-if {$tcl_platform(platform) == "macintosh"} {
-    set consoleFileNames [list console0 console1 console2]
+if {[info commands testchannel] != ""} {
+    if {$tcl_platform(platform) == "macintosh"} {
+	set consoleFileNames [list console0 console1 console2]
+    } else {
+	set consoleFileNames [lsort [testchannel open]]
+    }
 } else {
-    set consoleFileNames [lsort [testchannel open]]
+    # just to avoid an error
+    set consoleFileNames [list]
 }
-test io-14.1 {Tcl_SetStdChannel and Tcl_GetStdChannel} {
+
+test io-14.1 {Tcl_SetStdChannel and Tcl_GetStdChannel} {testchannel} {
     set l ""
     lappend l [fconfigure stdin -buffering]
     lappend l [fconfigure stdout -buffering]
@@ -1677,7 +1679,7 @@ test io-16.1 {Tcl_DeleteCloseHandler} {
 # These functions use "eof stdin" to ensure that the standard
 # channels are added to the channel table of the interpreter.
 
-test io-17.1 {GetChannelTable, DeleteChannelTable on std handles} {
+test io-17.1 {GetChannelTable, DeleteChannelTable on std handles} {testchannel} {
     set l1 [testchannel refcount stdin]
     eof stdin
     interp create x
@@ -1689,7 +1691,7 @@ test io-17.1 {GetChannelTable, DeleteChannelTable on std handles} {
     lappend l [expr [testchannel refcount stdin] - $l1]
     set l
 } {0 1 0}
-test io-17.2 {GetChannelTable, DeleteChannelTable on std handles} {
+test io-17.2 {GetChannelTable, DeleteChannelTable on std handles} {testchannel} {
     set l1 [testchannel refcount stdout]
     eof stdin
     interp create x
@@ -1701,7 +1703,7 @@ test io-17.2 {GetChannelTable, DeleteChannelTable on std handles} {
     lappend l [expr [testchannel refcount stdout] - $l1]
     set l
 } {0 1 0}
-test io-17.3 {GetChannelTable, DeleteChannelTable on std handles} {
+test io-17.3 {GetChannelTable, DeleteChannelTable on std handles} {testchannel} {
     set l1 [testchannel refcount stderr]
     eof stdin
     interp create x
@@ -1714,7 +1716,7 @@ test io-17.3 {GetChannelTable, DeleteChannelTable on std handles} {
     set l
 } {0 1 0}
 
-test io-18.1 {Tcl_RegisterChannel, Tcl_UnregisterChannel} {
+test io-18.1 {Tcl_RegisterChannel, Tcl_UnregisterChannel} {testchannel} {
     removeFile test1
     set l ""
     set f [open test1 w]
@@ -1728,7 +1730,7 @@ test io-18.1 {Tcl_RegisterChannel, Tcl_UnregisterChannel} {
     string compare [string tolower $l] \
 	[list 1 [format "can not find channel named \"%s\"" $f]]
 } 0
-test io-18.2 {Tcl_RegisterChannel, Tcl_UnregisterChannel} {
+test io-18.2 {Tcl_RegisterChannel, Tcl_UnregisterChannel} {testchannel} {
     removeFile test1
     set l ""
     set f [open test1 w]
@@ -1749,7 +1751,7 @@ test io-18.2 {Tcl_RegisterChannel, Tcl_UnregisterChannel} {
     string compare [string tolower $l] \
 	[list 1 2 1 1 [format "can not find channel named \"%s\"" $f]]
 } 0
-test io-18.3 {Tcl_RegisterChannel, Tcl_UnregisterChannel} {
+test io-18.3 {Tcl_RegisterChannel, Tcl_UnregisterChannel} {testchannel} {
     removeFile test1
     set l ""
     set f [open test1 w]
@@ -1782,7 +1784,7 @@ test io-19.2 {testing Tcl_GetChannel, user opened handle} {
 test io-19.3 {Tcl_GetChannel, channel not found} {
     list [catch {eof file34} msg] $msg
 } {1 {can not find channel named "file34"}}
-test io-19.4 {Tcl_CreateChannel, insertion into channel table} {
+test io-19.4 {Tcl_CreateChannel, insertion into channel table} {testchannel} {
     removeFile test1
     set f [open test1 w]
     set l ""
@@ -1853,7 +1855,7 @@ test io-22.1 {Tcl_GetChannelMode} {
     # Not used anywhere in Tcl.
 } {}
 
-test io-23.1 {Tcl_GetChannelName} {
+test io-23.1 {Tcl_GetChannelName} {testchannel} {
     removeFile test1
     set f [open test1 w]
     set n [testchannel name $f]
@@ -1861,7 +1863,7 @@ test io-23.1 {Tcl_GetChannelName} {
     string compare $n $f
 } 0
 
-test io-24.1 {Tcl_GetChannelType} {
+test io-24.1 {Tcl_GetChannelType} {testchannel} {
     removeFile test1
     set f [open test1 w]
     set t [testchannel type $f]
@@ -1869,7 +1871,7 @@ test io-24.1 {Tcl_GetChannelType} {
     string compare $t file
 } 0
 
-test io-25.1 {Tcl_GetChannelHandle, input} {
+test io-25.1 {Tcl_GetChannelHandle, input} {testchannel} {
     set f [open test1 w]
     fconfigure $f -translation lf -eofchar {}
     puts $f "1234567890\n098765432"
@@ -1882,7 +1884,7 @@ test io-25.1 {Tcl_GetChannelHandle, input} {
     close $f
     set l
 } {10 11}
-test io-25.2 {Tcl_GetChannelHandle, output} {
+test io-25.2 {Tcl_GetChannelHandle, output} {testchannel} {
     removeFile test1
     set f [open test1 w]
     fconfigure $f -translation lf
@@ -2012,7 +2014,7 @@ test io-27.6 {FlushChannel, async flushing, async close} \
 
 # Tests closing a channel. The functions tested are CloseChannel and Tcl_Close.
 
-test io-28.1 {CloseChannel called when all references are dropped} {
+test io-28.1 {CloseChannel called when all references are dropped} {testchannel} {
     removeFile test1
     set f [open test1 w]
     interp create x
@@ -2086,7 +2088,7 @@ test io-28.3 {CloseChannel, not called before output queue is empty} \
         set result ok
     }
 } ok
-test io-28.4 {Tcl_Close} {
+test io-28.4 {Tcl_Close} {testchannel} {
     removeFile test1
     set l ""
     lappend l [lsort [testchannel open]]
@@ -2099,7 +2101,7 @@ test io-28.4 {Tcl_Close} {
 		$consoleFileNames]
     string compare $l $x
 } 0
-test io-28.5 {Tcl_Close vs standard handles} {stdio unixOnly} {
+test io-28.5 {Tcl_Close vs standard handles} {stdio unixOnly testchannel} {
     removeFile script
     set f [open script w]
     puts $f {
@@ -2132,7 +2134,7 @@ test io-29.3 {Tcl_WriteChars, nonempty string} {
     close $f
     file size test1
 } 5
-test io-29.4 {Tcl_WriteChars, buffering in full buffering mode} {
+test io-29.4 {Tcl_WriteChars, buffering in full buffering mode} {testchannel} {
     removeFile test1
     set f [open test1 w]
     fconfigure $f -translation lf -buffering full -eofchar {}
@@ -2146,7 +2148,7 @@ test io-29.4 {Tcl_WriteChars, buffering in full buffering mode} {
     close $f
     set l
 } {6 0 0 6}
-test io-29.5 {Tcl_WriteChars, buffering in line buffering mode} {
+test io-29.5 {Tcl_WriteChars, buffering in line buffering mode} {testchannel} {
     removeFile test1
     set f [open test1 w]
     fconfigure $f -translation lf -buffering line -eofchar {}
@@ -2160,7 +2162,7 @@ test io-29.5 {Tcl_WriteChars, buffering in line buffering mode} {
     close $f
     set l
 } {5 0 0 11}
-test io-29.6 {Tcl_WriteChars, buffering in no buffering mode} {
+test io-29.6 {Tcl_WriteChars, buffering in no buffering mode} {testchannel} {
     removeFile test1
     set f [open test1 w]
     fconfigure $f -translation lf -buffering none -eofchar {}
@@ -2175,7 +2177,7 @@ test io-29.6 {Tcl_WriteChars, buffering in no buffering mode} {
     set l
 } {0 5 0 11}
 
-test io-29.7 {Tcl_Flush, full buffering} {
+test io-29.7 {Tcl_Flush, full buffering} {testchannel} {
     removeFile test1
     set f [open test1 w]
     fconfigure $f -translation lf -buffering full -eofchar {}
@@ -2192,7 +2194,7 @@ test io-29.7 {Tcl_Flush, full buffering} {
     close $f
     set l
 } {5 0 11 0 0 11}
-test io-29.8 {Tcl_Flush, full buffering} {
+test io-29.8 {Tcl_Flush, full buffering} {testchannel} {
     removeFile test1
     set f [open test1 w]
     fconfigure $f -translation lf -buffering line
@@ -4671,7 +4673,7 @@ test io-36.6 {Tcl_InputBlocked vs files, event driven read} {nonBlockFiles} {
 
 # Test Tcl_InputBuffered
 
-test io-37.1 {Tcl_InputBuffered} {
+test io-37.1 {Tcl_InputBuffered} {testchannel} {
     set f [open longfile r]
     fconfigure $f -buffersize 4096
     read $f 3
@@ -4681,7 +4683,7 @@ test io-37.1 {Tcl_InputBuffered} {
     close $f
     set l
 } {4093 3}
-test io-37.2 {Tcl_InputBuffered, test input flushing on seek} {
+test io-37.2 {Tcl_InputBuffered, test input flushing on seek} {testchannel} {
     set f [open longfile r]
     fconfigure $f -buffersize 4096
     read $f 3
@@ -5097,6 +5099,7 @@ test io-40.6 {POSIX open access modes: EXCL} {
     close $f
     set msg [list [catch {open test3 {WRONLY CREAT EXCL}} msg] $msg]
     regsub " already " $msg " " msg
+    regsub [file join {} test3] $msg "test3" msg
     string tolower $msg
 } {1 {couldn't open "test3": file exists}}
 test io-40.7 {POSIX open access modes: EXCL} {
@@ -5144,11 +5147,15 @@ test io-40.10 {POSIX open access modes: RDONLY} {
 } 0
 test io-40.11 {POSIX open access modes: RDONLY} {
     removeFile test3
-    string tolower [list [catch {open test3 RDONLY} msg] $msg]
+    set msg [list [catch {open test3 RDONLY} msg] $msg]
+    regsub [file join {} test3] $msg "test3" msg
+	string tolower $msg
 } {1 {couldn't open "test3": no such file or directory}}
 test io-40.12 {POSIX open access modes: WRONLY} {
     removeFile test3
-    string tolower [list [catch {open test3 WRONLY} msg] $msg]
+    set msg [list [catch {open test3 WRONLY} msg] $msg]
+    regsub [file join {} test3] $msg "test3" msg
+	string tolower $msg
 } {1 {couldn't open "test3": no such file or directory}}
 test io-40.13 {POSIX open access modes: WRONLY} {
     makeFile xyzzy test3
@@ -5164,7 +5171,9 @@ test io-40.13 {POSIX open access modes: WRONLY} {
 } 0
 test io-40.14 {POSIX open access modes: RDWR} {
     removeFile test3
-    string tolower [list [catch {open test3 RDWR} msg] $msg]
+    set msg [list [catch {open test3 RDWR} msg] $msg]
+    regsub [file join {} test3] $msg "test3" msg
+	string tolower $msg
 } {1 {couldn't open "test3": no such file or directory}}
 test io-40.15 {POSIX open access modes: RDWR} {
     makeFile xyzzy test3
@@ -6054,7 +6063,7 @@ test io-49.5 {testing crlf reading, leftover cr disgorgment} {
     set l
 } [list 7 a\rb\rc 7 {} 7 1]
     
-test io-50.1 {testing handler deletion} {} {
+test io-50.1 {testing handler deletion} {testchannel} {
     removeFile test1
     set f [open test1 w]
     close $f
@@ -6070,7 +6079,7 @@ test io-50.1 {testing handler deletion} {} {
     close $f
     set z
 } called
-test io-50.2 {testing handler deletion with multiple handlers} {} {
+test io-50.2 {testing handler deletion with multiple handlers} {testchannel} {
     removeFile test1
     set f [open test1 w]
     close $f
@@ -6088,7 +6097,7 @@ test io-50.2 {testing handler deletion with multiple handlers} {} {
     string compare [string tolower $z] \
 	[list [list called delhandler $f 0] [list called delhandler $f 1]]
 } 0
-test io-50.3 {testing handler deletion with multiple handlers} {} {
+test io-50.3 {testing handler deletion with multiple handlers} {testchannel} {
     removeFile test1
     set f [open test1 w]
     close $f
@@ -6114,7 +6123,7 @@ test io-50.3 {testing handler deletion with multiple handlers} {} {
 	[list [list delhandler $f 0 called] \
 	      [list delhandler $f 0 deleted myself]]
 } 0
-test io-50.4 {testing handler deletion vs reentrant calls} {} {
+test io-50.4 {testing handler deletion vs reentrant calls} {testchannel} {
     removeFile test1
     set f [open test1 w]
     close $f
@@ -6138,7 +6147,7 @@ test io-50.4 {testing handler deletion vs reentrant calls} {} {
     string compare [string tolower $z] \
 	{{delrecursive calling recursive} {delrecursive deleting recursive}}
 } 0
-test io-50.5 {testing handler deletion vs reentrant calls} {} {
+test io-50.5 {testing handler deletion vs reentrant calls} {testchannel} {
     removeFile test1
     set f [open test1 w]
     close $f
@@ -6171,7 +6180,7 @@ test io-50.5 {testing handler deletion vs reentrant calls} {} {
 	[list {del calling recursive} {del deleted notcalled} \
 	      {del deleted myself} {del after update}]
 } 0
-test io-50.6 {testing handler deletion vs reentrant calls} {} {
+test io-50.6 {testing handler deletion vs reentrant calls} {testchannel} {
     removeFile test1
     set f [open test1 w]
     close $f
@@ -6723,7 +6732,7 @@ test io-55.1 {ChannelEventScriptInvoker: deletion} {
     set x
 } {got_error}
 
-test io-56.1 {ChannelTimerProc} {
+test io-56.1 {ChannelTimerProc} {testchannel} {
     set f [open fooBar w]
     puts $f "this is a test"
     close $f

@@ -11,14 +11,12 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.12 2000/01/21 02:25:26 hobbs Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.13 2001/07/31 19:12:06 vincentdarley Exp $
  */
 
 #include "tclInt.h"
 #include "tclPort.h"
 #include <locale.h>
-
-typedef int (StatProc)_ANSI_ARGS_((CONST char *path, struct stat *buf));
 
 /*
  * Prototypes for local procedures defined in this file:
@@ -27,15 +25,13 @@ typedef int (StatProc)_ANSI_ARGS_((CONST char *path, struct stat *buf));
 static int		CheckAccess _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *objPtr, int mode));
 static int		GetStatBuf _ANSI_ARGS_((Tcl_Interp *interp,
-			    Tcl_Obj *objPtr, StatProc *statProc,
+			    Tcl_Obj *objPtr, Tcl_FSStatProc *statProc,
 			    struct stat *statPtr));
 static char *		GetTypeFromMode _ANSI_ARGS_((int mode));
 static int		SplitPath _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *objPtr, int *argcPtr, char ***argvPtr));
 static int		StoreStatData _ANSI_ARGS_((Tcl_Interp *interp,
 			    char *varName, struct stat *statPtr));
-static char **		StringifyObjects _ANSI_ARGS_((int objc,
-			    Tcl_Obj *CONST objv[]));
 
 /*
  *----------------------------------------------------------------------
@@ -307,8 +303,7 @@ Tcl_CdObjCmd(dummy, interp, objc, objv)
     int objc;			/* Number of arguments. */
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
-    char *dirName;
-    Tcl_DString ds;
+    Tcl_Obj *dir;
     int result;
 
     if (objc > 2) {
@@ -317,23 +312,25 @@ Tcl_CdObjCmd(dummy, interp, objc, objv)
     }
 
     if (objc == 2) {
-	dirName = Tcl_GetString(objv[1]);
+	dir = objv[1];
     } else {
-	dirName = "~";
+	dir = Tcl_NewStringObj("~",1);
+	Tcl_IncrRefCount(dir);
     }
-    if (Tcl_TranslateFileName(interp, dirName, &ds) == NULL) {
-	return TCL_ERROR;
+    if (Tcl_FSConvertToPathType(interp, dir) != TCL_OK) {
+	result = TCL_ERROR;
+    } else {
+	result = Tcl_FSChdir(dir);
+	if (result != TCL_OK) {
+	    Tcl_AppendResult(interp, "couldn't change working directory to \"",
+		    Tcl_GetString(dir), "\": ", Tcl_PosixError(interp), (char *) NULL);
+	    result = TCL_ERROR;
+	}
     }
-
-    result = Tcl_Chdir(Tcl_DStringValue(&ds));
-    Tcl_DStringFree(&ds);
-
-    if (result != 0) {
-	Tcl_AppendResult(interp, "couldn't change working directory to \"",
-		dirName, "\": ", Tcl_PosixError(interp), (char *) NULL);
-	return TCL_ERROR;
+    if (objc != 2) {
+	Tcl_DecrRefCount(dir);
     }
-    return TCL_OK;
+    return result;
 }
 
 /*
@@ -765,7 +762,9 @@ Tcl_ExprObjCmd(dummy, interp, objc, objv)
  *	See the user documentation for details on what it does.
  *	PLEASE NOTE THAT THIS FAILS WITH FILENAMES AND PATHS WITH
  *	EMBEDDED NULLS, WHICH COULD THEORETICALLY HAPPEN ON A MAC.
- *
+ *      With the object-based Tcl_FS APIs, the above NOTE may no
+ *      longer be true.  In any case this assertion should be tested.
+ *      
  * Results:
  *	A standard Tcl result.
  *
@@ -795,9 +794,11 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	"delete",
 	"dirname",	"executable",	"exists",	"extension",
 	"isdirectory",	"isfile",	"join",		"lstat",
-	"mtime",	"mkdir",	"nativename",	"owned",
+	"mtime",	"mkdir",	"nativename",	
+	"normalize",    "owned",
 	"pathtype",	"readable",	"readlink",	"rename",
-	"rootname",	"size",		"split",	"stat",
+	"rootname",	"separator",    "size",		"split",	
+	"stat",         "system", 
 	"tail",		"type",		"volumes",	"writable",
 	(char *) NULL
     };
@@ -806,9 +807,11 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	FILE_DELETE,
 	FILE_DIRNAME,	FILE_EXECUTABLE, FILE_EXISTS,	FILE_EXTENSION,
 	FILE_ISDIRECTORY, FILE_ISFILE,	FILE_JOIN,	FILE_LSTAT,
-	FILE_MTIME,	FILE_MKDIR,	FILE_NATIVENAME, FILE_OWNED,
+	FILE_MTIME,	FILE_MKDIR,	FILE_NATIVENAME, 
+	FILE_NORMALIZE, FILE_OWNED,
 	FILE_PATHTYPE,	FILE_READABLE,	FILE_READLINK,	FILE_RENAME,
-	FILE_ROOTNAME,	FILE_SIZE,	FILE_SPLIT,	FILE_STAT,
+	FILE_ROOTNAME,	FILE_SEPARATOR, FILE_SIZE,	FILE_SPLIT,	
+	FILE_STAT,      FILE_SYSTEM, 
 	FILE_TAIL,	FILE_TYPE,	FILE_VOLUMES,	FILE_WRITABLE
     };
 
@@ -825,14 +828,13 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
     switch ((enum options) index) {
     	case FILE_ATIME: {
 	    struct stat buf;
-	    char *fileName;
 	    struct utimbuf tval;
 
 	    if ((objc < 3) || (objc > 4)) {
 		Tcl_WrongNumArgs(interp, 2, objv, "name ?time?");
 		return TCL_ERROR;
 	    }
-	    if (GetStatBuf(interp, objv[2], TclStat, &buf) != TCL_OK) {
+	    if (GetStatBuf(interp, objv[2], Tcl_FSStat, &buf) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    if (objc == 4) {
@@ -842,11 +844,10 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 		}
 		tval.actime = buf.st_atime;
 		tval.modtime = buf.st_mtime;
-		fileName = Tcl_GetString(objv[2]);
-		if (utime(fileName, &tval) != 0) {
+		if (Tcl_FSUtime(objv[2], &tval) != 0) {
 		    Tcl_AppendStringsToObj(resultPtr,
 			    "could not set access time for file \"",
-			    fileName, "\": ",
+			    Tcl_GetString(objv[2]), "\": ",
 			    Tcl_PosixError(interp), (char *) NULL);
 		    return TCL_ERROR;
 		}
@@ -856,7 +857,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 		 * one we sent in.  However, fs's like FAT don't
 		 * even know what atime is.
 		 */
-		if (GetStatBuf(interp, objv[2], TclStat, &buf) != TCL_OK) {
+		if (GetStatBuf(interp, objv[2], Tcl_FSStat, &buf) != TCL_OK) {
 		    return TCL_ERROR;
 		}
 	    }
@@ -875,26 +876,14 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 		    ((objc == 2) ? NULL : Tcl_GetString(objv[2])));
 	}
 	case FILE_COPY: {
-	    int result;
-	    char **argv;
-
-	    argv = StringifyObjects(objc, objv);
-	    result = TclFileCopyCmd(interp, objc, argv);
-	    ckfree((char *) argv);
-	    return result;
+	    return TclFileCopyCmd(interp, objc, objv);
 	}	    
 	case FILE_DELETE: {
-	    int result;
-	    char **argv;
-
-	    argv = StringifyObjects(objc, objv);
-	    result = TclFileDeleteCmd(interp, objc, argv);
-	    ckfree((char *) argv);
-	    return result;
+	    return TclFileDeleteCmd(interp, objc, objv);
 	}
     	case FILE_DIRNAME: {
     	    int argc;
-	    char **argv;
+	    char ** argv;
 
 	    if (objc != 3) {
 		goto only3Args;
@@ -959,7 +948,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 		goto only3Args;
 	    }
 	    value = 0;
-	    if (GetStatBuf(NULL, objv[2], TclStat, &buf) == TCL_OK) {
+	    if (GetStatBuf(NULL, objv[2], Tcl_FSStat, &buf) == TCL_OK) {
 		value = S_ISDIR(buf.st_mode);
 	    }
 	    Tcl_SetBooleanObj(resultPtr, value);
@@ -973,27 +962,21 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
     	    	goto only3Args;
     	    }
 	    value = 0;
-	    if (GetStatBuf(NULL, objv[2], TclStat, &buf) == TCL_OK) {
+	    if (GetStatBuf(NULL, objv[2], Tcl_FSStat, &buf) == TCL_OK) {
 		value = S_ISREG(buf.st_mode);
 	    }
 	    Tcl_SetBooleanObj(resultPtr, value);
 	    return TCL_OK;
 	}
 	case FILE_JOIN: {
-	    char **argv;
-	    Tcl_DString ds;
+	    Tcl_Obj *resObj;
 
 	    if (objc < 3) {
 		Tcl_WrongNumArgs(interp, 2, objv, "name ?name ...?");
 		return TCL_ERROR;
 	    }
-	    argv = StringifyObjects(objc - 2, objv + 2);
-	    Tcl_DStringInit(&ds);
-	    Tcl_JoinPath(objc - 2, argv, &ds);
-	    Tcl_SetStringObj(resultPtr, Tcl_DStringValue(&ds),
-		    Tcl_DStringLength(&ds));
-	    Tcl_DStringFree(&ds);
-	    ckfree((char *) argv);
+	    resObj = Tcl_FSJoinToPath(NULL, objc - 2, objv + 2);
+	    Tcl_SetObjResult(interp, resObj);
 	    return TCL_OK;
 	}
     	case FILE_LSTAT: {
@@ -1004,7 +987,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
     	    	Tcl_WrongNumArgs(interp, 2, objv, "name varName");
     	    	return TCL_ERROR;
     	    }
-	    if (GetStatBuf(interp, objv[2], TclpLstat, &buf) != TCL_OK) {
+	    if (GetStatBuf(interp, objv[2], Tcl_FSLstat, &buf) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    varName = Tcl_GetString(objv[3]);
@@ -1012,14 +995,13 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	}
 	case FILE_MTIME: {
 	    struct stat buf;
-	    char *fileName;
 	    struct utimbuf tval;
 
 	    if ((objc < 3) || (objc > 4)) {
 		Tcl_WrongNumArgs(interp, 2, objv, "name ?time?");
 		return TCL_ERROR;
 	    }
-	    if (GetStatBuf(interp, objv[2], TclStat, &buf) != TCL_OK) {
+	    if (GetStatBuf(interp, objv[2], Tcl_FSStat, &buf) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    if (objc == 4) {
@@ -1029,11 +1011,10 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 		}
 		tval.actime = buf.st_atime;
 		tval.modtime = buf.st_mtime;
-		fileName = Tcl_GetString(objv[2]);
-		if (utime(fileName, &tval) != 0) {
+		if (Tcl_FSUtime(objv[2], &tval) != 0) {
 		    Tcl_AppendStringsToObj(resultPtr,
 			    "could not set modification time for file \"",
-			    fileName, "\": ",
+			    Tcl_GetString(objv[2]), "\": ",
 			    Tcl_PosixError(interp), (char *) NULL);
 		    return TCL_ERROR;
 		}
@@ -1043,7 +1024,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 		 * one we sent in.  However, fs's like FAT don't
 		 * even know what atime is.
 		 */
-		if (GetStatBuf(interp, objv[2], TclStat, &buf) != TCL_OK) {
+		if (GetStatBuf(interp, objv[2], Tcl_FSStat, &buf) != TCL_OK) {
 		    return TCL_ERROR;
 		}
 	    }
@@ -1051,17 +1032,11 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    return TCL_OK;
 	}
 	case FILE_MKDIR: {
-	    char **argv;
-	    int result;
-
 	    if (objc < 3) {
 		Tcl_WrongNumArgs(interp, 2, objv, "name ?name ...?");
 		return TCL_ERROR;
 	    }
-	    argv = StringifyObjects(objc, objv);
-	    result = TclFileMakeDirsCmd(interp, objc, argv);
-	    ckfree((char *) argv);
-	    return result;
+	    return TclFileMakeDirsCmd(interp, objc, objv);
 	}
 	case FILE_NATIVENAME: {
 	    char *fileName;
@@ -1079,6 +1054,18 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    Tcl_DStringFree(&ds);
 	    return TCL_OK;
 	}
+	case FILE_NORMALIZE: {
+	    Tcl_Obj *fileName;
+
+	    if (objc != 3) {
+		Tcl_WrongNumArgs(interp, 2, objv, "filename");
+		return TCL_ERROR;
+	    }
+
+	    fileName = Tcl_FSGetNormalizedPath(interp, objv[2]);
+	    Tcl_SetObjResult(interp, fileName);
+	    return TCL_OK;
+	}
 	case FILE_OWNED: {
 	    int value;
 	    struct stat buf;
@@ -1087,7 +1074,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 		goto only3Args;
 	    }
 	    value = 0;
-	    if (GetStatBuf(NULL, objv[2], TclStat, &buf) == TCL_OK) {
+	    if (GetStatBuf(NULL, objv[2], Tcl_FSStat, &buf) == TCL_OK) {
 		/*
 		 * For Windows and Macintosh, there are no user ids 
 		 * associated with a file, so we always return 1.
@@ -1129,52 +1116,30 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    return CheckAccess(interp, objv[2], R_OK);
 	}
 	case FILE_READLINK: {
-	    char *fileName, *contents;
-	    Tcl_DString name, link;
+	    Tcl_Obj *contents;
 		
 	    if (objc != 3) {
 		goto only3Args;
 	    }
 	    
-	    fileName = Tcl_GetString(objv[2]);
-	    fileName = Tcl_TranslateFileName(interp, fileName, &name);
-	    if (fileName == NULL) {
+	    if (Tcl_FSConvertToPathType(interp, objv[2]) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 
-	    /*
-	     * If S_IFLNK isn't defined it means that the machine doesn't
-	     * support symbolic links, so the file can't possibly be a
-	     * symbolic link.  Generate an EINVAL error, which is what
-	     * happens on machines that do support symbolic links when
-	     * you invoke readlink on a file that isn't a symbolic link.
-	     */
+	    contents = Tcl_FSReadlink(objv[2]);
 
-#ifndef S_IFLNK
-	    contents = NULL;
-	    errno = EINVAL;
-#else
-	    contents = TclpReadlink(fileName, &link);
-#endif /* S_IFLNK */
-
-	    Tcl_DStringFree(&name);
 	    if (contents == NULL) {
 	    	Tcl_AppendResult(interp, "could not readlink \"", 
 	    		Tcl_GetString(objv[2]), "\": ", 
 	    		Tcl_PosixError(interp), (char *) NULL);
 	    	return TCL_ERROR;
 	    }
-	    Tcl_DStringResult(interp, &link);
+	    Tcl_SetObjResult(interp, contents);
+	    Tcl_DecrRefCount(contents);
 	    return TCL_OK;
 	}
 	case FILE_RENAME: {
-	    int result;
-	    char **argv;
-
-	    argv = StringifyObjects(objc, objv);
-	    result = TclFileRenameCmd(interp, objc, argv);
-	    ckfree((char *) argv);
-	    return result;
+	    return TclFileRenameCmd(interp, objc, objv);
 	}
 	case FILE_ROOTNAME: {
 	    int length;
@@ -1193,34 +1158,54 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    }
 	    return TCL_OK;
 	}
+	case FILE_SEPARATOR: {
+	    if ((objc < 2) || (objc > 3)) {
+		Tcl_WrongNumArgs(interp, 2, objv, "?name?");
+		return TCL_ERROR;
+	    }
+	    if (objc == 2) {
+	        char *separator = NULL; /* lint */
+		switch (tclPlatform) {
+		    case TCL_PLATFORM_UNIX:
+			separator = "/";
+			break;
+		    case TCL_PLATFORM_WINDOWS:
+			separator = "\\";
+			break;
+		    case TCL_PLATFORM_MAC:
+			separator = ":";
+			break;
+		}
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(separator,1));
+	    } else {
+		Tcl_Obj *separatorObj = Tcl_FSPathSeparator(objv[2]);
+		if (separatorObj != NULL) {
+		    Tcl_SetObjResult(interp, separatorObj);
+		} else {
+		    Tcl_SetObjResult(interp, 
+				     Tcl_NewStringObj("Unrecognised path",-1));
+		    return TCL_ERROR;
+		}
+	    }
+	    return TCL_OK;
+	}
 	case FILE_SIZE: {
 	    struct stat buf;
 	    
 	    if (objc != 3) {
 		goto only3Args;
 	    }
-	    if (GetStatBuf(interp, objv[2], TclStat, &buf) != TCL_OK) {
+	    if (GetStatBuf(interp, objv[2], Tcl_FSStat, &buf) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    Tcl_SetLongObj(resultPtr, (long) buf.st_size);
 	    return TCL_OK;
 	}
 	case FILE_SPLIT: {
-	    int i, argc;
-	    char **argv;
-	    char *fileName;
-	    Tcl_Obj *objPtr;
-	    
 	    if (objc != 3) {
 		goto only3Args;
 	    }
-	    fileName = Tcl_GetString(objv[2]);
-	    Tcl_SplitPath(fileName, &argc, &argv);
-	    for (i = 0; i < argc; i++) {
-		objPtr = Tcl_NewStringObj(argv[i], -1);
-		Tcl_ListObjAppendElement(NULL, resultPtr, objPtr);
-	    }
-	    ckfree((char *) argv);
+	    Tcl_SetObjResult(interp, Tcl_FSSplitPath(objv[2], NULL));
 	    return TCL_OK;
 	}
 	case FILE_STAT: {
@@ -1231,11 +1216,26 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    	Tcl_WrongNumArgs(interp, 1, objv, "stat name varName");
 		return TCL_ERROR;
 	    }
-	    if (GetStatBuf(interp, objv[2], TclStat, &buf) != TCL_OK) {
+	    if (GetStatBuf(interp, objv[2], Tcl_FSStat, &buf) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    varName = Tcl_GetString(objv[3]);
 	    return StoreStatData(interp, varName, &buf);
+	}
+	case FILE_SYSTEM: {
+	    Tcl_Obj* fsInfo;
+	    if (objc != 3) {
+		goto only3Args;
+	    }
+	    fsInfo = Tcl_FSFileSystemInfo(objv[2]);
+	    if (fsInfo != NULL) {
+		Tcl_SetObjResult(interp, fsInfo);
+		return TCL_OK;
+	    } else {
+		Tcl_SetObjResult(interp, 
+				 Tcl_NewStringObj("Unrecognised path",-1));
+		return TCL_ERROR;
+	    }
 	}
     	case FILE_TAIL: {
 	    int argc;
@@ -1268,7 +1268,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    if (objc != 3) {
 	    	goto only3Args;
 	    }
-	    if (GetStatBuf(interp, objv[2], TclpLstat, &buf) != TCL_OK) {
+	    if (GetStatBuf(interp, objv[2], Tcl_FSLstat, &buf) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    Tcl_SetStringObj(resultPtr, 
@@ -1280,7 +1280,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 		Tcl_WrongNumArgs(interp, 2, objv, NULL);
 		return TCL_ERROR;
 	    }
-	    return TclpListVolumes(interp);
+	    return Tcl_FSListVolumes(interp);
 	}
 	case FILE_WRITABLE: {
 	    if (objc != 3) {
@@ -1379,16 +1379,11 @@ CheckAccess(interp, objPtr, mode)
 				 * access(). */
 {
     int value;
-    char *fileName;
-    Tcl_DString ds;
     
-    fileName = Tcl_GetString(objPtr);
-    fileName = Tcl_TranslateFileName(interp, fileName, &ds);
-    if (fileName == NULL) {
+    if (Tcl_FSConvertToPathType(interp, objPtr) != TCL_OK) {
 	value = 0;
     } else {
-	value = (TclAccess(fileName, mode) == 0);
-        Tcl_DStringFree(&ds);
+	value = (Tcl_FSAccess(objPtr, mode) == 0);
     }
     Tcl_SetBooleanObj(Tcl_GetObjResult(interp), value);
 
@@ -1419,23 +1414,18 @@ static int
 GetStatBuf(interp, objPtr, statProc, statPtr)
     Tcl_Interp *interp;		/* Interp for error return.  May be NULL. */
     Tcl_Obj *objPtr;		/* Path name to examine. */
-    StatProc *statProc;		/* Either stat() or lstat() depending on
+    Tcl_FSStatProc *statProc;	/* Either stat() or lstat() depending on
 				 * desired behavior. */
     struct stat *statPtr;	/* Filled with info about file obtained by
 				 * calling (*statProc)(). */
 {
-    char *fileName;
-    Tcl_DString ds;
     int status;
     
-    fileName = Tcl_GetString(objPtr);
-    fileName = Tcl_TranslateFileName(interp, fileName, &ds);
-    if (fileName == NULL) {
+    if (Tcl_FSConvertToPathType(interp, objPtr) != TCL_OK) {
 	return TCL_ERROR;
     }
 
-    status = (*statProc)(Tcl_DStringValue(&ds), statPtr);
-    Tcl_DStringFree(&ds);
+    status = (*statProc)(objPtr, statPtr);
     
     if (status < 0) {
 	if (interp != NULL) {
@@ -2344,44 +2334,4 @@ Tcl_FormatObjCmd(dummy, interp, objc, objv)
     }
     Tcl_DecrRefCount(resultPtr);
     return TCL_ERROR;
-}
-
-/*
- *---------------------------------------------------------------------------
- *
- * StringifyObjects --
- *
- *	Helper function to bridge the gap between an object-based procedure
- *	and an older string-based procedure.
- * 
- *	Given an array of objects, allocate an array that consists of the
- *	string representations of those objects.
- *
- * Results:
- *	The return value is a pointer to the newly allocated array of
- *	strings.  Elements 0 to (objc-1) of the string array point to the
- *	string representation of the corresponding element in the source
- *	object array; element objc of the string array is NULL.
- *
- * Side effects:
- *	Memory allocated.  The caller must eventually free this memory
- *	by calling ckfree() on the return value.
- *
- *---------------------------------------------------------------------------
- */
-
-static char **
-StringifyObjects(objc, objv)
-    int objc;			/* Number of arguments. */
-    Tcl_Obj *CONST objv[];	/* Argument objects. */
-{
-    int i;
-    char **argv;
-    
-    argv = (char **) ckalloc((objc + 1) * sizeof(char *));
-    for (i = 0; i < objc; i++) {
-    	argv[i] = Tcl_GetString(objv[i]);
-    }
-    argv[i] = NULL;
-    return argv;
 }
