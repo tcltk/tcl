@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.21 2000/05/26 08:53:41 hobbs Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.21.4.1 2001/05/11 20:47:44 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -222,6 +222,40 @@ InstructionDesc instructionTable[] = {
 	/* Str Index:	push (strindex stknext stktop) */
     {"strmatch",	  1,   0,   {OPERAND_NONE}},
 	/* Str Match:	push (strmatch stkforenext stknext stktop) */
+    {"list",		  1,   0,   {OPERAND_NONE}},
+	/* List:	push (stk1 stk2 ... stktop) */
+    {"listindex",	  1,   0,   {OPERAND_NONE}},
+	/* List Index:	push (listindex stknext stktop) */
+    {"listlength",	  1,   0,   {OPERAND_NONE}},
+	/* List Len:	push (listlength stktop) */
+    {"appendScalar1",	  2,   1,   {OPERAND_UINT1}},
+	/* Append scalar variable at op1<=255 in frame; value is stktop */
+    {"appendScalar4",	  5,   1,   {OPERAND_UINT4}},
+	/* Append scalar variable at op1 > 255 in frame; value is stktop */
+    {"appendScalarStk",	  1,   0,   {OPERAND_NONE}},
+	/* Append scalar; value is stktop, scalar name is stknext */
+    {"appendArray1",	  2,   1,   {OPERAND_UINT1}},
+	/* Append array element; array at op1<=255, value is top then elem */
+    {"appendArray4",	  5,   1,   {OPERAND_UINT4}},
+	/* Append array element; array at op1>=256, value is top then elem */
+    {"appendArrayStk",	  1,   0,   {OPERAND_NONE}},
+	/* Append array element; value is stktop, then elem, array names */
+    {"appendStk",	  1,   0,   {OPERAND_NONE}},
+	/* Append general variable; value is stktop, then unparsed name */
+    {"lappendScalar1",	  2,   1,   {OPERAND_UINT1}},
+	/* Lappend scalar variable at op1<=255 in frame; value is stktop */
+    {"lappendScalar4",	  5,   1,   {OPERAND_UINT4}},
+	/* Lappend scalar variable at op1 > 255 in frame; value is stktop */
+    {"lappendScalarStk",	  1,   0,   {OPERAND_NONE}},
+	/* Lappend scalar; value is stktop, scalar name is stknext */
+    {"lappendArray1",	  2,   1,   {OPERAND_UINT1}},
+	/* Lappend array element; array at op1<=255, value is top then elem */
+    {"lappendArray4",	  5,   1,   {OPERAND_UINT4}},
+	/* Lappend array element; array at op1>=256, value is top then elem */
+    {"lappendArrayStk",	  1,   0,   {OPERAND_NONE}},
+	/* Lappend array element; value is stktop, then elem, array names */
+    {"lappendStk",	  1,   0,   {OPERAND_NONE}},
+	/* Lappend general variable; value is stktop, then unparsed name */
     {0}
 };
 

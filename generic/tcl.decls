@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.46 2001/04/24 20:59:17 kennykb Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.46.2.1 2001/05/11 20:47:44 hobbs Exp $
 
 library tcl
 
@@ -1514,6 +1514,12 @@ declare 432 generic {
 declare 433 generic {
     Tcl_ThreadId Tcl_GetChannelThread(Tcl_Channel channel)
 }
+
+# introduced in 8.4a3
+declare 434 generic {
+    Tcl_UniChar * Tcl_GetUnicodeFromObj (Tcl_Obj *objPtr, int *lengthPtr)
+}
+
 
 ##############################################################################
 

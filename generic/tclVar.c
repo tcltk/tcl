@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.31 2001/04/27 22:11:51 kennykb Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.31.2.1 2001/05/11 20:47:44 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -1401,13 +1401,13 @@ Tcl_SetVar2Ex(interp, part1, part2, newValuePtr, flags)
  */
 
 Tcl_Obj *
-TclSetIndexedScalar(interp, localIndex, newValuePtr, leaveErrorMsg)
+TclSetIndexedScalar(interp, localIndex, newValuePtr, flags)
     Tcl_Interp *interp;		/* Command interpreter in which variable is
 				 * to be found. */
     int localIndex;		/* Index of variable in procedure's array
 				 * of local variables. */
     Tcl_Obj *newValuePtr;	/* New value for variable. */
-    int leaveErrorMsg;		/* 1 if to leave an error message in
+    int flags;			/* 1 if to leave an error message in
 				 * the interpreter's result on an error.
 				 * Otherwise no error message is left. */
 {
@@ -1421,6 +1421,7 @@ TclSetIndexedScalar(interp, localIndex, newValuePtr, leaveErrorMsg)
     register Var *varPtr;	/* Points to the variable's in-frame Var
 				 * structure. */
     char *varName;		/* Name of the local variable. */
+    int leaveErrorMsg = (flags & TCL_LEAVE_ERR_MSG);
     Tcl_Obj *oldValuePtr;
     Tcl_Obj *resultPtr = NULL;
 
@@ -1487,12 +1488,41 @@ TclSetIndexedScalar(interp, localIndex, newValuePtr, leaveErrorMsg)
     }
 
     /*
-     * Set the variable's new value and discard its old value. We don't
-     * append with this "set" procedure so the old value isn't needed.
+     * Set the variable's new value and discard its old value.
      */
 
     oldValuePtr = varPtr->value.objPtr;
-    if (newValuePtr != oldValuePtr) {        /* set new value */
+    if (flags & TCL_APPEND_VALUE) {
+	if (TclIsVarUndefined(varPtr) && (oldValuePtr != NULL)) {
+	    Tcl_DecrRefCount(oldValuePtr);     /* discard old value */
+	    varPtr->value.objPtr = NULL;
+	    oldValuePtr = NULL;
+	}
+
+	/*
+	 * We append newValuePtr's data but don't change its ref count.
+	 */
+
+	if (oldValuePtr == NULL) {
+	    varPtr->value.objPtr = newValuePtr;
+	    Tcl_IncrRefCount(newValuePtr);
+	} else {
+	    if (Tcl_IsShared(oldValuePtr)) {	/* append to copy */
+		varPtr->value.objPtr = Tcl_DuplicateObj(oldValuePtr);
+		TclDecrRefCount(oldValuePtr);
+		oldValuePtr = varPtr->value.objPtr;
+		Tcl_IncrRefCount(oldValuePtr);	/* since var is ref */
+	    }
+	    if (flags & TCL_LIST_ELEMENT) {	/* append list element */
+		if (Tcl_ListObjAppendElement(interp, oldValuePtr,
+			newValuePtr) != TCL_OK) {
+		    return NULL;
+		}
+	    } else {				/* append string */
+		Tcl_AppendObjToObj(oldValuePtr, newValuePtr);
+	    }
+	}
+    } else if (newValuePtr != oldValuePtr) {        /* set new value */
 	varPtr->value.objPtr = newValuePtr;
 	Tcl_IncrRefCount(newValuePtr);       /* var is another ref to obj */
 	if (oldValuePtr != NULL) {
@@ -1578,8 +1608,7 @@ TclSetIndexedScalar(interp, localIndex, newValuePtr, leaveErrorMsg)
  */
 
 Tcl_Obj *
-TclSetElementOfIndexedArray(interp, localIndex, elemPtr, newValuePtr,
-        leaveErrorMsg)
+TclSetElementOfIndexedArray(interp, localIndex, elemPtr, newValuePtr, flags)
     Tcl_Interp *interp;		/* Command interpreter in which the array is
 				 * to be found. */
     int localIndex;		/* Index of array variable in procedure's
@@ -1587,7 +1616,7 @@ TclSetElementOfIndexedArray(interp, localIndex, elemPtr, newValuePtr,
     Tcl_Obj *elemPtr;		/* Points to an object holding the name of
 				 * an element to set in the array. */
     Tcl_Obj *newValuePtr;	/* New value for variable. */
-    int leaveErrorMsg;		/* 1 if to leave an error message in
+    int flags;			/* 1 if to leave an error message in
 				 * the interpreter's result on an error.
 				 * Otherwise no error message is left. */
 {
@@ -1602,6 +1631,7 @@ TclSetElementOfIndexedArray(interp, localIndex, elemPtr, newValuePtr,
 				 * structure. */
     char *arrayName;		/* Name of the local array. */
     char *elem;
+    int leaveErrorMsg = (flags & TCL_LEAVE_ERR_MSG);
     Tcl_HashEntry *hPtr;
     Var *varPtr = NULL;		/* Points to the element's Var structure
 				 * that we return. */
@@ -1620,7 +1650,7 @@ TclSetElementOfIndexedArray(interp, localIndex, elemPtr, newValuePtr,
 		(unsigned int) varFramePtr);
     }
     if ((localIndex < 0) || (localIndex >= localCt)) {
-	fprintf(stderr, "\nTclSetIndexedScalar: can't set elememt of local %i in frame 0x%x with %i locals\n",
+	fprintf(stderr, "\nTclSetIndexedScalar: can't set element of local %i in frame 0x%x with %i locals\n",
 		localIndex, (unsigned int) varFramePtr, localCt);
 	panic("TclSetElementOfIndexedArray: bad local index %i in frame 0x%x",
 		localIndex, (unsigned int) varFramePtr);
@@ -1637,7 +1667,7 @@ TclSetElementOfIndexedArray(interp, localIndex, elemPtr, newValuePtr,
      * reference to a variable in an enclosing namespace. Traverse through
      * any links until we find the referenced variable.
      */
-	
+
     while (TclIsVarLink(arrayPtr)) {
 	arrayPtr = arrayPtr->value.linkPtr;
     }
@@ -1676,7 +1706,7 @@ TclSetElementOfIndexedArray(interp, localIndex, elemPtr, newValuePtr,
 	    VarErrMsg(interp, arrayName, elem, "set", needArray);
 	}
 	goto errorReturn;
-    } 
+    }
 
     /*
      * Look up the element.
@@ -1707,16 +1737,45 @@ TclSetElementOfIndexedArray(interp, localIndex, elemPtr, newValuePtr,
     }
 
     /*
-     * Set the variable's new value and discard the old one. We don't
-     * append with this "set" procedure so the old value isn't needed.
+     * Set the variable's new value and discard the old one.
      */
 
     oldValuePtr = varPtr->value.objPtr;
-    if (newValuePtr != oldValuePtr) {	     /* set new value */
+    if (flags & TCL_APPEND_VALUE) {
+	if (TclIsVarUndefined(varPtr) && (oldValuePtr != NULL)) {
+	    Tcl_DecrRefCount(oldValuePtr);     /* discard old value */
+	    varPtr->value.objPtr = NULL;
+	    oldValuePtr = NULL;
+	}
+
+	/*
+	 * We append newValuePtr's bytes but don't change its ref count.
+	 */
+
+	if (oldValuePtr == NULL) {
+	    varPtr->value.objPtr = newValuePtr;
+	    Tcl_IncrRefCount(newValuePtr);
+	} else {
+	    if (Tcl_IsShared(oldValuePtr)) {	/* append to copy */
+		varPtr->value.objPtr = Tcl_DuplicateObj(oldValuePtr);
+		TclDecrRefCount(oldValuePtr);
+		oldValuePtr = varPtr->value.objPtr;
+		Tcl_IncrRefCount(oldValuePtr);	/* since var is ref */
+	    }
+	    if (flags & TCL_LIST_ELEMENT) {	/* append list element */
+		if (Tcl_ListObjAppendElement(interp, oldValuePtr,
+			newValuePtr) != TCL_OK) {
+		    return NULL;
+		}
+	    } else {				/* append string */
+		Tcl_AppendObjToObj(oldValuePtr, newValuePtr);
+	    }
+	}
+    } else if (newValuePtr != oldValuePtr) {	/* set new value */
 	varPtr->value.objPtr = newValuePtr;
-	Tcl_IncrRefCount(newValuePtr);       /* var is another ref to obj */
+	Tcl_IncrRefCount(newValuePtr);		/* var is another ref to obj */
 	if (oldValuePtr != NULL) {
-	    TclDecrRefCount(oldValuePtr);    /* discard old value */
+	    TclDecrRefCount(oldValuePtr);	/* discard old value */
 	}
     }
     TclSetVarScalar(varPtr);
@@ -1929,7 +1988,7 @@ TclIncrIndexedScalar(interp, localIndex, incrAmount)
      */
     
     resultPtr = TclSetIndexedScalar(interp, localIndex, varValuePtr,
-	    /*leaveErrorMsg*/ 1);
+	    TCL_LEAVE_ERR_MSG);
     if (resultPtr == NULL) {
 	return NULL;
     }

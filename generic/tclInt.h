@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.52 2001/04/27 22:11:51 kennykb Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.52.2.1 2001/05/11 20:47:44 hobbs Exp $
  */
 
 #ifndef _TCLINT
@@ -2082,6 +2082,8 @@ EXTERN int	Tcl_ResourceObjCmd _ANSI_ARGS_((ClientData clientData,
  *----------------------------------------------------------------
  */
 
+EXTERN int	TclCompileAppendCmd _ANSI_ARGS_((Tcl_Interp *interp,
+		    Tcl_Parse *parsePtr, struct CompileEnv *envPtr));
 EXTERN int	TclCompileBreakCmd _ANSI_ARGS_((Tcl_Interp *interp,
 		    Tcl_Parse *parsePtr, struct CompileEnv *envPtr));
 EXTERN int	TclCompileCatchCmd _ANSI_ARGS_((Tcl_Interp *interp,
@@ -2097,6 +2099,12 @@ EXTERN int	TclCompileForeachCmd _ANSI_ARGS_((Tcl_Interp *interp,
 EXTERN int	TclCompileIfCmd _ANSI_ARGS_((Tcl_Interp *interp,
 		    Tcl_Parse *parsePtr, struct CompileEnv *envPtr));
 EXTERN int	TclCompileIncrCmd _ANSI_ARGS_((Tcl_Interp *interp,
+		    Tcl_Parse *parsePtr, struct CompileEnv *envPtr));
+EXTERN int	TclCompileLappendCmd _ANSI_ARGS_((Tcl_Interp *interp,
+		    Tcl_Parse *parsePtr, struct CompileEnv *envPtr));
+EXTERN int	TclCompileLindexCmd _ANSI_ARGS_((Tcl_Interp *interp,
+		    Tcl_Parse *parsePtr, struct CompileEnv *envPtr));
+EXTERN int	TclCompileLlengthCmd _ANSI_ARGS_((Tcl_Interp *interp,
 		    Tcl_Parse *parsePtr, struct CompileEnv *envPtr));
 EXTERN int	TclCompileReturnCmd _ANSI_ARGS_((Tcl_Interp *interp,
 		    Tcl_Parse *parsePtr, struct CompileEnv *envPtr));

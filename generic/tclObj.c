@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.20 2001/04/04 16:07:21 kennykb Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.20.4.1 2001/05/11 20:47:44 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -764,18 +764,14 @@ Tcl_GetStringFromObj(objPtr, lengthPtr)
 				 * string rep's byte array length should be
 				 * stored. If NULL, no length is stored. */
 {
-    if (objPtr->bytes != NULL) {
-	if (lengthPtr != NULL) {
-	    *lengthPtr = objPtr->length;
+    if (objPtr->bytes == NULL) {
+	if (objPtr->typePtr->updateStringProc == NULL) {
+	    panic("UpdateStringProc should not be invoked for type %s",
+		    objPtr->typePtr->name);
 	}
-	return objPtr->bytes;
+	(*objPtr->typePtr->updateStringProc)(objPtr);
     }
 
-    if (objPtr->typePtr->updateStringProc == NULL) {
-	panic("UpdateStringProc should not be invoked for type %s",
-		objPtr->typePtr->name);
-    }
-    (*objPtr->typePtr->updateStringProc)(objPtr);
     if (lengthPtr != NULL) {
 	*lengthPtr = objPtr->length;
     }

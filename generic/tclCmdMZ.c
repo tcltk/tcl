@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.36 2001/04/24 20:59:17 kennykb Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.36.2.1 2001/05/11 20:47:44 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -568,10 +568,8 @@ Tcl_RegsubObjCmd(dummy, interp, objc, objv)
     }
 
     objPtr	= objv[1];
-    wstring	= Tcl_GetUnicode(objPtr);
-    wlen	= Tcl_GetCharLength(objPtr);
-    wsubspec	= Tcl_GetUnicode(objv[2]);
-    wsublen	= Tcl_GetCharLength(objv[2]);
+    wstring	= Tcl_GetUnicodeFromObj(objPtr, &wlen);
+    wsubspec	= Tcl_GetUnicodeFromObj(objv[2], &wsublen);
     varPtr	= objv[3];
 
     result = TCL_OK;
@@ -1123,11 +1121,9 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		!(objv[0]->typePtr == NULL && objv[1]->typePtr == NULL)) {
 		Tcl_UniChar *uni1, *uni2;
 
-		length1 = Tcl_GetCharLength(objv[0]);
-		length2 = Tcl_GetCharLength(objv[1]);
+		uni1 = Tcl_GetUnicodeFromObj(objv[0], &length1);
+		uni2 = Tcl_GetUnicodeFromObj(objv[1], &length2);
 		length = (length1 < length2) ? length1 : length2;
-		uni1 = Tcl_GetUnicode(objv[0]);
-		uni2 = Tcl_GetUnicode(objv[1]);
 
 		if (reqlength > 0 && reqlength < length) {
 		    length = reqlength;
@@ -1247,10 +1243,8 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	    start = 0;
 	    length2 = -1;
 
-	    ustring1 = Tcl_GetUnicode(objv[2]);
-	    length1  = Tcl_GetCharLength(objv[2]);
-	    ustring2 = Tcl_GetUnicode(objv[3]);
-	    length2  = Tcl_GetCharLength(objv[3]);
+	    ustring1 = Tcl_GetUnicodeFromObj(objv[2], &length1);
+	    ustring2 = Tcl_GetUnicodeFromObj(objv[3], &length2);
 
 	    if (objc == 5) {
 		/*
@@ -1637,10 +1631,8 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	    start = 0;
 	    length2 = -1;
 
-	    ustring1 = Tcl_GetUnicode(objv[2]);
-	    length1  = Tcl_GetCharLength(objv[2]);
-	    ustring2 = Tcl_GetUnicode(objv[3]);
-	    length2  = Tcl_GetCharLength(objv[3]);
+	    ustring1 = Tcl_GetUnicodeFromObj(objv[2], &length1);
+	    ustring2 = Tcl_GetUnicodeFromObj(objv[3], &length2);
 
 	    if (objc == 5) {
 		/*
@@ -1750,8 +1742,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	    }
 	    objc--;
 
-	    ustring1 = Tcl_GetUnicode(objv[objc]);
-	    length1  = Tcl_GetCharLength(objv[objc]);
+	    ustring1 = Tcl_GetUnicodeFromObj(objv[objc], &length1);
 	    if (length1 == 0) {
 		/*
 		 * Empty input string, just stop now
@@ -1774,10 +1765,11 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		 * algorithm is otherwise identical to the multi-pair case.
 		 * This will be >30% faster on larger strings.
 		 */
-		Tcl_UniChar *mapString = Tcl_GetUnicode(mapElemv[1]);
-		int mapLen = Tcl_GetCharLength(mapElemv[1]);
-		ustring2 = Tcl_GetUnicode(mapElemv[0]);
-		length2  = Tcl_GetCharLength(mapElemv[0]);
+		int mapLen;
+		Tcl_UniChar *mapString;
+
+		ustring2 = Tcl_GetUnicodeFromObj(mapElemv[0], &length2);
+		mapString = Tcl_GetUnicodeFromObj(mapElemv[1], &mapLen);
 		for (p = ustring1; ustring1 < end; ustring1++) {
 		    if ((length2 > 0) &&
 			    (nocase || (*ustring1 == *ustring2)) &&
@@ -1807,8 +1799,8 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		 * significantly speeding up the algorithm.
 		 */
 		for (index = 0; index < mapElemc; index++) {
-		    mapStrings[index] = Tcl_GetUnicode(mapElemv[index]);
-		    mapLens[index]    = Tcl_GetCharLength(mapElemv[index]);
+		    mapStrings[index] = Tcl_GetUnicodeFromObj(mapElemv[index],
+			    &(mapLens[index]));
 		}
 		for (p = ustring1; ustring1 < end; ustring1++) {
 		    for (index = 0; index < mapElemc; index += 2) {
@@ -1967,8 +1959,8 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		return TCL_ERROR;
 	    }
 
-	    ustring1 = Tcl_GetUnicode(objv[2]);
-	    length1  = Tcl_GetCharLength(objv[2]) - 1;
+	    ustring1 = Tcl_GetUnicodeFromObj(objv[2], &length1);
+	    length1--;
 
 	    if ((TclGetIntForIndex(interp, objv[3], length1, &first) != TCL_OK)
 		    || (TclGetIntForIndex(interp, objv[4], length1,
