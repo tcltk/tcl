@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: tclsh.1,v 1.3 1999/05/13 01:50:13 stanton Exp $
+'\" RCS: @(#) $Id: tclsh.1,v 1.4 2001/08/06 20:43:05 dgp Exp $
 '\" 
 .so man.macros
 .TH tclsh 1 "" Tcl "Tcl Applications"
@@ -80,6 +80,14 @@ instead to start up \fBtclsh\fR to reprocess the entire script.
 When \fBtclsh\fR starts up, it treats all three lines as comments,
 since the backslash at the end of the second line causes the third
 line to be treated as part of the comment on the second line.
+.PP
+.VS
+You should note that it is also common practise to install tclsh with
+its version number as part of the name.  This has the advantage of
+allowing multiple versions of Tcl to exist on the same system at once,
+but also the disadvantage of making it harder to write scripts that
+start up uniformly across different versions of Tcl.
+.VE
 
 .SH "VARIABLES"
 .PP
