@@ -601,8 +601,12 @@ AC_DEFUN(SC_ENABLE_LANGINFO, [
 #--------------------------------------------------------------------
 # SC_CONFIG_MANPAGES
 #	
-#	Decide whether to use symlinks for linking the manpages and
-#	whether to compress the manpages after installation.
+#	Decide whether to use symlinks for linking the manpages,
+#	whether to compress the manpages after installation, and
+#	whether to add a package name suffix to the installed
+#	manpages to avoidfile name clashes.
+#	If compression is enabled also find out what file name suffix
+#	the given compression program is using.
 #
 # Arguments:
 #	none
@@ -612,11 +616,12 @@ AC_DEFUN(SC_ENABLE_LANGINFO, [
 #	Adds the following arguments to configure:
 #		--enable-man-symlinks
 #		--enable-man-compression=PROG
+#		--enable-man-suffix[=STRING]
 #
 #	Defines the following variable:
 #
-#	MKLINKS_FLAGS -		The apropriate flags for mkLinks
-#				according to the user's selection.
+#	MAN_FLAGS -	The apropriate flags for installManPage
+#			according to the user's selection.
 #
 #--------------------------------------------------------------------
 AC_DEFUN(SC_CONFIG_MANPAGES, [
@@ -624,20 +629,39 @@ AC_DEFUN(SC_CONFIG_MANPAGES, [
 	AC_MSG_CHECKING([whether to use symlinks for manpages])
 	AC_ARG_ENABLE(man-symlinks,
 		[  --enable-man-symlinks   use symlinks for the manpages],
-		test "$enableval" != "no" && MKLINKS_FLAGS="$MKLINKS_FLAGS --symlinks",
+		test "$enableval" != "no" && MAN_FLAGS="$MAN_FLAGS --symlinks",
 		enableval="no")
 	AC_MSG_RESULT([$enableval])
 
-	AC_MSG_CHECKING([compression for manpages])
+	AC_MSG_CHECKING([whether to compress the manpages])
 	AC_ARG_ENABLE(man-compression,
 		[  --enable-man-compression=PROG
                           compress the manpages with PROG],
-		test "$enableval" = "yes" && echo && AC_MSG_ERROR([missing argument to --enable-man-compression])
-		test "$enableval" != "no" && MKLINKS_FLAGS="$MKLINKS_FLAGS --compress $enableval",
+		test "$enableval" = "yes" && AC_MSG_ERROR([missing argument to --enable-man-compression])
+		test "$enableval" != "no" && MAN_FLAGS="$MAN_FLAGS --compress $enableval",
+		enableval="no")
+	AC_MSG_RESULT([$enableval])
+	if test "$enableval" != "no"; then
+		AC_MSG_CHECKING([for compressed file suffix])
+		touch TeST
+		$enableval TeST
+		Z=`ls TeST* | sed 's/^....//'`
+		rm -f TeST*
+		MAN_FLAGS="$MAN_FLAGS --extension $Z"
+		AC_MSG_RESULT([$Z])
+	fi
+
+	AC_MSG_CHECKING([whether to add a package name suffix for the manpages])
+	AC_ARG_ENABLE(man-suffix,
+		[  --enable-man-suffix=STRING
+                          use STRING as a suffix to manpage file names
+                          (default: $1)],
+		test "$enableval" = "yes" && enableval="$1"
+		test "$enableval" != "no" && MAN_FLAGS="$MAN_FLAGS --suffix $enableval",
 		enableval="no")
 	AC_MSG_RESULT([$enableval])
 
-	AC_SUBST(MKLINKS_FLAGS)
+	AC_SUBST(MAN_FLAGS)
 ])
 
 #--------------------------------------------------------------------
