@@ -1,3 +1,18 @@
+2001-12-04  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* tests/compExpr-old.test, tests/compExpr.test, tests/compile.test: 
+	* tests/expr-old.test, tests/expr.test, tests/for.test: 
+	* tests/while.test, tests/if.test: Rewrite to handle more specific
+	syntax errors.
+	* tests/parseExpr.test: Rewrite to get rid of dup test numbers and
+	handle more specific syntax errors.
+	* generic/tclParseExpr.c (LogSyntaxError): Added a detail message
+	argument to help explain what the syntax error is.
+	(Tcl_ParseExpr, ParseCondExpr, ParsePrimaryExpr): Added detail
+	messages.
+	(UNKNOWN_CHAR): New lexeme for characters that are always illegal
+	in expressions outside strings.
+
 2001-12-03  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* doc/expr.n: Various documentation improvements in relation to
