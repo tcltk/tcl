@@ -7,12 +7,15 @@
  * Copyright (c) 1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclUnixInit.c,v 1.24 2001/08/27 02:14:08 dgp Exp $
+ * RCS: @(#) $Id: tclUnixInit.c,v 1.25 2001/11/16 20:55:40 hobbs Exp $
  */
 
 #include "tclInt.h"
 #include "tclPort.h"
 #include <locale.h>
+#ifdef HAVE_LANGINFO
+#include <langinfo.h>
+#endif
 #if defined(__FreeBSD__)
 #   include <floatingpoint.h>
 #endif
@@ -49,6 +52,7 @@ static char defaultLibraryDir[sizeof(TCL_LIBRARY)+200] = TCL_LIBRARY;
 
 static char pkgPath[sizeof(TCL_PACKAGE_PATH)+200] = TCL_PACKAGE_PATH;
 
+#ifndef HAVE_LANGINFO
 /*
  * The following table is used to map from Unix locale strings to
  * encoding files.
@@ -97,6 +101,7 @@ static CONST LocaleTable localeTable[] = {
 
     {NULL, NULL}
 };
+#endif /* !HAVE_LANGINFO */
 
 /*
  *---------------------------------------------------------------------------
@@ -396,14 +401,55 @@ TclpSetInitialEncodings()
 	CONST char *encoding;
 	int i;
 	Tcl_Obj *pathPtr;
-	char *langEnv;
 
 	/*
 	 * Determine the current encoding from the LC_* or LANG environment
 	 * variables.  We previously used setlocale() to determine the locale,
 	 * but this does not work on some systems (e.g. Linux/i386 RH 5.0).
 	 */
+#ifdef HAVE_LANGINFO
+	Tcl_DString ds;
 
+	setlocale(LC_CTYPE,"");
+	Tcl_DStringInit(&ds);
+	Tcl_DStringAppend(&ds, nl_langinfo(CODESET), -1);
+	encoding = Tcl_DStringValue(&ds);
+
+	Tcl_UtfToLower(Tcl_DStringValue(&ds));
+	if (encoding[0] == 'i' && encoding[1] == 's' && encoding[2] == 'o'
+		&& encoding[3] == '-') {
+	    char *p, *q;
+	    /* need to strip extra - from ISO-* encoding */
+	    for(p = Tcl_DStringValue(&ds)+3, q = Tcl_DStringValue(&ds)+4; *p;
+		*p++ = *q++);
+	} else if (encoding[0] == 'i' && encoding[1] == 'b'
+		&& encoding[2] == 'm' && encoding[3] >= '0'
+		&& encoding[3] <= '9') {
+	    char *p, *q;
+	    /* if langinfo reports IBMxxx we should use cpXXX*/
+	    p = Tcl_DStringValue(&ds);
+	    *p++='c'; *p++='p';
+	    for(q=p+1;*p;*p++= *q++);
+	} else if (!strcmp(encoding, "ansi_x3.4-1968") || *encoding == '\0') {
+	    /*
+	     * Use iso8859-1 for empty or 'ansi_x3.4-1968' encoding.
+	     */
+	    Tcl_DStringSetLength(&ds, 0);
+	    Tcl_DStringAppend(&ds, "iso8859-1", -1);
+	}
+	if (Tcl_SetSystemEncoding(NULL, encoding) != TCL_OK) {
+	    Tcl_Channel errChannel = Tcl_GetStdChannel(TCL_STDERR);
+	    if (errChannel) {
+		char msg[100];
+		sprintf(msg, "Couldn't set encoding to '%.50s'\n", encoding);
+		Tcl_Write(errChannel, msg, -1);
+	    }
+	    encoding = "iso8859-1";
+	    Tcl_SetSystemEncoding(NULL, encoding);
+	}
+	Tcl_DStringFree(&ds);
+#else
+	char *langEnv;
 	langEnv = getenv("LC_ALL");
 
 	if (langEnv == NULL || langEnv[0] == '\0') {
@@ -470,6 +516,7 @@ TclpSetInitialEncodings()
 	 */
 
 	setlocale(LC_CTYPE, "");
+#endif /* HAVE_LANGINFO */
 
 	/*
 	 * In case the initial locale is not "C", ensure that the numeric
