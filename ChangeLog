@@ -21,7 +21,7 @@
 	  Tcl_FSGetNativePath):
 	* generic/tclIndexObj.c (Tcl_GetIndexFromObj,Tcl_GetIndexFromObjStruct):
 	More TIP 27 updates in tclIOUtil.c and tclIndexObj.c that were
-	overlooked before.  
+	overlooked before.  [Patch 504671]
 	***POTENTIAL INCOMPATIBILITY*** 
 	Includes a source incompatibility in the tablePtr arguments of
 	the Tcl_GetIndexFromObj* routines.
@@ -80,13 +80,14 @@
 	* generic/tclParse.c (Tcl_ParseVar):
 	* generic/tclTest.c (TestparsevarObjCmd): Updated APIs in
         generic/tclParse.c according to the guidelines of TIP 27.  Updated
-	callers.
+	callers.  [Patch 501046]
 	* generic/tclDecls.h: make genstubs
 
 	* generic/tcl.decls (Tcl_RecordAndEval):
 	* generic/tclDecls.h: make genstubs
 	* generic/tclHistory.c (Tcl_RecordAndEval): Updated APIs in
 	generic/tclHistory.c according to the guidelines of TIP 27.
+	[Patch 504091]
 
 	* doc/CrtSlave.3:
 	* generic/tcl.decls (Tcl_CreateAlias, Tcl_CreateAliasObj,
@@ -94,7 +95,7 @@
 	* generic/tclInterp.c (Tcl_CreateAlias, Tcl_CreateAliasObj,
 	  Tcl_CreateSlave, Tcl_GetAlias, Tcl_GetAliasObj, Tcl_GetSlave):
 	Updated APIs in the file generic/tclInterp.c according to the
-	guidelines of TIP 27.
+	guidelines of TIP 27.  [Patch 501371]
 	***POTENTIAL INCOMPATIBILITY*** 
 	Includes a source incompatibility in the targetCmdPtr arguments of
 	the Tcl_GetAlias* routines.
@@ -148,6 +149,7 @@
 	  Tcl_SetChannelOption, Tcl_GetChannelNamesEx, Tcl_ChannelName):
 	Updated APIs in the file generic/tclIO.c according to the guidelines
 	of TIP 27.  Several minor documentation corrections as well.
+	[Patch 503565]
 	* generic/tclDecls.h: make genstubs
 
 	* generic/tcl.h (Tcl_DriverOutputProc, Tcl_DriverGetOptionProc,
@@ -186,7 +188,7 @@
 	  Tcl_WrongNumArgs):
 	* generic/tclIndexObj.c (Tcl_GetIndexFromObj, Tcl_GetIndexFromObjStruct,
 	  Tcl_WrongNumArgs):  Updated APIs in the file generic/tclIndexObj.c
-	according to the guidelines of TIP 27.
+	according to the guidelines of TIP 27.  [Patch 501491]
 	* generic/tclDecls.h: make genstubs
 
 2002-01-11  Mo DeJong  <mdejong@users.sourceforge.net>
@@ -247,6 +249,7 @@
 	* unix/tclLoadShl.c (TclGuessPackageName):
 	* win/tclWinLoad.c (TclGuessPackageName):  Updated APIs in 
 	the files */tcl*Load*.c according to the guidelines of TIP 27.
+	[Patch 501096]
 
 2002-01-09  Don Porter <dgp@users.sourceforge.net>
 
