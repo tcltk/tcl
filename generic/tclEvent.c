@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEvent.c,v 1.41 2004/07/15 09:50:11 vasiljevic Exp $
+ * RCS: @(#) $Id: tclEvent.c,v 1.42 2004/07/15 10:00:45 vasiljevic Exp $
  */
 
 #include "tclInt.h"
@@ -1253,19 +1253,10 @@ NewThreadProc(ClientData clientData)
     ClientData threadClientData;
     Tcl_ThreadCreateProc *threadProc;
 
-    (void) TCL_TSD_INIT(&dataKey);
-
     cdPtr  = (ThreadClientData *)clientData;
     threadProc = cdPtr->proc;
     threadClientData = cdPtr->clientData;
     Tcl_Free((char*)clientData); /* Allocated in Tcl_CreateThread() */
-
-    /*
-     * Please see the SF Bug #770053 comments to find out why
-     * this one below is commented out.
-     */
-
-    /* TclInitNotifier(); */
 
     (*threadProc)(threadClientData);
 
