@@ -11,23 +11,27 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 # 
-# RCS: @(#) $Id: defs.tcl,v 1.2 1999/04/16 00:47:26 stanton Exp $
+# RCS: @(#) $Id: defs.tcl,v 1.3 1999/04/20 18:12:18 hershey Exp $
 
 # Initialize wish shell
+
 if {[info exists tk_version]} {
     tk appname tktest
     wm title . tktest
 } else {
+
     # Ensure that we have a minimal auto_path so we don't pick up extra junk.
+
     set auto_path [list [info library]]
 }
 
 # create the "tcltest" namespace for all testing variables and procedures
+
 namespace eval tcltest {
     set procList [list test cleanupTests dotests saveState restoreState \
 	    normalizeMsg makeFile removeFile makeDirectory removeDirectory \
 	    viewFile bytestring set_iso8859_1_locale restore_locale \
-	    safeFetch]
+	    safeFetch threadReap]
     if {[info exists tk_version]} {
 	lappend procList setupbg dobg bgReady cleanupbg fixfocus
     }
@@ -36,12 +40,15 @@ namespace eval tcltest {
     }
 
     # ::tcltest::verbose defaults to "b"
+
     variable verbose "b"
 
     # match defaults to the empty list
+
     variable match {}
 
     # skip defaults to the empty list
+
     variable skip {}
 
     # Tests should not rely on the current working directory.
@@ -77,15 +84,22 @@ namespace eval tcltest {
 
     # ::tcltest::numTests will store test files as indices and the list
     # of files (that should not have been) left behind by the test files.
+
     array set ::tcltest::createdNewFiles {}
 
     # initialize ::tcltest::numTests array to keep track fo the number of
     # tests that pass, fial, and are skipped.
+
     array set numTests [list Total 0 Passed 0 Skipped 0 Failed 0]
 
     # initialize ::tcltest::skippedBecause array to keep track of
     # constraints that kept tests from running
+
     array set ::tcltest::skippedBecause {}
+
+    # tests that use thread need to know which is the main thread
+
+    set ::tcltest::mainThread [testthread names]
 }
 
 # If there is no "memory" command (because memory debugging isn't
@@ -169,6 +183,7 @@ proc ::tcltest::initConfig {} {
     set ::tcltest::testConfig(unixCrash) [expr {!$::tcltest::testConfig(unix)}]
 
     # Set the "fonts" constraint for wish apps
+
     if {[info exists tk_version]} {
 	set ::tcltest::testConfig(fonts) 1
 	catch {destroy .e}
@@ -191,22 +206,28 @@ proc ::tcltest::initConfig {} {
     }
 
     # Skip empty tests
+
     set ::tcltest::testConfig(emptyTest) 0
 
     # By default, tests that expost known bugs are skipped.
+
     set ::tcltest::testConfig(knownBug) 0
 
     # By default, non-portable tests are skipped.
+
     set ::tcltest::testConfig(nonPortable) 0
 
     # Some tests require user interaction.
+
     set ::tcltest::testConfig(userInteraction) 0
 
     # Some tests must be skipped if the interpreter is not in interactive mode
+
     set ::tcltest::testConfig(interactive) $tcl_interactive
 
     # Some tests must be skipped if you are running as root on Unix.
     # Other tests can only be run if you are running as root on Unix.
+
     set ::tcltest::testConfig(root) 0
     set ::tcltest::testConfig(notRoot) 1
     set user {}
@@ -223,6 +244,7 @@ proc ::tcltest::initConfig {} {
 
     # Set nonBlockFiles constraint: 1 means this platform supports
     # setting files into nonblocking mode.
+
     if {[catch {set f [open defs r]}]} {
 	set ::tcltest::testConfig(nonBlockFiles) 1
     } else {
@@ -240,6 +262,7 @@ proc ::tcltest::initConfig {} {
     # Test for SCO Unix - cannot run async flushing tests because a
     # potential problem with select is apparently interfering.
     # (Mark Diekhans).
+
     if {$tcl_platform(platform) == "unix"} {
 	if {[catch {exec uname -X | fgrep {Release = 3.2v}}] == 0} {
 	    set ::tcltest::testConfig(asyncPipeClose) 0
@@ -252,6 +275,7 @@ proc ::tcltest::initConfig {} {
 
     # Test to see if we have a broken version of sprintf with respect
     # to the "e" format of floating-point numbers.
+
     set ::tcltest::testConfig(eformat) 1
     if {[string compare "[format %g 5e-5]" "5e-05"] != 0} {
 	set ::tcltest::testConfig(eformat) 0
@@ -259,6 +283,7 @@ proc ::tcltest::initConfig {} {
 
     # Test to see if execed commands such as cat, echo, rm and so forth are
     # present on this machine.
+
     set ::tcltest::testConfig(unixExecs) 1
     if {$tcl_platform(platform) == "macintosh"} {
 	set ::tcltest::testConfig(unixExecs) 0
@@ -336,6 +361,7 @@ proc ::tcltest::processCmdLineArgs {} {
 
     # The "argv" var doesn't exist in some cases, so use {}
     # The "argv" var doesn't exist in some cases.
+
     if {(![info exists argv]) || ([llength $argv] < 2)} {
 	set flagArray {}
     } else {
@@ -351,6 +377,7 @@ proc ::tcltest::processCmdLineArgs {} {
     # Allow for 1-char abbreviations, where applicable (e.g., -match == -m).
     # Note that -verbose cannot be abbreviated to -v in wish because it
     # conflicts with the wish option -visual.
+
     foreach arg {-verbose -match -skip -constraints} {
 	set abbrev [string range $arg 0 1]
 	if {([info exists flag($abbrev)]) && \
@@ -362,22 +389,26 @@ proc ::tcltest::processCmdLineArgs {} {
 
     # Set ::tcltest::workingDir to [pwd].
     # Save the names of files that already exist in ::tcltest::workingDir.
+
     set ::tcltest::workingDir [pwd]
     foreach file [glob -nocomplain [file join $::tcltest::workingDir *]] {
 	lappend ::tcltest::filesExisted [file tail $file]
     }
 
     # Set ::tcltest::verbose to the arg of the -verbose flag, if given
+
     if {[info exists flag(-verbose)]} {
 	set ::tcltest::verbose $flag(-verbose)
     }
 
     # Set ::tcltest::match to the arg of the -match flag, if given
+
     if {[info exists flag(-match)]} {
 	set ::tcltest::match $flag(-match)
     }
 
     # Set ::tcltest::skip to the arg of the -skip flag, if given
+
     if {[info exists flag(-skip)]} {
 	set ::tcltest::skip $flag(-skip)
     }
@@ -385,6 +416,7 @@ proc ::tcltest::processCmdLineArgs {} {
     # Use the -constraints flag, if given, to turn on constraints that are
     # turned off by default: userInteractive knownBug nonPortable.  This
     # code fragment must be run after constraints are initialized.
+
     if {[info exists flag(-constraints)]} {
 	foreach elt $flag(-constraints) {
 	    set ::tcltest::testConfig($elt) 1
@@ -414,6 +446,7 @@ proc ::tcltest::cleanupTests {{calledFromAllFile 0}} {
     # ::tcltest::makeDirectory procedures.
     # Record the names of files in ::tcltest::workingDir that were not
     # pre-existing, and associate them with the test file that created them.
+
     if {!$calledFromAllFile} {
 
 	foreach file $::tcltest::filesMade {
@@ -438,7 +471,9 @@ proc ::tcltest::cleanupTests {{calledFromAllFile 0}} {
     }
 
     if {$calledFromAllFile || $::tcltest::testSingleFile} {
+
 	# print stats
+
 	puts -nonewline stdout "$tail:"
 	foreach index [list "Total" "Passed" "Skipped" "Failed"] {
 	    puts -nonewline stdout "\t$index\t$::tcltest::numTests($index)"
@@ -447,6 +482,7 @@ proc ::tcltest::cleanupTests {{calledFromAllFile 0}} {
 
 	# print number test files sourced
 	# print names of files that ran tests which failed
+
 	if {$calledFromAllFile} {
 	    puts stdout "Sourced $::tcltest::numTestFiles Test Files."
 	    set ::tcltest::numTestFiles 0
@@ -458,6 +494,7 @@ proc ::tcltest::cleanupTests {{calledFromAllFile 0}} {
 
 	# if any tests were skipped, print the constraints that kept them
 	# from running.
+
 	set constraintList [array names ::tcltest::skippedBecause]
 	if {[llength $constraintList] > 0} {
 	    puts stdout "Number of tests skipped for each constraint:"
@@ -470,6 +507,7 @@ proc ::tcltest::cleanupTests {{calledFromAllFile 0}} {
 
 	# report the names of test files in ::tcltest::createdNewFiles, and
 	# reset the array to be empty.
+
 	set testFilesThatTurded [lsort [array names ::tcltest::createdNewFiles]]
 	if {[llength $testFilesThatTurded] > 0} {
 	    puts stdout "Warning: test files left files behind:"
@@ -480,20 +518,24 @@ proc ::tcltest::cleanupTests {{calledFromAllFile 0}} {
 	}
 
 	# reset filesMade, filesExisted, and numTests
+
 	set ::tcltest::filesMade {}
 	foreach index [list "Total" "Passed" "Skipped" "Failed"] {
 	    set ::tcltest::numTests($index) 0
 	}
 
 	# exit only if running Tk in non-interactive mode
+
 	global tk_version tcl_interactive
 	if {[info exists tk_version] && !$tcl_interactive} {
 	    exit
 	}
     } else {
+
 	# if we're deferring stat-reporting until all files are sourced,
 	# then add current file to failFile list if any tests in this file
 	# failed
+
 	incr ::tcltest::numTestFiles
 	if {($::tcltest::currentFailure) && \
 		([lsearch -exact $::tcltest::failFiles $tail] == -1)} {
@@ -531,6 +573,7 @@ proc ::tcltest::test {name description script expectedAnswer args} {
     incr ::tcltest::numTests(Total)
 
     # skip the test if it's name matches an element of skip
+
     foreach pattern $::tcltest::skip {
 	if {[string match $pattern $name]} {
 	    incr ::tcltest::numTests(Skipped)
@@ -538,6 +581,7 @@ proc ::tcltest::test {name description script expectedAnswer args} {
 	}
     }
     # skip the test if it's name doesn't match any element of match
+
     if {[llength $::tcltest::match] > 0} {
 	set ok 0
 	foreach pattern $::tcltest::match {
@@ -555,6 +599,7 @@ proc ::tcltest::test {name description script expectedAnswer args} {
     if {$i == 0} {
 	set constraints {}
     } elseif {$i == 1} {
+
 	# "constraints" argument exists;  shuffle arguments down, then
 	# make sure that the constraints are satisfied.
 
@@ -563,10 +608,13 @@ proc ::tcltest::test {name description script expectedAnswer args} {
 	set expectedAnswer [lindex $args 0]
 	set doTest 0
 	if {[string match {*[$\[]*} $constraints] != 0} {
+
 	    # full expression, e.g. {$foo > [info tclversion]}
 
 	    catch {set doTest [uplevel #0 expr $constraints]}
+
 	} elseif {[regexp {[^.a-zA-Z0-9 ]+} $constraints] != 0} {
+
 	    # something like {a || b} should be turned into 
 	    # $::tcltest::testConfig(a) || $::tcltest::testConfig(b).
 
@@ -574,6 +622,7 @@ proc ::tcltest::test {name description script expectedAnswer args} {
 		    {$::tcltest::testConfig(&)} c
 	    catch {set doTest [eval expr $c]}
 	} else {
+
 	    # just simple constraints such as {unixOnly fonts}.
 
 	    set doTest 1
@@ -581,7 +630,9 @@ proc ::tcltest::test {name description script expectedAnswer args} {
 		if {![info exists ::tcltest::testConfig($constraint)]
 			|| !$::tcltest::testConfig($constraint)} {
 		    set doTest 0
+
 		    # store the constraint that kept the test from running
+
 		    set constraints $constraint
 		    break
 		}
@@ -592,8 +643,10 @@ proc ::tcltest::test {name description script expectedAnswer args} {
 	    if {[string first s $::tcltest::verbose] != -1} {
 		puts stdout "++++ $name SKIPPED: $constraints"
 	    }
+
 	    # add the constraint to the list of constraints the kept tests
 	    # from running
+
 	    if {[info exists ::tcltest::skippedBecause($constraints)]} {
 		incr ::tcltest::skippedBecause($constraints)
 	    } else {
@@ -821,6 +874,7 @@ catch {file delete -force tmp}
 
 # Deliberately call the socket with the wrong number of arguments.  The error
 # message you get will indicate whether sockets are available on this system.
+
 catch {socket} msg
 set ::tcltest::testConfig(socket) \
 	[expr {$msg != "sockets are not available on this system"}]
@@ -828,11 +882,14 @@ set ::tcltest::testConfig(socket) \
 #
 # Internationalization / ISO support procs     -- dl
 #
+
 if {[info commands testlocale]==""} {
+
     # No testlocale command, no tests...
     # (it could be that we are a sub interp and we could just load
     # the Tcltest package but that would interfere with tests
     # that tests packages/loading in slaves...)
+
     set ::tcltest::testConfig(hasIsoLocale) 0
 } else {
     proc ::tcltest::set_iso8859_1_locale {} {
@@ -848,7 +905,9 @@ if {[info commands testlocale]==""} {
 	set ::tcltest::isoLocale fr
         switch $tcl_platform(platform) {
 	    "unix" {
+
 		# Try some 'known' values for some platforms:
+
 		switch -exact -- $tcl_platform(os) {
 		    "FreeBSD" {
 			set ::tcltest::isoLocale fr_FR.ISO_8859-1
@@ -861,9 +920,11 @@ if {[info commands testlocale]==""} {
 			set ::tcltest::isoLocale fr
 		    }
 		    default {
+
 			# Works on SunOS 4 and Solaris, and maybe others...
 			# define it to something else on your system
 			#if you want to test those.
+
 			set ::tcltest::isoLocale iso_8859_1
 		    }
 		}
@@ -882,7 +943,9 @@ if {[info commands testlocale]==""} {
 #
 # procedures that are Tk specific
 #
+
 if {[info exists tk_version]} {
+
     # If the main window isn't already mapped (e.g. because the tests are
     # being run automatically) , specify a precise size for it so that the
     # user won't have to position it manually.
@@ -934,6 +997,7 @@ if {[info exists tk_version]} {
     
     # Send a command to the background process, catching errors and
     # flushing I/O channels
+
     proc ::tcltest::dobg {command} {
 	puts $::tcltest::fd "catch [list $command] msg; update; puts \$msg; puts **DONE**; flush stdout"
 	flush $::tcltest::fd
@@ -946,6 +1010,7 @@ if {[info exists tk_version]} {
     # Data arrived from background process.  Check for special marker
     # indicating end of data for this command, and make data available
     # to dobg procedure.
+
     proc ::tcltest::bgReady {} {
 	set x [gets $::tcltest::fd]
 	if {[eof $::tcltest::fd]} {
@@ -959,6 +1024,7 @@ if {[info exists tk_version]} {
     }
 
     # Exit the background process, and close the pipes
+
     proc ::tcltest::cleanupbg {} {
 	catch {
 	    puts $::tcltest::fd "exit"
@@ -984,7 +1050,32 @@ if {[info exists tk_version]} {
     }
 }
 
+# threadReap --
+#
+#	Kill all thread except for the main thread.
+#
+# Arguments:
+#	none.
+#
+# Results:
+#	Returns the number of existing threads.
+
+proc ::tcltest::threadReap {} {
+    testthread errorproc ThreadNullError
+    while {[llength [testthread names]] > 1} {
+	foreach tid [testthread names] {
+	    if {$tid != $::tcltest::mainThread} {
+		catch {testthread send -async $tid {testthread exit}}
+		update
+	    }
+	}
+    }
+    testthread errorproc ThreadError
+    return [llength [testthread names]]
+}
+
 # Need to catch the import because it fails if defs.tcl is sourced
 # more than once.
+
 catch {namespace import ::tcltest::*}
 return
