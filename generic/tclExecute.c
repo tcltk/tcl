@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.127 2004/05/14 19:15:35 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.128 2004/05/16 17:25:49 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -387,7 +387,8 @@ static void		PrintByteCodeInfo _ANSI_ARGS_((ByteCode *codePtr));
 static char *		StringForResultCode _ANSI_ARGS_((int result));
 static void		ValidatePcAndStackTop _ANSI_ARGS_((
 			    ByteCode *codePtr, unsigned char *pc,
-			    int stackTop, int stackLowerBound));
+			    int stackTop, int stackLowerBound, 
+			    int checkStack));
 #endif /* TCL_COMPILE_DEBUG */
 static int		VerifyExprObjType _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *objPtr));
@@ -1100,9 +1101,7 @@ TclExecuteByteCode(interp, codePtr)
     Tcl_WideInt w;
     int isWide;
     register int cleanup;
-    int objc = 0;
     Tcl_Obj *objResultPtr;
-    Tcl_Obj **objv = NULL, **stackObjArray = NULL;
     char *part1, *part2;
     Var *varPtr, *arrayPtr;
     CallFrame *varFramePtr = iPtr->varFramePtr;
@@ -1117,6 +1116,8 @@ TclExecuteByteCode(interp, codePtr)
     int codeNsEpoch = codePtr->nsEpoch;
     int codePrecompiled = (codePtr->flags & TCL_BYTECODE_PRECOMPILED);
     
+    Tcl_Obj *expandNestList = NULL;
+
     /*
      * The execution uses a unified stack: first the catch stack, immediately
      * above it the execution stack.
@@ -1223,8 +1224,12 @@ TclExecuteByteCode(interp, codePtr)
     cleanup0:
     
 #ifdef TCL_COMPILE_DEBUG
+    /*
+     * Skip the stack depth check if an expansion is in progress
+     */
+
     ValidatePcAndStackTop(codePtr, pc, (tosPtr - eePtr->stackPtr),
-            initStackTop);
+            initStackTop, /*checkStack*/ (expandNestList == NULL));
     if (traceInstructions) {
 	fprintf(stdout, "%2d: %2d ", iPtr->numLevels, (tosPtr - eePtr->stackPtr));
 	TclPrintInstruction(codePtr, pc);
@@ -1410,120 +1415,109 @@ TclExecuteByteCode(interp, codePtr)
 	    NEXT_INST_V(2, opnd, 1);
 	}
 
-    case INST_LIST_VERIFY:
-	{  
-	    int numElements = 0;
-	    valuePtr = *tosPtr;
+    case INST_EXPAND_START:
+	/*
+	 * Push an element to the expandNestList. This records
+	 * the current tosPtr - i.e., the point in the stack
+	 * where the expanded command starts.
+	 *
+	 * Use a Tcl_Obj as linked list element; slight mem waste,
+	 * but faster allocation than ckalloc. This also abuses
+	 * the Tcl_Obj structure, as we do not define a special
+	 * tclObjType for it. It is not dangerous as the obj is
+	 * never passed anywhere, so that all manipulations are
+	 * performed here and in INST_INVOKE_EXPANDED (in case of
+	 * an expansion error, also in INST_EXPAND_STKTOP).
+	 */
 
-	    result = Tcl_ListObjLength(interp, valuePtr, &numElements);
+	TclNewObj(objPtr);
+	objPtr->internalRep.twoPtrValue.ptr1 = (VOID *) (tosPtr - eePtr->stackPtr);
+	objPtr->internalRep.twoPtrValue.ptr2 = (VOID *) expandNestList;
+	expandNestList = objPtr;
+	NEXT_INST_F(1, 0, 0);
+
+    case INST_EXPAND_STKTOP:
+	{  
+	    int objc;
+	    Tcl_Obj **objv;
+
+	    /*
+	     * Make sure that the element at stackTop is a list; if not,
+	     * remove the element from the expand link list and leave.
+	     */
+	    
+
+	    valuePtr = *tosPtr;
+	    result = Tcl_ListObjGetElements(interp, valuePtr, &objc, &objv);
 	    if (result != TCL_OK) {
 		TRACE_WITH_OBJ(("%.30s => ERROR: ", O2S(valuePtr)),
 	        	Tcl_GetObjResult(interp));
+		objPtr = expandNestList;
+		expandNestList = (Tcl_Obj *) objPtr->internalRep.twoPtrValue.ptr2;
+		TclDecrRefCount(objPtr);
 		goto checkForCatch;
 	    }
-	    NEXT_INST_F(1, 0, 0);
-	}
-
-    case INST_INVOKE_EXP:
-	{
-	    int numWords = TclGetUInt4AtPtr(pc+1);
-	    int spaceAvailable = eePtr->endPtr - tosPtr;
-	    unsigned char *deltaPtr, *deltaPtrStart = pc+5;
-	    Tcl_Obj **wordv = tosPtr - (numWords - 1);
-	    int objIdx, wordIdx, wordToExpand = -1;
-
-	    /* 
-	     * Compute number of objects needed to store the 
-	     * command after expansion is complete.
-	     */
-
-	    opnd = objc = numWords;
-	    for (deltaPtr = deltaPtrStart; *deltaPtr; deltaPtr++) {
-		int numElements;
-		wordToExpand += TclGetUInt1AtPtr(deltaPtr);
-		Tcl_ListObjLength(NULL, wordv[wordToExpand], &numElements);
-		objc += numElements - 1;
-	    }
+	    tosPtr--;
 
 	    /*
-	     * We'll store the expanded command in the stack expansion
-	     * space just above tosPtr, assuming there is room.  Otherwise,
-	     * allocate enough heap storage to store the expanded command.
+	     * Make sure there is enough room in the stack to expand
+	     * this list *and* process the rest of the command (at least
+	     * up to the next argument expansion or command end).
+	     * The operand is the current stack depth, as seen by the 
+	     * compiler.
+	     */ 
+
+	    length = objc + codePtr->maxStackDepth - TclGetInt4AtPtr( pc+1 );
+	    while ((tosPtr + length) > eePtr->endPtr) {
+		DECACHE_STACK_INFO();
+		GrowEvaluationStack(eePtr); 
+		CACHE_STACK_INFO();
+	    }
+	    
+	    /*
+	     * Expand the list at stacktop onto the stack; free the list.
 	     */
 
-	    objv = stackObjArray = tosPtr + 1;
-	    if (objc > spaceAvailable) {
-		objv = (Tcl_Obj **) ckalloc((unsigned)
-			(objc * sizeof(Tcl_Obj *)));
-	    } else {
-		tosPtr += objc;
+	    for (i = 0; i < objc; i++) {
+		PUSH_OBJECT(objv[i]);
 	    }
-
-	    objIdx = 0;
-	    deltaPtr = deltaPtrStart;
-	    wordToExpand = TclGetUInt1AtPtr(deltaPtr) - 1;
-	    for (wordIdx = 0; wordIdx < numWords; wordIdx++) {
-
-		/* 
-		 * Copy words (expanding some) from wordv to objv.
-		 * Note that we do not increment refCounts.  We
-		 * rely on the references in wordv (on the execution
-		 * stack) to be sufficient to keep the values around
-		 * as long as we need them.
-		 */
-
-		if (wordIdx == wordToExpand) {
-		    int i, numElements;
-		    Tcl_Obj **elements, *temp = wordv[wordIdx];
-
-		    /*
-		     * Make sure the list we expand is unshared.
-		     * If it is not shared, then the stack holds the
-		     * only reference to it, and there is no danger
-		     * the list will shimmer to another type (and
-		     * possibly free the elements of the list) before
-		     * we are done with the command evaluation.
-		     */
-
-		    if (Tcl_IsShared(temp)) {
-			Tcl_DecrRefCount(temp);
-			temp = Tcl_DuplicateObj(temp);
-			Tcl_IncrRefCount(temp);
-			wordv[wordIdx] = temp;
-		    }
-		    Tcl_ListObjGetElements(NULL, temp, &numElements, &elements);
-		    for (i=0; i<numElements; i++) {
-			objv[objIdx++] = elements[i];
-		    }
-		    ++deltaPtr;
-		    if (*deltaPtr) {
-			wordToExpand += TclGetUInt1AtPtr(deltaPtr);
-		    } else {
-			wordToExpand = -1;
-		    }
-		} else {
-		    objv[objIdx++] = wordv[wordIdx];
-		}
-	    }
-	    pcAdjustment = (deltaPtr - pc) + 1;
-	    goto doInvocation;
+	    TclDecrRefCount(valuePtr);
+	    NEXT_INST_F(5, 0, 0);
 	}
+
+    case INST_INVOKE_EXPANDED:
+        objPtr = expandNestList;
+	expandNestList = (Tcl_Obj *) objPtr->internalRep.twoPtrValue.ptr2;
+	opnd = tosPtr - eePtr->stackPtr 
+		- (int) objPtr->internalRep.twoPtrValue.ptr1;
+	TclDecrRefCount(objPtr);
+	
+	if (opnd == 0) {
+	    /* 
+	     * Nothing was expanded, return {}.
+	     */
+
+	    TclNewObj(objResultPtr);
+	    NEXT_INST_F(1, 0, 1);
+	}
+
+	pcAdjustment = 1;
+	goto doInvocation;
 
     case INST_INVOKE_STK4:
 	opnd = TclGetUInt4AtPtr(pc+1);
-	objc = opnd;
-	objv = stackObjArray = (tosPtr - (objc-1));
 	pcAdjustment = 5;
 	goto doInvocation;
 
     case INST_INVOKE_STK1:
 	opnd = TclGetUInt1AtPtr(pc+1);
-	objc = opnd;
-	objv = stackObjArray = (tosPtr - (objc-1));
 	pcAdjustment = 2;
 	    
     doInvocation:
 	{
+	    int objc = opnd;
+	    Tcl_Obj **objv = (tosPtr - (objc-1));
+
 	    /*
 	     * We keep the stack reference count as a (char *), as that
 	     * works nicely as a portable pointer-sized counter.
@@ -1622,12 +1616,6 @@ TclExecuteByteCode(interp, codePtr)
 	    if (*preservedStackRefCountPtr == (char *) 0) {
 		ckfree((VOID *) preservedStackRefCountPtr);
 	    }	    
-
-	    if (objv != stackObjArray) {
-		ckfree((char *) objv);
-	    } else if (*pc == INST_INVOKE_EXP) {
-		tosPtr -= objc;
-	    }
 
 	    if (result == TCL_OK) {
 		/*
@@ -4756,7 +4744,7 @@ PrintByteCodeInfo(codePtr)
 
 #ifdef TCL_COMPILE_DEBUG
 static void
-ValidatePcAndStackTop(codePtr, pc, stackTop, stackLowerBound)
+ValidatePcAndStackTop(codePtr, pc, stackTop, stackLowerBound, checkStack)
     register ByteCode *codePtr; /* The bytecode whose summary is printed
 				 * to stdout. */
     unsigned char *pc;		/* Points to first byte of a bytecode
@@ -4765,6 +4753,8 @@ ValidatePcAndStackTop(codePtr, pc, stackTop, stackLowerBound)
 				 * stackLowerBound and stackUpperBound
 				 * (inclusive). */
     int stackLowerBound;	/* Smallest legal value for stackTop. */
+    int checkStack;             /* 0 if the stack depth check should be
+				 * skipped. */
 {
     int stackUpperBound = stackLowerBound +  codePtr->maxStackDepth;	
                                 /* Greatest legal value for stackTop. */
@@ -4784,7 +4774,8 @@ ValidatePcAndStackTop(codePtr, pc, stackTop, stackLowerBound)
 		(unsigned int) opCode, relativePc);
         Tcl_Panic("TclExecuteByteCode execution failure: bad opcode");
     }
-    if ((stackTop < stackLowerBound) || (stackTop > stackUpperBound)) {
+    if (checkStack && 
+            ((stackTop < stackLowerBound) || (stackTop > stackUpperBound))) {
 	int numChars;
 	char *cmd = GetSrcInfoForPc(pc, codePtr, &numChars);
 	
