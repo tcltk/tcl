@@ -1,5 +1,12 @@
 2004-03-05  Kevin B. Kenny <kennykb@acm.org>
 
+	* generic/tclTest.c: Modified TesteventObjCmd to use
+	a Tcl_QueuePosition in place of an 'int' for the enumerated
+	queue position, to avoid a compiler warning on SGI.
+	(Bug #771960).
+	
+2004-03-05  Kevin B. Kenny <kennykb@acm.org>
+
 	* tests/registry.test: Applied fix from Patch #910174 to
 	make the test for an English-language system include any
 	country code, rather than just English-United States.1252.
