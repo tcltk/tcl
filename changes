@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.47 1999/08/04 20:58:48 redman Exp $
+RCS: @(#) $Id: changes,v 1.48 1999/08/10 02:40:04 welch Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -4587,3 +4587,19 @@ TerminateThread(), which seems to leak about 4k from the helper
 thread's stack space. (redman)
 
 --------------- Released 8.2b2, August 5, 1999 ----------------------
+
+8/9/99 (internal api change) Removed the TclpMutexLock and TclpMutexUnlock
+APIs and added a new exported api, Tcl_GetAllocMutex. These APIs are all for
+the mutex used in the simple memory allocators.  By making this change
+we are able to substitute different implementations of the thread-related
+APIs without having to recompile the Tcl core. (welch)
+
+8/9/99 (new C API) Tcl_GetChannelNames returns a list of open channel
+names in the interpreter result.  Still no Tcl-level version of this,
+but server-like applications can use this to clean up files without
+deleting interpreters. (welch)
+
+8/9/99 (bug fix) Traces were not firing on "info exists", which used to
+happen in Tcl 7.6 and earlier. An "info exists" now fires a read trace,
+if defined.  This makes it possible to fully implement variables that
+are defined via traces. (welch)
