@@ -1,3 +1,9 @@
+2003-10-21  Andreas Kupries  <andreask@pliers.activestate.com>
+
+	* win/tclWinPipe.c (BuildCommandLine): Applied the patch coming
+	  with [Bug 805605] to the code, fixing the incorrect use of
+	  ispace noted by Ronald Dauster <ronaldd@users.sourceforge.net>.
+
 2003-10-14  David Gravereaux <davygrvy@pobox.com>
 
 	* win/tclAppInit.c (sigHandler): Punt gracefully if exitToken
