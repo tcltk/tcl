@@ -14,12 +14,11 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.34 2001/09/28 15:32:17 dkf Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.35 2001/10/01 15:31:51 msofer Exp $
  */
 
 #include "tclInt.h"
 #include "tclPort.h"
-#include "tclCompile.h"
 #include "tclRegexp.h"
 
 /*
@@ -575,23 +574,17 @@ InfoBodyCmd(dummy, interp, objc, objv)
         return TCL_ERROR;
     }
 
-    /*
-     * We should not return a bytecompiled body.  If it is precompiled,
-     * then the bodyPtr's string representation is bogus, since sources
-     * are not available.  If it was just a bytecompiled body, then it
-     * is likely to not be of any use to the caller, as it was compiled
-     * for a separate procedure context [Bug: 3412], and noone else can
-     * reasonably use it.
-     * In order to make sure that later manipulations of the object do not
-     * invalidate the internal representation, we make a copy of the string
-     * representation and return that one, instead.
+    /* 
+     * Here we used to return procPtr->bodyPtr, except when the body was
+     * bytecompiled - in that case, the return was a copy of the body's
+     * string rep. In order to better isolate the implementation details
+     * of the compiler/engine subsystem, we now always return a copy of 
+     * the string rep. It is important to return a copy so that later 
+     * manipulations of the object do not invalidate the internal rep.
      */
 
     bodyPtr = procPtr->bodyPtr;
-    resultPtr = bodyPtr;
-    if (bodyPtr->typePtr == &tclByteCodeType) {
-	resultPtr = Tcl_NewStringObj(bodyPtr->bytes, bodyPtr->length);
-    }
+    resultPtr = Tcl_NewStringObj(bodyPtr->bytes, bodyPtr->length);
     
     Tcl_SetObjResult(interp, resultPtr);
     return TCL_OK;
