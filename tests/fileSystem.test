@@ -404,6 +404,21 @@ test filesystem-7.1 {load from vfs} {win} {
     # The real result of this test is what happens when Tcl exits.
 } {ok}
 
+test filesystem-7.2 {cross-filesystem copy from vfs maintains mtime} {
+    set dir [pwd]
+    cd [file dirname [info script]]
+    set origtime [file mtime [info script]]
+    set dir [pwd]
+    testsimplefilesystem 1
+    file delete -force theCopy
+    file copy simplefs:/[file tail [info script]] theCopy
+    testsimplefilesystem 0
+    set newtime [file mtime theCopy]
+    file delete theCopy
+    cd $dir
+    expr {$origtime == $newtime}
+} {1}
+
 cleanupTests
 }
 namespace delete ::tcl::test::fileSystem
