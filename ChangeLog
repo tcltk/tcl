@@ -1,5 +1,13 @@
 2001-07-16  Mo DeJong  <mdejong@redhat.com>
 
+	* generic/tcl.h: Define __WIN32__ when
+	__CYGWIN__ or __MINGW32__ is defined.
+	* generic/tclAlloc.c: Define caddr_t when
+	compiling with VC++ or mingw. This type is
+	already defined when compiling with Cygwin.
+
+2001-07-16  Mo DeJong  <mdejong@redhat.com>
+
 	* win/tclWinConsole.c:
 	* win/tclWinPipe.c:
 	* win/tclWinPort.h:
