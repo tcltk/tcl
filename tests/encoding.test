@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: encoding.test,v 1.16 2003/02/21 02:40:58 hobbs Exp $
+# RCS: @(#) $Id: encoding.test,v 1.17 2003/03/07 21:40:28 mdejong Exp $
 
 package require tcltest 2
 namespace import -force ::tcltest::*
@@ -520,16 +520,16 @@ foreach from {cp932 shiftjis euc-jp iso2022-jp} {
 	    cd [temporaryDirectory]
 	    set f [open $from.chars]
 	    fconfigure $f -encoding $from
-	    set out [open $from.$to.out w]
+	    set out [open $from.$to.tcltestout w]
 	    fconfigure $out -encoding $to
 	    puts -nonewline $out [read $f]
 	    close $out
 	    close $f
 	    
-	    # then compare $to.chars <=> $from.to.out as binary.
+	    # then compare $to.chars <=> $from.to.tcltestout as binary.
 	    set fa [open $to.chars]
 	    fconfigure $fa -encoding binary
-	    set fb [open $from.$to.out]
+	    set fb [open $from.$to.tcltestout]
 	    fconfigure $fb -encoding binary
 	    set diff [channel-diff $fa $fb]
 	    close $fa
@@ -541,7 +541,7 @@ foreach from {cp932 shiftjis euc-jp iso2022-jp} {
     }
 }
 
-eval [list file delete] [glob -directory [temporaryDirectory] *.chars *.out]
+eval [list file delete] [glob -directory [temporaryDirectory] *.chars *.tcltestout]
 # ===> Cut here <===
 
 # EscapeFreeProc, GetTableEncoding, unilen
