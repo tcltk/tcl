@@ -1,6 +1,10 @@
 2001-09-05  David Gravereaux <davygrvy@pobox.com>
 
-	* generic/tclPlatDecls.h:  Another small trim finalizing Borland support.
+	* generic/tclPlatDecls.h:  Another small trim finalizing Borland
+	support.
+
+	* win/tclWinPipe.c:  More Borland compatibility fixes.
+	[Patch: 436116]
 
 2001-09-05 Vince Darley <vincentdarley@users.sourceforge.net>
 
