@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.10 1999/06/15 22:06:17 hershey Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.11 1999/06/16 00:00:48 hershey Exp $ */
 
 #include "tclInt.h"
 
@@ -654,7 +654,7 @@ Tcl_SetObjLength(objPtr, length)
     stringPtr->numChars = -1;
     stringPtr->uallocated = 0;
 
-    if (length > stringPtr->allocated) {
+    if (length > (int) stringPtr->allocated) {
 
 	/*
 	 * Not enough space in current string. Reallocate the string
@@ -1120,7 +1120,7 @@ AppendUtfToUtfRep(objPtr, bytes, numBytes)
     newLength = numBytes + oldLength;
 
     stringPtr = GET_STRING(objPtr);
-    if (newLength > stringPtr->allocated) {
+    if (newLength > (int) stringPtr->allocated) {
 
 	/*
 	 * There isn't currently enough space in the string
@@ -1201,7 +1201,7 @@ Tcl_AppendStringsToObjVA (objPtr, argList)
     }
 
     stringPtr = GET_STRING(objPtr);
-    if (newLength > stringPtr->allocated) {
+    if (newLength > (int) stringPtr->allocated) {
 
 	/*
 	 * There isn't currently enough space in the string
@@ -1380,7 +1380,7 @@ DupStringInternalRep(srcPtr, copyPtr)
      */
     
     if (srcStringPtr->numChars == srcPtr->length) {
-	copyStringPtr = (String *) ckalloc(STRING_SIZE(0));
+	copyStringPtr = (String *) ckalloc(sizeof(String));
 	copyStringPtr->uallocated = 0;
     } else {
 	copyStringPtr = (String *) ckalloc(
@@ -1453,7 +1453,7 @@ SetStringFromAny(interp, objPtr)
 	 * Allocate enough space for the basic String structure.
 	 */
 
-	stringPtr = (String *) ckalloc(STRING_SIZE(0));
+	stringPtr = (String *) ckalloc(sizeof(String));
 	stringPtr->numChars = -1;
 	stringPtr->uallocated = 0;
 
