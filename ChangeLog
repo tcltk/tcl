@@ -1,3 +1,10 @@
+2004-04-01  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+        * generic/tclIOUtil.c:   Fix to privately reported vfs bug with
+        'glob -type d -dir . *' across a vfs boundary.  No tests for
+        this are currently possible without effectively moving tclvfs
+        into Tcl's test suite.
+
 2004-03-31  Don Porter  <dgp@users.sourceforge.net>
 
 	* doc/msgcat.n:	Clarified message catalog file encodings. [Bug 811457]
