@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.16 2000/01/26 21:36:35 ericm Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.17 2000/03/27 22:18:56 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -953,6 +953,20 @@ Tcl_Export(interp, namespacePtr, pattern, resetListFirst)
 		"\": pattern can't specify a namespace",
 		(char *) NULL);
 	return TCL_ERROR;
+    }
+
+    /*
+     * Make sure that we don't already have the pattern in the array
+     */
+    if (nsPtr->exportArrayPtr != NULL) {
+	for (i = 0;  i < nsPtr->numExportPatterns;  i++) {
+	    if (strcmp(pattern, nsPtr->exportArrayPtr[i]) == 0) {
+		/*
+		 * The pattern already exists in the list
+		 */
+		return TCL_OK;
+	    }
+	}
     }
 
     /*
