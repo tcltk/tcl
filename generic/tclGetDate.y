@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclGetDate.y,v 1.19 2003/05/15 21:51:46 kennykb Exp $
+ * RCS: @(#) $Id: tclGetDate.y,v 1.20 2004/03/10 16:01:26 kennykb Exp $
  */
 
 %{
@@ -1146,7 +1146,7 @@ TclGetDate(p, now, zone, timePtr)
     yyInput = p;
     /* now has to be cast to a time_t for 64bit compliance */
     Start = now;
-    tm = TclpGetDate((TclpTime_t) &Start, 0);
+    tm = TclpGetDate((TclpTime_t) &Start, (zone == -50000));
     thisyear = tm->tm_year + TM_YEAR_BASE;
     yyYear = thisyear;
     yyMonth = tm->tm_mon + 1;
