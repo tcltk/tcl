@@ -1,3 +1,8 @@
+2004-12-12  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclObj.c (TclSetCmdNameObj): special handling for fully
+	qualified command names (as in fix [Patch 456668]).
+
 2004-12-11  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclInt.h:
