@@ -1,5 +1,58 @@
 1999-05-03    <stanton@scriptics.com>
 
+	* tests/cmdIL.test: 
+	* tests/cmdMZ.test: 
+	* tests/error.test: 
+	* tests/lindex.test:
+	* tests/linsert.test: 
+	* tests/lrange.test: 
+	* tests/lreplace.test: 
+	* tests/string.test: 
+	* generic/tclCmdMZ.c (Tcl_StringObjCmd): 
+	* generic/tclUtil.c (TclGetIntForIndex): Applied Jeff Hobbs's
+	string patch which includes the following changes [Bug: 1845]:
+	
+	    - string compare now takes optional length arg (for strncmp
+		behavior)
+                            
+            - added string equal (just a few lines of code blended
+                in with string compare)
+            
+            - added string icompare/iequal for case-insensitive comparisons
+            
+            - string index's index can now be ?end[+-]?expression
+                I made this change in the private TclGetIntForIndex,
+                which means that the list commands also benefit, as
+                well as string range, et al.
+            
+            - added [string repeat string count]
+                Repeats given string  number of times
+            
+            - added string replace, string equiv to lreplace
+              (quasi opposite of string range):
+                        string replace first last ?string?
+                Example of use, replacing end of string with ...
+                should the string be more than 16 chars long:
+                        string replace $string 16 end "..."
+                This just returns the string len < 16, so it
+                will only affect the long strings.
+            
+            - added optional first and last args to string to*
+                This allows you to just affect certain regions of
+                a string with the command (like just capping the
+                first letter).  I found the original totitle to
+                be too draconian to be useful.
+            
+            - added [string map charMap string]
+                where charMap is a {from to from to} list that equates to
+                what one might get from [array get].  Each  and 
+                can be multiple chars (or none at all).  For Tcl/CGI users,
+                this is a MAJOR speed booster.
+	
+	* generic/tclParse.c (Tcl_ParseCommand): Changed to avoid
+	modifying eval'ed strings that are already null terminated.
+	[Bug: 1793] 
+
 	* tests/binary.test: 
 	* generic/tclBinary.c (DupByteArrayInternalRep): Fixed bug where
 	type was not being set in duplicated object. 
