@@ -1,5 +1,20 @@
 1999-10-12  Jeff Hobbs  <hobbs@scriptics.com>
 
+	* generic/regc_color.c:
+	* generic/regc_cvec.c:
+	* generic/regc_lex.c:
+	* generic/regc_locale.c:
+	* generic/regcomp.c:
+	* generic/regcustom.h:
+	* generic/regerrs.h:
+	* generic/regex.h:
+	* generic/regexec.c:
+	* generic/regguts.h:
+	* generic/tclRegexp.c:
+	* generic/tclTest.c:
+	* tests/reg.test: updated to Henry Spencer's new regexp engine
+	(mid-Sept 99).  Should greatly reduce stack space reqs.
+
 	* library/tcltest1.0/pkgIndex.tcl: fixed procs in pkgIndex.tcl file
 
 	* generic/tclEnv.c: fixed mem leak with putenv and DStrings
