@@ -3,7 +3,7 @@
 # utility procs formerly in init.tcl which can be loaded on demand
 # for package management.
 #
-# RCS: @(#) $Id: package.tcl,v 1.12 2000/03/03 02:58:00 hobbs Exp $
+# RCS: @(#) $Id: package.tcl,v 1.13 2000/03/06 19:17:11 ericm Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1998 Sun Microsystems, Inc.
@@ -152,9 +152,6 @@ proc pkg_mkIndex {args} {
 	    if {! [string match $loadPat [lindex $pkg 1]]} {
 		continue
 	    }
-	    if {[string equal [lindex $pkg 1] "Tk"]} {
-		$c eval {set argv {-geometry +0+0}}
-	    }
 	    if {[catch {
 		load [lindex $pkg 0] [lindex $pkg 1] $c
 	    } err]} {
@@ -163,6 +160,10 @@ proc pkg_mkIndex {args} {
 		}
 	    } elseif {$doVerbose} {
 		tclLog "loaded [lindex $pkg 0] [lindex $pkg 1]"
+	    }
+	    if {[string equal [lindex $pkg 1] "Tk"]} {
+		# Withdraw . if Tk was loaded, to avoid showing a window.
+		$c eval [list wm withdraw .]
 	    }
 	}
 	cd $dir
