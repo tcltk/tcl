@@ -14,7 +14,9 @@
 	* doc/FileSystem.3: cleaned up internal handling of
 	Tcl_FSOpenFileChannel to remove duplicate code, and make
 	writing external vfs's clearer and easier.  No
-	functionality change.
+	functionality change.  Also clarify that objects with refCount
+	zero should not be passed in to the Tcl_FS API, and prevent
+	segfaults from occuring on such user errors. [Bug 578617]
 	
 2002-07-06  Don Porter  <dgp@users.sourceforge.net>
 
