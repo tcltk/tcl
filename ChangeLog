@@ -1,6 +1,11 @@
+1999-07-27    <redman@scriptics.com>
+
+	* tools/tclSplash.bmp:  Updated Windows installer bitmap
+	to ready Tcl/Tk Version 8.2.
+
 1999-07-26    <redman@scriptics.com>
 
- 	* tests/tcltest.test:  Need to close the new core file, there
+	* tests/tcltest.test:  Need to close the new core file, there
 	seems to be a hang in threaded WinNT if the file isn't closed.
 	Open issue, need to fix that hang.
 
