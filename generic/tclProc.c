@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.52 2004/05/04 03:20:22 msofer Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.53 2004/08/24 23:25:04 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -221,7 +221,7 @@ Tcl_ProcObjCmd(dummy, interp, objc, objv)
  *	Returns TCL_OK on success, along with a pointer to a Tcl
  *	procedure definition in procPtrPtr where the cmdPtr field is not
  *      initialised. This definition should be freed by calling
- *      TclCleanupProc() when it is no longer needed.  Returns TCL_ERROR if
+ *      TclProcCleanupProc() when it is no longer needed.  Returns TCL_ERROR if
  *      anything goes wrong. 
  *
  * Side effects:
