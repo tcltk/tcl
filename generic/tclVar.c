@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.42 2001/11/30 14:59:01 msofer Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.43 2001/12/05 20:43:58 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -3306,7 +3306,8 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
 	    Var *varPtr2;
 	    char *pattern = NULL;
 	    char *name;
-	    Tcl_Obj *namePtr, *valuePtr;
+	    Tcl_Obj *namePtr, *valuePtr, *nameLstPtr, *tmpResPtr, **namePtrPtr;
+	    int i, count;
 	    
 	    if ((objc != 3) && (objc != 4)) {
 	        Tcl_WrongNumArgs(interp, 2, objv, "arrayName ?pattern?");
@@ -3318,6 +3319,14 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
 	    if (objc == 4) {
 	        pattern = TclGetString(objv[3]);
 	    }
+
+	    /*
+	     * Store the array names in a new object.
+	     */
+
+	    nameLstPtr = Tcl_NewObj();
+	    Tcl_IncrRefCount(nameLstPtr);
+
 	    for (hPtr = Tcl_FirstHashEntry(varPtr->value.tablePtr, &search);
 		 hPtr != NULL;  hPtr = Tcl_NextHashEntry(&search)) {
 	        varPtr2 = (Var *) Tcl_GetHashValue(hPtr);
@@ -3330,27 +3339,77 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
 		}
 		
 		namePtr = Tcl_NewStringObj(name, -1);
-		result = Tcl_ListObjAppendElement(interp, resultPtr,
+		result = Tcl_ListObjAppendElement(interp, nameLstPtr,
 		        namePtr);
 		if (result != TCL_OK) {
 		    Tcl_DecrRefCount(namePtr); /* free unneeded name obj */
-		    return result;
-		}
-
-		valuePtr = Tcl_ObjGetVar2(interp, objv[2], namePtr,
-	                TCL_LEAVE_ERR_MSG);
-		if (valuePtr == NULL) {
-		    Tcl_DecrRefCount(namePtr); /* free unneeded name obj */
-		    return result;
-		}
-		result = Tcl_ListObjAppendElement(interp, resultPtr,
-			valuePtr);
-		if (result != TCL_OK) {
-		    Tcl_DecrRefCount(namePtr); /* free unneeded name obj */
+		    Tcl_DecrRefCount(nameLstPtr);
 		    return result;
 		}
 	    }
+
+	    /*
+	     * Make sure the Var structure of the array is not removed by
+	     * a trace while we're working.
+	     */
+
+	    varPtr->refCount++;
+	    tmpResPtr = Tcl_NewObj();
+
+	    /*
+	     * Get the array values corresponding to each element name 
+	     */
+
+	    result = Tcl_ListObjGetElements(interp, nameLstPtr, &count, &namePtrPtr);
+	    if (result != TCL_OK) {
+		goto errorInArrayGet;
+	    }
+	    
+	    tmpResPtr = Tcl_NewObj();
+	    for (i = 0; i < count; i++) { 
+		namePtr = *namePtrPtr++;
+		valuePtr = Tcl_ObjGetVar2(interp, objv[2], namePtr,
+	                TCL_LEAVE_ERR_MSG);
+		if (valuePtr == NULL) {
+		    /*
+		     * Some trace played a trick on us; we need to diagnose to
+		     * adapt our behaviour: was the array element unset, or did
+		     * the modification modify the complete array?
+		     */
+
+		    if (TclIsVarArray(varPtr) && !TclIsVarUndefined(varPtr)) {
+			/*
+			 * The array itself looks OK, the variable was undefined:
+			 * forget it.
+			 */
+			
+			continue;
+		    } else {
+			result = TCL_ERROR;
+			goto errorInArrayGet;
+		    }
+		}
+		result = Tcl_ListObjAppendElement(interp, tmpResPtr,
+			namePtr);
+		if (result != TCL_OK) {
+		    goto errorInArrayGet;
+		}
+		result = Tcl_ListObjAppendElement(interp, tmpResPtr,
+			valuePtr);
+		if (result != TCL_OK) {
+		    goto errorInArrayGet;
+		}
+	    }
+	    varPtr->refCount--;
+	    Tcl_SetObjResult(interp, tmpResPtr);
+	    Tcl_DecrRefCount(nameLstPtr);
 	    break;
+
+	    errorInArrayGet:
+	    varPtr->refCount--;
+	    Tcl_DecrRefCount(nameLstPtr);
+	    Tcl_DecrRefCount(tmpResPtr); /* free unneeded temp result obj */
+	    return result;
 	}
         case ARRAY_NAMES: {
 	    Tcl_HashSearch search;

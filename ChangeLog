@@ -1,3 +1,9 @@
+2001-12-05  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* generic/tclVar.c: 
+	* tests/trace.test: new algorithm for [array get], safe when there
+	are traces that modify the array [Bug #449893]. 
+
 2001-12-04  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* tests/compExpr-old.test, tests/compExpr.test, tests/compile.test: 
