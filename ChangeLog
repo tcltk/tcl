@@ -1,5 +1,8 @@
 2002-04-19  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclMain.c (Tcl_Main):  Free the memory allocated for the
+	startup script path.  [Bug 543549]
+
 	* library/msgcat/msgcat.tcl:  [mcmax] wasn't using the caller's
 	namespace when determining the max translated length.  Also
 	made revisions for better use of namespace variables and more
