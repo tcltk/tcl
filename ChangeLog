@@ -1,5 +1,11 @@
 2000-02-10  Jeff Hobbs  <hobbs@scriptics.com>
 
+	8.3.0 RELEASE
+
+	* changes: updated for 8.3.0 release
+
+	* doc/load.n: added notes about dll load errors on Windows
+
 	* unix/README:
 	* unix/Makefile.in (dist): removed porting.notes and porting.old
 	from distribution and CVS.  The information was very outdated.  Now
@@ -75,31 +81,11 @@
 	* library/tclIndex: 
 	* library/package.tcl: Renamed ::package namespace to ::pkg.
 
-2000-02-04  Eric Melski  <ericm@scriptics.com>
-
-	* doc/tree.n: 
-	* doc/stack.n: 
-	* doc/queue.n: docs for tree, stack, and queue.
-
-	* win/Makefile.in: 
-	* unix/Makefile.in: Added struct1.0 to list of libraries to install.
-
-	* tests/stackstruct.test: stack tests
-
-	* tests/queue.test: queue tests
-
-	* library/struct1.0/queue.tcl: queue data structure.
-
-	* library/struct1.0/stack.tcl: stack data structure.
-
-	* library/struct1.0/pkgIndex.tcl: 
-	* library/struct1.0/struct.tcl: data structure package
-
 2000-02-03  Eric Melski <ericm@scriptics.com>
 
 	* doc/Package.n:
-	* doc/packagens.n: Renamed Package.n -> packagens.n because NT 
-	can't deal with case-sensitive names!
+	* doc/packagens.n: Renamed Package.n -> packagens.n because Windows 
+	can't deal with case-sensitive names.
 
 2000-02-02  Jeff Hobbs  <hobbs@scriptics.com>
 
@@ -195,7 +181,6 @@
 	Fixed bug #1983, dealing with pkg_mkIndex incorrectly handling
 	situations with two procs by the same name but in different
 	namespaces (ie, foo::baz and bar::baz).
-	
 
 2000-01-26  Eric Melski  <ericm@scriptics.com>
 

@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.54 2000/01/26 03:37:23 hobbs Exp $
+RCS: @(#) $Id: changes,v 1.55 2000/02/10 09:53:46 hobbs Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -4791,3 +4791,42 @@ symbolicly (like chmod) in [file attributes $file -permissions ...] (schoebel)
 characters between 'Z' and 'a' (flawed upper/lower comparison logic) (melski)
 
 --- Released 8.3b2, January 13, 2000 --- See ChangeLog for details ---
+
+2000-01-14 (feature enhancement) clock format %Q added, clock scan updated
+
+2000-01-20 (bug fix) corrected complex array elem compiling (Spjuth)
+
+2000-01-20 (bug fix) made [info body] always return a string type arg,
+to prevent possible misuse of bytecodes in the wrong context (hobbs)
+
+2000-01-20 (bug fixes) several fixes to variable handling to prevent
+possible crashes, and further definition of correct behavior (melski)
+
+2000-01-25 (bug fixes) improved QNX, Ultrix and OSF1 (Tru64) config and
+compatibility (edge, furukawa)
+
+2000-01-25 (bug fix) fixed mem leak when calling lsort with a bad -command
+argument (hobbs)
+
+2000-01-27 (feature enhancement) package mechanism overhaul: changed
+behavior of pkg_mkIndex to do -direct by default, added -lazy option.
+Fixed pkg_mkIndex to handle odd proc names and auto_mkIndex to use platform
+independent file paths.  Other fixes for odd package quirks.  Added
+::pkg namespace and ::pkg::create helper function. (melski)
+
+2000-02-01 (bug fix) fixed problem where http POST would send one extra
+newline (vasiljevic)
+
+2000-02-02 (feature enhancement) added docs for new regexp -inline and
+-all switches. (hobbs)
+
+2000-02-08 (bug fix) corrected handling of "next monthname" in clock scan
+(melski)
+
+2000-02-09 (bug fix) restored Mac source to build readiness and prevented
+mac panic from an error when closing an async socket (steffen, ingham)
+
+2000-02-10 (feature enhancement) improved error reporting for failed
+loads on Windows (dejong, hobbs)
+
+--- Released 8.3.0, February 10, 2000 --- See ChangeLog for details ---
