@@ -1,3 +1,6 @@
+2002-11-11  Kevin Kenny  <kennykb@acm.org>
+	* doc/Tcl.n: Corrected indentation of the new language.  Oops.
+	
 2002-11-10  Kevin Kenny <kennykb@acm.org>
 
 	* doc/Tcl.n: Added language to the Endekalogue to make it clear
