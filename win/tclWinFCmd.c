@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFCmd.c,v 1.28 2002/03/24 11:41:51 vincentdarley Exp $
+ * RCS: @(#) $Id: tclWinFCmd.c,v 1.29 2002/04/22 22:51:19 hobbs Exp $
  */
 
 #include "tclWinInt.h"
@@ -649,7 +649,7 @@ DoDeleteFile(
 	Tcl_SetErrno(ENOENT);
 	return TCL_ERROR;
     }
-    
+
     if ((*tclWinProcs->deleteFileProc)(nativePath) != FALSE) {
 	return TCL_OK;
     }
@@ -666,13 +666,16 @@ DoDeleteFile(
 
 		Tcl_SetErrno(EISDIR);
 	    } else if (attr & FILE_ATTRIBUTE_READONLY) {
-		(*tclWinProcs->setFileAttributesProc)(nativePath, 
+		int res = (*tclWinProcs->setFileAttributesProc)(nativePath, 
 			attr & ~FILE_ATTRIBUTE_READONLY);
-		if ((*tclWinProcs->deleteFileProc)(nativePath) != FALSE) {
+		if ((res != 0) && ((*tclWinProcs->deleteFileProc)(nativePath)
+			!= FALSE)) {
 		    return TCL_OK;
 		}
 		TclWinConvertError(GetLastError());
-		(*tclWinProcs->setFileAttributesProc)(nativePath, attr);
+		if (res != 0) {
+		    (*tclWinProcs->setFileAttributesProc)(nativePath, attr);
+		}
 	    }
 	}
     } else if (Tcl_GetErrno() == ENOENT) {
