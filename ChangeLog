@@ -1,5 +1,24 @@
 2002-06-18  Miguel Sofer  <msofer@users.sourceforge.net>
 
+	* generic/tclExecute.c (TEBC): 
+	- elimination of duplicated code in the non-immediate INST_INCR
+	  instructions. 
+	- elimination of 103 (!) TclDecrRefCount macros. The different
+	  instructions now jump back to a common "DecrRefCount zone" at
+	  the top of the loop. The macro "ADJUST_PC" was replaced by two
+	  macros "NEXT_INST_F" and "NEXT_INST_V" that take three params
+	  (pcAdjustment, # of stack objects to discard, resultObjPtr
+	  handling flag). The only instructions that retain a
+	  TclDecrRefCount are INST_POP (for speed), the common code for
+	  the non-immediate INST_INCR, INST_FOREACH_STEP and the two
+	  INST_LSET.
+
+	The object size of tclExecute.o was reduced by approx 20% since
+	the start of the consolidation drive, while making room for some
+	peep-hole optimisation at runtime.
+
+2002-06-18  Miguel Sofer  <msofer@users.sourceforge.net>
+
 	* generic/tclExecute.c (TEBC, INST_DONE): small bug in the panic
 	code for tcl-stack corruption.
 
