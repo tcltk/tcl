@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.106 2004/06/14 22:14:11 kennykb Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.107 2004/07/05 22:41:01 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -980,8 +980,6 @@ DeleteInterpProc(interp)
         Tcl_Panic("DeleteInterpProc called on interpreter not marked deleted");
     }
 
-    TclHandleFree(iPtr->handle);
-
     /*
      * Shut down all limit handler callback scripts that call back
      * into this interpreter.  Then eliminate all limit handlers for
@@ -998,9 +996,13 @@ DeleteInterpProc(interp)
      *   
      * Dismantle the namespace here, before we clear the assocData. If any
      * background errors occur here, they will be deleted below.
+     *
+     * Dismantle the namespace before freeing the iPtr->handle, to insure
+     * that non-shared literals are freed properly [Bug 983660].
      */
     
     TclTeardownNamespace(iPtr->globalNsPtr);
+    TclHandleFree(iPtr->handle);
 
     /*
      * Delete all the hidden commands.

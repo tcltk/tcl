@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLiteral.c,v 1.14 2004/04/06 22:25:54 dgp Exp $
+ * RCS: @(#) $Id: tclLiteral.c,v 1.15 2004/07/05 22:41:02 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -712,27 +712,27 @@ TclReleaseLiteral(interp, objPtr)
 
 		TclDecrRefCount(objPtr);
 
-		/*
-		 * Check if the LiteralEntry is only being kept alive by 
-		 * a circular reference from a ByteCode stored as its 
-		 * internal rep. In that case, set the ByteCode object array 
-		 * entry NULL to signal to TclCleanupByteCode to not try to 
-		 * release this about to be freed literal again.
-		 */
-	    
-		if (objPtr->typePtr == &tclByteCodeType) {
-		    codePtr = (ByteCode *) objPtr->internalRep.otherValuePtr;
-		    if ((codePtr->numLitObjects == 1)
-		            && (codePtr->objArrayPtr[0] == objPtr)) {			
-			codePtr->objArrayPtr[0] = NULL;
-		    }
-		}
-
 #ifdef TCL_COMPILE_STATS
 		iPtr->stats.currentLitStringBytes -= (double) (length + 1);
 #endif /*TCL_COMPILE_STATS*/
 	    }
 	    break;
+	}
+    }
+
+    /*
+     * Check if the LiteralEntry is only being kept alive by 
+     * a circular reference from a ByteCode stored as its 
+     * internal rep. In that case, set the ByteCode object array 
+     * entry NULL to signal to TclCleanupByteCode to not try to 
+     * release this about to be freed literal again.
+     */
+    
+    if (objPtr->typePtr == &tclByteCodeType) {
+	codePtr = (ByteCode *) objPtr->internalRep.otherValuePtr;
+	if ((codePtr->numLitObjects == 1)
+		&& (codePtr->objArrayPtr[0] == objPtr)) {			
+	    codePtr->objArrayPtr[0] = NULL;
 	}
     }
     

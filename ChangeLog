@@ -1,3 +1,13 @@
+2004-07-05  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclBasic.c (DeleteInterpProc): fix for [Bug 983660],
+	found by pspjuth. Tear down the global namespace before freeing
+	the interp handle, to allow the bytecodes to free their non-shared
+	literals. 
+	* generic/tclLiteral.c (TclReleaseLiteral): moved special code for
+	self-ref so that it is also used for non-shared literals. Possible
+	bug found by inspection.
+
 2004-07-03  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclExecute.c (ExprRoundFunc):
