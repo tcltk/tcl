@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.79 2000/09/14 18:42:29 ericm Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.80 2000/09/20 23:09:51 jenn Exp $
  */
 
 #ifndef _TCL
@@ -51,6 +51,7 @@ extern "C" {
  * unix/README		(not patchlevel) (part (h))
  * unix/tcl.spec	(2 LOC Major/Minor, 1 LOC patch)
  * library/tcltest1.0/tcltest.tcl	(1 LOC M/M, 1 LOC patch)
+ * library/tcltest1.0/tcltest2.tcl	(1 LOC M/M, 1 LOC patch)
  * tools/tcl.hpj.in	(not patchlevel, for windows installer)
  * tools/tcl.wse.in	(for windows installer)
  * tools/tclSplash.bmp	(not patchlevel)
