@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.60 2002/07/17 20:42:27 msofer Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.61 2002/07/26 21:41:48 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -240,11 +240,10 @@ TclLookupVar(interp, part1, part2, flags, msg, createPart1, createPart2,
 	    p--;
 	    if (*p == ')') {
 		if (part2 != NULL) {
-		    openParen = NULL;
 		    if (flags & TCL_LEAVE_ERR_MSG) {
 			VarErrMsg(interp, part1, part2, msg, needArray);
 		    }
-		    goto done;
+		    return NULL;
 		}
 		closeParen = p;
 		*openParen = 0;
@@ -263,20 +262,17 @@ TclLookupVar(interp, part1, part2, flags, msg, createPart1, createPart2,
 	if ((errMsg != NULL) && (flags & TCL_LEAVE_ERR_MSG)) {
 	    VarErrMsg(interp, part1, elName, msg, errMsg);
 	}
-	return NULL;
+    } else {
+	while (TclIsVarLink(varPtr)) {
+	    varPtr = varPtr->value.linkPtr;
+	}
+	if (elName != NULL) {
+	    *arrayPtrPtr = varPtr;
+	    varPtr = TclLookupArrayElement(interp, part1, elName, flags, 
+		    msg, createPart1, createPart2, varPtr);
+	}
     }
 
-    while (TclIsVarLink(varPtr)) {
-	varPtr = varPtr->value.linkPtr;
-    }
-    if (elName == NULL) {
-	return varPtr;
-    }
-    *arrayPtrPtr = varPtr;
-    varPtr = TclLookupArrayElement(interp, part1, elName, flags, 
-            msg, createPart1, createPart2, varPtr);
-
-    done:
     if (openParen != NULL) {
         *openParen = '(';
 	*closeParen = ')';
