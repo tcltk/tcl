@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinSock.c,v 1.36 2003/01/16 19:02:00 mdejong Exp $
+ * RCS: @(#) $Id: tclWinSock.c,v 1.36.2.1 2003/10/23 16:24:42 andreas_kupries Exp $
  */
 
 #include "tclWinInt.h"
@@ -869,7 +869,7 @@ SocketEventProc(evPtr, flags)
 
 	Tcl_Time blockTime = { 0, 0 };
 	Tcl_SetMaxBlockTime(&blockTime);
-	mask |= TCL_READABLE;
+	mask |= TCL_READABLE|TCL_WRITABLE;
     } else if (events & FD_READ) {
 	fd_set readFds;
 	struct timeval timeout;
@@ -2254,7 +2254,7 @@ TcpWatchProc(instanceData, mask)
 	    infoPtr->watchEvents |= (FD_READ|FD_CLOSE|FD_ACCEPT);
 	}
 	if (mask & TCL_WRITABLE) {
-	    infoPtr->watchEvents |= (FD_WRITE|FD_CONNECT);
+	    infoPtr->watchEvents |= (FD_WRITE|FD_CLOSE|FD_CONNECT);
 	}
       
 	/*
