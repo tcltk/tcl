@@ -1,5 +1,7 @@
 2002-07-19  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
+	* win/tclWinSerial.c (no_timeout): Made this variable static.
+
 	* generic/tclExecute.c, generic/tclCompile.c, generic/tclBasic.c: 
 	* generic/tclCompile.h (builtinFuncTable, instructionTable): Added
 	prefix to these symbols because they are visible outside the Tcl
