@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.91 2001/12/19 20:11:55 mdejong Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.92 2001/12/20 02:17:58 dgp Exp $
 
 VERSION 		= @TCL_VERSION@
 
@@ -1236,8 +1236,8 @@ dist: $(UNIX_DIR)/configure mklinks
 		$(TOP_DIR)/tools/tcl.wse.in $(TOP_DIR)/tools/*.bmp \
 		$(TOP_DIR)/tools/tcl.hpj.in \
 		$(DISTDIR)/tools
-	$(TCL_EXE) $(TOOL_DIR)/eolFix.tcl -crlf $(DISTDIR)/win/tcl.hpj.in \
-		$(TOP_DIR)/tools/tcl.wse.in
+	$(TCL_EXE) $(TOOL_DIR)/eolFix.tcl -crlf $(DISTDIR)/tools/tcl.hpj.in \
+		$(DISTDIR)/tools/tcl.wse.in
 
 #
 # The following target can only be used for non-patch releases.  Use
