@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.38 2002/03/24 18:09:19 vincentdarley Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.39 2002/04/03 08:39:27 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -27,9 +27,7 @@
 #endif
 
 /*
- * Prototypes for procedures defined later in this file.  The last
- * of these could perhaps be exported in the future, if extensions
- * require it.
+ * Prototypes for procedures defined later in this file.
  */
 
 static void		DupFsPathInternalRep _ANSI_ARGS_((Tcl_Obj *srcPtr,
@@ -740,6 +738,12 @@ Tcl_FSUnregister(fsPtr)
  *    
  *    (3) when any filesystem (except the native fs) changes the list
  *    of available volumes.
+ *    
+ *    (4) when the mapping from a string representation of a file to
+ *    a full, normalized path changes.  For example, if 'env(HOME)' 
+ *    is modified, then any path containing '~' will map to a different
+ *    filesystem location.  Therefore all such paths need to have
+ *    their internal representation invalidated.
  *    
  *    Tcl has no control over (2) and (3), so any registered filesystem
  *    must make sure it calls this function when those situations
@@ -3408,6 +3412,11 @@ Tcl_FSConvertToPathType(interp, objPtr)
      */
     if (objPtr->typePtr == &tclFsPathType) {
 	FsPath *fsPathPtr = (FsPath*) objPtr->internalRep.otherValuePtr;
+	if (fsPathPtr->filesystemEpoch != theFilesystemEpoch) {
+	    FreeFsPathInternalRep(objPtr);
+	    objPtr->typePtr = NULL;
+	    return Tcl_ConvertToType(interp, objPtr, &tclFsPathType);
+	}
 	if (fsPathPtr->cwdPtr == NULL) {
 	    return TCL_OK;
 	} else {
@@ -3511,7 +3520,7 @@ SetFsPathFromAbsoluteNormalized(interp, objPtr)
     fsPathPtr->cwdPtr = NULL;
     fsPathPtr->nativePathPtr = NULL;
     fsPathPtr->fsRecPtr = NULL;
-    fsPathPtr->filesystemEpoch = -1;
+    fsPathPtr->filesystemEpoch = theFilesystemEpoch;
 
     objPtr->internalRep.otherValuePtr = (VOID *) fsPathPtr;
     objPtr->typePtr = &tclFsPathType;
@@ -3690,7 +3699,7 @@ SetFsPathFromAny(interp, objPtr)
     fsPathPtr->cwdPtr = NULL;
     fsPathPtr->nativePathPtr = NULL;
     fsPathPtr->fsRecPtr = NULL;
-    fsPathPtr->filesystemEpoch = -1;
+    fsPathPtr->filesystemEpoch = theFilesystemEpoch;
 
     objPtr->internalRep.otherValuePtr = (VOID *) fsPathPtr;
     objPtr->typePtr = &tclFsPathType;
@@ -4546,23 +4555,21 @@ Tcl_FSGetFileSystemForPath(pathObjPtr)
     
     srcFsPathPtr = (FsPath*) pathObjPtr->internalRep.otherValuePtr;
     
-    if (srcFsPathPtr->filesystemEpoch != -1) {
+    /* 
+     * Check if the filesystem has changed in some way since
+     * this object's internal representation was calculated.
+     */
+    if (srcFsPathPtr->filesystemEpoch != theFilesystemEpoch) {
 	/* 
-	 * Check if the filesystem has changed in some way since
-	 * this object's internal representation was calculated.
+	 * We have to discard the stale representation and 
+	 * recalculate it 
 	 */
-	if (srcFsPathPtr->filesystemEpoch != theFilesystemEpoch) {
-	    /* 
-	     * We have to discard the stale representation and 
-	     * recalculate it 
-	     */
-	    FreeFsPathInternalRep(pathObjPtr);
-	    pathObjPtr->typePtr = NULL;
-	    if (SetFsPathFromAny(NULL, pathObjPtr) != TCL_OK) {
-	        goto done;
-	    }
-	    srcFsPathPtr = (FsPath*) pathObjPtr->internalRep.otherValuePtr;
+	FreeFsPathInternalRep(pathObjPtr);
+	pathObjPtr->typePtr = NULL;
+	if (SetFsPathFromAny(NULL, pathObjPtr) != TCL_OK) {
+	    goto done;
 	}
+	srcFsPathPtr = (FsPath*) pathObjPtr->internalRep.otherValuePtr;
     }
     
     /* Check whether the object is already assigned to a fs */
