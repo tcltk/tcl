@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: man2help2.tcl,v 1.4 1999/12/21 23:59:29 hobbs Exp $
+# RCS: @(#) $Id: man2help2.tcl,v 1.5 1999/12/22 23:48:56 hobbs Exp $
 # 
 
 # Global variables used by these scripts:
@@ -147,7 +147,7 @@ proc text {string} {
     set string [string map [list \
 	    "\\"	"\\\\" \
 	    "\{"	"\\\{" \
-	    "\}"	"\}" \
+	    "\}"	"\\\}" \
 	    "\t"	{\tab } \
 	    ''		\" \
 	    ``		\" \
