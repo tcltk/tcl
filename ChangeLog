@@ -1,3 +1,14 @@
+2004-07-17  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* generic/tclIOUtil.c: fix to rare 'cd' infinite loop in
+	normalization with vfs [Bug 991420].
+	* tests/fileSystem.test: added test for above bug.
+
+	* doc/FileSystem.3: clarified documentation of posix error
+	codes in 'remove directory' FS proc - 'EEXIST' is used to
+	signify a non-empty directory error (bug reported against
+	tclvfs).
+
 2004-07-16  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* unix/Makefile.in, unix/tcl.m4:     move (C|LD)FLAGS after their
