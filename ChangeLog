@@ -1,3 +1,8 @@
+2003-07-15  Don Porter  <dgp@users.sourceforge.net>
+
+      * generic/tclCompCmds.c (TclCompileIfCmd):  Prior fix of Bug 711371
+      on 2003-04-07 introduced a buffer overflow.  Corrected.  [Bug 771613]
+
 2003-07-15  Kevin B. Kenny  <kennykb@acm.org>
 
 	* win/rules.vc: Added a missing $(OPTDEFINES) which broke the
