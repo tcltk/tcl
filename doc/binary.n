@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: binary.n,v 1.14 2003/07/11 21:14:46 dkf Exp $
+'\" RCS: @(#) $Id: binary.n,v 1.15 2003/07/11 22:01:48 dgp Exp $
 '\" 
 .so man.macros
 .TH binary n 8.0 Tcl "Tcl Built-In Commands"
@@ -67,8 +67,8 @@ the following characters:
 Stores a character string of length \fIcount\fR in the output string.
 Every character is taken as modulo 256 (i.e. the low byte of every
 character is used, and the high byte discarded) so when storing
-character strings not wholly expressible using the characters
-\bu0000-\bu00ff, the \fBencoding convertto\fR command should be used
+character strings not wholly expressible using the characters \\u0000-\\u00ff,
+the \fBencoding convertto\fR command should be used
 first if this truncation is not desired (i.e. if the characters are
 not part of the ISO 8859-1 character set.)
 If \fIarg\fR has fewer than \fIcount\fR bytes, then additional zero
@@ -390,8 +390,8 @@ The data is a character string of length \fIcount\fR.  If \fIcount\fR
 is \fB*\fR, then all of the remaining bytes in \fIstring\fR will be
 scanned into the variable.  If \fIcount\fR is omitted, then one
 character will be scanned.
-All characters scanned will be interpreted as being in the range
-\bu0000-\bu00ff so the \fBencoding convertfrom\fR command might be
+All characters scanned will be interpreted as being in the
+range \\u0000-\\u00ff so the \fBencoding convertfrom\fR command might be
 needed if the string is not an ISO 8859\-1 string.
 For example,
 .RS
