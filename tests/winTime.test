@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: winTime.test,v 1.7 2003/02/14 22:16:27 kennykb Exp $
+# RCS: @(#) $Id: winTime.test,v 1.8 2003/02/27 23:47:01 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -40,6 +40,8 @@ test winTime-1.2 {TclpGetDate} {pcOnly} {
 # but how many does a tester have patience for?
 
 test winTime-2.1 {Synchronization of Tcl and Windows clocks} {testwinclock} {
+    # May fail due to OS/hardware discrepancies.  See:
+    # http://support.microsoft.com/default.aspx?scid=kb;en-us;274323
     set failed {}
     set ok 1
     for { set i 0 } { $i < 3000 } { incr i } {
