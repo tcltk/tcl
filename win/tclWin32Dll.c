@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWin32Dll.c,v 1.10 2001/10/29 15:02:44 vincentdarley Exp $
+ * RCS: @(#) $Id: tclWin32Dll.c,v 1.11 2001/11/19 17:45:12 vincentdarley Exp $
  */
 
 #include "tclWinInt.h"
@@ -78,8 +78,7 @@ static TclWinProcs asciiProcs = {
 	    WCHAR *, TCHAR **)) SearchPathA,
     (BOOL (WINAPI *)(CONST TCHAR *)) SetCurrentDirectoryA,
     (BOOL (WINAPI *)(CONST TCHAR *, DWORD)) SetFileAttributesA,
-    (BOOL (WINAPI *)(CONST TCHAR *, GET_FILEEX_INFO_LEVELS, 
-		LPVOID)) GetFileAttributesExA,
+    NULL,
 };
 
 static TclWinProcs unicodeProcs = {
@@ -117,8 +116,7 @@ static TclWinProcs unicodeProcs = {
 	    WCHAR *, TCHAR **)) SearchPathW,
     (BOOL (WINAPI *)(CONST TCHAR *)) SetCurrentDirectoryW,
     (BOOL (WINAPI *)(CONST TCHAR *, DWORD)) SetFileAttributesW,
-    (BOOL (WINAPI *)(CONST TCHAR *, GET_FILEEX_INFO_LEVELS, 
-	    LPVOID)) GetFileAttributesExW,
+    NULL,
 };
 
 TclWinProcs *tclWinProcs;
@@ -390,6 +388,10 @@ TclWinGetPlatform()
  *	tclWinProcs structure to dispatch to either the wide-character
  *	or multi-byte versions of the operating system calls, depending
  *	on whether Unicode is the system encoding.
+ *	
+ *	As well as this, we can also try to load in some additional
+ *	procs which may/may not be present depending on the current
+ *	Windows version (e.g. Win95 will not have the procs below).
  *
  * Results:
  *	None.
@@ -410,9 +412,27 @@ TclWinSetInterfaces(
     if (wide) {
 	tclWinProcs = &unicodeProcs;
 	tclWinTCharEncoding = Tcl_GetEncoding(NULL, "unicode");
+	if (tclWinProcs->getFileAttributesExProc == NULL) {
+	    HINSTANCE hInstance = LoadLibraryA("kernel32");
+	    if (hInstance != NULL) {
+	        tclWinProcs->getFileAttributesExProc = 
+		  (BOOL (WINAPI *)(CONST TCHAR *, GET_FILEEX_INFO_LEVELS, 
+		  LPVOID)) GetProcAddress(hInstance, "GetFileAttributesExW");
+		FreeLibrary(hInstance);
+	    }
+	}
     } else {
 	tclWinProcs = &asciiProcs;
 	tclWinTCharEncoding = NULL;
+	if (tclWinProcs->getFileAttributesExProc == NULL) {
+	    HINSTANCE hInstance = LoadLibraryA("kernel32");
+	    if (hInstance != NULL) {
+		tclWinProcs->getFileAttributesExProc = 
+		  (BOOL (WINAPI *)(CONST TCHAR *, GET_FILEEX_INFO_LEVELS, 
+		  LPVOID)) GetProcAddress(hInstance, "GetFileAttributesExA");
+		FreeLibrary(hInstance);
+	    }
+	}
     }
 }
 
