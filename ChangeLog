@@ -1,3 +1,13 @@
+2002-03-29  Don Porter  <dgp@users.sourceforge.net>
+
+	* doc/AllowExc.3:
+	* generic/tclBasic.c (Tcl_EvalObjv,Tcl_EvalEx,Tcl_EvalObjEx):
+	* generic/tclCompile.h (TclCompEvalObj):
+	* generic/tclExecute.c (TclCompEvalObj,TclExecuteByteCode):
+	* tests/basic.test: Corrected problems with Tcl_AllowExceptions
+	having influence over the wrong scope of Tcl_*Eval* calls.  Patch
+	from Miguel Sofer.  Report from Jean-Claude Wippler.  [Bug 219181]
+
 2002-03-28  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclVar.c: Refactored CallTraces to collect repeated
