@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.11 1999/06/16 00:00:48 hershey Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.12 1999/06/16 00:47:56 hershey Exp $ */
 
 #include "tclInt.h"
 
@@ -1370,8 +1370,8 @@ DupStringInternalRep(srcPtr, copyPtr)
 				 * not currently have an internal rep.*/
 {
     String *srcStringPtr = GET_STRING(srcPtr);
-    String *copyStringPtr;
-    
+    String *copyStringPtr = NULL;
+
     /*
      * If the src obj is a string of 1-byte Utf chars, then copy the
      * string rep of the source object and create an "empty" Unicode
@@ -1379,8 +1379,8 @@ DupStringInternalRep(srcPtr, copyPtr)
      * internal rep, and invalidate the string rep of the new object.
      */
     
-    if (srcStringPtr->numChars == srcPtr->length) {
-	copyStringPtr = (String *) ckalloc(sizeof(String));
+    if (srcStringPtr->uallocated == 0) {
+    	copyStringPtr = (String *) ckalloc(sizeof(String));
 	copyStringPtr->uallocated = 0;
     } else {
 	copyStringPtr = (String *) ckalloc(
