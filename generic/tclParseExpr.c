@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParseExpr.c,v 1.21 2004/04/06 22:25:54 dgp Exp $
+ * RCS: @(#) $Id: tclParseExpr.c,v 1.22 2004/10/04 13:56:37 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1856,7 +1856,8 @@ GetLexeme(infoPtr)
 	    return TCL_OK;
 
 	case 'e':
-	    if ((src[1] == 'q') && ((infoPtr->lastChar - src) > 1)) {
+	    if ((src[1] == 'q') && ((infoPtr->lastChar - src) > 1) &&
+		(infoPtr->lastChar-src==2 || !isalpha(UCHAR(src[2])))) {
 		infoPtr->lexeme = STREQ;
 		infoPtr->size = 2;
 		infoPtr->next = src+2;
@@ -1867,7 +1868,8 @@ GetLexeme(infoPtr)
 	    }
 
 	case 'n':
-	    if ((src[1] == 'e') && ((infoPtr->lastChar - src) > 1)) {
+	    if ((src[1] == 'e') && ((infoPtr->lastChar - src) > 1) &&
+		(infoPtr->lastChar-src==2 || !isalpha(UCHAR(src[2])))) {
 		infoPtr->lexeme = STRNEQ;
 		infoPtr->size = 2;
 		infoPtr->next = src+2;
