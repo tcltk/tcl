@@ -20,7 +20,7 @@ static char TclDatesccsid[] = "@(#)yaccpar	1.9 (Berkeley) 02/21/93";
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDate.c,v 1.8 2000/01/11 02:35:11 ericm Exp $
+ * RCS: @(#) $Id: tclDate.c,v 1.9 2000/01/11 02:36:15 ericm Exp $
  */
 
 #include "tclInt.h"
@@ -842,7 +842,6 @@ TclDatelex()
     register char       *p;
     char                buff[20];
     int                 Count;
-    int                 sign;
 
     for ( ; ; ) {
         while (isspace(UCHAR(*TclDateInput))) {

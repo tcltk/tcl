@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclGetDate.y,v 1.6 2000/01/11 00:51:49 ericm Exp $
+ * RCS: @(#) $Id: tclGetDate.y,v 1.7 2000/01/11 02:36:15 ericm Exp $
  */
 
 %{
@@ -857,7 +857,6 @@ yylex()
     register char       *p;
     char                buff[20];
     int                 Count;
-    int                 sign;
 
     for ( ; ; ) {
         while (isspace(UCHAR(*yyInput))) {
