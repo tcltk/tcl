@@ -1,3 +1,8 @@
+2000-07-24  Eric Melski  <ericm@ajubasolutions.com>
+
+	* doc/msgcat.n: Added documentation about the selection of the
+	default locale on Windows.
+
 2000-07-23  Joe English  <jenglish@flightlab.com>
 	* doc/AddErrInfo.3:
 	* doc/ChnlStack.3:
