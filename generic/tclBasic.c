@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: %Z% $Id: tclBasic.c,v 1.9 1998/07/20 16:43:31 welch Exp $ 
+ * SCCS: %Z% $Id: tclBasic.c,v 1.10 1998/08/10 15:43:41 welch Exp $ 
  */
 
 #include "tclInt.h"
@@ -1415,11 +1415,13 @@ Tcl_CreateCommand(interp, cmdName, proc, clientData, deleteProc)
 				 * when this command is deleted. */
 {
     Interp *iPtr = (Interp *) interp;
+    ImportRef *oldRefPtr = NULL;
     Namespace *nsPtr, *dummy1, *dummy2;
-    Command *cmdPtr;
+    Command *cmdPtr, *refCmdPtr;
     Tcl_HashEntry *hPtr;
     char *tail;
     int new, result;
+    ImportedCmdData *dataPtr;
 
     if (iPtr->flags & DELETED) {
 	/*
@@ -1452,9 +1454,15 @@ Tcl_CreateCommand(interp, cmdName, proc, clientData, deleteProc)
     if (!new) {
 	/*
 	 * Command already exists. Delete the old one.
+	 * Be careful to preserve any existing import links so we can
+	 * restore them down below.  That way, you can redefine a
+	 * command and its import status will remain intact.
 	 */
 
 	cmdPtr = (Command *) Tcl_GetHashValue(hPtr);
+	oldRefPtr = cmdPtr->importRefPtr;
+	cmdPtr->importRefPtr = NULL;
+
 	Tcl_DeleteCommandFromToken(interp, (Tcl_Command) cmdPtr);
 	hPtr = Tcl_CreateHashEntry(&nsPtr->cmdTable, tail, &new);
 	if (!new) {
@@ -1482,6 +1490,18 @@ Tcl_CreateCommand(interp, cmdName, proc, clientData, deleteProc)
     cmdPtr->deleteData = clientData;
     cmdPtr->deleted = 0;
     cmdPtr->importRefPtr = NULL;
+
+    /*
+     * Plug in any existing import references found above.  Be sure
+     * to update all of these references to point to the new command.
+     */
+    cmdPtr->importRefPtr = oldRefPtr;
+    while (oldRefPtr != NULL) {
+	refCmdPtr = oldRefPtr->importedCmdPtr;
+	dataPtr = (ImportedCmdData*)refCmdPtr->objClientData;
+	dataPtr->realCmdPtr = cmdPtr;
+	oldRefPtr = oldRefPtr->nextPtr;
+    }
 
     /*
      * We just created a command, so in its namespace and all of its parent
@@ -1539,11 +1559,13 @@ Tcl_CreateObjCommand(interp, cmdName, proc, clientData, deleteProc)
 				 * when this command is deleted. */
 {
     Interp *iPtr = (Interp *) interp;
+    ImportRef *oldRefPtr = NULL;
     Namespace *nsPtr, *dummy1, *dummy2;
-    Command *cmdPtr;
+    Command *cmdPtr, *refCmdPtr;
     Tcl_HashEntry *hPtr;
     char *tail;
     int new, result;
+    ImportedCmdData *dataPtr;
 
     if (iPtr->flags & DELETED) {
 	/*
@@ -1590,6 +1612,16 @@ Tcl_CreateObjCommand(interp, cmdName, proc, clientData, deleteProc)
 	    return (Tcl_Command) cmdPtr;
 	}
 
+	/*
+	 * Otherwise, we delete the old command.  Be careful to preserve
+	 * any existing import links so we can restore them down below.
+	 * That way, you can redefine a command and its import status
+	 * will remain intact.
+	 */
+
+	oldRefPtr = cmdPtr->importRefPtr;
+	cmdPtr->importRefPtr = NULL;
+
 	Tcl_DeleteCommandFromToken(interp, (Tcl_Command) cmdPtr);
 	hPtr = Tcl_CreateHashEntry(&nsPtr->cmdTable, tail, &new);
 	if (!new) {
@@ -1617,7 +1649,27 @@ Tcl_CreateObjCommand(interp, cmdName, proc, clientData, deleteProc)
     cmdPtr->deleteData = clientData;
     cmdPtr->deleted = 0;
     cmdPtr->importRefPtr = NULL;
+
+    /*
+     * Plug in any existing import references found above.  Be sure
+     * to update all of these references to point to the new command.
+     */
+    cmdPtr->importRefPtr = oldRefPtr;
+    while (oldRefPtr != NULL) {
+	refCmdPtr = oldRefPtr->importedCmdPtr;
+	dataPtr = (ImportedCmdData*)refCmdPtr->objClientData;
+	dataPtr->realCmdPtr = cmdPtr;
+	oldRefPtr = oldRefPtr->nextPtr;
+    }
     
+    /*
+     * We just created a command, so in its namespace and all of its parent
+     * namespaces, it may shadow global commands with the same name. If any
+     * shadowed commands are found, invalidate all cached command references
+     * in the affected namespaces.
+     */
+    
+    TclResetShadowedCmdRefs(interp, cmdPtr);
     return (Tcl_Command) cmdPtr;
 }
 
