@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.73 2002/06/19 16:28:58 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.74 2002/06/20 00:11:43 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1331,7 +1331,7 @@ TclExecuteByteCode(interp, codePtr)
 	    } else {		
 		Command *cmdPtr;
 		cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, objv[0]);
-		if (cmdPtr != NULL && cmdPtr->flags & CMD_HAS_EXEC_TRACES) {
+		if ((cmdPtr != NULL) && (cmdPtr->flags & CMD_HAS_EXEC_TRACES)) {
 		    bytes = GetSrcInfoForPc(pc, codePtr, &length);
 		}
 	    }		
