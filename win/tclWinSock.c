@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinSock.c,v 1.23 2002/01/15 17:55:31 dgp Exp $
+ * RCS: @(#) $Id: tclWinSock.c,v 1.24 2002/01/23 20:46:01 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -171,11 +171,11 @@ static WNDCLASSA windowClass;
  */
 
 static SocketInfo *	CreateSocket _ANSI_ARGS_((Tcl_Interp *interp,
-			    int port, char *host, int server, char *myaddr,
-			    int myport, int async));
+			    int port, CONST char *host, int server,
+			    CONST char *myaddr, int myport, int async));
 static int		CreateSocketAddress _ANSI_ARGS_(
 			    (struct sockaddr_in *sockaddrPtr,
-			    char *host, int port));
+			    CONST char *host, int port));
 static void		InitSockets _ANSI_ARGS_((void));
 static SocketInfo *	NewSocketInfo _ANSI_ARGS_((SOCKET socket));
 static void		SocketCheckProc _ANSI_ARGS_((ClientData clientData,
@@ -1014,10 +1014,10 @@ static SocketInfo *
 CreateSocket(interp, port, host, server, myaddr, myport, async)
     Tcl_Interp *interp;		/* For error reporting; can be NULL. */
     int port;			/* Port number to open. */
-    char *host;			/* Name of host on which to open port. */
+    CONST char *host;		/* Name of host on which to open port. */
     int server;			/* 1 if socket should be a server socket,
 				 * else 0 for a client socket. */
-    char *myaddr;		/* Optional client-side address */
+    CONST char *myaddr;		/* Optional client-side address */
     int myport;			/* Optional client-side port */
     int async;			/* If nonzero, connect client socket
                                  * asynchronously. */
@@ -1211,7 +1211,7 @@ error:
 static int
 CreateSocketAddress(sockaddrPtr, host, port)
     struct sockaddr_in *sockaddrPtr;	/* Socket address */
-    char *host;				/* Host.  NULL implies INADDR_ANY */
+    CONST char *host;			/* Host.  NULL implies INADDR_ANY */
     int port;				/* Port number */
 {
     struct hostent *hostent;		/* Host database entry */
@@ -1355,8 +1355,8 @@ Tcl_Channel
 Tcl_OpenTcpClient(interp, port, host, myaddr, myport, async)
     Tcl_Interp *interp;			/* For error reporting; can be NULL. */
     int port;				/* Port number to open. */
-    char *host;				/* Host on which to open port. */
-    char *myaddr;			/* Client-side address */
+    CONST char *host;			/* Host on which to open port. */
+    CONST char *myaddr;			/* Client-side address */
     int myport;				/* Client-side port */
     int async;				/* If nonzero, should connect
                                          * client socket asynchronously. */
@@ -1471,7 +1471,7 @@ Tcl_OpenTcpServer(interp, port, host, acceptProc, acceptProcData)
     Tcl_Interp *interp;			/* For error reporting - may be
                                          * NULL. */
     int port;				/* Port number to open. */
-    char *host;				/* Name of local host. */
+    COSNT char *host;			/* Name of local host. */
     Tcl_TcpAcceptProc *acceptProc;	/* Callback for accepting connections
                                          * from new clients. */
     ClientData acceptProcData;		/* Data for the callback. */
@@ -2327,7 +2327,7 @@ SocketProc(hwnd, message, wParam, lParam)
  *----------------------------------------------------------------------
  */
 
-char *
+CONST char *
 Tcl_GetHostName()
 {
     DWORD length;
