@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.6 1999/05/22 01:20:12 stanton Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.7 1999/07/01 23:21:06 redman Exp $
  */
 
 #include "tclInt.h"
@@ -829,7 +829,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    if (objc != 3) {
 		goto only3Args;
 	    }
-	    if (GetStatBuf(interp, objv[2], TclpStat, &buf) != TCL_OK) {
+	    if (GetStatBuf(interp, objv[2], TclStat, &buf) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    Tcl_SetLongObj(resultPtr, (long) buf.st_atime);
@@ -923,7 +923,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 		goto only3Args;
 	    }
 	    value = 0;
-	    if (GetStatBuf(NULL, objv[2], TclpStat, &buf) == TCL_OK) {
+	    if (GetStatBuf(NULL, objv[2], TclStat, &buf) == TCL_OK) {
 		value = S_ISDIR(buf.st_mode);
 	    }
 	    Tcl_SetBooleanObj(resultPtr, value);
@@ -937,7 +937,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
     	    	goto only3Args;
     	    }
 	    value = 0;
-	    if (GetStatBuf(NULL, objv[2], TclpStat, &buf) == TCL_OK) {
+	    if (GetStatBuf(NULL, objv[2], TclStat, &buf) == TCL_OK) {
 		value = S_ISREG(buf.st_mode);
 	    }
 	    Tcl_SetBooleanObj(resultPtr, value);
@@ -980,7 +980,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    if (objc != 3) {
 		goto only3Args;
 	    }
-	    if (GetStatBuf(interp, objv[2], TclpStat, &buf) != TCL_OK) {
+	    if (GetStatBuf(interp, objv[2], TclStat, &buf) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    Tcl_SetLongObj(resultPtr, (long) buf.st_mtime);
@@ -1023,7 +1023,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 		goto only3Args;
 	    }
 	    value = 0;
-	    if (GetStatBuf(NULL, objv[2], TclpStat, &buf) == TCL_OK) {
+	    if (GetStatBuf(NULL, objv[2], TclStat, &buf) == TCL_OK) {
 		/*
 		 * For Windows and Macintosh, there are no user ids 
 		 * associated with a file, so we always return 1.
@@ -1135,7 +1135,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    if (objc != 3) {
 		goto only3Args;
 	    }
-	    if (GetStatBuf(interp, objv[2], TclpStat, &buf) != TCL_OK) {
+	    if (GetStatBuf(interp, objv[2], TclStat, &buf) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    Tcl_SetLongObj(resultPtr, (long) buf.st_size);
@@ -1167,7 +1167,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 	    	Tcl_WrongNumArgs(interp, 1, objv, "stat name varName");
 		return TCL_ERROR;
 	    }
-	    if (GetStatBuf(interp, objv[2], TclpStat, &buf) != TCL_OK) {
+	    if (GetStatBuf(interp, objv[2], TclStat, &buf) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    varName = Tcl_GetString(objv[3]);

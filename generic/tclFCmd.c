@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFCmd.c,v 1.5 1999/04/21 21:50:25 rjohnson Exp $
+ * RCS: @(#) $Id: tclFCmd.c,v 1.6 1999/07/01 23:21:07 redman Exp $
  */
 
 #include "tclInt.h"
@@ -141,12 +141,12 @@ FileCopyRename(interp, argc, argv, copyFlag)
     result = TCL_OK;
 
     /*
-     * Call TclpStat() so that if target is a symlink that points to a
+     * Call TclStat() so that if target is a symlink that points to a
      * directory we will put the sources in that directory instead of
      * overwriting the symlink.
      */
 
-    if ((TclpStat(target, &statBuf) != 0) || !S_ISDIR(statBuf.st_mode)) {
+    if ((TclStat(target, &statBuf) != 0) || !S_ISDIR(statBuf.st_mode)) {
 	if ((argc - i) > 2) {
 	    errno = ENOTDIR;
 	    Tcl_PosixError(interp);
@@ -253,12 +253,12 @@ TclFileMakeDirsCmd(interp, argc, argv)
 	    char *target = Tcl_JoinPath(j + 1, pargv, &targetBuffer);
 
 	    /*
-	     * Call TclpStat() so that if target is a symlink that points
+	     * Call TclStat() so that if target is a symlink that points
 	     * to a directory we will create subdirectories in that
 	     * directory.
 	     */
 
-	    if (TclpStat(target, &statBuf) == 0) {
+	    if (TclStat(target, &statBuf) == 0) {
 		if (!S_ISDIR(statBuf.st_mode)) {
 		    errno = EEXIST;
 		    errfile = target;
