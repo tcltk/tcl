@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.153.2.16 2004/11/25 00:19:27 hobbs Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.153.2.17 2005/01/27 22:53:29 andreas_kupries Exp $
  */
 
 #ifndef _TCL
@@ -1425,6 +1425,14 @@ typedef int (Tcl_WaitForEventProc) _ANSI_ARGS_((Tcl_Time *timePtr));
 #define TCL_CHANNEL_VERSION_1	((Tcl_ChannelTypeVersion) 0x1)
 #define TCL_CHANNEL_VERSION_2	((Tcl_ChannelTypeVersion) 0x2)
 #define TCL_CHANNEL_VERSION_3	((Tcl_ChannelTypeVersion) 0x3)
+#define TCL_CHANNEL_VERSION_4	((Tcl_ChannelTypeVersion) 0x4)
+
+/*
+ * TIP #218: Channel Actions, Ids for Tcl_DriverThreadActionProc
+ */
+
+#define TCL_CHANNEL_THREAD_INSERT (0)
+#define TCL_CHANNEL_THREAD_REMOVE (1)
 
 /*
  * Typedefs for the various operations in a channel type:
@@ -1460,6 +1468,9 @@ typedef Tcl_WideInt (Tcl_DriverWideSeekProc) _ANSI_ARGS_((
 		    ClientData instanceData, Tcl_WideInt offset,
 		    int mode, int *errorCodePtr));
 
+  /* TIP #218, Channel Thread Actions */
+typedef void     (Tcl_DriverThreadActionProc) _ANSI_ARGS_ ((
+		    ClientData instanceData, int action));
 
 /*
  * The following declarations either map ckalloc and ckfree to
@@ -1550,6 +1561,16 @@ typedef struct Tcl_ChannelType {
 					 * handle 64-bit offsets. May be
 					 * NULL, and must be NULL if
 					 * seekProc is NULL. */
+
+     /*
+      * Only valid in TCL_CHANNEL_VERSION_4 channels or later
+      * TIP #218, Channel Thread Actions
+      */
+     Tcl_DriverThreadActionProc *threadActionProc;
+ 					/* Procedure to call to notify
+ 					 * the driver of thread specific
+ 					 * activity for a channel.
+					 * May be NULL. */
 } Tcl_ChannelType;
 
 /*

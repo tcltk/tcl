@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.94.2.2 2003/05/13 09:57:40 mistachkin Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.94.2.3 2005/01/27 22:53:28 andreas_kupries Exp $
 
 library tcl
 
@@ -1752,6 +1752,24 @@ declare 492 generic {
 declare 493 generic {
     Tcl_DriverWideSeekProc * Tcl_ChannelWideSeekProc(
 	    Tcl_ChannelType *chanTypePtr)
+}
+
+# Slots 494 to 553 are taken already by 8.5
+# #111 - Dicts            (494 ... 504)
+#  #59 - Config           (505)
+# #139 - Namespace API    (506 ... 517)
+# #137 - source -encoding (518)
+# #121 - ExitProc         (519)
+# #121 - Resource Limits  (520 ... 534)
+# #226 - S/R Interp State (535 ... 537)
+# #227 - S/G Return Opts  (538 ... 539)
+# #235 - Ensemble C API   (540 ... 551)
+# #233 - Virtualized Time (552 ... 553)
+
+# TIP#218 (Driver Thread Actions) davygrvy/akupries ChannelType ver 4
+# These slots are used by 8.5 as well.
+declare 554 generic {
+    Tcl_DriverThreadActionProc *Tcl_ChannelThreadActionProc(Tcl_ChannelType *chanTypePtr)
 }
 
 ##############################################################################
