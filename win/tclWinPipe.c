@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPipe.c,v 1.1.2.2 1998/09/24 23:59:52 stanton Exp $
+ * RCS: @(#) $Id: tclWinPipe.c,v 1.1.2.3 1998/12/03 04:57:27 stanton Exp $
  */
 
 #include "tclWinInt.h"
@@ -1965,6 +1965,7 @@ TclpCreateCommandChannel(
 	    infoPtr->startReader = CreateEvent(NULL, FALSE, FALSE, NULL);
 	    infoPtr->readThread = CreateThread(NULL, 8000, PipeReaderThread,
 		    infoPtr, 0, &id);
+	    SetThreadPriority(infoPtr->readThread, THREAD_PRIORITY_HIGHEST); 
 	} else {
 	    infoPtr->readThread = 0;
 	}
@@ -1982,6 +1983,7 @@ TclpCreateCommandChannel(
 	    infoPtr->startWriter = CreateEvent(NULL, FALSE, FALSE, NULL);
 	    infoPtr->writeThread = CreateThread(NULL, 8000, PipeWriterThread,
 		    infoPtr, 0, &id);
+	    SetThreadPriority(infoPtr->readThread, THREAD_PRIORITY_HIGHEST); 
 	} else {
 	    infoPtr->writeThread = 0;
 	}
