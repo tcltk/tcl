@@ -14,11 +14,13 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclAlloc.c,v 1.3 1999/01/06 21:08:51 stanton Exp $
+ * RCS: @(#) $Id: tclAlloc.c,v 1.3.4.1 1999/03/04 00:58:46 stanton Exp $
  */
 
 #include "tclInt.h"
 #include "tclPort.h"
+
+#ifndef USE_NATIVEMALLOC
 
 #ifdef TCL_DEBUG
 #   define DEBUG
@@ -125,9 +127,6 @@ char *
 TclpAlloc(
     unsigned int nbytes)	/* Number of bytes to allocate. */
 {
-#ifdef USE_NATIVEMALLOC
-    return (char*) malloc(nbytes);
-#else
     register union overhead *op;
     register long bucket;
     register unsigned amt;
@@ -206,7 +205,6 @@ TclpAlloc(
     *(unsigned short *)((caddr_t)(op + 1) + op->ov_size) = RMAGIC;
 #endif
     return ((char *)(op + 1));
-#endif /* USE_NATIVEMALLOC */
 }
 
 /*
@@ -283,10 +281,6 @@ void
 TclpFree(
     char *cp)		/* Pointer to memory to free. */
 {   
-#ifdef USE_NATIVEMALLOC
-    free(cp);
-    return;
-#else
     register long size;
     register union overhead *op;
 
@@ -318,7 +312,6 @@ TclpFree(
 #ifdef MSTATS
     nmalloc[size]--;
 #endif
-#endif /* USE_NATIVEMALLOC */
 }
 
 /*
@@ -342,9 +335,6 @@ TclpRealloc(
     char *cp,			/* Pointer to alloced block. */
     unsigned int nbytes)	/* New size of memory. */
 {   
-#ifdef USE_NATIVEMALLOC
-    return (char*) realloc(cp, nbytes);
-#else
     int i;
     union overhead *op;
     int expensive;
@@ -419,7 +409,6 @@ TclpRealloc(
     *(unsigned short *)((caddr_t)(op + 1) + op->ov_size) = RMAGIC;
 #endif
     return(cp);
-#endif /* USE_NATIVEMALLOC */
 }
 
 /*
@@ -468,3 +457,78 @@ mstats(
 }
 #endif
 
+#else /* USE_NATIVEMALLOC */
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpAlloc --
+ *
+ *	Allocate more memory.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+char *
+TclpAlloc(
+    unsigned int nbytes)	/* Number of bytes to allocate. */
+{
+    return (char*) malloc(nbytes);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpFree --
+ *
+ *	Free memory.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclpFree(
+    char *cp)		/* Pointer to memory to free. */
+{   
+    free(cp);
+    return;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpRealloc --
+ *
+ *	Reallocate memory.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+char *
+TclpRealloc(
+    char *cp,			/* Pointer to alloced block. */
+    unsigned int nbytes)	/* New size of memory. */
+{   
+    return (char*) realloc(cp, nbytes);
+}
+
+#endif /* USE_NATIVEMALLOC */
