@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.53.2.8 2005/03/15 19:20:14 msofer Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.53.2.9 2005/03/15 19:48:50 msofer Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -223,7 +223,7 @@ typedef union TclVMWord {
 #define HPINT_MIN  (-HPINT_MAX-1)
 
 #define HP_STASH(full, n, u) \
-    (full) = (((n) << HP_SHIFT) | (u))
+    (full) = ((((TclPSizedInt) n) << HP_SHIFT) | (u))
 
 #define HP_EXTRACT(full, n, u)\
     (n) = ((full) >> HP_SHIFT);\
