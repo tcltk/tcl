@@ -1,3 +1,14 @@
+2000-08-24  Mo DeJong  <mdejong@redhat.com>
+
+	* unix/README: Update to account for removal of --enable-gcc.
+	* unix/configure.in:
+	* unix/tcl.m4 (SC_ENABLE_GCC): Remove --enable-gcc option.
+	* win/README: Add note about building with Cygwin.
+	* win/configure.in: 
+	* win/tcl.m4 (SC_ENABLE_GCC): Remove --enable-gcc option.
+	Remove quick hack that provided cross compile support for
+	windows builds.
+
 2000-08-24  Eric Melski  <ericm@ajubasolutions.com>
 
 	Overall change:  Added support for command rename/delete traces

@@ -22,7 +22,7 @@ SGI, as well as PCs running Linux, BSDI, and SCO UNIX.  To compile for
 a PC running Windows, see the README file in the directory ../win.  To
 compile for a Macintosh, see the README file in the directory ../mac.
 
-RCS: @(#) $Id: README,v 1.12 2000/05/03 00:15:10 hobbs Exp $
+RCS: @(#) $Id: README,v 1.13 2000/08/25 05:45:08 mo Exp $
 
 How To Compile And Install Tcl:
 -------------------------------
@@ -51,12 +51,6 @@ How To Compile And Install Tcl:
     type "./configure -help" or refer to the autoconf documentation (not
     included here).  Tcl's "configure" supports the following special
     switches in addition to the standard ones:
-	--enable-gcc		If this switch is set, Tcl will configure
-				itself to use gcc if it is available on your
-				system.  Note:  it is not safe to modify the
-				Makefile to use gcc after configure is run;
-				if you do this, then information related to
-				dynamic linking will be incorrect.
 	--enable-threads	If this switch is set, Tcl will compile
 				itself with multithreading support.
 	--disable-load		If this switch is specified then Tcl will
@@ -72,6 +66,12 @@ How To Compile And Install Tcl:
 				how to build shared libraries.
 	--disable-shared	If this switch is specified, Tcl will compile
 				itself as a static library.
+
+    Note: by default gcc will be used if it can be located on the PATH.
+    if you want to use cc instead of gcc, set the CC environment variable
+    to "cc" before running configure. It is not safe to Makefile to use
+    gcc after configure is run.
+
     Note: be sure to use only absolute path names (those starting with "/")
     in the --prefix and --exec_prefix options.
 

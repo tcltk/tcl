@@ -2,7 +2,7 @@
 # generate the file "configure", which is run during Tcl installation
 # to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.26 2000/07/27 22:47:37 mo Exp $
+# RCS: @(#) $Id: configure.in,v 1.27 2000/08/25 05:45:09 mo Exp $
 
 AC_INIT(../generic/tcl.h)
 
@@ -19,13 +19,27 @@ if test "${exec_prefix}" = "NONE"; then
     exec_prefix=$prefix
 fi
 
-#--------------------------------------------------------------------
-# Check whether --enable-gcc or --disable-gcc was given.  Do this 
-# before AC_PROG_CC and AC_CYGWIN are called so the compiler can 
-# be fully tested by built-in autoconf tools.
-#--------------------------------------------------------------------
- 
-SC_ENABLE_GCC
+#------------------------------------------------------------------------
+# Standard compiler checks
+#------------------------------------------------------------------------
+
+AC_PROG_CC
+
+# To properly support cross-compilation, one would
+# need to use these tool checks instead of
+# the ones below and reconfigure with
+# autoconf 2.50. You can also just set
+# the CC, AR, RANLIB, and RC environment
+# variables if you want to cross compile.
+#AC_CHECK_TOOL(AR, ar, :)
+#AC_CHECK_TOOL(RANLIB, ranlib, :)
+#AC_CHECK_TOOL(RC, windres, :)
+
+if test "${GCC}" = "yes" ; then
+    AC_CHECK_PROG(AR, ar, ar)
+    AC_CHECK_PROG(RANLIB, ranlib, ranlib)
+    AC_CHECK_PROG(RC, windres, windres)
+fi
 
 #--------------------------------------------------------------------
 # Checks to see if the make progeam sets the $MAKE variable.

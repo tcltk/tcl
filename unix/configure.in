@@ -3,7 +3,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 AC_INIT(../generic/tcl.h)
-# RCS: @(#) $Id: configure.in,v 1.59 2000/07/19 01:17:41 mo Exp $
+# RCS: @(#) $Id: configure.in,v 1.60 2000/08/25 05:45:08 mo Exp $
 
 TCL_VERSION=8.4
 TCL_MAJOR_VERSION=8
@@ -27,8 +27,8 @@ TCL_SRC_DIR=`cd $srcdir/..; pwd`
 # Standard compiler checks
 #------------------------------------------------------------------------
 
+AC_PROG_CC
 AC_PROG_RANLIB
-SC_ENABLE_GCC
 AC_HAVE_HEADERS(unistd.h limits.h)
 
 #------------------------------------------------------------------------
