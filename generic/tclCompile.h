@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.27 2002/05/30 15:03:57 msofer Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.28 2002/06/28 21:24:19 msofer Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -932,10 +932,13 @@ EXTERN void		TclVerifyLocalLiteralTable _ANSI_ARGS_((
  */
 
 #define TclEmitPush(objIndex, envPtr) \
-    if ((objIndex) <= 255) { \
-	TclEmitInstInt1(INST_PUSH1, (objIndex), (envPtr)); \
-    } else { \
-	TclEmitInstInt4(INST_PUSH4, (objIndex), (envPtr)); \
+    {\
+        register int objIndexCopy = (objIndex);\
+        if (objIndexCopy <= 255) { \
+	    TclEmitInstInt1(INST_PUSH1, objIndexCopy, (envPtr)); \
+        } else { \
+	    TclEmitInstInt4(INST_PUSH4, objIndexCopy, (envPtr)); \
+	}\
     }
 
 /*
