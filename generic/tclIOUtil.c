@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.47 2002/06/10 17:41:52 vincentdarley Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.48 2002/06/12 09:28:58 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -26,7 +26,7 @@
 #include "tclMacInt.h"
 #endif
 #ifdef __WIN32__
-/* For 'file link' */
+/* for tclWinProcs->useWide */
 #include "tclWinInt.h"
 #endif
 
@@ -318,6 +318,9 @@ typedef struct FilesystemRecord {
                                    * to Tcl, or NULL if no more. */
 } FilesystemRecord;
 
+static FilesystemRecord* GetFilesystemRecord 
+	_ANSI_ARGS_((Tcl_Filesystem *fromFilesystem, int *epoch));
+
 /* 
  * Declare the native filesystem support.  These functions should
  * be considered private to Tcl, and should really not be called
@@ -370,7 +373,7 @@ Tcl_FSLinkProc TclpObjLink;
 Tcl_FSListVolumesProc TclpObjListVolumes;	    
 
 /* Define the native filesystem dispatch table */
-static Tcl_Filesystem nativeFilesystem = {
+Tcl_Filesystem nativeFilesystem = {
     "native",
     sizeof(Tcl_Filesystem),
     TCL_FILESYSTEM_VERSION_1,
@@ -3900,20 +3903,22 @@ SetFsPathFromAny(interp, objPtr)
 
 Tcl_Obj *
 Tcl_FSNewNativePath(fromFilesystem, clientData)
-    Tcl_Obj* fromFilesystem;
+    Tcl_Filesystem* fromFilesystem;
     ClientData clientData;
 {
     Tcl_Obj *objPtr;
-    FsPath *fsPathPtr, *fsFromPtr;
+    FsPath *fsPathPtr;
+    FilesystemRecord *fsFromPtr;
     Tcl_FSInternalToNormalizedProc *proc;
+    int epoch;
     
-    if (Tcl_FSConvertToPathType(NULL, fromFilesystem) != TCL_OK) {
-        return NULL;
+    fsFromPtr = GetFilesystemRecord(fromFilesystem, &epoch);
+
+    if (fsFromPtr == NULL) {
+	return NULL;
     }
     
-    fsFromPtr = (FsPath*) fromFilesystem->internalRep.otherValuePtr;
-
-    proc = fsFromPtr->fsRecPtr->fsPtr->internalToNormalizedProc;
+    proc = fsFromPtr->fsPtr->internalToNormalizedProc;
 
     if (proc == NULL) {
         return NULL;
@@ -3946,10 +3951,10 @@ Tcl_FSNewNativePath(fromFilesystem, clientData)
     fsPathPtr->normPathPtr = objPtr;
     fsPathPtr->cwdPtr = NULL;
     fsPathPtr->nativePathPtr = clientData;
-    fsPathPtr->fsRecPtr = fsFromPtr->fsRecPtr;
+    fsPathPtr->fsRecPtr = fsFromPtr;
     /* We must increase the refCount for this filesystem. */
     fsPathPtr->fsRecPtr->fileRefCount++;
-    fsPathPtr->filesystemEpoch = fsFromPtr->filesystemEpoch;
+    fsPathPtr->filesystemEpoch = epoch;
 
     objPtr->internalRep.otherValuePtr = (VOID *) fsPathPtr;
     objPtr->typePtr = &tclFsPathType;
@@ -4385,14 +4390,20 @@ NativeCreateNativeRep(pathObjPtr)
     str = Tcl_GetStringFromObj(normPtr,&len);
 #ifdef __WIN32__
     Tcl_WinUtfToTChar(str, len, &ds);
-    nativePathPtr = ckalloc((unsigned)(2+Tcl_DStringLength(&ds)));
-    memcpy((VOID*)nativePathPtr, (VOID*)Tcl_DStringValue(&ds), 
-	   (size_t) (2+Tcl_DStringLength(&ds)));
+    if (tclWinProcs->useWide) {
+	nativePathPtr = ckalloc((unsigned)(sizeof(WCHAR)+Tcl_DStringLength(&ds)));
+	memcpy((VOID*)nativePathPtr, (VOID*)Tcl_DStringValue(&ds), 
+	       (size_t) (sizeof(WCHAR)+Tcl_DStringLength(&ds)));
+    } else {
+	nativePathPtr = ckalloc((unsigned)(sizeof(char)+Tcl_DStringLength(&ds)));
+	memcpy((VOID*)nativePathPtr, (VOID*)Tcl_DStringValue(&ds), 
+	       (size_t) (sizeof(char)+Tcl_DStringLength(&ds)));
+    }
 #else
     Tcl_UtfToExternalDString(NULL, str, len, &ds);
-    nativePathPtr = ckalloc((unsigned)(1+Tcl_DStringLength(&ds)));
+    nativePathPtr = ckalloc((unsigned)(sizeof(char)+Tcl_DStringLength(&ds)));
     memcpy((VOID*)nativePathPtr, (VOID*)Tcl_DStringValue(&ds), 
-	  (size_t) (1+Tcl_DStringLength(&ds)));
+	  (size_t) (sizeof(char)+Tcl_DStringLength(&ds)));
 #endif
 	  
     Tcl_DStringFree(&ds);
@@ -4439,9 +4450,14 @@ TclpNativeToNormalized(clientData)
      * prefix to indicate that they are to be treated specially.  For
      * example extremely long paths, or symlinks 
      */
-    if (0 == strncmp(copy,"\\??\\",4)) {
-	copy += 4;
-	len -= 4;
+    if (*copy == '\\') {
+        if (0 == strncmp(copy,"\\??\\",4)) {
+	    copy += 4;
+	    len -= 4;
+	} else if (0 == strncmp(copy,"\\\\?\\",4)) {
+	    copy += 4;
+	    len -= 4;
+	}
     }
 #endif
 
@@ -4774,6 +4790,23 @@ Tcl_FSGetFileSystemForPath(pathObjPtr)
   done:
     FsReleaseIterator();
     return retVal;
+}
+
+/* Simple helper function */
+static FilesystemRecord* 
+GetFilesystemRecord(fromFilesystem, epoch)
+    Tcl_Filesystem *fromFilesystem;
+    int *epoch;
+{
+    FilesystemRecord *fsRecPtr = FsGetIterator();
+    while (fsRecPtr != NULL) {
+	if (fsRecPtr->fsPtr == fromFilesystem) {
+	    *epoch = theFilesystemEpoch;
+	    break;
+	}
+    }
+    FsReleaseIterator();
+    return fsRecPtr;
 }
 
 /*

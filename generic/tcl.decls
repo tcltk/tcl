@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.87 2002/05/24 21:19:05 dkf Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.88 2002/06/12 09:28:58 vincentdarley Exp $
 
 library tcl
 
@@ -1649,7 +1649,7 @@ declare 467 generic {
     int Tcl_FSEvalFile(Tcl_Interp *interp, Tcl_Obj *fileName)
 }
 declare 468 generic {
-    Tcl_Obj* Tcl_FSNewNativePath(Tcl_Obj* fromFilesystem,
+    Tcl_Obj* Tcl_FSNewNativePath(Tcl_Filesystem* fromFilesystem,
 	    ClientData clientData)
 }
 declare 469 generic {

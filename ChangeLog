@@ -1,3 +1,25 @@
+2002-06-12  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* generic/tclIOUtil.c:
+	* generic/tcl.decls:
+	* generic/tclDecls.h: made code for Tcl_FSNewNativePath
+	agree with man pages.
+	
+	* doc/FileSystem.3: clarified the circumstances under which
+	certain functions are called in the presence of symlinks.
+	
+	* win/tclWinFile.c:
+	* win/tclWinPort.h: 
+	* win/tclWinInt.h: 
+	* win/tclWinFCmd.c:  Fix for Windows to allow 'file lstat', 
+	'file type', 'glob -type l', 'file copy', 'file delete', 
+	'file normalize', and all VFS code to work correctly in the 
+	presence of symlinks (previously Tcl's behaviour was not very 
+	well defined).  This also fixes possible serious problems in 
+	all versions of WinTcl where 'file delete' on a NTFS symlink 
+	could delete the original, not the symlink.
+	Note: symlinks cannot yet be created in pure Tcl.
+
 2002-06-11  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* generic/tclBasic.c: 
