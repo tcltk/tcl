@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFCmd.c,v 1.19 2002/03/24 18:09:19 vincentdarley Exp $
+ * RCS: @(#) $Id: tclUnixFCmd.c,v 1.20 2002/04/04 21:14:53 hobbs Exp $
  *
  * Portions of this code were derived from NetBSD source code which has
  * the following copyright notice:
@@ -1689,8 +1689,8 @@ TclpObjNormalizePath(interp, pathPtr, nextCheckpoint)
 	     * converted, normalized path.
 	     */
 	    Tcl_DStringFree(&ds);
-	    Tcl_ExternalToUtfDString(NULL,normPath,
-                                     (unsigned)strlen(normPath),&ds);
+	    Tcl_ExternalToUtfDString(NULL, normPath,
+		    (int) strlen(normPath), &ds);
 
 	    if (path[nextCheckpoint] != '\0') {
 		/* not at end, append remaining path */
