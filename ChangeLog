@@ -1,5 +1,10 @@
 2002-03-28  Miguel Sofer  <msofer@users.sourceforge.net>
 
+	* generic/tclBasic.c (Tcl_EvalEx): passing the correct commandSize
+	to TclEvalObjvInternal. [Bug 219362], fix by David Knoll.
+
+2002-03-28  Miguel Sofer  <msofer@users.sourceforge.net>
+
 	* generic/tclBasic.c (Tcl_EvalEx):
 	* tests/basic.test: avoid exceptional returns at level 0 
 	[Bug 219181] 
