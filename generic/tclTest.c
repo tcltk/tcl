@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.39 2002/01/17 04:37:33 dgp Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.40 2002/01/21 21:05:58 dgp Exp $
  */
 
 #define TCL_TEST
@@ -332,28 +332,52 @@ static void TestReport _ANSI_ARGS_((CONST char* cmd, Tcl_Obj* arg1, Tcl_Obj* arg
 
 static Tcl_Obj *TestReportGetNativePath(Tcl_Obj* pathObjPtr);
 
-static Tcl_FSStatProc TestReportStat;
-static Tcl_FSAccessProc TestReportAccess;
-static Tcl_FSOpenFileChannelProc TestReportOpenFileChannel;
-static Tcl_FSMatchInDirectoryProc TestReportMatchInDirectory;
-static Tcl_FSChdirProc TestReportChdir;
-static Tcl_FSLstatProc TestReportLstat;
-static Tcl_FSCopyFileProc TestReportCopyFile;
-static Tcl_FSDeleteFileProc TestReportDeleteFile;
-static Tcl_FSRenameFileProc TestReportRenameFile;
-static Tcl_FSCreateDirectoryProc TestReportCreateDirectory;
-static Tcl_FSCopyDirectoryProc TestReportCopyDirectory; 
-static Tcl_FSRemoveDirectoryProc TestReportRemoveDirectory; 
-static Tcl_FSLoadFileProc TestReportLoadFile;
-static Tcl_FSLinkProc TestReportLink;
-static Tcl_FSFileAttrStringsProc TestReportFileAttrStrings;
-static Tcl_FSFileAttrsGetProc TestReportFileAttrsGet;
-static Tcl_FSFileAttrsSetProc TestReportFileAttrsSet;
-static Tcl_FSUtimeProc TestReportUtime;
-static Tcl_FSNormalizePathProc TestReportNormalizePath;
-static Tcl_FSPathInFilesystemProc TestReportInFilesystem;
-static Tcl_FSFreeInternalRepProc TestReportFreeInternalRep;
-static Tcl_FSDupInternalRepProc TestReportDupInternalRep;
+static int		TestReportStat _ANSI_ARGS_ ((Tcl_Obj *path,
+			    struct stat *buf));
+static int		TestReportAccess _ANSI_ARGS_ ((Tcl_Obj *path,
+			    int mode));
+static Tcl_Channel	TestReportOpenFileChannel _ANSI_ARGS_ ((
+			    Tcl_Interp *interp, Tcl_Obj *fileName,
+			    CONST char *modeString, int permissions));
+static int		TestReportMatchInDirectory _ANSI_ARGS_ ((
+			    Tcl_Interp *interp, Tcl_Obj *resultPtr,
+			    Tcl_Obj *dirPtr, char *pattern,
+			    Tcl_GlobTypeData *types));
+static int		TestReportChdir _ANSI_ARGS_ ((Tcl_Obj *dirName));
+static int		TestReportLstat _ANSI_ARGS_ ((Tcl_Obj *path,
+			    struct stat *buf));
+static int		TestReportCopyFile _ANSI_ARGS_ ((Tcl_Obj *src,
+			    Tcl_Obj *dst));
+static int		TestReportDeleteFile _ANSI_ARGS_ ((Tcl_Obj *path));
+static int		TestReportRenameFile _ANSI_ARGS_ ((Tcl_Obj *src,
+			    Tcl_Obj *dst));
+static int		TestReportCreateDirectory _ANSI_ARGS_ ((Tcl_Obj *path));
+static int		TestReportCopyDirectory _ANSI_ARGS_ ((Tcl_Obj *src,
+			    Tcl_Obj *dst, Tcl_Obj **errorPtr));
+static int		TestReportRemoveDirectory _ANSI_ARGS_ ((Tcl_Obj *path,
+			    int recursive, Tcl_Obj **errorPtr));
+static int		TestReportLoadFile _ANSI_ARGS_ ((Tcl_Interp *interp,
+			    Tcl_Obj *fileName, CONST char *sym1,
+			    CONST char *sym2, Tcl_PackageInitProc **proc1Ptr,
+			    Tcl_PackageInitProc **proc2Ptr,
+			    ClientData *clientDataPtr,
+			    Tcl_FSUnloadFileProc **unloadProcPtr));
+static Tcl_Obj *	TestReportLink _ANSI_ARGS_ ((Tcl_Obj *path,
+			    Tcl_Obj *to));
+static CONST char**	TestReportFileAttrStrings _ANSI_ARGS_ ((
+			    Tcl_Obj *fileName, Tcl_Obj **objPtrRef));
+static int		TestReportFileAttrsGet _ANSI_ARGS_ ((Tcl_Interp *interp,
+			    int index, Tcl_Obj *fileName, Tcl_Obj **objPtrRef));
+static int		TestReportFileAttrsSet _ANSI_ARGS_ ((Tcl_Interp *interp,
+			    int index, Tcl_Obj *fileName, Tcl_Obj *objPtr));
+static int		TestReportUtime _ANSI_ARGS_ ((Tcl_Obj *fileName,
+			    struct utimbuf *tval));
+static int		TestReportNormalizePath _ANSI_ARGS_ ((
+			    Tcl_Interp *interp, Tcl_Obj *pathPtr,
+			    int nextCheckpoint));
+static int		TestReportInFilesystem _ANSI_ARGS_ ((Tcl_Obj *pathPtr, ClientData *clientDataPtr));
+static void		TestReportFreeInternalRep _ANSI_ARGS_ ((ClientData clientData));
+static ClientData	TestReportDupInternalRep _ANSI_ARGS_ ((ClientData clientData));
 
 static Tcl_Filesystem testReportingFilesystem = {
     "reporting",
