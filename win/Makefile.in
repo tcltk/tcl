@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.42 2000/11/03 21:23:28 hobbs Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.43 2001/03/30 23:45:59 hobbs Exp $
 
 VERSION = @TCL_VERSION@
 
@@ -423,7 +423,7 @@ tclStubLib.${OBJEXT}: tclStubLib.c
 
 install: all install-binaries install-libraries install-doc
 
-install-binaries:
+install-binaries: binaries
 	@$(MKDIR) -p "$(BIN_INSTALL_DIR)"
 	@$(MKDIR) -p "$(LIB_INSTALL_DIR)"
 	$(COPY) tclConfig.sh $(LIB_INSTALL_DIR)/tclConfig.sh
@@ -468,7 +468,7 @@ install-binaries:
 	    $(COPY) $(REG_LIB_FILE) $(LIB_INSTALL_DIR)/reg1.0; \
 	    fi
 
-install-libraries:
+install-libraries: libraries
 	@for i in $(prefix)/lib $(INCLUDE_INSTALL_DIR) \
 		$(SCRIPT_INSTALL_DIR); \
 	    do \
@@ -497,37 +497,37 @@ install-libraries:
 	    do \
 	    $(COPY) "$$i" "$(SCRIPT_INSTALL_DIR)"; \
 	    done;
-	@echo "Installing library http1.0 directory"; \
+	@echo "Installing library http1.0 directory";
 	@for j in $(ROOT_DIR)/library/http1.0/*.tcl; \
 	    do \
 	    $(COPY) "$$j" "$(SCRIPT_INSTALL_DIR)/http1.0"; \
 	    done;
-	@echo "Installing library http2.3 directory"; \
+	@echo "Installing library http2.3 directory";
 	@for j in $(ROOT_DIR)/library/http/*.tcl; \
 	    do \
 	    $(COPY) "$$j" "$(SCRIPT_INSTALL_DIR)/http2.3"; \
 	    done;
-	@echo "Installing library opt0.4 directory"; \
+	@echo "Installing library opt0.4 directory";
 	@for j in $(ROOT_DIR)/library/opt/*.tcl; \
 	    do \
 	    $(COPY) "$$j" "$(SCRIPT_INSTALL_DIR)/opt0.4"; \
 	    done;
-	@echo "Installing library msgcat1.2 directory"; \
+	@echo "Installing library msgcat1.2 directory";
 	@for j in $(ROOT_DIR)/library/msgcat/*.tcl; \
 	    do \
 	    $(COPY) "$$j" "$(SCRIPT_INSTALL_DIR)/msgcat1.2"; \
 	    done;
-	@echo "Installing library tcltest2.0 directory"; \
+	@echo "Installing library tcltest2.0 directory";
 	@for j in $(ROOT_DIR)/library/tcltest/*.tcl; \
 	    do \
 	    $(COPY) "$$j" "$(SCRIPT_INSTALL_DIR)/tcltest2.0"; \
 	    done;
-	@echo "Installing encodings"
+	@echo "Installing encodings";
 	@for i in $(ROOT_DIR)/library/encoding/*.enc ; do \
 		$(COPY) "$$i" "$(SCRIPT_INSTALL_DIR)/encoding"; \
 	done;
 
-install-doc:
+install-doc: doc
 
 # Specifying TESTFLAGS on the command line is the standard way to pass
 # args to tcltest, ie:
