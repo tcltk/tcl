@@ -10,7 +10,7 @@
 # Copyright (c) 2001-2002 David Gravereaux.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: rules.vc,v 1.13 2003/06/16 18:36:45 andreas_kupries Exp $
+# RCS: @(#) $Id: rules.vc,v 1.14 2003/07/15 16:11:58 kennykb Exp $
 #------------------------------------------------------------------------------
 
 !ifndef _RULES_VC
@@ -272,7 +272,7 @@ TCL_COMPILE_DEBUG   = 0
 OPTDEFINES	= -DTCL_CFGVAL_ENCODING=$(CFG_ENCODING)
 
 !if $(TCL_MEM_DEBUG)
-OPTDEFINES	= -DTCL_MEM_DEBUG
+OPTDEFINES	= $(OPTDEFINES) -DTCL_MEM_DEBUG
 !endif
 !if $(TCL_COMPILE_DEBUG)
 OPTDEFINES	= $(OPTDEFINES) -DTCL_COMPILE_DEBUG -DTCL_COMPILE_STATS
