@@ -2,6 +2,9 @@
 
 	* library/tcltest/tcltest.tcl: Corrected [uplevel] quoting when
 	[source]-ing test script in subdirectories.
+	* tests/fileName.test:
+	* tests/load.test:
+	* tests/main.test:
 	* tests/tcltest.test: Fixes to test suite when there's a space
 	in the working path.  Thanks to Kevin Kenny.
 
