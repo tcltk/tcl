@@ -1,5 +1,11 @@
 2004-09-30  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclBasic.c (Tcl_EvalObjEx):	Removed the flag bit value
+	* generic/tclInt.h (Interp):	USE_EVAL_DIRECT.  It was used only
+	* generic/tcLTest.c (TestevalexObjCmd):	in the testing command
+	* tests/parser.test (parse-9.2): [testevalex] and nothing in the
+	test suite made use of the capability it enabled.
+
 	* generic/tclBasic.c (Tcl_AddObjErrorInfo): More re-organization
 	* generic/tclCmdAH.c (Tcl_ErrorObjCmd):     of the management of
 	* generic/tclCmdMZ.c (TclProcessReturn):    the errorCode value.
