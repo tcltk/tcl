@@ -1,3 +1,10 @@
+2004-07-30  Daniel Steffen  <das@users.sourceforge.net>
+
+	* unix/configure:
+	* unix/tcl.m4 (SC_CONFIG_CFLAGS): Darwin: instead of setting PLAT_OBJS 
+	to explict object files in tcl.m4, refer to MAC_OSX_OBJS makefile var.
+	* unix/Makefile.in: added MAC_OSX_OBJS variable.
+
 2004-07-28  Don Porter  <dgp@users.sourceforge.net>
 
         * generic/tclMain.c (Tcl_Main, StdinProc):      Append newline only
