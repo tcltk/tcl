@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.31.2.1 2001/05/31 23:45:44 kennykb Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.31.2.2 2001/06/06 22:30:41 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -2008,9 +2008,14 @@ Tcl_LindexObjCmd(dummy, interp, objc, objv)
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
     Tcl_Obj *listPtr, *oldListPtr;
-    Tcl_Obj **elemPtrs;
-    int listLen, index, result;
-    int i;
+				/* Pointers to the list being manipulated. */
+    Tcl_Obj **elemPtrs;		/* Elements of the list being manipulated. */
+    int listLen;		/* Length of the list being manipulated. */
+    int index;			/* Index into the list */
+    int result;			/* Result returned from a Tcl library call */
+    int i;			/* Current index number */
+    Tcl_Obj *CONST *indices;	/* Array of list indices */
+    int indexCount;		/* Size of the array of list indices */
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "list index ?index...?");
@@ -2030,60 +2035,179 @@ Tcl_LindexObjCmd(dummy, interp, objc, objv)
     listPtr = objv[1];
     Tcl_IncrRefCount( listPtr );
 
-    for ( i = 2; i < objc; ++i ) {
+    /*
+     * If objv == 3, then objv[ 2 ] may be either a single index or
+     * a list of indices.  We have to be careful as we determine
+     * just which it is, to avoid shimmering it multiple times.
+     */
+
+    if ( objc == 3
+	 && ( objv[ 2 ]->typePtr == &tclListType
+	      || TclGetIntForIndex( NULL, objv[ 2 ], 0, &index ) == TCL_ERROR )
+	 && Tcl_ListObjGetElements( interp, objv[ 2 ],
+				    &indexCount,
+				    (Tcl_Obj***) &indices ) == TCL_OK
+	 && indexCount > 0 ) {
 
 	/*
-	 * Convert the current listPtr to a list if necessary.
+	 * objv[ 2 ] is a list.  This case is a trifle messy because
+	 * the internal rep can shimmer away.
 	 */
 
-	result = Tcl_ListObjGetElements(interp, listPtr, &listLen, &elemPtrs);
-	if (result != TCL_OK) {
-	    Tcl_DecrRefCount( listPtr );
-	    return result;
-	}
+	i = 0;
+	for ( ; ; ) {
 
-	/*
-	 * Get the index from objv[i].
-	 */
-
-	result = TclGetIntForIndex(interp, objv[i], /*endValue*/ (listLen - 1),
-				   &index);
-	if (result != TCL_OK) {
-	    Tcl_DecrRefCount( listPtr );
-	    return result;
-	}
-	if ((index < 0) || (index >= listLen)) {
 	    /*
-	     * The index is out of range: the result is an empty string object.
+	     * Convert the current listPtr to a list if necessary.
 	     */
 	    
-	    Tcl_DecrRefCount( listPtr );
-	    return TCL_OK;
-	}
-
-	/*
-	 * Make sure listPtr still refers to a list object. It might have been
-	 * converted to an int above if the argument objects were shared.
-	 */
-	
-	if (listPtr->typePtr != &tclListType) {
-	    result = Tcl_ListObjGetElements(interp, listPtr, &listLen,
-					    &elemPtrs);
+	    result = Tcl_ListObjGetElements( interp, listPtr,
+					     &listLen, &elemPtrs );
 	    if (result != TCL_OK) {
 		Tcl_DecrRefCount( listPtr );
 		return result;
 	    }
-	}
+	    
+	    /*
+	     * Get the index from indices[ i ]
+	     */
+	    
+	    result = TclGetIntForIndex( interp, indices[ i ],
+					/*endValue*/ (listLen - 1),
+					&index );
+	    if ( result != TCL_OK
+		 || index < 0
+		 || index >= listLen ) {
+		
+		/*
+		 * Either the index is out of range, in which case the result
+		 * is an empty string object, or the index is incorrect, in
+		 * which case the interpreter result already contains the
+		 * error message.
+		 */
+		
+		Tcl_DecrRefCount( listPtr );
+		return result;
+	    }
+
+	    /*
+	     * Make sure listPtr still refers to a list object.
+	     * If it shared a Tcl_Obj structure with the arguments, then
+	     * it might have just been converted to something else.
+	     */
 	
+	    if (listPtr->typePtr != &tclListType) {
+		result = Tcl_ListObjGetElements(interp, listPtr, &listLen,
+						&elemPtrs);
+		if (result != TCL_OK) {
+		    Tcl_DecrRefCount( listPtr );
+		    return result;
+		}
+	    }
+
+	    /*
+	     * Extract the pointer to the appropriate element
+	     */
+	    
+	    oldListPtr = listPtr;
+	    listPtr = elemPtrs[ index ];
+	    Tcl_IncrRefCount( listPtr );
+	    Tcl_DecrRefCount( oldListPtr );
+
+	    /*
+	     * Break out of the loop when done.
+	     */
+
+	    ++i;
+	    if ( i >= indexCount ) {
+		break;
+	    }
+
+	    /*
+	     * The work we did above may have caused the internal rep
+	     * of objv[2] to change to something else.  Get it back.
+	     */
+
+	    result = Tcl_ListObjGetElements( interp, objv[ 2 ],
+					     &indexCount,
+					     (Tcl_Obj***) &indices );
+	    if ( result != TCL_OK ) {
+		/* 
+		 * This can't happen unless some extension corrupted a Tcl_Obj.
+		 */
+		Tcl_DecrRefCount( listPtr );
+		return result;
+	    }
+	    
+	} /* end for */
+
+    } else {
+
 	/*
-	 * Extract the pointer to the appropriate element
+	 * Either objc > 3, or else objv[2] did not parse as a list, 
+	 * and must be scalar.  Treat all parameters as scalar indices.
 	 */
 
-	oldListPtr = listPtr;
-	listPtr = elemPtrs[ index ];
-	Tcl_IncrRefCount( listPtr );
-	Tcl_DecrRefCount( oldListPtr );
+	for ( i = 2; i < objc; ++i ) {
 
+	    /*
+	     * Convert the current listPtr to a list if necessary.
+	     */
+	    
+	    result = Tcl_ListObjGetElements(interp, listPtr,
+					    &listLen, &elemPtrs);
+	    if (result != TCL_OK) {
+		Tcl_DecrRefCount( listPtr );
+		return result;
+	    }
+	    
+	    /*
+	     * Get the index from objv[i]
+	     */
+	    
+	    result = TclGetIntForIndex( interp, objv[ i ],
+					/*endValue*/ (listLen - 1),
+					&index );
+	    if ( result != TCL_OK
+		 || index < 0
+		 || index >= listLen ) {
+		
+		/*
+		 * Either the index is out of range, in which case the result
+		 * is an empty string object, or the index is incorrect, in
+		 * which case the interpreter result already contains the
+		 * error message.
+		 */
+		
+		Tcl_DecrRefCount( listPtr );
+		return result;
+	    }
+	    
+	    /*
+	     * Make sure listPtr still refers to a list object.
+	     * It might have been converted to something else above
+	     * if objv[1] overlaps with one of the other parameters.
+	     */
+	
+	    if (listPtr->typePtr != &tclListType) {
+		result = Tcl_ListObjGetElements(interp, listPtr, &listLen,
+						&elemPtrs);
+		if (result != TCL_OK) {
+		    Tcl_DecrRefCount( listPtr );
+		    return result;
+		}
+	    }
+	
+	    /*
+	     * Extract the pointer to the appropriate element
+	     */
+	    
+	    oldListPtr = listPtr;
+	    listPtr = elemPtrs[ index ];
+	    Tcl_IncrRefCount( listPtr );
+	    Tcl_DecrRefCount( oldListPtr );
+	    
+	}
     }
 	
     /*
