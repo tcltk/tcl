@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: tell.n,v 1.5 2001/09/14 19:20:40 andreas_kupries Exp $
+'\" RCS: @(#) $Id: tell.n,v 1.6 2004/05/28 12:48:36 dkf Exp $
 '\" 
 .so man.macros
 .TH tell n 8.1 Tcl "Tcl Built-In Commands"
@@ -34,6 +34,20 @@ Tcl standard channel (\fBstdin\fR, \fBstdout\fR, or \fBstderr\fR),
 the return value from an invocation of \fBopen\fR or \fBsocket\fR, or
 the result of a channel creation command provided by a Tcl extension.
 .VE
+.SH EXAMPLE
+Read a line from a file channel only if it starts with \fBfoobar\fR:
+
+.CS
+# Save the offset in case we need to undo the read...
+set offset [\fBtell\fR $chan]
+if {[read $chan 6] eq "foobar"} {
+    gets $chan line
+} else {
+    set line {}
+    # Undo the read...
+    seek $chan $offset
+}
+.CE
 
 .SH "SEE ALSO"
 file(n), open(n), close(n), gets(n), seek(n), Tcl_StandardChannels(3)
