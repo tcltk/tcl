@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.63 2002/07/22 16:51:48 vincentdarley Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.64 2002/07/22 16:57:47 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -2526,8 +2526,12 @@ Tcl_FSLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr,
 	    if (*handlePtr == NULL) {
 		return TCL_ERROR;
 	    }
-	    *proc1Ptr = TclpFindSymbol(interp, *handlePtr, sym1);
-	    *proc2Ptr = TclpFindSymbol(interp, *handlePtr, sym2);
+	    if (sym1 != NULL) {
+	        *proc1Ptr = TclpFindSymbol(interp, *handlePtr, sym1);
+	    }
+	    if (sym2 != NULL) {
+	        *proc2Ptr = TclpFindSymbol(interp, *handlePtr, sym2);
+	    }
 	    return retVal;
 	} else {
 	    Tcl_Filesystem *copyFsPtr;
