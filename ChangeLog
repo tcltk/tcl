@@ -1,3 +1,7 @@
+2003-09-01  Zoran Vasiljevic <zoran@archiware.com>
+
+	* generic/tclIOUtil.c: backported fix from HEAD [Bug 788780]
+
 2003-08-27  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclUtil.c:	Corrected [Bug 411825] and other bugs in
