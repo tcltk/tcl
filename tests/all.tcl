@@ -7,7 +7,7 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 # 
-# RCS: @(#) $Id: all.tcl,v 1.1.2.4 1999/03/23 20:06:08 hershey Exp $
+# RCS: @(#) $Id: all.tcl,v 1.1.2.5 1999/03/24 02:48:54 hershey Exp $
 
 if {[lsearch ::tcltest [namespace children]] == -1} {
     source [file join [pwd] [file dirname [info script]] defs.tcl]
@@ -15,7 +15,7 @@ if {[lsearch ::tcltest [namespace children]] == -1} {
 set ::tcltest::testSingleFile false
 
 puts stdout "Tcl $tcl_patchLevel tests running in interp:  [info nameofexecutable]"
-puts stdout "Tests running in working dir:  $::tcltest::tmpDir"
+puts stdout "Tests running in working dir:  $::tcltest::workingDir"
 if {[llength $::tcltest::skippingTests] > 0} {
     puts stdout "Skipping tests that match:  $::tcltest::skippingTests"
 }
@@ -63,6 +63,7 @@ foreach file [lsort $fileList] {
 puts stdout "\nTests ended at [eval $timeCmd]"
 ::tcltest::cleanupTests 1
 return
+
 
 
 

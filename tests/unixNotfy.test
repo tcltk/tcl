@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: unixNotfy.test,v 1.1.2.4 1999/03/23 20:07:01 hershey Exp $
+# RCS: @(#) $Id: unixNotfy.test,v 1.1.2.5 1999/03/24 02:49:47 hershey Exp $
 
 # The tests should not be run if you have a notifier which is unable to
 # detect infinite vwaits, as the tests below will hang. The presence of
@@ -51,6 +51,7 @@ file delete foo
 file delete foo2
 ::tcltest::cleanupTests
 return
+
 
 
 

@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: parseExpr.test,v 1.1.2.3 1999/03/23 20:06:45 hershey Exp $
+# RCS: @(#) $Id: parseExpr.test,v 1.1.2.4 1999/03/24 02:49:31 hershey Exp $
 
 # Note that the Tcl expression parser (tclParseExpr.c) does not check
 # the semantic validity of the expressions it parses. It does not check,
@@ -622,6 +622,7 @@ test parse-16.1 {LogSyntaxError procedure, error in expr longer than 60 chars} {
 # cleanup
 ::tcltest::cleanupTests
 return
+
 
 
 

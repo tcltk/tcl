@@ -8,16 +8,16 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 #
-# RCS: @(#) $Id: pkgMkIndex.test,v 1.4.2.5 1999/03/23 20:06:47 hershey Exp $
+# RCS: @(#) $Id: pkgMkIndex.test,v 1.4.2.6 1999/03/24 02:49:33 hershey Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     source [file join [pwd] [file dirname [info script]] defs.tcl]
 }
 
 # temporarily copy the pkg and pkg1 dirs from testsDir to tmpDir
-if {"$::tcltest::testsDir" != "$::tcltest::tmpDir"} {
+if {"$::tcltest::testsDir" != "$::tcltest::workingDir"} {
     set origPkgDir [file join $::tcltest::testsDir pkg]
-    set newPkgDir [file join $::tcltest::tmpDir pkg]
+    set newPkgDir [file join $::tcltest::workingDir pkg]
     if {![catch {file copy $origPkgDir $newPkgDir}]} {
 	set removePkgDir 1
     }
@@ -31,7 +31,7 @@ if {"$::tcltest::testsDir" != "$::tcltest::tmpDir"} {
 # Make sure that the path to pkg1 is absolute.
 
 set oldDir [pwd]
-lappend auto_path [file join $::tcltest::tmpDir pkg1]
+lappend auto_path [file join $::tcltest::workingDir pkg1]
 
 namespace eval pkgtest {
     # Namespace for procs we can discard
@@ -345,7 +345,7 @@ if {[file exists $x]} {
 
 # cleanup
 namespace delete pkgtest
-cd $::tcltest::tmpDir
+cd $::tcltest::workingDir
 if {[info exists removePkgDir]} {
     # strange error deleting the pkg dir only once--needs be done twice!
     catch {file delete -force $newPkgDir}
@@ -356,6 +356,7 @@ if {[info exists removePkg1Dir]} {
 }
 ::tcltest::cleanupTests
 return
+
 
 
 

@@ -11,7 +11,7 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 # 
-# RCS: @(#) $Id: defs.tcl,v 1.1.2.3 1999/03/23 20:06:16 hershey Exp $
+# RCS: @(#) $Id: defs.tcl,v 1.1.2.4 1999/03/24 02:49:03 hershey Exp $
 
 # Initialize wish shell
 if {[info exists tk_version]} {
@@ -22,12 +22,11 @@ if {[info exists tk_version]} {
     set auto_path [list [info library]]
 }
 
-# create the "test" namespace for all testing variables and procedures
+# create the "tcltest" namespace for all testing variables and procedures
 namespace eval tcltest {
     set procList [list test cleanupTests dotests saveState restoreState \
 	    normalizeMsg makeFile removeFile makeDirectory removeDirectory \
-	    viewFile safeFetch bytestring set_iso8859_1_locale restore_locale \
-	    setTmpDir]
+	    viewFile bytestring set_iso8859_1_locale restore_locale]
     if {[info exists tk_version]} {
 	lappend procList setupbg dobg bgReady cleanupbg fixfocus
     }
@@ -67,10 +66,10 @@ namespace eval tcltest {
     variable failFiles {}
 
     # Tests should remove all files they create.  The test suite will
-    # check tmpDir for files created by the tests.  ::tcltest::filesMade
-    # keeps track of such files created using the ::tcltest::makeFile and
-    # ::tcltest::makeDirectory procedures.  ::tcltest::filesExisted stores
-    # the names of pre-existing files.
+    # check the current working dir for files created by the tests.
+    # ::tcltest::filesMade keeps track of such files created using the
+    # ::tcltest::makeFile and ::tcltest::makeDirectory procedures.
+    # ::tcltest::filesExisted stores the names of pre-existing files.
 
     variable filesMade {}
     variable filesExisted {}
@@ -127,9 +126,12 @@ proc ::tcltest::initConfig {} {
 	}
     }
 
-    set ::tcltest::testConfig(unixOnly) [expr {$tcl_platform(platform) == "unix"}]
-    set ::tcltest::testConfig(macOnly) [expr {$tcl_platform(platform) == "macintosh"}]
-    set ::tcltest::testConfig(pcOnly) [expr {$tcl_platform(platform) == "windows"}]
+    set ::tcltest::testConfig(unixOnly) \
+	    [expr {$tcl_platform(platform) == "unix"}]
+    set ::tcltest::testConfig(macOnly) \
+	    [expr {$tcl_platform(platform) == "macintosh"}]
+    set ::tcltest::testConfig(pcOnly) \
+	    [expr {$tcl_platform(platform) == "windows"}]
 
     set ::tcltest::testConfig(unix) $::tcltest::testConfig(unixOnly)
     set ::tcltest::testConfig(mac) $::tcltest::testConfig(macOnly)
@@ -305,49 +307,9 @@ proc ::tcltest::initConfig {} {
 ::tcltest::initConfig
 
 
-# ::tcltest::setTmpDir --
-#
-#	Set the ::tcltest::tmpDir to the specified value.  If the path
-#	is relative, make it absolute.  If the file exists but is not
-#	a dir, then return an error.  If the dir does not already
-#	exist, create it.  If you cannot create it, then return an error.
-#
-# Arguments:
-#	value	the new value of ::tcltest::tmpDir
-#
-# Results:
-#	::tcltest::tmpDir is set to <value> and created if it didn't already
-#	exist.  The working dir is changed to ::tcltest::tmpDir.
-
-proc ::tcltest::setTmpDir {value} {
-
-    set ::tcltest::tmpDir $value
-
-    if {[string compare [file pathtype $::tcltest::tmpDir] absolute] != 0} {
-	set ::tcltest::tmpDir [file join [pwd] $::tcltest::tmpDir]
-    }
-    if {[file exists $::tcltest::tmpDir]} {
-	if {![file isdir $::tcltest::tmpDir]} {
-	    puts stderr "Error:  bad argument \"$value\" to -tmpdir:"
-	    puts stderr "            \"$::tcltest::tmpDir\""
-	    puts stderr "        is not a directory"
-	    exit
-	}
-    } else {
-	file mkdir $::tcltest::tmpDir
-    }
-
-    # change the working dir to tmpDir and add the existing files in
-    # tmpDir to the filesExisted list.
-    cd $::tcltest::tmpDir
-    foreach file [glob -nocomplain [file join [pwd] *]] {
-	lappend ::tcltest::filesExisted $file
-    }
-}
-
 # ::tcltest::processCmdLineArgs --
 #
-#	Use command line args to set the tmpDir, verbose, skippingTests, and
+#	Use command line args to set the verbose, skippingTests, and
 #	matchingTests variables.
 #
 # Arguments:
@@ -373,26 +335,22 @@ proc ::tcltest::processCmdLineArgs {} {
 	exit
     }
     
-    # Allow for 1-char abbreviations, where applicable (e.g., -tmpdir == -t).
+    # Allow for 1-char abbreviations, where applicable (e.g., -match == -m).
     # Note that -verbose cannot be abbreviated to -v in wish because it conflicts
     # with the wish option -visual.
-    foreach arg {-verbose -match -skip -constraints -tmpdir} {
+    foreach arg {-verbose -match -skip -constraints} {
 	set abbrev [string range $arg 0 1]
 	if {([info exists flag($abbrev)]) && \
-		([lsearch -exact $flagArray $arg] < [lsearch -exact $flagArray $abbrev])} {
+		([lsearch -exact $flagArray $arg] < \
+		[lsearch -exact $flagArray $abbrev])} {
 	    set flag($arg) $flag($abbrev)
 	}
     }
 
-    # Set ::tcltest::tmpDir to the arg of the -tmpdir flag, if given.
-    # ::tcltest::tmpDir defaults to [pwd].
-    # Save the names of files that already exist in ::tcltest::tmpDir.
-    if {[info exists flag(-tmpdir)]} {
-	::tcltest::setTmpDir $flag(-tmpdir)
-    } else {
-	set ::tcltest::tmpDir [pwd]
-    }
-    foreach file [glob -nocomplain [file join $::tcltest::tmpDir *]] {
+    # Set ::tcltest::workingDir to [pwd].
+    # Save the names of files that already exist in ::tcltest::workingDir.
+    set ::tcltest::workingDir [pwd]
+    foreach file [glob -nocomplain [file join $::tcltest::workingDir *]] {
 	lappend ::tcltest::filesExisted [file tail $file]
     }
 
@@ -478,9 +436,11 @@ proc ::tcltest::cleanupTests {{calledFromAllFile 0}} {
 	    }
 	}
 
-	# report the names of files in ::tcltest::tmpDir that were not pre-existing.
+	# report the names of files in ::tcltest::workingDir that were not
+	# pre-existing.
+
 	set currentFiles {}
-	foreach file [glob -nocomplain [file join $::tcltest::tmpDir *]] {
+	foreach file [glob -nocomplain [file join $::tcltest::workingDir *]] {
 	    lappend currentFiles [file tail $file]
 	}
 	set filesNew {}
@@ -585,7 +545,8 @@ proc ::tcltest::test {name description script expectedAnswer args} {
 	    # something like {a || b} should be turned into 
 	    # $::tcltest::testConfig(a) || $::tcltest::testConfig(b).
 
- 	    regsub -all {[.a-zA-Z0-9]+} $constraints {$::tcltest::testConfig(&)} c
+ 	    regsub -all {[.a-zA-Z0-9]+} $constraints \
+		    {$::tcltest::testConfig(&)} c
 	    catch {set doTest [eval expr $c]}
 	} else {
 	    # just simple constraints such as {unixOnly fonts}.
@@ -658,6 +619,21 @@ proc ::tcltest::test {name description script expectedAnswer args} {
 	}
     }
 }
+
+# ::tcltest::dotests --
+#
+#	takes two arguments--the name of the test file (such
+#	as "parse.test"), and a pattern selecting the tests you want to
+#	execute.  It sets ::tcltest::matching to the second argument, calls
+#	"source" on the file specified in the first argument, and restores
+#	::tcltest::matching to its pre-call value at the end.
+#
+# Arguments:
+#	file    name of tests file to source
+#	args    pattern selecting the tests you want to execute
+#
+# Results:
+#	none
 
 proc ::tcltest::dotests {file args} {
     set savedTests $::tcltest::matchingTests
@@ -794,11 +770,12 @@ proc ::tcltest::bytestring {string} {
 
 # Locate tcltest executable
 
-set tcltest [info nameofexecutable]
+if {![info exists tk_version]} {
+    set tcltest [info nameofexecutable]
 
-if {$tcltest == "{}"} {
-    set tcltest {}
-    puts stdout "Unable to find tcltest executable, multiple process tests will fail."
+    if {$tcltest == "{}"} {
+	set tcltest {}
+    }
 }
 
 set ::tcltest::testConfig(stdio) 0
@@ -809,10 +786,12 @@ catch {
 	exit
     }
     close $f
+
     # The following 2 lines cannot be run on Windows in Tk8.1b2
     # This bug is logged as a pipe bug (bugID 1495).
 
-    if {($tcl_platform(os) != "windows") || (![info exists tk_version])} {
+    if {($tcl_platform(platform) != "windows") || \
+	    (![info exists tk_version])} {
 	set f [open "|[list $tcltest tmp]" r]
 	close $f
     }
@@ -820,8 +799,11 @@ catch {
 }
 catch {file delete -force tmp}
 
+# Deliberately call the socket with the wrong number of arguments.  The error
+# message you get will indicate whether sockets are available on this system.
 catch {socket} msg
-set ::tcltest::testConfig(socket) [expr {$msg != "sockets are not available on this system"}]
+set ::tcltest::testConfig(socket) \
+	[expr {$msg != "sockets are not available on this system"}]
 
 #
 # Internationalization / ISO support procs     -- dl
@@ -893,7 +875,7 @@ if {[info exists tk_version]} {
     # The following code can be used to perform tests involving a second
     # process running in the background.
     
-    # Locate tktest executable
+    # Locate the tktest executable
 
     set ::tcltest::tktest [info nameofexecutable]
     if {$::tcltest::tktest == "{}"} {
@@ -910,16 +892,23 @@ if {[info exists tk_version]} {
 	if {[info exists ::tcltest::fd] && ($::tcltest::fd != "")} {
 	    cleanupbg
 	}
-	set ::tcltest::fd [open "|[list $::tcltest::tktest -geometry +0+0 -name tktest] $args" r+]
-	puts $::tcltest::fd "puts foo; flush stdout"
-	flush $::tcltest::fd
-	if {[gets $::tcltest::fd data] < 0} {
-	    error "unexpected EOF from \"$::tcltest::tktest\""
+	
+	# The following code segment cannot be run on Windows in Tk8.1b2
+	# This bug is logged as a pipe bug (bugID 1495).
+
+	global tcl_platform
+	if {$tcl_platform(platform) != "windows"} {
+	    set ::tcltest::fd [open "|[list $::tcltest::tktest -geometry +0+0 -name tktest] $args" r+]
+	    puts $::tcltest::fd "puts foo; flush stdout"
+	    flush $::tcltest::fd
+	    if {[gets $::tcltest::fd data] < 0} {
+		error "unexpected EOF from \"$::tcltest::tktest\""
+	    }
+	    if {[string compare $data foo]} {
+		error "unexpected output from background process \"$data\""
+	    }
+	    fileevent $::tcltest::fd readable bgReady
 	}
-	if {[string compare $data foo]} {
-	    error "unexpected output from background process \"$data\""
-	}
-	fileevent $::tcltest::fd readable bgReady
     }
     
     # Send a command to the background process, catching errors and
@@ -977,13 +966,4 @@ if {[info exists tk_version]} {
 # Need to catch the import because it fails if defs.tcl is sourced
 # more than once.
 catch {namespace import ::tcltest::*}
-
-
-
-
-
-
-
-
-
 

@@ -7,7 +7,7 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 #
-# RCS: @(#) $Id: reg.test,v 1.1.2.5 1999/03/23 20:06:49 hershey Exp $
+# RCS: @(#) $Id: reg.test,v 1.1.2.6 1999/03/24 02:49:35 hershey Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     source [file join [pwd] [file dirname [info script]] defs.tcl]
@@ -895,4 +895,5 @@ doing 0 "flush"			;# to flush any leftover complaints
 # cleanup
 ::tcltest::cleanupTests
 return
+
 

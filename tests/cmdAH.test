@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: cmdAH.test,v 1.1.2.8 1999/03/23 20:06:12 hershey Exp $
+# RCS: @(#) $Id: cmdAH.test,v 1.1.2.9 1999/03/24 02:48:59 hershey Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     source [file join [pwd] [file dirname [info script]] defs.tcl]
@@ -1469,6 +1469,7 @@ cd $cmdAHwd
 
 ::tcltest::cleanupTests
 return
+
 
 
 

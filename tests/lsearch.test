@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: lsearch.test,v 1.1.2.5 1999/03/23 20:06:40 hershey Exp $
+# RCS: @(#) $Id: lsearch.test,v 1.1.2.6 1999/03/24 02:49:26 hershey Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     source [file join [pwd] [file dirname [info script]] defs.tcl]
@@ -91,6 +91,7 @@ test lsearch-4.2 {binary data} {
 # cleanup
 ::tcltest::cleanupTests
 return
+
 
 
 

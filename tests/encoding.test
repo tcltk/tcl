@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: encoding.test,v 1.1.2.5 1999/03/23 20:06:17 hershey Exp $
+# RCS: @(#) $Id: encoding.test,v 1.1.2.6 1999/03/24 02:49:04 hershey Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     source [file join [pwd] [file dirname [info script]] defs.tcl]
@@ -23,10 +23,16 @@ proc fromutf {args} {
     lappend x "fromutf $args"
 }
 
+# Some tests require the testencoding command
+
+set ::tcltest::testConfig(testencoding) \
+	[expr {[info commands testencoding] != {}}]
+
+
 # TclInitEncodingSubsystem is tested by the rest of this file
 # TclFinalizeEncodingSubsystem is not currently tested
 
-test encoding-1.1 {Tcl_GetEncoding: system encoding} {
+test encoding-1.1 {Tcl_GetEncoding: system encoding} {testencoding} {
     testencoding create foo toutf fromutf
     set old [encoding system]
     encoding system foo
@@ -36,7 +42,7 @@ test encoding-1.1 {Tcl_GetEncoding: system encoding} {
     testencoding delete foo
     set x
 } {{fromutf }}
-test encoding-1.2 {Tcl_GetEncoding: existing encoding} {
+test encoding-1.2 {Tcl_GetEncoding: existing encoding} {testencoding} {
     testencoding create foo toutf fromutf
     set x {}
     encoding convertto foo abcd
@@ -51,7 +57,7 @@ test encoding-1.3 {Tcl_GetEncoding: load encoding} {
 test encoding-2.1 {Tcl_FreeEncoding: refcount == 0} {
     encoding convertto jis0208 \u4e4e
 } {8C}
-test encoding-2.2 {Tcl_FreeEncoding: refcount != 0} {
+test encoding-2.2 {Tcl_FreeEncoding: refcount != 0} {testencoding} {
     set system [encoding system]
     set path [testencoding path]
     encoding system jis0208		;# incr ref count
@@ -80,7 +86,7 @@ test encoding-3.2 {Tcl_GetEncodingName, non-null} {
     set x
 } {jis0208}
 
-test encoding-4.1 {Tcl_GetEncodingNames} {pcOnly} {
+test encoding-4.1 {Tcl_GetEncodingNames} {pcOnly testencoding} {
     file mkdir tmp/encoding
     close [open tmp/encoding/junk.enc w]
     close [open tmp/encoding/junk2.enc w]
@@ -93,7 +99,7 @@ test encoding-4.1 {Tcl_GetEncodingNames} {pcOnly} {
     file delete -force tmp
     set x
 } {junk utf-8 cp1252 junk2 identity unicode iso8859-1}
-test encoding-4.1 {Tcl_GetEncodingNames} {unixOnly} {
+test encoding-4.1 {Tcl_GetEncodingNames} {unixOnly testencoding} {
     file mkdir tmp/encoding
     close [open tmp/encoding/junk.enc w]
     close [open tmp/encoding/junk2.enc w]
@@ -122,7 +128,7 @@ test encoding-5.2 {Tcl_SetSystemEncoding: test ref count} {
     string compare $old [encoding system]
 } {0}
 
-test encoding-6.1 {Tcl_CreateEncoding: new} {
+test encoding-6.1 {Tcl_CreateEncoding: new} {testencoding} {
     testencoding create foo {toutf 1} {fromutf 2}
     set x {}
     encoding convertfrom foo abcd
@@ -130,7 +136,7 @@ test encoding-6.1 {Tcl_CreateEncoding: new} {
     testencoding delete foo
     set x
 } {{toutf 1} {fromutf 2}}
-test encoding-6.2 {Tcl_CreateEncoding: replace encoding} {
+test encoding-6.2 {Tcl_CreateEncoding: replace encoding} {testencoding} {
     testencoding create foo {toutf a} {fromutf b}
     set x {}
     encoding convertfrom foo abcd
@@ -193,7 +199,7 @@ test encoding-10.1 {Tcl_UtfToExternal} {
     set x
 } "ab\x8c\xc1g"
 
-test encoding-11.1 {LoadEncodingFile: unknown encoding} {
+test encoding-11.1 {LoadEncodingFile: unknown encoding} {testencoding} {
     set system [encoding system]
     set path [testencoding path]
     encoding system iso8859-1
@@ -215,7 +221,7 @@ test encoding-11.4 {LoadEncodingFile: multi-byte} {
 test encoding-11.5 {LoadEncodingFile: escape file} {
     encoding convertto iso2022 \u4e4e
 } "\x1b(B\x1b$@8C"
-test encoding-11.6 {LoadEncodingFile: invalid file} {
+test encoding-11.6 {LoadEncodingFile: invalid file} {testencoding} {
     set system [encoding system]
     set path [testencoding path]
     encoding system identity
@@ -298,6 +304,7 @@ test encoding-22.1 {EscapeFromUtfProc} {
 # cleanup
 ::tcltest::cleanupTests
 return
+
 
 
 

@@ -10,7 +10,7 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 #
-# RCS: @(#) $Id: security.test,v 1.1.2.3 1999/03/23 20:06:53 hershey Exp $
+# RCS: @(#) $Id: security.test,v 1.1.2.4 1999/03/24 02:49:39 hershey Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     source [file join [pwd] [file dirname [info script]] defs.tcl]
@@ -40,6 +40,7 @@ test sec-1.1 {tcl_endOfPreviousWord} {
 # cleanup
 ::tcltest::cleanupTests
 return
+
 
 
 

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: format.test,v 1.1.2.5 1999/03/23 20:06:25 hershey Exp $
+# RCS: @(#) $Id: format.test,v 1.1.2.6 1999/03/24 02:49:11 hershey Exp $
 
 if {[info commands test] != "test"} {
     source defs
@@ -485,6 +485,7 @@ catch {unset c}
 catch {unset d}
 ::tcltest::cleanupTests
 return
+
 
 
 

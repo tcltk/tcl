@@ -10,7 +10,7 @@
 # Copyright (c) 1997 by Sun Microsystems, Inc.  All rights reserved.
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 #
-# RCS: @(#) $Id: registry.test,v 1.1.2.6 1999/03/23 20:06:50 hershey Exp $
+# RCS: @(#) $Id: registry.test,v 1.1.2.7 1999/03/24 02:49:36 hershey Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     source [file join [pwd] [file dirname [info script]] defs.tcl]
@@ -519,6 +519,7 @@ test registry-11.3 {SetValue: failure} {pcOnly nonPortable english} {
 unset hostname
 ::tcltest::cleanupTests
 return
+
 
 
 

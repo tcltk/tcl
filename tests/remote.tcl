@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: remote.tcl,v 1.1.2.2 1999/03/23 20:06:50 hershey Exp $
+# RCS: @(#) $Id: remote.tcl,v 1.1.2.3 1999/03/24 02:49:37 hershey Exp $
 
 # Initialize message delimitor
 
@@ -159,6 +159,7 @@ if {[catch {set serverSocket \
 } else {
     vwait __server_wait_variable__
 }
+
 
 
 

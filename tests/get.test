@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: get.test,v 1.1.2.4 1999/03/23 20:06:26 hershey Exp $
+# RCS: @(#) $Id: get.test,v 1.1.2.5 1999/03/24 02:49:12 hershey Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     source [file join [pwd] [file dirname [info script]] defs.tcl]
@@ -96,6 +96,7 @@ test get-2.4 {Tcl_GetInt procedure} {nonPortable} {
 # cleanup
 ::tcltest::cleanupTests
 return
+
 
 
 

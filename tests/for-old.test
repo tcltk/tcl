@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: for-old.test,v 1.1.2.4 1999/03/23 20:06:23 hershey Exp $
+# RCS: @(#) $Id: for-old.test,v 1.1.2.5 1999/03/24 02:49:09 hershey Exp $
 
 if {[string compare test [info procs test]] == 1} then {source defs}
 
@@ -68,6 +68,7 @@ test for-old-1.9 {for tests} {
 # cleanup
 ::tcltest::cleanupTests
 return
+
 
 
 

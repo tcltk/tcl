@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: winConsole.test,v 1.1.2.1 1999/03/24 00:04:30 redman Exp $
+# RCS: @(#) $Id: winConsole.test,v 1.1.2.2 1999/03/24 02:49:51 hershey Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     source [file join [pwd] [file dirname [info script]] defs.tcl]
@@ -48,3 +48,4 @@ test winConsole-1.1 {Console file channel: non-blocking gets} \
 
 ::tcltest::cleanupTests
 return
+
