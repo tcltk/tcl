@@ -1,3 +1,10 @@
+2001-09-09  David Gravereaux <davygrvy@pobox.com>
+
+	* generic/tcl.h:
+	* generic/tclPlatDecls.h:  Reminder from David Cuthbert <dacut@kanga.org>
+	that I hadn't finished the Borland compatibility stuff.
+	[Patch: 436116]
+
 2001-09-09  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* tests/cmdAH.test: Modify cmdAH-20.5 and cmdAH-24.8
