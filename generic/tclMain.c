@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMain.c,v 1.17 2002/01/25 20:40:55 dgp Exp $
+ * RCS: @(#) $Id: tclMain.c,v 1.18 2002/02/28 00:53:32 dgp Exp $
  */
 
 #include "tcl.h"
@@ -353,6 +353,11 @@ Tcl_Main(argc, argv, appInitProc)
 	        break;
 	    }
 	}
+	if (Tcl_IsShared(commandPtr)) {
+	    Tcl_DecrRefCount(commandPtr);
+	    commandPtr = Tcl_DuplicateObj(commandPtr);
+	    Tcl_IncrRefCount(commandPtr);
+	}
         length = Tcl_GetsObj(inChannel, commandPtr);
 	if (length < 0) {
 	    if (Tcl_InputBlocked(inChannel)) {
@@ -380,6 +385,11 @@ Tcl_Main(argc, argv, appInitProc)
          * Add the newline removed by Tcl_GetsObj back to the string.
          */
 
+	if (Tcl_IsShared(commandPtr)) {
+	    Tcl_DecrRefCount(commandPtr);
+	    commandPtr = Tcl_DuplicateObj(commandPtr);
+	    Tcl_IncrRefCount(commandPtr);
+	}
 	Tcl_AppendToObj(commandPtr, "\n", 1);
 	if (!TclObjCommandComplete(commandPtr)) {
 	    prompt = PROMPT_CONTINUE;
@@ -401,11 +411,13 @@ Tcl_Main(argc, argv, appInitProc)
 	    }
 	} else if (tty) {
 	    resultPtr = Tcl_GetObjResult(interp);
+	    Tcl_IncrRefCount(resultPtr);
 	    Tcl_GetStringFromObj(resultPtr, &length);
 	    if ((length > 0) && outChannel) {
 		Tcl_WriteObj(outChannel, resultPtr);
 		Tcl_WriteChars(outChannel, "\n", 1);
 	    }
+	    Tcl_DecrRefCount(resultPtr);
 	}
 	if (mainLoopProc != NULL) {
 
@@ -446,6 +458,7 @@ Tcl_Main(argc, argv, appInitProc)
 		Tcl_LinkVar(interp, "tcl_interactive", (char *) &tty,
 			TCL_LINK_BOOLEAN);
 		prompt = isPtr->prompt;
+		commandPtr = isPtr->commandPtr;
 		if (isPtr->input != (Tcl_Channel) NULL) {
 		    Tcl_DeleteChannelHandler(isPtr->input, StdinProc,
 			    (ClientData) isPtr);
@@ -573,6 +586,11 @@ StdinProc(clientData, mask)
     Tcl_Interp *interp = isPtr->interp;
     int code, length;
 
+    if (Tcl_IsShared(commandPtr)) {
+	Tcl_DecrRefCount(commandPtr);
+	commandPtr = Tcl_DuplicateObj(commandPtr);
+	Tcl_IncrRefCount(commandPtr);
+    }
     length = Tcl_GetsObj(chan, commandPtr);
     if (length < 0) {
 	if (Tcl_InputBlocked(chan)) {
@@ -590,6 +608,11 @@ StdinProc(clientData, mask)
 	return;
     }
 
+    if (Tcl_IsShared(commandPtr)) {
+	Tcl_DecrRefCount(commandPtr);
+	commandPtr = Tcl_DuplicateObj(commandPtr);
+	Tcl_IncrRefCount(commandPtr);
+    }
     Tcl_AppendToObj(commandPtr, "\n", 1);
     if (!TclObjCommandComplete(commandPtr)) {
         isPtr->prompt = PROMPT_CONTINUE;
@@ -624,11 +647,13 @@ StdinProc(clientData, mask)
     } else if (isPtr->tty) {
 	Tcl_Obj *resultPtr = Tcl_GetObjResult(interp);
 	Tcl_Channel outChannel = Tcl_GetStdChannel(TCL_STDOUT);
+	Tcl_IncrRefCount(resultPtr);
 	Tcl_GetStringFromObj(resultPtr, &length);
 	if ((length >0) && (outChannel != (Tcl_Channel) NULL)) {
 	    Tcl_WriteObj(outChannel, resultPtr);
 	    Tcl_WriteChars(outChannel, "\n", 1);
 	}
+	Tcl_DecrRefCount(resultPtr);
     }
 
     /*
