@@ -1,0 +1,56 @@
+1998-11-17    <stanton@GASPODE>
+
+	* tclScan.c: moved "scan" implementation out of tclCmdMZ.c and
+	added Unicode support.  This required a complete reimplementation
+	of the command to avoid using scanf(), which isn't Unicode aware.
+	Two new features were added in the process: %n to return the
+	current number of characters consumed, and XPG3-style %n$ argument
+	order specifiers similar to those provided by the "format"
+	command. [Bug: 833]
+
+	* tclAlloc.c: changed so allocated memory is always 8-byte aligned
+	to improve memory performance and to ensure that it will work on
+	systems that don't like accessing 4-byte aligned values
+	(e.g. Solaris and HP-UX). [Bug: 834]
+
+1998-11-06    <stanton@GASPODE>
+
+	* tclVar.c (TclGetIndexedScalar): Fixed bug 796, var name was
+	getting lost before being passed to CallTraces.
+
+1998-10-21    <stanton@GASPODE>
+
+	* added "encoding" command
+	
+	* Moved internal regexp declarations from tclInt.h to tclRegexp.h
+
+	* integrated regexp updates from Henry Spencer
+
+1998-10-15    <stanton@GASPODE>
+
+	* tclUtf.c: added Unicode character table support
+
+	* tclInt.h: added TclUniCharIsWordChar
+
+	* tclCmdMZ.c (Tcl_StringObjCmd): added "totitle" subcommand,
+	changed "wordend" and "wordstart" to properly handle Unicode word
+	characters and connector punctuation
+
+1998-10-05    <stanton@GASPODE>
+
+	* tclCompile.c (TclCompileScript): changed to avoid modifying the
+	input string in place because name lookup operations could have
+	arbitrary side effects
+
+	* tclInterp.c: added guard against deleting current interpreter
+
+	* tclFileName.c: added warnings around code that modifies strings
+	in place
+
+	* tclExecute.c: fixed off-by-one copying error, fixed merge bugs
+
+	* tclEvent.c: changed so USE_TCLALLOC is tested for value instead
+	of definition
+
+	* tclCompCmds.c: replaced SCCS strings, added warnings around code
+	that modifies strings in place

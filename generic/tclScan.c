@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclScan.c,v 1.1.2.1 1998/11/16 20:45:22 stanton Exp $
+ * RCS: @(#) $Id: tclScan.c,v 1.1.2.2 1998/11/18 04:15:46 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -50,7 +50,8 @@ typedef struct CharSet {
  * Declarations for functions used only in this file.
  */
 
-static int	CharInSet _ANSI_ARGS_((CharSet *cset, Tcl_UniChar ch));
+static char *	BuildCharSet _ANSI_ARGS_((CharSet *cset, char *format));
+static int	CharInSet _ANSI_ARGS_((CharSet *cset, int ch));
 static void	ReleaseCharSet _ANSI_ARGS_((CharSet *cset));
 static int	ValidateFormat _ANSI_ARGS_((Tcl_Interp *interp, char *format,
 		    int numVars));
@@ -107,9 +108,10 @@ BuildCharSet(cset, format)
 	end += Tcl_UtfToUniChar(end, &ch);
     }
 
-    cset->chars = ckalloc(sizeof(Tcl_UniChar) * (end - format - 1));
+    cset->chars = (Tcl_UniChar *) ckalloc(sizeof(Tcl_UniChar)
+	    * (end - format - 1));
     if (nranges > 0) {
-	cset->ranges = ckalloc(sizeof(struct Range)*nranges);
+	cset->ranges = (struct Range *) ckalloc(sizeof(struct Range)*nranges);
     } else {
 	cset->ranges = NULL;
     }
@@ -145,8 +147,18 @@ BuildCharSet(cset, format)
 		cset->chars[cset->nchars++] = ch;
 	    } else {
 		format += Tcl_UtfToUniChar(format, &ch);
-		cset->ranges[cset->nranges].start = start;
-		cset->ranges[cset->nranges].end = ch;
+
+		/*
+		 * Check to see if the range is in reverse order.
+		 */
+
+		if (start < ch) {
+		    cset->ranges[cset->nranges].start = start;
+		    cset->ranges[cset->nranges].end = ch;
+		} else {
+		    cset->ranges[cset->nranges].start = ch;
+		    cset->ranges[cset->nranges].end = start;
+		}		    
 		cset->nranges++;
 	    }
 	} else {
@@ -174,10 +186,12 @@ BuildCharSet(cset, format)
  */
 
 static int
-CharInSet(cset, ch)
+CharInSet(cset, c)
     CharSet *cset;
-    Tcl_UniChar ch;
+    int c;			/* Character to test, passed as int because
+				 * of non-ANSI prototypes. */
 {
+    Tcl_UniChar ch = (Tcl_UniChar) c;
     int i, match = 0;
     for (i = 0; i < cset->nchars; i++) {
 	if (cset->chars[i] == ch) {
@@ -188,7 +202,7 @@ CharInSet(cset, ch)
     if (!match) {
 	for (i = 0; i < cset->nranges; i++) {
 	    if ((cset->ranges[i].start <= ch)
-		    || (ch <= cset->ranges[i].end)) {
+		    && (ch <= cset->ranges[i].end)) {
 		match = 1;
 		break;
 	    }
@@ -251,7 +265,6 @@ ValidateFormat(interp, format, numVars)
     char *end;
     Tcl_UniChar ch;
     int *nassign = (int*)ckalloc(sizeof(int) * numVars);
-    int code = TCL_OK;
     int objIndex;
 
     /*
@@ -465,14 +478,14 @@ Tcl_ScanObjCmd(dummy, interp, objc, objv)
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
     char *format;
-    int numVars;
+    int numVars, nconversions;
     int objIndex, offset, i, value, result, code;
     char *string, *end, *baseString;
-    char op;
-    int base;
+    char op = 0;
+    int base = 0;
     int underflow = 0;
     size_t width;
-    long (*fn)();
+    long (*fn)() = NULL;
     Tcl_UniChar ch, sch;
     Tcl_Obj **objs, *objPtr;
     int flags;
@@ -516,6 +529,7 @@ Tcl_ScanObjCmd(dummy, interp, objc, objv)
      */
 
     objIndex = 0;
+    nconversions = 0;
     while (*format != '\0') {
 	format += Tcl_UtfToUniChar(format, &ch);
 
@@ -602,6 +616,7 @@ Tcl_ScanObjCmd(dummy, interp, objc, objv)
 		    Tcl_IncrRefCount(objPtr);
 		    objs[objIndex++] = objPtr;
 		}
+		nconversions++;
 		continue;
 
 	    case 'd':
@@ -723,7 +738,7 @@ Tcl_ScanObjCmd(dummy, interp, objc, objv)
 		format = BuildCharSet(&cset, format);
 		while (*end != '\0') {
 		    offset = Tcl_UtfToUniChar(end, &sch);
-		    if (!CharInSet(&cset, sch)) {
+		    if (!CharInSet(&cset, (int)sch)) {
 			break;
 		    }
 		    end += offset;
@@ -853,6 +868,9 @@ Tcl_ScanObjCmd(dummy, interp, objc, objv)
 		 */
 
 		if (flags & SCAN_NODIGITS) {
+		    if (*string == '\0') {
+			underflow = 1;
+		    }
 		    goto done;
 		} else if (end[-1] == 'x' || end[-1] == 'X') {
 		    end--;
@@ -952,6 +970,9 @@ Tcl_ScanObjCmd(dummy, interp, objc, objv)
 			 * There were no digits at all so scanning has
 			 * failed and we are done.
 			 */
+			if (*string == '\0') {
+			    underflow = 1;
+			}
 			goto done;
 		    }
 
@@ -981,6 +1002,7 @@ Tcl_ScanObjCmd(dummy, interp, objc, objv)
 		}
 		break;
 	}
+	nconversions++;
     }
 
     done:
@@ -1002,6 +1024,9 @@ Tcl_ScanObjCmd(dummy, interp, objc, objv)
     }
     ckfree((char*) objs);
     if (code == TCL_OK) {
+	if (underflow && (nconversions == 0)) {
+	    result = -1;
+	}
 	Tcl_SetObjResult(interp, Tcl_NewIntObj(result));
     }
     return code;

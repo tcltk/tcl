@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.1.2.10 1998/11/11 04:08:12 stanton Exp $
+RCS: @(#) $Id: changes,v 1.1.2.11 1998/11/18 04:15:44 stanton Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -3988,3 +3988,10 @@ in %s format strings. (stanton)
 ("-line", "-lineanchor", and "-linestop") that control how regular
 expressions treat line breaks. See the regexp manual entry for more
 details. (stanton)
+
+11/17/98 (bug fix) "scan" now correctly handles Unicode
+characters. (stanton)
+
+11/17/98 (new feature) "scan" now supports XPG3 position specifiers
+and the "%n" conversion character.  See the "scan" manual entry for
+more details. (stanton)
