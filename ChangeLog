@@ -1,3 +1,9 @@
+2004-03-17  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* doc/lsearch.n: Improved examples on the advanced capabilities of
+	lsearch (with the right options, set element removal can be done)
+	following discussion on tkchat.
+
 2004-03-16  Don Porter  <dgp@users.sourceforge.net>
 
 	* doc/catch.n:	Compiled [catch] no longer fails to catch syntax
