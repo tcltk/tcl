@@ -11,7 +11,7 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 # 
-# RCS: @(#) $Id: defs.tcl,v 1.1.2.5 1999/03/24 19:26:02 hershey Exp $
+# RCS: @(#) $Id: defs.tcl,v 1.1.2.6 1999/03/24 23:53:44 hershey Exp $
 
 # Initialize wish shell
 if {[info exists tk_version]} {
@@ -74,6 +74,10 @@ namespace eval tcltest {
 
     variable filesMade {}
     variable filesExisted {}
+
+    # ::tcltest::numTests will store test files as indices and the list
+    # of files (that should not have been) left behind by the test files.
+    array set ::tcltest::createdNewFiles {}
 
     # initialize ::tcltest::numTests array to keep track fo the number of
     # tests that pass, fial, and are skipped.
@@ -337,8 +341,8 @@ proc ::tcltest::processCmdLineArgs {} {
     }
     
     # Allow for 1-char abbreviations, where applicable (e.g., -match == -m).
-    # Note that -verbose cannot be abbreviated to -v in wish because it conflicts
-    # with the wish option -visual.
+    # Note that -verbose cannot be abbreviated to -v in wish because it
+    # conflicts with the wish option -visual.
     foreach arg {-verbose -match -skip -constraints} {
 	set abbrev [string range $arg 0 1]
 	if {([info exists flag($abbrev)]) && \
@@ -399,15 +403,35 @@ proc ::tcltest::processCmdLineArgs {} {
 #
 
 proc ::tcltest::cleanupTests {{calledFromAllFile 0}} {
-    # remove files and directories created by the tests
-    foreach file $::tcltest::filesMade {
-	if {[file exists $file]} {
-	    catch {file delete -force $file}
-	    puts "removed $file"
+    set tail [file tail [info script]]
+
+    # Remove files and directories created by the :tcltest::makeFile and
+    # ::tcltest::makeDirectory procedures.
+    # Record the names of files in ::tcltest::workingDir that were not
+    # pre-existing, and associate them with the test file that created them.
+    if {!$calledFromAllFile} {
+
+	foreach file $::tcltest::filesMade {
+	    if {[file exists $file]} {
+		#catch {file delete -force $file}
+	    }
+	}
+	set currentFiles {}
+	foreach file [glob -nocomplain [file join $::tcltest::workingDir *]] {
+	    lappend currentFiles [file tail $file]
+	}
+	set newFiles {}
+	foreach file $currentFiles {
+	    if {[lsearch -exact $::tcltest::filesExisted $file] == -1} {
+		lappend newFiles $file
+	    }
+	}
+	set ::tcltest::filesExisted $currentFiles
+	if {[llength $newFiles] > 0} {
+	    set ::tcltest::createdNewFiles($tail) $newFiles
 	}
     }
 
-    set tail [file tail [info script]]
     if {$calledFromAllFile || $::tcltest::testSingleFile} {
 	# print stats
 	puts -nonewline stdout "$tail:"
@@ -438,27 +462,19 @@ proc ::tcltest::cleanupTests {{calledFromAllFile 0}} {
 	    }
 	}
 
-	# report the names of files in ::tcltest::workingDir that were not
-	# pre-existing.
-
-	set currentFiles {}
-	foreach file [glob -nocomplain [file join $::tcltest::workingDir *]] {
-	    lappend currentFiles [file tail $file]
-	}
-	set filesNew {}
-	foreach file $currentFiles {
-	    if {[lsearch -exact $::tcltest::filesExisted $file] == -1} {
-		lappend filesNew $file
-		puts "new: $file"
+	# report the names of test files in ::tcltest::createdNewFiles, and
+	# reset the array to be empty.
+	set testFilesThatTurded [lsort [array names ::tcltest::createdNewFiles]]
+	if {[llength $testFilesThatTurded] > 0} {
+	    puts stdout "Warning: test files left files behind:"
+	    foreach testFile $testFilesThatTurded {
+		puts "\t$testFile:\t$::tcltest::createdNewFiles($testFile)"
+		unset ::tcltest::createdNewFiles($testFile)
 	    }
-	}
-	if {[llength $filesNew] > 0} {
-	    puts stdout "Warning: created files:\t$filesNew"
 	}
 
 	# reset filesMade, filesExisted, and numTests
 	set ::tcltest::filesMade {}
-	set ::tcltest::filesExisted $currentFiles
 	foreach index [list "Total" "Passed" "Skipped" "Failed"] {
 	    set ::tcltest::numTests($index) 0
 	}
@@ -883,7 +899,8 @@ if {[info exists tk_version]} {
     set ::tcltest::tktest [info nameofexecutable]
     if {$::tcltest::tktest == "{}"} {
 	set ::tcltest::tktest {}
-	puts stdout "Unable to find tktest executable, skipping multiple process tests."
+	puts stdout \
+		"Unable to find tktest executable, skipping multiple process tests."
     }
 
     # Create background process
