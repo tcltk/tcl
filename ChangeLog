@@ -1,3 +1,10 @@
+1999-09-21  Jennifer Hom  <jenn@scriptics.com>
+
+	* library/tcltest1.0/tcltest.tcl: Applied patches sent in by
+	Andreas Kupries to fix typos in comments and ::tcltest::grep,
+	fix hook redefinition problems, and change "string compare" to
+	"string equal." [Bug: 2836, 2837, 2839, 2840]
+
 1999-09-20  Jeff Hobbs  <hobbs@scriptics.com>
 
 	* tests/env.test:

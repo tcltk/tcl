@@ -12,7 +12,7 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 # 
-# RCS: @(#) $Id: tcltest.tcl,v 1.13 1999/09/01 23:15:41 jenn Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.14 1999/09/21 23:11:24 jenn Exp $
 
 package provide tcltest 1.0
 
@@ -26,7 +26,7 @@ namespace eval tcltest {
     # Export the public tcltest procs
     set procList [list test cleanupTests saveState restoreState \
 	    normalizeMsg makeFile removeFile makeDirectory removeDirectory \
-	    viewFile bytestring safeFetch threadReap getMatchingTestFiles]
+	    viewFile bytestring safeFetch threadReap getMatchingFiles]
     foreach proc $procList {
 	namespace export $proc
     }
@@ -68,7 +68,7 @@ namespace eval tcltest {
     }
 
     # debug output doesn't get printed by default; debug level 1 spits
-    # up only the tets that were skipped because they didn't match or were 
+    # up only the tests that were skipped because they didn't match or were 
     # specifically skipped.  A debug level of 2 would spit up the tcltest
     # variables and flags provided; a debug level of 3 causes some additional
     # output regarding operations of the test harness.  The tcltest package
@@ -125,7 +125,7 @@ namespace eval tcltest {
     }
 
     # initialize ::tcltest::numTests array to keep track fo the number of
-    # tests that pass, fial, and are skipped.
+    # tests that pass, fail, and are skipped.
 
     if {![info exists numTests]} {
 	variable numTests
@@ -160,7 +160,7 @@ namespace eval tcltest {
 	variable limitConstraints false
     }
 
-    # tests that use thread need to know which is the main thread
+    # tests that use threads need to know which is the main thread
 
     if {![info exists mainThread]} {
 	variable mainThread 1
@@ -270,7 +270,7 @@ namespace eval tcltest {
 #       previously exist - otherwise, it just increments it.
 
 proc ::tcltest::AddToSkippedBecause { constraint } {
-    # add the constraint to the list of constraints the kept tests
+    # add the constraint to the list of constraints that kept tests
     # from running
 
     if {[info exists ::tcltest::skippedBecause($constraint)]} {
@@ -333,7 +333,9 @@ proc ::tcltest::PrintError {errorMsg} {
     return
 }
 
-proc ::tcltest::initConstraintsHook {} {}
+if {[namespace inscope ::tcltest info procs initConstraintsHook] == {}} {
+    proc ::tcltest::initConstraintsHook {} {}
+}
 
 # ::tcltest::initConstraints --
 #
@@ -400,9 +402,10 @@ proc ::tcltest::initConstraints {} {
     set ::tcltest::testConstraints(win32s) [string equal $tcl_platform(os) \
 	    "Win32s"]
 
-    # The following Constraints switches are used to mark tests that should work,
-    # but have been temporarily disabled on certain platforms because they don't
-    # and we haven't gotten around to fixing the underlying problem.
+    # The following Constraints switches are used to mark tests that should
+    # work, but have been temporarily disabled on certain platforms because
+    # they don't and we haven't gotten around to fixing the underlying
+    # problem. 
 
     set ::tcltest::testConstraints(tempNotPc) \
 	    [expr {!$::tcltest::testConstraints(pc)}]
@@ -498,7 +501,7 @@ proc ::tcltest::initConstraints {} {
     # to the "e" format of floating-point numbers.
 
     set ::tcltest::testConstraints(eformat) 1
-    if {[string compare "[format %g 5e-5]" "5e-05"] != 0} {
+    if {![string equal "[format %g 5e-5]" "5e-05"]} {
 	set ::tcltest::testConstraints(eformat) 0
     }
 
@@ -611,7 +614,9 @@ proc ::tcltest::initConstraints {} {
 #       Hook used for customization of display of usage information.
 #
 
-proc ::tcltest::PrintUsageInfoHook {} {}
+if {[namespace inscope ::tcltest info procs PrintUsageInfoHook] == {}} {
+    proc ::tcltest::PrintUsageInfoHook {} {}
+}
 
 # ::tcltest::PrintUsageInfo
 #
@@ -673,7 +678,9 @@ proc ::tcltest::PrintUsageInfo {} {
 #       processed by ::tcltest::processCmdLineArgs. 
 #
 
-proc ::tcltest::processCmdLineArgsAddFlagsHook {} {}
+if {[namespace inscope ::tcltest info procs processCmdLineArgsAddFlagsHook] == {}} {
+    proc ::tcltest::processCmdLineArgsAddFlagsHook {} {}
+}
 
 # ::tcltest::processCmdLineArgsHook --
 #
@@ -684,7 +691,9 @@ proc ::tcltest::processCmdLineArgsAddFlagsHook {} {}
 #	flags      The flags that have been pulled out of argv
 #
 
-proc ::tcltest::processCmdLineArgsHook {flag} {}
+if {[namespace inscope ::tcltest info procs processCmdLineArgsHook] == {}} {
+    proc ::tcltest::processCmdLineArgsHook {flag} {}
+}
 
 # ::tcltest::processCmdLineArgs --
 #
@@ -817,9 +826,9 @@ proc ::tcltest::processCmdLineArgs {} {
     if {[info exists flag(-tmpdir)]} {
 	set ::tcltest::temporaryDirectory $flag(-tmpdir)
 
-	if {[string compare \
+	if {![string equal \
 		[file pathtype $::tcltest::temporaryDirectory] \
-		"absolute"] != 0} { 
+		"absolute"]} { 
 	    set ::tcltest::temporaryDirectory [file join [pwd] \
 		    $::tcltest::temporaryDirectory] 
 	}
@@ -859,7 +868,7 @@ proc ::tcltest::processCmdLineArgs {} {
 
     if {[info exists flag(-outfile)]} {
 	set tmp $flag(-outfile)
-	if {[string compare [file pathtype $tmp] "absolute"] != 0} {
+	if {![string equal [file pathtype $tmp] "absolute"]} {
 	    set tmp [file join $::tcltest::temporaryDirectory $tmp]
 	}
 	set ::tcltest::outputChannel [open $tmp w]
@@ -867,7 +876,7 @@ proc ::tcltest::processCmdLineArgs {} {
 
     if {[info exists flag(-errfile)]} {
 	set tmp $flag(-errfile)
-	if {[string compare [file pathtype $tmp] "absolute"] != 0} {
+	if {![string equal [file pathtype $tmp] "absolute"]} {
 	    set tmp [file join $::tcltest::temporaryDirectory $tmp]
 	}
 	set ::tcltest::errorChannel [open $tmp w]
@@ -1116,7 +1125,9 @@ proc ::tcltest::cleanupTests {{calledFromAllFile 0}} {
 #       additional things that should be done at cleanup.
 #
 
-proc ::tcltest::cleanupTestsHook {} {}
+if {[namespace inscope ::tcltest info procs cleanupTestsHook] == {}} {
+    proc ::tcltest::cleanupTestsHook {} {}
+}
 
 # test --
 #
@@ -1255,7 +1266,7 @@ proc ::tcltest::test {name description script expectedAnswer args} {
     }
 
     set code [catch {uplevel $script} actualAnswer]
-    if {([string compare $actualAnswer $expectedAnswer] == 0) && ($code == 0)} {
+    if {([string equal $actualAnswer $expectedAnswer]) && ($code == 0)} {
 	incr ::tcltest::numTests(Passed)
 	if {[string first p $::tcltest::verbose] != -1} {
 	    puts $::tcltest::outputChannel "++++ $name PASSED"
@@ -1325,7 +1336,7 @@ proc ::tcltest::test {name description script expectedAnswer args} {
     }
 }
 
-# ::tcltest::getMatchingTestFiles
+# ::tcltest::getMatchingFiles
 #
 #       Looks at the patterns given to match and skip files
 #       and uses them to put together a list of the tests that will be run.
@@ -1572,7 +1583,7 @@ proc ::tcltest::viewFile {name} {
 # Example:
 #   grep {regexp a} $someList   
 #
-proc ::tcltest:grep { expression searchList } {
+proc ::tcltest::grep { expression searchList } {
     foreach element $searchList {
 	if {[regsub -all CURRENT_ELEMENT $expression $element \
 		newExpression] == 0} { 
