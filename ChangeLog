@@ -1,3 +1,9 @@
+2003-09-17  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* tclPathObj.c: fix to test-suite problem introduced by the bug 
+	fix below.  No problem in ordinary code, just test suite code
+	which manually adjusts tclPlatform. [Bug 808247]
+
 2003-09-16  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* doc/filename.n: documentation of Windows-specific feature as
