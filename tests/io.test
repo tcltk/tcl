@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: io.test,v 1.18 2001/05/23 23:22:43 hobbs Exp $
+# RCS: @(#) $Id: io.test,v 1.19 2001/07/17 18:46:47 andreas_kupries Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -4723,6 +4723,17 @@ test io-38.2 {Tcl_SetChannelBufferSize, Tcl_GetChannelBufferSize} {
     set l
 } {4096 10000 4096 4096 4096 100000 4096}
 
+test io-38.3 {Tcl_SetChannelBufferSize, changing buffersize between reads} {
+    # This test crashes the interp if Bug #427196 is not fixed
+
+    set chan [open [info script] r]
+    fconfigure $chan -buffersize 10
+    set var [read $chan 2]
+    fconfigure $chan -buffersize 32
+    append var [read $chan]
+    close $chan
+} {}
+
 # Test Tcl_SetChannelOption, Tcl_GetChannelOption
 
 test io-39.1 {Tcl_GetChannelOption} {
@@ -6814,7 +6825,6 @@ test io-59.1 {Thread reference of channels} {
     close $f
     set result
 } [testmainthread]
-
 
 
 # cleanup
