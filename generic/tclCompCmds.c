@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.12 2001/08/28 22:05:01 hobbs Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.13 2001/09/01 00:51:31 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -1513,7 +1513,7 @@ TclCompileIncrCmd(interp, parsePtr, envPtr)
 	    int numBytes = incrTokenPtr[1].size;
 	    char savedChar = word[numBytes];
 	    long n;
-	
+
 	    /*
 	     * Note there is a danger that modifying the string could have
 	     * undesirable side effects.  In this case, TclLooksLikeInt and
@@ -1817,6 +1817,88 @@ TclCompileLindexCmd(interp, parsePtr, envPtr)
 
     envPtr->maxStackDepth = depth;
     TclEmitOpcode(INST_LIST_INDEX, envPtr);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclCompileListCmd --
+ *
+ *	Procedure called to compile the "list" command.
+ *
+ * Results:
+ *	The return value is a standard Tcl result, which is normally TCL_OK
+ *	unless there was an error while parsing string. If an error occurs
+ *	then the interpreter's result contains a standard error message. If
+ *	complation fails because the command requires a second level of
+ *	substitutions, TCL_OUT_LINE_COMPILE is returned indicating that the
+ *	command should be compiled "out of line" by emitting code to
+ *	invoke its command procedure (Tcl_ListObjCmd) at runtime.
+ *
+ *	envPtr->maxStackDepth is updated with the maximum number of stack
+ *	elements needed to execute the incr command.
+ *
+ * Side effects:
+ *	Instructions are added to envPtr to execute the "list" command
+ *	at runtime.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclCompileListCmd(interp, parsePtr, envPtr)
+    Tcl_Interp *interp;		/* Used for error reporting. */
+    Tcl_Parse *parsePtr;	/* Points to a parse structure for the
+				 * command created by Tcl_ParseCommand. */
+    CompileEnv *envPtr;		/* Holds resulting instructions. */
+{
+    /*
+     * If we're not in a procedure, don't compile.
+     */
+    if (envPtr->procPtr == NULL) {
+	return TCL_OUT_LINE_COMPILE;
+    }
+
+    envPtr->maxStackDepth = 0;
+    if (parsePtr->numWords == 1) {
+	/*
+	 * Empty args case
+	 */
+
+	TclEmitPush(TclRegisterLiteral(envPtr, "", 0, 0), envPtr);
+	envPtr->maxStackDepth = 1;
+    } else {
+	/*
+	 * Push the all values onto the stack.
+	 */
+	Tcl_Token *valueTokenPtr;
+	int i, code, numWords, depth = 0;
+
+	numWords = parsePtr->numWords;
+
+	valueTokenPtr = parsePtr->tokenPtr
+	    + (parsePtr->tokenPtr->numComponents + 1);
+	for (i = 1; i < numWords; i++) {
+	    if (valueTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
+		TclEmitPush(TclRegisterLiteral(envPtr,
+			valueTokenPtr[1].start, valueTokenPtr[1].size,
+			/*onHeap*/ 0), envPtr);
+		depth++;
+	    } else {
+		code = TclCompileTokens(interp, valueTokenPtr+1,
+			valueTokenPtr->numComponents, envPtr);
+		if (code != TCL_OK) {
+		    envPtr->maxStackDepth = depth;
+		    return code;
+		}
+		depth += envPtr->maxStackDepth;
+	    }
+	    valueTokenPtr = valueTokenPtr + (valueTokenPtr->numComponents + 1);
+	}
+	TclEmitInstInt4(INST_LIST, numWords - 1, envPtr);
+    }
+
     return TCL_OK;
 }
 
