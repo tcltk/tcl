@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.66 2002/12/04 13:09:24 vincentdarley Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.67 2002/12/06 23:22:08 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -643,7 +643,18 @@ TclFinalizeFilesystem() {
 	}
 	filesystemList = tmpFsRecPtr;
     }
-    /* Now filesystemList is NULL */
+    /*
+     * Now filesystemList is NULL.  Reset statics to original state.
+     */
+    statProcList = NULL;
+    accessProcList = NULL;
+    openFileChannelProcList = NULL;
+    filesystemList = &nativeFilesystemRecord;
+    filesystemIteratorsInProgress = 0;
+    filesystemWantToModify = 0;
+#ifdef TCL_THREADS
+    filesystemOkToModify = NULL;
+#endif
 }
 
 /*
