@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.53.2.12 2005/03/16 21:29:15 msofer Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.53.2.13 2005/03/17 01:29:50 msofer Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -282,38 +282,52 @@ FIXME
 #define TclVMWord TclPSizedInt 
 #define TclVMOpnd TclPSizedInt 
 
-#define PINT_MAX  0x8FFFFFFF
+/*
+ * Remark that the names correspond to the interpretation for wcodes, and are
+ * grossly misleading here:
+ *   - PINT_MAX is the max integer that can be stored as a single operand
+ *   - HPINT_MAX is the max to be stored as signed part in a 2-opnd
+ *     instruction
+ *   - HPUINT_MAX is the max to be stored as unsigned part in a 2-opnd
+ *     instruction 
+ */
+
+#define PINT_MAX  0x7FFFFF
 #define PINT_MIN (-PINT_MAX -1)
 
 #define HP_SHIFT  8
 #define HP_MASK   0xFF
 
 #define HPUINT_MAX 0xFF
-#define HPINT_MAX  0x8FFFFF
+#define HPINT_MAX  0x7FFF
 #define HPINT_MIN  (-HPINT_MAX-1)
 
 #define HP_STASH(full, n, u) \
     (full) = ((((TclPSizedInt) (n)) << HP_SHIFT) | (u))
 
 #define HP_EXTRACT(full, n, u)\
-    (n) = ((full) >> HP_SHIFT);\
-    (u) = ((full) &  HP_MASK)
+    (n) = (((TclPSizedInt)(full)) >> HP_SHIFT);\
+    (u) = (((TclPSizedInt)(full)) &  HP_MASK)
     
-#define TclVMGetInstAtPtr(p) (*(p) & HP_MASK)
-#define TclVMGetOpndAtPtr(p) (*(p) >> HP_SHIFT)
+#define TclVMGetInstAtPtr(p) \
+    (*((TclPSizedInt *)(p)) & HP_MASK)
+#define TclVMGetOpndAtPtr(p) \
+    (*((TclPSizedInt *)(p)) >> HP_SHIFT)
 
 #define TclVMStoreInstAtPtr(instruction, p) \
-    *(p) = ((*(p) & ~HP_MASK) | (instruction))
+    *(p) = ((*((TclPSizedInt *)(p)) & ~HP_MASK)\
+	 | (instruction))
 
 #define TclVMStoreOpndAtPtr(operand, p) \
-    *(p) = ((*(p) & HP_MASK) | ((operand) << HP_SHIFT))
+    *(p) = ((*((TclPSizedInt *)(p)) & HP_MASK) \
+         | (((TclPSizedInt) operand) << HP_SHIFT))
 
 #define TclVMGetInstAndOpAtPtr(p, instruction, operand) \
     (instruction) = TclVMGetInstAtPtr(p);\
     (operand)     = TclVMGetOpndAtPtr(p) 
 
 #define TclVMStoreWordAtPtr(instruction, operand, p) \
-    HP_STASH(*(p), (operand), (instruction))
+    HP_STASH(*((TclPSizedInt *)(p)), (operand), (instruction))
 
 #endif /* USE_WORDCODES */
 
