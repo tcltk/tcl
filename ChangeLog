@@ -1,3 +1,12 @@
+2001-11-06  David Gravereaux <davygrvy@pobox.com>
+
+	* win/rules.vc:
+	* win/makefile.vc: Dropped the NOMSVCRT macro and put it on the
+	option list instead.  It makes more sense to me this way as
+	NOMSVCRT=0 would only be the valid setting.  Fixed the dde and reg
+	extension for building static.  Improved, but not perfected, the
+	winhelp target.
+
 2001-11-07  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* win/README: Change minimum VC++ version to 5.X since
