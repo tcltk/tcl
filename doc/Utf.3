@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Utf.3,v 1.3 1999/04/30 22:45:01 stanton Exp $
+'\" RCS: @(#) $Id: Utf.3,v 1.4 1999/05/06 18:46:23 stanton Exp $
 '\" 
 .so man.macros
 .TH Utf 3 "8.1" Tcl "Tcl Library Procedures"
@@ -34,6 +34,12 @@ int
 .sp
 int
 \fBTcl_UniCharNcmp\fR(\fIuniStr, uniStr, num\fR)
+.sp
+int
+\fBTcl_UtfNcmp\fR(\fIsrc, src, num\fR)
+.sp
+int
+\fBTcl_UtfNcasecmp\fR(\fIsrc, src, num\fR)
 .sp
 int
 \fBTcl_UtfCharComplete\fR(\fIsrc, len\fR)
@@ -83,7 +89,7 @@ equal to 0.
 .AP "Tcl_DString" *dstPtr in/out
 A pointer to a previously-initialized \fBTcl_DString\fR.
 .AP size_t n in
-The number of Unicode characters to compare in \fBTcl_UniCharNcmp\fR.
+The number of characters to compare.
 .AP "CONST char" *start in
 Pointer to the beginning of a UTF-8 string.
 .AP int index in
@@ -150,6 +156,20 @@ according to the Unicode character ordering.  It returns an integer
 greater than, equal to,
 or less than 0 if the first string is greater than, equal to, or
 less than the second string respectively.
+.PP
+\fBTcl_UtfNcmp\fR corresponds to \fBstrncmp\fR for UTF-8 strings. It
+accepts two NULL-terminated UTF-8 strings and the number of characters
+to compare.  (Both strings are assumed to be at least \fIlen\fR
+characters long.)  \fBTcl_UtfNcmp\fR compares the two strings
+character-by-character according to the Unicode character ordering.
+It returns an integer greater than, equal to, or less than 0 if the
+first string is greater than, equal to, or less than the second string
+respectively.
+.PP
+\fBTcl_UtfNcasecmp\fR corresponds to \fBstrncasecmp\fR for UTF-8
+strings.  It is similar to \fBTcl_UtfNcmp\fR except comparisons ignore
+differences in case when comparing upper, lower or title case
+characters.
 .PP
 \fBTcl_UtfCharComplete\fR returns 1 if the source UTF-8 string \fIsrc\fR
 of length \fIlen\fR bytes is long enough to be decoded by

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.10 1999/04/21 21:50:23 rjohnson Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.11 1999/05/06 18:46:24 stanton Exp $
 
 library tcl
 
@@ -1255,6 +1255,12 @@ declare 367 generic {
 }
 declare 368 generic {
     int Tcl_Stat(CONST char *path, struct stat *bufPtr)
+}
+declare 369 generic {
+    int Tcl_UtfNcmp(CONST char *s1, CONST char *s2, size_t n)
+}
+declare 370 generic {
+    int Tcl_UtfNcasecmp(CONST char *s1, CONST char *s2, size_t n)
 }
 
 ##############################################################################

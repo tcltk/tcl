@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUtf.c,v 1.4 1999/04/30 16:22:24 hershey Exp $
+ * RCS: @(#) $Id: tclUtf.c,v 1.5 1999/05/06 18:46:25 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -1043,6 +1043,93 @@ Tcl_UtfToTitle(str)
     }
     *dst = '\0';
     return (dst - str);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_UtfNcmp --
+ *
+ *	Compare at most n UTF chars of string cs to string ct.  Both cs
+ *	and ct are assumed to be at least n UTF chars long.
+ *
+ * Results:
+ *	Return <0 if cs < ct, 0 if cs == ct, or >0 if cs > ct.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_UtfNcmp(cs, ct, n)
+    CONST char *cs;		/* UTF string to compare to ct. */
+    CONST char *ct;		/* UTF string cs is compared to. */
+    size_t n;			/* Number of UTF chars to compare. */
+{
+    Tcl_UniChar ch1, ch2;
+    /*
+     * Another approach that should work is:
+     *   return memcmp(cs, ct, (unsigned) (Tcl_UtfAtIndex(cs, n) - cs));
+     * That assumes that ct is a properly formed UTF, so we will just
+     * be comparing the bytes that compromise those strings to the
+     * char length n.
+     */
+    while (n-- > 0) {
+	/*
+	 * n must be interpreted as chars, not bytes.
+	 * This should be called only when both strings are of
+	 * at least n chars long (no need for \0 check)
+	 */
+	cs += Tcl_UtfToUniChar(cs, &ch1);
+	ct += Tcl_UtfToUniChar(ct, &ch2);
+	if (ch1 != ch2) {
+	    return (ch1 - ch2);
+	}
+    }
+    return 0;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_UtfNcasecmp --
+ *
+ *	Compare at most n UTF chars of string cs to string ct case
+ *	insensitive.  Both cs and ct are assumed to be at least n
+ *	UTF chars long.
+ *
+ * Results:
+ *	Return <0 if cs < ct, 0 if cs == ct, or >0 if cs > ct.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_UtfNcasecmp(cs, ct, n)
+    CONST char *cs;		/* UTF string to compare to ct. */
+    CONST char *ct;		/* UTF string cs is compared to. */
+    size_t n;			/* Number of UTF chars to compare. */
+{
+    Tcl_UniChar ch1, ch2;
+    while (n-- > 0) {
+	/*
+	 * n must be interpreted as chars, not bytes.
+	 * This should be called only when both strings are of
+	 * at least n chars long (no need for \0 check)
+	 */
+	cs += Tcl_UtfToUniChar(cs, &ch1);
+	ct += Tcl_UtfToUniChar(ct, &ch2);
+	if ((ch1 != ch2) &&
+	    (Tcl_UniCharToLower(ch1) != Tcl_UniCharToLower(ch2))) {
+	    return (ch1 - ch2);
+	}
+    }
+    return 0;
 }
 
 /*
