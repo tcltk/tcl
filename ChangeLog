@@ -66,6 +66,9 @@
 					         that was needed only
 	                                         because of Bug 868489.
 	
+	* generic/tclBasic.c (TclObjInvoke): Removed three unused
+	variables to silence a compiler warning in VC++.
+	
 2004-09-27  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* doc/FileSystem.3: fix to small typo.
