@@ -16,7 +16,7 @@
 # Contributions from Don Porter, NIST, 2002.  (not subject to US copyright)
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.tcl,v 1.68 2002/07/08 20:43:50 dgp Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.69 2002/07/10 18:51:54 dgp Exp $
 
 package require Tcl 8.3		;# uses [glob -directory]
 namespace eval tcltest {
@@ -2738,7 +2738,7 @@ proc tcltest::runAllTests { {shell ""} } {
     if {[info exists testFileFailures]} {
 	puts [outputChannel] "\nTest files exiting with errors:  \n"
 	foreach file $testFileFailures {
-	    puts "  [file tail $file]\n"
+	    puts [outputChannel] "  [file tail $file]\n"
 	}
     }
 
