@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclAlloc.c,v 1.16 2002/04/23 17:03:34 hobbs Exp $
+ * RCS: @(#) $Id: tclAlloc.c,v 1.16.2.1 2004/10/28 21:12:37 andreas_kupries Exp $
  */
 
 /*
@@ -23,7 +23,7 @@
  * that has significantly reduced lock contention.
  */
 
-#if !defined(TCL_THREADS) || !defined(USE_THREAD_ALLOC)
+#if !defined(TCL_THREADS) || !defined(USE_THREAD_ALLOC) || defined(TCL_MEM_DEBUG)
 
 #include "tclInt.h"
 #include "tclPort.h"
