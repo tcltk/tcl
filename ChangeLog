@@ -1,3 +1,11 @@
+2004-10-25  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* tests/tm.test: Rewrote the tests to actually perform syntax
+	checks on the public API. Added a new test (currently failing) to
+	indicate that the test suite is not complete yet.
+	* library/tm.tcl (path): Rewrote to turn this command into an
+	ensemble to make it faster and simpler.
+
 2004-10-24  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclCmdIL.c:
