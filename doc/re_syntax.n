@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: re_syntax.n,v 1.2 1999/07/13 02:07:37 jpeek Exp $
+'\" RCS: @(#) $Id: re_syntax.n,v 1.3 1999/07/14 19:09:36 jpeek Exp $
 '\"
 .so man.macros
 .TH re_syntax n "8.1" Tcl "Tcl Built-In Commands"
@@ -650,10 +650,6 @@ Expanded-syntax white-space characters are blank, tab, newline, and
 .VS 8.2
 any character that belongs to the \fIspace\fR character class.
 .VE 8.2
-Exactly how a multi-line expanded-syntax RE
-can be entered interactively by a user,
-if at all, is application-specific;
-expanded syntax is primarily a scripting facility.
 .PP
 Finally, in an ARE,
 outside bracket expressions, the sequence `\fB(?#\fIttt\fB)\fR'
