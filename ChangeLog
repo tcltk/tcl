@@ -1,5 +1,7 @@
 2002-06-22  Don Porter  <dgp@users.sourceforge.net>
 
+	* changes: updated changes file for 8.4b1 release.
+
 	* library/tcltest/tcltest.tcl:	Corrections to tcltest and the
 	* tests/basic.test:		Tcl test suite so that a test
 	* tests/cmdInfo.test:		with options -constraints knownBug
