@@ -1,3 +1,10 @@
+2002-07-11  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* generic/tclCompile.c: now setting local vars undefined at
+	compile time, instead of waiting until the proc is initialized. 
+	* generic/tclProc.c: use macro TclSetVarUndefined instead of
+	directly etting the flag.
+
 2002-07-11  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* tests/cmdAH.test: [file attr -perm] is Unix-only, so add [catch]
