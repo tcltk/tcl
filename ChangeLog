@@ -1,3 +1,8 @@
+2004-02-17  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclCompCmds.c (TclCompileSwitchCmd): Bozo mistake in
+	memory releasing order when in an error case.  [Bug 898910]
+
 2004-02-16  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclTrace.c (TclTraceExecutionObjCmd) 
