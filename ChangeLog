@@ -1,3 +1,8 @@
+2003-04-16  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* generic/tclPathObj.c: removed undesired 'static' for function
+	which is now shared (previously it was duplicated).
+	
 2003-04-15  Joe English  <jenglish@users.sourceforge.net>
 	* doc/namespace.n: added example section "SCOPED SCRIPTS",
 	supplied by Kevin Kenny. (Fixes [Bug 219183])
