@@ -6,7 +6,7 @@
 # Copyright (c) 1995-1996 Sun Microsystems, Inc.
 # Copyright (c) 1998-2000 Ajuba Solutions.
 #
-# RCS: @(#) $Id: makefile.vc,v 1.62 2001/08/22 23:55:00 hobbs Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.63 2001/09/03 00:49:34 davygrvy Exp $
 
 # Does not depend on the presence of any environment variables in
 # order to compile tcl; all needed information is derived from 
@@ -491,7 +491,7 @@ $(TMPDIR)\tclWinDde.obj : $(WINDIR)\tclWinDde.c
 # be built as DLL objects but none of the symbols should be exported
 
 $(TMPDIR)\tclStubLib.obj : $(GENERICDIR)\tclStubLib.c
-	$(cc32) $(TCL_CFLAGS) -DSTATIC_BUILD -Fo$@ $?
+	$(cc32) $(TCL_CFLAGS) -Zl -DSTATIC_BUILD -Fo$@ $?
 
 
 # Dedependency rules
