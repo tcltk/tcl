@@ -1,3 +1,8 @@
+2004-09-23  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCmdAH.c (Tcl_ExprObjCmd):	Simplified the TclObjCmdProc
+	of [expr] with a call to Tcl_ConcatObj.
+
 2004-09-22  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclCmdMZ.c (TclProcessReturn):	Support the -errorline
