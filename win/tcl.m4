@@ -298,7 +298,6 @@ AC_DEFUN(SC_ENABLE_SYMBOLS, [
 #		CC_OBJNAME
 #		CC_EXENAME
 #		PATHTYPE
-#		VPSEP
 #		CYGPATH
 #		SHLIB_LD
 #		SHLIB_LD_LIBS
@@ -333,7 +332,6 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
     EXTRA_CFLAGS=""
     PATHTYPE='-w'
     CYGPATH='cygpath'
-    VPSEP=';'
 
     # set various compiler flags depending on whether we are using gcc or cl
     
@@ -369,7 +367,6 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	if test "$cross_compiling" = "yes" -o "$mno_cygwin" = "yes"; then
 	    PATHTYPE=''
 	    CYGPATH='echo '
-	    VPSEP=':'
 	fi
 
 	if test "${SHARED_BUILD}" = "0" ; then
