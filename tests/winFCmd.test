@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: winFCmd.test,v 1.20.2.3 2003/11/21 16:19:15 dgp Exp $
+# RCS: @(#) $Id: winFCmd.test,v 1.20.2.4 2004/05/04 22:26:00 hobbs Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -1014,6 +1014,15 @@ test winFCmd-16.11 {Windows file normalization} {pcOnly cdrom} {
     # Must not crash
     set result "no crash"
 } {no crash}
+test winFCmd-16.12 {Windows file normalization} {pcOnly} {
+    set oldhome ""
+    catch {set oldhome $::env(HOME)}
+    set ::env(HOME) ${d}:
+    cd
+    set result [pwd]; # <- Must not crash
+    set ::env(HOME) $oldhome
+    set result
+} ${d}:/
 
 cd $pwd
 unset d dd pwd

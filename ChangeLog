@@ -1,5 +1,9 @@
 2004-05-04  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	* generic/tclIOUtil.c (Tcl_FSChdir):  Work-around crash condition
+	* tests/winFCmd.test (winFCmd-16.12): triggered when $HOME is
+	volumerelative (ie 'C:').
+
 	* tests/fileName.test (filename-12.9): use C:/ instead of the
 	first item in file volumes - that's usually A:/, which for most
 	will have nothing in it.
@@ -15,16 +19,16 @@
 	  TtySetOptionProc. Report and Patch provided by Stuart
 	  Cassoff <stwo@users.sf.net>.
 
-2004-05-03  Kevin Kenny  <kennykb@acm.org>
+2004-05-03  Kevin Kenny	 <kennykb@acm.org>
 
 	* win/tclWin32Dll.c (TclpCheckStackSpace):
 	* tests/stack.test (stack-3.1): Fix for undetected stack
 	overflow in TclReExec on Windows. [Bug 947070]
-	
-2004-05-03  Don Porter  <dgp@users.sourceforge.net>
 
-        * library/init.tcl:     Corrected unique prefix matching of
-        interactive command completion in [unknown].  [Bug 946952]
+2004-05-03  Don Porter	<dgp@users.sourceforge.net>
+
+	* library/init.tcl:	Corrected unique prefix matching of
+	interactive command completion in [unknown].  [Bug 946952]
 
 2004-05-02  Miguel Sofer <msofer@users.sf.net>
 
@@ -57,8 +61,8 @@
 
 2004-04-02  Don Porter  <dgp@users.sourceforge.net>
 
-        * tests/tcltest.test: Corrected constraint typos: "nonRoot" ->
-        "notRoot".  Thanks to Steven Abner (tauvan). [Bug 928353]
+	* tests/tcltest.test: Corrected constraint typos: "nonRoot" ->
+	"notRoot".  Thanks to Steven Abner (tauvan). [Bug 928353]
 
 2004-03-31  Don Porter	<dgp@users.sourceforge.net>
 
