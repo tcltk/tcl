@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.21.2.8 2001/05/22 15:54:35 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.21.2.9 2001/06/02 19:53:10 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1981,8 +1981,8 @@ TclExecuteByteCode(interp, codePtr)
 	 */
 	if ((valuePtr->typePtr == &tclByteArrayType) &&
 	    (value2Ptr->typePtr == &tclByteArrayType)) {
-	    s1 = Tcl_GetByteArrayFromObj(valuePtr, &s1len);
-	    s2 = Tcl_GetByteArrayFromObj(value2Ptr, &s2len);
+	    s1 = (char *) Tcl_GetByteArrayFromObj(valuePtr, &s1len);
+	    s2 = (char *) Tcl_GetByteArrayFromObj(value2Ptr, &s2len);
 	    iResult = memcmp(s1, s2,
 			     (size_t) ((s1len < s2len) ? s1len : s2len));
 	} else {
