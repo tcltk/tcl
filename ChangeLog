@@ -1,3 +1,10 @@
+2003-05-22  Daniel Steffen  <das@users.sourceforge.net>
+
+	* macosx/tclMacOSXBundle.c: fixed a problem that caused only the
+	first call to Tcl_MacOSXOpenVersionedBundleResources() for a given
+	bundle identifier to succeed. This caused the tcl runtime library
+	not to be found in all interps created after the inital one.
+	
 2003-05-20  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	*** 8.4.3 TAGGED FOR RELEASE ***
