@@ -1,6 +1,6 @@
 2004-05-18  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
-	* doc/append.n: Added example.
+	* doc/append.n, doc/upvar.n: Added example.
 
 2004-05-18  David Gravereaux <davygrvy@pobox.com>
 
