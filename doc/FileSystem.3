@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: FileSystem.3,v 1.28 2002/07/08 10:14:24 vincentdarley Exp $
+'\" RCS: @(#) $Id: FileSystem.3,v 1.29 2002/07/08 12:08:34 vincentdarley Exp $
 '\" 
 .so man.macros
 .TH Filesystem 3 8.4 Tcl "Tcl Library Procedures"
@@ -257,17 +257,23 @@ declared to be, allowing the same code to be used both on systems with
 and systems without support for files larger than 2GB in size.
 .PP
 The \fBTcl_FS...\fR are objectified and may cache internal
-representations and other path-related strings (e.g. the current
-working directory).  One side-effect of this is that one must be
-careful when passing in temporary objects with a refCount of zero. 
-Under some circumstances, the filesystem code may wish to retain a
-reference to the passed in object, and so one must not assume that
-after any of these calls return, the object still has a refCount of
-zero - it may have been incremented.  The practical lesson to learn
-from this is that \fBTcl_Obj *path = Tcl_NewStringObj(...) ;
-Tcl_FS...(path) ; Tcl_DecrRefCount(path)\fR is wrong, and may
-segfault.  The 'path' must have its refCount incremented before
-passing it in, or decrementing it.
+representations and other path-related strings (e.g. the current working
+directory).  One side-effect of this is that one must not pass in objects
+with a refCount of zero to any of these functions.  If such calls were 
+handled, they might result
+in memory leaks (under some circumstances, the filesystem code may wish
+to retain a reference to the passed in object, and so one must not assume
+that after any of these calls return, the object still has a refCount of
+zero - it may have been incremented), or in a direct segfault
+due to the object being freed part way through the complex object
+manipulation required to ensure that the path is fully normalized and
+absolute for filesystem determination.  The practical lesson to learn
+from this is that \fBTcl_Obj *path = Tcl_NewStringObj(...)  ;
+Tcl_FS...(path) ; Tcl_DecrRefCount(path)\fR is wrong, and may segfault.
+The 'path' must have its refCount incremented before passing it in, or
+decrementing it.  For this reason, objects with a refCount of zero are
+considered not to be valid filesystem paths and calling any Tcl_FS API
+with such an object will result in no action being taken.
 .PP
 \fBTcl_FSCopyFile\fR attempts to copy the file given by srcPathPtr to the
 path name given by destPathPtr.  If the two paths given lie in the same

@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.53 2002/07/08 10:11:22 vincentdarley Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.54 2002/07/08 12:08:34 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -4756,6 +4756,17 @@ Tcl_FSGetFileSystemForPath(pathObjPtr)
     FilesystemRecord *fsRecPtr;
     Tcl_Filesystem* retVal = NULL;
     FsPath* srcFsPathPtr;
+    
+    /* 
+     * If the object has a refCount of zero, we reject it.  This
+     * is to avoid possible segfaults or nondeterministic memory
+     * leaks (i.e. the user doesn't know if they should decrement
+     * the ref count on return or not).
+     */
+    
+    if (pathObjPtr->refCount == 0) {
+        return NULL;
+    }
     
     /* Make sure pathObjPtr is of our type */
 
