@@ -1,3 +1,8 @@
+2003-04-15  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* generic/tclIOUtil.c: finished check-in from yesterday,
+	removing duplicate function definition.
+	
 2003-04-14  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclClock.c:	Corrected compiler warnings.
