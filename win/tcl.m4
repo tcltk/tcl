@@ -431,7 +431,7 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	SHLIB_LD=""
 	SHLIB_LD_LIBS=""
 	LIBS=""
-	LIBS_GUI="-lgdi32 -lcomdlg32 -limm32 -lcomctl32"
+	LIBS_GUI="-lgdi32 -lcomdlg32 -limm32 -lcomctl32 -lshell32"
 	STLIB_LD='${AR} cr'
 	RC_OUT=-o
 	RC_TYPE=
@@ -595,7 +595,7 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	SHLIB_LD="${LINKBIN} -dll -nologo -incremental:no"
 	SHLIB_LD_LIBS="user32.lib advapi32.lib"
 	LIBS="user32.lib advapi32.lib"
-	LIBS_GUI="gdi32.lib comdlg32.lib imm32.lib comctl32.lib"
+	LIBS_GUI="gdi32.lib comdlg32.lib imm32.lib comctl32.lib shell32.lib"
 	RC_OUT=-fo
 	RC_TYPE=-r
 	RC_INCLUDE=-i

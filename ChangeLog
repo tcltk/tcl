@@ -1,5 +1,13 @@
 2003-01-12  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* win/configure: Regen.
+	* win/tcl.m4 (SC_CONFIG_CFLAGS): Pull in
+	addition of shell32.lib to LIBS_GUI that
+	was added to the Tk tcl.m4 but never made
+	it back into the Tcl version.
+
+2003-01-12  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* generic/tcl.h: Skip Tcl's define of CHAR,
 	SHORT, and LONG when HAVE_WINNT_IGNORE_VOID
 	is defined. This avoids a bunch of compiler
