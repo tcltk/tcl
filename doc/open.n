@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: open.n,v 1.17 2003/04/18 00:28:15 dkf Exp $
+'\" RCS: @(#) $Id: open.n,v 1.18 2004/02/28 15:45:53 vincentdarley Exp $
 '\" 
 .so man.macros
 .TH open n 8.3 Tcl "Tcl Built-In Commands"
@@ -333,7 +333,7 @@ between the real console, if one is present, and a command pipeline that uses
 standard input or output.  If a command pipeline is opened for reading, some
 of the lines entered at the console will be sent to the command pipeline and
 some will be sent to the Tcl evaluator.  If a command pipeline is opened for
-writing, keystrokes entered into the console are not visible until the the
+writing, keystrokes entered into the console are not visible until the
 pipe is closed.  This behavior occurs whether the command pipeline is
 executing 16-bit or 32-bit applications.  These problems only occur because
 both Tcl and the child application are competing for the console at
@@ -356,7 +356,7 @@ standard input or output.  If a command pipeline is opened for reading from
 a 32-bit application, some of the keystrokes entered at the console will be
 sent to the command pipeline and some will be sent to the Tcl evaluator.  If
 a command pipeline is opened for writing to a 32-bit application, no output
-is visible on the console until the the pipe is closed.  These problems only
+is visible on the console until the pipe is closed.  These problems only
 occur because both Tcl and the child application are competing for the
 console at the same time.  If the command pipeline is started from a script,
 so that Tcl is not accessing the console, or if the command pipeline does
