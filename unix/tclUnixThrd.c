@@ -61,7 +61,7 @@ static pthread_mutex_t *allocLockPtr = &allocLock;
 /*
  *----------------------------------------------------------------------
  *
- * TclpThreadCreaet --
+ * TclpThreadCreate --
  *
  *	This procedure creates a new thread.
  *
