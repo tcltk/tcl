@@ -1,6 +1,6 @@
 README -- Tcl test suite design document.
 
-RCS: @(#) $Id: README,v 1.1.2.7 1999/04/02 18:57:06 hershey Exp $
+RCS: @(#) $Id: README,v 1.1.2.8 1999/04/07 01:59:27 hershey Exp $
 
 Contents:
 ---------
@@ -58,8 +58,8 @@ You can run the tests in three ways:
 	of the tests, type "source all.tcl".  To use the options in
 	interactive mode, you can set their corresponding tcltest
 	namespace variables after sourcing the defs.tcl file.
-		  ::tcltest::matchingTests
-		  ::tcltest::skippingTests
+		  ::tcltest::match
+		  ::tcltest::skip
 		  ::tcltest::testConfig(nonPortable)
 		  ::tcltest::testConfig(knownBug)
 		  ::tcltest::testConfig(userInteractive)
@@ -331,16 +331,16 @@ sourced.  An individual test will be skipped if one of the following
 conditions is met:
 
     1) the "name" of the tests does not match (using glob style
-       matching) one or more elements in the ::tcltest::matchingTests
+       matching) one or more elements in the ::tcltest::match
        variable
 
     2) the "name" of the tests matches (using glob style matching) one
-       or more elements in the ::tcltest::skippingTests variable
+       or more elements in the ::tcltest::skip variable
 
     3) the "constraints" argument to the "test" call, if given,
        contains one or more false elements.
 
-You can set ::tcltest::matchingTests and/or ::tcltest::skippingTests
+You can set ::tcltest::match and/or ::tcltest::skip
 either interactively (after the defs.tcl file has been sourced), or by
 the command line arguments -match and -skip, for example:
 
@@ -396,7 +396,7 @@ that your shell does not perform the glob substitution.
    old name   new name
    --------   --------
    VERBOSE    ::tcltest::verbose
-   TESTS      ::tcltest::matchingTests
+   TESTS      ::tcltest::match
    testConfig ::tcltest::testConfig
 
    The introduction of the "tcltest" namespace is a precursor to using

@@ -11,7 +11,7 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 # 
-# RCS: @(#) $Id: defs.tcl,v 1.1.2.10 1999/04/03 03:02:47 hershey Exp $
+# RCS: @(#) $Id: defs.tcl,v 1.1.2.11 1999/04/07 01:59:27 hershey Exp $
 
 # Initialize wish shell
 if {[info exists tk_version]} {
@@ -38,11 +38,11 @@ namespace eval tcltest {
     # ::tcltest::verbose defaults to "b"
     variable verbose "b"
 
-    # matchingTests defaults to the empty list
-    variable matchingTests {}
+    # match defaults to the empty list
+    variable match {}
 
-    # skippingTests defaults to the empty list
-    variable skippingTests {}
+    # skip defaults to the empty list
+    variable skip {}
 
     # Tests should not rely on the current working directory.
     # Files that are part of the test suite should be accessed relative to
@@ -320,8 +320,8 @@ proc ::tcltest::initConfig {} {
 
 # ::tcltest::processCmdLineArgs --
 #
-#	Use command line args to set the verbose, skippingTests, and
-#	matchingTests variables.  This procedure must be run after
+#	Use command line args to set the verbose, skip, and
+#	match variables.  This procedure must be run after
 #	constraints are initialized, because some constraints can be
 #	overridden.
 #
@@ -372,14 +372,14 @@ proc ::tcltest::processCmdLineArgs {} {
 	set ::tcltest::verbose $flag(-verbose)
     }
 
-    # Set ::tcltest::matchingTests to the arg of the -match flag, if given
+    # Set ::tcltest::match to the arg of the -match flag, if given
     if {[info exists flag(-match)]} {
-	set ::tcltest::matchingTests $flag(-match)
+	set ::tcltest::match $flag(-match)
     }
 
-    # Set ::tcltest::skippingTests to the arg of the -skip flag, if given
+    # Set ::tcltest::skip to the arg of the -skip flag, if given
     if {[info exists flag(-skip)]} {
-	set ::tcltest::skippingTests $flag(-skip)
+	set ::tcltest::skip $flag(-skip)
     }
 
     # Use the -constraints flag, if given, to turn on constraints that are
@@ -509,8 +509,8 @@ proc ::tcltest::cleanupTests {{calledFromAllFile 0}} {
 # This procedure runs a test and prints an error message if the test fails.
 # If ::tcltest::verbose has been set, it also prints a message even if the
 # test succeeds.  The test will be skipped if it doesn't match the
-# ::tcltest::matchingTests variable, if it matches an element in
-# ::tcltest::skippingTests, or if one of the elements of "constraints" turns
+# ::tcltest::match variable, if it matches an element in
+# ::tcltest::skip, or if one of the elements of "constraints" turns
 # out not to be true.
 #
 # Arguments:
@@ -530,17 +530,17 @@ proc ::tcltest::cleanupTests {{calledFromAllFile 0}} {
 proc ::tcltest::test {name description script expectedAnswer args} {
     incr ::tcltest::numTests(Total)
 
-    # skip the test if it's name matches an element of skippingTests
-    foreach pattern $::tcltest::skippingTests {
+    # skip the test if it's name matches an element of skip
+    foreach pattern $::tcltest::skip {
 	if {[string match $pattern $name]} {
 	    incr ::tcltest::numTests(Skipped)
 	    return
 	}
     }
-    # skip the test if it's name doesn't match any element of matchingTests
-    if {[llength $::tcltest::matchingTests] > 0} {
+    # skip the test if it's name doesn't match any element of match
+    if {[llength $::tcltest::match] > 0} {
 	set ok 0
-	foreach pattern $::tcltest::matchingTests {
+	foreach pattern $::tcltest::match {
 	    if {[string match $pattern $name]} {
 		set ok 1
 		break
@@ -661,10 +661,10 @@ proc ::tcltest::test {name description script expectedAnswer args} {
 #	none
 
 proc ::tcltest::dotests {file args} {
-    set savedTests $::tcltest::matchingTests
-    set ::tcltest::matchingTests $args
+    set savedTests $::tcltest::match
+    set ::tcltest::match $args
     source $file
-    set ::tcltest::matchingTests $savedTests
+    set ::tcltest::match $savedTests
 }
 
 proc ::tcltest::openfiles {} {
