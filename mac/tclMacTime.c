@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacTime.c,v 1.7 2002/01/04 11:21:05 das Exp $
+ * RCS: @(#) $Id: tclMacTime.c,v 1.8 2003/05/18 19:48:26 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -375,6 +375,7 @@ TclpGetDate(
  *
  * Results:
  *	Returns a pointer to a static string, or NULL on failure.
+ *	The static string is in UTF-8 encoding.
  *
  * Side effects:
  *	None.
