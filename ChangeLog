@@ -1,3 +1,11 @@
+2001-12-14  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* win/tclWinNotify.c (Tcl_FinalizeNotifier): Stop Tcl on Windows
+	from crashing when shutdown from a non-Tcl thread. Fixes Bug
+	#217982 [orig. 5804] reported by Hugh Vu and Gene Leache.   I'm
+	not convinced that the shutdown process is right even with this,
+	but it was definitely wrong without...
+
 2001-12-13  Andreas Kupries  <andreas_kupries@users.sourceforge.net> 
 
 	* win/tclWinSock.c (TcpGetOptionProc): Fix for tcl bug item
