@@ -1,3 +1,10 @@
+2002-06-14  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* doc/trace.n, tests/trace.test: 
+	* generic/tclCmdMZ.c (Tcl_TraceObjCmd,TclTraceCommandObjCmd)
+	(TclTraceVariableObjCmd): Changed references to "trace list" to
+	"trace info" as mandated by TIP#102.
+
 2002-06-13  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* generic/tclExecute.c (TclExecuteByteCode): consolidated code for

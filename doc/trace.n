@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: trace.n,v 1.8 2001/01/16 15:41:06 dkf Exp $
+'\" RCS: @(#) $Id: trace.n,v 1.9 2002/06/14 13:17:17 dkf Exp $
 '\" 
 .so man.macros
 .TH trace n "8.4" Tcl "Tcl Built-In Commands"
@@ -200,11 +200,11 @@ removed, so that \fIcommand\fR will never again be invoked.  Returns
 an empty string.
 .RE
 .TP
-\fBtrace list \fItype name\fR
+\fBtrace info \fItype name\fR
 Where \fItype\fR is either \fBcommand\fR or \fBvariable\fR.
 .RS
 .TP
-\fBtrace list command\fI name\fR
+\fBtrace info command\fI name\fR
 Returns a list containing one element for each trace currently set on
 command \fIname\fR. Each element of the list is itself a list
 containing two elements, which are the \fIopList\fR and \fIcommand\fR
@@ -212,7 +212,7 @@ associated with the trace.  If \fIname\fR doesn't have any traces set,
 then the result of the command will be an empty string.  If \fIname\fR
 doesn't exist, the command will throw an error.
 .TP
-\fBtrace list variable\fI name\fR
+\fBtrace info variable\fI name\fR
 Returns a list containing one element for each trace currently set on
 variable \fIname\fR.  Each element of the list is itself a list
 containing two elements, which are the \fIopList\fR and \fIcommand\fR
@@ -231,7 +231,7 @@ This is equivalent to \fBtrace add variable \fIname ops command\fR.
 This is equivalent to \fBtrace remove variable \fIname ops command\fR
 .TP 
 \fBtrace vinfo \fIname\fR 
-This is equivalent to \fBtrace list variable \fIname\fR
+This is equivalent to \fBtrace info variable \fIname\fR
 .RE
 .PP
 These subcommands are deprecated and will likely be removed in a
