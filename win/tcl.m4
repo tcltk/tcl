@@ -326,7 +326,6 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
     AC_ARG_ENABLE(64bit,[  --enable-64bit          enable 64bit support (where applicable)], [do64bit=$enableval], [do64bit=no])
     AC_MSG_RESULT($do64bit)
 
-
     # Set some defaults (may get changed below)
     EXTRA_CFLAGS=""
 
@@ -427,22 +426,6 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	LDFLAGS_CONSOLE="-mconsole ${extra_ldflags}"
 	LDFLAGS_WINDOW="-mwindows -e _WinMain@16 ${extra_ldflags}"
     else
-	SHLIB_LD="link -dll -nologo -link50compat -incremental:no"
-	SHLIB_LD_LIBS="user32.lib advapi32.lib"
-	LIBS="user32.lib advapi32.lib"
-	LIBS_GUI="gdi32.lib comdlg32.lib imm32.lib"
-	STLIB_LD="lib -nologo"
-	RC="rc"
-	RC_OUT=-fo
-	RC_TYPE=-r
-	RC_INCLUDE=-i
-	RC_DEFINE=-d
-	RES=res
-	MAKE_LIB="\${STLIB_LD} -out:\[$]@"
-	POST_MAKE_LIB=
-	MAKE_EXE="\${CC} -Fe\[$]@"
-	LIBPREFIX=""
-
 	if test "${SHARED_BUILD}" = "0" ; then
 	    # static
             AC_MSG_RESULT([using static flags])
@@ -465,10 +448,58 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	# users of tclConfig.sh that may build shared or static.
 	DLLSUFFIX="\${DBGX}.dll"
 
+	# This is a 2-stage check to make sure we have the 64-bit SDK
+	# We have to know where the SDK is installed.
+	if test "$do64bit" = "yes" ; then
+	    if test "x${MSSDK}x" = "xx" ; then
+		MSSDK="C:/Progra~1/Microsoft SDK"
+	    fi
+	    # In order to work in the tortured autoconf environment,
+	    # we need to ensure that this path has no spaces
+	    MSSDK=$(cygpath -w -s "$MSSDK" | sed -e 's!\\!/!g')
+	    if test ! -d "${MSSDK}/bin/win64" ; then
+		AC_MSG_WARN("could not find 64-bit SDK to enable 64bit mode")
+		do64bit="no"
+	    fi
+	fi
+
+	if test "$do64bit" = "yes" ; then
+	    # All this magic is necessary for the Win64 SDK RC1 - hobbs
+	    CC="${MSSDK}/Bin/Win64/cl.exe \
+	-I${MSSDK}/Include/prerelease \
+	-I${MSSDK}/Include/Win64/crt \
+	-I${MSSDK}/Include/Win64/crt/sys \
+	-I${MSSDK}/Include"
+	    RC="${MSSDK}/bin/rc.exe"
+	    CFLAGS_DEBUG="-nologo -Zi -Od ${runtime}d"
+	    CFLAGS_OPTIMIZE="-nologo -O2 -Gs ${runtime}"
+	    lflags="-MACHINE:IA64 -LIBPATH:${MSSDK}/Lib/IA64 \
+	-LIBPATH:${MSSDK}/Lib/Prerelease/IA64"
+	    STLIB_LD="${MSSDK}/bin/win64/lib.exe -nologo ${lflags}"
+	    LINKBIN="${MSSDK}/bin/win64/link.exe ${lflags}"
+	else
+	    RC="rc"
+	    CFLAGS_DEBUG="-nologo -Z7 -Od -WX ${runtime}d"
+	    CFLAGS_OPTIMIZE="-nologo -Oti -Gs -GD ${runtime}"
+	    STLIB_LD="lib -nologo"
+	    LINKBIN="link -link50compat"
+	fi
+
+	SHLIB_LD="${LINKBIN} -dll -nologo -incremental:no"
+	SHLIB_LD_LIBS="user32.lib advapi32.lib"
+	LIBS="user32.lib advapi32.lib"
+	LIBS_GUI="gdi32.lib comdlg32.lib imm32.lib"
+	RC_OUT=-fo
+	RC_TYPE=-r
+	RC_INCLUDE=-i
+	RC_DEFINE=-d
+	RES=res
+	MAKE_LIB="\${STLIB_LD} -out:\[$]@"
+	POST_MAKE_LIB=
+	MAKE_EXE="\${CC} -Fe\[$]@"
+	LIBPREFIX=""
+
 	EXTRA_CFLAGS="-YX"
-	CFLAGS_DEBUG="-nologo -Z7 -Od -WX ${runtime}d"
-#	CFLAGS_OPTIMIZE="-nologo -O2 -Gs -GD ${runtime}"
-	CFLAGS_OPTIMIZE="-nologo -Oti -Gs -GD ${runtime}"
 	CFLAGS_WARNING="-W3"
 	LDFLAGS_DEBUG="-debug:full -debugtype:cv"
 	LDFLAGS_OPTIMIZE="-release"
@@ -479,12 +510,8 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 
 	# Specify linker flags depending on the type of app being 
 	# built -- Console vs. Window.
-	LDFLAGS_CONSOLE="-link -subsystem:console"
-	LDFLAGS_WINDOW="-link -subsystem:windows"
-
-	if test "$do64bit" = "yes" ; then
-	    EXTRA_CFLAGS="$EXTRA_CFLAGS -DUSE_TCLALLOC=0"
-	fi
+	LDFLAGS_CONSOLE="-link -subsystem:console ${lflags}"
+	LDFLAGS_WINDOW="-link -subsystem:windows ${lflags}"
     fi
 ])
 

@@ -7,7 +7,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclWinInit.c,v 1.30 2001/09/20 18:35:25 hobbs Exp $
+ * RCS: @(#) $Id: tclWinInit.c,v 1.31 2001/10/01 20:58:52 hobbs Exp $
  */
 
 #include "tclWinInt.h"
@@ -42,14 +42,11 @@ typedef struct {
 #ifndef PROCESSOR_ARCHITECTURE_PPC
 #define PROCESSOR_ARCHITECTURE_PPC   3
 #endif
-#ifndef PROCESSOR_ARCHITECTURE_UNKNOWN
-#define PROCESSOR_ARCHITECTURE_UNKNOWN 0xFFFF
-#endif
 #ifndef PROCESSOR_ARCHITECTURE_SHX  
-#define PROCESSOR_ARCHITECTURE_SHX  4
+#define PROCESSOR_ARCHITECTURE_SHX   4
 #endif
 #ifndef PROCESSOR_ARCHITECTURE_ARM
-#define PROCESSOR_ARCHITECTURE_ARM  5
+#define PROCESSOR_ARCHITECTURE_ARM   5
 #endif
 #ifndef PROCESSOR_ARCHITECTURE_IA64
 #define PROCESSOR_ARCHITECTURE_IA64  6
@@ -59,6 +56,9 @@ typedef struct {
 #endif
 #ifndef PROCESSOR_ARCHITECTURE_MSIL
 #define PROCESSOR_ARCHITECTURE_MSIL  8
+#endif
+#ifndef PROCESSOR_ARCHITECTURE_UNKNOWN
+#define PROCESSOR_ARCHITECTURE_UNKNOWN 0xFFFF
 #endif
 
 /*
@@ -459,7 +459,7 @@ ToUtf(
 	wSrc++;
     }
     *dst = '\0';
-    return dst - start;
+    return (int) (dst - start);
 }
 
 
@@ -703,7 +703,7 @@ TclpFindVariable(name, lengthPtr)
 	if (p1 == NULL) {
 	    continue;
 	}
-	length = p1 - envUpper;
+	length = (int) (p1 - envUpper);
 	Tcl_DStringSetLength(&envString, length+1);
 	Tcl_UtfToUpper(envUpper);
 

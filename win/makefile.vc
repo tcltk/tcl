@@ -5,8 +5,9 @@
 # 
 # Copyright (c) 1995-1996 Sun Microsystems, Inc.
 # Copyright (c) 1998-2000 Ajuba Solutions.
+# Copyright (c) 2001 ActiveState Corporation.
 #
-# RCS: @(#) $Id: makefile.vc,v 1.65 2001/09/14 01:00:59 andreas_kupries Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.66 2001/10/01 20:58:52 hobbs Exp $
 
 # Does not depend on the presence of any environment variables in
 # order to compile tcl; all needed information is derived from 
@@ -36,10 +37,10 @@ INSTALLDIR	= C:\Progra~1\Tcl
 !IF "$(MACHINE)" == "IA64"
 
 # IA64 support is based on the standard setup with v2 of the
-# Microsoft Platform SDK for Whistler, build 2267
+# Microsoft SDK for XP, RC1
 
-TOOLS32		= C:\Progra~1\Microsoft Platform SDK
-TOOLS32_rc	= C:\Progra~1\Microsoft Platform SDK
+TOOLS32		= C:\Progra~1\Microsoft SDK
+TOOLS32_rc	= C:\Progra~1\Microsoft SDK
 
 cc32		= "$(TOOLS32)\bin\Win64\cl.exe"
 link32		= "$(TOOLS32)\bin\Win64\link.exe"
@@ -78,17 +79,8 @@ NODEBUG = 1
 #	-DTCL_MEM_DEBUG		Enables the debugging memory allocator.
 #	-DTCL_COMPILE_DEBUG	Enables byte compilation logging.
 #	-DTCL_COMPILE_STATS	Enables byte compilation statistics gathering.
-#	-DUSE_TCLALLOC=0	Disables the Tcl memory allocator in favor
-#				of the native malloc implementation.  This is
-#				needed when using Purify.  For IA64, we do
-#				want to use the native allocator.
 #
 #DEBUGDEFINES = -DTCL_MEM_DEBUG -DTCL_COMPILE_DEBUG -DTCL_COMPILE_STATS
-!IF "$(MACHINE)" == "IA64"
-DEBUGDEFINES = -DUSE_TCLALLOC=0
-!ELSE
-#DEBUGDEFINES = -DUSE_TCLALLOC=0
-!ENDIF
 
 ######################################################################
 # Do not modify below this line
@@ -251,7 +243,11 @@ TCL_DEFINES	= $(DEBUGDEFINES) $(THREADDEFINES)
 
 !IF "$(NODEBUG)" == "1"
 # This cranks the optimization level to maximize speed
+!IF "$(MACHINE)" == "IA64"
+cdebug = -O2 -Gs
+!ELSE
 cdebug = -O2 -Gs -GD
+!ENDIF
 !ELSE IF "$(MACHINE)" == "IA64"
 cdebug = -Od -Zi
 !ELSE
