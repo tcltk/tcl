@@ -23,12 +23,9 @@ item: Global
   Variable Name2=_ODBC16_
   Variable Default2=C:\WINDOWS\SYSTEM
   Variable Flags2=00001000
-  Variable Name3=_ODBC32_
-  Variable Default3=${__WISE__}\Wise\Runtime\ODBC30
+  Variable Name3=_WISE_
+  Variable Default3=${__WISE__}
   Variable Flags3=00001000
-  Variable Name4=_WISE_
-  Variable Default4=${__WISE__}
-  Variable Flags4=00001000
 end
 item: Open/Close INSTALL.LOG
   Flags=00000001
@@ -1551,7 +1548,7 @@ item: Install File
 end
 item: Install File
   Source=C:\WINNT\SYSTEM32\Msvcrt.dll
-  Destination=%SYS32%\msvcrt.dll
+  Destination=%MAINDIR%\bin\msvcrt.dll
   Flags=0010001000000011
 end
 item: Install File
@@ -2268,6 +2265,10 @@ item: Custom Dialog Set
       Text=%APPTITLE% has been successfully installed.
       Text=
       Text=Click the Finish button to exit this installation.
+      Text=
+      Text=You can view the README and Registration web site on the internet at %URL% or check the box below to start your web browser now.
+      Text=
+      Text=The installer may ask you to reboot your computer, this is to update your PATH and is not necessary while you are visiting the README and Registration web site.
       Text French=%APPTITLE% est maintenant installé.
       Text French=
       Text French=Cliquez sur le bouton Fin pour quitter l'installation.
