@@ -1,3 +1,11 @@
+2002-01-16  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* unix/tcl.m4 (SC_LOAD_TCLCONFIG):
+	* win/tcl.m4 (SC_LOAD_TCLCONFIG): Subst TCL_DBGX
+	into TCL_STUB_LIB_FILE and TCL_STUB_LIB_FLAG
+	variables so that an extension does not need
+	to subst TCL_DBGX into its makefile. [Tk Bug 504356]
+
 2002-01-16  Don Porter <dgp@users.sourceforge.net>
 
 	* doc/ParseCmd.3 (Tcl_ParseVar):
