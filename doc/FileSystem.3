@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: FileSystem.3,v 1.7 2001/09/28 01:21:53 dgp Exp $
+'\" RCS: @(#) $Id: FileSystem.3,v 1.8 2001/09/29 11:09:35 vincentdarley Exp $
 '\" 
 .so man.macros
 .TH Tcl_FSCopyFile 3 8.4 Tcl "Tcl Library Procedures"
@@ -946,9 +946,19 @@ of the filesystem, so that they can be returned by 'file volumes'.
 typedef Tcl_Obj* Tcl_FSListVolumesProc(void);
 .CE
 .PP
-The result should be TCL_OK, since there is no way this function can
-fail.  The function should add the known volumes to the list object
-contained in the Tcl interpreter's result.
+The result should be a list of volumes added by this filesystem, or
+NULL (or an empty list) if no volumes are provided.  The result object
+is considered to be owned by the filesystem (not by Tcl's core), but
+should be given a refCount for Tcl.  Tcl will use the contents of the
+list and then decrement that refCount.  This allows filesystems to
+choose whether they actually want to retain a 'master list' of volumes
+or not (if not, they generate the list on the fly and pass it to Tcl
+with a refCount of 1 and then forget about the list, if yes, then
+they simply increment the refCount of their master list and pass it
+to Tcl which will copy the contents and then decrememnt the count back
+to where it was).
+.PP
+Therefore, Tcl considers return values from this proc to be read-only.
 .PP
 .SH FILEATTRSTRINGSPROC
 .PP
