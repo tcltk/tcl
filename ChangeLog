@@ -1,3 +1,11 @@
+2004-05-23  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclNamesp.c (Tcl_FindNamespaceVar): [Bug 959052] fixed,
+	insuring that no "zombie" variables are found.
+	* generic/tclVar.c (TclLookupSimpleVar): comments re [Bug 736729] 
+	(predecessor of [Bug 959052]) removed.
+	* tests/namespace.test: added tests 17.10-12 
+
 2004-05-22  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclVar.c (TclObjLookupVar, TclObjUnsetVar2): fix for new
