@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: %Z% $Id: tclInitScript.h,v 1.4 1998/07/24 15:36:40 stanton Exp $ 
+ * SCCS: %Z% $Id: tclInitScript.h,v 1.5 1998/08/06 15:22:54 welch Exp $ 
  */
 
 /*
@@ -34,14 +34,26 @@
  *
  *	<executable directory>/../lib/tcl$tcl_version
  *				- look for a lib/tcl<ver> in a sibling of
- *				  the bin directory (e.g. /usr/local)
+ *				  the bin directory (e.g. install hierarchy)
+ *
+ *	<executable directory>/../../lib/tcl$tcl_version
+ *				- look for a lib/tcl<ver> in a sibling of
+ *				  the bin/arch directory
  *
  *	<executable directory>/../library
  *				- look in build directory
  *
+ *	<executable directory>/../../library
+ *				- look in build directory from unix/arch
+ *
  *	<executable directory>/../../tcl$tcl_patchLevel/library
  *				- look for tcl build directory relative
  *				  to a parallel build directory (e.g. Tk)
+ *
+ *	<executable directory>/../../../tcl$tcl_patchLevel/library
+ *				- look for tcl build directory relative
+ *				  to a parallel build directory from
+ *				  down inside unix/arch directory
  *
  * The first directory on this path that contains a valid init.tcl script
  * will be appended to tcl_pkgPath and set as the value of tcl_library.
@@ -67,13 +79,16 @@ static char initScript[] = "if {[info proc tclInit]==\"\"} {\n\
 	unset tclDefaultLibrary\n\
 	set parentDir [file dirname [file dirname [info nameofexecutable]]]\n\
 	lappend dirs [file join $parentDir lib/tcl$tcl_version]\n\
+	lappend dirs [file join [file dirname $parentDir] lib/tcl$tcl_version]\n\
 	lappend dirs [file join $parentDir library]\n\
+	lappend dirs [file join [file dirname $parentDir] library]\n\
 	if {[string match {*[ab]*} $tcl_patchLevel]} {\n\
 	    set ver $tcl_patchLevel\n\
 	} else {\n\
 	    set ver $tcl_version\n\
 	}\n\
 	lappend dirs [file join [file dirname $parentDir] tcl$ver/library]\n\
+	lappend dirs [file join [file dirname [file dirname $parentDir]] tcl$ver/library]\n\
     }\n\
     foreach i $dirs {\n\
 	set tcl_library $i\n\
