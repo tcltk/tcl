@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.133 2002/07/18 15:04:53 vincentdarley Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.134 2002/07/18 15:06:54 vincentdarley Exp $
  */
 
 #ifndef _TCL
@@ -459,7 +459,7 @@ typedef struct Tcl_TimerToken_ *Tcl_TimerToken;
 typedef struct Tcl_Trace_ *Tcl_Trace;
 typedef struct Tcl_Var_ *Tcl_Var;
 typedef struct Tcl_ChannelTypeVersion_ *Tcl_ChannelTypeVersion;
-
+typedef struct TclLoadHandle_ *TclLoadHandle;
 
 /*
  * Definition of the interface to procedures implementing threads.
