@@ -1,3 +1,8 @@
+2004-11-24  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* tools/man2html.tcl, tools/man2html1.tcl: Update to use Tcl 8.4.
+	* tools/man2html2.tcl: Fix broken .SS handling.
+
 2004-11-23  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* unix/Makefile.in: Add (commented-out) code to integrate tclConfig.h
