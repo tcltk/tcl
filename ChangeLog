@@ -1,3 +1,32 @@
+2001-09-01  David Gravereaux <davygrvy@pobox.com>
+
+	-=[ Tcl_Async* API merge from HEAD ]=-
+
+	* generic/tclInt.decls:  Removed TclpAsyncMark permanently and left
+	the hole not to upset the positions.
+
+	* generic/tclDecls.h:
+	* generic/tclIntDecls.h:
+	* generic/tclIntPlatDecls.h:
+	* generic/tclPlatDecls.h:
+	* generic/tclStubInit.c:  regen'd tables.
+
+	* generic/tclAsync.c:  Brought source to match -r1.6 on the HEAD branch.
+
+	* unix/tclUnixPort.h:
+	* mac/tclMacPort.h: removed #defines for TclpAsyncMark.
+
+	* win/tclWinInit.c:  Removed the TclpAsyncMark function and the thread ID
+	saving that was going on in TclpInitPlatform(). [the old hack]
+
+	* win/tclWinThread.c:  TclpFinalizeCondition() and TclpFinalizeMutex()
+	are now properly returning the old CriticalSection handle to the system.
+	Tcl_CreateThread() is now decrementing its handle reference, so the
+	system will recover resources when the thread closes (doh!).  These
+	changes are all already up on the HEAD.
+
+	* doc/Async.3:  matches HEAD.
+
 2001-08-30  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclIndexObj.c: fixed some casting problems that upset
