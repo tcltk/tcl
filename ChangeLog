@@ -1,5 +1,7 @@
 2004-10-26  Don Porter  <dgp@users.sourceforge.net>
 
+	* tests/subst.test (subst-12.3,4):	More tests for Bug 1036649.
+
 	* tests/compile.test (compile-12.4):	Backport test for Bug 1001997.
 	* tests/timer.test (timer-10.1):	Backport test for Bug 1016167.
 	* tests/tcltest.test (tcltest-12.3,4):	Backport setup corrections.
