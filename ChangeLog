@@ -1,5 +1,10 @@
-2002-07-05  Don Porter  <dgp@users.sourceforge.net>
+2002-07-06  Don Porter  <dgp@users.sourceforge.net>
 
+	* tests/pkgMkIndex.test:  Constrained tests of [load] package indexing
+	to those platforms where the testing shared libraries have been built.
+	[Bug 578166].
+
+2002-07-05  Don Porter  <dgp@users.sourceforge.net>
 	* changes: added recent changes
 
 2002-07-05  Reinhard Max  <max@suse.de>
