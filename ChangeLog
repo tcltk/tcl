@@ -9,6 +9,9 @@
 
 2000-09-29  Jeff Hobbs  <hobbs@scriptics.com>
 
+	* win/tclWinSerial.c (SerialGetOptionProc): corrected reporting of
+	space parity on Windows (Eason) [Bug 6057].
+
 	* win/Makefile.in: commented use of TESTFLAGS
 	* unix/Makefile.in: added TESTFLAGS to test target to
 	conform with Windows makefile and TEA style.
@@ -72,6 +75,10 @@
 
 	Following is an asynchronous include of the applicable ChangeLog
 	entries from 8.3.2.
+
+	********************************************************
+	** START OF ASYNCHRONOUS UP-PORT LOG (8.3.2 -> 8.4a2) **
+	********************************************************
 
 2000-08-07  Jeff Hobbs  <hobbs@scriptics.com>
 
