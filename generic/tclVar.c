@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.64 2002/09/03 15:04:42 msofer Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.65 2002/09/03 19:52:01 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -3639,19 +3639,16 @@ Tcl_UpVar2(interp, frameName, part1, part2, localName, flags)
     CallFrame *framePtr;
     Tcl_Obj *part1Ptr;
 
+    if (TclGetFrame(interp, frameName, &framePtr) == -1) {
+	return TCL_ERROR;
+    }
+
     part1Ptr = Tcl_NewStringObj(part1, -1);
     Tcl_IncrRefCount(part1Ptr);
-
-    result = TclGetFrame(interp, frameName, &framePtr);
-    if (result == -1) {
-	result = TCL_ERROR;
-	goto done;
-    }
     result = ObjMakeUpvar(interp, framePtr, part1Ptr, part2, 0,
 	    localName, flags, -1);
-
-    done:
     TclDecrRefCount(part1Ptr);
+
     return result;
 }
 
