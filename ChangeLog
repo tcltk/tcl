@@ -1,5 +1,7 @@
 2000-11-03  Jeff Hobbs  <hobbs@ajubasolutions.com>
 
+	8.4a2 RELEASE
+
 	* unix/Makefile.in (install-libraries, dist): 
 	* win/makefile.vc (install-libraries):
 	* win/Makefile.in (install-libraries): updated to install
