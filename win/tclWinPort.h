@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPort.h,v 1.42 2004/11/03 00:26:59 davygrvy Exp $
+ * RCS: @(#) $Id: tclWinPort.h,v 1.43 2004/11/03 21:07:01 davygrvy Exp $
  */
 
 #ifndef _TCLWINPORT
@@ -530,8 +530,5 @@ MODULE_SCOPE Tcl_WideUInt	strtoull _ANSI_ARGS_((CONST char *string,
 #ifndef INVALID_SET_FILE_POINTER
 #define INVALID_SET_FILE_POINTER 0xFFFFFFFF
 #endif /* INVALID_SET_FILE_POINTER */
-
-#undef TCL_STORAGE_CLASS
-#define TCL_STORAGE_CLASS DLLIMPORT
 
 #endif /* _TCLWINPORT */
