@@ -604,32 +604,24 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
-	    DL_LIBS="-ldl"
+	    # AIX-5 has dl* in libc.so
+	    DL_LIBS=""
 	    LDFLAGS=""
 	    if test "$using_gcc" = "yes" ; then
 		LD_SEARCH_FLAGS='-Wl,-R,${LIB_RUNTIME_DIR}'
 	    else
 		LD_SEARCH_FLAGS='-R${LIB_RUNTIME_DIR}'
 	    fi
-	    ;;
-	AIX-4.[[2-9]])
-	    if test "${TCL_THREADS}" = "1" -a "$using_gcc" = "no" ; then
-		# AIX requires the _r compiler when gcc isn't being used
-		if test "${CC}" != "cc_r" ; then
-		    CC=${CC}_r
+
+	    if test "$do64bit" = "yes" ; then
+		if test "$using_gcc" = "no" ; then
+		    do64bit_ok=yes
+		    EXTRA_CFLAGS="-q64"
+		    LDFLAGS="-q64"
+		else 
+		    AC_MSG_WARN("64bit mode not supported with GCC on $system")
 		fi
-		AC_MSG_RESULT(Using $CC for compiling with threads)
 	    fi
-	    SHLIB_CFLAGS=""
-	    SHLIB_LD="$fullSrcDir/ldAix /bin/ld -bhalt:4 -bM:SRE -bE:lib.exp -H512 -T512 -bnoentry"
-	    SHLIB_LD_LIBS='${LIBS}'
-	    SHLIB_SUFFIX=".so"
-	    DL_OBJS="tclLoadDl.o"
-	    DL_LIBS="-ldl"
-	    LDFLAGS=""
-	    LD_SEARCH_FLAGS='-L${LIB_RUNTIME_DIR}'
-	    TCL_NEEDS_EXP_FILE=1
-	    TCL_EXPORT_FILE_SUFFIX='${VERSION}\$\{DBGX\}.exp'
 	    ;;
 	AIX-*)
 	    if test "${TCL_THREADS}" = "1" -a "$using_gcc" = "no" ; then
@@ -644,12 +636,35 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
-	    LIBOBJS="$LIBOBJS tclLoadAix.o"
-	    DL_LIBS="-lld"
+	    DL_LIBS="-ldl"
 	    LDFLAGS=""
 	    LD_SEARCH_FLAGS='-L${LIB_RUNTIME_DIR}'
 	    TCL_NEEDS_EXP_FILE=1
 	    TCL_EXPORT_FILE_SUFFIX='${VERSION}\$\{DBGX\}.exp'
+
+	    # AIX v<=4.1 has some different flags than 4.2+
+	    if test "$system" = "AIX-4.1" -o "`uname -v`" -lt "4" ; then
+		LIBOBJS="$LIBOBJS tclLoadAix.o"
+		DL_LIBS="-lld"
+	    fi
+
+	    # On AIX <=v4 systems, libbsd.a has to be linked in to support
+	    # non-blocking file IO.  This library has to be linked in after
+	    # the MATH_LIBS or it breaks the pow() function.  The way to
+	    # insure proper sequencing, is to add it to the tail of MATH_LIBS.
+	    # This library also supplies gettimeofday.
+	    #
+	    # AIX does not have a timezone field in struct tm. When the AIX
+	    # bsd library is used, the timezone global and the gettimeofday
+	    # methods are to be avoided for timezone deduction instead, we
+	    # deduce the timezone by comparing the localtime result on a
+	    # known GMT value.
+
+	    AC_CHECK_LIB(bsd, gettimeofday, libbsd=yes, libbsd=no)
+	    if test $libbsd = yes; then
+	    	MATH_LIBS="$MATH_LIBS -lbsd"
+	    	AC_DEFINE(USE_DELTA_FOR_TZ)
+	    fi
 	    ;;
 	BSD/OS-2.1*|BSD/OS-3*)
 	    SHLIB_CFLAGS=""
@@ -978,7 +993,6 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 	    SHLIB_LD="/usr/ccs/bin/ld -G -z text"
 	    LDFLAGS=""
     
-	    do64bit_ok=no
 	    if test "$do64bit" = "yes" ; then
 		arch=`isainfo`
 		if test "$arch" = "sparcv9 sparc" ; then
@@ -1669,29 +1683,6 @@ AC_DEFUN(SC_TCL_LINK_LIBS, [
 
     AC_CHECK_FUNC(sin, MATH_LIBS="", MATH_LIBS="-lm")
     AC_CHECK_LIB(ieee, main, [MATH_LIBS="-lieee $MATH_LIBS"])
-
-    #--------------------------------------------------------------------
-    # On AIX systems, libbsd.a has to be linked in to support
-    # non-blocking file IO.  This library has to be linked in after
-    # the MATH_LIBS or it breaks the pow() function.  The way to
-    # insure proper sequencing, is to add it to the tail of MATH_LIBS.
-    # This library also supplies gettimeofday.
-    #
-    # AIX does not have a timezone field in struct tm. When the AIX bsd
-    # library is used, the timezone global and the gettimeofday methods are
-    # to be avoided for timezone deduction instead, we deduce the timezone
-    # by comparing the localtime result on a known GMT value.
-    #--------------------------------------------------------------------
-
-    libbsd=no
-    if test "`uname -s`" = "AIX" ; then
-	AC_CHECK_LIB(bsd, gettimeofday, libbsd=yes)
-	if test $libbsd = yes; then
-	    MATH_LIBS="$MATH_LIBS -lbsd"
-	    AC_DEFINE(USE_DELTA_FOR_TZ)
-	fi
-    fi
-
 
     #--------------------------------------------------------------------
     # Interactive UNIX requires -linet instead of -lsocket, plus it

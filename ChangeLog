@@ -1,3 +1,16 @@
+2000-11-01  Jeff Hobbs  <hobbs@ajubasolutions.com>
+
+	* unix/tcl.m4: removed use of -lbsd and -ldl for AIX-5.
+
+	* tests/subst.test: added tests for non-zero return code handling
+	by subst.
+	* generic/tclParse.c (Tcl_EvalEx): corrected handling of non-zero,
+	non-error return code cases for subst. [BUG: 119829]
+
+	* generic/tclVar.c (TclVarTraceExists): Corrected excessive mem
+	use when info exists was called on a non-existent array element.
+	[BUG: 119213, 119336]
+
 2000-10-30  David Gravereaux  <davygrvy@ajubasolutions.com>
 
 	* win/configure.in:
