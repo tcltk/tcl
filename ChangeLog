@@ -1,3 +1,12 @@
+2004-02-19  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* win/tclWinInit.c (AppendEnvironment):
+	Use the tail component of the passed in
+	lib path instead of just blindly using
+	lib+4. That worked when lib was "lib/..."
+	but fails for other values. Thanks go to
+	Patrick Samson for pointing this out.
+
 2004-02-17  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	*** 8.4.6 TAGGED FOR RELEASE ***
