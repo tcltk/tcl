@@ -1,3 +1,8 @@
+2005-01-21  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* doc/FileSystem.3: Add missing ARGUMENTS section definitions for
+	arguments to Tcl_FSLink. [Bug 1106272]
+
 2005-01-19  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	TIP#235 IMPLEMENTATION
