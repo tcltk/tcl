@@ -1,5 +1,10 @@
 2002-11-26  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	* tests/__clone.test: rename to allow it to be lexically first.
+
+	* generic/tclLiteral.c (TclGlobalLiteralTable): add a thread exit
+	handler to remove remaining literals on thread exit.
+
 	* generic/tclMain.c (Tcl_Main):	added Tcl_DeleteInterp and
 	* unix/tclAppInit.c (main):	Tcl_Finalize in -DPURIFY case to
 					help indentify memory leaks.
