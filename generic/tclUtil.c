@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.21 2001/07/31 19:12:07 vincentdarley Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.22 2001/08/31 17:53:57 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -2182,6 +2182,7 @@ TclGetIntForIndex(interp, objPtr, endValue, indexPtr)
     } else {
 	intforindex_error:
 	if ((Interp *)interp != NULL) {
+	    Tcl_ResetResult(interp);
 	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
 		    "bad index \"", bytes,
 		    "\": must be integer or end?-integer?", (char *) NULL);
@@ -2239,6 +2240,10 @@ TclCheckBadOctal(interp, value)
 	if (*p == '\0') {
 	    /* Reached end of string */
 	    if (interp != NULL) {
+		/*
+		 * Don't reset the result here because we want this result
+		 * to be added to an existing error message as extra info.
+		 */
 		Tcl_AppendResult(interp, " (looks like invalid octal number)",
 			(char *) NULL);
 	    }
