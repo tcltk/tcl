@@ -1,6 +1,6 @@
 Tcl 8.3 for Windows
 
-RCS: @(#) $Id: README,v 1.16.2.2 2001/04/06 01:32:53 hobbs Exp $
+RCS: @(#) $Id: README,v 1.16.2.3 2001/10/03 20:26:10 hobbs Exp $
 
 1. Introduction
 ---------------
@@ -10,7 +10,8 @@ version of Tcl.  This directory also contains source files for Tcl
 that are specific to Microsoft Windows.
 
 The information in this file is maintained on the web at:
-	http://dev.scriptics.com/doc/howto/compile.html#win
+
+	http://www.tcl-tk.net/doc/howto/compile.html#win
 
 2. Compiling Tcl
 ----------------
@@ -21,7 +22,7 @@ In order to compile Tcl for Windows, you need the following items:
 
 	Visual C++ 5+
 
-In practice, this release is built with Visual C++ 6.0
+In practice, this release is built with Visual C++ 6.0.
 
 In the "win" subdirectory of the source release, you will find
 "makefile.vc".  This is the makefile Visual C++ compiler.  You should
@@ -36,8 +37,8 @@ find them.  Tcl looks in one of following places for the library files:
 	1) The path specified in the environment variable "TCL_LIBRARY".
 
 	2) Relative to the directory containing the current .exe.
-	    Tcl will look for a directory "..\lib\tcl8.3" relative to the
-	    directory containing the currently running .exe.
+	   Tcl will look for a directory "..\lib\tcl8.3" relative to the
+	   directory containing the currently running .exe.
 
 Note that in order to run tclsh83.exe, you must ensure that tcl83.dll
 and tclpip83.dll are on your path, in the system directory, or in the 
@@ -52,6 +53,7 @@ This distribution contains an extensive test suite for Tcl.  Some of
 the tests are timing dependent and will fail from time to time.  If a
 test is failing consistently, please send us a bug report with as much
 detail as you can manage.  Please use the online database at
+
 	http://tcl.sourceforge.net/
 
 In order to run the test suite, you build the "test" target using the

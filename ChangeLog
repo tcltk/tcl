@@ -1,3 +1,30 @@
+2001-10-03  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* README:
+	* generic/tcl.h:
+	* mac/README:
+	* tools/tcl.hpj.in:
+	* tools/tcl.wse.in:
+	* unix/Makefile.in:
+	* unix/README:
+	* unix/configure:
+	* unix/configure.in:
+	* unix/tcl.m4:
+	* unix/tcl.spec:
+	* win/README: 
+	* win/REAME.binary: updated patchlevel to 8.3.4.  Changed urls to
+	point to www.tcl-tk.net where applicable.
+
+	* win/configure: 
+	* win/configure.in: 
+	* win/tcl.m4: 
+	* win/Makefile.in: added proper Win64 build support.
+	updated patchlevel to 8.3.4.
+
+	* generic/tclEvent.c (Tcl_FinalizeThread): moved freeing of
+	tclLibraryPath to before the thread exit handlers are called.
+	Slight modification to change on 2001-09-24.
+
 2001-09-28  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* doc/FindExec.3: added a comment not to change the working
@@ -10,14 +37,14 @@
 	  on calls to Tcl_Preserve and Tcl_Release -- ones that Vince
 	  apparently missed.
 	
-2001-09-27  Don Porter  <dgp@users.sourceforge.net>
+2001-09-27  Don Porter	<dgp@users.sourceforge.net>
 
-        * generic/tclIO.c (ChannelTimerProc):  Added Tcl_Preserve()
-        and Tcl_Release() to fix segfault introduced by the 2001-09-26
-        changes.  [Bug 465494]
+	* generic/tclIO.c (ChannelTimerProc):  Added Tcl_Preserve()
+	and Tcl_Release() to fix segfault introduced by the 2001-09-26
+	changes.  [Bug 465494]
 
-        * doc/TCL_MEM_DEBUG.3:  Updated out-of-date reference to
-        #define GUARD_SIZE.
+	* doc/TCL_MEM_DEBUG.3:	Updated out-of-date reference to
+	#define GUARD_SIZE.
 
 2001-09-26  Andreas Kupries  <andreas_kupries@users.sourceforge.net> 
 

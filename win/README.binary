@@ -1,11 +1,11 @@
 Tcl/Tk 8.3 for Windows, Binary Distribution
 
-RCS: @(#) $Id: README.binary,v 1.19.2.3 2001/04/06 01:32:53 hobbs Exp $ 
+RCS: @(#) $Id: README.binary,v 1.19.2.4 2001/10/03 20:26:10 hobbs Exp $ 
 
 1. Introduction
 --------------- 
 
-This directory contains the binary distribution of Tcl/Tk 8.3.3 for
+This directory contains the binary distribution of Tcl/Tk 8.3.4 for
 Windows.  It was compiled with Microsoft Visual C++ 5.0 using Win32
 API, so that it will run under Windows NT, 95, 98 and 2000.
 
@@ -25,22 +25,19 @@ The home of Tcl and Tk sources and bug database on the Web is at:
 	http://tcl.sourceforge.net/
 
 The home page for the Tcl Developer Xchange is at:
-	http://dev.scriptics.com/
+	http://www.tcl-tk.net/
 
 The home page for the Tcl/Tk release is
-	http://dev.scriptics.com/software/tcltk/
+	http://www.tcl-tk.net/software/tcltk/
 
 Detailed release notes can be found at
-	http://dev.scriptics.com/software/tcltk/relnotes/
-
-Information about Tcl itself can be found at
-	http://dev.scriptics.com/scripting/
+	http://sourceforge.net/project/showfiles.php?group_id=10894
 
 There are many Tcl books on the market.  Most are listed at
-	http://dev.scriptics.com/resource/doc/books/
+	http://www.tcl-tk.net/resource/doc/books/
 
 There are notes about compiling Tcl at
-	http://dev.scriptics.com/doc/howto/compile.html
+	http://www.tcl-tk.net/doc/howto/compile.html
 
 3. Installation
 ---------------
@@ -132,7 +129,4 @@ to subscribe, visit:
 
 	http://sourceforge.net/projects/tcl/
 
-and go to the Mailing Lists page.  There are also Special Interest Groups
-(SIGs) setup for these topics and more at:
-
-       http://dev.scriptics.com/
+and go to the Mailing Lists page.

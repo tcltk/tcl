@@ -1,15 +1,16 @@
+#! /bin/bash -norc
 # This file is an input file used by the GNU "autoconf" program to
 # generate the file "configure", which is run during Tcl installation
 # to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.20.2.4 2001/04/04 08:36:16 hobbs Exp $
+# RCS: @(#) $Id: configure.in,v 1.20.2.5 2001/10/03 20:26:10 hobbs Exp $
 
 AC_INIT(../generic/tcl.h)
 
 TCL_VERSION=8.3
 TCL_MAJOR_VERSION=8
 TCL_MINOR_VERSION=3
-TCL_PATCH_LEVEL=".3"
+TCL_PATCH_LEVEL=".4"
 VER=$TCL_MAJOR_VERSION$TCL_MINOR_VERSION
 
 if test "${prefix}" = "NONE"; then
@@ -34,9 +35,9 @@ SC_ENABLE_GCC
 # autoconf 2.50. You can also just set
 # the CC, AR, RANLIB, and RC environment
 # variables if you want to cross compile.
-#AC_CHECK_TOOL(AR, ar, :)
-#AC_CHECK_TOOL(RANLIB, ranlib, :)
-#AC_CHECK_TOOL(RC, windres, :)
+dnl AC_CHECK_TOOL(AR, ar, :)
+dnl AC_CHECK_TOOL(RANLIB, ranlib, :)
+dnl AC_CHECK_TOOL(RC, windres, :)
 
 if test "${GCC}" = "yes" ; then
     AC_CHECK_PROG(AR, ar, ar)
@@ -92,8 +93,6 @@ SC_CONFIG_CFLAGS
 
 SC_ENABLE_SYMBOLS
 
-CFLAGS=${CFLAGS_DEFAULT}
-LDFLAGS=${LDFLAGS_DEFAULT}
 TCL_DBGX=${DBGX}
 
 #--------------------------------------------------------------------
@@ -148,21 +147,15 @@ CFG_TCL_EXPORT_FILE_SUFFIX=${TCL_EXPORT_FILE_SUFFIX}
 # on symbols and static vs. shared.
 #--------------------------------------------------------------------
 
-if test "${GCC}" = "yes" ; then
-    RC_DEFINE_FLAG=--define
-else
-    RC_DEFINE_FLAG=-d
-fi
-
 if test ${SHARED_BUILD} = 0 ; then
     if test "${DBGX}" = "d"; then
-        RC_DEFINES="${RC_DEFINE_FLAG} STATIC_BUILD ${RC_DEFINE_FLAG} DEBUG"
+	RC_DEFINES="${RC_DEFINE} STATIC_BUILD ${RC_DEFINE} DEBUG"
     else
-        RC_DEFINES="${RC_DEFINE_FLAG} STATIC_BUILD"
+        RC_DEFINES="${RC_DEFINE} STATIC_BUILD"
     fi
 else
     if test "${DBGX}" = "d"; then
-        RC_DEFINES="${RC_DEFINE_FLAG} DEBUG"
+        RC_DEFINES="${RC_DEFINE} DEBUG"
     else
         RC_DEFINES=""
     fi
@@ -190,9 +183,9 @@ AC_SUBST(CFG_TCL_UNSHARED_LIB_SUFFIX)
 AC_SUBST(CFG_TCL_EXPORT_FILE_SUFFIX)
 AC_SUBST(TCL_SHARED_BUILD)
 
-AC_SUBST(PATHTYPE)
 AC_SUBST(CYGPATH)
-AC_SUBST(VPSEP)
+AC_SUBST(DEPARG)
+AC_SUBST(CFLAGS_DEFAULT)
 AC_SUBST(CFLAGS_DEBUG)
 AC_SUBST(CFLAGS_OPTIMIZE)
 AC_SUBST(CFLAGS_WARNING)
@@ -204,7 +197,7 @@ AC_SUBST(SHLIB_CFLAGS)
 AC_SUBST(SHLIB_SUFFIX)
 AC_SUBST(CC_OBJNAME)
 AC_SUBST(CC_EXENAME)
-AC_SUBST(LDFLAGS)
+AC_SUBST(LDFLAGS_DEFAULT)
 AC_SUBST(LDFLAGS_DEBUG)
 AC_SUBST(LDFLAGS_OPTIMIZE)
 AC_SUBST(LDFLAGS_CONSOLE)
@@ -215,6 +208,7 @@ AC_SUBST(RC)
 AC_SUBST(RC_OUT)
 AC_SUBST(RC_TYPE)
 AC_SUBST(RC_INCLUDE)
+AC_SUBST(RC_DEFINE)
 AC_SUBST(RC_DEFINES)
 AC_SUBST(RES)
 AC_SUBST(LIBS)
