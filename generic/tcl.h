@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.28 1998/10/13 20:30:22 rjohnson Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.29 1998/10/17 00:19:24 escoffon Exp $
  */
 
 #ifndef _TCL
@@ -27,6 +27,8 @@
  * unix/configure.in
  * win/makefile.bc	(only if major.minor changes, not patchlevel)
  * win/makefile.vc	(only if major.minor changes, not patchlevel)
+ * win/README
+ * win/README.binary
  *
  * The release level should be  0 for alpha, 1 for beta, and 2 for
  * final/patch.  The release serial value is the number that follows the
