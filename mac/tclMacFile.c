@@ -416,7 +416,7 @@ TclMatchFiles(
 
 int
 TclpStat(
-    char *path,
+    CONST char *path,
     struct stat *buf)
 {
     HFileInfo fpb;

@@ -262,5 +262,7 @@ void	TclUnsetEnv(CONST char *name);
 EXTERN int              TclpSameFile _ANSI_ARGS_((char *file1, char *file2,
 			    struct stat *sourceStatBufPtr, 
 		            struct stat *destStatBufPtr)) ;
+EXTERN int TclpStat _ANSI_ARGS_ ((CONST char *path, struct stat *buf));
+EXTERN int TclpAccess _ANSI_ARGS_ ((CONST char *path, int mode));
 
 #endif /* _MACPORT */
