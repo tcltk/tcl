@@ -51,6 +51,11 @@ if {[catch {
     tcltest::testConstraint hasLinks 1
 }
 
+tcltest::testConstraint testsetplatform [string equal testsetplatform [info commands testsetplatform]]
+if {[tcltest::testConstraint testsetplatform]} {
+    set platform [testgetplatform]
+}
+
 tcltest::testConstraint testsimplefilesystem \
   [string equal testsimplefilesystem [info commands testsimplefilesystem]]
 
@@ -257,6 +262,25 @@ removeDirectory dir.file
 test filesystem-1.30 {normalisation of nonexistent user} {
     list [catch {file normalize ~noonewiththisname} err] $err
 } {1 {user "noonewiththisname" doesn't exist}}
+
+test filesystem-1.31 {link normalisation: link near filesystem root} {testsetplatform} {
+    testsetplatform unix
+    file normalize /foo/../bar
+} {/bar}
+
+test filesystem-1.32 {link normalisation: link near filesystem root} {testsetplatform} {
+    testsetplatform unix
+    file normalize /../bar
+} {/bar}
+
+test filesystem-1.33 {link normalisation: link near filesystem root} {testsetplatform} {
+    testsetplatform windows
+    file normalize C:/../bar
+} {C:/bar}
+
+if {[tcltest::testConstraint testsetplatform]} {
+    testsetplatform $platform
+}
 
 test filesystem-2.0 {new native path} {unixOnly} {
    foreach f [lsort [glob -nocomplain /usr/bin/c*]] {
