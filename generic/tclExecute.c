@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.78 2002/07/17 10:36:22 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.79 2002/07/17 14:23:13 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1063,7 +1063,6 @@ TclExecuteByteCode(interp, codePtr)
 #endif
     register int cleanup;
     Tcl_Obj *objResultPtr;
-//
     char *part1, *part2;
     Var *varPtr, *arrayPtr;
     CallFrame *varFramePtr = iPtr->varFramePtr;
@@ -1169,6 +1168,11 @@ TclExecuteByteCode(interp, codePtr)
 	    valuePtr = POP_OBJECT();
 	    TclDecrRefCount(valuePtr);
         case 0:
+	    /*
+	     * We really want to do nothing now, but this is needed
+	     * for some compilers (SunPro CC)
+	     */
+	    break;
     }
 
     cleanup0:
