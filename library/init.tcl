@@ -3,7 +3,7 @@
 # Default system startup file for Tcl-based applications.  Defines
 # "unknown" procedure and auto-load facilities.
 #
-# RCS: @(#) $Id: init.tcl,v 1.49 2001/07/31 19:12:07 vincentdarley Exp $
+# RCS: @(#) $Id: init.tcl,v 1.50 2001/11/04 17:59:48 vincentdarley Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
@@ -647,7 +647,8 @@ proc ::tcl::CopyDirectory {action src dest} {
     set nsrc [file normalize $src]
     set ndest [file normalize $dest]
     if {[string equal $action "renaming"]} {
-	# Can't rename volumes
+	# Can't rename volumes.  We could give a more precise
+	# error message here, but that would break the test suite.
 	if {[lsearch -exact [file volumes] $nsrc] != -1} {
 	    return -code error "error $action \"$src\" to\
 	      \"$dest\": trying to rename a volume or move a directory\
@@ -690,15 +691,16 @@ proc ::tcl::CopyDirectory {action src dest} {
 	}
 	file mkdir $dest
     }
-    # Have to be careful to capture both visible and hidden files
-    foreach s [glob -nocomplain -directory $src *] {
-	if {([file tail $s] != ".") && ([file tail $s] != "..")} {
-	    file copy $s [file join $dest [file tail $s]]
-	}
-    }
-    # This will pick up things beginning with '.' on Unix and on
-    # Windows/MacOS those files which the OS considers invisible.
-    foreach s [glob -nocomplain -directory $src -types hidden *] {
+    # Have to be careful to capture both visible and hidden files.
+    # We will also be more generous to the file system and not
+    # assume the hidden and non-hidden lists are non-overlapping.
+    # 
+    # On Unix 'hidden' files begin with '.'.  On other platforms
+    # or filesystems hidden files may have other interpretations.
+    set filelist [concat [glob -nocomplain -directory $src *] \
+      [glob -nocomplain -directory $src -types hidden *]]
+    
+    foreach s [lsort -unique $filelist] {
 	if {([file tail $s] != ".") && ([file tail $s] != "..")} {
 	    file copy $s [file join $dest [file tail $s]]
 	}
