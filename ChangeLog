@@ -1,3 +1,18 @@
+2001-07-10  Mo DeJong  <mdejong@redhat.com>
+
+	* unix/Makefile.in: Add AR variable for use in STLIB_LD.
+	* unix/configure: Regen.
+	* unix/configure.in: Use STLIB_LD when defining MAKE_LIB
+	and MAKE_STUB_LIB. Subst RANLIB and AR.
+	* unix/tcl.m4 (SC_CONFIG_CFLAGS): Add doc comment about
+	STLIB_LD command. Check ${AR} env var when setting
+	STLIB_LD and delay evaluation until make time.
+	* win/configure: Regen.
+	* win/tcl.m4 (SC_CONFIG_CFLAGS): Delay evaluation of
+	${AR} in STLIB_LD and add flags to better match the
+	Unix implementation. Don't bother defining AR when
+	using VC++ since it is not used.
+
 2001-07-06  Mo DeJong  <mdejong@redhat.com>
 
 	* win/configure: Regen.

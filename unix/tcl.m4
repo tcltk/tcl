@@ -450,6 +450,8 @@ AC_DEFUN(SC_ENABLE_SYMBOLS, [
 #       MAKE_LIB -      Command to execute to build the Tcl library;
 #                       differs depending on whether or not Tcl is being
 #                       compiled as a shared library.
+#       STLIB_LD -      Base command to use for combining object files
+#                       into a static library.
 #       SHLIB_CFLAGS -  Flags to pass to cc when compiling the components
 #                       of a shared library (may request position-independent
 #                       code, among other things).
@@ -592,7 +594,10 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
     TCL_NEEDS_EXP_FILE=0
     TCL_BUILD_EXP_FILE=""
     TCL_EXP_FILE=""
-    STLIB_LD="ar cr"
+dnl FIXME: Replace AC_CHECK_PROG with AC_CHECK_TOOL once cross compiling is fixed.
+dnl AC_CHECK_TOOL(AR, ar, :)
+    AC_CHECK_PROG(AR, ar, ar)
+    STLIB_LD='${AR} cr'
     case $system in
 	AIX-5.*)
 	    if test "${TCL_THREADS}" = "1" -a "$using_gcc" = "no" ; then
