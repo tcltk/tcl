@@ -10,11 +10,15 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPipe.c,v 1.22 2002/06/28 09:56:54 dkf Exp $
+ * RCS: @(#) $Id: tclUnixPipe.c,v 1.23 2003/02/21 14:15:58 das Exp $
  */
 
 #include "tclInt.h"
 #include "tclPort.h"
+
+#ifdef USE_VFORK
+#define fork vfork
+#endif
 
 /*
  * The following macros convert between TclFile's and fd's.  The conversion
