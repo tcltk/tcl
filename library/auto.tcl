@@ -3,7 +3,7 @@
 # utility procs formerly in init.tcl dealing with auto execution
 # of commands and can be auto loaded themselves.
 #
-# RCS: @(#) $Id: auto.tcl,v 1.12 2002/10/28 16:34:25 dgp Exp $
+# RCS: @(#) $Id: auto.tcl,v 1.12.2.1 2004/11/16 16:56:01 dgp Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1998 Sun Microsystems, Inc.
@@ -60,54 +60,85 @@ proc tcl_findLibrary {basename version patch initScript enVarName varName} {
     set errors {}
 
     # The C application may have hardwired a path, which we honor
-    
+
     set variableSet [info exists the_library]
-    if {$variableSet && [string compare $the_library {}]} {
+    if {$variableSet && $the_library ne ""} {
 	lappend dirs $the_library
     } else {
 
 	# Do the canonical search
 
-	# 1. From an environment variable, if it exists
+	# 1. From an environment variable, if it exists.
+	#    Placing this first gives the end-user ultimate control
+	#    to work-around any bugs, or to customize.
 
         if {[info exists env($enVarName)]} {
             lappend dirs $env($enVarName)
         }
 
-	# 2. Relative to the Tcl library
+	# 2. In the package script directory registered within
+	#    the configuration of the package itself.
+	#
+	# Only do this for Tcl 8.5+, when Tcl_RegsiterConfig() is available.
+	#if {[catch {
+	#    ::${basename}::pkgconfig get scriptdir,runtime
+	#} value] == 0} {
+	#    lappend dirs $value
+	#}
 
-        lappend dirs [file join [file dirname [info library]] \
-		$basename$version]
+	# 3. Relative to auto_path directories.  This checks relative to the
+	# Tcl library as well as allowing loading of libraries added to the
+	# auto_path that is not relative to the core library or binary paths.
+	foreach d $::auto_path {
+	    lappend dirs [file join $d $basename$version]
+	    if {$::tcl_platform(platform) eq "unix"
+		&& $::tcl_platform(os) eq "Darwin"} {
+		# 4. On MacOSX, check the Resources/Scripts subdir too
+		lappend dirs [file join $d $basename$version Resources Scripts]
+	    }
+	}
 
 	# 3. Various locations relative to the executable
 	# ../lib/foo1.0		(From bin directory in install hierarchy)
 	# ../../lib/foo1.0	(From bin/arch directory in install hierarchy)
 	# ../library		(From unix directory in build hierarchy)
-	# ../../library		(From unix/arch directory in build hierarchy)
-	# ../../foo1.0.1/library
-	#		(From unix directory in parallel build hierarchy)
-	# ../../../foo1.0.1/library
-	#		(From unix/arch directory in parallel build hierarchy)
-
         set parentDir [file dirname [file dirname [info nameofexecutable]]]
         set grandParentDir [file dirname $parentDir]
         lappend dirs [file join $parentDir lib $basename$version]
         lappend dirs [file join $grandParentDir lib $basename$version]
         lappend dirs [file join $parentDir library]
-        lappend dirs [file join $grandParentDir library]
-        lappend dirs [file join $grandParentDir $basename$patch library]
-        lappend dirs [file join [file dirname $grandParentDir] \
-		$basename$patch library]
 
-	# 4. On MacOSX, check the directories in the tcl_pkgPath
-	if {[string equal $::tcl_platform(platform) "unix"] && \
-		[string equal $::tcl_platform(os) "Darwin"]} {
-	    foreach d $::tcl_pkgPath {
-		lappend dirs [file join $d $basename$version]
-		lappend dirs [file join $d $basename$version Resources Scripts]
-	    }
+	# Remaining locations are out of date (when relevant, they ought
+	# to be covered by the $::auto_path seach above).
+	#
+	# ../../library		(From unix/arch directory in build hierarchy)
+	# ../../foo1.0.1/library
+	#		(From unix directory in parallel build hierarchy)
+	# ../../../foo1.0.1/library
+	#		(From unix/arch directory in parallel build hierarchy)
+	#
+	# For the sake of extra compatibility safety, we keep adding these
+	# paths during the 8.4.* release series.
+	if {1} {
+	    lappend dirs [file join $grandParentDir library]
+	    lappend dirs [file join $grandParentDir $basename$patch library]
+	    lappend dirs [file join [file dirname $grandParentDir] \
+			      $basename$patch library]
 	}
     }
+    # uniquify $dirs in order
+    array set seen {}
+    foreach i $dirs {
+	if {[interp issafe]} {
+	    set norm $i
+	} else {
+	    set norm [file normalize $i]
+	}
+	if {[info exists seen($norm)]} { continue }
+	set seen($norm) ""
+	lappend uniqdirs $norm
+    }
+    set dirs $uniqdirs
     foreach i $dirs {
         set the_library $i
         set file [file join $i $initScript]
