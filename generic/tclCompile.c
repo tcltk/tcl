@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.65 2004/05/12 17:43:54 msofer Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.66 2004/05/16 17:25:48 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -274,10 +274,20 @@ InstructionDesc tclInstructionTable[] = {
 	 * are on the stack. */
     {"expon",		  1,   -1,	   0,	{OPERAND_NONE}},
 	/* Binary exponentiation operator: push (stknext ** stktop) */
-    {"listverify",	  1,    0,	   0,   {OPERAND_NONE}},
-	/* Test that top of stack is a valid list; error if not */
-    {"invokeExp",   INT_MIN,   INT_MIN,    2, {OPERAND_UINT4, OPERAND_ULIST1}},
-	/* Invoke with expansion: <objc,objv> = expanded <op1,top op1> */
+     /* 
+      * NOTE: the stack effects of expandStkTop and invokeExpanded
+      * are wrong - but it cannot be done right at compile time, the stack
+      * effect is only known at run time. The value for invokeExpanded
+      * is estimated better at compile time.
+      * See the comments further down in this file, where INST_INVOKE_EXPANDED 
+      * is emitted.
+      */
+     {"expandStart",       1,    0,          0,   {OPERAND_NONE}},
+         /* Start of command with {expand}ed arguments */
+     {"expandStkTop",      5,    0,          1,   {OPERAND_INT4}},
+         /* Expand the list at stacktop: push its elements on the stack */
+     {"invokeExpanded",    1,    0,          0,   {OPERAND_NONE}},
+         /* Invoke the command marked by the last 'expandStart' */
     {"listIndexImm",	  5,	0,	   1,	{OPERAND_IDX4}},
 	/* List Index:	push (lindex stktop op4) */
     {"listRangeImm",	  9,	0,	   2,	{OPERAND_IDX4, OPERAND_IDX4}},
@@ -941,8 +951,6 @@ TclCompileScript(interp, script, numBytes, envPtr)
 	gotParse = 1;
 	if (parse.numWords > 0) {
 	    int expand = 0;
-	    unsigned char delta = 1;
-	    Tcl_DString deltaList;
 
 	    /*
 	     * If not the first command, pop the previous command's result
@@ -995,7 +1003,7 @@ TclCompileScript(interp, script, numBytes, envPtr)
 		    wordIdx++, tokenPtr += (tokenPtr->numComponents + 1)) {
 		if (tokenPtr->type == TCL_TOKEN_EXPAND_WORD) {
 		    expand = 1;
-		    Tcl_DStringInit(&deltaList);
+		    TclEmitOpcode(INST_EXPAND_START, envPtr);		    
 		    break;
 		}
 	    }
@@ -1013,20 +1021,8 @@ TclCompileScript(interp, script, numBytes, envPtr)
 	     */
 	    
 	    for (wordIdx = 0, tokenPtr = parse.tokenPtr;
-		    wordIdx < parse.numWords; delta++, wordIdx++,
+		    wordIdx < parse.numWords; wordIdx++,
 		    tokenPtr += (tokenPtr->numComponents + 1)) {
-
-		if (expand && (delta == 255)
-			&& (tokenPtr->type != TCL_TOKEN_EXPAND_WORD)) {
-		    /*
-		     * Push an empty list for expansion so our delta
-		     * between expanded words doesn't overflow a byte
-		     */
-		    objIndex = TclRegisterNewLiteral(envPtr, "", 0);
-		    TclEmitPush(objIndex, envPtr);
-		    Tcl_DStringAppend(&deltaList, (CONST char *)&delta, 1);
-		    delta = 1;
-		}
 
 		if (tokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
 		    /*
@@ -1138,35 +1134,8 @@ TclCompileScript(interp, script, numBytes, envPtr)
 		    }
 		}
 		if (tokenPtr->type == TCL_TOKEN_EXPAND_WORD) {
-
-		    if ((tokenPtr->numComponents == 1)
-			    && (tokenPtr[1].type == TCL_TOKEN_TEXT)) {
-			/*
-			 * The value to be expanded is fully known
-			 * now at compile time.  We can check list
-			 * validity, so we do not have to do so at
-			 * runtime
-			 */
-			int length;
-			Tcl_Obj *testObj = Tcl_NewStringObj(tokenPtr[1].start,
-				tokenPtr[1].size);
-			if (TCL_OK !=
-				Tcl_ListObjLength(NULL, testObj, &length)) {
-			    /*
-			     * Not a valid list, so emit instructions to
-			     * test list validity (and fail) at runtime
-			     */
-			    TclEmitOpcode(INST_LIST_VERIFY, envPtr);
-			}
-		    } else {
-			/* 
-			 * Value to expand unknown until runtime, so
-			 * include a runtime check for valid list
-			 */
-			TclEmitOpcode(INST_LIST_VERIFY, envPtr);
-		    }
-		    Tcl_DStringAppend(&deltaList, (char *)&delta, 1);
-		    delta = 0;
+		    TclEmitInstInt4(INST_EXPAND_STKTOP, 
+		            envPtr->currStackDepth, envPtr);
 		}
 	    }
 
@@ -1176,9 +1145,24 @@ TclCompileScript(interp, script, numBytes, envPtr)
 	     */
 
 	    if (expand) {
-		TclEmitInstInt4(INST_INVOKE_EXP, wordIdx, envPtr);
-		TclEmitImmDeltaList1(&deltaList, envPtr);
-		Tcl_DStringFree(&deltaList);
+		/*
+		 * The stack depth during argument expansion can only be
+		 * managed at runtime, as the number of elements in the
+		 * expanded lists is not known at compile time.
+		 * We adjust here the stack depth estimate so that it is
+		 * correct after the command with expanded arguments
+		 * returns.
+		 * The end effect of this command's invocation is that 
+		 * all the words of the command are popped from the stack, 
+		 * and the result is pushed: the stack top changes by
+		 * (1-wordIdx).
+		 * Note that the estimates are not correct while the 
+		 * command is being prepared and run, INST_EXPAND_STKTOP 
+		 * is not stack-neutral in general. 
+		 */
+
+		TclEmitOpcode(INST_INVOKE_EXPANDED, envPtr);
+		TclAdjustStackDepth((1-wordIdx), envPtr);
 	    } else if (wordIdx > 0) {
 		if (wordIdx <= 255) {
 		    TclEmitInstInt1(INST_INVOKE_STK1, wordIdx, envPtr);
@@ -3413,16 +3397,6 @@ TclPrintInstruction(codePtr, pc)
 	    } else {
 		fprintf(stdout, "%u ", (unsigned int) opnd);
 	    }
-	    break;
-
-	case OPERAND_ULIST1:
-	    opnd = TclGetUInt1AtPtr(pc+numBytes); numBytes++;
-	    fprintf(stdout, "{");
-	    while (opnd) {
-		fprintf(stdout, "%u ", opnd);
-	        opnd = TclGetUInt1AtPtr(pc+numBytes); numBytes++;
-	    }
-	    fprintf(stdout, "0}");
 	    break;
 
 	case OPERAND_IDX4:
