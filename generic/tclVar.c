@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.6 1998/11/19 20:10:52 stanton Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.5 1998/09/14 18:40:02 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -191,7 +191,8 @@ TclLookupVar(interp, part1, part2, flags, msg, createPart1, createPart2,
      */
     if ((flags & TCL_GLOBAL_ONLY) != 0 || iPtr->varFramePtr == NULL) {
         cxtNsPtr = iPtr->globalNsPtr;
-    } else {
+    }
+    else {
         cxtNsPtr = iPtr->varFramePtr->nsPtr;
     }
 
@@ -216,7 +217,8 @@ TclLookupVar(interp, part1, part2, flags, msg, createPart1, createPart2,
         if (result == TCL_OK) {
             varPtr = (Var *) var;
             goto lookupVarPart2;
-        } else if (result != TCL_CONTINUE) {
+        }
+        else if (result != TCL_CONTINUE) {
             return (Var *) NULL;
         }
     }
