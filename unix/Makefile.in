@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.117 2002/09/26 19:06:11 hobbs Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.118 2002/10/10 04:56:21 hobbs Exp $
 
 VERSION 		= @TCL_VERSION@
 MAJOR_VERSION		= @TCL_MAJOR_VERSION@
@@ -134,10 +134,11 @@ NOTIFY_OBJS = tclUnixNotfy.o
 #NOTIFY_OBJS =
 
 # To enable memory debugging reverse the comment characters on the following
-# lines.  Warning:  if you enable memory debugging, you must do it
-# *everywhere*, including all the code that calls Tcl, and you must use
-# ckalloc and ckfree everywhere instead of malloc and free.
-MEM_DEBUG_FLAGS		= @MEM_DEBUG_FLAGS@
+# lines or call configure with --enable-symbols=mem
+# Warning:  if you enable memory debugging, you must do it *everywhere*,
+# including all the code that calls Tcl, and you must use ckalloc and
+# ckfree everywhere instead of malloc and free.
+MEM_DEBUG_FLAGS		=
 #MEM_DEBUG_FLAGS	= -DTCL_MEM_DEBUG
 
 TCL_STUB_LIB_FILE	= @TCL_STUB_LIB_FILE@
@@ -149,10 +150,9 @@ STUB_LIB_FILE		= ${TCL_STUB_LIB_FILE}
 TCL_STUB_LIB_FLAG	= @TCL_STUB_LIB_FLAG@
 #TCL_STUB_LIB_FLAG	= -ltclstub
 
-# To enable compilation debugging reverse the comment characters on
-# one of the following lines.
+# To enable compilation debugging reverse the comment characters on one
+# of the following lines or call configure with --enable-symbols=compile
 COMPILE_DEBUG_FLAGS	=
-#COMPILE_DEBUG_FLAGS	= -DTCL_COMPILE_STATS
 #COMPILE_DEBUG_FLAGS	= -DTCL_COMPILE_DEBUG -DTCL_COMPILE_STATS
 
 # To compile without backward compatibility and deprecated code

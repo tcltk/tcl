@@ -1,3 +1,12 @@
+2002-10-09  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* unix/README: doc'ed --enable-symbols options.
+	* unix/Makefile.in: removed @MEM_DEBUG_FLAGS@ subst.
+	* unix/configure: regen
+	* unix/configure.in: removed SC_ENABLE_MEMDEBUG call
+	* unix/tcl.m4: replaced SC_ENABLE_MEMDEBUG with a more intelligent
+	SC_ENABLE_SYMBOLS that takes yes|no|mem|compile|all as options now.
+
 2002-10-09  Kevin B. Kenny  <kennykb@acm.org>
 
 	* win/tclWinTime.c: Added code to set an exit handler that
