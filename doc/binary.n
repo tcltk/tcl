@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: binary.n,v 1.11.2.4 2003/07/14 08:01:47 das Exp $
+'\" RCS: @(#) $Id: binary.n,v 1.11.2.5 2003/07/14 18:26:29 hobbs Exp $
 '\" 
 .so man.macros
 .TH binary n 8.0 Tcl "Tcl Built-In Commands"
@@ -55,7 +55,7 @@ specifiers and the arguments:
 The first argument is a list of four numbers, but because of the count
 of 3 for the associated field specifier, only the first three will be
 used. The second argument is associated with the second field
-specifier. The resulting binary string contains the four numbers 10,
+specifier. The resulting binary string contains the four numbers 1.0,
 2.0, 3.0 and 0.1.
 .PP
 Each type-count pair moves an imaginary cursor through the binary
