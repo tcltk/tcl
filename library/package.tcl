@@ -3,7 +3,7 @@
 # utility procs formerly in init.tcl which can be loaded on demand
 # for package management.
 #
-# RCS: @(#) $Id: package.tcl,v 1.6 1999/08/19 02:59:40 hobbs Exp $
+# RCS: @(#) $Id: package.tcl,v 1.7 2000/01/27 19:20:05 ericm Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1998 Sun Microsystems, Inc.
@@ -74,7 +74,7 @@ proc pkg_mkIndex {args} {
     }
 
     set more ""
-    set direct 0
+    set direct 1
     set doVerbose 0
     set loadPat ""
     for {set idx 0} {$idx < $argCount} {incr idx} {
@@ -88,8 +88,11 @@ proc pkg_mkIndex {args} {
 	    -verbose {
 		set doVerbose 1
 	    }
+	    -lazy {
+		set direct 0
+		append more " -lazy"
+	    }
 	    -direct {
-		set direct 1
 		append more " -direct"
 	    }
 	    -load {
@@ -269,38 +272,45 @@ proc pkg_mkIndex {args} {
 		    set ::tcl::type source
 		}
 
-		# See what new namespaces appeared, and import commands
-		# from them.  Only exported commands go into the index.
-
-		foreach ::tcl::x [::tcl::GetAllNamespaces] {
-		    if {! [info exists ::tcl::namespaces($::tcl::x)]} {
-			namespace import -force ${::tcl::x}::*
-		    }
-		}
-
-		# Figure out what commands appeared
-
-		foreach ::tcl::x [info commands] {
-		    set ::tcl::newCmds($::tcl::x) 1
-		}
-		foreach ::tcl::x $::tcl::origCmds {
-		    catch {unset ::tcl::newCmds($::tcl::x)}
-		}
-		foreach ::tcl::x [array names ::tcl::newCmds] {
-		    # reverse engineer which namespace a command comes from
+		# As a performance optimization, if we are creating 
+		# direct load packages, don't bother figuring out the 
+		# set of commands created by the new packages.  We 
+		# only need that list for setting up the autoloading 
+		# used in the non-direct case.
+		if { !$::tcl::direct } {
+		    # See what new namespaces appeared, and import commands
+		    # from them.  Only exported commands go into the index.
 		    
-		    set ::tcl::abs [namespace origin $::tcl::x]
+		    foreach ::tcl::x [::tcl::GetAllNamespaces] {
+			if {! [info exists ::tcl::namespaces($::tcl::x)]} {
+			    namespace import -force ${::tcl::x}::*
+			}
+		    }
+		    
+		    # Figure out what commands appeared
+		    
+		    foreach ::tcl::x [info commands] {
+			set ::tcl::newCmds($::tcl::x) 1
+		    }
+		    foreach ::tcl::x $::tcl::origCmds {
+			catch {unset ::tcl::newCmds($::tcl::x)}
+		    }
+		    foreach ::tcl::x [array names ::tcl::newCmds] {
+			# reverse engineer which namespace a command comes from
+			
+			set ::tcl::abs [namespace origin $::tcl::x]
+			
+			# special case so that global names have no leading
+			# ::, this is required by the unknown command
+			
+			set ::tcl::abs [auto_qualify $::tcl::abs ::]
+			
+			if {[string compare $::tcl::x $::tcl::abs]} {
+			    # Name changed during qualification
 
-		    # special case so that global names have no leading
-		    # ::, this is required by the unknown command
-
-		    set ::tcl::abs [auto_qualify $::tcl::abs ::]
-
-		    if {[string compare $::tcl::x $::tcl::abs]} {
-			# Name changed during qualification
-
-			set ::tcl::newCmds($::tcl::abs) 1
-			unset ::tcl::newCmds($::tcl::x)
+			    set ::tcl::newCmds($::tcl::abs) 1
+			    unset ::tcl::newCmds($::tcl::x)
+			}
 		    }
 		}
 

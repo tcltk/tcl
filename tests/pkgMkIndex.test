@@ -8,7 +8,7 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 #
-# RCS: @(#) $Id: pkgMkIndex.test,v 1.12 1999/10/19 18:08:44 jenn Exp $
+# RCS: @(#) $Id: pkgMkIndex.test,v 1.13 2000/01/27 19:20:05 ericm Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -261,23 +261,27 @@ proc pkgtest::runIndex { args } {
 # changed on us
 
 test pkgMkIndex-1.1 {nothing matches pattern - current dir is the same} {
-    list [pkgtest::runIndex $fullPkgPath nomatch.tcl] [pwd]
+    list [pkgtest::runIndex -lazy $fullPkgPath nomatch.tcl] [pwd]
 } [list {1 {no files matched glob pattern "nomatch.tcl"}} [pwd]]
 
 test pkgMkIndex-2.1 {simple package} {
-    pkgtest::runIndex $fullPkgPath simple.tcl
+    pkgtest::runIndex -lazy $fullPkgPath simple.tcl
 } {0 {{simple:1.0 {tclPkgSetup {simple.tcl source {::simple::lower ::simple::upper}}}}}}
 
 test pkgMkIndex-2.2 {simple package - use -direct} {
     pkgtest::runIndex -direct $fullPkgPath simple.tcl
 } "0 {{simple:1.0 {source [file join $fullPkgPath simple.tcl]}}}"
 
+test pkgMkIndex-2.3 {simple package - direct loading is default} {
+    pkgtest::runIndex $fullPkgPath simple.tcl
+} "0 {{simple:1.0 {source [file join $fullPkgPath simple.tcl]}}}"
+
 test pkgMkIndex-3.1 {simple package with global symbols} {
-    pkgtest::runIndex $fullPkgPath global.tcl
+    pkgtest::runIndex -lazy $fullPkgPath global.tcl
 } {0 {{global:1.0 {tclPkgSetup {global.tcl source {global_lower global_upper}}}}}}
 
 test pkgMkIndex-4.1 {split package} {
-    pkgtest::runIndex $fullPkgPath pkg2_a.tcl pkg2_b.tcl
+    pkgtest::runIndex -lazy $fullPkgPath pkg2_a.tcl pkg2_b.tcl
 } {0 {{pkg2:1.0 {tclPkgSetup {pkg2_a.tcl source ::pkg2::p2-1} {pkg2_b.tcl source ::pkg2::p2-2}}}}}
 
 test pkgMkIndex-4.2 {split package - direct loading} {
@@ -292,11 +296,11 @@ source [file join $fullPkgPath pkg2_b.tcl]}}}"
 # Both failures are caused by Tcl code executed in pkgIndex.tcl.
 
 test pkgMkIndex-5.1 {requires -direct package} {
-    pkgtest::runIndex $fullPkgPath std.tcl
+    pkgtest::runIndex -lazy $fullPkgPath std.tcl
 } {0 {{std:1.0 {tclPkgSetup {std.tcl source {::std::p1 ::std::p2}}}}}}
 
 test pkgMkIndex-6.1 {pkg1 requires pkg3} {
-    pkgtest::runIndex $fullPkgPath pkg1.tcl pkg3.tcl
+    pkgtest::runIndex -lazy $fullPkgPath pkg1.tcl pkg3.tcl
 } {0 {{pkg1:1.0 {tclPkgSetup {pkg1.tcl source {::pkg1::p1-1 ::pkg1::p1-2}}}} {pkg3:1.0 {tclPkgSetup {pkg3.tcl source {::pkg3::p3-1 ::pkg3::p3-2}}}}}}
 
 test pkgMkIndex-6.2 {pkg1 requires pkg3 - use -direct} {
@@ -304,7 +308,7 @@ test pkgMkIndex-6.2 {pkg1 requires pkg3 - use -direct} {
 } "0 {{pkg1:1.0 {source [file join $fullPkgPath pkg1.tcl]}} {pkg3:1.0 {source [file join $fullPkgPath pkg3.tcl]}}}"
 
 test pkgMkIndex-7.1 {pkg4 uses pkg3} {
-    pkgtest::runIndex $fullPkgPath pkg4.tcl pkg3.tcl
+    pkgtest::runIndex -lazy $fullPkgPath pkg4.tcl pkg3.tcl
 } {0 {{pkg3:1.0 {tclPkgSetup {pkg3.tcl source {::pkg3::p3-1 ::pkg3::p3-2}}}} {pkg4:1.0 {tclPkgSetup {pkg4.tcl source {::pkg4::p4-1 ::pkg4::p4-2}}}}}}
 
 test pkgMkIndex-7.2 {pkg4 uses pkg3 - use -direct} {
@@ -312,7 +316,7 @@ test pkgMkIndex-7.2 {pkg4 uses pkg3 - use -direct} {
 } "0 {{pkg3:1.0 {source [file join $fullPkgPath pkg3.tcl]}} {pkg4:1.0 {source [file join $fullPkgPath pkg4.tcl]}}}"
 
 test pkgMkIndex-8.1 {pkg5 uses pkg2} {
-    pkgtest::runIndex $fullPkgPath pkg5.tcl pkg2_a.tcl pkg2_b.tcl
+    pkgtest::runIndex -lazy $fullPkgPath pkg5.tcl pkg2_a.tcl pkg2_b.tcl
 } {0 {{pkg2:1.0 {tclPkgSetup {pkg2_a.tcl source ::pkg2::p2-1} {pkg2_b.tcl source ::pkg2::p2-2}}} {pkg5:1.0 {tclPkgSetup {pkg5.tcl source {::pkg5::p5-1 ::pkg5::p5-2}}}}}}
 
 test pkgMkIndex-8.2 {pkg5 uses pkg2 - use -direct} {
@@ -321,7 +325,7 @@ test pkgMkIndex-8.2 {pkg5 uses pkg2 - use -direct} {
 source [file join $fullPkgPath pkg2_b.tcl]}} {pkg5:1.0 {source [file join $fullPkgPath pkg5.tcl]}}}"
 
 test pkgMkIndex-9.1 {circular packages} {
-    pkgtest::runIndex $fullPkgPath circ1.tcl circ2.tcl circ3.tcl
+    pkgtest::runIndex -lazy $fullPkgPath circ1.tcl circ2.tcl circ3.tcl
 } {0 {{circ1:1.0 {tclPkgSetup {circ1.tcl source {::circ1::c1-1 ::circ1::c1-2 ::circ1::c1-3 ::circ1::c1-4}}}} {circ2:1.0 {tclPkgSetup {circ2.tcl source {::circ2::c2-1 ::circ2::c2-2}}}} {circ3:1.0 {tclPkgSetup {circ3.tcl source ::circ3::c3-1}}}}}
 
 # Some tests require the existence of one of the DLLs in the dltest directory
@@ -332,16 +336,16 @@ set ::tcltest::testConstraints($dll) [file exists $x]
 
 test pkgMkIndex-10.1 {package in DLL and script} $dll {
     file copy -force $x $fullPkgPath
-    pkgtest::runIndex $fullPkgPath pkga[info sharedlibextension] pkga.tcl
+    pkgtest::runIndex -lazy $fullPkgPath pkga[info sharedlibextension] pkga.tcl
 } "0 {{Pkga:1.0 {tclPkgSetup {pkga[info sharedlibextension] load {pkga_eq pkga_quote}} {pkga.tcl source pkga_neq}}}}"
 test pkgMkIndex-10.2 {package in DLL hidden by -load} $dll {
-    pkgtest::runIndex -load Pkg* -- $fullPkgPath pkga[info sharedlibextension]
+    pkgtest::runIndex -lazy -load Pkg* -- $fullPkgPath pkga[info sharedlibextension]
 } {0 {}}
 
 # Tolerate "namespace import" at the global scope
 
 test pkgMkIndex-11.1 {conflicting namespace imports} {
-    pkgtest::runIndex $fullPkgPath import.tcl
+    pkgtest::runIndex -lazy $fullPkgPath import.tcl
 } {0 {{fubar:1.0 {tclPkgSetup {import.tcl source ::fubar::foo}}}}}
 
 # cleanup

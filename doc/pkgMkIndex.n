@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: pkgMkIndex.n,v 1.6 1998/12/02 01:42:18 welch Exp $
+'\" RCS: @(#) $Id: pkgMkIndex.n,v 1.7 2000/01/27 19:20:05 ericm Exp $
 '\" 
 .so man.macros
 .TH pkg_mkIndex n 8.0 Tcl "Tcl Built-In Commands"
@@ -15,7 +15,7 @@ pkg_mkIndex \- Build an index for automatic loading of packages
 .SH SYNOPSIS
 .nf
 .VS 8.0.3
-\fBpkg_mkIndex ?\fI-direct\fR? ?\fI-load pkgPat\fR? ?\fI-verbose\fR? \fIdir\fR ?\fIpattern pattern ...\fR?
+\fBpkg_mkIndex ?\fI-lazy\fR? ?\fI-load pkgPat\fR? ?\fI-verbose\fR? \fIdir\fR ?\fIpattern pattern ...\fR?
 .VE
 .fi
 .BE
@@ -102,10 +102,10 @@ interpreters.
 .SH OPTIONS
 The optional switches are:
 .TP 15
-\fB\-direct\fR
-The generated index
-will manage to load the package immediately upon \fBpackage require\fR
-instead of delaying loading until actual use of one of the commands.
+\fB\-lazy\fR
+The generated index will manage to delay loading the package until the
+use of one of the commands provided by the package, instead of loading
+it immediately upon \fBpackage require\fR.
 .TP 15
 \fB\-load \fIpkgPat\fR
 The index process will pre-load any packages that exist in the
@@ -155,7 +155,7 @@ invoke \fBpackage provide\fR commands to announce the
 availability of the package, and they setup auto-loader
 information to load the files of the package.
 .VS 8.0.3
-Unless the \fI-direct\fR flag was provided when the \fBpkgIndex.tcl\fR
+If the \fI-lazy\fR flag was provided when the \fBpkgIndex.tcl\fR
 was generated,
 .VE
 a given file of a given version of a given package isn't
@@ -169,15 +169,15 @@ not see
 the package's commands in the interpreter, but you will be able
 to invoke the commands and they will be auto-loaded.
 
-.VS 8.0.3
+.VS 8.3.0
 .SH "DIRECT LOADING"
 .PP
 Some packages, for instance packages which use namespaces and export
 commands or those which require special initialization, might select
 that their package files be loaded immediately upon \fBpackage require\fR
 instead of delaying the actual loading to the first use of one of the
-package's command. This mode is enabled when generating the package
-index by specifying the \fI-direct\fR argument.
+package's command. This is the default mode when generating the package
+index.  It can be overridden by specifying the \fI-lazy\fR argument.
 .VE
 
 .SH "COMPLEX CASES"

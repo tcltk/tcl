@@ -1,3 +1,12 @@
+2000-01-27  Eric Melski  <ericm@scriptics.com>
+
+	* tests/pkgMkIndex.test: 
+	* doc/pkgMkIndex.n: 
+	* library/package.tcl: Per rfe #4097, optimized creation of direct
+	load packages to bypass computing the list of commands added by
+	the new package.  Also made direct loading the default, and added
+	a -lazy option.
+
 2000-01-26  Eric Melski  <ericm@scriptics.com>
 
 	* generic/tclNamesp.c: Undid fix for #956, which broke backwards
