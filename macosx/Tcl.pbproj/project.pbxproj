@@ -90,7 +90,7 @@
 			refType = 4;
 		};
 		00E2F84B016E8A830ACA28DC = {
-			buildArgumentsString = "-c \"if [ \\\"${ACTION}\\\" != \\\"clean\\\" ]; then if [ -z \\\"`find Makefile -newer \\\"${SRCROOT}/../unix/configure\\\"`\\\" ]; then \\\"${SRCROOT}/../unix/configure\\\" --prefix=/usr --mandir=/usr/share/man --libdir=\\\"${LIBDIR}\\\" --includedir=\\\"${LIBDIR}/Headers\\\" --enable-threads --enable-framework ${EXTRA_CONFIGURE_FLAGS}; mkdir -p Tcl.framework; ln -fs ../Tcl Tcl.framework/Tcl; fi; else rm -f Makefile; fi\"";
+			buildArgumentsString = "-c \"if [ \\\"${ACTION}\\\" != \\\"clean\\\" ]; then if [ -z \\\"`find . -name Makefile -newer \\\"${SRCROOT}/../unix/configure\\\"`\\\" ]; then \\\"${SRCROOT}/../unix/configure\\\" --prefix=/usr --mandir=/usr/share/man --libdir=\\\"${LIBDIR}\\\" --includedir=\\\"${LIBDIR}/Headers\\\" --enable-threads --enable-framework ${EXTRA_CONFIGURE_FLAGS}; mkdir -p Tcl.framework; ln -fs ../Tcl Tcl.framework/Tcl; fi; else rm -f Makefile; fi\"";
 			buildPhases = (
 			);
 			buildSettings = {
