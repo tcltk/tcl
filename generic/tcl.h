@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: %Z% $Id: tcl.h,v 1.7 1998/06/29 18:08:50 welch Exp $ 
+ * SCCS: %Z% $Id: tcl.h,v 1.8 1998/07/01 19:08:21 escoffon Exp $ 
  */
 
 #ifndef _TCL
@@ -70,10 +70,6 @@
 #   ifndef USE_TCLALLOC
 #	define USE_TCLALLOC 1
 #   endif
-#   ifndef STRINGIFY
-#	define STRINGIFY(x)	    STRINGIFY1(x)
-#	define STRINGIFY1(x)	    #x
-#   endif
 #endif /* __WIN32__ */
 
 /*
@@ -91,6 +87,34 @@
 #   ifndef NO_STRERROR
 #	define NO_STRERROR 1
 #   endif
+#endif
+
+/*
+ * Utility macros: STRINGIFY takes an argument and wraps it in "" (double
+ * quotation marks), JOIN joins two arguments.
+ */
+
+#define VERBATIM(x) x
+#ifdef _MSC_VER
+# define STRINGIFY(x) STRINGIFY1(x)
+# define STRINGIFY1(x) #x
+# define JOIN(a,b) JOIN1(a,b)
+# define JOIN1(a,b) a##b
+#else
+# ifdef RESOURCE_INCLUDED
+#  define STRINGIFY(x) STRINGIFY1(x)
+#  define STRINGIFY1(x) #x
+#  define JOIN(a,b) JOIN1(a,b)
+#  define JOIN1(a,b) a##b
+# else
+#  ifdef __STDC__
+#   define STRINGIFY(x) #x
+#   define JOIN(a,b) a##b
+#  else
+#   define STRINGIFY(x) "x"
+#   define JOIN(a,b) VERBATIM(a)VERBATIM(b)
+#  endif
+# endif
 #endif
 
 /* 

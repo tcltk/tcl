@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclCompile.c 1.80 97/09/18 18:23:30
+ * SCCS: %Z% $Id: tclCompile.c,v 1.6 1998/07/01 19:12:42 escoffon Exp $ 
  */
 
 #include "tclInt.h"
@@ -352,6 +352,14 @@ unsigned char tclTypeTable[] = {
 };
 
 /*
+ * Table of all AuxData types.
+ */
+
+static Tcl_HashTable auxDataTypeTable;
+static int auxDataTypeTableInitialized = 0;    /* 0 means not yet
+                                                * initialized. */
+
+/*
  * Prototypes for procedures defined later in this file:
  */
 
@@ -417,6 +425,16 @@ Tcl_ObjType tclByteCodeType = {
     DupByteCodeInternalRep,	/* dupIntRepProc */
     UpdateStringOfByteCode,	/* updateStringProc */
     SetByteCodeFromAny		/* setFromAnyProc */
+};
+
+/*
+ * The structures below define the AuxData types defined in this file.
+ */
+
+AuxDataType tclForeachInfoType = {
+    "ForeachInfo",				/* name */
+    DupForeachInfo,				/* dupProc */
+    FreeForeachInfo				/* freeProc */
 };
 
 /*
@@ -966,8 +984,8 @@ TclCleanupByteCode(codePtr)
 
     auxDataPtr = codePtr->auxDataArrayPtr;
     for (i = 0;  i < numAuxDataItems;  i++) {
-	if (auxDataPtr->freeProc != NULL) {
-	    auxDataPtr->freeProc(auxDataPtr->clientData);
+	if (auxDataPtr->type->freeProc != NULL) {
+	    auxDataPtr->type->freeProc(auxDataPtr->clientData);
 	}
 	auxDataPtr++;
     }
@@ -1077,8 +1095,8 @@ SetByteCodeFromAny(interp, objPtr)
 
 	auxDataPtr = compEnv.auxDataArrayPtr;
 	for (i = 0;  i < compEnv.auxDataArrayNext;  i++) {
-	    if (auxDataPtr->freeProc != NULL) {
-		auxDataPtr->freeProc(auxDataPtr->clientData);
+	    if (auxDataPtr->type->freeProc != NULL) {
+            auxDataPtr->type->freeProc(auxDataPtr->clientData);
 	    }
 	    auxDataPtr++;
 	}
@@ -4533,7 +4551,7 @@ TclCompileForeachCmd(interp, string, lastChar, flags, envPtr)
 	infoPtr->varLists[i] = varListPtr;
     }
     infoIndex = TclCreateAuxData((ClientData) infoPtr,
-            DupForeachInfo, FreeForeachInfo, envPtr);
+            &tclForeachInfoType, envPtr);
 
     /*
      * Emit code to store each value list into the associated temporary.
@@ -7447,17 +7465,12 @@ CreateExceptionRange(type, envPtr)
  */
 
 int
-TclCreateAuxData(clientData, dupProc, freeProc, envPtr)
+TclCreateAuxData(clientData, typePtr, envPtr)
     ClientData clientData;	/* The compilation auxiliary data to store
-				 * in the new aux data record. */
-    AuxDataDupProc *dupProc;	/* Procedure to call to duplicate the
-				 * compilation aux data when the containing
-				 * ByteCode structure is duplicated. */
-    AuxDataFreeProc *freeProc;	/* Procedure to call to free the
-				 * compilation aux data when the containing
-				 * ByteCode structure is freed.  */
+                             * in the new aux data record. */
+    AuxDataType *typePtr;	/* Pointer to the type to attach to this AuxData */
     register CompileEnv *envPtr;/* Points to the CompileEnv for which a new
-				 * aux data structure is to be allocated. */
+                                 * aux data structure is to be allocated. */
 {
     int index;			/* Index for the new AuxData structure. */
     register AuxData *auxDataPtr;
@@ -7493,9 +7506,8 @@ TclCreateAuxData(clientData, dupProc, freeProc, envPtr)
     envPtr->auxDataArrayNext++;
     
     auxDataPtr = &(envPtr->auxDataArrayPtr[index]);
+    auxDataPtr->type = typePtr;
     auxDataPtr->clientData = clientData;
-    auxDataPtr->dupProc  = dupProc;
-    auxDataPtr->freeProc = freeProc;
     return index;
 }
 
@@ -7806,5 +7818,145 @@ TclGetInstructionTable()
 {
     return &instructionTable[0];
 }
+
+/*
+ *--------------------------------------------------------------
+ *
+ * TclRegisterAuxDataType --
+ *
+ *	This procedure is called to register a new AuxData type
+ *	in the table of all AuxData types supported by Tcl.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The type is registered in the AuxData type table. If there was already
+ *	a type with the same name as in typePtr, it is replaced with the
+ *	new type.
+ *
+ *--------------------------------------------------------------
+ */
 
+void
+TclRegisterAuxDataType(typePtr)
+    AuxDataType *typePtr;	/* Information about object type;
+                             * storage must be statically
+                             * allocated (must live forever). */
+{
+    register Tcl_HashEntry *hPtr;
+    int new;
 
+    if (!auxDataTypeTableInitialized) {
+        TclInitAuxDataTypeTable();
+    }
+
+    /*
+     * If there's already a type with the given name, remove it.
+     */
+
+    hPtr = Tcl_FindHashEntry(&auxDataTypeTable, typePtr->name);
+    if (hPtr != (Tcl_HashEntry *) NULL) {
+        Tcl_DeleteHashEntry(hPtr);
+    }
+
+    /*
+     * Now insert the new object type.
+     */
+
+    hPtr = Tcl_CreateHashEntry(&auxDataTypeTable, typePtr->name, &new);
+    if (new) {
+        Tcl_SetHashValue(hPtr, typePtr);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclGetAuxDataType --
+ *
+ *	This procedure looks up an Auxdata type by name.
+ *
+ * Results:
+ *	If an AuxData type with name matching "typeName" is found, a pointer
+ *	to its AuxDataType structure is returned; otherwise, NULL is returned.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+AuxDataType *
+TclGetAuxDataType(typeName)
+    char *typeName;		/* Name of AuxData type to look up. */
+{
+    register Tcl_HashEntry *hPtr;
+    AuxDataType *typePtr = NULL;
+
+    if (!auxDataTypeTableInitialized) {
+        TclInitAuxDataTypeTable();
+    }
+
+    hPtr = Tcl_FindHashEntry(&auxDataTypeTable, typeName);
+    if (hPtr != (Tcl_HashEntry *) NULL) {
+        typePtr = (AuxDataType *) Tcl_GetHashValue(hPtr);
+    }
+
+    return typePtr;
+}
+
+/*
+ *--------------------------------------------------------------
+ *
+ * TclInitAuxDataTypeTable --
+ *
+ *	This procedure is invoked to perform once-only initialization of
+ *	the AuxData type table. It also registers the AuxData types defined in 
+ *	this file.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Initializes the table of defined AuxData types "auxDataTypeTable" with
+ *	builtin AuxData types defined in this file.
+ *
+ *--------------------------------------------------------------
+ */
+
+void
+TclInitAuxDataTypeTable()
+{
+    auxDataTypeTableInitialized = 1;
+
+    Tcl_InitHashTable(&auxDataTypeTable, TCL_STRING_KEYS);
+    TclRegisterAuxDataType(&tclForeachInfoType);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclFinalizeAuxDataTypeTable --
+ *
+ *	This procedure is called by Tcl_Finalize after all exit handlers
+ *	have been run to free up storage associated with the table of AuxData
+ *	types.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Deletes all entries in the hash table of AuxData types, "auxDataTypeTable".
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclFinalizeAuxDataTypeTable()
+{
+    if (auxDataTypeTableInitialized) {
+        Tcl_DeleteHashTable(&auxDataTypeTable);
+        auxDataTypeTableInitialized = 0;
+    }
+}

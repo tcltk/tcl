@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: %Z% $Id: tclBasic.c,v 1.4 1998/06/29 17:32:09 welch Exp $ 
+ * SCCS: %Z% $Id: tclBasic.c,v 1.5 1998/07/01 19:09:11 escoffon Exp $ 
  */
 
 #include "tclInt.h"
@@ -3494,8 +3494,8 @@ Tcl_ExprObj(interp, objPtr, resultPtrPtr)
 
 	    auxDataPtr = compEnv.auxDataArrayPtr;
 	    for (i = 0;  i < compEnv.auxDataArrayNext;  i++) {
-		if (auxDataPtr->freeProc != NULL) {
-		    auxDataPtr->freeProc(auxDataPtr->clientData);
+		if (auxDataPtr->type->freeProc != NULL) {
+		    auxDataPtr->type->freeProc(auxDataPtr->clientData);
 		}
 		auxDataPtr++;
 	    }
