@@ -91,12 +91,12 @@ test unixFCmd-1.7 {TclpRenameFile: EXDEV} {
     catch {file delete -force foo}
     set result
 } {1}
-test unixFCmd-1.8 {Checking EINTR Bug} {
+test unixFCmd-1.8 {Checking EINTR Bug} nonPortable {
     testalarm 
     after 2000
     list [testgotsig] [testgotsig]
 } {1 0}
-test unixFCmd-1.9 {Checking EINTR Bug} {
+test unixFCmd-1.9 {Checking EINTR Bug} nonPortable {
     cleanup
     set f [open tfalarm w]
     puts $f {
