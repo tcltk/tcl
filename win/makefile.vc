@@ -12,7 +12,7 @@
 # Copyright (c) 2001 Tomasoft Engineering.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.81 2002/02/20 19:06:53 davygrvy Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.82 2002/02/21 18:37:27 davygrvy Exp $
 #------------------------------------------------------------------------------
 
 !if "$(MSVCDIR)" == ""
@@ -78,6 +78,8 @@ the environment.  Jump to this line to read the new instructions.
 #		threads =  Turns on full multithreading support.
 #		symbols =  Adds symbols for step debugging.
 #		profile =  Adds profiling hooks.  Map file is assumed.
+#		loimpact=  Adds a flag for how NT treats the heap to keep memory
+#			   in use low.  This is said to impact performance.
 #
 #	STATS=memdbg,compdbg,none
 #		Sets optional memory and bytecode compiler debugging code added
@@ -373,12 +375,15 @@ lflags	= $(lflags) -opt:nowin98
 lflags	= $(lflags) -align:4096
 !endif
 
+!if $(LOIMPACT)
+lflags	= $(lflags) -ws:aggressive
+!endif
+
 dlllflags = $(lflags) -dll
 conlflags = $(lflags) -subsystem:console
 guilflags = $(lflags) -subsystem:windows
 
 baselibs   = kernel32.lib advapi32.lib user32.lib
-winlibs	   = $(baselibs) gdi32.lib
 
 
 #---------------------------------------------------------------------
@@ -427,7 +432,7 @@ $(TCLLIB): $(TCLOBJS)
 $**
 <<
 !else
-	$(link32) $(dlllflags) -out:$@ $(winlibs) @<<
+	$(link32) $(dlllflags) -out:$@ $(baselibs) @<<
 $**
 <<
 	-@del $*.exp
