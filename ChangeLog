@@ -1,5 +1,9 @@
 2004-07-16  Andreas Kupries  <andreask@activestate.com>
 
+	* tests/socket.test: Accepted two new testcases by Stuart Casoff
+	  <stwo@users.sourceforge.net> checking that -server and -async
+	  don't go together [Tcl SF Bug 796534].
+
 	* unix/tclUnixNotfy.c (NotifierThreadProc): Accepted Joe
 	  Mistachkin's patch for [Tcl SF Bug 990500], properly closing the
 	  notifier thread when its exits.
