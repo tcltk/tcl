@@ -1,3 +1,9 @@
+2001-09-07  David Gravereaux <davygrvy@pobox.com>
+
+	* win/tcl.m4: Added -link50compat option so a VC6 linker makes
+	a VC5 (pre sp3) compatible import library.
+	[Bug: 219257]
+
 2001-09-07  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* win/tclWinThrd.c (TclpThreadExit): Cast status argument to
