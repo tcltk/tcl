@@ -1,3 +1,20 @@
+2003-04-13  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* win/configure: Regen.
+	* win/configure.in: Add check for FINDEX_INFO_LEVELS
+	from winbase.h, known to be a problem in VC++ 5.2.
+	Define HAVE_NO_FINDEX_ENUMS if the define does not
+	exist.
+	* win/tclWinFile.c: Put declarations for
+	FINDEX_INFO_LEVELS and FINDEX_SEARCH_OPS inside
+	a check for HAVE_NO_FINDEX_ENUMS so that these are
+	not declared twice. This fixes the Mingw build.
+	* win/tclWinTime.c: Rework the init of timeInfo
+	so that the number or initializers matches the
+	declaration. This was broken under Mingw. Add
+	cast to avoid compile warning when calling the
+	AccumulateSample function.
+
 2003-04-12  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* win/Makefile.in (GENERIC_OBJS): add missing tclPathObj.c
