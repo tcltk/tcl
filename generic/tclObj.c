@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.12.2.5 2001/10/19 23:47:57 hobbs Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.12.2.5.2.1 2002/11/05 01:49:32 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -134,6 +134,12 @@ TclInitObjSubsystem()
     Tcl_MutexLock(&tclObjMutex);
     tclObjsAlloced = 0;
     tclObjsFreed = 0;
+    {
+	int i;
+	for (i = 0;  i < TCL_MAX_SHARED_OBJ_STATS;  i++) {
+	    tclObjsShared[i] = 0;
+	}
+    }
     Tcl_MutexUnlock(&tclObjMutex);
 #endif
 }
@@ -2068,6 +2074,17 @@ Tcl_DbIsShared(objPtr, file, line)
 	fflush(stderr);
 	panic("Trying to check whether previously disposed object is shared.");
     }
+#endif
+#ifdef TCL_COMPILE_STATS
+    Tcl_MutexLock(&tclObjMutex);
+    if ((objPtr)->refCount <= 1) {
+	tclObjsShared[1]++;
+    } else if ((objPtr)->refCount < TCL_MAX_SHARED_OBJ_STATS) {
+	tclObjsShared[(objPtr)->refCount]++;
+    } else {
+	tclObjsShared[0]++;
+    }
+    Tcl_MutexUnlock(&tclObjMutex);
 #endif
     return ((objPtr)->refCount > 1);
 }

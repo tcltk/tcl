@@ -1,3 +1,16 @@
+2002-11-04  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclBasic.c (Tcl_CreateInterp): simplify ByteCodeStats
+	initialization with one memset.
+
+	* generic/tclObj.c (TclInitObjSubsystem, Tcl_DbIsShared): enable
+	shared object reporting in EvalStatsCmd when used with TCL_MEM_DEBUG.
+
+	* generic/tclExecute.c (EvalStatsCmd): rework to use sprintf for
+	the conversions, so that it works in IOS.
+
+	* generic/tclHash.c (HashString): minor performance tweak.
+
 2002-07-19  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
 	
 	* generic/tclExecute.c (TclCompileByteCodesForExpr): Bugfix. Added
