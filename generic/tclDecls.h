@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.70 2002/01/15 17:55:29 dgp Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.71 2002/01/15 21:19:07 dgp Exp $
  */
 
 #ifndef _TCLDECLS
@@ -429,15 +429,15 @@ EXTERN void		Tcl_DStringStartSublist _ANSI_ARGS_((
 /* 126 */
 EXTERN int		Tcl_Eof _ANSI_ARGS_((Tcl_Channel chan));
 /* 127 */
-EXTERN char *		Tcl_ErrnoId _ANSI_ARGS_((void));
+EXTERN CONST char *	Tcl_ErrnoId _ANSI_ARGS_((void));
 /* 128 */
-EXTERN char *		Tcl_ErrnoMsg _ANSI_ARGS_((int err));
+EXTERN CONST char *	Tcl_ErrnoMsg _ANSI_ARGS_((int err));
 /* 129 */
 EXTERN int		Tcl_Eval _ANSI_ARGS_((Tcl_Interp * interp, 
 				char * string));
 /* 130 */
 EXTERN int		Tcl_EvalFile _ANSI_ARGS_((Tcl_Interp * interp, 
-				char * fileName));
+				CONST char * fileName));
 /* 131 */
 EXTERN int		Tcl_EvalObj _ANSI_ARGS_((Tcl_Interp * interp, 
 				Tcl_Obj * objPtr));
@@ -642,8 +642,8 @@ EXTERN Tcl_Channel	Tcl_OpenCommandChannel _ANSI_ARGS_((
 #endif /* __WIN32__ */
 /* 198 */
 EXTERN Tcl_Channel	Tcl_OpenFileChannel _ANSI_ARGS_((Tcl_Interp * interp, 
-				char * fileName, char * modeString, 
-				int permissions));
+				CONST char * fileName, 
+				CONST char * modeString, int permissions));
 /* 199 */
 EXTERN Tcl_Channel	Tcl_OpenTcpClient _ANSI_ARGS_((Tcl_Interp * interp, 
 				int port, char * address, char * myaddr, 
@@ -661,7 +661,7 @@ EXTERN void		Tcl_PrintDouble _ANSI_ARGS_((Tcl_Interp * interp,
 /* 203 */
 EXTERN int		Tcl_PutEnv _ANSI_ARGS_((CONST char * string));
 /* 204 */
-EXTERN char *		Tcl_PosixError _ANSI_ARGS_((Tcl_Interp * interp));
+EXTERN CONST char *	Tcl_PosixError _ANSI_ARGS_((Tcl_Interp * interp));
 /* 205 */
 EXTERN void		Tcl_QueueEvent _ANSI_ARGS_((Tcl_Event * evPtr, 
 				Tcl_QueuePosition position));
@@ -769,9 +769,9 @@ EXTERN char *		Tcl_SetVar2 _ANSI_ARGS_((Tcl_Interp * interp,
 				char * part1, char * part2, char * newValue, 
 				int flags));
 /* 239 */
-EXTERN char *		Tcl_SignalId _ANSI_ARGS_((int sig));
+EXTERN CONST char *	Tcl_SignalId _ANSI_ARGS_((int sig));
 /* 240 */
-EXTERN char *		Tcl_SignalMsg _ANSI_ARGS_((int sig));
+EXTERN CONST char *	Tcl_SignalMsg _ANSI_ARGS_((int sig));
 /* 241 */
 EXTERN void		Tcl_SourceRCFile _ANSI_ARGS_((Tcl_Interp * interp));
 /* 242 */
@@ -1441,7 +1441,7 @@ EXTERN int		Tcl_FSAccess _ANSI_ARGS_((Tcl_Obj * pathPtr,
 /* 456 */
 EXTERN Tcl_Channel	Tcl_FSOpenFileChannel _ANSI_ARGS_((
 				Tcl_Interp * interp, Tcl_Obj * pathPtr, 
-				char * modeString, int permissions));
+				CONST char * modeString, int permissions));
 /* 457 */
 EXTERN Tcl_Obj*		Tcl_FSGetCwd _ANSI_ARGS_((Tcl_Interp * interp));
 /* 458 */
@@ -1674,10 +1674,10 @@ typedef struct TclStubs {
     void (*tcl_DStringSetLength) _ANSI_ARGS_((Tcl_DString * dsPtr, int length)); /* 124 */
     void (*tcl_DStringStartSublist) _ANSI_ARGS_((Tcl_DString * dsPtr)); /* 125 */
     int (*tcl_Eof) _ANSI_ARGS_((Tcl_Channel chan)); /* 126 */
-    char * (*tcl_ErrnoId) _ANSI_ARGS_((void)); /* 127 */
-    char * (*tcl_ErrnoMsg) _ANSI_ARGS_((int err)); /* 128 */
+    CONST char * (*tcl_ErrnoId) _ANSI_ARGS_((void)); /* 127 */
+    CONST char * (*tcl_ErrnoMsg) _ANSI_ARGS_((int err)); /* 128 */
     int (*tcl_Eval) _ANSI_ARGS_((Tcl_Interp * interp, char * string)); /* 129 */
-    int (*tcl_EvalFile) _ANSI_ARGS_((Tcl_Interp * interp, char * fileName)); /* 130 */
+    int (*tcl_EvalFile) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * fileName)); /* 130 */
     int (*tcl_EvalObj) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * objPtr)); /* 131 */
     void (*tcl_EventuallyFree) _ANSI_ARGS_((ClientData clientData, Tcl_FreeProc * freeProc)); /* 132 */
     void (*tcl_Exit) _ANSI_ARGS_((int status)); /* 133 */
@@ -1761,13 +1761,13 @@ typedef struct TclStubs {
 #ifdef MAC_TCL
     void *reserved197;
 #endif /* MAC_TCL */
-    Tcl_Channel (*tcl_OpenFileChannel) _ANSI_ARGS_((Tcl_Interp * interp, char * fileName, char * modeString, int permissions)); /* 198 */
+    Tcl_Channel (*tcl_OpenFileChannel) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * fileName, CONST char * modeString, int permissions)); /* 198 */
     Tcl_Channel (*tcl_OpenTcpClient) _ANSI_ARGS_((Tcl_Interp * interp, int port, char * address, char * myaddr, int myport, int async)); /* 199 */
     Tcl_Channel (*tcl_OpenTcpServer) _ANSI_ARGS_((Tcl_Interp * interp, int port, char * host, Tcl_TcpAcceptProc * acceptProc, ClientData callbackData)); /* 200 */
     void (*tcl_Preserve) _ANSI_ARGS_((ClientData data)); /* 201 */
     void (*tcl_PrintDouble) _ANSI_ARGS_((Tcl_Interp * interp, double value, char * dst)); /* 202 */
     int (*tcl_PutEnv) _ANSI_ARGS_((CONST char * string)); /* 203 */
-    char * (*tcl_PosixError) _ANSI_ARGS_((Tcl_Interp * interp)); /* 204 */
+    CONST char * (*tcl_PosixError) _ANSI_ARGS_((Tcl_Interp * interp)); /* 204 */
     void (*tcl_QueueEvent) _ANSI_ARGS_((Tcl_Event * evPtr, Tcl_QueuePosition position)); /* 205 */
     int (*tcl_Read) _ANSI_ARGS_((Tcl_Channel chan, char * bufPtr, int toRead)); /* 206 */
 #if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
@@ -1810,8 +1810,8 @@ typedef struct TclStubs {
     void (*tcl_SetStdChannel) _ANSI_ARGS_((Tcl_Channel channel, int type)); /* 236 */
     char * (*tcl_SetVar) _ANSI_ARGS_((Tcl_Interp * interp, char * varName, char * newValue, int flags)); /* 237 */
     char * (*tcl_SetVar2) _ANSI_ARGS_((Tcl_Interp * interp, char * part1, char * part2, char * newValue, int flags)); /* 238 */
-    char * (*tcl_SignalId) _ANSI_ARGS_((int sig)); /* 239 */
-    char * (*tcl_SignalMsg) _ANSI_ARGS_((int sig)); /* 240 */
+    CONST char * (*tcl_SignalId) _ANSI_ARGS_((int sig)); /* 239 */
+    CONST char * (*tcl_SignalMsg) _ANSI_ARGS_((int sig)); /* 240 */
     void (*tcl_SourceRCFile) _ANSI_ARGS_((Tcl_Interp * interp)); /* 241 */
     int (*tcl_SplitList) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * listStr, int * argcPtr, char *** argvPtr)); /* 242 */
     void (*tcl_SplitPath) _ANSI_ARGS_((CONST char * path, int * argcPtr, char *** argvPtr)); /* 243 */
@@ -2027,7 +2027,7 @@ typedef struct TclStubs {
     char** (*tcl_FSFileAttrStrings) _ANSI_ARGS_((Tcl_Obj * pathPtr, Tcl_Obj ** objPtrRef)); /* 453 */
     int (*tcl_FSStat) _ANSI_ARGS_((Tcl_Obj * pathPtr, struct stat * buf)); /* 454 */
     int (*tcl_FSAccess) _ANSI_ARGS_((Tcl_Obj * pathPtr, int mode)); /* 455 */
-    Tcl_Channel (*tcl_FSOpenFileChannel) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * pathPtr, char * modeString, int permissions)); /* 456 */
+    Tcl_Channel (*tcl_FSOpenFileChannel) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * pathPtr, CONST char * modeString, int permissions)); /* 456 */
     Tcl_Obj* (*tcl_FSGetCwd) _ANSI_ARGS_((Tcl_Interp * interp)); /* 457 */
     int (*tcl_FSChdir) _ANSI_ARGS_((Tcl_Obj * pathPtr)); /* 458 */
     int (*tcl_FSConvertToPathType) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * pathPtr)); /* 459 */

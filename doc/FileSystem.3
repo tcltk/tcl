@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: FileSystem.3,v 1.14 2002/01/03 21:52:15 dgp Exp $
+'\" RCS: @(#) $Id: FileSystem.3,v 1.15 2002/01/15 21:19:06 dgp Exp $
 '\" 
 .so man.macros
 .TH Filesystem 3 8.4 Tcl "Tcl Library Procedures"
@@ -196,7 +196,7 @@ Filled with the function to use to unload this piece of code.
 .AP utimbuf *tval in
 The access and modification times in this structure are read and 
 used to set those values for a given file.
-.AP char *modeString in
+.AP "CONST char" *modeString in
 Specifies how the file is to be accessed.  May have any of the values
 allowed for the \fImode\fR argument to the Tcl \fBopen\fR command.
 .AP int permissions in
@@ -830,7 +830,7 @@ which require open or accessing a file's contents will use it
 typedef Tcl_Channel Tcl_FSOpenFileChannelProc(
 	Tcl_Interp *\fIinterp\fR,
 	Tcl_Obj *\fIpathPtr\fR,
-	char *\fImodeString\fR,
+	CONST char *\fImodeString\fR,
 	int \fIpermissions\fR);
 .CE
 .PP

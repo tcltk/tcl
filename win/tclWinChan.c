@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinChan.c,v 1.17 2002/01/15 17:55:30 dgp Exp $
+ * RCS: @(#) $Id: tclWinChan.c,v 1.18 2002/01/15 21:19:07 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -659,7 +659,7 @@ TclpOpenFileChannel(interp, pathPtr, modeString, permissions)
     Tcl_Interp *interp;			/* Interpreter for error reporting;
                                          * can be NULL. */
     Tcl_Obj *pathPtr;			/* Name of file to open. */
-    char *modeString;			/* A list of POSIX open modes or
+    CONST char *modeString;		/* A list of POSIX open modes or
                                          * a string such as "rw". */
     int permissions;			/* If the open involves creating a
                                          * file, with what modes to create

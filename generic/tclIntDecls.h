@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.33 2002/01/09 19:09:28 kennykb Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.34 2002/01/15 21:19:07 dgp Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -156,7 +156,7 @@ EXTERN int		TclGetNamespaceForQualName _ANSI_ARGS_((
 EXTERN TclObjCmdProcType TclGetObjInterpProc _ANSI_ARGS_((void));
 /* 40 */
 EXTERN int		TclGetOpenMode _ANSI_ARGS_((Tcl_Interp * interp, 
-				char * str, int * seekFlagPtr));
+				CONST char * str, int * seekFlagPtr));
 /* 41 */
 EXTERN Tcl_Command	TclGetOriginalCommand _ANSI_ARGS_((
 				Tcl_Command command));
@@ -563,7 +563,7 @@ typedef struct TclIntStubs {
     int (*tclGetLoadedPackages) _ANSI_ARGS_((Tcl_Interp * interp, char * targetName)); /* 37 */
     int (*tclGetNamespaceForQualName) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * qualName, Namespace * cxtNsPtr, int flags, Namespace ** nsPtrPtr, Namespace ** altNsPtrPtr, Namespace ** actualCxtPtrPtr, CONST char ** simpleNamePtr)); /* 38 */
     TclObjCmdProcType (*tclGetObjInterpProc) _ANSI_ARGS_((void)); /* 39 */
-    int (*tclGetOpenMode) _ANSI_ARGS_((Tcl_Interp * interp, char * str, int * seekFlagPtr)); /* 40 */
+    int (*tclGetOpenMode) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * str, int * seekFlagPtr)); /* 40 */
     Tcl_Command (*tclGetOriginalCommand) _ANSI_ARGS_((Tcl_Command command)); /* 41 */
     char * (*tclpGetUserHome) _ANSI_ARGS_((CONST char * name, Tcl_DString * bufferPtr)); /* 42 */
     int (*tclGlobalInvoke) _ANSI_ARGS_((Tcl_Interp * interp, int argc, char ** argv, int flags)); /* 43 */

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPosixStr.c,v 1.6 2000/05/11 01:50:59 hobbs Exp $
+ * RCS: @(#) $Id: tclPosixStr.c,v 1.7 2002/01/15 21:19:07 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -35,7 +35,7 @@
  *----------------------------------------------------------------------
  */
 
-char *
+CONST char *
 Tcl_ErrnoId()
 {
     switch (errno) {
@@ -480,7 +480,7 @@ Tcl_ErrnoId()
  *----------------------------------------------------------------------
  */
 
-char *
+CONST char *
 Tcl_ErrnoMsg(err)
     int err;			/* Error number (such as in errno variable). */
 {
@@ -927,7 +927,7 @@ Tcl_ErrnoMsg(err)
  *----------------------------------------------------------------------
  */
 
-char *
+CONST char *
 Tcl_SignalId(sig)
     int sig;			/* Number of signal. */
 {
@@ -1059,7 +1059,7 @@ Tcl_SignalId(sig)
  *----------------------------------------------------------------------
  */
 
-char *
+CONST char *
 Tcl_SignalMsg(sig)
     int sig;			/* Number of signal. */
 {

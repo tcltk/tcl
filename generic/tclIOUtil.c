@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.28 2002/01/07 23:09:13 dgp Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.29 2002/01/15 21:19:07 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -111,8 +111,8 @@ Tcl_Channel
 Tcl_OpenFileChannel(interp, path, modeString, permissions)
     Tcl_Interp *interp;                 /* Interpreter for error reporting;
 					 * can be NULL. */
-    char *path;                         /* Name of file to open. */
-    char *modeString;                   /* A list of POSIX open modes or
+    CONST char *path;                   /* Name of file to open. */
+    CONST char *modeString;             /* A list of POSIX open modes or
 					 * a string such as "rw". */
     int permissions;                    /* If the open involves creating a
 					 * file, with what modes to create
@@ -162,7 +162,7 @@ Tcl_GetCwd(interp, cwdPtr)
 int
 Tcl_EvalFile(interp, fileName)
     Tcl_Interp *interp;		/* Interpreter in which to process file. */
-    char *fileName;		/* Name of file to process.  Tilde-substitution
+    CONST char *fileName;	/* Name of file to process.  Tilde-substitution
 				 * will be performed on this name. */
 {
     int ret;
@@ -977,7 +977,7 @@ int
 TclGetOpenMode(interp, string, seekFlagPtr)
     Tcl_Interp *interp;			/* Interpreter to use for error
 					 * reporting - may be NULL. */
-    char *string;			/* Mode string, e.g. "r+" or
+    CONST char *string;			/* Mode string, e.g. "r+" or
 					 * "RDONLY CREAT". */
     int *seekFlagPtr;			/* Set this to 1 if the caller
                                          * should seek to EOF during the
@@ -1299,12 +1299,12 @@ Tcl_SetErrno(err)
  *----------------------------------------------------------------------
  */
 
-char *
+CONST char *
 Tcl_PosixError(interp)
     Tcl_Interp *interp;		/* Interpreter whose $errorCode variable
 				 * is to be changed. */
 {
-    char *id, *msg;
+    CONST char *id, *msg;
 
     msg = Tcl_ErrnoMsg(errno);
     id = Tcl_ErrnoId();
@@ -1502,7 +1502,7 @@ Tcl_FSOpenFileChannel(interp, pathPtr, modeString, permissions)
     Tcl_Interp *interp;                 /* Interpreter for error reporting;
                                          * can be NULL. */
     Tcl_Obj *pathPtr;                   /* Name of file to open. */
-    char *modeString;                   /* A list of POSIX open modes or
+    CONST char *modeString;             /* A list of POSIX open modes or
                                          * a string such as "rw". */
     int permissions;                    /* If the open involves creating a
                                          * file, with what modes to create
