@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: info.test,v 1.3 1998/09/14 18:40:10 stanton Exp $
+# RCS: @(#) $Id: info.test,v 1.4 1998/10/13 18:44:16 rjohnson Exp $
 
 if {[string compare test [info procs test]] == 1} then {source defs}
 
@@ -232,6 +232,12 @@ test info-5.46 {info complete option} {
 } 1
 test info-5.47 {info complete option} {
     info complete "abc\\\n"
+} 0
+test info-5.48 {info complete option} {
+    info complete "set x [binary format H 00]; puts hi"
+} 1
+test info-5.49 {info complete option} {
+    info complete "set x [binary format H 00]; {"
 } 0
 
 test info-6.1 {info default option} {

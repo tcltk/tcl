@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.7 1998/09/14 18:39:57 stanton Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.8 1998/10/13 18:44:16 rjohnson Exp $
  */
 
 #include "tclInt.h"
@@ -762,19 +762,17 @@ InfoCompleteCmd(dummy, interp, objc, objv)
     int objc;			/* Number of arguments. */
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
-    char *command;
-
     if (objc != 3) {
         Tcl_WrongNumArgs(interp, 2, objv, "command");
         return TCL_ERROR;
     }
 
-    command = Tcl_GetStringFromObj(objv[2], (int *) NULL);
-    if (Tcl_CommandComplete(command)) {
+    if (TclObjCommandComplete(objv[2])) {
 	Tcl_SetIntObj(Tcl_GetObjResult(interp), 1);
     } else {
 	Tcl_SetIntObj(Tcl_GetObjResult(interp), 0);
     }
+
     return TCL_OK;
 }
 
