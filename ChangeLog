@@ -1,3 +1,8 @@
+2002-06-18  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* generic/tclExecute.c (TEBC, INST_DONE): small bug in the panic
+	code for tcl-stack corruption.
+
 2002-06-17  David Gravereaux <davygrvy@pobox.com>
 
 	Trims to support the removal of RESOURCE_INCLUDED from rc

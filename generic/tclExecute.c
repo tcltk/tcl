@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.70 2002/06/17 22:52:51 hobbs Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.71 2002/06/18 13:22:21 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1079,6 +1079,7 @@ TclExecuteByteCode(interp, codePtr)
         switch (*pc) {
 	case INST_DONE:
 	    if (stackTop <= initStackTop) {
+		stackTop--;
 		goto abnormalReturn;
 	    }
 
