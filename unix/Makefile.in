@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.123 2003/04/05 01:25:11 dkf Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.124 2003/04/11 16:09:51 vincentdarley Exp $
 
 VERSION 		= @TCL_VERSION@
 MAJOR_VERSION		= @TCL_MAJOR_VERSION@
@@ -309,7 +309,7 @@ GENERIC_OBJS = regcomp.o regexec.o regfree.o regerror.o tclAlloc.o \
 	tclHash.o tclHistory.o tclIndexObj.o tclInterp.o tclIO.o tclIOCmd.o \
 	tclIOGT.o tclIOSock.o tclIOUtil.o tclLink.o tclListObj.o \
 	tclLiteral.o tclLoad.o tclMain.o tclNamesp.o tclNotify.o \
-	tclObj.o tclPanic.o tclParse.o tclParseExpr.o tclPipe.o \
+	tclObj.o tclPanic.o tclParse.o tclParseExpr.o tclPathObj.o tclPipe.o \
 	tclPkg.o tclPosixStr.o tclPreserve.o tclProc.o tclRegexp.o \
 	tclResolve.o tclResult.o tclScan.o tclStringObj.o tclThread.o \
 	 tclThreadAlloc.o tclThreadJoin.o tclStubInit.o tclStubLib.o \
@@ -380,6 +380,7 @@ GENERIC_SRCS = \
 	$(GENERIC_DIR)/tclObj.c \
         $(GENERIC_DIR)/tclParse.c \
         $(GENERIC_DIR)/tclParseExpr.c \
+	$(GENERIC_DIR)/tclPathObj.c \
 	$(GENERIC_DIR)/tclPipe.c \
 	$(GENERIC_DIR)/tclPkg.c \
 	$(GENERIC_DIR)/tclPosixStr.c \
@@ -944,6 +945,9 @@ tclParseExpr.o: $(GENERIC_DIR)/tclParseExpr.c
 
 tclPanic.o: $(GENERIC_DIR)/tclPanic.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclPanic.c
+
+tclPathObj.o: $(GENERIC_DIR)/tclPathObj.c
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclPathObj.c
 
 tclPipe.o: $(GENERIC_DIR)/tclPipe.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclPipe.c

@@ -9,7 +9,7 @@
 #
 # Copyright (c) 1998, 1999 Henry Spencer.  All rights reserved.
 #
-# RCS: @(#) $Id: reg.test,v 1.16 2002/07/29 12:28:35 dkf Exp $
+# RCS: @(#) $Id: reg.test,v 1.17 2003/04/11 16:00:00 vincentdarley Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -994,6 +994,94 @@ test reg-31.1 {[[:xdigit:]] behaves correctly when followed by [[:space:]]} {
     list [regexp $re $str match xdigit spaces] $match $xdigit $spaces
     # Code used to produce {1 2:::DebugWin32 2 :::DebugWin32} !!!
 } {1 2 2 {}}
+
+test reg-32.1 {canmatch functionality -- at end} {
+    set pat {blah}
+    set line "asd asd"
+    # can match at the final d, if '%' follows
+    set res [testregexp -xflags -- c $pat $line resvar]
+    lappend res $resvar
+} {0 7}
+
+test reg-32.2 {canmatch functionality -- at end} {
+    set pat {s%$}
+    set line "asd asd"
+    # can only match after the end of the string
+    set res [testregexp -xflags -- c $pat $line resvar]
+    lappend res $resvar
+} {0 7}
+
+test reg-32.3 {canmatch functionality -- not last char} {
+    set pat {[^d]%$}
+    set line "asd asd"
+    # can only match after the end of the string
+    set res [testregexp -xflags -- c $pat $line resvar]
+    lappend res $resvar
+} {0 7}
+
+test reg-32.3.1 {canmatch functionality -- no match} {
+    set pat {\Zx}
+    set line "asd asd"
+    # can match the last char, if followed by x
+    set res [testregexp -xflags -- c $pat $line resvar]
+    lappend res $resvar
+} {0 -1}
+
+test reg-32.4 {canmatch functionality -- last char} {knownBug} {
+    set pat {.x}
+    set line "asd asd"
+    # can match the last char, if followed by x
+    set res [testregexp -xflags -- c $pat $line resvar]
+    lappend res $resvar
+} {0 6}
+
+test reg-32.4.1 {canmatch functionality -- last char} {knownBug} {
+    set pat {.x$}
+    set line "asd asd"
+    # can match the last char, if followed by x
+    set res [testregexp -xflags -- c $pat $line resvar]
+    lappend res $resvar
+} {0 6}
+
+test reg-32.5 {canmatch functionality -- last char} {knownBug} {
+    set pat {.[^d]x$}
+    set line "asd asd"
+    # can match the last char, if followed by not-d and x.
+    set res [testregexp -xflags -- c $pat $line resvar]
+    lappend res $resvar
+} {0 6}
+
+test reg-32.6 {canmatch functionality -- last char} {knownBug} {
+    set pat {[^a]%[^\r\n]*$}
+    set line "asd asd"
+    # can match at the final d, if '%' follows
+    set res [testregexp -xflags -- c $pat $line resvar]
+    lappend res $resvar
+} {0 6}
+
+test reg-32.7 {canmatch functionality -- last char} {knownBug} {
+    set pat {[^a]%$}
+    set line "asd asd"
+    # can match at the final d, if '%' follows
+    set res [testregexp -xflags -- c $pat $line resvar]
+    lappend res $resvar
+} {0 6}
+
+test reg-32.8 {canmatch functionality -- last char} {knownBug} {
+    set pat {[^x]%$}
+    set line "asd asd"
+    # can match at the final d, if '%' follows
+    set res [testregexp -xflags -- c $pat $line resvar]
+    lappend res $resvar
+} {0 6}
+
+test reg-32.9 {canmatch functionality -- more complex case} {knownBug} {
+    set pat {((\B\B|\Bh+line)[ \t]*|[^\B]%[^\r\n]*)$}
+    set line "asd asd"
+    # can match at the final d, if '%' follows
+    set res [testregexp -xflags -- c $pat $line resvar]
+    lappend res $resvar
+} {0 6}
 
 # cleanup
 ::tcltest::cleanupTests
