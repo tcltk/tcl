@@ -3,7 +3,7 @@
 # Makefile to build Tcl on Mac OS X packaged as a Framework
 #	uses standard unix build system in tcl/unix
 #
-# RCS: @(#) $Id: Makefile,v 1.5.2.1 2003/07/15 01:15:51 das Exp $
+# RCS: @(#) $Id: Makefile,v 1.5.2.2 2003/07/18 01:06:16 das Exp $
 #
 ########################################################################################################
 
@@ -87,6 +87,7 @@ PRODUCT_LONGVERSION	:= $(shell eval $$(grep '^TCL_PATCH_LEVEL=' ${UNIX_DIR}/conf
 PRIVATE_HEADERS		:= tclInt.h tclIntDecls.h tclIntPlatDecls.h tclMath.h
 TARGETS			:= tclsh tcltest
 TCLSH			:= tclsh${PRODUCT_VERSION}
+TCL_EXE			?= ${SYMROOT}/${TCLSH}
 
 DYLIB_INSTALL_PATH	?= ${INSTALL_PATH}
 
@@ -175,7 +176,7 @@ ifeq (${BUILD_STYLE},Deployment)
 # build html documentation
 	export DYLD_FRAMEWORK_PATH=${SYMROOT} && \
 	${MAKE} -C ${OBJ_DIR} html-tcl \
-	DISTDIR=${INSTALL_ROOT}${DOCDIR} TCL_EXE=${SYMROOT}/${TCLSH} && \
+	DISTDIR=${INSTALL_ROOT}${DOCDIR} TCL_EXE=${TCL_EXE} && \
 	cd ${INSTALL_ROOT}${DOCDIR} && ln -fs contents.htm html/${PRODUCT_NAME}TOC.html && \
 	rm -fr "${PRODUCT_NAME}" && mv -f html "${PRODUCT_NAME}"
 endif
