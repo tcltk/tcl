@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.96 2004/03/17 18:14:13 das Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.97 2004/03/30 15:35:46 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -3442,8 +3442,15 @@ TclGetPathType(pathPtr, filesystemPtrPtr, driveNameLengthPtr, driveNameRef)
                                          * non-NULL, then set to the
                                          * filesystem which claims this
                                          * path */  
-    int *driveNameLengthPtr;            
-    Tcl_Obj **driveNameRef;
+    int *driveNameLengthPtr;            /* If the path is absolute, and 
+                                         * this is non-NULL, then set to
+                                         * the length of the driveName */
+    Tcl_Obj **driveNameRef;             /* If the path is absolute, and
+                                         * this is non-NULL, then set to
+                                         * the name of the drive,
+                                         * network-volume which contains
+                                         * the path, already with a
+                                         * refCount for the caller.  */
 {
     FilesystemRecord *fsRecPtr;
     int pathLen;

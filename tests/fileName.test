@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fileName.test,v 1.39 2004/03/30 09:56:33 vincentdarley Exp $
+# RCS: @(#) $Id: fileName.test,v 1.40 2004/03/30 15:35:47 vincentdarley Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -1312,12 +1312,15 @@ test filename-14.21 {asterisks, question marks, and brackets} {
 test filename-14.22 {asterisks, question marks, and brackets} {
     list [catch {glob goo/* x*z foo?q} msg] $msg
 } {1 {no files matched glob patterns "goo/* x*z foo?q"}}
-test filename-14.23 {slash globbing} {unixOrPc} {
+test filename-14.23 {slash globbing} {unixOnly} {
     glob /
 } /
+test filename-14.23.2 {slash globbing} {pcOnly} {
+    glob /
+} [file norm /]
 test filename-14.24 {slash globbing} {pcOnly} {
     glob {\\}
-} /
+} [file norm /]
 test filename-14.25 {type specific globbing} {unixOnly} {
     list [catch {lsort [glob -dir globTest -types f *]} msg] $msg
 } [list 0 [lsort [list \

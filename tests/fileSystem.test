@@ -400,6 +400,28 @@ test filesystem-1.39 {file normalisation with volume relative} {winOnly} {
     }
 } {ok}
 
+test filesystem-1.40 {file normalisation with repeated separators} {
+    set a [file norm foo////bar]
+    set b [file norm foo/bar]
+    
+    if {![string equal $a $b]} {
+        set res "Paths should be equal: $a , $b"
+    } else {
+        set res "ok"
+    }
+} {ok}
+
+test filesystem-1.41 {file normalisation with repeated separators} {winOnly} {
+    set a [file norm foo\\\\\\bar]
+    set b [file norm foo/bar]
+    
+    if {![string equal $a $b]} {
+        set res "Paths should be equal: $a , $b"
+    } else {
+        set res "ok"
+    }
+} {ok}
+
 test filesystem-2.0 {new native path} {unixOnly} {
    foreach f [lsort [glob -nocomplain /usr/bin/c*]] {
        catch {file readlink $f}
