@@ -12,6 +12,20 @@
 
 2002-04-22  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	* generic/tclAlloc.c:
+	* generic/tclInt.h:
+	* generic/tclThreadAlloc.c (new):
+	* unix/Makefile.in:
+	* unix/tclUnixThrd.c:
+	* win/Makefile.in:
+	* win/tclWinInt.h:
+	* win/tclWinThrd.c: added new threaded allocator contributed by
+	AOL that significantly reduces lock contention when multiple
+	threads are in use.  Only Windows and Unix implementations are
+	ready, and the Windows one may need work.  It is only used by
+	default on Unix for now, and requires that USE_THREAD_ALLOC be
+	defined (--enable-threads on Unix will define this).
+
 	* generic/tclIOUtil.c (Tcl_FSRegister, Tcl_FSUnregister):
 	corrected calling of Tcl_ConditionWait to ensure that there would
 	be a condition to wait upon.

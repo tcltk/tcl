@@ -15,8 +15,15 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclAlloc.c,v 1.15 2002/02/27 07:08:28 hobbs Exp $
+ * RCS: @(#) $Id: tclAlloc.c,v 1.16 2002/04/23 17:03:34 hobbs Exp $
  */
+
+/*
+ * Windows and Unix use an alternative allocator when building with threads
+ * that has significantly reduced lock contention.
+ */
+
+#if !defined(TCL_THREADS) || !defined(USE_THREAD_ALLOC)
 
 #include "tclInt.h"
 #include "tclPort.h"
@@ -721,3 +728,4 @@ TclpRealloc(cp, nbytes)
 }
 
 #endif /* !USE_TCLALLOC */
+#endif /* !TCL_THREADS */
