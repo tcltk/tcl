@@ -12,6 +12,20 @@
 	Added missing CONST'ification usage to match prototype listed
 	in tclInt.decls.
 
+	* win/tclWinPort.h:  Added a block for OpenWatcom adjustments
+	that fixes the same issue Mo did for MinGW lack of missing LPFN_*
+	typedefs in their WINE derived <winsock2.h>
+
+	* win/tclWinSock.c:  Added OpenWatcom to the commentary about the
+	#ifdef HAVE_NO_LPFN_DECLS block.
+
+	* win/tclWinTime.c:  Changed use of '_timezone' to 'timezone' as
+	this difference is already adjusted for in tclWinPort.h.  Removed
+	unreferenced posixEpoch file-scope global.
+
+	* win/tclWinFile.c (WinReadLinkDirectory): Fix for 'Initializers
+	must be constant' with the driveSpec array with OpenWatcom.
+
 2003-08-27  Don Porter  <dgp@users.sourceforge.net>
 
 	* tests/util.test: Added new tests for remaining TclNeedSpace()
