@@ -3,7 +3,7 @@
 # utility procs formerly in init.tcl which can be loaded on demand
 # for package management.
 #
-# RCS: @(#) $Id: package.tcl,v 1.10 2000/02/01 01:14:01 ericm Exp $
+# RCS: @(#) $Id: package.tcl,v 1.11 2000/02/07 22:33:17 ericm Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1998 Sun Microsystems, Inc.
@@ -13,7 +13,7 @@
 #
 
 # Create the package namespace
-namespace eval ::package {
+namespace eval ::pkg {
 }
 
 # pkg_compareExtension --
@@ -360,7 +360,7 @@ proc pkg_mkIndex {args} {
 	foreach {name version} $pkg {
 	    break
 	}
-	lappend cmd ::package::create -name $name -version $version
+	lappend cmd ::pkg::create -name $name -version $version
 	foreach spec $files($pkg) {
 	    foreach {file type procs} $spec {
 		if { $direct } {
@@ -488,7 +488,7 @@ proc tclPkgUnknown {name version {exact {}}} {
     }
 }
 
-# ::package::create --
+# ::pkg::create --
 #
 #	Given a package specification generate a "package ifneeded" statement
 #	for the package, suitable for inclusion in a pkgIndex.tcl file.
@@ -514,8 +514,8 @@ proc tclPkgUnknown {name version {exact {}}} {
 # Results:
 #	An appropriate "package ifneeded" statement for the package.
 
-proc ::package::create {args} {
-    append err(usage) "::package::create "
+proc ::pkg::create {args} {
+    append err(usage) "[lindex [info level 0] 0] "
     append err(usage) "-name packageName -version packageVersion"
     append err(usage) "?-load {filename ?{procs}?}? ... "
     append err(usage) "?-source {filename ?{procs}?}? ..."
