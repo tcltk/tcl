@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.20.2.1 2003/03/12 17:51:33 dgp Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.20.2.2 2003/05/12 22:35:40 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1446,7 +1446,7 @@ AliasObjCmd(clientData, interp, objc, objv)
 #define ALIAS_CMDV_PREALLOC 10
     Tcl_Interp *targetInterp;	
     Alias *aliasPtr;		
-    int result, prefc, cmdc;
+    int result, prefc, cmdc, i;
     Tcl_Obj **prefv, **cmdv;
     Tcl_Obj *cmdArr[ALIAS_CMDV_PREALLOC];
     aliasPtr = (Alias *) clientData;
@@ -1474,6 +1474,9 @@ AliasObjCmd(clientData, interp, objc, objv)
 
     Tcl_ResetResult(targetInterp);
 
+    for (i=0; i<cmdc; i++) {
+	Tcl_IncrRefCount(cmdv[i]);
+    }
     if (targetInterp != interp) {
 	Tcl_Preserve((ClientData) targetInterp);
 	result = Tcl_EvalObjv(targetInterp, cmdc, cmdv, TCL_EVAL_INVOKE);
@@ -1481,6 +1484,9 @@ AliasObjCmd(clientData, interp, objc, objv)
 	Tcl_Release((ClientData) targetInterp);
     } else {
 	result = Tcl_EvalObjv(targetInterp, cmdc, cmdv, TCL_EVAL_INVOKE);
+    }
+    for (i=0; i<cmdc; i++) {
+	Tcl_DecrRefCount(cmdv[i]);
     }
 
     if (cmdv != cmdArr) {
