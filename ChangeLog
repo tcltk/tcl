@@ -1,3 +1,12 @@
+2002-07-24  Daniel Steffen  <das@users.sourceforge.net>
+
+	* unix/Makefile.in:
+	* unix/configure.in: corrected fix for [Bug 529801]: ranlib
+	only needed for static builds on Mac OS X.
+	* unix/configure: Regen.
+	* unix/tclLoadDyld.c: fixed small bugs introduced by Vince,
+	implemented library unloading correctly (needs OS X 10.2).
+
 2002-07-23  Joe English  <jenglish@users.sourceforge.net>
 
 	* doc/OpenFileChnl.3: (Updates from Larry Virden)
