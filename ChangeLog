@@ -1,4 +1,4 @@
-2004-11-16  Don Porter  <dgp@users.sourceforge.net>
+2004-11-18  Don Porter  <dgp@users.sourceforge.net>
 
 	*** 8.4.8 TAGGED FOR RELEASE ***
 
@@ -6,13 +6,13 @@
 
 2004-11-18  Reinhard Max  <max@suse.de>
 
-        * unix/tcl.m4 (SC_CONFIG_MANPAGES): Applied an improved version of
-        * unix/configure.in:                patch #996085, that introduces
-        * unix/Makefile.in:                 --enable-man-suffix.
+	* unix/tcl.m4 (SC_CONFIG_MANPAGES): Applied an improved version of
+	* unix/configure.in:		    patch #996085, that introduces
+	* unix/Makefile.in:		    --enable-man-suffix.
 
-        * unix/installManPage:              added
-        * unix/mkLinks.tcl:                 removed
-        * unix/mkLinks:                     removed
+	* unix/installManPage:		    added
+	* unix/mkLinks.tcl:		    removed
+	* unix/mkLinks:			    removed
 
 2004-11-16  Jeff Hobbs  <jeffh@ActiveState.com>
 
@@ -106,11 +106,11 @@
 
 2004-11-02  Don Porter  <dgp@users.sourceforge.net>
 
-        * library/tcltest/tcltest.tcl:          Corrected some misleading
-        * tests/tcltest.test (tcltest-26.1,2):  displays of ::errorInfo and
-        ::errorCode information when the -setup, -body, and/or -cleanup scripts
-        return an unexpected return code.  Thanks to Robert Seeger for the
-        fix. [RFE 1017151].
+	* library/tcltest/tcltest.tcl:		Corrected some misleading
+	* tests/tcltest.test (tcltest-26.1,2):	displays of ::errorInfo and
+	::errorCode information when the -setup, -body, and/or -cleanup scripts
+	return an unexpected return code.  Thanks to Robert Seeger for the
+	fix. [RFE 1017151].
 
 2004-11-02  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
@@ -209,12 +209,12 @@
 	* tests/error.test (error-6.3,4,7,9):	Backport of some tests.
 	* tests/basic.test (basic-49.*):
 	* tests/namespace.test (namespace-8.7):
-        * tests/init.test (init-2.8):   Updated to not rely on http package.
+	* tests/init.test (init-2.8):	Updated to not rely on http package.
 
-        * generic/tclThreadTest.c (ThreadEventProc):    Corrected subtle
-        bug where the returned (char *) from Tcl_GetStringResult(interp)
-        continued to be used without copying or refcounting, while
-        activity on the interp continued.
+	* generic/tclThreadTest.c (ThreadEventProc):	Corrected subtle
+	bug where the returned (char *) from Tcl_GetStringResult(interp)
+	continued to be used without copying or refcounting, while
+	activity on the interp continued.
 
 2004-10-14  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
