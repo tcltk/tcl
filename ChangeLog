@@ -1,3 +1,30 @@
+1999-03-09    <stanton@GASPODE>
+
+	* Regenerated stub interfaces.
+	
+	* tools/genStubs.tcl: Reorganized code to support mixed generic
+	and platform specific tables. 
+
+	* generic/tclInt.decls: Removed TclCompile*Cmd routines from the
+	table.
+
+	* generic/tcl.decls: Moved old Unix fd handler routines into
+	generic table and modified stubs ordering to match the plus patch.
+
+	* win/tclWinChan.c (FileSeekProc): Fixed bug where errors during
+	seeking were not getting propagated.
+
+1999-03-08    <stanton@GASPODE>
+
+	* generic/tclDecls.h:
+	* generic/tclStubs.c:
+	* generic/tclStubInit.c:
+	* generic/tcl.decls: Removed Tcl_InitMemory().
+
+	* generic/tcl.h: Changed TCL_STUB_MAGIC to break binary
+	compatibility with plus patch version, since the tables don't
+	match. 
+
 1999-03-08    <stanton@GASPODE>
 
 	* win/tclWinInt.h:

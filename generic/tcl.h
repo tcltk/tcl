@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.33.4.3 1999/03/05 20:18:03 stanton Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.33.4.4 1999/03/10 05:50:24 stanton Exp $
  */
 
 #ifndef _TCL
@@ -1071,14 +1071,19 @@ typedef enum Tcl_PathType {
 /*
  * The following constant is used to test for older versions of Tcl
  * in the stubs tables.
+ *
+ * The plus patch implementation uses 0xFCA1BACF so we need to pick
+ * a different value to avoid accidental matches.
  */
 
-#define TCL_STUB_MAGIC 0xFCA1BACF
+#define TCL_STUB_MAGIC 0xFCA3BACF
 
 /*
  * The following function is required to be defined in all stubs aware
  * extensions.  The function is actually implemented in the stub
- * library, not the main Tcl library.
+ * library, not the main Tcl library, although there is a trivial
+ * implementation in the main library in case an extension is statically
+ * linked into an application.
  */
 
 EXTERN char *		Tcl_InitStubs _ANSI_ARGS_((Tcl_Interp *interp,
@@ -1092,19 +1097,10 @@ EXTERN char *		Tcl_InitStubs _ANSI_ARGS_((Tcl_Interp *interp,
 #include "tclDecls.h"
 
 /*
- * For backwards compatibility reasons, we include the platform specific
- * public function declarations on Unix.  This will bring in the old
- * file handler interfaces.
- */
-
-#if !defined(__WIN32__) && !defined(MAC_TCL)
-#include "tclPlatDecls.h"
-#endif
-
-/*
  * Public functions that are not accessible via the stubs table.
  */
 
+EXTERN void		Tcl_InitMemory _ANSI_ARGS_((Tcl_Interp *interp));
 EXTERN void		Tcl_Main _ANSI_ARGS_((int argc, char **argv,
 			    Tcl_AppInitProc *appInitProc));
 

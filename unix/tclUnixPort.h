@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPort.h,v 1.8.4.2 1999/03/05 20:18:09 stanton Exp $
+ * RCS: @(#) $Id: tclUnixPort.h,v 1.8.4.3 1999/03/10 05:50:29 stanton Exp $
  */
 
 #ifndef _TCLUNIXPORT
@@ -457,6 +457,7 @@ extern double strtod();
 
 #define TclpFinalize()
 
+#include "tclPlatDecls.h"
 #include "tclIntPlatDecls.h"
 
 #endif /* _TCLUNIXPORT */

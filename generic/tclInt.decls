@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.2.2.3 1999/03/08 22:25:29 stanton Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.2.2.4 1999/03/10 05:50:26 stanton Exp $
 
 library tcl
 
@@ -483,61 +483,17 @@ declare 131 generic {
 	    Tcl_ResolveCmdProc *cmdProc, Tcl_ResolveVarProc *varProc, \
 	    Tcl_ResolveCompiledVarProc *compiledVarProc)
 }
-
-# Compilation procedures for commands in the generic core:
-
 declare 132 generic {
-    int	TclCompileBreakCmd(Tcl_Interp *interp, char *string, char *lastChar, \
-	    int compileFlags, struct CompileEnv *compileEnvPtr)
-}
-declare 133 generic {
-    int	TclCompileCatchCmd(Tcl_Interp *interp, char *string, char *lastChar, \
-	    int compileFlags, struct CompileEnv *compileEnvPtr)
-}
-declare 134 generic {
-    int	TclCompileContinueCmd(Tcl_Interp *interp, char *string, \
-	    char *lastChar, int compileFlags, struct CompileEnv *compileEnvPtr)
-}
-declare 135 generic {
-    int	TclCompileExprCmd(Tcl_Interp *interp, char *string, char *lastChar, \
-	    int compileFlags, struct CompileEnv *compileEnvPtr)
-}
-declare 136 generic {
-    int	TclCompileForCmd(Tcl_Interp *interp, char *string, char *lastChar, \
-	    int compileFlags, struct CompileEnv *compileEnvPtr)
-}
-declare 137 generic {
-    int	TclCompileForeachCmd(Tcl_Interp *interp, char *string, \
-	    char *lastChar, int compileFlags, struct CompileEnv *compileEnvPtr)
-}
-declare 138 generic {
-    int	TclCompileIfCmd(Tcl_Interp *interp, char *string, char *lastChar, \
-	    int compileFlags, struct CompileEnv *compileEnvPtr)
-}
-declare 139 generic {
-    int	TclCompileIncrCmd(Tcl_Interp *interp, char *string, char *lastChar, \
-	    int compileFlags, struct CompileEnv *compileEnvPtr)
-}
-declare 140 generic {
-    int	TclCompileSetCmd(Tcl_Interp *interp, char *string, char *lastChar, \
-	    int compileFlags, struct CompileEnv *compileEnvPtr)
-}
-declare 141 generic {
-    int	TclCompileWhileCmd(Tcl_Interp *interp, char *string, char *lastChar, \
-	    int compileFlags, struct CompileEnv *compileEnvPtr)
-}
-
-declare 142 generic {
     int TclHasSockets(Tcl_Interp *interp)
 }
-declare 143 generic {
+declare 133 generic {
     struct tm *	TclpGetDate(TclpTime_t time, int useGMT)
 }
-declare 144 generic {
+declare 134 generic {
     size_t TclStrftime(char *s, size_t maxsize, const char *format, \
 	    const struct tm *t)
 }
-declare 145 generic {
+declare 135 generic {
     int TclpCheckStackSpace(void)
 }
 

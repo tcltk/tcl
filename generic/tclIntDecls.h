@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.2.4.1 1999/03/08 22:25:30 stanton Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.2.4.2 1999/03/10 05:50:26 stanton Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -441,63 +441,13 @@ EXTERN void		Tcl_SetNamespaceResolvers _ANSI_ARGS_((
 				Tcl_ResolveVarProc * varProc, 
 				Tcl_ResolveCompiledVarProc * compiledVarProc));
 /* 132 */
-EXTERN int		TclCompileBreakCmd _ANSI_ARGS_((Tcl_Interp * interp, 
-				char * string, char * lastChar, 
-				int compileFlags, 
-				struct CompileEnv * compileEnvPtr));
-/* 133 */
-EXTERN int		TclCompileCatchCmd _ANSI_ARGS_((Tcl_Interp * interp, 
-				char * string, char * lastChar, 
-				int compileFlags, 
-				struct CompileEnv * compileEnvPtr));
-/* 134 */
-EXTERN int		TclCompileContinueCmd _ANSI_ARGS_((
-				Tcl_Interp * interp, char * string, 
-				char * lastChar, int compileFlags, 
-				struct CompileEnv * compileEnvPtr));
-/* 135 */
-EXTERN int		TclCompileExprCmd _ANSI_ARGS_((Tcl_Interp * interp, 
-				char * string, char * lastChar, 
-				int compileFlags, 
-				struct CompileEnv * compileEnvPtr));
-/* 136 */
-EXTERN int		TclCompileForCmd _ANSI_ARGS_((Tcl_Interp * interp, 
-				char * string, char * lastChar, 
-				int compileFlags, 
-				struct CompileEnv * compileEnvPtr));
-/* 137 */
-EXTERN int		TclCompileForeachCmd _ANSI_ARGS_((
-				Tcl_Interp * interp, char * string, 
-				char * lastChar, int compileFlags, 
-				struct CompileEnv * compileEnvPtr));
-/* 138 */
-EXTERN int		TclCompileIfCmd _ANSI_ARGS_((Tcl_Interp * interp, 
-				char * string, char * lastChar, 
-				int compileFlags, 
-				struct CompileEnv * compileEnvPtr));
-/* 139 */
-EXTERN int		TclCompileIncrCmd _ANSI_ARGS_((Tcl_Interp * interp, 
-				char * string, char * lastChar, 
-				int compileFlags, 
-				struct CompileEnv * compileEnvPtr));
-/* 140 */
-EXTERN int		TclCompileSetCmd _ANSI_ARGS_((Tcl_Interp * interp, 
-				char * string, char * lastChar, 
-				int compileFlags, 
-				struct CompileEnv * compileEnvPtr));
-/* 141 */
-EXTERN int		TclCompileWhileCmd _ANSI_ARGS_((Tcl_Interp * interp, 
-				char * string, char * lastChar, 
-				int compileFlags, 
-				struct CompileEnv * compileEnvPtr));
-/* 142 */
 EXTERN int		TclHasSockets _ANSI_ARGS_((Tcl_Interp * interp));
-/* 143 */
+/* 133 */
 EXTERN struct tm *	TclpGetDate _ANSI_ARGS_((TclpTime_t time, int useGMT));
-/* 144 */
+/* 134 */
 EXTERN size_t		TclStrftime _ANSI_ARGS_((char * s, size_t maxsize, 
 				const char * format, const struct tm * t));
-/* 145 */
+/* 135 */
 EXTERN int		TclpCheckStackSpace _ANSI_ARGS_((void));
 
 typedef struct TclIntStubs {
@@ -636,20 +586,10 @@ typedef struct TclIntStubs {
     int (*tcl_PushCallFrame) _ANSI_ARGS_((Tcl_Interp* interp, Tcl_CallFrame * framePtr, Tcl_Namespace * nsPtr, int isProcCallFrame)); /* 129 */
     int (*tcl_RemoveInterpResolvers) _ANSI_ARGS_((Tcl_Interp * interp, char * name)); /* 130 */
     void (*tcl_SetNamespaceResolvers) _ANSI_ARGS_((Tcl_Namespace * namespacePtr, Tcl_ResolveCmdProc * cmdProc, Tcl_ResolveVarProc * varProc, Tcl_ResolveCompiledVarProc * compiledVarProc)); /* 131 */
-    int (*tclCompileBreakCmd) _ANSI_ARGS_((Tcl_Interp * interp, char * string, char * lastChar, int compileFlags, struct CompileEnv * compileEnvPtr)); /* 132 */
-    int (*tclCompileCatchCmd) _ANSI_ARGS_((Tcl_Interp * interp, char * string, char * lastChar, int compileFlags, struct CompileEnv * compileEnvPtr)); /* 133 */
-    int (*tclCompileContinueCmd) _ANSI_ARGS_((Tcl_Interp * interp, char * string, char * lastChar, int compileFlags, struct CompileEnv * compileEnvPtr)); /* 134 */
-    int (*tclCompileExprCmd) _ANSI_ARGS_((Tcl_Interp * interp, char * string, char * lastChar, int compileFlags, struct CompileEnv * compileEnvPtr)); /* 135 */
-    int (*tclCompileForCmd) _ANSI_ARGS_((Tcl_Interp * interp, char * string, char * lastChar, int compileFlags, struct CompileEnv * compileEnvPtr)); /* 136 */
-    int (*tclCompileForeachCmd) _ANSI_ARGS_((Tcl_Interp * interp, char * string, char * lastChar, int compileFlags, struct CompileEnv * compileEnvPtr)); /* 137 */
-    int (*tclCompileIfCmd) _ANSI_ARGS_((Tcl_Interp * interp, char * string, char * lastChar, int compileFlags, struct CompileEnv * compileEnvPtr)); /* 138 */
-    int (*tclCompileIncrCmd) _ANSI_ARGS_((Tcl_Interp * interp, char * string, char * lastChar, int compileFlags, struct CompileEnv * compileEnvPtr)); /* 139 */
-    int (*tclCompileSetCmd) _ANSI_ARGS_((Tcl_Interp * interp, char * string, char * lastChar, int compileFlags, struct CompileEnv * compileEnvPtr)); /* 140 */
-    int (*tclCompileWhileCmd) _ANSI_ARGS_((Tcl_Interp * interp, char * string, char * lastChar, int compileFlags, struct CompileEnv * compileEnvPtr)); /* 141 */
-    int (*tclHasSockets) _ANSI_ARGS_((Tcl_Interp * interp)); /* 142 */
-    struct tm * (*tclpGetDate) _ANSI_ARGS_((TclpTime_t time, int useGMT)); /* 143 */
-    size_t (*tclStrftime) _ANSI_ARGS_((char * s, size_t maxsize, const char * format, const struct tm * t)); /* 144 */
-    int (*tclpCheckStackSpace) _ANSI_ARGS_((void)); /* 145 */
+    int (*tclHasSockets) _ANSI_ARGS_((Tcl_Interp * interp)); /* 132 */
+    struct tm * (*tclpGetDate) _ANSI_ARGS_((TclpTime_t time, int useGMT)); /* 133 */
+    size_t (*tclStrftime) _ANSI_ARGS_((char * s, size_t maxsize, const char * format, const struct tm * t)); /* 134 */
+    int (*tclpCheckStackSpace) _ANSI_ARGS_((void)); /* 135 */
 } TclIntStubs;
 
 extern TclIntStubs *tclIntStubsPtr;
@@ -1188,61 +1128,21 @@ extern TclIntStubs *tclIntStubsPtr;
 #define Tcl_SetNamespaceResolvers(namespacePtr, cmdProc, varProc, compiledVarProc) \
 	(tclIntStubsPtr->tcl_SetNamespaceResolvers)(namespacePtr, cmdProc, varProc, compiledVarProc) /* 131 */
 #endif
-#ifndef TclCompileBreakCmd
-#define TclCompileBreakCmd(interp, string, lastChar, compileFlags, compileEnvPtr) \
-	(tclIntStubsPtr->tclCompileBreakCmd)(interp, string, lastChar, compileFlags, compileEnvPtr) /* 132 */
-#endif
-#ifndef TclCompileCatchCmd
-#define TclCompileCatchCmd(interp, string, lastChar, compileFlags, compileEnvPtr) \
-	(tclIntStubsPtr->tclCompileCatchCmd)(interp, string, lastChar, compileFlags, compileEnvPtr) /* 133 */
-#endif
-#ifndef TclCompileContinueCmd
-#define TclCompileContinueCmd(interp, string, lastChar, compileFlags, compileEnvPtr) \
-	(tclIntStubsPtr->tclCompileContinueCmd)(interp, string, lastChar, compileFlags, compileEnvPtr) /* 134 */
-#endif
-#ifndef TclCompileExprCmd
-#define TclCompileExprCmd(interp, string, lastChar, compileFlags, compileEnvPtr) \
-	(tclIntStubsPtr->tclCompileExprCmd)(interp, string, lastChar, compileFlags, compileEnvPtr) /* 135 */
-#endif
-#ifndef TclCompileForCmd
-#define TclCompileForCmd(interp, string, lastChar, compileFlags, compileEnvPtr) \
-	(tclIntStubsPtr->tclCompileForCmd)(interp, string, lastChar, compileFlags, compileEnvPtr) /* 136 */
-#endif
-#ifndef TclCompileForeachCmd
-#define TclCompileForeachCmd(interp, string, lastChar, compileFlags, compileEnvPtr) \
-	(tclIntStubsPtr->tclCompileForeachCmd)(interp, string, lastChar, compileFlags, compileEnvPtr) /* 137 */
-#endif
-#ifndef TclCompileIfCmd
-#define TclCompileIfCmd(interp, string, lastChar, compileFlags, compileEnvPtr) \
-	(tclIntStubsPtr->tclCompileIfCmd)(interp, string, lastChar, compileFlags, compileEnvPtr) /* 138 */
-#endif
-#ifndef TclCompileIncrCmd
-#define TclCompileIncrCmd(interp, string, lastChar, compileFlags, compileEnvPtr) \
-	(tclIntStubsPtr->tclCompileIncrCmd)(interp, string, lastChar, compileFlags, compileEnvPtr) /* 139 */
-#endif
-#ifndef TclCompileSetCmd
-#define TclCompileSetCmd(interp, string, lastChar, compileFlags, compileEnvPtr) \
-	(tclIntStubsPtr->tclCompileSetCmd)(interp, string, lastChar, compileFlags, compileEnvPtr) /* 140 */
-#endif
-#ifndef TclCompileWhileCmd
-#define TclCompileWhileCmd(interp, string, lastChar, compileFlags, compileEnvPtr) \
-	(tclIntStubsPtr->tclCompileWhileCmd)(interp, string, lastChar, compileFlags, compileEnvPtr) /* 141 */
-#endif
 #ifndef TclHasSockets
 #define TclHasSockets(interp) \
-	(tclIntStubsPtr->tclHasSockets)(interp) /* 142 */
+	(tclIntStubsPtr->tclHasSockets)(interp) /* 132 */
 #endif
 #ifndef TclpGetDate
 #define TclpGetDate(time, useGMT) \
-	(tclIntStubsPtr->tclpGetDate)(time, useGMT) /* 143 */
+	(tclIntStubsPtr->tclpGetDate)(time, useGMT) /* 133 */
 #endif
 #ifndef TclStrftime
 #define TclStrftime(s, maxsize, format, t) \
-	(tclIntStubsPtr->tclStrftime)(s, maxsize, format, t) /* 144 */
+	(tclIntStubsPtr->tclStrftime)(s, maxsize, format, t) /* 134 */
 #endif
 #ifndef TclpCheckStackSpace
 #define TclpCheckStackSpace() \
-	(tclIntStubsPtr->tclpCheckStackSpace)() /* 145 */
+	(tclIntStubsPtr->tclpCheckStackSpace)() /* 135 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPort.h,v 1.6.4.2 1999/03/04 00:59:55 stanton Exp $
+ * RCS: @(#) $Id: tclWinPort.h,v 1.6.4.3 1999/03/10 05:50:30 stanton Exp $
  */
 
 #ifndef _TCLWINPORT
@@ -351,8 +351,6 @@
 
 #define TclPlatformExit(status) exit(status)
 
-#include "tclPlatDecls.h"
-
 /*
  * The following prototypes and defines replace the Windows versions
  * of POSIX function that various compiler vendors didn't implement 
@@ -363,6 +361,7 @@
 
 #define TclpReleaseFile(file)	ckfree((char *) file)
 
+#include "tclPlatDecls.h"
 #include "tclIntPlatDecls.h"
 
 # undef TCL_STORAGE_CLASS

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.2.2.3 1999/03/08 22:25:31 stanton Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.2.2.4 1999/03/10 05:50:28 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -46,282 +46,309 @@ static TclStubHooks tclStubHooks;
 TclStubs tclStubs = {
     TCL_STUB_MAGIC,
     &tclStubHooks,
-    Tcl_AddErrorInfo, /* 0 */
-    Tcl_AddObjErrorInfo, /* 1 */
-    Tcl_Alloc, /* 2 */
-    Tcl_AllowExceptions, /* 3 */
-    Tcl_AppendAllObjTypes, /* 4 */
-    Tcl_AppendElement, /* 5 */
-    Tcl_AppendResult, /* 6 */
-    Tcl_AppendResultVA, /* 7 */
-    Tcl_AppendToObj, /* 8 */
-    Tcl_AppendStringsToObj, /* 9 */
-    Tcl_AppendStringsToObjVA, /* 10 */
-    Tcl_AsyncCreate, /* 11 */
-    Tcl_AsyncDelete, /* 12 */
-    Tcl_AsyncInvoke, /* 13 */
-    Tcl_AsyncMark, /* 14 */
-    Tcl_AsyncReady, /* 15 */
-    Tcl_BackgroundError, /* 16 */
-    Tcl_Backslash, /* 17 */
-    Tcl_BadChannelOption, /* 18 */
-    Tcl_CallWhenDeleted, /* 19 */
-    Tcl_CancelIdleCall, /* 20 */
-    Tcl_Close, /* 21 */
-    Tcl_CommandComplete, /* 22 */
-    Tcl_Concat, /* 23 */
-    Tcl_ConcatObj, /* 24 */
-    Tcl_ConvertCountedElement, /* 25 */
-    Tcl_ConvertElement, /* 26 */
-    Tcl_ConvertToType, /* 27 */
-    Tcl_CreateAlias, /* 28 */
-    Tcl_CreateAliasObj, /* 29 */
-    Tcl_CreateChannel, /* 30 */
-    Tcl_CreateChannelHandler, /* 31 */
-    Tcl_CreateCloseHandler, /* 32 */
-    Tcl_CreateCommand, /* 33 */
-    Tcl_CreateEventSource, /* 34 */
-    Tcl_CreateExitHandler, /* 35 */
-    Tcl_CreateInterp, /* 36 */
-    Tcl_CreateMathFunc, /* 37 */
-    Tcl_CreateObjCommand, /* 38 */
-    Tcl_CreateSlave, /* 39 */
-    Tcl_CreateTimerHandler, /* 40 */
-    Tcl_CreateTrace, /* 41 */
-    Tcl_DbCkalloc, /* 42 */
-    Tcl_DbCkfree, /* 43 */
-    Tcl_DbCkrealloc, /* 44 */
-    Tcl_DbDecrRefCount, /* 45 */
-    Tcl_DbIncrRefCount, /* 46 */
-    Tcl_DbIsShared, /* 47 */
-    Tcl_DbNewBooleanObj, /* 48 */
-    Tcl_DbNewByteArrayObj, /* 49 */
-    Tcl_DbNewDoubleObj, /* 50 */
-    Tcl_DbNewListObj, /* 51 */
-    Tcl_DbNewLongObj, /* 52 */
-    Tcl_DbNewObj, /* 53 */
-    Tcl_DbNewStringObj, /* 54 */
-    Tcl_DeleteAssocData, /* 55 */
-    Tcl_DeleteCommand, /* 56 */
-    Tcl_DeleteCommandFromToken, /* 57 */
-    Tcl_DeleteChannelHandler, /* 58 */
-    Tcl_DeleteCloseHandler, /* 59 */
-    Tcl_DeleteEvents, /* 60 */
-    Tcl_DeleteEventSource, /* 61 */
-    Tcl_DeleteExitHandler, /* 62 */
-    Tcl_DeleteHashEntry, /* 63 */
-    Tcl_DeleteHashTable, /* 64 */
-    Tcl_DeleteInterp, /* 65 */
-    Tcl_DeleteTimerHandler, /* 66 */
-    Tcl_DeleteTrace, /* 67 */
-    Tcl_DetachPids, /* 68 */
-    Tcl_DontCallWhenDeleted, /* 69 */
-    Tcl_DoOneEvent, /* 70 */
-    Tcl_DoWhenIdle, /* 71 */
-    Tcl_DStringAppend, /* 72 */
-    Tcl_DStringAppendElement, /* 73 */
-    Tcl_DStringEndSublist, /* 74 */
-    Tcl_DStringFree, /* 75 */
-    Tcl_DStringGetResult, /* 76 */
-    Tcl_DStringInit, /* 77 */
-    Tcl_DStringResult, /* 78 */
-    Tcl_DStringSetLength, /* 79 */
-    Tcl_DStringStartSublist, /* 80 */
-    Tcl_DumpActiveMemory, /* 81 */
-    Tcl_DuplicateObj, /* 82 */
-    Tcl_Eof, /* 83 */
-    Tcl_ErrnoId, /* 84 */
-    Tcl_ErrnoMsg, /* 85 */
-    Tcl_Eval, /* 86 */
-    Tcl_EvalFile, /* 87 */
-    Tcl_EventuallyFree, /* 88 */
-    Tcl_EvalObj, /* 89 */
-    Tcl_Exit, /* 90 */
-    Tcl_ExposeCommand, /* 91 */
-    Tcl_ExprBoolean, /* 92 */
-    Tcl_ExprBooleanObj, /* 93 */
-    Tcl_ExprDouble, /* 94 */
-    Tcl_ExprDoubleObj, /* 95 */
-    Tcl_ExprLong, /* 96 */
-    Tcl_ExprLongObj, /* 97 */
-    Tcl_ExprObj, /* 98 */
-    Tcl_ExprString, /* 99 */
-    Tcl_Finalize, /* 100 */
-    Tcl_FindExecutable, /* 101 */
-    Tcl_FirstHashEntry, /* 102 */
-    Tcl_Flush, /* 103 */
-    Tcl_Free, /* 104 */
-    TclFreeObj, /* 105 */
-    Tcl_FreeResult, /* 106 */
-    Tcl_GetAlias, /* 107 */
-    Tcl_GetAliasObj, /* 108 */
-    Tcl_GetAssocData, /* 109 */
-    Tcl_GetBoolean, /* 110 */
-    Tcl_GetBooleanFromObj, /* 111 */
-    Tcl_GetByteArrayFromObj, /* 112 */
-    Tcl_GetChannel, /* 113 */
-    Tcl_GetChannelBufferSize, /* 114 */
-    Tcl_GetChannelHandle, /* 115 */
-    Tcl_GetChannelInstanceData, /* 116 */
-    Tcl_GetChannelMode, /* 117 */
-    Tcl_GetChannelName, /* 118 */
-    Tcl_GetChannelOption, /* 119 */
-    Tcl_GetChannelType, /* 120 */
-    Tcl_GetCommandInfo, /* 121 */
-    Tcl_GetCommandName, /* 122 */
-    Tcl_GetDouble, /* 123 */
-    Tcl_GetDoubleFromObj, /* 124 */
-    Tcl_GetErrno, /* 125 */
-    Tcl_GetHostName, /* 126 */
-    Tcl_GetIndexFromObj, /* 127 */
-    Tcl_GetInt, /* 128 */
-    Tcl_GetInterpPath, /* 129 */
-    Tcl_GetIntFromObj, /* 130 */
-    Tcl_GetLongFromObj, /* 131 */
-    Tcl_GetMaster, /* 132 */
-    Tcl_GetNameOfExecutable, /* 133 */
-    Tcl_GetObjResult, /* 134 */
-    Tcl_GetObjType, /* 135 */
-    Tcl_GetPathType, /* 136 */
-    Tcl_Gets, /* 137 */
-    Tcl_GetsObj, /* 138 */
-    Tcl_GetServiceMode, /* 139 */
-    Tcl_GetSlave, /* 140 */
-    Tcl_GetStdChannel, /* 141 */
-    Tcl_GetStringFromObj, /* 142 */
-    Tcl_GetStringResult, /* 143 */
-    Tcl_GetVar, /* 144 */
-    Tcl_GetVar2, /* 145 */
-    Tcl_GlobalEval, /* 146 */
-    Tcl_GlobalEvalObj, /* 147 */
-    Tcl_HashStats, /* 148 */
-    Tcl_HideCommand, /* 149 */
-    Tcl_Init, /* 150 */
-    Tcl_InitHashTable, /* 151 */
-    Tcl_InitMemory, /* 152 */
-    Tcl_InputBlocked, /* 153 */
-    Tcl_InputBuffered, /* 154 */
-    Tcl_InterpDeleted, /* 155 */
-    Tcl_IsSafe, /* 156 */
-    Tcl_InvalidateStringRep, /* 157 */
-    Tcl_JoinPath, /* 158 */
-    Tcl_LinkVar, /* 159 */
-    Tcl_ListObjAppendList, /* 160 */
-    Tcl_ListObjAppendElement, /* 161 */
-    Tcl_ListObjGetElements, /* 162 */
-    Tcl_ListObjIndex, /* 163 */
-    Tcl_ListObjLength, /* 164 */
-    Tcl_ListObjReplace, /* 165 */
-    Tcl_MakeFileChannel, /* 166 */
-    Tcl_MakeSafe, /* 167 */
-    Tcl_MakeTcpClientChannel, /* 168 */
-    Tcl_Merge, /* 169 */
-    Tcl_NewBooleanObj, /* 170 */
-    Tcl_NewByteArrayObj, /* 171 */
-    Tcl_NewDoubleObj, /* 172 */
-    Tcl_NewIntObj, /* 173 */
-    Tcl_NewListObj, /* 174 */
-    Tcl_NewLongObj, /* 175 */
-    Tcl_NewObj, /* 176 */
-    Tcl_NewStringObj, /* 177 */
-    Tcl_NextHashEntry, /* 178 */
-    Tcl_NotifyChannel, /* 179 */
-    Tcl_ObjGetVar2, /* 180 */
-    Tcl_ObjSetVar2, /* 181 */
-    Tcl_OpenCommandChannel, /* 182 */
-    Tcl_OpenFileChannel, /* 183 */
-    Tcl_OpenTcpClient, /* 184 */
-    Tcl_OpenTcpServer, /* 185 */
-    panic, /* 186 */
-    panicVA, /* 187 */
-    Tcl_ParseVar, /* 188 */
-    Tcl_PkgPresent, /* 189 */
-    Tcl_PkgPresentEx, /* 190 */
-    Tcl_PkgProvide, /* 191 */
-    Tcl_PkgProvideEx, /* 192 */
-    Tcl_PkgRequire, /* 193 */
-    Tcl_PkgRequireEx, /* 194 */
-    Tcl_PosixError, /* 195 */
-    Tcl_Preserve, /* 196 */
-    Tcl_PrintDouble, /* 197 */
-    Tcl_PutEnv, /* 198 */
-    Tcl_QueueEvent, /* 199 */
-    Tcl_Read, /* 200 */
-    Tcl_Realloc, /* 201 */
-    Tcl_ReapDetachedProcs, /* 202 */
-    Tcl_RecordAndEval, /* 203 */
-    Tcl_RecordAndEvalObj, /* 204 */
-    Tcl_RegExpCompile, /* 205 */
-    Tcl_RegExpExec, /* 206 */
-    Tcl_RegExpMatch, /* 207 */
-    Tcl_RegExpRange, /* 208 */
-    Tcl_RegisterChannel, /* 209 */
-    Tcl_RegisterObjType, /* 210 */
-    Tcl_Release, /* 211 */
-    Tcl_ResetResult, /* 212 */
-    Tcl_ScanCountedElement, /* 213 */
-    Tcl_ScanElement, /* 214 */
-    Tcl_Seek, /* 215 */
-    Tcl_ServiceAll, /* 216 */
-    Tcl_ServiceEvent, /* 217 */
-    Tcl_SetAssocData, /* 218 */
-    Tcl_SetBooleanObj, /* 219 */
-    Tcl_SetByteArrayLength, /* 220 */
-    Tcl_SetByteArrayObj, /* 221 */
-    Tcl_SetChannelBufferSize, /* 222 */
-    Tcl_SetChannelOption, /* 223 */
-    Tcl_SetCommandInfo, /* 224 */
-    Tcl_SetDoubleObj, /* 225 */
-    Tcl_SetErrno, /* 226 */
-    Tcl_SetErrorCode, /* 227 */
-    Tcl_SetErrorCodeVA, /* 228 */
-    Tcl_SetIntObj, /* 229 */
-    Tcl_SetListObj, /* 230 */
-    Tcl_SetLongObj, /* 231 */
-    Tcl_SetMaxBlockTime, /* 232 */
-    Tcl_SetObjErrorCode, /* 233 */
-    Tcl_SetObjLength, /* 234 */
+    Tcl_PkgProvideEx, /* 0 */
+    Tcl_PkgRequireEx, /* 1 */
+    panic, /* 2 */
+    Tcl_Alloc, /* 3 */
+    Tcl_Free, /* 4 */
+    Tcl_Realloc, /* 5 */
+    Tcl_DbCkalloc, /* 6 */
+    Tcl_DbCkfree, /* 7 */
+    Tcl_DbCkrealloc, /* 8 */
+#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
+    Tcl_CreateFileHandler, /* 9 */
+#endif /* UNIX */
+#ifdef __WIN32__
+    NULL, /* 9 */
+#endif /* __WIN32__ */
+#ifdef MAC_TCL
+    NULL, /* 9 */
+#endif /* MAC_TCL */
+#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
+    Tcl_DeleteFileHandler, /* 10 */
+#endif /* UNIX */
+#ifdef __WIN32__
+    NULL, /* 10 */
+#endif /* __WIN32__ */
+#ifdef MAC_TCL
+    NULL, /* 10 */
+#endif /* MAC_TCL */
+    Tcl_SetTimer, /* 11 */
+    Tcl_Sleep, /* 12 */
+    Tcl_WaitForEvent, /* 13 */
+    Tcl_AppendAllObjTypes, /* 14 */
+    Tcl_AppendStringsToObj, /* 15 */
+    Tcl_AppendToObj, /* 16 */
+    Tcl_ConcatObj, /* 17 */
+    Tcl_ConvertToType, /* 18 */
+    Tcl_DbDecrRefCount, /* 19 */
+    Tcl_DbIncrRefCount, /* 20 */
+    Tcl_DbIsShared, /* 21 */
+    Tcl_DbNewBooleanObj, /* 22 */
+    Tcl_DbNewByteArrayObj, /* 23 */
+    Tcl_DbNewDoubleObj, /* 24 */
+    Tcl_DbNewListObj, /* 25 */
+    Tcl_DbNewLongObj, /* 26 */
+    Tcl_DbNewObj, /* 27 */
+    Tcl_DbNewStringObj, /* 28 */
+    Tcl_DuplicateObj, /* 29 */
+    TclFreeObj, /* 30 */
+    Tcl_GetBoolean, /* 31 */
+    Tcl_GetBooleanFromObj, /* 32 */
+    Tcl_GetByteArrayFromObj, /* 33 */
+    Tcl_GetDouble, /* 34 */
+    Tcl_GetDoubleFromObj, /* 35 */
+    Tcl_GetIndexFromObj, /* 36 */
+    Tcl_GetInt, /* 37 */
+    Tcl_GetIntFromObj, /* 38 */
+    Tcl_GetLongFromObj, /* 39 */
+    Tcl_GetObjType, /* 40 */
+    Tcl_GetStringFromObj, /* 41 */
+    Tcl_InvalidateStringRep, /* 42 */
+    Tcl_ListObjAppendList, /* 43 */
+    Tcl_ListObjAppendElement, /* 44 */
+    Tcl_ListObjGetElements, /* 45 */
+    Tcl_ListObjIndex, /* 46 */
+    Tcl_ListObjLength, /* 47 */
+    Tcl_ListObjReplace, /* 48 */
+    Tcl_NewBooleanObj, /* 49 */
+    Tcl_NewByteArrayObj, /* 50 */
+    Tcl_NewDoubleObj, /* 51 */
+    Tcl_NewIntObj, /* 52 */
+    Tcl_NewListObj, /* 53 */
+    Tcl_NewLongObj, /* 54 */
+    Tcl_NewObj, /* 55 */
+    Tcl_NewStringObj, /* 56 */
+    Tcl_SetBooleanObj, /* 57 */
+    Tcl_SetByteArrayLength, /* 58 */
+    Tcl_SetByteArrayObj, /* 59 */
+    Tcl_SetDoubleObj, /* 60 */
+    Tcl_SetIntObj, /* 61 */
+    Tcl_SetListObj, /* 62 */
+    Tcl_SetLongObj, /* 63 */
+    Tcl_SetObjLength, /* 64 */
+    Tcl_SetStringObj, /* 65 */
+    Tcl_AddErrorInfo, /* 66 */
+    Tcl_AddObjErrorInfo, /* 67 */
+    Tcl_AllowExceptions, /* 68 */
+    Tcl_AppendElement, /* 69 */
+    Tcl_AppendResult, /* 70 */
+    Tcl_AsyncCreate, /* 71 */
+    Tcl_AsyncDelete, /* 72 */
+    Tcl_AsyncInvoke, /* 73 */
+    Tcl_AsyncMark, /* 74 */
+    Tcl_AsyncReady, /* 75 */
+    Tcl_BackgroundError, /* 76 */
+    Tcl_Backslash, /* 77 */
+    Tcl_BadChannelOption, /* 78 */
+    Tcl_CallWhenDeleted, /* 79 */
+    Tcl_CancelIdleCall, /* 80 */
+    Tcl_Close, /* 81 */
+    Tcl_CommandComplete, /* 82 */
+    Tcl_Concat, /* 83 */
+    Tcl_ConvertElement, /* 84 */
+    Tcl_ConvertCountedElement, /* 85 */
+    Tcl_CreateAlias, /* 86 */
+    Tcl_CreateAliasObj, /* 87 */
+    Tcl_CreateChannel, /* 88 */
+    Tcl_CreateChannelHandler, /* 89 */
+    Tcl_CreateCloseHandler, /* 90 */
+    Tcl_CreateCommand, /* 91 */
+    Tcl_CreateEventSource, /* 92 */
+    Tcl_CreateExitHandler, /* 93 */
+    Tcl_CreateInterp, /* 94 */
+    Tcl_CreateMathFunc, /* 95 */
+    Tcl_CreateObjCommand, /* 96 */
+    Tcl_CreateSlave, /* 97 */
+    Tcl_CreateTimerHandler, /* 98 */
+    Tcl_CreateTrace, /* 99 */
+    Tcl_DeleteAssocData, /* 100 */
+    Tcl_DeleteChannelHandler, /* 101 */
+    Tcl_DeleteCloseHandler, /* 102 */
+    Tcl_DeleteCommand, /* 103 */
+    Tcl_DeleteCommandFromToken, /* 104 */
+    Tcl_DeleteEvents, /* 105 */
+    Tcl_DeleteEventSource, /* 106 */
+    Tcl_DeleteExitHandler, /* 107 */
+    Tcl_DeleteHashEntry, /* 108 */
+    Tcl_DeleteHashTable, /* 109 */
+    Tcl_DeleteInterp, /* 110 */
+    Tcl_DetachPids, /* 111 */
+    Tcl_DeleteTimerHandler, /* 112 */
+    Tcl_DeleteTrace, /* 113 */
+    Tcl_DontCallWhenDeleted, /* 114 */
+    Tcl_DoOneEvent, /* 115 */
+    Tcl_DoWhenIdle, /* 116 */
+    Tcl_DStringAppend, /* 117 */
+    Tcl_DStringAppendElement, /* 118 */
+    Tcl_DStringEndSublist, /* 119 */
+    Tcl_DStringFree, /* 120 */
+    Tcl_DStringGetResult, /* 121 */
+    Tcl_DStringInit, /* 122 */
+    Tcl_DStringResult, /* 123 */
+    Tcl_DStringSetLength, /* 124 */
+    Tcl_DStringStartSublist, /* 125 */
+    Tcl_Eof, /* 126 */
+    Tcl_ErrnoId, /* 127 */
+    Tcl_ErrnoMsg, /* 128 */
+    Tcl_Eval, /* 129 */
+    Tcl_EvalFile, /* 130 */
+    Tcl_EvalObj, /* 131 */
+    Tcl_EventuallyFree, /* 132 */
+    Tcl_Exit, /* 133 */
+    Tcl_ExposeCommand, /* 134 */
+    Tcl_ExprBoolean, /* 135 */
+    Tcl_ExprBooleanObj, /* 136 */
+    Tcl_ExprDouble, /* 137 */
+    Tcl_ExprDoubleObj, /* 138 */
+    Tcl_ExprLong, /* 139 */
+    Tcl_ExprLongObj, /* 140 */
+    Tcl_ExprObj, /* 141 */
+    Tcl_ExprString, /* 142 */
+    Tcl_Finalize, /* 143 */
+    Tcl_FindExecutable, /* 144 */
+    Tcl_FirstHashEntry, /* 145 */
+    Tcl_Flush, /* 146 */
+    Tcl_FreeResult, /* 147 */
+    Tcl_GetAlias, /* 148 */
+    Tcl_GetAliasObj, /* 149 */
+    Tcl_GetAssocData, /* 150 */
+    Tcl_GetChannel, /* 151 */
+    Tcl_GetChannelBufferSize, /* 152 */
+    Tcl_GetChannelHandle, /* 153 */
+    Tcl_GetChannelInstanceData, /* 154 */
+    Tcl_GetChannelMode, /* 155 */
+    Tcl_GetChannelName, /* 156 */
+    Tcl_GetChannelOption, /* 157 */
+    Tcl_GetChannelType, /* 158 */
+    Tcl_GetCommandInfo, /* 159 */
+    Tcl_GetCommandName, /* 160 */
+    Tcl_GetErrno, /* 161 */
+    Tcl_GetHostName, /* 162 */
+    Tcl_GetInterpPath, /* 163 */
+    Tcl_GetMaster, /* 164 */
+    Tcl_GetNameOfExecutable, /* 165 */
+    Tcl_GetObjResult, /* 166 */
+#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
+    Tcl_GetOpenFile, /* 167 */
+#endif /* UNIX */
+#ifdef __WIN32__
+    NULL, /* 167 */
+#endif /* __WIN32__ */
+#ifdef MAC_TCL
+    NULL, /* 167 */
+#endif /* MAC_TCL */
+    Tcl_GetPathType, /* 168 */
+    Tcl_Gets, /* 169 */
+    Tcl_GetsObj, /* 170 */
+    Tcl_GetServiceMode, /* 171 */
+    Tcl_GetSlave, /* 172 */
+    Tcl_GetStdChannel, /* 173 */
+    Tcl_GetStringResult, /* 174 */
+    Tcl_GetVar, /* 175 */
+    Tcl_GetVar2, /* 176 */
+    Tcl_GlobalEval, /* 177 */
+    Tcl_GlobalEvalObj, /* 178 */
+    Tcl_HideCommand, /* 179 */
+    Tcl_Init, /* 180 */
+    Tcl_InitHashTable, /* 181 */
+    Tcl_InputBlocked, /* 182 */
+    Tcl_InputBuffered, /* 183 */
+    Tcl_InterpDeleted, /* 184 */
+    Tcl_IsSafe, /* 185 */
+    Tcl_JoinPath, /* 186 */
+    Tcl_LinkVar, /* 187 */
+    NULL, /* 188 */
+    Tcl_MakeFileChannel, /* 189 */
+    Tcl_MakeSafe, /* 190 */
+    Tcl_MakeTcpClientChannel, /* 191 */
+    Tcl_Merge, /* 192 */
+    Tcl_NextHashEntry, /* 193 */
+    Tcl_NotifyChannel, /* 194 */
+    Tcl_ObjGetVar2, /* 195 */
+    Tcl_ObjSetVar2, /* 196 */
+    Tcl_OpenCommandChannel, /* 197 */
+    Tcl_OpenFileChannel, /* 198 */
+    Tcl_OpenTcpClient, /* 199 */
+    Tcl_OpenTcpServer, /* 200 */
+    Tcl_Preserve, /* 201 */
+    Tcl_PrintDouble, /* 202 */
+    Tcl_PutEnv, /* 203 */
+    Tcl_PosixError, /* 204 */
+    Tcl_QueueEvent, /* 205 */
+    Tcl_Read, /* 206 */
+    Tcl_ReapDetachedProcs, /* 207 */
+    Tcl_RecordAndEval, /* 208 */
+    Tcl_RecordAndEvalObj, /* 209 */
+    Tcl_RegisterChannel, /* 210 */
+    Tcl_RegisterObjType, /* 211 */
+    Tcl_RegExpCompile, /* 212 */
+    Tcl_RegExpExec, /* 213 */
+    Tcl_RegExpMatch, /* 214 */
+    Tcl_RegExpRange, /* 215 */
+    Tcl_Release, /* 216 */
+    Tcl_ResetResult, /* 217 */
+    Tcl_ScanElement, /* 218 */
+    Tcl_ScanCountedElement, /* 219 */
+    Tcl_Seek, /* 220 */
+    Tcl_ServiceAll, /* 221 */
+    Tcl_ServiceEvent, /* 222 */
+    Tcl_SetAssocData, /* 223 */
+    Tcl_SetChannelBufferSize, /* 224 */
+    Tcl_SetChannelOption, /* 225 */
+    Tcl_SetCommandInfo, /* 226 */
+    Tcl_SetErrno, /* 227 */
+    Tcl_SetErrorCode, /* 228 */
+    Tcl_SetMaxBlockTime, /* 229 */
+    Tcl_SetPanicProc, /* 230 */
+    Tcl_SetRecursionLimit, /* 231 */
+    Tcl_SetResult, /* 232 */
+    Tcl_SetServiceMode, /* 233 */
+    Tcl_SetObjErrorCode, /* 234 */
     Tcl_SetObjResult, /* 235 */
-    Tcl_SetPanicProc, /* 236 */
-    Tcl_SetRecursionLimit, /* 237 */
-    Tcl_SetResult, /* 238 */
-    Tcl_SetServiceMode, /* 239 */
-    Tcl_SetStdChannel, /* 240 */
-    Tcl_SetStringObj, /* 241 */
-    Tcl_SetTimer, /* 242 */
-    Tcl_SetVar, /* 243 */
-    Tcl_SetVar2, /* 244 */
-    Tcl_SignalId, /* 245 */
-    Tcl_SignalMsg, /* 246 */
-    Tcl_Sleep, /* 247 */
-    Tcl_SourceRCFile, /* 248 */
-    Tcl_SplitList, /* 249 */
-    Tcl_SplitPath, /* 250 */
-    Tcl_StaticPackage, /* 251 */
-    Tcl_StringMatch, /* 252 */
-    Tcl_Tell, /* 253 */
-    Tcl_TraceVar, /* 254 */
-    Tcl_TraceVar2, /* 255 */
-    Tcl_TranslateFileName, /* 256 */
-    Tcl_Ungets, /* 257 */
-    Tcl_UnlinkVar, /* 258 */
-    Tcl_UnregisterChannel, /* 259 */
-    Tcl_UnsetVar, /* 260 */
-    Tcl_UnsetVar2, /* 261 */
-    Tcl_UntraceVar, /* 262 */
-    Tcl_UntraceVar2, /* 263 */
-    Tcl_UpdateLinkedVar, /* 264 */
-    Tcl_UpVar, /* 265 */
-    Tcl_UpVar2, /* 266 */
-    Tcl_ValidateAllMemory, /* 267 */
-    Tcl_VarEval, /* 268 */
-    Tcl_VarEvalVA, /* 269 */
-    Tcl_VarTraceInfo, /* 270 */
-    Tcl_VarTraceInfo2, /* 271 */
-    Tcl_WaitForEvent, /* 272 */
-    Tcl_WaitPid, /* 273 */
-    Tcl_Write, /* 274 */
-    Tcl_WrongNumArgs, /* 275 */
+    Tcl_SetStdChannel, /* 236 */
+    Tcl_SetVar, /* 237 */
+    Tcl_SetVar2, /* 238 */
+    Tcl_SignalId, /* 239 */
+    Tcl_SignalMsg, /* 240 */
+    Tcl_SourceRCFile, /* 241 */
+    Tcl_SplitList, /* 242 */
+    Tcl_SplitPath, /* 243 */
+    Tcl_StaticPackage, /* 244 */
+    Tcl_StringMatch, /* 245 */
+    Tcl_Tell, /* 246 */
+    Tcl_TraceVar, /* 247 */
+    Tcl_TraceVar2, /* 248 */
+    Tcl_TranslateFileName, /* 249 */
+    Tcl_Ungets, /* 250 */
+    Tcl_UnlinkVar, /* 251 */
+    Tcl_UnregisterChannel, /* 252 */
+    Tcl_UnsetVar, /* 253 */
+    Tcl_UnsetVar2, /* 254 */
+    Tcl_UntraceVar, /* 255 */
+    Tcl_UntraceVar2, /* 256 */
+    Tcl_UpdateLinkedVar, /* 257 */
+    Tcl_UpVar, /* 258 */
+    Tcl_UpVar2, /* 259 */
+    Tcl_VarEval, /* 260 */
+    Tcl_VarTraceInfo, /* 261 */
+    Tcl_VarTraceInfo2, /* 262 */
+    Tcl_Write, /* 263 */
+    Tcl_WrongNumArgs, /* 264 */
+    Tcl_DumpActiveMemory, /* 265 */
+    Tcl_ValidateAllMemory, /* 266 */
+    Tcl_AppendResultVA, /* 267 */
+    Tcl_AppendStringsToObjVA, /* 268 */
+    Tcl_HashStats, /* 269 */
+    Tcl_ParseVar, /* 270 */
+    Tcl_PkgPresent, /* 271 */
+    Tcl_PkgPresentEx, /* 272 */
+    Tcl_PkgProvide, /* 273 */
+    Tcl_PkgRequire, /* 274 */
+    Tcl_SetErrorCodeVA, /* 275 */
+    Tcl_VarEvalVA, /* 276 */
+    Tcl_WaitPid, /* 277 */
+    panicVA, /* 278 */
 };
 
 TclStubs *tclStubsPtr = &tclStubs;
@@ -461,20 +488,10 @@ TclIntStubs tclIntStubs = {
     Tcl_PushCallFrame, /* 129 */
     Tcl_RemoveInterpResolvers, /* 130 */
     Tcl_SetNamespaceResolvers, /* 131 */
-    TclCompileBreakCmd, /* 132 */
-    TclCompileCatchCmd, /* 133 */
-    TclCompileContinueCmd, /* 134 */
-    TclCompileExprCmd, /* 135 */
-    TclCompileForCmd, /* 136 */
-    TclCompileForeachCmd, /* 137 */
-    TclCompileIfCmd, /* 138 */
-    TclCompileIncrCmd, /* 139 */
-    TclCompileSetCmd, /* 140 */
-    TclCompileWhileCmd, /* 141 */
-    TclHasSockets, /* 142 */
-    TclpGetDate, /* 143 */
-    TclStrftime, /* 144 */
-    TclpCheckStackSpace, /* 145 */
+    TclHasSockets, /* 132 */
+    TclpGetDate, /* 133 */
+    TclStrftime, /* 134 */
+    TclpCheckStackSpace, /* 135 */
 };
 
 TclIntStubs *tclIntStubsPtr = &tclIntStubs;
@@ -482,6 +499,17 @@ TclIntStubs *tclIntStubsPtr = &tclIntStubs;
 TclIntPlatStubs tclIntPlatStubs = {
     TCL_STUB_MAGIC,
     NULL,
+#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
+    TclGetAndDetachPids, /* 0 */
+    TclpCloseFile, /* 1 */
+    TclpCreateCommandChannel, /* 2 */
+    TclpCreatePipe, /* 3 */
+    TclpCreateProcess, /* 4 */
+    TclpCreateTempFile, /* 5 */
+    TclpMakeFile, /* 6 */
+    TclpOpenFile, /* 7 */
+    TclUnixWaitForFile, /* 8 */
+#endif /* UNIX */
 #ifdef __WIN32__
     TclWinConvertError, /* 0 */
     TclWinConvertWSAError, /* 1 */
@@ -504,17 +532,6 @@ TclIntPlatStubs tclIntPlatStubs = {
     TclpMakeFile, /* 18 */
     TclpOpenFile, /* 19 */
 #endif /* __WIN32__ */
-#if !defined(__WIN32__) && !defined(MAC_TCL)
-    TclGetAndDetachPids, /* 0 */
-    TclpCloseFile, /* 1 */
-    TclpCreateCommandChannel, /* 2 */
-    TclpCreatePipe, /* 3 */
-    TclpCreateProcess, /* 4 */
-    TclpCreateTempFile, /* 5 */
-    TclpMakeFile, /* 6 */
-    TclpOpenFile, /* 7 */
-    TclUnixWaitForFile, /* 8 */
-#endif /* UNIX */
 #ifdef MAC_TCL
     TclpSysAlloc, /* 0 */
     TclpSysFree, /* 1 */
@@ -550,11 +567,6 @@ TclIntPlatStubs *tclIntPlatStubsPtr = &tclIntPlatStubs;
 TclPlatStubs tclPlatStubs = {
     TCL_STUB_MAGIC,
     NULL,
-#if !defined(__WIN32__) && !defined(MAC_TCL)
-    Tcl_CreateFileHandler, /* 0 */
-    Tcl_DeleteFileHandler, /* 1 */
-    Tcl_GetOpenFile, /* 2 */
-#endif /* UNIX */
 #ifdef MAC_TCL
     Tcl_MacSetEventProc, /* 0 */
     Tcl_MacConvertTextResource, /* 1 */

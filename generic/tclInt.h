@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.23.4.4 1999/03/08 22:25:29 stanton Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.23.4.5 1999/03/10 05:50:26 stanton Exp $
  */
 
 #ifndef _TCLINT
@@ -1486,6 +1486,36 @@ extern char *		tclEmptyStringRep;
  *----------------------------------------------------------------
  */
 
+EXTERN int	TclCompileBreakCmd _ANSI_ARGS_((Tcl_Interp *interp,
+		    char *string, char *lastChar, int compileFlags,
+		    struct CompileEnv *compileEnvPtr));
+EXTERN int	TclCompileCatchCmd _ANSI_ARGS_((Tcl_Interp *interp,
+		    char *string, char *lastChar, int compileFlags,
+		    struct CompileEnv *compileEnvPtr));
+EXTERN int	TclCompileContinueCmd _ANSI_ARGS_((Tcl_Interp *interp,
+		    char *string, char *lastChar, int compileFlags,
+		    struct CompileEnv *compileEnvPtr));
+EXTERN int	TclCompileExprCmd _ANSI_ARGS_((Tcl_Interp *interp,
+		    char *string, char *lastChar, int compileFlags,
+		    struct CompileEnv *compileEnvPtr));
+EXTERN int	TclCompileForCmd _ANSI_ARGS_((Tcl_Interp *interp,
+		    char *string, char *lastChar, int compileFlags,
+		    struct CompileEnv *compileEnvPtr));
+EXTERN int	TclCompileForeachCmd _ANSI_ARGS_((Tcl_Interp *interp,
+		    char *string, char *lastChar, int compileFlags,
+		    struct CompileEnv *compileEnvPtr));
+EXTERN int	TclCompileIfCmd _ANSI_ARGS_((Tcl_Interp *interp,
+		    char *string, char *lastChar, int compileFlags,
+		    struct CompileEnv *compileEnvPtr));
+EXTERN int	TclCompileIncrCmd _ANSI_ARGS_((Tcl_Interp *interp,
+		    char *string, char *lastChar, int compileFlags,
+		    struct CompileEnv *compileEnvPtr));
+EXTERN int	TclCompileSetCmd _ANSI_ARGS_((Tcl_Interp *interp,
+		    char *string, char *lastChar, int compileFlags,
+		    struct CompileEnv *compileEnvPtr));
+EXTERN int	TclCompileWhileCmd _ANSI_ARGS_((Tcl_Interp *interp,
+		    char *string, char *lastChar, int compileFlags,
+		    struct CompileEnv *compileEnvPtr));
 EXTERN void	TclFinalizeCompExecEnv _ANSI_ARGS_((void));
 EXTERN void	TclFinalizeEnvironment _ANSI_ARGS_((void));
 EXTERN void	TclFinalizeExecEnv _ANSI_ARGS_((void));
