@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fileName.test,v 1.6 1999/12/12 22:46:47 hobbs Exp $
+# RCS: @(#) $Id: fileName.test,v 1.7 2000/04/04 08:05:18 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -1322,10 +1322,10 @@ test filename-13.22 {globbing with brace substitution} {
 } {1 {unmatched open-brace in file name}}
 
 test filename-14.1 {asterisks, question marks, and brackets} {unixOrPc} {
-    lsort [glob g*/*.c]
+    lsort [glob glo*/*.c]
 } {{globTest/weird name.c} globTest/x,z1.c globTest/x1.c globTest/y1.c globTest/z1.c}
 test filename-14.2 {asterisks, question marks, and brackets} {macOnly} {
-    lsort [glob g*/*.c]
+    lsort [glob glo*/*.c]
 } {{:globTest:weird name.c} :globTest:x,z1.c :globTest:x1.c :globTest:y1.c :globTest:z1.c}
 test filename-14.3 {asterisks, question marks, and brackets} {unixOrPc} {
     lsort [glob globTest/?1.c]

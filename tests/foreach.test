@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: foreach.test,v 1.4 1999/06/26 03:54:14 jenn Exp $
+# RCS: @(#) $Id: foreach.test,v 1.5 2000/04/04 08:05:18 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -157,8 +157,8 @@ test foreach-3.1 {compiled foreach backward jump works correctly} {
         return $l
     }
     array set x {0 zero 1 one 2 two 3 three}
-    foo x
-} {{0 zero} {1 one} {2 two} {3 three}}
+    lsort [foo x]
+} [lsort {{0 zero} {1 one} {2 two} {3 three}}]
 
 test foreach-4.1 {noncompiled foreach and shared variable or value list objects that are converted to another type} {
     catch {unset x}

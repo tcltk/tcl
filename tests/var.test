@@ -14,7 +14,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: var.test,v 1.13 2000/01/21 03:29:14 ericm Exp $
+# RCS: @(#) $Id: var.test,v 1.14 2000/04/04 08:05:19 hobbs Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -343,16 +343,16 @@ test var-7.3 {Tcl_VariableObjCmd, "define" var already created above} {
     namespace eval test_ns_var {
         variable two 2
     }
-    list [info vars test_ns_var::*] \
+    list [lsort [info vars test_ns_var::*]] \
          [namespace eval test_ns_var {set two}]
-} {{::test_ns_var::two ::test_ns_var::one} 2}
+} [list [lsort {::test_ns_var::two ::test_ns_var::one}] 2]
 test var-7.4 {Tcl_VariableObjCmd, list of vars} {
     namespace eval test_ns_var {
         variable three 3 four 4
     }
-    list [info vars test_ns_var::*] \
+    list [lsort [info vars test_ns_var::*]] \
          [namespace eval test_ns_var {expr $three+$four}]
-} {{::test_ns_var::four ::test_ns_var::three ::test_ns_var::two ::test_ns_var::one} 7}
+} [list [lsort {::test_ns_var::four ::test_ns_var::three ::test_ns_var::two ::test_ns_var::one}] 7]
 test var-7.5 {Tcl_VariableObjCmd, value for last var is optional} {
     catch {unset a}
     catch {unset five}
@@ -401,28 +401,28 @@ test var-7.9 {Tcl_VariableObjCmd, mark as namespace var so var persists until na
         variable y
         variable z
     }
-    lappend a [info vars test_ns_var2::*]
+    lappend a [lsort [info vars test_ns_var2::*]]
     lappend a [info exists test_ns_var2::x] [info exists test_ns_var2::y] \
         [info exists test_ns_var2::z]
     lappend a [list [catch {set test_ns_var2::y} msg] $msg]
-    lappend a [info vars test_ns_var2::*]
+    lappend a [lsort [info vars test_ns_var2::*]]
     lappend a [info exists test_ns_var2::y] [info exists test_ns_var2::z]
     lappend a [set test_ns_var2::y hello]
     lappend a [info exists test_ns_var2::y] [info exists test_ns_var2::z]
     lappend a [list [catch {unset test_ns_var2::y} msg] $msg]
-    lappend a [info vars test_ns_var2::*]
+    lappend a [lsort [info vars test_ns_var2::*]]
     lappend a [info exists test_ns_var2::y] [info exists test_ns_var2::z]
     lappend a [list [catch {unset test_ns_var2::z} msg] $msg]
     lappend a [namespace delete test_ns_var2]
     set a
-} {{::test_ns_var2::x ::test_ns_var2::y ::test_ns_var2::z} 1 0 0\
-{1 {can't read "test_ns_var2::y": no such variable}}\
-{::test_ns_var2::x ::test_ns_var2::y ::test_ns_var2::z} 0 0\
-hello 1 0\
-{0 {}}\
-{::test_ns_var2::x ::test_ns_var2::z} 0 0\
-{1 {can't unset "test_ns_var2::z": no such variable}}\
-{}}
+} [list [lsort {::test_ns_var2::x ::test_ns_var2::y ::test_ns_var2::z}] 1 0 0\
+	{1 {can't read "test_ns_var2::y": no such variable}}\
+	[lsort {::test_ns_var2::x ::test_ns_var2::y ::test_ns_var2::z}] 0 0\
+	hello 1 0\
+	{0 {}}\
+	[lsort {::test_ns_var2::x ::test_ns_var2::z}] 0 0\
+	{1 {can't unset "test_ns_var2::z": no such variable}}\
+	{}]
 test var-7.10 {Tcl_VariableObjCmd, variable cmd inside proc creates local link var} {
     namespace eval test_ns_var {
         proc p {} {
