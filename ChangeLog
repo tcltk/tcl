@@ -1,3 +1,9 @@
+2001-12-10  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* generic/tclEvent.c:
+	* tests/event.test: fix background error reporting in the absence
+	of a bgerror proc [Bug 219142].
+
 2001-12-10  Don Porter <dgp@users.sourceforge.net>
 
 	* doc/Access.3:
