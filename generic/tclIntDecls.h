@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.48 2002/11/07 02:13:36 mdejong Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.49 2003/02/18 02:25:45 hobbs Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -498,6 +498,11 @@ EXTERN int		TclCheckExecutionTraces _ANSI_ARGS_((
 				Tcl_Obj *CONST objv[]));
 /* 172 */
 EXTERN int		TclInThreadExit _ANSI_ARGS_((void));
+/* 173 */
+EXTERN int		TclUniCharMatch _ANSI_ARGS_((
+				CONST Tcl_UniChar * string, int strLen, 
+				CONST Tcl_UniChar * pattern, int ptnLen, 
+				int nocase));
 
 typedef struct TclIntStubs {
     int magic;
@@ -700,6 +705,7 @@ typedef struct TclIntStubs {
     int (*tclCheckInterpTraces) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * command, int numChars, Command * cmdPtr, int result, int traceFlags, int objc, Tcl_Obj *CONST objv[])); /* 170 */
     int (*tclCheckExecutionTraces) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * command, int numChars, Command * cmdPtr, int result, int traceFlags, int objc, Tcl_Obj *CONST objv[])); /* 171 */
     int (*tclInThreadExit) _ANSI_ARGS_((void)); /* 172 */
+    int (*tclUniCharMatch) _ANSI_ARGS_((CONST Tcl_UniChar * string, int strLen, CONST Tcl_UniChar * pattern, int ptnLen, int nocase)); /* 173 */
 } TclIntStubs;
 
 #ifdef __cplusplus
@@ -1305,6 +1311,10 @@ extern TclIntStubs *tclIntStubsPtr;
 #ifndef TclInThreadExit
 #define TclInThreadExit \
 	(tclIntStubsPtr->tclInThreadExit) /* 172 */
+#endif
+#ifndef TclUniCharMatch
+#define TclUniCharMatch \
+	(tclIntStubsPtr->tclUniCharMatch) /* 173 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */
