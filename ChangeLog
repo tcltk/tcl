@@ -9,11 +9,31 @@
 	* unix/README: fixed notes about --enable-shared and add note
 	about --disable-shared.
 
+2000-02-04  Eric Melski  <ericm@scriptics.com>
+
+	* doc/tree.n: 
+	* doc/stack.n: 
+	* doc/queue.n: docs for tree, stack, and queue.
+
+	* win/Makefile.in: 
+	* unix/Makefile.in: Added struct1.0 to list of libraries to install.
+
+	* tests/stackstruct.test: stack tests
+
+	* tests/queue.test: queue tests
+
+	* library/struct1.0/queue.tcl: queue data structure.
+
+	* library/struct1.0/stack.tcl: stack data structure.
+
+	* library/struct1.0/pkgIndex.tcl: 
+	* library/struct1.0/struct.tcl: data structure package
+
 2000-02-03  Eric Melski <ericm@scriptics.com>
 
 	* doc/Package.n:
-	* doc/packagens.n: Renamed Package.n -> packagens.n because NT is
-	stupid and can't deal with case-sensitive names!
+	* doc/packagens.n: Renamed Package.n -> packagens.n because NT 
+	can't deal with case-sensitive names!
 
 2000-02-02  Jeff Hobbs  <hobbs@scriptics.com>
 
