@@ -1,3 +1,8 @@
+1999-08-03  Scott Redman  <redman@scriptics.com>
+
+	* win/tclWinInt.h: Remove function declarations in header that was
+	moved to tclInt.decls file in previous changes.
+
 1999-08-02  Scott Redman  <redman@scriptics.com>
 
 	* unix/configure.in:

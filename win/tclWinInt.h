@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinInt.h,v 1.7 1999/04/16 00:48:09 stanton Exp $
+ * RCS: @(#) $Id: tclWinInt.h,v 1.8 1999/08/03 18:07:15 redman Exp $
  */
 
 #ifndef _TCLWININT
@@ -99,10 +99,7 @@ EXTERN Tcl_Encoding tclWinTCharEncoding;
  * stubs table.
  */
 
-EXTERN TclPlatformType *TclWinGetPlatform(void);
-EXTERN int		TclWinGetPlatformId(void);
 EXTERN void		TclWinInit(HINSTANCE hInst);
-EXTERN void		TclWinSetInterfaces(int);
 
 # undef TCL_STORAGE_CLASS
 # define TCL_STORAGE_CLASS DLLIMPORT
