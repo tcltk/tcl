@@ -1,5 +1,12 @@
 2003-03-06  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* tests/io.test: Define a fileevent constraint and add
+	it to the constraint list of any test that depends
+	on the fileevent command. This is only useful to
+	Jacl which does not support fileevent.
+
+2003-03-06  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* tests/io.test: Define an openpipe constraint and add
 	it to the constraint list of any test that creates
 	a pipe using the open command. This is only useful to
