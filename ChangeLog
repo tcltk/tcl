@@ -1,5 +1,7 @@
 1999-10-12  Jeff Hobbs  <hobbs@scriptics.com>
 
+	* library/tcltest1.0/pkgIndex.tcl: fixed procs in pkgIndex.tcl file
+
 	* generic/tclEnv.c: fixed mem leak with putenv and DStrings
 	* doc/Encoding.3: corrected docs
 	* tests/basic.test: updated test cases for 8.3
