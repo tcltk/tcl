@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.149 2004/09/18 19:24:53 dkf Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.150 2004/09/21 21:14:03 dgp Exp $
  */
 
 #ifdef STDC_HEADERS
@@ -910,7 +910,6 @@ TclCompEvalObj(interp, objPtr)
     int oldCount = iPtr->cmdCount;	/* Used to tell whether any commands
 					 * at all were executed. */
     char *script;
-    int numSrcBytes;
     int result;
     Namespace *namespacePtr;
 
@@ -991,69 +990,22 @@ TclCompEvalObj(interp, objPtr)
     }
 
     /*
-     * Execute the commands. If the code was compiled from an empty string,
-     * don't bother executing the code.
+     * Increment the code's ref count while it is being executed. If
+     * afterwards no references to it remain, free the code.
      */
 
-    numSrcBytes = codePtr->numSrcBytes;
-    if ((numSrcBytes > 0) || (codePtr->flags & TCL_BYTECODE_PRECOMPILED)) {
-	/*
-	 * Increment the code's ref count while it is being executed. If
-	 * afterwards no references to it remain, free the code.
-	 */
-	
-	codePtr->refCount++;
-	if (iPtr->returnOpts != iPtr->defaultReturnOpts) {
-	    Tcl_DecrRefCount(iPtr->returnOpts);
-	    iPtr->returnOpts = iPtr->defaultReturnOpts;
-	    Tcl_IncrRefCount(iPtr->returnOpts);
-	}
-	result = TclExecuteByteCode(interp, codePtr);
-	codePtr->refCount--;
-	if (codePtr->refCount <= 0) {
-	    TclCleanupByteCode(codePtr);
-	}
-    } else {
-	result = TCL_OK;
+    codePtr->refCount++;
+    if (iPtr->returnOpts != iPtr->defaultReturnOpts) {
+	Tcl_DecrRefCount(iPtr->returnOpts);
+	iPtr->returnOpts = iPtr->defaultReturnOpts;
+	Tcl_IncrRefCount(iPtr->returnOpts);
+    }
+    result = TclExecuteByteCode(interp, codePtr);
+    codePtr->refCount--;
+    if (codePtr->refCount <= 0) {
+	TclCleanupByteCode(codePtr);
     }
     iPtr->numLevels--;
-
-    /*
-     * If no commands at all were executed, check for asynchronous
-     * handlers and resource limits so that they at least get one
-     * change to execute.  This is needed to handle event loops
-     * written in Tcl with empty bodies.
-     */
-
-    if (oldCount == iPtr->cmdCount) {
-	if (Tcl_AsyncReady()) {
-	    result = Tcl_AsyncInvoke(interp, result);
-
-	    /*
-	     * If an error occurred, record information about what was
-	     * being executed when the error occurred.
-	     */
-
-	    if ((result == TCL_ERROR) && !(iPtr->flags & ERR_ALREADY_LOGGED)) {
-		script = Tcl_GetStringFromObj(objPtr, &numSrcBytes);
-		Tcl_LogCommandInfo(interp, script, script, numSrcBytes);
-	    }
-	}
-	if (result==TCL_OK && Tcl_LimitReady(interp)) {
-	    result = Tcl_LimitCheck(interp);
-
-	    /*
-	     * If an error occurred, record information about what was
-	     * being executed when the error occurred.
-	     */
-
-	    if (result==TCL_ERROR && !(iPtr->flags & ERR_ALREADY_LOGGED)) {
-		script = Tcl_GetStringFromObj(objPtr, &numSrcBytes);
-		Tcl_LogCommandInfo(interp, script, script, numSrcBytes);
-	    }
-	}
-    }
-
     iPtr->flags &= ~ERR_ALREADY_LOGGED;
     return result;
 }
@@ -4879,7 +4831,6 @@ TclExecuteByteCode(interp, codePtr)
 		DECACHE_STACK_INFO();
 		Tcl_LogCommandInfo(interp, codePtr->source, bytes, length);
 		CACHE_STACK_INFO();
-		iPtr->flags |= ERR_ALREADY_LOGGED;
 	    }
 	}
 
