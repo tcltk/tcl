@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.3.2.9 1999/03/24 04:25:12 stanton Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.3.2.10 1999/03/30 01:55:51 redman Exp $
  */
 
 #ifndef _TCLDECLS
@@ -1442,1127 +1442,1127 @@ extern TclStubs *tclStubsPtr;
  */
 
 #ifndef Tcl_PkgProvideEx
-#define Tcl_PkgProvideEx(interp, name, version, clientData) \
-	(tclStubsPtr->tcl_PkgProvideEx)(interp, name, version, clientData) /* 0 */
+#define Tcl_PkgProvideEx \
+	(tclStubsPtr->tcl_PkgProvideEx) /* 0 */
 #endif
 #ifndef Tcl_PkgRequireEx
-#define Tcl_PkgRequireEx(interp, name, version, exact, clientDataPtr) \
-	(tclStubsPtr->tcl_PkgRequireEx)(interp, name, version, exact, clientDataPtr) /* 1 */
+#define Tcl_PkgRequireEx \
+	(tclStubsPtr->tcl_PkgRequireEx) /* 1 */
 #endif
 #ifndef Tcl_Panic
 #define Tcl_Panic \
 	(tclStubsPtr->tcl_Panic) /* 2 */
 #endif
 #ifndef Tcl_Alloc
-#define Tcl_Alloc(size) \
-	(tclStubsPtr->tcl_Alloc)(size) /* 3 */
+#define Tcl_Alloc \
+	(tclStubsPtr->tcl_Alloc) /* 3 */
 #endif
 #ifndef Tcl_Free
-#define Tcl_Free(ptr) \
-	(tclStubsPtr->tcl_Free)(ptr) /* 4 */
+#define Tcl_Free \
+	(tclStubsPtr->tcl_Free) /* 4 */
 #endif
 #ifndef Tcl_Realloc
-#define Tcl_Realloc(ptr, size) \
-	(tclStubsPtr->tcl_Realloc)(ptr, size) /* 5 */
+#define Tcl_Realloc \
+	(tclStubsPtr->tcl_Realloc) /* 5 */
 #endif
 #ifndef Tcl_DbCkalloc
-#define Tcl_DbCkalloc(size, file, line) \
-	(tclStubsPtr->tcl_DbCkalloc)(size, file, line) /* 6 */
+#define Tcl_DbCkalloc \
+	(tclStubsPtr->tcl_DbCkalloc) /* 6 */
 #endif
 #ifndef Tcl_DbCkfree
-#define Tcl_DbCkfree(ptr, file, line) \
-	(tclStubsPtr->tcl_DbCkfree)(ptr, file, line) /* 7 */
+#define Tcl_DbCkfree \
+	(tclStubsPtr->tcl_DbCkfree) /* 7 */
 #endif
 #ifndef Tcl_DbCkrealloc
-#define Tcl_DbCkrealloc(ptr, size, file, line) \
-	(tclStubsPtr->tcl_DbCkrealloc)(ptr, size, file, line) /* 8 */
+#define Tcl_DbCkrealloc \
+	(tclStubsPtr->tcl_DbCkrealloc) /* 8 */
 #endif
 #if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
 #ifndef Tcl_CreateFileHandler
-#define Tcl_CreateFileHandler(fd, mask, proc, clientData) \
-	(tclStubsPtr->tcl_CreateFileHandler)(fd, mask, proc, clientData) /* 9 */
+#define Tcl_CreateFileHandler \
+	(tclStubsPtr->tcl_CreateFileHandler) /* 9 */
 #endif
 #endif /* UNIX */
 #if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
 #ifndef Tcl_DeleteFileHandler
-#define Tcl_DeleteFileHandler(fd) \
-	(tclStubsPtr->tcl_DeleteFileHandler)(fd) /* 10 */
+#define Tcl_DeleteFileHandler \
+	(tclStubsPtr->tcl_DeleteFileHandler) /* 10 */
 #endif
 #endif /* UNIX */
 #ifndef Tcl_SetTimer
-#define Tcl_SetTimer(timePtr) \
-	(tclStubsPtr->tcl_SetTimer)(timePtr) /* 11 */
+#define Tcl_SetTimer \
+	(tclStubsPtr->tcl_SetTimer) /* 11 */
 #endif
 #ifndef Tcl_Sleep
-#define Tcl_Sleep(ms) \
-	(tclStubsPtr->tcl_Sleep)(ms) /* 12 */
+#define Tcl_Sleep \
+	(tclStubsPtr->tcl_Sleep) /* 12 */
 #endif
 #ifndef Tcl_WaitForEvent
-#define Tcl_WaitForEvent(timePtr) \
-	(tclStubsPtr->tcl_WaitForEvent)(timePtr) /* 13 */
+#define Tcl_WaitForEvent \
+	(tclStubsPtr->tcl_WaitForEvent) /* 13 */
 #endif
 #ifndef Tcl_AppendAllObjTypes
-#define Tcl_AppendAllObjTypes(interp, objPtr) \
-	(tclStubsPtr->tcl_AppendAllObjTypes)(interp, objPtr) /* 14 */
+#define Tcl_AppendAllObjTypes \
+	(tclStubsPtr->tcl_AppendAllObjTypes) /* 14 */
 #endif
 #ifndef Tcl_AppendStringsToObj
 #define Tcl_AppendStringsToObj \
 	(tclStubsPtr->tcl_AppendStringsToObj) /* 15 */
 #endif
 #ifndef Tcl_AppendToObj
-#define Tcl_AppendToObj(objPtr, bytes, length) \
-	(tclStubsPtr->tcl_AppendToObj)(objPtr, bytes, length) /* 16 */
+#define Tcl_AppendToObj \
+	(tclStubsPtr->tcl_AppendToObj) /* 16 */
 #endif
 #ifndef Tcl_ConcatObj
-#define Tcl_ConcatObj(objc, objv) \
-	(tclStubsPtr->tcl_ConcatObj)(objc, objv) /* 17 */
+#define Tcl_ConcatObj \
+	(tclStubsPtr->tcl_ConcatObj) /* 17 */
 #endif
 #ifndef Tcl_ConvertToType
-#define Tcl_ConvertToType(interp, objPtr, typePtr) \
-	(tclStubsPtr->tcl_ConvertToType)(interp, objPtr, typePtr) /* 18 */
+#define Tcl_ConvertToType \
+	(tclStubsPtr->tcl_ConvertToType) /* 18 */
 #endif
 #ifndef Tcl_DbDecrRefCount
-#define Tcl_DbDecrRefCount(objPtr, file, line) \
-	(tclStubsPtr->tcl_DbDecrRefCount)(objPtr, file, line) /* 19 */
+#define Tcl_DbDecrRefCount \
+	(tclStubsPtr->tcl_DbDecrRefCount) /* 19 */
 #endif
 #ifndef Tcl_DbIncrRefCount
-#define Tcl_DbIncrRefCount(objPtr, file, line) \
-	(tclStubsPtr->tcl_DbIncrRefCount)(objPtr, file, line) /* 20 */
+#define Tcl_DbIncrRefCount \
+	(tclStubsPtr->tcl_DbIncrRefCount) /* 20 */
 #endif
 #ifndef Tcl_DbIsShared
-#define Tcl_DbIsShared(objPtr, file, line) \
-	(tclStubsPtr->tcl_DbIsShared)(objPtr, file, line) /* 21 */
+#define Tcl_DbIsShared \
+	(tclStubsPtr->tcl_DbIsShared) /* 21 */
 #endif
 #ifndef Tcl_DbNewBooleanObj
-#define Tcl_DbNewBooleanObj(boolValue, file, line) \
-	(tclStubsPtr->tcl_DbNewBooleanObj)(boolValue, file, line) /* 22 */
+#define Tcl_DbNewBooleanObj \
+	(tclStubsPtr->tcl_DbNewBooleanObj) /* 22 */
 #endif
 #ifndef Tcl_DbNewByteArrayObj
-#define Tcl_DbNewByteArrayObj(bytes, length, file, line) \
-	(tclStubsPtr->tcl_DbNewByteArrayObj)(bytes, length, file, line) /* 23 */
+#define Tcl_DbNewByteArrayObj \
+	(tclStubsPtr->tcl_DbNewByteArrayObj) /* 23 */
 #endif
 #ifndef Tcl_DbNewDoubleObj
-#define Tcl_DbNewDoubleObj(doubleValue, file, line) \
-	(tclStubsPtr->tcl_DbNewDoubleObj)(doubleValue, file, line) /* 24 */
+#define Tcl_DbNewDoubleObj \
+	(tclStubsPtr->tcl_DbNewDoubleObj) /* 24 */
 #endif
 #ifndef Tcl_DbNewListObj
-#define Tcl_DbNewListObj(objc, objv, file, line) \
-	(tclStubsPtr->tcl_DbNewListObj)(objc, objv, file, line) /* 25 */
+#define Tcl_DbNewListObj \
+	(tclStubsPtr->tcl_DbNewListObj) /* 25 */
 #endif
 #ifndef Tcl_DbNewLongObj
-#define Tcl_DbNewLongObj(longValue, file, line) \
-	(tclStubsPtr->tcl_DbNewLongObj)(longValue, file, line) /* 26 */
+#define Tcl_DbNewLongObj \
+	(tclStubsPtr->tcl_DbNewLongObj) /* 26 */
 #endif
 #ifndef Tcl_DbNewObj
-#define Tcl_DbNewObj(file, line) \
-	(tclStubsPtr->tcl_DbNewObj)(file, line) /* 27 */
+#define Tcl_DbNewObj \
+	(tclStubsPtr->tcl_DbNewObj) /* 27 */
 #endif
 #ifndef Tcl_DbNewStringObj
-#define Tcl_DbNewStringObj(bytes, length, file, line) \
-	(tclStubsPtr->tcl_DbNewStringObj)(bytes, length, file, line) /* 28 */
+#define Tcl_DbNewStringObj \
+	(tclStubsPtr->tcl_DbNewStringObj) /* 28 */
 #endif
 #ifndef Tcl_DuplicateObj
-#define Tcl_DuplicateObj(objPtr) \
-	(tclStubsPtr->tcl_DuplicateObj)(objPtr) /* 29 */
+#define Tcl_DuplicateObj \
+	(tclStubsPtr->tcl_DuplicateObj) /* 29 */
 #endif
 #ifndef TclFreeObj
-#define TclFreeObj(objPtr) \
-	(tclStubsPtr->tclFreeObj)(objPtr) /* 30 */
+#define TclFreeObj \
+	(tclStubsPtr->tclFreeObj) /* 30 */
 #endif
 #ifndef Tcl_GetBoolean
-#define Tcl_GetBoolean(interp, str, boolPtr) \
-	(tclStubsPtr->tcl_GetBoolean)(interp, str, boolPtr) /* 31 */
+#define Tcl_GetBoolean \
+	(tclStubsPtr->tcl_GetBoolean) /* 31 */
 #endif
 #ifndef Tcl_GetBooleanFromObj
-#define Tcl_GetBooleanFromObj(interp, objPtr, boolPtr) \
-	(tclStubsPtr->tcl_GetBooleanFromObj)(interp, objPtr, boolPtr) /* 32 */
+#define Tcl_GetBooleanFromObj \
+	(tclStubsPtr->tcl_GetBooleanFromObj) /* 32 */
 #endif
 #ifndef Tcl_GetByteArrayFromObj
-#define Tcl_GetByteArrayFromObj(objPtr, lengthPtr) \
-	(tclStubsPtr->tcl_GetByteArrayFromObj)(objPtr, lengthPtr) /* 33 */
+#define Tcl_GetByteArrayFromObj \
+	(tclStubsPtr->tcl_GetByteArrayFromObj) /* 33 */
 #endif
 #ifndef Tcl_GetDouble
-#define Tcl_GetDouble(interp, str, doublePtr) \
-	(tclStubsPtr->tcl_GetDouble)(interp, str, doublePtr) /* 34 */
+#define Tcl_GetDouble \
+	(tclStubsPtr->tcl_GetDouble) /* 34 */
 #endif
 #ifndef Tcl_GetDoubleFromObj
-#define Tcl_GetDoubleFromObj(interp, objPtr, doublePtr) \
-	(tclStubsPtr->tcl_GetDoubleFromObj)(interp, objPtr, doublePtr) /* 35 */
+#define Tcl_GetDoubleFromObj \
+	(tclStubsPtr->tcl_GetDoubleFromObj) /* 35 */
 #endif
 #ifndef Tcl_GetIndexFromObj
-#define Tcl_GetIndexFromObj(interp, objPtr, tablePtr, msg, flags, indexPtr) \
-	(tclStubsPtr->tcl_GetIndexFromObj)(interp, objPtr, tablePtr, msg, flags, indexPtr) /* 36 */
+#define Tcl_GetIndexFromObj \
+	(tclStubsPtr->tcl_GetIndexFromObj) /* 36 */
 #endif
 #ifndef Tcl_GetInt
-#define Tcl_GetInt(interp, str, intPtr) \
-	(tclStubsPtr->tcl_GetInt)(interp, str, intPtr) /* 37 */
+#define Tcl_GetInt \
+	(tclStubsPtr->tcl_GetInt) /* 37 */
 #endif
 #ifndef Tcl_GetIntFromObj
-#define Tcl_GetIntFromObj(interp, objPtr, intPtr) \
-	(tclStubsPtr->tcl_GetIntFromObj)(interp, objPtr, intPtr) /* 38 */
+#define Tcl_GetIntFromObj \
+	(tclStubsPtr->tcl_GetIntFromObj) /* 38 */
 #endif
 #ifndef Tcl_GetLongFromObj
-#define Tcl_GetLongFromObj(interp, objPtr, longPtr) \
-	(tclStubsPtr->tcl_GetLongFromObj)(interp, objPtr, longPtr) /* 39 */
+#define Tcl_GetLongFromObj \
+	(tclStubsPtr->tcl_GetLongFromObj) /* 39 */
 #endif
 #ifndef Tcl_GetObjType
-#define Tcl_GetObjType(typeName) \
-	(tclStubsPtr->tcl_GetObjType)(typeName) /* 40 */
+#define Tcl_GetObjType \
+	(tclStubsPtr->tcl_GetObjType) /* 40 */
 #endif
 #ifndef Tcl_GetStringFromObj
-#define Tcl_GetStringFromObj(objPtr, lengthPtr) \
-	(tclStubsPtr->tcl_GetStringFromObj)(objPtr, lengthPtr) /* 41 */
+#define Tcl_GetStringFromObj \
+	(tclStubsPtr->tcl_GetStringFromObj) /* 41 */
 #endif
 #ifndef Tcl_InvalidateStringRep
-#define Tcl_InvalidateStringRep(objPtr) \
-	(tclStubsPtr->tcl_InvalidateStringRep)(objPtr) /* 42 */
+#define Tcl_InvalidateStringRep \
+	(tclStubsPtr->tcl_InvalidateStringRep) /* 42 */
 #endif
 #ifndef Tcl_ListObjAppendList
-#define Tcl_ListObjAppendList(interp, listPtr, elemListPtr) \
-	(tclStubsPtr->tcl_ListObjAppendList)(interp, listPtr, elemListPtr) /* 43 */
+#define Tcl_ListObjAppendList \
+	(tclStubsPtr->tcl_ListObjAppendList) /* 43 */
 #endif
 #ifndef Tcl_ListObjAppendElement
-#define Tcl_ListObjAppendElement(interp, listPtr, objPtr) \
-	(tclStubsPtr->tcl_ListObjAppendElement)(interp, listPtr, objPtr) /* 44 */
+#define Tcl_ListObjAppendElement \
+	(tclStubsPtr->tcl_ListObjAppendElement) /* 44 */
 #endif
 #ifndef Tcl_ListObjGetElements
-#define Tcl_ListObjGetElements(interp, listPtr, objcPtr, objvPtr) \
-	(tclStubsPtr->tcl_ListObjGetElements)(interp, listPtr, objcPtr, objvPtr) /* 45 */
+#define Tcl_ListObjGetElements \
+	(tclStubsPtr->tcl_ListObjGetElements) /* 45 */
 #endif
 #ifndef Tcl_ListObjIndex
-#define Tcl_ListObjIndex(interp, listPtr, index, objPtrPtr) \
-	(tclStubsPtr->tcl_ListObjIndex)(interp, listPtr, index, objPtrPtr) /* 46 */
+#define Tcl_ListObjIndex \
+	(tclStubsPtr->tcl_ListObjIndex) /* 46 */
 #endif
 #ifndef Tcl_ListObjLength
-#define Tcl_ListObjLength(interp, listPtr, intPtr) \
-	(tclStubsPtr->tcl_ListObjLength)(interp, listPtr, intPtr) /* 47 */
+#define Tcl_ListObjLength \
+	(tclStubsPtr->tcl_ListObjLength) /* 47 */
 #endif
 #ifndef Tcl_ListObjReplace
-#define Tcl_ListObjReplace(interp, listPtr, first, count, objc, objv) \
-	(tclStubsPtr->tcl_ListObjReplace)(interp, listPtr, first, count, objc, objv) /* 48 */
+#define Tcl_ListObjReplace \
+	(tclStubsPtr->tcl_ListObjReplace) /* 48 */
 #endif
 #ifndef Tcl_NewBooleanObj
-#define Tcl_NewBooleanObj(boolValue) \
-	(tclStubsPtr->tcl_NewBooleanObj)(boolValue) /* 49 */
+#define Tcl_NewBooleanObj \
+	(tclStubsPtr->tcl_NewBooleanObj) /* 49 */
 #endif
 #ifndef Tcl_NewByteArrayObj
-#define Tcl_NewByteArrayObj(bytes, length) \
-	(tclStubsPtr->tcl_NewByteArrayObj)(bytes, length) /* 50 */
+#define Tcl_NewByteArrayObj \
+	(tclStubsPtr->tcl_NewByteArrayObj) /* 50 */
 #endif
 #ifndef Tcl_NewDoubleObj
-#define Tcl_NewDoubleObj(doubleValue) \
-	(tclStubsPtr->tcl_NewDoubleObj)(doubleValue) /* 51 */
+#define Tcl_NewDoubleObj \
+	(tclStubsPtr->tcl_NewDoubleObj) /* 51 */
 #endif
 #ifndef Tcl_NewIntObj
-#define Tcl_NewIntObj(intValue) \
-	(tclStubsPtr->tcl_NewIntObj)(intValue) /* 52 */
+#define Tcl_NewIntObj \
+	(tclStubsPtr->tcl_NewIntObj) /* 52 */
 #endif
 #ifndef Tcl_NewListObj
-#define Tcl_NewListObj(objc, objv) \
-	(tclStubsPtr->tcl_NewListObj)(objc, objv) /* 53 */
+#define Tcl_NewListObj \
+	(tclStubsPtr->tcl_NewListObj) /* 53 */
 #endif
 #ifndef Tcl_NewLongObj
-#define Tcl_NewLongObj(longValue) \
-	(tclStubsPtr->tcl_NewLongObj)(longValue) /* 54 */
+#define Tcl_NewLongObj \
+	(tclStubsPtr->tcl_NewLongObj) /* 54 */
 #endif
 #ifndef Tcl_NewObj
-#define Tcl_NewObj() \
-	(tclStubsPtr->tcl_NewObj)() /* 55 */
+#define Tcl_NewObj \
+	(tclStubsPtr->tcl_NewObj) /* 55 */
 #endif
 #ifndef Tcl_NewStringObj
-#define Tcl_NewStringObj(bytes, length) \
-	(tclStubsPtr->tcl_NewStringObj)(bytes, length) /* 56 */
+#define Tcl_NewStringObj \
+	(tclStubsPtr->tcl_NewStringObj) /* 56 */
 #endif
 #ifndef Tcl_SetBooleanObj
-#define Tcl_SetBooleanObj(objPtr, boolValue) \
-	(tclStubsPtr->tcl_SetBooleanObj)(objPtr, boolValue) /* 57 */
+#define Tcl_SetBooleanObj \
+	(tclStubsPtr->tcl_SetBooleanObj) /* 57 */
 #endif
 #ifndef Tcl_SetByteArrayLength
-#define Tcl_SetByteArrayLength(objPtr, length) \
-	(tclStubsPtr->tcl_SetByteArrayLength)(objPtr, length) /* 58 */
+#define Tcl_SetByteArrayLength \
+	(tclStubsPtr->tcl_SetByteArrayLength) /* 58 */
 #endif
 #ifndef Tcl_SetByteArrayObj
-#define Tcl_SetByteArrayObj(objPtr, bytes, length) \
-	(tclStubsPtr->tcl_SetByteArrayObj)(objPtr, bytes, length) /* 59 */
+#define Tcl_SetByteArrayObj \
+	(tclStubsPtr->tcl_SetByteArrayObj) /* 59 */
 #endif
 #ifndef Tcl_SetDoubleObj
-#define Tcl_SetDoubleObj(objPtr, doubleValue) \
-	(tclStubsPtr->tcl_SetDoubleObj)(objPtr, doubleValue) /* 60 */
+#define Tcl_SetDoubleObj \
+	(tclStubsPtr->tcl_SetDoubleObj) /* 60 */
 #endif
 #ifndef Tcl_SetIntObj
-#define Tcl_SetIntObj(objPtr, intValue) \
-	(tclStubsPtr->tcl_SetIntObj)(objPtr, intValue) /* 61 */
+#define Tcl_SetIntObj \
+	(tclStubsPtr->tcl_SetIntObj) /* 61 */
 #endif
 #ifndef Tcl_SetListObj
-#define Tcl_SetListObj(objPtr, objc, objv) \
-	(tclStubsPtr->tcl_SetListObj)(objPtr, objc, objv) /* 62 */
+#define Tcl_SetListObj \
+	(tclStubsPtr->tcl_SetListObj) /* 62 */
 #endif
 #ifndef Tcl_SetLongObj
-#define Tcl_SetLongObj(objPtr, longValue) \
-	(tclStubsPtr->tcl_SetLongObj)(objPtr, longValue) /* 63 */
+#define Tcl_SetLongObj \
+	(tclStubsPtr->tcl_SetLongObj) /* 63 */
 #endif
 #ifndef Tcl_SetObjLength
-#define Tcl_SetObjLength(objPtr, length) \
-	(tclStubsPtr->tcl_SetObjLength)(objPtr, length) /* 64 */
+#define Tcl_SetObjLength \
+	(tclStubsPtr->tcl_SetObjLength) /* 64 */
 #endif
 #ifndef Tcl_SetStringObj
-#define Tcl_SetStringObj(objPtr, bytes, length) \
-	(tclStubsPtr->tcl_SetStringObj)(objPtr, bytes, length) /* 65 */
+#define Tcl_SetStringObj \
+	(tclStubsPtr->tcl_SetStringObj) /* 65 */
 #endif
 #ifndef Tcl_AddErrorInfo
-#define Tcl_AddErrorInfo(interp, message) \
-	(tclStubsPtr->tcl_AddErrorInfo)(interp, message) /* 66 */
+#define Tcl_AddErrorInfo \
+	(tclStubsPtr->tcl_AddErrorInfo) /* 66 */
 #endif
 #ifndef Tcl_AddObjErrorInfo
-#define Tcl_AddObjErrorInfo(interp, message, length) \
-	(tclStubsPtr->tcl_AddObjErrorInfo)(interp, message, length) /* 67 */
+#define Tcl_AddObjErrorInfo \
+	(tclStubsPtr->tcl_AddObjErrorInfo) /* 67 */
 #endif
 #ifndef Tcl_AllowExceptions
-#define Tcl_AllowExceptions(interp) \
-	(tclStubsPtr->tcl_AllowExceptions)(interp) /* 68 */
+#define Tcl_AllowExceptions \
+	(tclStubsPtr->tcl_AllowExceptions) /* 68 */
 #endif
 #ifndef Tcl_AppendElement
-#define Tcl_AppendElement(interp, string) \
-	(tclStubsPtr->tcl_AppendElement)(interp, string) /* 69 */
+#define Tcl_AppendElement \
+	(tclStubsPtr->tcl_AppendElement) /* 69 */
 #endif
 #ifndef Tcl_AppendResult
 #define Tcl_AppendResult \
 	(tclStubsPtr->tcl_AppendResult) /* 70 */
 #endif
 #ifndef Tcl_AsyncCreate
-#define Tcl_AsyncCreate(proc, clientData) \
-	(tclStubsPtr->tcl_AsyncCreate)(proc, clientData) /* 71 */
+#define Tcl_AsyncCreate \
+	(tclStubsPtr->tcl_AsyncCreate) /* 71 */
 #endif
 #ifndef Tcl_AsyncDelete
-#define Tcl_AsyncDelete(async) \
-	(tclStubsPtr->tcl_AsyncDelete)(async) /* 72 */
+#define Tcl_AsyncDelete \
+	(tclStubsPtr->tcl_AsyncDelete) /* 72 */
 #endif
 #ifndef Tcl_AsyncInvoke
-#define Tcl_AsyncInvoke(interp, code) \
-	(tclStubsPtr->tcl_AsyncInvoke)(interp, code) /* 73 */
+#define Tcl_AsyncInvoke \
+	(tclStubsPtr->tcl_AsyncInvoke) /* 73 */
 #endif
 #ifndef Tcl_AsyncMark
-#define Tcl_AsyncMark(async) \
-	(tclStubsPtr->tcl_AsyncMark)(async) /* 74 */
+#define Tcl_AsyncMark \
+	(tclStubsPtr->tcl_AsyncMark) /* 74 */
 #endif
 #ifndef Tcl_AsyncReady
-#define Tcl_AsyncReady() \
-	(tclStubsPtr->tcl_AsyncReady)() /* 75 */
+#define Tcl_AsyncReady \
+	(tclStubsPtr->tcl_AsyncReady) /* 75 */
 #endif
 #ifndef Tcl_BackgroundError
-#define Tcl_BackgroundError(interp) \
-	(tclStubsPtr->tcl_BackgroundError)(interp) /* 76 */
+#define Tcl_BackgroundError \
+	(tclStubsPtr->tcl_BackgroundError) /* 76 */
 #endif
 #ifndef Tcl_Backslash
-#define Tcl_Backslash(src, readPtr) \
-	(tclStubsPtr->tcl_Backslash)(src, readPtr) /* 77 */
+#define Tcl_Backslash \
+	(tclStubsPtr->tcl_Backslash) /* 77 */
 #endif
 #ifndef Tcl_BadChannelOption
-#define Tcl_BadChannelOption(interp, optionName, optionList) \
-	(tclStubsPtr->tcl_BadChannelOption)(interp, optionName, optionList) /* 78 */
+#define Tcl_BadChannelOption \
+	(tclStubsPtr->tcl_BadChannelOption) /* 78 */
 #endif
 #ifndef Tcl_CallWhenDeleted
-#define Tcl_CallWhenDeleted(interp, proc, clientData) \
-	(tclStubsPtr->tcl_CallWhenDeleted)(interp, proc, clientData) /* 79 */
+#define Tcl_CallWhenDeleted \
+	(tclStubsPtr->tcl_CallWhenDeleted) /* 79 */
 #endif
 #ifndef Tcl_CancelIdleCall
-#define Tcl_CancelIdleCall(idleProc, clientData) \
-	(tclStubsPtr->tcl_CancelIdleCall)(idleProc, clientData) /* 80 */
+#define Tcl_CancelIdleCall \
+	(tclStubsPtr->tcl_CancelIdleCall) /* 80 */
 #endif
 #ifndef Tcl_Close
-#define Tcl_Close(interp, chan) \
-	(tclStubsPtr->tcl_Close)(interp, chan) /* 81 */
+#define Tcl_Close \
+	(tclStubsPtr->tcl_Close) /* 81 */
 #endif
 #ifndef Tcl_CommandComplete
-#define Tcl_CommandComplete(cmd) \
-	(tclStubsPtr->tcl_CommandComplete)(cmd) /* 82 */
+#define Tcl_CommandComplete \
+	(tclStubsPtr->tcl_CommandComplete) /* 82 */
 #endif
 #ifndef Tcl_Concat
-#define Tcl_Concat(argc, argv) \
-	(tclStubsPtr->tcl_Concat)(argc, argv) /* 83 */
+#define Tcl_Concat \
+	(tclStubsPtr->tcl_Concat) /* 83 */
 #endif
 #ifndef Tcl_ConvertElement
-#define Tcl_ConvertElement(src, dst, flags) \
-	(tclStubsPtr->tcl_ConvertElement)(src, dst, flags) /* 84 */
+#define Tcl_ConvertElement \
+	(tclStubsPtr->tcl_ConvertElement) /* 84 */
 #endif
 #ifndef Tcl_ConvertCountedElement
-#define Tcl_ConvertCountedElement(src, length, dst, flags) \
-	(tclStubsPtr->tcl_ConvertCountedElement)(src, length, dst, flags) /* 85 */
+#define Tcl_ConvertCountedElement \
+	(tclStubsPtr->tcl_ConvertCountedElement) /* 85 */
 #endif
 #ifndef Tcl_CreateAlias
-#define Tcl_CreateAlias(slave, slaveCmd, target, targetCmd, argc, argv) \
-	(tclStubsPtr->tcl_CreateAlias)(slave, slaveCmd, target, targetCmd, argc, argv) /* 86 */
+#define Tcl_CreateAlias \
+	(tclStubsPtr->tcl_CreateAlias) /* 86 */
 #endif
 #ifndef Tcl_CreateAliasObj
-#define Tcl_CreateAliasObj(slave, slaveCmd, target, targetCmd, objc, objv) \
-	(tclStubsPtr->tcl_CreateAliasObj)(slave, slaveCmd, target, targetCmd, objc, objv) /* 87 */
+#define Tcl_CreateAliasObj \
+	(tclStubsPtr->tcl_CreateAliasObj) /* 87 */
 #endif
 #ifndef Tcl_CreateChannel
-#define Tcl_CreateChannel(typePtr, chanName, instanceData, mask) \
-	(tclStubsPtr->tcl_CreateChannel)(typePtr, chanName, instanceData, mask) /* 88 */
+#define Tcl_CreateChannel \
+	(tclStubsPtr->tcl_CreateChannel) /* 88 */
 #endif
 #ifndef Tcl_CreateChannelHandler
-#define Tcl_CreateChannelHandler(chan, mask, proc, clientData) \
-	(tclStubsPtr->tcl_CreateChannelHandler)(chan, mask, proc, clientData) /* 89 */
+#define Tcl_CreateChannelHandler \
+	(tclStubsPtr->tcl_CreateChannelHandler) /* 89 */
 #endif
 #ifndef Tcl_CreateCloseHandler
-#define Tcl_CreateCloseHandler(chan, proc, clientData) \
-	(tclStubsPtr->tcl_CreateCloseHandler)(chan, proc, clientData) /* 90 */
+#define Tcl_CreateCloseHandler \
+	(tclStubsPtr->tcl_CreateCloseHandler) /* 90 */
 #endif
 #ifndef Tcl_CreateCommand
-#define Tcl_CreateCommand(interp, cmdName, proc, clientData, deleteProc) \
-	(tclStubsPtr->tcl_CreateCommand)(interp, cmdName, proc, clientData, deleteProc) /* 91 */
+#define Tcl_CreateCommand \
+	(tclStubsPtr->tcl_CreateCommand) /* 91 */
 #endif
 #ifndef Tcl_CreateEventSource
-#define Tcl_CreateEventSource(setupProc, checkProc, clientData) \
-	(tclStubsPtr->tcl_CreateEventSource)(setupProc, checkProc, clientData) /* 92 */
+#define Tcl_CreateEventSource \
+	(tclStubsPtr->tcl_CreateEventSource) /* 92 */
 #endif
 #ifndef Tcl_CreateExitHandler
-#define Tcl_CreateExitHandler(proc, clientData) \
-	(tclStubsPtr->tcl_CreateExitHandler)(proc, clientData) /* 93 */
+#define Tcl_CreateExitHandler \
+	(tclStubsPtr->tcl_CreateExitHandler) /* 93 */
 #endif
 #ifndef Tcl_CreateInterp
-#define Tcl_CreateInterp() \
-	(tclStubsPtr->tcl_CreateInterp)() /* 94 */
+#define Tcl_CreateInterp \
+	(tclStubsPtr->tcl_CreateInterp) /* 94 */
 #endif
 #ifndef Tcl_CreateMathFunc
-#define Tcl_CreateMathFunc(interp, name, numArgs, argTypes, proc, clientData) \
-	(tclStubsPtr->tcl_CreateMathFunc)(interp, name, numArgs, argTypes, proc, clientData) /* 95 */
+#define Tcl_CreateMathFunc \
+	(tclStubsPtr->tcl_CreateMathFunc) /* 95 */
 #endif
 #ifndef Tcl_CreateObjCommand
-#define Tcl_CreateObjCommand(interp, cmdName, proc, clientData, deleteProc) \
-	(tclStubsPtr->tcl_CreateObjCommand)(interp, cmdName, proc, clientData, deleteProc) /* 96 */
+#define Tcl_CreateObjCommand \
+	(tclStubsPtr->tcl_CreateObjCommand) /* 96 */
 #endif
 #ifndef Tcl_CreateSlave
-#define Tcl_CreateSlave(interp, slaveName, isSafe) \
-	(tclStubsPtr->tcl_CreateSlave)(interp, slaveName, isSafe) /* 97 */
+#define Tcl_CreateSlave \
+	(tclStubsPtr->tcl_CreateSlave) /* 97 */
 #endif
 #ifndef Tcl_CreateTimerHandler
-#define Tcl_CreateTimerHandler(milliseconds, proc, clientData) \
-	(tclStubsPtr->tcl_CreateTimerHandler)(milliseconds, proc, clientData) /* 98 */
+#define Tcl_CreateTimerHandler \
+	(tclStubsPtr->tcl_CreateTimerHandler) /* 98 */
 #endif
 #ifndef Tcl_CreateTrace
-#define Tcl_CreateTrace(interp, level, proc, clientData) \
-	(tclStubsPtr->tcl_CreateTrace)(interp, level, proc, clientData) /* 99 */
+#define Tcl_CreateTrace \
+	(tclStubsPtr->tcl_CreateTrace) /* 99 */
 #endif
 #ifndef Tcl_DeleteAssocData
-#define Tcl_DeleteAssocData(interp, name) \
-	(tclStubsPtr->tcl_DeleteAssocData)(interp, name) /* 100 */
+#define Tcl_DeleteAssocData \
+	(tclStubsPtr->tcl_DeleteAssocData) /* 100 */
 #endif
 #ifndef Tcl_DeleteChannelHandler
-#define Tcl_DeleteChannelHandler(chan, proc, clientData) \
-	(tclStubsPtr->tcl_DeleteChannelHandler)(chan, proc, clientData) /* 101 */
+#define Tcl_DeleteChannelHandler \
+	(tclStubsPtr->tcl_DeleteChannelHandler) /* 101 */
 #endif
 #ifndef Tcl_DeleteCloseHandler
-#define Tcl_DeleteCloseHandler(chan, proc, clientData) \
-	(tclStubsPtr->tcl_DeleteCloseHandler)(chan, proc, clientData) /* 102 */
+#define Tcl_DeleteCloseHandler \
+	(tclStubsPtr->tcl_DeleteCloseHandler) /* 102 */
 #endif
 #ifndef Tcl_DeleteCommand
-#define Tcl_DeleteCommand(interp, cmdName) \
-	(tclStubsPtr->tcl_DeleteCommand)(interp, cmdName) /* 103 */
+#define Tcl_DeleteCommand \
+	(tclStubsPtr->tcl_DeleteCommand) /* 103 */
 #endif
 #ifndef Tcl_DeleteCommandFromToken
-#define Tcl_DeleteCommandFromToken(interp, command) \
-	(tclStubsPtr->tcl_DeleteCommandFromToken)(interp, command) /* 104 */
+#define Tcl_DeleteCommandFromToken \
+	(tclStubsPtr->tcl_DeleteCommandFromToken) /* 104 */
 #endif
 #ifndef Tcl_DeleteEvents
-#define Tcl_DeleteEvents(proc, clientData) \
-	(tclStubsPtr->tcl_DeleteEvents)(proc, clientData) /* 105 */
+#define Tcl_DeleteEvents \
+	(tclStubsPtr->tcl_DeleteEvents) /* 105 */
 #endif
 #ifndef Tcl_DeleteEventSource
-#define Tcl_DeleteEventSource(setupProc, checkProc, clientData) \
-	(tclStubsPtr->tcl_DeleteEventSource)(setupProc, checkProc, clientData) /* 106 */
+#define Tcl_DeleteEventSource \
+	(tclStubsPtr->tcl_DeleteEventSource) /* 106 */
 #endif
 #ifndef Tcl_DeleteExitHandler
-#define Tcl_DeleteExitHandler(proc, clientData) \
-	(tclStubsPtr->tcl_DeleteExitHandler)(proc, clientData) /* 107 */
+#define Tcl_DeleteExitHandler \
+	(tclStubsPtr->tcl_DeleteExitHandler) /* 107 */
 #endif
 #ifndef Tcl_DeleteHashEntry
-#define Tcl_DeleteHashEntry(entryPtr) \
-	(tclStubsPtr->tcl_DeleteHashEntry)(entryPtr) /* 108 */
+#define Tcl_DeleteHashEntry \
+	(tclStubsPtr->tcl_DeleteHashEntry) /* 108 */
 #endif
 #ifndef Tcl_DeleteHashTable
-#define Tcl_DeleteHashTable(tablePtr) \
-	(tclStubsPtr->tcl_DeleteHashTable)(tablePtr) /* 109 */
+#define Tcl_DeleteHashTable \
+	(tclStubsPtr->tcl_DeleteHashTable) /* 109 */
 #endif
 #ifndef Tcl_DeleteInterp
-#define Tcl_DeleteInterp(interp) \
-	(tclStubsPtr->tcl_DeleteInterp)(interp) /* 110 */
+#define Tcl_DeleteInterp \
+	(tclStubsPtr->tcl_DeleteInterp) /* 110 */
 #endif
 #ifndef Tcl_DetachPids
-#define Tcl_DetachPids(numPids, pidPtr) \
-	(tclStubsPtr->tcl_DetachPids)(numPids, pidPtr) /* 111 */
+#define Tcl_DetachPids \
+	(tclStubsPtr->tcl_DetachPids) /* 111 */
 #endif
 #ifndef Tcl_DeleteTimerHandler
-#define Tcl_DeleteTimerHandler(token) \
-	(tclStubsPtr->tcl_DeleteTimerHandler)(token) /* 112 */
+#define Tcl_DeleteTimerHandler \
+	(tclStubsPtr->tcl_DeleteTimerHandler) /* 112 */
 #endif
 #ifndef Tcl_DeleteTrace
-#define Tcl_DeleteTrace(interp, trace) \
-	(tclStubsPtr->tcl_DeleteTrace)(interp, trace) /* 113 */
+#define Tcl_DeleteTrace \
+	(tclStubsPtr->tcl_DeleteTrace) /* 113 */
 #endif
 #ifndef Tcl_DontCallWhenDeleted
-#define Tcl_DontCallWhenDeleted(interp, proc, clientData) \
-	(tclStubsPtr->tcl_DontCallWhenDeleted)(interp, proc, clientData) /* 114 */
+#define Tcl_DontCallWhenDeleted \
+	(tclStubsPtr->tcl_DontCallWhenDeleted) /* 114 */
 #endif
 #ifndef Tcl_DoOneEvent
-#define Tcl_DoOneEvent(flags) \
-	(tclStubsPtr->tcl_DoOneEvent)(flags) /* 115 */
+#define Tcl_DoOneEvent \
+	(tclStubsPtr->tcl_DoOneEvent) /* 115 */
 #endif
 #ifndef Tcl_DoWhenIdle
-#define Tcl_DoWhenIdle(proc, clientData) \
-	(tclStubsPtr->tcl_DoWhenIdle)(proc, clientData) /* 116 */
+#define Tcl_DoWhenIdle \
+	(tclStubsPtr->tcl_DoWhenIdle) /* 116 */
 #endif
 #ifndef Tcl_DStringAppend
-#define Tcl_DStringAppend(dsPtr, str, length) \
-	(tclStubsPtr->tcl_DStringAppend)(dsPtr, str, length) /* 117 */
+#define Tcl_DStringAppend \
+	(tclStubsPtr->tcl_DStringAppend) /* 117 */
 #endif
 #ifndef Tcl_DStringAppendElement
-#define Tcl_DStringAppendElement(dsPtr, string) \
-	(tclStubsPtr->tcl_DStringAppendElement)(dsPtr, string) /* 118 */
+#define Tcl_DStringAppendElement \
+	(tclStubsPtr->tcl_DStringAppendElement) /* 118 */
 #endif
 #ifndef Tcl_DStringEndSublist
-#define Tcl_DStringEndSublist(dsPtr) \
-	(tclStubsPtr->tcl_DStringEndSublist)(dsPtr) /* 119 */
+#define Tcl_DStringEndSublist \
+	(tclStubsPtr->tcl_DStringEndSublist) /* 119 */
 #endif
 #ifndef Tcl_DStringFree
-#define Tcl_DStringFree(dsPtr) \
-	(tclStubsPtr->tcl_DStringFree)(dsPtr) /* 120 */
+#define Tcl_DStringFree \
+	(tclStubsPtr->tcl_DStringFree) /* 120 */
 #endif
 #ifndef Tcl_DStringGetResult
-#define Tcl_DStringGetResult(interp, dsPtr) \
-	(tclStubsPtr->tcl_DStringGetResult)(interp, dsPtr) /* 121 */
+#define Tcl_DStringGetResult \
+	(tclStubsPtr->tcl_DStringGetResult) /* 121 */
 #endif
 #ifndef Tcl_DStringInit
-#define Tcl_DStringInit(dsPtr) \
-	(tclStubsPtr->tcl_DStringInit)(dsPtr) /* 122 */
+#define Tcl_DStringInit \
+	(tclStubsPtr->tcl_DStringInit) /* 122 */
 #endif
 #ifndef Tcl_DStringResult
-#define Tcl_DStringResult(interp, dsPtr) \
-	(tclStubsPtr->tcl_DStringResult)(interp, dsPtr) /* 123 */
+#define Tcl_DStringResult \
+	(tclStubsPtr->tcl_DStringResult) /* 123 */
 #endif
 #ifndef Tcl_DStringSetLength
-#define Tcl_DStringSetLength(dsPtr, length) \
-	(tclStubsPtr->tcl_DStringSetLength)(dsPtr, length) /* 124 */
+#define Tcl_DStringSetLength \
+	(tclStubsPtr->tcl_DStringSetLength) /* 124 */
 #endif
 #ifndef Tcl_DStringStartSublist
-#define Tcl_DStringStartSublist(dsPtr) \
-	(tclStubsPtr->tcl_DStringStartSublist)(dsPtr) /* 125 */
+#define Tcl_DStringStartSublist \
+	(tclStubsPtr->tcl_DStringStartSublist) /* 125 */
 #endif
 #ifndef Tcl_Eof
-#define Tcl_Eof(chan) \
-	(tclStubsPtr->tcl_Eof)(chan) /* 126 */
+#define Tcl_Eof \
+	(tclStubsPtr->tcl_Eof) /* 126 */
 #endif
 #ifndef Tcl_ErrnoId
-#define Tcl_ErrnoId() \
-	(tclStubsPtr->tcl_ErrnoId)() /* 127 */
+#define Tcl_ErrnoId \
+	(tclStubsPtr->tcl_ErrnoId) /* 127 */
 #endif
 #ifndef Tcl_ErrnoMsg
-#define Tcl_ErrnoMsg(err) \
-	(tclStubsPtr->tcl_ErrnoMsg)(err) /* 128 */
+#define Tcl_ErrnoMsg \
+	(tclStubsPtr->tcl_ErrnoMsg) /* 128 */
 #endif
 #ifndef Tcl_Eval
-#define Tcl_Eval(interp, string) \
-	(tclStubsPtr->tcl_Eval)(interp, string) /* 129 */
+#define Tcl_Eval \
+	(tclStubsPtr->tcl_Eval) /* 129 */
 #endif
 #ifndef Tcl_EvalFile
-#define Tcl_EvalFile(interp, fileName) \
-	(tclStubsPtr->tcl_EvalFile)(interp, fileName) /* 130 */
+#define Tcl_EvalFile \
+	(tclStubsPtr->tcl_EvalFile) /* 130 */
 #endif
 #ifndef Tcl_EvalObj
-#define Tcl_EvalObj(interp, objPtr) \
-	(tclStubsPtr->tcl_EvalObj)(interp, objPtr) /* 131 */
+#define Tcl_EvalObj \
+	(tclStubsPtr->tcl_EvalObj) /* 131 */
 #endif
 #ifndef Tcl_EventuallyFree
-#define Tcl_EventuallyFree(clientData, freeProc) \
-	(tclStubsPtr->tcl_EventuallyFree)(clientData, freeProc) /* 132 */
+#define Tcl_EventuallyFree \
+	(tclStubsPtr->tcl_EventuallyFree) /* 132 */
 #endif
 #ifndef Tcl_Exit
-#define Tcl_Exit(status) \
-	(tclStubsPtr->tcl_Exit)(status) /* 133 */
+#define Tcl_Exit \
+	(tclStubsPtr->tcl_Exit) /* 133 */
 #endif
 #ifndef Tcl_ExposeCommand
-#define Tcl_ExposeCommand(interp, hiddenCmdToken, cmdName) \
-	(tclStubsPtr->tcl_ExposeCommand)(interp, hiddenCmdToken, cmdName) /* 134 */
+#define Tcl_ExposeCommand \
+	(tclStubsPtr->tcl_ExposeCommand) /* 134 */
 #endif
 #ifndef Tcl_ExprBoolean
-#define Tcl_ExprBoolean(interp, str, ptr) \
-	(tclStubsPtr->tcl_ExprBoolean)(interp, str, ptr) /* 135 */
+#define Tcl_ExprBoolean \
+	(tclStubsPtr->tcl_ExprBoolean) /* 135 */
 #endif
 #ifndef Tcl_ExprBooleanObj
-#define Tcl_ExprBooleanObj(interp, objPtr, ptr) \
-	(tclStubsPtr->tcl_ExprBooleanObj)(interp, objPtr, ptr) /* 136 */
+#define Tcl_ExprBooleanObj \
+	(tclStubsPtr->tcl_ExprBooleanObj) /* 136 */
 #endif
 #ifndef Tcl_ExprDouble
-#define Tcl_ExprDouble(interp, str, ptr) \
-	(tclStubsPtr->tcl_ExprDouble)(interp, str, ptr) /* 137 */
+#define Tcl_ExprDouble \
+	(tclStubsPtr->tcl_ExprDouble) /* 137 */
 #endif
 #ifndef Tcl_ExprDoubleObj
-#define Tcl_ExprDoubleObj(interp, objPtr, ptr) \
-	(tclStubsPtr->tcl_ExprDoubleObj)(interp, objPtr, ptr) /* 138 */
+#define Tcl_ExprDoubleObj \
+	(tclStubsPtr->tcl_ExprDoubleObj) /* 138 */
 #endif
 #ifndef Tcl_ExprLong
-#define Tcl_ExprLong(interp, str, ptr) \
-	(tclStubsPtr->tcl_ExprLong)(interp, str, ptr) /* 139 */
+#define Tcl_ExprLong \
+	(tclStubsPtr->tcl_ExprLong) /* 139 */
 #endif
 #ifndef Tcl_ExprLongObj
-#define Tcl_ExprLongObj(interp, objPtr, ptr) \
-	(tclStubsPtr->tcl_ExprLongObj)(interp, objPtr, ptr) /* 140 */
+#define Tcl_ExprLongObj \
+	(tclStubsPtr->tcl_ExprLongObj) /* 140 */
 #endif
 #ifndef Tcl_ExprObj
-#define Tcl_ExprObj(interp, objPtr, resultPtrPtr) \
-	(tclStubsPtr->tcl_ExprObj)(interp, objPtr, resultPtrPtr) /* 141 */
+#define Tcl_ExprObj \
+	(tclStubsPtr->tcl_ExprObj) /* 141 */
 #endif
 #ifndef Tcl_ExprString
-#define Tcl_ExprString(interp, string) \
-	(tclStubsPtr->tcl_ExprString)(interp, string) /* 142 */
+#define Tcl_ExprString \
+	(tclStubsPtr->tcl_ExprString) /* 142 */
 #endif
 #ifndef Tcl_Finalize
-#define Tcl_Finalize() \
-	(tclStubsPtr->tcl_Finalize)() /* 143 */
+#define Tcl_Finalize \
+	(tclStubsPtr->tcl_Finalize) /* 143 */
 #endif
 #ifndef Tcl_FindExecutable
-#define Tcl_FindExecutable(argv0) \
-	(tclStubsPtr->tcl_FindExecutable)(argv0) /* 144 */
+#define Tcl_FindExecutable \
+	(tclStubsPtr->tcl_FindExecutable) /* 144 */
 #endif
 #ifndef Tcl_FirstHashEntry
-#define Tcl_FirstHashEntry(tablePtr, searchPtr) \
-	(tclStubsPtr->tcl_FirstHashEntry)(tablePtr, searchPtr) /* 145 */
+#define Tcl_FirstHashEntry \
+	(tclStubsPtr->tcl_FirstHashEntry) /* 145 */
 #endif
 #ifndef Tcl_Flush
-#define Tcl_Flush(chan) \
-	(tclStubsPtr->tcl_Flush)(chan) /* 146 */
+#define Tcl_Flush \
+	(tclStubsPtr->tcl_Flush) /* 146 */
 #endif
 #ifndef Tcl_FreeResult
-#define Tcl_FreeResult(interp) \
-	(tclStubsPtr->tcl_FreeResult)(interp) /* 147 */
+#define Tcl_FreeResult \
+	(tclStubsPtr->tcl_FreeResult) /* 147 */
 #endif
 #ifndef Tcl_GetAlias
-#define Tcl_GetAlias(interp, slaveCmd, targetInterpPtr, targetCmdPtr, argcPtr, argvPtr) \
-	(tclStubsPtr->tcl_GetAlias)(interp, slaveCmd, targetInterpPtr, targetCmdPtr, argcPtr, argvPtr) /* 148 */
+#define Tcl_GetAlias \
+	(tclStubsPtr->tcl_GetAlias) /* 148 */
 #endif
 #ifndef Tcl_GetAliasObj
-#define Tcl_GetAliasObj(interp, slaveCmd, targetInterpPtr, targetCmdPtr, objcPtr, objv) \
-	(tclStubsPtr->tcl_GetAliasObj)(interp, slaveCmd, targetInterpPtr, targetCmdPtr, objcPtr, objv) /* 149 */
+#define Tcl_GetAliasObj \
+	(tclStubsPtr->tcl_GetAliasObj) /* 149 */
 #endif
 #ifndef Tcl_GetAssocData
-#define Tcl_GetAssocData(interp, name, procPtr) \
-	(tclStubsPtr->tcl_GetAssocData)(interp, name, procPtr) /* 150 */
+#define Tcl_GetAssocData \
+	(tclStubsPtr->tcl_GetAssocData) /* 150 */
 #endif
 #ifndef Tcl_GetChannel
-#define Tcl_GetChannel(interp, chanName, modePtr) \
-	(tclStubsPtr->tcl_GetChannel)(interp, chanName, modePtr) /* 151 */
+#define Tcl_GetChannel \
+	(tclStubsPtr->tcl_GetChannel) /* 151 */
 #endif
 #ifndef Tcl_GetChannelBufferSize
-#define Tcl_GetChannelBufferSize(chan) \
-	(tclStubsPtr->tcl_GetChannelBufferSize)(chan) /* 152 */
+#define Tcl_GetChannelBufferSize \
+	(tclStubsPtr->tcl_GetChannelBufferSize) /* 152 */
 #endif
 #ifndef Tcl_GetChannelHandle
-#define Tcl_GetChannelHandle(chan, direction, handlePtr) \
-	(tclStubsPtr->tcl_GetChannelHandle)(chan, direction, handlePtr) /* 153 */
+#define Tcl_GetChannelHandle \
+	(tclStubsPtr->tcl_GetChannelHandle) /* 153 */
 #endif
 #ifndef Tcl_GetChannelInstanceData
-#define Tcl_GetChannelInstanceData(chan) \
-	(tclStubsPtr->tcl_GetChannelInstanceData)(chan) /* 154 */
+#define Tcl_GetChannelInstanceData \
+	(tclStubsPtr->tcl_GetChannelInstanceData) /* 154 */
 #endif
 #ifndef Tcl_GetChannelMode
-#define Tcl_GetChannelMode(chan) \
-	(tclStubsPtr->tcl_GetChannelMode)(chan) /* 155 */
+#define Tcl_GetChannelMode \
+	(tclStubsPtr->tcl_GetChannelMode) /* 155 */
 #endif
 #ifndef Tcl_GetChannelName
-#define Tcl_GetChannelName(chan) \
-	(tclStubsPtr->tcl_GetChannelName)(chan) /* 156 */
+#define Tcl_GetChannelName \
+	(tclStubsPtr->tcl_GetChannelName) /* 156 */
 #endif
 #ifndef Tcl_GetChannelOption
-#define Tcl_GetChannelOption(interp, chan, optionName, dsPtr) \
-	(tclStubsPtr->tcl_GetChannelOption)(interp, chan, optionName, dsPtr) /* 157 */
+#define Tcl_GetChannelOption \
+	(tclStubsPtr->tcl_GetChannelOption) /* 157 */
 #endif
 #ifndef Tcl_GetChannelType
-#define Tcl_GetChannelType(chan) \
-	(tclStubsPtr->tcl_GetChannelType)(chan) /* 158 */
+#define Tcl_GetChannelType \
+	(tclStubsPtr->tcl_GetChannelType) /* 158 */
 #endif
 #ifndef Tcl_GetCommandInfo
-#define Tcl_GetCommandInfo(interp, cmdName, infoPtr) \
-	(tclStubsPtr->tcl_GetCommandInfo)(interp, cmdName, infoPtr) /* 159 */
+#define Tcl_GetCommandInfo \
+	(tclStubsPtr->tcl_GetCommandInfo) /* 159 */
 #endif
 #ifndef Tcl_GetCommandName
-#define Tcl_GetCommandName(interp, command) \
-	(tclStubsPtr->tcl_GetCommandName)(interp, command) /* 160 */
+#define Tcl_GetCommandName \
+	(tclStubsPtr->tcl_GetCommandName) /* 160 */
 #endif
 #ifndef Tcl_GetErrno
-#define Tcl_GetErrno() \
-	(tclStubsPtr->tcl_GetErrno)() /* 161 */
+#define Tcl_GetErrno \
+	(tclStubsPtr->tcl_GetErrno) /* 161 */
 #endif
 #ifndef Tcl_GetHostName
-#define Tcl_GetHostName() \
-	(tclStubsPtr->tcl_GetHostName)() /* 162 */
+#define Tcl_GetHostName \
+	(tclStubsPtr->tcl_GetHostName) /* 162 */
 #endif
 #ifndef Tcl_GetInterpPath
-#define Tcl_GetInterpPath(askInterp, slaveInterp) \
-	(tclStubsPtr->tcl_GetInterpPath)(askInterp, slaveInterp) /* 163 */
+#define Tcl_GetInterpPath \
+	(tclStubsPtr->tcl_GetInterpPath) /* 163 */
 #endif
 #ifndef Tcl_GetMaster
-#define Tcl_GetMaster(interp) \
-	(tclStubsPtr->tcl_GetMaster)(interp) /* 164 */
+#define Tcl_GetMaster \
+	(tclStubsPtr->tcl_GetMaster) /* 164 */
 #endif
 #ifndef Tcl_GetNameOfExecutable
-#define Tcl_GetNameOfExecutable() \
-	(tclStubsPtr->tcl_GetNameOfExecutable)() /* 165 */
+#define Tcl_GetNameOfExecutable \
+	(tclStubsPtr->tcl_GetNameOfExecutable) /* 165 */
 #endif
 #ifndef Tcl_GetObjResult
-#define Tcl_GetObjResult(interp) \
-	(tclStubsPtr->tcl_GetObjResult)(interp) /* 166 */
+#define Tcl_GetObjResult \
+	(tclStubsPtr->tcl_GetObjResult) /* 166 */
 #endif
 #if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
 #ifndef Tcl_GetOpenFile
-#define Tcl_GetOpenFile(interp, str, write, checkUsage, filePtr) \
-	(tclStubsPtr->tcl_GetOpenFile)(interp, str, write, checkUsage, filePtr) /* 167 */
+#define Tcl_GetOpenFile \
+	(tclStubsPtr->tcl_GetOpenFile) /* 167 */
 #endif
 #endif /* UNIX */
 #ifndef Tcl_GetPathType
-#define Tcl_GetPathType(path) \
-	(tclStubsPtr->tcl_GetPathType)(path) /* 168 */
+#define Tcl_GetPathType \
+	(tclStubsPtr->tcl_GetPathType) /* 168 */
 #endif
 #ifndef Tcl_Gets
-#define Tcl_Gets(chan, dsPtr) \
-	(tclStubsPtr->tcl_Gets)(chan, dsPtr) /* 169 */
+#define Tcl_Gets \
+	(tclStubsPtr->tcl_Gets) /* 169 */
 #endif
 #ifndef Tcl_GetsObj
-#define Tcl_GetsObj(chan, objPtr) \
-	(tclStubsPtr->tcl_GetsObj)(chan, objPtr) /* 170 */
+#define Tcl_GetsObj \
+	(tclStubsPtr->tcl_GetsObj) /* 170 */
 #endif
 #ifndef Tcl_GetServiceMode
-#define Tcl_GetServiceMode() \
-	(tclStubsPtr->tcl_GetServiceMode)() /* 171 */
+#define Tcl_GetServiceMode \
+	(tclStubsPtr->tcl_GetServiceMode) /* 171 */
 #endif
 #ifndef Tcl_GetSlave
-#define Tcl_GetSlave(interp, slaveName) \
-	(tclStubsPtr->tcl_GetSlave)(interp, slaveName) /* 172 */
+#define Tcl_GetSlave \
+	(tclStubsPtr->tcl_GetSlave) /* 172 */
 #endif
 #ifndef Tcl_GetStdChannel
-#define Tcl_GetStdChannel(type) \
-	(tclStubsPtr->tcl_GetStdChannel)(type) /* 173 */
+#define Tcl_GetStdChannel \
+	(tclStubsPtr->tcl_GetStdChannel) /* 173 */
 #endif
 #ifndef Tcl_GetStringResult
-#define Tcl_GetStringResult(interp) \
-	(tclStubsPtr->tcl_GetStringResult)(interp) /* 174 */
+#define Tcl_GetStringResult \
+	(tclStubsPtr->tcl_GetStringResult) /* 174 */
 #endif
 #ifndef Tcl_GetVar
-#define Tcl_GetVar(interp, varName, flags) \
-	(tclStubsPtr->tcl_GetVar)(interp, varName, flags) /* 175 */
+#define Tcl_GetVar \
+	(tclStubsPtr->tcl_GetVar) /* 175 */
 #endif
 #ifndef Tcl_GetVar2
-#define Tcl_GetVar2(interp, part1, part2, flags) \
-	(tclStubsPtr->tcl_GetVar2)(interp, part1, part2, flags) /* 176 */
+#define Tcl_GetVar2 \
+	(tclStubsPtr->tcl_GetVar2) /* 176 */
 #endif
 #ifndef Tcl_GlobalEval
-#define Tcl_GlobalEval(interp, command) \
-	(tclStubsPtr->tcl_GlobalEval)(interp, command) /* 177 */
+#define Tcl_GlobalEval \
+	(tclStubsPtr->tcl_GlobalEval) /* 177 */
 #endif
 #ifndef Tcl_GlobalEvalObj
-#define Tcl_GlobalEvalObj(interp, objPtr) \
-	(tclStubsPtr->tcl_GlobalEvalObj)(interp, objPtr) /* 178 */
+#define Tcl_GlobalEvalObj \
+	(tclStubsPtr->tcl_GlobalEvalObj) /* 178 */
 #endif
 #ifndef Tcl_HideCommand
-#define Tcl_HideCommand(interp, cmdName, hiddenCmdToken) \
-	(tclStubsPtr->tcl_HideCommand)(interp, cmdName, hiddenCmdToken) /* 179 */
+#define Tcl_HideCommand \
+	(tclStubsPtr->tcl_HideCommand) /* 179 */
 #endif
 #ifndef Tcl_Init
-#define Tcl_Init(interp) \
-	(tclStubsPtr->tcl_Init)(interp) /* 180 */
+#define Tcl_Init \
+	(tclStubsPtr->tcl_Init) /* 180 */
 #endif
 #ifndef Tcl_InitHashTable
-#define Tcl_InitHashTable(tablePtr, keyType) \
-	(tclStubsPtr->tcl_InitHashTable)(tablePtr, keyType) /* 181 */
+#define Tcl_InitHashTable \
+	(tclStubsPtr->tcl_InitHashTable) /* 181 */
 #endif
 #ifndef Tcl_InputBlocked
-#define Tcl_InputBlocked(chan) \
-	(tclStubsPtr->tcl_InputBlocked)(chan) /* 182 */
+#define Tcl_InputBlocked \
+	(tclStubsPtr->tcl_InputBlocked) /* 182 */
 #endif
 #ifndef Tcl_InputBuffered
-#define Tcl_InputBuffered(chan) \
-	(tclStubsPtr->tcl_InputBuffered)(chan) /* 183 */
+#define Tcl_InputBuffered \
+	(tclStubsPtr->tcl_InputBuffered) /* 183 */
 #endif
 #ifndef Tcl_InterpDeleted
-#define Tcl_InterpDeleted(interp) \
-	(tclStubsPtr->tcl_InterpDeleted)(interp) /* 184 */
+#define Tcl_InterpDeleted \
+	(tclStubsPtr->tcl_InterpDeleted) /* 184 */
 #endif
 #ifndef Tcl_IsSafe
-#define Tcl_IsSafe(interp) \
-	(tclStubsPtr->tcl_IsSafe)(interp) /* 185 */
+#define Tcl_IsSafe \
+	(tclStubsPtr->tcl_IsSafe) /* 185 */
 #endif
 #ifndef Tcl_JoinPath
-#define Tcl_JoinPath(argc, argv, resultPtr) \
-	(tclStubsPtr->tcl_JoinPath)(argc, argv, resultPtr) /* 186 */
+#define Tcl_JoinPath \
+	(tclStubsPtr->tcl_JoinPath) /* 186 */
 #endif
 #ifndef Tcl_LinkVar
-#define Tcl_LinkVar(interp, varName, addr, type) \
-	(tclStubsPtr->tcl_LinkVar)(interp, varName, addr, type) /* 187 */
+#define Tcl_LinkVar \
+	(tclStubsPtr->tcl_LinkVar) /* 187 */
 #endif
 /* Slot 188 is reserved */
 #ifndef Tcl_MakeFileChannel
-#define Tcl_MakeFileChannel(handle, mode) \
-	(tclStubsPtr->tcl_MakeFileChannel)(handle, mode) /* 189 */
+#define Tcl_MakeFileChannel \
+	(tclStubsPtr->tcl_MakeFileChannel) /* 189 */
 #endif
 #ifndef Tcl_MakeSafe
-#define Tcl_MakeSafe(interp) \
-	(tclStubsPtr->tcl_MakeSafe)(interp) /* 190 */
+#define Tcl_MakeSafe \
+	(tclStubsPtr->tcl_MakeSafe) /* 190 */
 #endif
 #ifndef Tcl_MakeTcpClientChannel
-#define Tcl_MakeTcpClientChannel(tcpSocket) \
-	(tclStubsPtr->tcl_MakeTcpClientChannel)(tcpSocket) /* 191 */
+#define Tcl_MakeTcpClientChannel \
+	(tclStubsPtr->tcl_MakeTcpClientChannel) /* 191 */
 #endif
 #ifndef Tcl_Merge
-#define Tcl_Merge(argc, argv) \
-	(tclStubsPtr->tcl_Merge)(argc, argv) /* 192 */
+#define Tcl_Merge \
+	(tclStubsPtr->tcl_Merge) /* 192 */
 #endif
 #ifndef Tcl_NextHashEntry
-#define Tcl_NextHashEntry(searchPtr) \
-	(tclStubsPtr->tcl_NextHashEntry)(searchPtr) /* 193 */
+#define Tcl_NextHashEntry \
+	(tclStubsPtr->tcl_NextHashEntry) /* 193 */
 #endif
 #ifndef Tcl_NotifyChannel
-#define Tcl_NotifyChannel(channel, mask) \
-	(tclStubsPtr->tcl_NotifyChannel)(channel, mask) /* 194 */
+#define Tcl_NotifyChannel \
+	(tclStubsPtr->tcl_NotifyChannel) /* 194 */
 #endif
 #ifndef Tcl_ObjGetVar2
-#define Tcl_ObjGetVar2(interp, part1Ptr, part2Ptr, flags) \
-	(tclStubsPtr->tcl_ObjGetVar2)(interp, part1Ptr, part2Ptr, flags) /* 195 */
+#define Tcl_ObjGetVar2 \
+	(tclStubsPtr->tcl_ObjGetVar2) /* 195 */
 #endif
 #ifndef Tcl_ObjSetVar2
-#define Tcl_ObjSetVar2(interp, part1Ptr, part2Ptr, newValuePtr, flags) \
-	(tclStubsPtr->tcl_ObjSetVar2)(interp, part1Ptr, part2Ptr, newValuePtr, flags) /* 196 */
+#define Tcl_ObjSetVar2 \
+	(tclStubsPtr->tcl_ObjSetVar2) /* 196 */
 #endif
 #ifndef Tcl_OpenCommandChannel
-#define Tcl_OpenCommandChannel(interp, argc, argv, flags) \
-	(tclStubsPtr->tcl_OpenCommandChannel)(interp, argc, argv, flags) /* 197 */
+#define Tcl_OpenCommandChannel \
+	(tclStubsPtr->tcl_OpenCommandChannel) /* 197 */
 #endif
 #ifndef Tcl_OpenFileChannel
-#define Tcl_OpenFileChannel(interp, fileName, modeString, permissions) \
-	(tclStubsPtr->tcl_OpenFileChannel)(interp, fileName, modeString, permissions) /* 198 */
+#define Tcl_OpenFileChannel \
+	(tclStubsPtr->tcl_OpenFileChannel) /* 198 */
 #endif
 #ifndef Tcl_OpenTcpClient
-#define Tcl_OpenTcpClient(interp, port, address, myaddr, myport, async) \
-	(tclStubsPtr->tcl_OpenTcpClient)(interp, port, address, myaddr, myport, async) /* 199 */
+#define Tcl_OpenTcpClient \
+	(tclStubsPtr->tcl_OpenTcpClient) /* 199 */
 #endif
 #ifndef Tcl_OpenTcpServer
-#define Tcl_OpenTcpServer(interp, port, host, acceptProc, callbackData) \
-	(tclStubsPtr->tcl_OpenTcpServer)(interp, port, host, acceptProc, callbackData) /* 200 */
+#define Tcl_OpenTcpServer \
+	(tclStubsPtr->tcl_OpenTcpServer) /* 200 */
 #endif
 #ifndef Tcl_Preserve
-#define Tcl_Preserve(data) \
-	(tclStubsPtr->tcl_Preserve)(data) /* 201 */
+#define Tcl_Preserve \
+	(tclStubsPtr->tcl_Preserve) /* 201 */
 #endif
 #ifndef Tcl_PrintDouble
-#define Tcl_PrintDouble(interp, value, dst) \
-	(tclStubsPtr->tcl_PrintDouble)(interp, value, dst) /* 202 */
+#define Tcl_PrintDouble \
+	(tclStubsPtr->tcl_PrintDouble) /* 202 */
 #endif
 #ifndef Tcl_PutEnv
-#define Tcl_PutEnv(string) \
-	(tclStubsPtr->tcl_PutEnv)(string) /* 203 */
+#define Tcl_PutEnv \
+	(tclStubsPtr->tcl_PutEnv) /* 203 */
 #endif
 #ifndef Tcl_PosixError
-#define Tcl_PosixError(interp) \
-	(tclStubsPtr->tcl_PosixError)(interp) /* 204 */
+#define Tcl_PosixError \
+	(tclStubsPtr->tcl_PosixError) /* 204 */
 #endif
 #ifndef Tcl_QueueEvent
-#define Tcl_QueueEvent(evPtr, position) \
-	(tclStubsPtr->tcl_QueueEvent)(evPtr, position) /* 205 */
+#define Tcl_QueueEvent \
+	(tclStubsPtr->tcl_QueueEvent) /* 205 */
 #endif
 #ifndef Tcl_Read
-#define Tcl_Read(chan, bufPtr, toRead) \
-	(tclStubsPtr->tcl_Read)(chan, bufPtr, toRead) /* 206 */
+#define Tcl_Read \
+	(tclStubsPtr->tcl_Read) /* 206 */
 #endif
 #ifndef Tcl_ReapDetachedProcs
-#define Tcl_ReapDetachedProcs() \
-	(tclStubsPtr->tcl_ReapDetachedProcs)() /* 207 */
+#define Tcl_ReapDetachedProcs \
+	(tclStubsPtr->tcl_ReapDetachedProcs) /* 207 */
 #endif
 #ifndef Tcl_RecordAndEval
-#define Tcl_RecordAndEval(interp, cmd, flags) \
-	(tclStubsPtr->tcl_RecordAndEval)(interp, cmd, flags) /* 208 */
+#define Tcl_RecordAndEval \
+	(tclStubsPtr->tcl_RecordAndEval) /* 208 */
 #endif
 #ifndef Tcl_RecordAndEvalObj
-#define Tcl_RecordAndEvalObj(interp, cmdPtr, flags) \
-	(tclStubsPtr->tcl_RecordAndEvalObj)(interp, cmdPtr, flags) /* 209 */
+#define Tcl_RecordAndEvalObj \
+	(tclStubsPtr->tcl_RecordAndEvalObj) /* 209 */
 #endif
 #ifndef Tcl_RegisterChannel
-#define Tcl_RegisterChannel(interp, chan) \
-	(tclStubsPtr->tcl_RegisterChannel)(interp, chan) /* 210 */
+#define Tcl_RegisterChannel \
+	(tclStubsPtr->tcl_RegisterChannel) /* 210 */
 #endif
 #ifndef Tcl_RegisterObjType
-#define Tcl_RegisterObjType(typePtr) \
-	(tclStubsPtr->tcl_RegisterObjType)(typePtr) /* 211 */
+#define Tcl_RegisterObjType \
+	(tclStubsPtr->tcl_RegisterObjType) /* 211 */
 #endif
 #ifndef Tcl_RegExpCompile
-#define Tcl_RegExpCompile(interp, string) \
-	(tclStubsPtr->tcl_RegExpCompile)(interp, string) /* 212 */
+#define Tcl_RegExpCompile \
+	(tclStubsPtr->tcl_RegExpCompile) /* 212 */
 #endif
 #ifndef Tcl_RegExpExec
-#define Tcl_RegExpExec(interp, regexp, str, start) \
-	(tclStubsPtr->tcl_RegExpExec)(interp, regexp, str, start) /* 213 */
+#define Tcl_RegExpExec \
+	(tclStubsPtr->tcl_RegExpExec) /* 213 */
 #endif
 #ifndef Tcl_RegExpMatch
-#define Tcl_RegExpMatch(interp, str, pattern) \
-	(tclStubsPtr->tcl_RegExpMatch)(interp, str, pattern) /* 214 */
+#define Tcl_RegExpMatch \
+	(tclStubsPtr->tcl_RegExpMatch) /* 214 */
 #endif
 #ifndef Tcl_RegExpRange
-#define Tcl_RegExpRange(regexp, index, startPtr, endPtr) \
-	(tclStubsPtr->tcl_RegExpRange)(regexp, index, startPtr, endPtr) /* 215 */
+#define Tcl_RegExpRange \
+	(tclStubsPtr->tcl_RegExpRange) /* 215 */
 #endif
 #ifndef Tcl_Release
-#define Tcl_Release(clientData) \
-	(tclStubsPtr->tcl_Release)(clientData) /* 216 */
+#define Tcl_Release \
+	(tclStubsPtr->tcl_Release) /* 216 */
 #endif
 #ifndef Tcl_ResetResult
-#define Tcl_ResetResult(interp) \
-	(tclStubsPtr->tcl_ResetResult)(interp) /* 217 */
+#define Tcl_ResetResult \
+	(tclStubsPtr->tcl_ResetResult) /* 217 */
 #endif
 #ifndef Tcl_ScanElement
-#define Tcl_ScanElement(str, flagPtr) \
-	(tclStubsPtr->tcl_ScanElement)(str, flagPtr) /* 218 */
+#define Tcl_ScanElement \
+	(tclStubsPtr->tcl_ScanElement) /* 218 */
 #endif
 #ifndef Tcl_ScanCountedElement
-#define Tcl_ScanCountedElement(str, length, flagPtr) \
-	(tclStubsPtr->tcl_ScanCountedElement)(str, length, flagPtr) /* 219 */
+#define Tcl_ScanCountedElement \
+	(tclStubsPtr->tcl_ScanCountedElement) /* 219 */
 #endif
 #ifndef Tcl_Seek
-#define Tcl_Seek(chan, offset, mode) \
-	(tclStubsPtr->tcl_Seek)(chan, offset, mode) /* 220 */
+#define Tcl_Seek \
+	(tclStubsPtr->tcl_Seek) /* 220 */
 #endif
 #ifndef Tcl_ServiceAll
-#define Tcl_ServiceAll() \
-	(tclStubsPtr->tcl_ServiceAll)() /* 221 */
+#define Tcl_ServiceAll \
+	(tclStubsPtr->tcl_ServiceAll) /* 221 */
 #endif
 #ifndef Tcl_ServiceEvent
-#define Tcl_ServiceEvent(flags) \
-	(tclStubsPtr->tcl_ServiceEvent)(flags) /* 222 */
+#define Tcl_ServiceEvent \
+	(tclStubsPtr->tcl_ServiceEvent) /* 222 */
 #endif
 #ifndef Tcl_SetAssocData
-#define Tcl_SetAssocData(interp, name, proc, clientData) \
-	(tclStubsPtr->tcl_SetAssocData)(interp, name, proc, clientData) /* 223 */
+#define Tcl_SetAssocData \
+	(tclStubsPtr->tcl_SetAssocData) /* 223 */
 #endif
 #ifndef Tcl_SetChannelBufferSize
-#define Tcl_SetChannelBufferSize(chan, sz) \
-	(tclStubsPtr->tcl_SetChannelBufferSize)(chan, sz) /* 224 */
+#define Tcl_SetChannelBufferSize \
+	(tclStubsPtr->tcl_SetChannelBufferSize) /* 224 */
 #endif
 #ifndef Tcl_SetChannelOption
-#define Tcl_SetChannelOption(interp, chan, optionName, newValue) \
-	(tclStubsPtr->tcl_SetChannelOption)(interp, chan, optionName, newValue) /* 225 */
+#define Tcl_SetChannelOption \
+	(tclStubsPtr->tcl_SetChannelOption) /* 225 */
 #endif
 #ifndef Tcl_SetCommandInfo
-#define Tcl_SetCommandInfo(interp, cmdName, infoPtr) \
-	(tclStubsPtr->tcl_SetCommandInfo)(interp, cmdName, infoPtr) /* 226 */
+#define Tcl_SetCommandInfo \
+	(tclStubsPtr->tcl_SetCommandInfo) /* 226 */
 #endif
 #ifndef Tcl_SetErrno
-#define Tcl_SetErrno(err) \
-	(tclStubsPtr->tcl_SetErrno)(err) /* 227 */
+#define Tcl_SetErrno \
+	(tclStubsPtr->tcl_SetErrno) /* 227 */
 #endif
 #ifndef Tcl_SetErrorCode
 #define Tcl_SetErrorCode \
 	(tclStubsPtr->tcl_SetErrorCode) /* 228 */
 #endif
 #ifndef Tcl_SetMaxBlockTime
-#define Tcl_SetMaxBlockTime(timePtr) \
-	(tclStubsPtr->tcl_SetMaxBlockTime)(timePtr) /* 229 */
+#define Tcl_SetMaxBlockTime \
+	(tclStubsPtr->tcl_SetMaxBlockTime) /* 229 */
 #endif
 #ifndef Tcl_SetPanicProc
-#define Tcl_SetPanicProc(panicProc) \
-	(tclStubsPtr->tcl_SetPanicProc)(panicProc) /* 230 */
+#define Tcl_SetPanicProc \
+	(tclStubsPtr->tcl_SetPanicProc) /* 230 */
 #endif
 #ifndef Tcl_SetRecursionLimit
-#define Tcl_SetRecursionLimit(interp, depth) \
-	(tclStubsPtr->tcl_SetRecursionLimit)(interp, depth) /* 231 */
+#define Tcl_SetRecursionLimit \
+	(tclStubsPtr->tcl_SetRecursionLimit) /* 231 */
 #endif
 #ifndef Tcl_SetResult
-#define Tcl_SetResult(interp, str, freeProc) \
-	(tclStubsPtr->tcl_SetResult)(interp, str, freeProc) /* 232 */
+#define Tcl_SetResult \
+	(tclStubsPtr->tcl_SetResult) /* 232 */
 #endif
 #ifndef Tcl_SetServiceMode
-#define Tcl_SetServiceMode(mode) \
-	(tclStubsPtr->tcl_SetServiceMode)(mode) /* 233 */
+#define Tcl_SetServiceMode \
+	(tclStubsPtr->tcl_SetServiceMode) /* 233 */
 #endif
 #ifndef Tcl_SetObjErrorCode
-#define Tcl_SetObjErrorCode(interp, errorObjPtr) \
-	(tclStubsPtr->tcl_SetObjErrorCode)(interp, errorObjPtr) /* 234 */
+#define Tcl_SetObjErrorCode \
+	(tclStubsPtr->tcl_SetObjErrorCode) /* 234 */
 #endif
 #ifndef Tcl_SetObjResult
-#define Tcl_SetObjResult(interp, resultObjPtr) \
-	(tclStubsPtr->tcl_SetObjResult)(interp, resultObjPtr) /* 235 */
+#define Tcl_SetObjResult \
+	(tclStubsPtr->tcl_SetObjResult) /* 235 */
 #endif
 #ifndef Tcl_SetStdChannel
-#define Tcl_SetStdChannel(channel, type) \
-	(tclStubsPtr->tcl_SetStdChannel)(channel, type) /* 236 */
+#define Tcl_SetStdChannel \
+	(tclStubsPtr->tcl_SetStdChannel) /* 236 */
 #endif
 #ifndef Tcl_SetVar
-#define Tcl_SetVar(interp, varName, newValue, flags) \
-	(tclStubsPtr->tcl_SetVar)(interp, varName, newValue, flags) /* 237 */
+#define Tcl_SetVar \
+	(tclStubsPtr->tcl_SetVar) /* 237 */
 #endif
 #ifndef Tcl_SetVar2
-#define Tcl_SetVar2(interp, part1, part2, newValue, flags) \
-	(tclStubsPtr->tcl_SetVar2)(interp, part1, part2, newValue, flags) /* 238 */
+#define Tcl_SetVar2 \
+	(tclStubsPtr->tcl_SetVar2) /* 238 */
 #endif
 #ifndef Tcl_SignalId
-#define Tcl_SignalId(sig) \
-	(tclStubsPtr->tcl_SignalId)(sig) /* 239 */
+#define Tcl_SignalId \
+	(tclStubsPtr->tcl_SignalId) /* 239 */
 #endif
 #ifndef Tcl_SignalMsg
-#define Tcl_SignalMsg(sig) \
-	(tclStubsPtr->tcl_SignalMsg)(sig) /* 240 */
+#define Tcl_SignalMsg \
+	(tclStubsPtr->tcl_SignalMsg) /* 240 */
 #endif
 #ifndef Tcl_SourceRCFile
-#define Tcl_SourceRCFile(interp) \
-	(tclStubsPtr->tcl_SourceRCFile)(interp) /* 241 */
+#define Tcl_SourceRCFile \
+	(tclStubsPtr->tcl_SourceRCFile) /* 241 */
 #endif
 #ifndef Tcl_SplitList
-#define Tcl_SplitList(interp, listStr, argcPtr, argvPtr) \
-	(tclStubsPtr->tcl_SplitList)(interp, listStr, argcPtr, argvPtr) /* 242 */
+#define Tcl_SplitList \
+	(tclStubsPtr->tcl_SplitList) /* 242 */
 #endif
 #ifndef Tcl_SplitPath
-#define Tcl_SplitPath(path, argcPtr, argvPtr) \
-	(tclStubsPtr->tcl_SplitPath)(path, argcPtr, argvPtr) /* 243 */
+#define Tcl_SplitPath \
+	(tclStubsPtr->tcl_SplitPath) /* 243 */
 #endif
 #ifndef Tcl_StaticPackage
-#define Tcl_StaticPackage(interp, pkgName, initProc, safeInitProc) \
-	(tclStubsPtr->tcl_StaticPackage)(interp, pkgName, initProc, safeInitProc) /* 244 */
+#define Tcl_StaticPackage \
+	(tclStubsPtr->tcl_StaticPackage) /* 244 */
 #endif
 #ifndef Tcl_StringMatch
-#define Tcl_StringMatch(str, pattern) \
-	(tclStubsPtr->tcl_StringMatch)(str, pattern) /* 245 */
+#define Tcl_StringMatch \
+	(tclStubsPtr->tcl_StringMatch) /* 245 */
 #endif
 #ifndef Tcl_Tell
-#define Tcl_Tell(chan) \
-	(tclStubsPtr->tcl_Tell)(chan) /* 246 */
+#define Tcl_Tell \
+	(tclStubsPtr->tcl_Tell) /* 246 */
 #endif
 #ifndef Tcl_TraceVar
-#define Tcl_TraceVar(interp, varName, flags, proc, clientData) \
-	(tclStubsPtr->tcl_TraceVar)(interp, varName, flags, proc, clientData) /* 247 */
+#define Tcl_TraceVar \
+	(tclStubsPtr->tcl_TraceVar) /* 247 */
 #endif
 #ifndef Tcl_TraceVar2
-#define Tcl_TraceVar2(interp, part1, part2, flags, proc, clientData) \
-	(tclStubsPtr->tcl_TraceVar2)(interp, part1, part2, flags, proc, clientData) /* 248 */
+#define Tcl_TraceVar2 \
+	(tclStubsPtr->tcl_TraceVar2) /* 248 */
 #endif
 #ifndef Tcl_TranslateFileName
-#define Tcl_TranslateFileName(interp, name, bufferPtr) \
-	(tclStubsPtr->tcl_TranslateFileName)(interp, name, bufferPtr) /* 249 */
+#define Tcl_TranslateFileName \
+	(tclStubsPtr->tcl_TranslateFileName) /* 249 */
 #endif
 #ifndef Tcl_Ungets
-#define Tcl_Ungets(chan, str, len, atHead) \
-	(tclStubsPtr->tcl_Ungets)(chan, str, len, atHead) /* 250 */
+#define Tcl_Ungets \
+	(tclStubsPtr->tcl_Ungets) /* 250 */
 #endif
 #ifndef Tcl_UnlinkVar
-#define Tcl_UnlinkVar(interp, varName) \
-	(tclStubsPtr->tcl_UnlinkVar)(interp, varName) /* 251 */
+#define Tcl_UnlinkVar \
+	(tclStubsPtr->tcl_UnlinkVar) /* 251 */
 #endif
 #ifndef Tcl_UnregisterChannel
-#define Tcl_UnregisterChannel(interp, chan) \
-	(tclStubsPtr->tcl_UnregisterChannel)(interp, chan) /* 252 */
+#define Tcl_UnregisterChannel \
+	(tclStubsPtr->tcl_UnregisterChannel) /* 252 */
 #endif
 #ifndef Tcl_UnsetVar
-#define Tcl_UnsetVar(interp, varName, flags) \
-	(tclStubsPtr->tcl_UnsetVar)(interp, varName, flags) /* 253 */
+#define Tcl_UnsetVar \
+	(tclStubsPtr->tcl_UnsetVar) /* 253 */
 #endif
 #ifndef Tcl_UnsetVar2
-#define Tcl_UnsetVar2(interp, part1, part2, flags) \
-	(tclStubsPtr->tcl_UnsetVar2)(interp, part1, part2, flags) /* 254 */
+#define Tcl_UnsetVar2 \
+	(tclStubsPtr->tcl_UnsetVar2) /* 254 */
 #endif
 #ifndef Tcl_UntraceVar
-#define Tcl_UntraceVar(interp, varName, flags, proc, clientData) \
-	(tclStubsPtr->tcl_UntraceVar)(interp, varName, flags, proc, clientData) /* 255 */
+#define Tcl_UntraceVar \
+	(tclStubsPtr->tcl_UntraceVar) /* 255 */
 #endif
 #ifndef Tcl_UntraceVar2
-#define Tcl_UntraceVar2(interp, part1, part2, flags, proc, clientData) \
-	(tclStubsPtr->tcl_UntraceVar2)(interp, part1, part2, flags, proc, clientData) /* 256 */
+#define Tcl_UntraceVar2 \
+	(tclStubsPtr->tcl_UntraceVar2) /* 256 */
 #endif
 #ifndef Tcl_UpdateLinkedVar
-#define Tcl_UpdateLinkedVar(interp, varName) \
-	(tclStubsPtr->tcl_UpdateLinkedVar)(interp, varName) /* 257 */
+#define Tcl_UpdateLinkedVar \
+	(tclStubsPtr->tcl_UpdateLinkedVar) /* 257 */
 #endif
 #ifndef Tcl_UpVar
-#define Tcl_UpVar(interp, frameName, varName, localName, flags) \
-	(tclStubsPtr->tcl_UpVar)(interp, frameName, varName, localName, flags) /* 258 */
+#define Tcl_UpVar \
+	(tclStubsPtr->tcl_UpVar) /* 258 */
 #endif
 #ifndef Tcl_UpVar2
-#define Tcl_UpVar2(interp, frameName, part1, part2, localName, flags) \
-	(tclStubsPtr->tcl_UpVar2)(interp, frameName, part1, part2, localName, flags) /* 259 */
+#define Tcl_UpVar2 \
+	(tclStubsPtr->tcl_UpVar2) /* 259 */
 #endif
 #ifndef Tcl_VarEval
 #define Tcl_VarEval \
 	(tclStubsPtr->tcl_VarEval) /* 260 */
 #endif
 #ifndef Tcl_VarTraceInfo
-#define Tcl_VarTraceInfo(interp, varName, flags, procPtr, prevClientData) \
-	(tclStubsPtr->tcl_VarTraceInfo)(interp, varName, flags, procPtr, prevClientData) /* 261 */
+#define Tcl_VarTraceInfo \
+	(tclStubsPtr->tcl_VarTraceInfo) /* 261 */
 #endif
 #ifndef Tcl_VarTraceInfo2
-#define Tcl_VarTraceInfo2(interp, part1, part2, flags, procPtr, prevClientData) \
-	(tclStubsPtr->tcl_VarTraceInfo2)(interp, part1, part2, flags, procPtr, prevClientData) /* 262 */
+#define Tcl_VarTraceInfo2 \
+	(tclStubsPtr->tcl_VarTraceInfo2) /* 262 */
 #endif
 #ifndef Tcl_Write
-#define Tcl_Write(chan, s, slen) \
-	(tclStubsPtr->tcl_Write)(chan, s, slen) /* 263 */
+#define Tcl_Write \
+	(tclStubsPtr->tcl_Write) /* 263 */
 #endif
 #ifndef Tcl_WrongNumArgs
-#define Tcl_WrongNumArgs(interp, objc, objv, message) \
-	(tclStubsPtr->tcl_WrongNumArgs)(interp, objc, objv, message) /* 264 */
+#define Tcl_WrongNumArgs \
+	(tclStubsPtr->tcl_WrongNumArgs) /* 264 */
 #endif
 #ifndef Tcl_DumpActiveMemory
-#define Tcl_DumpActiveMemory(fileName) \
-	(tclStubsPtr->tcl_DumpActiveMemory)(fileName) /* 265 */
+#define Tcl_DumpActiveMemory \
+	(tclStubsPtr->tcl_DumpActiveMemory) /* 265 */
 #endif
 #ifndef Tcl_ValidateAllMemory
-#define Tcl_ValidateAllMemory(file, line) \
-	(tclStubsPtr->tcl_ValidateAllMemory)(file, line) /* 266 */
+#define Tcl_ValidateAllMemory \
+	(tclStubsPtr->tcl_ValidateAllMemory) /* 266 */
 #endif
 #ifndef Tcl_AppendResultVA
-#define Tcl_AppendResultVA(interp, argList) \
-	(tclStubsPtr->tcl_AppendResultVA)(interp, argList) /* 267 */
+#define Tcl_AppendResultVA \
+	(tclStubsPtr->tcl_AppendResultVA) /* 267 */
 #endif
 #ifndef Tcl_AppendStringsToObjVA
-#define Tcl_AppendStringsToObjVA(objPtr, argList) \
-	(tclStubsPtr->tcl_AppendStringsToObjVA)(objPtr, argList) /* 268 */
+#define Tcl_AppendStringsToObjVA \
+	(tclStubsPtr->tcl_AppendStringsToObjVA) /* 268 */
 #endif
 #ifndef Tcl_HashStats
-#define Tcl_HashStats(tablePtr) \
-	(tclStubsPtr->tcl_HashStats)(tablePtr) /* 269 */
+#define Tcl_HashStats \
+	(tclStubsPtr->tcl_HashStats) /* 269 */
 #endif
 #ifndef Tcl_ParseVar
-#define Tcl_ParseVar(interp, str, termPtr) \
-	(tclStubsPtr->tcl_ParseVar)(interp, str, termPtr) /* 270 */
+#define Tcl_ParseVar \
+	(tclStubsPtr->tcl_ParseVar) /* 270 */
 #endif
 #ifndef Tcl_PkgPresent
-#define Tcl_PkgPresent(interp, name, version, exact) \
-	(tclStubsPtr->tcl_PkgPresent)(interp, name, version, exact) /* 271 */
+#define Tcl_PkgPresent \
+	(tclStubsPtr->tcl_PkgPresent) /* 271 */
 #endif
 #ifndef Tcl_PkgPresentEx
-#define Tcl_PkgPresentEx(interp, name, version, exact, clientDataPtr) \
-	(tclStubsPtr->tcl_PkgPresentEx)(interp, name, version, exact, clientDataPtr) /* 272 */
+#define Tcl_PkgPresentEx \
+	(tclStubsPtr->tcl_PkgPresentEx) /* 272 */
 #endif
 #ifndef Tcl_PkgProvide
-#define Tcl_PkgProvide(interp, name, version) \
-	(tclStubsPtr->tcl_PkgProvide)(interp, name, version) /* 273 */
+#define Tcl_PkgProvide \
+	(tclStubsPtr->tcl_PkgProvide) /* 273 */
 #endif
 #ifndef Tcl_PkgRequire
-#define Tcl_PkgRequire(interp, name, version, exact) \
-	(tclStubsPtr->tcl_PkgRequire)(interp, name, version, exact) /* 274 */
+#define Tcl_PkgRequire \
+	(tclStubsPtr->tcl_PkgRequire) /* 274 */
 #endif
 #ifndef Tcl_SetErrorCodeVA
-#define Tcl_SetErrorCodeVA(interp, argList) \
-	(tclStubsPtr->tcl_SetErrorCodeVA)(interp, argList) /* 275 */
+#define Tcl_SetErrorCodeVA \
+	(tclStubsPtr->tcl_SetErrorCodeVA) /* 275 */
 #endif
 #ifndef Tcl_VarEvalVA
-#define Tcl_VarEvalVA(interp, argList) \
-	(tclStubsPtr->tcl_VarEvalVA)(interp, argList) /* 276 */
+#define Tcl_VarEvalVA \
+	(tclStubsPtr->tcl_VarEvalVA) /* 276 */
 #endif
 #ifndef Tcl_WaitPid
-#define Tcl_WaitPid(pid, statPtr, options) \
-	(tclStubsPtr->tcl_WaitPid)(pid, statPtr, options) /* 277 */
+#define Tcl_WaitPid \
+	(tclStubsPtr->tcl_WaitPid) /* 277 */
 #endif
 #ifndef Tcl_PanicVA
-#define Tcl_PanicVA(format, argList) \
-	(tclStubsPtr->tcl_PanicVA)(format, argList) /* 278 */
+#define Tcl_PanicVA \
+	(tclStubsPtr->tcl_PanicVA) /* 278 */
 #endif
 #ifndef Tcl_GetVersion
-#define Tcl_GetVersion(major, minor, patchLevel, type) \
-	(tclStubsPtr->tcl_GetVersion)(major, minor, patchLevel, type) /* 279 */
+#define Tcl_GetVersion \
+	(tclStubsPtr->tcl_GetVersion) /* 279 */
 #endif
 /* Slot 280 is reserved */
 /* Slot 281 is reserved */
@@ -2571,240 +2571,240 @@ extern TclStubs *tclStubsPtr;
 /* Slot 284 is reserved */
 /* Slot 285 is reserved */
 #ifndef Tcl_AppendObjToObj
-#define Tcl_AppendObjToObj(objPtr, appendObjPtr) \
-	(tclStubsPtr->tcl_AppendObjToObj)(objPtr, appendObjPtr) /* 286 */
+#define Tcl_AppendObjToObj \
+	(tclStubsPtr->tcl_AppendObjToObj) /* 286 */
 #endif
 #ifndef Tcl_CreateEncoding
-#define Tcl_CreateEncoding(typePtr) \
-	(tclStubsPtr->tcl_CreateEncoding)(typePtr) /* 287 */
+#define Tcl_CreateEncoding \
+	(tclStubsPtr->tcl_CreateEncoding) /* 287 */
 #endif
 #ifndef Tcl_CreateThreadExitHandler
-#define Tcl_CreateThreadExitHandler(proc, clientData) \
-	(tclStubsPtr->tcl_CreateThreadExitHandler)(proc, clientData) /* 288 */
+#define Tcl_CreateThreadExitHandler \
+	(tclStubsPtr->tcl_CreateThreadExitHandler) /* 288 */
 #endif
 #ifndef Tcl_DeleteThreadExitHandler
-#define Tcl_DeleteThreadExitHandler(proc, clientData) \
-	(tclStubsPtr->tcl_DeleteThreadExitHandler)(proc, clientData) /* 289 */
+#define Tcl_DeleteThreadExitHandler \
+	(tclStubsPtr->tcl_DeleteThreadExitHandler) /* 289 */
 #endif
 #ifndef Tcl_DiscardResult
-#define Tcl_DiscardResult(statePtr) \
-	(tclStubsPtr->tcl_DiscardResult)(statePtr) /* 290 */
+#define Tcl_DiscardResult \
+	(tclStubsPtr->tcl_DiscardResult) /* 290 */
 #endif
 #ifndef Tcl_EvalEx
-#define Tcl_EvalEx(interp, script, numBytes, flags) \
-	(tclStubsPtr->tcl_EvalEx)(interp, script, numBytes, flags) /* 291 */
+#define Tcl_EvalEx \
+	(tclStubsPtr->tcl_EvalEx) /* 291 */
 #endif
 #ifndef Tcl_EvalObjv
-#define Tcl_EvalObjv(interp, objc, objv, flags) \
-	(tclStubsPtr->tcl_EvalObjv)(interp, objc, objv, flags) /* 292 */
+#define Tcl_EvalObjv \
+	(tclStubsPtr->tcl_EvalObjv) /* 292 */
 #endif
 #ifndef Tcl_EvalObjEx
-#define Tcl_EvalObjEx(interp, objPtr, flags) \
-	(tclStubsPtr->tcl_EvalObjEx)(interp, objPtr, flags) /* 293 */
+#define Tcl_EvalObjEx \
+	(tclStubsPtr->tcl_EvalObjEx) /* 293 */
 #endif
 #ifndef Tcl_ExitThread
-#define Tcl_ExitThread(status) \
-	(tclStubsPtr->tcl_ExitThread)(status) /* 294 */
+#define Tcl_ExitThread \
+	(tclStubsPtr->tcl_ExitThread) /* 294 */
 #endif
 #ifndef Tcl_ExternalToUtf
-#define Tcl_ExternalToUtf(interp, encoding, src, srcLen, flags, statePtr, dst, dstLen, srcReadPtr, dstWrotePtr, dstCharsPtr) \
-	(tclStubsPtr->tcl_ExternalToUtf)(interp, encoding, src, srcLen, flags, statePtr, dst, dstLen, srcReadPtr, dstWrotePtr, dstCharsPtr) /* 295 */
+#define Tcl_ExternalToUtf \
+	(tclStubsPtr->tcl_ExternalToUtf) /* 295 */
 #endif
 #ifndef Tcl_ExternalToUtfDString
-#define Tcl_ExternalToUtfDString(encoding, src, srcLen, dsPtr) \
-	(tclStubsPtr->tcl_ExternalToUtfDString)(encoding, src, srcLen, dsPtr) /* 296 */
+#define Tcl_ExternalToUtfDString \
+	(tclStubsPtr->tcl_ExternalToUtfDString) /* 296 */
 #endif
 #ifndef Tcl_FinalizeThread
-#define Tcl_FinalizeThread() \
-	(tclStubsPtr->tcl_FinalizeThread)() /* 297 */
+#define Tcl_FinalizeThread \
+	(tclStubsPtr->tcl_FinalizeThread) /* 297 */
 #endif
 #ifndef Tcl_FinalizeNotifier
-#define Tcl_FinalizeNotifier(clientData) \
-	(tclStubsPtr->tcl_FinalizeNotifier)(clientData) /* 298 */
+#define Tcl_FinalizeNotifier \
+	(tclStubsPtr->tcl_FinalizeNotifier) /* 298 */
 #endif
 #ifndef Tcl_FreeEncoding
-#define Tcl_FreeEncoding(encoding) \
-	(tclStubsPtr->tcl_FreeEncoding)(encoding) /* 299 */
+#define Tcl_FreeEncoding \
+	(tclStubsPtr->tcl_FreeEncoding) /* 299 */
 #endif
 #ifndef Tcl_GetCurrentThread
-#define Tcl_GetCurrentThread() \
-	(tclStubsPtr->tcl_GetCurrentThread)() /* 300 */
+#define Tcl_GetCurrentThread \
+	(tclStubsPtr->tcl_GetCurrentThread) /* 300 */
 #endif
 #ifndef Tcl_GetEncoding
-#define Tcl_GetEncoding(interp, name) \
-	(tclStubsPtr->tcl_GetEncoding)(interp, name) /* 301 */
+#define Tcl_GetEncoding \
+	(tclStubsPtr->tcl_GetEncoding) /* 301 */
 #endif
 #ifndef Tcl_GetEncodingName
-#define Tcl_GetEncodingName(encoding) \
-	(tclStubsPtr->tcl_GetEncodingName)(encoding) /* 302 */
+#define Tcl_GetEncodingName \
+	(tclStubsPtr->tcl_GetEncodingName) /* 302 */
 #endif
 #ifndef Tcl_GetEncodingNames
-#define Tcl_GetEncodingNames(interp) \
-	(tclStubsPtr->tcl_GetEncodingNames)(interp) /* 303 */
+#define Tcl_GetEncodingNames \
+	(tclStubsPtr->tcl_GetEncodingNames) /* 303 */
 #endif
 #ifndef Tcl_GetIndexFromObjStruct
-#define Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr, offset, msg, flags, indexPtr) \
-	(tclStubsPtr->tcl_GetIndexFromObjStruct)(interp, objPtr, tablePtr, offset, msg, flags, indexPtr) /* 304 */
+#define Tcl_GetIndexFromObjStruct \
+	(tclStubsPtr->tcl_GetIndexFromObjStruct) /* 304 */
 #endif
 #ifndef Tcl_GetThreadData
-#define Tcl_GetThreadData(keyPtr, size) \
-	(tclStubsPtr->tcl_GetThreadData)(keyPtr, size) /* 305 */
+#define Tcl_GetThreadData \
+	(tclStubsPtr->tcl_GetThreadData) /* 305 */
 #endif
 #ifndef Tcl_GetVar2Ex
-#define Tcl_GetVar2Ex(interp, part1, part2, flags) \
-	(tclStubsPtr->tcl_GetVar2Ex)(interp, part1, part2, flags) /* 306 */
+#define Tcl_GetVar2Ex \
+	(tclStubsPtr->tcl_GetVar2Ex) /* 306 */
 #endif
 #ifndef Tcl_InitNotifier
-#define Tcl_InitNotifier() \
-	(tclStubsPtr->tcl_InitNotifier)() /* 307 */
+#define Tcl_InitNotifier \
+	(tclStubsPtr->tcl_InitNotifier) /* 307 */
 #endif
 #ifndef Tcl_MutexLock
-#define Tcl_MutexLock(mutexPtr) \
-	(tclStubsPtr->tcl_MutexLock)(mutexPtr) /* 308 */
+#define Tcl_MutexLock \
+	(tclStubsPtr->tcl_MutexLock) /* 308 */
 #endif
 #ifndef Tcl_MutexUnlock
-#define Tcl_MutexUnlock(mutexPtr) \
-	(tclStubsPtr->tcl_MutexUnlock)(mutexPtr) /* 309 */
+#define Tcl_MutexUnlock \
+	(tclStubsPtr->tcl_MutexUnlock) /* 309 */
 #endif
 #ifndef Tcl_ConditionNotify
-#define Tcl_ConditionNotify(condPtr) \
-	(tclStubsPtr->tcl_ConditionNotify)(condPtr) /* 310 */
+#define Tcl_ConditionNotify \
+	(tclStubsPtr->tcl_ConditionNotify) /* 310 */
 #endif
 #ifndef Tcl_ConditionWait
-#define Tcl_ConditionWait(condPtr, mutexPtr, timePtr) \
-	(tclStubsPtr->tcl_ConditionWait)(condPtr, mutexPtr, timePtr) /* 311 */
+#define Tcl_ConditionWait \
+	(tclStubsPtr->tcl_ConditionWait) /* 311 */
 #endif
 #ifndef Tcl_NumUtfChars
-#define Tcl_NumUtfChars(src, len) \
-	(tclStubsPtr->tcl_NumUtfChars)(src, len) /* 312 */
+#define Tcl_NumUtfChars \
+	(tclStubsPtr->tcl_NumUtfChars) /* 312 */
 #endif
 #ifndef Tcl_ReadChars
-#define Tcl_ReadChars(channel, objPtr, charsToRead, appendFlag) \
-	(tclStubsPtr->tcl_ReadChars)(channel, objPtr, charsToRead, appendFlag) /* 313 */
+#define Tcl_ReadChars \
+	(tclStubsPtr->tcl_ReadChars) /* 313 */
 #endif
 #ifndef Tcl_RestoreResult
-#define Tcl_RestoreResult(interp, statePtr) \
-	(tclStubsPtr->tcl_RestoreResult)(interp, statePtr) /* 314 */
+#define Tcl_RestoreResult \
+	(tclStubsPtr->tcl_RestoreResult) /* 314 */
 #endif
 #ifndef Tcl_SaveResult
-#define Tcl_SaveResult(interp, statePtr) \
-	(tclStubsPtr->tcl_SaveResult)(interp, statePtr) /* 315 */
+#define Tcl_SaveResult \
+	(tclStubsPtr->tcl_SaveResult) /* 315 */
 #endif
 #ifndef Tcl_SetSystemEncoding
-#define Tcl_SetSystemEncoding(interp, name) \
-	(tclStubsPtr->tcl_SetSystemEncoding)(interp, name) /* 316 */
+#define Tcl_SetSystemEncoding \
+	(tclStubsPtr->tcl_SetSystemEncoding) /* 316 */
 #endif
 #ifndef Tcl_SetVar2Ex
-#define Tcl_SetVar2Ex(interp, part1, part2, newValuePtr, flags) \
-	(tclStubsPtr->tcl_SetVar2Ex)(interp, part1, part2, newValuePtr, flags) /* 317 */
+#define Tcl_SetVar2Ex \
+	(tclStubsPtr->tcl_SetVar2Ex) /* 317 */
 #endif
 #ifndef Tcl_ThreadAlert
-#define Tcl_ThreadAlert(threadId) \
-	(tclStubsPtr->tcl_ThreadAlert)(threadId) /* 318 */
+#define Tcl_ThreadAlert \
+	(tclStubsPtr->tcl_ThreadAlert) /* 318 */
 #endif
 #ifndef Tcl_ThreadQueueEvent
-#define Tcl_ThreadQueueEvent(threadId, evPtr, position) \
-	(tclStubsPtr->tcl_ThreadQueueEvent)(threadId, evPtr, position) /* 319 */
+#define Tcl_ThreadQueueEvent \
+	(tclStubsPtr->tcl_ThreadQueueEvent) /* 319 */
 #endif
 #ifndef Tcl_UniCharAtIndex
-#define Tcl_UniCharAtIndex(src, index) \
-	(tclStubsPtr->tcl_UniCharAtIndex)(src, index) /* 320 */
+#define Tcl_UniCharAtIndex \
+	(tclStubsPtr->tcl_UniCharAtIndex) /* 320 */
 #endif
 #ifndef Tcl_UniCharToLower
-#define Tcl_UniCharToLower(ch) \
-	(tclStubsPtr->tcl_UniCharToLower)(ch) /* 321 */
+#define Tcl_UniCharToLower \
+	(tclStubsPtr->tcl_UniCharToLower) /* 321 */
 #endif
 #ifndef Tcl_UniCharToTitle
-#define Tcl_UniCharToTitle(ch) \
-	(tclStubsPtr->tcl_UniCharToTitle)(ch) /* 322 */
+#define Tcl_UniCharToTitle \
+	(tclStubsPtr->tcl_UniCharToTitle) /* 322 */
 #endif
 #ifndef Tcl_UniCharToUpper
-#define Tcl_UniCharToUpper(ch) \
-	(tclStubsPtr->tcl_UniCharToUpper)(ch) /* 323 */
+#define Tcl_UniCharToUpper \
+	(tclStubsPtr->tcl_UniCharToUpper) /* 323 */
 #endif
 #ifndef Tcl_UniCharToUtf
-#define Tcl_UniCharToUtf(ch, buf) \
-	(tclStubsPtr->tcl_UniCharToUtf)(ch, buf) /* 324 */
+#define Tcl_UniCharToUtf \
+	(tclStubsPtr->tcl_UniCharToUtf) /* 324 */
 #endif
 #ifndef Tcl_UtfAtIndex
-#define Tcl_UtfAtIndex(src, index) \
-	(tclStubsPtr->tcl_UtfAtIndex)(src, index) /* 325 */
+#define Tcl_UtfAtIndex \
+	(tclStubsPtr->tcl_UtfAtIndex) /* 325 */
 #endif
 #ifndef Tcl_UtfCharComplete
-#define Tcl_UtfCharComplete(src, len) \
-	(tclStubsPtr->tcl_UtfCharComplete)(src, len) /* 326 */
+#define Tcl_UtfCharComplete \
+	(tclStubsPtr->tcl_UtfCharComplete) /* 326 */
 #endif
 #ifndef Tcl_UtfBackslash
-#define Tcl_UtfBackslash(src, readPtr, dst) \
-	(tclStubsPtr->tcl_UtfBackslash)(src, readPtr, dst) /* 327 */
+#define Tcl_UtfBackslash \
+	(tclStubsPtr->tcl_UtfBackslash) /* 327 */
 #endif
 #ifndef Tcl_UtfFindFirst
-#define Tcl_UtfFindFirst(src, ch) \
-	(tclStubsPtr->tcl_UtfFindFirst)(src, ch) /* 328 */
+#define Tcl_UtfFindFirst \
+	(tclStubsPtr->tcl_UtfFindFirst) /* 328 */
 #endif
 #ifndef Tcl_UtfFindLast
-#define Tcl_UtfFindLast(src, ch) \
-	(tclStubsPtr->tcl_UtfFindLast)(src, ch) /* 329 */
+#define Tcl_UtfFindLast \
+	(tclStubsPtr->tcl_UtfFindLast) /* 329 */
 #endif
 #ifndef Tcl_UtfNext
-#define Tcl_UtfNext(src) \
-	(tclStubsPtr->tcl_UtfNext)(src) /* 330 */
+#define Tcl_UtfNext \
+	(tclStubsPtr->tcl_UtfNext) /* 330 */
 #endif
 #ifndef Tcl_UtfPrev
-#define Tcl_UtfPrev(src, start) \
-	(tclStubsPtr->tcl_UtfPrev)(src, start) /* 331 */
+#define Tcl_UtfPrev \
+	(tclStubsPtr->tcl_UtfPrev) /* 331 */
 #endif
 #ifndef Tcl_UtfToExternal
-#define Tcl_UtfToExternal(interp, encoding, src, srcLen, flags, statePtr, dst, dstLen, srcReadPtr, dstWrotePtr, dstCharsPtr) \
-	(tclStubsPtr->tcl_UtfToExternal)(interp, encoding, src, srcLen, flags, statePtr, dst, dstLen, srcReadPtr, dstWrotePtr, dstCharsPtr) /* 332 */
+#define Tcl_UtfToExternal \
+	(tclStubsPtr->tcl_UtfToExternal) /* 332 */
 #endif
 #ifndef Tcl_UtfToExternalDString
-#define Tcl_UtfToExternalDString(encoding, src, srcLen, dsPtr) \
-	(tclStubsPtr->tcl_UtfToExternalDString)(encoding, src, srcLen, dsPtr) /* 333 */
+#define Tcl_UtfToExternalDString \
+	(tclStubsPtr->tcl_UtfToExternalDString) /* 333 */
 #endif
 #ifndef Tcl_UtfToLower
-#define Tcl_UtfToLower(src) \
-	(tclStubsPtr->tcl_UtfToLower)(src) /* 334 */
+#define Tcl_UtfToLower \
+	(tclStubsPtr->tcl_UtfToLower) /* 334 */
 #endif
 #ifndef Tcl_UtfToTitle
-#define Tcl_UtfToTitle(src) \
-	(tclStubsPtr->tcl_UtfToTitle)(src) /* 335 */
+#define Tcl_UtfToTitle \
+	(tclStubsPtr->tcl_UtfToTitle) /* 335 */
 #endif
 #ifndef Tcl_UtfToUniChar
-#define Tcl_UtfToUniChar(src, chPtr) \
-	(tclStubsPtr->tcl_UtfToUniChar)(src, chPtr) /* 336 */
+#define Tcl_UtfToUniChar \
+	(tclStubsPtr->tcl_UtfToUniChar) /* 336 */
 #endif
 #ifndef Tcl_UtfToUpper
-#define Tcl_UtfToUpper(src) \
-	(tclStubsPtr->tcl_UtfToUpper)(src) /* 337 */
+#define Tcl_UtfToUpper \
+	(tclStubsPtr->tcl_UtfToUpper) /* 337 */
 #endif
 #ifndef Tcl_WriteChars
-#define Tcl_WriteChars(chan, src, srcLen) \
-	(tclStubsPtr->tcl_WriteChars)(chan, src, srcLen) /* 338 */
+#define Tcl_WriteChars \
+	(tclStubsPtr->tcl_WriteChars) /* 338 */
 #endif
 #ifndef Tcl_WriteObj
-#define Tcl_WriteObj(chan, objPtr) \
-	(tclStubsPtr->tcl_WriteObj)(chan, objPtr) /* 339 */
+#define Tcl_WriteObj \
+	(tclStubsPtr->tcl_WriteObj) /* 339 */
 #endif
 #ifndef Tcl_GetString
-#define Tcl_GetString(objPtr) \
-	(tclStubsPtr->tcl_GetString)(objPtr) /* 340 */
+#define Tcl_GetString \
+	(tclStubsPtr->tcl_GetString) /* 340 */
 #endif
 #ifndef Tcl_GetDefaultEncodingDir
-#define Tcl_GetDefaultEncodingDir() \
-	(tclStubsPtr->tcl_GetDefaultEncodingDir)() /* 341 */
+#define Tcl_GetDefaultEncodingDir \
+	(tclStubsPtr->tcl_GetDefaultEncodingDir) /* 341 */
 #endif
 #ifndef Tcl_SetDefaultEncodingDir
-#define Tcl_SetDefaultEncodingDir(path) \
-	(tclStubsPtr->tcl_SetDefaultEncodingDir)(path) /* 342 */
+#define Tcl_SetDefaultEncodingDir \
+	(tclStubsPtr->tcl_SetDefaultEncodingDir) /* 342 */
 #endif
 #ifndef Tcl_AlertNotifier
-#define Tcl_AlertNotifier(clientData) \
-	(tclStubsPtr->tcl_AlertNotifier)(clientData) /* 343 */
+#define Tcl_AlertNotifier \
+	(tclStubsPtr->tcl_AlertNotifier) /* 343 */
 #endif
 #ifndef Tcl_ServiceModeHook
-#define Tcl_ServiceModeHook(mode) \
-	(tclStubsPtr->tcl_ServiceModeHook)(mode) /* 344 */
+#define Tcl_ServiceModeHook \
+	(tclStubsPtr->tcl_ServiceModeHook) /* 344 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */

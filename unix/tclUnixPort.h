@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPort.h,v 1.1.2.6 1999/03/11 01:50:33 stanton Exp $
+ * RCS: @(#) $Id: tclUnixPort.h,v 1.1.2.7 1999/03/30 01:55:56 redman Exp $
  */
 
 #ifndef _TCLUNIXPORT
@@ -464,6 +464,10 @@ extern double strtod();
  */
 
 #define TclpExit		exit
+
+#ifdef TclpStat
+#undef TclpStat
+#endif
 
 EXTERN int		TclpLstat _ANSI_ARGS_((CONST char *path, 
 			    struct stat *buf));

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.1.2.19 1999/03/17 21:29:57 stanton Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.1.2.20 1999/03/30 01:55:49 redman Exp $
  */
 
 #ifndef _TCL
@@ -1306,8 +1306,22 @@ typedef unsigned short Tcl_UniChar;
  * linked into an application.
  */
 
+#ifdef USE_TCL_STUBS
+
 EXTERN char *		Tcl_InitStubs _ANSI_ARGS_((Tcl_Interp *interp,
 			    char *version, int exact));
+
+#else
+
+/*
+ * When not using stubs, make it a macro.
+ */
+
+#define Tcl_InitStubs(interp, version, exact) \
+    Tcl_PkgRequire(interp, "Tcl", version, exact)
+
+#endif
+
 
 /*
  * Include the public function declarations that are accessible via

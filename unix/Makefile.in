@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.1.2.21 1999/03/25 19:46:23 stanton Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.1.2.22 1999/03/30 01:55:56 redman Exp $
 
 # Current Tcl version;  used in various names.
 
@@ -272,8 +272,7 @@ GENERIC_OBJS = regcomp.o regexec.o regfree.o regerror.o tclAlloc.o \
 	tclResolve.o tclResult.o tclScan.o tclStringObj.o tclThread.o \
 	tclStubInit.o tclTimer.o tclUtf.o tclUtil.o tclVar.o
 
-STUB_LIB_OBJS = tclIntPlatStubs.o tclIntStubs.o tclPlatStubs.o tclStubLib.o \
-	tclStubs.o ${COMPAT_OBJS}
+STUB_LIB_OBJS = tclStubLib.o ${COMPAT_OBJS}
 
 OBJS = ${GENERIC_OBJS} ${UNIX_OBJS} ${NOTIFY_OBJS} ${COMPAT_OBJS} @DL_OBJS@
 
@@ -355,11 +354,8 @@ GENERIC_SRCS = \
 	$(GENERIC_DIR)/tclVar.c
 
 STUB_SRCS = \
-	$(GENERIC_DIR)/tclIntPlatStubs.c \
-	$(GENERIC_DIR)/tclIntStubs.c \
-	$(GENERIC_DIR)/tclPlatStubs.c \
 	$(GENERIC_DIR)/tclStubLib.c \
-	$(GENERIC_DIR)/tclStubs.c
+
 
 UNIX_HDRS = \
 	$(UNIX_DIR)/tclUnixPort.h
@@ -968,20 +964,9 @@ waitpid.o: $(COMPAT_DIR)/waitpid.c
 # Stub library binaries, these must be compiled for use in a shared library
 # even though they will be placed in a static archive
 
-tclIntPlatStubs.o: $(GENERIC_DIR)/tclIntPlatStubs.c
-	$(CC) -c $(STUB_CC_SWITCHES) $(GENERIC_DIR)/tclIntPlatStubs.c
-
-tclIntStubs.o: $(GENERIC_DIR)/tclIntStubs.c
-	$(CC) -c $(STUB_CC_SWITCHES) $(GENERIC_DIR)/tclIntStubs.c
-
-tclPlatStubs.o: $(GENERIC_DIR)/tclPlatStubs.c
-	$(CC) -c $(STUB_CC_SWITCHES) $(GENERIC_DIR)/tclPlatStubs.c
 
 tclStubLib.o: $(GENERIC_DIR)/tclStubLib.c
 	$(CC) -c $(STUB_CC_SWITCHES) $(GENERIC_DIR)/tclStubLib.c
-
-tclStubs.o: $(GENERIC_DIR)/tclStubs.c
-	$(CC) -c $(STUB_CC_SWITCHES) $(GENERIC_DIR)/tclStubs.c
 
 .c.o:
 	$(CC) -c $(CC_SWITCHES) $<

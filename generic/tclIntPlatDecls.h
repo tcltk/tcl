@@ -9,7 +9,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclIntPlatDecls.h,v 1.3.2.5 1999/03/19 04:01:21 stanton Exp $
+ * RCS: @(#) $Id: tclIntPlatDecls.h,v 1.3.2.6 1999/03/30 01:55:53 redman Exp $
  */
 
 #ifndef _TCLINTPLATDECLS
@@ -286,245 +286,245 @@ extern TclIntPlatStubs *tclIntPlatStubsPtr;
 
 #if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
 #ifndef TclGetAndDetachPids
-#define TclGetAndDetachPids(interp, chan) \
-	(tclIntPlatStubsPtr->tclGetAndDetachPids)(interp, chan) /* 0 */
+#define TclGetAndDetachPids \
+	(tclIntPlatStubsPtr->tclGetAndDetachPids) /* 0 */
 #endif
 #ifndef TclpCloseFile
-#define TclpCloseFile(file) \
-	(tclIntPlatStubsPtr->tclpCloseFile)(file) /* 1 */
+#define TclpCloseFile \
+	(tclIntPlatStubsPtr->tclpCloseFile) /* 1 */
 #endif
 #ifndef TclpCreateCommandChannel
-#define TclpCreateCommandChannel(readFile, writeFile, errorFile, numPids, pidPtr) \
-	(tclIntPlatStubsPtr->tclpCreateCommandChannel)(readFile, writeFile, errorFile, numPids, pidPtr) /* 2 */
+#define TclpCreateCommandChannel \
+	(tclIntPlatStubsPtr->tclpCreateCommandChannel) /* 2 */
 #endif
 #ifndef TclpCreatePipe
-#define TclpCreatePipe(readPipe, writePipe) \
-	(tclIntPlatStubsPtr->tclpCreatePipe)(readPipe, writePipe) /* 3 */
+#define TclpCreatePipe \
+	(tclIntPlatStubsPtr->tclpCreatePipe) /* 3 */
 #endif
 #ifndef TclpCreateProcess
-#define TclpCreateProcess(interp, argc, argv, inputFile, outputFile, errorFile, pidPtr) \
-	(tclIntPlatStubsPtr->tclpCreateProcess)(interp, argc, argv, inputFile, outputFile, errorFile, pidPtr) /* 4 */
+#define TclpCreateProcess \
+	(tclIntPlatStubsPtr->tclpCreateProcess) /* 4 */
 #endif
 /* Slot 5 is reserved */
 #ifndef TclpMakeFile
-#define TclpMakeFile(channel, direction) \
-	(tclIntPlatStubsPtr->tclpMakeFile)(channel, direction) /* 6 */
+#define TclpMakeFile \
+	(tclIntPlatStubsPtr->tclpMakeFile) /* 6 */
 #endif
 #ifndef TclpOpenFile
-#define TclpOpenFile(fname, mode) \
-	(tclIntPlatStubsPtr->tclpOpenFile)(fname, mode) /* 7 */
+#define TclpOpenFile \
+	(tclIntPlatStubsPtr->tclpOpenFile) /* 7 */
 #endif
 #ifndef TclUnixWaitForFile
-#define TclUnixWaitForFile(fd, mask, timeout) \
-	(tclIntPlatStubsPtr->tclUnixWaitForFile)(fd, mask, timeout) /* 8 */
+#define TclUnixWaitForFile \
+	(tclIntPlatStubsPtr->tclUnixWaitForFile) /* 8 */
 #endif
 #ifndef TclpCreateTempFile
-#define TclpCreateTempFile(contents) \
-	(tclIntPlatStubsPtr->tclpCreateTempFile)(contents) /* 9 */
+#define TclpCreateTempFile \
+	(tclIntPlatStubsPtr->tclpCreateTempFile) /* 9 */
 #endif
 #endif /* UNIX */
 #ifdef __WIN32__
 #ifndef TclWinConvertError
-#define TclWinConvertError(errCode) \
-	(tclIntPlatStubsPtr->tclWinConvertError)(errCode) /* 0 */
+#define TclWinConvertError \
+	(tclIntPlatStubsPtr->tclWinConvertError) /* 0 */
 #endif
 #ifndef TclWinConvertWSAError
-#define TclWinConvertWSAError(errCode) \
-	(tclIntPlatStubsPtr->tclWinConvertWSAError)(errCode) /* 1 */
+#define TclWinConvertWSAError \
+	(tclIntPlatStubsPtr->tclWinConvertWSAError) /* 1 */
 #endif
 #ifndef TclWinGetServByName
-#define TclWinGetServByName(nm, proto) \
-	(tclIntPlatStubsPtr->tclWinGetServByName)(nm, proto) /* 2 */
+#define TclWinGetServByName \
+	(tclIntPlatStubsPtr->tclWinGetServByName) /* 2 */
 #endif
 #ifndef TclWinGetSockOpt
-#define TclWinGetSockOpt(s, level, optname, optval, optlen) \
-	(tclIntPlatStubsPtr->tclWinGetSockOpt)(s, level, optname, optval, optlen) /* 3 */
+#define TclWinGetSockOpt \
+	(tclIntPlatStubsPtr->tclWinGetSockOpt) /* 3 */
 #endif
 #ifndef TclWinGetTclInstance
-#define TclWinGetTclInstance() \
-	(tclIntPlatStubsPtr->tclWinGetTclInstance)() /* 4 */
+#define TclWinGetTclInstance \
+	(tclIntPlatStubsPtr->tclWinGetTclInstance) /* 4 */
 #endif
 /* Slot 5 is reserved */
 #ifndef TclWinNToHS
-#define TclWinNToHS(ns) \
-	(tclIntPlatStubsPtr->tclWinNToHS)(ns) /* 6 */
+#define TclWinNToHS \
+	(tclIntPlatStubsPtr->tclWinNToHS) /* 6 */
 #endif
 #ifndef TclWinSetSockOpt
-#define TclWinSetSockOpt(s, level, optname, optval, optlen) \
-	(tclIntPlatStubsPtr->tclWinSetSockOpt)(s, level, optname, optval, optlen) /* 7 */
+#define TclWinSetSockOpt \
+	(tclIntPlatStubsPtr->tclWinSetSockOpt) /* 7 */
 #endif
 #ifndef TclpGetPid
-#define TclpGetPid(pid) \
-	(tclIntPlatStubsPtr->tclpGetPid)(pid) /* 8 */
+#define TclpGetPid \
+	(tclIntPlatStubsPtr->tclpGetPid) /* 8 */
 #endif
 #ifndef TclWinGetPlatformId
-#define TclWinGetPlatformId() \
-	(tclIntPlatStubsPtr->tclWinGetPlatformId)() /* 9 */
+#define TclWinGetPlatformId \
+	(tclIntPlatStubsPtr->tclWinGetPlatformId) /* 9 */
 #endif
 #ifndef TclWinSynchSpawn
-#define TclWinSynchSpawn(args, type, trans, pidPtr) \
-	(tclIntPlatStubsPtr->tclWinSynchSpawn)(args, type, trans, pidPtr) /* 10 */
+#define TclWinSynchSpawn \
+	(tclIntPlatStubsPtr->tclWinSynchSpawn) /* 10 */
 #endif
 #ifndef TclGetAndDetachPids
-#define TclGetAndDetachPids(interp, chan) \
-	(tclIntPlatStubsPtr->tclGetAndDetachPids)(interp, chan) /* 11 */
+#define TclGetAndDetachPids \
+	(tclIntPlatStubsPtr->tclGetAndDetachPids) /* 11 */
 #endif
 #ifndef TclpCloseFile
-#define TclpCloseFile(file) \
-	(tclIntPlatStubsPtr->tclpCloseFile)(file) /* 12 */
+#define TclpCloseFile \
+	(tclIntPlatStubsPtr->tclpCloseFile) /* 12 */
 #endif
 #ifndef TclpCreateCommandChannel
-#define TclpCreateCommandChannel(readFile, writeFile, errorFile, numPids, pidPtr) \
-	(tclIntPlatStubsPtr->tclpCreateCommandChannel)(readFile, writeFile, errorFile, numPids, pidPtr) /* 13 */
+#define TclpCreateCommandChannel \
+	(tclIntPlatStubsPtr->tclpCreateCommandChannel) /* 13 */
 #endif
 #ifndef TclpCreatePipe
-#define TclpCreatePipe(readPipe, writePipe) \
-	(tclIntPlatStubsPtr->tclpCreatePipe)(readPipe, writePipe) /* 14 */
+#define TclpCreatePipe \
+	(tclIntPlatStubsPtr->tclpCreatePipe) /* 14 */
 #endif
 #ifndef TclpCreateProcess
-#define TclpCreateProcess(interp, argc, argv, inputFile, outputFile, errorFile, pidPtr) \
-	(tclIntPlatStubsPtr->tclpCreateProcess)(interp, argc, argv, inputFile, outputFile, errorFile, pidPtr) /* 15 */
+#define TclpCreateProcess \
+	(tclIntPlatStubsPtr->tclpCreateProcess) /* 15 */
 #endif
 /* Slot 16 is reserved */
 /* Slot 17 is reserved */
 #ifndef TclpMakeFile
-#define TclpMakeFile(channel, direction) \
-	(tclIntPlatStubsPtr->tclpMakeFile)(channel, direction) /* 18 */
+#define TclpMakeFile \
+	(tclIntPlatStubsPtr->tclpMakeFile) /* 18 */
 #endif
 #ifndef TclpOpenFile
-#define TclpOpenFile(fname, mode) \
-	(tclIntPlatStubsPtr->tclpOpenFile)(fname, mode) /* 19 */
+#define TclpOpenFile \
+	(tclIntPlatStubsPtr->tclpOpenFile) /* 19 */
 #endif
 #ifndef TclWinAddProcess
-#define TclWinAddProcess(hProcess, id) \
-	(tclIntPlatStubsPtr->tclWinAddProcess)(hProcess, id) /* 20 */
+#define TclWinAddProcess \
+	(tclIntPlatStubsPtr->tclWinAddProcess) /* 20 */
 #endif
 #ifndef TclpAsyncMark
-#define TclpAsyncMark(async) \
-	(tclIntPlatStubsPtr->tclpAsyncMark)(async) /* 21 */
+#define TclpAsyncMark \
+	(tclIntPlatStubsPtr->tclpAsyncMark) /* 21 */
 #endif
 #ifndef TclpCreateTempFile
-#define TclpCreateTempFile(contents) \
-	(tclIntPlatStubsPtr->tclpCreateTempFile)(contents) /* 22 */
+#define TclpCreateTempFile \
+	(tclIntPlatStubsPtr->tclpCreateTempFile) /* 22 */
 #endif
 #ifndef TclpGetTZName
-#define TclpGetTZName(isdst) \
-	(tclIntPlatStubsPtr->tclpGetTZName)(isdst) /* 23 */
+#define TclpGetTZName \
+	(tclIntPlatStubsPtr->tclpGetTZName) /* 23 */
 #endif
 #ifndef TclWinNoBackslash
-#define TclWinNoBackslash(path) \
-	(tclIntPlatStubsPtr->tclWinNoBackslash)(path) /* 24 */
+#define TclWinNoBackslash \
+	(tclIntPlatStubsPtr->tclWinNoBackslash) /* 24 */
 #endif
 #ifndef Tcl_WinUtfToTChar
-#define Tcl_WinUtfToTChar(str, len, dsPtr) \
-	(tclIntPlatStubsPtr->tcl_WinUtfToTChar)(str, len, dsPtr) /* 25 */
+#define Tcl_WinUtfToTChar \
+	(tclIntPlatStubsPtr->tcl_WinUtfToTChar) /* 25 */
 #endif
 #ifndef Tcl_WinTCharToUtf
-#define Tcl_WinTCharToUtf(str, len, dsPtr) \
-	(tclIntPlatStubsPtr->tcl_WinTCharToUtf)(str, len, dsPtr) /* 26 */
+#define Tcl_WinTCharToUtf \
+	(tclIntPlatStubsPtr->tcl_WinTCharToUtf) /* 26 */
 #endif
 #endif /* __WIN32__ */
 #ifdef MAC_TCL
 #ifndef TclpSysAlloc
-#define TclpSysAlloc(size, isBin) \
-	(tclIntPlatStubsPtr->tclpSysAlloc)(size, isBin) /* 0 */
+#define TclpSysAlloc \
+	(tclIntPlatStubsPtr->tclpSysAlloc) /* 0 */
 #endif
 #ifndef TclpSysFree
-#define TclpSysFree(ptr) \
-	(tclIntPlatStubsPtr->tclpSysFree)(ptr) /* 1 */
+#define TclpSysFree \
+	(tclIntPlatStubsPtr->tclpSysFree) /* 1 */
 #endif
 #ifndef TclpSysRealloc
-#define TclpSysRealloc(cp, size) \
-	(tclIntPlatStubsPtr->tclpSysRealloc)(cp, size) /* 2 */
+#define TclpSysRealloc \
+	(tclIntPlatStubsPtr->tclpSysRealloc) /* 2 */
 #endif
 #ifndef TclpExit
-#define TclpExit(status) \
-	(tclIntPlatStubsPtr->tclpExit)(status) /* 3 */
+#define TclpExit \
+	(tclIntPlatStubsPtr->tclpExit) /* 3 */
 #endif
 #ifndef FSpGetDefaultDir
-#define FSpGetDefaultDir(theSpec) \
-	(tclIntPlatStubsPtr->fSpGetDefaultDir)(theSpec) /* 4 */
+#define FSpGetDefaultDir \
+	(tclIntPlatStubsPtr->fSpGetDefaultDir) /* 4 */
 #endif
 #ifndef FSpSetDefaultDir
-#define FSpSetDefaultDir(theSpec) \
-	(tclIntPlatStubsPtr->fSpSetDefaultDir)(theSpec) /* 5 */
+#define FSpSetDefaultDir \
+	(tclIntPlatStubsPtr->fSpSetDefaultDir) /* 5 */
 #endif
 #ifndef FSpFindFolder
-#define FSpFindFolder(vRefNum, folderType, createFolder, spec) \
-	(tclIntPlatStubsPtr->fSpFindFolder)(vRefNum, folderType, createFolder, spec) /* 6 */
+#define FSpFindFolder \
+	(tclIntPlatStubsPtr->fSpFindFolder) /* 6 */
 #endif
 #ifndef GetGlobalMouse
-#define GetGlobalMouse(mouse) \
-	(tclIntPlatStubsPtr->getGlobalMouse)(mouse) /* 7 */
+#define GetGlobalMouse \
+	(tclIntPlatStubsPtr->getGlobalMouse) /* 7 */
 #endif
 #ifndef FSpGetDirectoryID
-#define FSpGetDirectoryID(spec, theDirID, isDirectory) \
-	(tclIntPlatStubsPtr->fSpGetDirectoryID)(spec, theDirID, isDirectory) /* 8 */
+#define FSpGetDirectoryID \
+	(tclIntPlatStubsPtr->fSpGetDirectoryID) /* 8 */
 #endif
 #ifndef FSpOpenResFileCompat
-#define FSpOpenResFileCompat(spec, permission) \
-	(tclIntPlatStubsPtr->fSpOpenResFileCompat)(spec, permission) /* 9 */
+#define FSpOpenResFileCompat \
+	(tclIntPlatStubsPtr->fSpOpenResFileCompat) /* 9 */
 #endif
 #ifndef FSpCreateResFileCompat
-#define FSpCreateResFileCompat(spec, creator, fileType, scriptTag) \
-	(tclIntPlatStubsPtr->fSpCreateResFileCompat)(spec, creator, fileType, scriptTag) /* 10 */
+#define FSpCreateResFileCompat \
+	(tclIntPlatStubsPtr->fSpCreateResFileCompat) /* 10 */
 #endif
 #ifndef FSpLocationFromPath
-#define FSpLocationFromPath(length, path, theSpec) \
-	(tclIntPlatStubsPtr->fSpLocationFromPath)(length, path, theSpec) /* 11 */
+#define FSpLocationFromPath \
+	(tclIntPlatStubsPtr->fSpLocationFromPath) /* 11 */
 #endif
 #ifndef FSpPathFromLocation
-#define FSpPathFromLocation(theSpec, length, fullPath) \
-	(tclIntPlatStubsPtr->fSpPathFromLocation)(theSpec, length, fullPath) /* 12 */
+#define FSpPathFromLocation \
+	(tclIntPlatStubsPtr->fSpPathFromLocation) /* 12 */
 #endif
 #ifndef TclMacExitHandler
-#define TclMacExitHandler() \
-	(tclIntPlatStubsPtr->tclMacExitHandler)() /* 13 */
+#define TclMacExitHandler \
+	(tclIntPlatStubsPtr->tclMacExitHandler) /* 13 */
 #endif
 #ifndef TclMacInitExitToShell
-#define TclMacInitExitToShell(usePatch) \
-	(tclIntPlatStubsPtr->tclMacInitExitToShell)(usePatch) /* 14 */
+#define TclMacInitExitToShell \
+	(tclIntPlatStubsPtr->tclMacInitExitToShell) /* 14 */
 #endif
 #ifndef TclMacInstallExitToShellPatch
-#define TclMacInstallExitToShellPatch(newProc) \
-	(tclIntPlatStubsPtr->tclMacInstallExitToShellPatch)(newProc) /* 15 */
+#define TclMacInstallExitToShellPatch \
+	(tclIntPlatStubsPtr->tclMacInstallExitToShellPatch) /* 15 */
 #endif
 #ifndef TclMacOSErrorToPosixError
-#define TclMacOSErrorToPosixError(error) \
-	(tclIntPlatStubsPtr->tclMacOSErrorToPosixError)(error) /* 16 */
+#define TclMacOSErrorToPosixError \
+	(tclIntPlatStubsPtr->tclMacOSErrorToPosixError) /* 16 */
 #endif
 #ifndef TclMacRemoveTimer
-#define TclMacRemoveTimer(timerToken) \
-	(tclIntPlatStubsPtr->tclMacRemoveTimer)(timerToken) /* 17 */
+#define TclMacRemoveTimer \
+	(tclIntPlatStubsPtr->tclMacRemoveTimer) /* 17 */
 #endif
 #ifndef TclMacStartTimer
-#define TclMacStartTimer(ms) \
-	(tclIntPlatStubsPtr->tclMacStartTimer)(ms) /* 18 */
+#define TclMacStartTimer \
+	(tclIntPlatStubsPtr->tclMacStartTimer) /* 18 */
 #endif
 #ifndef TclMacTimerExpired
-#define TclMacTimerExpired(timerToken) \
-	(tclIntPlatStubsPtr->tclMacTimerExpired)(timerToken) /* 19 */
+#define TclMacTimerExpired \
+	(tclIntPlatStubsPtr->tclMacTimerExpired) /* 19 */
 #endif
 #ifndef TclMacRegisterResourceFork
-#define TclMacRegisterResourceFork(fileRef, tokenPtr, insert) \
-	(tclIntPlatStubsPtr->tclMacRegisterResourceFork)(fileRef, tokenPtr, insert) /* 20 */
+#define TclMacRegisterResourceFork \
+	(tclIntPlatStubsPtr->tclMacRegisterResourceFork) /* 20 */
 #endif
 #ifndef TclMacUnRegisterResourceFork
-#define TclMacUnRegisterResourceFork(tokenPtr, resultPtr) \
-	(tclIntPlatStubsPtr->tclMacUnRegisterResourceFork)(tokenPtr, resultPtr) /* 21 */
+#define TclMacUnRegisterResourceFork \
+	(tclIntPlatStubsPtr->tclMacUnRegisterResourceFork) /* 21 */
 #endif
 #ifndef TclMacCreateEnv
-#define TclMacCreateEnv() \
-	(tclIntPlatStubsPtr->tclMacCreateEnv)() /* 22 */
+#define TclMacCreateEnv \
+	(tclIntPlatStubsPtr->tclMacCreateEnv) /* 22 */
 #endif
 #ifndef TclMacFOpenHack
-#define TclMacFOpenHack(path, mode) \
-	(tclIntPlatStubsPtr->tclMacFOpenHack)(path, mode) /* 23 */
+#define TclMacFOpenHack \
+	(tclIntPlatStubsPtr->tclMacFOpenHack) /* 23 */
 #endif
 /* Slot 24 is reserved */
 #ifndef TclMacChmod
-#define TclMacChmod(path, mode) \
-	(tclIntPlatStubsPtr->tclMacChmod)(path, mode) /* 25 */
+#define TclMacChmod \
+	(tclIntPlatStubsPtr->tclMacChmod) /* 25 */
 #endif
 #endif /* MAC_TCL */
 

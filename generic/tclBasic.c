@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.1.2.11 1999/03/11 01:50:28 stanton Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.1.2.12 1999/03/30 01:55:50 redman Exp $
  */
 
 #include "tclInt.h"
@@ -31,6 +31,8 @@ static void		ProcessUnexpectedResult _ANSI_ARGS_((
 static void		RecordTracebackInfo _ANSI_ARGS_((
 			    Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    int numSrcBytes));
+
+extern TclStubs tclStubs;
 
 /*
  * The following structure defines the commands in the Tcl core.
@@ -236,35 +238,7 @@ static CmdInfo builtInCmds[] = {
     {NULL,		(Tcl_CmdProc *) NULL,	(Tcl_ObjCmdProc *) NULL,
         (CompileProc *) NULL,		0}
 };
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_InitStubs --
- *
- *	Ensures that the correct version of Tcl is loaded.  This is
- *	a trivial implementation of the stubs library initializer
- *	that will get called if a stubs aware extension is directly
- *	linked with the Tcl library.
- *
- * Results:
- *	The actual version of Tcl that satisfies the request, or
- *	NULL to indicate that an error occurred.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
 
-char *
-Tcl_InitStubs (interp, version, exact)
-    Tcl_Interp *interp;
-    char *version;
-    int exact;
-{
-    return Tcl_PkgRequire(interp, "Tcl", version, exact);
-}
 
 /*
  *----------------------------------------------------------------------
@@ -428,7 +402,7 @@ Tcl_CreateInterp()
      * Initialise the stub table pointer.
      */
 
-    iPtr->stubTable = tclStubsPtr;
+    iPtr->stubTable = &tclStubs;
     
     /*
      * Create the core commands. Do it here, rather than calling
@@ -563,7 +537,7 @@ Tcl_CreateInterp()
      * Register Tcl's version number.
      */
 
-    Tcl_PkgProvideEx(interp, "Tcl", TCL_VERSION, (ClientData) tclStubsPtr);
+    Tcl_PkgProvideEx(interp, "Tcl", TCL_VERSION, (ClientData) &tclStubs);
     
     return interp;
 }

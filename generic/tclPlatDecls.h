@@ -6,7 +6,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclPlatDecls.h,v 1.3.2.3 1999/03/14 18:56:10 stanton Exp $
+ * RCS: @(#) $Id: tclPlatDecls.h,v 1.3.2.4 1999/03/30 01:55:54 redman Exp $
  */
 
 #ifndef _TCLPLATDECLS
@@ -78,40 +78,40 @@ extern TclPlatStubs *tclPlatStubsPtr;
 
 #ifdef MAC_TCL
 #ifndef Tcl_MacSetEventProc
-#define Tcl_MacSetEventProc(procPtr) \
-	(tclPlatStubsPtr->tcl_MacSetEventProc)(procPtr) /* 0 */
+#define Tcl_MacSetEventProc \
+	(tclPlatStubsPtr->tcl_MacSetEventProc) /* 0 */
 #endif
 #ifndef Tcl_MacConvertTextResource
-#define Tcl_MacConvertTextResource(resource) \
-	(tclPlatStubsPtr->tcl_MacConvertTextResource)(resource) /* 1 */
+#define Tcl_MacConvertTextResource \
+	(tclPlatStubsPtr->tcl_MacConvertTextResource) /* 1 */
 #endif
 #ifndef Tcl_MacEvalResource
-#define Tcl_MacEvalResource(interp, resourceName, resourceNumber, fileName) \
-	(tclPlatStubsPtr->tcl_MacEvalResource)(interp, resourceName, resourceNumber, fileName) /* 2 */
+#define Tcl_MacEvalResource \
+	(tclPlatStubsPtr->tcl_MacEvalResource) /* 2 */
 #endif
 #ifndef Tcl_MacFindResource
-#define Tcl_MacFindResource(interp, resourceType, resourceName, resourceNumber, resFileRef, releaseIt) \
-	(tclPlatStubsPtr->tcl_MacFindResource)(interp, resourceType, resourceName, resourceNumber, resFileRef, releaseIt) /* 3 */
+#define Tcl_MacFindResource \
+	(tclPlatStubsPtr->tcl_MacFindResource) /* 3 */
 #endif
 #ifndef Tcl_GetOSTypeFromObj
-#define Tcl_GetOSTypeFromObj(interp, objPtr, osTypePtr) \
-	(tclPlatStubsPtr->tcl_GetOSTypeFromObj)(interp, objPtr, osTypePtr) /* 4 */
+#define Tcl_GetOSTypeFromObj \
+	(tclPlatStubsPtr->tcl_GetOSTypeFromObj) /* 4 */
 #endif
 #ifndef Tcl_SetOSTypeObj
-#define Tcl_SetOSTypeObj(objPtr, osType) \
-	(tclPlatStubsPtr->tcl_SetOSTypeObj)(objPtr, osType) /* 5 */
+#define Tcl_SetOSTypeObj \
+	(tclPlatStubsPtr->tcl_SetOSTypeObj) /* 5 */
 #endif
 #ifndef Tcl_NewOSTypeObj
-#define Tcl_NewOSTypeObj(osType) \
-	(tclPlatStubsPtr->tcl_NewOSTypeObj)(osType) /* 6 */
+#define Tcl_NewOSTypeObj \
+	(tclPlatStubsPtr->tcl_NewOSTypeObj) /* 6 */
 #endif
 #ifndef strncasecmp
-#define strncasecmp(s1, s2, n) \
-	(tclPlatStubsPtr->strncasecmp)(s1, s2, n) /* 7 */
+#define strncasecmp \
+	(tclPlatStubsPtr->strncasecmp) /* 7 */
 #endif
 #ifndef strcasecmp
-#define strcasecmp(s1, s2) \
-	(tclPlatStubsPtr->strcasecmp)(s1, s2) /* 8 */
+#define strcasecmp \
+	(tclPlatStubsPtr->strcasecmp) /* 8 */
 #endif
 #endif /* MAC_TCL */
 

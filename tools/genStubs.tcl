@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: genStubs.tcl,v 1.2.2.2 1999/03/25 23:29:19 stanton Exp $
+# RCS: @(#) $Id: genStubs.tcl,v 1.2.2.3 1999/03/30 01:55:55 redman Exp $
 
 namespace eval genStubs {
     # libraryName --
@@ -421,7 +421,7 @@ proc genStubs::makeMacro {name decl index} {
 	    append argList ")"
 	}
     }
-    append text $argList " \\\n\t(${name}StubsPtr->$lfname)$argList"
+    append text " \\\n\t(${name}StubsPtr->$lfname)"
     append text " /* $index */\n#endif\n"
     return $text
 }
@@ -850,7 +850,6 @@ proc genStubs::init {} {
     foreach name [lsort [array names interfaces]] {
 	puts "Emitting $name"
 	emitHeader $name
-	emitStubs $name
     }
 
     emitInits
