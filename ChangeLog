@@ -1,3 +1,8 @@
+2001-09-28  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* doc/FindExec.3: added a comment not to change the working
+	directory before calling Tcl_GetNameOfExecutable [Bug 219215] 
+
 2001-09-28  Andreas Kupries  <andreas_kupries@users.sourceforge.net> 
 
 	* generic/tclIO.c: added (on behalf of Kevin Kenny

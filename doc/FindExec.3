@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: FindExec.3,v 1.4 2000/03/03 02:57:37 hobbs Exp $
+'\" RCS: @(#) $Id: FindExec.3,v 1.4.2.1 2001/09/28 17:53:48 msofer Exp $
 '\" 
 .so man.macros
 .TH Tcl_FindExecutable 3 8.1 Tcl "Tcl Library Procedures"
@@ -39,7 +39,9 @@ It is also returned by the \fBinfo nameofexecutable\fR command.
 .PP
 On UNIX platforms this procedure is typically invoked as the very
 first thing in the application's main program;  it must be passed
-\fIargv[0]\fR as its argument.  \fBTcl_FindExecutable\fR uses \fIargv0\fR
+\fIargv[0]\fR as its argument.  It is important not to change the
+working directory before the invocation.
+\fBTcl_FindExecutable\fR uses \fIargv0\fR
 along with the \fBPATH\fR environment variable to find the
 application's executable, if possible.  If it fails to find
 the binary, then future calls to \fBinfo nameofexecutable\fR
