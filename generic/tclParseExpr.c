@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParseExpr.c,v 1.23.2.2 2005/02/03 23:56:13 kennykb Exp $
+ * RCS: @(#) $Id: tclParseExpr.c,v 1.23.2.3 2005/02/03 23:56:39 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -1678,8 +1678,6 @@ GetLexeme(infoPtr)
 	    Tcl_DStringFree(&toParse);
 	    if (termPtr != startPtr) {
 		if (errno != 0) {
-		    fprintf( stderr, "errno = %d, doubleValue = %.17g\n",
-			     errno, doubleValue );
 		    if (interp != NULL) {
 			TclExprFloatError(interp, doubleValue);
 		    }
