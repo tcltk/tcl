@@ -1,5 +1,11 @@
 2001-07-17  Mo DeJong  <mdejong@redhat.com>
 
+	* win/tclWinFile.c (TclpReadlink): Add Cygwin specific definition
+	for the TclpReadlink function. This method implements reading of
+	symbolic links when build with Cygwin.
+
+2001-07-17  Mo DeJong  <mdejong@redhat.com>
+
 	* win/tclWinPort.h: Add Cygwin specific defines for environ
 	and timezone variables.
 
