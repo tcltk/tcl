@@ -1,5 +1,7 @@
 2002-10-04  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
+	* doc/binary.n: Doc improvements [Patch 616480]
+
 	* tests/fCmd.test, tests/winFCmd.test:
 	* tools/eolFix.tcl, tools/genStubs.tcl: [file exist] -> [file exists]
 	Thanks to David Welton.
