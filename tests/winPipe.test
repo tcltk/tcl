@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: winPipe.test,v 1.1.2.5 1999/03/11 18:50:21 hershey Exp $
+# RCS: @(#) $Id: winPipe.test,v 1.1.2.6 1999/03/12 22:32:38 hershey Exp $
 
 if {$tcl_platform(platform) != "windows"} {
     puts "skipping: Windows only tests..."
@@ -272,6 +272,7 @@ test winpipe-2.21 {16 bit comprehensive tests: read/write application} {nt} {
     set r
 } "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
 }
+file delete more
 
 test winpipe-4.1 {Tcl_WaitPid} {nt} {
     proc readResults {f} {
@@ -400,4 +401,3 @@ if {[catch {set env(TEMP) $env_temp}]} {
 file delete big little stdout stderr nothing echoArgs.tcl
 ::test::cleanupTests
 return
-

@@ -8,7 +8,7 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 #
-# RCS: @(#) $Id: pkgMkIndex.test,v 1.4.2.3 1999/03/12 19:51:31 hershey Exp $
+# RCS: @(#) $Id: pkgMkIndex.test,v 1.4.2.4 1999/03/12 22:32:38 hershey Exp $
 
 if {[lsearch [namespace children] ::test] == -1} {
     source [file join [pwd] [file dirname [info script]] defs.tcl]
@@ -347,6 +347,8 @@ if {[file exists $x]} {
 namespace delete pkgtest
 cd $::test::tmpDir
 if {[info exists removePkgDir]} {
+    # strange error deleting the pkg dir only once--needs be done twice!
+    catch {file delete -force $newPkgDir}
     catch {file delete -force $newPkgDir}
 }
 if {[info exists removePkg1Dir]} {
