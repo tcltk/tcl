@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.105 2004/06/10 17:11:02 vasiljevic Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.106 2004/07/11 21:13:27 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -2644,19 +2644,26 @@ Tcl_FSChdir(pathPtr)
 	 */
 
 	/*
-	 * The correct logic which performs the part below is
-	 * already part of the Tcl_FSGetCwd() call, so no need
-	 * to replicate it again. This will have a side effect
-	 * though. The private authoritative representation of
-	 * the current working directory stored in cwdPathPtr
-	 * in static memory will be out-of-sync with the real
-	 * OS-maintained value. The first call to Tcl_FSGetCwd
-	 * will however recalculate the private copy to match
-     * the OS-value so everything will work right.
-     * We leave the below as a reminder until it's proven ok.
+	 * If the filesystem in question has a getCwdProc, then the
+	 * correct logic which performs the part below is already part
+	 * of the Tcl_FSGetCwd() call, so no need to replicate it again.
+	 * This will have a side effect though.  The private
+	 * authoritative representation of the current working directory
+	 * stored in cwdPathPtr in static memory will be out-of-sync
+	 * with the real OS-maintained value.  The first call to
+	 * Tcl_FSGetCwd will however recalculate the private copy to
+	 * match the OS-value so everything will work right.
+	 * 
+	 * However, if there is no getCwdProc, then we _must_ update
+	 * our private storage of the cwd, since this is the only
+	 * opportunity to do that!
+	 * 
+	 * Note: We used to call this block of code irrespective of
+	 * whether there was a getCwdProc or not, but that led to
+	 * problems with threads.
 	 */
 
-	if (/* temporarily disabled */0 && retVal == 0) {
+	if (fsPtr->getCwdProc == NULL && retVal == 0) {
 	    /* 
 	     * Note that this normalized path may be different to what
 	     * we found above (or at least a different object), if the
