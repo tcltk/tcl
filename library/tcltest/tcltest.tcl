@@ -16,7 +16,7 @@
 # Contributions from Don Porter, NIST, 2002.  (not subject to US copyright)
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.tcl,v 1.76 2003/01/27 15:25:46 dgp Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.77 2003/02/06 16:29:19 dgp Exp $
 
 package require Tcl 8.3		;# uses [glob -directory]
 namespace eval tcltest {
@@ -24,7 +24,7 @@ namespace eval tcltest {
     # When the version number changes, be sure to update the pkgIndex.tcl file,
     # and the install directory in the Makefiles.  When the minor version
     # changes (new feature) be sure to update the man page as well.
-    variable Version 2.2.1
+    variable Version 2.2.2
 
     # Compatibility support for dumb variables defined in tcltest 1
     # Do not use these.  Call [package provide Tcl] and [info patchlevel]
@@ -230,19 +230,21 @@ namespace eval tcltest {
     # filesMade keeps track of such files created using the makeFile and
     # makeDirectory procedures.  filesExisted stores the names of
     # pre-existing files.
+    #
+    # Note that $filesExisted lists only those files that exist in
+    # the original [temporaryDirectory].
     Default filesMade {} AcceptList
     Default filesExisted {} AcceptList
-    variable FilesExistedFilled 0
     proc FillFilesExisted {} {
-	variable FilesExistedFilled
-	if {$FilesExistedFilled} {return}
 	variable filesExisted
 
 	# Save the names of files that already exist in the scratch directory.
 	foreach file [glob -nocomplain -directory [temporaryDirectory] *] {
 	    lappend filesExisted [file tail $file]
 	}
-	set FilesExistedFilled 1
+
+	# After successful filling, turn this into a no-op.
+	proc FillFilesExisted args {}
     }
 
     # Kept only for compatibility
@@ -337,19 +339,58 @@ namespace eval tcltest {
 	}
     }
 
+    variable ChannelsWeOpened; array set ChannelsWeOpened {}
     # output goes to stdout by default
     Default outputChannel stdout
     proc outputChannel { {filename ""} } {
 	variable outputChannel
+	variable ChannelsWeOpened
 
-	# Trigger auto-configuration of -outfile option, if needed.
-	# This is tricky because we have to trigger a trace on $debug
-	# so that traces attached to $outputFile are not disabled.
-	# We need them enabled to reflect changes back to outputChannel
-	set dummy [debug]
+	# This is very subtle and tricky, so let me try to explain.
+	# (Hopefully this longer comment will be clear when I come
+	# back in a few months, unlike its predecessor :) )
+	# 
+	# The [outputChannel] command (and underlying variable) have to
+	# be kept in sync with the [configure -outfile] configuration
+	# option ( and underlying variable Option(-outfile) ).  This is
+	# accomplished with a write trace on Option(-outfile) that will
+	# update [outputChannel] whenver a new value is written.  That
+	# much is easy.
+	#
+	# The trick is that in order to maintain compatibility with
+	# version 1 of tcltest, we must allow every configuration option
+	# to get its inital value from command line arguments.  This is
+	# accomplished by setting initial read traces on all the
+	# configuration options to parse the command line option the first
+	# time they are read.  These traces are cancelled whenever the
+	# program itself calls [configure].
+	# 
+	# OK, then so to support tcltest 1 compatibility, it seems we want
+	# to get the return from [outputFile] to trigger the read traces,
+	# just in case.
+	#
+	# BUT!  A little known feature of Tcl variable traces is that 
+	# traces are disabled during the handling of other traces.  So,
+	# if we trigger read traces on Option(-outfile) and that triggers
+	# command line parsing which turns around and sets an initial
+	# value for Option(-outfile) -- <whew!> -- the write trace that
+	# would keep [outputChannel] in sync with that new initial value
+	# would not fire!
+	#
+	# SO, finally, as a workaround, instead of triggering read traces
+	# by invoking [outputFile], we instead trigger the same set of
+	# read traces by invoking [debug].  Any command that reads a
+	# configuration option would do.  [debug] is just a handy one.
+	# The end result is that we support tcltest 1 compatibility and
+	# keep outputChannel and -outfile in sync in all cases.
+	debug
 
 	if {[llength [info level 0]] == 1} {
 	    return $outputChannel
+	}
+	if {[info exists ChannelsWeOpened($outputChannel)]} {
+	    close $outputChannel
+	    unset ChannelsWeOpened($outputChannel)
 	}
 	switch -exact -- $filename {
 	    stderr -
@@ -358,6 +399,21 @@ namespace eval tcltest {
 	    }
 	    default {
 		set outputChannel [open $filename a]
+		set ChannelsWeOpened($outputChannel) 1
+
+		# If we created the file in [temporaryDirectory], then
+		# [cleanupTests] will delete it, unless we claim it was
+		# already there.
+		set outdir [normalizePath [file dirname \
+			[file join [pwd] $filename]]]
+		if {[string equal $outdir [temporaryDirectory]]} {
+		    variable filesExisted
+		    FillFilesExisted
+		    set filename [file tail $filename]
+		    if {[lsearch -exact $filesExisted $filename] == -1} {
+			lappend filesExisted $filename
+		    }
+		}
 	    }
 	}
 	return $outputChannel
@@ -367,15 +423,18 @@ namespace eval tcltest {
     Default errorChannel stderr
     proc errorChannel { {filename ""} } {
 	variable errorChannel
+	variable ChannelsWeOpened
 
-	# Trigger auto-configuration of -errfile option, if needed.
-	# This is tricky because we have to trigger a trace on $debug
-	# so that traces attached to $outputFile are not disabled.
-	# We need them enabled to reflect changes back to outputChannel
-	set dummy [debug]
+	# This is subtle and tricky.  See the comment above in
+	# [outputChannel] for a detailed explanation.
+	debug
 
 	if {[llength [info level 0]] == 1} {
 	    return $errorChannel
+	}
+	if {[info exists ChannelsWeOpened($errorChannel)]} {
+	    close $errorChannel
+	    unset ChannelsWeOpened($errorChannel)
 	}
 	switch -exact -- $filename {
 	    stderr -
@@ -384,6 +443,21 @@ namespace eval tcltest {
 	    }
 	    default {
 		set errorChannel [open $filename a]
+		set ChannelsWeOpened($errorChannel) 1
+
+		# If we created the file in [temporaryDirectory], then
+		# [cleanupTests] will delete it, unless we claim it was
+		# already there.
+		set outdir [normalizePath [file dirname \
+			[file join [pwd] $filename]]]
+		if {[string equal $outdir [temporaryDirectory]]} {
+		    variable filesExisted
+		    FillFilesExisted
+		    set filename [file tail $filename]
+		    if {[lsearch -exact $filesExisted $filename] == -1} {
+			lappend filesExisted $filename
+		    }
+		}
 	    }
 	}
 	return $errorChannel
@@ -491,7 +565,7 @@ namespace eval tcltest {
 		}
 	    }
 	}
-	# One the traces are removed, this can become a no-op
+	# Once the traces are removed, this can become a no-op
 	proc RemoveAutoConfigureTraces {} {}
     }
 
