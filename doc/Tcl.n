@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Tcl.n,v 1.5 2002/10/10 16:11:01 dgp Exp $
+'\" RCS: @(#) $Id: Tcl.n,v 1.6 2002/11/10 17:22:35 kennykb Exp $
 '\"
 .so man.macros
 .TH Tcl n "8.1" Tcl "Tcl Built-In Commands"
@@ -190,6 +190,14 @@ processed entirely by the recursive call to the Tcl interpreter;
 no substitutions are performed before making the recursive
 call and no additional substitutions are performed on the result
 of the nested script.
+.LP
+Substitutions take place from left to right, and each substitution is
+evaluated completely before attempting to evaluate the next.  Thus, a
+sequence like
+.CS
+set y [set x 0][incr x][incr x]
+.CE
+will always set the variable \fIy\fR to the value, \fI012\fR.
 .IP [11]
 Substitutions do not affect the word boundaries of a command.
 For example, during variable substitution the entire value of
