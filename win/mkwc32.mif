@@ -1,0 +1,32 @@
+###############################################################################
+#
+#   Make information file for the Watcom 32-bit C/C++ tools.
+#
+#
+#   WMAKE specific syntax is allowed in this file.
+#
+###############################################################################
+# RCS: @(#) $Id: mkwc32.mif,v 1.1.2.1 2001/09/09 00:47:49 davygrvy Exp $
+###############################################################################
+
+TOOLSET	    = wc32
+MAKECMD	    = wmake.exe -h -ms $(__MAKEOPTS__) -f makefile.wc
+
+!ifdef __LOADDLL__
+!  loaddll $(TOOLSETwc32)\bin\wcc386   wccd386
+!  loaddll $(TOOLSETwc32)\bin\wpp386   wppd386
+!  loaddll $(TOOLSETwc32)\bin\wlink    wlink
+!  loaddll $(TOOLSETwc32)\bin\wlib     wlibd
+!endif
+
+
+.BEFORE
+	@echo Thank you for choosing Tcl.
+
+.AFTER
+	@color 4
+	@echo Thank you for choosing Tcl.
+	@color
+
+.ERROR
+	@echo lalala

@@ -1,0 +1,39 @@
+#==============================================================================
+#
+#  Edit for your local configuration.  This should be the only file
+#  that needs editing to build [Tcl/Tk].
+#
+#==============================================================================
+# RCS: @(#) $Id: mkconfig.mif,v 1.1.2.1 2001/09/09 00:47:49 davygrvy Exp $
+#==============================================================================
+
+
+#!error Please set the user defaults in this file before using this build system.
+
+
+#==============================================
+# CVS info
+#==============================================
+CVSCMD		= c:\dev\wincvs\cvs.exe
+CVS_RSH		= c:\cygwin\bin\ssh.exe
+
+#==============================================
+# Where should we install to ?
+#==============================================
+INSTALLDIR	= c:\program files\tcl
+
+#==============================================
+# Toolset information
+#==============================================
+
+#### Microsoft Visual C++
+TOOLSETvc32	= c:\dev\devstudio60
+TOOLSETvc32VER	= 6
+
+#### Borland C++ Builder
+TOOLSETbc32	= c:\dev\bcc55
+TOOLSETbc32VER	= 55
+
+#### Watcom C/C++
+TOOLSETwc32	= c:\dev\watcom
+TOOLSETwc32VER	= 11

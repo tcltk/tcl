@@ -1,0 +1,71 @@
+#==============================================================================
+#   The Tcl/Tk SuperDuty Win32 Common-Denominator Makefile Multiplexor for:
+#
+#	Microsoft NMAKE  v1.62+
+#	Borland MAKE     v5.2
+#	Watcom WMAKE     v11.0
+#
+#   Tool specific syntax is NOT allowed in this file.
+#
+#==============================================================================
+# RCS: @(#) $Id: makefile.win,v 1.1.2.1 2001/09/09 00:47:49 davygrvy Exp $
+#==============================================================================
+
+
+#==============================================
+# Within what context are we ?
+#==============================================
+
+!ifdef _NMAKE_VER
+!include "mkvc32.mif"	# Microsoft 32-bit Toolset
+!else
+!ifdef __LOADDLL__
+!ifdef __NT__
+!include "mkwc32.mif"	# Watcom 32-bit Toolset
+!else
+!ifdef __MSDOS__
+!include "mkwc16.mif"	# Watcom 16-bit Toolset
+!endif
+!endif
+!else
+!ifdef __MAKE__
+!include "mkbc32.mif"	# Borland 32-bit Toolset
+!else
+!error Unknown make tool.  Toolset cannot be determined.
+!endif
+!endif
+!endif
+
+#==============================================
+#  Load the user info.
+#==============================================
+
+!include "mkconfig.mif"
+
+#==============================================
+#  Targets.
+#==============================================
+
+all: .SYMBOLIC
+	@echo doing all target
+
+nonthreadedcore:
+	$(MAKECMD) core
+
+threadedcore:
+	$(MAKECMD) TCL_THREADS=1 core
+
+minicore:
+	$(MAKECMD) TCL_GENERIC_ONLY=1 core
+
+utils:
+	$(MAKECMD) dde
+	$(MAKECMD) registry
+
+docs:
+	$(MAKECMD) winhelp
+
+cvsupdate:
+	cd ..
+	set CVS_RSH=$(CVS_RSH)
+	$(CVSCMD) update
