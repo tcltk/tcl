@@ -8,9 +8,10 @@
 #	on it.  If your code does rely on this package you
 #	may directly incorporate this code into your application.
 #
-# RCS: @(#) $Id: optparse.tcl,v 1.5 2000/12/11 04:17:39 dgp Exp $
+# RCS: @(#) $Id: optparse.tcl,v 1.6 2001/08/09 01:06:42 dgp Exp $
 
-package provide opt 0.4.2
+package require Tcl 8
+package provide opt 0.4.3
 
 namespace eval ::tcl {
 

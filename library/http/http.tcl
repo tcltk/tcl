@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and
 # redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: http.tcl,v 1.35 2001/08/02 04:21:16 dgp Exp $
+# RCS: @(#) $Id: http.tcl,v 1.36 2001/08/09 01:06:42 dgp Exp $
 
 # Rough version history:
 # 1.0	Old http_get interface
@@ -20,7 +20,8 @@
 #	This version also cleans up error cases and eliminates the
 #	"ioerror" status in favor of raising an error
 
-package provide http 2.3.1
+package require Tcl 8.2
+package provide http 2.3.2
 
 namespace eval http {
     variable http
@@ -28,7 +29,7 @@ namespace eval http {
 	-accept */*
 	-proxyhost {}
 	-proxyport {}
-	-useragent {Tcl http client package 2.3.1}
+	-useragent {Tcl http client package 2.3.2}
 	-proxyfilter http::ProxyRequired
     }
 
