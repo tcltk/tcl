@@ -12,15 +12,15 @@
 # Note that after running these tests, entries will be left behind in the
 # message catalogs for locales foo, foo_BAR, and foo_BAR_baz.
 #
-# RCS: @(#) $Id: msgcat.test,v 1.11.2.1 2003/03/26 22:56:09 dgp Exp $
+# RCS: @(#) $Id: msgcat.test,v 1.11.2.2 2004/08/13 21:45:16 dgp Exp $
 
 package require Tcl 8.2
 if {[catch {package require tcltest 2}]} {
     puts stderr "Skipping tests in [info script].  tcltest 2 required."
     return
 }
-if {[catch {package require msgcat 1.3}]} {
-    puts stderr "Skipping tests in [info script].  No msgcat 1.3 found to test."
+if {[catch {package require msgcat 1.3.3}]} {
+    puts stderr "Skipping tests in [info script].  No msgcat 1.3.3 found to test."
     return
 }
 
@@ -164,6 +164,22 @@ namespace eval ::msgcat::test {
     } -body {
 	mcpreferences
     } -result {en_us_funky en_us en}
+
+    test msgcat-1.12 {mclocale set, reject evil input} -setup {
+	variable locale [mclocale]
+    } -cleanup {
+	mclocale $locale
+    } -body {
+	mclocale /path/to/evil/code
+    } -returnCodes error -match glob -result {invalid newLocale value *}
+
+    test msgcat-1.13 {mclocale set, reject evil input} -setup {
+	variable locale [mclocale]
+    } -cleanup {
+	mclocale $locale
+    } -body {
+	mclocale looks/ok/../../../../but/is/path/to/evil/code
+    } -returnCodes error -match glob -result {invalid newLocale value *}
 
     # Tests msgcat-2.*: [mcset], [mcmset], namespace partitioning
 
