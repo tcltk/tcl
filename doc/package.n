@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: package.n,v 1.6 2002/01/27 17:35:06 dgp Exp $
+'\" RCS: @(#) $Id: package.n,v 1.7 2004/05/30 15:07:29 dkf Exp $
 '\" 
 .so man.macros
 .TH package n 7.5 Tcl "Tcl Built-In Commands"
@@ -90,7 +90,9 @@ provided by a previous \fBpackage provide\fR command.
 If the \fIversion\fR argument is omitted, then the command
 returns the version number that is currently provided, or an
 empty string if no \fBpackage provide\fR command has been
-invoked for \fIpackage\fR in this interpreter.
+invoked for \fIpackage\fR in this interpreter.  By convention, package
+names starting with "app-" are reserved for applications that are
+being managed with the package versioning subsystem.
 .TP
 \fBpackage require \fR?\fB\-exact\fR? \fIpackage \fR?\fIversion\fR?
 This command is typically invoked by Tcl code that wishes to use
@@ -161,7 +163,6 @@ Returns 1 if scripts written for \fIversion2\fR will work unchanged
 with \fIversion1\fR (i.e. \fIversion1\fR is equal to or greater
 than \fIversion2\fR and they both have the same major version
 number), 0 otherwise.
-
 .SH "VERSION NUMBERS"
 .PP
 Version numbers consist of one or more decimal numbers separated
@@ -181,7 +182,6 @@ work unchanged under versions 2.3.2, 2.4, and 2.5.1.
 Changes in the major version number signify incompatible changes:
 if code is written to use version 2.1 of a package, it is not guaranteed
 to work unmodified with either version 1.7.3 or version 3.1.
-
 .SH "PACKAGE INDICES"
 .PP
 The recommended way to use packages in Tcl is to invoke \fBpackage require\fR
@@ -190,6 +190,31 @@ and \fBpackage provide\fR commands in scripts, and use the procedure
 Once you've done this, packages will be loaded automatically
 in response to \fBpackage require\fR commands.
 See the documentation for \fBpkg_mkIndex\fR for details.
+.SH EXAMPLES
+To state that a Tcl script requires the Tk and http packages, put this
+at the top of the script:
+.CS
+\fBpackage require\fR Tk
+\fBpackage require\fR http
+.CE
+.PP
+To test to see if the Snack package is available and load if it is
+(often useful for optional enhancements to programs where the loss of
+the functionality is not critical) do this:
+.CS
+if {[catch {\fBpackage require\fR Snack}]} {
+    # We have the package, configure the app to use it
+} else {
+    # Set up a dummy interface to work around the absence
+}
+.CE
+.PP
+When writing a package implementation, you should put the following at
+the \fIbottom\fR of your library script so it is only called once the
+package has been successfully set up:
+.CS
+\fBpackage provide\fR foobar 1.0
+.CE
 
 .SH "SEE ALSO"
 msgcat(n), packagens(n), pkgMkIndex(n)
