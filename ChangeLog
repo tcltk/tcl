@@ -1,3 +1,17 @@
+2002-12-04  David Gravereaux  <davygrvy@pobox.com>
+
+	* win/tclWinPipe.c (Tcl_WaitPid):  When a process exits with an
+	exception, pass this notice on to the caller with a SIG* code
+	rather than truncating the exit code and missing the meaning.
+	This allows TclCleanupChildren() to report "CHILDKILLED".
+
+	This has a different behavior than unix in that closing the
+	read pipe to a process sends the SIGPIPE signal which is
+	returned as a SIGPIPE exit status.  On windows, we send the
+	process a CTRL_BREAK_EVENT and get back a CONTROL_C_EXIT which
+	is documented to mean a SIGINT which seems wrong as a system,
+	but is the correct exit status.
+
 2002-12-04  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* generic/tclIOUtil.c: fix to redirected 'load' in virtual
@@ -79,7 +93,7 @@
 	[Patch 561305 561301]
 
 	2) Revamps how the socket message handler thread is brought
-	up and down to allows for cleaner exits without the use of
+	up and down to allow for cleaner exits without the use of
 	TerminateThread().  TerminateThread is evil.  No attempt has
 	been made to resolve [Bug 593810] which may need a new
 	channel driver version for adding a registering function
