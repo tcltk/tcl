@@ -1,3 +1,7 @@
+2004-09-02  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* doc/lsearch.n: Clarified meaning of -dictionary. [Bug 759545]
+
 2004-09-02  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* win/makefile.vc: clock.tcl needs to be installed.
