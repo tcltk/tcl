@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.39 1999/01/29 00:32:14 rjohnson Exp $
+RCS: @(#) $Id: changes,v 1.40 1999/02/02 23:01:41 stanton Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -3697,3 +3697,10 @@ Thanks to Kevin Kenny for this fix.  (SS)
 empty string on static apps.  It now always returns ".sl".  (RJ)
 
 1/28/99 (configure change) Now support -pipe option on gcc.  (RJ)
+
+2/2/99 (bug fix) Fixed initialization problem on Windows where no
+searching for init.tcl would be performed if the registry keys were
+missing.  (stanton)
+
+2/2/99 (bug fix) Added support for HKEY_PERFORMANCE_DATA and
+HKEY_DYN_DATA keys in the "registry" command. (stanton)

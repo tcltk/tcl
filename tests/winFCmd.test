@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: winFCmd.test,v 1.2 1998/09/14 18:40:15 stanton Exp $
+# RCS: @(#) $Id: winFCmd.test,v 1.3 1999/02/02 23:01:42 stanton Exp $
 #
 
 if {[string compare test [info procs test]] == 1} then {source defs}
@@ -733,8 +733,8 @@ test winFCmd-7.18 {TraverseWinTree: recurse on files: several files and dir} {
     createfile td1/tf3
     createfile td1/tf4
     testfile cpdir td1 td2
-    glob td2/*
-} {td2/tf1 td2/tf2 td2/td2 td2/tf3 td2/tf4}
+    lsort [glob td2/*]
+} {td2/td2 td2/tf1 td2/tf2 td2/tf3 td2/tf4}
 test winFCmd-7.19 {TraverseWinTree: call TraversalCopy: DOTREE_POSTD} {
     cleanup
     file mkdir td1

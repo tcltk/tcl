@@ -9,7 +9,7 @@
 #
 # Copyright (c) 1997 by Sun Microsystems, Inc.  All rights reserved.
 #
-# RCS: @(#) $Id: registry.test,v 1.3 1998/11/02 23:04:14 stanton Exp $
+# RCS: @(#) $Id: registry.test,v 1.4 1999/02/02 23:01:42 stanton Exp $
 
 if {$tcl_platform(platform) != "windows"} {
     return
@@ -115,7 +115,7 @@ test registry-1.23 {argument parsing for registry command} {
 
 test registry-2.1 {DeleteKey: bad key} {
     list [catch {registry delete foo} msg] $msg
-} {1 {bad root name "foo": must be HKEY_LOCAL_MACHINE, HKEY_USERS, HKEY_CLASSES_ROOT, HKEY_CURRENT_USER, or HKEY_CURRENT_CONFIG}}
+} {1 {bad root name "foo": must be HKEY_LOCAL_MACHINE, HKEY_USERS, HKEY_CLASSES_ROOT, HKEY_CURRENT_USER, HKEY_CURRENT_CONFIG, HKEY_PERFORMANCE_DATA, or HKEY_DYN_DATA}}
 test registry-2.2 {DeleteKey: bad key} {
     list [catch {registry delete HKEY_CLASSES_ROOT} msg] $msg
 } {1 {bad key: cannot delete root keys}}
@@ -459,19 +459,19 @@ test registry-9.2 {ParseKeyName: bad keys} {
 } {1 {bad key "\foobar": must start with a valid root}}
 test registry-9.3 {ParseKeyName: bad keys} {
     list [catch {registry values \\\\} msg] $msg
-} {1 {ambiguous root name "": must be HKEY_LOCAL_MACHINE, HKEY_USERS, HKEY_CLASSES_ROOT, HKEY_CURRENT_USER, or HKEY_CURRENT_CONFIG}}
+} {1 {ambiguous root name "": must be HKEY_LOCAL_MACHINE, HKEY_USERS, HKEY_CLASSES_ROOT, HKEY_CURRENT_USER, HKEY_CURRENT_CONFIG, HKEY_PERFORMANCE_DATA, or HKEY_DYN_DATA}}
 test registry-9.4 {ParseKeyName: bad keys} {
     list [catch {registry values \\\\\\} msg] $msg
-} {1 {ambiguous root name "": must be HKEY_LOCAL_MACHINE, HKEY_USERS, HKEY_CLASSES_ROOT, HKEY_CURRENT_USER, or HKEY_CURRENT_CONFIG}}
+} {1 {ambiguous root name "": must be HKEY_LOCAL_MACHINE, HKEY_USERS, HKEY_CLASSES_ROOT, HKEY_CURRENT_USER, HKEY_CURRENT_CONFIG, HKEY_PERFORMANCE_DATA, or HKEY_DYN_DATA}}
 test registry-9.5 {ParseKeyName: bad keys} {
     list [catch {registry values \\\\\\HKEY_CLASSES_ROOT} msg] $msg
 } {1 {unable to open key: The network address is invalid.}}
 test registry-9.6 {ParseKeyName: bad keys} {
     list [catch {registry values \\\\gaspode} msg] $msg
-} {1 {ambiguous root name "": must be HKEY_LOCAL_MACHINE, HKEY_USERS, HKEY_CLASSES_ROOT, HKEY_CURRENT_USER, or HKEY_CURRENT_CONFIG}}
+} {1 {ambiguous root name "": must be HKEY_LOCAL_MACHINE, HKEY_USERS, HKEY_CLASSES_ROOT, HKEY_CURRENT_USER, HKEY_CURRENT_CONFIG, HKEY_PERFORMANCE_DATA, or HKEY_DYN_DATA}}
 test registry-9.7 {ParseKeyName: bad keys} {
     list [catch {registry values foobar} msg] $msg
-} {1 {bad root name "foobar": must be HKEY_LOCAL_MACHINE, HKEY_USERS, HKEY_CLASSES_ROOT, HKEY_CURRENT_USER, or HKEY_CURRENT_CONFIG}}
+} {1 {bad root name "foobar": must be HKEY_LOCAL_MACHINE, HKEY_USERS, HKEY_CLASSES_ROOT, HKEY_CURRENT_USER, HKEY_CURRENT_CONFIG, HKEY_PERFORMANCE_DATA, or HKEY_DYN_DATA}}
 test registry-9.8 {ParseKeyName: null keys} {
     list [catch {registry delete HKEY_CLASSES_ROOT\\} msg] $msg
 } {1 {bad key: cannot delete root keys}}
