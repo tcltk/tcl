@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.3.2.13 1999/04/02 23:44:53 stanton Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.3.2.14 1999/04/05 22:20:27 rjohnson Exp $
 
 library tcl
 
@@ -1208,6 +1208,9 @@ declare 354 generic {
 declare 355 generic {
     Tcl_UniChar * Tcl_UtfToUniCharDString(CONST char *string, int length, \
 	    Tcl_DString *dsPtr)
+}
+declare 356 generic {
+    Tcl_RegExp	Tcl_GetRegExpFromObj(Tcl_Interp *interp, Tcl_Obj *patObj, int flags)
 }
 
 ##############################################################################

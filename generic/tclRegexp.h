@@ -27,13 +27,13 @@
  * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * 
- * Copyright (c) 1998 by Scriptics Corporation.
  * Copyright (c) 1998 by Sun Microsystems, Inc.
+ * Copyright (c) 1998-1999 by Scriptics Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclRegexp.h,v 1.1.2.4 1998/11/11 01:44:54 stanton Exp $
+ * RCS: @(#) $Id: tclRegexp.h,v 1.1.2.5 1999/04/05 22:20:31 rjohnson Exp $
  */
 
 #ifndef _TCLREGEXP
@@ -70,8 +70,6 @@ typedef struct TclRegexp {
  * Functions exported for use within the rest of Tcl.
  */
 
-EXTERN Tcl_RegExp	TclRegCompObj _ANSI_ARGS_((Tcl_Interp *interp,
-			    Tcl_Obj *patObj, int flags));
 EXTERN int		TclRegAbout _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_RegExp re));
 EXTERN VOID		TclRegXflags _ANSI_ARGS_((char *string, int length,

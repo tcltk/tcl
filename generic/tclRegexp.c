@@ -4,13 +4,13 @@
  *	This file contains the public interfaces to the Tcl regular
  *	expression mechanism.
  *
- * Copyright (c) 1998 by Scriptics Corporation.
  * Copyright (c) 1998 by Sun Microsystems, Inc.
+ * Copyright (c) 1998-1999 by Scriptics Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclRegexp.c,v 1.1.2.7 1999/04/02 23:44:57 stanton Exp $
+ * RCS: @(#) $Id: tclRegexp.c,v 1.1.2.8 1999/04/05 22:20:30 rjohnson Exp $
  */
 
 #include "tclInt.h"
@@ -204,7 +204,7 @@ Tcl_RegExpExec(interp, re, string, start)
     Tcl_Interp *interp;		/* Interpreter to use for error reporting. */
     Tcl_RegExp re;		/* Compiled regular expression;  must have
 				 * been returned by previous call to
-				 * Tcl_RegExpCompile or TclRegCompObj. */
+				 * Tcl_GetRegExpFromObj. */
     CONST char *string;		/* String against which to match re. */
     CONST char *start;		/* If string is part of a larger string,
 				 * this identifies beginning of larger
@@ -309,8 +309,7 @@ int
 TclRegExpExecUniChar(interp, re, wString, numChars, nmatches, flags)
     Tcl_Interp *interp;		/* Interpreter to use for error reporting. */
     Tcl_RegExp re;		/* Compiled regular expression; returned by
-				 * a previous call to Tcl_RegExpCompile() or
-				 * TclRegCompObj(). */
+				 * a previous call to Tcl_GetRegExpFromObj */
     CONST Tcl_UniChar *wString;	/* String against which to match re. */
     int numChars;		/* Length of string in Tcl_UniChars (must
 				 * be >= 0). */
@@ -451,7 +450,7 @@ TclRegExpMatchObj(interp, string, patObj)
 {
     Tcl_RegExp re;
 
-    re = TclRegCompObj(interp, patObj, REG_ADVANCED);
+    re = Tcl_GetRegExpFromObj(interp, patObj, REG_ADVANCED);
     if (re == NULL) {
 	return -1;
     }
@@ -461,7 +460,7 @@ TclRegExpMatchObj(interp, string, patObj)
 /*
  *----------------------------------------------------------------------
  *
- * TclRegCompObj --
+ * Tcl_GetRegExpFromObj --
  *
  *	Compile a regular expression into a form suitable for fast
  *	matching.  This procedure caches the result in a Tcl_Obj.
@@ -479,7 +478,7 @@ TclRegExpMatchObj(interp, string, patObj)
  */
 
 Tcl_RegExp
-TclRegCompObj(interp, objPtr, flags)
+Tcl_GetRegExpFromObj(interp, objPtr, flags)
     Tcl_Interp *interp;		/* For use in error reporting. */
     Tcl_Obj *objPtr;		/* Object whose string rep contains regular
 				 * expression pattern.  Internal rep will be
@@ -712,7 +711,7 @@ SetRegexpFromAny(interp, objPtr)
     Tcl_Interp *interp;		/* Used for error reporting if not NULL. */
     Tcl_Obj *objPtr;		/* The object to convert. */
 {
-    if (TclRegCompObj(interp, objPtr, REG_ADVANCED) == NULL) {
+    if (Tcl_GetRegExpFromObj(interp, objPtr, REG_ADVANCED) == NULL) {
 	return TCL_ERROR;
     }
     return TCL_OK;

@@ -5,11 +5,12 @@
  *	native and network form.
  *
  * Copyright (c) 1995-1998 Sun Microsystems, Inc.
+ * Copyright (c) 1998-1999 by Scriptics Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.1.2.10 1999/03/30 23:56:18 stanton Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.1.2.11 1999/04/05 22:20:30 rjohnson Exp $
  */
 
 #include "tclInt.h"
@@ -176,7 +177,7 @@ ExtractWinRoot(path, resultPtr, offset)
 	FileNameInit();
     }
 
-    re = TclRegCompObj(NULL, winRootPatternPtr, REG_ADVANCED);
+    re = Tcl_GetRegExpFromObj(NULL, winRootPatternPtr, REG_ADVANCED);
 
     /*
      * Match the root portion of a Windows path name.
@@ -261,7 +262,7 @@ Tcl_GetPathType(path)
 		if (!initialized) {
 		    FileNameInit();
 		}
-		re = TclRegCompObj(NULL, macRootPatternPtr, REG_ADVANCED);
+		re = Tcl_GetRegExpFromObj(NULL, macRootPatternPtr, REG_ADVANCED);
 
 		if (!Tcl_RegExpExec(NULL, re, path, path)) {
 		    type = TCL_PATH_RELATIVE;
@@ -287,7 +288,7 @@ Tcl_GetPathType(path)
 		if (!initialized) {
 		    FileNameInit();
 		}
-		re = TclRegCompObj(NULL, winRootPatternPtr, REG_ADVANCED);
+		re = Tcl_GetRegExpFromObj(NULL, winRootPatternPtr, REG_ADVANCED);
 
 		if (Tcl_RegExpExec(NULL, re, path, path)) {
 		    char *drive, *dummy, *unixRoot, *lastSlash;
@@ -571,7 +572,7 @@ SplitMacPath(path, bufPtr)
      */
 
     i = 0;			/* Needed only to prevent gcc warnings. */
-    re = TclRegCompObj(NULL, macRootPatternPtr, REG_ADVANCED);
+    re = Tcl_GetRegExpFromObj(NULL, macRootPatternPtr, REG_ADVANCED);
 
     if (Tcl_RegExpExec(NULL, re, path, path) == 1) {
 	char *start, *end;
