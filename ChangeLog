@@ -1,3 +1,9 @@
+2003-09-20  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* tests/expr.test (expr-23.4): Prevented accidental wrapping round
+	of exponential operation; it isn't portable, and not what I
+	intended to test either. [Bug 808244]
+
 2003-09-19  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclExecute.c: adding (DE)CACHE_STACK_INFO() pairs to
