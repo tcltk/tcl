@@ -1,3 +1,18 @@
+2003-02-20  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclEncoding.c (LoadTableEncoding):
+	* library/encoding/cp932.enc:      Correct jis round-trip encoding
+	* library/encoding/euc-jp.enc:     by adding 'R' type to .enc files.
+	* library/encoding/iso2022-jp.enc: [Patch #689341] (koboyasi, taguchi)
+	* library/encoding/jis0208.enc:
+	* library/encoding/shiftjis.enc:
+	* tests/encoding.test:
+
+	* unix/tclUnixChan.c (Tcl_MakeTcpClientChannel): add
+	MakeTcpClientChannelMode that takes actual mode flags to avoid
+	hang on OS X (may be OS X bug, but patch works x-plat).
+	[Bug #689835] (steffen)
+
 2003-02-20  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* doc/regsub.n: Typo fix [Bug #688943]
