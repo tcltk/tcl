@@ -1,3 +1,8 @@
+2000-08-10  David Gravereaux <davygrvy@ajubasolutions.com>
+
+	* generic/tclObj.c: r1.15 accidentally changed a global mutex
+	name tclObjMutex to ObjMutex.  Put the correct name back.
+
 2000-08-07  Eric Melski  <ericm@ajubasolutions.com>
 
 	* tests/indexObj.test: Added tests using the [testwrongnumargs]
