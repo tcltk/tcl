@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: ioCmd.test,v 1.14 2002/07/04 15:46:55 andreas_kupries Exp $
+# RCS: @(#) $Id: ioCmd.test,v 1.15 2002/07/10 11:56:44 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -21,8 +21,6 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 
 removeFile test1
 removeFile pipe
-
-set executable [list [info nameofexecutable]]
 
 test iocmd-1.1 {puts command} {
    list [catch {puts} msg] $msg

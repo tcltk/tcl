@@ -6,7 +6,7 @@
 # Copyright (c) 2000 by Ajuba Solutions
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.test,v 1.30 2002/07/03 19:40:31 dgp Exp $
+# RCS: @(#) $Id: tcltest.test,v 1.31 2002/07/10 11:56:45 dgp Exp $
 
 # Note that there are several places where the value of 
 # tcltest::currentFailure is stored/reset in the -setup/-cleanup
@@ -52,17 +52,19 @@ makeFile {
 } test.tcl
 
 cd [temporaryDirectory]
+testConstraint exec [llength [info commands exec]]
 # test -help
-test tcltest-1.1 {tcltest -help} {unixOrPc} {
+# Child processes because -help [exit]s.
+test tcltest-1.1 {tcltest -help} {exec} {
     set result [catch {exec [interpreter] test.tcl -help} msg]
     set result [catch {runCmd $cmd}]
     list $result [regexp Usage $msg]
 } {1 1} 
-test tcltest-1.2 {tcltest -help -something} {unixOrPc} {
+test tcltest-1.2 {tcltest -help -something} {exec} {
     set result [catch {exec [interpreter] test.tcl -help -something} msg]
     list $result [regexp Usage $msg]
 } {1 1}
-test tcltest-1.3 {tcltest -h} {unixOrPc} {
+test tcltest-1.3 {tcltest -h} {exec} {
     set result [catch {exec [interpreter] test.tcl -h} msg]
     list $result [regexp Usage $msg]
 } {1 0} 
@@ -280,11 +282,11 @@ test tcltest-5.5 {InitConstraints: list of built-in constraints} \
 	-setup {tcltest::InitConstraints} \
 	-body { lsort [array names ::tcltest::testConstraints] } \
 	-result [lsort {
-    95 98 asyncPipeClose eformat emptyTest hasIsoLocale interactive knownBug
-    mac macCrash macOnly macOrPc macOrUnix macOrWin nonBlockFiles nonPortable
-    notRoot nt pc pcCrash pcOnly root singleTestInterp socket stdio tempNotMac
-    tempNotPc tempNotUnix tempNotWin unix unixCrash unixExecs unixOnly unixOrPc
-    unixOrWin userInteraction win winCrash winOnly
+    95 98 asyncPipeClose eformat emptyTest exec hasIsoLocale interactive
+    knownBug mac macCrash macOnly macOrPc macOrUnix macOrWin nonBlockFiles
+    nonPortable notRoot nt pc pcCrash pcOnly root singleTestInterp socket
+    stdio tempNotMac tempNotPc tempNotUnix tempNotWin unix unixCrash unixExecs
+    unixOnly unixOrPc unixOrWin userInteraction win winCrash winOnly
 }]
 
 # Removed this broken test.  Its usage of [limitConstraints] was not
