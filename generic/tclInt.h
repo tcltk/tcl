@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.49 2000/08/10 18:25:15 davidg Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.50 2000/08/25 02:04:29 ericm Exp $
  */
 
 #ifndef _TCLINT
@@ -268,6 +268,35 @@ typedef struct VarTrace {
     struct VarTrace *nextPtr;	/* Next in list of traces associated with
 				 * a particular variable. */
 } VarTrace;
+
+/*
+ * The following structure defines a command trace, which is used to
+ * invoke a specific C procedure whenever certain operations are performed
+ * on a command.
+ */
+
+typedef struct CommandTrace {
+    Tcl_CommandTraceProc *traceProc;/* Procedure to call when operations given
+				     * by flags are performed on command. */
+    ClientData clientData;	    /* Argument to pass to proc. */
+    int flags;			    /* What events the trace procedure is
+				     * interested in:  OR-ed combination of
+				     * TCL_TRACE_RENAME, TCL_TRACE_DELETE. */
+    struct CommandTrace *nextPtr;   /* Next in list of traces associated with
+				     * a particular command. */
+} CommandTrace;
+
+typedef struct ActiveCommandTrace {
+    struct Command *cmdPtr;	/* Variable that's being traced. */
+    struct ActiveCommandTrace *nextPtr;
+				/* Next in list of all active variable
+				 * traces for the interpreter, or NULL
+				 * if no more. */
+    CommandTrace *nextTracePtr;	/* Next trace to check after current
+				 * trace procedure returns;  if this
+				 * trace gets deleted, must update pointer
+				 * to avoid using free'd memory. */
+} ActiveCommandTrace;
 
 /*
  * When a variable trace is active (i.e. its associated procedure is
@@ -1020,10 +1049,8 @@ typedef struct Command {
 				/* Procedure invoked when deleting command
 				 * to, e.g., free all client data. */
     ClientData deleteData;	/* Arbitrary value passed to deleteProc. */
-    int deleted;		/* Means that the command is in the process
-				 * of being deleted (its deleteProc is
-				 * currently executing). Other attempts to
-				 * delete the command should be ignored. */
+    int flags;			/* Miscellaneous bits of information about
+				 * command. See below for definitions. */
     ImportRef *importRefPtr;	/* List of each imported Command created in
 				 * another namespace when this command is
 				 * imported. These imported commands
@@ -1031,7 +1058,29 @@ typedef struct Command {
 				 * command. The list is used to remove all
 				 * those imported commands when deleting
 				 * this "real" command. */
+    CommandTrace *tracePtr;	/* First in list of all traces set for this
+				 * command. */
 } Command;
+
+/*
+ * Flag bits for commands. 
+ *
+ * CMD_IS_DELETED -		Means that the command is in the process
+ *                              of being deleted (its deleteProc is
+ *                              currently executing). Other attempts to
+ *                              delete the command should be ignored.
+ * CMD_TRACE_ACTIVE -		1 means that trace processing is currently
+ *				underway for a rename/delete change.
+ *				See the two flags below for which is
+ *				currently being processed.
+ * TCL_TRACE_RENAME -           A rename trace is in progress. Further
+ *                              recursive renames will not be traced.
+ * TCL_TRACE_DELETE -           A delete trace is in progress. Further 
+ *                              recursive deletes will not be traced.
+ * (these last two flags are defined in tcl.h)
+ */
+#define CMD_IS_DELETED		0x1
+#define CMD_TRACE_ACTIVE	0x2
 
 /*
  *----------------------------------------------------------------
@@ -1248,6 +1297,9 @@ typedef struct Interp {
 				 * accessed directly; see comment above. */
     Tcl_ThreadId threadId;	/* ID of thread that owns the interpreter */
 
+    ActiveCommandTrace *activeCmdTracePtr;
+				/* First in list of active command traces for
+				 * interp, or NULL if no active traces. */
     /*
      * Statistical information about the bytecode compiler and interpreter's
      * operation.

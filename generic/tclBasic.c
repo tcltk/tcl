@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.28 2000/05/23 22:10:49 ericm Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.29 2000/08/25 02:04:28 ericm Exp $
  */
 
 #include "tclInt.h"
@@ -25,6 +25,9 @@
  * Static procedures in this file:
  */
 
+static char *		CallCommandTraces _ANSI_ARGS_((Interp *iPtr, 
+			    Command *cmdPtr, char *oldName, 
+			    char* newName, int flags));
 static void		DeleteInterpProc _ANSI_ARGS_((Tcl_Interp *interp));
 static void		ProcessUnexpectedResult _ANSI_ARGS_((
 			    Tcl_Interp *interp, int returnCode));
@@ -335,6 +338,7 @@ Tcl_CreateInterp()
     iPtr->scriptFile = NULL;
     iPtr->flags = 0;
     iPtr->tracePtr = NULL;
+    iPtr->activeCmdTracePtr = NULL;
     iPtr->assocData = (Tcl_HashTable *) NULL;
     iPtr->execEnvPtr = NULL;	      /* set after namespaces initialized */
     iPtr->emptyObjPtr = Tcl_NewObj(); /* another empty object */
@@ -447,8 +451,9 @@ Tcl_CreateInterp()
 	    }
 	    cmdPtr->deleteProc = NULL;
 	    cmdPtr->deleteData = (ClientData) NULL;
-	    cmdPtr->deleted = 0;
+	    cmdPtr->flags = 0;
 	    cmdPtr->importRefPtr = NULL;
+	    cmdPtr->tracePtr = NULL;
 	    Tcl_SetHashValue(hPtr, cmdPtr);
 	}
     }
@@ -1498,8 +1503,9 @@ Tcl_CreateCommand(interp, cmdName, proc, clientData, deleteProc)
     cmdPtr->clientData = clientData;
     cmdPtr->deleteProc = deleteProc;
     cmdPtr->deleteData = clientData;
-    cmdPtr->deleted = 0;
+    cmdPtr->flags = 0;
     cmdPtr->importRefPtr = NULL;
+    cmdPtr->tracePtr = NULL;
 
     /*
      * Plug in any existing import references found above.  Be sure
@@ -1659,8 +1665,9 @@ Tcl_CreateObjCommand(interp, cmdName, proc, clientData, deleteProc)
     cmdPtr->clientData = (ClientData) cmdPtr;
     cmdPtr->deleteProc = deleteProc;
     cmdPtr->deleteData = clientData;
-    cmdPtr->deleted = 0;
+    cmdPtr->flags = 0;
     cmdPtr->importRefPtr = NULL;
+    cmdPtr->tracePtr = NULL;
 
     /*
      * Plug in any existing import references found above.  Be sure
@@ -1975,6 +1982,8 @@ TclRenameCommand(interp, oldName, newName)
         return result;
     }
 
+    CallCommandTraces(iPtr,cmdPtr,oldName,newName,TCL_TRACE_RENAME);
+
     /*
      * The new command name is okay, so remove the command from its
      * current namespace. This is like deleting the command, so bump
@@ -2281,7 +2290,7 @@ Tcl_DeleteCommandFromToken(interp, cmd)
      * flag allows us to detect these cases and skip nested deletes.
      */
 
-    if (cmdPtr->deleted) {
+    if (cmdPtr->flags & CMD_IS_DELETED) {
 	/*
 	 * Another deletion is already in progress.  Remove the hash
 	 * table entry now, but don't invoke a callback or free the
@@ -2293,6 +2302,33 @@ Tcl_DeleteCommandFromToken(interp, cmd)
 	return 0;
     }
 
+    /* 
+     * We must delete this command, even though both traces and
+     * delete procs may try to avoid this (renaming the command etc).
+     * Also traces and delete procs may try to delete the command
+     * themsevles.  This flag declares that a delete is in progress
+     * and that recursive deletes should be ignored.
+     */
+    cmdPtr->flags |= CMD_IS_DELETED;
+
+    /*
+     * Call trace procedures for the command being deleted. Then delete
+     * its traces. 
+     */
+
+    if (cmdPtr->tracePtr != NULL) {
+	CommandTrace *tracePtr;
+	CallCommandTraces(iPtr,cmdPtr,NULL,NULL,TCL_TRACE_DELETE);
+	/* Now delete these traces */
+	tracePtr = cmdPtr->tracePtr;
+	while (tracePtr != NULL) {
+	    CommandTrace *nextPtr = tracePtr->nextPtr;
+	    ckfree((char *) tracePtr);
+	    tracePtr = nextPtr;
+	}
+	cmdPtr->tracePtr = NULL;
+    }
+    
     /*
      * If the command being deleted has a compile procedure, increment the
      * interpreter's compileEpoch to invalidate its compiled code. This
@@ -2306,7 +2342,6 @@ Tcl_DeleteCommandFromToken(interp, cmd)
         iPtr->compileEpoch++;
     }
 
-    cmdPtr->deleted = 1;
     if (cmdPtr->deleteProc != NULL) {
 	/*
 	 * Delete the command's client data. If this was an imported command
@@ -2381,6 +2416,75 @@ Tcl_DeleteCommandFromToken(interp, cmd)
     TclCleanupCommand(cmdPtr);
     return 0;
 }
+static char *
+CallCommandTraces(iPtr, cmdPtr, oldName, newName, flags)
+    Interp *iPtr;		/* Interpreter containing variable. */
+    Command *cmdPtr;		/* Variable whose traces are to be
+				 * invoked. */
+    char *oldName;	        /* Command's old name, or NULL if we
+                                 * must get the name from cmdPtr */
+    char *newName;	        /* Command's new name, or NULL if
+                                 * the command is not being renamed */
+    int flags;			/* Flags passed to trace procedures:
+				 * indicates what's happening to variable,
+				 * plus other stuff like TCL_GLOBAL_ONLY,
+				 * TCL_NAMESPACE_ONLY, and
+				 * TCL_INTERP_DESTROYED. */
+{
+    register CommandTrace *tracePtr;
+    ActiveCommandTrace active;
+    char *result;
+    if (cmdPtr->flags & CMD_TRACE_ACTIVE) {
+	/* 
+	 * While a rename trace is active, we will not process any more
+	 * rename traces; while a delete trace is active we will not
+	 * process any more delete traces 
+	 */
+	if (cmdPtr->flags & TCL_TRACE_RENAME) {
+	    flags &= ~TCL_TRACE_RENAME;
+	}
+	if (cmdPtr->flags & TCL_TRACE_DELETE) {
+	    flags &= ~TCL_TRACE_DELETE;
+	}
+	if (flags == 0) {
+	    return NULL;
+	}
+    }
+    cmdPtr->flags |= CMD_TRACE_ACTIVE;
+    cmdPtr->refCount++;
+    
+    result = NULL;
+    active.nextPtr = iPtr->activeCmdTracePtr;
+    iPtr->activeCmdTracePtr = &active;
+
+    active.cmdPtr = cmdPtr;
+    for (tracePtr = cmdPtr->tracePtr; tracePtr != NULL;
+	 tracePtr = active.nextTracePtr) {
+	active.nextTracePtr = tracePtr->nextPtr;
+	if (!(tracePtr->flags & flags)) {
+	    continue;
+	}
+	cmdPtr->flags |= tracePtr->flags;
+	if (oldName == NULL) {
+	    oldName = Tcl_GetCommandName((Tcl_Interp *) iPtr, 
+					 (Tcl_Command) cmdPtr);
+	}
+	(*tracePtr->traceProc)(tracePtr->clientData,
+		(Tcl_Interp *) iPtr, oldName, newName, flags);
+	cmdPtr->flags &= ~tracePtr->flags;
+    }
+
+    /*
+     * Restore the variable's flags, remove the record of our active
+     * traces, and then return.
+     */
+
+    cmdPtr->flags &= ~CMD_TRACE_ACTIVE;
+    cmdPtr->refCount--;
+    iPtr->activeCmdTracePtr = active.nextPtr;
+    return result;
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -3870,11 +3974,11 @@ Tcl_CreateTrace(interp, level, proc, clientData)
     iPtr->flags |= DONT_COMPILE_CMDS_INLINE;
 
     tracePtr = (Trace *) ckalloc(sizeof(Trace));
-    tracePtr->level = level;
-    tracePtr->proc = proc;
-    tracePtr->clientData = clientData;
-    tracePtr->nextPtr = iPtr->tracePtr;
-    iPtr->tracePtr = tracePtr;
+    tracePtr->level		= level;
+    tracePtr->proc		= proc;
+    tracePtr->clientData	= clientData;
+    tracePtr->nextPtr		= iPtr->tracePtr;
+    iPtr->tracePtr		= tracePtr;
 
     return (Tcl_Trace) tracePtr;
 }

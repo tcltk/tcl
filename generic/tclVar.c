@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.21 2000/08/21 01:37:51 ericm Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.22 2000/08/25 02:04:29 ericm Exp $
  */
 
 #include "tclInt.h"
@@ -2309,8 +2309,17 @@ Tcl_TraceVar2(interp, part1, part2, flags, proc, clientData)
 {
     Var *varPtr, *arrayPtr;
     register VarTrace *tracePtr;
-
-    varPtr = TclLookupVar(interp, part1, part2, (flags | TCL_LEAVE_ERR_MSG),
+    int flagMask;
+    
+    /* 
+     * We strip 'flags' down to just the parts which are relevant to
+     * TclLookupVar, to avoid conflicts between trace flags and
+     * internal namespace flags such as 'FIND_ONLY_NS'.  This can
+     * now occur since we have trace flags with values 0x1000 and higher.
+     */
+    flagMask = TCL_GLOBAL_ONLY | TCL_NAMESPACE_ONLY;
+    varPtr = TclLookupVar(interp, part1, part2,
+	    (flags & flagMask) | TCL_LEAVE_ERR_MSG,
 	    "trace", /*createPart1*/ 1, /*createPart2*/ 1, &arrayPtr);
     if (varPtr == NULL) {
 	return TCL_ERROR;
@@ -2320,14 +2329,17 @@ Tcl_TraceVar2(interp, part1, part2, flags, proc, clientData)
      * Set up trace information.
      */
 
-    tracePtr = (VarTrace *) ckalloc(sizeof(VarTrace));
-    tracePtr->traceProc = proc;
-    tracePtr->clientData = clientData;
-    tracePtr->flags = 
-	flags & (TCL_TRACE_READS | TCL_TRACE_WRITES | TCL_TRACE_UNSETS | 
+    flagMask = (TCL_TRACE_READS | TCL_TRACE_WRITES | TCL_TRACE_UNSETS | 
 		TCL_TRACE_ARRAY);
-    tracePtr->nextPtr = varPtr->tracePtr;
-    varPtr->tracePtr = tracePtr;
+#ifndef TCL_REMOVE_OBSOLETE_TRACES
+    flagMask |= TCL_TRACE_OLD_STYLE;
+#endif
+    tracePtr = (VarTrace *) ckalloc(sizeof(VarTrace));
+    tracePtr->traceProc		= proc;
+    tracePtr->clientData	= clientData;
+    tracePtr->flags		= flags & flagMask;
+    tracePtr->nextPtr		= varPtr->tracePtr;
+    varPtr->tracePtr		= tracePtr;
     return TCL_OK;
 }
 
@@ -2403,17 +2415,31 @@ Tcl_UntraceVar2(interp, part1, part2, flags, proc, clientData)
     Var *varPtr, *arrayPtr;
     Interp *iPtr = (Interp *) interp;
     ActiveVarTrace *activePtr;
-
-    varPtr = TclLookupVar(interp, part1, part2,
-	    flags & (TCL_GLOBAL_ONLY|TCL_NAMESPACE_ONLY),
+    int flagMask;
+    
+    /*
+     * Set up a mask to mask out the parts of the flags that we are not
+     * interested in now.
+     */
+    flagMask = TCL_GLOBAL_ONLY | TCL_NAMESPACE_ONLY;
+    varPtr = TclLookupVar(interp, part1, part2, flags & flagMask,
 	    /*msg*/ (char *) NULL,
 	    /*createPart1*/ 0, /*createPart2*/ 0, &arrayPtr);
     if (varPtr == NULL) {
 	return;
     }
 
-    flags &= (TCL_TRACE_READS | TCL_TRACE_WRITES | TCL_TRACE_UNSETS |
-	    TCL_TRACE_ARRAY);
+
+    /*
+     * Set up a mask to mask out the parts of the flags that we are not
+     * interested in now.
+     */
+    flagMask = TCL_TRACE_READS | TCL_TRACE_WRITES | TCL_TRACE_UNSETS |
+	TCL_TRACE_ARRAY; 
+#ifndef TCL_REMOVE_OBSOLETE_TRACES
+    flagMask |= TCL_TRACE_OLD_STYLE;
+#endif
+    flags &= flagMask;
     for (tracePtr = varPtr->tracePtr, prevPtr = NULL;  ;
 	 prevPtr = tracePtr, tracePtr = tracePtr->nextPtr) {
 	if (tracePtr == NULL) {

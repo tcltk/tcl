@@ -5,14 +5,14 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: trace.n,v 1.3 2000/01/26 21:36:35 ericm Exp $
+'\" RCS: @(#) $Id: trace.n,v 1.4 2000/08/25 02:04:27 ericm Exp $
 '\" 
 .so man.macros
-.TH trace n "" Tcl "Tcl Built-In Commands"
+.TH trace n "8.4" Tcl "Tcl Built-In Commands"
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
-trace \- Monitor variable accesses
+trace \- Monitor variable accesses and command usages
 .SH SYNOPSIS
 \fBtrace \fIoption\fR ?\fIarg arg ...\fR?
 .BE
@@ -20,12 +20,55 @@ trace \- Monitor variable accesses
 .SH DESCRIPTION
 .PP
 This command causes Tcl commands to be executed whenever certain operations are
-invoked.  At present, only variable tracing is implemented. The
-legal \fIoption\fR's (which may be abbreviated) are:
+invoked.  The legal \fIoption\fR's (which may be abbreviated) are:
 .TP
-\fBtrace variable \fIname ops command\fR
+\fBtrace add \fItype name ops ?args?\fR
+Where \fItype\fR is \fBcommand\fR, or \fBvariable\fR.
+.RS
+.TP
+\fBtrace add command\fR \fIname ops command\fR
+Arrange for \fIcommand\fR to be executed whenever command \fIname\fR
+is modified in one of the ways given by the list \fIops\fR.  \fIName\fR will be
+resolved using the usual namespace resolution rules used by
+procedures.  If the command does not exist, an error will be thrown.
+.RS
+.PP
+\fIOps\fR indicates which operations are of interest, and is a list of
+one or more of the following items:
+.TP
+\fBrename\fR
+Invoke \fIcommand\fR whenever the command is renamed.  Note that
+renaming to the empty string is considered deletion, and will not
+be traced with '\fBrename\fR'.
+.TP
+\fBdelete\fR
+Invoke \fIcommand\fR when the command is deleted.  Commands can be
+deleted explicitly by using the \fBrename\fR command to rename the
+command to an empty string.  Commands are also deleted when the
+interpreter is deleted, but traces will not be invoked because there is no
+interpreter in which to execute them.
+.PP
+When the trace triggers, three arguments are appended to
+\fIcommand\fR so that the actual command is as follows:
+.CS
+\fIcommand oldName newName op\fR
+.CE
+\fIOldName\fR and \fInewName\fR give the traced command's current
+(old) namename, and the name to which it is being renamed (the empty
+string if this is a 'delete' operation).
+\fIOp\fR indicates what operation is being performed on the
+variable, and is one of \fBrename\fR or \fBdelete\fR as
+defined above.  The trace operation cannot be used to stop a command
+from being deleted.  Tcl will always remove the command once the trace
+is complete.  Recursive renaming or deleting will not cause further traces 
+of the same type to be evaluated, so a delete trace which itself
+deletes the command, or a rename trace which itself renames the
+command will not cause further trace evaluations to occur.
+.RE
+.TP
+\fBtrace add variable\fI name ops command\fR
 Arrange for \fIcommand\fR to be executed whenever variable \fIname\fR
-is accessed in one of the ways given by \fIops\fR.  \fIName\fR may
+is accessed in one of the ways given by the list \fIops\fR.  \fIName\fR may
 refer to a normal variable, an element of an array, or to an array
 as a whole (i.e. \fIname\fR may be just the name of an array, with no
 parenthesized index).  If \fIname\fR refers to a whole array, then
@@ -35,16 +78,19 @@ will not be given a value, so it will be visible to \fBnamespace which\fR
 queries, but not to \fBinfo exists\fR queries.
 .RS
 .PP
-\fIOps\fR indicates which operations are of interest, and consists of
-one or more of the following letters:
+\fIOps\fR indicates which operations are of interest, and is a list of
+one or more of the following items:
 .TP
-\fBr\fR
+\fBarray\fR
+Invoke \fIcommand\fR whenever the variable is accessed or modified via
+the \fBarray\fR command.
+\fBread\fR
 Invoke \fIcommand\fR whenever the variable is read.
 .TP
-\fBw\fR
+\fBwrite\fR
 Invoke \fIcommand\fR whenever the variable is written.
 .TP
-\fBu\fR
+\fBunset\fR
 Invoke \fIcommand\fR whenever the variable is unset.  Variables
 can be unset explicitly with the \fBunset\fR command, or
 implicitly when procedures return (all of their local variables
@@ -70,91 +116,124 @@ name used in the \fBtrace variable\fR command:  the \fBupvar\fR
 command allows a procedure to reference a variable under a
 different name.
 \fIOp\fR indicates what operation is being performed on the
-variable, and is one of \fBr\fR, \fBw\fR, or \fBu\fR as
+variable, and is one of \fBread\fR, \fBwrite\fR, or \fBunset\fR as
 defined above.
 .PP
 \fICommand\fR executes in the same context as the code that invoked
-the traced operation:  if the variable was accessed as part of a
-Tcl procedure, then \fIcommand\fR will have access to the same
-local variables as code in the procedure.  This context may be
-different than the context in which the trace was created.
-If \fIcommand\fR invokes a procedure (which it normally does) then
-the procedure will have to use \fBupvar\fR or \fBuplevel\fR if it
-wishes to access the traced variable.
-Note also that \fIname1\fR may not necessarily be the same as the name
-used to set the trace on the variable;  differences can occur if
-the access is made through a variable defined with the \fBupvar\fR
-command.
+the traced operation:  if the variable was accessed as part of a Tcl
+procedure, then \fIcommand\fR will have access to the same local
+variables as code in the procedure.  This context may be different
+than the context in which the trace was created. If \fIcommand\fR
+invokes a procedure (which it normally does) then the procedure will
+have to use \fBupvar\fR or \fBuplevel\fR if it wishes to access the
+traced variable.  Note also that \fIname1\fR may not necessarily be
+the same as the name used to set the trace on the variable;
+differences can occur if the access is made through a variable defined
+with the \fBupvar\fR command.
 .PP
-For read and write traces, \fIcommand\fR can modify
-the variable to affect the result of the traced operation.
-If \fIcommand\fR modifies the value of a variable during a
-read or write trace, then the new value will be returned as the
-result of the traced operation.
-The return value from  \fIcommand\fR is ignored except that
-if it returns an error of any sort then the traced operation
-also returns an error with
-the same error message returned by the trace command
-(this mechanism can be used to implement read-only variables, for
-example).
-For write traces, \fIcommand\fR is invoked after the variable's
-value has been changed; it can write a new value into the variable
-to override the original value specified in the write operation.
-To implement read-only variables, \fIcommand\fR will have to restore
-the old value of the variable.
+For read and write traces, \fIcommand\fR can modify the variable to
+affect the result of the traced operation.  If \fIcommand\fR modifies
+the value of a variable during a read or write trace, then the new
+value will be returned as the result of the traced operation.  The
+return value from  \fIcommand\fR is ignored except that if it returns
+an error of any sort then the traced operation also returns an error
+with the same error message returned by the trace command (this
+mechanism can be used to implement read-only variables, for example).
+For write traces, \fIcommand\fR is invoked after the variable's value
+has been changed; it can write a new value into the variable to
+override the original value specified in the write operation.  To
+implement read-only variables, \fIcommand\fR will have to restore the
+old value of the variable.
 .PP
 While \fIcommand\fR is executing during a read or write trace, traces
-on the variable are temporarily disabled.
-This means that reads and writes invoked by
-\fIcommand\fR will occur directly, without invoking \fIcommand\fR
-(or any other traces) again.
-However, if \fIcommand\fR unsets the variable then unset traces
-will be invoked.
+on the variable are temporarily disabled.  This means that reads and
+writes invoked by \fIcommand\fR will occur directly, without invoking
+\fIcommand\fR (or any other traces) again.  However, if \fIcommand\fR
+unsets the variable then unset traces will be invoked.
 .PP
-When an unset trace is invoked, the variable has already been
-deleted:  it will appear to be undefined with no traces.
-If an unset occurs because of a procedure return, then the
-trace will be invoked in the variable context of the procedure
-being returned to:  the stack frame of the returning procedure
-will no longer exist.
-Traces are not disabled during unset traces, so if an unset trace
-command creates a new trace and accesses the variable, the
-trace will be invoked.
-Any errors in unset traces are ignored.
+When an unset trace is invoked, the variable has already been deleted:
+it will appear to be undefined with no traces.  If an unset occurs
+because of a procedure return, then the trace will be invoked in the
+variable context of the procedure being returned to:  the stack frame
+of the returning procedure will no longer exist.  Traces are not
+disabled during unset traces, so if an unset trace command creates a
+new trace and accesses the variable, the trace will be invoked.  Any
+errors in unset traces are ignored.
 .PP
-If there are multiple traces on a variable they are invoked
-in order of creation, most-recent first.
-If one trace returns an error, then no further traces are
-invoked for the variable.
-If an array element has a trace set, and there is also a trace
-set on the array as a whole, the trace on the overall array
-is invoked before the one on the element.
+If there are multiple traces on a variable they are invoked in order
+of creation, most-recent first.  If one trace returns an error, then
+no further traces are invoked for the variable.  If an array element
+has a trace set, and there is also a trace set on the array as a
+whole, the trace on the overall array is invoked before the one on the
+element.
 .PP
-Once created, the trace remains in effect either until the
-trace is removed with the \fBtrace vdelete\fR command described
-below, until the variable is unset, or until the interpreter
-is deleted.
-Unsetting an element of array will remove any traces on that
-element, but will not remove traces on the overall array.
+Once created, the trace remains in effect either until the trace is
+removed with the \fBtrace remove variable\fR command described below,
+until the variable is unset, or until the interpreter is deleted.
+Unsetting an element of array will remove any traces on that element,
+but will not remove traces on the overall array.
 .PP
 This command returns an empty string.
 .RE
 .TP
-\fBtrace vdelete \fIname ops command\fR
-If there is a trace set on variable \fIname\fR with the
-operations and command given by \fIops\fR and \fIcommand\fR,
-then the trace is removed, so that \fIcommand\fR will never
-again be invoked.
-Returns an empty string.
+\fBtrace remove \fItype name opList command\fR
+Where \fItype\fR is either \fBcommand\fR or \fBvariable\fR.
+.RS
 .TP
-\fBtrace vinfo \fIname\fR
-Returns a list containing one element for each trace
-currently set on variable \fIname\fR.
-Each element of the list is itself a list containing two
-elements, which are the \fIops\fR and \fIcommand\fR associated
-with the trace.
-If \fIname\fR doesn't exist or doesn't have any traces set, then
-the result of the command will be an empty string.
+\fBtrace remove command\fI name opList command\fR
+If there is a trace set on command \fIname\fR with the operations and
+command given by \fIopList\fR and \fIcommand\fR, then the trace is
+removed, so that \fIcommand\fR will never again be invoked.  Returns
+an empty string.   If \fIname\fR doesn't exist, the command will throw
+an error.
+.TP
+\fBtrace remove variable\fI name opList command\fR
+If there is a trace set on variable \fIname\fR with the operations and
+command given by \fIopList\fR and \fIcommand\fR, then the trace is
+removed, so that \fIcommand\fR will never again be invoked.  Returns
+an empty string.
+.RE
+.TP
+\fBtrace list \fItype name\fR
+Where \fItype\fR is either \fBcommand\fR or \fBvariable\fR.
+.RS
+.TP
+\fBtrace list command\fI name\fR
+Returns a list containing one element for each trace currently set on
+command \fIname\fR. Each element of the list is itself a list
+containing two elements, which are the \fIopList\fR and \fIcommand\fR
+associated with the trace.  If \fIname\fR doesn't have any traces set,
+then the result of the command will be an empty string.  If \fIname\fR
+doesn't exist, the command will throw an error.
+.TP
+\fBtrace list variable\fI name\fR
+Returns a list containing one element for each trace currently set on
+variable \fIname\fR.  Each element of the list is itself a list
+containing two elements, which are the \fIopList\fR and \fIcommand\fR
+associated with the trace.  If \fIname\fR doesn't exist or doesn't
+have any traces set, then the result of the command will be an empty
+string.
+.RE
+.PP
+For backwards compatibility, three other subcommands are available:
+.RS
+.TP
+\fBtrace variable \fIname ops command\fR
+This is equivalent to \fBtrace add variable \fIname ops command\fR.
+.TP
+\fBtrace vdelete \fIname ops command\fR
+This is equivalent to \fBtrace remove variable \fIname ops command\fR
+.TP 
+\fBtrace vinfo \fIname\fR 
+This is equivalent to \fBtrace list variable \fIname\fR
+.RE
+.PP
+These subcommands are deprecated and will likely be removed in a
+future version of Tcl.  They use an older syntax in which \fBarray\fR,
+\fBread\fR, \fBwrite\fR, \fBunset\fR are replaced by \fBa\fR, \fBr\fR,
+\fBw\fR and \fBu\fR respectively, and the \fIops\fR argument is not a
+list, but simply a string concatenation of the operations, such as
+\fBrwua\fR.
 
 .SH KEYWORDS
-read, variable, write, trace, unset
+read, command, rename, variable, write, trace, unset

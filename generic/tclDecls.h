@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.39 2000/07/22 01:53:24 ericm Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.40 2000/08/25 02:04:28 ericm Exp $
  */
 
 #ifndef _TCLDECLS
@@ -1268,6 +1268,21 @@ EXTERN void		Tcl_InitHashTableEx _ANSI_ARGS_((
 /* 406 */
 EXTERN void		Tcl_InitObjHashTable _ANSI_ARGS_((
 				Tcl_HashTable * tablePtr));
+/* 407 */
+EXTERN ClientData	Tcl_CommandTraceInfo _ANSI_ARGS_((
+				Tcl_Interp * interp, char * varName, 
+				int flags, Tcl_CommandTraceProc * procPtr, 
+				ClientData prevClientData));
+/* 408 */
+EXTERN int		Tcl_TraceCommand _ANSI_ARGS_((Tcl_Interp * interp, 
+				char * varName, int flags, 
+				Tcl_CommandTraceProc * proc, 
+				ClientData clientData));
+/* 409 */
+EXTERN void		Tcl_UntraceCommand _ANSI_ARGS_((Tcl_Interp * interp, 
+				char * varName, int flags, 
+				Tcl_CommandTraceProc * proc, 
+				ClientData clientData));
 
 typedef struct TclStubHooks {
     struct TclPlatStubs *tclPlatStubs;
@@ -1742,6 +1757,9 @@ typedef struct TclStubs {
     Tcl_HashEntry * (*tcl_CreateHashEntry) _ANSI_ARGS_((Tcl_HashTable * tablePtr, CONST char * key, int * newPtr)); /* 404 */
     void (*tcl_InitHashTableEx) _ANSI_ARGS_((Tcl_HashTable * tablePtr, int keyType, Tcl_HashKeyType * typePtr)); /* 405 */
     void (*tcl_InitObjHashTable) _ANSI_ARGS_((Tcl_HashTable * tablePtr)); /* 406 */
+    ClientData (*tcl_CommandTraceInfo) _ANSI_ARGS_((Tcl_Interp * interp, char * varName, int flags, Tcl_CommandTraceProc * procPtr, ClientData prevClientData)); /* 407 */
+    int (*tcl_TraceCommand) _ANSI_ARGS_((Tcl_Interp * interp, char * varName, int flags, Tcl_CommandTraceProc * proc, ClientData clientData)); /* 408 */
+    void (*tcl_UntraceCommand) _ANSI_ARGS_((Tcl_Interp * interp, char * varName, int flags, Tcl_CommandTraceProc * proc, ClientData clientData)); /* 409 */
 } TclStubs;
 
 #ifdef __cplusplus
@@ -3414,6 +3432,18 @@ extern TclStubs *tclStubsPtr;
 #ifndef Tcl_InitObjHashTable
 #define Tcl_InitObjHashTable \
 	(tclStubsPtr->tcl_InitObjHashTable) /* 406 */
+#endif
+#ifndef Tcl_CommandTraceInfo
+#define Tcl_CommandTraceInfo \
+	(tclStubsPtr->tcl_CommandTraceInfo) /* 407 */
+#endif
+#ifndef Tcl_TraceCommand
+#define Tcl_TraceCommand \
+	(tclStubsPtr->tcl_TraceCommand) /* 408 */
+#endif
+#ifndef Tcl_UntraceCommand
+#define Tcl_UntraceCommand \
+	(tclStubsPtr->tcl_UntraceCommand) /* 409 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */
