@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.29 2001/09/04 18:06:34 vincentdarley Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.30 2001/09/06 17:51:00 vincentdarley Exp $
  */
 
 #define TCL_TEST
@@ -328,7 +328,6 @@ static Tcl_FSCreateDirectoryProc TestReportCreateDirectory;
 static Tcl_FSCopyDirectoryProc TestReportCopyDirectory; 
 static Tcl_FSRemoveDirectoryProc TestReportRemoveDirectory; 
 static Tcl_FSLoadFileProc TestReportLoadFile;
-static Tcl_FSUnloadFileProc TestReportUnloadFile;
 static Tcl_FSLinkProc TestReportLink;
 static Tcl_FSFileAttrStringsProc TestReportFileAttrStrings;
 static Tcl_FSFileAttrsGetProc TestReportFileAttrsGet;
@@ -4091,7 +4090,7 @@ static int PretendTclpStat(path, buf)
     int ret;
     Tcl_Obj *pathPtr = Tcl_NewStringObj(path, -1);
     Tcl_IncrRefCount(pathPtr);
-    ret = Tcl_FSStat(pathPtr, buf);
+    ret = TclpObjStat(pathPtr, buf);
     Tcl_DecrRefCount(pathPtr);
     return ret;
 }
@@ -4245,7 +4244,7 @@ static int PretendTclpAccess(path, mode)
     int ret;
     Tcl_Obj *pathPtr = Tcl_NewStringObj(path, -1);
     Tcl_IncrRefCount(pathPtr);
-    ret = Tcl_FSAccess(pathPtr, mode);
+    ret = TclpObjAccess(pathPtr, mode);
     Tcl_DecrRefCount(pathPtr);
     return ret;
 }
@@ -4366,7 +4365,7 @@ PretendTclpOpenFileChannel(interp, fileName, modeString, permissions)
     Tcl_Channel ret;
     Tcl_Obj *pathPtr = Tcl_NewStringObj(fileName, -1);
     Tcl_IncrRefCount(pathPtr);
-    ret = Tcl_FSOpenFileChannel(interp, pathPtr, modeString, permissions);
+    ret = TclpOpenFileChannel(interp, pathPtr, modeString, permissions);
     Tcl_DecrRefCount(pathPtr);
     return ret;
 }
@@ -5421,15 +5420,6 @@ TestReportLoadFile(interp, fileName, sym1, sym2, proc1Ptr, proc2Ptr,
     TestReport("loadfile",fileName,NULL);
     return Tcl_FSLoadFile(interp, TestReportGetNativePath(fileName), sym1, sym2,
 			  proc1Ptr, proc2Ptr, clientDataPtr, unloadProcPtr);
-}
-static void
-TestReportUnloadFile(clientData)
-    ClientData clientData;    /* ClientData returned by a previous call
-			       * to TclpLoadFile().  The clientData is 
-			       * a token that represents the loaded 
-			       * file. */
-{
-    TestReport("unloadfile",NULL,NULL);
 }
 static Tcl_Obj *
 TestReportLink(path, to)
