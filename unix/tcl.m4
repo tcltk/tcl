@@ -44,10 +44,16 @@ AC_DEFUN(SC_PATH_TCLCONFIG, [
 	    if test x"${ac_cv_c_tclconfig}" = x ; then
 		for i in \
 			../tcl \
+			`ls -dr ../tcl[[8-9]].[[0-9]].[[0-9]]* 2>/dev/null` \
+			`ls -dr ../tcl[[8-9]].[[0-9]] 2>/dev/null` \
 			`ls -dr ../tcl[[8-9]].[[0-9]]* 2>/dev/null` \
 			../../tcl \
+			`ls -dr ../../tcl[[8-9]].[[0-9]].[[0-9]]* 2>/dev/null` \
+			`ls -dr ../../tcl[[8-9]].[[0-9]] 2>/dev/null` \
 			`ls -dr ../../tcl[[8-9]].[[0-9]]* 2>/dev/null` \
 			../../../tcl \
+			`ls -dr ../../../tcl[[8-9]].[[0-9]].[[0-9]]* 2>/dev/null` \
+			`ls -dr ../../../tcl[[8-9]].[[0-9]] 2>/dev/null` \
 			`ls -dr ../../../tcl[[8-9]].[[0-9]]* 2>/dev/null` ; do
 		    if test -f "$i/unix/tclConfig.sh" ; then
 			ac_cv_c_tclconfig=`(cd $i/unix; pwd)`
@@ -74,6 +80,8 @@ AC_DEFUN(SC_PATH_TCLCONFIG, [
 	    if test x"${ac_cv_c_tclconfig}" = x ; then
 		for i in \
 			${srcdir}/../tcl \
+			`ls -dr ${srcdir}/../tcl[[8-9]].[[0-9]].[[0-9]]* 2>/dev/null` \
+			`ls -dr ${srcdir}/../tcl[[8-9]].[[0-9]] 2>/dev/null` \
 			`ls -dr ${srcdir}/../tcl[[8-9]].[[0-9]]* 2>/dev/null` ; do
 		    if test -f "$i/unix/tclConfig.sh" ; then
 		    ac_cv_c_tclconfig=`(cd $i/unix; pwd)`
@@ -140,10 +148,16 @@ AC_DEFUN(SC_PATH_TKCONFIG, [
 	    if test x"${ac_cv_c_tkconfig}" = x ; then
 		for i in \
 			../tk \
+			`ls -dr ../tk[[8-9]].[[0-9]].[[0-9]]* 2>/dev/null` \
+			`ls -dr ../tk[[8-9]].[[0-9]] 2>/dev/null` \
 			`ls -dr ../tk[[8-9]].[[0-9]]* 2>/dev/null` \
 			../../tk \
+			`ls -dr ../../tk[[8-9]].[[0-9]].[[0-9]]* 2>/dev/null` \
+			`ls -dr ../../tk[[8-9]].[[0-9]] 2>/dev/null` \
 			`ls -dr ../../tk[[8-9]].[[0-9]]* 2>/dev/null` \
 			../../../tk \
+			`ls -dr ../../../tk[[8-9]].[[0-9]].[[0-9]]* 2>/dev/null` \
+			`ls -dr ../../../tk[[8-9]].[[0-9]] 2>/dev/null` \
 			`ls -dr ../../../tk[[8-9]].[[0-9]]* 2>/dev/null` ; do
 		    if test -f "$i/unix/tkConfig.sh" ; then
 			ac_cv_c_tkconfig=`(cd $i/unix; pwd)`
@@ -168,6 +182,8 @@ AC_DEFUN(SC_PATH_TKCONFIG, [
 	    if test x"${ac_cv_c_tkconfig}" = x ; then
 		for i in \
 			${srcdir}/../tk \
+			`ls -dr ${srcdir}/../tk[[8-9]].[[0-9]].[[0-9]]* 2>/dev/null` \
+			`ls -dr ${srcdir}/../tk[[8-9]].[[0-9]] 2>/dev/null` \
 			`ls -dr ${srcdir}/../tk[[8-9]].[[0-9]]* 2>/dev/null` ; do
 		    if test -f "$i/unix/tkConfig.sh" ; then
 			ac_cv_c_tkconfig=`(cd $i/unix; pwd)`
