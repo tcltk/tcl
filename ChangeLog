@@ -1,3 +1,10 @@
+2001-07-03  Don Porter  <dgp@users.sourceforge.net>
+
+	* tests/unixInit.test (unixInit-2.8):  Changed test back to using
+	installation layout, adding comments explaining why the test writes
+	to the directories it does, and checks to avoid destroying other
+	files in /tmp.
+
 2001-07-03  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* tests/unixInit.test (unixInit-1.2): Fixed faults reported in
