@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.9 1999/04/22 22:57:07 stanton Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.10 1999/05/23 16:37:14 surles Exp $
 
 library tcl
 
@@ -539,6 +539,9 @@ declare 143 generic {
 declare 144 generic {
     void TclHideLiteral(Tcl_Interp *interp, struct CompileEnv *envPtr, \
 	    int index)
+}
+declare 145 generic {
+    struct AuxDataType *TclGetAuxDataType(char *typeName)
 }
 
 ##############################################################################

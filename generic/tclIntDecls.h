@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.9 1999/04/30 22:45:01 stanton Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.10 1999/05/23 16:37:14 surles Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -456,6 +456,8 @@ EXTERN int		TclAddLiteralObj _ANSI_ARGS_((
 /* 144 */
 EXTERN void		TclHideLiteral _ANSI_ARGS_((Tcl_Interp * interp, 
 				struct CompileEnv * envPtr, int index));
+/* 145 */
+EXTERN struct AuxDataType * TclGetAuxDataType _ANSI_ARGS_((char * typeName));
 
 typedef struct TclIntStubs {
     int magic;
@@ -606,6 +608,7 @@ typedef struct TclIntStubs {
     int (*tclSetByteCodeFromAny) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * objPtr, CompileHookProc * hookProc, ClientData clientData)); /* 142 */
     int (*tclAddLiteralObj) _ANSI_ARGS_((struct CompileEnv * envPtr, Tcl_Obj * objPtr, LiteralEntry ** litPtrPtr)); /* 143 */
     void (*tclHideLiteral) _ANSI_ARGS_((Tcl_Interp * interp, struct CompileEnv * envPtr, int index)); /* 144 */
+    struct AuxDataType * (*tclGetAuxDataType) _ANSI_ARGS_((char * typeName)); /* 145 */
 } TclIntStubs;
 
 #ifdef __cplusplus
@@ -1162,6 +1165,10 @@ extern TclIntStubs *tclIntStubsPtr;
 #ifndef TclHideLiteral
 #define TclHideLiteral \
 	(tclIntStubsPtr->tclHideLiteral) /* 144 */
+#endif
+#ifndef TclGetAuxDataType
+#define TclGetAuxDataType \
+	(tclIntStubsPtr->tclGetAuxDataType) /* 145 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */

@@ -6,7 +6,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.10 1999/04/16 00:46:45 stanton Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.11 1999/05/23 16:37:14 surles Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -740,7 +740,6 @@ EXTERN void		TclDeleteLiteralTable _ANSI_ARGS_((
 			    Tcl_Interp *interp, LiteralTable *tablePtr));
 EXTERN void		TclEmitForwardJump _ANSI_ARGS_((CompileEnv *envPtr,
 			    TclJumpType jumpType, JumpFixup *jumpFixupPtr));
-EXTERN AuxDataType *TclGetAuxDataType _ANSI_ARGS_((char *typeName));
 EXTERN ExceptionRange *	TclGetExceptionRangeForPc _ANSI_ARGS_((
 			    unsigned char *pc, int catchOnly,
 			    ByteCode* codePtr));

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.14 1999/05/22 01:20:13 stanton Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.15 1999/05/23 16:37:14 surles Exp $
  */
 
 #include "tclInt.h"
@@ -188,6 +188,7 @@ TclIntStubs tclIntStubs = {
     TclSetByteCodeFromAny, /* 142 */
     TclAddLiteralObj, /* 143 */
     TclHideLiteral, /* 144 */
+    TclGetAuxDataType, /* 145 */
 };
 
 TclIntPlatStubs tclIntPlatStubs = {
