@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.47 2001/06/27 01:53:18 mdejong Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.48 2001/07/04 00:07:46 mdejong Exp $
 
 VERSION = @TCL_VERSION@
 
@@ -102,16 +102,12 @@ GENERIC_DIR		= @srcdir@/../generic
 WIN_DIR			= @srcdir@
 COMPAT_DIR		= @srcdir@/../compat
 
-# This is a switch passed to a Cygwin script that generates file
-# names based on the platform.
-PATHTYPE		= @PATHTYPE@
-
 # This program converts between Windows native and Cygwin POSIX pathnames.
 CYGPATH			= @CYGPATH@
 
-GENERIC_DIR_NATIVE	= $(shell $(CYGPATH) $(PATHTYPE) '$(GENERIC_DIR)')
-WIN_DIR_NATIVE		= $(shell $(CYGPATH) $(PATHTYPE) '$(WIN_DIR)')
-ROOT_DIR_NATIVE		= $(shell $(CYGPATH) $(PATHTYPE) '$(ROOT_DIR)')
+GENERIC_DIR_NATIVE	= $(shell $(CYGPATH) '$(GENERIC_DIR)')
+WIN_DIR_NATIVE		= $(shell $(CYGPATH) '$(WIN_DIR)')
+ROOT_DIR_NATIVE		= $(shell $(CYGPATH) '$(ROOT_DIR)')
 
 LIBRARY_DIR   = $(shell echo '$(ROOT_DIR_NATIVE)/library' | sed 's/\\/\//g' )
 
@@ -142,7 +138,7 @@ MAN2TCL			= man2tcl$(EXEEXT)
 # Macro that expands to the first dependency argument with the appropriate
 # path type already resolved.
 
-DEPARG = "$(shell $(CYGPATH) $(PATHTYPE) $<)"
+DEPARG = "$(shell $(CYGPATH) $<)"
 
 # Setting the VPATH variable to a list of paths will cause the 
 # makefile to look into these paths when resolving .c to .obj

@@ -1,3 +1,14 @@
+2001-07-03  Mo DeJong  <mdejong@redhat.com>
+
+	* win/Makefile.in: Remove PATHTYPE variable.
+	* win/configure: Regen.
+	* win/configure.in: Don't subst PATHTYPE.
+	* win/tcl.m4 (SC_CONFIG_CFLAGS): Remove PATHTYPE
+	variable. Set CYGPATH to "cygpath -w" if the
+	cygpath executable is found on the path. This
+	approach works for native Cygwin builds and
+	cross compiles.
+
 2001-07-03  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclVar.c (Tcl_GetVar2Ex): added ability to recognize
