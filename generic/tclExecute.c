@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.27 2001/08/30 12:04:13 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.28 2001/09/01 00:51:31 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -1388,7 +1388,7 @@ TclExecuteByteCode(interp, codePtr)
 	case INST_APPEND_ARRAY1:
 	    opnd = TclGetUInt1AtPtr(pc+1);
 	    pcAdjustment = 2;
-	    
+
 	    doAppendArray:
 	    valuePtr = POP_OBJECT();
 	    elemPtr = POP_OBJECT();
@@ -1415,6 +1415,24 @@ TclExecuteByteCode(interp, codePtr)
 	    /*
 	     * END APPEND INSTRUCTIONS
 	     */
+
+	case INST_LIST:
+	    /*
+	     * Pop the opnd (objc) top stack elements into a new list obj
+	     * and then decrement their ref counts. 
+	     */
+
+	    opnd = TclGetUInt4AtPtr(pc+1);
+	    valuePtr = Tcl_NewListObj(opnd, &(stackPtr[stackTop - (opnd-1)]));
+
+	    for (i = 0; i < opnd; i++) {
+		TclDecrRefCount(stackPtr[stackTop--]);
+	    }
+
+	    PUSH_OBJECT(valuePtr);
+	    TRACE_WITH_OBJ(("%u => " opnd), valuePtr);
+	    ADJUST_PC(5);
+
 	    /*
 	     * START LAPPEND INSTRUCTIONS
 	     */

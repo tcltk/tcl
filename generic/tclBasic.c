@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.34 2001/08/14 13:45:57 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.35 2001/09/01 00:51:31 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -119,7 +119,7 @@ static CmdInfo builtInCmds[] = {
     {"linsert",		(Tcl_CmdProc *) NULL,	Tcl_LinsertObjCmd,
         (CompileProc *) NULL,		1},
     {"list",		(Tcl_CmdProc *) NULL,	Tcl_ListObjCmd,
-        (CompileProc *) NULL,		1},
+        TclCompileListCmd,		1},
     {"llength",		(Tcl_CmdProc *) NULL,	Tcl_LlengthObjCmd,
         TclCompileLlengthCmd,		1},
     {"load",		(Tcl_CmdProc *) NULL,	Tcl_LoadObjCmd,
