@@ -728,6 +728,57 @@ test filesystem-7.3 {glob in simplefs} \
     set res
 } {simplefs:/simpledir/simplefile}
 
+test filesystem-7.3.1 {glob in simplefs: no path/dir} \
+  {testsimplefilesystem} {
+    set dir [pwd]
+    cd [tcltest::temporaryDirectory]
+    file mkdir simpledir
+    close [open [file join simpledir simplefile] w]
+    testsimplefilesystem 1
+    set res [glob -nocomplain simplefs:/simpledir/*]
+    eval lappend res [glob -nocomplain simplefs:/simpledir]
+    testsimplefilesystem 0
+    file delete -force simpledir
+    cd $dir
+    set res
+} {simplefs:/simpledir/simplefile simplefs:/simpledir}
+
+test filesystem-7.3.2 {glob in simplefs: no path/dir, no subdirectory} \
+  {testsimplefilesystem} {
+    set dir [pwd]
+    cd [tcltest::temporaryDirectory]
+    file mkdir simpledir
+    close [open [file join simpledir simplefile] w]
+    testsimplefilesystem 1
+    set res [glob -nocomplain simplefs:/s*]
+    testsimplefilesystem 0
+    file delete -force simpledir
+    cd $dir
+    if {[llength $res] > 0} {
+	set res "ok"
+    } else {
+        set res "no files found with 'glob -nocomplain simplefs:/s*'"
+    }
+} {ok}
+
+test filesystem-7.3.3 {glob in simplefs: pattern is a volume} \
+  {testsimplefilesystem} {
+    set dir [pwd]
+    cd [tcltest::temporaryDirectory]
+    file mkdir simpledir
+    close [open [file join simpledir simplefile] w]
+    testsimplefilesystem 1
+    set res [glob -nocomplain simplefs:/*]
+    testsimplefilesystem 0
+    file delete -force simpledir
+    cd $dir
+    if {[llength $res] > 0} {
+	set res "ok"
+    } else {
+	set res "no files found with 'glob -nocomplain simplefs:/*'"
+    }
+} {ok}
+
 test filesystem-7.4 {cross-filesystem file copy with -force} \
   {testsimplefilesystem} {
     set dir [pwd]
