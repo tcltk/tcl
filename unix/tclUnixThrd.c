@@ -819,7 +819,7 @@ TclpReaddir(DIR * dir)
 #   endif /* HAVE_STRUCT_DIRENT64 */
     if (ent != NULL) {
 	memcpy((VOID *) &tsdPtr->rdbuf.ent, (VOID *) ent,
-		sizeof(&tsdPtr->rdbuf));
+		sizeof(tsdPtr->rdbuf));
 	ent = &tsdPtr->rdbuf.ent;
     }
     Tcl_MutexUnlock(&rdMutex);
