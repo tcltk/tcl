@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.68 2004/10/30 21:36:48 kennykb Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.69 2004/11/01 16:58:37 kennykb Exp $
  */
 
 //#define _WIN32_WINNT  0x0500
@@ -162,6 +162,8 @@ typedef enum _FINDEX_SEARCH_OPS {
 /* Other typedefs required by this code */
 
 static time_t		ToCTime(FILETIME fileTime);
+static void             FromCTime( time_t posixTime,
+				   FILETIME* fileTime );
 
 typedef NET_API_STATUS NET_API_FUNCTION NETUSERGETINFOPROC
 	(LPWSTR servername, LPWSTR username, DWORD level, LPBYTE *bufptr);
@@ -1998,15 +2000,39 @@ NativeStatMode(DWORD attr, int checkLinks, int isExec)
  */
 
 static time_t
-ToCTime( FILETIME fileTime )	/* UTC Time to convert to local time_t. */
+ToCTime( FILETIME fileTime )	/* UTC time */
 {
-
     LARGE_INTEGER convertedTime;
     convertedTime.LowPart = fileTime.dwLowDateTime;
     convertedTime.HighPart = (LONG) fileTime.dwHighDateTime;
     return (time_t) ( (convertedTime.QuadPart
 		       - (Tcl_WideInt) POSIX_EPOCH_AS_FILETIME)
 		      / (Tcl_WideInt) 10000000);
+}
+
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * FromCTime --
+ *
+ *	Converts a time_t to a Windows FILETIME
+ *
+ * Results:
+ *	Returns the count of 100-ns ticks seconds from the Windows epoch.
+ *
+ *------------------------------------------------------------------------
+ */
+
+static void
+FromCTime( time_t posixTime,
+	   FILETIME* fileTime )	/* UTC Time */
+{
+    LARGE_INTEGER convertedTime;
+    convertedTime.QuadPart = ((LONGLONG) posixTime) * 10000000 
+	+ POSIX_EPOCH_AS_FILETIME;
+    fileTime->dwLowDateTime = convertedTime.LowPart;
+    fileTime->dwHighDateTime = convertedTime.HighPart;
 }
 
 #if 0
@@ -2895,7 +2921,8 @@ TclNativeDupInternalRep(clientData)
  *	0 on success, -1 on error.
  *
  * Side effects:
- *	None.
+ *	Sets errno to a representation of any Windows problem that's
+ *	observed in the process.
  *
  *---------------------------------------------------------------------------
  */
@@ -2904,24 +2931,29 @@ TclpUtime(pathPtr, tval)
     Tcl_Obj *pathPtr;      /* File to modify */
     struct utimbuf *tval;  /* New modification date structure */
 {
-    int res;
-#ifndef __BORLANDC__
-    /* 
-     * Windows uses a slightly different structure name and, possibly,
-     * contents, so we have to copy the information over
-     */
-    struct _utimbuf buf;
-#else
-    /*
-     * Borland's compiler does not, but we still copy the content into a
-     * local variable using the 'generic' name
-     */
-    struct utimbuf buf;
-#endif
-
-    buf.actime = tval->actime;
-    buf.modtime = tval->modtime;
-    
-    res = (*tclWinProcs->utimeProc)(Tcl_FSGetNativePath(pathPtr),&buf);
+    int res = 0;
+    char* path;
+    int pathLen;
+    Tcl_DString buffer;
+    TCHAR* winPath;
+    HANDLE fileHandle;
+    FILETIME lastAccessTime;
+    FILETIME lastModTime;
+    FromCTime( tval->actime, &lastAccessTime );
+    FromCTime( tval->modtime, &lastModTime );
+    path = Tcl_GetStringFromObj( pathPtr, &pathLen );
+    winPath = Tcl_WinUtfToTChar( path, pathLen, &buffer );
+    fileHandle = (tclWinProcs->createFileProc)
+	( winPath, FILE_WRITE_ATTRIBUTES, 0, NULL, OPEN_EXISTING, 
+	  FILE_ATTRIBUTE_NORMAL, NULL );
+    if ( fileHandle == INVALID_HANDLE_VALUE
+	 || !SetFileTime( fileHandle, NULL, &lastAccessTime, &lastModTime ) ) {
+	TclWinConvertError( GetLastError() );
+	res = -1;
+    }
+    if ( fileHandle != INVALID_HANDLE_VALUE ) {
+	CloseHandle( fileHandle );
+    }
+    Tcl_DStringFree( &buffer );
     return res;
 }

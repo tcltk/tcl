@@ -1,3 +1,15 @@
+2004-11-01  Kevin B. Kenny  <kennykb@acm.org>
+
+	* win/tclWinFile.c (FromCTime, TclpUtime): Replaced a call to the
+	Posix 'utime' function with calls to Windows-API equivalents, to
+	avoid a bug where the VC++ versions misconvert times across a
+	Daylight Saving Time boundary.	[Bug 926106]
+	* win/tclWinInt.h (TclWinProcs):
+	* win/tclWin32Dll.c (asciiProcs, unicodeProcs): Removed now-unused
+	reference to 'utime'.
+	* tests/cmdAH.test (cmdAH-24.12): Added test case for the
+	above bug.
+	
 2004-11-01  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclExecute.c (TclExecuteByteCode): Make INST_EQ and
