@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: trace.test,v 1.19 2002/06/17 22:52:51 hobbs Exp $
+# RCS: @(#) $Id: trace.test,v 1.20 2002/07/18 13:37:46 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -1254,7 +1254,7 @@ test trace-20.1 {trace add command (delete option)} {
     trace add command foo delete traceCommand
     rename foo ""
     set info
-} {foo {} delete}
+} {::foo {} delete}
 test trace-20.2 {trace add command delete doesn't trace recreated commands} {
     set info {}
     proc foo {} {}
@@ -1271,7 +1271,7 @@ test trace-20.3 {trace add command implicit delete} {
     trace add command foo delete traceCommand
     proc foo {} {}
     set info
-} {foo {} delete}
+} {::foo {} delete}
 test trace-20.3.1 {trace add command delete trace info} {
     proc foo {} {}
     trace info command foo
@@ -1287,7 +1287,7 @@ test trace-20.4 {trace add command rename followed by delete} {
     set info $infotemp
     unset infotemp
     set info
-} {{foo bar rename} {bar {} delete}}
+} {{foo bar rename} {::bar {} delete}}
 catch {rename foo {}}
 catch {rename bar {}}
 
@@ -1303,7 +1303,7 @@ test trace-20.5 {trace add command rename and delete} {
     set info $infotemp
     unset infotemp
     set info
-} {{foo bar rename} {bar {} delete}}
+} {{foo bar rename} {::bar {} delete}}
 
 test trace-20.6 {trace add command rename and delete in subinterp} {
     set tc [interp create]
@@ -1323,7 +1323,7 @@ test trace-20.6 {trace add command rename and delete in subinterp} {
     set info [$tc eval [list set info]]
     interp delete $tc
     set info
-} {{foo bar rename} {bar {} delete}}
+} {{foo bar rename} {::bar {} delete}}
 
 # I'd like it if this test could give 'foo {} d' as a result,
 # but interp deletion means there is no interp to evaluate
