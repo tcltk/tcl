@@ -1,5 +1,9 @@
 2004-10-04  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
+	* generic/tclParseExpr.c (GetLexeme): Ensure that the 'eq' and
+	'ne' operators are followed by non-alphabetic characters so
+	lexemes can't run together. [Bug 884830]
+
 	* doc/DictObj.3, doc/dict.n: Clarified that a dictionary is not
 	order-preserving. [Bug 1032243]  Also added another example to
 	show off more ways of using a dictionary and a few other
