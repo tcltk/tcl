@@ -1,3 +1,8 @@
+2005-01-25  Don Porter  <dgp@users.sourceforge.net>
+
+        * library/auto.tcl:     Updated [auto_reset] to clear auto-loaded
+        procs in namespaces other than :: [Bug 1101670].
+
 2005-01-25  Daniel Steffen  <das@users.sourceforge.net>
 
 	* unix/tcl.m4 (Darwin): fixed bug with static build linking to
