@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParseExpr.c,v 1.12 2002/02/15 14:28:49 dkf Exp $
+ * RCS: @(#) $Id: tclParseExpr.c,v 1.13 2002/06/21 21:17:39 jenglish Exp $
  */
 
 #include "tclInt.h"
@@ -1996,6 +1996,7 @@ LogSyntaxError(infoPtr, extraInfo)
 	sprintf(buffer, "syntax error in expression \"%s\"",
 		infoPtr->originalExpr);
     }
+    Tcl_ResetResult(infoPtr->parsePtr->interp);
     Tcl_AppendStringsToObj(Tcl_GetObjResult(infoPtr->parsePtr->interp),
 	    buffer, ": ", extraInfo, (char *) NULL);
     infoPtr->parsePtr->errorType = TCL_PARSE_SYNTAX;

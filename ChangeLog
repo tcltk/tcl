@@ -1,3 +1,10 @@
+2002-06-21  Joe English  <jenglish@users.sourceforge.net>
+
+	* generic/tclCompExpr.c:
+	* generic/tclParseExpr.c: LogSyntaxError() should reset 
+	the interpreter result [Bug 550142 "Tcl_ExprObj -> abort"] 
+
+
 2002-06-21  Don Porter  <dgp@users.sourceforge.net>
 
 	* library/init.tcl:  Corrected comments and namespace style
