@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: binary.test,v 1.18.2.3 2005/03/03 21:29:28 kennykb Exp $
+# RCS: @(#) $Id: binary.test,v 1.18.2.4 2005/03/15 19:08:08 kennykb Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -1391,14 +1391,8 @@ test binary-40.1 {ScanNumber: floating point overflow} {nonPortable bigEndian} {
 test binary-40.3 {ScanNumber: floating point overflow} {littleEndian win} {
     catch {unset arg1}
     set result [binary scan \xff\xff\xff\xff f1 arg1]
-    if {[string equal $arg1 -1.\#QNAN] 
-	|| [string equal -nocase $arg1 -NAN] 
-	|| [string equal -nocase $arg1 NAN] } {
-	lappend result success
-    } else {
-	lappend result failure $arg1
-    }
-} {1 success}
+    lappend result [regexp -nocase NaN $arg1]
+} {1 1}
 test binary-40.4 {ScanNumber: floating point overflow} {nonPortable bigEndian} {
     catch {unset arg1}
     list [binary scan \xff\xff\xff\xff\xff\xff\xff\xff d1 arg1] $arg1
@@ -1406,14 +1400,8 @@ test binary-40.4 {ScanNumber: floating point overflow} {nonPortable bigEndian} {
 test binary-40.6 {ScanNumber: floating point overflow} {littleEndian win} {
     catch {unset arg1}
     set result [binary scan \xff\xff\xff\xff\xff\xff\xff\xff d1 arg1]
-    if {[string equal $arg1 -1.\#QNAN] 
-	|| [string equal -nocase $arg1 -NAN] 
-	|| [string equal -nocase $arg1 NAN] } {
-	lappend result success
-    } else {
-	lappend result failure $arg1
-    }
-} {1 success}
+    lappend result [regexp -nocase NaN $arg1]
+} {1 1}
 
 test binary-41.1 {ScanNumber: word alignment} {
     catch {unset arg1; unset arg2}
