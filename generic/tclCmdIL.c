@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.18 1999/11/24 20:55:07 hobbs Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.19 1999/12/21 23:58:03 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -30,6 +30,7 @@
 
 typedef struct SortElement {
     Tcl_Obj *objPtr;			/* Object being sorted. */
+    int count;				/* number of same elements in list */
     struct SortElement *nextPtr;        /* Next element in the list, or
 					 * NULL for end of list. */
 } SortElement;
@@ -2428,7 +2429,7 @@ Tcl_LsortObjCmd(clientData, interp, objc, objv)
     int objc;			/* Number of arguments. */
     Tcl_Obj *CONST objv[];	/* Argument values. */
 {
-    int i, index;
+    int i, index, unique;
     Tcl_Obj *resultPtr;
     int length;
     Tcl_Obj *cmdPtr, **listObjPtrs;
@@ -2437,9 +2438,10 @@ Tcl_LsortObjCmd(clientData, interp, objc, objv)
     SortInfo sortInfo;                  /* Information about this sort that
                                          * needs to be passed to the 
                                          * comparison function */
-    static char *switches[] =
-	    {"-ascii", "-command", "-decreasing", "-dictionary",
-	    "-increasing", "-index", "-integer", "-real", (char *) NULL};
+    static char *switches[] = {
+	"-ascii", "-command", "-decreasing", "-dictionary", "-increasing",
+	"-index", "-integer", "-real", "-unique", (char *) NULL
+    };
 
     resultPtr = Tcl_GetObjResult(interp);
     if (objc < 2) {
@@ -2457,6 +2459,7 @@ Tcl_LsortObjCmd(clientData, interp, objc, objv)
     sortInfo.interp = interp;
     sortInfo.resultCode = TCL_OK;
     cmdPtr = NULL;
+    unique = 0;
     for (i = 1; i < objc-1; i++) {
 	if (Tcl_GetIndexFromObj(interp, objv[i], switches, "option", 0, &index)
 		!= TCL_OK) {
@@ -2506,6 +2509,9 @@ Tcl_LsortObjCmd(clientData, interp, objc, objv)
 	    case 7:			/* -real */
 		sortInfo.sortMode = SORTMODE_REAL;
 		break;
+	    case 8:			/* -unique */
+		unique = 1;
+		break;
 	}
     }
     if (sortInfo.sortMode == SORTMODE_COMMAND) {
@@ -2537,6 +2543,7 @@ Tcl_LsortObjCmd(clientData, interp, objc, objv)
     elementArray = (SortElement *) ckalloc(length * sizeof(SortElement));
     for (i=0; i < length; i++){
 	elementArray[i].objPtr = listObjPtrs[i];
+	elementArray[i].count = 0;
 	elementArray[i].nextPtr = &elementArray[i+1];
     }
     elementArray[length-1].nextPtr = NULL;
@@ -2549,8 +2556,18 @@ Tcl_LsortObjCmd(clientData, interp, objc, objv)
 
 	Tcl_ResetResult(interp);
 	resultPtr = Tcl_GetObjResult(interp);
-	for (; elementPtr != NULL; elementPtr = elementPtr->nextPtr){
-	    Tcl_ListObjAppendElement(interp, resultPtr, elementPtr->objPtr);
+	if (unique) {
+	    for (; elementPtr != NULL; elementPtr = elementPtr->nextPtr){
+		if (elementPtr->count == 0) {
+		    Tcl_ListObjAppendElement(interp, resultPtr,
+			    elementPtr->objPtr);
+		}
+	    }
+	} else {
+	    for (; elementPtr != NULL; elementPtr = elementPtr->nextPtr){
+		Tcl_ListObjAppendElement(interp, resultPtr,
+			elementPtr->objPtr);
+	    }
 	}
     }
     ckfree((char*) elementArray);
@@ -2650,6 +2667,7 @@ MergeLists(leftPtr, rightPtr, infoPtr)
 {
     SortElement *headPtr;
     SortElement *tailPtr;
+    int cmp;
 
     if (leftPtr == NULL) {
         return rightPtr;
@@ -2657,20 +2675,28 @@ MergeLists(leftPtr, rightPtr, infoPtr)
     if (rightPtr == NULL) {
         return leftPtr;
     }
-    if (SortCompare(leftPtr->objPtr, rightPtr->objPtr, infoPtr) > 0) {
+    cmp = SortCompare(leftPtr->objPtr, rightPtr->objPtr, infoPtr);
+    if (cmp > 0) {
 	tailPtr = rightPtr;
 	rightPtr = rightPtr->nextPtr;
     } else {
+	if (cmp == 0) {
+	    leftPtr->count++;
+	}
 	tailPtr = leftPtr;
 	leftPtr = leftPtr->nextPtr;
     }
     headPtr = tailPtr;
     while ((leftPtr != NULL) && (rightPtr != NULL)) {
-	if (SortCompare(leftPtr->objPtr, rightPtr->objPtr, infoPtr) > 0) {
+	cmp = SortCompare(leftPtr->objPtr, rightPtr->objPtr, infoPtr);
+	if (cmp > 0) {
 	    tailPtr->nextPtr = rightPtr;
 	    tailPtr = rightPtr;
 	    rightPtr = rightPtr->nextPtr;
 	} else {
+	    if (cmp == 0) {
+		leftPtr->count++;
+	    }
 	    tailPtr->nextPtr = leftPtr;
 	    tailPtr = leftPtr;
 	    leftPtr = leftPtr->nextPtr;

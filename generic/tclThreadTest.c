@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThreadTest.c,v 1.4 1999/10/21 02:16:22 hobbs Exp $
+ * RCS: @(#) $Id: tclThreadTest.c,v 1.5 1999/12/21 23:58:04 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -256,7 +256,7 @@ Tcl_ThreadObjCmd(dummy, interp, objc, objv)
 	}
 	case THREAD_ID:
 	    if (objc == 2) {
-		Tcl_Obj *idObj = Tcl_NewIntObj((int)Tcl_GetCurrentThread());
+		Tcl_Obj *idObj = Tcl_NewLongObj((long)Tcl_GetCurrentThread());
 		Tcl_SetObjResult(interp, idObj);
 		return TCL_OK;
 	    } else {
@@ -271,7 +271,7 @@ Tcl_ThreadObjCmd(dummy, interp, objc, objv)
 	    return TclThreadList(interp);
 	}
 	case THREAD_SEND: {
-	    int id;
+	    long id;
 	    char *script;
 	    int wait, arg;
 
@@ -290,7 +290,7 @@ Tcl_ThreadObjCmd(dummy, interp, objc, objv)
 		wait = 1;
 		arg = 2;
 	    }
-	    if (Tcl_GetIntFromObj(interp, objv[arg], &id) != TCL_OK) {
+	    if (Tcl_GetLongFromObj(interp, objv[arg], &id) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    arg++;
@@ -373,7 +373,7 @@ TclCreateThread(interp, script)
     Tcl_ConditionWait(&ctrl.condWait, &threadMutex, NULL);
     Tcl_MutexUnlock(&threadMutex);
     TclFinalizeCondition(&ctrl.condWait);
-    Tcl_SetObjResult(interp, Tcl_NewIntObj((int)id));
+    Tcl_SetObjResult(interp, Tcl_NewLongObj((long)id));
     return TCL_OK;
 }
 
@@ -610,7 +610,7 @@ TclThreadList(interp)
     Tcl_MutexLock(&threadMutex);
     for (tsdPtr = threadList ; tsdPtr ; tsdPtr = tsdPtr->nextPtr) {
 	Tcl_ListObjAppendElement(interp, listPtr,
-		Tcl_NewIntObj((int)tsdPtr->threadId));
+		Tcl_NewLongObj((long)tsdPtr->threadId));
     }
     Tcl_MutexUnlock(&threadMutex);
     Tcl_SetObjResult(interp, listPtr);

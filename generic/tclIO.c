@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.18 1999/12/08 03:49:52 hobbs Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.19 1999/12/21 23:58:03 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -2324,8 +2324,8 @@ FlushChannel(interp, chanPtr, calledFromAsyncFlush)
 		/*
 		 * This used to check for CHANNEL_NONBLOCKING, and panic
 		 * if the channel was blocking.  However, it appears
-		 * that setting stdin to -blocking 0 has some effect
-		 * on the stdout when it's a tty channel
+		 * that setting stdin to -blocking 0 has some effect on
+		 * the stdout when it's a tty channel (dup'ed underneath)
 		 */
 		if (!(chanPtr->flags & BG_FLUSH_SCHEDULED)) {
 		    chanPtr->flags |= BG_FLUSH_SCHEDULED;
