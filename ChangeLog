@@ -1,5 +1,19 @@
 2003-03-19  Don Porter  <dgp@users.sourceforge.net>
 
+	* library/auto.tcl:		Replaced [regexp] and [regsub] with
+	* library/history.tcl:		[string map] where possible.  Thanks
+	* library/ldAout.tcl:		to David Welton.  [Bugs 667456,667558]
+	* library/safe.tcl:		Bumped to http 2.4.3, opt 0.4.5, and
+	* library/http/http.tcl:	tcltest 2.2.3.
+	* library/http/pkgIndex.tcl:
+	* library/opt/optparse.tcl:
+	* library/opt/pkgIndex.tcl:
+	* library/tcltest/tcltest.tcl:
+	* library/tcltest/pkgIndex.tcl:
+	* tools/genStubs.tcl:
+	* tools/tcltk-man2html.tcl:
+	* unix/mkLinks.tcl:
+
 	* doc/Eval.3 (Tcl_EvalObjEx):			Corrected CONST and
 	* doc/ParseCmd.3 (Tcl_EvalTokensStandard):	return type errors
 	in documentation.  [Bug 683994]
