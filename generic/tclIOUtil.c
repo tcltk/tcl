@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.78 2003/04/11 15:59:54 vincentdarley Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.79 2003/04/14 15:48:35 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -1000,7 +1000,7 @@ Tcl_FSData(fsPtr)
 /*
  *---------------------------------------------------------------------------
  *
- * FSNormalizeAbsolutePath --
+ * TclFSNormalizeAbsolutePath --
  *
  * Description:
  *	Takes an absolute path specification and computes a 'normalized'
@@ -1032,7 +1032,7 @@ Tcl_FSData(fsPtr)
  *---------------------------------------------------------------------------
  */
 static Tcl_Obj*
-FSNormalizeAbsolutePath(interp, pathPtr, clientDataPtr)
+TclFSNormalizeAbsolutePath(interp, pathPtr, clientDataPtr)
     Tcl_Interp* interp;    /* Interpreter to use */
     Tcl_Obj *pathPtr;      /* Absolute path to normalize */
     ClientData *clientDataPtr;
@@ -2204,7 +2204,7 @@ Tcl_FSGetCwd(interp)
 	 * could be problematic.
 	 */
 	if (retVal != NULL) {
-	    Tcl_Obj *norm = FSNormalizeAbsolutePath(interp, retVal, NULL);
+	    Tcl_Obj *norm = TclFSNormalizeAbsolutePath(interp, retVal, NULL);
 	    if (norm != NULL) {
 		/* 
 		 * We found a cwd, which is now in our global storage.
@@ -2253,7 +2253,7 @@ Tcl_FSGetCwd(interp)
 	    if (proc != NULL) {
 		Tcl_Obj *retVal = (*proc)(interp);
 		if (retVal != NULL) {
-		    Tcl_Obj *norm = FSNormalizeAbsolutePath(interp, retVal, NULL);
+		    Tcl_Obj *norm = TclFSNormalizeAbsolutePath(interp, retVal, NULL);
 		    /* 
 		     * Check whether cwd has changed from the value
 		     * previously stored in cwdPathPtr.  Really 'norm'
