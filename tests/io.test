@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: io.test,v 1.30 2002/05/31 23:16:17 dgp Exp $
+# RCS: @(#) $Id: io.test,v 1.31 2002/06/06 18:44:43 dgp Exp $
 
 if {[catch {package require tcltest 2}]} {
     puts stderr "Skipping tests in [info script].  tcltest 2 required."
@@ -982,7 +982,7 @@ test io-6.56 {Tcl_GetsObj: incomplete lines should disable file events} {stdio} 
     fconfigure $f -buffering none
     puts -nonewline $f "foobar"
     fconfigure $f -blocking 0
-    set x {}
+    variable x {}
     after 500 [namespace code { lappend x timeout }]
     fileevent $f readable [namespace code { lappend x [gets $f] }]
     vwait [namespace which -variable x]
@@ -1042,7 +1042,7 @@ test io-7.4 {FilterInputBytes: recover from split up character} {stdio} {
     puts -nonewline $f "1234567890123\x82\x4f\x82\x50\x82"
     fconfigure $f -encoding shiftjis -blocking 0
     fileevent $f read [namespace code "ready $f"]
-    set x {}
+    variable x {}
     proc ready {f} {
 	variable x
 	lappend x [gets $f line] $line [fblocked $f]
@@ -1077,7 +1077,7 @@ test io-8.2 {PeekAhead: only go to device if no more cached data} {stdio testcha
     set f [open "|[list [interpreter] cat]" w+]
     fconfigure $f -translation lf -encoding ascii -buffering none
     puts -nonewline $f "123456789012345\r\nbcdefghijklmnopqrstuvwxyz"
-    set x {}
+    variable x {}
     fileevent $f read [namespace code "ready $f"]
     proc ready {f} {
 	variable x
@@ -1327,7 +1327,7 @@ test io-12.4 {ReadChars: split-up char} {stdio testchannel} {
 	variable x
 	lappend x [read $f] [testchannel inputbuffered $f]
     }
-    set x {}
+    variable x {}
 
     fconfigure $f -encoding shiftjis
     vwait [namespace which -variable x]
@@ -1356,7 +1356,7 @@ test io-12.5 {ReadChars: fileevents on partial characters} {stdio} {
     puts $f "go1"
     flush $f
     fconfigure $f -blocking 0 -encoding utf-8
-    set x {}
+    variable x {}
     vwait [namespace which -variable x]
     after 500 [namespace code { lappend x timeout }]
     vwait [namespace which -variable x]
@@ -1446,8 +1446,8 @@ test io-13.6 {TranslateInputEOL: auto mode: saw cr in last segment} {stdio testc
 	variable x
 	lappend x [read $f] [testchannel queuedcr $f]
     }
-    set x {}
-    set y {}
+    variable x {}
+    variable y {}
 
     puts -nonewline $f "abcdefghj\r"
     after 500 [namespace code {set y ok}]
@@ -2656,7 +2656,7 @@ test io-29.33 {Tcl_Flush, implicit flush on exit} {stdio} {
 } "hello\nbye\nstrange\n"
 test io-29.34 {Tcl_Close, async flush on close, using sockets} {socket tempNotMac} {
     set c 0
-    set x running
+    variable x running
     set l abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz
     proc writelots {s l} {
 	for {set i 0} {$i < 2000} {incr i} {
@@ -4682,6 +4682,7 @@ test io-36.4 {Tcl_InputBlocked vs files, event driven read} {
     set f [open test1 r]
     set l ""
     fileevent $f readable [namespace code [list in $f]]
+    variable x
     vwait [namespace which -variable x]
     set l
 } {abc def ghi jkl mno {p
@@ -4718,6 +4719,7 @@ test io-36.6 {Tcl_InputBlocked vs files, event driven read} {nonBlockFiles} {
     fconfigure $f -blocking off
     set l ""
     fileevent $f readable [namespace code [list in $f]]
+    variable x
     vwait [namespace which -variable x]
     set l
 } {abc def ghi jkl mno {p
@@ -4998,7 +5000,7 @@ test io-39.17 {Tcl_SetChannelOption: -encoding, clearing CHANNEL_NEED_MORE_DATA}
     puts -nonewline $f "\xe7"
     flush $f
     fconfigure $f -encoding utf-8 -blocking 0
-    set x {}
+    variable x {}
     fileevent $f readable [namespace code { lappend x [read $f] }]
     vwait [namespace which -variable x]
     after 300 [namespace code { lappend x timeout }]
@@ -5385,7 +5387,7 @@ test io-44.1 {FileEventProc procedure: normal read event} {stdio unixExecs} {
 	set x [gets $f2]; fileevent $f2 readable {}
     }]
     puts $f2 text; flush $f2
-    set x initial
+    variable x initial
     vwait [namespace which -variable x]
     set x
 } {text}
@@ -5393,7 +5395,7 @@ test io-44.2 {FileEventProc procedure: error in read event} {stdio unixExecs} {
     proc ::bgerror args "set [namespace which -variable x] \$args"
     fileevent $f2 readable {error bogus}
     puts $f2 text; flush $f2
-    set x initial
+    variable x initial
     vwait [namespace which -variable x]
     rename ::bgerror {}
     list $x [fileevent $f2 readable]
@@ -5406,7 +5408,7 @@ test io-44.3 {FileEventProc procedure: normal write event} {stdio unixExecs} {
 	    fileevent $f2 writable {}
 	}
     }]
-    set x initial
+    variable x initial
     set count 3
     vwait [namespace which -variable x]
     vwait [namespace which -variable x]
@@ -5416,7 +5418,7 @@ test io-44.3 {FileEventProc procedure: normal write event} {stdio unixExecs} {
 test io-44.4 {FileEventProc procedure: eror in write event} {stdio unixExecs} {
     proc ::bgerror args "set [namespace which -variable x] \$args"
     fileevent $f2 writable {error bad-write}
-    set x initial
+    variable x initial
     vwait [namespace which -variable x]
     rename ::bgerror {}
     list $x [fileevent $f2 writable]
@@ -5431,7 +5433,7 @@ test io-44.5 {FileEventProc procedure: end of file} {stdio unixExecs} {
 	    lappend x $line
 	}
     }]
-    set x initial
+    variable x initial
     vwait [namespace which -variable x]
     vwait [namespace which -variable x]
     close $f4
@@ -5453,6 +5455,7 @@ test io-45.1 {DeleteFileEvent, cleanup on close} {
     close $f
     set x initial
     after 100 [namespace code { set y done }]
+    variable y
     vwait [namespace which -variable y]
     set x
 } {initial}
@@ -5468,7 +5471,7 @@ test io-45.2 {DeleteFileEvent, cleanup on close} {
 	fileevent $f2 readable {}
     }]
     close $f
-    set x initial
+    variable x initial
     vwait [namespace which -variable x]
     close $f2
     set x
@@ -5516,7 +5519,7 @@ test io-46.1 {Tcl event loop vs multiple interpreters} {testfevent} {
 test io-46.2 {Tcl event loop vs multiple interpreters} testfevent {
     testfevent create
     testfevent cmd {
-        set x 0
+        variable x 0
         after 100 {set x triggered}
         vwait [namespace which -variable x]
         set x
@@ -5662,7 +5665,7 @@ test io-48.1 {testing readability conditions} {
 	}
     }
     set l ""
-    set x not_done
+    variable x not_done
     vwait [namespace which -variable x]
     list $x $l
 } {done {called called called called called called called}}
@@ -5689,7 +5692,7 @@ test io-48.2 {testing readability conditions} {nonBlockFiles} {
 	}
     }
     set l ""
-    set x not_done
+    variable x not_done
     vwait [namespace which -variable x]
     list $x $l
 } {done {called called called called called called called}}
@@ -5729,7 +5732,7 @@ test io-48.3 {testing readability conditions} {stdio unixOnly nonBlockFiles} {
 	}
     }
     set l ""
-    set x not_done
+    variable x not_done
     puts $f {source my_script}
     puts $f {set f [open bar r]}
     puts $f {copy_slowly $f}
@@ -5762,6 +5765,7 @@ test io-48.4 {lf write, testing readability, ^Z termination, auto read mode} {
     set f [open test1 r]
     fconfigure $f -translation auto -eofchar \x1a
     fileevent $f readable [namespace code [list consume $f]]
+    variable x
     vwait [namespace which -variable x]
     list $c $l
 } {3 {abc def {}}}
@@ -5789,6 +5793,7 @@ test io-48.5 {lf write, testing readability, ^Z in middle, auto read mode} {
     set f [open test1 r]
     fconfigure $f -eofchar \x1a -translation auto
     fileevent $f readable [namespace code [list consume $f]]
+    variable x
     vwait [namespace which -variable x]
     list $c $l
 } {3 {abc def {}}}
@@ -5816,6 +5821,7 @@ test io-48.6 {cr write, testing readability, ^Z termination, auto read mode} {
     set f [open test1 r]
     fconfigure $f -translation auto -eofchar \x1a
     fileevent $f readable [namespace code [list consume $f]]
+    variable x
     vwait [namespace which -variable x]
     list $c $l
 } {3 {abc def {}}}
@@ -5843,6 +5849,7 @@ test io-48.7 {cr write, testing readability, ^Z in middle, auto read mode} {
     set f [open test1 r]
     fconfigure $f -eofchar \x1a -translation auto
     fileevent $f readable [namespace code [list consume $f]]
+    variable x
     vwait [namespace which -variable x]
     list $c $l
 } {3 {abc def {}}}
@@ -5870,6 +5877,7 @@ test io-48.8 {crlf write, testing readability, ^Z termination, auto read mode} {
     set f [open test1 r]
     fconfigure $f -translation auto -eofchar \x1a
     fileevent $f readable [namespace code [list consume $f]]
+    variable x
     vwait [namespace which -variable x]
     list $c $l
 } {3 {abc def {}}}
@@ -5897,6 +5905,7 @@ test io-48.9 {crlf write, testing readability, ^Z in middle, auto read mode} {
     set f [open test1 r]
     fconfigure $f -eofchar \x1a -translation auto
     fileevent $f readable [namespace code [list consume $f]]
+    variable x
     vwait [namespace which -variable x]
     list $c $l
 } {3 {abc def {}}}
@@ -5924,6 +5933,7 @@ test io-48.10 {lf write, testing readability, ^Z in middle, lf read mode} {
     set f [open test1 r]
     fconfigure $f -eofchar \x1a -translation lf
     fileevent $f readable [namespace code [list consume $f]]
+    variable x
     vwait [namespace which -variable x]
     list $c $l
 } {3 {abc def {}}}
@@ -5951,6 +5961,7 @@ test io-48.11 {lf write, testing readability, ^Z termination, lf read mode} {
     set f [open test1 r]
     fconfigure $f -translation lf -eofchar \x1a
     fileevent $f readable [namespace code [list consume $f]]
+    variable x
     vwait [namespace which -variable x]
     list $c $l
 } {3 {abc def {}}}
@@ -5978,6 +5989,7 @@ test io-48.12 {cr write, testing readability, ^Z in middle, cr read mode} {
     set f [open test1 r]
     fconfigure $f -eofchar \x1a -translation cr
     fileevent $f readable [namespace code [list consume $f]]
+    variable x
     vwait [namespace which -variable x]
     list $c $l
 } {3 {abc def {}}}
@@ -6005,6 +6017,7 @@ test io-48.13 {cr write, testing readability, ^Z termination, cr read mode} {
     set f [open test1 r]
     fconfigure $f -translation cr -eofchar \x1a
     fileevent $f readable [namespace code [list consume $f]]
+    variable x
     vwait [namespace which -variable x]
     list $c $l
 } {3 {abc def {}}}
@@ -6032,6 +6045,7 @@ test io-48.14 {crlf write, testing readability, ^Z in middle, crlf read mode} {
     set f [open test1 r]
     fconfigure $f -eofchar \x1a -translation crlf
     fileevent $f readable [namespace code [list consume $f]]
+    variable x
     vwait [namespace which -variable x]
     list $c $l
 } {3 {abc def {}}}
@@ -6059,6 +6073,7 @@ test io-48.15 {crlf write, testing readability, ^Z termi, crlf read mode} {
     set f [open test1 r]
     fconfigure $f -translation crlf -eofchar \x1a
     fileevent $f readable [namespace code [list consume $f]]
+    variable x
     vwait [namespace which -variable x]
     list $c $l
 } {3 {abc def {}}}
@@ -6352,7 +6367,7 @@ test io-51.1 {Test old socket deletion on Macintosh} {socket} {
 	set wait done
     }
     set ss [socket -server [namespace code accept] 0]
-    set wait ""
+    variable wait ""
     set cs [socket [info hostname] [lindex [fconfigure $ss -sockname] 2]]
     vwait [namespace which -variable wait]
     lappend result [gets $cs]
@@ -6607,6 +6622,7 @@ test io-53.2 {CopyData} {
     fconfigure $f2 -translation cr -blocking 0
     fcopy $f1 $f2 -command [namespace code {set s0}]
     set result [list [fconfigure $f1 -blocking] [fconfigure $f2 -blocking]]
+    variable s0
     vwait [namespace which -variable s0]
     close $f1
     close $f2
@@ -6649,6 +6665,7 @@ test io-53.3 {CopyData: background read underflow} {stdio unixOnly} {
 } "ready line1 line2 {done\n}"
 test io-53.4 {CopyData: background write overflow} {stdio unixOnly} {
     set big bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\n
+    variable x
     for {set x 0} {$x < 12} {incr x} {
 	append big $big
     }
@@ -6698,12 +6715,14 @@ proc FcopyTestDone {bytes {error {}}} {
 }
 
 test io-53.5 {CopyData: error during fcopy} {socket} {
+    variable fcopyTestDone
     set listen [socket -server [namespace code FcopyTestAccept] 0]
     set in [open $thisScript]	;# 126 K
     set out [socket 127.0.0.1 [lindex [fconfigure $listen -sockname] 2]]
     catch {unset fcopyTestDone}
     close $listen	;# This means the socket open never really succeeds
     fcopy $in $out -command [namespace code FcopyTestDone]
+    variable fcopyTestDone
     if ![info exists fcopyTestDone] {
 	vwait [namespace which -variable fcopyTestDone]		;# The error occurs here in the b.g.
     }
@@ -6712,6 +6731,7 @@ test io-53.5 {CopyData: error during fcopy} {socket} {
     set fcopyTestDone	;# 1 for error condition
 } 1
 test io-53.6 {CopyData: error during fcopy} {stdio} {
+    variable fcopyTestDone
     removeFile pipe
     removeFile test1
     catch {unset fcopyTestDone}
@@ -6748,6 +6768,7 @@ proc doFcopy {in out {bytes 0} {error {}}} {
 }
 
 test io-53.7 {CopyData: Flooding fcopy from pipe} {stdio} {
+    variable fcopyTestDone
     removeFile pipe
     removeFile test1
     catch {unset fcopyTestDone}
@@ -6772,6 +6793,7 @@ test io-53.7 {CopyData: Flooding fcopy from pipe} {stdio} {
     set in [open "|[list [interpreter] pipe &]" r+]
     set out [open test1 w]
     doFcopy $in $out
+    variable fcopyTestDone
     if ![info exists fcopyTestDone] {
 	vwait [namespace which -variable fcopyTestDone]
     }
@@ -6819,8 +6841,8 @@ test io-54.1 {Recursive channel events} {socket} {
 	close $ss
 	error "failed to connect to server"
     }
-    set result {}
-    set x 0
+    variable result {}
+    variable x 0
     variable as
     vwait [namespace which -variable as]
     fconfigure $cs -translation lf
@@ -6838,7 +6860,7 @@ test io-54.1 {Recursive channel events} {socket} {
 test io-54.2 {Testing for busy-wait in recursive channel events} {socket} {
     set accept {}
     set after {}
-    set s [socket -server [namespace code accept] 0]
+    variable s [socket -server [namespace code accept] 0]
     proc accept {s a p} {
 	variable counter
 	variable accept
@@ -6886,6 +6908,7 @@ test io-54.2 {Testing for busy-wait in recursive channel events} {socket} {
 	set done 1
     }
     producer
+    variable done
     vwait [namespace which -variable done]
     close $writer
     close $s
@@ -6905,7 +6928,7 @@ test io-55.1 {ChannelEventScriptInvoker: deletion} {
     proc ::bgerror {args} "set [namespace which -variable x] got_error"
     set f [open fooBar w]
     fileevent $f writable [namespace code [list eventScript $f]]
-    set x not_done
+    variable x not_done
     vwait [namespace which -variable x]
     set x
 } {got_error}
@@ -6919,12 +6942,13 @@ test io-56.1 {ChannelTimerProc} {testchannelevent} {
 	read $f 1
 	incr x
     }]
-    set x 0
+    variable x 0
     vwait [namespace which -variable x]
     vwait [namespace which -variable x]
     set result $x
     testchannelevent $f set 0 none
     after idle [namespace code {set y done}]
+    variable y
     vwait [namespace which -variable y]
     close $f
     lappend result $y
@@ -6937,12 +6961,13 @@ test io-57.1 {buffered data and file events, gets} {
     }
     set server [socket -server [namespace code accept] 0]
     set s [socket 127.0.0.1 [lindex [fconfigure $server -sockname] 2]]
+    variable s2
     vwait [namespace which -variable s2]
     update
     fileevent $s2 readable [namespace code {lappend result readable}]
     puts $s "12\n34567890"
     flush $s
-    set result [gets $s2]
+    variable result [gets $s2]
     after 1000 [namespace code {lappend result timer}]
     vwait [namespace which -variable result]
     lappend result [gets $s2]
@@ -6959,12 +6984,13 @@ test io-57.2 {buffered data and file events, read} {
     }
     set server [socket -server [namespace code accept] 0]
     set s [socket 127.0.0.1 [lindex [fconfigure $server -sockname] 2]]
+    variable s2
     vwait [namespace which -variable s2]
     update
     fileevent $s2 readable [namespace code {lappend result readable}]
     puts -nonewline $s "1234567890"
     flush $s
-    set result [read $s2 1]
+    variable result [read $s2 1]
     after 1000 [namespace code {lappend result timer}]
     vwait [namespace which -variable result]
     lappend result [read $s2 9]
@@ -6996,7 +7022,7 @@ test io-58.1 {Tcl_NotifyChannel and error when closing} {stdio unixOrPc} {
     close $out
     set pipe [open "|[list [interpreter]] script" r]
     fileevent $pipe readable [namespace code [list readit $pipe]]
-    set x ""
+    variable x ""
     set result ""
     vwait [namespace which -variable x]
     list $x $result
