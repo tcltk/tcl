@@ -2112,7 +2112,6 @@ struct subre *t;
 FILE *f;
 int nfapresent;			/* is the original NFA still around? */
 {
-	int i;
 	char idbuf[50];
 
 	fprintf(f, "%s. `%c'", stid(t, idbuf, sizeof(idbuf)), t->op);
