@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.149 2004/11/12 16:44:56 dkf Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.150 2004/11/12 18:07:49 rmax Exp $
 
 VERSION 		= @TCL_VERSION@
 MAJOR_VERSION		= @TCL_MAJOR_VERSION@
@@ -240,6 +240,7 @@ AR			= @AR@
 RANLIB			= @RANLIB@
 SRC_DIR			= @srcdir@
 TOP_DIR			= @srcdir@/..
+BUILD_DIR		= @builddir@
 GENERIC_DIR		= $(TOP_DIR)/generic
 COMPAT_DIR		= $(TOP_DIR)/compat
 TOOL_DIR		= $(TOP_DIR)/tools
@@ -274,12 +275,12 @@ DDD			= ddd
 
 
 CC_SWITCHES = ${CFLAGS} ${CFLAGS_WARNING} ${SHLIB_CFLAGS} \
--I${GENERIC_DIR} -I${UNIX_DIR} -I${SRC_DIR} \
+-I${GENERIC_DIR} -I${UNIX_DIR} -I${SRC_DIR} -I${BUILD_DIR} \
 ${AC_FLAGS} ${MATH_FLAGS} ${GENERIC_FLAGS} ${PROTO_FLAGS} \
 ${NO_DEPRECATED_FLAGS} ${ENV_FLAGS}
 
 STUB_CC_SWITCHES = ${CFLAGS} ${CFLAGS_WARNING} ${SHLIB_CFLAGS} \
--I${GENERIC_DIR} -I${SRC_DIR} \
+-I${GENERIC_DIR} -I${SRC_DIR} -I${BUILD_DIR} \
 ${AC_FLAGS} ${MATH_FLAGS} ${GENERIC_FLAGS} ${PROTO_FLAGS} ${ENV_FLAGS}
 
 LIBS		= @TCL_LIBS@
@@ -758,7 +759,7 @@ install-private-headers: libraries
 	@echo "Installing private header files";
 	@for i in $(GENERIC_DIR)/tclInt.h $(GENERIC_DIR)/tclIntDecls.h \
 		$(GENERIC_DIR)/tclIntPlatDecls.h $(GENERIC_DIR)/tclPort.h \
-		$(UNIX_DIR)/tclUnixPort.h ; \
+		$(UNIX_DIR)/tclUnixPort.h $(BUILD_DIR)/tclConfig.h; \
 	    do \
 	    $(INSTALL_DATA) $$i $(PRIVATE_INCLUDE_INSTALL_DIR); \
 	    done;
@@ -1294,10 +1295,12 @@ DISTROOT = /tmp/dist
 DISTNAME = tcl${VERSION}${PATCH_LEVEL}
 ZIPNAME	 = tcl${MAJOR_VERSION}${MINOR_VERSION}${PATCH_LEVEL}-src.zip
 DISTDIR	 = $(DISTROOT)/$(DISTNAME)
-$(UNIX_DIR)/configure: $(UNIX_DIR)/configure.in
-	autoconf $(UNIX_DIR)/configure.in > $(UNIX_DIR)/configure
+$(UNIX_DIR)/configure: $(UNIX_DIR)/configure.in $(UNIX_DIR)/tcl.m4
+	cd $(UNIX_DIR); autoconf
+$(UNIX_DIR)/tclConfig.h.in: $(UNIX_DIR)/configure.in
+	cd $(UNIX_DIR); autoheader
 
-dist: $(UNIX_DIR)/configure mklinks
+dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in mklinks
 	rm -rf $(DISTDIR)
 	mkdir -p $(DISTDIR)/unix
 	cp -p $(UNIX_DIR)/*.c $(UNIX_DIR)/*.h $(DISTDIR)/unix
@@ -1307,7 +1310,7 @@ dist: $(UNIX_DIR)/configure mklinks
 		$(UNIX_DIR)/tcl.m4 $(UNIX_DIR)/aclocal.m4 \
 		$(UNIX_DIR)/tclConfig.sh.in $(UNIX_DIR)/install-sh \
 		$(UNIX_DIR)/README $(UNIX_DIR)/ldAix $(UNIX_DIR)/tcl.spec \
-		$(UNIX_DIR)/mkLinks \
+		$(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/mkLinks \
 		$(DISTDIR)/unix
 	chmod 775 $(DISTDIR)/unix/configure $(DISTDIR)/unix/configure.in
 	chmod 775 $(DISTDIR)/unix/ldAix

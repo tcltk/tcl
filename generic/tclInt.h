@@ -12,14 +12,14 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.194 2004/11/12 16:44:56 dkf Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.195 2004/11/12 18:07:49 rmax Exp $
  */
 
 #ifndef _TCLINT
 #define _TCLINT
 
 #ifdef HAVE_CONFIG_H
-#include <config.h>
+#include "tclConfig.h"
 #endif
 
 /*
