@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.26 2001/07/03 23:39:10 hobbs Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.27 2001/08/30 12:04:13 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -5337,6 +5337,22 @@ Tcl_GetCommandFromObj(interp, objPtr)
     register Command *cmdPtr;
     Namespace *currNsPtr;
     int result;
+    CallFrame *savedFramePtr;
+    char *name;
+
+    /*
+     * If the variable name is fully qualified, do as if the lookup were
+     * done from the global namespace; this helps avoid repeated lookups 
+     * of fully qualified names. It costs close to nothing, and may be very
+     * helpful for OO applications which pass along a command name ("this"),
+     * [Patch 456668]
+     */
+
+    savedFramePtr = iPtr->varFramePtr;
+    name = Tcl_GetString(objPtr);
+    if ((*name++ == ':') && (*name == ':')) {
+	iPtr->varFramePtr = NULL;
+    }
 
     /*
      * Get the internal representation, converting to a command type if
@@ -5347,6 +5363,7 @@ Tcl_GetCommandFromObj(interp, objPtr)
     if (objPtr->typePtr != &tclCmdNameType) {
         result = tclCmdNameType.setFromAnyProc(interp, objPtr);
         if (result != TCL_OK) {
+	    iPtr->varFramePtr = savedFramePtr;
             return (Tcl_Command) NULL;
         }
     }
@@ -5393,6 +5410,7 @@ Tcl_GetCommandFromObj(interp, objPtr)
             cmdPtr = resPtr->cmdPtr;
         }
     }
+    iPtr->varFramePtr = savedFramePtr;
     return (Tcl_Command) cmdPtr;
 }
 

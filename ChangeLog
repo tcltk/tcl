@@ -1,3 +1,11 @@
+2001-08-30  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* generic/tclExecute.c: allow cached fully-qualified command names
+	to be usable from different namespaces within the same interpreter
+	without forcing a new lookup. This speeds up scripts that pass
+	command names in variables ("this" in some OO packages).
+	[Patch 456668]. 
+
 2001-08-30 Vince Darley <vincentdarley@users.sourceforge.net>
 
 	Further fs updates.  After examining the most common Tcl
