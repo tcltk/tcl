@@ -1,5 +1,8 @@
 2004-09-18  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
+	* generic/tclExecute.c (TEBC-INST_LSHIFT,INST_RSHIFT): Ensure that
+	large shifts end up shifting correctly. [Bug 868467]
+
 	* doc/FileSystem.3, doc/OpenFileChnl.3: More documentation fixes
 	from Mikhail Kolesnitchenko. [Patch 1022527]
 	* doc/*: Standardize highlighting of symbols defined in tcl.h
