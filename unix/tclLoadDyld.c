@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoadDyld.c,v 1.1 2000/04/19 08:32:45 hobbs Exp $
+ * RCS: @(#) $Id: tclLoadDyld.c,v 1.2 2000/04/25 17:55:45 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -29,7 +29,7 @@
  *
  * Results:
  *     A standard Tcl completion code.  If an error occurs, an error
- *     message is left in interp->result.  *proc1Ptr and *proc2Ptr
+ *     message is left in the interpreter's result.  *proc1Ptr and *proc2Ptr
  *     are filled in with the addresses of the symbols given by
  *     *sym1 and *sym2, or NULL if those symbols can't be found.
  *
@@ -63,22 +63,25 @@ TclpLoadFile(interp, fileName, sym1, sym2, proc1Ptr, proc2Ptr, clientDataPtr)
     if (err != NSObjectFileImageSuccess) {
 	switch (err) {
 	    case NSObjectFileImageFailure:
-		interp->result = "dyld: general failure";
+		Tcl_SetResult(interp, "dyld: general failure", TCL_STATIC);
 		break;
 	    case NSObjectFileImageInappropriateFile:
-		interp->result = "dyld: inappropriate Mach-O file";
+		Tcl_SetResult(interp, "dyld: inappropriate Mach-O file",
+			TCL_STATIC);
 		break;
 	    case NSObjectFileImageArch:
-		interp->result = "dyld: inappropriate Mach-O architecture";
+		Tcl_SetResult(interp,
+			"dyld: inappropriate Mach-O architecture", TCL_STATIC);
 		break;
 	    case NSObjectFileImageFormat:
-		interp->result = "dyld: invalid Mach-O file format";
+		Tcl_SetResult(interp, "dyld: invalid Mach-O file format",
+			TCL_STATIC);
 		break;
 	    case NSObjectFileImageAccess:
-		interp->result = "dyld: permission denied";
+		Tcl_SetResult(interp, "dyld: permission denied", TCL_STATIC);
 		break;
 	    default:
-		interp->result = "dyld: unknown failure";
+		Tcl_SetResult(interp, "dyld: unknown failure", TCL_STATIC);
 		break;
 	}
 	return TCL_ERROR;
@@ -87,7 +90,7 @@ TclpLoadFile(interp, fileName, sym1, sym2, proc1Ptr, proc2Ptr, clientDataPtr)
     module = NSLinkModule(image, fileName, TRUE);
 
     if (module == NULL) {
-	interp->result = "dyld: falied to link module";
+	Tcl_SetResult(interp, "dyld: falied to link module", TCL_STATIC);
 	return TCL_ERROR;
     }
 
