@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPipe.c,v 1.1.2.7 1999/03/11 01:50:34 stanton Exp $
+ * RCS: @(#) $Id: tclWinPipe.c,v 1.1.2.8 1999/03/14 18:55:11 stanton Exp $
  */
 
 #include "tclWinInt.h"
@@ -2135,6 +2135,13 @@ PipeClose2Proc(
 
 	if (pipePtr->readThread) {
 	    TerminateThread(pipePtr->readThread, 0);
+
+	    /*
+	     * Wait for the thread to terminate.  This ensures that we are
+	     * completely cleaned up before we leave this function. 
+	     */
+
+	    WaitForSingleObject(pipePtr->readThread, INFINITE);
 	    CloseHandle(pipePtr->readThread);
 	    CloseHandle(pipePtr->readable);
 	    CloseHandle(pipePtr->startReader);
@@ -2157,6 +2164,12 @@ PipeClose2Proc(
 	if (pipePtr->writeThread) {
 	    WaitForSingleObject(pipePtr->writable, INFINITE);
 	    TerminateThread(pipePtr->writeThread, 0);
+	    /*
+	     * Wait for the thread to terminate.  This ensures that we are
+	     * completely cleaned up before we leave this function. 
+	     */
+
+	    WaitForSingleObject(pipePtr->writeThread, INFINITE);
 	    CloseHandle(pipePtr->writeThread);
 	    CloseHandle(pipePtr->writable);
 	    CloseHandle(pipePtr->startWriter);

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinConsole.c,v 1.1.2.2 1999/03/13 02:55:56 redman Exp $
+ * RCS: @(#) $Id: tclWinConsole.c,v 1.1.2.3 1999/03/14 18:55:11 stanton Exp $
  */
 
 #include "tclWinInt.h"
@@ -448,7 +448,7 @@ ConsoleCloseProc(
     Tcl_Interp *interp)		/* For error reporting. */
 {
     ConsoleInfo *consolePtr = (ConsoleInfo *) instanceData;
-    int errorCode, result;
+    int errorCode;
     ConsoleInfo *infoPtr, **nextPtrPtr;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
@@ -462,6 +462,13 @@ ConsoleCloseProc(
     
     if (consolePtr->readThread) {
 	TerminateThread(consolePtr->readThread, 0);
+
+	/*
+	 * Wait for the thread to terminate.  This ensures that we are
+	 * completely cleaned up before we leave this function. 
+	 */
+
+	WaitForSingleObject(consolePtr->readThread, INFINITE);
 	CloseHandle(consolePtr->readThread);
 	CloseHandle(consolePtr->readable);
 	CloseHandle(consolePtr->startReader);
@@ -478,6 +485,13 @@ ConsoleCloseProc(
     if (consolePtr->writeThread) {
 	WaitForSingleObject(consolePtr->writable, INFINITE);
 	TerminateThread(consolePtr->writeThread, 0);
+
+	/*
+	 * Wait for the thread to terminate.  This ensures that we are
+	 * completely cleaned up before we leave this function. 
+	 */
+
+	WaitForSingleObject(consolePtr->writeThread, INFINITE);
 	CloseHandle(consolePtr->writeThread);
 	CloseHandle(consolePtr->writable);
 	CloseHandle(consolePtr->startWriter);
