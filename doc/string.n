@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: string.n,v 1.8 1999/05/06 20:13:23 stanton Exp $
+'\" RCS: @(#) $Id: string.n,v 1.9 1999/05/06 22:50:02 stanton Exp $
 '\" 
 .so man.macros
 .TH string n 8.1 Tcl "Tcl Built-In Commands"
@@ -32,19 +32,19 @@ the byte length are rare.  In almost all cases, you should use the
 \fBstring length\fB operation.  Refer to the \fBTcl_NumUtfChars\fR
 manual entry for more details on the UTF-8 representation.
 .TP
-\fBstring compare ?\fI-nocase\fR? ?\fI-length int\fR? \fIstring1 string2\fR
+\fBstring compare ?\fB-nocase\fR? ?\fB-length int\fR? \fIstring1 string2\fR
 .VE 8.1
 Perform a character-by-character comparison of strings \fIstring1\fR and
 \fIstring2\fR in the same way as the C \fBstrcmp\fR procedure.  Return
 \-1, 0, or 1, depending on whether \fIstring1\fR is lexicographically
 less than, equal to, or greater than \fIstring2\fR.
 .VS 8.1
-If \fI-length\fR is specified, it works like C \fBstrncmp\fR,
-comparing only to the specified length.  If \fI-length\fR is negative,
-it is ignored.  If \fI-nocase\fR is specified, then the strings are
+If \fB-length\fR is specified, it works like C \fBstrncmp\fR,
+comparing only to the specified length.  If \fB-length\fR is negative,
+it is ignored.  If \fB-nocase\fR is specified, then the strings are
 compared in a case-insensitive manner.
 .TP
-\fBstring equal ?\fI-nocase\fR? ?\fI-length int\fR? \fIstring1 string2\fR
+\fBstring equal ?\fB-nocase\fR? ?\fB-length int\fR? \fIstring1 string2\fR
 .VE 8.1
 Like the \fBcompare\fR method, but returns 1 when the strings
 are equal, or 0 when not.
@@ -78,10 +78,10 @@ returned.
 .RE
 .VS 8.1
 .TP
-\fBstring is \fIclass\fR ?\fI-strict\fR? ?\fI-failindex varname\fR? \fIstring\fR
+\fBstring is \fIclass\fR ?\fB-strict\fR? ?\fB-failindex \fIvarname\fR? \fIstring\fR
 See if \fIstring\fR is a valid form of the specified class.  If
-\fI-strict\fR is specified, then an empty string returns 0, otherwise and
-empty string will return 1 on any class.  If \fI-failindex\fR is specified,
+\fB-strict\fR is specified, then an empty string returns 0, otherwise and
+empty string will return 1 on any class.  If \fB-failindex\fR is specified,
 then if the function returns 0, the index in the string where the class was
 no longer valid will be stored in the variable named \fIvarname\fR.  The
 \fIvarname\fR will not be set if the function returns 1.  The following
@@ -137,16 +137,17 @@ Returns a decimal string giving the number of characters in
 number of bytes used to store the string.
 .VS 8.1
 .TP
-\fBstring map ?\fIoptions\fR? \fIcharMap string\fR
+\fBstring map ?\fB-nocase\fR? \fIcharMap string\fR
 Replaces characters in \fIstring\fR based on the key-value pairs in
 \fIcharMap\fR.  \fIcharMap\fR is a list of key value key value ... as
 in the form returned by \fBarray get\fR.  Each instance of a key in
-the string will be replace with its corresponding value.  Both key and
-value may be multiple characters.  This is done
-in an ordered manner, so the key appearing first in the list will be
-checked first, and so on.  \fIstring\fR is only iterated over once,
-so earlier key replacements will have no affect for later key matches.
-For example,
+the string will be replace with its corresponding value.  If
+\fB-nocase\fR is specified, then matching is done without regard to
+case differences. Both key and value may be multiple characters.  This
+is done in an ordered manner, so the key appearing first in the list
+will be checked first, and so on.  \fIstring\fR is only iterated over
+once, so earlier key replacements will have no affect for later key
+matches.  For example,
 .RS
 .CS
 \fBstring map {abc 1 ab 2 a 3 1 0} 1abcaababcabababc\fR

@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.7 1999/05/06 19:21:11 stanton Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.8 1999/05/06 22:50:03 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -879,7 +879,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		 * Anything matches at 0 chars, right?
 		 */
 		match = 0;
-	    } else if (nocase || ((reqlength > 0) && (reqlength < length))) {
+	    } else if (nocase || ((reqlength > 0) && (reqlength <= length))) {
 		/*
 		 * with -nocase or -length we have to check true char length
 		 * as it could be smaller than expected
@@ -901,7 +901,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		    match = Tcl_UtfNcmp(string1, string2,
 			    (unsigned) length);
 		}
-		if ((match == 0) && (reqlength >= length)) {
+		if ((match == 0) && (reqlength > length)) {
 		    match = length1 - length2;
 		}
 	    } else {

@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: string.test,v 1.8 1999/05/06 18:46:43 stanton Exp $
+# RCS: @(#) $Id: string.test,v 1.9 1999/05/06 22:50:04 stanton Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     source [file join [pwd] [file dirname [info script]] defs.tcl]
@@ -95,6 +95,12 @@ test string-2.20 {string compare -len unicode} {
 test string-2.21 {string compare -nocase with special index} {
     list [catch {string compare -nocase -length end-3 Abcde abxyz} msg] $msg
 } {1 {expected integer but got "end-3"}}
+test string-2.22 {string equal with length, unequal strings} {
+    string compare -length 2 abc abde
+} 0
+test string-2.22 {string equal with length, unequal strings} {
+    string compare -length 2 ab abde
+} 0
 
 # only need a few tests on equal, since it uses the same code as
 # string compare, but just modifies the return output
@@ -118,6 +124,9 @@ test string-3.6 {string equal -nocase} {
 } 1
 test string-3.7 {string equal -nocase} {
     string equal -nocase abcde abcde
+} 1
+test string-3.8 {string equal with length, unequal strings} {
+    string equal -length 2 abc abde
 } 1
 
 test string-4.1 {string first} {
