@@ -1,3 +1,17 @@
+2000-04-10  Eric Melski  <ericm@scriptics.com>
+
+	* win/tclWinPipe.c (TclpCreateTempFile): Added conversion of
+	contents string from UTF to native encoding [Bug: 4030].
+
+	* tests/regexp.test: Added tests for infinite looping in [regexp
+	-all].
+	
+	* generic/tclCmdMZ.c: Fixed infinite loop bug with [regexp -all]
+	[Bug: 4981].
+
+	* tests/*.test: Changed all occurances of "namespace import
+	::tcltest" to "namespace import -force ::tcltest" [Bug: 3948].
+
 2000-04-10  Jeff Hobbs  <hobbs@scriptics.com>
 
 	* generic/tcl.h: removed specific typedef of Tcl_ThreadCreateProc

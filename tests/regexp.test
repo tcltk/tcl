@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: regexp.test,v 1.12 2000/04/10 17:19:03 ericm Exp $
+# RCS: @(#) $Id: regexp.test,v 1.13 2000/04/10 21:08:27 ericm Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -503,6 +503,29 @@ test regexp-18.6 {regexp -all -inline} {
 test regexp-18.7 {regexp -all -inline} {
     list [catch {regexp -all -inline b abc match} msg] $msg
 } {1 {regexp match variables not allowed when using -inline}}
+test regexp-18.8 {regexp -all} {
+    # This should not cause an infinite loop
+    regexp -all -inline {a*} a
+} {a}
+test regexp-18.9 {regexp -all} {
+    # Yes, the expected result is {a {}}.  Here's why:
+    # Start at index 0; a* matches the "a" there then stops.
+    # Go to index 1; a* matches the lambda (or {}) there then stops.  Recall
+    #   that a* matches zero or more "a"'s; thus it matches the string "b", as
+    #   there are zero or more "a"'s there.
+    # Go to index 2; this is past the end of the string, so stop.
+    regexp -all -inline {a*} ab
+} {a {}}
+test regexp-18.10 {regexp -all} {
+    # Yes, the expected result is {a {} a}.  Here's why:
+    # Start at index 0; a* matches the "a" there then stops.
+    # Go to index 1; a* matches the lambda (or {}) there then stops.   Recall
+    #   that a* matches zero or more "a"'s; thus it matches the string "b", as
+    #   there are zero or more "a"'s there.
+    # Go to index 2; a* matches the "a" there then stops.
+    # Go to index 3; this is past the end of the string, so stop.
+    regexp -all -inline {a*} aba
+} {a {} a}
 
 # cleanup
 ::tcltest::cleanupTests

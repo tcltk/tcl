@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPipe.c,v 1.9 1999/12/09 14:44:11 hobbs Exp $
+ * RCS: @(#) $Id: tclWinPipe.c,v 1.10 2000/04/10 21:08:27 ericm Exp $
  */
 
 #include "tclWinInt.h"
@@ -692,6 +692,8 @@ TclpCreateTempFile(contents)
     CONST char *contents;	/* String to write into temp file, or NULL. */
 {
     WCHAR name[MAX_PATH];
+    char *native;
+    Tcl_DString dstring;
     HANDLE handle;
 
     if (TempFileName(name) == 0) {
@@ -712,27 +714,33 @@ TclpCreateTempFile(contents)
     if (contents != NULL) {
 	DWORD result, length;
 	CONST char *p;
+
+	/*
+	 * Convert the contents from UTF to native encoding
+	 */
+	native = Tcl_UtfToExternalDString(NULL, contents, -1, &dstring);
 	
-	for (p = contents; *p != '\0'; p++) {
+	for (p = native; *p != '\0'; p++) {
 	    if (*p == '\n') {
-		length = p - contents;
+		length = p - native;
 		if (length > 0) {
-		    if (!WriteFile(handle, contents, length, &result, NULL)) {
+		    if (!WriteFile(handle, native, length, &result, NULL)) {
 			goto error;
 		    }
 		}
 		if (!WriteFile(handle, "\r\n", 2, &result, NULL)) {
 		    goto error;
 		}
-		contents = p+1;
+		native = p+1;
 	    }
 	}
-	length = p - contents;
+	length = p - native;
 	if (length > 0) {
-	    if (!WriteFile(handle, contents, length, &result, NULL)) {
+	    if (!WriteFile(handle, native, length, &result, NULL)) {
 		goto error;
 	    }
 	}
+	Tcl_DStringFree(&dstring);
 	if (SetFilePointer(handle, 0, NULL, FILE_BEGIN) == 0xFFFFFFFF) {
 	    goto error;
 	}
@@ -741,6 +749,11 @@ TclpCreateTempFile(contents)
     return TclWinMakeFile(handle);
 
   error:
+    /* Free the native representation of the contents if necessary */
+    if (contents != NULL) {
+	Tcl_DStringFree(&dstring);
+    }
+
     TclWinConvertError(GetLastError());
     CloseHandle(handle);
     (*tclWinProcs->deleteFileProc)((TCHAR *) name);

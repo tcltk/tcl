@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.25 2000/02/05 12:08:59 hobbs Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.26 2000/04/10 21:08:26 ericm Exp $
  */
 
 #include "tclInt.h"
@@ -127,7 +127,7 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
     Tcl_Obj *CONST objv[];		/* Argument objects. */
 {
     int i, indices, match, about, offset, all, doinline, numMatchesSaved;
-    int cflags, eflags;
+    int cflags, eflags, stringLength;
     Tcl_RegExp regExpr;
     Tcl_Obj *objPtr, *resultPtr;
     Tcl_RegExpInfo info;
@@ -274,6 +274,20 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
 	numMatchesSaved = (objc == 0) ? all : objc;
     }
 
+    /*
+     * Get the length of the string that we are matching against so
+     * we can do the termination test for -all matches.
+     */
+    stringLength = Tcl_GetCharLength(objPtr);
+    
+    /*
+     * The following loop is to handle multiple matches within the
+     * same source string;  each iteration handles one match.  If "-all"
+     * hasn't been specified then the loop body only gets executed once.
+     * We terminate the loop when the starting offset is past the end of the
+     * string.
+     */
+
     while (1) {
 	match = Tcl_RegExpExecObj(interp, regExpr, objPtr,
 		offset /* offset */, numMatchesSaved, eflags);
@@ -377,10 +391,20 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
 	/*
 	 * Adjust the offset to the character just after the last one
 	 * in the matchVar and increment all to count how many times
-	 * we are making a match
+	 * we are making a match.  We always increment the offset by at least
+	 * one to prevent endless looping (as in the case:
+	 * regexp -all {a*} a).  Otherwise, when we match the NULL string at
+	 * the end of the input string, we will loop indefinately (because the
+	 * length of the match is 0, so offset never changes).
 	 */
+	if (info.matches[0].end == 0) {
+	    offset++;
+	}
 	offset += info.matches[0].end;
 	all++;
+	if (offset >= stringLength) {
+	    break;
+	}
     }
 
     /*
