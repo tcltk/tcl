@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.159 2004/10/22 13:48:56 dkf Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.160 2004/10/22 14:01:00 dkf Exp $
  */
 
 #ifdef STDC_HEADERS
@@ -751,16 +751,16 @@ Tcl_ExprObj(interp, objPtr, resultPtrPtr)
     if (objPtr->typePtr == &tclByteCodeType) {
 	codePtr = (ByteCode *) objPtr->internalRep.otherValuePtr;
 	if (((Interp *) *codePtr->interpHandle != iPtr)
-	        || (codePtr->compileEpoch != iPtr->compileEpoch)) {
-            if (codePtr->flags & TCL_BYTECODE_PRECOMPILED) {
-                if ((Interp *) *codePtr->interpHandle != iPtr) {
-                    Tcl_Panic("Tcl_ExprObj: compiled expression jumped interps");
-                }
-	        codePtr->compileEpoch = iPtr->compileEpoch;
-            } else {
+		|| (codePtr->compileEpoch != iPtr->compileEpoch)) {
+	    if (codePtr->flags & TCL_BYTECODE_PRECOMPILED) {
+		if ((Interp *) *codePtr->interpHandle != iPtr) {
+		    Tcl_Panic("Tcl_ExprObj: compiled expression jumped interps");
+		}
+		codePtr->compileEpoch = iPtr->compileEpoch;
+	    } else {
 		objPtr->typePtr->freeIntRepProc(objPtr);
-                objPtr->typePtr = (Tcl_ObjType *) NULL;
-            }
+		objPtr->typePtr = (Tcl_ObjType *) NULL;
+	    }
 	}
     }
     if (objPtr->typePtr != &tclByteCodeType) {
@@ -792,7 +792,7 @@ Tcl_ExprObj(interp, objPtr, resultPtrPtr)
 #ifdef TCL_COMPILE_DEBUG
 	    TclVerifyGlobalLiteralTable(iPtr);
 #endif /*TCL_COMPILE_DEBUG*/
-    
+
 	    auxDataPtr = compEnv.auxDataArrayPtr;
 	    for (i = 0;  i < compEnv.auxDataArrayNext;  i++) {
 		if (auxDataPtr->type->freeProc != NULL) {
@@ -811,9 +811,9 @@ Tcl_ExprObj(interp, objPtr, resultPtrPtr)
 	    
 	if (compEnv.codeNext == compEnv.codeStart) {
 	    TclEmitPush(TclRegisterLiteral(&compEnv, "0", 1, /*onHeap*/ 0),
-	            &compEnv);
+		    &compEnv);
 	}
-	    
+
 	/*
 	 * Add a "done" instruction as the last instruction and change the
 	 * object into a ByteCode object. Ownership of the literal objects
@@ -913,9 +913,9 @@ TclCompEvalObj(interp, objPtr)
     }
 
     if (iPtr->varFramePtr != NULL) {
-        namespacePtr = iPtr->varFramePtr->nsPtr;
+	namespacePtr = iPtr->varFramePtr->nsPtr;
     } else {
-        namespacePtr = iPtr->globalNsPtr;
+	namespacePtr = iPtr->globalNsPtr;
     }
 
     /* 
@@ -926,7 +926,7 @@ TclCompEvalObj(interp, objPtr)
      */
 
     if (objPtr->typePtr != &tclByteCodeType) {
-        recompileObj:
+      recompileObj:
 	iPtr->errorLine = 1; 
 	result = tclByteCodeType.setFromAnyProc(interp, objPtr);
 	if (result != TCL_OK) {
@@ -955,19 +955,19 @@ TclCompEvalObj(interp, objPtr)
 	 */
 	codePtr = (ByteCode *) objPtr->internalRep.otherValuePtr;
 	if (((Interp *) *codePtr->interpHandle != iPtr)
-	        || (codePtr->compileEpoch != iPtr->compileEpoch)
+		|| (codePtr->compileEpoch != iPtr->compileEpoch)
 #ifdef CHECK_PROC_ORIGINATION	/* [Bug: 3412 Pedantic] */
 		|| (codePtr->procPtr != NULL && !(iPtr->varFramePtr &&
 			iPtr->varFramePtr->procPtr == codePtr->procPtr))
 #endif
-	        || (codePtr->nsPtr != namespacePtr)
-	        || (codePtr->nsEpoch != namespacePtr->resolverEpoch)) {
-            if (codePtr->flags & TCL_BYTECODE_PRECOMPILED) {
-                if ((Interp *) *codePtr->interpHandle != iPtr) {
-                    Tcl_Panic("Tcl_EvalObj: compiled script jumped interps");
-                }
-	        codePtr->compileEpoch = iPtr->compileEpoch;
-            } else {
+		|| (codePtr->nsPtr != namespacePtr)
+		|| (codePtr->nsEpoch != namespacePtr->resolverEpoch)) {
+	    if (codePtr->flags & TCL_BYTECODE_PRECOMPILED) {
+		if ((Interp *) *codePtr->interpHandle != iPtr) {
+		    Tcl_Panic("Tcl_EvalObj: compiled script jumped interps");
+		}
+		codePtr->compileEpoch = iPtr->compileEpoch;
+	    } else {
 		/*
 		 * This byteCode is invalid: free it and recompile
 		 */
