@@ -11,10 +11,10 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.29 2002/06/12 09:28:59 vincentdarley Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.30 2002/06/12 19:16:01 hobbs Exp $
  */
 
-#define _WIN32_WINNT  0x0500
+//#define _WIN32_WINNT  0x0500
 
 #include "tclWinInt.h"
 #include <winioctl.h>
@@ -32,49 +32,53 @@ extern  int		ConvertFileNameFormat(Tcl_Interp *interp,
  * well documented).
  */
 #ifndef IO_REPARSE_TAG_RESERVED_ONE
-#define IO_REPARSE_TAG_RESERVED_ONE 0x000000001
+#  define IO_REPARSE_TAG_RESERVED_ONE 0x000000001
 #endif
 #ifndef IO_REPARSE_TAG_RESERVED_RANGE
-#define IO_REPARSE_TAG_RESERVED_RANGE 0x000000001
+#  define IO_REPARSE_TAG_RESERVED_RANGE 0x000000001
 #endif
 #ifndef IO_REPARSE_TAG_VALID_VALUES
-#define IO_REPARSE_TAG_VALID_VALUES 0x0E000FFFF
+#  define IO_REPARSE_TAG_VALID_VALUES 0x0E000FFFF
 #endif
 #ifndef IO_REPARSE_TAG_HSM
-#define IO_REPARSE_TAG_HSM 0x0C0000004
+#  define IO_REPARSE_TAG_HSM 0x0C0000004
 #endif
 #ifndef IO_REPARSE_TAG_NSS
-#define IO_REPARSE_TAG_NSS 0x080000005
+#  define IO_REPARSE_TAG_NSS 0x080000005
 #endif
 #ifndef IO_REPARSE_TAG_NSSRECOVER
-#define IO_REPARSE_TAG_NSSRECOVER 0x080000006
+#  define IO_REPARSE_TAG_NSSRECOVER 0x080000006
 #endif
 #ifndef IO_REPARSE_TAG_SIS
-#define IO_REPARSE_TAG_SIS 0x080000007
+#  define IO_REPARSE_TAG_SIS 0x080000007
 #endif
 #ifndef IO_REPARSE_TAG_DFS
-#define IO_REPARSE_TAG_DFS 0x080000008
+#  define IO_REPARSE_TAG_DFS 0x080000008
 #endif
 
 #ifndef IO_REPARSE_TAG_RESERVED_ZERO
-#define IO_REPARSE_TAG_RESERVED_ZERO 0x00000000
+#  define IO_REPARSE_TAG_RESERVED_ZERO 0x00000000
 #endif
 #ifndef FILE_FLAG_OPEN_REPARSE_POINT
-#define FILE_FLAG_OPEN_REPARSE_POINT 0x00200000
+#  define FILE_FLAG_OPEN_REPARSE_POINT 0x00200000
 #endif
 #ifndef IO_REPARSE_TAG_MOUNT_POINT
-#define IO_REPARSE_TAG_MOUNT_POINT 0xA0000003
+#  define IO_REPARSE_TAG_MOUNT_POINT 0xA0000003
 #endif
 #ifndef IsReparseTagValid
-#define IsReparseTagValid(x) (!((x)&~IO_REPARSE_TAG_VALID_VALUES)&&((x)>IO_REPARSE_TAG_RESERVED_RANGE))
+#  define IsReparseTagValid(x) (!((x)&~IO_REPARSE_TAG_VALID_VALUES)&&((x)>IO_REPARSE_TAG_RESERVED_RANGE))
 #endif
 #ifndef IO_REPARSE_TAG_SYMBOLIC_LINK
-#define IO_REPARSE_TAG_SYMBOLIC_LINK IO_REPARSE_TAG_RESERVED_ZERO
+#  define IO_REPARSE_TAG_SYMBOLIC_LINK IO_REPARSE_TAG_RESERVED_ZERO
 #endif
-#define FILE_SPECIAL_ACCESS         (FILE_ANY_ACCESS)
-#define FSCTL_SET_REPARSE_POINT     CTL_CODE(FILE_DEVICE_FILE_SYSTEM, 41, METHOD_BUFFERED, FILE_SPECIAL_ACCESS) 
-#define FSCTL_GET_REPARSE_POINT     CTL_CODE(FILE_DEVICE_FILE_SYSTEM, 42, METHOD_BUFFERED, FILE_ANY_ACCESS) 
-#define FSCTL_DELETE_REPARSE_POINT  CTL_CODE(FILE_DEVICE_FILE_SYSTEM, 43, METHOD_BUFFERED, FILE_SPECIAL_ACCESS) 
+#ifndef FILE_SPECIAL_ACCESS
+#  define FILE_SPECIAL_ACCESS         (FILE_ANY_ACCESS)
+#endif
+#ifndef FSCTL_SET_REPARSE_POINT
+#  define FSCTL_SET_REPARSE_POINT    CTL_CODE(FILE_DEVICE_FILE_SYSTEM, 41, METHOD_BUFFERED, FILE_SPECIAL_ACCESS)
+#  define FSCTL_GET_REPARSE_POINT    CTL_CODE(FILE_DEVICE_FILE_SYSTEM, 42, METHOD_BUFFERED, FILE_ANY_ACCESS) 
+#  define FSCTL_DELETE_REPARSE_POINT CTL_CODE(FILE_DEVICE_FILE_SYSTEM, 43, METHOD_BUFFERED, FILE_SPECIAL_ACCESS) 
+#endif
 
 /* 
  * Maximum reparse buffer info size. The max user defined reparse
@@ -83,18 +87,38 @@ extern  int		ConvertFileNameFormat(Tcl_Interp *interp,
 
 #define MAX_REPARSE_SIZE	17000
 
-/* Undocumented FSCTL_SET_REPARSE_POINT structure definition */
+/*
+ * Undocumented REPARSE_MOUNTPOINT_HEADER_SIZE structure definition.
+ * This is found in winnt.h.
+ */
 
 #define REPARSE_MOUNTPOINT_HEADER_SIZE   8
-typedef struct {
-    DWORD          ReparseTag;
-    DWORD          ReparseDataLength;
-    WORD           Dummy;
-    WORD           ReparseTargetLength;
-    WORD           ReparseTargetMaximumLength;
-    WORD           Dummy1;
-    WCHAR          ReparseTarget[MAX_PATH*3];
+#ifndef REPARSE_DATA_BUFFER_HEADER_SIZE
+typedef struct _REPARSE_DATA_BUFFER {
+    DWORD  ReparseTag;
+    WORD   ReparseDataLength;
+    WORD   Reserved;
+    union {
+        struct {
+            WORD   SubstituteNameOffset;
+            WORD   SubstituteNameLength;
+            WORD   PrintNameOffset;
+            WORD   PrintNameLength;
+            WCHAR PathBuffer[1];
+        } SymbolicLinkReparseBuffer;
+        struct {
+            WORD   SubstituteNameOffset;
+            WORD   SubstituteNameLength;
+            WORD   PrintNameOffset;
+            WORD   PrintNameLength;
+            WCHAR PathBuffer[1];
+        } MountPointReparseBuffer;
+        struct {
+            BYTE   DataBuffer[1];
+        } GenericReparseBuffer;
+    };
 } REPARSE_DATA_BUFFER;
+#endif
 
 /* Other typedefs required by this code */
 
@@ -277,10 +301,12 @@ WinReadLinkDirectory(LinkDirectory)
 	    ClientData clientData;
 	    Tcl_Obj *retVal;
 	    
-	    len = reparseBuffer.ReparseTargetLength + sizeof(WCHAR);
+	    len = reparseBuffer.SymbolicLinkReparseBuffer.SubstituteNameLength
+		+ sizeof(WCHAR);
 	    clientData = (ClientData)ckalloc(len);
-	    memcpy((VOID*)clientData, (VOID*)reparseBuffer.ReparseTarget, 
-		   len);
+	    memcpy((VOID*)clientData,
+		    (VOID*)reparseBuffer.SymbolicLinkReparseBuffer.PathBuffer,
+		    len);
 	    
 	    retVal = Tcl_FSNewNativePath(&nativeFilesystem, clientData);
 	    Tcl_IncrRefCount(retVal);

@@ -1,3 +1,11 @@
+2002-06-12  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* win/tclWinFile.c: corrected the symbolic link handling code to
+	allow it to compile.  Added real definition of REPARSE_DATA_BUFFER
+	(found in winnt.h).  Most of the added definitions appear to have
+	correct, cross-Win-version equivalents in winnt.h and should be
+	removed, but just making things "work" for now.
+
 2002-06-12  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* generic/tclIOUtil.c:
