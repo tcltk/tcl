@@ -6,7 +6,7 @@
 # Copyright (c) 2000 by Ajuba Solutions
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.test,v 1.42 2004/05/26 15:18:24 dgp Exp $
+# RCS: @(#) $Id: tcltest.test,v 1.43 2004/05/26 16:25:01 dgp Exp $
 
 # Note that there are several places where the value of 
 # tcltest::currentFailure is stored/reset in the -setup/-cleanup
@@ -1725,13 +1725,18 @@ test tcltest-25.2 {
 
 test tcltest-25.3 {
 	reported return code (Bug 611922)
+} -setup {
+	set fail $::tcltest::currentFailure
+	set v [verbose]
 } -body {
-	# Buggy tcltest will generate result of 2
+	verbose {}
 	test tcltest-25.3.0 {} -body {
 	    error foo
 	}
+} -cleanup {
+	set ::tcltest::currentFailure $fail
+	verbose $v
 } -match glob -output {*generated error; Return code was: 1*}
-
 
 cleanupTests
 }
