@@ -1,21 +1,12 @@
 @echo off
-rem RCS: @(#) $Id: mkd.bat,v 1.7 2001/09/08 23:52:02 davygrvy Exp $
+rem RCS: @(#) $Id: mkd.bat,v 1.8 2001/11/10 10:38:47 davygrvy Exp $
 
-if exist %1\. goto end
-
-if "%OS%" == "Windows_NT" goto winnt
+if exist %1\nul goto end
 
 md %1
 if errorlevel 1 goto end
 
-goto success
-
-:winnt
-md %1
-if errorlevel 1 goto end
-
-:success
-echo created directory %1
+echo Created directory %1
 
 :end
 
