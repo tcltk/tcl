@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: socket.test,v 1.26.2.4 2004/10/28 04:16:22 dgp Exp $
+# RCS: @(#) $Id: socket.test,v 1.26.2.5 2004/10/28 04:53:12 dgp Exp $
 
 # Running socket tests with a remote server:
 # ------------------------------------------
@@ -1660,7 +1660,7 @@ test socket-13.1 {Testing use of shared socket between two threads} \
 
 } -body {
     # create a thread
-    set serverthread [testthread create { source $path(script) } ]
+    set serverthread [testthread create [list source $path(script) ] ]
     update
     set port [testthread send $serverthread {set listen}]
     update
