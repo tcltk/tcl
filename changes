@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.27 1998/10/20 17:27:43 suresh Exp $
+RCS: @(#) $Id: changes,v 1.28 1998/10/20 20:01:22 rjohnson Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -3643,3 +3643,9 @@ element of the tcl_platform array indicates that the particular Tcl
 shell has been compiled with debug information.  Using
 "info exists tcl_platform(debug)" a Tcl script can direct the interpreter
 to load debug versions of DLLs with the load command. (SKS)
+
+10/20/98 (feature change) The Makefile and configure scripts have been
+changed for IRIX to build n32 binaries instead of the old 32 abi
+format.  If you have extensions built with the o32 abi's you will need
+to update them to n32 for them to work with Tcl.  (RJ)
+*** POTENTIAL INCOMPATIBILITY ***

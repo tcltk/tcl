@@ -2,7 +2,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 AC_INIT(../generic/tcl.h)
-# RCS: @(#) $Id: configure.in,v 1.20 1998/10/13 19:03:53 escoffon Exp $
+# RCS: @(#) $Id: configure.in,v 1.21 1998/10/20 20:01:23 rjohnson Exp $
 
 TCL_VERSION=8.0
 TCL_MAJOR_VERSION=8
@@ -660,7 +660,7 @@ AC_CHECK_LIB(dl, dlopen, have_dl=yes, have_dl=no)
 # Step 3: set configuration options based on system name and version.
 
 fullSrcDir=`cd $srcdir; pwd`
-TCL_SHARED_LIB_SUFFIX=""
+EXTRA_CFLAGS=""
 TCL_UNSHARED_LIB_SUFFIX=""
 TCL_TRIM_DOTS='`echo ${VERSION} | tr -d .`'
 ECHO_VERSION='`echo ${VERSION}`'
@@ -737,13 +737,19 @@ case $system in
 	;;
     IRIX-5.*|IRIX-6.*)
 	SHLIB_CFLAGS=""
-	SHLIB_LD="ld -shared -rdata_shared"
+	SHLIB_LD="ld -n32 -shared -rdata_shared"
 	SHLIB_LD_LIBS=""
 	SHLIB_SUFFIX=".so"
 	DL_OBJS="tclLoadDl.o"
 	DL_LIBS=""
-	LD_FLAGS=""
 	LD_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
+	if test "$CC" = "gcc" -o `$CC -v 2>&1 | grep -c gcc` != "0" ; then
+	    EXTRA_CFLAGS="-mabi=n32"
+	    LD_FLAGS="-mabi=n32"
+	else
+	    EXTRA_CFLAGS="-n32"
+	    LD_FLAGS="-n32"
+	fi
 	;;
     IRIX64-6.*)
 	SHLIB_CFLAGS=""
@@ -1248,6 +1254,7 @@ AC_SUBST(CFG_TCL_UNSHARED_LIB_SUFFIX)
 AC_SUBST(TCL_DBGX)
 AC_SUBST(DL_LIBS)
 AC_SUBST(DL_OBJS)
+AC_SUBST(EXTRA_CFLAGS)
 AC_SUBST(LD_FLAGS)
 AC_SUBST(MAKE_LIB)
 AC_SUBST(MATH_LIBS)
