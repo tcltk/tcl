@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.27 2001/09/10 17:04:10 msofer Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.28 2001/09/17 11:51:59 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1058,19 +1058,17 @@ TclObjInterpProc(clientData, interp, objc, objv)
      * Invoke the commands in the procedure's body.
      */
 
-    if (tclTraceExec >= 1) {
 #ifdef TCL_COMPILE_DEBUG
+    if (tclTraceExec >= 1) {
 	fprintf(stdout, "Calling proc ");
 	for (i = 0;  i < objc;  i++) {
 	    TclPrintObject(stdout, objv[i], 15);
 	    fprintf(stdout, " ");
 	}
 	fprintf(stdout, "\n");
-#else /* TCL_COMPILE_DEBUG */
-	fprintf(stdout, "Calling proc %.*s\n", nameLen, procName);
-#endif /*TCL_COMPILE_DEBUG*/
 	fflush(stdout);
     }
+#endif /*TCL_COMPILE_DEBUG*/
 
     iPtr->returnCode = TCL_OK;
     procPtr->refCount++;
@@ -1172,6 +1170,7 @@ TclProcCompileProc(interp, procPtr, bodyPtr, nsPtr, description, procName)
  	int numChars;
  	char *ellipsis;
  	
+#ifdef TCL_COMPILE_DEBUG
  	if (tclTraceCompile >= 1) {
  	    /*
  	     * Display a line summarizing the top level command we
@@ -1187,6 +1186,7 @@ TclProcCompileProc(interp, procPtr, bodyPtr, nsPtr, description, procName)
  	    fprintf(stdout, "Compiling %s \"%.*s%s\"\n",
  		    description, numChars, procName, ellipsis);
  	}
+#endif
  	
  	/*
  	 * Plug the current procPtr into the interpreter and coerce
