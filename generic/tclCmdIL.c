@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclCmdIL.c 1.173 97/11/18 13:55:01
+ * SCCS: %Z% $Id: tclCmdIL.c,v 1.4 1998/07/01 18:37:16 rjohnson Exp $ 
  */
 
 #include "tclInt.h"
