@@ -1,3 +1,18 @@
+2000-05-10  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* doc/namespace.n:
+	* tests/namespace.test:
+	* generic/tclNamesp.c (Tcl_NamespaceObjCmd): added 'namespace
+	exists' command. [Bug: 4665]
+
+	* doc/source.n:
+	* doc/Eval.3:
+	* tests/source.test:
+	* generic/tclIOUtil.c (Tcl_EvalFile): added explicit \32 (^Z)
+	eofchar (affects Tcl_EvalFile in C, "source" in Tcl).  This was
+	implicit on Windows already, and is now cross-platform to allow
+	for scripted documents.
+
 2000-05-09  Andreas Kupries  <a.kupries@westend.com>
 	operating as proxy for David Gravereaux <davygrvy@pobox.com>
 	
