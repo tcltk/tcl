@@ -1,3 +1,16 @@
+2004-09-17  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclBasic.c (Tcl_AddObjErrorInfo, Tcl_LogCommandInfo):
+	* generic/tclCmdAH.c ([catch], [error]):
+	* generic/tclCmdMZ.c ([return]):
+	* generic/tclProc.c (TclUpdateReturnInfo):
+	* generic/tclResult.c (Tcl_SetErrorCodeVA, Tcl_SetObjErrorCode
+	  TclTransferResult): 	Refactored so that all errorCode setting
+	flows through Tcl_SetObjErrorCode().  This greatly reduces the
+	number of different places in the code that need to know details
+	about an internal bitflag field of the Interp struct.  Also
+	places errorCode setting in one place for easier future mods.
+
 2004-09-17  Kevin B.Kenny  <kennykb@acm.org>
 
 	* generic/tclDate.c:    Revised tclGetDate.y to use bison instead
