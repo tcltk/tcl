@@ -1,6 +1,13 @@
 2005-03-16 Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclCompile.h:
+	Fixing some stupidities in the bitwise ops and limits for the
+	packed version - it was all wrong, but only managed to show itself
+	in a failure of clock-2.1464 (thanks dgp).
+
+2005-03-16 Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclCompile.h:
 	Enabled new packed mode: (inst+opnd) are packed in 32 bits. To
 	enable, set the env var 
 	   CFLAGS_DEBUG="-DVM_USE_PACKED" (resp "-g -DVM_USE_PACKED")
