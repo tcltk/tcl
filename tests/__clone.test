@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: __clone.test,v 1.1.2.1 2002/11/26 20:14:50 hobbs Exp $
+# RCS: @(#) $Id: __clone.test,v 1.1.2.2 2002/11/26 21:13:53 andreas_kupries Exp $
 
 # allow the process to exit without calling the system exit,
 # to improve finalization cleanup
@@ -28,6 +28,7 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
     namespace import -force ::tcltest::*
 }
 
+set ::___________________test 0
 
 proc foo {} {
     # Have a compiled local variable.

@@ -1,3 +1,12 @@
+2002-11-26  Andreas Kupries  <andreask@activestate.com>
+
+	* tclBasic.c (CloneVariable): The initialization of the refCount
+	  for the cloned variable assumed that all variables are namespace
+	  variables. This is not true. Globals are not marked as in a
+	  namespace. This caused the system to skip freeing all global
+	  variables in a cloned interpreter. Changed to explicitly check
+	  the variable if it is namespace'd.
+
 2002-11-26  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* tests/__clone.test: rename to allow it to be lexically first.

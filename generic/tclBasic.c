@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.27.6.5 2002/11/26 19:48:49 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.27.6.6 2002/11/26 21:13:52 andreas_kupries Exp $
  */
 #include <assert.h>
 #include "tclInt.h"
@@ -4291,10 +4291,13 @@ CloneVariable (interp, ns, varSrcPtr, varName, fixup)
     varNew->nsPtr     = ns;
     varNew->tracePtr  = NULL; /* Traces are not cloned */
     varNew->searchPtr = NULL;
-    varNew->refCount  = 1;    /* Namespace variable */
+    varNew->refCount  = 0;    /* Basic reference count */
     varNew->name      = NULL; /* Variable contained in hashtable of namespace. */
     varNew->flags     = varSrcPtr->flags;
 
+    if (varNew->flags & VAR_NAMESPACE_VAR) {
+      varNew->refCount++;
+    }
     if (varSrcPtr->flags & VAR_SCALAR) {
         /*
 	 * We share the object used as the contents of the scalar
