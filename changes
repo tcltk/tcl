@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.68 2002/06/22 18:24:51 dgp Exp $
+RCS: @(#) $Id: changes,v 1.69 2002/07/05 07:15:18 hobbs Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -5445,8 +5445,6 @@ encodings. (taguchi, takahashi, hobbs)
 
 2002-03-08 (platform feature) mingw 1.1 build favored (dejong)
 
-2002-03-15 (bug fix)[530320] buffer overflow in compiler (fellows)
-
 2002-03-20 (new feature)[TIP 27] CONST-ified variable access functions (porter)
 
 2002-03-24 (bug fix)[511666,511658,523217,530960] expanded
@@ -5457,13 +5455,12 @@ Tcl_FSMatchInDirectory to handle assorted [glob] bugs in VFS. (darley)
 
 2002-03-25 (bug fix)[495977] allow \n in test constraints (porter)
 
-2002-03-27 (platform support)[527941,533862] VC/winhelp/W9X (spjuth, gravereaux)
+2002-03-27 (platform support)[527941,533862] VC/winhelp/W9X (spjuth,
+gravereaux)
 
-2002-03-28 (bug fix)[219181] execption at level 0 issues (sofer)
+2002-03-28 (bug fix)[219181] exception at level 0 issues (sofer)
 
 2002-03-28 (bug fix)[219362] command termination; Tcl_CreateTrace (knoll,sofer)
-
-2002-03-29 (bug fix)[536937] self-deleting trace double-free (hobbs)
 
 2002-04-05 (bug fix)[536879] exceptions during variable subst (porter)
 
@@ -5472,11 +5469,9 @@ Tcl_FSMatchInDirectory to handle assorted [glob] bugs in VFS. (darley)
 
 2002-04-17 (bug fix)[495660] [(save|restore)state] deprecated (porter)
 
-2002-04-17 (bug fix)[526524] escape-based encodings (yamamoto, hobbs)
+2002-04-17 (bug fix)[526524] escape-based encodings corrected (yamamoto, hobbs)
 
-2002-04-18 (bug fix)[542588] [expr] error msgs (ehrens, sofer)
-
-2002-04-18 (bug fix)[545644] [info body] on no string rep (fellows)
+2002-04-18 (bug fix)[542588] [expr] error msgs improved (ehrens, sofer)
 
 2002-04-18 (bug fix)[545325] [info level $level] now returns [namespace eval]
 as documented (suchenwirth,sofer)
@@ -5491,7 +5486,8 @@ inclusion of tcl library code in resource fork on Mac.  (steffen)
 
 2002-05-21 (platform support) static libs on OSF (dejong)
 
-2002-05-24 (bug fix)[557878] set encoding on listening socket (staplin, kupries)
+2002-05-24 (bug fix)[557878] set encoding on listening socket (staplin,
+kupries)
 
 2002-05-24 (new feature)[TIP 91] Tcl_Seek compatibility (fellows)
 
@@ -5540,4 +5536,4 @@ default; older compilers may need configuration (english)
 
 2002-06-21 (new feature)[TIP 99,562970] new [file link] command (darley)
 
---- Released 8.4b1, June 24, 2002 --- See ChangeLog for details ---
+--- Released 8.4b1, July 5, 2002 --- See ChangeLog for details ---
