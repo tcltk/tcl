@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.32 2002/03/05 20:55:36 hobbs Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.33 2002/05/13 14:06:22 dkf Exp $
  */
 
 #include	"tclInt.h"	/* Internal definitions for Tcl. */
@@ -82,7 +82,11 @@
 #   endif
 #   if defined(TIOCSBRK) && defined(TIOCCBRK)
 #	define SETBREAK(fd, flag)		\
-		ioctl((fd), (unsigned) ((flag) ? TIOCSBRK:TIOCCBRK), NULL)
+		if (flag) {			\
+		    ioctl((fd), TIOCSBRK, NULL);\
+		} else {			\
+		    ioctl((fd), TIOCCBRK, NULL);\
+		}
 #   endif
 #   if !defined(CRTSCTS) && defined(CNEW_RTSCTS)
 #	define CRTSCTS CNEW_RTSCTS
