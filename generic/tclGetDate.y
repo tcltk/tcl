@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclGetDate.y,v 1.5 1999/09/21 04:20:40 hobbs Exp $
+ * RCS: @(#) $Id: tclGetDate.y,v 1.6 2000/01/11 00:51:49 ericm Exp $
  */
 
 %{
@@ -135,10 +135,10 @@ yyparse _ANSI_ARGS_((void));
 }
 
 %token  tAGO tDAY tDAYZONE tID tMERIDIAN tMINUTE_UNIT tMONTH tMONTH_UNIT
-%token  tSEC_UNIT tSNUMBER tUNUMBER tZONE tEPOCH tDST
+%token  tSEC_UNIT tSNUMBER tUNUMBER tZONE tEPOCH tDST tISOBASE
 
 %type   <Number>        tDAY tDAYZONE tMINUTE_UNIT tMONTH tMONTH_UNIT tDST
-%type   <Number>        tSEC_UNIT tSNUMBER tUNUMBER tZONE
+%type   <Number>        tSEC_UNIT tSNUMBER tUNUMBER tZONE tISOBASE
 %type   <Meridian>      tMERIDIAN o_merid
 
 %%
@@ -162,6 +162,10 @@ item    : time {
         | rel {
             yyHaveRel++;
         }
+        | iso {
+	    yyHaveTime++;
+	    yyHaveDate++;
+	}
         | number
         ;
 
@@ -177,12 +181,12 @@ time    : tUNUMBER tMERIDIAN {
             yySeconds = 0;
             yyMeridian = $4;
         }
-        | tUNUMBER ':' tUNUMBER tSNUMBER {
+        | tUNUMBER ':' tUNUMBER '-' tUNUMBER {
             yyHour = $1;
             yyMinutes = $3;
             yyMeridian = MER24;
             yyDSTmode = DSToff;
-            yyTimezone = - ($4 % 100 + ($4 / 100) * 60);
+            yyTimezone = ($5 % 100 + ($5 / 100) * 60);
         }
         | tUNUMBER ':' tUNUMBER ':' tUNUMBER o_merid {
             yyHour = $1;
@@ -190,13 +194,13 @@ time    : tUNUMBER tMERIDIAN {
             yySeconds = $5;
             yyMeridian = $6;
         }
-        | tUNUMBER ':' tUNUMBER ':' tUNUMBER tSNUMBER {
+        | tUNUMBER ':' tUNUMBER ':' tUNUMBER '-' tUNUMBER {
             yyHour = $1;
             yyMinutes = $3;
             yySeconds = $5;
             yyMeridian = MER24;
             yyDSTmode = DSToff;
-            yyTimezone = - ($6 % 100 + ($6 / 100) * 60);
+            yyTimezone = ($7 % 100 + ($7 / 100) * 60);
         }
         ;
 
@@ -237,6 +241,21 @@ date    : tUNUMBER '/' tUNUMBER {
             yyDay = $3;
             yyYear = $5;
         }
+        | tISOBASE {
+	    yyYear = $1 / 10000;
+	    yyMonth = ($1 % 10000)/100;
+	    yyDay = $1 % 100;
+	}
+        | tUNUMBER '-' tMONTH '-' tUNUMBER {
+	    yyDay = $1;
+	    yyMonth = $3;
+	    yyYear = $5;
+	}
+        | tUNUMBER '-' tUNUMBER '-' tUNUMBER {
+            yyMonth = $3;
+            yyDay = $5;
+            yyYear = $1;
+        }
         | tMONTH tUNUMBER {
             yyMonth = $1;
             yyDay = $2;
@@ -262,6 +281,34 @@ date    : tUNUMBER '/' tUNUMBER {
         }
         ;
 
+iso     : tISOBASE tZONE tISOBASE {
+            if ($2 != HOUR(- 7)) goto yyabort;
+	    yyYear = $1 / 10000;
+	    yyMonth = ($1 % 10000)/100;
+	    yyDay = $1 % 100;
+	    yyHour = $3 / 10000;
+	    yyMinutes = ($3 % 10000)/100;
+	    yySeconds = $3 % 100;
+        }
+        | tISOBASE tZONE tUNUMBER ':' tUNUMBER ':' tUNUMBER {
+            if ($2 != HOUR(- 7)) goto yyabort;
+	    yyYear = $1 / 10000;
+	    yyMonth = ($1 % 10000)/100;
+	    yyDay = $1 % 100;
+	    yyHour = $3;
+	    yyMinutes = $5;
+	    yySeconds = $7;
+        }
+	| tISOBASE tISOBASE {
+	    yyYear = $1 / 10000;
+	    yyMonth = ($1 % 10000)/100;
+	    yyDay = $1 % 100;
+	    yyHour = $2 / 10000;
+	    yyMinutes = ($2 % 10000)/100;
+	    yySeconds = $2 % 100;
+        }
+        ;
+
 rel     : relunit tAGO {
             yyRelSeconds = -yyRelSeconds;
             yyRelMonth = -yyRelMonth;
@@ -272,14 +319,14 @@ rel     : relunit tAGO {
 relunit : tUNUMBER tMINUTE_UNIT {
             yyRelSeconds += $1 * $2 * 60L;
         }
-        | tSNUMBER tMINUTE_UNIT {
-            yyRelSeconds += $1 * $2 * 60L;
+        | '-' tUNUMBER tMINUTE_UNIT {
+            yyRelSeconds -= $2 * $3 * 60L;
         }
         | tMINUTE_UNIT {
             yyRelSeconds += $1 * 60L;
         }
-        | tSNUMBER tSEC_UNIT {
-            yyRelSeconds += $1;
+        | '-' tUNUMBER tSEC_UNIT {
+            yyRelSeconds -= $2;
         }
         | tUNUMBER tSEC_UNIT {
             yyRelSeconds += $1;
@@ -287,8 +334,8 @@ relunit : tUNUMBER tMINUTE_UNIT {
         | tSEC_UNIT {
             yyRelSeconds++;
         }
-        | tSNUMBER tMONTH_UNIT {
-            yyRelMonth += $1 * $2;
+        | '-' tUNUMBER tMONTH_UNIT {
+            yyRelMonth -= $2 * $3;
         }
         | tUNUMBER tMONTH_UNIT {
             yyRelMonth += $1 * $2;
@@ -305,8 +352,8 @@ number  : tUNUMBER
 	} else {
 	    yyHaveTime++;
 	    if ($1 < 100) {
-		yyHour = 0;
-		yyMinutes = $1;
+		yyHour = $1;
+		yyMinutes = 0;
 	    } else {
 		yyHour = $1 / 100;
 		yyMinutes = $1 % 100;
@@ -388,7 +435,7 @@ static TABLE    OtherTable[] = {
     { "next",           tUNUMBER,       2 },
 #if 0
     { "first",          tUNUMBER,       1 },
-/*  { "second",         tUNUMBER,       2 }, */
+    { "second",         tUNUMBER,       2 },
     { "third",          tUNUMBER,       3 },
     { "fourth",         tUNUMBER,       4 },
     { "fifth",          tUNUMBER,       5 },
@@ -817,27 +864,17 @@ yylex()
             yyInput++;
 	}
 
-        if (isdigit(UCHAR(c = *yyInput)) || c == '-' || c == '+') { /* INTL: digit */
-            if (c == '-' || c == '+') {
-                sign = c == '-' ? -1 : 1;
-                if (!isdigit(UCHAR(*++yyInput))) { /* INTL: digit */
-                    /*
-		     * skip the '-' sign
-		     */
-                    continue;
-		}
-            } else {
-                sign = 0;
-	    }
+        if (isdigit(UCHAR(c = *yyInput))) { /* INTL: digit */
             for (yylval.Number = 0;
 		    isdigit(UCHAR(c = *yyInput++)); ) { /* INTL: digit */
                 yylval.Number = 10 * yylval.Number + c - '0';
 	    }
             yyInput--;
-            if (sign < 0) {
-                yylval.Number = -yylval.Number;
+	    if (yylval.Number >= 100000) {
+		return tISOBASE;
+	    } else {
+		return tUNUMBER;
 	    }
-            return sign ? tSNUMBER : tUNUMBER;
         }
         if (!(c & 0x80) && isalpha(UCHAR(c))) {	/* INTL: ISO only. */
             for (p = buff; isalpha(UCHAR(c = *yyInput++)) /* INTL: ISO only. */
@@ -942,7 +979,8 @@ TclGetDate(p, now, zone, timePtr)
     } else {
         Start = now;
         if (!yyHaveRel) {
-            Start -= ((tm->tm_hour * 60L) + tm->tm_min * 60L) + tm->tm_sec;
+            Start -= ((tm->tm_hour * 60L * 60L) +
+		    tm->tm_min * 60L) +	tm->tm_sec;
 	}
     }
 
