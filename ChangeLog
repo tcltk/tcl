@@ -1,3 +1,10 @@
+2003-03-18  Daniel Steffen  <das@users.sourceforge.net>
+
+	* tools/tcltk-man2html.tcl: added support for building 'make html'
+	from inside distribution directories named with 8.x.x version
+	numbers. tcltk-man2html now uses the latest tcl8.x.x resp. tk8.x.x
+	directories found inside its --srcdir argument.
+
 2003-03-18  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* tests/cmdAH.test: fix test suite problem if /home is a symlink
