@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.95 2002/03/04 23:25:43 hobbs Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.96 2002/03/05 18:47:58 davygrvy Exp $
 
 VERSION 		= @TCL_VERSION@
 
@@ -1227,6 +1227,11 @@ dist: $(UNIX_DIR)/configure mklinks
 	cp -p $(TOP_DIR)/win/*.bat $(DISTDIR)/win
 	$(TCL_EXE) $(TOOL_DIR)/eolFix.tcl -crlf $(DISTDIR)/win/*.bat
 	cp -p $(TOP_DIR)/win/makefile.* $(DISTDIR)/win
+	$(TCL_EXE) $(TOOL_DIR)/eolFix.tcl -crlf $(DISTDIR)/win/makefile.*
+	cp -p $(TOP_DIR)/win/rules.vc $(DISTDIR)/win
+	$(TCL_EXE) $(TOOL_DIR)/eolFix.tcl -crlf $(DISTDIR)/win/rules.vc
+	cp -p $(TOP_DIR)/win/coffbase.txt $(DISTDIR)/win
+	$(TCL_EXE) $(TOOL_DIR)/eolFix.tcl -crlf $(DISTDIR)/win/coffbase.txt
 	cp -p $(TOP_DIR)/win/tcl.hpj.in $(DISTDIR)/win
 	$(TCL_EXE) $(TOOL_DIR)/eolFix.tcl -crlf $(DISTDIR)/win/tcl.hpj.in
 	cp -p $(TOP_DIR)/win/README $(DISTDIR)/win
