@@ -1,3 +1,7 @@
+2004-02-06  Don Porter	<dgp@users.sourceforge.net>
+
+	* doc/clock.n:	Removed reference to non-existent [file ctime].
+
 2004-02-05  David Gravereaux <davygrvy@pobo.co>
 
 	* docs/tclvars.n: Added clarification of the tcl_platform(debug)

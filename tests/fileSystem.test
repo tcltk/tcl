@@ -743,7 +743,6 @@ test filesystem-7.7 {cross-filesystem dir copy with -force} \
     # First copy should succeed
     set res [catch {file copy simplefs:/simpledir dir2} err]
     lappend res $err
-    file attributes dir2 -permissions 0000
     # Second copy should fail (no -force)
     lappend res [catch {file copy simplefs:/simpledir dir2} err]
     lappend res $err
