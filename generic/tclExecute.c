@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.15 2000/09/06 16:59:27 hobbs Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.16 2000/11/24 15:29:51 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2512,6 +2512,7 @@ TclExecuteByteCode(interp, codePtr)
 		 */
 		
 		double d;
+		int boolvar;
 		Tcl_ObjType *tPtr;
 		
 		valuePtr = POP_OBJECT();
@@ -2529,6 +2530,11 @@ TclExecuteByteCode(interp, codePtr)
 			} else {
 			    result = Tcl_GetDoubleFromObj((Tcl_Interp *) NULL,
 				    valuePtr, &d);
+			}
+			if (result == TCL_ERROR && *pc == INST_LNOT) {
+			    result = Tcl_GetBooleanFromObj((Tcl_Interp *)NULL,
+				    valuePtr, &boolvar);
+			    i = (long)boolvar; /* i is long, not int! */
 			}
 			if (result != TCL_OK) {
 			    TRACE(("\"%.20s\" => ILLEGAL TYPE %s\n",
