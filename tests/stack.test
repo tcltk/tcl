@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: stack.test,v 1.9 2000/09/29 21:42:35 hobbs Exp $
+# RCS: @(#) $Id: stack.test,v 1.10 2001/09/11 00:46:35 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -44,6 +44,14 @@ test stack-1.1 {maxNestingDepth reached on infinite recursion} {minStack2400} {
     rename recurse {}
     set rv
 } {too many nested calls to Tcl_EvalObj (infinite loop?)}
+
+test stack-2.1 {maxNestingDepth reached on infinite recursion} {minStack2400} {
+    catch {rename unknown unknown_safe}
+    interp alias {} unknown {} notaknownproc
+    catch {foo} msg
+    catch {rename unknown {} ; rename unknown_safe unknown}
+    set msg
+} {too many nested calls to AliasObjCmd (infinite loop using alias?)}
 
 # cleanup
 ::tcltest::cleanupTests
