@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: namespace.test,v 1.28 2004/05/25 19:45:17 msofer Exp $
+# RCS: @(#) $Id: namespace.test,v 1.29 2004/08/25 21:28:27 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -1649,6 +1649,32 @@ test namespace-47.6 {ensemble: unknown handler} {
     while parsing result of ensemble unknown subcommand handler
     invoked from within
 "foo bar"}}
+test namespace-47.7 {ensemble: unknown handler and namespace import} {
+    namespace eval foo {
+	namespace export bar
+	namespace ensemble create -command bar -unknown ::foo::u -subcomm x
+	proc u {ens args} {
+	    global result
+	    lappend result $ens $args
+	    namespace ensemble config $ens -subcommand {x y}
+	}
+	proc x args {
+	    global result
+	    lappend result XXX $args
+	}
+	proc y args {
+	    global result
+	    lappend result YYY $args
+	}
+    }
+    namespace import foo::bar
+    set result {}
+    lappend result [catch {namespace ensemble config bar} msg] $msg
+    bar x 123
+    bar y 456
+    namespace delete foo
+    set result
+} {1 {bar is not an ensemble command} XXX 123 ::bar {y 456} YYY 456}
 
 # cleanup
 catch {rename cmd1 {}}
