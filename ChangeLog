@@ -24,7 +24,7 @@
 	Paul Duffin.
 
 	* generic/tclRegexp.c: Fix bug when the regexp cache is empty
-	and an empty pattern is used in regexp ( such as {} or "" ).s
+	and an empty pattern is used in regexp ( such as {} or "" ).
 
 1999-05-18    <stanton@scriptics.com>
 
