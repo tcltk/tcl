@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.43 2002/01/25 20:40:55 dgp Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.44 2002/01/25 22:01:31 dgp Exp $
 
 library tcl
 
@@ -431,7 +431,7 @@ declare 109 generic {
 # defined here instead of in tcl.decls since they are not stable yet.
 
 declare 111 generic {
-    void Tcl_AddInterpResolvers(Tcl_Interp *interp, char *name, \
+    void Tcl_AddInterpResolvers(Tcl_Interp *interp, CONST char *name, \
 	    Tcl_ResolveCmdProc *cmdProc, Tcl_ResolveVarProc *varProc, \
 	    Tcl_ResolveCompiledVarProc *compiledVarProc)
 }
@@ -447,19 +447,19 @@ declare 114 generic {
     void Tcl_DeleteNamespace(Tcl_Namespace *nsPtr)
 }
 declare 115 generic {
-    int Tcl_Export(Tcl_Interp *interp, Tcl_Namespace *nsPtr, char *pattern, \
-	    int resetListFirst)
+    int Tcl_Export(Tcl_Interp *interp, Tcl_Namespace *nsPtr, \
+	    CONST char *pattern, int resetListFirst)
 }
 declare 116 generic {
     Tcl_Command Tcl_FindCommand(Tcl_Interp *interp, CONST char *name, \
 	    Tcl_Namespace *contextNsPtr, int flags)
 }
 declare 117 generic {
-    Tcl_Namespace * Tcl_FindNamespace(Tcl_Interp *interp, char *name, \
+    Tcl_Namespace * Tcl_FindNamespace(Tcl_Interp *interp, CONST char *name, \
 	    Tcl_Namespace *contextNsPtr, int flags)
 }
 declare 118 generic {
-    int Tcl_GetInterpResolvers(Tcl_Interp *interp, char *name, \
+    int Tcl_GetInterpResolvers(Tcl_Interp *interp, CONST char *name, \
 	    Tcl_ResolverInfo *resInfo)
 }
 declare 119 generic {
@@ -472,7 +472,7 @@ declare 120 generic {
 }
 declare 121 generic {
     int Tcl_ForgetImport(Tcl_Interp *interp, Tcl_Namespace *nsPtr, \
-	    char *pattern)
+	    CONST char *pattern)
 }
 declare 122 generic {
     Tcl_Command Tcl_GetCommandFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr)
@@ -493,7 +493,7 @@ declare 126 generic {
 }
 declare 127 generic {
     int Tcl_Import(Tcl_Interp *interp, Tcl_Namespace *nsPtr, \
-	    char *pattern, int allowOverwrite)
+	    CONST char *pattern, int allowOverwrite)
 }
 declare 128 generic {
     void Tcl_PopCallFrame(Tcl_Interp* interp)
@@ -503,7 +503,7 @@ declare 129 generic {
 	    Tcl_Namespace *nsPtr, int isProcCallFrame)
 } 
 declare 130 generic {
-    int Tcl_RemoveInterpResolvers(Tcl_Interp *interp, char *name)
+    int Tcl_RemoveInterpResolvers(Tcl_Interp *interp, CONST char *name)
 }
 declare 131 generic {
     void Tcl_SetNamespaceResolvers(Tcl_Namespace *namespacePtr, \
