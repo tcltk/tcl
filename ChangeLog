@@ -1,3 +1,13 @@
+2005-01-21  Kevin B. Kenny  <kennykb@acm.org>
+
+	[kennykb-numerics-branch]
+
+	* unix/Makefile.in:     Updated Makefile to build libtommath on
+				Unix as well as Windows. [Bug 1106865]
+
+	* generic/tclTestObj.c: Silenced a compiler warning about
+				a mismatched 'const'.
+	
 2005-01-20  Kevin B. Kenny  <kennykb@acm.org>
 
 	[kennykb-numerics-branch] Development checkpoint.

@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTestObj.c,v 1.12.6.2 2005/01/20 21:19:46 kennykb Exp $
+ * RCS: @(#) $Id: tclTestObj.c,v 1.12.6.3 2005/01/21 18:35:22 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -145,7 +145,7 @@ TestbignumobjCmd( clientData, interp, objc, objv )
     Tcl_Obj* CONST objv[];	/* Argument vector */
 {
 
-    char * subcmds[] = {
+    const char * subcmds[] = {
 	"set",      "get",      "mult10",      "div10", 
 	NULL
     };

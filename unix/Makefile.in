@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.157.2.4 2005/01/20 19:13:57 kennykb Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.157.2.5 2005/01/21 18:35:22 kennykb Exp $
 
 VERSION 		= @TCL_VERSION@
 MAJOR_VERSION		= @TCL_MAJOR_VERSION@
@@ -239,6 +239,7 @@ SRC_DIR			= @srcdir@
 TOP_DIR			= $(SRC_DIR)/..
 BUILD_DIR		= @builddir@
 GENERIC_DIR		= $(TOP_DIR)/generic
+TOMMATH_DIR		= $(TOP_DIR)/libtommath
 COMPAT_DIR		= $(TOP_DIR)/compat
 TOOL_DIR		= $(TOP_DIR)/tools
 UNIX_DIR		= $(SRC_DIR)
@@ -272,12 +273,12 @@ DDD			= ddd
 
 
 CC_SWITCHES = ${CFLAGS} ${CFLAGS_WARNING} ${SHLIB_CFLAGS} \
--I${BUILD_DIR} -I${UNIX_DIR} -I${GENERIC_DIR} \
+-I${BUILD_DIR} -I${UNIX_DIR} -I${GENERIC_DIR} -DTCL_TOMMATH -I${TOMMATH_DIR} \
 ${AC_FLAGS} ${MATH_FLAGS} ${GENERIC_FLAGS} ${PROTO_FLAGS} \
 ${NO_DEPRECATED_FLAGS} ${ENV_FLAGS}
 
 STUB_CC_SWITCHES = ${CFLAGS} ${CFLAGS_WARNING} ${SHLIB_CFLAGS} \
--I${BUILD_DIR} -I${UNIX_DIR} -I${GENERIC_DIR} \
+-I${BUILD_DIR} -I${UNIX_DIR} -I${GENERIC_DIR} -DTCL_TOMMATH -I${TOMMATH_DIR} \
 ${AC_FLAGS} ${MATH_FLAGS} ${GENERIC_FLAGS} ${PROTO_FLAGS} ${ENV_FLAGS}
 
 LIBS		= @TCL_LIBS@
@@ -306,14 +307,27 @@ GENERIC_OBJS = regcomp.o regexec.o regfree.o regerror.o tclAlloc.o \
 	tclPkg.o tclPkgConfig.o tclPosixStr.o tclPreserve.o tclProc.o tclRegexp.o \
 	tclResolve.o tclResult.o tclScan.o tclStringObj.o tclThread.o \
 	tclThreadAlloc.o tclThreadJoin.o tclThreadStorage.o tclStubInit.o \
-	tclStubLib.o tclTimer.o tclTrace.o tclUtf.o tclUtil.o tclVar.o
+	tclStubLib.o tclTimer.o tclTrace.o tclUtf.o tclUtil.o tclVar.o \
+	tclTomMathInterface.o
+
+TOMMATH_OBJS = bncore.o bn_reverse.o bn_fast_s_mp_mul_digs.o bn_mp_add.o \
+        bn_mp_add_d.o bn_mp_clamp.o bn_mp_clear.o bn_mp_clear_multi.o \
+        bn_mp_cmp.o bn_mp_cmp_mag.o bn_mp_copy.o bn_mp_count_bits.o \
+        bn_mp_div.o bn_mp_div_d.o bn_mp_div_2.o bn_mp_div_2d.o bn_mp_div_3.o \
+        bn_mp_exch.o bn_mp_grow.o bn_mp_init.o bn_mp_init_copy.o \
+        bn_mp_init_multi.o bn_mp_init_size.o bn_mp_karatsuba_mul.o \
+        bn_mp_lshd.o bn_mp_mod.o bn_mp_mod_2d.o bn_mp_mul.o bn_mp_mul_2.o \
+        bn_mp_mul_2d.o bn_mp_mul_d.o bn_mp_radix_size.o bn_mp_radix_smap.o \
+        bn_mp_read_radix.o bn_mp_rshd.o bn_mp_sub.o bn_mp_sub_d.o \
+        bn_mp_toom_mul.o bn_mp_toradix_n.o bn_mp_zero.o bn_s_mp_add.o \
+        bn_s_mp_mul_digs.o bn_s_mp_sub.o
 
 STUB_LIB_OBJS = tclStubLib.o ${COMPAT_OBJS}
 
 MAC_OSX_OBJS = tclMacOSXBundle.o tclMacOSXFCmd.o
 
-OBJS = ${GENERIC_OBJS} ${UNIX_OBJS} ${NOTIFY_OBJS} ${COMPAT_OBJS} \
-        @DL_OBJS@ @PLAT_OBJS@
+OBJS = ${GENERIC_OBJS} ${TOMMATH_OBJS} ${UNIX_OBJS} ${NOTIFY_OBJS} \
+	${COMPAT_OBJS} @DL_OBJS@ @PLAT_OBJS@
 
 TCL_DECLS = \
 	$(GENERIC_DIR)/tcl.decls \
@@ -573,6 +587,15 @@ gendate:
 #	    -e '/#define YYENLARGE/,/realloc/s/realloc/TclDateRealloc/g' \
 #	    <y.tab.c >$(GENERIC_DIR)/tclDate.c
 #	rm y.tab.c
+
+# The following target generates the file generic/tommath.h.
+# It needs to be run (and the results checked) after updating
+# to a new release of libtommath.
+
+gentommath_h:
+	$(TCL_EXE) "$(TOP_DIR)/tools/fix_tommath_h.tcl" \
+		"$(TOMMATH_DIR)/tommath.h" \
+		> "$(GENERIC_DIR)/tommath.h"
 
 # The following target generates the shared libraries in dltest/ that
 # are used for testing;  they are included as part of the "tcltest"
@@ -1074,6 +1097,138 @@ tclThreadStorage.o: $(GENERIC_DIR)/tclThreadStorage.c
 
 tclThreadTest.o: $(GENERIC_DIR)/tclThreadTest.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclThreadTest.c
+
+tclTomMathInterface.o: $(GENERIC_DIR)/tclTomMathInterface.c
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclTomMathInterface.c
+
+bncore.o: $(TOMMATH_DIR)/bncore.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bncore.c
+
+bn_reverse.o: $(TOMMATH_DIR)/bn_reverse.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_reverse.c
+
+bn_fast_s_mp_mul_digs.o: $(TOMMATH_DIR)/bn_fast_s_mp_mul_digs.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_fast_s_mp_mul_digs.c
+
+bn_mp_add.o: $(TOMMATH_DIR)/bn_mp_add.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_add.c
+
+bn_mp_add_d.o: $(TOMMATH_DIR)/bn_mp_add_d.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_add_d.c
+
+bn_mp_clamp.o: $(TOMMATH_DIR)/bn_mp_clamp.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_clamp.c
+
+bn_mp_clear.o: $(TOMMATH_DIR)/bn_mp_clear.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_clear.c
+
+bn_mp_clear_multi.o: $(TOMMATH_DIR)/bn_mp_clear_multi.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_clear_multi.c
+
+bn_mp_cmp.o: $(TOMMATH_DIR)/bn_mp_cmp.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_cmp.c
+
+bn_mp_cmp_mag.o: $(TOMMATH_DIR)/bn_mp_cmp_mag.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_cmp_mag.c
+
+bn_mp_copy.o: $(TOMMATH_DIR)/bn_mp_copy.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_copy.c
+
+bn_mp_count_bits.o: $(TOMMATH_DIR)/bn_mp_count_bits.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_count_bits.c
+
+bn_mp_div.o: $(TOMMATH_DIR)/bn_mp_div.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_div.c
+
+bn_mp_div_d.o: $(TOMMATH_DIR)/bn_mp_div_d.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_div_d.c
+
+bn_mp_div_2.o: $(TOMMATH_DIR)/bn_mp_div_2.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_div_2.c
+
+bn_mp_div_2d.o: $(TOMMATH_DIR)/bn_mp_div_2d.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_div_2d.c
+
+bn_mp_div_3.o: $(TOMMATH_DIR)/bn_mp_div_3.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_div_3.c
+
+bn_mp_exch.o: $(TOMMATH_DIR)/bn_mp_exch.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_exch.c
+
+bn_mp_grow.o: $(TOMMATH_DIR)/bn_mp_grow.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_grow.c
+
+bn_mp_init.o: $(TOMMATH_DIR)/bn_mp_init.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_init.c
+
+bn_mp_init_copy.o: $(TOMMATH_DIR)/bn_mp_init_copy.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_init_copy.c
+
+bn_mp_init_multi.o: $(TOMMATH_DIR)/bn_mp_init_multi.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_init_multi.c
+
+bn_mp_init_size.o:$(TOMMATH_DIR)/bn_mp_init_size.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_init_size.c
+
+bn_mp_karatsuba_mul.o: $(TOMMATH_DIR)/bn_mp_karatsuba_mul.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_karatsuba_mul.c
+
+bn_mp_lshd.o: $(TOMMATH_DIR)/bn_mp_lshd.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_lshd.c
+
+bn_mp_mod.o: $(TOMMATH_DIR)/bn_mp_mod.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_mod.c
+
+bn_mp_mod_2d.o: $(TOMMATH_DIR)/bn_mp_mod_2d.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_mod_2d.c
+
+bn_mp_mul.o: $(TOMMATH_DIR)/bn_mp_mul.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_mul.c
+
+bn_mp_mul_2.o: $(TOMMATH_DIR)/bn_mp_mul_2.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_mul_2.c
+
+bn_mp_mul_2d.o: $(TOMMATH_DIR)/bn_mp_mul_2d.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_mul_2d.c
+
+bn_mp_mul_d.o: $(TOMMATH_DIR)/bn_mp_mul_d.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_mul_d.c
+
+bn_mp_radix_size.o: $(TOMMATH_DIR)/bn_mp_radix_size.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_radix_size.c
+
+bn_mp_radix_smap.o: $(TOMMATH_DIR)/bn_mp_radix_smap.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_radix_smap.c
+
+bn_mp_read_radix.o: $(TOMMATH_DIR)/bn_mp_read_radix.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_read_radix.c
+
+bn_mp_rshd.o: $(TOMMATH_DIR)/bn_mp_rshd.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_rshd.c
+
+bn_mp_sub.o: $(TOMMATH_DIR)/bn_mp_sub.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_sub.c
+
+bn_mp_sub_d.o: $(TOMMATH_DIR)/bn_mp_sub_d.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_sub_d.c
+
+bn_mp_toom_mul.o: $(TOMMATH_DIR)/bn_mp_toom_mul.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_toom_mul.c
+
+bn_mp_toradix_n.o: $(TOMMATH_DIR)/bn_mp_toradix_n.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_toradix_n.c
+
+bn_mp_zero.o: $(TOMMATH_DIR)/bn_mp_zero.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_zero.c
+
+bn_s_mp_add.o: $(TOMMATH_DIR)/bn_s_mp_add.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_s_mp_add.c
+
+bn_s_mp_mul_digs.o: $(TOMMATH_DIR)/bn_s_mp_mul_digs.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_s_mp_mul_digs.c
+
+bn_s_mp_sub.o: $(TOMMATH_DIR)/bn_s_mp_sub.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_s_mp_sub.c
 
 tclUnixChan.o: $(UNIX_DIR)/tclUnixChan.c
 	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclUnixChan.c
