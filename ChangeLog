@@ -1,3 +1,9 @@
+2002-08-28  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* unix/configure.in: Cache handling of ac_cv_type_socklen_t was
+	wrong. [Bug 600931] reported by John Ellson.  Fixed by putting the
+	brackets where they belong.
+
 2002-08-26  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* generic/tclCompCmds.c: fix for [Bug 599788] (error in element
