@@ -6,7 +6,7 @@
 # Copyright (c) 2000 by Ajuba Solutions
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.test,v 1.48 2004/11/25 16:17:09 rmax Exp $
+# RCS: @(#) $Id: tcltest.test,v 1.48.2.1 2005/03/09 15:57:19 kennykb Exp $
 
 # Note that there are several places where the value of 
 # tcltest::currentFailure is stored/reset in the -setup/-cleanup
@@ -699,23 +699,23 @@ removeFile thisdirectoryisafile
 removeDirectory normaldirectory
 
 # -file, -notfile, [matchFiles], [skipFiles]
-test tcltest-9.1 {-file a*.tcl} -constraints {unixOrPc} -setup {
+test tcltest-9.1 {-file d*.tcl} -constraints {unixOrPc} -setup {
     set old [testsDirectory]
     testsDirectory [file dirname [info script]]
 } -body {
-    slave msg [file join [testsDirectory] all.tcl] -file a*.test
+    slave msg [file join [testsDirectory] all.tcl] -file d*.test
     set msg
 } -cleanup {
     testsDirectory $old
-} -match regexp -result {assocd\.test}
+} -match regexp -result {dstring\.test}
 
-test tcltest-9.2 {-file a*.tcl} -constraints {unixOrPc} -setup {
+test tcltest-9.2 {-file d*.tcl} -constraints {unixOrPc} -setup {
     set old [testsDirectory]
     testsDirectory [file dirname [info script]]
 } -body {
     slave msg [file join [testsDirectory] all.tcl] \
-	    -file a*.test -notfile assocd*
-    regexp {assocd\.test} $msg
+	    -file d*.test -notfile dstring*
+    regexp {dstring\.test} $msg
 } -cleanup {
     testsDirectory $old
 } -result 0
@@ -745,6 +745,21 @@ test tcltest-9.4 {skipFiles} {
     } 
     -result {foo bar}
 }
+
+test tcltest-9.5 {GetMatchingFiles: Bug 1119798} -setup {
+    set d [makeDirectory tmp]
+    makeDirectory foo $d
+    makeFile {} fee $d
+    file copy [file join [file dirname [info script]] all.tcl] $d
+} -body {
+    slave msg [file join [temporaryDirectory] all.tcl] -file f*
+    regexp {exiting with errors:} $msg
+} -cleanup {
+    file delete [file join $d all.tcl]
+    removeFile fee $d
+    removeDirectory foo $d
+    removeDirectory tmp
+} -result 0
 
 # -preservecore, [preserveCore]
 set mc [makeFile {

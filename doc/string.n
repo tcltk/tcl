@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: string.n,v 1.24.2.1 2005/01/20 14:53:39 kennykb Exp $
+'\" RCS: @(#) $Id: string.n,v 1.24.2.2 2005/03/09 15:57:15 kennykb Exp $
 '\" 
 .so man.macros
 .TH string n 8.1 Tcl "Tcl Built-In Commands"
@@ -88,7 +88,7 @@ length of the string then an empty string is returned.
 \fBstring is \fIclass\fR ?\fB\-strict\fR? ?\fB\-failindex \fIvarname\fR? \fIstring\fR
 Returns 1 if \fIstring\fR is a valid member of the specified character
 class, otherwise returns 0.  If \fB\-strict\fR is specified, then an
-empty string returns 0, otherwise and empty string will return 1 on
+empty string returns 0, otherwise an empty string will return 1 on
 any class.  If \fB\-failindex\fR is specified, then if the function
 returns 0, the index in the string where the class was no longer valid
 will be stored in the variable named \fIvarname\fR.  The \fIvarname\fR

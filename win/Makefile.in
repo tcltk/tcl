@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.84.2.6 2005/03/02 21:25:50 kennykb Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.84.2.7 2005/03/09 15:57:20 kennykb Exp $
 
 VERSION = @TCL_VERSION@
 
@@ -637,8 +637,8 @@ install-libraries: libraries install-tzdata install-msgs
 	    done;
 	@echo "Installing package msgcat 1.4.1 as a Tcl Module";
 	@$(COPY) $(ROOT_DIR)/library/msgcat/msgcat.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.5/msgcat-1.4.1.tm;
-	@echo "Installing package tcltest 2.2.7 as a Tcl Module";
-	@$(COPY) $(ROOT_DIR)/library/tcltest/tcltest.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.3/tcltest-2.2.7.tm;
+	@echo "Installing package tcltest 2.2.8 as a Tcl Module";
+	@$(COPY) $(ROOT_DIR)/library/tcltest/tcltest.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.3/tcltest-2.2.8.tm;
 	@echo "Installing encodings";
 	@for i in $(ROOT_DIR)/library/encoding/*.enc ; do \
 		$(COPY) "$$i" "$(SCRIPT_INSTALL_DIR)/encoding"; \

@@ -1,6 +1,6 @@
 2005-03-09  Kevin B. Kenny  <kennykb@acm.org>
 
-	[kennykb-numerics-branch]
+	[kennykb-numerics-branch] Merged from HEAD.
 
 	* generic/tclExecute.c (Tcl_ExecuteByteCode): Removed the check
 	for division-by-zero on IEEE-754 machines.
@@ -20,6 +20,21 @@
 	* tests/util.test (util-10.*): Added test case for the bug in
 	tclUtil.c.
 	
+2005-03-08  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* win/makefile.vc: clarify necessary defined vars that can come
+	from MSVC or the Platform SDK.
+
+2005-03-07  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/string.n: Minor typo. [Bug 1158247]
+
+2005-03-07  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclExecute.c: new peephole optimisation for INST_PUSH1;
+	fixed the peephole opt in INST_POP so that it is not used when
+	TCL_COMPILE_DEBUG is defined.
+
 2005-03-04  Kevin B. Kenny  <kennykb@acm.org>
 
 	[kennykb-numerics-branch]
@@ -96,6 +111,21 @@
 		of tests for correct rounding in Tcl_PrintDouble. [TIP
 		#132].
 	
+2005-03-01  David N. Welton  <davidw@dedasys.com>
+
+	* doc/CrtSlave.3: Changed to Tcl_Object to Tcl_Obj in the man
+	page.
+
+2005-02-24  Don Porter  <dgp@users.sourceforge.net>
+
+	* library/tcltest/tcltest.tcl:  Better use of [glob -types] to avoid
+	* tests/tcltest.test:   failed attempts to [source] a directory, and
+	similar matters.  Thanks to "mpettigr".  [Bug 1119798]
+
+	* library/tcltest/pkgIndex.tcl: Bump to tcltest 2.2.8
+	* unix/Makefile.in:
+	* win/Makefile.in:
+
 2005-02-23  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* doc/CrtChannel.3 (THREADACTIONPROC): Formatting fix. [Bug 1149605]
