@@ -1,3 +1,10 @@
+2003-04-25  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclBasic.c:  Tcl_EvalObjv() failed to honor the
+	TCL_EVAL_GLOBAL flag when resolving command names.  Tcl_EvalEx
+	passed a string rep including leading whitespace and comments
+	to TclEvalObjvInternal().
+
 2003-04-25  Andreas Kupries  <andreask@activestate.com>
 
 	* win/tclWinThrd.c: Applied SF patch #727271. This patch changes
