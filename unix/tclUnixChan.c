@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.31 2002/02/27 18:53:26 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.32 2002/03/05 20:55:36 hobbs Exp $
  */
 
 #include	"tclInt.h"	/* Internal definitions for Tcl. */
@@ -56,7 +56,22 @@
 #   define SETIOSTATE(fd, statePtr)	tcsetattr((fd), TCSADRAIN, (statePtr))
 #   define GETCONTROL(fd, intPtr)	ioctl((fd), TIOCMGET, (intPtr))
 #   define SETCONTROL(fd, intPtr)	ioctl((fd), TIOCMSET, (intPtr))
+    /*
+     * TIP #35 introduced a different on exit flush/close behavior that
+     * doesn't work correctly with standard channels on all systems.
+     * The problem is tcflush throws away waiting channel data.  This may
+     * be necessary for true serial channels that may block, but isn't
+     * correct in the standard case.  This might be replaced with tcdrain
+     * instead, but that can block.  For now, we revert to making this do
+     * nothing, and TtyOutputProc being the same old FileOutputProc.
+     * -- hobbs [Bug #525783]
+     */
+#define BAD_TIP35_FLUSH 0
+#if BAD_TIP35_FLUSH
 #   define TTYFLUSH(fd)			tcflush((fd), TCIOFLUSH);
+#else
+#   define TTYFLUSH(fd)			
+#endif
 #   ifdef FIONREAD
 #	define GETREADQUEUE(fd, int)	ioctl((fd), FIONREAD, &(int))
 #   elif defined(FIORDCHK)
@@ -293,7 +308,11 @@ static Tcl_ChannelType ttyChannelType = {
     TCL_CHANNEL_VERSION_2,	/* v2 channel */
     TtyCloseProc,		/* Close proc. */
     FileInputProc,		/* Input proc. */
+#if BAD_TIP35_FLUSH
     TtyOutputProc,		/* Output proc. */
+#else
+    FileOutputProc,		/* Output proc. */
+#endif
     NULL,			/* Seek proc. */
     TtySetOptionProc,		/* Set option proc. */
     TtyGetOptionProc,		/* Get option proc. */
@@ -669,9 +688,9 @@ TtyCloseProc(instanceData, interp)
     ClientData instanceData;	/* Tty state. */
     Tcl_Interp *interp;		/* For error reporting - unused. */
 {
-    TtyState *ttyPtr;
-
-    ttyPtr = (TtyState *) instanceData;
+#if BAD_TIP35_FLUSH
+    TtyState *ttyPtr = (TtyState *) instanceData;
+#endif
 #ifdef TTYFLUSH
     TTYFLUSH(ttyPtr->fs.fd);
 #endif
