@@ -13,11 +13,15 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.187 2004/11/03 19:13:33 davygrvy Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.188 2004/11/12 20:27:28 das Exp $
  */
 
 #ifndef _TCL
 #define _TCL
+
+#ifdef HAVE_CONFIG_H
+#include "tclConfig.h"
+#endif
 
 /*
  * The following defines are used to indicate the various release levels.
