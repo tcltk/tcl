@@ -1,10 +1,11 @@
-.cvsignore
 Debug
 Release
 *.dsp
+*.dsw
 *.opt
 *.ncb
 *.plg
+*.00?
 Makefile
 configure
 tcl.hpj
