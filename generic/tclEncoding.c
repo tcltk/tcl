@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEncoding.c,v 1.12 2002/03/11 20:43:07 mdejong Exp $
+ * RCS: @(#) $Id: tclEncoding.c,v 1.13 2002/04/18 01:51:20 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -2562,14 +2562,28 @@ EscapeFromUtfProc(clientData, src, srcLen, flags, statePtr, dst, dstLen,
 	    tablePrefixBytes = tableDataPtr->prefixBytes;
 	    tableFromUnicode = tableDataPtr->fromUnicode;
 
-	    subTablePtr = &dataPtr->subTables[state];
-	    if (dst + subTablePtr->sequenceLen > dstEnd) {
-		result = TCL_CONVERT_NOSPACE;
-		break;
+	    /*
+	     * The state variable has the value of oldState when word is 0.
+	     * In this case, the escape sequense should not be copied to dst 
+	     * because the current character set is not changed.
+	     */
+	    if (state != oldState) {
+		subTablePtr = &dataPtr->subTables[state];
+		if ((dst + subTablePtr->sequenceLen) > dstEnd) {
+		    /*
+		     * If there is no space to write the escape sequence, the
+		     * state variable must be changed to the value of oldState
+		     * variable because this escape sequence must be written
+		     * in the next conversion.
+		     */
+		    state = oldState;
+		    result = TCL_CONVERT_NOSPACE;
+		    break;
+		}
+		memcpy((VOID *) dst, (VOID *) subTablePtr->sequence,
+			(size_t) subTablePtr->sequenceLen);
+		dst += subTablePtr->sequenceLen;
 	    }
-	    memcpy((VOID *) dst, (VOID *) subTablePtr->sequence,
-		    (size_t) subTablePtr->sequenceLen);
-	    dst += subTablePtr->sequenceLen;
 	}
 
 	if (tablePrefixBytes[(word >> 8)] != 0) {
