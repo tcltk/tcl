@@ -1,5 +1,16 @@
 2001-04-07  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
 
+	* unix/Makefile.in (checkdoc): New target, checking the
+	  definitions as found in the compiled library against the
+	  manpages to find undocumented public functionality.
+
+	* unix/mkLinks: Updated to include the new manpage.
+
+	* doc/UniCharIsAlpha.3: New manpage documenting the Unicode
+	  character classification APIs [Bug #218720].
+
+2001-04-07  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
+
 	* unix/mkLinks: Updated to incorporate the changes below.
 
 	* doc/StringObj.3: Added 'Tcl_AttemptSetObjLength' to the NAME
