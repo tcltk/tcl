@@ -14,7 +14,7 @@
 	been made to resolve [Bug 593810] which may need a new
 	channel driver version for adding a registering function
 	whithin the transfered thread to init the handler thread.
-	IOW, initialization of the TSD structure was getting bypassed
+	IOW, initialization of the TSD structure is getting bypassed
 	through the thread extension's [thread::transfer] command.
 
 2002-11-26  David Gravereaux  <davygrvy@pobox.com>
