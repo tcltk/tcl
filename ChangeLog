@@ -1,3 +1,11 @@
+2002-02-27  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
+
+	* unix/tclUnixChan.c (TclpOpenFileChannel): Added code to regonize
+	  "/dev/tty" (by name) and to not handle it as tty / serial
+	  line. This is the controlling terminal and is special. Setting
+	  it into raw mode as is done for other tty's is a bad idea. This
+	  is a hackish fix for expect SGF Bug #520624.
+
 2002-02-25  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
 
 	* mac/tclMacSock.c (TcpGetOptionProc): Changed to recognize the
@@ -7,12 +15,12 @@
 2002-02-25  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* win/tclWinNotify.c (Tcl_FinalizeNotifier): backported fix for
-	[Bug #217982] which also affected Tkinter [Python Bug #216289]
+	  [Bug #217982] which also affected Tkinter [Python Bug #216289]
 
 2002-02-25  Daniel Steffen  <das@users.sourceforge.net>
 
 	* unix/tclLoadDyld.c: updated to use Mac OS X 10.1 dyld APIs that     
-	have more libdl-like semantics. (bug #514392)
+	  have more libdl-like semantics. (bug #514392)
 
 2002-02-19  Don Porter	<dgp@users.sourceforge.net>
 
@@ -26,8 +34,8 @@
 
 	* tests/scan.test:
 	* generic/tclScan.c (Tcl_ScanObjCmd): corrected scan 0x... %x
-	handling that didn't accept the 0x as a prelude to a base 16
-	number.	 [Bug #495213]
+	  handling that didn't accept the 0x as a prelude to a base 16
+	  number.	 [Bug #495213]
 
 2002-02-05  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
 
