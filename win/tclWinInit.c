@@ -7,7 +7,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclWinInit.c,v 1.54 2004/06/17 21:33:43 dgp Exp $
+ * RCS: @(#) $Id: tclWinInit.c,v 1.55 2004/06/17 21:43:56 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -210,7 +210,10 @@ GetDefaultLibraryDir()
     }
 
     if (NULL == defaultLibraryDir) {
-Tcl_Panic("Called GetDLD before SetDLD!");
+	/*
+	 * Careful here.  This may be bogus, calling TclpInitLibraryPath
+	 * when not in TclpInitLock.  OTOH, this branch shouldn't happen.
+	 */
 	TclpInitLibraryPath(NULL);
 	if (NULL != *savedDirectoryPtr) {
 	    return *savedDirectoryPtr;
