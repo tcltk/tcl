@@ -1,5 +1,7 @@
 2004-06-17  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclObj.c:	Added missing space in panic message.
+
 	* win/tclWinInit.c:	Inform [tclInit] about the default library
 	directory via the ::tclDefaultLibrary variable.  This should correct
 	a problem with my 2004-06-11 commit.  Better solutions still in the
