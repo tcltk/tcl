@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.11 1999/11/10 02:51:57 hobbs Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.12 1999/12/04 06:15:41 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -1686,6 +1686,7 @@ SetIntFromAny(interp, objPtr)
 	    sprintf(buf, "expected integer but got \"%.50s\"", string);
 	    Tcl_ResetResult(interp);
 	    Tcl_AppendToObj(Tcl_GetObjResult(interp), buf, -1);
+	    TclCheckBadOctal(interp, string);
 	}
 	return TCL_ERROR;
     }

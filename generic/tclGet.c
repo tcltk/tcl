@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclGet.c,v 1.4 1999/08/19 02:59:09 hobbs Exp $
+ * RCS: @(#) $Id: tclGet.c,v 1.5 1999/12/04 06:15:41 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -71,6 +71,7 @@ Tcl_GetInt(interp, string, intPtr)
         if (interp != (Tcl_Interp *) NULL) {
 	    Tcl_AppendResult(interp, "expected integer but got \"", string,
 		    "\"", (char *) NULL);
+	    TclCheckBadOctal(interp, string);
         }
 	return TCL_ERROR;
     }
@@ -157,6 +158,7 @@ TclGetLong(interp, string, longPtr)
         if (interp != (Tcl_Interp *) NULL) {
 	    Tcl_AppendResult(interp, "expected integer but got \"", string,
 		    "\"", (char *) NULL);
+	    TclCheckBadOctal(interp, string);
         }
 	return TCL_ERROR;
     }

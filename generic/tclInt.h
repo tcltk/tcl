@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.37 1999/11/10 02:51:56 hobbs Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.38 1999/12/04 06:15:41 hobbs Exp $
  */
 
 #ifndef _TCLINT
@@ -1544,6 +1544,8 @@ EXTERN int		TclAccessInsertProc _ANSI_ARGS_((TclAccessProc_ *proc));
 EXTERN void		TclAllocateFreeObjects _ANSI_ARGS_((void));
 EXTERN int		TclArraySet _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *arrayNameObj, Tcl_Obj *arrayElemObj));
+EXTERN int		TclCheckBadOctal _ANSI_ARGS_((Tcl_Interp *interp,
+			    char *value));
 EXTERN int		TclCleanupChildren _ANSI_ARGS_((Tcl_Interp *interp,
 			    int numPids, Tcl_Pid *pidPtr,
 			    Tcl_Channel errorChan));

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.7 1999/06/16 21:56:33 stanton Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.8 1999/12/04 06:15:41 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -260,6 +260,8 @@ static void		ValidatePcAndStackTop _ANSI_ARGS_((
 			    int stackTop, int stackLowerBound,
 			    int stackUpperBound));
 #endif
+static int		VerifyExprObjType _ANSI_ARGS_((Tcl_Interp *interp,
+			    Tcl_Obj *objPtr));
 
 /*
  * Table describing the built-in math functions. Entries in this table are
@@ -3054,7 +3056,6 @@ IllegalExprOperandType(interp, pc, opndPtr)
 				 * with the illegal type. */
 {
     unsigned char opCode = *pc;
-    int isDouble;
     
     Tcl_ResetResult(interp);
     if ((opndPtr->bytes == NULL) || (opndPtr->length == 0)) {
@@ -3062,7 +3063,7 @@ IllegalExprOperandType(interp, pc, opndPtr)
 		"can't use empty string as operand of \"",
 		operatorStrings[opCode - INST_LOR], "\"", (char *) NULL);
     } else {
-	isDouble = 1;
+	char *msg = "non-numeric string";
 	if (opndPtr->typePtr != &tclDoubleType) {
 	    /*
 	     * See if the operand can be interpreted as a double in order to
@@ -3072,13 +3073,20 @@ IllegalExprOperandType(interp, pc, opndPtr)
 	    char *s = Tcl_GetString(opndPtr);
 	    double d;
 
-	    if (Tcl_GetDouble((Tcl_Interp *) NULL, s, &d) != TCL_OK) {
-		isDouble = 0;
+	    if (Tcl_GetDouble((Tcl_Interp *) NULL, s, &d) == TCL_OK) {
+		/*
+		 * Make sure that what appears to be a double
+		 * (ie 08) isn't really a bad octal
+		 */
+		if (TclCheckBadOctal(NULL, Tcl_GetString(opndPtr))) {
+		    msg = "invalid octal number";
+		} else {
+		    msg = "floating-point value";
+		}
 	    }
 	}
 	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "can't use ",
-		(isDouble? "floating-point value" : "non-numeric string"),
-		" as operand of \"", operatorStrings[opCode - INST_LOR],
+		msg, " as operand of \"", operatorStrings[opCode - INST_LOR],
 		"\"", (char *) NULL);
     }
 }
@@ -3373,6 +3381,61 @@ GetOpcodeName(pc)
 /*
  *----------------------------------------------------------------------
  *
+ * VerifyExprObjType --
+ *
+ *	This procedure is called by the math functions to verify that
+ *	the object is either an int or double, coercing it if necessary.
+ *	If an error occurs during conversion, an error message is left
+ *	in the interpreter's result unless "interp" is NULL.
+ *
+ * Results:
+ *	TCL_OK if it was int or double, TCL_ERROR otherwise
+ *
+ * Side effects:
+ *	objPtr is ensured to be either tclIntType of tclDoubleType.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+VerifyExprObjType(interp, objPtr)
+    Tcl_Interp *interp;		/* The interpreter in which to execute the
+				 * function. */
+    Tcl_Obj *objPtr;		/* Points to the object to type check. */
+{
+    if ((objPtr->typePtr == &tclIntType) ||
+	    (objPtr->typePtr == &tclDoubleType)) {
+	return TCL_OK;
+    } else {
+	int length, result = TCL_OK;
+	char *s = Tcl_GetStringFromObj(objPtr, &length);
+	
+	if (TclLooksLikeInt(s, length)) {
+	    long i;
+	    result = Tcl_GetLongFromObj((Tcl_Interp *) NULL, objPtr, &i);
+	} else {
+	    double d;
+	    result = Tcl_GetDoubleFromObj((Tcl_Interp *) NULL, objPtr, &d);
+	}
+	if ((result != TCL_OK) && (interp != NULL)) {
+	    Tcl_ResetResult(interp);
+	    if (TclCheckBadOctal((Tcl_Interp *) NULL, s)) {
+		Tcl_AppendToObj(Tcl_GetObjResult(interp),
+			"argument to math function was an invalid octal number",
+			-1);
+	    } else {
+		Tcl_AppendToObj(Tcl_GetObjResult(interp),
+			"argument to math function didn't have numeric value",
+			-1);
+	    }
+	}
+	return result;
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Math Functions --
  *
  *	This page contains the procedures that implement all of the
@@ -3402,10 +3465,8 @@ ExprUnaryFunc(interp, eePtr, clientData)
     Tcl_Obj **stackPtr;		/* Cached evaluation stack base pointer. */
     register int stackTop;	/* Cached top index of evaluation stack. */
     register Tcl_Obj *valuePtr;
-    Tcl_ObjType *tPtr;
     double d, dResult;
-    long i;
-    int length, result;
+    int result;
     
     double (*func) _ANSI_ARGS_((double)) =
 	(double (*)_ANSI_ARGS_((double))) clientData;
@@ -3423,27 +3484,16 @@ ExprUnaryFunc(interp, eePtr, clientData)
      */
 
     valuePtr = POP_OBJECT();
-    tPtr = valuePtr->typePtr;
+
+    if (VerifyExprObjType(interp, valuePtr) != TCL_OK) {
+	result = TCL_ERROR;
+	goto done;
+    }
     
-    if (tPtr == &tclIntType) {
+    if (valuePtr->typePtr == &tclIntType) {
 	d = (double) valuePtr->internalRep.longValue;
-    } else if (tPtr == &tclDoubleType) {
-	d = valuePtr->internalRep.doubleValue;
     } else {
-	char *s = Tcl_GetStringFromObj(valuePtr, &length);
-	
-	if (TclLooksLikeInt(s, length)) {
-	    result = Tcl_GetLongFromObj((Tcl_Interp *) NULL, valuePtr, &i);
-	    d = (double) valuePtr->internalRep.longValue;
-	} else {
-	    result = Tcl_GetDoubleFromObj((Tcl_Interp *) NULL, valuePtr, &d);
-	}
-	if (result != TCL_OK) {
-	    Tcl_ResetResult(interp);
-	    Tcl_AppendToObj(Tcl_GetObjResult(interp),
-	            "argument to math function didn't have numeric value", -1);
-	    goto done;
-	}
+	d = valuePtr->internalRep.doubleValue;
     }
 
     errno = 0;
@@ -3483,11 +3533,8 @@ ExprBinaryFunc(interp, eePtr, clientData)
     Tcl_Obj **stackPtr;        /* Cached evaluation stack base pointer. */
     register int stackTop;	/* Cached top index of evaluation stack. */
     register Tcl_Obj *valuePtr, *value2Ptr;
-    Tcl_ObjType *tPtr;
     double d1, d2, dResult;
-    long i;
-    char *s;
-    int length, result;
+    int result;
     
     double (*func) _ANSI_ARGS_((double, double))
 	= (double (*)_ANSI_ARGS_((double, double))) clientData;
@@ -3507,44 +3554,22 @@ ExprBinaryFunc(interp, eePtr, clientData)
     value2Ptr = POP_OBJECT();
     valuePtr  = POP_OBJECT();
 
-    tPtr = valuePtr->typePtr;
-    if (tPtr == &tclIntType) {
-	d1 = (double) valuePtr->internalRep.longValue;
-    } else if (tPtr == &tclDoubleType) {
-	d1 = valuePtr->internalRep.doubleValue;
-    } else {
-	s = Tcl_GetStringFromObj(valuePtr, &length);
-	if (TclLooksLikeInt(s, length)) {
-	    result = Tcl_GetLongFromObj((Tcl_Interp *) NULL, valuePtr, &i);
-	    d1 = (double) valuePtr->internalRep.longValue;
-	} else {
-	    result = Tcl_GetDoubleFromObj((Tcl_Interp *) NULL, valuePtr, &d1);
-	}
-	if (result != TCL_OK) {
-            badArg:
-	    Tcl_ResetResult(interp);
-	    Tcl_AppendToObj(Tcl_GetObjResult(interp),
-	            "argument to math function didn't have numeric value", -1);
-	    goto done;
-	}
+    if ((VerifyExprObjType(interp, valuePtr) != TCL_OK) ||
+	    (VerifyExprObjType(interp, value2Ptr) != TCL_OK)) {
+	result = TCL_ERROR;
+	goto done;
     }
 
-    tPtr = value2Ptr->typePtr;
-    if (tPtr == &tclIntType) {
-	d2 = value2Ptr->internalRep.longValue;
-    } else if (tPtr == &tclDoubleType) {
-	d2 = value2Ptr->internalRep.doubleValue;
+    if (valuePtr->typePtr == &tclIntType) {
+	d1 = (double) valuePtr->internalRep.longValue;
     } else {
-	s = Tcl_GetStringFromObj(value2Ptr, &length);
-	if (TclLooksLikeInt(s, length)) {
-	    result = Tcl_GetLongFromObj((Tcl_Interp *) NULL, value2Ptr, &i);
-	    d2 = (double) value2Ptr->internalRep.longValue;
-	} else {
-	    result = Tcl_GetDoubleFromObj((Tcl_Interp *) NULL, value2Ptr, &d2);
-	}
-	if (result != TCL_OK) {
-	    goto badArg;
-	}
+	d1 = valuePtr->internalRep.doubleValue;
+    }
+
+    if (value2Ptr->typePtr == &tclIntType) {
+	d2 = (double) value2Ptr->internalRep.longValue;
+    } else {
+	d2 = value2Ptr->internalRep.doubleValue;
     }
 
     errno = 0;
@@ -3583,10 +3608,9 @@ ExprAbsFunc(interp, eePtr, clientData)
     Tcl_Obj **stackPtr;        /* Cached evaluation stack base pointer. */
     register int stackTop;	/* Cached top index of evaluation stack. */
     register Tcl_Obj *valuePtr;
-    Tcl_ObjType *tPtr;
     long i, iResult;
     double d, dResult;
-    int length, result;
+    int result;
 
     /*
      * Set stackPtr and stackTop from eePtr.
@@ -3600,34 +3624,17 @@ ExprAbsFunc(interp, eePtr, clientData)
      */
 
     valuePtr = POP_OBJECT();
-    tPtr = valuePtr->typePtr;
-    
-    if (tPtr == &tclIntType) {
-	i = valuePtr->internalRep.longValue;
-    } else if (tPtr == &tclDoubleType) {
-	d = valuePtr->internalRep.doubleValue;
-    } else {
-	char *s = Tcl_GetStringFromObj(valuePtr, &length);
-	
-	if (TclLooksLikeInt(s, length)) {
-	    result = Tcl_GetLongFromObj((Tcl_Interp *) NULL, valuePtr, &i);
-	} else {
-	    result = Tcl_GetDoubleFromObj((Tcl_Interp *) NULL, valuePtr, &d);
-	}
-	if (result != TCL_OK) {
-	    Tcl_ResetResult(interp);
-	    Tcl_AppendToObj(Tcl_GetObjResult(interp),
-	            "argument to math function didn't have numeric value", -1);
-	    goto done;
-	}
-	tPtr = valuePtr->typePtr;
+
+    if (VerifyExprObjType(interp, valuePtr) != TCL_OK) {
+	result = TCL_ERROR;
+	goto done;
     }
 
     /*
      * Push a Tcl object with the result.
      */
-    
-    if (tPtr == &tclIntType) {
+    if (valuePtr->typePtr == &tclIntType) {
+	i = valuePtr->internalRep.longValue;
 	if (i < 0) {
 	    iResult = -i;
 	    if (iResult < 0) {
@@ -3644,6 +3651,7 @@ ExprAbsFunc(interp, eePtr, clientData)
 	}	    
 	PUSH_OBJECT(Tcl_NewLongObj(iResult));
     } else {
+	d = valuePtr->internalRep.doubleValue;
 	if (d < 0.0) {
 	    dResult = -d;
 	} else {
@@ -3656,7 +3664,7 @@ ExprAbsFunc(interp, eePtr, clientData)
 	}
 	PUSH_OBJECT(Tcl_NewDoubleObj(dResult));
     }
-    
+
     /*
      * Reflect the change to stackTop back in eePtr.
      */
@@ -3679,8 +3687,7 @@ ExprDoubleFunc(interp, eePtr, clientData)
     register int stackTop;	/* Cached top index of evaluation stack. */
     register Tcl_Obj *valuePtr;
     double dResult;
-    long i;
-    int length, result;
+    int result;
 
     /*
      * Set stackPtr and stackTop from eePtr.
@@ -3694,26 +3701,16 @@ ExprDoubleFunc(interp, eePtr, clientData)
      */
 
     valuePtr = POP_OBJECT();
+
+    if (VerifyExprObjType(interp, valuePtr) != TCL_OK) {
+	result = TCL_ERROR;
+	goto done;
+    }
+
     if (valuePtr->typePtr == &tclIntType) {
 	dResult = (double) valuePtr->internalRep.longValue;
-    } else if (valuePtr->typePtr == &tclDoubleType) {
-	dResult = valuePtr->internalRep.doubleValue;
     } else {
-	char *s = Tcl_GetStringFromObj(valuePtr, &length);
-	
-	if (TclLooksLikeInt(s, length)) {
-	    result = Tcl_GetLongFromObj((Tcl_Interp *) NULL, valuePtr, &i);
-	    dResult = (double) valuePtr->internalRep.longValue;
-	} else {
-	    result = Tcl_GetDoubleFromObj((Tcl_Interp *) NULL, valuePtr,
-		    &dResult);
-	}
-	if (result != TCL_OK) {
-	    Tcl_ResetResult(interp);
-	    Tcl_AppendToObj(Tcl_GetObjResult(interp),
-		    "argument to math function didn't have numeric value", -1);
-	    goto done;
-	}
+	dResult = valuePtr->internalRep.doubleValue;
     }
 
     /*
@@ -3743,11 +3740,9 @@ ExprIntFunc(interp, eePtr, clientData)
     Tcl_Obj **stackPtr;        /* Cached evaluation stack base pointer. */
     register int stackTop;	/* Cached top index of evaluation stack. */
     register Tcl_Obj *valuePtr;
-    Tcl_ObjType *tPtr;
-    long i = 0;			/* Initialized to avoid compiler warning. */
     long iResult;
     double d;
-    int length, result;
+    int result;
 
     /*
      * Set stackPtr and stackTop from eePtr.
@@ -3761,36 +3756,16 @@ ExprIntFunc(interp, eePtr, clientData)
      */
 
     valuePtr = POP_OBJECT();
-    tPtr = valuePtr->typePtr;
     
-    if (tPtr == &tclIntType) {
-	i = valuePtr->internalRep.longValue;
-    } else if (tPtr == &tclDoubleType) {
-	d = valuePtr->internalRep.doubleValue;
-    } else {
-	char *s = Tcl_GetStringFromObj(valuePtr, &length);
-	
-	if (TclLooksLikeInt(s, length)) {
-	    result = Tcl_GetLongFromObj((Tcl_Interp *) NULL, valuePtr, &i);
-	} else {
-	    result = Tcl_GetDoubleFromObj((Tcl_Interp *) NULL, valuePtr, &d);
-	}
-	if (result != TCL_OK) {
-	    Tcl_ResetResult(interp);
-	    Tcl_AppendToObj(Tcl_GetObjResult(interp),
-		    "argument to math function didn't have numeric value", -1);
-	    goto done;
-	}
-	tPtr = valuePtr->typePtr;
+    if (VerifyExprObjType(interp, valuePtr) != TCL_OK) {
+	result = TCL_ERROR;
+	goto done;
     }
-
-    /*
-     * Push a Tcl object with the result.
-     */
     
-    if (tPtr == &tclIntType) {
-	iResult = i;
+    if (valuePtr->typePtr == &tclIntType) {
+	iResult = valuePtr->internalRep.longValue;
     } else {
+	d = valuePtr->internalRep.doubleValue;
 	if (d < 0.0) {
 	    if (d < (double) (long) LONG_MIN) {
 		tooLarge:
@@ -3814,6 +3789,11 @@ ExprIntFunc(interp, eePtr, clientData)
 	}
 	iResult = (long) d;
     }
+
+    /*
+     * Push a Tcl object with the result.
+     */
+    
     PUSH_OBJECT(Tcl_NewLongObj(iResult));
 
     /*
@@ -3925,11 +3905,9 @@ ExprRoundFunc(interp, eePtr, clientData)
     Tcl_Obj **stackPtr;        /* Cached evaluation stack base pointer. */
     register int stackTop;	/* Cached top index of evaluation stack. */
     Tcl_Obj *valuePtr;
-    Tcl_ObjType *tPtr;
-    long i = 0;			/* Initialized to avoid compiler warning. */
     long iResult;
     double d, temp;
-    int length, result;
+    int result;
 
     /*
      * Set stackPtr and stackTop from eePtr.
@@ -3943,36 +3921,16 @@ ExprRoundFunc(interp, eePtr, clientData)
      */
 
     valuePtr = POP_OBJECT();
-    tPtr = valuePtr->typePtr;
-    
-    if (tPtr == &tclIntType) {
-	i = valuePtr->internalRep.longValue;
-    } else if (tPtr == &tclDoubleType) {
-	d = valuePtr->internalRep.doubleValue;
-    } else {
-	char *s = Tcl_GetStringFromObj(valuePtr, &length);
-	
-	if (TclLooksLikeInt(s, length)) {
-	    result = Tcl_GetLongFromObj((Tcl_Interp *) NULL, valuePtr, &i);
-	} else {
-	    result = Tcl_GetDoubleFromObj((Tcl_Interp *) NULL, valuePtr, &d);
-	}
-	if (result != TCL_OK) {
-	    Tcl_ResetResult(interp);
-	    Tcl_AppendToObj(Tcl_GetObjResult(interp),
-		    "argument to math function didn't have numeric value", -1);
-	    goto done;
-	}
-	tPtr = valuePtr->typePtr;
-    }
 
-    /*
-     * Push a Tcl object with the result.
-     */
+    if (VerifyExprObjType(interp, valuePtr) != TCL_OK) {
+	result = TCL_ERROR;
+	goto done;
+    }
     
-    if (tPtr == &tclIntType) {
-	iResult = i;
+    if (valuePtr->typePtr == &tclIntType) {
+	iResult = valuePtr->internalRep.longValue;
     } else {
+	d = valuePtr->internalRep.doubleValue;
 	if (d < 0.0) {
 	    if (d <= (((double) (long) LONG_MIN) - 0.5)) {
 		tooLarge:
@@ -3999,6 +3957,11 @@ ExprRoundFunc(interp, eePtr, clientData)
 	}
 	iResult = (long) temp;
     }
+
+    /*
+     * Push a Tcl object with the result.
+     */
+    
     PUSH_OBJECT(Tcl_NewLongObj(iResult));
 
     /*
@@ -4023,9 +3986,8 @@ ExprSrandFunc(interp, eePtr, clientData)
     register int stackTop;	/* Cached top index of evaluation stack. */
     Interp *iPtr = (Interp *) interp;
     Tcl_Obj *valuePtr;
-    Tcl_ObjType *tPtr;
     long i = 0;			/* Initialized to avoid compiler warning. */
-    int isDouble, result;
+    int result;
 
     /*
      * Set stackPtr and stackTop from eePtr.
@@ -4039,36 +4001,26 @@ ExprSrandFunc(interp, eePtr, clientData)
      */
 
     valuePtr = POP_OBJECT();
-    tPtr = valuePtr->typePtr;
-    
-    if (tPtr == &tclIntType) {
+
+    if (VerifyExprObjType(interp, valuePtr) != TCL_OK) {
+	result = TCL_ERROR;
+	goto badValue;
+    }
+
+    if (valuePtr->typePtr == &tclIntType) {
 	i = valuePtr->internalRep.longValue;
     } else {
-	result = Tcl_GetLongFromObj((Tcl_Interp *) NULL, valuePtr, &i);
-	if (result != TCL_OK) {
-	    /*
-	     * See if the operand can be interpreted as a double in order to
-	     * improve the error message.
-	     */
-
-	    isDouble = 1;
-	    if (valuePtr->typePtr != &tclDoubleType) {
-		char *s = Tcl_GetString(valuePtr);
-		double d;
-
-		if (Tcl_GetDouble((Tcl_Interp *) NULL, s, &d) != TCL_OK) {
-		    isDouble = 0;
-		}
-	    }
-
-	    Tcl_ResetResult(interp);
-	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "can't use ",
-		    (isDouble? "floating-point value":"non-numeric string"),
-		    " as argument to srand", (char *) NULL);
-	    Tcl_DecrRefCount(valuePtr);
-	    DECACHE_STACK_INFO();
-	    return result;
-	}
+	/*
+	 * At this point, the only other possible type is double
+	 */
+	Tcl_ResetResult(interp);
+	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
+		"can't use floating-point value as argument to srand",
+		(char *) NULL);
+	badValue:
+	Tcl_DecrRefCount(valuePtr);
+	DECACHE_STACK_INFO();
+	return TCL_ERROR;
     }
     
     /*
@@ -4132,10 +4084,9 @@ ExprCallMathFunc(interp, eePtr, objc, objv)
     Tcl_Value args[MAX_MATH_ARGS]; /* Arguments for function call. */
     Tcl_Value funcResult;	/* Result of function call as Tcl_Value. */
     register Tcl_Obj *valuePtr;
-    Tcl_ObjType *tPtr;
     long i;
     double d;
-    int j, k, length, result;
+    int j, k, result;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     Tcl_ResetResult(interp);
@@ -4174,39 +4125,19 @@ ExprCallMathFunc(interp, eePtr, objc, objv)
 
     for (j = 1, k = 0;  j < objc;  j++, k++) {
 	valuePtr = objv[j];
-	tPtr = valuePtr->typePtr;
-	
-	if (tPtr == &tclIntType) {
-	    i = valuePtr->internalRep.longValue;
-	} else if (tPtr == &tclDoubleType) {
-	    d = valuePtr->internalRep.doubleValue;
-	} else {
-	    /*
-	     * Try to convert to int first then double.
-	     */
-	    
-	    char *s = Tcl_GetStringFromObj(valuePtr, &length);
-	    
-	    if (TclLooksLikeInt(s, length)) {
-		result = Tcl_GetLongFromObj((Tcl_Interp *) NULL, valuePtr, &i);
-	    } else {
-		result = Tcl_GetDoubleFromObj((Tcl_Interp *) NULL,
-			valuePtr, &d);
-	    }
-	    if (result != TCL_OK) {
-		Tcl_AppendToObj(Tcl_GetObjResult(interp),
-			"argument to math function didn't have numeric value", -1);
-		goto done;
-	    }
-	    tPtr = valuePtr->typePtr;
+
+	if (VerifyExprObjType(interp, valuePtr) != TCL_OK) {
+	    result = TCL_ERROR;
+	    goto done;
 	}
 
 	/*
 	 * Copy the object's numeric value to the argument record,
 	 * converting it if necessary. 
 	 */
-	
-	if (tPtr == &tclIntType) {
+
+	if (valuePtr->typePtr == &tclIntType) {
+	    i = valuePtr->internalRep.longValue;
 	    if (mathFuncPtr->argTypes[k] == TCL_DOUBLE) {
 		args[k].type = TCL_DOUBLE;
 		args[k].doubleValue = i;
@@ -4215,6 +4146,7 @@ ExprCallMathFunc(interp, eePtr, objc, objv)
 		args[k].intValue = i;
 	    }
 	} else {
+	    d = valuePtr->internalRep.doubleValue;
 	    if (mathFuncPtr->argTypes[k] == TCL_INT) {
 		args[k].type = TCL_INT;
 		args[k].intValue = (long) d;

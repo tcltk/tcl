@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.13 1999/09/21 04:20:41 hobbs Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.14 1999/12/04 06:15:42 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -2248,10 +2248,64 @@ TclGetIntForIndex(interp, objPtr, endValue, indexPtr)
 	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
 		    "bad index \"", bytes,
 		    "\": must be integer or end?-integer?", (char *) NULL);
+	    TclCheckBadOctal(interp, bytes);
 	}
 	return TCL_ERROR;
     }
     return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclCheckBadOctal --
+ *
+ *	This procedure checks for a bad octal value and appends a
+ *	meaningful error to the interp's result.
+ *
+ * Results:
+ *	1 if the argument was a bad octal, else 0.
+ *
+ * Side effects:
+ *	The interpreter's result is modified.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclCheckBadOctal(interp, value)
+    Tcl_Interp *interp;		/* Interpreter to use for error reporting. 
+				 * If NULL, then no error message is left
+				 * after errors. */
+    char *value;		/* String to check. */
+{
+    register char *p = value;
+
+    /*
+     * A frequent mistake is invalid octal values due to an unwanted
+     * leading zero. Try to generate a meaningful error message.
+     */
+
+    while (isspace(UCHAR(*p))) {	/* INTL: ISO space. */
+	p++;
+    }
+    if (*p == '+' || *p == '-') {
+	p++;
+    }
+    if (*p == '0') {
+	while (isdigit(UCHAR(*p))) {	/* INTL: digit. */
+	    p++;
+	}
+	if (*p == '\0') {
+	    /* Reached end of string */
+	    if (interp != NULL) {
+		Tcl_AppendResult(interp, " (looks like invalid octal number)",
+			(char *) NULL);
+	    }
+	    return 1;
+	}
+    }
+    return 0;
 }
 
 /*

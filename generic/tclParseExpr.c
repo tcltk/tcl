@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParseExpr.c,v 1.5 1999/09/02 16:26:33 hobbs Exp $
+ * RCS: @(#) $Id: tclParseExpr.c,v 1.6 1999/12/04 06:15:42 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -1521,8 +1521,28 @@ GetLexeme(infoPtr)
 	    }
  	    if (termPtr != src) {
                 /*
-                 * src was the start of a valid integer.
+                 * src was the start of a valid integer, but was it
+		 * a bad octal?  Stopping at a digit would cause that.
                  */
+		if (isdigit(UCHAR(*termPtr))) {	/* INTL: digit. */
+		    /*
+		     * We only want to report an error for the number,
+		     * but we may have something like "08+1"
+		     */
+		    if (interp != NULL) {
+			while (isdigit(UCHAR(*(++termPtr)))) {} /* INTL: digit. */
+			Tcl_ResetResult(interp);
+			offset = termPtr - src;
+			c = src[offset];
+			src[offset] = 0;
+			Tcl_AppendResult(interp, "\"", src,
+				"\" is an invalid octal number",
+				(char *) NULL);
+			src[offset] = c;
+		    }
+		    parsePtr->errorType = TCL_PARSE_BAD_NUMBER;
+		    return TCL_ERROR;
+		}
 
                 infoPtr->lexeme = LITERAL;
 		infoPtr->start = src;
