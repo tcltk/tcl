@@ -1,3 +1,10 @@
+2004-10-04  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* doc/DictObj.3, doc/dict.n: Clarified that a dictionary is not
+	order-preserving. [Bug 1032243]  Also added another example to
+	show off more ways of using a dictionary and a few other
+	formatting improvements.
+
 2004-10-02  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclDictObj.c (TraceDictPath, Tcl_DictObjPutKeyList): Add
