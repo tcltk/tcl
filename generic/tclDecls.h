@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.60 2001/09/25 16:23:55 dgp Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.61 2001/09/27 00:19:57 dgp Exp $
  */
 
 #ifndef _TCLDECLS
@@ -551,7 +551,7 @@ EXTERN int		Tcl_GetOpenFile _ANSI_ARGS_((Tcl_Interp * interp,
 				ClientData * filePtr));
 #endif /* UNIX */
 /* 168 */
-EXTERN Tcl_PathType	Tcl_GetPathType _ANSI_ARGS_((char * path));
+EXTERN Tcl_PathType	Tcl_GetPathType _ANSI_ARGS_((CONST char * path));
 /* 169 */
 EXTERN int		Tcl_Gets _ANSI_ARGS_((Tcl_Channel chan, 
 				Tcl_DString * dsPtr));
@@ -1716,7 +1716,7 @@ typedef struct TclStubs {
 #ifdef MAC_TCL
     void *reserved167;
 #endif /* MAC_TCL */
-    Tcl_PathType (*tcl_GetPathType) _ANSI_ARGS_((char * path)); /* 168 */
+    Tcl_PathType (*tcl_GetPathType) _ANSI_ARGS_((CONST char * path)); /* 168 */
     int (*tcl_Gets) _ANSI_ARGS_((Tcl_Channel chan, Tcl_DString * dsPtr)); /* 169 */
     int (*tcl_GetsObj) _ANSI_ARGS_((Tcl_Channel chan, Tcl_Obj * objPtr)); /* 170 */
     int (*tcl_GetServiceMode) _ANSI_ARGS_((void)); /* 171 */

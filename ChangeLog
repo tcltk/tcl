@@ -1,3 +1,14 @@
+2001-09-26  Don Porter  <dgp@users.sourceforge.net>
+
+	* doc/SplitPath.3 (Tcl_GetPathType):
+	* generic/tcl.decls (Tcl_GetPathType):
+	* generic/tclFileName.c (Tcl_GetPathType):
+	* win/tclWinFile.c (TclpMatchInDirectory, NativeStat):  Vince
+	Darley reports the 2001-09-24 TIP 27 changes left the win
+	directory CONST poisoned.  These changes should fix that.
+
+	* generic/tclDecls.h: make genstubs
+
 2001-09-25  Don Porter  <dgp@users.sourceforge.net>
 
 	* doc/GetInt.3:
