@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.168 2004/12/15 20:44:36 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.169 2004/12/24 18:06:58 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -885,7 +885,7 @@ Tcl_ExprObj(interp, objPtr, resultPtrPtr)
 	 */
 	    
 	if (compEnv.codeNext == compEnv.codeStart) {
-	    TclEmitPush(TclRegisterLiteral(&compEnv, "0", 1, /*onHeap*/ 0),
+	    TclEmitPush(TclRegisterNewLiteral(&compEnv, "0", 1),
 		    &compEnv);
 	}
 
