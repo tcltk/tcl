@@ -1,5 +1,11 @@
 2004-11-12  Don Porter  <dgp@users.sourceforge.net>
 
+	* unix/Makefile.in:	Be sure -I{BUILD_DIR} comes first so that
+	we #include the correct tclConfig.h file for the correct build.
+
+	* generic/tclPort.h:	Make sure tclConfig.h is #include'd so that
+	its configuration values can guide portability support.
+
 	* generic/tclInt.h:	Moved verification of ptrdiff_t typedef from
 	* generic/tclExecute.c: multiple .c files into one common header where
 	* generic/tclVar.c:	it is verifiably after tclConfig.h inclusion.
