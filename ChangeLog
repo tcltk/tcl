@@ -1,4 +1,4 @@
-2005-03-17  Don Porter  <dgp@users.sourceforge.net>
+2005-03-18  Don Porter  <dgp@users.sourceforge.net>
 
         * generic/tclCompCmds.c (TclCompileIncrCmd):    Corrected checks
         for immediate operand usage to permit leading space and sign
