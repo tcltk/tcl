@@ -1,3 +1,28 @@
+2002-06-22  Don Porter  <dgp@users.sourceforge.net>
+
+	* library/tcltest/tcltest.tcl:	Corrections to tcltest and the
+	* tests/basic.test:		Tcl test suite so that a test
+	* tests/cmdInfo.test:		with options -constraints knownBug
+	* tests/compile.test:		-limitConstraints 1 only tests the
+	* tests/encoding.test:		knownBug tests.  Mostly involves
+	* tests/env.test:		replacing direct access to the
+	* tests/event.test:		testConstraints array with calls
+	* tests/exec.test:		to the testConstraint command
+	* tests/execute.test:		(which requires tcltest version 2)
+	* tests/fCmd.test:
+	* tests/format.test:
+	* tests/http.test:
+	* tests/httpold.test:
+	* tests/ioUtil.test:
+	* tests/link.test:
+	* tests/load.test:
+	* tests/namespace.test:
+	* tests/pkgMkIndex.test:
+	* tests/reg.test:
+	* tests/result.test:
+	* tests/scan.test:
+	* tests/stack.test:
+
 2002-06-22  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* tools/tcl.wse.in (Disk Label), unix/tcl.spec (version): 

@@ -15,21 +15,21 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: basic.test,v 1.20 2002/05/07 15:54:40 msofer Exp $
+# RCS: @(#) $Id: basic.test,v 1.21 2002/06/22 04:19:47 dgp Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest
+    package require tcltest 2
     namespace import -force ::tcltest::*
 }
 
-set ::tcltest::testConstraints(testcmdtoken) \
+::tcltest::testConstraint testcmdtoken \
 	[llength [info commands testcmdtoken]]
-set ::tcltest::testConstraints(testcmdtrace) \
+::tcltest::testConstraint testcmdtrace \
 	[llength [info commands testcmdtrace]]
-set ::tcltest::testConstraints(testcreatecommand) \
+::tcltest::testConstraint testcreatecommand \
 	[llength [info commands testcreatecommand]]
-set ::tcltest::testConstraints(exec) \
+::tcltest::testConstraint exec \
 	[llength [info commands exec]]
 
 # This variable needs to be changed when the major or minor version number for
