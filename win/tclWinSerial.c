@@ -10,7 +10,7 @@
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  * Changes by Rolf.Schroedter@dlr.de June 25-27, 1999
  *
- * RCS: @(#) $Id: tclWinSerial.c,v 1.8 1999/10/05 22:47:05 hobbs Exp $
+ * RCS: @(#) $Id: tclWinSerial.c,v 1.9 1999/11/24 20:55:17 hobbs Exp $
  */
 
 #include "tclWinInt.h"
@@ -49,6 +49,13 @@ static int initialized = 0;
 #define SERIAL_DEFAULT_BLOCKTIME    10  /* 10 msec */
 
 /*
+ * Define Win32 read/write error masks returned by ClearCommError()
+ */
+#define SERIAL_READ_ERRORS	( CE_RXOVER | CE_OVERRUN | CE_RXPARITY \
+				| CE_FRAME  | CE_BREAK )
+#define SERIAL_WRITE_ERRORS	( CE_TXFULL )
+
+/*
  * This structure describes per-instance data for a serial based channel.
  */
 
@@ -66,6 +73,10 @@ typedef struct SerialInfo {
     int writable;               /* flag that the channel is readable */
     int readable;               /* flag that the channel is readable */
     int blockTime;              /* max. blocktime in msec */
+    DWORD error;		/* pending error code returned by 
+				 * ClearCommError() */
+    DWORD lastError;		/* last error code, can be fetched with 
+				 * fconfigure chan -lasterror */
 } SerialInfo;
 
 typedef struct ThreadSpecificData {
@@ -343,7 +354,6 @@ SerialCheckProc(
     SerialEvent *evPtr;
     int needEvent;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-    DWORD   cError;
     COMSTAT cStat;
 
     if (!(flags & TCL_FILE_EVENTS)) {
@@ -370,14 +380,18 @@ SerialCheckProc(
          */
 
         if( infoPtr->watchMask & (TCL_WRITABLE | TCL_READABLE) ) {
-            if( ClearCommError( infoPtr->handle, &cError, &cStat ) ) {
+            if( ClearCommError( infoPtr->handle, &infoPtr->error, &cStat ) ) {
 		/*
 		 * Look for empty output buffer.  If empty, poll.
 		 */
 
                 if( infoPtr->watchMask & TCL_WRITABLE ) {
-                    if( ((infoPtr->flags & SERIAL_WRITE) != 0) && \
-			    (cStat.cbOutQue == 0) ) {
+		    /*
+		     * force fileevent after serial write error
+		     */
+		    if (((infoPtr->flags & SERIAL_WRITE) != 0) &&
+			    ((cStat.cbOutQue == 0) ||
+				    (infoPtr->error & SERIAL_WRITE_ERRORS))) {
                         /*
 			 * allow only one fileevent after each callback
 			 */
@@ -394,7 +408,11 @@ SerialCheckProc(
                  */
 
                 if( infoPtr->watchMask & TCL_READABLE ) {
-                    if( cStat.cbInQue > 0 ) {
+		    /*
+		     * force fileevent after serial read error
+		     */
+                    if( (cStat.cbInQue > 0) || 
+			    (infoPtr->error & SERIAL_READ_ERRORS) ) {
                         infoPtr->readable = 1;
                         needEvent = 1;
                     }
@@ -566,24 +584,29 @@ SerialInputProc(
     SerialInfo *infoPtr = (SerialInfo *) instanceData;
     DWORD bytesRead = 0;
     DWORD err;
-    DWORD   cError;
     COMSTAT cStat;
 
     *errorCode = 0;
+
+    /* 
+     * Check if there is a CommError pending from SerialCheckProc
+     */
+    if( infoPtr->error & SERIAL_READ_ERRORS ){
+	goto commError;
+    }
 
     /*
      * Look for characters already pending in windows queue.
      * This is the mainly restored good old code from Tcl8.0
      */
 
-    if( ClearCommError( infoPtr->handle, &cError, &cStat ) ) {
+    if( ClearCommError( infoPtr->handle, &infoPtr->error, &cStat ) ) {
         /*
 	 * Check for errors here, but not in the evSetup/Check procedures
 	 */
 
-        if( cError != 0 ) {
-            *errorCode = EIO;
-            return -1;
+        if( infoPtr->error & SERIAL_READ_ERRORS ) {
+	    goto commError;
         }
         if( infoPtr->flags & SERIAL_ASYNC ) {
 	    /*
@@ -629,9 +652,15 @@ SerialInputProc(
     }
     return bytesRead;
 
-error:
+    error:
     TclWinConvertError(GetLastError());
     *errorCode = errno;
+    return -1;
+
+    commError:
+    infoPtr->lastError = infoPtr->error;  /* save last error code */
+    infoPtr->error = 0;			  /* reset error code */
+    *errorCode = EIO;			  /* to return read-error only once */
     return -1;
 }
 
@@ -664,6 +693,16 @@ SerialOutputProc(
     DWORD bytesWritten, err;
 
     *errorCode = 0;
+
+    /*
+     * Check if there is a CommError pending from SerialCheckProc
+     */
+    if( infoPtr->error & SERIAL_WRITE_ERRORS ){
+	infoPtr->lastError = infoPtr->error;  /* save last error code */
+	infoPtr->error = 0;		      /* reset error code */
+	*errorCode = EIO;		/* to return read-error only once */
+	return -1;
+    }
 
     /*
      * Check for a background error on the last write.
@@ -926,6 +965,7 @@ TclWinOpenSerialChannel(handle, channelName, permissions)
 
     infoPtr->readable = infoPtr->writable = 0;
     infoPtr->blockTime = SERIAL_DEFAULT_BLOCKTIME;
+    infoPtr->lastError = infoPtr->error = 0;
 
     /*
      * Files have default translation of AUTO and ^Z eof char, which
@@ -936,6 +976,45 @@ TclWinOpenSerialChannel(handle, channelName, permissions)
     Tcl_SetChannelOption(NULL, infoPtr->channel, "-eofchar", "\032 {}");
 
     return infoPtr->channel;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SerialErrorStr --
+ *
+ *  Converts a Win32 serial error code to a list of readable errors
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+SerialErrorStr(error, dsPtr)
+    DWORD error;           /* Win32 serial error code */
+    Tcl_DString *dsPtr;    /* Where to store string */
+{
+    if( (error & CE_RXOVER) != 0) {
+	Tcl_DStringAppendElement(dsPtr, "RXOVER");
+    }
+    if( (error & CE_OVERRUN) != 0) {
+	Tcl_DStringAppendElement(dsPtr, "OVERRUN");
+    }
+    if( (error & CE_RXPARITY) != 0) {
+	Tcl_DStringAppendElement(dsPtr, "RXPARITY");
+    }
+    if( (error & CE_FRAME) != 0) {
+	Tcl_DStringAppendElement(dsPtr, "FRAME");
+    }
+    if( (error & CE_BREAK) != 0) {
+	Tcl_DStringAppendElement(dsPtr, "BREAK");
+    }
+    if( (error & CE_TXFULL) != 0) {
+	Tcl_DStringAppendElement(dsPtr, "TXFULL");
+    }
+    if( (error & ~(SERIAL_READ_ERRORS | SERIAL_WRITE_ERRORS)) != 0) {
+	char buf[TCL_INTEGER_SPACE + 1];
+	wsprintfA(buf, "%d", error);
+	Tcl_DStringAppendElement(dsPtr, buf);
+    }
 }
 
 /*
@@ -1103,9 +1182,21 @@ SerialGetOptionProc(instanceData, interp, optionName, dsPtr)
         Tcl_DStringAppendElement(dsPtr, buf);
     }
 
+    /*
+     * get option -lasterror
+     * option is readonly and returned by [fconfigure chan -lasterror]
+     * but not returned by unnamed [fconfigure chan]
+     */
+
+    if ( (len > 1) && (strncmp(optionName, "-lasterror", len) == 0) ) {
+	valid = 1;
+	SerialErrorStr(infoPtr->lastError, dsPtr);
+    }
+
     if (valid) {
         return TCL_OK;
     } else {
-        return Tcl_BadChannelOption(interp, optionName, "mode pollinterval");
+        return Tcl_BadChannelOption(interp, optionName,
+		"mode pollinterval lasterror");
     }
 }
