@@ -12,7 +12,7 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
 #
-# RCS: @(#) $Id: http.test,v 1.24 2001/09/07 00:03:08 hobbs Exp $
+# RCS: @(#) $Id: http.test,v 1.25 2001/10/12 19:44:56 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -485,6 +485,9 @@ if {[info exists httpthread]} {
 
 if {[info exist removeHttpd]} {
     removeFile $httpdFile
+}
+foreach file [list outdata] {
+    catch {::tcltest::removeFile $file}
 }
 
 ::tcltest::cleanupTests
