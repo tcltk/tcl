@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.84 2002/02/20 18:46:29 dgp Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.85 2002/02/28 05:11:25 dgp Exp $
 
 library tcl
 
@@ -1086,7 +1086,7 @@ declare 303 generic {
 }
 declare 304 generic {
     int Tcl_GetIndexFromObjStruct(Tcl_Interp *interp, Tcl_Obj *objPtr,
-	    CONST84 char **tablePtr, int offset, CONST char *msg, int flags,
+	    CONST VOID *tablePtr, int offset, CONST char *msg, int flags,
 	    int *indexPtr)
 }
 declare 305 generic {
