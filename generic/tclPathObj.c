@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPathObj.c,v 1.33 2004/06/10 16:55:39 dgp Exp $
+ * RCS: @(#) $Id: tclPathObj.c,v 1.34 2004/09/27 15:00:40 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -491,7 +491,8 @@ TclPathPart(interp, pathPtr, portion)
 {
     if (pathPtr->typePtr == &tclFsPathType) {
 	FsPath *fsPathPtr = (FsPath*) PATHOBJ(pathPtr);
-	if (PATHFLAGS(pathPtr) != 0) {
+	if (TclFSEpochOk(fsPathPtr->filesystemEpoch) 
+	  && (PATHFLAGS(pathPtr) != 0)) {
 	    switch (portion) {
 		case TCL_PATH_DIRNAME: {
 		    /* 
@@ -999,8 +1000,6 @@ Tcl_FSConvertToPathType(interp, pathPtr)
     Tcl_Obj *pathPtr;		/* Object to convert to a valid, current
 				 * path type. */
 {
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&tclFsDataKey);
-
     /* 
      * While it is bad practice to examine an object's type directly,
      * this is actually the best thing to do here.  The reason is that
@@ -1012,7 +1011,7 @@ Tcl_FSConvertToPathType(interp, pathPtr)
      */
     if (pathPtr->typePtr == &tclFsPathType) {
 	FsPath *fsPathPtr = (FsPath*) PATHOBJ(pathPtr);
-	if (fsPathPtr->filesystemEpoch != tsdPtr->filesystemEpoch) {
+	if (!TclFSEpochOk(fsPathPtr->filesystemEpoch)) {
 	    if (pathPtr->bytes == NULL) {
 		UpdateStringOfFsPath(pathPtr);
 	    }
@@ -1691,7 +1690,16 @@ Tcl_FSGetNormalizedPath(interp, pathPtr)
 	 * action, which might loop back through here.
 	 */
 	if (path[0] != '\0') {
-	    Tcl_PathType type = Tcl_FSGetPathType(pathPtr);
+	    Tcl_PathType type;
+	    /*
+	     * We don't ask for the type of 'pathPtr' here, because
+	     * that is not correct for our purposes when we have a
+	     * path like '~'.  Tcl has a bit of a contradiction in
+	     * that '~' paths are defined as 'absolute', but in
+	     * reality can be just about anything, depending on
+	     * how env(HOME) is set.
+	     */
+	    type = Tcl_FSGetPathType(absolutePath);
 	    if (type == TCL_PATH_RELATIVE) {
 		useThisCwd = Tcl_FSGetCwd(interp);
 
@@ -1941,7 +1949,6 @@ TclFSEnsureEpochOk(pathPtr, fsPtrPtr)
     Tcl_Filesystem **fsPtrPtr;
 {
     FsPath* srcFsPathPtr;
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&tclFsDataKey);
 
     if (pathPtr->typePtr != &tclFsPathType) {
 	return TCL_OK;
@@ -1953,7 +1960,7 @@ TclFSEnsureEpochOk(pathPtr, fsPtrPtr)
      * Check if the filesystem has changed in some way since
      * this object's internal representation was calculated.
      */
-    if (srcFsPathPtr->filesystemEpoch != tsdPtr->filesystemEpoch) {
+    if (!TclFSEpochOk(srcFsPathPtr->filesystemEpoch)) {
 	/* 
 	 * We have to discard the stale representation and 
 	 * recalculate it 
