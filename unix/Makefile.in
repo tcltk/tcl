@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.19 1999/03/11 02:49:35 stanton Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.20 1999/03/11 21:47:39 stanton Exp $
 
 # Current Tcl version;  used in various names.
 
@@ -375,7 +375,7 @@ all: ${TCL_LIB_FILE} $(TCL_STUB_LIB_FILE) tclsh
 
 # The following target is configured by autoconf to generate either
 # a shared library or non-shared library for Tcl.
-${TCL_LIB_FILE}: ${OBJS}
+${TCL_LIB_FILE}: ${OBJS} ${STUB_LIB_FILE}
 	rm -f ${TCL_LIB_FILE}
 	@MAKE_LIB@
 	$(RANLIB) ${TCL_LIB_FILE}

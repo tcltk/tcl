@@ -1,3 +1,16 @@
+1999-03-11    <stanton@GASPODE>
+
+	* unix/tclConfig.sh.in:
+	* unix/dltest/Makefile.in:
+	* unix/dltest/configure.in:
+	* unix/dltest/pkga.c:
+	* unix/dltest/pkgb.c:
+	* unix/dltest/pkgc.c:
+	* unix/dltest/pkgd.c:
+	* unix/dltest/pkge.c:
+	* unix/dltest/pkgf.c: Changed package tests to build against the
+	stubs library.
+
 1999-03-10    <stanton@GASPODE>
 
 	* generic/tclAlloc.c: Changed TCL_NATIVE_MALLOC to USE_TCLALLOC so
