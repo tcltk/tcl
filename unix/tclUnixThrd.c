@@ -72,14 +72,18 @@ TclpThreadCreate(idPtr, proc, clientData)
     ClientData clientData;		/* The one argument to Main() */
 {
     pthread_attr_t attr;
+    int result;
 
     pthread_attr_init(&attr);
     pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM);
-    if (pthread_create((pthread_t *)idPtr, &attr, (void * (*)())proc, (void *)clientData) < 0) {
-	return TCL_ERROR;
+    if (pthread_create((pthread_t *)idPtr, &attr,
+	    (void * (*)())proc, (void *)clientData) < 0) {
+	result = TCL_ERROR;
     } else {
-	return TCL_OK;
+	result = TCL_OK;
     }
+    pthread_attr_destroy(&attr);
+    return result;
 }
 
 /*
