@@ -1,5 +1,8 @@
 2000-05-18  Jeff Hobbs  <hobbs@scriptics.com>
 
+	* win/{tcl.m4,Makefile.in,configure.in}: added support for mingw
+	compile env and cross-compiling. [Bug: 5499]
+
 	* generic/tclClock.c (FormatClock): correct code to handle locale
 	specific return values from strftime, if any. [Bug: 3345]
 
