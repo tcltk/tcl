@@ -11,7 +11,7 @@
 2004-07-15  Andreas Kupries  <andreask@activestate.com>
 
 	* unix/tclUnixThrd.c (TclpFinalizeMutex): Accepted Joe
-	  Mistachkin's patch for [Tcl SF Bug 99453], closing leakage of
+	  Mistachkin's patch for [Tcl SF Bug 990453], closing leakage of
 	  mutexes. They were not destroyed properly upon finalization.
 
 2004-07-15  Zoran Vasiljevic <vasiljevic@users.sf.net>
