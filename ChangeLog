@@ -1,3 +1,9 @@
+2001-11-09  Don Porter	<dgp@users.sourceforge.net>
+
+	* tests/var.test:
+	* generic/tclVar.c: Corrected bug in [global] when dealing
+	with variable names matching :*.  [Bug 480176]
+
 2001-11-08  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	Fixup stack size under OSF1. [Tcl patch 474790]
