@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEvent.c,v 1.42 2004/07/15 10:00:45 vasiljevic Exp $
+ * RCS: @(#) $Id: tclEvent.c,v 1.43 2004/07/15 20:04:38 vasiljevic Exp $
  */
 
 #include "tclInt.h"
@@ -933,10 +933,23 @@ Tcl_Finalize()
 	Tcl_SetPanicProc(NULL);
 
 	/*
+	 * Repeat finalization of the thread local storage once more.
+	 * Although this step is already done by the Tcl_FinalizeThread
+	 * call above, series of events happening afterwards may
+	 * re-initialize TSD slots.  Those need to be finalized again,
+	 * otherwise we're leaking memory chunks.
+	 * Very important to note is that things happening afterwards
+	 * should not reference anything which may re-initialize TSD's.
+	 * This includes freeing Tcl_Objs's, among other things.
+	 *
+	 * This fixes the Tcl Bug #990552.
+	 */
+	TclFinalizeThreadData();
+
+	/*
 	 * Free synchronization objects.  There really should only be one
 	 * thread alive at this moment.
 	 */
-
 	TclFinalizeSynchronization();
 
 	/*
@@ -1021,17 +1034,17 @@ Tcl_FinalizeThread()
 	TclFinalizeAsync();
     }
 
-	/*
-	 * Blow away all thread local storage blocks.
+    /*
+     * Blow away all thread local storage blocks.
      *
      * Note that Tcl API allows creation of threads which do not use any
      * Tcl interp or other Tcl subsytems. Those threads might, however,
      * use thread local storage, so we must unconditionally finalize it.
      *
      * Fix [Bug #571002]
-	 */
+     */
 
-	TclFinalizeThreadData();
+     TclFinalizeThreadData();
 }
 
 /*
