@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: switch.n,v 1.5 2000/09/07 14:27:51 poenitz Exp $
+'\" RCS: @(#) $Id: switch.n,v 1.5.18.1 2004/10/27 14:23:58 dkf Exp $
 '\" 
 .so man.macros
 .TH switch n 7.0 Tcl "Tcl Built-In Commands"
@@ -78,37 +78,43 @@ several patterns.
 Beware of how you place comments in \fBswitch\fR commands.  Comments
 should only be placed \fBinside\fR the execution body of one of the
 patterns, and not intermingled with the patterns.
+.SH "EXAMPLES"
+The \fBswitch\fR command can match against variables and not just
+literals, as shown here (the result is \fI2\fR):
+.CS
+set foo "abc"
+\fBswitch\fR abc a \- b {expr 1} $foo {expr 2} default {expr 3}
+.CE
 .PP
-Below are some examples of \fBswitch\fR commands:
+Using glob matching and the fall-through body is an alternative to
+writing regular expressions with alternations, as can be seen here
+(this returns \fI1\fR):
 .CS
-\fBswitch\0abc\0a\0\-\0b\0{format 1}\0abc\0{format 2}\0default\0{format 3}\fR
+\fBswitch\fR \-glob aaab {
+   a*b     \-
+   b       {expr 1}
+   a*      {expr 2}
+   default {expr 3}
+}
 .CE
-will return \fB2\fR, 
+.PP
+Whenever nothing matches, the \fBdefault\fR clause (which must be
+last) is taken.  This example has a result of \fI3\fR:
 .CS
-\fBswitch\0\-regexp\0aaab {
-	^a.*b$\0\-
-	b\0{format 1}
-	a*\0{format 2}
-	default\0{format 3}
-}\fR
+\fBswitch\fR xyz {
+   a  \-
+   b {
+      # Correct Comment Placement
+      expr 1
+   }
+   c {
+      expr 2
+   }
+   default {
+      expr 3
+   }
+}
 .CE
-will return \fB1\fR, and
-.CS
-\fBswitch\0xyz {
-	a
-		\-
-	b
-		{
-		# Correct Comment Placement
-		format 1
-	}
-	a*
-		{format 2}
-	default
-		{format 3}
-}\fR
-.CE
-will return \fB3\fR.
 
 .SH "SEE ALSO"
 for(n), if(n), regexp(n)
