@@ -1,3 +1,35 @@
+2002-05-24  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	=== Changes due to TIP#91 ===
+
+	* win/tclWinPort.h: Added declaration of EOVERFLOW.
+	* doc/CrtChannel.3: Added documentation of wideSeekProc.
+	* generic/tclIOGT.c (TransformSeekProc, TransformWideSeekProc):
+	Adapted to use the new channel mechanism.
+	* unix/tclUnixChan.c (FileSeekProc, FileWideSeekProc): Renamed
+	FileSeekProc to FileWideSeekProc and created new FileSeekProc
+	which has the old-style interface and which errors out with
+	EOVERFLOW when the returned file position can't fit into the
+	return type (int for historical reasons.)
+	* win/tclWinChan.c (FileSeekProc, FileWideSeekProc): Renamed
+	FileSeekProc to FileWideSeekProc and created new FileSeekProc
+	which has the old-style interface and which errors out with
+	EOVERFLOW when the returned file position can't fit into the
+	return type (int for historical reasons.)
+	* mac/tclMacChan.c (FileSeek): Reverted to old interface; Macs
+	lack large-file support because I can't see how to add it.
+	* generic/tclIO.c (Tcl_Seek, Tcl_Tell): Given these functions
+	knowledge of the new arrangement of channel types.
+	(Tcl_ChannelVersion): Added recognition of new version code.
+	(HaveVersion): New function to do version checking.
+	(Tcl_ChannelBlockModeProc, Tcl_ChannelFlushProc)
+	(Tcl_ChannelHandlerProc): Made these functions use HaveVersion for
+	ease of future maintainability.
+	(Tcl_ChannelBlockModeProc): Obvious lookup function.
+	* generic/tcl.h (Tcl_ChannelType): New wideSeekProc field, and
+	seekProc type restored to old interpretation.
+	(TCL_CHANNEL_VERSION_3): New channel version.
+
 2002-05-24  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
 	
 	* win/tclWinSock.c (TcpWatchProc): Fixed SF Tcl Bug #557878. We

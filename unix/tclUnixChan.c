@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.34 2002/05/14 10:46:52 dkf Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.35 2002/05/24 21:19:08 dkf Exp $
  */
 
 #include "tclInt.h"	/* Internal definitions for Tcl. */
@@ -247,7 +247,9 @@ static int		FileInputProc _ANSI_ARGS_((ClientData instanceData,
 static int		FileOutputProc _ANSI_ARGS_((
 			    ClientData instanceData, CONST char *buf,
 			    int toWrite, int *errorCode));
-static Tcl_WideInt	FileSeekProc _ANSI_ARGS_((ClientData instanceData,
+static int		FileSeekProc _ANSI_ARGS_((ClientData instanceData,
+			    long offset, int mode, int *errorCode));
+static Tcl_WideInt	FileWideSeekProc _ANSI_ARGS_((ClientData instanceData,
 			    Tcl_WideInt offset, int mode, int *errorCode));
 static void		FileWatchProc _ANSI_ARGS_((ClientData instanceData,
 			    int mask));
@@ -298,7 +300,7 @@ static int		WaitForConnect _ANSI_ARGS_((TcpState *statePtr,
 
 static Tcl_ChannelType fileChannelType = {
     "file",			/* Type name. */
-    TCL_CHANNEL_VERSION_2,	/* v2 channel */
+    TCL_CHANNEL_VERSION_3,	/* v3 channel */
     FileCloseProc,		/* Close proc. */
     FileInputProc,		/* Input proc. */
     FileOutputProc,		/* Output proc. */
@@ -311,6 +313,7 @@ static Tcl_ChannelType fileChannelType = {
     FileBlockModeProc,		/* Set blocking or non-blocking mode.*/
     NULL,			/* flush proc. */
     NULL,			/* handler proc. */
+    FileWideSeekProc,		/* wide seek proc. */
 };
 
 #ifdef SUPPORTS_TTY
@@ -585,15 +588,72 @@ FileCloseProc(instanceData, interp)
  *----------------------------------------------------------------------
  */
 
-static Tcl_WideInt
+static int
 FileSeekProc(instanceData, offset, mode, errorCodePtr)
-    ClientData instanceData;			/* File state. */
-    Tcl_WideInt offset;				/* Offset to seek to. */
-    int mode;					/* Relative to where
-						 * should we seek? Can be
-						 * one of SEEK_START,
-						 * SEEK_SET or SEEK_END. */
-    int *errorCodePtr;				/* To store error code. */
+    ClientData instanceData;	/* File state. */
+    long offset;		/* Offset to seek to. */
+    int mode;			/* Relative to where should we seek? Can be
+				 * one of SEEK_START, SEEK_SET or SEEK_END. */
+    int *errorCodePtr;		/* To store error code. */
+{
+    FileState *fsPtr = (FileState *) instanceData;
+    Tcl_WideInt oldLoc, newLoc;
+
+    /*
+     * Save our current place in case we need to roll-back the seek.
+     */
+    oldLoc = Tcl_PlatformSeek(fsPtr->fd, (Tcl_SeekOffset) 0, SEEK_CUR);
+    if (oldLoc == Tcl_LongAsWide(-1)) {
+	/*
+	 * Bad things are happening.  Error out...
+	 */
+	*errorCodePtr = errno;
+	return -1;
+    }
+ 
+    newLoc = Tcl_PlatformSeek(fsPtr->fd, (Tcl_SeekOffset) offset, mode);
+ 
+    /*
+     * Check for expressability in our return type, and roll-back otherwise.
+     */
+    if (newLoc > Tcl_LongAsWide(INT_MAX)) {
+	*errorCodePtr = EOVERFLOW;
+	Tcl_PlatformSeek(fsPtr->fd, (Tcl_SeekOffset) oldLoc, SEEK_SET);
+	return -1;
+    } else {
+	*errorCodePtr = (newLoc == Tcl_LongAsWide(-1)) ? errno : 0;
+    }
+    return (int) Tcl_WideAsLong(newLoc);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FileWideSeekProc --
+ *
+ *	This procedure is called by the generic IO level to move the
+ *	access point in a file based channel, with offsets expressed
+ *	as wide integers.
+ *
+ * Results:
+ *	-1 if failed, the new position if successful. An output
+ *	argument contains the POSIX error code if an error occurred,
+ *	or zero.
+ *
+ * Side effects:
+ *	Moves the location at which the channel will be accessed in
+ *	future operations.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static Tcl_WideInt
+FileWideSeekProc(instanceData, offset, mode, errorCodePtr)
+    ClientData instanceData;	/* File state. */
+    Tcl_WideInt offset;		/* Offset to seek to. */
+    int mode;			/* Relative to where should we seek? Can be
+				 * one of SEEK_START, SEEK_CUR or SEEK_END. */
+    int *errorCodePtr;		/* To store error code. */
 {
     FileState *fsPtr = (FileState *) instanceData;
     Tcl_WideInt newLoc;
