@@ -92,7 +92,7 @@ main(int argc, char **argv)
 	case 'm':
 	    fixmissing = 0;
 	    break;
-	    
+
 	default:
 	    goto usage;
 	}
@@ -174,7 +174,7 @@ main(int argc, char **argv)
 	if (enc < 32 || uni < 32) {
 	    continue;
 	}
-	
+
 	hi = enc >> 8;
 	lo = enc & 0xff;
 	if (toUnicode[hi] == NULL) {
@@ -183,7 +183,7 @@ main(int argc, char **argv)
 	}
 	toUnicode[hi][lo] = uni;
     }
-	
+
     fclose(fp);
 
     dot = strrchr(argv[argc - 1], '.');
@@ -228,7 +228,7 @@ main(int argc, char **argv)
 	}
     }
     printf("%c\n%04X %d %d\n", "SDM"[type], fallbackChar, symbol, used);
-    
+
     for (hi = 0; hi < 256; hi++) {
 	if (toUnicode[hi] != NULL) {
 	    printf("%02X\n", hi);
@@ -239,6 +239,13 @@ main(int argc, char **argv)
 		}
 	    }
 	}
+    }
+
+    for (hi = 0; hi < 256; hi++) {
+        if (toUnicode[hi] != NULL) {
+            free(toUnicode[hi]);
+            toUnicode[hi] = NULL;
+        }
     }
     return 0;
 }
