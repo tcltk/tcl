@@ -1,3 +1,21 @@
+2004-03-29  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclMain.c (Tcl_Main, StdinProc):	Append newline only
+	* tests/basic.test (basic-46.1):		to incomplete scripts
+	as part of multi-line script construction.  Do not add an extra
+	trailing newline to the complete script.  [Bug 833150]
+
+2004-03-28  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclCompile.c (TclCompileScript): corrected possible
+	segfault when a compilation returns TCL_OUTLINE_COMPILE after
+	having grown the compile environment [Bug 925121].
+
+2004-03-27  Miguel Sofer <msofer@users.sf.net>
+
+	* doc/array.n: added documentation for trace-realted behaviour of
+	'array get' [Bug 449893]
+
 2004-03-26  Don Porter  <dgp@users.sourceforge.net>
 
 	* README:		Bumped version number to 8.5a2 to

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.49.2.4 2004/02/18 22:30:53 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.49.2.5 2004/03/29 21:43:18 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1016,7 +1016,7 @@ TclCompileScriptTokens(interp, tokens, lastTokenPtr, envPtr)
 	    Command *cmdPtr = 
 		    (Command *) Tcl_GetCommandFromObj(interp, cmdName);
 	    int savedNumCmds = envPtr->numCommands;
-	    unsigned char *savedCodeNext = envPtr->codeNext;
+	    unsigned int savedCodeNext = envPtr->codeNext - envPtr->codeStart;
 	    int code = TCL_OUT_LINE_COMPILE;
 
 	    if ((cmdPtr != NULL) && (cmdPtr->compileProc != NULL)
@@ -1051,7 +1051,7 @@ TclCompileScriptTokens(interp, tokens, lastTokenPtr, envPtr)
 		 * so push the simple cmdName word.
 		 */
 		envPtr->numCommands = savedNumCmds;
-		envPtr->codeNext = savedCodeNext;
+		envPtr->codeNext = envPtr->codeStart + savedCodeNext;
 		TclEmitPush(objIndex, envPtr);
 		wordIndex++;
 		tokenPtr += (tokenPtr->numComponents + 1);

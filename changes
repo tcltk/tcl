@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.79.4.2 2004/03/04 17:26:12 dgp Exp $
+RCS: @(#) $Id: changes,v 1.79.4.3 2004/03/29 21:43:18 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -6013,6 +6013,7 @@ in this changeset (new minor version) rather than bug fixes:
  * [TIP #120] enable dde in safe interpreters
  * [TIP #130] enable unique dde server names on Windows
  * [TIP #135] change dde servername -exact option to -force
+=> dde 1.3
 
  * [TIP #121] new Tcl_SetExitProc C API to control application shutdown
 
@@ -6040,6 +6041,7 @@ in this changeset (new minor version) rather than bug fixes:
  * [TIP #148] correct [list]-quoting of the '#' character
 
  * [TIP #156] add "root locale" to msgcat
+=> msgcat 1.4
 
  * [TIP #157] leading {expand} syntax on words to cause argument expansion.
    This is a safer/cleaner alternative to the use of 'eval'.

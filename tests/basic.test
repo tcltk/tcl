@@ -15,7 +15,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: basic.test,v 1.27.2.4 2004/03/04 17:26:18 dgp Exp $
+# RCS: @(#) $Id: basic.test,v 1.27.2.5 2004/03/29 21:43:18 dgp Exp $
 #
 
 package require tcltest 2
@@ -521,8 +521,7 @@ test basic-46.1 {Tcl_AllowExceptions: exception return not allowed} {stdio} {
     list $res $msg
 } {1 {invoked "continue" outside of a loop
     while executing
-"continue
-"
+"continue"
 DONE
 }}
 
