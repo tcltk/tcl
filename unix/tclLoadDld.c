@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoadDld.c,v 1.4 2001/08/30 08:53:15 vincentdarley Exp $
+ * RCS: @(#) $Id: tclLoadDld.c,v 1.5 2001/09/04 18:06:34 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -49,7 +49,8 @@
  */
 
 int
-TclpLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr, clientDataPtr)
+TclpLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr, 
+	     clientDataPtr, unloadProcPtr)
     Tcl_Interp *interp;		/* Used for error reporting. */
     Tcl_Obj *pathPtr;		/* Name of the file containing the desired
 				 * code. */
@@ -60,7 +61,11 @@ TclpLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr, clientDataPtr)
 				 * to sym1 and sym2. */
     ClientData *clientDataPtr;	/* Filled with token for dynamically loaded
 				 * file which will be passed back to 
-				 * TclpUnloadFile() to unload the file. */
+				 * (*unloadProcPtr)() to unload the file. */
+    Tcl_FSUnloadFileProc **unloadProcPtr;	
+				/* Filled with address of Tcl_FSUnloadFileProc
+				 * function which should be used for
+				 * this file. */
 {
     static int firstTime = 1;
     int returnCode;
@@ -98,6 +103,7 @@ TclpLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr, clientDataPtr)
     *proc2Ptr = (Tcl_PackageInitProc *) dld_get_func(sym2);
     *clientDataPtr = strcpy(
 	    (char *) ckalloc((unsigned) (strlen(fileName) + 1)), fileName);
+    *unloadProcPtr = &TclpUnloadFile;
     return TCL_OK;
 }
 

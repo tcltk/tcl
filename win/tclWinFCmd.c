@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFCmd.c,v 1.11 2001/08/30 08:53:15 vincentdarley Exp $
+ * RCS: @(#) $Id: tclWinFCmd.c,v 1.12 2001/09/04 18:06:35 vincentdarley Exp $
  */
 
 #include "tclWinInt.h"
@@ -92,7 +92,7 @@ static int		DoCopyFile(CONST TCHAR *srcPtr, CONST TCHAR *dstPtr);
 static int		DoCreateDirectory(CONST TCHAR *pathPtr);
 static int		DoDeleteFile(CONST TCHAR *pathPtr);
 static int		DoRemoveJustDirectory(CONST TCHAR *nativeSrc, 
-			    int recursive, Tcl_DString *errorPtr);
+			    int ignoreError, Tcl_DString *errorPtr);
 static int		DoRemoveDirectory(Tcl_DString *pathPtr, int recursive, 
 			    Tcl_DString *errorPtr);
 static int		DoRenameFile(CONST TCHAR *nativeSrc, CONST TCHAR *dstPtr);
@@ -747,7 +747,7 @@ TclpObjRemoveDirectory(pathPtr, recursive, errorPtr)
 	Tcl_DStringFree(&native);
     } else {
 	ret = DoRemoveJustDirectory(Tcl_FSGetNativePath(pathPtr), 
-			      recursive, &ds);
+				    0, &ds);
     }
     if (ret != TCL_OK) {
 	int len = Tcl_DStringLength(&ds);
@@ -764,7 +764,7 @@ static int
 DoRemoveJustDirectory(
     CONST TCHAR *nativePath,	/* Pathname of directory to be removed
 				 * (native). */
-    int recursive,		/* If non-zero, don't initialize the
+    int ignoreError,		/* If non-zero, don't initialize the
                   		 * errorPtr under some circumstances
                   		 * on return. */
     Tcl_DString *errorPtr)	/* If non-NULL, uninitialized or free
@@ -877,7 +877,7 @@ DoRemoveJustDirectory(
 
 	Tcl_SetErrno(EEXIST);
     }
-    if ((recursive != 0) && (Tcl_GetErrno() == EEXIST)) {
+    if ((ignoreError != 0) && (Tcl_GetErrno() == EEXIST)) {
 	/* 
 	 * If we're being recursive, this error may actually
 	 * be ok, so we don't want to initialise the errorPtr

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.53 2001/08/30 08:53:14 vincentdarley Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.54 2001/09/04 18:06:34 vincentdarley Exp $
 
 library tcl
 
@@ -1667,7 +1667,13 @@ declare 475 generic {
 declare 476 generic {
     char* Tcl_FSGetTranslatedStringPath(Tcl_Interp *interp, Tcl_Obj* pathPtr)
 }
-
+declare 477 generic {
+    Tcl_Filesystem* Tcl_FSGetFileSystemForPath(Tcl_Obj* pathObjPtr)
+}
+declare 478 generic {
+    Tcl_PathType     Tcl_FSGetPathType (Tcl_Obj *pathObjPtr)
+}
+		  
 ##############################################################################
 
 # Define the platform specific public Tcl interface.  These functions are
