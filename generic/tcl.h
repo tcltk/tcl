@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.125 2002/06/13 09:40:00 vincentdarley Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.126 2002/06/17 18:31:26 jenglish Exp $
  */
 
 #ifndef _TCL
@@ -79,20 +79,13 @@ extern "C" {
 #   endif
 #endif
 
+/*
+ * STRICT: See MSDN Article Q83456
+ */
 #ifdef __WIN32__
 #   ifndef STRICT
 #	define STRICT
 #   endif
-#   ifndef USE_PROTOTYPE
-#	define USE_PROTOTYPE 1
-#   endif
-#   ifndef HAS_STDARG
-#	define HAS_STDARG 1
-#   endif
-#   ifndef USE_PROTOTYPE
-#	define USE_PROTOTYPE 1
-#   endif
-
 #endif /* __WIN32__ */
 
 /*
@@ -102,9 +95,6 @@ extern "C" {
 
 #ifdef MAC_TCL
 #include <ConditionalMacros.h>
-#   ifndef HAS_STDARG
-#	define HAS_STDARG 1
-#   endif
 #   ifndef USE_TCLALLOC
 #	define USE_TCLALLOC 1
 #   endif
@@ -114,32 +104,18 @@ extern "C" {
 #   define INLINE 
 #endif
 
+
 /*
  * Utility macros: STRINGIFY takes an argument and wraps it in "" (double
  * quotation marks), JOIN joins two arguments.
  */
-
-#define VERBATIM(x) x
-#ifdef _MSC_VER
-# define STRINGIFY(x) STRINGIFY1(x)
-# define STRINGIFY1(x) #x
-# define JOIN(a,b) JOIN1(a,b)
-# define JOIN1(a,b) a##b
-#else
-# ifdef RESOURCE_INCLUDED
+#ifndef STRINGIFY
 #  define STRINGIFY(x) STRINGIFY1(x)
 #  define STRINGIFY1(x) #x
+#endif
+#ifndef JOIN
 #  define JOIN(a,b) JOIN1(a,b)
 #  define JOIN1(a,b) a##b
-# else
-#  ifdef __STDC__
-#   define STRINGIFY(x) #x
-#   define JOIN(a,b) a##b
-#  else
-#   define STRINGIFY(x) "x"
-#   define JOIN(a,b) VERBATIM(a)VERBATIM(b)
-#  endif
-# endif
 #endif
 
 /*
@@ -168,12 +144,14 @@ extern "C" {
 #endif /* TCL_THREADS */
 
 /* 
- * A special definition used to allow this header file to be included 
- * in resource files so that they can get obtain version information from
- * this file.  Resource compilers don't like all the C stuff, like typedefs
- * and procedure declarations, that occur below.
+ * A special definition used to allow this header file to be included
+ * from windows resource files so that they can obtain version
+ * information.  RC_INVOKED is defined by default by the RC tool.
+ * Resource compilers don't like all the C stuff, like typedefs and
+ * procedure declarations, that occur below, so block them out.
  */
-#ifndef RESOURCE_INCLUDED
+
+#ifndef RC_INVOKED
 
 
 #ifndef BUFSIZ
@@ -190,24 +168,18 @@ extern "C" {
  * string for use in the function definition.  TCL_VARARGS_START
  * initializes the va_list data structure and returns the first argument.
  */
-#if defined(__STDC__) || defined(HAS_STDARG)
+#if !defined(NO_STDARG)
 #   include <stdarg.h>
 #   define TCL_VARARGS(type, name) (type name, ...)
 #   define TCL_VARARGS_DEF(type, name) (type name, ...)
 #   define TCL_VARARGS_START(type, name, list) (va_start(list, name), name)
 #else
 #   include <varargs.h>
-#   ifdef __cplusplus
-#      define TCL_VARARGS(type, name) (type name, ...)
-#      define TCL_VARARGS_DEF(type, name) (type va_alist, ...)
-#   else
 #      define TCL_VARARGS(type, name) ()
 #      define TCL_VARARGS_DEF(type, name) (va_alist)
-#   endif
 #   define TCL_VARARGS_START(type, name, list) \
 	(va_start(list), va_arg(list, type))
 #endif
-
 
 /*
  * Macros used to declare a function to be exported by a DLL.
@@ -267,13 +239,16 @@ extern "C" {
 #   define INLINE
 #endif
 
-#if ((defined(__STDC__) || defined(SABER)) && !defined(NO_PROTOTYPE)) || defined(__cplusplus) || defined(USE_PROTOTYPE)
-#   define _USING_PROTOTYPES_ 1
-#   define _ANSI_ARGS_(x)	x
+#ifndef NO_CONST
 #   define CONST const
 #else
-#   define _ANSI_ARGS_(x)	()
 #   define CONST
+#endif
+
+#ifndef NO_PROTOTYPES
+#   define _ANSI_ARGS_(x)	x
+#else
+#   define _ANSI_ARGS_(x)	()
 #endif
 
 #ifdef USE_NON_CONST
@@ -298,30 +273,30 @@ extern "C" {
 
 
 /*
+ * The following code is copied from winnt.h.
+ * If we don't replicate it here, then <windows.h> can't be included 
+ * after tcl.h, since tcl.h also defines VOID.
+ */
+#ifdef __WIN32__
+#ifndef VOID
+#define VOID void
+typedef char CHAR;
+typedef short SHORT;
+typedef long LONG;
+#endif
+#endif /* __WIN32__ */
+
+/*
  * Macro to use instead of "void" for arguments that must have
  * type "void *" in ANSI C;  maps them to type "char *" in
  * non-ANSI systems.
  */
-#ifndef __WIN32__
-#   ifndef VOID
-#      ifdef __STDC__
-#         define VOID void
-#      else
-#         define VOID char
-#      endif
-#   endif
-#else /* __WIN32__ */
-/*
- * The following code is copied from winnt.h
- */
-#   ifndef VOID
-#      define VOID void
-typedef char CHAR;
-typedef short SHORT;
-typedef long LONG;
-#   endif
-#endif /* __WIN32__ */
 
+#ifndef NO_VOID
+#         define VOID void
+#else
+#         define VOID char
+#endif
 
 /*
  * Miscellaneous declarations.
@@ -331,14 +306,13 @@ typedef long LONG;
 #endif
 
 #ifndef _CLIENTDATA
-#   if defined(__STDC__) || defined(__cplusplus) || defined(__BORLANDC__)
-typedef void *ClientData;
+#   ifndef NO_VOID
+	typedef void *ClientData;
 #   else
-typedef int *ClientData;
-#   endif /* __STDC__ */
+	typedef int *ClientData;
+#   endif
 #   define _CLIENTDATA
 #endif
-
 
 /*
  * Define Tcl_WideInt to be a type that is (at least) 64-bits wide,
@@ -366,6 +340,7 @@ typedef int *ClientData;
  * backwards) so any changes you make will need to be done
  * cautiously...
  */
+
 #if !defined(TCL_WIDE_INT_TYPE)&&!defined(TCL_WIDE_INT_IS_LONG)
 #   ifdef __WIN32__
 #      define TCL_WIDE_INT_TYPE __int64
@@ -404,9 +379,6 @@ typedef TCL_WIDE_INT_TYPE		Tcl_WideInt;
 typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 
 #ifdef TCL_WIDE_INT_IS_LONG
-#   ifndef MAC_TCL
-#   include <sys/types.h>
-#   endif
 typedef struct stat	Tcl_StatBuf;
 #   define Tcl_WideAsLong(val)		((long)(val))
 #   define Tcl_LongAsWide(val)		((long)(val))
@@ -414,9 +386,6 @@ typedef struct stat	Tcl_StatBuf;
 #   define Tcl_DoubleAsWide(val)	((long)((double)(val)))
 #else /* TCL_WIDE_INT_IS_LONG */
 #   ifndef __WIN32__
-#      ifndef MAC_TCL
-#      include <sys/types.h>
-#      endif
 #      ifdef HAVE_STRUCT_STAT64
 typedef struct stat64	Tcl_StatBuf;
 #      else
@@ -2271,7 +2240,7 @@ EXTERN void Tcl_Main _ANSI_ARGS_((int argc, char **argv,
 
 EXTERN int		Tcl_AppInit _ANSI_ARGS_((Tcl_Interp *interp));
 
-#endif /* RESOURCE_INCLUDED */
+#endif /* RC_INVOKED */
 
 #undef TCL_STORAGE_CLASS
 #define TCL_STORAGE_CLASS DLLIMPORT
