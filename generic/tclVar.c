@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.66 2002/09/04 15:18:53 msofer Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.67 2002/09/05 20:21:06 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -4506,9 +4506,12 @@ TclDeleteVars(iPtr, tablePtr)
 
     flags = TCL_TRACE_UNSETS;
     if (tablePtr == &iPtr->globalNsPtr->varTable) {
-	flags |= (TCL_INTERP_DESTROYED | TCL_GLOBAL_ONLY);
+	flags |= TCL_GLOBAL_ONLY;
     } else if (tablePtr == &currNsPtr->varTable) {
 	flags |= TCL_NAMESPACE_ONLY;
+    }
+    if (Tcl_InterpDeleted(interp)) {
+	flags |= TCL_INTERP_DESTROYED;
     }
 
     for (hPtr = Tcl_FirstHashEntry(tablePtr, &search);  hPtr != NULL;
