@@ -1,3 +1,7 @@
+2003-01-24  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* tests/unixFCmd.test: only do groups check on unix
+
 2003-01-24  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* generic/tclStringObj.c: proper fixes for Tcl_SetObjLength and 
