@@ -36,6 +36,11 @@
 #include <windows.h>
 #undef WIN32_LEAN_AND_MEAN
 
+#ifdef BUILD_tcl
+# undef EXPORT
+# define EXPORT DLLEXPORT
+#endif
+
 /*
  * Define EINPROGRESS in terms of WSAEINPROGRESS.
  */
@@ -394,4 +399,8 @@ EXTERN u_short PASCAL FAR
 			TclWinNToHS _ANSI_ARGS_((u_short ns));
 EXTERN int PASCAL FAR	TclWinSetSockOpt _ANSI_ARGS_((SOCKET s, int level,
 		            int optname, const char FAR * optval, int optlen));
+
+#undef EXPORT
+#define EXPORT DLLIMPORT
+
 #endif /* _TCLWINPORT */
