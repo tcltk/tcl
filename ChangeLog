@@ -1,3 +1,7 @@
+2004-09-19  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclCmdAH.c: removed outdated comment [Bug 1029518].
+	
 2004-09-18  David Gravereaux <davygrvy@pobox.com>
 
 	* win/tclAppInit.c: Dde package can load into a safe interp.
