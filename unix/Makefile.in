@@ -5,9 +5,12 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.110 2002/07/24 13:51:18 das Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.111 2002/07/28 03:15:10 mdejong Exp $
 
 VERSION 		= @TCL_VERSION@
+MAJOR_VERSION		= @TCL_MAJOR_VERSION@
+MINOR_VERSION		= @TCL_MINOR_VERSION@
+PATCH_LEVEL		= @TCL_PATCH_LEVEL@
 
 #----------------------------------------------------------------
 # Things you can change to personalize the Makefile for your own
@@ -137,11 +140,11 @@ NOTIFY_OBJS = tclUnixNotfy.o
 MEM_DEBUG_FLAGS		=
 #MEM_DEBUG_FLAGS	= -DTCL_MEM_DEBUG
 
-# To enable support for stubs in Tcl.
-STUB_LIB_FILE		= @TCL_STUB_LIB_FILE@
-
 TCL_STUB_LIB_FILE	= @TCL_STUB_LIB_FILE@
 #TCL_STUB_LIB_FILE	= libtclstub.a
+
+# Generic stub lib name used in rules that apply to tcl and tk
+STUB_LIB_FILE		= ${TCL_STUB_LIB_FILE}
 
 TCL_STUB_LIB_FLAG	= @TCL_STUB_LIB_FLAG@
 #TCL_STUB_LIB_FLAG	= -ltclstub
@@ -190,11 +193,19 @@ TCL_EXE			= tclsh
 STLIB_LD		= @STLIB_LD@
 SHLIB_LD		= @SHLIB_LD@
 SHLIB_CFLAGS		= @SHLIB_CFLAGS@
+SHLIB_LD_FLAGS		= @SHLIB_LD_FLAGS@
+SHLIB_LD_LIBS		= @SHLIB_LD_LIBS@
 
 SHLIB_SUFFIX		= @SHLIB_SUFFIX@
 #SHLIB_SUFFIX		=
 
 DLTEST_TARGETS		= dltest.marker
+
+# Additional search flags needed to find the various shared libraries
+# at run-time.  The first symbol is for use when creating a binary
+# with cc, and the second is for use when running ld directly.
+CC_SEARCH_FLAGS	= @CC_SEARCH_FLAGS@
+LD_SEARCH_FLAGS	= @LD_SEARCH_FLAGS@
 
 # The following symbol is defined to "$(DLTEST_TARGETS)" if dynamic
 # loading is available;  this causes everything in the "dltest"
@@ -206,6 +217,9 @@ BUILD_DLTEST		= @BUILD_DLTEST@
 
 TCL_LIB_FILE		= @TCL_LIB_FILE@
 #TCL_LIB_FILE		= libtcl.a
+
+# Generic lib name used in rules that apply to tcl and tk
+LIB_FILE		= ${TCL_LIB_FILE}
 
 TCL_LIB_FLAG		= @TCL_LIB_FLAG@
 #TCL_LIB_FLAG		= -ltcl
@@ -422,7 +436,7 @@ SRCS = $(GENERIC_SRCS) $(UNIX_SRCS) $(STUB_SRCS)
 
 all: binaries libraries doc
 
-binaries: ${TCL_LIB_FILE} $(TCL_STUB_LIB_FILE) $(TCL_BUILD_EXP_FILE) tclsh
+binaries: ${LIB_FILE} $(STUB_LIB_FILE) $(TCL_BUILD_EXP_FILE) tclsh
 
 libraries:
 
@@ -430,18 +444,13 @@ doc:
 
 # The following target is configured by autoconf to generate either
 # a shared library or non-shared library for Tcl.
-${TCL_LIB_FILE}: ${OBJS} ${STUB_LIB_FILE}
-	rm -f ${TCL_LIB_FILE}
+${LIB_FILE}: ${OBJS} ${STUB_LIB_FILE}
+	rm -f $@
 	@MAKE_LIB@
-	@if test "x@DL_OBJS@" = "xtclLoadAout.o" ; then \
-	    echo "$(RANLIB) ${TCL_LIB_FILE}"; \
-	    $(RANLIB) ${TCL_LIB_FILE}; \
-	fi
 
 ${STUB_LIB_FILE}: ${STUB_LIB_OBJS}
-	rm -f ${STUB_LIB_FILE}
+	rm -f $@
 	@MAKE_STUB_LIB@
-	$(RANLIB) ${STUB_LIB_FILE}
 
 # Make target which outputs the list of the .o contained in the Tcl lib
 # usefull to build a single big shared library containing Tcl and other
@@ -457,7 +466,7 @@ objs: ${OBJS}
 
 tclsh: ${TCLSH_OBJS} ${TCL_LIB_FILE}
 	${CC} ${LDFLAGS} ${TCLSH_OBJS} @TCL_BUILD_LIB_SPEC@ ${LIBS} \
-		@TCL_LD_SEARCH_FLAGS@ -o tclsh
+		${LD_SEARCH_FLAGS} -o tclsh
 
 # Resetting the LIB_RUNTIME_DIR below is required so that
 # the generated tcltest executable gets the build directory
@@ -469,7 +478,7 @@ tcltest: ${TCLTEST_OBJS} ${TCL_LIB_FILE} ${BUILD_DLTEST}
 
 tcltest-real:
 	${CC} ${LDFLAGS} ${TCLTEST_OBJS} @TCL_BUILD_LIB_SPEC@ ${LIBS} \
-		@TCL_LD_SEARCH_FLAGS@ -o tcltest
+		${LD_SEARCH_FLAGS} -o tcltest
 
 # Note, in the target below TCL_LIBRARY needs to be set or else
 # "make test" won't work in the case where the compilation directory
@@ -594,12 +603,9 @@ install-binaries: binaries
 	@if test ! -x $(SRC_DIR)/install-sh; then \
 	    chmod +x $(SRC_DIR)/install-sh; \
 	    fi
-	@echo "Installing $(TCL_LIB_FILE) to $(LIB_INSTALL_DIR)/"
-	@$(INSTALL_LIBRARY) $(TCL_LIB_FILE) $(LIB_INSTALL_DIR)/$(TCL_LIB_FILE)
-	@if test "x@DL_OBJS@" = "xtclLoadAout.o"; then \
-	    (cd $(LIB_INSTALL_DIR); $(RANLIB) $(TCL_LIB_FILE)); \
-	    fi
-	@chmod 555 $(LIB_INSTALL_DIR)/$(TCL_LIB_FILE)
+	@echo "Installing $(LIB_FILE) to $(LIB_INSTALL_DIR)/"
+	@@INSTALL_LIB@
+	@chmod 555 $(LIB_INSTALL_DIR)/$(LIB_FILE)
 	@if test "$(TCL_BUILD_EXP_FILE)" != ""; then \
 	    echo "Installing $(TCL_EXP_FILE) to $(LIB_INSTALL_DIR)/"; \
 	    $(INSTALL_DATA) $(TCL_BUILD_EXP_FILE) \
@@ -609,11 +615,10 @@ install-binaries: binaries
 	@$(INSTALL_PROGRAM) tclsh $(BIN_INSTALL_DIR)/tclsh$(VERSION)
 	@echo "Installing tclConfig.sh to $(LIB_INSTALL_DIR)/"
 	@$(INSTALL_DATA) tclConfig.sh $(LIB_INSTALL_DIR)/tclConfig.sh
-	@if test "$(TCL_STUB_LIB_FILE)" != "" ; then \
-	    echo "Installing $(TCL_STUB_LIB_FILE) to $(LIB_INSTALL_DIR)/"; \
-	    $(INSTALL_LIBRARY) $(STUB_LIB_FILE) \
-			 $(LIB_INSTALL_DIR)/$(TCL_STUB_LIB_FILE); \
-	    fi
+	@if test "$(STUB_LIB_FILE)" != "" ; then \
+	    echo "Installing $(STUB_LIB_FILE) to $(LIB_INSTALL_DIR)/"; \
+	    @INSTALL_STUB_LIB@ ; \
+	fi
 
 install-libraries: libraries
 	@for i in $(INCLUDE_INSTALL_DIR) $(SCRIPT_INSTALL_DIR); \
@@ -1051,7 +1056,7 @@ xttest:  ${XTTEST_OBJS} ${GENERIC_OBJS} ${UNIX_OBJS} ${COMPAT_OBJS} \
 	@DL_OBJS@ ${BUILD_DLTEST}
 	${CC} ${XTTEST_OBJS} ${GENERIC_OBJS} ${UNIX_OBJS} ${COMPAT_OBJS} \
 		@DL_OBJS@ @TCL_BUILD_LIB_SPEC@ ${LIBS} \
-		@TCL_LD_SEARCH_FLAGS@ -L/usr/openwin/lib -lXt -o xttest
+		${LD_SEARCH_FLAGS} -L/usr/openwin/lib -lXt -o xttest
 
 tclXtNotify.o: $(UNIX_DIR)/tclXtNotify.c
 	$(CC) -c $(CC_SWITCHES) -I/usr/openwin/include \
@@ -1203,8 +1208,8 @@ mklinks:
 #
 
 DISTROOT = /tmp/dist
-DISTNAME = tcl@TCL_VERSION@@TCL_PATCH_LEVEL@
-ZIPNAME	 = tcl@TCL_MAJOR_VERSION@@TCL_MINOR_VERSION@@TCL_PATCH_LEVEL@.zip
+DISTNAME = tcl${VERSION}${PATCH_LEVEL}
+ZIPNAME	 = tcl${MAJOR_VERSION}${MINOR_VERSION}${PATCH_LEVEL}.zip
 DISTDIR	 = $(DISTROOT)/$(DISTNAME)
 $(UNIX_DIR)/configure: $(UNIX_DIR)/configure.in
 	autoconf $(UNIX_DIR)/configure.in > $(UNIX_DIR)/configure
