@@ -1313,7 +1313,7 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".dylib"
 	    DL_OBJS="tclLoadDyld.o"
-	    PLAT_OBJS="tclMacOSXBundle.o"
+	    PLAT_OBJS=\$\(MAC\_OSX_OBJS\)
 	    DL_LIBS=""
 	    LDFLAGS="$LDFLAGS -prebind"
 	    CC_SEARCH_FLAGS=""
@@ -1323,7 +1323,7 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    AC_DEFINE(MAC_OSX_TCL)
 	    AC_DEFINE(HAVE_CFBUNDLE)
 	    AC_DEFINE(USE_VFORK)
-	    AC_DEFINE_UNQUOTED(TCL_DEFAULT_ENCODING,"utf-8")
+	    AC_DEFINE(TCL_DEFAULT_ENCODING,"utf-8")
 	    LIBS="$LIBS -framework CoreFoundation"
 	    ;;
 	NEXTSTEP-*)
