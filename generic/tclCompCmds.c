@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.25 2002/02/22 19:54:02 msofer Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.26 2002/02/25 14:15:10 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -492,7 +492,6 @@ TclCompileExprCmd(interp, parsePtr, envPtr)
  *
  *----------------------------------------------------------------------
  */
-
 int
 TclCompileForCmd(interp, parsePtr, envPtr)
     Tcl_Interp *interp;		/* Used for error reporting. */
@@ -502,7 +501,7 @@ TclCompileForCmd(interp, parsePtr, envPtr)
 {
     Tcl_Token *startTokenPtr, *testTokenPtr, *nextTokenPtr, *bodyTokenPtr;
     JumpFixup jumpEvalCondFixup;
-    int testCodeOffset, bodyCodeOffset, jumpDist;
+    int testCodeOffset, bodyCodeOffset, nextCodeOffset, jumpDist;
     int bodyRange, nextRange, code;
     char buffer[32 + TCL_INTEGER_SPACE];
     int savedStackDepth = envPtr->currStackDepth;
@@ -572,9 +571,9 @@ TclCompileForCmd(interp, parsePtr, envPtr)
      * "for start cond next body" produces then:
      *       start
      *       goto A
-     *    B: body
-     *       next
-     *    A: cond -> result
+     *    B: body                : bodyCodeOffset
+     *       next                : nextCodeOffset, continueOffset
+     *    A: cond -> result      : testCodeOffset
      *       if (result) goto B
      */
 
@@ -585,7 +584,6 @@ TclCompileForCmd(interp, parsePtr, envPtr)
      */
 
     bodyCodeOffset = (envPtr->codeNext - envPtr->codeStart);
-    envPtr->exceptArrayPtr[bodyRange].codeOffset = bodyCodeOffset;
 
     code = TclCompileCmdWord(interp, bodyTokenPtr+1,
 	    bodyTokenPtr->numComponents, envPtr);
@@ -608,10 +606,7 @@ TclCompileForCmd(interp, parsePtr, envPtr)
      */
 
     envPtr->currStackDepth = savedStackDepth;
-    envPtr->exceptArrayPtr[bodyRange].continueOffset =
-	    (envPtr->codeNext - envPtr->codeStart);
-    envPtr->exceptArrayPtr[nextRange].codeOffset =
-	    (envPtr->codeNext - envPtr->codeStart);
+    nextCodeOffset = (envPtr->codeNext - envPtr->codeStart);
     code = TclCompileCmdWord(interp, nextTokenPtr+1,
 	    nextTokenPtr->numComponents, envPtr);
     envPtr->currStackDepth = savedStackDepth + 1;
@@ -637,6 +632,8 @@ TclCompileForCmd(interp, parsePtr, envPtr)
     jumpDist = testCodeOffset - jumpEvalCondFixup.codeOffset;
     if (TclFixupForwardJump(envPtr, &jumpEvalCondFixup, jumpDist, 127)) {
 	bodyCodeOffset += 3;
+	nextCodeOffset += 3;
+	testCodeOffset += 3;
     }
     
     envPtr->currStackDepth = savedStackDepth;
@@ -658,8 +655,13 @@ TclCompileForCmd(interp, parsePtr, envPtr)
     }
     
     /*
-     * Set the loop's break target.
+     * Set the loop's offsets and break target.
      */
+
+    envPtr->exceptArrayPtr[bodyRange].codeOffset = bodyCodeOffset;
+    envPtr->exceptArrayPtr[bodyRange].continueOffset = nextCodeOffset;
+
+    envPtr->exceptArrayPtr[nextRange].codeOffset = nextCodeOffset;
 
     envPtr->exceptArrayPtr[bodyRange].breakOffset =
             envPtr->exceptArrayPtr[nextRange].breakOffset =
@@ -1132,7 +1134,6 @@ FreeForeachInfo(clientData)
  *
  *----------------------------------------------------------------------
  */
-
 int
 TclCompileIfCmd(interp, parsePtr, envPtr)
     Tcl_Interp *interp;		/* Used for error reporting. */
@@ -2965,16 +2966,20 @@ TclCompileWhileCmd(interp, parsePtr, envPtr)
      * rotation" optimisation (which eliminates one branch from the loop).
      * "while cond body" produces then:
      *       goto A
-     *    B: body
-     *    A: cond -> result
+     *    B: body                : bodyCodeOffset
+     *    A: cond -> result      : testCodeOffset, continueOffset
      *       if (result) goto B
+     *
+     * The infinite loop "while 1 body" produces:
+     *    B: body                : all three offsets here
+     *       goto B
      */
 
     if (loopMayEnd) {
 	TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, &jumpEvalCondFixup);
+	testCodeOffset = 0; /* avoid compiler warning */
     } else {
 	testCodeOffset = (envPtr->codeNext - envPtr->codeStart);
-	envPtr->exceptArrayPtr[range].continueOffset = testCodeOffset;
     }
     
 
@@ -2983,8 +2988,6 @@ TclCompileWhileCmd(interp, parsePtr, envPtr)
      */
 
     bodyCodeOffset = (envPtr->codeNext - envPtr->codeStart);
-    envPtr->exceptArrayPtr[range].codeOffset = bodyCodeOffset;
-
     code = TclCompileCmdWord(interp, bodyTokenPtr+1,
 	    bodyTokenPtr->numComponents, envPtr);
     envPtr->currStackDepth = savedStackDepth + 1;
@@ -3007,12 +3010,11 @@ TclCompileWhileCmd(interp, parsePtr, envPtr)
 
     if (loopMayEnd) {
 	testCodeOffset = (envPtr->codeNext - envPtr->codeStart);
-	envPtr->exceptArrayPtr[range].continueOffset = testCodeOffset;
 	jumpDist = testCodeOffset - jumpEvalCondFixup.codeOffset;
 	if (TclFixupForwardJump(envPtr, &jumpEvalCondFixup, jumpDist, 127)) {
 	    bodyCodeOffset += 3;
+	    testCodeOffset += 3;
 	}
-	
 	envPtr->currStackDepth = savedStackDepth;
 	code = TclCompileExprWords(interp, testTokenPtr, 1, envPtr);
 	if (code != TCL_OK) {
@@ -3041,9 +3043,11 @@ TclCompileWhileCmd(interp, parsePtr, envPtr)
 
 
     /*
-     * Set the loop's break target.
+     * Set the loop's body, continue and break offsets.
      */
 
+    envPtr->exceptArrayPtr[range].continueOffset = testCodeOffset;
+    envPtr->exceptArrayPtr[range].codeOffset = bodyCodeOffset;
     envPtr->exceptArrayPtr[range].breakOffset =
 	    (envPtr->codeNext - envPtr->codeStart);
     
