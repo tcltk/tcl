@@ -1,3 +1,7 @@
+2004-02-10  David Gravereaux  <davygrvy@pobox.com>
+
+	* win/nmakehlp.c: better macro grepping logic.
+
 2004-02-07  David Gravereaux  <davygrvy@pobox.com>
 
 	* win/makefile.vc:
