@@ -1,3 +1,30 @@
+1998-11-30    <stanton@GASPODE>
+
+	* unix/tclUnixNotfy.c (Tcl_WaitForEvent): Fixed hang that occurs
+	when trying to close a pipe that is currently being waited on by
+	the notifier thread. [Bug: 607]
+
+	* unix/tclUnixFCmd.c (GetPermissionsAttribute): Increase size of
+	returnString buffer to avoid overflow.
+
+	* generic/tclThreadTest.c (TclThreadSend): Fixed memory leak due
+	to use of TCL_VOLATILE instead of TCL_DYNAMIC.
+
+	* generic/tclThread.c (TclRememberSyncObject): Fixed memory leak
+	caused by failure to reuse condition variables.
+
+	* unix/tclUnixNotfy.c: 	(Tcl_AlertNotifier, Tcl_WaitForEvent,
+	NotifierThreadProc, Tcl_InitNotifier): Fixed race condition caused
+	by incorrect use of condition variables when sending messages
+	between threads.. [Bug: 607]
+
+	* generic/tclTestObj.c (TeststringobjCmd): MAX_STRINGS was off by one
+	so the strings array was too small.
+
+	* generic/tclCkalloc.c (Tcl_DbCkfree): Moved mutex lock so
+	ValidateMemory is done inside the mutex to avoid a race condition
+	when validate_memory is enabled. [Bug: 880]
+
 1998-11-23    <stanton@GASPODE>
 
 	* regexec.c: more performance tuning from Henry Spencer.
