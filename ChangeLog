@@ -1,3 +1,10 @@
+2003-03-18  Daniel Steffen  <das@users.sourceforge.net>
+
+	* tools/tcltk-man2html.tcl: added support for building 'make html'
+	from inside distribution directories named with 8.x.x version
+	numbers. tcltk-man2html now uses the latest tcl8.x.x resp. tk8.x.x
+	directories found inside its --srcdir argument.
+
 2003-03-17  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* tests/format.test: Renumber tests, a bunch of
@@ -66,14 +73,14 @@
 	[return] and [continue] exceptions.  All other behavior should
 	remain compatible.  [RFE 536831,684982] [Bug 685106]
 
-        * generic/tcl.h:        Removed TCL_PREFIX_IDENT and TCL_DEBUG_IDENT
-        * win/tclWinPipe.c:     from tcl.h -- they are not part of Tcl's
-        public interface.  Put them in win/tclWinPipe.c where they are used.
+	* generic/tcl.h:        Removed TCL_PREFIX_IDENT and TCL_DEBUG_IDENT
+	* win/tclWinPipe.c:     from tcl.h -- they are not part of Tcl's
+	public interface.  Put them in win/tclWinPipe.c where they are used.
 
-        * generic/tclInterp.c (Tcl_InterpObjCmd):       Corrected and added
-        * tests/interp.test (interp-2.13):              test for option
-        parsing beyond objc for [interp create --].  Thanks to Marco Maggi.
-        [Bug 702383]
+	* generic/tclInterp.c (Tcl_InterpObjCmd):       Corrected and added
+	* tests/interp.test (interp-2.13):              test for option
+	parsing beyond objc for [interp create --].  Thanks to Marco Maggi.
+	[Bug 702383]
 
 2003-03-11  Kevin Kenny  <kennykb@users.sourceforge.net>
 

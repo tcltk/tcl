@@ -1,8 +1,8 @@
 #!/bin/sh
 # The next line is executed by /bin/sh, but not tcl \
-exec tclsh8.2 "$0" ${1+"$@"}
+exec tclsh8.4 "$0" ${1+"$@"}
 
-package require Tcl 8.2
+package require Tcl 8.4
 
 # Convert Ousterhout format man pages into highly crosslinked
 # hypertext.
@@ -65,7 +65,7 @@ package require Tcl 8.2
 #  Oct 24, 1997 - moved from 8.0b1 to 8.0 release
 #
 
-set Version "0.30"
+set Version "0.31"
 
 proc parse_command_line {} {
     global argv Version
@@ -79,10 +79,6 @@ proc parse_command_line {} {
     set tkdir {}
     set tcldir {}
     set webdir ../html
-
-    # Directory names for Tcl and Tk, in priority order.
-    set tclDirList {tcl8.4 tcl8.3 tcl8.2 tcl8.1 tcl8.0 tcl}
-    set tkDirList {tk8.4 tk8.3 tk8.2 tk8.1 tk8.0 tk}
 
     # Handle arguments a la GNU:
     #   --version
@@ -124,28 +120,22 @@ proc parse_command_line {} {
     }
 
     # Find Tcl.
-    foreach dir $tclDirList {
-	if {[file isdirectory $tcltkdir/$dir]} then {
-	    set tcldir $dir
-	    break
-	}
-    }
+    set tcldir [lindex [lsort [glob -nocomplain -tails -type d \
+		-directory $tcltkdir {tcl{,[8-9].[0-9]{,.[0-9]}}}]] end]
     if {$tcldir == ""} then {
 	puts stderr "tcltk-man-html: couldn't find Tcl below $tcltkdir"
 	exit 1
     }
+    puts "using Tcl source directory $tcldir"
 
     # Find Tk.
-    foreach dir $tkDirList {
-	if {[file isdirectory $tcltkdir/$dir]} then {
-	    set tkdir $dir
-	    break
-	}
-    }
+    set tkdir [lindex [lsort [glob -nocomplain -tails -type d \
+		-directory $tcltkdir {tk{,[8-9].[0-9]{,.[0-9]}}}]] end]
     if {$tkdir == ""} then {
 	puts stderr "tcltk-man-html: couldn't find Tk below $tcltkdir"
 	exit 1
     }
+    puts "using Tk source directory $tkdir"
 
     # the title for the man pages overall
     global overall_title
