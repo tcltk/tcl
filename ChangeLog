@@ -1,3 +1,11 @@
+2000-11-21  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* doc/global.n: 
+	* doc/upvar.n: 
+	* doc/variable.n: Improved documentation to mention that variables
+	so created are listed in [info locals] and added a few more
+	cross-links between these commands.  Fixes bug #119387
+
 2000-11-17  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* tests/safe.test: (safe-4.3):

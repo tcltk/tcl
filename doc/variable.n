@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: variable.n,v 1.3 2000/01/26 21:36:35 ericm Exp $
+'\" RCS: @(#) $Id: variable.n,v 1.4 2000/11/21 15:56:21 dkf Exp $
 '\" 
 .so man.macros
 .TH variable n 8.0 Tcl "Tcl Built-In Commands"
@@ -42,7 +42,8 @@ command, but not to the \fBinfo exists\fR command.
 .PP
 If the \fBvariable\fR command is executed inside a Tcl procedure,
 it creates local variables
-linked to the corresponding namespace variables.
+linked to the corresponding namespace variables (and therefore these
+variables are listed by \fBinfo locals\fR.)
 In this way the \fBvariable\fR command resembles the \fBglobal\fR command,
 although the \fBglobal\fR command
 only links to variables in the global namespace.
@@ -59,7 +60,7 @@ elements within the array can be set using ordinary
 \fBset\fR or \fBarray\fR commands.
 
 .SH "SEE ALSO"
-global(n), namespace(n)
+global(n), namespace(n), upvar(n)
 
 .SH KEYWORDS
 global, namespace, procedure, variable
