@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.92 2002/08/05 03:24:40 dgp Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.93 2002/08/05 15:01:04 dgp Exp $
  */
 
 #ifndef _TCLDECLS
@@ -274,7 +274,7 @@ EXTERN int		Tcl_Close _ANSI_ARGS_((Tcl_Interp * interp,
 /* 82 */
 EXTERN int		Tcl_CommandComplete _ANSI_ARGS_((CONST char * cmd));
 /* 83 */
-EXTERN CONST84_RETURN char * Tcl_Concat _ANSI_ARGS_((int argc, 
+EXTERN char *		Tcl_Concat _ANSI_ARGS_((int argc, 
 				CONST84 char * CONST * argv));
 /* 84 */
 EXTERN int		Tcl_ConvertElement _ANSI_ARGS_((CONST char * src, 
@@ -1674,7 +1674,7 @@ typedef struct TclStubs {
     void (*tcl_CancelIdleCall) _ANSI_ARGS_((Tcl_IdleProc * idleProc, ClientData clientData)); /* 80 */
     int (*tcl_Close) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Channel chan)); /* 81 */
     int (*tcl_CommandComplete) _ANSI_ARGS_((CONST char * cmd)); /* 82 */
-    CONST84_RETURN char * (*tcl_Concat) _ANSI_ARGS_((int argc, CONST84 char * CONST * argv)); /* 83 */
+    char * (*tcl_Concat) _ANSI_ARGS_((int argc, CONST84 char * CONST * argv)); /* 83 */
     int (*tcl_ConvertElement) _ANSI_ARGS_((CONST char * src, char * dst, int flags)); /* 84 */
     int (*tcl_ConvertCountedElement) _ANSI_ARGS_((CONST char * src, int length, char * dst, int flags)); /* 85 */
     int (*tcl_CreateAlias) _ANSI_ARGS_((Tcl_Interp * slave, CONST char * slaveCmd, Tcl_Interp * target, CONST char * targetCmd, int argc, CONST84 char * CONST * argv)); /* 86 */
