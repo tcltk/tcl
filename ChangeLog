@@ -1,3 +1,17 @@
+2001-08-30  David Gravereaux <davygrvy@pobox.com>
+
+	* generic/tclAsync.c:
+	* generic/tclEvent.c:
+	* generic/tclInt.h: Improper cleanup of asyncMutex in tclAsync.c
+	repaired.  TclFinalizeSynchronization() was trying to remove a
+	registered mutex that was dumped earlier when the TSD it was stored
+	in was cleared. This was only surfacing on *nix.  Windows was being
+	masked by mutexes not actually being returned to the system!  That
+	was repaired in a previous patch.  Needed to add a private
+	TclFinalizeAsync() to tclAsync.c and called from Tcl_FinalizeThread().
+	Pheww..  Is this done yet?
+	[Bug: 414419] requested by Rob Ratcliff <rrr6399@futuretek.com>
+
 2001-08-28  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclCompCmds.c (TclPushVarName): noted 'static' defn.
