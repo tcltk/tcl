@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: socket.test,v 1.16 2000/09/21 00:58:30 hobbs Exp $
+# RCS: @(#) $Id: socket.test,v 1.17 2001/09/11 17:30:44 andreas_kupries Exp $
 
 # Running socket tests with a remote server:
 # ------------------------------------------
@@ -250,13 +250,14 @@ test socket-2.1 {tcp connection} {socket stdio} {
     set f [open script w]
     puts $f {
 	set timer [after 2000 "set x timed_out"]
-	set f [socket -server accept 2828]
+	set f [socket -server accept 0]
 	proc accept {file addr port} {
 	    global x
 	    set x done
             close $file
 	}
 	puts ready
+	puts [lindex [fconfigure $f -sockname] 2]
 	vwait x
 	after cancel $timer
 	close $f
@@ -265,7 +266,8 @@ test socket-2.1 {tcp connection} {socket stdio} {
     close $f
     set f [open "|[list $::tcltest::tcltest script]" r]
     gets $f x
-    if {[catch {socket 127.0.0.1 2828} msg]} {
+    gets $f listen
+    if {[catch {socket 127.0.0.1 $listen} msg]} {
         set x $msg
     } else {
         lappend x [gets $f]
@@ -286,7 +288,7 @@ test socket-2.2 {tcp connection with client port specified} {socket stdio} {
     set f [open script w]
     puts $f {
 	set timer [after 2000 "set x done"]
-        set f [socket -server accept 2829]
+        set f [socket -server accept 0]
 	proc accept {file addr port} {
             global x
             puts "[gets $file] $port"
@@ -294,6 +296,7 @@ test socket-2.2 {tcp connection with client port specified} {socket stdio} {
             set x done
 	}
 	puts ready
+	puts [lindex [fconfigure $f -sockname] 2]
 	vwait x
 	after cancel $timer
 	close $f
@@ -301,10 +304,11 @@ test socket-2.2 {tcp connection with client port specified} {socket stdio} {
     close $f
     set f [open "|[list $::tcltest::tcltest script]" r]
     gets $f x
+    gets $f listen
     global port
-    if {[catch {socket -myport $port 127.0.0.1 2829} sock]} {
+    if {[catch {socket -myport $port 127.0.0.1 $listen} sock]} {
         set x $sock
-	close [socket 127.0.0.1 2829]
+	close [socket 127.0.0.1 $listen]
 	puts stderr $sock
     } else {
         puts $sock hello
@@ -351,7 +355,7 @@ test socket-2.4 {tcp connection with server interface specified} {socket stdio} 
     set f [open script w]
     puts $f {
 	set timer [after 2000 "set x done"]
-        set f [socket -server accept -myaddr [info hostname] 2831]
+        set f [socket -server accept -myaddr [info hostname] 0]
 	proc accept {file addr port} {
             global x
             puts "[gets $file]"
@@ -359,6 +363,7 @@ test socket-2.4 {tcp connection with server interface specified} {socket stdio} 
             set x done
 	}
 	puts ready
+	puts [lindex [fconfigure $f -sockname] 2]
 	vwait x
 	after cancel $timer
 	close $f
@@ -366,7 +371,8 @@ test socket-2.4 {tcp connection with server interface specified} {socket stdio} 
     close $f
     set f [open "|[list $::tcltest::tcltest script]" r]
     gets $f x
-    if {[catch {socket [info hostname] 2831} sock]} {
+    gets $f listen
+    if {[catch {socket [info hostname] $listen} sock]} {
         set x $sock
     } else {
         puts $sock hello
@@ -382,7 +388,7 @@ test socket-2.5 {tcp connection with redundant server port} {socket stdio} {
     set f [open script w]
     puts $f {
 	set timer [after 2000 "set x done"]
-        set f [socket -server accept 2832]
+        set f [socket -server accept 0]
 	proc accept {file addr port} {
             global x
             puts "[gets $file]"
@@ -390,6 +396,7 @@ test socket-2.5 {tcp connection with redundant server port} {socket stdio} {
             set x done
 	}
 	puts ready
+	puts [lindex [fconfigure $f -sockname] 2]
 	vwait x
 	after cancel $timer
 	close $f
@@ -397,7 +404,8 @@ test socket-2.5 {tcp connection with redundant server port} {socket stdio} {
     close $f
     set f [open "|[list $::tcltest::tcltest script]" r]
     gets $f x
-    if {[catch {socket 127.0.0.1 2832} sock]} {
+    gets $f listen
+    if {[catch {socket 127.0.0.1 $listen} sock]} {
         set x $sock
     } else {
         puts $sock hello
@@ -423,7 +431,7 @@ test socket-2.7 {echo server, one line} {socket stdio} {
     set f [open script w]
     puts $f {
 	set timer [after 2000 "set x done"]
-	set f [socket -server accept 2834]
+	set f [socket -server accept 0]
 	proc accept {s a p} {
             fileevent $s readable [list echo $s]
 	    fconfigure $s -translation lf -buffering line
@@ -439,6 +447,7 @@ test socket-2.7 {echo server, one line} {socket stdio} {
              }
 	}
 	puts ready
+	puts [lindex [fconfigure $f -sockname] 2]
 	vwait x
 	after cancel $timer
 	close $f
@@ -447,7 +456,8 @@ test socket-2.7 {echo server, one line} {socket stdio} {
     close $f
     set f [open "|[list $::tcltest::tcltest script]" r]
     gets $f
-    set s [socket 127.0.0.1 2834]
+    gets $f listen
+    set s [socket 127.0.0.1 $listen]
     fconfigure $s -buffering line -translation lf
     puts $s "hello abcdefghijklmnop"
     after 1000
@@ -459,7 +469,7 @@ test socket-2.7 {echo server, one line} {socket stdio} {
 } {{hello abcdefghijklmnop} done}
 test socket-2.8 {echo server, loop 50 times, single connection} {socket stdio} {
     makeFile {
-	set f [socket -server accept 2835]
+	set f [socket -server accept 0]
 	proc accept {s a p} {
             fileevent $s readable [list echo $s]
             fconfigure $s -buffering line
@@ -478,6 +488,7 @@ test socket-2.8 {echo server, loop 50 times, single connection} {socket stdio} {
 	}
 	set i 0
 	puts ready
+	puts [lindex [fconfigure $f -sockname] 2]
 	set timer [after 20000 "set x done"]
 	vwait x
 	after cancel $timer
@@ -486,7 +497,8 @@ test socket-2.8 {echo server, loop 50 times, single connection} {socket stdio} {
     } script
     set f [open "|[list $::tcltest::tcltest script]" r]
     gets $f
-    set s [socket 127.0.0.1 2835]
+    gets $f listen
+    set s [socket 127.0.0.1 $listen]
     fconfigure $s -buffering line
     catch {
 	for {set x 0} {$x < 50} {incr x} {
@@ -500,25 +512,24 @@ test socket-2.8 {echo server, loop 50 times, single connection} {socket stdio} {
     set x
 } {done 50}
 test socket-2.9 {socket conflict} {socket stdio} {
-    set s [socket -server accept 2828]
+    set s [socket -server accept 0]
     removeFile script
     set f [open script w]
-    puts -nonewline $f {socket -server accept 2828}
+    puts -nonewline $f "socket -server accept [lindex [fconfigure $s -sockname] 2]"
     close $f
     set f [open "|[list $::tcltest::tcltest script]" r]
     gets $f
     after 100
-    set x [list [catch {close $f} msg] $msg]
+    set x [list [catch {close $f} msg]]
+    regsub "\n.*$" $msg {} msg ; # cut part of the error message containing the port number
+    lappend x $msg
     close $s
     set x
-} {1 {couldn't open socket: address already in use
-    while executing
-"socket -server accept 2828"
-    (file "script" line 1)}}
+} {1 {couldn't open socket: address already in use}}
 test socket-2.10 {close on accept, accepted socket lives} {socket} {
     set done 0
     set timer [after 20000 "set done timed_out"]
-    set ss [socket -server accept 2830]
+    set ss [socket -server accept 0]
     proc accept {s a p} {
 	global ss
 	close $ss
@@ -531,7 +542,7 @@ test socket-2.10 {close on accept, accepted socket lives} {socket} {
 	close $s
 	set done 1
     }
-    set cs [socket [info hostname] 2830]
+    set cs [socket [info hostname] [lindex [fconfigure $ss -sockname] 2]]
     puts $cs hello
     close $cs
     vwait done
@@ -544,9 +555,9 @@ test socket-2.11 {detecting new data} {socket} {
 	set sock $s
     }
 
-    set s [socket -server accept 2400]
+    set s [socket -server accept 0]
     set sock ""
-    set s2 [socket 127.0.0.1 2400]
+    set s2 [socket 127.0.0.1 [lindex [fconfigure $s -sockname] 2]]
     vwait sock
     puts $s2 one
     flush $s2
@@ -571,15 +582,17 @@ test socket-3.1 {socket conflict} {socket stdio} {
     removeFile script
     set f [open script w]
     puts $f {
-	set f [socket -server accept 2828]
+	set f [socket -server accept 0]
 	puts ready
+	puts [lindex [fconfigure $f -sockname] 2]
 	gets stdin
 	close $f
     }
     close $f
     set f [open "|[list $::tcltest::tcltest script]" r+]
     gets $f
-    set x [list [catch {socket -server accept 2828} msg] \
+    gets $f listen
+    set x [list [catch {socket -server accept $listen} msg] \
 		$msg]
     puts $f bye
     close $f
@@ -593,7 +606,7 @@ test socket-3.2 {server with several clients} {socket stdio} {
 	set t2 [after 31000 "set x timed_out"]
 	set t3 [after 32000 "set x timed_out"]
 	set counter 0
-	set s [socket -server accept 2828]
+	set s [socket -server accept 0]
 	proc accept {s a p} {
 	    fileevent $s readable [list echo $s]
 	    fconfigure $s -buffering line
@@ -609,6 +622,7 @@ test socket-3.2 {server with several clients} {socket stdio} {
              }
 	}
 	puts ready
+	puts [lindex [fconfigure $s -sockname] 2]
 	vwait x
 	after cancel $t1
 	vwait x
@@ -621,11 +635,12 @@ test socket-3.2 {server with several clients} {socket stdio} {
     close $f
     set f [open "|[list $::tcltest::tcltest script]" r+]
     set x [gets $f]
-    set s1 [socket 127.0.0.1 2828]
+    gets $f listen
+    set s1 [socket 127.0.0.1 $listen]
     fconfigure $s1 -buffering line
-    set s2 [socket 127.0.0.1 2828]
+    set s2 [socket 127.0.0.1 $listen]
     fconfigure $s2 -buffering line
-    set s3 [socket 127.0.0.1 2828]
+    set s3 [socket 127.0.0.1 $listen]
     fconfigure $s3 -buffering line
     for {set i 0} {$i < 100} {incr i} {
 	puts $s1 hello,s1
@@ -647,8 +662,8 @@ test socket-4.1 {server with several clients} {socket stdio} {
     removeFile script
     set f [open script w]
     puts $f {
-	gets stdin
-	set s [socket 127.0.0.1 2828]
+	set port [gets stdin]
+	set s [socket 127.0.0.1 $port]
 	fconfigure $s -buffering line
 	for {set i 0} {$i < 100} {incr i} {
 	    puts $s hello
@@ -682,10 +697,11 @@ test socket-4.1 {server with several clients} {socket stdio} {
     set t1 [after 30000 "set x timed_out"]
     set t2 [after 31000 "set x timed_out"]
     set t3 [after 32000 "set x timed_out"]
-    set s [socket -server accept 2828]
-    puts $p1 open
-    puts $p2 open
-    puts $p3 open
+    set s [socket -server accept 0]
+    set listen [lindex [fconfigure $s -sockname] 2]
+    puts $p1 $listen
+    puts $p2 $listen
+    puts $p3 $listen
     vwait x
     vwait x
     vwait x
@@ -746,8 +762,8 @@ test socket-6.1 {accept callback error} {socket stdio} {
     removeFile script
     set f [open script w]
     puts $f {
-	gets stdin
-	socket 127.0.0.1 2848
+	gets stdin port
+	socket 127.0.0.1 $port
     }
     close $f
     set f [open "|[list $::tcltest::tcltest script]" r+]
@@ -756,8 +772,8 @@ test socket-6.1 {accept callback error} {socket stdio} {
 	set x $args
     }
     proc accept {s a p} {expr 10 / 0}
-    set s [socket -server accept 2848]
-    puts $f hello
+    set s [socket -server accept 0]
+    puts $f [lindex [fconfigure $s -sockname] 2]
     close $f
     set timer [after 10000 "set x timed_out"]
     vwait x
@@ -771,12 +787,13 @@ test socket-7.1 {testing socket specific options} {socket stdio} {
     removeFile script
     set f [open script w]
     puts $f {
-	socket -server accept 2820
+	set ss [socket -server accept 0]
 	proc accept args {
 	    global x
 	    set x done
 	}
 	puts ready
+	puts [lindex [fconfigure $ss -sockname] 2]
 	set timer [after 10000 "set x timed_out"]
 	vwait x
 	after cancel $timer
@@ -784,25 +801,27 @@ test socket-7.1 {testing socket specific options} {socket stdio} {
     close $f
     set f [open "|[list $::tcltest::tcltest script]" r]
     gets $f
-    set s [socket 127.0.0.1 2820]
+    gets $f listen
+    set s [socket 127.0.0.1 $listen]
     set p [fconfigure $s -peername]
     close $s
     close $f
     set l ""
     lappend l [string compare [lindex $p 0] 127.0.0.1]
-    lappend l [string compare [lindex $p 2] 2820]
+    lappend l [string compare [lindex $p 2] $listen]
     lappend l [llength $p]
 } {0 0 3}
 test socket-7.2 {testing socket specific options} {socket stdio} {
     removeFile script
     set f [open script w]
     puts $f {
-	socket -server accept 2821
+	set ss [socket -server accept 2821]
 	proc accept args {
 	    global x
 	    set x done
 	}
 	puts ready
+	puts [lindex [fconfigure $ss -sockname] 2]
 	set timer [after 10000 "set x timed_out"]
 	vwait x
 	after cancel $timer
@@ -810,54 +829,57 @@ test socket-7.2 {testing socket specific options} {socket stdio} {
     close $f
     set f [open "|[list $::tcltest::tcltest script]" r]
     gets $f
-    set s [socket 127.0.0.1 2821]
+    gets $f listen
+    set s [socket 127.0.0.1 $listen]
     set p [fconfigure $s -sockname]
     close $s
     close $f
     set l ""
     lappend l [llength $p]
     lappend l [lindex $p 0]
-    lappend l [expr [lindex $p 2] == 2821]
+    lappend l [expr [lindex $p 2] == $listen]
 } {3 127.0.0.1 0}
 test socket-7.3 {testing socket specific options} {socket} {
-    set s [socket -server accept 2822]
+    set s [socket -server accept 0]
     set l [fconfigure $s]
     close $s
     update
     llength $l
 } 12
 test socket-7.4 {testing socket specific options} {socket} {
-    set s [socket -server accept 2823]
+    set s [socket -server accept 0]
     proc accept {s a p} {
 	global x
 	set x [fconfigure $s -sockname]
 	close $s
     }
-    set s1 [socket [info hostname] 2823]
+    set listen [lindex [fconfigure $s -sockname] 2]
+    set s1 [socket [info hostname] $listen]
     set timer [after 10000 "set x timed_out"]
     vwait x
     after cancel $timer
     close $s
     close $s1
     set l ""
-    lappend l [lindex $x 2] [llength $x]
-} {2823 3}
+    lappend l [expr {[lindex $x 2] == $listen}] [llength $x]
+} {1 3}
 test socket-7.5 {testing socket specific options} {socket unixOrPc} {
-    set s [socket -server accept 2829]
+    set s [socket -server accept 0]
     proc accept {s a p} {
 	global x
 	set x [fconfigure $s -sockname]
 	close $s
     }
-    set s1 [socket 127.0.0.1 2829]
+    set listen [lindex [fconfigure $s -sockname] 2]
+    set s1 [socket 127.0.0.1 $listen]
     set timer [after 10000 "set x timed_out"]
     vwait x
     after cancel $timer
     close $s
     close $s1
     set l ""
-    lappend l [lindex $x 0] [lindex $x 2] [llength $x]
-} {127.0.0.1 2829 3}
+    lappend l [lindex $x 0] [expr {[lindex $x 2] == $listen}] [llength $x]
+} {127.0.0.1 1 3}
 
 test socket-8.1 {testing -async flag on sockets} {socket} {
     # NOTE: This test may fail on some Solaris 2.4 systems. If it does,
@@ -874,14 +896,14 @@ test socket-8.1 {testing -async flag on sockets} {socket} {
     # problem, please email jyl@eng.sun.com. We have not observed this
     # failure on Solaris 2.5, so another option (instead of installing
     # these patches) is to upgrade to Solaris 2.5.
-    set s [socket -server accept 2830]
+    set s [socket -server accept 0]
     proc accept {s a p} {
 	global x
 	puts $s bye
 	close $s
 	set x done
     }
-    set s1 [socket -async [info hostname] 2830]
+    set s1 [socket -async [info hostname] [lindex [fconfigure $s -sockname] 2]]
     vwait x
     set z [gets $s1]
     close $s
@@ -911,8 +933,8 @@ test socket-9.1 {testing spurious events} {socket} {
 	fconfigure $s -buffering none -blocking off
 	fileevent $s readable [list readlittle $s]
     }
-    set s [socket -server accept 2831]
-    set c [socket [info hostname] 2831]
+    set s [socket -server accept 0]
+    set c [socket [info hostname] [lindex [fconfigure $s -sockname] 2]]
     puts -nonewline $c 01234567890123456789012345678901234567890123456789
     close $c
     set timer [after 10000 "set done timed_out"]
@@ -928,7 +950,7 @@ test socket-9.2 {testing async write, fileevents, flush on close} {socket} {
     for {set i 0} {$i < 16} {incr i} {
 	set secondblock "b$secondblock$secondblock"
     }
-    set l [socket -server accept 2832]
+    set l [socket -server accept 0]
     proc accept {s a p} {
 	fconfigure $s -blocking 0 -translation lf -buffersize 16384 \
 		-buffering line
@@ -949,7 +971,7 @@ test socket-9.2 {testing async write, fileevents, flush on close} {socket} {
 	puts -nonewline $s $secondblock
 	close $s
     }
-    set s [socket [info hostname] 2832]
+    set s [socket [info hostname] [lindex [fconfigure $l -sockname] 2]]
     fconfigure $s -blocking 0 -trans lf -buffering line
     set count 0
     puts $s hello
@@ -999,8 +1021,8 @@ test socket-9.3 {testing EOF stickyness} {socket} {
 	fconfigure $s -buffering line -translation lf
 	fileevent $s writable "write_then_close $s"
     }
-    set s [socket -server accept 2833]
-    set c [socket [info hostname] 2833]
+    set s [socket -server accept 0]
+    set c [socket [info hostname] [lindex [fconfigure $s -sockname] 2]]
     fconfigure $c -blocking off -buffering line -translation lf
     fileevent $c readable "count_to_eof $c"
     set timer [after 1000 timerproc]
@@ -1014,9 +1036,9 @@ removeFile script
 test socket-10.1 {testing socket accept callback error handling} {socket} {
     set goterror 0
     proc bgerror args {global goterror; set goterror 1}
-    set s [socket -server accept 2898]
+    set s [socket -server accept 0]
     proc accept {s a p} {close $s; error}
-    set c [socket 127.0.0.1 2898]
+    set c [socket 127.0.0.1 [lindex [fconfigure $s -sockname] 2]]
     vwait goterror
     close $s
     close $c
@@ -1387,7 +1409,8 @@ test socket-12.1 {testing inheritance of server sockets} {socket exec} {
     set f [open script2 w]
     puts $f [list set tcltest $::tcltest::tcltest]
     puts $f {
-	set f [socket -server accept 2828]
+	set f [socket -server accept 0]
+	puts [lindex [fconfigure $f -sockname] 2]
 	proc accept { file addr port } {
 	    close $file
 	}
@@ -1400,13 +1423,16 @@ test socket-12.1 {testing inheritance of server sockets} {socket exec} {
 	
     # Launch script2 and wait 5 seconds
 
-    exec $::tcltest::tcltest script2 &
+    ### exec $::tcltest::tcltest script2 &
+    set p [open "|[list $::tcltest::tcltest script2]" r]
+    gets $f listen
+
     after 5000 { set ok_to_proceed 1 }
     vwait ok_to_proceed
 
     # If we can still connect to the server, the socket got inherited.
 
-    if {[catch {socket 127.0.0.1 2828} msg]} {
+    if {[catch {socket 127.0.0.1 $listen} msg]} {
 	set x {server socket was not inherited}
     } else {
 	close $msg
@@ -1415,6 +1441,7 @@ test socket-12.1 {testing inheritance of server sockets} {socket exec} {
 
     removeFile script1
     removeFile script2
+    close $p
     set x
 } {server socket was not inherited}
 test socket-12.2 {testing inheritance of client sockets} {socket exec} {
@@ -1438,7 +1465,8 @@ test socket-12.2 {testing inheritance of client sockets} {socket exec} {
     set f [open script2 w]
     puts $f [list set tcltest $::tcltest::tcltest]
     puts $f {
-	set f [socket 127.0.0.1 2829]
+        gets stdin port
+	set f [socket 127.0.0.1 $port]
 	exec $tcltest script1 &
 	puts $f testing
 	flush $f
@@ -1449,7 +1477,7 @@ test socket-12.2 {testing inheritance of client sockets} {socket exec} {
 
     # Create the server socket
 
-    set server [socket -server accept 2829]
+    set server [socket -server accept 0]
     proc accept { file host port } {
 	# When the client connects, establish the read handler
 	global server
@@ -1489,8 +1517,10 @@ test socket-12.2 {testing inheritance of client sockets} {socket exec} {
     after 5000 [list set failed 1]
 
     # Launch the script2 process
+    ### exec $::tcltest::tcltest script2 &
 
-    exec $::tcltest::tcltest script2 &
+    set p [open "|[list $::tcltest::tcltest script2]" w]
+    puts $p [lindex [fconfigure $server -sockname] 2] ; flush $p
 
     vwait x
     if {!$failed} {
@@ -1498,6 +1528,7 @@ test socket-12.2 {testing inheritance of client sockets} {socket exec} {
     }
     removeFile script1
     removeFile script2
+    close $p
     set x
 } {client socket was not inherited}
 test socket-12.3 {testing inheritance of accepted sockets} {socket exec} {
@@ -1514,7 +1545,8 @@ test socket-12.3 {testing inheritance of accepted sockets} {socket exec} {
     set f [open script2 w]
     puts $f [list set tcltest $::tcltest::tcltest]
     puts $f {
-	set server [socket -server accept 2930]
+	set server [socket -server accept 0]
+	puts stdout [lindex [fconfigure $server -sockname] 2]
 	proc accept { file host port } {
 	    global tcltest
 	    puts $file {test data on socket}
@@ -1528,12 +1560,14 @@ test socket-12.3 {testing inheritance of accepted sockets} {socket exec} {
     # Launch the script2 process and connect to it.  See how long
     # the socket stays open
 
-    exec $::tcltest::tcltest script2 &
+    ## exec $::tcltest::tcltest script2 &
+    set p [open "|[list $::tcltest::tcltest script2]" r]
+    gets $p listen
 
     after 1000 set ok_to_proceed 1
     vwait ok_to_proceed
 
-    set f [socket 127.0.0.1 2930]
+    set f [socket 127.0.0.1 $listen]
     fconfigure $f -buffering full -blocking 0
     fileevent $f readable [list getdata $f]
 
@@ -1571,6 +1605,7 @@ test socket-12.3 {testing inheritance of accepted sockets} {socket exec} {
 
     removeFile script1
     removeFile script2
+    close $p
     set x
 } {accepted socket was not inherited}
 
@@ -1581,7 +1616,8 @@ test socket-13.1 {Testing use of shared socket between two threads} \
     threadReap
 
     makeFile {
-	set f [socket -server accept 2828]
+	set f [socket -server accept 0]
+	set listen [lindex [fconfigure $f -sockname] 2]
 	proc accept {s a p} {
             fileevent $s readable [list echo $s]
             fconfigure $s -buffering line
@@ -1609,9 +1645,11 @@ test socket-13.1 {Testing use of shared socket between two threads} \
     # create a thread
     set serverthread [testthread create { source script } ]
     update
-    
+    set port [testthread send $serverthread {set listen}]
+    update
+
     after 1000
-    set s [socket 127.0.0.1 2828]
+    set s [socket 127.0.0.1 $port]
     fconfigure $s -buffering line
 
     catch {
