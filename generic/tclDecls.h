@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.75 2002/01/17 04:37:33 dgp Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.76 2002/01/21 16:15:03 dgp Exp $
  */
 
 #ifndef _TCLDECLS
@@ -1332,17 +1332,17 @@ EXTERN void		Tcl_InitObjHashTable _ANSI_ARGS_((
 				Tcl_HashTable * tablePtr));
 /* 425 */
 EXTERN ClientData	Tcl_CommandTraceInfo _ANSI_ARGS_((
-				Tcl_Interp * interp, char * varName, 
+				Tcl_Interp * interp, CONST char * varName, 
 				int flags, Tcl_CommandTraceProc * procPtr, 
 				ClientData prevClientData));
 /* 426 */
 EXTERN int		Tcl_TraceCommand _ANSI_ARGS_((Tcl_Interp * interp, 
-				char * varName, int flags, 
+				CONST char * varName, int flags, 
 				Tcl_CommandTraceProc * proc, 
 				ClientData clientData));
 /* 427 */
 EXTERN void		Tcl_UntraceCommand _ANSI_ARGS_((Tcl_Interp * interp, 
-				char * varName, int flags, 
+				CONST char * varName, int flags, 
 				Tcl_CommandTraceProc * proc, 
 				ClientData clientData));
 /* 428 */
@@ -1998,9 +1998,9 @@ typedef struct TclStubs {
     Tcl_HashEntry * (*tcl_CreateHashEntry) _ANSI_ARGS_((Tcl_HashTable * tablePtr, CONST char * key, int * newPtr)); /* 422 */
     void (*tcl_InitCustomHashTable) _ANSI_ARGS_((Tcl_HashTable * tablePtr, int keyType, Tcl_HashKeyType * typePtr)); /* 423 */
     void (*tcl_InitObjHashTable) _ANSI_ARGS_((Tcl_HashTable * tablePtr)); /* 424 */
-    ClientData (*tcl_CommandTraceInfo) _ANSI_ARGS_((Tcl_Interp * interp, char * varName, int flags, Tcl_CommandTraceProc * procPtr, ClientData prevClientData)); /* 425 */
-    int (*tcl_TraceCommand) _ANSI_ARGS_((Tcl_Interp * interp, char * varName, int flags, Tcl_CommandTraceProc * proc, ClientData clientData)); /* 426 */
-    void (*tcl_UntraceCommand) _ANSI_ARGS_((Tcl_Interp * interp, char * varName, int flags, Tcl_CommandTraceProc * proc, ClientData clientData)); /* 427 */
+    ClientData (*tcl_CommandTraceInfo) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * varName, int flags, Tcl_CommandTraceProc * procPtr, ClientData prevClientData)); /* 425 */
+    int (*tcl_TraceCommand) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * varName, int flags, Tcl_CommandTraceProc * proc, ClientData clientData)); /* 426 */
+    void (*tcl_UntraceCommand) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * varName, int flags, Tcl_CommandTraceProc * proc, ClientData clientData)); /* 427 */
     char * (*tcl_AttemptAlloc) _ANSI_ARGS_((unsigned int size)); /* 428 */
     char * (*tcl_AttemptDbCkalloc) _ANSI_ARGS_((unsigned int size, CONST char * file, int line)); /* 429 */
     char * (*tcl_AttemptRealloc) _ANSI_ARGS_((char * ptr, unsigned int size)); /* 430 */

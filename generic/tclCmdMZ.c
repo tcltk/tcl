@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.55 2002/01/17 04:37:33 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.56 2002/01/21 16:15:03 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3338,7 +3338,7 @@ TclTraceVariableObjCmd(interp, optionIndex, objc, objv)
 ClientData
 Tcl_CommandTraceInfo(interp, cmdName, flags, proc, prevClientData)
     Tcl_Interp *interp;		/* Interpreter containing command. */
-    char *cmdName;		/* Name of command. */
+    CONST char *cmdName;	/* Name of command. */
     int flags;			/* OR-ed combo or TCL_GLOBAL_ONLY,
 				 * TCL_NAMESPACE_ONLY (can be 0). */
     Tcl_CommandTraceProc *proc;	/* Procedure assocated with trace. */
@@ -3403,7 +3403,7 @@ int
 Tcl_TraceCommand(interp, cmdName, flags, proc, clientData)
     Tcl_Interp *interp;		/* Interpreter in which command is
 				 * to be traced. */
-    char *cmdName;		/* Name of command. */
+    CONST char *cmdName;	/* Name of command. */
     int flags;			/* OR-ed collection of bits, including any
 				 * of TCL_TRACE_RENAME, TCL_TRACE_DELETE. */
     Tcl_CommandTraceProc *proc;	/* Procedure to call when specified ops are
@@ -3453,7 +3453,7 @@ Tcl_TraceCommand(interp, cmdName, flags, proc, clientData)
 void
 Tcl_UntraceCommand(interp, cmdName, flags, proc, clientData)
     Tcl_Interp *interp;		/* Interpreter containing command. */
-    char *cmdName;		/* Name of command. */
+    CONST char *cmdName;	/* Name of command. */
     int flags;			/* OR-ed collection of bits, including any
 				 * of TCL_TRACE_RENAME, TCL_TRACE_DELETE. */
     Tcl_CommandTraceProc *proc;	/* Procedure assocated with trace. */
