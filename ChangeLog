@@ -1,3 +1,19 @@
+2002-01-17  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
+
+	* generic/tclIOCmd.c (Tcl_GetsObjCmd): Fixed bug #504642 as
+	  reported by Brian Griffin <bgriffin@users.sourceforge.net>,
+	  using his patch. Before the patch the generic I/O layer held an
+	  unannounced reference to the interp result to store the read
+	  line into. This unfortunately has disastrous results if the
+	  channel driver executes a tcl script to perform its operation,
+	  this freeing the interp result. In that case we are
+	  dereferencing essentially a dangling reference. It is not truly
+	  dangling because the object is in the free list, but this only
+	  causes us to smash the free list and have the error occur later
+	  somewhere else. The patch simply creates a new object for the
+	  line and later sets it into the interp result when we are done
+	  with reading.
+
 2002-01-16  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* unix/tcl.m4 (SC_LOAD_TCLCONFIG):
