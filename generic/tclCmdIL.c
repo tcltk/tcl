@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.46 2003/02/11 23:59:39 hobbs Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.47 2003/02/27 16:01:55 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2928,10 +2928,11 @@ Tcl_LsearchObjCmd(clientData, interp, objc, objv)
 	if (result != TCL_OK) {
 	    return result;
 	}
+	if (offset > listc-1) {
+	    offset = listc-1;
+	}
 	if (offset < 0) {
 	    offset = 0;
-	} else if (offset > listc-1) {
-	    offset = listc-1;
 	}
     }
 
