@@ -1,3 +1,19 @@
+2000-07-23  Joe English  <jenglish@flightlab.com>
+	* doc/AddErrInfo.3:
+	* doc/ChnlStack.3:
+	* doc/Exit.3:
+	* doc/GetIndex.3:
+	* doc/Notifier.3:
+	* doc/Object.3:
+	* doc/RegExp.3:
+	* doc/SetResult.3:
+	* doc/SplitList.3:
+	* doc/Thread.3:  Added missing entries to NAME section.
+
+	* doc/AddErrInfo.3:
+	* doc/CrtObjCmd.3:
+	* doc/RecEvalObj.3: Changed Tcl_EvalObj to Tcl_EvalObjEx
+
 2000-07-21  Eric Melski  <ericm@ajubasolutions.com>
 
 	* generic/tclStubInit.c: 
