@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.53 2000/01/14 00:20:42 hobbs Exp $
+RCS: @(#) $Id: changes,v 1.54 2000/01/26 03:37:23 hobbs Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -1337,7 +1337,7 @@ to platform, which messes up Tcl tests.  Tcl_ErrnoMsg uses the standard
 POSIX messages for all the common signals, and calls strerror for
 signals it doesn't understand.
 
------------------ Released patch 7.5p2, 9/15/95 -----------------------
+----------------- Released patch 7.4p2, 9/15/95 -----------------------
 
 ----------------- Released 7.5a1, 9/15/95 -----------------------
 
@@ -4243,7 +4243,7 @@ was an incompatibility introduced in 8.1 that is being removed.
 (stanton)
 *** POTENTIAL INCOMPATIBILITY with previous beta releases ***
 
-3/26/99 (feature change) --nameble-shared is now the default and build
+3/26/99 (feature change) --enable-shared is now the default and build
 Tcl as a shared library; specify --disable-shared to build a static Tcl
 library and shell.
 *** POTENTIAL INCOMPATIBILITY ***
@@ -4579,7 +4579,7 @@ wish.  The command line was being primed with tclpip82.dll, but it was
 ignored later. 
 
 7/30/99 (bug fix) Added functions to stub table, patch provided by Jan
-Njitmans. [Bug: 2445] (hobbs)
+Nijtmans. [Bug: 2445] (hobbs)
 
 8/1/99  (bug fix) Changed Windows socket driver to terminate threads
 by sending a message to the window rather than calling

@@ -1,3 +1,24 @@
+2000-01-25  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* unix/tcl.m4: modified EXTRA_CFLAGS to add -DHAVE_TZSET for
+	OSF1-V* and ULTRIX-4.* when not using gcc.  Also added higher min
+	stack size for OSF1-V* when building with threads. [Bug: 4063]
+
+	* generic/tclClock.c (FormatClock): inlined resultPtr, as it
+	conflicted with var creation for HAVE_TZSET #def [Bug: 4063]
+
+	* generic/tclCmdIL.c (Tcl_LsortObjCmd): fixed potential leak
+	when calling lsort -command with bad command [Bug: 4067]
+
+	* generic/tclFileName.c (Tcl_JoinPath): added support for special
+	QNX node id prefixes in pathnames [Bug: 4053]
+
+	* doc/ListObj.3: clarified Tcl_ListObjGetElements docs [Bug: 4080]
+
+	* doc/glob.n: clarified Mac path separator determination docs.
+
+	* win/makefile.vc: added some support for building helpfile on Windows
+
 2000-01-23  Jeff Hobbs  <hobbs@scriptics.com>
 
 	* library/init.tcl (auto_execok): added 'start' to list of
@@ -7,8 +28,8 @@
 	systems (UTS) require sys/types.h to be included first [Bug: 4031]
 
 	* unix/tclUnixChan.c (CreateSocketAddress): changed comparison
-	with -1 to 0xFFFFFFFFFFFFFFF, which is the pedantic way to say -1
-	for both 32 bit and 64 bit systems. [Bug: 3878]
+	with -1 to 0xFFFFFFFF, to ensure 32 bit comparison even on 64 bit
+	systems. [Bug: 3878]
 
 	* generic/tclFileName.c: improved guessing of path separator
 	for the Mac. (Darley)
