@@ -7,7 +7,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.14 2000/05/26 08:53:42 hobbs Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.15 2001/05/17 02:13:02 hobbs Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -494,7 +494,7 @@ typedef struct ByteCode {
 #define INST_PUSH_RESULT		71
 #define INST_PUSH_RETURN_CODE		72
 
-/* Opcodes 73 to 74 */
+/* Opcodes 73 to 78 */
 #define INST_STR_EQ			73
 #define INST_STR_NEQ			74
 #define INST_STR_CMP			75
@@ -502,8 +502,27 @@ typedef struct ByteCode {
 #define INST_STR_INDEX			77
 #define INST_STR_MATCH			78
 
+/* Opcodes 78 to 81 */
+#define INST_LIST			79
+#define INST_LIST_INDEX			80
+#define INST_LIST_LENGTH		81
+
+#define INST_APPEND_SCALAR1		82
+#define INST_APPEND_SCALAR4		83
+#define INST_APPEND_ARRAY1		84
+#define INST_APPEND_ARRAY4		85
+#define INST_APPEND_ARRAY_STK		86
+#define INST_APPEND_STK			87
+
+#define INST_LAPPEND_SCALAR1		88
+#define INST_LAPPEND_SCALAR4		89
+#define INST_LAPPEND_ARRAY1		90
+#define INST_LAPPEND_ARRAY4		91
+#define INST_LAPPEND_ARRAY_STK		92
+#define INST_LAPPEND_STK		93
+
 /* The last opcode */
-#define LAST_INST_OPCODE        	78
+#define LAST_INST_OPCODE        	93
 
 /*
  * Table describing the Tcl bytecode instructions: their name (for
