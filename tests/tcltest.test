@@ -6,7 +6,7 @@
 # Copyright (c) 2000 by Ajuba Solutions
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.test,v 1.29 2002/06/26 03:25:06 dgp Exp $
+# RCS: @(#) $Id: tcltest.test,v 1.30 2002/07/03 19:40:31 dgp Exp $
 
 # Note that there are several places where the value of 
 # tcltest::currentFailure is stored/reset in the -setup/-cleanup
@@ -51,6 +51,7 @@ makeFile {
     exit
 } test.tcl
 
+cd [temporaryDirectory]
 # test -help
 test tcltest-1.1 {tcltest -help} {unixOrPc} {
     set result [catch {exec [interpreter] test.tcl -help} msg]
@@ -536,9 +537,8 @@ test tcltest-8.5 {tcltest a.tcl -tmpdir normaldirectory} {unixOrPc} {
     list [file exists [file join $normaldirectory a.tmp]] \
 	    [file delete [file join $normaldirectory a.tmp]] 
 } {1 {}}   
+cd [workingDirectory]
 
-
-set current [pwd]
 test tcltest-8.6 {temporaryDirectory}  {
     -setup {
 	set old $::tcltest::temporaryDirectory
@@ -546,11 +546,11 @@ test tcltest-8.6 {temporaryDirectory}  {
     }
     -body {
 	set f1 [temporaryDirectory]
-	set f2 [temporaryDirectory $current]
+	set f2 [temporaryDirectory [workingDirectory]]
 	set f3 [temporaryDirectory]
 	list $f1 $f2 $f3
     }
-    -result "[list $normaldirectory $current $current]"
+    -result "[list $normaldirectory [workingDirectory] [workingDirectory]]"
     -cleanup {
 	set ::tcltest::temporaryDirectory $old
     }
@@ -561,13 +561,14 @@ test tcltest-8.6a {temporaryDirectory - test format 2} -setup {
     set ::tcltest::temporaryDirectory $normaldirectory
 } -body {
     set f1 [temporaryDirectory]
-    set f2 [temporaryDirectory $current]
+    set f2 [temporaryDirectory [workingDirectory]]
     set f3 [temporaryDirectory]
     list $f1 $f2 $f3
 } -cleanup {
     set ::tcltest::temporaryDirectory $old
-} -result [list $normaldirectory $current $current]
+} -result [list $normaldirectory [workingDirectory] [workingDirectory]]
 
+cd [temporaryDirectory]
 # -testdir, [testsDirectory]
 test tcltest-8.10 {tcltest a.tcl -testdir thisdirectorydoesnotexist} {unixOrPc} {
     file delete -force thisdirectorydoesnotexist
@@ -593,11 +594,12 @@ test tcltest-8.13 {tcltest a.tcl -testdir normaldirectory} {unixOrPc} {
 	    [file exists [file join [temporaryDirectory] a.tmp]] \
 	    [file delete [file join [temporaryDirectory] a.tmp]] 
 } {0 1 {}} 
+cd [workingDirectory]
 
+set current [pwd]
 test tcltest-8.14 {testsDirectory} {
     -setup {
 	set old $::tcltest::testsDirectory
-	set current [pwd]
 	set ::tcltest::testsDirectory $normaldirectory
     }
     -body {
@@ -704,6 +706,7 @@ makeFile {
     return
 } makecore.tcl
 
+cd [temporaryDirectory]
 test tcltest-10.1 {-preservecore 0} {unixOrPc} {
     catch {exec [interpreter] makecore.tcl -preservecore 0} msg
     file delete core
@@ -835,11 +838,12 @@ set allfile [makeFile {
     testsDirectory [file join [temporaryDirectory] singleprocdir]
     runAllTests
 } [file join singleprocdir all-single.tcl]]
+cd [workingDirectory]
 
 test tcltest-14.1 {-singleproc - single process} {
     -constraints {unixOrPc}
     -body {
-	exec [interpreter] $allfile -singleproc 0
+	exec [interpreter] $allfile -singleproc 0 -tmpdir [temporaryDirectory]
     }
     -result {Test file error: can't unset .foo.: no such variable}
     -match regexp
@@ -848,7 +852,7 @@ test tcltest-14.1 {-singleproc - single process} {
 test tcltest-14.2 {-singleproc - multiple process} {
     -constraints {unixOrPc}
     -body {
-	exec [interpreter] $allfile -singleproc 1
+	exec [interpreter] $allfile -singleproc 1 -tmpdir [temporaryDirectory]
     }
     -result {single1.test.*single2.test.*all\-single.tcl:.*Total.*0.*Passed.*0.*Skipped.*0.*Failed.*0}
     -match regexp
@@ -908,7 +912,7 @@ makeFile {
 test tcltest-15.1 {basic directory walking} {
     -constraints {unixOrPc}
     -body {
-	exec [interpreter] [file join [temporaryDirectory] dirtestdir all.tcl]
+	exec [interpreter] [file join [temporaryDirectory] dirtestdir all.tcl] -tmpdir [temporaryDirectory]
     }
     -match regexp
     -returnCodes 1
@@ -920,7 +924,7 @@ test tcltest-15.2 {-asidefromdir} {
     -body {
 	exec [interpreter] \
 		[file join [temporaryDirectory] dirtestdir all.tcl] \
-		-asidefromdir dirtestdir2.3
+		-asidefromdir dirtestdir2.3 -tmpdir [temporaryDirectory]
     }
     -match regexp
     -returnCodes 1
@@ -935,7 +939,8 @@ test tcltest-15.3 {-relateddir, non-existent dir} {
     -body {
 	exec [interpreter] \
 		[file join [temporaryDirectory] dirtestdir all.tcl] \
-		-relateddir [file join [temporaryDirectory] dirtestdir0]
+		-relateddir [file join [temporaryDirectory] dirtestdir0] \
+		-tmpdir [temporaryDirectory]
     }
     -returnCodes 1
     -match regexp
@@ -947,7 +952,7 @@ test tcltest-15.4 {-relateddir, subdir} {
     -body {
 	exec [interpreter] \
 		[file join [temporaryDirectory] dirtestdir all.tcl] \
-		-relateddir dirtestdir2.1
+		-relateddir dirtestdir2.1 -tmpdir [temporaryDirectory]
     }
     -returnCodes 1
     -match regexp
@@ -959,7 +964,8 @@ test tcltest-15.5 {-relateddir, -asidefromdir} {
 	exec [interpreter] \
 		[file join [temporaryDirectory] dirtestdir all.tcl] \
 		-relateddir "dirtestdir2.1 dirtestdir2.2" \
-		-asidefromdir dirtestdir2.2
+		-asidefromdir dirtestdir2.2 \
+		-tmpdir [temporaryDirectory]
     }
     -match regexp
     -returnCodes 1
@@ -1036,6 +1042,7 @@ test tcltest-19.1 {TCLTEST_OPTIONS default} {
 
 # Begin testing of tcltest procs ...
 
+cd [temporaryDirectory]
 # PrintError
 test tcltest-20.1 {PrintError} {unixOrPc} {
     set result [catch {exec [interpreter] printerror.tcl} msg]
@@ -1043,6 +1050,7 @@ test tcltest-20.1 {PrintError} {unixOrPc} {
 	    [regexp "     \"quotes\"" $msg] [regexp "    \"Path" $msg] \
 	    [regexp "    \"Really" $msg] [regexp Problem $msg]
 } {1 1 1 1 1 1}
+cd [workingDirectory]
 
 # test::test
 test tcltest-21.0 {name and desc but no args specified} -setup {
@@ -1271,7 +1279,7 @@ makeFile {
 test tcltest-22.1 {runAllTests} {
     -constraints {unixOrPc}
     -body {
-	exec [interpreter] [file join [temporaryDirectory] alltestdir all.tcl] -verbose t
+	exec [interpreter] [file join [temporaryDirectory] alltestdir all.tcl] -verbose t -tmpdir [temporaryDirectory]
     }
     -match regexp
     -result "Test files exiting with errors:.*error.test.*exit.test"

@@ -1,3 +1,11 @@
+2002-07-03  Don Porter  <dgp@users.sourceforge.net>
+
+	* tests/main.test:	Cheap fix for [Bugs 575851, 575858].  Avoid
+	* tests/tcltest.test:	non-writable . by [cd [temporaryDirectory]].
+
+	* library/auto.tcl: Fix [tcl_findLibrary] to be sure it sets
+	$varName only if a successful library script is found.  [Bug 577033]
+
 2002-07-03  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* generic/tclCompCmds.c (TclCompileCatchCmd): return
