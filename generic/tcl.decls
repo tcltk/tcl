@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.78 2002/01/25 20:40:55 dgp Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.79 2002/01/25 21:36:09 dgp Exp $
 
 library tcl
 
@@ -166,7 +166,7 @@ declare 39 generic {
     int Tcl_GetLongFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, long *longPtr)
 }
 declare 40 generic {
-    Tcl_ObjType * Tcl_GetObjType(char *typeName)
+    Tcl_ObjType * Tcl_GetObjType(CONST char *typeName)
 }
 declare 41 generic {
     char * Tcl_GetStringFromObj(Tcl_Obj *objPtr, int *lengthPtr)
@@ -948,7 +948,7 @@ declare 268 generic {
     void Tcl_AppendStringsToObjVA(Tcl_Obj *objPtr, va_list argList)
 }
 declare 269 generic {
-    char * Tcl_HashStats(Tcl_HashTable *tablePtr)
+    CONST char * Tcl_HashStats(Tcl_HashTable *tablePtr)
 }
 declare 270 generic {
     CONST char * Tcl_ParseVar(Tcl_Interp *interp, char *str, char **termPtr)
@@ -1268,8 +1268,8 @@ declare 358 generic {
     void Tcl_FreeParse (Tcl_Parse *parsePtr)
 }
 declare 359 generic {
-    void Tcl_LogCommandInfo (Tcl_Interp *interp, char *script, \
-	    char *command, int length)
+    void Tcl_LogCommandInfo (Tcl_Interp *interp, CONST char *script, \
+	    CONST char *command, int length)
 }
 declare 360 generic {
     int Tcl_ParseBraces (Tcl_Interp *interp, char *string, \
@@ -1713,10 +1713,12 @@ interface tclPlat
 # Added in Tcl 8.1
 
 declare 0 win {
-    TCHAR * Tcl_WinUtfToTChar(CONST char *str, int len, Tcl_DString *dsPtr)
+    CONST TCHAR * Tcl_WinUtfToTChar(CONST char *str, int len, \
+	    Tcl_DString *dsPtr)
 }
 declare 1 win {
-    char * Tcl_WinTCharToUtf(CONST TCHAR *str, int len, Tcl_DString *dsPtr)
+    CONST char * Tcl_WinTCharToUtf(CONST TCHAR *str, int len, \
+	    Tcl_DString *dsPtr)
 }
 
 ##################

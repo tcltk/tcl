@@ -1,5 +1,44 @@
 2002-01-25  Don Porter <dgp@users.sourceforge.net>
 
+	* Following is [Patch 505630]
+	* doc/AddErrorInfo.3:
+	* generic/tcl.decls (Tcl_LogCommandInfo):
+	* generic/tclBasic.c (Tcl_LogCommandInfo): Updated interfaces
+	of generic/tclBasic.cc according to TIP 27.
+	* generic/tclDecls.h: make genstubs
+
+	* Following is [Patch 506818]
+	* doc/Hash.3:
+	* generic/tcl.decls (Tcl_HashStats):
+	* generic/tclHash.c (Tcl_HashStats):  Updated APIs of generic/tclHash.c
+	according to guidelines of TIP 27.
+	* generic/tclDecls.h: make genstubs
+	* generic/tclVar.c (Tcl_ArrayObjCmd): Updated callers.
+
+	* Following is [Patch 506807]
+	* doc/ObjectType.3:
+	* generic/tcl.decls (Tcl_GetObjType):
+	* generic/tclObj.c (Tcl_GetObjType): Updated APIs of generic/tclObj.c
+	according to guidelines of TIP 27.
+	* generic/tclDecls.h: make genstubs
+
+	* Following is [Patch 507304]
+	* doc/Encoding.3:
+	* generic/tcl.decls (Tcl_WinUtfToTChar,Tcl_WinTCharToUtf):
+	* win/tclWin32Dll.c (Tcl_WinUtfToTChar,Tcl_WinTCharToUtf):
+	Updated interfaces in win/tclWin32Dll.c according to TIP 27.
+	* generic/tclPlatDecls.h: make genstubs
+	* generic/tclIOUtil.c (TclpNativeToNormalized):
+	* win/tclWinFCmd.c (TclpObjNormalizePath):
+	* win/tclWinFile.c (TclpFindExecutable,TclpMatchInDirectory,
+	  NativeIsExec,NativeStat):
+	* win/tclWinLoad.c (TclpLoadFile):
+	* win/tclWinPipe.c (TclpOpenFile,ApplicationType):
+	* win/tclWinReg.c (regConnectRegistryProc,RecursiveDeleteKey,DeleteKey,
+	  GetKeyNames,GetType,GetValue,OpenSubKey,SetValue):
+	* win/tclWinSerial.c (SerialSetOptionProc): Update callers.
+
+	* Following is [Patch 505072]
 	* doc/Concat.3:
 	* doc/Encoding.3:
 	* doc/Filesystem.3:

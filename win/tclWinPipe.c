@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPipe.c,v 1.22 2002/01/25 20:40:56 dgp Exp $
+ * RCS: @(#) $Id: tclWinPipe.c,v 1.23 2002/01/25 21:36:10 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -578,7 +578,7 @@ TclpOpenFile(path, mode)
     HANDLE handle;
     DWORD accessMode, createMode, shareMode, flags;
     Tcl_DString ds;
-    TCHAR *nativePath;
+    CONST TCHAR *nativePath;
     
     /*
      * Map the access bits to the NT access mode.
@@ -1360,7 +1360,7 @@ ApplicationType(interp, originalName, fullName)
     DWORD attr, read;
     IMAGE_DOS_HEADER header;
     Tcl_DString nameBuf, ds;
-    TCHAR *nativeName;
+    CONST TCHAR *nativeName;
     WCHAR nativeFullPath[MAX_PATH];
     static char extensions[][5] = {"", ".com", ".exe", ".bat"};
 
