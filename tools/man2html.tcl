@@ -75,7 +75,7 @@ proc footer {packages} {
 # dir -			Name of the directory.
 
 proc doDir dir {
-    foreach f [lsort [glob $dir/*.\[13n\]]] {
+    foreach f [lsort [glob -directory $dir "*.\[13n\]"]] {
 	do $f	;# defined in man2html1.tcl & man2html2.tcl
     }
 }

@@ -1,22 +1,26 @@
 2000-11-24  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
+	* library/tcltest/tcltest.tcl (getMatchingFiles,
+	  getMatchingDirectories):
+	* tools/man2html.tcl (doDir): 
+	* tools/man2help.tcl (doDir): 
 	* library/package.tcl (tclPkgUnknown,tclMacPkgSearch): 
 	* library/safe.tcl (AddSubDirs): [glob] uses -directory instead of
-	unsafe [file join] to fix Bug #123313
+	  unsafe [file join] to fix Bug #123313
 
 	* generic/tclIndexObj.c:
 	* generic/tclTestObj.c (TestindexobjCmd): Changed internal
-	representation of index objects to fix Bug #119082; fix shouldn't
-	be visible to outside world...
+	  representation of index objects to fix Bug #119082; fix
+	  shouldn't be visible to outside world...
 
 	* generic/tclTest.c (TestGetIndexFromObjStructObjCmd): 
 	* tests/indexObj.test: (indexObj-6.*) Added to test for presence
-	of Bug #119082.
+	  of Bug #119082.
 
 2000-11-23  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* generic/tclCmdIL.c (Tcl_LsortObjCmd): Fixed memory leak from Bug
-	#119398
+	  #119398
 
 	* library/init.tcl (unknown): Added specific level parameters to
 	  all uplevel invokations to boost performance; didn't dare touch
@@ -82,21 +86,22 @@
 	* doc/global.n: 
 	* doc/upvar.n: 
 	* doc/variable.n: Improved documentation to mention that variables
-	so created are listed in [info locals] and added a few more
-	cross-links between these commands.  Fixes bug #119387
+	  so created are listed in [info locals] and added a few more
+	  cross-links between these commands.  Fixes bug #119387
 
 2000-11-17  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* tests/safe.test: (safe-4.3):
 	* generic/tclVar.c (TclLookupVar): Changed again.  Now passes all
-	the tests, though one needed modifying since it required the wrong
-	answer.  (Why on earth do we have inline modification of argument
-	strings?  This sort of thing is horrendous to debug and doesn't
-	work well in a multithreaded environment!)  Fixes bug 119192.
+	  the tests, though one needed modifying since it required the
+	  wrong answer.  (Why on earth do we have inline modification of
+	  argument strings?  This sort of thing is horrendous to debug and
+	  doesn't work well in a multithreaded environment!)  Fixes bug
+	  119192.
 
 	* tests/var.test: (var-1.19) If my attempts to fix the problem
-	aren't right yet, my attempts to describe it look pretty good to
-	me...
+	  aren't right yet, my attempts to describe it look pretty good to
+	  me...
 
 2000-11-16  Andreas Kupries  <a.kupries@westend.com>
 
@@ -109,25 +114,26 @@
 2000-11-15  jeff hobbs  <jeff.hobbs@acm.org>
 
 	* unix/Makefile.in: removed bp.c references (hasn't existed in a
-	long time).  Corrected 'make dist' to make dist with unversioned
-	library directories (same as out of cvs), so make install works
-	correctly with either source tree.
+	  long time).  Corrected 'make dist' to make dist with unversioned
+	  library directories (same as out of cvs), so make install works
+	  correctly with either source tree.
 
 2000-11-15  jeff hobbs  <jeff.hobbs@acm.org>
 
 	* generic/tclVar.c (TclLookupVar): reverted fix below as it broke
-	all other array unset error reporting.  Bug-119192 is still open.
+	  all other array unset error reporting.  Bug-119192 is still
+	  open.
 
 2000-11-15  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* generic/tclVar.c (TclLookupVar): Changed references to part2 to
-	use elName instead in various error message generating spots, so
-	as to fix Bug-119192.
+	  use elName instead in various error message generating spots, so
+	  as to fix Bug-119192.
 
 2000-11-03  David Gravereaux  <davygrvy@ajubasolutions.com>
 
 	* win/.cvsignore: Removed 'configure' from the glob list now
-	that it's included.
+	  that it's included.
 
 2000-11-03  Jeff Hobbs  <hobbs@ajubasolutions.com>
 
