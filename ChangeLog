@@ -4,8 +4,12 @@
 	* generic/tclParseExpr.c: LogSyntaxError() should reset 
 	the interpreter result [Bug 550142 "Tcl_ExprObj -> abort"] 
 
-
 2002-06-21  Don Porter  <dgp@users.sourceforge.net>
+	
+	* unix/Makefile.in:	Updated all package install directories
+	* win/Makefile.in:	to match current Major.minor versions
+	* win/makefile.bc:	of the packages.  Added tcltest package
+	* win/makefile.vc:	to installation on Windows.
 
 	* library/init.tcl:  Corrected comments and namespace style
         issues.  Thanks to Bruce Stephens. [Bug 572025]
