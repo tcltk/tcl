@@ -1,3 +1,13 @@
+2001-05-03  Don Porter  <dgp@users.sourceforge.net>
+
+	* doc/library.n:
+	* library/init.tcl:
+	* tests/autoMkindex.test: Modified [auto_import] to apply
+	pattern matching in the [namespace import] style.  [Bug 420186]
+	***POTENTIAL INCOMPATIBILITY*** for any callers of [auto_import]
+	from outside Tcl that expect the pattern matching to be like that
+	of [string match].
+
 2001-05-03  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* generic/tclParse.c: 
