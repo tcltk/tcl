@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.13 2001/08/30 08:53:15 vincentdarley Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.14 2001/09/07 17:08:50 andreas_kupries Exp $
  */
 
 #include "tclWinInt.h"
@@ -693,6 +693,14 @@ TclpObjChdir(pathPtr)
 {
     int result;
     TCHAR *nativePath;
+
+    /*
+     * Ensure correct file sizes by forcing the OS to write any
+     * pending data to disk. This is done only for channels which are
+     * dirty, i.e. have been written to since the last flush here.
+     */
+
+    TclWinFlushDirtyChannels ();
 
     nativePath = (TCHAR *) Tcl_FSGetNativePath(pathPtr);
     result = (*tclWinProcs->setCurrentDirectoryProc)(nativePath);

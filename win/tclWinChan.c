@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinChan.c,v 1.14 2001/08/30 08:53:15 vincentdarley Exp $
+ * RCS: @(#) $Id: tclWinChan.c,v 1.15 2001/09/07 17:08:50 andreas_kupries Exp $
  */
 
 #include "tclWinInt.h"
@@ -40,6 +40,8 @@ typedef struct FileInfo {
     int flags;			/* State flags, see above for a list. */
     HANDLE handle;		/* Input/output file. */
     struct FileInfo *nextPtr;	/* Pointer to next registered file. */
+    int dirty;                  /* Boolean flag. Set if the OS may have data
+				 * pending on the channel */
 } FileInfo;
 
 typedef struct ThreadSpecificData {
@@ -557,7 +559,7 @@ FileOutputProc(instanceData, buf, toWrite, errorCode)
         *errorCode = errno;
         return -1;
     }
-    FlushFileBuffers(infoPtr->handle);
+    infoPtr->dirty = 1;
     return bytesWritten;
 }
 
@@ -1122,7 +1124,7 @@ TclWinOpenFileChannel(handle, channelName, permissions, appendMode)
     infoPtr->watchMask = 0;
     infoPtr->flags = appendMode;
     infoPtr->handle = handle;
-	
+    infoPtr->dirty = 0;
     wsprintfA(channelName, "file%lx", (int) infoPtr);
     
     infoPtr->channel = Tcl_CreateChannel(&fileChannelType, channelName,
@@ -1139,3 +1141,45 @@ TclWinOpenFileChannel(handle, channelName, permissions, appendMode)
     return infoPtr->channel;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclWinOpenFileChannel --
+ *
+ *	Constructs a File channel for the specified standard OS handle.
+ *      This is a helper function to break up the construction of 
+ *      channels into File, Console, or Serial.
+ *
+ * Results:
+ *	Returns the new channel, or NULL.
+ *
+ * Side effects:
+ *	May open the channel and may cause creation of a file on the
+ *	file system.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclWinFlushDirtyChannels ()
+{
+    FileInfo *infoPtr;
+    ThreadSpecificData *tsdPtr;
+
+    tsdPtr = FileInit();
+
+    /*
+     * Flush all channels which are dirty, i.e. may have data pending
+     * in the OS
+     */
+    
+    for (infoPtr = tsdPtr->firstFilePtr;
+	 infoPtr != NULL; 
+	 infoPtr = infoPtr->nextPtr) {
+	if (infoPtr->dirty) {
+	    FlushFileBuffers(infoPtr->handle);
+	    infoPtr->dirty = 0;
+	}
+    }
+}
