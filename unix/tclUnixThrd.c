@@ -21,8 +21,6 @@
 
 typedef struct ThreadSpecificData {
     char	    	nabuf[16];
-    struct tm   	gtbuf;
-    struct tm   	ltbuf;
     struct {
 	Tcl_DirEntry ent;
 	char name[MAXNAMLEN+1];
@@ -864,51 +862,6 @@ TclpReaddir(DIR * dir)
 #endif
     return ent;
 }
-
-#if defined(TCL_THREADS) && (!defined(HAVE_GMTIME_R) || !defined(HAVE_LOCALTIME_R))
-TCL_DECLARE_MUTEX( tmMutex )
-#undef localtime
-#undef gmtime
-#endif
-
-struct tm *
-TclpLocaltime(time_t * clock)
-{
-#ifdef TCL_THREADS
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-
-#ifdef HAVE_LOCALTIME_R
-    return localtime_r(clock, &tsdPtr->ltbuf);
-#else
-    Tcl_MutexLock( &tmMutex );
-    memcpy( (VOID *) &tsdPtr->ltbuf, (VOID *) localtime( clock ), sizeof (struct tm) );
-    Tcl_MutexUnlock( &tmMutex );
-    return &tsdPtr->ltbuf;
-#endif    
-#else
-    return localtime(clock);
-#endif
-}
-
-struct tm *
-TclpGmtime(time_t * clock)
-{
-#ifdef TCL_THREADS
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-
-#ifdef HAVE_GMTIME_R
-    return gmtime_r(clock, &tsdPtr->gtbuf);
-#else
-    Tcl_MutexLock( &tmMutex );
-    memcpy( (VOID *) &tsdPtr->gtbuf, (VOID *) gmtime( clock ), sizeof (struct tm) );
-    Tcl_MutexUnlock( &tmMutex );
-    return &tsdPtr->gtbuf;
-#endif    
-#else
-    return gmtime(clock);
-#endif
-}
-
 char *
 TclpInetNtoa(struct in_addr addr)
 {

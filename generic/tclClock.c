@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclClock.c,v 1.20 2003/02/01 21:27:55 kennykb Exp $
+ * RCS: @(#) $Id: tclClock.c,v 1.20.2.1 2004/05/14 21:41:11 kennykb Exp $
  */
 
 #include "tcl.h"
@@ -310,7 +310,7 @@ FormatClock(interp, clockVal, useGMT, format)
         } else {
             savedTZEnv = NULL;
 	}
-        Tcl_SetVar2(interp, "env", "TZ", "GMT", TCL_GLOBAL_ONLY);
+        Tcl_SetVar2(interp, "env", "TZ", "GMT0", TCL_GLOBAL_ONLY);
         savedTimeZone = timezone;
         timezone = 0;
         tzset();
