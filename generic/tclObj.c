@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.42 2003/01/17 22:11:02 mdejong Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.42.2.1 2003/04/07 12:27:30 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -126,15 +126,18 @@ Tcl_ObjType tclIntType = {
     SetIntFromAny			/* setFromAnyProc */
 };
 
-#ifndef TCL_WIDE_INT_IS_LONG
 Tcl_ObjType tclWideIntType = {
     "wideInt",				/* name */
     (Tcl_FreeInternalRepProc *) NULL,   /* freeIntRepProc */
     (Tcl_DupInternalRepProc *) NULL,	/* dupIntRepProc */
+#ifdef TCL_WIDE_INT_IS_LONG
+    UpdateStringOfInt,			/* updateStringProc */
+    SetIntFromAny			/* setFromAnyProc */
+#else /* !TCL_WIDE_INT_IS_LONG */
     UpdateStringOfWideInt,		/* updateStringProc */
     SetWideIntFromAny			/* setFromAnyProc */
-};
 #endif
+};
 
 /*
  * The structure below defines the Tcl obj hash key type.
@@ -233,9 +236,7 @@ TclInitObjSubsystem()
     Tcl_RegisterObjType(&tclDoubleType);
     Tcl_RegisterObjType(&tclEndOffsetType);
     Tcl_RegisterObjType(&tclIntType);
-#ifndef TCL_WIDE_INT_IS_LONG
     Tcl_RegisterObjType(&tclWideIntType);
-#endif
     Tcl_RegisterObjType(&tclStringType);
     Tcl_RegisterObjType(&tclListType);
     Tcl_RegisterObjType(&tclByteCodeType);
@@ -1107,8 +1108,10 @@ SetBooleanFromAny(interp, objPtr)
 	newBool = (objPtr->internalRep.longValue != 0);
     } else if (objPtr->typePtr == &tclDoubleType) {
 	newBool = (objPtr->internalRep.doubleValue != 0.0);
-#ifndef TCL_WIDE_INT_IS_LONG
     } else if (objPtr->typePtr == &tclWideIntType) {
+#ifdef TCL_WIDE_INT_IS_LONG
+	newBool = (objPtr->internalRep.longValue != 0);
+#else /* !TCL_WIDE_INT_IS_LONG */
 	newBool = (objPtr->internalRep.wideValue != Tcl_LongAsWide(0));
 #endif /* TCL_WIDE_INT_IS_LONG */
     } else {
