@@ -12,7 +12,7 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
 #
-# RCS: @(#) $Id: http.test,v 1.33 2003/02/11 20:41:38 kennykb Exp $
+# RCS: @(#) $Id: http.test,v 1.33.4.1 2003/06/27 19:10:08 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -48,6 +48,7 @@ catch {unset data}
 # Ensure httpd file exists
 
 set origFile [file join $::tcltest::testsDirectory httpd]
+set origFile [file join [pwd] [file dirname [info script]] httpd]
 set httpdFile [file join [temporaryDirectory] httpd_[pid]]
 if {![file exists $httpdFile]} {
     makeFile "" $httpdFile

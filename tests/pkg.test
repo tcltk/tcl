@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: pkg.test,v 1.9 2001/08/06 19:13:29 dgp Exp $
+# RCS: @(#) $Id: pkg.test,v 1.9.14.1 2003/06/27 19:10:08 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -645,6 +645,7 @@ set auto_path $oldPath
 package unknown $oldPkgUnknown
 concat
 
+cleanupTests
 }
 
 # cleanup

@@ -1,3 +1,10 @@
+2003-06-27  Don Porter  <dgp@users.sourceforge.net>
+
+	* tests/init.test:	Added [cleanupTests] to report results of tests
+	* tests/pkg.test:	that run in slave interps.  [Bugs 761334,761344]
+
+	* tests/http.test:	Used more reliable path to find httpd script.
+
 2003-06-25  Don Porter  <dgp@users.sourceforge.net>
 
 	* tests/init.test:  Added tests init-4.6.* to illustrate [Bug 760872]
