@@ -1,3 +1,9 @@
+2003-03-31  Don Porter  <dgp@users.sourceforge.net>
+
+	* tests/parse.test (parse-18.*):  Coverage tests for the new
+	implementation of Tcl_SubstObj().  Note that tests parse-18.17 and
+	parse-18.21 demonstrate some bugs left to fix in the current code.
+
 2003-03-27  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* unix/configure: Regen.
