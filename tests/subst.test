@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: subst.test,v 1.8 2001/06/28 01:10:15 hobbs Exp $
+# RCS: @(#) $Id: subst.test,v 1.9 2001/07/12 13:15:09 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -23,7 +23,7 @@ test subst-1.1 {basics} {
 } {1 {wrong # args: should be "subst ?-nobackslashes? ?-nocommands? ?-novariables? string"}}
 test subst-1.2 {basics} {
     list [catch {subst a b c} msg] $msg
-} {1 {wrong # args: should be "subst ?-nobackslashes? ?-nocommands? ?-novariables? string"}}
+} {1 {bad switch "a": must be -nobackslashes, -nocommands, or -novariables}}
 
 test subst-2.1 {simple strings} {
     subst {}
@@ -90,7 +90,7 @@ test subst-6.1 {clear the result after command substitution} {
 
 test subst-7.1 {switches} {
     list [catch {subst foo bar} msg] $msg
-} {1 {wrong # args: should be "subst ?-nobackslashes? ?-nocommands? ?-novariables? string"}}
+} {1 {bad switch "foo": must be -nobackslashes, -nocommands, or -novariables}}
 test subst-7.2 {switches} {
     list [catch {subst -no bar} msg] $msg
 } {1 {ambiguous switch "-no": must be -nobackslashes, -nocommands, or -novariables}}
@@ -148,19 +148,19 @@ test subst-9.2 {error in a subst} {
 
 test subst-10.1 {break in a subst} {
     subst {foo [break; bogus code] bar}
-} {foo  bar}
+} {foo }
 test subst-10.2 {break in a subst} {
     subst {foo [break; return x; bogus code] bar}
-} {foo  bar}
+} {foo }
 test subst-10.3 {break in a subst} {
     subst {foo [if 1 { break; bogus code}] bar}
-} {foo  bar}
+} {foo }
 test subst-10.4 {break in a subst, parse error} {
     subst {foo [break ; set a {}{} ; stuff] bar}
-} {foo set a {}{} ; stuff] bar}
+} {foo }
 test subst-10.5 {break in a subst, parse error} {
     subst {foo [break ;set bar baz ;set a {}{} ; stuff] bar}
-} {foo set bar baz ;set a {}{} ; stuff] bar}
+} {foo }
 
 test subst-11.1 {continue in a subst} {
     subst {foo [continue; bogus code] bar}
