@@ -1,3 +1,9 @@
+2003-02-13  Kevin Kenny  <kennykb@users.sourceforge.net>
+
+	* doc/tclsh.1: Added language to describe the handling of the
+	end-of-file character \u001a embedded in a script file.
+	[Bug 685485]
+	
 2003-02-10  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* tests/fileName.test:
