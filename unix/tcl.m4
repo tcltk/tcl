@@ -361,8 +361,16 @@ AC_DEFUN(SC_ENABLE_THREADS, [
 	AC_DEFINE(TCL_THREADS)
 	AC_DEFINE(_REENTRANT)
 	AC_DEFINE(_THREAD_SAFE)
-
 	AC_CHECK_LIB(pthread,pthread_mutex_init,tcl_ok=yes,tcl_ok=no)
+	if test "$tcl_ok" = "no"; then
+	    # Check a little harder for __pthread_mutex_init in the same
+	    # library, as some systems hide it there until pthread.h is
+	    # defined.  We could alternatively do an AC_TRY_COMPILE with
+	    # pthread.h, but that will work with libpthread really doesn't
+	    # exist, like AIX 4.2.  [Bug: 4359]
+	    AC_CHECK_LIB(pthread,__pthread_mutex_init,tcl_ok=yes,tcl_ok=no)
+	fi
+
 	if test "$tcl_ok" = "yes"; then
 	    # The space is needed
 	    THREADS_LIBS=" -lpthread"
@@ -517,19 +525,32 @@ AC_DEFUN(SC_ENABLE_SYMBOLS, [
 
 AC_DEFUN(SC_CONFIG_CFLAGS, [
 
-    # Step 0: Enable 64 bit support?
+    # Step 0.a: Enable 64 bit support?
 
-    AC_MSG_CHECKING([if 64bit support is enabled])
-    AC_ARG_ENABLE(64bit,[  --enable-64bit          enable 64bit support],,enableval="no")
+    AC_MSG_CHECKING([if 64bit support is requested])
+    AC_ARG_ENABLE(64bit,[  --enable-64bit          enable 64bit support (where applicable)],,enableval="no")
 
     if test "$enableval" = "yes"; then
-	AC_MSG_RESULT(Will compile with 64bit support)
 	do64bit=yes
     else
 	do64bit=no
     fi
     AC_MSG_RESULT($do64bit)
- 
+
+    # Step 0.b: Enable Solaris 64 bit VIS support?
+
+    AC_MSG_CHECKING([if 64bit Sparc VIS support is requested])
+    AC_ARG_ENABLE(64bit-vis,[  --enable-64bit-vis      enable 64bit Sparc VIS support],,enableval="no")
+
+    if test "$enableval" = "yes"; then
+	# Force 64bit on with VIS
+	do64bit=yes
+	do64bitVIS=yes
+    else
+	do64bitVIS=no
+    fi
+    AC_MSG_RESULT($do64bitVIS)
+
     # Step 1: set the variable "system" to hold the name and version number
     # for the system.  This can usually be done via the "uname" command, but
     # there are a few systems, like Next, where this doesn't work.
@@ -964,8 +985,13 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
 		if test "$arch" = "sparcv9 sparc" ; then
 			if test "$using_gcc" = "no" ; then
 			    do64bit_ok=yes
-			    EXTRA_CFLAGS="-xarch=v9"
-			    LDFLAGS="-xarch=v9"
+			    if test "$do64bitVIS" = "yes" ; then
+				EXTRA_CFLAGS="-xarch=v9a"
+			    	LDFLAGS="-xarch=v9a"
+			    else
+				EXTRA_CFLAGS="-xarch=v9"
+			    	LDFLAGS="-xarch=v9"
+			    fi
 			else 
 			    AC_MSG_WARN("64bit mode not supported with GCC on $system")
 			fi
@@ -1025,7 +1051,7 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
     esac
 
     if test "$do64bit" = "yes" -a "$do64bit_ok" = "no" ; then
-    AC_MSG_WARN("64bit support being disabled -- not supported on this platform")
+    AC_MSG_WARN("64bit support being disabled -- don\'t know magic for this platform")
     fi
 
     # Step 4: If pseudo-static linking is in use (see K. B. Kenny, "Dynamic
