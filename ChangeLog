@@ -4,7 +4,8 @@
 	the -blocking option when closing is the same way the UNIX
 	side works.  This is to avoid a hung shell when exiting due
 	to open pipes that refuse to close in a graceful manner.
-	[Bug 947693]
+	* doc/open.n: Added a note about -blocking 0 and lack of
+	exit status as it had never been documented. [Bug 947693]
 
 	***POTENTIAL INCOMPATIBILITY***
 
