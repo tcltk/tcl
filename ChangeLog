@@ -1,3 +1,34 @@
+1999-03-23    <stanton@scriptics.com>
+
+	* tools/tcl.wse: Fixed file association to look in the right place
+	for the wish icon. [Bug: 1544]
+
+	* tests/winNotify.test: 
+	* tests/ioCmd.test: 
+	* tests/event.test: Changed to use new style conditionals.
+
+	* tests/encoding.test: Fixed nonportable test.
+
+	* unix/dltest/configure.in: 
+	* unix/dltest/Makefile.in: Added missing DBGX macros. [Bug: 1564]
+
+	* tests/winNotify.test: 
+	* mac/tclMacNotify.c: 
+	* win/tclWinNotify.c: 
+	* unix/tclUnixNotfy.c:
+	* generic/tclNotify.c: Added a new Tcl_ServiceModeHook interface
+	that is invoked whenever the service mode changes.  This is needed
+	to allow the Windows notifier to create a communication window the
+	first time Tcl is about to enter an external modal event loop
+	instead of at startup time.  This will avoid the various problems
+	that people have been seeing where the system hangs when tclsh
+	is running outside of the event loop. [Bug: 783]
+
+	* generic/tclInt.h: 
+	* generic/tcl.decls: Renamed TclpAlertNotifier back to
+	Tcl_AlertNotifier since it is part of the public notifier driver
+	API.
+
 1999-03-23    <redman@scriptics.com>
 
 	* win/tclWinSerial.c: Fixed problem with fileevent on the serial
