@@ -15,7 +15,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: basic.test,v 1.19 2002/04/08 09:02:00 das Exp $
+# RCS: @(#) $Id: basic.test,v 1.20 2002/05/07 15:54:40 msofer Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -563,7 +563,7 @@ test basic-45.1 {Tcl_SetRecursionLimit: see interp.test} {emptyTest} {
 test basic-46.1 {Tcl_AllowExceptions: exception return not allowed} {exec} {
     catch {close $f}
     set res [catch {
-	set f [open |[info nameofexecutable] w+]
+	set f [open |[list [info nameofexecutable]] w+]
 	fconfigure $f -buffering line
 	puts $f {fconfigure stdout -buffering line}
 	puts $f continue
@@ -576,8 +576,8 @@ test basic-46.1 {Tcl_AllowExceptions: exception return not allowed} {exec} {
 	    append msg "${newMsg}\n"
 	}
 	close $f
-    }]
-    list $res $msg   
+    } error]
+    list $res $msg
 } {1 {invoked "continue" outside of a loop
     while executing
 "continue

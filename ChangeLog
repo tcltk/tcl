@@ -1,3 +1,10 @@
+2002-05-07  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* tests/basic.test: Fix for [Bug 549607]
+	* tests/encoding.test: Fix for [Bug 549610]
+	These are testsuite bugs that caused failures when the filename
+	contained spaces. Report & fix by Kevin Kenny.
+
 2002-05-02  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* generic/tclFileName.c: fix to freeing a bad object 
