@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWin32Dll.c,v 1.4 1998/09/14 18:40:19 stanton Exp $
+ * RCS: @(#) $Id: tclWin32Dll.c,v 1.5 1999/03/10 05:52:53 stanton Exp $
  */
 
 #include "tclWinInt.h"
@@ -373,6 +373,41 @@ HINSTANCE
 TclWinGetTclInstance()
 {
     return tclInstance;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpCheckStackSpace --
+ *
+ *	Detect if we are about to blow the stack.  Called before an 
+ *	evaluation can happen when nesting depth is checked.
+ *
+ * Results:
+ *	1 if there is enough stack space to continue; 0 if not.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclpCheckStackSpace()
+{
+    /*
+     * We can recurse only if there is at least TCL_WIN_STACK_THRESHOLD
+     * bytes of stack space left.  alloca() is cheap on windows; basically
+     * it just subtracts from the stack pointer causing the OS to throw an
+     * exception if the stack pointer is set below the bottom of the stack.
+     */
+
+    try {
+	alloca(TCL_WIN_STACK_THRESHOLD);
+	return 1;
+    } except (1) {}
+
+    return 0;
 }
 
 /*

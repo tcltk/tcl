@@ -1,3 +1,106 @@
+1999-03-09    <stanton@GASPODE>
+
+	* Regenerated stub interfaces.
+	
+	* tools/genStubs.tcl: Reorganized code to support mixed generic
+	and platform specific tables. 
+
+	* generic/tclInt.decls: Removed TclCompile*Cmd routines from the
+	table.
+
+	* generic/tcl.decls: Moved old Unix fd handler routines into
+	generic table and modified stubs ordering to match the plus patch.
+
+	* win/tclWinChan.c (FileSeekProc): Fixed bug where errors during
+	seeking were not getting propagated.
+
+1999-03-08    <stanton@GASPODE>
+
+	* generic/tclDecls.h:
+	* generic/tclStubs.c:
+	* generic/tclStubInit.c:
+	* generic/tcl.decls: Removed Tcl_InitMemory().
+
+	* generic/tcl.h: Changed TCL_STUB_MAGIC to break binary
+	compatibility with plus patch version, since the tables don't
+	match. 
+
+1999-03-08    <stanton@GASPODE>
+
+	* win/tclWinInt.h:
+	* generic/tclInt.h:
+	* generic/tclIntDecls.h:
+	* generic/tclIntPlatDecls.h:
+	* generic/tclIntPlatStubs.c:
+	* generic/tclIntStubs.c:
+	* generic/tclStubInit.c:
+	* generic/tclInt.decls: Removed initialization and finalization
+	routines from the stub table since these should never be called by
+	an extension.
+
+1999-03-06    <stanton@GASPODE>
+
+	* unix/Makefile.in: 
+	* generic/tcl.decls:
+	* generic/tclCompile.h: 
+	* generic/tclCompileDecls.h: 
+	* generic/tclCompileStubs.c: 
+	* generic/tclDecls.h: 
+	* generic/tclInt.decls: 
+	* generic/tclInt.h: 
+	* generic/tclStubInit.c: Removed tclCompile.h functions.  Moved
+	TclGetAuxDataType to tclInt.h so it is available for use by
+	the TclPro Byte Compiler loader.
+
+1999-03-05    <stanton@GASPODE>
+
+	* unix/configure.in: Applied patch from Jan Nijtmans to fix the
+	following problems: 
+	    - There seems to be a HP-UX-11 already, which behaves
+	      identical to HP-UX-10.
+	    - For 64-bit IRIX, SHLIB_LD_LIBS should be set to
+	      '${LIBS}'. This also has the side-effect that SHLIB_LD
+	      doesn't need the -rpath option any more: it is already part
+	      of ${LIBS}
+	    - Fix Linux to use the -rpath option.
+	    - On Solaris, LD_SEARCH_FLAGS can only be used with the
+	      linker, not with the compiler, because the "-Wl," part is
+	      missing.
+	    - The TCL_LD_SEARCH_FLAGS should be used in static executables
+	      as well as dynamically linked ones. Otherwise, static
+	      executables have a different search strategy for dynamically
+	      loadable stub-enabled extensions than executables using
+	      shared libraries.  This effects extensions which load other
+	      libraries in turn.
+
+	* generic/tclCompile.h:
+	* generic/tclStubInit.c:
+	* generic/tclCompileDecls.h:
+	* generic/tclCompileStubs.c:
+	* generic/tclInt.decls: Added functions from tclCompile.h into a
+	new tclCompile interface.
+
+	* generic/tclStubs.c:
+	* generic/tclDecls.h:
+	* generic/tcl.decls: Added Tcl_InitMemory.
+
+	* generic/tclStubLib.c: Changed to define USE_TCL_STUBS and
+	USE_TCL_STUB_PROCS automatically.
+
+	* unix/Makefile.in: Changes to get stubs mechanism working.
+
+	* generic/tclGetDate.y: Updated to reflect tclDate.c changes.
+	
+	* tools/genStubs.tcl: 
+	* generic/tclProc.c:
+	* generic/tclStubInit.c: 
+	* generic/tclTest.c:
+	* unix/tclUnixFile.c:
+	* unix/tclUnixPort.h: lint 
+
+	* win/makefile.vc: 
+	* generic/tclAlloc.c: Changed USE_NATIVEMALLOC to USE_NATIVE_MALLOC.
+
 1999-03-03    <stanton@GASPODE>
 
 	* unix/tclUnixTime.c: Added TclpGetDate and TclStrftime.

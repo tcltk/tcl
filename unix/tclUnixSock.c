@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixSock.c,v 1.2 1998/09/14 18:40:17 stanton Exp $
+ * RCS: @(#) $Id: tclUnixSock.c,v 1.3 1999/03/10 05:52:52 stanton Exp $
  */
 
 #include "tcl.h"
@@ -97,4 +97,27 @@ Tcl_GetHostName()
 
     hostname[0] = 0;
     return hostname;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclHasSockets --
+ *
+ *	Detect if sockets are available on this platform.
+ *
+ * Results:
+ *	Returns TCL_OK.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclHasSockets(interp)
+    Tcl_Interp *interp;		/* Not used. */
+{
+    return TCL_OK;
 }

@@ -3,13 +3,14 @@
 #	This file contains the declarations for all unsupported
 #	functions that are exported by the Tcl library.  This file
 #	is used to generate the tclIntDecls.h, tclIntPlatDecls.h,
-#	tclIntStub.c, and tclPlatStub.c files.
+#	tclIntStub.c, tclPlatStub.c, tclCompileDecls.h and tclCompileStub.c
+#	files
 #
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.2 1999/03/04 01:01:58 stanton Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.3 1999/03/10 05:52:48 stanton Exp $
 
 library tcl
 
@@ -98,457 +99,401 @@ declare 21 generic {
     int TclFileRenameCmd(Tcl_Interp *interp, int argc, char **argv)
 }
 declare 22 generic {
-    void TclFinalizeCompExecEnv(void)
-}
-declare 23 generic {
-    void TclFinalizeEnvironment(void)
-}
-declare 24 generic {
-    void TclFinalizeExecEnv(void)
-}
-declare 25 generic {
     int TclFindElement(Tcl_Interp *interp, char *list, int listLength, \
 	    char **elementPtr, char **nextPtr, int *sizePtr, int *bracePtr)
 }
-declare 26 generic {
+declare 23 generic {
     Proc * TclFindProc(Interp *iPtr, char *procName)
 }
-declare 27 generic {
+declare 24 generic {
     int TclFormatInt(char *buffer, long n)
 }
-declare 28 generic {
+declare 25 generic {
     void TclFreePackageInfo(Interp *iPtr)
 }
-declare 29 generic {
+declare 26 generic {
     char * TclGetCwd(Tcl_Interp *interp)
 }
-declare 30 generic {
+declare 27 generic {
     int TclGetDate(char *p, unsigned long now, long zone, \
 	    unsigned long *timePtr)
 }
-declare 31 generic {
+declare 28 generic {
     Tcl_Channel TclGetDefaultStdChannel(int type)
 }
-declare 32 generic {
+declare 29 generic {
     Tcl_Obj * TclGetElementOfIndexedArray(Tcl_Interp *interp, \
 	    int localIndex, Tcl_Obj *elemPtr, int leaveErrorMsg)
 }
-declare 33 generic {
+declare 30 generic {
     char * TclGetEnv(CONST char *name)
 }
-declare 34 generic {
+declare 31 generic {
     char * TclGetExtension(char *name)
 }
-declare 35 generic {
+declare 32 generic {
     int TclGetFrame(Tcl_Interp *interp, char *string, CallFrame **framePtrPtr)
 }
-declare 36 generic {
+declare 33 generic {
     TclCmdProcType TclGetInterpProc(void)
 }
-declare 37 generic {
+declare 34 generic {
     int TclGetIntForIndex(Tcl_Interp *interp, Tcl_Obj *objPtr, \
 	    int endValue, int *indexPtr)
 }
-declare 38 generic {
+declare 35 generic {
     Tcl_Obj * TclGetIndexedScalar(Tcl_Interp *interp, int localIndex, \
 	    int leaveErrorMsg)
 }
-declare 39 generic {
+declare 36 generic {
     int TclGetLong(Tcl_Interp *interp, char *string, long *longPtr)
 }
-declare 40 generic {
+declare 37 generic {
     int TclGetLoadedPackages(Tcl_Interp *interp, char *targetName)
 }
-declare 41 generic {
+declare 38 generic {
     int TclGetNamespaceForQualName(Tcl_Interp *interp, char *qualName, \
 	    Namespace *cxtNsPtr, int flags, Namespace **nsPtrPtr, \
 	    Namespace **altNsPtrPtr, Namespace **actualCxtPtrPtr, \
 	    char **simpleNamePtr)
 }
-declare 42 generic {
+declare 39 generic {
     TclObjCmdProcType TclGetObjInterpProc(void)
 }
-declare 43 generic {
+declare 40 generic {
     int TclGetOpenMode(Tcl_Interp *interp, char *string, int *seekFlagPtr)
 }
-declare 44 generic {
+declare 41 generic {
     Tcl_Command TclGetOriginalCommand(Tcl_Command command)
 }
-declare 45 generic {
+declare 42 generic {
     char * TclGetUserHome(char *name, Tcl_DString *bufferPtr)
 }
-declare 46 generic {
+declare 43 generic {
     int TclGlobalInvoke(Tcl_Interp *interp, int argc, char **argv, int flags)
 }
-declare 47 generic {
+declare 44 generic {
     int TclGuessPackageName(char *fileName, Tcl_DString *bufPtr)
 }
-declare 48 generic {
+declare 45 generic {
     int TclHideUnsafeCommands(Tcl_Interp *interp)
 }
-declare 49 generic {
+declare 46 generic {
     int TclInExit(void)
 }
-declare 50 generic {
+declare 47 generic {
     Tcl_Obj * TclIncrElementOfIndexedArray(Tcl_Interp *interp, \
 	    int localIndex, Tcl_Obj *elemPtr, long incrAmount)
 }
-declare 51 generic {
+declare 48 generic {
     Tcl_Obj * TclIncrIndexedScalar(Tcl_Interp *interp, int localIndex, \
 	    long incrAmount)
 }
-declare 52 generic {
+declare 49 generic {
     Tcl_Obj * TclIncrVar2(Tcl_Interp *interp, Tcl_Obj *part1Ptr, \
 	    Tcl_Obj *part2Ptr, long incrAmount, int part1NotParsed)
 }
-declare 53 generic {
+declare 50 generic {
     void TclInitCompiledLocals(Tcl_Interp *interp, CallFrame *framePtr, \
 	    Namespace *nsPtr)
 }
-declare 54 generic {
-    void TclInitNamespaces(void)
-}
-declare 55 generic {
+declare 51 generic {
     int TclInterpInit(Tcl_Interp *interp)
 }
-declare 56 generic {
+declare 52 generic {
     int TclInvoke(Tcl_Interp *interp, int argc, char **argv, int flags)
 }
-declare 57 generic {
+declare 53 generic {
     int TclInvokeObjectCommand(ClientData clientData, Tcl_Interp *interp, \
 	    int argc, char **argv)
 }
-declare 58 generic {
+declare 54 generic {
     int TclInvokeStringCommand(ClientData clientData, Tcl_Interp *interp, \
 	    int objc, Tcl_Obj *CONST objv[])
 }
-declare 59 generic {
+declare 55 generic {
     Proc * TclIsProc(Command *cmdPtr)
 }
-declare 60 generic {
+declare 56 generic {
     int TclLoadFile(Tcl_Interp *interp, char *fileName, char *sym1, \
 	    char *sym2, Tcl_PackageInitProc **proc1Ptr, \
 	    Tcl_PackageInitProc **proc2Ptr)
 }
-declare 61 generic {
+declare 57 generic {
     int TclLooksLikeInt(char *p)
 }
-declare 62 generic {
+declare 58 generic {
     Var * TclLookupVar(Tcl_Interp *interp, char *part1, char *part2, \
 	    int flags, char *msg, int createPart1, int createPart2, \
 	    Var **arrayPtrPtr)
 }
-declare 63 generic {
+declare 59 generic {
     int TclMatchFiles(Tcl_Interp *interp, char *separators, \
 	    Tcl_DString *dirPtr, char *pattern, char *tail)
 }
-declare 64 generic {
+declare 60 generic {
     int TclNeedSpace(char *start, char *end)
 }
-declare 65 generic {
+declare 61 generic {
     Tcl_Obj * TclNewProcBodyObj(Proc *procPtr)
 }
-declare 66 generic {
+declare 62 generic {
     int TclObjCommandComplete(Tcl_Obj *cmdPtr)
 }
-declare 67 generic {
+declare 63 generic {
     int TclObjInterpProc(ClientData clientData, Tcl_Interp *interp, \
 	    int objc, Tcl_Obj *CONST objv[])
 }
-declare 68 generic {
+declare 64 generic {
     int TclObjInvoke(Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[], \
 	    int flags)
 }
-declare 69 generic {
+declare 65 generic {
     int TclObjInvokeGlobal(Tcl_Interp *interp, int objc, \
 	    Tcl_Obj *CONST objv[], int flags)
 }
-declare 70 generic {
+declare 66 generic {
     int TclOpenFileChannelDeleteProc(TclOpenFileChannelProc_ *proc)
 }
-declare 71 generic {
+declare 67 generic {
     int TclOpenFileChannelInsertProc(TclOpenFileChannelProc_ *proc)
 }
-declare 72 generic {
+declare 68 generic {
     int TclpAccess(CONST char *path, int mode)
 }
-declare 73 generic {
+declare 69 generic {
     char * TclpAlloc(unsigned int size)
 }
-declare 74 generic {
+declare 70 generic {
     int TclpCopyFile(char *source, char *dest)
 }
-declare 75 generic {
+declare 71 generic {
     int TclpCopyDirectory(char *source, char *dest, Tcl_DString *errorPtr)
 }
-declare 76 generic {
+declare 72 generic {
     int TclpCreateDirectory(char *path)
 }
-declare 77 generic {
+declare 73 generic {
     int TclpDeleteFile(char *path)
 }
-declare 78 generic {
+declare 74 generic {
     void TclpFree(char *ptr)
 }
-declare 79 generic {
+declare 75 generic {
     unsigned long TclpGetClicks(void)
 }
-declare 80 generic {
+declare 76 generic {
     unsigned long TclpGetSeconds(void)
 }
-declare 81 generic {
+declare 77 generic {
     void TclpGetTime(Tcl_Time *time)
 }
-declare 82 generic {
+declare 78 generic {
     int TclpGetTimeZone(unsigned long time)
 }
-declare 83 generic {
+declare 79 generic {
     int TclpListVolumes(Tcl_Interp *interp)
 }
-declare 84 generic {
+declare 80 generic {
     Tcl_Channel TclpOpenFileChannel(Tcl_Interp *interp, char *fileName, \
 	    char *modeString, int permissions)
 }
-declare 85 generic {
+declare 81 generic {
     char * TclpRealloc(char *ptr, unsigned int size)
 }
-declare 86 generic {
+declare 82 generic {
     int TclpRemoveDirectory(char *path, int recursive, Tcl_DString *errorPtr)
 }
-declare 87 generic {
+declare 83 generic {
     int TclpRenameFile(char *source, char *dest)
 }
-declare 88 generic {
+declare 84 generic {
     int TclParseBraces(Tcl_Interp *interp, char *string, char **termPtr, \
 	    ParseValue *pvPtr)
 }
-declare 89 generic {
+declare 85 generic {
     int TclParseNestedCmd(Tcl_Interp *interp, char *string, int flags, \
 	    char **termPtr, ParseValue *pvPtr)
 }
-declare 90 generic {
+declare 86 generic {
     int TclParseQuotes(Tcl_Interp *interp, char *string, int termChar, \
 	    int flags, char **termPtr, ParseValue *pvPtr)
 }
-declare 91 generic {
+declare 87 generic {
     void TclPlatformInit(Tcl_Interp *interp)
 }
-declare 92 generic {
+declare 88 generic {
     char * TclPrecTraceProc(ClientData clientData, Tcl_Interp *interp, \
 	    char *name1, char *name2, int flags)
 }
-declare 93 generic {
+declare 89 generic {
     int TclPreventAliasLoop(Tcl_Interp *interp, Tcl_Interp *cmdInterp, \
 	    Tcl_Command cmd)
 }
-declare 94 generic {
+declare 90 generic {
     void TclPrintByteCodeObj(Tcl_Interp *interp, Tcl_Obj *objPtr)
 }
-declare 95 generic {
+declare 91 generic {
     void TclProcCleanupProc(Proc *procPtr)
 }
-declare 96 generic {
+declare 92 generic {
     int TclProcCompileProc(Tcl_Interp *interp, Proc *procPtr, \
 	    Tcl_Obj *bodyPtr, Namespace *nsPtr, CONST char *description, \
 	    CONST char *procName)
 }
-declare 97 generic {
+declare 93 generic {
     void TclProcDeleteProc(ClientData clientData)
 }
-declare 98 generic {
+declare 94 generic {
     int TclProcInterpProc(ClientData clientData, Tcl_Interp *interp, \
 	    int argc, char **argv)
 }
-declare 99 generic {
+declare 95 generic {
     int TclpStat(CONST char *path, struct stat *buf)
 }
-declare 100 generic {
+declare 96 generic {
     int TclRenameCommand(Tcl_Interp *interp, char *oldName, char *newName)
 }
-declare 101 generic {
+declare 97 generic {
     void TclResetShadowedCmdRefs(Tcl_Interp *interp, Command *newCmdPtr)
 }
-declare 102 generic {
+declare 98 generic {
     int TclServiceIdle(void)
 }
-declare 103 generic {
+declare 99 generic {
     Tcl_Obj * TclSetElementOfIndexedArray(Tcl_Interp *interp, \
 	    int localIndex, Tcl_Obj *elemPtr, Tcl_Obj *objPtr, int leaveErrorMsg)
 }
-declare 104 generic {
+declare 100 generic {
     Tcl_Obj * TclSetIndexedScalar(Tcl_Interp *interp, int localIndex, \
 	    Tcl_Obj *objPtr, int leaveErrorMsg)
 }
-declare 105 generic {
+declare 101 generic {
     char * TclSetPreInitScript(char *string)
 }
-declare 106 generic {
+declare 102 generic {
     void TclSetupEnv(Tcl_Interp *interp)
 }
-declare 107 generic {
+declare 103 generic {
     int TclSockGetPort(Tcl_Interp *interp, char *string, char *proto, \
 	    int *portPtr)
 }
-declare 108 generic {
+declare 104 generic {
     int TclSockMinimumBuffers(int sock, int size)
 }
-declare 109 generic {
+declare 105 generic {
     int TclStat(CONST char *path, TclStat_ *buf)
 }
-declare 110 generic {
+declare 106 generic {
     int TclStatDeleteProc(TclStatProc_ *proc)
 }
-declare 111 generic {
+declare 107 generic {
     int TclStatInsertProc(TclStatProc_ *proc)
 }
-declare 112 generic {
+declare 108 generic {
     void TclTeardownNamespace(Namespace *nsPtr)
 }
-declare 113 generic {
+declare 109 generic {
     int TclUpdateReturnInfo(Interp *iPtr)
 }
-declare 114 generic {
+declare 110 generic {
     char * TclWordEnd(char *start, char *lastChar, int nested, int *semiPtr)
 }
 
 # Procedures used in conjunction with Tcl namespaces. They are
 # defined here instead of in tcl.decls since they are not stable yet.
 
-declare 115 generic {
+declare 111 generic {
     void Tcl_AddInterpResolvers(Tcl_Interp *interp, char *name, \
 	    Tcl_ResolveCmdProc *cmdProc, Tcl_ResolveVarProc *varProc, \
 	    Tcl_ResolveCompiledVarProc *compiledVarProc)
 }
-declare 116 generic {
+declare 112 generic {
     int Tcl_AppendExportList(Tcl_Interp *interp, Tcl_Namespace *nsPtr, \
 	    Tcl_Obj *objPtr)
 }
-declare 117 generic {
+declare 113 generic {
     Tcl_Namespace * Tcl_CreateNamespace(Tcl_Interp *interp, char *name, \
 	    ClientData clientData, Tcl_NamespaceDeleteProc *deleteProc)
 }
-declare 118 generic {
+declare 114 generic {
     void Tcl_DeleteNamespace(Tcl_Namespace *nsPtr)
 }
-declare 119 generic {
+declare 115 generic {
     int Tcl_Export(Tcl_Interp *interp, Tcl_Namespace *nsPtr, char *pattern, \
 	    int resetListFirst)
 }
-declare 120 generic {
+declare 116 generic {
     Tcl_Command Tcl_FindCommand(Tcl_Interp *interp, char *name, \
 	    Tcl_Namespace *contextNsPtr, int flags)
 }
-declare 121 generic {
+declare 117 generic {
     Tcl_Namespace * Tcl_FindNamespace(Tcl_Interp *interp, char *name, \
 	    Tcl_Namespace *contextNsPtr, int flags)
 }
-declare 122 generic {
+declare 118 generic {
     int Tcl_GetInterpResolvers(Tcl_Interp *interp, char *name, \
 	    Tcl_ResolverInfo *resInfo)
 }
-declare 123 generic {
+declare 119 generic {
     int Tcl_GetNamespaceResolvers(Tcl_Namespace *namespacePtr, \
 	    Tcl_ResolverInfo *resInfo)
 }
-declare 124 generic {
+declare 120 generic {
     Tcl_Var Tcl_FindNamespaceVar(Tcl_Interp *interp, char *name, \
 	    Tcl_Namespace *contextNsPtr, int flags)
 }
-declare 125 generic {
+declare 121 generic {
     int Tcl_ForgetImport(Tcl_Interp *interp, Tcl_Namespace *nsPtr, \
 	    char *pattern)
 }
-declare 126 generic {
+declare 122 generic {
     Tcl_Command Tcl_GetCommandFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr)
 }
-declare 127 generic {
+declare 123 generic {
     void Tcl_GetCommandFullName(Tcl_Interp *interp, Tcl_Command command, \
 	    Tcl_Obj *objPtr)
 }
-declare 128 generic {
+declare 124 generic {
     Tcl_Namespace * Tcl_GetCurrentNamespace(Tcl_Interp *interp)
 }
-declare 129 generic {
+declare 125 generic {
     Tcl_Namespace * Tcl_GetGlobalNamespace(Tcl_Interp *interp)
 }
-declare 130 generic {
+declare 126 generic {
     void Tcl_GetVariableFullName(Tcl_Interp *interp, Tcl_Var variable, \
 	    Tcl_Obj *objPtr)
 }
-declare 131 generic {
+declare 127 generic {
     int Tcl_Import(Tcl_Interp *interp, Tcl_Namespace *nsPtr, \
 	    char *pattern, int allowOverwrite)
 }
-declare 132 generic {
+declare 128 generic {
     void Tcl_PopCallFrame(Tcl_Interp* interp)
 }
-declare 133 generic {
+declare 129 generic {
     int Tcl_PushCallFrame(Tcl_Interp* interp, Tcl_CallFrame *framePtr, \
 	    Tcl_Namespace *nsPtr, int isProcCallFrame)
 } 
-declare 134 generic {
+declare 130 generic {
     int Tcl_RemoveInterpResolvers(Tcl_Interp *interp, char *name)
 }
-declare 135 generic {
+declare 131 generic {
     void Tcl_SetNamespaceResolvers(Tcl_Namespace *namespacePtr, \
 	    Tcl_ResolveCmdProc *cmdProc, Tcl_ResolveVarProc *varProc, \
 	    Tcl_ResolveCompiledVarProc *compiledVarProc)
 }
-
-# Compilation procedures for commands in the generic core:
-
-declare 136 generic {
-    int	TclCompileBreakCmd(Tcl_Interp *interp, char *string, char *lastChar, \
-	    int compileFlags, struct CompileEnv *compileEnvPtr)
-}
-declare 137 generic {
-    int	TclCompileCatchCmd(Tcl_Interp *interp, char *string, char *lastChar, \
-	    int compileFlags, struct CompileEnv *compileEnvPtr)
-}
-declare 138 generic {
-    int	TclCompileContinueCmd(Tcl_Interp *interp, char *string, \
-	    char *lastChar, int compileFlags, struct CompileEnv *compileEnvPtr)
-}
-declare 139 generic {
-    int	TclCompileExprCmd(Tcl_Interp *interp, char *string, char *lastChar, \
-	    int compileFlags, struct CompileEnv *compileEnvPtr)
-}
-declare 140 generic {
-    int	TclCompileForCmd(Tcl_Interp *interp, char *string, char *lastChar, \
-	    int compileFlags, struct CompileEnv *compileEnvPtr)
-}
-declare 141 generic {
-    int	TclCompileForeachCmd(Tcl_Interp *interp, char *string, \
-	    char *lastChar, int compileFlags, struct CompileEnv *compileEnvPtr)
-}
-declare 142 generic {
-    int	TclCompileIfCmd(Tcl_Interp *interp, char *string, char *lastChar, \
-	    int compileFlags, struct CompileEnv *compileEnvPtr)
-}
-declare 143 generic {
-    int	TclCompileIncrCmd(Tcl_Interp *interp, char *string, char *lastChar, \
-	    int compileFlags, struct CompileEnv *compileEnvPtr)
-}
-declare 144 generic {
-    int	TclCompileSetCmd(Tcl_Interp *interp, char *string, char *lastChar, \
-	    int compileFlags, struct CompileEnv *compileEnvPtr)
-}
-declare 145 generic {
-    int	TclCompileWhileCmd(Tcl_Interp *interp, char *string, char *lastChar, \
-	    int compileFlags, struct CompileEnv *compileEnvPtr)
-}
-
-declare 146 generic {
+declare 132 generic {
     int TclHasSockets(Tcl_Interp *interp)
 }
-declare 147 generic {
+declare 133 generic {
     struct tm *	TclpGetDate(TclpTime_t time, int useGMT)
 }
-declare 148 generic {
+declare 134 generic {
     size_t TclStrftime(char *s, size_t maxsize, const char *format, \
 	    const struct tm *t)
 }
-declare 149 generic {
+declare 135 generic {
     int TclpCheckStackSpace(void)
 }
 
@@ -697,49 +642,43 @@ declare 8 win {
     unsigned long TclpGetPid(Tcl_Pid pid)
 }
 declare 9 win {
-    void TclpFinalize(void)
-}
-declare 10 win {
     int TclWinGetPlatformId(void)
 }
-declare 11 win {
-    void TclWinInit(HINSTANCE hInst)
-}
-declare 12 win {
+declare 10 win {
     int TclWinSynchSpawn(void *args, int type, void **trans, Tcl_Pid *pidPtr)
 }
 
 # Pipe channel functions
 
-declare 13 win {
+declare 11 win {
     void TclGetAndDetachPids(Tcl_Interp *interp, Tcl_Channel chan)
 }
-declare 14 win {
+declare 12 win {
     int TclpCloseFile(TclFile file)
 }
-declare 15 win {
+declare 13 win {
     Tcl_Channel TclpCreateCommandChannel(TclFile readFile, \
 	    TclFile writeFile, TclFile errorFile, int numPids, Tcl_Pid *pidPtr)
 }
-declare 16 win {
+declare 14 win {
     int TclpCreatePipe(TclFile *readPipe, TclFile *writePipe)
 }
-declare 17 win {
+declare 15 win {
     int TclpCreateProcess(Tcl_Interp *interp, int argc, char **argv, \
 	    TclFile inputFile, TclFile outputFile, TclFile errorFile, \
 	    Tcl_Pid *pidPtr)
 }
-declare 18 win {
+declare 16 win {
     TclFile TclpCreateTempFile(char *contents, 
     Tcl_DString *namePtr)
 }
-declare 19 win {
+declare 17 win {
     char * TclpGetTZName(void)
 }
-declare 20 win {
+declare 18 win {
     TclFile TclpMakeFile(Tcl_Channel channel, int direction)
 }
-declare 21 win {
+declare 19 win {
     TclFile TclpOpenFile(char *fname, int mode)
 }
 
@@ -779,4 +718,3 @@ declare 7 unix {
 declare 8 unix {
     int TclUnixWaitForFile(int fd, int mask, int timeout)
 }
-

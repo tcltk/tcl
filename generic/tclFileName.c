@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.4 1999/02/03 19:12:26 stanton Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.5 1999/03/10 05:52:48 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -1084,17 +1084,13 @@ DoTildeSubst(interp, user, resultPtr)
 	    return NULL;
 	}
 	Tcl_JoinPath(1, &dir, resultPtr);
-    } else {
-	
-	/* lint, TclGetuserHome() always NULL under windows. */
-	if (TclGetUserHome(user, resultPtr) == NULL) {	
-	    if (interp) {
-		Tcl_ResetResult(interp);
-		Tcl_AppendResult(interp, "user \"", user, "\" doesn't exist",
-			(char *) NULL);
-	    }
-	    return NULL;
+    } else if (TclGetUserHome(user, resultPtr) == NULL) {	
+	if (interp) {
+	    Tcl_ResetResult(interp);
+	    Tcl_AppendResult(interp, "user \"", user, "\" doesn't exist",
+		    (char *) NULL);
 	}
+	return NULL;
     }
     return resultPtr->string;
 }

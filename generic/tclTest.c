@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.8 1999/02/03 02:58:25 stanton Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.9 1999/03/10 05:52:50 stanton Exp $
  */
 
 #define TCL_TEST
@@ -2716,6 +2716,7 @@ NoopObjCmd(unused, interp, objc, objv)
  */
 
 	/* ARGSUSED */
+static int
 TestsetCmd(data, interp, argc, argv)
     ClientData data;			/* Additional flags for Get/SetVar2. */
     register Tcl_Interp *interp;	/* Current interpreter. */

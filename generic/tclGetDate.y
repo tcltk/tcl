@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclGetDate.y,v 1.2 1998/09/14 18:39:59 stanton Exp $
+ * RCS: @(#) $Id: tclGetDate.y,v 1.3 1999/03/10 05:52:48 stanton Exp $
  */
 
 %{
@@ -596,7 +596,7 @@ Convert(Month, Day, Year, Hours, Minutes, Seconds, Meridian, DSTmode, TimePtr)
         return -1;
     Julian += tod;
     if (DSTmode == DSTon
-     || (DSTmode == DSTmaybe && TclpGetDate(&Julian, 0)->tm_isdst))
+     || (DSTmode == DSTmaybe && TclpGetDate((TclpTime_t)&Julian, 0)->tm_isdst))
         Julian -= 60 * 60;
     *TimePtr = Julian;
     return 0;
@@ -611,8 +611,8 @@ DSTcorrect(Start, Future)
     time_t      StartDay;
     time_t      FutureDay;
 
-    StartDay = (TclpGetDate(&Start, 0)->tm_hour + 1) % 24;
-    FutureDay = (TclpGetDate(&Future, 0)->tm_hour + 1) % 24;
+    StartDay = (TclpGetDate((TclpTime_t)&Start, 0)->tm_hour + 1) % 24;
+    FutureDay = (TclpGetDate((TclpTime_t)&Future, 0)->tm_hour + 1) % 24;
     return (Future - Start) + (StartDay - FutureDay) * 60L * 60L;
 }
 
@@ -627,7 +627,7 @@ RelativeDate(Start, DayOrdinal, DayNumber)
     time_t      now;
 
     now = Start;
-    tm = TclpGetDate(&now, 0);
+    tm = TclpGetDate((TclpTime_t)&now, 0);
     now += SECSPERDAY * ((DayNumber - tm->tm_wday + 7) % 7);
     now += 7 * SECSPERDAY * (DayOrdinal <= 0 ? DayOrdinal : DayOrdinal - 1);
     return DSTcorrect(Start, now);
@@ -650,7 +650,7 @@ RelativeMonth(Start, RelMonth, TimePtr)
         *TimePtr = 0;
         return 0;
     }
-    tm = TclpGetDate(&Start, 0);
+    tm = TclpGetDate((TclpTime_t)&Start, 0);
     Month = 12 * (tm->tm_year + TM_YEAR_BASE) + tm->tm_mon + RelMonth;
     Year = Month / 12;
     Month = Month % 12 + 1;
@@ -881,7 +881,7 @@ TclGetDate(p, now, zone, timePtr)
     int thisyear;
 
     yyInput = p;
-    tm = TclpGetDate((time_t *) &now, 0);
+    tm = TclpGetDate((TclpTime_t) &now, 0);
     thisyear = tm->tm_year + TM_YEAR_BASE;
     yyYear = thisyear;
     yyMonth = tm->tm_mon + 1;

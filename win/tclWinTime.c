@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinTime.c,v 1.2 1998/09/14 18:40:20 stanton Exp $
+ * RCS: @(#) $Id: tclWinTime.c,v 1.3 1999/03/10 05:52:54 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -191,10 +191,12 @@ TclpGetTZName()
  */
 
 struct tm *
-TclpGetDate(tp, useGMT)
-    const time_t *tp;
+TclpGetDate(t, useGMT)
+    TclpTime_t t;
     int useGMT;
 {
+    const time_t *tp = (const time_t *) t;
+
     struct tm *tmPtr;
     long time;
 

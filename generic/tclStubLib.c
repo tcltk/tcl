@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubLib.c,v 1.2 1999/03/04 00:54:07 stanton Exp $
+ * RCS: @(#) $Id: tclStubLib.c,v 1.3 1999/03/10 05:52:50 stanton Exp $
  */
 
 /*
@@ -20,7 +20,10 @@
  * including the rest of the stub functions.
  */
 
-#undef TCL_NO_INLINES
+#ifndef USE_TCL_STUBS
+#define USE_TCL_STUBS
+#endif
+#undef USE_TCL_STUB_PROCS
 
 #include "tclInt.h"
 #include "tclPort.h"

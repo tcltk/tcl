@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.3 1998/10/05 22:32:09 escoffon Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.4 1999/03/10 05:52:49 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -129,6 +129,7 @@ InitTypeTable()
 
     Tcl_InitHashTable(&typeTable, TCL_STRING_KEYS);
     Tcl_RegisterObjType(&tclBooleanType);
+    Tcl_RegisterObjType(&tclByteArrayType);
     Tcl_RegisterObjType(&tclDoubleType);
     Tcl_RegisterObjType(&tclIntType);
     Tcl_RegisterObjType(&tclStringType);

@@ -7,7 +7,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclIntPlatStubs.c,v 1.2 1999/03/04 01:01:58 stanton Exp $
+ * RCS: @(#) $Id: tclIntPlatStubs.c,v 1.3 1999/03/10 05:52:49 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -25,208 +25,7 @@
  * Exported stub functions:
  */
 
-#ifdef __WIN32__
-/* Slot 0 */
-void
-TclWinConvertError(errCode)
-    DWORD errCode;
-{
-    (tclIntPlatStubsPtr->tclWinConvertError)(errCode);
-}
-
-/* Slot 1 */
-void
-TclWinConvertWSAError(errCode)
-    DWORD errCode;
-{
-    (tclIntPlatStubsPtr->tclWinConvertWSAError)(errCode);
-}
-
-/* Slot 2 */
-struct servent *
-TclWinGetServByName(nm, proto)
-    const char * nm;
-    const char * proto;
-{
-    return (tclIntPlatStubsPtr->tclWinGetServByName)(nm, proto);
-}
-
-/* Slot 3 */
-int
-TclWinGetSockOpt(s, level, optname, optval, optlen)
-    SOCKET s;
-    int level;
-    int optname;
-    char FAR * optval;
-    int FAR * optlen;
-{
-    return (tclIntPlatStubsPtr->tclWinGetSockOpt)(s, level, optname, optval, optlen);
-}
-
-/* Slot 4 */
-HINSTANCE
-TclWinGetTclInstance()
-{
-    return (tclIntPlatStubsPtr->tclWinGetTclInstance)();
-}
-
-/* Slot 5 */
-HINSTANCE
-TclWinLoadLibrary(name)
-    char * name;
-{
-    return (tclIntPlatStubsPtr->tclWinLoadLibrary)(name);
-}
-
-/* Slot 6 */
-u_short
-TclWinNToHS(ns)
-    u_short ns;
-{
-    return (tclIntPlatStubsPtr->tclWinNToHS)(ns);
-}
-
-/* Slot 7 */
-int
-TclWinSetSockOpt(s, level, optname, optval, optlen)
-    SOCKET s;
-    int level;
-    int optname;
-    const char FAR * optval;
-    int optlen;
-{
-    return (tclIntPlatStubsPtr->tclWinSetSockOpt)(s, level, optname, optval, optlen);
-}
-
-/* Slot 8 */
-unsigned long
-TclpGetPid(pid)
-    Tcl_Pid pid;
-{
-    return (tclIntPlatStubsPtr->tclpGetPid)(pid);
-}
-
-/* Slot 9 */
-void
-TclpFinalize()
-{
-    (tclIntPlatStubsPtr->tclpFinalize)();
-}
-
-/* Slot 10 */
-int
-TclWinGetPlatformId()
-{
-    return (tclIntPlatStubsPtr->tclWinGetPlatformId)();
-}
-
-/* Slot 11 */
-void
-TclWinInit(hInst)
-    HINSTANCE hInst;
-{
-    (tclIntPlatStubsPtr->tclWinInit)(hInst);
-}
-
-/* Slot 12 */
-int
-TclWinSynchSpawn(args, type, trans, pidPtr)
-    void * args;
-    int type;
-    void ** trans;
-    Tcl_Pid * pidPtr;
-{
-    return (tclIntPlatStubsPtr->tclWinSynchSpawn)(args, type, trans, pidPtr);
-}
-
-/* Slot 13 */
-void
-TclGetAndDetachPids(interp, chan)
-    Tcl_Interp * interp;
-    Tcl_Channel chan;
-{
-    (tclIntPlatStubsPtr->tclGetAndDetachPids)(interp, chan);
-}
-
-/* Slot 14 */
-int
-TclpCloseFile(file)
-    TclFile file;
-{
-    return (tclIntPlatStubsPtr->tclpCloseFile)(file);
-}
-
-/* Slot 15 */
-Tcl_Channel
-TclpCreateCommandChannel(readFile, writeFile, errorFile, numPids, pidPtr)
-    TclFile readFile;
-    TclFile writeFile;
-    TclFile errorFile;
-    int numPids;
-    Tcl_Pid * pidPtr;
-{
-    return (tclIntPlatStubsPtr->tclpCreateCommandChannel)(readFile, writeFile, errorFile, numPids, pidPtr);
-}
-
-/* Slot 16 */
-int
-TclpCreatePipe(readPipe, writePipe)
-    TclFile * readPipe;
-    TclFile * writePipe;
-{
-    return (tclIntPlatStubsPtr->tclpCreatePipe)(readPipe, writePipe);
-}
-
-/* Slot 17 */
-int
-TclpCreateProcess(interp, argc, argv, inputFile, outputFile, errorFile, pidPtr)
-    Tcl_Interp * interp;
-    int argc;
-    char ** argv;
-    TclFile inputFile;
-    TclFile outputFile;
-    TclFile errorFile;
-    Tcl_Pid * pidPtr;
-{
-    return (tclIntPlatStubsPtr->tclpCreateProcess)(interp, argc, argv, inputFile, outputFile, errorFile, pidPtr);
-}
-
-/* Slot 18 */
-TclFile
-TclpCreateTempFile(contents, namePtr)
-    char * contents;
-    Tcl_DString * namePtr;
-{
-    return (tclIntPlatStubsPtr->tclpCreateTempFile)(contents, namePtr);
-}
-
-/* Slot 19 */
-char *
-TclpGetTZName()
-{
-    return (tclIntPlatStubsPtr->tclpGetTZName)();
-}
-
-/* Slot 20 */
-TclFile
-TclpMakeFile(channel, direction)
-    Tcl_Channel channel;
-    int direction;
-{
-    return (tclIntPlatStubsPtr->tclpMakeFile)(channel, direction);
-}
-
-/* Slot 21 */
-TclFile
-TclpOpenFile(fname, mode)
-    char * fname;
-    int mode;
-{
-    return (tclIntPlatStubsPtr->tclpOpenFile)(fname, mode);
-}
-
-#endif /* __WIN32__ */
-#if !defined(__WIN32__) && !defined(MAC_TCL)
+#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
 /* Slot 0 */
 void
 TclGetAndDetachPids(interp, chan)
@@ -317,6 +116,192 @@ TclUnixWaitForFile(fd, mask, timeout)
 }
 
 #endif /* UNIX */
+#ifdef __WIN32__
+/* Slot 0 */
+void
+TclWinConvertError(errCode)
+    DWORD errCode;
+{
+    (tclIntPlatStubsPtr->tclWinConvertError)(errCode);
+}
+
+/* Slot 1 */
+void
+TclWinConvertWSAError(errCode)
+    DWORD errCode;
+{
+    (tclIntPlatStubsPtr->tclWinConvertWSAError)(errCode);
+}
+
+/* Slot 2 */
+struct servent *
+TclWinGetServByName(nm, proto)
+    const char * nm;
+    const char * proto;
+{
+    return (tclIntPlatStubsPtr->tclWinGetServByName)(nm, proto);
+}
+
+/* Slot 3 */
+int
+TclWinGetSockOpt(s, level, optname, optval, optlen)
+    SOCKET s;
+    int level;
+    int optname;
+    char FAR * optval;
+    int FAR * optlen;
+{
+    return (tclIntPlatStubsPtr->tclWinGetSockOpt)(s, level, optname, optval, optlen);
+}
+
+/* Slot 4 */
+HINSTANCE
+TclWinGetTclInstance()
+{
+    return (tclIntPlatStubsPtr->tclWinGetTclInstance)();
+}
+
+/* Slot 5 */
+HINSTANCE
+TclWinLoadLibrary(name)
+    char * name;
+{
+    return (tclIntPlatStubsPtr->tclWinLoadLibrary)(name);
+}
+
+/* Slot 6 */
+u_short
+TclWinNToHS(ns)
+    u_short ns;
+{
+    return (tclIntPlatStubsPtr->tclWinNToHS)(ns);
+}
+
+/* Slot 7 */
+int
+TclWinSetSockOpt(s, level, optname, optval, optlen)
+    SOCKET s;
+    int level;
+    int optname;
+    const char FAR * optval;
+    int optlen;
+{
+    return (tclIntPlatStubsPtr->tclWinSetSockOpt)(s, level, optname, optval, optlen);
+}
+
+/* Slot 8 */
+unsigned long
+TclpGetPid(pid)
+    Tcl_Pid pid;
+{
+    return (tclIntPlatStubsPtr->tclpGetPid)(pid);
+}
+
+/* Slot 9 */
+int
+TclWinGetPlatformId()
+{
+    return (tclIntPlatStubsPtr->tclWinGetPlatformId)();
+}
+
+/* Slot 10 */
+int
+TclWinSynchSpawn(args, type, trans, pidPtr)
+    void * args;
+    int type;
+    void ** trans;
+    Tcl_Pid * pidPtr;
+{
+    return (tclIntPlatStubsPtr->tclWinSynchSpawn)(args, type, trans, pidPtr);
+}
+
+/* Slot 11 */
+void
+TclGetAndDetachPids(interp, chan)
+    Tcl_Interp * interp;
+    Tcl_Channel chan;
+{
+    (tclIntPlatStubsPtr->tclGetAndDetachPids)(interp, chan);
+}
+
+/* Slot 12 */
+int
+TclpCloseFile(file)
+    TclFile file;
+{
+    return (tclIntPlatStubsPtr->tclpCloseFile)(file);
+}
+
+/* Slot 13 */
+Tcl_Channel
+TclpCreateCommandChannel(readFile, writeFile, errorFile, numPids, pidPtr)
+    TclFile readFile;
+    TclFile writeFile;
+    TclFile errorFile;
+    int numPids;
+    Tcl_Pid * pidPtr;
+{
+    return (tclIntPlatStubsPtr->tclpCreateCommandChannel)(readFile, writeFile, errorFile, numPids, pidPtr);
+}
+
+/* Slot 14 */
+int
+TclpCreatePipe(readPipe, writePipe)
+    TclFile * readPipe;
+    TclFile * writePipe;
+{
+    return (tclIntPlatStubsPtr->tclpCreatePipe)(readPipe, writePipe);
+}
+
+/* Slot 15 */
+int
+TclpCreateProcess(interp, argc, argv, inputFile, outputFile, errorFile, pidPtr)
+    Tcl_Interp * interp;
+    int argc;
+    char ** argv;
+    TclFile inputFile;
+    TclFile outputFile;
+    TclFile errorFile;
+    Tcl_Pid * pidPtr;
+{
+    return (tclIntPlatStubsPtr->tclpCreateProcess)(interp, argc, argv, inputFile, outputFile, errorFile, pidPtr);
+}
+
+/* Slot 16 */
+TclFile
+TclpCreateTempFile(contents, namePtr)
+    char * contents;
+    Tcl_DString * namePtr;
+{
+    return (tclIntPlatStubsPtr->tclpCreateTempFile)(contents, namePtr);
+}
+
+/* Slot 17 */
+char *
+TclpGetTZName()
+{
+    return (tclIntPlatStubsPtr->tclpGetTZName)();
+}
+
+/* Slot 18 */
+TclFile
+TclpMakeFile(channel, direction)
+    Tcl_Channel channel;
+    int direction;
+{
+    return (tclIntPlatStubsPtr->tclpMakeFile)(channel, direction);
+}
+
+/* Slot 19 */
+TclFile
+TclpOpenFile(fname, mode)
+    char * fname;
+    int mode;
+{
+    return (tclIntPlatStubsPtr->tclpOpenFile)(fname, mode);
+}
+
+#endif /* __WIN32__ */
 #ifdef MAC_TCL
 /* Slot 0 */
 VOID *

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacFile.c,v 1.4 1998/09/14 18:40:05 stanton Exp $
+ * RCS: @(#) $Id: tclMacFile.c,v 1.5 1999/03/10 05:52:51 stanton Exp $
  */
 
 /*

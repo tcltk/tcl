@@ -7,7 +7,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclPlatStubs.c,v 1.2 1999/03/04 01:01:59 stanton Exp $
+ * RCS: @(#) $Id: tclPlatStubs.c,v 1.3 1999/03/10 05:52:49 stanton Exp $
  */
 
 #include "tcl.h"
@@ -24,39 +24,6 @@
  * Exported stub functions:
  */
 
-#if !defined(__WIN32__) && !defined(MAC_TCL)
-/* Slot 0 */
-void
-Tcl_CreateFileHandler(fd, mask, proc, clientData)
-    int fd;
-    int mask;
-    Tcl_FileProc * proc;
-    ClientData clientData;
-{
-    (tclPlatStubsPtr->tcl_CreateFileHandler)(fd, mask, proc, clientData);
-}
-
-/* Slot 1 */
-void
-Tcl_DeleteFileHandler(fd)
-    int fd;
-{
-    (tclPlatStubsPtr->tcl_DeleteFileHandler)(fd);
-}
-
-/* Slot 2 */
-int
-Tcl_GetOpenFile(interp, string, write, checkUsage, filePtr)
-    Tcl_Interp * interp;
-    char * string;
-    int write;
-    int checkUsage;
-    ClientData * filePtr;
-{
-    return (tclPlatStubsPtr->tcl_GetOpenFile)(interp, string, write, checkUsage, filePtr);
-}
-
-#endif /* UNIX */
 #ifdef MAC_TCL
 /* Slot 0 */
 void

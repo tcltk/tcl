@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclClock.c,v 1.2 1998/09/14 18:39:57 stanton Exp $
+ * RCS: @(#) $Id: tclClock.c,v 1.3 1999/03/10 05:52:47 stanton Exp $
  */
 
 #include "tcl.h"
@@ -263,7 +263,7 @@ FormatClock(interp, clockVal, useGMT, format)
     }
 #endif
 
-    timeDataPtr = TclpGetDate((time_t *) &clockVal, useGMT);
+    timeDataPtr = TclpGetDate((TclpTime_t) &clockVal, useGMT);
     
     /*
      * Make a guess at the upper limit on the substituted string size

@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: genStubs.tcl,v 1.1 1999/03/03 00:38:45 stanton Exp $
+# RCS: @(#) $Id: genStubs.tcl,v 1.2 1999/03/10 05:52:51 stanton Exp $
 
 namespace eval genStubs {
     # libraryName --
@@ -214,7 +214,7 @@ proc genStubs::addPlatformGuard {plat text} {
 	    return "#ifdef __WIN32__\n${text}#endif /* __WIN32__ */\n"
 	}
 	unix {
-	    return "#if !defined(__WIN32__) && !defined(MAC_TCL)\n${text}#endif /* UNIX */\n"
+	    return "#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */\n${text}#endif /* UNIX */\n"
 	}		    
 	mac {
 	    return "#ifdef MAC_TCL\n${text}#endif /* MAC_TCL */\n"
@@ -226,8 +226,8 @@ proc genStubs::addPlatformGuard {plat text} {
 # genStubs::emitSlots --
 #
 #	Generate the stub table slots for the given interface.  If there
-#	are no platform specific slots, then one table is generated for
-#	all platforms, otherwise one table is generated for each platform.
+#	are no generic slots, then one table is generated for each
+#	platform, otherwise one table is generated for all platforms.
 #
 # Arguments:
 #	name	The name of the interface being emitted.
@@ -240,43 +240,7 @@ proc genStubs::emitSlots {name textVar} {
     variable stubs
     upvar $textVar text
 
-    set lastNum -1
-    if {[info exists stubs($name,generic,lastNum)]} {
-	set lastNum $stubs($name,generic,lastNum)
-    }
-    set output 0
-    foreach plat {win unix mac} {
-	if {[info exists stubs($name,$plat,lastNum)]} {
-	    set num $stubs($name,$plat,lastNum)
-	    if {$num < $lastNum} {
-		set num $lastNum
-	    }
-	    set temp ""
-	    for {set i 0} {$i <= $num} {incr i} {
-		if {[info exists stubs($name,$plat,$i)]} {
-		    if {[info exists stubs($name,generic,$i)]} {
-			puts stderr "platform entry duplicates generic entry: $i"
-		    }
-		    append temp [makeSlot $stubs($name,$plat,$i) $i]
-		} elseif {[info exists stubs($name,generic,$i)]} {
-		    append temp [makeSlot $stubs($name,generic,$i) $i]
-		} else {
-		    append temp "    void *reserved$i;\n"
-		}
-	    }
-	    append text [addPlatformGuard $plat $temp]
-	    set output 1
-	}
-    }
-    if {!$output} {
-	for {set i 0} {$i <= $lastNum} {incr i} {
-	    if {[info exists stubs($name,generic,$i)]} {
-		append text [makeSlot $stubs($name,generic,$i) $i]
-	    } else {
-		append text "    void *reserved$i;\n"
-	    }
-	}
-    }
+    forAllStubs $name makeSlot 1 text {"    void *reserved$i;\n"}
     return
 }
 
@@ -532,13 +496,14 @@ proc genStubs::makeStub {name decl index} {
 #	Generate the stub table entry for a function.
 #
 # Arguments:
+#	name	The interface name.
 #	decl	The function declaration.
 #	index	The slot index for this function.
 #
 # Results:
 #	Returns the formatted table entry.
 
-proc genStubs::makeSlot {decl index} {
+proc genStubs::makeSlot {name decl index} {
     lassign $decl rtype fname args
 
     set lfname [string tolower [string index $fname 0]]
@@ -571,6 +536,23 @@ proc genStubs::makeSlot {decl index} {
     return $text
 }
 
+# genStubs::makeInit --
+#
+#	Generate the prototype for a function.
+#
+# Arguments:
+#	name	The interface name.
+#	decl	The function declaration.
+#	index	The slot index for this function.
+#
+# Results:
+#	Returns the formatted declaration string.
+
+proc genStubs::makeInit {name decl index} {
+    append text "    " [lindex $decl 1] ", /* " $index " */\n"
+    return $text
+}
+
 # genStubs::forAllStubs --
 #
 #	This function iterates over all of the platforms and invokes
@@ -582,29 +564,74 @@ proc genStubs::makeSlot {decl index} {
 #	slotProc	The proc to invoke to handle the slot.  It will
 #			have the interface name, the declaration,  and
 #			the index appended.
+#	onAll		If 1, emit the skip string even if there are
+#			definitions for one or more platforms.
 #	textVar		The variable to use for output.
+#	skipString	The string to emit if a slot is skipped.  This
+#			string will be subst'ed in the loop so "$i" can
+#			be used to substitute the index value.
 #
 # Results:
 #	None.
 
-proc genStubs::forAllStubs {name slotProc textVar} {
+proc genStubs::forAllStubs {name slotProc onAll textVar \
+	{skipString {"/* Slot $i is reserved */\n"}}} {
     variable stubs
     upvar $textVar text
 
-    foreach plat {generic win unix mac} {
-	if {[info exists stubs($name,$plat,lastNum)]} {
-	    set lastNum $stubs($name,$plat,lastNum)
-	    set temp {}
-	    for {set i 0} {$i <= $lastNum} {incr i} {
-		if {![info exists stubs($name,$plat,$i)]} {
-		    append temp "/* Slot $i is reserved */\n"
-		} else {
-		    append temp [$slotProc $name $stubs($name,$plat,$i) $i]
+    set plats [array names stubs $name,*,lastNum]
+    if {[info exists stubs($name,generic,lastNum)]} {
+	# Emit integrated stubs block
+	set lastNum -1
+	foreach plat [array names stubs $name,*,lastNum] {
+	    if {$stubs($plat) > $lastNum} {
+		set lastNum $stubs($plat)
+	    }
+	}
+	for {set i 0} {$i <= $lastNum} {incr i} {
+	    set slots [array names stubs $name,*,$i]
+	    set emit 0
+	    if {[info exists stubs($name,generic,$i)]} {
+		if {[llength $slots] > 1} {
+		    puts stderr "platform entry duplicates generic entry: $i"
+		}
+		append text [$slotProc $name $stubs($name,generic,$i) $i]
+		set emit 1
+	    } elseif {[llength $slots] > 0} {
+		foreach plat {unix win mac} {
+		    if {[info exists stubs($name,$plat,$i)]} {
+			append text [addPlatformGuard $plat \
+				[$slotProc $name $stubs($name,$plat,$i) $i]]
+			set emit 1
+		    } elseif {$onAll} {
+			append text [eval {addPlatformGuard $plat} $skipString]
+			set emit 1
+		    }
 		}
 	    }
-	    append text [addPlatformGuard $plat $temp]
+	    if {$emit == 0} {
+		eval {append text} $skipString
+	    }
+	}
+	
+    } else {
+	# Emit separate stubs blocks per platform
+	foreach plat {unix win mac} {
+	    if {[info exists stubs($name,$plat,lastNum)]} {
+		set lastNum $stubs($name,$plat,lastNum)
+		set temp {}
+		for {set i 0} {$i <= $lastNum} {incr i} {
+		    if {![info exists stubs($name,$plat,$i)]} {
+			eval {append temp} $skipString
+		    } else {
+			append temp [$slotProc $name $stubs($name,$plat,$i) $i]
+		    }
+		}
+		append text [addPlatformGuard $plat $temp]
+	    }
 	}
     }
+
 }
 
 # genStubs::emitDeclarations --
@@ -623,7 +650,7 @@ proc genStubs::emitDeclarations {name textVar} {
     upvar $textVar text
 
     append text "\n/*\n * Exported function declarations:\n */\n\n"
-    forAllStubs $name makeDecl text
+    forAllStubs $name makeDecl 0 text
     return
 }
 
@@ -647,7 +674,7 @@ proc genStubs::emitMacros {name textVar} {
     append text "\n#if defined(USE_${upName}_STUBS) && !defined(USE_${upName}_STUB_PROCS)\n"
     append text "\n/*\n * Inline function declarations:\n */\n\n"
     
-    forAllStubs $name makeMacro text
+    forAllStubs $name makeMacro 0 text
 
     append text "\n#endif /* defined(USE_${upName}_STUBS) && !defined(USE_${upName}_STUB_PROCS) */\n"
     return
@@ -713,13 +740,13 @@ proc genStubs::emitStubs {name} {
     variable outDir
 
     append text "\n/*\n * Exported stub functions:\n */\n\n"
-    forAllStubs $name makeStub text
+    forAllStubs $name makeStub 0 text
 
     rewriteFile [file join $outDir ${name}Stubs.c] $text
     return    
 }
 
-# genStubs::makeInit --
+# genStubs::emitInit --
 #
 #	Generate the table initializers for an interface.
 #
@@ -730,7 +757,7 @@ proc genStubs::emitStubs {name} {
 # Results:
 #	Returns the formatted output.
 
-proc genStubs::makeInit {name textVar} {
+proc genStubs::emitInit {name textVar} {
     variable stubs
     variable hooks
     upvar $textVar text
@@ -749,53 +776,14 @@ proc genStubs::makeInit {name textVar} {
 	append text "    NULL,\n"
     }
     
-    set lastNum -1
-    if {[info exists stubs($name,generic,lastNum)]} {
-	set lastNum $stubs($name,generic,lastNum)
-    }
-    set output 0
-    foreach plat {win unix mac} {
-	if {[info exists stubs($name,$plat,lastNum)]} {
-	    set num $stubs($name,$plat,lastNum)
-	    if {$num < $lastNum} {
-		set num $lastNum
-	    }
-	    set temp ""
-	    for {set i 0} {$i <= $num} {incr i} {
-		append temp "    "
-		if {[info exists stubs($name,$plat,$i)]} {
-		    if {[info exists stubs($name,generic,$i)]} {
-			puts stderr "platform entry duplicates generic entry: $i"
-		    }
-		    append temp [lindex $stubs($name,$plat,$i) 1]
-		} elseif {[info exists stubs($name,generic,$i)]} {
-		    append temp [lindex $stubs($name,generic,$i) 1]
-		} else {
-		    append temp "NULL"
-		}
-		append temp ", /* $i */\n"
-	    }
-	    append text [addPlatformGuard $plat $temp]
-	    set output 1
-	}
-    }
-    if {!$output} {
-	for {set i 0} {$i <= $lastNum} {incr i} {
-	    append text "    "
-	    if {[info exists stubs($name,generic,$i)]} {
-		append text [lindex $stubs($name,generic,$i) 1]
-	    } else {
-		append text "NULL"
-	    }
-	    append text ", /* $i */\n"
-	}
-    }
+    forAllStubs $name makeInit 1 text {"    NULL, /* $i */\n"}
+
     append text "\};\n\n"
-    append text "extern ${capName}Stubs *${name}StubsPtr = &${name}Stubs;\n"
+    append text "${capName}Stubs *${name}StubsPtr = &${name}Stubs;\n"
     return
 }
 
-# genStubs::emitInit --
+# genStubs::emitInits --
 #
 #	This function emits the body of the <name>StubInit.c file for
 #	the specified interface.
@@ -806,14 +794,14 @@ proc genStubs::makeInit {name textVar} {
 # Results:
 #	None.
 
-proc genStubs::emitInit {} {
+proc genStubs::emitInits {} {
     variable hooks
     variable outDir
     variable libraryName
     variable interfaces
 
     foreach name [lsort [array names interfaces]] {
-	makeInit $name text
+	emitInit $name text
     }
 
 
@@ -865,7 +853,7 @@ proc genStubs::init {} {
 	emitStubs $name
     }
 
-    emitInit
+    emitInits
 }
 
 # lassign --
