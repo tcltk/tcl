@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.64 2002/03/20 22:47:36 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.65 2002/03/29 22:47:23 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -3005,7 +3005,7 @@ Tcl_TraceObjCmd(dummy, interp, objc, objv)
 		if ((tvarPtr->length == length) && (tvarPtr->flags == flags)
 			&& (strncmp(command, tvarPtr->command,
 				(size_t) length) == 0)) {
-		    Tcl_UntraceVar(interp, name,
+		    Tcl_UntraceVar2(interp, name, NULL,
 			    flags | TCL_TRACE_UNSETS | TCL_TRACE_RESULT_OBJECT,
 			    TraceVarProc, clientData);
 		    ckfree((char *) tvarPtr);
@@ -3359,7 +3359,7 @@ TclTraceVariableObjCmd(interp, optionIndex, objc, objv)
 			    && (tvarPtr->flags == flags)
 			    && (strncmp(command, tvarPtr->command,
 				    (size_t) length) == 0)) {
-			Tcl_UntraceVar(interp, name,
+			Tcl_UntraceVar2(interp, name, NULL,
 				flags | TCL_TRACE_UNSETS | TCL_TRACE_RESULT_OBJECT,
 				TraceVarProc, clientData);
 			ckfree((char *) tvarPtr);
@@ -3659,13 +3659,10 @@ TraceCommandProc(clientData, interp, oldName, newName, flags)
 	 * for the old and new command name and the operation.
 	 */
 
-	if (newName == NULL) {
-	    newName = "";
-	}
 	Tcl_DStringInit(&cmd);
 	Tcl_DStringAppend(&cmd, tcmdPtr->command, (int) tcmdPtr->length);
 	Tcl_DStringAppendElement(&cmd, oldName);
-	Tcl_DStringAppendElement(&cmd, newName);
+	Tcl_DStringAppendElement(&cmd, (newName ? newName : ""));
 	if (flags & TCL_TRACE_RENAME) {
 	    Tcl_DStringAppend(&cmd, " rename", 7);
 	} else if (flags & TCL_TRACE_DELETE) {
@@ -3675,11 +3672,19 @@ TraceCommandProc(clientData, interp, oldName, newName, flags)
 	/*
 	 * Execute the command.  Save the interp's result used for
 	 * the command. We discard any object result the command returns.
+	 *
+	 * Add the TCL_TRACE_DESTROYED flag to tcmdPtr to indicate to
+	 * other areas that this will be destroyed by us, otherwise a
+	 * double-free might occur depending on what the eval does.
 	 */
 
 	Tcl_SaveResult(interp, &state);
+	if (flags & TCL_TRACE_DESTROYED) {
+	    tcmdPtr->flags |= TCL_TRACE_DESTROYED;
+	}
 
-	code = Tcl_Eval(interp, Tcl_DStringValue(&cmd));
+	code = Tcl_EvalEx(interp, Tcl_DStringValue(&cmd),
+		Tcl_DStringLength(&cmd), 0);
 	if (code != TCL_OK) {	     
 	    /* We ignore errors in these traced commands */
 	}
@@ -3741,13 +3746,10 @@ TraceVarProc(clientData, interp, name1, name2, flags)
 	     * for the two variable names and the operation. 
 	     */
 
-	    if (name2 == NULL) {
-		name2 = "";
-	    }
 	    Tcl_DStringInit(&cmd);
 	    Tcl_DStringAppend(&cmd, tvarPtr->command, (int) tvarPtr->length);
 	    Tcl_DStringAppendElement(&cmd, name1);
-	    Tcl_DStringAppendElement(&cmd, name2);
+	    Tcl_DStringAppendElement(&cmd, (name2 ? name2 : ""));
 #ifndef TCL_REMOVE_OBSOLETE_TRACES
 	    if (tvarPtr->flags & TCL_TRACE_OLD_STYLE) {
 		if (flags & TCL_TRACE_ARRAY) {
@@ -3777,11 +3779,19 @@ TraceVarProc(clientData, interp, name1, name2, flags)
 	    /*
 	     * Execute the command.  Save the interp's result used for
 	     * the command. We discard any object result the command returns.
+	     *
+	     * Add the TCL_TRACE_DESTROYED flag to tvarPtr to indicate to
+	     * other areas that this will be destroyed by us, otherwise a
+	     * double-free might occur depending on what the eval does.
 	     */
 
 	    Tcl_SaveResult(interp, &state);
+	    if (flags & TCL_TRACE_DESTROYED) {
+		tvarPtr->flags |= TCL_TRACE_DESTROYED;
+	    }
 
-	    code = Tcl_Eval(interp, Tcl_DStringValue(&cmd));
+	    code = Tcl_EvalEx(interp, Tcl_DStringValue(&cmd),
+		    Tcl_DStringLength(&cmd), 0);
 	    if (code != TCL_OK) {	     /* copy error msg to result */
 		register Tcl_Obj *errMsgObj = Tcl_GetObjResult(interp);
 		Tcl_IncrRefCount(errMsgObj);
