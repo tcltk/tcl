@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.167 2004/11/12 19:16:50 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.168 2004/12/15 20:44:36 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -655,6 +655,87 @@ GrowEvaluationStack(eePtr)
     eePtr->tosPtr += (newStackPtr - oldStackPtr);
     newStackPtr[-1] = (Tcl_Obj *) ((char *) 1);	
 }
+
+/*
+ *--------------------------------------------------------------
+ *
+ * TclStackAlloc --
+ *
+ *	Allocate memory from the execution stack; it has to be returned later
+ *	with a call to TclStackFree
+ *
+ * Results:
+ *	A pointer to the first byte allocated, or panics if the allocation did 
+ *      not succeed.
+ *
+ * Side effects:
+ *	The execution stack may be grown.
+ *
+ *--------------------------------------------------------------
+ */
+
+char *
+TclStackAlloc(interp, numBytes)
+    Tcl_Interp *interp;
+    int numBytes;
+{
+    Interp *iPtr = (Interp *) interp;
+    ExecEnv *eePtr = iPtr->execEnvPtr;
+    int numWords;
+    Tcl_Obj **tosPtr = eePtr->tosPtr;
+    char **stackRefCountPtr;
+    
+    /*
+     * Add two words to store
+     *   - a pointer to the used execution stack
+     *   - the number of words reserved
+     * These will be used later by TclStackFree. 
+     */
+    
+    numWords = (numBytes + 3*sizeof(void *) - 1)/sizeof(void *);
+
+    while ((tosPtr + numWords) > eePtr->endPtr) {
+	GrowEvaluationStack(eePtr);
+	tosPtr = eePtr->tosPtr;
+    }
+
+    /*
+     * Increase the stack's reference count, to make sure it is not freed
+     * prematurely. 
+     */ 
+
+    stackRefCountPtr = (char **) (eePtr->stackPtr-1);
+    ++*stackRefCountPtr;
+    
+    /*
+     * Reserve the space in the exec stack, and store the data for freeing.
+     */
+    
+    eePtr->tosPtr += numWords;
+    *(eePtr->tosPtr-1) = (Tcl_Obj *) stackRefCountPtr;
+    *(eePtr->tosPtr)   = (Tcl_Obj *) numWords;
+
+    return (char *) (tosPtr+1);    
+}
+
+void
+TclStackFree(interp) 
+    Tcl_Interp *interp;
+{
+    Interp *iPtr = (Interp *) interp;
+    ExecEnv *eePtr = iPtr->execEnvPtr;
+    char **stackRefCountPtr;
+
+    
+    stackRefCountPtr = (char **) *(eePtr->tosPtr-1);
+    eePtr->tosPtr -= (int) *(eePtr->tosPtr);
+    
+    --*stackRefCountPtr;
+    if (*stackRefCountPtr == (char *) 0) {
+	ckfree((VOID *) stackRefCountPtr);
+    }	    
+}
+
 
 /*
  *--------------------------------------------------------------
