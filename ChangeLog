@@ -2,7 +2,10 @@
 
 	* library/tcltest/tcltest.tcl:  Corrected [puts -nonewline] within
 	test bodies.  Thanks to Harald Kirsch.  [Bug 612786, Patch 612788]
+	Also corrected reporting of body return code.  Thanks to David
+	Taback [Bug 611922]
 	* library/tcltest/pkgIndex.tcl: Bump to version 2.2.1.
+	* tests/tcltest.test: added tests for these bugs.
 
 2002-09-15  Mo DeJong  <mdejong@users.sourceforge.net>
 
