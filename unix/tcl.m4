@@ -1078,7 +1078,11 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 	OSF1-1.*)
 	    # OSF/1 1.3 from OSF using ELF, and derivatives, including AD2
 	    SHLIB_CFLAGS="-fPIC"
-	    SHLIB_LD="ld -shared"
+	    if test "$SHARED_BUILD" = "1" ; then
+	        SHLIB_LD="ld -shared"
+	    else
+	        SHLIB_LD="ld -non_shared"
+	    fi
 	    SHLIB_LD_LIBS=""
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
@@ -1089,7 +1093,11 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 	OSF1-V*)
 	    # Digital OSF/1
 	    SHLIB_CFLAGS=""
-	    SHLIB_LD='ld -shared -expect_unresolved "*"'
+	    if test "$SHARED_BUILD" = "1" ; then
+	        SHLIB_LD='ld -shared -expect_unresolved "*"'
+	    else
+	        SHLIB_LD='ld -non_shared -expect_unresolved "*"'
+	    fi
 	    SHLIB_LD_LIBS=""
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
