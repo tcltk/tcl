@@ -12,7 +12,7 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
 #
-# RCS: @(#) $Id: http.test,v 1.30 2002/09/02 19:27:27 hobbs Exp $
+# RCS: @(#) $Id: http.test,v 1.31 2002/10/03 13:34:32 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -20,7 +20,7 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 }
 
 if {[catch {package require http 2} version]} {
-    if {[info exist http2]} {
+    if {[info exists http2]} {
 	catch {puts "Cannot load http 2.* package"}
 	return
     } else {
@@ -494,7 +494,7 @@ if {[info exists httpthread]} {
     close $listen
 }
 
-if {[info exist removeHttpd]} {
+if {[info exists removeHttpd]} {
     removeFile $httpdFile
 }
 
