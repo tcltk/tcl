@@ -5,14 +5,14 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: pid.n,v 1.4 2004/05/28 12:40:29 dkf Exp $
+'\" RCS: @(#) $Id: pid.n,v 1.5 2004/08/31 15:19:36 dkf Exp $
 '\" 
 .so man.macros
 .TH pid n 7.0 Tcl "Tcl Built-In Commands"
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
-pid \- Retrieve process id(s)
+pid \- Retrieve process identifiers
 .SH SYNOPSIS
 \fBpid \fR?\fIfileId\fR?
 .BE
