@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fileName.test,v 1.28 2003/02/04 17:06:52 vincentdarley Exp $
+# RCS: @(#) $Id: fileName.test,v 1.29 2003/02/07 15:29:31 vincentdarley Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -1822,6 +1822,18 @@ test filename-17.1 {windows specific special files} {testsetplatform} {
       [file pathtype prn] [file pathtype nul] [file pathtype aux] \
       [file pathtype foo]
 } {absolute absolute absolute absolute absolute absolute relative}
+
+test filename-17.2 {windows specific glob with executable} {winOnly} {
+    makeDirectory execglob
+    makeFile contents execglob/abc.exe
+    makeFile contents execglob/abc.notexecutable
+    set res [glob -nocomplain -dir [temporaryDirectory]/execglob \
+      -tails -types x *]
+    removeFile execglob/abc.exe
+    removeFile execglob/abc.notexecutable
+    removeDirectory execglob
+    set res
+} {abc.exe}
 
 # cleanup
 catch {file delete -force C:/globTest}
