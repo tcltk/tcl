@@ -1,3 +1,9 @@
+2004-02-05  David Gravereaux <davygrvy@pobo.co>
+
+	* docs/tclvars.n: Added clarification of the tcl_platform(debug)
+	var that it only refers to the flavor of the C run-time, and not
+	whether the core contains symbols.
+
 2004-02-05  Don Porter	<dgp@users.sourceforge.net>
 
 	* generic/tclFileName.c (SkipToChar):	Corrected CONST and
