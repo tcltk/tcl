@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fileName.test,v 1.23 2002/06/21 14:22:29 vincentdarley Exp $
+# RCS: @(#) $Id: fileName.test,v 1.24 2002/07/05 10:38:42 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -312,6 +312,7 @@ if {[tcltest::testConstraint testsetplatform]} {
 test filename-4.19 {Tcl_SplitPath} {
     set oldDir [pwd]
     set res [catch {
+	cd [temporaryDirectory]
 	file mkdir tildetmp
 	set nastydir [file join tildetmp ./~tilde]
 	file mkdir $nastydir
@@ -1125,7 +1126,9 @@ test filename-11.13 {Tcl_GlobCmd} {
     list [catch {file join [lindex [glob ~] 0]} msg] $msg
 } [list 0 [file join $env(HOME)]]
 
+set oldpwd [pwd]
 set oldhome $env(HOME)
+cd [temporaryDirectory]
 set env(HOME) [pwd]
 file delete -force globTest
 file mkdir globTest/a1/b1
@@ -1487,9 +1490,9 @@ test filename-12.3 {simple globbing} {
 } {0 {}}
 
 if {$tcl_platform(platform) == "macintosh"} {
-  set globPreResult :globTest:
+    set globPreResult :globTest:
 } else {
-  set globPreResult globTest/
+    set globPreResult globTest/
 }
 set x1 x1.c
 set y1 y1.c
@@ -1582,12 +1585,25 @@ test filename-14.3 {asterisks, question marks, and brackets} {unixOrPc} {
 test filename-14.4 {asterisks, question marks, and brackets} {macOnly} {
     lsort [glob globTest/?1.c]
 } {:globTest:x1.c :globTest:y1.c :globTest:z1.c}
+
+# The current directory could be anywhere; do this to stop spurious matches
+file mkdir globTestContext
+file rename globTest [file join globTestContext globTest]
+set savepwd [pwd]
+cd globTestContext
+
 test filename-14.5 {asterisks, question marks, and brackets} {unixOrPc} {
     lsort [glob */*/*/*.c]
 } {globTest/a1/b1/x2.c globTest/a1/b2/y2.c}
 test filename-14.6 {asterisks, question marks, and brackets} {macOnly} {
     lsort [glob */*/*/*.c]
 } {:globTest:a1:b1:x2.c :globTest:a1:b2:y2.c}
+
+# Reset to where we were
+cd $savepwd
+file rename [file join globTestContext globTest] globTest
+file delete globTestContext
+
 test filename-14.7 {asterisks, question marks, and brackets} {unixOnly} {
     lsort [glob globTest/*]
 } {globTest/a1 globTest/a2 globTest/a3 {globTest/weird name.c} globTest/x,z1.c globTest/x1.c globTest/y1.c globTest/z1.c}
@@ -1792,7 +1808,7 @@ test filename-16.16 {windows specific globbing} {pcOnly} {
 
 # cleanup
 catch {file delete -force C:/globTest}
-cd $oldDir
+cd $oldpwd
 file delete -force globTest
 set env(HOME) $oldhome
 if {[tcltest::testConstraint testsetplatform]} {

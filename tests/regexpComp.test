@@ -595,8 +595,7 @@ test regexp-14.2 {CompileRegexp: regexp cache, different flags} {
 # There is no exec on the Mac ...
 
 test regexp-14.3 {CompileRegexp: regexp cache, empty regexp and empty cache} {unixOrPc} {
-    makeFile {puts [regexp {} foo]} junk.tcl
-    exec $::tcltest::tcltest junk.tcl
+    exec $::tcltest::tcltest [makeFile {puts [regexp {} foo]} junk.tcl]
 } 1
 
 test regexp-15.1 {regexp -start} {
