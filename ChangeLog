@@ -1,3 +1,8 @@
+1999-09-30  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* unix/configure.in:
+	* win/configure.in: updated patchlevel to 1
+
 1999-09-24  Jennifer Hom  <jenn@scriptics.com>
 
 	* library/tcltest1.0/tcltest.tcl: Changed checks for value of
