@@ -1,3 +1,10 @@
+1999-06-04    <stanton@scriptics.com>
+
+	* win/configure.in: 
+	* win/Makefile.in: Windows build now handles static/dynamic
+	debug/nodebug builds and supports the standard targets using
+	Cygwin user tools plus GNU make and autoconf.
+
 1999-06-03    <stanton@scriptics.com>
 
 	* generic/tclCmdMZ.c (Tcl_StringObjCmd): 
