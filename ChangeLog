@@ -1,3 +1,17 @@
+2004-11-08  David Gravereaux <davygrvy@pobox.com>
+
+	* win/tclWinPipe.c: The pipe channel driver now respects
+	the -blocking option when closing is the same way the UNIX
+	side works.  This is to avoid a hung shell when exiting due
+	to open pipes that refuse to close in a graceful manner.
+	[Bug 947693]
+
+	***POTENTIAL INCOMPATIBILITY***
+
+	Scripts that use async pipes on windows, must (like the
+	UNIX side) set -blocking to 1 before calling [close] to
+	receive the exit status.
+
 2004-11-07  David Gravereaux <davygrvy@pobox.com>
 
 	* tests/winFile.test: added contraint to winFile-4.0 to prevent
