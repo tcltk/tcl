@@ -1,15 +1,41 @@
+2005-04-02  Miguel Sofer <msofer@users.sf.net>
+
+	*** FROM HEAD ***
+	* doc/ListObj.3:
+	* generic/tclBasic.c:
+	* generic/tclCmdIL.c:
+	* generic/tclConfig.c:
+	* generic/tclExecute.c:
+	* generic/tclInt.decls:
+	* generic/tclInt.h:
+	* generic/tclIntDecls.h:
+	* generic/tclListObj.c:
+	* generic/tclStubInit.c:
+	* generic/tclVar.c: Changed the internal representation of lists
+	to (a) reduce the malloc/free calls at list creation (from 2 to
+	1), (b) reduce the cost of handling empty lists (we now never
+	create a list internal rep for them), (c) allow refcounting of the
+	list internal rep. The latter permits insuring that the pointers
+	returned by Tcl_ListObjGetElements remain valid even if the object
+	shimmers away from its original list type. This is [Patch 1158008]
+
 2005-04-01  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclExecute.c:
 	* generic/tclInt.h:
 	* generic/tclObj.c:
 	* generic/tclStringObj.c: opt in INST_*_SCALAR, sync with HEAD: 
+
 	- (INST_JUMP_TRUE/FALSE): replaced "test and branch" with "compute
 	index into table" 
+
+	*** FROM HEAD ***
 	- defined new internal macros for creating and setting frequently
 	used obj types (int,long, wideInt, double, string). Changed TEBC
 	to use eg 'TclNewIntObj(objPtr, i)' to avoid the function call in
 	'objPtr = Tcl_NewIntObj(i)' 
+
+	*** FROM HEAD ***
 	- ExecEnv now stores two Tcl_Obj* pointing to the constants "0"
 	and "1", for use by TEBC.  
 

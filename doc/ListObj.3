@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: ListObj.3,v 1.8 2004/10/07 16:05:14 dkf Exp $
+'\" RCS: @(#) $Id: ListObj.3,v 1.8.4.1 2005/04/02 13:36:05 msofer Exp $
 '\" 
 .so man.macros
 .TH Tcl_ListObj 3 8.0 Tcl "Tcl Library Procedures"
@@ -151,8 +151,9 @@ has reference count zero.
 the elements in a list object.  It returns the count by storing it in the
 address \fIobjcPtr\fR.  Similarly, it returns the array pointer by storing
 it in the address \fIobjvPtr\fR.
-The memory pointed to is managed by Tcl and should not be freed by the
-caller.
+The memory pointed to is managed by Tcl and should not be freed or written
+to by the caller. If the list is empty, 0 is stored at \fIobjcPtr\fR
+and NULL at \fIobjvPtr\fR.
 If \fIlistPtr\fR is not already a list object, \fBTcl_ListObjGetElements\fR
 will attempt to convert it to one; if the conversion fails, it returns
 \fBTCL_ERROR\fR and leaves an error message in the interpreter's result

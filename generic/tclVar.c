@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.101 2004/12/14 21:11:47 msofer Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.101.2.1 2005/04/02 13:36:10 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -2468,11 +2468,10 @@ Tcl_LappendObjCmd(dummy, interp, objc, objv)
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
     Tcl_Obj *varValuePtr, *newValuePtr;
-    register List *listRepPtr;
-    register Tcl_Obj **elemPtrs;
-    int numElems, numRequired, createdNewObj, createVar, i, j;
+    int numElems, createdNewObj, createVar;
     Var *varPtr, *arrayPtr;
     char *part1;
+    int result;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "varName ?value value ...?");
@@ -2549,58 +2548,17 @@ Tcl_LappendObjCmd(dummy, interp, objc, objv)
 	    createdNewObj = 1;
 	}
 
-	/*
-	 * Convert the variable's old value to a list object if necessary.
-	 */
-
-	if (varValuePtr->typePtr != &tclListType) {
-	    int result = tclListType.setFromAnyProc(interp, varValuePtr);
-	    if (result != TCL_OK) {
-		if (createdNewObj) {
-		    Tcl_DecrRefCount(varValuePtr); /* free unneeded obj. */
-		}
-		return result;
+	result = Tcl_ListObjLength(interp, varValuePtr, &numElems);
+	if (result == TCL_OK) {
+	    result = Tcl_ListObjReplace(interp, varValuePtr, numElems, 0,
+		    (objc-2), (objv+2));
+	}
+	if (result != TCL_OK) {
+	    if (createdNewObj) {
+		Tcl_DecrRefCount(varValuePtr); /* free unneeded obj. */
 	    }
+	    return result;
 	}
-	listRepPtr = (List *) varValuePtr->internalRep.twoPtrValue.ptr1;
-	elemPtrs = listRepPtr->elements;
-	numElems = listRepPtr->elemCount;
-
-	/*
-	 * If there is no room in the current array of element pointers,
-	 * allocate a new, larger array and copy the pointers to it.
-	 */
-	
-	numRequired = numElems + (objc-2);
-	if (numRequired > listRepPtr->maxElemCount) {
-	    int newMax = (2 * numRequired);
-	    Tcl_Obj **newElemPtrs = (Tcl_Obj **)
-		ckalloc((unsigned) (newMax * sizeof(Tcl_Obj *)));
-	    
-	    memcpy((VOID *) newElemPtrs, (VOID *) elemPtrs,
-		    (size_t) (numElems * sizeof(Tcl_Obj *)));
-	    listRepPtr->maxElemCount = newMax;
-	    listRepPtr->elements = newElemPtrs;
-	    ckfree((char *) elemPtrs);
-	    elemPtrs = newElemPtrs;
-	}
-
-	/*
-	 * Insert the new elements at the end of the list.
-	 */
-
-	for (i = 2, j = numElems;  i < objc;  i++, j++) {
-            elemPtrs[j] = objv[i];
-            Tcl_IncrRefCount(objv[i]);
-        }
-	listRepPtr->elemCount = numRequired;
-
-	/*
-	 * Invalidate and free any old string representation since it no
-	 * longer reflects the list's internal representation.
-	 */
-
-	Tcl_InvalidateStringRep(varValuePtr);
 
 	/*
 	 * Now store the list object back into the variable. If there is an

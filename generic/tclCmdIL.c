@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.71 2004/12/14 21:11:45 msofer Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.71.2.1 2005/04/02 13:36:07 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -2866,8 +2866,9 @@ Tcl_LrepeatObjCmd(dummy, interp, objc, objv)
     register Tcl_Obj *CONST objv[];	/* The argument objects. */
 {
     int elementCount, i, result;
-    Tcl_Obj **dataArray;
-
+    Tcl_Obj *listPtr, **dataArray;
+    List *listRepPtr;
+    
     /* 
      * Check arguments for legality:
      *		lrepeat posInt value ?value ...?
@@ -2896,33 +2897,14 @@ Tcl_LrepeatObjCmd(dummy, interp, objc, objv)
     objv += 2;
 
     /*
-     * Create workspace array large enough to hold each init value
-     * elementCount times.  Note that we don't bother with stack
-     * allocation for this, as we expect this function to be used
-     * mainly when stack allocation would be inappropriate anyway.
-     * First check to see if we'd overflow and try to allocate an
-     * object larger than our memory allocator allows.  Note that this
-     * is actually a fairly small value when you're on a serious
-     * 64-bit machine, but that requires API changes to fix.
-     *
-     * We allocate using attemptckalloc() because if we ask for
-     * something big but can't get it, we've still got a high chance
-     * of having a proper failover strategy.  If *that* fails to get
-     * memory, Tcl_Panic() will happen just a few lines lower...
+     * Get an empty list object that is allocated large enough to hold each
+     * init value elementCount times.
      */
 
-    if ((unsigned)elementCount > INT_MAX/sizeof(Tcl_Obj *)/objc) {
-	Tcl_AppendResult(interp, "overflow of maximum list length", NULL);
-	return TCL_ERROR;
-    }
-
-    dataArray = (Tcl_Obj **)
-	    attemptckalloc(elementCount * objc * sizeof(Tcl_Obj *));
-
-    if (dataArray == NULL) {
-	Tcl_AppendResult(interp, "insufficient memory to create list", NULL);
-	return TCL_ERROR;
-    }
+    listPtr = Tcl_NewListObj(elementCount*objc, NULL);
+    listRepPtr = (List *) listPtr->internalRep.twoPtrValue.ptr1;
+    listRepPtr->elemCount = elementCount*objc;
+    dataArray = &listRepPtr->elements;
 
     /*
      * Set the elements.  Note that we handle the common degenerate
@@ -2934,6 +2916,7 @@ Tcl_LrepeatObjCmd(dummy, interp, objc, objv)
     if (objc == 1) {
 	register Tcl_Obj *tmpPtr = objv[0];
 
+	tmpPtr->refCount += elementCount;
 	for (i=0 ; i<elementCount ; i++) {
 	    dataArray[i] = tmpPtr;
 	}
@@ -2942,16 +2925,13 @@ Tcl_LrepeatObjCmd(dummy, interp, objc, objv)
 
 	for (i=0 ; i<elementCount ; i++) {
 	    for (j=0 ; j<objc ; j++) {
+		Tcl_IncrRefCount(objv[j]);
 		dataArray[k++] = objv[j];
 	    }
 	}
     }
 
-    /*
-     * Build the result list, clean up and return.
-     */
-
-    Tcl_SetObjResult(interp, TclNewListObjDirect(elementCount*objc,dataArray));
+    Tcl_SetObjResult(interp, listPtr);
     return TCL_OK;
 }
 

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.171.2.16 2005/04/01 18:48:59 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.171.2.17 2005/04/02 13:36:07 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -4456,7 +4456,7 @@ TclExecuteByteCode(interp, codePtr)
 	    ForeachVarList *varListPtr;
 	    int numLists;
 	    Tcl_Obj *listPtr,*valuePtr, *value2Ptr;
-	    List *listRepPtr;
+	    Tcl_Obj **elements;
 	    Var *iterVarPtr, *listVarPtr;
 	    int iterNum, listTmpIndex, listLen, numVars;
 	    int varIndex, valIndex, continueLoop, j;
@@ -4518,8 +4518,7 @@ TclExecuteByteCode(interp, codePtr)
 
 		    listVarPtr = &(compiledLocals[listTmpIndex]);
 		    listPtr = listVarPtr->value.objPtr;
-		    listRepPtr = (List *) listPtr->internalRep.twoPtrValue.ptr1;
-		    listLen = listRepPtr->elemCount;
+		    TclListObjGetElements(listPtr, listLen, elements);
 			
 		    valIndex = (iterNum * numVars);
 		    for (j = 0;  j < numVars;  j++) {
@@ -4528,7 +4527,7 @@ TclExecuteByteCode(interp, codePtr)
 			    setEmptyStr = 1;
 			    TclNewObj(valuePtr);
 			} else {
-			    valuePtr = listRepPtr->elements[valIndex];
+			    valuePtr = elements[valIndex];
 			}
 			    
 			varIndex = varListPtr->varIndexes[j];

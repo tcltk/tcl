@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.76 2004/12/15 20:44:39 msofer Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.76.2.1 2005/04/02 13:36:09 msofer Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -917,18 +917,8 @@ EXTERN void		Tcl_SetStartupScript _ANSI_ARGS_((Tcl_Obj * pathPtr,
 EXTERN Tcl_Obj *	Tcl_GetStartupScript _ANSI_ARGS_((
 				CONST char ** encodingNamePtr));
 #endif
-#ifndef TclNewListObjDirect_TCL_DECLARED
-#define TclNewListObjDirect_TCL_DECLARED
-/* 180 */
-EXTERN Tcl_Obj *	TclNewListObjDirect _ANSI_ARGS_((int objc, 
-				Tcl_Obj ** objv));
-#endif
-#ifndef TclDbNewListObjDirect_TCL_DECLARED
-#define TclDbNewListObjDirect_TCL_DECLARED
-/* 181 */
-EXTERN Tcl_Obj *	TclDbNewListObjDirect _ANSI_ARGS_((int objc, 
-				Tcl_Obj ** objv, CONST char * file, int line));
-#endif
+/* Slot 180 is reserved */
+/* Slot 181 is reserved */
 #ifndef TclpLocaltime_TCL_DECLARED
 #define TclpLocaltime_TCL_DECLARED
 /* 182 */
@@ -1342,8 +1332,8 @@ typedef struct TclIntStubs {
     void (*tclVarErrMsg) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * part1, CONST char * part2, CONST char * operation, CONST char * reason)); /* 177 */
     void (*tcl_SetStartupScript) _ANSI_ARGS_((Tcl_Obj * pathPtr, CONST char* encodingName)); /* 178 */
     Tcl_Obj * (*tcl_GetStartupScript) _ANSI_ARGS_((CONST char ** encodingNamePtr)); /* 179 */
-    Tcl_Obj * (*tclNewListObjDirect) _ANSI_ARGS_((int objc, Tcl_Obj ** objv)); /* 180 */
-    Tcl_Obj * (*tclDbNewListObjDirect) _ANSI_ARGS_((int objc, Tcl_Obj ** objv, CONST char * file, int line)); /* 181 */
+    void *reserved180;
+    void *reserved181;
     struct tm * (*tclpLocaltime) _ANSI_ARGS_((CONST time_t * clock)); /* 182 */
     struct tm * (*tclpGmtime) _ANSI_ARGS_((CONST time_t * clock)); /* 183 */
     void (*tclThreadStorageLockInit) _ANSI_ARGS_((void)); /* 184 */
@@ -1988,14 +1978,8 @@ extern TclIntStubs *tclIntStubsPtr;
 #define Tcl_GetStartupScript \
 	(tclIntStubsPtr->tcl_GetStartupScript) /* 179 */
 #endif
-#ifndef TclNewListObjDirect
-#define TclNewListObjDirect \
-	(tclIntStubsPtr->tclNewListObjDirect) /* 180 */
-#endif
-#ifndef TclDbNewListObjDirect
-#define TclDbNewListObjDirect \
-	(tclIntStubsPtr->tclDbNewListObjDirect) /* 181 */
-#endif
+/* Slot 180 is reserved */
+/* Slot 181 is reserved */
 #ifndef TclpLocaltime
 #define TclpLocaltime \
 	(tclIntStubsPtr->tclpLocaltime) /* 182 */
