@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.28 1998/10/20 20:01:22 rjohnson Exp $
+RCS: @(#) $Id: changes,v 1.29 1998/10/23 22:22:02 welch Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -3649,3 +3649,9 @@ changed for IRIX to build n32 binaries instead of the old 32 abi
 format.  If you have extensions built with the o32 abi's you will need
 to update them to n32 for them to work with Tcl.  (RJ)
 *** POTENTIAL INCOMPATIBILITY ***
+
+10/23/98 (bug fix) tcl_findLibrary had a stray ] in one of the pathnames
+it searched for the initialization script.  tclInitScript.h was incorrectly
+adding the parent of tcl_library to tcl_pkgPath.  This logic was moved
+into init.tcl, and the initialization of auto_path was documented.
+Thanks to Donald Porter and Tom Silva for related patches. (BW)

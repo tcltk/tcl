@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInitScript.h,v 1.7 1998/09/14 18:40:00 stanton Exp $
+ * RCS: @(#) $Id: tclInitScript.h,v 1.8 1998/10/23 22:22:15 welch Exp $
  */
 
 /*
@@ -56,7 +56,7 @@
  *				  down inside unix/arch directory
  *
  * The first directory on this path that contains a valid init.tcl script
- * will be appended to tcl_pkgPath and set as the value of tcl_library.
+ * will be set as the value of tcl_library.
  *
  * Note that this entire search mechanism can be bypassed by defining an
  * alternate tclInit procedure before calling Tcl_Init().
@@ -65,7 +65,7 @@
 static char initScript[] = "if {[info proc tclInit]==\"\"} {\n\
   proc tclInit {} {\n\
     global tcl_library tcl_version tcl_patchLevel errorInfo\n\
-    global tcl_pkgPath env tclDefaultLibrary\n\
+    global env tclDefaultLibrary\n\
     rename tclInit {}\n\
     set errors {}\n\
     set dirs {}\n\
@@ -95,7 +95,6 @@ static char initScript[] = "if {[info proc tclInit]==\"\"} {\n\
 	set tclfile [file join $i init.tcl]\n\
 	if {[file exists $tclfile]} {\n\
 	    if {![catch {uplevel #0 [list source $tclfile]} msg]} {\n\
-                lappend tcl_pkgPath [file dirname $i]\n\
 	        return\n\
 	    } else {\n\
 		append errors \"$tclfile: $msg\n$errorInfo\n\"\n\

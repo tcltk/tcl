@@ -3,7 +3,7 @@
 # Default system startup file for Tcl-based applications.  Defines
 # "unknown" procedure and auto-load facilities.
 #
-# RCS: @(#) $Id: init.tcl,v 1.16 1998/10/17 00:15:40 escoffon Exp $
+# RCS: @(#) $Id: init.tcl,v 1.17 1998/10/23 22:22:15 welch Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
@@ -18,24 +18,42 @@ if {[info commands package] == ""} {
 package require -exact Tcl 8.0
 
 # Compute the auto path to use in this interpreter.
-# (auto_path could be already set, in safe interps for instance)
+# The values on the path come from several locations:
+#
+# The environment variable TCLLIBPATH
+#
+# tcl_library, which is the directory containing this init.tcl script.
+# tclInitScript.h searches around for the directory containing this
+# init.tcl and defines tcl_library to that location before sourcing it.
+#
+# The parent directory of tcl_library. Adding the parent
+# means that packages in peer directories will be found automatically.
+#
+# tcl_pkgPath, which is set by the platform-specific initialization routines
+#	On UNIX it is compiled in
+#	On Windows it comes from the registry
+#	On Macintosh it is "Tool Command Language" in the Extensions folder
 
 if {![info exists auto_path]} {
-    if {[catch {set auto_path $env(TCLLIBPATH)}]} {
+    if {[info exist env(TCLLIBPATH)]} {
+	set auto_path $env(TCLLIBPATH)
+    } else {
 	set auto_path ""
     }
 }
-if {[lsearch -exact $auto_path [info library]] < 0} {
-    lappend auto_path [info library]
+foreach __dir [list [info library] [file dirname [info library]]] {
+    if {[lsearch -exact $auto_path $__dir] < 0} {
+	lappend auto_path $__dir
+    }
 }
-catch {
+if {[info exist tcl_pkgPath]} {
     foreach __dir $tcl_pkgPath {
 	if {[lsearch -exact $auto_path $__dir] < 0} {
 	    lappend auto_path $__dir
 	}
     }
-    unset __dir
 }
+unset __dir
 
 # Windows specific initialization to handle case isses with envars
 
@@ -621,12 +639,12 @@ proc tcl_findLibrary {basename version patch initScript enVarName varName} {
         lappend dirs [file join $grandParentDir lib $basename$version]
         lappend dirs [file join $parentDir library]
         lappend dirs [file join $grandParentDir library]
-        if [string match {*[ab]*} $patch] {
+        if {[string match {*[ab]*} $patch]} {
             set ver $patch
         } else {
             set ver $version
         }
-        lappend dirs [file join $grandParentDir] $basename$ver library]
+        lappend dirs [file join $grandParentDir $basename$ver library]
         lappend dirs [file join [file dirname $grandParentDir] $basename$ver library]
     }
     foreach i $dirs {
@@ -1163,7 +1181,7 @@ proc pkg_mkIndex {args} {
     }
 
     set dir [lindex $args $idx]
-    set patternList [lrange $args [expr $idx + 1] end]
+    set patternList [lrange $args [expr {$idx + 1}] end]
     if {[llength $patternList] == 0} {
 	set patternList [list "*.tcl" "*[info sharedlibextension]"]
     }
