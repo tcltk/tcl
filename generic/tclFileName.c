@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.20.6.2 2001/09/25 16:49:56 dkf Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.20.6.3 2001/09/26 14:23:10 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -73,7 +73,7 @@ TclPlatformType tclPlatform = TCL_PLATFORM_UNIX;
 static char *		DoTildeSubst _ANSI_ARGS_((Tcl_Interp *interp,
 			    CONST char *user, Tcl_DString *resultPtr));
 static CONST char *	ExtractWinRoot _ANSI_ARGS_((CONST char *path,
-			    Tcl_DString *resultPtr, int offset, 
+			    Tcl_DString *resultPtr, Tcl_Length offset, 
 			    Tcl_PathType *typePtr));
 static int		SkipToChar _ANSI_ARGS_((char **stringPtr,
 			    char *match));
@@ -160,7 +160,7 @@ static CONST char *
 ExtractWinRoot(path, resultPtr, offset, typePtr)
     CONST char *path;		/* Path to parse. */
     Tcl_DString *resultPtr;	/* Buffer to hold result. */
-    int offset;			/* Offset in buffer where result should be
+    Tcl_Length offset;		/* Offset in buffer where result should be
 				 * stored. */
     Tcl_PathType *typePtr;	/* Where to store pathType result */
 {
@@ -413,7 +413,7 @@ TclpGetNativePathType(pathObjPtr, driveNameLengthPtr, driveNameRef)
 				    } else if ((gotColon > 1) && (*(c-1) == ':')) {
 					/* We have an extra colon */
 				        Tcl_SetObjLength(*driveNameRef, 
-						c - Tcl_GetString(*driveNameRef) - 1);
+						(Tcl_Length)(c - Tcl_GetString(*driveNameRef) - 1));
 				    }
 				}
 			    }
@@ -449,7 +449,7 @@ TclpGetNativePathType(pathObjPtr, driveNameLengthPtr, driveNameRef)
 		    *driveNameLengthPtr = rootEnd - path;
 		    if (driveNameRef != NULL) {
 			*driveNameRef = Tcl_NewStringObj(Tcl_DStringValue(&ds), 
-							 Tcl_DStringLength(&ds));
+							 (int)Tcl_DStringLength(&ds));
 			Tcl_IncrRefCount(*driveNameRef);
 		    }
 		}
@@ -556,8 +556,7 @@ Tcl_SplitPath(path, argcPtr, argvPtr)
 {
     Tcl_Obj *resultPtr = NULL;  /* Needed only to prevent gcc warnings. */
     Tcl_Obj *tmpPtr, *eltPtr;
-    int i, size;
-    Tcl_Length len;
+    Tcl_Length len, size, i, resultLength;
     char *p, *str;
 
     /*
@@ -566,14 +565,15 @@ Tcl_SplitPath(path, argcPtr, argvPtr)
 
     tmpPtr = Tcl_NewStringObj(path, -1);
     Tcl_IncrRefCount(tmpPtr);
-    resultPtr = Tcl_FSSplitPath(tmpPtr, argcPtr);
+    resultPtr = Tcl_FSSplitPath(tmpPtr, &resultLength);
+    *argcPtr = resultLength;
     Tcl_DecrRefCount(tmpPtr);
 
     /* Calculate space required for the result */
     
     size = 1;
-    for (i = 0; i < *argcPtr; i++) {
-	Tcl_ListObjIndex(NULL, resultPtr, i, &eltPtr);
+    for (i = 0; i < resultLength; i++) {
+	Tcl_ListObjIndex(NULL, resultPtr, (int)i, &eltPtr);
 	Tcl_GetStringFromObj(eltPtr, &len);
 	size += len + 1;
     }
@@ -584,16 +584,16 @@ Tcl_SplitPath(path, argcPtr, argvPtr)
      */
 
     *argvPtr = (char **) ckalloc((unsigned)
-	    ((((*argcPtr) + 1) * sizeof(char *)) + size));
+	    (((resultLength + 1) * sizeof(char *)) + size));
 
     /*
      * Position p after the last argv pointer and copy the contents of
      * the list in, piece by piece.
      */
 
-    p = (char *) &(*argvPtr)[(*argcPtr) + 1];
-    for (i = 0; i < *argcPtr; i++) {
-	Tcl_ListObjIndex(NULL, resultPtr, i, &eltPtr);
+    p = (char *) &(*argvPtr)[resultLength + 1];
+    for (i = 0; i < resultLength; i++) {
+	Tcl_ListObjIndex(NULL, resultPtr, (int)i, &eltPtr);
 	str = Tcl_GetStringFromObj(eltPtr, &len);
 	memcpy((VOID *) p, (VOID *) str, (size_t) len+1);
 	p += len+1;
@@ -603,9 +603,9 @@ Tcl_SplitPath(path, argcPtr, argvPtr)
      * Now set up the argv pointers.
      */
 
-    p = (char *) &(*argvPtr)[(*argcPtr) + 1];
+    p = (char *) &(*argvPtr)[resultLength + 1];
 
-    for (i = 0; i < *argcPtr; i++) {
+    for (i = 0; i < resultLength; i++) {
 	(*argvPtr)[i] = p;
 	while ((*p++) != '\0') {}
     }
@@ -726,8 +726,8 @@ SplitWinPath(path)
 
     if (p != path) {
 	Tcl_ListObjAppendElement(NULL, result, 
-				 Tcl_NewStringObj(Tcl_DStringValue(&buf), 
-						  Tcl_DStringLength(&buf)));
+		Tcl_NewStringObj(Tcl_DStringValue(&buf), 
+			(int)Tcl_DStringLength(&buf)));
     }
     Tcl_DStringFree(&buf);
     
@@ -1290,7 +1290,7 @@ Tcl_JoinPath(argc, argv, resultPtr)
     
     /* Store the result */
     resultStr = Tcl_GetStringFromObj(resultObj, &len);
-    Tcl_DStringAppend(resultPtr, resultStr, len);
+    Tcl_DStringAppend(resultPtr, resultStr, (int)len);
     Tcl_DecrRefCount(resultObj);
     
     /* Return a pointer to the result */
@@ -1731,7 +1731,7 @@ Tcl_GlobObjCmd(dummy, interp, objc, objv)
 	while(--length >= 0) {
 	    Tcl_Length len;
 	    char *str;
-	    Tcl_ListObjIndex(interp, typePtr, length, &look);
+	    Tcl_ListObjIndex(interp, typePtr, (int)length, &look);
 	    str = Tcl_GetStringFromObj(look, &len);
 	    if (strcmp("readonly", str) == 0) {
 		globTypes->perm |= TCL_GLOB_PERM_RONLY;
@@ -1847,7 +1847,7 @@ Tcl_GlobObjCmd(dummy, interp, objc, objv)
 	}
 	for (i = 0; i < objc; i++) {
 	    string = Tcl_GetStringFromObj(objv[i], &length);
-	    Tcl_DStringAppend(&prefix, string, length);
+	    Tcl_DStringAppend(&prefix, string, (int)length);
 	    if (i != objc -1) {
 		Tcl_DStringAppend(&prefix, separators, 1);
 	    }
@@ -1864,10 +1864,10 @@ Tcl_GlobObjCmd(dummy, interp, objc, objv)
 		Tcl_DStringInit(&str);
 		if (dir == PATH_GENERAL) {
 		    Tcl_DStringAppend(&str, Tcl_DStringValue(&prefix),
-			    Tcl_DStringLength(&prefix));
+			    (int)Tcl_DStringLength(&prefix));
 		}
 		string = Tcl_GetStringFromObj(objv[i], &length);
-		Tcl_DStringAppend(&str, string, length);
+		Tcl_DStringAppend(&str, string, (int)length);
 		if (TclGlob(interp, Tcl_DStringValue(&str), pathOrDir,
 			globFlags, globTypes) != TCL_OK) {
 		    result = TCL_ERROR;
@@ -2117,7 +2117,7 @@ TclGlob(interp, pattern, unquotedPrefix, globFlags, types)
 		    }
 		} else {
 		    str = Tcl_NewStringObj(oldStr + prefixLen, 
-						len - prefixLen);
+					   (int)len - prefixLen);
 		}
 		Tcl_ListObjAppendElement(interp, tailResult, str);
 	    }
@@ -2219,12 +2219,12 @@ TclDoGlob(interp, separators, headPtr, tail, types)
     Tcl_GlobTypeData *types;	/* List object containing list of acceptable 
                             	 * types. May be NULL. */
 {
-    int baseLength, quoted, count;
+    int quoted, count;
     int result = TCL_OK;
     char *name, *p, *openBrace, *closeBrace, *firstSpecialChar, savedChar;
     char lastChar = 0;
     
-    int length = Tcl_DStringLength(headPtr);
+    Tcl_Length baseLength, length = Tcl_DStringLength(headPtr);
 
     if (length > 0) {
 	lastChar = Tcl_DStringValue(headPtr)[length-1];
@@ -2535,7 +2535,7 @@ TclDoGlob(interp, separators, headPtr, tail, types)
 	}
 	/* Common for all platforms */
 	name = Tcl_DStringValue(headPtr);
-	nameObj = Tcl_NewStringObj(name, Tcl_DStringLength(headPtr));
+	nameObj = Tcl_NewStringObj(name, (int)Tcl_DStringLength(headPtr));
 
 	Tcl_IncrRefCount(nameObj);
 	if (Tcl_FSLstat(nameObj, &buf) == 0) {
@@ -2577,7 +2577,7 @@ TclFileDirname(interp, pathPtr)
     Tcl_Interp *interp;		/* Used for error reporting */
     Tcl_Obj *pathPtr;           /* Path to take dirname of */
 {
-    int splitElements;
+    Tcl_Length splitElements;
     Tcl_Obj *splitPtr;
     Tcl_Obj *splitResultPtr = NULL;
 
@@ -2605,7 +2605,7 @@ TclFileDirname(interp, pathPtr)
      */
 
     if (splitElements > 1) {
-	splitResultPtr = Tcl_FSJoinPath(splitPtr, splitElements - 1);
+	splitResultPtr = Tcl_FSJoinPath(splitPtr, (int)splitElements - 1);
     } else if (splitElements == 0 || 
       (Tcl_FSGetPathType(pathPtr) == TCL_PATH_RELATIVE)) {
 	splitResultPtr = Tcl_NewStringObj(

@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.21.8.1 2001/09/25 16:49:56 dkf Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.21.8.2 2001/09/26 14:23:10 dkf Exp $ */
 
 #include "tclInt.h"
 
@@ -374,7 +374,8 @@ Tcl_GetCharLength(objPtr)
     
     if (stringPtr->numChars == -1) {
 
-	stringPtr->numChars = Tcl_NumUtfChars(objPtr->bytes, objPtr->length);
+	stringPtr->numChars = Tcl_NumUtfChars(objPtr->bytes,
+					      (int)objPtr->length);
 
  	if (stringPtr->numChars == objPtr->length) {
 
@@ -427,7 +428,7 @@ Tcl_GetCharLength(objPtr)
 Tcl_UniChar
 Tcl_GetUniChar(objPtr, index)
     Tcl_Obj *objPtr;	/* The object to get the Unicode charater from. */
-    int index;		/* Get the index'th Unicode character. */
+    Tcl_Length index;	/* Get the index'th Unicode character. */
 {
     Tcl_UniChar unichar;
     String *stringPtr;
@@ -597,8 +598,8 @@ Tcl_Obj *
 Tcl_GetRange(objPtr, first, last)
    
  Tcl_Obj *objPtr;		/* The Tcl object to find the range of. */
-    int first;			/* First index of the range. */
-    int last;			/* Last index of the range. */
+    Tcl_Length first;		/* First index of the range. */
+    Tcl_Length last;		/* Last index of the range. */
 {
     Tcl_Obj *newObjPtr;		/* The Tcl object to find the range of. */
     String *stringPtr;
@@ -633,7 +634,7 @@ Tcl_GetRange(objPtr, first, last)
 	 * object containing the specified range of chars.
 	 */
 	
-	newObjPtr = Tcl_NewStringObj(&str[first], last-first+1);
+	newObjPtr = Tcl_NewStringObj(&str[first], (int)(last-first+1));
 
 	/*
 	 * Since we know the new string only has 1-byte chars, we
@@ -645,7 +646,7 @@ Tcl_GetRange(objPtr, first, last)
 	stringPtr->numChars = last-first+1;
     } else {
 	newObjPtr = Tcl_NewUnicodeObj(stringPtr->unicode + first,
-		last-first+1);
+		(int)(last-first+1));
     }
     return newObjPtr;
 }
@@ -736,7 +737,7 @@ void
 Tcl_SetObjLength(objPtr, length)
     register Tcl_Obj *objPtr;	/* Pointer to object.  This object must
 				 * not currently be shared. */
-    register int length;	/* Number of bytes desired for string
+    register Tcl_Length length;	/* Number of bytes desired for string
 				 * representation of object, not including
 				 * terminating null byte. */
 {
@@ -811,7 +812,7 @@ int
 Tcl_AttemptSetObjLength(objPtr, length)
     register Tcl_Obj *objPtr;	/* Pointer to object.  This object must
 				 * not currently be shared. */
-    register int length;	/* Number of bytes desired for string
+    register Tcl_Length length;	/* Number of bytes desired for string
 				 * representation of object, not including
 				 * terminating null byte. */
 {
@@ -1092,7 +1093,7 @@ Tcl_AppendObjToObj(objPtr, appendObjPtr)
 		    stringPtr->numChars);
 	} else {
 	    bytes = Tcl_GetStringFromObj(appendObjPtr, &length);
-	    AppendUtfToUnicodeRep(objPtr, bytes, length);
+	    AppendUtfToUnicodeRep(objPtr, bytes, (int)length);
 	}
 	return;
     }
@@ -1115,7 +1116,7 @@ Tcl_AppendObjToObj(objPtr, appendObjPtr)
 	}
     }
 
-    AppendUtfToUtfRep(objPtr, bytes, length);
+    AppendUtfToUtfRep(objPtr, bytes, (int)length);
 
     if (allOneByteChars) {
 	stringPtr = GET_STRING(objPtr);
@@ -1236,8 +1237,9 @@ AppendUnicodeToUtfRep(objPtr, unicode, numChars)
     }
 
     Tcl_DStringInit(&dsPtr);
-    bytes = (char *)Tcl_UniCharToUtfDString(unicode, numChars, &dsPtr);
-    AppendUtfToUtfRep(objPtr, bytes, Tcl_DStringLength(&dsPtr));
+    bytes = (char *)Tcl_UniCharToUtfDString(unicode, (Tcl_Length)numChars,
+					    &dsPtr);
+    AppendUtfToUtfRep(objPtr, bytes, (int)Tcl_DStringLength(&dsPtr));
     Tcl_DStringFree(&dsPtr);
 }
 
@@ -1307,7 +1309,7 @@ AppendUtfToUtfRep(objPtr, bytes, numBytes)
     int numBytes;	/* Number of bytes of "bytes" to append. */
 {
     String *stringPtr;
-    int newLength, oldLength;
+    Tcl_Length newLength, oldLength;
 
     if (numBytes < 0) {
 	numBytes = (bytes ? strlen(bytes) : 0);
@@ -1380,7 +1382,7 @@ Tcl_AppendStringsToObjVA (objPtr, argList)
 {
 #define STATIC_LIST_SIZE 16
     String *stringPtr;
-    int newLength, oldLength, attemptLength;
+    Tcl_Length newLength, oldLength, attemptLength;
     register char *string, *dst;
     char *static_list[STATIC_LIST_SIZE];
     char **args = static_list;
@@ -1557,7 +1559,7 @@ FillUnicodeRep(objPtr)
     
     stringPtr = GET_STRING(objPtr);
     if (stringPtr->numChars == -1) {
-	stringPtr->numChars = Tcl_NumUtfChars(src, objPtr->length);
+	stringPtr->numChars = Tcl_NumUtfChars(src, (int)objPtr->length);
     }
 
     uallocated = stringPtr->numChars * sizeof(Tcl_UniChar);

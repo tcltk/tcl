@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUtf.c,v 1.17 2001/09/13 19:31:04 hobbs Exp $
+ * RCS: @(#) $Id: tclUtf.c,v 1.17.2.1 2001/09/26 14:23:10 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -234,7 +234,7 @@ Tcl_UniCharToUtf(ch, str)
 char *
 Tcl_UniCharToUtfDString(wString, numChars, dsPtr)
     CONST Tcl_UniChar *wString;	/* Unicode string to convert to UTF-8. */
-    int numChars;		/* Length of Unicode string in Tcl_UniChars
+    Tcl_Length numChars;	/* Length of Unicode string in Tcl_UniChars
 				 * (must be >= 0). */
     Tcl_DString *dsPtr;		/* UTF-8 representation of string is
 				 * appended to this previously initialized
@@ -242,7 +242,7 @@ Tcl_UniCharToUtfDString(wString, numChars, dsPtr)
 {
     CONST Tcl_UniChar *w, *wEnd;
     char *p, *string;
-    int oldLength;
+    Tcl_Length oldLength;
 
     /*
      * UTF-8 string length in bytes will be <= Unicode string length *
@@ -417,7 +417,7 @@ Tcl_UtfToUniCharDString(string, length, dsPtr)
 
     oldLength = Tcl_DStringLength(dsPtr);
     Tcl_DStringSetLength(dsPtr,
-	    (int) ((oldLength + length + 1) * sizeof(Tcl_UniChar)));
+	    ((oldLength + length + 1) * sizeof(Tcl_UniChar)));
     wString = (Tcl_UniChar *) (Tcl_DStringValue(dsPtr) + oldLength);
 
     w = wString;
@@ -428,7 +428,7 @@ Tcl_UtfToUniCharDString(string, length, dsPtr)
     }
     *w = '\0';
     Tcl_DStringSetLength(dsPtr,
-	    (oldLength + ((char *) w - (char *) wString)));
+	    (Tcl_Length)(oldLength + ((char *) w - (char *) wString)));
 
     return wString;
 }
@@ -456,7 +456,7 @@ int
 Tcl_UtfCharComplete(str, len)
     CONST char *str;		/* String to check if first few bytes
 				 * contain a complete UTF-8 character. */
-    int len;			/* Length of above string in bytes. */
+    Tcl_Length len;			/* Length of above string in bytes. */
 {
     int ch;
 
@@ -700,14 +700,13 @@ Tcl_UtfPrev(str, start)
 Tcl_UniChar
 Tcl_UniCharAtIndex(src, index)
     register CONST char *src;	/* The UTF-8 string to dereference. */
-    register int index;		/* The position of the desired character. */
+    register Tcl_Length index;	/* The position of the desired character. */
 {
     Tcl_UniChar ch;
 
-    while (index >= 0) {
-	index--;
+    do {
 	src += Tcl_UtfToUniChar(src, &ch);
-    }
+    } while (index-- > 0);
     return ch;
 }
 
@@ -1092,7 +1091,7 @@ int
 Tcl_UtfNcmp(cs, ct, n)
     CONST char *cs;		/* UTF string to compare to ct. */
     CONST char *ct;		/* UTF string cs is compared to. */
-    unsigned long n;		/* Number of UTF chars to compare. */
+    Tcl_Length n;		/* Number of UTF chars to compare. */
 {
     Tcl_UniChar ch1, ch2;
     /*
@@ -1137,7 +1136,7 @@ int
 Tcl_UtfNcasecmp(cs, ct, n)
     CONST char *cs;		/* UTF string to compare to ct. */
     CONST char *ct;		/* UTF string cs is compared to. */
-    unsigned long n;			/* Number of UTF chars to compare. */
+    Tcl_Length n;		/* Number of UTF chars to compare. */
 {
     Tcl_UniChar ch1, ch2;
     while (n-- > 0) {
@@ -1304,7 +1303,7 @@ int
 Tcl_UniCharNcmp(cs, ct, n)
     CONST Tcl_UniChar *cs;		/* Unicode string to compare to ct. */
     CONST Tcl_UniChar *ct;		/* Unicode string cs is compared to. */
-    unsigned long n;			/* Number of unichars to compare. */
+    Tcl_Length n;			/* Number of unichars to compare. */
 {
     for ( ; n != 0; n--, cs++, ct++) {
 	if (*cs != *ct) {
@@ -1339,7 +1338,7 @@ int
 Tcl_UniCharNcasecmp(cs, ct, n)
     CONST Tcl_UniChar *cs;		/* Unicode string to compare to ct. */
     CONST Tcl_UniChar *ct;		/* Unicode string cs is compared to. */
-    unsigned long n;			/* Number of unichars to compare. */
+    Tcl_Length n;			/* Number of unichars to compare. */
 {
     for ( ; n != 0; n--, cs++, ct++) {
 	if ((*cs != *ct) &&

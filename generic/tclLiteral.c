@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLiteral.c,v 1.8.16.1 2001/09/25 16:49:56 dkf Exp $
+ * RCS: @(#) $Id: tclLiteral.c,v 1.8.16.2 2001/09/26 14:23:10 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -35,7 +35,7 @@ static int		AddLocalLiteralEntry _ANSI_ARGS_((
 static void		ExpandLocalLiteralArray _ANSI_ARGS_((
 			    CompileEnv *envPtr));
 static unsigned int	HashString _ANSI_ARGS_((CONST char *bytes,
-			    int length));
+			    Tcl_Length length));
 static void		RebuildLiteralTable _ANSI_ARGS_((
 			    LiteralTable *tablePtr));
 
@@ -191,7 +191,7 @@ TclRegisterLiteral(envPtr, bytes, length, onHeap)
     if (length < 0) {
 	length = (bytes? strlen(bytes) : 0);
     }
-    hash = HashString(bytes, length);
+    hash = HashString(bytes, (Tcl_Length)length);
 
     /*
      * Is the literal already in the CompileEnv's local literal array?
@@ -778,7 +778,7 @@ static unsigned int
 HashString(bytes, length)
     register CONST char *bytes; /* String for which to compute hash
 				 * value. */
-    int length;			/* Number of bytes in the string. */
+    Tcl_Length length;		/* Number of bytes in the string. */
 {
     register unsigned int result;
     register int i;

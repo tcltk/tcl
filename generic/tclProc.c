@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.28.2.1 2001/09/25 16:49:56 dkf Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.28.2.2 2001/09/26 14:23:10 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -26,7 +26,7 @@ static int	ProcBodySetFromAny _ANSI_ARGS_((Tcl_Interp *interp,
 		Tcl_Obj *objPtr));
 static void	ProcBodyUpdateString _ANSI_ARGS_((Tcl_Obj *objPtr));
 static  int	ProcessProcResultCode _ANSI_ARGS_((Tcl_Interp *interp,
-		    char *procName, int nameLen, int returnCode));
+		    char *procName, Tcl_Length nameLen, int returnCode));
 static int	TclCompileNoOp _ANSI_ARGS_((Tcl_Interp *interp,
 		    Tcl_Parse *parsePtr, struct CompileEnv *envPtr));
 
@@ -185,7 +185,7 @@ Tcl_ProcObjCmd(dummy, interp, objc, objv)
 
 	    txt = Tcl_GetString(objv[3]);
 	    while(*txt != '\0') {
-		if (!isspace(*txt)) {
+		if (!isspace(UCHAR(*txt))) {		/* INTL: ISO space. */
 		    goto done;
 		}
 		txt++;
@@ -281,7 +281,7 @@ TclCreateProc(interp, nsPtr, procName, argsPtr, bodyPtr, procPtrPtr)
 
         if (Tcl_IsShared(bodyPtr)) {
             bytes = Tcl_GetStringFromObj(bodyPtr, &length);
-            bodyPtr = Tcl_NewStringObj(bytes, length);
+            bodyPtr = Tcl_NewStringObj(bytes, (int)length);
         }
 
         /*
@@ -1281,7 +1281,7 @@ ProcessProcResultCode(interp, procName, nameLen, returnCode)
 				 * was called and returned returnCode. */
     char *procName;		/* Name of the procedure. Used for error
 				 * messages and trace information. */
-    int nameLen;		/* Number of bytes in procedure's name. */
+    Tcl_Length nameLen;		/* Number of bytes in procedure's name. */
     int returnCode;		/* The unexpected result code. */
 {
     Interp *iPtr = (Interp *) interp;
@@ -1293,7 +1293,7 @@ ProcessProcResultCode(interp, procName, nameLen, returnCode)
 	char *ellipsis = "";
 	int numChars = nameLen;
 
-	if (numChars > 60) {
+	if (nameLen > 60) {
 	    numChars = 60;
 	    ellipsis = "...";
 	}

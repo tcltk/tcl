@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFCmd.c,v 1.13.6.2 2001/09/25 16:49:56 dkf Exp $
+ * RCS: @(#) $Id: tclFCmd.c,v 1.13.6.3 2001/09/26 14:23:10 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -226,7 +226,8 @@ TclFileMakeDirsCmd(interp, objc, objv)
     Tcl_Obj *CONST objv[];	/* Argument strings passed to Tcl_FileCmd. */
 {
     Tcl_Obj *errfile;
-    int result, i, j, pobjc;
+    int result, i;
+    Tcl_Length j, pobjc;
     Tcl_Obj *split = NULL;
     Tcl_Obj *target = NULL;
     Tcl_StatBuf statBuf;
@@ -247,7 +248,7 @@ TclFileMakeDirsCmd(interp, objc, objv)
 	    break;
 	}
 	for (j = 0; j < pobjc; j++) {
-	    target = Tcl_FSJoinPath(split, j + 1);
+	    target = Tcl_FSJoinPath(split, (int)j + 1);
 	    Tcl_IncrRefCount(target);
 	    /*
 	     * Call Tcl_Stat() so that if target is a symlink that points
@@ -732,7 +733,7 @@ FileBasename(interp, pathPtr)
     Tcl_Interp *interp;		/* Interp, for error return. */
     Tcl_Obj *pathPtr;		/* Path whose basename to extract. */
 {
-    int objc;
+    Tcl_Length objc;
     Tcl_Obj *splitPtr;
     Tcl_Obj *resultPtr = NULL;
     
@@ -753,7 +754,7 @@ FileBasename(interp, pathPtr)
 	 */
 
 	if (objc > 0) {
-	    Tcl_ListObjIndex(NULL, splitPtr, objc-1, &resultPtr);
+	    Tcl_ListObjIndex(NULL, splitPtr, (int)objc-1, &resultPtr);
 	    if ((objc == 1) &&
 	      (Tcl_FSGetPathType(resultPtr) != TCL_PATH_RELATIVE)) {
 		resultPtr = NULL;

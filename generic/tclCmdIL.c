@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.33.6.1 2001/09/25 16:49:55 dkf Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.33.6.2 2001/09/26 14:23:09 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -53,7 +53,9 @@ typedef struct SortInfo {
     int index;			/* If the -index option was specified, this
 				 * holds the index of the list element
 				 * to extract for comparison.  If -index
-				 * wasn't specified, this is -1. */
+				 * wasn't specified, this is SORT_INDEX_NONE.
+				 * Indexing relative to the end of the list
+				 * is done by offsets from SORT_INDEX_END. */
     Tcl_Interp *interp;		/* The interpreter in which the sortis
 				 * being done. */
     int resultCode;		/* Completion code for the lsort command.
@@ -71,6 +73,9 @@ typedef struct SortInfo {
 #define SORTMODE_REAL       2
 #define SORTMODE_COMMAND    3
 #define SORTMODE_DICTIONARY 4
+
+#define SORT_INDEX_NONE -1
+#define SORT_INDEX_END  -2
 
 /*
  * Forward declarations for procedures defined in this file:
@@ -583,7 +588,7 @@ InfoBodyCmd(dummy, interp, objc, objv)
     bodyPtr = procPtr->bodyPtr;
     resultPtr = bodyPtr;
     if (bodyPtr->typePtr == &tclByteCodeType) {
-	resultPtr = Tcl_NewStringObj(bodyPtr->bytes, bodyPtr->length);
+	resultPtr = Tcl_NewStringObj(bodyPtr->bytes, (int)bodyPtr->length);
     }
     
     Tcl_SetObjResult(interp, resultPtr);
@@ -1972,9 +1977,9 @@ Tcl_JoinObjCmd(dummy, interp, objc, objv)
     for (i = 0;  i < listLen;  i++) {
 	bytes = Tcl_GetStringFromObj(elemPtrs[i], &length);
 	if (i > 0) {
-	    Tcl_AppendToObj(resObjPtr, joinString, joinLength);
+	    Tcl_AppendToObj(resObjPtr, joinString, (int)joinLength);
 	}
-	Tcl_AppendToObj(resObjPtr, bytes, length);
+	Tcl_AppendToObj(resObjPtr, bytes, (int)length);
     }
     return TCL_OK;
 }
@@ -2231,7 +2236,7 @@ Tcl_LlengthObjCmd(dummy, interp, objc, objv)
      * length. 
      */
 
-    Tcl_SetIntObj(Tcl_GetObjResult(interp), listLen);
+    Tcl_SetIntObj(Tcl_GetObjResult(interp), (int)listLen);
     return TCL_OK;
 }
 
@@ -2775,7 +2780,7 @@ Tcl_LsortObjCmd(clientData, interp, objc, objv)
 
     sortInfo.isIncreasing = 1;
     sortInfo.sortMode = SORTMODE_ASCII;
-    sortInfo.index = -1;
+    sortInfo.index = SORT_INDEX_NONE;
     sortInfo.interp = interp;
     sortInfo.resultCode = TCL_OK;
     cmdPtr = NULL;
@@ -2816,8 +2821,9 @@ Tcl_LsortObjCmd(clientData, interp, objc, objv)
 			    -1);
 		    return TCL_ERROR;
 		}
-		if (TclGetIntForIndex(interp, objv[i+1], -2, &sortInfo.index)
-			!= TCL_OK) {
+		if (TclGetIntForIndex(interp, objv[i+1],
+				      (Tcl_Length)SORT_INDEX_END,
+				      &sortInfo.index) != TCL_OK) {
 		    return TCL_ERROR;
 		}
 		i++;
@@ -3071,7 +3077,7 @@ SortCompare(objPtr1, objPtr2, infoPtr)
 
 	return order;
     }
-    if (infoPtr->index != -1) {
+    if (infoPtr->index != SORT_INDEX_NONE) {
 	/*
 	 * The "-index" option was specified.  Treat each object as a
 	 * list, extract the requested element from each list, and
@@ -3083,8 +3089,8 @@ SortCompare(objPtr1, objPtr2, infoPtr)
 	    infoPtr->resultCode = TCL_ERROR;
 	    return order;
 	}
-	if (infoPtr->index < -1) {
-	    index = listLen - 1;
+	if (infoPtr->index <= SORT_INDEX_END) {
+	    index = listLen + infoPtr->index + 1;
 	} else {
 	    index = infoPtr->index;
 	}
@@ -3110,8 +3116,8 @@ SortCompare(objPtr1, objPtr2, infoPtr)
 	    infoPtr->resultCode = TCL_ERROR;
 	    return order;
 	}
-	if (infoPtr->index < -1) {
-	    index = listLen - 1;
+	if (infoPtr->index <= SORT_INDEX_END) {
+	    index = listLen + infoPtr->index + 1;
 	} else {
 	    index = infoPtr->index;
 	}
@@ -3127,12 +3133,15 @@ SortCompare(objPtr1, objPtr2, infoPtr)
 	}
 	objPtr2 = objPtr;
     }
-    if (infoPtr->sortMode == SORTMODE_ASCII) {
+    switch (infoPtr->sortMode) {
+    case SORTMODE_ASCII:
 	order = strcmp(Tcl_GetString(objPtr1), Tcl_GetString(objPtr2));
-    } else if (infoPtr->sortMode == SORTMODE_DICTIONARY) {
+	break;
+    case SORTMODE_DICTIONARY:
 	order = DictionaryCompare(
 		Tcl_GetString(objPtr1),	Tcl_GetString(objPtr2));
-    } else if (infoPtr->sortMode == SORTMODE_INTEGER) {
+	break;
+    case SORTMODE_INTEGER: {
 	long a, b;
 
 	if ((Tcl_GetLongFromObj(infoPtr->interp, objPtr1, &a) != TCL_OK)
@@ -3146,7 +3155,9 @@ SortCompare(objPtr1, objPtr2, infoPtr)
 	} else if (b > a) {
 	    order = -1;
 	}
-    } else if (infoPtr->sortMode == SORTMODE_REAL) {
+	break;
+    }
+    case SORTMODE_REAL: {
 	double a, b;
 
 	if ((Tcl_GetDoubleFromObj(infoPtr->interp, objPtr1, &a) != TCL_OK)
@@ -3160,7 +3171,9 @@ SortCompare(objPtr1, objPtr2, infoPtr)
 	} else if (b > a) {
 	    order = -1;
 	}
-    } else {
+	break;
+    }
+    default: {
 	Tcl_Obj **objv, *paramObjv[2];
 	Tcl_Length objc;
 
@@ -3173,12 +3186,13 @@ SortCompare(objPtr1, objPtr2, infoPtr)
 	 */
 
 	Tcl_ListObjLength(infoPtr->interp, infoPtr->compareCmdPtr, &objc);
-	Tcl_ListObjReplace(infoPtr->interp, infoPtr->compareCmdPtr, objc - 2,
-		2, 2, paramObjv);
+	Tcl_ListObjReplace(infoPtr->interp, infoPtr->compareCmdPtr,
+		(int)objc - 2, 2, 2, paramObjv);
    	Tcl_ListObjGetElements(infoPtr->interp, infoPtr->compareCmdPtr,
 		&objc, &objv);
 
-	infoPtr->resultCode = Tcl_EvalObjv(infoPtr->interp, objc, objv, 0);
+	infoPtr->resultCode = Tcl_EvalObjv(infoPtr->interp,
+		(int)objc, objv, 0);
   
   	if (infoPtr->resultCode != TCL_OK) {
 	    Tcl_AddErrorInfo(infoPtr->interp,
@@ -3198,7 +3212,10 @@ SortCompare(objPtr1, objPtr2, infoPtr)
 	    infoPtr->resultCode = TCL_ERROR;
 	    return order;
 	}
-    }
+	break;
+    } /* end of default case */
+    } /* end of switch */
+
     if (!infoPtr->isIncreasing) {
 	order = -order;
     }

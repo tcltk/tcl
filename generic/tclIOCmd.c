@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOCmd.c,v 1.10.2.1 2001/09/25 16:49:56 dkf Exp $
+ * RCS: @(#) $Id: tclIOCmd.c,v 1.10.2.2 2001/09/26 14:23:10 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -425,8 +425,9 @@ Tcl_SeekObjCmd(clientData, interp, objc, objv)
     Tcl_Obj *CONST objv[];		/* Argument objects. */
 {
     Tcl_Channel chan;			/* The channel to tell on. */
-    int offset, mode;			/* Where to seek? */
-    int result;				/* Of calling Tcl_Seek. */
+    Tcl_WideInt offset;			/* Where to seek? */
+    int mode;				/* How to seek? */
+    Tcl_WideInt result;			/* Of calling Tcl_Seek. */
     char *chanName;
     int optionIndex;
     static char *originOptions[] = {"start", "current", "end", (char *) NULL};
@@ -441,7 +442,7 @@ Tcl_SeekObjCmd(clientData, interp, objc, objv)
     if (chan == (Tcl_Channel) NULL) {
 	return TCL_ERROR;
     }
-    if (Tcl_GetIntFromObj(interp, objv[2], &offset) != TCL_OK) {
+    if (Tcl_GetWideIntFromObj(interp, objv[2], &offset) != TCL_OK) {
 	return TCL_ERROR;
     }
     mode = SEEK_SET;
@@ -453,8 +454,8 @@ Tcl_SeekObjCmd(clientData, interp, objc, objv)
 	mode = modeArray[optionIndex];
     }
 
-    result = Tcl_Seek(chan, offset, mode);
-    if (result == -1) {
+    result = Tcl_Seek(chan, (Tcl_WideInt)offset, mode);
+    if (result == (Tcl_WideInt)-1) {
         Tcl_AppendResult(interp, "error during seek on \"", 
 		chanName, "\": ", Tcl_PosixError(interp), (char *) NULL);
         return TCL_ERROR;
@@ -504,7 +505,7 @@ Tcl_TellObjCmd(clientData, interp, objc, objv)
     if (chan == (Tcl_Channel) NULL) {
 	return TCL_ERROR;
     }
-    Tcl_SetIntObj(Tcl_GetObjResult(interp), Tcl_Tell(chan));
+    Tcl_SetWideIntObj(Tcl_GetObjResult(interp), Tcl_Tell(chan));
     return TCL_OK;
 }
 
@@ -848,7 +849,7 @@ Tcl_ExecObjCmd(dummy, interp, objc, objv)
 
     result = Tcl_Close(interp, chan);
     string = Tcl_GetStringFromObj(Tcl_GetObjResult(interp), &length);
-    Tcl_AppendToObj(resultPtr, string, length);
+    Tcl_AppendToObj(resultPtr, string, (int)length);
 
     /*
      * If the last character of the result is a newline, then remove

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFile.c,v 1.12.6.1 2001/09/25 10:24:07 dkf Exp $
+ * RCS: @(#) $Id: tclUnixFile.c,v 1.12.6.2 2001/09/26 14:23:11 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -203,14 +203,11 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 {
     char *native, *fname, *dirName;
     DIR *d;
-    Tcl_DString ds;
+    Tcl_DString ds, dsOrig;
     Tcl_StatBuf statBuf;
-    int matchHidden;
-    int nativeDirLen;
-    int result = TCL_OK;
-    Tcl_DString dsOrig;
+    int matchHidden, result = TCL_OK;
     Tcl_Obj *fileNamePtr;
-    int baseLength;
+    Tcl_Length baseLength, nativeDirLen;
 
     fileNamePtr = Tcl_FSGetTranslatedPath(interp, pathPtr);
     if (fileNamePtr == NULL) {
@@ -420,7 +417,8 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 	    }
 	    if (typeOk) {
 		Tcl_ListObjAppendElement(interp, resultPtr, 
-			Tcl_NewStringObj(fname, Tcl_DStringLength(&dsOrig)));
+			Tcl_NewStringObj(fname,
+					 (int)Tcl_DStringLength(&dsOrig)));
 	    }
 	}
 	Tcl_DStringFree(&utfDs);

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.25.2.1 2001/09/25 16:49:55 dkf Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.25.2.2 2001/09/26 14:23:10 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -359,8 +359,8 @@ TclSetByteCodeFromAny(interp, objPtr, hookProc, clientData)
 	nested = 0;
     }
     string = Tcl_GetStringFromObj(objPtr, &length);
-    TclInitCompileEnv(interp, &compEnv, string, length);
-    result = TclCompileScript(interp, string, length, nested, &compEnv);
+    TclInitCompileEnv(interp, &compEnv, string, (int)length);
+    result = TclCompileScript(interp, string, (int)length, nested, &compEnv);
 
     if (result == TCL_OK) {
 	/*
@@ -929,7 +929,7 @@ TclCompileScript(interp, script, numBytes, nested, envPtr)
 
 			Tcl_DStringSetLength(&ds, 0);
 			Tcl_DStringAppend(&ds, tokenPtr[1].start,
-				tokenPtr[1].size);
+				(int)tokenPtr[1].size);
 
 			cmdPtr = (Command *) Tcl_FindCommand(interp,
 				Tcl_DStringValue(&ds),
@@ -965,7 +965,7 @@ TclCompileScript(interp, script, numBytes, nested, envPtr)
 			 */
 
 			objIndex = TclRegisterLiteral(envPtr,
-				tokenPtr[1].start, tokenPtr[1].size,
+				tokenPtr[1].start, (int)tokenPtr[1].size,
 				/*onHeap*/ 0);
 			if (cmdPtr != NULL) {
 			    TclSetCmdNameObj(interp,
@@ -974,7 +974,7 @@ TclCompileScript(interp, script, numBytes, nested, envPtr)
 			}
 		    } else {
 			objIndex = TclRegisterLiteral(envPtr,
-				tokenPtr[1].start, tokenPtr[1].size,
+				tokenPtr[1].start, (int)tokenPtr[1].size,
 				/*onHeap*/ 0);
 		    }
 		    TclEmitPush(objIndex, envPtr);
@@ -1140,7 +1140,7 @@ TclCompileTokens(interp, tokenPtr, count, envPtr)
 	switch (tokenPtr->type) {
 	    case TCL_TOKEN_TEXT:
 		Tcl_DStringAppend(&textBuffer, tokenPtr->start,
-			tokenPtr->size);
+			(int)tokenPtr->size);
 		break;
 
 	    case TCL_TOKEN_BS:
@@ -1159,7 +1159,8 @@ TclCompileTokens(interp, tokenPtr, count, envPtr)
 		    
 		    literal = TclRegisterLiteral(envPtr,
 			    Tcl_DStringValue(&textBuffer),
-			    Tcl_DStringLength(&textBuffer), /*onHeap*/ 0);
+			    (int)Tcl_DStringLength(&textBuffer),
+			    /*onHeap*/ 0);
 		    TclEmitPush(literal, envPtr);
 		    numObjsToConcat++;
 		    maxDepth = TclMax(numObjsToConcat, maxDepth);
@@ -1167,7 +1168,7 @@ TclCompileTokens(interp, tokenPtr, count, envPtr)
 		}
 		
 		code = TclCompileScript(interp, tokenPtr->start+1,
-			tokenPtr->size-2, /*nested*/ 1,	envPtr);
+			(int)tokenPtr->size-2, /*nested*/ 1, envPtr);
 		if (code != TCL_OK) {
 		    goto error;
 		}
@@ -1186,7 +1187,8 @@ TclCompileTokens(interp, tokenPtr, count, envPtr)
 		    
 		    literal = TclRegisterLiteral(envPtr,
 			    Tcl_DStringValue(&textBuffer),
-			    Tcl_DStringLength(&textBuffer), /*onHeap*/ 0);
+			    (int)Tcl_DStringLength(&textBuffer),
+			    /*onHeap*/ 0);
 		    TclEmitPush(literal, envPtr);
 		    numObjsToConcat++;
 		    maxDepth = TclMax(numObjsToConcat, maxDepth);
@@ -1283,7 +1285,7 @@ TclCompileTokens(interp, tokenPtr, count, envPtr)
 	int literal;
 
 	literal = TclRegisterLiteral(envPtr, Tcl_DStringValue(&textBuffer),
-	        Tcl_DStringLength(&textBuffer), /*onHeap*/ 0);
+	        (int)Tcl_DStringLength(&textBuffer), /*onHeap*/ 0);
 	TclEmitPush(literal, envPtr);
 	numObjsToConcat++;
 	maxDepth = TclMax(numObjsToConcat, maxDepth);
@@ -1362,7 +1364,7 @@ TclCompileCmdWord(interp, tokenPtr, count, envPtr)
     
     envPtr->maxStackDepth = 0;
     if ((count == 1) && (tokenPtr->type == TCL_TOKEN_TEXT)) {
-	code = TclCompileScript(interp, tokenPtr->start, tokenPtr->size,
+	code = TclCompileScript(interp, tokenPtr->start, (int)tokenPtr->size,
 	        /*nested*/ 0, envPtr);
 	return code;
     }
@@ -3330,7 +3332,7 @@ TclPrintObject(outFile, objPtr, maxChars)
     Tcl_Length length;
     
     bytes = Tcl_GetStringFromObj(objPtr, &length);
-    TclPrintSource(outFile, bytes, TclMin(length, maxChars));
+    TclPrintSource(outFile, bytes, TclMin((int)length, maxChars));
 }
 
 /*

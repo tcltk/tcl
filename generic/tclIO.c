@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.35.6.1 2001/09/25 16:49:56 dkf Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.35.6.2 2001/09/26 14:23:10 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -88,12 +88,12 @@ static int		CloseChannel _ANSI_ARGS_((Tcl_Interp *interp,
 				Channel *chanPtr, int errorCode));
 static void		CommonGetsCleanup _ANSI_ARGS_((Channel *chanPtr,
 				Tcl_Encoding encoding));
-static int		CopyAndTranslateBuffer _ANSI_ARGS_((
+static Tcl_Length	CopyAndTranslateBuffer _ANSI_ARGS_((
 				ChannelState *statePtr, char *result,
-				int space));
-static int		CopyBuffer _ANSI_ARGS_((
+				Tcl_Length space));
+static Tcl_Length	CopyBuffer _ANSI_ARGS_((
 				Channel *chanPtr, char *result,
-				int space));
+				Tcl_Length space));
 static int		CopyData _ANSI_ARGS_((CopyState *csPtr, int mask));
 static void		CopyEventProc _ANSI_ARGS_((ClientData clientData,
 				int mask));
@@ -111,9 +111,9 @@ static void		DiscardInputQueued _ANSI_ARGS_((ChannelState *statePtr,
 static void		DiscardOutputQueued _ANSI_ARGS_((
 				ChannelState *chanPtr));
 static int		DoRead _ANSI_ARGS_((Channel *chanPtr, char *srcPtr,
-				int slen));
+				Tcl_Length slen));
 static int		DoWrite _ANSI_ARGS_((Channel *chanPtr, char *src,
-				int srcLen));
+				Tcl_Length srcLen));
 static int		DoReadChars _ANSI_ARGS_ ((Channel* chan,
 				Tcl_Obj* objPtr, int toRead, int appendFlag));
 static int		DoWriteChars _ANSI_ARGS_ ((Channel* chan,
@@ -147,9 +147,9 @@ static int		TranslateOutputEOL _ANSI_ARGS_((ChannelState *statePtr,
 				Tcl_Length *dstLenPtr, Tcl_Length *srcLenPtr));
 static void		UpdateInterest _ANSI_ARGS_((Channel *chanPtr));
 static int		WriteBytes _ANSI_ARGS_((Channel *chanPtr,
-				CONST char *src, int srcLen));
+				CONST char *src, Tcl_Length srcLen));
 static int		WriteChars _ANSI_ARGS_((Channel *chanPtr,
-				CONST char *src, int srcLen));
+				CONST char *src, Tcl_Length srcLen));
 
 
 /*
@@ -1989,7 +1989,7 @@ FlushChannel(interp, chanPtr, calledFromAsyncFlush)
 					/* State of the channel stack. */
     ChannelBuffer *bufPtr;		/* Iterates over buffered output
                                          * queue. */
-    int toWrite;			/* Amount of output data in current
+    Tcl_Length toWrite;			/* Amount of output data in current
                                          * buffer available to be written. */
     int written;			/* Amount of output data actually
                                          * written in current round. */
@@ -2702,7 +2702,7 @@ Tcl_Write(chan, src, srcLen)
     if (srcLen < 0) {
         srcLen = strlen(src);
     }
-    return DoWrite(chanPtr, src, srcLen);
+    return DoWrite(chanPtr, src, (Tcl_Length)srcLen);
 }
 
 /*
@@ -2754,7 +2754,7 @@ Tcl_WriteRaw(chan, src, srcLen)
      */
 
     written = (chanPtr->typePtr->outputProc) (chanPtr->instanceData,
-	    src, srcLen, &errorCode);
+	    src, (Tcl_Length)srcLen, &errorCode);
 
     if (written < 0) {
 	Tcl_SetErrno(errorCode);
@@ -2861,7 +2861,7 @@ DoWriteChars(chanPtr, src, len)
 	Tcl_DecrRefCount(objPtr);
 	return result;
     }
-    return WriteChars(chanPtr, src, len);
+    return WriteChars(chanPtr, src, (Tcl_Length)len);
 }
 
 /*
@@ -2942,7 +2942,7 @@ static int
 WriteBytes(chanPtr, src, srcLen)
     Channel *chanPtr;		/* The channel to buffer output for. */
     CONST char *src;		/* Bytes to write. */
-    int srcLen;			/* Number of bytes to write. */
+    Tcl_Length srcLen;		/* Number of bytes to write. */
 {
     ChannelState *statePtr = chanPtr->state;	/* state info for channel */
     ChannelBuffer *bufPtr;
@@ -3031,7 +3031,7 @@ static int
 WriteChars(chanPtr, src, srcLen)
     Channel *chanPtr;		/* The channel to buffer output for. */
     CONST char *src;		/* UTF-8 string to write. */
-    int srcLen;			/* Length of UTF-8 string in bytes. */
+    Tcl_Length srcLen;		/* Length of UTF-8 string in bytes. */
 {
     ChannelState *statePtr = chanPtr->state;	/* state info for channel */
     ChannelBuffer *bufPtr;
@@ -3120,9 +3120,10 @@ WriteChars(chanPtr, src, srcLen)
 		saved = 0;
 	    }
 
-	    Tcl_UtfToExternal(NULL, encoding, stage, stageLen, flags,
+	    Tcl_UtfToExternal(NULL, encoding, stage, (int)stageLen, flags,
 		    &statePtr->outputEncodingState, dst,
-		    dstLen + BUFFER_PADDING, &stageRead, &dstWrote, NULL);
+		    (Tcl_Length)dstLen + BUFFER_PADDING, &stageRead,
+		    &dstWrote, NULL);
 	    if (stageRead + dstWrote == 0) {
 		/*
 		 * We have an incomplete UTF-8 character at the end of the
@@ -3380,7 +3381,7 @@ Tcl_Gets(chan, lineRead)
     charsStored = Tcl_GetsObj(chan, objPtr);
     if (charsStored > 0) {
 	string = Tcl_GetStringFromObj(objPtr, &length);
-	Tcl_DStringAppend(lineRead, string, length);
+	Tcl_DStringAppend(lineRead, string, (int)length);
     }
     Tcl_DecrRefCount(objPtr);
     return charsStored;
@@ -3578,7 +3579,7 @@ Tcl_GetsObj(chan, objPtr)
 			bufPtr = gs.bufPtr;
 			Tcl_ExternalToUtf(NULL, gs.encoding,
 				bufPtr->buf + bufPtr->nextRemoved,
-				gs.rawRead, statePtr->inputEncodingFlags,
+				(int)gs.rawRead, statePtr->inputEncodingFlags,
 				&gs.state, tmp, 1 + TCL_UTF_MAX, &rawRead,
 				NULL, NULL);
 			bufPtr->nextRemoved += rawRead;
@@ -3663,16 +3664,17 @@ Tcl_GetsObj(chan, objPtr)
     bufPtr = gs.bufPtr;
     statePtr->inputEncodingState = gs.state;
     Tcl_ExternalToUtf(NULL, gs.encoding, bufPtr->buf + bufPtr->nextRemoved,
-	    gs.rawRead, statePtr->inputEncodingFlags,
-	    &statePtr->inputEncodingState, dst, eol - dst + skip + TCL_UTF_MAX,
-	    &gs.rawRead, NULL, &gs.charsWrote);
+	    (int)gs.rawRead, statePtr->inputEncodingFlags,
+	    &statePtr->inputEncodingState, dst,
+	    (Tcl_Length)(eol - dst + skip + TCL_UTF_MAX), &gs.rawRead, NULL,
+	    &gs.charsWrote);
     bufPtr->nextRemoved += gs.rawRead;
 
     /*
      * Recycle all the emptied buffers.
      */
 
-    Tcl_SetObjLength(objPtr, eol - objPtr->bytes);
+    Tcl_SetObjLength(objPtr, (Tcl_Length)(eol - objPtr->bytes));
     CommonGetsCleanup(chanPtr, encoding);
     statePtr->flags &= ~CHANNEL_BLOCKED;
     copiedTotal = gs.totalChars + gs.charsWrote - skip;
@@ -3829,7 +3831,7 @@ FilterInputBytes(chanPtr, gsPtr)
 	    length = offset + dstNeeded;
 	}
 	length += TCL_UTF_MAX + 1;
-	Tcl_SetObjLength(objPtr, length);
+	Tcl_SetObjLength(objPtr, (Tcl_Length)length);
 	spaceLeft = length - offset;
 	dst = objPtr->bytes + offset;
 	*gsPtr->dstPtr = dst;
@@ -3837,7 +3839,7 @@ FilterInputBytes(chanPtr, gsPtr)
     gsPtr->state = statePtr->inputEncodingState;
     result = Tcl_ExternalToUtf(NULL, gsPtr->encoding, raw, rawLen,
 	    statePtr->inputEncodingFlags, &statePtr->inputEncodingState,
-	    dst, spaceLeft, &gsPtr->rawRead, &gsPtr->bytesWrote,
+	    dst, (Tcl_Length)spaceLeft, &gsPtr->rawRead, &gsPtr->bytesWrote,
 	    &gsPtr->charsWrote); 
     if (result == TCL_CONVERT_MULTIBYTE) {
 	/*
@@ -4066,7 +4068,7 @@ int
 Tcl_Read(chan, dst, bytesToRead)
     Tcl_Channel chan;		/* The channel from which to read. */
     char *dst;			/* Where to store input read. */
-    int bytesToRead;		/* Maximum number of bytes to read. */
+    Tcl_Length bytesToRead;	/* Maximum number of bytes to read. */
 {
     Channel *chanPtr = (Channel *) chan;		
     ChannelState *statePtr = chanPtr->state;	/* state info for channel */
@@ -4109,8 +4111,8 @@ Tcl_Read(chan, dst, bytesToRead)
 int
 Tcl_ReadRaw(chan, bufPtr, bytesToRead)
     Tcl_Channel chan;		/* The channel from which to read. */
-    char *bufPtr;			/* Where to store input read. */
-    int bytesToRead;		/* Maximum number of bytes to read. */
+    char *bufPtr;		/* Where to store input read. */
+    Tcl_Length bytesToRead;	/* Maximum number of bytes to read. */
 {
     Channel *chanPtr = (Channel *) chan;		
     ChannelState *statePtr = chanPtr->state;	/* state info for channel */
@@ -4560,7 +4562,7 @@ ReadChars(statePtr, objPtr, charsToRead, offsetPtr, factorPtr)
     srcLen = bufPtr->nextAdded - bufPtr->nextRemoved;
 
     toRead = charsToRead;
-    if ((unsigned) toRead > (unsigned) srcLen) {
+    if ((Tcl_Length) toRead > (Tcl_Length) srcLen) {
 	toRead = srcLen;
     }
 
@@ -4587,7 +4589,7 @@ ReadChars(statePtr, objPtr, charsToRead, offsetPtr, factorPtr)
 	}
 	spaceLeft = length - offset;
 	length += TCL_UTF_MAX + 1;
-	Tcl_SetObjLength(objPtr, length);
+	Tcl_SetObjLength(objPtr, (Tcl_Length)length);
     }
     if (toRead == srcLen) {
 	/*
@@ -4630,7 +4632,8 @@ ReadChars(statePtr, objPtr, charsToRead, offsetPtr, factorPtr)
 
     Tcl_ExternalToUtf(NULL, statePtr->encoding, src, srcLen,
 	    statePtr->inputEncodingFlags, &statePtr->inputEncodingState, dst,
-	    dstNeeded + TCL_UTF_MAX, &srcRead, &dstWrote, &numChars);
+	    (Tcl_Length)dstNeeded + TCL_UTF_MAX, &srcRead, &dstWrote,
+	    &numChars);
     if (srcRead == 0) {
 	/*
 	 * Not enough bytes in src buffer to make a complete char.  Copy
@@ -4695,7 +4698,8 @@ ReadChars(statePtr, objPtr, charsToRead, offsetPtr, factorPtr)
 	statePtr->inputEncodingState = oldState;
 	Tcl_ExternalToUtf(NULL, statePtr->encoding, src, srcLen,
 		statePtr->inputEncodingFlags, &statePtr->inputEncodingState,
-		dst, eof - dst + TCL_UTF_MAX, &srcRead, &dstWrote, &numChars);
+		dst, (Tcl_Length)(eof - dst + TCL_UTF_MAX),
+		&srcRead, &dstWrote, &numChars);
 	dstRead = dstWrote;
 	TranslateInputEOL(statePtr, dst, dst, &dstWrote, &dstRead);
 	numChars -= (dstRead - dstWrote);
@@ -5202,7 +5206,7 @@ GetInput(chanPtr)
     }
 
     nread = (chanPtr->typePtr->inputProc)(chanPtr->instanceData,
-	    bufPtr->buf + bufPtr->nextAdded, toRead, &result);
+	    bufPtr->buf + bufPtr->nextAdded, (Tcl_Length)toRead, &result);
 
     if (nread > 0) {
 	bufPtr->nextAdded += nread;
@@ -5259,7 +5263,7 @@ Tcl_Seek(chan, offset, mode)
     ChannelState *statePtr = chanPtr->state;	/* state info for channel */
     int inputBuffered, outputBuffered;
     int result;			/* Of device driver operations. */
-    int curPos;			/* Position on the device. */
+    Tcl_WideInt curPos;		/* Position on the device. */
     int wasAsync;		/* Was the channel nonblocking before the
                                  * seek operation? If so, must restore to
                                  * nonblocking mode after the seek. */
@@ -5368,7 +5372,7 @@ Tcl_Seek(chan, offset, mode)
          */
 
         curPos = (chanPtr->typePtr->seekProc) (chanPtr->instanceData,
-                (long) offset, mode, &result);
+		offset, mode, &result);
         if (curPos == -1) {
             Tcl_SetErrno(result);
         }
@@ -5419,7 +5423,7 @@ Tcl_Tell(chan)
     ChannelState *statePtr = chanPtr->state;	/* state info for channel */
     int inputBuffered, outputBuffered;
     int result;				/* Of calling device driver. */
-    int curPos;				/* Position on device. */
+    Tcl_WideInt curPos;			/* Position on device. */
 
     if (CheckChannelErrors(statePtr, TCL_WRITABLE | TCL_READABLE) != 0) {
 	return -1;
@@ -5471,7 +5475,7 @@ Tcl_Tell(chan)
      */
 
     curPos = (chanPtr->typePtr->seekProc) (chanPtr->instanceData,
-            (long) 0, SEEK_CUR, &result);
+	    (Tcl_WideInt)0, SEEK_CUR, &result);
     if (curPos == -1) {
         Tcl_SetErrno(result);
         return -1;
@@ -7374,7 +7378,8 @@ CopyData(csPtr, mask)
 	}
 
 	if (inBinary || sameEncoding) {
-	    size = DoRead(inStatePtr->topChanPtr, csPtr->buffer, size);
+	    size = DoRead(inStatePtr->topChanPtr, csPtr->buffer,
+		    (Tcl_Length) size);
 	} else {
 	    size = DoReadChars(inStatePtr->topChanPtr, bufObj, size, 0 /* No append */);
 	}
@@ -7424,7 +7429,7 @@ CopyData(csPtr, mask)
 	if (outBinary || sameEncoding) {
 	    sizeb = DoWrite(outStatePtr->topChanPtr, buffer, sizeb);
 	} else {
-	    sizeb = DoWriteChars(outStatePtr->topChanPtr, buffer, sizeb);
+	    sizeb = DoWriteChars(outStatePtr->topChanPtr, buffer, (int)sizeb);
 	}
 
 	if (inBinary || sameEncoding) {
@@ -7566,7 +7571,7 @@ static int
 DoRead(chanPtr, bufPtr, toRead)
     Channel *chanPtr;		/* The channel from which to read. */
     char *bufPtr;		/* Where to store input read. */
-    int toRead;			/* Maximum number of bytes to read. */
+    Tcl_Length toRead;		/* Maximum number of bytes to read. */
 {
     ChannelState *statePtr = chanPtr->state;	/* state info for channel */
     int copied;			/* How many characters were copied into
@@ -7640,11 +7645,11 @@ DoRead(chanPtr, bufPtr, toRead)
  *----------------------------------------------------------------------
  */
 
-static int
+static Tcl_Length
 CopyAndTranslateBuffer(statePtr, result, space)
     ChannelState *statePtr;	/* Channel state from which to read input. */
     char *result;		/* Where to store the copied input. */
-    int space;			/* How many bytes are available in result
+    Tcl_Length space;		/* How many bytes are available in result
                                  * to store the copied input? */
 {
     ChannelBuffer *bufPtr;	/* The buffer from which to copy bytes. */
@@ -7877,11 +7882,11 @@ CopyAndTranslateBuffer(statePtr, result, space)
  *----------------------------------------------------------------------
  */
 
-static int
+static Tcl_Length
 CopyBuffer(chanPtr, result, space)
     Channel *chanPtr;		/* Channel from which to read input. */
     char *result;		/* Where to store the copied input. */
-    int space;			/* How many bytes are available in result
+    Tcl_Length space;		/* How many bytes are available in result
                                  * to store the copied input? */
 {
     ChannelBuffer *bufPtr;	/* The buffer from which to copy bytes. */
@@ -7977,7 +7982,7 @@ static int
 DoWrite(chanPtr, src, srcLen)
     Channel *chanPtr;			/* The channel to buffer output for. */
     char *src;				/* Data to write. */
-    int srcLen;				/* Number of bytes to write. */
+    Tcl_Length srcLen;			/* Number of bytes to write. */
 {
     ChannelState *statePtr = chanPtr->state;	/* state info for channel */
     ChannelBuffer *outBufPtr;		/* Current output buffer. */

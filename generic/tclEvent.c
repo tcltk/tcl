@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEvent.c,v 1.13.4.1 2001/09/25 16:49:56 dkf Exp $
+ * RCS: @(#) $Id: tclEvent.c,v 1.13.4.2 2001/09/26 14:23:10 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -302,7 +302,7 @@ HandleBgErrors(clientData)
                             -1);
                     Tcl_WriteChars(errChannel, "\n", -1);
                     Tcl_WriteChars(errChannel, "    Error in bgerror: ", -1);
-                    Tcl_WriteChars(errChannel, string, len);
+                    Tcl_WriteChars(errChannel, string, (int)len);
                     Tcl_WriteChars(errChannel, "\n", -1);
                 }
                 Tcl_Flush(errChannel);

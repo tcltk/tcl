@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEncoding.c,v 1.7.6.1 2001/09/25 16:49:55 dkf Exp $
+ * RCS: @(#) $Id: tclEncoding.c,v 1.7.6.2 2001/09/26 14:23:10 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -561,7 +561,8 @@ Tcl_GetEncodingNames(interp)
 
     pathPtr = TclGetLibraryPath();
     if (pathPtr != NULL) {
-	int i, objc;
+	int i;
+	Tcl_Length objc;
 	Tcl_Obj **objv;
 	char globArgString[10];
 	Tcl_Obj* encodingObj = Tcl_NewStringObj("encoding",-1);
@@ -594,9 +595,8 @@ Tcl_GetEncodingNames(interp)
 	     */
 	    if ((TclGlob(interp, globArgString, searchIn, 
 			 TCL_GLOBMODE_TAILS, NULL) == TCL_OK)) {
-		int objc2 = 0;
+		Tcl_Length j, objc2 = 0;
 		Tcl_Obj **objv2;
-		int j;
 
 		Tcl_ListObjGetElements(NULL, Tcl_GetObjResult(interp), &objc2,
 			&objv2);
@@ -814,8 +814,8 @@ Tcl_ExternalToUtfDString(encoding, src, srcLen, dstPtr)
     flags = TCL_ENCODING_START | TCL_ENCODING_END;
     while (1) {
 	result = (*encodingPtr->toUtfProc)(encodingPtr->clientData, src,
-		srcLen, flags, &state, dst, dstLen, &srcRead, &dstWrote,
-		&dstChars);
+		(Tcl_Length)srcLen, flags, &state, dst, dstLen, &srcRead,
+		&dstWrote, &dstChars);
 	soFar = dst + dstWrote - Tcl_DStringValue(dstPtr);
 	if (result != TCL_CONVERT_NOSPACE) {
 	    Tcl_DStringSetLength(dstPtr, soFar);
@@ -858,7 +858,7 @@ Tcl_ExternalToUtf(interp, encoding, src, srcLen, flags, statePtr, dst,
     Tcl_Encoding encoding;	/* The encoding for the source string, or
 				 * NULL for the default system encoding. */
     CONST char *src;		/* Source string in specified encoding. */
-    Tcl_Length srcLen;		/* Source string length in bytes, or < 0 for
+    int srcLen;			/* Source string length in bytes, or < 0 for
 				 * encoding-specific string length. */
     int flags;			/* Conversion control flags. */
     Tcl_EncodingState *statePtr;/* Place for conversion routine to store
@@ -918,9 +918,9 @@ Tcl_ExternalToUtf(interp, encoding, src, srcLen, flags, statePtr, dst,
      */
 
     dstLen--;
-    result = (*encodingPtr->toUtfProc)(encodingPtr->clientData, src, srcLen,
-	    flags, statePtr, dst, dstLen, srcReadPtr, dstWrotePtr,
-	    dstCharsPtr);
+    result = (*encodingPtr->toUtfProc)(encodingPtr->clientData, src,
+	    (Tcl_Length)srcLen, flags, statePtr, dst, dstLen, srcReadPtr,
+	    dstWrotePtr, dstCharsPtr);
     dst[*dstWrotePtr] = '\0';
     return result;
 }
@@ -979,8 +979,8 @@ Tcl_UtfToExternalDString(encoding, src, srcLen, dstPtr)
     flags = TCL_ENCODING_START | TCL_ENCODING_END;
     while (1) {
 	result = (*encodingPtr->fromUtfProc)(encodingPtr->clientData, src,
-		srcLen, flags, &state, dst, dstLen, &srcRead, &dstWrote,
-		&dstChars);
+		(Tcl_Length)srcLen, flags, &state, dst, dstLen, &srcRead,
+		&dstWrote, &dstChars);
 	soFar = dst + dstWrote - Tcl_DStringValue(dstPtr);
 	if (result != TCL_CONVERT_NOSPACE) {
 	    if (encodingPtr->nullSize == 2) {
@@ -1026,7 +1026,7 @@ Tcl_UtfToExternal(interp, encoding, src, srcLen, flags, statePtr, dst,
     Tcl_Encoding encoding;	/* The encoding for the converted string,
 				 * or NULL for the default system encoding. */
     CONST char *src;		/* Source string in UTF-8. */
-    Tcl_Length srcLen;		/* Source string length in bytes, or < 0 for
+    int srcLen;			/* Source string length in bytes, or < 0 for
 				 * strlen(). */
     int flags;			/* Conversion control flags. */
     Tcl_EncodingState *statePtr;/* Place for conversion routine to store
@@ -1080,9 +1080,9 @@ Tcl_UtfToExternal(interp, encoding, src, srcLen, flags, statePtr, dst,
     }
 
     dstLen -= encodingPtr->nullSize;
-    result = (*encodingPtr->fromUtfProc)(encodingPtr->clientData, src, srcLen,
-	    flags, statePtr, dst, dstLen, srcReadPtr, dstWrotePtr,
-	    dstCharsPtr);
+    result = (*encodingPtr->fromUtfProc)(encodingPtr->clientData, src,
+	    (Tcl_Length)srcLen, flags, statePtr, dst, dstLen, srcReadPtr,
+	    dstWrotePtr, dstCharsPtr);
     if (encodingPtr->nullSize == 2) {
 	dst[*dstWrotePtr + 1] = '\0';
     }
@@ -1187,9 +1187,9 @@ LoadEncodingFile(interp, name)
     CONST char *name;		/* The name of the encoding file on disk
 				 * and also the name for new encoding. */
 {
-    int objc, i, ch;
-    Tcl_Obj **objv;
-    Tcl_Obj *pathPtr;
+    int ch;
+    Tcl_Length objc, i;
+    Tcl_Obj **objv, *pathPtr;
     Tcl_Channel chan;
     Tcl_Encoding encoding;
 
@@ -1788,7 +1788,8 @@ UtfToUtfProc(clientData, src, srcLen, flags, statePtr, dst, dstLen,
     dstEnd = dst + dstLen - TCL_UTF_MAX;
 
     for (numChars = 0; src < srcEnd; numChars++) {
-	if ((src > srcClose) && (!Tcl_UtfCharComplete(src, srcEnd - src))) {
+	if ((src > srcClose) && (!Tcl_UtfCharComplete(src,
+		(Tcl_Length)(srcEnd - src)))) {
 	    /*
 	     * If there is more string to follow, this will ensure that the
 	     * last UTF-8 character in the source buffer hasn't been cut off.
@@ -1950,7 +1951,8 @@ UtfToUnicodeProc(clientData, src, srcLen, flags, statePtr, dst, dstLen,
 
     result = TCL_OK;
     for (numChars = 0; src < srcEnd; numChars++) {
-	if ((src > srcClose) && (!Tcl_UtfCharComplete(src, srcEnd - src))) {
+	if ((src > srcClose) && (!Tcl_UtfCharComplete(src,
+		(Tcl_Length)(srcEnd - src)))) {
 	    /*
 	     * If there is more string to follow, this will ensure that the
 	     * last UTF-8 character in the source buffer hasn't been cut off.
@@ -2144,7 +2146,8 @@ TableFromUtfProc(clientData, src, srcLen, flags, statePtr, dst, dstLen,
     dstEnd = dst + dstLen - 1;
 
     for (numChars = 0; src < srcEnd; numChars++) {
-	if ((src > srcClose) && (!Tcl_UtfCharComplete(src, srcEnd - src))) {
+	if ((src > srcClose) && (!Tcl_UtfCharComplete(src,
+		(Tcl_Length)(srcEnd - src)))) {
 	    /*
 	     * If there is more string to follow, this will ensure that the
 	     * last UTF-8 character in the source buffer hasn't been cut off.
@@ -2525,7 +2528,8 @@ EscapeFromUtfProc(clientData, src, srcLen, flags, statePtr, dst, dstLen,
 	int word;
 	Tcl_UniChar ch;
 	
-	if ((src > srcClose) && (!Tcl_UtfCharComplete(src, srcEnd - src))) {
+	if ((src > srcClose) && (!Tcl_UtfCharComplete(src,
+		(Tcl_Length)(srcEnd - src)))) {
 	    /*
 	     * If there is more string to follow, this will ensure that the
 	     * last UTF-8 character in the source buffer hasn't been cut off.

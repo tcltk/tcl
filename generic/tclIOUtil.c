@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.20.6.2 2001/09/25 16:49:56 dkf Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.20.6.3 2001/09/26 14:23:10 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -791,7 +791,8 @@ FSNormalizeAbsolutePath(interp, pathPtr)
     Tcl_Interp* interp;    /* Interpreter to use */
     Tcl_Obj *pathPtr;      /* Absolute path to normalize */
 {
-    int splen = 0, nplen, i;
+    int nplen, i;
+    Tcl_Length splen = 0;
     Tcl_Obj *retVal;
     Tcl_Obj *split;
     
@@ -1199,7 +1200,7 @@ Tcl_FSEvalFile(interp, fileName)
     iPtr->scriptFile = fileName;
     Tcl_IncrRefCount(iPtr->scriptFile);
     string = Tcl_GetStringFromObj(objPtr, &length);
-    result = Tcl_EvalEx(interp, string, length, 0);
+    result = Tcl_EvalEx(interp, string, (int)length, 0);
     /* 
      * Now we have to be careful; the script may have changed the
      * iPtr->scriptFile value, so we must reset it without
@@ -1684,10 +1685,11 @@ Tcl_FSMatchInDirectory(interp, result, pathPtr, pattern, types)
 			Tcl_Length eltLen, i;
 
 			for (i = 0; i < resLength; i++) {
-			    Tcl_ListObjIndex(interp, tmpResultPtr, i, &elt);
-			    eltStr = Tcl_GetStringFromObj(elt,&eltLen);
+			    Tcl_ListObjIndex(interp, tmpResultPtr, (int)i,
+					     &elt);
+			    eltStr = Tcl_GetStringFromObj(elt, &eltLen);
 			    cutElt = Tcl_NewStringObj(eltStr + cwdLen,
-				    eltLen - cwdLen);
+				    (int)(eltLen - cwdLen));
 			    Tcl_ListObjAppendElement(interp, result, cutElt);
 			}
 		    }
@@ -2855,23 +2857,22 @@ GetPathType(pathObjPtr, filesystemPtrPtr, driveNameLengthPtr, driveNameRef)
 				      &numVolumes) != TCL_OK) {
 		    /* 
 		     * This is VERY bad; Tcl_FSListVolumes didn't 
-		     * return a valid list.  Set numVolumes to -1
-		     * so that we skip the while loop below and
-		     * just return with the current value of 'type'.
+		     * return a valid list.  We skip the while loop
+		     * below and just return with the current value
+		     * of 'type'.
 		     * 
 		     * It would be better if we could signal an error
 		     * here (but panic seems a bit excessive).
 		     */
-		    numVolumes = -1;
-		}
-		while (numVolumes > 0) {
+		} else while (numVolumes > 0) {
 		    Tcl_Obj *vol;
 		    Tcl_Length len;
 		    char *strVol;
 
 		    numVolumes--;
-		    Tcl_ListObjIndex(NULL, thisFsVolumes, numVolumes, &vol);
-		    strVol = Tcl_GetStringFromObj(vol,&len);
+		    Tcl_ListObjIndex(NULL, thisFsVolumes, (int)numVolumes,
+				     &vol);
+		    strVol = Tcl_GetStringFromObj(vol, &len);
 		    if (pathLen < len) {
 			continue;
 		    }
@@ -3490,7 +3491,8 @@ SetFsPathFromAny(interp, objPtr)
 	}
 	
 	expandedUser = Tcl_DStringValue(&temp);
-	transPtr = Tcl_NewStringObj(expandedUser, Tcl_DStringLength(&temp));
+	transPtr = Tcl_NewStringObj(expandedUser,
+		(int)Tcl_DStringLength(&temp));
 
 	if (split != len) {
 	    /* 
@@ -4032,7 +4034,7 @@ NativeCreateNativeRep(pathObjPtr)
     memcpy((VOID*)nativePathPtr, (VOID*)Tcl_DStringValue(&ds), 
 	   (size_t) (2+Tcl_DStringLength(&ds)));
 #else
-    Tcl_UtfToExternalDString(NULL, str, len, &ds);
+    Tcl_UtfToExternalDString(NULL, str, (int)len, &ds);
     nativePathPtr = ckalloc((unsigned)(1+Tcl_DStringLength(&ds)));
     memcpy((VOID*)nativePathPtr, (VOID*)Tcl_DStringValue(&ds), 
 	  (size_t) (1+Tcl_DStringLength(&ds)));
@@ -4070,7 +4072,8 @@ TclpNativeToNormalized(clientData)
 #else
     Tcl_ExternalToUtfDString(NULL, (char*)clientData, -1, &ds);
 #endif
-    objPtr = Tcl_NewStringObj(Tcl_DStringValue(&ds),Tcl_DStringLength(&ds));
+    objPtr = Tcl_NewStringObj(Tcl_DStringValue(&ds),
+	    (int)Tcl_DStringLength(&ds));
     Tcl_DStringFree(&ds);
     
     return objPtr;

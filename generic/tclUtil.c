@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.23.2.1 2001/09/25 16:49:56 dkf Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.23.2.2 2001/09/26 14:23:10 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1031,7 +1031,7 @@ Tcl_ConcatObj(objc, objv)
 	     * the end.  It will be set right in Tcl_ListObjReplace.
 	     */
 	    Tcl_ListObjGetElements(NULL, objv[i], &listc, &listv);
-	    Tcl_ListObjReplace(NULL, objPtr, INT_MAX, 0, listc, listv);
+	    Tcl_ListObjReplace(NULL, objPtr, INT_MAX, 0, (int)listc, listv);
 	}
 	return objPtr;
     }
@@ -1518,13 +1518,10 @@ Tcl_DStringAppendElement(dsPtr, string)
 void
 Tcl_DStringSetLength(dsPtr, length)
     Tcl_DString *dsPtr;		/* Structure describing dynamic string. */
-    int length;			/* New length for dynamic string. */
+    Tcl_Length length;		/* New length for dynamic string. */
 {
     int newsize;
 
-    if (length < 0) {
-	length = 0;
-    }
     if (length >= dsPtr->spaceAvl) {
 	/*
 	 * There are two interesting cases here.  In the first case, the user
@@ -2151,7 +2148,7 @@ TclGetIntForIndex(interp, objPtr, endValue, indexPtr)
 				 * after errors. */
     Tcl_Obj *objPtr;		/* Points to an object containing either
 				 * "end" or an integer. */
-    int endValue;		/* The value to be stored at "indexPtr" if
+    Tcl_Length endValue;	/* The value to be stored at "indexPtr" if
 				 * "objPtr" holds "end". */
     int *indexPtr;		/* Location filled in with an integer
 				 * representing an index. */

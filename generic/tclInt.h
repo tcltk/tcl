@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.64.6.2 2001/09/25 16:49:56 dkf Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.64.6.3 2001/09/26 14:23:10 dkf Exp $
  */
 
 #ifndef _TCLINT
@@ -1687,7 +1687,8 @@ EXTERN int		TclGetFrame _ANSI_ARGS_((Tcl_Interp *interp,
 			    char *string, CallFrame **framePtrPtr));
 EXTERN TclCmdProcType	TclGetInterpProc _ANSI_ARGS_((void));
 EXTERN int		TclGetIntForIndex _ANSI_ARGS_((Tcl_Interp *interp,
-			    Tcl_Obj *objPtr, int endValue, int *indexPtr));
+			    Tcl_Obj *objPtr, Tcl_Length endValue,
+			    int *indexPtr));
 EXTERN Tcl_Obj *	TclGetIndexedScalar _ANSI_ARGS_((Tcl_Interp *interp,
 			    int localIndex, int flags));
 EXTERN int		TclGetLong _ANSI_ARGS_((Tcl_Interp *interp,

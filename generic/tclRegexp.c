@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclRegexp.c,v 1.11.8.1 2001/09/25 16:49:56 dkf Exp $
+ * RCS: @(#) $Id: tclRegexp.c,v 1.11.8.2 2001/09/26 14:23:10 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -463,7 +463,7 @@ Tcl_RegExpExecObj(interp, re, objPtr, offset, nmatches, flags)
     udata += offset;
     length -= offset;
     
-    return RegExpExecUniChar(interp, re, udata, length, nmatches, flags);
+    return RegExpExecUniChar(interp, re, udata, (int)length, nmatches, flags);
 }
 
 /*
@@ -572,7 +572,7 @@ Tcl_GetRegExpFromObj(interp, objPtr, flags)
     if ((typePtr != &tclRegexpType) || (regexpPtr->flags != flags)) {
 	pattern = Tcl_GetStringFromObj(objPtr, &length);
 
-	regexpPtr = CompileRegexp(interp, pattern, length, flags);
+	regexpPtr = CompileRegexp(interp, pattern, (int)length, flags);
 	if (regexpPtr == NULL) {
 	    return NULL;
 	}

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclListObj.c,v 1.9.12.1 2001/09/25 16:49:56 dkf Exp $
+ * RCS: @(#) $Id: tclListObj.c,v 1.9.12.2 2001/09/26 14:23:10 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -382,7 +382,7 @@ Tcl_ListObjAppendList(interp, listPtr, elemListPtr)
      * Delete zero existing elements.
      */
     
-    return Tcl_ListObjReplace(interp, listPtr, listLen, 0, objc, objv);
+    return Tcl_ListObjReplace(interp, listPtr, listLen, 0, (int)objc, objv);
 }
 
 /*
@@ -1033,7 +1033,7 @@ UpdateStringOfList(listPtr)
     listPtr->length = 1;
     for (i = 0; i < numElems; i++) {
 	elem = Tcl_GetStringFromObj(listRepPtr->elements[i], &length);
-	listPtr->length += Tcl_ScanCountedElement(elem, length,
+	listPtr->length += Tcl_ScanCountedElement(elem, (int)length,
 		&flagPtr[i]) + 1;
     }
 
@@ -1045,7 +1045,7 @@ UpdateStringOfList(listPtr)
     dst = listPtr->bytes;
     for (i = 0; i < numElems; i++) {
 	elem = Tcl_GetStringFromObj(listRepPtr->elements[i], &length);
-	dst += Tcl_ConvertCountedElement(elem, length, dst, flagPtr[i]);
+	dst += Tcl_ConvertCountedElement(elem, (int)length, dst, flagPtr[i]);
 	*dst = ' ';
 	dst++;
     }

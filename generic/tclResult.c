@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclResult.c,v 1.4 1999/10/21 02:16:22 hobbs Exp $
+ * RCS: @(#) $Id: tclResult.c,v 1.4.16.1 2001/09/26 14:23:10 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -19,7 +19,7 @@
 
 static void             ResetObjResult _ANSI_ARGS_((Interp *iPtr));
 static void		SetupAppendBuffer _ANSI_ARGS_((Interp *iPtr,
-			    int newSpace));
+			    Tcl_Length newSpace));
 
 
 /*
@@ -460,7 +460,8 @@ Tcl_AppendResultVA (interp, argList)
     char *string, *static_list[STATIC_LIST_SIZE];
     char **args = static_list;
     int nargs_space = STATIC_LIST_SIZE;
-    int nargs, newSpace, i;
+    int nargs, i;
+    Tcl_Length newSpace;
 
     /*
      * If the string result is empty, move the object result to the
@@ -664,7 +665,7 @@ Tcl_AppendElement(interp, string)
 static void
 SetupAppendBuffer(iPtr, newSpace)
     Interp *iPtr;		/* Interpreter whose result is being set up. */
-    int newSpace;		/* Make sure that at least this many bytes
+    Tcl_Length newSpace;	/* Make sure that at least this many bytes
 				 * of new information may be added. */
 {
     int totalSpace;

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclClock.c,v 1.11.12.1 2001/09/25 16:49:55 dkf Exp $
+ * RCS: @(#) $Id: tclClock.c,v 1.11.12.2 2001/09/26 14:23:09 dkf Exp $
  */
 
 #include "tcl.h"
@@ -258,7 +258,7 @@ FormatClock(interp, clockVal, useGMT, format)
 {
     struct tm *timeDataPtr;
     Tcl_DString buffer, uniBuffer;
-    int bufSize;
+    Tcl_Length bufSize;
     char *p;
     int result;
     time_t tclockVal;

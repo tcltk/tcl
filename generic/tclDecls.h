@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.58.2.1 2001/09/25 16:49:55 dkf Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.58.2.2 2001/09/26 14:23:10 dkf Exp $
  */
 
 #ifndef _TCLDECLS
@@ -280,8 +280,8 @@ EXTERN int		Tcl_ConvertElement _ANSI_ARGS_((CONST char * src,
 				char * dst, int flags));
 /* 85 */
 EXTERN int		Tcl_ConvertCountedElement _ANSI_ARGS_((
-				CONST char * src, Tcl_Length length, 
-				char * dst, int flags));
+				CONST char * src, int length, char * dst, 
+				int flags));
 /* 86 */
 EXTERN int		Tcl_CreateAlias _ANSI_ARGS_((Tcl_Interp * slave, 
 				char * slaveCmd, Tcl_Interp * target, 
@@ -710,7 +710,7 @@ EXTERN int		Tcl_ScanElement _ANSI_ARGS_((CONST char * str,
 				int * flagPtr));
 /* 219 */
 EXTERN int		Tcl_ScanCountedElement _ANSI_ARGS_((CONST char * str, 
-				Tcl_Length length, int * flagPtr));
+				int length, int * flagPtr));
 /* 220 */
 EXTERN Tcl_WideInt	Tcl_Seek _ANSI_ARGS_((Tcl_Channel chan, 
 				Tcl_WideInt offset, int mode));
@@ -1005,7 +1005,7 @@ EXTERN int		Tcl_NumUtfChars _ANSI_ARGS_((CONST char * src,
 				int len));
 /* 313 */
 EXTERN int		Tcl_ReadChars _ANSI_ARGS_((Tcl_Channel channel, 
-				Tcl_Obj * objPtr, Tcl_Length charsToRead, 
+				Tcl_Obj * objPtr, int charsToRead, 
 				int appendFlag));
 /* 314 */
 EXTERN void		Tcl_RestoreResult _ANSI_ARGS_((Tcl_Interp * interp, 
@@ -1240,7 +1240,7 @@ EXTERN int		Tcl_ReadRaw _ANSI_ARGS_((Tcl_Channel chan,
 				char * dst, Tcl_Length bytesToRead));
 /* 395 */
 EXTERN int		Tcl_WriteRaw _ANSI_ARGS_((Tcl_Channel chan, 
-				char * src, Tcl_Length srcLen));
+				char * src, int srcLen));
 /* 396 */
 EXTERN Tcl_Channel	Tcl_GetTopChannel _ANSI_ARGS_((Tcl_Channel chan));
 /* 397 */
@@ -1404,7 +1404,7 @@ EXTERN int		Tcl_FSMatchInDirectory _ANSI_ARGS_((
 				Tcl_Obj * pathPtr, char * pattern, 
 				Tcl_GlobTypeData * types));
 /* 446 */
-EXTERN Tcl_Obj*		Tcl_FSLink _ANSI_ARGS_((Tcl_Obj * pathPtr, 
+EXTERN Tcl_Obj *	Tcl_FSLink _ANSI_ARGS_((Tcl_Obj * pathPtr, 
 				Tcl_Obj * toPtr));
 /* 447 */
 EXTERN int		Tcl_FSRemoveDirectory _ANSI_ARGS_((Tcl_Obj * pathPtr, 
@@ -1634,7 +1634,7 @@ typedef struct TclStubs {
     int (*tcl_CommandComplete) _ANSI_ARGS_((char * cmd)); /* 82 */
     char * (*tcl_Concat) _ANSI_ARGS_((int argc, char ** argv)); /* 83 */
     int (*tcl_ConvertElement) _ANSI_ARGS_((CONST char * src, char * dst, int flags)); /* 84 */
-    int (*tcl_ConvertCountedElement) _ANSI_ARGS_((CONST char * src, Tcl_Length length, char * dst, int flags)); /* 85 */
+    int (*tcl_ConvertCountedElement) _ANSI_ARGS_((CONST char * src, int length, char * dst, int flags)); /* 85 */
     int (*tcl_CreateAlias) _ANSI_ARGS_((Tcl_Interp * slave, char * slaveCmd, Tcl_Interp * target, char * targetCmd, int argc, char ** argv)); /* 86 */
     int (*tcl_CreateAliasObj) _ANSI_ARGS_((Tcl_Interp * slave, char * slaveCmd, Tcl_Interp * target, char * targetCmd, int objc, Tcl_Obj *CONST objv[])); /* 87 */
     Tcl_Channel (*tcl_CreateChannel) _ANSI_ARGS_((Tcl_ChannelType * typePtr, char * chanName, ClientData instanceData, int mask)); /* 88 */
@@ -1800,7 +1800,7 @@ typedef struct TclStubs {
     void (*tcl_Release) _ANSI_ARGS_((ClientData clientData)); /* 216 */
     void (*tcl_ResetResult) _ANSI_ARGS_((Tcl_Interp * interp)); /* 217 */
     int (*tcl_ScanElement) _ANSI_ARGS_((CONST char * str, int * flagPtr)); /* 218 */
-    int (*tcl_ScanCountedElement) _ANSI_ARGS_((CONST char * str, Tcl_Length length, int * flagPtr)); /* 219 */
+    int (*tcl_ScanCountedElement) _ANSI_ARGS_((CONST char * str, int length, int * flagPtr)); /* 219 */
     Tcl_WideInt (*tcl_Seek) _ANSI_ARGS_((Tcl_Channel chan, Tcl_WideInt offset, int mode)); /* 220 */
     int (*tcl_ServiceAll) _ANSI_ARGS_((void)); /* 221 */
     int (*tcl_ServiceEvent) _ANSI_ARGS_((int flags)); /* 222 */
@@ -1894,7 +1894,7 @@ typedef struct TclStubs {
     void (*tcl_ConditionNotify) _ANSI_ARGS_((Tcl_Condition * condPtr)); /* 310 */
     void (*tcl_ConditionWait) _ANSI_ARGS_((Tcl_Condition * condPtr, Tcl_Mutex * mutexPtr, Tcl_Time * timePtr)); /* 311 */
     int (*tcl_NumUtfChars) _ANSI_ARGS_((CONST char * src, int len)); /* 312 */
-    int (*tcl_ReadChars) _ANSI_ARGS_((Tcl_Channel channel, Tcl_Obj * objPtr, Tcl_Length charsToRead, int appendFlag)); /* 313 */
+    int (*tcl_ReadChars) _ANSI_ARGS_((Tcl_Channel channel, Tcl_Obj * objPtr, int charsToRead, int appendFlag)); /* 313 */
     void (*tcl_RestoreResult) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_SavedResult * statePtr)); /* 314 */
     void (*tcl_SaveResult) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_SavedResult * statePtr)); /* 315 */
     int (*tcl_SetSystemEncoding) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * name)); /* 316 */
@@ -1976,7 +1976,7 @@ typedef struct TclStubs {
     void (*tcl_MutexFinalize) _ANSI_ARGS_((Tcl_Mutex * mutex)); /* 392 */
     int (*tcl_CreateThread) _ANSI_ARGS_((Tcl_ThreadId * idPtr, Tcl_ThreadCreateProc proc, ClientData clientData, int stackSize, int flags)); /* 393 */
     int (*tcl_ReadRaw) _ANSI_ARGS_((Tcl_Channel chan, char * dst, Tcl_Length bytesToRead)); /* 394 */
-    int (*tcl_WriteRaw) _ANSI_ARGS_((Tcl_Channel chan, char * src, Tcl_Length srcLen)); /* 395 */
+    int (*tcl_WriteRaw) _ANSI_ARGS_((Tcl_Channel chan, char * src, int srcLen)); /* 395 */
     Tcl_Channel (*tcl_GetTopChannel) _ANSI_ARGS_((Tcl_Channel chan)); /* 396 */
     int (*tcl_ChannelBuffered) _ANSI_ARGS_((Tcl_Channel chan)); /* 397 */
     char * (*tcl_ChannelName) _ANSI_ARGS_((Tcl_ChannelType * chanTypePtr)); /* 398 */
@@ -2027,7 +2027,7 @@ typedef struct TclStubs {
     int (*tcl_FSDeleteFile) _ANSI_ARGS_((Tcl_Obj * pathPtr)); /* 443 */
     int (*tcl_FSLoadFile) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * pathPtr, char * sym1, char * sym2, Tcl_PackageInitProc ** proc1Ptr, Tcl_PackageInitProc ** proc2Ptr, ClientData * clientDataPtr, Tcl_FSUnloadFileProc ** unloadProcPtr)); /* 444 */
     int (*tcl_FSMatchInDirectory) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * result, Tcl_Obj * pathPtr, char * pattern, Tcl_GlobTypeData * types)); /* 445 */
-    Tcl_Obj* (*tcl_FSLink) _ANSI_ARGS_((Tcl_Obj * pathPtr, Tcl_Obj * toPtr)); /* 446 */
+    Tcl_Obj * (*tcl_FSLink) _ANSI_ARGS_((Tcl_Obj * pathPtr, Tcl_Obj * toPtr)); /* 446 */
     int (*tcl_FSRemoveDirectory) _ANSI_ARGS_((Tcl_Obj * pathPtr, int recursive, Tcl_Obj ** errorPtr)); /* 447 */
     int (*tcl_FSRenameFile) _ANSI_ARGS_((Tcl_Obj * srcPathPtr, Tcl_Obj * destPathPtr)); /* 448 */
     int (*tcl_FSLstat) _ANSI_ARGS_((Tcl_Obj * pathPtr, Tcl_StatBuf * buf)); /* 449 */

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.21.6.1 2001/09/25 16:49:57 dkf Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.21.6.2 2001/09/26 14:23:10 dkf Exp $
  */
 
 #include	"tclInt.h"	/* Internal definitions for Tcl. */
@@ -1378,7 +1378,8 @@ TclpOpenFileChannel(interp, pathPtr, modeString, permissions)
 	    (ClientData) fsPtr, channelPermissions);
 
     if (seekFlag) {
-        if (Tcl_Seek(fsPtr->channel, 0, SEEK_END) < 0) {
+        if (Tcl_Seek(fsPtr->channel, (Tcl_WideInt)0,
+		     SEEK_END) < (Tcl_WideInt)0) {
             if (interp != (Tcl_Interp *) NULL) {
                 Tcl_AppendResult(interp, "couldn't seek to end of file on \"",
                         channelName, "\": ", Tcl_PosixError(interp), NULL);

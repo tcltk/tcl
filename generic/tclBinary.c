@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBinary.c,v 1.8.6.1 2001/09/25 16:49:55 dkf Exp $
+ * RCS: @(#) $Id: tclBinary.c,v 1.8.6.2 2001/09/26 14:23:09 dkf Exp $
  */
 
 #include <math.h>
@@ -139,8 +139,7 @@ Tcl_Obj *
 Tcl_NewByteArrayObj(bytes, length)
     CONST unsigned char *bytes;	/* The array of bytes used to initialize
 				 * the new object. */
-    int length;			/* Length of the array of bytes, which must
-				 * be >= 0. */
+    Tcl_Length length;		/* Length of the array of bytes. */
 {
     Tcl_Obj *objPtr;
 
@@ -202,8 +201,7 @@ Tcl_Obj *
 Tcl_DbNewByteArrayObj(bytes, length, file, line)
     CONST unsigned char *bytes;	/* The array of bytes used to initialize
 				 * the new object. */
-    int length;			/* Length of the array of bytes, which must
-				 * be >= 0. */
+    Tcl_Length length;		/* Length of the array of bytes. */
     CONST char *file;		/* The name of the source file calling this
 				 * procedure; used for debugging. */
     int line;			/* Line number in the source file; used
@@ -236,8 +234,7 @@ Tcl_SetByteArrayObj(objPtr, bytes, length)
     Tcl_Obj *objPtr;		/* Object to initialize as a ByteArray. */
     CONST unsigned char *bytes;	/* The array of bytes to use as the new
 				 * value. */
-    int length;			/* Length of the array of bytes, which must
-				 * be >= 0. */
+    Tcl_Length length;		/* Length of the array of bytes. */
 {
     Tcl_ObjType *typePtr;
     ByteArray *byteArrayPtr;
@@ -320,7 +317,7 @@ Tcl_GetByteArrayFromObj(objPtr, lengthPtr)
 unsigned char *
 Tcl_SetByteArrayLength(objPtr, length)
     Tcl_Obj *objPtr;		/* The ByteArray object. */
-    int length;			/* New length for internal byte array. */
+    Tcl_Length length;		/* New length for internal byte array. */
 {
     ByteArray *byteArrayPtr, *newByteArrayPtr;
     
@@ -560,8 +557,8 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
     unsigned char *maxPos;	/* Greatest position within result buffer that
 				 * cursor has visited.*/
     char *errorString, *errorValue, *str;
-    int offset, size, index;
-    Tcl_Length length;
+    int offset, index;
+    Tcl_Length length, size;
     static char *options[] = { 
 	"format",	"scan",		NULL 
     };
@@ -668,7 +665,7 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
 			    arg++;
 			    count = 1;
 			} else {
-			    int listc;
+			    Tcl_Length listc;
 			    Tcl_Obj **listv;
 			    if (Tcl_ListObjGetElements(interp, objv[arg++],
 				    &listc, &listv) != TCL_OK) {
@@ -927,7 +924,7 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
 		    case 'I':
 		    case 'd':
 		    case 'f': {
-			int listc, i;
+			Tcl_Length listc, i;
 			Tcl_Obj **listv;
 
 			if (count == BINARY_NOCOUNT) {

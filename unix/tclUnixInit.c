@@ -7,7 +7,7 @@
  * Copyright (c) 1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclUnixInit.c,v 1.24.6.1 2001/09/25 16:49:57 dkf Exp $
+ * RCS: @(#) $Id: tclUnixInit.c,v 1.24.6.2 2001/09/26 14:23:11 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -257,7 +257,7 @@ CONST char *path;		/* Path to the executable in native
 	    
 	    pathv[pathc - 1] = installLib + 4;
 	    str = Tcl_JoinPath(pathc, pathv, &ds);
-	    objPtr = Tcl_NewStringObj(str, Tcl_DStringLength(&ds));
+	    objPtr = Tcl_NewStringObj(str, (int)Tcl_DStringLength(&ds));
 	    Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
 	    Tcl_DStringFree(&ds);
 	}
@@ -297,7 +297,7 @@ CONST char *path;		/* Path to the executable in native
 	    pathv[pathc - 2] = installLib;
 	    path = Tcl_JoinPath(pathc - 1, pathv, &ds);
 	    pathv[pathc - 2] = str;
-	    objPtr = Tcl_NewStringObj(path, Tcl_DStringLength(&ds));
+	    objPtr = Tcl_NewStringObj(path, (int)Tcl_DStringLength(&ds));
 	    Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
 	    Tcl_DStringFree(&ds);
 	}
@@ -306,7 +306,7 @@ CONST char *path;		/* Path to the executable in native
 	    pathv[pathc - 3] = installLib;
 	    path = Tcl_JoinPath(pathc - 2, pathv, &ds);
 	    pathv[pathc - 3] = str;
-	    objPtr = Tcl_NewStringObj(path, Tcl_DStringLength(&ds));
+	    objPtr = Tcl_NewStringObj(path, (int)Tcl_DStringLength(&ds));
 	    Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
 	    Tcl_DStringFree(&ds);
 	}
@@ -315,7 +315,7 @@ CONST char *path;		/* Path to the executable in native
 	    pathv[pathc - 2] = "library";
 	    path = Tcl_JoinPath(pathc - 1, pathv, &ds);
 	    pathv[pathc - 2] = str;
-	    objPtr = Tcl_NewStringObj(path, Tcl_DStringLength(&ds));
+	    objPtr = Tcl_NewStringObj(path, (int)Tcl_DStringLength(&ds));
 	    Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
 	    Tcl_DStringFree(&ds);
 	}
@@ -324,7 +324,7 @@ CONST char *path;		/* Path to the executable in native
 	    pathv[pathc - 3] = "library";
 	    path = Tcl_JoinPath(pathc - 2, pathv, &ds);
 	    pathv[pathc - 3] = str;
-	    objPtr = Tcl_NewStringObj(path, Tcl_DStringLength(&ds));
+	    objPtr = Tcl_NewStringObj(path, (int)Tcl_DStringLength(&ds));
 	    Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
 	    Tcl_DStringFree(&ds);
 	}
@@ -333,7 +333,7 @@ CONST char *path;		/* Path to the executable in native
 	    pathv[pathc - 3] = developLib;
 	    path = Tcl_JoinPath(pathc - 2, pathv, &ds);
 	    pathv[pathc - 3] = str;
-	    objPtr = Tcl_NewStringObj(path, Tcl_DStringLength(&ds));
+	    objPtr = Tcl_NewStringObj(path, (int)Tcl_DStringLength(&ds));
 	    Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
 	    Tcl_DStringFree(&ds);
 	}
@@ -342,7 +342,7 @@ CONST char *path;		/* Path to the executable in native
 	    pathv[pathc - 4] = developLib;
 	    path = Tcl_JoinPath(pathc - 3, pathv, &ds);
 	    pathv[pathc - 4] = str;
-	    objPtr = Tcl_NewStringObj(path, Tcl_DStringLength(&ds));
+	    objPtr = Tcl_NewStringObj(path, (int)Tcl_DStringLength(&ds));
 	    Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
 	    Tcl_DStringFree(&ds);
 	}
@@ -515,9 +515,9 @@ TclpSetInitialEncodings()
 		Tcl_DString ds;
 
 		string = Tcl_GetStringFromObj(objv[i], &length);
-		Tcl_ExternalToUtfDString(NULL, string, length, &ds);
+		Tcl_ExternalToUtfDString(NULL, string, (int)length, &ds);
 		Tcl_SetStringObj(objv[i], Tcl_DStringValue(&ds), 
-			Tcl_DStringLength(&ds));
+			(int)Tcl_DStringLength(&ds));
 		Tcl_DStringFree(&ds);
 	    }
 	}

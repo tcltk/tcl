@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.45.2.1 2001/09/25 16:49:55 dkf Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.45.2.2 2001/09/26 14:23:09 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -383,8 +383,8 @@ Tcl_RegexpObjCmd(dummy, interp, objc, objv)
 	    } else {
 		if (i <= info.nsubs) {
 		    newPtr = Tcl_GetRange(objPtr,
-			    offset + info.matches[i].start,
-			    offset + info.matches[i].end - 1);
+			    (Tcl_Length)offset + info.matches[i].start,
+			    (Tcl_Length)offset + info.matches[i].end - 1);
 		} else {
 		    newPtr = Tcl_NewObj();
 		}
@@ -702,9 +702,10 @@ Tcl_RegsubObjCmd(dummy, interp, objc, objv)
 	 * On zero matches, just ignore the offset, since it shouldn't
 	 * matter to us in this case, and the user may have skewed it.
 	 */
-	Tcl_AppendUnicodeToObj(resultPtr, wstring, wlen);
+	Tcl_AppendUnicodeToObj(resultPtr, wstring, (int)wlen);
     } else if (offset < wlen) {
-	Tcl_AppendUnicodeToObj(resultPtr, wstring + offset, wlen - offset);
+	Tcl_AppendUnicodeToObj(resultPtr, wstring + offset,
+		(int)wlen - offset);
     }
     if (Tcl_ObjSetVar2(interp, objv[3], NULL, resultPtr, 0) == NULL) {
 	Tcl_AppendResult(interp, "couldn't set variable \"",
@@ -1202,8 +1203,8 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	     */
 	    string1 = Tcl_GetStringFromObj(objv[0], &length1);
 	    string2 = Tcl_GetStringFromObj(objv[1], &length2);
-	    length1 = Tcl_NumUtfChars(string1, length1);
-	    length2 = Tcl_NumUtfChars(string2, length2);
+	    length1 = Tcl_NumUtfChars(string1, (int)length1);
+	    length2 = Tcl_NumUtfChars(string2, (int)length2);
 	    length = (length1 < length2) ? length1 : length2;
 
 	    if ((reqlength > 0) && (reqlength < length)) {
@@ -1252,7 +1253,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 
 	    match = -1;
 	    start = 0;
-	    length2 = -1;
+	    length2 = (Tcl_Length)-1;  /* Is this needed? - DKF */
 
 	    ustring1 = Tcl_GetUnicodeFromObj(objv[2], &length1);
 	    ustring2 = Tcl_GetUnicodeFromObj(objv[3], &length2);
@@ -1347,9 +1348,9 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		    char buf[TCL_UTF_MAX];
 		    Tcl_UniChar ch;
 
-		    ch      = Tcl_GetUniChar(objv[2], index);
+		    ch      = Tcl_GetUniChar(objv[2], (Tcl_Length)index);
 		    length1 = Tcl_UniCharToUtf(ch, buf);
-		    Tcl_SetStringObj(resultPtr, buf, length1);
+		    Tcl_SetStringObj(resultPtr, buf, (int)length1);
 		}
 	    }
 	    break;
@@ -1496,7 +1497,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		     * If strtoul gets to the end, we know we either
 		     * received an acceptable int, or over/underflow
 		     */
-		    if (TclLooksLikeInt(string1, length1)) {
+		    if (TclLooksLikeInt(string1, (int)length1)) {
 			errno = 0;
 			strtoul(string1, &stop, 0);
 			if (stop == end) {
@@ -1646,7 +1647,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 
 	    match = -1;
 	    start = 0;
-	    length2 = -1;
+	    length2 = (Tcl_Length)-1; /* Do we need this? - DKF */
 
 	    ustring1 = Tcl_GetUnicodeFromObj(objv[2], &length1);
 	    ustring2 = Tcl_GetUnicodeFromObj(objv[3], &length2);
@@ -1712,11 +1713,12 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		    length1 = Tcl_GetCharLength(objv[2]);
 		}
 	    }
-	    Tcl_SetIntObj(resultPtr, length1);
+	    Tcl_SetIntObj(resultPtr, (int)length1);
 	    break;
 	}
 	case STR_MAP: {
-	    int mapElemc, nocase = 0;
+	    int nocase = 0;
+	    Tcl_Length mapElemc;
 	    Tcl_Obj **mapElemv;
 	    Tcl_UniChar *ustring1, *ustring2, *p, *end;
 	    int (*strCmpFn)_ANSI_ARGS_((CONST Tcl_UniChar*,
@@ -1801,7 +1803,8 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 			}
 			ustring1 = p - 1;
 
-			Tcl_AppendUnicodeToObj(resultPtr, mapString, mapLen);
+			Tcl_AppendUnicodeToObj(resultPtr, mapString,
+				(int)mapLen);
 		    }
 		}
 	    } else {
@@ -1849,7 +1852,8 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 			     * Append the map value to the unicode string
 			     */
 			    Tcl_AppendUnicodeToObj(resultPtr,
-				    mapStrings[index+1], mapLens[index+1]);
+				    mapStrings[index+1],
+				    (int)mapLens[index+1]);
 			    break;
 			}
 		    }
@@ -1917,7 +1921,8 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		last = length1;
 	    }
 	    if (last >= first) {
-		Tcl_SetObjResult(interp, Tcl_GetRange(objv[2], first, last));
+		Tcl_SetObjResult(interp, Tcl_GetRange(objv[2],
+			(Tcl_Length)first, (Tcl_Length)last));
 	    }
 	    break;
 	}
@@ -1998,7 +2003,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		}
 		if (last < length1) {
 		    Tcl_AppendUnicodeToObj(resultPtr, ustring1 + last + 1,
-			    length1 - last);
+			    (int)length1 - last);
 		}
 	    }
 	    break;
@@ -2021,7 +2026,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		 * of the string, so reset the length after conversion.
 		 */
 
-		Tcl_SetStringObj(resultPtr, string1, length1);
+		Tcl_SetStringObj(resultPtr, string1, (int)length1);
 		if ((enum options) index == STR_TOLOWER) {
 		    length1 = Tcl_UtfToLower(Tcl_GetString(resultPtr));
 		} else if ((enum options) index == STR_TOUPPER) {
@@ -2034,7 +2039,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		int first, last;
 		char *start, *end;
 
-		length1 = Tcl_NumUtfChars(string1, length1) - 1;
+		length1 = Tcl_NumUtfChars(string1, (int)length1) - 1;
 		if (TclGetIntForIndex(interp, objv[3], length1,
 				      &first) != TCL_OK) {
 		    return TCL_ERROR;
@@ -2068,7 +2073,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		    length2 = Tcl_UtfToTitle(string2);
 		}
 		Tcl_SetStringObj(resultPtr, string1, start - string1);
-		Tcl_AppendToObj(resultPtr, string2, length2);
+		Tcl_AppendToObj(resultPtr, string2, (int)length2);
 		Tcl_AppendToObj(resultPtr, end, -1);
 		ckfree(string2);
 	    }
@@ -2149,7 +2154,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 		    }
 		}
 	    }
-	    Tcl_SetStringObj(resultPtr, string1, length1);
+	    Tcl_SetStringObj(resultPtr, string1, (int)length1);
 	    break;
 	}
 	case STR_TRIMLEFT: {
@@ -2166,7 +2171,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	    int cur;
 	    Tcl_UniChar ch;
 	    char *p, *end;
-	    int numChars;
+	    Tcl_Length numChars;
 	    
 	    if (objc != 4) {
 	        Tcl_WrongNumArgs(interp, 2, objv, "string index");
@@ -2174,7 +2179,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	    }
 
 	    string1 = Tcl_GetStringFromObj(objv[2], &length1);
-	    numChars = Tcl_NumUtfChars(string1, length1);
+	    numChars = Tcl_NumUtfChars(string1, (int)length1);
 	    if (TclGetIntForIndex(interp, objv[3], numChars-1,
 				  &index) != TCL_OK) {
 		return TCL_ERROR;
@@ -2204,7 +2209,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	    int cur;
 	    Tcl_UniChar ch;
 	    char *p;
-	    int numChars;
+	    Tcl_Length numChars;
 	    
 	    if (objc != 4) {
 	        Tcl_WrongNumArgs(interp, 2, objv, "string index");
@@ -2212,7 +2217,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
 	    }
 
 	    string1 = Tcl_GetStringFromObj(objv[2], &length1);
-	    numChars = Tcl_NumUtfChars(string1, length1);
+	    numChars = Tcl_NumUtfChars(string1, (int)length1);
 	    if (TclGetIntForIndex(interp, objv[3], numChars-1,
 				  &index) != TCL_OK) {
 		return TCL_ERROR;
@@ -2534,7 +2539,8 @@ Tcl_SwitchObjCmd(dummy, interp, objc, objv)
     if (objc == 1) {
 	Tcl_Obj **listv;
 
-	if (Tcl_ListObjGetElements(interp, objv[0], &objc, &listv) != TCL_OK) {
+	if (Tcl_ListObjGetElements(interp, objv[0], (Tcl_Length *)&objc,
+				   &listv) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	objv = listv;
@@ -2980,8 +2986,8 @@ TclTraceCommandObjCmd(interp, optionIndex, objc, objv)
     switch ((enum traceOptions) optionIndex) {
 	case TRACE_ADD: 
 	case TRACE_REMOVE: {
-	    int flags = 0;
-	    int i, listLen, result;
+	    int result, flags = 0;
+	    Tcl_Length i, listLen;
 	    Tcl_Obj **elemPtrs;
 	    if (objc != 6) {
 		Tcl_WrongNumArgs(interp, 3, objv, "name opList command");
@@ -3153,8 +3159,8 @@ TclTraceVariableObjCmd(interp, optionIndex, objc, objv)
     switch ((enum traceOptions) optionIndex) {
 	case TRACE_ADD: 
 	case TRACE_REMOVE: {
-	    int flags = 0;
-	    int i, listLen, result;
+	    int result, flags = 0;
+	    Tcl_Length i, listLen;
 	    Tcl_Obj **elemPtrs;
 	    if (objc != 6) {
 		Tcl_WrongNumArgs(interp, 3, objv, "name opList command");

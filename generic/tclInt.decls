@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.31.4.1 2001/09/25 10:24:07 dkf Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.31.4.2 2001/09/26 14:23:10 dkf Exp $
 
 library tcl
 
@@ -147,7 +147,7 @@ declare 33 generic {
 }
 declare 34 generic {
     int TclGetIntForIndex(Tcl_Interp *interp, Tcl_Obj *objPtr, \
-	    int endValue, int *indexPtr)
+	    Tcl_Length endValue, int *indexPtr)
 }
 declare 35 generic {
     Tcl_Obj * TclGetIndexedScalar(Tcl_Interp *interp, int localIndex, \
