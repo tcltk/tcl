@@ -1,3 +1,12 @@
+1998-12-03    <stanton@GASPODE>
+
+	* tests/defs: Changed so auto_path is set to only contain the Tcl
+	library directory.  This keeps the tests from accidentally picking
+	up stuff in installed packages. 
+
+	* generic/tclUtil.c (Tcl_StringMatch): Changed to match 8.0
+	behavior in corner case where there is no closing bracket.
+
 1998-12-02    <stanton@GASPODE>
 
 	* win/tclWinPipe.c (TclpCreateCommandChannel): Changed
