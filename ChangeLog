@@ -1,3 +1,8 @@
+2004-09-09  David Gravereaux <davygrvy@pobox.com>
+
+	* win/tclWinConsole.c: Calls to WriteFile and WriteConsoleA
+	changed to WriteConsole for simplicity.
+
 2004-09-09  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclNamesp.c (Tcl_ForgetImport):	Corrected faulty
