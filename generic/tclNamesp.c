@@ -21,7 +21,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.65 2004/11/01 14:21:50 dkf Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.66 2004/12/02 10:48:30 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -34,12 +34,23 @@
 #define NUM_TRAIL_ELEMS 5
 
 /*
- * Count of the number of namespaces created. This value is used as a
- * unique id for each namespace.
+ * Thread-local storage used to avoid having a global lock on data
+ * that is not limited to a single interpreter.
  */
 
-static long numNsCreated = 0; 
-TCL_DECLARE_MUTEX(nsMutex)
+typedef struct ThreadSpecificData {
+    long numNsCreated;		/* Count of the number of namespaces created
+				 * within the thread. This value is used as a
+				 * unique id for each namespace. Cannot be
+				 * per-interp because the nsId is used to
+				 * distinguish objects which can be passed
+				 * around between interps in the same thread,
+				 * but does not need to be global because
+				 * object internal reps are always per-thread
+				 * anyway. */
+} ThreadSpecificData;
+
+static Tcl_ThreadDataKey dataKey;
 
 /*
  * This structure contains a cached pointer to a namespace that is the
@@ -700,6 +711,7 @@ Tcl_CreateNamespace(interp, name, clientData, deleteProc)
     Tcl_HashEntry *entryPtr;
     Tcl_DString buffer1, buffer2;
     int newEntry;
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     /*
      * If there is no active namespace, the interpreter is being
@@ -764,10 +776,7 @@ Tcl_CreateNamespace(interp, name, clientData, deleteProc)
     nsPtr->deleteProc = deleteProc;
     nsPtr->parentPtr = parentPtr;
     Tcl_InitHashTable(&nsPtr->childTable, TCL_STRING_KEYS);
-    Tcl_MutexLock(&nsMutex);
-    numNsCreated++;
-    nsPtr->nsId = numNsCreated;
-    Tcl_MutexUnlock(&nsMutex);
+    nsPtr->nsId = ++(tsdPtr->numNsCreated);
     nsPtr->interp = interp;
     nsPtr->flags = 0;
     nsPtr->activationCount = 0;
