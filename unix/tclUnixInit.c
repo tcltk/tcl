@@ -45,19 +45,12 @@ static char pkgPath[sizeof(TCL_PACKAGE_PATH)+200] = TCL_PACKAGE_PATH;
 static int initialized = 0;
 
 /*
- * The Init script (common to Windows and Unix platforms) is
- * defined in tclInitScript.h
+ * The Init script, tclPreInitScript variable, and the routine
+ * TclSetPreInitScript (common to Windows and Unix platforms) are defined
+ * in generic/tclInitScript.h.
  */
 
 #include "tclInitScript.h"
-
-/*
- * A pointer to a string that holds an initialization script that if non-NULL
- * is evaluated in Tcl_Init() prior to the the built-in initialization script
- * that is defined in the file "generic/tclInitScript.h".
- */
- 
-char *          tclPreInitScript = NULL;
 
 /*
  * Static routines in this file:
