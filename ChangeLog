@@ -1,3 +1,9 @@
+2004-12-13  Kevin B. Kenny  <kennykb@acm.org>
+
+	* doc/clock.n: Clarify that the [clock scan] command does not
+	accept the full range of ISO8601 point-in-time formats
+	[Bug 1075433].
+	
 2004-12-12  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclVar.c (TclArrayObjCmd - ARRAY_NAMES): leaking an
