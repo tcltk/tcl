@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.48 2002/01/21 20:38:06 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.49 2002/01/25 20:40:55 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -5908,7 +5908,7 @@ Tcl_BadChannelOption(interp, optionName, optionList)
     if (interp) {
 	CONST char *genericopt = 
 	    "blocking buffering buffersize encoding eofchar translation";
-	char **argv;
+	CONST char **argv;
 	int  argc, i;
 	Tcl_DString ds;
 
@@ -6192,7 +6192,7 @@ Tcl_SetChannelOption(interp, chan, optionName, newValue)
     ChannelState *statePtr = chanPtr->state;	/* state info for channel */
     size_t len;			/* Length of optionName string. */
     int argc;
-    char **argv;
+    CONST char **argv;
 
     /*
      * If the channel is in the middle of a background copy, fail.
@@ -6318,13 +6318,13 @@ Tcl_SetChannelOption(interp, chan, optionName, newValue)
                 statePtr->outEofChar = (int) argv[1][0];
             }
         }
-        if (argv != (char **) NULL) {
+        if (argv != NULL) {
             ckfree((char *) argv);
         }
 	return TCL_OK;
     } else if ((len > 1) && (optionName[1] == 't') &&
             (strncmp(optionName, "-translation", len) == 0)) {
-	char *readMode, *writeMode;
+	CONST char *readMode, *writeMode;
 
         if (Tcl_SplitList(interp, newValue, &argc, &argv) == TCL_ERROR) {
             return TCL_ERROR;

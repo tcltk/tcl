@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: SetResult.3,v 1.6 2000/07/24 00:03:02 jenglish Exp $
+'\" RCS: @(#) $Id: SetResult.3,v 1.7 2002/01/25 20:40:55 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_SetResult 3 8.0 Tcl "Tcl Library Procedures"
@@ -23,7 +23,7 @@ Tcl_Obj *
 .sp
 \fBTcl_SetResult\fR(\fIinterp, string, freeProc\fR)
 .sp
-char *
+CONST char *
 \fBTcl_GetStringResult\fR(\fIinterp\fR)
 .sp
 \fBTcl_AppendResult\fR(\fIinterp, string, string, ... , \fB(char *) NULL\fR)

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.30 2001/12/11 19:45:52 msofer Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.31 2002/01/25 20:40:55 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1711,7 +1711,7 @@ LogCompilationInfo(interp, script, command, length)
 
 int
 TclFindCompiledLocal(name, nameBytes, create, flags, procPtr)
-    register char *name;	/* Points to first character of the name of
+    register CONST char *name;	/* Points to first character of the name of
 				 * a scalar or array variable. If NULL, a
 				 * temporary var should be created. */
     int nameBytes;		/* Number of bytes in the name. */

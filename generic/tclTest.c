@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.40 2002/01/21 21:05:58 dgp Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.41 2002/01/25 20:40:55 dgp Exp $
  */
 
 #define TCL_TEST
@@ -341,7 +341,7 @@ static Tcl_Channel	TestReportOpenFileChannel _ANSI_ARGS_ ((
 			    CONST char *modeString, int permissions));
 static int		TestReportMatchInDirectory _ANSI_ARGS_ ((
 			    Tcl_Interp *interp, Tcl_Obj *resultPtr,
-			    Tcl_Obj *dirPtr, char *pattern,
+			    Tcl_Obj *dirPtr, CONST char *pattern,
 			    Tcl_GlobTypeData *types));
 static int		TestReportChdir _ANSI_ARGS_ ((Tcl_Obj *dirName));
 static int		TestReportLstat _ANSI_ARGS_ ((Tcl_Obj *path,
@@ -753,12 +753,12 @@ AsyncHandlerProc(clientData, interp, code)
     int code;			/* Current return code from command. */
 {
     TestAsyncHandler *asyncPtr = (TestAsyncHandler *) clientData;
-    char *listArgv[4];
+    CONST char *listArgv[4];
     char string[TCL_INTEGER_SPACE], *cmd;
 
     TclFormatInt(string, code);
     listArgv[0] = asyncPtr->command;
-    listArgv[1] = Tcl_GetStringResult(interp);
+    listArgv[1] = Tcl_GetString(Tcl_GetObjResult(interp));
     listArgv[2] = string;
     listArgv[3] = NULL;
     cmd = Tcl_Merge(3, listArgv);
@@ -2841,7 +2841,8 @@ TestregexpObjCmd(dummy, interp, objc, objv)
 	
 	Tcl_SetIntObj(Tcl_GetObjResult(interp), 0);
 	if (objc > 2 && (cflags&REG_EXPECT) && indices) {
-	    char *varName, *value;
+	    char *varName;
+	    CONST char *value;
 	    int start, end;
 	    char info[TCL_INTEGER_SPACE * 2];
 
@@ -3254,7 +3255,7 @@ TesttranslatefilenameCmd(dummy, interp, argc, argv)
     char **argv;			/* Argument strings. */
 {
     Tcl_DString buffer;
-    char *result;
+    CONST char *result;
 
     if (argc != 2) {
 	Tcl_AppendResult(interp, "wrong # arguments: should be \"",
@@ -3466,7 +3467,7 @@ TestpanicCmd(dummy, interp, argc, argv)
      *  Append all of the arguments together separated by spaces
      */
 
-    argString = Tcl_Merge(argc-1, argv+1);
+    argString = Tcl_Merge(argc-1, (CONST char **) argv+1);
     panic(argString);
     ckfree(argString);
  
@@ -3516,13 +3517,14 @@ TestchmodCmd(dummy, interp, argc, argv)
 
     for (i = 2; i < argc; i++) {
         Tcl_DString buffer;
+	CONST char *translated;
         
-        argv[i] = Tcl_TranslateFileName(interp, argv[i], &buffer);
-        if (argv[i] == NULL) {
+        translated = Tcl_TranslateFileName(interp, argv[i], &buffer);
+        if (translated == NULL) {
             return TCL_ERROR;
         }
-	if (chmod(argv[i], (unsigned) mode) != 0) {
-	    Tcl_AppendResult(interp, argv[i], ": ", Tcl_PosixError(interp),
+	if (chmod(translated, (unsigned) mode) != 0) {
+	    Tcl_AppendResult(interp, translated, ": ", Tcl_PosixError(interp),
 		    (char *) NULL);
 	    return TCL_ERROR;
 	}
@@ -3707,7 +3709,7 @@ GetTimesCmd(unused, interp, argc, argv)
     Tcl_Time start, stop;
     Tcl_Obj *objPtr;
     Tcl_Obj **objv;
-    char *s;
+    CONST char *s;
     char newString[TCL_INTEGER_SPACE];
 
     /* alloc & free 100000 times */
@@ -3937,7 +3939,7 @@ TestsetCmd(data, interp, argc, argv)
     char **argv;			/* Argument strings. */
 {
     int flags = (int) data;
-    char *value;
+    CONST char *value;
 
     if (argc == 2) {
         Tcl_SetResult(interp, "before get", TCL_STATIC);
@@ -4549,7 +4551,7 @@ TestOpenFileChannelProc1(interp, fileName, modeString, permissions)
                                          * file, with what modes to create
                                          * it? */
 {
-    char *expectname="testOpenFileChannel1%.fil";
+    CONST char *expectname="testOpenFileChannel1%.fil";
     Tcl_DString ds;
     
     Tcl_DStringInit(&ds);
@@ -4577,7 +4579,7 @@ TestOpenFileChannelProc2(interp, fileName, modeString, permissions)
                                          * file, with what modes to create
                                          * it? */
 {
-    char *expectname="testOpenFileChannel2%.fil";
+    CONST char *expectname="testOpenFileChannel2%.fil";
     Tcl_DString ds;
     
     Tcl_DStringInit(&ds);
@@ -4605,7 +4607,7 @@ TestOpenFileChannelProc3(interp, fileName, modeString, permissions)
                                          * file, with what modes to create
                                          * it? */
 {
-    char *expectname="testOpenFileChannel3%.fil";
+    CONST char *expectname="testOpenFileChannel3%.fil";
     Tcl_DString ds;
     
     Tcl_DStringInit(&ds);
@@ -5552,7 +5554,7 @@ TestReportMatchInDirectory(interp, resultPtr, dirPtr, pattern, types)
     Tcl_Interp *interp;		/* Interpreter to receive results. */
     Tcl_Obj *resultPtr;		/* Directory separators to pass to TclDoGlob. */
     Tcl_Obj *dirPtr;	        /* Contains path to directory to search. */
-    char *pattern;		/* Pattern to match against. */
+    CONST char *pattern;	/* Pattern to match against. */
     Tcl_GlobTypeData *types;	/* Object containing list of acceptable types.
 				 * May be NULL. */
 {

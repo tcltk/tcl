@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOCmd.c,v 1.12 2002/01/17 20:35:22 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclIOCmd.c,v 1.13 2002/01/25 20:40:55 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -726,10 +726,10 @@ Tcl_ExecObjCmd(dummy, interp, objc, objv)
 
 #define NUM_ARGS 20
     Tcl_Obj *resultPtr;
-    char **argv;
+    CONST char **argv;
     char *string;
     Tcl_Channel chan;
-    char *argStorage[NUM_ARGS];
+    CONST char *argStorage[NUM_ARGS];
     int argc, background, i, index, keepNewline, result, skip, length;
     static CONST char *options[] = {
 	"-keepnewline",	"--",		NULL
@@ -784,7 +784,7 @@ Tcl_ExecObjCmd(dummy, interp, objc, objv)
     argv = argStorage;
     argc = objc - skip;
     if ((argc + 1) > sizeof(argv) / sizeof(argv[0])) {
-	argv = (char **) ckalloc((unsigned)(argc + 1) * sizeof(char *));
+	argv = (CONST char **) ckalloc((unsigned)(argc + 1) * sizeof(char *));
     }
 
     /*
@@ -976,7 +976,7 @@ Tcl_OpenObjCmd(notUsed, interp, objc, objv)
 	return TCL_ERROR;
 #else
 	int mode, seekFlag, cmdObjc;
-	char **cmdArgv;
+	CONST char **cmdArgv;
 
         if (Tcl_SplitList(interp, what+1, &cmdObjc, &cmdArgv) != TCL_OK) {
             return TCL_ERROR;

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.35 2002/01/17 03:03:12 dgp Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.36 2002/01/25 20:40:55 dgp Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -63,14 +63,14 @@ EXTERN int		TclCopyChannel _ANSI_ARGS_((Tcl_Interp * interp,
 #if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
 /* 9 */
 EXTERN int		TclCreatePipeline _ANSI_ARGS_((Tcl_Interp * interp, 
-				int argc, char ** argv, 
+				int argc, CONST char ** argv, 
 				Tcl_Pid ** pidArrayPtr, TclFile * inPipePtr, 
 				TclFile * outPipePtr, TclFile * errFilePtr));
 #endif /* UNIX */
 #ifdef __WIN32__
 /* 9 */
 EXTERN int		TclCreatePipeline _ANSI_ARGS_((Tcl_Interp * interp, 
-				int argc, char ** argv, 
+				int argc, CONST char ** argv, 
 				Tcl_Pid ** pidArrayPtr, TclFile * inPipePtr, 
 				TclFile * outPipePtr, TclFile * errFilePtr));
 #endif /* __WIN32__ */
@@ -426,14 +426,14 @@ EXTERN int		TclpCheckStackSpace _ANSI_ARGS_((void));
 /* Slot 136 is reserved */
 /* Slot 137 is reserved */
 /* 138 */
-EXTERN char *		TclGetEnv _ANSI_ARGS_((CONST char * name, 
+EXTERN CONST char *	TclGetEnv _ANSI_ARGS_((CONST char * name, 
 				Tcl_DString * valuePtr));
 /* Slot 139 is reserved */
 /* 140 */
 EXTERN int		TclLooksLikeInt _ANSI_ARGS_((CONST char * bytes, 
 				int length));
 /* 141 */
-EXTERN char *		TclpGetCwd _ANSI_ARGS_((Tcl_Interp * interp, 
+EXTERN CONST char *	TclpGetCwd _ANSI_ARGS_((Tcl_Interp * interp, 
 				Tcl_DString * cwdPtr));
 /* 142 */
 EXTERN int		TclSetByteCodeFromAny _ANSI_ARGS_((
@@ -525,10 +525,10 @@ typedef struct TclIntStubs {
     int (*tclCopyAndCollapse) _ANSI_ARGS_((int count, CONST char * src, char * dst)); /* 7 */
     int (*tclCopyChannel) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Channel inChan, Tcl_Channel outChan, int toRead, Tcl_Obj * cmdPtr)); /* 8 */
 #if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
-    int (*tclCreatePipeline) _ANSI_ARGS_((Tcl_Interp * interp, int argc, char ** argv, Tcl_Pid ** pidArrayPtr, TclFile * inPipePtr, TclFile * outPipePtr, TclFile * errFilePtr)); /* 9 */
+    int (*tclCreatePipeline) _ANSI_ARGS_((Tcl_Interp * interp, int argc, CONST char ** argv, Tcl_Pid ** pidArrayPtr, TclFile * inPipePtr, TclFile * outPipePtr, TclFile * errFilePtr)); /* 9 */
 #endif /* UNIX */
 #ifdef __WIN32__
-    int (*tclCreatePipeline) _ANSI_ARGS_((Tcl_Interp * interp, int argc, char ** argv, Tcl_Pid ** pidArrayPtr, TclFile * inPipePtr, TclFile * outPipePtr, TclFile * errFilePtr)); /* 9 */
+    int (*tclCreatePipeline) _ANSI_ARGS_((Tcl_Interp * interp, int argc, CONST char ** argv, Tcl_Pid ** pidArrayPtr, TclFile * inPipePtr, TclFile * outPipePtr, TclFile * errFilePtr)); /* 9 */
 #endif /* __WIN32__ */
 #ifdef MAC_TCL
     void *reserved9;
@@ -677,10 +677,10 @@ typedef struct TclIntStubs {
     int (*tclpCheckStackSpace) _ANSI_ARGS_((void)); /* 135 */
     void *reserved136;
     void *reserved137;
-    char * (*tclGetEnv) _ANSI_ARGS_((CONST char * name, Tcl_DString * valuePtr)); /* 138 */
+    CONST char * (*tclGetEnv) _ANSI_ARGS_((CONST char * name, Tcl_DString * valuePtr)); /* 138 */
     void *reserved139;
     int (*tclLooksLikeInt) _ANSI_ARGS_((CONST char * bytes, int length)); /* 140 */
-    char * (*tclpGetCwd) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_DString * cwdPtr)); /* 141 */
+    CONST char * (*tclpGetCwd) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_DString * cwdPtr)); /* 141 */
     int (*tclSetByteCodeFromAny) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * objPtr, CompileHookProc * hookProc, ClientData clientData)); /* 142 */
     int (*tclAddLiteralObj) _ANSI_ARGS_((struct CompileEnv * envPtr, Tcl_Obj * objPtr, LiteralEntry ** litPtrPtr)); /* 143 */
     void (*tclHideLiteral) _ANSI_ARGS_((Tcl_Interp * interp, struct CompileEnv * envPtr, int index)); /* 144 */
