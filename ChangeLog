@@ -1,3 +1,8 @@
+2004-05-05  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* doc/CrtObjCmd.3: Remove reference to Tcl_RenameCommand; there is
+	no such API. [Bug 848440]
+
 2004-05-04  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclIOUtil.c (Tcl_FSChdir):  Work-around crash condition
