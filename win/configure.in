@@ -3,7 +3,7 @@
 # generate the file "configure", which is run during Tcl installation
 # to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.47 2002/03/06 15:20:23 dkf Exp $
+# RCS: @(#) $Id: configure.in,v 1.48 2002/03/15 01:10:19 mdejong Exp $
 
 AC_INIT(../generic/tcl.h)
 
@@ -81,6 +81,34 @@ AC_CYGWIN
 if test "$ac_cv_cygwin" = "yes" ; then
     AC_MSG_ERROR([Compiling with the Cygwin version of gcc is not supported.
     Use the Mingw version of gcc from www.mingw.org instead.])
+fi
+
+
+AC_CACHE_CHECK(for SEH support in compiler,
+    tcl_cv_seh,
+AC_TRY_RUN([
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#undef WIN32_LEAN_AND_MEAN
+
+int main(int argc, char** argv) {
+    int a, b = 0;
+    __try {
+        a = 666 / b;
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER) {
+        return 0;
+    }
+    return 1;
+}
+],
+        tcl_cv_seh=yes,
+        tcl_cv_seh=no,
+        tcl_cv_seh=no)
+)
+if test "$tcl_cv_seh" = "no" ; then
+    AC_DEFINE(HAVE_NO_SEH,,
+            [Defined when mingw does not support SEH])
 fi
 
 #--------------------------------------------------------------------

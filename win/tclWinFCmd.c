@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFCmd.c,v 1.26 2002/03/14 20:51:44 mdejong Exp $
+ * RCS: @(#) $Id: tclWinFCmd.c,v 1.27 2002/03/15 01:10:19 mdejong Exp $
  */
 
 #include "tclWinInt.h"
@@ -72,6 +72,11 @@ CONST TclFileAttrProcs tclpFileAttrProcs[] = {
 	{GetWinFileAttributes, SetWinFileAttributes},
 	{GetWinFileShortName, CannotSetAttribute},
 	{GetWinFileAttributes, SetWinFileAttributes}};
+
+#ifdef HAVE_NO_SEH
+static void *ESP;
+static void *EBP;
+#endif /* HAVE_NO_SEH */
 
 /*
  * Prototype for the TraverseWinTree callback function.
@@ -182,11 +187,36 @@ DoRenameFile(
      * if one of the arguments is a char block device.
      */
 
+#ifdef HAVE_NO_SEH
+    __asm__ __volatile__ (
+            "movl  %esp, _ESP" "\n\t"
+            "movl  %ebp, _EBP");
+
+    __asm__ __volatile__ (
+            "pushl $__except_dorenamefile_handler" "\n\t"
+            "pushl %fs:0" "\n\t"
+            "mov   %esp, %fs:0");
+#else
     __try {
+#endif /* HAVE_NO_SEH */
 	if ((*tclWinProcs->moveFileProc)(nativeSrc, nativeDst) != FALSE) {
 	    retval = TCL_OK;
 	}
+#ifdef HAVE_NO_SEH
+    __asm__ __volatile__ (
+            "jmp   dorenamefile_pop" "\n"
+            "dorenamefile_reentry:" "\n\t"
+            "movl  _ESP, %esp" "\n\t"
+            "movl  _EBP, %ebp");
+
+    __asm__ __volatile__ (
+            "dorenamefile_pop:" "\n\t"
+            "mov   (%esp), %eax" "\n\t"
+            "mov   %eax, %fs:0" "\n\t"
+            "add   $8, %esp");
+#else
     } __except (EXCEPTION_EXECUTE_HANDLER) {}
+#endif /* HAVE_NO_SEH */
 
     /*
      * Avoid using control flow statements in the SEH guarded block!
@@ -408,6 +438,21 @@ DoRenameFile(
     }
     return TCL_ERROR;
 }
+#ifdef HAVE_NO_SEH
+static
+__attribute__ ((cdecl))
+EXCEPTION_DISPOSITION
+_except_dorenamefile_handler(
+    struct _EXCEPTION_RECORD *ExceptionRecord,
+    void *EstablisherFrame,
+    struct _CONTEXT *ContextRecord,
+    void *DispatcherContext)
+{
+    __asm__ __volatile__ (
+            "jmp dorenamefile_reentry");
+    return 0; /* Function does not return */
+}
+#endif /* HAVE_NO_SEH */
 
 /*
  *---------------------------------------------------------------------------
@@ -467,12 +512,37 @@ DoCopyFile(
      * The CopyFile API would throw an exception under NT if one
      * of the arguments is a char block device.
      */
-    
+
+#ifdef HAVE_NO_SEH
+    __asm__ __volatile__ (
+            "movl  %esp, _ESP" "\n\t"
+            "movl  %ebp, _EBP");
+
+    __asm__ __volatile__ (
+            "pushl $__except_docopyfile_handler" "\n\t"
+            "pushl %fs:0" "\n\t"
+            "mov   %esp, %fs:0");
+#else
     __try {
+#endif /* HAVE_NO_SEH */
 	if ((*tclWinProcs->copyFileProc)(nativeSrc, nativeDst, 0) != FALSE) {
 	    retval = TCL_OK;
 	}
+#ifdef HAVE_NO_SEH
+    __asm__ __volatile__ (
+            "jmp   docopyfile_pop" "\n"
+            "docopyfile_reentry:" "\n\t"
+            "movl  _ESP, %esp" "\n\t"
+            "movl  _EBP, %ebp");
+
+    __asm__ __volatile__ (
+            "docopyfile_pop:" "\n\t"
+            "mov   (%esp), %eax" "\n\t"
+            "mov   %eax, %fs:0" "\n\t"
+            "add   $8, %esp");
+#else
     } __except (EXCEPTION_EXECUTE_HANDLER) {}
+#endif /* HAVE_NO_SEH */
 
     /*
      * Avoid using control flow statements in the SEH guarded block!
@@ -516,6 +586,21 @@ DoCopyFile(
     }
     return TCL_ERROR;
 }
+#ifdef HAVE_NO_SEH
+static
+__attribute__ ((cdecl))
+EXCEPTION_DISPOSITION
+_except_docopyfile_handler(
+    struct _EXCEPTION_RECORD *ExceptionRecord,
+    void *EstablisherFrame,
+    struct _CONTEXT *ContextRecord,
+    void *DispatcherContext)
+{
+    __asm__ __volatile__ (
+            "jmp docopyfile_reentry");
+    return 0; /* Function does not return */
+}
+#endif /* HAVE_NO_SEH */
 
 /*
  *---------------------------------------------------------------------------
