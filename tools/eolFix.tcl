@@ -16,7 +16,7 @@ namespace eval ::EOL {
 proc EOL::fix {filename {newfilename ""}} {
     variable outMode
 
-    if {![file exist $filename]} { return }
+    if {![file exists $filename]} { return }
     puts "EOL Fixing: $filename"
 
     file rename ${filename} ${filename}.o
