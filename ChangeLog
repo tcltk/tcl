@@ -1,3 +1,24 @@
+2004-09-30  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclBasic.c (Tcl_AddObjErrorInfo): More re-organization
+	* generic/tclCmdAH.c (Tcl_ErrorObjCmd):     of the management of
+	* generic/tclCmdMZ.c (TclProcessReturn):    the errorCode value.
+	* tests/error.test (error-6.4-9):
+
+        * generic/tclNamespace.c (TclTeardownNamespace): Tcl_Obj-ified
+        * tests/namespace.test (namespace-8.5,6):       the save/restore
+        of ::errorInfo and ::errorCode during global namespace teardown.
+        Revised the comment to clarify why this is done, and added tests
+        that will fail if this is not done.
+
+        * generic/tclResult.c (TclTransferResult):      Added safety
+        checks so that unexpected undefined ::errorInfo or ::errorCode
+        will not lead to a segfault.
+
+        * generic/tclTrace.c (TclCallVarTraces):     Save/restore the flag
+        * tests/var.test (var-16.1):    values that define part of the
+        interpreter state during variable traces.  [Bug 10381021].
+
 2004-09-30  Miguel Sofer <msofer@users.sf.net>
 
 	* tests/subst.test (12.1-2): added tests for [Bug 1036649]

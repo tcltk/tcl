@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTrace.c,v 1.11 2004/08/02 20:55:38 dgp Exp $
+ * RCS: @(#) $Id: tclTrace.c,v 1.12 2004/09/30 23:06:49 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2450,6 +2450,7 @@ TclCallVarTraces(iPtr, arrayPtr, varPtr, part1, part2, flags, leaveErrMsg)
     int copiedName;
     int code = TCL_OK;
     int disposeFlags = 0;
+    int saveErrFlags = iPtr->flags;
 
     /*
      * If there are already similar trace procedures active for the
@@ -2572,6 +2573,9 @@ TclCallVarTraces(iPtr, arrayPtr, varPtr, part1, part2, flags, leaveErrMsg)
      */
 
     done:
+    if (code == TCL_OK) {
+	iPtr->flags = saveErrFlags;
+    }
     if (code == TCL_ERROR) {
 	if (leaveErrMsg) {
 	    CONST char *type = "";
