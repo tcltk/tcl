@@ -1,5 +1,10 @@
 2002-06-16  Miguel Sofer  <msofer@users.sourceforge.net>
 
+	* generic/tclCompile.c (TclCompileTokens): a better algorithm for
+	the previous bug fix.
+
+2002-06-16  Miguel Sofer  <msofer@users.sourceforge.net>
+
 	* generic/tclCompile.c (TclCompileTokens): 
 	* tests/compile.test: [Bug 569438] in the processing of dollar
 	variables; report by Georgios Petasis. 
