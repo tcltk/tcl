@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.63.4.1 2000/07/17 22:58:47 hobbs Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.63.4.2 2000/07/26 04:57:08 welch Exp $
 
 VERSION 		= @TCL_VERSION@
 
@@ -293,6 +293,8 @@ GENERIC_HDRS = \
 	$(GENERIC_DIR)/tclPort.h \
 	$(GENERIC_DIR)/tclRegexp.h
 
+INSTALL_HDRS = $(GENERIC_HDRS)
+
 GENERIC_SRCS = \
 	$(GENERIC_DIR)/regcomp.c \
 	$(GENERIC_DIR)/regexec.c \
@@ -474,7 +476,7 @@ topDirName:
 gendate:
 	yacc -l $(GENERIC_DIR)/tclGetDate.y
 	sed -e 's/yy/TclDate/g' -e '/^#include <values.h>/d' \
-	    -e 's?SCCSID?RCS: @(#) $$Id: Makefile.in,v 1.63.4.1 2000/07/17 22:58:47 hobbs Exp $$?' \
+	    -e 's?SCCSID?RCS: @(#) $$Id: Makefile.in,v 1.63.4.2 2000/07/26 04:57:08 welch Exp $$?' \
 	    -e '/#ifdef __STDC__/,/#endif/d' -e '/TclDateerrlab:/d' \
 	    -e '/TclDatenewstate:/d' -e '/#pragma/d' \
 	    -e '/#include <inttypes.h>/d' -e 's/const /CONST /g' \
@@ -563,7 +565,7 @@ install-libraries: libraries
 	    chmod +x $(SRC_DIR)/install-sh; \
 	    fi
 	@echo "Installing header files";
-	@for i in $(GENERIC_DIR)/tcl.h $(GENERIC_DIR)/tclDecls.h ; \
+	@for i in $(INSTALL_HDRS) ; \
 	    do \
 	    $(INSTALL_DATA) $$i $(INCLUDE_INSTALL_DIR); \
 	    done;
