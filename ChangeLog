@@ -1,3 +1,10 @@
+2003-02-17  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* generic/tclIO.c (Tcl_GetsObj): Minor change
+	so that eol is only assigned at the top of the
+	TCL_TRANSLATE_AUTO case block. The other cases
+	assign eol so this does not change any functionality.
+
 2003-02-17  Kevin Kenny  <kennykb@users.sourceforge.net>
 
 	* tests/notify.test: Removed Windows line terminators. [Bug 687913].
