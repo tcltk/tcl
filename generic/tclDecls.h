@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.65 2001/10/16 05:31:17 dgp Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.66 2001/11/21 02:36:20 hobbs Exp $
  */
 
 #ifndef _TCLDECLS
@@ -1507,6 +1507,8 @@ EXTERN void		Tcl_FSMountsChanged _ANSI_ARGS_((
 EXTERN int		Tcl_EvalTokensStandard _ANSI_ARGS_((
 				Tcl_Interp * interp, Tcl_Token * tokenPtr, 
 				int count));
+/* 482 */
+EXTERN void		Tcl_GetTime _ANSI_ARGS_((Tcl_Time* timeBuf));
 
 typedef struct TclStubHooks {
     struct TclPlatStubs *tclPlatStubs;
@@ -2048,6 +2050,7 @@ typedef struct TclStubs {
     int (*tcl_OutputBuffered) _ANSI_ARGS_((Tcl_Channel chan)); /* 479 */
     void (*tcl_FSMountsChanged) _ANSI_ARGS_((Tcl_Filesystem * fsPtr)); /* 480 */
     int (*tcl_EvalTokensStandard) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Token * tokenPtr, int count)); /* 481 */
+    void (*tcl_GetTime) _ANSI_ARGS_((Tcl_Time* timeBuf)); /* 482 */
 } TclStubs;
 
 #ifdef __cplusplus
@@ -4015,6 +4018,10 @@ extern TclStubs *tclStubsPtr;
 #ifndef Tcl_EvalTokensStandard
 #define Tcl_EvalTokensStandard \
 	(tclStubsPtr->tcl_EvalTokensStandard) /* 481 */
+#endif
+#ifndef Tcl_GetTime
+#define Tcl_GetTime \
+	(tclStubsPtr->tcl_GetTime) /* 482 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacTime.c,v 1.4 2001/07/31 19:12:07 vincentdarley Exp $
+ * RCS: @(#) $Id: tclMacTime.c,v 1.5 2001/11/21 02:36:21 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -19,7 +19,7 @@
 #include <time.h>
 
 /*
- * Static variables used by the TclpGetTime function.
+ * Static variables used by the Tcl_GetTime function.
  */
  
 static int initalized = false;
@@ -173,7 +173,7 @@ TclpGetTimeZone (
 /*
  *----------------------------------------------------------------------
  *
- * TclpGetTime --
+ * Tcl_GetTime --
  *
  *	Gets the current system time in seconds and microseconds
  *	since the beginning of the epoch: 00:00 UCT, January 1, 1970.
@@ -188,7 +188,7 @@ TclpGetTimeZone (
  */
 
 void
-TclpGetTime(
+Tcl_GetTime(
     Tcl_Time *timePtr)		/* Location to store time information. */
 {
     UnsignedWide micro;

@@ -1,3 +1,38 @@
+2001-11-20  Kevin B. Kenny  <kennykb@users.sourceforge.net>
+
+	* doc/GetTime.3 (Tcl_GetTime):
+	* generic/tcl.decls (Tcl_GetTime):
+	* generic/tclClock.c (Tcl_ClockObjCmd):
+	* generic/tclCompile.c (TclCleanupByteCode, TclInitByteCodeObj):
+	* generic/tclCmdMZ.c (Tcl_TimeObjCmd):
+	* generic/tclUtil.c (TclpGetTime):
+	* generic/tclTest.c (GetTimesCmd):
+	* generic/tclTimer.c (Tcl_CreateTimerHandler, TimerSetupProc,
+	TimerCheckProc, TimerHandlerEventProc):
+	* mac/tclMacNotify.c (Tcl_SetTimer):
+	* mac/tclMacShLib.exp (Tcl_GetTime):
+	* mac/tclMacTime.c (Tcl_GetTime):
+	* unix/tclUnixChan.c (TclUnixWaitForFile):
+	* unix/tclUnixEvent.c (Tcl_Sleep):
+	* unix/tclUnixThrd.c (Tcl_ConditionWait):
+	* unix/tclUnixTime.c (Tcl_GetTime):
+	* win/tclWinNotify.c (Tcl_Sleep):
+	* win/tclWinTest.c (TestwinclockCmd):
+	* win/tclWinTime.c (TclpGetSeconds, TclpGetClicks, Tcl_GetTime):
+	Changed all uses of TclpGetTime to Tcl_GetTime.  Added Tcl_GetTime
+	to the Stubs table and the library documentation.  Added a
+	TclpGetTime in tclUtil.c for backward compatibility of
+	extensions. [Patch #483500, TIP#73]
+
+	* generic/tclCmdMZ.c (Tcl_TimeObjCmd): Corrected an error in the
+	[time] command that caused incorrect results to be returned if the
+	total duration of all iterations exceeded 2**31 microseconds.
+	[Bug #478847]
+
+	* generic/tclInt.decls:
+	* generic/tclInt.h:
+	* generic/tclStubInit.h: Reran 'make genstubs'
+	
 2001-11-20  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* generic/tclBasic.c
@@ -39,6 +74,10 @@
 	to the original logic (previous to buggy modifs on 2001-11-16).
 
 2001-11-20  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* tools/eolFix.tcl (new-file):
+	* unix/Makefile.in: added EOL correction for Windows bat files to
+	dist target. [Bug #219409] (davygrvy)
 
 	* unix/tclUnixInit.c (TclpSetInitialEncodings): update of patch
 	from 2001-11-16 that uses the old Tcl encoding check mechanism as

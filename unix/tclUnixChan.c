@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.22 2001/10/25 15:50:49 dkf Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.23 2001/11/21 02:36:21 hobbs Exp $
  */
 
 #include	"tclInt.h"	/* Internal definitions for Tcl. */
@@ -2706,7 +2706,7 @@ TclUnixWaitForFile(fd, mask, timeout)
      */
 
     if (timeout > 0) {
-	TclpGetTime(&now);
+	Tcl_GetTime(&now);
 	abortTime.sec = now.sec + timeout/1000;
 	abortTime.usec = now.usec + (timeout%1000)*1000;
 	if (abortTime.usec >= 1000000) {
@@ -2796,7 +2796,7 @@ TclUnixWaitForFile(fd, mask, timeout)
 	 * The select returned early, so we need to recompute the timeout.
 	 */
 
-	TclpGetTime(&now);
+	Tcl_GetTime(&now);
 	if ((abortTime.sec < now.sec)
 		|| ((abortTime.sec == now.sec)
 		&& (abortTime.usec <= now.usec))) {

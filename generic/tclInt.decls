@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.36 2001/11/14 23:17:03 hobbs Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.37 2001/11/21 02:36:20 hobbs Exp $
 
 library tcl
 
@@ -301,9 +301,12 @@ declare 75 generic {
 declare 76 generic {
     unsigned long TclpGetSeconds(void)
 }
+
+# deprecated
 declare 77 generic {
     void TclpGetTime(Tcl_Time *time)
 }
+
 declare 78 generic {
     int TclpGetTimeZone(unsigned long time)
 }
