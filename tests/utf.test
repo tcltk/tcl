@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: utf.test,v 1.5 1999/06/26 20:55:17 rjohnson Exp $
+# RCS: @(#) $Id: utf.test,v 1.6 2000/01/12 11:13:26 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -141,7 +141,9 @@ bsCheck \\	92
 bsCheck \Ca	67
 bsCheck \Ma	77
 bsCheck \CMa	67
-bsCheck \8a	8
+# prior to 8.3, this returned 8, as \8 as accepted as an
+# octal value - but it isn't! [Bug: 3975]
+bsCheck \8a	56
 bsCheck \14	12
 bsCheck \141	97
 bsCheck b\0	98

@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: unixFCmd.test,v 1.9 1999/07/01 17:36:20 jenn Exp $
+# RCS: @(#) $Id: unixFCmd.test,v 1.10 2000/01/12 11:13:25 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -267,7 +267,34 @@ test unixFCmd-17.3 {SetPermissionsAttribute} {unixOnly notRoot} {
     close [open foo.test w]
     list [catch {file attributes foo.test -permissions foo} msg] $msg \
 	    [file delete -force -- foo.test]
-} {1 {expected integer but got "foo"} {}}
+} {1 {unknown permission string format "foo"} {}}
+test unixFCmd-17.3 {SetPermissionsAttribute} {unixOnly notRoot} {
+    catch {file delete -force -- foo.test}
+    close [open foo.test w]
+    list [catch {file attributes foo.test -permissions ---rwx} msg] $msg \
+	    [file delete -force -- foo.test]
+} {1 {unknown permission string format "---rwx"} {}}
+
+close [open foo.test w]
+set ::i 4
+proc permcheck {permstr expected} {
+    test unixFCmd-17.[incr ::i] {SetPermissionsAttribute} {unixOnly notRoot} \
+	    [subst {
+	file attributes foo.test -permissions $permstr
+	file attributes foo.test -permissions
+    }
+    ] $expected
+}
+permcheck rwxrwxrwx	00777
+permcheck r--r---w-	00442
+permcheck 0		00000
+permcheck u+rwx,g+r	00740
+permcheck u-w		00540
+permcheck o+rwx		00547
+permcheck --x--x--x	00111
+permcheck a+rwx		00777
+file delete -force -- foo.test
+
 test unixFCmd-18.1 {Unix pwd} {nonPortable unixOnly notRoot} {
     # This test is nonportable because SunOS generates a weird error
     # message when the current directory isn't readable.

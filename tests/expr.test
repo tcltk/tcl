@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: expr.test,v 1.7 1999/12/04 06:16:48 hobbs Exp $
+# RCS: @(#) $Id: expr.test,v 1.8 2000/01/12 11:13:25 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -647,6 +647,9 @@ test expr-18.1 {expr and conversion of operands to numbers} {
     catch {expr int($x)}
     expr {$x}
 } 11
+test expr-18.2 {whitespace strings should not be == 0 (buggy strtod)} {
+    expr {" "}
+} { }
 
 # Check "expr" and interpreter result object resetting before appending
 # an error msg during evaluation of exprs not in {}s

@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: info.test,v 1.12 1999/12/12 02:27:03 hobbs Exp $
+# RCS: @(#) $Id: info.test,v 1.13 2000/01/12 11:13:25 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -426,6 +426,64 @@ test info-15.4 {info procs option} {
         list [info procs] [info procs p*]
     }
 } {{p q r} p}
+test info-15.5 {info procs option with a proc in a namespace} {
+    catch {namespace delete test_ns_info2}
+    namespace eval test_ns_info2 {
+	proc p1 { arg } {
+	    puts cmd
+	}
+        proc p2 { arg } {
+	    puts cmd
+	}
+    }
+    info procs ::test_ns_info2::p1
+} {::test_ns_info2::p1}
+test info-15.6 {info procs option with a pattern in a namespace} {
+    catch {namespace delete test_ns_info2}
+    namespace eval test_ns_info2 {
+	proc p1 { arg } {
+	    puts cmd
+	}
+        proc p2 { arg } {
+	    puts cmd
+	}
+    }
+    lsort [info procs ::test_ns_info2::p*]
+} [lsort [list ::test_ns_info2::p1 ::test_ns_info2::p2]]
+test info-15.7 {info procs option with a global shadowing proc} {
+    catch {namespace delete test_ns_info2}
+    proc string_cmd { arg } {
+        puts cmd
+    }
+    namespace eval test_ns_info2 {
+	proc string_cmd { arg } {
+	    puts cmd
+	}
+    }
+    info procs test_ns_info2::string*
+} {::test_ns_info2::string_cmd}
+# This regression test is currently commented out because it requires
+# that the implementation of "info procs" looks into the global namespace,
+# which it does not (in contrast to "info commands")
+if {0} {
+test info-15.8 {info procs option with a global shadowing proc} {
+    catch {namespace delete test_ns_info2}
+    proc string_cmd { arg } {
+        puts cmd
+    }
+    proc string_cmd2 { arg } {
+        puts cmd
+    }
+    namespace eval test_ns_info2 {
+	proc string_cmd { arg } {
+	    puts cmd
+	}
+    }
+    namespace eval test_ns_info2 {
+        lsort [info procs string*]
+    }
+} [lsort [list string_cmd string_cmd2]]
+}
 
 test info-16.1 {info script option} {
     list [catch {info script x} msg] $msg
