@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: namespace.test,v 1.26 2004/05/23 22:53:21 msofer Exp $
+# RCS: @(#) $Id: namespace.test,v 1.27 2004/05/25 18:58:04 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -1488,6 +1488,7 @@ test namespace-46.3 {ensemble: implementation errors} {
     set result {}
     lappend result [catch { ns } msg] $msg
     ns a [ns b 10]
+    catch {rename p {}}
     rename ns p
     p a [p b 3000]
     lappend result $ns::count

@@ -7,6 +7,10 @@
 	
 2004-05-25  Don Porter  <dgp@users.sourceforge.net>
 
+	* tests/unload.test (unload-3.1): Verify [pkgb_sub] does not exist.
+	* tests/stringComp.test:	stop re-use of string.test test names
+	* tests/regexpComp.test:	stop re-use of regexp.test test names
+	* tests/namespace.test (namespace-46.3): Verify [p] does not exist.
 	* tests/http.test:	Clear away the custom [bgerror] when done.
 	* tests/io.test:	Take care to use namespace variables.
 	* tests/autoMkindex.test (autoMkindex-5.2): Use variable "result"
