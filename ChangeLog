@@ -1,3 +1,9 @@
+2003-08-18  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* win/configure: Regen.
+	* win/tcl.m4 (SC_ENABLE_SYMBOLS): Use test instead
+	of -eq, which does not work. [Bug 781109]
+
 2003-08-13  Chengye Mao <chengye.geo@yahoo.com>
 
 	* win/tclWinPipe.c: fixed a bug in BuildCommandLine.
