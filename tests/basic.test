@@ -15,7 +15,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: basic.test,v 1.13 2002/01/03 11:58:25 dkf Exp $
+# RCS: @(#) $Id: basic.test,v 1.14 2002/01/03 18:23:47 dkf Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -495,32 +495,19 @@ test basic-39.2 {Tcl_CreateTrace, correct command and argc/argv arguments of tra
 test basic-39.3 {Tcl_CreateTrace, correct command and argc/argv arguments of trace proc} {testcmdtrace} {
     testcmdtrace deletetest {set stuff [info tclversion]}
 } $tclvers
-test basic-39.4 {Tcl_CreateTrace, check that tracing doesn't cause memory faults} {testcmdtrace knownBug} {
-    proc inst {args} {}
-    proc Something {} {inst}
-    proc Test {level} {
-	incr level 
-	puts "Test: level = $level"
-	#inst "a"
-	Something ;# you may call inst directly
-	if {$level == 1} {
-	    set instlist {1 2}
-	} else {
-	    set instlist {}
-	}
-	puts "instlist = /$instlist/"
-
-	foreach inst $instlist { 
-	    puts "inst = /$inst/" 
-	    Test $level 
-	}
+test basic-39.4 {Tcl_CreateTrace, check that tracing doesn't cause memory faults} {testcmdtrace} {
+    # Note that the proc call is the same as the variable name, and that
+    # the call can be direct or indirect by way of another procedure
+    proc tracer {args} {}
+    proc tracedLoop {level} {
+	incr level
+	tracer
+	foreach tracer [expr {$level==1 ? {1 2} : {}}] {tracedLoop $level}
     }
-
-    testcmdtrace tracetest {Test 0}
-} {}
-catch {rename inst {}}
-catch {rename Test {}}
-catch {rename Something {}}
+    testcmdtrace tracetest {tracedLoop 0}
+} {{tracedLoop 0} {tracedLoop 0} {incr level} {incr level} tracer {tracer} {expr {$level==1 ? {1 2} : {}}} {expr {$level==1 ? {1 2} : {}}} {foreach tracer [expr {$level==1 ? {1 2} : {}}] {tracedLoop $level}} {foreach tracer {1 2} {tracedLoop $level}} {tracedLoop $level} {tracedLoop 1} {incr level} {incr level} tracer {tracer} {expr {$level==1 ? {1 2} : {}}} {expr {$level==1 ? {1 2} : {}}} {foreach tracer [expr {$level==1 ? {1 2} : {}}] {tracedLoop $level}} {foreach tracer {} {tracedLoop $level}} {tracedLoop $level} {tracedLoop 1} {incr level} {incr level} tracer {tracer} {expr {$level==1 ? {1 2} : {}}} {expr {$level==1 ? {1 2} : {}}} {foreach tracer [expr {$level==1 ? {1 2} : {}}] {tracedLoop $level}} {foreach tracer {} {tracedLoop $level}}}
+catch {rename tracer {}}
+catch {rename tracedLoop {}}
 
 test basic-40.1 {Tcl_DeleteTrace} {emptyTest} {
 } {}
