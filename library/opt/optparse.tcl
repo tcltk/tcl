@@ -8,12 +8,12 @@
 #	on it.  If your code does rely on this package you
 #	may directly incorporate this code into your application.
 #
-# RCS: @(#) $Id: optparse.tcl,v 1.7 2002/08/20 15:33:32 dgp Exp $
+# RCS: @(#) $Id: optparse.tcl,v 1.8 2002/11/23 01:41:35 hobbs Exp $
 
 package require Tcl 8
 # When this version number changes, update the pkgIndex.tcl file
 # and the install directory in the Makefiles.
-package provide opt 0.4.3
+package provide opt 0.4.4
 
 namespace eval ::tcl {
 
@@ -69,13 +69,6 @@ namespace eval ::tcl {
     }
 
 ###################  No User serviceable part below ! ###############
-# You should really not look any further :
-# The following is private unexported undocumented unblessed... code 
-# time to hit "q" ;-) !
-
-# Hmmm... ok, you really want to know ?
-
-# You've been warned... Here it is...
 
     # Array storing the parsed descriptions
     variable OptDesc;
@@ -154,7 +147,7 @@ namespace eval ::tcl {
 proc ::tcl::OptKeyRegister {desc {key ""}} {
     variable OptDesc;
     variable OptDescN;
-    if {[string compare $key ""] == 0} {
+    if {[string equal $key ""]} {
         # in case a key given to us as a parameter was a number
         while {[info exists OptDesc($OptDescN)]} {incr OptDescN}
         set key $OptDescN;
@@ -256,8 +249,7 @@ proc ::tcl::OptParse {desc arglist} {
 # into local variable named "Args".
 proc ::tcl::OptProc {name desc body} {
     set namespace [uplevel 1 [list ::namespace current]];
-    if {   ([string match "::*" $name]) 
-        || ([string compare $namespace "::"]==0)} {
+    if {[string match "::*" $name] || [string equal $namespace "::"]} {
         # absolute name or global namespace, name is the key
         set key $name;
     } else {
@@ -464,7 +456,7 @@ proc ::tcl::OptProcArgGiven {argname} {
                 }
                 # consume the flag
                 OptNextArg arguments;
-                if {[string compare "--" $arg] == 0} {
+                if {[string equal "--" $arg]} {
                     # return from 'flags' state
                     return -code return;
                 }
@@ -536,7 +528,7 @@ proc ::tcl::OptKeyParse {descKey arglist} {
     set desc [OptKeyGetDesc $descKey];
 
     # make sure -help always give usage
-    if {[string compare "-help" [string tolower $arglist]] == 0} {
+    if {[string equal -nocase "-help" $arglist]} {
 	return -code error [OptError "Usage information:" $desc 1];
     }
 
@@ -587,7 +579,7 @@ proc ::tcl::OptCheckType {arg type {typeArgs ""}} {
 
     switch -exact -- $type {
         int {
-            if {![regexp {^(-+)?[0-9]+$} $arg]} {
+            if {![string is integer -strict $arg]} {
                 error "not an integer"
             }
 	    return $arg;
@@ -598,23 +590,17 @@ proc ::tcl::OptCheckType {arg type {typeArgs ""}} {
 	script -
         list {
 	    # if llength fail : malformed list
-            if {[llength $arg]==0} {
-		if {[OptIsFlag $arg]} {
-		    error "no values with leading -"
-		}
+            if {[llength $arg]==0 && [OptIsFlag $arg]} {
+		error "no values with leading -"
 	    }
 	    return $arg;
         }
         boolean {
-	    if {![regexp -nocase {^(true|false|0|1)$} $arg]} {
+	    if {![string is boolean -strict $arg]} {
 		error "non canonic boolean"
             }
 	    # convert true/false because expr/if is broken with "!,...
-	    if {$arg} {
-		return 1
-	    } else {
-		return 0
-	    }
+	    return [expr {$arg ? 1 : 0}]
         }
         choice {
             if {[lsearch -exact $typeArgs $arg] < 0} {
@@ -656,16 +642,14 @@ proc ::tcl::OptCheckType {arg type {typeArgs ""}} {
 	    # (string length ought to be cheap)
 	    set lflag [string tolower $flag];
 	    if {$len == [string length $lflag]} {
-		if {[string compare $larg $lflag]==0} {
+		if {[string equal $larg $lflag]} {
 		    # Exact match case
 		    OptSetPrgCounter desc $i;
 		    return 1;
 		}
-	    } else {
-		if {[string compare $larg [string range $lflag 0 $last]]==0} {
-		    lappend hitems $i;
-		    incr hits;
-		}
+	    } elseif {[string equal $larg [string range $lflag 0 $last]]} {
+		lappend hitems $i;
+		incr hits;
             }
 	    incr i;
         }
@@ -680,11 +664,9 @@ proc ::tcl::OptCheckType {arg type {typeArgs ""}} {
     proc OptName {item} {
         lindex $item 1;
     }
-    # 
     proc OptHasBeenSet {item} {
 	Lget $item {2 0};
     }
-    # 
     proc OptValue {item} {
 	Lget $item {2 1};
     }
@@ -715,7 +697,7 @@ proc ::tcl::OptCheckType {arg type {typeArgs ""}} {
         lindex $item 5
     }
     proc OptNeedValue {item} {
-        string compare [OptType $item] boolflag
+        expr {![string equal [OptType $item] boolflag]}
     }
     proc OptDefaultValue {item} {
         set val [OptTypeArgs $item]
@@ -761,7 +743,7 @@ proc ::tcl::OptCheckType {arg type {typeArgs ""}} {
             set state "flags";
         } elseif {$isopt} {
 	    set state "optValue";
-	} elseif {[string compare $varname "args"]} {
+	} elseif {![string equal $varname "args"]} {
 	    set state "value";
 	} else {
 	    set state "args";
@@ -783,7 +765,7 @@ proc ::tcl::OptCheckType {arg type {typeArgs ""}} {
                 # varname default
                 # varname help
                 set type [OptGuessType $arg1]
-                if {[string compare $type "string"] == 0} {
+                if {[string equal $type "string"]} {
                     if {$isflag} {
 			set type boolflag
 			set def false
