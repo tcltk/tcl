@@ -15,6 +15,9 @@
 
 2002-01-21  Don Porter <dgp@users.sourceforge.net>
 
+	* generic/tclTest.c: Converted declarations of TestReport file system
+	to more portable form.  [Bug 501417].
+
 	* generic/tcl.decls (Tcl_TraceCommand,Tcl_UntraceCommand,
 	  Tcl_CommandTraceInfo):
 	* generic/tclCmdMZ.c (Tcl_TraceCommand,Tcl_UntraceCommand,
