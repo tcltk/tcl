@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.118.2.2 2003/03/21 03:24:08 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.118.2.3 2003/04/16 23:31:44 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -1564,9 +1564,7 @@ extern Tcl_ObjType	tclStringType;
 extern Tcl_ObjType	tclArraySearchType;
 extern Tcl_ObjType	tclIndexType;
 extern Tcl_ObjType	tclNsNameType;
-#ifndef TCL_WIDE_INT_IS_LONG
 extern Tcl_ObjType	tclWideIntType;
-#endif
 
 /*
  * Variables denoting the hash key types defined in the core.
@@ -2208,6 +2206,26 @@ extern Tcl_Mutex tclObjMutex;
 
 #define TclGetString(objPtr) \
     ((objPtr)->bytes? (objPtr)->bytes : Tcl_GetString((objPtr)))
+
+/*
+ *----------------------------------------------------------------
+ * Macro used by the Tcl core to get a Tcl_WideInt value out of
+ * a Tcl_Obj of the "wideInt" type.  Different implementation on
+ * different platforms depending whether TCL_WIDE_INT_IS_LONG.
+ *----------------------------------------------------------------
+ */
+
+#ifdef TCL_WIDE_INT_IS_LONG
+#    define TclGetWide(resultVar, objPtr) \
+	(resultVar) = (objPtr)->internalRep.longValue
+#    define TclGetLongFromWide(resultVar, objPtr) \
+	(resultVar) = (objPtr)->internalRep.longValue
+#else
+#    define TclGetWide(resultVar, objPtr) \
+	(resultVar) = (objPtr)->internalRep.wideValue
+#    define TclGetLongFromWide(resultVar, objPtr) \
+	(resultVar) = Tcl_WideAsLong((objPtr)->internalRep.wideValue)
+#endif
 
 /*
  *----------------------------------------------------------------
