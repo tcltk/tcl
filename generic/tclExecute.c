@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.91 2003/01/08 21:29:06 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.92 2003/02/06 22:44:57 mdejong Exp $
  */
 
 #include "tclInt.h"
@@ -1918,6 +1918,7 @@ TclExecuteByteCode(interp, codePtr)
 	    if (result != TCL_OK) {
 		TRACE_WITH_OBJ(("%u (by %s) => ERROR converting increment amount to int: ",
 		        opnd, O2S(valuePtr)), Tcl_GetObjResult(interp));
+		Tcl_AddErrorInfo(interp, "\n    (reading increment)");
 		goto checkForCatch;
 	    }
 	    FORCE_LONG(valuePtr, i, w);
