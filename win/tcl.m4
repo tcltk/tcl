@@ -151,60 +151,6 @@ AC_DEFUN(SC_LOAD_TKCONFIG, [
 ])
 
 #------------------------------------------------------------------------
-# SC_ENABLE_GCC --
-#
-#	Allows the use of GCC if available
-#
-# Arguments:
-#	none
-#	
-# Results:
-#
-#	Adds the following arguments to configure:
-#		--enable-gcc
-#
-#	Sets the following vars:
-#		CC	Command to use for the compiler
-#		AR	Comman for the archive tool
-#		RANLIB	Command for the archive indexing tool
-#		RC	Command for the resource compiler
-#
-#------------------------------------------------------------------------
-
-AC_DEFUN(SC_ENABLE_GCC, [
-    AC_ARG_ENABLE(gcc, [  --enable-gcc            allow use of gcc if available [--disable-gcc]],
-	[ok=$enableval], [ok=no])
-    if test "$ok" = "yes"; then
-	# Quick hack to simulate a real cross check
-	# The right way to do this is to use AC_CHECK_TOOL
-	# correctly, but this is the minimal change
-	# we need until the real fix is ready.
-	if test "$host" != "$build" ; then
-	    if test -z "$CC"; then
-		CC=${host}-gcc
-	    fi
-	    AC_PROG_CC
-	    AC_CHECK_PROG(AR, ${host}-ar, ${host}-ar)
-	    AC_CHECK_PROG(RANLIB, ${host}-ranlib, ${host}-ranlib)
-	    AC_CHECK_PROG(RC, ${host}-windres, ${host}-windres)
-	else
-	    if test -z "$CC"; then
-		CC=gcc
-	    fi
-	    AC_PROG_CC
-	    AC_CHECK_PROG(AR, ar, ar)
-	    AC_CHECK_PROG(RANLIB, ranlib, ranlib)
-	    AC_CHECK_PROG(RC, windres, windres)
-    	fi
-    else
-	# Allow user to override
-	if test -z "$CC"; then
-	    CC=cl
-	fi
-    fi
-])
-
-#------------------------------------------------------------------------
 # SC_ENABLE_SHARED --
 #
 #	Allows the building of shared libraries

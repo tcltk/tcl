@@ -257,36 +257,6 @@ AC_DEFUN(SC_LOAD_TKCONFIG, [
 ])
 
 #------------------------------------------------------------------------
-# SC_ENABLE_GCC --
-#
-#	Allows the use of GCC if available
-#
-# Arguments:
-#	none
-#	
-# Results:
-#
-#	Adds the following arguments to configure:
-#		--enable-gcc
-#
-#	Sets the following vars:
-#		CC	Command to use for the compiler
-#------------------------------------------------------------------------
-
-AC_DEFUN(SC_ENABLE_GCC, [
-    AC_ARG_ENABLE(gcc, [  --enable-gcc            allow use of gcc if available [--disable-gcc]],
-	[ok=$enableval], [ok=no])
-    if test "$ok" = "yes"; then
-	if test -z "$CC"; then
-            CC=gcc
-	fi
-	AC_PROG_CC
-    else
-	CC=${CC-cc}
-    fi
-])
-
-#------------------------------------------------------------------------
 # SC_ENABLE_SHARED --
 #
 #	Allows the building of shared libraries
