@@ -2,7 +2,7 @@
 	
 	* generic/tclLiteral.c: (TclReleaseLiteral) insured that
 	self-referential bytecodes are properly cleaned up on interpreter
-	deletion [Bug 467523]
+	deletion [Bug 467523] (Ronnie Brunner)
 
 2001-10-04  Jeff Hobbs  <jeffh@ActiveState.com>
 
