@@ -12,11 +12,15 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: waitpid.c,v 1.2 1998/09/14 18:39:45 stanton Exp $
+ * RCS: @(#) $Id: waitpid.c,v 1.3 2000/01/11 22:08:50 hobbs Exp $
  */
 
 #include "tclInt.h"
 #include "tclPort.h"
+
+#ifndef pid_t
+#define pid_t int
+#endif
 
 /*
  * A linked list of the following structures is used to keep track
@@ -28,7 +32,7 @@
  */
 
 typedef struct WaitInfo {
-    int pid;				/* Pid of process that exited. */
+    pid_t pid;				/* Pid of process that exited. */
     WAIT_STATUS_TYPE status;		/* Status returned when child exited
 					 * or suspended. */
     struct WaitInfo *nextPtr;		/* Next in list of exited processes. */
@@ -64,9 +68,9 @@ static WaitInfo *deadList = NULL;	/* First in list of all dead
 #   undef waitpid
 #endif
 
-int
+pid_t
 waitpid(pid, statusPtr, options)
-    int pid;			/* The pid to wait on.  Must be -1 or
+    pid_t pid;			/* The pid to wait on.  Must be -1 or
 				 * greater than zero. */
     int *statusPtr;		/* Where to store wait status for the
 				 * process. */
@@ -74,7 +78,7 @@ waitpid(pid, statusPtr, options)
 				 * WUNTRACED. */
 {
     register WaitInfo *waitPtr, *prevPtr;
-    int result;
+    pid_t result;
     WAIT_STATUS_TYPE status;
 
     if ((pid < -1) || (pid == 0)) {
