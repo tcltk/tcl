@@ -80,7 +80,7 @@ test encoding-3.2 {Tcl_GetEncodingName, non-null} {
     set x
 } {jis0208}
 
-test encoding-4.1 {Tcl_GetEncodingNames} {
+test encoding-4.1 {Tcl_GetEncodingNames} {pcOnly} {
     file mkdir tmp/encoding
     close [open tmp/encoding/junk.enc w]
     close [open tmp/encoding/junk2.enc w]
@@ -93,6 +93,19 @@ test encoding-4.1 {Tcl_GetEncodingNames} {
     file delete -force tmp
     set x
 } {junk utf-8 cp1252 junk2 identity unicode iso8859-1}
+test encoding-4.1 {Tcl_GetEncodingNames} {unixOnly} {
+    file mkdir tmp/encoding
+    close [open tmp/encoding/junk.enc w]
+    close [open tmp/encoding/junk2.enc w]
+    cd tmp
+    set path [testencoding path]
+    testencoding path .
+    set x [encoding names]
+    testencoding path $path
+    cd ..
+    file delete -force tmp
+    set x
+} {junk utf-8 junk2 identity unicode iso8859-1}
 
 
 test encoding-5.1 {Tcl_SetSystemEncoding} {

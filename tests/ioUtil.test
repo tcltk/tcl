@@ -1,4 +1,4 @@
-# This file (iOUtil.test) tests the hookable TclStat(), TclAccess(),
+# This file (ioUtil.test) tests the hookable TclStat(), TclAccess(),
 # and Tcl_OpenFileChannel, routines in the file generic/tclIOUtils.c.
 # Sourcing this file into Tcl runs the tests and generates output for
 # errors. No output means no errors were found. 
@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution 
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES. 
 # 
-# RCS: @(#) $Id: ioUtil.test,v 1.1.2.1 1998/09/24 23:59:26 stanton Exp $
+# RCS: @(#) $Id: ioUtil.test,v 1.1.2.2 1998/12/02 03:13:33 stanton Exp $
  
 if {[string compare test [info procs test]] == 1} then {source defs}
 

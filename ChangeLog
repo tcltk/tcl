@@ -1,5 +1,8 @@
 1998-12-01    <stanton@GASPODE>
 
+	* generic/tclIO.c (Tcl_ReadChars): Added a call to UpdateInterest
+	so we don't block when there is data sitting in the buffers.
+
 	* generic/tclTest.c (TestevalobjvObjCmd): Updated for EvalObjv
 	change.
 

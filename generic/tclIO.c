@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.1.2.3 1998/11/11 04:08:16 stanton Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.1.2.4 1998/12/02 03:13:30 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -3510,7 +3510,8 @@ Tcl_ReadChars(chan, objPtr, toRead, appendFlag)
     
     chanPtr = (Channel *) chan;
     if (CheckChannelErrors(chanPtr, TCL_READABLE) != 0) {
-	return -1;
+	copied = -1;
+	goto done;
     }
 
     encoding = chanPtr->encoding;
@@ -3572,7 +3573,8 @@ Tcl_ReadChars(chan, objPtr, toRead, appendFlag)
 		if (result == EAGAIN) {
 		    break;
 		}
-		return -1;
+		copied = -1;
+		goto done;
 	    }
 	} else {
 	    copied += copiedNow;
@@ -3585,6 +3587,14 @@ Tcl_ReadChars(chan, objPtr, toRead, appendFlag)
     } else {
 	Tcl_SetObjLength(objPtr, offset);
     }
+
+    done:
+    /*
+     * Update the notifier state so we don't block while there is still
+     * data in the buffers.
+     */
+
+    UpdateInterest(chanPtr);
     return copied;
 }
 /*
