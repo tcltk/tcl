@@ -1,3 +1,8 @@
+2003-12-12  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* generic/tclCmdAH.c: fix to normalization of non-existent user
+	name ('file normalize ~nobody') [Bug 858937]
+
 2003-12-09  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* unix/tclUnixPort.h:	#ifdef'd out declarations of errno which
