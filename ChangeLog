@@ -1,3 +1,8 @@
+2001-11-27  D. Richard Hipp   <drh@hwaci.com>
+
+	* win/tclWinFCmd.c: Fix a coredump in the filename normalizer
+	code for Win95/98.
+
 2001-11-27  David Gravereaux <davygrvy@pobox.com>
 
 	* win/makefile.vc: Removed the Tk reference for the 'winhelp' target.
