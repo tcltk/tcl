@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.83 2002/02/15 14:28:48 dkf Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.84 2002/02/20 18:46:29 dgp Exp $
  */
 
 #ifndef _TCLDECLS
@@ -704,8 +704,8 @@ EXTERN int		Tcl_RegExpMatch _ANSI_ARGS_((Tcl_Interp * interp,
 				CONST char * str, CONST char * pattern));
 /* 215 */
 EXTERN void		Tcl_RegExpRange _ANSI_ARGS_((Tcl_RegExp regexp, 
-				int index, CONST char ** startPtr, 
-				CONST char ** endPtr));
+				int index, CONST84 char ** startPtr, 
+				CONST84 char ** endPtr));
 /* 216 */
 EXTERN void		Tcl_Release _ANSI_ARGS_((ClientData clientData));
 /* 217 */
@@ -987,7 +987,7 @@ EXTERN void		Tcl_GetEncodingNames _ANSI_ARGS_((
 /* 304 */
 EXTERN int		Tcl_GetIndexFromObjStruct _ANSI_ARGS_((
 				Tcl_Interp * interp, Tcl_Obj * objPtr, 
-				CONST char ** tablePtr, int offset, 
+				CONST84 char ** tablePtr, int offset, 
 				CONST char * msg, int flags, int * indexPtr));
 /* 305 */
 EXTERN VOID *		Tcl_GetThreadData _ANSI_ARGS_((
@@ -1827,7 +1827,7 @@ typedef struct TclStubs {
     Tcl_RegExp (*tcl_RegExpCompile) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * string)); /* 212 */
     int (*tcl_RegExpExec) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_RegExp regexp, CONST char * str, CONST char * start)); /* 213 */
     int (*tcl_RegExpMatch) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * str, CONST char * pattern)); /* 214 */
-    void (*tcl_RegExpRange) _ANSI_ARGS_((Tcl_RegExp regexp, int index, CONST char ** startPtr, CONST char ** endPtr)); /* 215 */
+    void (*tcl_RegExpRange) _ANSI_ARGS_((Tcl_RegExp regexp, int index, CONST84 char ** startPtr, CONST84 char ** endPtr)); /* 215 */
     void (*tcl_Release) _ANSI_ARGS_((ClientData clientData)); /* 216 */
     void (*tcl_ResetResult) _ANSI_ARGS_((Tcl_Interp * interp)); /* 217 */
     int (*tcl_ScanElement) _ANSI_ARGS_((CONST char * str, int * flagPtr)); /* 218 */
@@ -1916,7 +1916,7 @@ typedef struct TclStubs {
     Tcl_Encoding (*tcl_GetEncoding) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * name)); /* 301 */
     CONST char * (*tcl_GetEncodingName) _ANSI_ARGS_((Tcl_Encoding encoding)); /* 302 */
     void (*tcl_GetEncodingNames) _ANSI_ARGS_((Tcl_Interp * interp)); /* 303 */
-    int (*tcl_GetIndexFromObjStruct) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * objPtr, CONST char ** tablePtr, int offset, CONST char * msg, int flags, int * indexPtr)); /* 304 */
+    int (*tcl_GetIndexFromObjStruct) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * objPtr, CONST84 char ** tablePtr, int offset, CONST char * msg, int flags, int * indexPtr)); /* 304 */
     VOID * (*tcl_GetThreadData) _ANSI_ARGS_((Tcl_ThreadDataKey * keyPtr, int size)); /* 305 */
     Tcl_Obj * (*tcl_GetVar2Ex) _ANSI_ARGS_((Tcl_Interp * interp, char * part1, char * part2, int flags)); /* 306 */
     ClientData (*tcl_InitNotifier) _ANSI_ARGS_((void)); /* 307 */
