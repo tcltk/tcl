@@ -3,7 +3,7 @@
 # utility procs formerly in init.tcl which can be loaded on demand
 # for package management.
 #
-# RCS: @(#) $Id: package.tcl,v 1.1.2.5 1998/12/02 20:08:06 welch Exp $
+# RCS: @(#) $Id: package.tcl,v 1.1.2.6 1999/04/01 23:21:33 welch Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1998 Sun Microsystems, Inc.
@@ -278,7 +278,7 @@ proc pkg_mkIndex {args} {
 
 		foreach ::tcl::x [::tcl::GetAllNamespaces] {
 		    if {! [info exists ::tcl::namespaces($::tcl::x)]} {
-			namespace import ${::tcl::x}::*
+			namespace import -force ${::tcl::x}::*
 		    }
 		}
 
