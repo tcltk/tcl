@@ -1,3 +1,8 @@
+2003-11-20  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclVar.c: fix flag bit collision between
+	LOOKUP_FOR_UPVAR and TCL_PARSE_PART1 (deprecated) [Bug 835020] 
+	
 2003-11-19  Don Porter	<dgp@users.sourceforge.net>
 
 	* tests/compile.test (compile-16.22.0):	Improved test for the
