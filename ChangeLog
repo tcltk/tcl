@@ -1,3 +1,9 @@
+1999-04-27    <stanton@scriptics.com>
+
+	* generic/tclLiteral.c (TclHideLiteral): Fixed so hidden literals
+	get duplicated to avoid accidental sharing in the global object
+	table. 
+
 1999-04-23    <stanton@scriptics.com>
 
 	* generic/tclStubInit.c: 
