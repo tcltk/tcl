@@ -3,7 +3,7 @@
 # Default system startup file for Tcl-based applications.  Defines
 # "unknown" procedure and auto-load facilities.
 #
-# RCS: @(#) $Id: init.tcl,v 1.53 2002/10/03 13:34:32 dkf Exp $
+# RCS: @(#) $Id: init.tcl,v 1.54 2002/10/28 16:34:25 dgp Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
@@ -112,6 +112,17 @@ if {(![interp issafe]) && [string equal $tcl_platform(platform) "windows"]} {
 # Setup the unknown package handler
 
 package unknown tclPkgUnknown
+
+if {![interp issafe]} {
+    # setup platform specific unknown package handlers
+    if {[string equal $::tcl_platform(platform) "unix"] && \
+	    [string equal $::tcl_platform(os) "Darwin"]} {
+	package unknown [list tcl::MacOSXPkgUnknown [package unknown]]
+    }
+    if {[string equal $::tcl_platform(platform) "macintosh"]} {
+	package unknown [list tcl::MacPkgUnknown [package unknown]]
+    }
+}
 
 # Conditionalize for presence of exec.
 

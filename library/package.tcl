@@ -3,7 +3,7 @@
 # utility procs formerly in init.tcl which can be loaded on demand
 # for package management.
 #
-# RCS: @(#) $Id: package.tcl,v 1.20 2002/10/22 16:41:28 das Exp $
+# RCS: @(#) $Id: package.tcl,v 1.21 2002/10/28 16:34:25 dgp Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1998 Sun Microsystems, Inc.
@@ -452,23 +452,6 @@ proc tclPkgSetup {dir pkg version files} {
     }
 }
 
-# tclMacPkgSearch --
-# The procedure is used on the Macintosh to search a given directory for files
-# with a TEXT resource named "pkgIndex".  If it exists it is sourced in to the
-# interpreter to setup the package database.
-
-proc tclMacPkgSearch {dir} {
-    foreach x [glob -directory $dir -nocomplain *.shlb] {
-	if {[file isfile $x]} {
-	    set res [resource open $x]
-	    foreach y [resource list TEXT $res] {
-		if {[string equal $y "pkgIndex"]} {source -rsrc pkgIndex}
-	    }
-	    catch {resource close $res}
-	}
-    }
-}
-
 # tclPkgUnknown --
 # This procedure provides the default for the "package unknown" function.
 # It is invoked when a package that's needed can't be found.  It scans
@@ -484,7 +467,7 @@ proc tclMacPkgSearch {dir} {
 # exact -		Either "-exact" or omitted.  Not used.
 
 proc tclPkgUnknown {name version {exact {}}} {
-    global auto_path tcl_platform env
+    global auto_path env
 
     if {![info exists auto_path]} {
 	return
@@ -510,25 +493,6 @@ proc tclPkgUnknown {name version {exact {}}} {
 		}
 	    }
 	}
-	# On MacOSX also search the Resources/Scripts directories in
-	# the subdirectories for pkgIndex files
-	if {[string equal $::tcl_platform(platform) "unix"] && \
-	        [string equal $::tcl_platform(os) "Darwin"]} {
-	    set dir [lindex $use_path end]
-	    catch {
-		foreach file [glob -directory $dir -join -nocomplain \
-			* Resources Scripts pkgIndex.tcl] {
-		    set dir [file dirname $file]
-		    if {[file readable $file] && ![info exists procdDirs($dir)]} {
-			if {[catch {source $file} msg]} {
-			    tclLog "error reading package index file $file: $msg"
-			} else {
-			    set procdDirs($dir) 1
-			}
-		    }
-		}
-	    }
-	}
 	set dir [lindex $use_path end]
 	set file [file join $dir pkgIndex.tcl]
 	# safe interps usually don't have "file readable", nor stderr channel
@@ -540,22 +504,109 @@ proc tclPkgUnknown {name version {exact {}}} {
 		set procdDirs($dir) 1
 	    }
 	}
-	# On the Macintosh we also look in the resource fork 
-	# of shared libraries
-	# We can't use tclMacPkgSearch in safe interps because it uses glob
-	if {(![interp issafe]) && \
-		[string equal $tcl_platform(platform) "macintosh"]} {
-	    set dir [lindex $use_path end]
-	    if {![info exists procdDirs($dir)]} {
-		tclMacPkgSearch $dir
-		set procdDirs($dir) 1
+	set use_path [lrange $use_path 0 end-1]
+	if {[string compare $old_path $auto_path]} {
+	    foreach dir $auto_path {
+		lappend use_path $dir
 	    }
-	    foreach x [glob -directory $dir -nocomplain *] {
-		if {[file isdirectory $x] && ![info exists procdDirs($x)]} {
-		    set dir $x
-		    tclMacPkgSearch $dir
+	    set old_path $auto_path
+	}
+    }
+}
+
+# tcl::MacOSXPkgUnknown --
+# This procedure extends the "package unknown" function for MacOSX.
+# It scans the Resources/Scripts directories of the immediate children
+# of the auto_path directories for pkgIndex files.
+# Only installed in interps that are not safe so we don't check
+# for [interp issafe] as in tclPkgUnknown.
+#
+# Arguments:
+# original -		original [package unknown] procedure
+# name -		Name of desired package.  Not used.
+# version -		Version of desired package.  Not used.
+# exact -		Either "-exact" or omitted.  Not used.
+
+proc tcl::MacOSXPkgUnknown {original name version {exact {}}} {
+
+    #  First do the cross-platform default search
+    uplevel 1 $original [list $name $version $exact]
+
+    # Now do MacOSX specific searching
+    global auto_path
+
+    if {![info exists auto_path]} {
+	return
+    }
+    # Cache the auto_path, because it may change while we run through
+    # the first set of pkgIndex.tcl files
+    set old_path [set use_path $auto_path]
+    while {[llength $use_path]} {
+	set dir [lindex $use_path end]
+	# get the pkgIndex files out of the subdirectories
+	foreach file [glob -directory $dir -join -nocomplain \
+		* Resources Scripts pkgIndex.tcl] {
+	    set dir [file dirname $file]
+	    if {[file readable $file] && ![info exists procdDirs($dir)]} {
+		if {[catch {source $file} msg]} {
+		    tclLog "error reading package index file $file: $msg"
+		} else {
 		    set procdDirs($dir) 1
 		}
+	    }
+	}
+	set use_path [lrange $use_path 0 end-1]
+	if {[string compare $old_path $auto_path]} {
+	    foreach dir $auto_path {
+		lappend use_path $dir
+	    }
+	    set old_path $auto_path
+	}
+    }
+}
+
+# tcl::MacPkgUnknown --
+# This procedure extends the "package unknown" function for Mac.
+# It searches for pkgIndex TEXT resources in all files
+# Only installed in interps that are not safe so we don't check
+# for [interp issafe] as in tclPkgUnknown.
+#
+# Arguments:
+# original -		original [package unknown] procedure
+# name -		Name of desired package.  Not used.
+# version -		Version of desired package.  Not used.
+# exact -		Either "-exact" or omitted.  Not used.
+
+proc tcl::MacPkgUnknown {original name version {exact {}}} {
+
+    #  First do the cross-platform default search
+    uplevel 1 $original [list $name $version $exact]
+
+    # Now do Mac specific searching
+    global auto_path
+
+    if {![info exists auto_path]} {
+	return
+    }
+    # Cache the auto_path, because it may change while we run through
+    # the first set of pkgIndex.tcl files
+    set old_path [set use_path $auto_path]
+    while {[llength $use_path]} {
+	# We look for pkgIndex TEXT resources in the resource fork of shared libraries
+	set dir [lindex $use_path end]
+	foreach x [concat [list $dir] [glob -directory $dir -nocomplain *] ] {
+	    if {[file isdirectory $x] && ![info exists procdDirs($x)]} {
+		set dir $x
+		foreach x [glob -directory $dir -nocomplain *.shlb] {
+		    if {[file isfile $x]} {
+			set res [resource open $x]
+			foreach y [resource list TEXT $res] {
+			    if {[string equal $y "pkgIndex"]} {source -rsrc pkgIndex}
+			}
+			catch {resource close $res}
+		    }
+		}
+		set procdDirs($dir) 1
 	    }
 	}
 	set use_path [lrange $use_path 0 end-1]
