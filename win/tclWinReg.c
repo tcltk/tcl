@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinReg.c,v 1.21.2.3 2003/11/10 22:42:07 dgp Exp $
+ * RCS: @(#) $Id: tclWinReg.c,v 1.21.2.4 2004/09/01 17:26:04 hobbs Exp $
  */
 
 #include <tclPort.h>
@@ -1328,7 +1328,7 @@ BroadcastValue(
     int objc,			/* Number of arguments. */
     Tcl_Obj * CONST objv[])	/* Argument values. */
 {
-    DWORD result, sendResult;
+    LRESULT result, sendResult;
     UINT timeout = 3000;
     int len;
     char *str;
@@ -1362,8 +1362,8 @@ BroadcastValue(
 	    (WPARAM) 0, (LPARAM) str, SMTO_ABORTIFHUNG, timeout, &sendResult);
 
     objPtr = Tcl_NewObj();
-    Tcl_ListObjAppendElement(NULL, objPtr, Tcl_NewIntObj((int) result));
-    Tcl_ListObjAppendElement(NULL, objPtr, Tcl_NewIntObj((int) sendResult));
+    Tcl_ListObjAppendElement(NULL, objPtr, Tcl_NewLongObj((long) result));
+    Tcl_ListObjAppendElement(NULL, objPtr, Tcl_NewLongObj((long) sendResult));
     Tcl_SetObjResult(interp, objPtr);
 
     return TCL_OK;
