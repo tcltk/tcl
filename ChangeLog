@@ -13,6 +13,9 @@
 
 2002-06-17  Don Porter  <dgp@users.sourceforge.net>
 
+	* doc/msgcat.n: Corrected en_UK references to en_GB.  UK is not
+	a country designation recognized in ISO 3166.
+
 	* library/msgcat/msgcat.tcl:  More Windows Registry locale codes
 	from Bruno Haible.
 

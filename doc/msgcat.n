@@ -98,8 +98,9 @@ returns {en_US_funky en_US en}.
 .TP
 \fB::msgcat::mcload \fIdirname\fR
 Searches the specified directory for files that match
-the language specifications returned by \fB::msgcat::mcpreferences\fR,
-extended by the file extension ``.msg''.  Each matching file is 
+the language specifications returned by \fB::msgcat::mcpreferences\fR
+(note that these are all lowercase), extended by the file
+extension ``.msg''.  Each matching file is 
 read in order, assuming a UTF-8 encoding.  The file contents are
 then evaluated as a Tcl script.  This means that non-Latin characters
 may be present in the message file either directly in their UTF-8
@@ -166,7 +167,7 @@ locale of ``C''.
 .PP
 When a locale is specified by the user, a ``best match'' search is
 performed during string translation.  For example, if a user specifies
-en_UK_Funky, the locales ``en_UK_Funky'', ``en_UK'', and ``en'' are
+en_GB_Funky, the locales ``en_GB_Funky'', ``en_GB'', and ``en'' are
 searched in order until a matching translation string is found.  If no
 translation string is available, then \fB::msgcat::unknown\fR is
 called.
@@ -229,11 +230,11 @@ to the following conditions:
 .IP [1]
 All message files for a package are in the same directory.
 .IP [2]
-The message file name is a locale specifier followed
-by ``.msg''.  For example:
+The message file name is a msgcat locale specifier (all lowercase)
+followed by ``.msg''.  For example:
 .CS
 es.msg    -- spanish
-en_UK.msg -- UK English
+en_gb.msg -- United Kingdom English
 .CE
 .IP [3]
 The file contains a series of calls to \fBmcset\fR and
