@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: unixFCmd.test,v 1.15 2002/08/08 08:56:21 hobbs Exp $
+# RCS: @(#) $Id: unixFCmd.test,v 1.16 2002/08/08 10:41:22 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -127,7 +127,7 @@ test unixFCmd-2.1 {TclpCopyFile: target exists: lstat(dst) == 0} \
     close [open tf2 a]
     file copy -force tf1 tf2
 } {}
-test unixFCmd-2.2 {TclpCopyFile: src is symlink} {unixOnly notRoot} {
+test unixFCmd-2.2.1 {TclpCopyFile: src is symlink} {unixOnly notRoot dontCopyLinks} {
     # copying links should end up with real files
     cleanup
     close [open tf1 a]
@@ -135,6 +135,14 @@ test unixFCmd-2.2 {TclpCopyFile: src is symlink} {unixOnly notRoot} {
     file copy tf2 tf3
     file type tf3
 } {file}
+test unixFCmd-2.2.2 {TclpCopyFile: src is symlink} {unixOnly notRoot} {
+    # copying links should end up with the links copied
+    cleanup
+    close [open tf1 a]
+    file link -symbolic tf2 tf1
+    file copy tf2 tf3
+    file type tf3
+} {link}
 test unixFCmd-2.3 {TclpCopyFile: src is block} {unixOnly notRoot} {
     cleanup
     set null "/dev/null"
