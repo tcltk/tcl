@@ -8,7 +8,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: tcltest.n,v 1.22 2002/07/01 07:56:32 dgp Exp $
+'\" RCS: @(#) $Id: tcltest.n,v 1.23 2002/07/01 18:24:39 jenglish Exp $
 '\" 
 .so man.macros
 .TH "tcltest" n 2.1 tcltest "Tcl Bundled Packages"
@@ -104,7 +104,7 @@ test, as configured by the options of \fBtcltest\fR.  The
 remaining \fIoption value\fR arguments to [\fBtest\fR]
 define the test, including the scripts to run, the conditions
 under which to run them, the expected result, and the means
-by which the expected and acutal results should be compared.
+by which the expected and actual results should be compared.
 See \fBTESTS\fR below for a complete description of the valid
 options and how they define a test.  The [\fBtest\fR] command
 returns an empty string.  
@@ -144,7 +144,7 @@ Evaluates the script specified by the [\fBconfigure -load\fR]
 or [\fBconfigure -loadfile\fR] configuration options in the
 caller's context.  Returns the result of that script evaluation,
 including any error raised by the script.  Use this command
-and the related confiugration options to provide the commands
+and the related configuration options to provide the commands
 to be tested to the interpreter running the test suite.
 .TP
 \fBmakeFile\fR \fIcontents name ?directory?\fR
@@ -362,7 +362,7 @@ which the test suite was launched.  The Tcl commands [\fBcd\fR] and
 [\fBpwd\fR] are sufficient replacements.
 .TP
 \fBnormalizeMsg\fR \fImsg\fR
-Returns the result of removing the ``extra'' nelwines from \fImsg\fR,
+Returns the result of removing the ``extra'' newlines from \fImsg\fR,
 where ``extra'' is rather imprecise.  Tcl offers plenty of string
 processing commands to modify strings as you wish, and
 [\fBcustomMatch\fR] allows flexible matching of actual and expected
@@ -816,7 +816,7 @@ display usage information.
 .TP
 \fB-singleproc <bool>\fR
 if <bool> is 0, run test files in separate interpreters.  if 1, source test
-files into the current intpreter. (tcltest::singleProcess)
+files into the current interpreter. (tcltest::singleProcess)
 .TP
 \fB-verbose <levelList>\fR
 set the level of verbosity to a list containing 0 or more of "body",
@@ -927,7 +927,7 @@ environment variable is evaluated before the command line arguments.
 Options specified on the command line override those specified in 
 TCLTEST_OPTIONS. 
 .PP
-A second way to run tets is to start up a shell, load the
+A second way to run tests is to start up a shell, load the
 \fBtcltest\fR package, and then source an appropriate test file or use
 the test command.  To use the options in interactive mode, set
 their corresponding tcltest namespace variables after loading the
@@ -965,7 +965,7 @@ only the test's name, desired output, and
 actual output, are printed for each failed test.  If "pass" is present,
 then a line is printed for each passed test, otherwise no line is
 printed for passed tests.  If "skip" is present, then a line (containing
-the consraints that cause the test to be skipped) is printed for each
+the constraints that cause the test to be skipped) is printed for each
 skipped test, otherwise no line is printed for skipped tests.  If "start"
 is present, then a line is printed each time a new test starts.
 If "error" is present, then the content of errorInfo and errorCode (if
