@@ -1540,10 +1540,6 @@ if test -r cd.n; then
     rm -f cd.n.*
     $ZIP cd.n
 fi
-if test -r clock.n; then
-    rm -f clock.n.*
-    $ZIP clock.n
-fi
 if test -r close.n; then
     rm -f close.n.*
     $ZIP close.n
@@ -1893,6 +1889,10 @@ fi
 if test -r time.n; then
     rm -f time.n.*
     $ZIP time.n
+fi
+if test -r tm.n; then
+    rm -f tm.n.*
+    $ZIP tm.n
 fi
 if test -r trace.n; then
     rm -f trace.n.*
