@@ -1,3 +1,9 @@
+2000-04-10  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* generic/tcl.h: removed specific typedef of Tcl_ThreadCreateProc
+	for Windows as the build choked.  It seems to be OK using the Unix
+	fallback (void).
+
 2000-04-09  Brent Welch <welch@scriptics.com>
 
 	* lib/httpd2.1/http.tcl: Worked on the "server closes before
