@@ -1,3 +1,21 @@
+2003-01-28  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* generic/tcl.h: Add TCL_PREFIX_IDENT and
+	TCL_DEBUG_IDENT, used only by TclpCreateProcess.
+	* unix/Makefile.in: Define TCL_DBGX.
+	* win/Makefile.in: Define TCL_DBGX.
+	* win/tclWinPipe.c (TclpCreateProcess):
+	Check that the Tcl pipe dll actually exists
+	in the Tcl bin directory and panic if it
+	is not found. Incorporate TCL_DBGX into
+	the Tcl pipe dll name. This fixes a really
+	mysterious error that would show up when
+	exec'ing a 16 bit application under Win95
+	or Win98 when Tcl was compiled with symbols.
+ 	The error seemed to indicate that the executable
+	could not be found, but it was actually the
+	Tcl pipe dll that could not be found.
+
 2003-01-26  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* win/README: Update msys+mingw URL to release 6.
