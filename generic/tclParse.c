@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.14 2000/11/01 22:13:39 hobbs Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.15 2001/05/03 21:14:57 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -860,7 +860,7 @@ EvalObjv(interp, objc, objv, command, length, flags)
 	for (i = objc-1; i >= 0; i--) {
 	    newObjv[i+1] = objv[i];
 	}
-	newObjv[0] = Tcl_NewStringObj("unknown", -1);
+	newObjv[0] = Tcl_NewStringObj("::unknown", -1);
 	Tcl_IncrRefCount(newObjv[0]);
 	cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, newObjv[0]);
 	if (cmdPtr == NULL) {
