@@ -1,5 +1,9 @@
 2003-04-01  Don Porter  <dgp@users.sourceforge.net>
 
+	* tests/README:  Direct [source] of *.test files is no longer
+	recommended.  The tests/*.test files should only be evaluated under
+	the control of the [runAllTests] command in tests/all.tcl.
+
 	* generic/tclExecute.c (INST_RETURN):  Bytecompiled [return] failed
 	to reset iPtr->returnCode, causing tests parse-18.17 and parse-18.21
 	to fail strangely.
