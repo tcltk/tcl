@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclCompCmds.c 1.11 98/02/11 18:58:25
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.1.2.5 1998/10/06 00:35:22 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -677,6 +677,14 @@ TclCompileForeachCmd(interp, parsePtr, envPtr)
 	    }
 	    varList = tokenPtr[1].start;
 	    savedChar = varList[tokenPtr[1].size];
+
+	    /*
+	     * Note there is a danger that modifying the string could have
+	     * undesirable side effects.  In this case, Tcl_SplitList does
+	     * not have any dependencies on shared strings so we should be
+	     * safe.
+	     */
+
 	    varList[tokenPtr[1].size] = '\0';
 	    code = Tcl_SplitList(interp, varList,
 		    &varcList[loopIndex], &varvList[loopIndex]);
@@ -1426,6 +1434,13 @@ TclCompileIncrCmd(interp, parsePtr, envPtr)
 	    char savedChar = word[numBytes];
 	    long n;
 	
+	    /*
+	     * Note there is a danger that modifying the string could have
+	     * undesirable side effects.  In this case, TclLooksLikeInt and
+	     * TclGetLong do not have any dependencies on shared strings so we
+	     * should be safe.
+	     */
+
 	    word[numBytes] = '\0';
 	    if (TclLooksLikeInt(word, numBytes)
 		     && (TclGetLong((Tcl_Interp *) NULL, word, &n) == TCL_OK)) {
