@@ -1,3 +1,8 @@
+2004-10-02  Don Porter  <dgp@users.sourceforge.net>
+
+	* tests/namespace.test (namespace-8.7):	Another test for save/restore
+	of ::errorInfo and ::errorCode during global namespace teardown.
+
 2004-10-01  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclProc.c (TclObjGetFrame, Tcl_UplevelObjCmd): 
