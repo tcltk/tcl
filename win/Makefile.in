@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.43 2001/03/30 23:45:59 hobbs Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.44 2001/05/11 23:02:18 mdejong Exp $
 
 VERSION = @TCL_VERSION@
 
@@ -80,6 +80,13 @@ CFLAGS_WARNING = @CFLAGS_WARNING@
 CFLAGS_DEBUG    = @CFLAGS_DEBUG@
 CFLAGS_OPTIMIZE	= @CFLAGS_OPTIMIZE@
 
+# To change the compiler switches, for example to change from optimization to
+# debugging symbols, change the following line:
+#CFLAGS = 		$(CFLAGS_DEBUG)
+#CFLAGS = 		$(CFLAGS_OPTIMIZE)
+#CFLAGS = 		$(CFLAGS_DEBUG) $(CFLAGS_OPTIMIZE)
+CFLAGS = 		@CFLAGS@
+
 # To enable compilation debugging reverse the comment characters on
 # one of the following lines.
 COMPILE_DEBUG_FLAGS =
@@ -89,13 +96,6 @@ COMPILE_DEBUG_FLAGS =
 # The default switches for optimization or debugging
 LDFLAGS_DEBUG    = @LDFLAGS_DEBUG@
 LDFLAGS_OPTIMIZE = @LDFLAGS_OPTIMIZE@
-
-# To change the compiler switches, for example to change from optimization to
-# debugging symbols, change the following line:
-#CFLAGS = 		$(CFLAGS_DEBUG)
-#CFLAGS = 		$(CFLAGS_OPTIMIZE)
-#CFLAGS = 		$(CFLAGS_DEBUG) $(CFLAGS_OPTIMIZE)
-CFLAGS = 		@CFLAGS@
 
 # Special compiler flags to use when building man2tcl on Windows.
 MAN2TCLFLAGS =		@MAN2TCLFLAGS@
