@@ -10,7 +10,7 @@
 # Copyright (c) 2001-2003 David Gravereaux.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: rules.vc,v 1.16 2004/01/10 00:24:55 davygrvy Exp $
+# RCS: @(#) $Id: rules.vc,v 1.17 2004/01/15 23:08:10 davygrvy Exp $
 #------------------------------------------------------------------------------
 
 !ifndef _RULES_VC
@@ -271,12 +271,19 @@ TCL_COMPILE_DEBUG   = 0
 
 !if "$(CHECKS)" == "" || [nmakehlp -f "$(CHECKS)" "none"]
 TCL_NO_DEPRECATED	    = 0
+FULLWARNINGS		    = 0
 !else
 !if [nmakehlp -f $(CHECKS) "nodep"]
 !message *** Doing nodep check
 TCL_NO_DEPRECATED	    = 1
 !else
 TCL_NO_DEPRECATED	    = 0
+!endif
+!if [nmakehlp -f $(CHECKS) "fullwarn"]
+!message *** Doing full warnings check
+FULLWARNINGS		    = 1
+!else
+FULLWARNINGS		    = 0
 !endif
 !endif
 
