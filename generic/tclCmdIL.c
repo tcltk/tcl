@@ -13,11 +13,12 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: %Z% $Id: tclCmdIL.c,v 1.4 1998/07/01 18:37:16 rjohnson Exp $ 
+ * SCCS: %Z% $Id: tclCmdIL.c,v 1.5 1998/07/28 13:53:29 escoffon Exp $ 
  */
 
 #include "tclInt.h"
 #include "tclPort.h"
+#include "tclCompile.h"
 
 /*
  * During execution of the "lsort" command, structures of the following
@@ -524,7 +525,8 @@ InfoBodyCmd(dummy, interp, objc, objv)
     register Interp *iPtr = (Interp *) interp;
     char *name;
     Proc *procPtr;
-
+    Tcl_Obj *bodyPtr, *resultPtr;
+    
     if (objc != 3) {
         Tcl_WrongNumArgs(interp, 2, objv, "procname");
         return TCL_ERROR;
@@ -537,7 +539,27 @@ InfoBodyCmd(dummy, interp, objc, objv)
 		"\"", name, "\" isn't a procedure", (char *) NULL);
         return TCL_ERROR;
     }
-    Tcl_SetObjResult(interp, procPtr->bodyPtr);
+
+    /*
+     * we need to check if the body from this procedure had been generated
+     * from a precompiled body. If that is the case, then the bodyPtr's
+     * string representation is bogus, since sources are not available.
+     * In order to make sure that later manipulations of the object do not
+     * invalidate the internal representation, we make a copy of the string
+     * representation and return that one, instead.
+     */
+
+    bodyPtr = procPtr->bodyPtr;
+    resultPtr = bodyPtr;
+    if (bodyPtr->typePtr == &tclByteCodeType) {
+        ByteCode *codePtr = (ByteCode *) bodyPtr->internalRep.otherValuePtr;
+
+        if (codePtr->flags & TCL_BYTECODE_PRECOMPILED) {
+            resultPtr = Tcl_NewStringObj(bodyPtr->bytes, bodyPtr->length);
+        }
+    }
+    
+    Tcl_SetObjResult(interp, resultPtr);
     return TCL_OK;
 }
 
