@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.28 2000/09/17 22:40:41 ericm Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.29 2000/11/23 15:53:26 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2796,11 +2796,8 @@ Tcl_LsortObjCmd(clientData, interp, objc, objv)
 
     sortInfo.resultCode = Tcl_ListObjGetElements(interp, objv[objc-1],
 	    &length, &listObjPtrs);
-    if (sortInfo.resultCode != TCL_OK) {
+    if (sortInfo.resultCode != TCL_OK || length <= 0) {
 	goto done;
-    }
-    if (length <= 0) {
-        return TCL_OK;
     }
     elementArray = (SortElement *) ckalloc(length * sizeof(SortElement));
     for (i=0; i < length; i++){
