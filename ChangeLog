@@ -1,5 +1,11 @@
 1999-05-03    <stanton@scriptics.com>
 
+	* doc/string.n: 
+	* tests/cmdMZ.test: 
+	* tests/string.test: 
+	* generic/tclCmdMZ.c (Tcl_StringObjCmd): Changed "string length"
+	to avoid regenerating the string rep of a ByteArray object.
+	
 	* tests/cmdIL.test: 
 	* tests/cmdMZ.test: 
 	* tests/error.test: 
