@@ -1,3 +1,8 @@
+2003-05-23  D. Richard Hipp <drh@hwaci.com>
+
+	* win/tclWinTime.c: Add tests to detect and avoid a division by zero
+	in the windows precision timer calibration logic.
+
 2003-05-23  Don Porter  <dgp@users.sourceforge.net>
 
         * generic/tclObj.c (tclCmdNameType):  Converted internal rep
