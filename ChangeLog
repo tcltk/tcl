@@ -23,6 +23,17 @@
 	* generic/tclHistory.c:
 	* generic/tclIndexObj.c:
 	* generic/tclInterp.c:
+	* generic/tclIO.c:
+	* generic/tclIOCmd.c:
+	* generic/tclNamesp.c:
+	* generic/tclObj.c:
+	* generic/tclPkg.c:
+	* generic/tclResult.c:
+	* generic/tclScan.c:
+	* generic/tclTimer.c:
+	* generic/tclTrace.c:
+	* generic/tclUtil.c:
+	* generic/tclVar.c:
 	It is a poor practice to directly set or append to the value
 	of the objResult of an interp, because that value might be
 	shared, and in that circumstance a Tcl_Panic() will be the
