@@ -1,5 +1,10 @@
 2002-08-05  Don Porter  <dgp@users.sourceforge.net>
 
+	* library/tcltest/tcltest.tcl:	The setup and cleanup scripts are now
+	* library/tcltest/pkgIndex.tcl:	skipped when a test is skipped, fixing
+	* tests/tcltest.test:		[Bug 589859].  Test for bug added, and
+	corrected tcltest package bumped to version 2.2.
+
 	* generic/tcl.decls:	Restored Tcl_Concat to return (char *).  Like
 	* generic/tclDecls.h:	Tcl_Merge, it transfers ownership of a dynamic
 	* generic/tclUtil.c:	allocated string to the caller.
