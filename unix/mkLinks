@@ -37,12 +37,14 @@ fi
 if test -r AddErrInfo.3; then
     rm -f Tcl_AddObjErrorInfo.3
     rm -f Tcl_AddErrorInfo.3
+    rm -f Tcl_SetObjErrorCode.3
     rm -f Tcl_SetErrorCode.3
     rm -f Tcl_SetErrorCodeVA.3
     rm -f Tcl_PosixError.3
     rm -f Tcl_LogCommandInfo.3
     ln AddErrInfo.3 Tcl_AddObjErrorInfo.3
     ln AddErrInfo.3 Tcl_AddErrorInfo.3
+    ln AddErrInfo.3 Tcl_SetObjErrorCode.3
     ln AddErrInfo.3 Tcl_SetErrorCode.3
     ln AddErrInfo.3 Tcl_SetErrorCodeVA.3
     ln AddErrInfo.3 Tcl_PosixError.3
@@ -119,8 +121,10 @@ fi
 if test -r ChnlStack.3; then
     rm -f Tcl_StackChannel.3
     rm -f Tcl_UnstackChannel.3
+    rm -f Tcl_GetStackedChannel.3
     ln ChnlStack.3 Tcl_StackChannel.3
     ln ChnlStack.3 Tcl_UnstackChannel.3
+    ln ChnlStack.3 Tcl_GetStackedChannel.3
 fi
 if test -r CmdCmplt.3; then
     rm -f Tcl_CommandComplete.3
@@ -141,6 +145,26 @@ if test -r CrtChannel.3; then
     rm -f Tcl_SetChannelBufferSize.3
     rm -f Tcl_NotifyChannel.3
     rm -f Tcl_BadChannelOption.3
+    rm -f Tcl_ChannelName.3
+    rm -f Tcl_ChannelVersion.3
+    rm -f Tcl_ChannelBlockModeProc.3
+    rm -f Tcl_ChannelCloseProc.3
+    rm -f Tcl_ChannelClose2Proc.3
+    rm -f Tcl_ChannelInputProc.3
+    rm -f Tcl_ChannelOutputProc.3
+    rm -f Tcl_ChannelSeekProc.3
+    rm -f Tcl_ChannelSetOptionProc.3
+    rm -f Tcl_ChannelGetOptionProc.3
+    rm -f Tcl_ChannelWatchProc.3
+    rm -f Tcl_ChannelGetHandleProc.3
+    rm -f Tcl_ChannelFlushProc.3
+    rm -f Tcl_ChannelHandlerProc.3
+    rm -f Tcl_IsChannelShared.3
+    rm -f Tcl_IsChannelRegistered.3
+    rm -f Tcl_CutChannel.3
+    rm -f Tcl_SpliceChannel.3
+    rm -f Tcl_IsChannelExisting.3
+    rm -f Tcl_ClearChannelHandlers.3
     ln CrtChannel.3 Tcl_CreateChannel.3
     ln CrtChannel.3 Tcl_GetChannelInstanceData.3
     ln CrtChannel.3 Tcl_GetChannelType.3
@@ -151,6 +175,26 @@ if test -r CrtChannel.3; then
     ln CrtChannel.3 Tcl_SetChannelBufferSize.3
     ln CrtChannel.3 Tcl_NotifyChannel.3
     ln CrtChannel.3 Tcl_BadChannelOption.3
+    ln CrtChannel.3 Tcl_ChannelName.3
+    ln CrtChannel.3 Tcl_ChannelVersion.3
+    ln CrtChannel.3 Tcl_ChannelBlockModeProc.3
+    ln CrtChannel.3 Tcl_ChannelCloseProc.3
+    ln CrtChannel.3 Tcl_ChannelClose2Proc.3
+    ln CrtChannel.3 Tcl_ChannelInputProc.3
+    ln CrtChannel.3 Tcl_ChannelOutputProc.3
+    ln CrtChannel.3 Tcl_ChannelSeekProc.3
+    ln CrtChannel.3 Tcl_ChannelSetOptionProc.3
+    ln CrtChannel.3 Tcl_ChannelGetOptionProc.3
+    ln CrtChannel.3 Tcl_ChannelWatchProc.3
+    ln CrtChannel.3 Tcl_ChannelGetHandleProc.3
+    ln CrtChannel.3 Tcl_ChannelFlushProc.3
+    ln CrtChannel.3 Tcl_ChannelHandlerProc.3
+    ln CrtChannel.3 Tcl_IsChannelShared.3
+    ln CrtChannel.3 Tcl_IsChannelRegistered.3
+    ln CrtChannel.3 Tcl_CutChannel.3
+    ln CrtChannel.3 Tcl_SpliceChannel.3
+    ln CrtChannel.3 Tcl_IsChannelExisting.3
+    ln CrtChannel.3 Tcl_ClearChannelHandlers.3
 fi
 if test -r CrtChnlHdlr.3; then
     rm -f Tcl_CreateChannelHandler.3
@@ -347,16 +391,18 @@ fi
 if test -r Exit.3; then
     rm -f Tcl_Exit.3
     rm -f Tcl_Finalize.3
-    rm -f Tcl_FinalizeThread.3
     rm -f Tcl_CreateExitHandler.3
     rm -f Tcl_DeleteExitHandler.3
+    rm -f Tcl_ExitThread.3
+    rm -f Tcl_FinalizeThread.3
     rm -f Tcl_CreateThreadExitHandler.3
     rm -f Tcl_DeleteThreadExitHandler.3
     ln Exit.3 Tcl_Exit.3
     ln Exit.3 Tcl_Finalize.3
-    ln Exit.3 Tcl_FinalizeThread.3
     ln Exit.3 Tcl_CreateExitHandler.3
     ln Exit.3 Tcl_DeleteExitHandler.3
+    ln Exit.3 Tcl_ExitThread.3
+    ln Exit.3 Tcl_FinalizeThread.3
     ln Exit.3 Tcl_CreateThreadExitHandler.3
     ln Exit.3 Tcl_DeleteThreadExitHandler.3
 fi
@@ -398,7 +444,9 @@ if test -r GetHostName.3; then
 fi
 if test -r GetIndex.3; then
     rm -f Tcl_GetIndexFromObj.3
+    rm -f Tcl_GetIndexFromObjStruct.3
     ln GetIndex.3 Tcl_GetIndexFromObj.3
+    ln GetIndex.3 Tcl_GetIndexFromObjStruct.3
 fi
 if test -r GetInt.3; then
     rm -f Tcl_GetInt.3
@@ -424,6 +472,8 @@ if test -r GetVersion.3; then
 fi
 if test -r Hash.3; then
     rm -f Tcl_InitHashTable.3
+    rm -f Tcl_InitHashTableEx.3
+    rm -f Tcl_InitObjHashTable.3
     rm -f Tcl_DeleteHashTable.3
     rm -f Tcl_CreateHashEntry.3
     rm -f Tcl_DeleteHashEntry.3
@@ -435,6 +485,8 @@ if test -r Hash.3; then
     rm -f Tcl_NextHashEntry.3
     rm -f Tcl_HashStats.3
     ln Hash.3 Tcl_InitHashTable.3
+    ln Hash.3 Tcl_InitHashTableEx.3
+    ln Hash.3 Tcl_InitObjHashTable.3
     ln Hash.3 Tcl_DeleteHashTable.3
     ln Hash.3 Tcl_CreateHashEntry.3
     ln Hash.3 Tcl_DeleteHashEntry.3
@@ -540,11 +592,13 @@ if test -r Object.3; then
     rm -f Tcl_IncrRefCount.3
     rm -f Tcl_DecrRefCount.3
     rm -f Tcl_IsShared.3
+    rm -f Tcl_InvalidateStringRep.3
     ln Object.3 Tcl_NewObj.3
     ln Object.3 Tcl_DuplicateObj.3
     ln Object.3 Tcl_IncrRefCount.3
     ln Object.3 Tcl_DecrRefCount.3
     ln Object.3 Tcl_IsShared.3
+    ln Object.3 Tcl_InvalidateStringRep.3
 fi
 if test -r ObjectType.3; then
     rm -f Tcl_RegisterObjType.3
@@ -675,14 +729,16 @@ if test -r RegExp.3; then
     rm -f Tcl_RegExpRange.3
     rm -f Tcl_GetRegExpFromObj.3
     rm -f Tcl_RegExpMatchObj.3
-    rm -f Tcl_GetRegExpInfo.3
+    rm -f Tcl_RegExpExecObj.3
+    rm -f Tcl_RegExpGetInfo.3
     ln RegExp.3 Tcl_RegExpMatch.3
     ln RegExp.3 Tcl_RegExpCompile.3
     ln RegExp.3 Tcl_RegExpExec.3
     ln RegExp.3 Tcl_RegExpRange.3
     ln RegExp.3 Tcl_GetRegExpFromObj.3
     ln RegExp.3 Tcl_RegExpMatchObj.3
-    ln RegExp.3 Tcl_GetRegExpInfo.3
+    ln RegExp.3 Tcl_RegExpExecObj.3
+    ln RegExp.3 Tcl_RegExpGetInfo.3
 fi
 if test -r SaveResult.3; then
     rm -f Tcl_SaveResult.3
@@ -715,6 +771,7 @@ if test -r SetResult.3; then
     rm -f Tcl_AppendResultVA.3
     rm -f Tcl_AppendElement.3
     rm -f Tcl_ResetResult.3
+    rm -f Tcl_FreeResult.3
     ln SetResult.3 Tcl_SetObjResult.3
     ln SetResult.3 Tcl_GetObjResult.3
     ln SetResult.3 Tcl_SetResult.3
@@ -723,6 +780,7 @@ if test -r SetResult.3; then
     ln SetResult.3 Tcl_AppendResultVA.3
     ln SetResult.3 Tcl_AppendElement.3
     ln SetResult.3 Tcl_ResetResult.3
+    ln SetResult.3 Tcl_FreeResult.3
 fi
 if test -r SetVar.3; then
     rm -f Tcl_SetVar2Ex.3
@@ -759,10 +817,14 @@ if test -r SplitList.3; then
     rm -f Tcl_Merge.3
     rm -f Tcl_ScanElement.3
     rm -f Tcl_ConvertElement.3
+    rm -f Tcl_ScanCountedElement.3
+    rm -f Tcl_ConvertCountedElement.3
     ln SplitList.3 Tcl_SplitList.3
     ln SplitList.3 Tcl_Merge.3
     ln SplitList.3 Tcl_ScanElement.3
     ln SplitList.3 Tcl_ConvertElement.3
+    ln SplitList.3 Tcl_ScanCountedElement.3
+    ln SplitList.3 Tcl_ConvertCountedElement.3
 fi
 if test -r SplitPath.3; then
     rm -f Tcl_SplitPath.3
@@ -818,6 +880,10 @@ if test -r StringObj.3; then
     ln StringObj.3 Tcl_SetObjLength.3
     ln StringObj.3 Tcl_ConcatObj.3
 fi
+if test -r Tcl_Main.3; then
+    rm -f Tcl_SetMainLoop.3
+    ln Tcl_Main.3 Tcl_SetMainLoop.3
+fi
 if test -r Thread.3; then
     rm -f Tcl_ConditionNotify.3
     rm -f Tcl_ConditionWait.3
@@ -826,6 +892,8 @@ if test -r Thread.3; then
     rm -f Tcl_MutexLock.3
     rm -f Tcl_MutexUnlock.3
     rm -f Tcl_MutexFinalize.3
+    rm -f Tcl_CreateThread.3
+    rm -f Tcl_JoinThread.3
     ln Thread.3 Tcl_ConditionNotify.3
     ln Thread.3 Tcl_ConditionWait.3
     ln Thread.3 Tcl_ConditionFinalize.3
@@ -833,6 +901,8 @@ if test -r Thread.3; then
     ln Thread.3 Tcl_MutexLock.3
     ln Thread.3 Tcl_MutexUnlock.3
     ln Thread.3 Tcl_MutexFinalize.3
+    ln Thread.3 Tcl_CreateThread.3
+    ln Thread.3 Tcl_JoinThread.3
 fi
 if test -r ToUpper.3; then
     rm -f Tcl_UniCharToUpper.3
@@ -955,13 +1025,5 @@ fi
 if test -r safe.n; then
     rm -f SafeBase.n
     ln safe.n SafeBase.n
-fi
-if test -r tcltest.n; then
-    rm -f Tcltest.n
-    ln tcltest.n Tcltest.n
-fi
-if test -r tcltest2.n; then
-    rm -f Tcltest2.n
-    ln tcltest2.n Tcltest2.n
 fi
 exit 0
