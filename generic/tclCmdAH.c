@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.3 1998/09/14 18:39:57 stanton Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.4 1998/12/23 02:01:42 rjohnson Exp $
  */
 
 #include "tclInt.h"
@@ -306,7 +306,7 @@ Tcl_CdObjCmd(dummy, interp, objc, objv)
     int result;
 
     if (objc > 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "dirName");
+	Tcl_WrongNumArgs(interp, 1, objv, "?dirName?");
 	return TCL_ERROR;
     }
 
