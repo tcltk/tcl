@@ -12,7 +12,7 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
 #
-# RCS: @(#) $Id: http.test,v 1.36 2003/11/14 20:44:46 dgp Exp $
+# RCS: @(#) $Id: http.test,v 1.37 2004/05/25 18:06:25 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -507,4 +507,5 @@ if {[info exists removeHttpd]} {
     removeFile $httpdFile
 }
 
+rename bgerror {}
 ::tcltest::cleanupTests
