@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.76 2004/09/29 22:17:31 dkf Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.77 2004/10/06 09:31:38 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -381,7 +381,7 @@ TclSetByteCodeFromAny(interp, objPtr, hookProc, clientData)
     LiteralEntry *entryPtr;
     register int i;
     int length, result = TCL_OK;
-    char *string;
+    char *stringPtr;
 
 #ifdef TCL_COMPILE_DEBUG
     if (!traceInitialized) {
@@ -393,9 +393,9 @@ TclSetByteCodeFromAny(interp, objPtr, hookProc, clientData)
     }
 #endif
 
-    string = Tcl_GetStringFromObj(objPtr, &length);
-    TclInitCompileEnv(interp, &compEnv, string, length);
-    TclCompileScript(interp, string, length, &compEnv);
+    stringPtr = Tcl_GetStringFromObj(objPtr, &length);
+    TclInitCompileEnv(interp, &compEnv, stringPtr, length);
+    TclCompileScript(interp, stringPtr, length, &compEnv);
 
     /*
      * Successful compilation. Add a "done" instruction at the end.
@@ -704,18 +704,18 @@ TclCleanupByteCode(codePtr)
  */
 
 void
-TclInitCompileEnv(interp, envPtr, string, numBytes)
+TclInitCompileEnv(interp, envPtr, stringPtr, numBytes)
     Tcl_Interp *interp;		 /* The interpreter for which a CompileEnv
 				  * structure is initialized. */
     register CompileEnv *envPtr; /* Points to the CompileEnv structure to
 				  * initialize. */
-    char *string;		 /* The source string to be compiled. */
+    char *stringPtr;		 /* The source string to be compiled. */
     int numBytes;		 /* Number of bytes in source string. */
 {
     Interp *iPtr = (Interp *) interp;
     
     envPtr->iPtr = iPtr;
-    envPtr->source = string;
+    envPtr->source = stringPtr;
     envPtr->numSrcBytes = numBytes;
     envPtr->procPtr = iPtr->compiledProcPtr;
     envPtr->numCommands = 0;
@@ -3392,21 +3392,21 @@ TclPrintObject(outFile, objPtr, maxChars)
  */
 
 void
-TclPrintSource(outFile, string, maxChars)
+TclPrintSource(outFile, stringPtr, maxChars)
     FILE *outFile;		/* The file to print the source to. */
-    CONST char *string;		/* The string to print. */
+    CONST char *stringPtr;	/* The string to print. */
     int maxChars;		/* Maximum number of chars to print. */
 {
     register CONST char *p;
     register int i = 0;
 
-    if (string == NULL) {
+    if (stringPtr == NULL) {
 	fprintf(outFile, "\"\"");
 	return;
     }
 
     fprintf(outFile, "\"");
-    p = string;
+    p = stringPtr;
     for (;  (*p != '\0') && (i < maxChars);  p++, i++) {
 	switch (*p) {
 	    case '"':
