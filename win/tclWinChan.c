@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinChan.c,v 1.26 2002/11/27 22:57:18 davygrvy Exp $
+ * RCS: @(#) $Id: tclWinChan.c,v 1.27 2003/01/14 02:06:11 mdejong Exp $
  */
 
 #include "tclWinInt.h"
@@ -467,7 +467,7 @@ FileSeekProc(instanceData, offset, mode, errorCodePtr)
     oldPos = SetFilePointer(infoPtr->handle, (LONG)0, &oldPosHigh,
 	    FILE_CURRENT);
     if (oldPos == INVALID_SET_FILE_POINTER) {
-	int winError = GetLastError();
+	DWORD winError = GetLastError();
 	if (winError != NO_ERROR) {
 	    TclWinConvertError(winError);
 	    *errorCodePtr = errno;
@@ -479,7 +479,7 @@ FileSeekProc(instanceData, offset, mode, errorCodePtr)
     newPos = SetFilePointer(infoPtr->handle, (LONG) offset, &newPosHigh,
 			    moveMethod);
     if (newPos == INVALID_SET_FILE_POINTER) {
-	int winError = GetLastError();
+	DWORD winError = GetLastError();
 	if (winError != NO_ERROR) {
 	    TclWinConvertError(winError);
 	    *errorCodePtr = errno;
@@ -540,7 +540,7 @@ FileWideSeekProc(instanceData, offset, mode, errorCodePtr)
     newPos = SetFilePointer(infoPtr->handle, (LONG) offset, &newPosHigh,
 			    moveMethod);
     if (newPos == INVALID_SET_FILE_POINTER) {
-	int winError = GetLastError();
+	DWORD winError = GetLastError();
 	if (winError != NO_ERROR) {
 	    TclWinConvertError(winError);
 	    *errorCodePtr = errno;
