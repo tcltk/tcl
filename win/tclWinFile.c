@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.1.2.2 1998/09/24 23:59:51 stanton Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.1.2.3 1998/10/06 00:42:17 stanton Exp $
  */
 
 #include "tclWinInt.h"
@@ -108,7 +108,8 @@ TclpMatchFiles(interp, separators, dirPtr, pattern, tail)
     Tcl_DString *dirPtr;	/* Contains path to directory to search. */
     char *pattern;		/* Pattern to match against. */
     char *tail;			/* Pointer to end of pattern.  Tail must
-				 * point to a location in pattern. */
+				 * point to a location in pattern. Must not
+				 * point to a static string. */
 {
     char drivePat[] = "?:\\";
     const char *message;

@@ -4,7 +4,7 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
 # Copyright (c) 1995-1996 Sun Microsystems, Inc.
-# RCS: @(#) $Id: makefile.vc,v 1.1.2.3 1998/09/30 20:50:30 stanton Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.1.2.4 1998/10/06 00:42:17 stanton Exp $
 
 # Does not depend on the presence of any environment variables in
 # order to compile tcl; all needed information is derived from 
@@ -44,9 +44,6 @@ INSTALLDIR	= c:\progra~1\Tcl
 # Set this to the appropriate value of /MACHINE: for your platform
 MACHINE	= IX86
 
-# Uncomment the following line to compile with debugging symbols:
-#DEBUG=1
-
 # Uncomment the following line to compile with thread support
 #THREADDEFINES = -DTCL_THREADS=1
 
@@ -59,16 +56,18 @@ NODEBUG = 1
 # TCL_MEM_DEBUG - enable the debugging memory allocator
 # TCL_COMPILE_DEBUG - enable the debugging bytecode compiler
 # TCL_COMPILE_STATS - enable statistics gathering in the bytecode compiler
-#
+# USE_TCLALLLOC=0 - disable the Tcl memory allocator so Purify will work
+
 #DEBUGDEFINES	= -DTCL_MEM_DEBUG -DTCL_COMPILE_DEBUG -DTCL_COMPILE_STATS
+#DEBUGDEFINES = -DUSE_TCLALLOC=0 -DTCL_COMPILE_DEBUG 
 
 ######################################################################
 # Do not modify below this line
 ######################################################################
 
 NAMEPREFIX = tcl
-DOTVERSION = 8.0
-VERSION = 80
+DOTVERSION = 8.1
+VERSION = 81
 
 BINROOT		= .
 !IF "$(NODEBUG)" == "1"
@@ -214,6 +213,8 @@ DLL16_CFLAGS	= $(cdebug) $(cflags) $(include16) -ALw
 
 !IF "$(NODEBUG)" == "1"
 ldebug = /RELEASE
+!ELSE
+ldebug = -debug:full -debugtype:cv
 !ENDIF
 
 # declarations common to all linker options
