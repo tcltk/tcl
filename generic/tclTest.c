@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.38 2002/01/17 02:43:19 dgp Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.39 2002/01/17 04:37:33 dgp Exp $
  */
 
 #define TCL_TEST
@@ -427,7 +427,7 @@ Tcltest_Init(interp)
     Tcl_Obj *listPtr;
     Tcl_Obj **objv;
     int objc, index;
-    static char *specialOptions[] = {
+    static CONST char *specialOptions[] = {
 	"-appinitprocerror", "-appinitprocdeleteinterp",
 	"-appinitprocclosestderr", "-appinitprocsetrcfile", (char *) NULL
     };
@@ -1496,7 +1496,7 @@ TestencodingObjCmd(dummy, interp, objc, objv)
     int index, length;
     char *string;
     TclEncoding *encodingPtr;
-    static char *optionStrings[] = {
+    static CONST char *optionStrings[] = {
 	"create",	"delete",	"path",
 	NULL
     };
@@ -1945,7 +1945,7 @@ TestgetplatformCmd(clientData, interp, argc, argv)
     int argc;				/* Number of arguments. */
     char **argv;			/* Argument strings. */
 {
-    static char *platformStrings[] = { "unix", "mac", "windows" };
+    static CONST char *platformStrings[] = { "unix", "mac", "windows" };
     TclPlatformType *platform;
 
 #ifdef __WIN32__
@@ -2204,7 +2204,7 @@ TestlocaleCmd(clientData, interp, objc, objv)
     int index;
     char *locale;
 
-    static char *optionStrings[] = {
+    static CONST char *optionStrings[] = {
     	"ctype", "numeric", "time", "collate", "monetary", 
 	"all",	NULL
     };
@@ -2703,7 +2703,7 @@ TestregexpObjCmd(dummy, interp, objc, objv)
     char *string;
     Tcl_Obj *objPtr;
     Tcl_RegExpInfo info;
-    static char *options[] = {
+    static CONST char *options[] = {
 	"-indices",	"-nocase",	"-about",	"-expanded",
 	"-line",	"-linestop",	"-lineanchor",
 	"-xflags",
@@ -3967,7 +3967,7 @@ TestsaveresultCmd(dummy, interp, objc, objv)
     int discard, result, index;
     Tcl_SavedResult state;
     Tcl_Obj *objPtr;
-    static char *optionStrings[] = {
+    static CONST char *optionStrings[] = {
 	"append", "dynamic", "free", "object", "small", NULL
     };
     enum options {
@@ -5318,7 +5318,9 @@ TestGetIndexFromObjStructObjCmd(dummy, interp, objc, objv)
     int objc;				/* Number of arguments. */
     Tcl_Obj *CONST objv[];		/* Argument objects. */
 {
-    char *ary[] = { "a", "b", "c", "d", "e", "f", (char *)NULL,(char *)NULL };
+    CONST char *ary[] = {
+	"a", "b", "c", "d", "e", "f", (char *)NULL,(char *)NULL
+    };
     int idx,target;
 
     if (objc != 3) {
@@ -5633,7 +5635,7 @@ TestReportRemoveDirectory(path, recursive, errorPtr)
     return Tcl_FSRemoveDirectory(TestReportGetNativePath(path), recursive, 
 				 errorPtr);
 }
-static char**
+static CONST char**
 TestReportFileAttrStrings(fileName, objPtrRef)
     Tcl_Obj* fileName;
     Tcl_Obj** objPtrRef;

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPkg.c,v 1.7 2001/08/06 19:13:29 dgp Exp $
+ * RCS: @(#) $Id: tclPkg.c,v 1.8 2002/01/17 04:37:33 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -470,7 +470,7 @@ Tcl_PackageObjCmd(dummy, interp, objc, objv)
     int objc;				/* Number of arguments. */
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
-    static char *pkgOptions[] = {
+    static CONST char *pkgOptions[] = {
 	"forget", "ifneeded", "names", "present", "provide", "require",
 	"unknown", "vcompare", "versions", "vsatisfies", (char *) NULL
     };

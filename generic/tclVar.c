@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.44 2001/12/07 13:55:59 msofer Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.45 2002/01/17 04:37:33 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3152,7 +3152,7 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
     enum {ARRAY_ANYMORE, ARRAY_DONESEARCH,  ARRAY_EXISTS, ARRAY_GET,
 	  ARRAY_NAMES, ARRAY_NEXTELEMENT, ARRAY_SET, ARRAY_SIZE,
 	  ARRAY_STARTSEARCH, ARRAY_STATISTICS, ARRAY_UNSET}; 
-    static char *arrayOptions[] = {
+    static CONST char *arrayOptions[] = {
 	"anymore", "donesearch", "exists", "get", "names", "nextelement",
 	"set", "size", "startsearch", "statistics", "unset", (char *) NULL
     };
@@ -3418,7 +3418,7 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
 	    char *name;
 	    Tcl_Obj *namePtr;
 	    int mode, matched = 0;
-	    static char *options[] = {
+	    static CONST char *options[] = {
 		"-exact", "-glob", "-regexp", (char *) NULL
 	    };
 	    enum options { OPT_EXACT, OPT_GLOB, OPT_REGEXP };

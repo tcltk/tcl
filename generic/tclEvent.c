@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEvent.c,v 1.17 2002/01/07 23:09:13 dgp Exp $
+ * RCS: @(#) $Id: tclEvent.c,v 1.18 2002/01/17 04:37:33 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1050,7 +1050,7 @@ Tcl_UpdateObjCmd(clientData, interp, objc, objv)
 {
     int optionIndex;
     int flags = 0;		/* Initialized to avoid compiler warning. */
-    static char *updateOptions[] = {"idletasks", (char *) NULL};
+    static CONST char *updateOptions[] = {"idletasks", (char *) NULL};
     enum updateOptions {REGEXP_IDLETASKS};
 
     if (objc == 1) {

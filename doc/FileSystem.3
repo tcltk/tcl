@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: FileSystem.3,v 1.15 2002/01/15 21:19:06 dgp Exp $
+'\" RCS: @(#) $Id: FileSystem.3,v 1.16 2002/01/17 04:37:32 dgp Exp $
 '\" 
 .so man.macros
 .TH Filesystem 3 8.4 Tcl "Tcl Library Procedures"
@@ -69,7 +69,7 @@ int
 int
 \fBTcl_FSFileAttrsSet\fR(\fIinterp, int index, pathPtr, Tcl_Obj *objPtr\fR)
 .sp
-char**      
+CONST char**      
 \fBTcl_FSFileAttrStrings\fR(\fIpathPtr, objPtrRef\fR)
 .sp
 int
@@ -114,13 +114,13 @@ ClientData
 Tcl_Obj* 
 \fBTcl_FSGetTranslatedPath\fR(\fIinterp, pathPtr\fR)
 .sp
-char* 
+CONST char* 
 \fBTcl_FSGetTranslatedStringPath\fR(\fIinterp, pathPtr\fR)
 .sp
 Tcl_Obj*
 \fBTcl_FSNewNativePath\fR(\fIfsPtr, clientData\fR)
 .sp
-char* 
+CONST char* 
 \fBTcl_FSGetNativePath\fR(\fIpathPtr\fR)
 .sp
 Tcl_Obj*
@@ -950,7 +950,7 @@ not implemented, there is no need to implement the \fBget\fR and \fBset\fR
 methods.
 .PP
 .CS
-typedef char** Tcl_FSFileAttrStringsProc(
+typedef CONST char** Tcl_FSFileAttrStringsProc(
 	Tcl_Obj *\fIpathPtr\fR, 
 	Tcl_Obj** \fIobjPtrRef\fR);
 .CE
