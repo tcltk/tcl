@@ -1,3 +1,8 @@
+2003-05-07  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* generic/tclDictObj.c (DictInfoCmd): Fixed memory leak caused by
+	confusion about string ownership.  [Bug 731706]
+
 2003-05-05  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclBasic.c:		Implementation of TIP 90, which
