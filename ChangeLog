@@ -1,17 +1,28 @@
 2001-09-19  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	* generic/tclTest.c (TestcmdtokenCmd): corrected pointer
+	storage/retrieval for 64bit machines.
+
+	* generic/tclCmdAH.c (Tcl_FormatObjCmd):
+	* generic/tclScan.c (Tcl_ScanObjCmd): corrected handling of format
+	and scan on 64-bit machines. [Bug #412696] (rmax)
+
+	* unix/configure: regen'ed
+	* unix/tcl.m4: added --enable-64bit support for HP-11 with the
+	64-bit kernel.
+
 	* generic/tcl.h: removed forced #define USE_TCLALLOC 1 for
 	Windows.  This means the native system allocator will be used by
 	default.  This should be binary and source compatible with
 	extensions, as Tcl_Alloc is a properly stubbed function.
 
-2001-09-18  Don Porter  <dgp@users.sourceforge.net>
+2001-09-18  Don Porter	<dgp@users.sourceforge.net>
 
-        * unix/configure: Regen.
-        * unix/tcl.m4 (SC_CONFIG_CFLAGS): On Linux, disable inlining when
-        one of the compat/*.c routines is to be linked in. [Patch 440891]
+	* unix/configure: Regen.
+	* unix/tcl.m4 (SC_CONFIG_CFLAGS): On Linux, disable inlining when
+	one of the compat/*.c routines is to be linked in. [Patch 440891]
 
-2001-09-13  Jeff Hobbs  <jeffh@ActiveState.com>
+2001-09-13  Jeff Hobbs	<jeffh@ActiveState.com>
 
 	* generic/tclUtf.c (Tcl_UtfPrev): corrected to return the proper
 	location when the middle of a UTF-8 byte was passed in.
@@ -30,9 +41,9 @@
 
 	Backport several bug fixes from HEAD to core-8-3-1-branch:
 
-        * tests/rename.test:
-        * tests/split.test:  Corrected tests to better isolate tests in
-        one file from influencing tests in other files.  [Bug 460591]
+	* tests/rename.test:
+	* tests/split.test:  Corrected tests to better isolate tests in
+	one file from influencing tests in other files.	 [Bug 460591]
 
 	* unix/tclLoadShl.c:  Added #include of tclInt.h; access to Tcl
         internals, notably TclpUnloadFile(), is required.  Thanks to
@@ -106,17 +117,17 @@
 
 	  (TclWinOpenFileChannel): Added initialization of 'dirty' flag.
 
-2001-09-06  Don Porter  <dgp@users.sourceforge.net>
+2001-09-06  Don Porter	<dgp@users.sourceforge.net>
 
-        * doc/http.n:
-        * library/http/*.tcl:
-        * tools/tcl.wse.in:
-        * tools/tclmin.wse:
-        * unix/Makefile.in:
-        * win/{Mm}akefile.*:  Updated http package to version 2.4,
-          reflecting the new features just added.
+	* doc/http.n:
+	* library/http/*.tcl:
+	* tools/tcl.wse.in:
+	* tools/tclmin.wse:
+	* unix/Makefile.in:
+	* win/{Mm}akefile.*:  Updated http package to version 2.4,
+	  reflecting the new features just added.
 
-2001-09-06  Jeff Hobbs  <jeffh@ActiveState.com>
+2001-09-06  Jeff Hobbs	<jeffh@ActiveState.com>
 
 	* doc/http.n: noted -binary, charset and coding state keys.
 	* tests/http.test:
