@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: man2help2.tcl,v 1.5 1999/12/22 23:48:56 hobbs Exp $
+# RCS: @(#) $Id: man2help2.tcl,v 1.6 2000/04/04 08:05:32 hobbs Exp $
 # 
 
 # Global variables used by these scripts:
@@ -60,6 +60,7 @@ proc initGlobals {} {
     set state(leftMargin) [getTwips 0.5i]
     set state(nestingLevel) 0
     set state(intl) 0
+    set state(sb) 0
     setTabs 0.5i
 
 # set up international character table
@@ -125,6 +126,14 @@ proc textSetup {} {
     if $state(paragraphPending) {
 	puts $file [format "\\par\n\\pard\\fi%.0f\\li%.0f" \
 			$state(firstIndent) $state(leftIndent)]
+	foreach tab $state(tabs) {
+	    puts $file [format "\\tx%.0f" $tab]
+	}
+	set state(tabs) {}
+	if {$state(sb)} {
+	    puts $file "\\sb$state(sb)"
+	    set state(sb) 0
+	}
     }
     set state(breakPending) 0
     set state(paragraphPending) 0
@@ -149,8 +158,8 @@ proc text {string} {
 	    "\{"	"\\\{" \
 	    "\}"	"\\\}" \
 	    "\t"	{\tab } \
-	    ''		\" \
-	    ``		\" \
+	    ''		"\\rdblquote " \
+	    ``		"\\ldblquote " \
 	    ] $string]
 
     # Check if this is the beginning of an international character string.
@@ -224,7 +233,7 @@ proc insertRef {string} {
 	}
     }
 
-    if {([string equal $ref {}]) && ($ref != $curID)} {
+    if {($ref != {}) && ($ref != $curID)} {
 	set string [link $string $ref]
     }
     return $string
@@ -297,6 +306,7 @@ proc macro {name args} {
 	}
 	LP {
 	    newPara 0i
+	    set state(sb) 80
 	}
 	ne {
 	}
@@ -308,8 +318,8 @@ proc macro {name args} {
 		puts stderr "Bad .OP macro: .$name [join $args " "]"
 	    }
 	    set state(nestingLevel) 0
-	    set state(breakPending) 1
 	    newPara 0i
+	    set state(sb) 120
 	    setTabs 4c
 	    text "Command-Line Name:"
 	    tab
@@ -332,11 +342,11 @@ proc macro {name args} {
 	    font R
 	    set state(inTP) 0
 	    newPara 0.5i
-	    set state(breakPending) 1
+	    set state(sb) 80
 	}
 	PP {
-	    set state(breakPending) 1
 	    newPara 0i
+	    set state(sb) 120
 	}
 	RE {
 	    decrNestingLevel
@@ -556,10 +566,11 @@ proc tab {} {
 proc setTabs {tabList} {
     global file state
 
+    set state(tabs) {}
     foreach arg $tabList {
 	set distance [expr {$state(leftMargin) \
 		+ ($state(offset) * $state(nestingLevel)) + [getTwips $arg]}]
-    	puts $file [format "\\tx%.0f" [expr {round($distance)}]]
+	lappend state(tabs) [expr {round($distance)}]
     }
 }
 
@@ -611,8 +622,14 @@ proc newline {} {
 # None.
 
 proc pageBreak {} {
-    global file
-    puts $file "\\page"
+    global file curVer
+    if {[string equal $curVer ""]} {
+	puts $file {\page}
+    } else {
+	puts $file {\par}
+	puts $file {\pard\sb400\qc}
+	puts $file "Last change: $curVer\\page"
+    }
 }
 
 
@@ -743,16 +760,8 @@ proc IPmacro {argList} {
 	return
     }
     if {$length == 1} {
-	set arg [lindex $argList 0]
-	if {$arg == {[1]}} {
-	    newPara 0.5i
-	    return
-	}
-	if {[regexp {^\[[0-9]*\]$} $arg] == 1} {
-	    newPara 0.5i
-	    return
-	}
 	newPara 0.5i -0.5i
+	set state(sb) 80
 	setTabs 0.5i
 	formattedText [lindex $argList 0]
 	tab
@@ -762,7 +771,7 @@ proc IPmacro {argList} {
 	set count [lindex $argList 1]
 	set tab [expr $count * 0.1]i
 	newPara $tab -$tab
-	textSetup
+	set state(sb) 80
 	setTabs $tab
 	formattedText [lindex $argList 0]
 	tab
@@ -787,7 +796,6 @@ proc IPmacro {argList} {
 #
 # HTML limitations: 'x' in '.TP x' is ignored.
 
-
 proc TPmacro {argList} {
     global state
     set length [llength $argList]
@@ -799,9 +807,8 @@ proc TPmacro {argList} {
     newPara $val -$val
     setTabs $val
     set state(inTP) 1
-    set state(breakPending) 1
+    set state(sb) 120
 }
-
 
 
 # THmacro --
@@ -816,7 +823,7 @@ proc TPmacro {argList} {
 # argList -		List of arguments to the .TH macro.
 
 proc THmacro {argList} {
-    global file curPkg curSect curID id_keywords state
+    global file curPkg curSect curID id_keywords state curVer
 
     if {[llength $argList] != 5} {
 	set args [join $argList " "]
@@ -825,7 +832,7 @@ proc THmacro {argList} {
     incr curID
     set name	[lindex $argList 0]		;# Tcl_UpVar
     set page	[lindex $argList 1]		;# 3
-    set vers	[lindex $argList 2]		;# 7.4
+    set curVer	[lindex $argList 2]		;# 7.4
     set curPkg	[lindex $argList 3]		;# Tcl
     set curSect	[lindex $argList 4]		;# {Tcl Library Procedures}
     
@@ -894,7 +901,6 @@ proc newPara {leftIndent {firstIndent 0i}} {
     set state(firstIndent) [getTwips $firstIndent]
     set state(paragraphPending) 1
 }
-
 
 
 # getTwips --
