@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.118 2003/02/10 10:26:25 vincentdarley Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.118.2.1 2003/03/20 22:33:02 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -1379,37 +1379,6 @@ typedef struct Interp {
 #define SAFE_INTERP			 0x80
 #define USE_EVAL_DIRECT			0x100
 #define INTERP_TRACE_IN_PROGRESS	0x200
-
-/*
- *----------------------------------------------------------------
- * Data structures related to command parsing. These are used in
- * tclParse.c and its clients.
- *----------------------------------------------------------------
- */
-
-/*
- * The following data structure is used by various parsing procedures
- * to hold information about where to store the results of parsing
- * (e.g. the substituted contents of a quoted argument, or the result
- * of a nested command).  At any given time, the space available
- * for output is fixed, but a procedure may be called to expand the
- * space available if the current space runs out.
- */
-
-typedef struct ParseValue {
-    char *buffer;		/* Address of first character in
-				 * output buffer. */
-    char *next;			/* Place to store next character in
-				 * output buffer. */
-    char *end;			/* Address of the last usable character
-				 * in the buffer. */
-    void (*expandProc) _ANSI_ARGS_((struct ParseValue *pvPtr, int needed));
-				/* Procedure to call when space runs out;
-				 * it will make more space. */
-    ClientData clientData;	/* Arbitrary information for use of
-				 * expandProc. */
-} ParseValue;
-
 
 /*
  * Maximum number of levels of nesting permitted in Tcl commands (used
