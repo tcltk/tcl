@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.70 2000/11/03 21:23:26 hobbs Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.71 2000/11/16 00:15:29 hobbs Exp $
 
 VERSION 		= @TCL_VERSION@
 
@@ -667,9 +667,6 @@ distclean: clean
 depend:
 	makedepend -- $(DEPEND_SWITCHES) -- $(SRCS)
 
-bp: $(UNIX_DIR)/bp.c
-	$(CC) $(CC_SWITCHES) $(UNIX_DIR)/bp.c -o bp
-
 # Test binaries.  The rules for tclTestInit.o and xtTestInit.o are
 # complicated because they are compiled from tclAppInit.c.  Can't use
 # the "-o" option because this doesn't work on some strange compilers
@@ -1107,18 +1104,17 @@ rpm: all /bin/rpm
 # to put the distribution.
 #
 
-DISTROOT =	/tmp/dist
-DISTNAME =	tcl@TCL_VERSION@@TCL_PATCH_LEVEL@
-ZIPNAME =	tcl@TCL_MAJOR_VERSION@@TCL_MINOR_VERSION@@TCL_PATCH_LEVEL@.zip
-DISTDIR =	$(DISTROOT)/$(DISTNAME)
+DISTROOT = /tmp/dist
+DISTNAME = tcl@TCL_VERSION@@TCL_PATCH_LEVEL@
+ZIPNAME	 = tcl@TCL_MAJOR_VERSION@@TCL_MINOR_VERSION@@TCL_PATCH_LEVEL@.zip
+DISTDIR	 = $(DISTROOT)/$(DISTNAME)
 $(UNIX_DIR)/configure: $(UNIX_DIR)/configure.in
 	autoconf $(UNIX_DIR)/configure.in > $(UNIX_DIR)/configure
+
 dist: $(UNIX_DIR)/configure
 	rm -rf $(DISTDIR)
-	mkdir $(DISTDIR)
-	mkdir $(DISTDIR)/unix
+	mkdir -p $(DISTDIR)/unix
 	cp -p $(UNIX_DIR)/*.c $(UNIX_DIR)/*.h $(DISTDIR)/unix
-	rm -f $(DISTDIR)/unix/bp.c
 	cp $(UNIX_DIR)/Makefile.in $(DISTDIR)/unix
 	chmod 664 $(DISTDIR)/unix/Makefile.in
 	cp $(UNIX_DIR)/configure $(UNIX_DIR)/configure.in \
@@ -1129,7 +1125,6 @@ dist: $(UNIX_DIR)/configure
 	chmod 775 $(DISTDIR)/unix/configure $(DISTDIR)/unix/configure.in
 	chmod 775 $(DISTDIR)/unix/ldAix
 	chmod +x $(DISTDIR)/unix/install-sh
-
 	$(TCL_EXE) $(UNIX_DIR)/mkLinks.tcl \
 		$(UNIX_DIR)/../doc/*.[13n] > $(DISTDIR)/unix/mkLinks
 	chmod +x $(DISTDIR)/unix/mkLinks
@@ -1143,20 +1138,11 @@ dist: $(UNIX_DIR)/configure
 	mkdir $(DISTDIR)/library
 	cp -p $(TOP_DIR)/license.terms $(TOP_DIR)/library/*.tcl \
 		$(TOP_DIR)/library/tclIndex $(DISTDIR)/library
-	mkdir $(DISTDIR)/library/http1.0
-	cp -p $(TOP_DIR)/library/http1.0/*.tcl $(DISTDIR)/library/http1.0
-	mkdir $(DISTDIR)/library/http2.3
-	cp -p $(TOP_DIR)/library/http/*.tcl $(DISTDIR)/library/http2.3
-	mkdir $(DISTDIR)/library/opt0.4
-	cp -p $(TOP_DIR)/library/opt/*.tcl $(DISTDIR)/library/opt0.4
-	mkdir $(DISTDIR)/library/msgcat1.2
-	cp -p $(TOP_DIR)/library/msgcat/*.tcl $(DISTDIR)/library/msgcat1.2
-	mkdir $(DISTDIR)/library/reg1.0
-	cp -p $(TOP_DIR)/library/reg/*.tcl $(DISTDIR)/library/reg1.0
-	mkdir $(DISTDIR)/library/dde1.1
-	cp -p $(TOP_DIR)/library/dde/*.tcl $(DISTDIR)/library/dde1.1
-	mkdir $(DISTDIR)/library/tcltest2.0
-	cp -p $(TOP_DIR)/library/tcltest/*.tcl $(DISTDIR)/library/tcltest2.0
+	for i in http1.0 http opt msgcat reg dde tcltest; \
+	    do \
+		mkdir $(DISTDIR)/library/$$i ;\
+		cp -p $(TOP_DIR)/library/$$i/*.tcl $(DISTDIR)/library/$$i; \
+	    done;
 	mkdir $(DISTDIR)/library/encoding
 	cp -p $(TOP_DIR)/library/encoding/*.enc $(DISTDIR)/library/encoding
 	mkdir $(DISTDIR)/doc
@@ -1176,8 +1162,7 @@ dist: $(UNIX_DIR)/configure
 	cp -p $(TOP_DIR)/tests/pkg/*.tcl $(DISTDIR)/tests/pkg
 	mkdir $(DISTDIR)/win
 	cp $(TOP_DIR)/win/Makefile.in $(DISTDIR)/win
-	cp $(TOP_DIR)/win/configure.in \
-		$(TOP_DIR)/win/configure \
+	cp $(TOP_DIR)/win/configure.in $(TOP_DIR)/win/configure \
 		$(TOP_DIR)/win/tclConfig.sh.in \
 		$(TOP_DIR)/win/tcl.m4 $(TOP_DIR)/win/aclocal.m4 \
 		$(DISTDIR)/win
@@ -1190,13 +1175,12 @@ dist: $(UNIX_DIR)/configure
 	cp -p $(TOP_DIR)/win/README $(DISTDIR)/win
 	cp -p $(TOP_DIR)/license.terms $(DISTDIR)/win
 	mkdir $(DISTDIR)/mac
-	cp -p $(TOP_DIR)/mac/tclMacProjects.sea.hqx $(DISTDIR)/mac
-	cp -p $(TOP_DIR)/mac/*.c $(TOP_DIR)/mac/*.h $(TOP_DIR)/mac/*.r \
+	cp -p $(TOP_DIR)/mac/tclMacProjects.sea.hqx \
+		$(TOP_DIR)/mac/*.c $(TOP_DIR)/mac/*.h $(TOP_DIR)/mac/*.r \
 		$(DISTDIR)/mac
 	cp -p $(TOP_DIR)/mac/porting.notes $(TOP_DIR)/mac/README $(DISTDIR)/mac
 	cp -p $(TOP_DIR)/mac/*.exp $(TOP_DIR)/mac/*.pch $(DISTDIR)/mac
-	cp -p $(TOP_DIR)/mac/*.doc $(DISTDIR)/mac
-	cp -p $(TOP_DIR)/mac/*.html $(DISTDIR)/mac
+	cp -p $(TOP_DIR)/mac/*.doc $(TOP_DIR)/mac/*.html $(DISTDIR)/mac
 	cp -p $(TOP_DIR)/license.terms $(DISTDIR)/mac
 	mkdir $(DISTDIR)/unix/dltest
 	cp -p $(UNIX_DIR)/dltest/*.c $(UNIX_DIR)/dltest/Makefile.in \
@@ -1204,14 +1188,11 @@ dist: $(UNIX_DIR)/configure
 	cp -p $(UNIX_DIR)/dltest/configure.in $(UNIX_DIR)/dltest/configure \
 		$(UNIX_DIR)/dltest/README $(DISTDIR)/unix/dltest
 	mkdir $(DISTDIR)/tools
-	cp -p $(TOP_DIR)/tools/Makefile.in \
-	    $(TOP_DIR)/tools/README \
-	    $(TOP_DIR)/tools/configure.in \
-	    $(TOP_DIR)/tools/*.tcl \
-	    $(TOP_DIR)/tools/man2tcl.c \
-	    $(TOP_DIR)/tools/tcl.wse.in \
-	    $(TOP_DIR)/tools/*.bmp \
-	    $(TOP_DIR)/tools/tcl.hpj.in \
+	cp -p $(TOP_DIR)/tools/Makefile.in $(TOP_DIR)/tools/README \
+		$(TOP_DIR)/tools/configure $(TOP_DIR)/tools/configure.in \
+		$(TOP_DIR)/tools/*.tcl $(TOP_DIR)/tools/man2tcl.c \
+		$(TOP_DIR)/tools/tcl.wse.in $(TOP_DIR)/tools/*.bmp \
+		$(TOP_DIR)/tools/tcl.hpj.in \
 		$(DISTDIR)/tools
 
 #
