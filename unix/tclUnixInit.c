@@ -7,7 +7,7 @@
  * Copyright (c) 1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclUnixInit.c,v 1.36 2003/11/10 20:34:15 dgp Exp $
+ * RCS: @(#) $Id: tclUnixInit.c,v 1.37 2003/11/18 23:29:47 davygrvy Exp $
  */
 
 #if defined(HAVE_CFBUNDLE)
@@ -167,7 +167,11 @@ static int Tcl_MacOSXGetLibraryPath(Tcl_Interp *interp, int maxPathLen, char *tc
 void
 TclpInitPlatform()
 {
+#ifdef DJGPP
+    tclPlatform = TCL_PLATFORM_WINDOWS;
+#else		
     tclPlatform = TCL_PLATFORM_UNIX;
+#endif
 
     /*
      * The code below causes SIGPIPE (broken pipe) errors to
