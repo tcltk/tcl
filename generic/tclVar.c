@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.28 2001/03/06 14:45:03 dkf Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.29 2001/03/13 11:18:48 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2609,10 +2609,16 @@ Tcl_UnsetObjCmd(dummy, interp, objc, objv)
     register int i, flags = TCL_LEAVE_ERR_MSG;
     register char *name;
 
-    if (objc < 2) {
+    if (objc < 1) {
 	Tcl_WrongNumArgs(interp, 1, objv,
 		"?-nocomplain? ?--? ?varName varName ...?");
 	return TCL_ERROR;
+    } else if (objc == 1) {
+	/*
+	 * Do nothing if no arguments supplied, so as to match
+	 * command documentation.
+	 */
+	return TCL_OK;
     }
 
     /*
