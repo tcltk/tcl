@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.30 2003/11/15 03:19:17 dgp Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.31 2003/11/24 19:06:08 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -360,7 +360,9 @@ parseWord:
 		    && (0 == strncmp(expPfx,expPtr->start,expPfxLen))
 					/* Is the prefix */
 		    && (numBytes > 0)
-		    && (0 == TclParseWhiteSpace(termPtr, 1, parsePtr, &type))
+		    && (TclParseWhiteSpace(termPtr, numBytes, parsePtr, &type)
+			    == 0)
+		    && (type != TYPE_COMMAND_END)
 					/* Non-whitespace follows */
 		    ) {
 		expandWord = 1;
