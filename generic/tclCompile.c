@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.78.2.2 2004/12/29 22:46:39 kennykb Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.78.2.3 2005/03/15 20:23:39 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -269,7 +269,7 @@ InstructionDesc tclInstructionTable[] = {
 	 * stacked objs: stktop is old value, next is new element value, next 
 	 * come (operand-2) indices; pushes the new value.
 	 */
-    {"return",		  9,   -2,         2,   {OPERAND_INT4, OPERAND_UINT4}},
+    {"return",		  9,   -1,         2,   {OPERAND_INT4, OPERAND_UINT4}},
 	/* Compiled [return], code, level are operands; options and result
 	 * are on the stack. */
     {"expon",		  1,   -1,	   0,	{OPERAND_NONE}},

@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.191.2.6 2005/02/02 15:53:15 kennykb Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.191.2.7 2005/03/15 20:23:36 kennykb Exp $
  */
 
 #ifndef _TCL
@@ -1075,14 +1075,6 @@ typedef struct Tcl_DString {
 #define TCL_TRACE_DELETE 0x4000
 
 #define TCL_ALLOW_INLINE_COMPILATION 0x20000
-
-/*
- * Flag values passed to Tcl_CreateObjTrace, and used internally
- * by command execution traces.  Slots 4,8,16 and 32 are
- * used internally by execution traces (see tclCmdMZ.c)
- */
-#define TCL_TRACE_ENTER_EXEC		1
-#define TCL_TRACE_LEAVE_EXEC		2
 
 /*
  * The TCL_PARSE_PART1 flag is deprecated and has no effect. 

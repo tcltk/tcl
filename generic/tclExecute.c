@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.167.2.8 2005/03/15 19:41:44 kennykb Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.167.2.9 2005/03/15 20:23:42 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -1304,7 +1304,7 @@ TclExecuteByteCode(interp, codePtr)
 	instPush1Peephole:
 #endif
 	PUSH_OBJECT(codePtr->objArrayPtr[TclGetUInt1AtPtr(pc+1)]);
-	TRACE_WITH_OBJ(("%u => ", TclGetInt1AtPtr(pc+1)), *(tosPtr-1));
+	TRACE_WITH_OBJ(("%u => ", TclGetInt1AtPtr(pc+1)), *tosPtr);
 	pc += 2;
 #if !TCL_COMPILE_DEBUG
 	/*

@@ -1,6 +1,6 @@
 2005-03-15  Kevin B. Kenny  <kennykb@acm.org>
 
-	[kennykb-numerics-branch]
+	[kennykb-numerics-branch] Merged with HEAD.
 	
 	* generic/tclBasic.c (many):
 	* generic/tclCompExpr.c (CompileMathFuncCall):
@@ -21,6 +21,42 @@
 	* tests/binary.test (binary-40.3, binary-40.6): Corrected tests
 	to allow NaN(7ffffffffffff).
 	
+2005-03-15  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* generic/tclFileName.c: 
+	* win/tclWinFile.c:
+	* tests/winFCMd.test: fix to 'file pathtype' and 'file norm' 
+	failures on reserved filenames like 'COM1:', etc.
+
+2005-03-15  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* unix/tcl.m4:    Updated the OpenBSD configuration and regenerated
+	* unix/configure: the configure script.
+	
+2005-03-14  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclExecute.c: fixed INST_PUSH1's debugging code (wrong
+	obj ref passed to TRACE_WITH_OBJ).
+
+2005-03-14  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclCompile.c: fixed INST_RETURN's stack effect in
+	tclInstructionTable (-1 instead of -2)
+
+2005-03-10  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclCompCmds.c: removed debugging line
+	
+2005-03-10  Don Porter  <dgp@users.sourceforge.net>
+
+        * generic/tclTrace.c (TclCheckInterpTraces):    Corrected mistaken
+        cast of ClientData to (TraceCommandInfo *) when not warranted.
+        Thanks to Yuri Victorovich for the report.  [Bug 1153871]
+	* generic/tcl.h:	Moved flag values TCL_TRACE_ENTER_EXEC and
+	* generic/tclInt.h:	TCL_TRACE_LEAVE_EXEC from public interface
+	into private.  Should be used only by internal workings of
+	execution traces.
+
 2005-03-09  Kevin B. Kenny  <kennykb@acm.org>
 
 	[kennykb-numerics-branch] Merged from HEAD.
