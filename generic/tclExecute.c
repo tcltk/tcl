@@ -11,19 +11,14 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.59 2002/06/03 16:45:02 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.60 2002/06/07 10:38:03 dkf Exp $
  */
 
 #include "tclInt.h"
 #include "tclCompile.h"
 
-#ifdef NO_FLOAT_H
-#   include "../compat/float.h"
-#else
-#   include <float.h>
-#endif
 #ifndef TCL_NO_MATH
-#include "tclMath.h"
+#   include "tclMath.h"
 #endif
 
 /*
@@ -33,16 +28,38 @@
  */
 
 #ifndef TCL_GENERIC_ONLY
-#include "tclPort.h"
-#else
-#define NO_ERRNO_H
-#endif
+#   include "tclPort.h"
+#else /* TCL_GENERIC_ONLY */
+#   ifndef NO_FLOAT_H
+#	include <float.h>
+#   else /* NO_FLOAT_H */
+#	ifndef NO_VALUES_H
+#	    include <values.h>
+#	endif /* !NO_VALUES_H */
+#   endif /* !NO_FLOAT_H */
+#   define NO_ERRNO_H
+#endif /* !TCL_GENERIC_ONLY */
 
 #ifdef NO_ERRNO_H
 int errno;
-#define EDOM 33
-#define ERANGE 34
+#   define EDOM   33
+#   define ERANGE 34
 #endif
+
+/*
+ * Need DBL_MAX for IS_INF() macro...
+ */
+#ifndef DBL_MAX
+#   ifdef MAXDOUBLE
+#	define DBL_MAX MAXDOUBLE
+#   else /* !MAXDOUBLE */
+/*
+ * This value is from the Solaris headers, but doubles seem to be the
+ * same size everywhere.  Long doubles aren't, but we don't use those.
+ */
+#	define DBL_MAX 1.79769313486231570e+308
+#   endif /* MAXDOUBLE */
+#endif /* !DBL_MAX */
 
 /*
  * Boolean flag indicating whether the Tcl bytecode interpreter has been
@@ -108,11 +125,7 @@ long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
  */
 
 #define IS_NAN(v) ((v) != (v))
-#ifdef DBL_MAX
-#   define IS_INF(v) (((v) > DBL_MAX) || ((v) < -DBL_MAX))
-#else
-#   define IS_INF(v) 0
-#endif
+#define IS_INF(v) (((v) > DBL_MAX) || ((v) < -DBL_MAX))
 
 /*
  * Macro to adjust the program counter and restart the instruction execution
@@ -166,14 +179,14 @@ long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
  */
 
 #ifdef TCL_COMPILE_DEBUG
-#define TRACE(a) \
+#   define TRACE(a) \
     if (traceInstructions) { \
         fprintf(stdout, "%2d: %2d (%u) %s ", iPtr->numLevels, stackTop, \
 	       (unsigned int)(pc - codePtr->codeStart), \
 	       GetOpcodeName(pc)); \
 	printf a; \
     }
-#define TRACE_WITH_OBJ(a, objPtr) \
+#   define TRACE_WITH_OBJ(a, objPtr) \
     if (traceInstructions) { \
         fprintf(stdout, "%2d: %2d (%u) %s ", iPtr->numLevels, stackTop, \
 	       (unsigned int)(pc - codePtr->codeStart), \
@@ -182,12 +195,12 @@ long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
         TclPrintObject(stdout, objPtr, 30); \
         fprintf(stdout, "\n"); \
     }
-#define O2S(objPtr) \
+#   define O2S(objPtr) \
     (objPtr ? TclGetString(objPtr) : "")
-#else
-#define TRACE(a)
-#define TRACE_WITH_OBJ(a, objPtr)
-#define O2S(objPtr)
+#else /* !TCL_COMPILE_DEBUG */
+#   define TRACE(a)
+#   define TRACE_WITH_OBJ(a, objPtr)
+#   define O2S(objPtr)
 #endif /* TCL_COMPILE_DEBUG */
 
 
