@@ -3,7 +3,7 @@
 # generate the file "configure", which is run during Tcl installation
 # to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.72 2003/04/03 02:24:12 mdejong Exp $
+# RCS: @(#) $Id: configure.in,v 1.73 2003/04/14 02:36:58 mdejong Exp $
 
 AC_INIT(../generic/tcl.h)
 AC_PREREQ(2.57)
@@ -258,6 +258,29 @@ if test "$tcl_cv_cast_to_union" = "yes"; then
             [Defined when compiler supports casting to union type.])
 fi
 
+
+# See if declarations like FINDEX_INFO_LEVELS are
+# missing from winbase.h. This is known to be
+# a problem with VC++ 5.2.
+
+AC_CACHE_CHECK(for FINDEX_INFO_LEVELS in winbase.h,
+    tcl_cv_findex_enums,
+AC_TRY_COMPILE([
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#undef WIN32_LEAN_AND_MEAN
+],
+[
+  FINDEX_INFO_LEVELS i;
+  FINDEX_SEARCH_OPS j;
+],
+        tcl_cv_findex_enums=yes,
+        tcl_cv_findex_enums=no)
+)
+if test "$tcl_cv_findex_enums" = "no"; then
+    AC_DEFINE(HAVE_NO_FINDEX_ENUMS, 1,
+            [Defined when enums are missing from winbase.h])
+fi
 
 #--------------------------------------------------------------------
 # Determines the correct binary file extension (.o, .obj, .exe etc.)
