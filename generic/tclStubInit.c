@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.52 2001/06/17 03:48:19 dgp Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.53 2001/07/12 13:15:09 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -832,6 +832,7 @@ TclStubs tclStubs = {
     Tcl_GetUnicodeFromObj, /* 434 */
     Tcl_GetMathFuncInfo, /* 435 */
     Tcl_ListMathFuncs, /* 436 */
+    Tcl_SubstObj, /* 437 */
 };
 
 /* !END!: Do not edit above this line. */

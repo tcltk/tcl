@@ -1,11 +1,12 @@
 '\"
 '\" Copyright (c) 1994 The Regents of the University of California.
 '\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
+'\" Copyright (c) 2001 Donal K. Fellows
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: subst.n,v 1.3 2000/09/07 14:27:51 poenitz Exp $
+'\" RCS: @(#) $Id: subst.n,v 1.4 2001/07/12 13:15:09 dkf Exp $
 '\" 
 .so man.macros
 .TH subst n 7.4 Tcl "Tcl Built-In Commands"
@@ -35,17 +36,48 @@ For example, if \fB\-nocommands\fR is specified, no command substitution
 is performed:  open and close brackets are treated as ordinary characters
 with no special interpretation.
 .PP
-Note: when it performs its substitutions, \fIsubst\fR does not
-give any special treatment to double quotes or curly braces.  For
-example, the script
+.VS 8.4
+If a break exception occurs during the evaluation of a command
+substitution, the result of the substitution will be the string (as
+substituted) up to the start of the command substitution.  If a
+continue exception occurs during the evaluation of a command
+substitution, an empty string will be substituted for that entire
+command substitution (as long as it is well-formed Tcl.)
+.VE
+.SH EXAMPLES
+.PP
+When it performs its substitutions, \fIsubst\fR does not give any
+special treatment to double quotes or curly braces (except within
+command substitutions) so the script
 .CS
 \fBset a 44
 subst {xyz {$a}}\fR
 .CE
-returns ``\fBxyz {44}\fR'', not ``\fBxyz {$a}\fR''.
+returns ``\fBxyz {44}\fR'', not ``\fBxyz {$a}\fR''
+.VS 8.4
+and the script
+.CS
+\fBset a "p\\} q \\{r"
+subst {xyz {$a}}\fR
+.CE
+return ``\fBxyz {p} q {r}\fR'', not ``\fBxyz {p\\} q \\{r}\fR''.
+.PP
+The continue and break exceptions allow command substitutions to
+prevent substitution of the rest of the command substitution and the
+rest of \fIstring\fR respectively, giving script authors more options
+when processing text using \fIsubst\fR.  For example, the script
+.CS
+\fBsubst {abc,[break],def}\fR
+.CE
+returns ``\fBabc,\fR'', not ``\fBabc,,def\fR'' and the script
+.CS
+\fBsubst {abc,[continue;expr 1+2],def}\fR
+.CE
+returns ``\fBabc,,def\fR'', not ``\fBabc,3,def\fR''.
+.VE
 
 .SH "SEE ALSO"
-eval(n)
+Tcl(n), eval(n), break(n), continue(n)
 
 .SH KEYWORDS
 backslash substitution, command substitution, variable substitution

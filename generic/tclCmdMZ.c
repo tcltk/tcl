@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.39 2001/06/12 08:07:37 dkf Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.40 2001/07/12 13:15:09 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2247,8 +2247,7 @@ Tcl_StringObjCmd(dummy, interp, objc, objv)
  *
  *	This procedure is invoked to process the "subst" Tcl command.
  *	See the user documentation for details on what it does.  This
- *	command is an almost direct copy of an implementation by
- *	Andrew Payne.
+ *	command relies on Tcl_SubstObj() for its implementation.
  *
  * Results:
  *	A standard Tcl result.
@@ -2273,21 +2272,15 @@ Tcl_SubstObjCmd(dummy, interp, objc, objv)
     enum substOptions {
 	SUBST_NOBACKSLASHES,      SUBST_NOCOMMANDS,       SUBST_NOVARS
     };
-    Interp *iPtr = (Interp *) interp;
-    Tcl_DString result;
-    char *p, *old, *value;
-    int optionIndex, code, count, doVars, doCmds, doBackslashes, i;
+    Tcl_Obj *resultPtr;
+    int optionIndex, flags, i;
 
     /*
      * Parse command-line options.
      */
 
-    doVars = doCmds = doBackslashes = 1;
+    flags = TCL_SUBST_ALL;
     for (i = 1; i < (objc-1); i++) {
-	p = Tcl_GetString(objv[i]);
-	if (*p != '-') {
-	    break;
-	}
 	if (Tcl_GetIndexFromObj(interp, objv[i], substOptions,
 		"switch", 0, &optionIndex) != TCL_OK) {
 
@@ -2295,15 +2288,15 @@ Tcl_SubstObjCmd(dummy, interp, objc, objv)
 	}
 	switch (optionIndex) {
 	    case SUBST_NOBACKSLASHES: {
-		doBackslashes = 0;
+		flags &= ~TCL_SUBST_BACKSLASHES;
 		break;
 	    }
 	    case SUBST_NOCOMMANDS: {
-		doCmds = 0;
+		flags &= ~TCL_SUBST_COMMANDS;
 		break;
 	    }
 	    case SUBST_NOVARS: {
-		doVars = 0;
+		flags &= ~TCL_SUBST_VARIABLES;
 		break;
 	    }
 	    default: {
@@ -2318,76 +2311,154 @@ Tcl_SubstObjCmd(dummy, interp, objc, objv)
     }
 
     /*
-     * Scan through the string one character at a time, performing
-     * command, variable, and backslash substitutions.
+     * Perform the substitution.
      */
+    resultPtr = Tcl_SubstObj(interp, objv[i], flags);
 
-    Tcl_DStringInit(&result);
-    old = p = Tcl_GetString(objv[i]);
-    while (*p != 0) {
+    if (resultPtr == NULL) {
+	return TCL_ERROR;
+    }
+    Tcl_SetObjResult(interp, resultPtr);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_SubstObjCmd --
+ *
+ *	This function performs the substitutions specificed on the
+ *	given string as described in the user documentation for the
+ *	"subst" Tcl command.  This code is heavily based on an
+ *	implementation by Andrew Payne.  Note that if a command
+ *	substitution returns TCL_CONTINUE or TCL_RETURN from its
+ *	evaluation and is not completely well-formed, the results are
+ *	not defined.
+ *
+ * Results:
+ *	A Tcl_Obj* containing the substituted string, or NULL to
+ *	indicate that an error occurred.
+ *
+ * Side effects:
+ *	See the user documentation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Obj *
+Tcl_SubstObj(interp, objPtr, flags)
+    Tcl_Interp *interp;
+    Tcl_Obj *objPtr;
+    int flags;
+{
+    Tcl_Obj *resultObj;
+    char *p, *old;
+
+    old = p = Tcl_GetString(objPtr);
+    resultObj = Tcl_NewStringObj("", 0);
+    while (1) {
 	switch (*p) {
-	    case '\\':
-		if (doBackslashes) {
-		    char buf[TCL_UTF_MAX];
+	case 0:
+	    if (p != old) {
+		Tcl_AppendToObj(resultObj, old, p-old);
+	    }
+	    return resultObj;
 
-		    if (p != old) {
-			Tcl_DStringAppend(&result, old, p-old);
-		    }
-		    Tcl_DStringAppend(&result, buf,
-			    Tcl_UtfBackslash(p, &count, buf));
-		    p += count;
-		    old = p;
-		} else {
-		    p++;
+	case '\\':
+	    if (flags & TCL_SUBST_BACKSLASHES) {
+		char buf[TCL_UTF_MAX];
+		int count;
+
+		if (p != old) {
+		    Tcl_AppendToObj(resultObj, old, p-old);
 		}
-		break;
-
-	    case '$':
-		if (doVars) {
-		    if (p != old) {
-			Tcl_DStringAppend(&result, old, p-old);
-		    }
-		    value = Tcl_ParseVar(interp, p, &p);
-		    if (value == NULL) {
-			Tcl_DStringFree(&result);
-			return TCL_ERROR;
-		    }
-		    Tcl_DStringAppend(&result, value, -1);
-		    old = p;
-		} else {
-		    p++;
-		}
-		break;
-
-	    case '[':
-		if (doCmds) {
-		    if (p != old) {
-			Tcl_DStringAppend(&result, old, p-old);
-		    }
-		    iPtr->evalFlags = TCL_BRACKET_TERM;
-		    code = Tcl_Eval(interp, p+1);
-		    if (code == TCL_ERROR) {
-			Tcl_DStringFree(&result);
-			return code;
-		    }
-		    old = p = (p+1 + iPtr->termOffset+1);
-		    Tcl_DStringAppend(&result, iPtr->result, -1);
-		    Tcl_ResetResult(interp);
-		} else {
-		    p++;
-		}
-		break;
-
-	    default:
+		Tcl_AppendToObj(resultObj, buf,
+				Tcl_UtfBackslash(p, &count, buf));
+		p += count;
+		old = p;
+	    } else {
 		p++;
-		break;
+	    }
+	    break;
+
+	case '$':
+	    if (flags & TCL_SUBST_VARIABLES) {
+		Tcl_Parse parse;
+		Tcl_Obj *tempObj;
+
+		/*
+		 * Code is simpler overall if we (effectively) inline
+		 * Tcl_ParseVar, particularly as that allows us to use
+		 * a non-string interface when we come to appending
+		 * the variable contents to the result object.  There
+		 * are a few other optimisations that doing this
+		 * enables (like being able to continue the run of
+		 * unsubstituted characters straight through if a '$'
+		 * does not precede a variable name.)
+		 */
+		if (Tcl_ParseVarName(interp, p, -1, &parse, 0) != TCL_OK) {
+		    goto errorResult;
+		}
+		if (parse.numTokens == 1) {
+		    /*
+		     * There isn't a variable name after all: the $ is
+		     * just a $.
+		     */
+		    p++;
+		    break;
+		}
+		if (p != old) {
+		    Tcl_AppendToObj(resultObj, old, p-old);
+		}
+		p += parse.tokenPtr->size;
+		tempObj = Tcl_EvalTokens(interp, parse.tokenPtr,
+					 parse.numTokens);
+		if (tempObj == NULL) {
+		    goto errorResult;
+		}
+		Tcl_AppendObjToObj(resultObj, tempObj);
+		Tcl_DecrRefCount(tempObj);
+		old = p;
+	    } else {
+		p++;
+	    }
+	    break;
+
+	case '[':
+	    if (flags & TCL_SUBST_COMMANDS) {
+		Interp *iPtr = (Interp *) interp;
+		int code;
+
+		if (p != old) {
+		    Tcl_AppendToObj(resultObj, old, p-old);
+		}
+		iPtr->evalFlags = TCL_BRACKET_TERM;
+		code = Tcl_EvalEx(interp, p+1, -1, 0);
+		switch (code) {
+		case TCL_ERROR:
+		    goto errorResult;
+		case TCL_BREAK:
+		    Tcl_ResetResult(interp);
+		    return resultObj;
+		default:
+		    Tcl_AppendObjToObj(resultObj, Tcl_GetObjResult(interp));
+		case TCL_CONTINUE:
+		    Tcl_ResetResult(interp);
+		    old = p = (p+1 + iPtr->termOffset + 1);
+		}
+	    } else {
+		p++;
+	    }
+	    break;
+	default:
+	    p++;
+	    break;
 	}
     }
-    if (p != old) {
-	Tcl_DStringAppend(&result, old, p-old);
-    }
-    Tcl_DStringResult(interp, &result);
-    return TCL_OK;
+
+ errorResult:
+    Tcl_DecrRefCount(resultObj);
+    return NULL;
 }
 
 /*
