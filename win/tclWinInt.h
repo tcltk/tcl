@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinInt.h,v 1.25 2004/04/06 22:25:58 dgp Exp $
+ * RCS: @(#) $Id: tclWinInt.h,v 1.26 2004/05/03 17:04:31 kennykb Exp $
  */
 
 #ifndef _TCLWININT
@@ -22,7 +22,7 @@
  * to help avoid overflowing the stack in the case of infinite recursion.
  */
 
-#define TCL_WIN_STACK_THRESHOLD 0x2000
+#define TCL_WIN_STACK_THRESHOLD 0x8000
 
 #ifdef BUILD_tcl
 # undef TCL_STORAGE_CLASS
