@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.153 2004/09/24 01:14:42 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.154 2004/10/06 14:59:01 dgp Exp $
  */
 
 #ifdef STDC_HEADERS
@@ -4691,8 +4691,7 @@ TclExecuteByteCode(interp, codePtr)
 	
  divideByZero:
     DECACHE_STACK_INFO();
-    Tcl_ResetResult(interp);
-    Tcl_AppendToObj(Tcl_GetObjResult(interp), "divide by zero", -1);
+    Tcl_SetObjResult(interp, Tcl_NewStringObj("divide by zero", -1));
     Tcl_SetErrorCode(interp, "ARITH", "DIVZERO", "divide by zero",
             (char *) NULL);
     CACHE_STACK_INFO();
@@ -4707,9 +4706,8 @@ TclExecuteByteCode(interp, codePtr)
 
  exponOfZero:
     DECACHE_STACK_INFO();
-    Tcl_ResetResult(interp);
-    Tcl_AppendToObj(Tcl_GetObjResult(interp),
-	    "exponentiation of zero by negative power", -1);
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+	    "exponentiation of zero by negative power", -1));
     Tcl_SetErrorCode(interp, "ARITH", "DOMAIN",
 	    "exponentiation of zero by negative power", (char *) NULL);
     CACHE_STACK_INFO();
@@ -5109,9 +5107,8 @@ IllegalExprOperandType(interp, pc, opndPtr)
 
     Tcl_ResetResult(interp);
     if ((opndPtr->bytes == NULL) || (opndPtr->length == 0)) {
-	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		"can't use empty string as operand of \"", operator, "\"",
-		(char *) NULL);
+	Tcl_AppendResult(interp, "can't use empty string as operand of \"",
+		operator, "\"", (char *) NULL);
     } else {
 	char *msg = "non-numeric string";
 	char *s, *p;
@@ -5209,8 +5206,8 @@ IllegalExprOperandType(interp, pc, opndPtr)
 	    }
 	}
       makeErrorMessage:
-	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "can't use ",
-		msg, " as operand of \"", operator, "\"", (char *) NULL);
+	Tcl_AppendResult(interp, "can't use ", msg, " as operand of \"",
+		operator, "\"", (char *) NULL);
     }
 }
 
@@ -5477,15 +5474,14 @@ VerifyExprObjType(interp, objPtr)
 	    result = Tcl_GetDoubleFromObj((Tcl_Interp *) NULL, objPtr, &d);
 	}
 	if ((result != TCL_OK) && (interp != NULL)) {
-	    Tcl_ResetResult(interp);
 	    if (TclCheckBadOctal((Tcl_Interp *) NULL, s)) {
-		Tcl_AppendToObj(Tcl_GetObjResult(interp),
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"argument to math function was an invalid octal number",
-			-1);
+			-1));
 	    } else {
-		Tcl_AppendToObj(Tcl_GetObjResult(interp),
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"argument to math function didn't have numeric value",
-			-1);
+			-1));
 	    }
 	}
 	return result;
@@ -5632,9 +5628,8 @@ ExprAbsFunc(interp, tosPtr, clientData)
 	if (i < 0) {
 	    iResult = -i;
 	    if (iResult < 0) {
-		Tcl_ResetResult(interp);
-		Tcl_AppendToObj(Tcl_GetObjResult(interp),
-		        "integer value too large to represent", -1);
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		        "integer value too large to represent", -1));
 		Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW",
 			"integer value too large to represent", (char *) NULL);
 		return TCL_ERROR;
@@ -5649,9 +5644,8 @@ ExprAbsFunc(interp, tosPtr, clientData)
 	if (w < W0) {
 	    wResult = -w;
 	    if (wResult < 0) {
-		Tcl_ResetResult(interp);
-		Tcl_AppendToObj(Tcl_GetObjResult(interp),
-		        "integer value too large to represent", -1);
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		        "integer value too large to represent", -1));
 		Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW",
 			"integer value too large to represent", (char *) NULL);
 		return TCL_ERROR;
@@ -5740,9 +5734,8 @@ ExprIntFunc(interp, tosPtr, clientData)
 	if (d < 0.0) {
 	    if (d < (double) (long) LONG_MIN) {
 		tooLarge:
-		Tcl_ResetResult(interp);
-		Tcl_AppendToObj(Tcl_GetObjResult(interp),
-		        "integer value too large to represent", -1);
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		        "integer value too large to represent", -1));
 		Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW",
 			"integer value too large to represent", (char *) NULL);
 		return TCL_ERROR;
@@ -5798,9 +5791,8 @@ ExprWideFunc(interp, tosPtr, clientData)
 	if (d < 0.0) {
 	    if (d < Tcl_WideAsDouble(LLONG_MIN)) {
 		tooLarge:
-		Tcl_ResetResult(interp);
-		Tcl_AppendToObj(Tcl_GetObjResult(interp),
-		        "integer value too large to represent", -1);
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		        "integer value too large to represent", -1));
 		Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW",
 			"integer value too large to represent", (char *) NULL);
 		return TCL_ERROR;
@@ -5969,9 +5961,8 @@ ExprRoundFunc(interp, tosPtr, clientData)
      */
     
     tooLarge:
-    Tcl_ResetResult(interp);
-    Tcl_AppendToObj(Tcl_GetObjResult(interp),
-	    "integer value too large to represent", -1);
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+	    "integer value too large to represent", -1));
     Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW",
 	    "integer value too large to represent",
 	    (char *) NULL);
@@ -6008,10 +5999,8 @@ ExprSrandFunc(interp, tosPtr, clientData)
 	/*
 	 * At this point, the only other possible type is double
 	 */
-	Tcl_ResetResult(interp);
-	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		"can't use floating-point value as argument to srand",
-		(char *) NULL);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"can't use floating-point value as argument to srand", -1));
 	return TCL_ERROR;
     }
     
@@ -6088,8 +6077,8 @@ ExprCallMathFunc(interp, objc, objv)
     funcName = TclGetString(objv[0]);
     hPtr = Tcl_FindHashEntry(&iPtr->mathFuncTable, funcName);
     if (hPtr == NULL) {
-	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		"unknown math function \"", funcName, "\"", (char *) NULL);
+	Tcl_AppendResult(interp, "unknown math function \"", funcName,
+		"\"", (char *) NULL);
 	return TCL_ERROR;
     }
     mathFuncPtr = (MathFunc *) Tcl_GetHashValue(hPtr);
@@ -6221,28 +6210,27 @@ TclExprFloatError(interp, value)
     double value;		/* Value returned after error;  used to
 				 * distinguish underflows from overflows. */
 {
-    char *s;
+    CONST char *s;
 
-    Tcl_ResetResult(interp);
     if ((errno == EDOM) || IS_NAN(value)) {
 	s = "domain error: argument not in valid range";
-	Tcl_AppendToObj(Tcl_GetObjResult(interp), s, -1);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
 	Tcl_SetErrorCode(interp, "ARITH", "DOMAIN", s, (char *) NULL);
     } else if ((errno == ERANGE) || IS_INF(value)) {
 	if (value == 0.0) {
 	    s = "floating-point value too small to represent";
-	    Tcl_AppendToObj(Tcl_GetObjResult(interp), s, -1);
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
 	    Tcl_SetErrorCode(interp, "ARITH", "UNDERFLOW", s, (char *) NULL);
 	} else {
 	    s = "floating-point value too large to represent";
-	    Tcl_AppendToObj(Tcl_GetObjResult(interp), s, -1);
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
 	    Tcl_SetErrorCode(interp, "ARITH", "OVERFLOW", s, (char *) NULL);
 	}
     } else {
 	char msg[64 + TCL_INTEGER_SPACE];
 	
 	sprintf(msg, "unknown floating-point error, errno = %d", errno);
-	Tcl_AppendToObj(Tcl_GetObjResult(interp), msg, -1);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(msg, -1));
 	Tcl_SetErrorCode(interp, "ARITH", "UNKNOWN", msg, (char *) NULL);
     }
 }
