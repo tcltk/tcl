@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclHash.c,v 1.3.16.1 2001/12/03 18:23:14 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclHash.c,v 1.3.16.2 2002/11/05 01:46:00 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -396,11 +396,11 @@ HashString(string)
     result = 0;
     while (1) {
 	c = *string;
-	string++;
 	if (c == 0) {
 	    break;
 	}
 	result += (result<<3) + c;
+	string++;
     }
     return result;
 }
