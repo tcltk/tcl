@@ -1,4 +1,9 @@
 2001-04-10  Kevin B. Kenny    <kennykb@acm.org>
+	* unix/tclUnixTime.c: Altered code to use memcpy instead of
+	structure assigments in an effort to achieve better K&R
+	compatibility.
+	
+2001-04-10  Kevin B. Kenny    <kennykb@acm.org>
 
 	* unix/tclUnixTime.c: Fixed silly typo in calls to 'gmtime' and
 	'localtime' that broke the Linux build.
