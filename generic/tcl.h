@@ -13,20 +13,12 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.184 2004/10/02 17:00:38 dkf Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.185 2004/10/27 23:20:59 davygrvy Exp $
  */
 
 #ifndef _TCL
 #define _TCL
 
-/*
- * For C++ compilers, use extern "C"
- */
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-    
 /*
  * The following defines are used to indicate the various release levels.
  */
@@ -2350,12 +2342,4 @@ EXTERN int		Tcl_AppInit _ANSI_ARGS_((Tcl_Interp *interp));
 #define TCL_STORAGE_CLASS DLLIMPORT
 
 #endif /* RC_INVOKED */
-
-/*
- * end block for C++
- */
-#ifdef __cplusplus
-}
-#endif
-
 #endif /* _TCL */
