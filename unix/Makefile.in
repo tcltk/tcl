@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.1.2.10 1998/12/10 00:49:46 stanton Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.1.2.11 1998/12/10 01:40:56 stanton Exp $
 
 # Current Tcl version;  used in various names.
 
@@ -998,14 +998,6 @@ dist: $(UNIX_DIR)/configure
 		$(DISTDIR)/unix/dltest
 	cp -p $(UNIX_DIR)/dltest/configure.in $(UNIX_DIR)/dltest/configure \
 		$(UNIX_DIR)/dltest/README $(DISTDIR)/unix/dltest
-	mkdir $(DISTDIR)/tools
-	cp -p $(TOP_DIR)/tools/*.in $(TOP_DIR)/tools/*.c \
-		$(TOP_DIR)/tools/*.tcl $(TOP_DIR)/tools/*.hpj \
-		$(TOP_DIR)/tools/*.wse $(TOP_DIR)/tools/str2c \
-		$(TOP_DIR)/tools/README $(DISTDIR)/tools
-	cp -p $(TOP_DIR)/license.terms $(DISTDIR)/tools
-	mkdir $(DISTDIR)/tools/encoding
-	cp `ls -d1 $(TOP_DIR)/tools/encoding/*|egrep -i -v "(CVS|SCCS|TAGS|~|,|#|%|core|\.l?o)"` $(DISTDIR)/tools/encoding
 
 #
 # The following target can only be used for non-patch releases.  Use
@@ -1018,7 +1010,7 @@ alldist: dist
 		$(DISTROOT)/$(ZIPNAME)
 	cd $(DISTROOT); tar cf $(DISTNAME).tar $(DISTNAME); \
 		gzip -9 -c $(DISTNAME).tar > $(DISTNAME).tar.gz; \
-		compress $(DISTNAME).tar; zip -r8 $(ZIPNAME) $(DISTNAME)
+		compress $(DISTNAME).tar; zip -qr8 $(ZIPNAME) $(DISTNAME)
 
 #
 # The target below is similar to "alldist" except it works for patch

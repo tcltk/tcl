@@ -1,5 +1,9 @@
 1998-12-09    <stanton@GASPODE>
 
+	* library/msgcat1.0/msgcat.tcl: Fixed bad export list, fixed so
+	all locale strings are converted to lower case, including file
+	names.
+
 	* generic/regcomp.c (makescan): Fixed bug in longest match case
 	that caused anchored patterns to fail. [Bug: 897]
 

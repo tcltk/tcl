@@ -164,15 +164,15 @@ If a package is installed into a subdirectory of the
 following procedure is recommended.
 .IP [1]
 During package installation, create a subdirectory
-\fBlang\fR under your package directory.
+\fBmsgs\fR under your package directory.
 .IP [2]
 Copy your *.msg files into that directory.
 .IP [3]
  Add the following command to your package
 initialization script:
 .CS
-# load language files, stored in lang subdirectory
-::msgcat::mcload [file join [file dirname [info script]] lang]
+# load language files, stored in msgs subdirectory
+::msgcat::mcload [file join [file dirname [info script]] msgs]
 .CE
 
 .SH "POSTITIONAL CODES FOR FORMAT AND SCAN COMMANDS"

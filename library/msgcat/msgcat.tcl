@@ -10,12 +10,12 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: msgcat.tcl,v 1.1.2.4 1998/12/09 01:13:51 stanton Exp $
+# RCS: @(#) $Id: msgcat.tcl,v 1.1.2.5 1998/12/10 01:40:55 stanton Exp $
 
 package provide msgcat 1.0
 
 namespace eval msgcat {
-    namespace export mc mcset mclocale mclocales mcunknown
+    namespace export mc mcset mclocale mcpreferences mcunknown
 
     # Records the current locale as passed to mclocale
     variable locale ""
@@ -71,6 +71,7 @@ proc msgcat::mclocale {args} {
 	error {wrong # args: should be "mclocale ?newLocale?"}
     }
 
+    set args [string tolower $args]
     if {$len == 1} {
 	set ::msgcat::locale $args
 	set ::msgcat::loclist {}
@@ -78,7 +79,7 @@ proc msgcat::mclocale {args} {
 	foreach part [split $args _] {
 	    set word [string trimleft "${word}_${part}" _]
 	    set ::msgcat::loclist \
-                    [linsert $::msgcat::loclist 0 [string tolower $word]]
+                    [linsert $::msgcat::loclist 0 $word]
 	}
     }
     return $::msgcat::locale

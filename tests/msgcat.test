@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: msgcat.test,v 1.1.2.2 1998/12/09 01:13:52 stanton Exp $
+# RCS: @(#) $Id: msgcat.test,v 1.1.2.3 1998/12/10 01:40:56 stanton Exp $
 
 if {[string compare test [info procs test]] == 1} then {source defs}
 
@@ -39,7 +39,7 @@ set oldlocale [::msgcat::mclocale]
 
 test msgcat-1.1 {::msgcat::mclocale default} {
     ::msgcat::mclocale
-} {C}
+} {c}
 test msgcat-1.2 {::msgcat::mcpreferences, single element} {
     ::msgcat::mcpreferences
 } {c}
@@ -54,20 +54,20 @@ test msgcat-1.5 {::msgcat::mcpreferences, single element} {
 } {en}
 test msgcat-1.6 {::msgcat::mclocale, two elements} {
     ::msgcat::mclocale en_US
-} {en_US}
+} {en_us}
 test msgcat-1.7 {::msgcat::mclocale, two elements} {
     ::msgcat::mclocale en_US
     ::msgcat::mclocale
-} {en_US}
+} {en_us}
 test msgcat-1.8 {::msgcat::mcpreferences, two elements} {
     ::msgcat::mcpreferences
 } {en_us en}
 test msgcat-1.9 {::msgcat::mclocale, three elements} {
     ::msgcat::mclocale en_US_funky
-} {en_US_funky}
+} {en_us_funky}
 test msgcat-1.10 {::msgcat::mclocale, three elements} {
     ::msgcat::mclocale
-} {en_US_funky}
+} {en_us_funky}
 test msgcat-1.11 {::msgcat::mcpreferences, three elements} {
     ::msgcat::mcpreferences
 } {en_us_funky en_us en}
@@ -238,7 +238,7 @@ set locales {en en_US en_US_funky}
 
 catch {file mkdir msgdir}
 foreach l $locales {
-    set fd [open [file join msgdir $l.msg] w]
+    set fd [open [string tolower [file join msgdir $l.msg]] w]
     puts $fd "::msgcat::mcset $l abc abc-$l"
     close $fd
 }
@@ -289,14 +289,14 @@ test msgcat-5.9 {::msgcat::mcload} {
     rename ::msgcat::mcunknown {}
     rename oldproc ::msgcat::mcunknown
     set result
-} {unknown:no_FI_notexist:abc}
+} {unknown:no_fi_notexist:abc}
 
 #
 # Clean up the test files
 #
 
 foreach l $locales {
-    file delete [file join msgdir $l.msg]
+    file delete [string tolower [file join msgdir $l.msg]]
 }
 
 # Clean out the msg catalogs
