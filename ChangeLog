@@ -1,5 +1,7 @@
 2002-02-05  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
 
+	* tests/config.test: Added a testsuite for pkgconfig.
+
 	* unix/mkLinks: Regenerated.
 	* doc/RegConfig.3: Added documentation for the new public API
 	  function.
