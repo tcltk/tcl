@@ -4,6 +4,8 @@
 	do 'file copy foo ""'. [Bug 756951]
 	* tests/fCmd.test: added two new tests for the bug.
 
+	* doc/FileSystem.3: documentation fix [Bug 720634]
+
 2003-06-18  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclNamesp.c (Tcl_Export): removed erroneous comments
