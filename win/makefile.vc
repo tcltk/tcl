@@ -4,9 +4,9 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
 # Copyright (c) 1995-1996 Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright (c) 1998-2000 Ajuba Solutions.
 #
-# RCS: @(#) $Id: makefile.vc,v 1.56 2000/10/31 01:20:09 davidg Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.57 2000/11/02 09:21:07 hobbs Exp $
 
 # Does not depend on the presence of any environment variables in
 # order to compile tcl; all needed information is derived from 
@@ -27,22 +27,49 @@
 #
 
 # Set this to the appropriate value of /MACHINE: for your platform
+# Choices: IX86, IA64, ALPHA
 MACHINE		= IX86
-#MACHINE		= ALPHA
 
 ROOT		= ..
-INSTALLDIR	= c:\Progra~1\Tcl
+INSTALLDIR	= C:\Progra~1\Tcl
 
 !IF "$(MACHINE)" == "IA64"
-TOOLS32		= c:\ia64sdk17
-TOOLS32_rc	= c:\ia64sdk17
+
+# IA64 support is based on the standard setup with v2 of the
+# Microsoft Platform SDK for Whistler, build 2267
+
+TOOLS32		= C:\Progra~1\Microsoft Platform SDK
+TOOLS32_rc	= C:\Progra~1\Microsoft Platform SDK
+
+cc32		= "$(TOOLS32)\bin\Win64\cl.exe"
+link32		= "$(TOOLS32)\bin\Win64\link.exe"
+libpath32	= /LIBPATH:"$(TOOLS32)\lib\IA64"
+lib32		= "$(TOOLS32)\bin\Win64\lib.exe"
+
 !ELSE IF "$(MACHINE)" == "ALPHA"
+
 TOOLS32		= C:\Progra~1\Micros~2\vc98
 TOOLS32_rc	= C:\Progra~1\Micros~2\common\MSDev98
+
+cc32		= "$(TOOLS32)\bin\cl.exe"
+link32		= "$(TOOLS32)\bin\link.exe"
+libpath32	= /LIBPATH:"$(TOOLS32)\lib"
+lib32		= "$(TOOLS32)\bin\lib.exe"
+
 !ELSE
-TOOLS32		= c:\Progra~1\devstudio\vc
-TOOLS32_rc	= c:\Progra~1\devstudio\sharedide
+
+TOOLS32		= C:\Progra~1\devstudio\vc
+TOOLS32_rc	= C:\Progra~1\devstudio\sharedide
+
+cc32		= "$(TOOLS32)\bin\cl.exe"
+link32		= "$(TOOLS32)\bin\link.exe"
+libpath32	= /LIBPATH:"$(TOOLS32)\lib"
+lib32		= "$(TOOLS32)\bin\lib.exe"
+
 !ENDIF
+
+rc32		= "$(TOOLS32_rc)\bin\rc.exe"
+include32	= -I"$(TOOLS32)\include"
 
 # Uncomment the following line to compile with thread support
 #THREADDEFINES = -DTCL_THREADS=1
@@ -58,10 +85,15 @@ NODEBUG = 1
 #	-DTCL_COMPILE_STATS	Enables byte compilation statistics gathering.
 #	-DUSE_TCLALLOC=0	Disables the Tcl memory allocator in favor
 #				of the native malloc implementation.  This is
-#				needed when using Purify.
+#				needed when using Purify.  For IA64, we do
+#				want to use the native allocator.
 #
 #DEBUGDEFINES = -DTCL_MEM_DEBUG -DTCL_COMPILE_DEBUG -DTCL_COMPILE_STATS
+!IF "$(MACHINE)" == "IA64"
+DEBUGDEFINES = -DUSE_TCLALLOC=0
+!ELSE
 #DEBUGDEFINES = -DUSE_TCLALLOC=0
+!ENDIF
 
 ######################################################################
 # Do not modify below this line
@@ -206,13 +238,6 @@ TCLOBJS = \
 
 TCLSTUBOBJS = $(TMPDIR)\tclStubLib.obj \
 
-cc32		= "$(TOOLS32)\bin\cl.exe"
-link32		= "$(TOOLS32)\bin\link.exe"
-rc32		= "$(TOOLS32_rc)\bin\rc.exe"
-include32	= -I"$(TOOLS32)\include"
-libpath32	= /LIBPATH:"$(TOOLS32)\lib"
-lib32		= "$(TOOLS32)\bin\lib.exe"
-
 WINDIR		= $(ROOT)\win
 GENERICDIR	= $(ROOT)\generic
 
@@ -226,12 +251,10 @@ TCL_DEFINES	= $(DEBUGDEFINES) $(THREADDEFINES)
 !IF "$(NODEBUG)" == "1"
 # This cranks the optimization level to maximize speed
 cdebug = -O2 -Gs -GD
-!ELSE
-!IF "$(MACHINE)" == "IA64"
+!ELSE IF "$(MACHINE)" == "IA64"
 cdebug = -Od -Zi
 !ELSE
 cdebug = -Z7 -Od -WX
-!ENDIF
 !ENDIF
 
 # declarations common to all compiler options
@@ -259,13 +282,11 @@ lflags	= /NODEFAULTLIB /NOLOGO /MACHINE:$(MACHINE) $(libpath32)
 !IF "$(MACHINE)" == "IX86"
 DLLENTRY = @12
 dlllflags = $(lflags) -entry:_DllMainCRTStartup$(DLLENTRY) -dll
-!ELSE
-!IF "$(MACHINE)" == "IA64"
+!ELSE IF "$(MACHINE)" == "IA64"
 DLLENTRY = @12
 dlllflags = $(lflags) -dll
 !ELSE
 dlllflags = $(lflags) -entry:_DllMainCRTStartup$(DLLENTRY) -dll
-!ENDIF
 !ENDIF
 
 conlflags = $(lflags) -subsystem:console -entry:mainCRTStartup
