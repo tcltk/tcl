@@ -1,3 +1,23 @@
+1999-06-25    <stanton@scriptics.com>
+
+	* tests/reg.test: 
+	* generic/regexec.c: Fixed bugs in non-greedy quantifiers.
+
+1999-06-23    <stanton@scriptics.com>
+
+	* unix/Makefile.in: Changed install-doc to install-man.
+
+	* tools/uniParse.tcl: 
+	* tools/uniClass.tcl: 
+	* tools/README: 
+	* tests/string.test: 
+	* generic/regc_locale.c: 
+	* generic/tclUniData.c: 
+	* generic/tclUtf.c: 
+	* doc/string.n: Updated Unicode character tables to reflect latest
+	Unicode 2.1 data.  Also rationalized "regexp" and "string is"
+	definitions of character classes.
+
 1999-06-21    <stanton@scriptics.com>
 
 	* unix/tclUnixThrd.c (TclpThreadCreate): Fixed memory leak where

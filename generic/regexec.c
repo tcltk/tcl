@@ -124,6 +124,7 @@ struct smalldfa {
 int exec _ANSI_ARGS_((regex_t *, CONST chr *, size_t, rm_detail_t *, size_t, regmatch_t [], int));
 static int find _ANSI_ARGS_((struct vars *, struct cnfa *, struct colormap *));
 static int cfind _ANSI_ARGS_((struct vars *, struct cnfa *, struct colormap *));
+static int cfindloop _ANSI_ARGS_((struct vars *, struct cnfa *, struct colormap *, struct dfa *, struct dfa *, chr **));
 static VOID zapsubs _ANSI_ARGS_((regmatch_t *, size_t));
 static VOID zapmem _ANSI_ARGS_((struct vars *, struct subre *));
 static VOID subset _ANSI_ARGS_((struct vars *, struct subre *, chr *, chr *));
@@ -265,7 +266,7 @@ struct colormap *cm;
 	struct smalldfa sa;
 	struct dfa *s = newdfa(v, &v->g->search, cm, &sa);
 	chr *begin;
-	chr *end = NULL;	/* needed to eliminate gcc warning */
+	chr *end = NULL;
 	chr *cold;
 	chr *open;		/* open and close of range of possible starts */
 	chr *close;
@@ -353,6 +354,47 @@ struct colormap *cm;
 	struct dfa *d = newdfa(v, cnfa, cm, &da);
 	struct smalldfa sa;
 	struct dfa *s = newdfa(v, &v->g->search, cm, &sa);
+	chr *cold;
+	int ret;
+
+	if (d == NULL)
+		return v->err;
+	if (s == NULL) {
+		freedfa(d);
+		return v->err;
+	}
+
+	ret = cfindloop(v, cnfa, cm, d, s, &cold);
+
+	freedfa(d);
+	freedfa(s);
+	if (ISERR())
+		return v->err;
+	if (v->g->cflags&REG_EXPECT) {
+		assert(v->details != NULL);
+		if (cold != NULL)
+			v->details->rm_extend.rm_so = OFF(cold);
+		else
+			v->details->rm_extend.rm_so = OFF(v->stop);
+		v->details->rm_extend.rm_eo = OFF(v->stop);	/* unknown */
+	}
+	return ret;
+}
+
+/*
+ - cfindloop - the heart of cfind
+ ^ static int cfindloop(struct vars *, struct cnfa *, struct colormap *,
+ ^	struct dfa *, struct dfa *, chr **);
+ */
+static int
+cfindloop(v, cnfa, cm, d, s, coldp)
+struct vars *v;
+struct cnfa *cnfa;
+struct colormap *cm;
+struct dfa *d;
+struct dfa *s;
+chr **coldp;			/* where to put coldstart pointer */
+{
 	chr *begin;
 	chr *end;
 	chr *cold;
@@ -362,16 +404,9 @@ struct colormap *cm;
 	chr *estop;
 	int er;
 	int shorter = v->g->tree->flags&SHORTER;
-	int ret = REG_NOMATCH;
 	int hitend;
 
-	if (d == NULL)
-		return v->err;
-	if (s == NULL) {
-		freedfa(d);
-		return v->err;
-	}
-
+	assert(d != NULL && s != NULL);
 	cold = NULL;
 	close = v->start;
 	do {
@@ -407,16 +442,17 @@ struct colormap *cm;
 						v->pmatch[0].rm_so = OFF(begin);
 						v->pmatch[0].rm_eo = OFF(end);
 					}
-					ret = REG_OKAY;
-					break;		/* NOTE BREAK OUT */
+					*coldp = cold;
+					return REG_OKAY;
 				}
 				if (er != REG_NOMATCH) {
 					ERR(er);
-					break;		/* NOTE BREAK OUT */
+					return er;
 				}
 				if ((shorter) ? end == estop : end == begin) {
 					/* no point in trying again */
-					break;		/* NOTE BREAK OUT */
+					*coldp = cold;
+					return REG_NOMATCH;
 				}
 				/* go around and try again */
 				if (shorter)
@@ -427,19 +463,8 @@ struct colormap *cm;
 		}
 	} while (close < v->stop);
 
-	freedfa(d);
-	freedfa(s);
-	if (ISERR())
-		return v->err;
-	if (v->g->cflags&REG_EXPECT) {
-		assert(v->details != NULL);
-		if (cold != NULL)
-			v->details->rm_extend.rm_so = OFF(cold);
-		else
-			v->details->rm_extend.rm_so = OFF(v->stop);
-		v->details->rm_extend.rm_eo = OFF(v->stop);	/* unknown */
-	}
-	return ret;
+	*coldp = cold;
+	return REG_NOMATCH;
 }
 
 /*
@@ -670,7 +695,7 @@ chr *end;			/* end of same */
 	int er;
 
 	assert(t != NULL);
-	MDEBUG(("cdissect %ld-%ld\n", LOFF(begin), LOFF(end)));
+	MDEBUG(("cdissect %ld-%ld %c\n", LOFF(begin), LOFF(end), t->op));
 
 	switch (t->op) {
 	case '=':		/* terminal node */

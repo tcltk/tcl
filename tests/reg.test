@@ -6,7 +6,7 @@
 #
 # Copyright (c) 1998, 1999 Henry Spencer.  All rights reserved.
 #
-# RCS: @(#) $Id: reg.test,v 1.4 1999/06/17 19:30:26 stanton Exp $
+# RCS: @(#) $Id: reg.test,v 1.5 1999/06/25 18:42:14 stanton Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     source [file join [pwd] [file dirname [info script]] defs.tcl]
@@ -850,6 +850,10 @@ m  5	P	ab??		ab	a
 m  6	P	ab??c		abc	abc
 m  7	PQ	"ab{2,4}?"	abbbb	abb
 m  8	PQ	"ab{2,4}?c"	abbbbc	abbbbc
+m  9	-	3z*		123zzzz456	3zzzz
+m 10	P	3z*?		123zzzz456	3
+m 11	-	z*4		123zzzz456	zzzz4
+m 12	P	z*?4		123zzzz456	zzzz4
 
 
 
