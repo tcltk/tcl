@@ -1,3 +1,9 @@
+1999-05-21    <redman@scriptics.com>
+
+	* win/tclWinPipe.c: Fix bug when launching command.com on
+	Win95/98.  Need to wait for the procInfo.hProcess of the process that
+	was created, not the hProcess of the current process.  [Bug: 2105]
+
 1999-05-14    <surles@scriptics.com>
 
 	* generic/tclBasic.c (Tcl_CreateInterp): Added introspection
