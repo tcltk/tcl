@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.38 2004/10/06 13:50:07 dkf Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.39 2004/10/26 21:52:37 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1840,7 +1840,7 @@ Tcl_SubstObj(interp, objPtr, flags)
 			Tcl_FreeParse(&nested);
 			p = nested.term + (nested.term < nested.end);
 			length = nested.end - p;
-			if (length == 0) {
+			if ((length == 0) && (nested.term == nested.end)) {
 			    /*
 			     * If we run out of string, blame the missing
 			     * close bracket on the last command, and do
