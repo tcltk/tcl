@@ -40,21 +40,6 @@
 static long numNsCreated = 0; 
 
 /*
- * Data structure used as the ClientData of imported commands: commands
- * created in an namespace when it imports a "real" command from another
- * namespace.
- */
-
-typedef struct ImportedCmdData {
-    Command *realCmdPtr;	/* "Real" command that this imported command
-                                 * refers to. */
-    Command *selfPtr;		/* Pointer to this imported command. Needed
-				 * only when deleting it in order to remove
-				 * it from the real command's linked list of
-				 * imported commands that refer to it. */
-} ImportedCmdData;
-
-/*
  * This structure contains a cached pointer to a namespace that is the
  * result of resolving the namespace's name in some other namespace. It is
  * the internal representation for a nsName object. It contains the
