@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: socket.test,v 1.1.2.8 1999/03/24 02:49:41 hershey Exp $
+# RCS: @(#) $Id: socket.test,v 1.1.2.9 1999/03/24 23:53:17 redman Exp $
 
 # Running socket tests with a remote server:
 # ------------------------------------------
@@ -65,6 +65,11 @@
 if {[lsearch [namespace children] ::tcltest] == -1} {
     source [file join [pwd] [file dirname [info script]] defs.tcl]
 }
+
+# Some tests require the testthread command
+
+set ::tcltest::testConfig(testthread) \
+	[expr {[info commands testthread] != {}}]
 
 #
 # If remoteServerIP or remoteServerPort are not set, check in the
@@ -1572,6 +1577,76 @@ test socket-12.3 {testing inheritance of accepted sockets} \
     removeFile script2
     set x
 } {accepted socket was not inherited}
+
+test socket-13.1 {Testing use of shared socket between two threads} \
+	{socket testthread} {
+
+    set mainthread [testthread names]
+    proc ThreadReap {} {
+	global mainthread
+	testthread errorproc ThreadNullError
+	while {[llength [testthread names]] > 1} {
+	    foreach tid [testthread names] {
+		if {$tid != $mainthread} {
+		    catch {testthread send -async $tid {testthread exit}}
+		    update
+		}
+	    }
+	}
+	testthread errorproc ThreadError
+	return [llength [testthread names]]
+    }
+
+    removeFile script
+
+    set f [open script w]
+    puts $f {
+	set f [socket -server accept 2828]
+	proc accept {s a p} {
+            fileevent $s readable [list echo $s]
+            fconfigure $s -buffering line
+        }
+	proc echo {s} {
+	     global i
+             set l [gets $s]
+             if {[eof $s]} {
+                 global x
+                 close $s
+                 set x done
+             } else { 
+	         incr i
+                 puts $s $l
+             }
+	}
+	set i 0
+	puts ready
+	set timer [after 20000 "set x done"]
+	vwait x
+	after cancel $timer
+	close $f
+	puts "done $i"
+
+	# thread cleans itself up.
+	testhread exit
+    }
+    close $f
+    
+    # create a thread
+    set serverthread [testthread create { source script } ]
+    update
+    
+
+    set s [socket 127.0.0.1 2828]
+    fconfigure $s -buffering line
+    catch {
+	puts $s "hello"
+	gets $s result
+    }
+    close $s
+
+    ThreadReap
+    set result
+} hello
 
 # cleanup
 if {[string match sock* $commandSocket] == 1} {

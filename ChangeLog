@@ -1,3 +1,11 @@
+1999-03-24    <redman@scriptics.com>
+
+	* win/tclWinSock.c: Make sockets thread-safe on Windows. The
+	current implementation uses windows to handle events on the
+	socket, one for each thread (thread local storage). Previously,
+	there was only one window shared between threads, which didn't
+	work. [Bug: 1326]
+
 1999-03-23    <stanton@scriptics.com>
 
 	* tools/tcl.wse: Fixed file association to look in the right place

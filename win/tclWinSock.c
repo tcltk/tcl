@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinSock.c,v 1.1.2.6 1999/03/10 06:49:30 stanton Exp $
+ * RCS: @(#) $Id: tclWinSock.c,v 1.1.2.7 1999/03/24 23:53:18 redman Exp $
  */
 
 #include "tclWinInt.h"
@@ -34,7 +34,6 @@ TCL_DECLARE_MUTEX(socketMutex)
 
 static struct {
     HINSTANCE hInstance;	/* Handle to WinSock library. */
-    HWND hwnd;			/* Handle to window for socket messages. */
     SOCKET (PASCAL FAR *accept)(SOCKET s, struct sockaddr FAR *addr,
 	    int FAR *addrlen);
     int (PASCAL FAR *bind)(SOCKET s, const struct sockaddr FAR *addr,
@@ -147,6 +146,7 @@ typedef struct ThreadSpecificData {
      * Every open socket has an entry on the following list.
      */
     
+    HWND hwnd;			/* Handle to window for socket messages. */
     SocketInfo *socketList;
 } ThreadSpecificData;
 
@@ -245,7 +245,7 @@ InitSockets()
 {
     WSADATA wsaData;
     OSVERSIONINFO info;
-    WNDCLASSA class;
+    static WNDCLASSA class;
     ThreadSpecificData *tsdPtr = 
 	(ThreadSpecificData *)TclThreadDataKeyGet(&dataKey);
 
@@ -388,18 +388,6 @@ InitSockets()
 	}
 	
 	/*
-	 * Initialize the winsock library and check the version number.
-	 */
-    
-	if ((*winSock.WSAStartup)(WSA_VERSION_REQD, &wsaData) != 0) {
-	    goto unloadLibrary;
-	}
-	if (wsaData.wVersion != WSA_VERSION_REQD) {
-	    (*winSock.WSACleanup)();
-	    goto unloadLibrary;
-	}
-    
-	/*
 	 * Create the async notification window with a new class.  We
 	 * must create a new class to avoid a Windows 95 bug that causes
 	 * us to get the wrong message number for socket events if the
@@ -416,15 +404,21 @@ InitSockets()
 	class.lpfnWndProc = SocketProc;
 	class.hIcon = NULL;
 	class.hCursor = NULL;
-    
+
 	if (RegisterClassA(&class)) {
-	    winSock.hwnd = CreateWindowA("TclSocket", "TclSocket", 
-		    WS_TILED, 0, 0, 0, 0, NULL, NULL, class.hInstance, NULL);
-	} else {
-	    winSock.hwnd = NULL;
-	}
-	if (winSock.hwnd == NULL) {
 	    TclWinConvertError(GetLastError());
+	    (*winSock.WSACleanup)();
+	    goto unloadLibrary;
+	}
+	
+	/*
+	 * Initialize the winsock library and check the version number.
+	 */
+    
+	if ((*winSock.WSAStartup)(WSA_VERSION_REQD, &wsaData) != 0) {
+	    goto unloadLibrary;
+	}
+	if (wsaData.wVersion != WSA_VERSION_REQD) {
 	    (*winSock.WSACleanup)();
 	    goto unloadLibrary;
 	}
@@ -437,6 +431,14 @@ InitSockets()
     if (tsdPtr == NULL) {
 	tsdPtr = TCL_TSD_INIT(&dataKey);
 	tsdPtr->socketList = NULL;
+    
+	tsdPtr->hwnd = CreateWindowA("TclSocket", "TclSocket", 
+		WS_TILED, 0, 0, 0, 0, NULL, NULL, class.hInstance, NULL);
+
+	if (tsdPtr->hwnd == NULL) {
+	    goto unloadLibrary;
+	}
+	    
 	Tcl_CreateEventSource(SocketSetupProc, SocketCheckProc, NULL);
 	Tcl_CreateThreadExitHandler(SocketThreadExitHandler, NULL);
     }
@@ -500,7 +502,6 @@ SocketExitHandler(clientData)
 {
     Tcl_MutexLock(&socketMutex);
     if (winSock.hInstance) {
-	DestroyWindow(winSock.hwnd);
 	UnregisterClassA("TclSocket", TclWinGetTclInstance());
 	(*winSock.WSACleanup)();
 	FreeLibrary(winSock.hInstance);
@@ -533,6 +534,11 @@ static void
 SocketThreadExitHandler(clientData)
     ClientData clientData;              /* Not used. */
 {
+    ThreadSpecificData *tsdPtr = 
+	(ThreadSpecificData *)TclThreadDataKeyGet(&dataKey);
+
+    DestroyWindow(tsdPtr->hwnd);
+
     Tcl_DeleteEventSource(SocketSetupProc, SocketCheckProc, NULL);
 }
 
@@ -766,7 +772,7 @@ SocketEventProc(evPtr, flags)
 	 * async select handler and keep waiting.
 	 */
 
-	(void) (*winSock.WSAAsyncSelect)(infoPtr->socket, winSock.hwnd, 0, 0);
+	(void) (*winSock.WSAAsyncSelect)(infoPtr->socket, tsdPtr->hwnd, 0, 0);
 
 	FD_ZERO(&readFds);
 	FD_SET(infoPtr->socket, &readFds);
@@ -776,7 +782,7 @@ SocketEventProc(evPtr, flags)
 	if ((*winSock.select)(0, &readFds, NULL, NULL, &timeout) != 0) {
 	    mask |= TCL_READABLE;
 	} else {
-	    (void) (*winSock.WSAAsyncSelect)(infoPtr->socket, winSock.hwnd,
+	    (void) (*winSock.WSAAsyncSelect)(infoPtr->socket, tsdPtr->hwnd,
 		    SOCKET_MESSAGE, infoPtr->selectEvents);
 	    infoPtr->readyEvents &= ~(FD_READ);
 	}
@@ -964,6 +970,8 @@ CreateSocket(interp, port, host, server, myaddr, myport, async)
     struct sockaddr_in mysockaddr;	/* Socket address for client */
     SOCKET sock;
     SocketInfo *infoPtr;		/* The returned value. */
+    ThreadSpecificData *tsdPtr = 
+	(ThreadSpecificData *)TclThreadDataKeyGet(&dataKey);
 
     /*
      * Check that WinSock is initialized; do not call it if not, to
@@ -1107,7 +1115,7 @@ CreateSocket(interp, port, host, server, myaddr, myport, async)
      */
 
     (*winSock.ioctlsocket)(sock, FIONBIO, &flag);
-    (void) (*winSock.WSAAsyncSelect)(infoPtr->socket, winSock.hwnd,
+    (void) (*winSock.WSAAsyncSelect)(infoPtr->socket, tsdPtr->hwnd,
 	    SOCKET_MESSAGE, infoPtr->selectEvents);
 
     return infoPtr;
@@ -1225,6 +1233,8 @@ WaitForSocketEvent(infoPtr, events, errorCodePtr)
     MSG msg;
     int result = 1;
     int oldMode;
+    ThreadSpecificData *tsdPtr = 
+	(ThreadSpecificData *)TclThreadDataKeyGet(&dataKey);
 
     /*
      * Be sure to disable event servicing so we are truly modal.
@@ -1236,8 +1246,8 @@ WaitForSocketEvent(infoPtr, events, errorCodePtr)
      * Reset WSAAsyncSelect so we have a fresh set of events pending.
      */
 
-    (void) (*winSock.WSAAsyncSelect)(infoPtr->socket, winSock.hwnd, 0, 0);
-    (void) (*winSock.WSAAsyncSelect)(infoPtr->socket, winSock.hwnd,
+    (void) (*winSock.WSAAsyncSelect)(infoPtr->socket, tsdPtr->hwnd, 0, 0);
+    (void) (*winSock.WSAAsyncSelect)(infoPtr->socket, tsdPtr->hwnd,
 	    SOCKET_MESSAGE, infoPtr->selectEvents);
 
     while (1) {
@@ -1245,7 +1255,7 @@ WaitForSocketEvent(infoPtr, events, errorCodePtr)
 	 * Process all outstanding messages on the socket window.
 	 */
 
-	while (PeekMessage(&msg, winSock.hwnd, 0, 0, PM_REMOVE)) {
+	while (PeekMessage(&msg, tsdPtr->hwnd, 0, 0, PM_REMOVE)) {
 	    DispatchMessage(&msg);
 	}
 	
@@ -1357,6 +1367,8 @@ Tcl_MakeTcpClientChannel(sock)
 {
     SocketInfo *infoPtr;
     char channelName[16 + TCL_INTEGER_SPACE];
+    ThreadSpecificData *tsdPtr = 
+	(ThreadSpecificData *)TclThreadDataKeyGet(&dataKey);
 
     if (TclpHasSockets(NULL) != TCL_OK) {
 	return NULL;
@@ -1375,7 +1387,7 @@ Tcl_MakeTcpClientChannel(sock)
      */
 
     infoPtr->selectEvents = FD_READ | FD_CLOSE | FD_WRITE;
-    (void) (*winSock.WSAAsyncSelect)(infoPtr->socket, winSock.hwnd,
+    (void) (*winSock.WSAAsyncSelect)(infoPtr->socket, tsdPtr->hwnd,
 	    SOCKET_MESSAGE, infoPtr->selectEvents);
 
     wsprintfA(channelName, "sock%d", infoPtr->socket);
@@ -1470,6 +1482,8 @@ TcpAccept(infoPtr)
     struct sockaddr_in addr;
     int len;
     char channelName[16 + TCL_INTEGER_SPACE];
+    ThreadSpecificData *tsdPtr = 
+	(ThreadSpecificData *)TclThreadDataKeyGet(&dataKey);
 
     /*
      * Accept the incoming connection request.
@@ -1509,7 +1523,7 @@ TcpAccept(infoPtr)
      */
 
     newInfoPtr->selectEvents = (FD_READ | FD_WRITE | FD_CLOSE);
-    (void) (*winSock.WSAAsyncSelect)(newInfoPtr->socket, winSock.hwnd, 
+    (void) (*winSock.WSAAsyncSelect)(newInfoPtr->socket, tsdPtr->hwnd, 
 	    SOCKET_MESSAGE, newInfoPtr->selectEvents);
 
     wsprintfA(channelName, "sock%d", newInfoPtr->socket);
@@ -1564,6 +1578,8 @@ TcpInputProc(instanceData, buf, toRead, errorCodePtr)
     SocketInfo *infoPtr = (SocketInfo *) instanceData;
     int bytesRead;
     int error;
+    ThreadSpecificData *tsdPtr = 
+	(ThreadSpecificData *)TclThreadDataKeyGet(&dataKey);
     
     *errorCodePtr = 0;
 
@@ -1606,7 +1622,7 @@ TcpInputProc(instanceData, buf, toRead, errorCodePtr)
      */
 
     while (1) {
-	(void) (*winSock.WSAAsyncSelect)(infoPtr->socket, winSock.hwnd,
+	(void) (*winSock.WSAAsyncSelect)(infoPtr->socket, tsdPtr->hwnd,
 		0, 0);
 	bytesRead = (*winSock.recv)(infoPtr->socket, buf, toRead, 0);
 	infoPtr->readyEvents &= ~(FD_READ);
@@ -1656,7 +1672,7 @@ TcpInputProc(instanceData, buf, toRead, errorCodePtr)
   	}
     }
     
-    (void) (*winSock.WSAAsyncSelect)(infoPtr->socket, winSock.hwnd,
+    (void) (*winSock.WSAAsyncSelect)(infoPtr->socket, tsdPtr->hwnd,
  	    SOCKET_MESSAGE, infoPtr->selectEvents);
     return bytesRead;
 }
@@ -1688,6 +1704,8 @@ TcpOutputProc(instanceData, buf, toWrite, errorCodePtr)
     SocketInfo *infoPtr = (SocketInfo *) instanceData;
     int bytesWritten;
     int error;
+    ThreadSpecificData *tsdPtr = 
+	(ThreadSpecificData *)TclThreadDataKeyGet(&dataKey);
 
     *errorCodePtr = 0;
 
@@ -1713,7 +1731,7 @@ TcpOutputProc(instanceData, buf, toWrite, errorCodePtr)
     }
 
     while (1) {
-	(void) (*winSock.WSAAsyncSelect)(infoPtr->socket, winSock.hwnd,
+	(void) (*winSock.WSAAsyncSelect)(infoPtr->socket, tsdPtr->hwnd,
 		0, 0);
 	bytesWritten = (*winSock.send)(infoPtr->socket, buf, toWrite, 0);
 	if (bytesWritten != SOCKET_ERROR) {
@@ -1763,7 +1781,7 @@ TcpOutputProc(instanceData, buf, toWrite, errorCodePtr)
 	}
     }
 
-    (void) (*winSock.WSAAsyncSelect)(infoPtr->socket, winSock.hwnd,
+    (void) (*winSock.WSAAsyncSelect)(infoPtr->socket, tsdPtr->hwnd,
 	    SOCKET_MESSAGE, infoPtr->selectEvents);
     return bytesWritten;
 }
