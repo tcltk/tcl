@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPipe.c,v 1.28 2002/12/04 03:59:17 davygrvy Exp $
+ * RCS: @(#) $Id: tclWinPipe.c,v 1.29 2002/12/04 05:41:14 davygrvy Exp $
  */
 
 #include "tclWinInt.h"
@@ -1861,7 +1861,7 @@ PipeClose2Proc(
 	 */
 
 	if (HasConsole() && pipePtr->numPids) {
-	    GenerateConsoleCtrlEvent(CTRL_C_EVENT,
+	    GenerateConsoleCtrlEvent(CTRL_BREAK_EVENT,
 		    TclpGetPid(pipePtr->pidPtr[0]));
 	}
 
