@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.34.2.3 2001/09/27 13:49:07 dkf Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.34.2.4 2001/10/05 13:48:34 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -244,6 +244,10 @@ static int		ExprSrandFunc _ANSI_ARGS_((Tcl_Interp *interp,
 			    ExecEnv *eePtr, ClientData clientData));
 static int		ExprUnaryFunc _ANSI_ARGS_((Tcl_Interp *interp,
 			    ExecEnv *eePtr, ClientData clientData));
+#ifndef TCL_WIDE_INT_IS_LONG
+static int		ExprWideFunc _ANSI_ARGS_((Tcl_Interp *interp,
+			    ExecEnv *eePtr, ClientData clientData));
+#endif
 #ifdef TCL_COMPILE_STATS
 static int              EvalStatsCmd _ANSI_ARGS_((ClientData clientData,
                             Tcl_Interp *interp, int argc, char **argv));
@@ -312,6 +316,11 @@ BuiltinFunc builtinFuncTable[] = {
     {"rand", 0, {TCL_EITHER}, ExprRandFunc, 0},	/* NOTE: rand takes no args. */
     {"round", 1, {TCL_EITHER}, ExprRoundFunc, 0},
     {"srand", 1, {TCL_INT}, ExprSrandFunc, 0},
+#ifdef TCL_WIDE_INT_IS_LONG
+    {"wide", 1, {TCL_EITHER}, ExprIntFunc, 0},
+#else
+    {"wide", 1, {TCL_EITHER}, ExprWideFunc, 0},
+#endif
     {0},
 };
 
@@ -1841,6 +1850,10 @@ TclExecuteByteCode(interp, codePtr)
 		    b = (valuePtr->internalRep.longValue != 0);
 		} else if (valuePtr->typePtr == &tclDoubleType) {
 		    b = (valuePtr->internalRep.doubleValue != 0.0);
+#ifndef TCL_WIDE_INT_IS_LONG
+		} else if (valuePtr->typePtr == &tclWideIntType) {
+		    b = (valuePtr->internalRep.wideValue != Tcl_LongAsWide(0));
+#endif
 		} else {
 		    result = Tcl_GetBooleanFromObj(interp, valuePtr, &b);
 		    if (result != TCL_OK) {
@@ -1881,6 +1894,10 @@ TclExecuteByteCode(interp, codePtr)
 		    b = (valuePtr->internalRep.longValue != 0);
 		} else if (valuePtr->typePtr == &tclDoubleType) {
 		    b = (valuePtr->internalRep.doubleValue != 0.0);
+#ifndef TCL_WIDE_INT_IS_LONG
+		} else if (valuePtr->typePtr == &tclWideIntType) {
+		    b = (valuePtr->internalRep.wideValue != Tcl_LongAsWide(0));
+#endif
 		} else {
 		    result = Tcl_GetBooleanFromObj(interp, valuePtr, &b);
 		    if (result != TCL_OK) {
@@ -4006,13 +4023,22 @@ VerifyExprObjType(interp, objPtr)
     if ((objPtr->typePtr == &tclIntType) ||
 	    (objPtr->typePtr == &tclDoubleType)) {
 	return TCL_OK;
+#ifndef TCL_WIDE_INT_IS_LONG
+    } else if (objPtr->typePtr == &tclWideIntType) {
+	return TCL_OK;
+#endif
     } else {
 	int length, result = TCL_OK;
 	char *s = Tcl_GetStringFromObj(objPtr, &length);
 	
 	if (TclLooksLikeInt(s, length)) {
+#ifdef TCL_WIDE_INT_IS_LONG
 	    long i;
 	    result = Tcl_GetLongFromObj((Tcl_Interp *) NULL, objPtr, &i);
+#else
+	    Tcl_WideInt w;
+	    result = Tcl_GetWideIntFromObj((Tcl_Interp *) NULL, objPtr, &w);
+#endif
 	} else {
 	    double d;
 	    result = Tcl_GetDoubleFromObj((Tcl_Interp *) NULL, objPtr, &d);
@@ -4092,6 +4118,10 @@ ExprUnaryFunc(interp, eePtr, clientData)
     
     if (valuePtr->typePtr == &tclIntType) {
 	d = (double) valuePtr->internalRep.longValue;
+#ifndef TCL_WIDE_INT_IS_LONG
+    } else if (valuePtr->typePtr == &tclWideIntType) {
+	d = Tcl_WideAsDouble(valuePtr->internalRep.wideValue);
+#endif
     } else {
 	d = valuePtr->internalRep.doubleValue;
     }
@@ -4162,12 +4192,20 @@ ExprBinaryFunc(interp, eePtr, clientData)
 
     if (valuePtr->typePtr == &tclIntType) {
 	d1 = (double) valuePtr->internalRep.longValue;
+#ifndef TCL_WIDE_INT_IS_LONG
+    } else if (valuePtr->typePtr == &tclWideIntType) {
+	d1 = Tcl_WideAsDouble(valuePtr->internalRep.wideValue);
+#endif
     } else {
 	d1 = valuePtr->internalRep.doubleValue;
     }
 
     if (value2Ptr->typePtr == &tclIntType) {
 	d2 = (double) value2Ptr->internalRep.longValue;
+#ifndef TCL_WIDE_INT_IS_LONG
+    } else if (value2Ptr->typePtr == &tclWideIntType) {
+	d2 = Tcl_WideAsDouble(value2Ptr->internalRep.wideValue);
+#endif
     } else {
 	d2 = value2Ptr->internalRep.doubleValue;
     }
@@ -4250,6 +4288,25 @@ ExprAbsFunc(interp, eePtr, clientData)
 	    iResult = i;
 	}	    
 	PUSH_OBJECT(Tcl_NewLongObj(iResult));
+#ifndef TCL_WIDE_INT_IS_LONG
+    } else if (valuePtr->typePtr == &tclWideIntType) {
+	Tcl_WideInt wResult, w = valuePtr->internalRep.wideValue;
+	if (w < Tcl_LongAsWide(0)) {
+	    wResult = -w;
+	    if (wResult < 0) {
+		Tcl_ResetResult(interp);
+		Tcl_AppendToObj(Tcl_GetObjResult(interp),
+		        "integer value too large to represent", -1);
+		Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW",
+			"integer value too large to represent", (char *) NULL);
+		result = TCL_ERROR;
+		goto done;
+	    }
+	} else {
+	    wResult = w;
+	}	    
+	PUSH_OBJECT(Tcl_NewWideIntObj(wResult));
+#endif
     } else {
 	d = valuePtr->internalRep.doubleValue;
 	if (d < 0.0) {
@@ -4309,6 +4366,10 @@ ExprDoubleFunc(interp, eePtr, clientData)
 
     if (valuePtr->typePtr == &tclIntType) {
 	dResult = (double) valuePtr->internalRep.longValue;
+#ifndef TCL_WIDE_INT_IS_LONG
+    } else if (valuePtr->typePtr == &tclWideIntType) {
+	d = Tcl_WideAsDouble(valuePtr->internalRep.wideValue);
+#endif
     } else {
 	dResult = valuePtr->internalRep.doubleValue;
     }
@@ -4364,6 +4425,10 @@ ExprIntFunc(interp, eePtr, clientData)
     
     if (valuePtr->typePtr == &tclIntType) {
 	iResult = valuePtr->internalRep.longValue;
+#ifndef TCL_WIDE_INT_IS_LONG
+    } else if (valuePtr->typePtr == &tclWideIntType) {
+	iResult = Tcl_WideAsLong(valuePtr->internalRep.wideValue);
+#endif
     } else {
 	d = valuePtr->internalRep.doubleValue;
 	if (d < 0.0) {
@@ -4405,6 +4470,87 @@ ExprIntFunc(interp, eePtr, clientData)
     DECACHE_STACK_INFO();
     return result;
 }
+
+#ifndef TCL_WIDE_INT_IS_LONG
+static int
+ExprWideFunc(interp, eePtr, clientData)
+    Tcl_Interp *interp;		/* The interpreter in which to execute the
+				 * function. */
+    ExecEnv *eePtr;		/* Points to the environment for executing
+				 * the function. */
+    ClientData clientData;	/* Ignored. */
+{
+    Tcl_Obj **stackPtr;        /* Cached evaluation stack base pointer. */
+    register int stackTop;	/* Cached top index of evaluation stack. */
+    register Tcl_Obj *valuePtr;
+    Tcl_WideInt wResult;
+    double d;
+    int result;
+
+    /*
+     * Set stackPtr and stackTop from eePtr.
+     */
+
+    result = TCL_OK;
+    CACHE_STACK_INFO();
+
+    /*
+     * Pop the argument from the evaluation stack.
+     */
+
+    valuePtr = POP_OBJECT();
+    
+    if (VerifyExprObjType(interp, valuePtr) != TCL_OK) {
+	result = TCL_ERROR;
+	goto done;
+    }
+    
+    if (valuePtr->typePtr == &tclWideIntType) {
+	wResult = valuePtr->internalRep.wideValue;
+    } else if (valuePtr->typePtr == &tclIntType) {
+	wResult = Tcl_LongAsWide(valuePtr->internalRep.longValue);
+    } else {
+	d = valuePtr->internalRep.doubleValue;
+	if (d < 0.0) {
+	    if (d < Tcl_WideAsDouble(LLONG_MIN)) {
+		tooLarge:
+		Tcl_ResetResult(interp);
+		Tcl_AppendToObj(Tcl_GetObjResult(interp),
+		        "integer value too large to represent", -1);
+		Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW",
+			"integer value too large to represent", (char *) NULL);
+		result = TCL_ERROR;
+		goto done;
+	    }
+	} else {
+	    if (d > Tcl_WideAsDouble(LLONG_MAX)) {
+		goto tooLarge;
+	    }
+	}
+	if (IS_NAN(d) || IS_INF(d)) {
+	    TclExprFloatError(interp, d);
+	    result = TCL_ERROR;
+	    goto done;
+	}
+	wResult = Tcl_DoubleAsWide(d);
+    }
+
+    /*
+     * Push a Tcl object with the result.
+     */
+    
+    PUSH_OBJECT(Tcl_NewWideIntObj(wResult));
+
+    /*
+     * Reflect the change to stackTop back in eePtr.
+     */
+
+    done:
+    Tcl_DecrRefCount(valuePtr);
+    DECACHE_STACK_INFO();
+    return result;
+}
+#endif
 
 static int
 ExprRandFunc(interp, eePtr, clientData)
@@ -4542,6 +4688,11 @@ ExprRoundFunc(interp, eePtr, clientData)
     
     if (valuePtr->typePtr == &tclIntType) {
 	iResult = valuePtr->internalRep.longValue;
+#ifndef TCL_WIDE_INT_IS_LONG
+    } else if (valuePtr->typePtr == &tclWideIntType) {
+	PUSH_OBJECT(Tcl_NewWideIntObj(valuePtr->internalRep.wideValue));
+	goto done;
+#endif
     } else {
 	d = valuePtr->internalRep.doubleValue;
 	if (d < 0.0) {
@@ -4622,6 +4773,10 @@ ExprSrandFunc(interp, eePtr, clientData)
 
     if (valuePtr->typePtr == &tclIntType) {
 	i = valuePtr->internalRep.longValue;
+#ifndef TCL_WIDE_INT_IS_LONG
+    } else if (valuePtr->typePtr == &tclWideIntType) {
+	i = Tcl_WideAsLong(valuePtr->internalRep.wideValue);
+#endif
     } else {
 	/*
 	 * At this point, the only other possible type is double
@@ -4759,15 +4914,39 @@ ExprCallMathFunc(interp, eePtr, objc, objv)
 	    if (mathFuncPtr->argTypes[k] == TCL_DOUBLE) {
 		args[k].type = TCL_DOUBLE;
 		args[k].doubleValue = i;
+#ifndef TCL_WIDE_INT_IS_LONG
+	    } else if (mathFuncPtr->argTypes[k] == TCL_WIDE_INT) {
+		args[k].type = TCL_WIDE_INT;
+		args[k].wideValue = Tcl_LongAsWide(i);
+#endif
 	    } else {
 		args[k].type = TCL_INT;
 		args[k].intValue = i;
 	    }
+#ifndef TCL_WIDE_INT_IS_LONG
+	} else if (valuePtr->typePtr == &tclWideIntType) {
+	    Tcl_WideInt w = valuePtr->internalRep.wideValue;
+	    if (mathFuncPtr->argTypes[k] == TCL_DOUBLE) {
+		args[k].type = TCL_DOUBLE;
+		args[k].wideValue = Tcl_WideAsDouble(w);
+	    } else if (mathFuncPtr->argTypes[k] == TCL_INT) {
+		args[k].type = TCL_INT;
+		args[k].wideValue = Tcl_WideAsLong(w);
+	    } else {
+		args[k].type = TCL_WIDE_INT;
+		args[k].wideValue = w;
+	    }
+#endif
 	} else {
 	    d = valuePtr->internalRep.doubleValue;
 	    if (mathFuncPtr->argTypes[k] == TCL_INT) {
 		args[k].type = TCL_INT;
 		args[k].intValue = (long) d;
+#ifndef TCL_WIDE_INT_IS_LONG
+	    } else if (mathFuncPtr->argTypes[k] == TCL_WIDE_INT) {
+		args[k].type = TCL_WIDE_INT;
+		args[k].wideValue = Tcl_DoubleAsWide(d);
+#endif
 	    } else {
 		args[k].type = TCL_DOUBLE;
 		args[k].doubleValue = d;

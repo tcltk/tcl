@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.102.2.11 2001/10/05 08:14:56 dkf Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.102.2.12 2001/10/05 13:48:34 dkf Exp $
  */
 
 #ifndef _TCL
@@ -364,6 +364,8 @@ typedef int *ClientData;
  *	implementation of the wideInt Tcl_ObjType.
  * Tcl_WideAsLong - forgetful converter from wideInt to long.
  * Tcl_LongAsWide - sign-extending converter from long to wideInt.
+ * Tcl_WideAsDouble - converter from wideInt to double.
+ * Tcl_DoubleAsWide - converter from double to wideInt.
  *
  * The following invariant should hold for any long value 'longVal':
  *	longVal == Tcl_WideAsLong(Tcl_LongAsWide(longVal))
@@ -386,8 +388,10 @@ typedef int *ClientData;
 typedef long		Tcl_WideInt;
 #   define TCL_WIDE_INT_IS_LONG
 #   define TCL_FILE_OFFSETS_ARE_LONG
-#   define Tcl_WideAsLong(val)	(val)
-#   define Tcl_LongAsWide(val)	(val)
+#   define Tcl_WideAsLong(val)		((long)(val))
+#   define Tcl_LongAsWide(val)		((long)(val))
+#   define Tcl_WideAsDouble(val)	((double)((long)(val)))
+#   define Tcl_DoubleAsWide(val)	((long)((double)(val)))
 #else
 /*
  * Type of 64-bit values on 32-bit systems.  I think this is the ISO
@@ -395,8 +399,10 @@ typedef long		Tcl_WideInt;
  */
 typedef long long	Tcl_WideInt;
 #   define TCL_PRINTF_SUPPORTS_LL /*True on Solaris/SPARC and Linux/glibc2.1*/
-#   define Tcl_WideAsLong(val)	((long)(val))
-#   define Tcl_LongAsWide(val)	((Tcl_WideInt)(val))
+#   define Tcl_WideAsLong(val)		((long)((Tcl_WideInt)(val)))
+#   define Tcl_LongAsWide(val)		((Tcl_WideInt)((long)(val)))
+#   define Tcl_WideAsDouble(val)	((double)((Tcl_WideInt)(val)))
+#   define Tcl_DoubleAsWide(val)	((Tcl_WideInt)((double)(val)))
 #endif /* _LP64 */
 
 #ifdef TCL_FILE_OFFSETS_ARE_LONG
@@ -622,12 +628,20 @@ typedef Tcl_StatBuf *Tcl_Stat_;
 /*
  * Argument descriptors for math function callbacks in expressions:
  */
-typedef enum {TCL_INT, TCL_DOUBLE, TCL_EITHER} Tcl_ValueType;
+typedef enum {
+    TCL_INT, TCL_DOUBLE, TCL_EITHER, TCL_WIDE_INT
+#ifdef TCL_WIDE_INT_IS_LONG
+    = TCL_INT
+#endif
+} Tcl_ValueType;
 typedef struct Tcl_Value {
     Tcl_ValueType type;		/* Indicates intValue or doubleValue is
 				 * valid, or both. */
     long intValue;		/* Integer value. */
     double doubleValue;		/* Double-precision floating value. */
+#ifndef TCL_WIDE_INT_IS_LONG
+    Tcl_WideInt wideValue;	/* Wide (min. 64-bit) integer value. */
+#endif
 } Tcl_Value;
 
 /*
