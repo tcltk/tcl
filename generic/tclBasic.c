@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.30 2001/04/24 20:59:17 kennykb Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.31 2001/04/25 09:44:49 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1893,7 +1893,7 @@ TclRenameCommand(interp, oldName, newName)
     char *newName;                      /* New command name. */
 {
     Interp *iPtr = (Interp *) interp;
-    char *newTail;
+    CONST char *newTail;
     Namespace *cmdNsPtr, *newNsPtr, *dummy1, *dummy2;
     Tcl_Command cmd;
     Command *cmdPtr;

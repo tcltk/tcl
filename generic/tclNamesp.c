@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.21 2001/04/24 20:59:17 kennykb Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.22 2001/04/25 09:44:49 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -445,7 +445,7 @@ Tcl_CreateNamespace(interp, name, clientData, deleteProc)
     register Namespace *nsPtr, *ancestorPtr;
     Namespace *parentPtr, *dummy1Ptr, *dummy2Ptr;
     Namespace *globalNsPtr = iPtr->globalNsPtr;
-    char *simpleName;
+    CONST char *simpleName;
     Tcl_HashEntry *entryPtr;
     Tcl_DString buffer1, buffer2;
     int newEntry;
@@ -912,7 +912,8 @@ Tcl_Export(interp, namespacePtr, pattern, resetListFirst)
 #define INIT_EXPORT_PATTERNS 5    
     Namespace *nsPtr, *exportNsPtr, *dummyPtr;
     Namespace *currNsPtr = (Namespace *) Tcl_GetCurrentNamespace(interp);
-    char *simplePattern, *patternCpy;
+    CONST char *simplePattern;
+    char *patternCpy;
     int neededElems, len, i;
 
     /*
@@ -1111,7 +1112,8 @@ Tcl_Import(interp, namespacePtr, pattern, allowOverwrite)
     Interp *iPtr = (Interp *) interp;
     Namespace *nsPtr, *importNsPtr, *dummyPtr;
     Namespace *currNsPtr = (Namespace *) Tcl_GetCurrentNamespace(interp);
-    char *simplePattern, *cmdName;
+    CONST char *simplePattern;
+    char *cmdName;
     register Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
     Command *cmdPtr, *realCmdPtr;
@@ -1340,7 +1342,8 @@ Tcl_ForgetImport(interp, namespacePtr, pattern)
 				  * imported. */
 {
     Namespace *nsPtr, *importNsPtr, *dummyPtr, *actualCtxPtr;
-    char *simplePattern, *cmdName;
+    CONST char *simplePattern;
+    char *cmdName;
     register Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
     Command *cmdPtr;
@@ -1890,7 +1893,7 @@ Tcl_FindNamespace(interp, name, contextNsPtr, flags)
 				  * TCL_LEAVE_ERR_MSG flags. */
 {
     Namespace *nsPtr, *dummy1Ptr, *dummy2Ptr;
-    char *dummy;
+    CONST char *dummy;
 
     /*
      * Find the namespace(s) that contain the specified namespace name.
@@ -1957,7 +1960,7 @@ Tcl_FindCommand(interp, name, contextNsPtr, flags)
 
     ResolverScheme *resPtr;
     Namespace *nsPtr[2], *cxtNsPtr;
-    char *simpleName;
+    CONST char *simpleName;
     register Tcl_HashEntry *entryPtr;
     register Command *cmdPtr;
     register int search;
@@ -2088,7 +2091,7 @@ Tcl_FindNamespaceVar(interp, name, contextNsPtr, flags)
     Interp *iPtr = (Interp*)interp;
     ResolverScheme *resPtr;
     Namespace *nsPtr[2], *cxtNsPtr;
-    char *simpleName;
+    CONST char *simpleName;
     Tcl_HashEntry *entryPtr;
     Var *varPtr;
     register int search;
@@ -3829,7 +3832,8 @@ SetNsNameFromAny(interp, objPtr)
     register Tcl_Obj *objPtr;	/* The object to convert. */
 {
     register Tcl_ObjType *oldTypePtr = objPtr->typePtr;
-    char *name, *dummy;
+    char *name;
+    CONST char *dummy;
     Namespace *nsPtr, *dummy1Ptr, *dummy2Ptr;
     register ResolvedNsName *resNamePtr;
 
