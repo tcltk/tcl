@@ -1,5 +1,6 @@
 2000-08-08  Jeff Hobbs  <hobbs@scriptics.com>
 
+	* library/msgcat1.0/pkgIndex.tcl: 
 	* library/msgcat1.0/msgcat.tcl: bumped msgcat version to 1.1.
 
 2000-08-07  Jeff Hobbs  <hobbs@scriptics.com>
