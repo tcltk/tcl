@@ -1,5 +1,11 @@
 2000-09-06  Jeff Hobbs  <hobbs@scriptics.com>
 
+	* win/tclWinLoad.c (TclpLoadFile): added special message for
+	ERROR_PROC_NOT_FOUND exception in loading a dll.
+	* win/tclWinError.c: changed ERROR_PROC_NOT_FOUND to map from
+	ESRCH (POSIX: no such process) to EINVAL because there is no good
+	mapping for "procedure not found".
+
 	* README:
 	* generic/tcl.h:
 	* library/tcltest1.0/tcltest.tcl:
