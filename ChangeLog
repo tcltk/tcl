@@ -1,5 +1,18 @@
 2004-07-15  Kevin Kenny  <kennykb@acm.org>
 
+	* generic/tclEvent.c (Tcl_Finalize): stuffed memory leak
+	incurred by re-initializing of TSD slots after the last call to
+	TclFinalizeThreadData (done from within Tcl_FinalizeThread()).
+	We basically just repeat the TclFinalizeThreadData() once more 
+	before tearing down TSD keys in TclFinalizeSynchronization().  
+	There should be more elaborate mechanism in place for handling
+	such issues, based on thread cleanup handlers registered on the
+	OS level. Such change requires much more work and would also
+	require TIP because some visible parts of Tcl API would have to
+	be modified. In the meantime, this will do. 
+
+2004-07-15  Kevin Kenny  <kennykb@acm.org>
+
 	* generic/tclLiteral.c (TclReleaseLiteral): Removed unused
 	variable 'codePtr' to silence a message from VC++.
 	
