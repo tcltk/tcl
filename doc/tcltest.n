@@ -7,7 +7,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: tcltest.n,v 1.15 2002/04/15 17:04:29 dgp Exp $
+'\" RCS: @(#) $Id: tcltest.n,v 1.16 2002/04/18 00:00:19 dgp Exp $
 '\" 
 .so man.macros
 .TH "tcltest" n 8.4 Tcl "Tcl Built-In Commands"
@@ -87,10 +87,6 @@ tcltest \- Test harness support code and utilities
 \fBtcltest::normalizePath \fIpathVar\fR
 .sp
 \fBtcltest::bytestring \fIstring\fR
-.sp
-\fBtcltest::saveState\fR
-.sp
-\fBtcltest::restoreState\fR
 .sp
 \fBtcltest::threadReap\fR
 .sp
@@ -368,18 +364,6 @@ value supplied in \fIstring\fR.  This allows the tester to create
 denormalized or improperly formed strings to pass to C procedures that
 are supposed to accept strings with embedded NULL types and confirm
 that a string result has a certain pattern of bytes.
-.TP
-\fBtcltest::saveState\fR
-Save procedure and global variable names.
-A test file might contain calls to \fBtcltest::saveState\fR and
-\fB::tcltest:restoreState\fR if it creates or deletes global variables
-or procs. 
-.TP
-\fBtcltest::restoreState\fR
-Restore procedure and global variable names.
-A test file might contain calls to \fBtcltest::saveState\fR and
-\fB::tcltest:restoreState\fR if it creates or deletes global variables
-or procs. 
 .TP
 \fBtcltest::threadReap\fR
 \fBtcltest::threadReap\fR only works if \fItestthread\fR is
