@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.71 2004/11/30 19:34:51 dgp Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.72 2004/12/01 23:18:55 dgp Exp $
  */
 
 //#define _WIN32_WINNT  0x0500
@@ -674,19 +674,13 @@ NativeWriteReparse(LinkDirectory, buffer)
  * TclpFindExecutable --
  *
  *	This procedure computes the absolute path name of the current
- *	application, given its argv[0] value.
+ *	application.
  *
  * Results:
- *	A clean UTF string that is the path to the executable.  At this
- *	point we may not know the system encoding, but we convert the
- *	string value to UTF-8 using core Windows functions.  The path name
- *	contains ASCII string and '/' chars do not conflict with other UTF
- *	chars.
+ * 	None.
  *
  * Side effects:
- *	The variable tclNativeExecutableName gets filled in with the file
- *	name for the application, if we figured it out.  If we couldn't
- *	figure it out, tclNativeExecutableName is set to NULL.
+ *	The computed path is stored.
  *
  *---------------------------------------------------------------------------
  */
@@ -698,14 +692,6 @@ TclpFindExecutable(argv0)
 {
     WCHAR wName[MAX_PATH];
     char name[MAX_PATH * TCL_UTF_MAX];
-    Tcl_DString ds;
-
-    if (argv0 == NULL) {
-	return;
-    }
-    if (tclNativeExecutableName != NULL) {
-	return;
-    }
 
     /*
      * Under Windows we ignore argv0, and return the path for the file used to
@@ -721,12 +707,7 @@ TclpFindExecutable(argv0)
     }
     WideCharToMultiByte(CP_UTF8, 0, wName, -1, name, sizeof(name), NULL, NULL);
     TclWinNoBackslash(name);
-
-    Tcl_UtfToExternalDString(NULL, name, -1, &ds);
-    tclNativeExecutableName = ckalloc((unsigned) (Tcl_DStringLength(&ds) + 1));
-    strcpy(tclNativeExecutableName, Tcl_DStringValue(&ds));
-    Tcl_DStringFree(&ds);
-    Tcl_GetNameOfExecutable();
+    TclSetObjNameOfExecutable(Tcl_NewStringObj(name, -1), NULL);
 }
 
 /*
