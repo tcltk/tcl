@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.71 2001/11/23 01:26:52 das Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.72 2002/01/08 20:44:39 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -1627,13 +1627,6 @@ EXTERN void		TclCleanupCommand _ANSI_ARGS_((Command *cmdPtr));
 EXTERN int		TclCopyChannel _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Channel inChan, Tcl_Channel outChan,
 			    int toRead, Tcl_Obj *cmdPtr));
-/*
- * TclCreatePipeline unofficially exported for use by BLT.
- */
-EXTERN int		TclCreatePipeline _ANSI_ARGS_((Tcl_Interp *interp,
-			    int argc, char **argv, Tcl_Pid **pidArrayPtr,
-			    TclFile *inPipePtr, TclFile *outPipePtr,
-			    TclFile *errFilePtr));
 EXTERN int		TclCreateProc _ANSI_ARGS_((Tcl_Interp *interp,
 			    Namespace *nsPtr, CONST char *procName,
 			    Tcl_Obj *argsPtr, Tcl_Obj *bodyPtr,
