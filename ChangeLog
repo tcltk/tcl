@@ -1,3 +1,9 @@
+2000-12-08  jeff hobbs  <jhobbs@interwoven.com>
+
+	* library/init.tcl: Added support for PATHEXT variable in
+	auto_execok, recognizing the proper set of executable extensions
+	on Windows.  [Patch #102719]
+
 2000-12-08  Andreas Kupries  <a.kupries@westend.com>
 
 	* generic/tclEncoding.c (LoadTableEncoding): Changed dangerous
