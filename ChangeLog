@@ -1,3 +1,9 @@
+2004-05-13  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* doc/binary.n:		TIP#129 IMPLEMENTATION [Patch 858211]
+	* generic/tclBinary.c:	Note that the test suite probably has many more
+	* tests/binary.test:	failures now due to alterations in constraints.
+
 2004-05-12  Miguel Sofer <msofer@users.sf.net>
 
 	Optimisations for INST_START_CMD [Bug 926164].
