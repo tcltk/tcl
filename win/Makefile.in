@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.48 2001/07/04 00:07:46 mdejong Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.49 2001/07/06 02:20:31 mdejong Exp $
 
 VERSION = @TCL_VERSION@
 
@@ -102,7 +102,7 @@ GENERIC_DIR		= @srcdir@/../generic
 WIN_DIR			= @srcdir@
 COMPAT_DIR		= @srcdir@/../compat
 
-# This program converts between Windows native and Cygwin POSIX pathnames.
+# Converts a POSIX path to a Windows native path.
 CYGPATH			= @CYGPATH@
 
 GENERIC_DIR_NATIVE	= $(shell $(CYGPATH) '$(GENERIC_DIR)')
@@ -134,11 +134,6 @@ CAT32			= cat32$(EXEEXT)
 MAN2TCL			= man2tcl$(EXEEXT)
 
 @SET_MAKE@
-
-# Macro that expands to the first dependency argument with the appropriate
-# path type already resolved.
-
-DEPARG = "$(shell $(CYGPATH) $<)"
 
 # Setting the VPATH variable to a list of paths will cause the 
 # makefile to look into these paths when resolving .c to .obj
@@ -319,7 +314,7 @@ $(TCLTEST): $(TCL_LIB_FILE) $(TCLTEST_OBJS) $(CAT32) tclsh.$(RES)
         tclsh.$(RES) $(CC_EXENAME) 
 
 cat32.$(OBJEXT): cat.c
-	$(CC) -c $(CC_SWITCHES) $(DEPARG) $(CC_OBJNAME)
+	$(CC) -c $(CC_SWITCHES) @DEPARG@ $(CC_OBJNAME)
 
 $(CAT32): cat32.$(OBJEXT)
 	$(CC) $(CFLAGS) cat32.$(OBJEXT) $(CC_EXENAME) $(LDFLAGS_CONSOLE)
@@ -374,45 +369,45 @@ ${PIPE_DLL_FILE}: ${PIPE_OBJS}
 # Special case object targets
 
 tclWinInit.${OBJEXT}: tclWinInit.c
-	$(CC) -c $(CC_SWITCHES) -DBUILD_tcl $(EXTFLAGS) $(DEPARG) $(CC_OBJNAME)
+	$(CC) -c $(CC_SWITCHES) -DBUILD_tcl $(EXTFLAGS) @DEPARG@ $(CC_OBJNAME)
 
 testMain.${OBJEXT}: tclAppInit.c
-	$(CC) -c $(CC_SWITCHES) -DTCL_TEST $(DEPARG) $(CC_OBJNAME)
+	$(CC) -c $(CC_SWITCHES) -DTCL_TEST @DEPARG@ $(CC_OBJNAME)
 
 tclTest.${OBJEXT}: tclTest.c
-	$(CC) -c $(CC_SWITCHES) $(DEPARG) $(CC_OBJNAME)
+	$(CC) -c $(CC_SWITCHES) @DEPARG@ $(CC_OBJNAME)
 
 tclTestObj.${OBJEXT}: tclTestObj.c
-	$(CC) -c $(CC_SWITCHES) $(DEPARG) $(CC_OBJNAME)
+	$(CC) -c $(CC_SWITCHES) @DEPARG@ $(CC_OBJNAME)
 
 tclWinTest.${OBJEXT}: tclWinTest.c
-	$(CC) -c $(CC_SWITCHES) $(DEPARG) $(CC_OBJNAME)
+	$(CC) -c $(CC_SWITCHES) @DEPARG@ $(CC_OBJNAME)
 
 tclAppInit.${OBJEXT} : tclAppInit.c
-	$(CC) -c $(CC_SWITCHES) $(DEPARG) $(CC_OBJNAME)
+	$(CC) -c $(CC_SWITCHES) @DEPARG@ $(CC_OBJNAME)
 
 # The following objects should be built using the stub interfaces
 
 tclWinReg.${OBJEXT} : tclWinReg.c
-	$(CC) -c $(CC_SWITCHES) -DUSE_TCL_STUBS $(DEPARG) $(CC_OBJNAME)
+	$(CC) -c $(CC_SWITCHES) -DUSE_TCL_STUBS @DEPARG@ $(CC_OBJNAME)
 
 tclWinDde.${OBJEXT} : tclWinDde.c
-	$(CC) -c $(CC_SWITCHES) -DUSE_TCL_STUBS $(DEPARG) $(CC_OBJNAME)
+	$(CC) -c $(CC_SWITCHES) -DUSE_TCL_STUBS @DEPARG@ $(CC_OBJNAME)
 
 # The following objects are part of the stub library and should not
 # be built as DLL objects but none of the symbols should be exported
 
 tclStubLib.${OBJEXT}: tclStubLib.c
-	$(CC) -c $(CC_SWITCHES) -DSTATIC_BUILD $(DEPARG) $(CC_OBJNAME)
+	$(CC) -c $(CC_SWITCHES) -DSTATIC_BUILD @DEPARG@ $(CC_OBJNAME)
 
 
 # Implicit rule for all object files that will end up in the Tcl library
 
 .c.${OBJEXT}:
-	$(CC) -c $(CC_SWITCHES) -DBUILD_tcl ${DEPARG} $(CC_OBJNAME)
+	$(CC) -c $(CC_SWITCHES) -DBUILD_tcl @DEPARG@ $(CC_OBJNAME)
 
 .rc.$(RES):
-	$(RC) @RC_OUT@ $@ @RC_TYPE@ @RC_DEFINES@ @RC_INCLUDE@ "$(GENERIC_DIR_NATIVE)" @RC_INCLUDE@ "$(WIN_DIR_NATIVE)" $(DEPARG)
+	$(RC) @RC_OUT@ $@ @RC_TYPE@ @RC_DEFINES@ @RC_INCLUDE@ "$(GENERIC_DIR_NATIVE)" @RC_INCLUDE@ "$(WIN_DIR_NATIVE)" @DEPARG@
 
 install: all install-binaries install-libraries install-doc
 
