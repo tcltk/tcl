@@ -1,12 +1,12 @@
 '\"
 '\" Copyright (c) 1993 The Regents of the University of California.
 '\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
-.\" Copyright (c) 2001 Kevin B. Kenny.  All rights reserved.
+'\" Copyright (c) 2001 Kevin B. Kenny.  All rights reserved.
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: lrange.n,v 1.5 2001/11/14 23:15:33 hobbs Exp $
+'\" RCS: @(#) $Id: lrange.n,v 1.6 2001/11/14 23:38:39 hobbs Exp $
 '\" 
 .so man.macros
 .TH lrange n 7.4 Tcl "Tcl Built-In Commands"
