@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.127.2.11 2004/10/28 18:47:18 dgp Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.127.2.12 2004/12/09 23:01:13 dgp Exp $
 
 VERSION 		= @TCL_VERSION@
 MAJOR_VERSION		= @TCL_MAJOR_VERSION@
@@ -96,8 +96,7 @@ CFLAGS_OPTIMIZE		= @CFLAGS_OPTIMIZE@
 #CFLAGS			= $(CFLAGS_DEBUG)
 #CFLAGS			= $(CFLAGS_OPTIMIZE)
 #CFLAGS			= $(CFLAGS_DEBUG) $(CFLAGS_OPTIMIZE)
-CFLAGS			= @CFLAGS_DEFAULT@ @CFLAGS@ -DTCL_DBGX=$(TCL_DBGX) \
-                          -DTCL_UNLOAD_DLLS=1
+CFLAGS			= @CFLAGS_DEFAULT@ @CFLAGS@
 
 # Flags to pass to the linker
 LDFLAGS_DEBUG		= @LDFLAGS_DEBUG@
@@ -138,13 +137,10 @@ UNIX_OBJS = tclUnixChan.o tclUnixEvent.o tclUnixFCmd.o \
 NOTIFY_OBJS = tclUnixNotfy.o
 #NOTIFY_OBJS =
 
-# To enable memory debugging reverse the comment characters on the following
-# lines or call configure with --enable-symbols=mem
+# To enable memory debugging, call configure with --enable-symbols=mem
 # Warning:  if you enable memory debugging, you must do it *everywhere*,
 # including all the code that calls Tcl, and you must use ckalloc and
 # ckfree everywhere instead of malloc and free.
-MEM_DEBUG_FLAGS		=
-#MEM_DEBUG_FLAGS	= -DTCL_MEM_DEBUG
 
 TCL_STUB_LIB_FILE	= @TCL_STUB_LIB_FILE@
 #TCL_STUB_LIB_FILE	= libtclstub.a
@@ -154,11 +150,6 @@ STUB_LIB_FILE		= ${TCL_STUB_LIB_FILE}
 
 TCL_STUB_LIB_FLAG	= @TCL_STUB_LIB_FLAG@
 #TCL_STUB_LIB_FLAG	= -ltclstub
-
-# To enable compilation debugging reverse the comment characters on one
-# of the following lines or call configure with --enable-symbols=compile
-COMPILE_DEBUG_FLAGS	=
-#COMPILE_DEBUG_FLAGS	= -DTCL_COMPILE_DEBUG -DTCL_COMPILE_STATS
 
 # To compile without backward compatibility and deprecated code
 # uncomment the following
@@ -248,11 +239,12 @@ AC_FLAGS		= @DEFS@
 AR			= @AR@
 RANLIB			= @RANLIB@
 SRC_DIR			= @srcdir@
-TOP_DIR			= @srcdir@/..
+TOP_DIR			= $(SRC_DIR)/..
+BUILD_DIR		= @builddir@
 GENERIC_DIR		= $(TOP_DIR)/generic
 COMPAT_DIR		= $(TOP_DIR)/compat
 TOOL_DIR		= $(TOP_DIR)/tools
-UNIX_DIR		= $(TOP_DIR)/unix
+UNIX_DIR		= $(SRC_DIR)
 MAC_OSX_DIR		= $(TOP_DIR)/macosx
 # Must be absolute because of the cd dltest $(DLTEST_DIR)/configure below.
 DLTEST_DIR		= @TCL_SRC_DIR@/unix/dltest
@@ -262,9 +254,9 @@ TCL_BUILDTIME_LIBRARY	= @TCL_SRC_DIR@/library
 CC			= @CC@
 #CC			= purify -best-effort @CC@ -DPURIFY
 
-# Flags to be passed to mkLinks to control whether the manpages
-# should be compressed and linked with softlinks
-MKLINKS_FLAGS           = @MKLINKS_FLAGS@
+# Flags to be passed to installManPage to control how the manpages
+# should be installed (symlinks, compression, package name suffix).
+MAN_FLAGS               = @MAN_FLAGS@
 
 #----------------------------------------------------------------
 # The information below is usually usable as is.  The configure
@@ -283,22 +275,19 @@ DDD			= ddd
 
 
 CC_SWITCHES = ${CFLAGS} ${CFLAGS_WARNING} ${SHLIB_CFLAGS} \
--I${GENERIC_DIR} -I${UNIX_DIR} -I${SRC_DIR} \
-${AC_FLAGS} ${MATH_FLAGS} ${GENERIC_FLAGS} ${PROTO_FLAGS} ${MEM_DEBUG_FLAGS} \
-${COMPILE_DEBUG_FLAGS} ${NO_DEPRECATED_FLAGS} ${ENV_FLAGS} \
--DTCL_SHLIB_EXT=\"${SHLIB_SUFFIX}\"
+-I${BUILD_DIR} -I${UNIX_DIR} -I${GENERIC_DIR} \
+${AC_FLAGS} ${MATH_FLAGS} ${GENERIC_FLAGS} ${PROTO_FLAGS} \
+${NO_DEPRECATED_FLAGS} ${ENV_FLAGS}
 
 STUB_CC_SWITCHES = ${CFLAGS} ${CFLAGS_WARNING} ${SHLIB_CFLAGS} \
--I${GENERIC_DIR} -I${SRC_DIR} \
-${AC_FLAGS} ${MATH_FLAGS} ${GENERIC_FLAGS} ${PROTO_FLAGS} ${MEM_DEBUG_FLAGS} \
-${COMPILE_DEBUG_FLAGS} ${ENV_FLAGS} -DTCL_SHLIB_EXT=\"${SHLIB_SUFFIX}\"
+-I${BUILD_DIR} -I${UNIX_DIR} -I${GENERIC_DIR} \
+${AC_FLAGS} ${MATH_FLAGS} ${GENERIC_FLAGS} ${PROTO_FLAGS} ${ENV_FLAGS}
 
 LIBS		= @TCL_LIBS@
 
-DEPEND_SWITCHES	= ${CFLAGS} -I${GENERIC_DIR} -I${SRC_DIR} \
+DEPEND_SWITCHES	= ${CFLAGS} -I${UNIX_DIR} -I${GENERIC_DIR} \
 ${AC_FLAGS} ${MATH_FLAGS} \
-${GENERIC_FLAGS} ${PROTO_FLAGS} ${MEM_DEBUG_FLAGS} \
--DTCL_SHLIB_EXT=\"${SHLIB_SUFFIX}\"
+${GENERIC_FLAGS} ${PROTO_FLAGS}
 
 TCLSH_OBJS = tclAppInit.o
 
@@ -421,6 +410,7 @@ STUB_SRCS = \
 
 UNIX_HDRS = \
 	$(UNIX_DIR)/tclUnixPort.h
+#	$(UNIX_DIR)/tclConfig.h
 
 UNIX_SRCS = \
 	$(UNIX_DIR)/tclAppInit.c \
@@ -660,7 +650,7 @@ install-libraries: libraries install-tzdata install-msgs
 	    fi
 	@echo "Installing header files";
 	@for i in $(GENERIC_DIR)/tcl.h $(GENERIC_DIR)/tclDecls.h \
-		$(GENERIC_DIR)/tclPlatDecls.h ; \
+		$(GENERIC_DIR)/tclPlatDecls.h; \
 	    do \
 	    $(INSTALL_DATA) $$i $(INCLUDE_INSTALL_DIR); \
 	    done;
@@ -683,8 +673,8 @@ install-libraries: libraries install-tzdata install-msgs
 	    done;
 	@echo "Installing package msgcat 1.4.1 as a Tcl Module";
 	@$(INSTALL_DATA) $(TOP_DIR)/library/msgcat/msgcat.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.5/msgcat-1.4.1.tm;
-	@echo "Installing package tcltest 2.2.6 as a Tcl Module";
-	@$(INSTALL_DATA) $(TOP_DIR)/library/tcltest/tcltest.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.3/tcltest-2.2.6.tm;
+	@echo "Installing package tcltest 2.2.7 as a Tcl Module";
+	@$(INSTALL_DATA) $(TOP_DIR)/library/tcltest/tcltest.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.3/tcltest-2.2.7.tm;
 	@echo "Installing library encoding directory";
 	@for i in $(TOP_DIR)/library/encoding/*.enc ; do \
 		$(INSTALL_DATA) $$i $(SCRIPT_INSTALL_DIR)/encoding; \
@@ -710,8 +700,8 @@ install-msgs:
 	    $(TOP_DIR)/library/msgs $(SCRIPT_INSTALL_DIR)/msgs
 
 install-doc: doc
-	@if test ! -x $(UNIX_DIR)/mkLinks; then \
-	    chmod +x $(UNIX_DIR)/mkLinks; \
+	@if test ! -x $(UNIX_DIR)/installManPage; then \
+	    chmod +x $(UNIX_DIR)/installManPage; \
 	    fi
 	@for i in $(MAN_INSTALL_DIR) $(MAN1_INSTALL_DIR) $(MAN3_INSTALL_DIR) $(MANN_INSTALL_DIR) ; \
 	    do \
@@ -722,36 +712,20 @@ install-doc: doc
 		else true; \
 		fi; \
 	    done;
-	@echo "Installing top-level (.1) docs";
-	@cd $(TOP_DIR)/doc; for i in *.1; \
-	    do \
-	    rm -f $(MAN1_INSTALL_DIR)/$$i; \
-	    sed -e '/man\.macros/r man.macros' -e '/man\.macros/d' \
-		    $$i > $(MAN1_INSTALL_DIR)/$$i; \
-	    chmod 444 $(MAN1_INSTALL_DIR)/$$i; \
-	    done;
-	@echo "Cross-linking top-level (.1) docs";
-	@$(UNIX_DIR)/mkLinks $(MKLINKS_FLAGS) $(MAN1_INSTALL_DIR)
-	@echo "Installing C API (.3) docs";
-	@cd $(TOP_DIR)/doc; for i in *.3; \
-	    do \
-	    rm -f $(MAN3_INSTALL_DIR)/$$i; \
-	    sed -e '/man\.macros/r man.macros' -e '/man\.macros/d' \
-		    $$i > $(MAN3_INSTALL_DIR)/$$i; \
-	    chmod 444 $(MAN3_INSTALL_DIR)/$$i; \
-	    done;
-	@echo "Cross-linking C API (.3) docs";
-	@$(UNIX_DIR)/mkLinks $(MKLINKS_FLAGS) $(MAN3_INSTALL_DIR)
-	@echo "Installing command (.n) docs";
-	@cd $(TOP_DIR)/doc; for i in *.n; \
-	    do \
-	    rm -f $(MANN_INSTALL_DIR)/$$i; \
-	    sed -e '/man\.macros/r man.macros' -e '/man\.macros/d' \
-		    $$i > $(MANN_INSTALL_DIR)/$$i; \
-	    chmod 444 $(MANN_INSTALL_DIR)/$$i; \
-	    done;
-	@echo "Cross-linking command (.n) docs";
-	@$(UNIX_DIR)/mkLinks $(MKLINKS_FLAGS) $(MANN_INSTALL_DIR)
+	@echo "Installing and cross-linking top-level (.1) docs";
+	@for i in $(TOP_DIR)/doc/*.1; do \
+	    $(UNIX_DIR)/installManPage $(MAN_FLAGS) $$i $(MAN1_INSTALL_DIR); \
+	done
+
+	@echo "Installing and cross-linking C API (.3) docs";
+	@for i in $(TOP_DIR)/doc/*.3; do \
+	    $(UNIX_DIR)/installManPage $(MAN_FLAGS) $$i $(MAN3_INSTALL_DIR); \
+	done
+
+	@echo "Installing and cross-linking command (.n) docs";
+	@for i in $(TOP_DIR)/doc/*.n; do \
+	    $(UNIX_DIR)/installManPage $(MAN_FLAGS) $$i $(MANN_INSTALL_DIR); \
+	done
 
 # Optional target to install private headers
 install-private-headers: libraries
@@ -770,13 +744,15 @@ install-private-headers: libraries
 	@echo "Installing private header files";
 	@for i in $(GENERIC_DIR)/tclInt.h $(GENERIC_DIR)/tclIntDecls.h \
 		$(GENERIC_DIR)/tclIntPlatDecls.h $(GENERIC_DIR)/tclPort.h \
-		$(UNIX_DIR)/tclUnixPort.h ; \
+		$(UNIX_DIR)/tclUnixPort.h; \
 	    do \
 	    $(INSTALL_DATA) $$i $(PRIVATE_INCLUDE_INSTALL_DIR); \
 	    done;
 
 Makefile: $(UNIX_DIR)/Makefile.in $(DLTEST_DIR)/Makefile.in
 	$(SHELL) config.status
+#tclConfig.h: $(UNIX_DIR)/tclConfig.h.in
+#	$(SHELL) config.status
 
 clean:
 	rm -f *.a *.o libtcl* core errs *~ \#* TAGS *.E a.out \
@@ -785,7 +761,7 @@ clean:
 
 distclean: clean
 	rm -rf Makefile config.status config.cache config.log tclConfig.sh \
-		$(PACKAGE).* prototype
+		$(PACKAGE).* prototype #tclConfig.h
 	cd dltest ; $(MAKE) distclean
 
 depend:
@@ -1291,11 +1267,6 @@ rpm: all /bin/rpm
 	mv RPMS/i386/*.rpm .
 	rm -rf RPMS THIS.TCL.SPEC
 
-mklinks:
-	$(TCL_EXE) $(UNIX_DIR)/mkLinks.tcl \
-		$(UNIX_DIR)/../doc/*.[13n] > $(UNIX_DIR)/mkLinks
-	chmod +x $(UNIX_DIR)/mkLinks
-
 #
 # Target to create a proper Tcl distribution from information in the
 # master source directory.  DISTDIR must be defined to indicate where
@@ -1306,10 +1277,12 @@ DISTROOT = /tmp/dist
 DISTNAME = tcl${VERSION}${PATCH_LEVEL}
 ZIPNAME	 = tcl${MAJOR_VERSION}${MINOR_VERSION}${PATCH_LEVEL}-src.zip
 DISTDIR	 = $(DISTROOT)/$(DISTNAME)
-$(UNIX_DIR)/configure: $(UNIX_DIR)/configure.in
-	autoconf $(UNIX_DIR)/configure.in > $(UNIX_DIR)/configure
+$(UNIX_DIR)/configure: $(UNIX_DIR)/configure.in $(UNIX_DIR)/tcl.m4
+	cd $(UNIX_DIR); autoconf
+$(UNIX_DIR)/tclConfig.h.in: $(UNIX_DIR)/configure.in $(UNIX_DIR)/tcl.m4
+	cd $(UNIX_DIR); autoheader
 
-dist: $(UNIX_DIR)/configure mklinks
+dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in
 	rm -rf $(DISTDIR)
 	mkdir -p $(DISTDIR)/unix
 	cp -p $(UNIX_DIR)/*.c $(UNIX_DIR)/*.h $(DISTDIR)/unix
@@ -1319,7 +1292,7 @@ dist: $(UNIX_DIR)/configure mklinks
 		$(UNIX_DIR)/tcl.m4 $(UNIX_DIR)/aclocal.m4 \
 		$(UNIX_DIR)/tclConfig.sh.in $(UNIX_DIR)/install-sh \
 		$(UNIX_DIR)/README $(UNIX_DIR)/ldAix $(UNIX_DIR)/tcl.spec \
-		$(UNIX_DIR)/mkLinks \
+		$(UNIX_DIR)/installManPage $(UNIX_DIR)/tclConfig.h.in \
 		$(DISTDIR)/unix
 	chmod 775 $(DISTDIR)/unix/configure $(DISTDIR)/unix/configure.in
 	chmod 775 $(DISTDIR)/unix/ldAix
@@ -1342,6 +1315,12 @@ dist: $(UNIX_DIR)/configure mklinks
 	    done;
 	mkdir $(DISTDIR)/library/encoding
 	cp -p $(TOP_DIR)/library/encoding/*.enc $(DISTDIR)/library/encoding
+	mkdir $(DISTDIR)/library/msgs
+	cp -p $(TOP_DIR)/library/msgs/*.msg $(DISTDIR)/library/msgs
+	( cd $(TOP_DIR); \
+	  find library/tzdata -name CVS -prune -o -type f -print ) \
+	    | ( cd $(TOP_DIR) ; xargs tar cf - ) \
+	    | ( cd $(DISTDIR) ; tar xfp - )
 	mkdir $(DISTDIR)/doc
 	cp -p $(TOP_DIR)/license.terms $(TOP_DIR)/doc/*.[13n] \
 		$(TOP_DIR)/doc/man.macros $(DISTDIR)/doc

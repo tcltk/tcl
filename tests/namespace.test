@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: namespace.test,v 1.21.4.8 2004/10/28 18:47:17 dgp Exp $
+# RCS: @(#) $Id: namespace.test,v 1.21.4.9 2004/12/09 23:01:10 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -1923,6 +1923,37 @@ test namespace-49.1 {ensemble subcommand caching} -body {
     rename a {}
     rename c {}
     rename x {}
+}
+
+test namespace-50.1 {ensembles affect proc arguments error messages} -body {
+    namespace ens cre -command a -map {b {bb foo}}
+    proc bb {c d {e f} args} {list $c $args}
+    a b
+} -returnCodes error -result "wrong # args: should be \"a b d ?e? ...\"" -cleanup {
+    rename a {}
+    rename bb {}
+}
+test namespace-50.2 {ensembles affect WrongNumArgs error messages} -body {
+    namespace ens cre -command a -map {b {string is}}
+    a b boolean
+} -returnCodes error -result "wrong # args: should be \"a b class ?-strict? ?-failindex var? str\"" -cleanup {
+    rename a {}
+}
+test namespace-50.3 {chained ensembles affect error messages} -body {
+    namespace ens cre -command a -map {b c}
+    namespace ens cre -command c -map {d e}
+    proc e f {}
+    a b d
+} -returnCodes error -result "wrong # args: should be \"a b d f\"" -cleanup {
+    rename a {}
+}
+test namespace-50.4 {chained ensembles affect error messages} -body {
+    namespace ens cre -command a -map {b {c d}}
+    namespace ens cre -command c -map {d {e f}}
+    proc e f {}
+    a b d
+} -returnCodes error -result "wrong # args: should be \"a b\"" -cleanup {
+    rename a {}
 }
 
 # cleanup

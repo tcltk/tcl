@@ -15,14 +15,8 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.73.2.10 2004/10/28 18:47:04 dgp Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.73.2.11 2004/12/09 23:00:42 dgp Exp $
  */
-
-#ifdef STDC_HEADERS
-#include <stddef.h>
-#else
-typedef int ptrdiff_t;
-#endif
 
 #include "tclInt.h"
 
@@ -2729,8 +2723,7 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
 	    ArraySearch *searchPtr;
 	    
 	    if (objc != 4) {
-	        Tcl_WrongNumArgs(interp, 2, objv, 
-                        "arrayName searchId");
+	        Tcl_WrongNumArgs(interp, 2, objv, "arrayName searchId");
 		return TCL_ERROR;
 	    }
 	    if (notArray) {
@@ -2762,8 +2755,7 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
 	    ArraySearch *searchPtr, *prevPtr;
 
 	    if (objc != 4) {
-	        Tcl_WrongNumArgs(interp, 2, objv, 
-                        "arrayName searchId");
+	        Tcl_WrongNumArgs(interp, 2, objv, "arrayName searchId");
 		return TCL_ERROR;
 	    }
 	    if (notArray) {
@@ -2914,8 +2906,7 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
 	    mode = OPT_GLOB;
 	    
 	    if ((objc < 3) || (objc > 5)) {
-  	        Tcl_WrongNumArgs(interp, 2, objv,
-			"arrayName ?mode? ?pattern?");
+  	        Tcl_WrongNumArgs(interp, 2,objv, "arrayName ?mode? ?pattern?");
 		return TCL_ERROR;
 	    }
 	    if (notArray) {
@@ -2975,8 +2966,7 @@ Tcl_ArrayObjCmd(dummy, interp, objc, objv)
 	    Tcl_HashEntry *hPtr;
 	    
 	    if (objc != 4) {
-	        Tcl_WrongNumArgs(interp, 2, objv, 
-                        "arrayName searchId");
+	        Tcl_WrongNumArgs(interp, 2, objv, "arrayName searchId");
 		return TCL_ERROR;
 	    }
 	    if (notArray) {

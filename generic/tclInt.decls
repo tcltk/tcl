@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.61.2.8 2004/10/28 18:46:54 dgp Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.61.2.9 2004/12/09 23:00:38 dgp Exp $
 
 library tcl
 
@@ -840,6 +840,24 @@ declare 207 generic {
 declare 208 generic {
     Tcl_Channel TclpOpenFileChannel (Tcl_Interp *interp,
 	    Tcl_Obj *pathPtr, int mode, int permissions)
+}
+declare 209 generic {
+    Tcl_Obj * TclGetEncodingSearchPath(void)
+}
+declare 210 generic {
+    int TclSetEncodingSearchPath(Tcl_Obj *searchPath)
+}
+declare 211 generic {
+    CONST char * TclpGetEncodingNameFromEnvironment(Tcl_DString *bufPtr)
+}
+declare 212 generic {
+    void TclpFindExecutable(CONST char *argv0)
+}
+declare 213 generic {
+    Tcl_Obj * TclGetObjNameOfExecutable(void)
+}
+declare 214 generic {
+    void TclSetObjNameOfExecutable(Tcl_Obj *name, Tcl_Encoding encoding)
 }
 
 ##############################################################################

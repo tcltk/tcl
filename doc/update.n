@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: update.n,v 1.4.20.1 2004/09/08 23:02:35 dgp Exp $
+'\" RCS: @(#) $Id: update.n,v 1.4.20.2 2004/12/09 23:00:29 dgp Exp $
 '\" 
 .so man.macros
 .TH update n 7.5 Tcl "Tcl Built-In Commands"
@@ -61,7 +61,7 @@ while {!$done} {
 .CE
 
 .SH "SEE ALSO"
-after(n), bgerror(n)
+after(n), interp(n)
 
 .SH KEYWORDS
 event, flush, handler, idle, update

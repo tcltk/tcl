@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclClock.c,v 1.23.2.9 2004/10/28 18:46:20 dgp Exp $
+ * RCS: @(#) $Id: tclClock.c,v 1.23.2.10 2004/12/09 23:00:30 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -21,7 +21,7 @@
  * Windows has mktime.  The configurators do not check.
  */
 
-#ifdef WIN32
+#ifdef __WIN32__
 #define HAVE_MKTIME 1
 #endif
 
@@ -336,7 +336,6 @@ TclClockMktimeObjCmd(  ClientData clientData,
 
 }
 
-
 /*----------------------------------------------------------------------
  *
  * TclClockClicksObjCmd --
@@ -356,7 +355,7 @@ TclClockMktimeObjCmd(  ClientData clientData,
  */
 
 int
-TclClockClicksObjCmd( clientData, interp, objc, objv )
+TclClockClicksObjCmd(clientData, interp, objc, objv)
     ClientData clientData;	/* Client data is unused */
     Tcl_Interp* interp;		/* Tcl interpreter */
     int objc;			/* Parameter count */
@@ -371,46 +370,43 @@ TclClockClicksObjCmd( clientData, interp, objc, objv )
     int index = CLICKS_NATIVE;
     Tcl_Time now;
 
-    switch ( objc ) {
-        case 1:
-	    break;
-        case 2:
-	    if ( Tcl_GetIndexFromObj( interp, objv[1], clicksSwitches,
-				      "option", 0, &index) != TCL_OK ) {
-		return TCL_ERROR;
-	    }
-	    break;
-        default:
-	    Tcl_WrongNumArgs( interp, 1, objv, "?option?" );
+    switch (objc) {
+    case 1:
+	break;
+    case 2:
+	if (Tcl_GetIndexFromObj(interp, objv[1], clicksSwitches, "option", 0,
+		&index) != TCL_OK) {
 	    return TCL_ERROR;
+	}
+	break;
+    default:
+	Tcl_WrongNumArgs(interp, 1, objv, "?option?");
+	return TCL_ERROR;
     }
 
-    switch ( index ) {
-        case CLICKS_MILLIS:
-	    Tcl_GetTime( &now );
-	    Tcl_SetObjResult( interp,
-			      Tcl_NewWideIntObj( (Tcl_WideInt) now.sec * 1000
-						 + now.usec / 1000 ) );
-	    break;
-        case CLICKS_NATIVE:
+    switch (index) {
+    case CLICKS_MILLIS:
+	Tcl_GetTime(&now);
+	Tcl_SetObjResult(interp, Tcl_NewWideIntObj( (Tcl_WideInt)
+		now.sec * 1000 + now.usec / 1000 ) );
+	break;
+    case CLICKS_NATIVE:
 #if 0
-	    /* 
-	     * The following code will be used once this is incorporated
-	     * into Tcl.  But TEA bugs prevent it for right now. :(
-	     * So we fall through this case and return the microseconds
-	     * instead.
-	     */
-	    Tcl_SetObjResult( interp,
-			      Tcl_NewWideIntObj( (Tcl_WideInt) TclpGetClicks() ) );
-	    break;
+	/* 
+	 * The following code will be used once this is incorporated
+	 * into Tcl.  But TEA bugs prevent it for right now. :(
+	 * So we fall through this case and return the microseconds
+	 * instead.
+	 */
+	Tcl_SetObjResult(interp, Tcl_NewWideIntObj( (Tcl_WideInt)
+		TclpGetClicks()));
+	break;
 #endif
-        case CLICKS_MICROS:
-	    Tcl_GetTime( &now );
-	    Tcl_SetObjResult( interp,
-			      Tcl_NewWideIntObj( ( (Tcl_WideInt) now.sec 
-						   * 1000000 )
-						 + now.usec ) );
-	    break;
+    case CLICKS_MICROS:
+	Tcl_GetTime(&now);
+	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(
+		((Tcl_WideInt) now.sec * 1000000) + now.usec));
+	break;
     }
 
     return TCL_OK;
@@ -435,21 +431,20 @@ TclClockClicksObjCmd( clientData, interp, objc, objv )
  */
 
 int
-TclClockMillisecondsObjCmd( clientData, interp, objc, objv )
+TclClockMillisecondsObjCmd(clientData, interp, objc, objv)
     ClientData clientData;	/* Client data is unused */
     Tcl_Interp* interp;		/* Tcl interpreter */
     int objc;			/* Parameter count */
     Tcl_Obj* CONST* objv;	/* Parameter values */
 {
     Tcl_Time now;
-    if ( objc != 1 ) {
-	Tcl_WrongNumArgs( interp, 1, objv, "" );
+    if (objc != 1) {
+	Tcl_WrongNumArgs(interp, 1, objv, NULL);
 	return TCL_ERROR;
     }
-    Tcl_GetTime( &now );
-    Tcl_SetObjResult( interp,
-		      Tcl_NewWideIntObj( (Tcl_WideInt) now.sec * 1000
-					 + now.usec / 1000 ) );
+    Tcl_GetTime(&now);
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj( (Tcl_WideInt)
+	    now.sec * 1000 + now.usec / 1000));
     return TCL_OK;
 }
 
@@ -472,21 +467,20 @@ TclClockMillisecondsObjCmd( clientData, interp, objc, objv )
  */
 
 int
-TclClockMicrosecondsObjCmd( clientData, interp, objc, objv )
+TclClockMicrosecondsObjCmd(clientData, interp, objc, objv)
     ClientData clientData;	/* Client data is unused */
     Tcl_Interp* interp;		/* Tcl interpreter */
     int objc;			/* Parameter count */
     Tcl_Obj* CONST* objv;	/* Parameter values */
 {
     Tcl_Time now;
-    if ( objc != 1 ) {
-	Tcl_WrongNumArgs( interp, 1, objv, "" );
+    if (objc != 1) {
+	Tcl_WrongNumArgs(interp, 1, objv, NULL);
 	return TCL_ERROR;
     }
-    Tcl_GetTime( &now );
-    Tcl_SetObjResult( interp,
-		      Tcl_NewWideIntObj( ( (Tcl_WideInt) now.sec * 1000000 )
-					 + now.usec ) );
+    Tcl_GetTime(&now);
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(
+	    ((Tcl_WideInt) now.sec * 1000000) + now.usec));
     return TCL_OK;
 }
 
@@ -509,19 +503,19 @@ TclClockMicrosecondsObjCmd( clientData, interp, objc, objv )
  */
 
 int
-TclClockSecondsObjCmd( clientData, interp, objc, objv )
+TclClockSecondsObjCmd(clientData, interp, objc, objv)
     ClientData clientData;	/* Client data is unused */
     Tcl_Interp* interp;		/* Tcl interpreter */
     int objc;			/* Parameter count */
     Tcl_Obj* CONST* objv;	/* Parameter values */
 {
     Tcl_Time now;
-    if ( objc != 1 ) {
-	Tcl_WrongNumArgs( interp, 1, objv, "" );
+    if (objc != 1) {
+	Tcl_WrongNumArgs(interp, 1, objv, NULL);
 	return TCL_ERROR;
     }
-    Tcl_GetTime( &now );
-    Tcl_SetObjResult( interp, Tcl_NewWideIntObj( (Tcl_WideInt) now.sec ) );
+    Tcl_GetTime(&now);
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj((Tcl_WideInt) now.sec));
     return TCL_OK;
 }
 

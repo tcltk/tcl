@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: fileevent.n,v 1.5.8.1 2004/10/28 18:46:14 dgp Exp $
+'\" RCS: @(#) $Id: fileevent.n,v 1.5.8.2 2004/12/09 23:00:29 dgp Exp $
 '\" 
 .so man.macros
 .TH fileevent n 7.5 Tcl "Tcl Built-In Commands"
@@ -96,7 +96,7 @@ The script for a file event is executed at global level (outside the
 context of any Tcl procedure) in the interpreter in which the
 \fBfileevent\fR command was invoked.
 If an error occurs while executing the script then the
-\fBbgerror\fR mechanism is used to report the error.
+command registered with \fBinterp bgerror\fR is used to report the error.
 In addition, the file event handler is deleted if it ever returns
 an error;  this is done in order to prevent infinite loops due to
 buggy handlers.
@@ -119,7 +119,7 @@ proc GetData {chan} {
 by Mark Diekhans.
 
 .SH "SEE ALSO"
-bgerror(n), fconfigure(n), gets(n), puts(n), read(n), Tcl_StandardChannels(3)
+fconfigure(n), gets(n), interp(n), puts(n), read(n), Tcl_StandardChannels(3)
 
 .SH KEYWORDS
 asynchronous I/O, blocking, channel, event handler, nonblocking, readable,

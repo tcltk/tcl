@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: cmdAH.test,v 1.33.2.10 2004/10/28 18:47:11 dgp Exp $
+# RCS: @(#) $Id: cmdAH.test,v 1.33.2.11 2004/12/09 23:01:04 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -359,7 +359,7 @@ test cmdAH-8.44 {Tcl_FileObjCmd: dirname} testsetplatform {
     set result
 } {0 ~}
 test cmdAH-8.45 {Tcl_FileObjCmd: dirname} {
-    -constraints {Tcltest testsetplatform}
+    -constraints {win testsetplatform}
     -match regexp
     -setup {
 	set temp $::env(HOME)
@@ -374,7 +374,6 @@ test cmdAH-8.45 {Tcl_FileObjCmd: dirname} {
     }
     -result {([a-zA-Z]:?)/homewontexist}
 }
-
 test cmdAH-8.46 {Tcl_FileObjCmd: dirname} {
     set f [file normalize [info nameof]]
     file exists $f
@@ -630,14 +629,14 @@ test cmdAH-10.34 {Tcl_FileObjCmd: rootname} testsetplatform {
 } a\\b.c\\
 set num 35
 foreach outer { {} a .a a. a.a } {
-  foreach inner { {} a .a a. a.a } {
-    set thing [format %s/%s $outer $inner]
-;   test cmdAH-10.$num {Tcl_FileObjCmd: rootname and extension options} testsetplatform {
-	testsetplatform unix
-	format %s%s [file rootname $thing] [file ext $thing]
-    } $thing
-    set num [expr $num+1]
-  }
+    foreach inner { {} a .a a. a.a } {
+	set thing [format %s/%s $outer $inner]
+	;test cmdAH-10.$num {Tcl_FileObjCmd: rootname and extension options} testsetplatform "
+	    testsetplatform unix
+	    [list format %s%s [file rootname $thing] [file ext $thing]]
+	" $thing
+	incr num
+    }
 }
 
 # extension
@@ -733,7 +732,7 @@ test cmdAH-11.34 {Tcl_FileObjCmd: extension} testsetplatform {
 set num 35
 foreach value {a..b a...b a.c..b ..b} result {.b .b .b .b} {
     foreach p {unix windows} {
-;	test cmdAH-11.$num {Tcl_FileObjCmd: extension} testsetplatform "
+	;test cmdAH-11.$num {Tcl_FileObjCmd: extension} testsetplatform "
 	    testsetplatform $p
 	    file extension $value
 	" $result
@@ -1231,6 +1230,18 @@ test cmdAH-24.11 {Tcl_FileObjCmd: mtime touch with non-ascii chars} win {
 } 1
 removeFile touch.me
 rename waitForEvenSecondForFAT {}
+
+test cmdAH-24.12 {Tcl_FileObjCmd: mtime and daylight savings} {
+    set name [file join [temporaryDirectory] clockchange]
+
+    file delete -force $name
+    close [open $name w]
+    set time [clock scan "21:00:00 October 30 2004 GMT"]
+    file mtime $name $time
+    set newmtime [file mtime $name]
+    file delete $name
+    expr {$newmtime == $time ? 1 : "$newmtime != $time"}
+} {1}
 
 # owned
 

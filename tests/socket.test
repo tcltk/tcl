@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: socket.test,v 1.26.4.6 2004/10/28 18:47:18 dgp Exp $
+# RCS: @(#) $Id: socket.test,v 1.26.4.7 2004/12/09 23:01:10 dgp Exp $
 
 # Running socket tests with a remote server:
 # ------------------------------------------
@@ -149,7 +149,7 @@ if {$doTestsWithRemoteServer} {
 
 # Some tests are run only if we are doing testing against a remote server.
 testConstraint doTestsWithRemoteServer $doTestsWithRemoteServer
-if {![testConstraint doTestsWithRemoteServer]} {
+if {!$doTestsWithRemoteServer} {
     if {[string first s $::tcltest::verbose] != -1} {
     	puts "Skipping tests with remote server. See tests/socket.test for"
 	puts "information on how to run remote server."
@@ -769,8 +769,14 @@ test socket-5.3 {byte order problems, socket numbers, htons} \
     set x
 } {couldn't open socket: not owner}
 
-test socket-6.1 {accept callback error} {socket stdio} {
+test socket-6.1 {accept callback error} -constraints {socket stdio} -setup {
+    proc myHandler {msg options} {
+	variable x $msg
+    }
+    set handler [interp bgerror {}]
+    interp bgerror {} [namespace which myHandler]
     file delete $path(script)
+} -body {
     set f [open $path(script) w]
     puts $f {
 	gets stdin port
@@ -778,10 +784,6 @@ test socket-6.1 {accept callback error} {socket stdio} {
     }
     close $f
     set f [open "|[list [interpreter] $path(script)]" r+]
-    proc bgerror args {
-	global x
-	set x $args
-    }
     proc accept {s a p} {expr 10 / 0}
     set s [socket -server accept 0]
     puts $f [lindex [fconfigure $s -sockname] 2]
@@ -790,9 +792,10 @@ test socket-6.1 {accept callback error} {socket stdio} {
     vwait x
     after cancel $timer
     close $s
-    rename bgerror {}
     set x
-} {{divide by zero}}
+} -cleanup {
+    interp bgerror {} $handler
+} -result {divide by zero}
 
 test socket-7.1 {testing socket specific options} {socket stdio} {
     file delete $path(script)
@@ -1043,9 +1046,16 @@ test socket-9.3 {testing EOF stickyness} {socket} {
 
 removeFile script
 
-test socket-10.1 {testing socket accept callback error handling} {socket} {
-    set goterror 0
-    proc bgerror args {global goterror; set goterror 1}
+test socket-10.1 {testing socket accept callback error handling} -constraints {
+    socket
+} -setup {
+    variable goterror 0
+    proc myHandler {msg options} {
+	variable goterror 1
+    }
+    set handler [interp bgerror {}]
+    interp bgerror {} [namespace which myHandler]
+} -body {
     set s [socket -server accept 0]
     proc accept {s a p} {close $s; error}
     set c [socket 127.0.0.1 [lindex [fconfigure $s -sockname] 2]]
@@ -1053,7 +1063,9 @@ test socket-10.1 {testing socket accept callback error handling} {socket} {
     close $s
     close $c
     set goterror
-} 1
+} -cleanup {
+    interp bgerror {} $handler
+} -result 1
 
 test socket-11.1 {tcp connection} {socket doTestsWithRemoteServer} {
     sendCommand {
@@ -1228,13 +1240,17 @@ test socket-11.8 {client with several servers} {socket doTestsWithRemoteServer} 
     }
     set l
 } {4003 {} 1 4004 {} 1 4005 {} 1}
-test socket-11.9 {accept callback error} {socket doTestsWithRemoteServer} {
+test socket-11.9 {accept callback error} -constraints {
+    socket doTestsWithRemoteServer
+} -setup {
+    proc myHandler {msg options} {
+	variable x $msg
+    }
+    set handler [interp bgerror {}]
+    interp bgerror {} [namespace which myHandler]
+} -body {
     set s [socket -server accept 2836]
     proc accept {s a p} {expr 10 / 0}
-    proc bgerror args {
-	global x
-	set x $args
-    }
     if {[catch {sendCommand {
 	    set peername [fconfigure $callerSocket -peername]
 	    set s [socket [lindex $peername 0] 2836]
@@ -1247,9 +1263,10 @@ test socket-11.9 {accept callback error} {socket doTestsWithRemoteServer} {
     vwait x
     after cancel $timer
     close $s
-    rename bgerror {}
     set x
-} {{divide by zero}}
+} -cleanup {
+    interp bgerror {} $handler
+} -result {divide by zero}
 test socket-11.10 {testing socket specific options} {socket doTestsWithRemoteServer} {
     sendCommand {
 	set socket10_12_test_server [socket -server accept 2836]

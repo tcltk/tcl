@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: indexObj.test,v 1.7.20.1 2004/05/27 14:29:18 dgp Exp $
+# RCS: @(#) $Id: indexObj.test,v 1.7.20.2 2004/12/09 23:01:08 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -83,6 +83,11 @@ test indexObj-5.5 {Tcl_WrongNumArgs} testindexobj {
 test indexObj-5.6 {Tcl_WrongNumArgs} testindexobj {
     testwrongnumargs 2 "" mycmd foo
 } "wrong # args: should be \"mycmd foo\""
+# Contrast this with test proc-3.6; they have to be like this because
+# of [Bug 1066837] so Itcl won't break.
+test indexObj-5.7 {Tcl_WrongNumArgs} testindexobj {
+    testwrongnumargs 2 "fee fi" "fo fum" foo bar
+} "wrong # args: should be \"fo fum foo fee fi\""
 
 test indexObj-6.1 {Tcl_GetIndexFromObjStruct} testindexobj {
     set x a

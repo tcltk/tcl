@@ -3,7 +3,7 @@
 # utility procs formerly in init.tcl dealing with auto execution
 # of commands and can be auto loaded themselves.
 #
-# RCS: @(#) $Id: auto.tcl,v 1.13.2.4 2004/10/28 18:47:05 dgp Exp $
+# RCS: @(#) $Id: auto.tcl,v 1.13.2.5 2004/12/09 23:00:43 dgp Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1998 Sun Microsystems, Inc.
@@ -123,6 +123,10 @@ proc tcl_findLibrary {basename version patch initScript enVarName varName} {
     # uniquify $dirs in order
     array set seen {}
     foreach i $dirs {
+	# Take note that the [file normalize] below has been noted to
+	# cause difficulties for the freewrap utility.  See Bug 1072136.
+	# Until freewrap resolves the matter, one might work around the
+	# problem by disabling that branch.
 	if {[interp issafe]} {
 	    set norm $i
 	} else {
@@ -130,7 +134,7 @@ proc tcl_findLibrary {basename version patch initScript enVarName varName} {
 	}
 	if {[info exists seen($norm)]} { continue }
 	set seen($norm) ""
-	lappend uniqdirs $norm
+	lappend uniqdirs $i
     }
     set dirs $uniqdirs
     foreach i $dirs {

@@ -29,7 +29,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tclZIC.tcl,v 1.2.2.1 2004/09/08 23:03:21 dgp Exp $
+# RCS: @(#) $Id: tclZIC.tcl,v 1.2.2.2 2004/12/09 23:01:13 dgp Exp $
 #
 #----------------------------------------------------------------------
 
@@ -963,7 +963,7 @@ proc applyRules { ruleSet year startSecs stdGMTOffset DSTOffset nextGMTOffset \
 	set untilJCD [eval $untilDaySpec]
 	set untilBaseSecs [expr {
 				 wide(86400) * wide($untilJCD)
-				 - $::tcl::clock::PosixEpochAsJulianSeconds }]
+				 - 210866803200 }]
 	set untilSecs [eval [linsert $untilTimeOfDay 0 convertTimeOfDay \
 				 $untilBaseSecs $stdGMTOffset $DSTOffset]]
     }
@@ -1048,7 +1048,7 @@ proc applyRules { ruleSet year startSecs stdGMTOffset DSTOffset nextGMTOffset \
 	set date [::tcl::clock::GetJulianDayFromEraYearMonthDay \
 		      [dict create era CE year $year month 1 dayOfMonth 1]]
 	set startSecs [expr { [dict get $date julianDay] * wide(86400) \
-			     - $::tcl::clock::PosixEpochAsJulianSeconds }]
+			     -210866803200 }]
 	set startSecs [expr { $startSecs - $stdGMTOffset - $DSTOffset }]
 
 
@@ -1145,7 +1145,7 @@ proc findEarliestRule { remainingRules year stdGMTOffset DSTOffset } {
 	set dayIn [eval $daySpecOn]
 	set secs [expr {
 			wide(86400) * wide($dayIn)
-			- $::tcl::clock::PosixEpochAsJulianSeconds }]
+			-210866803200 }]
 	set secs [eval [linsert $timeAt 0 convertTimeOfDay \
 			    $secs $stdGMTOffset $DSTOffset]]
 	if { $secs < $earliest } {
@@ -1275,7 +1275,7 @@ proc processTimeZone { zoneName zoneData } {
 	    set startDay [eval $dayRule]
 	    set secs [expr {
 			    wide(86400) * wide($startDay)
-			    - $::tcl::clock::PosixEpochAsJulianSeconds}]
+			    -210866803200}]
 	    set secs [eval [linsert $timeOfDay 0 convertTimeOfDay \
 				$secs $stdGMTOffset $DSTOffset]]
 	}

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPort.h,v 1.36.4.5 2004/09/08 23:03:30 dgp Exp $
+ * RCS: @(#) $Id: tclWinPort.h,v 1.36.4.6 2004/12/09 23:01:39 dgp Exp $
  */
 
 #ifndef _TCLWINPORT
@@ -70,11 +70,6 @@
  */
 #define INCL_WINSOCK_API_TYPEDEFS   1
 #include <winsock2.h>
-
-#ifdef BUILD_tcl
-#   undef TCL_STORAGE_CLASS
-#   define TCL_STORAGE_CLASS DLLEXPORT
-#endif /* BUILD_tcl */
 
 /*
  * Define EINPROGRESS in terms of WSAEINPROGRESS.
@@ -515,9 +510,9 @@
 
 #ifdef TCL_THREADS
 typedef CRITICAL_SECTION TclpMutex;
-EXTERN void	TclpMutexInit _ANSI_ARGS_((TclpMutex *mPtr));
-EXTERN void	TclpMutexLock _ANSI_ARGS_((TclpMutex *mPtr));
-EXTERN void	TclpMutexUnlock _ANSI_ARGS_((TclpMutex *mPtr));
+MODULE_SCOPE void	TclpMutexInit _ANSI_ARGS_((TclpMutex *mPtr));
+MODULE_SCOPE void	TclpMutexLock _ANSI_ARGS_((TclpMutex *mPtr));
+MODULE_SCOPE void	TclpMutexUnlock _ANSI_ARGS_((TclpMutex *mPtr));
 #else /* !TCL_THREADS */
 typedef int TclpMutex;
 #define	TclpMutexInit(a)
@@ -526,17 +521,14 @@ typedef int TclpMutex;
 #endif /* TCL_THREADS */
 
 #ifdef TCL_WIDE_INT_TYPE
-EXTERN Tcl_WideInt	strtoll _ANSI_ARGS_((CONST char *string,
+MODULE_SCOPE Tcl_WideInt	strtoll _ANSI_ARGS_((CONST char *string,
 					     char **endPtr, int base));
-EXTERN Tcl_WideUInt	strtoull _ANSI_ARGS_((CONST char *string,
+MODULE_SCOPE Tcl_WideUInt	strtoull _ANSI_ARGS_((CONST char *string,
 					      char **endPtr, int base));
 #endif /* TCL_WIDE_INT_TYPE */
 
 #ifndef INVALID_SET_FILE_POINTER
 #define INVALID_SET_FILE_POINTER 0xFFFFFFFF
 #endif /* INVALID_SET_FILE_POINTER */
-
-#undef TCL_STORAGE_CLASS
-#define TCL_STORAGE_CLASS DLLIMPORT
 
 #endif /* _TCLWINPORT */

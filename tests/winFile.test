@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: winFile.test,v 1.10.2.3 2004/09/08 23:03:21 dgp Exp $
+# RCS: @(#) $Id: winFile.test,v 1.10.2.4 2004/12/09 23:01:12 dgp Exp $
 
 if {[catch {package require tcltest 2.0.2}]} {
     puts stderr "Skipping tests in [info script]. tcltest 2.0.2 required."
@@ -26,6 +26,12 @@ if {[info commands ::testvolumetype] == ""} {
     } else {
 	tcltest::testConstraint notNTFS 1
     }
+}
+if {[string equal $::tcl_platform(os) "Windows NT"] &&
+	    $::tcl_platform(osVersion) >= 5.0} {
+    tcltest::testConstraint win2000 1
+} else {
+    tcltest::testConstraint win2000 0
 }
 
 test winFile-1.1 {TclpGetUserHome} {win} {
@@ -160,7 +166,7 @@ close [open $fname w]
 test winFile-4.0 {
     Enhanced NTFS user/group permissions: test no acccess
 } -constraints {
-    win nt notNTFS
+    win nt notNTFS win2000
 } -setup {
     set owner [getuser $fname]
     set user $::env(USERDOMAIN)\\$::env(USERNAME)

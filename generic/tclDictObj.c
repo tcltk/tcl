@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDictObj.c,v 1.10.2.8 2004/10/28 18:46:24 dgp Exp $
+ * RCS: @(#) $Id: tclDictObj.c,v 1.10.2.9 2004/12/09 23:00:33 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2739,7 +2739,7 @@ DictUpdateCmd(interp, objc, objv)
 {
     Tcl_Obj *dictPtr, *objPtr;
     int i, result, dummy, allocdict = 0;
-    TclInterpState state;
+    Tcl_InterpState state;
 
     if (objc < 6 || objc & 1) {
 	Tcl_WrongNumArgs(interp, 2, objv,
@@ -2794,9 +2794,9 @@ DictUpdateCmd(interp, objc, objv)
      * Double-check that it is still a dictionary.
      */
 
-    state = TclSaveInterpState(interp, result);
+    state = Tcl_SaveInterpState(interp, result);
     if (Tcl_DictObjSize(interp, dictPtr, &dummy) != TCL_OK) {
-	TclDiscardInterpState(state);
+	Tcl_DiscardInterpState(state);
 	return TCL_ERROR;
     }
 
@@ -2826,14 +2826,14 @@ DictUpdateCmd(interp, objc, objv)
 
     if (Tcl_ObjSetVar2(interp, objv[2], NULL, dictPtr,
 	    TCL_LEAVE_ERR_MSG) == NULL) {
-	TclDiscardInterpState(state);
+	Tcl_DiscardInterpState(state);
 	if (allocdict) {
 	    TclDecrRefCount(dictPtr);
 	}
 	return TCL_ERROR;
     }
 
-    return TclRestoreInterpState(interp, state);
+    return Tcl_RestoreInterpState(interp, state);
 }
 
 /*
@@ -2862,7 +2862,7 @@ DictWithCmd(interp, objc, objv)
 {
     Tcl_Obj *dictPtr, *keysPtr, *keyPtr, *valPtr, **keyv, *leafPtr;
     Tcl_DictSearch s;
-    TclInterpState state;
+    Tcl_InterpState state;
     int done, result, keyc, i, allocdict=0;
 
     if (objc < 4) {
@@ -2938,10 +2938,10 @@ DictWithCmd(interp, objc, objv)
      * Double-check that it is still a dictionary.
      */
 
-    state = TclSaveInterpState(interp, result);
+    state = Tcl_SaveInterpState(interp, result);
     if (Tcl_DictObjSize(interp, dictPtr, &i) != TCL_OK) {
 	TclDecrRefCount(keysPtr);
-	TclDiscardInterpState(state);
+	Tcl_DiscardInterpState(state);
 	return TCL_ERROR;
     }
 
@@ -2967,7 +2967,7 @@ DictWithCmd(interp, objc, objv)
 	    if (allocdict) {
 		TclDecrRefCount(dictPtr);
 	    }
-	    TclDiscardInterpState(state);
+	    Tcl_DiscardInterpState(state);
 	    return TCL_ERROR;
 	}
 	if (leafPtr == DICT_PATH_NON_EXISTENT) {
@@ -2975,7 +2975,7 @@ DictWithCmd(interp, objc, objv)
 	    if (allocdict) {
 		TclDecrRefCount(dictPtr);
 	    }
-	    return TclRestoreInterpState(interp, state);
+	    return Tcl_RestoreInterpState(interp, state);
 	}
     } else {
 	leafPtr = dictPtr;
@@ -3014,10 +3014,10 @@ DictWithCmd(interp, objc, objv)
 	if (allocdict) {
 	    TclDecrRefCount(dictPtr);
 	}
-	TclDiscardInterpState(state);
+	Tcl_DiscardInterpState(state);
 	return TCL_ERROR;
     }
-    return TclRestoreInterpState(interp, state);
+    return Tcl_RestoreInterpState(interp, state);
 }
 
 /*

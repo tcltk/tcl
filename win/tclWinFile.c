@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.50.2.10 2004/10/28 18:47:39 dgp Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.50.2.11 2004/12/09 23:01:38 dgp Exp $
  */
 
 //#define _WIN32_WINNT  0x0500
@@ -22,6 +22,14 @@
 #include <sys/stat.h>
 #include <shlobj.h>
 #include <lmaccess.h>		/* For TclpGetUserHome(). */
+
+/*
+ * The number of 100-ns intervals between the Windows system epoch 
+ * (1601-01-01 on the proleptic Gregorian calendar) and the
+ * Posix epoch (1970-01-01).
+ */
+
+#define POSIX_EPOCH_AS_FILETIME 116444736000000000
 
 /*
  * Declarations for 'link' related information.  This information
@@ -154,6 +162,8 @@ typedef enum _FINDEX_SEARCH_OPS {
 /* Other typedefs required by this code */
 
 static time_t		ToCTime(FILETIME fileTime);
+static void             FromCTime( time_t posixTime,
+				   FILETIME* fileTime );
 
 typedef NET_API_STATUS NET_API_FUNCTION NETUSERGETINFOPROC
 	(LPWSTR servername, LPWSTR username, DWORD level, LPBYTE *bufptr);
@@ -664,37 +674,24 @@ NativeWriteReparse(LinkDirectory, buffer)
  * TclpFindExecutable --
  *
  *	This procedure computes the absolute path name of the current
- *	application, given its argv[0] value.
+ *	application.
  *
  * Results:
- *	A clean UTF string that is the path to the executable.  At this
- *	point we may not know the system encoding, but we convert the
- *	string value to UTF-8 using core Windows functions.  The path name
- *	contains ASCII string and '/' chars do not conflict with other UTF
- *	chars.
+ * 	None.
  *
  * Side effects:
- *	The variable tclNativeExecutableName gets filled in with the file
- *	name for the application, if we figured it out.  If we couldn't
- *	figure it out, tclNativeExecutableName is set to NULL.
+ *	The computed path is stored.
  *
  *---------------------------------------------------------------------------
  */
 
-char *
+void
 TclpFindExecutable(argv0)
     CONST char *argv0;		/* The value of the application's argv[0]
 				 * (native). */
 {
     WCHAR wName[MAX_PATH];
     char name[MAX_PATH * TCL_UTF_MAX];
-
-    if (argv0 == NULL) {
-	return NULL;
-    }
-    if (tclNativeExecutableName != NULL) {
-	return tclNativeExecutableName;
-    }
 
     /*
      * Under Windows we ignore argv0, and return the path for the file used to
@@ -709,12 +706,8 @@ TclpFindExecutable(argv0)
 	MultiByteToWideChar(CP_ACP, 0, name, -1, wName, MAX_PATH);
     }
     WideCharToMultiByte(CP_UTF8, 0, wName, -1, name, sizeof(name), NULL, NULL);
-
-    tclNativeExecutableName = ckalloc((unsigned) (strlen(name) + 1));
-    strcpy(tclNativeExecutableName, name);
-
-    TclWinNoBackslash(tclNativeExecutableName);
-    return tclNativeExecutableName;
+    TclWinNoBackslash(name);
+    TclSetObjNameOfExecutable(Tcl_NewStringObj(name, -1), NULL);
 }
 
 /*
@@ -1948,6 +1941,10 @@ NativeStat(nativePath, statPtr, checkLinks)
  * NativeStatMode --
  *
  *	Calculate just the 'st_mode' field of a 'stat' structure.
+ *	
+ *	In many places we don't need the full stat structure, and
+ *	it's much faster just to calculate these pieces, if that's
+ *	all we need.
  *
  *----------------------------------------------------------------------
  */
@@ -1976,56 +1973,54 @@ NativeStatMode(DWORD attr, int checkLinks, int isExec)
     return (unsigned short)mode;
 }
 
+/*
+ *------------------------------------------------------------------------
+ *
+ * ToCTime --
+ *
+ *	Converts a Windows FILETIME to a time_t in UTC.
+ *
+ * Results:
+ *	Returns the count of seconds from the Posix epoch.
+ *
+ *------------------------------------------------------------------------
+ */
+
 static time_t
-ToCTime(
-    FILETIME fileTime)		/* UTC Time to convert to local time_t. */
+ToCTime(FILETIME fileTime)	/* UTC time */
 {
-    FILETIME localFileTime;
-    SYSTEMTIME systemTime;
-    struct tm tm;
-
-    if (FileTimeToLocalFileTime(&fileTime, &localFileTime) == 0) {
-	return 0;
-    }
-    if (FileTimeToSystemTime(&localFileTime, &systemTime) == 0) {
-	return 0;
-    }
-    tm.tm_sec = systemTime.wSecond;
-    tm.tm_min = systemTime.wMinute;
-    tm.tm_hour = systemTime.wHour;
-    tm.tm_mday = systemTime.wDay;
-    tm.tm_mon = systemTime.wMonth - 1;
-    tm.tm_year = systemTime.wYear - 1900;
-    tm.tm_wday = 0;
-    tm.tm_yday = 0;
-    tm.tm_isdst = -1;
-
-    return mktime(&tm);
+    LARGE_INTEGER convertedTime;
+    convertedTime.LowPart = fileTime.dwLowDateTime;
+    convertedTime.HighPart = (LONG) fileTime.dwHighDateTime;
+    return (time_t) ((convertedTime.QuadPart
+		      - (Tcl_WideInt) POSIX_EPOCH_AS_FILETIME)
+		      / (Tcl_WideInt) 10000000);
 }
 
-#if 0
+
+/*
+ *------------------------------------------------------------------------
+ *
+ * FromCTime --
+ *
+ *	Converts a time_t to a Windows FILETIME
+ *
+ * Results:
+ *	Returns the count of 100-ns ticks seconds from the Windows epoch.
+ *
+ *------------------------------------------------------------------------
+ */
 
-    /*
-     * Borland's stat doesn't take into account localtime.
-     */
-
-    if ((result == 0) && (buf->st_mtime != 0)) {
-	TIME_ZONE_INFORMATION tz;
-	int time, bias;
-
-	time = GetTimeZoneInformation(&tz);
-	bias = tz.Bias;
-	if (time == TIME_ZONE_ID_DAYLIGHT) {
-	    bias += tz.DaylightBias;
-	}
-	bias *= 60;
-	buf->st_atime -= bias;
-	buf->st_ctime -= bias;
-	buf->st_mtime -= bias;
-    }
-
-#endif
-
+static void
+FromCTime(time_t posixTime,
+	  FILETIME* fileTime)	/* UTC Time */
+{
+    LARGE_INTEGER convertedTime;
+    convertedTime.QuadPart = ((LONGLONG) posixTime) * 10000000 
+	+ POSIX_EPOCH_AS_FILETIME;
+    fileTime->dwLowDateTime = convertedTime.LowPart;
+    fileTime->dwHighDateTime = convertedTime.HighPart;
+}
 
 #if 0
 /*
@@ -2913,7 +2908,8 @@ TclNativeDupInternalRep(clientData)
  *	0 on success, -1 on error.
  *
  * Side effects:
- *	None.
+ *	Sets errno to a representation of any Windows problem that's
+ *	observed in the process.
  *
  *---------------------------------------------------------------------------
  */
@@ -2922,24 +2918,29 @@ TclpUtime(pathPtr, tval)
     Tcl_Obj *pathPtr;      /* File to modify */
     struct utimbuf *tval;  /* New modification date structure */
 {
-    int res;
-#ifndef __BORLANDC__
-    /* 
-     * Windows uses a slightly different structure name and, possibly,
-     * contents, so we have to copy the information over
-     */
-    struct _utimbuf buf;
-#else
-    /*
-     * Borland's compiler does not, but we still copy the content into a
-     * local variable using the 'generic' name
-     */
-    struct utimbuf buf;
-#endif
-
-    buf.actime = tval->actime;
-    buf.modtime = tval->modtime;
+    int res = 0;
+    HANDLE fileHandle;
+    FILETIME lastAccessTime, lastModTime;
     
-    res = (*tclWinProcs->utimeProc)(Tcl_FSGetNativePath(pathPtr),&buf);
+    FromCTime(tval->actime, &lastAccessTime);
+    FromCTime(tval->modtime, &lastModTime);
+    
+    /*
+     * We use the native APIs (not 'utime') because there are
+     * some daylight savings complications that utime gets wrong.
+     */
+    fileHandle = (tclWinProcs->createFileProc) (
+         (CONST TCHAR*) Tcl_FSGetNativePath(pathPtr), 
+	 FILE_WRITE_ATTRIBUTES, 0, NULL, OPEN_EXISTING, 
+	 FILE_ATTRIBUTE_NORMAL, NULL);
+    
+    if (fileHandle == INVALID_HANDLE_VALUE
+      || !SetFileTime(fileHandle, NULL, &lastAccessTime, &lastModTime)) {
+	TclWinConvertError(GetLastError());
+	res = -1;
+    }
+    if (fileHandle != INVALID_HANDLE_VALUE) {
+	CloseHandle(fileHandle);
+    }
     return res;
 }

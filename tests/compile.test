@@ -11,10 +11,14 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: compile.test,v 1.27.2.4 2004/10/28 18:47:11 dgp Exp $
+# RCS: @(#) $Id: compile.test,v 1.27.2.5 2004/12/09 23:01:05 dgp Exp $
 
 package require tcltest 2
 namespace import -force ::tcltest::*
+
+testConstraint exec       [llength [info commands exec]]
+testConstraint memory     [llength [info commands memory]]
+testConstraint testevalex [llength [info commands testevalex]]
 
 # The following tests are very incomplete, although the rest of the
 # test suite covers this file fairly well.
@@ -273,15 +277,12 @@ test compile-11.9 {Tcl_Append*: ensure Tcl_ResetResult is used properly} {
 # with TCL_MEM_DEBUG
 #
 # Special test for leak on interp delete [Bug 467523]. 
-::tcltest::testConstraint exec [llength [info commands exec]]
-::tcltest::testConstraint memory [llength [info commands memory]]
-
-test compile-12.1 {testing literal leak on interp delete} {memory} {
+test compile-12.1 {testing literal leak on interp delete} -setup {
     proc getbytes {} {
 	set lines [split [memory info] "\n"]
-	lindex [lindex $lines 3] 3
+	lindex $lines 3 3
     }
-    
+} -constraints memory -body {
     set end [getbytes]
     for {set i 0} {$i < 5} {incr i} {
 	interp create foo 
@@ -291,36 +292,36 @@ test compile-12.1 {testing literal leak on interp delete} {memory} {
 	interp delete foo
 	set tmp $end
 	set end [getbytes]
-    }    
+    }
+    set leakedBytes [expr {$end - $tmp}]
+} -cleanup {
     rename getbytes {}
-    set leak [expr {$end - $tmp}]
-} 0
+} -result 0
 # Special test for a memory error in a preliminary fix of [Bug 467523]. 
 # It requires executing a helpfile.  Presumably the child process is
 # used because when this test fails, it crashes.
-test compile-12.2 {testing error on literal deletion} {memory exec} {
-    makeFile {
+test compile-12.2 {testing error on literal deletion} -constraints {memory exec} -body {
+    set sourceFile [makeFile {
 	for {set i 0} {$i < 5} {incr i} {
 	    namespace eval bar {}
 	    namespace delete bar
 	}
 	puts 0
-    } source.file
-    set res [catch {
-	exec [interpreter] source.file 
-    }]
-    catch {removeFile source.file}
-    set res
-} 0
+    } source.file]
+    exec [interpreter] $sourceFile 
+} -cleanup {
+    catch {removeFile $sourceFile}
+} -result 0
 # Test to catch buffer overrun in TclCompileTokens from buf 530320
-test compile-12.3 {check for a buffer overrun} {
+test compile-12.3 {check for a buffer overrun} -body {
     proc crash {} {
 	puts $array([expr {a+2}])
     }
-    list [catch crash msg] $msg
-} {1 {syntax error in expression "a+2": variable references require preceding $}}
-
-test compile-12.4 {TclCleanupLiteralTable segfault} {
+    crash
+} -returnCodes error -cleanup {
+    rename crash {}
+} -result {syntax error in expression "a+2": variable references require preceding $}
+test compile-12.4 {TclCleanupLiteralTable segfault} -body {
     # Tcl Bug 1001997
     # Here, we're trying to test a case that causes a crash in
     # TclCleanupLiteralTable.  The conditions that we're trying to
@@ -347,35 +348,37 @@ test compile-12.4 {TclCleanupLiteralTable segfault} {
     #  (c) Delete the interpreter to invoke TclCleanupLiteralTable
     #      and tickle the bug.
     proc foo {} {
-    set i [interp create]
-    $i eval {
-	namespace eval ::w {concat 4649; variable bugbug}
-	namespace eval ::w {
-	    concat x1 x2 x3 x4 x5 x6 x7 x8 x9 x10 \
-		x11 x12 x13 x14 x15 x16 x17 x18 x19 x20 \
-		x21 x22 x23 x24 x25 x26 x27 x28 x29 x30 \
-		x31 x32 X33 X34 X35 X36 X37 X38 X39 X40 \
-		x41 x42 x43 x44 x45 x46 x47 x48 x49 x50 \
-		x51 x52 x53 x54 x55 x56 x57 x58 x59 x60 \
-		x61 x62 x63 x64
-	    concat y1 y2 y3 y4 y5 y6 y7 y8 y9 y10 \
-		y11 y12 y13 y14 y15 y16 y17 y18 y19 y20 \
-		y21 y22 y23 y24 y25 y26 y27 y28 y29 y30 \
-		y31 y32 Y33 Y34 Y35 Y36 Y37 Y38 Y39 Y40 \
-		y41 y42 y43 y44 y45 y46 y47 y48 y49 y50 \
-		y51 y52 y53 y54 y55 y56 y57 y58 y59 y60 \
-		y61 y62 y63 y64
-	    concat z1 z2 z3 z4 z5 z6 z7 z8 z9 z10 \
-		z11 z12 z13 z14 z15 z16 z17 z18 z19 z20 \
-		z21 z22 z23 z24 z25 z26 z27 z28 z29 z30 \
-		z31 z32
+	set i [interp create]
+	$i eval {
+	    namespace eval ::w {concat 4649; variable bugbug}
+	    namespace eval ::w {
+		concat x1 x2 x3 x4 x5 x6 x7 x8 x9 x10 \
+		    x11 x12 x13 x14 x15 x16 x17 x18 x19 x20 \
+		    x21 x22 x23 x24 x25 x26 x27 x28 x29 x30 \
+		    x31 x32 X33 X34 X35 X36 X37 X38 X39 X40 \
+		    x41 x42 x43 x44 x45 x46 x47 x48 x49 x50 \
+		    x51 x52 x53 x54 x55 x56 x57 x58 x59 x60 \
+		    x61 x62 x63 x64
+		concat y1 y2 y3 y4 y5 y6 y7 y8 y9 y10 \
+		    y11 y12 y13 y14 y15 y16 y17 y18 y19 y20 \
+		    y21 y22 y23 y24 y25 y26 y27 y28 y29 y30 \
+		    y31 y32 Y33 Y34 Y35 Y36 Y37 Y38 Y39 Y40 \
+		    y41 y42 y43 y44 y45 y46 y47 y48 y49 y50 \
+		    y51 y52 y53 y54 y55 y56 y57 y58 y59 y60 \
+		    y61 y62 y63 y64
+		concat z1 z2 z3 z4 z5 z6 z7 z8 z9 z10 \
+		    z11 z12 z13 z14 z15 z16 z17 z18 z19 z20 \
+		    z21 z22 z23 z24 z25 z26 z27 z28 z29 z30 \
+		    z31 z32
+	    }
 	}
-    }
-    interp delete $i; # must not crash
-    return ok
+	interp delete $i; # must not crash
+	return ok
     }
     foo
-} ok
+} -cleanup {
+    rename foo {}
+} -result ok
 
 # Special test for underestimating the maxStackSize required for a
 # compiled command. A failure will cause a segfault in the child 
@@ -430,7 +433,6 @@ test compile-15.5 {proper TCL_RETURN code from [return]} {
     set result
 } ""
 
-testConstraint testevalex [llength [info commands testevalex]]
 for {set noComp 0} {$noComp <= 1} {incr noComp} {
 
 if $noComp {

@@ -9,8 +9,15 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileSystem.h,v 1.2.2.6 2004/10/28 18:46:27 dgp Exp $
+ * RCS: @(#) $Id: tclFileSystem.h,v 1.2.2.7 2004/12/09 23:00:35 dgp Exp $
  */
+
+#ifndef _TCLFILESYSTEM
+#define _TCLFILESYSTEM
+
+#ifndef _TCL
+#include "tcl.h"
+#endif
 
 /* 
  * struct FilesystemRecord --
@@ -62,45 +69,62 @@ typedef struct ThreadSpecificData {
  * These functions are not exported at all at present.
  */
 
-int      TclFSCwdPointerEquals _ANSI_ARGS_((Tcl_Obj** pathPtrPtr));
-int	 TclFSMakePathFromNormalized _ANSI_ARGS_((Tcl_Interp *interp, 
-		Tcl_Obj *pathPtr, ClientData clientData));
-int      TclFSNormalizeToUniquePath _ANSI_ARGS_((Tcl_Interp *interp, 
-		Tcl_Obj *pathPtr, int startAt, ClientData *clientDataPtr));
-Tcl_Obj* TclFSMakePathRelative _ANSI_ARGS_((Tcl_Interp *interp, 
-		Tcl_Obj *pathPtr, Tcl_Obj *cwdPtr));
-Tcl_Obj* TclFSInternalToNormalized _ANSI_ARGS_((
-		Tcl_Filesystem *fromFilesystem, ClientData clientData,
-		FilesystemRecord **fsRecPtrPtr));
-int      TclFSEnsureEpochOk _ANSI_ARGS_((Tcl_Obj* pathPtr,
-		Tcl_Filesystem **fsPtrPtr));
-void     TclFSSetPathDetails _ANSI_ARGS_((Tcl_Obj *pathPtr, 
-		FilesystemRecord *fsRecPtr, ClientData clientData ));
-Tcl_Obj* TclFSNormalizeAbsolutePath _ANSI_ARGS_((Tcl_Interp* interp, 
-		Tcl_Obj *pathPtr, ClientData *clientDataPtr));
+MODULE_SCOPE int	TclFSCwdPointerEquals _ANSI_ARGS_((
+			    Tcl_Obj** pathPtrPtr));
+MODULE_SCOPE int	TclFSMakePathFromNormalized _ANSI_ARGS_((
+			    Tcl_Interp *interp, Tcl_Obj *pathPtr,
+			    ClientData clientData));
+MODULE_SCOPE int	TclFSNormalizeToUniquePath _ANSI_ARGS_((
+			    Tcl_Interp *interp, Tcl_Obj *pathPtr,
+			    int startAt, ClientData *clientDataPtr));
+MODULE_SCOPE Tcl_Obj *	TclFSMakePathRelative _ANSI_ARGS_((
+			    Tcl_Interp *interp, Tcl_Obj *pathPtr,
+			    Tcl_Obj *cwdPtr));
+MODULE_SCOPE Tcl_Obj *	TclFSInternalToNormalized _ANSI_ARGS_((
+			    Tcl_Filesystem *fromFilesystem,
+			    ClientData clientData,
+			    FilesystemRecord **fsRecPtrPtr));
+MODULE_SCOPE int	TclFSEnsureEpochOk _ANSI_ARGS_((Tcl_Obj* pathPtr,
+			    Tcl_Filesystem **fsPtrPtr));
+MODULE_SCOPE void	TclFSSetPathDetails _ANSI_ARGS_((Tcl_Obj *pathPtr,
+			    FilesystemRecord *fsRecPtr,
+			    ClientData clientData ));
+MODULE_SCOPE Tcl_Obj *	TclFSNormalizeAbsolutePath _ANSI_ARGS_((
+			    Tcl_Interp* interp, Tcl_Obj *pathPtr,
+			    ClientData *clientDataPtr));
 
 /* 
  * Private shared variables for use by tclIOUtil.c and tclPathObj.c
  */
-extern Tcl_Filesystem tclNativeFilesystem;
-extern Tcl_ThreadDataKey tclFsDataKey;
+MODULE_SCOPE Tcl_Filesystem tclNativeFilesystem;
+MODULE_SCOPE Tcl_ThreadDataKey tclFsDataKey;
 
 /* 
  * Private shared functions for use by tclIOUtil.c, tclPathObj.c
  * and tclFileName.c, and any platform-specific filesystem code.
  */
-Tcl_PathType     TclFSGetPathType  _ANSI_ARGS_((Tcl_Obj *pathPtr, 
-			    Tcl_Filesystem **filesystemPtrPtr, 
-			    int *driveNameLengthPtr));
-Tcl_PathType     TclFSNonnativePathType  _ANSI_ARGS_((CONST char *pathPtr, 
-			    int pathLen, Tcl_Filesystem **filesystemPtrPtr, 
-			    int *driveNameLengthPtr, Tcl_Obj **driveNameRef));
-Tcl_PathType     TclGetPathType  _ANSI_ARGS_((Tcl_Obj *pathPtr, 
-			    Tcl_Filesystem **filesystemPtrPtr, 
-			    int *driveNameLengthPtr, Tcl_Obj **driveNameRef));
-int              TclFSEpochOk _ANSI_ARGS_((int filesystemEpoch));
-int              TclFSCwdIsNative _ANSI_ARGS_((void)); 
-Tcl_Obj*         TclWinVolumeRelativeNormalize _ANSI_ARGS_((Tcl_Interp *interp, 
-			    CONST char *path, Tcl_Obj **useThisCwdPtr));
-Tcl_FSPathInFilesystemProc TclNativePathInFilesystem;
-Tcl_FSCreateInternalRepProc TclNativeCreateNativeRep;
+MODULE_SCOPE Tcl_PathType   TclFSGetPathType  _ANSI_ARGS_((
+				Tcl_Obj *pathPtr,
+				Tcl_Filesystem **filesystemPtrPtr,
+				int *driveNameLengthPtr));
+MODULE_SCOPE Tcl_PathType   TclFSNonnativePathType  _ANSI_ARGS_((
+				CONST char *pathPtr, int pathLen,
+				Tcl_Filesystem **filesystemPtrPtr,
+				int *driveNameLengthPtr,
+				Tcl_Obj **driveNameRef));
+MODULE_SCOPE Tcl_PathType   TclGetPathType  _ANSI_ARGS_((
+				Tcl_Obj *pathPtr,
+				Tcl_Filesystem **filesystemPtrPtr,
+				int *driveNameLengthPtr,
+				Tcl_Obj **driveNameRef));
+MODULE_SCOPE int	    TclFSEpochOk _ANSI_ARGS_((
+				int filesystemEpoch));
+MODULE_SCOPE int	    TclFSCwdIsNative _ANSI_ARGS_((void));
+MODULE_SCOPE Tcl_Obj*	    TclWinVolumeRelativeNormalize _ANSI_ARGS_((
+				Tcl_Interp *interp, CONST char *path,
+				Tcl_Obj **useThisCwdPtr));
+
+MODULE_SCOPE Tcl_FSPathInFilesystemProc TclNativePathInFilesystem;
+MODULE_SCOPE Tcl_FSCreateInternalRepProc TclNativeCreateNativeRep;
+
+#endif /* _TCLFILESYSTEM */

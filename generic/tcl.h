@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.157.2.15 2004/10/28 18:46:17 dgp Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.157.2.16 2004/12/09 23:00:29 dgp Exp $
  */
 
 #ifndef _TCL
@@ -457,11 +457,15 @@ typedef struct Tcl_Interp {
 
 typedef struct Tcl_AsyncHandler_ *Tcl_AsyncHandler;
 typedef struct Tcl_Channel_ *Tcl_Channel;
+typedef struct Tcl_ChannelTypeVersion_ *Tcl_ChannelTypeVersion;
 typedef struct Tcl_Command_ *Tcl_Command;
 typedef struct Tcl_Condition_ *Tcl_Condition;
+typedef struct Tcl_Dict_ *Tcl_Dict;
 typedef struct Tcl_EncodingState_ *Tcl_EncodingState;
 typedef struct Tcl_Encoding_ *Tcl_Encoding;
 typedef struct Tcl_Event Tcl_Event;
+typedef struct Tcl_InterpState_ *Tcl_InterpState;
+typedef struct Tcl_LoadHandle_ *Tcl_LoadHandle;
 typedef struct Tcl_Mutex_ *Tcl_Mutex;
 typedef struct Tcl_Pid_ *Tcl_Pid;
 typedef struct Tcl_RegExp_ *Tcl_RegExp;
@@ -470,9 +474,6 @@ typedef struct Tcl_ThreadId_ *Tcl_ThreadId;
 typedef struct Tcl_TimerToken_ *Tcl_TimerToken;
 typedef struct Tcl_Trace_ *Tcl_Trace;
 typedef struct Tcl_Var_ *Tcl_Var;
-typedef struct Tcl_ChannelTypeVersion_ *Tcl_ChannelTypeVersion;
-typedef struct Tcl_LoadHandle_ *Tcl_LoadHandle;
-typedef struct Tcl_Dict_ *Tcl_Dict;
 
 /*
  * Definition of the interface to procedures implementing threads.
@@ -994,14 +995,24 @@ typedef struct Tcl_DString {
 #define TCL_EXACT	1
 
 /*
- * Flag values passed to Tcl_RecordAndEval and/or Tcl_EvalObj.
+ * Flag values passed to Tcl_RecordAndEval, Tcl_EvalObj, Tcl_EvalObjv.
  * WARNING: these bit choices must not conflict with the bit choices
  * for evalFlag bits in tclInt.h!!
+ *
+ * Meanings:
+ *	TCL_NO_EVAL:		Just record this command
+ *	TCL_EVAL_GLOBAL:	Execute script in global namespace
+ *	TCL_EVAL_DIRECT:	Do not compile this script
+ *	TCL_EVAL_INVOKE:	Magical Tcl_EvalObjv mode for aliases/ensembles
+ *				o Run in global namespace
+ *				o Cut out of error traces
+ *				o Don't reset the flags controlling ensemble
+ *				  error message rewriting.
  */
 #define TCL_NO_EVAL		0x10000
 #define TCL_EVAL_GLOBAL		0x20000
 #define TCL_EVAL_DIRECT		0x40000
-#define TCL_EVAL_INVOKE	        0x80000
+#define TCL_EVAL_INVOKE		0x80000
 
 /*
  * Special freeProc values that may be passed to Tcl_SetResult (see
@@ -2306,6 +2317,13 @@ EXTERN CONST char *	Tcl_InitStubs _ANSI_ARGS_((Tcl_Interp *interp,
 
 #endif
 
+/*
+ * Public functions that are not accessible via the stubs table.
+ */
+
+EXTERN void Tcl_Main _ANSI_ARGS_((int argc, char **argv,
+	Tcl_AppInitProc *appInitProc));
+
 
 /*
  * Include the public function declarations that are accessible via
@@ -2320,13 +2338,6 @@ EXTERN CONST char *	Tcl_InitStubs _ANSI_ARGS_((Tcl_Interp *interp,
  */
 
 #include "tclPlatDecls.h"
-
-/*
- * Public functions that are not accessible via the stubs table.
- */
-
-EXTERN void Tcl_Main _ANSI_ARGS_((int argc, char **argv,
-	Tcl_AppInitProc *appInitProc));
 
 /*
  * Convenience declaration of Tcl_AppInit for backwards compatibility.

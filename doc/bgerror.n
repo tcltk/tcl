@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: bgerror.n,v 1.4.20.2 2004/05/27 14:29:07 dgp Exp $
+'\" RCS: @(#) $Id: bgerror.n,v 1.4.20.3 2004/12/09 23:00:28 dgp Exp $
 '\" 
 .so man.macros
 .TH bgerror n 7.5 Tcl "Tcl Built-In Commands"
@@ -18,6 +18,19 @@ bgerror \- Command invoked to process background errors
 .BE
 
 .SH DESCRIPTION
+.VS 8.5
+Release 8.5 of Tcl supports the \fBinterp bgerror\fR command,
+which allows applications to register in an interpreter the command
+that will handle background errors in that interpreter.  In older
+releases of Tcl, this level of control was not available, and applications
+could control the handling of background errors only by creating
+a command with the particular command name \fBbgerror\fR in the
+global namespace of an interpreter.  The following documentation
+describes the interface requirements of the \fBbgerror\fR command
+an application might define to retain compatibility with pre-8.5
+releases of Tcl.  Applications intending to support only
+Tcl releases 8.5 and later should simply make use of \fBinterp bgerror\fR.
+.VE 8.5
 .PP
 The \fBbgerror\fR command doesn't exist as built-in part of Tcl.  Instead,
 individual applications or users can define a \fBbgerror\fR
@@ -36,8 +49,10 @@ unwinding ends in the Tcl library and there is no obvious way for Tcl
 to report the error.
 .PP
 When Tcl detects a background error, it saves information about the
-error and invokes the \fBbgerror\fR command later as an idle event
-handler. Before invoking \fBbgerror\fR, Tcl restores the
+error and invokes a handler command registered by \fBinterp bgerror\fR
+later as an idle event handler.  The default handler command in turn
+calls the \fBbgerror\fR command .
+Before invoking \fBbgerror\fR, Tcl restores the
 \fBerrorInfo\fR and \fBerrorCode\fR variables to their values at the
 time the error occurred, then it invokes \fBbgerror\fR with the error
 message as its only argument.  Tcl assumes that the application has
@@ -56,22 +71,6 @@ error, in the order they occurred.  However, if \fBbgerror\fR returns
 with a break exception, then any remaining errors are skipped without
 calling \fBbgerror\fR.
 .PP
-Tcl has no default implementation for \fBbgerror\fR. However, in
-applications using Tk there is a default \fBbgerror\fR procedure which
-posts a dialog box containing the error message and offers the user a
-chance to see a stack trace showing where the error occurred.  In
-addition to allowing the user to view the stack trace, the dialog
-provides an additional application configurable button which may be
-used, for example, to save the stack trace to a file.  By default,
-this is the behavior associated with that button.  This behavior can
-be redefined by setting the option database values
-\fB*ErrorDialog.function.text\fR, to specify the caption for the
-function button, and \fB*ErrorDialog.function.command\fR, to specify
-the command to be run.  The text of the stack trace is appended to the
-command when it is evaluated.  If either of these options is set to
-the empty string, then the additional button will not be displayed in
-the dialog.
-.PP
 If you are writing code that will be used by others as part of a
 package or other kind of library, consider avoiding \fBbgerror\fR.
 The reason for this is that the application programmer may also want
@@ -89,7 +88,7 @@ proc bgerror {message} {
 .CE
 
 .SH "SEE ALSO"
-after(n), tclvars(n)
+after(n), interp(n), tclvars(n)
 
 .SH KEYWORDS
 background error, reporting

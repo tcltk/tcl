@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: expr.test,v 1.18.2.7 2004/10/28 18:47:12 dgp Exp $
+# RCS: @(#) $Id: expr.test,v 1.18.2.8 2004/12/09 23:01:06 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -809,6 +809,11 @@ test expr-22.7 {non-numeric floats} nonPortable {
 test expr-22.8 {non-numeric floats} nonPortable {
     list [catch {expr {1 / Inf}} msg] $msg
 } {1 {can't use infinite floating-point value as operand of "/"}}
+# Make sure [Bug 761471] stays fixed.
+test expr-22.9 {non-numeric floats: shared object equality and NaN} {
+    set x NaN
+    expr {$x == $x}
+} 0
 
 # Tests for exponentiation handling
 test expr-23.1 {CompileExponentialExpr: just exponential expr} {expr 4**2} 16

@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.71.2.7 2004/10/28 18:47:36 dgp Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.71.2.8 2004/12/09 23:01:36 dgp Exp $
 
 VERSION = @TCL_VERSION@
 
@@ -110,7 +110,7 @@ CYGPATH			= @CYGPATH@
 
 GENERIC_DIR_NATIVE	= $(shell $(CYGPATH) '$(GENERIC_DIR)')
 WIN_DIR_NATIVE		= $(shell $(CYGPATH) '$(WIN_DIR)')
-ROOT_DIR_NATIVE		= $(shell $(CYGPATH) '$(ROOT_DIR)')
+ROOT_DIR_NATIVE		= $(shell $(CYGPATH) '$(ROOT_DIR)' | sed 's/\\*$$//' )
 
 LIBRARY_DIR   = $(shell echo '$(ROOT_DIR_NATIVE)/library' | sed 's/\\/\//g' )
 
@@ -535,7 +535,7 @@ install-libraries: libraries install-tzdata install-msgs
 		else true; \
 		fi; \
 	    done;
-	@for i in http1.0 http2.4 opt0.4 encoding msgcat1.4 tcltest2.2; \
+	@for i in http1.0 opt0.4 encoding ../tcl8 ../tcl8/8.2 ../tcl8/8.3 ../tcl8/8.5; \
 	    do \
 	    if [ ! -d $(SCRIPT_INSTALL_DIR)/$$i ] ; then \
 		echo "Making directory $(SCRIPT_INSTALL_DIR)/$$i"; \
@@ -559,26 +559,17 @@ install-libraries: libraries install-tzdata install-msgs
 	    do \
 	    $(COPY) "$$j" "$(SCRIPT_INSTALL_DIR)/http1.0"; \
 	    done;
-	@echo "Installing library http2.4 directory";
-	@for j in $(ROOT_DIR)/library/http/*.tcl; \
-	    do \
-	    $(COPY) "$$j" "$(SCRIPT_INSTALL_DIR)/http2.4"; \
-	    done;
+	@echo "Installing package http 2.5.0 as a Tcl Module";
+	@$(COPY) $(ROOT_DIR)/library/http/http.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.2/http-2.5.0.tm;
 	@echo "Installing library opt0.4 directory";
 	@for j in $(ROOT_DIR)/library/opt/*.tcl; \
 	    do \
 	    $(COPY) "$$j" "$(SCRIPT_INSTALL_DIR)/opt0.4"; \
 	    done;
-	@echo "Installing library msgcat1.4 directory";
-	@for j in $(ROOT_DIR)/library/msgcat/*.tcl; \
-	    do \
-	    $(COPY) "$$j" "$(SCRIPT_INSTALL_DIR)/msgcat1.4"; \
-	    done;
-	@echo "Installing library tcltest2.2 directory";
-	@for j in $(ROOT_DIR)/library/tcltest/*.tcl; \
-	    do \
-	    $(COPY) "$$j" "$(SCRIPT_INSTALL_DIR)/tcltest2.2"; \
-	    done;
+	@echo "Installing package msgcat 1.4.1 as a Tcl Module";
+	@$(COPY) $(ROOT_DIR)/library/msgcat/msgcat.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.5/msgcat-1.4.1.tm;
+	@echo "Installing package tcltest 2.2.7 as a Tcl Module";
+	@$(COPY) $(ROOT_DIR)/library/tcltest/tcltest.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.3/tcltest-2.2.7.tm;
 	@echo "Installing encodings";
 	@for i in $(ROOT_DIR)/library/encoding/*.enc ; do \
 		$(COPY) "$$i" "$(SCRIPT_INSTALL_DIR)/encoding"; \

@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: info.test,v 1.25.2.1 2004/05/27 14:29:18 dgp Exp $
+# RCS: @(#) $Id: info.test,v 1.25.2.2 2004/12/09 23:01:08 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -287,6 +287,10 @@ test info-8.2 {info globals option} {
 test info-8.3 {info globals option} {
     list [catch {info globals 1 2} msg] $msg
 } {1 {wrong # args: should be "info globals ?pattern?"}}
+test info-8.4 {info globals option: may have leading namespace qualifiers} {
+    set x 0
+    list [info globals x] [info globals :x] [info globals ::x] [info globals :::x] [info globals ::::x]
+} {x {} x x x}
 
 test info-9.1 {info level option} {
     info level
@@ -598,6 +602,14 @@ test info-19.5 {info vars with temporary variables} {
     }
     t1
 } {a}
+test info-19.6 {info vars: Bug 1072654} -setup {
+    namespace eval :: unset -nocomplain foo
+    catch {namespace delete x}
+} -body {
+    namespace eval x info vars foo
+} -cleanup {
+    namespace delete x
+} -result {}
 
 # Check whether the extra testing functions are defined...
 if {([catch {expr T1()} msg] == 1) && ($msg == {unknown math function "T1"})} {

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * CVS: $Id: tclIOGT.c,v 1.7.4.3 2004/10/28 18:46:37 dgp Exp $
+ * CVS: $Id: tclIOGT.c,v 1.7.4.4 2004/12/09 23:00:36 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -383,13 +383,13 @@ ExecuteCallback (dataPtr, interp, op, buf, bufLen, transmit, preserve)
     Tcl_Obj* resObj;		    /* See below, switch (transmit) */
     int resLen;
     unsigned char* resBuf;
-    TclInterpState state = NULL;
+    Tcl_InterpState state = NULL;
     int res = TCL_OK;
     Tcl_Obj* command = Tcl_DuplicateObj (dataPtr->command);
     Tcl_Obj* temp;
 
     if (preserve) {
-	state = TclSaveInterpState(dataPtr->interp, res);
+	state = Tcl_SaveInterpState(dataPtr->interp, res);
     }
 
     if (command == (Tcl_Obj*) NULL) {
@@ -488,14 +488,14 @@ ExecuteCallback (dataPtr, interp, op, buf, bufLen, transmit, preserve)
     Tcl_ResetResult(dataPtr->interp);
 
     if (preserve) {
-	(void) TclRestoreInterpState(dataPtr->interp, state);
+	(void) Tcl_RestoreInterpState(dataPtr->interp, state);
     }
 
     return res;
 
     cleanup:
     if (preserve) {
-	(void) TclRestoreInterpState(dataPtr->interp, state);
+	(void) Tcl_RestoreInterpState(dataPtr->interp, state);
     }
 
     if (command != (Tcl_Obj*) NULL) {

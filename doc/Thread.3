@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Thread.3,v 1.14.4.4 2004/10/28 18:46:11 dgp Exp $
+'\" RCS: @(#) $Id: Thread.3,v 1.14.4.5 2004/12/09 23:00:28 dgp Exp $
 '\" 
 .so man.macros
 .TH Threads 3 "8.1" Tcl "Tcl Library Procedures"
@@ -145,6 +145,9 @@ The result of locking a mutex twice from the same thread is undefined.
 On some platforms it will result in a deadlock.
 The \fBTcl_MutexLock\fR, \fBTcl_MutexUnlock\fR and \fBTcl_MutexFinalize\fR
 procedures are defined as empty macros if not compiling with threads enabled.
+For declaration of mutexes the \fBTCL_DECLARE_MUTEX\fR macro should be used.
+This macro assures correct mutex handling even when the core is compiled
+without threads enabled.
 .PP
 A condition variable is used as a signaling mechanism:
 a thread can lock a mutex and then wait on a condition variable
@@ -188,8 +191,7 @@ the script level.  One such package is the \fBThread\fR package.
 .VE 8.5
 .SH "SEE ALSO"
 Tcl_GetCurrentThread(3), Tcl_ThreadQueueEvent(3), Tcl_ThreadAlert(3),
-Tcl_ExitThread(3), Tcl_FinalizeThread(3),
-Tcl_CreateThreadExitHandler(3), Tcl_DeleteThreadExitHandler(3),
-\fBThread\fR package
+Tcl_ExitThread(3), Tcl_FinalizeThread(3), Tcl_CreateThreadExitHandler(3),
+Tcl_DeleteThreadExitHandler(3), Thread
 .SH KEYWORDS
 thread, mutex, condition variable, thread local storage

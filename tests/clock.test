@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.test,v 1.23.2.7 2004/10/28 18:47:07 dgp Exp $
+# RCS: @(#) $Id: clock.test,v 1.23.2.8 2004/12/09 23:01:02 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -34894,15 +34894,21 @@ test clock-33.5 {clock clicks tests, millisecond timing test} {
     after 10
     set end [clock clicks -milli]
     # 60 msecs seems to be the max time slice under Windows 95/98
-    expr {($end > $start) && (($end - $start) <= 60)}
-} {1}
+    expr {
+	  ($end > $start) && (($end - $start) <= 60) ?
+	  "ok" : 
+	  "test should have taken 0-60 ms, actually took [expr $end - $start]"}
+} {ok}
 test clock-33.5a {clock tests, millisecond timing test} {
     set start [clock milliseconds]
     after 10
     set end [clock milliseconds]
     # 60 msecs seems to be the max time slice under Windows 95/98
-    expr {($end > $start) && (($end - $start) <= 60)}
-} {1}
+    expr {
+	  ($end > $start) && (($end - $start) <= 60) ?
+	  "ok" : 
+	  "test should have taken 0-60 ms, actually took [expr $end - $start]"}
+} {ok}
 test clock-33.6 {clock clicks, milli with too much abbreviation} {
     list [catch { clock clicks {} } msg] $msg
 } {1 {bad option "": must be -milliseconds or -microseconds}}
@@ -35106,7 +35112,7 @@ test clock-34.26 {clock scan, DST for days} {
 test clock-34.27 {clock scan, DST for days} {
     clock scan "yesterday" -base [clock scan "19991101 00:00:00"]
 } [clock scan "19991031 00:00:00"]
-test clock-34.28 {clock scan, day} knownBug {
+test clock-34.28 {clock scan, day} {
     clock format [clock scan "Monday" -gmt true -base 946627200] \
 	    -format {%b %d, %Y %H:%M:%S} -gmt true
 } "Jan 03, 2000 00:00:00"
@@ -35183,7 +35189,7 @@ test clock-34.43 {last monday in november} {
     set res
 } {1991-11-25 1992-11-30 1993-11-29 1994-11-28 1995-11-27 1996-11-25}
 
-test clock-34.44 {2nd monday in november} knownBug {
+test clock-34.44 {2nd monday in november} {
     set res {}
     foreach i {91 92 93 94 95 96} {
       set nov8th [clock scan 11/8/$i -gmt 1]
@@ -35192,7 +35198,7 @@ test clock-34.44 {2nd monday in november} knownBug {
     }
     set res
 } {1991-11-11 1992-11-09 1993-11-08 1994-11-14 1995-11-13 1996-11-11}
-test clock-34.45 {2nd monday in november (2nd try)} knownBug {
+test clock-34.45 {2nd monday in november (2nd try)} {
     set res {}
     foreach i {91 92 93 94 95 96} {
       set nov1th [clock scan 11/1/$i -gmt 1]
@@ -35201,7 +35207,7 @@ test clock-34.45 {2nd monday in november (2nd try)} knownBug {
     }
     set res
 } {1991-11-11 1992-11-09 1993-11-08 1994-11-14 1995-11-13 1996-11-11}
-test clock-34.46 {last monday in november} knownBug {
+test clock-34.46 {last monday in november} {
     set res {}
     foreach i {91 92 93 94 95 96} {
       set dec1th [clock scan 12/1/$i -gmt 1]
@@ -35223,7 +35229,7 @@ test clock-35.1 {clock seconds tests} {
 } {}
 test clock-35.2 {clock seconds tests} {
     list [catch {clock seconds foo} msg] $msg
-} {1 {wrong # args: should be "::tcl::clock::seconds "}}
+} {1 {wrong # args: should be "clock seconds"}}
 test clock-35.3 {clock seconds tests} {
     set start [clock seconds]
     after 2000
@@ -35363,7 +35369,11 @@ test clock-44.1 {regression test - time zone name containing hyphen } \
     } \
     -result {12:34:56-0500}
     
-
+test clock-45.1 {regression test - time zone containing only two digits} \
+    -body {
+	clock scan 1985-04-12T10:15:30+04 -format %Y-%m-%dT%H:%M:%S%Z
+    } \
+    -result 482134530
 
 # cleanup
 

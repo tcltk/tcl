@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixNotfy.c,v 1.12.2.4 2004/09/08 23:03:27 dgp Exp $
+ * RCS: @(#) $Id: tclUnixNotfy.c,v 1.12.2.5 2004/12/09 23:01:35 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -54,6 +54,18 @@ typedef struct FileHandlerEvent {
 } FileHandlerEvent;
 
 /*
+ *
+ * The following structure contains a set of select() masks to track
+ * readable, writable, and exceptional conditions.
+ */
+
+typedef struct SelectMasks {
+    fd_set readable;
+    fd_set writable;
+    fd_set exceptional;
+} SelectMasks;
+
+/*
  * The following static structure contains the state information for the
  * select based implementation of the Tcl notifier.  One of these structures
  * is created for each thread that is using the notifier.  
@@ -62,13 +74,12 @@ typedef struct FileHandlerEvent {
 typedef struct ThreadSpecificData {
     FileHandler *firstFileHandlerPtr;
 				/* Pointer to head of file handler list. */
-    fd_mask checkMasks[3*MASK_SIZE];
-				/* This array is used to build up the masks
+    
+    SelectMasks checkMasks;	/* This structure is used to build up the masks
 				 * to be used in the next call to select.
 				 * Bits are set in response to calls to
 				 * Tcl_CreateFileHandler. */
-    fd_mask readyMasks[3*MASK_SIZE];
-				/* This array reflects the readable/writable
+    SelectMasks readyMasks;	/* This array reflects the readable/writable
 				 * conditions that were found to exist by the
 				 * last call to select. */
     int numFdBits;		/* Number of valid bits in checkMasks
@@ -410,7 +421,6 @@ Tcl_CreateFileHandler(fd, mask, proc, clientData)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     FileHandler *filePtr;
-    int index, bit;
 
     if (tclStubs.tcl_CreateFileHandler != tclOriginalNotifier.createFileHandlerProc) {
 	tclStubs.tcl_CreateFileHandler(fd, mask, proc, clientData);
@@ -438,22 +448,20 @@ Tcl_CreateFileHandler(fd, mask, proc, clientData)
      * Update the check masks for this file.
      */
 
-    index = fd/(NBBY*sizeof(fd_mask));
-    bit = 1 << (fd%(NBBY*sizeof(fd_mask)));
-    if (mask & TCL_READABLE) {
-	tsdPtr->checkMasks[index] |= bit;
+    if ( mask & TCL_READABLE ) {
+	FD_SET( fd, &(tsdPtr->checkMasks.readable) );
     } else {
-	tsdPtr->checkMasks[index] &= ~bit;
-    } 
-    if (mask & TCL_WRITABLE) {
-	(tsdPtr->checkMasks+MASK_SIZE)[index] |= bit;
-    } else {
-	(tsdPtr->checkMasks+MASK_SIZE)[index] &= ~bit;
+	FD_CLR( fd, &(tsdPtr->checkMasks.readable) );
     }
-    if (mask & TCL_EXCEPTION) {
-	(tsdPtr->checkMasks+2*(MASK_SIZE))[index] |= bit;
+    if ( mask & TCL_WRITABLE ) {
+	FD_SET( fd, &(tsdPtr->checkMasks.writable) );
     } else {
-	(tsdPtr->checkMasks+2*(MASK_SIZE))[index] &= ~bit;
+	FD_CLR( fd, &(tsdPtr->checkMasks.writable) );
+    }
+    if ( mask & TCL_EXCEPTION ) {
+	FD_SET( fd, &(tsdPtr->checkMasks.exceptional) );
+    } else {
+	FD_CLR( fd, &(tsdPtr->checkMasks.exceptional) );
     }
     if (tsdPtr->numFdBits <= fd) {
 	tsdPtr->numFdBits = fd+1;
@@ -482,8 +490,7 @@ Tcl_DeleteFileHandler(fd)
     int fd;		/* Stream id for which to remove callback procedure. */
 {
     FileHandler *filePtr, *prevPtr;
-    int index, bit, i;
-    unsigned long flags;
+    int i;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     if (tclStubs.tcl_DeleteFileHandler != tclOriginalNotifier.deleteFileHandlerProc) {
@@ -509,17 +516,14 @@ Tcl_DeleteFileHandler(fd)
      * Update the check masks for this file.
      */
 
-    index = fd/(NBBY*sizeof(fd_mask));
-    bit = 1 << (fd%(NBBY*sizeof(fd_mask)));
-
     if (filePtr->mask & TCL_READABLE) {
-	tsdPtr->checkMasks[index] &= ~bit;
+	FD_CLR( fd, &(tsdPtr->checkMasks.readable) );
     }
     if (filePtr->mask & TCL_WRITABLE) {
-	(tsdPtr->checkMasks+MASK_SIZE)[index] &= ~bit;
+	FD_CLR( fd, &(tsdPtr->checkMasks.writable) );
     }
     if (filePtr->mask & TCL_EXCEPTION) {
-	(tsdPtr->checkMasks+2*(MASK_SIZE))[index] &= ~bit;
+	FD_CLR( fd, &(tsdPtr->checkMasks.exceptional) );
     }
 
     /*
@@ -527,17 +531,12 @@ Tcl_DeleteFileHandler(fd)
      */
 
     if (fd+1 == tsdPtr->numFdBits) {
-	for (tsdPtr->numFdBits = 0; index >= 0; index--) {
-	    flags = tsdPtr->checkMasks[index]
-		| (tsdPtr->checkMasks+MASK_SIZE)[index]
-		| (tsdPtr->checkMasks+2*(MASK_SIZE))[index];
-	    if (flags) {
-		for (i = (NBBY*sizeof(fd_mask)); i > 0; i--) {
-		    if (flags & (((unsigned long)1) << (i-1))) {
-			break;
-		    }
-		}
-		tsdPtr->numFdBits = index * (NBBY*sizeof(fd_mask)) + i;
+	tsdPtr->numFdBits = 0;
+	for (i = fd-1; i >= 0; i--) {
+	    if ( FD_ISSET( i, &(tsdPtr->checkMasks.readable) )
+		 || FD_ISSET( i, &(tsdPtr->checkMasks.writable) )
+		 || FD_ISSET( i, &(tsdPtr->checkMasks.exceptional ) ) ) {
+		tsdPtr->numFdBits = i+1;
 		break;
 	    }
 	}
@@ -654,7 +653,7 @@ Tcl_WaitForEvent(timePtr)
     FileHandler *filePtr;
     FileHandlerEvent *fileEvPtr;
     struct timeval timeout, *timeoutPtr;
-    int bit, index, mask;
+    int mask;
 #ifdef TCL_THREADS
     int waitForFiles;
 #else
@@ -736,7 +735,9 @@ Tcl_WaitForEvent(timePtr)
 	write(triggerPipe, "", 1);
     }
 
-    memset((VOID *) tsdPtr->readyMasks, 0, 3*MASK_SIZE*sizeof(fd_mask));
+    FD_ZERO( &(tsdPtr->readyMasks.readable) );
+    FD_ZERO( &(tsdPtr->readyMasks.writable) );
+    FD_ZERO( &(tsdPtr->readyMasks.exceptional) );
 
     if (!tsdPtr->eventReady) {
         Tcl_ConditionWait(&tsdPtr->waitCV, &notifierMutex, timePtr);
@@ -766,12 +767,12 @@ Tcl_WaitForEvent(timePtr)
 
     
 #else
-    memcpy((VOID *) tsdPtr->readyMasks, (VOID *) tsdPtr->checkMasks,
-	    3*MASK_SIZE*sizeof(fd_mask));
-    numFound = select(tsdPtr->numFdBits,
-	    (SELECT_MASK *) &tsdPtr->readyMasks[0],
-	    (SELECT_MASK *) &tsdPtr->readyMasks[MASK_SIZE],
-	    (SELECT_MASK *) &tsdPtr->readyMasks[2*MASK_SIZE], timeoutPtr);
+    tsdPtr->readyMasks = tsdPtr->checkMasks;
+    numFound = select( tsdPtr->numFdBits,
+		       &(tsdPtr->readyMasks.readable),
+		       &(tsdPtr->readyMasks.writable),
+		       &(tsdPtr->readyMasks.exceptional),
+		       timeoutPtr );
 
     /*
      * Some systems don't clear the masks after an error, so
@@ -779,7 +780,9 @@ Tcl_WaitForEvent(timePtr)
      */
 
     if (numFound == -1) {
-	memset((VOID *) tsdPtr->readyMasks, 0, 3*MASK_SIZE*sizeof(fd_mask));
+	FD_ZERO( &(tsdPtr->readyMasks.readable ) );
+	FD_ZERO( &(tsdPtr->readyMasks.writable ) );
+	FD_ZERO( &(tsdPtr->readyMasks.exceptional ) );
     }
 #endif
 
@@ -789,17 +792,15 @@ Tcl_WaitForEvent(timePtr)
 
     for (filePtr = tsdPtr->firstFileHandlerPtr; (filePtr != NULL);
 	 filePtr = filePtr->nextPtr) {
-	index = filePtr->fd / (NBBY*sizeof(fd_mask));
-	bit = 1 << (filePtr->fd % (NBBY*sizeof(fd_mask)));
-	mask = 0;
 
-	if (tsdPtr->readyMasks[index] & bit) {
+	mask = 0;
+	if ( FD_ISSET( filePtr->fd, &(tsdPtr->readyMasks.readable) ) ) {
 	    mask |= TCL_READABLE;
 	}
-	if ((tsdPtr->readyMasks+MASK_SIZE)[index] & bit) {
+	if ( FD_ISSET( filePtr->fd, &(tsdPtr->readyMasks.writable) ) ) {
 	    mask |= TCL_WRITABLE;
 	}
-	if ((tsdPtr->readyMasks+2*(MASK_SIZE))[index] & bit) {
+	if ( FD_ISSET( filePtr->fd, &(tsdPtr->readyMasks.exceptional) ) ) {
 	    mask |= TCL_EXCEPTION;
 	}
 
@@ -858,13 +859,13 @@ NotifierThreadProc(clientData)
     ClientData clientData;	/* Not used. */
 {
     ThreadSpecificData *tsdPtr;
-    fd_mask masks[3*MASK_SIZE];
-    long *maskPtr = (long *)masks;	/* masks[] cast to type long[] */
+    fd_set readableMask;
+    fd_set writableMask;
+    fd_set exceptionalMask;
     int fds[2];
-    int i, status, index, bit, numFdBits, receivePipe;
-    long found, word;
+    int i, status, numFdBits = 0, receivePipe;
+    long found;
     struct timeval poll = {0., 0.}, *timePtr;
-    int maskSize = 3 * ((MASK_SIZE) / sizeof(long)) * sizeof(fd_mask);
     char buf[2];
 
     if (pipe(fds) != 0) {
@@ -912,29 +913,33 @@ NotifierThreadProc(clientData)
      */
 
     while (1) {
-	/*
-	 * Set up the select mask to include the receive pipe.
-	 */
 
-	memset((VOID *)masks, 0, 3*MASK_SIZE*sizeof(fd_mask));
-        numFdBits = receivePipe + 1;
-	index = receivePipe / (NBBY*sizeof(fd_mask));
-	bit = 1 << (receivePipe % (NBBY*sizeof(fd_mask)));
-	masks[index] |= bit;
+	FD_ZERO( &readableMask );
+	FD_ZERO( &writableMask );
+	FD_ZERO( &exceptionalMask );
 
 	/*
-	 * Add in the check masks from all of the waiting notifiers.
+	 * Compute the logical OR of the select masks from all the
+	 * waiting notifiers.
 	 */
-	
+
 	Tcl_MutexLock(&notifierMutex);
 	timePtr = NULL;
         for (tsdPtr = waitingListPtr; tsdPtr; tsdPtr = tsdPtr->nextPtr) {
-            for (i = 0; i < maskSize; i++) {
-                maskPtr[i] |= ((long*)tsdPtr->checkMasks)[i];
-            }
-            if (tsdPtr->numFdBits > numFdBits) {
-                numFdBits = tsdPtr->numFdBits;
-            }
+	    for ( i = tsdPtr->numFdBits-1; i >= 0; --i ) {
+		if ( FD_ISSET( i, &(tsdPtr->checkMasks.readable) ) ) {
+		    FD_SET( i, &readableMask );
+		}
+		if ( FD_ISSET( i, &(tsdPtr->checkMasks.writable) ) ) {
+		    FD_SET( i, &writableMask );
+		}
+		if ( FD_ISSET( i, &(tsdPtr->checkMasks.exceptional) ) ) {
+		    FD_SET( i, &exceptionalMask );
+		}
+	    }
+	    if ( tsdPtr->numFdBits > numFdBits ) {
+		numFdBits = tsdPtr->numFdBits;
+	    }
 	    if (tsdPtr->pollState & POLL_WANT) {
 		/*
 		 * Here we make sure we go through select() with the same
@@ -944,14 +949,20 @@ NotifierThreadProc(clientData)
 		tsdPtr->pollState |= POLL_DONE;
 		timePtr = &poll;
 	    }
-        }
+	}
 	Tcl_MutexUnlock(&notifierMutex);
 
-	maskSize = 3 * ((MASK_SIZE) / sizeof(long)) * sizeof(fd_mask);
+	/*
+	 * Set up the select mask to include the receive pipe.
+	 */
 
-	if (select(numFdBits, (SELECT_MASK *) &masks[0],
-		(SELECT_MASK *) &masks[MASK_SIZE],
-		(SELECT_MASK *) &masks[2*MASK_SIZE], timePtr) == -1) {
+	if ( receivePipe >= numFdBits ) {
+	    numFdBits = receivePipe + 1;
+	}
+	FD_SET( receivePipe, &readableMask );
+
+	if ( select( numFdBits, &readableMask, &writableMask,
+		     &exceptionalMask, timePtr) == -1 ) {
 	    /*
 	     * Try again immediately on an error.
 	     */
@@ -967,11 +978,24 @@ NotifierThreadProc(clientData)
         for (tsdPtr = waitingListPtr; tsdPtr; tsdPtr = tsdPtr->nextPtr) {
 	    found = 0;
 
-            for (i = 0; i < maskSize; i++) {
-                word = maskPtr[i] & ((long*)tsdPtr->checkMasks)[i];
-                found |= word;
-                (((long*)(tsdPtr->readyMasks))[i]) = word;
+	    for ( i = tsdPtr->numFdBits-1; i >= 0; --i ) {
+		if ( FD_ISSET( i, &(tsdPtr->checkMasks.readable) )
+		     && FD_ISSET( i, &readableMask ) ) {
+		    FD_SET( i, &(tsdPtr->readyMasks.readable) );
+		    found = 1;
+		}
+		if ( FD_ISSET( i, &(tsdPtr->checkMasks.writable) )
+		     && FD_ISSET( i, &writableMask ) ) {
+		    FD_SET( i, &(tsdPtr->readyMasks.writable) );
+		    found = 1;
+		}
+		if ( FD_ISSET( i, &(tsdPtr->checkMasks.exceptional) )
+		     && FD_ISSET( i, &exceptionalMask ) ) {
+		    FD_SET( i, &(tsdPtr->readyMasks.exceptional) );
+		    found = 1;
+		}
 	    }
+			       
             if (found || (tsdPtr->pollState & POLL_DONE)) {
                 tsdPtr->eventReady = 1;
 		if (tsdPtr->onList) {
@@ -1005,7 +1029,7 @@ NotifierThreadProc(clientData)
 	 * to avoid a race condition we only read one at a time.
 	 */
 
-	if (masks[index] & bit) {
+	if ( FD_ISSET( receivePipe, &readableMask ) ) {
 	    i = read(receivePipe, buf, 1);
 
 	    if ((i == 0) || ((i == 1) && (buf[0] == 'q'))) {

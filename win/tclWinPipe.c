@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPipe.c,v 1.35.2.6 2004/10/28 18:47:40 dgp Exp $
+ * RCS: @(#) $Id: tclWinPipe.c,v 1.35.2.7 2004/12/09 23:01:38 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -1211,7 +1211,7 @@ TclpCreateProcess(
 		Tcl_DString pipeDll;
 		Tcl_DStringInit(&pipeDll);
 		Tcl_DStringAppend(&pipeDll, TCL_PIPE_DLL, -1);
-		tclExePtr = Tcl_NewStringObj(TclpFindExecutable(""), -1);
+		tclExePtr = TclGetObjNameOfExecutable();
 		start = Tcl_GetStringFromObj(tclExePtr, &i);
 		for (end = start + (i-1); end > start; end--) {
 		    if (*end == '/') {
@@ -1887,7 +1887,10 @@ PipeClose2Proc(
     DWORD exitCode;
 
     errorCode = 0;
-    if ((!flags || flags == TCL_CLOSE_READ) && (pipePtr->readFile != NULL)) {
+    result = 0;
+
+    if ((!flags || flags == TCL_CLOSE_READ)
+	    && (pipePtr->readFile != NULL)) {
 	/*
 	 * Clean up the background thread if necessary.  Note that this
 	 * must be done before we can close the file, since the 
@@ -1896,39 +1899,42 @@ PipeClose2Proc(
 
 	if (pipePtr->readThread) {
 	    /*
-	     * The thread may already have closed on it's own.  Check it's
-	     * exit code.
+	     * The thread may already have closed on its own.  Check
+	     * its exit code.
 	     */
 
 	    GetExitCodeThread(pipePtr->readThread, &exitCode);
 
 	    if (exitCode == STILL_ACTIVE) {
 		/*
-		 * Set the stop event so that if the reader thread is blocked
-		 * in PipeReaderThread on WaitForMultipleEvents, it will exit
-		 * cleanly.
+		 * Set the stop event so that if the reader thread is
+		 * blocked in PipeReaderThread on WaitForMultipleEvents,
+		 * it will exit cleanly.
 		 */
 
 		SetEvent(pipePtr->stopReader);
 
 		/*
-		 * Wait at most 20 milliseconds for the reader thread to close.
+		 * Wait at most 20 milliseconds for the reader thread to
+		 * close.
 		 */
 
 		if (WaitForSingleObject(pipePtr->readThread,
 			20) == WAIT_TIMEOUT) {
 		    /*
 		     * The thread must be blocked waiting for the pipe to
-		     * become readable in ReadFile().  There isn't a clean way
-		     * to exit the thread from this condition.  We should
-		     * terminate the child process instead to get the reader
-		     * thread to fall out of ReadFile with a FALSE.  (below) is
-		     * not the correct way to do this, but will stay here until
-		     * a better solution is found.
+		     * become readable in ReadFile().  There isn't a
+		     * clean way to exit the thread from this condition.
+		     * We should terminate the child process instead to
+		     * get the reader thread to fall out of ReadFile with
+		     * a FALSE.  (below) is not the correct way to do
+		     * this, but will stay here until a better solution
+		     * is found.
 		     *
 		     * Note that we need to guard against terminating the
-		     * thread while it is in the middle of Tcl_ThreadAlert
-		     * because it won't be able to release the notifier lock.
+		     * thread while it is in the middle of
+		     * Tcl_ThreadAlert because it won't be able to
+		     * release the notifier lock.
 		     */
 
 		    Tcl_MutexLock(&pipeMutex);
@@ -1951,7 +1957,8 @@ PipeClose2Proc(
 	pipePtr->validMask &= ~TCL_READABLE;
 	pipePtr->readFile = NULL;
     }
-    if ((!flags || flags & TCL_CLOSE_WRITE) && (pipePtr->writeFile != NULL)) {
+    if ((!flags || flags & TCL_CLOSE_WRITE)
+	    && (pipePtr->writeFile != NULL)) {
 	if (pipePtr->writeThread) {
 	    /*
 	     * Wait for the writer thread to finish the current buffer,
@@ -1963,39 +1970,42 @@ PipeClose2Proc(
 	    WaitForSingleObject(pipePtr->writable, INFINITE);
 
 	    /*
-	     * The thread may already have closed on it's own.  Check it's
-	     * exit code.
+	     * The thread may already have closed on it's own.  Check
+	     * its exit code.
 	     */
 
 	    GetExitCodeThread(pipePtr->writeThread, &exitCode);
 
 	    if (exitCode == STILL_ACTIVE) {
 		/*
-		 * Set the stop event so that if the reader thread is blocked
-		 * in PipeReaderThread on WaitForMultipleEvents, it will exit
-		 * cleanly.
+		 * Set the stop event so that if the reader thread is
+		 * blocked in PipeReaderThread on WaitForMultipleEvents,
+		 * it will exit cleanly.
 		 */
 
 		SetEvent(pipePtr->stopWriter);
 
 		/*
-		 * Wait at most 20 milliseconds for the reader thread to close.
+		 * Wait at most 20 milliseconds for the reader thread to
+		 * close.
 		 */
 
 		if (WaitForSingleObject(pipePtr->writeThread,
 			20) == WAIT_TIMEOUT) {
 		    /*
 		     * The thread must be blocked waiting for the pipe to
-		     * consume input in WriteFile().  There isn't a clean way
-		     * to exit the thread from this condition.  We should
-		     * terminate the child process instead to get the writer
-		     * thread to fall out of WriteFile with a FALSE.  (below) is
-		     * not the correct way to do this, but will stay here until
-		     * a better solution is found.
+		     * consume input in WriteFile().  There isn't a clean
+		     * way to exit the thread from this condition.  We
+		     * should terminate the child process instead to get
+		     * the writer thread to fall out of WriteFile with a
+		     * FALSE.  (below) is not the correct way to do this,
+		     * but will stay here until a better solution is
+		     * found.
 		     *
 		     * Note that we need to guard against terminating the
-		     * thread while it is in the middle of Tcl_ThreadAlert
-		     * because it won't be able to release the notifier lock.
+		     * thread while it is in the middle of
+		     * Tcl_ThreadAlert because it won't be able to
+		     * release the notifier lock.
 		     */
 
 		    Tcl_MutexLock(&pipeMutex);
@@ -2044,27 +2054,42 @@ PipeClose2Proc(
 	}
     }
 
-    /*
-     * Wrap the error file into a channel and give it to the cleanup
-     * routine.
-     */
+    if ((pipePtr->flags & PIPE_ASYNC) || TclInExit()) {
+	/*
+	 * If the channel is non-blocking or Tcl is being cleaned up,
+	 * just detach the children PIDs, reap them (important if we are
+	 * in a dynamic load module), and discard the errorFile.
+	 */
 
-    if (pipePtr->errorFile) {
-	WinFile *filePtr;
+	Tcl_DetachPids(pipePtr->numPids, pipePtr->pidPtr);
+	Tcl_ReapDetachedProcs();
 
-	filePtr = (WinFile*)pipePtr->errorFile;
-	errChan = Tcl_MakeFileChannel((ClientData) filePtr->handle,
-		TCL_READABLE);
-	ckfree((char *) filePtr);
+	if (pipePtr->errorFile) {
+	    TclpCloseFile(pipePtr->errorFile);
+	}
     } else {
-        errChan = NULL;
+	/*
+	 * Wrap the error file into a channel and give it to the cleanup
+	 * routine.
+	 */
+
+	if (pipePtr->errorFile) {
+	    WinFile *filePtr;
+
+	    filePtr = (WinFile*)pipePtr->errorFile;
+	    errChan = Tcl_MakeFileChannel((ClientData) filePtr->handle,
+		    TCL_READABLE);
+	    ckfree((char *) filePtr);
+	} else {
+	    errChan = NULL;
+	}
+
+	result = TclCleanupChildren(interp, pipePtr->numPids,
+		pipePtr->pidPtr, errChan);
     }
 
-    result = TclCleanupChildren(interp, pipePtr->numPids, pipePtr->pidPtr,
-            errChan);
-
     if (pipePtr->numPids > 0) {
-        ckfree((char *) pipePtr->pidPtr);
+	ckfree((char *) pipePtr->pidPtr);
     }
 
     if (pipePtr->writeBuf != NULL) {
@@ -2074,7 +2099,7 @@ PipeClose2Proc(
     ckfree((char*) pipePtr);
 
     if (errorCode == 0) {
-        return result;
+	return result;
     }
     return errorCode;
 }

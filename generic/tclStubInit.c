@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.84.2.14 2004/10/28 18:47:01 dgp Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.84.2.15 2004/12/09 23:00:42 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -293,6 +293,12 @@ TclIntStubs tclIntStubs = {
     TclpObjStat, /* 206 */
     TclpObjAccess, /* 207 */
     TclpOpenFileChannel, /* 208 */
+    TclGetEncodingSearchPath, /* 209 */
+    TclSetEncodingSearchPath, /* 210 */
+    TclpGetEncodingNameFromEnvironment, /* 211 */
+    TclpFindExecutable, /* 212 */
+    TclGetObjNameOfExecutable, /* 213 */
+    TclSetObjNameOfExecutable, /* 214 */
 };
 
 TclIntPlatStubs tclIntPlatStubs = {
@@ -941,6 +947,11 @@ TclStubs tclStubs = {
     Tcl_LimitGetCommands, /* 532 */
     Tcl_LimitGetTime, /* 533 */
     Tcl_LimitGetGranularity, /* 534 */
+    Tcl_SaveInterpState, /* 535 */
+    Tcl_RestoreInterpState, /* 536 */
+    Tcl_DiscardInterpState, /* 537 */
+    Tcl_SetReturnOptions, /* 538 */
+    Tcl_GetReturnOptions, /* 539 */
 };
 
 /* !END!: Do not edit above this line. */

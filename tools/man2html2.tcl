@@ -5,8 +5,10 @@
 #
 # Copyright (c) 1996 by Sun Microsystems, Inc.
 #
-# $Id: man2html2.tcl,v 1.2.36.2 2004/09/08 23:03:21 dgp Exp $
+# $Id: man2html2.tcl,v 1.2.36.3 2004/12/09 23:01:13 dgp Exp $
 #
+
+package require Tcl 8.4
 
 # Global variables used by these scripts:
 #
@@ -76,7 +78,7 @@ proc initGlobals {} {
 proc beginFont font {
     global curFont file fontStart
 
-    if {$curFont == $font} {
+    if {$curFont eq $font} {
 	return
     }
     endFont
@@ -95,9 +97,9 @@ proc beginFont font {
 proc endFont {} {
     global curFont file fontEnd
 
-    if {$curFont != ""} {
-    puts -nonewline $file $fontEnd($curFont)
-    set curFont ""
+    if {$curFont ne ""} {
+	puts -nonewline $file $fontEnd($curFont)
+	set curFont ""
     }
 }
 
@@ -129,7 +131,7 @@ proc text string {
     regsub -all \"  $string {\&quot;}  string
     switch $textState {
 	REF { 
-	    if {$inDT == {}} {
+	    if {$inDT eq ""} {
 		set string [insertRef $string]
 	    }
 	}
@@ -161,7 +163,7 @@ proc insertRef string {
     global NAME_file self
     set path {}
     if ![catch {set ref $NAME_file([string trim $string])} ] {
-	if {"$ref.html" != $self} {
+	if {"$ref.html" ne $self} {
 	    set string "<A HREF=\"${path}$ref.html\">$string</A>"
 #	    puts "insertRef: $self $ref.html ---$string--"
 	}
@@ -308,7 +310,7 @@ proc macro {name args} {
 	    SHmacro $args
 	}
 	SS {
-	    SSmacro $args subsection
+	    SHmacro $args subsection
 	}
 	SO {
 	    global noFillCount inPRE file
@@ -321,12 +323,12 @@ proc macro {name args} {
 	    font B
 	}
 	so {
-	    if {$args != "man.macros"} {
+	    if {$args ne "man.macros"} {
 		puts stderr "Unknown macro: .$name [join $args " "]"
 	    }
 	}
 	sp {					;# needs work
-	    if {$args == ""} {
+	    if {$args eq ""} {
 		set count 1
 	    } else {
 		set count [lindex $args 0]
@@ -389,13 +391,13 @@ proc font type {
 	P -
 	R {
 	    endFont
-	    if {$textState == "REF"} {
+	    if {$textState eq "REF"} {
 		set textState INSERT
 	    }
 	}
 	B {
 	    beginFont Code
-	    if {$textState == "INSERT"} {
+	    if {$textState eq "INSERT"} {
 		set textState REF
 	    }
 	}
@@ -422,7 +424,7 @@ proc font type {
 
 proc formattedText text {
 #	puts "formattedText: $text"
-    while {$text != ""} {
+    while {$text ne ""} {
 	set index [string first \\ $text]
 	if {$index < 0} {
 	    text $text
@@ -466,7 +468,7 @@ proc formattedText text {
 
 proc dash {} {
     global textState charCnt
-    if {$textState == "NAME"} {
+    if {$textState eq "NAME"} {
     	set textState 0
     }
     incr charCnt
@@ -579,7 +581,7 @@ proc lineBreak {} {
 proc newline {} {
     global noFillCount file inDT inPRE charCnt
 
-    if {$inDT != {} } {
+    if {$inDT ne ""} {
     	puts $file "\n$inDT"
     	set inDT {}
     } elseif {$noFillCount == 0 || $inPRE == 1} {
@@ -661,7 +663,7 @@ proc SHmacro {argList {style section}} {
     nest reset
 
     set tag H3
-    if {[string compare "subsection" $level] == 0} {
+    if {$style eq "subsection"} {
 	set tag H4
     }
     puts -nonewline $file "<$tag>"
@@ -691,11 +693,12 @@ proc SHmacro {argList {style section}} {
 # of the following forms:
 #
 # .IP [1]			Translate to a "1Step" paragraph.
-# .IP [x] (x > 1)	Translate to a "Step" paragraph.
+# .IP [x] (x > 1)		Translate to a "Step" paragraph.
 # .IP				Translate to a "Bullet" paragraph.
-# .IP text count	Translate to a FirstBody paragraph with special
-#					indent and tab stop based on "count", and tab after
-#					"text".
+# .IP \(bu			Translate to a "Bullet" paragraph.
+# .IP text count		Translate to a FirstBody paragraph with special
+#				indent and tab stop based on "count", and tab
+#				after "text".
 #
 # Arguments:
 # argList -		List of arguments to the .IP macro.
@@ -802,7 +805,7 @@ proc THmacro {argList} {
 proc newPara {} {
     global file nestStk
 	
-    if {[lindex $nestStk end] != "NEW" } {
+    if {[lindex $nestStk end] ne "NEW"} {
 	nest decr    
     }
     puts -nonewline $file "<P>"
@@ -820,16 +823,16 @@ proc newPara {} {
 # listStart -		begin list tag: OL, UL, DL.
 # listItem -		item tag:       LI, LI, DT.
 
-proc nest {op {listStart "NEW"} {listItem {} } } {
+proc nest {op {listStart "NEW"} {listItem ""} } {
     global file nestStk inDT charCnt
 #	puts "nest: $op $listStart $listItem"
     switch $op {
 	para {
 	    set top [lindex $nestStk end]
-	    if {$top == "NEW" } {
+	    if {$top eq "NEW"} {
 		set nestStk [lreplace $nestStk end end $listStart]
 		puts $file "<$listStart>"
-	    } elseif {$top != $listStart} {
+	    } elseif {$top ne $listStart} {
 		puts stderr "nest para: bad stack"
 		exit 1
 	    }
@@ -845,7 +848,7 @@ proc nest {op {listStart "NEW"} {listItem {} } } {
 		set nestStk NEW
 	    }
 	    set tag [lindex $nestStk end]
-	    if {$tag != "NEW"} {
+	    if {$tag ne "NEW"} {
 		puts $file "</$tag>"
 	    }
 	    set nestStk [lreplace $nestStk end end]

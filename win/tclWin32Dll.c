@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWin32Dll.c,v 1.25.2.5 2004/09/08 23:03:29 dgp Exp $
+ * RCS: @(#) $Id: tclWin32Dll.c,v 1.25.2.6 2004/12/09 23:01:36 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -136,7 +136,7 @@ static TclWinProcs asciiProcs = {
      */
     NULL,
     NULL,
-    (int (__cdecl*)(CONST TCHAR *, struct _utimbuf *)) _utime,
+    /* deleted (int (__cdecl*)(CONST TCHAR *, struct _utimbuf *)) _utime, */
     NULL,
     NULL,
     /* Security SDK - not available on 95,98,ME */
@@ -187,7 +187,7 @@ static TclWinProcs unicodeProcs = {
      */
     NULL,
     NULL,
-    (int (__cdecl*)(CONST TCHAR *, struct _utimbuf *)) _wutime,
+    /* deleted (int (__cdecl*)(CONST TCHAR *, struct _utimbuf *)) _wutime, */
     NULL,
     NULL,
     /* Security SDK - will be filled in on NT,XP,2000,2003 */

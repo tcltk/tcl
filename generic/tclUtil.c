@@ -11,21 +11,16 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.37.2.7 2004/10/28 18:47:03 dgp Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.37.2.8 2004/12/09 23:00:42 dgp Exp $
  */
 
 #include "tclInt.h"
 
 /*
- * The following variable holds the full path name of the binary
- * from which this application was executed, or NULL if it isn't
- * know.  The value of the variable is set by the procedure
- * Tcl_FindExecutable.  The storage space is dynamically allocated.
+ * The absolute pathname of the executable in which this Tcl library
+ * is running.
  */
-
-char *tclExecutableName = NULL;
-char *tclNativeExecutableName = NULL;
-int tclFindExecutableSearchDone = 0;
+static ProcessGlobalValue executableName = {0, 0, NULL, NULL, NULL, NULL, NULL};
 
 /*
  * The following values are used in the flags returned by Tcl_ScanElement
@@ -73,9 +68,14 @@ TCL_DECLARE_MUTEX(precisionMutex)
  * Prototypes for procedures defined later in this file.
  */
 
-static void UpdateStringOfEndOffset _ANSI_ARGS_((Tcl_Obj* objPtr));
-static int SetEndOffsetFromAny _ANSI_ARGS_((Tcl_Interp* interp,
+static void		ClearHash _ANSI_ARGS_((Tcl_HashTable *tablePtr));
+static void		FreeProcessGlobalValue _ANSI_ARGS_((
+			    ClientData clientData));
+static void		FreeThreadHash _ANSI_ARGS_ ((ClientData clientData));
+static Tcl_HashTable *	GetThreadHash _ANSI_ARGS_ ((Tcl_ThreadDataKey *keyPtr));
+static int		SetEndOffsetFromAny _ANSI_ARGS_((Tcl_Interp* interp,
 					    Tcl_Obj* objPtr));
+static void		UpdateStringOfEndOffset _ANSI_ARGS_((Tcl_Obj* objPtr));
 
 /*
  * The following is the Tcl object type definition for an object
@@ -2564,20 +2564,318 @@ TclCheckBadOctal(interp, value)
 /*
  *----------------------------------------------------------------------
  *
+ * ClearHash --
+ *      Remove all the entries in the hash table *tablePtr.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+ClearHash(tablePtr)
+    Tcl_HashTable *tablePtr;
+{
+    Tcl_HashSearch search;
+    Tcl_HashEntry *hPtr;
+
+    for (hPtr = Tcl_FirstHashEntry(tablePtr, &search); hPtr != NULL;
+	    hPtr = Tcl_NextHashEntry(&search)) {
+	Tcl_Obj *objPtr = (Tcl_Obj *) Tcl_GetHashValue(hPtr);
+	Tcl_DecrRefCount(objPtr);
+	Tcl_DeleteHashEntry(hPtr);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetThreadHash --
+ *
+ *	Get a thread-specific (Tcl_HashTable *) associated with a
+ *	thread data key.
+ *
+ * Results:
+ *	The Tcl_HashTable * corresponding to *keyPtr.  
+ *
+ * Side effects:
+ *	The first call on a keyPtr in each thread creates a new
+ *	Tcl_HashTable, and registers a thread exit handler to
+ *	dispose of it.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static Tcl_HashTable *
+GetThreadHash(keyPtr)
+    Tcl_ThreadDataKey *keyPtr;
+{
+    Tcl_HashTable **tablePtrPtr = (Tcl_HashTable **)
+	    Tcl_GetThreadData(keyPtr, (int)sizeof(Tcl_HashTable *));
+    if (NULL == *tablePtrPtr) {
+	*tablePtrPtr = (Tcl_HashTable *)ckalloc(sizeof(Tcl_HashTable));
+	Tcl_CreateThreadExitHandler(FreeThreadHash, (ClientData)*tablePtrPtr);
+	Tcl_InitHashTable(*tablePtrPtr, TCL_ONE_WORD_KEYS);
+    }
+    return *tablePtrPtr;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FreeThreadHash --
+ *	Thread exit handler used by GetThreadHash to dispose
+ *	of a thread hash table.
+ *
+ * Side effects:
+ *	Frees a Tcl_HashTable.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+FreeThreadHash(clientData)
+    ClientData clientData; 
+{
+    Tcl_HashTable *tablePtr = (Tcl_HashTable *) clientData;
+    Tcl_DeleteHashTable(tablePtr);
+    ckfree((char *) tablePtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FreeProcessGlobalValue --
+ *	Exit handler used by Tcl(Set|Get)ProcessGlobalValue to cleanup
+ *	a ProcessGlobalValue at exit.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+FreeProcessGlobalValue(clientData)
+    ClientData clientData; 
+{
+    ProcessGlobalValue *pgvPtr = (ProcessGlobalValue *) clientData;
+    pgvPtr->epoch++;
+    pgvPtr->numBytes = 0;
+    ckfree(pgvPtr->value);
+    pgvPtr->value = NULL;
+    if (pgvPtr->encoding) {
+	Tcl_FreeEncoding(pgvPtr->encoding);
+	pgvPtr->encoding = NULL;
+    }
+    Tcl_MutexFinalize(&pgvPtr->mutex);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclSetProcessGlobalValue --
+ *
+ *	Utility routine to set a global value shared by all threads in
+ *	the process while keeping a thread-local copy as well.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+TclSetProcessGlobalValue(pgvPtr, newValue, encoding)
+    ProcessGlobalValue *pgvPtr;
+    Tcl_Obj *newValue;
+    Tcl_Encoding encoding;
+{
+    CONST char *bytes;
+    Tcl_HashTable *cacheMap;
+    Tcl_HashEntry *hPtr;
+    int dummy;
+
+    Tcl_MutexLock(&pgvPtr->mutex);
+    /* Fill the global string value */
+    pgvPtr->epoch++;
+    if (NULL != pgvPtr->value) {
+	ckfree(pgvPtr->value);
+    } else {
+	Tcl_CreateExitHandler(FreeProcessGlobalValue, (ClientData) pgvPtr);
+    }
+    bytes = Tcl_GetStringFromObj(newValue, &pgvPtr->numBytes);
+    pgvPtr->value = ckalloc((unsigned int) pgvPtr->numBytes + 1);
+    strcpy(pgvPtr->value, bytes);
+    if (pgvPtr->encoding) {
+	Tcl_FreeEncoding(pgvPtr->encoding);
+    }
+    pgvPtr->encoding = encoding;
+
+    /*
+     * Fill the local thread copy directly with the Tcl_Obj
+     * value to avoid loss of the intrep.  Increment newValue
+     * refCount early to handle case where we set a PGV to itself.
+     */
+    Tcl_IncrRefCount(newValue);
+    cacheMap = GetThreadHash(&pgvPtr->key);
+    ClearHash(cacheMap);
+    hPtr = Tcl_CreateHashEntry(cacheMap, (char *)pgvPtr->epoch, &dummy);
+    Tcl_SetHashValue(hPtr, (ClientData) newValue);
+    Tcl_MutexUnlock(&pgvPtr->mutex);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclGetProcessGlobalValue --
+ *
+ *	Retrieve a global value shared among all threads of the process,
+ *	preferring a thread-local copy as long as it remains valid.
+ *
+ * Results:
+ *	Returns a (Tcl_Obj *) that holds a copy of the global value.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Obj *
+TclGetProcessGlobalValue(pgvPtr)
+    ProcessGlobalValue *pgvPtr;
+{
+    Tcl_Obj *value = NULL;
+    Tcl_HashTable *cacheMap;
+    Tcl_HashEntry *hPtr;
+    int epoch = pgvPtr->epoch;
+
+    if (pgvPtr->encoding) {
+	Tcl_Encoding current = Tcl_GetEncoding(NULL, NULL);
+	if (pgvPtr->encoding != current) {
+
+	    /*
+	     * The system encoding has changed since the master
+	     * string value was saved.  Convert the master value
+	     * to be based on the new system encoding.  
+	     */
+
+	    Tcl_DString native, newValue;
+
+	    Tcl_MutexLock(&pgvPtr->mutex);
+	    pgvPtr->epoch++;
+	    epoch = pgvPtr->epoch;
+	    Tcl_UtfToExternalDString(pgvPtr->encoding, pgvPtr->value,
+		    pgvPtr->numBytes, &native);
+	    Tcl_ExternalToUtfDString(current, Tcl_DStringValue(&native),
+	    Tcl_DStringLength(&native), &newValue);
+	    Tcl_DStringFree(&native);
+	    ckfree(pgvPtr->value);
+	    pgvPtr->value = ckalloc((unsigned int)
+		    Tcl_DStringLength(&newValue) + 1);
+	    memcpy((VOID *) pgvPtr->value, (VOID *) Tcl_DStringValue(&newValue),
+		    (size_t) Tcl_DStringLength(&newValue) + 1);
+	    Tcl_DStringFree(&newValue);
+	    Tcl_FreeEncoding(pgvPtr->encoding);
+	    pgvPtr->encoding = current;
+	    Tcl_MutexUnlock(&pgvPtr->mutex);
+	} else {
+	    Tcl_FreeEncoding(current);
+	}
+    }
+    cacheMap = GetThreadHash(&pgvPtr->key);
+    hPtr = Tcl_FindHashEntry(cacheMap, (char *)epoch);
+    if (NULL == hPtr) {
+	int dummy;
+
+	/* No cache for the current epoch - must be a new one */
+	/* First, clear the cacheMap, as anything in it must
+	 * refer to some expired epoch.*/
+	ClearHash(cacheMap);
+
+	/* If no thread has set the shared value, call the initializer */
+	Tcl_MutexLock(&pgvPtr->mutex);
+	if (NULL == pgvPtr->value) {
+	    if (pgvPtr->proc) {
+		pgvPtr->epoch++;
+		(*(pgvPtr->proc))(&pgvPtr->value, &pgvPtr->numBytes,
+			&pgvPtr->encoding);
+		Tcl_CreateExitHandler(FreeProcessGlobalValue,
+			(ClientData) pgvPtr);
+	    }
+	}
+
+	/* Store a copy of the shared value in our epoch-indexed cache */
+	value = Tcl_NewStringObj(pgvPtr->value, pgvPtr->numBytes);
+	hPtr = Tcl_CreateHashEntry(cacheMap, (char *)pgvPtr->epoch, &dummy);
+	Tcl_MutexUnlock(&pgvPtr->mutex);
+	Tcl_SetHashValue(hPtr, (ClientData) value);
+	Tcl_IncrRefCount(value);
+    }
+    return (Tcl_Obj *) Tcl_GetHashValue(hPtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclSetObjNameOfExecutable --
+ *
+ *	This procedure stores the absolute pathname of
+ *	the executable file (normally as computed by
+ *	TclpFindExecutable).
+ *
+ * Results:
+ * 	None.
+ *
+ * Side effects:
+ *	Stores the executable name.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclSetObjNameOfExecutable(name, encoding)
+    Tcl_Obj *name;
+    Tcl_Encoding encoding;
+{
+    TclSetProcessGlobalValue(&executableName, name, encoding);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclGetObjNameOfExecutable --
+ *
+ *	This procedure retrieves the absolute pathname of the
+ *	application in which the Tcl library is running, usually
+ *	as previously stored by TclpFindExecutable().
+ *	This procedure call is the C API equivalent to the
+ *	"info nameofexecutable" command.
+ *
+ * Results:
+ *	A pointer to an "fsPath" Tcl_Obj, or to an empty Tcl_Obj if
+ *	the pathname of the application is unknown.
+ *
+ * Side effects:
+ * 	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Obj *
+TclGetObjNameOfExecutable()
+{
+    return TclGetProcessGlobalValue(&executableName);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_GetNameOfExecutable --
  *
- *	This procedure simply returns a pointer to the internal full
- *	path name of the executable file as computed by
- *	Tcl_FindExecutable.  This procedure call is the C API
- *	equivalent to the "info nameofexecutable" command.
+ *	This procedure retrieves the absolute pathname of the
+ *	application in which the Tcl library is running, and
+ *	returns it in string form.
+ *
+ * 	The returned string belongs to Tcl and should be copied
+ * 	if the caller plans to keep it, to guard against it
+ * 	becoming invalid.
  *
  * Results:
  *	A pointer to the internal string or NULL if the internal full
  *	path name has not been computed or unknown.
  *
  * Side effects:
- *	The object referenced by "objPtr" might be converted to an
- *	integer object.
+ * 	None.
  *
  *----------------------------------------------------------------------
  */
@@ -2585,7 +2883,13 @@ TclCheckBadOctal(interp, value)
 CONST char *
 Tcl_GetNameOfExecutable()
 {
-    return tclExecutableName;
+    int numBytes;
+    CONST char * bytes =
+	    Tcl_GetStringFromObj(TclGetObjNameOfExecutable(), &numBytes);
+    if (numBytes == 0) {
+	return NULL;
+    }
+    return bytes;
 }
 
 /*

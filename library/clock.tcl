@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.tcl,v 1.4.2.4 2004/10/28 18:47:06 dgp Exp $
+# RCS: @(#) $Id: clock.tcl,v 1.4.2.5 2004/12/09 23:00:58 dgp Exp $
 #
 #----------------------------------------------------------------------
 
@@ -1275,7 +1275,14 @@ proc ::tcl::clock::FreeScan { string base timezone locale } {
     set date [GetJulianDayFromEraYearMonthDay $date[set date {}]]
     if { $parseTime ne {} } {
 	dict set date secondOfDay $parseTime
+    } elseif { [llength $parseWeekday] != 0 
+	       || [llength $parseOrdinalMonth] != 0 
+	       || ( [llength $parseRel] != 0 
+		    && ( [lindex $parseRel 0] != 0
+			 || [lindex $parseRel 1] != 0 ) ) } {
+	dict set date secondOfDay 0
     }
+
     dict set date localSeconds \
 	[expr { -210866803200
 		+ ( 86400 * wide([dict get $date julianDay]) )
@@ -1284,7 +1291,6 @@ proc ::tcl::clock::FreeScan { string base timezone locale } {
     set date [ConvertLocalToUTC $date[set date {}]]
     set seconds [dict get $date seconds]
 
-
     # Do relative times
 
     if { [llength $parseRel] > 0 } {
@@ -1292,7 +1298,7 @@ proc ::tcl::clock::FreeScan { string base timezone locale } {
 	set seconds [add $seconds \
 			 $relMonth months $relDay days $relSecond seconds \
 			 -timezone $timezone -locale $locale]
-    }
+    }	
 
     # Do relative weekday
     
@@ -1662,7 +1668,7 @@ proc ::tcl::clock::ParseClockScanFormat { formatString } {
 			    "\]\n"
 		    }
 		    z - Z {			# Time zone name
-			append re {(?:([-+]\d\d:?\d\d(?::?\d\d)?)|([[:alnum:]]{1,4}))}
+			append re {(?:([-+]\d\d(?::?\d\d(?::?\d\d)?)?)|([[:alnum:]]{1,4}))}
 			dict set fieldSet tzName [incr fieldCount]
 			append postcode \
 			    {if } \{ { $field} [incr captureCount] \
@@ -3231,21 +3237,23 @@ proc ::tcl::clock::SetupTimeZone { timezone } {
 
 	    # Nothing to do, we'll convert using the localtime function
 
-	} elseif { [regexp {^([-+])(\d\d):?(\d\d)(?::?(\d\d))?} $timezone \
+	} elseif { [regexp {^([-+])(\d\d)(?::?(\d\d)(?::?(\d\d))?)?} $timezone \
 		    -> s hh mm ss] } {
 
 	    # Make a fixed offset
 
 	    ::scan $hh %d hh
-	    ::scan $mm %d mm
+	    if { $mm eq {} } {
+		set mm 0
+	    } else {
+		::scan $mm %d mm
+	    }
 	    if { $ss eq {} } {
 		set ss 0
 	    } else {
 		::scan $ss %d ss
 	    }
-	    set offset [expr { ( $hh * 60
-				 + $mm ) * 60
-			       + $ss }]
+	    set offset [expr { ( $hh * 60 + $mm ) * 60 + $ss }]
 	    if { $s eq {-} } {
 		set offset [expr { - $offset }]
 	    }

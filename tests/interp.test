@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: interp.test,v 1.22.2.9 2004/09/21 23:10:29 dgp Exp $
+# RCS: @(#) $Id: interp.test,v 1.22.2.10 2004/12/09 23:01:08 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -33,7 +33,7 @@ test interp-1.1 {options for interp command} {
 } {1 {wrong # args: should be "interp cmd ?arg ...?"}}
 test interp-1.2 {options for interp command} {
     list [catch {interp frobox} msg] $msg
-} {1 {bad option "frobox": must be alias, aliases, create, delete, eval, exists, expose, hide, hidden, issafe, invokehidden, limit, marktrusted, recursionlimit, slaves, share, target, or transfer}}
+} {1 {bad option "frobox": must be alias, aliases, bgerror, create, delete, eval, exists, expose, hide, hidden, issafe, invokehidden, limit, marktrusted, recursionlimit, slaves, share, target, or transfer}}
 test interp-1.3 {options for interp command} {
     interp delete
 } ""
@@ -51,13 +51,13 @@ test interp-1.6 {options for interp command} {
 } {1 {wrong # args: should be "interp slaves ?path?"}}
 test interp-1.7 {options for interp command} {
     list [catch {interp hello} msg] $msg
-} {1 {bad option "hello": must be alias, aliases, create, delete, eval, exists, expose, hide, hidden, issafe, invokehidden, limit, marktrusted, recursionlimit, slaves, share, target, or transfer}}
+} {1 {bad option "hello": must be alias, aliases, bgerror, create, delete, eval, exists, expose, hide, hidden, issafe, invokehidden, limit, marktrusted, recursionlimit, slaves, share, target, or transfer}}
 test interp-1.8 {options for interp command} {
     list [catch {interp -froboz} msg] $msg
-} {1 {bad option "-froboz": must be alias, aliases, create, delete, eval, exists, expose, hide, hidden, issafe, invokehidden, limit, marktrusted, recursionlimit, slaves, share, target, or transfer}}
+} {1 {bad option "-froboz": must be alias, aliases, bgerror, create, delete, eval, exists, expose, hide, hidden, issafe, invokehidden, limit, marktrusted, recursionlimit, slaves, share, target, or transfer}}
 test interp-1.9 {options for interp command} {
     list [catch {interp -froboz -safe} msg] $msg
-} {1 {bad option "-froboz": must be alias, aliases, create, delete, eval, exists, expose, hide, hidden, issafe, invokehidden, limit, marktrusted, recursionlimit, slaves, share, target, or transfer}} 
+} {1 {bad option "-froboz": must be alias, aliases, bgerror, create, delete, eval, exists, expose, hide, hidden, issafe, invokehidden, limit, marktrusted, recursionlimit, slaves, share, target, or transfer}} 
 test interp-1.10 {options for interp command} {
     list [catch {interp target} msg] $msg
 } {1 {wrong # args: should be "interp target path alias"}}
@@ -3210,6 +3210,41 @@ test interp-35.22 {interp time limits normalize milliseconds} -body {
 } -cleanup {
     interp delete $i
 } -result {2 500}
+
+test interp-36.1 {interp bgerror syntax} -body {
+    interp bgerror
+} -returnCodes error -result {wrong # args: should be "interp bgerror path ?cmdPrefix?"}
+test interp-36.2 {interp bgerror syntax} -body { 
+    interp bgerror x y z
+} -returnCodes error -result {wrong # args: should be "interp bgerror path ?cmdPrefix?"}
+test interp-36.3 {interp bgerror syntax} -setup {
+    interp create slave
+} -body {
+    slave bgerror x y
+} -cleanup {
+    interp delete slave
+} -returnCodes error -result {wrong # args: should be "slave bgerror ?cmdPrefix?"}
+test interp-36.4 {SlaveBgerror syntax} -setup {
+    interp create slave
+} -body {
+    slave bgerror \{
+} -cleanup {
+    interp delete slave
+} -returnCodes error -result {cmdPrefix must be list of length >= 1}
+test interp-36.5 {SlaveBgerror syntax} -setup {
+    interp create slave
+} -body {
+    slave bgerror {}
+} -cleanup {
+    interp delete slave
+} -returnCodes error -result {cmdPrefix must be list of length >= 1}
+test interp-36.6 {SlaveBgerror returns handler} -setup {
+    interp create slave
+} -body {
+    slave bgerror {foo bar soom}
+} -cleanup {
+    interp delete slave
+} -result {foo bar soom}
 
 # cleanup
 foreach i [interp slaves] {

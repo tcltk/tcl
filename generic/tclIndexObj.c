@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIndexObj.c,v 1.16.4.4 2004/10/28 18:46:54 dgp Exp $
+ * RCS: @(#) $Id: tclIndexObj.c,v 1.16.4.5 2004/12/09 23:00:37 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -445,12 +445,83 @@ Tcl_WrongNumArgs(interp, objc, objv, message)
 					 * message may be NULL. */
 {
     Tcl_Obj *objPtr;
-    int i;
+    int i, len, elemLen, flags;
     register IndexRep *indexRep;
+    Interp *iPtr = (Interp *) interp;
+    char *elementStr;
+#ifndef AVOID_HACKS_FOR_ITCL
+    int isFirst = 1;			/* Special flag used to inhibit the
+					 * treating of the first word as a
+					 * list element so the hacky way Itcl
+					 * does error message generation for
+					 * ensembles will still work.
+					 * [Bug 1066837] */
+#define MAY_QUOTE_WORD (!isFirst)
+#else /* !AVOID_HACKS_FOR_ITCL */
+#define MAY_QUOTE_WORD 1
+#endif /* AVOID_HACKS_FOR_ITCL */
 
     TclNewObj(objPtr);
-    Tcl_SetObjResult(interp, objPtr);
     Tcl_AppendToObj(objPtr, "wrong # args: should be \"", -1);
+
+    /*
+     * Check to see if we are processing an ensemble implementation,
+     * and if so rewrite the results in terms of how the ensemble was
+     * invoked.
+     */
+
+    if (iPtr->ensembleRewrite.sourceObjs != NULL) {
+	/*
+	 * We only know how to do rewriting if all the replaced
+	 * objects are actually arguments (in objv) to this function.
+	 * Otherwise it just gets too complicated...
+	 */
+
+	if (objc >= iPtr->ensembleRewrite.numInsertedObjs) {
+	    objv += iPtr->ensembleRewrite.numInsertedObjs;
+	    objc -= iPtr->ensembleRewrite.numInsertedObjs;
+	    /*
+	     * We assume no object is of index type.
+	     */
+	    for (i=0 ; i<iPtr->ensembleRewrite.numRemovedObjs ; i++) {
+		/*
+		 * Add the element, quoting it if necessary.
+		 */
+
+		elementStr = Tcl_GetStringFromObj(
+			iPtr->ensembleRewrite.sourceObjs[i], &elemLen);
+		len = Tcl_ScanCountedElement(elementStr, elemLen, &flags);
+		if (MAY_QUOTE_WORD && len != elemLen) {
+		    char *quotedElementStr = ckalloc((unsigned) len);
+		    len = Tcl_ConvertCountedElement(elementStr, elemLen,
+			    quotedElementStr, flags);
+		    Tcl_AppendToObj(objPtr, quotedElementStr, len);
+		    ckfree(quotedElementStr);
+		} else {
+		    Tcl_AppendToObj(objPtr, elementStr, elemLen);
+		}
+#ifndef AVOID_HACKS_FOR_ITCL
+		isFirst = 0;
+#endif /* AVOID_HACKS_FOR_ITCL */
+
+		/*
+		 * Add a space if the word is not the last one (which
+		 * has a moderately complex condition here).
+		 */
+
+		if ((i < (iPtr->ensembleRewrite.numRemovedObjs - 1))
+			|| objc || message) {
+		    Tcl_AppendStringsToObj(objPtr, " ", (char *) NULL);
+		}
+	    }
+	}
+    }
+
+    /*
+     * Now add the arguments (other than those rewritten) that the
+     * caller took from its calling context.
+     */
+
     for (i = 0; i < objc; i++) {
 	/*
 	 * If the object is an index type use the index table which allows
@@ -462,9 +533,25 @@ Tcl_WrongNumArgs(interp, objc, objv, message)
 	    indexRep = (IndexRep *) objv[i]->internalRep.otherValuePtr;
 	    Tcl_AppendStringsToObj(objPtr, EXPAND_OF(indexRep), (char *) NULL);
 	} else {
-	    Tcl_AppendStringsToObj(objPtr, Tcl_GetString(objv[i]),
-		    (char *) NULL);
+	    /*
+	     * Quote the argument if it contains spaces (Bug 942757).
+	     */
+
+	    elementStr = Tcl_GetStringFromObj(objv[i], &elemLen);
+	    len = Tcl_ScanCountedElement(elementStr, elemLen, &flags);
+	    if (MAY_QUOTE_WORD && len != elemLen) {
+		char *quotedElementStr = ckalloc((unsigned) len);
+		len = Tcl_ConvertCountedElement(elementStr, elemLen,
+			quotedElementStr, flags);
+		Tcl_AppendToObj(objPtr, quotedElementStr, len);
+		ckfree(quotedElementStr);
+	    } else {
+		Tcl_AppendToObj(objPtr, elementStr, elemLen);
+	    }
 	}
+#ifndef AVOID_HACKS_FOR_ITCL
+	isFirst = 0;
+#endif /* AVOID_HACKS_FOR_ITCL */
 
 	/*
 	 * Append a space character (" ") if there is more text to follow
@@ -475,8 +562,16 @@ Tcl_WrongNumArgs(interp, objc, objv, message)
 	}
     }
 
+    /*
+     * Add any trailing message bits and set the resulting string as
+     * the interpreter result. Caller is responsible for reporting
+     * this as an actual error.
+     */
+
     if (message) {
 	Tcl_AppendStringsToObj(objPtr, message, (char *) NULL);
     }
     Tcl_AppendStringsToObj(objPtr, "\"", (char *) NULL);
+    Tcl_SetObjResult(interp, objPtr);
+#undef MAY_QUOTE_WORD
 }

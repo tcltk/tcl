@@ -6,7 +6,7 @@
 # Copyright (c) 2000 by Ajuba Solutions
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.test,v 1.37.4.6 2004/09/21 23:10:29 dgp Exp $
+# RCS: @(#) $Id: tcltest.test,v 1.37.4.7 2004/12/09 23:01:11 dgp Exp $
 
 # Note that there are several places where the value of 
 # tcltest::currentFailure is stored/reset in the -setup/-cleanup
@@ -980,7 +980,7 @@ test tcltest-15.1 {basic directory walking} {
     }
     -match regexp
     -returnCodes 1
-    -result {Tests located in:.*dirtestdir.*Tests located in:.*dirtestdir2.1.*Tests located in:.*dirtestdir2.2.*Tests located in:.*dirtestdir2.3}
+    -result {Tests located in:.*dirtestdir.*Tests located in:.*dirtestdir2.[123].*Tests located in:.*dirtestdir2.[123].*Tests located in:.*dirtestdir2.[123]}
 }
 
 test tcltest-15.2 {-asidefromdir} {
@@ -995,7 +995,7 @@ test tcltest-15.2 {-asidefromdir} {
     }
     -match regexp
     -returnCodes 1
-    -result {Tests located in:.*dirtestdir.*Tests located in:.*dirtestdir2.1.*Tests located in:.*dirtestdir2.2.*dirtestdir2.2 test ended at .*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    -result {Tests located in:.*dirtestdir.*Tests located in:.*dirtestdir2.[12].*Tests located in:.*dirtestdir2.[12].*dirtestdir2.[12] test ended at .*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Error:  No test files remain after applying your match and skip patterns!
 Error:  No test files remain after applying your match and skip patterns!
 Error:  No test files remain after applying your match and skip patterns!$}
@@ -1739,6 +1739,47 @@ test tcltest-25.3 {
 	set ::tcltest::currentFailure $fail
 	verbose $v
 } -match glob -output {*generated error; Return code was: 1*}
+
+test tcltest-26.1 {Bug/RFE 1017151} -setup {
+    makeFile {
+	package require tcltest
+	set errorInfo "Should never see this"
+	tcltest::test tcltest-26.1.0 {
+	    no errorInfo when only return code mismatch
+	} -body {
+	    set x 1
+	} -returnCodes error -result 1
+	tcltest::cleanupTests
+    } test.tcl
+} -body {
+    slave msg [file join [temporaryDirectory] test.tcl]
+    set msg
+} -cleanup {
+    removeFile test.tcl
+} -match glob -result {*
+---- Return code should have been one of: 1
+==== tcltest-26.1.0 FAILED*}
+
+test tcltest-26.2 {Bug/RFE 1017151} -setup {
+    makeFile {
+	package require tcltest
+	set errorInfo "Should never see this"
+	tcltest::test tcltest-26.2.0 {do not mask body errorInfo} -body {
+	    error "body error"
+	} -cleanup {
+	    error "cleanup error"
+	} -result 1
+	tcltest::cleanupTests
+    } test.tcl
+} -body {
+    slave msg [file join [temporaryDirectory] test.tcl]
+    set msg
+} -cleanup {
+    removeFile test.tcl
+} -match glob -result {*
+---- errorInfo: body error
+*
+---- errorInfo(cleanup): cleanup error*}
 
 cleanupTests
 }

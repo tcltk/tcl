@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.50.2.6 2004/10/28 18:46:20 dgp Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.50.2.7 2004/12/09 23:00:30 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1092,6 +1092,14 @@ InfoGlobalsCmd(dummy, interp, objc, objv)
 	pattern = NULL;
     } else if (objc == 3) {
 	pattern = TclGetString(objv[2]);
+	/*
+	 * Strip leading global-namespace qualifiers. [Bug 1057461]
+	 */
+	if (pattern[0] == ':' && pattern[1] == ':') {
+	    while (*pattern == ':') {
+		pattern++;
+	    }
+	}
     } else {
 	Tcl_WrongNumArgs(interp, 2, objv, "?pattern?");
 	return TCL_ERROR;
@@ -1491,18 +1499,11 @@ InfoNameOfExecutableCmd(dummy, interp, objc, objv)
     int objc;			/* Number of arguments. */
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
-    CONST char *nameOfExecutable;
-
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 2, objv, NULL);
 	return TCL_ERROR;
     }
-
-    nameOfExecutable = Tcl_GetNameOfExecutable();
-
-    if (nameOfExecutable != NULL) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(nameOfExecutable, -1));
-    }
+    Tcl_SetObjResult(interp, TclGetObjNameOfExecutable());
     return TCL_OK;
 }
 
@@ -1990,11 +1991,13 @@ InfoVarsCmd(dummy, interp, objc, objv)
 	    } else if ((nsPtr != globalNsPtr) && !specificNsInPattern) {
 		entryPtr = Tcl_FindHashEntry(&globalNsPtr->varTable,
 			simplePattern);
-		varPtr = (Var *) Tcl_GetHashValue(entryPtr);
-		if (!TclIsVarUndefined(varPtr)
-			|| TclIsVarNamespaceVar(varPtr)) {
-		    Tcl_ListObjAppendElement(interp, listPtr,
-			    Tcl_NewStringObj(simplePattern, -1));
+		if (entryPtr != NULL) {
+		    varPtr = (Var *) Tcl_GetHashValue(entryPtr);
+		    if (!TclIsVarUndefined(varPtr)
+			    || TclIsVarNamespaceVar(varPtr)) {
+			Tcl_ListObjAppendElement(interp, listPtr,
+				Tcl_NewStringObj(simplePattern, -1));
+		    }
 		}
 	    }
 	} else {

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFCmd.c,v 1.29.2.8 2004/10/28 18:47:19 dgp Exp $
+ * RCS: @(#) $Id: tclUnixFCmd.c,v 1.29.2.9 2004/12/09 23:01:34 dgp Exp $
  *
  * Portions of this code were derived from NetBSD source code which has
  * the following copyright notice:
@@ -190,7 +190,7 @@ static int		TraversalDelete _ANSI_ARGS_((Tcl_DString *srcPtr,
 static int		TraverseUnixTree _ANSI_ARGS_((
 			    TraversalProc *traversalProc,
 			    Tcl_DString *sourcePtr, Tcl_DString *destPtr,
-			    Tcl_DString *errorPtr));
+			    Tcl_DString *errorPtr, int doRewind));
 
 #ifdef PURIFY
 /*
@@ -691,7 +691,7 @@ TclpObjCopyDirectory(srcPathPtr, destPathPtr, errorPtr)
 	Tcl_DecrRefCount(transPtr);
     }
 
-    ret = TraverseUnixTree(TraversalCopy, &srcString, &dstString, &ds);
+    ret = TraverseUnixTree(TraversalCopy, &srcString, &dstString, &ds, 0);
 
     Tcl_DStringFree(&srcString);
     Tcl_DStringFree(&dstString);
@@ -810,7 +810,7 @@ DoRemoveDirectory(pathPtr, recursive, errorPtr)
      */
 
     if (result == TCL_OK) {
-	result = TraverseUnixTree(TraversalDelete, pathPtr, NULL, errorPtr);
+	result = TraverseUnixTree(TraversalDelete, pathPtr, NULL, errorPtr, 1);
     }
     
     if ((result != TCL_OK) && (recursive != 0)) {
@@ -843,7 +843,7 @@ DoRemoveDirectory(pathPtr, recursive, errorPtr)
  */
 
 static int 
-TraverseUnixTree(traverseProc, sourcePtr, targetPtr, errorPtr)
+TraverseUnixTree(traverseProc, sourcePtr, targetPtr, errorPtr, doRewind)
     TraversalProc *traverseProc;/* Function to call for every file and
 				 * directory in source hierarchy. */
     Tcl_DString *sourcePtr;	/* Pathname of source directory to be
@@ -853,11 +853,18 @@ TraverseUnixTree(traverseProc, sourcePtr, targetPtr, errorPtr)
     Tcl_DString *errorPtr;	/* If non-NULL, uninitialized or free
 				 * DString filled with UTF-8 name of file
 				 * causing error. */
+    int doRewind;		/* Flag indicating that to ensure complete
+    				 * traversal of source hierarchy, the readdir
+    				 * loop should be rewound whenever
+    				 * traverseProc has returned TCL_OK; this is
+    				 * required when traverseProc modifies the
+    				 * source hierarchy, e.g. by deleting files. */ 
 {
     Tcl_StatBuf statBuf;
     CONST char *source, *errfile;
     int result, sourceLen;
     int targetLen;
+    int needRewind;
     Tcl_DirEntry *dirEntPtr;
     DIR *dirPtr;
 
@@ -902,36 +909,45 @@ TraverseUnixTree(traverseProc, sourcePtr, targetPtr, errorPtr)
 	targetLen = Tcl_DStringLength(targetPtr);
     }
 
-    while ((dirEntPtr = TclOSreaddir(dirPtr)) != NULL) { /* INTL: Native. */
-	if ((dirEntPtr->d_name[0] == '.')
-		&& ((dirEntPtr->d_name[1] == '\0')
-			|| (strcmp(dirEntPtr->d_name, "..") == 0))) {
-	    continue;
+    do {
+	needRewind = 0;
+	while ((dirEntPtr = TclOSreaddir(dirPtr)) != NULL) { /* INTL: Native. */
+	    if ((dirEntPtr->d_name[0] == '.')
+		    && ((dirEntPtr->d_name[1] == '\0')
+			    || (strcmp(dirEntPtr->d_name, "..") == 0))) {
+		continue;
+	    }
+	    
+	    /* 
+	     * Append name after slash, and recurse on the file.
+	     */
+	    
+	    Tcl_DStringAppend(sourcePtr, dirEntPtr->d_name, -1);
+	    if (targetPtr != NULL) {
+		Tcl_DStringAppend(targetPtr, dirEntPtr->d_name, -1);
+	    }
+	    result = TraverseUnixTree(traverseProc, sourcePtr, targetPtr,
+		    errorPtr, doRewind);
+	    if (result != TCL_OK) {
+	    	needRewind = 0;
+		break;
+	    } else {
+		needRewind = doRewind;
+	    }
+	    
+	    /*
+	     * Remove name after slash.
+	     */
+	    
+	    Tcl_DStringSetLength(sourcePtr, sourceLen);
+	    if (targetPtr != NULL) {
+		Tcl_DStringSetLength(targetPtr, targetLen);
+	    }
 	}
-
-	/* 
-	 * Append name after slash, and recurse on the file.
-	 */
-
-	Tcl_DStringAppend(sourcePtr, dirEntPtr->d_name, -1);
-	if (targetPtr != NULL) {
-	    Tcl_DStringAppend(targetPtr, dirEntPtr->d_name, -1);
+	if (needRewind) {
+	    rewinddir(dirPtr);
 	}
-	result = TraverseUnixTree(traverseProc, sourcePtr, targetPtr,
-		errorPtr);
-	if (result != TCL_OK) {
-	    break;
-	}
-	
-	/*
-	 * Remove name after slash.
-	 */
-
-	Tcl_DStringSetLength(sourcePtr, sourceLen);
-	if (targetPtr != NULL) {
-	    Tcl_DStringSetLength(targetPtr, targetLen);
-	}
-    }
+    } while (needRewind);
     closedir(dirPtr);
     
     /*

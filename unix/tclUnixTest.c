@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixTest.c,v 1.14.4.5 2004/09/08 23:03:27 dgp Exp $
+ * RCS: @(#) $Id: tclUnixTest.c,v 1.14.4.6 2004/12/09 23:01:35 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -426,7 +426,7 @@ TestfilewaitCmd(clientData, interp, argc, argv)
  * TestfindexecutableCmd --
  *
  *	This procedure implements the "testfindexecutable" command. It is
- *	used to test Tcl_FindExecutable.
+ *	used to test TclpFindExecutable.
  *
  * Results:
  *	A standard Tcl result.
@@ -444,9 +444,7 @@ TestfindexecutableCmd(clientData, interp, argc, argv)
     int argc;				/* Number of arguments. */
     CONST char **argv;			/* Argument strings. */
 {
-    char *oldName;
-    char *oldNativeName;
-    int oldDone;
+    Tcl_Obj *saveName;
 
     if (argc != 2) {
 	Tcl_AppendResult(interp, "wrong # arguments: should be \"", argv[0],
@@ -454,27 +452,14 @@ TestfindexecutableCmd(clientData, interp, argc, argv)
 	return TCL_ERROR;
     }
 
-    oldName       = tclExecutableName;
-    oldNativeName = tclNativeExecutableName;
-    oldDone       = tclFindExecutableSearchDone;
+    saveName = TclGetObjNameOfExecutable();
+    Tcl_IncrRefCount(saveName);
 
-    tclExecutableName       = NULL;
-    tclNativeExecutableName = NULL;
-    tclFindExecutableSearchDone = 0;
+    TclpFindExecutable(argv[1]);
+    Tcl_SetObjResult(interp, TclGetObjNameOfExecutable());
 
-    Tcl_FindExecutable(argv[1]);
-    if (tclExecutableName != NULL) {
-	Tcl_SetResult(interp, tclExecutableName, TCL_VOLATILE);
-	ckfree(tclExecutableName);
-    }
-    if (tclNativeExecutableName != NULL) {
-	ckfree(tclNativeExecutableName);
-    }
-
-    tclExecutableName           = oldName;
-    tclNativeExecutableName     = oldNativeName;
-    tclFindExecutableSearchDone = oldDone;
-
+    TclSetObjNameOfExecutable(saveName, NULL);
+    Tcl_DecrRefCount(saveName);
     return TCL_OK;
 }
 
@@ -529,7 +514,7 @@ TestgetopenfileCmd(clientData, interp, argc, argv)
  * TestsetdefencdirCmd --
  *
  *	This procedure implements the "testsetdefenc" command. It is
- *	used to set the value of tclDefaultEncodingDir.
+ *	used to test Tcl_SetDefaultEncodingDir().
  *
  * Results:
  *	A standard Tcl result.
@@ -555,15 +540,7 @@ TestsetdefencdirCmd(clientData, interp, argc, argv)
         return TCL_ERROR;
     }
 
-    if (tclDefaultEncodingDir != NULL) {
-	ckfree(tclDefaultEncodingDir);
-	tclDefaultEncodingDir = NULL;
-    }
-    if (*argv[1] != '\0') {
-	tclDefaultEncodingDir = (char *)
-	    ckalloc((unsigned) strlen(argv[1]) + 1);
-	strcpy(tclDefaultEncodingDir, argv[1]);
-    }
+    Tcl_SetDefaultEncodingDir(argv[1]);
     return TCL_OK;
 }
 
@@ -573,7 +550,7 @@ TestsetdefencdirCmd(clientData, interp, argc, argv)
  * TestgetdefencdirCmd --
  *
  *	This procedure implements the "testgetdefenc" command. It is
- *	used to get the value of tclDefaultEncodingDir.
+ *	used to test Tcl_GetDefaultEncodingDir().
  *
  * Results:
  *	A standard Tcl result.
@@ -598,9 +575,7 @@ TestgetdefencdirCmd(clientData, interp, argc, argv)
         return TCL_ERROR;
     }
 
-    if (tclDefaultEncodingDir != NULL) {
-        Tcl_AppendResult(interp, tclDefaultEncodingDir, (char *) NULL);
-    }
+    Tcl_AppendResult(interp, Tcl_GetDefaultEncodingDir(), (char *) NULL);
     return TCL_OK;
 }
 

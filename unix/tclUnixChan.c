@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.42.4.8 2004/10/28 18:47:19 dgp Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.42.4.9 2004/12/09 23:01:34 dgp Exp $
  */
 
 #include "tclInt.h"	/* Internal definitions for Tcl. */
@@ -126,10 +126,6 @@ typedef struct FileState {
     int validMask;		/* OR'ed combination of TCL_READABLE,
 				 * TCL_WRITABLE, or TCL_EXCEPTION: indicates
 				 * which operations are valid on the file. */
-#ifdef DEPRECATED
-    struct FileState *nextPtr;	/* Pointer to next file in list of all
-				 * file channels. */
-#endif /* DEPRECATED */
 } FileState;
 
 #ifdef SUPPORTS_TTY
@@ -167,19 +163,6 @@ typedef struct TtyAttrs {
 	    Tcl_AppendResult(interp, (detail),				\
 		    " not supported for this platform", (char *) NULL); \
 	}
-
-#ifdef DEPRECATED
-typedef struct ThreadSpecificData {
-    /*
-     * List of all file channels currently open.  This is per thread and is
-     * used to match up fd's to channels, which rarely occurs.
-     */
-
-    FileState *firstFilePtr;
-} ThreadSpecificData;
-
-static Tcl_ThreadDataKey dataKey;
-#endif /* DEPRECATED */
 
 /*
  * This structure describes per-instance state of a tcp based channel.
@@ -547,10 +530,7 @@ FileCloseProc(instanceData, interp)
 {
     FileState *fsPtr = (FileState *) instanceData;
     int errorCode = 0;
-#ifdef DEPRECATED
-    FileState **nextPtrPtr;
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-#endif /* DEPRECATED */
+
     Tcl_DeleteFileHandler(fsPtr->fd);
 
     /*
@@ -1000,6 +980,7 @@ TtySetOptionProc(instanceData, interp, optionName, value)
      * Option -ttycontrol {DTR 1 RTS 0 BREAK 0}
      */
     if ((len > 4) && (strncmp(optionName, "-ttycontrol", len) == 0)) {
+	int i;
 	if (Tcl_SplitList(interp, value, &argc, &argv) == TCL_ERROR) {
 	    return TCL_ERROR;
 	}
@@ -1014,12 +995,12 @@ TtySetOptionProc(instanceData, interp, optionName, value)
 	}
 
 	GETCONTROL(fsPtr->fd, &control);
-	while (argc > 1) {
-	    if (Tcl_GetBoolean(interp, argv[1], &flag) == TCL_ERROR) {
+	for (i = 0; i < argc-1; i += 2) {
+	    if (Tcl_GetBoolean(interp, argv[i+1], &flag) == TCL_ERROR) {
 		ckfree((char *) argv);
 		return TCL_ERROR;
 	    }
-	    if (strncasecmp(argv[0], "DTR", strlen(argv[0])) == 0) {
+	    if (strncasecmp(argv[i], "DTR", strlen(argv[i])) == 0) {
 #ifdef TIOCM_DTR
 		if (flag) {
 		    control |= TIOCM_DTR;
@@ -1031,7 +1012,7 @@ TtySetOptionProc(instanceData, interp, optionName, value)
 		ckfree((char *) argv);
 		return TCL_ERROR;
 #endif /* TIOCM_DTR */
-	    } else if (strncasecmp(argv[0], "RTS", strlen(argv[0])) == 0) {
+	    } else if (strncasecmp(argv[i], "RTS", strlen(argv[i])) == 0) {
 #ifdef TIOCM_RTS
 		if (flag) {
 		    control |= TIOCM_RTS;
@@ -1043,7 +1024,7 @@ TtySetOptionProc(instanceData, interp, optionName, value)
 		ckfree((char *) argv);
 		return TCL_ERROR;
 #endif /* TIOCM_RTS*/
-	    } else if (strncasecmp(argv[0], "BREAK", strlen(argv[0])) == 0) {
+	    } else if (strncasecmp(argv[i], "BREAK", strlen(argv[i])) == 0) {
 #ifdef SETBREAK
 		SETBREAK(fsPtr->fd, flag);
 #else /* !SETBREAK */
@@ -1053,15 +1034,14 @@ TtySetOptionProc(instanceData, interp, optionName, value)
 #endif /* SETBREAK */
 	    } else {
 		if (interp) {
-		    Tcl_AppendResult(interp,
-			    "bad signal for -ttycontrol: must be ",
+		    Tcl_AppendResult(interp, "bad signal \"", argv[i],
+			    "\" for -ttycontrol: must be ",
 			    "DTR, RTS or BREAK", (char *) NULL);
 		}
 		ckfree((char *) argv);
 		return TCL_ERROR;
 	    }
-	    argc -= 2, argv += 2;
-	} /* while (argc > 1) */
+	} /* -ttycontrol options loop */
 
 	SETCONTROL(fsPtr->fd, &control);
 	ckfree((char *) argv);
@@ -1771,9 +1751,6 @@ TclpOpenFileChannel(interp, pathPtr, mode, permissions)
 #ifdef SUPPORTS_TTY
     int ctl_tty;
 #endif /* SUPPORTS_TTY */
-#ifdef DEPRECATED
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-#endif /* DEPRECATED */
 
     switch (mode & (O_RDONLY | O_WRONLY | O_RDWR)) {
 	case O_RDONLY:
@@ -1844,12 +1821,6 @@ TclpOpenFileChannel(interp, pathPtr, mode, permissions)
 	fsPtr = (FileState *) ckalloc((unsigned) sizeof(FileState));
     }
 
-#ifdef DEPRECATED
-    if (channelTypePtr == &fileChannelType) {
-        fsPtr->nextPtr = tsdPtr->firstFilePtr;
-        tsdPtr->firstFilePtr = fsPtr;
-    }
-#endif /* DEPRECATED */
     fsPtr->validMask = channelPermissions | TCL_EXCEPTION;
     fsPtr->fd = fd;
 
@@ -1901,30 +1872,12 @@ Tcl_MakeFileChannel(handle, mode)
     char channelName[16 + TCL_INTEGER_SPACE];
     int fd = (int) handle;
     Tcl_ChannelType *channelTypePtr;
-#ifdef DEPRECATED
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-#endif /* DEPRECATED */
     struct sockaddr sockaddr;
     socklen_t sockaddrLen = sizeof(sockaddr);
 
     if (mode == 0) {
 	return NULL;
     }
-
-
-    /*
-     * Look to see if a channel with this fd and the same mode already exists.
-     * If the fd is used, but the mode doesn't match, return NULL.
-     */
-
-#ifdef DEPRECATED
-    for (fsPtr = tsdPtr->firstFilePtr; fsPtr != NULL; fsPtr = fsPtr->nextPtr) {
-	if (fsPtr->fd == fd) {
-	    return ((mode|TCL_EXCEPTION) == fsPtr->validMask) ?
-		    fsPtr->channel : NULL;
-	}
-    }
-#endif /* DEPRECATED */
 
     sockaddr.sa_family = AF_UNSPEC;
 
@@ -1945,12 +1898,6 @@ Tcl_MakeFileChannel(handle, mode)
 	sprintf(channelName, "file%d", fd);
     }
 
-#ifdef DEPRECATED
-    if (channelTypePtr == &fileChannelType) {
-        fsPtr->nextPtr = tsdPtr->firstFilePtr;
-        tsdPtr->firstFilePtr = fsPtr;
-    }
-#endif /* DEPRECATED */
     fsPtr->fd = fd;
     fsPtr->validMask = mode | TCL_EXCEPTION;
     fsPtr->channel = Tcl_CreateChannel(channelTypePtr, channelName,
@@ -3304,7 +3251,7 @@ TclUnixWaitForFile(fd, mask, timeout)
  *	None.
  *
  * Side effects:
- *	Changes thread local list of valid channels.
+ *	None. This is a no-op under unix.
  *
  *----------------------------------------------------------------------
  */
@@ -3315,39 +3262,6 @@ TclpCutFileChannel(chan)
                                          * not be referenced in any
                                          * interpreter. */
 {
-#ifdef DEPRECATED
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-    Channel *chanPtr = (Channel *) chan;
-    FileState *fsPtr;
-    FileState **nextPtrPtr;
-    int removed = 0;
-
-    if (chanPtr->typePtr != &fileChannelType) {
-        return;
-    }
-
-    fsPtr = (FileState *) chanPtr->instanceData;
-
-    for (nextPtrPtr = &(tsdPtr->firstFilePtr); (*nextPtrPtr) != NULL;
-	    nextPtrPtr = &((*nextPtrPtr)->nextPtr)) {
-	if ((*nextPtrPtr) == fsPtr) {
-	    (*nextPtrPtr) = fsPtr->nextPtr;
-	    removed = 1;
-	    break;
-	}
-    }
-
-    /*
-     * This could happen if the channel was created in one thread
-     * and then moved to another without updating the thread
-     * local data in each thread.
-     */
-
-    if (!removed) {
-        Tcl_Panic("file info ptr not on thread channel list");
-    }
-
-#endif /* DEPRECATED */
 }
 
 /*
@@ -3362,7 +3276,7 @@ TclpCutFileChannel(chan)
  *	None.
  *
  * Side effects:
- *	Changes thread local list of valid channels.
+ *	None. This is a no-op under unix.
  *
  *----------------------------------------------------------------------
  */
@@ -3373,18 +3287,4 @@ TclpSpliceFileChannel(chan)
                                          * not be referenced in any
                                          * interpreter. */
 {
-#ifdef DEPRECATED
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-    Channel *chanPtr = (Channel *) chan;
-    FileState *fsPtr;
-
-    if (chanPtr->typePtr != &fileChannelType) {
-        return;
-    }
-
-    fsPtr = (FileState *) chanPtr->instanceData;
-
-    fsPtr->nextPtr = tsdPtr->firstFilePtr;
-    tsdPtr->firstFilePtr = fsPtr;
-#endif /* DEPRECATED */
 }

@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNotify.c,v 1.11.4.3 2004/09/08 23:02:47 dgp Exp $
+ * RCS: @(#) $Id: tclNotify.c,v 1.11.4.4 2004/12/09 23:00:41 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -81,7 +81,7 @@ static Tcl_ThreadDataKey dataKey;
  * be replaced with a hashtable.
  */
 
-static ThreadSpecificData *firstNotifierPtr;
+static ThreadSpecificData *firstNotifierPtr = NULL;
 TCL_DECLARE_MUTEX(listLock)
 
 /*
@@ -111,15 +111,22 @@ static void		QueueEvent _ANSI_ARGS_((ThreadSpecificData *tsdPtr,
 void
 TclInitNotifier()
 {
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+    ThreadSpecificData *tsdPtr;
+    Tcl_ThreadId threadId = Tcl_GetCurrentThread();
 
     Tcl_MutexLock(&listLock);
-
-    tsdPtr->threadId = Tcl_GetCurrentThread();
-    tsdPtr->clientData = tclStubs.tcl_InitNotifier();
-    tsdPtr->nextPtr = firstNotifierPtr;
-    firstNotifierPtr = tsdPtr;
-
+    for (tsdPtr = firstNotifierPtr; tsdPtr && tsdPtr->threadId != threadId;
+	     tsdPtr = tsdPtr->nextPtr) {
+	/* Empty loop body. */
+    }
+    if (NULL == tsdPtr) {
+	/* Notifier not yet initialized in this thread */
+	tsdPtr = TCL_TSD_INIT(&dataKey);
+	tsdPtr->threadId = threadId;
+	tsdPtr->clientData = tclStubs.tcl_InitNotifier();
+	tsdPtr->nextPtr = firstNotifierPtr;
+	firstNotifierPtr = tsdPtr;
+    }
     Tcl_MutexUnlock(&listLock);
 }
 
