@@ -2,6 +2,25 @@
 
 	* generic/tclExecute.c: removed Tcl_DuplicateObj in INST_DUP 
 
+2001-05-21  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* tests/tcltest.test (tcltest-19.1): fixed failing test that was
+	getting affected by Windows env handling of empty valued elements.
+
+	* unix/tcl.m4: added more common install directories in which to
+	search for *Config.sh [Bug #419812]
+
+	* tests/cmdMZ.test (cmdMZ-1.4): added notLinux constraint to test
+	to prevent failure message on Linux due to OS caching bug.
+
+	* tests/httpd (httpdRespond): added response to timeout value in
+	query string.
+
+	* tests/http.test: removed unused notLinux constraint setting
+
+	* generic/tclRegexp.c (Tcl_RegExpExecObj): added use of
+	Tcl_GetUnicodeFromObj.
+
 2001-05-19  Andreas Kupries <andreas_kupries@users.sourceforge.net>
 
 	* Note that "tclbench" (see project "tcllib") was extended with
