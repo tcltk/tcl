@@ -1,5 +1,7 @@
 2004-03-01  Don Porter	<dgp@users.sourceforge.net>
 
+	*** 8.4.6 TAGGED FOR RELEASE ***
+
 	* unix/tcl.m4 (SC_CONFIG_CFLAGS):	Allow 64-bit enabling on
 	IRIX64-6.5* systems.  [Bug 218561]
 	* unix/configure:	autoconf-2.13
@@ -12,8 +14,6 @@
 	error, and made fix.  [Request 462580]
 
 2004-02-26  Daniel Steffen  <das@users.sourceforge.net>
-
-	*** 8.4.6 TAGGED FOR RELEASE ***
 
 	* macosx/Makefile: fixed copyright year in Tcl.framework Info.plist
 
