@@ -1,3 +1,22 @@
+2000-03-30  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* generic/tclBasic.c (Tcl_DeleteCommandFromToken): Added comments
+	noting the need to pair ckalloc with ckfree. [Bug: 4262]
+
+	* generic/tclInt.decls:
+	* generic/tclIntPlatDecls.h:
+	* generic/tclStubInit.c:
+	* win/tclWin32Dll.c: removed TclWinSynchSpawn (vestige of Win32s
+	support).
+
+	* win/tclWinReg.c: made use of TclWinGetPlatformId instead of
+	getting info again
+
+	* win/tclWinPort.h:
+	* win/Makefile.in:
+	* win/configure.in:
+	* win/tcl.m4: Added support for gcc/mingw on Windows [Bug: 4234]
+
 2000-03-29  Jeff Hobbs  <hobbs@scriptics.com>
 
 	* generic/tclCompile.c (TclCleanupByteCode): made ByteCode cleanup
