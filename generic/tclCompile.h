@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.53.2.16 2005/03/20 00:47:20 msofer Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.53.2.17 2005/03/20 13:28:12 msofer Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -601,30 +601,26 @@ typedef struct ByteCode {
  * opposites (eg '<' and '>=') have numbers (2n) and (2n+1).
  */
 
-/* Opcodes for termination.*/
-#define INST_DONE			0
-#define INST_RETURN			1
-
 /* Opcodes for stack management */
-#define INST_PUSH			2
-#define INST_POP			3
-#define INST_DUP			4
-#define INST_OVER			5
+#define INST_PUSH			0
+#define INST_POP			1
+#define INST_DUP			2
+#define INST_OVER			3
 
 /* Opcodes for command building and invocation*/
-#define INST_CONCAT			6
-#define INST_INVOKE_STK		        7
-#define INST_EVAL_STK			8
-#define INST_EXPR_STK			9
-#define INST_EXPAND_START               10
-#define INST_EXPAND_STKTOP              11
-#define INST_INVOKE_EXPANDED            12
-#define INST_START_CMD                  13
+#define INST_CONCAT			4
+#define INST_INVOKE_STK		        5
+#define INST_EVAL_STK			6
+#define INST_EXPR_STK			7
+#define INST_EXPAND_START               8
+#define INST_EXPAND_STKTOP              9
+#define INST_INVOKE_EXPANDED            10
+#define INST_START_CMD                  11
 
 /* Opcodes for variable access. */
-#define INST_LOAD		        14  
-#define INST_STORE                      15  					    
-#define INST_INCR                       16   
+#define INST_LOAD		        12  
+#define INST_STORE                      13  					    
+#define INST_INCR                       14   
 
 /*
  * Opcodes for flow control
@@ -637,6 +633,9 @@ typedef struct ByteCode {
  * It is also important that the comparisons immediately precede the other
  * math operators, as the [expr] compiler relies on that property.
  */
+
+#define INST_DONE			15
+#define INST_RETURN			16
 
 #define INST_BREAK			17
 #define INST_CONTINUE			18

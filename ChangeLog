@@ -1,5 +1,14 @@
 2005-03-19 Miguel Sofer <msofer@users.sf.net>
 
+	* generic/tclCompile.c:
+	* generic/tclCompile.h: Trivial instruction numbering change
+	
+	* generic/tclExecute.c: Code for jump-if-true at comparisons,
+	removed corresponding runtime peephole opts - as they will be
+	performed at compile time by the optimiser.
+
+2005-03-19 Miguel Sofer <msofer@users.sf.net>
+
 	* generic/tclCompile.h: (VM_USE_PACKED) added a check that jump
 	distances do not exceed the packing capability; if they do,
 	panic. Should not happen very often, jumps of up to 32k 32b words

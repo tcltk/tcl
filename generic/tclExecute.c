@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.171.2.10 2005/03/20 00:23:19 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.171.2.11 2005/03/20 13:28:12 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1078,7 +1078,7 @@ TclCompEvalObj(interp, objPtr)
  *
  *----------------------------------------------------------------------
  */
-#define ENABLE_PEEPHOLE 0
+#define ENABLE_PEEPHOLE 1
 #ifndef ENABLE_PEEPHOLE
 #define ENABLE_PEEPHOLE !defined(TCL_COMPILE_DEBUG)
 #endif
@@ -1380,26 +1380,23 @@ TclExecuteByteCode(interp, codePtr)
 	    TclDecrRefCount(valuePtr);
 	}
 
+#if ENABLE_PEEPHOLE
 	/*
 	 * Runtime peephole optimisation: an INST_POP is scheduled
 	 * at the end of most commands. If the next instruction is an
 	 * INST_START_CMD, fall through to it.
 	 */
 
-#if ENABLE_PEEPHOLE
-	TclVMGetInstAndOpAtPtr((pc+1), inst, opnd);	
-	if (inst == INST_START_CMD) {	
-	    pc++;
-	    goto instStartCmdPeephole;
+	pc++;
+	TclVMGetInstAndOpAtPtr(pc, inst, opnd);	
+	if (inst != INST_START_CMD) {	
+	    goto jumpToInst;
 	}
-#endif
+#else
 	NEXT_INST_F(0, 0);
-
+#endif
 	
     case INST_START_CMD:
-#if ENABLE_PEEPHOLE
-	instStartCmdPeephole:
-#endif
 	/*
 	 * Remark that if the interpreter is marked for deletion
 	 * its compileEpoch is modified, so that the epoch
@@ -2613,20 +2610,18 @@ TclExecuteByteCode(interp, codePtr)
 	TRACE(("%.20s %.20s => %d\n", O2S(valuePtr), O2S(value2Ptr), found));
 
 	/*
-	 * Peep-hole optimisation: if you're about to jump, do jump
-	 * from here.
+	 * Jump-if-true extension. Note that opnd==0 (which would mean
+	 * 'ignore the result, continue with the next instruction' and have
+	 * the effect of two INST_POPs) is taken to mean "push the result".
 	 */
-#if ENABLE_PEEPHOLE
-	TclVMGetInstAndOpAtPtr((pc+1), inst, opnd);	
-	switch (inst) {
-	case INST_JUMP_FALSE:
-	    pc += ((found)? 1 : opnd);
-	    NEXT_INST_F(2, 0);
-	case INST_JUMP_TRUE:
-	    pc += ((found)? opnd : 1);
-	    NEXT_INST_F(2, 0);
+	
+	if (opnd) {
+	    if (found) {
+		pc += (opnd-1);
+	    }
+	    NEXT_INST_F(2,0);
 	}
-#endif
+	
 	objResultPtr = Tcl_NewBooleanObj(found);
 	NEXT_INST_F(2, 1);
     }
@@ -2679,20 +2674,18 @@ TclExecuteByteCode(interp, codePtr)
 	TRACE(("%.20s %.20s => %d\n", O2S(valuePtr), O2S(value2Ptr), iResult));
 
 	/*
-	 * Peep-hole optimisation: if you're about to jump, do jump
-	 * from here.
+	 * Jump-if-true extension. Note that opnd==0 (which would mean
+	 * 'ignore the result, continue with the next instruction' and have
+	 * the effect of two INST_POPs) is taken to mean "push the result".
 	 */
-#if ENABLE_PEEPHOLE
-	TclVMGetInstAndOpAtPtr((pc+1), inst, opnd);	
-	switch (inst) {
-	case INST_JUMP_FALSE:
-	    pc += ((iResult)? 1 : opnd);
-	    NEXT_INST_F(2, 0);
-	case INST_JUMP_TRUE:
-	    pc += ((iResult)? opnd : 1);
-	    NEXT_INST_F(2, 0);
+	
+	if (opnd) {
+	    if (iResult) {
+		pc += (opnd-1);
+	    }
+	    NEXT_INST_F(2,0);
 	}
-#endif
+	
 	objResultPtr = Tcl_NewIntObj(iResult);
 	NEXT_INST_F(2, 1);
     }
@@ -3159,17 +3152,19 @@ TclExecuteByteCode(interp, codePtr)
 	 */
 
       foundResult:
-#if ENABLE_PEEPHOLE
-	TclVMGetInstAndOpAtPtr((pc+1), inst, opnd);	
-	switch (inst) {
-	case INST_JUMP_FALSE:
-	    pc += ((iResult)? 1 : opnd);
-	    NEXT_INST_F(2, 0);
-	case INST_JUMP_TRUE:
-	    pc += ((iResult)? opnd : 1);
-	    NEXT_INST_F(2, 0);
+	/*
+	 * Jump-if-true extension. Note that opnd==0 (which would mean
+	 * 'ignore the result, continue with the next instruction' and have
+	 * the effect of two INST_POPs) is taken to mean "push the result".
+	 */
+	
+	if (opnd) {
+	    if (iResult) {
+		pc += (opnd-1);
+	    }
+	    NEXT_INST_F(2,0);
 	}
-#endif
+	
 	objResultPtr = Tcl_NewIntObj(iResult);
 	NEXT_INST_F(2, 1);
     }
@@ -4209,7 +4204,8 @@ TclExecuteByteCode(interp, codePtr)
 	} else {
 	    /*
 	     * Range known from compile time: rewrite the instruction to a
-	     * jump! This part will be used just once 
+	     * jump! This part will be used just once.
+	     * Note that a well-functioning optimiser never emits this case. 
 	     */
 	    ExceptionRange *rangePtr = &codePtr->exceptArrayPtr[opnd];
 
@@ -4412,7 +4408,8 @@ TclExecuteByteCode(interp, codePtr)
 #if ENABLE_PEEPHOLE
 		/*
 		 * This is followed by an INST_PUSH; check if right after that
-		 * there is an INST_POP and both can be skipped.
+		 * there is an INST_POP and both can be skipped. 
+		 * Note that a well-functioning optimiser never emits this case. 
 		 */
 		
 		TclVMGetInstAndOpAtPtr((pc+2), inst, opnd);	
