@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.97 2002/03/05 19:37:35 davygrvy Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.98 2002/04/23 05:41:03 hobbs Exp $
 
 VERSION 		= @TCL_VERSION@
 
@@ -282,7 +282,8 @@ GENERIC_OBJS = regcomp.o regexec.o regfree.o regerror.o tclAlloc.o \
 	tclObj.o tclPanic.o tclParse.o tclParseExpr.o tclPipe.o \
 	tclPkg.o tclPosixStr.o tclPreserve.o tclProc.o tclRegexp.o \
 	tclResolve.o tclResult.o tclScan.o tclStringObj.o tclThread.o \
-	tclStubInit.o tclStubLib.o tclTimer.o tclUtf.o tclUtil.o tclVar.o
+	 tclThreadAlloc.o tclThreadJoin.o tclStubInit.o tclStubLib.o \
+	tclTimer.o tclUtf.o tclUtil.o tclVar.o
 
 STUB_LIB_OBJS = tclStubLib.o ${COMPAT_OBJS}
 
@@ -363,6 +364,7 @@ GENERIC_SRCS = \
 	$(GENERIC_DIR)/tclTestObj.c \
 	$(GENERIC_DIR)/tclTestProcBodyObj.c \
 	$(GENERIC_DIR)/tclThread.c \
+	$(GENERIC_DIR)/tclThreadAlloc.c \
 	$(GENERIC_DIR)/tclThreadJoin.c \
 	$(GENERIC_DIR)/tclTimer.c \
 	$(GENERIC_DIR)/tclUtil.c \
@@ -961,6 +963,9 @@ tclTimer.o: $(GENERIC_DIR)/tclTimer.c
 
 tclThread.o: $(GENERIC_DIR)/tclThread.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclThread.c
+
+tclThreadAlloc.o: $(GENERIC_DIR)/tclThreadAlloc.c
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclThreadAlloc.c
 
 tclThreadJoin.o: $(GENERIC_DIR)/tclThreadJoin.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclThreadJoin.c
