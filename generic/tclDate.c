@@ -42,7 +42,6 @@ typedef struct _TABLE {
     time_t      value;
 } TABLE;
 
-
 /*
  *  Daylight-savings mode:  on, off, or not yet known.
  */
@@ -566,7 +565,7 @@ Convert(Month, Day, Year, Hours, Minutes, Seconds, Meridian, DSTmode, TimePtr)
 
     /* Perform a preliminary DST compensation ?? */
     if (DSTmode == DSTon
-     || (DSTmode == DSTmaybe && TclpGetDate((TclpTime_t)&Julian, 0)->tm_isdst))
+	|| (DSTmode == DSTmaybe && TclpGetDate(&Julian, 0)->tm_isdst))
         Julian -= 60 * 60;
     *TimePtr = Julian;
     return 0;
@@ -580,8 +579,8 @@ DSTcorrect(Start, Future)
 {
     time_t      StartDay;
     time_t      FutureDay;
-    StartDay = (TclpGetDate((TclpTime_t)&Start, 0)->tm_hour + 1) % 24;
-    FutureDay = (TclpGetDate((TclpTime_t)&Future, 0)->tm_hour + 1) % 24;
+    StartDay = (TclpGetDate(&Start, 0)->tm_hour + 1) % 24;
+    FutureDay = (TclpGetDate(&Future, 0)->tm_hour + 1) % 24;
     return (Future - Start) + (StartDay - FutureDay) * 60L * 60L;
 }
 
@@ -596,7 +595,7 @@ NamedDay(Start, DayOrdinal, DayNumber)
     time_t      now;
 
     now = Start;
-    tm = TclpGetDate((TclpTime_t)&now, 0);
+    tm = TclpGetDate(&now, 0);
     now += SECSPERDAY * ((DayNumber - tm->tm_wday + 7) % 7);
     now += 7 * SECSPERDAY * (DayOrdinal <= 0 ? DayOrdinal : DayOrdinal - 1);
     return DSTcorrect(Start, now);
@@ -613,7 +612,7 @@ NamedMonth(Start, MonthOrdinal, MonthNumber)
     int result;
     
     now = Start;
-    tm = TclpGetDate((TclpTime_t)&now, 0);
+    tm = TclpGetDate(&now, 0);
     /* To compute the next n'th month, we use this alg:
      * add n to year value
      * if currentMonth < requestedMonth decrement year value by 1 (so that
@@ -648,7 +647,7 @@ RelativeMonth(Start, RelMonth, TimePtr)
         *TimePtr = 0;
         return 0;
     }
-    tm = TclpGetDate((TclpTime_t)&Start, 0);
+    tm = TclpGetDate(&Start, 0);
     Month = 12 * (tm->tm_year + TM_YEAR_BASE) + tm->tm_mon + RelMonth;
     Year = Month / 12;
     Month = Month % 12 + 1;
@@ -921,7 +920,7 @@ TclGetDate(p, now, zone, timePtr)
     TclDateInput = p;
     /* now has to be cast to a time_t for 64bit compliance */
     Start = now;
-    tm = TclpGetDate((TclpTime_t) &Start, (zone == -50000));
+    tm = TclpGetDate(&Start, (zone == -50000));
     thisyear = tm->tm_year + TM_YEAR_BASE;
     TclDateYear = thisyear;
     TclDateMonth = tm->tm_mon + 1;
