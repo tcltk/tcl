@@ -3598,4 +3598,10 @@ subdirectories. (SS)
 extensions, including Tk.  This searches in a canonical way for
 an extensions library directory and initialization file. (BW)
 
--------- Released 8.0.3 to the Tcl Consortium CD-ROM project, 8/7/98 ------
+8/10/98 (bug fix) Imported commands used to get lost if the target
+of the import was redefined.  Tcl_CreateCommand and Tcl_CreateObjCommand
+were updated to restore import links. (Note that if you rename a command,
+the import links move to the new name, and if you delete a command then
+the import links get lost. These semantics have not changed.) (MC)
+
+-------- Released 8.0.3 to the Tcl Consortium CD-ROM project, 8/10/98 ------
