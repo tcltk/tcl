@@ -63,20 +63,23 @@ DBGX		=
 TMPDIR		= .\Debug
 DBGX		= d
 !ENDIF
+OUTDIR		= $(TMPDIR)
 
-TCLLIB		= tcl$(VERSION)$(DBGX).lib
-TCLDLL		= tcl$(VERSION)$(DBGX).dll
-TCLPLUGINLIB	= tcl$(VERSION)p$(DBGX).lib
-TCLPLUGINDLL	= tcl$(VERSION)p$(DBGX).dll
-TCL16DLL	= tcl16$(VERSION)$(DBGX).dll
-TCLSH		= tclsh$(VERSION)$(DBGX).exe
-TCLSHP		= tclshp$(VERSION)$(DBGX).exe
-TCLPIPEDLL	= tclpip$(VERSION)$(DBGX).dll
-TCLREGDLL	= tclreg$(VERSION)$(DBGX).dll
-TCLTEST		= tcltest.exe
+TCLLIB		= $(OUTDIR)\tcl$(VERSION)$(DBGX).lib
+TCLDLLNAME	= tcl$(VERSION)$(DBGX).dll
+TCLDLL		= $(OUTDIR)\$(TCLDLLNAME)
+TCLPLUGINLIB	= $(OUTDIR)\tcl$(VERSION)p$(DBGX).lib
+TCLPLUGINDLLNAME= tcl$(VERSION)p$(DBGX).dll
+TCLPLUGINDLL	= $(OUTDIR)\$(TCLPLUGINDLLNAME)
+TCL16DLL	= $(OUTDIR)\tcl16$(VERSION)$(DBGX).dll
+TCLSH		= $(OUTDIR)\tclsh$(VERSION)$(DBGX).exe
+TCLSHP		= $(OUTDIR)\tclshp$(VERSION)$(DBGX).exe
+TCLPIPEDLL	= $(OUTDIR)\tclpip$(VERSION)$(DBGX).dll
+TCLREGDLL	= $(OUTDIR)\tclreg$(VERSION)$(DBGX).dll
+TCLTEST		= $(OUTDIR)\tcltest.exe
 DUMPEXTS	= $(TMPDIR)\dumpexts.exe
-CAT16		= cat16.exe
-CAT32		= cat32.exe
+CAT16		= $(TMPDIR)\cat16.exe
+CAT32		= $(TMPDIR)\cat32.exe
 
 TCLSHOBJS = \
 	$(TMPDIR)\tclAppInit.obj
@@ -259,7 +262,8 @@ test:	    setup $(TCLTEST) dlls $(CAT16) $(CAT32)
 <<
 
 setup:
-	md $(TMPDIR)
+	@mkd $(TMPDIR)
+	@mkd $(OUTDIR)
 
 $(DUMPEXTS): $(WINDIR)\winDumpExts.c
 	$(cc32) $(CON_CFLAGS) -Fo$(TMPDIR)\ $?
@@ -345,12 +349,12 @@ $(CAT16): $(WINDIR)\cat.c
 		$(TMPDIR)\cat.obj,$@,nul,llibce.lib,nul
 
 $(TMPDIR)\tcl.def: $(DUMPEXTS) $(TCLOBJS)
-	$(DUMPEXTS) -o $@ $(TCLDLL) @<<
+	$(DUMPEXTS) -o $@ $(TCLDLLNAME) @<<
 $(TCLOBJS)
 <<
 
 $(TMPDIR)\plugin.def: $(DUMPEXTS) $(TCLOBJS)
-	$(DUMPEXTS) -o $@ $(TCLPLUGINDLL) @<<
+	$(DUMPEXTS) -o $@ $(TCLPLUGINDLLNAME) @<<
 $(TCLOBJS)
 <<
 
@@ -379,13 +383,15 @@ $(TMPDIR)\testMain.obj: $(WINDIR)\tclAppInit.c
 		$(TCL_DEFINES) $<
 
 clean:
-        -@del *.exp 
-	-@del *.lib 
-	-@del *.dll 
-	-@del *.exe
-	-@del *.pdb
+        -@del $(OUTDIR)\*.exp 
+	-@del $(OUTDIR)\*.lib 
+	-@del $(OUTDIR)\*.dll 
+	-@del $(OUTDIR)\*.exe
+	-@del $(OUTDIR)\*.pdb
 	-@del *.pch
         -@del $(TMPDIR)\*.obj
         -@del $(TMPDIR)\*.res
         -@del $(TMPDIR)\*.def
         -@del $(TMPDIR)\*.exe
+	-@rmd $(OUTDIR)
+	-@rmd $(TMPDIR)
