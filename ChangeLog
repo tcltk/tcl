@@ -1,3 +1,8 @@
+2002-05-20  Daniel Steffen  <das@users.sourceforge.net>
+
+	* mac/tclMacChan.c: use MSL provided creator type if available
+	instead of the default 'MPW '.
+
 2002-04-26  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* unix/configure:
