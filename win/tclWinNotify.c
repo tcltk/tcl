@@ -10,11 +10,10 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinNotify.c,v 1.7 2000/11/21 21:33:43 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclWinNotify.c,v 1.8 2001/09/20 18:34:22 hobbs Exp $
  */
 
 #include "tclWinInt.h"
-#include <winsock.h>
 
 /*
  * The follwing static indicates whether this module has been initialized.
