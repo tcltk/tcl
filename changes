@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.70 2002/07/05 20:18:05 dgp Exp $
+RCS: @(#) $Id: changes,v 1.71 2002/09/03 04:11:36 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -5537,6 +5537,7 @@ default; older compilers may need configuration (english)
 2002-06-21 (new feature)[TIP 99,562970] new [file link] command (darley)
 
 2002-06-24 (new feature)[TIP 101] new [tcltest::configure] command (porter)
+=> tcltest 2.2
 
 2002-06-25 (new feature) --enable-man-symlinks and --enable-man-compression
 options to configure (max)
@@ -5547,3 +5548,56 @@ options to configure (max)
 2002-07-03 (bug fix)[577015] [catch] catches even compile errors (sofer)
 
 --- Released 8.4b1, July 5, 2002 --- See ChangeLog for details ---
+
+2002-07-08 (bug fix) restored compatibility of [viewFile] in tcltest (porter)
+
+2002-07-11 (bug fix) [file normalize] returns long form on Win 95/98/ME (darley)
+
+2002-07-15 (performance enhancment) variable operations rewritten to store
+	and use cached Var pointers (sofer)
+
+2002-07-22 (bug fix)[218000] Inf and Nan are floating-point values (fellows)
+
+2002-07-23 (platform support)[219220] 64-bit compile on IRIX (dejong)
+
+2002-07-25 (bug fix)[219218] return codes in background errors (english)
+
+2002-07-28 (bug fix)[582522] alias fires exec traces (sofer)
+
+2002-07-29 (bug fix)[578363] regexp (fellows,pvgoran)
+
+2002-07-30 (bug fix)[584603] WriteChars infinite loop non-UTF-8 string (kupries)
+
+2002-08-04 (new feature)[584051,580433,585105,582429][TIP 27] Tcl interfaces 
+	are now fully CONST-ified.  Use the symbols USE_NON_CONST or
+	USE_COMPAT_CONST to select interfaces with fewer changes.
+        *** POTENTIAL INCOMPATIBILITY ***
+
+2002-08-05 (bug fix)[589859] tcltest setup and cleanup scripts skipped when
+	test body is skipped (porter)
+	=> tcltest 2.2
+
+2002-08-07 (bug fix)[587488] mem leak with USE_THREAD_ALLOC (sofer,sass)
+	
+2002-08-07 (feature enhancement)[584794,584650,472576] boolean values
+	are no longer always re-parsed from string. (sofer)
+
+Many internal bugs fixed.
+Considerable cleanup of the test suite.
+
+--- Released 8.4b2, August 9, 2002 --- See ChangeLog for details ---
+
+2002-08-20 (new feature) --enable-memdebug configure option (kupries)
+
+2002-08-23 (bug fix)[597936] mem leak with USE_THREAD_ALLOC (sofer,zoran)
+
+2002-08-26 (bug fix)[599788] segfault in compiler (sofer,wilkason)
+
+2002-08-28 (bug fix)[414910] avoid mem leaks accessing environment variables
+	on Windows (welton,gravereaux)
+
+2002-08-31 (platform support) Mac OS X port (steffen,ingham)
+
+2002-09-02 (platfrom support) 64-bit compile on HP-11 (martin)
+
+--- Released 8.4.0, September X, 2002 --- See ChangeLog for details ---
