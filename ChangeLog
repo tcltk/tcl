@@ -1,5 +1,10 @@
 2004-05-25  Don Porter  <dgp@users.sourceforge.net>
 
+	* tests/autoMkindex.test (autoMkindex-5.2): Use variable "result"
+	that gets cleaned up.
+	* tests/exec.test:	Clean up the "path" array.
+	* tests/interp.test (interp-9.3): Initialize res, so prior values
+	cannot make the test fail.
 	* tests/execute.test (execute-8.1):  Updated to remove the trace
 	set on ::errorInfo .  When left in place, that trace can cause
 	later tests to fail.
