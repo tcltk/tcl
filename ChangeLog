@@ -1,3 +1,32 @@
+1999-06-17    <stanton@scriptics.com>
+
+	* tests/regexp.test: 
+	* generic/tclCmdMZ.c: 
+	* generic/tclCmdIL.c: Changed to use new regexp interfaces.  Added
+	-expanded, -line, -linestop, and -lineanchor switches to regsub.
+
+	* doc/RegExp.3: Documented the new regexp interfaces and
+	the compile/execute flags.
+	
+	* generic/tclTest.c: 
+	* generic/tclRegexp.h:
+	* generic/tclRegexp.c: 
+	* generic/tcl.h: 
+	* generic/tcl.decls: Renamed Tcl_RegExpMatchObj to
+	Tcl_RegExpExecObj and added a new Tcl_RegExpMatchObj that is
+	equivalent to Tcl_RegExpMatch.  Added public macros for the regexp
+	compile/execute flags.  Changed to store either an object pointer
+	or a string pointer in the TclRegexp structure.  Changed to avoid
+	adding a reference to the object or copying the string.
+
+	* generic/regcomp.c: lint
+
+	* tests/reg.test: 
+	* generic/regex.h: 
+	* generic/regc_lex.c: Added REG_BOSONLY flag to allow Expect to
+	iterate through a string an only find matches that start at the
+	current position within the string.
+
 1999-06-16  <wart@scriptics.com>
 
 	* unix/configure.in:
