@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fCmd.test,v 1.6 1999/07/01 17:36:18 jenn Exp $
+# RCS: @(#) $Id: fCmd.test,v 1.7 2000/04/08 02:35:32 hobbs Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -162,8 +162,8 @@ test fCmd-3.2 {FileCopyRename: not enough args} {notRoot} {
     list [catch {file rename xyz} msg] $msg
 } {1 {wrong # args: should be "file rename ?options? source ?source ...? target"}}
 test fCmd-3.3 {FileCopyRename: Tcl_TranslateFileName fails} {notRoot} {
-    list [catch {file rename xyz ~nonexistantuser} msg] $msg
-} {1 {user "nonexistantuser" doesn't exist}}
+    list [catch {file rename xyz ~_totally_bogus_user} msg] $msg
+} {1 {user "_totally_bogus_user" doesn't exist}}
 test fCmd-3.4 {FileCopyRename: Tcl_TranslateFileName passes} {notRoot} {
     cleanup
     list [catch {file copy tf1 ~} msg] $msg
@@ -226,8 +226,8 @@ test fCmd-3.13 {FileCopyRename: move each source: multiple sources} {notRoot} {
 test fCmd-3.14 {FileCopyRename: FileBasename fails} {notRoot} {
     cleanup
     file mkdir td1
-    list [catch {file rename ~nonexistantuser td1} msg] $msg
-} {1 {user "nonexistantuser" doesn't exist}}
+    list [catch {file rename ~_totally_bogus_user td1} msg] $msg
+} {1 {user "_totally_bogus_user" doesn't exist}}
 test fCmd-3.15 {FileCopyRename: source[0] == '\0'} {notRoot unixOrPc} {
     cleanup
     file mkdir td1
@@ -262,8 +262,8 @@ test fCmd-4.3 {TclFileMakeDirsCmd: stops on first error} {notRoot} {
 } {td1 td2 tf1}
 test fCmd-4.4 {TclFileMakeDirsCmd: Tcl_TranslateFileName fails} {notRoot} {
     cleanup
-    list [catch {file mkdir ~nonexistantuser} msg] $msg
-} {1 {user "nonexistantuser" doesn't exist}}
+    list [catch {file mkdir ~_totally_bogus_user} msg] $msg
+} {1 {user "_totally_bogus_user" doesn't exist}}
 test fCmd-4.5 {TclFileMakeDirsCmd: Tcl_SplitPath returns 0: *name == '\0'} \
 	{notRoot} {
     cleanup
@@ -368,8 +368,8 @@ test fCmd-5.5 {TclFileDeleteCmd: stop at first error} {notRoot unixOrPc} {
     list [file exist tf1] [file exist tf2] [file exist td1]
 } {0 1 0}
 test fCmd-5.6 {TclFileDeleteCmd: Tcl_TranslateFileName fails} {notRoot} {
-    list [catch {file delete ~nonexistantuser} msg] $msg
-} {1 {user "nonexistantuser" doesn't exist}}
+    list [catch {file delete ~_totally_bogus_user} msg] $msg
+} {1 {user "_totally_bogus_user" doesn't exist}}
 test fCmd-5.7 {TclFileDeleteCmd: Tcl_TranslateFileName succeeds} {notRoot} {
     catch {file delete ~/tf1}
     createfile ~/tf1
@@ -648,13 +648,18 @@ test fCmd-7.5 {FileForceOption: multiple times through loop} {notRoot} {
 } {1 {no files matched glob patterns "-- -force"}}
 
 test fCmd-8.1 {FileBasename: basename of ~user: argc == 1 && *path == ~} \
-	{unixOnly notRoot} {
+	{unixOnly notRoot knownBug} {
+    # Labelled knownBug because it is dangerous [Bug: 3881]
     file mkdir td1
     file attr td1 -perm 040000
     set result [list [catch {file rename ~$user td1} msg] $msg]
     file delete -force td1
     set result
 } "1 {error renaming \"~$user\" to \"td1/[file tail ~$user]\": permission denied}"
+test fCmd-8.2 {FileBasename: basename of ~user: argc == 1 && *path == ~} \
+	{unixOnly notRoot} {
+    file tail ~$user
+} "$user"
 
 test fCmd-9.1 {file rename: comprehensive: EACCES} {unixOnly notRoot} {
     cleanup
@@ -2107,8 +2112,8 @@ test fCmd-26.3 { TclDeleteFilesCmd : delete dangling symlink} {unixOnly notRoot}
 
 test fCmd-27.2 {TclFileAttrsCmd - Tcl_TranslateFileName fails} {
     testsetplatform unix
-    list [catch {file attributes ~_bad_user} msg] $msg [testsetplatform $platform]
-} {1 {user "_bad_user" doesn't exist} {}}
+    list [catch {file attributes ~_totally_bogus_user} msg] $msg [testsetplatform $platform]
+} {1 {user "_totally_bogus_user" doesn't exist} {}}
 test fCmd-27.3 {TclFileAttrsCmd - all attributes} {
     catch {file delete -force -- foo.tmp}
     createfile foo.tmp
