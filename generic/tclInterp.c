@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.41 2004/06/17 21:40:24 dgp Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.42 2004/06/17 22:18:44 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -20,7 +20,7 @@
  * In order to find init.tcl during initialization, the following script
  * is invoked by Tcl_Init().  It looks in several different directories:
  *
- *	$tcl_library		- can specify a primary location, if set
+ *	$tcl_library		- can specify a primary location, if set,
  *				  no other locations will be checked.  This
  *				  is the recommended way for a program that
  *				  embeds Tcl to specifically tell Tcl where
@@ -31,11 +31,12 @@
  *				  specified an exact directory above
  *
  *	$tclDefaultLibrary	- INTERNAL:  This variable is set by Tcl
- *				  only on the Mac OSX platform, and in time
- *				  we expect to disable it altogether.  Any
- *				  program that embeds Tcl that is using
- *				  this variable to customize [tclInit] should
- *				  migrate to use of tcl_library instead.
+ *				  on those platforms where it can determine
+ *				  at runtime the directory where it expects
+ *				  the init.tcl file to be.  After [tclInit]
+ *				  reads and uses this value, it [unset]s it.
+ *				  External users of Tcl should not make use
+ *				  of the variable to customize [tclInit].
  *
  *	$tcl_libPath		- OBSOLETE:  This variable is no longer
  *				  set by Tcl itself, but [tclInit] examines
