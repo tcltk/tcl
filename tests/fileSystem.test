@@ -390,6 +390,20 @@ test filesystem-6.33 {empty file name} {
 while {![catch {testfilesystem 0}]} {}
 }
 
+test filesystem-7.1 {load from vfs} {win} {
+    # This may cause a crash on exit
+    set dir [pwd]
+    cd [file dirname [info nameof]]
+    set dde [lindex [glob *dde*[info sharedlib]] 0]
+    testsimplefilesystem 1
+    # This loads dde via a complex copy-to-temp operation
+    load simplefs:/$dde dde
+    testsimplefilesystem 0
+    cd $dir
+    set res "ok"
+    # The real result of this test is what happens when Tcl exits.
+} {ok}
+
 cleanupTests
 }
 namespace delete ::tcl::test::fileSystem
