@@ -4,11 +4,11 @@
 ; of the DLL and the second token is the base virtual address, in hexidecimal.
 ; The third token is the maximum size of the DLL image file, including symbols.
 ;
-; Using a specified "prefered load addresses" should speed load-time by avoiding
+; Using a specified "prefered load address" should speed load-time by avoiding
 ; relocations.  It is assumed extension author will contribute their modules
 ; to this grand-master one.
 ;
-; RCS: @(#) $Id: coffbase.txt,v 1.1 2002/02/21 22:00:58 davygrvy Exp $
+; RCS: @(#) $Id: coffbase.txt,v 1.2 2002/02/21 22:04:42 davygrvy Exp $
 
 tcl		0x10000000	0x00200000
 tcldde		0x10200000	0x00010000
