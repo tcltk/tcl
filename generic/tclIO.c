@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.72 2004/04/06 22:25:51 dgp Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.73 2004/04/23 23:38:42 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -6480,6 +6480,15 @@ Tcl_SetChannelOption(interp, chan, optionName, newValue)
         if (argv != NULL) {
             ckfree((char *) argv);
         }
+
+	/*
+	 * [SF Tcl Bug 930851] Reset EOF and BLOCKED flags. Changing
+	 * the character which signals eof can transform a current eof
+	 * condition into a 'go ahead'. Ditto for blocked.
+	 */
+
+	statePtr->flags &= (~(CHANNEL_EOF | CHANNEL_STICKY_EOF | CHANNEL_BLOCKED));
+
 	return TCL_OK;
     } else if ((len > 1) && (optionName[1] == 't') &&
             (strncmp(optionName, "-translation", len) == 0)) {
