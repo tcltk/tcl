@@ -4,6 +4,17 @@
 	* tests/fCmd.test:
 	* tests/fileName.test: tests which rely on 'file link' need a
 	constraint so they don't run on older Windows OS. [Bug 578158]
+        * generic/tclIOUtil.c:
+	* generic/tcl.h:
+	* generic/tclInt.h:
+	* generic/tclTest.c:
+	* mac/tclMacChan.c:
+	* unix/tclUnixChan.c:
+	* win/tclWinChan.c:
+	* doc/FileSystem.3: cleaned up internal handling of
+	Tcl_FSOpenFileChannel to remove duplicate code, and make
+	writing external vfs's clearer and easier.  No
+	functionality change.
 	
 2002-07-06  Don Porter  <dgp@users.sourceforge.net>
 

@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.53 2002/07/08 10:08:58 vincentdarley Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.54 2002/07/08 10:11:22 vincentdarley Exp $
  */
 
 #define TCL_TEST
@@ -4785,7 +4785,7 @@ PretendTclpOpenFileChannel(interp, fileName, modeString, permissions)
     Tcl_DecrRefCount(pathPtr);
     if (ret != NULL) {
 	if (seekFlag) {
-	    if (Tcl_Seek(ret, 0, SEEK_END) < 0) {
+	    if (Tcl_Seek(ret, (Tcl_WideInt)0, SEEK_END) < (Tcl_WideInt)0) {
 		if (interp != (Tcl_Interp *) NULL) {
 		    Tcl_AppendResult(interp,
 		      "could not seek to end of file while opening \"",
