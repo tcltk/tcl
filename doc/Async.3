@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Async.3,v 1.4 2000/04/14 23:01:48 hobbs Exp $
+'\" RCS: @(#) $Id: Async.3,v 1.4.2.1 2001/09/01 22:53:45 davygrvy Exp $
 '\" 
 .so man.macros
 .TH Tcl_AsyncCreate 3 7.0 Tcl "Tcl Library Procedures"
@@ -60,6 +60,13 @@ The only safe approach is to set a flag indicating that the event
 occurred, then handle the event later when the world has returned
 to a clean state, such as after the current Tcl command completes.
 .PP
+\fBTcl_AsyncCreate\fR, \fBTcl_AsyncDelete\fR, and \fBTcl_AsyncReady\fR
+are thread sensitive.  They access and/or set a thread-specific data
+structure in the event of an --enable-thread built core.  The token
+created by Tcl_AsyncCreate contains the needed thread information it
+was called from so that calling Tcl_AsyncMark(token) will only yield
+the origin thread into the AsyncProc.
+.PP 
 \fBTcl_AsyncCreate\fR creates an asynchronous handler and returns
 a token for it.
 The asynchronous handler must be created before
