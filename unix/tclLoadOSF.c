@@ -31,7 +31,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoadOSF.c,v 1.7 2002/01/09 19:09:28 kennykb Exp $
+ * RCS: @(#) $Id: tclLoadOSF.c,v 1.8 2002/07/17 20:00:46 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -60,17 +60,11 @@
  */
 
 int
-TclpLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr, 
-	     clientDataPtr, unloadProcPtr)
+TclpDlopen(interp, pathPtr, loadHandle, unloadProcPtr)
     Tcl_Interp *interp;		/* Used for error reporting. */
     Tcl_Obj *pathPtr;		/* Name of the file containing the desired
-				 * code. */
-    CONST char *sym1, *sym2;	/* Names of two procedures to look up in
-				 * the file's symbol table. */
-    Tcl_PackageInitProc **proc1Ptr, **proc2Ptr;
-				/* Where to return the addresses corresponding
-				 * to sym1 and sym2. */
-    ClientData *clientDataPtr;	/* Filled with token for dynamically loaded
+				 * code (UTF-8). */
+    TclLoadHandle *loadHandle;	/* Filled with token for dynamically loaded
 				 * file which will be passed back to 
 				 * (*unloadProcPtr)() to unload the file. */
     Tcl_FSUnloadFileProc **unloadProcPtr;	
@@ -99,14 +93,23 @@ TclpLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr,
      * I build loadable modules with a makefile rule like 
      *		ld ... -export $@: -o $@ $(OBJS)
      */
-    if ((pkg = strrchr(fileName, '/')) == NULL)
-	pkg = fileName;
-    else
+    if ((pkg = strrchr(fileName, '/')) == NULL) {
+        pkg = fileName;
+    } else {
 	pkg++;
-    *proc1Ptr = ldr_lookup_package(pkg, sym1);
-    *proc2Ptr = ldr_lookup_package(pkg, sym2);
+    }
+    *loadHandle = pkg;
     *unloadProcPtr = &TclpUnloadFile;
     return TCL_OK;
+}
+
+Tcl_PackageInitProc*
+TclpFindSymbol(interp, loadHandle, symbol) 
+    Tcl_Interp *interp;
+    TclLoadHandle loadHandle;
+    CONST char *symbol;
+{
+    return ldr_lookup_package((char *)loadHandle, symbol);
 }
 
 /*

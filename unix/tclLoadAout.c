@@ -14,7 +14,7 @@
  * and Design Engineering (MADE) Initiative through ARPA contract
  * F33615-94-C-4400.
  *
- * RCS: @(#) $Id: tclLoadAout.c,v 1.10 2002/02/15 14:28:50 dkf Exp $
+ * RCS: @(#) $Id: tclLoadAout.c,v 1.11 2002/07/17 20:00:46 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -141,17 +141,11 @@ static void UnlinkSymbolTable _ANSI_ARGS_((void));
  */
 
 int
-TclpLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr, 
-	     clientDataPtr, unloadProcPtr)
+TclpDlopen(interp, pathPtr, loadHandle, unloadProcPtr)
     Tcl_Interp *interp;		/* Used for error reporting. */
     Tcl_Obj *pathPtr;		/* Name of the file containing the desired
 				 * code (UTF-8). */
-    CONST char *sym1, *sym2;	/* Names of two procedures to look up in
-				 * the file's symbol table. */
-    Tcl_PackageInitProc **proc1Ptr, **proc2Ptr;
-				/* Where to return the addresses corresponding
-				 * to sym1 and sym2. */
-    ClientData *clientDataPtr;	/* Filled with token for dynamically loaded
+    TclLoadHandle *loadHandle;	/* Filled with token for dynamically loaded
 				 * file which will be passed back to 
 				 * (*unloadProcPtr)() to unload the file. */
     Tcl_FSUnloadFileProc **unloadProcPtr;	
@@ -172,12 +166,9 @@ TclpLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr,
   struct exec relocatedHead;	/* Header of the relocated text */
   unsigned long relocatedSize;	/* Size of the relocated text */
   char * startAddress;		/* Starting address of the module */
-  DictFn dictionary;		/* Dictionary function in the load module */
   int status;			/* Status return from Tcl_ calls */
   char * p;
 
-  *clientDataPtr = NULL;
-  
   /* Find the file that contains the symbols for the run-time link. */
 
   if (SymbolTableFile != NULL) {
@@ -317,14 +308,20 @@ TclpLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr,
   SymbolTableFile = ckalloc (strlen (relocatedFileName) + 1);
   strcpy (SymbolTableFile, relocatedFileName);
   
-  /* Look up the entry points in the load module's dictionary. */
-
-  dictionary = (DictFn) startAddress;
-  *proc1Ptr = dictionary (sym1);
-  *proc2Ptr = dictionary (sym2);
-
+  *loadHandle = startAddress;
   return TCL_OK;
 }
+
+TclpFindSymbol(interp, loadHandle, symbol) 
+    Tcl_Interp *interp;
+    TclLoadHandle loadHandle;
+    CONST char *symbol;
+{
+    /* Look up the entry point in the load module's dictionary. */
+    DictFn dictionary = (DictFn) loadHandle;
+    return (Tcl_PackageInitProc*) dictionary(sym1);
+}
+
 
 /*
  *------------------------------------------------------------------------
