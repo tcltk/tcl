@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.50 2004/11/18 19:22:12 dgp Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.51 2004/11/18 21:00:50 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2029,10 +2029,8 @@ SlaveBgerror(interp, slaveInterp, objc, objv)
     if (objc) {
 	int length;
 
-	if (TCL_ERROR == Tcl_ListObjLength(interp, objv[0], &length)) {
-	    return TCL_ERROR;
-	}
-	if (length < 1) {
+	if (TCL_ERROR == Tcl_ListObjLength(NULL, objv[0], &length) 
+		|| (length < 1)) {
 	    Tcl_AppendResult(interp, "cmdPrefix must be list of length >= 1",
 		    (char *) NULL);
 	    return TCL_ERROR;
