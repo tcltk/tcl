@@ -8,7 +8,7 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 #
-# RCS: @(#) $Id: pkgMkIndex.test,v 1.13 2000/01/27 19:20:05 ericm Exp $
+# RCS: @(#) $Id: pkgMkIndex.test,v 1.14 2000/01/27 19:48:30 ericm Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -347,6 +347,14 @@ test pkgMkIndex-10.2 {package in DLL hidden by -load} $dll {
 test pkgMkIndex-11.1 {conflicting namespace imports} {
     pkgtest::runIndex -lazy $fullPkgPath import.tcl
 } {0 {{fubar:1.0 {tclPkgSetup {import.tcl source ::fubar::foo}}}}}
+
+# Verify that the auto load list generated is correct even when there
+# is a proc name conflict between two namespaces (ie, ::foo::baz and
+# ::bar::baz)
+
+test pkgMkIndex-12.1 {same name procs in different namespace} {
+    pkgtest::runIndex -lazy $fullPkgPath samename.tcl
+} {0 {{football:1.0 {tclPkgSetup {samename.tcl source {::college::team ::pro::team}}}}}}
 
 # cleanup
 
