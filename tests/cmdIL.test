@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: cmdIL.test,v 1.16 2003/10/14 13:38:58 dkf Exp $
+# RCS: @(#) $Id: cmdIL.test,v 1.17 2003/10/14 21:49:25 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -386,6 +386,15 @@ test cmdIL-5.4 {lsort with list style index} {
 	{dogs {0 1}}
     }
 } {{dogs {0 1}} {the {0 1 2} lazy} {jumps {30 31 2 33} over} {brown {0 1 2 3 4} fox} {the {0 1 2 3 4 5} quick}}
+test cmdIL-5.5 {lsort with list style index and sharing} {
+    proc test {l} {
+	set n $l
+	foreach e $l {lappend n [list [expr {rand()}] $e]}
+	lindex [lsort -real -index $l $n] 1 1
+    }
+    expr srand(1)
+    test 0
+} 0
 
 # cleanup
 ::tcltest::cleanupTests
