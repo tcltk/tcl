@@ -1,3 +1,10 @@
+2004-10-22  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclVar.c: fixed bug in commit of 2004-07-23, which was
+	causing a leak of Proc structures and failure of compile-12.1. Two
+	lines were 'zombies' from the previous way localVarNames
+	worked. Credit dgp for finding this.
+
 2004-10-21  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclInt.h (Interp):
