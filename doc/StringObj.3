@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: StringObj.3,v 1.8 2001/04/06 23:14:08 andreas_kupries Exp $
+'\" RCS: @(#) $Id: StringObj.3,v 1.9 2001/08/31 17:59:32 hobbs Exp $
 '\" 
 .so man.macros
 .TH Tcl_StringObj 3 8.1 Tcl "Tcl Library Procedures"
@@ -17,26 +17,21 @@ Tcl_NewStringObj, Tcl_NewUnicodeObj, Tcl_SetStringObj, Tcl_SetUnicodeObj, Tcl_Ge
 .sp
 Tcl_Obj *
 \fBTcl_NewStringObj\fR(\fIbytes, length\fR)
-.VS 8.1.2
 .sp
 Tcl_Obj *
 \fBTcl_NewUnicodeObj\fR(\fIunicode, numChars\fR)
-.VE
 .sp
 void
 \fBTcl_SetStringObj\fR(\fIobjPtr, bytes, length\fR)
-.VS 8.1.2
 .sp
 void
 \fBTcl_SetUnicodeObj\fR(\fIobjPtr, unicode, numChars\fR)
-.VE
 .sp
 char *
 \fBTcl_GetStringFromObj\fR(\fIobjPtr, lengthPtr\fR)
 .sp
 char *
 \fBTcl_GetString\fR(\fIobjPtr\fR)
-.VS 8.1.2
 .sp
 Tcl_UniChar *
 \fBTcl_GetUnicode\fR(\fIobjPtr\fR)
@@ -49,15 +44,12 @@ int
 .sp
 Tcl_Obj *
 \fBTcl_GetRange\fR(\fIobjPtr, first, last\fR)
-.VE
 .sp
 void
 \fBTcl_AppendToObj\fR(\fIobjPtr, bytes, length\fR)
-.VS 8.1.2
 .sp
 void
 \fBTcl_AppendUnicodeToObj\fR(\fIobjPtr, unicode, numChars\fR)
-.VE
 .sp
 void
 \fBTcl_AppendObjToObj\fR(\fIobjPtr, appendObjPtr\fR)
@@ -92,7 +84,6 @@ Points to the first byte of an array of Unicode characters
 used to set or append to a string object.
 This byte array may contain embedded null characters
 unless \fInumChars\fR is negative.
-.VS 8.1.2
 .AP int numChars in
 The number of Unicode characters to copy from \fIunicode\fR when
 initializing, setting, or appending to a string object.
@@ -105,7 +96,6 @@ returned as a new object.
 .AP int last in
 The index of the last Unicode character in the Unicode range to be
 returned as a new object.
-.VE
 .AP Tcl_Obj *objPtr in/out
 Points to an object to manipulate.
 .AP Tcl_Obj *appendObjPtr in
@@ -135,12 +125,13 @@ of the object to store additional information to make the string
 manipulations more efficient.  In particular, they make a series of
 append operations efficient by allocating extra storage space for the
 string so that it doesn't have to be copied for each append.
-.VS 8.1.2
 Also, indexing and length computations are optimized because the
 Unicode string representation is calculated and cached as needed.
-.VE
+When using the \fBTcl_Append*\fR family of functions where the
+interpreter's result is the object being appended to, it is important
+to call Tcl_ResetResult first to ensure you are not unintentionally
+appending to existing data in the result object.
 .PP
-.VS 8.1.2
 \fBTcl_NewStringObj\fR and \fBTcl_SetStringObj\fR create a new object
 or modify an existing object to hold a copy of the string given by
 \fIbytes\fR and \fIlength\fR.  \fBTcl_NewUnicodeObj\fR and
@@ -152,7 +143,6 @@ All four procedures set the object to hold a copy of the specified
 string.  \fBTcl_SetStringObj\fR and \fBTcl_SetUnicodeObj\fR free any
 old string representation as well as any old internal representation
 of the object.
-.VE
 .PP
 \fBTcl_GetStringFromObj\fR and \fBTcl_GetString\fR return an object's
 string representation.  This is given by the returned byte pointer and
@@ -166,7 +156,6 @@ caller.  The procedure \fBTcl_GetString\fR is used in the common case
 where the caller does not need the length of the string
 representation.
 .PP
-.VS 8.1.2
 \fBTcl_GetUnicode\fR returns an object's value as a Unicode string.
 \fBTcl_GetUniChar\fR returns the \fIindex\fR'th character in the
 object's Unicode representation.
@@ -203,7 +192,6 @@ object's string value).
 appends the string or Unicode value (whichever exists and is best
 suited to be appended to \fIobjPtr\fR) of \fIappendObjPtr\fR to
 \fIobjPtr\fR.
-.VE
 .PP
 \fBTcl_AppendStringsToObj\fR is similar to \fBTcl_AppendToObj\fR
 except that it can be passed more than one value to append and
