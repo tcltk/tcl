@@ -1,11 +1,11 @@
 README:  Tcl
-    This is the Tcl 8.4a1 source distribution.
+    This is the Tcl 8.4a2 source distribution.
     You can get any release of Tcl from:
         http://dev.scriptics.com/registration/<version>.tml
     Tcl/Tk is also available through NetCVS:
 	http://dev.scriptics.com/software/tcltk/netcvs.html
 
-RCS: @(#) $Id: README,v 1.33 2000/08/14 18:37:59 ericm Exp $
+RCS: @(#) $Id: README,v 1.34 2000/09/06 18:50:15 hobbs Exp $
 
 Contents
 --------
@@ -49,7 +49,7 @@ The home page for this release, including new features, is
 	http://dev.scriptics.com/software/tcltk/8.4.html
 
 Detailed release notes can be found at
-	http://dev.scriptics.com/software/tcltk/relnotes/tcl8.4a1.txt
+	http://dev.scriptics.com/software/tcltk/relnotes/tcl8.4a2.txt
 
 Information about Tcl itself can be found at
 	http://dev.scriptics.com/scripting/
