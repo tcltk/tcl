@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.44 1999/04/30 22:44:59 stanton Exp $
+RCS: @(#) $Id: changes,v 1.44.2.1 1999/05/25 20:22:44 stanton Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -4323,3 +4323,85 @@ pointer declaration so the stub library can be used from C++. (stanton)
 
 --------------- Released 8.1 final, April 29, 1999 ----------------------
 
+4/22/99 (bug fix) Changed Windows NT socket implementation to avoid
+creating a communication window.  This avoids the problem where the
+system hangs waiting for tclsh to respond to a system-wide synchronous
+broadcast (e.g. if you change system colors). (redman)
+
+4/22/99 (bug fix) Added call to TclWinInit from TclpInitPlatform when
+building a static library since DllMain will not be invoked.  This
+could break old code that explicitly called TclWinInit, but should be
+simpler in the long run. (stanton)
+*** POTENTIAL INCOMPATIBILITY ***
+
+4/23/99 (bug fix) Added support for the koi8-r Cyrillic
+encoding. [Bug: 1771] (stanton)
+
+4/28/99 (bug fix) Changed internal Tcl_Obj usage to avoid freeing the
+internal representation after the string representation has been
+freed.  This makes it easier to debug extensions. (stanton)
+
+4/30/99 (bug fix) Fixed a memory leak in CommandComplete. (stanton)
+
+5/3/99 (bug fix) Fixed a bug where the Tcl_ObjType was not being set
+in a duplicated Tcl_Obj. [Bug: 1975, 2047] (stanton)
+
+5/3/99 (bug fix) Changed Tcl_ParseCommand to avoid modifying eval'ed
+strings that are already null terminated.  [Bug: 1793] (stanton)
+
+5/3/99 (new feature) Applied Jeff Hobbs's string patch which includes
+the following changes:
+    - added new subcommands: equal, repeat, map, is, replace 
+    - added -length option to "string compare|equal"
+    - added -nocase option to "string compare|equal|match"
+    - string and list indices can be an integer or end?-integer?.
+    - added optional first and last index args to string toupper, et al.
+See the string.n manual entry for more details about the new string
+features.  [Bug: 1845] (stanton)
+
+5/6/99 (new feature) Added Tcl_UtfNcmp and Tcl_UtfNcasecmp to make Utf
+string comparision easier. (stanton)
+
+5/7/99 (bug fix) Improved OS/390 support. [Bug: 1976, 1997] (stanton)
+
+5/12/99 (bug fix) Changed Windows initialization code to avoid using
+GetUserName system call in favor of the env(USERNAME) variable.  This
+provides a significant startup speed improvement. (stanton)
+
+5/12/99 (bug fix) Replaced the per-interpreter regexp cache with a
+per-thread cache.  Changed the Regexp object to take advantage of this
+extra cache.  Added a reference count to the TclRegexp type so regexps
+can be shared by multiple objects.  Removed the per-interp regexp cache
+from the interpreter.  Now regexps can be used with no need for an
+interpreter. This set of changes should provide significant speed
+improvements for many Tcl scripts.  [Bug: 1063] (stanton)
+
+5/14/99 (bug fix) Durining initialization on Unix, Tcl now extracts the
+encoding subfield from the LANG/LC_ALL environment variables in cases
+where the locale is not found in the built-in locale table.  It also
+attempts to initialize the locale subsystem so X11 is happy. [Bug: 1989]
+(stanton) 
+
+5/14/99 (bug fix) Applied the patch to fix 100-year and 400-year
+boundaries in leap year code, from Isaac Hollander.  [Bug: 2066] (redman)
+
+5/14/99 (bug fix) Fixed a crash caused by a failure to reset the result
+before evaluating the test expression in an uncompiled for
+statement. (stanton)
+
+5/18/99 (bug fix) Modified initialization code on Windows to avoid
+inherenting closed or invalid channels.  If the standard input is
+anything other than a console, file, serial port, or pipe, then we fall
+back to the standard Tk window console. (stanton)
+
+5/19/99 (bug fix) Added an extern "C" block around the entire tcl.h
+header file to avoid C++ linkage issues. (redman)
+
+5/19/99 (new feature) Applied Jeff Hobb's patch to add
+Tcl_StringCaseMatch to support case insensitive glob style matching and
+Tcl_UniCharIs* character classification functions. (stanton)
+
+5/20/99 (bug fix) Added the directory containing the executuble and the
+../lib directory relative to that to the auto_path variable. (redman)
+
+--------------- Released 8.1.1, May 25, 1999 ----------------------
