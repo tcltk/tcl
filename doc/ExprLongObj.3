@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: ExprLongObj.3,v 1.2 1998/09/14 18:39:48 stanton Exp $
+'\" RCS: @(#) $Id: ExprLongObj.3,v 1.3 2001/09/03 09:38:50 dkf Exp $
 '\" 
 .so man.macros
 .TH Tcl_ExprLongObj 3 8.0 Tcl "Tcl Library Procedures"
@@ -27,7 +27,7 @@ int
 int
 \fBTcl_ExprObj\fR(\fIinterp, objPtr, resultPtrPtr\fR)
 .SH ARGUMENTS
-.AS Tcl_Interp *resultPtrPtr out
+.AS Tcl_Interp **resultPtrPtr out
 .AP Tcl_Interp *interp in
 Interpreter in whose context to evaluate \fIstring\fR or \fIobjPtr\fR.
 .AP Tcl_Obj *objPtr in
@@ -41,7 +41,7 @@ expression.
 .AP int *booleanPtr out
 Pointer to location in which to store the 0/1 boolean value of the
 expression.
-.AP Tcl_Obj *resultPtrPtr out
+.AP Tcl_Obj **resultPtrPtr out
 Pointer to location in which to store a pointer to the object
 that is the result of the expression.
 .BE
