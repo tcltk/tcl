@@ -1,5 +1,10 @@
 2002-09-05  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclBasic.c (TclRenameCommand,CallCommandTraces):
+	* tests/trace.test (trace-27.1): Corrected memory leak when a rename
+	trace deleted the command being traced.  Test added.  Thanks to
+	Hemang Lavana for the fix.  [Bug 604609]
+
 	* generic/tclVar.c (TclDeleteVars):  Corrected logic for setting the
 	TCL_INTERP_DESTROYED flag when calling variable traces.  [Tk Bug 605121]
 
