@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.63.2.6 2001/10/03 20:26:09 hobbs Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.63.2.7 2001/10/16 06:44:09 das Exp $
 
 VERSION 		= @TCL_VERSION@
 
@@ -166,8 +166,12 @@ SHELL			= /bin/sh
 # "install" around;  better to use the install-sh script that comes
 # with the distribution, which is slower but guaranteed to work.
 
+INSTALL_STRIP_PROGRAM   = -s
+INSTALL_STRIP_LIBRARY  = -S -S
+
 INSTALL			= @srcdir@/install-sh -c
 INSTALL_PROGRAM		= ${INSTALL}
+INSTALL_LIBRARY		= ${INSTALL}
 INSTALL_DATA		= ${INSTALL} -m 644
 
 # The following specifies which Tcl executable to use for make targets
@@ -252,7 +256,7 @@ STUB_CC_SWITCHES = ${CFLAGS} ${CFLAGS_WARNING} ${SHLIB_CFLAGS} \
 ${AC_FLAGS} ${MATH_FLAGS} ${GENERIC_FLAGS} ${PROTO_FLAGS} ${MEM_DEBUG_FLAGS} \
 ${COMPILE_DEBUG_FLAGS} ${ENV_FLAGS} -DTCL_SHLIB_EXT=\"${SHLIB_SUFFIX}\"
 
-LIBS		= @DL_LIBS@ @LIBS@ $(MATH_LIBS) -lc
+LIBS		= @DL_LIBS@ @LIBS@ $(MATH_LIBS)
 
 DEPEND_SWITCHES	= ${CFLAGS} -I${GENERIC_DIR} -I${SRC_DIR} \
 ${AC_FLAGS} ${MATH_FLAGS} \
@@ -414,7 +418,9 @@ doc:
 ${TCL_LIB_FILE}: ${OBJS} ${STUB_LIB_FILE}
 	rm -f ${TCL_LIB_FILE}
 	@MAKE_LIB@
-	$(RANLIB) ${TCL_LIB_FILE}
+	if test "x@DL_OBJS@" = "xtclLoadAout.o"; then \
+		$(RANLIB) ${TCL_LIB_FILE}; \
+	fi
 
 ${STUB_LIB_FILE}: ${STUB_LIB_OBJS}
 	rm -f ${STUB_LIB_FILE}
@@ -482,7 +488,7 @@ topDirName:
 gendate:
 	yacc -l $(GENERIC_DIR)/tclGetDate.y
 	sed -e 's/yy/TclDate/g' -e '/^#include <values.h>/d' \
-	    -e 's?SCCSID?RCS: @(#) $$Id: Makefile.in,v 1.63.2.6 2001/10/03 20:26:09 hobbs Exp $$?' \
+	    -e 's?SCCSID?RCS: @(#) $$Id: Makefile.in,v 1.63.2.7 2001/10/16 06:44:09 das Exp $$?' \
 	    -e '/#ifdef __STDC__/,/#endif/d' -e '/TclDateerrlab:/d' \
 	    -e '/TclDatenewstate:/d' -e '/#pragma/d' \
 	    -e '/#include <inttypes.h>/d' -e 's/const /CONST /g' \
@@ -510,14 +516,16 @@ dltest/Makefile: $(DLTEST_DIR)/configure $(DLTEST_DIR)/Makefile.in tclConfig.sh
 install: install-binaries install-libraries install-doc
 
 install-strip:
-	$(MAKE) install INSTALL_PROGRAM="$(INSTALL_PROGRAM) -s"
+	$(MAKE) install \
+		INSTALL_PROGRAM="$(INSTALL_PROGRAM) ${INSTALL_STRIP_PROGRAM}" \
+		INSTALL_LIBRARY="$(INSTALL_LIBRARY) ${INSTALL_STRIP_LIBRARY}"
 
 # Note: before running ranlib below, must cd to target directory because
 # some ranlibs write to current directory, and this might not always be
 # possible (e.g. if installing as root).
 
 install-binaries: binaries
-	@for i in $(LIB_INSTALL_DIR) $(BIN_INSTALL_DIR) ; \
+	@for i in $(LIB_INSTALL_DIR) $(BIN_INSTALL_DIR) $(SCRIPT_INSTALL_DIR); \
 	    do \
 	    if [ ! -d $$i ] ; then \
 		echo "Making directory $$i"; \
@@ -530,8 +538,10 @@ install-binaries: binaries
 	    chmod +x $(SRC_DIR)/install-sh; \
 	    fi
 	@echo "Installing $(TCL_LIB_FILE) to $(LIB_INSTALL_DIR)/"
-	@$(INSTALL_DATA) $(TCL_LIB_FILE) $(LIB_INSTALL_DIR)/$(TCL_LIB_FILE)
-	@(cd $(LIB_INSTALL_DIR); $(RANLIB) $(TCL_LIB_FILE))
+	@$(INSTALL_LIBRARY) $(TCL_LIB_FILE) $(LIB_INSTALL_DIR)/$(TCL_LIB_FILE)
+	@if test "x@DL_OBJS@" = "xtclLoadAout.o"; then \
+	    (cd $(LIB_INSTALL_DIR); $(RANLIB) $(TCL_LIB_FILE)); \
+	    fi
 	@chmod 555 $(LIB_INSTALL_DIR)/$(TCL_LIB_FILE)
 	@if test "$(TCL_BUILD_EXP_FILE)" != ""; then \
 	    echo "Installing $(TCL_EXP_FILE) to $(LIB_INSTALL_DIR)/"; \
@@ -540,11 +550,11 @@ install-binaries: binaries
 	    fi
 	@echo "Installing tclsh as $(BIN_INSTALL_DIR)/tclsh$(VERSION)"
 	@$(INSTALL_PROGRAM) tclsh $(BIN_INSTALL_DIR)/tclsh$(VERSION)
-	@echo "Installing tclConfig.sh to $(LIB_INSTALL_DIR)/"
-	@$(INSTALL_DATA) tclConfig.sh $(LIB_INSTALL_DIR)/tclConfig.sh
+	@echo "Installing tclConfig.sh to $(SCRIPT_INSTALL_DIR)/"
+	@$(INSTALL_DATA) tclConfig.sh $(SCRIPT_INSTALL_DIR)/tclConfig.sh
 	@if test "$(TCL_STUB_LIB_FILE)" != "" ; then \
 	    echo "Installing $(TCL_STUB_LIB_FILE) to $(LIB_INSTALL_DIR)/"; \
-	    $(INSTALL_DATA) $(STUB_LIB_FILE) \
+	    $(INSTALL_LIBRARY) $(STUB_LIB_FILE) \
 			 $(LIB_INSTALL_DIR)/$(TCL_STUB_LIB_FILE); \
 	    fi
 

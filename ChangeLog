@@ -1,3 +1,22 @@
+2001-10-16 Daniel Steffen <das@users.sourceforge.net>
+
+	* unix/Makefile.in:
+	* unix/configure.in:
+	* unix/tcl.m4: Added support for MacOSX / Darwin
+
+	* unix/mkLinks:
+	* unix/mkLinks.tcl: Added check for case-insensitive
+	  filesystems and conditionalized links that only differ by
+	  case (needed for MacOSX/Darwin on HFS+ FS)
+
+	* unix/tclLoadDyld.c: change in binary extension format from 
+	  MachO bundles to standard .dylib dynamic libraries like on
+	  other unices. **POTENTIAL INCOMPATIBILITY*** extensions
+	  will have to be recompiled as .dylib's. 
+	  Improved error handling and use of DStrings and 
+	  Tcl_UtfToExternalDString instead of sprintf to build up
+	  symbol and library names. [Patch 435258]
+
 2001-10-16  Don Porter	<dgp@users.sourceforge.net>
 
 	* tests/trace.test (trace-18.1): Added test to demonstrate

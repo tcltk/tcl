@@ -960,14 +960,16 @@ dnl AC_CHECK_TOOL(AR, ar, :)
 	    ;;
 	Rhapsody-*|Darwin-*)
 	    SHLIB_CFLAGS="-fno-common"
-	    SHLIB_LD="cc -dynamiclib \${LDFLAGS} -compatibility_version ${TCL_MAJOR_VERSION} -current_version \${VERSION} -install_name \${LIB_RUNTIME_DIR}/\${TCL_LIB_FILE}"
-	    SHLIB_LD_LIBS=""
+	    SHLIB_LD="cc -dynamiclib \${LDFLAGS}"
+	    TCL_SHLIB_LD_EXTRAS="-compatibility_version ${TCL_MAJOR_VERSION} -current_version \${VERSION} -install_name \${LIB_RUNTIME_DIR}/\${TCL_LIB_FILE} -prebind -seg1addr a000000"
+	    SHLIB_LD_LIBS="${LIBS}"
 	    SHLIB_SUFFIX=".dylib"
 	    DL_OBJS="tclLoadDyld.o"
 	    DL_LIBS=""
-	    LDFLAGS=""
+	    LDFLAGS="-prebind"
 	    LD_SEARCH_FLAGS=""
 	    CFLAGS_OPTIMIZE="-O3"
+	    EXTRA_CFLAGS="-arch ppc -pipe"
 	    ;;
 	NEXTSTEP-*)
 	    SHLIB_CFLAGS=""

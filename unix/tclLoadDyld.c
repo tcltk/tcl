@@ -2,26 +2,20 @@
  * tclLoadDyld.c --
  *
  *     This procedure provides a version of the TclLoadFile that
- *     works with NeXT/Apple's dyld dynamic loading.  This file
+ *     works with Apple's dyld dynamic loading.  This file
  *     provided by Wilfredo Sanchez (wsanchez@apple.com).
- *     The works on Mac OS X and Mac OS X Server.
- *     It should work with OpenStep, but it's not been tried.
+ *     This works on Mac OS X.
  *
  * Copyright (c) 1995 Apple Computer, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoadDyld.c,v 1.2.2.1 2001/04/06 18:42:39 hobbs Exp $
+ * RCS: @(#) $Id: tclLoadDyld.c,v 1.2.2.2 2001/10/16 06:44:09 das Exp $
  */
 
 #include "tclInt.h"
 #include <mach-o/dyld.h>
-
-/* For compatibility with older API. */
-#ifndef NSLINKMODULE_OPTION_PRIVATE
-#define NSLINKMODULE_OPTION_PRIVATE TRUE
-#endif
 
 /*
  *----------------------------------------------------------------------
@@ -58,69 +52,53 @@ TclpLoadFile(interp, fileName, sym1, sym2, proc1Ptr, proc2Ptr, clientDataPtr)
 				 * file which will be passed back to 
 				 * TclpUnloadFile() to unload the file. */
 {
-    NSObjectFileImageReturnCode	err;
-    NSObjectFileImage		image;
-    NSModule			module;
-    NSSymbol			symbol;
-    char			*name;
+    NSSymbol symbol;
+    enum DYLD_BOOL dyld_return;
+    Tcl_DString newName, ds;
+    char *native;
 
-    err = NSCreateObjectFileImageFromFile(fileName, &image);
-    if (err != NSObjectFileImageSuccess) {
-	switch (err) {
-	    case NSObjectFileImageFailure:
-		Tcl_SetResult(interp, "dyld: general failure", TCL_STATIC);
-		break;
-	    case NSObjectFileImageInappropriateFile:
-		Tcl_SetResult(interp, "dyld: inappropriate Mach-O file",
-			TCL_STATIC);
-		break;
-	    case NSObjectFileImageArch:
-		Tcl_SetResult(interp,
-			"dyld: inappropriate Mach-O architecture", TCL_STATIC);
-		break;
-	    case NSObjectFileImageFormat:
-		Tcl_SetResult(interp, "dyld: invalid Mach-O file format",
-			TCL_STATIC);
-		break;
-	    case NSObjectFileImageAccess:
-		Tcl_SetResult(interp, "dyld: permission denied", TCL_STATIC);
-		break;
-	    default:
-		Tcl_SetResult(interp, "dyld: unknown failure", TCL_STATIC);
-		break;
-	}
+    native = Tcl_UtfToExternalDString(NULL, fileName, -1, &ds);
+    dyld_return = NSAddLibrary(native);
+    Tcl_DStringFree(&ds);
+    
+    if (dyld_return !=  TRUE) {
+	Tcl_AppendResult(interp, "dyld: couldn't add library \"", fileName,
+		"\": ", Tcl_PosixError(interp), (char *) NULL);
 	return TCL_ERROR;
     }
 
-    module = NSLinkModule(image, fileName, NSLINKMODULE_OPTION_PRIVATE);
+    /* 
+     * dyld adds an underscore to the beginning of symbol names.
+     */
 
-    if (module == NULL) {
-	Tcl_SetResult(interp, "dyld: falied to link module", TCL_STATIC);
-	return TCL_ERROR;
+    native = Tcl_UtfToExternalDString(NULL, sym1, -1, &ds);
+    Tcl_DStringInit(&newName);
+    Tcl_DStringAppend(&newName, "_", 1);
+    native = Tcl_DStringAppend(&newName, native, -1);
+    if(NSIsSymbolNameDefined(native)) {
+        symbol = NSLookupAndBindSymbol(native);
+        *proc1Ptr = NSAddressOfSymbol(symbol);
+        *clientDataPtr = NSModuleForSymbol(symbol);
+    } else {
+        *proc1Ptr=NULL;
+        *clientDataPtr=NULL;
     }
+    Tcl_DStringFree(&newName);
+    Tcl_DStringFree(&ds);
 
-    name = (char*)malloc(sizeof(char)*(strlen(sym1)+2));
-    sprintf(name, "_%s", sym1);
-#ifdef NSLINKMODULE_OPTION_PRIVATE
-    symbol = NSLookupSymbolInModule(module, name);
-#else
-    symbol = NSLookupAndBindSymbol(name);
-#endif
-    free(name);
-    *proc1Ptr = NSAddressOfSymbol(symbol);
-
-    name = (char*)malloc(sizeof(char)*(strlen(sym2)+2));
-    sprintf(name, "_%s", sym2);
-#ifdef NSLINKMODULE_OPTION_PRIVATE
-    symbol = NSLookupSymbolInModule(module, name);
-#else
-    symbol = NSLookupAndBindSymbol(name);
-#endif
-    free(name);
-    *proc2Ptr = NSAddressOfSymbol(symbol);
-
-    *clientDataPtr = module;
-
+    native = Tcl_UtfToExternalDString(NULL, sym2, -1, &ds);
+    Tcl_DStringInit(&newName);
+    Tcl_DStringAppend(&newName, "_", 1);
+    native = Tcl_DStringAppend(&newName, native, -1);
+    if(NSIsSymbolNameDefined(native)) {
+        symbol = NSLookupAndBindSymbol(native);
+        *proc2Ptr = NSAddressOfSymbol(symbol);
+    } else {
+        *proc2Ptr=NULL;
+    }
+    Tcl_DStringFree(&newName);
+    Tcl_DStringFree(&ds);
+    
     return TCL_OK;
 }
 
