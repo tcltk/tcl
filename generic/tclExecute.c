@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.21.2.4 2001/04/30 20:55:23 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.21.2.5 2001/04/30 22:10:29 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -643,33 +643,24 @@ typedef struct ByteArray {
 /*
  * Include the compiler-dependent macros that determine the 
  * instruction-threading method used by tclExecute.c
+ * See tclExecute.h dor details.
  *
- * An instruction-threading method has to define the following macros:
+ * An instruction-threading method defines the following macros:
  *
- *  . _CASE(instruction)  the labelling method for instruction start
  *  . _CASE_DECLS         declarations of special variables required
- *  . _CASE_START         start of the block containing instructions
- *  . _CASE_END           end of the block containing instructions
  *  . CHECK_OPCODES       0/1, if the opcodes have to be checked before RT
+ *  . _CASE_START         start of the block containing instructions
+ *  . _CASE(instruction)  the labelling method for instruction start
  *  . NEXT_INSTR          the jump to the next instruction
- */
-
-/* 
- * THIS IS ONLY FOR USE WHILE DEBUGGING!
+ *  . _CASE_END           end of the block containing instructions
  *
- * Set the default method here by uncommenting the corresponding line.
- * If no line is uncommented, the choice will be according to the compiler
- * used (see tclExecute.h for details)
  *
- * To enable bytecode tracing via [set tcl_traceExec 3] uncomment the
- * last line (it only works for SWITCH method, and will set it accordingly)
+ ********************************************************************
+ * FOR DEBUGGING PURPOSES
+ * Uncomment the following line to get the bytecode tracing functionality
+ * triggered by setting tcl_traceExec >=2.
  */
-
-   /* #define    JUMP_version GCC*/
-   /* #define    JUMP_version MSVC*/
-   /* #define    JUMP_version SWITCH*/
-
-   /* #define TCL_BYTECODE_DEBUG 1 */
+/* #define TCL_BYTECODE_DEBUG 1 */
 
 #include "tclExecute.h"
 

@@ -7,19 +7,19 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.h,v 1.1.2.5 2001/04/30 20:52:34 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.h,v 1.1.2.6 2001/04/30 22:10:29 msofer Exp $
  */
 
 
 /*
  * An instruction-threading method has to define the following macros:
  *
- *  . _CASE(instruction)  the labelling method for instruction start
  *  . _CASE_DECLS         declarations of special variables required
- *  . _CASE_START         start of the block containing instructions
- *  . _CASE_END           end of the block containing instructions
  *  . CHECK_OPCODES       0/1, if the opcodes have to be checked before RT
+ *  . _CASE_START         start of the block containing instructions
+ *  . _CASE(instruction)  the labelling method for instruction start
  *  . NEXT_INSTR          the jump to the next instruction
+ *  . _CASE_END           end of the block containing instructions
  *
  *
  * Currently three different methods are implemented:
@@ -32,13 +32,7 @@
  *                 of an instruction to the start of the next one, using
  *                 a jump table and the "labels as values" extension
  * 3.  MSVC    directs msvc to omit checking the bounds of the switch
- *
- ********************************************************************
- * FOR DEBUGGING PURPOSES
- * If you need the functionality triggered by tcl_traceExec >= 2, then 
- * uncomment the following line:
  */
-/* #define TCL_BYTECODE_DEBUG 1 */
 
 
 #define SWITCH 0
