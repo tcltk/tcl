@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.60 2000/04/04 08:05:56 hobbs Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.61 2000/04/05 00:42:38 welch Exp $
 
 VERSION 		= @TCL_VERSION@
 
@@ -460,7 +460,7 @@ topDirName:
 gendate:
 	yacc -l $(GENERIC_DIR)/tclGetDate.y
 	sed -e 's/yy/TclDate/g' -e '/^#include <values.h>/d' \
-	    -e 's?SCCSID?RCS: @(#) $$Id: Makefile.in,v 1.60 2000/04/04 08:05:56 hobbs Exp $$?' \
+	    -e 's?SCCSID?RCS: @(#) $$Id: Makefile.in,v 1.61 2000/04/05 00:42:38 welch Exp $$?' \
 	    -e '/#ifdef __STDC__/,/#endif/d' -e '/TclDateerrlab:/d' \
 	    -e '/TclDatenewstate:/d' -e '/#pragma/d' \
 	    -e '/#include <inttypes.h>/d' -e 's/const /CONST /g' \
@@ -997,6 +997,11 @@ tclStubLib.o: $(GENERIC_DIR)/tclStubLib.c
 #
 # Target to regenerate header files and stub files from the *.decls tables.
 #
+
+$(GENERIC_DIR)/tclStubInit.c: $(GENERIC_DIR)/tcl.decls \
+		$(GENERIC_DIR)/tclInt.decls
+	tclsh $(TOOL_DIR)/genStubs.tcl $(GENERIC_DIR) \
+		$(GENERIC_DIR)/tcl.decls $(GENERIC_DIR)/tclInt.decls
 
 genstubs:
 	tclsh $(TOOL_DIR)/genStubs.tcl $(GENERIC_DIR) \
