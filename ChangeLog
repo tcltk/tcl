@@ -1,3 +1,25 @@
+1999-02-01    <stanton@GASPODE>
+
+	* generic/tclBasic.c:
+	* generic/tclCmdAH.c:
+	* generic/tclCmdIL.c:
+	* generic/tclCmdMZ.c:
+	* generic/tclExecute.c:
+	* generic/tclHistory.c:
+	* generic/tclIO.c:
+	* generic/tclIOUtil.c:
+	* generic/tclInterp.c:
+	* generic/tclMain.c:
+	* generic/tclNamesp.c:
+	* generic/tclParse.c:
+	* generic/tclProc.c:
+	* generic/tclTest.c:
+	* generic/tclTimer.c:
+	* generic/tcl.h: Made eval interfaces compatible with 8.0 by
+	renaming Tcl_EvalObj to Tcl_EvalObjEx, renaming Tcl_Eval2 to
+	Tcl_EvalEx and restoring Tcl_EvalObj and Tcl_GlobalEvalObj
+	interfaces so they match Tcl 8.0.
+
 1999-01-28    <stanton@GASPODE>
 
 	* Merged Tcl 8.0.5b1 changes.
