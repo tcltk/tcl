@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPort.h,v 1.29 2003/06/24 08:53:30 mdejong Exp $
+ * RCS: @(#) $Id: tclUnixPort.h,v 1.30 2003/11/11 08:24:55 davygrvy Exp $
  */
 
 #ifndef _TCLUNIXPORT
@@ -518,6 +518,7 @@ extern double strtod();
 
 #ifdef DJGPP
 #define	TCL_PLATFORM_TRANSLATION	TCL_TRANSLATE_CRLF
+typedef int socklen_t;
 #else
 #define	TCL_PLATFORM_TRANSLATION	TCL_TRANSLATE_LF
 #endif
