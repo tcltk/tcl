@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: man2tcl.c,v 1.3 1999/04/16 00:47:40 stanton Exp $
+ * RCS: @(#) $Id: man2tcl.c,v 1.4 1999/12/06 01:43:15 wart Exp $
  */
 
 static char sccsid[] = "@(#) man2tcl.c 1.3 95/08/12 17:34:08";
@@ -24,6 +24,9 @@ static char sccsid[] = "@(#) man2tcl.c 1.3 95/08/12 17:34:08";
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
+#ifndef NO_ERRNO_H
+#include <errno.h>
+#endif
 
 /*
  * Imported things that aren't defined in header files:
