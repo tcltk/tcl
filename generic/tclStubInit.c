@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.90 2003/11/01 01:31:21 dkf Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.91 2003/12/15 00:49:38 davygrvy Exp $
  */
 
 #include "tclInt.h"
@@ -229,7 +229,7 @@ TclIntStubs tclIntStubs = {
     TclpHasSockets, /* 132 */
     TclpGetDate, /* 133 */
     TclpStrftime, /* 134 */
-    TclpCheckStackSpace, /* 135 */
+    NULL, /* 135 */
     NULL, /* 136 */
     NULL, /* 137 */
     TclGetEnv, /* 138 */
