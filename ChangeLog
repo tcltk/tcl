@@ -1,3 +1,14 @@
+2004-02-25  Don Porter	<dgp@users.sourceforge.net>
+
+	* tests/basic.test:	Made several tests more robust to the
+	* tests/cmdMZ.test:	list-quoting of path names that might
+	* tests/exec.test:	contain Tcl-special chars like { or [.
+	* tests/io.test:	Should help us sort out Tcl Bug 554068.
+	* tests/pid.test:
+	* tests/socket.test:
+	* tests/source.test:
+	* tests/unixInit.test:
+
 2004-02-25  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclLoad.c (Tcl_LoadObjCmd): Missing dereference caused

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: unixInit.test,v 1.33 2004/02/18 01:30:19 hobbs Exp $
+# RCS: @(#) $Id: unixInit.test,v 1.34 2004/02/25 23:56:59 dgp Exp $
 
 package require tcltest 2
 namespace import -force ::tcltest::*
@@ -358,10 +358,10 @@ test unixInit-7.1 {closed standard channel: Bug 772288} -constraints {
 } -body {
     set tclsh [interpreter]
     makeFile {puts [open /dev/null]} crash.tcl
-    makeFile [subst -nocommands {
+    makeFile "
 	close stdin
-	exec $tclsh crash.tcl
-    }] crashtest.tcl
+	[list exec $tclsh crash.tcl]
+    " crashtest.tcl
     exec $tclsh crashtest.tcl
 } -cleanup {
     removeFile crash.tcl
