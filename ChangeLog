@@ -1,3 +1,10 @@
+2004-11-15  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCmdMZ.c (Tcl_TraceObjCmd):	Fixed Bug 1065378 which failed
+	* tests/trace.test (trace-33.1):	to permit a variable trace
+	created with [trace variable] to be destroyed with [trace remove].
+	Thanks to Keith Vetter for the report.
+
 2004-11-12  Don Porter  <dgp@users.sourceforge.net>
 
 	* library/init.tcl:	Made [unknown] robust in the case that
