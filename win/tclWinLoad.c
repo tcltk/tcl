@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinLoad.c,v 1.3 1999/04/16 00:48:09 stanton Exp $
+ * RCS: @(#) $Id: tclWinLoad.c,v 1.4 2000/02/10 08:55:39 hobbs Exp $
  */
 
 #include "tclWinInt.h"
@@ -60,9 +60,49 @@ TclpLoadFile(interp, fileName, sym1, sym2, proc1Ptr, proc2Ptr, clientDataPtr)
     *clientDataPtr = (ClientData) handle;
     
     if (handle == NULL) {
-	TclWinConvertError(GetLastError());
-	Tcl_AppendResult(interp, "couldn't load file \"", fileName,
-		"\": ", Tcl_PosixError(interp), (char *) NULL);
+	DWORD lastError = GetLastError();
+#if 0
+	/*
+	 * It would be ideal if the FormatMessage stuff worked better,
+	 * but unfortunately it doesn't seem to want to...
+	 */
+	LPTSTR lpMsgBuf;
+	char *buf;
+	int size;
+	size = FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM |
+		FORMAT_MESSAGE_ALLOCATE_BUFFER, NULL, lastError, 0,
+		(LPTSTR) &lpMsgBuf, 0, NULL);
+	buf = (char *) ckalloc((unsigned) TCL_INTEGER_SPACE + size + 1);
+	sprintf(buf, "%d %s", lastError, (char *)lpMsgBuf);
+#endif
+	Tcl_AppendResult(interp, "couldn't load library \"",
+		fileName, "\": ", (char *) NULL);
+	/*
+	 * Check for possible DLL errors.  This doesn't work quite right,
+	 * because Windows seems to only return ERROR_MOD_NOT_FOUND for
+	 * just about any problem, but it's better than nothing.  It'd be
+	 * even better if there was a way to get what DLLs
+	 */
+	switch (lastError) {
+	    case ERROR_MOD_NOT_FOUND:
+	    case ERROR_DLL_NOT_FOUND:
+		Tcl_AppendResult(interp, "this library or a dependent library",
+			" could not be found", (char *)
+			NULL);
+		break;
+	    case ERROR_INVALID_DLL:
+		Tcl_AppendResult(interp, "this library or a dependent library",
+			" is damaged", (char *) NULL);
+		break;
+	    case ERROR_DLL_INIT_FAILED:
+		Tcl_AppendResult(interp, "the library initialization",
+			" routine failed", (char *) NULL);
+		break;
+	    default:
+		TclWinConvertError(lastError);
+		Tcl_AppendResult(interp, Tcl_PosixError(interp),
+			(char *) NULL);
+	}
 	return TCL_ERROR;
     }
 
