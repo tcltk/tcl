@@ -1,3 +1,9 @@
+2004-04-23  David Gravereaux <davygrvy@pobox.com>
+
+	* win/tclWin32Dll.c:  Remove my mistake from 4/19 of adding an
+	exit handler to TclWinInit.  TclWinEncodingsCleanup called from
+	TclFinalizeFilesystem does the Tcl_FreeEncoding for us.
+
 2004-04-22  David Gravereaux <davygrvy@pobox.com>
 
 	* generic/tclEvent.c: TclSetLibraryPath's use of caching the
