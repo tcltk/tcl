@@ -1,3 +1,14 @@
+1999-04-05    <stanton@scriptics.com>
+
+	* tests/socket.test: Changed so tests don't reuse sockets,
+	since Windows is slow to release sockets.
+
+	* win/tclWinConsole.c: 
+	* win/tclWinPipe.c: 
+	* win/tclWinSerial.c: Fixed race condition where background
+	threads were terminated while they still held a lock in the
+	notifier. 
+
 1999-04-02    <stanton@scriptics.com>
 
 	* tests/http.test: Fixed bad test initialization code.
