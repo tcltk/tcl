@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinInt.h,v 1.13 2002/03/22 23:37:39 hobbs Exp $
+ * RCS: @(#) $Id: tclWinInt.h,v 1.14 2002/04/23 17:03:35 hobbs Exp $
  */
 
 #ifndef _TCLWININT
@@ -102,6 +102,13 @@ EXTERN TclWinProcs *tclWinProcs;
  */
 
 EXTERN void		TclWinInit(HINSTANCE hInst);
+#if defined(TCL_THREADS) && defined(USE_THREAD_ALLOC)
+EXTERN void		TclWinFreeAllocCache(void);
+EXTERN void		TclFreeAllocCache(void *);
+EXTERN Tcl_Mutex	*TclpNewAllocMutex(void);
+EXTERN void		*TclpGetAllocCache(void);
+EXTERN void		TclpSetAllocCache(void *);
+#endif /* TCL_THREADS */
 
 #include "tclIntPlatDecls.h"
 
