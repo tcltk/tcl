@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.30 2001/03/24 01:14:11 hobbs Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.31 2001/04/27 22:11:51 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -248,7 +248,7 @@ TclLookupVar(interp, part1, part2, flags, msg, createPart1, createPart2,
 	    || (varFramePtr == NULL)
 	    || !varFramePtr->isProcCallFrame
 	    || (strstr(part1, "::") != NULL)) {
-	char *tail;
+	CONST char *tail;
 	
 	/*
 	 * Don't pass TCL_LEAVE_ERR_MSG, we may yet create the variable,
@@ -3489,7 +3489,7 @@ MakeUpvar(iPtr, framePtr, otherP1, otherP2, otherFlags, myName, myFlags)
     CallFrame *savedFramePtr = NULL;  /* Init. to avoid compiler warning. */
     Tcl_HashTable *tablePtr;
     Namespace *nsPtr, *altNsPtr, *dummyNsPtr;
-    char *tail;
+    CONST char *tail;
     int new;
 
     /*

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.22 2001/04/24 20:59:18 kennykb Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.23 2001/04/27 22:11:51 kennykb Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -77,7 +77,7 @@ EXTERN int		TclCreatePipeline _ANSI_ARGS_((Tcl_Interp * interp,
 #endif /* __WIN32__ */
 /* 10 */
 EXTERN int		TclCreateProc _ANSI_ARGS_((Tcl_Interp * interp, 
-				Namespace * nsPtr, char * procName, 
+				Namespace * nsPtr, CONST char * procName, 
 				Tcl_Obj * argsPtr, Tcl_Obj * bodyPtr, 
 				Proc ** procPtrPtr));
 /* 11 */
@@ -561,7 +561,7 @@ typedef struct TclIntStubs {
 #ifdef MAC_TCL
     void *reserved9;
 #endif /* MAC_TCL */
-    int (*tclCreateProc) _ANSI_ARGS_((Tcl_Interp * interp, Namespace * nsPtr, char * procName, Tcl_Obj * argsPtr, Tcl_Obj * bodyPtr, Proc ** procPtrPtr)); /* 10 */
+    int (*tclCreateProc) _ANSI_ARGS_((Tcl_Interp * interp, Namespace * nsPtr, CONST char * procName, Tcl_Obj * argsPtr, Tcl_Obj * bodyPtr, Proc ** procPtrPtr)); /* 10 */
     void (*tclDeleteCompiledLocalVars) _ANSI_ARGS_((Interp * iPtr, CallFrame * framePtr)); /* 11 */
     void (*tclDeleteVars) _ANSI_ARGS_((Interp * iPtr, Tcl_HashTable * tablePtr)); /* 12 */
     int (*tclDoGlob) _ANSI_ARGS_((Tcl_Interp * interp, char * separators, Tcl_DString * headPtr, char * tail, GlobTypeData * types)); /* 13 */
