@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.56 2003/12/09 14:57:18 vincentdarley Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.57 2003/12/12 17:09:27 vincentdarley Exp $
  */
 
 //#define _WIN32_WINNT  0x0500
@@ -218,7 +218,7 @@ WinLink(LinkSource, LinkTarget, linkAction)
 	return -1;
     }
 
-    /* Get the full path referenced by the directory */
+    /* Get the full path referenced by the source file/directory */
     if (!(*tclWinProcs->getFullPathNameProc)(LinkSource, 
 			  MAX_PATH, tempFileName, &tempFilePart)) {
 	/* Invalid file */
