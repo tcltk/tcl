@@ -1,3 +1,10 @@
+2001-03-02  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* generic/tclExecute.c (TclExecuteByteCode): Fixed bug that could
+	pass pointers to freed memory to command implementations, which
+	most obviously caused some weird behaviour with [info level], but
+	could have caused problems with user code and command traces too.
+
 2001-02-23  msofer  <msofer@users.sourceforge.net>
 	* no changes; fixing up the missing comment in the previous one.
 	Sorry.
