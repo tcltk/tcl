@@ -3,7 +3,7 @@
 # Makefile to build Tcl on Mac OS X packaged as a Framework
 #	uses standard unix build system in tcl/unix
 #
-# RCS: @(#) $Id: Makefile,v 1.10 2003/11/04 09:36:45 das Exp $
+# RCS: @(#) $Id: Makefile,v 1.11 2003/11/06 13:11:00 das Exp $
 #
 ########################################################################################################
 
@@ -70,7 +70,8 @@ targets			:= $(foreach v,${meta},${$v})
 develop_make_args	:= BUILD_STYLE=Development CONFIGURE_ARGS=--enable-symbols
 deploy_make_args	:= BUILD_STYLE=Deployment \
 			   MAKE_ARGS=INSTALL_PROGRAM="'$$\$${INSTALL} $$\$${INSTALL_STRIP_PROGRAM}'" \
-			   MAKE_ARGS+=INSTALL_LIBRARY="'$$\$${INSTALL} $$\$${INSTALL_STRIP_LIBRARY}'"
+			   MAKE_ARGS+=INSTALL_LIBRARY="'$$\$${INSTALL} $$\$${INSTALL_STRIP_LIBRARY}'" \
+			   MAKE_ARGS+=MEM_DEBUG_FLAGS="-DNDEBUG"
 embedded_make_args	:= EMBEDDED_BUILD=1
 install_make_args	:= INSTALL_BUILD=1
 

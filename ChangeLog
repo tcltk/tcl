@@ -1,3 +1,8 @@
+2003-11-07  Daniel Steffen  <das@users.sourceforge.net>
+
+	* macosx/Makefile: optimized builds define NDEBUG to turn off
+	ThreadAlloc range checking.
+
 2003-11-05  Don Porter	<dgp@users.sourceforge.net>
 
 	* tests/unixInit.test (unixInit-2.10):  New test to expose [Bug 832657]
