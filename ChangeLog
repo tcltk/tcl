@@ -1,3 +1,18 @@
+2003-04-12  Kevin Kenny  <kennykb@acm.org>
+
+	* doc/clock.n:
+	* generic/tclClock.c (Tcl_ClockObjCmd): 
+	* tests/clock.test: Implementation of TIP #124. Also renumbered
+	test cases to avoid duplicates [Bug 710310].
+	* tests/winTime.test:
+	* win/tclWinTest.c (TestwinclockCmd, TestwinsleepCmd):
+	* win/tclWinTime.c (Tcl_WinTime, UpdateTimeEachSecond,
+	                    ResetCounterSamples, AccumulateSample,
+	                    SAMPLES, TimeInfo): Made substantial changes
+	to the phase-locked loop (replaced an IIR filter with an FIR one)
+	in a quest for improved loop stability (Bug not logged at SF, but
+	cited in private communication from Jeff Hobbs).
+	
 2003-04-11  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclCmdMZ.c (Tcl_StringObjCmd,STR_IS_INT):  Corrected
