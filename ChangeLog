@@ -1,3 +1,16 @@
+2003-02-17  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclExecute.c (TclExecuteByteCode INST_STR_MATCH):
+	* generic/tclCmdMZ.c (Tcl_StringObjCmd STR_MATCH):
+	* generic/tclUtf.c (TclUniCharMatch):
+	* generic/tclInt.decls:  add private TclUniCharMatch function that
+	* generic/tclIntDecls.h: does string match on counted unicode
+	* generic/tclStubInit.c: strings.  Tcl_UniCharCaseMatch has the
+	* tests/string.test:     failing that it can't handle strings or
+	* tests/stringComp.test: patterns with embedded NULLs.  Added
+	tests that actually try strings/pats with NULLs.  TclUniCharMatch
+	should be TIPed and made public in the next minor version rev.
+
 2003-02-17  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclBasic.c (TclRenameCommand): 'oldFullName' object was
