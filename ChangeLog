@@ -1,3 +1,9 @@
+1999-03-31    <redman@scriptics.com>
+
+	* win/tclWinConsole.c: WinNT has a bug when reading a single
+	character from the console.  Rewrote the code for the console to
+	read an entire line at a time using the reader thread.
+
 1999-03-30    <stanton@scriptics.com>
 
 	* unix/Makefile.in: Removed trailing backslash that broke the

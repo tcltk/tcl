@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinConsole.c,v 1.1.2.5 1999/03/27 00:39:31 redman Exp $
+ * RCS: @(#) $Id: tclWinConsole.c,v 1.1.2.6 1999/04/01 00:56:12 redman Exp $
  */
 
 #include "tclWinInt.h"
@@ -40,8 +40,10 @@ TCL_DECLARE_MUTEX(procMutex)
  */
 
 #define CONSOLE_EOF	  (1<<2)  /* Console has reached EOF. */
-#define CONSOLE_EXTRABYTE (1<<3)  /* extra byte consumed while waiting for read
-				     access */
+#define CONSOLE_BUFFERED  (1<<3)  /* data was read into a buffer by the reader
+				     thread */
+
+#define CONSOLE_BUFFER_SIZE (8*1024)
 /*
  * This structure describes per-instance data for a console based channel.
  */
@@ -92,8 +94,10 @@ typedef struct ConsoleInfo {
     int readFlags;		/* Flags that are shared with the reader
 				 * thread.  Access is synchronized with the
 				 * readable object.  */
-    char extraByte;             /* Buffer for extra character consumed by reade
-				   thread. */
+    int bytesRead;              /* number of bytes in the buffer */
+    int offset;                 /* number of bytes read out of the buffer */
+    char buffer[CONSOLE_BUFFER_SIZE];
+                                /* Data consumed by reader thread. */
 } ConsoleInfo;
 
 typedef struct ThreadSpecificData {
@@ -589,24 +593,28 @@ ConsoleInputProc(
 	return -1;
     }
 
-    if (infoPtr->readFlags & CONSOLE_EXTRABYTE) {
+    if (infoPtr->readFlags & CONSOLE_BUFFERED) {
 	/*
-	 * The reader thread consumed 1 byte.
+	 * Data is stored in the buffer.
 	 */
 
-	*buf = infoPtr->extraByte;
-	infoPtr->readFlags &= ~CONSOLE_EXTRABYTE;
-	buf++;
-	bufSize--;
-	bytesRead = 1;
+	if (bufSize < (infoPtr->bytesRead - infoPtr->offset)) {
+	    memcpy(buf, &infoPtr->buffer[infoPtr->offset], bufSize);
+	    bytesRead = bufSize;
+	    infoPtr->offset += bufSize;
+	} else {
+	    memcpy(buf, &infoPtr->buffer[infoPtr->offset], bufSize);
+	    bytesRead = infoPtr->bytesRead - infoPtr->offset;
 
-	/*
-	 * If further read attempts would block, return what we have.
-	 */
-
-	if (result == 0) {
-	    return bytesRead;
+	    /*
+	     * Reset the buffer
+	     */
+	    
+	    infoPtr->readFlags &= ~CONSOLE_BUFFERED;
+	    infoPtr->offset = 0;
 	}
+
+	return bytesRead;
     }
     
     /*
@@ -617,13 +625,8 @@ ConsoleInputProc(
 
     if (ReadConsole(infoPtr->handle, (LPVOID) buf, (DWORD) bufSize, &count,
 		    (LPOVERLAPPED) NULL) == TRUE) {
-	return bytesRead + count;
-    } else if (bytesRead) {
-	/*
-	 * Ignore errors if we have data to return.
-	 */
-	
-	return bytesRead;
+	buf[count] = '\0';
+	return count;
     }
 
     return -1;
@@ -979,7 +982,7 @@ WaitForRead(
 	     * Ignore errors if there is data in the buffer.
 	     */
 	    
-	    if (infoPtr->readFlags & CONSOLE_EXTRABYTE) {
+	    if (infoPtr->readFlags & CONSOLE_BUFFERED) {
 		return 0;
 	    } else {
 		return -1;
@@ -991,7 +994,7 @@ WaitForRead(
 	 * readable (since it is a line-oriented device).
 	 */
 
-	if (infoPtr->readFlags & CONSOLE_EXTRABYTE) {
+	if (infoPtr->readFlags & CONSOLE_BUFFERED) {
 	    return 1;
 	}
 
@@ -1020,7 +1023,7 @@ WaitForRead(
  * Side effects:
  *	Signals the main thread when input become available.  May
  *	cause the main thread to wake up by posting a message.  May
- *	consume one byte from the console for each wait operation.
+ *	one line from the console for each wait operation.
  *
  *----------------------------------------------------------------------
  */
@@ -1045,14 +1048,13 @@ ConsoleReaderThread(LPVOID arg)
 	 * Look for data on the console, but first ignore any events
 	 * that are not KEY_EVENTs 
 	 */
-	if (ReadConsole(handle, &(infoPtr->extraByte), 1, &count, NULL)
-		!= FALSE) {
+	if (ReadConsole(handle, infoPtr->buffer, CONSOLE_BUFFER_SIZE,
+		&infoPtr->bytesRead, NULL) != FALSE) {
 	    /*
-	     * One byte was consumed as a side effect of waiting for the
-	     * console to become readable.
+	     * Data was stored in the buffer.
 	     */
 	    
-	    infoPtr->readFlags |= CONSOLE_EXTRABYTE;
+	    infoPtr->readFlags |= CONSOLE_BUFFERED;
 	} else {
 	    DWORD err;
 	    err = GetLastError();
