@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.22 2001/09/29 11:09:35 vincentdarley Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.23 2001/10/18 12:08:11 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -2156,10 +2156,8 @@ Tcl_FSChdir(pathPtr)
 {
     Tcl_Filesystem *fsPtr;
     int retVal = -1;
-    Tcl_Obj *normDirName;
     
-    normDirName = Tcl_FSGetNormalizedPath(NULL, pathPtr);
-    if (normDirName == NULL) {
+    if (Tcl_FSGetNormalizedPath(NULL, pathPtr) == NULL) {
         return TCL_ERROR;
     }
     
@@ -2192,6 +2190,24 @@ Tcl_FSChdir(pathPtr)
 	 * information.
 	 */
 	if (retVal == TCL_OK) {
+	    /* 
+	     * Note that this normalized path may be different to what
+	     * we found above (or at least a different object), if the
+	     * filesystem epoch changed recently.  This can actually
+	     * happen with scripted documents very easily.  Therefore
+	     * we ask for the normalized path again (the correct value
+	     * will have been cached as a result of the
+	     * Tcl_FSGetFileSystemForPath call above anyway).
+	     */
+	    Tcl_Obj *normDirName = Tcl_FSGetNormalizedPath(NULL, pathPtr);
+	    if (normDirName == NULL) {
+	        return TCL_ERROR;
+	    }
+	    /* 
+	     * We will be adding a reference to this object when
+	     * we store it in the cwdPathPtr.
+	     */
+	    Tcl_IncrRefCount(normDirName);
 	    /* Get a lock on the cwd while we modify it */
 	    Tcl_MutexLock(&cwdMutex);
 	    /* Free up the previous cwd we stored */
@@ -2200,7 +2216,6 @@ Tcl_FSChdir(pathPtr)
 	    }
 	    /* Now remember the current cwd */
 	    cwdPathPtr = normDirName;
-	    Tcl_IncrRefCount(cwdPathPtr);
 	    Tcl_MutexUnlock(&cwdMutex);
 	}
     }
@@ -3360,6 +3375,14 @@ SetFsPathFromAbsoluteNormalized(interp, objPtr)
     /* Free old representation */
     if (objPtr->typePtr != NULL) {
 	if (objPtr->bytes == NULL) {
+	    if (objPtr->typePtr->updateStringProc == NULL) {
+		if (interp != NULL) {
+		    Tcl_ResetResult(interp);
+		    Tcl_AppendResult(interp, "can't find object",
+				     "string representation", (char *) NULL);
+		}
+		return TCL_ERROR;
+	    }
 	    objPtr->typePtr->updateStringProc(objPtr);
 	}
 	if ((objPtr->typePtr->freeIntRepProc) != NULL) {
@@ -3420,6 +3443,14 @@ SetFsPathFromAny(interp, objPtr)
     /* Free old representation */
     if (objPtr->typePtr != NULL) {
 	if (objPtr->bytes == NULL) {
+	    if (objPtr->typePtr->updateStringProc == NULL) {
+		if (interp != NULL) {
+		    Tcl_ResetResult(interp);
+		    Tcl_AppendResult(interp, "can't find object",
+				     "string representation", (char *) NULL);
+		}
+	        return TCL_ERROR;
+	    }
 	    objPtr->typePtr->updateStringProc(objPtr);
 	}
 	if ((objPtr->typePtr->freeIntRepProc) != NULL) {
@@ -3485,7 +3516,7 @@ SetFsPathFromAny(interp, objPtr)
 	    /* We have a user name '~user' */
 	    Tcl_DStringInit(&temp);
 	    if (TclpGetUserHome(name+1, &temp) == NULL) {	
-		if (interp) {
+		if (interp != NULL) {
 		    Tcl_ResetResult(interp);
 		    Tcl_AppendResult(interp, "user \"", (name+1), 
 				     "\" doesn't exist", (char *) NULL);
@@ -3586,6 +3617,9 @@ Tcl_FSNewNativePath(fromFilesystem, clientData)
      */
     if (objPtr->typePtr != NULL) {
 	if (objPtr->bytes == NULL) {
+	    if (objPtr->typePtr->updateStringProc == NULL) {
+		return NULL;
+	    }
 	    objPtr->typePtr->updateStringProc(objPtr);
 	}
 	if ((objPtr->typePtr->freeIntRepProc) != NULL) {
