@@ -1,5 +1,9 @@
 2001-04-02  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	* README:
+	* win/README:
+	* win/README.binary: further notes corrections.
+
 	* win/configure:
 	* win/tcl.m4 (SHLIB_LD):  added -incremental:no. [Bug #219381]
 
