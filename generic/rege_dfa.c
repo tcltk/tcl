@@ -429,7 +429,7 @@ chr *start;			/* where the attempt got started */
 	int noprogress;
 	int gotstate;
 	int dolacons;
-	int didlacons;
+	int sawlacons;
 
 	/* for convenience, we can be called even if it might not be a miss */
 	if (css->outs[co] != NULL) {
@@ -457,26 +457,28 @@ chr *start;			/* where the attempt got started */
 					FDEBUG(("%d -> %d\n", i, ca->to));
 				}
 	dolacons = (gotstate) ? (cnfa->flags&HASLACONS) : 0;
-	didlacons = 0;
+	sawlacons = 0;
 	while (dolacons) {		/* transitive closure */
 		dolacons = 0;
 		for (i = 0; i < d->nstates; i++)
 			if (ISBSET(d->work, i))
 				for (ca = cnfa->states[i]+1; ca->co != COLORLESS;
-									ca++)
-					if (ca->co > cnfa->ncolors &&
-						!ISBSET(d->work, ca->to) &&
-							lacon(v, cnfa, cp,
-								ca->co)) {
-						BSET(d->work, ca->to);
-						dolacons = 1;
-						didlacons = 1;
-						if (ca->to == cnfa->post)
-							ispost = 1;
-						if (!cnfa->states[ca->to]->co)
-							noprogress = 0;
-						FDEBUG(("%d :> %d\n",i,ca->to));
-					}
+									ca++) {
+					if (ca->co <= cnfa->ncolors)
+						continue; /* NOTE CONTINUE */
+					sawlacons = 1;
+					if (ISBSET(d->work, ca->to))
+						continue; /* NOTE CONTINUE */
+					if (!lacon(v, cnfa, cp, ca->co))
+						continue; /* NOTE CONTINUE */
+					BSET(d->work, ca->to);
+					dolacons = 1;
+					if (ca->to == cnfa->post)
+						ispost = 1;
+					if (!cnfa->states[ca->to]->co)
+						noprogress = 0;
+					FDEBUG(("%d :> %d\n", i, ca->to));
+				}
 	}
 	if (!gotstate)
 		return NULL;
@@ -500,7 +502,8 @@ chr *start;			/* where the attempt got started */
 		/* lastseen to be dealt with by caller */
 	}
 
-	if (!didlacons) {		/* lookahead conds. always cache miss */
+	if (!sawlacons) {		/* lookahead conds. always cache miss */
+		FDEBUG(("c%d[%d]->%d\n", css - d->ssets, co, p - d->ssets));
 		css->outs[co] = p;
 		css->inchain[co] = p->ins;
 		p->ins.ss = css;

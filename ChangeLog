@@ -1,3 +1,12 @@
+1999-07-08    <stanton@scriptics.com>
+
+	* win/Makefile.in: Added tcltest target so runtest works
+	properly.  Added missing names to the clean/distclean targets.
+
+	* tests/reg.test: 
+	* generic/rege_dfa.c: Applied fix supplied by Henry Spencer for
+	bug in DFA state caching under lookahead conditions.  [Bug: 2318]
+
 1999-07-07    <stanton@scriptics.com>
 
 	* doc/fconfigure.n: Clarified default buffering behavior for the
