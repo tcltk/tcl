@@ -1,3 +1,51 @@
+2002-11-11  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclUtil.c (Tcl_Backslash): use TclUtfToUniChar.
+	(Tcl_StringCaseMatch): use TclUtfToUniChar and add further
+	optimizations for the one-byte/char case.
+
+	* generic/tclUtf.c: make use of TclUtfToUniChar macro throughout
+	the functions, and add extra optimization to Tcl_NumUtfChars for
+	one-byte/char case.
+
+	* generic/tclVar.c (DisposeTraceResult, CallVarTraces): add proper
+	static declarations.
+
+	* generic/tclStringObj.c (Tcl_GetCharLength): optimize for the
+	ascii char case.
+	(Tcl_GetUniChar): remove unnecessary use of Tcl_UtfToUniChar.
+	(FillUnicodeRep): Use TclUtfToUniChar.
+
+	* generic/tclHash.c (HashStringKey): move string++ lower to save
+	an instruction.
+
+	* generic/tclExecute.c (TclExecuteByteCode): improve INST_STR_CMP
+	to use memcmp in the one-byte/char case, also use direct index for
+	INST_STR_INDEX in that case.
+
+	* generic/tclEncoding.c (UtfToUtfProc, UtfToUnicodeProc): 
+	(TableFromUtfProc, EscapeFromUtfProc): Use TclUtfToUniChar.
+	(UnicodeToUtfProc, TableToUtfProc): add 1-byte char optimizations
+	for Tcl_UniCharToUtf call.  These improve encoded channel
+	conversion speeds by up to 20%.
+
+	* tests/split.test: added 1-char string split tests
+	* generic/tclCmdMZ.c (Tcl_SplitObjCmd): Use TclUtfToUniChar.
+	Also added a special case for single-ascii-char splits.
+	(Tcl_StringObjCmd): Use TclUtfToUniChar.
+	For STR_RANGE, support getting ranges of ByteArrays (reverts
+	change from 2000-05-26).
+	(TraceExecutionProc) add proper static declaration.
+
+	* generic/tclInt.h: add macro version of Tcl_UtfToUniChar
+	(TclUtfToUniChar) that does the one-byte utf-char check without
+	calling Tcl_UtfToUniChar, for use by the core.  This brings
+	notable speedups for primarily ascii string handling.
+
+	* generic/tcl.h (TCL_PATCH_LEVEL): bump to 8.4.1.1 for patchlevel
+	only.  This interim number will only be reflected by
+	[info patchlevel].
+
 2002-11-11  Kevin Kenny  <kennykb@acm.org>
 	* doc/Tcl.n: Corrected indentation of the new language.  Oops.
 	
