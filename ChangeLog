@@ -1,5 +1,14 @@
 2005-03-19 Miguel Sofer <msofer@users.sf.net>
 
+	* generic/tclCompile.h: (VM_USE_PACKED) added a check that jump
+	distances do not exceed the packing capability; if they do,
+	panic. Should not happen very often, jumps of up to 32k 32b words
+	are still possible. Should be replaced with a mechanism to
+	TCL_OUT_LINE_COMPILE instead (not trivial, as typically code will
+	already be emitted and ExceptionRanges created).
+
+2005-03-19 Miguel Sofer <msofer@users.sf.net>
+
 	* generic/tclCompile.c:
 	* generic/tclCompile.h:
 	* generic/tclExecute.c:

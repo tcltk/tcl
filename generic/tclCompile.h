@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.53.2.15 2005/03/20 00:23:18 msofer Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.53.2.16 2005/03/20 00:47:20 msofer Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -651,6 +651,7 @@ typedef struct ByteCode {
 
 #define INST_JUMP_TRUE			24
 #define INST_JUMP_FALSE		        25
+#define TclIsJump(op) ((op<=25) && (op>=23))
 
 #define FIRST_OPERATOR_INST             26
 
@@ -1099,6 +1100,20 @@ MODULE_SCOPE int	TclWordKnownAtCompileTime _ANSI_ARGS_((
  * Macros to emit an instruction with integer operands.
  */
 
+#ifdef VM_USE_PACKED
+/* This test maybe should be distributed, so that it isn't performed for every
+ * INST? */
+#define TclEmitInst1(op, n, envPtr) \
+    if (TclIsJump(op) && \
+            (abs((TclPSizedInt)(n)) > HPINT_MAX)) \
+        Tcl_Panic("Oversize jump.");\
+    if (((envPtr)->codeNext + 1) > (envPtr)->codeEnd) { \
+	TclExpandCodeArray(envPtr); \
+    } \
+    TclVMStoreWordAtPtr((op), (n), (envPtr)->codeNext);\
+    (envPtr)->codeNext++;\
+    TclUpdateStackReqs((op), (n), envPtr)
+#else
 #define TclEmitInst1(op, n, envPtr) \
     if (((envPtr)->codeNext + 1) > (envPtr)->codeEnd) { \
 	TclExpandCodeArray(envPtr); \
@@ -1106,6 +1121,7 @@ MODULE_SCOPE int	TclWordKnownAtCompileTime _ANSI_ARGS_((
     TclVMStoreWordAtPtr((op), (n), (envPtr)->codeNext);\
     (envPtr)->codeNext++;\
     TclUpdateStackReqs((op), (n), envPtr)
+#endif
 
 #define TclEmitInst2(op, n, u, envPtr)\
     {\
@@ -1138,6 +1154,16 @@ MODULE_SCOPE int	TclWordKnownAtCompileTime _ANSI_ARGS_((
    (fixOffset) = (envPtr->codeNext - envPtr->codeStart);\
    TclEmitInst0((inst), (envPtr))
 
+#ifdef VM_USE_PACKED
+#define TclSetJumpTarget(envPtr, fixOffset) \
+{\
+    ptrdiff_t jumpDist =\
+        (envPtr->codeNext - envPtr->codeStart) - (fixOffset);\
+    TclVMWord *fixPc = envPtr->codeStart + fixOffset;\
+    if (abs(jumpDist) > HPINT_MAX) Tcl_Panic("Oversize jump.");\
+    TclVMStoreOpndAtPtr(jumpDist, fixPc);\
+}
+#else
 #define TclSetJumpTarget(envPtr, fixOffset) \
 {\
     ptrdiff_t jumpDist =\
@@ -1145,7 +1171,7 @@ MODULE_SCOPE int	TclWordKnownAtCompileTime _ANSI_ARGS_((
     TclVMWord *fixPc = envPtr->codeStart + fixOffset;\
     TclVMStoreOpndAtPtr(jumpDist, fixPc);\
 }
-
+#endif
 
 /*
  * Macros to update a (signed or unsigned) integer starting at a pointer.
