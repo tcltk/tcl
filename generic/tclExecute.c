@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.20 2001/03/13 09:31:37 dkf Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.21 2001/04/07 03:15:38 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -635,11 +635,15 @@ TclExecuteByteCode(interp, codePtr)
 	    Tcl_SetObjResult(interp, valuePtr);
 	    TclDecrRefCount(valuePtr);
 	    if (stackTop != initStackTop) {
-		fprintf(stderr, "\nTclExecuteByteCode: done instruction at pc %u: stack top %d != entry stack top %d\n",
+		/*
+		 * if extra items in the stack, clean up the stack before return
+		 */
+		if (stackTop > initStackTop) goto abnormalReturn;
+		fprintf(stderr, "\nTclExecuteByteCode: done instruction at pc %u: stack top %d < entry stack top %d\n",
 			(unsigned int)(pc - codePtr->codeStart),
 			(unsigned int) stackTop,
 			(unsigned int) initStackTop);
-		panic("TclExecuteByteCode execution failure: end stack top != start stack top");
+		panic("TclExecuteByteCode execution failure: end stack top < start stack top");
 	    }
 	    TRACE_WITH_OBJ(("=> return code=%d, result=", result),
 		    iPtr->objResultPtr);
