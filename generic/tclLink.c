@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLink.c,v 1.5 2002/02/15 14:28:49 dkf Exp $
+ * RCS: @(#) $Id: tclLink.c,v 1.6 2002/02/28 00:38:26 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -95,6 +95,7 @@ Tcl_LinkVar(interp, varName, addr, type)
 				 * Also may have TCL_LINK_READ_ONLY
 				 * OR'ed in. */
 {
+    Tcl_Obj *objPtr;
     Link *linkPtr;
     int code;
 
@@ -109,9 +110,11 @@ Tcl_LinkVar(interp, varName, addr, type)
     } else {
 	linkPtr->flags = 0;
     }
-    if (Tcl_ObjSetVar2(interp, linkPtr->varName, NULL, ObjValue(linkPtr),
+    objPtr = ObjValue(linkPtr);
+    if (Tcl_ObjSetVar2(interp, linkPtr->varName, NULL, objPtr,
 	    TCL_GLOBAL_ONLY|TCL_LEAVE_ERR_MSG) == NULL) {
 	Tcl_DecrRefCount(linkPtr->varName);
+	Tcl_DecrRefCount(objPtr);
 	ckfree((char *) linkPtr);
 	return TCL_ERROR;
     }
