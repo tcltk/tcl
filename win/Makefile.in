@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.22 1999/12/06 01:46:07 wart Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.23 1999/12/07 00:18:32 wart Exp $
 
 VERSION = @TCL_VERSION@
 
@@ -292,7 +292,9 @@ binaries: @LIBRARIES@ $(STATIC_LIBRARIES) $(TCLSH)
 
 libraries:
 
-doc: $(ROOT_DIR)/tools/man2help.tcl $(MAN2TCL) $(TCL_DOCS)
+doc:
+
+winhelp: $(ROOT_DIR)/tools/man2help.tcl $(MAN2TCL) $(TCL_DOCS)
 	TCL_LIBRARY="$(LIBRARY_DIR)"; export TCL_LIBRARY; \
 	./$(TCLSH) "$(ROOT_DIR_NATIVE)"/tools/man2help.tcl tcl "$(VER)" $(TCL_DOCS)
 	hcw /c /e tcl.hpj
