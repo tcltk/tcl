@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.49 2003/05/09 13:53:42 msofer Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.50 2003/09/12 23:55:32 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -271,6 +271,8 @@ InstructionDesc tclInstructionTable[] = {
 	 */
     {"return",		  1,   -1,          0,   {OPERAND_NONE}},
 	/* return TCL_RETURN code. */
+    {"expon",		  1,   -1,	    0,	 {OPERAND_NONE}},
+	/* Binary exponentiation operator: push (stknext ** stktop) */
     {0}
 };
 

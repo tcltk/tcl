@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: expr.test,v 1.18 2003/03/27 13:48:59 dkf Exp $
+# RCS: @(#) $Id: expr.test,v 1.19 2003/09/12 23:55:34 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -132,9 +132,9 @@ test expr-2.1 {TclCompileExpr: are builtin functions registered?} {
     expr double(5*[llength "6 2"])
 } 10.0
 test expr-2.2 {TclCompileExpr: error in expr} {
-    catch {expr 2**3} msg
+    catch {expr 2***3} msg
     set msg
-} {syntax error in expression "2**3": unexpected operator *}
+} {syntax error in expression "2***3": unexpected operator *}
 test expr-2.3 {TclCompileExpr: junk after legal expr} {
     catch {expr 7*[llength "a b"]foo} msg
     set msg
@@ -150,14 +150,14 @@ test expr-3.2 {CompileCondExpr: error in lor expr} {
 } {syntax error in expression "x||3": variable references require preceding $}
 test expr-3.3 {CompileCondExpr: test true arm} {expr 3>2?44:66} 44
 test expr-3.4 {CompileCondExpr: error compiling true arm} {
-    catch {expr 3>2?2**3:66} msg
+    catch {expr 3>2?2***3:66} msg
     set msg
-} {syntax error in expression "3>2?2**3:66": unexpected operator *}
+} {syntax error in expression "3>2?2***3:66": unexpected operator *}
 test expr-3.5 {CompileCondExpr: test false arm} {expr 2>3?44:66} 66
 test expr-3.6 {CompileCondExpr: error compiling false arm} {
-    catch {expr 2>3?44:2**3} msg
+    catch {expr 2>3?44:2***3} msg
     set msg
-} {syntax error in expression "2>3?44:2**3": unexpected operator *}
+} {syntax error in expression "2>3?44:2***3": unexpected operator *}
 test expr-3.7 {CompileCondExpr: long arms & nested cond exprs} {unixOnly nonPortable} {
     puts "Note: doing test expr-3.7 which can take several minutes to run"
     hello_world
@@ -178,13 +178,13 @@ test expr-4.3 {CompileLorExpr: simple lor exprs} {expr 0||1.0} 1
 test expr-4.4 {CompileLorExpr: simple lor exprs} {expr 3.0||0.0} 1
 test expr-4.5 {CompileLorExpr: simple lor exprs} {expr 0||0||1} 1
 test expr-4.6 {CompileLorExpr: error compiling lor arm} {
-    catch {expr 2**3||4.0} msg
+    catch {expr 2***3||4.0} msg
     set msg
-} {syntax error in expression "2**3||4.0": unexpected operator *}
+} {syntax error in expression "2***3||4.0": unexpected operator *}
 test expr-4.7 {CompileLorExpr: error compiling lor arm} {
-    catch {expr 1.3||2**3} msg
+    catch {expr 1.3||2***3} msg
     set msg
-} {syntax error in expression "1.3||2**3": unexpected operator *}
+} {syntax error in expression "1.3||2***3": unexpected operator *}
 test expr-4.8 {CompileLorExpr: error compiling lor arms} {
     list [catch {expr {"a"||"b"}} msg] $msg
 } {1 {expected boolean value but got "a"}}
@@ -204,13 +204,13 @@ test expr-5.4 {CompileLandExpr: simple land exprs} {expr 0&&0} 0
 test expr-5.5 {CompileLandExpr: simple land exprs} {expr 3.0&&1.2} 1
 test expr-5.6 {CompileLandExpr: simple land exprs} {expr 1&&1&&2} 1
 test expr-5.7 {CompileLandExpr: error compiling land arm} {
-    catch {expr 2**3&&4.0} msg
+    catch {expr 2***3&&4.0} msg
     set msg
-} {syntax error in expression "2**3&&4.0": unexpected operator *}
+} {syntax error in expression "2***3&&4.0": unexpected operator *}
 test expr-5.8 {CompileLandExpr: error compiling land arm} {
-    catch {expr 1.3&&2**3} msg
+    catch {expr 1.3&&2***3} msg
     set msg
-} {syntax error in expression "1.3&&2**3": unexpected operator *}
+} {syntax error in expression "1.3&&2***3": unexpected operator *}
 test expr-5.9 {CompileLandExpr: error compiling land arm} {
     list [catch {expr {"a"&&"b"}} msg] $msg
 } {1 {expected boolean value but got "a"}}
@@ -230,9 +230,9 @@ test expr-6.4 {CompileBitXorExpr: simple bitxor exprs} {expr 3^0x10} 19
 test expr-6.5 {CompileBitXorExpr: simple bitxor exprs} {expr 0^7} 7
 test expr-6.6 {CompileBitXorExpr: simple bitxor exprs} {expr -1^7} -8
 test expr-6.7 {CompileBitXorExpr: error compiling bitxor arm} {
-    catch {expr 2**3|6} msg
+    catch {expr 2***3|6} msg
     set msg
-} {syntax error in expression "2**3|6": unexpected operator *}
+} {syntax error in expression "2***3|6": unexpected operator *}
 test expr-6.8 {CompileBitXorExpr: error compiling bitxor arm} {
     catch {expr 2^x} msg
     set msg
@@ -257,9 +257,9 @@ test expr-7.7 {CompileBitAndExpr: simple bitand exprs} {expr 0xf2&0x53} 82
 test expr-7.8 {CompileBitAndExpr: simple bitand exprs} {expr 3&6} 2
 test expr-7.9 {CompileBitAndExpr: simple bitand exprs} {expr -1&-7} -7
 test expr-7.10 {CompileBitAndExpr: error compiling bitand arm} {
-    catch {expr 2**3&6} msg
+    catch {expr 2***3&6} msg
     set msg
-} {syntax error in expression "2**3&6": unexpected operator *}
+} {syntax error in expression "2***3&6": unexpected operator *}
 test expr-7.11 {CompileBitAndExpr: error compiling bitand arm} {
     catch {expr 2&x} msg
     set msg
@@ -290,9 +290,9 @@ test expr-8.7 {CompileEqualityExpr: simple equality exprs} {expr -0xf2!=0x53} 1
 test expr-8.8 {CompileEqualityExpr: simple equality exprs} {expr {"12398712938788234-1298379" != ""}} 1
 test expr-8.9 {CompileEqualityExpr: simple equality exprs} {expr -1!="abc"} 1
 test expr-8.10 {CompileEqualityExpr: error compiling equality arm} {
-    catch {expr 2**3==6} msg
+    catch {expr 2***3==6} msg
     set msg
-} {syntax error in expression "2**3==6": unexpected operator *}
+} {syntax error in expression "2***3==6": unexpected operator *}
 test expr-8.11 {CompileEqualityExpr: error compiling equality arm} {
     catch {expr 2!=x} msg
     set msg
@@ -339,9 +339,9 @@ test expr-9.6 {CompileRelationalExpr: error in shift expr} {
 test expr-9.7 {CompileRelationalExpr: simple relational exprs} {expr 0xff>=+0x3} 1
 test expr-9.8 {CompileRelationalExpr: simple relational exprs} {expr -0xf2<0x3} 1
 test expr-9.9 {CompileRelationalExpr: error compiling relational arm} {
-    catch {expr 2**3>6} msg
+    catch {expr 2***3>6} msg
     set msg
-} {syntax error in expression "2**3>6": unexpected operator *}
+} {syntax error in expression "2***3>6": unexpected operator *}
 test expr-9.10 {CompileRelationalExpr: error compiling relational arm} {
     catch {expr 2<x} msg
     set msg
@@ -358,9 +358,9 @@ test expr-10.5 {CompileShiftExpr: error in add expr} {
 test expr-10.6 {CompileShiftExpr: simple shift exprs} {expr 0xff>>0x3} 31
 test expr-10.7 {CompileShiftExpr: simple shift exprs} {expr -0xf2<<0x3} -1936
 test expr-10.8 {CompileShiftExpr: error compiling shift arm} {
-    catch {expr 2**3>>6} msg
+    catch {expr 2***3>>6} msg
     set msg
-} {syntax error in expression "2**3>>6": unexpected operator *}
+} {syntax error in expression "2***3>>6": unexpected operator *}
 test expr-10.9 {CompileShiftExpr: error compiling shift arm} {
     catch {expr 2<<x} msg
     set msg
@@ -383,9 +383,9 @@ test expr-11.5 {CompileAddExpr: error in multiply expr} {
 test expr-11.6 {CompileAddExpr: simple add exprs} {expr 0xff++0x3} 258
 test expr-11.7 {CompileAddExpr: simple add exprs} {expr -0xf2--0x3} -239
 test expr-11.8 {CompileAddExpr: error compiling add arm} {
-    catch {expr 2**3+6} msg
+    catch {expr 2***3+6} msg
     set msg
-} {syntax error in expression "2**3+6": unexpected operator *}
+} {syntax error in expression "2***3+6": unexpected operator *}
 test expr-11.9 {CompileAddExpr: error compiling add arm} {
     catch {expr 2-x} msg
     set msg
@@ -805,6 +805,60 @@ test expr-22.7 {non-numeric floats} nonPortable {
 test expr-22.8 {non-numeric floats} nonPortable {
     list [catch {expr {1 / Inf}} msg] $msg
 } {1 {can't use infinite floating-point value as operand of "/"}}
+
+# Tests for exponentiation handling
+test expr-23.1 {CompileExponentialExpr: just exponential expr} {expr 4**2} 16
+test expr-23.2 {CompileExponentialExpr: just exponential expr} {expr 0xff**2} 65025
+test expr-23.3 {CompileExponentialExpr: just exponential expr} {expr -1**2} 1
+test expr-23.4 {CompileExponentialExpr: just exponential expr} {expr 7891**0123} 75407563
+test expr-23.5 {CompileExponentialExpr: error in exponential expr} {
+    catch {expr x**3} msg
+    set msg
+} {syntax error in expression "x**3": variable references require preceding $}
+test expr-23.6 {CompileExponentialExpr: simple expo exprs} {expr 0xff**0x3} 16581375
+test expr-23.7 {CompileExponentialExpr: error compiling expo arm} {
+    catch {expr (-3-)**6} msg
+    set msg
+} {syntax error in expression "(-3-)**6": unexpected close parenthesis}
+test expr-23.8 {CompileExponentialExpr: error compiling expo arm} {
+    catch {expr 2**x} msg
+    set msg
+} {syntax error in expression "2**x": variable references require preceding $}
+test expr-23.9 {CompileExponentialExpr: runtime error} {
+    list [catch {expr {24.0**"xx"}} msg] $msg
+} {1 {can't use non-numeric string as operand of "**"}}
+test expr-23.10 {CompileExponentialExpr: runtime error} {
+    list [catch {expr {"a"**2}} msg] $msg
+} {1 {can't use non-numeric string as operand of "**"}}
+test expr-23.11 {CompileExponentialExpr: runtime error} {
+    list [catch {expr {0**-1}} msg] $msg
+} {1 {exponentiation of zero by negative power}}
+test expr-23.12 {CompileExponentialExpr: runtime error} {
+    list [catch {expr {0.0**-1.0}} msg] $msg
+} {1 {exponentiation of zero by negative power}}
+test expr-23.13 {CompileExponentialExpr: runtime error} {
+    list [catch {expr {wide(0)**wide(-1)}} msg] $msg
+} {1 {exponentiation of zero by negative power}}
+test epxr-23.14 {INST_EXPON: special cases} {expr {0**1}} 0
+test epxr-23.15 {INST_EXPON: special cases} {expr {0**0}} 1
+test epxr-23.16 {INST_EXPON: special cases} {expr {-2**-1}} 0
+test epxr-23.17 {INST_EXPON: special cases} {expr {-2**0}} 1
+test epxr-23.18 {INST_EXPON: special cases} {expr {-1**1}} -1
+test epxr-23.19 {INST_EXPON: special cases} {expr {-1**0}} 1
+test epxr-23.20 {INST_EXPON: special cases} {expr {-1**2}} 1
+test epxr-23.21 {INST_EXPON: special cases} {expr {-1**-1}} -1
+test epxr-23.22 {INST_EXPON: special cases} {expr {1**1234567}} 1
+test epxr-23.23 {INST_EXPON: special cases} {expr {2**-2}} 0
+test epxr-23.24 {INST_EXPON: special cases} {expr {wide(0)**wide(1)}} 0
+test epxr-23.25 {INST_EXPON: special cases} {expr {wide(0)**wide(0)}} 1
+test epxr-23.26 {INST_EXPON: special cases} {expr {wide(-2)**wide(-1)}} 0
+test epxr-23.27 {INST_EXPON: special cases} {expr {wide(-2)**wide(0)}} 1
+test epxr-23.28 {INST_EXPON: special cases} {expr {wide(-1)**wide(1)}} -1
+test epxr-23.29 {INST_EXPON: special cases} {expr {wide(-1)**wide(0)}} 1
+test epxr-23.30 {INST_EXPON: special cases} {expr {wide(-1)**wide(2)}} 1
+test epxr-23.31 {INST_EXPON: special cases} {expr {wide(-1)**wide(-1)}} -1
+test epxr-23.32 {INST_EXPON: special cases} {expr {wide(1)**wide(1234567)}} 1
+test epxr-23.33 {INST_EXPON: special cases} {expr {wide(2)**wide(-2)}} 0
 
 # cleanup
 if {[info exists a]} {
