@@ -1,3 +1,13 @@
+1999-04-27    <stanton@scriptics.com>
+
+	* generic/tclPlatDecls.h: 
+	* generic/tclIntPlatDecls.h: 
+	* generic/tclIntDecls.h: 
+	* generic/tclDecls.h: 
+	* tools/genStubs.tcl: Added 'extern "C" {}' block around the stub
+	table pointer declaration so the stub library can be used from
+	C++. [Bug: 1934]
+
 1999-04-23    <stanton@scriptics.com>
 
 	* generic/tclStubInit.c: 
