@@ -875,15 +875,16 @@ dist: $(UNIX_DIR)/configure
 	mkdir $(DISTDIR)/win
 	cp -p $(TOP_DIR)/win/*.c $(TOP_DIR)/win/*.h $(TOP_DIR)/win/*.rc \
 		$(DISTDIR)/win
+	cp -p $(TOP_DIR)/win/*.bat $(DISTDIR)/win
 	cp -p $(TOP_DIR)/win/makefile.* $(DISTDIR)/win
 	cp -p $(TOP_DIR)/win/README $(DISTDIR)/win
 	cp -p $(TOP_DIR)/win/pkgIndex.tcl $(DISTDIR)/win
 	cp -p $(TOP_DIR)/license.terms $(DISTDIR)/win
 	mkdir $(DISTDIR)/mac
-	sccs edit -s $(TOP_DIR)/mac/tclMacProjects.sit.hqx
-	cp -p tclMacProjects.sit.hqx $(DISTDIR)/mac
-	sccs unedit $(TOP_DIR)/mac/tclMacProjects.sit.hqx
-	rm -f tclMacProjects.sit.hqx
+	sccs edit -s $(TOP_DIR)/mac/tclMacProjects.sea.hqx
+	cp -p tclMacProjects.sea.hqx $(DISTDIR)/mac
+	sccs unedit $(TOP_DIR)/mac/tclMacProjects.sea.hqx
+	rm -f tclMacProjects.sea.hqx
 	cp -p $(TOP_DIR)/mac/*.c $(TOP_DIR)/mac/*.h $(TOP_DIR)/mac/*.r \
 		$(DISTDIR)/mac
 	cp -p $(TOP_DIR)/mac/porting.notes $(TOP_DIR)/mac/README $(DISTDIR)/mac
@@ -938,7 +939,7 @@ allpatch: dist
 #
 
 macdist: dist
-	rm -f $(DISTDIR)/mac/tclMacProjects.sit.hqx
+	rm -f $(DISTDIR)/mac/tclMacProjects.sea.hqx
 	tclsh $(TOOL_DIR)/man2html.tcl $(DISTDIR)/tmp ../.. tcl$(VERSION)
 	mv $(DISTDIR)/tmp/tcl$(VERSION) $(DISTDIR)/html
 	rm -rf $(DISTDIR)/doc
