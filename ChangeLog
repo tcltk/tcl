@@ -1,3 +1,10 @@
+2004-10-26  Andreas Kupries <andreask@activestate.com>
+
+	* library/tm.tcl (::tcl::tm::Defaults): Added a second [file
+	  dirname] around the location of the executable. This fixes [Tcl
+	  SF Bug 1038705]. Instable of a bogus "foo/bin/lib" we now have
+	  the correct "foo/lib" as a base path for modules.
+
 2004-10-26  Don Porter  <dgp@users.sourceforge.net>
 
 	* tests/basic.test:	Added missing constraints.
