@@ -10,10 +10,10 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinDde.c,v 1.19 2004/02/25 14:12:35 patthoyts Exp $
+ * RCS: @(#) $Id: tclWinDde.c,v 1.20 2004/03/19 18:33:52 kennykb Exp $
  */
 
-#include "tclPort.h"
+#include "tclInt.h"
 #include <dde.h>
 #include <ddeml.h>
 #include <tchar.h>

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinTime.c,v 1.22 2004/03/18 18:56:04 rmax Exp $
+ * RCS: @(#) $Id: tclWinTime.c,v 1.23 2004/03/19 18:33:53 kennykb Exp $
  */
 
 #include "tclWinInt.h"
@@ -545,7 +545,7 @@ TclpGetTZName(int dst)
 
 struct tm *
 TclpGetDate(t, useGMT)
-    CONST time_t t;
+    CONST time_t *t;
     int useGMT;
 {
     struct tm *tmPtr;
@@ -570,14 +570,14 @@ TclpGetDate(t, useGMT)
 	  H. Giese, June 2003
 	*/
 #ifdef __BORLANDC__
-	if (t >= SECSPERDAY) {
+	if (*t >= SECSPERDAY) {
 #else
-	if (t >= 0) {
+	if (*t >= 0) {
 #endif
-	    return localtime(tp);
+	    return localtime(t);
 	}
 
-	time = t - timezone;
+	time = *t - timezone;
 	
 	/*
 	 * If we aren't near to overflowing the long, just add the bias and
@@ -585,11 +585,11 @@ TclpGetDate(t, useGMT)
 	 * the result at the end.
 	 */
 
-	if (t < (LONG_MAX - 2 * SECSPERDAY)
-		&& t > (LONG_MIN + 2 * SECSPERDAY)) {
+	if (*t < (LONG_MAX - 2 * SECSPERDAY)
+		&& *t > (LONG_MIN + 2 * SECSPERDAY)) {
 	    tmPtr = ComputeGMT(&time);
 	} else {
-	    tmPtr = ComputeGMT(&t);
+	    tmPtr = ComputeGMT(t);
 
 	    tzset();
 
@@ -625,7 +625,7 @@ TclpGetDate(t, useGMT)
 	    tmPtr->tm_wday = (tmPtr->tm_wday + time) % 7;
 	}
     } else {
-	tmPtr = ComputeGMT(&t);
+	tmPtr = ComputeGMT(t);
     }
     return tmPtr;
 }
