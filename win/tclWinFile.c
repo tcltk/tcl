@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.42 2003/02/07 15:29:34 vincentdarley Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.43 2003/02/10 10:26:26 vincentdarley Exp $
  */
 
 //#define _WIN32_WINNT  0x0500
@@ -667,7 +667,7 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 				 * May be NULL. In particular the directory
 				 * flag is very important. */
 {
-    CONST TCHAR *nativeName;
+    CONST TCHAR *native;
 
     if (pattern == NULL || (*pattern == '\0')) {
 	Tcl_Obj *norm = Tcl_FSGetNormalizedPath(NULL, pathPtr);
@@ -677,43 +677,40 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 	    DWORD attr;
 	    CONST char *str = Tcl_GetStringFromObj(norm,&len);
 
-	    nativeName = (CONST TCHAR*) Tcl_FSGetNativePath(pathPtr);
+	    native = (CONST TCHAR*) Tcl_FSGetNativePath(pathPtr);
 	    
 	    if (tclWinProcs->getFileAttributesExProc == NULL) {
-		attr = (*tclWinProcs->getFileAttributesProc)(nativeName);
+		attr = (*tclWinProcs->getFileAttributesProc)(native);
 		if (attr == 0xffffffff) {
 		    return TCL_OK;
 		}
 	    } else {
 		WIN32_FILE_ATTRIBUTE_DATA data;
-		if((*tclWinProcs->getFileAttributesExProc)(nativeName,
-							   GetFileExInfoStandard,
-							   &data) != TRUE) {
+		if ((*tclWinProcs->getFileAttributesExProc)(native,
+			GetFileExInfoStandard, &data) != TRUE) {
 		    return TCL_OK;
 		}
 		attr = data.dwFileAttributes;
 	    }
 	    if (NativeMatchType(WinIsDrive(str,len), attr, 
-				nativeName, types)) {
+				native, types)) {
 		Tcl_ListObjAppendElement(interp, resultPtr, pathPtr);
 	    }
 	}
 	return TCL_OK;
     } else {
 	char drivePat[] = "?:\\";
-	const char *message;
-	CONST char *dir;
-	int dirLength;
-	Tcl_DString dirString;
 	DWORD attr;
 	HANDLE handle;
 	WIN32_FIND_DATAT data;
-	BOOL found;
-	Tcl_DString ds;
-	Tcl_DString dsOrig;
-	Tcl_Obj *fileNamePtr;
+	CONST char *dirName;
+	int dirLength;
 	int matchSpecialDots;
-	
+	Tcl_DString ds;        /* native encoding of dir */
+	Tcl_DString dsOrig;    /* utf-8 encoding of dir */
+	Tcl_DString dirString; /* utf-8 encoding of dir with \'s */
+	Tcl_Obj *fileNamePtr;
+
 	/*
 	 * Convert the path to normalized form since some interfaces only
 	 * accept backslashes.  Also, ensure that the directory ends with a
@@ -725,9 +722,8 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 	    return TCL_ERROR;
 	}
 	Tcl_DStringInit(&dsOrig);
-	Tcl_DStringAppend(&dsOrig, Tcl_GetString(fileNamePtr), -1);
-
-	dirLength = Tcl_DStringLength(&dsOrig);
+	dirName = Tcl_GetStringFromObj(fileNamePtr, &dirLength);
+	Tcl_DStringAppend(&dsOrig, dirName, dirLength);
 	
 	Tcl_DStringInit(&dirString);
 	if (dirLength == 0) {
@@ -735,8 +731,7 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 	} else {
 	    char *p;
 
-	    Tcl_DStringAppend(&dirString, Tcl_DStringValue(&dsOrig),
-		    Tcl_DStringLength(&dsOrig));
+	    Tcl_DStringAppend(&dirString, dirName, dirLength);
 	    for (p = Tcl_DStringValue(&dirString); *p != '\0'; p++) {
 		if (*p == '/') {
 		    *p = '\\';
@@ -750,19 +745,41 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 		dirLength++;
 	    }
 	}
-	dir = Tcl_DStringValue(&dirString);
+	dirName = Tcl_DStringValue(&dirString);
 
 	/*
 	 * First verify that the specified path is actually a directory.
 	 */
 
-	nativeName = Tcl_WinUtfToTChar(dir, Tcl_DStringLength(&dirString), &ds);
-	attr = (*tclWinProcs->getFileAttributesProc)(nativeName);
+	native = Tcl_WinUtfToTChar(dirName, Tcl_DStringLength(&dirString),
+		&ds);
+	attr = (*tclWinProcs->getFileAttributesProc)(native);
 	Tcl_DStringFree(&ds);
 
 	if ((attr == 0xffffffff) || ((attr & FILE_ATTRIBUTE_DIRECTORY) == 0)) {
 	    Tcl_DStringFree(&dirString);
 	    return TCL_OK;
+	}
+
+	/*
+	 * We need to check all files in the directory, so append a *.*
+	 * to the path. 
+	 */
+
+	dirName = Tcl_DStringAppend(&dirString, "*.*", 3);
+	native = Tcl_WinUtfToTChar(dirName, -1, &ds);
+	handle = (*tclWinProcs->findFirstFileProc)(native, &data);
+	Tcl_DStringFree(&ds);
+
+	if (handle == INVALID_HANDLE_VALUE) {
+	    Tcl_DStringFree(&dirString);
+	    TclWinConvertError(GetLastError());
+	    Tcl_ResetResult(interp);
+	    Tcl_AppendResult(interp, "couldn't read directory \"",
+		    Tcl_DStringValue(&dsOrig), "\": ", 
+		    Tcl_PosixError(interp), (char *) NULL);
+	    Tcl_DStringFree(&dsOrig);
+	    return TCL_ERROR;
 	}
 
 	/*
@@ -782,59 +799,40 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 	}
 
 	/*
-	 * We need to check all files in the directory, so append a *.*
-	 * to the path. 
+	 * Now iterate over all of the files in the directory, starting
+	 * with the first one we found.
 	 */
 
-	dir = Tcl_DStringAppend(&dirString, "*.*", 3);
-	nativeName = Tcl_WinUtfToTChar(dir, -1, &ds);
-	handle = (*tclWinProcs->findFirstFileProc)(nativeName, &data);
-	Tcl_DStringFree(&ds);
-
-	if (handle == INVALID_HANDLE_VALUE) {
-	    message = "couldn't read directory \"";
-	    goto error;
-	}
-
-	/*
-	 * Now iterate over all of the files in the directory.
-	 */
-
-	for (found = 1; found != 0; 
-		found = (*tclWinProcs->findNextFileProc)(handle, &data)) {
-	    CONST char *name, *fullname;
+	do {
+	    CONST char *utfname;
 	    int checkDrive = 0;
 	    int isDrive;
 	    DWORD attr;
 	    
 	    if (tclWinProcs->useWide) {
-		nativeName = (CONST TCHAR *) data.w.cFileName;
+		native = (CONST TCHAR *) data.w.cFileName;
 		attr = data.w.dwFileAttributes;
 	    } else {
-		nativeName = (CONST TCHAR *) data.a.cFileName;
+		native = (CONST TCHAR *) data.a.cFileName;
 		attr = data.a.dwFileAttributes;
 	    }
 	    
-	    name = Tcl_WinTCharToUtf(nativeName, -1, &ds);
+	    utfname = Tcl_WinTCharToUtf(native, -1, &ds);
 
 	    if (!matchSpecialDots) {
 		/* If it is exactly '.' or '..' then we ignore it */
-		if (name[0] == '.') {
-		    if (name[1] == '\0' 
-		      || (name[1] == '.' && name[2] == '\0')) {
-			Tcl_DStringFree(&ds);
-			continue;
-		    }
+		if ((utfname[0] == '.') && (utfname[1] == '\0' 
+			|| (utfname[1] == '.' && utfname[2] == '\0'))) {
+		    Tcl_DStringFree(&ds);
+		    continue;
 		}
-	    } else {
-		if (name[0] == '.' && name[1] == '.' && name[2] == '\0') {
-		    /* 
-		     * Have to check if this is a drive below, so
-		     * we can correctly match 'hidden' and not hidden
-		     * files.
-		     */
-		    checkDrive = 1;
-		}
+	    } else if (utfname[0] == '.' && utfname[1] == '.'
+		    && utfname[2] == '\0') {
+		/* 
+		 * Have to check if this is a drive below, so we can
+		 * correctly match 'hidden' and not hidden files.
+		 */
+		checkDrive = 1;
 	    }
 	    
 	    /*
@@ -849,57 +847,38 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 	     * the system.
 	     */
 
-	    if (Tcl_StringCaseMatch(name, pattern, 1) == 0) {
-		Tcl_DStringFree(&ds);
-		continue;
+	    if (Tcl_StringCaseMatch(utfname, pattern, 1)) {
+		/*
+		 * If the file matches, then we need to process the remainder
+		 * of the path.
+		 */
+
+		if (checkDrive) {
+		    CONST char *fullname = Tcl_DStringAppend(&dsOrig, utfname,
+			    Tcl_DStringLength(&ds));
+		    isDrive = WinIsDrive(fullname, Tcl_DStringLength(&dsOrig));
+		    Tcl_DStringSetLength(&dsOrig, dirLength);
+		} else {
+		    isDrive = 0;
+		}
+		if (NativeMatchType(isDrive, attr, native, types)) {
+		    Tcl_ListObjAppendElement(interp, resultPtr, 
+			    TclNewFSPathObj(pathPtr, utfname,
+				    Tcl_DStringLength(&ds)));
+		}
 	    }
 
 	    /*
-	     * If the file matches, then we need to process the remainder
-	     * of the path.
+	     * Free ds here to ensure that native is valid above.
 	     */
-
-	    Tcl_DStringAppend(&dsOrig, name, -1);
 	    Tcl_DStringFree(&ds);
-
-	    fullname = Tcl_DStringValue(&dsOrig);
-	    nativeName = Tcl_WinUtfToTChar(fullname, 
-					   Tcl_DStringLength(&dsOrig), &ds);
-	    
-	    if (checkDrive) {
-		isDrive = WinIsDrive(fullname, Tcl_DStringLength(&dsOrig));
-	    } else {
-		isDrive = 0;
-	    }
-	    if (NativeMatchType(isDrive, attr, nativeName, types)) {
-		Tcl_ListObjAppendElement(interp, resultPtr, 
-		  Tcl_NewStringObj(fullname, Tcl_DStringLength(&dsOrig)));
-	    }
-	    /*
-	     * Free ds here to ensure that nativeName is valid above.
-	     */
-
-	    Tcl_DStringFree(&ds);
-
-	    Tcl_DStringSetLength(&dsOrig, dirLength);
-	}
+	} while ((*tclWinProcs->findNextFileProc)(handle, &data) == TRUE);
 
 	FindClose(handle);
 	Tcl_DStringFree(&dirString);
 	Tcl_DStringFree(&dsOrig);
-
 	return TCL_OK;
-	
-        error:
-	Tcl_DStringFree(&dirString);
-	TclWinConvertError(GetLastError());
-	Tcl_ResetResult(interp);
-	Tcl_AppendResult(interp, message, Tcl_DStringValue(&dsOrig), "\": ", 
-			 Tcl_PosixError(interp), (char *) NULL);
-			 Tcl_DStringFree(&dsOrig);
-	return TCL_ERROR;
     }
-
 }
 
 /* 
@@ -999,7 +978,7 @@ NativeMatchType(
 	if (attr & FILE_ATTRIBUTE_HIDDEN && !isDrive) {
 	    /* If invisible */
 	    if ((types->perm == 0) || 
-	      !(types->perm & TCL_GLOB_PERM_HIDDEN)) {
+		    !(types->perm & TCL_GLOB_PERM_HIDDEN)) {
 		return 0;
 	    }
 	} else {
@@ -2047,7 +2026,7 @@ TclpObjNormalizePath(interp, pathPtr, nextCheckpoint)
 	int isDrive = 1;
 	Tcl_DString ds;
 
-	currentPathEndPosition = path + nextCheckpoint;
+	currentPathEndPosition = path + nextCheckpoint + 1;
 	while (1) {
 	    char cur = *currentPathEndPosition;
 	    if ((cur == '/' || cur == 0) && (path != currentPathEndPosition)) {
@@ -2116,7 +2095,7 @@ TclpObjNormalizePath(interp, pathPtr, nextCheckpoint)
 	int isDrive = 1;
 	Tcl_DString ds;
 
-	currentPathEndPosition = path + nextCheckpoint;
+	currentPathEndPosition = path + nextCheckpoint + 1;
 	while (1) {
 	    char cur = *currentPathEndPosition;
 	    if ((cur == '/' || cur == 0) && (path != currentPathEndPosition)) {

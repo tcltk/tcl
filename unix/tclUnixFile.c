@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFile.c,v 1.29 2003/01/09 10:38:34 vincentdarley Exp $
+ * RCS: @(#) $Id: tclUnixFile.c,v 1.30 2003/02/10 10:26:26 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -217,25 +217,25 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
     
     if (pattern == NULL || (*pattern == '\0')) {
 	/* Match a file directly */
-	CONST char *native = (CONST char*) Tcl_FSGetNativePath(pathPtr);
+	native = (CONST char*) Tcl_FSGetNativePath(pathPtr);
 	if (NativeMatchType(native, types)) {
 	    Tcl_ListObjAppendElement(interp, resultPtr, pathPtr);
 	}
 	return TCL_OK;
     } else {
-	CONST char *fname, *dirName;
 	DIR *d;
-	Tcl_DString ds;
-	Tcl_StatBuf statBuf;
+	Tcl_DirEntry *entryPtr;
+	CONST char *dirName;
+	int dirLength;
 	int matchHidden;
 	int nativeDirLen;
-	int result = TCL_OK;
-	Tcl_DString dsOrig;
-	int baseLength;
-	
+	Tcl_StatBuf statBuf;
+	Tcl_DString ds;      /* native encoding of dir */
+	Tcl_DString dsOrig;  /* utf-8 encoding of dir */
+
 	Tcl_DStringInit(&dsOrig);
-	Tcl_DStringAppend(&dsOrig, Tcl_GetString(fileNamePtr), -1);
-	baseLength = Tcl_DStringLength(&dsOrig);
+	dirName = Tcl_GetStringFromObj(fileNamePtr, &dirLength);
+	Tcl_DStringAppend(&dsOrig, dirName, dirLength);
 	
 	/*
 	 * Make sure that the directory part of the name really is a
@@ -245,26 +245,15 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 	 * otherwise "glob foo.c" would return "./foo.c".
 	 */
 
-	if (baseLength == 0) {
+	if (dirLength == 0) {
 	    dirName = ".";
 	} else {
 	    dirName = Tcl_DStringValue(&dsOrig);
 	    /* Make sure we have a trailing directory delimiter */
-	    if (dirName[baseLength-1] != '/') {
+	    if (dirName[dirLength-1] != '/') {
 		dirName = Tcl_DStringAppend(&dsOrig, "/", 1);
-		baseLength++;
+		dirLength++;
 	    }
-	}
-	
-	/*
-	 * Check to see if the pattern needs to compare with hidden files.
-	 */
-
-	if ((pattern[0] == '.')
-		|| ((pattern[0] == '\\') && (pattern[1] == '.'))) {
-	    matchHidden = 1;
-	} else {
-	    matchHidden = 0;
 	}
 
 	/*
@@ -282,41 +271,32 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 
 	d = opendir(native);				/* INTL: Native. */
 	if (d == NULL) {
-	    char savedChar = '\0';
-	    Tcl_ResetResult(interp);
 	    Tcl_DStringFree(&ds);
-
-	    /*
-	     * Strip off a trailing '/' if necessary, before reporting the error.
-	     */
-
-	    if (baseLength > 0) {
-		savedChar = (Tcl_DStringValue(&dsOrig))[baseLength-1];
-		if (savedChar == '/') {
-		    (Tcl_DStringValue(&dsOrig))[baseLength-1] = '\0';
-		}
-	    }
+	    Tcl_ResetResult(interp);
 	    Tcl_AppendResult(interp, "couldn't read directory \"",
 		    Tcl_DStringValue(&dsOrig), "\": ",
 		    Tcl_PosixError(interp), (char *) NULL);
-	    if (baseLength > 0) {
-		(Tcl_DStringValue(&dsOrig))[baseLength-1] = savedChar;
-	    }
 	    Tcl_DStringFree(&dsOrig);
 	    return TCL_ERROR;
 	}
 
 	nativeDirLen = Tcl_DStringLength(&ds);
 
-	while (1) {
+	/*
+	 * Check to see if the pattern needs to compare with hidden files.
+	 */
+
+	if ((pattern[0] == '.')
+		|| ((pattern[0] == '\\') && (pattern[1] == '.'))) {
+	    matchHidden = 1;
+	} else {
+	    matchHidden = 0;
+	}
+
+	while ((entryPtr = TclOSreaddir(d)) != NULL) { /* INTL: Native. */
 	    Tcl_DString utfDs;
-	    CONST char *utf;
-	    Tcl_DirEntry *entryPtr;
+	    CONST char *utfname;
 	    
-	    entryPtr = TclOSreaddir(d);			/* INTL: Native. */
-	    if (entryPtr == NULL) {
-		break;
-	    }
 	    if (types != NULL && (types->perm & TCL_GLOB_PERM_HIDDEN)) {
 		/* 
 		 * We explicitly asked for hidden files, so turn around
@@ -338,22 +318,20 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 	     * and pattern.  If so, add the file to the result.
 	     */
 
-	    utf = Tcl_ExternalToUtfDString(NULL, entryPtr->d_name, -1, &utfDs);
-	    if (Tcl_StringMatch(utf, pattern) != 0) {
+	    utfname = Tcl_ExternalToUtfDString(NULL, entryPtr->d_name,
+		    -1, &utfDs);
+	    if (Tcl_StringCaseMatch(utfname, pattern, 0)) {
 		int typeOk = 1;
 
-		Tcl_DStringSetLength(&dsOrig, baseLength);
-		Tcl_DStringAppend(&dsOrig, utf, -1);
-		fname = Tcl_DStringValue(&dsOrig);
 		if (types != NULL) {
-		    char *nativeEntry;
 		    Tcl_DStringSetLength(&ds, nativeDirLen);
-		    nativeEntry = Tcl_DStringAppend(&ds, entryPtr->d_name, -1);
-		    typeOk = NativeMatchType(nativeEntry, types);
+		    native = Tcl_DStringAppend(&ds, entryPtr->d_name, -1);
+		    typeOk = NativeMatchType(native, types);
 		}
 		if (typeOk) {
 		    Tcl_ListObjAppendElement(interp, resultPtr, 
-			    Tcl_NewStringObj(fname, Tcl_DStringLength(&dsOrig)));
+			    TclNewFSPathObj(pathPtr, utfname,
+				    Tcl_DStringLength(&utfDs)));
 		}
 	    }
 	    Tcl_DStringFree(&utfDs);
@@ -362,7 +340,7 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 	closedir(d);
 	Tcl_DStringFree(&ds);
 	Tcl_DStringFree(&dsOrig);
-	return result;
+	return TCL_OK;
     }
 }
 static int 
