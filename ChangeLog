@@ -1,3 +1,10 @@
+2002-06-28  Don Porter  <dgp@users.sourceforge.net>
+
+	* docs/tcltest.n:	Doc revisions in progress.
+	* library/tcltest/tcltest.tcl: Corrected -testdir default value.
+	Was not reliable, and disagreed with docs!  Thanks to Hemang Lavana.
+	[Bug 575150]
+
 2002-06-28  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* unix/tclUnixThrd.c:	Renamed the Tcl_Platform* #defines to

@@ -16,7 +16,7 @@
 # Contributions from Don Porter, NIST, 2002.  (not subject to US copyright)
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.tcl,v 1.59 2002/06/27 17:31:05 dgp Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.60 2002/06/28 19:22:55 dgp Exp $
 
 package require Tcl 8.3		;# uses [glob -directory]
 namespace eval tcltest {
@@ -406,11 +406,19 @@ namespace eval tcltest {
 	variable OptionControlledVariables
 	set Usage($option) $usage
 	set Verify($option) $verify
-	set Option($option) [$verify $value]
+	if {[catch {$verify $value} msg]} {
+	    return -code error $msg
+	} else {
+	    set Option($option) $msg
+	}
 	if {[string length $varName]} {
 	    variable $varName
 	    if {[info exists $varName]} {
-		set Option($option) [$verify [set $varName]]
+		if {[catch {$verify [set $varName]} msg]} {
+		    return -code error $msg
+		} else {
+		    set Option($option) $msg
+		}
 		unset $varName
 	    }
 	    namespace eval [namespace current] \
@@ -658,7 +666,7 @@ namespace eval tcltest {
     # Tests should not rely on the current working directory.
     # Files that are part of the test suite should be accessed relative
     # to [testsDirectory]
-    Option -testdir [file join [file dirname [info script]] .. ..  tests] {
+    Option -testdir [workingDirectory] {
 	Search tests in the specified directory.
     } AcceptDirectory testsDirectory
     trace variable Option(-testdir) w \
