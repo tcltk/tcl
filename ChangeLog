@@ -1,3 +1,11 @@
+2002-08-19  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
+
+	* unix/tclUnixTest.c (TestfilehandlerCmd): Changed
+	  readable/writable to the more common readable|writable.
+
+	  Fixes SF #596034 reported by Larry Virden
+	  <lvirden@users.sourceforge.net>.
+
 2002-08-16  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* tests/fCmd.test: Added test to make sure that the cause of the
