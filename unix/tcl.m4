@@ -1067,7 +1067,7 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    EXTRA_CFLAGS=""
 	    LDFLAGS=""
 	    ;;
-	IRIX-6.*|IRIX64-6.5*)
+	IRIX-6.*)
 	    SHLIB_CFLAGS=""
 	    SHLIB_LD="ld -n32 -shared -rdata_shared"
 	    SHLIB_LD_LIBS='${LIBS}'
