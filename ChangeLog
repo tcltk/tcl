@@ -1,3 +1,7 @@
+2004-08-27  Daniel Steffen  <das@users.sourceforge.net>
+
+	* tests/env.test: macosx fixes.
+
 2004-08-19  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclScan.c (Tcl_ScanObjCmd, ValidateFormat): Ensure that
