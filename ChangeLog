@@ -1,5 +1,10 @@
 2004-09-30  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclBasic.c (Tcl_CreateInterp): Removed the flag bit value
+	* generic/tclInt.h (Interp):	EXPR_INITIALIZED.  It was set during
+	interp creation and never tested.  Whatever purpose it had is in
+	the past.
+
 	* generic/tclBasic.c (Tcl_EvalObjEx):	Removed the flag bit value
 	* generic/tclInt.h (Interp):	USE_EVAL_DIRECT.  It was used only
 	* generic/tcLTest.c (TestevalexObjCmd):	in the testing command
