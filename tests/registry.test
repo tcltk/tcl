@@ -10,7 +10,7 @@
 # Copyright (c) 1997 by Sun Microsystems, Inc.  All rights reserved.
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 #
-# RCS: @(#) $Id: registry.test,v 1.14 2003/03/19 05:23:46 dgp Exp $
+# RCS: @(#) $Id: registry.test,v 1.15 2004/03/04 23:02:01 patthoyts Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -238,7 +238,7 @@ test registry-4.7 {GetKeyNames: Unicode} {pcOnly english} {
     registry delete HKEY_CLASSES_ROOT\\TclFoobar
     set result
 } "baz\u00c7bar blat"
-test registry-4.8 {GetKeyNames: Unicode} {pcOnly} {
+test registry-4.8 {GetKeyNames: Unicode} {pcOnly nt} {
     registry delete HKEY_CLASSES_ROOT\\TclFoobar
     registry set HKEY_CLASSES_ROOT\\TclFoobar\\baz\u30b7bar
     registry set HKEY_CLASSES_ROOT\\TclFoobar\\blat
@@ -428,7 +428,7 @@ test registry-6.17 {GetValue: Unicode value names} {pcOnly} {
     registry delete HKEY_CLASSES_ROOT\\TclFoobar
     set result
 } foobar
-test registry-6.18 {GetValue: values with Unicode strings} {pcOnly} {
+test registry-6.18 {GetValue: values with Unicode strings} {pcOnly nt} {
     registry set HKEY_CLASSES_ROOT\\TclFoobar val1 {foo ba\u30b7r baz} multi_sz
     set result [registry get HKEY_CLASSES_ROOT\\TclFoobar val1]
     registry delete HKEY_CLASSES_ROOT\\TclFoobar
