@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.25 2002/02/15 14:28:48 dkf Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.26 2002/03/29 21:01:11 dgp Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -748,7 +748,7 @@ EXTERN int              TclInterpReady _ANSI_ARGS_((Tcl_Interp *interp));
  */
 
 EXTERN int		TclCompEvalObj _ANSI_ARGS_((Tcl_Interp *interp,
-			    Tcl_Obj *objPtr, int engineCall));
+			    Tcl_Obj *objPtr));
 
 /*
  *----------------------------------------------------------------
