@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Notifier.3,v 1.9 2002/07/01 18:24:39 jenglish Exp $
+'\" RCS: @(#) $Id: Notifier.3,v 1.10 2004/10/07 14:44:33 dkf Exp $
 '\" 
 .so man.macros
 .TH Notifier 3 8.1 Tcl "Tcl Library Procedures"
@@ -65,7 +65,7 @@ int
 int
 \fBTcl_GetServiceMode\fR()
 .sp
-int		
+int
 \fBTcl_SetServiceMode\fR(\fImode\fR)
 .VE
 
@@ -235,8 +235,8 @@ the event source.
 \fISetupProc\fR should match the following prototype:
 .CS
 typedef void Tcl_EventSetupProc(
-	ClientData \fIclientData\fR,
-	int \fIflags\fR);
+        ClientData \fIclientData\fR,
+        int \fIflags\fR);
 .CE
 The \fIclientData\fR argument will be the same as the \fIclientData\fR
 argument to \fBTcl_CreateEventSource\fR;  it is typically used to
@@ -276,8 +276,8 @@ a structure that describes a time interval in seconds and
 microseconds:
 .CS
 typedef struct Tcl_Time {
-	long \fIsec\fR;
-	long \fIusec\fR;
+        long \fIsec\fR;
+        long \fIusec\fR;
 } Tcl_Time;
 .CE
 The \fIusec\fR field should be less than 1000000.
@@ -315,8 +315,8 @@ procedure, indicated by the \fIcheckProc\fR argument to
 following prototype:
 .CS
 typedef void Tcl_EventCheckProc(
-	ClientData \fIclientData\fR,
-	int \fIflags\fR);
+        ClientData \fIclientData\fR,
+        int \fIflags\fR);
 .CE
 The arguments to this procedure are the same as those for \fIsetupProc\fR.
 \fBCheckProc\fR is invoked by \fBTcl_DoOneEvent\fR after it has waited
@@ -373,8 +373,8 @@ in the first queued \fBTcl_Event\fR structure.
 \fIProc\fR must match the following prototype:
 .CS
 typedef int Tcl_EventProc(
-	Tcl_Event *\fIevPtr\fR,
-	int \fIflags\fR);
+        Tcl_Event *\fIevPtr\fR,
+        int \fIflags\fR);
 .CE
 The first argument to \fIproc\fR is a pointer to the event, which will
 be the same as the first argument to the \fBTcl_QueueEvent\fR call that
@@ -434,8 +434,8 @@ returns 1.  Events for which the procedure returns 0 are left in the
 queue.  \fIProc\fR should match the following prototype:
 .CS
 typedef int Tcl_EventDeleteProc(
-	Tcl_Event *\fIevPtr\fR,
-	ClientData \fIclientData\fR);
+        Tcl_Event *\fIevPtr\fR,
+        ClientData \fIclientData\fR);
 .CE
 The \fIclientData\fR argument will be the same as the \fIclientData\fR
 argument to \fBTcl_DeleteEvents\fR; it is typically used to point to
