@@ -8,7 +8,7 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 #
-# RCS: @(#) $Id: pkgMkIndex.test,v 1.16 2000/04/10 17:19:03 ericm Exp $
+# RCS: @(#) $Id: pkgMkIndex.test,v 1.17 2000/07/19 21:40:57 ericm Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -361,6 +361,26 @@ test pkgMkIndex-12.1 {same name procs in different namespace} {
 test pkgMkIndex-13.1 {proc names with embedded spaces} {
     pkgtest::runIndex -lazy $fullPkgPath spacename.tcl
 } {0 {{spacename:1.0 {tclPkgSetup {spacename.tcl source {{a b} {c d}}}}}}}
+
+# Test the pkg_compareExtension helper function
+test pkgMkIndex-14.1 {pkg_compareExtension} {unixOnly} {
+    pkg_compareExtension foo.so .so
+} 1
+test pkgMkIndex-14.2 {pkg_compareExtension} {unixOnly} {
+    pkg_compareExtension foo.so.bar .so
+} 0
+test pkgMkIndex-14.3 {pkg_compareExtension} {unixOnly} {
+    pkg_compareExtension foo.so.1 .so
+} 1
+test pkgMkIndex-14.4 {pkg_compareExtension} {unixOnly} {
+    pkg_compareExtension foo.so.1.2 .so
+} 1
+test pkgMkIndex-14.5 {pkg_compareExtension} {unixOnly} {
+    pkg_compareExtension foo .so
+} 0
+test pkgMkIndex-14.6 {pkg_compareExtension} {unixOnly} {
+    pkg_compareExtension foo.so.1.2.bar .so
+} 0
 
 # cleanup
 

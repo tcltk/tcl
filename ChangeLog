@@ -1,5 +1,12 @@
 2000-07-19  Eric Melski  <ericm@ajubasolutions.com>
 
+	* tests/pkgMkIndex.test: Added tests for pkg_compareExtension.
+
+	* library/package.tcl: Enhanced pkg_compareExtension to handle
+	Unixes which tack the version number on to the end of library
+	names (eg, foo.so.1.2); such filenames will be correctly matched.
+	(Patch from Vince Darley).
+
 	* win/makefile.vc: Applied patch from Don Porter to provide better
 	nmake support for NT/Alpha [RFE: 5938].
 

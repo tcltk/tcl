@@ -3,7 +3,7 @@
 # utility procs formerly in init.tcl which can be loaded on demand
 # for package management.
 #
-# RCS: @(#) $Id: package.tcl,v 1.14 2000/04/23 03:36:51 jingham Exp $
+# RCS: @(#) $Id: package.tcl,v 1.15 2000/07/19 21:40:57 ericm Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1998 Sun Microsystems, Inc.
@@ -33,13 +33,30 @@ namespace eval ::pkg {
 
 proc pkg_compareExtension { fileName {ext {}} } {
     global tcl_platform
-    if {[string length $ext] == 0} {
-	set ext [info sharedlibextension]
-    }
+    if {![string length $ext]} {set ext [info sharedlibextension]}
     if {[string equal $tcl_platform(platform) "windows"]} {
-	return [string equal -nocase [file extension $fileName] $ext]
+        return [string equal -nocase [file extension $fileName] $ext]
     } else {
-	return [string equal [file extension $fileName] $ext]
+        # Some unices add trailing numbers after the .so, so
+        # we could have something like '.so.1.2'.
+        set root $fileName
+        while {1} {
+            set currExt [file extension $root]
+            if {[string equal $currExt $ext]} {
+                return 1
+            } 
+
+	    # The current extension does not match; if it is not a numeric
+	    # value, quit, as we are only looking to ignore version number
+	    # extensions.  Otherwise we might return 1 in this case:
+	    #		pkg_compareExtension foo.so.bar .so
+	    # which should not match.
+
+	    if { ![string is integer -strict [string range $currExt 1 end]] } {
+		return 0
+	    }
+            set root [file rootname $root]
+	}
     }
 }
 
