@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.61 2003/02/15 20:24:10 kennykb Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.62 2003/02/18 10:13:25 vincentdarley Exp $
  */
 
 #define TCL_TEST
@@ -6263,15 +6263,15 @@ static Tcl_Interp *simpleInterpPtr = NULL;
 static Tcl_Obj *tempFile = NULL;
 
 /* 
- * This is a very 'hacky' filesystem which is used just so 
+ * This is a very 'hacky' filesystem which is used just to 
  * test two important features of the vfs code: (1) that
  * you can load a shared library from a vfs, (2) that when
  * copying files from one fs to another, the 'mtime' is
  * preserved.
  * 
- * It reates any file in 'simplefs:/' as a real file, and
+ * It treats any file in 'simplefs:/' as a file, and
  * artificially creates a real file on the fly which it uses
- * to extract information from.  The real file is uses is
+ * to extract information from.  The real file it uses is
  * whatever follows the trailing '/' (e.g. 'foo' in 'simplefs:/foo'),
  * and that file is assumed to exist in the native pwd, and is
  * copied over to the native temporary directory where it is
@@ -6379,13 +6379,17 @@ SimpleOpenFileChannel(interp, pathPtr, mode, permissions)
     }
     
     chan = Tcl_FSOpenFileChannel(interp, tempPtr, "r", permissions);
-    /* When we are done with this file, it will never be deleted */
+
     if (tempFile != NULL) {
         Tcl_FSDeleteFile(tempFile);
 	Tcl_DecrRefCount(tempFile);
+	tempFile = NULL;
     }
+    /* 
+     * Store file pointer in this global variable so we can delete
+     * it later 
+     */
     tempFile = tempPtr;
-
     return chan;
 }
 
