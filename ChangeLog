@@ -1,3 +1,10 @@
+2004-09-07  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tclTimer.c: Removed a premature optimisation that
+	attempted to store the assoc data in the client data; the
+	optimisation caused a bug that [after] would overwrite
+	its imports.  [Bug 1016167]
+	
 2004-09-02  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* doc/lsearch.n: Clarified meaning of -dictionary. [Bug 759545]
