@@ -2,7 +2,7 @@
 
 	Overall change:  Added support for command rename/delete traces
 	and new trace syntax, from patch from Vince Darley.  Added support
-	for array traces for variables.
+	for array traces for variables.  [RFE: 5048, 5967].
 
 	* doc/trace.n: Updated documentation for new syntax; flagged old
 	syntax as deprecated; added documentation for command
