@@ -1,3 +1,8 @@
+2005-03-01  David N. Welton  <davidw@dedasys.com>
+
+	* doc/CrtSlave.3: Changed to Tcl_Object to Tcl_Obj in the man
+	page.
+
 2005-02-24  Don Porter  <dgp@users.sourceforge.net>
 
         * library/tcltest/tcltest.tcl:  Better use of [glob -types] to avoid
