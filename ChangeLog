@@ -1,3 +1,9 @@
+2002-07-31  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* tests/expr.test (expr-22.*): Marked as non-portable because it
+	seems that these tests have an annoying tendency to fail in
+	unexpected ways.  [Bugs 584825, 584950, 585986]
+
 2002-07-30  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
 
 	* tests/io.test: 
