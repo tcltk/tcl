@@ -1,5 +1,11 @@
 2004-07-15  Andreas Kupries  <andreask@activestate.com>
 
+	* unix/tclUnixThrd.c (TclpFinalizeMutex): Accepted Joe
+	  Mistachkin's patch for [Tcl SF Bug 99453], closing leakage of
+	  mutexes. They were not destroyed properly upon finalization.
+
+2004-07-15  Andreas Kupries  <andreask@activestate.com>
+
 	* generic/tclIO.h (CHANNEL_INCLOSE):       New flag. Set in
 	* generic/tclIO.c (Tcl_UnregisterChannel): 'Tcl_Close' while the
 	* generic/tclIO.c (Tcl_Close):             close callbacks are
