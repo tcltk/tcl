@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: CrtInterp.3,v 1.2 1998/09/14 18:39:47 stanton Exp $
+'\" RCS: @(#) $Id: CrtInterp.3,v 1.3 1999/06/24 21:15:13 jpeek Exp $
 '\" 
 .so man.macros
 .TH Tcl_CreateInterp 3 7.5 Tcl "Tcl Library Procedures"
@@ -36,7 +36,7 @@ a token for it.  The token is required in calls to most other Tcl
 procedures, such as \fBTcl_CreateCommand\fR, \fBTcl_Eval\fR, and
 \fBTcl_DeleteInterp\fR.
 Clients are only allowed to access a few of the fields of
-Tcl_Interp structures;  see the Tcl_Interp
+Tcl_Interp structures;  see the \fBTcl_Interp\fR
 and \fBTcl_CreateCommand\fR man pages for details.
 The new interpreter is initialized with no defined variables and only
 the built-in Tcl commands.  To bind in additional commands, call

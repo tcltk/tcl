@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: switch.n,v 1.2 1998/09/14 18:39:55 stanton Exp $
+'\" RCS: @(#) $Id: switch.n,v 1.3 1999/06/24 21:15:14 jpeek Exp $
 '\" 
 .so man.macros
 .TH switch n 7.0 Tcl "Tcl Built-In Commands"
@@ -47,7 +47,7 @@ When matching \fIstring\fR to the patterns, use glob-style matching
 \fB\-regexp\fR
 When matching \fIstring\fR to the patterns, use regular
 expression matching
-(i.e. the same as implemented by the \fBregexp\fR command).
+(as described in the \fBre_syntax\fR reference page).
 .TP 10
 \fB\-\|\-\fR
 Marks the end of options.  The argument following this one will
