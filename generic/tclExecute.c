@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.157 2004/10/15 04:01:29 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.158 2004/10/18 21:15:38 dgp Exp $
  */
 
 #ifdef STDC_HEADERS
@@ -983,11 +983,6 @@ TclCompEvalObj(interp, objPtr)
      */
 
     codePtr->refCount++;
-    if (iPtr->returnOpts != iPtr->defaultReturnOpts) {
-	Tcl_DecrRefCount(iPtr->returnOpts);
-	iPtr->returnOpts = iPtr->defaultReturnOpts;
-	Tcl_IncrRefCount(iPtr->returnOpts);
-    }
     result = TclExecuteByteCode(interp, codePtr);
     codePtr->refCount--;
     if (codePtr->refCount <= 0) {

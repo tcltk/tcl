@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.127 2004/10/15 15:42:52 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.128 2004/10/18 21:15:34 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -233,13 +233,7 @@ Tcl_CreateInterp()
     Tcl_IncrRefCount(iPtr->returnLevelKey);
     iPtr->returnOptionsKey = Tcl_NewStringObj("-options",-1);
     Tcl_IncrRefCount(iPtr->returnOptionsKey);
-    iPtr->defaultReturnOpts = Tcl_NewDictObj();
-    Tcl_DictObjPut(NULL, iPtr->defaultReturnOpts,
-	    iPtr->returnCodeKey, Tcl_NewIntObj(TCL_OK));
-    Tcl_DictObjPut(NULL, iPtr->defaultReturnOpts,
-	    iPtr->returnLevelKey, Tcl_NewIntObj(1));
-    Tcl_IncrRefCount(iPtr->defaultReturnOpts);
-    iPtr->returnOpts = iPtr->defaultReturnOpts;
+    iPtr->returnOpts = Tcl_NewObj();
     Tcl_IncrRefCount(iPtr->returnOpts);
     iPtr->errorInfo = NULL;
     iPtr->eiVar = Tcl_NewStringObj("errorInfo", -1);
@@ -247,6 +241,8 @@ Tcl_CreateInterp()
     iPtr->errorCode = NULL;
     iPtr->ecVar = Tcl_NewStringObj("errorCode", -1);
     Tcl_IncrRefCount(iPtr->ecVar);
+    iPtr->returnLevel = 0;
+    iPtr->returnCode = TCL_OK;
 
     iPtr->appendResult = NULL;
     iPtr->appendAvl = 0;
@@ -994,7 +990,6 @@ DeleteInterpProc(interp)
 	iPtr->errorInfo = NULL;
     }
     Tcl_DecrRefCount(iPtr->returnOpts);
-    Tcl_DecrRefCount(iPtr->defaultReturnOpts);
     Tcl_DecrRefCount(iPtr->returnCodeKey);
     Tcl_DecrRefCount(iPtr->returnErrorcodeKey);
     Tcl_DecrRefCount(iPtr->returnErrorinfoKey);
