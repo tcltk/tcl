@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThread.c,v 1.1.2.4 1998/12/01 05:01:02 stanton Exp $
+ * RCS: @(#) $Id: tclThread.c,v 1.1.2.5 1998/12/10 21:57:48 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -51,8 +51,10 @@ static Tcl_Condition *condList[] = NULL;
  * Prototypes of functions used only in this file
  */
  
-void TclRememberSyncObject(char *objPtr, SyncObjRecord *recPtr);
-void TclForgetSyncObject(char *objPtr, SyncObjRecord *recPtr);
+static void		RememberSyncObject _ANSI_ARGS_((char *objPtr,
+			    SyncObjRecord *recPtr));
+static void		ForgetSyncObject _ANSI_ARGS_((char *objPtr,
+			    SyncObjRecord *recPtr));
 
 
 /*
@@ -205,7 +207,7 @@ TclThreadDataKeySet(keyPtr, data)
 /*
  *----------------------------------------------------------------------
  *
- * TclRememberSyncObject
+ * RememberSyncObject
  *
  *      Keep a list of (mutexes/condition variable/data key)
  *	used during finalization.
@@ -219,8 +221,8 @@ TclThreadDataKeySet(keyPtr, data)
  *----------------------------------------------------------------------
  */
 
-void
-TclRememberSyncObject(objPtr, recPtr)
+static void
+RememberSyncObject(objPtr, recPtr)
     char *objPtr;		/* Pointer to sync object */
     SyncObjRecord *recPtr;	/* Record of sync objects */
 {
@@ -254,7 +256,7 @@ TclRememberSyncObject(objPtr, recPtr)
 /*
  *----------------------------------------------------------------------
  *
- * TclForgetSyncObject
+ * ForgetSyncObject
  *
  *      Remove a single object from the list.
  *
@@ -267,8 +269,8 @@ TclRememberSyncObject(objPtr, recPtr)
  *----------------------------------------------------------------------
  */
 
-void
-TclForgetSyncObject(objPtr, recPtr)
+static void
+ForgetSyncObject(objPtr, recPtr)
     char *objPtr;		/* Pointer to sync object */
     SyncObjRecord *recPtr;	/* Record of sync objects */
 {
@@ -302,7 +304,7 @@ void
 TclRememberMutex(mutexPtr)
     Tcl_Mutex *mutexPtr;
 {
-    TclRememberSyncObject((char *)mutexPtr, &mutexRecord);
+    RememberSyncObject((char *)mutexPtr, &mutexRecord);
 }
 
 /*
@@ -329,7 +331,7 @@ TclFinalizeMutex(mutexPtr)
 #ifdef TCL_THREADS
     TclpFinalizeMutex(mutexPtr);
 #endif
-    TclForgetSyncObject((char *)mutexPtr, &mutexRecord);
+    ForgetSyncObject((char *)mutexPtr, &mutexRecord);
 }
 
 /*
@@ -352,7 +354,7 @@ void
 TclRememberDataKey(keyPtr)
     Tcl_ThreadDataKey *keyPtr;
 {
-    TclRememberSyncObject((char *)keyPtr, &keyRecord);
+    RememberSyncObject((char *)keyPtr, &keyRecord);
 }
 
 /*
@@ -375,7 +377,7 @@ void
 TclRememberCondition(condPtr)
     Tcl_Condition *condPtr;
 {
-    TclRememberSyncObject((char *)condPtr, &condRecord);
+    RememberSyncObject((char *)condPtr, &condRecord);
 }
 
 /*
@@ -402,7 +404,7 @@ TclFinalizeCondition(condPtr)
 #ifdef TCL_THREADS
     TclpFinalizeCondition(condPtr);
 #endif
-    TclForgetSyncObject((char *)condPtr, &condRecord);
+    ForgetSyncObject((char *)condPtr, &condRecord);
 }
 
 /*

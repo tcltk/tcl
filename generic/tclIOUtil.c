@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.1.2.6 1998/12/10 21:21:47 stanton Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.1.2.7 1998/12/10 21:57:47 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -77,8 +77,8 @@ static OpenFileChannelProc *openFileChannelProcList =
 
 #ifdef TCL_THREADS
 static Tcl_Mutex hookMutex;
-#endif
-
+#endif
+
 /*
  *---------------------------------------------------------------------------
  *

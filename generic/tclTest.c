@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.1.2.9 1998/12/02 03:16:54 stanton Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.1.2.10 1998/12/10 21:57:48 stanton Exp $
  */
 
 #define TCL_TEST
@@ -2733,7 +2733,7 @@ TestregexpObjCmd(dummy, interp, objc, objv)
  *----------------------------------------------------------------------
  */
 
-VOID
+static void
 TestregexpXflags(string, length, cflagsPtr, eflagsPtr)
     char *string;		/* The string of flags. */
     int length;			/* The length of the string in bytes. */

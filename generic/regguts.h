@@ -28,7 +28,10 @@
 
 /* assertions */
 #ifndef assert
+#ifndef REG_DEBUG
+#define NDEBUG
 #include <assert.h>
+#endif
 #endif
 
 /* voids */

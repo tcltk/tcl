@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.1.2.5 1998/12/10 21:21:48 stanton Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.1.2.6 1998/12/10 21:57:47 stanton Exp $
  */
 
 #include <stdio.h>
@@ -583,10 +583,10 @@ Tcl_InterpObjCmd(clientData, interp, objc, objv)
 	case OPT_INVOKEHID: {
 	    int i, index, global;
 	    Tcl_Interp *slaveInterp;
-	    char *options[] = {
+	    static char *hiddenOptions[] = {
 		"-global",	"--",		NULL
 	    };
-	    enum options {
+	    enum hiddenOption {
 		OPT_GLOBAL,	OPT_LAST
 	    };
 
@@ -595,8 +595,8 @@ Tcl_InterpObjCmd(clientData, interp, objc, objv)
 		if (Tcl_GetString(objv[i])[0] != '-') {
 		    break;
 		}
-		if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", 0,
-			&index) != TCL_OK) {
+		if (Tcl_GetIndexFromObj(interp, objv[i], hiddenOptions,
+			"option", 0, &index) != TCL_OK) {
 		    return TCL_ERROR;
 		}
 		if (index == OPT_GLOBAL) {
@@ -1896,10 +1896,10 @@ SlaveObjCmd(clientData, interp, objc, objv)
 	}
         case OPT_INVOKEHIDDEN: {
 	    int global, i, index;
-	    char *options[] = {
+	    static char *hiddenOptions[] = {
 		"-global",	"--",		NULL
 	    };
-	    enum options {
+	    enum hiddenOption {
 		OPT_GLOBAL,	OPT_LAST
 	    };
 	    global = 0;
@@ -1907,8 +1907,8 @@ SlaveObjCmd(clientData, interp, objc, objv)
 		if (Tcl_GetString(objv[i])[0] != '-') {
 		    break;
 		}
-		if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", 0,
-			&index) != TCL_OK) {
+		if (Tcl_GetIndexFromObj(interp, objv[i], hiddenOptions,
+			"option", 0, &index) != TCL_OK) {
 		    return TCL_ERROR;
 		}
 		if (index == OPT_GLOBAL) {

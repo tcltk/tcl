@@ -25,7 +25,7 @@ static struct rerr {
 size_t				/* actual space needed (including NUL) */
 regerror(errcode, preg, errbuf, errbuf_size)
 int errcode;			/* error code, or REG_ATOI or REG_ITOA */
-const regex_t *preg;		/* associated regex_t (unused at present) */
+CONST regex_t *preg;		/* associated regex_t (unused at present) */
 char *errbuf;			/* result buffer (unless errbuf_size==0) */
 size_t errbuf_size;		/* available space in errbuf, can be 0 */
 {
