@@ -1,3 +1,19 @@
+1999-04-22  Scott Stanton  <stanton@scriptics.com>
+
+	* generic/tclInt.h: 
+	* generic/tclInt.decls: 
+	* generic/tclCompile.c: Added TclSetByteCodeFromAny that takes a
+	hook procedure to invoke after compilation but before the byte
+	codes are emitted.  This makes it possible to do postprocessing on
+	the compiled byte codes before the ByteCode is generated.
+
+	* generic/tclLiteral.c: Added TclHideLiteral and TclAddLiteralObj
+	to make it possible to create local unshared literal objects.
+	
+	* win/tclWinInit.c:
+	* unix/tclUnixInit.c: Changed initial search path to match that
+	found used by tcl_findLibrary.
+
 1999-04-22    <redman@scriptics.com>
 
 	* win/tclWinPort.h:
