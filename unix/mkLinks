@@ -131,6 +131,10 @@ if test -r Concat.3; then
     rm -f Tcl_Concat.3
     ln Concat.3 Tcl_Concat.3
 fi
+if test -r GetHostName.3; then
+    rm -f Tcl_GetHostName.3
+    ln GetHostName.3 Tcl_GetHostName.3
+fi
 if test -r StringObj.3; then
     rm -f Tcl_ConcatObj.3
     ln StringObj.3 Tcl_ConcatObj.3
