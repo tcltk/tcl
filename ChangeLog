@@ -1,3 +1,7 @@
+2004-09-02  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* doc/lsearch.n: Clarified meaning of -dictionary. [Bug 759545]
+
 2004-09-01  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* win/tclWinReg.c (BroadcastValue): WIN64 cast corrections
