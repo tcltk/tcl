@@ -1,3 +1,10 @@
+2002-02-23  Mo DeJong  <supermo@bayarea.net>
+
+	* configure: Regen.
+	* unix/tcl.m4 (SC_CONFIG_CFLAGS): Link with -n32
+	instead of -32 when building on IRIX64-6.* system.
+	[Tcl bug 521707]
+
 2002-02-22  Don Porter <dgp@users.sourceforge.net>
 
 	* generic/tclInt.h:
