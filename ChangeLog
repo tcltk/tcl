@@ -1,4 +1,10 @@
+2002-03-28  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclVar.c: Refactored CallTraces to collect repeated
+	handling of its returned value into CallTraces itself.
+
 2002-03-28  David Gravereaux <davygrvy@pobox.com>
+
 	* tools/feather.bmp:
 	* tools/man2help.tcl:
 	* tools/man2help2.tcl:
