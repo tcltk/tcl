@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.35 2002/08/05 03:24:41 dgp Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.36 2002/08/07 14:25:01 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -523,6 +523,8 @@ Tcl_NewObj()
     Tcl_MutexLock(&tclObjMutex);
 #ifdef PURIFY
     objPtr = (Tcl_Obj *) Tcl_Ckalloc(sizeof(Tcl_Obj));
+#elif defined(TCL_THREADS) && defined(USE_THREAD_ALLOC)
+    objPtr = TclThreadAllocObj(); 
 #else
     if (tclFreeObjList == NULL) {
 	TclAllocateFreeObjects();
