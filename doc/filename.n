@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: filename.n,v 1.7 2001/09/04 18:06:34 vincentdarley Exp $
+'\" RCS: @(#) $Id: filename.n,v 1.8 2003/09/16 14:56:08 vincentdarley Exp $
 '\" 
 .so man.macros
 .TH filename n 7.5 Tcl "Tcl Built-In Commands"
@@ -200,15 +200,22 @@ Not all file systems are case sensitive, so scripts should avoid code
 that depends on the case of characters in a file name.  In addition,
 the character sets allowed on different devices may differ, so scripts
 should choose file names that do not contain special characters like:
-\fB<>:"/\e|\fR.  The safest approach is to use names consisting of
-alphanumeric characters only.  Also Windows 3.1 only supports file
+\fB<>:?"/\e|\fR.  The safest approach is to use names consisting of
+alphanumeric characters only.  Care should be taken with filenames
+which contain spaces (common on Windows and MacOS systems) and
+filenames where the backslash is the directory separator (Windows
+native path names).  Also Windows 3.1 only supports file
 names with a root of no more than 8 characters and an extension of no
 more than 3 characters.
 .PP
 On Windows platforms there are file and path length restrictions. 
 Complete paths or filenames longer than about 260 characters will lead
 to errors in most file operations.
-
+.PP
+Another Windows peculiarity is that any number of trailing dots '.'  in
+filenames are totally ignored, so, for example, attempts to create a
+file or directory with a name "foo." will result in the creation of a
+file/directory with name "foo".
 .SH KEYWORDS
 current directory, absolute file name, relative file name,
 volume-relative file name, portability

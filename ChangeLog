@@ -1,3 +1,11 @@
+2003-09-16  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* doc/filename.n: documentation of Windows-specific feature as
+        discussed in [Bug 541989]
+	* generic/tclPathObj.c: fix for normalization of volume-relative
+        paths [Bug 767834]
+        * tests/winFCmd.test: new tests for both of the above. 
+
 2003-09-13  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	TIP#123 IMPLEMENTATION BASED ON WORK BY ARJEN MARKUS
