@@ -2,6 +2,18 @@
 
 	* generic/tclBasic.c
 	* generic/tclCompile.h: 
+	* generic/tclExecute.c: moving all code relative to bytecodes from
+	tclBasic.c to tclExecute.c - the functions RecordTracebackInfo and
+	Tcl_ExprObj went to tclExecute.c, and new interface function was
+	defined (TclCompEvalObj).
+	The final objective of this sequence of moves is to provide a
+	clean, clear-cut interface between Tcl's core and the
+	compiler/engine subsystem.  
+
+2001-11-20  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* generic/tclBasic.c
+	* generic/tclCompile.h: 
 	* generic/tclExecute.c: factoring out of common code in tclBasic.c
 	(new function TclInterpReady defined: it resets the interp's
 	result, then checks that it hasn't been deleted and that the
