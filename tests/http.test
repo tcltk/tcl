@@ -12,7 +12,7 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
 #
-# RCS: @(#) $Id: http.test,v 1.1.2.6 1999/03/24 02:49:13 hershey Exp $
+# RCS: @(#) $Id: http.test,v 1.1.2.7 1999/04/02 18:57:08 hershey Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     source [file join [pwd] [file dirname [info script]] defs.tcl]
@@ -36,9 +36,10 @@ if {[catch {package require http 2.0}]} {
 set port 8010
 set bindata "This is binary data\x0d\x0amore\x0dmore\x0amore\x00null"
 
-if {[info commands testthread] == "testthread" && [file exists httpd]} {
+set httpdFile [file join $::tcltest::testsDir httpd]
+if {[info commands testthread] == "testthread" && [file exists $httpdFile]} {
     set httpthread [testthread create {
-	source httpd
+	source $httpdFile
 	testthread wait
     }]
     testthread send $httpthread [list set port $port]
@@ -46,12 +47,12 @@ if {[info commands testthread] == "testthread" && [file exists httpd]} {
     testthread send $httpthread {httpd_init $port}
     puts "Running httpd in thread $httpthread"
 } else {
-    if ![file exists httpd] {
-	puts "Cannot read httpd script, http test skipped"
+    if ![file exists $httpdFile] {
+	puts "Cannot read $httpdFile script, http test skipped"
 	unset port
 	return
     }
-    source httpd
+    source $httpdFile
     if [catch {httpd_init $port} listen] {
 	puts "Cannot start http server, http test skipped"
 	unset port

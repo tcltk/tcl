@@ -11,7 +11,7 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 # 
-# RCS: @(#) $Id: defs.tcl,v 1.1.2.8 1999/03/26 19:13:57 hershey Exp $
+# RCS: @(#) $Id: defs.tcl,v 1.1.2.9 1999/04/02 18:57:07 hershey Exp $
 
 # Initialize wish shell
 if {[info exists tk_version]} {
@@ -458,9 +458,10 @@ proc ::tcltest::cleanupTests {{calledFromAllFile 0}} {
 
 	# if any tests were skipped, print the constraints that kept them
 	# from running.
-	if {$::tcltest::numTests(Skipped) > 0} {
+	set constraintList [array names ::tcltest::skippedBecause]
+	if {[llength $constraintList] > 0} {
 	    puts stdout "Number of tests skipped for each constraint:"
-	    foreach constraint [lsort [array names ::tcltest::skippedBecause]] {
+	    foreach constraint [lsort $constraintList] {
 		puts stdout \
 			"\t$::tcltest::skippedBecause($constraint)\t$constraint"
 		unset ::tcltest::skippedBecause($constraint)
