@@ -1,3 +1,11 @@
+1999-09-20  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* tests/env.test:
+	* unix/Makefile.in: added support for AIX LIBPATH env var [Bug:	2793]
+	removed second definition of INCLUDE_INSTALL_DIR (the one that
+	referenced @includedir@) [Bug: 2805]
+	* unix/dltest/Makefile.in: added -lc to LIBS [Bug: 2794]
+
 1999-09-16  Jeff Hobbs  <hobbs@scriptics.com>
 
 	* tests/timer.test: changed after delay in timer test 6.29 from
