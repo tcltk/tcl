@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.115 2003/01/17 14:19:49 vincentdarley Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.116 2003/01/26 05:59:37 mdejong Exp $
  */
 
 #ifndef _TCLINT
@@ -1777,6 +1777,8 @@ EXTERN int		TclpObjStat _ANSI_ARGS_((Tcl_Obj *pathPtr, Tcl_StatBuf *buf));
 EXTERN Tcl_Channel	TclpOpenFileChannel _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *pathPtr, int mode,
 			    int permissions));
+EXTERN void		TclpCutFileChannel _ANSI_ARGS_((Tcl_Channel chan));
+EXTERN void		TclpSpliceFileChannel _ANSI_ARGS_((Tcl_Channel chan));
 EXTERN void		TclpPanic _ANSI_ARGS_(TCL_VARARGS(CONST char *,
 			    format));
 EXTERN char *		TclpReadlink _ANSI_ARGS_((CONST char *fileName,
