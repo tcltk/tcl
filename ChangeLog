@@ -1,3 +1,10 @@
+2004-05-27  Kevin B. Kenny  <kennykb@acm.org>
+
+	* tests/clock.test: Added a single test for the presence of %G
+	in [clock format], and conditioned out the clock-10.x series if
+	they're all going to fail because of a broken strftime() call.
+	[Bug 961714]
+	
 2004-05-27  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclHash.c (CompareStringKeys): Added #ifdef to allow
