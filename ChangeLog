@@ -19,9 +19,9 @@
 	Courier New for code samples and indent better.
 
 	* doc/file.n:
-	* doc/TraceCmd.3:  winhelp conversion tools where understand a '
-	as the first character on a line as an unknown macro.  Not
-	knowing how to repair tools/man2tcl.c, I decided to rearrange
+	* doc/TraceCmd.3:  winhelp conversion tools where understanding
+	a ' as the first character on a line to be an unknown macro.
+	Not knowing how to repair tools/man2tcl.c, I decided to rearrange
 	the text in the docs instead.
 
 2002-05-07  Vince Darley  <vincentdarley@users.sourceforge.net>
