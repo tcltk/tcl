@@ -6,7 +6,7 @@
 #
 #    HTML:		 1. Build the html target on Unix
 
-# RCS: @(#) $Id: Makefile.in,v 1.1.2.2 1998/09/24 23:59:40 stanton Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.1.2.3 1998/12/10 00:49:46 stanton Exp $
 
 #TCL = tcl@TCL_VERSION@@TCL_PATCH_LEVEL@
 #TK = tk@TCL_VERSION@@TCL_PATCH_LEVEL@
@@ -49,6 +49,7 @@ core:
 
 rtf: man2help.tcl man2tcl $(DOCS)
 	LD_LIBRARY_PATH=$(TCL_SOURCE)/unix \
+	TCL_LIBRARY=$(TCL_SOURCE)/library \
 	$(TCLSH) man2help.tcl tcl "$(VER)" $(DOCS)
 
 winhelp: tcl.rtf

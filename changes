@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.1.2.13 1998/12/04 01:19:33 stanton Exp $
+RCS: @(#) $Id: changes,v 1.1.2.14 1998/12/10 00:49:42 stanton Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -3992,6 +3992,9 @@ the encoding.n manual entry for more details. (stanton)
 syntax now includes Unicode characters in the supported
 classes. (stanton)
 
+11/6/98 (bug fix) Variable traces were causing crashes when upvar
+variables went out of scope. [Bug: 796] (stanton)
+
 11/9/98 (bug fix) "format" now correctly handles multibyte characters
 in %s format strings. (stanton)
 
@@ -4006,3 +4009,35 @@ characters. (stanton)
 11/17/98 (new feature) "scan" now supports XPG3 position specifiers
 and the "%n" conversion character.  See the "scan" manual entry for
 more details. (stanton)
+
+11/17/98 (bug fix) The Tcl memory allocator now returns 8-byte aligned
+chunks of memory which improves performance on Windows and avoids
+crashes on other platforms. [Bug: 834] (stanton)
+
+11/23/98 (bug fix) Applied various regular expression performance bug
+fixes supplied by Henry Spencer. (stanton)
+
+11/30/98 (bug fix) Fixed various thread related race conditions. [Bug:
+880 & 607] (stanton)
+
+11/30/98 (bug fix) Fixed a number of memory overflow and leak
+bugs. [Bug: 584] (stanton)
+
+12/1/98 (new feaure) Added support for Korean encodings. (stanton)
+
+12/1/98 (feature change) Changed the Tcl_EvalObjv interface to remove
+the string and length arguments.
+*** POTENTIAL INCOMPATIBILITY with previous alpha releases ***
+
+12/2/98 (bug fix) Fixed various bugs related to line feed
+translation. [Bug: 887] (stanton)
+
+12/4/98 (new feature) Added a message catalog facility to help with
+localizing Tcl scripts.  Thanks to Mark Harrison for contributing the
+initial implementation of the "msgcat" package. (stanton)
+
+12/7/98 (bug fix) The memory allocator was failing to update the
+block list for large memory blocks that were reallocated into a
+different address. [Bug: 933] (stanton)
+
+----------------- Released 8.1b1, Dec 10 1998 -----------------------

@@ -1,6 +1,6 @@
 Tcl
 
-RCS: @(#) $Id: README,v 1.1.2.3 1998/12/03 02:06:29 welch Exp $
+RCS: @(#) $Id: README,v 1.1.2.4 1998/12/10 00:49:42 stanton Exp $
 
 1. Introduction
 ---------------
@@ -13,14 +13,14 @@ have bugs and be missing some minor features.  This release is for
 early adopters who are willing to help us find and fix problems.
 Please let us know about any problems you uncover.
 
-Tcl 8.1 includes three major new features: Unicode support (all
-internal strings are now stored in UTF-8 form), a new regular
-expression matcher with most of the Perl features, and support for
-multithreading.  For details on features, incompatibilities, and
+Tcl 8.1 includes four major new features: Unicode support (all internal
+strings are now stored in UTF-8 form), a new regular expression matcher
+with most of the Perl features, support for multithreading, and a new
+message catalog package.  For details on features, incompatibilities, and
 potential problems with this release, see the Tcl/Tk 8.1 Web page at
-http://www.scriptics.com/software/8.1.html or refer to the "changes"
-file in this directory, which contains a historical record of all
-changes to Tcl.
+http://www.scriptics.com/software/8.1.html or refer to the "changes" file
+in this directory, which contains a historical record of all changes to
+Tcl.
 
 2. Documentation
 ----------------
@@ -68,8 +68,7 @@ pages at other sites.  Check them out!
 -------------------------------
 
 This release contains everything you should need to compile and run
-Tcl under UNIX, Macintoshes, and PCs (either Windows NT, Windows 95,
-or Win 3.1 with Win32s).
+Tcl under UNIX, Mac OS, and Windows (either Windows NT or Windows 95).
 
 Before trying to compile Tcl you should do the following things:
 
@@ -129,6 +128,48 @@ and running the test suite.
 Here are the most significant changes in Tcl 8.1.  In addition to these
 changes, there are several smaller changes and bug fixes.  See the file
 "changes" for a complete list of all changes.
+
+    1. Unicode. All strings in Tcl are stored using the UTF-8
+    representation for 16-bit Unicode characters.  All of the APIs in Tcl
+    should support UTF strings.  UTF-8 has the property that all ASCII
+    strings will be encoded with no change so code that only used 7-bit
+    ASCII charaters should not need to be changed.  Strings that
+    previously contained European characters (i.e. 0x80 or higher) will
+    now be encoded as two bytes.  These changes should not be visible to
+    Tcl scripts except that a new "\u" substitution has been added to
+    allow Unicode characters to be entered and a character is now a 16-bit
+    Unicode value.  See the manual entries doc/Utf.3 and doc/Tcl.n for
+    more details.
+
+    2. Encodings.  In order to convert strings between Unicode and various
+    native character formats, an encoding subsystem has been added.  UTF
+    strings need to be converted to the system's native encoding
+    (e.g. EUC) before being passed to system calls.  All channels now have
+    an associatd encoding that can be modified after creation.  There is
+    also a new "encoding" command to allow Tcl scripts to perform
+    conversions between strings in different encodings.  The Tcl library
+    directory now includes an "encoding" subdirectory that contains files
+    that describe the various encodings that Tcl currently supports.
+    Additional encodings can be added by supplying appropriate encoding
+    files.  See the manual entries doc/encoding.n and doc/Encoding.3 for
+    more details.
+
+    3. Regular expressions.  The regular expression syntax has been
+    greatly expanded to include most of the features in Perl.  In
+    addition, the regexp engine supports Unicode and binary data.  See the
+    doc/regexp.n manual entry for more details.
+
+    4. Threads.  If configured with the --enable-threads flag, Tcl can now
+    be compiled for use in a multi-threaded application.  Individual
+    threads are allowed to use one or more interpreters as long as each
+    interpreter (and any slave interpreters) is only accessed by one
+    thread.  There are new C APIs for mutexes, condition variables, and
+    thread local storage.  See the doc/Thread.3 manual entry for more
+    details. 
+
+    5. Message catalog. There is a new message catalog package which makes
+    it easy to localize the strings in a script.  See the doc/msgcat.n
+    manual entry for more details.
 
 5. Tcl newsgroup
 -----------------

@@ -83,6 +83,7 @@ pchr to;
 	cv->nranges++;
 }
 
+#ifdef USE_MCCE
 /*
  - addmcce - add an MCCE to a cvec
  ^ static VOID addmcce(struct cvec *, chr *, chr *);
@@ -109,6 +110,7 @@ chr *endp;			/* just past end of text */
 	assert(d == &cv->chrs[cv->chrspace - cv->nmccechrs]);
 	cv->nmccechrs += n + 1;
 }
+#endif
 
 /*
  - haschr - does a cvec contain this chr?

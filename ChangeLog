@@ -109,7 +109,7 @@
 	the notifier thread. [Bug: 607]
 
 	* unix/tclUnixFCmd.c (GetPermissionsAttribute): Increase size of
-	returnString buffer to avoid overflow.
+	returnString buffer to avoid overflow. [Bug: 584]
 
 	* generic/tclThreadTest.c (TclThreadSend): Fixed memory leak due
 	to use of TCL_VOLATILE instead of TCL_DYNAMIC.

@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.1.2.9 1998/12/02 20:08:10 welch Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.1.2.10 1998/12/10 00:49:46 stanton Exp $
 
 # Current Tcl version;  used in various names.
 
@@ -489,7 +489,7 @@ install-libraries:
 		else true; \
 		fi; \
 	    done;
-	@for i in http2.0 http1.0 opt0.4 encoding; \
+	@for i in http2.0 http1.0 opt0.4 encoding msgcat1.0; \
 	    do \
 	    if [ ! -d $(SCRIPT_INSTALL_DIR)/$$i ] ; then \
 		echo "Making directory $(SCRIPT_INSTALL_DIR)/$$i"; \
@@ -505,7 +505,7 @@ install-libraries:
 	    echo "Installing $$i"; \
 	    $(INSTALL_DATA) $$i $(SCRIPT_INSTALL_DIR); \
 	    done;
-	@for i in http2.0 http1.0 opt0.4; \
+	@for i in http2.0 http1.0 opt0.4 msgcat1.0; \
 	    do \
 	    for j in $(TOP_DIR)/library/$$i/*.tcl ; \
 		do \
@@ -954,7 +954,7 @@ dist: $(UNIX_DIR)/configure
 	mkdir $(DISTDIR)/library
 	cp -p $(TOP_DIR)/license.terms $(TOP_DIR)/library/*.tcl \
 		$(TOP_DIR)/library/tclIndex $(DISTDIR)/library
-	for i in http2.0 http1.0 opt0.4; \
+	for i in http2.0 http1.0 opt0.4 msgcat1.0; \
 	    do \
 		mkdir $(DISTDIR)/library/$$i ;\
 		cp -p $(TOP_DIR)/library/$$i/*.tcl $(DISTDIR)/library/$$i; \
@@ -975,7 +975,7 @@ dist: $(UNIX_DIR)/configure
 		$(TOP_DIR)/tests/defs $(DISTDIR)/tests
 	mkdir $(DISTDIR)/tests/pkg
 	cp -p $(TOP_DIR)/license.terms $(DISTDIR)/tests/pkg
-	cp -p $(TOP_DIR)/tests/pkg/*.tcl $(TOP_DIR)/tests/pkg
+	cp -p $(TOP_DIR)/tests/pkg/*.tcl $(DISTDIR)/tests/pkg
 	mkdir $(DISTDIR)/win
 	cp -p $(TOP_DIR)/win/*.c $(TOP_DIR)/win/*.h $(TOP_DIR)/win/*.rc \
 		$(DISTDIR)/win
@@ -985,10 +985,7 @@ dist: $(UNIX_DIR)/configure
 	cp -p $(TOP_DIR)/win/pkgIndex.tcl $(DISTDIR)/win
 	cp -p $(TOP_DIR)/license.terms $(DISTDIR)/win
 	mkdir $(DISTDIR)/mac
-	sccs edit -s $(TOP_DIR)/mac/tclMacProjects.sea.hqx
-	cp -p tclMacProjects.sea.hqx $(DISTDIR)/mac
-	sccs unedit $(TOP_DIR)/mac/tclMacProjects.sea.hqx
-	rm -f tclMacProjects.sea.hqx
+	cp -p $(TOP_DIR)/mac/tclMacProjects.sea.hqx $(DISTDIR)/mac
 	cp -p $(TOP_DIR)/mac/*.c $(TOP_DIR)/mac/*.h $(TOP_DIR)/mac/*.r \
 		$(DISTDIR)/mac
 	cp -p $(TOP_DIR)/mac/porting.notes $(TOP_DIR)/mac/README $(DISTDIR)/mac
@@ -1001,12 +998,14 @@ dist: $(UNIX_DIR)/configure
 		$(DISTDIR)/unix/dltest
 	cp -p $(UNIX_DIR)/dltest/configure.in $(UNIX_DIR)/dltest/configure \
 		$(UNIX_DIR)/dltest/README $(DISTDIR)/unix/dltest
-	@echo "ignore 'cp: xxx: is a directory' errors"
-	-@for i in tools tools/encoding ; do \
-		echo "making $(DISTDIR)/$$i"; \
-		mkdir -p $(DISTDIR)/$$i;\
-		cp `ls -d1 $(TOP_DIR)/$$i/*|egrep -v "(SCCS|TAGS|~|,|#|%|core|\.l?o)"` $(DISTDIR)/$$i;\
-	done
+	mkdir $(DISTDIR)/tools
+	cp -p $(TOP_DIR)/tools/*.in $(TOP_DIR)/tools/*.c \
+		$(TOP_DIR)/tools/*.tcl $(TOP_DIR)/tools/*.hpj \
+		$(TOP_DIR)/tools/*.wse $(TOP_DIR)/tools/str2c \
+		$(TOP_DIR)/tools/README $(DISTDIR)/tools
+	cp -p $(TOP_DIR)/license.terms $(DISTDIR)/tools
+	mkdir $(DISTDIR)/tools/encoding
+	cp `ls -d1 $(TOP_DIR)/tools/encoding/*|egrep -i -v "(CVS|SCCS|TAGS|~|,|#|%|core|\.l?o)"` $(DISTDIR)/tools/encoding
 
 #
 # The following target can only be used for non-patch releases.  Use
