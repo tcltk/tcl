@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.79.2.10 2004/07/23 16:02:26 kennykb Exp $
+RCS: @(#) $Id: changes,v 1.79.2.11 2004/07/26 19:15:03 hobbs Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -6042,4 +6042,4 @@ Corrects Tcl_StatBuf definition issues.  (hobbs)
 
 2004-07-20 (bug fix)[736426] plug leaky allocator reinit (mistachkin, kenny)
 
---- Released 8.4.7, July 22, 2004 --- See ChangeLog for details ---
+--- Released 8.4.7, July 26, 2004 --- See ChangeLog for details ---
