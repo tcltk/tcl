@@ -4,6 +4,10 @@
 
 2003-07-15  Don Porter  <dgp@users.sourceforge.net>
 
+	* unix/dltest/pkga.c:	Updated to not use Tcl_UtfNcmp and counted
+	strings instead of strcmp (not defined in any #include'd header)
+	and presumed NULL-terminated strings.
+
 	* README:		Bumped patch level to 8.4.4 in anticipation
 	* generic/tcl.h:	of another patch release.
 	* tools/tcl.wse.in:
