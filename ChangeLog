@@ -1,3 +1,8 @@
+2004-02-04  Don Porter	<dgp@users.sourceforge.net>
+
+	* library/tcltest/tcltest.tcl:	Corrected references to
+	non-existent $name variable in [cleanupTests]. [Bug 833637]
+ 
 2004-02-03  Don Porter  <dgp@users.sourceforge.net>
 
         * library/tcltest/tcltest.tcl:  Corrected parsing of single
