@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFile.c,v 1.7 1999/12/12 22:46:50 hobbs Exp $
+ * RCS: @(#) $Id: tclUnixFile.c,v 1.8 1999/12/13 03:05:52 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -338,7 +338,7 @@ TclpMatchFilesTypes(
 			struct stat buf;
 
 			if (TclpStat(fname, &buf) != 0) {
-			    panic("stat failed on known file\n");
+			    panic("stat failed on known file");
 			}
 			/* 
 			 * readonly means that there are NO write permissions
