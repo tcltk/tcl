@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: incr-old.test,v 1.6 2003/02/06 22:44:58 mdejong Exp $
+# RCS: @(#) $Id: incr-old.test,v 1.7 2003/03/27 13:19:15 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -34,7 +34,7 @@ test incr-old-1.3 {basic incr operation} {
     set x "  -106"
     list [incr x 1] $x
 } {-105 -105}
-test incr-old-1.3 {basic incr operation} {
+test incr-old-1.4 {basic incr operation} {
     set x "  +106"
     list [incr x 1] $x
 } {107 107}
@@ -94,15 +94,3 @@ test incr-old-2.10 {incr errors} {
 # cleanup
 ::tcltest::cleanupTests
 return
-
-
-
-
-
-
-
-
-
-
-
-
