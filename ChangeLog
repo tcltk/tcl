@@ -1,4 +1,9 @@
-2001-08-98  Don Porter  <dgp@users.sourceforge.net>
+2001-08-20  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* library/http/http.tcl (geturl): added port number to Host:
+	header to comply with HTTP/1.1 spec (RFC 2068).  [Bug #452217]
+
+2001-08-08  Don Porter  <dgp@users.sourceforge.net>
 
 	* library/dde1.1/pkgIndex.tcl:
 	* library/reg1.0/pkgIndex.tcl:  Package dependencies. [Patch 448931]
