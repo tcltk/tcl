@@ -13,9 +13,7 @@
 # Copyright (c) 2000 by Ajuba Solutions
 # All rights reserved.
 # 
-# RCS: @(#) $Id: tcltest2.tcl,v 1.1 2000/09/20 23:09:52 jenn Exp $
-
-package provide tcltest 2.0
+# RCS: @(#) $Id: tcltest2.tcl,v 1.2 2000/09/29 22:48:12 jenn Exp $
 
 # create the "tcltest" namespace for all testing variables and procedures
 
@@ -100,9 +98,9 @@ namespace eval tcltest {
 	variable parameters {}
     }
 
-    # Count the number of files tested (0 if all.tcl wasn't called).
-    # The all.tcl file will set testSingleFile to false, so stats will
-    # not be printed until all.tcl calls the cleanupTests proc.
+    # Count the number of files tested (0 if runAllTests wasn't called).
+    # runAllTests will set testSingleFile to false, so stats will
+    # not be printed until runAllTests calls the cleanupTests proc.
     # The currentFailure var stores the boolean value of whether the
     # current test file has had any failures.  The failFiles list
     # stores the names of test files that had failures.
@@ -1868,7 +1866,6 @@ proc tcltest::testEval {script {ignoreOutput 1}} {
 #	actual - string containing the actual result
 #       expected - pattern to be matched against
 #       mode - type of comparison to be done
-#       subst - perform subst on the expected value if this is true
 #
 # Results:
 #	result of the match
@@ -1876,18 +1873,7 @@ proc tcltest::testEval {script {ignoreOutput 1}} {
 # Side effects:
 #	None.
 
-proc tcltest::compareStrings {actual expected mode {subst false}} {
-    if {$subst} {
-	switch -- $mode {
-	    exact {
-		set expected [uplevel 2 subst \{$expected\}]
-	    } 
-	    glob - 
-	    regexp {
-		set expected [uplevel 2 subst -nocommand -nobackslashes \{$expected\}]
-	    }
-	}
-    }
+proc tcltest::compareStrings {actual expected mode} {
     switch -- $mode {
 	exact {
 	    set retval [string equal $actual $expected]
@@ -1896,10 +1882,106 @@ proc tcltest::compareStrings {actual expected mode {subst false}} {
 	    set retval [string match $expected $actual]
 	}
 	regexp {
-	    set retval [regexp $expected $actual]
+	    set retval [regexp -- $expected $actual]
 	}
     }
     return $retval
+}
+
+
+#
+# tcltest::substArguments list
+#
+# This helper function takes in a list of words, then perform a
+# substitution on the list as though each word in the list is a
+# separate argument to the Tcl function.  For example, if this
+# function is invoked as:
+#
+#      substArguments {$a {$a}}
+#
+# Then it is as though the function is invoked as:
+#
+#      substArguments $a {$a}
+#
+# This code is adapted from Paul Duffin's function "SplitIntoWords".
+# The original function can be found  on:
+#
+#      http://purl.org/thecliff/tcl/wiki/858.html
+#
+# Returns:
+#     a list containing the result of the substitution
+#
+# Exceptions:
+#     An error may occur if the list containing unbalanced quote or
+#     unknown variable.
+#
+proc tcltest::substArguments {argList} {
+
+    # We need to split the argList up into tokens but cannot use
+    # list operations as they throw away some significant
+    # quoting, and [split] ignores braces as it should.
+    # Therefore what we do is gradually build up a string out of
+    # whitespace seperated strings. We cannot use [split] to
+    # split the argList into whitespace seperated strings as it
+    # throws away the whitespace which maybe important so we
+    # have to do it all by hand.
+
+    set result {}
+    set token ""
+
+    while {[string length $argList]} {
+        # Look for the next word containing a quote: " { }
+        if {[regexp -indices {[^ \t\n]*[\"\{\}]+[^ \t\n]*} \
+                $argList all]} {
+            # Get the text leading up to this word, but not
+            # including this word, from the argList.
+            set text [string range $argList 0 \
+                    [expr {[lindex $all 0] - 1}]]
+            # Get the word with the quote
+            set word [string range $argList \
+                    [lindex $all 0] [lindex $all 1]]
+
+            # Remove all text up to and including the word from the
+            # argList.
+            set argList [string range $argList \
+                    [expr {[lindex $all 1] + 1}] end]
+        } else {
+            # Take everything up to the end of the argList.
+            set text $argList
+            set word {}
+            set argList {}
+        }
+        
+        if {$token != {}} {
+            # If we saw a word with quote before, then there is a
+            # multi-word token starting with that word.  In this case,
+            # add the text and the current word to this token.
+            append token $text $word
+        } else {
+            # Add the text to the result.  There is no need to parse
+            # the text because it couldn't be a part of any multi-word
+            # token.  Then start a new multi-word token with the word
+            # because we need to pass this token to the Tcl parser to
+            # check for balancing quotes
+            append result $text
+            set token $word
+        }
+        
+        if { [catch {llength $token} length] == 0 && $length == 1} {
+            # The token is a valid list so add it to the result.
+            # lappend result [string trim $token]
+            append result \{$token\}
+            set token {}
+        }
+    }
+
+    # If the last token has not been added to the list then there
+    # is a problem.
+    if { [string length $token] } {
+        error "incomplete token \"$token\""
+    }
+
+    return $result
 }
 
 
@@ -1920,133 +2002,147 @@ proc tcltest::compareStrings {actual expected mode {subst false}} {
 #   Only description is a required attribute.  All others are optional.
 #   Default values are indicated.
 # 
-#   description -		Short textual description of the test, to
-#  		  	        help humans understand what it does.
 #   constraints -		A list of one or more keywords, each of
 #			        which must be the name of an element in
 #			        the array "tcltest::testConstraints".  If any
 #                               of these elements is zero, the test is
 #                               skipped. This attribute is optional; default is {}
-#   script -		        Script to run to carry out the test.  It must
+#   body -		        Script to run to carry out the test.  It must
 #			        return a result that can be checked for
 #			        correctness.  This attribute is optional;
 #                               default is {}
-#   expect -	                Expected result from script.  This attribute is
+#   result -	                Expected result from script.  This attribute is
 #                               optional; default is {}.
-#   expect_out -                Expected output sent to stdout.  This attribute
+#   output -                    Expected output sent to stdout.  This attribute
 #                               is optional; default is {}.  
-#   expect_err -                Expected output sent to stderr.  This attribute
+#   errorOutput -               Expected output sent to stderr.  This attribute
 #                               is optional; default is {}.  
-#   expect_codes -              Expected return codes.  This attribute is
+#   returnCodes -              Expected return codes.  This attribute is
 #                               optional; default is {0 2}.
 #   setup -                     Code to run before $script (above).  This
 #                               attribute is optional; default is {}.
 #   cleanup -                   Code to run after $script (above).  This
 #                               attribute is optional; default is {}.
+#   match -                     specifies type of matching to do on result,
+#                               output, errorOutput; this must be one of: exact,
+#                               glob, regexp.  default is exact.
 #
 # Arguments:
 #   name -		Name of test, in the form foo-1.2.
+#   description -	Short textual description of the test, to
+#  		  	help humans understand what it does.
 # 
 # Results:
 #	0 if the command ran successfully; 1 otherwise.
 #
 # Side effects:
 # 
-proc tcltest::test {name args} {
+proc tcltest::test {name description args} {
     DebugPuts 3 "Test $name $args"
 
     incr tcltest::testLevel
 
-    # Pre-define everything to null except expect_out and expect_err.  We
+    # Pre-define everything to null except output and errorOutput.  We
     # determine whether or not to trap output based on whether or not these
-    # variables (expect_out & expect_err) are defined.
-    foreach item {constraints setup cleanup description script \
-	    expect expect_codes} {   
+    # variables (output & errorOutput) are defined.
+    foreach item {constraints setup cleanup body result returnCodes match} {
 	set $item {}
     }
 
     # Set the default match mode
-    set expectMatch exact
-    set expect_outMatch exact
-    set expect_errMatch exact
-
-    # default test format is the old format (where we don't have to subst the
-    # expected answer
-    set substExpected false
+    set match exact
 
     # Set the default match values for return codes (0 is the standard expected
     # return value if everything went well; 2 represents 'return' being used in
     # the test script).
-    set expect_codes [list 0 2]
+    set returnCodes [list 0 2]
 
-    if {[llength $args] >= 3} {
-	# This is parsing for the old test command format; it is here for
-	# backward compatibility.
-	set description [lindex $args 0]
-	set expect [lindex $args end]
-	if {[llength $args] == 3} {
-	    set script [lindex $args 1]
+    # if the commands are embedded within an outer set of braces, we have to do
+    # evaluate them before we can run or compare them
+    set doSubst false
+
+    # The old test format can't have a 3rd argument (constraints or script)
+    # that starts with '-'.
+    if {[llength $args] == 0} {
+	puts [errorChannel] "test $name: {wrong # args: should be \"test name desc ?options?\"}"
+	incr tcltest::testLevel -1
+	return 1
+    } elseif {([string index [lindex $args 0] 0] == "-") || ([llength $args] == 1)} {
+	if {[llength args] == 1} {
+	    set list [substArguments [lindex $args 0]]
+	    foreach {element value} $list { 
+		set testAttributes($element) $value
+	    }
+	    set doSubst true
 	} else {
-	    set constraints [lindex $args 1]
-	    set script [lindex $args 2]
+	    array set testAttributes $args
 	}
-    } else {
-	# we'll have to do a subst on the expected values later
-	set substExpected true
 
-	set testAttributes [lindex $args 0]
+	set validFlags {-setup -cleanup -body -result -returnCodes -match \
+		-output -errorOutput -constraints}
 
-	# These are attribute value pairs; there must be an even number in the
-	# list. 
-	if {[expr {[llength $testAttributes] %2}] == 1} {
-	    puts [errorChannel] "value for \"[lindex $testAttributes end]\" missing"
+	foreach flag [array names testAttributes] {
+	    if {[lsearch -exact $validFlags $flag] == -1} {
+		puts [errorChannel] "test $name: bad flag $flag supplied to tcltest::test"
+		incr tcltest::testLevel -1
+		return 1
+	    }
+	}
+
+	# store whatever the user gave us
+	foreach item [array names testAttributes] {
+	    set [string trimleft $item "-"] $testAttributes($item)
+	}
+
+	# Check the values supplied for -match
+	if {[lsearch {regexp glob exact} $match] == -1} {
+	    puts [errorChannel] "test $name: {bad value for -match: must be one of exact, glob, regexp}"
 	    incr tcltest::testLevel -1
 	    return 1
 	}
 
-	# store whatever the user gave us
-	foreach {item value} $testAttributes {
-	    set $item $value
+	# Replace symbolic valies supplied for -returnCodes
+	regsub -nocase normal $returnCodes 0 returnCodes
+	regsub -nocase error $returnCodes 1 returnCodes
+	regsub -nocase return $returnCodes 2 returnCodes
+	regsub -nocase break $returnCodes 3 returnCodes
+	regsub -nocase continue $returnCodes 4 returnCodes 
+    } else {
+	# This is parsing for the old test command format; it is here for
+	# backward compatibility.
+	set result [lindex $args end]
+	if {[llength $args] == 2} {
+	    set body [lindex $args 0]
+	} elseif {[llength $args] == 3} {
+	    set constraints [lindex $args 0]
+	    set body [lindex $args 1]
+	} else {
+	    puts [errorChannel] "test $name: {wrong # args: should be \"test name desc ?constraints? script expectedResult\"}"
+	    incr tcltest::testLevel -1
+	    return 1
 	}
-	
-	foreach mode {expect expect_out expect_err} {
-	    if {[info exists $mode]} {
-		set expectedContent [subst $$mode]
-		set suffix Match
-		# Set the match mode and the content based on whether or not
-		# the exact, glob, or regexp flags are being used.  If they
-		# are, set the appropriate match flag and reset the match
-		# pattern. 
-		if {[llength $expectedContent] == 2} {
-		    set flag [lindex $expectedContent 0]
-		    if {[regexp -- {-(exact|glob|regexp)} $flag fullMatch \
-			    $mode$suffix]} {
-			set $mode [lindex $expectedContent 1]
-		    }
-		}
-	    }
-	}	
-    }
+    } 
 
-    if {($name == {}) || ($description == {})} {
-	puts [errorChannel] "one of: name, description empty"
-	incr tcltest::testLevel -1
-	return 1
-    }
-    
     set setupFailure 0
     set cleanupFailure 0
 
     # Run the setup script
+    if {$doSubst} {
+	set setup [uplevel concat $setup]
+    }
     if {[catch {uplevel $setup} setupMsg]} {
 	set setupFailure 1
     }
 
     # run the test script
-    set command [list tcltest::runTest $name $description $script \
-	    $expect $constraints]  
+    if {$doSubst} {
+	set constraints [uplevel concat $constraints]
+	set body [uplevel concat $body]
+    }
+    set command [list tcltest::runTest $name $description $body \
+	    $result $constraints]  
     if {!$setupFailure} {
-	if {[info exists expect_out] || [info exists expect_err]} {
+	if {[info exists output] || [info exists errorOutput]} {
 	    set testResult [uplevel tcltest::testEval [list $command] 0]
 	} else {
 	    set testResult [uplevel tcltest::testEval [list $command] 1]
@@ -2056,19 +2152,32 @@ proc tcltest::test {name args} {
     }
 
     # Run the cleanup code
+    if {$doSubst} {
+	set cleanup [uplevel concat $cleanup]
+    }
     if {[catch {uplevel $cleanup} cleanupMsg]} {
 	set cleanupFailure 1
     }
 
+    if {$doSubst} {
+	foreach item {result returnCodes match} {
+	    set $item [uplevel concat [subst $$item]]
+	}	
+	if {[info exists output]} {
+	    set output [uplevel concat $output]
+	}
+	if {[info exists errorOutput]} {
+	    set errorOutput [uplevel concat $errorOutput]
+	}
+    } 
+
     # If testResult is an empty list, then the test was skipped
     if {$testResult != {}} {
-
 	set coreFailure 0
 	set coreMsg ""
 	# check for a core file first - if one was created by the test, then
 	# the test failed
 	if {$tcltest::preserveCore} {
-	    puts "checking for core"
 	    set currentTclPlatform [array get tcl_platform]
 	    if {[file exists [file join [tcltest::workingDirectory] core]]} {
 		# There's only a test failure if there is a core file and (1)
@@ -2084,7 +2193,6 @@ proc tcltest::test {name args} {
 		}
 		
 		if {($tcltest::preserveCore > 1) && ($coreFailure)} {
-		    puts "core failure (> 1)"
 		    append coreMsg "\nMoving file to: [file join $tcltest::temporaryDirectory core-$name]"
 		    catch {file rename -force \
 			    [file join [tcltest::workingDirectory] core] \
@@ -2098,8 +2206,6 @@ proc tcltest::test {name args} {
 	    array set tcl_platform $currentTclPlatform
 	}
 
-	set expectedAnswer $expect
-
 	set actualAnswer [lindex $testResult 0]
 	set code [lindex $testResult end]
 
@@ -2107,38 +2213,40 @@ proc tcltest::test {name args} {
 	# them.  If the comparison fails, then so did the test.
 	set outputFailure 0
 	set errorFailure 0
-	if {[info exists expect_out]} { 
+	if {[info exists output]} { 
 	    set outputFailure [expr ![compareStrings $tcltest::outData \
-		    $expect_out $expect_outMatch $substExpected]]
+		    $output $match]]
 	} 
-	if {[info exists expect_err]} {
+	if {[info exists errorOutput]} {
 	    set errorFailure [expr ![compareStrings $tcltest::errData \
-		    $expect_err $expect_errMatch $substExpected]]
+		    $errorOutput $match]]
 	}
 
 	set testFailed 1
 	set codeFailure 0
+	set scriptFailure 0
 
+	# check if the return code matched the expected return code
+	if {[lsearch -exact $returnCodes $code] == -1} {
+	    set codeFailure 1
+	} 
+
+	# check if the answer matched the expected answer
+	if {[compareStrings $actualAnswer $result $match] == 0} {
+	    set scriptFailure 1
+	}
+
+	# if we didn't experience any failures, then we passed
 	if {!($setupFailure || $cleanupFailure || $coreFailure || \
-		$outputFailure || $errorFailure)} {
-	    # if the strings compare properly, and we didn't experience a
-	    # problem with setup or cleanup, we might have passed.
-	    if {[compareStrings $actualAnswer $expectedAnswer $expectMatch $substExpected]} {
-		# if the return code matches the expected return codes, we
-		# definitely passed.
-		if {[lsearch -exact $code $expect_codes]} {
-		    set codeFailure 0
-		    if {$tcltest::testLevel == 1} {
-			incr tcltest::numTests(Passed)
-			if {[string first p $tcltest::verbose] != -1} {
-			    puts [outputChannel] "++++ $name PASSED"
-			}
-		    }
-		    set testFailed 0
-		} else {
-		    set codeFailure 1
+		$outputFailure || $errorFailure || $codeFailure || \
+		$scriptFailure)} {
+	    if {$tcltest::testLevel == 1} {
+		incr tcltest::numTests(Passed)
+		if {[string first p $tcltest::verbose] != -1} {
+		    puts [outputChannel] "++++ $name PASSED"
 		}
 	    }
+	    set testFailed 0
 	}
 
 	if {$testFailed} {
@@ -2147,21 +2255,21 @@ proc tcltest::test {name args} {
 	    }
 	    set tcltest::currentFailure true
 	    if {[string first b $tcltest::verbose] == -1} {
-		set script ""
+		set body ""
 	    }	
-	    puts [outputChannel] "\n==== $name $description FAILED"
-	    if {$script != ""} {
+	    puts [outputChannel] "\n==== $name [string trim $description] FAILED"
+	    if {$body != ""} {
 		puts [outputChannel] "==== Contents of test case:"
-		puts [outputChannel] $script
+		puts [outputChannel] $body
 	    }
 	    if {$setupFailure} {
 		puts [outputChannel] "---- Test setup failed:\n$setupMsg"
-	    } else {
-		puts [outputChannel] "---- Result should have been ($expectMatch matching):\n$expectedAnswer"
+	    } 
+	    if {$scriptFailure} {
 		puts [outputChannel] "---- Result was:\n$actualAnswer"
+		puts [outputChannel] "---- Result should have been ($match matching):\n$result"
 	    }
 	    if {$codeFailure} {
-		puts [outputChannel] "---- Return code should have been one of: $expect_codes"
 		switch -- $code {
 		    0 { set msg "Test completed normally" }
 		    1 { set msg "Test generated error" }
@@ -2171,14 +2279,15 @@ proc tcltest::test {name args} {
 		    default { set msg "Test generated exception" }
 		}
 		puts [outputChannel] "---- $msg; Return code was: $code"
+		puts [outputChannel] "---- Return code should have been one of: $returnCodes"
 	    }
 	    if {$outputFailure} {
-		puts [outputChannel] "---- Output should have been ($expect_outMatch matching):\n$expect_out"
 		puts [outputChannel] "---- Output was:\n$tcltest::outData"
+		puts [outputChannel] "---- Output should have been ($match matching):\n$output"
 	    }
 	    if {$errorFailure} {
-		puts [outputChannel] "---- Error output should have been ($expect_errMatch matching):\n$expect_err"
 		puts [outputChannel] "---- Error output was:\n$tcltest::errData"
+		puts [outputChannel] "---- Error output should have been ($match matching):\n$errorOutput"
 	    }
 	    if {$cleanupFailure} {
 		puts [outputChannel] "---- Test cleanup failed:\n$cleanupMsg"
@@ -2187,11 +2296,13 @@ proc tcltest::test {name args} {
 		puts [outputChannel] "---- Core file produced while running test! $coreMsg"
 	    }
 	    puts [outputChannel] "==== $name FAILED\n"
+
 	}
     }
     
     incr tcltest::testLevel -1
-    return 0}
+    return 0
+}
 
 
 # runTest --
@@ -2323,7 +2434,6 @@ proc tcltest::runTest {name description script expectedAnswer constraints} {
     # tcl_platform.
 
     if {$tcltest::preserveCore} {
-	puts "check for core 2"
 	set currentTclPlatform [array get tcl_platform]
 	array set tcl_platform $tcltest::originalTclPlatform
 	if {[file exists [file join [tcltest::workingDirectory] core]]} {
@@ -2784,6 +2894,7 @@ proc tcltest::runAllTests [list [list shell [tcltest::interpreter]]] {
 	puts [outputChannel] "\n$dir test ended at $endTime"
 	puts [outputChannel] "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
     }
+    return
 }
 
 #####################################################################
@@ -3119,4 +3230,6 @@ namespace eval tcltest {
 	lappend tcltest::filesExisted [file tail $file]
     }
 }
+
+package provide tcltest 2.0
 
