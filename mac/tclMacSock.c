@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacSock.c,v 1.5 1999/08/10 04:21:55 jingham Exp $
+ * RCS: @(#) $Id: tclMacSock.c,v 1.6 2000/02/10 08:41:46 jingham Exp $
  */
 
 #include "tclInt.h"
@@ -760,16 +760,12 @@ TcpClose(
     	closePB.tcpStream = tcpStream;
     	closePB.ioCompletion = NULL; 
     	err = PBControlSync((ParmBlkPtr) &closePB);
-    	if (err != noErr) {
-            panic("error closing async connect socket");
-    	}
-	statePtr->flags |= TCP_RELEASE;
+    	if (err == noErr) {
+	    statePtr->flags |= TCP_RELEASE;
 
-	InitMacTCPParamBlock(&statePtr->pb, TCPRelease);
-	statePtr->pb.tcpStream = statePtr->tcpStream;
-	err = PBControlSync((ParmBlkPtr) &statePtr->pb);
-	if (err != noErr) {
-            panic("error releasing async connect socket");
+	    InitMacTCPParamBlock(&statePtr->pb, TCPRelease);
+	    statePtr->pb.tcpStream = statePtr->tcpStream;
+	    err = PBControlSync((ParmBlkPtr) &statePtr->pb);
 	}
 
 	/*
@@ -779,7 +775,7 @@ TcpClose(
 
 	ckfree((char *) statePtr->pb.csParam.create.rcvBuff);
 	FreeSocketInfo(statePtr);
-	return 0;
+	return err;
     }
 
     /*
