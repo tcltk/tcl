@@ -1,3 +1,9 @@
+2000-12-08  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* doc/open.n: Added xref to fconfigure and advice on the opening
+	  of binary files.  Should help prevent a recurrence of bugs like
+	  #124558
+
 2000-12-07  jeff hobbs  <jhobbs@interwoven.com>
 
 	* generic/tcl.h: added note about need to updated
