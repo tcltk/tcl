@@ -1,3 +1,13 @@
+2002-07-30  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
+
+	* tests/io.test: 
+	* generic/tclIO.c (WriteChars): Added flag to break out of loop if
+	  nothing of the input is consumed at all, to prevent infinite
+	  looping of called with a non-UTF-8 string. Fixes Bug 584603
+	  (partially). Added new test "io-60.1". Might need additional
+	  changes to Tcl_Main so that unprintable results are printed as
+	  binary data.
+
 2002-07-29  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* unix/Makefile.in: Use CC_SEARCH_FLAGS instead of

@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: io.test,v 1.36 2002/07/10 11:56:44 dgp Exp $
+# RCS: @(#) $Id: io.test,v 1.37 2002/07/30 18:36:26 andreas_kupries Exp $
 
 if {[catch {package require tcltest 2}]} {
     puts stderr "Skipping tests in [info script].  tcltest 2 required."
@@ -7076,6 +7076,41 @@ test io-59.1 {Thread reference of channels} {testmainthread testchannel} {
     close $f
     string equal $result [testmainthread]
 } {1}
+
+
+test io-60.1 {writing illegal utf sequences} {
+    # This test will hang in older revisions of the core.
+
+    set out [open $path(script) w]
+    puts $out {
+	puts [encoding convertfrom identity \xe2]
+	exit 1
+    }
+    proc readit {pipe} {
+	variable x
+	variable result
+	if {[eof $pipe]} {
+	    set x [catch {close $pipe} line]
+	    lappend result catch $line
+	} else {
+	    gets $pipe line
+	    lappend result gets $line
+	}
+    }
+    close $out
+    set pipe [open "|[list [interpreter] $path(script)]" r]
+    fileevent $pipe readable [namespace code [list readit $pipe]]
+    variable x ""
+    set result ""
+    vwait [namespace which -variable x]
+
+    # cut of the remainder of the error stack, especially the filename
+    set result [lreplace $result 3 3 [lindex [split [lindex $result 3] \n] 0]]
+    list $x $result
+} {1 {gets {} catch {error writing "stdout": invalid argument}}}
+
+
+
 
 # cleanup
 foreach file [list fooBar longfile script output test1 pipe my_script foo \
