@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.6 1999/04/17 00:32:32 hershey Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.7 1999/04/17 01:36:32 hershey Exp $
  */
 
 #include "tclInt.h"
@@ -2179,7 +2179,7 @@ Tcl_Access(path, mode)
     CONST char *path;		/* Path of file to access (UTF-8). */
     int mode;			/* Permission setting. */
 {
-    return TclpAccess(path, mode);
+    return TclAccess(path, mode);
 }
 
 /*
@@ -2203,5 +2203,5 @@ Tcl_Stat(path, bufPtr)
     CONST char *path;		/* Path of file to stat (in UTF-8). */
     struct stat *bufPtr;	/* Filled with results of stat call. */
 {
-    return TclpStat(path, bufPtr);
+    return TclStat(path, bufPtr);
 }

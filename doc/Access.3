@@ -1,0 +1,64 @@
+'\"
+'\" Copyright (c) 1998-1999 Scriptics Corportation
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+'\" RCS: @(#) $Id: Access.3,v 1.1 1999/04/17 01:36:32 hershey Exp $
+'\" 
+.so man.macros
+.TH Tcl_Access 3 8.1 Tcl "Tcl Library Procedures"
+.BS
+.SH NAME
+Tcl_Access, Tcl_Stat \- check file permissions and other attributes
+.SH SYNOPSIS
+.nf
+\fB#include <tcl.h>\fR
+.sp
+int
+\fBTcl_Access\fR(\fpath\fR, \fImode\fR)
+.sp
+int
+\fBTcl_Stat\fR(\fIpath\fR, \fIbufPtr\fR)
+.SH ARGUMENTS
+.AS struct stat *bufPtr
+.AP CONST char *path in
+Native name of the file to check the attributes of.
+.AP int mode in
+Mask consisting of one or more of R_OK, W_OK, X_OK and F_OK.  R_OK,
+W_OK and X_OK request checking whether the file exists and  has  read,
+write and  execute  permissions, respectively.  F_OK just requests
+checking for the existence of the file.
+.AP struct stat *bufPtr out
+The structure that contains the result.
+.BE
+
+.SH DESCRIPTION
+.PP
+There are two reasons for calling \fBTcl_Access\fR and \fBTcl_Stat\fR
+rather than calling system level functions \fBaccess\fR and \fBstat\fR
+directly.  First, the Windows implementation of both functions fixes
+some bugs in the system level calls.  Second, both \fBTcl_Access\fR
+and \fBTcl_Stat\fR (as well as \fBTcl_OpenFileChannelProc\fR) hook
+into a linked list of functions, the first of which checks for the
+existence of \fBpath\fR in a Zip file rather than on disc.  The
+hooking behavior is necessary for applications wrapped with TclPro
+Wrapper.
+.PP
+\fBTcl_Access\fR checks whether the process would be allowed to read,
+write or test for existence of the file (or other file system object)
+whose name is pathname.   If pathname is a symbolic link on Unix,
+then permissions of the file referred by this symbolic link are
+tested.
+.PP
+On success (all requested permissions granted), zero is returned.  On
+error (at least one bit in mode asked for a permission that is denied,
+or some other  error occurred), -1 is returned.
+.PP
+\fBTcl_Stat\fR returns the stat structure with information about the
+specified file.  You do not need any access rights to the file to get
+this information but you need search rights to all directories named
+in the path leading to the file.  
+
+.SH KEYWORDS
+statc access
