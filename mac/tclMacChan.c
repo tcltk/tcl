@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacChan.c,v 1.21 2003/03/03 20:22:42 das Exp $
+ * RCS: @(#) $Id: tclMacChan.c,v 1.22 2003/12/24 04:18:21 davygrvy Exp $
  */
 
 #include "tclInt.h"
@@ -434,7 +434,7 @@ StdIOClose(
 	} else if (fd == 2) {
 	    tsdPtr->stderrChannel = NULL;
 	} else {
-	    panic("recieved invalid std file");
+	    Tcl_Panic("recieved invalid std file");
 	}
     
 	if (close(fd) < 0) {
@@ -696,7 +696,7 @@ TclpGetDefaultStdChannel(
 	    bufMode = "none";
 	    break;
 	default:
-	    panic("TclGetDefaultStdChannel: Unexpected channel type");
+	    Tcl_Panic("TclGetDefaultStdChannel: Unexpected channel type");
 	    break;
     }
 
@@ -987,7 +987,7 @@ FileClose(
     FlushVol(NULL, fileState->volumeRef);
     if (err != noErr) {
 	errorCode = errno = TclMacOSErrorToPosixError(err);
-	panic("error during file close");
+	Tcl_Panic("error during file close");
     }
 
     ckfree((char *) fileState);
@@ -1258,9 +1258,9 @@ TclpCutFileChannel(chan)
      * local data in each thread.
      */
 
-    if (!removed)
-        panic("file info ptr not on thread channel list");
-
+    if (!removed) {
+        Tcl_Panic("file info ptr not on thread channel list");
+    }
 }
 
 /*

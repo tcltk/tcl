@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPipe.c,v 1.38 2003/10/21 23:25:47 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclWinPipe.c,v 1.39 2003/12/24 04:18:23 davygrvy Exp $
  */
 
 #include "tclWinInt.h"
@@ -874,7 +874,7 @@ TclpCloseFile(
 	    break;
 
 	default:
-	    panic("TclpCloseFile: unexpected file type");
+	    Tcl_Panic("TclpCloseFile: unexpected file type");
     }
 
     ckfree((char *) filePtr);
@@ -1215,17 +1215,19 @@ TclpCreateProcess(
 		    if (*end == '/')
 		        break;
 		}
-		if (*end != '/')
-		    panic("no / in executable path name");
+		if (*end != '/') {
+		    Tcl_Panic("no / in executable path name");
+		}
 		i = (end - start) + 1;
 		pipeDllPtr = Tcl_NewStringObj(start, i);
 		Tcl_AppendToObj(pipeDllPtr, Tcl_DStringValue(&pipeDll), -1);
 		Tcl_IncrRefCount(pipeDllPtr);
-		if (Tcl_FSConvertToPathType(interp, pipeDllPtr) != TCL_OK)
-		    panic("Tcl_FSConvertToPathType failed");
+		if (Tcl_FSConvertToPathType(interp, pipeDllPtr) != TCL_OK) {
+		    Tcl_Panic("Tcl_FSConvertToPathType failed");
+		}
 		fileExists = (Tcl_FSAccess(pipeDllPtr, F_OK) == 0);
 		if (!fileExists) {
-		    panic("Tcl pipe dll \"%s\" not found",
+		    Tcl_Panic("Tcl pipe dll \"%s\" not found",
 		        Tcl_DStringValue(&pipeDll));
 		}
 		Tcl_DStringAppend(&cmdLine, Tcl_DStringValue(&pipeDll), -1);

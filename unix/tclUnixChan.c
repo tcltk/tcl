@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.44 2003/11/18 23:13:33 davygrvy Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.45 2003/12/24 04:18:22 davygrvy Exp $
  */
 
 #include "tclInt.h"	/* Internal definitions for Tcl. */
@@ -1777,7 +1777,7 @@ TclpOpenFileChannel(interp, pathPtr, mode, permissions)
 	    /*
 	     * This may occurr if modeString was "", for example.
 	     */
-	    panic("TclpOpenFileChannel: invalid mode value");
+	    Tcl_Panic("TclpOpenFileChannel: invalid mode value");
 	    return NULL;
     }
 
@@ -3002,7 +3002,7 @@ TclpGetDefaultStdChannel(type)
 	    bufMode = "none";
 	    break;
 	default:
-	    panic("TclGetDefaultStdChannel: Unexpected channel type");
+	    Tcl_Panic("TclGetDefaultStdChannel: Unexpected channel type");
 	    break;
     }
 
@@ -3194,7 +3194,7 @@ TclUnixWaitForFile(fd, mask, timeout)
      */
 
     if (fd >= FD_SETSIZE) {
-	panic("TclWaitForFile can't handle file id %d", fd);
+	Tcl_Panic("TclWaitForFile can't handle file id %d", fd);
     }
     memset((VOID *) readyMasks, 0, 3*MASK_SIZE*sizeof(fd_mask));
     index = fd/(NBBY*sizeof(fd_mask));
@@ -3323,8 +3323,9 @@ TclpCutFileChannel(chan)
      * local data in each thread.
      */
 
-    if (!removed)
-        panic("file info ptr not on thread channel list");
+    if (!removed) {
+        Tcl_Panic("file info ptr not on thread channel list");
+    }
 
 #endif /* DEPRECATED */
 }

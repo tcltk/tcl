@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWin32Dll.c,v 1.29 2003/12/21 21:58:43 davygrvy Exp $
+ * RCS: @(#) $Id: tclWin32Dll.c,v 1.30 2003/12/24 04:18:22 davygrvy Exp $
  */
 
 #include "tclWinInt.h"
@@ -325,7 +325,7 @@ TclWinInit(hInst)
      */
 
     if (platformId == VER_PLATFORM_WIN32s) {
-	panic("Win32s is not a supported platform");	
+	Tcl_Panic("Win32s is not a supported platform");	
     }
 
     tclWinProcs = &asciiProcs;
@@ -473,11 +473,11 @@ TclpCheckStackSpace()
               "=r"(RESTORED_HANDLER) );
 
     if (INITIAL_ESP != RESTORED_ESP)
-        panic("ESP restored incorrectly");
+        Tcl_Panic("ESP restored incorrectly");
     if (INITIAL_EBP != RESTORED_EBP)
-        panic("EBP restored incorrectly");
+        Tcl_Panic("EBP restored incorrectly");
     if (INITIAL_HANDLER != RESTORED_HANDLER)
-        panic("HANDLER restored incorrectly");
+        Tcl_Panic("HANDLER restored incorrectly");
 # endif /* TCL_MEM_DEBUG */
 #else
     } __except (EXCEPTION_EXECUTE_HANDLER) {}

@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.90 2003/12/17 09:24:43 vasiljevic Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.91 2003/12/24 04:18:20 davygrvy Exp $
  */
 
 #include "tclInt.h"
@@ -3294,7 +3294,7 @@ TclGetPathType(pathObjPtr, filesystemPtrPtr, driveNameLengthPtr, driveNameRef)
 		     * return with the current value of 'type'.
 		     * 
 		     * It would be better if we could signal an error
-		     * here (but panic seems a bit excessive).
+		     * here (but Tcl_Panic seems a bit excessive).
 		     */
 		    numVolumes = -1;
 		}
@@ -3697,7 +3697,7 @@ Tcl_FSGetFileSystemForPath(pathObjPtr)
     Tcl_Filesystem* retVal = NULL;
     
     if (pathObjPtr == NULL) {
-	panic("Tcl_FSGetFileSystemForPath called with NULL object");
+	Tcl_Panic("Tcl_FSGetFileSystemForPath called with NULL object");
 	return NULL;
     }
     
@@ -3709,7 +3709,7 @@ Tcl_FSGetFileSystemForPath(pathObjPtr)
      */
     
     if (pathObjPtr->refCount == 0) {
-	panic("Tcl_FSGetFileSystemForPath called with object with refCount == 0");
+	Tcl_Panic("Tcl_FSGetFileSystemForPath called with object with refCount == 0");
 	return NULL;
     }
     

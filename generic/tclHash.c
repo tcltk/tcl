@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclHash.c,v 1.15 2003/11/15 23:35:16 dkf Exp $
+ * RCS: @(#) $Id: tclHash.c,v 1.16 2003/12/24 04:18:19 davygrvy Exp $
  */
 
 #include "tclInt.h"
@@ -193,7 +193,7 @@ Tcl_InitCustomHashTable(tablePtr, keyType, typePtr)
 					 * the behaviour of this table. */
 {
 #if (TCL_SMALL_HASH_TABLE != 4) 
-    panic("Tcl_InitCustomHashTable: TCL_SMALL_HASH_TABLE is %d, not 4\n",
+    Tcl_Panic("Tcl_InitCustomHashTable: TCL_SMALL_HASH_TABLE is %d, not 4\n",
 	    TCL_SMALL_HASH_TABLE);
 #endif
     
@@ -548,7 +548,7 @@ Tcl_DeleteHashEntry(entryPtr)
     } else {
 	for (prevPtr = *bucketPtr; ; prevPtr = prevPtr->nextPtr) {
 	    if (prevPtr == NULL) {
-		panic("malformed bucket chain in Tcl_DeleteHashEntry");
+		Tcl_Panic("malformed bucket chain in Tcl_DeleteHashEntry");
 	    }
 	    if (prevPtr->nextPtr == entryPtr) {
 		prevPtr->nextPtr = entryPtr->nextPtr;
@@ -1068,7 +1068,7 @@ HashStringKey(tablePtr, keyPtr)
  *	on a table that has been deleted.
  *
  * Results:
- *	If panic returns (which it shouldn't) this procedure returns
+ *	If Tcl_Panic returns (which it shouldn't) this procedure returns
  *	NULL.
  *
  * Side effects:
@@ -1083,7 +1083,7 @@ BogusFind(tablePtr, key)
     Tcl_HashTable *tablePtr;	/* Table in which to lookup entry. */
     CONST char *key;		/* Key to use to find matching entry. */
 {
-    panic("called Tcl_FindHashEntry on deleted table");
+    Tcl_Panic("called Tcl_FindHashEntry on deleted table");
     return NULL;
 }
 
@@ -1114,7 +1114,7 @@ BogusCreate(tablePtr, key, newPtr)
     int *newPtr;		/* Store info here telling whether a new
 				 * entry was created. */
 {
-    panic("called Tcl_CreateHashEntry on deleted table");
+    Tcl_Panic("called Tcl_CreateHashEntry on deleted table");
     return NULL;
 }
 #endif
