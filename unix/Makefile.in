@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.157.2.5 2005/01/21 18:35:22 kennykb Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.157.2.6 2005/02/02 16:58:57 kennykb Exp $
 
 VERSION 		= @TCL_VERSION@
 MAJOR_VERSION		= @TCL_MAJOR_VERSION@
@@ -304,23 +304,29 @@ GENERIC_OBJS = regcomp.o regexec.o regfree.o regerror.o tclAlloc.o \
 	tclIOGT.o tclIOSock.o tclIOUtil.o tclLink.o tclListObj.o \
 	tclLiteral.o tclLoad.o tclMain.o tclNamesp.o tclNotify.o \
 	tclObj.o tclPanic.o tclParse.o tclParseExpr.o tclPathObj.o tclPipe.o \
-	tclPkg.o tclPkgConfig.o tclPosixStr.o tclPreserve.o tclProc.o tclRegexp.o \
-	tclResolve.o tclResult.o tclScan.o tclStringObj.o tclThread.o \
+	tclPkg.o tclPkgConfig.o tclPosixStr.o \
+	tclPreserve.o tclProc.o tclRegexp.o \
+	tclResolve.o tclResult.o tclScan.o tclStringObj.o \
+	tclStrToD.o tclThread.o \
 	tclThreadAlloc.o tclThreadJoin.o tclThreadStorage.o tclStubInit.o \
 	tclStubLib.o tclTimer.o tclTrace.o tclUtf.o tclUtil.o tclVar.o \
 	tclTomMathInterface.o
 
-TOMMATH_OBJS = bncore.o bn_reverse.o bn_fast_s_mp_mul_digs.o bn_mp_add.o \
+TOMMATH_OBJS = bncore.o bn_reverse.o bn_fast_s_mp_mul_digs.o \
+	bn_fast_s_mp_sqr.o bn_mp_add.o \
         bn_mp_add_d.o bn_mp_clamp.o bn_mp_clear.o bn_mp_clear_multi.o \
         bn_mp_cmp.o bn_mp_cmp_mag.o bn_mp_copy.o bn_mp_count_bits.o \
         bn_mp_div.o bn_mp_div_d.o bn_mp_div_2.o bn_mp_div_2d.o bn_mp_div_3.o \
         bn_mp_exch.o bn_mp_grow.o bn_mp_init.o bn_mp_init_copy.o \
         bn_mp_init_multi.o bn_mp_init_size.o bn_mp_karatsuba_mul.o \
+	bn_mp_karatsuba_sqr.o \
         bn_mp_lshd.o bn_mp_mod.o bn_mp_mod_2d.o bn_mp_mul.o bn_mp_mul_2.o \
         bn_mp_mul_2d.o bn_mp_mul_d.o bn_mp_radix_size.o bn_mp_radix_smap.o \
-        bn_mp_read_radix.o bn_mp_rshd.o bn_mp_sub.o bn_mp_sub_d.o \
-        bn_mp_toom_mul.o bn_mp_toradix_n.o bn_mp_zero.o bn_s_mp_add.o \
-        bn_s_mp_mul_digs.o bn_s_mp_sub.o
+        bn_mp_read_radix.o bn_mp_rshd.o bn_mp_set.o bn_mp_sqr.o \
+	bn_mp_sub.o bn_mp_sub_d.o \
+        bn_mp_toom_mul.o bn_mp_toom_sqr.o \
+	bn_mp_toradix_n.o bn_mp_zero.o bn_s_mp_add.o \
+        bn_s_mp_mul_digs.o bn_s_mp_sqr.o bn_s_mp_sub.o
 
 STUB_LIB_OBJS = tclStubLib.o ${COMPAT_OBJS}
 
@@ -404,6 +410,7 @@ GENERIC_SRCS = \
 	$(GENERIC_DIR)/tclStubInit.c \
 	$(GENERIC_DIR)/tclStubLib.c \
 	$(GENERIC_DIR)/tclStringObj.c \
+	$(GENERIC_DIR)/tclStrToD.c \
 	$(GENERIC_DIR)/tclTest.c \
 	$(GENERIC_DIR)/tclTestObj.c \
 	$(GENERIC_DIR)/tclTestProcBodyObj.c \
@@ -418,6 +425,57 @@ GENERIC_SRCS = \
 
 STUB_SRCS = \
 	$(GENERIC_DIR)/tclStubLib.c
+
+TOMMATH_SRCS = \
+	$(TOMMATH_DIR)/bncore.c \
+	$(TOMMATH_DIR)/bn_reverse.c \
+	$(TOMMATH_DIR)/bn_fast_s_mp_mul_digs.c \
+	$(TOMMATH_DIR)/bn_fast_s_mp_sqr.c \
+	$(TOMMATH_DIR)/bn_mp_add.c \
+	$(TOMMATH_DIR)/bn_mp_add_d.c \
+	$(TOMMATH_DIR)/bn_mp_clamp.c \
+	$(TOMMATH_DIR)/bn_mp_clear.c \
+	$(TOMMATH_DIR)/bn_mp_clear_multi.c \
+	$(TOMMATH_DIR)/bn_mp_cmp.c \
+	$(TOMMATH_DIR)/bn_mp_cmp_mag.c \
+	$(TOMMATH_DIR)/bn_mp_copy.c \
+	$(TOMMATH_DIR)/bn_mp_count_bits.c \
+	$(TOMMATH_DIR)/bn_mp_div.c \
+	$(TOMMATH_DIR)/bn_mp_div_d.c \
+	$(TOMMATH_DIR)/bn_mp_div_2.c \
+	$(TOMMATH_DIR)/bn_mp_div_2d.c \
+	$(TOMMATH_DIR)/bn_mp_div_3.c \
+	$(TOMMATH_DIR)/bn_mp_exch.c \
+	$(TOMMATH_DIR)/bn_mp_grow.c \
+	$(TOMMATH_DIR)/bn_mp_init.c \
+	$(TOMMATH_DIR)/bn_mp_init_copy.c \
+	$(TOMMATH_DIR)/bn_mp_init_multi.c \
+	$(TOMMATH_DIR)/bn_mp_init_size.c \
+	$(TOMMATH_DIR)/bn_mp_karatsuba_mul.c \
+	$(TOMMATH_DIR)/bn_mp_karatsuba_sqr.c \
+	$(TOMMATH_DIR)/bn_mp_lshd.c \
+	$(TOMMATH_DIR)/bn_mp_mod.c \
+	$(TOMMATH_DIR)/bn_mp_mod_2d.c \
+	$(TOMMATH_DIR)/bn_mp_mul.c \
+	$(TOMMATH_DIR)/bn_mp_mul_2.c \
+	$(TOMMATH_DIR)/bn_mp_mul_2d.c \
+	$(TOMMATH_DIR)/bn_mp_mul_d.c \
+	$(TOMMATH_DIR)/bn_mp_radix_size.c \
+	$(TOMMATH_DIR)/bn_mp_radix_smap.c \
+	$(TOMMATH_DIR)/bn_mp_read_radix.c \
+	$(TOMMATH_DIR)/bn_mp_rshd.c \
+	$(TOMMATH_DIR)/bn_mp_set.c \
+	$(TOMMATH_DIR)/bn_mp_sqr.c \
+	$(TOMMATH_DIR)/bn_mp_sub.c \
+	$(TOMMATH_DIR)/bn_mp_sub_d.c \
+	$(TOMMATH_DIR)/bn_mp_toom_mul.c \
+	$(TOMMATH_DIR)/bn_mp_toom_sqr.c \
+	$(TOMMATH_DIR)/bn_mp_toradix_n.c \
+	$(TOMMATH_DIR)/bn_mp_zero.c \
+	$(TOMMATH_DIR)/bn_s_mp_add.c \
+	$(TOMMATH_DIR)/bn_s_mp_mul_digs.c \
+	$(TOMMATH_DIR)/bn_s_mp_sqr.c \
+	$(TOMMATH_DIR)/bn_s_mp_sub.c
 
 UNIX_HDRS = \
 	$(UNIX_DIR)/tclUnixPort.h
@@ -456,7 +514,7 @@ MAC_OSX_SRCS = \
 # files won't compile on the current machine, and they will cause
 # problems for things like "make depend".
 
-SRCS = $(GENERIC_SRCS) $(UNIX_SRCS) $(STUB_SRCS)
+SRCS = $(GENERIC_SRCS) $(TOMMATH_SRCS) $(UNIX_SRCS) $(STUB_SRCS)
 
 all: binaries libraries doc
 
@@ -1056,6 +1114,9 @@ tclScan.o: $(GENERIC_DIR)/tclScan.c
 tclStringObj.o: $(GENERIC_DIR)/tclStringObj.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclStringObj.c
 
+tclStrToD.o: $(GENERIC_DIR)/tclStrToD.c
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclStrToD.c
+
 tclStubInit.o: $(GENERIC_DIR)/tclStubInit.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclStubInit.c
 
@@ -1109,6 +1170,9 @@ bn_reverse.o: $(TOMMATH_DIR)/bn_reverse.c
 
 bn_fast_s_mp_mul_digs.o: $(TOMMATH_DIR)/bn_fast_s_mp_mul_digs.c
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_fast_s_mp_mul_digs.c
+
+bn_fast_s_mp_sqr.o: $(TOMMATH_DIR)/bn_fast_s_mp_sqr.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_fast_s_mp_sqr.c
 
 bn_mp_add.o: $(TOMMATH_DIR)/bn_mp_add.c
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_add.c
@@ -1173,6 +1237,9 @@ bn_mp_init_size.o:$(TOMMATH_DIR)/bn_mp_init_size.c
 bn_mp_karatsuba_mul.o: $(TOMMATH_DIR)/bn_mp_karatsuba_mul.c
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_karatsuba_mul.c
 
+bn_mp_karatsuba_sqr.o: $(TOMMATH_DIR)/bn_mp_karatsuba_sqr.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_karatsuba_sqr.c
+
 bn_mp_lshd.o: $(TOMMATH_DIR)/bn_mp_lshd.c
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_lshd.c
 
@@ -1206,6 +1273,12 @@ bn_mp_read_radix.o: $(TOMMATH_DIR)/bn_mp_read_radix.c
 bn_mp_rshd.o: $(TOMMATH_DIR)/bn_mp_rshd.c
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_rshd.c
 
+bn_mp_set.o: $(TOMMATH_DIR)/bn_mp_set.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_set.c
+
+bn_mp_sqr.o: $(TOMMATH_DIR)/bn_mp_sqr.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_sqr.c
+
 bn_mp_sub.o: $(TOMMATH_DIR)/bn_mp_sub.c
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_sub.c
 
@@ -1214,6 +1287,9 @@ bn_mp_sub_d.o: $(TOMMATH_DIR)/bn_mp_sub_d.c
 
 bn_mp_toom_mul.o: $(TOMMATH_DIR)/bn_mp_toom_mul.c
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_toom_mul.c
+
+bn_mp_toom_sqr.o: $(TOMMATH_DIR)/bn_mp_toom_sqr.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_toom_sqr.c
 
 bn_mp_toradix_n.o: $(TOMMATH_DIR)/bn_mp_toradix_n.c
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_toradix_n.c
@@ -1226,6 +1302,9 @@ bn_s_mp_add.o: $(TOMMATH_DIR)/bn_s_mp_add.c
 
 bn_s_mp_mul_digs.o: $(TOMMATH_DIR)/bn_s_mp_mul_digs.c
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_s_mp_mul_digs.c
+
+bn_s_mp_sqr.o: $(TOMMATH_DIR)/bn_s_mp_sqr.c
+	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_s_mp_sqr.c
 
 bn_s_mp_sub.o: $(TOMMATH_DIR)/bn_s_mp_sub.c
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_s_mp_sub.c

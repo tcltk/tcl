@@ -17,6 +17,10 @@
 	* generic/tclStrToD.c: (new file)
 	    New scanning function for extracting 'double' from a string
 	    that rounds correctly, and handles denormals and infinities.
+	* unix/Makefile.in:
+	* win/Makefile.in:
+	* win/makefile.vc:
+	    Added tclStrToD.c and the tommath routines that support it.
 
 	These changes represent a partial implementation of TIP #132.
 	Output conversion of floating point numbers, and proper handling

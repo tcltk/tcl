@@ -12,7 +12,9 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStrToD.c,v 1.1.2.1 2005/02/02 15:53:27 kennykb Exp $
+ * RCS: @(#) $Id: tclStrToD.c,v 1.1.2.2 2005/02/02 16:58:57 kennykb Exp $
+ *
+ *----------------------------------------------------------------------
  */
 
 #include <tclInt.h>
@@ -23,6 +25,21 @@
 #include <math.h>
 #include <ctype.h>
 #include <tommath.h>
+
+/*
+ * The stuff below is a bit of a hack so that this file can be used in
+ * environments that include no UNIX, i.e. no errno: just arrange to use
+ * the errno from tclExecute.c here.
+ */
+
+#ifdef TCL_GENERIC_ONLY
+#define NO_ERRNO_H
+#endif
+
+#ifdef NO_ERRNO_H
+extern int errno;			/* Use errno from tclExecute.c. */
+#define ERANGE 34
+#endif
 
 #if ( FLT_RADIX == 2 ) && ( DBL_MANT_DIG == 53 ) && ( DBL_MAX_EXP == 1024 )
 #define IEEE_FLOATING_POINT
@@ -229,15 +246,29 @@ TclStrToD( CONST char* s,
 	++p;
 	c = *p;
 	if ( isdigit( c ) || c == '+' || c == '-' ) {
+	    errno = 0;
 	    exponent = strtol( p, (char**)&p, 10 );
+	    if ( errno == ERANGE ) {
+		if ( exponent > 0 ) {
+		    v = HUGE_VAL;
+		} else {
+		    v = 0.0;
+		}
+		*endPtr = p;
+		goto returnValue;
+	    }
 	}
 	if ( p == stringSave + 1 ) {
 	    p = stringSave;
 	    exponent = 0;
 	}
     }
-
     exponent = exponent + nTrailZero - nDigitsAfterDp;
+
+    /*
+     * If we come here with no significant digits, we might still be
+     * looking at Inf or NaN.  Go parse them.
+     */
 
     if ( !seenDigit ) {
 
@@ -288,6 +319,10 @@ TclStrToD( CONST char* s,
 
 	goto error;
     }
+
+    /*
+     * We've successfully scanned; update the end-of-element pointer.
+     */
 
     if ( endPtr != NULL ) {
 	*endPtr = p;
