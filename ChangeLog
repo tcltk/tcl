@@ -14,7 +14,8 @@
 
 2004-10-26  Don Porter  <dgp@users.sourceforge.net>
 
-        * tests/subst.test (subst-12.3,4):      More tests for Bug 1036649.
+	* generic/tclParse.c (Tcl_SubstObj):	Fix for failed subst-12.3 test.
+        * tests/subst.test (subst-12.3-5):      More tests for Bug 1036649.
 
         * unix/Makefile.in (install-libraries): Updated the installation
         of the http, msgcat, and tcltest packages to install as Tcl Modules
