@@ -431,6 +431,7 @@ if {$tcl_platform(os) != "Win32s"} {
 	close $f
 	set testConfig(stdio) 1
     }
+    catch {file delete -force tmp}
 }
 
 if {($tcl_platform(platform) == "windows") && ($testConfig(stdio) == 0)} {
