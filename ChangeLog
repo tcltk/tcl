@@ -1,5 +1,8 @@
 2004-02-25  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
+	* generic/tclLoad.c (Tcl_LoadObjCmd): Missing dereference caused
+	segfault with non-loadable extension. [Bug 904307]
+
 	* unix/tclUnixChan.c (TcpGetOptionProc): Stop memory leak with
 	very long hostnames.  [Bug 888777]
 
