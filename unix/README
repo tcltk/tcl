@@ -22,7 +22,7 @@ SGI, as well as PCs running Linux, BSDI, and SCO UNIX.  To compile for
 a PC running Windows, see the README file in the directory ../win.  To
 compile for a Macintosh, see the README file in the directory ../mac.
 
-RCS: @(#) $Id: README,v 1.14 2000/08/25 05:56:21 mo Exp $
+RCS: @(#) $Id: README,v 1.15 2001/04/02 01:59:55 hobbs Exp $
 
 How To Compile And Install Tcl:
 -------------------------------
@@ -123,7 +123,7 @@ information on the test suite.  Note: don't run the tests as superuser:
 this will cause several of them to fail.  If a test is failing
 consistently, please send us a bug report with as much detail as you
 can manage.  Please use the online database at
-	http://dev.scriptics.com/ticket/
+	http://tcl.sourceforge.net/
 
 The Tcl test suite is very sensitive to proper implementation of
 ANSI C library procedures such as sprintf and sscanf.  If the test

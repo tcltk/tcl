@@ -1,10 +1,6 @@
 Tcl 8.4 for Windows
 
-by Scott Stanton
-Scriptics Corporation
-scott.stanton@scriptics.com
-
-RCS: @(#) $Id: README,v 1.18 2000/08/25 05:45:08 mo Exp $
+RCS: @(#) $Id: README,v 1.19 2001/04/02 01:59:55 hobbs Exp $
 
 1. Introduction
 ---------------
@@ -73,8 +69,7 @@ This distribution contains an extensive test suite for Tcl.  Some of
 the tests are timing dependent and will fail from time to time.  If a
 test is failing consistently, please send us a bug report with as much
 detail as you can manage.  Please use the online database at
-	http://dev.scriptics.com/ticket/
+	http://tcl.sourceforge.net/
 
 In order to run the test suite, you build the "test" target using the
 appropriate makefile for your compiler.
-

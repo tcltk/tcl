@@ -1,3 +1,20 @@
+2001-04-01  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* README:
+	* mac/README:
+	* win/README:
+	* win/README.binary:
+	* unix/README: updated patchlevel information to 8.4a3 and
+	updated links and notes.
+
+	* generic/tcl.h:
+	* tools/tcl.wse.in:
+	* win/configure.in (VER):
+	* win/configure:
+	* unix/configure:
+	* unix/configure.in (VER):
+	* unix/tcl.spec: updated patchlevel information to 8.4a3
+
 2001-03-30  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclCkalloc.c (TclFinalizeMemorySubsystem): set curTagPtr
