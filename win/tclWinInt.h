@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinInt.h,v 1.17 2002/10/29 14:17:58 vincentdarley Exp $
+ * RCS: @(#) $Id: tclWinInt.h,v 1.18 2003/01/09 10:38:35 vincentdarley Exp $
  */
 
 #ifndef _TCLWININT
@@ -100,6 +100,9 @@ typedef struct TclWinProcs {
 	    GET_FILEEX_INFO_LEVELS, LPVOID);
     BOOL (WINAPI *createHardLinkProc)(CONST TCHAR*, CONST TCHAR*, 
 				      LPSECURITY_ATTRIBUTES);
+    
+    INT (__cdecl *utimeProc)(CONST TCHAR*, struct _utimbuf *);
+    
 } TclWinProcs;
 
 EXTERN TclWinProcs *tclWinProcs;

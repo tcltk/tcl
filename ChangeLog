@@ -2,6 +2,17 @@
 
 	* generic/tclFileName.c: remove unused variable 'macSpecialCase'
 	[Bug 664749]
+	
+	* generic/tclIOUtil.c:
+	* generic/tclInt.h:
+	* unix/tclUnixFile.c:
+	* mac/tclMacFile.c:
+	* win/tclWinFile.c:
+	* win/tclWinInt.h:
+	* win/tclWin32Dll.c: 
+	* tests/cmdAH.test: fix to non-ascii chars in paths when
+	setting mtime and atime through 'file (a|m)time $path $time'
+	[Bug 634151]
 
 2003-01-08  Don Porter  <dgp@users.sourceforge.net>
 

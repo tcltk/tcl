@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacFile.c,v 1.25 2002/10/09 11:54:24 das Exp $
+ * RCS: @(#) $Id: tclMacFile.c,v 1.26 2003/01/09 10:38:29 vincentdarley Exp $
  */
 
 /*
@@ -1240,3 +1240,32 @@ TclpFilesystemPathType(pathObjPtr)
     /* All native paths are of the same type */
     return NULL;
 }
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * TclpUtime --
+ *
+ *	Set the modification date for a file.
+ *
+ * Results:
+ *	0 on success, -1 on error.
+ *
+ * Side effects:
+ *	None.
+ *
+ *---------------------------------------------------------------------------
+ */
+int 
+TclpUtime(pathPtr, tval)
+    Tcl_Obj *pathPtr;      /* File to modify */
+    struct utimbuf *tval;  /* New modification date structure */
+{
+    long gmt_offset=TclpGetGMTOffset();
+    struct utimbuf local_tval;
+    local_tval.actime=tval->actime+gmt_offset;
+    local_tval.modtime=tval->modtime+gmt_offset;
+    return utime(Tcl_GetString(Tcl_FSGetNormalizedPath(NULL,pathPtr)),
+		 &local_tval);
+}
+

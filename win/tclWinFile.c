@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.39 2002/07/20 01:01:41 vincentdarley Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.40 2003/01/09 10:38:35 vincentdarley Exp $
  */
 
 //#define _WIN32_WINNT  0x0500
@@ -2221,4 +2221,38 @@ TclpObjNormalizePath(interp, pathPtr, nextCheckpoint)
     }
     Tcl_DStringFree(&dsNorm);
     return nextCheckpoint;
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * TclpUtime --
+ *
+ *	Set the modification date for a file.
+ *
+ * Results:
+ *	0 on success, -1 on error.
+ *
+ * Side effects:
+ *	None.
+ *
+ *---------------------------------------------------------------------------
+ */
+int
+TclpUtime(pathPtr, tval)
+    Tcl_Obj *pathPtr;      /* File to modify */
+    struct utimbuf *tval;  /* New modification date structure */
+{
+    int res;
+    /* 
+     * Windows uses a slightly different structure name and, possibly,
+     * contents, so we have to copy the information over
+     */
+    struct _utimbuf buf;
+    
+    buf.actime = tval->actime;
+    buf.modtime = tval->modtime;
+    
+    res = (*tclWinProcs->utimeProc)(Tcl_FSGetNativePath(pathPtr),&buf);
+    return res;
 }
