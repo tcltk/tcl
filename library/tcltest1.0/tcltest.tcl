@@ -3,7 +3,7 @@
 #	This file contains support code for the Tcl test suite.  It 
 #       defines the ::tcltest namespace and finds and defines the output
 #       directory, constraints available, output and error channels, etc. used
-#       by Tcl tests.  See the README file for more details.
+#       by Tcl tests.  See the tcltest man page for more details.
 #       
 #       This design was based on the Tcl testing approach designed and
 #       initially implemented by Mary Ann May-Pumphrey of Sun Microsystems. 
@@ -12,7 +12,7 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 # 
-# RCS: @(#) $Id: tcltest.tcl,v 1.18 1999/10/29 03:04:16 hobbs Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.19 1999/11/04 18:20:12 jenn Exp $
 
 package provide tcltest 1.0
 
@@ -428,7 +428,7 @@ if {[namespace inscope ::tcltest info procs initConstraintsHook] == {}} {
 # to run.  To do this, create an array ::tcltest::testConstraints.  Each
 # element has a 0 or 1 value.  If the element is "true" then tests
 # with that constraint will be run, otherwise tests with that constraint
-# will be skipped.  See the README file for the list of built-in
+# will be skipped.  See the tcltest man page for the list of built-in
 # constraints defined in this procedure.
 #
 # Arguments:
