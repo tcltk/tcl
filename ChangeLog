@@ -1,5 +1,10 @@
 2004-12-09  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
+	* generic/tclNamesp.c (TclMakeEnsembleCmd, TclSetEnsemble*)
+	(TclSetEnsemble*, TclFindEnsemble): Build an internal API for
+	creating and manipulating ensembles; they can be deleted using the
+	normal command-deletion API.
+
 	* doc/Async.3: Reword for better grammar, better nroff and get the
 	flag name right. (Reported by David Welton.)
 
