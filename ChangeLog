@@ -1,3 +1,22 @@
+2001-09-19  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclExecute.c (TclExecuteByteCode): fixed invalid usage
+	of valuePtr in TRACE_WITH_OBJ in INST_EVAL_STK case. [Bug #462594]
+	Changed INST_STR_CMP instruction to promote to Unicode strings
+	only when one of the strings is already of Unicode type.
+
+	* generic/tclExecute.c (TclExecuteByteCode):
+	* generic/tclCompile.c (instructionTable):
+	* generic/tclCompCmds.c (TclCompileStringCmd): INST_STR_MATCH -
+	Updated to Int1 instruction type and added special case to use
+	INST_STR_EQ instead when no glob chars are specified in a static
+	string.
+
+	* tests/{for.test,foreach.test,if.test,while.test}:
+	* generic/tclCompCmds.c (TclCompileForCmd, TclCompileForeachCmd,
+	TclCompileIfCmd, TclCompileWhileCmd): Corrected the overaggressive
+	compiling of loop bodies enclosed in ""s.  [Bug #219166] (msofer)
+
 2001-09-19  Miguel Sofer  <msofer@users.sourceforge.net>
 	
 	* generic/tclExecute.c: insured that execution stack errors are
@@ -79,6 +98,7 @@
 
 2001-09-13  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	* tests/regexp.test (regexp-20.1):
 	* generic/tclCmdMZ.c (Tcl_RegsubObjCmd): had to adjust fix from
 	2001-08-06 to actually duplicate the objects in certain cases.
 	This is really a place where feather would have been essential.
