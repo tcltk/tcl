@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: dict.test,v 1.7 2004/03/12 23:21:06 dkf Exp $
+# RCS: @(#) $Id: dict.test,v 1.8 2004/10/02 17:00:39 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -538,10 +538,10 @@ test dict-15.6 {dict set command} {
     set dictVar {a {b {c y}}}
     dict set dictVar a b c x
 } {a {b {c x}}}
-test dict-15.7 {dict set command: no path creation} {
+test dict-15.7 {dict set command: path creation} {
     set dictVar {}
-    list [catch {dict set dictVar a b x} msg] $msg
-} {1 {key "a" not known in dictionary}}
+    dict set dictVar a b x
+} {a {b x}}
 test dict-15.8 {dict set command: creates variables} {
     catch {unset dictVar}
     dict set dictVar a x
