@@ -1,5 +1,8 @@
 2002-02-15  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	* unix/tclUnixPort.h: add strtoll/strtoull declarations for
+	platforms that do not define them.
+
 	* generic/tclIndexObj.c (STRING_AT): removed ptrdiff_t cast and
 	use of VOID* in default case (GNU-ism).
 
