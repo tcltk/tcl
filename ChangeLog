@@ -1,3 +1,12 @@
+2001-09-13  Andreas Kupries <andreas_kupries@users.sourceforge.net>
+
+	* tests/ioCmd.test: Changed the computation of the result for
+	  iocmd-8.1[123] so that the tests work for single- and
+	  multi-process execution of the testsuite. Depending on the
+	  choice of the user stdout is a tty or not and thus reports
+	  different channel options. Fixes [460993] reported by Don
+	  Porter.
+
 2001-09-13  Miguel Sofer  <msofer@users.sourceforge.net>
   
    	* doc/ParseCmd.3:  
@@ -11,7 +20,6 @@
   	same duties but adheres to the standard return convention for Tcl
   	evaluations; the deprecated function could only return TCL_OK or
   	TCL_ERROR, which caused [Bug: 219384] and [Bug: 455151].
-  
 
 2001-09-12  Mo DeJong  <mdejong@users.sourceforge.net>
 
