@@ -1,3 +1,16 @@
+2002-08-28  David Gravereaux <davygrvy@pobox.com>
+
+	* generic/tclEnv.c:
+	* unix/configure.in:
+	* win/tclWinPort.h:  putenv() on some systems copies the buffer
+	rather than taking reference to it.  This causes memory leaks
+	and is know to effect mswindows (msvcrt) and NetBSD 1.5.2 .  This
+	patch tests for this behavior and turns on -DHAVE_PUTENV_THAT_COPIES=1
+	when approriate.  Thanks to David Welton for assistance.
+	[Bug 414910]
+
+	* unix/configure: regen'd
+
 2002-08-28  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* doc/eval.n: Added mention of list command and corrected "SEE ALSO".
