@@ -9,6 +9,8 @@
         speed-ups, but disabled some on the older Win 95/98/ME where
         they don't seem to work.
 
+        * doc/FileSystem.3: documentation fix [Bug 720634]
+
 2003-06-18  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclNamesp.c (Tcl_Export): removed erroneous comments
