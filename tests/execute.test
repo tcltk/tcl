@@ -14,7 +14,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: execute.test,v 1.14 2003/09/19 18:09:41 msofer Exp $
+# RCS: @(#) $Id: execute.test,v 1.15 2003/10/04 16:12:12 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -720,6 +720,15 @@ test execute-8.1 {Stack protection} {
     trace add variable ::errorInfo {write unset} whatever
     catch {expr {1+9/0}}
 } 1
+
+test execute-8.2 {Stack restoration} {
+    # Test for [Bug #816641], correct restoration
+    # of the stack top after the stack is grown
+     proc f {args} { f bee bop }
+     catch f msg
+     set msg
+ } {too many nested evaluations (infinite loop?)}
+
 
 # cleanup
 if {[info commands testobj] != {}} {
