@@ -1,5 +1,8 @@
 2003-05-15  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	* win/tclWinFile.c (TclpMatchInDirectory): revert glob code to
+	r1.44 as 2003-04-14 optimizations broke Windows98 glob'ing.
+
 	* README:           bumped version to 8.4.3
 	* generic/tcl.h:
 	* macosx/Tcl.pbproj/project.pbxproj:
