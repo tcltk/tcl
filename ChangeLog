@@ -1,5 +1,8 @@
 2004-10-31  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
+	* tests/io.test (io-40.3): Convert umask2 test constraint into a
+	form that most people will be able to satisfy.
+
 	* tests/cmdAH.test (cmdAH-8.45): Removed broken test constraint.
 	It didn't do what it was intended to do, and it implied the other
 	correct constraint. [Bug 1053908]
