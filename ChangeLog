@@ -1,5 +1,23 @@
 2003-03-06  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* generic/tclIO.c (Tcl_Seek, Tcl_OutputBuffered):
+	If there is data buffered in the statePtr->curOutPtr
+	member then set the BUFFER_READY flag in Tcl_Seek.
+	This is needed so that the next call to FlushChannel
+	will write any buffered bytes before doing the seek.
+	The existing code would set the BUFFER_READY flag
+	inside the Tcl_OutputBuffered function. This was a
+	programming error made when Tcl_OutputBuffered
+	was originally created in CVS revision 1.35. The
+	setting of the BUFFER_READY flag should not have
+	been included in the Tcl_OutputBuffered function.
+	* generic/tclTest.c (TestChannelCmd): Use the
+	Tcl_InputBuffered and Tcl_OutputBuffered
+	util methods to query the amount of buffered
+	input and output.
+
+2003-03-06  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* generic/tclIO.c (Tcl_Flush): Compare the
 	nextAdded member of the ChannelBuffer to the
 	nextRemoved member to determine if any output
