@@ -1,3 +1,11 @@
+2001-05-07  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* generic/tclInt.h
+	* generic/tclNamesp.c: invalidate all bytecodes in a namespace if
+	a new command shadows a bytecoded command.
+	* tests/namespace.test
+	Patched from [Bug: 231259] 
+
 2001-05-15  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* doc/console.n: Created.  It seems very odd to me that the
