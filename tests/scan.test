@@ -10,9 +10,37 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: scan.test,v 1.1.2.2 1998/09/24 23:59:35 stanton Exp $
+# RCS: @(#) $Id: scan.test,v 1.1.2.3 1998/11/16 20:45:23 stanton Exp $
 
 if {[string compare test [info procs test]] == 1} then {source defs}
+
+test scan-1.1 {ValidateFormat} {
+    list [catch {scan {} {%d%1$d} x} msg] $msg
+} {1 {cannot mix "%" and "%n$" conversion specifiers}}
+test scan-1.1 {ValidateFormat} {
+    list [catch {scan {} {%d%1$d} x} msg] $msg
+} {1 {cannot mix "%" and "%n$" conversion specifiers}}
+test scan-1.1 {ValidateFormat} {
+    list [catch {scan {} {%2$d%d} x} msg] $msg
+} {1 {"%n$" argument index out of range}}
+test scan-1.1 {ValidateFormat} {
+    list [catch {scan {} %d} msg] $msg
+} {1 {different numbers of variable names and field specifiers}}
+test scan-1.1 {ValidateFormat} {
+    list [catch {scan {} {%10c} a} msg] $msg
+} {1 {field width may not be specified in %c conversion}}
+test scan-1.1 {ValidateFormat} {
+    list [catch {scan {} {%*1$d} a} msg] $msg
+} {1 {bad scan conversion character "$"}}
+test scan-1.1 {ValidateFormat} {
+    list [catch {scan {} {%1$d%1$d} a} msg] $msg
+} {1 {variable is assigned by multiple "%n$" conversion specifiers}}
+test scan-1.1 {ValidateFormat} {
+    list [catch {scan {} a x} msg] $msg
+} {1 {variable is not assigend by any conversion specifiers}}
+
+
+
 
 test scan-1.1 {integer scanning} {
     set a {}; set b {}; set c {}; set d {}
@@ -130,6 +158,10 @@ test scan-3.7 {string and character scanning, unicode} {
     set a {}; set b {}
     list [scan "ab\u00c7cdef" "ab%c%c" a b] $a $b
 } "2 199 99"
+test scan-3.7 {string and character scanning, unicode} {
+    set a {}; set b {}
+    list [scan "ab\ufeffdef" "%\[ab\ufeff\]" a] $a
+} "1 ab\ufeff"
 
 test scan-4.1 {error conditions} {
     catch {scan a}
@@ -138,34 +170,27 @@ test scan-4.2 {error conditions} {
     catch {scan a} msg
     set msg
 } {wrong # args: should be "scan string format ?varName varName ...?"}
-test scan-4.3 {error conditions} {
-    catch {scan "1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21" "%d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d" a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 a18 a19 a20 a21}
-} 1
-test scan-4.4 {error conditions} {
-    catch {scan "1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21" "%d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d" a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 a18 a19 a20 a21} msg
-    set msg
-} {too many fields to scan}
 test scan-4.5 {error conditions} {
-    list [catch {scan a %D} msg] $msg
+    list [catch {scan a %D x} msg] $msg
 } {1 {bad scan conversion character "D"}}
 test scan-4.6 {error conditions} {
-    list [catch {scan a %O} msg] $msg
+    list [catch {scan a %O x} msg] $msg
 } {1 {bad scan conversion character "O"}}
 test scan-4.7 {error conditions} {
-    list [catch {scan a %X} msg] $msg
+    list [catch {scan a %X x} msg] $msg
 } {1 {bad scan conversion character "X"}}
 test scan-4.8 {error conditions} {
-    list [catch {scan a %F} msg] $msg
+    list [catch {scan a %F x} msg] $msg
 } {1 {bad scan conversion character "F"}}
 test scan-4.9 {error conditions} {
-    list [catch {scan a %E} msg] $msg
+    list [catch {scan a %E x} msg] $msg
 } {1 {bad scan conversion character "E"}}
 test scan-4.10 {error conditions} {
     list [catch {scan a "%d %d" a} msg] $msg
 } {1 {different numbers of variable names and field specifiers}}
 test scan-4.11 {error conditions} {
     list [catch {scan a "%d %d" a b c} msg] $msg
-} {1 {different numbers of variable names and field specifiers}}
+} {1 {variable is not assigend by any conversion specifiers}}
 test scan-4.12 {error conditions} {
     set a {}; set b {}; set c {}; set d {}
     list [expr {[scan "  a" " a %d %d %d %d" a b c d] <= 0}] $a $b $c $d
@@ -204,7 +229,16 @@ test scan-4.19 {error conditions} {
     list [catch {scan 44 %2c a} msg] $msg
 } {1 {field width may not be specified in %c conversion}}
 test scan-4.20 {error conditions} {
-    list [catch {scan abc {%[}} msg] $msg
+    list [catch {scan abc {%[} x} msg] $msg
+} {1 {unmatched [ in format string}}
+test scan-4.20 {error conditions} {
+    list [catch {scan abc {%[^a} x} msg] $msg
+} {1 {unmatched [ in format string}}
+test scan-4.20 {error conditions} {
+    list [catch {scan abc {%[^]a} x} msg] $msg
+} {1 {unmatched [ in format string}}
+test scan-4.20 {error conditions} {
+    list [catch {scan abc {%[]a} x} msg] $msg
 } {1 {unmatched [ in format string}}
 
 test scan-5.1 {lots of arguments} {
