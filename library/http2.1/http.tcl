@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and
 # redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: http.tcl,v 1.12 1999/10/21 02:16:37 hobbs Exp $
+# RCS: @(#) $Id: http.tcl,v 1.13 1999/10/30 00:31:58 welch Exp $
 
 package provide http 2.1	;# This uses Tcl namespaces
 
@@ -233,14 +233,13 @@ proc http::geturl { url args } {
     # Wait for the connection to complete
 
     if {$state(-timeout) > 0} {
-	#fileevent $s writable [list set $token\(status) connect]
 	fileevent $s writable [list http::Connect $token]
 	http::wait $token
 	if {[string equal $state(status) "timeout"]} {
 	    return
 	}
 	fileevent $s writable {}
-	unset state(status)
+	set state(status) ""
     }
 
     # Send data in cr-lf format, but accept any line terminators
