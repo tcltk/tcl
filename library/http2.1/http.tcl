@@ -9,13 +9,12 @@
 # See the file "license.terms" for information on usage and
 # redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: http.tcl,v 1.10 1999/08/19 02:59:45 hobbs Exp $
+# RCS: @(#) $Id: http.tcl,v 1.11 1999/10/05 22:46:00 hobbs Exp $
 
 package provide http 2.1	;# This uses Tcl namespaces
 
 namespace eval http {
     variable http
-
     array set http {
 	-accept */*
 	-proxyhost {}
@@ -25,8 +24,8 @@ namespace eval http {
     }
 
     variable formMap
-    set alphanumeric	a-zA-Z0-9
-
+    variable alphanumeric a-zA-Z0-9
+    variable c
     variable i 0
     for {} {$i <= 256} {incr i} {
 	set c [format %c $i]
