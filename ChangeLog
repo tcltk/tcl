@@ -26,6 +26,7 @@
 
 	* doc/FileSystem.3: added documentation for 3 public
 	functions which had been overlooked.  Fixes [Bug 507701].
+	* unix/mkLinks: make mklinks
 
 2002-01-29  Jeff Hobbs  <jeffh@ActiveState.com>
 
@@ -86,7 +87,7 @@
 	* doc/package.n: Documented global namespace context for script
 	evaluation by [package require].
 
-2001-01-27  Daniel Steffen  <das@users.sourceforge.net>
+2002-01-27  Daniel Steffen  <das@users.sourceforge.net>
 
 	* generic/tclInt.decls:
 	* generic/tclIntPlatDecls.h:
