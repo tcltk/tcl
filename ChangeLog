@@ -4,6 +4,11 @@
 	
 2002-07-04  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
 
+	* tests/socket.test: 
+	* tests/winPipe.test: 
+	* tests/pid.test: Fixed SF Bug #575848. See below for a
+	  description the general problem.
+
 	* All the bugs below are instances of the same problem: The
 	  testsuite assumes [pwd] = [temporaryDirectory] and writable.
 
