@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: httpold.test,v 1.8 2000/04/10 17:18:59 ericm Exp $
+# RCS: @(#) $Id: httpold.test,v 1.9 2002/06/22 04:19:47 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -27,6 +27,7 @@ if {[catch {package require http 1.0}]} {
 	catch {puts "Running http 1.0 tests in slave interp"}
 	set interp [interp create httpold]
 	$interp eval [list set httpold "running"]
+	$interp eval [list set argv $argv]
 	$interp eval [list source [info script]]
 	interp delete $interp
 	::tcltest::cleanupTests
