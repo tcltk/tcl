@@ -1,3 +1,8 @@
+2001-04-10  Kevin B. Kenny    <kennykb@acm.org>
+
+	* unix/tclUnixTime.c: Fixed silly typo in calls to 'gmtime' and
+	'localtime' that broke the Linux build.
+	
 2001-04-09  Kevin B. Kenny    <kennykb@acm.org>
 
 	* unix/tclLoadShl.c: Added DYNAMIC_PATH to the load flags so that
