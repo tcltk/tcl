@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: expr.test,v 1.1.2.5 1999/03/24 02:49:08 hershey Exp $
+# RCS: @(#) $Id: expr.test,v 1.1.2.6 1999/04/02 23:44:37 stanton Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     source [file join [pwd] [file dirname [info script]] defs.tcl]
@@ -667,19 +667,43 @@ test expr-19.1 {expr and interpreter result object resetting} {
     p
 } 3
 
+# Test for incorrect "double evaluation" semantics
+
+test expr-20.1 {wrong brace matching} {
+    catch {unset l}
+    catch {unset r}
+    catch {unset q}
+    catch {unset cmd}
+    catch {unset a}
+    set l "\{"; set r "\}"; set q "\""
+    set cmd "expr $l$q|$q == $q$r$q$r"
+    list [catch $cmd a] $a
+} {1 {extra characters after close-brace}}
+test expr-20.2 {double invocation of variable traces} {knownBug} {
+    set exprtracecounter 0
+    proc exprtraceproc {args} {
+       upvar #0 exprtracecounter counter
+       set argc [llength $args]
+       set extraargs [lrange $args 0 [expr {$argc - 4}]]
+       set name [lindex $args [expr {$argc - 3}]]
+       upvar 1 $name var
+       if {[incr counter] % 2 == 1} {
+           set var "$counter oops [concat $extraargs]"
+       } else {
+           set var "$counter + [concat $extraargs]"
+       }
+    }
+    trace variable exprtracevar r [list exprtraceproc 10]
+    list [catch {expr "$exprtracevar + 20"} a] $a \
+        [catch {expr "$exprtracevar + 20"} b] $b \
+        [unset exprtracevar exprtracecounter]
+} {1 {syntax error in expression "1 oops 10 + 20"} 0 32 {}}
+test expr-20.3 {broken substitution of integer digits} {
+    # fails with 8.0.x, but not 8.1b2
+    list [set a 000; expr 0x1$a] [set a 1; expr ${a}000]
+} {4096 1000}
+
 # cleanup
 unset a
 ::tcltest::cleanupTests
 return
-
-
-
-
-
-
-
-
-
-
-
-

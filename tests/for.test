@@ -9,9 +9,11 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: for.test,v 1.1.2.5 1999/03/24 02:49:10 hershey Exp $
+# RCS: @(#) $Id: for.test,v 1.1.2.6 1999/04/02 23:44:38 stanton Exp $
 
-if {[string compare test [info procs test]] == 1} then {source defs}
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    source [file join [pwd] [file dirname [info script]] defs.tcl]
+}
 
 # Basic "for" operation.
 
@@ -712,6 +714,26 @@ test for-5.15 {for cmd with computed command names: for command result} {
     set a [$z {set i 0} {$i < 5} {incr i} {if $i==3 break}]
     set a
 } {}
+
+# Test for incorrect "double evaluation" semantics
+
+test for-6.1 {possible delayed substitution of increment command} {knownBug} {
+    # Increment should be 5, and lappend should always append 5
+    catch {unset a}
+    catch {unset i}
+    set a 5
+    set i {}
+    for {set a 1} {$a < 12} "incr a $a" {lappend i $a}
+    set i
+} {1 6 11}
+
+test for-6.2 {possible delayed substitution of body command} {knownBug} {
+    # Increment should be 5, and lappend should always append 5
+    set a 5
+    set i {}
+    for {set a 1} {$a < 12} {incr a $a} "lappend i $a"
+    set i
+} {5 5 5 5}
 
 # cleanup
 ::tcltest::cleanupTests

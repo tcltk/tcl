@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: interp.test,v 1.1.2.9 1999/03/26 02:24:46 stanton Exp $
+# RCS: @(#) $Id: interp.test,v 1.1.2.10 1999/04/02 23:44:39 stanton Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     source [file join [pwd] [file dirname [info script]] defs.tcl]
@@ -2344,6 +2344,7 @@ test interp-31.1 {alias invocation scope} {
     set result [testMyNewSet "ok"]
     rename testMyNewSet {}
     rename mySet {}
+    rename myNewSet {}
     set result
 } ok
 
