@@ -113,11 +113,15 @@
 			shouldUseHeadermap = 0;
 		};
 		00E2F84C016E8B780ACA28DC = {
-			buildArgumentsString = "-c \"if [ \\\"${ACTION}\\\" != \\\"clean\\\" ]; then make tclsh tcltest TCL_LIBRARY=\\\"@TCL_IN_FRAMEWORK@\\\" ${EXTRA_MAKE_FLAGS} TCL_PACKAGE_PATH=\\\"~/Library/Tcl /Library/Tcl /Network/Library/Tcl /System/Library/Tcl\\\"; else make clean; fi\"";
+			buildArgumentsString = "-c \"if [ \\\"${ACTION}\\\" != \\\"clean\\\" ]; then gnumake tclsh tcltest TCL_LIBRARY=\\\"@TCL_IN_FRAMEWORK@\\\" TCL_PACKAGE_PATH=\\\"~/Library/Tcl /Library/Tcl /Network/Library/Tcl /System/Library/Tcl\\\" DYLIB_INSTALL_DIR=\\\"${DYLIB_INSTALL_DIR}\\\" ${EXTRA_MAKE_FLAGS}; else gnumake clean; fi\"";
 			buildPhases = (
 			);
 			buildSettings = {
+				DYLIB_INSTALL_DIR = "${DYLIB_INSTALL_PATH}/${PRODUCT_NAME}.framework/Versions/${FRAMEWORK_VERSION}";
+				DYLIB_INSTALL_PATH = "${INSTALL_PATH}";
 				EXTRA_MAKE_FLAGS = "";
+				FRAMEWORK_VERSION = 8.4;
+				INSTALL_PATH = /Library/Frameworks;
 				PRODUCT_NAME = Tcl;
 			};
 			buildToolPath = /bin/sh;
@@ -461,7 +465,7 @@ MacOS X Port by Jim Ingham &lt;jingham@apple.com&gt; &amp; Ian Reid, Copyright Â
 			);
 			runOnlyForDeploymentPostprocessing = 1;
 			shellPath = /bin/sh;
-			shellScript = "# redo prebinding\nif [ ! -d \"${INSTALL_ROOT}/usr/lib\" ]; then ln -fs /usr/lib \"${INSTALL_ROOT}/usr/\"; RM_USRLIB=1; fi\nif [ ! -d \"${INSTALL_ROOT}/System\" ]; then ln -fs /System \"${INSTALL_ROOT}/\"; RM_SYSTEM=1; fi\nredo_prebinding -r \"${INSTALL_ROOT}\" \"${INSTALL_ROOT}/usr/bin/tclsh${FRAMEWORK_VERSION}\"\nif [ -n \"${RM_USRLIB:-}\" ]; then rm -f \"${INSTALL_ROOT}/usr/lib\"; fi\nif [ -n \"${RM_SYSTEM:-}\" ]; then rm -r ${INSTALL_ROOT}/System; fi";
+			shellScript = "if [ `echo \"${DYLIB_INSTALL_PATH:-}\" | grep -c \"@executable_path\"` -gt 0 ]; then\n# if we are embedding frameworks, don't install tclsh\nrm -f \"${INSTALL_ROOT}/usr/bin/tclsh${FRAMEWORK_VERSION}\"\nrmdir -p \"${INSTALL_ROOT}/usr/bin\"\necho \"tclsh removed\"\nelse\n# redo prebinding\ncd \"${INSTALL_ROOT}\"\nif [ ! -d usr/lib ]; then mkdir -p usr; ln -fs /usr/lib usr/; RM_USRLIB=1; fi\nif [ ! -d System ]; then ln -fs /System .; RM_SYSTEM=1; fi\nredo_prebinding -r . \"./usr/bin/tclsh${FRAMEWORK_VERSION}\"\nif [ -n \"${RM_USRLIB:-}\" ]; then rm -f usr/lib; rmdir -p usr; fi\nif [ -n \"${RM_SYSTEM:-}\" ]; then rm -f System; fi\nfi";
 		};
 		F59AE5E3017AC67A01DC9062 = {
 			buildActionMask = 8;
@@ -474,7 +478,7 @@ MacOS X Port by Jim Ingham &lt;jingham@apple.com&gt; &amp; Ian Reid, Copyright Â
 			);
 			runOnlyForDeploymentPostprocessing = 1;
 			shellPath = /bin/sh;
-			shellScript = "# build html documentation\nif [ \"${BUILD_STYLE}\" = \"Deployment\" ]; then\n    cd \"${TEMP_DIR}/..\"\n    make html DISTDIR=\"${INSTALL_ROOT}${LIBDIR}/Resources/English.lproj/Documentation/Reference\"\n    cd \"${INSTALL_ROOT}${LIBDIR}/Resources/English.lproj/Documentation/Reference\"\n    ln -fs contents.htm html/index.html\n    rm -f \"${PRODUCT_NAME}\"; ln -fs html \"${PRODUCT_NAME}\"\nfi";
+			shellScript = "# build html documentation\nif [ \"${BUILD_STYLE}\" = \"Deployment\" ]; then\n    cd \"${TEMP_DIR}/..\"\n    gnumake html DISTDIR=\"${INSTALL_ROOT}${LIBDIR}/Resources/English.lproj/Documentation/Reference\"\n    cd \"${INSTALL_ROOT}${LIBDIR}/Resources/English.lproj/Documentation/Reference\"\n    ln -fs contents.htm html/index.html\n    rm -f \"${PRODUCT_NAME}\"; ln -fs html \"${PRODUCT_NAME}\"\nfi";
 		};
 		F5A1836F018242A501DC9062 = {
 			isa = PBXFileReference;

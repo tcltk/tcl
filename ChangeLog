@@ -1,3 +1,17 @@
+2002-09-10  Daniel Steffen  <das@users.sourceforge.net>
+
+	* unix/Makefile.in: added DYLIB_INSTALL_DIR variable for macosx
+	and set it to default value ${LIB_RUNTIME_DIR}
+	* unix/tcl.m4 (Darwin): use DYLIB_INSTALL_DIR instead of
+	LIB_RUNTIME_DIR in the -install_name argument to ld.
+	* unix/configure: regen.
+
+	* macosx/Tcl.pbproj/project.pbxproj:
+	* macosx/Makefile: added support for building Tcl as an embedded
+	framework, i.e. using an dyld install_name containing
+	@executable_path/../Frameworks via the new DYLIB_INSTALL_DIR
+	unix/Makefile variable.
+	
 2002-09-10  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	*** 8.4.0 TAGGED FOR RELEASE ***
