@@ -1,8 +1,16 @@
-2001-10-19  Daniel Steffen <das@users.sourceforge.net>
+2001-10-19  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	************************
 	****  8.3.4 TAGGED  ****
 	************************
+
+	* generic/tclInt.h: 
+	* generic/tclObj.c: added -DPURIFY object allocation option.
+
+	* unix/configure:
+	* unix/tcl.m4: added -lc to LIBS on AIX
+
+2001-10-19  Daniel Steffen <das@users.sourceforge.net>
 
 	* mac/tclMacFile.c: fix to glob -join, wasn't traversing aliased
 	folders
