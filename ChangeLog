@@ -17,6 +17,7 @@
 	undergone cross-platform copies.  [Patch 676271]
 	
 	* tests/basic.test:
+	* tests/exec.test:
 	* tests/fileName.test:
 	* tests/io.test: fixed some test failures when tests are run 
 	from a directory containing spaces.
