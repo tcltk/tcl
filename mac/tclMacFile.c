@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacFile.c,v 1.19 2002/04/08 09:02:43 das Exp $
+ * RCS: @(#) $Id: tclMacFile.c,v 1.20 2002/04/19 14:18:50 das Exp $
  */
 
 /*
@@ -35,6 +35,8 @@ static int NativeMatchType(Tcl_Obj *tempName, Tcl_GlobTypeData *types,
 			   HFileInfo fileInfo, OSType okType, OSType okCreator);
 static OSErr FspLocationFromFsPath _ANSI_ARGS_((Tcl_Obj *pathPtr, 
 						FSSpec* specPtr));
+static OSErr FspLLocationFromFsPath _ANSI_ARGS_((Tcl_Obj *pathPtr, 
+						FSSpec* specPtr));
 
 static OSErr 
 FspLocationFromFsPath(pathPtr, specPtr)
@@ -43,6 +45,15 @@ FspLocationFromFsPath(pathPtr, specPtr)
 {
     CONST char *native = Tcl_FSGetNativePath(pathPtr);
     return FSpLocationFromPath(strlen(native), native, specPtr);
+}
+
+static OSErr 
+FspLLocationFromFsPath(pathPtr, specPtr)
+    Tcl_Obj *pathPtr;
+    FSSpec* specPtr;
+{
+    CONST char *native = Tcl_FSGetNativePath(pathPtr);
+    return FSpLLocationFromPath(strlen(native), native, specPtr);
 }
 
 
@@ -166,7 +177,7 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 	    return TCL_OK;
 	}
 
-	if (FspLocationFromFsPath(fileNamePtr, &fileSpec) == noErr) {
+	if (FspLLocationFromFsPath(fileNamePtr, &fileSpec) == noErr) {
 	    paramBlock.hFileInfo.ioCompletion = NULL;
 	    paramBlock.hFileInfo.ioNamePtr = fileSpec.name;
 	    paramBlock.hFileInfo.ioVRefNum = fileSpec.vRefNum;
@@ -438,7 +449,7 @@ TclpObjAccess(pathPtr, mode)
     long dirID;
     int full_mode = 0;
 
-    err = FspLocationFromFsPath(pathPtr, &fileSpec);
+    err = FspLLocationFromFsPath(pathPtr, &fileSpec);
 
     if (err != noErr) {
 	errno = TclMacOSErrorToPosixError(err);
@@ -761,6 +772,10 @@ TclpReadlink(
     
     return Tcl_DStringValue(linkPtr);
 }
+
+static int 
+TclpObjStatAlias _ANSI_ARGS_((Tcl_Obj *pathPtr, Tcl_StatBuf *bufPtr, Boolean resolveLink));
+
 
 /*
  *----------------------------------------------------------------------
@@ -783,8 +798,7 @@ TclpObjLstat(pathPtr, buf)
     Tcl_Obj *pathPtr;
     Tcl_StatBuf *buf;
 {
-    /* This needs to be enhanced to deal with aliases */
-    return TclpObjStat(pathPtr, buf);
+    return TclpObjStatAlias(pathPtr, buf, FALSE);
 }
 
 /*
@@ -808,6 +822,13 @@ TclpObjStat(pathPtr, bufPtr)
     Tcl_Obj *pathPtr;
     Tcl_StatBuf *bufPtr;
 {
+    return TclpObjStatAlias(pathPtr, bufPtr, TRUE);
+}
+
+
+static int
+TclpObjStatAlias (Tcl_Obj *pathPtr, Tcl_StatBuf *bufPtr, Boolean resolveLink)
+{
     HFileInfo fpb;
     HVolumeParam vpb;
     OSErr err;
@@ -815,7 +836,10 @@ TclpObjStat(pathPtr, bufPtr)
     Boolean isDirectory;
     long dirID;
     
-    err = FspLocationFromFsPath(pathPtr, &fileSpec);
+    if (resolveLink)
+    	err = FspLocationFromFsPath(pathPtr, &fileSpec);
+    else
+    	err = FspLLocationFromFsPath(pathPtr, &fileSpec);
     
     if (err != noErr) {
 	errno = TclMacOSErrorToPosixError(err);
