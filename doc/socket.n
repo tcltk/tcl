@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: socket.n,v 1.8 2003/04/16 23:06:30 dkf Exp $
+'\" RCS: @(#) $Id: socket.n,v 1.9 2003/05/15 18:41:17 hobbs Exp $
 .so man.macros
 .TH socket n 8.0 Tcl "Tcl Built-In Commands"
 .BS
@@ -30,7 +30,7 @@ The \fBsocket\fR command may be used to open either the client or
 server side of a connection, depending on whether the \fB\-server\fR
 switch is specified.
 .PP
-Note that the default encoding for \fIall\fB sockets is the system
+Note that the default encoding for \fIall\fR sockets is the system
 encoding, as returned by \fBencoding system\fR.  Most of the time, you
 will need to use \fBfconfigure\fR to alter this to something else,
 such as \fIutf\-8\fR (ideal for communicating with other Tcl
