@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: cmdAH.test,v 1.35 2003/07/21 10:24:25 vincentdarley Exp $
+# RCS: @(#) $Id: cmdAH.test,v 1.36 2003/09/16 16:06:35 vincentdarley Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -1466,7 +1466,13 @@ test cmdAH-25.1 {Tcl_FileObjCmd: owned} {
     list [catch {file owned a b} msg] $msg
 } {1 {wrong # args: should be "file owned name"}}
 test cmdAH-25.2 {Tcl_FileObjCmd: owned} {
-    file owned $gorpfile
+    if {$tcl_platform(platform) eq "unix"} {
+	# Avoid problems with AFS
+	set tmpfile [makeFile "data" touch.me /tmp]
+	file owned $tmpfile
+    } else {
+	file owned $gorpfile
+    }
 } 1
 test cmdAH-25.3 {Tcl_FileObjCmd: owned} {unixOnly notRoot} {
     file owned /
