@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: break.n,v 1.5 2004/05/05 23:08:39 dkf Exp $
+'\" RCS: @(#) $Id: break.n,v 1.6 2004/09/18 17:01:06 dkf Exp $
 '\" 
 .so man.macros
 .TH break n "" Tcl "Tcl Built-In Commands"
@@ -21,7 +21,7 @@ break \- Abort looping command
 .PP
 This command is typically invoked inside the body of a looping command
 such as \fBfor\fR or \fBforeach\fR or \fBwhile\fR.
-It returns a TCL_BREAK code, which causes a break exception
+It returns a \fBTCL_BREAK\fR code, which causes a break exception
 to occur.
 The exception causes the current script to be aborted
 out to the innermost containing loop command, which then
