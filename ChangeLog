@@ -1,3 +1,9 @@
+2002-02-05  Don Porter <dgp@users.sourceforge.net>
+
+	* library/http/http.tcl:
+	* library/http/pkgIndex.tcl:  Corrected use of http::error when
+	::error was intended.  Bump to http 2.4.2.
+
 2002-02-04  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
 
 	* unix/tclUnixChan.c (FileOutputProc): Fixed [bug 465765] reported
