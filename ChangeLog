@@ -1,4 +1,9 @@
-1999-07-28  Jennifer Hom  <jenn@scriptics.com>
+1999-07-29    <redman@scriptics.com>
+
+	* win/tclWinSock.c:  Free Win32 Event handles when destroying
+	the socket helper thread.
+
+1999-07-28    <jenn@scriptics.com>
 
 	* tests/tcltest.test:
 	* library/tcltest1.0/tcltest.tcl: Fixed the condition under which

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinSock.c,v 1.14 1999/07/27 01:42:25 redman Exp $
+ * RCS: @(#) $Id: tclWinSock.c,v 1.15 1999/07/29 22:58:24 redman Exp $
  */
 
 #include "tclWinInt.h"
@@ -489,6 +489,7 @@ unloadLibrary:
 	    tsdPtr->socketThread = NULL;
 	}
 	CloseHandle(tsdPtr->readyEvent);
+	CloseHandle(tsdPtr->socketListLock);
     }
     FreeLibrary(winSock.hInstance);
     winSock.hInstance = NULL;
@@ -583,6 +584,8 @@ SocketThreadExitHandler(clientData)
 	(ThreadSpecificData *)TclThreadDataKeyGet(&dataKey);
 
     if (tsdPtr->socketThread != NULL) {
+
+	WaitForSingleObject(tsdPtr->socketListLock, INFINITE);
 	Tcl_MutexLock(&socketMutex);
 	TerminateThread(tsdPtr->socketThread, 0);
 
@@ -592,6 +595,8 @@ SocketThreadExitHandler(clientData)
 	 */
 	
 	WaitForSingleObject(tsdPtr->socketThread, INFINITE);
+	CloseHandle(tsdPtr->readyEvent);
+	CloseHandle(tsdPtr->socketListLock);
 	Tcl_MutexUnlock(&socketMutex);
     }
     if (tsdPtr->hwnd != NULL) {
