@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.32 1999/06/16 22:36:23 surles Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.33 1999/06/22 18:51:00 wart Exp $
 
 VERSION 		= @TCL_VERSION@
 
@@ -31,6 +31,8 @@ exec_prefix		= @exec_prefix@
 # run-time.  INSTALL_ROOT is prepended to $prefix and $exec_prefix
 # when installing files.
 INSTALL_ROOT		=
+
+TCL_LIBRARY	= tcl$(VERSION)
 
 # Path to use at runtime to refer to LIB_INSTALL_DIR:
 LIB_RUNTIME_DIR = $(exec_prefix)/lib
