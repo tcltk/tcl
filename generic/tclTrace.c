@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTrace.c,v 1.18 2004/10/25 01:06:51 msofer Exp $
+ * RCS: @(#) $Id: tclTrace.c,v 1.19 2004/11/03 17:16:05 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2554,19 +2554,33 @@ TclCallVarTraces(iPtr, arrayPtr, varPtr, part1, part2, flags, leaveErrMsg)
     if (code == TCL_ERROR) {
 	if (leaveErrMsg) {
 	    CONST char *type = "";
+	    Tcl_Obj *options = TclGetReturnOptions((Tcl_Interp *)iPtr, code);
+	    Tcl_Obj *errorInfoKey = Tcl_NewStringObj("-errorinfo", -1);
+	    Tcl_Obj *errorInfo;
+
+	    Tcl_IncrRefCount(errorInfoKey);
+	    Tcl_DictObjGet(NULL, options, errorInfoKey, &errorInfo);
+	    Tcl_IncrRefCount(errorInfo);
+	    Tcl_DictObjRemove(NULL, options, errorInfoKey);
+	    if (Tcl_IsShared(errorInfo)) {
+		Tcl_DecrRefCount(errorInfo);
+		errorInfo = Tcl_DuplicateObj(errorInfo);
+		Tcl_IncrRefCount(errorInfo);
+	    }
+	    Tcl_AppendToObj(errorInfo, "\n    (", -1);
 	    switch (flags&(TCL_TRACE_READS|TCL_TRACE_WRITES|TCL_TRACE_ARRAY)) {
-		case TCL_TRACE_READS: {
+		case TCL_TRACE_READS:
 		    type = "read";
+		    Tcl_AppendToObj(errorInfo, type, -1);
 		    break;
-		}
-		case TCL_TRACE_WRITES: {
+		case TCL_TRACE_WRITES:
 		    type = "set";
+		    Tcl_AppendToObj(errorInfo, "write", -1);
 		    break;
-		}
-		case TCL_TRACE_ARRAY: {
+		case TCL_TRACE_ARRAY:
 		    type = "trace array";
+		    Tcl_AppendToObj(errorInfo, "array", -1);
 		    break;
-		}
 	    }
 	    if (disposeFlags & TCL_TRACE_RESULT_OBJECT) {
 		TclVarErrMsg((Tcl_Interp *) iPtr, part1, part2, type,
@@ -2574,6 +2588,19 @@ TclCallVarTraces(iPtr, arrayPtr, varPtr, part1, part2, flags, leaveErrMsg)
 	    } else {
 		TclVarErrMsg((Tcl_Interp *) iPtr, part1, part2, type, result);
 	    }
+	    Tcl_AppendToObj(errorInfo, " trace on \"", -1);
+	    Tcl_AppendToObj(errorInfo, part1, -1);
+	    if (part2 != NULL) {
+		Tcl_AppendToObj(errorInfo, "(", -1);
+		Tcl_AppendToObj(errorInfo, part1, -1);
+		Tcl_AppendToObj(errorInfo, ")", -1);
+	    }
+	    Tcl_AppendToObj(errorInfo, "\")", -1);
+	    Tcl_DictObjPut(NULL, options, errorInfoKey, errorInfo);
+	    Tcl_DecrRefCount(errorInfoKey);
+	    Tcl_DecrRefCount(errorInfo);
+	    code = TclSetReturnOptions((Tcl_Interp *)iPtr, options);
+	    iPtr->flags &= ~(ERR_ALREADY_LOGGED);
 	    TclDiscardInterpState(state);
 	} else {
 	    (void) TclRestoreInterpState((Tcl_Interp *)iPtr, state);
