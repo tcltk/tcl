@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.79.2.4 2003/11/18 23:35:53 hobbs Exp $
+RCS: @(#) $Id: changes,v 1.79.2.5 2003/11/19 16:29:30 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -5922,7 +5922,7 @@ asked for writable events by the generic layer.
 
 2003-11-11 (bug fix) Improve AIX-64 build configuration.
 
-2003-11-17 (bug fix)[230589, 504785, 505048, 703709, 840258] fixed to
+2003-11-17 (bug fix)[230589, 504785, 505048, 703709, 840258] fixes to
 various odd regexp "can't happen" bugs.
 
 --- Released 8.4.5, November 20, 2003 --- See ChangeLog for details ---
