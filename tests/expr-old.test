@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: expr-old.test,v 1.19 2004/06/23 15:36:56 dkf Exp $
+# RCS: @(#) $Id: expr-old.test,v 1.20 2004/07/03 21:36:33 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -968,6 +968,21 @@ test expr-old-38.1 {Verify Tcl_ExprString's basic operation} testexprstring {
     list [testexprstring "1+4"] [testexprstring "2*3+4.2"] \
 	    [catch {testexprstring "1+"} msg] $msg
 } {5 10.2 1 {syntax error in expression "1+": premature end of expression}}
+
+#
+# Test for bug #908375: rounding numbers that do not fit in a
+# long but do fit in a wide
+#
+
+test expr-old-39.1 {Rounding with wide result} {
+    set x 1.0e10
+    set y [expr $x + 0.1]
+    catch {
+	set x [list [expr {$x == round($y)}] [expr $x == -round(-$y)]]
+    }
+    set x
+} {1 1}
+unset x y
 
 # Special test for Pentium arithmetic bug of 1994:
 
