@@ -1,3 +1,9 @@
+2002-04-17  Don Porter  <dgp@users.sourceforge.net>
+
+	* tests/iogt.test: Revised to run tests in a namespace, rather than
+	use the useless and buggy [saveState] and [restoreState] commands
+	of tcltest.  Updated to use tcltest 2 as well.  [Patch 544911]
+
 2002-04-16  Don Porter  <dgp@users.sourceforge.net>
 
 	* tests/io.test: Revised to run tests in a namespace, rather than
