@@ -1,0 +1,62 @@
+'\"
+'\" Copyright (c) 1998-2000 by Scriptics Corporation.
+'\" All rights reserved.
+'\" 
+'\" RCS: @(#) $Id: stack.n,v 1.1 2000/02/05 03:20:20 ericm Exp $
+'\" 
+.so man.macros
+.TH stack n 8.3 Tcl "Tcl Built-In Commands"
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+::struct::stack \- Create and manipulate stack objects
+.SH SYNOPSIS
+\fBpackage require struct ?1.0?\fR
+.sp
+\fB::struct::stack\fR \fIstackName\fR
+.sp
+.BE
+.SH DESCRIPTION
+.PP
+The \fB::struct::stack\fR command creates a new stack object with an
+associated global Tcl command whose name is \fIstackName\fR.  This command
+may be used to invoke various operations on the stack.  It has the
+following general form:
+.CS
+\fIstackName option \fR?\fIarg arg ...\fR?
+.CE
+\fIOption\fR and the \fIarg\fRs
+determine the exact behavior of the command.  The following
+commands are possible for stack objects:
+.TP
+\fIstackName \fBclear\fR
+Remove all items from the stack.
+.TP
+\fIstackName \fBdestroy\fR
+Destroy the stack, including its storage space and associated command.
+.TP
+\fIstackName \fBpeek\fR ?\fIcount\fR?
+Return the top \fIcount\fR items of the stack, without removing them
+from the stack.  If \fIcount\fR is not specified, it defaults to 1.
+If \fIcount\fR is 1, the result is a simple string; otherwise, it is a list.
+If specified, \fIcount\fR must be greater than or equal to 1.  If
+there are no items on the stack, this command will return \fIcount\fR
+empty strings.
+.TP
+\fIstackName \fBpop\fR ?\fIcount\fR?
+Return the top \fIcount\fR items of the stack and remove them
+from the stack.  If \fIcount\fR is not specified, it defaults to 1.
+If \fIcount\fR is 1, the result is a simple string; otherwise, it is a list.
+If specified, \fIcount\fR must be greater than or equal to 1.  If
+there are no items on the stack, this command will return \fIcount\fR
+empty strings.
+.TP
+\fIstackName \fBpush\fR \fIitem\fR ?\fIitem ...\fR?
+Push the item or items specified onto the stack.  If more than one
+item is given, they will be pushed in the order they are listed.
+.TP
+\fIstackName \fBsize\fR
+Return the number of items on the stack.
+
+.SH KEYWORDS
+stack, queue

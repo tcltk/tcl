@@ -1,0 +1,228 @@
+# stack.test:  tests for the stack package.
+#
+# This file contains a collection of tests for one or more of the Tcl
+# built-in commands.  Sourcing this file into Tcl runs the tests and
+# generates output for errors.  No output means no errors were found.
+#
+# Copyright (c) 1998-2000 by Scriptics Corporation.
+# All rights reserved.
+#
+# RCS: @(#) $Id: stackstruct.test,v 1.1 2000/02/05 03:20:21 ericm Exp $
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import ::tcltest::*
+}
+
+package require struct
+namespace import struct::*
+
+test stack-0.1 {stack errors} {
+    stack mystack
+    catch {stack mystack} msg
+    mystack destroy
+    set msg
+} "command \"mystack\" already exists, unable to create stack"
+test stack-0.2 {stack errors} {
+    stack mystack
+    catch {mystack} msg
+    mystack destroy
+    set msg
+} "wrong # args: should be \"mystack option ?arg arg ...?\""
+test stack-0.3 {stack errors} {
+    stack mystack
+    catch {mystack foo} msg
+    mystack destroy
+    set msg
+} "bad option \"foo\": must be clear, destroy, peek, pop, push, rotate, or size"
+test stack-0.4 {stack errors} {
+    catch {::struct::stack::StackProc mystack} msg
+    set msg
+} "unknown stack \"mystack\""
+test stack-0.5 {stack errors} {
+    catch {stack set} msg
+    set msg
+} "command \"set\" already exists, unable to create stack"
+
+test stack-1.1 {stack creation} {
+    set foo [stack mystack]
+    set cmd [info commands ::mystack]
+    set size [mystack size]
+    mystack destroy
+    list $foo $cmd $size
+} {mystack ::mystack 0}
+test stack-1.2 {stack creation} {
+    set foo [stack]
+    set cmd [info commands ::$foo]
+    set size [$foo size]
+    $foo destroy
+    list $foo $cmd $size
+} {stack1 ::stack1 0}
+
+test stack-2.1 {stack destroy} {
+    stack mystack
+    mystack destroy
+    info commands ::mystack
+} {}
+test stack-2.2 {stack destroy} {
+    stack mystack
+    mystack destroy
+    catch {::struct::stack::StackProc mystack} msg
+    set msg
+} "unknown stack \"mystack\""
+
+test stack-3.2 {size operation} {
+    stack mystack
+    mystack push a b c d e f g
+    set size [mystack size]
+    mystack destroy
+    set size
+} 7
+test stack-3.3 {size operation} {
+    stack mystack
+    mystack push a b c d e f g
+    mystack pop 3
+    set size [mystack size]
+    mystack destroy
+    set size
+} 4
+test stack-3.4 {size operation} {
+    stack mystack
+    mystack push a b c d e f g
+    mystack pop 3
+    mystack peek 3
+    set size [mystack size]
+    mystack destroy
+    set size
+} 4
+    
+test stack-4.1 {push operation} {
+    stack mystack
+    catch {mystack push} msg
+    mystack destroy
+    set msg
+} "wrong # args: should be \"mystack push item ?item ...?\""
+test stack-4.2 {push operation, singleton items} {
+    stack mystack
+    mystack push a
+    mystack push b
+    mystack push c
+    set result [list [mystack pop] [mystack pop] [mystack pop]]
+    mystack destroy
+    set result
+} "c b a"
+test stack-4.3 {push operation, multiple items} {
+    stack mystack
+    mystack push a b c
+    set result [list [mystack pop] [mystack pop] [mystack pop]]
+    mystack destroy
+    set result
+} "c b a"
+test stack-4.4 {push operation, spaces in items} {
+    stack mystack
+    mystack push a b "foo bar"
+    set result [list [mystack pop] [mystack pop] [mystack pop]]
+    mystack destroy
+    set result
+} [list "foo bar" b a]
+test stack-4.5 {push operation, bad chars in items} {
+    stack mystack
+    mystack push a b \{
+    set result [list [mystack pop] [mystack pop] [mystack pop]]
+    mystack destroy
+    set result
+} [list \{ b a]
+
+test stack-5.1 {pop operation} {
+    stack mystack
+    mystack push a
+    mystack push b
+    mystack push c
+    set result [list [mystack pop] [mystack pop] [mystack pop]]
+    mystack destroy
+    set result
+} [list c b a]
+test stack-5.2 {pop operation, multiple items} {
+    stack mystack
+    mystack push a
+    mystack push b
+    mystack push c
+    set result [mystack pop 3]
+    mystack destroy
+    set result
+} [list c b a]
+
+test stack-6.1 {peek operation} {
+    stack mystack
+    mystack push a
+    mystack push b
+    mystack push c
+    set result [list [mystack peek] [mystack peek] [mystack peek]]
+    mystack destroy
+    set result
+} [list c c c]
+test stack-6.2 {pop operation, multiple items} {
+    stack mystack
+    mystack push a
+    mystack push b
+    mystack push c
+    set result [list [mystack peek 3] [mystack pop 3]]
+    mystack destroy
+    set result
+} [list [list c b a] [list c b a]]
+
+test stack-7.1 {clear operation} {
+    stack mystack
+    mystack push a
+    mystack push b
+    mystack push c
+    set result [list [mystack peek 3]]
+    mystack clear
+    lappend result [mystack size]
+    mystack destroy
+    set result
+} [list [list c b a] 0]
+
+test stack-8.1 {rotate operation} {
+    stack mystack
+    mystack push a b c d e f g h
+    mystack rotate 3 1
+    set result [mystack peek [mystack size]]
+    mystack destroy
+    set result
+} [list g f h e d c b a]
+test stack-8.2 {rotate operation} {
+    stack mystack
+    mystack push a b c d e f g h
+    mystack rotate 3 2
+    set result [mystack peek [mystack size]]
+    mystack destroy
+    set result
+} [list f h g e d c b a]
+test stack-8.3 {rotate operation} {
+    stack mystack
+    mystack push a b c d e f g h
+    mystack rotate 3 5
+    set result [mystack peek [mystack size]]
+    mystack destroy
+    set result
+} [list f h g e d c b a]
+test stack-8.4 {rotate operation} {
+    stack mystack
+    mystack push a b c d e f g h
+    mystack rotate 8 1
+    set result [mystack peek [mystack size]]
+    mystack destroy
+    set result
+} [list g f e d c b a h]
+test stack-8.4 {rotate operation} {
+    stack mystack
+    mystack push a b c d e f g h
+    mystack rotate 8 -1
+    set result [mystack peek [mystack size]]
+    mystack destroy
+    set result
+} [list a h g f e d c b]
+
+
+::tcltest::cleanupTests

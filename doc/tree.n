@@ -1,0 +1,73 @@
+'\"
+'\" Copyright (c) 1998-2000 by Scriptics Corporation.
+'\" All rights reserved.
+'\" 
+'\" RCS: @(#) $Id: tree.n,v 1.1 2000/02/05 03:20:20 ericm Exp $
+'\" 
+.so man.macros
+.TH tree n 8.3 Tcl "Tcl Built-In Commands"
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+::struct::tree \- Create and manipulate tree objects
+.SH SYNOPSIS
+\fBpackage require struct ?1.0?\fR
+.sp
+\fB::struct::tree\fR \fItreeName\fR
+.sp
+.BE
+.SH DESCRIPTION
+.PP
+The \fB::struct::tree\fR command creates a new tree object with an
+associated global Tcl command whose name is \fItreeName\fR.  This command
+may be used to invoke various operations on the tree.  It has the
+following general form:
+.CS
+\fItreeName option \fR?\fIarg arg ...\fR?
+.CE
+\fIOption\fR and the \fIarg\fRs
+determine the exact behavior of the command.  The following
+commands are possible for tree objects:
+.TP
+\fItreeName \fBclear\fR
+Remove all nodes from the tree.
+.TP
+\fItreeName \fBdestroy\fR
+Destroy the tree, including its storage space and associated command.
+.TP
+\fItreeName \fBinsert\fR \fIindex\fR \fIparent\fR \fIchild\fR ?-value \fIvalue\fR?
+Insert a node named \fIchild\fR into the tree as a child of the node
+\fIparent\fR.  If \fIparent\fR is \fBroot\fR, it refers to the root of
+the tree.  The new node will have the value given by \fIvalue\fR.  The
+new node will be added to the \fIparent\fR node's childlist at the
+index given by \fIindex\fR.
+.TP
+\fItreeName\fR \fBchildren\fR \fInode\fR
+Return a list of the children of \fInode\fR.
+.TP
+\fItreeName\fR \fBparent\fR \fInode\fR
+Return the parent of \fInode\fR.
+.TP
+\fItreeName\fR \fBnodeconfigure\fR \fInode\fR -value \fIvalue\fR
+Set the associated value of a particular node.
+.TP
+\fItreeName\fR \fBnodecget\fR \fInode\fR -value
+Return the associated value of a particular node.
+.TP
+\fItreeName\fR \fBdelete\fR \fInode\fR ?\fInode\fR ...?
+Remove the specified nodes from the tree.  All of the nodes' children
+will be removed as well to prevent orphaned nodes.  An entire tree
+could be removed in this fashion with the command:
+.CS
+\fItreeName\fR \fBdelete\fR [\fItreeName\fR \fBchildren\fR root]
+.CE
+.TP
+\fItreeName\fR \fBmove\fR \fInode\fR \fIparent\fR \fIindex\fR
+Make \fInode\fR a child of \fIparent\fR, inserting it
+into the parent's child list at the index given by \fIindex\fR.
+.TP
+\fItreeName\fR \fBexists\fR \fInode\fR
+Remove true if the specified node exists in the tree.
+
+.SH KEYWORDS
+tree
