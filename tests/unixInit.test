@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: unixInit.test,v 1.34 2004/02/25 23:56:59 dgp Exp $
+# RCS: @(#) $Id: unixInit.test,v 1.35 2004/04/06 14:35:39 dgp Exp $
 
 package require tcltest 2
 namespace import -force ::tcltest::*
@@ -313,7 +313,9 @@ test unixInit-3.1 {TclpSetInitialEncodings} -constraints {
     unset env(LANG)
 
     set enc
-} -match regexp -result ^iso8859-15?$
+} -match regexp -result [expr {
+	($tcl_platform(os) eq "Darwin") ? "^utf-8$" : "^iso8859-15?$"}]
+
 test unixInit-3.2 {TclpSetInitialEncodings} {unixOnly stdio} {
     set env(LANG) japanese
     catch {set oldlc_all $env(LC_ALL)}
