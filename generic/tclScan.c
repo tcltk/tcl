@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclScan.c,v 1.11 2002/02/15 14:28:49 dkf Exp $
+ * RCS: @(#) $Id: tclScan.c,v 1.12 2002/02/25 15:23:02 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -707,6 +707,9 @@ Tcl_ScanObjCmd(dummy, interp, objc, objv)
 #ifndef TCL_WIDE_INT_IS_LONG
 	    flags |= SCAN_LONGER;
 #endif
+	    /*
+	     * Fall through so we skip to the next character.
+	     */
 	case 'h':
 	    format += Tcl_UtfToUniChar(format, &ch);
 	}
