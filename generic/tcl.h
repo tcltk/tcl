@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.47 1999/06/25 23:29:52 welch Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.48 1999/06/25 23:47:16 welch Exp $
  */
 
 #ifndef _TCL
@@ -40,6 +40,7 @@ extern "C" {
  *
  * library/init.tcl	(only if major.minor changes, not patchlevel)
  * unix/configure.in
+ * win/configure.in	(only if major.minor changes, not patchlevel)
  * win/makefile.bc	(only if major.minor changes, not patchlevel)
  * win/makefile.vc	(only if major.minor changes, not patchlevel)
  * win/pkgIndex.tcl	(for tclregNN.dll, not patchlevel)
