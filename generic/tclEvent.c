@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEvent.c,v 1.1.2.2 1998/09/24 23:58:47 stanton Exp $
+ * RCS: @(#) $Id: tclEvent.c,v 1.1.2.3 1998/10/06 00:36:19 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -688,7 +688,7 @@ TclInitSubsystems(argv0)
 	     * interesting happens so we can use the allocators in the
 	     * implementation of self-initializing locks.
 	     */
-#ifdef USE_TCLALLOC
+#if USE_TCLALLOC
 	    TclInitAlloc();
 #endif
 #ifdef TCL_MEM_DEBUG
