@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.116 2003/01/26 05:59:37 mdejong Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.117 2003/02/04 17:06:50 vincentdarley Exp $
  */
 
 #ifndef _TCLINT
@@ -1661,6 +1661,7 @@ EXTERN void		TclFinalizeEnvironment _ANSI_ARGS_((void));
 EXTERN void		TclFinalizeExecution _ANSI_ARGS_((void));
 EXTERN void		TclFinalizeIOSubsystem _ANSI_ARGS_((void));
 EXTERN void		TclFinalizeFilesystem _ANSI_ARGS_((void));
+EXTERN void		TclResetFilesystem _ANSI_ARGS_((void));
 EXTERN void		TclFinalizeLoad _ANSI_ARGS_((void));
 EXTERN void		TclFinalizeMemorySubsystem _ANSI_ARGS_((void));
 EXTERN void		TclFinalizeNotifier _ANSI_ARGS_((void));
@@ -1716,6 +1717,7 @@ EXTERN int              TclpObjLstat _ANSI_ARGS_((Tcl_Obj *pathPtr,
 			    Tcl_StatBuf *buf));
 EXTERN int		TclpCheckStackSpace _ANSI_ARGS_((void));
 EXTERN Tcl_Obj*         TclpTempFileName _ANSI_ARGS_((void));
+EXTERN int              TclpDeleteFile _ANSI_ARGS_((CONST char *path));
 EXTERN void		TclpFinalizeCondition _ANSI_ARGS_((
 			    Tcl_Condition *condPtr));
 EXTERN void		TclpFinalizeMutex _ANSI_ARGS_((Tcl_Mutex *mutexPtr));
