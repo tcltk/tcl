@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Utf.3,v 1.6 1999/07/22 01:08:04 redman Exp $
+'\" RCS: @(#) $Id: Utf.3,v 1.7 2000/04/25 17:55:29 hobbs Exp $
 '\" 
 .so man.macros
 .TH Utf 3 "8.1" Tcl "Tcl Library Procedures"
@@ -208,12 +208,13 @@ return value will be \fIstart\fR.
 Pascal Ord() function.  It returns the Tcl_UniChar represented at the
 specified character (not byte) \fIindex\fR in the UTF-8 string
 \fIsrc\fR.  The source string must contain at least \fIindex\fR
-characters.
+characters.  Behavior is undefined if a negative \fIindex\fR is given.
 .PP
 \fBTcl_UtfAtIndex\fR returns a pointer to the specified character (not
 byte) \fIindex\fR in the UTF-8 string \fIsrc\fR.  The source string must
 contain at least \fIindex\fR characters.  This is equivalent to calling 
-\fBTcl_UtfNext\fR \fIindex\fR times.
+\fBTcl_UtfNext\fR \fIindex\fR times.  If a negative \fIindex\fR is given,
+the return pointer points to the first character in the source string.
 .PP
 \fBTcl_UtfBackslash\fR is a utility procedure used by several of the Tcl
 commands.  It parses a backslash sequence and stores the properly formed
