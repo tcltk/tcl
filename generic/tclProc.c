@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.26 2001/09/04 22:45:52 msofer Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.27 2001/09/10 17:04:10 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -27,6 +27,8 @@ static int	ProcBodySetFromAny _ANSI_ARGS_((Tcl_Interp *interp,
 static void	ProcBodyUpdateString _ANSI_ARGS_((Tcl_Obj *objPtr));
 static  int	ProcessProcResultCode _ANSI_ARGS_((Tcl_Interp *interp,
 		    char *procName, int nameLen, int returnCode));
+static int	TclCompileNoOp _ANSI_ARGS_((Tcl_Interp *interp,
+		    Tcl_Parse *parsePtr, struct CompileEnv *envPtr));
 
 /*
  * The ProcBodyObjType type
@@ -146,6 +148,58 @@ Tcl_ProcObjCmd(dummy, interp, objc, objv)
     
     procPtr->cmdPtr = (Command *) cmd;
 
+
+    /*
+     * Optimize for noop procs: if the argument list is just "args"
+     * and the body is empty, define a compileProc.
+     *
+     * Notes: 
+     *   - cannot be done for any argument list without having different
+     *     compiled/not-compiled behaviour in the "wrong argument #" case, 
+     *     or making this code much more complicated. In any case, it doesn't 
+     *     seem to make a lot of sense to verify the number of arguments we 
+     *     are about to ignore ...
+     *   - could be enhanced to handle also non-empty bodies that contain 
+     *     only comments; however, parsing the body will slow down the 
+     *     compilation of all procs whose argument list is just _args_ 
+     */
+    
+    {
+	char *txt;
+	txt = Tcl_GetString(objv[2]);
+	
+	while(*txt == ' ') txt++;
+	
+	if ((txt[0] == 'a') && (memcmp(txt, "args", 4) == 0)) {
+	    txt +=4;
+	    while(*txt != '\0') {
+		if (*txt != ' ') {
+		    goto done;
+		}
+		txt++;
+	    }	
+    
+	    /* 
+	     * The argument list is just "args"; check the body
+	     */
+
+	    txt = Tcl_GetString(objv[3]);
+	    while(*txt != '\0') {
+		if (!isspace(*txt)) {
+		    goto done;
+		}
+		txt++;
+	    }	
+    
+	    /* 
+	     * The body is just spaces: link the compileProc
+	     */
+
+	    ((Command *) cmd)->compileProc = TclCompileNoOp;
+	}
+    }
+
+ done:
     return TCL_OK;
 }
 
@@ -1591,3 +1645,53 @@ ProcBodyUpdateString(objPtr)
 {
     panic("called ProcBodyUpdateString");
 }
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclCompileNoOp --
+ *
+ *	Procedure called to compile noOp's
+ *
+ * Results:
+ *	The return value is TCL_OK, indicating successful compilation.
+ *
+ *	envPtr->maxStackDepth is updated with the maximum number of stack
+ *	elements needed to execute the command.
+ *
+ * Side effects:
+ *	Instructions are added to envPtr to execute a noOp at runtime.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TclCompileNoOp(interp, parsePtr, envPtr)
+    Tcl_Interp *interp;         /* Used for error reporting. */
+    Tcl_Parse *parsePtr;        /* Points to a parse structure for the
+                                 * command created by Tcl_ParseCommand. */
+    CompileEnv *envPtr;         /* Holds resulting instructions. */
+{
+    Tcl_Token *tokenPtr;
+    int i, code;
+
+    envPtr->maxStackDepth = 1;
+    tokenPtr = parsePtr->tokenPtr;
+    for(i = 1; i < parsePtr->numWords; i++) {
+	tokenPtr = tokenPtr + tokenPtr->numComponents + 1;
+	if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) { 
+	    code = TclCompileTokens(interp, tokenPtr+1,
+	            tokenPtr->numComponents, envPtr);
+	    if (code != TCL_OK) {
+		return code;
+	    }
+	    TclEmitOpcode(INST_POP, envPtr);
+	} 
+    }
+    TclEmitPush(TclRegisterLiteral(envPtr, "", 0, /*onHeap*/ 0), envPtr);
+    return TCL_OK;
+}
+
+
+
