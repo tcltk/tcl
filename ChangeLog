@@ -1,3 +1,17 @@
+2000-05-19  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* generic/tclTest.c:
+	* generic/tclIO.c: moved channel test commands from tclIO.c to
+	tclTest.c.
+	* generic/tclIO.h: new file, split out from tclIO.c to allow test
+	commands to be moved to tclTest.c.
+
+	* generic/tclStubInit.c:
+	* generic/tclIntDecls.h:
+	* generic/tclInt.decls: removed TclTestChannel*Cmd from internal
+	stubs table and added TclChannelEventScriptInvoker to the internal
+	stubs table so it can be used from the test code.
+
 2000-05-18  Eric Melski  <ericm@scriptics.com>
 
 	* tests/clock.test: Added test for "2 days 2 hours ago" style
