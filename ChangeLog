@@ -1,3 +1,8 @@
+2001-10-16  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* unix/tclLoadAout.c (TclGuessPackageName): removed unused vars
+	and fixed warnings. [Bug #446622] (lim)
+
 2001-10-16 Daniel Steffen <das@users.sourceforge.net>
 
 	* unix/Makefile.in:
