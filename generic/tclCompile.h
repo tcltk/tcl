@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.18 2001/11/14 23:17:03 hobbs Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.19 2001/11/16 20:01:04 msofer Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -789,6 +789,9 @@ EXTERN void		TclEmitForwardJump _ANSI_ARGS_((CompileEnv *envPtr,
 EXTERN ExceptionRange *	TclGetExceptionRangeForPc _ANSI_ARGS_((
 			    unsigned char *pc, int catchOnly,
 			    ByteCode* codePtr));
+EXTERN int		TclEvalObjvInternal _ANSI_ARGS_((Tcl_Interp *interp, int objc,
+			    Tcl_Obj *CONST objv[], char *command, int length,
+			    int flags));
 EXTERN int		TclExecuteByteCode _ANSI_ARGS_((Tcl_Interp *interp,
 			    ByteCode *codePtr));
 EXTERN void		TclExpandJumpFixupArray _ANSI_ARGS_((
