@@ -11,12 +11,22 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoadDyld.c,v 1.11 2002/07/18 16:26:04 vincentdarley Exp $
+ * RCS: @(#) $Id: tclLoadDyld.c,v 1.12 2002/07/24 13:51:18 das Exp $
  */
 
 #include "tclInt.h"
 #include "tclPort.h"
 #include <mach-o/dyld.h>
+
+typedef struct Tcl_DyldModuleHandle {
+    struct Tcl_DyldModuleHandle *nextModuleHandle;
+    NSModule module;
+} Tcl_DyldModuleHandle;
+
+typedef struct Tcl_DyldLoadHandle {
+    const struct mach_header *dyld_lib;
+    Tcl_DyldModuleHandle *firstModuleHandle;
+} Tcl_DyldLoadHandle;
 
 /*
  *----------------------------------------------------------------------
@@ -49,8 +59,9 @@ TclpDlopen(interp, pathPtr, loadHandle, unloadProcPtr)
 				 * function which should be used for
 				 * this file. */
 {
+    Tcl_DyldLoadHandle *dyldLoadHandle;
     const struct mach_header *dyld_lib;
-    char *native;
+    CONST char *native;
 
     native = Tcl_FSGetNativePath(pathPtr);
     dyld_lib = NSAddImage(native, 
@@ -64,7 +75,11 @@ TclpDlopen(interp, pathPtr, loadHandle, unloadProcPtr)
         Tcl_AppendResult(interp, msg, (char *) NULL);
         return TCL_ERROR;
     }
-    *loadHandle = (Tcl_LoadHandle)dyld_lib;
+    dyldLoadHandle = (Tcl_DyldLoadHandle *) ckalloc(sizeof(Tcl_DyldLoadHandle));
+    if (!dyldLoadHandle) return TCL_ERROR;
+    dyldLoadHandle->dyld_lib = dyld_lib;
+    dyldLoadHandle->firstModuleHandle = NULL;
+    *loadHandle = (Tcl_LoadHandle) dyldLoadHandle;
     *unloadProcPtr = &TclpUnloadFile;
     return TCL_OK;
 }
@@ -94,7 +109,7 @@ TclpFindSymbol(interp, loadHandle, symbol)
     CONST char *native;
     Tcl_DString newName, ds;
     Tcl_PackageInitProc* proc = NULL;
-    const struct mach_header *dyld_lib = (mach_header *)loadHandle;
+    Tcl_DyldLoadHandle *dyldLoadHandle = (Tcl_DyldLoadHandle *) loadHandle;
     /* 
      * dyld adds an underscore to the beginning of symbol names.
      */
@@ -103,12 +118,18 @@ TclpFindSymbol(interp, loadHandle, symbol)
     Tcl_DStringInit(&newName);
     Tcl_DStringAppend(&newName, "_", 1);
     native = Tcl_DStringAppend(&newName, native, -1);
-    nsSymbol = NSLookupSymbolInImage(dyld_lib, native, 
+    nsSymbol = NSLookupSymbolInImage(dyldLoadHandle->dyld_lib, native, 
 	NSLOOKUPSYMBOLINIMAGE_OPTION_BIND_NOW | 
 	NSLOOKUPSYMBOLINIMAGE_OPTION_RETURN_ON_ERROR);
     if(nsSymbol) {
+	Tcl_DyldModuleHandle *dyldModuleHandle;
 	proc = NSAddressOfSymbol(nsSymbol);
-	/* *clientDataPtr = NSModuleForSymbol(nsSymbol); */
+	dyldModuleHandle = (Tcl_DyldModuleHandle *) ckalloc(sizeof(Tcl_DyldModuleHandle));
+	if (dyldModuleHandle) {
+	    dyldModuleHandle->module = NSModuleForSymbol(nsSymbol);
+	    dyldModuleHandle->nextModuleHandle = dyldLoadHandle->firstModuleHandle;
+	    dyldLoadHandle->firstModuleHandle = dyldModuleHandle;
+	}
     }
     Tcl_DStringFree(&newName);
     Tcl_DStringFree(&ds);
@@ -142,7 +163,17 @@ TclpUnloadFile(loadHandle)
 				 * a token that represents the loaded 
 				 * file. */
 {
-    NSUnLinkModule(loadHandle, FALSE);
+    Tcl_DyldLoadHandle *dyldLoadHandle = (Tcl_DyldLoadHandle *) loadHandle;
+    Tcl_DyldModuleHandle *dyldModuleHandle = dyldLoadHandle->firstModuleHandle;
+    void *ptr;
+
+    while (dyldModuleHandle) {
+	NSUnLinkModule(dyldModuleHandle->module, NSUNLINKMODULE_OPTION_NONE);
+	ptr = dyldModuleHandle;
+	dyldModuleHandle = dyldModuleHandle->nextModuleHandle;
+	ckfree(ptr);
+    }
+    ckfree(dyldLoadHandle);
 }
 
 /*
