@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.44 1999/05/22 01:20:11 stanton Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.45 1999/06/10 04:28:49 stanton Exp $
  */
 
 #ifndef _TCL
@@ -371,6 +371,46 @@ typedef struct Tcl_ThreadId_ *Tcl_ThreadId;
 typedef struct Tcl_TimerToken_ *Tcl_TimerToken;
 typedef struct Tcl_Trace_ *Tcl_Trace;
 typedef struct Tcl_Var_ *Tcl_Var;
+
+/*
+ * Flag values passed to Tcl_GetRegExpFromObj.
+ */
+
+#define	TCL_REG_BASIC		000000	/* BREs (convenience) */
+#define	TCL_REG_EXTENDED	000001	/* EREs */
+#define	TCL_REG_ADVF		000002	/* advanced features in EREs */
+#define	TCL_REG_ADVANCED	000003	/* AREs (which are also EREs) */
+#define	TCL_REG_QUOTE		000004	/* no special characters, none */
+#define	TCL_REG_NOCASE		000010	/* ignore case */
+#define	TCL_REG_NOSUB		000020	/* don't care about subexpressions */
+#define	TCL_REG_EXPANDED	000040	/* expanded format, white space &
+					 * comments */
+#define	TCL_REG_NLSTOP		000100  /* \n doesn't match . or [^ ] */
+#define	TCL_REG_NLANCH		000200  /* ^ matches after \n, $ before */
+#define	TCL_REG_NEWLINE		000300  /* newlines are line terminators */
+#define	TCL_REG_CANMATCH	001000  /* report details on partial/limited
+					 * matches */
+
+/*
+ * Structures filled in by Tcl_RegExpInfo.  Note that all offset values are
+ * relative to the start of the match string, not the beginning of the
+ * entire string.
+ */
+
+typedef struct Tcl_RegExpIndices {
+	long start;	/* character offset of first character in match */
+	long end;	/* character offset of first character after the
+			 * match. */
+} Tcl_RegExpIndices;
+
+typedef struct Tcl_RegExpInfo {
+	int nsubs;			/* number of subexpressions in the
+					 * compiled expression*/
+	Tcl_RegExpIndices *matches;	/* array of nsubs match offset
+					 * pairs */
+	long extendStart;		/* The offset at which a subsequent
+					 * match might begin. */
+} Tcl_RegExpInfo;
 
 /*
  * Picky compilers complain if this typdef doesn't appear before the

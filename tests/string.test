@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: string.test,v 1.12 1999/06/08 02:59:28 hershey Exp $
+# RCS: @(#) $Id: string.test,v 1.13 1999/06/10 04:28:52 stanton Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     source [file join [pwd] [file dirname [info script]] defs.tcl]
@@ -648,6 +648,9 @@ test string-10.12 {string map, unicode} {
 test string-10.13 {string map, -nocase unicode} {
     string map -nocase [list \374 ue UE \334] "a\374ueUE\000EU"
 } aue\334\334\0EU
+test string-10.14 {string map, -nocase null arguments} {
+    string map -nocase {{} abc} foo
+} foo
 
 test string-11.1 {string match, too few args} {
     list [catch {string match a} msg] $msg

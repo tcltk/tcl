@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.31 1999/06/08 23:30:24 hershey Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.32 1999/06/10 04:28:51 stanton Exp $
  */
 
 #ifndef _TCLINT
@@ -1546,6 +1546,9 @@ EXTERN void		TclAllocateFreeObjects _ANSI_ARGS_((void));
 EXTERN Tcl_Obj *	TclAppendObjToUnicodeObj _ANSI_ARGS_((
 	    		    register Tcl_Obj *targetObjPtr,
 	    		    register Tcl_Obj *srcObjPtr));
+EXTERN void		TclAppendUnicodeToObj _ANSI_ARGS_((
+	    		    register Tcl_Obj *objPtr, Tcl_UniChar *unichars,
+			    int length));
 EXTERN int		TclArraySet _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *arrayNameObj, Tcl_Obj *arrayElemObj));
 EXTERN int		TclCleanupChildren _ANSI_ARGS_((Tcl_Interp *interp,
@@ -1692,6 +1695,8 @@ EXTERN Var *		TclLookupVar _ANSI_ARGS_((Tcl_Interp *interp,
 EXTERN int		TclMathInProgress _ANSI_ARGS_((void));
 EXTERN int		TclNeedSpace _ANSI_ARGS_((char *start, char *end));
 EXTERN Tcl_Obj *	TclNewProcBodyObj _ANSI_ARGS_((Proc *procPtr));
+EXTERN Tcl_Obj *	TclNewUnicodeObj _ANSI_ARGS_((Tcl_UniChar *unichars,
+			    int numChars));
 EXTERN int		TclObjCommandComplete _ANSI_ARGS_((Tcl_Obj *cmdPtr));
 EXTERN int		TclObjInterpProc _ANSI_ARGS_((ClientData clientData,
 			    Tcl_Interp *interp, int objc,
