@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.69.2.7 2004/09/30 22:45:15 dgp Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.69.2.8 2004/10/01 00:09:36 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -4133,7 +4133,8 @@ CallVarTraces(iPtr, arrayPtr, varPtr, part1, part2, flags, leaveErrMsg)
     int copiedName;
     int code = TCL_OK;
     int disposeFlags = 0;
-    int saveErrFlags = iPtr->flags;
+    int saveErrFlags = iPtr->flags 
+	    & (ERR_IN_PROGRESS | ERR_ALREADY_LOGGED | ERROR_CODE_SET);
 
     /*
      * If there are already similar trace procedures active for the
@@ -4257,7 +4258,7 @@ CallVarTraces(iPtr, arrayPtr, varPtr, part1, part2, flags, leaveErrMsg)
 
     done:
     if (code == TCL_OK) {
-	iPtr->flags = saveErrFlags;
+	iPtr->flags |= saveErrFlags;
     }
     if (code == TCL_ERROR) {
 	if (leaveErrMsg) {
