@@ -77,6 +77,11 @@ static VOID uncolorchain _ANSI_ARGS_((struct colormap *, struct arc *));
 static int singleton _ANSI_ARGS_((struct colormap *, pchr c));
 static VOID rainbow _ANSI_ARGS_((struct nfa *, struct colormap *, int, pcolor, struct state *, struct state *));
 static VOID colorcomplement _ANSI_ARGS_((struct nfa *, struct colormap *, int, struct state *, struct state *, struct state *));
+#ifdef REG_DEBUG
+static VOID dumpcolors _ANSI_ARGS_((struct colormap *, FILE *));
+static VOID fillcheck _ANSI_ARGS_((struct colormap *, union tree *, int, FILE *));
+static VOID dumpchr _ANSI_ARGS_((pchr, FILE *));
+#endif
 /* === regc_nfa.c === */
 static struct nfa *newnfa _ANSI_ARGS_((struct vars *, struct colormap *, struct nfa *));
 static VOID freenfa _ANSI_ARGS_((struct nfa *));
@@ -120,7 +125,16 @@ static VOID compact _ANSI_ARGS_((struct nfa *, struct cnfa *));
 static VOID carcsort _ANSI_ARGS_((struct carc *, struct carc *));
 static VOID freecnfa _ANSI_ARGS_((struct cnfa *));
 static VOID dumpnfa _ANSI_ARGS_((struct nfa *, FILE *));
+#ifdef REG_DEBUG
+static VOID dumpstate _ANSI_ARGS_((struct state *, FILE *));
+static VOID dumparcs _ANSI_ARGS_((struct state *, FILE *));
+static int dumprarcs _ANSI_ARGS_((struct arc *, struct state *, FILE *, int));
+static VOID dumparc _ANSI_ARGS_((struct arc *, struct state *, FILE *));
+#endif
 static VOID dumpcnfa _ANSI_ARGS_((struct cnfa *, FILE *));
+#ifdef REG_DEBUG
+static VOID dumpcstate _ANSI_ARGS_((int, struct carc *, struct cnfa *, FILE *));
+#endif
 /* === regc_cvec.c === */
 static struct cvec *newcvec _ANSI_ARGS_((int, int, int));
 static struct cvec *clearcvec _ANSI_ARGS_((struct cvec *));
