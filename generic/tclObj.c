@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.23.6.11 2001/10/15 10:55:15 dkf Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.23.6.12 2001/10/18 14:19:39 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2163,34 +2163,14 @@ static void
 UpdateStringOfWideInt(objPtr)
     register Tcl_Obj *objPtr;	/* Int object whose string rep to update. */
 {
-    char buffer[TCL_INTEGER_SPACE*2+2];
-    register char *start;
+    char buffer[TCL_INTEGER_SPACE+2];
     register int len;
     register Tcl_WideInt wideVal = objPtr->internalRep.wideValue;
 
-#ifdef TCL_PRINTF_SUPPORTS_LL
     sprintf(buffer, "%" TCL_LL_MODIFIER "d", wideVal);
-    len = strlen(start = buffer);
-#else
-    buffer[TCL_INTEGER_SPACE*2+1] = '\0';
-    /*** lltostr() is a weird function... ***/
-    if (wideVal < 0) {
-	wideVal = -wideVal;
-	if (wideVal == 0) {
-	    start = ulltostr(((unsigned long long)LLONG_MAX)+1,
-			     buffer+(TCL_INTEGER_SPACE*2+1));
-	} else {
-	    start = lltostr(wideVal, buffer+(TCL_INTEGER_SPACE*2+1));
-	}
-	start--;
-	*start = '-';
-    } else {
-	start = lltostr(wideVal, buffer+(TCL_INTEGER_SPACE*2+1));
-    }
-    len = (int)(buffer + (TCL_INTEGER_SPACE*2+1) - start);
-#endif /* TCL_PRINTF_SUPPORTS_LL */
+    len = strlen(buffer);
     objPtr->bytes = ckalloc((unsigned) len + 1);
-    strcpy(objPtr->bytes, start);
+    memcpy(objPtr->bytes, buffer, len + 1);
     objPtr->length = len;
 }
 #endif /* TCL_WIDE_INT_IS_LONG */

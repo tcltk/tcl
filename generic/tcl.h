@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.102.2.18 2001/10/18 09:30:19 dkf Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.102.2.19 2001/10/18 14:19:38 dkf Exp $
  */
 
 #ifndef _TCL
@@ -338,9 +338,6 @@ typedef int *ClientData;
  * Also defines the following macros:
  * TCL_WIDE_INT_IS_LONG - if wide ints are really longs (i.e. we're on
  *	a real 64-bit system.)
- * TCL_PRINTF_SUPPORTS_LL - if we can do sprintf("%lld",wideVal) safely,
- *	which controls the feature set supported by [format] and the
- *	implementation of the wideInt Tcl_ObjType.
  * Tcl_WideAsLong - forgetful converter from wideInt to long.
  * Tcl_LongAsWide - sign-extending converter from long to wideInt.
  * Tcl_WideAsDouble - converter from wideInt to double.
@@ -356,38 +353,31 @@ typedef int *ClientData;
  * unusual function on Solaris8 (taking its operating buffer
  * backwards) so any changes you make will need to be done
  * cautiously...
- *
- * Naturally, support for [format]ting of wide values is dependent on
- * TCL_PRINTF_SUPPORTS_LL
  */
-#ifdef TCL_WIDE_INT_TYPE
+#if !defined(TCL_WIDE_INT_TYPE)&&!defined(TCL_WIDE_INT_IS_LONG)
+#   ifdef __WIN32__
+#      define TCL_WIDE_INT_TYPE __int64
+#      ifdef __BORLANDC__
+typedef struct stati64 Tcl_StatBuf;
+#         define TCL_LL_MODIFIER	"L"
+#         define TCL_LL_MODIFIER_SIZE	1
+#      else /* __BORLANDC__ */
+typedef struct _stati64	Tcl_StatBuf;
+#         define TCL_LL_MODIFIER	"I64"
+#         define TCL_LL_MODIFIER_SIZE	3
+#      endif /* __BORLANDC__ */
+#   else /* __WIN32__ */
+/*
+ * Don't know what platform it is and configure hasn't been run!  Assume
+ * it has no long long...
+ */
+#      define TCL_WIDE_INT_IS_LONG	1
+#      define TCL_WIDE_INT_TYPE		long
+#   endif /* __WIN32__ */
+#endif
+
 typedef TCL_WIDE_INT_TYPE		Tcl_WideInt;
 typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
-#else
-#   ifndef TCL_WIDE_INT_IS_LONG
-#      if defined(_LP64)||defined(__ALPHA)||defined(__alpha)||defined(_AIX)
-/*
- * Longs are 64-bit (or the compiler doesn't know how to do anything
- * else) so use them in all appropriate spots.
- */
-#         define TCL_WIDE_INT_IS_LONG
-#      else
-#         ifdef __WIN32__
-typedef __int64			Tcl_WideInt;
-typedef unsigned __int64	Tcl_WideUInt;
-#            define TCL_WIDE_INT_TYPE __int64
-#         else
-/*
- * Type of 64-bit values on 32-bit systems.  I think this is the ISO
- * C99 standard way of writing this type.
- */
-typedef long long		Tcl_WideInt;
-typedef unsigned long long	Tcl_WideUInt;
-#            define TCL_WIDE_INT_TYPE long long
-#         endif /* __WIN32__ */
-#      endif  /* _LP64 | __ALPHA | __alpha | _AIX */
-#   endif /* !TCL_WIDE_INT_IS_LONG */
-#endif /* TCL_WIDE_INT_TYPE */
 
 #ifdef TCL_WIDE_INT_IS_LONG
 #   include <sys/types.h>
@@ -399,18 +389,7 @@ typedef struct stat	Tcl_StatBuf;
 #   define Tcl_WideAsDouble(val)	((double)((long)(val)))
 #   define Tcl_DoubleAsWide(val)	((long)((double)(val)))
 #else /* TCL_WIDE_INT_IS_LONG */
-#   define TCL_PRINTF_SUPPORTS_LL
-#   ifdef __WIN32__
-#      ifdef __BORLANDC__
-typedef struct stati64 Tcl_StatBuf;
-#         define TCL_LL_MODIFIER	"L"
-#         define TCL_LL_MODIFIER_SIZE	1
-#      else /* __BORLANDC__ */
-typedef struct _stati64	Tcl_StatBuf;
-#         define TCL_LL_MODIFIER	"I64"
-#         define TCL_LL_MODIFIER_SIZE	3
-#      endif /* __BORLANDC__ */
-#   else
+#   ifndef __WIN32__
 #      include <sys/types.h>
 #      ifdef HAVE_STRUCT_STAT64
 typedef struct stat64	Tcl_StatBuf;
@@ -419,7 +398,7 @@ typedef struct stat	Tcl_StatBuf;
 #      endif /* HAVE_STRUCT_STAT64 */
 #      define TCL_LL_MODIFIER		"ll"
 #      define TCL_LL_MODIFIER_SIZE	2
-#   endif
+#   endif /* !__WIN32__ */
 #   define Tcl_WideAsLong(val)		((long)((Tcl_WideInt)(val)))
 #   define Tcl_LongAsWide(val)		((Tcl_WideInt)((long)(val)))
 #   define Tcl_WideAsDouble(val)	((double)((Tcl_WideInt)(val)))

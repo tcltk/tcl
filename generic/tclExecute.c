@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.34.2.13 2001/10/15 10:52:39 dkf Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.34.2.14 2001/10/18 14:19:38 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -245,7 +245,10 @@ long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
     } else {								\
 	(doubleVar) = (objPtr)->internalRep.doubleValue;		\
     }
-#else
+#   define LLTRACE(a)			TRACE(a)
+#   define LLTRACE_WITH_OBJ(a,b)	TRACE_WITH_OBJ(a,b)
+#   define LLD				"%" TCL_LL_MODIFIER "d"
+#else /* TCL_WIDE_INT_IS_LONG */
 #   define GET_WIDE_OR_INT(resultVar, objPtr, longVar, wideVar)		\
     (resultVar) = Tcl_GetLongFromObj((Tcl_Interp *) NULL, (objPtr),	\
 	    &(longVar));
@@ -256,17 +259,11 @@ long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
     } else {								\
 	(doubleVar) = (objPtr)->internalRep.doubleValue;		\
     }
-#endif
-#define IS_NUMERIC_TYPE(typePtr)					\
-	(IS_INTEGER_TYPE(typePtr) || (typePtr) == &tclDoubleType)
-#ifdef TCL_PRINTF_SUPPORTS_LL
-#   define LLTRACE(a)			TRACE(a)
-#   define LLTRACE_WITH_OBJ(a,b)	TRACE_WITH_OBJ(a,b)
-#   define LLD				"%" TCL_LL_MODIFIER "d"
-#else
 #   define LLTRACE(a)
 #   define LLTRACE_WITH_OBJ(a,b)
-#endif
+#endif /* TCL_WIDE_INT_IS_LONG */
+#define IS_NUMERIC_TYPE(typePtr)					\
+	(IS_INTEGER_TYPE(typePtr) || (typePtr) == &tclDoubleType)
 
 
 /*

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclScan.c,v 1.8.2.6 2001/10/18 12:47:21 dkf Exp $
+ * RCS: @(#) $Id: tclScan.c,v 1.8.2.7 2001/10/18 14:19:39 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1016,23 +1016,14 @@ Tcl_ScanObjCmd(dummy, interp, objc, objv)
 #ifndef TCL_WIDE_INT_IS_LONG
 		    if (flags & SCAN_LONGER) {
 			wideValue = (Tcl_WideInt) (*lfn)(buf, NULL, base);
-#   ifdef TCL_PRINTF_SUPPORTS_LL
 			if ((flags & SCAN_UNSIGNED) && (wideValue < 0)) {
 			    /* INTL: ISO digit */
-			    sprintf(buf, "%" TCL_LL_MODIFIER "u", wideValue);
+			    sprintf(buf, "%" TCL_LL_MODIFIER "u",
+				    (Tcl_WideUInt)wideValue);
 			    objPtr = Tcl_NewStringObj(buf, -1);
 			} else {
 			    objPtr = Tcl_NewWideIntObj(wideValue);
 			}
-#   else
-			/*
-			 * Convert to string inside the wide-int type;
-			 * this will produce an apparently signed
-			 * value, but it is tricky to do otherwise at
-			 * this point because lltostr() is *crufty*.
-			 */
-			objPtr = Tcl_NewWideIntObj(wideValue);
-#   endif /* TCL_PRINTF_SUPPORTS_LL */
 		    } else {
 #endif /* !TCL_WIDE_INT_IS_LONG */
 			value = (long) (*fn)(buf, NULL, base);
