@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacInit.c,v 1.9 2002/02/08 02:52:54 dgp Exp $
+ * RCS: @(#) $Id: tclMacInit.c,v 1.9.2.1 2004/03/29 18:49:36 hobbs Exp $
  */
 
 #include <AppleEvents.h>
@@ -339,7 +339,8 @@ TclpInitPlatform()
  *	Called at process initialization time.
  *
  * Results:
- *	None.
+ *	Return 1, indicating that the UTF may be dirty and require "cleanup"
+ *	after encodings are initialized.
  *
  * Side effects:
  *	None.
@@ -347,7 +348,7 @@ TclpInitPlatform()
  *---------------------------------------------------------------------------
  */
 
-void
+int
 TclpInitLibraryPath(argv0)
     CONST char *argv0;		/* Name of executable from argv[0] to main().
 				 * Not used because we can determine the name
@@ -411,6 +412,8 @@ TclpInitLibraryPath(argv0)
 	    Tcl_DStringFree(&path);
     }    
     TclSetLibraryPath(pathPtr);
+
+    return 1; /* 1 indicates that pathPtr may be dirty utf (needs cleaning) */
 }
 
 /*
