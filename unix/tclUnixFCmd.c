@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFCmd.c,v 1.36 2004/04/06 22:25:56 dgp Exp $
+ * RCS: @(#) $Id: tclUnixFCmd.c,v 1.37 2004/04/26 15:51:20 dgp Exp $
  *
  * Portions of this code were derived from NetBSD source code which has
  * the following copyright notice:
@@ -1810,9 +1810,18 @@ TclpObjNormalizePath(interp, pathPtr, nextCheckpoint)
 		&& (strcmp(normPath, nativePath) == 0)) {
 	    /* String is unchanged */
 	    Tcl_DStringFree(&ds);
-	    if (path[nextCheckpoint] != '\0') {
-		nextCheckpoint++;
+	    /*
+	     * Enable this to have the native FS claim normalization of
+	     * the whole path for existing files.  That would permit the
+	     * caller to declare normalization complete without calls to
+	     * additional filesystems.  Saving lots of calls is probably
+	     * worth the extra access() time here.  When no other FS's
+	     * are registered though, things are less clear.
+	     *
+	    if (0 == access(normPath, F_OK)) {
+		return pathLen;
 	    }
+	     */
 	    return nextCheckpoint;
 	}
 	
