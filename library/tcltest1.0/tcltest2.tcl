@@ -13,7 +13,7 @@
 # Copyright (c) 2000 by Ajuba Solutions
 # All rights reserved.
 # 
-# RCS: @(#) $Id: tcltest2.tcl,v 1.2 2000/09/29 22:48:12 jenn Exp $
+# RCS: @(#) $Id: tcltest2.tcl,v 1.3 2000/09/29 23:26:11 jenn Exp $
 
 # create the "tcltest" namespace for all testing variables and procedures
 
@@ -2068,7 +2068,8 @@ proc tcltest::test {name description args} {
 	incr tcltest::testLevel -1
 	return 1
     } elseif {([string index [lindex $args 0] 0] == "-") || ([llength $args] == 1)} {
-	if {[llength args] == 1} {
+	
+	if {[llength $args] == 1} {
 	    set list [substArguments [lindex $args 0]]
 	    foreach {element value} $list { 
 		set testAttributes($element) $value
