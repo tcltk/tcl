@@ -12,7 +12,7 @@
 # Copyright (c) 2001-2002 David Gravereaux.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.93 2002/09/29 20:41:16 davygrvy Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.94 2002/10/18 23:58:41 hobbs Exp $
 #------------------------------------------------------------------------------
 
 !if "$(MSVCDIR)" == ""
@@ -160,7 +160,7 @@ VERSION = $(DOTVERSION:.=)
 DDEDOTVERSION = 1.2
 DDEVERSION = $(DDEDOTVERSION:.=)
 
-REGDOTVERSION = 1.0
+REGDOTVERSION = 1.1
 REGVERSION = $(REGDOTVERSION:.=)
 
 BINROOT		= .
