@@ -586,6 +586,32 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
     TCL_EXP_FILE=""
     STLIB_LD="ar cr"
     case $system in
+	AIX-5.*)
+	    if test "${TCL_THREADS}" = "1" -a "$using_gcc" = "no" ; then
+		# AIX requires the _r compiler when gcc isn't being used
+		if test "${CC}" != "cc_r" ; then
+		    CC=${CC}_r
+		fi
+		AC_MSG_RESULT(Using $CC for compiling with threads)
+	    fi
+	    # AIX-5 uses ELF style dynamic libraries
+	    SHLIB_CFLAGS=""
+	    SHLIB_LD="/usr/ccs/bin/ld -G -z text"
+
+	    # Note: need the LIBS below, otherwise Tk won't find Tcl's
+	    # symbols when dynamically loaded into tclsh.
+
+	    SHLIB_LD_LIBS='${LIBS}'
+	    SHLIB_SUFFIX=".so"
+	    DL_OBJS="tclLoadDl.o"
+	    DL_LIBS="-ldl"
+	    LDFLAGS=""
+	    if test "$using_gcc" = "yes" ; then
+		LD_SEARCH_FLAGS='-Wl,-R,${LIB_RUNTIME_DIR}'
+	    else
+		LD_SEARCH_FLAGS='-R${LIB_RUNTIME_DIR}'
+	    fi
+	    ;;
 	AIX-4.[[2-9]])
 	    if test "${TCL_THREADS}" = "1" -a "$using_gcc" = "no" ; then
 		# AIX requires the _r compiler when gcc isn't being used
