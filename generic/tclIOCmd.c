@@ -8,12 +8,13 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOCmd.c,v 1.7.2.1 2001/08/06 22:24:11 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclIOCmd.c,v 1.7.2.1.2.1 2001/11/28 17:58:36 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
 #include "tclPort.h"
 
+#ifndef TCL_NO_SOCKETS
 /*
  * Callback structure for accept callback in a TCP server.
  */
@@ -27,6 +28,7 @@ typedef struct AcceptCallback {
  * Static functions for this file:
  */
 
+#ifndef TCL_NO_FILEEVENTS
 static void	AcceptCallbackProc _ANSI_ARGS_((ClientData callbackData,
 	            Tcl_Channel chan, char *address, int port));
 static void	RegisterTcpServerInterpCleanup _ANSI_ARGS_((Tcl_Interp *interp,
@@ -36,6 +38,8 @@ static void	TcpAcceptCallbacksDeleteProc _ANSI_ARGS_((
 static void	TcpServerCloseProc _ANSI_ARGS_((ClientData callbackData));
 static void	UnregisterTcpServerInterpCleanupProc _ANSI_ARGS_((
 		    Tcl_Interp *interp, AcceptCallback *acceptCallbackPtr));
+#endif /* TCL_NO_FILEEVENTS */
+#endif /* TCL_NO_SOCKETS */
 
 /*
  *----------------------------------------------------------------------
@@ -282,6 +286,7 @@ Tcl_GetsObjCmd(dummy, interp, objc, objv)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_CHANNEL_READ
 	/* ARGSUSED */
 int
 Tcl_ReadObjCmd(dummy, interp, objc, objv)
@@ -380,6 +385,7 @@ Tcl_ReadObjCmd(dummy, interp, objc, objv)
     Tcl_DecrRefCount(resultPtr);
     return TCL_OK;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -398,7 +404,7 @@ Tcl_ReadObjCmd(dummy, interp, objc, objv)
  *
  *----------------------------------------------------------------------
  */
-
+#ifndef TCL_NO_NONSTDCHAN
 	/* ARGSUSED */
 int
 Tcl_SeekObjCmd(clientData, interp, objc, objv)
@@ -444,6 +450,7 @@ Tcl_SeekObjCmd(clientData, interp, objc, objv)
     }
     return TCL_OK;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -507,7 +514,7 @@ Tcl_TellObjCmd(clientData, interp, objc, objv)
  *
  *----------------------------------------------------------------------
  */
-
+#ifndef TCL_NO_NONSTDCHAN
 	/* ARGSUSED */
 int
 Tcl_CloseObjCmd(clientData, interp, objc, objv)
@@ -556,6 +563,7 @@ Tcl_CloseObjCmd(clientData, interp, objc, objv)
 
     return TCL_OK;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -574,6 +582,7 @@ Tcl_CloseObjCmd(clientData, interp, objc, objv)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_CHANNEL_CONFIG
 	/* ARGSUSED */
 int
 Tcl_FconfigureObjCmd(clientData, interp, objc, objv)
@@ -627,6 +636,7 @@ Tcl_FconfigureObjCmd(clientData, interp, objc, objv)
     }
     return TCL_OK;
 }
+#endif
 
 /*
  *---------------------------------------------------------------------------
@@ -646,6 +656,7 @@ Tcl_FconfigureObjCmd(clientData, interp, objc, objv)
  *---------------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_CHANNEL_EOF
 	/* ARGSUSED */
 int
 Tcl_EofObjCmd(unused, interp, objc, objv)
@@ -672,6 +683,7 @@ Tcl_EofObjCmd(unused, interp, objc, objv)
     Tcl_SetBooleanObj(Tcl_GetObjResult(interp), Tcl_Eof(chan));
     return TCL_OK;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -690,6 +702,8 @@ Tcl_EofObjCmd(unused, interp, objc, objv)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
+#ifndef TCL_NO_PIPES
 	/* ARGSUSED */
 int
 Tcl_ExecObjCmd(dummy, interp, objc, objv)
@@ -848,6 +862,8 @@ Tcl_ExecObjCmd(dummy, interp, objc, objv)
     return result;
 #endif /* !MAC_TCL */
 }
+#endif /* TCL_NO_PIPES */
+#endif /* TCL_NO_FILESYSTEM */
 
 /*
  *---------------------------------------------------------------------------
@@ -867,6 +883,7 @@ Tcl_ExecObjCmd(dummy, interp, objc, objv)
  *---------------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_CHANNEL_BLOCKED
 	/* ARGSUSED */
 int
 Tcl_FblockedObjCmd(unused, interp, objc, objv)
@@ -898,6 +915,7 @@ Tcl_FblockedObjCmd(unused, interp, objc, objv)
     Tcl_SetBooleanObj(Tcl_GetObjResult(interp), Tcl_InputBlocked(chan));
     return TCL_OK;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -916,6 +934,8 @@ Tcl_FblockedObjCmd(unused, interp, objc, objv)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
+#ifndef TCL_NO_NONSTDCHAN
 	/* ARGSUSED */
 int
 Tcl_OpenObjCmd(notUsed, interp, objc, objv)
@@ -963,6 +983,12 @@ Tcl_OpenObjCmd(notUsed, interp, objc, objv)
 		(char *)NULL);
 	return TCL_ERROR;
 #else
+#ifdef TCL_NO_PIPES
+	Tcl_AppendResult(interp,
+		"command pipelines not supported (TCL_NO_PIPES)",
+		(char *)NULL);
+	return TCL_ERROR;
+#else
 	int mode, seekFlag, cmdObjc;
 	char **cmdArgv;
 
@@ -992,7 +1018,8 @@ Tcl_OpenObjCmd(notUsed, interp, objc, objv)
 	    chan = Tcl_OpenCommandChannel(interp, cmdObjc, cmdArgv, flags);
 	}
         ckfree((char *) cmdArgv);
-#endif
+#endif /* TCL_NO_PIPES */
+#endif /* MAC_TCL */
     }
     if (chan == (Tcl_Channel) NULL) {
         return TCL_ERROR;
@@ -1001,7 +1028,10 @@ Tcl_OpenObjCmd(notUsed, interp, objc, objv)
     Tcl_AppendResult(interp, Tcl_GetChannelName(chan), (char *) NULL);
     return TCL_OK;
 }
+#endif /* TCL_NO_NONSTDCHAN */
+#endif /* TCL_NO_FILESYSTEM */
 
+#ifndef TCL_NO_SOCKETS
 /*
  *----------------------------------------------------------------------
  *
@@ -1023,6 +1053,7 @@ Tcl_OpenObjCmd(notUsed, interp, objc, objv)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILEEVENTS
 	/* ARGSUSED */
 static void
 TcpAcceptCallbacksDeleteProc(clientData, interp)
@@ -1045,6 +1076,7 @@ TcpAcceptCallbacksDeleteProc(clientData, interp)
     Tcl_DeleteHashTable(hTblPtr);
     ckfree((char *) hTblPtr);
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -1066,6 +1098,7 @@ TcpAcceptCallbacksDeleteProc(clientData, interp)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILEEVENTS
 static void
 RegisterTcpServerInterpCleanup(interp, acceptCallbackPtr)
     Tcl_Interp *interp;		/* Interpreter for which we want to be
@@ -1096,6 +1129,7 @@ RegisterTcpServerInterpCleanup(interp, acceptCallbackPtr)
     }
     Tcl_SetHashValue(hPtr, (ClientData) acceptCallbackPtr);
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -1116,6 +1150,7 @@ RegisterTcpServerInterpCleanup(interp, acceptCallbackPtr)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILEEVENTS
 static void
 UnregisterTcpServerInterpCleanupProc(interp, acceptCallbackPtr)
     Tcl_Interp *interp;		/* Interpreter in which the accept callback
@@ -1138,6 +1173,7 @@ UnregisterTcpServerInterpCleanupProc(interp, acceptCallbackPtr)
     }
     Tcl_DeleteHashEntry(hPtr);
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -1156,6 +1192,7 @@ UnregisterTcpServerInterpCleanupProc(interp, acceptCallbackPtr)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILEEVENTS
 static void
 AcceptCallbackProc(callbackData, chan, address, port)
     ClientData callbackData;		/* The data stored when the callback
@@ -1225,6 +1262,7 @@ AcceptCallbackProc(callbackData, chan, address, port)
         Tcl_Close((Tcl_Interp *) NULL, chan);
     }
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -1247,6 +1285,7 @@ AcceptCallbackProc(callbackData, chan, address, port)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILEEVENTS
 static void
 TcpServerCloseProc(callbackData)
     ClientData callbackData;	/* The data passed in the call to
@@ -1263,6 +1302,7 @@ TcpServerCloseProc(callbackData)
     Tcl_EventuallyFree((ClientData) acceptCallbackPtr->script, TCL_DYNAMIC);
     ckfree((char *) acceptCallbackPtr);
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -1295,12 +1335,18 @@ Tcl_SocketObjCmd(notUsed, interp, objc, objv)
 	SKT_ASYNC,      SKT_MYADDR,      SKT_MYPORT,      SKT_SERVER  
     };
     int optionIndex, a, server, port;
+#ifndef TCL_NO_FILEEVENTS
     char *arg, *copyScript, *host, *script;
+#else
+    char *arg,              *host, *script;
+#endif
     char *myaddr = NULL;
     int myport = 0;
     int async = 0;
     Tcl_Channel chan;
+#ifndef TCL_NO_FILEEVENTS
     AcceptCallback *acceptCallbackPtr;
+#endif
     
     server = 0;
     script = NULL;
@@ -1410,6 +1456,7 @@ wrongNumArgs:
     }
 
     if (server) {
+#ifndef TCL_NO_FILEEVENTS
         acceptCallbackPtr = (AcceptCallback *) ckalloc((unsigned)
                 sizeof(AcceptCallback));
         copyScript = ckalloc((unsigned) strlen(script) + 1);
@@ -1441,6 +1488,10 @@ wrongNumArgs:
         
         Tcl_CreateCloseHandler(chan, TcpServerCloseProc,
                 (ClientData) acceptCallbackPtr);
+#else
+	/* IOS FIXME: error message */
+	return TCL_ERROR;
+#endif
     } else {
         chan = Tcl_OpenTcpClient(interp, port, host, myaddr, myport, async);
         if (chan == (Tcl_Channel) NULL) {
@@ -1452,6 +1503,7 @@ wrongNumArgs:
     
     return TCL_OK;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -1471,6 +1523,7 @@ wrongNumArgs:
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_CHANNELCOPY
 int
 Tcl_FcopyObjCmd(dummy, interp, objc, objv)
     ClientData dummy;		/* Not used. */
@@ -1534,10 +1587,15 @@ Tcl_FcopyObjCmd(dummy, interp, objc, objv)
 		}
 		break;
 	    case FcopyCommand:
+#ifndef TCL_NO_FILEEVENTS
 		cmdPtr = objv[i+1];
+#else
+		return TCL_ERROR; /* IOS FIXME: need error message */
+#endif
 		break;
 	}
     }
 
     return TclCopyChannel(interp, inChan, outChan, toRead, cmdPtr);
 }
+#endif

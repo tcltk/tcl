@@ -9,13 +9,14 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.5.12.2 2001/09/11 00:53:27 hobbs Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.5.12.2.2.1 2001/11/28 17:58:37 andreas_kupries Exp $
  */
 
 #include <stdio.h>
 #include "tclInt.h"
 #include "tclPort.h"
 
+#ifndef TCL_NO_CMDALIASES
 /*
  * Counter for how many aliases were created (global)
  */
@@ -57,7 +58,9 @@ typedef struct Alias {
                                  * hash table is never required - we are using
                                  * a hash table only for convenience. */
 } Alias;
+#endif
 
+#if !(defined(TCL_NO_SLAVEINTERP) && defined(TCL_NO_CMDALIASES))
 /*
  *
  * struct Slave:
@@ -81,7 +84,9 @@ typedef struct Slave {
                                  * in slave interpreter to struct Alias
                                  * defined below. */
 } Slave;
+#endif /* !(defined(TCL_NO_SLAVEINTERP) && defined(TCL_NO_CMDALIASES)) */
 
+#ifndef TCL_NO_CMDALIASES
 /*
  * struct Target:
  *
@@ -100,7 +105,9 @@ typedef struct Target {
     Tcl_Command	slaveCmd;	/* Command for alias in slave interp. */
     Tcl_Interp *slaveInterp;	/* Slave Interpreter. */
 } Target;
+#endif
 
+#if !(defined(TCL_NO_SLAVEINTERP) && defined(TCL_NO_CMDALIASES))
 /*
  * struct Master:
  *
@@ -120,6 +127,7 @@ typedef struct Target {
 typedef struct Master {
     Tcl_HashTable slaveTable;	/* Hash table for slave interpreters.
                                  * Maps from command names to Slave records. */
+#ifndef TCL_NO_CMDALIASES
     Tcl_HashTable targetTable;	/* Hash table for Target Records. Contains
                                  * all Target records which denote aliases
                                  * from slaves or sibling interpreters that
@@ -127,6 +135,7 @@ typedef struct Master {
                                  * table is used to remove dangling pointers
                                  * from the slave (or sibling) interpreters
                                  * when this interpreter is deleted. */
+#endif
 } Master;
 
 /*
@@ -140,11 +149,13 @@ typedef struct InterpInfo {
     Slave slave;		/* Information necessary for this interp to
 				 * function as a slave. */
 } InterpInfo;
+#endif /* !(defined(TCL_NO_SLAVEINTERP) && defined(TCL_NO_CMDALIASES)) */
 
 /*
  * Prototypes for local static procedures:
  */
 
+#ifndef TCL_NO_CMDALIASES
 static int		AliasCreate _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Interp *slaveInterp, Tcl_Interp *masterInterp,
 			    Tcl_Obj *namePtr, Tcl_Obj *targetPtr, int objc,
@@ -160,13 +171,17 @@ static int		AliasObjCmd _ANSI_ARGS_((ClientData dummy,
 		            Tcl_Obj *CONST objv[]));
 static void		AliasObjCmdDeleteProc _ANSI_ARGS_((
 			    ClientData clientData));
+#endif
 
+#if !(defined(TCL_NO_SLAVEINTERP) && defined(TCL_NO_CMDALIASES))
 static Tcl_Interp *	GetInterp _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *pathPtr));
 static Tcl_Interp *	GetInterp2 _ANSI_ARGS_((Tcl_Interp *interp, int objc,
 			    Tcl_Obj *CONST objv[]));
 static void		InterpInfoDeleteProc _ANSI_ARGS_((
 			    ClientData clientData, Tcl_Interp *interp));
+#endif /* !(defined(TCL_NO_SLAVEINTERP) && defined(TCL_NO_CMDALIASES)) */
+#ifndef TCL_NO_SLAVEINTERP
 static Tcl_Interp *	SlaveCreate _ANSI_ARGS_((Tcl_Interp *interp,
 		            Tcl_Obj *pathPtr, int safe));
 static int		SlaveEval _ANSI_ARGS_((Tcl_Interp *interp,
@@ -190,6 +205,7 @@ static int		SlaveObjCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Obj *CONST objv[]));
 static void		SlaveObjCmdDeleteProc _ANSI_ARGS_((
 			    ClientData clientData));
+#endif
 
 /*
  *---------------------------------------------------------------------------
@@ -210,6 +226,7 @@ static void		SlaveObjCmdDeleteProc _ANSI_ARGS_((
  *---------------------------------------------------------------------------
  */
 
+#if !(defined(TCL_NO_SLAVEINTERP) && defined(TCL_NO_CMDALIASES))
 int
 TclInterpInit(interp)
     Tcl_Interp *interp;			/* Interpreter to initialize. */
@@ -223,7 +240,9 @@ TclInterpInit(interp)
 
     masterPtr = &interpInfoPtr->master;
     Tcl_InitHashTable(&masterPtr->slaveTable, TCL_STRING_KEYS);
+#ifndef TCL_NO_CMDALIASES
     Tcl_InitHashTable(&masterPtr->targetTable, TCL_ONE_WORD_KEYS);
+#endif
 
     slavePtr = &interpInfoPtr->slave;
     slavePtr->masterInterp	= NULL;
@@ -237,6 +256,7 @@ TclInterpInit(interp)
     Tcl_CallWhenDeleted(interp, InterpInfoDeleteProc, NULL);
     return TCL_OK;
 }
+#endif /* !(defined(TCL_NO_SLAVEINTERP) && defined(TCL_NO_CMDALIASES)) */
 
 /*
  *---------------------------------------------------------------------------
@@ -256,6 +276,7 @@ TclInterpInit(interp)
  *---------------------------------------------------------------------------
  */
 
+#if !(defined(TCL_NO_SLAVEINTERP) && defined(TCL_NO_CMDALIASES))
 static void
 InterpInfoDeleteProc(clientData, interp)
     ClientData clientData;	/* Ignored. */
@@ -265,9 +286,11 @@ InterpInfoDeleteProc(clientData, interp)
     InterpInfo *interpInfoPtr;
     Slave *slavePtr;
     Master *masterPtr;
+#ifndef TCL_NO_CMDALIASES
     Tcl_HashSearch hSearch;
     Tcl_HashEntry *hPtr;
     Target *targetPtr;
+#endif
 
     interpInfoPtr = (InterpInfo *) ((Interp *) interp)->interpInfo;
 
@@ -281,6 +304,7 @@ InterpInfoDeleteProc(clientData, interp)
     }
     Tcl_DeleteHashTable(&masterPtr->slaveTable);
 
+#ifndef TCL_NO_CMDALIASES
     /*
      * Tell any interps that have aliases to this interp that they should
      * delete those aliases.  If the other interp was already dead, it
@@ -295,6 +319,7 @@ InterpInfoDeleteProc(clientData, interp)
 	hPtr = Tcl_NextHashEntry(&hSearch);
     }
     Tcl_DeleteHashTable(&masterPtr->targetTable);
+#endif
 
     slavePtr = &interpInfoPtr->slave;
     if (slavePtr->interpCmd != NULL) {
@@ -321,6 +346,7 @@ InterpInfoDeleteProc(clientData, interp)
 
     ckfree((char *) interpInfoPtr);    
 }
+#endif /* !(defined(TCL_NO_SLAVEINTERP) && defined(TCL_NO_CMDALIASES)) */
 
 /*
  *----------------------------------------------------------------------
@@ -338,6 +364,8 @@ InterpInfoDeleteProc(clientData, interp)
  *
  *----------------------------------------------------------------------
  */
+
+#if !(defined(TCL_NO_SLAVEINTERP) && defined(TCL_NO_CMDALIASES))
 	/* ARGSUSED */
 int
 Tcl_InterpObjCmd(clientData, interp, objc, objv)
@@ -348,17 +376,58 @@ Tcl_InterpObjCmd(clientData, interp, objc, objv)
 {
     int index;
     static char *options[] = {
-        "alias",	"aliases",	"create",	"delete", 
+#ifndef TCL_NO_CMDALIASES
+        "alias",	"aliases",
+#endif
+#ifndef TCL_NO_SLAVEINTERP
+	"create",	"delete", 
 	"eval",		"exists",	"expose",	"hide", 
 	"hidden",	"issafe",	"invokehidden",	"marktrusted", 
-	"slaves",	"share",	"target",	"transfer",
+	"slaves",
+#endif
+#ifndef TCL_NO_SLAVEINTERP
+#ifndef TCL_NO_NONSTDCHAN
+	"share",
+#endif
+#endif
+#ifndef TCL_NO_CMDALIASES
+	"target",
+#endif
+#ifndef TCL_NO_SLAVEINTERP
+#ifndef TCL_NO_NONSTDCHAN
+	"transfer",
+#endif
+#endif
         NULL
     };
     enum option {
-	OPT_ALIAS,	OPT_ALIASES,	OPT_CREATE,	OPT_DELETE,
-	OPT_EVAL,	OPT_EXISTS,	OPT_EXPOSE,	OPT_HIDE,
-	OPT_HIDDEN,	OPT_ISSAFE,	OPT_INVOKEHID,	OPT_MARKTRUSTED,
-	OPT_SLAVES,	OPT_SHARE,	OPT_TARGET,	OPT_TRANSFER
+#ifndef TCL_NO_CMDALIASES
+	OPT_ALIAS
+	,OPT_ALIASES
+#endif
+#ifndef TCL_NO_SLAVEINTERP
+#ifndef TCL_NO_CMDALIASES
+	,
+#endif
+	OPT_CREATE
+	,OPT_DELETE
+	,OPT_EVAL,	OPT_EXISTS,	OPT_EXPOSE,	OPT_HIDE
+	,OPT_HIDDEN,	OPT_ISSAFE,	OPT_INVOKEHID,	OPT_MARKTRUSTED
+	,OPT_SLAVES
+#endif
+#ifndef TCL_NO_SLAVEINTERP
+#ifndef TCL_NO_NONSTDCHAN
+	,OPT_SHARE
+#endif
+#endif
+#ifndef TCL_NO_CMDALIASES
+	,OPT_TARGET
+#endif
+#ifndef TCL_NO_SLAVEINTERP
+#ifndef TCL_NO_NONSTDCHAN
+	,OPT_TRANSFER
+#endif
+#endif
     };
 
 
@@ -371,6 +440,7 @@ Tcl_InterpObjCmd(clientData, interp, objc, objv)
 	return TCL_ERROR;
     }
     switch ((enum option) index) {
+#ifndef TCL_NO_CMDALIASES
 	case OPT_ALIAS: {
 	    Tcl_Interp *slaveInterp, *masterInterp;
 
@@ -415,6 +485,8 @@ Tcl_InterpObjCmd(clientData, interp, objc, objv)
 	    }
 	    return AliasList(interp, slaveInterp);
 	}
+#endif
+#ifndef TCL_NO_SLAVEINTERP
 	case OPT_CREATE: {
 	    int i, last, safe;
 	    Tcl_Obj *slavePtr;
@@ -652,6 +724,9 @@ Tcl_InterpObjCmd(clientData, interp, objc, objv)
 	    }
 	    return TCL_OK;
 	}
+#endif
+#ifndef TCL_NO_NONSTDCHAN
+#ifndef TCL_NO_SLAVEINTERP
 	case OPT_SHARE: {
 	    Tcl_Interp *slaveInterp;		/* A slave. */
 	    Tcl_Interp *masterInterp;		/* Its master. */
@@ -678,6 +753,9 @@ Tcl_InterpObjCmd(clientData, interp, objc, objv)
 	    Tcl_RegisterChannel(slaveInterp, chan);
 	    return TCL_OK;
 	}
+#endif
+#endif
+#ifndef TCL_NO_CMDALIASES
 	case OPT_TARGET: {
 	    Tcl_Interp *slaveInterp;
 	    InterpInfo *iiPtr;
@@ -717,6 +795,9 @@ Tcl_InterpObjCmd(clientData, interp, objc, objv)
 	    }
 	    return TCL_OK;
 	}
+#endif
+#ifndef TCL_NO_NONSTDCHAN
+#ifndef TCL_NO_SLAVEINTERP
 	case OPT_TRANSFER: {
 	    Tcl_Interp *slaveInterp;		/* A slave. */
 	    Tcl_Interp *masterInterp;		/* Its master. */
@@ -747,9 +828,12 @@ Tcl_InterpObjCmd(clientData, interp, objc, objv)
 	    }
 	    return TCL_OK;
 	}
+#endif
+#endif
     }
     return TCL_OK;
 }
+#endif /* !(defined(TCL_NO_SLAVEINTERP) && defined(TCL_NO_CMDALIASES)) */
 
 /*
  *---------------------------------------------------------------------------
@@ -772,6 +856,7 @@ Tcl_InterpObjCmd(clientData, interp, objc, objv)
  *---------------------------------------------------------------------------
  */
  
+#if !(defined(TCL_NO_SLAVEINTERP) && defined(TCL_NO_CMDALIASES))
 static Tcl_Interp *
 GetInterp2(interp, objc, objv)
     Tcl_Interp *interp;		/* Default interp if no interp was specified
@@ -788,6 +873,7 @@ GetInterp2(interp, objc, objv)
 	return NULL;
     }
 }
+#endif /* !(defined(TCL_NO_SLAVEINTERP) && defined(TCL_NO_CMDALIASES)) */
 
 /*
  *----------------------------------------------------------------------
@@ -805,6 +891,7 @@ GetInterp2(interp, objc, objv)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_CMDALIASES
 int
 Tcl_CreateAlias(slaveInterp, slaveCmd, targetInterp, targetCmd, argc, argv)
     Tcl_Interp *slaveInterp;	/* Interpreter for source command. */
@@ -843,6 +930,7 @@ Tcl_CreateAlias(slaveInterp, slaveCmd, targetInterp, targetCmd, argc, argv)
 
     return result;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -860,6 +948,7 @@ Tcl_CreateAlias(slaveInterp, slaveCmd, targetInterp, targetCmd, argc, argv)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_CMDALIASES
 int
 Tcl_CreateAliasObj(slaveInterp, slaveCmd, targetInterp, targetCmd, objc, objv)
     Tcl_Interp *slaveInterp;	/* Interpreter for source command. */
@@ -885,6 +974,7 @@ Tcl_CreateAliasObj(slaveInterp, slaveCmd, targetInterp, targetCmd, objc, objv)
     Tcl_DecrRefCount(targetObjPtr);
     return result;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -902,6 +992,7 @@ Tcl_CreateAliasObj(slaveInterp, slaveCmd, targetInterp, targetCmd, objc, objv)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_CMDALIASES
 int
 Tcl_GetAlias(interp, aliasName, targetInterpPtr, targetNamePtr, argcPtr,
         argvPtr)
@@ -945,6 +1036,7 @@ Tcl_GetAlias(interp, aliasName, targetInterpPtr, targetNamePtr, argcPtr,
     }
     return TCL_OK;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -962,6 +1054,7 @@ Tcl_GetAlias(interp, aliasName, targetInterpPtr, targetNamePtr, argcPtr,
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_CMDALIASES
 int
 Tcl_GetAliasObj(interp, aliasName, targetInterpPtr, targetNamePtr, objcPtr,
         objvPtr)
@@ -1002,6 +1095,7 @@ Tcl_GetAliasObj(interp, aliasName, targetInterpPtr, targetNamePtr, objcPtr,
     }
     return TCL_OK;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -1025,6 +1119,7 @@ Tcl_GetAliasObj(interp, aliasName, targetInterpPtr, targetNamePtr, objcPtr,
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_CMDALIASES
 int
 TclPreventAliasLoop(interp, cmdInterp, cmd)
     Tcl_Interp *interp;			/* Interp in which to report errors. */
@@ -1095,6 +1190,7 @@ TclPreventAliasLoop(interp, cmdInterp, cmd)
 
     /* NOTREACHED */
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -1113,6 +1209,7 @@ TclPreventAliasLoop(interp, cmdInterp, cmd)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_CMDALIASES
 static int
 AliasCreate(interp, slaveInterp, masterInterp, namePtr, targetNamePtr,
 	objc, objv)
@@ -1224,6 +1321,7 @@ AliasCreate(interp, slaveInterp, masterInterp, namePtr, targetNamePtr,
     Tcl_SetObjResult(interp, namePtr);
     return TCL_OK;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -1241,6 +1339,7 @@ AliasCreate(interp, slaveInterp, masterInterp, namePtr, targetNamePtr,
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_CMDALIASES
 static int
 AliasDelete(interp, slaveInterp, namePtr)
     Tcl_Interp *interp;		/* Interpreter for result & errors. */
@@ -1268,6 +1367,7 @@ AliasDelete(interp, slaveInterp, namePtr)
     Tcl_DeleteCommandFromToken(slaveInterp, aliasPtr->slaveCmd);
     return TCL_OK;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -1288,6 +1388,7 @@ AliasDelete(interp, slaveInterp, namePtr)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_CMDALIASES
 static int
 AliasDescribe(interp, slaveInterp, namePtr)
     Tcl_Interp *interp;		/* Interpreter for result & errors. */
@@ -1313,6 +1414,7 @@ AliasDescribe(interp, slaveInterp, namePtr)
     Tcl_SetObjResult(interp, aliasPtr->prefixPtr);
     return TCL_OK;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -1330,6 +1432,7 @@ AliasDescribe(interp, slaveInterp, namePtr)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_CMDALIASES
 static int
 AliasList(interp, slaveInterp)
     Tcl_Interp *interp;		/* Interp for data return. */
@@ -1351,6 +1454,7 @@ AliasList(interp, slaveInterp)
     }
     return TCL_OK;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -1374,6 +1478,7 @@ AliasList(interp, slaveInterp)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_CMDALIASES
 static int
 AliasObjCmd(clientData, interp, objc, objv)
     ClientData clientData;	/* Alias record. */
@@ -1460,6 +1565,7 @@ AliasObjCmd(clientData, interp, objc, objv)
     Tcl_Release((ClientData) targetInterp);
     return result;        
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -1479,6 +1585,7 @@ AliasObjCmd(clientData, interp, objc, objv)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_CMDALIASES
 static void
 AliasObjCmdDeleteProc(clientData)
     ClientData clientData;	/* The alias record for this alias. */
@@ -1498,6 +1605,7 @@ AliasObjCmdDeleteProc(clientData)
 
     ckfree((char *) aliasPtr);
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -1522,6 +1630,7 @@ AliasObjCmdDeleteProc(clientData)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_SLAVEINTERP
 Tcl_Interp *
 Tcl_CreateSlave(interp, slavePath, isSafe)
     Tcl_Interp *interp;		/* Interpreter to start search at. */
@@ -1537,6 +1646,7 @@ Tcl_CreateSlave(interp, slavePath, isSafe)
 
     return slaveInterp;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -1555,6 +1665,7 @@ Tcl_CreateSlave(interp, slavePath, isSafe)
  *----------------------------------------------------------------------
  */
 
+#if !(defined(TCL_NO_SLAVEINTERP) && defined(TCL_NO_CMDALIASES))
 Tcl_Interp *
 Tcl_GetSlave(interp, slavePath)
     Tcl_Interp *interp;		/* Interpreter to start search from. */
@@ -1569,6 +1680,7 @@ Tcl_GetSlave(interp, slavePath)
 
     return slaveInterp;
 }
+#endif /* !(defined(TCL_NO_SLAVEINTERP) && defined(TCL_NO_CMDALIASES)) */
 
 /*
  *----------------------------------------------------------------------
@@ -1586,6 +1698,7 @@ Tcl_GetSlave(interp, slavePath)
  *----------------------------------------------------------------------
  */
 
+#if !(defined(TCL_NO_SLAVEINTERP) && defined(TCL_NO_CMDALIASES))
 Tcl_Interp *
 Tcl_GetMaster(interp)
     Tcl_Interp *interp;		/* Get the master of this interpreter. */
@@ -1598,6 +1711,7 @@ Tcl_GetMaster(interp)
     slavePtr = &((InterpInfo *) ((Interp *) interp)->interpInfo)->slave;
     return slavePtr->masterInterp;
 }
+#endif /* !(defined(TCL_NO_SLAVEINTERP) && defined(TCL_NO_CMDALIASES)) */
 
 /*
  *----------------------------------------------------------------------
@@ -1625,6 +1739,7 @@ Tcl_GetMaster(interp)
  *----------------------------------------------------------------------
  */
 
+#if !(defined(TCL_NO_SLAVEINTERP) && defined(TCL_NO_CMDALIASES))
 int
 Tcl_GetInterpPath(askingInterp, targetInterp)
     Tcl_Interp *askingInterp;	/* Interpreter to start search from. */
@@ -1647,6 +1762,7 @@ Tcl_GetInterpPath(askingInterp, targetInterp)
 		    iiPtr->slave.slaveEntryPtr));
     return TCL_OK;
 }
+#endif /* !(defined(TCL_NO_SLAVEINTERP) && defined(TCL_NO_CMDALIASES)) */
 
 /*
  *----------------------------------------------------------------------
@@ -1665,6 +1781,7 @@ Tcl_GetInterpPath(askingInterp, targetInterp)
  *----------------------------------------------------------------------
  */
 
+#if !(defined(TCL_NO_SLAVEINTERP) && defined(TCL_NO_CMDALIASES))
 static Tcl_Interp *
 GetInterp(interp, pathPtr)
     Tcl_Interp *interp;		/* Interp. to start search from. */
@@ -1704,6 +1821,7 @@ GetInterp(interp, pathPtr)
     }
     return searchInterp;
 }
+#endif /* !(defined(TCL_NO_SLAVEINTERP) && defined(TCL_NO_CMDALIASES)) */
 
 /*
  *----------------------------------------------------------------------
@@ -1724,6 +1842,7 @@ GetInterp(interp, pathPtr)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_SLAVEINTERP
 static Tcl_Interp *
 SlaveCreate(interp, pathPtr, safe)
     Tcl_Interp *interp;		/* Interp. to start search from. */
@@ -1802,6 +1921,7 @@ SlaveCreate(interp, pathPtr, safe)
 
     return NULL;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -1820,6 +1940,7 @@ SlaveCreate(interp, pathPtr, safe)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_SLAVEINTERP
 static int
 SlaveObjCmd(clientData, interp, objc, objv)
     ClientData clientData;	/* Slave interpreter. */
@@ -1830,12 +1951,18 @@ SlaveObjCmd(clientData, interp, objc, objv)
     Tcl_Interp *slaveInterp;
     int index;
     static char *options[] = {
-        "alias",	"aliases",	"eval",		"expose",
+#ifndef TCL_NO_CMDALIASES
+        "alias",	"aliases",
+#endif
+	"eval",		"expose",
         "hide",		"hidden",	"issafe",	"invokehidden",
         "marktrusted",	NULL
     };
     enum options {
-	OPT_ALIAS,	OPT_ALIASES,	OPT_EVAL,	OPT_EXPOSE,
+#ifndef TCL_NO_CMDALIASES
+	OPT_ALIAS,	OPT_ALIASES,
+#endif
+	OPT_EVAL,	OPT_EXPOSE,
 	OPT_HIDE,	OPT_HIDDEN,	OPT_ISSAFE,	OPT_INVOKEHIDDEN,
 	OPT_MARKTRUSTED
     };
@@ -1855,6 +1982,7 @@ SlaveObjCmd(clientData, interp, objc, objv)
     }
 
     switch ((enum options) index) {
+#ifndef TCL_NO_CMDALIASES
 	case OPT_ALIAS: {
 	    if (objc == 3) {
 		return AliasDescribe(interp, slaveInterp, objv[2]);
@@ -1874,6 +2002,7 @@ SlaveObjCmd(clientData, interp, objc, objv)
 	case OPT_ALIASES: {
 	    return AliasList(interp, slaveInterp);
 	}
+#endif
 	case OPT_EVAL: {
 	    if (objc < 3) {
 		Tcl_WrongNumArgs(interp, 2, objv, "arg ?arg ...?");
@@ -1949,6 +2078,7 @@ SlaveObjCmd(clientData, interp, objc, objv)
 
     return TCL_ERROR;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -1969,6 +2099,7 @@ SlaveObjCmd(clientData, interp, objc, objv)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_SLAVEINTERP
 static void
 SlaveObjCmdDeleteProc(clientData)
     ClientData clientData;		/* The SlaveRecord for the command. */
@@ -1997,6 +2128,7 @@ SlaveObjCmdDeleteProc(clientData)
 	Tcl_DeleteInterp(slavePtr->slaveInterp);
     }
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -2014,6 +2146,7 @@ SlaveObjCmdDeleteProc(clientData)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_SLAVEINTERP
 static int
 SlaveEval(interp, slaveInterp, objc, objv)
     Tcl_Interp *interp;		/* Interp for error return. */
@@ -2041,6 +2174,7 @@ SlaveEval(interp, slaveInterp, objc, objv)
     Tcl_Release((ClientData) slaveInterp);
     return result;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -2059,6 +2193,7 @@ SlaveEval(interp, slaveInterp, objc, objv)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_SLAVEINTERP
 static int
 SlaveExpose(interp, slaveInterp, objc, objv)
     Tcl_Interp *interp;		/* Interp for error return. */
@@ -2083,6 +2218,7 @@ SlaveExpose(interp, slaveInterp, objc, objv)
     }
     return TCL_OK;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -2101,6 +2237,7 @@ SlaveExpose(interp, slaveInterp, objc, objv)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_SLAVEINTERP
 static int
 SlaveHide(interp, slaveInterp, objc, objv)
     Tcl_Interp *interp;		/* Interp for error return. */
@@ -2125,6 +2262,7 @@ SlaveHide(interp, slaveInterp, objc, objv)
     }
     return TCL_OK;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -2143,6 +2281,7 @@ SlaveHide(interp, slaveInterp, objc, objv)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_SLAVEINTERP
 static int
 SlaveHidden(interp, slaveInterp)
     Tcl_Interp *interp;		/* Interp for data return. */
@@ -2166,6 +2305,7 @@ SlaveHidden(interp, slaveInterp)
     }
     return TCL_OK;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -2183,6 +2323,7 @@ SlaveHidden(interp, slaveInterp)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_SLAVEINTERP
 static int
 SlaveInvokeHidden(interp, slaveInterp, global, objc, objv)
     Tcl_Interp *interp;		/* Interp for error return. */
@@ -2216,6 +2357,7 @@ SlaveInvokeHidden(interp, slaveInterp, global, objc, objv)
     Tcl_Release((ClientData) slaveInterp);
     return result;        
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -2234,6 +2376,7 @@ SlaveInvokeHidden(interp, slaveInterp, global, objc, objv)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_SLAVEINTERP
 static int
 SlaveMarkTrusted(interp, slaveInterp)
     Tcl_Interp *interp;		/* Interp for error return. */
@@ -2249,6 +2392,7 @@ SlaveMarkTrusted(interp, slaveInterp)
     ((Interp *) slaveInterp)->flags &= ~SAFE_INTERP;
     return TCL_OK;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -2340,6 +2484,13 @@ Tcl_MakeSafe(interp)
     Tcl_UnsetVar(interp, "tcl_library", TCL_GLOBAL_ONLY);
     Tcl_UnsetVar(interp, "tcl_pkgPath", TCL_GLOBAL_ONLY);
     
+#ifdef TCL_NO_NONSTDCHAN
+    /* IOS FIXME: Unregister is still required to make sub interpreters safe by
+     * removing the std* channels from them.
+     * This means that removal of sub interp fucntionality allows the removal of this
+     * functionality too.
+     */
+#endif
     /*
      * Remove the standard channels from the interpreter; safe interpreters
      * do not ordinarily have access to stdin, stdout and stderr.

@@ -7,7 +7,7 @@
  * Copyright (c) 1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclUnixInit.c,v 1.18.2.3 2001/08/24 16:19:10 dgp Exp $
+ * RCS: @(#) $Id: tclUnixInit.c,v 1.18.2.3.2.1 2001/11/28 17:58:37 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -116,7 +116,10 @@ static CONST LocaleTable localeTable[] = {
 void
 TclpInitPlatform()
 {
+#ifndef TCL_NO_FILESYSTEM
+    /* See tclFileName.c for definition and usage */
     tclPlatform = TCL_PLATFORM_UNIX;
+#endif
 
     /*
      * The code below causes SIGPIPE (broken pipe) errors to
@@ -186,6 +189,7 @@ TclpInitPlatform()
  *---------------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
 void
 TclpInitLibraryPath(path)
 CONST char *path;		/* Path to the executable in native 
@@ -361,6 +365,7 @@ CONST char *path;		/* Path to the executable in native
     TclSetLibraryPath(pathPtr);    
     Tcl_DStringFree(&buffer);
 }
+#endif
 
 /*
  *---------------------------------------------------------------------------
@@ -386,7 +391,9 @@ TclpSetInitialEncodings()
 {
     CONST char *encoding;
     int i;
+#ifndef TCL_NO_FILESYSTEM
     Tcl_Obj *pathPtr;
+#endif
     char *langEnv;
 
     /*
@@ -493,6 +500,7 @@ TclpSetInitialEncodings()
      * encoding.
      */
 
+#ifndef TCL_NO_FILESYSTEM
     pathPtr = TclGetLibraryPath();
     if (pathPtr != NULL) {
 	int objc;
@@ -512,6 +520,7 @@ TclpSetInitialEncodings()
 	    Tcl_DStringFree(&ds);
 	}
     }
+#endif
 
     /*
      * Keep the iso8859-1 encoding preloaded.  The IO package uses it for
@@ -693,7 +702,9 @@ int
 Tcl_Init(interp)
     Tcl_Interp *interp;		/* Interpreter to initialize. */
 {
+#ifndef TCL_NO_FILESYSTEM
     Tcl_Obj *pathPtr;
+#endif
 
     if (tclPreInitScript != NULL) {
 	if (Tcl_Eval(interp, tclPreInitScript) == TCL_ERROR) {
@@ -701,11 +712,13 @@ Tcl_Init(interp)
 	};
     }
     
+#ifndef TCL_NO_FILESYSTEM
     pathPtr = TclGetLibraryPath();
     if (pathPtr == NULL) {
 	pathPtr = Tcl_NewObj();
     }
     Tcl_SetVar2Ex(interp, "tcl_libPath", NULL, pathPtr, TCL_GLOBAL_ONLY);
+#endif
     return Tcl_Eval(interp, initScript);
 }
 
@@ -731,6 +744,13 @@ void
 Tcl_SourceRCFile(interp)
     Tcl_Interp *interp;		/* Interpreter to source rc file into. */
 {
+#ifndef TCL_NO_FILESYSTEM
+#ifndef TCL_NO_NONSTDCHAN
+    /* This functionality cannot be made available if the channel
+     * system is restricted to the standard channels, i.e. stdin,
+     * stdout, stderr.
+     */
+
     Tcl_DString temp;
     char *fileName;
     Tcl_Channel errChannel;
@@ -769,6 +789,8 @@ Tcl_SourceRCFile(interp)
 	}
         Tcl_DStringFree(&temp);
     }
+#endif
+#endif /* TCL_NO_FILESYSTEM */
 }
 
 /*

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixNotfy.c,v 1.10 2000/04/24 23:32:13 hobbs Exp $
+ * RCS: @(#) $Id: tclUnixNotfy.c,v 1.10.20.1 2001/11/28 17:58:37 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -20,6 +20,7 @@
 
 extern TclStubs tclStubs;
 
+#ifndef TCL_NO_FILEEVENTS
 /*
  * This structure is used to keep track of the notifier info for a 
  * a registered file.
@@ -52,6 +53,7 @@ typedef struct FileHandlerEvent {
 				 * FileHandler structure because it could
 				 * go away while the event is queued). */
 } FileHandlerEvent;
+#endif
 
 /*
  * The following static structure contains the state information for the
@@ -60,8 +62,10 @@ typedef struct FileHandlerEvent {
  */
 
 typedef struct ThreadSpecificData {
+#ifndef TCL_NO_FILEEVENTS
     FileHandler *firstFileHandlerPtr;
 				/* Pointer to head of file handler list. */
+#endif
     fd_mask checkMasks[3*MASK_SIZE];
 				/* This array is used to build up the masks
 				 * to be used in the next call to select.
@@ -174,8 +178,10 @@ static Tcl_ThreadId notifierThread;
 #ifdef TCL_THREADS
 static void	NotifierThreadProc _ANSI_ARGS_((ClientData clientData));
 #endif
+#ifndef TCL_NO_FILEEVENTS
 static int	FileHandlerEventProc _ANSI_ARGS_((Tcl_Event *evPtr,
 		    int flags));
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -397,6 +403,7 @@ Tcl_ServiceModeHook(mode)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILEEVENTS
 void
 Tcl_CreateFileHandler(fd, mask, proc, clientData)
     int fd;			/* Handle of stream to watch. */
@@ -459,6 +466,7 @@ Tcl_CreateFileHandler(fd, mask, proc, clientData)
 	tsdPtr->numFdBits = fd+1;
     }
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -477,6 +485,7 @@ Tcl_CreateFileHandler(fd, mask, proc, clientData)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILEEVENTS
 void
 Tcl_DeleteFileHandler(fd)
     int fd;		/* Stream id for which to remove callback procedure. */
@@ -554,6 +563,7 @@ Tcl_DeleteFileHandler(fd)
     }
     ckfree((char *) filePtr);
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -577,6 +587,7 @@ Tcl_DeleteFileHandler(fd)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILEEVENTS
 static int
 FileHandlerEventProc(evPtr, flags)
     Tcl_Event *evPtr;		/* Event to service. */
@@ -627,6 +638,7 @@ FileHandlerEventProc(evPtr, flags)
     }
     return 1;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -651,10 +663,12 @@ int
 Tcl_WaitForEvent(timePtr)
     Tcl_Time *timePtr;		/* Maximum block time, or NULL. */
 {
+#ifndef TCL_NO_FILEEVENTS
     FileHandler *filePtr;
     FileHandlerEvent *fileEvPtr;
-    struct timeval timeout, *timeoutPtr;
     int bit, index, mask;
+#endif
+    struct timeval timeout, *timeoutPtr;
 #ifdef TCL_THREADS
     int waitForFiles;
 #else
@@ -783,6 +797,7 @@ Tcl_WaitForEvent(timePtr)
     }
 #endif
 
+#ifndef TCL_NO_FILEEVENTS
     /*
      * Queue all detected file events before returning.
      */
@@ -821,6 +836,7 @@ Tcl_WaitForEvent(timePtr)
 	}
 	filePtr->readyMask = mask;
     }
+#endif
 #ifdef TCL_THREADS
     Tcl_MutexUnlock(&notifierMutex);
 #endif

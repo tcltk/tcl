@@ -10,12 +10,13 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPipe.c,v 1.3 1999/04/16 00:46:51 stanton Exp $
+ * RCS: @(#) $Id: tclPipe.c,v 1.3.30.1 2001/11/28 17:58:37 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
 #include "tclPort.h"
 
+#ifndef TCL_NO_PIPES
 /*
  * A linked list of the following structures is used to keep track
  * of child processes that have been detached but haven't exited
@@ -38,9 +39,11 @@ TCL_DECLARE_MUTEX(pipeMutex)		/* Guard access to detList. */
  * Declarations for local procedures defined in this file:
  */
 
+#ifndef TCL_NO_FILESYSTEM
 static TclFile	FileForRedirect _ANSI_ARGS_((Tcl_Interp *interp,
 	            char *spec, int atOk, char *arg, char *nextArg, 
 		    int flags, int *skipPtr, int *closePtr, int *releasePtr));
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -63,6 +66,7 @@ static TclFile	FileForRedirect _ANSI_ARGS_((Tcl_Interp *interp,
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
 static TclFile
 FileForRedirect(interp, spec, atOK, arg, nextArg, flags, skipPtr, closePtr,
 	releasePtr)
@@ -155,6 +159,7 @@ FileForRedirect(interp, spec, atOK, arg, nextArg, flags, skipPtr, closePtr,
 	    "\" as last word in command", (char *) NULL);
     return NULL;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -192,7 +197,6 @@ Tcl_DetachPids(numPids, pidPtr)
 	detList = detPtr;
     }
     Tcl_MutexUnlock(&pipeMutex);
-
 }
 
 /*
@@ -434,6 +438,7 @@ TclCleanupChildren(interp, numPids, pidPtr, errorChan)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
 int
 TclCreatePipeline(interp, argc, argv, pidArrayPtr, inPipePtr,
 	outPipePtr, errFilePtr)
@@ -952,6 +957,7 @@ error:
     numPids = -1;
     goto cleanup;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -987,6 +993,7 @@ error:
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
 Tcl_Channel
 Tcl_OpenCommandChannel(interp, argc, argv, flags)
     Tcl_Interp *interp;		/* Interpreter for error reporting. Can
@@ -1059,3 +1066,5 @@ error:
     }
     return NULL;
 }
+#endif /* TCL_NO_FILESYSTEM */
+#endif /* TCL_NO_PIPES */

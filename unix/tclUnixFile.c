@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFile.c,v 1.9 2000/01/11 22:09:19 hobbs Exp $
+ * RCS: @(#) $Id: tclUnixFile.c,v 1.9.12.1 2001/11/28 17:58:37 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -40,6 +40,7 @@
  *---------------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
 char *
 TclpFindExecutable(argv0)
     CONST char *argv0;		/* The value of the application's argv[0]
@@ -172,6 +173,7 @@ TclpFindExecutable(argv0)
     Tcl_DStringFree(&buffer);
     return tclNativeExecutableName;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -194,6 +196,7 @@ TclpFindExecutable(argv0)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
 int
 TclpMatchFilesTypes(interp, separators, dirPtr, pattern, tail, types)
     Tcl_Interp *interp;		/* Interpreter to receive results. */
@@ -435,6 +438,7 @@ TclpMatchFiles(interp, separators, dirPtr, pattern, tail)
 {
     return TclpMatchFilesTypes(interp,separators,dirPtr,pattern,tail,NULL);
 }
+#endif
 
 /*
  *---------------------------------------------------------------------------
@@ -457,6 +461,7 @@ TclpMatchFiles(interp, separators, dirPtr, pattern, tail)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
 char *
 TclpGetUserHome(name, bufferPtr)
     CONST char *name;		/* User name for desired home directory. */
@@ -479,6 +484,7 @@ TclpGetUserHome(name, bufferPtr)
     endpwent();
     return Tcl_DStringValue(bufferPtr);
 }
+#endif
 
 /*
  *---------------------------------------------------------------------------
@@ -496,6 +502,7 @@ TclpGetUserHome(name, bufferPtr)
  *---------------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
 int
 TclpAccess(path, mode)
     CONST char *path;		/* Path of file to access (UTF-8). */
@@ -511,6 +518,7 @@ TclpAccess(path, mode)
 
     return result;
 }
+#endif
 
 /*
  *---------------------------------------------------------------------------
@@ -528,6 +536,7 @@ TclpAccess(path, mode)
  *---------------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
 int
 TclpChdir(dirName)
     CONST char *dirName;     	/* Path to new working directory (UTF-8). */
@@ -542,6 +551,7 @@ TclpChdir(dirName)
 
     return result;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -559,6 +569,7 @@ TclpChdir(dirName)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
 int
 TclpLstat(path, bufPtr)
     CONST char *path;		/* Path of file to stat (UTF-8). */
@@ -574,6 +585,7 @@ TclpLstat(path, bufPtr)
 
     return result;
 }
+#endif
 
 /*
  *---------------------------------------------------------------------------
@@ -596,6 +608,7 @@ TclpLstat(path, bufPtr)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
 char *
 TclpGetCwd(interp, bufferPtr)
     Tcl_Interp *interp;		/* If non-NULL, used for error reporting. */
@@ -618,6 +631,7 @@ TclpGetCwd(interp, bufferPtr)
     }
     return Tcl_ExternalToUtfDString(NULL, buffer, -1, bufferPtr);
 }
+#endif
 
 /*
  *---------------------------------------------------------------------------
@@ -639,6 +653,7 @@ TclpGetCwd(interp, bufferPtr)
  *---------------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
 char *
 TclpReadlink(path, linkPtr)
     CONST char *path;		/* Path of file to readlink (UTF-8). */
@@ -661,6 +676,7 @@ TclpReadlink(path, linkPtr)
     Tcl_ExternalToUtfDString(NULL, link, length, linkPtr);
     return Tcl_DStringValue(linkPtr);
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -678,6 +694,7 @@ TclpReadlink(path, linkPtr)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
 int
 TclpStat(path, bufPtr)
     CONST char *path;		/* Path of file to stat (in UTF-8). */
@@ -693,4 +710,4 @@ TclpStat(path, bufPtr)
 
     return result;
 }
-
+#endif

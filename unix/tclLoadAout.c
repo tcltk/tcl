@@ -14,7 +14,7 @@
  * and Design Engineering (MADE) Initiative through ARPA contract
  * F33615-94-C-4400.
  *
- * RCS: @(#) $Id: tclLoadAout.c,v 1.4.2.1 2001/10/16 21:13:36 hobbs Exp $
+ * RCS: @(#) $Id: tclLoadAout.c,v 1.4.2.1.2.1 2001/11/28 17:58:37 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -140,6 +140,7 @@ static void UnlinkSymbolTable _ANSI_ARGS_((void));
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_LOADCMD
 int
 TclpLoadFile(interp, fileName, sym1, sym2, proc1Ptr, proc2Ptr, clientDataPtr)
     Tcl_Interp *interp;		/* Used for error reporting. */
@@ -313,6 +314,7 @@ TclpLoadFile(interp, fileName, sym1, sym2, proc1Ptr, proc2Ptr, clientDataPtr)
 
   return TCL_OK;
 }
+#endif
 
 /*
  *------------------------------------------------------------------------

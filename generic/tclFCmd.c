@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFCmd.c,v 1.6 1999/07/01 23:21:07 redman Exp $
+ * RCS: @(#) $Id: tclFCmd.c,v 1.6.20.1 2001/11/28 17:58:36 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -19,6 +19,7 @@
  * Declarations for local procedures defined in this file:
  */
 
+#ifndef TCL_NO_FILESYSTEM
 static int		CopyRenameOneFile _ANSI_ARGS_((Tcl_Interp *interp,
 			    char *source, char *dest, int copyFlag,
 			    int force));
@@ -28,6 +29,7 @@ static int		FileCopyRename _ANSI_ARGS_((Tcl_Interp *interp,
 			    int argc, char **argv, int copyFlag));
 static int		FileForceOption _ANSI_ARGS_((Tcl_Interp *interp,
 			    int argc, char **argv, int *forcePtr));
+#endif
 
 /*
  *---------------------------------------------------------------------------
@@ -48,6 +50,7 @@ static int		FileForceOption _ANSI_ARGS_((Tcl_Interp *interp,
  *---------------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
 int
 TclFileRenameCmd(interp, argc, argv)
     Tcl_Interp *interp;		/* Interp for error reporting. */
@@ -56,6 +59,7 @@ TclFileRenameCmd(interp, argc, argv)
 {
     return FileCopyRename(interp, argc, argv, 0);
 }
+#endif
 
 /*
  *---------------------------------------------------------------------------
@@ -76,6 +80,7 @@ TclFileRenameCmd(interp, argc, argv)
  *---------------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
 int
 TclFileCopyCmd(interp, argc, argv)
     Tcl_Interp *interp;		/* Used for error reporting */
@@ -84,6 +89,7 @@ TclFileCopyCmd(interp, argc, argv)
 {
     return FileCopyRename(interp, argc, argv, 1);
 }
+#endif
 
 /*
  *---------------------------------------------------------------------------
@@ -102,6 +108,7 @@ TclFileCopyCmd(interp, argc, argv)
  *---------------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
 static int
 FileCopyRename(interp, argc, argv, copyFlag)
     Tcl_Interp *interp;		/* Used for error reporting. */
@@ -199,6 +206,7 @@ FileCopyRename(interp, argc, argv, copyFlag)
     Tcl_DStringFree(&targetBuffer);
     return result;
 }
+#endif
 
 /*
  *---------------------------------------------------------------------------
@@ -218,6 +226,8 @@ FileCopyRename(interp, argc, argv, copyFlag)
  *
  *----------------------------------------------------------------------
  */
+
+#ifndef TCL_NO_FILESYSTEM
 int
 TclFileMakeDirsCmd(interp, argc, argv)
     Tcl_Interp *interp;		/* Used for error reporting. */
@@ -290,6 +300,7 @@ TclFileMakeDirsCmd(interp, argc, argv)
     }
     return result;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -308,6 +319,7 @@ TclFileMakeDirsCmd(interp, argc, argv)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
 int
 TclFileDeleteCmd(interp, argc, argv)
     Tcl_Interp *interp;		/* Used for error reporting */
@@ -395,6 +407,7 @@ TclFileDeleteCmd(interp, argc, argv)
     Tcl_DStringFree(&nameBuffer);
     return result;
 }
+#endif
 
 /*
  *---------------------------------------------------------------------------
@@ -415,6 +428,7 @@ TclFileDeleteCmd(interp, argc, argv)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
 static int
 CopyRenameOneFile(interp, source, target, copyFlag, force) 
     Tcl_Interp *interp;		/* Used for error reporting. */
@@ -594,6 +608,7 @@ CopyRenameOneFile(interp, source, target, copyFlag, force)
     Tcl_DStringFree(&targetPath);
     return result;
 }
+#endif
 
 /*
  *---------------------------------------------------------------------------
@@ -615,6 +630,7 @@ CopyRenameOneFile(interp, source, target, copyFlag, force)
  *---------------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
 static int
 FileForceOption(interp, argc, argv, forcePtr)
     Tcl_Interp *interp;		/* Interp, for error return. */
@@ -645,6 +661,7 @@ FileForceOption(interp, argc, argv, forcePtr)
     *forcePtr = force;
     return i;
 }
+#endif
 /*
  *---------------------------------------------------------------------------
  *
@@ -667,6 +684,7 @@ FileForceOption(interp, argc, argv, forcePtr)
  *---------------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
 static char *
 FileBasename(interp, path, bufferPtr)
     Tcl_Interp *interp;		/* Interp, for error return. */
@@ -709,6 +727,7 @@ FileBasename(interp, path, bufferPtr)
     ckfree((char *) argv);
     return Tcl_DStringValue(bufferPtr);
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -745,6 +764,7 @@ FileBasename(interp, path, bufferPtr)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
 int
 TclFileAttrsCmd(interp, objc, objv)
     Tcl_Interp *interp;		/* The interpreter for error reporting. */
@@ -839,3 +859,4 @@ TclFileAttrsCmd(interp, objc, objv)
     Tcl_DStringFree(&buffer);
     return result;
 }
+#endif

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.20.2.6 2001/10/17 19:29:25 das Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.20.2.6.2.1 2001/11/28 17:58:37 andreas_kupries Exp $
 
 library tcl
 
@@ -23,13 +23,13 @@ interface tclInt
 # Use at your own risk.  Note that the position of functions should not
 # be changed between versions to avoid gratuitous incompatibilities.
 
-declare 0 generic {
+declare 0 generic {TCL_NO_FILESYSTEM} {
     int TclAccess(CONST char *path, int mode)
 }
-declare 1 generic {
+declare 1 generic {TCL_NO_FILESYSTEM} {
     int TclAccessDeleteProc(TclAccessProc_ *proc)
 }
-declare 2 generic {
+declare 2 generic {TCL_NO_FILESYSTEM} {
     int TclAccessInsertProc(TclAccessProc_ *proc)
 }
 declare 3 generic {
@@ -39,7 +39,7 @@ declare 3 generic {
 #  declare 4 generic {   
 #      int TclChdir(Tcl_Interp *interp, char *dirName)
 #  }
-declare 5 {unix win} {
+declare 5 {unix win} {TCL_NO_PIPES} {
     int TclCleanupChildren(Tcl_Interp *interp, int numPids, Tcl_Pid *pidPtr, \
 	    Tcl_Channel errorChan)
 }
@@ -49,14 +49,14 @@ declare 6 generic {
 declare 7 generic {
     int TclCopyAndCollapse(int count, CONST char *src, char *dst)
 }
-declare 8 generic {
+declare 8 generic {TCL_NO_CHANNELCOPY} {
     int TclCopyChannel(Tcl_Interp *interp, Tcl_Channel inChan, \
 	    Tcl_Channel outChan, int toRead, Tcl_Obj *cmdPtr)
 }
 
 # TclCreatePipeline unofficially exported for use by BLT.
 
-declare 9 {unix win} {
+declare 9 {unix win} {TCL_NO_FILESYSTEM TCL_NO_PIPES} {
     int TclCreatePipeline(Tcl_Interp *interp, int argc, char **argv, \
 	    Tcl_Pid **pidArrayPtr, TclFile *inPipePtr, TclFile *outPipePtr, \
 	    TclFile *errFilePtr)
@@ -71,7 +71,7 @@ declare 11 generic {
 declare 12 generic {
     void TclDeleteVars(Interp *iPtr, Tcl_HashTable *tablePtr)
 }
-declare 13 generic {
+declare 13 generic {TCL_NO_FILESYSTEM} {
     int TclDoGlob(Tcl_Interp *interp, char *separators, \
 	    Tcl_DString *headPtr, char *tail, GlobTypeData *types)
 }
@@ -85,19 +85,19 @@ declare 14 generic {
 declare 16 generic {
     void TclExprFloatError(Tcl_Interp *interp, double value)
 }
-declare 17 generic {
+declare 17 generic {TCL_NO_FILESYSTEM} {
     int TclFileAttrsCmd(Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 }
-declare 18 generic {
+declare 18 generic {TCL_NO_FILESYSTEM} {
     int TclFileCopyCmd(Tcl_Interp *interp, int argc, char **argv)
 }
-declare 19 generic {
+declare 19 generic {TCL_NO_FILESYSTEM} {
     int TclFileDeleteCmd(Tcl_Interp *interp, int argc, char **argv)
 }
-declare 20 generic {
+declare 20 generic {TCL_NO_FILESYSTEM} {
     int TclFileMakeDirsCmd(Tcl_Interp *interp, int argc, char **argv)
 }
-declare 21 generic {
+declare 21 generic {TCL_NO_FILESYSTEM} {
     int TclFileRenameCmd(Tcl_Interp *interp, int argc, char **argv)
 }
 declare 22 generic {
@@ -133,7 +133,7 @@ declare 29 generic {
 #  declare 30 generic {
 #      char * TclGetEnv(CONST char *name)
 #  }
-declare 31 generic {
+declare 31 generic {TCL_NO_FILESYSTEM} {
     char * TclGetExtension(char *name)
 }
 declare 32 generic {
@@ -171,7 +171,7 @@ declare 40 generic {
 declare 41 generic {
     Tcl_Command TclGetOriginalCommand(Tcl_Command command)
 }
-declare 42 generic {
+declare 42 generic {TCL_NO_FILESYSTEM} {
     char * TclpGetUserHome(CONST char *name, Tcl_DString *bufferPtr)
 }
 declare 43 generic {
@@ -202,7 +202,7 @@ declare 50 generic {
     void TclInitCompiledLocals(Tcl_Interp *interp, CallFrame *framePtr, \
 	    Namespace *nsPtr)
 }
-declare 51 generic {
+declare 51 generic {{TCL_NO_SLAVEINTERP TCL_NO_CMDALIASES}} {
     int TclInterpInit(Tcl_Interp *interp)
 }
 declare 52 generic {
@@ -234,7 +234,7 @@ declare 58 generic {
 	    int flags, char *msg, int createPart1, int createPart2, \
 	    Var **arrayPtrPtr)
 }
-declare 59 generic {
+declare 59 generic {TCL_NO_FILESYSTEM} {
     int TclpMatchFiles(Tcl_Interp *interp, char *separators, \
 	    Tcl_DString *dirPtr, char *pattern, char *tail)
 }
@@ -259,29 +259,29 @@ declare 65 generic {
     int TclObjInvokeGlobal(Tcl_Interp *interp, int objc, \
 	    Tcl_Obj *CONST objv[], int flags)
 }
-declare 66 generic {
+declare 66 generic {TCL_NO_FILESYSTEM} {
     int TclOpenFileChannelDeleteProc(TclOpenFileChannelProc_ *proc)
 }
-declare 67 generic {
+declare 67 generic {TCL_NO_FILESYSTEM} {
     int TclOpenFileChannelInsertProc(TclOpenFileChannelProc_ *proc)
 }
-declare 68 generic {
+declare 68 generic {TCL_NO_FILESYSTEM} {
     int TclpAccess(CONST char *path, int mode)
 }
 declare 69 generic {
     char * TclpAlloc(unsigned int size)
 }
-declare 70 generic {
+declare 70 generic {TCL_NO_FILESYSTEM} {
     int TclpCopyFile(CONST char *source, CONST char *dest)
 }
-declare 71 generic {
+declare 71 generic {TCL_NO_FILESYSTEM} {
     int TclpCopyDirectory(CONST char *source, CONST char *dest, \
 	    Tcl_DString *errorPtr)
 }
-declare 72 generic {
+declare 72 generic {TCL_NO_FILESYSTEM} {
     int TclpCreateDirectory(CONST char *path)
 }
-declare 73 generic {
+declare 73 generic {TCL_NO_FILESYSTEM} {
     int TclpDeleteFile(CONST char *path)
 }
 declare 74 generic {
@@ -299,21 +299,21 @@ declare 77 generic {
 declare 78 generic {
     int TclpGetTimeZone(unsigned long time)
 }
-declare 79 generic {
+declare 79 generic {TCL_NO_FILESYSTEM} {
     int TclpListVolumes(Tcl_Interp *interp)
 }
-declare 80 generic {
+declare 80 generic {TCL_NO_FILESYSTEM TCL_NO_NONSTDCHAN} {
     Tcl_Channel TclpOpenFileChannel(Tcl_Interp *interp, char *fileName, \
 	    char *modeString, int permissions)
 }
 declare 81 generic {
     char * TclpRealloc(char *ptr, unsigned int size)
 }
-declare 82 generic {
+declare 82 generic {TCL_NO_FILESYSTEM} {
     int TclpRemoveDirectory(CONST char *path, int recursive, \
 	    Tcl_DString *errorPtr)
 }
-declare 83 generic {
+declare 83 generic {TCL_NO_FILESYSTEM} {
     int TclpRenameFile(CONST char *source, CONST char *dest)
 }
 # Removed in 8.1:
@@ -336,7 +336,7 @@ declare 88 generic {
     char * TclPrecTraceProc(ClientData clientData, Tcl_Interp *interp, \
 	    char *name1, char *name2, int flags)
 }
-declare 89 generic {
+declare 89 generic {TCL_NO_CMDALIASES} {
     int TclPreventAliasLoop(Tcl_Interp *interp, Tcl_Interp *cmdInterp, \
 	    Tcl_Command cmd)
 }
@@ -359,7 +359,7 @@ declare 94 generic {
     int TclProcInterpProc(ClientData clientData, Tcl_Interp *interp, \
 	    int argc, char **argv)
 }
-declare 95 generic {
+declare 95 generic {TCL_NO_FILESYSTEM} {
     int TclpStat(CONST char *path, struct stat *buf)
 }
 declare 96 generic {
@@ -392,13 +392,13 @@ declare 103 generic {
 declare 104 {unix win} {
     int TclSockMinimumBuffers(int sock, int size)
 }
-declare 105 generic {
+declare 105 generic {TCL_NO_FILESYSTEM} {
     int TclStat(CONST char *path, struct stat *buf)
 }
-declare 106 generic {
+declare 106 generic {TCL_NO_FILESYSTEM} {
     int TclStatDeleteProc(TclStatProc_ *proc)
 }
-declare 107 generic {
+declare 107 generic {TCL_NO_FILESYSTEM} {
     int TclStatInsertProc(TclStatProc_ *proc)
 }
 declare 108 generic {
@@ -511,13 +511,13 @@ declare 135 generic {
 
 # Added in 8.1:
 
-declare 137 generic {
+declare 137 generic {TCL_NO_FILESYSTEM} {
    int TclpChdir(CONST char *dirName)
 }
 declare 138 generic {
     char * TclGetEnv(CONST char *name, Tcl_DString *valuePtr)
 }
-declare 139 generic {
+declare 139 generic {TCL_NO_FILESYSTEM TCL_NO_LOADCMD} {
     int TclpLoadFile(Tcl_Interp *interp, char *fileName, char *sym1, \
 	    char *sym2, Tcl_PackageInitProc **proc1Ptr, \
 	    Tcl_PackageInitProc **proc2Ptr, ClientData *clientDataPtr)
@@ -525,7 +525,7 @@ declare 139 generic {
 declare 140 generic {
     int TclLooksLikeInt(char *bytes, int length)
 }
-declare 141 generic {
+declare 141 generic {TCL_NO_FILESYSTEM} {
     char *TclpGetCwd(Tcl_Interp *interp, Tcl_DString *cwdPtr)
 }
 declare 142 generic {
@@ -570,10 +570,10 @@ declare 151 generic {
 	    int *endPtr)
 }
 
-declare 152 generic {
+declare 152 generic {TCL_NO_FILESYSTEM} {
     void TclSetLibraryPath(Tcl_Obj *pathPtr)
 }
-declare 153 generic {
+declare 153 generic {TCL_NO_FILESYSTEM} {
     Tcl_Obj *TclGetLibraryPath(void)
 }
 
@@ -600,7 +600,7 @@ declare 158 generic {
 declare 159 generic {
     char *TclGetStartupScriptFileName(void)
 }
-declare 160 generic {
+declare 160 generic {TCL_NO_FILESYSTEM} {
     int TclpMatchFilesTypes(Tcl_Interp *interp, char *separators, \
 	    Tcl_DString *dirPtr, char *pattern, char *tail, GlobTypeData *types)
 }
@@ -610,7 +610,7 @@ declare 161 generic {
     int TclChannelTransform(Tcl_Interp *interp, Tcl_Channel chan, \
 	    Tcl_Obj *cmdObjPtr)
 }
-declare 162 generic {
+declare 162 generic {TCL_NO_FILEEVENTS} {
     void TclChannelEventScriptInvoker(ClientData clientData, int flags)
 }
 
@@ -791,7 +791,7 @@ declare 9 win {
 
 # Pipe channel functions
 
-declare 11 win {
+declare 11 win {TCL_NO_PIPES} {
     void TclGetAndDetachPids(Tcl_Interp *interp, Tcl_Channel chan)
 }
 declare 12 win {
@@ -859,20 +859,20 @@ declare 27 win {
 
 # Pipe channel functions
 
-declare 0 unix {
+declare 0 unix {TCL_NO_PIPES} {
     void TclGetAndDetachPids(Tcl_Interp *interp, Tcl_Channel chan)
 }
-declare 1 unix {
+declare 1 unix {TCL_NO_PIPES} {
     int TclpCloseFile(TclFile file)
 }
-declare 2 unix {
+declare 2 unix {TCL_NO_PIPES} {
     Tcl_Channel TclpCreateCommandChannel(TclFile readFile, \
 	    TclFile writeFile, TclFile errorFile, int numPids, Tcl_Pid *pidPtr)
 }
-declare 3 unix {
+declare 3 unix {TCL_NO_PIPES} {
     int TclpCreatePipe(TclFile *readPipe, TclFile *writePipe)
 }
-declare 4 unix {
+declare 4 unix {TCL_NO_PIPES} {
     int TclpCreateProcess(Tcl_Interp *interp, int argc, char **argv, \
 	    TclFile inputFile, TclFile outputFile, TclFile errorFile, \
 	    Tcl_Pid *pidPtr)
@@ -882,10 +882,10 @@ declare 4 unix {
 #      TclFile TclpCreateTempFile(char *contents, 
 #      Tcl_DString *namePtr)
 #  }
-declare 6 unix {
+declare 6 unix {TCL_NO_PIPES} {
     TclFile TclpMakeFile(Tcl_Channel channel, int direction)
 }
-declare 7 unix {
+declare 7 unix {TCL_NO_PIPES} {
     TclFile TclpOpenFile(CONST char *fname, int mode)
 }
 declare 8 unix {
@@ -894,6 +894,6 @@ declare 8 unix {
 
 # Added in 8.1:
 
-declare 9 unix {
+declare 9 unix {TCL_NO_PIPES} {
     TclFile TclpCreateTempFile(CONST char *contents)
 }

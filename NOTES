@@ -1,0 +1,153 @@
+
+Pre-notes
+
+	The cutting of the channel system is not as clean as I would like
+	it to be, simply because cisco has the special need of a channel
+	system trimmed down to the std* channels, without complete removal.
+	I am not sure that I have removed the maximum amount of C Api's
+	and functions possible for this specific configuration.
+
+	A first step in rationalizing this section would be NO_CHANNELS
+	to remove the I/O system completely, and then NO_NONSTDCHAN
+	for minial exposure of channels. NO_FILEEVENTS is orthogonal
+	to NO_NONSTDCHAN. Drivers are possible only if not NO_CHANNELS,
+	but can be disabled separately. The standard channels need the
+	"file" driver (currently not disable-able), should use #ifdef's
+	to ensure integrity.
+
+	=>	Would be interesting to have a configuration tool which
+		is able to express and enforce these constraints.
+
+	=>	The linux core configuration uses the domain specific
+		language CML2 (Eric Raymond, written in Python).
+
+	!	Investigate possible usage of SourceNavigator as
+		basic for parsing the Tcl core. Use custom tools to
+		follow dependencies between structures and functions.
+
+		(What-If tools: What if I exclude this function/struct,
+		what else can be removed, or requires this).
+
+		Also: What are the leaf functions in the system ...
+
+	!	Mapping help: Associate functions with functional areas
+		and see how the areas relate, how much can be removed
+		whenever an area is excluded ...
+
+------------------------------------------------------------------------
+------------------------------------------------------------------------
+------------------------------------------------------------------------
+
+Shrinking the core.
+	Filesystem
+
+Shrinking the usage of stack
+	Large static arrays on the stack
+	Look for #define's, check usage, create #defines if necessary
+	DString !! (initial dstring data in structure!)
+	RE's ?
+	NRE1
+
+	== running a stack test of the full test suite for a build is 1.5 hours ==
+	== something for the evening and the night ==
+
+Document methodology of testing stack
+
+Macros
+	TCL_NO_<feature>	to deactivate/cut feature
+	MODULAR_TCL		activates all TCL_NO_<feature> macros
+------------------------------------------------------------------------
+Cut 1
+	The cut currently restricts itself to the UNIX and GENERIC parts.
+	No changes in Win* and Mac areas.
+
+	channel system
+	-	no sockets		TCL_NO_SOCKETS			/
+	-	no serial/tty		TCL_NO_TTY			/
+	-	no pipes		TCL_NO_PIPES			/
+	-	no pid command		TCL_NO_PIDCMD			/
+	-	channel system provides	TCL_NO_NONSTDCHAN		/
+		only std* channels [x]
+	-	no channel copying	TCL_NO_CHANNELCOPY		/
+	-	no [read]ing		TCL_NO_CHANNEL_READ		/
+	-	no [eof] [/]		TCL_NO_CHANNEL_EOF		/
+	-	no channel set/get cfg	TCL_NO_CHANNEL_CONFIG	[+]	/
+	-	no [fblocked]		TCL_NO_CHANNEL_BLOCKED	[/]	/
+	-	no fileevents		TCL_NO_FILEEVENTS	[=]	/
+
+	filesystem
+	-	disable filesystem	TCL_NO_FILESYSTEM	[%]	/*
+	-	disable load'ing	TCL_NO_LOADCMD			/
+
+	master/slave interpreters
+	-	disable slave interp	TCL_NO_SLAVEINTERP		/*
+	-	disable command aliases	TCL_NO_CMDALIASES		/*
+
+[*]	Access from the C level is not removed.
+
+[x]	Implies that no .rc can be read during unix init.
+	Implies that no startup script can be read by tclsh.
+	Implies NO_SOCKETS, NO_TTY, NO_PIPES
+	Implies currently 'no "source" cmd' and	no loading of encoding files.
+	In the generic case this functionality can the reimplemented by direct
+	OS calls without using the channel system. Makes the
+	implementation platform dependent. As Cisco doesn't want this functionality
+	we disable them without adding a new implementation.
+	Implies that channels cannot be moved/shared between master/slave interps.
+	(seek is removed under the assumption that the std* channels are not seekable)
+
+[/]	Tcl_Eof, Tcl_InputBlocked stay because they are required by [gets].
+
+[+]	Tcl_SetChannelOption stays, required for initial config of std channels.
+
+[=]	Implies no socket servers. Reason: Accept callback for socket server
+	is done through fev's
+
+[%]	Ripping the filesystem intrudes heavily on the startup sequence of the
+	interpreter as auto_path, package paths, etc. can't be initialized anymore.
+	This also cuts into the initialization of encodings.
+
+	Given that encodings will be changed later to not use UTF internally this
+	is no big deal. For Cisco. Others might want to have 'no fs', but UTF.
+
+	We have to check that the startup sequence is still operational.
+
+	Given that without a FS loading of encoding from files is
+	impossible the loss of initialization is again not so big a deal.
+
+------------------------------------------------------------------------
+------------------------------------------------------------------------
+------------------------------------------------------------------------
+
+Handling of stub table when cutting features:
+
+1.	Disable all functions for the feature, from the bottom up to
+	the top (script level command). This includes full disabling
+	of stub functions too.
+
+	The bottom-up approach enforces link errors in the higher
+	levels and thus allows us to use the compiler to find all
+	relevant places where we have to cut.
+
+	Cutting stub functions is essential to find everything.
+
+2.	Go through the functions causing link errors in tclStubInit.o
+	== stub functions. Add variants which are empty, return errors
+	etc. and compile these when the feature is disabled.
+
+	** Changed **
+	Add suppressor definitions to "tcl*.decls" and regen the code.
+
+------------------------------------------------------------------------
+------------------------------------------------------------------------
+------------------------------------------------------------------------
+
+Future:
+	Implement a mechanism for 'tcl.decls'
+	which allows the definition of (static, loadable) sub packages.
+	So that the stub table is minimally initialized and
+	sub packages initialize their slots when loaded.
+
+------------------------------------------------------------------------
+------------------------------------------------------------------------
+------------------------------------------------------------------------

@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: genStubs.tcl,v 1.7.10.1 2001/08/24 16:19:10 dgp Exp $
+# RCS: @(#) $Id: genStubs.tcl,v 1.7.10.1.2.1 2001/11/28 17:58:37 andreas_kupries Exp $
 
 package require Tcl 8
 
@@ -133,10 +133,15 @@ proc genStubs::declare {args} {
     variable stubs
     variable curName
 
-    if {[llength $args] != 3} {
+    if {[llength $args] != 3 && [llength $args] != 4} {
 	puts stderr "wrong # args: declare $args"
     }
-    lassign $args index platformList decl
+    if {[llength $args] == 3} {
+	lassign $args index platformList decl
+	set supressorList {}
+    } else {
+	lassign $args index platformList supressorList decl
+    }
 
     # Check for duplicate declarations, then add the declaration and
     # bump the lastNum counter if necessary.
@@ -151,7 +156,7 @@ proc genStubs::declare {args} {
 
     foreach platform $platformList {
 	if {$decl != ""} {
-	    set stubs($curName,$platform,$index) $decl
+	    set stubs($curName,$platform,$index) [list $decl $supressorList]
 	    if {![info exists stubs($curName,$platform,lastNum)] \
 		    || ($index > $stubs($curName,$platform,lastNum))} {
 		set stubs($curName,$platform,lastNum) $index
@@ -348,6 +353,7 @@ proc genStubs::parseArg {arg} {
 #	Returns the formatted declaration string.
 
 proc genStubs::makeDecl {name decl index} {
+    set decl [lindex $decl 0]
     lassign $decl rtype fname args
 
     append text "/* $index */\n"
@@ -408,6 +414,7 @@ proc genStubs::makeDecl {name decl index} {
 #	Returns the formatted macro definition.
 
 proc genStubs::makeMacro {name decl index} {
+    set decl [lindex $decl 0]
     lassign $decl rtype fname args
 
     set lfname [string tolower [string index $fname 0]]
@@ -449,6 +456,7 @@ proc genStubs::makeMacro {name decl index} {
 #	Returns the formatted stub function definition.
 
 proc genStubs::makeStub {name decl index} {
+    set decl [lindex $decl 0]
     lassign $decl rtype fname args
 
     set lfname [string tolower [string index $fname 0]]
@@ -514,6 +522,7 @@ proc genStubs::makeStub {name decl index} {
 #	Returns the formatted table entry.
 
 proc genStubs::makeSlot {name decl index} {
+    set decl [lindex $decl 0] ; # ignore supressors here.
     lassign $decl rtype fname args
 
     set lfname [string tolower [string index $fname 0]]
@@ -559,7 +568,24 @@ proc genStubs::makeSlot {name decl index} {
 #	Returns the formatted declaration string.
 
 proc genStubs::makeInit {name decl index} {
-    append text "    " [lindex $decl 1] ", /* " $index " */\n"
+    lassign $decl decl suppressors
+    if {[llength $suppressors] > 0} {
+	set sup [list]
+	foreach s $suppressors {
+	    if {[llength $s] > 1} {
+		lappend sup "defined([join $s ") && defined ("])"
+	    } else {
+		lappend sup "defined($s)"
+	    }
+	}
+	append text "#if " [join $sup " || "] "\n"
+	append text "    NULL, /* " $index "*/\n"
+	append text "#else  /* " [join $suppressors] " */\n"
+	append text "    " [lindex $decl 1] ", /* " $index " */\n"
+	append text "#endif /* " [join $suppressors] " */\n"
+    } else {
+	append text "    " [lindex $decl 1] ", /* " $index " */\n"
+    }
     return $text
 }
 

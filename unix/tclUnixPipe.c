@@ -10,12 +10,13 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPipe.c,v 1.9.2.2 2001/10/18 01:02:02 hobbs Exp $
+ * RCS: @(#) $Id: tclUnixPipe.c,v 1.9.2.2.2.1 2001/11/28 17:58:37 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
 #include "tclPort.h"
 
+#ifndef TCL_NO_PIPES
 /*
  * The following macros convert between TclFile's and fd's.  The conversion
  * simple involves shifting fd's up by one to ensure that no valid fd is ever
@@ -285,7 +286,9 @@ TclpCloseFile(file)
         return 0;
     }
     
+#ifndef TCL_NO_FILEEVENTS
     Tcl_DeleteFileHandler(fd);
+#endif
     return close(fd);
 }
 
@@ -1046,6 +1049,7 @@ PipeWatchProc(instanceData, mask)
                                          * combination of TCL_READABLE,
                                          * TCL_WRITABEL and TCL_EXCEPTION. */
 {
+#ifndef TCL_NO_FILEEVENTS
     PipeState *psPtr = (PipeState *) instanceData;
     int newmask;
 
@@ -1069,6 +1073,7 @@ PipeWatchProc(instanceData, mask)
 	    Tcl_DeleteFileHandler(GetFd(psPtr->outFile));
 	}
     }
+#endif
 }
 
 /*
@@ -1141,6 +1146,7 @@ Tcl_WaitPid(pid, statPtr, options)
 	}
     }
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -1159,6 +1165,7 @@ Tcl_WaitPid(pid, statPtr, options)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_PIDCMD
 	/* ARGSUSED */
 int
 Tcl_PidObjCmd(dummy, interp, objc, objv)
@@ -1167,12 +1174,13 @@ Tcl_PidObjCmd(dummy, interp, objc, objv)
     int objc;			/* Number of arguments. */
     Tcl_Obj *CONST *objv;	/* Argument strings. */
 {
+#ifndef TCL_NO_PIPES
     Tcl_Channel chan;
     Tcl_ChannelType *chanTypePtr;
     PipeState *pipePtr;
     int i;
     Tcl_Obj *resultPtr, *longObjPtr;
-
+#endif
     if (objc > 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?channelId?");
 	return TCL_ERROR;
@@ -1180,6 +1188,7 @@ Tcl_PidObjCmd(dummy, interp, objc, objv)
     if (objc == 1) {
 	Tcl_SetLongObj(Tcl_GetObjResult(interp), (long) getpid());
     } else {
+#ifndef TCL_NO_PIPES
         chan = Tcl_GetChannel(interp, Tcl_GetString(objv[1]), NULL);
         if (chan == (Tcl_Channel) NULL) {
 	    return TCL_ERROR;
@@ -1194,6 +1203,11 @@ Tcl_PidObjCmd(dummy, interp, objc, objv)
 	    longObjPtr = Tcl_NewLongObj((long) TclpGetPid(pipePtr->pidPtr[i]));
 	    Tcl_ListObjAppendElement(NULL, resultPtr, longObjPtr);
 	}
+#else
+        /* IOS FIXME: Add error message */
+        return TCL_ERROR;
+#endif
     }
     return TCL_OK;
 }
+#endif /* TCL_NO_PIDCMD */

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoadNone.c,v 1.4 1999/05/07 20:07:40 stanton Exp $
+ * RCS: @(#) $Id: tclLoadNone.c,v 1.4.22.1 2001/11/28 17:58:37 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -34,6 +34,7 @@
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_LOADCMD
 int
 TclpLoadFile(interp, fileName, sym1, sym2, proc1Ptr, proc2Ptr, clientDataPtr)
     Tcl_Interp *interp;		/* Used for error reporting. */
@@ -53,6 +54,7 @@ TclpLoadFile(interp, fileName, sym1, sym2, proc1Ptr, proc2Ptr, clientDataPtr)
 	    TCL_STATIC);
     return TCL_ERROR;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -102,6 +104,7 @@ TclGuessPackageName(fileName, bufPtr)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_LOADCMD
 void
 TclpUnloadFile(clientData)
     ClientData clientData;    /* ClientData returned by a previous call
@@ -110,3 +113,4 @@ TclpUnloadFile(clientData)
 			       * file. */
 {
 }
+#endif

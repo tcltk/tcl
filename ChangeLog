@@ -1,3 +1,58 @@
+2001-11-28  Andreas Kupries  <andreas_kupries@users.sourceforge.net> 
+
+	* NOTES: New file. Read here about the new modularization macros,
+	  interdependencies, implications, etc.
+
+	* static.sizes.html: New file. Report on the cuts achieved so
+	  far. Regarding the object files only the files which did change
+	  in size are reported. Usage of the MODULAR_TCL macro currently
+	  cuts about 17 % of the code (measured using strip'ped object
+	  files and libraries).
+
+	* Changed files so far
+	* tcl.decls
+	* tcl.h
+	* tclBasic.c
+	* tclCmdAH.c
+	* tclCmdMZ.c
+	* tclEncoding.c
+	* tclEvent.c
+	* tclFCmd.c
+	* tclFileName.c
+	* tclIO.c
+	* tclIOCmd.c
+	* tclIOGT.c
+	* tclIOUtil.c
+	* tclInt.decls
+	* tclInterp.c
+	* tclLoad.c
+	* tclLoadNone.c
+	* tclMain.c
+	* tclPipe.c
+	* tclStubInit.c
+	* tclUtil.c
+	* genStubs.tcl
+	* tclLoadAout.c
+	* tclLoadDl.c
+	* tclLoadDld.c
+	* tclLoadDyld.c
+	* tclLoadNext.c
+	* tclLoadOSF.c
+	* tclLoadShl.c
+	* tclUnixChan.c
+	* tclUnixFCmd.c
+	* tclUnixFile.c
+	* tclUnixInit.c
+	* tclUnixNotfy.c
+	* tclUnixPipe.c
+	* tclUnixSock.c
+
+	* Working on modularization of the tcl core.
+
+	***************************
+	****  mod-8-3-4-branch ****
+	***************************
+
 2001-11-20  Kevin B. Kenny  <kennykb@users.sourceforge.net>
 
 	* generic/tclCmdMZ.c (Tcl_TimeObjCmd) Added extra parentheses to a

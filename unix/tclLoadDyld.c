@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoadDyld.c,v 1.2.2.2 2001/10/16 06:44:09 das Exp $
+ * RCS: @(#) $Id: tclLoadDyld.c,v 1.2.2.2.2.1 2001/11/28 17:58:37 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -38,6 +38,7 @@
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_LOADCMD
 int
 TclpLoadFile(interp, fileName, sym1, sym2, proc1Ptr, proc2Ptr, clientDataPtr)
     Tcl_Interp *interp;		/* Used for error reporting. */
@@ -101,6 +102,7 @@ TclpLoadFile(interp, fileName, sym1, sym2, proc1Ptr, proc2Ptr, clientDataPtr)
     
     return TCL_OK;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -121,6 +123,7 @@ TclpLoadFile(interp, fileName, sym1, sym2, proc1Ptr, proc2Ptr, clientDataPtr)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_LOADCMD
 void
 TclpUnloadFile(clientData)
     ClientData clientData;	/* ClientData returned by a previous call
@@ -130,6 +133,7 @@ TclpUnloadFile(clientData)
 {
     NSUnLinkModule(clientData, FALSE);
 }
+#endif
 
 /*
  *----------------------------------------------------------------------

@@ -10,12 +10,13 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.17.2.1 2001/04/03 22:54:39 hobbs Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.17.2.1.2.1 2001/11/28 17:58:37 andreas_kupries Exp $
  */
 
 #include	"tclInt.h"	/* Internal definitions for Tcl. */
 #include	"tclPort.h"	/* Portability features for Tcl. */
 
+#ifndef TCL_NO_TTY
 /*
  * sys/ioctl.h has already been included by tclPort.h.  Including termios.h
  * or termio.h causes a bunch of warning messages because some duplicate
@@ -65,6 +66,9 @@
 #endif	/* !USE_SGTTY */
 #endif	/* !USE_TERMIO */
 #endif	/* !USE_TERMIOS */
+#else
+#undef SUPPORTS_TTY
+#endif /* TCL_NO_TTY */
 
 /*
  * This structure describes per-instance state of a file based channel.
@@ -119,6 +123,7 @@ typedef struct ThreadSpecificData {
 
 static Tcl_ThreadDataKey dataKey;
 
+#ifndef TCL_NO_SOCKETS
 /*
  * This structure describes per-instance state of a tcp based channel.
  */
@@ -163,17 +168,20 @@ typedef struct TcpState {
  */
 
 #define SOCKET_BUFSIZE	4096
+#endif
 
 /*
  * Static routines for this file:
  */
 
+#ifndef TCL_NO_SOCKETS
 static TcpState *	CreateSocket _ANSI_ARGS_((Tcl_Interp *interp,
 			    int port, char *host, int server,
 			    char *myaddr, int myport, int async));
 static int		CreateSocketAddress _ANSI_ARGS_(
 			    (struct sockaddr_in *sockaddrPtr,
 			    char *host, int port));
+#endif
 static int		FileBlockModeProc _ANSI_ARGS_((
     			    ClientData instanceData, int mode));
 static int		FileCloseProc _ANSI_ARGS_((ClientData instanceData,
@@ -189,7 +197,10 @@ static int		FileSeekProc _ANSI_ARGS_((ClientData instanceData,
 			    long offset, int mode, int *errorCode));
 static void		FileWatchProc _ANSI_ARGS_((ClientData instanceData,
 		            int mask));
+#ifndef TCL_NO_SOCKETS
+#ifndef TCL_NO_FILEEVENTS
 static void		TcpAccept _ANSI_ARGS_((ClientData data, int mask));
+#endif
 static int		TcpBlockModeProc _ANSI_ARGS_((ClientData data,
         		    int mode));
 static int		TcpCloseProc _ANSI_ARGS_((ClientData instanceData,
@@ -205,6 +216,9 @@ static int		TcpOutputProc _ANSI_ARGS_((ClientData instanceData,
 		            char *buf, int toWrite, int *errorCode));
 static void		TcpWatchProc _ANSI_ARGS_((ClientData instanceData,
 		            int mask));
+static int		WaitForConnect _ANSI_ARGS_((TcpState *statePtr,
+		            int *errorCodePtr));
+#endif
 #ifdef SUPPORTS_TTY
 static int		TtyCloseProc _ANSI_ARGS_((ClientData instanceData,
 			    Tcl_Interp *interp));
@@ -223,8 +237,6 @@ static int		TtySetOptionProc _ANSI_ARGS_((ClientData instanceData,
 			    Tcl_Interp *interp, char *optionName, 
 			    char *value));
 #endif	/* SUPPORTS_TTY */
-static int		WaitForConnect _ANSI_ARGS_((TcpState *statePtr,
-		            int *errorCodePtr));
 
 /*
  * This structure describes the channel type structure for file based IO:
@@ -271,6 +283,7 @@ static Tcl_ChannelType ttyChannelType = {
 };
 #endif	/* SUPPORTS_TTY */
 
+#ifndef TCL_NO_SOCKETS
 /*
  * This structure describes the channel type structure for TCP socket
  * based IO:
@@ -292,7 +305,7 @@ static Tcl_ChannelType tcpChannelType = {
     NULL,			/* flush proc. */
     NULL,			/* handler proc. */
 };
-
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -458,7 +471,9 @@ FileCloseProc(instanceData, interp)
     int errorCode = 0;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
+#ifndef TCL_NO_FILEEVENTS
     Tcl_DeleteFileHandler(fsPtr->fd);
+#endif
 
     /*
      * Do not close standard channels while in thread-exit.
@@ -544,6 +559,7 @@ FileWatchProc(instanceData, mask)
                                          * combination of TCL_READABLE,
                                          * TCL_WRITABLE and TCL_EXCEPTION. */
 {
+#ifndef TCL_NO_FILEEVENTS
     FileState *fsPtr = (FileState *) instanceData;
 
     /*
@@ -560,6 +576,7 @@ FileWatchProc(instanceData, mask)
     } else {
 	Tcl_DeleteFileHandler(fsPtr->fd);
     }
+#endif
 }
 
 /*
@@ -1264,6 +1281,8 @@ TtyInit(fd)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
+#ifndef TCL_NO_NONSTDCHAN
 Tcl_Channel
 TclpOpenFileChannel(interp, fileName, modeString, permissions)
     Tcl_Interp *interp;			/* Interpreter for error reporting;
@@ -1371,6 +1390,7 @@ TclpOpenFileChannel(interp, fileName, modeString, permissions)
         }
     }
 
+#ifdef SUPPORTS_TTY
     if (translation != NULL) {
 	/*
 	 * Gotcha.  Most modems need a "\r" at the end of the command
@@ -1386,9 +1406,12 @@ TclpOpenFileChannel(interp, fileName, modeString, permissions)
 	    return NULL;
 	}
     }
+#endif
 
     return fsPtr->channel;
 }
+#endif
+#endif /* TCL_NO_FILESYSTEM */
 
 /*
  *----------------------------------------------------------------------
@@ -1464,6 +1487,7 @@ Tcl_MakeFileChannel(handle, mode)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_SOCKETS
 	/* ARGSUSED */
 static int
 TcpBlockModeProc(instanceData, mode)
@@ -1700,6 +1724,7 @@ TcpCloseProc(instanceData, interp)
     TcpState *statePtr = (TcpState *) instanceData;
     int errorCode = 0;
 
+#ifndef TCL_NO_FILEEVENTS
     /*
      * Delete a file handler that may be active for this socket if this
      * is a server socket - the file handler was created automatically
@@ -1710,6 +1735,7 @@ TcpCloseProc(instanceData, interp)
      */
 
     Tcl_DeleteFileHandler(statePtr->fd);
+#endif
 
     if (close(statePtr->fd) < 0) {
 	errorCode = errno;
@@ -1896,6 +1922,7 @@ TcpWatchProc(instanceData, mask)
                                          * combination of TCL_READABLE,
                                          * TCL_WRITABLE and TCL_EXCEPTION. */
 {
+#ifndef TCL_NO_FILEEVENTS
     TcpState *statePtr = (TcpState *) instanceData;
 
     /*
@@ -1913,6 +1940,7 @@ TcpWatchProc(instanceData, mask)
 	    Tcl_DeleteFileHandler(statePtr->fd);
 	}
     }
+#endif
 }
 
 /*
@@ -2209,6 +2237,7 @@ CreateSocketAddress(sockaddrPtr, host, port)
     sockaddrPtr->sin_addr.s_addr = addr.s_addr;
     return 1;	/* Success. */
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -2227,6 +2256,7 @@ CreateSocketAddress(sockaddrPtr, host, port)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_SOCKETS
 Tcl_Channel
 Tcl_OpenTcpClient(interp, port, host, myaddr, myport, async)
     Tcl_Interp *interp;			/* For error reporting; can be NULL. */
@@ -2264,6 +2294,7 @@ Tcl_OpenTcpClient(interp, port, host, myaddr, myport, async)
     }
     return statePtr->channel;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -2281,6 +2312,7 @@ Tcl_OpenTcpClient(interp, port, host, myaddr, myport, async)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_SOCKETS
 Tcl_Channel
 Tcl_MakeTcpClientChannel(sock)
     ClientData sock;		/* The socket to wrap up into a channel. */
@@ -2304,6 +2336,7 @@ Tcl_MakeTcpClientChannel(sock)
     }
     return statePtr->channel;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -2323,6 +2356,8 @@ Tcl_MakeTcpClientChannel(sock)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_SOCKETS
+#ifndef TCL_NO_FILEEVENTS
 Tcl_Channel
 Tcl_OpenTcpServer(interp, port, myHost, acceptProc, acceptProcData)
     Tcl_Interp *interp;			/* For error reporting - may be
@@ -2360,6 +2395,8 @@ Tcl_OpenTcpServer(interp, port, myHost, acceptProc, acceptProcData)
             (ClientData) statePtr, 0);
     return statePtr->channel;
 }
+#endif /* NO_FILEEVENTS */
+#endif /* NO_SOCKETS */
 
 /*
  *----------------------------------------------------------------------
@@ -2377,6 +2414,8 @@ Tcl_OpenTcpServer(interp, port, myHost, acceptProc, acceptProcData)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_SOCKETS
+#ifndef TCL_NO_FILEEVENTS
 	/* ARGSUSED */
 static void
 TcpAccept(data, mask)
@@ -2425,6 +2464,8 @@ TcpAccept(data, mask)
 		ntohs(addr.sin_port));
     }
 }
+#endif /* NO_FILEEVENTS */
+#endif /* NO SOCKETS */
 
 /*
  *----------------------------------------------------------------------
@@ -2567,7 +2608,9 @@ Tcl_GetOpenFile(interp, string, forWriting, checkUsage, filePtr)
 #ifdef SUPPORTS_TTY
 	    || (chanTypePtr == &ttyChannelType)
 #endif	/* SUPPORTS_TTY */
+#ifndef TCL_NO_SOCKETS
 	    || (chanTypePtr == &tcpChannelType)
+#endif
 	    || (strcmp(chanTypePtr->typeName, "pipe") == 0)) {
         if (Tcl_GetChannelHandle(chan,
 		(forWriting ? TCL_WRITABLE : TCL_READABLE),

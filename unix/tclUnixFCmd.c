@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFCmd.c,v 1.6.2.1 2001/10/17 19:12:26 hobbs Exp $
+ * RCS: @(#) $Id: tclUnixFCmd.c,v 1.6.2.1.2.1 2001/11/28 17:58:37 andreas_kupries Exp $
  *
  * Portions of this code were derived from NetBSD source code which has
  * the following copyright notice:
@@ -57,6 +57,7 @@
 #endif
 #endif
 
+#ifndef TCL_NO_FILESYSTEM
 /*
  * The following constants specify the type of callback when
  * TraverseUnixTree() calls the traverseProc()
@@ -149,6 +150,7 @@ static int		TraverseUnixTree _ANSI_ARGS_((
 			    TraversalProc *traversalProc,
 			    Tcl_DString *sourcePtr, Tcl_DString *destPtr,
 			    Tcl_DString *errorPtr));
+#endif
 
 /*
  *---------------------------------------------------------------------------
@@ -185,6 +187,7 @@ static int		TraverseUnixTree _ANSI_ARGS_((
  *---------------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
 int
 TclpRenameFile(src, dst)
     CONST char *src;		/* Pathname of file or dir to be renamed
@@ -283,7 +286,7 @@ DoRenameFile(src, dst)
 
     return TCL_ERROR;
 }
-
+#endif
 
 /*
  *---------------------------------------------------------------------------
@@ -312,6 +315,7 @@ DoRenameFile(src, dst)
  *---------------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
 int 
 TclpCopyFile(src, dst)
     CONST char *src;		/* Pathname of file to be copied (UTF-8). */
@@ -403,6 +407,7 @@ DoCopyFile(srcPtr, dstPtr)
     }
     return TCL_OK;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -421,6 +426,7 @@ DoCopyFile(srcPtr, dstPtr)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
 static int 
 CopyFile(src, dst, statBufPtr) 
     CONST char *src;		/* Pathname of file to copy (native). */
@@ -493,6 +499,7 @@ CopyFile(src, dst, statBufPtr)
     }
     return TCL_OK;
 }
+#endif
 
 /*
  *---------------------------------------------------------------------------
@@ -516,6 +523,7 @@ CopyFile(src, dst, statBufPtr)
  *---------------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
 int
 TclpDeleteFile(path) 
     CONST char *path;		/* Pathname of file to be removed (UTF-8). */
@@ -541,6 +549,7 @@ DoDeleteFile(pathPtr)
     }
     return TCL_OK;
 }
+#endif
 
 /*
  *---------------------------------------------------------------------------
@@ -568,6 +577,7 @@ DoDeleteFile(pathPtr)
  *---------------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
 int
 TclpCreateDirectory(path)
     CONST char *path;		/* Pathname of directory to create (UTF-8). */
@@ -604,6 +614,7 @@ DoCreateDirectory(pathPtr)
     }
     return TCL_OK;
 }
+#endif
 
 /*
  *---------------------------------------------------------------------------
@@ -631,6 +642,7 @@ DoCreateDirectory(pathPtr)
  *---------------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
 int
 TclpCopyDirectory(src, dst, errorPtr)
     CONST char *src;		/* Pathname of directory to be copied
@@ -652,6 +664,7 @@ TclpCopyDirectory(src, dst, errorPtr)
     Tcl_DStringFree(&dstString);
     return result;
 }
+#endif
 
 /*
  *---------------------------------------------------------------------------
@@ -679,6 +692,7 @@ TclpCopyDirectory(src, dst, errorPtr)
  *---------------------------------------------------------------------------
  */
  
+#ifndef TCL_NO_FILESYSTEM
 int
 TclpRemoveDirectory(path, recursive, errorPtr) 
     CONST char *path;		/* Pathname of directory to be removed
@@ -734,6 +748,7 @@ DoRemoveDirectory(pathPtr, recursive, errorPtr)
 
     return TraverseUnixTree(TraversalDelete, pathPtr, NULL, errorPtr);
 }
+#endif
 	
 /*
  *---------------------------------------------------------------------------
@@ -757,6 +772,7 @@ DoRemoveDirectory(pathPtr, recursive, errorPtr)
  *---------------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
 static int 
 TraverseUnixTree(traverseProc, sourcePtr, targetPtr, errorPtr)
     TraversalProc *traverseProc;/* Function to call for every file and
@@ -876,6 +892,7 @@ TraverseUnixTree(traverseProc, sourcePtr, targetPtr, errorPtr)
 	    
     return result;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -895,6 +912,7 @@ TraverseUnixTree(traverseProc, sourcePtr, targetPtr, errorPtr)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
 static int 
 TraversalCopy(srcPtr, dstPtr, statBufPtr, type, errorPtr) 
     Tcl_DString *srcPtr;	/* Source pathname to copy (native). */
@@ -939,6 +957,7 @@ TraversalCopy(srcPtr, dstPtr, statBufPtr, type, errorPtr)
     }
     return TCL_ERROR;
 }
+#endif
 
 /*
  *---------------------------------------------------------------------------
@@ -959,6 +978,7 @@ TraversalCopy(srcPtr, dstPtr, statBufPtr, type, errorPtr)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
 static int
 TraversalDelete(srcPtr, ignore, statBufPtr, type, errorPtr) 
     Tcl_DString *srcPtr;	/* Source pathname (native). */
@@ -993,6 +1013,7 @@ TraversalDelete(srcPtr, ignore, statBufPtr, type, errorPtr)
     }
     return TCL_ERROR;
 }
+#endif
 
 /*
  *---------------------------------------------------------------------------
@@ -1013,6 +1034,7 @@ TraversalDelete(srcPtr, ignore, statBufPtr, type, errorPtr)
  *---------------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
 static int
 CopyFileAtts(src, dst, statBufPtr) 
     CONST char *src;		/* Path name of source file (native). */
@@ -1050,7 +1072,7 @@ CopyFileAtts(src, dst, statBufPtr)
     }
     return TCL_OK;
 }
-
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -1069,6 +1091,7 @@ CopyFileAtts(src, dst, statBufPtr)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
 static int
 GetGroupAttribute(interp, objIndex, fileName, attributePtrPtr)
     Tcl_Interp *interp;		/* The interp we are using for errors. */
@@ -1102,6 +1125,7 @@ GetGroupAttribute(interp, objIndex, fileName, attributePtrPtr)
     endgrent();
     return TCL_OK;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -1120,6 +1144,7 @@ GetGroupAttribute(interp, objIndex, fileName, attributePtrPtr)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
 static int
 GetOwnerAttribute(interp, objIndex, fileName, attributePtrPtr)
     Tcl_Interp *interp;		/* The interp we are using for errors. */
@@ -1153,6 +1178,7 @@ GetOwnerAttribute(interp, objIndex, fileName, attributePtrPtr)
     endpwent();
     return TCL_OK;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -1171,6 +1197,7 @@ GetOwnerAttribute(interp, objIndex, fileName, attributePtrPtr)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
 static int
 GetPermissionsAttribute(interp, objIndex, fileName, attributePtrPtr)
     Tcl_Interp *interp;		    /* The interp we are using for errors. */
@@ -1196,6 +1223,7 @@ GetPermissionsAttribute(interp, objIndex, fileName, attributePtrPtr)
     
     return TCL_OK;
 }
+#endif
 
 /*
  *---------------------------------------------------------------------------
@@ -1213,6 +1241,7 @@ GetPermissionsAttribute(interp, objIndex, fileName, attributePtrPtr)
  *---------------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
 static int
 SetGroupAttribute(interp, objIndex, fileName, attributePtr)
     Tcl_Interp *interp;		    /* The interp for error reporting. */
@@ -1258,6 +1287,7 @@ SetGroupAttribute(interp, objIndex, fileName, attributePtr)
     }    
     return TCL_OK;
 }
+#endif
 
 /*
  *---------------------------------------------------------------------------
@@ -1275,6 +1305,7 @@ SetGroupAttribute(interp, objIndex, fileName, attributePtr)
  *---------------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
 static int
 SetOwnerAttribute(interp, objIndex, fileName, attributePtr)
     Tcl_Interp *interp;		    /* The interp for error reporting. */
@@ -1318,6 +1349,7 @@ SetOwnerAttribute(interp, objIndex, fileName, attributePtr)
     }
     return TCL_OK;
 }
+#endif
 
 /*
  *---------------------------------------------------------------------------
@@ -1335,6 +1367,7 @@ SetOwnerAttribute(interp, objIndex, fileName, attributePtr)
  *---------------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
 static int
 SetPermissionsAttribute(interp, objIndex, fileName, attributePtr)
     Tcl_Interp *interp;		    /* The interp we are using for errors. */
@@ -1390,6 +1423,7 @@ SetPermissionsAttribute(interp, objIndex, fileName, attributePtr)
     }
     return TCL_OK;
 }
+#endif
 
 /*
  *---------------------------------------------------------------------------
@@ -1409,6 +1443,7 @@ SetPermissionsAttribute(interp, objIndex, fileName, attributePtr)
  *---------------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
 int
 TclpListVolumes(interp)
     Tcl_Interp *interp;			/* Interpreter to which to pass
@@ -1420,6 +1455,7 @@ TclpListVolumes(interp)
     Tcl_SetStringObj(resultPtr, "/", 1);
     return TCL_OK;	
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -1439,6 +1475,7 @@ TclpListVolumes(interp)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
 static int
 GetModeFromPermString(interp, modeStringPtr, modePtr)
     Tcl_Interp *interp;		/* The interp we are using for errors. */
@@ -1609,3 +1646,4 @@ GetModeFromPermString(interp, modeStringPtr, modePtr)
     }
     return TCL_OK;
 }
+#endif

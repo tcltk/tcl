@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixSock.c,v 1.4 1999/04/16 00:48:05 stanton Exp $
+ * RCS: @(#) $Id: tclUnixSock.c,v 1.4.30.1 2001/11/28 17:58:37 andreas_kupries Exp $
  */
 
 #include "tcl.h"
@@ -39,10 +39,16 @@
  * The following variable holds the network name of this host.
  */
 
+#ifndef TCL_NO_SOCKETS
 static char hostname[TCL_HOSTNAME_LEN + 1];
 static int  hostnameInited = 0;
 TCL_DECLARE_MUTEX(hostMutex)
+#else
+/* Without sockets a network hostname makes no sense.
+ */
 
+static char hostname [] = "";
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -65,6 +71,12 @@ TCL_DECLARE_MUTEX(hostMutex)
 char *
 Tcl_GetHostName()
 {
+#ifdef TCL_NO_SOCKETS
+    /* Empty string, pre-initialized.
+     */
+    return hostname;
+#else
+
 #ifndef NO_UNAME
     struct utsname u;
     struct hostent *hp;
@@ -109,6 +121,7 @@ Tcl_GetHostName()
     hostnameInited = 1;
     Tcl_MutexUnlock(&hostMutex);
     return hostname;
+#endif
 }
 
 /*
@@ -131,5 +144,9 @@ int
 TclpHasSockets(interp)
     Tcl_Interp *interp;		/* Not used. */
 {
+#ifndef TCL_NO_SOCKETS
     return TCL_OK;
+#else
+    return TCL_ERROR;
+#endif
 }

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.12.2.2 2001/10/17 19:29:24 das Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.12.2.2.2.1 2001/11/28 17:58:35 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -27,6 +27,7 @@ typedef int (StatProc)_ANSI_ARGS_((CONST char *path, struct stat *buf));
  * Prototypes for local procedures defined in this file:
  */
 
+#ifndef TCL_NO_FILESYSTEM
 static int		CheckAccess _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *objPtr, int mode));
 static int		GetStatBuf _ANSI_ARGS_((Tcl_Interp *interp,
@@ -39,6 +40,7 @@ static int		StoreStatData _ANSI_ARGS_((Tcl_Interp *interp,
 			    char *varName, struct stat *statPtr));
 static char **		StringifyObjects _ANSI_ARGS_((int objc,
 			    Tcl_Obj *CONST objv[]));
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -302,6 +304,7 @@ Tcl_CatchObjCmd(dummy, interp, objc, objv)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
 	/* ARGSUSED */
 int
 Tcl_CdObjCmd(dummy, interp, objc, objv)
@@ -338,6 +341,7 @@ Tcl_CdObjCmd(dummy, interp, objc, objv)
     }
     return TCL_OK;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -778,6 +782,7 @@ Tcl_ExprObjCmd(dummy, interp, objc, objv)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
 	/* ARGSUSED */
 int
 Tcl_FileObjCmd(dummy, interp, objc, objv)
@@ -1305,6 +1310,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
     Tcl_WrongNumArgs(interp, 2, objv, "name");
     return TCL_ERROR;
 }
+#endif
 
 /*
  *---------------------------------------------------------------------------
@@ -1331,6 +1337,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
  *---------------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
 static int
 SplitPath(interp, objPtr, argcPtr, argvPtr)
     Tcl_Interp *interp;		/* Interp for error return.  May be NULL. */
@@ -1362,6 +1369,7 @@ SplitPath(interp, objPtr, argcPtr, argvPtr)
     }
     return TCL_OK;
 }
+#endif
 
 /*
  *---------------------------------------------------------------------------
@@ -1381,6 +1389,7 @@ SplitPath(interp, objPtr, argcPtr, argvPtr)
  *---------------------------------------------------------------------------
  */
   
+#ifndef TCL_NO_FILESYSTEM
 static int
 CheckAccess(interp, objPtr, mode)
     Tcl_Interp *interp;		/* Interp for status return.  Must not be
@@ -1405,6 +1414,7 @@ CheckAccess(interp, objPtr, mode)
 
     return TCL_OK;
 }
+#endif
 
 /*
  *---------------------------------------------------------------------------
@@ -1426,6 +1436,7 @@ CheckAccess(interp, objPtr, mode)
  *---------------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
 static int
 GetStatBuf(interp, objPtr, statProc, statPtr)
     Tcl_Interp *interp;		/* Interp for error return.  May be NULL. */
@@ -1458,6 +1469,7 @@ GetStatBuf(interp, objPtr, statProc, statPtr)
     }
     return TCL_OK;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -1478,6 +1490,7 @@ GetStatBuf(interp, objPtr, statProc, statPtr)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
 static int
 StoreStatData(interp, varName, statPtr)
     Tcl_Interp *interp;			/* Interpreter for error reports. */
@@ -1545,6 +1558,7 @@ StoreStatData(interp, varName, statPtr)
     }
     return TCL_OK;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -1563,6 +1577,7 @@ StoreStatData(interp, varName, statPtr)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
 static char *
 GetTypeFromMode(mode)
     int mode;
@@ -1588,6 +1603,7 @@ GetTypeFromMode(mode)
     }
     return "unknown";
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -2390,6 +2406,7 @@ Tcl_FormatObjCmd(dummy, interp, objc, objv)
  *---------------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
 static char **
 StringifyObjects(objc, objv)
     int objc;			/* Number of arguments. */
@@ -2405,3 +2422,4 @@ StringifyObjects(objc, objv)
     argv[i] = NULL;
     return argv;
 }
+#endif

@@ -10,13 +10,14 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * CVS: $Id: tclIOGT.c,v 1.1.4.3 2001/04/03 22:54:37 hobbs Exp $
+ * CVS: $Id: tclIOGT.c,v 1.1.4.3.2.1 2001/11/28 17:58:36 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
 #include "tclPort.h"
 #include "tclIO.h"
 
+#ifndef TCL_NO_CHANNEL_CONFIG
 
 /*
  * Forward declarations of internal procedures.
@@ -55,8 +56,10 @@ static int		TransformNotifyProc _ANSI_ARGS_ ((
  * Secondly the procedures for handling and generating fileeevents.
  */
 
+#ifndef TCL_NO_FILEEVENTS
 static void		TransformChannelHandlerTimer _ANSI_ARGS_ ((
 				ClientData clientData));
+#endif
 
 /*
  * Forward declarations of internal procedures.
@@ -999,6 +1002,7 @@ TransformWatchProc (instanceData, mask)
     ClientData instanceData;	/* Channel to watch */
     int        mask;		/* Events of interest */
 {
+#ifndef TCL_NO_FILEEVENTS
     /* The caller expressed interest in events occuring for this
      * channel. We are forwarding the call to the underlying
      * channel now.
@@ -1049,6 +1053,7 @@ TransformWatchProc (instanceData, mask)
 	dataPtr->timer = Tcl_CreateTimerHandler (FLUSH_DELAY,
 		TransformChannelHandlerTimer, (ClientData) dataPtr);
     }
+#endif
 }
 
 /*
@@ -1150,6 +1155,7 @@ TransformNotifyProc (clientData, mask)
  *------------------------------------------------------*
  */
 
+#ifndef TCL_NO_FILEEVENTS
 static void
 TransformChannelHandlerTimer (clientData)
     ClientData clientData; /* Transformation to query */
@@ -1170,6 +1176,7 @@ TransformChannelHandlerTimer (clientData)
 
     Tcl_NotifyChannel(dataPtr->self, TCL_READABLE);
 }
+#endif
 
 /*
  *------------------------------------------------------*
@@ -1357,3 +1364,16 @@ ResultAdd (r, buf, toWrite)
     memcpy(r->buf + r->used, buf, (size_t) toWrite);
     r->used += toWrite;
 }
+
+#else
+
+int
+TclChannelTransform(interp, chan, cmdObjPtr)
+    Tcl_Interp	*interp;	/* Interpreter for result. */
+    Tcl_Channel chan;		/* Channel to transform. */
+    Tcl_Obj	*cmdObjPtr;	/* Script to use for transform. */
+{
+  return TCL_ERROR;
+}
+#endif
+

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.27 2000/04/15 17:34:09 hobbs Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.27.6.1 2001/11/28 17:58:35 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -89,10 +89,14 @@ static CmdInfo builtInCmds[] = {
         (CompileProc *) NULL,		0},
     {"expr",		(Tcl_CmdProc *) NULL,	Tcl_ExprObjCmd,
         TclCompileExprCmd,		1},
+#ifndef TCL_NO_CHANNELCOPY
     {"fcopy",		(Tcl_CmdProc *) NULL,	Tcl_FcopyObjCmd,
         (CompileProc *) NULL,		1},
+#endif
+#ifndef TCL_NO_FILEEVENTS
     {"fileevent",	(Tcl_CmdProc *) NULL,	Tcl_FileEventObjCmd,
         (CompileProc *) NULL,		1},
+#endif
     {"for",		(Tcl_CmdProc *) NULL,	Tcl_ForObjCmd,
         TclCompileForCmd,		1},
     {"foreach",		(Tcl_CmdProc *) NULL,	Tcl_ForeachObjCmd,
@@ -119,8 +123,12 @@ static CmdInfo builtInCmds[] = {
         (CompileProc *) NULL,		1},
     {"llength",		(Tcl_CmdProc *) NULL,	Tcl_LlengthObjCmd,
         (CompileProc *) NULL,		1},
+#ifndef TCL_NO_FILESYSTEM
+#ifndef TCL_NO_LOADCMD
     {"load",		(Tcl_CmdProc *) NULL,	Tcl_LoadObjCmd,
         (CompileProc *) NULL,		0},
+#endif
+#endif
     {"lrange",		(Tcl_CmdProc *) NULL,	Tcl_LrangeObjCmd,
         (CompileProc *) NULL,		1},
     {"lreplace",	(Tcl_CmdProc *) NULL,	Tcl_LreplaceObjCmd,
@@ -175,38 +183,66 @@ static CmdInfo builtInCmds[] = {
 #ifndef TCL_GENERIC_ONLY
     {"after",		(Tcl_CmdProc *) NULL,	Tcl_AfterObjCmd,
         (CompileProc *) NULL,		1},
+#ifndef TCL_NO_FILESYSTEM
     {"cd",		(Tcl_CmdProc *) NULL,	Tcl_CdObjCmd,
         (CompileProc *) NULL,		0},
+#endif
+#ifndef TCL_NO_NONSTDCHAN
     {"close",		(Tcl_CmdProc *) NULL,	Tcl_CloseObjCmd,
         (CompileProc *) NULL,		1},
+#endif
+#ifndef TCL_NO_CHANNEL_EOF
     {"eof",		(Tcl_CmdProc *) NULL,	Tcl_EofObjCmd,
         (CompileProc *) NULL,		1},
+#endif
+#ifndef TCL_NO_CHANNEL_BLOCKED
     {"fblocked",	(Tcl_CmdProc *) NULL,	Tcl_FblockedObjCmd,
         (CompileProc *) NULL,		1},
+#endif
+#ifndef TCL_NO_CHANNEL_CONFIG
     {"fconfigure",	(Tcl_CmdProc *) NULL,	Tcl_FconfigureObjCmd,
         (CompileProc *) NULL,		0},
+#endif
+#ifndef TCL_NO_FILESYSTEM
     {"file",		(Tcl_CmdProc *) NULL,	Tcl_FileObjCmd,
         (CompileProc *) NULL,		0},
+#endif
     {"flush",		(Tcl_CmdProc *) NULL,	Tcl_FlushObjCmd,
         (CompileProc *) NULL,		1},
     {"gets",		(Tcl_CmdProc *) NULL,	Tcl_GetsObjCmd,
         (CompileProc *) NULL,		1},
+#ifndef TCL_NO_FILESYSTEM
     {"glob",		(Tcl_CmdProc *) NULL,	Tcl_GlobObjCmd,
         (CompileProc *) NULL,		0},
+#endif
+#ifndef TCL_NO_FILESYSTEM
+#ifndef TCL_NO_NONSTDCHAN
     {"open",		(Tcl_CmdProc *) NULL,	Tcl_OpenObjCmd,
         (CompileProc *) NULL,		0},
+#endif
+#endif
+#ifndef TCL_NO_PIDCMD
     {"pid",		(Tcl_CmdProc *) NULL,	Tcl_PidObjCmd,
         (CompileProc *) NULL,		1},
+#endif
     {"puts",		(Tcl_CmdProc *) NULL,	Tcl_PutsObjCmd,
         (CompileProc *) NULL,		1},
+#ifndef TCL_NO_FILESYSTEM
     {"pwd",		(Tcl_CmdProc *) NULL,	Tcl_PwdObjCmd,
         (CompileProc *) NULL,		0},
+#endif
+#ifndef TCL_NO_CHANNEL_READ
     {"read",		(Tcl_CmdProc *) NULL,	Tcl_ReadObjCmd,
         (CompileProc *) NULL,		1},
+#endif
+#ifndef TCL_NO_NONSTDCHAN
     {"seek",		(Tcl_CmdProc *) NULL,	Tcl_SeekObjCmd,
         (CompileProc *) NULL,		1},
+#endif
+#ifndef TCL_NO_SOCKETS
     {"socket",		(Tcl_CmdProc *) NULL,	Tcl_SocketObjCmd,
         (CompileProc *) NULL,		0},
+#endif
     {"tell",		(Tcl_CmdProc *) NULL,	Tcl_TellObjCmd,
         (CompileProc *) NULL,		1},
     {"time",		(Tcl_CmdProc *) NULL,	Tcl_TimeObjCmd,
@@ -225,13 +261,29 @@ static CmdInfo builtInCmds[] = {
         (CompileProc *) NULL,		0},
     {"resource",	(Tcl_CmdProc *) NULL,	Tcl_ResourceObjCmd,
         (CompileProc *) NULL,		1},
+#ifndef TCL_NO_FILESYSTEM
     {"source",		(Tcl_CmdProc *) NULL,	Tcl_MacSourceObjCmd,
         (CompileProc *) NULL,		0},
+#endif
 #else
+#ifndef TCL_NO_FILESYSTEM
+#ifndef TCL_NO_PIPES
     {"exec",		(Tcl_CmdProc *) NULL,	Tcl_ExecObjCmd,
         (CompileProc *) NULL,		0},
+#endif
+#endif
+#ifndef TCL_NO_FILESYSTEM
+#ifndef TCL_NO_NONSTDCHAN
+    /* IOS FIXME : in the generic case this functionality can be made
+     * available, it just has to read the file directly instead of using
+     * the channel system. This makes the code platform dependent.
+     *
+     * => See Tcl_EvalFile
+     */
     {"source",		(Tcl_CmdProc *) NULL,	Tcl_SourceObjCmd,
         (CompileProc *) NULL,		0},
+#endif
+#endif /* TCL_NO_FILESYSTEM */
 #endif /* MAC_TCL */
     
 #endif /* TCL_GENERIC_ONLY */
@@ -475,11 +527,13 @@ Tcl_CreateInterp()
     }
     iPtr->flags |= EXPR_INITIALIZED;
 
+#if !(defined(TCL_NO_SLAVEINTERP) && defined(TCL_NO_CMDALIASES))
     /*
      * Do Multiple/Safe Interps Tcl init stuff
      */
 
     TclInterpInit(interp);
+#endif /* !(defined(TCL_NO_SLAVEINTERP) && defined(TCL_NO_CMDALIASES)) */
 
     /*
      * We used to create the "errorInfo" and "errorCode" global vars at this
@@ -1891,7 +1945,10 @@ TclRenameCommand(interp, oldName, newName)
     Tcl_Command cmd;
     Command *cmdPtr;
     Tcl_HashEntry *hPtr, *oldHPtr;
-    int new, result;
+    int new;
+#ifndef TCL_NO_CMDALIASES
+    int result;
+#endif
 
     /*
      * Find the existing command. An error is returned if cmdName can't
@@ -1962,6 +2019,7 @@ TclRenameCommand(interp, oldName, newName)
     cmdPtr->nsPtr = newNsPtr;
     TclResetShadowedCmdRefs(interp, cmdPtr);
 
+#ifndef TCL_NO_CMDALIASES
     /*
      * Now check for an alias loop. If we detect one, put everything back
      * the way it was and report the error.
@@ -1974,6 +2032,7 @@ TclRenameCommand(interp, oldName, newName)
         cmdPtr->nsPtr = cmdNsPtr;
         return result;
     }
+#endif
 
     /*
      * The new command name is okay, so remove the command from its

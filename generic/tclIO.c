@@ -10,13 +10,20 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.20.2.12 2001/11/07 04:48:14 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.20.2.12.2.1 2001/11/28 17:58:36 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
 #include "tclPort.h"
 #include "tclIO.h"
 #include <assert.h>
+
+#ifdef TCL_NO_NONSTDCHAN
+static void		Tcl_RegisterChannelInternal _ANSI_ARGS_((Tcl_Interp * interp, 
+				Tcl_Channel chan));
+
+#define Tcl_RegisterChannel Tcl_RegisterChannelInternal
+#endif
 
 
 /*
@@ -60,8 +67,10 @@ static Tcl_ThreadDataKey dataKey;
  */
 
 static ChannelBuffer *	AllocChannelBuffer _ANSI_ARGS_((int length));
+#ifndef TCL_NO_FILEEVENTS
 static void		ChannelTimerProc _ANSI_ARGS_((
 				ClientData clientData));
+#endif
 static int		CheckChannelErrors _ANSI_ARGS_((ChannelState *statePtr,
 				int direction));
 static int		CheckFlush _ANSI_ARGS_((Channel *chanPtr,
@@ -70,8 +79,10 @@ static int		CheckForDeadChannel _ANSI_ARGS_((Tcl_Interp *interp,
 				ChannelState *statePtr));
 static void		CheckForStdChannelsBeingClosed _ANSI_ARGS_((
 				Tcl_Channel chan));
+#ifndef TCL_NO_FILEEVENTS
 static void		CleanupChannelHandlers _ANSI_ARGS_((
 				Tcl_Interp *interp, Channel *chanPtr));
+#endif
 static int		CloseChannel _ANSI_ARGS_((Tcl_Interp *interp,
 				Channel *chanPtr, int errorCode));
 static void		CommonGetsCleanup _ANSI_ARGS_((Channel *chanPtr,
@@ -82,16 +93,24 @@ static int		CopyAndTranslateBuffer _ANSI_ARGS_((
 static int		CopyBuffer _ANSI_ARGS_((
 				Channel *chanPtr, char *result,
 				int space));
+#ifndef TCL_NO_CHANNELCOPY
 static int		CopyData _ANSI_ARGS_((CopyState *csPtr, int mask));
+#ifndef TCL_NO_FILEEVENTS
 static void		CopyEventProc _ANSI_ARGS_((ClientData clientData,
 				int mask));
+#endif
+#endif
+#ifndef TCL_NO_FILEEVENTS
 static void		CreateScriptRecord _ANSI_ARGS_((
 				Tcl_Interp *interp, Channel *chanPtr,
 				int mask, Tcl_Obj *scriptPtr));
+#endif
 static void		DeleteChannelTable _ANSI_ARGS_((
 				ClientData clientData, Tcl_Interp *interp));
+#ifndef TCL_NO_FILEEVENTS
 static void		DeleteScriptRecord _ANSI_ARGS_((Tcl_Interp *interp,
 				Channel *chanPtr, int mask));
+#endif
 static void		DiscardInputQueued _ANSI_ARGS_((ChannelState *statePtr,
 				int discardSavedBuffers));
 static void		DiscardOutputQueued _ANSI_ARGS_((
@@ -108,22 +127,28 @@ static Tcl_HashTable *	GetChannelTable _ANSI_ARGS_((Tcl_Interp *interp));
 static int		GetInput _ANSI_ARGS_((Channel *chanPtr));
 static void		PeekAhead _ANSI_ARGS_((Channel *chanPtr,
 				char **dstEndPtr, GetsState *gsPtr));
+#if !defined(TCL_NO_CHANNEL_READ) || !defined(TCL_NO_PIPES)
 static int		ReadBytes _ANSI_ARGS_((ChannelState *statePtr,
 				Tcl_Obj *objPtr, int charsLeft,
 				int *offsetPtr));
 static int		ReadChars _ANSI_ARGS_((ChannelState *statePtr,
 				Tcl_Obj *objPtr, int charsLeft, int *offsetPtr,
 				int *factorPtr));
+#endif
 static void		RecycleBuffer _ANSI_ARGS_((ChannelState *statePtr,
 				ChannelBuffer *bufPtr, int mustDiscard));
 static int		StackSetBlockMode _ANSI_ARGS_((Channel *chanPtr,
 				int mode));
 static int		SetBlockMode _ANSI_ARGS_((Tcl_Interp *interp,
 				Channel *chanPtr, int mode));
+#ifndef TCL_NO_CHANNELCOPY
 static void		StopCopy _ANSI_ARGS_((CopyState *csPtr));
+#endif
+#if !defined(TCL_NO_CHANNEL_READ) || !defined(TCL_NO_PIPES)
 static int		TranslateInputEOL _ANSI_ARGS_((ChannelState *statePtr,
 				char *dst, CONST char *src, int *dstLenPtr,
 				int *srcLenPtr));
+#endif
 static int		TranslateOutputEOL _ANSI_ARGS_((ChannelState *statePtr,
 				char *dst, CONST char *src, int *dstLenPtr,
 				int *srcLenPtr));
@@ -553,10 +578,12 @@ DeleteChannelTable(clientData, interp)
     Tcl_HashEntry *hPtr;	/* Search variable. */
     Channel *chanPtr;		/* Channel being deleted. */
     ChannelState *statePtr;	/* State of Channel being deleted. */
+#ifndef TCL_NO_FILEEVENTS
     EventScriptRecord *sPtr, *prevPtr, *nextPtr;
     				/* Variables to loop over all channel events
                                  * registered, to delete the ones that refer
                                  * to the interpreter being deleted. */
+#endif
 
     /*
      * Delete all the registered channels - this will close channels whose
@@ -571,6 +598,7 @@ DeleteChannelTable(clientData, interp)
         chanPtr = (Channel *) Tcl_GetHashValue(hPtr);
 	statePtr = chanPtr->state;
 
+#ifndef TCL_NO_FILEEVENTS
         /*
          * Remove any fileevents registered in this interpreter.
          */
@@ -596,6 +624,7 @@ DeleteChannelTable(clientData, interp)
                 prevPtr = sPtr;
             }
         }
+#endif
 
         /*
          * Cannot call Tcl_UnregisterChannel because that procedure calls
@@ -742,6 +771,13 @@ Tcl_RegisterChannel(interp, chan)
  *----------------------------------------------------------------------
  */
 
+#ifdef TCL_NO_NONSTDCHAN
+/* IOS FIXME: Unregister is still required to make sub interpreters safe by
+ * removing the std* channels from them.
+ * This means that removal of sub interp functionality allows the removal of this
+ * functionality too.
+ */
+#endif
 int
 Tcl_UnregisterChannel(interp, chan)
     Tcl_Interp *interp;		/* Interpreter in which channel is defined. */
@@ -774,6 +810,7 @@ Tcl_UnregisterChannel(interp, chan)
         }
         Tcl_DeleteHashEntry(hPtr);
 
+#ifndef TCL_NO_FILEEVENTS
         /*
          * Remove channel handlers that refer to this interpreter, so that they
          * will not be present if the actual close is delayed and more events
@@ -783,6 +820,7 @@ Tcl_UnregisterChannel(interp, chan)
          */
     
         CleanupChannelHandlers(interp, chanPtr);
+#endif
     }
 
     statePtr->refCount--;
@@ -2179,7 +2217,6 @@ CloseChannel(interp, chanPtr, errorCode)
  *
  *----------------------------------------------------------------------
  */
-
 	/* ARGSUSED */
 int
 Tcl_Close(interp, chan)
@@ -2255,7 +2292,9 @@ Tcl_Close(interp, chan)
      * Cancel any pending copy operation.
      */
 
+#ifndef TCL_NO_CHANNELCOPY
     StopCopy(statePtr->csPtr);
+#endif
 
     /*
      * Must set the interest mask now to 0, otherwise infinite loops
@@ -3853,7 +3892,8 @@ done:
  *
  *---------------------------------------------------------------------------
  */
- 
+
+#if !defined(TCL_NO_CHANNEL_READ) || !defined(TCL_NO_PIPES)
 int
 Tcl_ReadChars(chan, objPtr, toRead, appendFlag)
     Tcl_Channel chan;		/* The channel to read. */
@@ -3968,6 +4008,7 @@ Tcl_ReadChars(chan, objPtr, toRead, appendFlag)
     UpdateInterest(chanPtr);
     return copied;
 }
+#endif
 /*
  *---------------------------------------------------------------------------
  *
@@ -3993,7 +4034,7 @@ Tcl_ReadChars(chan, objPtr, toRead, appendFlag)
  *
  *---------------------------------------------------------------------------
  */
-
+#if !defined(TCL_NO_CHANNEL_READ) || !defined(TCL_NO_PIPES)
 static int
 ReadBytes(statePtr, objPtr, bytesToRead, offsetPtr)
     ChannelState *statePtr;	/* State of the channel to read. */
@@ -4468,6 +4509,7 @@ TranslateInputEOL(statePtr, dstStart, srcStart, dstLenPtr, srcLenPtr)
     *srcLenPtr = srcLen;
     return 0;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -4840,7 +4882,7 @@ GetInput(chanPtr)
  *
  *----------------------------------------------------------------------
  */
-
+#ifndef TCL_NO_NONSTDCHAN
 int
 Tcl_Seek(chan, offset, mode)
     Tcl_Channel chan;		/* The channel on which to seek. */
@@ -5009,6 +5051,7 @@ Tcl_Seek(chan, offset, mode)
 
     return curPos;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -5506,6 +5549,7 @@ Tcl_BadChannelOption(interp, optionName, optionList)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_CHANNEL_CONFIG
 int
 Tcl_GetChannelOption(interp, chan, optionName, dsPtr)
     Tcl_Interp *interp;		/* For error reporting - can be NULL. */
@@ -5712,6 +5756,7 @@ Tcl_GetChannelOption(interp, chan, optionName, dsPtr)
 	return Tcl_BadChannelOption(interp, optionName, NULL);
     }
 }
+#endif
 
 /*
  *---------------------------------------------------------------------------
@@ -6039,6 +6084,7 @@ Tcl_SetChannelOption(interp, chan, optionName, newValue)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILEEVENTS
 static void
 CleanupChannelHandlers(interp, chanPtr)
     Tcl_Interp *interp;
@@ -6074,6 +6120,7 @@ CleanupChannelHandlers(interp, chanPtr)
         }
     }
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -6094,6 +6141,7 @@ CleanupChannelHandlers(interp, chanPtr)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILEEVENTS
 void
 Tcl_NotifyChannel(channel, mask)
     Tcl_Channel channel;	/* Channel that detected an event. */
@@ -6217,6 +6265,7 @@ Tcl_NotifyChannel(channel, mask)
 
     tsdPtr->nestedHandlerPtr = nh.nestedHandlerPtr;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -6239,6 +6288,7 @@ static void
 UpdateInterest(chanPtr)
     Channel *chanPtr;		/* Channel to update. */
 {
+#ifndef TCL_NO_FILEEVENTS
     ChannelState *statePtr = chanPtr->state;	/* state info for channel */
     int mask = statePtr->interestMask;
 
@@ -6271,6 +6321,7 @@ UpdateInterest(chanPtr)
 	}
     }
     (chanPtr->typePtr->watchProc)(chanPtr->instanceData, mask);
+#endif
 }
 
 /*
@@ -6290,6 +6341,7 @@ UpdateInterest(chanPtr)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILEEVENTS
 static void
 ChannelTimerProc(clientData)
     ClientData clientData;
@@ -6331,6 +6383,7 @@ ChannelTimerProc(clientData)
 	UpdateInterest(chanPtr);
     }
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -6354,6 +6407,7 @@ ChannelTimerProc(clientData)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILEEVENTS
 void
 Tcl_CreateChannelHandler(chan, mask, proc, clientData)
     Tcl_Channel chan;		/* The channel to create the handler for. */
@@ -6416,6 +6470,7 @@ Tcl_CreateChannelHandler(chan, mask, proc, clientData)
 
     UpdateInterest(statePtr->topChanPtr);
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -6436,6 +6491,7 @@ Tcl_CreateChannelHandler(chan, mask, proc, clientData)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILEEVENTS
 void
 Tcl_DeleteChannelHandler(chan, proc, clientData)
     Tcl_Channel chan;		/* The channel for which to remove the
@@ -6512,6 +6568,7 @@ Tcl_DeleteChannelHandler(chan, proc, clientData)
 
     UpdateInterest(statePtr->topChanPtr);
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -6530,6 +6587,7 @@ Tcl_DeleteChannelHandler(chan, proc, clientData)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILEEVENTS
 static void
 DeleteScriptRecord(interp, chanPtr, mask)
     Tcl_Interp *interp;		/* Interpreter in which script was to be
@@ -6563,6 +6621,7 @@ DeleteScriptRecord(interp, chanPtr, mask)
         }
     }
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -6581,6 +6640,7 @@ DeleteScriptRecord(interp, chanPtr, mask)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILEEVENTS
 static void
 CreateScriptRecord(interp, chanPtr, mask, scriptPtr)
     Tcl_Interp *interp;			/* Interpreter in which to execute
@@ -6617,6 +6677,7 @@ CreateScriptRecord(interp, chanPtr, mask, scriptPtr)
     Tcl_IncrRefCount(scriptPtr);
     esPtr->scriptPtr = scriptPtr;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -6636,6 +6697,7 @@ CreateScriptRecord(interp, chanPtr, mask, scriptPtr)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILEEVENTS
 void
 TclChannelEventScriptInvoker(clientData, mask)
     ClientData clientData;	/* The script+interp record. */
@@ -6678,6 +6740,7 @@ TclChannelEventScriptInvoker(clientData, mask)
     }
     Tcl_Release((ClientData) interp);
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -6698,6 +6761,7 @@ TclChannelEventScriptInvoker(clientData, mask)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILEEVENTS
 	/* ARGSUSED */
 int
 Tcl_FileEventObjCmd(clientData, interp, objc, objv)
@@ -6778,6 +6842,7 @@ Tcl_FileEventObjCmd(clientData, interp, objc, objv)
     
     return TCL_OK;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -6800,6 +6865,7 @@ Tcl_FileEventObjCmd(clientData, interp, objc, objv)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_CHANNELCOPY
 int
 TclCopyChannel(interp, inChan, outChan, toRead, cmdPtr)
     Tcl_Interp *interp;		/* Current interpreter. */
@@ -6986,12 +7052,14 @@ CopyData(csPtr, mask)
 	    if (Tcl_Eof(inChan)) {
 		break;
 	    } else if (!(mask & TCL_READABLE)) {
+#ifndef TCL_NO_FILEEVENTS
 		if (mask & TCL_WRITABLE) {
 		    Tcl_DeleteChannelHandler(outChan, CopyEventProc,
 			    (ClientData) csPtr);
 		}
 		Tcl_CreateChannelHandler(inChan, TCL_READABLE,
 			CopyEventProc, (ClientData) csPtr);
+#endif
 	    }
 	    return TCL_OK;
 	}
@@ -7028,6 +7096,7 @@ CopyData(csPtr, mask)
 	 */
 
 	if (outStatePtr->flags & BG_FLUSH_SCHEDULED) {
+#ifndef TCL_NO_FILEEVENTS
 	    if (!(mask & TCL_WRITABLE)) {
 		if (mask & TCL_READABLE) {
 		    Tcl_DeleteChannelHandler(inChan, CopyEventProc,
@@ -7036,9 +7105,11 @@ CopyData(csPtr, mask)
 		Tcl_CreateChannelHandler(outChan, TCL_WRITABLE,
 			CopyEventProc, (ClientData) csPtr);
 	    }
+#endif
 	    return TCL_OK;
 	}
 
+#ifndef TCL_NO_FILEEVENTS
 	/*
 	 * For background copies, we only do one buffer per invocation so
 	 * we don't starve the rest of the system.
@@ -7056,6 +7127,7 @@ CopyData(csPtr, mask)
 	    }
 	    return TCL_OK;
 	}
+#endif
     }
 
     /*
@@ -7064,6 +7136,7 @@ CopyData(csPtr, mask)
      */
 
     total = csPtr->total;
+#ifndef TCL_NO_FILEEVENTS
     if (cmdPtr) {
 	/*
 	 * Get a private copy of the command so we can mutate it
@@ -7087,6 +7160,7 @@ CopyData(csPtr, mask)
 	Tcl_DecrRefCount(cmdPtr);
 	Tcl_Release((ClientData) interp);
     } else {
+#endif
 	StopCopy(csPtr);
 	if (errObj) {
 	    Tcl_SetObjResult(interp, errObj);
@@ -7095,9 +7169,12 @@ CopyData(csPtr, mask)
 	    Tcl_ResetResult(interp);
 	    Tcl_SetIntObj(Tcl_GetObjResult(interp), total);
 	}
+#ifndef TCL_NO_FILEEVENTS
     }
+#endif
     return result;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -7682,6 +7759,8 @@ DoWrite(chanPtr, src, srcLen)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_CHANNELCOPY
+#ifndef TCL_NO_FILEEVENTS
 static void
 CopyEventProc(clientData, mask)
     ClientData clientData;
@@ -7689,6 +7768,7 @@ CopyEventProc(clientData, mask)
 {
     (void) CopyData((CopyState *)clientData, mask);
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -7741,6 +7821,7 @@ StopCopy(csPtr)
     outStatePtr->flags |=
 	csPtr->writeFlags & (CHANNEL_LINEBUFFERED | CHANNEL_UNBUFFERED);
 
+#ifndef TCL_NO_FILEEVENTS
     if (csPtr->cmdPtr) {
 	Tcl_DeleteChannelHandler((Tcl_Channel)csPtr->readPtr, CopyEventProc,
 		(ClientData)csPtr);
@@ -7750,10 +7831,12 @@ StopCopy(csPtr)
 	}
         Tcl_DecrRefCount(csPtr->cmdPtr);
     }
+#endif
     inStatePtr->csPtr  = NULL;
     outStatePtr->csPtr = NULL;
     ckfree((char*) csPtr);
 }
+#endif
 
 /*
  *----------------------------------------------------------------------

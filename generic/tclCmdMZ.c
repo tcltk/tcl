@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.26.2.5 2001/11/20 15:14:09 kennykb Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.26.2.5.2.1 2001/11/28 17:58:35 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -62,6 +62,7 @@ static char *		TraceVarProc _ANSI_ARGS_((ClientData clientData,
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
 	/* ARGSUSED */
 int
 Tcl_PwdObjCmd(dummy, interp, objc, objv)
@@ -83,6 +84,7 @@ Tcl_PwdObjCmd(dummy, interp, objc, objv)
     Tcl_DStringResult(interp, &ds);
     return TCL_OK;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -831,6 +833,14 @@ Tcl_ReturnObjCmd(dummy, interp, objc, objv)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
+#ifndef TCL_NO_NONSTDCHAN
+/* IOS FIXME : in the generic case this functionality can be made
+ * available, it just has to read the file directly instead of using
+ * the channel system. This makes the code platform dependent.
+ *
+ * => See Tcl_EvalFile
+ */
 	/* ARGSUSED */
 int
 Tcl_SourceObjCmd(dummy, interp, objc, objv)
@@ -851,6 +861,8 @@ Tcl_SourceObjCmd(dummy, interp, objc, objv)
     result = Tcl_EvalFile(interp, bytes);
     return result;
 }
+#endif
+#endif /* TCL_NO_FILESYSTEM */
 
 /*
  *----------------------------------------------------------------------

@@ -31,7 +31,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoadOSF.c,v 1.3 1999/04/16 00:48:04 stanton Exp $
+ * RCS: @(#) $Id: tclLoadOSF.c,v 1.3.22.1 2001/11/28 17:58:37 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -59,6 +59,7 @@
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_LOADCMD
 int
 TclpLoadFile(interp, fileName, sym1, sym2, proc1Ptr, proc2Ptr, clientDataPtr)
     Tcl_Interp *interp;		/* Used for error reporting. */
@@ -101,6 +102,7 @@ TclpLoadFile(interp, fileName, sym1, sym2, proc1Ptr, proc2Ptr, clientDataPtr)
     *proc2Ptr = ldr_lookup_package(pkg, sym2);
     return TCL_OK;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -120,6 +122,7 @@ TclpLoadFile(interp, fileName, sym1, sym2, proc1Ptr, proc2Ptr, clientDataPtr)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_LOADCMD
 void
 TclpUnloadFile(clientData)
     ClientData clientData;	/* ClientData returned by a previous call
@@ -128,6 +131,7 @@ TclpUnloadFile(clientData)
 				 * file. */
 {
 }
+#endif
 
 /*
  *----------------------------------------------------------------------

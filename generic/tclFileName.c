@@ -10,13 +10,14 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.13.2.2 2001/10/10 00:47:41 hobbs Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.13.2.2.2.1 2001/11/28 17:58:36 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
 #include "tclPort.h"
 #include "tclRegexp.h"
 
+#ifndef TCL_NO_FILESYSTEM
 /*
  * The following regular expression matches the root portion of a Macintosh
  * absolute path.  It will match degenerate Unix-style paths, tilde paths,
@@ -71,6 +72,7 @@ static char *		SplitWinPath _ANSI_ARGS_((CONST char *path,
 			    Tcl_DString *bufPtr));
 static char *		SplitUnixPath _ANSI_ARGS_((CONST char *path,
 			    Tcl_DString *bufPtr));
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -88,6 +90,7 @@ static char *		SplitUnixPath _ANSI_ARGS_((CONST char *path,
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
 static void
 FileNameInit()
 {
@@ -98,6 +101,7 @@ FileNameInit()
 	Tcl_CreateThreadExitHandler(FileNameCleanup, NULL);
     }
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -116,6 +120,7 @@ FileNameInit()
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
 static void
 FileNameCleanup(clientData)
     ClientData clientData;	/* Not used. */
@@ -124,6 +129,7 @@ FileNameCleanup(clientData)
     Tcl_DecrRefCount(tsdPtr->macRootPatternPtr);
     tsdPtr->initialized = 0;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -145,6 +151,7 @@ FileNameCleanup(clientData)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
 static CONST char *
 ExtractWinRoot(path, resultPtr, offset, typePtr)
     CONST char *path;		/* Path to parse. */
@@ -236,6 +243,7 @@ ExtractWinRoot(path, resultPtr, offset, typePtr)
 	return path;
     }
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -255,6 +263,7 @@ ExtractWinRoot(path, resultPtr, offset, typePtr)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
 Tcl_PathType
 Tcl_GetPathType(path)
     char *path;
@@ -314,6 +323,7 @@ Tcl_GetPathType(path)
     }
     return type;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -341,6 +351,7 @@ Tcl_GetPathType(path)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
 void
 Tcl_SplitPath(path, argcPtr, argvPtr)
     CONST char *path;		/* Pointer to string containing a path. */
@@ -416,6 +427,7 @@ Tcl_SplitPath(path, argcPtr, argvPtr)
 
     Tcl_DStringFree(&buffer);
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -435,6 +447,7 @@ Tcl_SplitPath(path, argcPtr, argvPtr)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
 static char *
 SplitUnixPath(path, bufPtr)
     CONST char *path;		/* Pointer to string containing a path. */
@@ -491,6 +504,7 @@ SplitUnixPath(path, bufPtr)
     }
     return Tcl_DStringValue(bufPtr);
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -510,6 +524,7 @@ SplitUnixPath(path, bufPtr)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
 static char *
 SplitWinPath(path, bufPtr)
     CONST char *path;		/* Pointer to string containing a path. */
@@ -551,6 +566,7 @@ SplitWinPath(path, bufPtr)
 
     return Tcl_DStringValue(bufPtr);
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -569,6 +585,7 @@ SplitWinPath(path, bufPtr)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
 static char *
 SplitMacPath(path, bufPtr)
     CONST char *path;		/* Pointer to string containing a path. */
@@ -739,6 +756,7 @@ SplitMacPath(path, bufPtr)
     }
     return Tcl_DStringValue(bufPtr);
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -758,6 +776,7 @@ SplitMacPath(path, bufPtr)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
 char *
 Tcl_JoinPath(argc, argv, resultPtr)
     int argc;
@@ -972,6 +991,7 @@ Tcl_JoinPath(argc, argv, resultPtr)
     Tcl_DStringFree(&buffer);
     return Tcl_DStringValue(resultPtr);
 }
+#endif
 
 /*
  *---------------------------------------------------------------------------
@@ -999,6 +1019,7 @@ Tcl_JoinPath(argc, argv, resultPtr)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
 char *
 Tcl_TranslateFileName(interp, name, bufferPtr)
     Tcl_Interp *interp;		/* Interpreter in which to store error
@@ -1063,6 +1084,7 @@ Tcl_TranslateFileName(interp, name, bufferPtr)
     }
     return Tcl_DStringValue(bufferPtr);
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -1082,6 +1104,7 @@ Tcl_TranslateFileName(interp, name, bufferPtr)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
 char *
 TclGetExtension(name)
     char *name;			/* File name to parse. */
@@ -1130,6 +1153,7 @@ TclGetExtension(name)
 
     return p;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -1153,6 +1177,7 @@ TclGetExtension(name)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
 static char *
 DoTildeSubst(interp, user, resultPtr)
     Tcl_Interp *interp;		/* Interpreter in which to store error
@@ -1190,6 +1215,7 @@ DoTildeSubst(interp, user, resultPtr)
     }
     return resultPtr->string;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -1208,6 +1234,7 @@ DoTildeSubst(interp, user, resultPtr)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
 	/* ARGSUSED */
 int
 Tcl_GlobObjCmd(dummy, interp, objc, objv)
@@ -1588,6 +1615,7 @@ Tcl_GlobObjCmd(dummy, interp, objc, objv)
     }
     return result;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -1611,6 +1639,7 @@ Tcl_GlobObjCmd(dummy, interp, objc, objv)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
 	/* ARGSUSED */
 int
 TclGlob(interp, pattern, unquotedPrefix, globFlags, types)
@@ -1753,6 +1782,7 @@ TclGlob(interp, pattern, unquotedPrefix, globFlags, types)
     }
     return result;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -1774,6 +1804,7 @@ TclGlob(interp, pattern, unquotedPrefix, globFlags, types)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
 static int
 SkipToChar(stringPtr, match)
     char **stringPtr;			/* Pointer string to check. */
@@ -1805,6 +1836,7 @@ SkipToChar(stringPtr, match)
     *stringPtr = p;
     return 0;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -1833,6 +1865,7 @@ SkipToChar(stringPtr, match)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
 int
 TclDoGlob(interp, separators, headPtr, tail, types)
     Tcl_Interp *interp;		/* Interpreter to use for error reporting
@@ -2130,3 +2163,4 @@ TclDoGlob(interp, separators, headPtr, tail, types)
 
     return TCL_OK;
 }
+#endif

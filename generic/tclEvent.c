@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEvent.c,v 1.8.2.5 2001/10/03 18:30:45 hobbs Exp $
+ * RCS: @(#) $Id: tclEvent.c,v 1.8.2.5.2.1 2001/11/28 17:58:35 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -587,6 +587,7 @@ Tcl_Exit(status)
  *-------------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
 void
 TclSetLibraryPath(pathPtr)
     Tcl_Obj *pathPtr;		/* A Tcl list object whose elements are
@@ -608,6 +609,7 @@ TclSetLibraryPath(pathPtr)
      */
     tclLibraryPathStr = Tcl_GetStringFromObj(pathPtr, NULL);
 }
+#endif
 
 /*
  *-------------------------------------------------------------------------
@@ -626,6 +628,7 @@ TclSetLibraryPath(pathPtr)
  *-------------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
 Tcl_Obj *
 TclGetLibraryPath()
 {
@@ -643,6 +646,7 @@ TclGetLibraryPath()
     }
     return tsdPtr->tclLibraryPath;
 }
+#endif
 
 /*
  *-------------------------------------------------------------------------

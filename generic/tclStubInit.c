@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.35.2.7 2001/10/17 19:29:25 das Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.35.2.7.2.1 2001/11/28 17:58:37 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -43,28 +43,60 @@
 TclIntStubs tclIntStubs = {
     TCL_STUB_MAGIC,
     NULL,
+#if defined(TCL_NO_FILESYSTEM)
+    NULL, /* 0*/
+#else  /* TCL_NO_FILESYSTEM */
     TclAccess, /* 0 */
+#endif /* TCL_NO_FILESYSTEM */
+#if defined(TCL_NO_FILESYSTEM)
+    NULL, /* 1*/
+#else  /* TCL_NO_FILESYSTEM */
     TclAccessDeleteProc, /* 1 */
+#endif /* TCL_NO_FILESYSTEM */
+#if defined(TCL_NO_FILESYSTEM)
+    NULL, /* 2*/
+#else  /* TCL_NO_FILESYSTEM */
     TclAccessInsertProc, /* 2 */
+#endif /* TCL_NO_FILESYSTEM */
     TclAllocateFreeObjects, /* 3 */
     NULL, /* 4 */
 #if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
+#if defined(TCL_NO_PIPES)
+    NULL, /* 5*/
+#else  /* TCL_NO_PIPES */
     TclCleanupChildren, /* 5 */
+#endif /* TCL_NO_PIPES */
 #endif /* UNIX */
 #ifdef __WIN32__
+#if defined(TCL_NO_PIPES)
+    NULL, /* 5*/
+#else  /* TCL_NO_PIPES */
     TclCleanupChildren, /* 5 */
+#endif /* TCL_NO_PIPES */
 #endif /* __WIN32__ */
 #ifdef MAC_TCL
     NULL, /* 5 */
 #endif /* MAC_TCL */
     TclCleanupCommand, /* 6 */
     TclCopyAndCollapse, /* 7 */
+#if defined(TCL_NO_CHANNELCOPY)
+    NULL, /* 8*/
+#else  /* TCL_NO_CHANNELCOPY */
     TclCopyChannel, /* 8 */
+#endif /* TCL_NO_CHANNELCOPY */
 #if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
+#if defined(TCL_NO_FILESYSTEM) || defined(TCL_NO_PIPES)
+    NULL, /* 9*/
+#else  /* TCL_NO_FILESYSTEM TCL_NO_PIPES */
     TclCreatePipeline, /* 9 */
+#endif /* TCL_NO_FILESYSTEM TCL_NO_PIPES */
 #endif /* UNIX */
 #ifdef __WIN32__
+#if defined(TCL_NO_FILESYSTEM) || defined(TCL_NO_PIPES)
+    NULL, /* 9*/
+#else  /* TCL_NO_FILESYSTEM TCL_NO_PIPES */
     TclCreatePipeline, /* 9 */
+#endif /* TCL_NO_FILESYSTEM TCL_NO_PIPES */
 #endif /* __WIN32__ */
 #ifdef MAC_TCL
     NULL, /* 9 */
@@ -72,15 +104,39 @@ TclIntStubs tclIntStubs = {
     TclCreateProc, /* 10 */
     TclDeleteCompiledLocalVars, /* 11 */
     TclDeleteVars, /* 12 */
+#if defined(TCL_NO_FILESYSTEM)
+    NULL, /* 13*/
+#else  /* TCL_NO_FILESYSTEM */
     TclDoGlob, /* 13 */
+#endif /* TCL_NO_FILESYSTEM */
     TclDumpMemoryInfo, /* 14 */
     NULL, /* 15 */
     TclExprFloatError, /* 16 */
+#if defined(TCL_NO_FILESYSTEM)
+    NULL, /* 17*/
+#else  /* TCL_NO_FILESYSTEM */
     TclFileAttrsCmd, /* 17 */
+#endif /* TCL_NO_FILESYSTEM */
+#if defined(TCL_NO_FILESYSTEM)
+    NULL, /* 18*/
+#else  /* TCL_NO_FILESYSTEM */
     TclFileCopyCmd, /* 18 */
+#endif /* TCL_NO_FILESYSTEM */
+#if defined(TCL_NO_FILESYSTEM)
+    NULL, /* 19*/
+#else  /* TCL_NO_FILESYSTEM */
     TclFileDeleteCmd, /* 19 */
+#endif /* TCL_NO_FILESYSTEM */
+#if defined(TCL_NO_FILESYSTEM)
+    NULL, /* 20*/
+#else  /* TCL_NO_FILESYSTEM */
     TclFileMakeDirsCmd, /* 20 */
+#endif /* TCL_NO_FILESYSTEM */
+#if defined(TCL_NO_FILESYSTEM)
+    NULL, /* 21*/
+#else  /* TCL_NO_FILESYSTEM */
     TclFileRenameCmd, /* 21 */
+#endif /* TCL_NO_FILESYSTEM */
     TclFindElement, /* 22 */
     TclFindProc, /* 23 */
     TclFormatInt, /* 24 */
@@ -90,7 +146,11 @@ TclIntStubs tclIntStubs = {
     TclpGetDefaultStdChannel, /* 28 */
     TclGetElementOfIndexedArray, /* 29 */
     NULL, /* 30 */
+#if defined(TCL_NO_FILESYSTEM)
+    NULL, /* 31*/
+#else  /* TCL_NO_FILESYSTEM */
     TclGetExtension, /* 31 */
+#endif /* TCL_NO_FILESYSTEM */
     TclGetFrame, /* 32 */
     TclGetInterpProc, /* 33 */
     TclGetIntForIndex, /* 34 */
@@ -101,7 +161,11 @@ TclIntStubs tclIntStubs = {
     TclGetObjInterpProc, /* 39 */
     TclGetOpenMode, /* 40 */
     TclGetOriginalCommand, /* 41 */
+#if defined(TCL_NO_FILESYSTEM)
+    NULL, /* 42*/
+#else  /* TCL_NO_FILESYSTEM */
     TclpGetUserHome, /* 42 */
+#endif /* TCL_NO_FILESYSTEM */
     TclGlobalInvoke, /* 43 */
     TclGuessPackageName, /* 44 */
     TclHideUnsafeCommands, /* 45 */
@@ -110,7 +174,11 @@ TclIntStubs tclIntStubs = {
     TclIncrIndexedScalar, /* 48 */
     TclIncrVar2, /* 49 */
     TclInitCompiledLocals, /* 50 */
+#if defined(TCL_NO_SLAVEINTERP) && defined (TCL_NO_CMDALIASES)
+    NULL, /* 51*/
+#else  /* TCL_NO_SLAVEINTERP TCL_NO_CMDALIASES */
     TclInterpInit, /* 51 */
+#endif /* TCL_NO_SLAVEINTERP TCL_NO_CMDALIASES */
     TclInvoke, /* 52 */
     TclInvokeObjectCommand, /* 53 */
     TclInvokeStringCommand, /* 54 */
@@ -118,43 +186,99 @@ TclIntStubs tclIntStubs = {
     NULL, /* 56 */
     NULL, /* 57 */
     TclLookupVar, /* 58 */
+#if defined(TCL_NO_FILESYSTEM)
+    NULL, /* 59*/
+#else  /* TCL_NO_FILESYSTEM */
     TclpMatchFiles, /* 59 */
+#endif /* TCL_NO_FILESYSTEM */
     TclNeedSpace, /* 60 */
     TclNewProcBodyObj, /* 61 */
     TclObjCommandComplete, /* 62 */
     TclObjInterpProc, /* 63 */
     TclObjInvoke, /* 64 */
     TclObjInvokeGlobal, /* 65 */
+#if defined(TCL_NO_FILESYSTEM)
+    NULL, /* 66*/
+#else  /* TCL_NO_FILESYSTEM */
     TclOpenFileChannelDeleteProc, /* 66 */
+#endif /* TCL_NO_FILESYSTEM */
+#if defined(TCL_NO_FILESYSTEM)
+    NULL, /* 67*/
+#else  /* TCL_NO_FILESYSTEM */
     TclOpenFileChannelInsertProc, /* 67 */
+#endif /* TCL_NO_FILESYSTEM */
+#if defined(TCL_NO_FILESYSTEM)
+    NULL, /* 68*/
+#else  /* TCL_NO_FILESYSTEM */
     TclpAccess, /* 68 */
+#endif /* TCL_NO_FILESYSTEM */
     TclpAlloc, /* 69 */
+#if defined(TCL_NO_FILESYSTEM)
+    NULL, /* 70*/
+#else  /* TCL_NO_FILESYSTEM */
     TclpCopyFile, /* 70 */
+#endif /* TCL_NO_FILESYSTEM */
+#if defined(TCL_NO_FILESYSTEM)
+    NULL, /* 71*/
+#else  /* TCL_NO_FILESYSTEM */
     TclpCopyDirectory, /* 71 */
+#endif /* TCL_NO_FILESYSTEM */
+#if defined(TCL_NO_FILESYSTEM)
+    NULL, /* 72*/
+#else  /* TCL_NO_FILESYSTEM */
     TclpCreateDirectory, /* 72 */
+#endif /* TCL_NO_FILESYSTEM */
+#if defined(TCL_NO_FILESYSTEM)
+    NULL, /* 73*/
+#else  /* TCL_NO_FILESYSTEM */
     TclpDeleteFile, /* 73 */
+#endif /* TCL_NO_FILESYSTEM */
     TclpFree, /* 74 */
     TclpGetClicks, /* 75 */
     TclpGetSeconds, /* 76 */
     TclpGetTime, /* 77 */
     TclpGetTimeZone, /* 78 */
+#if defined(TCL_NO_FILESYSTEM)
+    NULL, /* 79*/
+#else  /* TCL_NO_FILESYSTEM */
     TclpListVolumes, /* 79 */
+#endif /* TCL_NO_FILESYSTEM */
+#if defined(TCL_NO_FILESYSTEM) || defined(TCL_NO_NONSTDCHAN)
+    NULL, /* 80*/
+#else  /* TCL_NO_FILESYSTEM TCL_NO_NONSTDCHAN */
     TclpOpenFileChannel, /* 80 */
+#endif /* TCL_NO_FILESYSTEM TCL_NO_NONSTDCHAN */
     TclpRealloc, /* 81 */
+#if defined(TCL_NO_FILESYSTEM)
+    NULL, /* 82*/
+#else  /* TCL_NO_FILESYSTEM */
     TclpRemoveDirectory, /* 82 */
+#endif /* TCL_NO_FILESYSTEM */
+#if defined(TCL_NO_FILESYSTEM)
+    NULL, /* 83*/
+#else  /* TCL_NO_FILESYSTEM */
     TclpRenameFile, /* 83 */
+#endif /* TCL_NO_FILESYSTEM */
     NULL, /* 84 */
     NULL, /* 85 */
     NULL, /* 86 */
     NULL, /* 87 */
     TclPrecTraceProc, /* 88 */
+#if defined(TCL_NO_CMDALIASES)
+    NULL, /* 89*/
+#else  /* TCL_NO_CMDALIASES */
     TclPreventAliasLoop, /* 89 */
+#endif /* TCL_NO_CMDALIASES */
     NULL, /* 90 */
     TclProcCleanupProc, /* 91 */
     TclProcCompileProc, /* 92 */
     TclProcDeleteProc, /* 93 */
     TclProcInterpProc, /* 94 */
+#if defined(TCL_NO_FILESYSTEM)
+    NULL, /* 95*/
+#else  /* TCL_NO_FILESYSTEM */
     TclpStat, /* 95 */
+#endif /* TCL_NO_FILESYSTEM */
     TclRenameCommand, /* 96 */
     TclResetShadowedCmdRefs, /* 97 */
     TclServiceIdle, /* 98 */
@@ -180,9 +304,21 @@ TclIntStubs tclIntStubs = {
 #ifdef MAC_TCL
     NULL, /* 104 */
 #endif /* MAC_TCL */
+#if defined(TCL_NO_FILESYSTEM)
+    NULL, /* 105*/
+#else  /* TCL_NO_FILESYSTEM */
     TclStat, /* 105 */
+#endif /* TCL_NO_FILESYSTEM */
+#if defined(TCL_NO_FILESYSTEM)
+    NULL, /* 106*/
+#else  /* TCL_NO_FILESYSTEM */
     TclStatDeleteProc, /* 106 */
+#endif /* TCL_NO_FILESYSTEM */
+#if defined(TCL_NO_FILESYSTEM)
+    NULL, /* 107*/
+#else  /* TCL_NO_FILESYSTEM */
     TclStatInsertProc, /* 107 */
+#endif /* TCL_NO_FILESYSTEM */
     TclTeardownNamespace, /* 108 */
     TclUpdateReturnInfo, /* 109 */
     NULL, /* 110 */
@@ -212,11 +348,23 @@ TclIntStubs tclIntStubs = {
     TclpStrftime, /* 134 */
     TclpCheckStackSpace, /* 135 */
     NULL, /* 136 */
+#if defined(TCL_NO_FILESYSTEM)
+    NULL, /* 137*/
+#else  /* TCL_NO_FILESYSTEM */
     TclpChdir, /* 137 */
+#endif /* TCL_NO_FILESYSTEM */
     TclGetEnv, /* 138 */
+#if defined(TCL_NO_FILESYSTEM) || defined(TCL_NO_LOADCMD)
+    NULL, /* 139*/
+#else  /* TCL_NO_FILESYSTEM TCL_NO_LOADCMD */
     TclpLoadFile, /* 139 */
+#endif /* TCL_NO_FILESYSTEM TCL_NO_LOADCMD */
     TclLooksLikeInt, /* 140 */
+#if defined(TCL_NO_FILESYSTEM)
+    NULL, /* 141*/
+#else  /* TCL_NO_FILESYSTEM */
     TclpGetCwd, /* 141 */
+#endif /* TCL_NO_FILESYSTEM */
     TclSetByteCodeFromAny, /* 142 */
     TclAddLiteralObj, /* 143 */
     TclHideLiteral, /* 144 */
@@ -227,17 +375,33 @@ TclIntStubs tclIntStubs = {
     TclHandleRelease, /* 149 */
     TclRegAbout, /* 150 */
     TclRegExpRangeUniChar, /* 151 */
+#if defined(TCL_NO_FILESYSTEM)
+    NULL, /* 152*/
+#else  /* TCL_NO_FILESYSTEM */
     TclSetLibraryPath, /* 152 */
+#endif /* TCL_NO_FILESYSTEM */
+#if defined(TCL_NO_FILESYSTEM)
+    NULL, /* 153*/
+#else  /* TCL_NO_FILESYSTEM */
     TclGetLibraryPath, /* 153 */
+#endif /* TCL_NO_FILESYSTEM */
     NULL, /* 154 */
     NULL, /* 155 */
     TclRegError, /* 156 */
     TclVarTraceExists, /* 157 */
     TclSetStartupScriptFileName, /* 158 */
     TclGetStartupScriptFileName, /* 159 */
+#if defined(TCL_NO_FILESYSTEM)
+    NULL, /* 160*/
+#else  /* TCL_NO_FILESYSTEM */
     TclpMatchFilesTypes, /* 160 */
+#endif /* TCL_NO_FILESYSTEM */
     TclChannelTransform, /* 161 */
+#if defined(TCL_NO_FILEEVENTS)
+    NULL, /* 162*/
+#else  /* TCL_NO_FILEEVENTS */
     TclChannelEventScriptInvoker, /* 162 */
+#endif /* TCL_NO_FILEEVENTS */
     TclGetInstructionTable, /* 163 */
     TclExpandCodeArray, /* 164 */
 };
@@ -246,16 +410,48 @@ TclIntPlatStubs tclIntPlatStubs = {
     TCL_STUB_MAGIC,
     NULL,
 #if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
+#if defined(TCL_NO_PIPES)
+    NULL, /* 0*/
+#else  /* TCL_NO_PIPES */
     TclGetAndDetachPids, /* 0 */
+#endif /* TCL_NO_PIPES */
+#if defined(TCL_NO_PIPES)
+    NULL, /* 1*/
+#else  /* TCL_NO_PIPES */
     TclpCloseFile, /* 1 */
+#endif /* TCL_NO_PIPES */
+#if defined(TCL_NO_PIPES)
+    NULL, /* 2*/
+#else  /* TCL_NO_PIPES */
     TclpCreateCommandChannel, /* 2 */
+#endif /* TCL_NO_PIPES */
+#if defined(TCL_NO_PIPES)
+    NULL, /* 3*/
+#else  /* TCL_NO_PIPES */
     TclpCreatePipe, /* 3 */
+#endif /* TCL_NO_PIPES */
+#if defined(TCL_NO_PIPES)
+    NULL, /* 4*/
+#else  /* TCL_NO_PIPES */
     TclpCreateProcess, /* 4 */
+#endif /* TCL_NO_PIPES */
     NULL, /* 5 */
+#if defined(TCL_NO_PIPES)
+    NULL, /* 6*/
+#else  /* TCL_NO_PIPES */
     TclpMakeFile, /* 6 */
+#endif /* TCL_NO_PIPES */
+#if defined(TCL_NO_PIPES)
+    NULL, /* 7*/
+#else  /* TCL_NO_PIPES */
     TclpOpenFile, /* 7 */
+#endif /* TCL_NO_PIPES */
     TclUnixWaitForFile, /* 8 */
+#if defined(TCL_NO_PIPES)
+    NULL, /* 9*/
+#else  /* TCL_NO_PIPES */
     TclpCreateTempFile, /* 9 */
+#endif /* TCL_NO_PIPES */
 #endif /* UNIX */
 #ifdef __WIN32__
     TclWinConvertError, /* 0 */
@@ -269,7 +465,11 @@ TclIntPlatStubs tclIntPlatStubs = {
     TclpGetPid, /* 8 */
     TclWinGetPlatformId, /* 9 */
     NULL, /* 10 */
+#if defined(TCL_NO_PIPES)
+    NULL, /* 11*/
+#else  /* TCL_NO_PIPES */
     TclGetAndDetachPids, /* 11 */
+#endif /* TCL_NO_PIPES */
     TclpCloseFile, /* 12 */
     TclpCreateCommandChannel, /* 13 */
     TclpCreatePipe, /* 14 */
@@ -356,7 +556,11 @@ TclStubs tclStubs = {
     Tcl_DbCkfree, /* 7 */
     Tcl_DbCkrealloc, /* 8 */
 #if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
+#if defined(TCL_NO_FILEEVENTS)
+    NULL, /* 9*/
+#else  /* TCL_NO_FILEEVENTS */
     Tcl_CreateFileHandler, /* 9 */
+#endif /* TCL_NO_FILEEVENTS */
 #endif /* UNIX */
 #ifdef __WIN32__
     NULL, /* 9 */
@@ -365,7 +569,11 @@ TclStubs tclStubs = {
     NULL, /* 9 */
 #endif /* MAC_TCL */
 #if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
+#if defined(TCL_NO_FILEEVENTS)
+    NULL, /* 10*/
+#else  /* TCL_NO_FILEEVENTS */
     Tcl_DeleteFileHandler, /* 10 */
+#endif /* TCL_NO_FILEEVENTS */
 #endif /* UNIX */
 #ifdef __WIN32__
     NULL, /* 10 */
@@ -448,10 +656,22 @@ TclStubs tclStubs = {
     Tcl_Concat, /* 83 */
     Tcl_ConvertElement, /* 84 */
     Tcl_ConvertCountedElement, /* 85 */
+#if defined(TCL_NO_CMDALIASES)
+    NULL, /* 86*/
+#else  /* TCL_NO_CMDALIASES */
     Tcl_CreateAlias, /* 86 */
+#endif /* TCL_NO_CMDALIASES */
+#if defined(TCL_NO_CMDALIASES)
+    NULL, /* 87*/
+#else  /* TCL_NO_CMDALIASES */
     Tcl_CreateAliasObj, /* 87 */
+#endif /* TCL_NO_CMDALIASES */
     Tcl_CreateChannel, /* 88 */
+#if defined(TCL_NO_FILEEVENTS)
+    NULL, /* 89*/
+#else  /* TCL_NO_FILEEVENTS */
     Tcl_CreateChannelHandler, /* 89 */
+#endif /* TCL_NO_FILEEVENTS */
     Tcl_CreateCloseHandler, /* 90 */
     Tcl_CreateCommand, /* 91 */
     Tcl_CreateEventSource, /* 92 */
@@ -459,11 +679,19 @@ TclStubs tclStubs = {
     Tcl_CreateInterp, /* 94 */
     Tcl_CreateMathFunc, /* 95 */
     Tcl_CreateObjCommand, /* 96 */
+#if defined(TCL_NO_SLAVEINTERP)
+    NULL, /* 97*/
+#else  /* TCL_NO_SLAVEINTERP */
     Tcl_CreateSlave, /* 97 */
+#endif /* TCL_NO_SLAVEINTERP */
     Tcl_CreateTimerHandler, /* 98 */
     Tcl_CreateTrace, /* 99 */
     Tcl_DeleteAssocData, /* 100 */
+#if defined(TCL_NO_FILEEVENTS)
+    NULL, /* 101*/
+#else  /* TCL_NO_FILEEVENTS */
     Tcl_DeleteChannelHandler, /* 101 */
+#endif /* TCL_NO_FILEEVENTS */
     Tcl_DeleteCloseHandler, /* 102 */
     Tcl_DeleteCommand, /* 103 */
     Tcl_DeleteCommandFromToken, /* 104 */
@@ -474,10 +702,18 @@ TclStubs tclStubs = {
     Tcl_DeleteHashTable, /* 109 */
     Tcl_DeleteInterp, /* 110 */
 #if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
+#if defined(TCL_NO_PIPES)
+    NULL, /* 111*/
+#else  /* TCL_NO_PIPES */
     Tcl_DetachPids, /* 111 */
+#endif /* TCL_NO_PIPES */
 #endif /* UNIX */
 #ifdef __WIN32__
+#if defined(TCL_NO_PIPES)
+    NULL, /* 111*/
+#else  /* TCL_NO_PIPES */
     Tcl_DetachPids, /* 111 */
+#endif /* TCL_NO_PIPES */
 #endif /* __WIN32__ */
 #ifdef MAC_TCL
     NULL, /* 111 */
@@ -500,7 +736,11 @@ TclStubs tclStubs = {
     Tcl_ErrnoId, /* 127 */
     Tcl_ErrnoMsg, /* 128 */
     Tcl_Eval, /* 129 */
+#if defined(TCL_NO_FILESYSTEM) || defined(TCL_NO_NONSTDCHAN)
+    NULL, /* 130*/
+#else  /* TCL_NO_FILESYSTEM TCL_NO_NONSTDCHAN */
     Tcl_EvalFile, /* 130 */
+#endif /* TCL_NO_FILESYSTEM TCL_NO_NONSTDCHAN */
     Tcl_EvalObj, /* 131 */
     Tcl_EventuallyFree, /* 132 */
     Tcl_Exit, /* 133 */
@@ -518,8 +758,16 @@ TclStubs tclStubs = {
     Tcl_FirstHashEntry, /* 145 */
     Tcl_Flush, /* 146 */
     Tcl_FreeResult, /* 147 */
+#if defined(TCL_NO_CMDALIASES)
+    NULL, /* 148*/
+#else  /* TCL_NO_CMDALIASES */
     Tcl_GetAlias, /* 148 */
+#endif /* TCL_NO_CMDALIASES */
+#if defined(TCL_NO_CMDALIASES)
+    NULL, /* 149*/
+#else  /* TCL_NO_CMDALIASES */
     Tcl_GetAliasObj, /* 149 */
+#endif /* TCL_NO_CMDALIASES */
     Tcl_GetAssocData, /* 150 */
     Tcl_GetChannel, /* 151 */
     Tcl_GetChannelBufferSize, /* 152 */
@@ -527,14 +775,26 @@ TclStubs tclStubs = {
     Tcl_GetChannelInstanceData, /* 154 */
     Tcl_GetChannelMode, /* 155 */
     Tcl_GetChannelName, /* 156 */
+#if defined(TCL_NO_CHANNEL_CONFIG)
+    NULL, /* 157*/
+#else  /* TCL_NO_CHANNEL_CONFIG */
     Tcl_GetChannelOption, /* 157 */
+#endif /* TCL_NO_CHANNEL_CONFIG */
     Tcl_GetChannelType, /* 158 */
     Tcl_GetCommandInfo, /* 159 */
     Tcl_GetCommandName, /* 160 */
     Tcl_GetErrno, /* 161 */
     Tcl_GetHostName, /* 162 */
+#if defined(TCL_NO_SLAVEINTERP) && defined (TCL_NO_CMDALIASES)
+    NULL, /* 163*/
+#else  /* TCL_NO_SLAVEINTERP TCL_NO_CMDALIASES */
     Tcl_GetInterpPath, /* 163 */
+#endif /* TCL_NO_SLAVEINTERP TCL_NO_CMDALIASES */
+#if defined(TCL_NO_SLAVEINTERP) && defined (TCL_NO_CMDALIASES)
+    NULL, /* 164*/
+#else  /* TCL_NO_SLAVEINTERP TCL_NO_CMDALIASES */
     Tcl_GetMaster, /* 164 */
+#endif /* TCL_NO_SLAVEINTERP TCL_NO_CMDALIASES */
     Tcl_GetNameOfExecutable, /* 165 */
     Tcl_GetObjResult, /* 166 */
 #if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
@@ -546,11 +806,19 @@ TclStubs tclStubs = {
 #ifdef MAC_TCL
     NULL, /* 167 */
 #endif /* MAC_TCL */
+#if defined(TCL_NO_FILESYSTEM)
+    NULL, /* 168*/
+#else  /* TCL_NO_FILESYSTEM */
     Tcl_GetPathType, /* 168 */
+#endif /* TCL_NO_FILESYSTEM */
     Tcl_Gets, /* 169 */
     Tcl_GetsObj, /* 170 */
     Tcl_GetServiceMode, /* 171 */
+#if defined(TCL_NO_SLAVEINTERP) && defined (TCL_NO_CMDALIASES)
+    NULL, /* 172*/
+#else  /* TCL_NO_SLAVEINTERP TCL_NO_CMDALIASES */
     Tcl_GetSlave, /* 172 */
+#endif /* TCL_NO_SLAVEINTERP TCL_NO_CMDALIASES */
     Tcl_GetStdChannel, /* 173 */
     Tcl_GetStringResult, /* 174 */
     Tcl_GetVar, /* 175 */
@@ -564,29 +832,61 @@ TclStubs tclStubs = {
     Tcl_InputBuffered, /* 183 */
     Tcl_InterpDeleted, /* 184 */
     Tcl_IsSafe, /* 185 */
+#if defined(TCL_NO_FILESYSTEM)
+    NULL, /* 186*/
+#else  /* TCL_NO_FILESYSTEM */
     Tcl_JoinPath, /* 186 */
+#endif /* TCL_NO_FILESYSTEM */
     Tcl_LinkVar, /* 187 */
     NULL, /* 188 */
     Tcl_MakeFileChannel, /* 189 */
     Tcl_MakeSafe, /* 190 */
+#if defined(TCL_NO_SOCKETS)
+    NULL, /* 191*/
+#else  /* TCL_NO_SOCKETS */
     Tcl_MakeTcpClientChannel, /* 191 */
+#endif /* TCL_NO_SOCKETS */
     Tcl_Merge, /* 192 */
     Tcl_NextHashEntry, /* 193 */
+#if defined(TCL_NO_FILEEVENTS)
+    NULL, /* 194*/
+#else  /* TCL_NO_FILEEVENTS */
     Tcl_NotifyChannel, /* 194 */
+#endif /* TCL_NO_FILEEVENTS */
     Tcl_ObjGetVar2, /* 195 */
     Tcl_ObjSetVar2, /* 196 */
 #if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
+#if defined(TCL_NO_FILESYSTEM) || defined(TCL_NO_PIPES)
+    NULL, /* 197*/
+#else  /* TCL_NO_FILESYSTEM TCL_NO_PIPES */
     Tcl_OpenCommandChannel, /* 197 */
+#endif /* TCL_NO_FILESYSTEM TCL_NO_PIPES */
 #endif /* UNIX */
 #ifdef __WIN32__
+#if defined(TCL_NO_FILESYSTEM) || defined(TCL_NO_PIPES)
+    NULL, /* 197*/
+#else  /* TCL_NO_FILESYSTEM TCL_NO_PIPES */
     Tcl_OpenCommandChannel, /* 197 */
+#endif /* TCL_NO_FILESYSTEM TCL_NO_PIPES */
 #endif /* __WIN32__ */
 #ifdef MAC_TCL
     NULL, /* 197 */
 #endif /* MAC_TCL */
+#if defined(TCL_NO_FILESYSTEM) || defined(TCL_NO_FILEEVENTS)
+    NULL, /* 198*/
+#else  /* TCL_NO_FILESYSTEM TCL_NO_FILEEVENTS */
     Tcl_OpenFileChannel, /* 198 */
+#endif /* TCL_NO_FILESYSTEM TCL_NO_FILEEVENTS */
+#if defined(TCL_NO_SOCKETS)
+    NULL, /* 199*/
+#else  /* TCL_NO_SOCKETS */
     Tcl_OpenTcpClient, /* 199 */
+#endif /* TCL_NO_SOCKETS */
+#if defined(TCL_NO_SOCKETS) || defined(TCL_NO_FILEEVENTS)
+    NULL, /* 200*/
+#else  /* TCL_NO_SOCKETS TCL_NO_FILEEVENTS */
     Tcl_OpenTcpServer, /* 200 */
+#endif /* TCL_NO_SOCKETS TCL_NO_FILEEVENTS */
     Tcl_Preserve, /* 201 */
     Tcl_PrintDouble, /* 202 */
     Tcl_PutEnv, /* 203 */
@@ -594,17 +894,29 @@ TclStubs tclStubs = {
     Tcl_QueueEvent, /* 205 */
     Tcl_Read, /* 206 */
 #if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
+#if defined(TCL_NO_PIPES)
+    NULL, /* 207*/
+#else  /* TCL_NO_PIPES */
     Tcl_ReapDetachedProcs, /* 207 */
+#endif /* TCL_NO_PIPES */
 #endif /* UNIX */
 #ifdef __WIN32__
+#if defined(TCL_NO_PIPES)
+    NULL, /* 207*/
+#else  /* TCL_NO_PIPES */
     Tcl_ReapDetachedProcs, /* 207 */
+#endif /* TCL_NO_PIPES */
 #endif /* __WIN32__ */
 #ifdef MAC_TCL
     NULL, /* 207 */
 #endif /* MAC_TCL */
     Tcl_RecordAndEval, /* 208 */
     Tcl_RecordAndEvalObj, /* 209 */
+#if defined(TCL_NO_NONSTDCHAN)
+    NULL, /* 210*/
+#else  /* TCL_NO_NONSTDCHAN */
     Tcl_RegisterChannel, /* 210 */
+#endif /* TCL_NO_NONSTDCHAN */
     Tcl_RegisterObjType, /* 211 */
     Tcl_RegExpCompile, /* 212 */
     Tcl_RegExpExec, /* 213 */
@@ -614,7 +926,11 @@ TclStubs tclStubs = {
     Tcl_ResetResult, /* 217 */
     Tcl_ScanElement, /* 218 */
     Tcl_ScanCountedElement, /* 219 */
+#if defined(TCL_NO_NONSTDCHAN)
+    NULL, /* 220*/
+#else  /* TCL_NO_NONSTDCHAN */
     Tcl_Seek, /* 220 */
+#endif /* TCL_NO_NONSTDCHAN */
     Tcl_ServiceAll, /* 221 */
     Tcl_ServiceEvent, /* 222 */
     Tcl_SetAssocData, /* 223 */
@@ -637,13 +953,21 @@ TclStubs tclStubs = {
     Tcl_SignalMsg, /* 240 */
     Tcl_SourceRCFile, /* 241 */
     Tcl_SplitList, /* 242 */
+#if defined(TCL_NO_FILESYSTEM)
+    NULL, /* 243*/
+#else  /* TCL_NO_FILESYSTEM */
     Tcl_SplitPath, /* 243 */
+#endif /* TCL_NO_FILESYSTEM */
     Tcl_StaticPackage, /* 244 */
     Tcl_StringMatch, /* 245 */
     Tcl_Tell, /* 246 */
     Tcl_TraceVar, /* 247 */
     Tcl_TraceVar2, /* 248 */
+#if defined(TCL_NO_FILESYSTEM)
+    NULL, /* 249*/
+#else  /* TCL_NO_FILESYSTEM */
     Tcl_TranslateFileName, /* 249 */
+#endif /* TCL_NO_FILESYSTEM */
     Tcl_Ungets, /* 250 */
     Tcl_UnlinkVar, /* 251 */
     Tcl_UnregisterChannel, /* 252 */
@@ -671,7 +995,11 @@ TclStubs tclStubs = {
     Tcl_PkgRequire, /* 274 */
     Tcl_SetErrorCodeVA, /* 275 */
     Tcl_VarEvalVA, /* 276 */
+#if defined(TCL_NO_PIPES)
+    NULL, /* 277*/
+#else  /* TCL_NO_PIPES */
     Tcl_WaitPid, /* 277 */
+#endif /* TCL_NO_PIPES */
 #if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
     Tcl_PanicVA, /* 278 */
 #endif /* UNIX */
@@ -715,7 +1043,11 @@ TclStubs tclStubs = {
     Tcl_ConditionNotify, /* 310 */
     Tcl_ConditionWait, /* 311 */
     Tcl_NumUtfChars, /* 312 */
+#if defined(TCL_NO_CHANNEL_READ) && defined (TCL_NO_PIPES)
+    NULL, /* 313*/
+#else  /* TCL_NO_CHANNEL_READ TCL_NO_PIPES */
     Tcl_ReadChars, /* 313 */
+#endif /* TCL_NO_CHANNEL_READ TCL_NO_PIPES */
     Tcl_RestoreResult, /* 314 */
     Tcl_SaveResult, /* 315 */
     Tcl_SetSystemEncoding, /* 316 */
@@ -743,8 +1075,16 @@ TclStubs tclStubs = {
     Tcl_WriteChars, /* 338 */
     Tcl_WriteObj, /* 339 */
     Tcl_GetString, /* 340 */
+#if defined(TCL_NO_FILESYSTEM)
+    NULL, /* 341*/
+#else  /* TCL_NO_FILESYSTEM */
     Tcl_GetDefaultEncodingDir, /* 341 */
+#endif /* TCL_NO_FILESYSTEM */
+#if defined(TCL_NO_FILESYSTEM)
+    NULL, /* 342*/
+#else  /* TCL_NO_FILESYSTEM */
     Tcl_SetDefaultEncodingDir, /* 342 */
+#endif /* TCL_NO_FILESYSTEM */
     Tcl_AlertNotifier, /* 343 */
     Tcl_ServiceModeHook, /* 344 */
     Tcl_UniCharIsAlnum, /* 345 */
@@ -767,10 +1107,26 @@ TclStubs tclStubs = {
     Tcl_ParseExpr, /* 362 */
     Tcl_ParseQuotedString, /* 363 */
     Tcl_ParseVarName, /* 364 */
+#if defined(TCL_NO_FILESYSTEM)
+    NULL, /* 365*/
+#else  /* TCL_NO_FILESYSTEM */
     Tcl_GetCwd, /* 365 */
+#endif /* TCL_NO_FILESYSTEM */
+#if defined(TCL_NO_FILESYSTEM)
+    NULL, /* 366*/
+#else  /* TCL_NO_FILESYSTEM */
     Tcl_Chdir, /* 366 */
+#endif /* TCL_NO_FILESYSTEM */
+#if defined(TCL_NO_FILESYSTEM)
+    NULL, /* 367*/
+#else  /* TCL_NO_FILESYSTEM */
     Tcl_Access, /* 367 */
+#endif /* TCL_NO_FILESYSTEM */
+#if defined(TCL_NO_FILESYSTEM)
+    NULL, /* 368*/
+#else  /* TCL_NO_FILESYSTEM */
     Tcl_Stat, /* 368 */
+#endif /* TCL_NO_FILESYSTEM */
     Tcl_UtfNcmp, /* 369 */
     Tcl_UtfNcasecmp, /* 370 */
     Tcl_StringCaseMatch, /* 371 */

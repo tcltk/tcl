@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEncoding.c,v 1.5.2.1 2001/04/03 22:54:36 hobbs Exp $
+ * RCS: @(#) $Id: tclEncoding.c,v 1.5.2.1.2.1 2001/11/28 17:58:35 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -162,12 +162,16 @@ TCL_DECLARE_MUTEX(encodingMutex)
 static Tcl_Encoding defaultEncoding;
 static Tcl_Encoding systemEncoding;
 
+#ifndef TCL_NO_FILESYSTEM
+#ifndef TCL_NO_NONSTDCHAN
 /*
  * The following variable is used in the sparse matrix code for a
  * TableEncoding to represent a page in the table that has no entries.
  */
 
 static unsigned short emptyPage[256];
+#endif
+#endif /* TCL_NO_FILESYSTEM */
 
 /*
  * Procedures used only in this module.
@@ -178,6 +182,8 @@ static int		BinaryProc _ANSI_ARGS_((ClientData clientData,
 			    Tcl_EncodingState *statePtr, char *dst, int dstLen,
 			    int *srcReadPtr, int *dstWrotePtr,
 			    int *dstCharsPtr));
+#ifndef TCL_NO_FILESYSTEM
+#ifndef TCL_NO_NONSTDCHAN
 static void		EscapeFreeProc _ANSI_ARGS_((ClientData clientData));
 static int		EscapeFromUtfProc _ANSI_ARGS_((ClientData clientData,
 			    CONST char *src, int srcLen, int flags,
@@ -189,11 +195,21 @@ static int		EscapeToUtfProc _ANSI_ARGS_((ClientData clientData,
 			    Tcl_EncodingState *statePtr, char *dst, int dstLen,
 			    int *srcReadPtr, int *dstWrotePtr,
 			    int *dstCharsPtr));
+#endif
+#endif /* TCL_NO_FILESYSTEM */
 static void		FreeEncoding _ANSI_ARGS_((Tcl_Encoding encoding));
+#ifndef TCL_NO_FILESYSTEM
+#ifndef TCL_NO_NONSTDCHAN
 static Encoding *	GetTableEncoding _ANSI_ARGS_((
 			    EscapeEncodingData *dataPtr, int state));
 static Tcl_Encoding	LoadEncodingFile _ANSI_ARGS_((Tcl_Interp *interp,
 			    CONST char *name));
+
+/* IOS FIXME : in the generic case this functionality can be made
+ * available, it just has to read the file directly instead of using
+ * the channel system. This makes the code platform dependent.
+ * See also LoadEncodingFile.
+ */
 static Tcl_Encoding	LoadTableEncoding _ANSI_ARGS_((Tcl_Interp *interp,
 			    CONST char *name, int type, Tcl_Channel chan));
 static Tcl_Encoding	LoadEscapeEncoding _ANSI_ARGS_((CONST char *name, 
@@ -211,6 +227,8 @@ static int		TableToUtfProc _ANSI_ARGS_((ClientData clientData,
 			    Tcl_EncodingState *statePtr, char *dst, int dstLen,
 			    int *srcReadPtr, int *dstWrotePtr,
 			    int *dstCharsPtr));
+#endif /* TCL_NO_NONSTDCHAN */
+#endif /* TCL_NO_FILESYSTEM */
 static size_t		unilen _ANSI_ARGS_((CONST char *src));
 static int		UnicodeToUtfProc _ANSI_ARGS_((ClientData clientData,
 			    CONST char *src, int srcLen, int flags,
@@ -341,11 +359,13 @@ TclFinalizeEncodingSubsystem()
  *-------------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
 char *
 Tcl_GetDefaultEncodingDir()
 {
     return tclDefaultEncodingDir;
 }
+#endif
 
 /*
  *-------------------------------------------------------------------------
@@ -360,6 +380,7 @@ Tcl_GetDefaultEncodingDir()
  *-------------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
 void
 Tcl_SetDefaultEncodingDir(path)
     char *path;
@@ -367,6 +388,7 @@ Tcl_SetDefaultEncodingDir(path)
     tclDefaultEncodingDir = (char *)ckalloc((unsigned) strlen(path) + 1);
     strcpy(tclDefaultEncodingDir, path);
 }
+#endif
 
 /*
  *-------------------------------------------------------------------------
@@ -417,7 +439,11 @@ Tcl_GetEncoding(interp, name)
 	return (Tcl_Encoding) encodingPtr;
     }
     Tcl_MutexUnlock(&encodingMutex);
+#if defined(TCL_NO_FILESYSTEM) || defined(TCL_NO_NONSTDCHAN)
+    return NULL;
+#else
     return LoadEncodingFile(interp, name);
+#endif
 }
 
 /*
@@ -542,7 +568,10 @@ Tcl_GetEncodingNames(interp)
 {
     Tcl_HashSearch search;
     Tcl_HashEntry *hPtr;
-    Tcl_Obj *pathPtr, *resultPtr;
+#ifndef TCL_NO_FILESYSTEM
+    Tcl_Obj *pathPtr;
+#endif
+    Tcl_Obj *resultPtr;
     int dummy;
 
     Tcl_HashTable table;
@@ -559,6 +588,7 @@ Tcl_GetEncodingNames(interp)
     }
     Tcl_MutexUnlock(&encodingMutex);
 
+#ifndef TCL_NO_FILESYSTEM
     pathPtr = TclGetLibraryPath();
     if (pathPtr != NULL) {
 	int i, objc;
@@ -608,6 +638,7 @@ Tcl_GetEncodingNames(interp)
 	}
 	Tcl_DStringFree(&pwdString);
     }
+#endif
 
     /*
      * Clear any values placed in the result by globbing.
@@ -1102,8 +1133,10 @@ Tcl_FindExecutable(argv0)
     CONST char *argv0;		/* The value of the application's argv[0]
 				 * (native). */
 {
+#ifndef TCL_NO_FILESYSTEM
     CONST char *name;
     Tcl_DString buffer, nameString;
+#endif
 
     TclInitSubsystems(argv0);
 
@@ -1114,6 +1147,7 @@ Tcl_FindExecutable(argv0)
 	ckfree(tclExecutableName);
 	tclExecutableName = NULL;
     }
+#ifndef TCL_NO_FILESYSTEM
     if ((name = TclpFindExecutable(argv0)) == NULL) {
 	goto done;
     }
@@ -1144,6 +1178,7 @@ Tcl_FindExecutable(argv0)
     Tcl_DStringFree(&nameString);
     return;
 	
+#endif
     done:
     TclFindEncodings(argv0);
 }
@@ -1168,6 +1203,11 @@ Tcl_FindExecutable(argv0)
  *---------------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
+#ifndef TCL_NO_NONSTDCHAN
+    /* IOS FIXME: Add error message
+     * Also see OpenEncodingFile below.
+     */
 static Tcl_Encoding
 LoadEncodingFile(interp, name)
     Tcl_Interp *interp;		/* Interp for error reporting, if not NULL. */
@@ -1247,6 +1287,8 @@ LoadEncodingFile(interp, name)
     }
     return NULL;
 }
+#endif
+#endif /* TCL_NO_FILESYSTEM */
 
 /*
  *----------------------------------------------------------------------
@@ -1263,6 +1305,15 @@ LoadEncodingFile(interp, name)
  *	None.
  *
  *----------------------------------------------------------------------
+ */
+
+#ifndef TCL_NO_FILESYSTEM
+#ifndef TCL_NO_NONSTDCHAN
+
+/* IOS FIXME : in the generic case this functionality can be made
+ * available, it just has to read the file directly instead of using
+ * the channel system. This makes the code platform dependent.
+ * See also LoadEncodingFile.
  */
 
 static Tcl_Channel
@@ -1640,6 +1691,8 @@ LoadEscapeEncoding(name, chan)
 
     return Tcl_CreateEncoding(&type);
 }
+#endif /* TCL_NO_NONSTDCHAN */
+#endif /* TCL_NO_FILESYSTEM */
 
 /*
  *-------------------------------------------------------------------------
@@ -1970,6 +2023,8 @@ UtfToUnicodeProc(clientData, src, srcLen, flags, statePtr, dst, dstLen,
  *-------------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
+#ifndef TCL_NO_NONSTDCHAN
 static int 
 TableToUtfProc(clientData, src, srcLen, flags, statePtr, dst, dstLen,
 	srcReadPtr, dstWrotePtr, dstCharsPtr)
@@ -2054,6 +2109,8 @@ TableToUtfProc(clientData, src, srcLen, flags, statePtr, dst, dstLen,
     *dstCharsPtr = numChars;
     return result;
 }
+#endif
+#endif
 
 /*
  *-------------------------------------------------------------------------
@@ -2072,6 +2129,8 @@ TableToUtfProc(clientData, src, srcLen, flags, statePtr, dst, dstLen,
  *-------------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
+#ifndef TCL_NO_NONSTDCHAN
 static int 
 TableFromUtfProc(clientData, src, srcLen, flags, statePtr, dst, dstLen,
 	srcReadPtr, dstWrotePtr, dstCharsPtr)
@@ -2166,6 +2225,8 @@ TableFromUtfProc(clientData, src, srcLen, flags, statePtr, dst, dstLen,
     *dstCharsPtr = numChars;
     return result;
 }
+#endif
+#endif
 
 /*
  *---------------------------------------------------------------------------
@@ -2184,6 +2245,8 @@ TableFromUtfProc(clientData, src, srcLen, flags, statePtr, dst, dstLen,
  *---------------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
+#ifndef TCL_NO_NONSTDCHAN
 static void
 TableFreeProc(clientData)
     ClientData clientData;	/* TableEncodingData that specifies
@@ -2196,6 +2259,8 @@ TableFreeProc(clientData)
     ckfree((char *) dataPtr->fromUnicode);
     ckfree((char *) dataPtr);
 }
+#endif
+#endif
 
 /*
  *-------------------------------------------------------------------------
@@ -2214,6 +2279,8 @@ TableFreeProc(clientData)
  *-------------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
+#ifndef TCL_NO_NONSTDCHAN
 static int 
 EscapeToUtfProc(clientData, src, srcLen, flags, statePtr, dst, dstLen,
 	srcReadPtr, dstWrotePtr, dstCharsPtr)
@@ -2406,6 +2473,8 @@ EscapeToUtfProc(clientData, src, srcLen, flags, statePtr, dst, dstLen,
     *dstCharsPtr = numChars;
     return result;
 }
+#endif
+#endif
 
 /*
  *-------------------------------------------------------------------------
@@ -2424,6 +2493,8 @@ EscapeToUtfProc(clientData, src, srcLen, flags, statePtr, dst, dstLen,
  *-------------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
+#ifndef TCL_NO_NONSTDCHAN
 static int 
 EscapeFromUtfProc(clientData, src, srcLen, flags, statePtr, dst, dstLen,
 	srcReadPtr, dstWrotePtr, dstCharsPtr)
@@ -2591,6 +2662,8 @@ EscapeFromUtfProc(clientData, src, srcLen, flags, statePtr, dst, dstLen,
     *dstCharsPtr = numChars;
     return result;
 }
+#endif
+#endif
 
 /*
  *---------------------------------------------------------------------------
@@ -2609,6 +2682,8 @@ EscapeFromUtfProc(clientData, src, srcLen, flags, statePtr, dst, dstLen,
  *---------------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
+#ifndef TCL_NO_NONSTDCHAN
 static void
 EscapeFreeProc(clientData)
     ClientData clientData;	/* EscapeEncodingData that specifies encoding. */
@@ -2628,6 +2703,8 @@ EscapeFreeProc(clientData)
     }
     ckfree((char *) dataPtr);
 }
+#endif
+#endif /* TCL_NO_FILESYSTEM */
 
 /*
  *---------------------------------------------------------------------------
@@ -2649,6 +2726,8 @@ EscapeFreeProc(clientData)
  *---------------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_FILESYSTEM
+#ifndef TCL_NO_NONSTDCHAN
 static Encoding *
 GetTableEncoding(dataPtr, state)
     EscapeEncodingData *dataPtr;/* Contains names of encodings. */
@@ -2669,6 +2748,8 @@ GetTableEncoding(dataPtr, state)
     }
     return encodingPtr;
 }
+#endif
+#endif /* TCL_NO_FILESYSTEM */
 
 /*
  *---------------------------------------------------------------------------
@@ -2726,9 +2807,11 @@ TclFindEncodings(argv0)
     CONST char *argv0;		/* Name of executable from argv[0] to main()
 				 * in native multi-byte encoding. */
 {
+#ifndef TCL_NO_FILESYSTEM
     char *native;
     Tcl_Obj *pathPtr;
     Tcl_DString libPath, buffer;
+#endif
 
     if (encodingsInitialized == 0) {
 	/* 
@@ -2745,6 +2828,7 @@ TclFindEncodings(argv0)
 
 	    encodingsInitialized = 1;
 
+#ifndef TCL_NO_FILESYSTEM
 	    native = TclpFindExecutable(argv0);
 	    TclpInitLibraryPath(native);
 
@@ -2760,9 +2844,11 @@ TclFindEncodings(argv0)
 		Tcl_UtfToExternalDString(NULL, Tcl_GetString(pathPtr), -1,
 			&libPath);
 	    }
+#endif
 
 	    TclpSetInitialEncodings();
 
+#ifndef TCL_NO_FILESYSTEM
 	    /*
 	     * Now convert the native string back to UTF.
 	     */
@@ -2776,6 +2862,7 @@ TclFindEncodings(argv0)
 		Tcl_DStringFree(&libPath);
 		Tcl_DStringFree(&buffer);
 	    }
+#endif
 	}
 	TclpInitUnlock();
     }

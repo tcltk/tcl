@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.33.2.2 2001/08/28 00:12:43 hobbs Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.33.2.2.2.1 2001/11/28 17:58:35 andreas_kupries Exp $
 
 library tcl
 
@@ -60,11 +60,11 @@ declare 8 generic {
 # but they are part of the old generic interface, so we include them here for
 # compatibility reasons.
 
-declare 9 unix {
+declare 9 unix {TCL_NO_FILEEVENTS} {
     void Tcl_CreateFileHandler(int fd, int mask, Tcl_FileProc *proc, \
 	    ClientData clientData)
 }
-declare 10 unix {
+declare 10 unix {TCL_NO_FILEEVENTS} {
     void Tcl_DeleteFileHandler(int fd)
 }
 
@@ -310,11 +310,11 @@ declare 85 generic {
     int Tcl_ConvertCountedElement(CONST char *src, int length, char *dst, \
 	    int flags)
 }
-declare 86 generic {
+declare 86 generic {TCL_NO_CMDALIASES} {
     int Tcl_CreateAlias(Tcl_Interp *slave, char *slaveCmd, \
 	    Tcl_Interp *target, char *targetCmd, int argc, char **argv)
 }
-declare 87 generic {
+declare 87 generic {TCL_NO_CMDALIASES} {
     int Tcl_CreateAliasObj(Tcl_Interp *slave, char *slaveCmd, \
 	    Tcl_Interp *target, char *targetCmd, int objc, \
 	    Tcl_Obj *CONST objv[])
@@ -323,7 +323,7 @@ declare 88 generic {
     Tcl_Channel Tcl_CreateChannel(Tcl_ChannelType *typePtr, char *chanName, \
 	    ClientData instanceData, int mask)
 }
-declare 89 generic {
+declare 89 generic {TCL_NO_FILEEVENTS} {
     void Tcl_CreateChannelHandler(Tcl_Channel chan, int mask, \
 	    Tcl_ChannelProc *proc, ClientData clientData)
 }
@@ -355,7 +355,7 @@ declare 96 generic {
 	    Tcl_ObjCmdProc *proc, ClientData clientData, \
 	    Tcl_CmdDeleteProc *deleteProc)
 }
-declare 97 generic {
+declare 97 generic {TCL_NO_SLAVEINTERP} {
     Tcl_Interp * Tcl_CreateSlave(Tcl_Interp *interp, char *slaveName, \
 	    int isSafe)
 }
@@ -370,7 +370,7 @@ declare 99 generic {
 declare 100 generic {
     void Tcl_DeleteAssocData(Tcl_Interp *interp, char *name)
 }
-declare 101 generic {
+declare 101 generic {TCL_NO_FILEEVENTS} {
     void Tcl_DeleteChannelHandler(Tcl_Channel chan, Tcl_ChannelProc *proc, \
 	    ClientData clientData)
 }
@@ -403,7 +403,7 @@ declare 109 generic {
 declare 110 generic {
     void Tcl_DeleteInterp(Tcl_Interp *interp)
 }
-declare 111 {unix win} {
+declare 111 {unix win} {TCL_NO_PIPES} {
     void Tcl_DetachPids(int numPids, Tcl_Pid *pidPtr)
 }
 declare 112 generic {
@@ -461,7 +461,7 @@ declare 128 generic {
 declare 129 generic {
     int Tcl_Eval(Tcl_Interp *interp, char *string)
 }
-declare 130 generic {
+declare 130 generic {TCL_NO_FILESYSTEM TCL_NO_NONSTDCHAN} {
     int Tcl_EvalFile(Tcl_Interp *interp, char *fileName)
 }
 declare 131 generic {
@@ -518,12 +518,12 @@ declare 146 generic {
 declare 147 generic {
     void Tcl_FreeResult(Tcl_Interp *interp)
 }
-declare 148 generic {
+declare 148 generic {TCL_NO_CMDALIASES} {
     int Tcl_GetAlias(Tcl_Interp *interp, char *slaveCmd, \
 	    Tcl_Interp **targetInterpPtr, char **targetCmdPtr, int *argcPtr, \
 	    char ***argvPtr)
 }
-declare 149 generic {
+declare 149 generic {TCL_NO_CMDALIASES} {
     int Tcl_GetAliasObj(Tcl_Interp *interp, char *slaveCmd, \
 	    Tcl_Interp **targetInterpPtr, char **targetCmdPtr, int *objcPtr, \
 	    Tcl_Obj ***objv)
@@ -552,7 +552,7 @@ declare 155 generic {
 declare 156 generic {
     char * Tcl_GetChannelName(Tcl_Channel chan)
 }
-declare 157 generic {
+declare 157 generic {TCL_NO_CHANNEL_CONFIG} {
     int Tcl_GetChannelOption(Tcl_Interp *interp, Tcl_Channel chan, \
 	    char *optionName, Tcl_DString *dsPtr)
 }
@@ -572,10 +572,10 @@ declare 161 generic {
 declare 162 generic {
     char * Tcl_GetHostName(void)
 }
-declare 163 generic {
+declare 163 generic {{TCL_NO_SLAVEINTERP TCL_NO_CMDALIASES}} {
     int Tcl_GetInterpPath(Tcl_Interp *askInterp, Tcl_Interp *slaveInterp)
 }
-declare 164 generic {
+declare 164 generic {{TCL_NO_SLAVEINTERP TCL_NO_CMDALIASES}} {
     Tcl_Interp * Tcl_GetMaster(Tcl_Interp *interp)
 }
 declare 165 generic {
@@ -593,7 +593,7 @@ declare 167 unix {
 	    int checkUsage, ClientData *filePtr)
 }
 
-declare 168 generic {
+declare 168 generic {TCL_NO_FILESYSTEM} {
     Tcl_PathType Tcl_GetPathType(char *path)
 }
 declare 169 generic {
@@ -605,7 +605,7 @@ declare 170 generic {
 declare 171 generic {
     int Tcl_GetServiceMode(void)
 }
-declare 172 generic {
+declare 172 generic {{TCL_NO_SLAVEINTERP TCL_NO_CMDALIASES}} {
     Tcl_Interp * Tcl_GetSlave(Tcl_Interp *interp, char *slaveName)
 }
 declare 173 generic {
@@ -648,7 +648,7 @@ declare 184 generic {
 declare 185 generic {
     int Tcl_IsSafe(Tcl_Interp *interp)
 }
-declare 186 generic {
+declare 186 generic {TCL_NO_FILESYSTEM} {
     char * Tcl_JoinPath(int argc, char **argv, Tcl_DString *resultPtr)
 }
 declare 187 generic {
@@ -666,7 +666,7 @@ declare 189 generic {
 declare 190 generic {
     int Tcl_MakeSafe(Tcl_Interp *interp)
 }
-declare 191 generic {
+declare 191 generic {TCL_NO_SOCKETS} {
     Tcl_Channel Tcl_MakeTcpClientChannel(ClientData tcpSocket)
 }
 declare 192 generic {
@@ -675,7 +675,7 @@ declare 192 generic {
 declare 193 generic {
     Tcl_HashEntry * Tcl_NextHashEntry(Tcl_HashSearch *searchPtr)
 }
-declare 194 generic {
+declare 194 generic {TCL_NO_FILEEVENTS} {
     void Tcl_NotifyChannel(Tcl_Channel channel, int mask)
 }
 declare 195 generic {
@@ -686,19 +686,19 @@ declare 196 generic {
     Tcl_Obj * Tcl_ObjSetVar2(Tcl_Interp *interp, Tcl_Obj *part1Ptr, \
 	    Tcl_Obj *part2Ptr, Tcl_Obj *newValuePtr, int flags)
 }
-declare 197 {unix win} {
+declare 197 {unix win} {TCL_NO_FILESYSTEM TCL_NO_PIPES} {
     Tcl_Channel Tcl_OpenCommandChannel(Tcl_Interp *interp, int argc, \
 	    char **argv, int flags)
 }
-declare 198 generic {
+declare 198 generic {TCL_NO_FILESYSTEM TCL_NO_FILEEVENTS} {
     Tcl_Channel Tcl_OpenFileChannel(Tcl_Interp *interp, char *fileName, \
 	    char *modeString, int permissions)
 }
-declare 199 generic {
+declare 199 generic {TCL_NO_SOCKETS} {
     Tcl_Channel Tcl_OpenTcpClient(Tcl_Interp *interp, int port, \
 	    char *address, char *myaddr, int myport, int async)
 }
-declare 200 generic {
+declare 200 generic {TCL_NO_SOCKETS TCL_NO_FILEEVENTS} {
     Tcl_Channel Tcl_OpenTcpServer(Tcl_Interp *interp, int port, char *host, \
 	    Tcl_TcpAcceptProc *acceptProc, ClientData callbackData)
 }
@@ -720,7 +720,7 @@ declare 205 generic {
 declare 206 generic {
     int Tcl_Read(Tcl_Channel chan, char *bufPtr, int toRead)
 }
-declare 207 {unix win} {
+declare 207 {unix win} {TCL_NO_PIPES} {
     void Tcl_ReapDetachedProcs(void)
 }
 declare 208 generic {
@@ -729,7 +729,7 @@ declare 208 generic {
 declare 209 generic {
     int Tcl_RecordAndEvalObj(Tcl_Interp *interp, Tcl_Obj *cmdPtr, int flags)
 }
-declare 210 generic {
+declare 210 generic {TCL_NO_NONSTDCHAN} {
     void Tcl_RegisterChannel(Tcl_Interp *interp, Tcl_Channel chan)
 }
 declare 211 generic {
@@ -761,7 +761,7 @@ declare 218 generic {
 declare 219 generic {
     int Tcl_ScanCountedElement(CONST char *str, int length, int *flagPtr)
 }
-declare 220 generic {
+declare 220 generic {TCL_NO_NONSTDCHAN} {
     int Tcl_Seek(Tcl_Channel chan, int offset, int mode)
 }
 declare 221 generic {
@@ -837,7 +837,7 @@ declare 242 generic {
     int Tcl_SplitList(Tcl_Interp *interp, CONST char *listStr, int *argcPtr, \
 	    char ***argvPtr)
 }
-declare 243 generic {
+declare 243 generic {TCL_NO_FILESYSTEM} {
     void Tcl_SplitPath(CONST char *path, int *argcPtr, char ***argvPtr)
 }
 declare 244 generic {
@@ -858,7 +858,7 @@ declare 248 generic {
     int Tcl_TraceVar2(Tcl_Interp *interp, char *part1, char *part2, \
 	    int flags, Tcl_VarTraceProc *proc, ClientData clientData)
 }
-declare 249 generic {
+declare 249 generic {TCL_NO_FILESYSTEM} {
     char * Tcl_TranslateFileName(Tcl_Interp *interp, char *name, \
 	    Tcl_DString *bufferPtr)
 }
@@ -954,7 +954,7 @@ declare 275 generic {
 declare 276 generic {
     int  Tcl_VarEvalVA(Tcl_Interp *interp, va_list argList)
 }
-declare 277 generic {
+declare 277 generic {TCL_NO_PIPES} {
     Tcl_Pid Tcl_WaitPid(Tcl_Pid pid, int *statPtr, int options)
 }
 declare 278 {unix win} {
@@ -1094,7 +1094,7 @@ declare 311 generic {
 declare 312 generic {
     int Tcl_NumUtfChars(CONST char *src, int len)
 }
-declare 313 generic {
+declare 313 generic {{TCL_NO_CHANNEL_READ TCL_NO_PIPES}} {
     int Tcl_ReadChars(Tcl_Channel channel, Tcl_Obj *objPtr, int charsToRead, \
 	    int appendFlag)
 }
@@ -1185,10 +1185,10 @@ declare 339 generic {
 declare 340 generic {
     char * Tcl_GetString(Tcl_Obj *objPtr)
 }
-declare 341 generic {
+declare 341 generic {TCL_NO_FILESYSTEM} {
     char * Tcl_GetDefaultEncodingDir(void)
 }
-declare 342 generic {
+declare 342 generic {TCL_NO_FILESYSTEM} {
     void Tcl_SetDefaultEncodingDir(char *path)
 }
 declare 343 generic {
@@ -1268,16 +1268,16 @@ declare 364 generic {
     int Tcl_ParseVarName (Tcl_Interp *interp, char *string, \
 	    int numBytes, Tcl_Parse *parsePtr, int append)
 }
-declare 365 generic {
+declare 365 generic {TCL_NO_FILESYSTEM} {
     char *Tcl_GetCwd(Tcl_Interp *interp, Tcl_DString *cwdPtr)
 }
-declare 366 generic {
+declare 366 generic {TCL_NO_FILESYSTEM} {
    int Tcl_Chdir(CONST char *dirName)
 }
-declare 367 generic {
+declare 367 generic {TCL_NO_FILESYSTEM} {
    int Tcl_Access(CONST char *path, int mode)
 }
-declare 368 generic {
+declare 368 generic {TCL_NO_FILESYSTEM} {
     int Tcl_Stat(CONST char *path, struct stat *bufPtr)
 }
 declare 369 generic {
