@@ -1,9 +1,14 @@
+2003-08-06  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* win/tclWinInit.c: recognize amd64 and ia32_on_win64 cpus and
+	Windows CE platform.
+
 2003-08-06  Don Porter  <dgp@users.sourceforge.net>
 
-        * library/msgcat/msgcat.tcl:    Added escape so that non-Windows
-        * library/msgcat/pkgIndex.tcl:  platforms do not try to use the
-        registry package.  This can save a costly and pointless package
-        search.  Bumped to 1.3.1. Thanks to "imdave1".  [Bug 781609].
+	* library/msgcat/msgcat.tcl:	Added escape so that non-Windows
+	* library/msgcat/pkgIndex.tcl:	platforms do not try to use the
+	registry package.  This can save a costly and pointless package
+	search.	 Bumped to 1.3.1. Thanks to "imdave1".	[Bug 781609].
 
 2003-08-05  Miguel Sofer <msofer@users.sf.net>
 
