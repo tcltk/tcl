@@ -4,12 +4,15 @@
 	* compat/strtoull.c (strtoull): on TCL_WIDE_INT_IS_LONG.
 	* generic/tcl.h: Revised #ifdef nest that searches for a 64-bit
 	integer type and defines Tcl_WideInt and Tcl_WideUInt.
+	* unix/tcl.m4: Changed to use the SIZEOF_* and HAVE_STRUCT_STAT64
+	macros.
 	* win/configure.in: Added SC_TCL_64BIT_FLAGS to the configuration
 	tests.
 	* win/rules.vc: Added definitions of the SIZEOF_* and
 	HAVE_STRUCT__STATI64 macros.
 	* win/tcl.m4: Added definition of SC_TCL_64BIT_FLAGS to the
 	configurator on Windows as well as Unix.
+	* unix/configure: Regenerated.
 	* win/configure: Regenerated.
 	
 2004-12-07  Don Porter  <dgp@users.sourceforge.net>
