@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclHistory.c,v 1.6 2004/05/13 12:59:22 dkf Exp $
+ * RCS: @(#) $Id: tclHistory.c,v 1.7 2004/10/06 14:59:02 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -65,8 +65,7 @@ Tcl_RecordAndEval(interp, cmd, flags)
 	 * then reset the object result.
 	 */
 
-	Tcl_SetResult(interp, TclGetString(Tcl_GetObjResult(interp)),
-	        TCL_VOLATILE);
+	(void) Tcl_GetStringResult(interp);
 
 	/*
 	 * Discard the Tcl object created to hold the command.
