@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: append.n,v 1.3 2000/09/07 14:27:45 poenitz Exp $
+'\" RCS: @(#) $Id: append.n,v 1.4 2003/02/10 13:32:22 dkf Exp $
 '\" 
 .so man.macros
 .TH append n "" Tcl "Tcl Built-In Commands"
@@ -23,6 +23,8 @@ Append all of the \fIvalue\fR arguments to the current value
 of variable \fIvarName\fR.  If \fIvarName\fR doesn't exist,
 it is given a value equal to the concatenation of all the
 \fIvalue\fR arguments.
+The result of this command is the new value stored in variable
+\fIvarName\fR.
 This command provides an efficient way to build up long
 variables incrementally.
 For example, ``\fBappend a $b\fR'' is much more efficient than

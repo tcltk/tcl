@@ -1,3 +1,7 @@
+2003-02-10  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* doc/append.n: Return value was not documented. [Bug 683188]
+
 2003-02-10  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* doc/FileSystem.3:
