@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixTime.c,v 1.15.2.3 2004/10/28 16:06:50 kennykb Exp $
+ * RCS: @(#) $Id: tclUnixTime.c,v 1.15.2.4 2005/03/15 16:29:54 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -131,7 +131,7 @@ TclpGetClicks()
 
 int
 TclpGetTimeZone (currentTime)
-    unsigned long  currentTime;
+    Tcl_WideInt  currentTime;
 {
     /*
      * We prefer first to use the time zone in "struct tm" if the
