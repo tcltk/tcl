@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPathObj.c,v 1.11 2003/10/10 15:50:35 dkf Exp $
+ * RCS: @(#) $Id: tclPathObj.c,v 1.12 2003/10/13 16:48:06 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -377,6 +377,7 @@ Tcl_FSJoinPath(listObj, elements)
 		     * '/'.  There's no need to return a special path
 		     * object, when the base itself is just fine!
 		     */
+		    Tcl_DecrRefCount(res);
 		    return elt;
 		}
 		/* 
@@ -390,6 +391,7 @@ Tcl_FSJoinPath(listObj, elements)
 		 */
 		if (str[0] != '.' && ((tclPlatform != TCL_PLATFORM_WINDOWS) 
 				      || (strchr(str, '\\') == NULL))) {
+		    Tcl_DecrRefCount(res);
 		    return TclNewFSPathObj(elt, str, len);
 		}
 		/* 
@@ -399,6 +401,7 @@ Tcl_FSJoinPath(listObj, elements)
 		 */
 	    } else {
 		if (tclPlatform == TCL_PLATFORM_UNIX) {
+		    Tcl_DecrRefCount(res);
 		    return tail;
 		} else {
 		    CONST char *str;
@@ -406,10 +409,12 @@ Tcl_FSJoinPath(listObj, elements)
 		    str = Tcl_GetStringFromObj(tail,&len);
 		    if (tclPlatform == TCL_PLATFORM_WINDOWS) {
 			if (strchr(str, '\\') == NULL) {
+			    Tcl_DecrRefCount(res);
 			    return tail;
 			}
 		    } else if (tclPlatform == TCL_PLATFORM_MAC) {
 			if (strchr(str, '/') == NULL) {
+			    Tcl_DecrRefCount(res);
 			    return tail;
 			}
 		    }
@@ -965,6 +970,7 @@ Tcl_FSGetTranslatedPath(interp, pathPtr)
 	retObj = srcFsPathPtr->translatedPathPtr;
     }
 
+    Tcl_IncrRefCount(retObj);
     return retObj;
 }
 
@@ -995,7 +1001,13 @@ Tcl_FSGetTranslatedStringPath(interp, pathPtr)
     Tcl_Obj *transPtr = Tcl_FSGetTranslatedPath(interp, pathPtr);
 
     if (transPtr != NULL) {
-	return Tcl_GetString(transPtr);
+	int len;
+	CONST char *result, *orig;
+	orig = Tcl_GetStringFromObj(transPtr, &len);
+	result = (char*) ckalloc((unsigned)(len+1));
+	memcpy((VOID*) result, (VOID*) orig, (size_t) (len+1));
+	Tcl_DecrRefCount(transPtr);
+	return result;
     }
 
     return NULL;
