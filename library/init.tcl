@@ -3,7 +3,7 @@
 # Default system startup file for Tcl-based applications.  Defines
 # "unknown" procedure and auto-load facilities.
 #
-# SCCS: %Z% $Id: init.tcl,v 1.6 1998/07/13 17:53:36 escoffon Exp $ 
+# SCCS: %Z% $Id: init.tcl,v 1.7 1998/07/14 14:49:54 escoffon Exp $ 
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
@@ -627,7 +627,7 @@ proc pkg_mkIndex {args} {
 		break
 	    }
 
-	    -vervose {
+	    -verbose {
 		set doVerbose 1
 	    }
 
