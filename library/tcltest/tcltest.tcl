@@ -12,7 +12,7 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 # 
-# RCS: @(#) $Id: tcltest.tcl,v 1.23 2000/04/08 02:35:24 hobbs Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.24 2000/04/11 01:04:19 welch Exp $
 
 package provide tcltest 1.0
 
@@ -170,8 +170,10 @@ namespace eval tcltest {
 
     if {![info exists mainThread]} {
 	variable mainThread 1
-	if {[info commands testthread] != {}} {
-	    set mainThread [testthread names]
+	if {[info commands thread::id] != {}} {
+	    set mainThread [thread::id]
+	} elseif {[info commands testthread] != {}} {
+	    set mainThread [testthread id]
 	}
     }
 
@@ -1851,6 +1853,9 @@ proc ::tcltest::restore_locale {} {
 #	Returns the number of existing threads.
 proc ::tcltest::threadReap {} {
     if {[info commands testthread] != {}} {
+
+	# testthread built into tcltest
+
 	testthread errorproc ThreadNullError
 	while {[llength [testthread names]] > 1} {
 	    foreach tid [testthread names] {
@@ -1865,6 +1870,24 @@ proc ::tcltest::threadReap {} {
 	}
 	testthread errorproc ThreadError
 	return [llength [testthread names]]
+    } elseif {[info commands thread::id] != {}} {
+	
+	# Thread extension
+
+	thread::errorproc ThreadNullError
+	while {[llength [thread::names]] > 1} {
+	    foreach tid [thread::names] {
+		if {$tid != $::tcltest::mainThread} {
+		    catch {thread::send -async $tid {thread::exit}}
+		}
+	    }
+	    ## Enter a bit a sleep to give the threads enough breathing
+	    ## room to kill themselves off, otherwise the end up with a
+	    ## massive queue of repeated events
+	    after 1
+	}
+	thread::errorproc ThreadError
+	return [llength [thread::names]]
     } else {
 	return 1
     }
