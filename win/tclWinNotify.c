@@ -10,11 +10,10 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinNotify.c,v 1.5.10.1 2001/04/03 22:54:39 hobbs Exp $
+ * RCS: @(#) $Id: tclWinNotify.c,v 1.5.10.2 2001/09/20 18:50:24 hobbs Exp $
  */
 
 #include "tclWinInt.h"
-#include <winsock.h>
 
 #define INTERVAL_TIMER 1	/* Handle of interval timer. */
 

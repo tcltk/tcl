@@ -1,3 +1,18 @@
+2001-09-20  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* win/makefile.vc: updated IA64 compile settings
+
+	* win/tclWinInit.c: added extra processor definitions. (mstacy)
+
+	* win/tclWinSock.c (SocketThread): corrected pointer cast for _WIN64.
+
+	* win/tclWinNotify.c: removed unnecessary winsock include (it is
+	already in from tclWinPort.h).
+
+	* win/tclWinPort.h: changed winsock.h include to winsock2.h.
+	Reverses change from 2000-11-16, but is necessary for WIN64.
+	Extensions should comply with defined OS words, or use #ifndef.
+
 2001-09-19  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclTest.c (TestcmdtokenCmd): corrected pointer
