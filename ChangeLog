@@ -3,6 +3,8 @@
 	* tests/winFCmd.test: renamed 'win2000' and 'notWin2000' to
 	more appropriate constraint names.
 	* win/tclWinFile.c: updated comments to reflect 07-11 changes.
+	* win/tclWinFCmd.c: made ConvertFileNameFormat static again,
+	since no longer used in tclWinFile.c
 	
 2002-07-14  Don Porter  <dgp@users.sourceforge.net>
 
