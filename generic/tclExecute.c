@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.45 2001/12/11 19:45:52 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.46 2002/01/29 02:21:47 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -1786,8 +1786,8 @@ TclExecuteByteCode(interp, codePtr)
 	    opnd = TclGetUInt4AtPtr(pc+1);
 	    valuePtr = Tcl_NewListObj(opnd, &(stackPtr[stackTop - (opnd-1)]));
 
-	    for (i = 0; i < opnd; i++) {
-		TclDecrRefCount(stackPtr[stackTop--]);
+	    for (i = 0; i < opnd; stackTop--, i++) {
+		TclDecrRefCount(stackPtr[stackTop]);
 	    }
 
 	    PUSH_OBJECT(valuePtr);
