@@ -7,7 +7,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclWinInit.c,v 1.48 2004/06/11 21:30:08 dgp Exp $
+ * RCS: @(#) $Id: tclWinInit.c,v 1.49 2004/06/17 19:28:26 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -100,7 +100,131 @@ static int libraryPathEncodingFixed = 0;
 static void		AppendEnvironment(Tcl_Obj *listPtr, CONST char *lib);
 static void		AppendDllPath(Tcl_Obj *listPtr, HMODULE hModule,
 			    CONST char *lib);
+static void		SetDefaultLibraryDir(Tcl_Obj *directory);
+static Tcl_Obj *	GetDefaultLibraryDir(Tcl_Obj *directory);
 static int		ToUtf(CONST WCHAR *wSrc, char *dst);
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * SetDefaultLibraryDir --
+ *
+ *	Called by TclpInitLibraryPath to save the path to the
+ *	directory ../lib/tcl<version> relative to the Tcl Dll.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Saves a per-thread (Tcl_Obj *) and a per-process string.
+ *	Sets up exit handlers to free them.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+/*
+ * Per-process copy of the default library dir, as a string, shared by
+ * all threads
+ */
+static char *defaultLibraryDir = NULL;
+static int defaultLibraryDirLength = 0;
+static Tcl_ThreadDataKey defaultLibraryDirKey;
+
+static void
+FreeThreadDefaultLibraryDir(clientData)
+    ClientData clientData;
+{
+    Tcl_Obj **objPtrPtr = (Tcl_Obj **) clientData;
+    Tcl_DecrRefCount(*objPtrPtr);
+}
+
+static void
+FreeDefaultLibraryDir(clientData)
+    ClientData clientData;
+{
+    ckfree(defaultLibraryDir);
+    defaultLibraryDir = NULL;
+    defaultLibraryDirLength = 0;
+}
+
+static void
+SetDefaultLibraryDir(directory)
+    Tcl_Obj *directory;
+{
+    int numBytes;
+    CONST char *bytes;
+    Tcl_Obj **savedDirectoryPtr = (Tcl_Obj **)
+	    Tcl_GetThreadData(&defaultLibraryDirKey, (int)sizeof(Tcl_Obj *));
+
+    Tcl_IncrRefCount(directory);
+    if (NULL == *savedDirectoryPtr) {
+	/* First call in this thread, set up the thread exit handler */
+	Tcl_CreateThreadExitHandler(FreeThreadDefaultLibraryDir,
+		(ClientData) savedDirectoryPtr);
+    } else {
+	/* Called SetDLD after a previous SetDLD or GetDLD in this thread ?! */
+	Tcl_DecrRefCount(*savedDirectoryPtr);
+    }
+    *savedDirectoryPtr = directory;
+
+    /* No Mutex protection, as the only caller is already in TclpInitLock */
+
+    if (NULL == defaultLibraryDir) {
+	/* First call from any thread; set up exit handler */
+	Tcl_CreateExitHandler(FreeDefaultLibraryDir, NULL);
+    } else {
+	Tcl_Panic("Double initialization of DefaultLibraryDir?!");
+    }
+    bytes = Tcl_GetStringFromObj(directory, &defaultLibraryDirLength);
+    defaultLibraryDir = ckalloc((unsigned int) defaultLibraryDirLength+1);
+    memcpy(defaultLibraryDir, bytes, (unsigned int) defaultLibraryDirLength+1);
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * GetDefaultLibraryDir --
+ *
+ *	Called by TclpSetVariables to retrieve the saved value
+ *	stored by SetDefaultLibraryDir in order to store that value
+ *	in ::tclDefaultLibrary .
+ *
+ * Results:
+ *	A pointer to a Tcl_Obj holding the default directory path
+ *	for init.tcl.
+ *
+ * Side effects:
+ *
+ *---------------------------------------------------------------------------
+ */
+
+static Tcl_Obj *
+GetDefaultLibraryDir()
+{
+    int numBytes;
+    CONST char *bytes;
+    Tcl_Obj **savedDirectoryPtr = (Tcl_Obj **)
+	    Tcl_GetThreadData(&defaultLibraryDirKey, (int)sizeof(Tcl_Obj *));
+
+    if (NULL != *savedDirectoryPtr) {
+	return *savedDirectoryPtr;
+    }
+
+    if (NULL == defaultLibraryDir) {
+	TclpInitLibraryPath(NULL);
+	if (NULL != *savedDirectoryPtr) {
+	    return *savedDirectoryPtr;
+	} else {
+	    Tcl_Panic("TclpInitLibraryPath failed to set default library dir");
+	}
+    }
+
+    *savedDirectoryPtr =
+	    Tcl_NewStringObj(defaultLibraryDir, defaultLibraryDirLength);
+    Tcl_CreateThreadExitHandler(FreeThreadDefaultLibraryDir,
+		(ClientData) savedDirectoryPtr);
+    return *savedDirectoryPtr;
+}
 
 /*
  *---------------------------------------------------------------------------
@@ -179,10 +303,10 @@ TclpInitLibraryPath(path)
 				/* the path to the executable name.     */
 {
 #define LIBRARY_SIZE	    32
-    Tcl_Obj *pathPtr, *objPtr;
+    Tcl_Obj *pathPtr, *objPtr, objv[];
     CONST char *str;
     Tcl_DString ds;
-    int pathc;
+    int objc, pathc;
     CONST char **pathv;
     char installLib[LIBRARY_SIZE], developLib[LIBRARY_SIZE];
 
@@ -224,7 +348,9 @@ TclpInitLibraryPath(path)
      */
 
     AppendDllPath(pathPtr, TclWinGetTclInstance(), installLib);
-    
+
+    Tcl_ListObjGetElements(NULL, pathPtr, &objc, &objv);
+    SetDefaultLibraryDir(objv[objc-1]);
 
     /*
      * Look for the library relative to the executable.  This algorithm
@@ -650,6 +776,9 @@ TclpSetVariables(interp)
     Tcl_DString ds;
     TCHAR szUserName[ UNLEN+1 ];
     DWORD dwUserNameLen = sizeof(szUserName);
+
+    Tcl_SetVar2Ex(interp, "tclDefaultLibrary", NULL,
+	    GetDefaultLibraryDir(), TCL_GLOBAL_ONLY);
 
     osInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFOA);
     GetVersionExA(&osInfo);
