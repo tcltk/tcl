@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: format.n,v 1.7 2002/02/19 10:26:24 dkf Exp $
+'\" RCS: @(#) $Id: format.n,v 1.8 2004/05/07 23:29:18 dkf Exp $
 '\" 
 .so man.macros
 .TH format n 8.1 Tcl "Tcl Built-In Commands"
@@ -26,7 +26,6 @@ implementation).
 \fB%\fR conversion specifiers as in \fBsprintf\fR, and the additional
 arguments, if any, provide values to be substituted into the result.
 The return value from \fBformat\fR is the formatted string.
-
 .SH "DETAILS ON FORMATTING"
 .PP
 The command operates by scanning \fIformatString\fR from left to right. 
@@ -196,7 +195,6 @@ For the numerical conversions the argument being converted must
 be an integer or floating-point string; format converts the argument
 to binary and then converts it back to a string according to 
 the conversion specifier.
-
 .SH "DIFFERENCES FROM ANSI SPRINTF"
 .PP
 The behavior of the format command is the same as the
@@ -218,6 +216,57 @@ of real and integer values, respectively).
 If the \fBh\fR modifier is specified then integer values are truncated
 to \fBshort\fR before conversion.  Both \fBh\fR and \fBl\fR modifiers
 are ignored on all other conversions.
+.SH EXAMPLES
+Convert the output of \fBtime\fR into seconds to an accuracy of
+hundredths of a second:
+
+.CS
+set us [lindex [time $someTclCode] 0]
+puts [format "%.2f seconds to execute" [expr {$us / 1e6}]]
+.CE
+
+Create a packed X11 literal color specification:
+
+.CS
+# Each color-component should be in range (0..255)
+set color [format "#%02x%02x%02x" $r $g $b]
+.CE
+
+Use XPG3 format codes to allow reordering of fields (a technique that
+is often used in localized message catalogs; see \fBmsgcat\fR) without
+reordering the data values passed to format:
+
+.CS
+set fmt1 "Today, %d shares in %s were bought at $%.2f each"
+puts [format $fmt1 123 "Global BigCorp" 19.37]
+
+set fmt2 "Bought %2\\$s equity ($%3$.2f x %1\\$d) today"
+puts [format $fmt2 123 "Global BigCorp" 19.37]
+.CE
+
+Print a small table of powers of three:
+
+.CS
+# Set up the column widths
+set w1 5
+set w2 10
+
+# Make a nice header (with separator) for the table first
+set sep +-[string repeat - $w1]-+-[string repeat - $w2]-+
+puts $sep
+puts [format "| %-*s | %-*s |" $w1 "Index" $w2 "Power"]
+puts $sep
+
+# Print the contents of the table
+set p 1
+for {set i 0} {$i<=20} {incr i} {
+   puts [format "| %*d | %*ld |" $w1 $i $w2 $p]
+   set p [expr {wide($p) * 3}]
+}
+
+# Finish off by printing the separator again
+puts $sep
+.CE
 
 .SH "SEE ALSO"
 sprintf(3), string(n)
