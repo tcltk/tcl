@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFile.c,v 1.1.2.4 1998/09/30 23:01:11 stanton Exp $
+ * RCS: @(#) $Id: tclUnixFile.c,v 1.1.2.5 1998/10/06 00:40:13 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -196,7 +196,8 @@ TclpMatchFiles(interp, separators, dirPtr, pattern, tail)
     char *separators;		/* Path separators to pass to TclDoGlob. */
     Tcl_DString *dirPtr;	/* Contains path to directory to search. */
     char *pattern;		/* Pattern to match against. */
-    char *tail;			/* Pointer to end of pattern. */
+    char *tail;			/* Pointer to end of pattern. Must not
+				 * refer to a static string. */
 {
     char *native, *dirName, *patternEnd = tail;
     char savedChar = 0;		/* lint. */
