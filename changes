@@ -3511,3 +3511,12 @@ that could lead to a crash. (SS)
 
 6/18/98 (bug fix) The foreach compile proc did not correctly handle
 non-local variable references. (SS)
+
+6/29/98 (compatibility patch) Changed the signature of Tcl_EvalObj
+to match that in Tcl 8.1, but added a macro for compatibility with
+the 2-argument version of the call.  This works with gcc but we
+don't know how other compilers will handle it, so
+*** POTENTIAL INCOMPATIBILITY ***
+The goal of this patch is that simple extensions compiled against
+Tcl 8.0.3 will also work with Tcl 8.1.
+Contributed by Jan Nijtmans (JN)
