@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: interp.n,v 1.11 2004/05/18 10:52:57 dkf Exp $
+'\" RCS: @(#) $Id: interp.n,v 1.12 2004/05/29 18:50:33 jenglish Exp $
 '\" 
 .so man.macros
 .TH interp n 7.6 Tcl "Tcl Built-In Commands"
@@ -59,8 +59,9 @@ instead, it is \fIhidden\fR, so that only trusted interpreters can obtain
 access to it. For a detailed explanation of hidden commands, see
 HIDDEN COMMANDS, below.
 The alias mechanism can be used for protected communication (analogous to a
-kernel call) between a slave interpreter and its master. See ALIAS
-INVOCATION, below, for more details on how the alias mechanism works.
+kernel call) between a slave interpreter and its master. 
+See ALIAS INVOCATION, below, for more details 
+on how the alias mechanism works.
 .PP
 A qualified interpreter name is a proper Tcl lists containing a subset of its
 ancestors in the interpreter hierarchy, terminated by the string naming the
@@ -359,8 +360,8 @@ applied to the arguments.
 If the \fB-global\fR flag is given, the command is invoked at the global
 level in the slave; otherwise it is invoked at the current call frame and
 can access local variables in that or outer call frames.
-For more details on hidden commands, see HIDDEN
-COMMANDS, below.
+For more details on hidden commands, 
+see HIDDEN COMMANDS, below.
 .TP
 \fIslave \fBissafe\fR
 Returns  \fB1\fR if the slave interpreter is safe, \fB0\fR otherwise.
@@ -445,7 +446,7 @@ creates a safe interpreter:
 .DS
 .ta 1.2i 2.4i 3.6i
 \fBcd	encoding	exec	exit
-fconfigure file	glob	load
+fconfigure	file	glob	load
 open	pwd	socket	source\fR
 .DE
 These commands can be recreated later as Tcl procedures or aliases, or

@@ -1,3 +1,8 @@
+2004-05-29  Joe English  <jenglish@users.sourceforge.net>
+
+	* doc/global.n, doc/interp.n, doc/lrange.n:
+	Fix minor markup errors.
+
 2004-05-28  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* doc/*.n: Added examples to many (too many to list) more man pages.
