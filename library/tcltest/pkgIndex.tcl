@@ -14,4 +14,5 @@ package ifneeded tcltest 1.0 [list tclPkgSetup $dir tcltest 1.0 \
         ::tcltest::removeDirectory ::tcltest::removeFile \
         ::tcltest::restoreState ::tcltest::saveState ::tcltest::test \
         ::tcltest::threadReap ::tcltest::viewFile ::tcltest::grep \
-        ::tcltest::getMatchingFiles ::tcltest::loadTestedCommands}}}]
+        ::tcltest::getMatchingFiles ::tcltest::loadTestedCommands \
+        ::tcltest::normalizePath }}}]

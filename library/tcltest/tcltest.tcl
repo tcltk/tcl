@@ -12,7 +12,7 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 # 
-# RCS: @(#) $Id: tcltest.tcl,v 1.20 1999/11/23 22:59:13 stanton Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.21 2000/01/27 23:44:07 jenn Exp $
 
 package provide tcltest 1.0
 
@@ -24,7 +24,7 @@ namespace eval tcltest {
     set procList [list test cleanupTests saveState restoreState \
 	    normalizeMsg makeFile removeFile makeDirectory removeDirectory \
 	    viewFile bytestring safeFetch threadReap getMatchingFiles \
-	    loadTestedCommands]
+	    loadTestedCommands normalizePath]
     foreach proc $procList {
 	namespace export $proc
     }
@@ -803,7 +803,7 @@ proc ::tcltest::CheckDirectory {rw dir errMsg} {
     }
 }
 
-# ::tcltest::NormalizePath --
+# ::tcltest::normalizePath --
 #
 #     This procedure resolves any symlinks in the path thus creating a
 #     path without internal redirection. It assumes that the incoming
@@ -816,7 +816,7 @@ proc ::tcltest::CheckDirectory {rw dir errMsg} {
 #     The path is modified in place.
 #
 
-proc ::tcltest::NormalizePath {pathVar} {
+proc ::tcltest::normalizePath {pathVar} {
     upvar $pathVar path
 
     set oldpwd [pwd]
@@ -1016,7 +1016,7 @@ proc ::tcltest::processCmdLineArgs {} {
 	file mkdir $::tcltest::temporaryDirectory
     }
 
-    NormalizePath ::tcltest::temporaryDirectory
+    normalizePath ::tcltest::temporaryDirectory
 
     # Set the ::tcltest::testsDirectory to the arg of -testdir, if
     # given.
@@ -1041,7 +1041,7 @@ proc ::tcltest::processCmdLineArgs {} {
 	exit 1
     }
     
-    NormalizePath ::tcltest::testsDirectory
+    normalizePath ::tcltest::testsDirectory
     
     # Save the names of files that already exist in
     # the output directory.

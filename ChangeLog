@@ -1,3 +1,12 @@
+2000-01-27  Jennifer Hom  <jenn@scriptics.com>
+
+	* library/tcltest1.0/tcltest.tcl: Changed NormalizePath to
+	normalizePath and exported it as a public proc.  This proc 
+	creates an absolute path given the name of the variable containing
+	the path to modify.  The path is modified in place.
+	* library/tcltest1.0/pkgIndex.tcl: Added normalizePath.
+	* tests/all.tcl: Changed code to use normalizePath.
+
 2000-01-27  Eric Melski  <ericm@scriptics.com>
 
 	* tests/pkgMkIndex.test: 
