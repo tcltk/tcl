@@ -1,11 +1,22 @@
+1999-08-09  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* doc/Object.3: clarified Tcl_DecrRefCount docs [Bug: 1952]
+	* doc/array.n: clarified array pattern docs [Bug: 1330]
+	* doc/clock.n: fixed clock docs [Bug: 693]
+	* doc/lindex.n: clarified to account for new end-int behavior.
+	* doc/string.n: fixed formatting errors [Bug: 2188 2189]
+	* doc/tclvars.n: fixed doc error [Bug: 2042]
+	* library/init.tcl: fixed path handling in auto_execok (it could
+	miss including the normal path on some Windows machines) [Bug: 1276]
+
 1999-08-05  Jeff Hobbs  <hobbs@scriptics.com>
 
 	* doc/tclvars.n: Made it clear that tcl_pkgPath was not set
 	for Windows (already mentioned in init.tcl) [Bug: 2455]
 	* generic/tclLiteral.c: fixed reference to bytes that might
 	not be null terminated (using objPtr->bytes, which is) [Bug: 2496]
-	* library/http2.1/http.tcl: Made use of "i" in init section not
-	use global var. [Bug: 2502]
+	* library/http2.1/http.tcl: Made use of "i" in init section use
+	local var and start at 0 (was 1). [Bug: 2502]
 
 1999-08-04  Scott Stanton  <stanton@scriptics.com>
 
