@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.82 2003/08/23 12:16:49 vasiljevic Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.83 2003/09/05 21:52:12 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1363,10 +1363,20 @@ TclGetOpenMode(interp, string, seekFlagPtr)
     return mode;
 }
 
+/* Tcl_FSEvalFile is Tcl_FSEvalFileEx without encoding argument */
+int
+Tcl_FSEvalFile(interp, pathPtr)
+    Tcl_Interp *interp;		/* Interpreter in which to process file. */
+    Tcl_Obj *pathPtr;		/* Path of file to process.  Tilde-substitution
+				 * will be performed on this name. */
+{
+    return Tcl_FSEvalFileEx(interp, pathPtr, NULL);
+}
+
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_FSEvalFile --
+ * Tcl_FSEvalFileEx --
  *
  *	Read in a file and process the entire file as one gigantic
  *	Tcl command.
@@ -1385,10 +1395,11 @@ TclGetOpenMode(interp, string, seekFlagPtr)
  */
 
 int
-Tcl_FSEvalFile(interp, pathPtr)
+Tcl_FSEvalFileEx(interp, pathPtr, encodingName)
     Tcl_Interp *interp;		/* Interpreter in which to process file. */
     Tcl_Obj *pathPtr;		/* Path of file to process.  Tilde-substitution
 				 * will be performed on this name. */
+    CONST char *encodingName;
 {
     int result, length;
     Tcl_StatBuf statBuf;
@@ -1426,6 +1437,18 @@ Tcl_FSEvalFile(interp, pathPtr)
      * [Bug: 2040]
      */
     Tcl_SetChannelOption(interp, chan, "-eofchar", "\32");
+    /*
+     * If the encoding is specified, set it for the channel.
+     * Else don't touch it (and use the system encoding)
+     * Report error on unknown encoding.
+     */
+    if (encodingName) {
+	if (Tcl_SetChannelOption(interp, chan, "-encoding", encodingName)
+		!= TCL_OK) {
+	    Tcl_Close(interp,chan);
+	    goto end;
+	}
+    }
     if (Tcl_ReadChars(chan, objPtr, -1, 0) < 0) {
         Tcl_Close(interp, chan);
 	Tcl_AppendResult(interp, "couldn't read file \"", 
