@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.30 2001/05/19 16:59:04 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.31 2001/07/17 17:53:43 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -4999,7 +4999,21 @@ GetInput(chanPtr)
 	}
         bufPtr->nextPtr = (ChannelBuffer *) NULL;
 
-        toRead = statePtr->bufSize;
+	/* SF #427196: Use the actual size of the buffer to determine
+	 * the number of bytes to read from the channel and not the
+	 * size for new buffers. They can be different if the
+	 * buffersize was changed between reads.
+	 *
+	 * Note: This affects performance negatively if the buffersize
+	 * was extended but this small buffer is reused for all
+	 * subsequent reads. The system never uses buffers with the
+	 * requested bigger size in that case. An adjunct patch could
+	 * try and delete all unused buffers it encounters and which
+	 * are smaller than the formally requested buffersize.
+	 */
+
+	toRead = bufPtr->bufLength - bufPtr->nextAdded;
+
         if (statePtr->inQueueTail == NULL) {
             statePtr->inQueueHead = bufPtr;
         } else {
