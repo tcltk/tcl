@@ -1090,6 +1090,10 @@ if test -r RecordEval.3; then
     rm -f Tcl_RecordAndEval.3 Tcl_RecordAndEval.3.* 
     ln $S RecordEval.3$Z Tcl_RecordAndEval.3$Z 
 fi
+if test -r RegConfig.3; then
+    rm -f Tcl_RegisterConfig.3
+    ln RegConfig.3 Tcl_RegisterConfig.3
+fi
 if test -r RegExp.3; then
     rm -f RegExp.3.*
     $ZIP RegExp.3

@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.97 2003/05/13 10:16:16 mistachkin Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.98 2003/06/09 22:48:32 andreas_kupries Exp $
 
 library tcl
 
@@ -1795,6 +1795,12 @@ declare 503 generic {
 }
 declare 504 generic {
     Tcl_Obj *Tcl_DbNewDictObj(CONST char *file, int line)
+}
+
+# New export due to TIP#59
+declare 505 generic {
+    void Tcl_RegisterConfig (Tcl_Interp* interp, CONST char* pkgName, Tcl_Config* configuration, \
+	CONST char* valEncoding)
 }
 
 ##############################################################################

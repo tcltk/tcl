@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.127 2003/05/05 20:54:40 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.128 2003/06/09 22:48:32 andreas_kupries Exp $
  */
 
 #ifndef _TCLINT
@@ -1648,6 +1648,8 @@ EXTERN int		TclGlob _ANSI_ARGS_((Tcl_Interp *interp,
 			    int globFlags, Tcl_GlobTypeData* types));
 EXTERN void		TclInitAlloc _ANSI_ARGS_((void));
 EXTERN void		TclInitDbCkalloc _ANSI_ARGS_((void));
+EXTERN void             TclInitEmbeddedConfigurationInformation 
+                            _ANSI_ARGS_((Tcl_Interp *interp));
 EXTERN void		TclInitEncodingSubsystem _ANSI_ARGS_((void));
 EXTERN void		TclInitIOSubsystem _ANSI_ARGS_((void));
 EXTERN void		TclInitNamespaceSubsystem _ANSI_ARGS_((void));
