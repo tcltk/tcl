@@ -1,3 +1,14 @@
+2001-11-16  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* generic/tclBasic.c:
+	* generic/tclParse.c: Code reorganisation. Moved all evaluation
+	functions from tclParse.c to tclBasic.c, so that now tclParse.c
+	deals exclusively with parsing and all evaluations are done by
+	code in tclBasic.c. The functions moved are: TclEvalObjvInternal,
+	Tcl_EvalObjv, Tcl_LogCommandInfo, Tcl_EvalTokensStandard,
+	Tcl_EvalTokens, Tcl_EvalEx, Tcl_Eval, Tcl_EvalObj and
+	Tcl_GlobalEvalObj. 
+
 2001-11-19  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* tests/trace.test (trace-8.8): Added adapted version of Bug
