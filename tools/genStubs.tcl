@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: genStubs.tcl,v 1.15 2003/05/14 19:21:25 das Exp $
+# RCS: @(#) $Id: genStubs.tcl,v 1.15.2.1 2003/08/27 21:07:21 dgp Exp $
 
 package require Tcl 8
 
@@ -397,8 +397,9 @@ proc genStubs::makeDecl {name decl index} {
     }
     append text $line
     
-    append text ");\n"
-    return $text
+    append text ");"
+    format "#ifndef %s_TCL_DECLARED\n#define %s_TCL_DECLARED\n%s\n#endif\n" \
+	    $fname $fname $text
 }
 
 # genStubs::makeMacro --

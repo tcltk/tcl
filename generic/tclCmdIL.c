@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.50.2.1 2003/08/07 21:35:59 dgp Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.50.2.2 2003/08/27 21:07:19 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2631,6 +2631,94 @@ Tcl_LrangeObjCmd(notUsed, interp, objc, objv)
 
     numElems = (last - first + 1);
     Tcl_SetListObj(Tcl_GetObjResult(interp), numElems, &(elemPtrs[first]));
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_LrepeatObjCmd --
+ *
+ *	This procedure is invoked to process the "lrepeat" Tcl command.
+ *	See the user documentation for details on what it does.
+ *
+ * Results:
+ *	A standard Tcl object result.
+ *
+ * Side effects:
+ *	See the user documentation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+	/* ARGSUSED */
+int
+Tcl_LrepeatObjCmd(dummy, interp, objc, objv)
+    ClientData dummy;			/* Not used. */
+    Tcl_Interp *interp;			/* Current interpreter. */
+    register int objc;			/* Number of arguments. */
+    register Tcl_Obj *CONST objv[];	/* The argument objects. */
+{
+    int elementCount, i, j, k, result;
+    Tcl_Obj **dataArray;
+
+    /* 
+     * Check arguments for legality:
+     *		lrepeat posInt value ?value ...?
+     */
+
+    if (objc < 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "positiveCount value ?value ...?");
+	return TCL_ERROR;
+    }
+    elementCount = 0;
+    result = Tcl_GetIntFromObj(interp, objv[1], &elementCount);
+    if (result == TCL_ERROR) {
+	return TCL_ERROR;
+    }
+    if (elementCount < 1) {
+	Tcl_AppendResult(interp, "must have a count of at least 1", NULL);
+	return TCL_ERROR;
+    }
+
+    /*
+     * Skip forward to the interesting arguments now we've finished
+     * parsing.
+     */
+
+    objc -= 2;
+    objv += 2;
+
+    /*
+     * Create workspace array large enough to hold each init value
+     * elementCount times.  Note that we don't bother with stack
+     * allocation for this, as we expect this function to be used
+     * mainly when stack allocation would be inappropriate anyway.
+     *
+     * POSSIBLE FUTURE ENHANCEMENT: Build the resulting list object
+     * directly and avoid a copy.
+     */
+
+    dataArray = (Tcl_Obj **) ckalloc(elementCount * objc * sizeof(Tcl_Obj));
+
+    /*
+     * Set the elements.  Note that this ends up setting k to the
+     * total number of elements.
+     */
+
+    k = 0;
+    for (i=0 ; i<elementCount ; i++) {
+	for (j=0 ; j<objc ; j++) {
+	    dataArray[k++] = objv[j];
+	}
+    }
+
+    /*
+     * Build the result list, clean up and return.
+     */
+
+    Tcl_SetObjResult(interp, Tcl_NewListObj(k, dataArray));
+    ckfree((char*) dataArray);
     return TCL_OK;
 }
 

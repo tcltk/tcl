@@ -1,3 +1,104 @@
+2003-08-27  David Gravereaux <davygrvy@pobox.com>
+
+	* compat/strftime.c (_fmt): Removed syst array intializer that
+	couldn't take variables within it under the watcom compiler:
+	'Initializers must be constant'.  I believe Borland has this
+	strictness as well.  VC++ must be non-standard about this.
+
+	Changed Win32 platform #ifdef from 'WIN32' to '__WIN32__' as
+	this is the correct one to use across the Tcl sources.  Even
+	though we do force it in tcl.h, the true parent one is __WIN32__.
+
+	Added missing CONST'ification usage to match prototype listed
+	in tclInt.decls.
+
+	* win/tclWinPort.h:  Added a block for OpenWatcom adjustments
+	that fixes the same issue Mo did for MinGW lack of missing LPFN_*
+	typedefs in their WINE derived <winsock2.h>
+
+	* win/tclWinSock.c:  Added OpenWatcom to the commentary about the
+	#ifdef HAVE_NO_LPFN_DECLS block.
+
+	* win/tclWinTime.c:  Changed use of '_timezone' to 'timezone' as
+	this difference is already adjusted for in tclWinPort.h.  Removed
+	unreferenced posixEpoch file-scope global.
+
+	* win/tclWinFile.c (WinReadLinkDirectory): Fix for 'Initializers
+	must be constant' with the driveSpec array with OpenWatcom.
+
+2003-08-27  Don Porter  <dgp@users.sourceforge.net>
+
+        * generic/tclUtil.c:    Corrected [Bug 411825] and other bugs in
+        TclNeedSpace() where non-breaking space (\u00A0) and backslash-escaped
+        spaces were handled incorrectly.  
+        * tests/util.test:      Added new tests util-8.[2-6].
+
+2003-08-26  David Gravereaux <davygrvy@pobox.com>
+
+	* generic/tcl.h: Added some support for the LCC-Win32 compiler.
+	Unfortunetly, this compiler has a bug in its preprocessor and
+	can't build Tcl even with this minor patch.  Also added some
+	support for the OpenWatcom compiler.  A new win/makefile.wc to
+	follow soon.
+
+2003-08-25  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* tools/genStubs.tcl (genStubs::makeDecl): A more subtle way of
+	generating stubbed declarations allows us to have declarations of
+	a function in multiple interfaces simultaneously.
+
+	* generic/tcl.decls: Duplicated some namespace declarations from
+	tclInt.decls here, as mandated by TIP #139.  This is OK since the
+	declarations match and will end up using the declarations in the
+	public code from now on because of #include ordering.  Keeping the
+	old declarations in tclInt.decls; there's no need to gratuitously
+	break compatability for those extensions which are already clients
+	of the namespace code.
+
+2003-08-23  Zoran Vasiljevic  <zoran@archiwrae.com>
+
+	* generic/tclIOUtil.c: merged fixes for thread-unsafe
+	handling of filesystem records [Bug #753315]. 
+	This also fixed the Bug #788780
+	* generic/tclPathObj.c: merged fixes for thread-unsafe
+	handling of filesystem records [Bug #753315]. 
+
+	* generic/tclFileSystem.h: merged fixes for thread-unsafe
+	handling of filesystem records [Bug #753315].
+
+2003-08-19  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* win/tclWinSerial.c (SerialErrorStr): Fixed a syntax error
+	created in the previous code cleanup.
+
+2003-08-19  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* win/tclWinSerial.c: Adjusted commenting and spacing usage to
+	follow the principles of the Style Guide better.
+
+2003-08-18  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* win/configure: Regen.
+	* win/tcl.m4 (SC_ENABLE_SYMBOLS): Use test instead
+	of -eq, which does not work. [Bug 781109]
+
+2003-08-13  Chengye Mao <chengye.geo@yahoo.com>
+
+	* win/tclWinPipe.c: fixed a bug in BuildCommandLine.
+	This bug built a command line with a missing space between
+	tclpipe.dll and the following arguments.  It caused error
+	in Windows 98 when exec command.com (e.g. dir) [Bug 789040]
+
+2003-08-11  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	TIP #136 IMPLEMENTATION from Simon Geard <simon.geard@ntlworld.com>
+	* generic/tclCmdIL.c (Tcl_LrepeatObjCmd): Adapted version of Simon's
+	* doc/lrepeat.n:			  patch, updated to the HEAD
+	* tests/lrepeat.test:			  and matching the core style.
+	* generic/tclBasic.c (buildIntCmds):	Splice into core.
+	* generic/tclInt.h: 
+	* doc/list.n:				Cross-reference.
+
 2003-08-06  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* win/tclWinInit.c: recognize amd64 and ia32_on_win64 cpus.

@@ -10,7 +10,7 @@
  *
  * Changes 2002 Copyright (c) 2002 ActiveState Corporation.
  *
- * RCS: @(#) $Id: strftime.c,v 1.11 2003/05/18 19:48:26 kennykb Exp $
+ * RCS: @(#) $Id: strftime.c,v 1.11.2.1 2003/08/27 21:07:18 dgp Exp $
  */
 
 /*
@@ -47,7 +47,7 @@
  */
 
 #if defined(LIBC_SCCS)
-static char *rcsid = "$Id: strftime.c,v 1.11 2003/05/18 19:48:26 kennykb Exp $";
+static char *rcsid = "$Id: strftime.c,v 1.11.2.1 2003/08/27 21:07:18 dgp Exp $";
 #endif /* LIBC_SCCS */
 
 #include <time.h>
@@ -109,15 +109,15 @@ static const _TimeLocale _DefaultTimeLocale =
     "%I:%M:%S %p"
 };
 
-static const _TimeLocale *_CurrentTimeLocale = &_DefaultTimeLocale;
+static CONST _TimeLocale *_CurrentTimeLocale = &_DefaultTimeLocale;
 
 static int isGMT;
 static size_t gsize;
 static char *pt;
-static int		 _add _ANSI_ARGS_((const char* str));
+static int		 _add _ANSI_ARGS_((CONST char* str));
 static int		_conv _ANSI_ARGS_((int n, int digits, int pad));
-static int		_secs _ANSI_ARGS_((const struct tm *t));
-static size_t		_fmt _ANSI_ARGS_((const char *format,
+static int		_secs _ANSI_ARGS_((CONST struct tm *t));
+static size_t		_fmt _ANSI_ARGS_((CONST char *format,
 			    const struct tm *t));
 
 /*
@@ -143,9 +143,9 @@ size_t
 TclpStrftime(s, maxsize, format, t, useGMT)
     char *s;			/* Buffer to hold the formatted string */
     size_t maxsize;		/* Size of the passed buffer */
-    const char *format;		/* Format to use (see the user documentation
+    CONST char *format;		/* Format to use (see the user documentation
 				 * for [clock] for details) */
-    const struct tm *t;		/* Time to format */
+    CONST struct tm *t;		/* Time to format */
     int useGMT;			/* Flag == 1 if time is to be returned
 				 * in UTC */
 {
@@ -183,22 +183,21 @@ TclpStrftime(s, maxsize, format, t, useGMT)
 
 static size_t
 _fmt(format, t)
-    const char *format;
-    const struct tm *t;
+    CONST char *format;
+    CONST struct tm *t;
 {
-#ifdef WIN32
+#ifdef __WIN32__
 #define BUF_SIZ 256
     TCHAR buf[BUF_SIZ];
-    SYSTEMTIME syst = {
-	t->tm_year + 1900,
-	t->tm_mon + 1,
-	t->tm_wday,
-	t->tm_mday,
-	t->tm_hour,
-	t->tm_min,
-	t->tm_sec,
-	0,
-    };
+    SYSTEMTIME syst;
+    syst.wYear	    = t->tm_year + 1900;
+    syst.wMonth	    = t->tm_mon + 1;
+    syst.wDayOfWeek = t->tm_wday;
+    syst.wDay	    = t->tm_mday;
+    syst.wHour	    = t->tm_hour;
+    syst.wMinute    = t->tm_min;
+    syst.wSecond    = t->tm_sec;
+    syst.wMilliseconds = 0;
 #endif
     for (; *format; ++format) {
 	if (*format == '%') {
@@ -359,7 +358,7 @@ _fmt(format, t)
 		    if (!_conv(t->tm_wday, 1, '0'))
 			return(0);
 		    continue;
-#ifdef WIN32
+#ifdef __WIN32__
 		/*
 		 * To properly handle the localized time routines on Windows,
 		 * we must make use of the special localized calls.
@@ -435,7 +434,7 @@ _fmt(format, t)
 
 static int
 _secs(t)
-    const struct tm *t;
+    CONST struct tm *t;
 {
     static char buf[15];
     register time_t s;

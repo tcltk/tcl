@@ -6,7 +6,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclPlatDecls.h,v 1.19 2003/05/13 08:40:31 das Exp $
+ * RCS: @(#) $Id: tclPlatDecls.h,v 1.19.2.1 2003/08/27 21:07:21 dgp Exp $
  */
 
 #ifndef _TCLPLATDECLS
@@ -37,57 +37,96 @@
  */
 
 #ifdef __WIN32__
+#ifndef Tcl_WinUtfToTChar_TCL_DECLARED
+#define Tcl_WinUtfToTChar_TCL_DECLARED
 /* 0 */
 EXTERN TCHAR *		Tcl_WinUtfToTChar _ANSI_ARGS_((CONST char * str, 
 				int len, Tcl_DString * dsPtr));
+#endif
+#ifndef Tcl_WinTCharToUtf_TCL_DECLARED
+#define Tcl_WinTCharToUtf_TCL_DECLARED
 /* 1 */
 EXTERN char *		Tcl_WinTCharToUtf _ANSI_ARGS_((CONST TCHAR * str, 
 				int len, Tcl_DString * dsPtr));
+#endif
 #endif /* __WIN32__ */
 #ifdef MAC_TCL
+#ifndef Tcl_MacSetEventProc_TCL_DECLARED
+#define Tcl_MacSetEventProc_TCL_DECLARED
 /* 0 */
 EXTERN void		Tcl_MacSetEventProc _ANSI_ARGS_((
 				Tcl_MacConvertEventPtr procPtr));
+#endif
+#ifndef Tcl_MacConvertTextResource_TCL_DECLARED
+#define Tcl_MacConvertTextResource_TCL_DECLARED
 /* 1 */
 EXTERN char *		Tcl_MacConvertTextResource _ANSI_ARGS_((
 				Handle resource));
+#endif
+#ifndef Tcl_MacEvalResource_TCL_DECLARED
+#define Tcl_MacEvalResource_TCL_DECLARED
 /* 2 */
 EXTERN int		Tcl_MacEvalResource _ANSI_ARGS_((Tcl_Interp * interp, 
 				CONST char * resourceName, 
 				int resourceNumber, CONST char * fileName));
+#endif
+#ifndef Tcl_MacFindResource_TCL_DECLARED
+#define Tcl_MacFindResource_TCL_DECLARED
 /* 3 */
 EXTERN Handle		Tcl_MacFindResource _ANSI_ARGS_((Tcl_Interp * interp, 
 				long resourceType, CONST char * resourceName, 
 				int resourceNumber, CONST char * resFileRef, 
 				int * releaseIt));
+#endif
+#ifndef Tcl_GetOSTypeFromObj_TCL_DECLARED
+#define Tcl_GetOSTypeFromObj_TCL_DECLARED
 /* 4 */
 EXTERN int		Tcl_GetOSTypeFromObj _ANSI_ARGS_((
 				Tcl_Interp * interp, Tcl_Obj * objPtr, 
 				OSType * osTypePtr));
+#endif
+#ifndef Tcl_SetOSTypeObj_TCL_DECLARED
+#define Tcl_SetOSTypeObj_TCL_DECLARED
 /* 5 */
 EXTERN void		Tcl_SetOSTypeObj _ANSI_ARGS_((Tcl_Obj * objPtr, 
 				OSType osType));
+#endif
+#ifndef Tcl_NewOSTypeObj_TCL_DECLARED
+#define Tcl_NewOSTypeObj_TCL_DECLARED
 /* 6 */
 EXTERN Tcl_Obj *	Tcl_NewOSTypeObj _ANSI_ARGS_((OSType osType));
+#endif
+#ifndef strncasecmp_TCL_DECLARED
+#define strncasecmp_TCL_DECLARED
 /* 7 */
 EXTERN int		strncasecmp _ANSI_ARGS_((CONST char * s1, 
 				CONST char * s2, size_t n));
+#endif
+#ifndef strcasecmp_TCL_DECLARED
+#define strcasecmp_TCL_DECLARED
 /* 8 */
 EXTERN int		strcasecmp _ANSI_ARGS_((CONST char * s1, 
 				CONST char * s2));
+#endif
 #endif /* MAC_TCL */
 #ifdef MAC_OSX_TCL
+#ifndef Tcl_MacOSXOpenBundleResources_TCL_DECLARED
+#define Tcl_MacOSXOpenBundleResources_TCL_DECLARED
 /* 0 */
 EXTERN int		Tcl_MacOSXOpenBundleResources _ANSI_ARGS_((
 				Tcl_Interp * interp, CONST char * bundleName, 
 				int hasResourceFile, int maxPathLen, 
 				char * libraryPath));
+#endif
+#ifndef Tcl_MacOSXOpenVersionedBundleResources_TCL_DECLARED
+#define Tcl_MacOSXOpenVersionedBundleResources_TCL_DECLARED
 /* 1 */
 EXTERN int		Tcl_MacOSXOpenVersionedBundleResources _ANSI_ARGS_((
 				Tcl_Interp * interp, CONST char * bundleName, 
 				CONST char * bundleVersion, 
 				int hasResourceFile, int maxPathLen, 
 				char * libraryPath));
+#endif
 #endif /* MAC_OSX_TCL */
 
 typedef struct TclPlatStubs {

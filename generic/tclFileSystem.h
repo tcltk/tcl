@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileSystem.h,v 1.2 2003/04/14 15:48:35 vincentdarley Exp $
+ * RCS: @(#) $Id: tclFileSystem.h,v 1.2.2.1 2003/08/27 21:07:20 dgp Exp $
  */
 
 /* 
@@ -31,7 +31,27 @@ typedef struct FilesystemRecord {
     struct FilesystemRecord *nextPtr;  
 				  /* The next filesystem registered
 				   * to Tcl, or NULL if no more. */
+    struct FilesystemRecord *prevPtr;
+				  /* The previous filesystem registered
+				   * to Tcl, or NULL if no more. */
 } FilesystemRecord;
+
+/*
+ * This structure holds per-thread private copy of the
+ * current directory maintained by the global cwdPathPtr.
+ * This structure holds per-thread private copies of
+ * some global data. This way we avoid most of the
+ * synchronization calls which boosts performance, at
+ * cost of having to update this information each
+ * time the corresponding epoch counter changes.
+ */
+typedef struct ThreadSpecificData {
+    int initialized;
+    int cwdPathEpoch;
+    int filesystemEpoch;
+    Tcl_Obj *cwdPathPtr;
+    FilesystemRecord *filesystemList;
+} ThreadSpecificData;
 
 /* 
  * The internal TclFS API provides routines for handling and
@@ -50,12 +70,11 @@ Tcl_Obj* TclFSMakePathRelative _ANSI_ARGS_((Tcl_Interp *interp,
 		Tcl_Obj *objPtr, Tcl_Obj *cwdPtr));
 Tcl_Obj* TclFSInternalToNormalized _ANSI_ARGS_((
 		Tcl_Filesystem *fromFilesystem, ClientData clientData,
-		FilesystemRecord **fsRecPtrPtr, int *epochPtr));
-int      TclFSEnsureEpochOk _ANSI_ARGS_((Tcl_Obj* pathObjPtr, int theEpoch, 
+		FilesystemRecord **fsRecPtrPtr));
+int      TclFSEnsureEpochOk _ANSI_ARGS_((Tcl_Obj* pathObjPtr,
 		Tcl_Filesystem **fsPtrPtr));
 void     TclFSSetPathDetails _ANSI_ARGS_((Tcl_Obj *pathObjPtr, 
-		FilesystemRecord *fsRecPtr, ClientData clientData, 
-		int theEpoch));
+		FilesystemRecord *fsRecPtr, ClientData clientData ));
 Tcl_Obj* TclFSNormalizeAbsolutePath _ANSI_ARGS_((Tcl_Interp* interp, 
 		Tcl_Obj *pathPtr, ClientData *clientDataPtr));
 
@@ -64,6 +83,7 @@ Tcl_Obj* TclFSNormalizeAbsolutePath _ANSI_ARGS_((Tcl_Interp* interp,
  */
 extern Tcl_Filesystem tclNativeFilesystem;
 extern int theFilesystemEpoch;
+extern Tcl_ThreadDataKey fsDataKey;
 
 /* 
  * Private shared functions for use by tclIOUtil.c and tclPathObj.c

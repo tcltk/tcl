@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.3 2003/06/27 15:10:10 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.4 2003/08/27 21:07:19 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -125,6 +125,8 @@ static CmdInfo builtInCmds[] = {
     {"load",		(Tcl_CmdProc *) NULL,	Tcl_LoadObjCmd,
         (CompileProc *) NULL,		0},
     {"lrange",		(Tcl_CmdProc *) NULL,	Tcl_LrangeObjCmd,
+        (CompileProc *) NULL,		1},
+    {"lrepeat",		(Tcl_CmdProc *) NULL,	Tcl_LrepeatObjCmd,
         (CompileProc *) NULL,		1},
     {"lreplace",	(Tcl_CmdProc *) NULL,	Tcl_LreplaceObjCmd,
         (CompileProc *) NULL,		1},
