@@ -1,3 +1,11 @@
+2001-08-24  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* tests/stringComp.test: added string-1.3
+	* generic/tclCompCmds.c (TclCompileStringCmd): changed to return
+	TCL_OUT_LINE_COMPILE instead of TCL_ERROR when compiling and an
+	unknown string method is called.  This is necessary as the string
+	command may be never called, or not until 'string' is redefined.
+
 2001-08-24 Vince Darley <vincentdarley@users.sourceforge.net>
 
 	* doc/glob.n: documented windows-style path issue with glob.
