@@ -1,3 +1,12 @@
+2004-11-22  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclInterp.c:	Restored several directories to the search
+	* tests/unixInit.test:	path used to locate init.tcl within [tclInit].
+	This change does not restore any directories to the encoding search
+	path, so should still avoid the price of an unreasonably large number
+	of filesystem accesses during encoding initialization at startup
+	[Bug 976438]
+
 2004-11-22  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* generic/tclPathObj.c: fix and new test for [Bug 1043129] in
