@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.52 2001/09/07 02:43:12 dgp Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.53 2001/09/10 00:33:09 mdejong Exp $
 
 VERSION = @TCL_VERSION@
 
@@ -535,15 +535,15 @@ test: binaries $(TCLTEST)
 	| ./$(CAT32)
 
 # Useful target to launch a built tcltest with the proper path,...
-runtest: tcltest
+runtest: $(TCLTEST)
 	@TCL_LIBRARY="$(LIBRARY_DIR)"; export TCL_LIBRARY; \
-	    ./tcltest
+	    ./$(TCLTEST)
 
 # This target can be used to run tclsh from the build directory
 # via `make shell SCRIPT=foo.tcl`
 shell: $(TCLSH)
 	@TCL_LIBRARY="$(LIBRARY_DIR)"; export TCL_LIBRARY; \
-	    ./$(TCLSH) ${SCRIPT}
+	    ./$(TCLSH) $(SCRIPT)
 
 depend:
 
