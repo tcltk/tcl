@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMain.c,v 1.7.2.2.2.1 2001/11/28 17:58:37 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclMain.c,v 1.7.2.2.2.2 2002/11/26 20:05:51 hobbs Exp $
  */
 
 #include "tcl.h"
@@ -397,6 +397,12 @@ Tcl_Main(argc, argv, appInitProc)
     }
     sprintf(buffer, "exit %d", exitCode);
     Tcl_Eval(interp, buffer);
+#ifdef PURIFY
+    /*
+     * Not reached unless exit is redefined.
+     */
+    Tcl_DeleteInterp(interp);
+#endif
 }
 
 /*
