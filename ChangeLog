@@ -1,3 +1,12 @@
+2005-01-30  Joe English  <jenglish@users.sourceforge.net>
+
+	* unix/configure.in: Restored two double-evals that were
+	removed in the DBGX purge; these are still needed on some
+	platforms to account for TCL_TRIM_DOTS.  [Bug 1112654]
+
+	* unix/configure: NOT REGENERATED: only have autoconf 2.59 here,
+	need to find someone with autoconf 2.57.
+
 2005-01-28  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* unix/configure, unix/tcl.m4: add solaris 64-bit gcc build
