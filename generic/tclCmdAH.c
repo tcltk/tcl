@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.32 2003/05/05 20:54:38 dgp Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.33 2003/05/14 22:45:12 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2256,7 +2256,7 @@ Tcl_FormatObjCmd(dummy, interp, objc, objv)
 	case 'x':
 	case 'X':
 	    if (useWide) {
-		if (Tcl_GetWideIntFromObj(interp, /* INTL: Tcl source. */
+		if (Tcl_GetWideIntFromObj(interp,	/* INTL: Tcl source. */
 			objv[objIndex], &wideValue) != TCL_OK) {
 		    goto fmtError;
 		}
@@ -2264,7 +2264,18 @@ Tcl_FormatObjCmd(dummy, interp, objc, objv)
 		size = 40 + precision;
 		break;
 	    }
-	    if (Tcl_GetLongFromObj(interp,	      /* INTL: Tcl source. */
+	    if (objv[objIndex]->typePtr == &tclWideIntType) {
+		/* Operation won't fail; we're typed! */
+		Tcl_GetWideIntFromObj(NULL, objv[objIndex], &wideValue);
+		if (wideValue>ULONG_MAX || wideValue<LONG_MIN) {
+		    /*
+		     * Value too big for type.  Generate an error;
+		     */
+		    Tcl_GetLongFromObj(interp, objv[objIndex], &intValue);
+		    goto fmtError;
+		}
+		intValue = Tcl_WideAsLong(wideValue);
+	    } else if (Tcl_GetLongFromObj(interp,	/* INTL: Tcl source. */
 		    objv[objIndex], &intValue) != TCL_OK) {
 		goto fmtError;
 	    }
