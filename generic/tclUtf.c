@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUtf.c,v 1.28 2002/08/05 03:24:41 dgp Exp $
+ * RCS: @(#) $Id: tclUtf.c,v 1.29 2002/11/12 02:26:29 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -423,7 +423,7 @@ Tcl_UtfToUniCharDString(string, length, dsPtr)
     w = wString;
     end = string + length;
     for (p = string; p < end; ) {
-	p += Tcl_UtfToUniChar(p, w);
+	p += TclUtfToUniChar(p, w);
 	w++;
     }
     *w = '\0';
@@ -490,27 +490,36 @@ Tcl_NumUtfChars(str, len)
 {
     Tcl_UniChar ch;
     register Tcl_UniChar *chPtr = &ch;
-    register int n;
-    int i;
+    register int i;
 
     /*
      * The separate implementations are faster.
+     *
+     * Since this is a time-sensitive function, we also do the check for
+     * the single-byte char case specially.
      */
-     
+
     i = 0;
     if (len < 0) {
 	while (1) {
-	    str += Tcl_UtfToUniChar(str, chPtr);
+	    str += TclUtfToUniChar(str, chPtr);
 	    if (ch == '\0') {
 		break;
 	    }
 	    i++;
 	}
     } else {
+	register int n;
+
 	while (len > 0) {
-	    n = Tcl_UtfToUniChar(str, chPtr);
-	    len -= n;
-	    str += n;
+	    if (UCHAR(*str) < 0xC0) {
+		len--;
+		str++;
+	    } else {
+		n = Tcl_UtfToUniChar(str, chPtr);
+		len -= n;
+		str += n;
+	    }
 	    i++;
 	}
     }
@@ -545,7 +554,7 @@ Tcl_UtfFindFirst(string, ch)
     Tcl_UniChar find;
     
     while (1) {
-	len = Tcl_UtfToUniChar(string, &find);
+	len = TclUtfToUniChar(string, &find);
 	if (find == ch) {
 	    return string;
 	}
@@ -587,7 +596,7 @@ Tcl_UtfFindLast(string, ch)
 	
     last = NULL;
     while (1) {
-	len = Tcl_UtfToUniChar(string, &find);
+	len = TclUtfToUniChar(string, &find);
 	if (find == ch) {
 	    last = string;
 	}
@@ -625,7 +634,7 @@ Tcl_UtfNext(str)
 {
     Tcl_UniChar ch;
 
-    return str + Tcl_UtfToUniChar(str, &ch);
+    return str + TclUtfToUniChar(str, &ch);
 }
 
 /*
@@ -706,7 +715,7 @@ Tcl_UniCharAtIndex(src, index)
 
     while (index >= 0) {
 	index--;
-	src += Tcl_UtfToUniChar(src, &ch);
+	src += TclUtfToUniChar(src, &ch);
     }
     return ch;
 }
@@ -737,7 +746,7 @@ Tcl_UtfAtIndex(src, index)
     
     while (index > 0) {
 	index--;
-	src += Tcl_UtfToUniChar(src, &ch);
+	src += TclUtfToUniChar(src, &ch);
     }
     return src;
 }
@@ -825,7 +834,7 @@ Tcl_UtfToUpper(str)
 
     src = dst = str;
     while (*src) {
-        bytes = Tcl_UtfToUniChar(src, &ch);
+        bytes = TclUtfToUniChar(src, &ch);
 	upChar = Tcl_UniCharToUpper(ch);
 
 	/*
@@ -878,7 +887,7 @@ Tcl_UtfToLower(str)
 
     src = dst = str;
     while (*src) {
-	bytes = Tcl_UtfToUniChar(src, &ch);
+	bytes = TclUtfToUniChar(src, &ch);
 	lowChar = Tcl_UniCharToLower(ch);
 
 	/*
@@ -934,7 +943,7 @@ Tcl_UtfToTitle(str)
     src = dst = str;
 
     if (*src) {
-	bytes = Tcl_UtfToUniChar(src, &ch);
+	bytes = TclUtfToUniChar(src, &ch);
 	titleChar = Tcl_UniCharToTitle(ch);
 
 	if (bytes < UtfCount(titleChar)) {
@@ -946,7 +955,7 @@ Tcl_UtfToTitle(str)
 	src += bytes;
     }
     while (*src) {
-	bytes = Tcl_UtfToUniChar(src, &ch);
+	bytes = TclUtfToUniChar(src, &ch);
 	lowChar = Tcl_UniCharToLower(ch);
 
 	if (bytes < UtfCount(lowChar)) {
@@ -1041,8 +1050,8 @@ Tcl_UtfNcmp(cs, ct, n)
 	 * This should be called only when both strings are of
 	 * at least n chars long (no need for \0 check)
 	 */
-	cs += Tcl_UtfToUniChar(cs, &ch1);
-	ct += Tcl_UtfToUniChar(ct, &ch2);
+	cs += TclUtfToUniChar(cs, &ch1);
+	ct += TclUtfToUniChar(ct, &ch2);
 	if (ch1 != ch2) {
 	    return (ch1 - ch2);
 	}
@@ -1081,8 +1090,8 @@ Tcl_UtfNcasecmp(cs, ct, n)
 	 * This should be called only when both strings are of
 	 * at least n chars long (no need for \0 check)
 	 */
-	cs += Tcl_UtfToUniChar(cs, &ch1);
-	ct += Tcl_UtfToUniChar(ct, &ch2);
+	cs += TclUtfToUniChar(cs, &ch1);
+	ct += TclUtfToUniChar(ct, &ch2);
 	if (ch1 != ch2) {
 	    ch1 = Tcl_UniCharToLower(ch1);
 	    ch2 = Tcl_UniCharToLower(ch2);
