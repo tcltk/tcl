@@ -10,11 +10,11 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: unixInit.test,v 1.29 2002/07/24 21:05:19 dgp Exp $
+# RCS: @(#) $Id: unixInit.test,v 1.30 2002/12/04 07:07:40 hobbs Exp $
 
 package require tcltest 2
 namespace import -force ::tcltest::*
-
+catch {unset path}
 if {[info exists env(TCL_LIBRARY)]} {
     set oldlibrary $env(TCL_LIBRARY)
     unset env(TCL_LIBRARY)
