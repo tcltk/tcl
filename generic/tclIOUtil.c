@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.32 2002/01/25 20:40:55 dgp Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.33 2002/01/25 21:36:09 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -4134,9 +4134,9 @@ TclpNativeToNormalized(clientData)
     Tcl_Obj *objPtr;
     
 #ifdef __WIN32__
-    Tcl_WinTCharToUtf((char*)clientData, -1, &ds);
+    Tcl_WinTCharToUtf((CONST char*)clientData, -1, &ds);
 #else
-    Tcl_ExternalToUtfDString(NULL, (char*)clientData, -1, &ds);
+    Tcl_ExternalToUtfDString(NULL, (CONST char*)clientData, -1, &ds);
 #endif
     objPtr = Tcl_NewStringObj(Tcl_DStringValue(&ds),Tcl_DStringLength(&ds));
     Tcl_DStringFree(&ds);

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWin32Dll.c,v 1.11 2001/11/19 17:45:12 vincentdarley Exp $
+ * RCS: @(#) $Id: tclWin32Dll.c,v 1.12 2002/01/25 21:36:10 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -490,7 +490,7 @@ TclWinSetInterfaces(
  *---------------------------------------------------------------------------
  */
 
-TCHAR *
+CONST TCHAR *
 Tcl_WinUtfToTChar(string, len, dsPtr)
     CONST char *string;		/* Source string in UTF-8. */
     int len;			/* Source string length in bytes, or < 0 for
@@ -502,7 +502,7 @@ Tcl_WinUtfToTChar(string, len, dsPtr)
 	    string, len, dsPtr);
 }
 
-char *
+CONST char *
 Tcl_WinTCharToUtf(string, len, dsPtr)
     CONST TCHAR *string;	/* Source string in Unicode when running
 				 * NT, ANSI when running 95. */

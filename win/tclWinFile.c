@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.23 2002/01/25 20:40:56 dgp Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.24 2002/01/25 21:36:10 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -80,7 +80,7 @@ TclpFindExecutable(argv0)
      */
 
     (*tclWinProcs->getModuleFileNameProc)(NULL, wName, MAX_PATH);
-    Tcl_WinTCharToUtf((TCHAR *) wName, -1, &ds);
+    Tcl_WinTCharToUtf((CONST TCHAR *) wName, -1, &ds);
 
     tclNativeExecutableName = ckalloc((unsigned) (Tcl_DStringLength(&ds) + 1));
     strcpy(tclNativeExecutableName, Tcl_DStringValue(&ds));
@@ -132,7 +132,7 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
     Tcl_DString ds;
     Tcl_DString dsOrig;
     Tcl_Obj *fileNamePtr;
-    TCHAR *nativeName;
+    CONST TCHAR *nativeName;
     int matchSpecialDots;
     
     /*
@@ -269,15 +269,15 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 
     for (found = 1; found != 0; 
 	    found = (*tclWinProcs->findNextFileProc)(handle, &data)) {
-	TCHAR *nativeMatchResult;
-	char *name, *fname;
+	CONST TCHAR *nativeMatchResult;
+	CONST char *name, *fname;
 	
 	int typeOk = 1;
 	
 	if (tclWinProcs->useWide) {
-	    nativeName = (TCHAR *) data.w.cFileName;
+	    nativeName = (CONST TCHAR *) data.w.cFileName;
 	} else {
-	    nativeName = (TCHAR *) data.a.cFileName;
+	    nativeName = (CONST TCHAR *) data.a.cFileName;
 	}
 	name = Tcl_WinTCharToUtf(nativeName, -1, &ds);
 
@@ -643,8 +643,7 @@ static int
 NativeIsExec(nativePath)
     CONST TCHAR *nativePath;
 {
-    CONST char *p;
-    char *path;
+    CONST char *p, *path;
     Tcl_DString ds;
     
     /* 
@@ -937,7 +936,7 @@ NativeStat(nativePath, statPtr)
 	if ((fullPath[0] == '\\') && (fullPath[1] == '\\')) {
 	    CONST char *p;
 	    DWORD dw;
-	    TCHAR *nativeVol;
+	    CONST TCHAR *nativeVol;
 	    Tcl_DString volString;
 
 	    p = strchr(fullPath + 2, '\\');
@@ -997,7 +996,7 @@ NativeStat(nativePath, statPtr)
 	if ((fullPath[0] == '\\') && (fullPath[1] == '\\')) {
 	    CONST char *p;
 	    DWORD dw;
-	    TCHAR *nativeVol;
+	    CONST TCHAR *nativeVol;
 	    Tcl_DString volString;
 
 	    p = strchr(fullPath + 2, '\\');

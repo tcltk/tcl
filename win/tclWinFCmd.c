@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFCmd.c,v 1.19 2002/01/18 14:17:06 dgp Exp $
+ * RCS: @(#) $Id: tclWinFCmd.c,v 1.20 2002/01/25 21:36:10 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -1888,7 +1888,7 @@ TclpObjNormalizePath(interp, pathPtr, nextCheckpoint)
 	Tcl_DStringFree(&ds);
     } else {
 	/* We're on WinNT or 2000 or XP */
-	char *nativePath;
+	CONST char *nativePath;
 #if 0
 	/* 
 	 * We don't use this simpler version, because the speed

@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.43 2001/12/14 20:31:22 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.44 2002/01/25 21:36:09 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3064,15 +3064,15 @@ Tcl_EvalObjv(interp, objc, objv, flags)
 void
 Tcl_LogCommandInfo(interp, script, command, length)
     Tcl_Interp *interp;		/* Interpreter in which to log information. */
-    char *script;		/* First character in script containing
+    CONST char *script;		/* First character in script containing
 				 * command (must be <= command). */
-    char *command;		/* First character in command that
+    CONST char *command;	/* First character in command that
 				 * generated the error. */
     int length;			/* Number of bytes in command (-1 means
 				 * use all bytes up to first null byte). */
 {
     char buffer[200];
-    register char *p;
+    register CONST char *p;
     char *ellipsis = "";
     Interp *iPtr = (Interp *) interp;
 
