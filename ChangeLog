@@ -1,3 +1,9 @@
+2001-12-17  Andreas Kupries  <andreas_kupries@users.sourceforge.net> 
+
+	* Applied #219311 on behalf of Rolf Schroedter
+	  <schroedter@users.sourceforge.net> to prevent fcopy on serial
+	  ports from flooding the event queue.
+
 2001-12-11  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* doc/CrtInterp.3:
