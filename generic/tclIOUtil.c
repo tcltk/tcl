@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.43 2002/05/13 13:20:00 vincentdarley Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.44 2002/05/14 09:44:43 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -561,12 +561,19 @@ FsReleaseIterator(void) {
  *
  *	Clean up the filesystem.  After this, calls to all Tcl_FS...
  *	functions will fail.
+ *	
+ *	Note that, since 'TclFinalizedLoad' may unload extensions
+ *	which implement other filesystems, and which may therefore
+ *	contain a 'freeProc' for those filesystems, at this stage
+ *	we _must_ have freed all objects of "path" type, or we may
+ *	end up with segfaults if we try to free them later.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	Frees any memory allocated by the filesystem.
+ *	Frees any memory allocated by the filesystem.  Unloads any
+ *	extensions which have been loaded.
  *
  *----------------------------------------------------------------------
  */
@@ -583,6 +590,14 @@ TclFinalizeFilesystem() {
 	cwdPathPtr = NULL;
     }
 
+    /*
+     * We defer unloading of packages until very late 
+     * to avoid memory access issues.  Both exit callbacks and
+     * synchronization variables may be stored in packages.
+     */
+
+    TclFinalizeLoad();
+    
     /* Remove all filesystems, freeing any allocated memory */
     while (filesystemList != NULL) {
 	FilesystemRecord *tmpFsRecPtr = filesystemList->nextPtr;
