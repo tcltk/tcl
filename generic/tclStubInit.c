@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.43 2000/08/25 02:04:29 ericm Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.44 2000/09/14 18:42:32 ericm Exp $
  */
 
 #include "tclInt.h"
@@ -812,6 +812,11 @@ TclStubs tclStubs = {
     Tcl_CommandTraceInfo, /* 407 */
     Tcl_TraceCommand, /* 408 */
     Tcl_UntraceCommand, /* 409 */
+    Tcl_AttemptAlloc, /* 410 */
+    Tcl_AttemptDbCkalloc, /* 411 */
+    Tcl_AttemptRealloc, /* 412 */
+    Tcl_AttemptDbCkrealloc, /* 413 */
+    Tcl_AttemptSetObjLength, /* 414 */
 };
 
 /* !END!: Do not edit above this line. */

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.40 2000/08/25 02:04:28 ericm Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.41 2000/09/14 18:42:31 ericm Exp $
  */
 
 #ifndef _TCLDECLS
@@ -1283,6 +1283,20 @@ EXTERN void		Tcl_UntraceCommand _ANSI_ARGS_((Tcl_Interp * interp,
 				char * varName, int flags, 
 				Tcl_CommandTraceProc * proc, 
 				ClientData clientData));
+/* 410 */
+EXTERN char *		Tcl_AttemptAlloc _ANSI_ARGS_((unsigned int size));
+/* 411 */
+EXTERN char *		Tcl_AttemptDbCkalloc _ANSI_ARGS_((unsigned int size, 
+				char * file, int line));
+/* 412 */
+EXTERN char *		Tcl_AttemptRealloc _ANSI_ARGS_((char * ptr, 
+				unsigned int size));
+/* 413 */
+EXTERN char *		Tcl_AttemptDbCkrealloc _ANSI_ARGS_((char * ptr, 
+				unsigned int size, char * file, int line));
+/* 414 */
+EXTERN int		Tcl_AttemptSetObjLength _ANSI_ARGS_((
+				Tcl_Obj * objPtr, int length));
 
 typedef struct TclStubHooks {
     struct TclPlatStubs *tclPlatStubs;
@@ -1760,6 +1774,11 @@ typedef struct TclStubs {
     ClientData (*tcl_CommandTraceInfo) _ANSI_ARGS_((Tcl_Interp * interp, char * varName, int flags, Tcl_CommandTraceProc * procPtr, ClientData prevClientData)); /* 407 */
     int (*tcl_TraceCommand) _ANSI_ARGS_((Tcl_Interp * interp, char * varName, int flags, Tcl_CommandTraceProc * proc, ClientData clientData)); /* 408 */
     void (*tcl_UntraceCommand) _ANSI_ARGS_((Tcl_Interp * interp, char * varName, int flags, Tcl_CommandTraceProc * proc, ClientData clientData)); /* 409 */
+    char * (*tcl_AttemptAlloc) _ANSI_ARGS_((unsigned int size)); /* 410 */
+    char * (*tcl_AttemptDbCkalloc) _ANSI_ARGS_((unsigned int size, char * file, int line)); /* 411 */
+    char * (*tcl_AttemptRealloc) _ANSI_ARGS_((char * ptr, unsigned int size)); /* 412 */
+    char * (*tcl_AttemptDbCkrealloc) _ANSI_ARGS_((char * ptr, unsigned int size, char * file, int line)); /* 413 */
+    int (*tcl_AttemptSetObjLength) _ANSI_ARGS_((Tcl_Obj * objPtr, int length)); /* 414 */
 } TclStubs;
 
 #ifdef __cplusplus
@@ -3444,6 +3463,26 @@ extern TclStubs *tclStubsPtr;
 #ifndef Tcl_UntraceCommand
 #define Tcl_UntraceCommand \
 	(tclStubsPtr->tcl_UntraceCommand) /* 409 */
+#endif
+#ifndef Tcl_AttemptAlloc
+#define Tcl_AttemptAlloc \
+	(tclStubsPtr->tcl_AttemptAlloc) /* 410 */
+#endif
+#ifndef Tcl_AttemptDbCkalloc
+#define Tcl_AttemptDbCkalloc \
+	(tclStubsPtr->tcl_AttemptDbCkalloc) /* 411 */
+#endif
+#ifndef Tcl_AttemptRealloc
+#define Tcl_AttemptRealloc \
+	(tclStubsPtr->tcl_AttemptRealloc) /* 412 */
+#endif
+#ifndef Tcl_AttemptDbCkrealloc
+#define Tcl_AttemptDbCkrealloc \
+	(tclStubsPtr->tcl_AttemptDbCkrealloc) /* 413 */
+#endif
+#ifndef Tcl_AttemptSetObjLength
+#define Tcl_AttemptSetObjLength \
+	(tclStubsPtr->tcl_AttemptSetObjLength) /* 414 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */
