@@ -1,3 +1,9 @@
+2004-10-29  Don Porter  <dgp@users.sourceforge.net>
+
+        * library/tcltest/tcltest.tcl:  Correct reaction to errors in the
+        obsolete processCmdLineArgsHook.        [Bug 1055673]
+        * library/tcltest/pkgIndex.tcl: Bump to tcltest 2.2.7
+
 2004-10-28  Andreas Kupries <andreask@activestate.com>
 
 	* generic/tclAlloc.c:	    Fixed [Tcl SF Bug 1030548], a
