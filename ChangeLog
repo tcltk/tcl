@@ -1,5 +1,9 @@
 2002-10-09  Daniel Steffen  <das@users.sourceforge.net>
 
+	* generic/tclIntDecls.h: fixed botched regen.
+
+2002-10-09  Daniel Steffen  <das@users.sourceforge.net>
+
 	* generic/tclInt.decls: made TclSetPreInitScript() declaration
 	generic as it is used on mac & aqua as well.
 	* generic/tclIntDecls.h:

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.46 2002/10/09 11:54:13 das Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.47 2002/10/09 12:28:01 das Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -618,15 +618,7 @@ typedef struct TclIntStubs {
     int (*tclServiceIdle) _ANSI_ARGS_((void)); /* 98 */
     void *reserved99;
     void *reserved100;
-#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
     char * (*tclSetPreInitScript) _ANSI_ARGS_((char * string)); /* 101 */
-#endif /* UNIX */
-#ifdef __WIN32__
-    char * (*tclSetPreInitScript) _ANSI_ARGS_((char * string)); /* 101 */
-#endif /* __WIN32__ */
-#ifdef MAC_TCL
-    void *reserved101;
-#endif /* MAC_TCL */
     void (*tclSetupEnv) _ANSI_ARGS_((Tcl_Interp * interp)); /* 102 */
     int (*tclSockGetPort) _ANSI_ARGS_((Tcl_Interp * interp, char * str, char * proto, int * portPtr)); /* 103 */
 #if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
