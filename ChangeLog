@@ -1,3 +1,15 @@
+2001-10-29  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* win/tclWinFile.c: fix to '-types {f r}' bug in
+	TclpMatchInDirectory (which could cause a UMR, as well as
+	returning wrong results).  Also improved API for 'stat'
+	to resolve [Bug#219258].
+	* win/tclWin32Dll.c
+	* win/tclWinInt.h: addition of improved stat API to internal 
+	lookup table.
+	* tests/fileName.test: two new tests for the above bug.
+	* generic/tclIOUtil.c: some cleanup of comments and #ifdefs
+	
 2001-10-29  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* unix/tclUnixFile.c (TclpMatchInDirectory): Argument to access()

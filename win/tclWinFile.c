@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.17 2001/09/27 00:36:16 dgp Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.18 2001/10/29 15:02:44 vincentdarley Exp $
  */
 
 #include "tclWinInt.h"
@@ -339,8 +339,6 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 		typeOk = 0;
 	    }
 	} else {
-	    struct stat buf;
-	    
 	    if (attr & FILE_ATTRIBUTE_HIDDEN) {
 		/* If invisible */
 		if ((types->perm == 0) || 
@@ -369,12 +367,16 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 		}
 	    }
 	    if (typeOk && types->type != 0) {
-		if (types->perm == 0) {
-		    /* We haven't yet done a stat on the file */
-		    if (NativeStat(nativeName, &buf) != 0) {
-			/* Posix error occurred */
-			typeOk = 0;
-		    }
+		struct stat buf;
+		
+		if (NativeStat(nativeName, &buf) != 0) {
+		    /* 
+		     * Posix error occurred, either the file
+		     * has disappeared, or there is some other
+		     * strange error.  In any case we don't
+		     * return this file.
+		     */
+		    typeOk = 0;
 		}
 		if (typeOk) {
 		    /*
@@ -791,7 +793,7 @@ TclpGetCwd(interp, bufferPtr)
     }
 
     /*
-     * Watch for the wierd Windows c:\\UNC syntax.
+     * Watch for the weird Windows c:\\UNC syntax.
      */
 
     if (tclWinProcs->useWide) {
@@ -831,6 +833,7 @@ TclpObjStat(pathPtr, statPtr)
     Tcl_Obj *pathPtr;          /* Path of file to stat */
     struct stat *statPtr;      /* Filled with results of stat call. */
 {
+#ifdef OLD_API
     Tcl_Obj *transPtr;
     /*
      * Eliminate file names containing wildcard characters, or subsequent 
@@ -842,7 +845,8 @@ TclpObjStat(pathPtr, statPtr)
 	Tcl_SetErrno(ENOENT);
 	return -1;
     }
-
+#endif
+    
     /*
      * Ensure correct file sizes by forcing the OS to write any
      * pending data to disk. This is done only for channels which are
@@ -883,14 +887,19 @@ NativeStat(nativePath, statPtr)
     struct stat *statPtr;      /* Filled with results of stat call. */
 {
     Tcl_DString ds;
+#ifdef OLD_API
     WIN32_FIND_DATAT data;
     HANDLE handle;
+#else
+    WIN32_FILE_ATTRIBUTE_DATA data;
+#endif
     DWORD attr;
     WCHAR nativeFullPath[MAX_PATH];
     TCHAR *nativePart;
     CONST char *fullPath;
     int dev, mode;
 
+#ifdef OLD_API
     handle = (*tclWinProcs->findFirstFileProc)(nativePath, &data);
     if (handle == INVALID_HANDLE_VALUE) {
 	/* 
@@ -914,7 +923,15 @@ NativeStat(nativePath, statPtr)
     } else {
 	FindClose(handle);
     }
-
+#else
+    if((*tclWinProcs->getFileAttributesExProc)(nativePath,
+					       GetFileExInfoStandard,
+					       &data) != TRUE) {
+	Tcl_SetErrno(ENOENT);
+	return -1;
+    }
+#endif
+    
     (*tclWinProcs->getFullPathNameProc)(nativePath, MAX_PATH, nativeFullPath,
 	    &nativePart);
 
@@ -959,7 +976,11 @@ NativeStat(nativePath, statPtr)
     }
     Tcl_DStringFree(&ds);
 
+#ifdef OLD_API
     attr = data.a.dwFileAttributes;
+#else
+    attr = data.dwFileAttributes;
+#endif
     mode  = (attr & FILE_ATTRIBUTE_DIRECTORY) ? S_IFDIR | S_IEXEC : S_IFREG;
     mode |= (attr & FILE_ATTRIBUTE_READONLY) ? S_IREAD : S_IREAD | S_IWRITE;
     if (NativeIsExec(nativePath)) {
@@ -981,10 +1002,17 @@ NativeStat(nativePath, statPtr)
     statPtr->st_uid	= 0;
     statPtr->st_gid	= 0;
     statPtr->st_rdev	= (dev_t) dev;
+#ifdef OLD_API
     statPtr->st_size	= data.a.nFileSizeLow;
     statPtr->st_atime	= ToCTime(data.a.ftLastAccessTime);
     statPtr->st_mtime	= ToCTime(data.a.ftLastWriteTime);
     statPtr->st_ctime	= ToCTime(data.a.ftCreationTime);
+#else
+    statPtr->st_size	= data.nFileSizeLow;
+    statPtr->st_atime	= ToCTime(data.ftLastAccessTime);
+    statPtr->st_mtime	= ToCTime(data.ftLastWriteTime);
+    statPtr->st_ctime	= ToCTime(data.ftCreationTime);
+#endif
     return 0;
 }
 
