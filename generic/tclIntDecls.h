@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.42 2002/06/17 22:52:51 hobbs Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.43 2002/07/15 22:18:06 msofer Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -210,8 +210,8 @@ EXTERN Proc *		TclIsProc _ANSI_ARGS_((Command * cmdPtr));
 /* 58 */
 EXTERN Var *		TclLookupVar _ANSI_ARGS_((Tcl_Interp * interp, 
 				char * part1, CONST char * part2, int flags, 
-				char * msg, int createPart1, int createPart2, 
-				Var ** arrayPtrPtr));
+				CONST char * msg, int createPart1, 
+				int createPart2, Var ** arrayPtrPtr));
 /* Slot 59 is reserved */
 /* 60 */
 EXTERN int		TclNeedSpace _ANSI_ARGS_((CONST char * start, 
@@ -373,7 +373,7 @@ EXTERN int		Tcl_GetNamespaceResolvers _ANSI_ARGS_((
 				Tcl_ResolverInfo * resInfo));
 /* 120 */
 EXTERN Tcl_Var		Tcl_FindNamespaceVar _ANSI_ARGS_((
-				Tcl_Interp * interp, char * name, 
+				Tcl_Interp * interp, CONST char * name, 
 				Tcl_Namespace * contextNsPtr, int flags));
 /* 121 */
 EXTERN int		Tcl_ForgetImport _ANSI_ARGS_((Tcl_Interp * interp, 
@@ -597,7 +597,7 @@ typedef struct TclIntStubs {
     Proc * (*tclIsProc) _ANSI_ARGS_((Command * cmdPtr)); /* 55 */
     void *reserved56;
     void *reserved57;
-    Var * (*tclLookupVar) _ANSI_ARGS_((Tcl_Interp * interp, char * part1, CONST char * part2, int flags, char * msg, int createPart1, int createPart2, Var ** arrayPtrPtr)); /* 58 */
+    Var * (*tclLookupVar) _ANSI_ARGS_((Tcl_Interp * interp, char * part1, CONST char * part2, int flags, CONST char * msg, int createPart1, int createPart2, Var ** arrayPtrPtr)); /* 58 */
     void *reserved59;
     int (*tclNeedSpace) _ANSI_ARGS_((CONST char * start, CONST char * end)); /* 60 */
     Tcl_Obj * (*tclNewProcBodyObj) _ANSI_ARGS_((Proc * procPtr)); /* 61 */
@@ -675,7 +675,7 @@ typedef struct TclIntStubs {
     Tcl_Namespace * (*tcl_FindNamespace) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * name, Tcl_Namespace * contextNsPtr, int flags)); /* 117 */
     int (*tcl_GetInterpResolvers) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * name, Tcl_ResolverInfo * resInfo)); /* 118 */
     int (*tcl_GetNamespaceResolvers) _ANSI_ARGS_((Tcl_Namespace * namespacePtr, Tcl_ResolverInfo * resInfo)); /* 119 */
-    Tcl_Var (*tcl_FindNamespaceVar) _ANSI_ARGS_((Tcl_Interp * interp, char * name, Tcl_Namespace * contextNsPtr, int flags)); /* 120 */
+    Tcl_Var (*tcl_FindNamespaceVar) _ANSI_ARGS_((Tcl_Interp * interp, CONST char * name, Tcl_Namespace * contextNsPtr, int flags)); /* 120 */
     int (*tcl_ForgetImport) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Namespace * nsPtr, CONST char * pattern)); /* 121 */
     Tcl_Command (*tcl_GetCommandFromObj) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * objPtr)); /* 122 */
     void (*tcl_GetCommandFullName) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Command command, Tcl_Obj * objPtr)); /* 123 */
