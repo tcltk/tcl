@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.35 2002/05/24 21:19:08 dkf Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.36 2002/06/28 09:56:54 dkf Exp $
  */
 
 #include "tclInt.h"	/* Internal definitions for Tcl. */
@@ -602,7 +602,7 @@ FileSeekProc(instanceData, offset, mode, errorCodePtr)
     /*
      * Save our current place in case we need to roll-back the seek.
      */
-    oldLoc = Tcl_PlatformSeek(fsPtr->fd, (Tcl_SeekOffset) 0, SEEK_CUR);
+    oldLoc = TclOSseek(fsPtr->fd, (Tcl_SeekOffset) 0, SEEK_CUR);
     if (oldLoc == Tcl_LongAsWide(-1)) {
 	/*
 	 * Bad things are happening.  Error out...
@@ -611,14 +611,14 @@ FileSeekProc(instanceData, offset, mode, errorCodePtr)
 	return -1;
     }
  
-    newLoc = Tcl_PlatformSeek(fsPtr->fd, (Tcl_SeekOffset) offset, mode);
+    newLoc = TclOSseek(fsPtr->fd, (Tcl_SeekOffset) offset, mode);
  
     /*
      * Check for expressability in our return type, and roll-back otherwise.
      */
     if (newLoc > Tcl_LongAsWide(INT_MAX)) {
 	*errorCodePtr = EOVERFLOW;
-	Tcl_PlatformSeek(fsPtr->fd, (Tcl_SeekOffset) oldLoc, SEEK_SET);
+	TclOSseek(fsPtr->fd, (Tcl_SeekOffset) oldLoc, SEEK_SET);
 	return -1;
     } else {
 	*errorCodePtr = (newLoc == Tcl_LongAsWide(-1)) ? errno : 0;
@@ -658,7 +658,7 @@ FileWideSeekProc(instanceData, offset, mode, errorCodePtr)
     FileState *fsPtr = (FileState *) instanceData;
     Tcl_WideInt newLoc;
 
-    newLoc = Tcl_PlatformSeek(fsPtr->fd, (Tcl_SeekOffset) offset, mode);
+    newLoc = TclOSseek(fsPtr->fd, (Tcl_SeekOffset) offset, mode);
 
     *errorCodePtr = (newLoc == -1) ? errno : 0;
     return newLoc;
@@ -1794,7 +1794,7 @@ TclpOpenFileChannel(interp, pathPtr, modeString, permissions)
     if (native == NULL) {
 	return NULL;
     }
-    fd = Tcl_PlatformOpen(native, mode, permissions);
+    fd = TclOSopen(native, mode, permissions);
 #ifdef SUPPORTS_TTY
     ctl_tty = (strcmp (native, "/dev/tty") == 0);
 #endif /* SUPPORTS_TTY */
@@ -2954,10 +2954,16 @@ TclpGetDefaultStdChannel(type)
     int mode = 0;		/* compiler warning (used before set). */
     char *bufMode = NULL;
 
+    /*
+     * Some #def's to make the code a little clearer!
+     */
+#define ZERO_OFFSET	((Tcl_SeekOffset) 0)
+#define ERROR_OFFSET	((Tcl_SeekOffset) -1)
+
     switch (type) {
 	case TCL_STDIN:
-	    if ((Tcl_PlatformSeek(0, (Tcl_SeekOffset) 0,
-		    SEEK_CUR) == (Tcl_SeekOffset)-1) && (errno == EBADF)) {
+	    if ((TclOSseek(0, ZERO_OFFSET, SEEK_CUR) == ERROR_OFFSET)
+		    && (errno == EBADF)) {
 		return (Tcl_Channel) NULL;
 	    }
 	    fd = 0;
@@ -2965,8 +2971,8 @@ TclpGetDefaultStdChannel(type)
 	    bufMode = "line";
 	    break;
 	case TCL_STDOUT:
-	    if ((Tcl_PlatformSeek(1, (Tcl_SeekOffset) 0,
-		    SEEK_CUR) == (Tcl_SeekOffset)-1) && (errno == EBADF)) {
+	    if ((TclOSseek(1, ZERO_OFFSET, SEEK_CUR) == ERROR_OFFSET)
+		    && (errno == EBADF)) {
 		return (Tcl_Channel) NULL;
 	    }
 	    fd = 1;
@@ -2974,8 +2980,8 @@ TclpGetDefaultStdChannel(type)
 	    bufMode = "line";
 	    break;
 	case TCL_STDERR:
-	    if ((Tcl_PlatformSeek(2, (Tcl_SeekOffset) 0,
-		    SEEK_CUR) == (Tcl_SeekOffset)-1) && (errno == EBADF)) {
+	    if ((TclOSseek(2, ZERO_OFFSET, SEEK_CUR) == ERROR_OFFSET)
+		    && (errno == EBADF)) {
 		return (Tcl_Channel) NULL;
 	    }
 	    fd = 2;
@@ -2986,6 +2992,9 @@ TclpGetDefaultStdChannel(type)
 	    panic("TclGetDefaultStdChannel: Unexpected channel type");
 	    break;
     }
+
+#undef ZERO_OFFSET
+#undef ERROR_OFFSET
 
     channel = Tcl_MakeFileChannel((ClientData) fd, mode);
     if (channel == NULL) {

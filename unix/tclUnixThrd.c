@@ -803,23 +803,26 @@ TclpReaddir(DIR * dir)
 
 #ifdef HAVE_READDIR_R
     ent = &tsdPtr->rdbuf.ent; 
-    if (Tcl_PlatformReaddir_r(dir, ent, &ent) != 0) {
+    if (TclOSreaddir_r(dir, ent, &ent) != 0) {
 	ent = NULL;
     }
-#else
-    Tcl_MutexLock( &rdMutex );
-#ifdef HAVE_STRUCT_DIRENT64
+
+#else /* !HAVE_READDIR_R */
+
+    Tcl_MutexLock(&rdMutex);
+#   ifdef HAVE_STRUCT_DIRENT64
     ent = readdir64(dir);
-#else
+#   else /* !HAVE_STRUCT_DIRENT64 */
     ent = readdir(dir);
-#endif
-    if(ent != NULL) {
-    	memcpy( (VOID *) &tsdPtr->rdbuf.ent, (VOID *) ent,
-    		sizeof (Tcl_DirEntry) + sizeof (char) * (PATH_MAX+1) );
-    	ent = &tsdPtr->rdbuf.ent;     
+#   endif /* HAVE_STRUCT_DIRENT64 */
+    if (ent != NULL) {
+	memcpy((VOID *) &tsdPtr->rdbuf.ent, (VOID *) ent,
+		sizeof(Tcl_DirEntry) + sizeof(char) * (PATH_MAX+1));
+	ent = &tsdPtr->rdbuf.ent;
     }
-    Tcl_MutexUnlock( &rdMutex );
-#endif
+    Tcl_MutexUnlock(&rdMutex);
+
+#endif /* HAVE_READDIR_R */
     return ent;
 }
 
