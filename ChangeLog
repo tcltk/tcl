@@ -1,8 +1,12 @@
 2004-04-23  David Gravereaux <davygrvy@pobox.com>
 
-	* win/tclWin32Dll.c:  Remove my mistake from 4/19 of adding an
+	* win/tclWin32Dll.c:  Removed my mistake from 4/19 of adding an
 	exit handler to TclWinInit.  TclWinEncodingsCleanup called from
 	TclFinalizeFilesystem does the Tcl_FreeEncoding for us.
+
+	* win/tclWinChan.c (Tcl_MakeFileChannel) : Case for CloseHandle
+	returning zero and not throwing a
+	RaiseException(EXCEPTION_INVALID_HANDLE) now being done.
 
 2004-04-22  David Gravereaux <davygrvy@pobox.com>
 
