@@ -9,6 +9,13 @@
 
 2002-01-23  Don Porter <dgp@users.sourceforge.net>
 
+	* win/tclWinFile.c (NativeAccess,NativeStat,NativeIsExec,
+	  TclpGetUserHome):
+	* win/tclWinPort.h (TclWinSerialReopen):
+	* win/tclWinSerial.c (TclWinSerialReopen):
+	* win/tclWinSock.c (Tcl_OpenTcpServer):  Corrections to earlier
+	TIP 27 changes.  Thanks to Andreas Kupries for the feedback.
+
 	* doc/GetHostName.3:
 	* doc/GetOpnFl.3:
 	* doc/OpenTcp.3:

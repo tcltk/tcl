@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.21 2002/01/18 14:17:06 dgp Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.22 2002/01/24 01:34:16 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -30,9 +30,9 @@ typedef NET_API_STATUS NET_API_FUNCTION NETAPIBUFFERFREEPROC
 typedef NET_API_STATUS NET_API_FUNCTION NETGETDCNAMEPROC
 	(LPWSTR servername, LPWSTR domainname, LPBYTE *bufptr);
 
-static int NativeAccess(TCHAR *path, int mode);
-static int NativeStat(TCHAR *path, struct stat *statPtr);
-static int NativeIsExec(TCHAR *path);
+static int NativeAccess(CONST TCHAR *path, int mode);
+static int NativeStat(CONST TCHAR *path, struct stat *statPtr);
+static int NativeIsExec(CONST TCHAR *path);
 
 
 /*
@@ -499,7 +499,6 @@ TclpGetUserHome(name, bufferPtr)
 	    Tcl_DString ds;
 	    int nameLen, badDomain;
 	    char *domain;
-	    CONST WCHAR *wName;
 	    WCHAR *wHomeDir, *wDomain;
 	    WCHAR buf[MAX_PATH];
 
@@ -509,16 +508,18 @@ TclpGetUserHome(name, bufferPtr)
 	    domain = strchr(name, '@');
 	    if (domain != NULL) {
 		Tcl_DStringInit(&ds);
-		wName = Tcl_UtfToUniCharDString(domain + 1, -1, &ds);
-		badDomain = (*netGetDCNameProc)(NULL, wName,
+		Tcl_UtfToUniCharDString(domain + 1, -1, &ds);
+		badDomain = (*netGetDCNameProc)(NULL,
+			(LPWSTR) Tcl_DStringValue(&ds),
 			(LPBYTE *) &wDomain);
 		Tcl_DStringFree(&ds);
 		nameLen = domain - name;
 	    }
 	    if (badDomain == 0) {
 		Tcl_DStringInit(&ds);
-		wName = Tcl_UtfToUniCharDString(name, nameLen, &ds);
-		if ((*netUserGetInfoProc)(wDomain, wName, 1, 
+		Tcl_UtfToUniCharDString(name, nameLen, &ds);
+		if ((*netUserGetInfoProc)(wDomain, 
+			(LPWSTR) Tcl_DStringValue(&ds), 1, 
 			(LPBYTE *) &uiPtr) == 0) {
 		    wHomeDir = uiPtr->usri1_home_dir;
 		    if ((wHomeDir != NULL) && (wHomeDir[0] != L'\0')) {
