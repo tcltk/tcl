@@ -1,3 +1,18 @@
+2001-10-15  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclFileName.c: minor code cleanup
+
+	* generic/tcl.h: moved #define of WIN32 to tcl.h where __WIN32__
+	is defined and added #ifndef check.
+
+	* doc/open.n: moved all fconfigure option docs to fconfigure.n
+	* doc/fconfigure.n: added serial config options
+
+	* win/tclWinChan.c:
+	* win/tclWinPort.h:
+	* win/tclWinSerial.c: added TIP #35 Windows enhancements for
+	serial configuration. [Patch #438509] (schroedter)
+
 2001-10-15  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* generic/tclFCmd.c: fix to memory leak in TclFileDeleteCmd on
