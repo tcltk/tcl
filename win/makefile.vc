@@ -1,7 +1,7 @@
 #--------------------------------------------------------------------------------
 # makefile.vc --
 #
-#	Microsoft Visual C++ makefile for use with nmake.exe v1.52+ (VC++ 5.0+)
+#	Microsoft Visual C++ makefile for use with nmake.exe v1.62+ (VC++ 5.0+)
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -12,7 +12,7 @@
 # Copyright (c) 2001 Tomasoft Engineering.
 #
 #--------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.67 2001/11/07 03:39:30 davygrvy Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.68 2001/11/08 00:22:22 davygrvy Exp $
 #--------------------------------------------------------------------------------
 
 !if "$(MSVCDIR)" == ""
@@ -61,23 +61,20 @@ the environment.  Jump to this line to read the new instructions.
 #		Sets where to install Tcl from the built binaries.
 #		C:\Progra~1\Tcl is assumed when not specified.
 #
-#	OPTS=static,threads,symbols,profile,none
+#	OPTS=static,msvcrt,threads,symbols,profile,none
 #		Sets special options for the core.  The default is for none.
 #		Any combination of the above may be used (comma separated).
 #		'none' will over-ride everything to nothing.
 #
 #		static  =  Builds a static library of the core instead of a
 #			   dll.  The shell will be static (and large), as well.
+#		msvcrt  =  Effects the static option only to switch it from
+#			   using libcmt(d) as the C runtime [by default] to
+#			   msvcrt(d). This is useful for static embedding
+#			   support.
 #		threads =  Turns on full multithreading support.
 #		symbols =  Adds symbols for step debugging.
 #		profile =  Adds profiling hooks.  Map file is assumed.
-#
-#	NOMSVCRT=(0|1)
-#		Allows the core to be compiled with libcmt(d) instead of
-#		msvcrt(d).  For a non-static core, msvcrt(d) is the default.
-#		For a static core, libcmt(d) is the default.  This hook is
-#		useful if you want to build a static library that can link to
-#		msvcrt(d) instead.
 #
 #	STATS=memdbg,compdbg,compstat,none
 #		Sets optional memory and bytecode compiler debugging code added
@@ -158,10 +155,11 @@ TCLSTUBLIB	= $(OUT_DIR)\$(TCLSTUBLIBNAME)
 TCLSH		= $(OUT_DIR)\$(PROJECT)sh$(VERSION)$(SUFX).exe
 TCLPIPEDLLNAME	= $(PROJECT)pip$(VERSION).dll
 TCLPIPEDLL	= $(OUT_DIR)\$(TCLPIPEDLLNAME)
-TCLREGDLLNAME	= $(PROJECT)reg$(REGVERSION)$(DBGX).dll
+
+TCLREGDLLNAME	= $(PROJECT)reg$(REGVERSION)$(SUFX).$(EXT)
 TCLREGDLL	= $(OUT_DIR)\$(TCLREGDLLNAME)
 
-TCLDDEDLLNAME	= $(PROJECT)dde$(DDEVERSION)$(DBGX).dll
+TCLDDEDLLNAME	= $(PROJECT)dde$(DDEVERSION)$(SUFX).$(EXT)
 TCLDDEDLL	= $(OUT_DIR)\$(TCLDDEDLLNAME)
 
 TCLTEST		= $(OUT_DIR)\$(PROJECT)test.exe
@@ -298,14 +296,15 @@ cdebug = -Z7 -Od -WX
 # declarations common to all compiler options
 cflags = -c -W3 -nologo -Fp$(TMP_DIR)\ -YX
 
-!if $(NOMSVCRT)
-cvarsdll = -MT$(DBGX)
+!if $(MSVCRT)
+crt = -MD$(DBGX)
 !else
-cvarsdll = -MD$(DBGX)
+crt = -MT$(DBGX)
 !endif
 
-TCL_CFLAGS	= $(cdebug) $(cflags) $(cvarsdll) $(TCL_INCLUDES) $(TCL_DEFINES)
-CON_CFLAGS	= $(cdebug) $(cflags) $(cvarsdll) -DCONSOLE
+BASE_CLFAGS	= $(cdebug) $(cflags) $(crt) $(TCL_INCLUDES)
+TCL_CFLAGS	= $(BASE_CLFAGS) $(TCL_DEFINES)
+CON_CFLAGS	= $(cdebug) $(cflags) $(crt) -DCONSOLE
 
 ######################################################################
 # Link flags
@@ -377,12 +376,10 @@ $(TCLSTUBLIB): $(TCLSTUBOBJS)
 	$(lib32) -nologo -out:$@ $(TCLSTUBOBJS)
 
 $(TCLSH): $(TCLSHOBJS) $(TCLIMPLIB)
-	$(link32) $(ldebug) $(conlflags) -stack:2300000 -out:$@ $(baselibs) \
-		$(TCLIMPLIB) $(TCLSHOBJS) 
+	$(link32) $(ldebug) $(conlflags) -stack:2300000 -out:$@ $(baselibs) $**
 
 $(TCLTEST): $(TCLTESTOBJS) $(TCLIMPLIB)
-	$(link32) $(ldebug) $(conlflags) -stack:2300000 -out:$@ $(baselibs) \
-		$(TCLIMPLIB) $(TCLTESTOBJS)
+	$(link32) $(ldebug) $(conlflags) -stack:2300000 -out:$@ $(baselibs) $**
 
 $(TCLPIPEDLL): $(WINDIR)\stub16.c
 	$(cc32) $(CON_CFLAGS) -Fo$(TMP_DIR)\ $(WINDIR)\stub16.c
@@ -390,16 +387,20 @@ $(TCLPIPEDLL): $(WINDIR)\stub16.c
 
 
 $(TCLDDEDLL): $(TMP_DIR)\tclWinDde.obj $(TCLSTUBLIB)
+!if $(STATIC_BUILD)
+	$(lib32) -nologo -out:$@ $(TMP_DIR)\tclWinDde.obj
+!else
 	$(link32) $(ldebug) $(dlllflags) -out:$@ $** $(baselibs)
-!if !$(STATIC_BUILD)
 	-@del $*.exp
 	-@del $*.lib
 !endif
 
 
 $(TCLREGDLL): $(TMP_DIR)\tclWinReg.obj $(TCLSTUBLIB)
+!if $(STATIC_BUILD)
+	$(lib32) -nologo -out:$@ $(TMP_DIR)\tclWinReg.obj
+!else
 	$(link32) $(ldebug) $(dlllflags) -out:$@ $** $(baselibs)
-!if !$(STATIC_BUILD)
 	-@del $*.exp
 	-@del $*.lib
 !endif
@@ -482,20 +483,23 @@ genstubs:
 TCLTOOLS	= $(ROOT)/tools
 MAN2TCL		= $(TCLTOOLS)/man2tcl
 TCLRTF		= $(TCLTOOLS)/tcl.rtf
-TCLHPJ		= $(TCLTOOLS)/tcl.hpj
 MAN2HELP	= $(TCLTOOLS)/man2help.tcl
 
-winhelp: $(TCLRTF)
-	start /wait hcrtf.exe -xn $(TCLHPJ)
+winhelp: $(OUT_DIR)\$(PROJECT)$(VERSION).hlp
+
+$(OUT_DIR)\$(PROJECT)$(VERSION).hlp : $(TCLRTF)
+	cd $(TCLTOOLS)
+	start /wait hcrtf.exe -xn tcl.hpj
+	copy $(PROJECT)$(VERSION).hlp ..\win\$(OUT_DIR)
+	copy $(PROJECT)$(VERSION).cnt ..\win\$(OUT_DIR)
 
 $(MAN2TCL).exe: $(MAN2TCL).obj 
 	cd $(TCLTOOLS)
-	$(cc32) /nologo /G4 /ML /O2 $(MAN2TCL).c
+	$(cc32) -nologo -G4 -ML -O2 $(MAN2TCL).c
 
 $(TCLRTF): $(MAN2TCL).exe $(TCLSH)
 	cd $(TCLTOOLS)
 	..\win\$(TCLSH) $(MAN2HELP) $(PROJECT) $(VERSION) $(ROOT)/doc ../../tk$(DOTVERSION)/doc
-
 #
 # Special case object file targets
 #
@@ -515,21 +519,31 @@ $(TMP_DIR)\tclTestObj.obj: $(GENERICDIR)\tclTestObj.c
 $(TMP_DIR)\tclWinTest.obj: $(WINDIR)\tclWinTest.c
 	$(cc32) $(TCL_CFLAGS) -Fo$@ $?
 
-$(TMP_DIR)\tclAppInit.obj : $(WINDIR)\tclAppInit.c
+$(TMP_DIR)\tclAppInit.obj: $(WINDIR)\tclAppInit.c
 	$(cc32) $(TCL_CFLAGS) -Fo$@ $?
 
 # The following objects should be built using the stub interfaces
 
-$(TMP_DIR)\tclWinReg.obj : $(WINDIR)\tclWinReg.c
-	$(cc32) $(TCL_CFLAGS) -DUSE_TCL_STUBS -DTCL_THREADS=1 -Fo$@ $?
+$(TMP_DIR)\tclWinReg.obj: $(WINDIR)\tclWinReg.c
+!if $(STATIC_BUILD)
+	$(cc32) $(BASE_CLFAGS) -DTCL_THREADS=1 -DSTATIC_BUILD -Fo$@ $?
+!else
+	$(cc32) $(BASE_CLFAGS) -DTCL_THREADS=1 -DUSE_TCL_STUBS -Fo$@ $?
+!endif
 
-$(TMP_DIR)\tclWinDde.obj : $(WINDIR)\tclWinDde.c
-	$(cc32) $(TCL_CFLAGS) -DUSE_TCL_STUBS -DTCL_THREADS=1 -Fo$@ $?
+
+$(TMP_DIR)\tclWinDde.obj: $(WINDIR)\tclWinDde.c
+!if $(STATIC_BUILD)
+	$(cc32) $(BASE_CLFAGS) -DTCL_THREADS=1 -DSTATIC_BUILD -Fo$@ $?
+!else
+	$(cc32) $(BASE_CLFAGS) -DTCL_THREADS=1 -DUSE_TCL_STUBS -Fo$@ $?
+!endif
+
 
 # The following objects are part of the stub library and should not
 # be built as DLL objects but none of the symbols should be exported
 
-$(TMP_DIR)\tclStubLib.obj : $(GENERICDIR)\tclStubLib.c
+$(TMP_DIR)\tclStubLib.obj: $(GENERICDIR)\tclStubLib.c
 	$(cc32) $(cdebug) $(cflags) -Zl -DSTATIC_BUILD $(TCL_INCLUDES) -Fo$@ $?
 
 
@@ -589,3 +603,5 @@ clean:
 	-@$(RM) $(TMP_DIR)\*.exe
 	-@$(RMDIR) $(OUT_DIR)
 	-@$(RMDIR) $(TMP_DIR)
+
+.SUFFIXES:.c .rc
