@@ -12,10 +12,11 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: winPipe.test,v 1.27 2004/05/19 20:15:32 dkf Exp $
+# RCS: @(#) $Id: winPipe.test,v 1.28 2004/05/25 19:38:16 dgp Exp $
 
 package require tcltest
 namespace import -force ::tcltest::*
+unset -nocomplain path
 
 testConstraint exec [llength [info commands exec]]
 
