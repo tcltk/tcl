@@ -11,14 +11,8 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.166 2004/11/02 15:32:06 dkf Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.167 2004/11/12 19:16:50 dgp Exp $
  */
-
-#ifdef STDC_HEADERS
-#include <stddef.h>
-#else
-typedef int ptrdiff_t;
-#endif
 
 #include "tclInt.h"
 #include "tclCompile.h"

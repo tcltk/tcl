@@ -15,14 +15,8 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.98 2004/10/29 15:39:06 dkf Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.99 2004/11/12 19:16:53 dgp Exp $
  */
-
-#ifdef STDC_HEADERS
-#include <stddef.h>
-#else
-typedef int ptrdiff_t;
-#endif
 
 #include "tclInt.h"
 
