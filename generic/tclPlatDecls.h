@@ -6,7 +6,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclPlatDecls.h,v 1.17 2002/08/31 06:09:45 das Exp $
+ * RCS: @(#) $Id: tclPlatDecls.h,v 1.18 2002/09/27 00:50:10 hobbs Exp $
  */
 
 #ifndef _TCLPLATDECLS
@@ -15,7 +15,9 @@
 /*
  *  Pull in the typedef of TCHAR for windows.
  */
-#if defined(__WIN32__) && !defined(_TCHAR_DEFINED)
+#if defined(__CYGWIN__)
+    typedef char TCHAR;
+#elif defined(__WIN32__) && !defined(_TCHAR_DEFINED)
 #   include <tchar.h>
 #   ifndef _TCHAR_DEFINED
 	/* Borland seems to forget to set this. */
