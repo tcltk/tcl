@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.109 2004/12/01 23:18:53 dgp Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.110 2004/12/15 20:44:42 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -299,6 +299,10 @@ TclIntStubs tclIntStubs = {
     TclpFindExecutable, /* 212 */
     TclGetObjNameOfExecutable, /* 213 */
     TclSetObjNameOfExecutable, /* 214 */
+    TclStackAlloc, /* 215 */
+    TclStackFree, /* 216 */
+    TclPushStackFrame, /* 217 */
+    TclPopStackFrame, /* 218 */
 };
 
 TclIntPlatStubs tclIntPlatStubs = {
