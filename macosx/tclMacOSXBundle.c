@@ -138,6 +138,16 @@ Tcl_MacOSXOpenVersionedBundleResources(
 		bundleVersion, kCFStringEncodingUTF8);
 	CFURLRef bundleURL = CFBundleCopyBundleURL(bundleRef);
 	if (bundleURL) {
+	    CFStringRef bundleTailRef = CFURLCopyLastPathComponent(bundleURL);
+	    if (bundleTailRef) {
+		if (CFStringCompare(bundleTailRef,bundleVersionRef,0)
+			== kCFCompareEqualTo) {
+		    versionedBundleRef = bundleRef;
+		}
+		CFRelease(bundleTailRef);
+	    }
+	}
+	if (bundleURL && !versionedBundleRef) {
 	    CFURLRef versURL = CFURLCreateCopyAppendingPathComponent(NULL,
 	    	    bundleURL, CFSTR("Versions"), TRUE);
 	    if (versURL) {
