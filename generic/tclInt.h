@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.183 2004/10/19 21:54:07 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.184 2004/10/21 03:53:04 kennykb Exp $
  */
 
 #ifndef _TCLINT
@@ -1955,6 +1955,8 @@ EXTERN int	Tcl_CatchObjCmd _ANSI_ARGS_((ClientData clientData,
 EXTERN int	Tcl_CdObjCmd _ANSI_ARGS_((ClientData clientData,
 		    Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]));
 EXTERN int	TclClockClicksObjCmd _ANSI_ARGS_((ClientData clientData,
+		    Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]));
+EXTERN int	TclClockGetenvObjCmd _ANSI_ARGS_((ClientData clientData,
 		    Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]));
 EXTERN int	TclClockMicrosecondsObjCmd _ANSI_ARGS_((ClientData clientData,
 		    Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]));
