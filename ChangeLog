@@ -1,3 +1,11 @@
+2004-08-19  Kevin Kenny  <kennykb@acm.org>
+
+	* library/clock.tcl (format): Changed default timezone format
+	from alphabetic to numeric to produce scannable times in more
+	locales.
+	* tests/clock.test (clock-37.1): Removed now-unused 'needPST'
+	constraint and the comments that refer to it.
+	
 2004-08-18  Andreas Kupries  <andreask@activestate.com>
 
 	* library/init.tcl: Integrated TIP #189. We source a separate file
