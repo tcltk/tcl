@@ -1,3 +1,7 @@
+2001-09-05  David Gravereaux <davygrvy@pobox.com>
+
+	* generic/tclPlatDecls.h:  Another small trim finalizing Borland support.
+
 2001-09-05 Vince Darley <vincentdarley@users.sourceforge.net>
 
 	* tests/winFCmd.test: made notWin2000 constraint false if not
