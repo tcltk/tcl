@@ -1,3 +1,10 @@
+2000-09-17  Eric Melski  <ericm@ajubasolutions.com>
+
+	* tests/cmdIL.test: Added a test for fix for [Bug: 6212].
+
+	* generic/tclCmdIL.c (Tcl_LsortObjCmd): Applied patch from [Bug:
+	6212], which corrected an error in the handling of the -index option.
+
 2000-09-14  Eric Melski  <ericm@ajubasolutions.com>
 
 	* doc/Alloc.3: Added entries for Tcl_AttemptAlloc, Tcl_AttempRealloc.
