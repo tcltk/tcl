@@ -1,3 +1,11 @@
+2004-05-17  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* generic/tclPathObj.c: fix to (Bug 956063) in 'file dirname'.
+	* tests/cmdAH.test: added test for this bug.
+
+	* doc/FileSystem.3: better documentation of refCount requirements 
+	of some FS functions (Bug 956126)
+
 2004-05-19  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclTest.c (TestgetintCmd): Made the tests in get.test check
