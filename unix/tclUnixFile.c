@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFile.c,v 1.40 2004/06/18 20:38:02 dgp Exp $
+ * RCS: @(#) $Id: tclUnixFile.c,v 1.41 2004/07/20 10:12:29 das Exp $
  */
 
 #include "tclInt.h"
@@ -378,8 +378,12 @@ NativeMatchType(
 	    /* 
 	     * readonly means that there are NO write permissions
 	     * (even for user), but execute is OK for anybody
+	     * OR that the user immutable flag is set (where supported).
 	     */
 	    if (((types->perm & TCL_GLOB_PERM_RONLY) &&
+#if defined(HAVE_CHFLAGS) && defined(UF_IMMUTABLE)
+			!(buf.st_flags & UF_IMMUTABLE) &&
+#endif
 			(buf.st_mode & (S_IWOTH|S_IWGRP|S_IWUSR))) ||
 		((types->perm & TCL_GLOB_PERM_R) &&
 			(access(nativeEntry, R_OK) != 0)) ||
