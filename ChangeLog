@@ -27,6 +27,17 @@
 	* tests/reg.test: 
 	* generic/regexec.c: Fixed bugs in non-greedy quantifiers.
 
+1999-06-23    <jpeek@scriptics.com>
+
+	* doc/re_syntax.n:
+	* doc/switch.n:
+	* doc/lsearch.n:
+	* doc/RegExp.3:
+	* doc/regexp.n:
+	* doc/regsub.n: Moved information about syntax of 8.1 regular
+	expressions from regexp(n) manpage into new re_syntax(n) page.
+	Added pointers from other manpages to new re_syntax(n) page.
+
 1999-06-23    <stanton@scriptics.com>
 
 	* unix/Makefile.in: Changed install-doc to install-man.
