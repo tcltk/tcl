@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.76 2004/07/03 02:03:37 msofer Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.77 2004/08/25 01:11:03 dgp Exp $
 
 library tcl
 
@@ -147,9 +147,10 @@ declare 32 generic {
     int TclGetFrame(Tcl_Interp *interp, CONST char *str,
 	    CallFrame **framePtrPtr)
 }
-declare 33 generic {
-    TclCmdProcType TclGetInterpProc(void)
-}
+# Removed in Tcl 8.5
+#declare 33 generic {
+#    TclCmdProcType TclGetInterpProc(void)
+#}
 declare 34 generic {
     int TclGetIntForIndex(Tcl_Interp *interp, Tcl_Obj *objPtr,
 	    int endValue, int *indexPtr)
@@ -374,10 +375,11 @@ declare 92 generic {
 declare 93 generic {
     void TclProcDeleteProc(ClientData clientData)
 }
-declare 94 generic {
-    int TclProcInterpProc(ClientData clientData, Tcl_Interp *interp,
-	    int argc, CONST84 char **argv)
-}
+# Removed in Tcl 8.5:
+#declare 94 generic {
+#    int TclProcInterpProc(ClientData clientData, Tcl_Interp *interp,
+#	    int argc, CONST84 char **argv)
+#}
 # Replaced by Tcl_FSStat in 8.4:
 #declare 95 generic {
 #    int TclpStat(CONST char *path, Tcl_StatBuf *buf)
