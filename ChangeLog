@@ -1,3 +1,8 @@
+2001-04-05  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* mac/tclMacProjects.sea.hqx: fixed accidental swap with Tk
+	project files.
+
 2001-04-04  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	** Start changes for improved mac build (steffen)  **
