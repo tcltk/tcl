@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: string.test,v 1.43 2004/10/28 00:04:39 dgp Exp $
+# RCS: @(#) $Id: string.test,v 1.43.2.1 2005/03/09 14:39:28 kennykb Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -409,10 +409,7 @@ test string-6.37 {string is double, false on int overflow} {
     # Make it the largest int recognizable, with one more digit for overflow
     list [string is double -fail var [largest_int]0] $var
 } {0 -1}
-test string-6.38 {string is double, false on underflow} {
-    catch {unset var}
-    list [string is double -fail var 123e-9999] $var
-} {0 -1}
+# string-6.38 removed, underflow on input is no longer an error.
 test string-6.39 {string is double, false} {nonPortable} {
     # This test is non-portable because IRIX thinks 
     # that .e1 is a valid double - this is really a bug

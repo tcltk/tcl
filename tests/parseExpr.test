@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: parseExpr.test,v 1.13 2004/06/23 15:36:57 dkf Exp $
+# RCS: @(#) $Id: parseExpr.test,v 1.13.2.1 2005/03/09 14:39:28 kennykb Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -26,6 +26,64 @@ testConstraint testexprparser [llength [info commands testexprparser]]
 # integers at all.
 
 testConstraint wideIntegerUnparsed [expr {-1 == 0xffffffff}]
+
+# Big test for correct ordering of data in [expr]
+
+proc testIEEE {} {
+    variable ieeeValues
+    binary scan [binary format dd -1.0 1.0] c* c
+    switch -exact -- $c {
+	{0 0 0 0 0 0 -16 -65 0 0 0 0 0 0 -16 63} {
+	    # little endian
+	    binary scan \x00\x00\x00\x00\x00\x00\xf0\xff d \
+		ieeeValues(-Infinity)
+	    binary scan \x00\x00\x00\x00\x00\x00\xf0\xbf d \
+		ieeeValues(-Normal)
+	    binary scan \x00\x00\x00\x00\x00\x00\x08\x80 d \
+		ieeeValues(-Subnormal)
+	    binary scan \x00\x00\x00\x00\x00\x00\x00\x80 d \
+		ieeeValues(-0)
+	    binary scan \x00\x00\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(+0)
+	    binary scan \x00\x00\x00\x00\x00\x00\x08\x00 d \
+		ieeeValues(+Subnormal)
+	    binary scan \x00\x00\x00\x00\x00\x00\xf0\x3f d \
+		ieeeValues(+Normal)
+	    binary scan \x00\x00\x00\x00\x00\x00\xf0\x7f d \
+		ieeeValues(+Infinity)
+	    binary scan \x00\x00\x00\x00\x00\x00\xf8\x7f d \
+		ieeeValues(NaN)
+	    set ieeeValues(littleEndian) 1
+	    return 1
+	}
+	{-65 -16 0 0 0 0 0 0 63 -16 0 0 0 0 0 0} {
+	    binary scan \xff\xf0\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(-Infinity)
+	    binary scan \xbf\xf0\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(-Normal)
+	    binary scan \x80\x08\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(-Subnormal)
+	    binary scan \x80\x00\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(-0)
+	    binary scan \x00\x00\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(+0)
+	    binary scan \x00\x08\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(+Subnormal)
+	    binary scan \x3f\xf0\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(+Normal)
+	    binary scan \x7f\xf0\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(+Infinity)
+	    binary scan \x7f\xf8\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(NaN)
+	    set ieeeValues(littleEndian) 0
+	    return 1
+	}
+	default {
+	    return 0
+	}
+    }
+}
+::tcltest::testConstraint ieeeFloatingPoint [testIEEE]
 
 ######################################################################
 
@@ -525,9 +583,12 @@ test parseExpr-16.9 {GetLexeme procedure, double lexeme} {testexprparser nonPort
 test parseExpr-16.10 {GetLexeme procedure, double lexeme} {testexprparser nonPortable unix} {
     testexprparser {NaN} -1
 } {- {} 0 subexpr NaN 1 text NaN 0 {}}
-test parseExpr-16.11 {GetLexeme procedure, bad double lexeme too big} testexprparser {
+test parseExpr-16.11a {GetLexeme procedure, bad double lexeme too big} {testexprparser && !ieeeFloatingPoint} {
     list [catch {testexprparser {123.e+99999999999999} -1} msg] $msg
 } {1 {floating-point value too large to represent}}
+test parseExpr-16.11b {GetLexeme procedure, bad double lexeme too big} {testexprparser && ieeeFloatingPoint} {
+    list [catch {testexprparser {123.e+99999999999999} -1} msg] $msg
+} {0 {- {} 0 subexpr 123.e+99999999999999 1 text 123.e+99999999999999 0 {}}}
 test parseExpr-16.12 {GetLexeme procedure, bad double lexeme} testexprparser {
     list [catch {testexprparser {123.4x56} -1} msg] $msg
 } {1 {syntax error in expression "123.4x56": extra tokens at end of expression}}

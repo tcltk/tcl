@@ -1,10 +1,24 @@
-2005-03-08  Kevin B. Kenny  <kennykb@acm.org>
+2005-03-09  Kevin B. Kenny  <kennykb@acm.org>
 
 	[kennykb-numerics-branch]
 
+	* generic/tclExecute.c (Tcl_ExecuteByteCode): Removed the check
+	for division-by-zero on IEEE-754 machines.
 	* generic/tclUtil.c (Tcl_PrintDouble): Corrected bug where numbers
-		in the range [1e-4 .. 1.) were printed incorrectly.
-	* tests/util.test (util-10.*): Added test case for the above bug.
+	in the range [1e-4 .. 1.) were printed incorrectly.
+	* tests/compExpr-old.test (compExpr-old-11.13): Revised test
+	case for division by zero
+	* tests/expr-old.test (expr-34.11, expr-34.12): Revised test
+	cases for overflow in pow() to deal with infinities.
+	* tests/expr.test (expr-11.13, expr-29.1, expr-29.2): Revised
+	test case for division by zero and for underflow on input
+	conversions.
+	* tests/parseExpr.test (parseExpr-16.11): Revised test case for
+	overflow on input conversion.
+	* tests/string.test (string-6.38 deleted): Removed test case
+	for underflow on input conversion, which is no longer an error.
+	* tests/util.test (util-10.*): Added test case for the bug in
+	tclUtil.c.
 	
 2005-03-04  Kevin B. Kenny  <kennykb@acm.org>
 

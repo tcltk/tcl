@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: expr-old.test,v 1.22.2.2 2005/03/02 21:25:25 kennykb Exp $
+# RCS: @(#) $Id: expr-old.test,v 1.22.2.3 2005/03/09 14:39:27 kennykb Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -25,6 +25,64 @@ if {([catch {expr T1()} msg] == 1) && ($msg == {unknown math function "T1"})} {
 } else {
     testConstraint testmathfunctions 1
 }
+
+# Big test for correct ordering of data in [expr]
+
+proc testIEEE {} {
+    variable ieeeValues
+    binary scan [binary format dd -1.0 1.0] c* c
+    switch -exact -- $c {
+	{0 0 0 0 0 0 -16 -65 0 0 0 0 0 0 -16 63} {
+	    # little endian
+	    binary scan \x00\x00\x00\x00\x00\x00\xf0\xff d \
+		ieeeValues(-Infinity)
+	    binary scan \x00\x00\x00\x00\x00\x00\xf0\xbf d \
+		ieeeValues(-Normal)
+	    binary scan \x00\x00\x00\x00\x00\x00\x08\x80 d \
+		ieeeValues(-Subnormal)
+	    binary scan \x00\x00\x00\x00\x00\x00\x00\x80 d \
+		ieeeValues(-0)
+	    binary scan \x00\x00\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(+0)
+	    binary scan \x00\x00\x00\x00\x00\x00\x08\x00 d \
+		ieeeValues(+Subnormal)
+	    binary scan \x00\x00\x00\x00\x00\x00\xf0\x3f d \
+		ieeeValues(+Normal)
+	    binary scan \x00\x00\x00\x00\x00\x00\xf0\x7f d \
+		ieeeValues(+Infinity)
+	    binary scan \x00\x00\x00\x00\x00\x00\xf8\x7f d \
+		ieeeValues(NaN)
+	    set ieeeValues(littleEndian) 1
+	    return 1
+	}
+	{-65 -16 0 0 0 0 0 0 63 -16 0 0 0 0 0 0} {
+	    binary scan \xff\xf0\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(-Infinity)
+	    binary scan \xbf\xf0\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(-Normal)
+	    binary scan \x80\x08\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(-Subnormal)
+	    binary scan \x80\x00\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(-0)
+	    binary scan \x00\x00\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(+0)
+	    binary scan \x00\x08\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(+Subnormal)
+	    binary scan \x3f\xf0\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(+Normal)
+	    binary scan \x7f\xf0\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(+Infinity)
+	    binary scan \x7f\xf8\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(NaN)
+	    set ieeeValues(littleEndian) 0
+	    return 1
+	}
+	default {
+	    return 0
+	}
+    }
+}
+::tcltest::testConstraint ieeeFloatingPoint [testIEEE]
 
 # First, test all of the integer operators individually.
 
@@ -462,9 +520,12 @@ test expr-old-26.8 {error conditions} {
 test expr-old-26.9 {error conditions} {
     list [catch {expr 2%0} msg] $msg $errorCode
 } {1 {divide by zero} {ARITH DIVZERO {divide by zero}}}
-test expr-old-26.10 {error conditions} {
+test expr-old-26.10a {error conditions} !ieeeFloatingPoint {
     list [catch {expr 2.0/0.0} msg] $msg $errorCode
 } {1 {divide by zero} {ARITH DIVZERO {divide by zero}}}
+test expr-old-26.10b {error conditions} ieeeFloatingPoint {
+    list [catch {expr 2.0/0.0} msg] $msg
+} {0 Inf}
 test expr-old-26.11 {error conditions} {
     list [catch {expr 2#} msg] $msg
 } {1 {syntax error in expression "2#": extra tokens at end of expression}}
@@ -871,12 +932,18 @@ test expr-old-34.9 {errors in math functions} {
 test expr-old-34.10 {errors in math functions} {nonPortable} {
     list [catch {expr pow(-3, 1000001)} msg] $msg $errorCode
 } {1 {floating-point value too large to represent} {ARITH OVERFLOW {floating-point value too large to represent}}}
-test expr-old-34.11 {errors in math functions} {
+test expr-old-34.11a {errors in math functions} !ieeeFloatingPoint {
     list [catch {expr pow(3, 1000001)} msg] $msg $errorCode
 } {1 {floating-point value too large to represent} {ARITH OVERFLOW {floating-point value too large to represent}}}
-test expr-old-34.12 {errors in math functions} {
+test expr-old-34.11b {errors in math functions} ieeeFloatingPoint {
+    list [catch {expr pow(3, 1000001)} msg] $msg
+} {0 Inf}
+test expr-old-34.12a {errors in math functions} !ieeeFloatingPoint {
     list [catch {expr -14.0*exp(100000)} msg] $msg $errorCode
 } {1 {floating-point value too large to represent} {ARITH OVERFLOW {floating-point value too large to represent}}}
+test expr-old-34.12b {errors in math functions} ieeeFloatingPoint {
+    list [catch {expr -14.0*exp(100000)} msg] $msg
+} {0 -Inf}
 test expr-old-34.13 {errors in math functions} {
     list [catch {expr int(1.0e30)} msg] $msg $errorCode
 } {1 {integer value too large to represent} {ARITH IOVERFLOW {integer value too large to represent}}}

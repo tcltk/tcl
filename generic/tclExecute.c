@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.167.2.5 2005/03/04 20:43:44 kennykb Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.167.2.6 2005/03/09 14:39:24 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -21,6 +21,17 @@
 #   include <math.h>
 #endif
 #include <float.h>
+
+/*
+ * Hack to determine whether we may expect IEEE floating point.
+ * The hack is formally incorrect in that non-IEEE platforms might
+ * have the same precision and range, but VAX, IBM, and Cray do not;
+ * are there any other floating point units that we might care about?
+ */
+
+#if ( FLT_RADIX == 2 ) && ( DBL_MANT_DIG == 53 ) && ( DBL_MAX_EXP == 1024 )
+#define IEEE_FLOATING_POINT
+#endif
 
 /*
  * The stuff below is a bit of a hack so that this file can be used
@@ -3992,10 +4003,18 @@ TclExecuteByteCode(interp, codePtr)
 		    dResult = d1 * d2;
 		    break;
 	        case INST_DIV:
+#ifndef IEEE_FLOATING_POINT
 		    if (d2 == 0.0) {
 			TRACE(("%.6g %.6g => DIVIDE BY ZERO\n", d1, d2));
 			goto divideByZero;
 		    }
+#endif
+		    /*
+		     * We presume that we are running with zero-divide
+		     * unmasked if we're on an IEEE box. Otherwise,
+		     * this statement might cause demons to fly out
+		     * our noses.
+		     */
 		    dResult = d1 / d2;
 		    break;
 		case INST_EXPON:

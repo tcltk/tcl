@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: expr.test,v 1.30.2.5 2005/03/02 21:25:25 kennykb Exp $
+# RCS: @(#) $Id: expr.test,v 1.30.2.6 2005/03/09 14:39:27 kennykb Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -65,6 +65,64 @@ proc do_twelve_days {} {
     12days 1 1 1
     string length $xxx
 }
+
+# Big test for correct ordering of data in [expr]
+
+proc testIEEE {} {
+    variable ieeeValues
+    binary scan [binary format dd -1.0 1.0] c* c
+    switch -exact -- $c {
+	{0 0 0 0 0 0 -16 -65 0 0 0 0 0 0 -16 63} {
+	    # little endian
+	    binary scan \x00\x00\x00\x00\x00\x00\xf0\xff d \
+		ieeeValues(-Infinity)
+	    binary scan \x00\x00\x00\x00\x00\x00\xf0\xbf d \
+		ieeeValues(-Normal)
+	    binary scan \x00\x00\x00\x00\x00\x00\x08\x80 d \
+		ieeeValues(-Subnormal)
+	    binary scan \x00\x00\x00\x00\x00\x00\x00\x80 d \
+		ieeeValues(-0)
+	    binary scan \x00\x00\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(+0)
+	    binary scan \x00\x00\x00\x00\x00\x00\x08\x00 d \
+		ieeeValues(+Subnormal)
+	    binary scan \x00\x00\x00\x00\x00\x00\xf0\x3f d \
+		ieeeValues(+Normal)
+	    binary scan \x00\x00\x00\x00\x00\x00\xf0\x7f d \
+		ieeeValues(+Infinity)
+	    binary scan \x00\x00\x00\x00\x00\x00\xf8\x7f d \
+		ieeeValues(NaN)
+	    set ieeeValues(littleEndian) 1
+	    return 1
+	}
+	{-65 -16 0 0 0 0 0 0 63 -16 0 0 0 0 0 0} {
+	    binary scan \xff\xf0\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(-Infinity)
+	    binary scan \xbf\xf0\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(-Normal)
+	    binary scan \x80\x08\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(-Subnormal)
+	    binary scan \x80\x00\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(-0)
+	    binary scan \x00\x00\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(+0)
+	    binary scan \x00\x08\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(+Subnormal)
+	    binary scan \x3f\xf0\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(+Normal)
+	    binary scan \x7f\xf0\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(+Infinity)
+	    binary scan \x7f\xf8\x00\x00\x00\x00\x00\x00 d \
+		ieeeValues(NaN)
+	    set ieeeValues(littleEndian) 0
+	    return 1
+	}
+	default {
+	    return 0
+	}
+    }
+}
+::tcltest::testConstraint ieeeFloatingPoint [testIEEE]
 
 # start of tests
 
@@ -407,9 +465,12 @@ test expr-11.11 {CompileAddExpr: runtime error} {
 test expr-11.12 {CompileAddExpr: runtime error} {
     list [catch {expr {3/0}} msg] $msg
 } {1 {divide by zero}}
-test expr-11.13 {CompileAddExpr: runtime error} {
+test expr-11.13a {CompileAddExpr: runtime error} !ieeeFloatingPoint {
     list [catch {expr {2.3/0.0}} msg] $msg
 } {1 {divide by zero}}
+test expr-11.13b {CompileAddExpr: runtime error} ieeeFloatingPoint {
+    list [catch {expr {2.3/0.0}} msg] $msg
+} {0 Inf}
 
 test expr-12.1 {CompileMultiplyExpr: just unary expr} {expr ~4} -5
 test expr-12.2 {CompileMultiplyExpr: just unary expr} {expr --5} 5
@@ -896,64 +957,6 @@ test expr-26.4 {'ni' operator} {expr {"a" ni ""}} 1
 test expr-26.5 {'ni' operator} {expr {"" ni {a b c ""}}} 0
 test expr-26.6 {'ni' operator} {expr {"" ni "a b c"}} 1
 test expr-26.7 {'ni' operator} {expr {"" ni ""}} 1
-
-# Big test for correct ordering of data in [expr]
-
-proc testIEEE {} {
-    variable ieeeValues
-    binary scan [binary format dd -1.0 1.0] c* c
-    switch -exact -- $c {
-	{0 0 0 0 0 0 -16 -65 0 0 0 0 0 0 -16 63} {
-	    # little endian
-	    binary scan \x00\x00\x00\x00\x00\x00\xf0\xff d \
-		ieeeValues(-Infinity)
-	    binary scan \x00\x00\x00\x00\x00\x00\xf0\xbf d \
-		ieeeValues(-Normal)
-	    binary scan \x00\x00\x00\x00\x00\x00\x08\x80 d \
-		ieeeValues(-Subnormal)
-	    binary scan \x00\x00\x00\x00\x00\x00\x00\x80 d \
-		ieeeValues(-0)
-	    binary scan \x00\x00\x00\x00\x00\x00\x00\x00 d \
-		ieeeValues(+0)
-	    binary scan \x00\x00\x00\x00\x00\x00\x08\x00 d \
-		ieeeValues(+Subnormal)
-	    binary scan \x00\x00\x00\x00\x00\x00\xf0\x3f d \
-		ieeeValues(+Normal)
-	    binary scan \x00\x00\x00\x00\x00\x00\xf0\x7f d \
-		ieeeValues(+Infinity)
-	    binary scan \x00\x00\x00\x00\x00\x00\xf8\x7f d \
-		ieeeValues(NaN)
-	    set ieeeValues(littleEndian) 1
-	    return 1
-	}
-	{-65 -16 0 0 0 0 0 0 63 -16 0 0 0 0 0 0} {
-	    binary scan \xff\xf0\x00\x00\x00\x00\x00\x00 d \
-		ieeeValues(-Infinity)
-	    binary scan \xbf\xf0\x00\x00\x00\x00\x00\x00 d \
-		ieeeValues(-Normal)
-	    binary scan \x80\x08\x00\x00\x00\x00\x00\x00 d \
-		ieeeValues(-Subnormal)
-	    binary scan \x80\x00\x00\x00\x00\x00\x00\x00 d \
-		ieeeValues(-0)
-	    binary scan \x00\x00\x00\x00\x00\x00\x00\x00 d \
-		ieeeValues(+0)
-	    binary scan \x00\x08\x00\x00\x00\x00\x00\x00 d \
-		ieeeValues(+Subnormal)
-	    binary scan \x3f\xf0\x00\x00\x00\x00\x00\x00 d \
-		ieeeValues(+Normal)
-	    binary scan \x7f\xf0\x00\x00\x00\x00\x00\x00 d \
-		ieeeValues(+Infinity)
-	    binary scan \x7f\xf8\x00\x00\x00\x00\x00\x00 d \
-		ieeeValues(NaN)
-	    set ieeeValues(littleEndian) 0
-	    return 1
-	}
-	default {
-	    return 0
-	}
-    }
-}
-::tcltest::testConstraint ieeeFloatingPoint [testIEEE]
 
 foreach op {< <= == != > >=} {
     proc test$op {a b} [list expr "\$a $op \$b"]
@@ -5132,7 +5135,7 @@ test expr-29.1 {smallest representible number} {ieeeFloatingPoint} {
 	$result \
 	[catch {convertToDouble 2.47032822920623e-324} result] \
 	$result
-} {0 0x0000000000000001 0 0x0000000000000001 1 {floating-point value too small to represent}}
+} {0 0x0000000000000001 0 0x0000000000000001 0 0x0000000000000000}
 test expr-29.2 {smallest representible number} {ieeeFloatingPoint} {
     list [catch {convertToDouble -4.9406564584124654e-324} result] \
 	$result \
@@ -5140,7 +5143,7 @@ test expr-29.2 {smallest representible number} {ieeeFloatingPoint} {
 	$result \
 	[catch {convertToDouble -2.47032822920623e-324} result] \
 	$result
-} {0 0x8000000000000001 0 0x8000000000000001 1 {floating-point value too small to represent}}
+} {0 0x8000000000000001 0 0x8000000000000001 0 0x8000000000000000}
 
 # cleanup
 if {[info exists a]} {
