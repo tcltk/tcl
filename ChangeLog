@@ -1,3 +1,12 @@
+2001-09-10  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclEvent.c (TclInExit): Corrected handling of tsd in
+	late stages of finalization.  [Bug #419449] (darley)
+
+	* tests/stack.test:
+	* generic/tclInterp.c (AliasObjCmd): Check the numLevels to ensure
+	that we aren't hitting some alias loop condition.  [Bug #443184]
+
 2001-09-10  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* unix/configure: Regen.
