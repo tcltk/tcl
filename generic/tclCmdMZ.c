@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.76 2002/08/22 15:57:54 msofer Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.77 2002/10/15 16:13:46 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -46,7 +46,12 @@ typedef struct {
     size_t length;		/* Number of non-NULL chars. in command. */
     Tcl_Trace stepTrace;        /* Used for execution traces, when tracing
                                  * inside the given command */
-    int startLevel;             /* Used for bookkeeping with execution traces */
+    int startLevel;             /* Used for bookkeeping with step execution
+                                 * traces, store the level at which the step
+                                 * trace was invoked */
+    char *startCmd;             /* Used for bookkeeping with step execution
+                                 * traces, store the command name which invoked
+                                 * step trace */
     int curFlags;               /* Trace flags for the current command */
     int curCode;                /* Return code for the current command */
     char command[4];		/* Space for Tcl command to invoke.  Actual
@@ -3187,6 +3192,7 @@ TclTraceExecutionObjCmd(interp, optionIndex, objc, objv)
 		tcmdPtr->flags = flags;
 		tcmdPtr->stepTrace = NULL;
 		tcmdPtr->startLevel = 0;
+		tcmdPtr->startCmd = NULL;
 		tcmdPtr->length = length;
 		flags |= TCL_TRACE_DELETE;
 		if (flags & (TRACE_EXEC_ENTER_STEP | TRACE_EXEC_LEAVE_STEP)) {
@@ -3236,6 +3242,9 @@ TclTraceExecutionObjCmd(interp, optionIndex, objc, objv)
 			     */
 			    Tcl_DeleteTrace(interp, tcmdPtr->stepTrace);
 			    tcmdPtr->stepTrace = NULL;
+                            if (tcmdPtr->startCmd != NULL) {
+			        ckfree((char *)tcmdPtr->startCmd);
+			    }
 			}
 			/* Postpone deletion */
 			if (tcmdPtr->flags & TCL_TRACE_EXEC_IN_PROGRESS) {
@@ -3388,6 +3397,7 @@ TclTraceCommandObjCmd(interp, optionIndex, objc, objv)
 		tcmdPtr->flags = flags;
 		tcmdPtr->stepTrace = NULL;
 		tcmdPtr->startLevel = 0;
+		tcmdPtr->startCmd = NULL;
 		tcmdPtr->length = length;
 		flags |= TCL_TRACE_DELETE;
 		strcpy(tcmdPtr->command, command);
@@ -3963,6 +3973,9 @@ TraceCommandProc(clientData, interp, oldName, newName, flags)
 	if (tcmdPtr->stepTrace != NULL) {
 	    Tcl_DeleteTrace(interp, tcmdPtr->stepTrace);
 	    tcmdPtr->stepTrace = NULL;
+            if (tcmdPtr->startCmd != NULL) {
+	        ckfree((char *)tcmdPtr->startCmd);
+	    }
 	}
 	/* Postpone deletion, until exec trace returns */
 	if (tcmdPtr->flags & TCL_TRACE_EXEC_IN_PROGRESS) {
@@ -4289,14 +4302,18 @@ TraceExecutionProc(ClientData clientData, Tcl_Interp *interp,
 	}
 	/*
 	 * First, if we have returned back to the level at which we
-	 * created an interpreter trace, we remove it
+	 * created an interpreter trace for enterstep and/or leavestep
+         * execution traces, we remove it here.
 	 */
 	if (flags & TCL_TRACE_LEAVE_EXEC) {
-	    if ((tcmdPtr->stepTrace != NULL) && (level == tcmdPtr->startLevel)) {
+	    if ((tcmdPtr->stepTrace != NULL) && (level == tcmdPtr->startLevel)
+                && (strcmp(command, tcmdPtr->startCmd) == 0)) {
 		Tcl_DeleteTrace(interp, tcmdPtr->stepTrace);
 		tcmdPtr->stepTrace = NULL;
+                if (tcmdPtr->startCmd != NULL) {
+	            ckfree((char *)tcmdPtr->startCmd);
+	        }
 	    }
-	    
 	}
 	
 	/*
@@ -4381,12 +4398,19 @@ TraceExecutionProc(ClientData clientData, Tcl_Interp *interp,
 	}
 	
 	/*
-	 * Third, create an interpreter trace, if we need one for
-	 * subsequent internal execution traces.
+	 * Third, if there are any step execution traces for this proc,
+         * we register an interpreter trace to invoke enterstep and/or
+	 * leavestep traces.
+	 * We also need to save the current stack level and the proc
+         * string in startLevel and startCmd so that we can delete this
+         * interpreter trace when it reaches the end of this proc.
 	 */
 	if ((flags & TCL_TRACE_ENTER_EXEC) && (tcmdPtr->stepTrace == NULL)
 	    && (tcmdPtr->flags & (TCL_TRACE_ENTER_DURING_EXEC | TCL_TRACE_LEAVE_DURING_EXEC))) {
 		tcmdPtr->startLevel = level;
+		tcmdPtr->startCmd = 
+		    (char *) ckalloc((unsigned) (strlen(command) + 1));
+		strcpy(tcmdPtr->startCmd, command);
 		tcmdPtr->stepTrace = Tcl_CreateObjTrace(interp, 0,
 		   (tcmdPtr->flags & TCL_TRACE_ANY_EXEC) >> 2, 
 		   TraceExecutionProc, (ClientData)tcmdPtr, NULL);
@@ -4396,6 +4420,9 @@ TraceExecutionProc(ClientData clientData, Tcl_Interp *interp,
 	if (tcmdPtr->stepTrace != NULL) {
 	    Tcl_DeleteTrace(interp, tcmdPtr->stepTrace);
 	    tcmdPtr->stepTrace = NULL;
+            if (tcmdPtr->startCmd != NULL) {
+	        ckfree((char *)tcmdPtr->startCmd);
+	    }
 	}
 	Tcl_EventuallyFree((ClientData)tcmdPtr, TCL_DYNAMIC);
     }
