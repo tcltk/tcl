@@ -822,6 +822,40 @@ if test -r Interp.3; then
     rm -f Tcl_Interp.3 Tcl_Interp.3.* 
     ln $S Interp.3$Z Tcl_Interp.3$Z 
 fi
+if test -r Limit.3; then
+    rm -f Limit.3.*
+    $ZIP Limit.3
+    rm -f Tcl_LimitAddHandler.3 Tcl_LimitAddHandler.3.* 
+    rm -f Tcl_LimitCheck.3 Tcl_LimitCheck.3.* 
+    rm -f Tcl_LimitExceeded.3 Tcl_LimitExceeded.3.* 
+    rm -f Tcl_LimitGetCommands.3 Tcl_LimitGetCommands.3.* 
+    rm -f Tcl_LimitGetGranularity.3 Tcl_LimitGetGranularity.3.* 
+    rm -f Tcl_LimitGetTime.3 Tcl_LimitGetTime.3.* 
+    rm -f Tcl_LimitReady.3 Tcl_LimitReady.3.* 
+    rm -f Tcl_LimitRemoveHandler.3 Tcl_LimitRemoveHandler.3.* 
+    rm -f Tcl_LimitSetCommands.3 Tcl_LimitSetCommands.3.* 
+    rm -f Tcl_LimitSetGranularity.3 Tcl_LimitSetGranularity.3.* 
+    rm -f Tcl_LimitSetTime.3 Tcl_LimitSetTime.3.* 
+    rm -f Tcl_LimitTypeEnabled.3 Tcl_LimitTypeEnabled.3.* 
+    rm -f Tcl_LimitTypeExceeded.3 Tcl_LimitTypeExceeded.3.* 
+    rm -f Tcl_LimitTypeReset.3 Tcl_LimitTypeReset.3.* 
+    rm -f Tcl_LimitTypeSet.3 Tcl_LimitTypeSet.3.* 
+    ln $S Limit.3$Z Tcl_LimitAddHandler.3$Z 
+    ln $S Limit.3$Z Tcl_LimitCheck.3$Z 
+    ln $S Limit.3$Z Tcl_LimitExceeded.3$Z 
+    ln $S Limit.3$Z Tcl_LimitGetCommands.3$Z 
+    ln $S Limit.3$Z Tcl_LimitGetGranularity.3$Z 
+    ln $S Limit.3$Z Tcl_LimitGetTime.3$Z 
+    ln $S Limit.3$Z Tcl_LimitReady.3$Z 
+    ln $S Limit.3$Z Tcl_LimitRemoveHandler.3$Z 
+    ln $S Limit.3$Z Tcl_LimitSetCommands.3$Z 
+    ln $S Limit.3$Z Tcl_LimitSetGranularity.3$Z 
+    ln $S Limit.3$Z Tcl_LimitSetTime.3$Z 
+    ln $S Limit.3$Z Tcl_LimitTypeEnabled.3$Z 
+    ln $S Limit.3$Z Tcl_LimitTypeExceeded.3$Z 
+    ln $S Limit.3$Z Tcl_LimitTypeReset.3$Z 
+    ln $S Limit.3$Z Tcl_LimitTypeSet.3$Z 
+fi
 if test -r LinkVar.3; then
     rm -f LinkVar.3.*
     $ZIP LinkVar.3
