@@ -1561,12 +1561,18 @@ BuildCommandLine(argc, argv, linePtr)
 	}
 
 	quote = 0;
-	for (start = argv[i]; *start != '\0'; start++) {
-	    if (isspace(*start)) {
-		quote = 1;
-		Tcl_DStringAppend(linePtr, "\"", 1);
-    		break;
+	if (argv[i][0] == '\0') {
+	    quote = 1;
+	} else {
+	    for (start = argv[i]; *start != '\0'; start++) {
+		if (isspace(*start)) {
+		    quote = 1;
+		    break;
+		}
 	    }
+	}
+	if (quote) {
+	    Tcl_DStringAppend(linePtr, "\"", 1);
 	}
 
 	start = argv[i];	    
