@@ -1,5 +1,11 @@
 2002-04-22  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	* generic/tclIOUtil.c (Tcl_FSRegister, Tcl_FSUnregister):
+	corrected calling of Tcl_ConditionWait to ensure that there would
+	be a condition to wait upon.
+
+	* generic/tclCmdAH.c (Tcl_FileObjCmd): added cast in FILE_SIZE.
+
 	* win/tclWinFCmd.c (DoDeleteFile): check return of setattr API
 	calls in file deletion for correct Win32 API handling.
 
