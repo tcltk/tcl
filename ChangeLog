@@ -1,3 +1,18 @@
+2002-11-05  Andreas Kupries  <andreask@pliers.activestate.com>
+
+	* generic/tclParseExpr.c: 'struct ParseInfo'.
+	* generic/tclLink.c: 'struct Link'.
+	* generic/tclEncoding.c: 'struct Encoding', and 'struct EscapeEncodingData'.
+	* generic/tclCmdIL.c: 'struct SortInfo'.
+	* generic/tclIO.h: 'struct ChannelState'.
+	* generic/tclRegexp.h: 'struct TclRegexp'.
+	* generic/tclCompile.h: 'struct CompileEnv', and 'struct ByteCode'.
+	* generic/tclInt.h: 'struct Var', 'struct ByteCodeStats', and
+	  'struct Interp'.
+
+	  Reordered fields in various structures for better usage of
+	  memory (less padding).
+
 2002-11-04  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclBasic.c (Tcl_CreateInterp): simplify ByteCodeStats

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.h,v 1.1.4.2 2001/09/27 02:26:43 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclIO.h,v 1.1.4.2.2.1 2002/11/05 22:56:03 andreas_kupries Exp $
  */
 
 /*
@@ -161,44 +161,21 @@ typedef struct ChannelState {
     char *channelName;		/* The name of the channel instance in Tcl
 				 * commands. Storage is owned by the generic IO
 				 * code, is dynamically allocated. */
-    int	flags;			/* ORed combination of the flags defined
-				 * below. */
     Tcl_Encoding encoding;	/* Encoding to apply when reading or writing
 				 * data on this channel.  NULL means no
 				 * encoding is applied to data. */
     Tcl_EncodingState inputEncodingState;
 				/* Current encoding state, used when converting
 				 * input data bytes to UTF-8. */
-    int inputEncodingFlags;	/* Encoding flags to pass to conversion
-				 * routine when converting input data bytes to
-				 * UTF-8.  May be TCL_ENCODING_START before
-				 * converting first byte and TCL_ENCODING_END
-				 * when EOF is seen. */
     Tcl_EncodingState outputEncodingState;
 				/* Current encoding state, used when converting
 				 * UTF-8 to output data bytes. */
-    int outputEncodingFlags;	/* Encoding flags to pass to conversion
-				 * routine when converting UTF-8 to output
-				 * data bytes.  May be TCL_ENCODING_START
-				 * before converting first byte and
-				 * TCL_ENCODING_END when EOF is seen. */
     Tcl_EolTranslation inputTranslation;
 				/* What translation to apply for end of line
 				 * sequences on input? */    
     Tcl_EolTranslation outputTranslation;
 				/* What translation to use for generating
 				 * end of line sequences in output? */
-    int inEofChar;		/* If nonzero, use this as a signal of EOF
-				 * on input. */
-    int outEofChar;             /* If nonzero, append this to the channel
-				 * when it is closed if it is open for
-				 * writing. */
-    int unreportedError;	/* Non-zero if an error report was deferred
-				 * because it happened in the background. The
-				 * value is the POSIX error code. */
-    int refCount;		/* How many interpreters hold references to
-				 * this IO channel? */
-
     CloseCallback *closeCbPtr;	/* Callbacks registered to be called when the
 				 * channel is closed. */
     char *outputStage;		/* Temporary staging buffer used when
@@ -216,14 +193,11 @@ typedef struct ChannelState {
 
     struct ChannelHandler *chPtr;/* List of channel handlers registered
 				  * for this channel. */
-    int interestMask;		/* Mask of all events this channel has
-				 * handlers for. */
     EventScriptRecord *scriptRecordPtr;
 				/* Chain of all scripts registered for
 				 * event handlers ("fileevent") on this
 				 * channel. */
 
-    int bufSize;		/* What size buffers to allocate? */
     Tcl_TimerToken timer;	/* Handle to wakeup timer for this channel. */
     CopyState *csPtr;		/* State of background copy, or NULL. */
     Channel *topChanPtr;	/* Refers to topmost channel in a stack.
@@ -233,6 +207,31 @@ typedef struct ChannelState {
 				 * long as the channel state. Never NULL. */
     struct ChannelState *nextCSPtr;
 				/* Next in list of channels currently open. */
+    int	flags;			/* ORed combination of the flags defined
+				 * below. */
+    int inputEncodingFlags;	/* Encoding flags to pass to conversion
+				 * routine when converting input data bytes to
+				 * UTF-8.  May be TCL_ENCODING_START before
+				 * converting first byte and TCL_ENCODING_END
+				 * when EOF is seen. */
+    int outputEncodingFlags;	/* Encoding flags to pass to conversion
+				 * routine when converting UTF-8 to output
+				 * data bytes.  May be TCL_ENCODING_START
+				 * before converting first byte and
+				 * TCL_ENCODING_END when EOF is seen. */
+    int inEofChar;		/* If nonzero, use this as a signal of EOF
+				 * on input. */
+    int outEofChar;             /* If nonzero, append this to the channel
+				 * when it is closed if it is open for
+				 * writing. */
+    int unreportedError;	/* Non-zero if an error report was deferred
+				 * because it happened in the background. The
+				 * value is the POSIX error code. */
+    int refCount;		/* How many interpreters hold references to
+				 * this IO channel? */
+    int interestMask;		/* Mask of all events this channel has
+				 * handlers for. */
+    int bufSize;		/* What size buffers to allocate? */
 } ChannelState;
     
 /*

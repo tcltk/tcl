@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclRegexp.h,v 1.11 1999/08/02 17:45:38 redman Exp $
+ * RCS: @(#) $Id: tclRegexp.h,v 1.11.28.1 2002/11/05 22:56:03 andreas_kupries Exp $
  */
 
 #ifndef _TCLREGEXP
@@ -33,7 +33,6 @@
  */
 
 typedef struct TclRegexp {
-    int flags;			/* Regexp compile flags. */
     regex_t re;			/* Compiled re, includes number of
 				 * subexpressions. */
     CONST char *string;		/* Last string passed to Tcl_RegExpExec. */
@@ -44,6 +43,7 @@ typedef struct TclRegexp {
 				 * of subexpressions. */
     rm_detail_t details;	/* Detailed information on match (currently
 				 * used only for REG_EXPECT). */
+    int flags;			/* Regexp compile flags. */
     int refCount;		/* Count of number of references to this
 				 * compiled regexp. */
 } TclRegexp;

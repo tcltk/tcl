@@ -6,7 +6,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.11.10.1 2001/10/15 20:27:23 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.11.10.1.2.1 2002/11/05 22:56:02 andreas_kupries Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -197,12 +197,31 @@ typedef struct CompileEnv {
 				 * SetByteCodeFromAny. This pointer is not
 				 * owned by the CompileEnv and must not be
 				 * freed or changed by it. */
-    int numSrcBytes;		/* Number of bytes in source. */
     Proc *procPtr;		/* If a procedure is being compiled, a
 				 * pointer to its Proc structure; otherwise
 				 * NULL. Used to compile local variables.
 				 * Set from information provided by
 				 * ObjInterpProc in tclProc.c. */
+    LiteralTable localLitTable;	/* Contains LiteralEntry's describing
+				 * all Tcl objects referenced by this
+				 * compiled code. Indexed by the string
+				 * representations of the literals. Used to
+				 * avoid creating duplicate objects. */
+    unsigned char *codeStart;	/* Points to the first byte of the code. */
+    unsigned char *codeNext;	/* Points to next code array byte to use. */
+    unsigned char *codeEnd;	/* Points just after the last allocated
+				 * code array byte. */
+    LiteralEntry *literalArrayPtr;
+    				/* Points to start of LiteralEntry array. */
+    ExceptionRange *exceptArrayPtr;
+    				/* Points to start of the ExceptionRange
+				 * array. */
+    CmdLocation *cmdMapPtr;	/* Points to start of CmdLocation array.
+				 * numCommands is the index of the next
+				 * entry to use; (numCommands-1) is the
+				 * entry index for the last command. */
+    AuxData *auxDataArrayPtr;   /* Points to auxiliary data array start. */
+    int numSrcBytes;		/* Number of bytes in source. */
     int numCommands;		/* Number of commands compiled. */
     int exceptDepth;		/* Current exception range nesting level;
 				 * -1 if not in any range currently. */
@@ -211,11 +230,6 @@ typedef struct CompileEnv {
     int maxStackDepth;		/* Maximum number of stack elements needed
 				 * to execute the code. Set by compilation
 				 * procedures before returning. */
-    LiteralTable localLitTable;	/* Contains LiteralEntry's describing
-				 * all Tcl objects referenced by this
-				 * compiled code. Indexed by the string
-				 * representations of the literals. Used to
-				 * avoid creating duplicate objects. */
     int exprIsJustVarRef;	/* Set 1 if the expression last compiled by
 				 * TclCompileExpr consisted of just a
 				 * variable reference as in the expression
@@ -228,21 +242,12 @@ typedef struct CompileEnv {
 				 * might be strings, the expr is compiled
 				 * out-of-line to implement expr's 2 level
 				 * substitution semantics properly. */
-    unsigned char *codeStart;	/* Points to the first byte of the code. */
-    unsigned char *codeNext;	/* Points to next code array byte to use. */
-    unsigned char *codeEnd;	/* Points just after the last allocated
-				 * code array byte. */
     int mallocedCodeArray;      /* Set 1 if code array was expanded 
 				 * and codeStart points into the heap.*/
-    LiteralEntry *literalArrayPtr;
-    				/* Points to start of LiteralEntry array. */
     int literalArrayNext;	/* Index of next free object array entry. */
     int literalArrayEnd;	/* Index just after last obj array entry. */
     int mallocedLiteralArray;   /* 1 if object array was expanded and
                                  * objArray points into the heap, else 0. */
-    ExceptionRange *exceptArrayPtr;
-    				/* Points to start of the ExceptionRange
-				 * array. */
     int exceptArrayNext;	/* Next free ExceptionRange array index.
 				 * exceptArrayNext is the number of ranges
 				 * and (exceptArrayNext-1) is the index of
@@ -252,14 +257,9 @@ typedef struct CompileEnv {
     int mallocedExceptArray;	/* 1 if ExceptionRange array was expanded
 				 * and exceptArrayPtr points in heap,
 				 * else 0. */
-    CmdLocation *cmdMapPtr;	/* Points to start of CmdLocation array.
-				 * numCommands is the index of the next
-				 * entry to use; (numCommands-1) is the
-				 * entry index for the last command. */
     int cmdMapEnd;		/* Index after last CmdLocation entry. */
     int mallocedCmdMap;		/* 1 if command map array was expanded and
 				 * cmdMapPtr points in the heap, else 0. */
-    AuxData *auxDataArrayPtr;   /* Points to auxiliary data array start. */
     int auxDataArrayNext;	/* Next free compile aux data array index.
 				 * auxDataArrayNext is the number of aux
 				 * data items and (auxDataArrayNext-1) is
@@ -277,6 +277,7 @@ typedef struct CompileEnv {
                                 /* Initial storage for cmd location map. */
     AuxData staticAuxDataArraySpace[COMPILEENV_INIT_AUX_DATA_SIZE];
                                 /* Initial storage for aux data array. */
+
 } CompileEnv;
 
 /*
@@ -299,25 +300,10 @@ typedef struct ByteCode {
 				 * procs are specific to an interpreter so the
 				 * code emitted will depend on the
 				 * interpreter. */
-    int compileEpoch;		/* Value of iPtr->compileEpoch when this
-				 * ByteCode was compiled. Used to invalidate
-				 * code when, e.g., commands with compile
-				 * procs are redefined. */
     Namespace *nsPtr;		/* Namespace context in which this code
 				 * was compiled. If the code is executed
 				 * if a different namespace, it must be
 				 * recompiled. */
-    int nsEpoch;		/* Value of nsPtr->resolverEpoch when this
-				 * ByteCode was compiled. Used to invalidate
-				 * code when new namespace resolution rules
-				 * are put into effect. */
-    int refCount;		/* Reference count: set 1 when created
-				 * plus 1 for each execution of the code
-				 * currently active. This structure can be
-				 * freed when refCount becomes zero. */
-    unsigned int flags;		/* flags describing state for the codebyte.
-                                 * this variable holds ORed values from the
-                                 * TCL_BYTECODE_ masks defined above */
     char *source;		/* The source string from which this
 				 * ByteCode was compiled. Note that this
 				 * pointer is not owned by the ByteCode and
@@ -327,22 +313,6 @@ typedef struct ByteCode {
 				 * Proc structure; otherwise NULL. This
 				 * pointer is also not owned by the ByteCode
 				 * and must not be freed by it. */
-    size_t structureSize;	/* Number of bytes in the ByteCode structure
-				 * itself. Does not include heap space for
-				 * literal Tcl objects or storage referenced
-				 * by AuxData entries. */
-    int numCommands;		/* Number of commands compiled. */
-    int numSrcBytes;		/* Number of source bytes compiled. */
-    int numCodeBytes;		/* Number of code bytes. */
-    int numLitObjects;		/* Number of objects in literal array. */
-    int numExceptRanges;	/* Number of ExceptionRange array elems. */
-    int numAuxDataItems;	/* Number of AuxData items. */
-    int numCmdLocBytes;		/* Number of bytes needed for encoded
-				 * command location information. */
-    int maxExceptDepth;		/* Maximum nesting level of ExceptionRanges;
-				 * -1 if no ranges were compiled. */
-    int maxStackDepth;		/* Maximum number of stack elements needed
-				 * to execute the code. */
     unsigned char *codeStart;	/* Points to the first byte of the code.
 				 * This is just after the final ByteCode
 				 * member cmdMapPtr. */
@@ -390,6 +360,37 @@ typedef struct ByteCode {
 				 * are always positive. This sequence is
 				 * just after the last byte in the source
 				 * delta sequence. */
+    size_t structureSize;	/* Number of bytes in the ByteCode structure
+				 * itself. Does not include heap space for
+				 * literal Tcl objects or storage referenced
+				 * by AuxData entries. */
+    int compileEpoch;		/* Value of iPtr->compileEpoch when this
+				 * ByteCode was compiled. Used to invalidate
+				 * code when, e.g., commands with compile
+				 * procs are redefined. */
+    int nsEpoch;		/* Value of nsPtr->resolverEpoch when this
+				 * ByteCode was compiled. Used to invalidate
+				 * code when new namespace resolution rules
+				 * are put into effect. */
+    int refCount;		/* Reference count: set 1 when created
+				 * plus 1 for each execution of the code
+				 * currently active. This structure can be
+				 * freed when refCount becomes zero. */
+    unsigned int flags;		/* flags describing state for the codebyte.
+                                 * this variable holds ORed values from the
+                                 * TCL_BYTECODE_ masks defined above */
+    int numCommands;		/* Number of commands compiled. */
+    int numSrcBytes;		/* Number of source bytes compiled. */
+    int numCodeBytes;		/* Number of code bytes. */
+    int numLitObjects;		/* Number of objects in literal array. */
+    int numExceptRanges;	/* Number of ExceptionRange array elems. */
+    int numAuxDataItems;	/* Number of AuxData items. */
+    int numCmdLocBytes;		/* Number of bytes needed for encoded
+				 * command location information. */
+    int maxExceptDepth;		/* Maximum nesting level of ExceptionRanges;
+				 * -1 if no ranges were compiled. */
+    int maxStackDepth;		/* Maximum number of stack elements needed
+				 * to execute the code. */
 #ifdef TCL_COMPILE_STATS
     Tcl_Time createTime;	/* Absolute time when the ByteCode was
 				 * created. */

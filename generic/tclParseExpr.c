@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParseExpr.c,v 1.6.6.2 2001/12/04 21:52:09 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclParseExpr.c,v 1.6.6.3 2002/11/05 22:56:03 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -52,11 +52,7 @@ static int traceParseExpr = 0;
 typedef struct ParseInfo {
     Tcl_Parse *parsePtr;	/* Points to structure to fill in with
 				 * information about the expression. */
-    int lexeme;			/* Type of last lexeme scanned in expr.
-				 * See below for definitions. Corresponds to
-				 * size characters beginning at start. */
     char *start;		/* First character in lexeme. */
-    int size;			/* Number of bytes in lexeme. */
     char *next;			/* Position of the next character to be
 				 * scanned in the expression string. */
     char *prevEnd;		/* Points to the character just after the
@@ -65,6 +61,11 @@ typedef struct ParseInfo {
     char *originalExpr;		/* Points to the start of the expression
 				 * originally passed to Tcl_ParseExpr. */
     char *lastChar;		/* Points just after last byte of expr. */
+
+    int lexeme;			/* Type of last lexeme scanned in expr.
+				 * See below for definitions. Corresponds to
+				 * size characters beginning at start. */
+    int size;			/* Number of bytes in lexeme. */
 } ParseInfo;
 
 /*

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.42.2.3.2.3 2002/07/19 17:28:21 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.42.2.3.2.4 2002/11/05 22:56:03 andreas_kupries Exp $
  */
 
 #ifndef _TCLINT
@@ -358,6 +358,10 @@ typedef struct Var {
 				 * hashtable. This is used to delete an
 				 * variable from its hashtable if it is no
 				 * longer needed. */
+    VarTrace *tracePtr;		/* First in list of all traces set for this
+				 * variable. */
+    ArraySearch *searchPtr;	/* First in list of all searches active
+				 * for this variable, or NULL if none. */
     int refCount;		/* Counts number of active uses of this
 				 * variable, not including its entry in the
 				 * call frame or the hash table: 1 for each
@@ -366,10 +370,6 @@ typedef struct Var {
 				 * variable, and 1 if the variable is a 
 				 * namespace variable. This record can't be
 				 * deleted until refCount becomes 0. */
-    VarTrace *tracePtr;		/* First in list of all traces set for this
-				 * variable. */
-    ArraySearch *searchPtr;	/* First in list of all searches active
-				 * for this variable, or NULL if none. */
     int flags;			/* Miscellaneous bits of information about
 				 * variable. See below for definitions. */
 } Var;
@@ -914,31 +914,28 @@ typedef struct LiteralTable {
 
 #ifdef TCL_COMPILE_STATS
 typedef struct ByteCodeStats {
-    long numExecutions;		  /* Number of ByteCodes executed. */
-    long numCompilations;	  /* Number of ByteCodes created. */
-    long numByteCodesFreed;	  /* Number of ByteCodes destroyed. */
-    long instructionCount[256];	  /* Number of times each instruction was
-				   * executed. */
-
     double totalSrcBytes;	  /* Total source bytes ever compiled. */
     double totalByteCodeBytes;	  /* Total bytes for all ByteCodes. */
+    double totalLitStringBytes;	  /* Total string bytes in all literals. */
     double currentSrcBytes;	  /* Src bytes for all current ByteCodes. */
     double currentByteCodeBytes;  /* Code bytes in all current ByteCodes. */
-
-    long srcCount[32];		  /* Source size distribution: # of srcs of
-				   * size [2**(n-1)..2**n), n in [0..32). */
-    long byteCodeCount[32];	  /* ByteCode size distribution. */
-    long lifetimeCount[32];	  /* ByteCode lifetime distribution (ms). */
-    
     double currentInstBytes;	  /* Instruction bytes-current ByteCodes. */
     double currentLitBytes;	  /* Current literal bytes. */
     double currentExceptBytes;	  /* Current exception table bytes. */
     double currentAuxBytes;	  /* Current auxiliary information bytes. */
     double currentCmdMapBytes;	  /* Current src<->code map bytes. */
-    
-    long numLiteralsCreated;	  /* Total literal objects ever compiled. */
-    double totalLitStringBytes;	  /* Total string bytes in all literals. */
     double currentLitStringBytes; /* String bytes in current literals. */
+    
+    long numExecutions;		  /* Number of ByteCodes executed. */
+    long numCompilations;	  /* Number of ByteCodes created. */
+    long numByteCodesFreed;	  /* Number of ByteCodes destroyed. */
+    long instructionCount[256];	  /* Number of times each instruction was
+				   * executed. */
+    long srcCount[32];		  /* Source size distribution: # of srcs of
+				   * size [2**(n-1)..2**n), n in [0..32). */
+    long byteCodeCount[32];	  /* ByteCode size distribution. */
+    long lifetimeCount[32];	  /* ByteCode lifetime distribution (ms). */
+    long numLiteralsCreated;	  /* Total literal objects ever compiled. */
     long literalCount[32];	  /* Distribution of literal string sizes. */
 } ByteCodeStats;
 #endif /* TCL_COMPILE_STATS */
@@ -1108,6 +1105,9 @@ typedef struct Interp {
     int errorLine;		/* When TCL_ERROR is returned, this gives
 				 * the line number in the command where the
 				 * error occurred (1 means first line). */
+
+    /* Internal fields ................................. */
+
     struct TclStubs *stubTable;
 				/* Pointer to the exported Tcl stub table.
 				 * On previous versions of Tcl this is a
@@ -1132,52 +1132,6 @@ typedef struct Interp {
 				 * strings (function names); values have
 				 * type (MathFunc *). */
 
-
-
-    /*
-     * Information related to procedures and variables. See tclProc.c
-     * and tclvar.c for usage.
-     */
-
-    int numLevels;		/* Keeps track of how many nested calls to
-				 * Tcl_Eval are in progress for this
-				 * interpreter.	 It's used to delay deletion
-				 * of the table until all Tcl_Eval
-				 * invocations are completed. */
-    int maxNestingDepth;	/* If numLevels exceeds this value then Tcl
-				 * assumes that infinite recursion has
-				 * occurred and it generates an error. */
-    CallFrame *framePtr;	/* Points to top-most in stack of all nested
-				 * procedure invocations.  NULL means there
-				 * are no active procedures. */
-    CallFrame *varFramePtr;	/* Points to the call frame whose variables
-				 * are currently in use (same as framePtr
-				 * unless an "uplevel" command is
-				 * executing). NULL means no procedure is
-				 * active or "uplevel 0" is executing. */
-    ActiveVarTrace *activeTracePtr;
-				/* First in list of active traces for
-				 * interp, or NULL if no active traces. */
-    int returnCode;		/* Completion code to return if current
-				 * procedure exits with TCL_RETURN code. */
-    char *errorInfo;		/* Value to store in errorInfo if returnCode
-				 * is TCL_ERROR.  Malloc'ed, may be NULL */
-    char *errorCode;		/* Value to store in errorCode if returnCode
-				 * is TCL_ERROR.  Malloc'ed, may be NULL */
-
-    /*
-     * Information used by Tcl_AppendResult to keep track of partial
-     * results.	 See Tcl_AppendResult code for details.
-     */
-
-    char *appendResult;		/* Storage space for results generated
-				 * by Tcl_AppendResult.	 Malloc-ed.  NULL
-				 * means not yet allocated. */
-    int appendAvl;		/* Total amount of space available at
-				 * partialResult. */
-    int appendUsed;		/* Number of non-null bytes currently
-				 * stored at partialResult. */
-
     /*
      * Information about packages.  Used only in tclPkg.c.
      */
@@ -1195,25 +1149,12 @@ typedef struct Interp {
      * Miscellaneous information:
      */
 
-    int cmdCount;		/* Total number of times a command procedure
-				 * has been called for this interpreter. */
-    int evalFlags;		/* Flags to control next call to Tcl_Eval.
-				 * Normally zero, but may be set before
-				 * calling Tcl_Eval.  See below for valid
-				 * values. */
-    int termOffset;		/* Offset of character just after last one
-				 * compiled or executed by Tcl_EvalObj. */
     LiteralTable literalTable;	/* Contains LiteralEntry's describing all
 				 * Tcl objects holding literals of scripts
 				 * compiled by the interpreter. Indexed by
 				 * the string representations of literals.
 				 * Used to avoid creating duplicate
 				 * objects. */
-    int compileEpoch;		/* Holds the current "compilation epoch"
-				 * for this interpreter. This is
-				 * incremented to invalidate existing
-				 * ByteCodes when, e.g., a command with a
-				 * compile procedure is redefined. */
     Proc *compiledProcPtr;	/* If a procedure is being compiled, a
 				 * pointer to its Proc structure; otherwise,
 				 * this is NULL. Set by ObjInterpProc in
@@ -1230,7 +1171,7 @@ typedef struct Interp {
 				 * the name of the file being sourced (it's
 				 * not malloc-ed:  it points to an argument
 				 * to Tcl_EvalFile. */
-    int flags;			/* Various flag bits.  See below. */
+
     long randSeed;		/* Seed used for rand() function. */
     Trace *tracePtr;		/* List of traces for this interpreter. */
     Tcl_HashTable *assocData;	/* Hash table for associating data with
@@ -1243,19 +1184,95 @@ typedef struct Interp {
 				 * string. Returned by Tcl_ObjSetVar2 when
 				 * variable traces change a variable in a
 				 * gross way. */
-    char resultSpace[TCL_RESULT_SIZE+1];
-				/* Static space holding small results. */
     Tcl_Obj *objResultPtr;	/* If the last command returned an object
 				 * result, this points to it. Should not be
 				 * accessed directly; see comment above. */
     Tcl_ThreadId threadId;	/* ID of thread that owns the interpreter */
 
     /*
+     * Information related to procedures and variables. See tclProc.c
+     * and tclvar.c for usage.
+     */
+
+    CallFrame *framePtr;	/* Points to top-most in stack of all nested
+				 * procedure invocations.  NULL means there
+				 * are no active procedures. */
+    CallFrame *varFramePtr;	/* Points to the call frame whose variables
+				 * are currently in use (same as framePtr
+				 * unless an "uplevel" command is
+				 * executing). NULL means no procedure is
+				 * active or "uplevel 0" is executing. */
+    ActiveVarTrace *activeTracePtr;
+				/* First in list of active traces for
+				 * interp, or NULL if no active traces. */
+    char *errorInfo;		/* Value to store in errorInfo if returnCode
+				 * is TCL_ERROR.  Malloc'ed, may be NULL */
+    char *errorCode;		/* Value to store in errorCode if returnCode
+				 * is TCL_ERROR.  Malloc'ed, may be NULL */
+
+    /*
+     * Information used by Tcl_AppendResult to keep track of partial
+     * results.	 See Tcl_AppendResult code for details.
+     */
+
+    char *appendResult;		/* Storage space for results generated
+				 * by Tcl_AppendResult.	 Malloc-ed.  NULL
+				 * means not yet allocated. */
+
+    /*
+     * Information related to procedures and variables. See tclProc.c
+     * and tclvar.c for usage.
+     */
+
+    int returnCode;		/* Completion code to return if current
+				 * procedure exits with TCL_RETURN code. */
+    int numLevels;		/* Keeps track of how many nested calls to
+				 * Tcl_Eval are in progress for this
+				 * interpreter.	 It's used to delay deletion
+				 * of the table until all Tcl_Eval
+				 * invocations are completed. */
+    int maxNestingDepth;	/* If numLevels exceeds this value then Tcl
+				 * assumes that infinite recursion has
+				 * occurred and it generates an error. */
+
+    /*
+     * Information used by Tcl_AppendResult to keep track of partial
+     * results.	 See Tcl_AppendResult code for details.
+     */
+
+    int appendAvl;		/* Total amount of space available at
+				 * partialResult. */
+    int appendUsed;		/* Number of non-null bytes currently
+				 * stored at partialResult. */
+
+    /*
+     * Miscellaneous information:
+     */
+
+    int cmdCount;		/* Total number of times a command procedure
+				 * has been called for this interpreter. */
+    int evalFlags;		/* Flags to control next call to Tcl_Eval.
+				 * Normally zero, but may be set before
+				 * calling Tcl_Eval.  See below for valid
+				 * values. */
+    int termOffset;		/* Offset of character just after last one
+				 * compiled or executed by Tcl_EvalObj. */
+    int compileEpoch;		/* Holds the current "compilation epoch"
+				 * for this interpreter. This is
+				 * incremented to invalidate existing
+				 * ByteCodes when, e.g., a command with a
+				 * compile procedure is redefined. */
+    int flags;			/* Various flag bits.  See below. */
+
+    char resultSpace[TCL_RESULT_SIZE+1];
+				/* Static space holding small results. */
+
+#ifdef TCL_COMPILE_STATS
+    /*
      * Statistical information about the bytecode compiler and interpreter's
      * operation.
      */
 
-#ifdef TCL_COMPILE_STATS
     ByteCodeStats stats;	/* Holds compilation and execution
 				 * statistics for this interpreter. */
 #endif /* TCL_COMPILE_STATS */	  

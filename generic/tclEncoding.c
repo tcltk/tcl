@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEncoding.c,v 1.5.2.1.2.1 2001/11/28 17:58:35 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclEncoding.c,v 1.5.2.1.2.2 2002/11/05 22:56:03 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -37,11 +37,6 @@ typedef struct Encoding {
     Tcl_EncodingFreeProc *freeProc;
 				/* If non-NULL, procedure to call when this
 				 * encoding is deleted. */
-    int nullSize;		/* Number of 0x00 bytes that signify
-				 * end-of-string in this encoding.  This
-				 * number is used to determine the source
-				 * string length when the srcLen argument is
-				 * negative.  This number can be 1 or 2. */
     ClientData clientData;	/* Arbitrary value associated with encoding
 				 * type.  Passed to conversion procedures. */
     LengthProc *lengthProc;	/* Function to compute length of
@@ -50,8 +45,13 @@ typedef struct Encoding {
 				 * nullSize is 2, this is a function that
 				 * returns the number of bytes in a 0x0000
 				 * terminated string. */
-    int refCount;		/* Number of uses of this structure. */
     Tcl_HashEntry *hPtr;	/* Hash table entry that owns this encoding. */
+    int nullSize;		/* Number of 0x00 bytes that signify
+				 * end-of-string in this encoding.  This
+				 * number is used to determine the source
+				 * string length when the srcLen argument is
+				 * negative.  This number can be 1 or 2. */
+    int refCount;		/* Number of uses of this structure. */
 } Encoding;
 
 /*
@@ -104,13 +104,11 @@ typedef struct EscapeSubTable {
 } EscapeSubTable;
 
 typedef struct EscapeEncodingData {
-    int fallback;		/* Character (in this encoding) to
-				 * substitute when this encoding cannot
-				 * represent a UTF-8 character. */
     unsigned int initLen;	/* Length of following string. */
+    unsigned int finalLen;	/* Length of following string. */
+
     char init[16];		/* String to emit or expect before first char
 				 * in conversion. */
-    unsigned int finalLen;	/* Length of following string. */
     char final[16];		/* String to emit or expect after last char
 				 * in conversion. */
     char prefixBytes[256];	/* If a byte in the input stream is the 
@@ -119,6 +117,9 @@ typedef struct EscapeEncodingData {
 				 * corresponding entry in this array is 1,
 				 * otherwise it is 0. */
     int numSubTables;		/* Length of following array. */
+    int fallback;		/* Character (in this encoding) to
+				 * substitute when this encoding cannot
+				 * represent a UTF-8 character. */
     EscapeSubTable subTables[1];/* Information about each EscapeSubTable
 				 * used by this encoding type.  The actual 
 				 * size will be as large as necessary to 
