@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEncoding.c,v 1.22 2004/05/07 20:01:23 rmax Exp $
+ * RCS: @(#) $Id: tclEncoding.c,v 1.23 2004/06/18 20:38:01 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -236,7 +236,7 @@ static int		UtfExtToUtfIntProc _ANSI_ARGS_((ClientData clientData,
 			    Tcl_EncodingState *statePtr, char *dst, int dstLen,
 			    int *srcReadPtr, int *dstWrotePtr,
 			    int *dstCharsPtr));
-static int		TclFindEncodings _ANSI_ARGS_((CONST char *argv0));
+static int		FindEncodings();
 
 
 /*
@@ -1142,7 +1142,7 @@ Tcl_FindExecutable(argv0)
     /*
      * The value returned from TclpNameOfExecutable is a UTF string that
      * is possibly dirty depending on when it was initialized.
-     * TclFindEncodings will indicate whether we must "clean" the UTF (as
+     * FindEncodings will indicate whether we must "clean" the UTF (as
      * reported by the underlying system).  To assure that the UTF string
      * is a properly encoded native string for this system, convert the
      * UTF string to the default native encoding before the default
@@ -1151,7 +1151,7 @@ Tcl_FindExecutable(argv0)
      */
     
     Tcl_UtfToExternalDString(NULL, name, -1, &buffer);
-    mustCleanUtf = TclFindEncodings(argv0);
+    mustCleanUtf = FindEncodings();
 
     /*
      * Now it is OK to convert the native string back to UTF and set
@@ -1174,7 +1174,7 @@ Tcl_FindExecutable(argv0)
     return;
 	
     done:
-    (void) TclFindEncodings(argv0);
+    (void) FindEncodings();
 }
 
 /*
@@ -2942,7 +2942,7 @@ unilen(src)
 /*
  *-------------------------------------------------------------------------
  *
- * TclFindEncodings --
+ * FindEncodings --
  *
  *	Find and load the encoding file for this operating system.
  *	Before this is called, Tcl makes assumptions about the
@@ -2959,10 +2959,8 @@ unilen(src)
  *-------------------------------------------------------------------------
  */
 
-int
-TclFindEncodings(argv0)
-    CONST char *argv0;		/* Name of executable from argv[0] to main()
-				 * in native multi-byte encoding. */
+static int
+FindEncodings()
 {
     int mustCleanUtf = 0;
 
@@ -2974,7 +2972,6 @@ TclFindEncodings(argv0)
 
 	TclpInitLock();
 	if (encodingsInitialized == 0) {
-	    char *native;
 	    Tcl_Obj *pathPtr;
 	    Tcl_DString libPath, buffer;
 
@@ -2985,8 +2982,13 @@ TclFindEncodings(argv0)
 
 	    encodingsInitialized = 1;
 
-	    native = TclpFindExecutable(argv0);
-	    mustCleanUtf = TclpInitLibraryPath(native);
+	    /* 
+	     * NOTE: we can safely make direct use of tclNativeExecutableName
+	     * because we know all our callers ( Tcl_FindExecutable() is the
+	     * only one) have already called TclpFindExecutable().
+	     */
+
+	    mustCleanUtf = TclpInitLibraryPath(tclNativeExecutableName);
 
 	    /*
 	     * The library path was set in the TclpInitLibraryPath routine.
