@@ -1,3 +1,9 @@
+2004-04-23  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclIO.c (Tcl_SetChannelOption): Fixed [SF Tcl Bug
+	  930851]. When changing the eofchar we have to zap the related
+	  flags to prevent them from prematurely aborting the next read.
+
 2004-04-25  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* generic/tclPathObj.c: fix to [Bug 940281].  Tcl_FSJoinPath
