@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: interp.test,v 1.17 2002/07/29 15:56:54 msofer Exp $
+# RCS: @(#) $Id: interp.test,v 1.18 2002/11/23 01:22:51 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -497,6 +497,12 @@ test interp-14.3 {testing interp aliases} {
     interp alias {a x3} froboz "" puts
     interp aliases {a x3}
 } froboz
+test interp-14.4 {testing interp alias - alias over master} {
+    # SF Bug 641195
+    catch {interp delete a}
+    interp create a
+    list [catch {interp alias "" a a eval} msg] $msg [info commands a]
+} {1 {cannot define or rename alias "a": interpreter deleted} {}}
 
 # part 15: testing file sharing
 test interp-15.1 {testing file sharing} {
