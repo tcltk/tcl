@@ -245,8 +245,8 @@ AC_DEFUN(SC_ENABLE_THREADS, [
 #		--enable-symbols
 #
 #	Defines the following vars:
-#		CFLAGS_DEFAULT	Sets to CFLAGS_DEBUG if true
-#				Sets to CFLAGS_OPTIMIZE if false
+#		CFLAGS_DEFAULT	Sets to $(CFLAGS_DEBUG) if true
+#				Sets to $(CFLAGS_OPTIMIZE) if false
 #		LDFLAGS_DEFAULT	Sets to LDFLAGS_DEBUG if true
 #				Sets to LDFLAGS_OPTIMIZE if false
 #		DBGX		Debug library extension
@@ -258,12 +258,12 @@ AC_DEFUN(SC_ENABLE_SYMBOLS, [
     AC_ARG_ENABLE(symbols, [  --enable-symbols        build with debugging symbols [--disable-symbols]],    [tcl_ok=$enableval], [tcl_ok=no])
 
     if test "$tcl_ok" = "yes"; then
-	CFLAGS_DEFAULT="${CFLAGS_DEBUG}"
+	CFLAGS_DEFAULT='$(CFLAGS_DEBUG)'
 	LDFLAGS_DEFAULT="${LDFLAGS_DEBUG}"
 	DBGX=d
 	AC_MSG_RESULT([yes])
     else
-	CFLAGS_DEFAULT="${CFLAGS_OPTIMIZE}"
+	CFLAGS_DEFAULT='$(CFLAGS_OPTIMIZE)'
 	LDFLAGS_DEFAULT="${LDFLAGS_OPTIMIZE}"
 	DBGX=""
 	AC_MSG_RESULT([no])
