@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.79.2.11 2004/07/26 19:15:03 hobbs Exp $
+RCS: @(#) $Id: changes,v 1.79.2.12 2004/11/04 06:06:50 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -6043,3 +6043,63 @@ Corrects Tcl_StatBuf definition issues.  (hobbs)
 2004-07-20 (bug fix)[736426] plug leaky allocator reinit (mistachkin, kenny)
 
 --- Released 8.4.7, July 26, 2004 --- See ChangeLog for details ---
+
+2004-07-28 (bug fix)[999084] no deadlock in re-entrant Tcl_Finalize (porter)
+
+2004-08-10 (bug fix) thread IDs on 64-bit systems (ratcliff,vasiljevic)
+
+2004-08-13 (bug fix) avoid malicious code acceptance by [mclocale] (porter)
+=> msgcat 1.3.3
+
+2004-08-16 (bug fix)[1008314] Tcl_SetVar TCL_LIST_ELEMENT (sofer,porter)
+
+2004-08-19 (bug fix)[1011860] [scan %ld] fix on LP64 (fellows,porter)
+
+2004-08-30 (bug fix) [string map $x $x] crash (fellows)
+
+2004-09-01 (bug fix)[1020445] WIN64 support (hobbs)
+
+2004-09-07 (bug fix)[1016167] [after] overwrites its imports (kenny)
+
+2004-09-08 (bug fix) fixed [clock format 0 -format %k] (kenny)
+
+2004-09-09 (bug fix)[560297] fixed broken [namespace forget] logic (porter)
+
+2004-09-09 (bug fix)[1017299] fixed [namespace import] cycle prevention (porter)
+
+2004-09-10 (performance) $x[set x {}] is now fast [K $x [set x {}]] (sofer)
+
+2004-09-10 (bug fix)[868489] better control over int <-> wideInt (fellows,kenny)
+
+2004-09-10 (bug fix)[1025359] POSIX errorCode from wide seeks (kupries,fellows)
+
+2004-09-18 (bug fix)[868467] fix [expr 5>>32] => 0, not 5 (hintermayer,fellows)
+
+2004-09-23 (bug fix)[1016726] fix `make clean` in static config (leitgeb,dejong)
+
+2004-09-29 (bug fix)[1036649] syntax error in [subst] => buffer overflow (sofer)
+
+2004-09-30 (bug fix)[1038021] save/restore error state: var traces (porter)
+
+2004-10-08 (bug fix)[954263] case insensitive [file exec] for Win (hobbs,darley)
+
+2004-10-14 (performance) [info commands/globals/procs/vars $pattern] faster
+		when $pattern is trivial (fellows)
+
+2004-10-28 (bug fix)[1030548] restore the --enable-symbols --enable-threads
+		build on Win (mistachkin,kenny,kupries)
+
+2004-10-29 (bug fix)[1055673] fix command line syntax error message (porter)
+=> tcltest 2.2.7
+
+2004-10-31 (bug fix)[1057461] fix [info globals ::varName] (fellows)
+
+2004-11-02 (bug fix)[761471] fix [expr {NaN == NaN}] (sofer)
+
+2004-11-02 (bug fix)[1017151] misleading errorInfo after tests (seeger,porter)
+
+Documentation improvements [759545,1058446,etc.]
+Test suite expansion [1036649,1001997,etc.]
+
+--- Released 8.4.8, November XX, 2004 --- See ChangeLog for details ---
+
