@@ -3,7 +3,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 AC_INIT(../generic/tcl.h)
-# RCS: @(#) $Id: configure.in,v 1.72.6.1 2001/10/15 14:58:55 dkf Exp $
+# RCS: @(#) $Id: configure.in,v 1.72.6.2 2001/10/17 09:28:16 dkf Exp $
 
 TCL_VERSION=8.4
 TCL_MAJOR_VERSION=8
@@ -61,25 +61,10 @@ fi
 fi
 
 AC_C_CROSS
-AC_MSG_CHECKING([for 64-bit integer type])
-AC_CACHE_VAL(tcl_cv_type_64bit,[
-    AC_TRY_COMPILE(,[__int64 value = (__int64) 0;],
-        tcl_cv_type_64bit=__int64,
-        AC_TRY_RUN([
-#include <unistd.h>
-int main() {
-    exit(!(sizeof(long long) > sizeof(long)));
-}
-],
-	    tcl_cv_type_64bit="long long",
-	    tcl_cv_type_64bit=none, tcl_cv_type_64bit=none))])
-if test "${tcl_cv_type_64bit}" = none ; then
-    AC_DEFINE(TCL_WIDE_INT_IS_LONG)
-    AC_MSG_RESULT(using long)
-else
-    AC_DEFINE_UNQUOTED(TCL_WIDE_INT_TYPE,${tcl_cv_type_64bit})
-    AC_MSG_RESULT(${tcl_cv_type_64bit})
-fi
+
+SC_TCL_EARLY_FLAGS
+
+SC_TCL_64BIT_FLAGS
 
 #--------------------------------------------------------------------
 #	Supply substitutes for missing POSIX library procedures, or
@@ -129,16 +114,23 @@ SC_SERIAL_PORT
 #	special flag.
 #--------------------------------------------------------------------
 
-AC_MSG_CHECKING([fd_set and sys/select])
-AC_TRY_COMPILE([#include <sys/types.h>],
-	[fd_set readMask, writeMask;], tk_ok=yes, tk_ok=no)
-if test $tk_ok = no; then
-    AC_HEADER_EGREP(fd_mask, sys/select.h, tk_ok=yes)
-    if test $tk_ok = yes; then
+AC_MSG_CHECKING([for fd_set in sys/types])
+AC_CACHE_VAL(tcl_cv_type_fd_set,
+    AC_TRY_COMPILE([#include <sys/types.h>],[fd_set readMask, writeMask;],
+	tcl_cv_type_fd_set=yes, tcl_cv_type_fd_set=no))
+AC_MSG_RESULT($tcl_cv_type_fd_set)
+tk_ok=$tcl_cv_type_fd_set
+if test $tcl_cv_type_fd_set = no; then
+    AC_MSG_CHECKING([for fd_mask in sys/select])
+    AC_CACHE_VAL(tcl_cv_grep_fd_mask,
+	AC_HEADER_EGREP(fd_mask, sys/select.h,
+	     tcl_cv_grep_fd_mask=present, tcl_cv_grep_fd_mask=missing))
+    AC_MSG_RESULT($tcl_cv_grep_fd_mask)
+    if test $tcl_cv_grep_fd_mask = present; then
 	AC_DEFINE(HAVE_SYS_SELECT_H)
+        tk_ok=yes
     fi
 fi
-AC_MSG_RESULT($tk_ok)
 if test $tk_ok = no; then
     AC_DEFINE(NO_FD_SET)
 fi
@@ -275,14 +267,15 @@ AC_CHECK_FUNC(opendir, , [AC_DEFINE(USE_DIRENT2_H)])
 #--------------------------------------------------------------------
 
 AC_MSG_CHECKING([union wait])
-AC_TRY_LINK([#include <sys/types.h> 
+AC_CACHE_VAL(tcl_cv_union_wait,
+    AC_TRY_LINK([#include <sys/types.h> 
 #include <sys/wait.h>], [
 union wait x;
 WIFEXITED(x);		/* Generates compiler error if WIFEXITED
 			 * uses an int. */
-], tcl_ok=yes, tcl_ok=no)
-AC_MSG_RESULT($tcl_ok)
-if test $tcl_ok = no; then
+	], tcl_cv_union_wait=yes, tcl_cv_union_wait=no))
+AC_MSG_RESULT($tcl_cv_union_wait)
+if test $tcl_cv_union_wait = no; then
     AC_DEFINE(NO_UNION_WAIT)
 fi
 
@@ -292,13 +285,14 @@ fi
 #--------------------------------------------------------------------
 
 AC_MSG_CHECKING([matherr support])
-AC_TRY_COMPILE([#include <math.h>], [
-struct exception x;
-x.type = DOMAIN;
-x.type = SING;
-], tcl_ok=yes, tcl_ok=no)
-AC_MSG_RESULT($tcl_ok)
-if test $tcl_ok = yes; then
+AC_CACHE_VAL(tcl_cv_func_matherr,
+    AC_TRY_COMPILE([#include <math.h>], [
+	struct exception x;
+	x.type = DOMAIN;
+	x.type = SING;
+    ], tcl_cv_func_matherr=yes, tcl_cv_func_matherr=no))
+AC_MSG_RESULT($tcl_cv_func_matherr)
+if test $tcl_cv_func_matherr = yes; then
     AC_DEFINE(NEED_MATHERR)
 fi
 
@@ -335,10 +329,13 @@ AC_CHECK_FUNC(BSDgettimeofday,
     AC_CHECK_FUNC(gettimeofday, , [AC_DEFINE(NO_GETTOD)])
 ])
 AC_MSG_CHECKING([for gettimeofday declaration])
-AC_EGREP_HEADER(gettimeofday, sys/time.h, AC_MSG_RESULT(present), [
-    AC_MSG_RESULT(missing)
+AC_CACHE_VAL(tcl_cv_grep_gettimeofday,
+    AC_EGREP_HEADER(gettimeofday, sys/time.h,
+	tcl_cv_grep_gettimeofday=present, tcl_cv_grep_gettimeofday=missing))
+AC_MSG_RESULT($tcl_cv_grep_gettimeofday)
+if test $tcl_cv_grep_gettimeofday = missing ; then
     AC_DEFINE(GETTOD_NOT_DECLARED)
-])
+fi
 
 #--------------------------------------------------------------------
 #	The following code checks to see whether it is possible to get
@@ -348,12 +345,13 @@ AC_EGREP_HEADER(gettimeofday, sys/time.h, AC_MSG_RESULT(present), [
 
 AC_C_CHAR_UNSIGNED
 AC_MSG_CHECKING([signed char declarations])
-AC_TRY_COMPILE(, [
-signed char *p;
-p = 0;
-], tcl_ok=yes, tcl_ok=no)
-AC_MSG_RESULT($tcl_ok)
-if test $tcl_ok = yes; then
+AC_CACHE_VAL(tcl_cv_char_signed,
+    AC_TRY_COMPILE(, [
+	signed char *p;
+	p = 0;
+	], tcl_cv_char_signed=yes, tcl_cv_char_signed=no))
+AC_MSG_RESULT($tcl_cv_char_signed)
+if test $tcl_cv_char_signed = yes; then
     AC_DEFINE(HAVE_SIGNED_CHAR)
 fi
 

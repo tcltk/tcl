@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.102.2.15 2001/10/15 14:58:54 dkf Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.102.2.16 2001/10/17 09:28:16 dkf Exp $
  */
 
 #ifndef _TCL
@@ -168,25 +168,6 @@ extern "C" {
  * and procedure declarations, that occur below.
  */
 #ifndef RESOURCE_INCLUDED
-
-
-/*
- * Must #define before *any* #include of system headers or all hell
- * tends to break loose...
- *
- * _LARGEFILE64_SOURCE requests the presence (transitional) 64-bit
- * interface to file operations.
- *
- * _ISOC99_SOURCE requests the presence of strtoll() and strtoull() on
- * some platforms (e.g. glibc2.1-based Linux.)
- */
-#define _LARGEFILE64_SOURCE	1
-#define _ISOC99_SOURCE		1
-/*
- * *Not* the following definition...
- *
- * #define _LARGEFILE_SOURCE 1
- */
 
 
 #ifndef BUFSIZ
@@ -391,6 +372,10 @@ typedef TCL_WIDE_INT_TYPE Tcl_WideInt;
 #         ifdef __WIN32__
 typedef __int64		Tcl_WideInt;
 #         else
+/*
+ * Type of 64-bit values on 32-bit systems.  I think this is the ISO
+ * C99 standard way of writing this type.
+ */
 typedef long long	Tcl_WideInt;
 #         endif /* __WIN32__ */
 #      endif  /* _LP64 | __ALPHA | __alpha | _AIX */
@@ -398,46 +383,38 @@ typedef long long	Tcl_WideInt;
 #endif /* TCL_WIDE_INT_TYPE */
 
 #ifdef TCL_WIDE_INT_IS_LONG
+#   include <sys/types.h>
 typedef long		Tcl_WideInt;
+#   ifdef __WIN32__
+typedef long		Tcl_SeekOffset;
+#   else
 typedef off_t		Tcl_SeekOffset;
+#   endif
 typedef struct stat	Tcl_StatBuf;
-typedef struct dirent	Tcl_DirEntry;
 #   define Tcl_WideAsLong(val)		((long)(val))
 #   define Tcl_LongAsWide(val)		((long)(val))
 #   define Tcl_WideAsDouble(val)	((double)((long)(val)))
 #   define Tcl_DoubleAsWide(val)	((long)((double)(val)))
-#   define Tcl_PlatformStat		stat
-#   define Tcl_PlatformLStat		lstat
-#   define Tcl_PlatformSeek		lseek
-#   define Tcl_PlatformOpen		open
-#   define Tcl_PlatformReaddir		readdir
 #else /* TCL_WIDE_INT_IS_LONG */
-/*
- * Type of 64-bit values on 32-bit systems.  I think this is the ISO
- * C99 standard way of writing this type.
- */
 #   define TCL_PRINTF_SUPPORTS_LL
 #   ifdef __WIN32__
-typedef Tcl_WideInt	Tcl_SeekOffset;
 typedef struct _stati64	Tcl_StatBuf;
 #      define TCL_LL_MODIFIER		"I64"
 #      define TCL_LL_MODIFIER_SIZE	3
 #   else
-typedef off64_t		Tcl_SeekOffset;
+#      include <sys/types.h>
+#      ifdef HAVE_STRUCT_STAT64
 typedef struct stat64	Tcl_StatBuf;
+#      else
+typedef struct stat	Tcl_StatBuf;
+#      endif /* HAVE_STRUCT_STAT64 */
 #      define TCL_LL_MODIFIER		"ll"
 #      define TCL_LL_MODIFIER_SIZE	2
 #   endif
-typedef struct dirent64	Tcl_DirEntry;
 #   define Tcl_WideAsLong(val)		((long)((Tcl_WideInt)(val)))
 #   define Tcl_LongAsWide(val)		((Tcl_WideInt)((long)(val)))
 #   define Tcl_WideAsDouble(val)	((double)((Tcl_WideInt)(val)))
 #   define Tcl_DoubleAsWide(val)	((Tcl_WideInt)((double)(val)))
-#   define Tcl_PlatformStat		stat64
-#   define Tcl_PlatformLStat		lstat64
-#   define Tcl_PlatformSeek		lseek64
-#   define Tcl_PlatformOpen		open64
-#   define Tcl_PlatformReaddir		readdir64
 #endif /* TCL_WIDE_INT_IS_LONG */
 
 

@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPort.h,v 1.18 2001/08/30 08:53:15 vincentdarley Exp $
+ * RCS: @(#) $Id: tclUnixPort.h,v 1.18.6.1 2001/10/17 09:28:17 dkf Exp $
  */
 
 #ifndef _TCLUNIXPORT
@@ -55,6 +55,29 @@
 #else
 #   include <dirent.h>
 #endif
+#endif
+#ifdef HAVE_STRUCT_DIRENT64
+typedef struct dirent64	Tcl_DirEntry;
+#   define Tcl_PlatformReaddir		readdir64
+#else
+typedef struct dirent	Tcl_DirEntry;
+#   define Tcl_PlatformReaddir		readdir
+#endif
+#ifdef HAVE_TYPE_OFF64_T
+typedef off64_t		Tcl_SeekOffset;
+#   define Tcl_PlatformSeek		lseek64
+#   define Tcl_PlatformOpen		open64
+#else
+typedef off_t		Tcl_SeekOffset;
+#   define Tcl_PlatformSeek		lseek
+#   define Tcl_PlatformOpen		open
+#endif
+#ifdef HAVE_STRUCT_STAT64
+#   define Tcl_PlatformStat		stat64
+#   define Tcl_PlatformLStat		lstat64
+#else
+#   define Tcl_PlatformStat		stat
+#   define Tcl_PlatformLStat		lstat
 #endif
 #include <sys/file.h>
 #ifdef HAVE_SYS_SELECT_H
