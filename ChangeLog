@@ -1,3 +1,8 @@
+2004-04-19  David Gravereaux <davygrvy@pobox.com>
+
+	* win/tclWinInit.c: Added an exit handler in tclWinInit() so
+	tclWinTCharEncoding could be freed during Tcl_Finalize().
+
 2004-04-19  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* doc/read.n: Added example from David Welton. [Patch 938056]
