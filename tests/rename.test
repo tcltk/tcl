@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: rename.test,v 1.6 1999/06/30 00:17:36 jenn Exp $
+# RCS: @(#) $Id: rename.test,v 1.7 1999/07/08 17:29:30 jenn Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -132,6 +132,9 @@ if {[info command testdel] == "testdel"} {
 	testdel foo cmd {set env(value) deleted; kill}
 	list [catch {interp delete foo} msg] $msg $env(value)
     } {0 {} deleted}
+    if {[info exists env(value)]} {
+	unset env(value)
+    }
 }
 
 # Save the unknown procedure which is modified by the following test.
@@ -173,16 +176,3 @@ if {[info commands incr.old] != {}} {
 }
 ::tcltest::cleanupTests
 return
-
-
-
-
-
-
-
-
-
-
-
-
-

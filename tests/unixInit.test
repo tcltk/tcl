@@ -10,14 +10,17 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: unixInit.test,v 1.9 1999/07/07 23:08:13 rjohnson Exp $
+# RCS: @(#) $Id: unixInit.test,v 1.10 1999/07/08 17:29:30 jenn Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
     namespace import ::tcltest::*
 }
 
-catch {set oldlibrary $env(TCL_LIBRARY); unset env(TCL_LIBRARY)}
+if {[info exists env(TCL_LIBRARY)]} {
+    set oldlibrary $env(TCL_LIBRARY)
+    unset env(TCL_LIBRARY)
+}
 catch {set oldlang $env(LANG)}
 set env(LANG) C
 
@@ -191,19 +194,10 @@ test unixInit-6.1 {Tcl_SourceRCFile} {emptyTest unixOnly} {
 } {}
     
 # cleanup
-catch {unset env(TCL_LIBRARY); set env(TCL_LIBRARY) $oldlibrary}
+if {[info exists oldlibrary]} {
+    set env(TCL_LIBRARY) $oldlibrary
+}
 catch {unset env(LANG); set env(LANG) $oldlang}
 ::tcltest::cleanupTests
 return
-
-
-
-
-
-
-
-
-
-
-
 
