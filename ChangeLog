@@ -1,3 +1,22 @@
+2002-02-06  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclCompCmds.c (TclCompileRegexpCmd): made early check
+	for bad RE to stop checking further.
+
+	* generic/tclCmdMZ.c (Tcl_RegsubObjCmd): added special case to
+	search for simple 'string map' style regsub calls.
+	Delayed creation of resultPtr object until an initial match is
+	made, as the input string object can then be reused for no matches.
+	(Tcl_StringObjCmd): optimization improvements to the STR_MAP
+	algorithm for zero-length and nocase cases.
+
+	* tests/regexp.test:
+	* tests/regexpComp.test: extra code coverage tests.
+
+	* tests/string.test: added 10.18 and 10.19 extra tests.
+
+	* generic/regc_locale.c (casecmp): slight performance improvement.
+
 2002-02-05  Don Porter <dgp@users.sourceforge.net>
 
 	* library/http/http.tcl:
