@@ -1,3 +1,9 @@
+2004-07-11  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclExecute.c (TEBC): fixed leak of expandNestList objs 
+	when there is an error while an expansion is in progress (code
+	added at checkForCatch).
+	
 2004-07-11  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* generic/tclIOUtil.c: fix to 'cd' bug when vfs is active
