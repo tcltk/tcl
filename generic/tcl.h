@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.160 2003/07/18 02:02:02 das Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.161 2003/07/22 00:59:58 mdejong Exp $
  */
 
 #ifndef _TCL
@@ -778,6 +778,15 @@ typedef struct Tcl_Obj {
 	    VOID *ptr2;
 	} twoPtrValue;
     } internalRep;
+
+    /*
+     * Thread id used to check that calls to Tcl_IncrRefCount,
+     * Tcl_DecrRefCount, and Tcl_IsShared are being made
+     * from the thread that originally allocated the Tcl_Obj.
+     */
+#if defined(TCL_MEM_DEBUG) && defined(TCL_THREADS)
+    Tcl_ThreadId allocThread;
+#endif
 } Tcl_Obj;
 
 
