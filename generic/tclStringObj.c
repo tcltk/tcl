@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclStringObj.c 1.31 97/10/30 13:56:35
+ * RCS: @(#) $Id: tclStringObj.c,v 1.2 1998/09/14 18:40:02 stanton Exp $
  */
 
 #include "tclInt.h"

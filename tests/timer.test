@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# SCCS: @(#) timer.test 1.2 97/04/29 11:59:59
+# RCS: @(#) $Id: timer.test,v 1.2 1998/09/14 18:40:14 stanton Exp $
 
 if {[string compare test [info procs test]] == 1} then {source defs}
 

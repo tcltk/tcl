@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# SCCS: %Z% $Id: safe.tcl,v 1.2 1998/06/27 18:11:25 welch Exp $ 
+# RCS: @(#) $Id: safe.tcl,v 1.3 1998/09/14 18:40:03 stanton Exp $
 
 #
 # The implementation is based on namespaces. These naming conventions

@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" SCCS: @(#) switch.n 1.10 97/10/31 13:05:55
+'\" RCS: @(#) $Id: switch.n,v 1.2 1998/09/14 18:39:55 stanton Exp $
 '\" 
 .so man.macros
 .TH switch n 7.0 Tcl "Tcl Built-In Commands"

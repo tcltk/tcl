@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) pkga.c 1.4 96/02/15 12:30:35
+ * RCS: @(#) $Id: pkga.c,v 1.2 1998/09/14 18:40:18 stanton Exp $
  */
 #include "tcl.h"
 

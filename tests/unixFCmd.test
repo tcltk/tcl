@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# SCCS: @(#) unixFCmd.test 1.15 97/11/03 15:58:22
+# RCS: @(#) $Id: unixFCmd.test,v 1.5 1998/09/14 18:40:14 stanton Exp $
 
 if {[string compare test [info procs test]] == 1} then {source defs}
 

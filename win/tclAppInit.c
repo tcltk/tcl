@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclAppInit.c 1.12 97/04/30 11:04:50
+ * RCS: @(#) $Id: tclAppInit.c,v 1.2 1998/09/14 18:40:19 stanton Exp $
  */
 
 #include "tcl.h"

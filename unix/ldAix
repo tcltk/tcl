@@ -10,7 +10,7 @@
 # symbols exported by those files, and then invokes "ldCmd" to
 # perform the real link.
 #
-# SCCS: @(#) ldAix 1.8 97/02/21 14:50:27
+# RCS: @(#) $Id: ldAix,v 1.2 1998/09/14 18:40:16 stanton Exp $
 
 # Extract from the arguments the names of all of the object files.
 

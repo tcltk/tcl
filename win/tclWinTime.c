@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclWinTime.c 1.6 97/04/14 17:25:56
+ * RCS: @(#) $Id: tclWinTime.c,v 1.2 1998/09/14 18:40:20 stanton Exp $
  */
 
 #include "tclInt.h"

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclWinReg.c 1.8 97/08/01 11:17:49
+ * RCS: @(#) $Id: tclWinReg.c,v 1.6 1998/09/14 18:40:20 stanton Exp $
  */
 
 #include <tcl.h>

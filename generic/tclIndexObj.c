@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclIndexObj.c 1.8 97/07/29 10:16:54
+ * RCS: @(#) $Id: tclIndexObj.c,v 1.2 1998/09/14 18:40:00 stanton Exp $
  */
 
 #include "tclInt.h"

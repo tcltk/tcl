@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclUnixNotfy.c 1.44 97/11/05 13:02:20
+ * RCS: @(#) $Id: tclUnixNotfy.c,v 1.2 1998/09/14 18:40:17 stanton Exp $
  */
 
 #include "tclInt.h"

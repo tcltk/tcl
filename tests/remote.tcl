@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# @(#) remote.tcl 1.5 96/04/17 08:21:19"
+# RCS: @(#) $Id: remote.tcl,v 1.2 1998/09/14 18:40:13 stanton Exp $
 
 # Initialize message delimitor
 

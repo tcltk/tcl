@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclMacPanic.c 1.14 97/11/20 18:41:06
+ * RCS: @(#) $Id: tclMacPanic.c,v 1.2 1998/09/14 18:40:05 stanton Exp $
  */
 
 

@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# SCCS: @(#) Makefile.in 1.190 97/11/05 10:57:38
+# RCS: @(#) $Id: Makefile.in,v 1.10 1998/09/14 18:40:15 stanton Exp $
 
 # Current Tcl version;  used in various names.
 
@@ -401,7 +401,7 @@ topDirName:
 gendate:
 	yacc -l $(GENERIC_DIR)/tclGetDate.y
 	sed -e 's/yy/TclDate/g' -e '/^#include <values.h>/d' \
-	    -e 's/SCCSID/%Z\% %M\% %I\% %E\% %U\%/g' \
+	    -e 's/SCCSID/RCS: @(#) $Id: Makefile.in,v 1.10 1998/09/14 18:40:15 stanton Exp $'
 	    -e '/#ifdef __STDC__/,/#endif/d' -e '/TclDateerrlab:/d' \
 	    -e '/TclDatenewstate:/d' -e '/#pragma/d' \
 	    <y.tab.c >$(GENERIC_DIR)/tclDate.c

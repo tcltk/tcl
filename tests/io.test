@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# SCCS: @(#) io.test 1.131 97/09/22 11:15:05
+# RCS: @(#) $Id: io.test,v 1.4 1998/09/14 18:40:10 stanton Exp $
 
 if {[string compare test [info procs test]] == 1} then {source defs}
 

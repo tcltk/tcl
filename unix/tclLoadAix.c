@@ -17,7 +17,7 @@
  *	for any results of using the software, alterations are clearly marked
  *	as such, and this notice is not modified.
  *
- * SCCS: @(#) tclLoadAix.c 1.11 96/10/07 10:41:24
+ * RCS: @(#) $Id: tclLoadAix.c,v 1.2 1998/09/14 18:40:16 stanton Exp $
  *
  * Note:  this file has been altered from the original in a few
  * ways in order to work properly with Tcl.

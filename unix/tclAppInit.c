@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclAppInit.c 1.20 97/03/24 14:29:43
+ * RCS: @(#) $Id: tclAppInit.c,v 1.2 1998/09/14 18:40:16 stanton Exp $
  */
 
 #ifdef TCL_XT_TEST

@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# SCCS: %Z% $Id: word.tcl,v 1.2 1998/06/27 18:11:26 welch Exp $ 
+# RCS: @(#) $Id: word.tcl,v 1.3 1998/09/14 18:40:03 stanton Exp $
 # 
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclMacBOAAppInit.c 1.1 97/11/03 17:06:21
+ * RCS: @(#) $Id: tclMacBOAAppInit.c,v 1.2 1998/09/14 18:40:04 stanton Exp $
  */
 
 #include "tcl.h"

@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: %Z% $Id: tclResolve.c,v 1.1 1998/06/28 21:41:31 welch Exp $ 
+ * RCS: @(#) $Id: tclResolve.c,v 1.2 1998/09/14 18:40:02 stanton Exp $
  */
 
 #include "tclInt.h"

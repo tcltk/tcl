@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclClock.c 1.37 97/07/29 10:29:58
+ * RCS: @(#) $Id: tclClock.c,v 1.2 1998/09/14 18:39:57 stanton Exp $
  */
 
 #include "tcl.h"

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclUnixTime.c 1.13 97/10/31 15:04:58
+ * RCS: @(#) $Id: tclUnixTime.c,v 1.2 1998/09/14 18:40:18 stanton Exp $
  */
 
 #include "tclInt.h"

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclBinary.c 1.26 97/11/05 13:02:05
+ * RCS: @(#) $Id: tclBinary.c,v 1.3 1998/09/14 18:39:57 stanton Exp $
  */
 
 #include <math.h>

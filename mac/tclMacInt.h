@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclMacInt.h 1.24 97/09/09 16:22:01
+ * RCS: @(#) $Id: tclMacInt.h,v 1.2 1998/09/14 18:40:05 stanton Exp $
  */
 
 #ifndef _TCLMACINT

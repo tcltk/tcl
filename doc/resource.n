@@ -3,7 +3,7 @@
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-'\" SCCS: @(#) resource.n 1.4 97/09/10 15:22:18
+'\" RCS: @(#) $Id: resource.n,v 1.2 1998/09/14 18:39:54 stanton Exp $
 '\" 
 .so man.macros
 .TH resource n 8.0 Tcl "Tcl Built-In Commands"

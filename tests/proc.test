@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# SCCS: @(#) proc.test 1.11 97/08/12 13:31:43
+# RCS: @(#) $Id: proc.test,v 1.2 1998/09/14 18:40:12 stanton Exp $
 
 if {[string compare test [info procs test]] == 1} then {source defs}
 

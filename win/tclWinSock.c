@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclWinSock.c 1.80 97/10/09 18:24:59
+ * RCS: @(#) $Id: tclWinSock.c,v 1.3 1998/09/14 18:40:20 stanton Exp $
  */
 
 #include "tclInt.h"

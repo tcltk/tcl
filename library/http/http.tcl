@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and
 # redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# SCCS: %Z% $Id: http.tcl,v 1.2 1998/06/29 15:30:16 welch Exp $ 
+# RCS: @(#) $Id: http.tcl,v 1.3 1998/09/14 18:40:03 stanton Exp $
 
 package provide http 2.0	;# This uses Tcl namespaces
 

@@ -2,7 +2,7 @@
 # tests.  Execute it by invoking "source all" when running tclTest
 # in this directory.
 #
-# SCCS: @(#) all 1.8 97/08/01 11:07:14
+# RCS: @(#) $Id: all,v 1.2 1998/09/14 18:40:07 stanton Exp $
 
 if {$tcl_platform(os) == "Win32s"} {
     set files [glob *.tes]
@@ -12,7 +12,7 @@ if {$tcl_platform(os) == "Win32s"} {
 
 foreach i [lsort $files] {
     if [string match l.*.test $i] {
-	# This is an SCCS lock file;  ignore it.
+	# This is an SCCS lockfile
 	continue
     }
     puts stdout $i

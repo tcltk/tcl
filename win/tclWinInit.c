@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclWinInit.c 1.32 97/06/24 17:28:26
+ * RCS: @(#) $Id: tclWinInit.c,v 1.10 1998/09/14 18:40:20 stanton Exp $
  */
 
 #include "tclInt.h"

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclMacOSA.r 1.6 97/11/20 18:40:02
+ * RCS: @(#) $Id: tclMacOSA.r,v 1.2 1998/09/14 18:40:05 stanton Exp $
  */
 
 #include <Types.r>

@@ -5,7 +5,7 @@
 # These procedures use a callback interface to avoid using vwait,
 # which is not defined in the safe base.
 #
-# SCCS: %Z% $Id: http.tcl,v 1.2 1998/06/29 15:30:24 welch Exp $ 
+# RCS: @(#) $Id: http.tcl,v 1.3 1998/09/14 18:40:03 stanton Exp $
 #
 # See the http.n man page for documentation
 

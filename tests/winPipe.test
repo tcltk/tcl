@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# SCCS: @(#) winPipe.test 1.11 97/10/09 17:06:16
+# RCS: @(#) $Id: winPipe.test,v 1.3 1998/09/14 18:40:15 stanton Exp $
 
 if {$tcl_platform(platform) != "windows"} {
     return

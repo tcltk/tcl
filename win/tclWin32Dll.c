@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclWin32Dll.c 1.21 97/08/05 11:47:10
+ * RCS: @(#) $Id: tclWin32Dll.c,v 1.4 1998/09/14 18:40:19 stanton Exp $
  */
 
 #include "tclWinInt.h"

@@ -59,7 +59,7 @@
 # listening at port 2048. If all fails, a message is printed and the tests
 # using the remote server are not performed.
 #
-# SCCS: @(#) socket.test 1.83 97/09/15 16:29:47
+# RCS: @(#) $Id: socket.test,v 1.5 1998/09/14 18:40:13 stanton Exp $
 
 if {[string compare test [info procs test]] == 1} then {source defs}
 

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) gettod.c 1.2 96/02/15 12:08:26
+ * RCS: @(#) $Id: gettod.c,v 1.2 1998/09/14 18:39:44 stanton Exp $
  */
 
 #include "tcl.h"

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclWinFile.c 1.45 97/10/29 19:08:35
+ * RCS: @(#) $Id: tclWinFile.c,v 1.3 1998/09/14 18:40:20 stanton Exp $
  */
 
 #include "tclWinInt.h"

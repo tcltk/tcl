@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclMain.c 1.54 97/08/07 19:04:43
+ * RCS: @(#) $Id: tclMain.c,v 1.4 1998/09/14 18:40:00 stanton Exp $
  */
 
 #include "tcl.h"

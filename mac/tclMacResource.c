@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclMacResource.c 1.35 97/11/24 15:03:58
+ * RCS: @(#) $Id: tclMacResource.c,v 1.3 1998/09/14 18:40:06 stanton Exp $
  */
 
 #include <Errors.h>

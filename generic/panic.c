@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) panic.c 1.15 96/09/12 14:55:25
+ * RCS: @(#) $Id: panic.c,v 1.4 1998/09/14 18:39:56 stanton Exp $
  */
 
 #include <stdio.h>

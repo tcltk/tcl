@@ -13,7 +13,7 @@
 #             written initially with Brent Welch, itself initially
 #             based on work with Steve Uhler. Thanks them !
 #
-# SCCS: %Z% $Id: optparse.tcl,v 1.2 1998/06/29 15:30:44 welch Exp $ 
+# RCS: @(#) $Id: optparse.tcl,v 1.3 1998/09/14 18:40:03 stanton Exp $
 
 package provide opt 0.3
 

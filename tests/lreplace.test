@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# SCCS: @(#) lreplace.test 1.16 97/10/29 16:32:39
+# RCS: @(#) $Id: lreplace.test,v 1.2 1998/09/14 18:40:11 stanton Exp $
 
 if {[string compare test [info procs test]] == 1} then {source defs}
 

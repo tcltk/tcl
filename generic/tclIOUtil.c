@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclIOUtil.c 1.133 97/09/24 16:38:57
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.5 1998/09/14 18:40:00 stanton Exp $
  */
 
 #include "tclInt.h"

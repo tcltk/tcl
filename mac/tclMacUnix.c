@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclMacUnix.c 1.56 96/12/12 19:38:08
+ * RCS: @(#) $Id: tclMacUnix.c,v 1.2 1998/09/14 18:40:07 stanton Exp $
  */
 
 #include <Files.h>

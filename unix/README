@@ -12,7 +12,7 @@ SGI, as well as PCs running Linux, BSDI, and SCO UNIX.  To compile for
 a PC running Windows, see the README file in the directory ../win.  To
 compile for a Macintosh, see the README file in the directory ../mac.
 
-SCCS: @(#) README 1.15 96/12/19 14:02:23
+RCS: @(#) $Id: README,v 1.2 1998/09/14 18:40:15 stanton Exp $
 
 How To Compile And Install Tcl:
 -------------------------------

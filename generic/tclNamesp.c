@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: %Z% $Id: tclNamesp.c,v 1.7 1998/08/13 13:43:41 welch Exp $ 
+ * RCS: @(#) $Id: tclNamesp.c,v 1.8 1998/09/14 18:40:01 stanton Exp $
  */
 
 #include "tclInt.h"

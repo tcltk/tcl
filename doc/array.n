@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" SCCS: @(#) array.n 1.9 97/10/29 14:10:13
+'\" RCS: @(#) $Id: array.n,v 1.2 1998/09/14 18:39:51 stanton Exp $
 '\" 
 .so man.macros
 .TH array n 7.4 Tcl "Tcl Built-In Commands"

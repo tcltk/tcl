@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclMacAlloc.c 1.13 97/07/24 14:42:19
+ * RCS: @(#) $Id: tclMacAlloc.c,v 1.3 1998/09/14 18:40:04 stanton Exp $
  */
 
 #include "tclMacInt.h"

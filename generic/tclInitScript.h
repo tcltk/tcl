@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: %Z% $Id: tclInitScript.h,v 1.6 1998/08/07 11:02:49 welch Exp $ 
+ * RCS: @(#) $Id: tclInitScript.h,v 1.7 1998/09/14 18:40:00 stanton Exp $
  */
 
 /*

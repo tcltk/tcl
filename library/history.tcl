@@ -2,7 +2,7 @@
 #
 # Implementation of the history command.
 #
-# SCCS: @(#) history.tcl 1.7 97/08/07 16:45:50
+# RCS: @(#) $Id: history.tcl,v 1.3 1998/09/14 18:40:03 stanton Exp $
 #
 # Copyright (c) 1997 Sun Microsystems, Inc.
 #

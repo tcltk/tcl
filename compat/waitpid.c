@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) waitpid.c 1.9 96/02/15 12:08:26
+ * RCS: @(#) $Id: waitpid.c,v 1.2 1998/09/14 18:39:45 stanton Exp $
  */
 
 #include "tclInt.h"

@@ -19,7 +19,7 @@
  *           compiler other than Visual C++.
  *----------------------------------------------------------------------
  *
- * SCCS: @(#) winDumpExts.c 1.11 96/09/18 15:25:11
+ * RCS: @(#) $Id: winDumpExts.c,v 1.2 1998/09/14 18:40:21 stanton Exp $
  */
 
 #include <windows.h>

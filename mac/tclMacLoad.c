@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclMacLoad.c 1.20 97/11/20 18:39:20
+ * RCS: @(#) $Id: tclMacLoad.c,v 1.2 1998/09/14 18:40:05 stanton Exp $
  */
 
 #include <CodeFragments.h>

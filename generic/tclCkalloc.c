@@ -12,7 +12,7 @@
  *
  * This code contributed by Karl Lehenbauer and Mark Diekhans
  *
- * SCCS: @(#) tclCkalloc.c 1.28 97/04/30 12:09:04
+ * RCS: @(#) $Id: tclCkalloc.c,v 1.2 1998/09/14 18:39:57 stanton Exp $
  */
 
 #include "tclInt.h"

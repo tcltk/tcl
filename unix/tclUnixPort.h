@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclUnixPort.h 1.49 97/07/30 14:11:59
+ * RCS: @(#) $Id: tclUnixPort.h,v 1.7 1998/09/14 18:40:17 stanton Exp $
  */
 
 #ifndef _TCLUNIXPORT

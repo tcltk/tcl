@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) stub16.c 1.5 96/12/11 20:01:58
+ * RCS: @(#) $Id: stub16.c,v 1.2 1998/09/14 18:40:19 stanton Exp $
  */
 
 #define STRICT

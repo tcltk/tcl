@@ -9,7 +9,7 @@
 #
 # Copyright (c) 1997 by Sun Microsystems, Inc.  All rights reserved.
 #
-# SCCS: @(#) registry.test 1.5 97/08/01 11:14:25
+# RCS: @(#) $Id: registry.test,v 1.2 1998/09/14 18:40:13 stanton Exp $
 
 if {$tcl_platform(platform) != "windows"} {
     return

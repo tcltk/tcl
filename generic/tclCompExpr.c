@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclCompExpr.c 1.34 97/11/03 14:29:18
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.2 1998/09/14 18:39:58 stanton Exp $
  */
 
 #include "tclInt.h"

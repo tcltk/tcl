@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclMacTime.c 1.19 97/06/27 13:07:10
+ * RCS: @(#) $Id: tclMacTime.c,v 1.2 1998/09/14 18:40:07 stanton Exp $
  */
 
 #include "tclInt.h"

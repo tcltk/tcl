@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclWinFCmd.c 1.20 97/10/10 11:50:14
+ * RCS: @(#) $Id: tclWinFCmd.c,v 1.2 1998/09/14 18:40:19 stanton Exp $
  */
 
 #include "tclWinInt.h"

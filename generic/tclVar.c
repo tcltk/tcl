@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclVar.c 1.130 97/10/29 18:26:16
+ * RCS: @(#) $Id: tclVar.c,v 1.5 1998/09/14 18:40:02 stanton Exp $
  */
 
 #include "tclInt.h"

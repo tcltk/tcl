@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: %Z% $Id: tcl.h,v 1.24 1998/08/06 12:10:41 welch Exp $ 
+ * RCS: @(#) $Id: tcl.h,v 1.25 1998/09/14 18:39:57 stanton Exp $
  */
 
 #ifndef _TCL

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: %Z% $Id: tclProc.c,v 1.14 1998/08/07 11:47:46 stanton Exp $ 
+ * RCS: @(#) $Id: tclProc.c,v 1.15 1998/09/14 18:40:02 stanton Exp $
  */
 
 #include "tclInt.h"

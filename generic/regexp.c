@@ -41,7 +41,7 @@
  * *** 2. This in addition to changes to TclRegError makes the   ***
  * ***    code multi-thread safe.                                ***
  *
- * SCCS: @(#) regexp.c 1.13 97/04/29 17:49:17
+ * RCS: @(#) $Id: regexp.c,v 1.2 1998/09/14 18:39:57 stanton Exp $
  */
 
 #include "tclInt.h"

@@ -14,7 +14,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# SCCS: @(#) basic.test 1.19 97/10/31 16:02:26
+# RCS: @(#) $Id: basic.test,v 1.4 1998/09/14 18:40:07 stanton Exp $
 #
 
 if {[string compare test [info procs test]] == 1} then {source defs}

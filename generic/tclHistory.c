@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: @(#) tclHistory.c 1.47 97/08/04 16:08:17
+ * RCS: @(#) $Id: tclHistory.c,v 1.2 1998/09/14 18:39:59 stanton Exp $
  */
 
 #include "tclInt.h"

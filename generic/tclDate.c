@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * @(#) tclDate.c 1.32 97/02/03 14:54:37
+ * RCS: @(#) $Id: tclDate.c,v 1.2 1998/09/14 18:39:58 stanton Exp $ 
  */
 
 #include "tclInt.h"
