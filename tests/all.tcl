@@ -7,9 +7,9 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 # 
-# RCS: @(#) $Id: all.tcl,v 1.2 1999/04/16 00:47:23 stanton Exp $
+# RCS: @(#) $Id: all.tcl,v 1.3 1999/04/17 00:32:32 hershey Exp $
 
-if {[lsearch ::tcltest [namespace children]] == -1} {
+if {[lsearch [namespace children] ::tcltest] == -1} {
     source [file join [pwd] [file dirname [info script]] defs.tcl]
 }
 set ::tcltest::testSingleFile false

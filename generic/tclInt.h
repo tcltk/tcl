@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.25 1999/04/16 00:46:48 stanton Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.26 1999/04/17 00:32:29 hershey Exp $
  */
 
 #ifndef _TCLINT
@@ -1476,8 +1476,7 @@ typedef struct TclFile_ *TclFile;
  *----------------------------------------------------------------
  */
 
-typedef struct stat TclStat_;
-typedef int (TclStatProc_) _ANSI_ARGS_((CONST char *path, TclStat_ *buf));
+typedef int (TclStatProc_) _ANSI_ARGS_((CONST char *path, struct stat *buf));
 typedef int (TclAccessProc_) _ANSI_ARGS_((CONST char *path, int mode));
 typedef Tcl_Channel (TclOpenFileChannelProc_) _ANSI_ARGS_((Tcl_Interp *interp,
 	char *fileName, char *modeString,
@@ -1811,7 +1810,7 @@ EXTERN int		TclSockGetPort _ANSI_ARGS_((Tcl_Interp *interp,
 EXTERN int		TclSockMinimumBuffers _ANSI_ARGS_((int sock,
 			    int size));
 EXTERN int		TclStat _ANSI_ARGS_((CONST char *path,
-			    TclStat_ *buf));
+			    struct stat *buf));
 EXTERN int		TclStatDeleteProc _ANSI_ARGS_((TclStatProc_ *proc));
 EXTERN int		TclStatInsertProc _ANSI_ARGS_((TclStatProc_ *proc));
 EXTERN void		TclTeardownNamespace _ANSI_ARGS_((Namespace *nsPtr));

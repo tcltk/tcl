@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.39 1999/04/16 00:46:42 stanton Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.40 1999/04/17 00:32:27 hershey Exp $
  */
 
 #ifndef _TCL
@@ -363,6 +363,13 @@ typedef struct Tcl_ThreadId_ *Tcl_ThreadId;
 typedef struct Tcl_TimerToken_ *Tcl_TimerToken;
 typedef struct Tcl_Trace_ *Tcl_Trace;
 typedef struct Tcl_Var_ *Tcl_Var;
+
+/*
+ * Picky compilers complain if this typdef doesn't appear before the
+ * struct's reference in tclDecls.h.
+ */
+
+typedef struct stat *Tcl_Stat_;
 
 /*
  * When a TCL command returns, the interpreter contains a result from the

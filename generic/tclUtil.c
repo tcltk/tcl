@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.5 1999/04/16 00:46:55 stanton Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.6 1999/04/17 00:32:32 hershey Exp $
  */
 
 #include "tclInt.h"
@@ -2157,4 +2157,51 @@ Tcl_Chdir(dirName)
 {
     return TclpChdir(dirName);
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_Access --
+ *
+ *	This function replaces the library version of access().
+ *
+ * Results:
+ *	See access() documentation.
+ *
+ * Side effects:
+ *	See access() documentation.
+ *
+ *----------------------------------------------------------------------
+ */
 
+int
+Tcl_Access(path, mode)
+    CONST char *path;		/* Path of file to access (UTF-8). */
+    int mode;			/* Permission setting. */
+{
+    return TclpAccess(path, mode);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_Stat --
+ *
+ *	This function replaces the library version of stat().
+ *
+ * Results:
+ *	See stat() documentation.
+ *
+ * Side effects:
+ *	See stat() documentation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_Stat(path, bufPtr)
+    CONST char *path;		/* Path of file to stat (in UTF-8). */
+    struct stat *bufPtr;	/* Filled with results of stat call. */
+{
+    return TclpStat(path, bufPtr);
+}

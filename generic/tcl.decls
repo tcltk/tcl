@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.8 1999/04/16 00:46:41 stanton Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.9 1999/04/17 00:32:27 hershey Exp $
 
 library tcl
 
@@ -1249,6 +1249,12 @@ declare 365 generic {
 }
 declare 366 generic {
    int Tcl_Chdir(CONST char *dirName)
+}
+declare 367 generic {
+   int Tcl_Access(CONST char *path, int mode)
+}
+declare 368 generic {
+    int Tcl_Stat(CONST char *path, struct stat *bufPtr)
 }
 
 ##############################################################################

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.6 1999/04/16 22:03:58 surles Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.7 1999/04/17 00:32:29 hershey Exp $
 
 library tcl
 
@@ -393,7 +393,7 @@ declare 104 generic {
     int TclSockMinimumBuffers(int sock, int size)
 }
 declare 105 generic {
-    int TclStat(CONST char *path, TclStat_ *buf)
+    int TclStat(CONST char *path, struct stat *buf)
 }
 declare 106 generic {
     int TclStatDeleteProc(TclStatProc_ *proc)

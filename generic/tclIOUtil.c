@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.6 1999/04/16 00:46:47 stanton Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.7 1999/04/17 00:32:29 hershey Exp $
  */
 
 #include "tclInt.h"
@@ -446,7 +446,7 @@ Tcl_PosixError(interp)
 int
 TclStat(path, buf)
     CONST char *path;		/* Path of file to stat (in current CP). */
-    TclStat_ *buf;		/* Filled with results of stat call. */
+    struct stat *buf;		/* Filled with results of stat call. */
 {
     StatProc *statProcPtr;
     int retVal = -1;
