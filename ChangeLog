@@ -1,3 +1,15 @@
+2002-06-06  Daniel Steffen  <das@users.sourceforge.net>
+
+	* unix/tclUnixInit.c (TclpSetInitialEncodings): 8.4 backport 
+	of default fallback encoding set with TCL_DEFAULT_ENCODING
+	* unix/tcl.m4 (Darwin): set TCL_DEFAULT_ENCODING to utf-8 on
+	MacOSX (where posix file apis expect utf-8, not iso8859-1).
+	* unix/configure: regen
+	* unix/Makefile.in: set DYLD_LIBRARY_PATH in parallel
+	to LD_LIBRARY_PATH for MacOSX dynamic linker.
+	* generic/tclEnv.c (TclSetEnv): fix env var setting on
+	MacOSX (adapted from patch #524352 by jkbonfield).
+
 2002-06-05  Daniel Steffen  <das@users.sourceforge.net>
 
 	* mac/tclMacResource.c (Tcl_MacConvertTextResource): added utf

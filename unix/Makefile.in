@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.63.2.10 2002/03/26 02:27:27 hobbs Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.63.2.11 2002/06/06 17:39:34 das Exp $
 
 VERSION 		= @TCL_VERSION@
 
@@ -456,6 +456,7 @@ tcltest: ${TCLTEST_OBJS} ${TCL_LIB_FILE} ${BUILD_DLTEST}
 
 test: tcltest
 	LD_LIBRARY_PATH=`pwd`:${LD_LIBRARY_PATH}; export LD_LIBRARY_PATH; \
+	DYLD_LIBRARY_PATH=`pwd`:${DYLD_LIBRARY_PATH}; export DYLD_LIBRARY_PATH; \
 	LIBPATH=`pwd`:${LIBPATH}; export LIBPATH; \
 	SHLIB_PATH=`pwd`:${SHLIB_PATH}; export SHLIB_PATH; \
 	TCL_LIBRARY="${TCL_BUILDTIME_LIBRARY}"; export TCL_LIBRARY; \
@@ -464,6 +465,7 @@ test: tcltest
 # Useful target to launch a built tcltest with the proper path,...
 runtest: tcltest
 	LD_LIBRARY_PATH=`pwd`:${LD_LIBRARY_PATH}; export LD_LIBRARY_PATH; \
+	DYLD_LIBRARY_PATH=`pwd`:${DYLD_LIBRARY_PATH}; export DYLD_LIBRARY_PATH; \
 	LIBPATH=`pwd`:${LIBPATH}; export LIBPATH; \
 	SHLIB_PATH=`pwd`:${SHLIB_PATH}; export SHLIB_PATH; \
 	TCL_LIBRARY="${TCL_BUILDTIME_LIBRARY}"; export TCL_LIBRARY; \
@@ -473,6 +475,7 @@ runtest: tcltest
 # via `make shell SCRIPT=/tmp/foo.tcl`
 shell: tclsh
 	@LD_LIBRARY_PATH=`pwd`:${LD_LIBRARY_PATH}; export LD_LIBRARY_PATH; \
+	@DYLD_LIBRARY_PATH=`pwd`:${DYLD_LIBRARY_PATH}; export DYLD_LIBRARY_PATH; \
 	LIBPATH=`pwd`:${LIBPATH}; export LIBPATH; \
 	SHLIB_PATH=`pwd`:${SHLIB_PATH}; export SHLIB_PATH; \
 	TCL_LIBRARY="${TCL_BUILDTIME_LIBRARY}"; export TCL_LIBRARY; \
@@ -481,6 +484,7 @@ shell: tclsh
 # This target can be used to run tclsh inside either gdb or insight
 gdb: tclsh
 	@echo "set env LD_LIBRARY_PATH=`pwd`:${LD_LIBRARY_PATH}" > gdb.run
+	@echo "set env DYLD_LIBRARY_PATH=`pwd`:${DYLD_LIBRARY_PATH}" > gdb.run
 	@echo "set env LIBPATH=`pwd`:${LIBPATH}" >> gdb.run
 	@echo "set env SHLIB_PATH=`pwd`:${SHLIB_PATH}" >> gdb.run
 	@echo "set env TCL_LIBRARY=${TCL_BUILDTIME_LIBRARY}" >> gdb.run
@@ -506,7 +510,7 @@ topDirName:
 gendate:
 	yacc -l $(GENERIC_DIR)/tclGetDate.y
 	sed -e 's/yy/TclDate/g' -e '/^#include <values.h>/d' \
-	    -e 's?SCCSID?RCS: @(#) $$Id: Makefile.in,v 1.63.2.10 2002/03/26 02:27:27 hobbs Exp $$?' \
+	    -e 's?SCCSID?RCS: @(#) $$Id: Makefile.in,v 1.63.2.11 2002/06/06 17:39:34 das Exp $$?' \
 	    -e '/#ifdef __STDC__/,/#endif/d' -e '/TclDateerrlab:/d' \
 	    -e '/TclDatenewstate:/d' -e '/#pragma/d' \
 	    -e '/#include <inttypes.h>/d' -e 's/const /CONST /g' \
