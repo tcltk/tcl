@@ -1,3 +1,16 @@
+2002-02-15  Kevin Kenny  <kennykb@acm.org>
+
+	* compat/strtoll.c:
+	* compat/strtoul.c:
+	* compat/strtoull.c:
+	* generic/tclIOUtil.c:
+	* generic/tclPosixStr.c:
+	* generic/tclTest.c:
+	* generic/tclTestObj.c:
+	* tests/get.test:
+	* win/Makefile.vc: Further tweaks to the TIP 72 patch to make it
+	compile under VC++.
+	
 2002-02-15  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
 
 	* tclExecute.c:

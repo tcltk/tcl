@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTestObj.c,v 1.10 2002/02/15 14:28:49 dkf Exp $
+ * RCS: @(#) $Id: tclTestObj.c,v 1.11 2002/02/15 23:42:12 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -465,7 +465,8 @@ TestindexobjCmd(clientData, interp, objc, objv)
      * the index object, clear out the object's cached state.
      */
 
-    if (objv[3]->typePtr == &tclIndexType) {
+    if ( objv[3]->typePtr != NULL
+	 && !strcmp( "index", objv[3]->typePtr->name ) ) {
 	indexRep = (struct IndexRep *) objv[3]->internalRep.otherValuePtr;
 	if (indexRep->tablePtr == (VOID *) argv) {
 	    objv[3]->typePtr->freeIntRepProc(objv[3]);
