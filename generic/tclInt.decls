@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.56 2002/10/09 11:54:09 das Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.57 2002/11/07 02:13:36 mdejong Exp $
 
 library tcl
 
@@ -684,6 +684,10 @@ declare 171 generic {
     int TclCheckExecutionTraces (Tcl_Interp *interp, CONST char *command, int numChars, \
             Command *cmdPtr, int result, int traceFlags, int objc, \
 	    Tcl_Obj *CONST objv[])
+}
+
+declare 172 generic {
+    int TclInThreadExit(void)
 }
 
 ##############################################################################
