@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPipe.c,v 1.11 2000/04/11 21:42:12 ericm Exp $
+ * RCS: @(#) $Id: tclWinPipe.c,v 1.11.2.1 2000/07/27 01:39:25 hobbs Exp $
  */
 
 #include "tclWinInt.h"
@@ -209,7 +209,7 @@ static int		WaitForRead(PipeInfo *infoPtr, int blocking);
 
 static Tcl_ChannelType pipeChannelType = {
     "pipe",			/* Type name. */
-    PipeBlockModeProc,		/* Set blocking or non-blocking mode.*/
+    TCL_CHANNEL_VERSION_2,	/* v2 channel */
     TCL_CLOSE2PROC,		/* Close proc. */
     PipeInputProc,		/* Input proc. */
     PipeOutputProc,		/* Output proc. */
@@ -218,7 +218,10 @@ static Tcl_ChannelType pipeChannelType = {
     NULL,			/* Get option proc. */
     PipeWatchProc,		/* Set up notifier to watch the channel. */
     PipeGetHandleProc,		/* Get an OS handle from channel. */
-    PipeClose2Proc
+    PipeClose2Proc,		/* close2proc */
+    PipeBlockModeProc,		/* Set blocking or non-blocking mode.*/
+    NULL,			/* flush proc. */
+    NULL,			/* handler proc. */
 };
 
 /*

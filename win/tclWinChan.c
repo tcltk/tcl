@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinChan.c,v 1.10 2000/04/20 01:30:20 hobbs Exp $
+ * RCS: @(#) $Id: tclWinChan.c,v 1.10.2.1 2000/07/27 01:39:24 hobbs Exp $
  */
 
 #include "tclWinInt.h"
@@ -101,7 +101,7 @@ static void		FileWatchProc _ANSI_ARGS_((ClientData instanceData,
 
 static Tcl_ChannelType fileChannelType = {
     "file",			/* Type name. */
-    FileBlockProc,		/* Set blocking or non-blocking mode.*/
+    TCL_CHANNEL_VERSION_2,	/* v2 channel */
     FileCloseProc,		/* Close proc. */
     FileInputProc,		/* Input proc. */
     FileOutputProc,		/* Output proc. */
@@ -110,6 +110,10 @@ static Tcl_ChannelType fileChannelType = {
     NULL,			/* Get option proc. */
     FileWatchProc,		/* Set up the notifier to watch the channel. */
     FileGetHandleProc,		/* Get an OS handle from channel. */
+    NULL,			/* close2proc. */
+    FileBlockProc,		/* Set blocking or non-blocking mode.*/
+    NULL,			/* flush proc. */
+    NULL,			/* handler proc. */
 };
 
 

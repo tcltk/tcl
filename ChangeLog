@@ -1,9 +1,185 @@
+2000-07-26  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* merged core-8-3-1-io-rewrite back into core-8-3-1-branch.
+	The core-8-3-1-io-rewrite branch should now be considered defunct.
+
+	* generic/tclStubInit.c:
+	* generic/tclDecls.h:
+	* generic/tcl.decls:
+	* generic/tcl.h:
+	* generic/tclIO.c: moved the Tcl_Channel* macros from tcl.h to
+	tclIO.c and made them proper stubbed functions.  These are:
+	Tcl_ChannelName, Tcl_ChannelVersion, Tcl_ChannelBlockModeProc,
+	Tcl_ChannelCloseProc, Tcl_ChannelClose2Proc, Tcl_ChannelInputProc,
+	Tcl_ChannelOutputProc, Tcl_ChannelSeekProc, Tcl_ChannelSetOptionProc,
+	Tcl_ChannelGetOptionProc, Tcl_ChannelWatchProc,
+	Tcl_ChannelGetHandleProc, Tcl_ChannelFlushProc,
+	and Tcl_ChannelHandlerProc.  These should be used to access the
+	Tcl_ChannelType structure instead of direct pointer dereferencing.
+
+	* unix/Makefile.in: undid 07-25 Makefile.in changes because we
+	don't really want to force all private makefiles on everyone.
+	This needs to be addressed again in the future.  Best possible
+	solution is to create a tcl/ subdir in the installing include dir
+	(as is done already with the lib dir).
+
+	* tests/iogt.test: added RCS string, marked tests 2.* to be
+	unixOnly due to underlying system differences.
+
+	* tests/all.tcl: corrected additional sets by Kupries for testing.
+
+2000-07-25 Brent Welch	<welch@ajubasolutions.com>
+
+	* unix/Makefile.in: Need to install all the Tcl headers because
+	Itcl depends on internal headers.
+
+2000-07-25 Andreas Kupries <a.kupries@westend.com>
+
+	* tests/iogt.test: (line 866f) New tests iogt-6.[01], highlighting
+ 	  buffering trouble when stacking and unstacking transformations.
+	  iogt-6.0 is solved, see the changes below. iogt-6.1 remains, for
+ 	  now, due to the perceived complexity of solutions.
+
+	* generic/tclIO.h: (line 139f) struct Channel, added a buffer
+	  queue, to hold data pushed back when stacking a transformation.
+
+	* generic/tclIO.c:
+	  (line 91f, line 7434f) New internal function 'CopyBuffer'.
+	  Derived from 'CopyAndTranslateBuffer', with translation
+	  removed.
+	  (line 1025f, line 1212f): Initialization of new queue.
+	  (line 1164f, Tcl_StackChannel): Pushback of input queue.
+	  (line 1293f, Tcl_UnstackChannel): Discard input and pushback.
+	  (line 3748f, Tcl_ReadRaw): Modified to use data in the push back
+	  area before going to the driver. Uses 'CopyBuffer', s.a.
+	  (line 4702f, GetInput): Modified to use data in the push back
+	  area before going to the driver.
+ 	  (line 4867f, Tcl_Seek): Modified to take pushback of the topmost
+	  channel in a stack into account.
+	  (line 5620f, Tcl_InputBuffered): See above. Added
+	  'Tcl_ChannelBuffered'. Analogue to 'Tcl_InputBuffered' but for
+	  the buffer area in the channel.
+
+	* generic/tcl.decls: New public API 'Tcl_ChannelBuffered'. S.a.
+
+2000-07-19  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* tests/socket.test: removed doTestsWithRemoteServer constraint
+	from socket-12.*.  It requires 'exec', not a remote server.
+	Cleaned up some coding errors.
+
+2000-07-18 Brent Welch	<welch@ajubasolutions.com>
+
+	* win/Makefile.in: Added rules for static tcldde and tclreg libraries.
+
+2000-07-17  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* README:
+	* win/README:
+	* win/README.binary:
+	* win/configure.in:
+	* unix/configure.in:
+	* unix/tcl.spec:
+	* tools/tcl.wse.in:
+	* generic/tcl.h (TCL_RELEASE_SERIAL): updated to patchlevel 8.3.2
+
+	* unix/Makefile.in:
+	* win/Makefile.in:
+	* win/makefile.vc: added tclIOGT.c to objects list to compile.
+
+	* generic/tclStubInit.c:
+	* generic/tclIntDecls.h:
+	* generic/tclInt.decls: commented out internal decls for
+	TclTestChannelCmd and TclTestChannelEventCmd as they were moved to
+	tclTest.c.  Added new decls for TclChannelEventScriptInvoker and
+	TclChannelTransform.
+
+	* generic/tclIO.h: new file that contains the main internal
+	structures of Tcl_Channel code to allow for multiple files to
+	access them.
+	* generic/tclTest.c:
+	* generic/tclIO.c: broke into 3 files - tclIO.c core code, tclIO.h
+	header code, and tclIOGT.c - the giot test code from Kupries.  The
+	channel test code also moved to tclTest.c.
+	* generic/tclIO.c (CloseChannel): stopped masking out of the
+	TCL_READABLE|TCL_WRITABLE bits from the state flags in
+	CloseChannel, instead adding extra intelligence to
+	CheckChannelErrors with a new CHANNEL_RAW_MODE bit for special
+	behavior when called from Raw channel APIs.
+
+2000-07-13  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* generic/tclIO.c (StackSetBlockMode): moved set of chanPtr
+	outside of blockModeProc check to avoid infinite loop when
+	blockModeProc was NULL (Kupries).  updated TransformSeekProc to
+	not call Tcl_Seek directly (Kupries).
+
+	* win/tclWinChan.c: updated fileChannelType to v2 channel struct
+	* win/tclWinConsole.c: updated consoleChannelType to v2 channel struct
+	* win/tclWinPipe.c: updated pipeChannelType to v2 channel struct
+	* win/tclWinSerial.c: updated serialChannelType to v2 channel struct
+	* win/tclWinSock.c: updated tcpChannelType to v2 channel struct
+
 2000-07-11  Brent Welch	<welch@ajubasolutions.com>
+
 	* win/tclConfig.sh.in: Cleaned up unix-specific autoconf variables.
 
-2000-07-10  Brent Welch	<welch@ajubasolutions.com>
-	* win/Makefile.in: Added rules for dde and registry
-	static library make targets.
+2000-07-11  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* tests/iogt.test: made tests [345].0 not run by default as they
+	were failing in the new design, but I'm not convinced that the
+	returned result isn't correct.
+
+	* generic/tclDecls.h:
+	* generic/tclStubInit.c:
+	* generic/tcl.decls: added Tcl_GetTopChannel C API that returns
+	the current top channel of a channel stack.  Tcl_GetChannel was
+	changed earlier to return the bottommost channel of a stack
+	because that is the one that is guaranteed to stay around the
+	longest, and this was needed to compensate for certain
+	operations that want to look at the state of the main channel.
+	Most channel APIs already compensate for grabbing the top, so it
+	shouldn't be needed often.
+
+	* generic/tclIO.c (Tcl_StackChannel, Tcl_UnstackChannel): Added
+	flushing of buffers (Kupries), removed use of DownChannel macro,
+	added Tcl_GetTopChannel public API to get to the top channel of
+	the channel stack (necessary for TLS).  Rewrote Tcl_NotifyChannel
+	for new channel design (Kupries).  Did some code cleanup in the
+	transform code.  tclIO.c must still be broken into bits (separate
+	out test code and giot code, create tclIO.h).
+
+2000-07-10  Andreas Kupries <a.kupries@westend.com>
+
+	* tests/iogt.test: Reverted some earlier changes as a fix by Jeff
+	  revived the original and correct behaviour. IOW, the tests showed
+	  a genuine error and I didn't see it :(.
+
+	* generic/tclIO.c (Tcl_Read|Write_Raw): Changed to directly use
+ 	  the drivers and not DoRead|DoWrite. The latter use the buffering
+ 	  system, encoding and eol-translation and this wreaks havoc with
+ 	  the data going through the transformations. Both procedures use
+ 	  CheckForchannelErrors and let it believe that there is no
+ 	  background copy in progress or else stacked channels could not
+	  be used for that.
+
+	* generic/tclIO.c (TclCopyChannel, CopyData): Moved access to the
+ 	  topmost channel from the first to the second procedure to make
+ 	  the decision about that at the last possible time (Callbacks can
+ 	  change the stacking).
+
+	test suite: failures of iogt-[345].0
+	
+2000-07-06  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* tests/iogt.test: new tests for stacked channel stuff based off
+	new 'testchannel transform|unstack' code (Kupries IOGT extension).
+	* generic/tcl.decls:
+	* generic/tcl.h:
+	* generic/tclDecls.h:
+	* generic/tclStubsInit.c:
+	* generic/tclIO.c (TclCopyChannel): complete rewrite of Tcl
+	Channel code for stacked channels.  HOBBS: ADD MORE WHEN DONE.
 
 2000-06-02  Jeff Hobbs  <hobbs@scriptics.com>
 

@@ -10,7 +10,7 @@
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  * Changes by Rolf.Schroedter@dlr.de June 25-27, 1999
  *
- * RCS: @(#) $Id: tclWinSerial.c,v 1.9 1999/11/24 20:55:17 hobbs Exp $
+ * RCS: @(#) $Id: tclWinSerial.c,v 1.9.2.1 2000/07/27 01:39:26 hobbs Exp $
  */
 
 #include "tclWinInt.h"
@@ -154,16 +154,20 @@ static int       SerialSetOptionProc _ANSI_ARGS_((ClientData instanceData,
  */
 
 static Tcl_ChannelType serialChannelType = {
-    "serial",               /* Type name. */
-    SerialBlockProc,        /* Set blocking or non-blocking mode.*/
-    SerialCloseProc,        /* Close proc. */
-    SerialInputProc,        /* Input proc. */
-    SerialOutputProc,       /* Output proc. */
-    NULL,                   /* Seek proc. */
-    SerialSetOptionProc,    /* Set option proc. */
-    SerialGetOptionProc,    /* Get option proc. */
-    SerialWatchProc,        /* Set up notifier to watch the channel. */
-    SerialGetHandleProc,    /* Get an OS handle from channel. */
+    "serial",			/* Type name. */
+    TCL_CHANNEL_VERSION_2,	/* v2 channel */
+    SerialCloseProc,		/* Close proc. */
+    SerialInputProc,		/* Input proc. */
+    SerialOutputProc,		/* Output proc. */
+    NULL,			/* Seek proc. */
+    SerialSetOptionProc,	/* Set option proc. */
+    SerialGetOptionProc,	/* Get option proc. */
+    SerialWatchProc,		/* Set up notifier to watch the channel. */
+    SerialGetHandleProc,	/* Get an OS handle from channel. */
+    NULL,			/* close2proc. */
+    SerialBlockProc,		/* Set blocking or non-blocking mode.*/
+    NULL,			/* flush proc. */
+    NULL,			/* handler proc. */
 };
 
 /*

@@ -5,12 +5,12 @@
 # generates output for errors.  No output means no errors were found.
 #
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
-# Copyright (c) 1998-1999 by Scriptics Corporation.
+# Copyright (c) 1998-2000 Ajuba Solutions.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: socket.test,v 1.14 2000/04/10 17:19:04 ericm Exp $
+# RCS: @(#) $Id: socket.test,v 1.14.2.1 2000/07/27 01:39:21 hobbs Exp $
 
 # Running socket tests with a remote server:
 # ------------------------------------------
@@ -67,10 +67,11 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
     namespace import -force ::tcltest::*
 }
 
-# Some tests require the testthread command
+# Some tests require the testthread and exec commands
 
 set ::tcltest::testConstraints(testthread) \
 	[expr {[info commands testthread] != {}}]
+set ::tcltest::testConstraints(exec) [expr {[info commands exec] != {}}]
 
 #
 # If remoteServerIP or remoteServerPort are not set, check in the
@@ -551,19 +552,19 @@ test socket-2.11 {detecting new data} {socket} {
     flush $s2
     after 500
     fconfigure $sock -blocking 0
-    set result [gets $sock]
-    lappend result [gets $sock]
+    set result a:[gets $sock]
+    lappend result b:[gets $sock]
     fconfigure $sock -blocking 1
     puts $s2 two
     flush $s2
     fconfigure $sock -blocking 0
-    lappend result [gets $sock]
+    lappend result c:[gets $sock]
     fconfigure $sock -blocking 1
     close $s2
     close $s
     close $sock
     set result
-} {one {} two}
+} {a:one b: c:two}
 
 
 test socket-3.1 {socket conflict} {socket stdio} {
@@ -1276,6 +1277,7 @@ test socket-11.11 {testing spurious events} {socket doTestsWithRemoteServer} {
     sendCommand {close $socket10_13_test_server}
     list $spurious $len
 } {0 2690}
+
 test socket-11.12 {testing EOF stickyness} {socket doTestsWithRemoteServer} {
     set counter 0
     set done 0
@@ -1303,12 +1305,13 @@ test socket-11.12 {testing EOF stickyness} {socket doTestsWithRemoteServer} {
 	}
     }
     set c [socket $remoteServerIP 2836]
-    fileevent $c readable "count_up $c"
+    fileevent $c readable [list count_up $c]
     set after_id [after 1000 timed_out]
     vwait done
     sendCommand {close $socket10_14_test_server}
     set done
 } {EOF is sticky}
+
 test socket-11.13 {testing async write, async flush, async close} \
 	{socket doTestsWithRemoteServer} {
     proc readit {s} {
@@ -1363,8 +1366,7 @@ test socket-11.13 {testing async write, async flush, async close} \
     set count
 } 65566
 
-test socket-12.1 {testing inheritance of server sockets} \
-	{socket doTestsWithRemoteServer} {
+test socket-12.1 {testing inheritance of server sockets} {socket exec} {
     removeFile script1
     removeFile script2
 
@@ -1383,14 +1385,13 @@ test socket-12.1 {testing inheritance of server sockets} \
     # be closed unless script1 inherited it.
 
     set f [open script2 w]
-    puts $f [list set tcltest $::tcltest::tcltest]
+    puts $f [list set tclsh $::tcltest::tcltest]
     puts $f {
-	package require tcltest
 	set f [socket -server accept 2828]
 	proc accept { file addr port } {
 	    close $file
 	}
-	exec $::tcltest::tcltest script1 &
+	exec $tclsh script1 &
 	close $f
 	after 1000 exit
 	vwait forever
@@ -1416,8 +1417,7 @@ test socket-12.1 {testing inheritance of server sockets} \
     removeFile script2
     set x
 } {server socket was not inherited}
-test socket-12.2 {testing inheritance of client sockets} \
-	{socket doTestsWithRemoteServer} {
+test socket-12.2 {testing inheritance of client sockets} {socket exec} {
     removeFile script1
     removeFile script2
 
@@ -1436,10 +1436,10 @@ test socket-12.2 {testing inheritance of client sockets} \
     # client socket, the socket will still be open.
 
     set f [open script2 w]
-    puts $f [list set tcltest $::tcltest::tcltest]
+    puts $f [list set tclsh $::tcltest::tcltest]
     puts $f {
 	set f [socket 127.0.0.1 2829]
-	exec $::tcltest::tcltest script1 &
+	exec $tclsh script1 &
 	puts $f testing
 	flush $f
 	after 1000 exit
@@ -1451,7 +1451,6 @@ test socket-12.2 {testing inheritance of client sockets} \
 
     set server [socket -server accept 2829]
     proc accept { file host port } {
-
 	# When the client connects, establish the read handler
 	global server
 	close $server
@@ -1460,7 +1459,6 @@ test socket-12.2 {testing inheritance of client sockets} \
 	return
     }
     proc getdata { file } {
-
 	# Read handler on the accepted socket.
 	global x
 	global failed
@@ -1502,8 +1500,7 @@ test socket-12.2 {testing inheritance of client sockets} \
     removeFile script2
     set x
 } {client socket was not inherited}
-test socket-12.3 {testing inheritance of accepted sockets} \
-	{socket doTestsWithRemoteServer} {
+test socket-12.3 {testing inheritance of accepted sockets} {socket exec} {
     removeFile script1
     removeFile script2
 
@@ -1515,13 +1512,13 @@ test socket-12.3 {testing inheritance of accepted sockets} \
     close $f
 
     set f [open script2 w]
-    puts $f [list set tcltest $::tcltest::tcltest]
+    puts $f [list set tclsh $::tcltest::tcltest]
     puts $f {
-	set server [socket -server accept 2930]
+	set server [socket -server accept 2931]
 	proc accept { file host port } {
-	    global tcltest
+	    global tclsh
 	    puts $file {test data on socket}
-	    exec $::tcltest::tcltest script1 &
+	    exec $tclsh script1 &
 	    after 1000 exit
 	}
 	vwait forever
@@ -1536,7 +1533,7 @@ test socket-12.3 {testing inheritance of accepted sockets} \
     after 1000 set ok_to_proceed 1
     vwait ok_to_proceed
 
-    set f [socket 127.0.0.1 2930]
+    set f [socket 127.0.0.1 2931]
     fconfigure $f -buffering full -blocking 0
     fileevent $f readable [list getdata $f]
 
@@ -1547,7 +1544,6 @@ test socket-12.3 {testing inheritance of accepted sockets} \
     after 5000 set failed 1
 
     proc getdata { file } {
-
 	# Read handler on the client socket.
 	global x
 	global failed
@@ -1642,14 +1638,3 @@ catch {close $remoteProcChan}
 ::tcltest::cleanupTests
 flush stdout
 return
-
-
-
-
-
-
-
-
-
-
-
