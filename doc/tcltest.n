@@ -7,7 +7,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: tcltest.n,v 1.13 2001/11/12 19:37:03 hobbs Exp $
+'\" RCS: @(#) $Id: tcltest.n,v 1.14 2002/03/27 08:19:57 dgp Exp $
 '\" 
 .so man.macros
 .TH "tcltest" n 8.4 Tcl "Tcl Built-In Commands"
@@ -93,6 +93,8 @@ tcltest \- Test harness support code and utilities
 \fBtcltest::restoreState\fR
 .sp
 \fBtcltest::threadReap\fR
+.sp
+\fBtcltest::mainThread\fR
 .BE
 .SH DESCRIPTION
 .PP

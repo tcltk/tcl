@@ -6,7 +6,7 @@
 # Copyright (c) 2000 by Ajuba Solutions
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.test,v 1.17 2001/11/23 01:29:11 das Exp $
+# RCS: @(#) $Id: tcltest.test,v 1.18 2002/03/27 08:19:57 dgp Exp $
 
 set tcltestVersion [package require tcltest]
 namespace import -force ::tcltest::*
@@ -244,11 +244,11 @@ test tcltest-5.4 {tcltest::constraintsSpecified} {
 	set tcltest::constraintsSpecified {}
     }
     -body {
-	set r1 [tcltest::constraintsSpecified]
+	set r1 $tcltest::constraintsSpecified
 	tcltest::testConstraint tcltestFakeConstraint1 1
-	set r2 [tcltest::constraintsSpecified]
+	set r2 $tcltest::constraintsSpecified
 	tcltest::testConstraint tcltestFakeConstraint2 1
-	set r3 [tcltest::constraintsSpecified]
+	set r3 $tcltest::constraintsSpecified
 	list $r1 $r2 $r3
     }
     -result {{} tcltestFakeConstraint1 {tcltestFakeConstraint1 tcltestFakeConstraint2}}
@@ -261,7 +261,7 @@ test tcltest-5.4 {tcltest::constraintsSpecified} {
 
 test tcltest-5.5 {tcltest::constraintList} \
 	-constraints {!$::tcltest::testConstraints(singleTestInterp)} \
-	-body { lsort [tcltest::constraintList] } \
+	-body { lsort [array names ::tcltest::testConstraints] } \
 	-result [lsort {
     95 98 asyncPipeClose eformat emptyTest hasIsoLocale interactive knownBug
     mac macCrash macOnly macOrPc macOrUnix macOrWin nonBlockFiles nonPortable
@@ -913,9 +913,9 @@ test tcltest-15.2 {-asidefromdir} {
     -match regexp
     -returnCodes 1
     -result {Tests located in:.*dirtestdir.*Tests located in:.*dirtestdir2.1.*Tests located in:.*dirtestdir2.2.*dirtestdir2.2 test ended at .*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Error:  No test files remain after applying  your match and skip patterns!
-Error:  No test files remain after applying  your match and skip patterns!
-Error:  No test files remain after applying  your match and skip patterns!$}
+Error:  No test files remain after applying your match and skip patterns!
+Error:  No test files remain after applying your match and skip patterns!
+Error:  No test files remain after applying your match and skip patterns!$}
 }
 
 test tcltest-15.3 {-relateddir, non-existent dir} {
@@ -1006,9 +1006,9 @@ test tcltest-19.1 {TCLTEST_OPTIONS default} {
 	tcltest::debug $olddebug
     }
     -body {
-	tcltest::processCmdLineArgs
+	tcltest::ProcessCmdLineArgs
 	set ::env(TCLTEST_OPTIONS) "-debug 3"
-	tcltest::processCmdLineArgs
+	tcltest::ProcessCmdLineArgs
     }
     -result {^$}
     -match regexp
