@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThreadTest.c,v 1.12 2001/11/23 01:29:15 das Exp $
+ * RCS: @(#) $Id: tclThreadTest.c,v 1.13 2001/12/29 00:49:49 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -843,7 +843,7 @@ TclThreadSend(interp, id, script, wait)
  *
  *------------------------------------------------------------------------
  */
-int
+static int
 ThreadEventProc(evPtr, mask)
     Tcl_Event *evPtr;		/* Really ThreadEvent */
     int mask;
@@ -916,7 +916,7 @@ ThreadEventProc(evPtr, mask)
  *------------------------------------------------------------------------
  */
      /* ARGSUSED */
-void
+static void
 ThreadFreeProc(clientData)
     ClientData clientData;
 {
@@ -942,7 +942,7 @@ ThreadFreeProc(clientData)
  *------------------------------------------------------------------------
  */
      /* ARGSUSED */
-int
+static int
 ThreadDeleteEvent(eventPtr, clientData)
     Tcl_Event *eventPtr;		/* Really ThreadEvent */
     ClientData clientData;		/* dummy */
@@ -975,7 +975,7 @@ ThreadDeleteEvent(eventPtr, clientData)
  *------------------------------------------------------------------------
  */
      /* ARGSUSED */
-void
+static void
 ThreadExitProc(clientData)
     ClientData clientData;
 {
