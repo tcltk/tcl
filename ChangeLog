@@ -1,3 +1,15 @@
+2004-04-25  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* generic/tclPathObj.c: fix to [Bug 940281].  Tcl_FSJoinPath
+	will now always return a valid Tcl_Obj when the input is valid.
+	* generic/tclIOUtil.c: fix to [Bug 931823] for a more consistent
+	Tcl_FSPathSeparator() implementation which allows filesystems
+	not to implement their Tcl_FSFilesystemSeparatorProc if they
+	wish to use the default '/'.  Also fixed associated memory leak
+	seen with, e.g., tclvfs package.
+	* doc/FileSystem.3: documented Tcl_FSJoinPath return values
+	more clearly, and Tcl_FSFilesystemSeparatorProc requirements.
+
 2004-04-23  David Gravereaux <davygrvy@pobox.com>
 
 	* win/tclWin32Dll.c:  Removed my mistake from 4/19 of adding an
