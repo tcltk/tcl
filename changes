@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.35 1998/12/02 01:42:00 welch Exp $
+RCS: @(#) $Id: changes,v 1.36 1998/12/04 01:04:15 stanton Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -3675,3 +3675,8 @@ MSL rather than ExitToShell.  This allows MSL to clean up its temporary files. T
 Vince Darley for this improvement. (JI)
 
 ----------------- Released 8.0.4, 11/20/98 -------------------------
+
+12/3/98 (bug fix) Windows NT creates sockets so they are inheritable
+by default.  Fixed socket code so it turns off this bit right after
+creation so sockets aren't kept open by exec'ed processes. [Bug: 892]
+Thanks to Kevin Kenny for this fix.  (SS)
