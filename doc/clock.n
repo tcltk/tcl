@@ -118,7 +118,7 @@ the equivalent ways to specify it.
 Specifies that locale-dependent scanning and formatting (and date arithmetic
 for dates preceding the adoption of the Gregorian calendar) is to be done in
 the locale identified by \fIlocaleName\fR.  The locale name may be any of
-the locales acceptable to the \fBmsgcat\fR command, or it may be the special
+the locales acceptable to the \fBmsgcat\fR package, or it may be the special
 name \fIsystem\fR, which represents the current locale of the process, or
 the null string, which represents Tcl's default locale.
 .sp
@@ -286,7 +286,7 @@ the obsolete usage \fB-gmt\fR \fItrue\fR may be used.  See
 .PP
 If a \fB-locale\fR option is present, the following argument is
 a string that specifies the locale in which the time is to be formatted,
-in the same format that is used for the \fBmsgcat\fR command.  Note
+in the same format that is used for the \fBmsgcat\fR package.  Note
 that the default, if \fB-locale\fR is not specified, is the root locale
 \fB{}\fR rather than the current locale.  The current locale may
 be obtained by using \fB-locale\fR \fBcurrent\fR.
@@ -318,7 +318,7 @@ the obsolete usage \fB-gmt\fR \fItrue\fR may be used.  See
 .PP
 If a \fB-locale\fR option is present, the following argument is
 a string that specifies the locale in which the time is to be interpreted,
-in the same format that is used for the \fBmsgcat\fR command.  Note
+in the same format that is used for the \fBmsgcat\fR package.  Note
 that the default, if \fB-locale\fR is not specified, is the root locale
 \fB{}\fR rather than the current locale.  The current locale may
 be obtained by using \fB-locale\fR \fBcurrent\fR.
