@@ -1,6 +1,6 @@
 Tcl
 
-RCS: @(#) $Id: README,v 1.1.2.4 1998/12/10 00:49:42 stanton Exp $
+RCS: @(#) $Id: README,v 1.1.2.5 1998/12/11 01:32:13 stanton Exp $
 
 1. Introduction
 ---------------
@@ -129,43 +129,68 @@ Here are the most significant changes in Tcl 8.1.  In addition to these
 changes, there are several smaller changes and bug fixes.  See the file
 "changes" for a complete list of all changes.
 
-    1. Unicode. All strings in Tcl are stored using the UTF-8
-    representation for 16-bit Unicode characters.  All of the APIs in Tcl
-    should support UTF strings.  UTF-8 has the property that all ASCII
-    strings will be encoded with no change so code that only used 7-bit
-    ASCII charaters should not need to be changed.  Strings that
-    previously contained European characters (i.e. 0x80 or higher) will
-    now be encoded as two bytes.  These changes should not be visible to
-    Tcl scripts except that a new "\u" substitution has been added to
-    allow Unicode characters to be entered and a character is now a 16-bit
-    Unicode value.  See the manual entries doc/Utf.3 and doc/Tcl.n for
-    more details.
+    1. Internationalization. Tcl has undergone a major revision to
+    support international character sets:
 
-    2. Encodings.  In order to convert strings between Unicode and various
-    native character formats, an encoding subsystem has been added.  UTF
-    strings need to be converted to the system's native encoding
-    (e.g. EUC) before being passed to system calls.  All channels now have
-    an associatd encoding that can be modified after creation.  There is
-    also a new "encoding" command to allow Tcl scripts to perform
-    conversions between strings in different encodings.  The Tcl library
-    directory now includes an "encoding" subdirectory that contains files
-    that describe the various encodings that Tcl currently supports.
-    Additional encodings can be added by supplying appropriate encoding
-    files.  See the manual entries doc/encoding.n and doc/Encoding.3 for
-    more details.
+    All strings in Tcl are now represented in UTF-8 instead of ASCII,
+    so that Tcl now supports the full Unicode character set.  The
+    representation of ASCII characters is unchanged (in UTF-8 anything
+    that looks like an ASCII character is an ASCII character), but
+    characters with the high-order bit set, such as those in ISO-8859,
+    are represented with multi-byte sequences, as are all Unicode
+    characters with values greater than 127.  This change does not
+    affect Tcl scripts but it does affect C code that parses strings.
+    Tcl automatically translates between UTF-8 and the normal encoding
+    for the platform during interactions with the system.
 
-    3. Regular expressions.  The regular expression syntax has been
-    greatly expanded to include most of the features in Perl.  In
-    addition, the regexp engine supports Unicode and binary data.  See the
-    doc/regexp.n manual entry for more details.
+    In Tcl scripts the backslash sequence \u can be used to enter
+    16-bit Unicode characters.  \o and \x generate only 8-bit
+    characters as before.
 
-    4. Threads.  If configured with the --enable-threads flag, Tcl can now
-    be compiled for use in a multi-threaded application.  Individual
-    threads are allowed to use one or more interpreters as long as each
-    interpreter (and any slave interpreters) is only accessed by one
-    thread.  There are new C APIs for mutexes, condition variables, and
-    thread local storage.  See the doc/Thread.3 manual entry for more
-    details. 
+    There is a new "encoding" command that allows scripts to determine
+    what encodings are available as well as to convert strings between
+    different encodings.  The fconfigure command now supports a
+    -encoding option for specifying the encoding of an open file or
+    socket.  Tcl will automatically translate between the specified
+    encoding and UTF-8 during I/O.
+
+    There are several new C APIs that support UTF-8 and various
+    encodings.  See the manual entry Utf.3 for procedures that
+    translate between Unicode and UTF-8 and manipulate UTF-8 strings.
+    See Encoding.3 for procedures that create new encodings and
+    translate between encodings.  See ToUpper.3 for procedures that
+    perform case conversions on UTF-8 strings.
+
+    2. Binary data.  Binary data is handled differently in Tcl 8.1
+    than in Tcl 8.0.  Tcl 8.1 uses the UTF-8 facilities to represent
+    binary data: the character value zero is represented with a
+    multi-byte sequence, so that (once again) strings in Tcl 8.1 never
+    contain null bytes.  This means that binary data is now accepted
+    everywhere in Tcl and Tk (in Tcl 8.0 the support for binary data
+    was incomplete).  If you have C code that needs to manipulate the
+    bytes of binary data (as opposed to just passing the data through)
+    you should use a new object type called "byte array".  See the
+    manual entry ByteArrObj.3 for information about procedures such as
+    Tcl_GetByteArrayFromObj.
+
+    3. Regular expressions.  Tcl 8.1 contains a brand new
+    implementation of regular expressions from Henry Spencer.  The
+    regular expression syntax has been greatly expanded to include
+    most of the features in Perl.  In addition, the regexp engine
+    supports Unicode and binary data.  See the doc/regexp.n manual
+    entry for more details.
+
+    4. Threads.  If configured with the --enable-threads flag, Tcl can
+    now be compiled for use in a multi-threaded application.
+    Individual threads are allowed to use one or more interpreters as
+    long as each interpreter (and any slave interpreters) is only
+    accessed by one thread.  Each thread runs its own event loop, and
+    you can post events to other threads. There are new C APIs for
+    mutexes, condition variables, and thread local storage.  See the
+    doc/Thread.3 manual entry for more details.  Tk 8.1 is not yet
+    multi-thread safe.  There is not yet support for tcl level use of
+    threading except for a test command. (Compile tcltest and try
+    testthread.)
 
     5. Message catalog. There is a new message catalog package which makes
     it easy to localize the strings in a script.  See the doc/msgcat.n
