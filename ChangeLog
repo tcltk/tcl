@@ -17,6 +17,8 @@
 	whether WinTcl on NTFS can coexist peacefully with links
 	in the filesystem.  Added new test command 'testfilelink'
 	to enable the newer code to be tested.
+	* tests/fCmd.test: (made certain tests of 'testfilelink' not
+	run on unix).
 
 2002-06-12  Miguel Sofer  <msofer@users.sourceforge.net>
 
