@@ -19,7 +19,7 @@
 
 2001-08-31  Jeff Hobbs  <jeffh@ActiveState.com>
 
-	* generic/tcl.h: added TclCompileListCmd header
+	* generic/tclInt.h: added TclCompileListCmd header
 	* generic/tclBasic.c: added TclCompileListCmd compile proc
 	* generic/tclCompCmds.c (TclCompileListCmd): function to compile
 	the 'list' command at parse time.
