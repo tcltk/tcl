@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.64 2002/06/13 21:37:15 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.65 2002/06/13 23:10:12 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1842,14 +1842,24 @@ TclExecuteByteCode(interp, codePtr)
 		   (unsigned int)(pc + opnd - codePtr->codeStart)));
 	    ADJUST_PC(opnd);
 
+	case INST_JUMP_FALSE4:
+	    opnd = 5;                             /* TRUE */
+	    pcAdjustment = TclGetInt4AtPtr(pc+1); /* FALSE */
+	    goto doJumpTrue;
+
 	case INST_JUMP_TRUE4:
-	    opnd = TclGetInt4AtPtr(pc+1);
-	    pcAdjustment = 5;
+	    opnd = TclGetInt4AtPtr(pc+1);         /* TRUE */
+	    pcAdjustment = 5;                     /* FALSE */
+	    goto doJumpTrue;
+
+	case INST_JUMP_FALSE1:
+	    opnd = 2;                             /* TRUE */
+	    pcAdjustment = TclGetInt1AtPtr(pc+1); /* FALSE */
 	    goto doJumpTrue;
 
 	case INST_JUMP_TRUE1:
-	    opnd = TclGetInt1AtPtr(pc+1);
-	    pcAdjustment = 2;
+	    opnd = TclGetInt1AtPtr(pc+1);          /* TRUE */
+	    pcAdjustment = 2;                      /* FALSE */
 	    
 	    doJumpTrue:
 	    {
@@ -1874,62 +1884,33 @@ TclExecuteByteCode(interp, codePtr)
 		    }
 		}
 		if (b) {
-		    TRACE(("%d => %.20s true, new pc %u\n",
-			    opnd, O2S(valuePtr),
-		            (unsigned int)(pc+opnd - codePtr->codeStart)));
-		    TclDecrRefCount(valuePtr);
-		    ADJUST_PC(opnd);
-		} else {
-		    TRACE(("%d => %.20s false\n", opnd, O2S(valuePtr)));
-		    TclDecrRefCount(valuePtr);
-		    ADJUST_PC(pcAdjustment);
-		}
-	    }
-	    
-	case INST_JUMP_FALSE4:
-	    opnd = TclGetInt4AtPtr(pc+1);
-	    pcAdjustment = 5;
-	    goto doJumpFalse;
-
-	case INST_JUMP_FALSE1:
-	    opnd = TclGetInt1AtPtr(pc+1);
-	    pcAdjustment = 2;
-	    
-	    doJumpFalse:
-	    {
-		int b;
-		
-		valuePtr = POP_OBJECT();
-		if (valuePtr->typePtr == &tclIntType) {
-		    b = (valuePtr->internalRep.longValue != 0);
-		} else if (valuePtr->typePtr == &tclDoubleType) {
-		    b = (valuePtr->internalRep.doubleValue != 0.0);
-#ifndef TCL_WIDE_INT_IS_LONG
-		} else if (valuePtr->typePtr == &tclWideIntType) {
-		    b = (valuePtr->internalRep.wideValue != W0);
-#endif /* TCL_WIDE_INT_IS_LONG */
-		} else {
-		    result = Tcl_GetBooleanFromObj(interp, valuePtr, &b);
-		    if (result != TCL_OK) {
-			TRACE_WITH_OBJ(("%d => ERROR: ", opnd),
-				Tcl_GetObjResult(interp));
-			TclDecrRefCount(valuePtr);
-			goto checkForCatch;
+#ifdef TCL_COMPILE_DEBUG
+		    if ((*pc == INST_JUMP_TRUE1) || (*pc == INST_JUMP_TRUE1)) {
+			TRACE(("%d => %.20s true, new pc %u\n",
+			        opnd, O2S(valuePtr),
+		                (unsigned int)(pc+opnd - codePtr->codeStart)));
+		    } else {
+			TRACE(("%d => %.20s true\n", pcAdjustment, O2S(valuePtr)));
 		    }
-		}
-		if (b) {
-		    TRACE(("%d => %.20s true\n", opnd, O2S(valuePtr)));
-		    TclDecrRefCount(valuePtr);
-		    ADJUST_PC(pcAdjustment);
-		} else {
-		    TRACE(("%d => %.20s false, new pc %u\n",
-			   opnd, O2S(valuePtr),
-			   (unsigned int)(pc + opnd - codePtr->codeStart)));
+#endif
 		    TclDecrRefCount(valuePtr);
 		    ADJUST_PC(opnd);
+		} else {
+#ifdef TCL_COMPILE_DEBUG
+		    if ((*pc == INST_JUMP_TRUE1) || (*pc == INST_JUMP_TRUE1)) {
+			TRACE(("%d => %.20s false\n", opnd, O2S(valuePtr)));
+		    } else {
+			opnd = pcAdjustment;
+			TRACE(("%d => %.20s false, new pc %u\n",
+			       opnd, O2S(valuePtr),
+			       (unsigned int)(pc + opnd - codePtr->codeStart)));
+		    }
+#endif
+		    TclDecrRefCount(valuePtr);
+		    ADJUST_PC(pcAdjustment);
 		}
 	    }
-	    
+	    	    
 	case INST_LOR:
 	case INST_LAND:
 	    {
