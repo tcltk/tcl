@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.115 2002/02/15 14:28:48 dkf Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.116 2002/02/20 00:35:47 dkf Exp $
  */
 
 #ifndef _TCL
@@ -380,10 +380,14 @@ typedef struct _stati64	Tcl_StatBuf;
 #      endif /* __BORLANDC__ */
 #   else /* __WIN32__ */
 /*
- * Don't know what platform it is and configure hasn't been run!  Assume
- * it has no long long...
+ * Don't know what platform it is and configure hasn't discovered what
+ * is going on for us.  Try to guess...
  */
-#      define TCL_WIDE_INT_IS_LONG	1
+#      if (0x80000000L < 0)
+#	  define TCL_WIDE_INT_IS_LONG	1
+#      else
+#	  define TCL_WIDE_INT_TYPE long long
+#      endif
 #   endif /* __WIN32__ */
 #endif /* !TCL_WIDE_INT_TYPE & !TCL_WIDE_INT_IS_LONG */
 #ifdef TCL_WIDE_INT_IS_LONG
