@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.15 1999/11/19 06:34:25 hobbs Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.16 2000/05/08 22:10:58 hobbs Exp $ */
 
 #include "tclInt.h"
 
@@ -252,7 +252,7 @@ Tcl_DbNewStringObj(bytes, length, file, line)
  * TclNewUnicodeObj --
  *
  *	This procedure is creates a new String object and initializes
- *	it from the given Utf String.  If the Utf String is the same size
+ *	it from the given Unicode String.  If the Utf String is the same size
  *	as the Unicode string, don't duplicate the data.
  *
  * Results:
