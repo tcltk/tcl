@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.69 2004/07/07 22:05:59 msofer Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.70 2004/07/08 18:46:05 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -590,7 +590,7 @@ TclCleanupByteCode(codePtr)
     Tcl_Interp *interp = (Tcl_Interp *) *codePtr->interpHandle;
     int numLitObjects = codePtr->numLitObjects;
     int numAuxDataItems = codePtr->numAuxDataItems;
-    register Tcl_Obj **objArrayPtr;
+    register Tcl_Obj **objArrayPtr, *objPtr;
     register AuxData *auxDataPtr;
     int i;
 #ifdef TCL_COMPILE_STATS
@@ -642,10 +642,17 @@ TclCleanupByteCode(codePtr)
      * like those generated from tbcload) is special, as they doesn't
      * make use of the global literal table.  They instead maintain
      * private references to their literals which must be decremented.
+     *
+     * In order to insure a proper and efficient cleanup of the literal
+     * array when it contains non-shared literals [Bug 983660], we also
+     * distinguish the case of an interpreter being deleted (signaled by
+     * interp == NULL). Also, as the interp deletion will remove the global
+     * literal table anyway, we avoid the extra cost of updating it for each
+     * literal being released.
      */
 
-    if (codePtr->flags & TCL_BYTECODE_PRECOMPILED) {
-	register Tcl_Obj *objPtr;
+    if ((codePtr->flags & TCL_BYTECODE_PRECOMPILED)
+	    || (interp == NULL)) {
  
 	objArrayPtr = codePtr->objArrayPtr;
 	for (i = 0;  i < numLitObjects;  i++) {
@@ -656,13 +663,7 @@ TclCleanupByteCode(codePtr)
 	    objArrayPtr++;
 	}
 	codePtr->numLitObjects = 0;
-    } else if (interp != NULL) {
-	/*
-	 * If the interp has already been freed, then Tcl will have already 
-	 * forcefully released all the literals used by ByteCodes compiled
-	 * with respect to that interp.
-	 */
-	 
+    } else {
 	objArrayPtr = codePtr->objArrayPtr;
 	for (i = 0;  i < numLitObjects;  i++) {
 	    /*
@@ -670,8 +671,9 @@ TclCleanupByteCode(codePtr)
 	     * indicate that it has already freed the literal.
 	     */
 	    
-	    if (*objArrayPtr != NULL) {
-		TclReleaseLiteral(interp, *objArrayPtr);
+	    objPtr = *objArrayPtr;
+	    if (objPtr != NULL) {
+		TclReleaseLiteral(interp, objPtr);
 	    }
 	    objArrayPtr++;
 	}
