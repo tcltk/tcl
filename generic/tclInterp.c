@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.28 2004/05/13 20:31:08 dkf Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.29 2004/05/18 09:29:30 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2634,12 +2634,13 @@ Tcl_LimitCheck(interp)
 	RunLimitHandlers(iPtr->limit.cmdHandlers, interp);
 	if (iPtr->limit.cmdCount >= iPtr->cmdCount) {
 	    iPtr->limit.exceeded &= ~TCL_LIMIT_COMMANDS;
-	} else {
+	} else if (iPtr->limit.exceeded & TCL_LIMIT_COMMANDS) {
 	    Tcl_ResetResult(interp);
 	    Tcl_AppendResult(interp, "command count limit exceeded", NULL);
 	    Tcl_Release(interp);
 	    return TCL_ERROR;
 	}
+	Tcl_Release(interp);
     }
 
     if ((iPtr->limit.active & TCL_LIMIT_TIME) &&
@@ -2658,12 +2659,13 @@ Tcl_LimitCheck(interp)
 		    (iPtr->limit.time.sec == now.sec &&
 		    iPtr->limit.time.usec < now.usec)) {
 		iPtr->limit.exceeded &= ~TCL_LIMIT_TIME;
-	    } else {
+	    } else if (iPtr->limit.exceeded & TCL_LIMIT_TIME) {
 		Tcl_ResetResult(interp);
 		Tcl_AppendResult(interp, "time limit exceeded", NULL);
 		Tcl_Release(interp);
 		return TCL_ERROR;
 	    }
+	    Tcl_Release(interp);
 	}
     }
 
@@ -2884,6 +2886,7 @@ Tcl_LimitTypeReset(interp, type)
     Interp *iPtr = (Interp *) interp;
 
     iPtr->limit.active &= ~type;
+    iPtr->limit.exceeded &= ~type;
 }
 
 void
