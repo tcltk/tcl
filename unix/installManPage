@@ -20,15 +20,28 @@ MANPAGE=$1
 DIR=$2
 test -z "$S" && S="$DIR/"
 
-# Backslashes are trippled in the sed script, because it is in backticks
-# which don't pass backslashes literally.
+# A sed script to parse the alternative names out of a man page.
+#
+#    /^\\.SH NAME/{   ;# Look for a line, that starts with .SH NAME
+#	s/^.*$//      ;# Delete the content of this line from the buffer
+#	n             ;# Read next line
+#	s/,\|\\\ //g  ;# Remove all commas
+#	s/ \\\-.*//   ;# Delete from \- to the end of line
+#	p             ;# print the result
+#	q             ;# exit
+#
+# Backslashes are trippled in the sed script, because it is in
+# backticks which don't pass backslashes literally.
+#
+# Please keep the commented version above updated if you
+# change anything to the script below.
 NAMES=`sed -n '
-    /^\\.SH NAME/{    # Look for a line, that starts with .SH NAME
-	s/^.*$//      # Delete the content of this line from the buffer
-	n             # Read next line
-	s/,\|\\\ //g  # Remove all commas
-	s/ \\\-.*//   # Delete from \- to the end of line
-	p             # print the result
+    /^\\.SH NAME/{
+	s/^.*$//
+	n
+	s/,\|\\\ //g
+	s/ \\\-.*//
+	p
 	q
     }' $MANPAGE`
 
