@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.1.2.8 1999/03/10 06:49:15 stanton Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.1.2.9 1999/03/20 01:26:48 redman Exp $
  */
 
 #include "tclInt.h"
@@ -2812,8 +2812,11 @@ SortCompare(objPtr1, objPtr2, infoPtr)
 	    order = -1;
 	}
     } else {
-	Tcl_Obj **objv, *paramObjv[2] = {objPtr1, objPtr2};
+	Tcl_Obj **objv, *paramObjv[2];
 	int objc;
+
+	paramObjv[0] = objPtr1;
+	paramObjv[1] = objPtr2;
 
   	/*
  	 * We made space in the command list for the two things to
