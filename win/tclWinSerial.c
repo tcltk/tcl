@@ -10,7 +10,7 @@
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  * Changes by Rolf.Schroedter@dlr.de June 25-27, 1999
  *
- * RCS: @(#) $Id: tclWinSerial.c,v 1.11 2000/09/28 06:38:23 hobbs Exp $
+ * RCS: @(#) $Id: tclWinSerial.c,v 1.12 2000/09/29 21:53:51 hobbs Exp $
  */
 
 #include "tclWinInt.h"
@@ -1157,7 +1157,7 @@ SerialGetOptionProc(instanceData, interp, optionName, dsPtr)
             char buf[2 * TCL_INTEGER_SPACE + 16];
 
             parity = 'n';
-            if (dcb.Parity < 4) {
+            if (dcb.Parity <= 4) {
                 parity = "noems"[dcb.Parity];
             }
 
