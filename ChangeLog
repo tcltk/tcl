@@ -1,3 +1,8 @@
+2004-06-18  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* win/tclWinInit.c (SetDefaultLibraryDir): Fix logic, simplify and
+	add comments.
+
 2004-06-17  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclObj.c:	Added missing space in panic message.
