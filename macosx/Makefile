@@ -3,7 +3,7 @@
 # Makefile to build Tcl on Mac OS X packaged as a Framework
 #	uses standard unix build system in tcl/unix
 #
-# RCS: @(#) $Id: Makefile,v 1.5.2.5 2003/10/01 14:34:16 das Exp $
+# RCS: @(#) $Id: Makefile,v 1.5.2.6 2003/11/04 09:36:30 das Exp $
 #
 ########################################################################################################
 
@@ -35,7 +35,7 @@ TCL_PACKAGE_PATH	?= "~/Library/Tcl /Library/Tcl /Network/Library/Tcl /System/Lib
 #-------------------------------------------------------------------------------------------------------
 # meta targets
 
-meta 			:= all install embedded install-embedded clean distclean
+meta 			:= all install embedded install-embedded clean distclean test
 
 styles			:= develop deploy
 
@@ -57,6 +57,10 @@ clean-%:		action := clean-
 distclean		:= ${styles:%=distclean-%}
 distclean		: ${distclean}
 distclean-%:		action := distclean-
+
+test			:= ${styles:%=test-%}
+test			: ${test}
+test-%:			action := test-
 
 targets			:= $(foreach v,${meta},${$v})
 
@@ -143,6 +147,9 @@ distclean-${PROJECT}:
 	${MAKE} -C ${OBJ_DIR} distclean ${EXTRA_MAKE_ARGS}
 	rm -rf ${OBJ_DIR} ${PRODUCT_NAME}.framework tclsh${PRODUCT_VERSION} tcltest
 	
+test-${PROJECT}: build-${PROJECT}
+	${MAKE} -C ${OBJ_DIR} test ${EXTRA_MAKE_ARGS}
+
 install-${PROJECT}: build-${PROJECT}
 # install to ${INSTALL_ROOT} with optional stripping
 	${MAKE} -C ${OBJ_DIR} install-binaries install-libraries \
