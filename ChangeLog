@@ -4,6 +4,17 @@
         * win/tclWinInit.c (TclpInitLibraryPath):       Fix for [Bug 832657]
         that should not run afoul of startup constraints.
 
+        * library/dde/pkgIndex.tcl:     Added safeguards so that registry
+        * library/reg/pkgIndex.tcl:     and dde packages are not offered
+        * win/tclWinDde.c:      on non-Windows platforms.  Bumped to
+        * win/tclWinReg.c:      registry 1.1.3 and dde 1.3.
+	* win/Makefile.in:
+	* win/configure.in:
+	* win/makefile.bc:
+	* win/makefile.vc:
+
+	* win/configure:	autoconf (2.57)
+
 2003-11-10  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* tests/cmdIL.test: Stopped cmdIL-5.5 from stomping over the test
