@@ -1,3 +1,13 @@
+1999-07-20  Melissa Hirschl  <hershey@matisse.scriptics.com>
+
+	* generic/tclInitScript.h: 
+	* unix/tclUnixInit.c: merged code with 8.0.5.  We now use an
+	intermediate global tcl var "tclDefaultLibrary" to keep the
+	"tcl_library" var from being set by the default value in the
+	Makefile.  Also fixed a bug in which caused the value of
+	TCL_LIBRARY env var to be ignored.
+	* unix/tclWinInit.c: just updated some comments.
+
 1999-07-19  Melissa Hirschl  <hershey@matisse.scriptics.com>
 
 	* library/http2.1/http.tcl: updated -useragent text to say version

@@ -5,11 +5,9 @@
  *
  * Copyright (c) 1994-1997 Sun Microsystems, Inc.
  * Copyright (c) 1998-1999 by Scriptics Corporation.
+ * All rights reserved.
  *
- * See the file "license.terms" for information on usage and redistribution
- * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclWinInit.c,v 1.17 1999/05/13 01:50:17 stanton Exp $
+ * RCS: @(#) $Id: tclWinInit.c,v 1.18 1999/07/21 02:01:37 hershey Exp $
  */
 
 #include "tclWinInt.h"
@@ -527,14 +525,14 @@ TclpSetInitialEncodings()
  * TclpSetVariables --
  *
  *	Performs platform-specific interpreter initialization related to
- *	the tcl_library and tcl_platform variables, and other platform-
- *	specific things.
+ *	the tcl_platform and env variables, and other platform-specific
+ *	things.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	Sets "tcl_library", "tcl_platform", and "env(HOME)" Tcl variables.
+ *	Sets "tcl_platform" and "env(HOME)" Tcl variables.
  *
  *----------------------------------------------------------------------
  */
