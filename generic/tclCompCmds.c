@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.15 2001/11/14 23:17:03 hobbs Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.16 2001/11/19 12:25:08 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1955,6 +1955,7 @@ TclCompileListCmd(interp, parsePtr, envPtr)
 	    }
 	    valueTokenPtr = valueTokenPtr + (valueTokenPtr->numComponents + 1);
 	}
+	envPtr->maxStackDepth = depth;
 	TclEmitInstInt4(INST_LIST, numWords - 1, envPtr);
     }
 
