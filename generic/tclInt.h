@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.173 2004/09/17 22:06:24 kennykb Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.174 2004/09/26 16:36:04 msofer Exp $
  */
 
 #ifndef _TCLINT
@@ -844,18 +844,19 @@ struct CompileEnv;
 /*
  * The type of procedures called by the Tcl bytecode compiler to compile
  * commands. Pointers to these procedures are kept in the Command structure
- * describing each command. When a CompileProc returns, the interpreter's
- * result is set to error information, if any. In addition, the CompileProc
- * returns an integer value, which is one of the following:
+ * describing each command.  The integer value returned by a CompileProc
+ * must be one of the following:
  *
  * TCL_OK		Compilation completed normally.
- * TCL_ERROR		Compilation failed because of an error;
- *			the interpreter's result describes what went wrong.
- * TCL_OUT_LINE_COMPILE	Compilation failed because, e.g., the command is
- *			too complex for effective inline compilation. The
- *			CompileProc believes the command is legal but 
- *			should be compiled "out of line" by emitting code
- *			to invoke its command procedure at runtime.
+ * TCL_OUT_LINE_COMPILE	Compilation could not be completed.  This can
+ * 			be just a judgment by the CompileProc that the
+ * 			command is too complex to compile effectively,
+ * 			or it can indicate that in the current state of
+ * 			the interp, the command would raise an error.
+ * 			In the latter circumstance, we defer error reporting
+ * 			until the actual runtime, because by then changes
+ * 			in the interp state may allow the command to be
+ * 			successfully evaluated.
  */
 
 #define TCL_OUT_LINE_COMPILE	(TCL_CONTINUE + 1)
