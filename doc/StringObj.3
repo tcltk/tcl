@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: StringObj.3,v 1.15 2004/03/09 12:59:04 vincentdarley Exp $
+'\" RCS: @(#) $Id: StringObj.3,v 1.16 2004/03/23 09:01:00 dkf Exp $
 '\" 
 .so man.macros
 .TH Tcl_StringObj 3 8.1 Tcl "Tcl Library Procedures"
@@ -77,8 +77,8 @@ Tcl_Obj *
 .VS 8.1
 Points to the first byte of an array of UTF-8-encoded bytes
 used to set or append to a string object.
-This byte array should not contain embedded null bytes
-unless \fIlength\fR is negative.  (Applications needing null bytes
+This byte array may contain embedded null characters
+unless \fInumChars\fR is negative.  (Applications needing null bytes
 should represent them as the two-byte sequence \fI\\700\\600\fR, use
 \fBTcl_ExternalToUtf\fR to convert, or \fBTcl_NewByteArrayObj\fR if
 the string is a collection of uninterpreted bytes.)
