@@ -1,5 +1,15 @@
 2004-08-02  Don Porter  <dgp@users.sourceforge.net>
 
+	TIP#207 IMPLEMENTATION
+
+	* doc/interp.n:		Added support for a -namespace option to the
+	* generic/tclBasic.c:	[interp invokehidden] command.  Also added an
+	* generic/tclInt.h:	internal routine TclObjInvokeNamespace() and
+	* generic/tclInterp.c:	corrected the flag names TCL_FIND_ONLY_NS and
+	* generic/tclNamesp.c:	TCL_CREATE_NS_IF_UNKNOWN that are passed to the
+	* generic/tclTrace.c:	internal routine TclGetNamespaceForQualName().
+	* tests/interp.test:	[Patch 981841]
+
 	* generic/tclLiteral.c (TclCleanupLiteralTable):	Corrected
 	* tests/compile.test (compile-12.4):	flawed deletion of literal
 	internal reps that could lead to accessing of freed memory.

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.42 2004/06/17 22:18:44 dgp Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.43 2004/08/02 20:55:37 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -297,8 +297,9 @@ static int		SlaveHide _ANSI_ARGS_((Tcl_Interp *interp,
 static int		SlaveHidden _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Interp *slaveInterp));
 static int		SlaveInvokeHidden _ANSI_ARGS_((Tcl_Interp *interp,
-			    Tcl_Interp *slaveInterp, int global, int objc,
-			    Tcl_Obj *CONST objv[]));
+			    Tcl_Interp *slaveInterp,
+			    CONST char *namespaceName, 
+			    int objc, Tcl_Obj *CONST objv[]));
 static int		SlaveMarkTrusted _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Interp *slaveInterp));
 static int		SlaveObjCmd _ANSI_ARGS_((ClientData dummy,
@@ -779,16 +780,17 @@ Tcl_InterpObjCmd(clientData, interp, objc, objv)
 	    return TCL_OK;
 	}
 	case OPT_INVOKEHID: {
-	    int i, index, global;
+	    int i, index;
+	    CONST char *namespaceName;
 	    Tcl_Interp *slaveInterp;
 	    static CONST char *hiddenOptions[] = {
-		"-global",	"--",		NULL
+		"-global",	"-namespace",	"--",		NULL
 	    };
 	    enum hiddenOption {
-		OPT_GLOBAL,	OPT_LAST
+		OPT_GLOBAL,	OPT_NAMESPACE,	OPT_LAST
 	    };
 
-	    global = 0;
+	    namespaceName = NULL;
 	    for (i = 3; i < objc; i++) {
 		if (Tcl_GetString(objv[i])[0] != '-') {
 		    break;
@@ -798,23 +800,31 @@ Tcl_InterpObjCmd(clientData, interp, objc, objv)
 		    return TCL_ERROR;
 		}
 		if (index == OPT_GLOBAL) {
-		    global = 1;
+		    namespaceName = "::";
 		} else {
-		    i++;
-		    break;
+		    if (index == OPT_NAMESPACE) {
+			if (++i == objc) { /* There must be more arguments. */
+		            break;
+			} else {
+		            namespaceName = Tcl_GetString(objv[i]);
+			}
+		    } else {
+			i++;
+			break;
+		    }
 		}
 	    }
 	    if (objc - i < 1) {
 		Tcl_WrongNumArgs(interp, 2, objv,
-			"path ?-global? ?--? cmd ?arg ..?");
+			"path ?-namespace ns? ?-global? ?--? cmd ?arg ..?");
 		return TCL_ERROR;
 	    }
 	    slaveInterp = GetInterp(interp, objv[2]);
 	    if (slaveInterp == (Tcl_Interp *) NULL) {
 		return TCL_ERROR;
 	    }
-	    return SlaveInvokeHidden(interp, slaveInterp, global, objc - i,
-		    objv + i);
+	    return SlaveInvokeHidden(interp, slaveInterp, namespaceName,
+		    objc - i, objv + i);
 	}
 	case OPT_LIMIT: {
 	    Tcl_Interp *slaveInterp;
@@ -2184,14 +2194,16 @@ SlaveObjCmd(clientData, interp, objc, objv)
 	    return TCL_OK;
 	}
         case OPT_INVOKEHIDDEN: {
-	    int global, i, index;
+	    int i, index;
+	    CONST char *namespaceName;
 	    static CONST char *hiddenOptions[] = {
-		"-global",	"--",		NULL
+		"-global",	"-namespace",	"--",		NULL
 	    };
 	    enum hiddenOption {
-		OPT_GLOBAL,	OPT_LAST
+		OPT_GLOBAL,	OPT_NAMESPACE,	OPT_LAST
 	    };
-	    global = 0;
+
+	    namespaceName = NULL;
 	    for (i = 2; i < objc; i++) {
 		if (Tcl_GetString(objv[i])[0] != '-') {
 		    break;
@@ -2201,19 +2213,27 @@ SlaveObjCmd(clientData, interp, objc, objv)
 		    return TCL_ERROR;
 		}
 		if (index == OPT_GLOBAL) {
-		    global = 1;
+		    namespaceName = "::";
 		} else {
-		    i++;
-		    break;
+		    if (index == OPT_NAMESPACE) {
+			if (++i == objc) { /* There must be more arguments. */
+		            break;
+			} else {
+		            namespaceName = Tcl_GetString(objv[i]);
+			}
+		    } else {
+			i++;
+			break;
+		    }
 		}
 	    }
 	    if (objc - i < 1) {
 		Tcl_WrongNumArgs(interp, 2, objv,
-			"?-global? ?--? cmd ?arg ..?");
+			"?-namespace ns? ?-global? ?--? cmd ?arg ..?");
 		return TCL_ERROR;
 	    }
-	    return SlaveInvokeHidden(interp, slaveInterp, global, objc - i,
-		    objv + i);
+	    return SlaveInvokeHidden(interp, slaveInterp, namespaceName,
+		    objc - i, objv + i);
 	}
 	case OPT_LIMIT: {
 	    static CONST char *limitTypes[] = {
@@ -2551,11 +2571,11 @@ SlaveHidden(interp, slaveInterp)
  */
 
 static int
-SlaveInvokeHidden(interp, slaveInterp, global, objc, objv)
+SlaveInvokeHidden(interp, slaveInterp, namespaceName, objc, objv)
     Tcl_Interp *interp;		/* Interp for error return. */
     Tcl_Interp *slaveInterp;	/* The slave interpreter in which command
 				 * will be invoked. */
-    int global;			/* Non-zero to invoke in global namespace. */
+    CONST char *namespaceName;	/* The namespace to use, if any. */
     int objc;			/* Number of arguments. */
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
@@ -2571,11 +2591,20 @@ SlaveInvokeHidden(interp, slaveInterp, global, objc, objv)
     Tcl_Preserve((ClientData) slaveInterp);
     Tcl_AllowExceptions(slaveInterp);
     
-    if (global) {
-        result = TclObjInvokeGlobal(slaveInterp, objc, objv,
-                TCL_INVOKE_HIDDEN);
-    } else {
+    if (namespaceName == NULL) {
         result = TclObjInvoke(slaveInterp, objc, objv, TCL_INVOKE_HIDDEN);
+    } else {
+	Namespace *nsPtr, *dummy1, *dummy2;
+	CONST char *tail;
+
+	result = TclGetNamespaceForQualName(slaveInterp, namespaceName,
+		(Namespace *) NULL, TCL_FIND_ONLY_NS | TCL_GLOBAL_ONLY 
+		| TCL_LEAVE_ERR_MSG | TCL_CREATE_NS_IF_UNKNOWN, &nsPtr,
+		&dummy1, &dummy2, &tail);
+	if (result == TCL_OK) {
+	    result = TclObjInvokeNamespace(slaveInterp, objc, objv,
+		    (Tcl_Namespace *)nsPtr, TCL_INVOKE_HIDDEN);
+	}
     }
 
     TclTransferResult(slaveInterp, result, interp);

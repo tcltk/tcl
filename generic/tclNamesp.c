@@ -21,19 +21,10 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.41 2004/07/11 23:11:22 dkf Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.42 2004/08/02 20:55:38 dgp Exp $
  */
 
 #include "tclInt.h"
-
-/*
- * Flag passed to TclGetNamespaceForQualName to indicate that it should
- * search for a namespace rather than a command or variable inside a
- * namespace. Note that this flag's value must not conflict with the values
- * of TCL_GLOBAL_ONLY, TCL_NAMESPACE_ONLY, or CREATE_NS_IF_UNKNOWN.
- */
-
-#define FIND_ONLY_NS	0x1000
 
 /*
  * Initial size of stack allocated space for tail list - used when resetting
@@ -606,7 +597,7 @@ Tcl_CreateNamespace(interp, name, clientData, deleteProc)
 	 */
 
 	TclGetNamespaceForQualName(interp, name, (Namespace *) NULL,
-		/*flags*/ (CREATE_NS_IF_UNKNOWN | TCL_LEAVE_ERR_MSG),
+		/*flags*/ (TCL_CREATE_NS_IF_UNKNOWN | TCL_LEAVE_ERR_MSG),
 		&parentPtr, &dummy1Ptr, &dummy2Ptr, &simpleName);
 
 	/*
@@ -1727,18 +1718,18 @@ DeleteImportedCmd(clientData)
  *	TCL_NAMESPACE_ONLY are specified, TCL_GLOBAL_ONLY is ignored and
  *	the search starts from the namespace specified by cxtNsPtr.
  *
- *	If "flags" contains CREATE_NS_IF_UNKNOWN, all namespace
+ *	If "flags" contains TCL_CREATE_NS_IF_UNKNOWN, all namespace
  *	components of the qualified name that cannot be found are
  *	automatically created within their specified parent. This makes sure
  *	that functions like Tcl_CreateCommand always succeed. There is no
  *	alternate search path, so *altNsPtrPtr is set NULL.
  *
- *	If "flags" contains FIND_ONLY_NS, the qualified name is treated as a
+ *	If "flags" contains TCL_FIND_ONLY_NS, the qualified name is treated as a
  *	reference to a namespace, and the entire qualified name is
  *	followed. If the name is relative, the namespace is looked up only
  *	in the current namespace. A pointer to the namespace is stored in
  *	*nsPtrPtr and NULL is stored in *simpleNamePtr. Otherwise, if
- *	FIND_ONLY_NS is not specified, only the leading components are
+ *	TCL_FIND_ONLY_NS is not specified, only the leading components are
  *	treated as namespace names, and a pointer to the simple name of the
  *	final component is stored in *simpleNamePtr.
  *
@@ -1749,7 +1740,7 @@ DeleteImportedCmd(clientData)
  *	to NULL, then the search along that path failed.  The procedure also
  *	stores a pointer to the simple name of the final component in
  *	*simpleNamePtr. If the qualified name is "::" or was treated as a
- *	namespace reference (FIND_ONLY_NS), the procedure stores a pointer
+ *	namespace reference (TCL_FIND_ONLY_NS), the procedure stores a pointer
  *	to the namespace in *nsPtrPtr, NULL in *altNsPtrPtr, and sets
  *	*simpleNamePtr to point to an empty string.
  *
@@ -1766,7 +1757,7 @@ DeleteImportedCmd(clientData)
  *	this function always returns TCL_OK.
  *
  * Side effects:
- *	If "flags" contains CREATE_NS_IF_UNKNOWN, new namespaces may be
+ *	If "flags" contains TCL_CREATE_NS_IF_UNKNOWN, new namespaces may be
  *	created.
  *
  *----------------------------------------------------------------------
@@ -1787,8 +1778,8 @@ TclGetNamespaceForQualName(interp, qualName, cxtNsPtr, flags,
     int flags;			 /* Flags controlling the search: an OR'd
 				  * combination of TCL_GLOBAL_ONLY,
 				  * TCL_NAMESPACE_ONLY,
-				  * CREATE_NS_IF_UNKNOWN, and
-				  * FIND_ONLY_NS. */
+				  * TCL_CREATE_NS_IF_UNKNOWN, and
+				  * TCL_FIND_ONLY_NS. */
     Namespace **nsPtrPtr;	 /* Address where procedure stores a pointer
 				  * to containing namespace if qualName is
 				  * found starting from *cxtNsPtr or, if
@@ -1801,8 +1792,8 @@ TclGetNamespaceForQualName(interp, qualName, cxtNsPtr, flags,
 				  * namespace. NULL is stored if qualName
 				  * isn't found starting from :: or if the
 				  * TCL_GLOBAL_ONLY, TCL_NAMESPACE_ONLY,
-				  * CREATE_NS_IF_UNKNOWN, FIND_ONLY_NS flag
-				  * is set. */
+				  * TCL_CREATE_NS_IF_UNKNOWN, TCL_FIND_ONLY_NS
+				  * flag is set. */
     Namespace **actualCxtPtrPtr; /* Address where procedure stores a pointer
 				  * to the actual namespace from which the
 				  * search started. This is either cxtNsPtr,
@@ -1812,7 +1803,7 @@ TclGetNamespaceForQualName(interp, qualName, cxtNsPtr, flags,
     CONST char **simpleNamePtr;	 /* Address where procedure stores the
 				  * simple name at end of the qualName, or
 				  * NULL if qualName is "::" or the flag
-				  * FIND_ONLY_NS was specified. */
+				  * TCL_FIND_ONLY_NS was specified. */
 {
     Interp *iPtr = (Interp *) interp;
     Namespace *nsPtr = cxtNsPtr;
@@ -1826,7 +1817,7 @@ TclGetNamespaceForQualName(interp, qualName, cxtNsPtr, flags,
 
     /*
      * Determine the context namespace nsPtr in which to start the primary
-     * search. If TCL_NAMESPACE_ONLY or FIND_ONLY_NS was specified, search
+     * search. If TCL_NAMESPACE_ONLY or TCL_FIND_ONLY_NS was specified, search
      * from the current namespace. If the qualName name starts with a "::"
      * or TCL_GLOBAL_ONLY was specified, search from the global
      * namespace. Otherwise, use the given namespace given in cxtNsPtr, or
@@ -1834,7 +1825,7 @@ TclGetNamespaceForQualName(interp, qualName, cxtNsPtr, flags,
      * always treat two or more adjacent ":"s as a namespace separator.
      */
 
-    if (flags & (TCL_NAMESPACE_ONLY | FIND_ONLY_NS)) {
+    if (flags & (TCL_NAMESPACE_ONLY | TCL_FIND_ONLY_NS)) {
 	nsPtr = (Namespace *) Tcl_GetCurrentNamespace(interp);
     } else if (flags & TCL_GLOBAL_ONLY) {
 	nsPtr = globalNsPtr;
@@ -1872,7 +1863,7 @@ TclGetNamespaceForQualName(interp, qualName, cxtNsPtr, flags,
 
     altNsPtr = globalNsPtr;
     if ((nsPtr == globalNsPtr)
-	    || (flags & (TCL_NAMESPACE_ONLY | FIND_ONLY_NS))) {
+	    || (flags & (TCL_NAMESPACE_ONLY | TCL_FIND_ONLY_NS))) {
         altNsPtr = NULL;
     }
 
@@ -1905,12 +1896,12 @@ TclGetNamespaceForQualName(interp, qualName, cxtNsPtr, flags,
 	if ((*end == '\0')
 	        && !((end-start >= 2) && (*(end-1) == ':') && (*(end-2) == ':'))) {
 	    /*
-	     * qualName ended with a simple name at start. If FIND_ONLY_NS
+	     * qualName ended with a simple name at start. If TCL_FIND_ONLY_NS
 	     * was specified, look this up as a namespace. Otherwise,
 	     * start is the name of a cmd or var and we are done.
 	     */
 	    
-	    if (flags & FIND_ONLY_NS) {
+	    if (flags & TCL_FIND_ONLY_NS) {
 		nsName = start;
 	    } else {
 		*nsPtrPtr      = nsPtr;
@@ -1935,7 +1926,7 @@ TclGetNamespaceForQualName(interp, qualName, cxtNsPtr, flags,
 
         /*
 	 * Look up the namespace qualifier nsName in the current namespace
-         * context. If it isn't found but CREATE_NS_IF_UNKNOWN is set,
+         * context. If it isn't found but TCL_CREATE_NS_IF_UNKNOWN is set,
          * create that qualifying namespace. This is needed for procedures
          * like Tcl_CreateCommand that cannot fail.
 	 */
@@ -1944,7 +1935,7 @@ TclGetNamespaceForQualName(interp, qualName, cxtNsPtr, flags,
             entryPtr = Tcl_FindHashEntry(&nsPtr->childTable, nsName);
             if (entryPtr != NULL) {
                 nsPtr = (Namespace *) Tcl_GetHashValue(entryPtr);
-            } else if (flags & CREATE_NS_IF_UNKNOWN) {
+            } else if (flags & TCL_CREATE_NS_IF_UNKNOWN) {
 		Tcl_CallFrame frame;
 		
 		(void) Tcl_PushCallFrame(interp, &frame,
@@ -1995,7 +1986,7 @@ TclGetNamespaceForQualName(interp, qualName, cxtNsPtr, flags,
      * variable name, trailing "::"s refer to the cmd or var named {}.
      */
 
-    if ((flags & FIND_ONLY_NS)
+    if ((flags & TCL_FIND_ONLY_NS)
 	    || ((end > start ) && (*(end-1) != ':'))) {
 	*simpleNamePtr = NULL; /* found namespace name */
     } else {
@@ -2009,7 +2000,7 @@ TclGetNamespaceForQualName(interp, qualName, cxtNsPtr, flags,
      * namespaces can not have empty names except for the global namespace.
      */
 
-    if ((flags & FIND_ONLY_NS) && (*qualName == '\0')
+    if ((flags & TCL_FIND_ONLY_NS) && (*qualName == '\0')
 	    && (nsPtr != globalNsPtr)) {
 	nsPtr = NULL;
     }
@@ -2061,12 +2052,12 @@ Tcl_FindNamespace(interp, name, contextNsPtr, flags)
 
     /*
      * Find the namespace(s) that contain the specified namespace name.
-     * Add the FIND_ONLY_NS flag to resolve the name all the way down
+     * Add the TCL_FIND_ONLY_NS flag to resolve the name all the way down
      * to its last component, a namespace.
      */
 
     TclGetNamespaceForQualName(interp, name, (Namespace *) contextNsPtr,
-	    (flags | FIND_ONLY_NS), &nsPtr, &dummy1Ptr, &dummy2Ptr, &dummy);
+	    (flags | TCL_FIND_ONLY_NS), &nsPtr, &dummy1Ptr, &dummy2Ptr, &dummy);
     
     if (nsPtr != NULL) {
        return (Tcl_Namespace *) nsPtr;
@@ -4063,7 +4054,7 @@ SetNsNameFromAny(interp, objPtr)
      */
 
     TclGetNamespaceForQualName(interp, name, (Namespace *) NULL,
-            FIND_ONLY_NS, &nsPtr, &dummy1Ptr, &dummy2Ptr, &dummy);
+            TCL_FIND_ONLY_NS, &nsPtr, &dummy1Ptr, &dummy2Ptr, &dummy);
 
     /*
      * If we found a namespace, then create a new ResolvedNsName structure
