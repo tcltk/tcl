@@ -12,6 +12,14 @@
 		TclpObjStat,		TclpObjAccess,
 		TclpOpenFileChannel
 
+	* tests/registry.test:	Fixed test files to load the correct
+	* tests/winDde.test:	registry and dde packages by using the info
+	* win/Makefile.in:	from makefiles to tell tcltest where to load
+	* win/makefile.vc:	them from.  This avoids grabbing the wrong
+	package from $auto_path which might be the install point rather than
+	the dev location.  Kudos to Jennifer Hom for adding -load and
+	-loadfile to the tcltest package. [Bug 926088]
+
 2004-10-27  Andreas Kupries <andreask@activestate.com>
 
 	* tests/tm.test:  Expanded on the testsuite entered by Donal.
