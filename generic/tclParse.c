@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.20 2002/04/12 06:28:33 hobbs Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.21 2002/07/19 10:12:28 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -56,7 +56,7 @@
 
 #define CHAR_TYPE(c) (typeTable+128)[(int)(c)]
 
-char typeTable[] = {
+static CONST char typeTable[] = {
     /*
      * Negative character values, from -128 to -1:
      */
@@ -1169,20 +1169,30 @@ Tcl_ParseBraces(interp, string, numBytes, parsePtr, append, termPtr)
 		src += length;
 	    }
 	} else if (src == end) {
-	    int openBrace;
+	    register int openBrace;	/* bool-flag for when scanning back */
 
-	    if (interp != NULL) {
-		Tcl_SetResult(interp, "missing close-brace", TCL_STATIC);
+	    parsePtr->errorType = TCL_PARSE_MISSING_BRACE;
+	    parsePtr->term = string;
+	    parsePtr->incomplete = 1;
+	    if (interp == NULL) {
+		/*
+		 * Skip straight to the exit code since we have no
+		 * interpreter to put error messages in.
+		 */
+		goto error;
 	    }
+
+	    Tcl_SetResult(interp, "missing close-brace", TCL_STATIC);
+
 	    /*
-	     *  Search the source string for a possible open
-	     *  brace within the context of a comment.  Since we
-	     *  aren't performing a full Tcl parse, just look for
-	     *  an open brace preceeded by a '<whitspace>#' on 
-	     *  the same line.
+	     * Guess if the problem is due to comments by searching
+	     * the source string for a possible open brace within the
+	     * context of a comment.  Since we aren't performing a
+	     * full Tcl parse, just look for an open brace preceeded
+	     * by a '<whitespace>#' on the same line.
 	     */
 	    openBrace = 0;
-	    while (src > string ) {
+	    for (; src>string ; src--) {
 		switch (*src) {
 		    case '{': 
 			openBrace = 1; 
@@ -1191,25 +1201,15 @@ Tcl_ParseBraces(interp, string, numBytes, parsePtr, append, termPtr)
 			openBrace = 0; 
 			break;
 		    case '#':
-			if ((openBrace == 1) && (isspace(UCHAR(src[-1])))) {
-			    if (interp != NULL) {
-				Tcl_AppendResult(interp,
-					": possible unbalanced brace in comment",
-					(char *) NULL);
-			    }
-			    openBrace = -1;
-			    break;
+			if (openBrace && (isspace(UCHAR(src[-1])))) {
+			    Tcl_AppendResult(interp,
+				    ": possible unbalanced brace in comment",
+				    (char *) NULL);
+			    goto error;
 			}
 			break;
 		}
-		if (openBrace == -1) {
-		    break;
-		}
-		src--;
 	    }
-	    parsePtr->errorType = TCL_PARSE_MISSING_BRACE;
-	    parsePtr->term = string;
-	    parsePtr->incomplete = 1;
 	    goto error;
 	} else {
 	    src++;
