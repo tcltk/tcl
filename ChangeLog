@@ -1,3 +1,12 @@
+2001-11-08  David Gravereaux <davygrvy@pobox.com>
+
+	* win/rules.vc:
+	* win/makefile.vc:  Fixed install target to adjust for the
+	different build types.  Added a 'linkexten' option to link the
+	win extensions inside the shell when built static.  Placed
+	win/tclAppInit.c patch in SF patch DB for approval. 'profile'
+	option not hooked in yet.  Everything else know is done.
+
 2001-11-07  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* unix/Makefile.in:
