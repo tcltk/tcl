@@ -1,5 +1,11 @@
 2004-03-30  Miguel Sofer <msofer@users.sf.net>
 
+	* generic/tclExecute.c (TEBC): reverting to the previous method
+	for async tests in TEBC, as the new method turned out to be too
+	costly. Async tests now run every 64 instructions.
+	
+2004-03-30  Miguel Sofer <msofer@users.sf.net>
+
 	* generic/tclCompile.c:     New instruction code INST_START_CMD
 	* generic/tclCompile.h:     that allows checking the bytecode's  
 	* generic/tclExecute.c:     validity [Bug 729692] and the interp's  
