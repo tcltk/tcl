@@ -1043,6 +1043,10 @@ if test -r GetStdChan.3; then
     rm -f Tcl_SetStdChannel.3
     ln GetStdChan.3 Tcl_SetStdChannel.3
 fi
+if test -r StrMatch.3; then
+    rm -f Tcl_StringCaseMatch.3
+    ln StrMatch.3 Tcl_StringCaseMatch.3
+fi
 if test -r StringObj.3; then
     rm -f Tcl_SetStringObj.3
     ln StringObj.3 Tcl_SetStringObj.3

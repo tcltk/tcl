@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.13 1999/05/06 18:46:25 stanton Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.14 1999/05/22 01:20:13 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -686,6 +686,11 @@ TclStubs tclStubs = {
     Tcl_Stat, /* 368 */
     Tcl_UtfNcmp, /* 369 */
     Tcl_UtfNcasecmp, /* 370 */
+    Tcl_StringCaseMatch, /* 371 */
+    Tcl_UniCharIsControl, /* 372 */
+    Tcl_UniCharIsGraph, /* 373 */
+    Tcl_UniCharIsPrint, /* 374 */
+    Tcl_UniCharIsPunct, /* 375 */
 };
 
 /* !END!: Do not edit above this line. */

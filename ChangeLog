@@ -4,6 +4,52 @@
 	Win95/98.  Need to wait for the procInfo.hProcess of the process that
 	was created, not the hProcess of the current process.  [Bug: 2105]
 
+1999-05-20    <redman@scriptics.com>
+
+	* library/init.tcl: Add the directory where the executable is, and
+	the ../lib directory relative to that, to the auto_path variable.
+	
+1999-05-19    <stanton@scriptics.com>
+
+	Merged in various changes submitted by Jeff Hobbs:
+	
+	* generic/tcl.decls: 
+	* generic/tclUtf.c: Added Tcl_UniCharIs* functions for control,
+	graph, print, and punct classes.
+
+	* generic/tclUtil.c:
+	* doc/StrMatch.3: Added Tcl_StringCaseMatch() implementation to
+	support case-insensitive globbing.
+	
+	* doc/string.n: 
+	* unix/mkLinks: 
+	* tests/string.test: 
+	* generic/tclCmdMZ.c: Added additional character class tests,
+	added -nocase switch to "string match", changed string first/last
+	to use offsets.
+
+1999-05-19    <redman@scriptics.com>
+
+	* generic/tcl.h: Add extern "C" block around entire header file for
+	C++ compilers to fix linkage issues.  Submitted by Don Porter and
+	Paul Duffin.
+
+	* generic/tclRegexp.c: Fix bug when the regexp cache is empty
+	and an empty pattern is used in regexp ( such as {} or "" ).
+
+1999-05-18    <stanton@scriptics.com>
+
+	* win/tclWinChan.c: Modified initialization code to avoid
+	inherenting closed or invalid channels.  If the standard input is
+	anything other than a console, file, serial port, or pipe, then we
+	fall back to the standard Tk window console.
+
+1999-05-14    <stanton@scriptics.com>
+
+	* generic/tclCmdAH.c (Tcl_ForObjCmd): Fixed crash caused by
+	failure to reset the result before evaluating the test
+	expression. 
+
 1999-05-14    <surles@scriptics.com>
 
 	* generic/tclBasic.c (Tcl_CreateInterp): Added introspection

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclRegexp.c,v 1.4 1999/05/14 02:04:05 stanton Exp $
+ * RCS: @(#) $Id: tclRegexp.c,v 1.5 1999/05/22 01:20:13 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -751,7 +751,7 @@ CompileRegexp(interp, string, length, flags)
      * a regexp if it has the same pattern and the same flags.
      */
 
-    for (i = 0; i < NUM_REGEXPS; i++) {
+    for (i = 0; (i < NUM_REGEXPS) && (tsdPtr->patterns[i] != NULL); i++) {
 	if ((length == tsdPtr->patLengths[i])
 		&& (tsdPtr->regexps[i]->flags == flags)
 		&& (strcmp(string, tsdPtr->patterns[i]) == 0)) {

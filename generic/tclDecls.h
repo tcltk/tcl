@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.12 1999/05/07 20:07:47 stanton Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.13 1999/05/22 01:20:12 stanton Exp $
  */
 
 #ifndef _TCLDECLS
@@ -1129,6 +1129,17 @@ EXTERN int		Tcl_UtfNcmp _ANSI_ARGS_((CONST char * s1,
 /* 370 */
 EXTERN int		Tcl_UtfNcasecmp _ANSI_ARGS_((CONST char * s1, 
 				CONST char * s2, size_t n));
+/* 371 */
+EXTERN int		Tcl_StringCaseMatch _ANSI_ARGS_((CONST char * str, 
+				CONST char * pattern, int nocase));
+/* 372 */
+EXTERN int		Tcl_UniCharIsControl _ANSI_ARGS_((int ch));
+/* 373 */
+EXTERN int		Tcl_UniCharIsGraph _ANSI_ARGS_((int ch));
+/* 374 */
+EXTERN int		Tcl_UniCharIsPrint _ANSI_ARGS_((int ch));
+/* 375 */
+EXTERN int		Tcl_UniCharIsPunct _ANSI_ARGS_((int ch));
 
 typedef struct TclStubHooks {
     struct TclPlatStubs *tclPlatStubs;
@@ -1535,6 +1546,11 @@ typedef struct TclStubs {
     int (*tcl_Stat) _ANSI_ARGS_((CONST char * path, struct stat * bufPtr)); /* 368 */
     int (*tcl_UtfNcmp) _ANSI_ARGS_((CONST char * s1, CONST char * s2, size_t n)); /* 369 */
     int (*tcl_UtfNcasecmp) _ANSI_ARGS_((CONST char * s1, CONST char * s2, size_t n)); /* 370 */
+    int (*tcl_StringCaseMatch) _ANSI_ARGS_((CONST char * str, CONST char * pattern, int nocase)); /* 371 */
+    int (*tcl_UniCharIsControl) _ANSI_ARGS_((int ch)); /* 372 */
+    int (*tcl_UniCharIsGraph) _ANSI_ARGS_((int ch)); /* 373 */
+    int (*tcl_UniCharIsPrint) _ANSI_ARGS_((int ch)); /* 374 */
+    int (*tcl_UniCharIsPunct) _ANSI_ARGS_((int ch)); /* 375 */
 } TclStubs;
 
 #ifdef __cplusplus
@@ -3022,6 +3038,26 @@ extern TclStubs *tclStubsPtr;
 #ifndef Tcl_UtfNcasecmp
 #define Tcl_UtfNcasecmp \
 	(tclStubsPtr->tcl_UtfNcasecmp) /* 370 */
+#endif
+#ifndef Tcl_StringCaseMatch
+#define Tcl_StringCaseMatch \
+	(tclStubsPtr->tcl_StringCaseMatch) /* 371 */
+#endif
+#ifndef Tcl_UniCharIsControl
+#define Tcl_UniCharIsControl \
+	(tclStubsPtr->tcl_UniCharIsControl) /* 372 */
+#endif
+#ifndef Tcl_UniCharIsGraph
+#define Tcl_UniCharIsGraph \
+	(tclStubsPtr->tcl_UniCharIsGraph) /* 373 */
+#endif
+#ifndef Tcl_UniCharIsPrint
+#define Tcl_UniCharIsPrint \
+	(tclStubsPtr->tcl_UniCharIsPrint) /* 374 */
+#endif
+#ifndef Tcl_UniCharIsPunct
+#define Tcl_UniCharIsPunct \
+	(tclStubsPtr->tcl_UniCharIsPunct) /* 375 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */

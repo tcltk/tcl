@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUtf.c,v 1.6 1999/05/20 23:40:34 hershey Exp $
+ * RCS: @(#) $Id: tclUtf.c,v 1.7 1999/05/22 01:20:13 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -34,6 +34,16 @@
     | (1 << PARAGRAPH_SEPARATOR))
 
 #define CONNECTOR_BITS (1 << CONNECTOR_PUNCTUATION)
+
+#define PRINT_BITS (ALPHA_BITS | DIGIT_BITS | SPACE_BITS | \
+	    (1 << NON_SPACING_MARK) | (1 << ENCLOSING_MARK) | \
+	    (1 << COMBINING_SPACING_MARK) | (1 << LETTER_NUMBER) | \
+	    (1 << OTHER_NUMBER) | (1 << CONNECTOR_PUNCTUATION) | \
+	    (1 << DASH_PUNCTUATION) | (1 << OPEN_PUNCTUATION) | \
+	    (1 << CLOSE_PUNCTUATION) | (1 << INITIAL_QUOTE_PUNCTUATION) | \
+	    (1 << FINAL_QUOTE_PUNCTUATION) | (1 << OTHER_PUNCTUATION) | \
+	    (1 << MATH_SYMBOL) | (1 << CURRENCY_SYMBOL) | \
+	    (1 << MODIFIER_SYMBOL) | (1 << OTHER_SYMBOL))
 
 /*
  * Unicode characters less than this value are represented by themselves 
@@ -1341,6 +1351,29 @@ Tcl_UniCharIsAlpha(ch)
 /*
  *----------------------------------------------------------------------
  *
+ * Tcl_UniCharIsControl --
+ *
+ *	Test if a character is a Unicode control character.
+ *
+ * Results:
+ *	Returns non-zero if character is a control.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_UniCharIsControl(ch)
+    int ch;			/* Unicode character to test. */
+{
+    return ((GetUniCharInfo(ch) & UNICODE_CATEGORY_MASK) == CONTROL);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_UniCharIsDigit --
  *
  *	Test if a character is a numeric Unicode character.
@@ -1365,6 +1398,30 @@ Tcl_UniCharIsDigit(ch)
 /*
  *----------------------------------------------------------------------
  *
+ * Tcl_UniCharIsGraph --
+ *
+ *	Test if a character is any Unicode print character except space.
+ *
+ * Results:
+ *	Returns non-zero if character is printable, but not space.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_UniCharIsGraph(ch)
+    int ch;			/* Unicode character to test. */
+{
+    register int category = (GetUniCharInfo(ch) & UNICODE_CATEGORY_MASK);
+    return (((PRINT_BITS >> category) & 1) && ((unsigned char) ch != ' '));
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_UniCharIsLower --
  *
  *	Test if a character is a lowercase Unicode character.
@@ -1383,6 +1440,55 @@ Tcl_UniCharIsLower(ch)
     int ch;			/* Unicode character to test. */
 {
     return ((GetUniCharInfo(ch) & UNICODE_CATEGORY_MASK) == LOWERCASE_LETTER);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_UniCharIsPrint --
+ *
+ *	Test if a character is a Unicode print character.
+ *
+ * Results:
+ *	Returns non-zero if character is printable.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_UniCharIsPrint(ch)
+    int ch;			/* Unicode character to test. */
+{
+    register int category = (GetUniCharInfo(ch) & UNICODE_CATEGORY_MASK);
+    return ((PRINT_BITS >> category) & 1);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_UniCharIsPunct --
+ *
+ *	Test if for any printing char that is neither space or an alnum.
+ *
+ * Results:
+ *	Returns non-zero if character is punct.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_UniCharIsPunct(ch)
+    int ch;			/* Unicode character to test. */
+{
+    register int category = (GetUniCharInfo(ch) & UNICODE_CATEGORY_MASK);
+    return (((PRINT_BITS >> category) & 1) && ((unsigned char) ch != ' ')
+	    && !(((ALPHA_BITS | DIGIT_BITS) >> category) & 1));
 }
 
 /*

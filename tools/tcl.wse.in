@@ -2159,7 +2159,7 @@ item: Self-Register OCXs/DLLs
 end
 item: Edit Registry
   Total Keys=1
-  Key=SOFTWARE\Sun\Tcl\%VER%
+  Key=SOFTWARE\Scriptics\Tcl\%VER%
   New Value=%MAINDIR%
   Value Name=Root
   Root=2

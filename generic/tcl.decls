@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.12 1999/05/07 20:07:46 stanton Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.13 1999/05/22 01:20:11 stanton Exp $
 
 library tcl
 
@@ -1261,6 +1261,21 @@ declare 369 generic {
 }
 declare 370 generic {
     int Tcl_UtfNcasecmp(CONST char *s1, CONST char *s2, size_t n)
+}
+declare 371 generic {
+    int Tcl_StringCaseMatch(CONST char *str, CONST char *pattern, int nocase)
+}
+declare 372 generic {
+    int Tcl_UniCharIsControl(int ch)
+}
+declare 373 generic {
+    int Tcl_UniCharIsGraph(int ch)
+}
+declare 374 generic {
+    int Tcl_UniCharIsPrint(int ch)
+}
+declare 375 generic {
+    int Tcl_UniCharIsPunct(int ch)
 }
 
 ##############################################################################
