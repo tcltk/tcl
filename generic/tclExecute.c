@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.108 2003/09/23 14:48:49 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.109 2003/09/23 18:38:05 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1057,7 +1057,7 @@ TclExecuteByteCode(interp, codePtr)
     Interp *iPtr = (Interp *) interp;
     ExecEnv *eePtr = iPtr->execEnvPtr;
     				/* Points to the execution environment. */
-    int *catchStackPtr;         /* start of the catch stack */
+    long *catchStackPtr;        /* start of the catch stack */
     int catchTop = -1;
     register Tcl_Obj **tosPtr;  /* Cached pointer to top of evaluation stack. */
     register unsigned char *pc = codePtr->codeStart;
@@ -1088,12 +1088,23 @@ TclExecuteByteCode(interp, codePtr)
 #endif
 
     /*
-     * This procedure uses a stack to hold information about catch commands.
-     * This information is the current operand stack top when starting to
-     * execute the code for each catch command. It starts out with stack-
-     * allocated space but uses dynamically-allocated storage if needed.
+     * The execution uses a unified stack: first the catch stack, immediately
+     * above it the execution stack.
+     *
+     * Make sure the catch stack is large enough to hold the maximum number
+     * of catch commands that could ever be executing at the same time (this
+     * will be no more than the exception range array's depth).
+     * Make sure the execution stack is large enough to execute this ByteCode.
      */
 
+    catchStackPtr = (long *)(eePtr->tosPtr + 1);
+    while ((catchStackPtr + codePtr->maxExceptDepth + codePtr->maxStackDepth) 
+	    > (long *) eePtr->endPtr) {
+        GrowEvaluationStack(eePtr); 
+        catchStackPtr = (long *)(eePtr->tosPtr + 1);
+    }
+    tosPtr = (Tcl_Obj **) (catchStackPtr + codePtr->maxExceptDepth - 1);
+    initStackTop = tosPtr - eePtr->stackPtr;
 
 #ifdef TCL_COMPILE_DEBUG
     if (tclTraceExec >= 2) {
@@ -1108,24 +1119,6 @@ TclExecuteByteCode(interp, codePtr)
     iPtr->stats.numExecutions++;
 #endif
 
-    /*
-     * The execution uses a unified stack: first the catch stack, immediately
-     * above it the execution stack.
-     *
-     * Make sure the catch stack is large enough to hold the maximum number
-     * of catch commands that could ever be executing at the same time (this
-     * will be no more than the exception range array's depth).
-     * Make sure the execution stack is large enough to execute this ByteCode.
-     */
-
-    catchStackPtr = (int *)(eePtr->tosPtr + 1);
-    while ((catchStackPtr + codePtr->maxExceptDepth + codePtr->maxStackDepth) 
-	    > (int *) eePtr->endPtr) {
-        GrowEvaluationStack(eePtr); 
-        catchStackPtr = (int *)(eePtr->tosPtr + 1);
-    }
-    tosPtr = (Tcl_Obj **) (catchStackPtr + codePtr->maxExceptDepth - 1);
-    initStackTop = tosPtr - eePtr->stackPtr;
 
     /*
      * Loop executing instructions until a "done" instruction, a 
@@ -4285,7 +4278,7 @@ TclExecuteByteCode(interp, codePtr)
 #ifdef TCL_COMPILE_DEBUG
     if (traceInstructions) {
 	fprintf(stdout, "  ... found catch at %d, catchTop=%d, unwound to %d, new pc %u\n",
-	        rangePtr->codeOffset, catchTop, catchStackPtr[catchTop],
+	        rangePtr->codeOffset, catchTop, (int) catchStackPtr[catchTop],
 	        (unsigned int)(rangePtr->catchOffset));
     }
 #endif	
@@ -4323,7 +4316,6 @@ TclExecuteByteCode(interp, codePtr)
 	    
     eePtr->tosPtr = (Tcl_Obj **) (catchStackPtr - 1);
     return result;
-#undef STATIC_CATCH_STACK_SIZE
 }
 
 #ifdef TCL_COMPILE_DEBUG
