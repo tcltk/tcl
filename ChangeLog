@@ -1,3 +1,10 @@
+2001-08-11  Vince Darley <vincentdarley@users.sourceforge.net>
+
+        Variety of small issues introduced by the vfs code fixed:
+	* generic/tclIOUtil.c: uninitialised read.
+	* generic/tclFCmd.c: possible memory leak in file delete 
+	with error condition.
+
 2001-08-10  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* generic/tclVar.c: 

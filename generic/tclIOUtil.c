@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.13 2001/08/02 22:16:44 hobbs Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.14 2001/08/11 18:43:21 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -548,6 +548,7 @@ Tcl_FSRegister(clientData, fsPtr)
 
     newFilesystemPtr->clientData = clientData;
     newFilesystemPtr->fsPtr = fsPtr;
+    newFilesystemPtr->refCount = 0;
     
     /* 
      * Is this lock and wait strictly speaking necessary?  Since any
