@@ -21,7 +21,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.42 2004/08/02 20:55:38 dgp Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.43 2004/08/03 20:31:52 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -5118,6 +5118,7 @@ MakeCachedEnsembleCommand(objPtr, ensemblePtr, subcommandName, prefixObjPtr)
      * Populate the internal rep.
      */
     ensembleCmd->nsPtr = ensemblePtr->nsPtr;
+    ensembleCmd->epoch = ensemblePtr->epoch;
     ensemblePtr->nsPtr->refCount++;
     ensembleCmd->realPrefixObj = prefixObjPtr;
     length = strlen(subcommandName)+1;
