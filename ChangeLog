@@ -1,5 +1,8 @@
 2003-10-06  Don Porter  <dgp@users.sourceforge.net>
 
+	* tests/regexp.test:		Matched [makeFile] with [removeFile].
+	* tests/regexpComp.test:	[Bug 675652]
+
         * tests/fCmd.test (fCmd-8.2):   Test only that tilde-substitution
         happens, not for any particular result. [Bug 685991]
 
