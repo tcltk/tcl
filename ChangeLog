@@ -1,3 +1,8 @@
+1999-05-20    <redman@scriptics.com>
+
+	* library/init.tcl: Add the directory where the executable is, and
+	the ../lib directory relative to that, to the auto_path variable.
+	
 1999-05-19    <stanton@scriptics.com>
 
 	Merged in various changes submitted by Jeff Hobbs:
