@@ -1,5 +1,16 @@
 2001-12-07  Miguel Sofer  <msofer@users.sourceforge.net>
 
+	* generic/tclCompCmds.c:
+	* generic/tclCompExpr.c:
+	* generic/tclCompile.c:
+	* generic/tclCompile.h:
+	* generic/tclExecute.c:
+	* generic/tclProc.c: fixed the calculation of the maximal stack
+	depth required by bytecodes [Bug 483611].
+
+
+2001-12-07  Miguel Sofer  <msofer@users.sourceforge.net>
+
 	* generic/tclVar.c: 
 	* tests/trace.test: restored consistency in refCount accounting by
 	array traces [Bug #4484339], submitted by Don Porter. 
