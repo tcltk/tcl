@@ -443,6 +443,9 @@ if test -r ExprLongObj.3; then
     ln ExprLongObj.3 Tcl_ExprObj.3
 fi
 if test -r FileSystem.3; then
+    rm -f Tcl_FSRegister.3
+    rm -f Tcl_FSUnregister.3
+    rm -f Tcl_FSData.3
     rm -f Tcl_FSCopyFile.3
     rm -f Tcl_FSCopyDirectory.3
     rm -f Tcl_FSCreateDirectory.3
@@ -476,6 +479,9 @@ if test -r FileSystem.3; then
     rm -f Tcl_FSNewNativePath.3
     rm -f Tcl_FSGetNativePath.3
     rm -f Tcl_FSFileSystemInfo.3
+    ln FileSystem.3 Tcl_FSRegister.3
+    ln FileSystem.3 Tcl_FSUnregister.3
+    ln FileSystem.3 Tcl_FSData.3
     ln FileSystem.3 Tcl_FSCopyFile.3
     ln FileSystem.3 Tcl_FSCopyDirectory.3
     ln FileSystem.3 Tcl_FSCreateDirectory.3
