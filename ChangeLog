@@ -1,5 +1,10 @@
 2003-02-01  Kevin Kenny  <kennykb@users.sourceforge.net>
 
+	* generic/tclCompCmds.c: Removed an unused variable that caused
+	compiler warnings on SGI. [Bug 664379]
+	
+2003-02-01  Kevin Kenny  <kennykb@users.sourceforge.net>
+
 	* generic/tclLoad.c: Changed the code so that if Tcl_StaticPackage
 	is called to report the same package as being loaded in two interps,
 	it shows up in [info loaded {}] in both of them (previously,
