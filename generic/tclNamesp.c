@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.17 2000/03/27 22:18:56 hobbs Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.18 2000/05/11 00:17:29 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -102,6 +102,9 @@ static int		NamespaceDeleteCmd _ANSI_ARGS_((
 			    ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *CONST objv[]));
 static int		NamespaceEvalCmd _ANSI_ARGS_((
+			    ClientData dummy, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *CONST objv[]));
+static int		NamespaceExistsCmd _ANSI_ARGS_((
 			    ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *CONST objv[]));
 static int		NamespaceExportCmd _ANSI_ARGS_((
@@ -2409,6 +2412,7 @@ GetNamespaceFromObj(interp, objPtr, nsPtrPtr)
  *	    namespace current
  *	    namespace delete ?name name...?
  *	    namespace eval name arg ?arg...?
+ *	    namespace exists name
  *	    namespace export ?-clear? ?pattern pattern...?
  *	    namespace forget ?pattern pattern...?
  *	    namespace import ?-force? ?pattern pattern...?
@@ -2443,15 +2447,16 @@ Tcl_NamespaceObjCmd(clientData, interp, objc, objv)
     register Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
     static char *subCmds[] = {
-            "children", "code", "current", "delete",
-	    "eval", "export", "forget", "import",
-	    "inscope", "origin", "parent", "qualifiers",
-	    "tail", "which", (char *) NULL};
+	"children", "code", "current", "delete",
+	"eval", "exists", "export", "forget", "import",
+	"inscope", "origin", "parent", "qualifiers",
+	"tail", "which", (char *) NULL
+    };
     enum NSSubCmdIdx {
-	    NSChildrenIdx, NSCodeIdx, NSCurrentIdx, NSDeleteIdx,
-	    NSEvalIdx, NSExportIdx, NSForgetIdx, NSImportIdx,
-	    NSInscopeIdx, NSOriginIdx, NSParentIdx, NSQualifiersIdx,
-	    NSTailIdx, NSWhichIdx
+	NSChildrenIdx, NSCodeIdx, NSCurrentIdx, NSDeleteIdx,
+	NSEvalIdx, NSExistsIdx, NSExportIdx, NSForgetIdx, NSImportIdx,
+	NSInscopeIdx, NSOriginIdx, NSParentIdx, NSQualifiersIdx,
+	NSTailIdx, NSWhichIdx
     };
     int index, result;
 
@@ -2485,6 +2490,9 @@ Tcl_NamespaceObjCmd(clientData, interp, objc, objv)
             break;
         case NSEvalIdx:
 	    result = NamespaceEvalCmd(clientData, interp, objc, objv);
+            break;
+        case NSExistsIdx:
+	    result = NamespaceExistsCmd(clientData, interp, objc, objv);
             break;
         case NSExportIdx:
 	    result = NamespaceExportCmd(clientData, interp, objc, objv);
@@ -2946,6 +2954,53 @@ NamespaceEvalCmd(dummy, interp, objc, objv)
     
     Tcl_PopCallFrame(interp);
     return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NamespaceExistsCmd --
+ *
+ *	Invoked to implement the "namespace exists" command that returns 
+ *	true if the given namespace currently exists, and false otherwise.
+ *	Handles the following syntax:
+ *
+ *	    namespace exists name
+ *
+ * Results:
+ *	Returns TCL_OK if successful, and TCL_ERROR if anything goes wrong.
+ *
+ * Side effects:
+ *	Returns a result in the interpreter's result object. If anything
+ *	goes wrong, the result is an error message.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+NamespaceExistsCmd(dummy, interp, objc, objv)
+    ClientData dummy;		/* Not used. */
+    Tcl_Interp *interp;		/* Current interpreter. */
+    int objc;			/* Number of arguments. */
+    Tcl_Obj *CONST objv[];	/* Argument objects. */
+{
+    Tcl_Namespace *namespacePtr;
+
+    if (objc != 3) {
+        Tcl_WrongNumArgs(interp, 2, objv, "name");
+        return TCL_ERROR;
+    }
+
+    /*
+     * Check whether the given namespace exists
+     */
+
+    if (GetNamespaceFromObj(interp, objv[2], &namespacePtr) != TCL_OK) {
+        return TCL_ERROR;
+    }
+
+    Tcl_SetBooleanObj(Tcl_GetObjResult(interp), (namespacePtr != NULL));
+    return TCL_OK;
 }
 
 /*
