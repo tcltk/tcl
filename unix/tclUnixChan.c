@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.21.6.4 2001/09/27 15:48:17 dkf Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.21.6.5 2001/09/28 14:29:23 dkf Exp $
  */
 
 #include	"tclInt.h"	/* Internal definitions for Tcl. */
@@ -1326,7 +1326,7 @@ TclpOpenFileChannel(interp, pathPtr, modeString, permissions)
     if (native == NULL) {
 	return NULL;
     }
-    fd = open(native, mode, permissions);
+    fd = Tcl_PlatformOpen(native, mode, permissions);
 
     if (fd < 0) {
         if (interp != (Tcl_Interp *) NULL) {

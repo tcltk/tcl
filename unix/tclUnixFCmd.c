@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFCmd.c,v 1.12.6.6 2001/09/27 15:48:17 dkf Exp $
+ * RCS: @(#) $Id: tclUnixFCmd.c,v 1.12.6.7 2001/09/28 14:29:23 dkf Exp $
  *
  * Portions of this code were derived from NetBSD source code which has
  * the following copyright notice:
@@ -230,7 +230,7 @@ DoRenameFile(src, dst)
     if (errno == EINVAL) {
 	char srcPath[MAXPATHLEN], dstPath[MAXPATHLEN];
 	DIR *dirPtr;
-	struct dirent *dirEntPtr;
+	Tcl_DirEntry *dirEntPtr;
 
 	if ((realpath((char *) src, srcPath) != NULL)	/* INTL: Native. */
 		&& (realpath((char *) dst, dstPath) != NULL) /* INTL: Native. */
@@ -238,7 +238,7 @@ DoRenameFile(src, dst)
 	    dirPtr = opendir(dst);			/* INTL: Native. */
 	    if (dirPtr != NULL) {
 		while (1) {
-		    dirEntPtr = readdir(dirPtr);	/* INTL: Native. */
+		    dirEntPtr = Tcl_PlatformReaddir(dirPtr); /* INTL: Native. */
 		    if (dirEntPtr == NULL) {
 			break;
 		    }
@@ -415,11 +415,11 @@ CopyFile(src, dst, statBufPtr)
     char *buffer;      /* Data buffer for copy */
     size_t nread;
 
-    if ((srcFd = open(src, O_RDONLY, 0)) < 0) {		/* INTL: Native. */
+    if ((srcFd = Tcl_PlatformOpen(src,O_RDONLY,0)) < 0) {  /* INTL: Native. */
 	return TCL_ERROR;
     }
 
-    dstFd = open(dst, O_CREAT | O_TRUNC | O_WRONLY,	/* INTL: Native. */
+    dstFd = Tcl_PlatformOpen(dst, O_CREAT|O_TRUNC|O_WRONLY,/* INTL: Native. */
 	    statBufPtr->st_mode);
     if (dstFd < 0) {
 	close(srcFd); 
@@ -772,7 +772,7 @@ TraverseUnixTree(traverseProc, sourcePtr, targetPtr, errorPtr)
     CONST char *source, *errfile;
     int result, sourceLen;
     int targetLen;
-    struct dirent *dirEntPtr;
+    Tcl_DirEntry *dirEntPtr;
     DIR *dirPtr;
 
     errfile = NULL;
@@ -816,7 +816,7 @@ TraverseUnixTree(traverseProc, sourcePtr, targetPtr, errorPtr)
 	targetLen = Tcl_DStringLength(targetPtr);
     }
 				  
-    while ((dirEntPtr = readdir(dirPtr)) != NULL) {	/* INTL: Native. */
+    while ((dirEntPtr = Tcl_PlatformReaddir(dirPtr)) != NULL) {	/* INTL: Native. */
 	if ((strcmp(dirEntPtr->d_name, ".") == 0)
 	        || (strcmp(dirEntPtr->d_name, "..") == 0)) {
 	    continue;

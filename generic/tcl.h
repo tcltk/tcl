@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.102.2.5 2001/09/27 15:48:17 dkf Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.102.2.6 2001/09/28 14:29:22 dkf Exp $
  */
 
 #ifndef _TCL
@@ -174,7 +174,8 @@ extern "C" {
 #ifndef RESOURCE_INCLUDED
 
 /*
- * Must define _before_ any #include of system headers...
+ * Must #define _before_ any #include of system headers or all hell
+ * breaks loose...
  */
 #define _LARGEFILE64_SOURCE 1
 /*
@@ -344,11 +345,56 @@ typedef long LONG;
  * Type of 64-bit values on 32-bit systems.  FIXME - DKF
  */
 typedef long long	Tcl_WideInt;
+/*
+ * Strip the high bits, bearing in mind the sign!
+ */
+#define Tcl_WideAsLong(val)	((long)(val))
+/*
+ * Sign-extend the top-bit to the full value!
+ */
+#define Tcl_LongAsWide(val)	((Tcl_WideInt)(val))
+
+/*
+ * Note on converting between Tcl_WideInt and strings.  This
+ * implementation (in tclObj.c) depends on the functions strtoull()
+ * and lltostr(); although strtoull is fairly straight-forward,
+ * lltostr is a most unusual function on Solaris8 (taking its
+ * operating buffer backwards) so any changes you make will need to be
+ * done cautiously...
+ */
+
+/*
+ * If _LARGEFILE64_SOURCE is not defined, then on Solaris at least
+ * there is no chance that any of the following definitions will work
+ * in wide mode, so we'll switch to narrow off_t et al. instead.
+ */
+#ifndef _LARGEFILE64_SOURCE
+#define NARROW_OFFSETS
+#endif
+
+#ifdef NARROW_OFFSETS
+
+typedef struct stat	Tcl_StatBuf;
+typedef off_t		Tcl_SeekOffset;
+typedef struct dirent	Tcl_DirEntry;
+#define Tcl_PlatformStat  stat
+#define Tcl_PlatformLStat lstat
+#define Tcl_PlatformSeek  lseek
+#define Tcl_PlatformOpen  open
+#define Tcl_PlatformReaddir readdir
+
+#else /* NARROW_OFFSETS */
+
 typedef struct stat64	Tcl_StatBuf;
 typedef off64_t		Tcl_SeekOffset;
-#define Tcl_PlatformStat  stat64
-#define Tcl_PlatformLStat lstat64
-#define Tcl_PlatformSeek  lseek64
+typedef struct dirent64	Tcl_DirEntry;
+#define Tcl_PlatformStat    stat64
+#define Tcl_PlatformLStat   lstat64
+#define Tcl_PlatformSeek    lseek64
+#define Tcl_PlatformOpen    open64
+#define Tcl_PlatformReaddir readdir64
+
+#endif /* NARROW_OFFSETS */
 
 /*
  * This flag controls whether binary compatability is maintained with

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.16.2.5 2001/09/27 15:08:23 dkf Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.16.2.6 2001/09/28 14:29:23 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1420,6 +1420,11 @@ StoreStatData(interp, varName, statPtr)
     Tcl_IncrRefCount(var);
     Tcl_IncrRefCount(field);
     STORE_ARY("dev",   Tcl_NewLongObj((long)statPtr->st_dev));
+    /*
+     * Watch out porters; the inode is meant to be an *unsigned* value,
+     * so the cast might fail when there isn't a real arithmentic 'long
+     * long' type...
+     */
     STORE_ARY("ino",   Tcl_NewWideIntObj((Tcl_WideInt)statPtr->st_ino));
     STORE_ARY("nlink", Tcl_NewLongObj((long)statPtr->st_nlink));
     STORE_ARY("uid",   Tcl_NewLongObj((long)statPtr->st_uid));

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOCmd.c,v 1.10.2.3 2001/09/27 14:11:43 dkf Exp $
+ * RCS: @(#) $Id: tclIOCmd.c,v 1.10.2.4 2001/09/28 14:29:23 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -455,7 +455,7 @@ Tcl_SeekObjCmd(clientData, interp, objc, objv)
     }
 
     result = Tcl_Seek(chan, offset, mode);
-    if (result == (Tcl_WideInt)-1) {
+    if (result == Tcl_LongAsWide(-1)) {
         Tcl_AppendResult(interp, "error during seek on \"", 
 		chanName, "\": ", Tcl_PosixError(interp), (char *) NULL);
         return TCL_ERROR;

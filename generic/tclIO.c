@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.35.6.3 2001/09/27 14:23:03 dkf Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.35.6.4 2001/09/28 14:29:23 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -5464,7 +5464,7 @@ Tcl_Tell(chan)
      */
 
     curPos = (chanPtr->typePtr->seekProc) (chanPtr->instanceData,
-	    (Tcl_WideInt)0, SEEK_CUR, &result);
+	    Tcl_LongAsWide(0), SEEK_CUR, &result);
     if (curPos == -1) {
         Tcl_SetErrno(result);
         return -1;

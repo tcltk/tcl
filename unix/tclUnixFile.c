@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFile.c,v 1.12.6.5 2001/09/27 15:48:17 dkf Exp $
+ * RCS: @(#) $Id: tclUnixFile.c,v 1.12.6.6 2001/09/28 14:29:23 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -295,9 +295,9 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
     while (1) {
         Tcl_DString utfDs;
 	char *utf;
-	struct dirent *entryPtr;
+	Tcl_DirEntry *entryPtr;
 	
-	entryPtr = readdir(d);				/* INTL: Native. */
+	entryPtr = Tcl_PlatformReaddir(d);		/* INTL: Native. */
 	if (entryPtr == NULL) {
 	    break;
 	}
