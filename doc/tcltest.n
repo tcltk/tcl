@@ -8,7 +8,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: tcltest.n,v 1.23 2002/07/01 18:24:39 jenglish Exp $
+'\" RCS: @(#) $Id: tcltest.n,v 1.24 2002/07/01 22:33:20 dgp Exp $
 '\" 
 .so man.macros
 .TH "tcltest" n 2.1 tcltest "Tcl Bundled Packages"
@@ -196,45 +196,27 @@ by a test into the result of that test for matching against
 an expected result.  The contents of the file are read using
 the binary encoding, so the exact byte for byte contents are returned.
 .TP
+\fBcleanupTests\fR
+Intended to clean up and summarize after several tests have been
+run.  Typically called once per test file, at the end of the file
+after all tests have been completed.  For best effectiveness, be
+sure that the [\fBcleanupTests\fR] is evaluated even if an error
+occurs earlier in the test file evaluation.  
+.sp
+Prints statistics about the tests run and removes files that were
+created by [\fBmakeDirectory\fR] and [\fBmakeFile\fR] since the
+last [\fBcleanupTests\fR].  Names of files and directories created
+outside of [\fBmakeFile\fR] and [\fBmakeDirectory\fR] and
+never deleted are printed to [\fBoutputChannel\fR].  This command
+also restores the original shell environment, as described by the ::env
+array. Returns an empty string.
+.TP
 \fBrunAllTests\fR
 This is a master command meant to run an entire suite of tests,
 spanning multiple files and/or directories, as governed by
-the configurable options of \fBtcltest\fR.
-
-
-This command should be used in your 'all.tcl' file.  It is used to
-loop over test files and directories, determining which test files to
-run and then running them.  Note that this test calls
-[\fBcleanupTests\fR]; if using this proc in your 'all.tcl' file, you
-should not call [\fBcleanupTests\fR] explicitly in that file. See the
-sample 'all.tcl' file in the \fI"Examples"\fR section.
-
-
-.TP
-\fBcleanupTests\fR \fI?multipleFiles?\fR
-Intended to clean up and summarize after several tests have been
-run.  In a simple test file, [\fBcleanupTests\fR] should be
-called wihout arguments at the end of the file after
-all [\fBtest\fR]s.  When called without arguments, \fImultipleFiles\fR
-has a default value of false.
-
-
-
-This command should be called at the end of a test file.  It prints
-statistics about the tests run and removes files that were created by
-[\fBmakeDirectory\fR] and [\fBmakeFile\fR].  Names
-of files and directories created outside of 
-[\fBmakeFile\fR] and [\fBmakeDirectory\fR] and
-never deleted are printed to [\fBoutputChannel\fR].  This command
-also restores the original shell environment, as described by the ::env
-array. \fIcalledFromAllFile\fR should be specified as a true value if
-[\fBcleanupTests\fR] is called explicitly from an "all.tcl"
-file.  Tcl files are generally used to run multiple tests.  The
-[\fBcleanupTests\fR] command returns an empty string.  For
-more details on how to run multiple tests, please see the section
-\fI"Running test files"\fR.  
-
-
+the configurable options of \fBtcltest\fR.  See RUNNING ALL TESTS
+below for a complete description of the many variations possible
+with [\fBrunAllTests\fR].
 .SH "CONFIGURATION COMMANDS"
 .TP
 \fBconfigure\fR
@@ -382,29 +364,17 @@ denormalized or improperly formed strings to pass to C procedures that
 are supposed to accept strings with embedded NULL types and confirm
 that a string result has a certain pattern of bytes.  This is
 exactly equivalent to the Tcl command [\fBencoding convertfrom identity\fR].
-
-
-
-
-
-
-
 .SH TESTS
-The \fBtest\fR procedure runs a test script and prints an error
-message if the script's result does not match the expected result.
-Two syntaxes are provided for specifying the attributes of the tests.
-The first uses a separate argument for each of the attributes and
-values.  The second form places all of the attributes and values
-together into a single argument; the argument must have proper list
-structure, with the elements of the list being the attributes and
-values.  The second form makes it easy to construct multi-line
-scripts, since the braces around the whole list make it unnecessary to
-include a backslash at the end of each line.  In the second form, no
-command or variable substitutions are performed on the attribute
-names.  This makes the behavior of the second form different from the
-first form in some cases.
 .PP
-The first form for the \fBtest\fR command:
+The [\fBtest\fR] command is the heart of the \fBtcltest\fR package.
+Its essential function is to evaluate a Tcl script and compare
+the result with an expected result.  The options of [\fBtest\fR]
+define the test script, the environment in which to evaluate it,
+the expected result, and how the compare the actual result to
+the expected result.  Some configuration options of \fBtcltest\fR
+also influence how [\fBtest\fR] operates.
+.PP
+The valid options for [\fBtest\fR] are summarized:
 .CS
 test \fIname\fR \fIdescription\fR
     ?-constraints \fIkeywordList|expression\fR
@@ -417,36 +387,35 @@ test \fIname\fR \fIdescription\fR
     ?-returnCodes \fIcodeList\fR?
     ?-match \fImode\fR?
 .CE
-.PP
-The second form for the \fBtest\fR command (adds brace grouping):
-.CS
-test \fIname\fR \fIdescription\fR {
-    ?-constraints \fIkeywordList|expression\fR
-    ?-setup \fIsetupScript\fR?
-    ?-body \fItestScript\fR?
-    ?-cleanup \fIcleanupScript\fR?
-    ?-result \fIexpectedAnswer\fR?
-    ?-output\fIexpectedOutput\fR?
-    ?-errorOutput \fIexpectedError\fR?
-    ?-returnCodes \fIcodeList\fR?
-    ?-match \fImode\fR?
-}
-.CE
-The \fIname\fR argument should follow the pattern:
+The \fIname\fR may be any string.  It is conventional to choose
+a \fIname\fR according to the pattern:
 .CS
 <target>-<majorNum>.<minorNum>
 .CE
 For white-box (regression) tests, the target should be the name of the
 C function or Tcl procedure being tested.  For black-box tests, the
-target should be the name of the feature being tested.  Related tests
-should share a major number.
+target should be the name of the feature being tested.  Some convetions
+call for the names of black-box tests to have the suffix \fB_bb\fR.
+Related tests should share a major number.  As a test suite evolves,
+it is best to have the same test name continue to correspond to the
+same test, so that it remains meaningful to say things like ``Test
+foo-1.3 passed in all releases up to 3.4, but began failing in
+release 3.5.''
+.PP
+During evaluation of [\fBtest\fR], the \fIname\fR will be compared
+to the lists of string matching patterns returned by
+[\fBconfigure -match\fR], and [\fBconfigure -skip\fR].  The test
+will be run only if \fIname\fR matches one of the patterns from
+[\fBconfigure -match\fR] and matches none of the patterns
+from [\fRconfigure -skip\fB].
 .PP
 The \fIdescription\fR should be a short textual description of the
-test.  It is generally used to help humans 
-understand the purpose of the test.  The name of a Tcl or C function
-being tested should be included in the description for regression
-tests.  If the test case exists to reproduce a bug, include the bug ID
-in the description. 
+test.  The \fIdescription\fR is included in output produced by the
+test, typically test failure messages.  Good \fIdescription\fR values
+should briefly explain the purpose of the test to users of a test suite.
+The name of a Tcl or C function being tested should be included in the
+description for regression tests.  If the test case exists to reproduce
+a bug, include the bug ID in the description. 
 .PP
 Valid attributes and associated values are:
 .TP
@@ -454,80 +423,115 @@ Valid attributes and associated values are:
 The optional \fIconstraints\fR attribute can be list of one or more
 keywords or an expression.  If the \fIconstraints\fR value consists of
 keywords, each of these keywords being the name of a constraint
-defined by a call to \fItcltest::testConstraint\fR.  If any of these
-elements is false or does 
-not exist, the test is skipped.  If the \fIconstraints\fR argument
-consists of an expression, that expression is evaluated. If the
-expression evaluates to true, then the test is run.  Appropriate
-constraints should be added to any tests that should
-not always be run.  See the "Test Constraints" section for a list of built-in 
-constraints and information on how to add your own constraints.
+defined by a call to [\fItestConstraint\fR].  If any of these
+elements is false or does not exist, the test is skipped.  If the
+\fIconstraints\fR argument consists of an expression, that expression
+is evaluated. If the expression evaluates to true, then the test is run.
+Note that the expression form of \fIconstraints\fR may interfere with the
+operation of [\fBconfigure -constraints\fR] and
+[\fBconfigure -limitconstraints\fR], and is not recommended.
+Appropriate constraints should be added to any tests that should
+not always be run.  The default value is an empty list.  See TEST
+CONSTRAINTS below for a list of built-in constraints and information
+on how to add your own constraints.
 .TP
 \fB-setup \fIscript\fR
-The optional \fIsetup\fR attribute indicates a script that will be run
-before the script indicated by the \fIscript\fR attribute.  If setup
-fails, the test will fail.
+The optional \fIsetup\fR attribute indicates a \fIscript\fR that will be run
+before the script indicated by the \fIbody\fR attribute.  If evaluation
+of \fIscript\fR raises an error, the test will fail.  The default value
+is an empty script.
 .TP
 \fB-body \fIscript\fR
-The \fIbody\fR attribute indicates the script to run to carry out the 
+The \fIbody\fR attribute indicates the \fIscript\fR to run to carry out the 
 test.  It must return a result that can be checked for correctness.
-If left unspecified, the script value will be {}.
+If evaluation of \fIscript\fR raises an error, the test will fail.
+The default value is an empty script.
 .TP
 \fB-cleanup \fIscript\fR
-The optional \fIcleanup\fR attribute indicates a script that will be
-run after the script indicated by the \fIscript\fR attribute.  If
-cleanup fails, the test will fail.  
+The optional \fIcleanup\fR attribute indicates a \fIscript\fR that will be
+run after the script indicated by the \fIbody\fR attribute.
+If evaluation of \fIscript\fR raises an error, the test will fail.
+The default value is an empty script.
 .TP
 \fB-match \fImode\fR
 The \fImatch\fR attribute determines how expected answers supplied in
 \fIresult\fR, \fIoutput\fR, and \fIerrorOutput\fR are compared.  Valid
-options for the value supplied are ``regexp'', ``glob'', ``exact'',
-and any value registered by a prior call to \fItcltest::customMatch\fR.
-If \fImatch\fR is not specified, the comparisons will be
-done in ``exact'' mode by default.
+values for \fImode\fR are \fBregexp\fR, \fBglob\fR, \fRexact\fR, and
+any value registered by a prior call to [\fIcustomMatch\fR].  The default
+value is \fBexact\fR.
 .TP
 \fB-result \fIexpectedValue\fR
-The \fIresult\fR attribute supplies the comparison value with which
-the return value from script will be compared. 
-If left unspecified, the default
-\fIexpectedValue\fR will be the empty list.
+The \fIresult\fR attribute supplies the \fIexpectedValue\fR against which
+the return value from script will be compared. The default value is
+an empty string.
 .TP
 \fB-output \fIexpectedValue\fR
-The \fIoutput\fR attribute supplies the comparison value with which
-any output sent to stdout or tcltest::outputChannel during the script
-run will be compared.  Note that only output printed using
-puts is used for comparison.  If \fIoutput\fR is not specified, output
-sent to stdout and tcltest::outputChannel is not processed for comparison.
+The \fIoutput\fR attribute supplies the \fIexpectedValue\fR against which
+any output sent to \fBstdout\fR or [\fBoutputChannel\fR] during evaluation
+of the script(s) will be compared.  Note that only output printed using
+[\fBputs\fR] is used for comparison.  If \fIoutput\fR is not specified,
+output sent to \fBstdout\fR and [\fBoutputChannel\fR] is not processed for
+comparison.
 .TP
 \fB-errorOutput \fIexpectedValue\fR
-The \fIerrorOutput\fR attribute supplies the comparison value with which
-any output sent to stderr or tcltest::errorChannel during the script
-run will be compared. Note that only output printed using
-puts is used for comparison.  If \fIerrorOutput\fR is not specified, output
-sent to stderr and tcltest::errorChannel is not processed for comparison.
+The \fIerrorOutput\fR attribute supplies the \fIexpectedValue\fR against
+which any output sent to \fBstderr\fR or [\fBerrorChannel\fR] during 
+evaluation of the script(s) will be compared. Note that only output
+printed using [\fBputs\fR] is used for comparison.  If \fIerrorOutput\fR
+is not specified, output sent to \fBstderr\fR and [\fBerrorChannel\fR] is
+not processed for comparison.
 .TP
 \fB-returnCodes \fIexpectedCodeList\fR
-The optional \fIreturnCodes\fR attribute indicates which return codes
-from the script supplied with the \fIscript\fR attribute are correct.
-Default values for \fIexpectedCodeList\fR are 0 (normal return) and 2
-(return exception).  Symbolic values \fInormal\fR (0), \fIerror\fR
-(1), \fIreturn\fR (2), \fIbreak\fR (3), and \fIcontinue\fR (4) can be
-used in the \fIexpectedCodeList\fR list.
+The optional \fIreturnCodes\fR attribute supplies \fIexpectedCodeList\fR,
+a list of return codes that may be accepted from evaluation of the
+\fBbody\fR script.  If evaluation of the \fBbody\fR script returns
+a code not in the \fIexpectedCodeList\fR, the test fails.  All
+return codes known to [\fBreturn\fR], in both numeric and symbolic
+form, including extended return codes, are acceptable elements in
+the \fIexpectedCodeList\fR.  Default value is \fB{ok return}\fR.
 .PP
 To pass, a test must successfully execute its setup, script, and
 cleanup code.  The return code of the test and its return values must
 match expected values, and if specified, output and error data from
-the test must match expected output and error values. If all of these
-conditions are not met, then the test fails.
+the test must match expected output and error values.  If any of these
+conditions are not met, then the test fails.  Note that all scripts
+are evaluated in the context of the caller of [\fBtest\fR].
+.PP
+As long as [\fBtest\fR] is called with valid syntax, and legal
+values for all attributes, it will not raise an error.  Test
+failures are instead reported as output written to [\fBoutputChannel\fR].
+In default operation, a successful test produces no output.  The output
+messages produced by [\fBtest\fR] are controlled by the
+[\fBconfigure -verbose\fR] option as described in CONFIGURABLE OPTIONS
+below.  Any output produced by the test scripts themselves should be
+produced using [\fBputs\fR] to [\fBoutputChannel\fR] or
+[\fBerrorChannel\fR], so that users of the test suite may
+easily capture output with the [\fBconfigure -outfile\fR] and
+[\fBconfigure -errfile\fR] options, and so that the \fB-output\fR
+and \fB-errorOutput\fR attributes work properly.
 .SH "TEST CONSTRAINTS"
 Constraints are used to determine whether or not a test should be skipped.
-If a test is constrained by ``unixOnly'', then it will only be run if
-the value of the constraint is true.  Several
-constraints are defined in the \fBtcltest\fR package.  To add 
-constraints, you can call \fBtcltest::testConstraint\fR
-with the appropriate arguments in your own test file.
+Each constraint has a name, which may be any string, and a boolean
+value.  Each [\fBtest\fR] has a \fB-constraints\fR value which is a
+list of constraint names.  The test will run only if all constraints
+in the list are true-valued.  Thus, the \fB-constraints\fR option
+of [\fBtest\fR] is a convenient, symbolic way to define any conditions
+required for the test to be possible or meaningful.  For example,
+a [\fBtest\fR] with \fB-constraints unix\fR will only be run
+if the constraint \fBunix\fR is true, which indicates the test suite
+is being run on a Unix platform.
 .PP
-The following is a list of constraints defined in the \fBtcltest\fR package:
+Each [\fBtest\fR] should include whatever \fB-constraints\fR are
+required to constrain it to run only where appropriate.  Several
+constraints are pre-defined in the \fBtcltest\fR package, listed
+below.  The registration of user-defined constraints is performed
+by the [\fBtestConstraint\fR] command.  User-defined constraints
+may appear within a test file, or within the script specified
+by the [\fBconfigure -load\fR] or [\fBconfigure -loadfile\fR]
+options.
+.PP
+The following is a list of constraints pre-defined by the
+\fBtcltest\fR package itself:
 .TP
 \fIsingleTestInterp\fR
 test can only be run if all test files are sourced into a single interpreter
@@ -582,24 +586,25 @@ disable a test.
 \fIemptyTest\fR
 test is empty, and so not worth running, but it remains as a
 place-holder for a test to be written in the future.  This constraint
-always causes tests to be skipped.
+has value false to cause tests to be skipped unless the user specifies
+otherwise.
 .TP
 \fIknownBug\fR
 test is known to fail and the bug is not yet fixed.  This constraint
-always causes tests to be skipped unless the user specifies otherwise.
-See the "Introduction" section for more details.
+has value false to cause tests to be skipped unless the user specifies
+otherwise.
 .TP
 \fInonPortable\fR
-test can only be run in the master Tcl/Tk development environment.
+test can only be run in some known development environment.
 Some tests are inherently non-portable because they depend on things
 like word length, file system configuration, window manager, etc.
-These tests are only run in the main Tcl development directory where
-the configuration is well known.  This constraint always causes tests
-to be skipped unless the user specifies otherwise.  
+This constraint has value false to cause tests to be skipped unless
+the user specifies otherwise.  
 .TP
 \fIuserInteraction\fR
-test requires interaction from the user.  This constraint always
-causes tests to be skipped unless the user specifies otherwise.  
+test requires interaction from the user.  This constraint has
+value false to causes tests to be skipped unless the user specifies
+otherwise.  
 .TP
 \fIinteractive\fR
 test can only be run in if the interpreter is in interactive mode 
@@ -633,6 +638,11 @@ to the "e" format of floating-point numbers.
 .TP
 \fIstdio\fR
 test can only be run if the current app can be spawned via a pipe
+.PP
+
+Add description of -constraints and -limitconstraints here.
+
+.SH "RUNNING ALL TESTS"
 
 .SH "CONFIGURABLE OPTIONS"
 
@@ -799,7 +809,6 @@ that output default to stdout.
 .SH "CREATING TEST SUITES WITH TCLTEST"
 
 
-
 .SH "RUNNING TEST FILES"
 Use the following command to run a test file that uses package
 tcltest:
@@ -950,6 +959,7 @@ each .test file, use separate interpreters for each file, or handle
 complex directory structures.  
 For an example of an all.tcl file,
 please see the "Examples" section of this document.
+
 .SH "TEST OUTPUT"
 After all specified test files are run, the number of tests
 passed, skipped, and failed is printed to
@@ -978,6 +988,7 @@ argument \fB-verbose\fR, for example:
 .CS
 tclsh socket.test -verbose 'body pass skip'
 .CE
+
 .SH "CONTENTS OF A TEST FILE"
 Test files should begin by loading the \fBtcltest\fR package:
 .CS
@@ -1000,6 +1011,7 @@ When naming test files, file names should end with a .test extension.
 The names of test files that contain regression (or glass-box) tests
 should correspond to the Tcl or C code file that they are testing.
 For example, the test file for the C file "tclCmdAH.c" is "cmdAH.test".  
+
 .SH "SELECTING TESTS FOR EXECUTION"
 .PP
 Normally, all the tests in a file are run whenever the file is
@@ -1082,6 +1094,7 @@ sourced), or by using the command line arguments \fB-relateddir\fR and
 .CS
 tclsh info.test -relateddir 'subdir*' -asidefromdir 'subdir2'
 .CE
+
 .SH "HOW TO CUSTOMIZE THE TEST HARNESS"
 To create your own custom test harness, create a .tcl file that contains your
 namespace.  Within this file, require package \fBtcltest\fR.  Commands
@@ -1097,6 +1110,7 @@ proc tcltest::cleanupTestsHook {} {
     # Add your cleanup code here
 }
 .CE
+
 .SH EXAMPLES
 .IP [1] 
 A simple test file (foo.test)
@@ -1155,6 +1169,9 @@ test testOnUnixWithoutThreads-1.1 {
     }
 }
 .CE
+
+.SH COMPATIBILITY
+
 
 .SH "KNOWN ISSUES"
 There are two known issues related to nested evaluations of [\fBtest\fR].  

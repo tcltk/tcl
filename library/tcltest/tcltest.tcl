@@ -16,7 +16,7 @@
 # Contributions from Don Porter, NIST, 2002.  (not subject to US copyright)
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.tcl,v 1.63 2002/07/01 14:35:10 dgp Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.64 2002/07/01 22:33:20 dgp Exp $
 
 package require Tcl 8.3		;# uses [glob -directory]
 namespace eval tcltest {
@@ -561,7 +561,7 @@ namespace eval tcltest {
     # matchFiles, which defaults to all .test files in the
     # testsDirectory and matchDirectories, which defaults to all
     # directories.
-    Option -match {} {
+    Option -match * {
 	Run all tests within the specified files that match one of the
 	list of glob patterns given.
     } AcceptList match
@@ -2118,21 +2118,19 @@ proc tcltest::RunTest {
     }
 
     # skip the test if it's name doesn't match any element of match
-    if {[llength [match]] > 0} {
-	set ok 0
-	foreach pattern [match] {
-	    if {[string match $pattern $name]} {
-		set ok 1
-		break
-	    }
-        }
-	if {!$ok} {
-	    if {$testLevel == 1} {
-		incr numTests(Skipped)
-		DebugDo 1 {AddToSkippedBecause userSpecifiedNonMatch}
-	    }
-	    return
+    set ok 0
+    foreach pattern [match] {
+	if {[string match $pattern $name]} {
+	    set ok 1
+	    break
 	}
+    }
+    if {!$ok} {
+	if {$testLevel == 1} {
+	    incr numTests(Skipped)
+	    DebugDo 1 {AddToSkippedBecause userSpecifiedNonMatch}
+	}
+	return
     }
 
     DebugPuts 3 "Running $name ($description) {$script}\
@@ -2657,9 +2655,7 @@ proc tcltest::runAllTests { {shell ""} } {
     if {[llength [skip]] > 0} {
 	puts [outputChannel] "Skipping tests that match:  [skip]"
     }
-    if {[llength [match]] > 0} {
-	puts [outputChannel] "Only running tests that match:  [match]"
-    }
+    puts [outputChannel] "Running tests that match:  [match]"
 
     if {[llength [skipFiles]] > 0} {
 	puts [outputChannel] \
