@@ -1,3 +1,10 @@
+1998-12-07    <stanton@GASPODE>
+
+	* tests/msgcat.test: Added message catalog test suite.
+
+	* library/msgcat1.0/msgcat.tcl: minor bug fixes, integrated latest
+	changes from Mark Harrison.
+
 1998-12-04    <stanton@GASPODE>
 
 	* library/msgcat1.0/msgcat.tcl: Changed code to conform to Tcl
