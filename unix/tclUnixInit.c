@@ -7,7 +7,7 @@
  * Copyright (c) 1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclUnixInit.c,v 1.18 1999/10/13 00:32:49 hobbs Exp $
+ * RCS: @(#) $Id: tclUnixInit.c,v 1.18.2.1 2000/08/07 21:31:12 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -369,7 +369,6 @@ TclpSetInitialEncodings()
     int i;
     Tcl_Obj *pathPtr;
     char *langEnv;
-    Tcl_DString ds;
 
     /*
      * Determine the current encoding from the LC_* or LANG environment
@@ -432,19 +431,17 @@ TclpSetInitialEncodings()
 
     Tcl_SetSystemEncoding(NULL, encoding);
 
+    resetPath:
     /*
      * Initialize the C library's locale subsystem.  This is required
-     * for input methods to work properly on X11. Note that we need to
-     * retore the initial "C" locale so that Tcl can parse numbers
-     * properly.  The side effect of setting the default locale should be to
-     * load any locale specific modules that are needed by X.
+     * for input methods to work properly on X11.  We only do this for
+     * LC_CTYPE because that's the necessary one, and we don't want to
+     * affect LC_TIME here.  The side effect of setting the default locale
+     * should be to load any locale specific modules that are needed by X.
+     * [BUG: 5422 3345 4236 2522 2521].
      */
- 
-    Tcl_DStringInit(&ds);
-    Tcl_DStringAppend(&ds, setlocale(LC_ALL, NULL), -1);
-    setlocale(LC_ALL, "");
-    setlocale(LC_ALL, Tcl_DStringValue(&ds));
-    Tcl_DStringFree(&ds);
+
+    setlocale(LC_CTYPE, "");
 
     /*
      * In case the initial locale is not "C", ensure that the numeric
@@ -454,7 +451,6 @@ TclpSetInitialEncodings()
      */
 
     setlocale(LC_NUMERIC, "C");
- 
 
     /*
      * Until the system encoding was actually set, the library path was
@@ -478,7 +474,6 @@ TclpSetInitialEncodings()
      * encoding.
      */
 
-    resetPath:
     pathPtr = TclGetLibraryPath();
     if (pathPtr != NULL) {
 	int objc;
