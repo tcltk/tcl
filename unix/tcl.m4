@@ -793,8 +793,11 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
     TCL_BUILD_EXP_FILE=""
     TCL_EXP_FILE=""
 dnl FIXME: Replace AC_CHECK_PROG with AC_CHECK_TOOL once cross compiling is fixed.
-dnl AC_CHECK_TOOL(AR, ar, :)
+dnl AC_CHECK_TOOL(AR, ar)
     AC_CHECK_PROG(AR, ar, ar)
+    if test "${AR}" = "" ; then
+	AC_MSG_ERROR([Required archive tool 'ar' not found on PATH.])
+    fi
     STLIB_LD='${AR} cr'
     LD_LIBRARY_PATH_VAR="LD_LIBRARY_PATH"
     PLAT_OBJS=""
