@@ -1,3 +1,11 @@
+1999-03-26    <redman@scriptics.com>
+
+	* win/tclWinSerial.c:
+	* win/tclWinConsole.c:
+	* win/tclWinPipe.c: Don't close the Win32 handle for a channel if
+	it's a stdio handle (GetStdHandle()) during shutdown of a thread
+	to prevent it from destroying the stdio of other threads.
+
 1999-03-26    <suresh@scriptics.com>
 
 	* unix/configure.in
