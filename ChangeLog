@@ -1,5 +1,7 @@
 2002-04-26  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
+	* tests/obj.test (obj-11.[56]): Test conversion to boolean more
+	thoroughly.
 	* generic/tclObj.c (SetBooleanFromAny): Was not calling an integer
 	parsing function on native 64-bit platforms!  [Bug 548686]
 
