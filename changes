@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.79.2.7 2004/03/01 18:22:59 dgp Exp $
+RCS: @(#) $Id: changes,v 1.79.2.8 2004/07/23 00:24:44 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -5963,3 +5963,77 @@ various odd regexp "can't happen" bugs.
 2004-03-01 (platform support)[218561] Allow 64-bit configure on IRIX64-6.5*
 
 --- Released 8.4.6, March 1, 2004 --- See ChangeLog for details ---
+
+2004-03-08 (bug fix)[910525] [glob -path] in root directory (darley)
+
+2004-03-15 (bug fix)[916795] syntax error -> compiler segfault (sofer,porter)
+
+2004-03-21 (platform support) Unicode support on Win CE (hobbs)
+
+2004-03-29 (bug fix)[920667] install into any Unicode path on Win (hobbs)
+
+2004-03-31 (bug fix)[811457] support translation to "" (porter)
+2004-03-31 (bug fix)[811461] ignore locales with no "langauge" part (porter)
+=> msgcat 1.3.2
+
+2004-04-07 (platform support) more values in win/tclConfig.sh (hobbs)
+
+2004-04-23 (bug fix)[930851] reset channel EOF when eofchar changes (kupries)
+
+2004-05-03 (bug fix)[947070] stack overflow prevention on Win (kenny)
+
+2004-05-03 (bug fix)[868853] leak in [fconfigure $serial -xchar] (cassoff)
+
+2004-04/05 (bug fix)[928353,929892,928808,947440,948177] test fixes: OSX (abner)
+
+2004-05-04 (bug fix) crash: [cd] w/ volumerelative $HOME (hobbs)
+
+2004-05-05 (bug fix)[794839] socket connect error -> r/w fileevents (gravereaux)
+
+2004-05-14 (bug fix)[940278] [clock] notices $::env(TZ) changes (kenny)
+
+2004-05-18 (bug fix)[500285,500389,852944] [clock %G %V] ISO8601 week #s (kenny)
+
+2004-05-22 (bug fix)[735335,736729] variable name resolution error (sofer)
+
+2004-05-24 (bug fix) support for non-WIDE_INT aware math functions (hobbs)
+
+2004-05-25 (new feature) [http::config -urlencoding] (hobbs)
+=> http 2.5.0
+
+2004-05-26 (bug fix)[960926] file count doubled when -singleproc 1 (porter)
+=> tcltest 2.2.6
+
+2004-05-27 (bug fix)[949905] corrected utf-8 encoding of \u0000 on I/O (max)
+
+2004-06-05 (bug fix)[976722] hi-res clock fixes: Win (godfrey,suchenwirth,kenny)
+
+2004-06-10 (bug fix)[932314] bad return values from Tcl_FSChdir() (vasiljevic)
+
+2004-06-14 (bug fix) dde hangs w/non-responsive apps (thoyts)
+=> dde 1.2.3
+
+2004-06-21 (platform support) exceptions w/ gcc -O3 on Win (dejong)
+
+2004-06-29 (bug fix)[981733] SafeBase global pollution (fellows)
+
+2004-07-02 (new feature)[TIP 202] pipe redirection 2>@1 (hobbs)
+
+2004-07-03 (bug fix)[908375] round() wide integer support (lavana, sofer)
+
+2004-07-15 (bug fix)[770053] crash in thread finalize of notifier (vasiljevic)
+
+2004-07-15 (bug fix)[990453] plug mutex leaks on reinit (mistachkin, vasiljevic)
+
+2004-07-16 (bug fix)[990500] clean exit of notifier thread (mistachkin, kupries)
+
+2004-07-19 (bug fix)[987967] improved self-init of mutexes on Win (vasiljevic)
+
+2004-07-19 (bug fix)[874058] improved build configuration on 64-bit systems.
+Corrects Tcl_StatBuf definition issues.  (hobbs)
+
+2004-07-20 (bug fix) pure Darwin/CFLite support (steffen)
+
+2004-07-20 (bug fix)[736426] plug leaky allocator reinit (mistachkin, kenny)
+
+--- Released 8.4.7, July 22, 2004 --- See ChangeLog for details ---
