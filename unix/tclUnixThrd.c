@@ -883,8 +883,12 @@ TclpReaddir(DIR * dir)
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
 #ifdef HAVE_READDIR_R
-    ent = &tsdPtr->rdbuf.ent; 
+    ent = &tsdPtr->rdbuf.ent;
+# ifdef HAVE_TWO_ARG_READDIR_R
+    if (TclOSreaddir_r(dir, ent) != 0) {
+# else /* HAVE_THREE_ARG_READDIR_R */
     if (TclOSreaddir_r(dir, ent, &ent) != 0) {
+# endif /* HAVE_TWO_ARG_READDIR_R */
 	ent = NULL;
     }
 

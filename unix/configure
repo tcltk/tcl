@@ -4965,6 +4965,109 @@ _ACEOF
 fi
 done
 
+	if test "x$ac_cv_func_readdir_r" = "xyes"; then
+	    # IRIX 5.3 has a 2 arg version of readdir_r
+	    # while other systems have a 3 arg version.
+	    if test "${tcl_cv_two_arg_readdir_r+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <sys/types.h>
+#include <sys/dir.h>
+int
+main ()
+{
+readdir_r(NULL, NULL);
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  tcl_cv_two_arg_readdir_r=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+tcl_cv_two_arg_readdir_r=no
+fi
+rm -f conftest.$ac_objext conftest.$ac_ext
+fi
+
+	    if test "${tcl_cv_three_arg_readdir_r+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <sys/types.h>
+#include <sys/dir.h>
+int
+main ()
+{
+readdir_r(NULL, NULL, NULL);
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  tcl_cv_three_arg_readdir_r=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+tcl_cv_three_arg_readdir_r=no
+fi
+rm -f conftest.$ac_objext conftest.$ac_ext
+fi
+
+	    if test "x$tcl_cv_two_arg_readdir_r" = "xyes" ; then
+	        cat >>confdefs.h <<\_ACEOF
+#define HAVE_TWO_ARG_READDIR_R 1
+_ACEOF
+
+	    elif test "x$tcl_cv_three_arg_readdir_r" = "xyes" ; then
+	        cat >>confdefs.h <<\_ACEOF
+#define HAVE_THREE_ARG_READDIR_R 1
+_ACEOF
+
+	    else
+	        { { echo "$as_me:$LINENO: error: unknown number of args for readdir_r" >&5
+echo "$as_me: error: unknown number of args for readdir_r" >&2;}
+   { (exit 1); exit 1; }; }
+	    fi
+	fi
     else
 	TCL_THREADS=0
 	echo "$as_me:$LINENO: result: no (default)" >&5
