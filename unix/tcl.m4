@@ -806,7 +806,7 @@ AC_DEFUN(SC_CONFIG_CFLAGS, [
     ECHO_VERSION='`echo ${VERSION}`'
     TCL_LIB_VERSIONS_OK=ok
     CFLAGS_DEBUG=-g
-    CFLAGS_OPTIMIZE=-O2
+    CFLAGS_OPTIMIZE=-O
     if test "$GCC" = "yes" ; then
 	CFLAGS_WARNING="-Wall -Wconversion -Wno-implicit-int"
     else
@@ -1134,6 +1134,7 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".so"
 
+	    CFLAGS_OPTIMIZE=-O2
 	    # egcs-2.91.66 on Redhat Linux 6.0 generates lots of warnings 
 	    # when you inline the string and math operations.  Turn this off to
 	    # get rid of the warnings.
@@ -1221,7 +1222,7 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    CC_SEARCH_FLAGS=""
 	    LD_SEARCH_FLAGS=""
 	    ;;
-	NetBSD-*|FreeBSD-[[1-2]].*|OpenBSD-*)
+	NetBSD-*|FreeBSD-[[1-2]].*)
 	    # Not available on all versions:  check for include file.
 	    AC_CHECK_HEADER(dlfcn.h, [
 		# NetBSD/SPARC needs -fPIC, -fpic will not do.
@@ -1260,6 +1261,31 @@ dnl AC_CHECK_TOOL(AR, ar)
 
 	    # FreeBSD doesn't handle version numbers with dots.
 
+	    UNSHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}\$\{DBGX\}.a'
+	    TCL_LIB_VERSIONS_OK=nodots
+	    ;;
+	OpenBSD-*)
+	    SHLIB_LD="${CC} -shared"
+	    SHLIB_LD_LIBS='${LIBS}'
+	    SHLIB_SUFFIX=".so"
+	    DL_OBJS="tclLoadDl.o"
+	    DL_LIBS=""
+	    LDFLAGS=""
+	    CC_SEARCH_FLAGS=""
+	    LD_SEARCH_FLAGS=""
+	    AC_MSG_CHECKING(for ELF)
+	    AC_EGREP_CPP(yes, [
+#ifdef __ELF__
+	yes
+#endif
+	    ],
+		[AC_MSG_RESULT(yes)
+		SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}\$\{DBGX\}.so.1.0'],
+		[AC_MSG_RESULT(no)
+		SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}\$\{DBGX\}.so.1.0']
+	    )
+
+	    # OpenBSD doesn't do version numbers with dots.
 	    UNSHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}\$\{DBGX\}.a'
 	    TCL_LIB_VERSIONS_OK=nodots
 	    ;;
@@ -1700,7 +1726,7 @@ dnl AC_CHECK_TOOL(AR, ar)
 		    ;;
 		IRIX*)
 		    ;;
-		NetBSD-*|FreeBSD-*|OpenBSD-*)
+		NetBSD-*|FreeBSD-*)
 		    ;;
 		Rhapsody-*|Darwin-*)
 		    ;;
