@@ -113,8 +113,8 @@ VERSION		= 84
 DDEVERSION = 12
 DDEDOTVERSION = 1.2
 
-REGVERSION = 10
-REGDOTVERSION = 1.0
+REGVERSION = 11
+REGDOTVERSION = 1.1
 
 BINROOT		= ..
 !IF "$(NODEBUG)" == "1"
@@ -421,9 +421,9 @@ install-libraries:
 	-@copy "$(TCLDDEDLL)" "$(SCRIPT_INSTALL_DIR)\dde1.1"
 	-@copy "$(ROOT)\library\dde\pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)\dde1.1"
 	@echo installing $(TCLREGDLLNAME)
-	-@$(MKDIR) "$(SCRIPT_INSTALL_DIR)\reg1.0"
-	-@copy "$(TCLREGDLL)" "$(SCRIPT_INSTALL_DIR)\reg1.0"
-	-@copy "$(ROOT)\library\reg\pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)\reg1.0"
+	-@$(MKDIR) "$(SCRIPT_INSTALL_DIR)\reg1.1"
+	-@copy "$(TCLREGDLL)" "$(SCRIPT_INSTALL_DIR)\reg1.1"
+	-@copy "$(ROOT)\library\reg\pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)\reg1.1"
 	@echo installing encoding files
 	-@$(MKDIR) "$(SCRIPT_INSTALL_DIR)\encoding"
 	-@copy "$(ROOT)\library\encoding\*.enc" "$(SCRIPT_INSTALL_DIR)\encoding"
