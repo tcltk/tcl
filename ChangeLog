@@ -1,3 +1,13 @@
+2002-06-25  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* generic/tclUtil.c (TclGetIntForIndex): Fix of critical bug
+	#533364 generated when the index is bad and the result is a shared
+	object.  The T_ASTO(T_GOR, ...) idiom likely exists elsewhere
+	though.  Also removed some cruft that just complicated things to
+	no advantage.
+	(SetEndOffsetFromAny): Same fix, though this wasn't on the path
+	excited by the bug.
+
 2002-06-24  Don Porter  <dgp@users.sourceforge.net>
 
 	* library/tcltest/tcltest.tcl:	Implementation of TIP 101.  Adds
