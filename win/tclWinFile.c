@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.44.2.2 2003/04/14 15:46:00 vincentdarley Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.44.2.3 2003/04/14 22:55:12 kennykb Exp $
  */
 
 //#define _WIN32_WINNT  0x0500
@@ -127,6 +127,12 @@ typedef struct {
     REPARSE_DATA_BUFFER dummy;
     WCHAR  dummyBuf[MAX_PATH*3];
 } DUMMY_REPARSE_BUFFER;
+
+#if defined(_MSC_VER) && ( _MSC_VER <= 1100 )
+#define HAVE_NO_FINDEX_ENUMS
+#elif !defined(_WIN32_WINNT) || (_WIN32_WINNT < 0x0400)
+#define HAVE_NO_FINDEX_ENUMS
+#endif
 
 #ifdef HAVE_NO_FINDEX_ENUMS
 /* These two aren't in VC++ 5.2 headers */
