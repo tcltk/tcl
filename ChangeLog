@@ -1,3 +1,10 @@
+2003-06-23  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* doc/dde.n:                 Committed TIP #120 which provides the
+	* win/tclWinDde.c:           dde package for safe interpreters.
+	* tests/winDde.test:         Incremented package version to 1.2.4
+	* library/dde/pkgIndex.tcl:
+
 2003-06-23  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* generic/tclFCmd.c: fix to bad error message when trying to
