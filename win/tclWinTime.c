@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinTime.c,v 1.1.2.3 1999/03/10 06:49:31 stanton Exp $
+ * RCS: @(#) $Id: tclWinTime.c,v 1.1.2.4 1999/04/06 00:29:19 stanton Exp $
  */
 
 #include "tclWinInt.h"
@@ -269,10 +269,11 @@ TclpGetDate(t, useGMT)
 	 * algorithm ignores daylight savings time before the epoch.
 	 */
 
-	time = *tp - _timezone;
-	if (time >= 0) {
+	if (*tp >= 0) {
 	    return localtime(tp);
 	}
+
+	time = *tp - _timezone;
 	
 	/*
 	 * If we aren't near to overflowing the long, just add the bias and
