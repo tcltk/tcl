@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Hash.3,v 1.3 1999/12/21 23:57:33 hobbs Exp $
+'\" RCS: @(#) $Id: Hash.3,v 1.4 2000/06/24 00:26:08 ericm Exp $
 '\" 
 .so man.macros
 .TH Tcl_Hash 3 "" Tcl "Tcl Library Procedures"
@@ -52,7 +52,7 @@ Address of hash table structure (for all procedures but
 previous call to \fBTcl_InitHashTable\fR).
 .AP int keyType in
 Kind of keys to use for new hash table.  Must be either
-TCL_STRING_KEYS, TCL_ONE_WORD_KEYS, or an integer value
+TCL_STRING_KEYS, TCL_OBJ_KEYS, TCL_ONE_WORD_KEYS, or an integer value
 greater than 1.
 .AP char *key in
 Key to use for probe into table.  Exact form depends on
@@ -107,13 +107,20 @@ one of the following values:
 Keys are null-terminated ASCII strings.
 They are passed to hashing routines using the address of the
 first character of the string.
+.IP \fBTCL_OBJ_KEYS\fR 25
+Keys are Tcl_Obj *.  Hashing and comparison are done on the string
+representation of the object.  The differences between this type and
+TCL_STRING_KEYS are:  the key is not copied, instead the reference
+count is incremented; and the extra information associated with the
+Tcl_Obj * is used to optimize comparisons.  The string is only
+compared if the two Tcl_Obj * are different and have the same length.
 .IP \fBTCL_ONE_WORD_KEYS\fR 25
 Keys are single-word values;  they are passed to hashing routines
 and stored in hash table entries as ``char *'' values.
 The pointer value is the key;  it need not (and usually doesn't)
 actually point to a string.
 .IP \fIother\fR 25
-If \fIkeyType\fR is not TCL_STRING_KEYS or TCL_ONE_WORD_KEYS,
+If \fIkeyType\fR is not one of the above,
 then it must be an integer value greater than 1.
 In this case the keys will be arrays of ``int'' values, where
 \fIkeyType\fR gives the number of ints in each key.

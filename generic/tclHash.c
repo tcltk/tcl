@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclHash.c,v 1.3 1999/04/16 00:46:46 stanton Exp $
+ * RCS: @(#) $Id: tclHash.c,v 1.4 2000/06/24 00:26:09 ericm Exp $
  */
 
 #include "tclInt.h"
@@ -56,6 +56,11 @@ static Tcl_HashEntry *	OneWordFind _ANSI_ARGS_((Tcl_HashTable *tablePtr,
 			    CONST char *key));
 static Tcl_HashEntry *	OneWordCreate _ANSI_ARGS_((Tcl_HashTable *tablePtr,
 			    CONST char *key, int *newPtr));
+static unsigned int	HashObj _ANSI_ARGS_((Tcl_Obj *objPtr));
+static Tcl_HashEntry *	ObjFind _ANSI_ARGS_((Tcl_HashTable *tablePtr,
+			    CONST char *key));
+static Tcl_HashEntry *	ObjCreate _ANSI_ARGS_((Tcl_HashTable *tablePtr,
+			    CONST char *key, int *newPtr));
 
 /*
  *----------------------------------------------------------------------
@@ -97,7 +102,10 @@ Tcl_InitHashTable(tablePtr, keyType)
     tablePtr->downShift = 28;
     tablePtr->mask = 3;
     tablePtr->keyType = keyType;
-    if (keyType == TCL_STRING_KEYS) {
+    if (keyType == TCL_OBJ_KEYS) {
+	tablePtr->findProc = ObjFind;
+	tablePtr->createProc = ObjCreate;
+    } else if (keyType == TCL_STRING_KEYS) {
 	tablePtr->findProc = StringFind;
 	tablePtr->createProc = StringCreate;
     } else if (keyType == TCL_ONE_WORD_KEYS) {
@@ -147,6 +155,10 @@ Tcl_DeleteHashEntry(entryPtr)
 	    }
 	}
     }
+    
+    if (entryPtr->tablePtr->keyType == TCL_OBJ_KEYS) {
+	Tcl_DecrRefCount (entryPtr->key.objPtr);
+    }
     entryPtr->tablePtr->numEntries--;
     ckfree((char *) entryPtr);
 }
@@ -183,6 +195,9 @@ Tcl_DeleteHashTable(tablePtr)
 	hPtr = tablePtr->buckets[i];
 	while (hPtr != NULL) {
 	    nextPtr = hPtr->nextPtr;
+	    if (tablePtr->keyType == TCL_OBJ_KEYS) {
+		Tcl_DecrRefCount (hPtr->key.objPtr);
+	    }
 	    ckfree((char *) hPtr);
 	    hPtr = nextPtr;
 	}
@@ -844,6 +859,234 @@ BogusCreate(tablePtr, key, newPtr)
 /*
  *----------------------------------------------------------------------
  *
+ * HashObj --
+ *
+ *	Compute a one-word summary of the string representation of the
+ *	Tcl_Obj, which can be used to generate a hash index.
+ *
+ * Results:
+ *	The return value is a one-word summary of the information in
+ *	the string representation of the Tcl_Obj.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static unsigned int
+HashObj(objPtr)
+    Tcl_Obj *objPtr;
+{
+    register CONST char *string;
+    register int length;
+    register unsigned int result;
+    register int c;
+
+    string = Tcl_GetStringFromObj (objPtr, NULL);
+    length = objPtr->length;
+    
+    /*
+     * I tried a zillion different hash functions and asked many other
+     * people for advice.  Many people had their own favorite functions,
+     * all different, but no-one had much idea why they were good ones.
+     * I chose the one below (multiply by 9 and add new character)
+     * because of the following reasons:
+     *
+     * 1. Multiplying by 10 is perfect for keys that are decimal strings,
+     *    and multiplying by 9 is just about as good.
+     * 2. Times-9 is (shift-left-3) plus (old).  This means that each
+     *    character's bits hang around in the low-order bits of the
+     *    hash value for ever, plus they spread fairly rapidly up to
+     *    the high-order bits to fill out the hash value.  This seems
+     *    works well both for decimal and non-decimal strings.
+     */
+
+    result = 0;
+    while (length) {
+	c = *string;
+	string++;
+	length--;
+	if (length == 0) {
+	    break;
+	}
+	result += (result<<3) + c;
+    }
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ObjFind --
+ *
+ *	Given a hash table with string keys, and a string key, find
+ *	the entry with a matching key.
+ *
+ * Results:
+ *	The return value is a token for the matching entry in the
+ *	hash table, or NULL if there was no matching entry.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static Tcl_HashEntry *
+ObjFind(tablePtr, key)
+    Tcl_HashTable *tablePtr;	/* Table in which to lookup entry. */
+    CONST char *key;		/* Key to use to find matching entry. */
+{
+    Tcl_Obj *objPtr = (Tcl_Obj *) key;
+    register Tcl_HashEntry *hPtr;
+    register CONST char *p1, *p2;
+    register int l1, l2;
+    int index;
+
+    index = HashObj(objPtr) & tablePtr->mask;
+
+    /*
+     * Search all of the entries in the appropriate bucket.
+     */
+
+    for (hPtr = tablePtr->buckets[index]; hPtr != NULL;
+	    hPtr = hPtr->nextPtr) {
+	/*
+	 * If the object pointers are the same then they match.
+	 */
+	if (objPtr == hPtr->key.objPtr) {
+	    return hPtr;
+	}
+
+	p1 = Tcl_GetStringFromObj (objPtr, (int *) 0);
+	l1 = objPtr->length;
+	p2 = Tcl_GetStringFromObj (hPtr->key.objPtr, (int *) 0);
+	l2 = hPtr->key.objPtr->length;
+	
+	/*
+	 * If the lengths are different then they do not match.
+	 */
+	if (l1 != l2) {
+	    continue;
+	}
+	
+	for (;; p1++, p2++, l1--) {
+	    if (*p1 != *p2) {
+		break;
+	    }
+	    if (l1 == 0) {
+		return hPtr;
+	    }
+	}
+    }
+    return NULL;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ObjCreate --
+ *
+ *	Given a hash table with string keys, and a string key, find
+ *	the entry with a matching key.  If there is no matching entry,
+ *	then create a new entry that does match.
+ *
+ * Results:
+ *	The return value is a pointer to the matching entry.  If this
+ *	is a newly-created entry, then *newPtr will be set to a non-zero
+ *	value;  otherwise *newPtr will be set to 0.  If this is a new
+ *	entry the value stored in the entry will initially be 0.
+ *
+ * Side effects:
+ *	A new entry may be added to the hash table.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static Tcl_HashEntry *
+ObjCreate(tablePtr, key, newPtr)
+    Tcl_HashTable *tablePtr;	/* Table in which to lookup entry. */
+    CONST char *key;		/* Key to use to find or create matching
+				 * entry. */
+    int *newPtr;		/* Store info here telling whether a new
+				 * entry was created. */
+{
+    Tcl_Obj *objPtr = (Tcl_Obj *) key;
+    register Tcl_HashEntry *hPtr;
+    register CONST char *p1, *p2;
+    register int l1, l2;
+    int index;
+
+    index = HashObj(objPtr) & tablePtr->mask;
+
+    /*
+     * Search all of the entries in this bucket.
+     */
+
+    for (hPtr = tablePtr->buckets[index]; hPtr != NULL;
+	    hPtr = hPtr->nextPtr) {
+	/*
+	 * If the object pointers are the same then they match.
+	 */
+	if (objPtr == hPtr->key.objPtr) {
+	    *newPtr = 0;
+	    return hPtr;
+	}
+
+	p1 = Tcl_GetStringFromObj (objPtr, (int *) 0);
+	l1 = objPtr->length;
+	p2 = Tcl_GetStringFromObj (hPtr->key.objPtr, (int *) 0);
+	l2 = hPtr->key.objPtr->length;
+	
+	/*
+	 * If the lengths are different then they do not match.
+	 */
+	if (l1 != l2) {
+	    continue;
+	}
+	
+	for (;; p1++, p2++, l1--) {
+	    if (*p1 != *p2) {
+		break;
+	    }
+	    if (l1 == 0) {
+		*newPtr = 0;
+		return hPtr;
+	    }
+	}
+    }
+
+    /*
+     * Entry not found.  Add a new one to the bucket.
+     */
+
+    *newPtr = 1;
+    hPtr = (Tcl_HashEntry *)
+	Tcl_Alloc((unsigned) sizeof(Tcl_HashEntry));
+    hPtr->tablePtr = tablePtr;
+    hPtr->bucketPtr = &(tablePtr->buckets[index]);
+    hPtr->nextPtr = *hPtr->bucketPtr;
+    hPtr->clientData = 0;
+    hPtr->key.objPtr = objPtr;
+    Tcl_IncrRefCount (objPtr);
+    *hPtr->bucketPtr = hPtr;
+    tablePtr->numEntries++;
+
+    /*
+     * If the table has exceeded a decent size, rebuild it with many
+     * more buckets.
+     */
+
+    if (tablePtr->numEntries >= tablePtr->rebuildSize) {
+	RebuildTable(tablePtr);
+    }
+    return hPtr;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * RebuildTable --
  *
  *	This procedure is invoked when the ratio of entries to hash
@@ -896,7 +1139,9 @@ RebuildTable(tablePtr)
     for (oldChainPtr = oldBuckets; oldSize > 0; oldSize--, oldChainPtr++) {
 	for (hPtr = *oldChainPtr; hPtr != NULL; hPtr = *oldChainPtr) {
 	    *oldChainPtr = hPtr->nextPtr;
-	    if (tablePtr->keyType == TCL_STRING_KEYS) {
+	    if (tablePtr->keyType == TCL_OBJ_KEYS) {
+		index = HashObj(hPtr->key.objPtr) & tablePtr->mask;
+	    } else if (tablePtr->keyType == TCL_STRING_KEYS) {
 		index = HashString(hPtr->key.string) & tablePtr->mask;
 	    } else if (tablePtr->keyType == TCL_ONE_WORD_KEYS) {
 		index = RANDOM_INDEX(tablePtr, hPtr->key.oneWordValue);

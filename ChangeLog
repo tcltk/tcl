@@ -1,3 +1,12 @@
+2000-06-23  Eric Melski  <ericm@scriptics.com>
+
+	* doc/Hash.3: Added documentation patch for Tcl_Obj *'s as keys in
+	Tcl hash tables [RFE: 5934].
+
+	* generic/tcl.h: 
+	* generic/tclHash.c: Applied patch from [RFE: 5934], which extends
+	Tcl hash tables to allow Tcl_Obj *'s as the key.
+
 2000-06-20  Eric Melski  <ericm@ajubasolutions.com>
 
 	* library/opt0.4/optparse.tcl: Applied patch from [Bug: 5922], which 

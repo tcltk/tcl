@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.71 2000/05/03 00:15:06 hobbs Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.72 2000/06/24 00:26:08 ericm Exp $
  */
 
 #ifndef _TCL
@@ -969,6 +969,7 @@ typedef struct Tcl_HashEntry {
 					 * with Tcl_SetHashValue. */
     union {				/* Key has one of these forms: */
 	char *oneWordValue;		/* One-word value for key. */
+        Tcl_Obj *objPtr;		/* Tcl_Obj * key value. */
 	int words[1];			/* Multiple integer words for key.
 					 * The actual size will be as large
 					 * as necessary for this table's
@@ -1005,10 +1006,10 @@ typedef struct Tcl_HashTable {
     int mask;				/* Mask value used in hashing
 					 * function. */
     int keyType;			/* Type of keys used in this table. 
-					 * It's either TCL_STRING_KEYS,
-					 * TCL_ONE_WORD_KEYS, or an integer
-					 * giving the number of ints that
-                                         * is the size of the key.
+					 * It's either TCL_OBJ_KEYS,
+					 * TCL_STRING_KEYS, TCL_ONE_WORD_KEYS,
+					 * or an integer giving the number of
+					 * ints that is the size of the key.
 					 */
     Tcl_HashEntry *(*findProc) _ANSI_ARGS_((struct Tcl_HashTable *tablePtr,
 	    CONST char *key));
@@ -1033,6 +1034,7 @@ typedef struct Tcl_HashSearch {
  * Acceptable key types for hash tables:
  */
 
+#define TCL_OBJ_KEYS		-1
 #define TCL_STRING_KEYS		0
 #define TCL_ONE_WORD_KEYS	1
 
@@ -1043,8 +1045,10 @@ typedef struct Tcl_HashSearch {
 #define Tcl_GetHashValue(h) ((h)->clientData)
 #define Tcl_SetHashValue(h, value) ((h)->clientData = (ClientData) (value))
 #define Tcl_GetHashKey(tablePtr, h) \
-    ((char *) (((tablePtr)->keyType == TCL_ONE_WORD_KEYS) ? (h)->key.oneWordValue \
-						: (h)->key.string))
+    ((char *) (((tablePtr)->keyType == TCL_ONE_WORD_KEYS || \
+		(tablePtr)->keyType == TCL_OBJ_KEYS) \
+	       ? (h)->key.oneWordValue \
+	       : (h)->key.string))
 
 /*
  * Macros to use for clients to use to invoke find and create procedures
