@@ -6,7 +6,7 @@
 # Copyright (c) 1995-1996 Sun Microsystems, Inc.
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 #
-# RCS: @(#) $Id: makefile.vc,v 1.46 1999/12/09 14:44:10 hobbs Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.47 2000/01/24 02:30:39 hobbs Exp $
 
 # Does not depend on the presence of any environment variables in
 # order to compile tcl; all needed information is derived from 
@@ -204,12 +204,13 @@ cc32		= "$(TOOLS32)\bin\cl.exe"
 link32		= "$(TOOLS32)\bin\link.exe"
 rc32		= "$(TOOLS32_rc)\bin\rc.exe"
 include32	= -I"$(TOOLS32)\include"
+libpath32	= /LIBPATH:"$(TOOLS32)\lib"
 lib32		= "$(TOOLS32)\bin\lib.exe"
 
 WINDIR		= $(ROOT)\win
 GENERICDIR	= $(ROOT)\generic
 
-TCL_INCLUDES	= -I$(WINDIR) -I$(GENERICDIR)
+TCL_INCLUDES	= -I"$(WINDIR)" -I"$(GENERICDIR)"
 TCL_DEFINES	= $(DEBUGDEFINES) $(THREADDEFINES)
 
 ######################################################################
@@ -246,8 +247,7 @@ ldebug	= -debug:full -debugtype:cv
 !ENDIF
 
 # declarations common to all linker options
-lcommon	= /NODEFAULTLIB /RELEASE /NOLOGO
-lflags	= $(lcommon) /MACHINE:$(MACHINE)
+lflags	= /NODEFAULTLIB /NOLOGO /MACHINE:$(MACHINE) $(libpath32)
 
 # declarations for use on Intel i386, i486, and Pentium systems
 !IF "$(MACHINE)" == "IX86"
@@ -302,7 +302,6 @@ setup:
 $(TCLLIB): $(TCLDLL)
 
 $(TCLDLL): $(TCLOBJS) $(TMPDIR)\tcl.res
-	set LIB="$(TOOLS32)\lib"
 	$(link32) $(ldebug) $(dlllflags) \
 		-out:$@ $(TMPDIR)\tcl.res $(guilibsdll) @<<
 $(TCLOBJS)
@@ -314,45 +313,37 @@ $(TCLSTUBLIB): $(TCLSTUBOBJS)
 $(TCLPLUGINLIB): $(TCLPLUGINDLL)
 
 $(TCLPLUGINDLL): $(TCLOBJS) $(TMPDIR)\tcl.res
-	set LIB="$(TOOLS32)\lib"
 	$(link32) $(ldebug) $(dlllflags) \
 		-out:$@ $(TMPDIR)\tcl.res $(guilibsdll) @<<
 $(TCLOBJS)
 <<
 
 $(TCLSH): $(TCLSHOBJS) $(TCLLIB) $(TMPDIR)\tclsh.res
-	set LIB="$(TOOLS32)\lib"
 	$(link32) $(ldebug) $(conlflags) $(TMPDIR)\tclsh.res -stack:2300000 \
 		-out:$@ $(conlibsdll) $(TCLLIB) $(TCLSHOBJS) 
 
 $(TCLSHP): $(TCLSHOBJS) $(TCLPLUGINLIB) $(TMPDIR)\tclsh.res
-	set LIB=$(TOOLS32)\lib
 	$(link32) $(ldebug) $(conlflags) $(TMPDIR)\tclsh.res -stack:2300000 \
 		-out:$@ $(conlibsdll) $(TCLPLUGINLIB) $(TCLSHOBJS) 
 
 $(TCLTEST): $(TCLTESTOBJS) $(TCLLIB) $(TMPDIR)\tclsh.res
-	set LIB="$(TOOLS32)\lib"
 	$(link32) $(ldebug) $(conlflags) $(TMPDIR)\tclsh.res -stack:2300000 \
 		 -out:$@ $(conlibsdll) $(TCLLIB) $(TCLTESTOBJS)
 
 $(TCLPIPEDLL): $(WINDIR)\stub16.c
 	$(cc32) $(CON_CFLAGS) -Fo$(TMPDIR)\ $(WINDIR)\stub16.c
-	set LIB="$(TOOLS32)\lib"
 	$(link32) $(ldebug) $(conlflags) -out:$@ $(TMPDIR)\stub16.obj $(guilibs)
 
 $(TCLDDEDLL): $(TMPDIR)\tclWinDde.obj $(TCLSTUBLIB)
-	set LIB="$(TOOLS32)\lib"
 	$(link32) $(ldebug) $(dlllflags) -out:$@ $(TMPDIR)\tclWinDde.obj \
 		$(conlibsdll) $(TCLSTUBLIB)
 
 $(TCLREGDLL): $(TMPDIR)\tclWinReg.obj $(TCLSTUBLIB)
-	set LIB="$(TOOLS32)\lib"
 	$(link32) $(ldebug) $(dlllflags) -out:$@ $(TMPDIR)\tclWinReg.obj \
 		$(conlibsdll) $(TCLSTUBLIB)
 
 $(CAT32): $(WINDIR)\cat.c
 	$(cc32) $(CON_CFLAGS) -Fo$(TMPDIR)\ $?
-	set LIB="$(TOOLS32)\lib"
 	$(link32) $(conlflags) -out:$@ -stack:16384 $(TMPDIR)\cat.obj $(conlibs)
 
 install-binaries: $(TCLSH)
