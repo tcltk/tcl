@@ -1,3 +1,8 @@
+2003-02-17  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclBasic.c (TclRenameCommand): fixing error in previous
+	commit. 
+
 2003-02-17  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclExecute.c (TclExecuteByteCode INST_STR_MATCH):
@@ -16,7 +21,7 @@
 	* generic/tclBasic.c (TclRenameCommand): 'oldFullName' object was
 	not being freed on all function exits, causing a memory leak 
 	[Bug 684756]
-
+	
 2003-02-17  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* generic/tclIO.c (Tcl_GetsObj): Minor change
