@@ -1,3 +1,8 @@
+2002-10-17  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclVar.c:	Fixed code that check for proper # of args to
+	* tests/var.test:	[array names].  Added test.  [Bug 624755]
+
 2002-10-16  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* win/configure:                 add workaround for cygwin windres
