@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: catch.n,v 1.6 2003/08/31 21:39:23 dgp Exp $
+'\" RCS: @(#) $Id: catch.n,v 1.7 2003/09/02 18:51:31 dgp Exp $
 '\" 
 .so man.macros
 .TH catch n "8.5" Tcl "Tcl Built-In Commands"
@@ -107,6 +107,9 @@ proc foo {} {
     catch {expr {1 +- }}
 }
 .CE
+
+There are more complex examples of \fBcatch\fR usage in the
+documentation for the \fBreturn\fR command.
 
 .SH "SEE ALSO" 
 break(n), continue(n), dict(n), error(n), return(n), tclvars(n)
