@@ -6,7 +6,7 @@
 #
 #    HTML:		 1. Build the html target on Unix
 
-# RCS: @(#) $Id: Makefile.in,v 1.7 1999/02/19 02:14:56 stanton Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.7.6.1 1999/05/20 03:28:09 stanton Exp $
 
 TCL = tcl@TCL_VERSION@
 TK = tk@TCL_VERSION@
@@ -25,7 +25,10 @@ TK_DOCS = \
 	$(TK_SOURCE)/doc/*.[13n]
 
 PRO_DOCS = \
-	$(PRO_SOURCE)/doc/man/*.[13n]
+	$(PRO_SOURCE)/doc/man/procheck.1 \
+	$(PRO_SOURCE)/doc/man/prodebug.1 \
+	$(PRO_SOURCE)/doc/man/prodebug.n \
+	$(PRO_SOURCE)/doc/man/prolicense.1
 
 ITCL_DOCS = \
 	$(ITCL_SOURCE)/itcl/doc/*.[13n] \
@@ -34,7 +37,8 @@ ITCL_DOCS = \
 #	$(ITCL_SOURCE)/iwidgets3.0.0/doc/*.[13n]
 
 COREDOCS = $(TCL_DOCS) $(TK_DOCS) 
-PRODOCS = $(COREDOCS) $(PRO_DOCS) $(ITCL_DOCS)
+#PRODOCS = $(COREDOCS) $(PRO_DOCS) $(ITCL_DOCS)
+PRODOCS = $(COREDOCS) $(PRO_DOCS) 
 TCLSH = $(TCL_BIN_DIR)/tclsh
 CC=@CC@
 
