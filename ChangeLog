@@ -1,3 +1,9 @@
+2002-07-02  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* tests/fCmd.test: 
+	* generic/tclCmdAH.c: clearer error msgs for 'file link',
+	as per the man page.
+
 2002-07-01  Joe English  <jenglish@users.sourceforge.net>
 
 	* doc/Access.3:
