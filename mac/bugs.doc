@@ -4,7 +4,7 @@ by Ray Johnson
 Sun Microsystems Laboratories
 rjohnson@eng.sun.com
 
-RCS: @(#) $Id: bugs.doc,v 1.2 1998/09/14 18:40:04 stanton Exp $
+RCS: @(#) $Id: bugs.doc,v 1.3 1999/08/15 04:05:13 jingham Exp $
 
 This was a new feature as of Tcl7.6b1 and as such I'll started with
 a clean slate.  I currently know of no reproducable bugs.  I often
@@ -30,3 +30,8 @@ Known bugs in the current release.
   If you find additional test cases that show crashes please let us
   know!
 
+* In Tcl 8.2, the new Regexp code seems to be more deeply recursive than
+the older version in Tcl8.0.  As a result, I have had to increase the Stack
+size of Tcl to 1Meg.  If you are not doing regexps with many subexpressions,
+this is probably more stack than you will need.  You can relink with the 
+stack set to 512K, and you will be fine for most purposes.
