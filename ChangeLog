@@ -1,3 +1,9 @@
+1999-05-14    <surles@scriptics.com>
+
+	* generic/tclBasic.c (Tcl_CreateInterp): Added introspection
+	variable for threaded interps.  If the interp was compiled with
+	threads enabled, the tcl_platform(threaded) variable will exist.
+
 1999-05-14    <redman@scriptics.com>
 
 	* generic/tclDate.c: Applied patch to fix 100-year and 400-year
