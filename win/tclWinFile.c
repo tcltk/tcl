@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.44 2003/02/10 12:50:32 vincentdarley Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.45 2003/04/11 16:00:13 vincentdarley Exp $
  */
 
 //#define _WIN32_WINNT  0x0500
@@ -128,6 +128,18 @@ typedef struct {
     WCHAR  dummyBuf[MAX_PATH*3];
 } DUMMY_REPARSE_BUFFER;
 
+/* These two aren't in VC++ 5.2 headers */
+typedef enum _FINDEX_INFO_LEVELS {
+	FindExInfoStandard,
+	FindExInfoMaxInfoLevel
+} FINDEX_INFO_LEVELS;
+typedef enum _FINDEX_SEARCH_OPS {
+	FindExSearchNameMatch,
+	FindExSearchLimitToDirectories,
+	FindExSearchLimitToDevices,
+	FindExSearchMaxSearchOp
+} FINDEX_SEARCH_OPS;
+
 /* Other typedefs required by this code */
 
 static time_t		ToCTime(FILETIME fileTime);
@@ -140,6 +152,8 @@ typedef NET_API_STATUS NET_API_FUNCTION NETAPIBUFFERFREEPROC
 
 typedef NET_API_STATUS NET_API_FUNCTION NETGETDCNAMEPROC
 	(LPWSTR servername, LPWSTR domainname, LPBYTE *bufptr);
+
+extern Tcl_FSDupInternalRepProc NativeDupInternalRep;
 
 /*
  * Declarations for local procedures defined in this file:
@@ -162,7 +176,6 @@ static int WinLink(CONST TCHAR* LinkSource, CONST TCHAR* LinkTarget,
 		   int linkAction);
 static int WinSymLinkDirectory(CONST TCHAR* LinkDirectory, 
 			       CONST TCHAR* LinkTarget);
-
 
 /*
  *--------------------------------------------------------------------
@@ -249,8 +262,7 @@ WinLink(LinkSource, LinkTarget, linkAction)
  *
  * WinReadLink
  *
- * What does 'LinkSource' point to?  We need the original 'pathPtr'
- * just so we can construct a path object in the correct filesystem.
+ * What does 'LinkSource' point to? 
  *--------------------------------------------------------------------
  */
 static Tcl_Obj* 
@@ -429,7 +441,11 @@ TclWinSymLinkDelete(LinkOriginal, linkOnly)
  *
  * Assumption that LinkDirectory is a valid, existing directory.
  * 
- * Returns a Tcl_Obj with refCount of 1 (i.e. owned by the caller).
+ * Returns a Tcl_Obj with refCount of 1 (i.e. owned by the caller),
+ * or NULL if anything went wrong.
+ * 
+ * In the future we should enhance this to return a path object
+ * rather than a string.
  *--------------------------------------------------------------------
  */
 static Tcl_Obj* 
@@ -457,28 +473,77 @@ WinReadLinkDirectory(LinkDirectory)
 	    Tcl_DString ds;
 	    CONST char *copy;
 	    int len;
+	    int offset = 0;
 	    
-	    Tcl_WinTCharToUtf( 
-		(CONST char*)reparseBuffer->SymbolicLinkReparseBuffer.PathBuffer, 
-		(int)reparseBuffer->SymbolicLinkReparseBuffer.SubstituteNameLength, 
-		&ds);
-	
-	    copy = Tcl_DStringValue(&ds);
-	    len = Tcl_DStringLength(&ds);
 	    /* 
-	     * Certain native path representations on Windows have this special
-	     * prefix to indicate that they are to be treated specially.  For
-	     * example extremely long paths, or symlinks 
+	     * Certain native path representations on Windows have a
+	     * special prefix to indicate that they are to be treated
+	     * specially.  For example extremely long paths, or symlinks,
+	     * or volumes mounted inside directories.
+	     * 
+	     * There is an assumption in this code that 'wide' interfaces
+	     * are being used (see tclWin32Dll.c), which is true for the
+	     * only systems which support reparse tags at present.  If
+	     * that changes in the future, this code will have to be
+	     * generalised.
 	     */
-	    if (*copy == '\\') {
-		if (0 == strncmp(copy,"\\??\\",4)) {
-		    copy += 4;
-		    len -= 4;
-		} else if (0 == strncmp(copy,"\\\\?\\",4)) {
-		    copy += 4;
-		    len -= 4;
+	    if (reparseBuffer->SymbolicLinkReparseBuffer.PathBuffer[0] 
+		                                                 == L'\\') {
+		/* Check whether this is a mounted volume */
+		if (wcsncmp(reparseBuffer->SymbolicLinkReparseBuffer.PathBuffer, 
+			    L"\\??\\Volume{",11) == 0) {
+		    char drive;
+		    /* 
+		     * There is some confusion between \??\ and \\?\ which
+		     * we have to fix here.  It doesn't seem very well
+		     * documented.
+		     */
+		    reparseBuffer->SymbolicLinkReparseBuffer
+		                                      .PathBuffer[1] = L'\\';
+		    /* 
+		     * Check if a corresponding drive letter exists, and
+		     * use that if it is found
+		     */
+		    drive = TclWinDriveLetterForVolMountPoint(reparseBuffer
+					->SymbolicLinkReparseBuffer.PathBuffer);
+		    if (drive != -1) {
+			char driveSpec[3] = {
+			    drive, ':', '\0'
+			};
+			retVal = Tcl_NewStringObj(driveSpec,2);
+			Tcl_IncrRefCount(retVal);
+			return retVal;
+		    }
+		    /* 
+		     * This is actually a mounted drive, which doesn't
+		     * exists as a DOS drive letter.  This means the path
+		     * isn't actually a link, although we partially treat
+		     * it like one ('file type' will return 'link'), but
+		     * then the link will actually just be treated like
+		     * an ordinary directory.  I don't believe any
+		     * serious inconsistency will arise from this, but it
+		     * is something to be aware of.
+		     */
+		    Tcl_SetErrno(EINVAL);
+		    return NULL;
+		} else if (wcsncmp(reparseBuffer->SymbolicLinkReparseBuffer
+				   .PathBuffer, L"\\\\?\\",4) == 0) {
+		    /* Strip off the prefix */
+		    offset = 4;
+		} else if (wcsncmp(reparseBuffer->SymbolicLinkReparseBuffer
+				   .PathBuffer, L"\\??\\",4) == 0) {
+		    /* Strip off the prefix */
+		    offset = 4;
 		}
 	    }
+	    
+	    Tcl_WinTCharToUtf(
+		(CONST char*)reparseBuffer->SymbolicLinkReparseBuffer.PathBuffer, 
+		(int)reparseBuffer->SymbolicLinkReparseBuffer
+		.SubstituteNameLength, &ds);
+	
+	    copy = Tcl_DStringValue(&ds)+offset;
+	    len = Tcl_DStringLength(&ds)-offset;
 	    retVal = Tcl_NewStringObj(copy,len);
 	    Tcl_IncrRefCount(retVal);
 	    Tcl_DStringFree(&ds);
@@ -702,77 +767,97 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 	DWORD attr;
 	HANDLE handle;
 	WIN32_FIND_DATAT data;
-	CONST char *dirName;
+	CONST char *dirName;   /* utf-8 dir name, later 
+	                        * with pattern appended */
 	int dirLength;
 	int matchSpecialDots;
-	Tcl_DString ds;        /* native encoding of dir */
+	Tcl_DString ds;        /* native encoding of dir, also used
+	                        * temporarily for other things. */
 	Tcl_DString dsOrig;    /* utf-8 encoding of dir */
-	Tcl_DString dirString; /* utf-8 encoding of dir with \'s */
 	Tcl_Obj *fileNamePtr;
+	char lastChar;
 
 	/*
-	 * Convert the path to normalized form since some interfaces only
-	 * accept backslashes.  Also, ensure that the directory ends with a
-	 * separator character.
+	 * Get the normalized path representation 
+	 * (the main thing is we dont want any '~' sequences).
 	 */
 
-	fileNamePtr = Tcl_FSGetTranslatedPath(interp, pathPtr);
+	fileNamePtr = Tcl_FSGetNormalizedPath(interp, pathPtr);
 	if (fileNamePtr == NULL) {
 	    return TCL_ERROR;
 	}
+
+	/*
+	 * Verify that the specified path exists and 
+	 * is actually a directory.
+	 */
+	native = Tcl_FSGetNativePath(pathPtr);
+	if (native == NULL) {
+	    return TCL_OK;
+	}
+	attr = (*tclWinProcs->getFileAttributesProc)(native);
+
+	if ((attr == 0xffffffff) || ((attr & FILE_ATTRIBUTE_DIRECTORY) == 0)) {
+	    return TCL_OK;
+	}
+
+	/* 
+	 * Build up the directory name for searching, including
+	 * a trailing directory separator.
+	 */
+
 	Tcl_DStringInit(&dsOrig);
 	dirName = Tcl_GetStringFromObj(fileNamePtr, &dirLength);
 	Tcl_DStringAppend(&dsOrig, dirName, dirLength);
 	
-	Tcl_DStringInit(&dirString);
-	if (dirLength == 0) {
-	    Tcl_DStringAppend(&dirString, ".\\", 2);
+	lastChar = dirName[dirLength -1];
+	if ((lastChar != '\\') && (lastChar != '/') && (lastChar != ':')) {
+	    Tcl_DStringAppend(&dsOrig, "/", 1);
+	    dirLength++;
+	}
+	dirName = Tcl_DStringValue(&dsOrig);
+
+	/*
+	 * We need to check all files in the directory, so we append
+	 * '*.*' to the path, unless the pattern we've been given is
+	 * rather simple, when we can use that instead.
+	 */
+
+	if (strpbrk(pattern, "[]\\") == NULL) {
+	    /* 
+	     * The pattern is a simple one containing just '*' and/or '?'.
+	     * This means we can get the OS to help us, by passing
+	     * it the pattern.
+	     */
+	    dirName = Tcl_DStringAppend(&dsOrig, pattern, -1);
 	} else {
-	    char *p;
-
-	    Tcl_DStringAppend(&dirString, dirName, dirLength);
-	    for (p = Tcl_DStringValue(&dirString); *p != '\0'; p++) {
-		if (*p == '/') {
-		    *p = '\\';
-		}
-	    }
-	    p--;
-	    /* Make sure we have a trailing directory delimiter */
-	    if ((*p != '\\') && (*p != ':')) {
-		Tcl_DStringAppend(&dirString, "\\", 1);
-		Tcl_DStringAppend(&dsOrig, "/", 1);
-		dirLength++;
-	    }
+	    dirName = Tcl_DStringAppend(&dsOrig, "*.*", 3);
 	}
-	dirName = Tcl_DStringValue(&dirString);
-
-	/*
-	 * First verify that the specified path is actually a directory.
-	 */
-
-	native = Tcl_WinUtfToTChar(dirName, Tcl_DStringLength(&dirString),
-		&ds);
-	attr = (*tclWinProcs->getFileAttributesProc)(native);
-	Tcl_DStringFree(&ds);
-
-	if ((attr == 0xffffffff) || ((attr & FILE_ATTRIBUTE_DIRECTORY) == 0)) {
-	    Tcl_DStringFree(&dirString);
-	    return TCL_OK;
-	}
-
-	/*
-	 * We need to check all files in the directory, so append a *.*
-	 * to the path. 
-	 */
-
-	dirName = Tcl_DStringAppend(&dirString, "*.*", 3);
 	native = Tcl_WinUtfToTChar(dirName, -1, &ds);
-	handle = (*tclWinProcs->findFirstFileProc)(native, &data);
+	if (tclWinProcs->findFirstFileExProc == NULL 
+	    || (types == NULL)
+	    || (types->type != TCL_GLOB_TYPE_DIR)) {
+	    handle = (*tclWinProcs->findFirstFileProc)(native, &data);
+	} else {
+	    /* We can be more efficient, for pure directory requests */
+	    handle = (*tclWinProcs->findFirstFileExProc)(native, 
+			FindExInfoStandard, &data, 
+			FindExSearchLimitToDirectories, NULL, 0);
+	}
 	Tcl_DStringFree(&ds);
 
 	if (handle == INVALID_HANDLE_VALUE) {
-	    Tcl_DStringFree(&dirString);
-	    TclWinConvertError(GetLastError());
+	    DWORD err = GetLastError();
+	    if (err == ERROR_FILE_NOT_FOUND) {
+	        /* 
+	         * We used our 'pattern' above, and matched nothing
+	         * This means we just return TCL_OK, indicating
+	         * no results found.
+	         */
+		Tcl_DStringFree(&dsOrig);
+		return TCL_OK;
+	    }
+	    TclWinConvertError(err);
 	    Tcl_ResetResult(interp);
 	    Tcl_AppendResult(interp, "couldn't read directory \"",
 		    Tcl_DStringValue(&dsOrig), "\": ", 
@@ -780,6 +865,12 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 	    Tcl_DStringFree(&dsOrig);
 	    return TCL_ERROR;
 	}
+
+	/* 
+	 * We may use this later, so we must restore it to its
+	 * length including the directory delimiter
+	 */
+	Tcl_DStringSetLength(&dsOrig, dirLength);
 
 	/*
 	 * Check to see if the pattern should match the special
@@ -874,7 +965,6 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 	} while ((*tclWinProcs->findNextFileProc)(handle, &data) == TRUE);
 
 	FindClose(handle);
-	Tcl_DStringFree(&dirString);
 	Tcl_DStringFree(&dsOrig);
 	return TCL_OK;
     }
@@ -942,10 +1032,9 @@ WinIsDrive(
  * volume, because for NTFS root volumes, the getFileAttributesProc
  * returns a 'hidden' attribute when it should not.
  * 
- * We only ever make one call to a 'get attributes' routine here,
- * so that this function is as fast as possible.  Unfortunately,
- * it still means we have to make the call for every single file
- * we return from 'glob', which is not ideal.
+ * We never make any calss to a 'get attributes' routine here,
+ * since we have arranged things so that our caller already knows
+ * such information.
  * 
  * Results:
  *  0 = file doesn't match

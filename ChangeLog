@@ -1,3 +1,45 @@
+2003-04-11  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* tests/cmdAH.test: fix test suite problem if /home is a symlink
+	[Bug #703264]
+	* generic/tclIOUtil.c: fix bad error message with 'cd ""'
+	[Bug #704917]
+	* win/tclWinFile.c: 
+	* win/tclWin32Dll.c: 
+	* win/tclWinInt.h: allow Tcl to differentiate between reparse
+	points which are symlinks and mounted volumes, and correctly
+	handle the latter. This involves some elaborate code to find
+	the actual drive letter (if possible) corresponding to a mounted
+	volume.  [Bug #697862]
+	* tests/fileSystem.test: add constraints to stop tests running
+	in ordinary tcl interpreter. [Bug #705675]
+
+	* generic/tclIOUtil.c:
+	* generic/tclPathObj.c: (new file)
+	* generic/tclFileSystem.h: (new file)
+	* win/makefile.vc:
+	Split path object handling out of the virtual filesystem layer,
+	into tclPathObj.c.  This refactoring cleans up the internal
+	filesystem code, and will make any future optimisations and
+	forthcoming better thread-safety much easier.
+	
+	* generic/tclTest.c:
+	* tests/reg.test: added some 'knownBug' tests for problems in
+	Tcl's regexp code with the TCL_REG_CAN_MATCH flag (see Bug #703709).  
+	Code too impenetrable to fix right now, but a fix is needed 
+	for tip113 to work correctly.
+	
+	* tests/fCmd.test
+	* win/tclWinFile.c: added some filesystem optimisation to the
+	'glob' implementation, and some new tests.
+	
+	* generic/tclCmdMZ.c: fix typo in comment
+	
+	* tests/winFile.test:
+	* tests/ioUtil.test:
+	* tests/unixFCmd.test: renumbered tests with duplicate numbers.
+	(Bug #710361)
+	
 2003-04-10  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* doc/binary.n: Fixed typo in [binary format w] desc. [Bug 718543]

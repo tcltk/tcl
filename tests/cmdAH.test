@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: cmdAH.test,v 1.30 2003/01/09 10:38:32 vincentdarley Exp $
+# RCS: @(#) $Id: cmdAH.test,v 1.31 2003/04/11 15:59:59 vincentdarley Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -86,6 +86,9 @@ test cmdAH-2.5 {Tcl_CdObjCmd} {
 test cmdAH-2.6 {Tcl_CdObjCmd} {
     list [catch {cd _foobar} msg] $msg
 } {1 {couldn't change working directory to "_foobar": no such file or directory}}
+test cmdAH-2.6.1 {Tcl_CdObjCmd} {
+    list [catch {cd ""} msg] $msg
+} {1 {couldn't change working directory to "": no such file or directory}}
 
 test cmdAH-2.7 {Tcl_ConcatObjCmd} {
     concat
@@ -396,12 +399,12 @@ test cmdAH-8.42 {Tcl_FileObjCmd: dirname} {
 test cmdAH-8.43 {Tcl_FileObjCmd: dirname} {
     global env
     set temp $env(HOME)
-    set env(HOME) "/home/test"
+    set env(HOME) "/homewontexist/test"
     testsetplatform unix
     set result [list [catch {file dirname ~} msg] $msg]
     set env(HOME) $temp
     set result
-} {0 /home}
+} {0 /homewontexist}
 test cmdAH-8.44 {Tcl_FileObjCmd: dirname} {
     global env
     set temp $env(HOME)
@@ -414,12 +417,12 @@ test cmdAH-8.44 {Tcl_FileObjCmd: dirname} {
 test cmdAH-8.45 {Tcl_FileObjCmd: dirname} {
     global env
     set temp $env(HOME)
-    set env(HOME) "/home/test"
+    set env(HOME) "/homewontexist/test"
     testsetplatform windows
     set result [list [catch {file dirname ~} msg] $msg]
     set env(HOME) $temp
     set result
-} {0 /home}
+} {0 /homewontexist}
 test cmdAH-8.46 {Tcl_FileObjCmd: dirname} {
     global env
     set temp $env(HOME)
