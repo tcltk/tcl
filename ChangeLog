@@ -1,5 +1,28 @@
 2004-12-01  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclUtil.c:		Updated Tcl_GetNameOfExecutable() to
+	* generic/tclEncoding.c:	make use of a ProcessGlobalValue for
+	* generic/tclEvent.c:		storing the executable name.
+	Added internal routines Tcl(Get|Set)ObjNameOfExecutable() to access
+	that storage in Tcl_Obj, rather than string format.
+
+	* unix/tclUnixFile.c:	Rewrote TclpFindExecutable() to use
+	* win/tclWinFile.c:	TclSetObjNameOfExecutable to store the
+	executable name it computes.
+
+	* generic/tclInt.h:	Added internal stub entries for
+	* generic/tclInt.decls: TclpFindExecutable and
+	Tcl(Get|Set)ObjNameOfExecutable.
+
+	* generic/tclIntDecls.h:	make genstubs
+	* generic/tclStubInit.c:
+
+	* generic/tclCmdIL.c:	Retrieve executable name in Tcl_Obj form
+	* win/tclWinPipe.c:	instead of string form.
+
+	* unix/tclUnixTest.c:	Update [testfindexecutable] command to use
+	new internal interfaces.
+
 	* generic/tclEncoding.c:	Moved TclpSetInitialEncodings()
 	call from Tcl_FindExecutable() into TclInitEncodingSubsystem().
 	This is important on Windows where it establishes whether the
