@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.52 2002/07/01 14:35:09 dgp Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.53 2002/07/08 10:08:58 vincentdarley Exp $
  */
 
 #define TCL_TEST
@@ -345,7 +345,7 @@ static int		TestReportAccess _ANSI_ARGS_ ((Tcl_Obj *path,
 			    int mode));
 static Tcl_Channel	TestReportOpenFileChannel _ANSI_ARGS_ ((
 			    Tcl_Interp *interp, Tcl_Obj *fileName,
-			    CONST char *modeString, int permissions));
+			    int mode, int permissions));
 static int		TestReportMatchInDirectory _ANSI_ARGS_ ((
 			    Tcl_Interp *interp, Tcl_Obj *resultPtr,
 			    Tcl_Obj *dirPtr, CONST char *pattern,
@@ -4773,10 +4773,30 @@ PretendTclpOpenFileChannel(interp, fileName, modeString, permissions)
 					 * it? */
 {
     Tcl_Channel ret;
-    Tcl_Obj *pathPtr = Tcl_NewStringObj(fileName, -1);
+    int mode, seekFlag;
+    Tcl_Obj *pathPtr;
+    mode = TclGetOpenMode(interp, modeString, &seekFlag);
+    if (mode == -1) {
+	return NULL;
+    }
+    pathPtr = Tcl_NewStringObj(fileName, -1);
     Tcl_IncrRefCount(pathPtr);
-    ret = TclpOpenFileChannel(interp, pathPtr, modeString, permissions);
+    ret = TclpOpenFileChannel(interp, pathPtr, mode, permissions);
     Tcl_DecrRefCount(pathPtr);
+    if (ret != NULL) {
+	if (seekFlag) {
+	    if (Tcl_Seek(ret, 0, SEEK_END) < 0) {
+		if (interp != (Tcl_Interp *) NULL) {
+		    Tcl_AppendResult(interp,
+		      "could not seek to end of file while opening \"",
+		      fileName, "\": ", 
+		      Tcl_PosixError(interp), (char *) NULL);
+		}
+		Tcl_Close(NULL, ret);
+		return NULL;
+	    }
+	}
+    }
     return ret;
 }
 
@@ -5772,19 +5792,18 @@ TestReportAccess(path, mode)
     return Tcl_FSAccess(TestReportGetNativePath(path),mode);
 }
 static Tcl_Channel
-TestReportOpenFileChannel(interp, fileName, modeString, permissions)
+TestReportOpenFileChannel(interp, fileName, mode, permissions)
     Tcl_Interp *interp;                 /* Interpreter for error reporting;
 					 * can be NULL. */
     Tcl_Obj *fileName;                  /* Name of file to open. */
-    CONST char *modeString;             /* A list of POSIX open modes or
-					 * a string such as "rw". */
+    int mode;                           /* POSIX open mode. */
     int permissions;                    /* If the open involves creating a
 					 * file, with what modes to create
 					 * it? */
 {
     TestReport("open",fileName, NULL);
-    return Tcl_FSOpenFileChannel(interp, TestReportGetNativePath(fileName),
-				 modeString, permissions);
+    return TclpOpenFileChannel(interp, TestReportGetNativePath(fileName),
+				 mode, permissions);
 }
 
 static int

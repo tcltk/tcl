@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacChan.c,v 1.16 2002/06/05 11:59:38 das Exp $
+ * RCS: @(#) $Id: tclMacChan.c,v 1.17 2002/07/08 10:08:58 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -741,7 +741,7 @@ TclpGetDefaultStdChannel(
  *
  * TclpOpenFileChannel --
  *
- *	Open an File based channel on Unix systems.
+ *	Open a File based channel on MacOS systems.
  *
  * Results:
  *	The new channel or NULL. If NULL, the output argument
@@ -759,22 +759,15 @@ TclpOpenFileChannel(
     Tcl_Interp *interp,			/* Interpreter for error reporting;
                                          * can be NULL. */
     Tcl_Obj *pathPtr,			/* Name of file to open. */
-    CONST char *modeString,		/* A list of POSIX open modes or
-                                         * a string such as "rw". */
+    int mode,				/* POSIX open mode. */
     int permissions)			/* If the open involves creating a
                                          * file, with what modes to create
                                          * it? */
 {
     Tcl_Channel chan;
-    int mode;
     CONST char *native;
     int errorCode;
     
-    mode = GetOpenMode(interp, modeString);
-    if (mode == -1) {
-	return NULL;
-    }
-
     native = Tcl_FSGetNativePath(pathPtr);
     if (native == NULL) {
 	return NULL;
