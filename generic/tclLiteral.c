@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLiteral.c,v 1.9 2001/10/06 00:12:11 msofer Exp $
+ * RCS: @(#) $Id: tclLiteral.c,v 1.10 2001/10/09 17:18:56 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -715,16 +715,6 @@ TclReleaseLiteral(interp, objPtr)
 		     */
 
 		    codePtr->objArrayPtr[0] = NULL;
-
-		    /*
-		     * At this point, objPtr has three references: one each 
-		     * from the global and local literal tables, and one 
-		     * self-referential (it is its own internal rep). In 
-		     * order to allow the object to be cleared, we remove
-		     * one reference [Bug 467523].
-		     */
-
-		    Tcl_DecrRefCount(objPtr);
 		}
 	    }
 
