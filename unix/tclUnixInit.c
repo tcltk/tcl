@@ -7,7 +7,7 @@
  * Copyright (c) 1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclUnixInit.c,v 1.48 2004/09/22 15:48:23 msofer Exp $
+ * RCS: @(#) $Id: tclUnixInit.c,v 1.49 2004/09/22 15:51:53 msofer Exp $
  */
 
 #if defined(HAVE_CFBUNDLE)
@@ -423,8 +423,7 @@ CONST char *path;		/* Path to the executable in native
       * overwrite pathv[0] since that might produce a relative path.
       */
 
-    //if (0 && path != NULL) {
-    if (path != NULL) {
+    if (0 && path != NULL) {
 	int i, origc;
 	CONST char **origv;
 
