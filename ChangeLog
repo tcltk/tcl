@@ -4,7 +4,10 @@
 	support.
 
 	* win/tclWinPipe.c:
-	* win/tclWinPort.h:  More Borland compatibility fixes.
+	* win/tclWinPort.h:  More Borland compatibility fixes.  Changed
+	EDQUOT #define from 49 to 69.  Borland had a clash as it was already
+	using this number.  Upon advice from Helmut Giese, EDQUOT has been
+	found in other header files #defined as 69.
 	[Patch: 436116]
 
 	* win/.cvsignore:  A few more glob patterns added.
