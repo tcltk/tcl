@@ -1,3 +1,18 @@
+2001-12-28  Daniel Steffen <das@users.sourceforge.net>
+
+	* mac/tclMacInit.c:
+	* mac/tclMacTclCode.r: synced up tclInit features to unix/win:
+	implemented TclSetPreInitScript support, use of existing tclInit 
+	proc if defined, check of default encoding dir if set. Changed
+	script library resource names to lowercase (i.e. same as
+	corresponding files). Used Tcl_JoinPath instead of string append.
+	Check that system encoding could be loaded before utf translating
+	the LibraryPath.
+	* mac/tclMacApplication.r:
+	* mac/tclMacLibrary.r:
+	* mac/tclMacOSA.r:
+	* mac/tclMacResource.r: minor version resources cleanup
+
 2001-12-21  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* unix/tcl.m4 (SC_PATH_TCLCONFIG, SC_PATH_TKCONFIG):
