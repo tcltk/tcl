@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclGetDate.y,v 1.11 2000/01/12 19:36:42 ericm Exp $
+ * RCS: @(#) $Id: tclGetDate.y,v 1.12 2000/01/12 23:35:52 ericm Exp $
  */
 
 %{
@@ -138,11 +138,11 @@ yyparse _ANSI_ARGS_((void));
 }
 
 %token  tAGO tDAY tDAYZONE tID tMERIDIAN tMINUTE_UNIT tMONTH tMONTH_UNIT
-%token  tSEC_UNIT tSNUMBER tUNUMBER tZONE tEPOCH tDST tISOBASE tDAY_UNIT
+%token  tSEC_UNIT tSNUMBER tUNUMBER tZONE tEPOCH tDST tISOBASE tDAY_UNIT tNEXT
 
 %type   <Number>        tDAY tDAYZONE tMINUTE_UNIT tMONTH tMONTH_UNIT tDST
 %type   <Number>        tSEC_UNIT tSNUMBER tUNUMBER tZONE tISOBASE tDAY_UNIT
-%type   <Number>        unit ago sign
+%type   <Number>        unit ago sign tNEXT
 %type   <Meridian>      tMERIDIAN o_merid
 
 %%
@@ -234,6 +234,14 @@ day     : tDAY {
             yyDayOrdinal = $1;
             yyDayNumber = $2;
         }
+        | sign tUNUMBER tDAY {
+            yyDayOrdinal = $1 * $2;
+            yyDayNumber = $3;
+        }
+        | tNEXT tDAY {
+            yyDayOrdinal = 2;
+            yyDayNumber = $2;
+        }
         ;
 
 date    : tUNUMBER '/' tUNUMBER {
@@ -315,6 +323,8 @@ iso     : tISOBASE tZONE tISOBASE {
 
 relspec : sign tUNUMBER unit ago { *yyRelPointer += $1 * $2 * $3 * $4; }
         | tUNUMBER unit ago      { *yyRelPointer += $1 * $2 * $3; }
+        | tNEXT unit             { *yyRelPointer += $2; }
+        | tNEXT tUNUMBER unit    { *yyRelPointer += $2 * $3; }
         | unit ago               { *yyRelPointer += $1 * $2; }
         ;
 sign    : '-'            { $$ = -1; }
@@ -415,7 +425,7 @@ static TABLE    OtherTable[] = {
     { "now",            tSEC_UNIT,      0 },
     { "last",           tUNUMBER,      -1 },
     { "this",           tSEC_UNIT,      0 },
-    { "next",           tUNUMBER,       1 },
+    { "next",           tNEXT,          1 },
 #if 0
     { "first",          tUNUMBER,       1 },
     { "second",         tUNUMBER,       2 },
