@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.42.2.4 2004/11/17 02:52:25 hobbs Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.42.2.5 2005/01/27 22:53:35 andreas_kupries Exp $
  */
 
 #include "tclInt.h"	/* Internal definitions for Tcl. */
@@ -250,6 +250,10 @@ static int		FileOutputProc _ANSI_ARGS_((
 			    int toWrite, int *errorCode));
 static int		FileSeekProc _ANSI_ARGS_((ClientData instanceData,
 			    long offset, int mode, int *errorCode));
+#ifdef DEPRECATED
+static void             FileThreadActionProc _ANSI_ARGS_ ((
+			   ClientData instanceData, int action));
+#endif
 static Tcl_WideInt	FileWideSeekProc _ANSI_ARGS_((ClientData instanceData,
 			    Tcl_WideInt offset, int mode, int *errorCode));
 static void		FileWatchProc _ANSI_ARGS_((ClientData instanceData,
@@ -305,7 +309,7 @@ static Tcl_Channel	MakeTcpClientChannelMode _ANSI_ARGS_(
 
 static Tcl_ChannelType fileChannelType = {
     "file",			/* Type name. */
-    TCL_CHANNEL_VERSION_3,	/* v3 channel */
+    TCL_CHANNEL_VERSION_4,	/* v4 channel */
     FileCloseProc,		/* Close proc. */
     FileInputProc,		/* Input proc. */
     FileOutputProc,		/* Output proc. */
@@ -319,6 +323,11 @@ static Tcl_ChannelType fileChannelType = {
     NULL,			/* flush proc. */
     NULL,			/* handler proc. */
     FileWideSeekProc,		/* wide seek proc. */
+#ifdef DEPRECATED
+    FileThreadActionProc,       /* thread actions */
+#else
+    NULL,
+#endif
 };
 
 #ifdef SUPPORTS_TTY
@@ -329,7 +338,7 @@ static Tcl_ChannelType fileChannelType = {
 
 static Tcl_ChannelType ttyChannelType = {
     "tty",			/* Type name. */
-    TCL_CHANNEL_VERSION_2,	/* v2 channel */
+    TCL_CHANNEL_VERSION_4,	/* v4 channel */
     TtyCloseProc,		/* Close proc. */
     FileInputProc,		/* Input proc. */
 #if BAD_TIP35_FLUSH
@@ -346,6 +355,8 @@ static Tcl_ChannelType ttyChannelType = {
     FileBlockModeProc,		/* Set blocking or non-blocking mode.*/
     NULL,			/* flush proc. */
     NULL,			/* handler proc. */
+    NULL,			/* wide seek proc. */
+    NULL,			/* thread action proc. */
 };
 #endif	/* SUPPORTS_TTY */
 
@@ -356,7 +367,7 @@ static Tcl_ChannelType ttyChannelType = {
 
 static Tcl_ChannelType tcpChannelType = {
     "tcp",			/* Type name. */
-    TCL_CHANNEL_VERSION_2,	/* v2 channel */
+    TCL_CHANNEL_VERSION_4,	/* v4 channel */
     TcpCloseProc,		/* Close proc. */
     TcpInputProc,		/* Input proc. */
     TcpOutputProc,		/* Output proc. */
@@ -369,6 +380,8 @@ static Tcl_ChannelType tcpChannelType = {
     TcpBlockModeProc,		/* Set blocking or non-blocking mode.*/
     NULL,			/* flush proc. */
     NULL,			/* handler proc. */
+    NULL,			/* wide seek proc. */
+    NULL,			/* thread action proc. */
 };
 
 
@@ -1840,8 +1853,11 @@ TclpOpenFileChannel(interp, pathPtr, mode, permissions)
 
 #ifdef DEPRECATED
     if (channelTypePtr == &fileChannelType) {
-        fsPtr->nextPtr = tsdPtr->firstFilePtr;
-        tsdPtr->firstFilePtr = fsPtr;
+        /* TIP #218. Removed the code inserting the new structure
+	 * into the global list. This is now handled in the thread
+	 * action callbacks, and only there.
+	 */
+        fsPtr->nextPtr = NULL;
     }
 #endif /* DEPRECATED */
     fsPtr->validMask = channelPermissions | TCL_EXCEPTION;
@@ -3281,13 +3297,13 @@ TclUnixWaitForFile(fd, mask, timeout)
     return result;
 }
 
+#ifdef DEPRECATED
 /*
  *----------------------------------------------------------------------
  *
- * TclpCutFileChannel --
+ * FileThreadActionProc --
  *
- *	Remove any thread local refs to this channel. See
- *	Tcl_CutChannel for more info.
+ *	Insert or remove any thread local refs to this channel.
  *
  * Results:
  *	None.
@@ -3298,79 +3314,40 @@ TclUnixWaitForFile(fd, mask, timeout)
  *----------------------------------------------------------------------
  */
 
-void
-TclpCutFileChannel(chan)
-    Tcl_Channel chan;			/* The channel being removed. Must
-                                         * not be referenced in any
-                                         * interpreter. */
+static void
+FileThreadActionProc (instanceData, action)
+     ClientData instanceData;
+     int action;
 {
-#ifdef DEPRECATED
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-    Channel *chanPtr = (Channel *) chan;
-    FileState *fsPtr;
-    FileState **nextPtrPtr;
-    int removed = 0;
+    FileState *fsPtr = (FileState *) instanceData;
 
-    if (chanPtr->typePtr != &fileChannelType)
-        return;
+    if (action == TCL_CHANNEL_THREAD_INSERT) {
+        fsPtr->nextPtr       = tsdPtr->firstFilePtr;
+	tsdPtr->firstFilePtr = fsPtr;
+    } else {
+        FileState **nextPtrPtr;
+	int removed = 0;
 
-    fsPtr = (FileState *) chanPtr->instanceData;
+	for (nextPtrPtr = &(tsdPtr->firstFilePtr); (*nextPtrPtr) != NULL;
+	     nextPtrPtr = &((*nextPtrPtr)->nextPtr)) {
+	    if ((*nextPtrPtr) == fsPtr) {
+	        (*nextPtrPtr) = fsPtr->nextPtr;
+		removed = 1;
+		break;
+	    }
+	}
 
-    for (nextPtrPtr = &(tsdPtr->firstFilePtr); (*nextPtrPtr) != NULL;
-	 nextPtrPtr = &((*nextPtrPtr)->nextPtr)) {
-	if ((*nextPtrPtr) == fsPtr) {
-	    (*nextPtrPtr) = fsPtr->nextPtr;
-	    removed = 1;
-	    break;
+	/*
+	 * This could happen if the channel was created in one
+	 * thread and then moved to another without updating
+	 * the thread local data in each thread.
+	 */
+
+	if (!removed) {
+	  panic("file info ptr not on thread channel list");
 	}
     }
-
-    /*
-     * This could happen if the channel was created in one thread
-     * and then moved to another without updating the thread
-     * local data in each thread.
-     */
-
-    if (!removed)
-        panic("file info ptr not on thread channel list");
-
-#endif /* DEPRECATED */
 }
-
-/*
- *----------------------------------------------------------------------
- *
- * TclpSpliceFileChannel --
- *
- *	Insert thread local ref for this channel.
- *	Tcl_SpliceChannel for more info.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Changes thread local list of valid channels.
- *
- *----------------------------------------------------------------------
- */
-
-void
-TclpSpliceFileChannel(chan)
-    Tcl_Channel chan;			/* The channel being removed. Must
-                                         * not be referenced in any
-                                         * interpreter. */
-{
-#ifdef DEPRECATED
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-    Channel *chanPtr = (Channel *) chan;
-    FileState *fsPtr;
-
-    if (chanPtr->typePtr != &fileChannelType)
-        return;
-
-    fsPtr = (FileState *) chanPtr->instanceData;
-
-    fsPtr->nextPtr = tsdPtr->firstFilePtr;
-    tsdPtr->firstFilePtr = fsPtr;
 #endif /* DEPRECATED */
-}
+

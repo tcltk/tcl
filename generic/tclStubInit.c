@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.79.2.8 2004/10/14 15:30:52 dkf Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.79.2.9 2005/01/27 22:53:34 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -953,6 +953,67 @@ TclStubs tclStubs = {
     Tcl_Seek, /* 491 */
     Tcl_Tell, /* 492 */
     Tcl_ChannelWideSeekProc, /* 493 */
+    NULL, /* 494 */
+    NULL, /* 495 */
+    NULL, /* 496 */
+    NULL, /* 497 */
+    NULL, /* 498 */
+    NULL, /* 499 */
+    NULL, /* 500 */
+    NULL, /* 501 */
+    NULL, /* 502 */
+    NULL, /* 503 */
+    NULL, /* 504 */
+    NULL, /* 505 */
+    NULL, /* 506 */
+    NULL, /* 507 */
+    NULL, /* 508 */
+    NULL, /* 509 */
+    NULL, /* 510 */
+    NULL, /* 511 */
+    NULL, /* 512 */
+    NULL, /* 513 */
+    NULL, /* 514 */
+    NULL, /* 515 */
+    NULL, /* 516 */
+    NULL, /* 517 */
+    NULL, /* 518 */
+    NULL, /* 519 */
+    NULL, /* 520 */
+    NULL, /* 521 */
+    NULL, /* 522 */
+    NULL, /* 523 */
+    NULL, /* 524 */
+    NULL, /* 525 */
+    NULL, /* 526 */
+    NULL, /* 527 */
+    NULL, /* 528 */
+    NULL, /* 529 */
+    NULL, /* 530 */
+    NULL, /* 531 */
+    NULL, /* 532 */
+    NULL, /* 533 */
+    NULL, /* 534 */
+    NULL, /* 535 */
+    NULL, /* 536 */
+    NULL, /* 537 */
+    NULL, /* 538 */
+    NULL, /* 539 */
+    NULL, /* 540 */
+    NULL, /* 541 */
+    NULL, /* 542 */
+    NULL, /* 543 */
+    NULL, /* 544 */
+    NULL, /* 545 */
+    NULL, /* 546 */
+    NULL, /* 547 */
+    NULL, /* 548 */
+    NULL, /* 549 */
+    NULL, /* 550 */
+    NULL, /* 551 */
+    NULL, /* 552 */
+    NULL, /* 553 */
+    Tcl_ChannelThreadActionProc, /* 554 */
 };
 
 /* !END!: Do not edit above this line. */

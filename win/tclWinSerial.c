@@ -11,7 +11,7 @@
  *
  * Serial functionality implemented by Rolf.Schroedter@dlr.de
  *
- * RCS: @(#) $Id: tclWinSerial.c,v 1.25.2.1 2003/05/11 00:31:41 hobbs Exp $
+ * RCS: @(#) $Id: tclWinSerial.c,v 1.25.2.2 2005/01/27 22:53:38 andreas_kupries Exp $
  */
 
 #include "tclWinInt.h"
@@ -190,6 +190,9 @@ static int       SerialSetOptionProc _ANSI_ARGS_((ClientData instanceData,
                 CONST char *value));
 static DWORD WINAPI     SerialWriterThread(LPVOID arg);
 
+static void             SerialThreadActionProc _ANSI_ARGS_ ((
+			   ClientData instanceData, int action));
+
 /*
  * This structure describes the channel type structure for command serial
  * based IO.
@@ -197,7 +200,7 @@ static DWORD WINAPI     SerialWriterThread(LPVOID arg);
 
 static Tcl_ChannelType serialChannelType = {
     "serial",                   /* Type name. */
-    TCL_CHANNEL_VERSION_2,      /* v2 channel */
+    TCL_CHANNEL_VERSION_4,      /* v4 channel */
     SerialCloseProc,            /* Close proc. */
     SerialInputProc,            /* Input proc. */
     SerialOutputProc,           /* Output proc. */
@@ -210,6 +213,8 @@ static Tcl_ChannelType serialChannelType = {
     SerialBlockProc,            /* Set blocking or non-blocking mode.*/
     NULL,                       /* flush proc. */
     NULL,                       /* handler proc. */
+    NULL,                       /* wide seek proc */
+    SerialThreadActionProc,     /* thread action proc */
 };
 
 /*
@@ -1346,7 +1351,10 @@ SerialWriterThread(LPVOID arg)
          */
 
         Tcl_MutexLock(&serialMutex);
-        Tcl_ThreadAlert(infoPtr->threadId);
+	if (infoPtr->threadId != NULL) {
+	    /* TIP #218. When in flight ignore the event, no one will receive it anyway */
+	    Tcl_ThreadAlert(infoPtr->threadId);
+	}
         Tcl_MutexUnlock(&serialMutex);
     }
 
@@ -1419,16 +1427,25 @@ TclWinOpenSerialChannel(handle, channelName, permissions)
     int permissions;
 {
     SerialInfo *infoPtr;
-    ThreadSpecificData *tsdPtr;
     DWORD id;
 
-    tsdPtr = SerialInit();
+    SerialInit();
 
     infoPtr = (SerialInfo *) ckalloc((unsigned) sizeof(SerialInfo));
     memset(infoPtr, 0, sizeof(SerialInfo));
 
-    infoPtr->validMask = permissions;
-    infoPtr->handle = handle;
+    infoPtr->validMask     = permissions;
+    infoPtr->handle        = handle;
+    infoPtr->channel       = (Tcl_Channel) NULL;
+    infoPtr->readable      = 0; 
+    infoPtr->writable      = 1;
+    infoPtr->toWrite       = infoPtr->writeQueue = 0;
+    infoPtr->blockTime     = SERIAL_DEFAULT_BLOCKTIME;
+    infoPtr->lastEventTime = 0;
+    infoPtr->lastError     = infoPtr->error = 0;
+    infoPtr->threadId      = Tcl_GetCurrentThread();
+    infoPtr->sysBufRead    = 4096;
+    infoPtr->sysBufWrite   = 4096;
 
     /*
      * Use the pointer to keep the channel names unique, in case
@@ -1440,14 +1457,6 @@ TclWinOpenSerialChannel(handle, channelName, permissions)
     infoPtr->channel = Tcl_CreateChannel(&serialChannelType, channelName,
             (ClientData) infoPtr, permissions);
 
-    infoPtr->readable = 0; 
-    infoPtr->writable = 1;
-    infoPtr->toWrite = infoPtr->writeQueue = 0;
-    infoPtr->blockTime = SERIAL_DEFAULT_BLOCKTIME;
-    infoPtr->lastEventTime = 0;
-    infoPtr->lastError = infoPtr->error = 0;
-    infoPtr->threadId = Tcl_GetCurrentThread();
-    infoPtr->sysBufRead = infoPtr->sysBufWrite = 4096;
 
     SetupComm(handle, infoPtr->sysBufRead, infoPtr->sysBufWrite);
     PurgeComm(handle, PURGE_TXABORT | PURGE_RXABORT | PURGE_TXCLEAR 
@@ -2106,4 +2115,52 @@ SerialGetOptionProc(instanceData, interp, optionName, dsPtr)
         return Tcl_BadChannelOption(interp, optionName,
             "mode pollinterval lasterror queue sysbuffer ttystatus xchar");
     }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SerialThreadActionProc --
+ *
+ *	Insert or remove any thread local refs to this channel.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Changes thread local list of valid channels.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+SerialThreadActionProc (instanceData, action)
+     ClientData instanceData;
+     int action;
+{
+    SerialInfo *infoPtr = (SerialInfo *) instanceData;
+
+    /* We do not access firstSerialPtr in the thread structures. This is
+     * not for all serials managed by the thread, but only those we are
+     * watching. Removal of the filevent handlers before transfer thus
+     * takes care of this structure.
+     */
+
+    Tcl_MutexLock(&serialMutex);
+    if (action == TCL_CHANNEL_THREAD_INSERT) {
+        /* We can't copy the thread information from the channel when
+	 * the channel is created. At this time the channel back
+	 * pointer has not been set yet. However in that case the
+	 * threadId has already been set by TclpCreateCommandChannel
+	 * itself, so the structure is still good.
+	 */
+
+        SerialInit ();
+        if (infoPtr->channel != NULL) {
+	    infoPtr->threadId = Tcl_GetChannelThread (infoPtr->channel);
+	}
+    } else {
+	infoPtr->threadId = NULL;
+    }
+    Tcl_MutexUnlock(&serialMutex);
 }

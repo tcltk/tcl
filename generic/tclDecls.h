@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.93.2.5 2004/06/10 17:17:42 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.93.2.6 2005/01/27 22:53:30 andreas_kupries Exp $
  */
 
 #ifndef _TCLDECLS
@@ -1564,6 +1564,69 @@ EXTERN Tcl_WideInt	Tcl_Tell _ANSI_ARGS_((Tcl_Channel chan));
 /* 493 */
 EXTERN Tcl_DriverWideSeekProc * Tcl_ChannelWideSeekProc _ANSI_ARGS_((
 				Tcl_ChannelType * chanTypePtr));
+/* Slot 494 is reserved */
+/* Slot 495 is reserved */
+/* Slot 496 is reserved */
+/* Slot 497 is reserved */
+/* Slot 498 is reserved */
+/* Slot 499 is reserved */
+/* Slot 500 is reserved */
+/* Slot 501 is reserved */
+/* Slot 502 is reserved */
+/* Slot 503 is reserved */
+/* Slot 504 is reserved */
+/* Slot 505 is reserved */
+/* Slot 506 is reserved */
+/* Slot 507 is reserved */
+/* Slot 508 is reserved */
+/* Slot 509 is reserved */
+/* Slot 510 is reserved */
+/* Slot 511 is reserved */
+/* Slot 512 is reserved */
+/* Slot 513 is reserved */
+/* Slot 514 is reserved */
+/* Slot 515 is reserved */
+/* Slot 516 is reserved */
+/* Slot 517 is reserved */
+/* Slot 518 is reserved */
+/* Slot 519 is reserved */
+/* Slot 520 is reserved */
+/* Slot 521 is reserved */
+/* Slot 522 is reserved */
+/* Slot 523 is reserved */
+/* Slot 524 is reserved */
+/* Slot 525 is reserved */
+/* Slot 526 is reserved */
+/* Slot 527 is reserved */
+/* Slot 528 is reserved */
+/* Slot 529 is reserved */
+/* Slot 530 is reserved */
+/* Slot 531 is reserved */
+/* Slot 532 is reserved */
+/* Slot 533 is reserved */
+/* Slot 534 is reserved */
+/* Slot 535 is reserved */
+/* Slot 536 is reserved */
+/* Slot 537 is reserved */
+/* Slot 538 is reserved */
+/* Slot 539 is reserved */
+/* Slot 540 is reserved */
+/* Slot 541 is reserved */
+/* Slot 542 is reserved */
+/* Slot 543 is reserved */
+/* Slot 544 is reserved */
+/* Slot 545 is reserved */
+/* Slot 546 is reserved */
+/* Slot 547 is reserved */
+/* Slot 548 is reserved */
+/* Slot 549 is reserved */
+/* Slot 550 is reserved */
+/* Slot 551 is reserved */
+/* Slot 552 is reserved */
+/* Slot 553 is reserved */
+/* 554 */
+EXTERN Tcl_DriverThreadActionProc * Tcl_ChannelThreadActionProc _ANSI_ARGS_((
+				Tcl_ChannelType * chanTypePtr));
 
 typedef struct TclStubHooks {
     struct TclPlatStubs *tclPlatStubs;
@@ -2117,6 +2180,67 @@ typedef struct TclStubs {
     Tcl_WideInt (*tcl_Seek) _ANSI_ARGS_((Tcl_Channel chan, Tcl_WideInt offset, int mode)); /* 491 */
     Tcl_WideInt (*tcl_Tell) _ANSI_ARGS_((Tcl_Channel chan)); /* 492 */
     Tcl_DriverWideSeekProc * (*tcl_ChannelWideSeekProc) _ANSI_ARGS_((Tcl_ChannelType * chanTypePtr)); /* 493 */
+    void *reserved494;
+    void *reserved495;
+    void *reserved496;
+    void *reserved497;
+    void *reserved498;
+    void *reserved499;
+    void *reserved500;
+    void *reserved501;
+    void *reserved502;
+    void *reserved503;
+    void *reserved504;
+    void *reserved505;
+    void *reserved506;
+    void *reserved507;
+    void *reserved508;
+    void *reserved509;
+    void *reserved510;
+    void *reserved511;
+    void *reserved512;
+    void *reserved513;
+    void *reserved514;
+    void *reserved515;
+    void *reserved516;
+    void *reserved517;
+    void *reserved518;
+    void *reserved519;
+    void *reserved520;
+    void *reserved521;
+    void *reserved522;
+    void *reserved523;
+    void *reserved524;
+    void *reserved525;
+    void *reserved526;
+    void *reserved527;
+    void *reserved528;
+    void *reserved529;
+    void *reserved530;
+    void *reserved531;
+    void *reserved532;
+    void *reserved533;
+    void *reserved534;
+    void *reserved535;
+    void *reserved536;
+    void *reserved537;
+    void *reserved538;
+    void *reserved539;
+    void *reserved540;
+    void *reserved541;
+    void *reserved542;
+    void *reserved543;
+    void *reserved544;
+    void *reserved545;
+    void *reserved546;
+    void *reserved547;
+    void *reserved548;
+    void *reserved549;
+    void *reserved550;
+    void *reserved551;
+    void *reserved552;
+    void *reserved553;
+    Tcl_DriverThreadActionProc * (*tcl_ChannelThreadActionProc) _ANSI_ARGS_((Tcl_ChannelType * chanTypePtr)); /* 554 */
 } TclStubs;
 
 #ifdef __cplusplus
@@ -4132,6 +4256,70 @@ extern TclStubs *tclStubsPtr;
 #ifndef Tcl_ChannelWideSeekProc
 #define Tcl_ChannelWideSeekProc \
 	(tclStubsPtr->tcl_ChannelWideSeekProc) /* 493 */
+#endif
+/* Slot 494 is reserved */
+/* Slot 495 is reserved */
+/* Slot 496 is reserved */
+/* Slot 497 is reserved */
+/* Slot 498 is reserved */
+/* Slot 499 is reserved */
+/* Slot 500 is reserved */
+/* Slot 501 is reserved */
+/* Slot 502 is reserved */
+/* Slot 503 is reserved */
+/* Slot 504 is reserved */
+/* Slot 505 is reserved */
+/* Slot 506 is reserved */
+/* Slot 507 is reserved */
+/* Slot 508 is reserved */
+/* Slot 509 is reserved */
+/* Slot 510 is reserved */
+/* Slot 511 is reserved */
+/* Slot 512 is reserved */
+/* Slot 513 is reserved */
+/* Slot 514 is reserved */
+/* Slot 515 is reserved */
+/* Slot 516 is reserved */
+/* Slot 517 is reserved */
+/* Slot 518 is reserved */
+/* Slot 519 is reserved */
+/* Slot 520 is reserved */
+/* Slot 521 is reserved */
+/* Slot 522 is reserved */
+/* Slot 523 is reserved */
+/* Slot 524 is reserved */
+/* Slot 525 is reserved */
+/* Slot 526 is reserved */
+/* Slot 527 is reserved */
+/* Slot 528 is reserved */
+/* Slot 529 is reserved */
+/* Slot 530 is reserved */
+/* Slot 531 is reserved */
+/* Slot 532 is reserved */
+/* Slot 533 is reserved */
+/* Slot 534 is reserved */
+/* Slot 535 is reserved */
+/* Slot 536 is reserved */
+/* Slot 537 is reserved */
+/* Slot 538 is reserved */
+/* Slot 539 is reserved */
+/* Slot 540 is reserved */
+/* Slot 541 is reserved */
+/* Slot 542 is reserved */
+/* Slot 543 is reserved */
+/* Slot 544 is reserved */
+/* Slot 545 is reserved */
+/* Slot 546 is reserved */
+/* Slot 547 is reserved */
+/* Slot 548 is reserved */
+/* Slot 549 is reserved */
+/* Slot 550 is reserved */
+/* Slot 551 is reserved */
+/* Slot 552 is reserved */
+/* Slot 553 is reserved */
+#ifndef Tcl_ChannelThreadActionProc
+#define Tcl_ChannelThreadActionProc \
+	(tclStubsPtr->tcl_ChannelThreadActionProc) /* 554 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */
