@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclScan.c,v 1.2 1999/04/16 00:46:53 stanton Exp $
+ * RCS: @(#) $Id: tclScan.c,v 1.2.6.1 1999/11/30 08:42:52 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -748,6 +748,12 @@ Tcl_ScanObjCmd(dummy, interp, objc, objv)
 		}
 		ReleaseCharSet(&cset);
 
+		if (string == end) {
+		    /*
+		     * Nothing matched the range, stop processing
+		     */
+		    goto done;
+		}
 		if (!(flags & SCAN_SUPPRESS)) {
 		    objPtr = Tcl_NewStringObj(string, end-string);
 		    Tcl_IncrRefCount(objPtr);
