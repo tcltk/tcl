@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.40 2003/03/05 22:31:23 dkf Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.41 2003/03/06 23:17:09 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -3060,7 +3060,7 @@ TclCompileSwitchCmd(interp, parsePtr, envPtr)
     contFixIndex = -1;
     fixupArray = (JumpFixup *) ckalloc(sizeof(JumpFixup) * argc);
     fixupTargetArray = (int *) ckalloc(sizeof(int) * argc);
-    bzero(fixupTargetArray, sizeof(int) * argc);
+    (VOID *) memset( fixupTargetArray, 0, argc * sizeof( int ) );
     fixupCount = 0;
     foundDefault = 0;
     for (i=0 ; i<argc ; i+=2) {
