@@ -12,7 +12,7 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
 #
-# RCS: @(#) $Id: http.test,v 1.6 1999/05/06 18:45:41 stanton Exp $
+# RCS: @(#) $Id: http.test,v 1.7 1999/05/18 22:59:17 hershey Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     source [file join [pwd] [file dirname [info script]] defs.tcl]
@@ -311,7 +311,7 @@ if {[info exists httpthread]} {
 }
 
 if {[info exist removeHttpd]} {
-    remove $httpdFile
+    removeFile $httpdFile
 }
 
 ::tcltest::cleanupTests
