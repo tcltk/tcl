@@ -1,3 +1,8 @@
+2002-04-26  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* generic/tclObj.c (SetBooleanFromAny): Was not calling an integer
+	parsing function on native 64-bit platforms!  [Bug 548686]
+
 2002-04-24  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclInt.h: corrected TclRememberJoinableThread decl to

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.32 2002/02/27 07:08:28 hobbs Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.33 2002/04/26 08:34:35 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1166,7 +1166,29 @@ SetBooleanFromAny(interp, objPtr)
 	}
     } else {
 	double dbl;
-#ifndef TCL_WIDE_INT_IS_LONG
+	/*
+	 * Boolean values can be extracted from ints or doubles.  Note
+	 * that we don't use strtoul or strtoull here because we don't
+	 * care about what the value is, just whether it is equal to
+	 * zero or not.
+	 */
+#ifdef TCL_WIDE_INT_IS_LONG
+	newBool = strtol(string, &end, 0);
+	if (end != string) {
+	    /*
+	     * Make sure the string has no garbage after the end of
+	     * the int.
+	     */
+	    while ((end < (string+length))
+		   && isspace(UCHAR(*end))) { /* INTL: ISO only */
+		end++;
+	    }
+	    if (end == (string+length)) {
+		newBool = (newBool != 0);
+		goto goodBoolean;
+	    }
+	}
+#else /* !TCL_WIDE_INT_IS_LONG */
 	Tcl_WideInt wide = strtoll(string, &end, 0);
 	if (end != string) {
 	    /*
@@ -1182,7 +1204,7 @@ SetBooleanFromAny(interp, objPtr)
 		goto goodBoolean;
 	    }
 	}
-#endif
+#endif /* TCL_WIDE_INT_IS_LONG */
         /*
          * Still might be a string containing the characters representing an
          * int or double that wasn't handled above. This would be a string
