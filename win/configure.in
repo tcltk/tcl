@@ -2,7 +2,7 @@
 # generate the file "configure", which is run during Tcl installation
 # to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.30 2001/04/02 01:59:26 hobbs Exp $
+# RCS: @(#) $Id: configure.in,v 1.31 2001/05/11 23:02:18 mdejong Exp $
 
 AC_INIT(../generic/tcl.h)
 
@@ -31,9 +31,9 @@ AC_PROG_CC
 # autoconf 2.50. You can also just set
 # the CC, AR, RANLIB, and RC environment
 # variables if you want to cross compile.
-#AC_CHECK_TOOL(AR, ar, :)
-#AC_CHECK_TOOL(RANLIB, ranlib, :)
-#AC_CHECK_TOOL(RC, windres, :)
+dnl AC_CHECK_TOOL(AR, ar, :)
+dnl AC_CHECK_TOOL(RANLIB, ranlib, :)
+dnl AC_CHECK_TOOL(RC, windres, :)
 
 if test "${GCC}" = "yes" ; then
     AC_CHECK_PROG(AR, ar, ar)

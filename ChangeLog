@@ -1,3 +1,18 @@
+2001-05-11  Mo DeJong  <mdejong@redhat.com>
+
+	* unix/Makefile.in: Add a LDFLAGS variable to the
+	Makefile instead of directly substing @LDFLAGS@.
+	* unix/configure: Regen.
+	* unix/tcl.m4: Fix CFLAGS_DEFAULT so that the name
+	of a Makefile variable is passed as @CFLAGS@.
+	* win/Makefile.in: Move the setting of CFLAGS
+	higher up in the Makefile.
+	* win/configure: Regen.
+	* win/configure.in: Use dnl to comment out macros
+	so that they are not accidently expanded.
+	* win/tcl.m4: Fix CFLAGS_DEFAULT so that the name
+	of a Makefile variable is passed as @CFLAGS@.
+
 2001-05-07  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* generic/tclExecute.c: insure different rand() seeds in different
