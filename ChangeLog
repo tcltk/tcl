@@ -1,5 +1,9 @@
 2004-02-17  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	* generic/tclIOUtil.c: backport of rewrite of generic file 
+	normalization code to cope with links followed by '..'.
+	[Bug 849514], and parts of [859251]
+
 	* tests/unixInit.test: unixInit-7.1
 	* unix/tclUnixInit.c (TclpInitPlatform): ensure the std fds exist
 	to prevent crash condition [Bug #772288]
