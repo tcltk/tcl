@@ -1,7 +1,13 @@
+2002-04-19  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* tests/lindex.test (lindex-3.7): 
+	* generic/tclUtil.c (TclGetIntForIndex): Stopped indexes from
+	hitting wide ints.  [Bug #526717]
+
 2002-04-18  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* generic/tclNamesp.c:
-	* tests/info.test:  [Bug 545325 ] info level didn't report
+	* tests/info.test: [Bug 545325] info level didn't report
 	namespace eval, bug report by Richard Suchenwirth.
 
 2002-04-18  Don Porter  <dgp@users.sourceforge.net>
