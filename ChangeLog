@@ -1,3 +1,14 @@
+2002-05-07  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* generic/tclFileName.c: fix to similar segfault when using 
+	'glob -types nonsense -dir dirname -join * *'. [Bug 553320]
+	
+	* doc/FileSystem.3: further documentation on vfs.
+	* tests/cmdAH.test:
+	* tests/fileSystem.test:
+	* tests/pkgMkindex.test: Fix to testsuite bugs when running out
+	of directory whose name contains '{' or '['.
+
 2002-05-07  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* tests/basic.test: Fix for [Bug 549607]
@@ -26,8 +37,8 @@
 	* tests/winFile.test: test for 'file system' returning correct
 	values.
 	* tests/fileSystem.test: test for 'file system' returning correct
-	values.
-
+	values.  Clean up after failed previous test run.
+	
 2002-04-26  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* unix/configure:

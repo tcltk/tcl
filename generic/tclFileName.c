@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.34 2002/05/02 20:15:20 vincentdarley Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.35 2002/05/07 18:03:04 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -1789,18 +1789,25 @@ Tcl_GlobObjCmd(dummy, interp, objc, objv)
 		    }
 		}
 		/*
-		 * Error cases
+		 * Error cases.  We re-get the interpreter's result,
+		 * just to be sure it hasn't changed, and we reset
+		 * the 'join' flag to zero, since we haven't yet
+		 * made use of it.
 		 */
 		badTypesArg:
+		resultPtr = Tcl_GetObjResult(interp);
 		Tcl_AppendToObj(resultPtr, "bad argument to \"-types\": ", -1);
 		Tcl_AppendObjToObj(resultPtr, look);
 		result = TCL_ERROR;
+		join = 0;
 		goto endOfGlob;
 		badMacTypesArg:
+		resultPtr = Tcl_GetObjResult(interp);
 		Tcl_AppendToObj(resultPtr,
 		   "only one MacOS type or creator argument"
 		   " to \"-types\" allowed", -1);
 		result = TCL_ERROR;
+		join = 0;
 		goto endOfGlob;
 	    }
 	}
