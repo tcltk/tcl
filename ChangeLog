@@ -1,5 +1,14 @@
 2004-04-07  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	* win/tclWinInit.c (TclpSetInitialEncodings): note that WIN32_CE
+	is also a unicode platform.
+	* generic/tclEncoding.c (TclFindEncodings, Tcl_FindExecutable): 
+	* generic/tclInt.h:                         Correct handling of UTF
+	* unix/tclUnixInit.c (TclpInitLibraryPath): data that is actually
+	* win/tclWinFile.c (TclpFindExecutable):    "clean", allowing the
+	* win/tclWinInit.c (TclpInitLibraryPath):   loading of Tcl from
+	paths that contain multi-byte chars on Windows [Bug 920667]
+
 	* win/configure:    define TCL_LIB_FLAG, TCL_BUILD_LIB_SPEC,
 	* win/configure.in: TCL_LIB_SPEC, TCL_PACKAGE_PATH in tclConfig.sh.
 
