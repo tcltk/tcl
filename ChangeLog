@@ -1,3 +1,10 @@
+2002-03-06  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* doc/lsearch.n: Documentation of new features, plus examples.
+	* tests/lsearch.test: Tests of new features.
+	* generic/tclCmdIL.c (Tcl_LsearchObjCmd): TIP#80 support.  See
+	http://purl.org/tcl/tip/80 for details.
+
 2002-03-05  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	*** 8.4a4 TAGGED FOR RELEASE ***
