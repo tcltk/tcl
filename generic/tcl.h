@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.145 2002/09/27 18:04:12 dgp Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.146 2002/10/11 13:22:23 dkf Exp $
  */
 
 #ifndef _TCL
@@ -328,8 +328,6 @@ typedef long LONG;
  * and define Tcl_WideUInt to be the unsigned variant of that type
  * (assuming that where we have one, we can have the other.)
  *
- * At the moment, this only works on Unix systems anyway...
- *
  * Also defines the following macros:
  * TCL_WIDE_INT_IS_LONG - if wide ints are really longs (i.e. we're on
  *	a real 64-bit system.)
@@ -343,11 +341,10 @@ typedef long LONG;
  *
  * Note on converting between Tcl_WideInt and strings.  This
  * implementation (in tclObj.c) depends on the functions strtoull()
- * and, where sprintf(...,"%lld",...) does not work, lltostr().
- * Although strtoull() is fairly straight-forward, lltostr() is a most
- * unusual function on Solaris8 (taking its operating buffer
- * backwards) so any changes you make will need to be done
- * cautiously...
+ * and sprintf(...,"%" TCL_LL_MODIFIER "d",...).  TCL_LL_MODIFIER_SIZE
+ * is the length of the modifier string, which is "ll" on most 32-bit
+ * Unix systems.  It has to be split up like this to allow for the more
+ * complex formats sometimes needed (e.g. in the format(n) command.)
  */
 
 #if !defined(TCL_WIDE_INT_TYPE)&&!defined(TCL_WIDE_INT_IS_LONG)
@@ -398,8 +395,16 @@ typedef struct stat	Tcl_StatBuf;
 #   define Tcl_LongAsWide(val)		((long)(val))
 #   define Tcl_WideAsDouble(val)	((double)((long)(val)))
 #   define Tcl_DoubleAsWide(val)	((long)((double)(val)))
+#   ifndef TCL_LL_MODIFIER
+#      define TCL_LL_MODIFIER		"l"
+#      define TCL_LL_MODIFIER_SIZE	1
+#   endif /* !TCL_LL_MODIFIER */
 #else /* TCL_WIDE_INT_IS_LONG */
-#   ifndef __WIN32__
+/*
+ * The next short section of defines are only done when not running on
+ * Windows or some other strange platform.
+ */
+#   ifndef TCL_LL_MODIFIER
 #      ifdef HAVE_STRUCT_STAT64
 typedef struct stat64	Tcl_StatBuf;
 #      else
@@ -407,7 +412,7 @@ typedef struct stat	Tcl_StatBuf;
 #      endif /* HAVE_STRUCT_STAT64 */
 #      define TCL_LL_MODIFIER		"ll"
 #      define TCL_LL_MODIFIER_SIZE	2
-#   endif /* !__WIN32__ */
+#   endif /* !TCL_LL_MODIFIER */
 #   define Tcl_WideAsLong(val)		((long)((Tcl_WideInt)(val)))
 #   define Tcl_LongAsWide(val)		((Tcl_WideInt)((long)(val)))
 #   define Tcl_WideAsDouble(val)	((double)((Tcl_WideInt)(val)))
