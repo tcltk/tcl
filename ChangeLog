@@ -1,5 +1,8 @@
 2001-03-13  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
+	* doc/info.n: Improved documentation for [info hostname].
+	[Bug #403840]
+
 	* generic/tclVar.c (Tcl_UnsetObjCmd): Made command behave as
 	documented [issue remaining from bug #405769]
 
