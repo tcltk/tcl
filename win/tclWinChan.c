@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinChan.c,v 1.6.2.1 1999/05/18 17:38:29 redman Exp $
+ * RCS: @(#) $Id: tclWinChan.c,v 1.6.2.2 1999/05/18 17:40:28 redman Exp $
  */
 
 #include "tclWinInt.h"
@@ -817,6 +817,7 @@ TclpOpenFileChannel(interp, fileName, modeString, permissions)
 					(mode & O_APPEND) ? FILE_APPEND : 0);
 	break;
 
+    case FILE_TYPE_UNKNOWN:
     case FILE_TYPE_CHAR:
     default:
 	/*
@@ -924,11 +925,21 @@ Tcl_MakeFileChannel(rawHandle, mode)
 	}
 	channel = TclpCreateCommandChannel(readFile, writeFile, NULL, 0, NULL);
 	break;
-    case FILE_TYPE_UNKNOWN:
+
+    case FILE_TYPE_DISK:
+	channel = TclWinOpenFileChannel(handle, channelName, mode, 0);
 	break;
+	
+    case FILE_TYPE_UNKNOWN:
     case FILE_TYPE_CHAR:
     default:
-	channel = TclWinOpenFileChannel(handle, channelName, mode, 0);
+	/*
+	 * The handle is of an unknown type, probably /dev/nul equivalent
+	 * or possibly a closed handle.  Don't use it, otherwise Tk runs into
+	 * trouble with the MS DevStudio debugger.
+	 */
+	
+	channel = NULL
 	break;
 
     }
