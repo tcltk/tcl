@@ -16,14 +16,6 @@
 #include "tclInt.h"
 #include "tclCompile.h"
 
-/*
- * Forward references to procedures defined later in this file:
- */
-
-static void	CleanupProc _ANSI_ARGS_((Proc *procPtr));
-static  int	InterpProc _ANSI_ARGS_((ClientData clientData,
-		    Tcl_Interp *interp, int argc, char **argv));
-static  void	ProcDeleteProc _ANSI_ARGS_((ClientData clientData));
 
 /*
  *----------------------------------------------------------------------
@@ -272,10 +264,10 @@ Tcl_ProcObjCmd(dummy, interp, objc, objv)
     }
     Tcl_DStringAppend(&ds, procName, -1);
     
-    Tcl_CreateCommand(interp, Tcl_DStringValue(&ds), InterpProc,
-	    (ClientData) procPtr, ProcDeleteProc);
+    Tcl_CreateCommand(interp, Tcl_DStringValue(&ds), TclProcInterpProc,
+	    (ClientData) procPtr, TclProcDeleteProc);
     cmd = Tcl_CreateObjCommand(interp, Tcl_DStringValue(&ds),
-	    TclObjInterpProc, (ClientData) procPtr, ProcDeleteProc);
+	    TclObjInterpProc, (ClientData) procPtr, TclProcDeleteProc);
 
     /*
      * Now initialize the new procedure's cmdPtr field. This will be used
@@ -516,7 +508,7 @@ TclFindProc(iPtr, procName)
     if (origCmd != NULL) {
 	cmdPtr = (Command *) origCmd;
     }
-    if (cmdPtr->proc != InterpProc) {
+    if (cmdPtr->proc != TclProcInterpProc) {
 	return NULL;
     }
     return (Proc *) cmdPtr->clientData;
@@ -550,7 +542,7 @@ TclIsProc(cmdPtr)
     if (origCmd != NULL) {
 	cmdPtr = (Command *) origCmd;
     }
-    if (cmdPtr->proc == InterpProc) {
+    if (cmdPtr->proc == TclProcInterpProc) {
 	return (Proc *) cmdPtr->clientData;
     }
     return (Proc *) 0;
@@ -559,7 +551,7 @@ TclIsProc(cmdPtr)
 /*
  *----------------------------------------------------------------------
  *
- * InterpProc --
+ * TclProcInterpProc --
  *
  *	When a Tcl procedure gets invoked with an argc/argv array of
  *	strings, this routine gets invoked to interpret the procedure.
@@ -573,8 +565,8 @@ TclIsProc(cmdPtr)
  *----------------------------------------------------------------------
  */
 
-static int
-InterpProc(clientData, interp, argc, argv)
+int
+TclProcInterpProc(clientData, interp, argc, argv)
     ClientData clientData;	/* Record describing procedure to be
 				 * interpreted. */
     Tcl_Interp *interp;		/* Interpreter in which procedure was
@@ -906,7 +898,7 @@ TclObjInterpProc(clientData, interp, objc, objv)
     result = Tcl_EvalObj(interp, procPtr->bodyPtr);
     procPtr->refCount--;
     if (procPtr->refCount <= 0) {
-	CleanupProc(procPtr);
+	TclProcCleanupProc(procPtr);
     }
 
     if (result != TCL_OK) {
@@ -952,7 +944,7 @@ TclObjInterpProc(clientData, interp, objc, objv)
 /*
  *----------------------------------------------------------------------
  *
- * ProcDeleteProc --
+ * TclProcDeleteProc --
  *
  *	This procedure is invoked just before a command procedure is
  *	removed from an interpreter.  Its job is to release all the
@@ -969,22 +961,22 @@ TclObjInterpProc(clientData, interp, objc, objv)
  *----------------------------------------------------------------------
  */
 
-static void
-ProcDeleteProc(clientData)
+void
+TclProcDeleteProc(clientData)
     ClientData clientData;		/* Procedure to be deleted. */
 {
     Proc *procPtr = (Proc *) clientData;
 
     procPtr->refCount--;
     if (procPtr->refCount <= 0) {
-	CleanupProc(procPtr);
+	TclProcCleanupProc(procPtr);
     }
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * CleanupProc --
+ * TclProcCleanupProc --
  *
  *	This procedure does all the real work of freeing up a Proc
  *	structure.  It's called only when the structure's reference
@@ -999,8 +991,8 @@ ProcDeleteProc(clientData)
  *----------------------------------------------------------------------
  */
 
-static void
-CleanupProc(procPtr)
+void
+TclProcCleanupProc(procPtr)
     register Proc *procPtr;		/* Procedure to be deleted. */
 {
     register CompiledLocal *localPtr;
