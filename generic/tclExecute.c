@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.54 2002/05/29 09:09:57 hobbs Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.55 2002/05/29 10:35:45 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2751,7 +2751,7 @@ TclExecuteByteCode(interp, codePtr)
 		    Tcl_UniChar *uni1, *uni2;
 		    uni1 = Tcl_GetUnicodeFromObj(valuePtr, &s1len);
 		    uni2 = Tcl_GetUnicodeFromObj(value2Ptr, &s2len);
-		    iResult = Tcl_UniCharNcmp(uni1, uni2,
+		    iResult = TclUniCharNcmp(uni1, uni2,
 			    (unsigned) ((s1len < s2len) ? s1len : s2len));
 		} else {
 		    /*
