@@ -9,7 +9,7 @@
 #
 # The information in this file is specific to a single platform.
 #
-# SCCS: %Z% $Id: tclConfig.sh.in,v 1.3 1998/07/21 15:22:15 escoffon Exp $ 
+# SCCS: %Z% $Id: tclConfig.sh.in,v 1.4 1998/07/28 17:33:45 welch Exp $ 
 
 # Tcl's version number.
 TCL_VERSION='@TCL_VERSION@'
@@ -25,7 +25,7 @@ TCL_DEFS='@DEFS@'
 
 # If TCL was built with debugging symbols, generated libraries contain
 # this string at the end of the library name (before the extension).
-TCL_DBGX=@DBGX@
+TCL_DBGX=@TCL_DBGX@
 
 # Default flags used in an optimized and debuggable build, respectively.
 TCL_CFLAGS_DEBUG='@CFLAGS_DEBUG@'
@@ -35,7 +35,7 @@ TCL_CFLAGS_OPTIMIZE='@CFLAGS_OPTIMIZE@'
 TCL_SHARED_BUILD=@TCL_SHARED_BUILD@
 
 # The name of the Tcl library (may be either a .a file or a shared library):
-TCL_LIB_FILE=@TCL_LIB_FILE@
+TCL_LIB_FILE='@TCL_LIB_FILE@'
 
 # Additional libraries to use when linking Tcl.
 TCL_LIBS='@DL_LIBS@ @LIBS@ @MATH_LIBS@'
