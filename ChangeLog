@@ -1,5 +1,8 @@
 2002-10-15  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	* unix/configure:
+	* unix/tcl.m4: updated platform targets to match 8.4 fixes.
+
 	backport of cygwin build support cobbled together.
 	[Patch #622183] (hobbs, howell, khan, dejong)
 
