@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.17.4.3 1999/03/05 20:18:08 stanton Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.17.4.4 1999/03/05 23:24:52 stanton Exp $
 
 # Current Tcl version;  used in various names.
 
@@ -445,7 +445,7 @@ topDirName:
 gendate:
 	yacc -l $(GENERIC_DIR)/tclGetDate.y
 	sed -e 's/yy/TclDate/g' -e '/^#include <values.h>/d' \
-	    -e 's/SCCSID/RCS: @(#) $Id: Makefile.in,v 1.17.4.3 1999/03/05 20:18:08 stanton Exp $'
+	    -e 's/SCCSID/RCS: @(#) $Id: Makefile.in,v 1.17.4.4 1999/03/05 23:24:52 stanton Exp $'
 	    -e '/#ifdef __STDC__/,/#endif/d' -e '/TclDateerrlab:/d' \
 	    -e '/TclDatenewstate:/d' -e '/#pragma/d' \
 	    <y.tab.c >$(GENERIC_DIR)/tclDate.c
@@ -921,10 +921,10 @@ genstubs:
 checkstubs:
 	-@for i in `nm -p $(TCL_LIB_FILE) | awk '$$2 ~ /T/ { print $$3 }' \
 		| sort -n`; do \
-		match=1; \
+		match=0; \
 		for j in $(TCL_DECLS); do \
-		    if [ `grep -c $$i $$j` -eq 0 ]; then \
-			match=0; \
+		    if [ `grep -c $$i $$j` -gt 0 ]; then \
+			match=1; \
 		    fi; \
 		done; \
 		if [ $$match -eq 0 ]; then echo $$i; fi \
