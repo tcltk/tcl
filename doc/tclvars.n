@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: tclvars.n,v 1.20 2004/11/20 00:17:32 dgp Exp $
+'\" RCS: @(#) $Id: tclvars.n,v 1.20.2.1 2005/03/09 16:34:37 kennykb Exp $
 '\" 
 .so man.macros
 .TH tclvars n 8.0 Tcl "Tcl Built-In Commands"
@@ -251,7 +251,20 @@ is same as the result of evaluating \fIsizeof(long)\fR in C.)
 .VS
 This variable controls the number of digits to generate
 when converting floating-point values to strings.  It defaults
-to 12.
+.VS 8.5
+to 0.  \fIApplications should not change this value;\fR it is
+provided for compatibility with legacy code.
+.PP
+The default value of 0 is special, meaning that Tcl should
+convert numbers using as few digits as possible while still
+distinguishing any floating point number from its nearest
+neighbours.  It differs from using an arbitrarily high value
+for \fItcl_precision\fR in that an inexact number like \fI1.4\fR
+will convert as \fI1.4\fR rather than \fI1.3999999999999999\fR
+even though the latter is nearer to the exact value of the
+binary number.
+.VE 8.5
+.PP
 17 digits is ``perfect'' for IEEE floating-point in that it allows
 double-precision values to be converted to strings and back to
 binary with no loss of information.  However, using 17 digits prevents

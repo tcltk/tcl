@@ -2,6 +2,8 @@
 
 	[kennykb-numerics-branch] Merged from HEAD.
 
+	* doc/PrintDbl.3:
+	* doc/tclVars.n: Documented new semantics for tcl_precision.
 	* generic/tclExecute.c (Tcl_ExecuteByteCode): Removed the check
 	for division-by-zero on IEEE-754 machines.
 	* generic/tclUtil.c (Tcl_PrintDouble): Corrected bug where numbers
