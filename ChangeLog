@@ -34,6 +34,8 @@
 	* generic/tclTrace.c:
 	* generic/tclUtil.c:
 	* generic/tclVar.c:
+	* unix/tclUnixFCmd.c:
+	* unix/tclUnixPipe.c:
 	It is a poor practice to directly set or append to the value
 	of the objResult of an interp, because that value might be
 	shared, and in that circumstance a Tcl_Panic() will be the

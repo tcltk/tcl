@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPipe.c,v 1.25 2004/06/08 19:18:39 dgp Exp $
+ * RCS: @(#) $Id: tclUnixPipe.c,v 1.26 2004/10/06 16:08:57 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1225,7 +1225,7 @@ Tcl_PidObjCmd(dummy, interp, objc, objv)
 	return TCL_ERROR;
     }
     if (objc == 1) {
-	Tcl_SetLongObj(Tcl_GetObjResult(interp), (long) getpid());
+	Tcl_SetObjResult(interp, Tcl_NewLongObj((long) getpid()));
     } else {
         chan = Tcl_GetChannel(interp, Tcl_GetString(objv[1]), NULL);
         if (chan == (Tcl_Channel) NULL) {
@@ -1236,11 +1236,12 @@ Tcl_PidObjCmd(dummy, interp, objc, objv)
 	    return TCL_OK;
 	}
         pipePtr = (PipeState *) Tcl_GetChannelInstanceData(chan);
-	resultPtr = Tcl_GetObjResult(interp);
+	resultPtr = Tcl_NewObj();
         for (i = 0; i < pipePtr->numPids; i++) {
 	    longObjPtr = Tcl_NewLongObj((long) TclpGetPid(pipePtr->pidPtr[i]));
 	    Tcl_ListObjAppendElement(NULL, resultPtr, longObjPtr);
 	}
+	Tcl_SetObjResult(interp, resultPtr);
     }
     return TCL_OK;
 }
