@@ -1,3 +1,16 @@
+2000-07-13  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* generic/tclIO.c (StackSetBlockMode): moved set of chanPtr
+	outside of blockModeProc check to avoid infinite loop when
+	blockModeProc was NULL (Kupries).  updated TransformSeekProc to
+	not call Tcl_Seek directly (Kupries).
+
+	* win/tclWinChan.c: updated fileChannelType to v2 channel struct
+	* win/tclWinConsole.c: updated consoleChannelType to v2 channel struct
+	* win/tclWinPipe.c: updated pipeChannelType to v2 channel struct
+	* win/tclWinSerial.c: updated serialChannelType to v2 channel struct
+	* win/tclWinSock.c: updated tcpChannelType to v2 channel struct
+
 2000-07-11  Jeff Hobbs  <hobbs@scriptics.com>
 
 	* tests/iogt.test: made tests [345].0 not run by default as they

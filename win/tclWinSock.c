@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinSock.c,v 1.18 1999/12/09 14:44:11 hobbs Exp $
+ * RCS: @(#) $Id: tclWinSock.c,v 1.18.4.1 2000/07/14 04:16:31 hobbs Exp $
  */
 
 #include "tclWinInt.h"
@@ -215,16 +215,20 @@ static DWORD WINAPI     SocketThread _ANSI_ARGS_((LPVOID arg));
  */
 
 static Tcl_ChannelType tcpChannelType = {
-    "tcp",		/* Type name. */
-    TcpBlockProc,	/* Set socket into blocking/non-blocking mode. */
-    TcpCloseProc,	/* Close proc. */
-    TcpInputProc,	/* Input proc. */
-    TcpOutputProc,	/* Output proc. */
-    NULL,		/* Seek proc. */
-    NULL,		/* Set option proc. */
-    TcpGetOptionProc,	/* Get option proc. */
-    TcpWatchProc,	/* Initialize notifier to watch this channel. */
-    TcpGetHandleProc,	/* Get an OS handle from channel. */
+    "tcp",			/* Type name. */
+    TCL_CHANNEL_VERSION_2,	/* v2 channel */
+    TcpCloseProc,		/* Close proc. */
+    TcpInputProc,		/* Input proc. */
+    TcpOutputProc,		/* Output proc. */
+    NULL,			/* Seek proc. */
+    NULL,			/* Set option proc. */
+    TcpGetOptionProc,		/* Get option proc. */
+    TcpWatchProc,		/* Set up notifier to watch this channel. */
+    TcpGetHandleProc,		/* Get an OS handle from channel. */
+    NULL,			/* close2proc. */
+    TcpBlockProc,		/* Set blocking/non-blocking mode. */
+    NULL,			/* flush proc. */
+    NULL,			/* handler proc. */
 };
 
 /*
