@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.102 2004/05/07 07:44:37 vincentdarley Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.103 2004/05/08 15:51:41 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -553,7 +553,7 @@ static void
 FsRecacheFilesystemList(void)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&tclFsDataKey);
-    FilesystemRecord *fsRecPtr, *tmpFsRecPtr;
+    FilesystemRecord *fsRecPtr, *tmpFsRecPtr = NULL;
 
     /* Trash the current cache */
     fsRecPtr = tsdPtr->filesystemList;

@@ -1,3 +1,8 @@
+2004-05-08  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* generic/tclFileName.c: 
+	* generic/tclIOUtil.c: remove some compiler warnings on MacOS X.
+
 2004-05-07  Chengye Mao <chengye.geo@yahoo.com>
         * win/tclWinPipe.c: refixed bug 789040 re-entered in rev 1.41.
         Let's be careful and don't re-enter previously fixed bugs.
