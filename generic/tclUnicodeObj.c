@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnicodeObj.c,v 1.2 1999/06/08 02:59:27 hershey Exp $
+ * RCS: @(#) $Id: tclUnicodeObj.c,v 1.3 1999/06/08 23:30:24 hershey Exp $
  */
 
 #include <math.h>
@@ -35,6 +35,8 @@ static Tcl_Obj *	TclNewUnicodeObj _ANSI_ARGS_((Tcl_UniChar *unichars,
 			    int numChars));
 static void		SetOptUnicodeFromAny _ANSI_ARGS_((Tcl_Obj *objPtr,
 			    int numChars));
+static void		SetFullUnicodeFromAny _ANSI_ARGS_((Tcl_Obj *objPtr,
+			    char *src, int numBytes, int numChars));
 
 /*
  * The following object type represents a Unicode string.  A Unicode string
@@ -81,6 +83,54 @@ typedef struct Unicode {
 #define SET_UNICODE(objPtr, unicodePtr) \
 		(objPtr)->internalRep.otherValuePtr = (VOID *) (unicodePtr)
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclGetUnicodeFromObj --
+ *
+ *	Get the index'th Unicode character from the Unicode object.  If
+ *	the object is not already a Unicode object, an attempt will be
+ *	made to convert it to one.  The index is assumed to be in the
+ *	appropriate range.
+ *
+ * Results:
+ *	Returns a pointer to the object's internal unicode string.
+ *
+ * Side effects:
+ *	Converts the object to have the Unicode internal rep.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_UniChar *
+TclGetUnicodeFromObj(objPtr)
+    Tcl_Obj *objPtr;	/* The object to find the unicode string for. */
+{
+    Tcl_UniChar *unicharPtr;
+    Unicode *unicodePtr;
+    int numBytes;
+    char *src;
+    
+    SetUnicodeFromAny(NULL, objPtr);
+    unicodePtr = GET_UNICODE(objPtr);
+    
+    if (AllSingleByteChars(objPtr) && (unicodePtr->allocated == 0)) {
+
+	/*
+	 * If all of the characters in the Utf string are 1 byte chars,
+	 * we don't normally store the unicode str.  Since this
+	 * function must return a unicode string, and one has not yet
+	 * been stored, force the Unicode to be calculated and stored
+	 * now.
+	 */
+	
+	src = Tcl_GetStringFromObj(objPtr, &numBytes);
+	SetFullUnicodeFromAny(objPtr, src, numBytes, unicodePtr->numChars);
+    }
+    unicharPtr = (Tcl_UniChar *)unicodePtr->chars;
+    return unicharPtr;
+}
 
 /*
  *----------------------------------------------------------------------
@@ -650,17 +700,16 @@ UpdateStringOfUnicode(objPtr)
  *
  * SetOptUnicodeFromAny --
  *
- *	Generate the Unicode internal rep from the string rep.
+ *	Generate the optimized Unicode internal rep from the string rep.
  *
  * Results:
- *	The return value is always TCL_OK.
+ *	None.
  *
  * Side effects:
- *	A Unicode object is stored as the internal rep of objPtr.  The Unicode
- * ojbect is opitmized for the case where each UTF char in a string is only
- * one byte.  In this case, we store the value of numChars, but we don't copy
- * the bytes to the unicodeObj->chars.  Before accessing obj->chars, check if
- * all chars are 1 byte long.
+ *	The Unicode ojbect is opitmized for the case where each UTF char in
+ *	a string is only one byte.  In this case, we store the value of
+ *	numChars, but we don't copy the bytes to the unicodeObj->chars.
+ *	Before accessing obj->chars, check if all chars are 1 byte long.
  *
  *---------------------------------------------------------------------------
  */
@@ -675,7 +724,61 @@ SetOptUnicodeFromAny(objPtr, numChars)
     
     unicodePtr = (Unicode *) ckalloc(UNICODE_SIZE(4));
     unicodePtr->numChars = numChars;
+    unicodePtr->allocated = 0;
+    unicodePtr->used = 0;
 
+    typePtr = objPtr->typePtr;
+    if ((typePtr != NULL) && (typePtr->freeIntRepProc) != NULL) {
+	(*typePtr->freeIntRepProc)(objPtr);
+    }
+    objPtr->typePtr = &tclUnicodeType;
+    SET_UNICODE(objPtr, unicodePtr);
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * SetFullUnicodeFromAny --
+ *
+ *	Generate the full (non-optimized) Unicode internal rep from the
+ *	string rep.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The Unicode internal rep will contain a copy of the string "src" in
+ *	unicode format.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+static void
+SetFullUnicodeFromAny(objPtr, src, numBytes, numChars)
+    Tcl_Obj *objPtr;		/* The object to convert to type Unicode. */
+    char *src;
+    int numBytes;
+    int numChars;
+{
+    Tcl_ObjType *typePtr;
+    Unicode *unicodePtr;
+    char *srcEnd;
+    unsigned char *dst;
+    
+	    
+    unicodePtr = (Unicode *) ckalloc(UNICODE_SIZE(numChars
+	    * sizeof(Tcl_UniChar)));
+    srcEnd = src + numBytes;
+	
+    for (dst = unicodePtr->chars; src < srcEnd;
+	 dst += sizeof(Tcl_UniChar)) {
+	src += Tcl_UtfToUniChar(src, (Tcl_UniChar *) dst);
+    }
+
+    unicodePtr->used = numChars * sizeof(Tcl_UniChar);
+    unicodePtr->numChars = numChars;
+    unicodePtr->allocated = numChars * sizeof(Tcl_UniChar);	
+    
     typePtr = objPtr->typePtr;
     if ((typePtr != NULL) && (typePtr->freeIntRepProc) != NULL) {
 	(*typePtr->freeIntRepProc)(objPtr);
@@ -711,9 +814,7 @@ SetUnicodeFromAny(interp, objPtr)
 {
     Tcl_ObjType *typePtr;
     int numBytes, numChars;
-    char *src, *srcEnd;
-    Unicode *unicodePtr;
-    unsigned char *dst;
+    char *src;
     
     typePtr = objPtr->typePtr;
     if (typePtr != &tclUnicodeType) {
@@ -723,24 +824,7 @@ SetUnicodeFromAny(interp, objPtr)
 	if (numChars == numBytes) {
 	    SetOptUnicodeFromAny(objPtr, numChars);
 	} else {
-	    unicodePtr = (Unicode *) ckalloc(UNICODE_SIZE(numChars
-		    * sizeof(Tcl_UniChar)));
-	    srcEnd = src + numBytes;
-	
-	    for (dst = unicodePtr->chars; src < srcEnd;
-		 dst += sizeof(Tcl_UniChar)) {
-		src += Tcl_UtfToUniChar(src, (Tcl_UniChar *) dst);
-	    }
-
-	    unicodePtr->used = numChars * sizeof(Tcl_UniChar);
-	    unicodePtr->numChars = numChars;
-	    unicodePtr->allocated = numChars * sizeof(Tcl_UniChar);	
-
-	    if ((typePtr != NULL) && (typePtr->freeIntRepProc) != NULL) {
-		(*typePtr->freeIntRepProc)(objPtr);
-	    }
-	    objPtr->typePtr = &tclUnicodeType;
-	    SET_UNICODE(objPtr, unicodePtr);
+	    SetFullUnicodeFromAny(objPtr, src, numBytes, numChars);
 	}
     }
     return TCL_OK;

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.30 1999/06/08 02:59:24 hershey Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.31 1999/06/08 23:30:24 hershey Exp $
  */
 
 #ifndef _TCLINT
@@ -1642,6 +1642,7 @@ EXTERN Tcl_Obj*         TclGetRangeFromObj _ANSI_ARGS_((Tcl_Obj *objPtr,
 			    int first, int last));
 EXTERN Tcl_UniChar      TclGetUniCharFromObj _ANSI_ARGS_((Tcl_Obj *objPtr,
 			    int index));
+EXTERN Tcl_UniChar *    TclGetUnicodeFromObj _ANSI_ARGS_((Tcl_Obj *objPtr));
 EXTERN int		TclGetUnicodeLengthFromObj _ANSI_ARGS_((
 			    Tcl_Obj *objPtr));
 EXTERN int		TclGlob _ANSI_ARGS_((Tcl_Interp *interp,
