@@ -1,3 +1,10 @@
+2002-02-14  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
+
+	* generic/tclIOCmd.c (Tcl_GetsObjCmd): Trivial fix for bug
+	  #517503, a memory leak reported by Miguel Sofer
+	  <msofer@users.sourceforge.net>. The leak happens if an error
+	  occurs for "set var [gets $chan]" and leak one empty object.
+
 2002-02-12  David Gravereaux <davygrvy@pobox.com>
 
 	* djgpp/ (new directory)
