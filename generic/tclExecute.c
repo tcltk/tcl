@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.87 2002/08/01 20:02:11 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.88 2002/08/01 22:17:07 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -636,7 +636,7 @@ GrowEvaluationStack(eePtr)
     int newElems  = 2*currElems;
     int currBytes = currElems * sizeof(Tcl_Obj *);
     int newBytes  = 2*currBytes;
-    Tcl_Obj **newStackPtr;
+    Tcl_Obj **newStackPtr = (Tcl_Obj **) ckalloc((unsigned) newBytes);
     Tcl_Obj **oldStackPtr = eePtr->stackPtr;
 
     /*
@@ -647,33 +647,29 @@ GrowEvaluationStack(eePtr)
     char *refCount = (char *) oldStackPtr[-1];
 
     /*
-     * Realloc the stack: copy existing stack items to the new stack 
-     * space, free the old storage if appropriate.
+     * Copy the existing stack items to the new stack space, free the old
+     * storage if appropriate, and record the refCount of the new stack
+     * held by the environment.
      */
  
-    newStackPtr = (Tcl_Obj **) ckrealloc((VOID *) (oldStackPtr-1), 
-            (unsigned) newBytes);
     newStackPtr++;
+    memcpy((VOID *) newStackPtr, (VOID *) oldStackPtr,
+	   (size_t) currBytes);
+
+    if (refCount == (char *) 1) {
+	ckfree((VOID *) (oldStackPtr-1));
+    } else {
+	/*
+	 * Remove the reference corresponding to the
+	 * environment pointer.
+	 */
+	
+	oldStackPtr[-1] = (Tcl_Obj *) (refCount-1);
+    }
+
     eePtr->stackPtr = newStackPtr;
     eePtr->stackEnd = (newElems - 2); /* index of last usable item */
-
-    if (newStackPtr != oldStackPtr) {
-	/*
-	 * The stack was moved; update the refCounts.
-	 */
-
-	newStackPtr[-1] = (Tcl_Obj *) ((char *) 1);	
-	if (refCount == (char *) 1) {
-	    ckfree((VOID *) (oldStackPtr-1));
-	} else {
-	    /*
-	     * Remove the reference corresponding to the
-	     * environment pointer.
-	     */
-
-	    oldStackPtr[-1] = (Tcl_Obj *) (refCount-1);
-	}
-    }
+    newStackPtr[-1] = (Tcl_Obj *) ((char *) 1);	
 }
 
 /*
