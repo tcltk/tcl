@@ -1,5 +1,8 @@
 2004-06-23  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
+	* tests/io.test: Added -force to 18.1 and 18.2. This was failing
+	on WinXP.
+
 	* tests/winFCmd.test: Added a cleanup to winFCmd-16.11 to avoid a
 	failure in 16.12.
 
