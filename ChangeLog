@@ -1,5 +1,10 @@
 2003-02-01  Kevin Kenny  <kennykb@users.sourceforge.net>
 
+	* tests/unixNotfy.test: Added cleanup of working files
+	[Bug 675609]
+	
+2003-02-01  Kevin Kenny  <kennykb@users.sourceforge.net>
+
 	* doc/Tcl.n: Added headings to the eleven paragraphs, to improve
 	formatting in the tools that attempt to extract tables of contents
 	from the manual pages. [Bug 627455]
