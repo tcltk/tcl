@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: cmdMZ.test,v 1.10 2002/07/01 07:52:02 dgp Exp $
+# RCS: @(#) $Id: cmdMZ.test,v 1.11 2002/07/04 21:47:59 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -35,14 +35,15 @@ test cmdMZ-1.4 {Tcl_PwdObjCmd: failure} {unixOnly notLinux} {
     # We don't want this test to run on Linux because they do a
     # permissions caching trick which causes this to fail.  The
     # caching is incorrect, but we have no control over that.
-    file delete -force foo
-    file mkdir foo
+    set foodir [file join [temporaryDirectory] foo]
+    file delete -force $foodir
+    file mkdir $foodir
     set cwd [pwd]
-    cd foo
+    cd $foodir
     file attr . -permissions 000
     set result [list [catch {pwd} msg] $msg]
     cd $cwd
-    file delete -force foo
+    file delete -force $foodir
     set result
 } {1 {error getting working directory name: permission denied}}
 
