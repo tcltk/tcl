@@ -1,3 +1,8 @@
+2004-10-19  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclDictObj.c (DictWithCmd): Make sure all paths (that
+	are not themselves error paths) do not lose the result code.
+
 2004-10-19  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclInt.h (Tcl*InterpState):		New internal routines
