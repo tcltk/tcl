@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: genStubs.tcl,v 1.6 1999/05/25 01:00:37 stanton Exp $
+# RCS: @(#) $Id: genStubs.tcl,v 1.7 1999/06/10 04:29:01 stanton Exp $
 
 namespace eval genStubs {
     # libraryName --
@@ -179,6 +179,9 @@ proc genStubs::rewriteFile {file text} {
     }
     set in [open ${file} r]
     set out [open ${file}.new w]
+
+    # Always write out the file with LF termination
+    fconfigure $out -translation lf
 
     while {![eof $in]} {
 	set line [gets $in]
