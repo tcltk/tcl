@@ -1,3 +1,8 @@
+2001-12-19  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* win/tclWinSerial.c (SerialCheckProc): corrected time
+	calculations to be unsigned. (schroedter)
+
 2001-12-18  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* unix/Makefile.in: Define new dltest target that

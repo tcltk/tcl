@@ -11,7 +11,7 @@
  *
  * Serial functionality implemented by Rolf.Schroedter@dlr.de
  *
- * RCS: @(#) $Id: tclWinSerial.c,v 1.15 2001/12/17 22:55:51 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclWinSerial.c,v 1.16 2001/12/19 19:34:18 hobbs Exp $
  */
 
 #include "tclWinInt.h"
@@ -79,7 +79,7 @@ typedef struct SerialInfo {
     int readable;               /* flag that the channel is readable */
     int writable;               /* flag that the channel is writable */
     int blockTime;              /* max. blocktime in msec */
-    int lastEventTime;		/* Time in milliseconds since last readable event */
+    unsigned int lastEventTime;	/* Time in milliseconds since last readable event */
 				/* Next readable event only after blockTime */
     DWORD error;                /* pending error code returned by
                                  * ClearCommError() */
@@ -350,7 +350,7 @@ SerialBlockTime(
  *----------------------------------------------------------------------
  */
 
-static int
+static unsigned int
 SerialGetMilliseconds(
     void)
 {
@@ -442,7 +442,7 @@ SerialCheckProc(
     int needEvent;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     COMSTAT cStat;
-    int time;
+    unsigned int time;
 
     if (!(flags & TCL_FILE_EVENTS)) {
         return;
@@ -493,7 +493,8 @@ SerialCheckProc(
                             (infoPtr->error & SERIAL_READ_ERRORS) ) {
                         infoPtr->readable = 1;
 			time = SerialGetMilliseconds();
-			if ( (time - infoPtr->lastEventTime) >= infoPtr->blockTime) {
+			if ((unsigned int) (time - infoPtr->lastEventTime)
+				>= (unsigned int) infoPtr->blockTime) {
 			    needEvent = 1;
 			    infoPtr->lastEventTime = time;
 			}
