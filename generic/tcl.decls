@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.90 2002/06/21 14:22:28 vincentdarley Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.91 2002/07/22 16:51:47 vincentdarley Exp $
 
 library tcl
 
@@ -1569,7 +1569,7 @@ declare 444 generic {
 	    Tcl_Obj *pathPtr, CONST char * sym1, CONST char * sym2,
 	    Tcl_PackageInitProc ** proc1Ptr,
 	    Tcl_PackageInitProc ** proc2Ptr,
-	    ClientData * clientDataPtr,
+	    Tcl_LoadHandle * handlePtr,
 	    Tcl_FSUnloadFileProc **unloadProcPtr)
 }
 declare 445 generic {
