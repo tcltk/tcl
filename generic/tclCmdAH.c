@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.27.2.10 2004/10/28 04:16:20 dgp Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.27.2.11 2004/10/30 21:00:09 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -241,12 +241,6 @@ Tcl_CatchObjCmd(dummy, interp, objc, objv)
 	return TCL_ERROR;
     }
 
-    /*
-     * Save a pointer to the variable name object, if any, in case the
-     * Tcl_EvalObj reallocates the bytecode interpreter's evaluation
-     * stack rendering objv invalid.
-     */
-    
     if (objc == 3) {
 	varNamePtr = objv[2];
     }
