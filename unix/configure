@@ -4966,6 +4966,8 @@ fi
 done
 
 	if test "x$ac_cv_func_readdir_r" = "xyes"; then
+            echo "$as_me:$LINENO: checking how many args readdir_r takes" >&5
+echo $ECHO_N "checking how many args readdir_r takes... $ECHO_C" >&6
 	    # IRIX 5.3 has a 2 arg version of readdir_r
 	    # while other systems have a 3 arg version.
 	    if test "${tcl_cv_two_arg_readdir_r+set}" = set; then
@@ -4978,6 +4980,7 @@ _ACEOF
 cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
+#include <stdlib.h>
 #include <sys/types.h>
 #include <sys/dir.h>
 int
@@ -5020,6 +5023,7 @@ _ACEOF
 cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
+#include <stdlib.h>
 #include <sys/types.h>
 #include <sys/dir.h>
 int
@@ -5053,11 +5057,15 @@ rm -f conftest.$ac_objext conftest.$ac_ext
 fi
 
 	    if test "x$tcl_cv_two_arg_readdir_r" = "xyes" ; then
+                echo "$as_me:$LINENO: result: 2" >&5
+echo "${ECHO_T}2" >&6
 	        cat >>confdefs.h <<\_ACEOF
 #define HAVE_TWO_ARG_READDIR_R 1
 _ACEOF
 
 	    elif test "x$tcl_cv_three_arg_readdir_r" = "xyes" ; then
+                echo "$as_me:$LINENO: result: 3" >&5
+echo "${ECHO_T}3" >&6
 	        cat >>confdefs.h <<\_ACEOF
 #define HAVE_THREE_ARG_READDIR_R 1
 _ACEOF
