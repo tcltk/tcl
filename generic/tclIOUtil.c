@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.57 2002/07/18 15:13:26 vincentdarley Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.58 2002/07/18 15:14:35 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -2563,7 +2563,8 @@ Tcl_FSLoadFile(interp, pathPtr, sym1, sym2, proc1Ptr, proc2Ptr,
 		int retVal;
 		
 		retVal = Tcl_FSLoadFile(interp, copyToPtr, sym1, sym2,
-					proc1Ptr, proc2Ptr, &newLoadHandle,
+					proc1Ptr, proc2Ptr, 
+					(ClientData*)&newLoadHandle,
 					&newUnloadProcPtr);
 	        if (retVal != TCL_OK) {
 		    /* The file didn't load successfully */
@@ -2710,7 +2711,7 @@ FSUnloadTempFile(loadHandle)
      * use.
      */
     if (tvdlPtr->unloadProcPtr != NULL) {
-	(*tvdlPtr->unloadProcPtr)(tvdlPtr->clientData);
+	(*tvdlPtr->unloadProcPtr)(tvdlPtr->loadHandle);
     }
     
     /* Remove the temporary file we created. */
