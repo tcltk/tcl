@@ -1,5 +1,11 @@
 2004-10-15  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclCmdMZ.c (TclProcessReturn):	Now that primary
+	* generic/tclProc.c (TclUpdateReturnInfo):	storage for the
+	errorInfo and errorCode values are internal fields, we can set
+	them at the time of the [return] command, and not have to wait
+	until the specified number of "-level"s have popped.
+
 	* generic/tclBasic.c (Tcl_CreateInterp,Tcl_DeleteInterp,
 		TclEvalObjvInternal,Tcl_LogCommandInfo,TclAddObjErrorInfo):
 	* generic/tclCmdAH.c (Tcl_CatchObjCmd):
