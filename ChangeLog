@@ -1,5 +1,9 @@
 2001-09-10  Don Porter <dgp@users.sourceforge.net>
 
+	* unix/tclLoadShl.c:  Added #include of tclInt.h; access to Tcl
+	internals, notably TclpUnloadFile(), is required.  Thanks to
+	Bob Techentin for report and patch.  [Bug 459305]
+
 	* generic/tclInitScript.h (initScript):
 	* win/tclWinInit.c (TCL_REGISTRY_KEY, TclpSetVariables):  Removed
 	vestiges of Tcl's old initialization from registry variables.
