@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.1.2.14 1998/12/10 00:49:42 stanton Exp $
+RCS: @(#) $Id: changes,v 1.1.2.15 1998/12/14 21:04:36 stanton Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -2547,7 +2547,7 @@ changes are to expressions and lists.
       incorrect programs that took advantage of behavior of the old
       implementation that was not documented in the man pages.
 Other changes to Tcl scripts are discussed in the web page at
-http://www.sunlabs.com/research/tcl/compiler.html. (BL)
+http://www.scriptics.com/doc/compiler.html. (BL)
 *** POTENTIAL INCOMPATIBILITY ***
 
 10/21/96 (new feature) In earlier versions of Tcl, strings were used as a
@@ -3115,7 +3115,7 @@ activity.  A refcount bug triggered a panic in Tcl_ListObjAppendElement. (BW)
 
 7/8/97 (bug fix) Relaxed the pattern matching on http_get so you do not
 need a trailing path component.  You can now get away with just
-http_get sunscript.sun.com					(BW)
+http_get www.scriptics.com					(BW)
 
 7/9/97 (bug fix) Creating anonymous interpreters no longer smashes existing
 commands with names similar to the generated name. Previously creating an
