@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.67 2001/12/18 15:21:20 dkf Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.68 2002/01/09 19:09:28 kennykb Exp $
 
 library tcl
 
@@ -855,7 +855,7 @@ declare 243 generic {
     void Tcl_SplitPath(CONST char *path, int *argcPtr, char ***argvPtr)
 }
 declare 244 generic {
-    void Tcl_StaticPackage(Tcl_Interp *interp, char *pkgName, \
+    void Tcl_StaticPackage(Tcl_Interp *interp, CONST char *pkgName, \
 	    Tcl_PackageInitProc *initProc, Tcl_PackageInitProc *safeInitProc)
 }
 declare 245 generic {
