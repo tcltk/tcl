@@ -1,13 +1,16 @@
+2003-02-08  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* library/safe.tcl: code cleanup of eval and string comp use.
+
 2003-02-07  Vince Darley  <vincentdarley@users.sourceforge.net>
 
-        * win/tclWinFCmd.c: cleanup long lines
-	* win/tclWinFile.c: sped up pure 'glob' by a factor of 3. It
-	is now faster than Tcl 8.3 
-	(but 'foreach f [glob *] { file exists $f }' is still slower)
+	* win/tclWinFCmd.c: cleanup long lines
+	* win/tclWinFile.c: sped up pure 'glob' by a factor of 2.5
+	('foreach f [glob *] { file exists $f }' is still slow)
 	* tests/fileSystem.text:
 	* tests/fileName.test: added new tests to ensure correct
 	behaviour in optimized filesystem code.
-	
+
 2003-02-07  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* generic/tclTest.c:

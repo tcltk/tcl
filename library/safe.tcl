@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: safe.tcl,v 1.8 2002/02/22 19:51:29 hobbs Exp $
+# RCS: @(#) $Id: safe.tcl,v 1.9 2003/02/08 22:03:20 hobbs Exp $
 
 #
 # The implementation is based on namespaces. These naming conventions
@@ -294,7 +294,7 @@ namespace eval ::safe {
 	deletehook
     } {
 	# Create the slave.
-	if {[string compare "" $slave]} {
+	if {$slave ne ""} {
 	    ::interp create -safe $slave
 	} else {
 	    # empty argument: generate slave name
@@ -601,7 +601,7 @@ proc ::safe::setLogCmd {args} {
     # if the slave argument is given, 
     # it will return the corresponding master global variable name
     proc PathToken {n {slave ""}} {
-	if {[string compare "" $slave]} {
+	if {$slave ne ""} {
 	    return "[InterpStateName $slave](access_path,$n)"
 	} else {
 	    # We need to have a ":" in the token string so
@@ -636,15 +636,15 @@ proc ::safe::setLogCmd {args} {
     }
     # set/get values
     proc Set {args} {
-	eval Toplevel set $args
+	eval [list Toplevel set] $args
     }
     # lappend on toplevel vars
     proc Lappend {args} {
-	eval Toplevel lappend $args
+	eval [list Toplevel lappend] $args
     }
     # unset a var/token (currently just an global level eval)
     proc Unset {args} {
-	eval Toplevel unset $args
+	eval [list Toplevel unset] $args
     }
     # test existance 
     proc Exists {varname} {
@@ -848,7 +848,7 @@ proc ::safe::setLogCmd {args} {
     proc Subset {slave command okpat args} {
 	set subcommand [lindex $args 0]
 	if {[regexp $okpat $subcommand]} {
-	    return [eval {$command $subcommand} [lrange $args 1 end]]
+	    return [eval [list $command $subcommand] [lrange $args 1 end]]
 	}
 	set msg "not allowed to invoke subcommand $subcommand of $command"
 	Log $slave $msg
