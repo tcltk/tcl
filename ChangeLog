@@ -1,5 +1,10 @@
 2004-01-22  Vince Darley  <vincentdarley@users.sourceforge.net>
 
+	* doc/file.n: clarified documentation of 'file system' [Bug 883825]
+	* tests/fCmd.test: improved test result in failure case.
+	
+2004-01-22  Vince Darley  <vincentdarley@users.sourceforge.net>
+
 	* tests/fileSystem.test: 3 new tests
 	* generic/tclPathObj.c: fix to [Bug 879555] in file normalization. 
 	* doc/filename.n: small clarification to Windows behaviour with
