@@ -1,8 +1,15 @@
 2000-11-17  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
-	* tests/var.test: (test var-1.19) If my attempts to fix the
-	problem aren't right yet, my attempts to describe it look pretty
-	good to me...
+	* tests/safe.test: (safe-4.3):
+	* generic/tclVar.c (TclLookupVar): Changed again.  Now passes all
+	the tests, though one needed modifying since it required the wrong
+	answer.  (Why on earth do we have inline modification of argument
+	strings?  This sort of thing is horrendous to debug and doesn't
+	work well in a multithreaded environment!)  Fixes bug 119192.
+
+	* tests/var.test: (var-1.19) If my attempts to fix the problem
+	aren't right yet, my attempts to describe it look pretty good to
+	me...
 
 2000-11-16  Andreas Kupries  <a.kupries@westend.com>
 

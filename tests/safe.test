@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: safe.test,v 1.9 2000/04/10 17:19:04 ericm Exp $
+# RCS: @(#) $Id: safe.test,v 1.10 2000/11/17 11:06:54 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -122,7 +122,7 @@ test safe-4.3 {safe::interpDelete, state array (not a public api)} {
     catch {namespace eval safe {set [InterpStateName a](foo)}} m2
     list $m1 $m2
 } "{}\
-   {can't read \"[safe::InterpStateName a]\": no such variable}"
+   {can't read \"[safe::InterpStateName a](foo)\": no such variable}"
 
 
 test safe-4.4 {safe::interpDelete, state array, indirectly (not a public api)} {
