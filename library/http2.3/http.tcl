@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and
 # redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: http.tcl,v 1.30 2000/04/09 23:56:13 welch Exp $
+# RCS: @(#) $Id: http.tcl,v 1.31 2000/04/22 00:37:33 welch Exp $
 
 # Rough version history:
 # 1.0	Old http_get interface
@@ -17,6 +17,8 @@
 # 2.1	Added callbacks to handle arriving data, and timeouts
 # 2.2	Added ability to fetch into a channel
 # 2.3	Added SSL support, and ability to post from a channel
+#	This version also cleans up error cases and eliminates the
+#	"ioerror" status in favor of raising an error
 
 package provide http 2.3
 
@@ -403,6 +405,23 @@ proc http::geturl { url args } {
 		    [expr {[tell $state(-querychannel)] - $start}]
 	    seek $state(-querychannel) $start
 	}
+
+	# Flush the request header and set up the fileevent that will
+	# either push the POST data or read the response.
+	#
+	# fileevent note:
+	#
+	# It is possible to have both the read and write fileevents active
+	# at this point.  The only scenario it seems to affect is a server
+	# that closes the connection without reading the POST data.
+	# (e.g., early versions TclHttpd in various error cases).
+	# Depending on the platform, the client may or may not be able to
+	# get the response from the server because of the error it will
+	# get trying to write the post data.  Having both fileevents active
+	# changes the timing and the behavior, but no two platforms
+	# (among Solaris, Linux, and NT)  behave the same, and none 
+	# behave all that well in any case.  Servers should always read thier
+	# POST data if they expect the client to read their response.
 		
 	if {$isQuery || $isQueryChannel} {
 	    puts $s "Content-Type: $state(-type)"
@@ -414,14 +433,9 @@ proc http::geturl { url args } {
 	    fileevent $s writable [list http::Write $token]
 	} else {
 	    puts $s ""
+	    flush $s
+	    fileevent $s readable [list http::Event $token]
 	}
-	# Set up the read file event here in either case.  This seems to
-	# help in the case where the server replies but does not
-	# read the query post data, and the server is on the same
-	# machine so the loopback interface is being used.
-
-	flush $s
-	fileevent $s readable [list http::Event $token]
 
 	if {! [info exists state(-command)]} {
 
@@ -540,11 +554,11 @@ proc http::Write {token} {
     
     # Output a block.  Tcl will buffer this if the socket blocks
     
+    set done 0
     if {[catch {
 	
 	# Catch I/O errors on dead sockets
 
-	set done 0
 	if {[info exists state(-query)]} {
 	    
 	    # Chop up large query strings so queryprogress callback
@@ -556,8 +570,7 @@ proc http::Write {token} {
 	    incr state(queryoffset) $state(-queryblocksize)
 	    if {$state(queryoffset) >= $state(querylength)} {
 		set state(queryoffset) $state(querylength)
-		flush $s
-		fileevent $s writable {}
+		set done 1
 	    }
 	} else {
 	    
@@ -567,17 +580,20 @@ proc http::Write {token} {
 	    puts -nonewline $s $outStr
 	    incr state(queryoffset) [string length $outStr]
 	    if {[eof $state(-querychannel)]} {
-		flush $s
-		fileevent $s writable {}
+		set done 1
 	    }
 	}
     } err]} {
 	# Do not call Finish here, but instead let the read half of
 	# the socket process whatever server reply there is to get.
-	# Simply turn off this write process
 
 	set state(posterror) $err
+	set done 1
+    }
+    if {$done} {
+	catch {flush $s}
 	fileevent $s writable {}
+	fileevent $s readable [list http::Event $token]
     }
 
     # Callback to the client after we've completely handled everything
