@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTestProcBodyObj.c,v 1.1 1998/10/05 22:32:10 escoffon Exp $
+ * RCS: @(#) $Id: tclTestProcBodyObj.c,v 1.2 1998/11/10 06:54:44 jingham Exp $
  */
 
 #include "tclInt.h"
@@ -50,6 +50,8 @@ static int	ProcBodyTestInitInternal _ANSI_ARGS_((Tcl_Interp *interp,
 			int isSafe));
 static int	RegisterCommand _ANSI_ARGS_((Tcl_Interp* interp,
 			char *namespace, CONST CmdTable *cmdTablePtr));
+int             Procbodytest_Init _ANSI_ARGS_((Tcl_Interp * interp));
+int             Procbodytest_SafeInit _ANSI_ARGS_((Tcl_Interp * interp));
 
 /*
  * List of commands to create when the package is loaded; must go after the
