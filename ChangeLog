@@ -1,3 +1,16 @@
+2001-07-02  Don Porter  <dgp@users.sourceforge.net>
+
+	* tests/unixInit.test (unixInit-2.8):  Corrected test for all
+	absolute pathnames in library path when executable is installed
+	near root directory to use correct development directory layout.
+	[Bug 438014]
+
+	* tests/unixInit.test (unixInit-2.9):  
+	* unix/tclUnixInit.c (TclpInitLibraryPath):
+	* win/tclWinInit.c (TclpInitLibraryPath):  Corrected buggy
+	construction of search path entries relative to executable.
+	Added test for bad construction.  [Bug 438014]
+
 2001-06-28  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* generic/tclNamesp.c: Correction to faulty patch from [Bug: 231259] 

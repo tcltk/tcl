@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: unixInit.test,v 1.16 2001/06/28 09:54:32 dkf Exp $
+# RCS: @(#) $Id: unixInit.test,v 1.17 2001/07/02 20:57:02 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -194,8 +194,8 @@ test unixInit-2.8 {TclpInitLibraryPath: all absolute pathtype} {unixOnly} {
     file mkdir /tmp/sparkly
     file copy $::tcltest::tcltest /tmp/sparkly/tcltest
 
-    file mkdir /tmp/library/tcl[info tclversion]
-    close [open /tmp/library/tcl[info tclversion]/init.tcl w]
+    file mkdir /tmp/library/
+    close [open /tmp/library/init.tcl w]
 
     set allAbsolute 1
     foreach dir [getlibpath /tmp/sparkly/tcltest] {
@@ -206,6 +206,24 @@ test unixInit-2.8 {TclpInitLibraryPath: all absolute pathtype} {unixOnly} {
     file delete -force /tmp/library
     set allAbsolute
 } 1
+test unixInit-2.9 {TclpInitLibraryPath: paths relative to executable} {
+	unixOnly} {
+    # Checking for Bug 438014
+    file delete -force /tmp/sparkly
+    file delete -force /tmp/library
+    file mkdir /tmp/sparkly
+    file copy $::tcltest::tcltest /tmp/sparkly/tcltest
+
+    file mkdir /tmp/library/
+    close [open /tmp/library/init.tcl w]
+
+    set x [lrange [getlibpath /tmp/sparkly/tcltest] 0 4]
+
+    file delete -force /tmp/sparkly
+    file delete -force /tmp/library
+    set x
+} [list /tmp/lib/tcl[info tclversion] /lib/tcl[info tclversion] \
+	/tmp/library /library /tcl[info patchlevel]/library]
 test unixInit-3.1 {TclpSetInitialEncodings} {unixOnly installedTcl} {
     set env(LANG) C
 
