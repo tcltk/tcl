@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: namespace.test,v 1.30 2004/08/25 21:35:21 dkf Exp $
+# RCS: @(#) $Id: namespace.test,v 1.31 2004/08/25 21:37:29 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -1674,7 +1674,7 @@ test namespace-47.7 {ensemble: unknown handler and namespace import} {
     bar y 456
     namespace delete foo
     set result
-} {1 {bar is not an ensemble command} XXX 123 ::bar {y 456} YYY 456}
+} {1 {bar is not an ensemble command} XXX 123 ::foo::bar {y 456} YYY 456}
 
 # cleanup
 catch {rename cmd1 {}}
