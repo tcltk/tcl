@@ -6,7 +6,7 @@
 # Copyright (c) 2000 by Ajuba Solutions
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.test,v 1.38 2004/03/17 18:14:18 das Exp $
+# RCS: @(#) $Id: tcltest.test,v 1.39 2004/03/17 19:29:43 dgp Exp $
 
 # Note that there are several places where the value of 
 # tcltest::currentFailure is stored/reset in the -setup/-cleanup
@@ -525,6 +525,9 @@ set a [makeFile {
 set tdiaf [makeFile {} thisdirectoryisafile]
 
 set normaldirectory [makeDirectory normaldirectory]
+if {$::tcl_platform(platform) == "macintosh"} {
+set normaldirectory [file normalize $normaldirectory]
+}
 
 # -tmpdir, [temporaryDirectory]
 test tcltest-8.1 {tcltest a.tcl -tmpdir a} {unixOrPc} {
