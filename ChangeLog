@@ -1,3 +1,20 @@
+2001-08-22  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* win/Makefile.in:
+	* win/makefile.vc: updated install target for dde1.2
+	* doc/dde.n: fixed dde man page (which was totally incorrect).
+	* tests/winDde.test:
+	* win/tclWinDde.c (Tcl_DdeObjCmd): added -binary option to dde
+	request command to allow for returning binary data. [Bug #227482]
+	Updated dde to 1.2
+
+	* tests/tcltest.test: added unixExecs constraint to files that
+	used 'grep' in the test. [Bug #453143]
+
+	* library/tcltest/tcltest.tcl: fixed stdio constraint test.
+	[Patch #454050] (stanton)
+	Simplified unixExecs constriant test. 
+	
 2001-08-22  Don Porter <dgp@users.sourceforge.net>
 
 	* tests/ioUtil.test (ioUtil-3.*): Corrected errors in tests
