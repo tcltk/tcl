@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.49 1999/08/10 22:45:10 redman Exp $
+RCS: @(#) $Id: changes,v 1.50 1999/08/13 18:30:24 redman Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -4630,4 +4630,13 @@ are defined via traces. (welch)
 Windows. (redman)
 
 --------------- Released 8.2b3, August 11, 1999 ----------------------
+
+8/12/99 (Mac) Rearrange projects in tclMacProjects.sea.hqx so that the
+build directory is separate from the sources. (Jim Ingham)
+
+8/12/99 (bug fix) Fixed bug in Tcl_EvalEx where the termOffset was not
+being updated in cases where the evaluation returned a non TCL_OK
+error code. [Bug: 2535] (stanton)
+
+--------------- Released 8.2.0, August 17, 1999 ----------------------
 
