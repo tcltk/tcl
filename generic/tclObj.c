@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.22 2001/05/26 01:25:59 msofer Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.23 2001/06/28 01:22:21 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -435,11 +435,15 @@ Tcl_NewObj()
      */
 
     Tcl_MutexLock(&tclObjMutex);
+#ifdef PURIFY
+    objPtr = (Tcl_Obj *) Tcl_Ckalloc(sizeof(Tcl_Obj));
+#else
     if (tclFreeObjList == NULL) {
 	TclAllocateFreeObjects();
     }
     objPtr = tclFreeObjList;
     tclFreeObjList = (Tcl_Obj *) tclFreeObjList->internalRep.otherValuePtr;
+#endif
     objPtr->refCount = 0;
     objPtr->bytes    = tclEmptyStringRep;
     objPtr->length   = 0;
@@ -553,6 +557,13 @@ TclAllocateFreeObjects()
     register Tcl_Obj *prevPtr, *objPtr;
     register int i;
 
+    /*
+     * This has been noted by Purify to be a potential leak.  The problem is
+     * that Tcl, when not TCL_MEM_DEBUG compiled, keeps around all allocated
+     * Tcl_Obj's, pointed to by tclFreeObjList, when freed instead of
+     * actually freeing the memory.  These never do get freed properly.
+     */
+
     basePtr = (char *) ckalloc(bytesToAlloc);
     memset(basePtr, 0, bytesToAlloc);
 
@@ -616,7 +627,7 @@ TclFreeObj(objPtr)
      */
 
     Tcl_MutexLock(&tclObjMutex);
-#ifdef TCL_MEM_DEBUG
+#if defined(TCL_MEM_DEBUG) || defined(PURIFY)
     ckfree((char *) objPtr);
 #else
     objPtr->internalRep.otherValuePtr = (VOID *) tclFreeObjList;
