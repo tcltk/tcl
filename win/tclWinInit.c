@@ -66,82 +66,12 @@ static char* processors[NUMPROCESSORS] = {
 };
 
 /*
- * The following string is the startup script executed in new
- * interpreters.  It looks on disk in several different directories
- * for a script "init.tcl" that is compatible with this version
- * of Tcl.  The init.tcl script does all of the real work of
- * initialization.
+ * The Init script (common to Windows and Unix platforms) is
+ * defined in tclInitScript.h
  */
 
-static char *initScript =
-"proc init {} {\n\
-    global tcl_library tcl_platform tcl_version tcl_patchLevel env errorInfo\n\
-    global tcl_pkgPath\n\
-    rename init {}\n\
-    set errors {}\n\
-    proc tcl_envTraceProc {lo n1 n2 op} {\n\
-	global env\n\
-	set x $env($n2)\n\
-	set env($lo) $x\n\
-	set env([string toupper $lo]) $x\n\
-    }\n\
-    foreach p [array names env] {\n\
-	set u [string toupper $p]\n\
-	if {$u != $p} {\n\
-	    switch -- $u {\n\
-		COMSPEC -\n\
-		PATH {\n\
-		    if {![info exists env($u)]} {\n\
-			set env($u) $env($p)\n\
-		    }\n\
-		    trace variable env($p) w [list tcl_envTraceProc $p]\n\
-		    trace variable env($u) w [list tcl_envTraceProc $p]\n\
-		}\n\
-	    }\n\
-	}\n\
-    }\n\
-    if {![info exists env(COMSPEC)]} {\n\
-	if {$tcl_platform(os) == {Windows NT}} {\n\
-	    set env(COMSPEC) cmd.exe\n\
-	} else {\n\
-	    set env(COMSPEC) command.com\n\
-	}\n\
-    }	\n\
-    set dirs {}\n\
-    if {[info exists env(tcl_pkgLibrary)]} {\n\
-	lappend dirs $env(tcl_pkgLibrary)\n\
-    }\n\
-    if {[info exists env(TCL_LIBRARY)]} {\n\
-	lappend dirs $env(TCL_LIBRARY)\n\
-    }\n\
-    lappend dirs $tcl_library\n\
-    lappend dirs [file join [file dirname [file dirname [info nameofexecutable]]] lib/tcl$tcl_version]\n\
-    if [string match {*[ab]*} $tcl_patchLevel] {\n\
-	set lib tcl$tcl_patchLevel\n\
-    } else {\n\
-	set lib tcl$tcl_version\n\
-    }\n\
-    lappend dirs [file join [file dirname [file dirname [pwd]]] $lib/library]\n\
-    lappend dirs [file join [file dirname [pwd]] library]\n\
-    foreach i $dirs {\n\
-	set tcl_library $i\n\
-	set tclfile [file join $i init.tcl]\n\
-	if {[file exists $tclfile]} {\n\
-            lappend tcl_pkgPath [file dirname $i]\n\
-	    if ![catch {uplevel #0 [list source $tclfile]} msg] {\n\
-	        return\n\
-	    } else {\n\
-		append errors \"$tclfile: $msg\n$errorInfo\n\"\n\
-	    }\n\
-	}\n\
-    }\n\
-    set msg \"Can't find a usable init.tcl in the following directories: \n\"\n\
-    append msg \"    $dirs\n\n\"\n\
-    append msg \"$errors\n\n\"\n\
-    append msg \"This probably means that Tcl wasn't installed properly.\n\"\n\
-    error $msg\n\
-}\n\
-init\n";
+#include "tclInitScript.h"
+
 
 /*
  *----------------------------------------------------------------------

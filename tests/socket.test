@@ -981,6 +981,18 @@ test socket-9.3 {testing EOF stickyness} {
 	    }
 	}
     }
+test socket-10.1 {testing socket accept callback error handling} {
+    set goterror 0
+    proc bgerror args {global goterror; set goterror 1}
+    set s [socket -server accept 2898]
+    proc accept {s a p} {close $s; error}
+    set c [socket localhost 2898]
+    vwait goterror
+    close $s
+    close $c
+    set goterror
+} 1
+
     proc timerproc {} {
 	global done count c
 	set done true
@@ -1018,7 +1030,7 @@ if {$doTestsWithRemoteServer == 0} {
     return
 }
 
-test socket-10.1 {tcp connection} {
+test socket-11.1 {tcp connection} {
     sendCommand {
 	set socket9_1_test_server [socket -server accept 2834]
 	proc accept {s a p} {
@@ -1032,7 +1044,7 @@ test socket-10.1 {tcp connection} {
     sendCommand {close $socket9_1_test_server}
     set r
 } done
-test socket-10.2 {client specifies its port} {
+test socket-11.2 {client specifies its port} {
     if {[info exists port]} {
 	incr port
     } else {
@@ -1056,10 +1068,7 @@ test socket-10.2 {client specifies its port} {
     }
     set result
 } ok
-#
-# Tests io-10.3, io-10.4 have been removed.
-#
-test socket-10.3 {trying to connect, no server} {
+test socket-11.3 {trying to connect, no server} {
     set status ok
     if {![catch {set s [socket $remoteServerIp 2836]}]} {
 	if {![catch {gets $s}]} {
@@ -1069,7 +1078,7 @@ test socket-10.3 {trying to connect, no server} {
     }
     set status
 } ok
-test socket-10.4 {remote echo, one line} {
+test socket-11.4 {remote echo, one line} {
     sendCommand {
 	set socket10_6_test_server [socket -server accept 2836]
 	proc accept {s a p} {
@@ -1093,7 +1102,7 @@ test socket-10.4 {remote echo, one line} {
     sendCommand {close $socket10_6_test_server}
     set r
 } hello
-test socket-10.5 {remote echo, 50 lines} {
+test socket-11.5 {remote echo, 50 lines} {
     sendCommand {
 	set socket10_7_test_server [socket -server accept 2836]
 	proc accept {s a p} {
@@ -1127,7 +1136,7 @@ if {$tcl_platform(platform) == "macintosh"} {
 } else {
     set conflictResult {1 {couldn't open socket: address already in use}}
 }
-test socket-10.6 {socket conflict} {
+test socket-11.6 {socket conflict} {
     set s1 [socket -server accept 2836]
     if {[catch {set s2 [socket -server accept 2836]} msg]} {
 	set result [list 1 $msg]
@@ -1138,7 +1147,7 @@ test socket-10.6 {socket conflict} {
     close $s1
     set result
 } $conflictResult
-test socket-10.7 {server with several clients} {
+test socket-11.7 {server with several clients} {
     sendCommand {
 	set socket10_9_test_server [socket -server accept 2836]
 	proc accept {s a p} {
@@ -1174,7 +1183,7 @@ test socket-10.7 {server with several clients} {
     sendCommand {close $socket10_9_test_server}
     set i
 } 100    
-test socket-10.8 {client with several servers} {
+test socket-11.8 {client with several servers} {
     sendCommand {
 	set s1 [socket -server "accept 4003" 4003]
 	set s2 [socket -server "accept 4004" 4004]
@@ -1200,7 +1209,7 @@ test socket-10.8 {client with several servers} {
     }
     set l
 } {4003 {} 1 4004 {} 1 4005 {} 1}
-test socket-10.9 {accept callback error} {
+test socket-11.9 {accept callback error} {
     set s [socket -server accept 2836]
     proc accept {s a p} {expr 10 / 0}
     proc bgerror args {
@@ -1222,7 +1231,7 @@ test socket-10.9 {accept callback error} {
     rename bgerror {}
     set x
 } {{divide by zero}}
-test socket-10.10 {testing socket specific options} {
+test socket-11.10 {testing socket specific options} {
     sendCommand {
 	set socket10_12_test_server [socket -server accept 2836]
 	proc accept {s a p} {close $s}
@@ -1236,7 +1245,7 @@ test socket-10.10 {testing socket specific options} {
     sendCommand {close $socket10_12_test_server}
     set l
 } {2836 3 3}
-test socket-10.11 {testing spurious events} {
+test socket-11.11 {testing spurious events} {
     sendCommand {
 	set socket10_13_test_server [socket -server accept 2836]
 	proc accept {s a p} {
@@ -1275,7 +1284,7 @@ test socket-10.11 {testing spurious events} {
     sendCommand {close $socket10_13_test_server}
     list $spurious $len
 } {0 2690}
-test socket-10.12 {testing EOF stickyness} {
+test socket-11.12 {testing EOF stickyness} {
     set counter 0
     set done 0
     proc count_up {s} {
@@ -1308,7 +1317,7 @@ test socket-10.12 {testing EOF stickyness} {
     sendCommand {close $socket10_14_test_server}
     set done
 } {EOF is sticky}
-test socket-10.13 {testing async write, async flush, async close} {
+test socket-11.13 {testing async write, async flush, async close} {
     proc readit {s} {
 	global count done
 	set l [read $s]

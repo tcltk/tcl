@@ -3,7 +3,7 @@
 # Default system startup file for Tcl-based applications.  Defines
 # "unknown" procedure and auto-load facilities.
 #
-# SCCS: @(#) init.tcl 1.95 97/11/19 17:16:34
+# SCCS: %Z% $Id: init.tcl,v 1.2 1998/06/27 18:11:24 welch Exp $ 
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
@@ -21,7 +21,7 @@ package require -exact Tcl 8.0
 # (auto_path could be already set, in safe interps for instance)
 
 if {![info exists auto_path]} {
-    if [catch {set auto_path $env(TCLLIBPATH)}] {
+    if {[catch {set auto_path $env(TCLLIBPATH)}]} {
 	set auto_path ""
     }
 }
@@ -36,6 +36,41 @@ catch {
     }
     unset __dir
 }
+
+# Windows specific end of initialization
+
+if {(![interp issafe]) && ($tcl_platform(platform) == "windows")} {
+    namespace eval tcl {
+	proc envTraceProc {lo n1 n2 op} {
+	    set x $::env($n2)
+	    set ::env($lo) $x
+	    set ::env([string toupper $lo]) $x
+	}
+    }
+    foreach p [array names env] {
+	set u [string toupper $p]
+	if {$u != $p} {
+	    switch -- $u {
+		COMSPEC -
+		PATH {
+		    if {![info exists env($u)]} {
+			set env($u) $env($p)
+		    }
+		    trace variable env($p) w [list tcl::envTraceProc $p]
+		    trace variable env($u) w [list tcl::envTraceProc $p]
+		}
+	    }
+	}
+    }
+    if {![info exists env(COMSPEC)]} {
+	if {$tcl_platform(os) == {Windows NT}} {
+	    set env(COMSPEC) cmd.exe
+	} else {
+	    set env(COMSPEC) command.com
+	}
+    }
+}
+
 
 # Setup the unknown package handler
 
@@ -98,11 +133,11 @@ if {[info commands tclLog] == ""} {
     set savedErrorCode $errorCode
     set savedErrorInfo $errorInfo
     set name [lindex $args 0]
-    if ![info exists auto_noload] {
+    if {![info exists auto_noload]} {
 	#
 	# Make sure we're not trying to load the same proc twice.
 	#
-	if [info exists unknown_pending($name)] {
+	if {[info exists unknown_pending($name)]} {
 	    return -code error "self-referential recursion in \"unknown\" for command \"$name\"";
 	}
 	set unknown_pending($name) pending;
@@ -112,10 +147,10 @@ if {[info commands tclLog] == ""} {
 	    return -code $ret -errorcode $errorCode \
 		"error while autoloading \"$name\": $msg"
 	}
-	if ![array size unknown_pending] {
+	if {![array size unknown_pending]} {
 	    unset unknown_pending
 	}
-	if $msg {
+	if {$msg} {
 	    set errorCode $savedErrorCode
 	    set errorInfo $savedErrorInfo
 	    set code [catch {uplevel 1 $args} msg]
@@ -126,7 +161,7 @@ if {[info commands tclLog] == ""} {
 		#
 
 		set new [split $errorInfo \n]
-		set new [join [lrange $new 0 [expr [llength $new] - 6]] \n]
+		set new [join [lrange $new 0 [expr {[llength $new] - 6}]] \n]
 		return -code error -errorcode $errorCode \
 			-errorinfo $new $msg
 	    } else {
@@ -137,7 +172,7 @@ if {[info commands tclLog] == ""} {
 
     if {([info level] == 1) && ([info script] == "") \
 	    && [info exists tcl_interactive] && $tcl_interactive} {
-	if ![info exists auto_noexec] {
+	if {![info exists auto_noexec]} {
 	    set new [auto_execok $name]
 	    if {$new != ""} {
 		set errorCode $savedErrorCode
@@ -159,7 +194,7 @@ if {[info commands tclLog] == ""} {
 	    set newcmd [history event -1]
 	    catch {regsub -all -- $old $newcmd $new newcmd}
 	}
-	if [info exists newcmd] {
+	if {[info exists newcmd]} {
 	    tclLog $newcmd
 	    history change $newcmd 0
 	    return [uplevel $newcmd]
@@ -211,15 +246,15 @@ if {[info commands tclLog] == ""} {
     # from older auto_mkindex versions
     lappend nameList $cmd
     foreach name $nameList {
-	if [info exists auto_index($name)] {
+	if {[info exists auto_index($name)]} {
 	    uplevel #0 $auto_index($name)
 	    return [expr {[info commands $name] != ""}]
 	}
     }
-    if ![info exists auto_path] {
+    if {![info exists auto_path]} {
 	return 0
     }
-    if [info exists auto_oldpath] {
+    if {[info exists auto_oldpath]} {
 	if {$auto_oldpath == $auto_path} {
 	    return 0
 	}
@@ -230,12 +265,12 @@ if {[info commands tclLog] == ""} {
     # newer format tclIndex files.
 
     set issafe [interp issafe]
-    for {set i [expr [llength $auto_path] - 1]} {$i >= 0} {incr i -1} {
+    for {set i [expr {[llength $auto_path] - 1}]} {$i >= 0} {incr i -1} {
 	set dir [lindex $auto_path $i]
 	set f ""
 	if {$issafe} {
 	    catch {source [file join $dir tclIndex]}
-	} elseif [catch {set f [open [file join $dir tclIndex]]}] {
+	} elseif {[catch {set f [open [file join $dir tclIndex]]}]} {
 	    continue
 	} else {
 	    set error [catch {
@@ -261,13 +296,13 @@ if {[info commands tclLog] == ""} {
 	    if {$f != ""} {
 		close $f
 	    }
-	    if $error {
+	    if {$error} {
 		error $msg $errorInfo $errorCode
 	    }
 	}
     }
     foreach name $nameList {
-	if [info exists auto_index($name)] {
+	if {[info exists auto_index($name)]} {
 	    uplevel #0 $auto_index($name)
 	    if {[info commands $name] != ""} {
 		return 1
@@ -359,7 +394,7 @@ if {[string compare $tcl_platform(platform) windows] == 0} {
 proc auto_execok name {
     global auto_execs env tcl_platform
 
-    if [info exists auto_execs($name)] {
+    if {[info exists auto_execs($name)]} {
 	return $auto_execs($name)
     }
     set auto_execs($name) ""
@@ -425,7 +460,7 @@ proc auto_execok name {
 proc auto_execok name {
     global auto_execs env
 
-    if [info exists auto_execs($name)] {
+    if {[info exists auto_execs($name)]} {
 	return $auto_execs($name)
     }
     set auto_execs($name) ""
@@ -506,7 +541,7 @@ proc auto_mkindex {dir args} {
 	set error [catch {
 	    set f [open $file]
 	    while {[gets $f line] >= 0} {
-		if [regexp {^proc[ 	]+([^ 	]*)} $line match procName] {
+		if {[regexp {^proc[ 	]+([^ 	]*)} $line match procName]} {
 		    set procName [lindex [auto_qualify $procName "::"] 0]
 		    append index "set [list auto_index($procName)]"
 		    append index " \[list source \[file join \$dir [list $file]\]\]\n"
@@ -514,7 +549,7 @@ proc auto_mkindex {dir args} {
 	    }
 	    close $f
 	} msg]
-	if $error {
+	if {$error} {
 	    set code $errorCode
 	    set info $errorInfo
 	    catch {close $f}
@@ -529,7 +564,7 @@ proc auto_mkindex {dir args} {
 	close $f
 	cd $oldDir
     } msg]
-    if $error {
+    if {$error} {
 	set code $errorCode
 	set info $errorInfo
 	catch {close $f}
@@ -589,7 +624,7 @@ proc pkg_mkIndex {dir args} {
 	    }
 	}
 	$c eval [list set file $file]
-	if [catch {
+	if {[catch {
 	    $c eval {
 		proc dummy args {}
 		rename package package-orig
@@ -657,7 +692,7 @@ proc pkg_mkIndex {dir args} {
 		    }
 		}
 	    }
-	} msg] {
+	} msg]} {
 	    tclLog "error while loading or sourcing $file: $msg"
 	}
 	foreach pkg [$c eval set pkgs] {
@@ -719,7 +754,7 @@ proc tclPkgSetup {dir pkg version files} {
 
 proc tclMacPkgSearch {dir} {
     foreach x [glob -nocomplain [file join $dir *.shlb]] {
-	if [file isfile $x] {
+	if {[file isfile $x]} {
 	    set res [resource open $x]
 	    foreach y [resource list TEXT $res] {
 		if {$y == "pkgIndex"} {source -rsrc pkgIndex}
@@ -745,17 +780,17 @@ proc tclMacPkgSearch {dir} {
 proc tclPkgUnknown {name version {exact {}}} {
     global auto_path tcl_platform env
 
-    if ![info exists auto_path] {
+    if {![info exists auto_path]} {
 	return
     }
-    for {set i [expr [llength $auto_path] - 1]} {$i >= 0} {incr i -1} {
+    for {set i [expr {[llength $auto_path] - 1}]} {$i >= 0} {incr i -1} {
 	# we can't use glob in safe interps, so enclose the following
 	# in a catch statement
 	catch {
 	    foreach file [glob -nocomplain [file join [lindex $auto_path $i] \
 		    * pkgIndex.tcl]] {
 		set dir [file dirname $file]
-		if [catch {source $file} msg] {
+		if {[catch {source $file} msg]} {
 		    tclLog "error reading package index file $file: $msg"
 		}
 	    }
@@ -775,7 +810,7 @@ proc tclPkgUnknown {name version {exact {}}} {
 	    set dir [lindex $auto_path $i]
 	    tclMacPkgSearch $dir
 	    foreach x [glob -nocomplain [file join $dir *]] {
-		if [file isdirectory $x] {
+		if {[file isdirectory $x]} {
 		    set dir $x
 		    tclMacPkgSearch $dir
 		}

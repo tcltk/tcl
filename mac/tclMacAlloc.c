@@ -23,6 +23,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+
 /*
  * Flags that are used by ConfigureMemory to define how the allocator
  * should work.  They can be or'd together.
@@ -242,6 +243,7 @@ TclpSysFree(
 
     hand = * (Handle *) ((Ptr) ptr - sizeof(Handle));
     DisposeHandle(hand);
+    *hand = NULL;
     err = MemError();
 }
 
@@ -272,7 +274,9 @@ CleanUpExitProc()
     while (systemMemory != NULL) {
 	memRecord = systemMemory;
 	systemMemory = memRecord->next;
-	DisposeHandle(memRecord->memoryHandle);
+        if (*(memRecord->memoryHandle) != NULL) {
+            DisposeHandle(memRecord->memoryHandle);
+        }
 	DisposePtr((void *) memRecord);
     }
 }
@@ -303,13 +307,17 @@ FreeAllMemory()
     while (systemMemory != NULL) {
 	memRecord = systemMemory;
 	systemMemory = memRecord->next;
-	DisposeHandle(memRecord->memoryHandle);
+	if (*(memRecord->memoryHandle) != NULL) {
+            DisposeHandle(memRecord->memoryHandle);
+        }
 	DisposePtr((void *) memRecord);
     }
     while (appMemory != NULL) {
 	memRecord = appMemory;
 	appMemory = memRecord->next;
-	DisposeHandle(memRecord->memoryHandle);
+	if (*(memRecord->memoryHandle) != NULL) {
+            DisposeHandle(memRecord->memoryHandle);
+        }
 	DisposePtr((void *) memRecord);
     }
 }

@@ -253,3 +253,25 @@ test opt-10.10 {medium size overall test} {
     list [catch {optTest save tst foo} msg] [lindex [split $msg "\n"] 0]
 } {1 {too many arguments (unexpected argument(s): foo), usage:}}
 
+
+test opt-11.1 {too many args test 2} {
+    set key [::tcl::OptKeyRegister {-foo}]
+    list [catch {::tcl::OptKeyParse $key {-foo blah}} msg] $msg\
+	    [::tcl::OptKeyDelete $key]
+} {1 {too many arguments (unexpected argument(s): blah), usage:
+    Var/FlagName Type     Value   Help
+    ------------ ----     -----   ----
+    ( -help                       gives this help )
+    -foo         boolflag (false) } {}}
+
+
+
+test opt-11.2 {default value for args} {
+    set args {}
+    set key [::tcl::OptKeyRegister {{args -list {a b c} "args..."}}]
+    ::tcl::OptKeyParse $key {}
+    ::tcl::OptKeyDelete $key
+    set args
+} {a b c}
+
+

@@ -3452,6 +3452,35 @@ Universal Headers V.3.0, so that Tcl will compile with CW Pro 2.
 
 ----------------- Released 8.0p2, 11/25/97 -----------------------
 
+12/3/97 (bug fix/optimization) Removed uneeded and potentially dangerous
+instances of double evaluations if "if" and "expr" statements from
+the library files. It is recommended that unless you need a double
+evaluation you always use "expr {...}" instead of "expr ..." and
+"if {...} ..." instead of "if ... ...". It will also be faster
+thanks to the byte compiler. (DL)
+
+---- Shipped as part of the plugin2.0b5 as 8.0p2Plugin1, Dec 8th 97 ----
+
+12/8/97 (bug fix) Need to protect the newly accepted channel in an
+accept callback on a socket, otherwise the callback may close it and
+cause an error, which would cause the C code to attempt to close the
+now deleted channel. Bumping the refcount assures that the channel sticks
+around to be really closed in this case. (JL)
+
+12/8/97 (bug fix) Need to protect the channel in a fileevent so that it
+is not deleted before the fileevent handler returns. (CS, JL)
+
+12/18/97 (bug fix) In the opt argument parsing package: if the description 
+had only flags, the "too many arguments" case was not detected. The default
+value was not used for the special "args" ending argument. (DL)
+
+1/15/98 (improvement) Moved common part of initScript in common file.
+Moved windows specific initialization to init.tcl so you can initialize
+Tcl in windows without having to call Tcl_Init which is now only
+searching for init.tcl {back ported from 8.1}. (DL)
+
+---- Shipped as part of the plugin as 8.0p2Plugin2, Jan 15th 98 ----
+
 5/27/98 (bug fix) Windows socket driver did not notice new data arriving
 on nonblocking sockets until the event loop was entered. (SS)
 

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: %Z% $Id: tclIO.c,v 1.2 1998/06/09 13:08:16 stanton Exp $ 
+ * SCCS: %Z% $Id: tclIO.c,v 1.3 1998/06/27 18:10:15 welch Exp $ 
  */
 
 #include	"tclInt.h"
@@ -4519,7 +4519,14 @@ Tcl_NotifyChannel(channel, mask)
     ChannelHandler *chPtr;
     NextChannelHandler nh;
 
-    Tcl_Preserve((ClientData)chanPtr);
+    /*
+     * Prevent the event handler from deleting the channel by incrementing
+     * the channel's ref count.  Case in point: ChannelEventScriptInvoker()
+     * was evaling a script (owned by the channel) which caused the channel
+     * to be closed and then the byte codes no longer existed.
+     */
+     
+    Tcl_RegisterChannel((Tcl_Interp *) NULL, channel);
 
     /*
      * If we are flushing in the background, be sure to call FlushChannel
@@ -4566,7 +4573,13 @@ Tcl_NotifyChannel(channel, mask)
     if (chanPtr->typePtr != NULL) {
 	UpdateInterest(chanPtr);
     }
-    Tcl_Release((ClientData)chanPtr);
+
+    /*
+     * No longer need to protect the channel from being deleted.
+     * After this point it is unsafe to use the value of "channel".
+     */
+ 
+    Tcl_UnregisterChannel((Tcl_Interp *) NULL, channel);
 
     nestedHandlerPtr = nh.nestedHandlerPtr;
 }

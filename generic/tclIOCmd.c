@@ -1238,12 +1238,28 @@ AcceptCallbackProc(callbackData, chan, address, port)
 
 	TclFormatInt(portBuf, port);
         Tcl_RegisterChannel(interp, chan);
+
+        /*
+         * Artificially bump the refcount to protect the channel from
+         * being deleted while the script is being evaluated.
+         */
+
+        Tcl_RegisterChannel((Tcl_Interp *) NULL,  chan);
+        
         result = Tcl_VarEval(interp, script, " ", Tcl_GetChannelName(chan),
                 " ", address, " ", portBuf, (char *) NULL);
         if (result != TCL_OK) {
             Tcl_BackgroundError(interp);
 	    Tcl_UnregisterChannel(interp, chan);
         }
+
+        /*
+         * Decrement the artificially bumped refcount. After this it is
+         * not safe anymore to use "chan", because it may now be deleted.
+         */
+
+        Tcl_UnregisterChannel((Tcl_Interp *) NULL, chan);
+        
         Tcl_Release((ClientData) interp);
         Tcl_Release((ClientData) script);
     } else {
