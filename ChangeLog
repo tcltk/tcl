@@ -1,3 +1,9 @@
+2004-08-10  Zoran Vasiljevic <vasiljevic@users.sf.net>
+
+	* unix/tclUnixThrd.c (TclpThreadCreate): changed handling of
+	the returned thread ID since broken on 64-bit systems (Cray).
+	Thanks to Rob Ratcliff for reporting the bug.
+
 2004-07-30  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclEvent.c (Tcl_Finalize):	Re-organized Tcl_Finalize
