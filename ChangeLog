@@ -13,6 +13,10 @@
 
 	* generic/tclAsync.c:  Brought source to match -r1.6 on the HEAD branch.
 
+	* generic/tclEvent.c:
+	* generic/tclInt.h: Added prototype to and use of new TclFinalizeAsync()
+	found in tclAsync.c.
+
 	* unix/tclUnixPort.h:
 	* mac/tclMacPort.h: removed #defines for TclpAsyncMark.
 
