@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPort.h,v 1.8 1998/09/29 18:22:39 rjohnson Exp $
+ * RCS: @(#) $Id: tclUnixPort.h,v 1.8.4.1 1999/03/04 00:55:51 stanton Exp $
  */
 
 #ifndef _TCLUNIXPORT
@@ -146,16 +146,6 @@
 #else
 #  define NBIO_FLAG O_NDELAY
 #endif
-
-/*
- * The following defines denote malloc and free as the system calls
- * used to allocate new memory.  These defines are only used in the
- * file tclCkalloc.c.
- */
-
-#define TclpAlloc(size)		malloc(size)
-#define TclpFree(ptr)		free(ptr)
-#define TclpRealloc(ptr, size)	realloc(ptr, size)
 
 /*
  * The default platform eol translation on Unix is TCL_TRANSLATE_LF:
@@ -300,15 +290,6 @@ EXTERN int		gettimeofday _ANSI_ARGS_((struct timeval *tp,
 #endif
 
 /*
- * On UNIX, there's no platform specific implementation of "TclpStat(...)"
- * or "TclpAccess(...)".  Simply call "stat(...)' and "access(...)"
- * respectively.
- */
-
-#define TclpStat	stat
-#define TclpAccess	access
-
-/*
  * On systems without symbolic links (i.e. S_IFLNK isn't defined)
  * define "lstat" to use "stat" instead.
  */
@@ -443,12 +424,6 @@ EXTERN int		gettimeofday _ANSI_ARGS_((struct timeval *tp,
 #define TclPlatformExit(status) exit(status)
 
 /*
- * The following functions always succeeds under Unix.
- */
-
-#define TclHasSockets(interp) (TCL_OK)
-
-/*
  * Variables provided by the C library:
  */
 
@@ -472,8 +447,6 @@ extern double strtod();
  * standard Unix routines.
  */
 
-#define TclpGetDate(t,u) ((u) ? gmtime((t)) : localtime((t)))
-#define TclStrftime(s,m,f,t) (strftime((s),(m),(f),(t)))
 #define TclpGetPid(pid)	    ((unsigned long) (pid))
 
 #define TclpReleaseFile(file)	
@@ -483,12 +456,5 @@ extern double strtod();
  */
 
 #define TclpFinalize()
-
-/*
- * The following routine is only exported for testing purposes.
- */
-
-EXTERN int	TclUnixWaitForFile _ANSI_ARGS_((int fd, int mask,
-		    int timeout));
 
 #endif /* _TCLUNIXPORT */
