@@ -1,3 +1,9 @@
+2005-04-05  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclInt.h:
+	* generic/tclObj.c: Change in TclDecrRefCount and TclFreeObj, to
+	speed up the freeing of simple Tcl_Obj [Patch 1174551]
+
 2005-04-04  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclExecute.c: small opts in obj handling
