@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: CrtCommand.3,v 1.6 2004/03/09 12:59:04 vincentdarley Exp $
+'\" RCS: @(#) $Id: CrtCommand.3,v 1.7 2004/07/16 20:46:33 andreas_kupries Exp $
 '\" 
 .so man.macros
 .TH Tcl_CreateCommand 3 "" Tcl "Tcl Library Procedures"
@@ -101,6 +101,11 @@ last value is NULL.
 Note that the argument strings should not be modified as they may
 point to constant strings or may be shared with other parts of the
 interpreter.
+.VE
+.PP
+.VS
+Note that the argument strings are encoded in normalized UTF-8 since
+version 8.1 of Tcl.
 .VE
 .PP
 \fIProc\fR must return an integer code that is either \fBTCL_OK\fR, \fBTCL_ERROR\fR,
