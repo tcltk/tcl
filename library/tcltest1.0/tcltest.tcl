@@ -12,7 +12,7 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 # 
-# RCS: @(#) $Id: tcltest.tcl,v 1.24.2.3 2002/03/24 19:07:48 dgp Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.24.2.4 2002/07/11 18:59:29 dgp Exp $
 
 package require Tcl 8.2
 package provide tcltest 1.0.2
@@ -1244,7 +1244,8 @@ proc ::tcltest::cleanupTests {{calledFromAllFile 0}} {
 	# exit only if running Tk in non-interactive mode
 
 	global tk_version tcl_interactive
-	if {[info exists tk_version] && ![info exists tcl_interactive]} {
+	if {[info exists tk_version] 
+		&& (![info exists tcl_interactive] || !$tcl_interactive)} {
 	    exit
 	}
     } else {

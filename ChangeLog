@@ -1,3 +1,8 @@
+2002-07-21  Don Porter  <dgp@users.sourceforge.net>
+
+	* library/tcltest1.0/tcltest.tcl:  Corrected reaction to existing
+	but false ::tcl_interactive.
+
 2002-07-05  Reinhard Max  <max@suse.de>
 
         * generic/tclClock.c (FormatClock): Convert the format string to
