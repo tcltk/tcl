@@ -2,6 +2,8 @@
 
 	* tests/safe.test:	Trim auto_path to improve performance [1080039]
 
+	* tests/msgcat.test:	makeFile/removeFile cleanup [1079117]
+
 2004-12-04  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclEncoding.c:	Different fix for [Bug 1077005].
