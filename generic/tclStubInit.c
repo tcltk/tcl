@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.46 2000/11/03 18:46:12 hobbs Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.47 2001/01/18 19:09:55 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -826,7 +826,7 @@ TclStubs tclStubs = {
     Tcl_UniCharCaseMatch, /* 420 */
     Tcl_FindHashEntry, /* 421 */
     Tcl_CreateHashEntry, /* 422 */
-    Tcl_InitHashTableEx, /* 423 */
+    Tcl_InitCustomHashTable, /* 423 */
     Tcl_InitObjHashTable, /* 424 */
     Tcl_CommandTraceInfo, /* 425 */
     Tcl_TraceCommand, /* 426 */

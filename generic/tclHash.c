@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclHash.c,v 1.8 2000/09/06 16:57:27 hobbs Exp $
+ * RCS: @(#) $Id: tclHash.c,v 1.9 2001/01/18 19:09:55 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -157,17 +157,17 @@ Tcl_InitHashTable(tablePtr, keyType)
      * extension is rebuilt then any calls to this function will be
      * redirected to the extended version by a macro.
      */
-    Tcl_InitHashTableEx(tablePtr, keyType, (Tcl_HashKeyType *) -1);
+    Tcl_InitCustomHashTable(tablePtr, keyType, (Tcl_HashKeyType *) -1);
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_InitHashTableEx --
+ * Tcl_InitCustomHashTable --
  *
  *	Given storage for a hash table, set up the fields to prepare
  *	the hash table for use. This is an extended version of
- *	Tcl_InitHashTableEx which supports user defined keys.
+ *	Tcl_InitHashTable which supports user defined keys.
  *
  * Results:
  *	None.
@@ -180,7 +180,7 @@ Tcl_InitHashTable(tablePtr, keyType)
  */
 
 void
-Tcl_InitHashTableEx(tablePtr, keyType, typePtr)
+Tcl_InitCustomHashTable(tablePtr, keyType, typePtr)
     register Tcl_HashTable *tablePtr;	/* Pointer to table record, which
 					 * is supplied by the caller. */
     int keyType;			/* Type of keys to use in table:
@@ -192,7 +192,7 @@ Tcl_InitHashTableEx(tablePtr, keyType, typePtr)
 					 * the behaviour of this table. */
 {
 #if (TCL_SMALL_HASH_TABLE != 4) 
-    panic("Tcl_InitHashTableEx: TCL_SMALL_HASH_TABLE is %d, not 4\n",
+    panic("Tcl_InitCustomHashTable: TCL_SMALL_HASH_TABLE is %d, not 4\n",
 	    TCL_SMALL_HASH_TABLE);
 #endif
     
