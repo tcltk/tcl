@@ -59,7 +59,7 @@ static pthread_mutex_t *allocLockPtr = &allocLock;
 /*
  *----------------------------------------------------------------------
  *
- * TclpThreadCreate --
+ * Tcl_CreateThread --
  *
  *	This procedure creates a new thread.
  *
@@ -74,37 +74,49 @@ static pthread_mutex_t *allocLockPtr = &allocLock;
  */
 
 int
-TclpThreadCreate(idPtr, proc, clientData)
+Tcl_CreateThread(idPtr, proc, clientData, stackSize, flags)
     Tcl_ThreadId *idPtr;		/* Return, the ID of the thread */
     Tcl_ThreadCreateProc proc;		/* Main() function of the thread */
     ClientData clientData;		/* The one argument to Main() */
+    int stackSize;			/* Size of stack for the new thread */
+    int flags;				/* Flags controlling behaviour of
+					 * the new thread */
 {
     pthread_attr_t attr;
     int result;
-#ifdef TCL_THREAD_STACK_MIN
-    size_t size;
-#endif
 
     pthread_attr_init(&attr);
     pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM);
 
+#ifdef HAVE_PTHREAD_ATTR_SETSTACKSIZE
+    if (stackSize != TCL_THREAD_STACK_DEFAULT) {
+        pthread_attr_setstacksize(&attr, (size_t) stackSize);
 #ifdef TCL_THREAD_STACK_MIN
-    /*
-     * Certain systems define a thread stack size that by default is
-     * too small for many operations.  The user has the option of
-     * defining TCL_THREAD_STACK_MIN to a value large enough to work
-     * for their needs.  This would look like (for 128K min stack):
-     *    make MEM_DEBUG_FLAGS=-DTCL_THREAD_STACK_MIN=131072L
-     *
-     * This solution is not optimal, as we should allow the user to
-     * specify a size at runtime, but we don't want to slow this function
-     * down, and that would still leave the main thread at the default.
-     */
-    result = pthread_attr_getstacksize(&attr, &size);
-    if (!result && (size < TCL_THREAD_STACK_MIN)) {
-	pthread_attr_setstacksize(&attr, (size_t) TCL_THREAD_STACK_MIN);
+    } else {
+        /*
+	 * Certain systems define a thread stack size that by default is
+	 * too small for many operations.  The user has the option of
+	 * defining TCL_THREAD_STACK_MIN to a value large enough to work
+	 * for their needs.  This would look like (for 128K min stack):
+	 *    make MEM_DEBUG_FLAGS=-DTCL_THREAD_STACK_MIN=131072L
+	 *
+	 * This solution is not optimal, as we should allow the user to
+	 * specify a size at runtime, but we don't want to slow this function
+	 * down, and that would still leave the main thread at the default.
+	 */
+
+        size_t size;
+	result = pthread_attr_getstacksize(&attr, &size);
+	if (!result && (size < TCL_THREAD_STACK_MIN)) {
+	    pthread_attr_setstacksize(&attr, (size_t) TCL_THREAD_STACK_MIN);
+	}
+#endif
     }
 #endif
+    if (! (flags & TCL_THREAD_JOINABLE)) {
+        pthread_attr_setdetachstate (&attr, PTHREAD_CREATE_DETACHED);
+    }
+
 
     if (pthread_create((pthread_t *)idPtr, &attr,
 	    (void * (*)())proc, (void *)clientData) &&

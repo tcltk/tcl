@@ -379,6 +379,11 @@ AC_DEFUN(SC_ENABLE_THREADS, [
 	    	fi
 	    fi
 	fi
+
+	# Does the pthread-implementation provide
+	# 'pthread_attr_setstacksize' ?
+
+	AC_CHECK_FUNCS(pthread_attr_setstacksize)
     else
 	TCL_THREADS=0
 	AC_MSG_RESULT(no (default))

@@ -100,7 +100,7 @@ static void FinalizeConditionEvent(ClientData data);
 /*
  *----------------------------------------------------------------------
  *
- * TclpThreadCreate --
+ * Tcl_CreateThread --
  *
  *	This procedure creates a new thread.
  *
@@ -115,14 +115,17 @@ static void FinalizeConditionEvent(ClientData data);
  */
 
 int
-TclpThreadCreate(idPtr, proc, clientData)
+Tcl_CreateThread(idPtr, proc, clientData, stackSize, flags)
     Tcl_ThreadId *idPtr;		/* Return, the ID of the thread */
     Tcl_ThreadCreateProc proc;		/* Main() function of the thread */
     ClientData clientData;		/* The one argument to Main() */
+    int stackSize;			/* Size of stack for the new thread */
+    int flags;				/* Flags controlling behaviour of
+					 * the new thread */
 {
     unsigned long code;
 
-    code = _beginthreadex(NULL, 0, (LPTHREAD_START_ROUTINE) proc,
+    code = _beginthreadex(NULL, stackSize, (LPTHREAD_START_ROUTINE) proc,
 		(void *)clientData, 0, (unsigned *)idPtr);
     if (code == 0) {
 	return TCL_ERROR;

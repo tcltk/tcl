@@ -1,3 +1,44 @@
+2000-04-08  Andreas Kupries <a.kupries@westend.com>
+
+	* Overall change: Definition of a public API for the creation of
+	  new threads.
+
+	* generic/tclInt.h (line 1802f): Removed the definition of
+	'TclpThreadCreate'. (line 793f) Removed the definition of
+	'Tcl_ThreadCreateProc'.
+
+	* generic/tcl.h (line 388f): Readded the definition of
+	  'Tcl_ThreadCreateProc'. Added Win32 stuff send in by David
+	  Graveraux <davygrvy@bigfoot.com> to that too (__stdcall,
+	  ...). Added macros for the default stacksize and allowed flags.
+
+	* generic/tcl.decls (line 1356f): Added definition of
+	  'Tcl_CreateThread', slot 393 of the stub table. Two new
+	  arguments in the public API, for stacksize and flags.
+
+	* win/tclWinThrd.c:
+	* mac/tclMacThrd.c: Renamed TclpThreadCreate to Tcl_CreateThread,
+	  added handling of the stacksize. Flags are currently ignored.
+
+	* unix/tclUnixThrd.c: See above, but handles joinable
+	  flag. Ignores the specified stacksize if the macro
+	  HAVE_PTHREAD_ATTR_SETSTACKSIZE is not defined.
+
+	* generic/tclThreadTest.c (line 363): See below.
+
+	* unix/tclUnixNotfy.c (line 210): Adapted to the changes
+	  above. Uses default stacksize and no flags now.
+
+	* unic/tcl.m4 (line 382f): Added a check for
+	  'pthread_attr_setstacksize' to detect platforms not implementing
+	  this feature of pthreads. If it is implemented, configure will
+	  define the macro HAVE_PTHREAD_ATTR_SETSTACKSIZE (See
+	  unix/tclUnixThrd.c too).
+
+	* doc/Thread.3: Added Tcl_CreateThread and its arguments to the
+	  list of described functions. Removed stuff about not providing a
+	  public C-API for thread-creation.
+
 2000-04-07  Jeff Hobbs  <hobbs@scriptics.com>
 
 	* doc/binary.n: clarified docs on sign extension in binary scan

@@ -89,7 +89,7 @@ TclMacHaveThreads(void)
 /*
  *----------------------------------------------------------------------
  *
- * TclpThreadCreate --
+ * Tcl_CreateThread --
  *
  *	This procedure creates a new thread.
  *
@@ -104,27 +104,34 @@ TclMacHaveThreads(void)
  */
 
 int
-TclpThreadCreate(idPtr, proc, clientData)
+Tcl_CreateThread(idPtr, proc, clientData, stackSize, flags)
     Tcl_ThreadId *idPtr;		/* Return, the ID of the thread */
     Tcl_ThreadCreateProc proc;		/* Main() function of the thread */
     ClientData clientData;		/* The one argument to Main() */
+    int stackSize;			/* Size of stack for the new thread */
+    int flags;				/* Flags controlling behaviour of
+					 * the new thread */
 {
 
     if (!TclMacHaveThreads()) {
         return TCL_ERROR;
     }
-    
+
+    if (stackSize == TCL_THREAD_STACK_DEFAULT) {
+        stackSize = TCL_MAC_THRD_DEFAULT_STACK;
+    }
+
 #if TARGET_CPU_68K && TARGET_RT_MAC_CFM
     {
         ThreadEntryProcPtr entryProc;
         entryProc = NewThreadEntryProc(proc);
         
         NewThread(kCooperativeThread, entryProc, (void *) clientData, 
-            TCL_MAC_THRD_DEFAULT_STACK, kCreateIfNeeded, NULL, (ThreadID *) idPtr);
+            stackSize, kCreateIfNeeded, NULL, (ThreadID *) idPtr);
     }
 #else
     NewThread(kCooperativeThread, proc, (void *) clientData, 
-        TCL_MAC_THRD_DEFAULT_STACK, kCreateIfNeeded, NULL, (ThreadID *) idPtr);
+        stackSize, kCreateIfNeeded, NULL, (ThreadID *) idPtr);
 #endif        
     if ((ThreadID) *idPtr == kNoThreadID) {
         return TCL_ERROR;

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.64 2000/04/04 20:28:41 kupries Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.65 2000/04/09 16:04:17 kupries Exp $
  */
 
 #ifndef _TCL
@@ -385,6 +385,30 @@ typedef struct Tcl_ThreadId_ *Tcl_ThreadId;
 typedef struct Tcl_TimerToken_ *Tcl_TimerToken;
 typedef struct Tcl_Trace_ *Tcl_Trace;
 typedef struct Tcl_Var_ *Tcl_Var;
+
+/*
+ * Definition of the interface to procedures implementing threads.
+ * A procedure following this definition is given to each call of
+ * 'Tcl_CreateThread' and will be called as the main fuction of
+ * the new thread created by that call.
+ */
+
+#ifdef MAC_TCL
+typedef pascal void *(Tcl_ThreadCreateProc) _ANSI_ARGS_((ClientData clientData));
+#elif defined __WIN32__
+typedef unsigned __stdcall (Tcl_ThreadCreateProc) _ANSI_ARGS_((ClientData clientData));
+#else
+typedef void (Tcl_ThreadCreateProc) _ANSI_ARGS_((ClientData clientData));
+#endif
+
+/*
+ * Definition of values for default stacksize and the possible flags to be
+ * given to Tcl_CreateThread.
+ */
+
+#define TCL_THREAD_STACK_DEFAULT (0)    /* Use default size for stack */
+#define TCL_THREAD_NOFLAGS       (0000) /* Standard flags, default behaviour */
+#define TCL_THREAD_JOINABLE      (0001) /* Mark the thread as joinable */
 
 /*
  * Flag values passed to Tcl_GetRegExpFromObj.

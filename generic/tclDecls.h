@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.33 2000/04/05 00:42:19 welch Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.34 2000/04/09 16:04:17 kupries Exp $
  */
 
 #ifndef _TCLDECLS
@@ -1223,6 +1223,11 @@ EXTERN void		Tcl_ConditionFinalize _ANSI_ARGS_((
 				Tcl_Condition * condPtr));
 /* 392 */
 EXTERN void		Tcl_MutexFinalize _ANSI_ARGS_((Tcl_Mutex * mutex));
+/* 393 */
+EXTERN int		Tcl_CreateThread _ANSI_ARGS_((Tcl_ThreadId * idPtr, 
+				Tcl_ThreadCreateProc proc, 
+				ClientData clientData, int stackSize, 
+				int flags));
 
 typedef struct TclStubHooks {
     struct TclPlatStubs *tclPlatStubs;
@@ -1683,6 +1688,7 @@ typedef struct TclStubs {
     int (*tcl_ProcObjCmd) _ANSI_ARGS_((ClientData clientData, Tcl_Interp * interp, int objc, Tcl_Obj *CONST objv[])); /* 390 */
     void (*tcl_ConditionFinalize) _ANSI_ARGS_((Tcl_Condition * condPtr)); /* 391 */
     void (*tcl_MutexFinalize) _ANSI_ARGS_((Tcl_Mutex * mutex)); /* 392 */
+    int (*tcl_CreateThread) _ANSI_ARGS_((Tcl_ThreadId * idPtr, Tcl_ThreadCreateProc proc, ClientData clientData, int stackSize, int flags)); /* 393 */
 } TclStubs;
 
 #ifdef __cplusplus
@@ -3299,6 +3305,10 @@ extern TclStubs *tclStubsPtr;
 #ifndef Tcl_MutexFinalize
 #define Tcl_MutexFinalize \
 	(tclStubsPtr->tcl_MutexFinalize) /* 392 */
+#endif
+#ifndef Tcl_CreateThread
+#define Tcl_CreateThread \
+	(tclStubsPtr->tcl_CreateThread) /* 393 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.41 2000/04/04 20:28:42 kupries Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.42 2000/04/09 16:04:18 kupries Exp $
  */
 
 #ifndef _TCLINT
@@ -789,12 +789,6 @@ EXTERN void TclThreadDataKeySet _ANSI_ARGS_((Tcl_ThreadDataKey *keyPtr, VOID *da
  */
 #define TCL_TSD_INIT(keyPtr)	(ThreadSpecificData *)Tcl_GetThreadData((keyPtr), sizeof(ThreadSpecificData))
 
-
-#ifdef MAC_TCL
-typedef pascal void *(Tcl_ThreadCreateProc) _ANSI_ARGS_((ClientData clientData));
-#else
-typedef void (Tcl_ThreadCreateProc) _ANSI_ARGS_((ClientData clientData));
-#endif
 
 /*
  *----------------------------------------------------------------
@@ -1799,8 +1793,6 @@ EXTERN int		TclProcCompileProc _ANSI_ARGS_((Tcl_Interp *interp,
 EXTERN void		TclProcDeleteProc _ANSI_ARGS_((ClientData clientData));
 EXTERN int		TclProcInterpProc _ANSI_ARGS_((ClientData clientData,
 			    Tcl_Interp *interp, int argc, char **argv));
-EXTERN int		TclpThreadCreate _ANSI_ARGS_((Tcl_ThreadId *idPtr,
-			    Tcl_ThreadCreateProc proc, ClientData clientData));
 EXTERN VOID *		TclpThreadDataKeyGet _ANSI_ARGS_((
 			    Tcl_ThreadDataKey *keyPtr));
 EXTERN void		TclpThreadDataKeyInit _ANSI_ARGS_((

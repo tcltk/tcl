@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Thread.3,v 1.8 2000/04/04 20:28:40 kupries Exp $
+'\" RCS: @(#) $Id: Thread.3,v 1.9 2000/04/09 16:04:17 kupries Exp $
 '\" 
 .so man.macros
 .TH Threads 3 "8.1" Tcl "Tcl Library Procedures"
@@ -38,6 +38,9 @@ void
 .sp
 void
 \fBTcl_MutexFinalize\fR(\fImutexPtr\fR)
+.sp
+int
+\fBTcl_CreateThread\fR(\fIidPtr, threadProc, clientData, stackSize, flags\fR)
 .SH ARGUMENTS
 .AS Tcl_ThreadDataKey *keyPtr
 .AP Tcl_Condition *condPtr in
@@ -55,6 +58,19 @@ a different block of storage with this key.
 The size of the thread local storage block.  This amount of data
 is allocated and initialized to zero the first time each thread
 calls \fBTcl_GetThreadData\fR.
+.AP Tcl_ThreadId *idPtr out
+The refered storage will contain the id of the newly created thread as
+returned by the operating system.
+.AP Tcl_ThreadCreateProc threadProc in
+This procedure will act as the \fBmain()\fR of the newly created
+thread. The specified \fIclientData\fR will be its sole argument.
+.AP ClientData clientData in
+Arbitrary information. Passed as sole argument to the \fIthreadProc\fR.
+.AP int stackSize in
+The size of the stack given to the new thread.
+.AP int flags in
+Bitmask containing flags allowing the caller to modify behaviour of
+the new thread.
 .BE
 .SH INTRODUCTION
 Beginning with the 8.1 release, the Tcl core is thread safe, which
@@ -70,10 +86,25 @@ the same Tcl interpreter.  (However, as was the case in previous
 releases, a single thread can safely create and use multiple
 interpreters.)
 .PP
-Tcl provides no special API for creating
-threads.  When writing multithreaded applications incorporating Tcl,
-use the standard POSIX threads APIs on Unix systems and the standard
-Win32 threads APIs on Windows systems.
+.VB
+Tcl does provide \fBTcl_CreateThread\fR for creating threads. The
+caller can determine the size of the stack given to the new thread and
+modify the behaviour through the supplied \fIflags\fR. The value
+\fBTCL_THREAD_STACK_DEFAULT\fR for the \fIstackSize\fR indicates that
+the default size as specified by the operating system is to be used
+for the new thread. As for the flags, currently are only the values
+\fBTCL_THREAD_NOFLAGS\fR and \fBTCL_THREAD_JOINABLE\fR defined. The
+first of them invokes the default behaviour with no
+specialities. Using the second value marks the new thread as
+\fIjoinable\fR. This means that another thread can wait for the such
+marked thread to exit and join it.
+
+Restrictions: On some unix systems the pthread-library does not
+contain the functionality to specify the stacksize of a thread. The
+specified value for the stacksize is ignored on these systems. Both
+Windows and Macintosh currently do not support joinable threads. This
+flag value is therefore ignored on these platforms.
+.VE
 .PP
 Tcl does provide \fBTcl_ExitThread\fR and \fBTcl_FinalizeThread\fR
 for terminating threads and invoking optional per-thread exit
