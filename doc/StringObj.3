@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: StringObj.3,v 1.5 1999/06/15 01:16:21 hershey Exp $
+'\" RCS: @(#) $Id: StringObj.3,v 1.6 2000/09/14 18:42:29 ericm Exp $
 '\" 
 .so man.macros
 .TH Tcl_StringObj 3 8.1 Tcl "Tcl Library Procedures"
@@ -70,6 +70,9 @@ void
 .sp
 void
 \fBTcl_SetObjLength\fR(\fIobjPtr, newLength\fR)
+.sp
+int
+\fBTcl_AttemptSetObjLength\fR(\fIobjPtr, newLength\fR)
 .sp
 Tcl_Obj *
 \fBTcl_ConcatObj\fR(\fIobjc, objv\fR)
@@ -226,6 +229,16 @@ string is recorded in the object, so that the string length can be
 enlarged in a subsequent call to \fBTcl_SetObjLength\fR without
 reallocating storage.  In all cases \fBTcl_SetObjLength\fR leaves
 a null character at \fIobjPtr->bytes[newLength]\fR.
+.PP
+\fBTcl_AttemptSetObjLength\fR is identical in function to
+\fBTcl_SetObjLength\fR except that if sufficient memory to satisfy the
+request cannot be allocated, it does not cause the Tcl interpreter to
+\fBpanic\fR.  Thus, if \fInewLength\fR is greater than the space
+allocated for the object's string, and there is not enough memory
+available to satisfy the request, \fBTcl_AttemptSetObjLength\fR will take
+no action and return 0 to indicate failure.  If there is enough memory
+to satisfy the request, \fBTcl_AttemptSetObjLength\fR behaves just like
+\fBTcl_SetObjLength\fR and returns 1 to indicate success.
 .PP
 The \fBTcl_ConcatObj\fR function returns a new string object whose
 value is the space-separated concatenation of the string

@@ -1,3 +1,29 @@
+2000-09-14  Eric Melski  <ericm@ajubasolutions.com>
+
+	* doc/Alloc.3: Added entries for Tcl_AttemptAlloc, Tcl_AttempRealloc.
+
+	* doc/StringObj.3: Added entry for Tcl_AttemptSetObjLength.
+	
+	* generic/tclDecls.h:
+	* generic/tclStubInit.c: Regen'ed stubs files from new tcl.decls.
+
+	* generic/tcl.decls: Added stubs for the Tcl_Attempt* memory
+	allocators and for Tcl_AttemptSetObjLength.
+
+	* generic/tcl.h: Added #define's for attemptckalloc,
+	attemptckrealloc, which map to the Tcl_Attempt* memory allocators.
+
+	* generic/tclCkalloc.c: Added non-panic'ing versions of Tcl_Alloc,
+	Tcl_Realloc, etc.; these are called Tcl_AttemptAlloc,
+	Tcl_AttemptRealloc, etc.  These are used by
+	Tcl_AttemptSetObjLength and the string obj append functions.
+
+	* generic/tclStringObj.c: Modified string growth algorithm to use
+	doubling algorithm as long as possible, and only fall back when
+	that fails.  Added Tcl_AttemptSetObjLength, and modified
+	AppendUnicodeToUnicodeRep, AppendUtfToUtfRep, and
+	Tcl_AppendStringsToObjVA to support this.
+
 2000-09-07  David Gravereaux <davygrvy@ajubasolutions.com>
 
 	* win/.cvsignore: changed the glob patterns a bit to exclude VC++
