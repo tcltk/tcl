@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFCmd.c,v 1.8 2001/08/07 01:00:02 hobbs Exp $
+ * RCS: @(#) $Id: tclFCmd.c,v 1.9 2001/08/11 18:43:21 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -315,6 +315,7 @@ TclFileDeleteCmd(interp, objc, objv)
 {
     int i, force, result;
     Tcl_Obj *errfile;
+    Tcl_Obj *errorBuffer = NULL;
     
     i = FileForceOption(interp, objc - 2, objv + 2, &force);
     if (i < 0) {
@@ -354,7 +355,10 @@ TclFileDeleteCmd(interp, objc, objv)
 		result = TCL_ERROR;
 	    }
 	} else if (S_ISDIR(statBuf.st_mode)) {
-	    Tcl_Obj *errorBuffer = NULL;
+	    /* 
+	     * We own a reference count on errorBuffer, if it was set
+	     * as a result of this call. 
+	     */
 	    result = Tcl_FSRemoveDirectory(objv[i], force, &errorBuffer);
 	    if (result != TCL_OK) {
 		if ((force == 0) && (errno == EEXIST)) {
@@ -379,7 +383,13 @@ TclFileDeleteCmd(interp, objc, objv)
 	    result = Tcl_FSDeleteFile(objv[i]);
 	}
 	
-	if (result == TCL_ERROR) {
+	if (result != TCL_OK) {
+	    result = TCL_ERROR;
+	    /* 
+	     * It is important that we break on error, otherwise we
+	     * might end up owning reference counts on numerous
+	     * errorBuffers.
+	     */
 	    break;
 	}
     }
@@ -395,6 +405,9 @@ TclFileDeleteCmd(interp, objc, objv)
 	    Tcl_AppendResult(interp, "error deleting \"", 
 		    Tcl_GetString(errfile), "\": ", 
 		    Tcl_PosixError(interp), (char *) NULL);
+	}
+	if (errorBuffer != NULL) {
+	    Tcl_DecrRefCount(errorBuffer);
 	}
     } 
     done:
