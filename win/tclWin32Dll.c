@@ -53,6 +53,10 @@ static void 		UnloadLibraries _ANSI_ARGS_((void));
 
 BOOL APIENTRY		DllMain _ANSI_ARGS_((HINSTANCE hInst,
 			    DWORD reason, LPVOID reserved));
+
+#ifdef __WIN32__
+#ifndef STATIC_BUILD
+
 
 /*
  *----------------------------------------------------------------------
@@ -124,6 +128,9 @@ DllMain(hInst, reason, reserved)
 
     return TRUE; 
 }
+
+#endif /* !STATIC_BUILD */
+#endif /* __WIN32__ */
 
 /*
  *----------------------------------------------------------------------
