@@ -1,0 +1,80 @@
+1999-03-02    <stanton@GASPODE>
+
+	* unix/Makefile.in:
+	* unix/configure.in: 
+	* unix/ldAix: Enhanced AIX shared library support.
+
+	* win/tclWinSock.c: Removed a bunch of extraneous PASCAL FAR
+	attributes from internal functions.
+
+	* win/tclWinReg.c: Changed registry package to use stubs mechanism
+	so it no longer depends on the specific version of Tcl.
+
+	* doc/AddErrInfo.3: 
+	* doc/Eval.3: 
+	* doc/PkgRequire.3: 
+	* doc/SetResult.3: 
+	* doc/StringObj.3: 
+	* generic/tcl.h:
+	* generic/tclBasic.c: 
+	* generic/tclPanic.c:
+	* generic/tclStringObj.c:
+	* generic/tclUtil.c:
+	* unix/mkLinks: Added va_list versions of all VARARGS
+	functions so they can be invoked from the stub functions.
+
+	* doc/package.n: 
+	* doc/PkgRequire.3: 
+	* generic/tclPkg.c: Added Tcl_PkgProvideEx, Tcl_RequireEx,
+	Tcl_PresentEx, and Tcl_PkgPresent.  Added "package present"
+	command.
+
+	* generic/tclFileName.c: 
+	* mac/tclMacFile.c: 
+	* mac/tclMacShLib.exp: 
+	* unix/tclUnixFile.c: 
+	* win/tclWinFile.c: Changed so TclGetUserHome is defined on
+	all platforms, even though it is currently a noop on mac and
+	windows, and renamed it to TclpGetUserHome.
+
+	* generic/tclCkalloc.c: Added stub versions of memory checking
+	functions when compiling without TCL_MEM_DEBUG.
+
+	* doc/ByteArrObj.3: 
+	* generic/tcl.h:
+	* generic/tclBinary.c: 
+	* generic/tclObj.c: Ported the 8.1 ByteArray type back to 8.0.
+	
+	* generic/tcl.decls:
+	* generic/tcl.h:
+	* generic/tclBasic.c: 
+	* generic/tclDecls.h:
+	* generic/tclInt.decls:
+	* generic/tclInt.h: 
+	* generic/tclIntDecls.h:
+	* generic/tclIntPlatDecls.h:
+	* generic/tclIntPlatStubs.c:
+	* generic/tclIntStubs.c:
+	* generic/tclPlatDecls.h:
+	* generic/tclPlatStubs.c:
+	* generic/tclStubInit.c:
+	* generic/tclStubLib.c:
+	* generic/tclStubs.c:
+	* tools/genStubs.tcl:
+	* unix/configure.in:
+	* unix/Makefile.in:
+	* unix/tclConfig.sh.in:
+	* win/makefile.vc:  
+	* win/tclWinPort.h: Added Tcl stubs implementation.  There are
+	now two new macros USE_TCL_STUBS and USE_TCL_STUB_PROCS that
+	enable use of stubs and disable stub macros respectively.  All of
+	the public and private function declarations from tcl.h and
+	tclInt.h have moved into the *.decls files and the *Stubs.c and
+	*Decls.h files are generated using the genStubs.tcl script.
+
+1999-02-27    <stanton@GASPODE>
+
+	* generic/tclPanic.c:
+	* generic/panic.c: renamed panic to Tcl_Panic, added macro for
+	backwards compatibility, renamed file to tclPanic.c
+
