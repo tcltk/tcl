@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.156 2004/05/03 19:59:18 msofer Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.157 2004/05/04 20:09:33 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -2168,6 +2168,8 @@ EXTERN void	TclDbInitNewObj _ANSI_ARGS_((Tcl_Obj *objPtr));
 
 # define TclNewListObjDirect(objc, objv) \
     TclDbNewListObjDirect(objc, objv, __FILE__, __LINE__)
+
+#undef USE_THREAD_ALLOC
 
 #elif defined(PURIFY)
 
