@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinSock.c,v 1.33 2002/11/27 22:47:28 davygrvy Exp $
+ * RCS: @(#) $Id: tclWinSock.c,v 1.34 2002/12/08 15:31:59 davygrvy Exp $
  */
 
 #include "tclWinInt.h"
@@ -389,25 +389,27 @@ InitSockets()
 
 	/*
 	 * Initialize the winsock library and check the interface
-	 * version number. We only ask for the 1.1 interface.
-	 *
-	 * Note that WSA_VERSION_REQD has major/minor swapped for the API
-	 * call (as it is supposed to be) and wsaData.wVersion is
-	 * reversed back for the comparison.  Also, note that
-	 * WSAVERNOTSUPPORTED is not listed in the error table, but
-	 * simply gets translated to EINVAL by being out-of-range.
+	 * version actually loaded. We only ask for the 1.1 interface
+	 * and do require that it not be less than 1.1.
 	 */
 
 #define WSA_VERSION_MAJOR   1
 #define WSA_VERSION_MINOR   1
-#define WSA_VERSION_REQD    MAKEWORD(WSA_VERSION_MINOR, WSA_VERSION_MAJOR)
+#define WSA_VERSION_REQD    MAKEWORD(WSA_VERSION_MAJOR, WSA_VERSION_MINOR)
 
 	if ((err = winSock.WSAStartup(WSA_VERSION_REQD, &wsaData)) != 0) {
 	    TclWinConvertWSAError(err);
 	    goto unloadLibrary;
 	}
-	if (((LOBYTE(wsaData.wVersion) << 16) + HIBYTE(wsaData.wVersion))
-		< (WSA_VERSION_MAJOR << 16) + WSA_VERSION_MINOR) {
+
+	/*
+	 * Note the byte positions are swapped for the comparison, so
+	 * that 0x0002 (2.0, MAKEWORD(2,0)) doesn't look less than 0x0101
+	 * (1.1).  We want the comparison to be 0x0200 < 0x0101.
+	 */
+
+	if (MAKEWORD(HIBYTE(wsaData.wVersion), LOBYTE(wsaData.wVersion))
+		< MAKEWORD(WSA_VERSION_MINOR, WSA_VERSION_MAJOR)) {
 	    TclWinConvertWSAError(WSAVERNOTSUPPORTED);
 	    winSock.WSACleanup();
 	    goto unloadLibrary;
@@ -561,7 +563,7 @@ SocketThreadExitHandler(clientData)
     ThreadSpecificData *tsdPtr = 
 	(ThreadSpecificData *)TclThreadDataKeyGet(&dataKey);
 
-    if (tsdPtr->socketThread != NULL) {
+    if (tsdPtr != NULL && tsdPtr->socketThread != NULL) {
 	DWORD exitCode;
 
 	GetExitCodeThread(tsdPtr->socketThread, &exitCode);
@@ -579,10 +581,10 @@ SocketThreadExitHandler(clientData)
 	tsdPtr->socketThread = NULL;
 	CloseHandle(tsdPtr->readyEvent);
 	CloseHandle(tsdPtr->socketListLock);
-    }
 
-    Tcl_DeleteThreadExitHandler(SocketThreadExitHandler, NULL);
-    Tcl_DeleteEventSource(SocketSetupProc, SocketCheckProc, NULL);
+	Tcl_DeleteThreadExitHandler(SocketThreadExitHandler, NULL);
+	Tcl_DeleteEventSource(SocketSetupProc, SocketCheckProc, NULL);
+    }
 }
 
 /*
