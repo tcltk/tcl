@@ -1,3 +1,12 @@
+2000-04-16  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* generic/tclEvent.c (TclInitSubsystems): Moved tclLibraryPath to
+	thread-local storage to prevent thread-related race condition.
+	[Bug: 5033]
+	* unix/tclAppInit.c (main): removed #ifdef TCL_TEST that sets the
+	library path as it was unnecessary and conflicts with move of
+	tclLibraryPath to thread-local storage.
+
 2000-04-18    <redman@scriptics.com>
 
 	* win/Makefile.in:
