@@ -1,3 +1,10 @@
+1999-07-09    <redman@scriptics.com>
+
+	* win/configure.in: Eval DLLSUFFIX, LIBSUFFIX, and EXESUFFIX in
+	the configure script so that substitutions get expanded before
+	being placed in the Makefile.  The "d" portion for debug libraries
+	and DLLs was not being set properly.
+	
 1999-07-08    <stanton@scriptics.com>
 
 	* tests/string.test: 
