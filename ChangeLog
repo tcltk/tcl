@@ -19,6 +19,7 @@
 	* win/tclWinInt.h:
 	* win/tclWinPort.h: exported internals dropped by a count of 14.
 	* generic/tclFileSystem.h: Added use of MODULE_SCOPE on protos.
+	* generic/tclRegexp.h: manipulating TCL_STORAGE_CLASS unnecessary.
 
 2004-11-02  Don Porter  <dgp@users.sourceforge.net>
 
