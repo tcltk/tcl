@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.14 2000/01/12 11:12:53 hobbs Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.15 2000/01/21 03:58:16 ericm Exp $
  */
 
 #include "tclInt.h"
@@ -3628,7 +3628,8 @@ NamespaceWhichCmd(dummy, interp, objc, objv)
         arg = Tcl_GetString(objv[argIndex]);
 	variable = Tcl_FindNamespaceVar(interp, arg, (Tcl_Namespace *) NULL,
 		/*flags*/ 0);
-        if (variable != (Tcl_Var) NULL) {
+        if (variable != (Tcl_Var) NULL
+		&& !TclIsVarUndefined((Var *)variable)) {
             Tcl_GetVariableFullName(interp, variable, Tcl_GetObjResult(interp));
         }
         break;
