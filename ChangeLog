@@ -1,5 +1,12 @@
 2002-06-14  Miguel Sofer  <msofer@users.sourceforge.net>
 
+	* generic/tclExecute.c: bug in the consolidation of the
+	INCR_..._STK instructions; the bug could not be exercised as the
+	(faulty) instruction INST_INCR_ARRAY_STK was never compiled-in
+	(related to [Bug 569438]).
+
+2002-06-14  Miguel Sofer  <msofer@users.sourceforge.net>
+
 	* generic/tclExecute.c (TclExecuteByteCode): runtime peep-hole
 	optimisation of variables (INST_STORE, INST_INCR) and commands
 	(INST_INVOKE); faster check for the existence of a catch.
