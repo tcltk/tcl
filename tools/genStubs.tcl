@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: genStubs.tcl,v 1.8 2001/05/02 20:42:37 mdejong Exp $
+# RCS: @(#) $Id: genStubs.tcl,v 1.9 2001/08/16 09:46:48 davygrvy Exp $
 
 package require Tcl 8
 
@@ -181,9 +181,6 @@ proc genStubs::rewriteFile {file text} {
     }
     set in [open ${file} r]
     set out [open ${file}.new w]
-
-    # Always write out the file with LF termination
-    fconfigure $out -translation lf
 
     while {![eof $in]} {
 	set line [gets $in]
