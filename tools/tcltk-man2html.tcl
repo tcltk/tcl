@@ -230,6 +230,7 @@ proc process-text {text} {
 	    {\(+-}	{&#177;} \
 	    {\fP}	{\fR} \
 	    {\.}	. \
+	    {\(bu}	{&#8226;} \
 	    ] $text]
     regsub -all {\\o'o\^'} $text {\&ocirc;} text; # o-circumflex in re_syntax.n
     regsub -all {\\-\\\|\\-} $text -- text;	# two hyphens
@@ -558,6 +559,8 @@ proc output-IP-list {context code rest} {
 			if {[string equal $manual(section) "ARGUMENTS"] || \
 				[regexp {^\[\d+\]$} $rest]} {
 			    man-puts "$para<DT>$rest<DD>"
+			} elseif {[string equal {&#8226;} $rest]} {
+			   man-puts "$para<DT><DD>$rest&nbsp;"
 			} else {
 			    man-puts "$para<DT>[long-toc $rest]<DD>"
 			}

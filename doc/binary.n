@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: binary.n,v 1.22 2004/10/27 14:24:37 dkf Exp $
+'\" RCS: @(#) $Id: binary.n,v 1.23 2004/11/12 09:01:25 das Exp $
 '\" 
 .so man.macros
 .TH binary n 8.0 Tcl "Tcl Built-In Commands"
@@ -82,7 +82,7 @@ formatted.  For example,
 .CE
 will return a string equivalent to \fBalpha\\000\\000bravoc\fR and
 .CS
-\fBbinary format a* [encoding convertto utf-8 \\u20ac]
+\fBbinary format a* [encoding convertto utf-8 \\u20ac]\fR
 .CE
 will return a string equivalent to \fB\\342\\202\\254\fR (which is the
 UTF-8 byte sequence for a Euro-currency character).
