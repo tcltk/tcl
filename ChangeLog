@@ -1,7 +1,7 @@
 2000-09-29  Jennifer Hom  <jenn@ajubasolutions.com>
 
 	* library/tcltest1.0/tcltest2.tcl:
-	* tests/tcltest.test:
+	* tests/tcltest2.test:
 	* doc/tcltest2.n: Modified the new form of the test command to
 	accept both attribute-value pairs and command line options.
 	Updated the tests and the documentation for this new format.
