@@ -1,3 +1,7 @@
+2003-06-25  Don Porter  <dgp@users.sourceforge.net>
+
+	* tests/init.test:  Added tests init-4.6.* to illustrate [Bug 760872]
+
 2003-06-25  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* generic/tclTrace.c: New file, factoring out of virtually all the
