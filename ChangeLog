@@ -1,6 +1,16 @@
 2001-11-20  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* generic/tclBasic.c
+	* generic/tclExecute.c: 
+	* generic/tclInt.h: factoring out of common code in tclBasic.c
+	(new function TclInterpReady defined: it resets the interp's
+	result, then checks that it hasn't been deleted and that the
+	nesting level is acceptable). Passed the responsibility of calling
+	it to the *callers* of TclEvalObjvInternal.
+
+2001-11-20  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* generic/tclBasic.c
 	* generic/tclExecute.c: a better variant of the previous-to-last
 	commit (restoring numLevels computations). The managing of the
 	levels now has to be done by the *callers* of TclEvalObjvInternal  
