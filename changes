@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.43 1999/04/16 00:46:29 stanton Exp $
+RCS: @(#) $Id: changes,v 1.43.4.1 1999/04/28 21:10:39 welch Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -4304,6 +4304,22 @@ created. (surles)
 that now does a case insensitive string comparison on Windows, and not
 on UNIX. (surles)
 
-
 --------------- Released 8.1b3, April 6, 1999 ----------------------
+
+4/9/99 (bug fix)  Fixed notifier deadlock situation when the pipe used
+to talk back notifier thread is filled with data.  Found as a result of the
+focus.test for Tk hanging. (redman)
+
+4/13/99 (bug fix) Fixed bug where socket -async combined with
+fileevent for writing did not work under Windows NT. (redman)
+
+4/13/99 (encoding fix) Restored the double byte definition of GB2312
+and added the EUC-CN encoding.  EUC-CN is a variant of GB2312 that
+shifts the characters into bytes with the high bit set and includes
+ASCII as a subset. (stanton)
+
+4/27/99 (bug fix) Added 'extern "C" {}' block around the stub table
+pointer declaration so the stub library can be used from C++. (stanton)
+
+--------------- Released 8.1 final, April 29, 1999 ----------------------
 

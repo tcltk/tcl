@@ -12,7 +12,7 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
 #
-# RCS: @(#) $Id: http.test,v 1.4 1999/04/16 00:47:28 stanton Exp $
+# RCS: @(#) $Id: http.test,v 1.4.4.1 1999/04/22 23:04:37 welch Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     source [file join [pwd] [file dirname [info script]] defs.tcl]
@@ -36,7 +36,16 @@ if {[catch {package require http 2.0}]} {
 set port 8010
 set bindata "This is binary data\x0d\x0amore\x0dmore\x0amore\x00null"
 
-set httpdFile [file join $::tcltest::testsDir httpd]
+# Ensure httpd file exists
+
+set origFile [file join $::tcltest::testsDir httpd]
+set newFile [file join $::tcltest::workingDir httpd]
+if {![file exists $newFile]} {
+    file copy $origFile $newFile
+    set removeHttpd 1
+}
+set httpdFile [file join $::tcltest::workingDir httpd]
+
 if {[info commands testthread] == "testthread" && [file exists $httpdFile]} {
     set httpthread [testthread create "
 	source $httpdFile
@@ -299,17 +308,10 @@ if {[info exists httpthread]} {
 } else {
     close $listen
 }
+
+if {[info exist removeHttpd]} {
+    remove $httpdFile
+}
+
 ::tcltest::cleanupTests
 return
-
-
-
-
-
-
-
-
-
-
-
-

@@ -2,12 +2,12 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 AC_INIT(../generic/tcl.h)
-# RCS: @(#) $Id: configure.in,v 1.32 1999/04/21 21:50:33 rjohnson Exp $
+# RCS: @(#) $Id: configure.in,v 1.32.2.2 1999/04/29 02:07:36 stanton Exp $
 
 TCL_VERSION=8.1
 TCL_MAJOR_VERSION=8
 TCL_MINOR_VERSION=1
-TCL_PATCH_LEVEL=0
+TCL_PATCH_LEVEL=
 VERSION=${TCL_VERSION}
 
 if test "${prefix}" = "NONE"; then
@@ -907,7 +907,7 @@ case $system in
 	LD_FLAGS="-Wl,-Bexport"
 	LD_SEARCH_FLAGS=""
 	;;
-    NetBSD-*|FreeBSD-*|OpenBSD-*)
+    NetBSD-*|FreeBSD-[12].*|OpenBSD-*)
 	# Not available on all versions:  check for include file.
 	AC_CHECK_HEADER(dlfcn.h, [
 	    SHLIB_CFLAGS="-fpic"
@@ -935,6 +935,17 @@ case $system in
 
 	TCL_UNSHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}\$\{DBGX\}.a'
 	TCL_LIB_VERSIONS_OK=nodots
+        ;;
+    FreeBSD-*)
+        # FreeBSD 3.* and greater have ELF.
+        SHLIB_CFLAGS="-fpic"
+        SHLIB_LD="ld -Bshareable -x"
+        SHLIB_LD_LIBS=""
+        SHLIB_SUFFIX=".so"
+        DL_OBJS="tclLoadDl.o"
+        DL_LIBS=""
+        LD_FLAGS=""
+        LD_SEARCH_FLAGS=""
 	;;
     NEXTSTEP-*)
 	SHLIB_CFLAGS=""

@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.5 1999/04/21 21:50:27 rjohnson Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.5.2.1 1999/04/29 23:19:04 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -483,10 +483,7 @@ Tcl_ParseCommand(interp, string, numBytes, nested, parsePtr)
 
     error:
     string[numBytes] = (char) savedChar;
-    if (parsePtr->tokenPtr != parsePtr->staticTokens) {
-	ckfree((char *) parsePtr->tokenPtr);
-	parsePtr->tokenPtr = parsePtr->staticTokens;
-    }
+    Tcl_FreeParse(parsePtr);
     if (parsePtr->commandStart == NULL) {
 	parsePtr->commandStart = string;
     }
@@ -1743,10 +1740,7 @@ Tcl_ParseVarName(interp, string, numBytes, parsePtr, append)
     return TCL_OK;
 
     error:
-    if (parsePtr->tokenPtr != parsePtr->staticTokens) {
-	ckfree((char *) parsePtr->tokenPtr);
-	parsePtr->tokenPtr = parsePtr->staticTokens;
-    }
+    Tcl_FreeParse(parsePtr);
     return TCL_ERROR;
 }
 
@@ -1985,10 +1979,7 @@ Tcl_ParseBraces(interp, string, numBytes, parsePtr, append, termPtr)
     return TCL_OK;
 
     error:
-    if (parsePtr->tokenPtr != parsePtr->staticTokens) {
-	ckfree((char *) parsePtr->tokenPtr);
-	parsePtr->tokenPtr = parsePtr->staticTokens;
-    }
+    Tcl_FreeParse(parsePtr);
     return TCL_ERROR;
 }
 
@@ -2079,10 +2070,7 @@ Tcl_ParseQuotedString(interp, string, numBytes, parsePtr, append, termPtr)
     return TCL_OK;
 
     error:
-    if (parsePtr->tokenPtr != parsePtr->staticTokens) {
-	ckfree((char *) parsePtr->tokenPtr);
-	parsePtr->tokenPtr = parsePtr->staticTokens;
-    }
+    Tcl_FreeParse(parsePtr);
     return TCL_ERROR;
 }
 
@@ -2113,6 +2101,7 @@ CommandComplete(script, length)
 {
     Tcl_Parse parse;
     char *p, *end;
+    int result;
 
     p = script;
     end = p + length;
@@ -2122,11 +2111,15 @@ CommandComplete(script, length)
 	if (*p == 0) {
 	    break;
 	}
+	Tcl_FreeParse(&parse);
     }
     if (parse.incomplete) {
-	return 0;
+	result = 0;
+    } else {
+	result = 1;
     }
-    return 1;
+    Tcl_FreeParse(&parse);
+    return result;
 }
 
 /*

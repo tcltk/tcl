@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.10 1999/04/21 21:50:28 rjohnson Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.10.2.1 1999/04/24 00:09:11 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -40,7 +40,250 @@
 
 /* !BEGIN!: Do not edit below this line. */
 
-static TclStubHooks tclStubHooks;
+TclIntStubs tclIntStubs = {
+    TCL_STUB_MAGIC,
+    NULL,
+    TclAccess, /* 0 */
+    TclAccessDeleteProc, /* 1 */
+    TclAccessInsertProc, /* 2 */
+    TclAllocateFreeObjects, /* 3 */
+    NULL, /* 4 */
+    TclCleanupChildren, /* 5 */
+    TclCleanupCommand, /* 6 */
+    TclCopyAndCollapse, /* 7 */
+    TclCopyChannel, /* 8 */
+    TclCreatePipeline, /* 9 */
+    TclCreateProc, /* 10 */
+    TclDeleteCompiledLocalVars, /* 11 */
+    TclDeleteVars, /* 12 */
+    TclDoGlob, /* 13 */
+    TclDumpMemoryInfo, /* 14 */
+    NULL, /* 15 */
+    TclExprFloatError, /* 16 */
+    TclFileAttrsCmd, /* 17 */
+    TclFileCopyCmd, /* 18 */
+    TclFileDeleteCmd, /* 19 */
+    TclFileMakeDirsCmd, /* 20 */
+    TclFileRenameCmd, /* 21 */
+    TclFindElement, /* 22 */
+    TclFindProc, /* 23 */
+    TclFormatInt, /* 24 */
+    TclFreePackageInfo, /* 25 */
+    NULL, /* 26 */
+    TclGetDate, /* 27 */
+    TclpGetDefaultStdChannel, /* 28 */
+    TclGetElementOfIndexedArray, /* 29 */
+    NULL, /* 30 */
+    TclGetExtension, /* 31 */
+    TclGetFrame, /* 32 */
+    TclGetInterpProc, /* 33 */
+    TclGetIntForIndex, /* 34 */
+    TclGetIndexedScalar, /* 35 */
+    TclGetLong, /* 36 */
+    TclGetLoadedPackages, /* 37 */
+    TclGetNamespaceForQualName, /* 38 */
+    TclGetObjInterpProc, /* 39 */
+    TclGetOpenMode, /* 40 */
+    TclGetOriginalCommand, /* 41 */
+    TclpGetUserHome, /* 42 */
+    TclGlobalInvoke, /* 43 */
+    TclGuessPackageName, /* 44 */
+    TclHideUnsafeCommands, /* 45 */
+    TclInExit, /* 46 */
+    TclIncrElementOfIndexedArray, /* 47 */
+    TclIncrIndexedScalar, /* 48 */
+    TclIncrVar2, /* 49 */
+    TclInitCompiledLocals, /* 50 */
+    TclInterpInit, /* 51 */
+    TclInvoke, /* 52 */
+    TclInvokeObjectCommand, /* 53 */
+    TclInvokeStringCommand, /* 54 */
+    TclIsProc, /* 55 */
+    NULL, /* 56 */
+    NULL, /* 57 */
+    TclLookupVar, /* 58 */
+    TclpMatchFiles, /* 59 */
+    TclNeedSpace, /* 60 */
+    TclNewProcBodyObj, /* 61 */
+    TclObjCommandComplete, /* 62 */
+    TclObjInterpProc, /* 63 */
+    TclObjInvoke, /* 64 */
+    TclObjInvokeGlobal, /* 65 */
+    TclOpenFileChannelDeleteProc, /* 66 */
+    TclOpenFileChannelInsertProc, /* 67 */
+    TclpAccess, /* 68 */
+    TclpAlloc, /* 69 */
+    TclpCopyFile, /* 70 */
+    TclpCopyDirectory, /* 71 */
+    TclpCreateDirectory, /* 72 */
+    TclpDeleteFile, /* 73 */
+    TclpFree, /* 74 */
+    TclpGetClicks, /* 75 */
+    TclpGetSeconds, /* 76 */
+    TclpGetTime, /* 77 */
+    TclpGetTimeZone, /* 78 */
+    TclpListVolumes, /* 79 */
+    TclpOpenFileChannel, /* 80 */
+    TclpRealloc, /* 81 */
+    TclpRemoveDirectory, /* 82 */
+    TclpRenameFile, /* 83 */
+    NULL, /* 84 */
+    NULL, /* 85 */
+    NULL, /* 86 */
+    NULL, /* 87 */
+    TclPrecTraceProc, /* 88 */
+    TclPreventAliasLoop, /* 89 */
+    NULL, /* 90 */
+    TclProcCleanupProc, /* 91 */
+    TclProcCompileProc, /* 92 */
+    TclProcDeleteProc, /* 93 */
+    TclProcInterpProc, /* 94 */
+    TclpStat, /* 95 */
+    TclRenameCommand, /* 96 */
+    TclResetShadowedCmdRefs, /* 97 */
+    TclServiceIdle, /* 98 */
+    TclSetElementOfIndexedArray, /* 99 */
+    TclSetIndexedScalar, /* 100 */
+    TclSetPreInitScript, /* 101 */
+    TclSetupEnv, /* 102 */
+    TclSockGetPort, /* 103 */
+    TclSockMinimumBuffers, /* 104 */
+    TclStat, /* 105 */
+    TclStatDeleteProc, /* 106 */
+    TclStatInsertProc, /* 107 */
+    TclTeardownNamespace, /* 108 */
+    TclUpdateReturnInfo, /* 109 */
+    NULL, /* 110 */
+    Tcl_AddInterpResolvers, /* 111 */
+    Tcl_AppendExportList, /* 112 */
+    Tcl_CreateNamespace, /* 113 */
+    Tcl_DeleteNamespace, /* 114 */
+    Tcl_Export, /* 115 */
+    Tcl_FindCommand, /* 116 */
+    Tcl_FindNamespace, /* 117 */
+    Tcl_GetInterpResolvers, /* 118 */
+    Tcl_GetNamespaceResolvers, /* 119 */
+    Tcl_FindNamespaceVar, /* 120 */
+    Tcl_ForgetImport, /* 121 */
+    Tcl_GetCommandFromObj, /* 122 */
+    Tcl_GetCommandFullName, /* 123 */
+    Tcl_GetCurrentNamespace, /* 124 */
+    Tcl_GetGlobalNamespace, /* 125 */
+    Tcl_GetVariableFullName, /* 126 */
+    Tcl_Import, /* 127 */
+    Tcl_PopCallFrame, /* 128 */
+    Tcl_PushCallFrame, /* 129 */
+    Tcl_RemoveInterpResolvers, /* 130 */
+    Tcl_SetNamespaceResolvers, /* 131 */
+    TclpHasSockets, /* 132 */
+    TclpGetDate, /* 133 */
+    TclpStrftime, /* 134 */
+    TclpCheckStackSpace, /* 135 */
+    NULL, /* 136 */
+    TclpChdir, /* 137 */
+    TclGetEnv, /* 138 */
+    TclpLoadFile, /* 139 */
+    TclLooksLikeInt, /* 140 */
+    TclpGetCwd, /* 141 */
+};
+
+TclIntPlatStubs tclIntPlatStubs = {
+    TCL_STUB_MAGIC,
+    NULL,
+#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
+    TclGetAndDetachPids, /* 0 */
+    TclpCloseFile, /* 1 */
+    TclpCreateCommandChannel, /* 2 */
+    TclpCreatePipe, /* 3 */
+    TclpCreateProcess, /* 4 */
+    NULL, /* 5 */
+    TclpMakeFile, /* 6 */
+    TclpOpenFile, /* 7 */
+    TclUnixWaitForFile, /* 8 */
+    TclpCreateTempFile, /* 9 */
+#endif /* UNIX */
+#ifdef __WIN32__
+    TclWinConvertError, /* 0 */
+    TclWinConvertWSAError, /* 1 */
+    TclWinGetServByName, /* 2 */
+    TclWinGetSockOpt, /* 3 */
+    TclWinGetTclInstance, /* 4 */
+    NULL, /* 5 */
+    TclWinNToHS, /* 6 */
+    TclWinSetSockOpt, /* 7 */
+    TclpGetPid, /* 8 */
+    TclWinGetPlatformId, /* 9 */
+    TclWinSynchSpawn, /* 10 */
+    TclGetAndDetachPids, /* 11 */
+    TclpCloseFile, /* 12 */
+    TclpCreateCommandChannel, /* 13 */
+    TclpCreatePipe, /* 14 */
+    TclpCreateProcess, /* 15 */
+    NULL, /* 16 */
+    NULL, /* 17 */
+    TclpMakeFile, /* 18 */
+    TclpOpenFile, /* 19 */
+    TclWinAddProcess, /* 20 */
+    TclpAsyncMark, /* 21 */
+    TclpCreateTempFile, /* 22 */
+    TclpGetTZName, /* 23 */
+    TclWinNoBackslash, /* 24 */
+#endif /* __WIN32__ */
+#ifdef MAC_TCL
+    TclpSysAlloc, /* 0 */
+    TclpSysFree, /* 1 */
+    TclpSysRealloc, /* 2 */
+    TclpExit, /* 3 */
+    FSpGetDefaultDir, /* 4 */
+    FSpSetDefaultDir, /* 5 */
+    FSpFindFolder, /* 6 */
+    GetGlobalMouse, /* 7 */
+    FSpGetDirectoryID, /* 8 */
+    FSpOpenResFileCompat, /* 9 */
+    FSpCreateResFileCompat, /* 10 */
+    FSpLocationFromPath, /* 11 */
+    FSpPathFromLocation, /* 12 */
+    TclMacExitHandler, /* 13 */
+    TclMacInitExitToShell, /* 14 */
+    TclMacInstallExitToShellPatch, /* 15 */
+    TclMacOSErrorToPosixError, /* 16 */
+    TclMacRemoveTimer, /* 17 */
+    TclMacStartTimer, /* 18 */
+    TclMacTimerExpired, /* 19 */
+    TclMacRegisterResourceFork, /* 20 */
+    TclMacUnRegisterResourceFork, /* 21 */
+    TclMacCreateEnv, /* 22 */
+    TclMacFOpenHack, /* 23 */
+    NULL, /* 24 */
+    TclMacChmod, /* 25 */
+#endif /* MAC_TCL */
+};
+
+TclPlatStubs tclPlatStubs = {
+    TCL_STUB_MAGIC,
+    NULL,
+#ifdef __WIN32__
+    Tcl_WinUtfToTChar, /* 0 */
+    Tcl_WinTCharToUtf, /* 1 */
+#endif /* __WIN32__ */
+#ifdef MAC_TCL
+    Tcl_MacSetEventProc, /* 0 */
+    Tcl_MacConvertTextResource, /* 1 */
+    Tcl_MacEvalResource, /* 2 */
+    Tcl_MacFindResource, /* 3 */
+    Tcl_GetOSTypeFromObj, /* 4 */
+    Tcl_SetOSTypeObj, /* 5 */
+    Tcl_NewOSTypeObj, /* 6 */
+    strncasecmp, /* 7 */
+    strcasecmp, /* 8 */
+#endif /* MAC_TCL */
+};
+
+static TclStubHooks tclStubHooks = {
+    &tclPlatStubs,
+    &tclIntStubs,
+    &tclIntPlatStubs
+};
 
 TclStubs tclStubs = {
     TCL_STUB_MAGIC,
@@ -439,251 +682,5 @@ TclStubs tclStubs = {
     Tcl_Access, /* 367 */
     Tcl_Stat, /* 368 */
 };
-
-TclIntStubs tclIntStubs = {
-    TCL_STUB_MAGIC,
-    NULL,
-    TclAccess, /* 0 */
-    TclAccessDeleteProc, /* 1 */
-    TclAccessInsertProc, /* 2 */
-    TclAllocateFreeObjects, /* 3 */
-    NULL, /* 4 */
-    TclCleanupChildren, /* 5 */
-    TclCleanupCommand, /* 6 */
-    TclCopyAndCollapse, /* 7 */
-    TclCopyChannel, /* 8 */
-    TclCreatePipeline, /* 9 */
-    TclCreateProc, /* 10 */
-    TclDeleteCompiledLocalVars, /* 11 */
-    TclDeleteVars, /* 12 */
-    TclDoGlob, /* 13 */
-    TclDumpMemoryInfo, /* 14 */
-    NULL, /* 15 */
-    TclExprFloatError, /* 16 */
-    TclFileAttrsCmd, /* 17 */
-    TclFileCopyCmd, /* 18 */
-    TclFileDeleteCmd, /* 19 */
-    TclFileMakeDirsCmd, /* 20 */
-    TclFileRenameCmd, /* 21 */
-    TclFindElement, /* 22 */
-    TclFindProc, /* 23 */
-    TclFormatInt, /* 24 */
-    TclFreePackageInfo, /* 25 */
-    NULL, /* 26 */
-    TclGetDate, /* 27 */
-    TclpGetDefaultStdChannel, /* 28 */
-    TclGetElementOfIndexedArray, /* 29 */
-    NULL, /* 30 */
-    TclGetExtension, /* 31 */
-    TclGetFrame, /* 32 */
-    TclGetInterpProc, /* 33 */
-    TclGetIntForIndex, /* 34 */
-    TclGetIndexedScalar, /* 35 */
-    TclGetLong, /* 36 */
-    TclGetLoadedPackages, /* 37 */
-    TclGetNamespaceForQualName, /* 38 */
-    TclGetObjInterpProc, /* 39 */
-    TclGetOpenMode, /* 40 */
-    TclGetOriginalCommand, /* 41 */
-    TclpGetUserHome, /* 42 */
-    TclGlobalInvoke, /* 43 */
-    TclGuessPackageName, /* 44 */
-    TclHideUnsafeCommands, /* 45 */
-    TclInExit, /* 46 */
-    TclIncrElementOfIndexedArray, /* 47 */
-    TclIncrIndexedScalar, /* 48 */
-    TclIncrVar2, /* 49 */
-    TclInitCompiledLocals, /* 50 */
-    TclInterpInit, /* 51 */
-    TclInvoke, /* 52 */
-    TclInvokeObjectCommand, /* 53 */
-    TclInvokeStringCommand, /* 54 */
-    TclIsProc, /* 55 */
-    NULL, /* 56 */
-    NULL, /* 57 */
-    TclLookupVar, /* 58 */
-    TclpMatchFiles, /* 59 */
-    TclNeedSpace, /* 60 */
-    TclNewProcBodyObj, /* 61 */
-    TclObjCommandComplete, /* 62 */
-    TclObjInterpProc, /* 63 */
-    TclObjInvoke, /* 64 */
-    TclObjInvokeGlobal, /* 65 */
-    TclOpenFileChannelDeleteProc, /* 66 */
-    TclOpenFileChannelInsertProc, /* 67 */
-    TclpAccess, /* 68 */
-    TclpAlloc, /* 69 */
-    TclpCopyFile, /* 70 */
-    TclpCopyDirectory, /* 71 */
-    TclpCreateDirectory, /* 72 */
-    TclpDeleteFile, /* 73 */
-    TclpFree, /* 74 */
-    TclpGetClicks, /* 75 */
-    TclpGetSeconds, /* 76 */
-    TclpGetTime, /* 77 */
-    TclpGetTimeZone, /* 78 */
-    TclpListVolumes, /* 79 */
-    TclpOpenFileChannel, /* 80 */
-    TclpRealloc, /* 81 */
-    TclpRemoveDirectory, /* 82 */
-    TclpRenameFile, /* 83 */
-    NULL, /* 84 */
-    NULL, /* 85 */
-    NULL, /* 86 */
-    NULL, /* 87 */
-    TclPrecTraceProc, /* 88 */
-    TclPreventAliasLoop, /* 89 */
-    NULL, /* 90 */
-    TclProcCleanupProc, /* 91 */
-    TclProcCompileProc, /* 92 */
-    TclProcDeleteProc, /* 93 */
-    TclProcInterpProc, /* 94 */
-    TclpStat, /* 95 */
-    TclRenameCommand, /* 96 */
-    TclResetShadowedCmdRefs, /* 97 */
-    TclServiceIdle, /* 98 */
-    TclSetElementOfIndexedArray, /* 99 */
-    TclSetIndexedScalar, /* 100 */
-    TclSetPreInitScript, /* 101 */
-    TclSetupEnv, /* 102 */
-    TclSockGetPort, /* 103 */
-    TclSockMinimumBuffers, /* 104 */
-    TclStat, /* 105 */
-    TclStatDeleteProc, /* 106 */
-    TclStatInsertProc, /* 107 */
-    TclTeardownNamespace, /* 108 */
-    TclUpdateReturnInfo, /* 109 */
-    NULL, /* 110 */
-    Tcl_AddInterpResolvers, /* 111 */
-    Tcl_AppendExportList, /* 112 */
-    Tcl_CreateNamespace, /* 113 */
-    Tcl_DeleteNamespace, /* 114 */
-    Tcl_Export, /* 115 */
-    Tcl_FindCommand, /* 116 */
-    Tcl_FindNamespace, /* 117 */
-    Tcl_GetInterpResolvers, /* 118 */
-    Tcl_GetNamespaceResolvers, /* 119 */
-    Tcl_FindNamespaceVar, /* 120 */
-    Tcl_ForgetImport, /* 121 */
-    Tcl_GetCommandFromObj, /* 122 */
-    Tcl_GetCommandFullName, /* 123 */
-    Tcl_GetCurrentNamespace, /* 124 */
-    Tcl_GetGlobalNamespace, /* 125 */
-    Tcl_GetVariableFullName, /* 126 */
-    Tcl_Import, /* 127 */
-    Tcl_PopCallFrame, /* 128 */
-    Tcl_PushCallFrame, /* 129 */
-    Tcl_RemoveInterpResolvers, /* 130 */
-    Tcl_SetNamespaceResolvers, /* 131 */
-    TclpHasSockets, /* 132 */
-    TclpGetDate, /* 133 */
-    TclpStrftime, /* 134 */
-    TclpCheckStackSpace, /* 135 */
-    NULL, /* 136 */
-    TclpChdir, /* 137 */
-    TclGetEnv, /* 138 */
-    TclpLoadFile, /* 139 */
-    TclLooksLikeInt, /* 140 */
-    TclpGetCwd, /* 141 */
-};
-
-TclIntPlatStubs tclIntPlatStubs = {
-    TCL_STUB_MAGIC,
-    NULL,
-#if !defined(__WIN32__) && !defined(MAC_TCL) /* UNIX */
-    TclGetAndDetachPids, /* 0 */
-    TclpCloseFile, /* 1 */
-    TclpCreateCommandChannel, /* 2 */
-    TclpCreatePipe, /* 3 */
-    TclpCreateProcess, /* 4 */
-    NULL, /* 5 */
-    TclpMakeFile, /* 6 */
-    TclpOpenFile, /* 7 */
-    TclUnixWaitForFile, /* 8 */
-    TclpCreateTempFile, /* 9 */
-#endif /* UNIX */
-#ifdef __WIN32__
-    TclWinConvertError, /* 0 */
-    TclWinConvertWSAError, /* 1 */
-    TclWinGetServByName, /* 2 */
-    TclWinGetSockOpt, /* 3 */
-    TclWinGetTclInstance, /* 4 */
-    NULL, /* 5 */
-    TclWinNToHS, /* 6 */
-    TclWinSetSockOpt, /* 7 */
-    TclpGetPid, /* 8 */
-    TclWinGetPlatformId, /* 9 */
-    TclWinSynchSpawn, /* 10 */
-    TclGetAndDetachPids, /* 11 */
-    TclpCloseFile, /* 12 */
-    TclpCreateCommandChannel, /* 13 */
-    TclpCreatePipe, /* 14 */
-    TclpCreateProcess, /* 15 */
-    NULL, /* 16 */
-    NULL, /* 17 */
-    TclpMakeFile, /* 18 */
-    TclpOpenFile, /* 19 */
-    TclWinAddProcess, /* 20 */
-    TclpAsyncMark, /* 21 */
-    TclpCreateTempFile, /* 22 */
-    TclpGetTZName, /* 23 */
-    TclWinNoBackslash, /* 24 */
-#endif /* __WIN32__ */
-#ifdef MAC_TCL
-    TclpSysAlloc, /* 0 */
-    TclpSysFree, /* 1 */
-    TclpSysRealloc, /* 2 */
-    TclpExit, /* 3 */
-    FSpGetDefaultDir, /* 4 */
-    FSpSetDefaultDir, /* 5 */
-    FSpFindFolder, /* 6 */
-    GetGlobalMouse, /* 7 */
-    FSpGetDirectoryID, /* 8 */
-    FSpOpenResFileCompat, /* 9 */
-    FSpCreateResFileCompat, /* 10 */
-    FSpLocationFromPath, /* 11 */
-    FSpPathFromLocation, /* 12 */
-    TclMacExitHandler, /* 13 */
-    TclMacInitExitToShell, /* 14 */
-    TclMacInstallExitToShellPatch, /* 15 */
-    TclMacOSErrorToPosixError, /* 16 */
-    TclMacRemoveTimer, /* 17 */
-    TclMacStartTimer, /* 18 */
-    TclMacTimerExpired, /* 19 */
-    TclMacRegisterResourceFork, /* 20 */
-    TclMacUnRegisterResourceFork, /* 21 */
-    TclMacCreateEnv, /* 22 */
-    TclMacFOpenHack, /* 23 */
-    NULL, /* 24 */
-    TclMacChmod, /* 25 */
-#endif /* MAC_TCL */
-};
-
-TclPlatStubs tclPlatStubs = {
-    TCL_STUB_MAGIC,
-    NULL,
-#ifdef __WIN32__
-    Tcl_WinUtfToTChar, /* 0 */
-    Tcl_WinTCharToUtf, /* 1 */
-#endif /* __WIN32__ */
-#ifdef MAC_TCL
-    Tcl_MacSetEventProc, /* 0 */
-    Tcl_MacConvertTextResource, /* 1 */
-    Tcl_MacEvalResource, /* 2 */
-    Tcl_MacFindResource, /* 3 */
-    Tcl_GetOSTypeFromObj, /* 4 */
-    Tcl_SetOSTypeObj, /* 5 */
-    Tcl_NewOSTypeObj, /* 6 */
-    strncasecmp, /* 7 */
-    strcasecmp, /* 8 */
-#endif /* MAC_TCL */
-};
-
-static TclStubHooks tclStubHooks = {
-    &tclPlatStubs,
-    &tclIntStubs,
-    &tclIntPlatStubs
-};
-
 
 /* !END!: Do not edit above this line. */

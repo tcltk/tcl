@@ -1,8 +1,14 @@
+Tcl UNIX README
+---------------
+
 This is the directory where you configure, compile, test, and install
 UNIX versions of Tcl.  This directory also contains source files for Tcl
 that are specific to UNIX.  Some of the files in this directory are
 used on the PC or Mac platform too, but they all depend on UNIX
 (POSIX/ANSI C) interfaces and some of them only make sense under UNIX.
+
+Updated forms of the information found in this file is available at:
+    http://www.scriptics.com/support/howto/compile.html#unix
 
 The rest of this file contains instructions on how to do this.  The
 release should compile and run either "out of the box" or with trivial
@@ -12,7 +18,7 @@ SGI, as well as PCs running Linux, BSDI, and SCO UNIX.  To compile for
 a PC running Windows, see the README file in the directory ../win.  To
 compile for a Macintosh, see the README file in the directory ../mac.
 
-RCS: @(#) $Id: README,v 1.4 1999/04/16 00:48:03 stanton Exp $
+RCS: @(#) $Id: README,v 1.4.4.1 1999/04/22 23:04:37 welch Exp $
 
 How To Compile And Install Tcl:
 -------------------------------

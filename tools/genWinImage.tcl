@@ -5,7 +5,7 @@
 # Copyright (c) 1999 by Scriptics Corporation.
 # All rights reserved.
 # 
-# RCS: @(#) $Id: genWinImage.tcl,v 1.2 1999/04/16 00:47:39 stanton Exp $
+# RCS: @(#) $Id: genWinImage.tcl,v 1.2.4.1 1999/04/29 23:20:36 stanton Exp $
 
 
 # This file is insensitive to the directory from which it is invoked.
@@ -69,6 +69,27 @@ proc genWinImage::init {} {
 	    [clock format [clock seconds] -format "%Y%m%d-%H:%M"] --\n\n"
 }
 
+# genWinImage::makeTextFile --
+#
+#	Convert the input file into a CRLF terminated text file.
+#
+# Arguments:
+#	infile		The input file to convert.
+#	outfile		The location where the text file should be stored.
+#
+# Results:
+#	None.
+
+proc genWinImage::makeTextFile {infile outfile} {
+    set f [open $infile r]
+    set text [read $f]
+    close $f
+    set f [open $outfile w]
+    fconfigure $f -translation crlf
+    puts -nonewline $f $text
+    close $f
+}
+
 # genWinImage::generateInstallers --
 #
 #	Perform substitutions on the pro.wse.in file and then
@@ -102,6 +123,13 @@ proc genWinImage::generateInstallers {} {
     set f [open tcl.wse w]
     puts $f $s
     close $f
+
+    # Ensure the text files are CRLF terminated
+
+    makeTextFile [file join $tclBuildDir win/README.binary] \
+	    [file join $tclBuildDir win/readme.txt]
+    makeTextFile [file join $tclBuildDir license.terms] \
+	    [file join $tclBuildDir license.txt]
 
     set wise32ProgFilePath [file native [file join $__WISE__ wise32.exe]]
 

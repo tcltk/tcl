@@ -13,7 +13,7 @@
 .SH NAME
 msgcat \- Tcl message catalog
 .SH SYNOPSIS
-\fB::msgcat::mc src-string\fR
+\fB::msgcat::mc \fIsrc-string\fR
 .sp
 \fB::msgcat::mclocale \fR?\fInewLocale\fR?
 .sp
@@ -43,7 +43,7 @@ wishes to be enabled for multi-lingual applications.
 
 .SH COMMANDS
 .TP
-\fB::msgcat::mc src-string\fR
+\fB::msgcat::mc \fIsrc-string\fR
 Returns a translation of \fIsrc-string\fR according to the
 user's current locale.  If no translation string
 exists, \fB::msgcat::mcunknown\fR is called and the string
@@ -58,8 +58,9 @@ later simply by defining new message catalog entries.
 .TP
 \fB::msgcat::mclocale \fR?\fInewLocale\fR?  
 This function sets the locale to \fInewLocale\fR.  If \fInewLocale\fR
-is omitted, the current locale is returned, otherwise the new locale
-is returned.  The initial locale defaults to the locale specified in
+is omitted, the current locale is returned, otherwise the current locale
+is set to \fInewLocale\fR.
+The initial locale defaults to the locale specified in
 the user's environment.  See \fBLOCALE AND SUBLOCALE SPECIFICATION\fR
 below for a description of the locale string format.
 .TP
@@ -81,7 +82,7 @@ and were loaded is returned.
 Sets the translation for \fIsrc-string\fR to \fItranslate-string\fR
 in the specified \fIlocale\fR.  If \fItranslate-string\fR is not
 specified, \fIsrc-string\fR is used for both.  The function
-return \fItranslate-string\fR.
+returns \fItranslate-string\fR.
 .TP
 \fB::msgcat::mcunknown \fIlocale src-string\fR
 This routine is called by \fB::msgcat::mc\fR in the case when
@@ -89,9 +90,9 @@ a translation for \fIsrc-string\fR is not defined in the
 current locale.  The default action is to return
 \fIsrc-string\fR.  This procedure can be redefined by the
 application, for example to log error messages for each unknown
-string.  The \fB::msgcat::mcunknown\fB procedure is invoked at the
+string.  The \fB::msgcat::mcunknown\fR procedure is invoked at the
 same stack context as the call to \fB::msgcat::mc\fR.  The return vaue
-of \fB::msgcat::mcunknown\fB is used as the return vaue for the call
+of \fB::msgcat::mcunknown\fR is used as the return vaue for the call
 to \fB::msgcat::mc\fR.  
 
 .SH "LOCALE AND SUBLOCALE SPECIFICATION"

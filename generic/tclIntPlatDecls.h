@@ -9,7 +9,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclIntPlatDecls.h,v 1.5 1999/04/16 00:46:48 stanton Exp $
+ * RCS: @(#) $Id: tclIntPlatDecls.h,v 1.5.4.1 1999/04/27 18:45:42 stanton Exp $
  */
 
 #ifndef _TCLINTPLATDECLS
@@ -268,7 +268,13 @@ typedef struct TclIntPlatStubs {
 #endif /* MAC_TCL */
 } TclIntPlatStubs;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 extern TclIntPlatStubs *tclIntPlatStubsPtr;
+#ifdef __cplusplus
+}
+#endif
 
 #if defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS)
 
