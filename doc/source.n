@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: source.n,v 1.3 2000/05/11 00:16:52 hobbs Exp $
+'\" RCS: @(#) $Id: source.n,v 1.4 2000/09/06 16:56:22 hobbs Exp $
 '\" 
 .so man.macros
 .TH source n "" Tcl "Tcl Built-In Commands"
@@ -38,6 +38,9 @@ The end-of-file character for files is '\\32' (^Z) for all platforms.
 The source command will read files up to this character.  This
 restriction does not exist for the \fBread\fR or \fBgets\fR commands,
 allowing for files containing code and data segments (scripted documents).
+If you require a ``^Z'' in code for string comparison, you can use
+``\\032'' or ``\\u001a'', which will be safely substituted by the Tcl
+interpreter into ``^Z''.
 .VE 8.4
 .PP
 The \fI\-rsrc\fR and \fI\-rsrcid\fR forms of this command are only
