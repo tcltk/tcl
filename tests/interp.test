@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: interp.test,v 1.5 1998/11/02 23:04:14 stanton Exp $
+# RCS: @(#) $Id: interp.test,v 1.6 1999/02/03 02:58:41 stanton Exp $
 
 if {[string compare test [info procs test]] == 1} then {source defs}
 
@@ -2258,11 +2258,11 @@ test interp-29.2 {recursion limit inheritance} {
 }
 
 # This test dumps core in Tcl 8.0.3!
-#test interp-30.1 {deletion of aliases inside namespaces} {
-#    set i [interp create]
-#    $i alias ns::cmd list
-#    $i alias ns::cmd {}
-#} {}
+test interp-30.1 {deletion of aliases inside namespaces} {
+    set i [interp create]
+    $i alias ns::cmd list
+    $i alias ns::cmd {}
+} {}
 
 foreach i [interp slaves] {
   interp delete $i
