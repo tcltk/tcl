@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.70 2004/12/20 18:27:19 msofer Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.71 2004/12/20 21:20:06 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1228,13 +1228,13 @@ TclObjInterpProc(clientData, interp, objc, objv)
 	Tcl_IncrRefCount(objPtr);  /* local var is a reference */
     } else {
 	Tcl_Obj **desiredObjs, *argObj;	
-	ByteCode *codePtr = (ByteCode *) procPtr->bodyPtr->internalRep.otherValuePtr;		
+	ByteCode *codePtr;		
     incorrectArgs:
 	/*
 	 * Do initialise all compiled locals, to avoid problems at
 	 * DeleteLocalVars. 
 	 */
-	
+	codePtr = (ByteCode *) procPtr->bodyPtr->internalRep.otherValuePtr;
 	InitCompiledLocals(interp, codePtr, localPtr, varPtr, nsPtr);
 
         /*
