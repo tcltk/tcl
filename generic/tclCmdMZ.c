@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.32 2001/03/13 11:10:44 dkf Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.33 2001/03/28 02:30:06 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -481,7 +481,7 @@ Tcl_RegsubObjCmd(dummy, interp, objc, objv)
     Tcl_RegExp regExpr;
     Tcl_RegExpInfo info;
     Tcl_Obj *resultPtr, *varPtr, *objPtr;
-    Tcl_UniChar ch, *wsrc, *wfirstChar, *wstring, *wsubspec;
+    Tcl_UniChar ch, *wsrc, *wfirstChar, *wstring, *wsubspec, *wend;
 
     static char *options[] = {
 	"-all",		"-nocase",	"-expanded",
@@ -629,7 +629,8 @@ Tcl_RegsubObjCmd(dummy, interp, objc, objv)
 	 */
 
 	wsrc = wfirstChar = wsubspec;
-	for (ch = *wsrc; ch != '\0'; wsrc++, ch = *wsrc) {
+	wend = wsubspec + wsublen;
+	for (ch = *wsrc; wsrc != wend; wsrc++, ch = *wsrc) {
 	    if (ch == '&') {
 		idx = 0;
 	    } else if (ch == '\\') {
