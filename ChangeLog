@@ -1,3 +1,9 @@
+2001-10-05  Miguel Sofer  <msofer@users.sourceforge.net>
+	
+	* generic/tclLiteral.c: (TclReleaseLiteral) insured that
+	self-referential bytecodes are properly cleaned up on interpreter
+	deletion [Bug 467523]
+
 2001-10-04  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* tools/configure:
