@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.81.2.4 2005/03/14 17:51:09 msofer Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.81.2.5 2005/03/15 02:01:08 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -694,8 +694,8 @@ TclInitCompileEnv(interp, envPtr, stringPtr, numBytes)
     envPtr->numSrcBytes = numBytes;
     envPtr->procPtr = iPtr->compiledProcPtr;
     envPtr->numCommands = 0;
-    envPtr->exceptDepth = 0;
-    envPtr->maxExceptDepth = 0;
+    envPtr->catchDepth = 0;
+    envPtr->maxCatchDepth = 0;
     envPtr->maxStackDepth = 0;
     envPtr->currStackDepth = 0;
     TclInitLiteralTable(&(envPtr->localLitTable));
@@ -713,6 +713,7 @@ TclInitCompileEnv(interp, envPtr, stringPtr, numBytes)
     
     envPtr->exceptArrayPtr = envPtr->staticExceptArraySpace;
     envPtr->exceptArrayNext = 0;
+    envPtr->exceptArrayCurr = -1;
     envPtr->exceptArrayEnd = COMPILEENV_INIT_EXCEPT_RANGES;
     envPtr->mallocedExceptArray = 0;
     
@@ -1636,7 +1637,7 @@ TclInitByteCodeObj(objPtr, envPtr)
     codePtr->numExceptRanges = envPtr->exceptArrayNext;
     codePtr->numAuxDataItems = envPtr->auxDataArrayNext;
     codePtr->numCmdLocBytes = cmdLocBytes;
-    codePtr->maxExceptDepth = envPtr->maxExceptDepth;
+    codePtr->maxCatchDepth = envPtr->maxCatchDepth;
     codePtr->maxStackDepth = envPtr->maxStackDepth;
 
     p += TCL_ALIGN(sizeof(ByteCode));  /* align codeBytes */
@@ -1979,7 +1980,7 @@ EnterCmdExtentData(envPtr, cmdIndex, numSrcBytes, numCodeWords)
 /*
  *----------------------------------------------------------------------
  *
- * TclCreateExceptRange --
+ * TclBeginExceptRange --
  *
  *	Procedure that allocates and initializes a new ExceptionRange
  *	structure of the specified kind in a CompileEnv.
@@ -1993,13 +1994,16 @@ EnterCmdExtentData(envPtr, cmdIndex, numSrcBytes, numCodeWords)
  *	allocated, if envPtr->mallocedExceptArray is non-zero the old
  *	array is freed, and ExceptionRange entries are copied from the old
  *	array to the new one.
+ *      The codeOffset field of the ExceptionRange is initialized to
+ *      the current position. The value of envPtr->exceptArrayCurr is saved 
+ *      in the numCodeWords field, otherwise unused until the loop
+ *      range is closed. 
+ *      
  *
  *----------------------------------------------------------------------
  */
 
-int
-TclCreateExceptRange(type, envPtr)
-    ExceptionRangeType type;	/* The kind of ExceptionRange desired. */
+int TclBeginExceptRange(envPtr)
     register CompileEnv *envPtr;/* Points to CompileEnv for which to
 				 * create a new ExceptionRange structure. */
 {
@@ -2027,7 +2031,7 @@ TclCreateExceptRange(type, envPtr)
 	 */
 	
 	memcpy((VOID *) newPtr, (VOID *) envPtr->exceptArrayPtr,
-	        currBytes);
+	       currBytes);
 	if (envPtr->mallocedExceptArray) {
 	    ckfree((char *) envPtr->exceptArrayPtr);
 	}
@@ -2038,14 +2042,43 @@ TclCreateExceptRange(type, envPtr)
     envPtr->exceptArrayNext++;
     
     rangePtr = &(envPtr->exceptArrayPtr[index]);
-    rangePtr->type = type;
-    rangePtr->nestingLevel = envPtr->exceptDepth;
-    rangePtr->codeOffset = -1;
-    rangePtr->numCodeWords = -1;
+    rangePtr->codeOffset = (envPtr->codeNext - envPtr->codeStart);
+    rangePtr->numCodeWords = envPtr->exceptArrayCurr;
+    envPtr->exceptArrayCurr = index;
     rangePtr->breakOffset = -1;
     rangePtr->continueOffset = -1;
-    rangePtr->catchOffset = -1;
     return index;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclEndExceptRange --
+ *
+ *
+ *	Procedure that closes an existing ExceptionRange.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *      The numCodeWords field of the ExceptionRange is initialized to
+ *      reflect the current position, the compilation environment's 
+ *      catchDepth is updated. envPtr->lastOpenRange is restored to
+ *      its previous value.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void TclEndExceptRange(index, envPtr)
+    int index;	        /* The index of the exception range. */
+    CompileEnv *envPtr;/* CompileEnv for this exceptionRange.*/
+{
+    register ExceptionRange *rangePtr = &(envPtr->exceptArrayPtr[index]);
+
+    envPtr->exceptArrayCurr = rangePtr->numCodeWords;
+    rangePtr->numCodeWords = 
+        (envPtr->codeNext - envPtr->codeStart) - rangePtr->codeOffset;
 }
 
 /*
@@ -2715,28 +2748,14 @@ TclPrintByteCodeObj(interp, objPtr)
      */
 
     if (codePtr->numExceptRanges > 0) {
-	fprintf(stdout, "  Exception ranges %d, depth %d:\n",
-	        codePtr->numExceptRanges, codePtr->maxExceptDepth);
+	fprintf(stdout, "  Exception ranges %d:\n", codePtr->numExceptRanges);
 	for (i = 0;  i < codePtr->numExceptRanges;  i++) {
 	    ExceptionRange *rangePtr = &(codePtr->exceptArrayPtr[i]);
-	    fprintf(stdout, "      %d: level %d, %s, pc %d-%d, ",
-		    i, rangePtr->nestingLevel,
-		    ((rangePtr->type == LOOP_EXCEPTION_RANGE)
-			    ? "loop" : "catch"),
-		    rangePtr->codeOffset,
+	    fprintf(stdout, "      %d: pc %d-%d, ",
+		    i, rangePtr->codeOffset,
 		    (rangePtr->codeOffset + rangePtr->numCodeWords - 1));
-	    switch (rangePtr->type) {
-	    case LOOP_EXCEPTION_RANGE:
-		fprintf(stdout,	"continue %d, break %d\n",
-		        rangePtr->continueOffset, rangePtr->breakOffset);
-		break;
-	    case CATCH_EXCEPTION_RANGE:
-		fprintf(stdout,	"catch %d\n", rangePtr->catchOffset);
-		break;
-	    default:
-		Tcl_Panic("TclPrintByteCodeObj: bad ExceptionRange type %d\n",
-		        rangePtr->type);
-	    }
+	    fprintf(stdout,	"continue %d, break %d\n",
+		    rangePtr->continueOffset, rangePtr->breakOffset);
 	}
     }
     

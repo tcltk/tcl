@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.171.2.4 2005/03/14 17:51:27 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.171.2.5 2005/03/15 02:01:11 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -368,7 +368,7 @@ static int              EvalStatsCmd _ANSI_ARGS_((ClientData clientData,
 static char *		GetOpcodeName _ANSI_ARGS_((TclVMWord *pc));
 #endif /* TCL_COMPILE_DEBUG */
 static ExceptionRange *	GetExceptRangeForPc _ANSI_ARGS_((TclVMWord *pc,
-			    int catchOnly, ByteCode* codePtr));
+			    ByteCode* codePtr));
 static char *		GetSrcInfoForPc _ANSI_ARGS_((TclVMWord *pc,
         		    ByteCode* codePtr, int *lengthPtr));
 static void		GrowEvaluationStack _ANSI_ARGS_((ExecEnv *eePtr));
@@ -1164,12 +1164,12 @@ TclExecuteByteCode(interp, codePtr)
     eePtr = iPtr->execEnvPtr;
     initCatch = eePtr->tosPtr - eePtr->stackPtr;
     catchItems = 0;
-    tosPtr = eePtr->tosPtr + CATCH_ITEM_SIZE*(codePtr->maxExceptDepth+1);
+    tosPtr = eePtr->tosPtr + CATCH_ITEM_SIZE*(codePtr->maxCatchDepth+1);
 
     while ((tosPtr + codePtr->maxStackDepth) > eePtr->endPtr) {
         GrowEvaluationStack(eePtr); 
 	tosPtr = eePtr->tosPtr
-	        + CATCH_ITEM_SIZE*codePtr->maxExceptDepth;
+	        + CATCH_ITEM_SIZE*codePtr->maxCatchDepth;
     }
     initStackTop = tosPtr - eePtr->stackPtr;
 
@@ -4375,21 +4375,50 @@ TclExecuteByteCode(interp, codePtr)
     }
 	
     case INST_BREAK:
-	DECACHE_STACK_INFO();
-	Tcl_ResetResult(interp);
-	CACHE_STACK_INFO();
-	result = TCL_BREAK;
-	cleanup = 0;
-	goto processExceptionReturn;
-
     case INST_CONTINUE:
-	DECACHE_STACK_INFO();
-	Tcl_ResetResult(interp);
-	CACHE_STACK_INFO();
-	result = TCL_CONTINUE;
-	cleanup = 0;
-	goto processExceptionReturn;
+#if ENABLE_PEEPHOLE	
+	if (opnd < 0) {
+	    nonLoopExceptionReturn:
+	    /*
+	     * No active loop range, detected at compile time.
+	     */
+#endif	    	    
+	    DECACHE_STACK_INFO();
+	    Tcl_ResetResult(interp);
+	    CACHE_STACK_INFO();
+	    result = ((inst == INST_BREAK)? TCL_BREAK : TCL_CONTINUE);
+	    if (opnd == -2) {
+		/*
+		 * Trapped by a catch, detected at compile time.
+		 */		
+		goto processCatch;
+	    } else {
+		cleanup = 0;
+		goto processExceptionReturn;		
+	    }
+#if ENABLE_PEEPHOLE	
+	} else {
+	    /*
+	     * Range known from compile time: rewrite the instruction to a
+	     * jump! This part will be u2ed just once 
+	     */
+	    ExceptionRange *rangePtr = &codePtr->exceptArrayPtr[opnd];
 
+	    if (inst == INST_BREAK) {
+		(*pc).i = INST_JUMP;
+		(*(pc+1)).i = (codePtr->codeStart + rangePtr->breakOffset) - pc;
+		pc = (codePtr->codeStart + rangePtr->breakOffset)-2;
+		NEXT_INST_F(0, 0);
+	    } else if (rangePtr->continueOffset != -1) {		
+		(*pc).i = INST_JUMP;
+		(*(pc+1)).i = (codePtr->codeStart + rangePtr->continueOffset) - pc;
+		pc = codePtr->codeStart + rangePtr->continueOffset - 2;
+		NEXT_INST_F(0, 0);
+	    }
+	    goto nonLoopExceptionReturn;
+	}
+#endif
+	    
     case INST_FOREACH_START:
 	{
 	    /*
@@ -4726,31 +4755,24 @@ TclExecuteByteCode(interp, codePtr)
 		break;
 	    default:
 		TRACE(("=> "));
-	}		    
+	}
 #endif	   
 	if ((result == TCL_CONTINUE) || (result == TCL_BREAK)) {
-	    rangePtr = GetExceptRangeForPc(pc, /*catchOnly*/ 0, codePtr);
-	    if (rangePtr == NULL) {
-		TRACE_APPEND(("no encl. loop or catch, returning %s\n",
-				     StringForResultCode(result)));
-		goto abnormalReturn;
-	    }
-#if 0
-	    if (rangePtr->type == CATCH_EXCEPTION_RANGE) {
-		TRACE_APPEND(("%s ...\n", StringForResultCode(result)));
-		goto processCatch;
-	    }
-#else
-	    if ((catchItems != 0) && ////
+	    rangePtr = GetExceptRangeForPc(pc, codePtr);
+	    if (catchItems && ((rangePtr == NULL) ||
 		    (codePtr->codeStart + rangePtr->codeOffset 
-			    <= catchStackPtr[catchItems].pc)) {
+			    <= catchStackPtr[catchItems].pc))) {
 		/*
 		 * This is caught earlier by an active catch range!
 		 */
 		
 		goto processCatch; 
 	    }
-#endif
+	    if (rangePtr == NULL) {
+		TRACE_APPEND(("no encl. loop or catch, returning %s\n",
+				     StringForResultCode(result)));
+		goto abnormalReturn;
+	    }
 	    while (cleanup--) {
 		valuePtr = POP_OBJECT();
 		TclDecrRefCount(valuePtr);
@@ -4804,6 +4826,7 @@ TclExecuteByteCode(interp, codePtr)
 		Tcl_LogCommandInfo(interp, codePtr->source, bytes, length);
 	    }
 	}
+
 	iPtr->flags &= ~ERR_ALREADY_LOGGED;
 
 	/*
@@ -5342,15 +5365,11 @@ GetSrcInfoForPc(pc, codePtr, lengthPtr)
  */
 
 static ExceptionRange *
-GetExceptRangeForPc(pc, catchOnly, codePtr)
+GetExceptRangeForPc(pc, codePtr)
     TclVMWord *pc;		/* The program counter value for which to
 				 * search for a closest enclosing exception
 				 * range. This points to a bytecode
 				 * instruction in codePtr's code. */
-    int catchOnly;		/* If 0, consider either loop or catch
-				 * ExceptionRanges in search. If nonzero
-				 * consider only catch ranges (and ignore
-				 * any closer loop ranges). */
     ByteCode* codePtr;		/* Points to the ByteCode in which to search
 				 * for the enclosing ExceptionRange. */
 {
@@ -5377,10 +5396,7 @@ GetExceptRangeForPc(pc, catchOnly, codePtr)
 	start = rangePtr->codeOffset;
 	if ((start <= pcOffset) &&
 	        (pcOffset < (start + rangePtr->numCodeWords))) {
-	    if ((!catchOnly)
-		    || (rangePtr->type == CATCH_EXCEPTION_RANGE)) {
-		return rangePtr;
-	    }
+	    return rangePtr;
 	}
     }
     return NULL;

@@ -1,3 +1,17 @@
+2005-03-15 Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclCompCmds.c:
+	* generic/tclCompile.c:
+	* generic/tclCompile.h:
+	* generic/tclExecute.c: rewrite of exception return handling. 
+	[catch] does not use the ExceptionArray anymore, there are only
+	loop exception ranges. Compiler simplification through two new
+	functions TclBeginExceptRange and TclEndExceptRange. The proper
+	ranges for INST_BREAK and INST_CONTINUE are detected at 
+	compile time; this info is used to *rewrite* them to INST_JUMP
+	when first encountered (this will disappear once we have the
+	optimiser).
+	
 2005-03-14 Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclCompile.c: 

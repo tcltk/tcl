@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.59.4.4 2005/03/14 17:51:08 msofer Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.59.4.5 2005/03/15 02:01:07 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -177,7 +177,7 @@ TclCompileBreakCmd(interp, parsePtr, envPtr)
      * Emit a break instruction.
      */
 
-    TclEmitInst0(INST_BREAK, envPtr);
+    TclEmitInst1(INST_BREAK, envPtr->exceptArrayCurr, envPtr);
     return TCL_OK;
 }
 
@@ -206,12 +206,12 @@ TclCompileCatchCmd(interp, parsePtr, envPtr)
 				 * command created by Tcl_ParseCommand. */
     CompileEnv *envPtr;		/* Holds resulting instructions. */
 {
-    int fixOffset;
     Tcl_Token *cmdTokenPtr, *nameTokenPtr;
     CONST char *name;
-    int localIndex, nameChars, range, startOffset;
+    int localIndex, nameChars, startOffset;
     int savedStackDepth = envPtr->currStackDepth;
-    int code;
+    int savedOpenRange = envPtr->exceptArrayCurr;
+
     
     /*
      * If syntax does not match what we expect for [catch], do not
@@ -277,11 +277,10 @@ TclCompileCatchCmd(interp, parsePtr, envPtr)
      * the start of the catch body: the subcommand it controls.
      */
 
-    envPtr->exceptDepth++;
-    envPtr->maxExceptDepth =
-	TclMax(envPtr->exceptDepth, envPtr->maxExceptDepth);
-    range = TclCreateExceptRange(CATCH_EXCEPTION_RANGE, envPtr);
-
+    envPtr->catchDepth++;
+    envPtr->maxCatchDepth =
+	TclMax(envPtr->catchDepth, envPtr->maxCatchDepth);
+    envPtr->exceptArrayCurr = -2;
     
     /*
      * Emit the instructions to eval the body. The INST_BEGIN_CATCH
@@ -296,11 +295,6 @@ TclCompileCatchCmd(interp, parsePtr, envPtr)
 	TclEmitInst0(INST_EVAL_STK, envPtr);
     }
     envPtr->currStackDepth = savedStackDepth + 1;    
-    envPtr->exceptArrayPtr[range].codeOffset = startOffset;
-    envPtr->exceptArrayPtr[range].numCodeWords =
-	    (envPtr->codeNext - envPtr->codeStart) - startOffset;
-    envPtr->exceptArrayPtr[range].catchOffset =
-	    (envPtr->codeNext - envPtr->codeStart);    
 
     /*
      * Store the offset between INST_BEGIN_CATCH and INST_END_CATCH at the
@@ -311,7 +305,8 @@ TclCompileCatchCmd(interp, parsePtr, envPtr)
     TclEmitInst1(INST_END_CATCH, localIndex, envPtr);
 
     envPtr->currStackDepth = savedStackDepth + 1;
-    envPtr->exceptDepth--;
+    envPtr->catchDepth--;
+    envPtr->exceptArrayCurr = savedOpenRange;
     return TCL_OK;
 }
 
@@ -352,7 +347,7 @@ TclCompileContinueCmd(interp, parsePtr, envPtr)
      * Emit a continue instruction.
      */
 
-    TclEmitInst0(INST_CONTINUE, envPtr);
+    TclEmitInst1(INST_CONTINUE, envPtr->exceptArrayCurr, envPtr);
     return TCL_OK;
 }
 
@@ -453,18 +448,6 @@ TclCompileForCmd(interp, parsePtr, envPtr)
     }
 
     /*
-     * Create ExceptionRange records for the body and the "next" command.
-     * The "next" command's ExceptionRange supports break but not continue
-     * (and has a -1 continueOffset).
-     */
-
-    envPtr->exceptDepth++;
-    envPtr->maxExceptDepth =
-	    TclMax(envPtr->exceptDepth, envPtr->maxExceptDepth);
-    bodyRange = TclCreateExceptRange(LOOP_EXCEPTION_RANGE, envPtr);
-    nextRange = TclCreateExceptRange(LOOP_EXCEPTION_RANGE, envPtr);
-
-    /*
      * Inline compile the initial command.
      */
 
@@ -490,29 +473,28 @@ TclCompileForCmd(interp, parsePtr, envPtr)
      * Compile the loop body.
      */
 
+    bodyRange = TclBeginExceptRange(envPtr);
     bodyCodeOffset = (envPtr->codeNext - envPtr->codeStart);
 
     TclCompileCmdWord(interp, bodyTokenPtr+1,
 	    bodyTokenPtr->numComponents, envPtr);
-    envPtr->currStackDepth = savedStackDepth + 1;
-    envPtr->exceptArrayPtr[bodyRange].numCodeWords =
-	    (envPtr->codeNext - envPtr->codeStart) - bodyCodeOffset;
+
+    TclEndExceptRange(bodyRange, envPtr);
     TclEmitInst0(INST_POP, envPtr);
+    envPtr->currStackDepth = savedStackDepth;
 
 
     /*
      * Compile the "next" subcommand.
      */
 
+    nextRange = TclBeginExceptRange(envPtr);
     nextCodeOffset = (envPtr->codeNext - envPtr->codeStart);
 
-    envPtr->currStackDepth = savedStackDepth;
     TclCompileCmdWord(interp, nextTokenPtr+1,
 	    nextTokenPtr->numComponents, envPtr);
-    envPtr->currStackDepth = savedStackDepth + 1;
-    envPtr->exceptArrayPtr[nextRange].numCodeWords =
-	    (envPtr->codeNext - envPtr->codeStart)
-	    - nextCodeOffset;
+
+    TclEndExceptRange(nextRange, envPtr);
     TclEmitInst0(INST_POP, envPtr);
     envPtr->currStackDepth = savedStackDepth;
 
@@ -531,13 +513,10 @@ TclCompileForCmd(interp, parsePtr, envPtr)
     TclEmitInst1(INST_JUMP_TRUE, -jumpDist, envPtr);
 
     /*
-     * Set the loop's offsets and break target.
+     * Set the loop's break and continue targets.
      */
 
-    envPtr->exceptArrayPtr[bodyRange].codeOffset = bodyCodeOffset;
     envPtr->exceptArrayPtr[bodyRange].continueOffset = nextCodeOffset;
-
-    envPtr->exceptArrayPtr[nextRange].codeOffset = nextCodeOffset;
 
     envPtr->exceptArrayPtr[bodyRange].breakOffset =
             envPtr->exceptArrayPtr[nextRange].breakOffset =
@@ -550,7 +529,6 @@ TclCompileForCmd(interp, parsePtr, envPtr)
     envPtr->currStackDepth = savedStackDepth;
     TclEmitPush(TclRegisterNewLiteral(envPtr, "", 0), envPtr);
 
-    envPtr->exceptDepth--;
     return TCL_OK;
 }
 
@@ -592,7 +570,8 @@ TclCompileForeachCmd(interp, parsePtr, envPtr)
     int jumpBackDist, jumpBackOffset, infoIndex, range;
     int numWords, numLists, numVars, loopIndex, tempVar, i, j, code;
     int savedStackDepth = envPtr->currStackDepth;
-
+    int continueOffset;
+    
     /*
      * We parse the variable list argument words and create two arrays:
      *    varcList[i] is number of variables in i-th var list
@@ -645,14 +624,6 @@ TclCompileForeachCmd(interp, parsePtr, envPtr)
         varcList[loopIndex] = 0;
         varvList[loopIndex] = NULL;
     }
-
-    /*
-     * Set the exception stack depth.
-     */ 
-
-    envPtr->exceptDepth++;
-    envPtr->maxExceptDepth =
-	    TclMax(envPtr->exceptDepth, envPtr->maxExceptDepth);
 
     /*
      * Break up each var list and set the varcList and varvList arrays.
@@ -749,8 +720,6 @@ TclCompileForeachCmd(interp, parsePtr, envPtr)
      * Evaluate then store each value list in the associated temporary.
      */
 
-    range = TclCreateExceptRange(LOOP_EXCEPTION_RANGE, envPtr);
-
     loopIndex = 0;
     for (i = 0, tokenPtr = parsePtr->tokenPtr;
 	    i < numWords-1;
@@ -777,8 +746,7 @@ TclCompileForeachCmd(interp, parsePtr, envPtr)
      * to terminate the loop.
      */
 
-    envPtr->exceptArrayPtr[range].continueOffset =
-	    (envPtr->codeNext - envPtr->codeStart);
+    continueOffset = (envPtr->codeNext - envPtr->codeStart);
     TclEmitInst1(INST_FOREACH_STEP, infoIndex, envPtr);
     TclEmitForwardJump(envPtr, INST_JUMP_FALSE, jumpFalseOffset);
 
@@ -786,14 +754,15 @@ TclCompileForeachCmd(interp, parsePtr, envPtr)
      * Inline compile the loop body.
      */
 
-    envPtr->exceptArrayPtr[range].codeOffset =
-	    (envPtr->codeNext - envPtr->codeStart);
+    range = TclBeginExceptRange(envPtr);
+    envPtr->exceptArrayPtr[range].continueOffset = continueOffset;
+
     TclCompileCmdWord(interp, bodyTokenPtr+1,
 	    bodyTokenPtr->numComponents, envPtr);
     envPtr->currStackDepth = savedStackDepth + 1;
-    envPtr->exceptArrayPtr[range].numCodeWords =
-	    (envPtr->codeNext - envPtr->codeStart)
-	    - envPtr->exceptArrayPtr[range].codeOffset;
+
+    TclEndExceptRange(range, envPtr);
+
     TclEmitInst0(INST_POP, envPtr);
 
     /*
@@ -805,7 +774,7 @@ TclCompileForeachCmd(interp, parsePtr, envPtr)
 
     jumpBackOffset = (envPtr->codeNext - envPtr->codeStart);
     jumpBackDist =
-	(jumpBackOffset - envPtr->exceptArrayPtr[range].continueOffset);
+	(jumpBackOffset - continueOffset);
     TclEmitInst1(INST_JUMP, -jumpBackDist, envPtr);
 
     /*
@@ -839,7 +808,6 @@ TclCompileForeachCmd(interp, parsePtr, envPtr)
 	ckfree((char *) varcList);
         ckfree((char *) varvList);
     }
-    envPtr->exceptDepth--;
     return code;
 }
 
@@ -2221,18 +2189,7 @@ cleanup:
 	/* We have default return options... */
 	if (envPtr->procPtr != NULL) {
 	    /* ... and we're in a proc ... */
-	    int index = envPtr->exceptArrayNext - 1;
-	    int enclosingCatch = 0;
-	    while (index >= 0) {
-		ExceptionRange range = envPtr->exceptArrayPtr[index];
-		if ((range.type == CATCH_EXCEPTION_RANGE)
-			&& (range.catchOffset == -1)) {
-		    enclosingCatch = 1;
-		    break;
-		}
-		index--;
-	    }
-	    if (!enclosingCatch) {
+	    if (!envPtr->catchDepth) {
 		/* ... and there is no enclosing catch. */
 		Tcl_DecrRefCount(returnOpts);
 		TclEmitInst0(INST_DONE, envPtr);
@@ -3049,16 +3006,6 @@ TclCompileWhileCmd(interp, parsePtr, envPtr)
 	}
     }
 
-    /* 
-     * Create a ExceptionRange record for the loop body. This is used to
-     * implement break and continue.
-     */
-
-    envPtr->exceptDepth++;
-    envPtr->maxExceptDepth =
-	TclMax(envPtr->exceptDepth, envPtr->maxExceptDepth);
-    range = TclCreateExceptRange(LOOP_EXCEPTION_RANGE, envPtr);
-
     /*
      * Jump to the evaluation of the condition. This code uses the "loop
      * rotation" optimisation (which eliminates one branch from the loop).
@@ -3084,12 +3031,12 @@ TclCompileWhileCmd(interp, parsePtr, envPtr)
      * Compile the loop body.
      */
 
+    range = TclBeginExceptRange(envPtr);
     bodyCodeOffset = (envPtr->codeNext - envPtr->codeStart);
     TclCompileCmdWord(interp, bodyTokenPtr+1,
 	    bodyTokenPtr->numComponents, envPtr);
     envPtr->currStackDepth = savedStackDepth + 1;
-    envPtr->exceptArrayPtr[range].numCodeWords =
-	    (envPtr->codeNext - envPtr->codeStart) - bodyCodeOffset;
+    TclEndExceptRange(range, envPtr);
     TclEmitInst0(INST_POP, envPtr);
 
     /*
@@ -3117,7 +3064,6 @@ TclCompileWhileCmd(interp, parsePtr, envPtr)
      */
 
     envPtr->exceptArrayPtr[range].continueOffset = testCodeOffset;
-    envPtr->exceptArrayPtr[range].codeOffset = bodyCodeOffset;
     envPtr->exceptArrayPtr[range].breakOffset =
 	    (envPtr->codeNext - envPtr->codeStart);
 
@@ -3128,7 +3074,6 @@ TclCompileWhileCmd(interp, parsePtr, envPtr)
     pushResult:
     envPtr->currStackDepth = savedStackDepth;
     TclEmitPush(TclRegisterNewLiteral(envPtr, "", 0), envPtr);
-    envPtr->exceptDepth--;
     return TCL_OK;
 }
 
