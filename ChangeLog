@@ -1,5 +1,16 @@
 2004-03-04  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
+	* tests/registry.test: Applied fixed from #766159 to skip two
+	tests on Win98 that depend on a Unicode registry (NT specific).
+
+2004-03-04  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclInt.h (TclParseInit):	Factored the common code
+	* generic/tclParse.c (TclParseInit):	for initializing a Tcl_Parse
+	* generic/tclParseExpr.c:		struct into one routine.
+
+2004-03-04  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
 	* library/reg/pkgIndex.tcl:  Added TIP #100 support to the
 	* win/tclWinReg.c:           registry package (patch #903831)
 	This provides a Windows test of the TIP #100 mechanism and 

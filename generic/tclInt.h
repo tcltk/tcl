@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.127.2.7 2004/03/04 17:26:15 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.127.2.8 2004/03/04 23:33:15 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -1819,6 +1819,9 @@ EXTERN int              TclParseExpr _ANSI_ARGS_((Tcl_Interp *interp,
 			    int useInternalTokens, Tcl_Parse *parsePtr));
 EXTERN int		TclParseHex _ANSI_ARGS_((CONST char *src, int numBytes,
                             Tcl_UniChar *resultPtr));
+EXTERN void		TclParseInit _ANSI_ARGS_ ((Tcl_Interp *interp,
+			    CONST char *string, int numBytes,
+			    Tcl_Parse *parsePtr));
 EXTERN int		TclParseInteger _ANSI_ARGS_((CONST char *string,
 			    int numBytes));
 Tcl_Token *		TclParseScript _ANSI_ARGS_((CONST char *script,
