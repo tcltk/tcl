@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fCmd.test,v 1.22 2002/08/08 08:56:21 hobbs Exp $
+# RCS: @(#) $Id: fCmd.test,v 1.23 2002/08/08 10:41:22 hobbs Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -1885,7 +1885,7 @@ test fCmd-21.6 {copy: mixed dirs and files into directory} \
     set result
 } {1}
 
-test fCmd-21.7 {TclCopyFilesCmd: copy a dangling link} {unixOnly notRoot} {
+test fCmd-21.7.1 {TclCopyFilesCmd: copy a dangling link} {unixOnly notRoot dontCopyLinks} {
     file mkdir tfad1
     file link -symbolic tfalink tfad1
     file delete tfad1
@@ -1893,8 +1893,17 @@ test fCmd-21.7 {TclCopyFilesCmd: copy a dangling link} {unixOnly notRoot} {
     file delete -force tfalink tfalink2 
     set result
 } {1 {error copying "tfalink": the target of this link doesn't exist}}
+test fCmd-21.7.2 {TclCopyFilesCmd: copy a dangling link} {unixOnly notRoot} {
+    file mkdir tfad1
+    file link -symbolic tfalink tfad1
+    file delete tfad1
+    file copy tfalink tfalink2
+    set result [string match [file type tfalink2] link]
+    file delete tfalink tfalink2 
+    set result
+} {1}
 
-test fCmd-21.8 {TclCopyFilesCmd : copy a link } {unixOnly notRoot} {
+test fCmd-21.8.1 {TclCopyFilesCmd: copy a link } {unixOnly notRoot dontCopyLinks} {
     file mkdir tfad1
     file link -symbolic tfalink tfad1
     file copy tfalink tfalink2
@@ -1902,6 +1911,17 @@ test fCmd-21.8 {TclCopyFilesCmd : copy a link } {unixOnly notRoot} {
     set r2 [file type tfalink2]; # directory
     set r3 [file isdir tfad1]; # 1
     set result [expr {("$r1" == "link") && ("$r2" == "directory") && $r3}]
+    file delete -force tfad1 tfalink tfalink2
+    set result
+} {1}
+test fCmd-21.8.2 {TclCopyFilesCmd: copy a link } {unixOnly notRoot} {
+    file mkdir tfad1
+    file link -symbolic tfalink tfad1
+    file copy tfalink tfalink2
+    set r1 [file type tfalink]; # link
+    set r2 [file type tfalink2]; # link
+    set r3 [file isdir tfad1]; # 1
+    set result [expr {("$r1" == "link") && ("$r2" == "link") && $r3}]
     file delete -force tfad1 tfalink tfalink2
     set result
 } {1}
@@ -1943,7 +1963,7 @@ test fCmd-21.12 {TclFileCopyCmd: copy dir on top of a non-empty dir w/ -force} \
     file delete -force tfa tfad
     set result
 } {1}
-   
+
 #
 # Coverage testing for TclpRenameFile
 #
@@ -2294,7 +2314,7 @@ test fCmd-28.14 {file link: deletes link not dir} {linkDirectory} {
     set res
 } {0 1}
 
-test fCmd-28.15 {file link: copies link not dir} {linkDirectory} {
+test fCmd-28.15.1 {file link: copies link not dir} {linkDirectory dontCopyLinks} {
     cd [temporaryDirectory]
     file delete -force abc.link
     file link abc.link abc.dir
@@ -2305,6 +2325,15 @@ test fCmd-28.15 {file link: copies link not dir} {linkDirectory} {
     cd [workingDirectory]
     set res
 } {directory abc.dir}
+test fCmd-28.15.2 {file link: copies link not dir} {linkDirectory} {
+    cd [temporaryDirectory]
+    file delete -force abc.link
+    file link abc.link abc.dir
+    file copy abc.link abc2.link
+    set res [list [file type abc2.link] [file tail [file link abc2.link]]]
+    cd [workingDirectory]
+    set res
+} {link abc.dir}
 
 cd [temporaryDirectory]
 file delete -force abc.link

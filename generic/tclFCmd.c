@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFCmd.c,v 1.19 2002/08/08 08:56:21 hobbs Exp $
+ * RCS: @(#) $Id: tclFCmd.c,v 1.20 2002/08/08 10:41:22 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -553,6 +553,7 @@ CopyRenameOneFile(interp, source, target, copyFlag, force)
 
     actualSource = source;
     Tcl_IncrRefCount(actualSource);
+#if 0
 #ifdef S_ISLNK
     /* 
      * To add a flag to make 'copy' copy links instead of files, we could
@@ -576,7 +577,7 @@ CopyRenameOneFile(interp, source, target, copyFlag, force)
 	} else {
 	    int counter = 0;
 	    while (1) {
-		Tcl_Obj *path = Tcl_FSLink(actualSource,NULL,0);
+		Tcl_Obj *path = Tcl_FSLink(actualSource, NULL, 0);
 		if (path == NULL) {
 		    break;
 		}
@@ -594,6 +595,7 @@ CopyRenameOneFile(interp, source, target, copyFlag, force)
 	    /* Now 'actualSource' is the correct file */
 	}
     }
+#endif
 #endif
 
     if (S_ISDIR(sourceStatBuf.st_mode)) {
