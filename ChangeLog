@@ -1,3 +1,7 @@
+2003-02-20  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* doc/regsub.n: Typo fix [Bug #688943]
+
 2003-02-19  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* unix/tclUnixThrd.c (TclpReaddir):
