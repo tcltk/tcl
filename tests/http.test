@@ -12,7 +12,7 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
 #
-# RCS: @(#) $Id: http.test,v 1.31 2002/10/03 13:34:32 dkf Exp $
+# RCS: @(#) $Id: http.test,v 1.32 2003/02/07 11:59:43 vincentdarley Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -444,6 +444,8 @@ test http-4.14 {http::Event} {
 # Bogus host
 
 test http-4.15 {http::Event} {
+    # This test may fail if you use a proxy server.  That is to be
+    # expected and is not a problem with Tcl.
     set code [catch {
 	set token [http::geturl not_a_host.scriptics.com -timeout 1000 -command {#}]
 	http::wait $token
