@@ -1242,13 +1242,12 @@ extern long 		tclObjsFreed;
 extern char *		tclEmptyStringRep;
 
 /*
- * A pointer to a string that holds an alternate initialization script to the
- * built-in initialization script defined in the file "generic/tclInitScript.h".
- * The Tcl_Init() routine will evaluate this script if it contains a non-NULL
- * value.
+ * A pointer to a string that holds an initialization script that if non-NULL
+ * is evaluated in Tcl_Init() prior to the the built-in initialization script
+ * that is defined in the file "generic/tclInitScript.h".
  */
 
-extern char *		tclAlternateInitScript;
+extern char *		tclPreInitScript;
 
 /*
  *----------------------------------------------------------------
