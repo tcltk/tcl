@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.117 2004/09/27 16:24:23 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.118 2004/09/27 22:03:42 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -4249,11 +4249,8 @@ TclObjInvoke(interp, objc, objv, flags)
     Tcl_HashTable *hTblPtr;	/* Table of hidden commands. */
     char *cmdName;		/* Name of the command from objv[0]. */
     register Tcl_HashEntry *hPtr;
-    Tcl_Command cmd;
     Command *cmdPtr;
-    int localObjc;		/* Used to invoke "unknown" if the */
     Tcl_Obj **localObjv = NULL;	/* command is not found. */
-    register int i;
     int result;
 
     if (interp == (Tcl_Interp *) NULL) {
