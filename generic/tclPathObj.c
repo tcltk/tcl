@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPathObj.c,v 1.32 2004/06/08 19:18:39 dgp Exp $
+ * RCS: @(#) $Id: tclPathObj.c,v 1.33 2004/06/10 16:55:39 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -518,6 +518,21 @@ TclPathPart(interp, pathPtr, portion)
 		    return fsPathPtr->cwdPtr;
 		}
 		case TCL_PATH_TAIL: {
+		    /* 
+		     * Check if the joined-on bit has any directory
+		     * delimiters in it.  If so, the 'tail' would
+		     * be only the part following the last delimiter.
+		     * We could handle that special case here, but we
+		     * don't, and instead just use the standardPath code.
+		     */
+		    CONST char *rest = Tcl_GetString(fsPathPtr->normPathPtr);
+		    if (strchr(rest, '/') != NULL) {
+			goto standardPath;
+		    }
+		    if ((tclPlatform == TCL_PLATFORM_WINDOWS) 
+		      && (strchr(rest, '\\') != NULL)) {
+			goto standardPath;
+		    }
 		    Tcl_IncrRefCount(fsPathPtr->normPathPtr);
 		    return fsPathPtr->normPathPtr;
 		}
