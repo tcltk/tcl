@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinDde.c,v 1.25 2004/11/26 20:02:28 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclWinDde.c,v 1.26 2004/11/30 18:40:33 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -1327,7 +1327,7 @@ Tcl_DdeObjCmd(clientData, interp, objc, objv)
 	}
     }
 
-    switch ((enum DdeSubcommand) index) {
+    switch ((enum DdeSubcommands) index) {
     case DDE_SERVERNAME:
 	serviceName = DdeSetServerName(interp, serviceName, exact, handlerPtr);
 	if (serviceName != NULL) {
