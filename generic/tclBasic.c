@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.75.2.2 2003/05/05 16:52:33 dkf Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.75.2.3 2003/05/12 20:16:08 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1837,9 +1837,9 @@ TclInvokeObjectCommand(clientData, interp, argc, argv)
      * end-of-objv word.
      */
 
-    if ((argc + 1) > NUM_ARGS) {
+    if (argc > NUM_ARGS) {
 	objv = (Tcl_Obj **)
-	    ckalloc((unsigned)(argc + 1) * sizeof(Tcl_Obj *));
+	    ckalloc((unsigned)(argc * sizeof(Tcl_Obj *)));
     }
 
     for (i = 0;  i < argc;  i++) {
@@ -1849,7 +1849,6 @@ TclInvokeObjectCommand(clientData, interp, argc, argv)
 	Tcl_IncrRefCount(objPtr);
 	objv[i] = objPtr;
     }
-    objv[argc] = 0;
 
     /*
      * Invoke the command's object-based Tcl_ObjCmdProc.
