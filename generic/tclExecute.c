@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.105 2003/08/05 15:59:15 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.106 2003/09/12 23:55:32 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -87,13 +87,16 @@ int tclTraceExec = 0;
  * Mapping from expression instruction opcodes to strings; used for error
  * messages. Note that these entries must match the order and number of the
  * expression opcodes (e.g., INST_LOR) in tclCompile.h.
+ *
+ * Does not include the string for INST_EXPON (and beyond), as that is
+ * disjoint for backward-compatability reasons
  */
 
-static char *operatorStrings[] = {
+static CONST char *operatorStrings[] = {
     "||", "&&", "|", "^", "&", "==", "!=", "<", ">", "<=", ">=", "<<", ">>",
     "+", "-", "*", "/", "%", "+", "-", "~", "!",
     "BUILTIN FUNCTION", "FUNCTION",
-    "", "", "", "", "", "", "", "", "eq", "ne",
+    "", "", "", "", "", "", "", "", "eq", "ne"
 };
 
 /*
@@ -378,6 +381,10 @@ static void		ValidatePcAndStackTop _ANSI_ARGS_((
 #endif /* TCL_COMPILE_DEBUG */
 static int		VerifyExprObjType _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *objPtr));
+static Tcl_WideInt	ExponWide _ANSI_ARGS_((Tcl_WideInt w, Tcl_WideInt w2,
+			    int *errExpon));
+static long		ExponLong _ANSI_ARGS_((long i, long i2,
+			    int *errExpon));
 
 /*
  * Table describing the built-in math functions. Entries in this table are
@@ -3159,6 +3166,7 @@ TclExecuteByteCode(interp, codePtr)
     case INST_SUB:
     case INST_MULT:
     case INST_DIV:
+    case INST_EXPON:
     {
 	/*
 	 * Operands must be numeric and ints get converted to floats
@@ -3275,6 +3283,13 @@ TclExecuteByteCode(interp, codePtr)
 		    }
 		    dResult = d1 / d2;
 		    break;
+		case INST_EXPON:
+		    if (d1==0.0 && d2<0.0) {
+			TRACE(("%.6g %.6g => EXPONENT OF ZERO\n", d1, d2));
+			goto exponOfZero;
+		    }
+		    dResult = pow(d1, d2);
+		    break;
 	    }
 		    
 	    /*
@@ -3331,11 +3346,21 @@ TclExecuteByteCode(interp, codePtr)
 		    }
 		    wResult = wquot;
 		    break;
+		case INST_EXPON: {
+		    int errExpon;
+
+		    wResult = ExponWide(w, w2, &errExpon);
+		    if (errExpon) {
+			TRACE((LLD" "LLD" => EXPONENT OF ZERO\n", w, w2));
+			goto exponOfZero;
+		    }
+		    break;
+		}
 	    }
 	} else {
 	    /*
-		     * Do integer arithmetic.
-		     */
+	     * Do integer arithmetic.
+	     */
 	    switch (*pc) {
 	        case INST_ADD:
 		    iResult = i + i2;
@@ -3368,6 +3393,16 @@ TclExecuteByteCode(interp, codePtr)
 		    }
 		    iResult = quot;
 		    break;
+		case INST_EXPON: {
+		    int errExpon;
+
+		    iResult = ExponLong(i, i2, &errExpon);
+		    if (errExpon) {
+			TRACE(("%ld %ld => EXPONENT OF ZERO\n", i, i2));
+			goto exponOfZero;
+		    }
+		    break;
+		}
 	    }
 	}
 
@@ -4044,7 +4079,21 @@ TclExecuteByteCode(interp, codePtr)
             (char *) NULL);
     result = TCL_ERROR;
     goto checkForCatch;
-	
+
+    /*
+     * Exponentiation of zero by negative number in an expression.
+     * Control only reaches this point by "goto exponOfZero".
+     */
+
+ exponOfZero:
+    Tcl_ResetResult(interp);
+    Tcl_AppendToObj(Tcl_GetObjResult(interp),
+	    "exponentiation of zero by negative power", -1);
+    Tcl_SetErrorCode(interp, "ARITH", "DOMAIN",
+	    "exponentiation of zero by negative power", (char *) NULL);
+    result = TCL_ERROR;
+    goto checkForCatch;
+
     /*
      * An external evaluation (INST_INVOKE or INST_EVAL) returned 
      * something different from TCL_OK, or else INST_BREAK or 
@@ -4381,12 +4430,16 @@ IllegalExprOperandType(interp, pc, opndPtr)
 				 * with the illegal type. */
 {
     unsigned char opCode = *pc;
-    
+    CONST char *operator = operatorStrings[opCode - INST_LOR];
+    if (opCode == INST_EXPON) {
+	operator = "**";
+    }
+
     Tcl_ResetResult(interp);
     if ((opndPtr->bytes == NULL) || (opndPtr->length == 0)) {
 	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		"can't use empty string as operand of \"",
-		operatorStrings[opCode - INST_LOR], "\"", (char *) NULL);
+		"can't use empty string as operand of \"", operator, "\"",
+		(char *) NULL);
     } else {
 	char *msg = "non-numeric string";
 	char *s, *p;
@@ -4485,8 +4538,7 @@ IllegalExprOperandType(interp, pc, opndPtr)
 	}
       makeErrorMessage:
 	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "can't use ",
-		msg, " as operand of \"", operatorStrings[opCode - INST_LOR],
-		"\"", (char *) NULL);
+		msg, " as operand of \"", operator, "\"", (char *) NULL);
     }
 }
 
@@ -6180,3 +6232,140 @@ StringForResultCode(result)
     return buf;
 }
 #endif /* TCL_COMPILE_DEBUG */
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ExponWide --
+ *
+ *	Procedure to return w**w2 as wide integer
+ *
+ * Results:
+ *	Return value is w to the power w2, unless the computation
+ *	makes no sense mathematically. In that case *errExpon is
+ *	set to 1.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static Tcl_WideInt
+ExponWide(w, w2, errExpon)
+    Tcl_WideInt w;		/* The value that must be exponentiated */
+    Tcl_WideInt w2;		/* The exponent */
+    int *errExpon;		/* Error code */
+{
+    Tcl_WideInt result;
+
+    *errExpon = 0;
+
+    /*
+     * Check for possible errors and simple/edge cases
+     */
+
+    if (w == 0) {
+	if (w2 < 0) {
+	    *errExpon = 1;
+	    return W0;
+	} else if (w2 > 0) {
+	    return W0;
+	}
+	return Tcl_LongAsWide(1); /* By definition and analysis */
+    } else if (w < -1) {
+	if (w2 < 0) {
+	    return W0;
+	} else if (w2 == 0) {
+	    return Tcl_LongAsWide(1);
+	}
+    } else if (w == -1) {
+	return (w2 & 1) ? Tcl_LongAsWide(-1) :  Tcl_LongAsWide(1);
+    } else if (w == 1) {
+	return Tcl_LongAsWide(1);
+    } else if (w>1 && w2<0) {
+	return W0;
+    }
+
+    /*
+     * The general case.  
+     */
+
+    result = Tcl_LongAsWide(1);
+    for (; w2>Tcl_LongAsWide(1) ; w*=w,w2/=2) {
+	if (w2 & 1) {
+	    result *= w;
+	}
+    }
+    return result * w;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ExponLong --
+ *
+ *      Procedure to return i**i2 as long integer
+ *
+ * Results:
+ *      Return value is i to the power i2, unless the computation
+ *      makes no sense mathematically. In that case *errExpon is
+ *      set to 1.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static long
+ExponLong(i, i2, errExpon)
+    long i;			/* The value that must be exponentiated */
+    long i2;			/* The exponent */
+    int *errExpon;		/* Error code */
+{
+    long result;
+
+    *errExpon = 0;
+
+    /*
+     * Check for possible errors and simple cases
+     */
+
+    if (i == 0) {
+        if (i2 < 0) {
+            *errExpon = 1;
+            return 0L;
+        } else if (i2 > 0) {
+            return 0L;
+        }
+	/*
+	 * By definition and analysis, 0**0 is 1.
+	 */
+	return 1L;
+    } else if (i < -1) {
+        if (i2 < 0) {
+            return 0L;
+        } else if (i2 == 0) {
+	    return 1L;
+        }
+    } else if (i == -1) {
+        return (i2&1) ? -1L : 1L;
+    } else if (i == 1) {
+        return 1L;
+    } else if (i > 1 && i2 < 0) {
+        return 0L;
+    }
+
+    /*
+     * The general case
+     */
+
+    result = 1;
+    for (; i2>1 ; i*=i,i2/=2) {
+	if (i2 & 1) {
+	    result *= i;
+	}
+    }
+    return result * i;
+}

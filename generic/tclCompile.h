@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.36 2003/03/19 16:51:42 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.37 2003/09/12 23:55:32 dkf Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -523,6 +523,8 @@ typedef struct ByteCode {
 #define INST_LSET_FLAT                  97
 
 #define INST_RETURN			98
+
+#define INST_EXPON			99 /* TIP#123 - exponentiation */
 
 /* The last opcode */
 #define LAST_INST_OPCODE        	98
