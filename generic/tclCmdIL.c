@@ -72,6 +72,9 @@ typedef struct SortInfo {
  * Forward declarations for procedures defined in this file:
  */
 
+static void		AppendLocals _ANSI_ARGS_((Tcl_Interp *interp,
+			    Tcl_Obj *listPtr, char *pattern,
+			    int includeLinks));
 static int		DictionaryCompare _ANSI_ARGS_((char *left,
 			    char *right));
 static int		InfoArgsCmd _ANSI_ARGS_((ClientData dummy,
@@ -1187,12 +1190,7 @@ InfoLocalsCmd(dummy, interp, objc, objv)
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
     Interp *iPtr = (Interp *) interp;
-    Var *varPtr;
-    char *varName, *pattern;
-    int i, localVarCt;
-    Tcl_HashTable *localVarTablePtr;
-    register Tcl_HashEntry *entryPtr;
-    Tcl_HashSearch search;
+    char *pattern;
     Tcl_Obj *listPtr;
 
     if (objc == 2) {
@@ -1204,10 +1202,9 @@ InfoLocalsCmd(dummy, interp, objc, objv)
         return TCL_ERROR;
     }
     
-    if (iPtr->varFramePtr == NULL) {
+    if (iPtr->varFramePtr == NULL || !iPtr->varFramePtr->isProcCallFrame) {
         return TCL_OK;
     }
-    localVarTablePtr = iPtr->varFramePtr->varTablePtr;
 
     /*
      * Return a list containing names of first the compiled locals (i.e. the
@@ -1216,18 +1213,63 @@ InfoLocalsCmd(dummy, interp, objc, objv)
      */
     
     listPtr = Tcl_NewListObj(0, (Tcl_Obj **) NULL);
-    
+    AppendLocals(interp, listPtr, pattern, 0);
+    Tcl_SetObjResult(interp, listPtr);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * AppendLocals --
+ *
+ *	Append the local variables for the current frame to the
+ *	specified list object.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+AppendLocals(interp, listPtr, pattern, includeLinks)
+    Tcl_Interp *interp;		/* Current interpreter. */
+    Tcl_Obj *listPtr;		/* List object to append names to. */
+    char *pattern;		/* Pattern to match against. */
+    int includeLinks;		/* 1 if upvars should be included, else 0. */
+{
+    Interp *iPtr = (Interp *) interp;
+    CompiledLocal *localPtr;
+    Var *varPtr;
+    int i, localVarCt;
+    char *varName;
+    Tcl_HashTable *localVarTablePtr;
+    register Tcl_HashEntry *entryPtr;
+    Tcl_HashSearch search;
+
+    localPtr = iPtr->varFramePtr->procPtr->firstLocalPtr;
     localVarCt = iPtr->varFramePtr->numCompiledLocals;
-    for (i = 0, varPtr = iPtr->varFramePtr->compiledLocals;
-            i < localVarCt;
-	    i++, varPtr++) {
-	if (!TclIsVarUndefined(varPtr)) {
+    varPtr = iPtr->varFramePtr->compiledLocals;
+    localVarTablePtr = iPtr->varFramePtr->varTablePtr;
+
+    for (i = 0; i < localVarCt; i++) {
+	/*
+	 * Skip nameless (temporary) variables and undefined variables
+	 */
+
+	if (!localPtr->isTemp && !TclIsVarUndefined(varPtr)) {
 	    varName = varPtr->name;
 	    if ((pattern == NULL) || Tcl_StringMatch(varName, pattern)) {
 		Tcl_ListObjAppendElement(interp, listPtr,
 		        Tcl_NewStringObj(varName, -1));
 	    }
         }
+	varPtr++;
+	localPtr = localPtr->nextPtr;
     }
     
     if (localVarTablePtr != NULL) {
@@ -1235,7 +1277,8 @@ InfoLocalsCmd(dummy, interp, objc, objv)
 	        entryPtr != NULL;
                 entryPtr = Tcl_NextHashEntry(&search)) {
 	    varPtr = (Var *) Tcl_GetHashValue(entryPtr);
-	    if (!TclIsVarUndefined(varPtr) && !TclIsVarLink(varPtr)) {
+	    if (!TclIsVarUndefined(varPtr)
+		    && (includeLinks || !TclIsVarLink(varPtr))) {
 		varName = Tcl_GetHashKey(localVarTablePtr, entryPtr);
 		if ((pattern == NULL)
 		        || Tcl_StringMatch(varName, pattern)) {
@@ -1245,9 +1288,6 @@ InfoLocalsCmd(dummy, interp, objc, objv)
 	    }
 	}
     }
-    
-    Tcl_SetObjResult(interp, listPtr);
-    return TCL_OK;
 }
 
 /*
@@ -1560,13 +1600,13 @@ InfoVarsCmd(dummy, interp, objc, objv)
     char *varName, *pattern, *simplePattern;
     register Tcl_HashEntry *entryPtr;
     Tcl_HashSearch search;
-    Var *varPtr, *localVarPtr;
+    Var *varPtr;
     Namespace *nsPtr;
     Namespace *globalNsPtr = (Namespace *) Tcl_GetGlobalNamespace(interp);
     Namespace *currNsPtr   = (Namespace *) Tcl_GetCurrentNamespace(interp);
     Tcl_Obj *listPtr, *elemObjPtr;
     int specificNsInPattern = 0;  /* Init. to avoid compiler warning. */
-    int i, result;
+    int result;
 
     /*
      * Get the pattern and find the "effective namespace" in which to
@@ -1674,49 +1714,7 @@ InfoVarsCmd(dummy, interp, objc, objv)
 	    }
 	}
     } else {
-	/*
-	 * We're in a local call frame and no specific namespace was
-	 * specific. Create a list that starts with the compiled locals
-	 * (i.e. the ones stored in the call frame).
-	 */
-
-	CallFrame *varFramePtr = iPtr->varFramePtr;
-        int localVarCt = varFramePtr->numCompiledLocals;
-	Tcl_HashTable *varTablePtr = varFramePtr->varTablePtr;
-	
-        for (i = 0, localVarPtr = iPtr->varFramePtr->compiledLocals;
-                i < localVarCt;
-                i++, localVarPtr++) {
-            if (!TclIsVarUndefined(localVarPtr)) {
-                varName = localVarPtr->name;
-                if ((simplePattern == NULL)
-		        || Tcl_StringMatch(varName, simplePattern)) {
-                    Tcl_ListObjAppendElement(interp, listPtr,
-			    Tcl_NewStringObj(varName, -1));
-                }
-            }
-        }
-
-	/*
-	 * Now add in the variables in the call frame's variable hash
-	 * table (if one exists).
-	 */
-
-	if (varTablePtr != NULL) {
-	    for (entryPtr = Tcl_FirstHashEntry(varTablePtr, &search);
-		    entryPtr != NULL;
-		    entryPtr = Tcl_NextHashEntry(&search)) {
-		varPtr = (Var *) Tcl_GetHashValue(entryPtr);
-		if (!TclIsVarUndefined(varPtr)) {
-		    varName = Tcl_GetHashKey(varTablePtr, entryPtr);
-		    if ((simplePattern == NULL)
-		            || Tcl_StringMatch(varName, simplePattern)) {
-			Tcl_ListObjAppendElement(interp, listPtr,
-				Tcl_NewStringObj(varName, -1));
-		    }
-		}
-	    }
-	}
+	AppendLocals(interp, listPtr, simplePattern, 1);
     }
     
     Tcl_SetObjResult(interp, listPtr);
@@ -2864,7 +2862,7 @@ DictionaryCompare(left, right)
 	    diff = 0;
 	    while (1) {
 		if (diff == 0) {
-		    diff = *left - *right;
+		    diff = UCHAR(*left) - UCHAR(*right);
 		}
 		right++;
 		left++;
@@ -2888,17 +2886,17 @@ DictionaryCompare(left, right)
 	    }
 	    continue;
 	}
-        diff = *left - *right;
+        diff = UCHAR(*left) - UCHAR(*right);
         if (diff) {
             if (isupper(UCHAR(*left)) && islower(UCHAR(*right))) {
-                diff = tolower(*left) - *right;
+                diff = UCHAR(tolower(*left)) - UCHAR(*right);
                 if (diff) {
 		    return diff;
                 } else if (secondaryDiff == 0) {
 		    secondaryDiff = -1;
                 }
             } else if (isupper(UCHAR(*right)) && islower(UCHAR(*left))) {
-                diff = *left - tolower(UCHAR(*right));
+                diff = UCHAR(*left) - UCHAR(tolower(UCHAR(*right)));
                 if (diff) {
 		    return diff;
                 } else if (secondaryDiff == 0) {
