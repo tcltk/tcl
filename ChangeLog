@@ -1,3 +1,11 @@
+2003-02-20  Daniel Steffen  <das@users.sourceforge.net>
+
+	* unix/tcl.m4:
+	* unix/tclUnixPipe.c: (macosx) use vfork() instead of fork() to
+	create new processes, as recommended by to Apple (vfork can be up to
+	100 times faster thank fork on macosx).
+	* unix/configure: regen.
+
 2003-02-20  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclEncoding.c (LoadTableEncoding):
