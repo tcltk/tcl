@@ -1,3 +1,10 @@
+2003-04-21  Don Porter  <dgp@users.sourceforge.net>
+
+        * library/tcltest/tcltest.tcl:  When the return code of a test does
+        not meet expectations, report that as the reason for test failure,
+        and do not attempt to check the test result for correctness.
+        [Bug 725253]
+
 2003-04-18  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* win/tclWinInt.h (VER_PLATFORM_WIN32_CE): conditionally define.
