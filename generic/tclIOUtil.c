@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.54 2002/07/08 12:08:34 vincentdarley Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.55 2002/07/15 14:16:43 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -2474,9 +2474,8 @@ Tcl_FSChdir(pathPtr)
  *	message is left in the interp's result.
  *
  * Side effects:
- *	New code suddenly appears in memory.  We remember which
- *	filesystem loaded the code, so that we can use that filesystem's
- *	unloadProc to unload the code when that occurs.
+ *	New code suddenly appears in memory.  This may later be
+ *	unloaded by passing the clientData to the unloadProc.
  *
  *----------------------------------------------------------------------
  */
@@ -4768,12 +4767,13 @@ Tcl_FSGetFileSystemForPath(pathObjPtr)
         return NULL;
     }
     
-    /* Make sure pathObjPtr is of our type */
+    /* 
+     * This will ensure the pathObjPtr can be converted into a 
+     * "path" type, and that we are able to generate a complete
+     * normalized path which is used to determine the filesystem
+     * match.
+     */
 
-    if (Tcl_FSConvertToPathType(NULL, pathObjPtr) != TCL_OK) {
-	return NULL;
-    }
-    
     if (Tcl_FSGetNormalizedPath(NULL, pathObjPtr) == NULL) {
 	return NULL;
     }
