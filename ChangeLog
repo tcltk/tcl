@@ -1,3 +1,24 @@
+2001-04-24  Kevin B. Kenny    <kennykb@acm.org>
+	* doc/AssocData.3:
+	* doc/CrtCommand.3:
+	* doc/CrtMathFnc.3:
+	* doc/CrtObjCmd.3:
+	* doc/ExprLong.3:
+	* generic/tclBasic.c:
+	* generic/tclCmdMZ.c:
+	* doc/CrtSlave.3:
+	* generic/tclNamesp.c:
+	* generic/tcl.decls:
+	* generic/tcl.h:
+	* generic/tclInt.decls:
+	* generic/tclInt.h: (TIP #27) Another round of CONST changes, this
+	time adding CONST to the API's exported from tclBasic.c.
+	[Patch #415179]
+	***POTENTIAL INCOMPATIBILITY*** from 8.4a2, in which Vince
+	Darley's changes to command tracing were added.  A const has been
+	added to the type signature of one of the parameters to
+	Tcl_CommandTraceProc.
+	
 2001-04-10  Kevin B. Kenny    <kennykb@acm.org>
 	* unix/tclUnixTime.c: Altered code to use memcpy instead of
 	structure assigments in an effort to achieve better K&R
