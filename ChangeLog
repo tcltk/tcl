@@ -1,3 +1,11 @@
+2004-10-29  Don Porter  <dgp@users.sourceforge.net>
+
+	* library/tcltest/tcltest.tcl:	Correct reaction to errors in the
+	obsolete processCmdLineArgsHook.	[Bug 1055673]
+	* library/tcltest/pkgIndex.tcl:	Bump to tcltest 2.2.7
+	* unix/Makefile.in:
+	* tests/all.tcl:	Update to use [tcltest::configure].
+
 2004-10-29  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* library/tm.tcl (::tcl::tm::*): Use the core proc engine to
