@@ -4,6 +4,7 @@
 	to reset iPtr->returnCode, causing tests parse-18.17 and parse-18.21
 	to fail strangely.
 	* tests/parse.test (parse-18.21):  Corrected now functioning test.
+	Added further coverage tests.
 
 2003-03-31  Don Porter  <dgp@users.sourceforge.net>
 
