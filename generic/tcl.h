@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.68 2000/04/13 02:30:43 hobbs Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.69 2000/04/17 20:32:21 welch Exp $
  */
 
 #ifndef _TCL
@@ -395,9 +395,30 @@ typedef struct Tcl_Var_ *Tcl_Var;
 
 #ifdef MAC_TCL
 typedef pascal void *(Tcl_ThreadCreateProc) _ANSI_ARGS_((ClientData clientData));
+#elif defined __WIN32__
+typedef unsigned (__stdcall Tcl_ThreadCreateProc) _ANSI_ARGS_((ClientData clientData));
 #else
 typedef void (Tcl_ThreadCreateProc) _ANSI_ARGS_((ClientData clientData));
 #endif
+
+
+/*
+ * Threading function return types used for abstracting away platform
+ * differences when writing a Tcl_ThreadCreateProc.  See the NewThread
+ * function in generic/tclThreadTest.c for it's usage.
+ */
+#ifdef MAC_TCL
+#   define Tcl_ThreadCreateType		pascal void *
+#   define TCL_THREAD_CREATE_RETURN	return NULL
+#elif defined __WIN32__
+#   define Tcl_ThreadCreateType		unsigned __stdcall
+#   define TCL_THREAD_CREATE_RETURN	return 0
+#else
+#   define Tcl_ThreadCreateType		void
+#   define TCL_THREAD_CREATE_RETURN	
+#endif
+
+
 
 /*
  * Definition of values for default stacksize and the possible flags to be

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThreadTest.c,v 1.8 2000/04/09 16:04:19 kupries Exp $
+ * RCS: @(#) $Id: tclThreadTest.c,v 1.9 2000/04/17 20:32:22 welch Exp $
  */
 
 #include "tclInt.h"
@@ -126,11 +126,7 @@ EXTERN int	TclThreadSend _ANSI_ARGS_((Tcl_Interp *interp, Tcl_ThreadId id,
 #undef TCL_STORAGE_CLASS
 #define TCL_STORAGE_CLASS DLLIMPORT
 
-#ifdef MAC_TCL
-static pascal void *NewThread _ANSI_ARGS_((ClientData clientData));
-#else
-static void     NewThread _ANSI_ARGS_((ClientData clientData));
-#endif
+Tcl_ThreadCreateType	NewThread _ANSI_ARGS_((ClientData clientData));
 static void	ListRemove _ANSI_ARGS_((ThreadSpecificData *tsdPtr));
 static void	ListUpdateInner _ANSI_ARGS_((ThreadSpecificData *tsdPtr));
 static int	ThreadEventProc _ANSI_ARGS_((Tcl_Event *evPtr, int mask));
@@ -406,11 +402,7 @@ TclCreateThread(interp, script)
  *
  *------------------------------------------------------------------------
  */
-#ifdef MAC_TCL
-static pascal void *
-#else
-static void
-#endif
+Tcl_ThreadCreateType
 NewThread(clientData)
     ClientData clientData;
 {
@@ -467,9 +459,8 @@ NewThread(clientData)
     Tcl_Release((ClientData) tsdPtr->interp);
     Tcl_DeleteInterp(tsdPtr->interp);
     Tcl_ExitThread(result);
-#ifdef MAC_TCL
-    return NULL;
-#endif
+
+    TCL_THREAD_CREATE_RETURN;
 }
 
 /*

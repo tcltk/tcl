@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS:  @(#) tclWinThrd.c 1.13 98/02/18 14:00:23
+ * RCS: @(#) $Id: tclWinThrd.c,v 1.7 2000/04/17 20:32:26 welch Exp $
  */
 
 #include "tclWinInt.h"
@@ -125,8 +125,8 @@ Tcl_CreateThread(idPtr, proc, clientData, stackSize, flags)
 {
     unsigned long code;
 
-    code = _beginthreadex(NULL, stackSize, (LPTHREAD_START_ROUTINE) proc,
-		(void *)clientData, 0, (unsigned *)idPtr);
+    code = _beginthreadex(NULL, stackSize, proc, clientData, 0,
+	(unsigned *)idPtr);
     if (code == 0) {
 	return TCL_ERROR;
     } else {
