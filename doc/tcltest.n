@@ -8,7 +8,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: tcltest.n,v 1.38 2003/01/24 16:33:35 dgp Exp $
+'\" RCS: @(#) $Id: tcltest.n,v 1.38.2.1 2003/03/08 21:43:49 dgp Exp $
 '\" 
 .so man.macros
 .TH "tcltest" n 2.2 tcltest "Tcl Bundled Packages"
@@ -976,10 +976,10 @@ namespace eval ::example::test {
     testConstraint X [expr {...}]
     variable SETUP {#common setup code}
     variable CLEANUP {#common cleanup code}
-    test example-1 {} -setup $SETUP {
+    test example-1 {} -setup $SETUP -body {
 	# First test
     } -cleanup $CLEANUP -result {...}
-    test example-2 {} -constraints X -setup $SETUP {
+    test example-2 {} -constraints X -setup $SETUP -body {
 	# Second test; constrained
     } -cleanup $CLEANUP -result {...}
     test example-3 {} {
