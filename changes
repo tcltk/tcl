@@ -3513,7 +3513,7 @@ that could lead to a crash. (SS)
 non-local variable references. (SS)
 
 6/25/98 (new features) Added name resolution hooks to support [incr Tcl].
-There are new Tcl_*Resolver* APIs to add, query and remove the hooks. 
+There are new internal Tcl_*Resolver* APIs to add, query and remove the hooks. 
 With this changes it should be possible to dynamically load [incr Tcl]
 as an extension. (MM)
 
