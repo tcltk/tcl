@@ -3,7 +3,7 @@
 # Default system startup file for Tcl-based applications.  Defines
 # "unknown" procedure and auto-load facilities.
 #
-# SCCS: %Z% $Id: init.tcl,v 1.4 1998/07/02 17:54:45 escoffon Exp $ 
+# SCCS: %Z% $Id: init.tcl,v 1.5 1998/07/11 13:07:06 welch Exp $ 
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
@@ -896,7 +896,14 @@ proc pkg_mkIndex {args} {
 		    }
 		    foreach __i [array names __cmds] {
 			# reverse engineer which namespace a command comes from
+			
 			set __absolute [namespace origin $__i]
+
+			# special case so that global names have no leading
+			# ::, this is required by the unknown command
+
+			set __absolute [auto_qualify $__absolute ::]
+
 			if {[string compare $__i $__absolute] != 0} {
 			    set __cmds($__absolute) 1
 			    unset __cmds($__i)
