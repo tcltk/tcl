@@ -1,7 +1,11 @@
 2000-08-10  Eric Melski  <ericm@ajubasolutions.com>
 
+	* library/msgcat1.0/pkgIndex.tcl: Bumped version number to 1.2
+	[Bug: 6100].
+
 	* library/msgcat1.0/msgcat.tcl: Removed erroneous [package forget]
-	in msgcat namespace initializer.
+	in msgcat namespace initializer.  Bumped version number to 1.2
+	[Bug: 6100].
 
 2000-08-10  David Gravereaux <davygrvy@ajubasolutions.com>
 

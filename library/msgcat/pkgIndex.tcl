@@ -1,1 +1,1 @@
-package ifneeded msgcat 1.0 [list source [file join $dir msgcat.tcl]]
+package ifneeded msgcat 1.2 [list source [file join $dir msgcat.tcl]]
