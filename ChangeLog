@@ -1,5 +1,17 @@
 1999-03-25    <stanton@scriptics.com>
 
+	* library/encoding/big5.enc:
+	* library/encoding/gb2312.enc:
+	* tools/encoding/big5.enc:
+	* tools/encoding/gb2312.enc: Added ASCII to big5 and gb2312
+	encodings. [Bug: 632]
+	
+	* generic/tclPkg.c (Tcl_PkgRequireEx): Fixed broken clientData
+	initialization in package code.
+
+	* unix/Makefile.in (dist): Added tcl.decls and tclInt.decls to
+	source distribution. [Bug: 1571]
+
 	* doc/Thread.3: Updated documentation of Tcl_MutexLock to indicate
 	that the recursive locking behavior is undefined.  On Windows, it
 	does not block, on Unix it deadlocks. [Bug: 1275]
