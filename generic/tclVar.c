@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.81 2004/05/22 16:21:17 msofer Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.82 2004/05/23 22:53:20 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -758,30 +758,18 @@ TclLookupSimpleVar(interp, varName, flags, create, errMsgPtr, indexPtr)
 	    }
 	} 
 
-	/*
-	 * FIXME: [Bug 736729]
-	 *
-	 * When a varName is looked from a namespace different from the
-	 * global one, there is no corresponding variable in the namespace and
-	 * there is a "zombie" variable in the global namespace (ie, the
-	 * varName is in the hash table, but the variable is unset), this code
-	 * returns a reference to the zombie. It should instead create a
-	 * variable in the namespace.
-	 *
-	 * Fix in progress - that it is not here yet may indicate that the
-	 * picture above is incomplete or wrong.
-	 *    - Miguel Sofer, 2004-05-22
-	 */
-
         /*
 	 * Don't pass TCL_LEAVE_ERR_MSG, we may yet create the variable,
 	 * or otherwise generate our own error!
 	 */
+
 	var = Tcl_FindNamespaceVar(interp, varName, (Tcl_Namespace *) cxtNsPtr,
 		flags & ~TCL_LEAVE_ERR_MSG);
+
 	if (var != (Tcl_Var) NULL) {
             varPtr = (Var *) var;
         }
+
 	if (varPtr == NULL) {
 	    if (create) {   /* var wasn't found so create it  */
 		TclGetNamespaceForQualName(interp, varName, cxtNsPtr,
@@ -799,7 +787,7 @@ TclLookupSimpleVar(interp, varName, flags, create, errMsgPtr, indexPtr)
 		Tcl_SetHashValue(hPtr, varPtr);
 		varPtr->hPtr = hPtr;
 		varPtr->nsPtr = varNsPtr;
-		if ((lookGlobal)  || (varNsPtr == NULL)) {
+		if (lookGlobal) {
 		    /*
 		     * The variable was created starting from the global
 		     * namespace: a global reference is returned even if 
