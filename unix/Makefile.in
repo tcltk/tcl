@@ -178,6 +178,9 @@ BUILD_DLTEST = @BUILD_DLTEST@
 TCL_LIB_FILE = @TCL_LIB_FILE@
 #TCL_LIB_FILE = libtcl.a
 
+TCL_LIB_FLAG = @TCL_LIB_FLAG@
+#TCL_LIB_FLAG = -ltcl
+
 #----------------------------------------------------------------
 # The information below is modified by the configure script when
 # Makefile is generated from Makefile.in.  You shouldn't normally

@@ -58,30 +58,32 @@ NODEBUG = 1
 # Do not modify below this line
 ######################################################################
 
+NAMEPREFIX = tcl
 DOTVERSION = 8.0
 VERSION = 80
 
+BINROOT		= .
 !IF "$(NODEBUG)" == "1"
-TMPDIR		= Release
+TMPDIR		= $(BINROOT)\Release
 DBGX		=
 !ELSE
-TMPDIR		= Debug
+TMPDIR		= $(BINROOT)\Debug
 DBGX		= d
 !ENDIF
 OUTDIR		= $(TMPDIR)
 
-TCLLIB		= $(OUTDIR)\tcl$(VERSION)$(DBGX).lib
-TCLDLLNAME	= tcl$(VERSION)$(DBGX).dll
+TCLLIB		= $(OUTDIR)\$(NAMEPREFIX)$(VERSION)$(DBGX).lib
+TCLDLLNAME	= $(NAMEPREFIX)$(VERSION)$(DBGX).dll
 TCLDLL		= $(OUTDIR)\$(TCLDLLNAME)
-TCLPLUGINLIB	= $(OUTDIR)\tcl$(VERSION)p$(DBGX).lib
-TCLPLUGINDLLNAME= tcl$(VERSION)p$(DBGX).dll
+TCLPLUGINLIB	= $(OUTDIR)\$(NAMEPREFIX)$(VERSION)p$(DBGX).lib
+TCLPLUGINDLLNAME= $(NAMEPREFIX)$(VERSION)p$(DBGX).dll
 TCLPLUGINDLL	= $(OUTDIR)\$(TCLPLUGINDLLNAME)
-TCL16DLL	= $(OUTDIR)\tcl16$(VERSION)$(DBGX).dll
-TCLSH		= $(OUTDIR)\tclsh$(VERSION)$(DBGX).exe
-TCLSHP		= $(OUTDIR)\tclshp$(VERSION)$(DBGX).exe
-TCLPIPEDLL	= $(OUTDIR)\tclpip$(VERSION)$(DBGX).dll
-TCLREGDLL	= $(OUTDIR)\tclreg$(VERSION)$(DBGX).dll
-TCLTEST		= $(OUTDIR)\tcltest.exe
+TCL16DLL	= $(OUTDIR)\$(NAMEPREFIX)16$(VERSION)$(DBGX).dll
+TCLSH		= $(OUTDIR)\$(NAMEPREFIX)sh$(VERSION)$(DBGX).exe
+TCLSHP		= $(OUTDIR)\$(NAMEPREFIX)shp$(VERSION)$(DBGX).exe
+TCLPIPEDLL	= $(OUTDIR)\$(NAMEPREFIX)pip$(VERSION)$(DBGX).dll
+TCLREGDLL	= $(OUTDIR)\$(NAMEPREFIX)reg$(VERSION)$(DBGX).dll
+TCLTEST		= $(OUTDIR)\$(NAMEPREFIX)test.exe
 DUMPEXTS	= $(TMPDIR)\dumpexts.exe
 CAT16		= $(TMPDIR)\cat16.exe
 CAT32		= $(TMPDIR)\cat32.exe
@@ -256,6 +258,12 @@ cflags = $(ccommon) -D_ALPHA_=1
 cvars      = -DWIN32 -D_WIN32
 cvarsmt    = $(cvars) -D_MT
 cvarsdll   = $(cvarsmt) -D_DLL
+
+!IF "$(NODEBUG)" == "1"
+cvarsdll   = $(cvars) -MD
+!ELSE
+cvarsdll   = $(cvars) -MDd
+!ENDIF
 
 ######################################################################
 # Project specific targets

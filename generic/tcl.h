@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: %Z% $Id: tcl.h,v 1.11 1998/07/20 16:54:16 welch Exp $ 
+ * SCCS: %Z% $Id: tcl.h,v 1.12 1998/07/21 15:25:42 escoffon Exp $ 
  */
 
 #ifndef _TCL
@@ -209,15 +209,19 @@ typedef long LONG;
  * Used by windows, maps to a simple declaration on non-windows systems
  */
 #ifdef __WIN32__
-#   if defined(_MSC_VER)
-#      define EXPORT(a,b) __declspec(dllexport) a b
+# ifdef STATIC_BUILD
+#  define EXPORT(a,b) a b
+# else
+#  if defined(_MSC_VER)
+#   define EXPORT(a,b) __declspec(dllexport) a b
+#  else
+#   if defined(__BORLANDC__)
+#	 define EXPORT(a,b) a _export b
 #   else
-#      if defined(__BORLANDC__)
-#	   define EXPORT(a,b) a _export b
-#      else
-#	   define EXPORT(a,b) a b
-#      endif
+#	 define EXPORT(a,b) a b
 #   endif
+#  endif
+# endif
 #else
 #   define EXPORT(a,b) a b
 #endif

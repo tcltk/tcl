@@ -2,7 +2,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 AC_INIT(../generic/tcl.h)
-# SCCS: %Z% $Id: configure.in,v 1.7 1998/07/20 16:54:38 welch Exp $ 
+# SCCS: %Z% $Id: configure.in,v 1.8 1998/07/21 15:26:05 escoffon Exp $ 
 
 TCL_VERSION=8.0
 TCL_MAJOR_VERSION=8
@@ -1167,9 +1167,9 @@ if test "$tcl_ok" = "yes" -a "${SHLIB_SUFFIX}" != "" ; then
     TCL_LD_SEARCH_FLAGS="${LD_SEARCH_FLAGS}"
     eval "TCL_LIB_FILE=libtcl${TCL_SHARED_LIB_SUFFIX}"
     if test "x$DL_OBJS" = "xtclLoadAout.o"; then
-	MAKE_LIB="ar cr ${TCL_LIB_FILE} \${OBJS}"
+	MAKE_LIB="ar cr \${TCL_LIB_FILE} \${OBJS}"
     else
-	MAKE_LIB="\${SHLIB_LD} -o ${TCL_LIB_FILE} \${OBJS} ${SHLIB_LD_LIBS}"
+	MAKE_LIB="\${SHLIB_LD} -o \${TCL_LIB_FILE} \${OBJS} ${SHLIB_LD_LIBS}"
 	RANLIB=":"
     fi
 else
@@ -1188,7 +1188,7 @@ else
     TCL_SHLIB_CFLAGS=""
     TCL_LD_SEARCH_FLAGS=""
     eval "TCL_LIB_FILE=libtcl${TCL_UNSHARED_LIB_SUFFIX}"
-    MAKE_LIB="ar cr ${TCL_LIB_FILE} \${OBJS}"
+    MAKE_LIB="ar cr \${TCL_LIB_FILE} \${OBJS}"
 fi
 
 # tclConfig.sh needs a version of the _LIB_SUFFIX that has been eval'ed
@@ -1203,12 +1203,12 @@ eval "CFG_TCL_UNSHARED_LIB_SUFFIX=${TCL_UNSHARED_LIB_SUFFIX}"
 # up the Tcl library.
 
 if test "${TCL_LIB_VERSIONS_OK}" = "ok"; then
-    TCL_BUILD_LIB_SPEC="-L`pwd` -ltcl${VERSION}\${DBGX}"
-    TCL_LIB_SPEC="-L${exec_prefix}/lib -ltcl${VERSION}\${DBGX}"
+    TCL_LIB_FLAG="-ltcl${VERSION}\${DBGX}"
 else
-    TCL_BUILD_LIB_SPEC="-L`pwd` -ltcl`echo ${VERSION} | tr -d .`\${DBGX}"
-    TCL_LIB_SPEC="-L${exec_prefix}/lib -ltcl`echo ${VERSION} | tr -d .`\${DBGX}"
+    TCL_LIB_FLAG="-ltcl`echo ${VERSION} | tr -d .`\${DBGX}"
 fi
+TCL_BUILD_LIB_SPEC="-L`pwd` \${TCL_LIB_FLAG}"
+TCL_LIB_SPEC="-L${exec_prefix}/lib \${TCL_LIB_FLAG}"
 
 #--------------------------------------------------------------------
 #	The statements below define the symbol TCL_PACKAGE_PATH, which
@@ -1242,6 +1242,7 @@ AC_SUBST(SHLIB_SUFFIX)
 AC_SUBST(TCL_BUILD_LIB_SPEC)
 AC_SUBST(TCL_LD_SEARCH_FLAGS)
 AC_SUBST(TCL_LIB_FILE)
+AC_SUBST(TCL_LIB_FLAG)
 AC_SUBST(TCL_LIB_SPEC)
 AC_SUBST(TCL_LIB_VERSIONS_OK)
 AC_SUBST(TCL_MAJOR_VERSION)
