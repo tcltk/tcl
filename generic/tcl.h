@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.89 2001/04/24 20:59:18 kennykb Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.90 2001/05/28 22:26:43 hobbs Exp $
  */
 
 #ifndef _TCL
@@ -1772,7 +1772,8 @@ typedef struct Tcl_Parse {
 #define TCL_UTF_MAX		3
 
 /*
- * This represents a Unicode character.  
+ * This represents a Unicode character.  Any changes to this should
+ * also be reflected in regcustom.h.
  */
 
 typedef unsigned short Tcl_UniChar;
