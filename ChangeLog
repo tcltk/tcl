@@ -1,7 +1,7 @@
 2002-08-01  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* generic/tclExecute.c: added a reference count for the complete
-	execution stack, instead of Tcl_Preserve/Tcl_Release.
+	execution stack, instead of Tcl_Preserve/Tcl_Release. 
 
 2002-08-01  Mo DeJong  <mdejong@users.sourceforge.net>
 
