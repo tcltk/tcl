@@ -1,3 +1,9 @@
+2004-05-03  Andreas Kupries  <andreask@activestate.com>
+
+	* Applied [SF Tcl Patch 868853], fixing a mem leak in
+	  TtySetOptionProc. Report and Patch provided by Stuart
+	  Cassoff <stwo@users.sf.net>.
+
 2004-05-03  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclProc.c (TclCreateProc): comments corrected.
