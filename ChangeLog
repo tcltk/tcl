@@ -1,3 +1,8 @@
+2004-12-02  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclNamesp.c (numNsCreated): Moved into thread-local
+	storage to remove a global mutex. Part of [FRQ 1077210]
+
 2004-12-01  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclUtil.c (TclGetProcessGlobalValue):	Narrowed the scope
