@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.20 2004/01/12 18:21:08 msofer Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.21 2004/01/12 18:50:15 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -632,18 +632,14 @@ CompileLandOrLorExpr(exprTokenPtr, opIndex, infoPtr, envPtr, endPtrPtr)
     tokenPtr += (tokenPtr->numComponents + 1);
 	    
     /*
-     * If the second operand has the same boolean value as the first,
-     * jump to the short-circuit target.
+     * The result is the boolean value of the second operand. We 
+     * code this in a somewhat contorted manner to be able to reuse
+     * the shortCircuit value and save one INST_JUMP.
      */
 
     TclEmitForwardJump(envPtr,
 	    ((opIndex==OP_LAND)? TCL_FALSE_JUMP : TCL_TRUE_JUMP),
 	    &shortCircuitFixup2);
-
-    /*
-     * Push the boolean value of the second operand, jump to the end.
-     */
-
 
     if (opIndex == OP_LAND) {
 	TclEmitPush(TclRegisterNewLiteral(envPtr, "1", 1), envPtr);
@@ -653,14 +649,14 @@ CompileLandOrLorExpr(exprTokenPtr, opIndex, infoPtr, envPtr, endPtrPtr)
     TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, &endFixup);
 
     /*
-     * Fixup the short-circuit jumps and push the correct boolean.
+     * Fixup the short-circuit jumps and push the shortCircuit value.
      * Note that shortCircuitFixup2 is always a short jump.
      */
 
     TclFixupForwardJumpToHere(envPtr, &shortCircuitFixup2, 127);
     if (TclFixupForwardJumpToHere(envPtr, &shortCircuitFixup, 127)) {
 	/*
-	 * Short-circuit jump grown by 3 bytes: update endFixup.
+	 * shortCircuit jump grown by 3 bytes: update endFixup.
 	 */
 	    
 	 endFixup.codeOffset += 3;
