@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: open.n,v 1.13 2001/10/15 17:35:05 hobbs Exp $
+'\" RCS: @(#) $Id: open.n,v 1.14 2002/02/04 18:30:12 andreas_kupries Exp $
 '\" 
 .so man.macros
 .TH open n 8.3 Tcl "Tcl Built-In Commands"
@@ -130,6 +130,8 @@ output unless overridden by the command.
 If read-only access is used (e.g. \fIaccess\fR is \fBr\fR),
 standard input for the pipeline is taken from the current standard
 input unless overridden by the command.
+The id of the spawned process is accessible through the \fBpid\fR
+command, using the channel id returned by \fBopen\fR as argument.
 
 .VS 8.4
 .SH "SERIAL COMMUNICATIONS"
@@ -232,7 +234,7 @@ applications on the various platforms
 
 .SH "SEE ALSO"
 file(n), close(n), filename(n), fconfigure(n), gets(n), read(n),
-puts(n), exec(n), fopen(1)
+puts(n), exec(n), pid(n), fopen(1)
 
 .SH KEYWORDS
 access mode, append, create, file, non-blocking, open, permissions,
