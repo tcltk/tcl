@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * SCCS: %Z% $Id: tclInt.h,v 1.7 1998/07/06 14:37:29 escoffon Exp $ 
+ * SCCS: %Z% $Id: tclInt.h,v 1.8 1998/07/09 13:41:38 suresh Exp $ 
  */
 
 #ifndef _TCLINT
@@ -1242,14 +1242,6 @@ extern long 		tclObjsFreed;
 extern char *		tclEmptyStringRep;
 
 /*
- * A pointer to a string that holds an initialization script that if non-NULL
- * is evaluated in Tcl_Init() prior to the the built-in initialization script
- * that is defined in the file "generic/tclInitScript.h".
- */
-
-extern char *		tclPreInitScript;
-
-/*
  *----------------------------------------------------------------
  * Procedures shared among Tcl modules but not used by the outside
  * world:
@@ -1505,6 +1497,7 @@ EXTERN Tcl_Obj *	TclSetElementOfIndexedArray _ANSI_ARGS_((
 EXTERN Tcl_Obj *	TclSetIndexedScalar _ANSI_ARGS_((Tcl_Interp *interp,
 			    int localIndex, Tcl_Obj *objPtr,
 			    int leaveErrorMsg));
+EXTERN char *		TclSetPreInitScript _ANSI_ARGS_((char *string));
 EXTERN void		TclSetupEnv _ANSI_ARGS_((Tcl_Interp *interp));
 EXTERN int		TclSockGetPort _ANSI_ARGS_((Tcl_Interp *interp,
 		            char *string, char *proto, int *portPtr));
