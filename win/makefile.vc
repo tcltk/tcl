@@ -12,7 +12,7 @@
 # Copyright (c) 2001 Tomasoft Engineering.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.71 2001/11/10 04:11:15 davygrvy Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.72 2001/11/10 10:38:47 davygrvy Exp $
 #------------------------------------------------------------------------------
 
 !if "$(MSVCDIR)" == ""
@@ -126,12 +126,12 @@ the environment.  Jump to this line to read the new instructions.
 #
 #	if "%MSVCDir%" == "" call c:\progra~1\micros~1\vc98\bin\vcvars32.bat
 #	set INSTALLDIR=C:\tclTestArea
-#	nmake -nologo -f makefile.vc %1 release winhelp
-#	nmake -nologo -f makefile.vc %1 release OPTS=static,linkexten
-#	nmake -nologo -f makefile.vc %1 core dlls OPTS=static,msvcrt
-#	nmake -nologo -f makefile.vc %1 core OPTS=static,threads
-#	nmake -nologo -f makefile.vc %1 core OPTS=static,msvcrt,threads
-#	nmake -nologo -f makefile.vc %1 shell OPTS=threads
+#	nmake -nologo -f makefile.vc release winhelp
+#	nmake -nologo -f makefile.vc release   OPTS=static,linkexten
+#	nmake -nologo -f makefile.vc core dlls OPTS=static,msvcrt
+#	nmake -nologo -f makefile.vc core      OPTS=static,threads
+#	nmake -nologo -f makefile.vc core      OPTS=static,msvcrt,threads
+#	nmake -nologo -f makefile.vc shell     OPTS=threads
 #	pause
 #
 #
@@ -150,6 +150,14 @@ the environment.  Jump to this line to read the new instructions.
 ###############################################################################
 #==============================================================================
 #------------------------------------------------------------------------------
+
+!if !exist("makefile.vc")
+MSG = ^
+You must run this makefile only from the directory it is in.^
+Please `cd` to its location first.
+!error $(MSG) 
+!endif
+
 PROJECT	= tcl
 !include "rules.vc"
 
@@ -413,13 +421,9 @@ $(TCLIMPLIB): $(TCLLIB)
 
 $(TCLLIB): $(TCLOBJS)
 !if $(STATIC_BUILD)
-	$(lib32) -nologo -out:$@ @<<
-$**
-<<
+	$(lib32) -nologo -out:$@ $**
 !else
-	$(link32) $(ldebug) $(dlllflags) -out:$@ $(winlibs) @<<
-$**
-<<
+	$(link32) $(ldebug) $(dlllflags) -out:$@ $(winlibs) $**
 	-@del $*.exp
 !endif
 
@@ -428,15 +432,11 @@ $(TCLSTUBLIB): $(TCLSTUBOBJS)
 	$(lib32) -nologo -out:$@ $(TCLSTUBOBJS)
 
 $(TCLSH): $(TCLSHOBJS) $(TCLIMPLIB)
-	$(link32) $(ldebug) $(conlflags) -stack:2300000 -out:$@ $(baselibs) @<<
-$**
-<<
+	$(link32) $(ldebug) $(conlflags) -stack:2300000 -out:$@ $(baselibs) $**
 
 
 $(TCLTEST): $(TCLTESTOBJS) $(TCLIMPLIB)
-	$(link32) $(ldebug) $(conlflags) -stack:2300000 -out:$@ $(baselibs) @<<
-$**
-<<
+	$(link32) $(ldebug) $(conlflags) -stack:2300000 -out:$@ $(baselibs) $**
 
 
 $(TCLPIPEDLL): $(WINDIR)\stub16.c
@@ -701,17 +701,11 @@ $<
 #---------------------------------------------------------------------
 
 clean:
-	-@$(RM) $(OUT_DIR)\*.exp 
-	-@$(RM) $(OUT_DIR)\*.lib 
-	-@$(RM) $(OUT_DIR)\*.dll 
-	-@$(RM) $(OUT_DIR)\*.exe
-	-@$(RM) $(OUT_DIR)\*.pdb
-	-@$(RM) $(TMP_DIR)\*.pch
-	-@$(RM) $(TMP_DIR)\*.obj
-	-@$(RM) $(TMP_DIR)\*.res
-	-@$(RM) $(TMP_DIR)\*.exe
-	-@$(RMDIR) $(OUT_DIR)
 	-@$(RMDIR) $(TMP_DIR)
+
+hose: clean
+	-@$(RMDIR) $(OUT_DIR)
+
 
 .SUFFIXES:
 .SUFFIXES:.c .rc
