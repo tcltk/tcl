@@ -3,7 +3,7 @@
 # Default system startup file for Tcl-based applications.  Defines
 # "unknown" procedure and auto-load facilities.
 #
-# RCS: @(#) $Id: init.tcl,v 1.62 2004/06/11 21:30:08 dgp Exp $
+# RCS: @(#) $Id: init.tcl,v 1.63 2004/06/16 21:20:42 dgp Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
@@ -164,7 +164,8 @@ if {[llength [info commands tclLog]] == 0} {
 #		command, including the command name.
 
 proc unknown args {
-    global auto_noexec auto_noload env unknown_pending tcl_interactive
+    variable ::tcl::UnknownPending
+    global auto_noexec auto_noload env tcl_interactive
     global errorCode errorInfo
 
     # If the command word has the form "namespace inscope ns cmd"
@@ -192,18 +193,18 @@ proc unknown args {
 	#
 	# Make sure we're not trying to load the same proc twice.
 	#
-	if {[info exists unknown_pending($name)]} {
+	if {[info exists UnknownPending($name)]} {
 	    return -code error "self-referential recursion in \"unknown\" for command \"$name\"";
 	}
-	set unknown_pending($name) pending;
+	set UnknownPending($name) pending;
 	set ret [catch {auto_load $name [uplevel 1 {::namespace current}]} msg]
-	unset unknown_pending($name);
+	unset UnknownPending($name);
 	if {$ret != 0} {
 	    append errorInfo "\n    (autoloading \"$name\")"
 	    return -code $ret -errorcode $errorCode -errorinfo $errorInfo $msg
 	}
-	if {![array size unknown_pending]} {
-	    unset unknown_pending
+	if {![array size UnknownPending]} {
+	    unset UnknownPending
 	}
 	if {$msg} {
 	    set errorCode $savedErrorCode
@@ -338,7 +339,7 @@ proc unknown args {
 #                       for instance. If not given, namespace current is used.
 
 proc auto_load {cmd {namespace {}}} {
-    global auto_index auto_oldpath auto_path
+    global auto_index auto_path
 
     if {[string length $namespace] == 0} {
 	set namespace [uplevel 1 [list ::namespace current]]
@@ -390,7 +391,8 @@ proc auto_load {cmd {namespace {}}} {
 # None.
 
 proc auto_load_index {} {
-    global auto_index auto_oldpath auto_path errorInfo errorCode
+    variable ::tcl::auto_oldpath
+    global auto_index auto_path errorInfo errorCode
 
     if {[info exists auto_oldpath] && \
 	    [string equal $auto_oldpath $auto_path]} {
