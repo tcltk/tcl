@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.194 2005/01/19 23:15:14 dkf Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.195 2005/01/21 22:25:09 andreas_kupries Exp $
  */
 
 #ifndef _TCL
@@ -1416,6 +1416,11 @@ typedef struct Tcl_Time {
 
 typedef void (Tcl_SetTimerProc) _ANSI_ARGS_((Tcl_Time *timePtr));
 typedef int (Tcl_WaitForEventProc) _ANSI_ARGS_((Tcl_Time *timePtr));
+
+/* TIP #233 (Virtualized Time)
+ */
+typedef void (Tcl_GetTimeProc)   _ANSI_ARGS_ ((Tcl_Time* timebuf, ClientData clientData));
+typedef void (Tcl_ScaleTimeProc) _ANSI_ARGS_ ((Tcl_Time* timebuf, ClientData clientData));
 
 
 /*
