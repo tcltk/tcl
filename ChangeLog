@@ -1,5 +1,8 @@
 2004-06-18  Don Porter  <dgp@users.sourceforge.net>
 
+	* tests/load.test:	Relaxed strictness of error message matching
+	for test load-2.3 so that it will pass on Mac OSX.
+
 	* generic/tclEncoding.c: Static TclFindEncodings -> FindEncodings.
 	* generic/tclInt.h:	Updated TclpFindExecutable() so that failed
 	* generic/tclUtil.c:	attempts to find the executable are saved
