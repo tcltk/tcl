@@ -13,7 +13,7 @@
 # Copyright (c) 2000 by Ajuba Solutions
 # All rights reserved.
 # 
-# RCS: @(#) $Id: tcltest.tcl,v 1.31 2001/08/09 01:06:42 dgp Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.32 2001/08/22 23:55:45 hobbs Exp $
 
 # create the "tcltest" namespace for all testing variables and procedures
 
@@ -1413,7 +1413,7 @@ proc tcltest::initConstraints {} {
     }
 
     # Set nonBlockFiles constraint: 1 means this platform supports
-    # ting files into nonblocking mode.
+    # setting files into nonblocking mode.
 
     if {[catch {set f [open defs r]}]} {
 	tcltest::testConstraint nonBlockFiles 1
@@ -1433,14 +1433,10 @@ proc tcltest::initConstraints {} {
     # potential problem with select is apparently interfering.
     # (Mark Diekhans).
 
-    if {[string equal $tcl_platform(platform) "unix"]} {
-	if {[catch {exec uname -X | fgrep {Release = 3.2v}}] == 0} {
+    tcltest::testConstraint asyncPipeClose 1
+    if {[string equal $tcl_platform(platform) "unix"] \
+	    && ([catch {exec uname -X | fgrep {Release = 3.2v}}] == 0)} {
 	    tcltest::testConstraint asyncPipeClose 0
-	} else {
-	    tcltest::testConstraint asyncPipeClose 1
-	}
-    } else {
-	tcltest::testConstraint asyncPipeClose 1
     }
 
     # Test to see if we have a broken version of sprintf with respect
@@ -1460,53 +1456,30 @@ proc tcltest::initConstraints {} {
     }
     if {([tcltest::testConstraint unixExecs] == 1) && \
 	    ([string equal $tcl_platform(platform) "windows"])} {
-	if {[catch {exec cat defs}] == 1} {
+	set file "_tcl_test_remove_me.txt"
+	if {[catch {
+	    set fid [open $file w]
+	    puts $fid "hello"
+	    close $fid
+	}]} {
+	    tcltest::testConstraint unixExecs 0
+	} elseif {
+	    [catch {exec cat $file}] ||
+	    [catch {exec echo hello}] ||
+	    [catch {exec sh -c echo hello}] ||
+	    [catch {exec wc $file}] ||
+	    [catch {exec sleep 1}] ||
+	    [catch {exec echo abc > $file}] ||
+	    [catch {exec chmod 644 $file}] ||
+	    [catch {exec rm $file}] ||
+	    [string equal {} [auto_execok mkdir]] ||
+	    [string equal {} [auto_execok fgrep]] ||
+	    [string equal {} [auto_execok grep]] ||
+	    [string equal {} [auto_execok ps]]
+	    } {
 	    tcltest::testConstraint unixExecs 0
 	}
-	if {([tcltest::testConstraint unixExecs] == 1) && \
-		([catch {exec echo hello}] == 1)} {
-	    tcltest::testConstraint unixExecs 0
-	}
-	if {([tcltest::testConstraint unixExecs] == 1) && \
-		([catch {exec sh -c echo hello}] == 1)} {
-	    tcltest::testConstraint unixExecs 0
-	}
-	if {([tcltest::testConstraint unixExecs] == 1) && \
-		([catch {exec wc defs}] == 1)} {
-	    tcltest::testConstraint unixExecs 0
-	}
-	if {[tcltest::testConstraint unixExecs] == 1} {
-	    exec echo hello > removeMe
-	    if {[catch {exec rm removeMe}] == 1} {
-		tcltest::testConstraint unixExecs 0
-	    }
-	}
-	if {([tcltest::testConstraint unixExecs] == 1) && \
-		([catch {exec sleep 1}] == 1)} {
-	    tcltest::testConstraint unixExecs 0
-	}
-	if {([tcltest::testConstraint unixExecs] == 1) && \
-		([catch {exec fgrep unixExecs defs}] == 1)} {
-	    tcltest::testConstraint unixExecs 0
-	}
-	if {([tcltest::testConstraint unixExecs] == 1) && \
-		([catch {exec ps}] == 1)} {
-	    tcltest::testConstraint unixExecs 0
-	}
-	if {([tcltest::testConstraint unixExecs] == 1) && \
-		([catch {exec echo abc > removeMe}] == 0) && \
-		([catch {exec chmod 644 removeMe}] == 1) && \
-		([catch {exec rm removeMe}] == 0)} {
-	    tcltest::testConstraint unixExecs 0
-	} else {
-	    catch {exec rm -f removeMe}
-	}
-	if {([tcltest::testConstraint unixExecs] == 1) && \
-		([catch {exec mkdir removeMe}] == 1)} {
-	    tcltest::testConstraint unixExecs 0
-	} else {
-	    catch {exec rm -r removeMe}
-	}
+	file delete -force $file
     }
 
     # Locate tcltest executable
@@ -1528,7 +1501,7 @@ proc tcltest::initConstraints {} {
 	}
 	close $f
 
-	set f [open "|[list $tcltest tmp]" r]
+	set f [open "|[list $tcltest::tcltest tmp]" r]
 	close $f
 	
 	tcltest::testConstraint stdio 1
