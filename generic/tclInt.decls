@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.20 2000/03/31 08:52:04 hobbs Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.20.4.1 2000/07/17 22:59:41 hobbs Exp $
 
 library tcl
 
@@ -577,14 +577,16 @@ declare 153 generic {
     Tcl_Obj *TclGetLibraryPath(void)
 }
 
-declare 154 generic {
-    int TclTestChannelCmd(ClientData clientData,
-    Tcl_Interp *interp, int argc, char **argv)
-}
-declare 155 generic {
-    int TclTestChannelEventCmd(ClientData clientData, \
-	    Tcl_Interp *interp, int argc, char **argv)
-}
+# moved to tclTest.c in 8.3.2/8.4a2
+#declare 154 generic {
+#    int TclTestChannelCmd(ClientData clientData,
+#    Tcl_Interp *interp, int argc, char **argv)
+#}
+#declare 155 generic {
+#    int TclTestChannelEventCmd(ClientData clientData, \
+#	     Tcl_Interp *interp, int argc, char **argv)
+#}
+
 declare 156 generic {
     void TclRegError (Tcl_Interp *interp, char *msg, \
 	    int status)
@@ -601,6 +603,15 @@ declare 159 generic {
 declare 160 generic {
     int TclpMatchFilesTypes(Tcl_Interp *interp, char *separators, \
 	    Tcl_DString *dirPtr, char *pattern, char *tail, GlobTypeData *types)
+}
+
+# new in 8.3.2/8.4a2
+declare 161 generic {
+    int TclChannelTransform(Tcl_Interp *interp, Tcl_Channel chan, \
+	    Tcl_Obj *cmdObjPtr)
+}
+declare 162 generic {
+    void TclChannelEventScriptInvoker(ClientData clientData, int flags)
 }
 
 ##############################################################################

@@ -868,8 +868,8 @@ delete/write {} *ignored*}
 
 # cleanup
 foreach file [list dummy dummyout __echo_srv__.tcl] {
-    #::tcltest::removeFile $file
+    ::tcltest::removeFile $file
 }
-#::tcltest::restoreState
-#::tcltest::cleanupTests
+::tcltest::restoreState
+::tcltest::cleanupTests
 return

@@ -1,3 +1,29 @@
+2000-07-17  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* unix/Makefile.in:
+	* win/Makefile.in:
+	* win/makefile.vc: added tclIOGT.c to objects list to compile.
+
+	* generic/tclStubInit.c:
+	* generic/tclIntDecls.h:
+	* generic/tclInt.decls: commented out internal decls for
+	TclTestChannelCmd and TclTestChannelEventCmd as they were moved to
+	tclTest.c.  Added new decls for TclChannelEventScriptInvoker and
+	TclChannelTransform.
+
+	* generic/tclIO.h: new file that contains the main internal
+	structures of Tcl_Channel code to allow for multiple files to
+	access them.
+	* generic/tclTest.c:
+	* generic/tclIO.c: broke into 3 files - tclIO.c core code, tclIO.h
+	header code, and tclIOGT.c - the giot test code from Kupries.  The
+	channel test code also moved to tclTest.c.
+	* generic/tclIO.c (CloseChannel): stopped masking out of the
+	TCL_READABLE|TCL_WRITABLE bits from the state flags in
+	CloseChannel, instead adding extra intelligence to
+	CheckChannelErrors with a new CHANNEL_RAW_MODE bit for special
+	behavior when called from Raw channel APIs.
+
 2000-07-13  Jeff Hobbs  <hobbs@scriptics.com>
 
 	* generic/tclIO.c (StackSetBlockMode): moved set of chanPtr
