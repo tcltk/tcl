@@ -1,5 +1,10 @@
 2003-09-29  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
+	* generic/tclPathObj.c (TclNativePathInFilesystem,TclFSGetPathType): 
+	* generic/tclIOUtil.c (TclNativeDupInternalRep,TclGetPathType): Rename
+	to make sure function names won't interfere with other non-Tcl
+	code (reported by George Staplin)
+
 	TIP#121 IMPLEMENTATION FROM JOE MISTACHKIN
 
 	* generic/tclEvent.c (Tcl_SetExitProc,Tcl_Exit): Implementation of
