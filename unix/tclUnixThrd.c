@@ -40,7 +40,7 @@ static pthread_mutex_t initLock = PTHREAD_MUTEX_INITIALIZER;
  */
 
 static pthread_mutex_t allocLock = PTHREAD_MUTEX_INITIALIZER; 
-static Tcl_Mutex allocMutex;
+TCL_DECLARE_MUTEX(allocMutex)
 
 /*
  * These are for the critical sections inside this file.

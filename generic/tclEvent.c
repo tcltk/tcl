@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEvent.c,v 1.1.2.5 1998/12/10 21:21:43 stanton Exp $
+ * RCS: @(#) $Id: tclEvent.c,v 1.1.2.6 1998/12/12 01:36:56 lfb Exp $
  */
 
 #include "tclInt.h"
@@ -76,9 +76,7 @@ typedef struct ExitHandler {
 static ExitHandler *firstExitPtr = NULL;
 				/* First in list of all exit handlers for
 				 * application. */
-#ifdef TCL_THREADS
-static Tcl_Mutex exitMutex;
-#endif
+TCL_DECLARE_MUTEX(exitMutex)
 
 /*
  * This variable is set to 1 when Tcl_Finalize is called, and at the end of

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPreserve.c,v 1.1.2.4 1998/12/10 21:21:54 stanton Exp $
+ * RCS: @(#) $Id: tclPreserve.c,v 1.1.2.5 1998/12/12 01:37:02 lfb Exp $
  */
 
 #include "tclInt.h"
@@ -40,9 +40,7 @@ static int spaceAvl = 0;	/* Total number of structures available
 static int inUse = 0;		/* Count of structures currently in use
 				 * in refArray. */
 #define INITIAL_SIZE 2
-#ifdef TCL_THREADS
-static Tcl_Mutex preserveMutex;	/* To protect the above statics */
-#endif
+TCL_DECLARE_MUTEX(preserveMutex)/* To protect the above statics */
 
 /*
  * The following data structure is used to keep track of whether an

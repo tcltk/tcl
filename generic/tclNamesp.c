@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.1.2.4 1998/12/10 21:21:50 stanton Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.1.2.5 1998/12/12 01:37:00 lfb Exp $
  */
 
 #include "tclInt.h"
@@ -46,9 +46,7 @@
  */
 
 static long numNsCreated = 0; 
-#ifdef TCL_THREADS
-static Tcl_Mutex nsMutex;
-#endif
+TCL_DECLARE_MUTEX(nsMutex)
 
 /*
  * This structure contains a cached pointer to a namespace that is the

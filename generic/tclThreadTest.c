@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThreadTest.c,v 1.1.2.4 1998/12/11 00:44:57 stanton Exp $
+ * RCS: @(#) $Id: tclThreadTest.c,v 1.1.2.5 1998/12/12 01:37:03 lfb Exp $
  */
 
 #include "tclInt.h"
@@ -109,7 +109,7 @@ static char *errorProcString;
  * guarded by this mutex. 
  */
 
-static Tcl_Mutex threadMutex;
+TCL_DECLARE_MUTEX(threadMutex)
 
 #undef TCL_STORAGE_CLASS
 #define TCL_STORAGE_CLASS DLLEXPORT

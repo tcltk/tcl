@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.1.2.6 1998/12/10 21:57:47 stanton Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.1.2.7 1998/12/12 01:36:59 lfb Exp $
  */
 
 #include <stdio.h>
@@ -21,9 +21,7 @@
  */
 
 static int aliasCounter = 0;
-#ifdef TCL_THREADS
-static Tcl_Mutex cntMutex;
-#endif
+TCL_DECLARE_MUTEX(cntMutex)
 
 /*
  * struct Alias:

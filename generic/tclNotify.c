@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNotify.c,v 1.1.2.5 1998/12/10 21:21:52 stanton Exp $
+ * RCS: @(#) $Id: tclNotify.c,v 1.1.2.6 1998/12/12 01:37:01 lfb Exp $
  */
 
 #include "tclInt.h"
@@ -80,9 +80,7 @@ static Tcl_ThreadDataKey dataKey;
  */
 
 static ThreadSpecificData *firstNotifierPtr;
-#ifdef TCL_THREADS
-static Tcl_Mutex listLock;
-#endif
+TCL_DECLARE_MUTEX(listLock)
 
 /*
  * Declarations for routines used only in this file.

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclAsync.c,v 1.1.2.4 1998/12/10 21:21:30 stanton Exp $
+ * RCS: @(#) $Id: tclAsync.c,v 1.1.2.5 1998/12/12 01:36:53 lfb Exp $
  */
 
 #include "tclInt.h"
@@ -42,9 +42,7 @@ static AsyncHandler *firstHandler;	/* First handler defined for process,
 					 * or NULL if none. */
 static AsyncHandler *lastHandler;	/* Last handler or NULL. */
 
-#ifdef TCL_THREADS
-static Tcl_Mutex asyncMutex;		/* Process-wide async handler lock */
-#endif
+TCL_DECLARE_MUTEX(asyncMutex)           /* Process-wide async handler lock */
 
 /*
  * The variable below is set to 1 whenever a handler becomes ready and

@@ -40,7 +40,7 @@ static CRITICAL_SECTION initLock;
  */
 
 static CRITICAL_SECTION allocLock;
-static Tcl_Mutex allocMutex;
+TCL_DECLARE_MUTEX(allocMutex)
 
 
 /*

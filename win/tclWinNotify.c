@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinNotify.c,v 1.1.2.2 1998/09/24 23:59:52 stanton Exp $
+ * RCS: @(#) $Id: tclWinNotify.c,v 1.1.2.3 1998/12/12 01:37:05 lfb Exp $
  */
 
 #include "tclWinInt.h"
@@ -57,7 +57,7 @@ static int notifierCount = 0;
  * as well as the pending flag for any specific notifier.
  */
 
-static Tcl_Mutex notifierMutex;
+TCL_DECLARE_MUTEX(notifierMutex)
 
 /*
  * Static routines defined in this file.

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinSock.c,v 1.1.2.3 1998/12/04 01:19:36 stanton Exp $
+ * RCS: @(#) $Id: tclWinSock.c,v 1.1.2.4 1998/12/12 01:37:06 lfb Exp $
  */
 
 #include "tclWinInt.h"
@@ -23,7 +23,7 @@ static int initialized = 0;
 static int  hostnameInitialized = 0;
 static char hostname[255];	/* This buffer should be big enough for
                                  * hostname plus domain name. */
-static Tcl_Mutex socketMutex;
+TCL_DECLARE_MUTEX(socketMutex)
 
 /*
  * The following structure contains pointers to all of the WinSock API entry

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixSock.c,v 1.1.2.4 1998/12/10 21:21:58 stanton Exp $
+ * RCS: @(#) $Id: tclUnixSock.c,v 1.1.2.5 1998/12/12 01:37:04 lfb Exp $
  */
 
 #include "tcl.h"
@@ -41,9 +41,7 @@
 
 static char hostname[TCL_HOSTNAME_LEN + 1];
 static int  hostnameInited = 0;
-#ifdef TCL_THREADS
-static Tcl_Mutex hostMutex;
-#endif
+TCL_DECLARE_MUTEX(hostMutex)
 
 
 /*

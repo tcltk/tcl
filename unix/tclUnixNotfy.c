@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixNotfy.c,v 1.1.2.5 1998/12/10 21:21:56 stanton Exp $
+ * RCS: @(#) $Id: tclUnixNotfy.c,v 1.1.2.6 1998/12/12 01:37:04 lfb Exp $
  */
 
 #include "tclInt.h"
@@ -136,7 +136,7 @@ static int triggerPipe = -1;
  * The notifierMutex locks access to all of the global notifier state. 
  */
 
-static Tcl_Mutex notifierMutex;
+TCL_DECLARE_MUTEX(notifierMutex)
 
 /*
  * The notifier thread signals the notifierCV when it has finished

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.1.2.8 1998/11/11 04:08:21 stanton Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.1.2.9 1998/12/12 01:36:58 lfb Exp $
  */
 
 #ifndef _TCLINT
@@ -782,17 +782,6 @@ typedef struct MathFunc {
 #ifdef TCL_THREADS
 EXTERN void TclpConditionNotify _ANSI_ARGS_((Tcl_Condition *condPtr));
 EXTERN void TclpConditionWait _ANSI_ARGS_((Tcl_Condition *condPtr, Tcl_Mutex *mutexPtr, Tcl_Time *timePtr));
-#endif
-
-/*
- * Special macro to define mutexes, that doesn't do anything
- * if we are not using threads.
- */
-
-#ifdef TCL_THREADS
-#define TCL_DECLARE_MUTEX(name) static Tcl_Mutex name;
-#else
-#define TCL_DECLARE_MUTEX(name)
 #endif
 
 /*

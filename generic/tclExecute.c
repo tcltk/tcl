@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.1.2.6 1998/12/10 21:21:43 stanton Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.1.2.7 1998/12/12 01:36:57 lfb Exp $
  */
 
 #include "tclInt.h"
@@ -48,9 +48,7 @@ int errno;
  */
 
 static int execInitialized = 0;
-#ifdef TCL_THREADS
-static Tcl_Mutex execMutex;
-#endif
+TCL_DECLARE_MUTEX(execMutex)
 
 /*
  * Variable that controls whether execution tracing is enabled and, if so,

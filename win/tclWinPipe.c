@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPipe.c,v 1.1.2.4 1998/12/04 02:59:54 stanton Exp $
+ * RCS: @(#) $Id: tclWinPipe.c,v 1.1.2.5 1998/12/12 01:37:05 lfb Exp $
  */
 
 #include "tclWinInt.h"
@@ -25,7 +25,7 @@
  */
 
 static int initialized = 0;
-static Tcl_Mutex procMutex;
+TCL_DECLARE_MUTEX(procMutex)
 
 /*
  * The following defines identify the various types of applications that 

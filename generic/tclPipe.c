@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPipe.c,v 1.1.2.4 1998/12/10 21:21:53 stanton Exp $
+ * RCS: @(#) $Id: tclPipe.c,v 1.1.2.5 1998/12/12 01:37:02 lfb Exp $
  */
 
 #include "tclInt.h"
@@ -32,9 +32,7 @@ typedef struct Detached {
 } Detached;
 
 static Detached *detList = NULL;	/* List of all detached proceses. */
-#ifdef TCL_THREADS
-static Tcl_Mutex pipeMutex;		/* Guard access to detList. */
-#endif
+TCL_DECLARE_MUTEX(pipeMutex)		/* Guard access to detList. */
 
 /*
  * Declarations for local procedures defined in this file:
