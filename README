@@ -1,11 +1,11 @@
 README:  Tcl
     This is the Tcl 8.4a3 source distribution.
     You can get any release of Tcl from:
-        http://dev.scriptics.com/registration/<version>.tml
+        ftp://ftp.scriptics.com/pub/tcl/
     Tcl/Tk is also available through NetCVS:
 	http://tcl.sourceforge.net/
 
-RCS: @(#) $Id: README,v 1.35 2001/04/02 01:59:55 hobbs Exp $
+RCS: @(#) $Id: README,v 1.36 2001/04/03 07:11:39 hobbs Exp $
 
 Contents
 --------
@@ -44,7 +44,7 @@ and selling it either in whole or in part.  See the file
 "license.terms" for complete information.
 
 2. Documentation
----------------
+----------------
 
 Extensive documentation is available at our website.
 The home page for this release, including new features, is

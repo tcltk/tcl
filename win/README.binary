@@ -1,6 +1,6 @@
 Tcl/Tk 8.4 for Windows, Binary Distribution
 
-RCS: @(#) $Id: README.binary,v 1.22 2001/04/02 01:59:55 hobbs Exp $ 
+RCS: @(#) $Id: README.binary,v 1.23 2001/04/03 07:11:40 hobbs Exp $ 
 
 1. Introduction
 --------------- 
@@ -16,8 +16,7 @@ and most powerful way to create GUI applications that run on PCs, Unix,
 and the Macintosh.  Tcl can also be used for a variety of web-related
 tasks and for creating powerful command languages for applications.
 
-Tcl is maintained, enhanced, and distributed freely as a service to the
-Tcl community by Scriptics Corporation.
+Tcl is maintained, enhanced, and distributed freely by the Tcl community.
 
 2. Documentation
 ----------------
@@ -137,6 +136,3 @@ and go to the Mailing Lists page.  There are also Special Interest Groups
 (SIGs) setup for these topics and more at:
 
        http://dev.scriptics.com/
-
-
-
