@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.1.2.19 1999/03/13 18:23:34 welch Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.1.2.20 1999/03/17 20:16:55 welch Exp $
 
 # Current Tcl version;  used in various names.
 
@@ -1110,6 +1110,17 @@ dist: $(UNIX_DIR)/configure
 		$(DISTDIR)/unix/dltest
 	cp -p $(UNIX_DIR)/dltest/configure.in $(UNIX_DIR)/dltest/configure \
 		$(UNIX_DIR)/dltest/README $(DISTDIR)/unix/dltest
+	mkdir $(DISTDIR)/tools
+	cp -p $(TOP_DIR)/tools/Makefile.in \
+	    $(TOP_DIR)/tools/README \
+	    $(TOP_DIR)/tools/configure \
+	    $(TOP_DIR)/tools/configure.in \
+	    $(TOP_DIR)/tools/*.tcl \
+	    $(TOP_DIR)/tools/man2tcl.c \
+	    $(TOP_DIR)/tools/tcl.wse \
+	    $(TOP_DIR)/tools/*.bmp \
+	    $(TOP_DIR)/tools/tcl.hpj.in \
+		$(DISTDIR)/tools
 
 #
 # The following target can only be used for non-patch releases.  Use
