@@ -1,3 +1,13 @@
+2004-11-22  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* unix/configure: Regen.
+	* unix/tcl.m4 (SC_ENABLE_THREADS): Check for a 2
+	argument version of readdir_r that is known to
+	exists under IRIX 5.3.
+	* unix/tclUnixThrd.c (TclpReaddir): Use either
+	2 arg or 3 arg version of readdir_r.
+	[Bug 1001325]
+
 2004-11-22  Don Porter  <dgp@users.sourceforge.net>
 
 	* unix/tclUnixInit.c (TclpInitLibraryPath):	Purged dead code that
