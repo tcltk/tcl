@@ -18,7 +18,7 @@ SGI, as well as PCs running Linux, BSDI, and SCO UNIX.  To compile for
 a PC running Windows, see the README file in the directory ../win.  To
 compile for a Macintosh, see the README file in the directory ../mac.
 
-RCS: @(#) $Id: README,v 1.5 1999/04/24 01:46:54 stanton Exp $
+RCS: @(#) $Id: README,v 1.6 1999/05/17 20:22:29 welch Exp $
 
 How To Compile And Install Tcl:
 -------------------------------
@@ -30,7 +30,17 @@ How To Compile And Install Tcl:
     platform, or if you have applied patches, type "make distclean" to
     discard all the configuration information computed previously.
 
-(c) Type "./configure".  This runs a configuration script created by GNU
+(c) If there is no "configure" script in this directory it is because you
+    are working out of the source repository (i.e., CVS) instead of working
+    from a source distribution.  In this case you need to use "autoconf"
+    to generate the configure script.  It runs with no arguments.
+    Remember to run it here and down in the dltest directory.
+
+    (in the tcl/unix directory)
+    autoconf
+    cd dltest ; autoconf ; cd ..
+
+(d) Type "./configure".  This runs a configuration script created by GNU
     autoconf, which configures Tcl for your system and creates a
     Makefile.  The configure script allows you to customize the Tcl
     configuration for your site; for details on how you can do this,
@@ -57,11 +67,11 @@ How To Compile And Install Tcl:
     Note: be sure to use only absolute path names (those starting with "/")
     in the --prefix and --exec_prefix options.
 
-(d) Type "make".  This will create a library archive called "libtcl.a"
+(e) Type "make".  This will create a library archive called "libtcl.a"
     or "libtcl.so" and an interpreter application called "tclsh" that
     allows you to type Tcl commands interactively or execute script files.
 
-(e) If the make fails then you'll have to personalize the Makefile
+(f) If the make fails then you'll have to personalize the Makefile
     for your site or possibly modify the distribution in other ways.
     First check the file "porting.notes" to see if there are hints
     for compiling on your system.  Then look at the porting Web page
@@ -69,7 +79,7 @@ How To Compile And Install Tcl:
     are comments at the beginning of it that describe the things you
     might want to change and how to change them.
 
-(f) Type "make install" to install Tcl binaries and script files in
+(g) Type "make install" to install Tcl binaries and script files in
     standard places.  You'll need write permission on the installation
     directories to do this.  The installation directories are
     determined by the "configure" script and may be specified with
@@ -78,7 +88,7 @@ How To Compile And Install Tcl:
     can override these choices by modifying the "prefix" and
     "exec_prefix" variables in the Makefile.
 
-(g) At this point you can play with Tcl by invoking the "tclsh"
+(h) At this point you can play with Tcl by invoking the "tclsh"
     program and typing Tcl commands.  However, if you haven't installed
     Tcl then you'll first need to set your TCL_LIBRARY variable to
     hold the full path name of the "library" subdirectory.  Note that
