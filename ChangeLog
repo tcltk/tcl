@@ -1,3 +1,9 @@
+2002-07-17  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* generic/tclBasic.c (CallCommandTraces): delete traces now
+	receive the FQ old name of the command. 
+	[Bug 582532] (Don Porter)
+
 2002-07-18  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* tests/ioUtil.test: added constraints to 1.4,2.4 so they
