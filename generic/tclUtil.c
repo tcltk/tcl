@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.14 1999/12/04 06:15:42 hobbs Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.15 1999/12/04 06:28:05 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -2294,6 +2294,9 @@ TclCheckBadOctal(interp, value)
     }
     if (*p == '0') {
 	while (isdigit(UCHAR(*p))) {	/* INTL: digit. */
+	    p++;
+	}
+	while (isspace(UCHAR(*p))) {	/* INTL: ISO space. */
 	    p++;
 	}
 	if (*p == '\0') {
