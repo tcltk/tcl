@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFCmd.c,v 1.5 2000/01/12 11:13:55 hobbs Exp $
+ * RCS: @(#) $Id: tclUnixFCmd.c,v 1.6 2000/04/04 08:05:57 hobbs Exp $
  *
  * Portions of this code were derived from NetBSD source code which has
  * the following copyright notice:
@@ -1247,7 +1247,7 @@ SetGroupAttribute(interp, objIndex, fileName, attributePtr)
     }
 
     native = Tcl_UtfToExternalDString(NULL, fileName, -1, &ds);
-    result = chown(native, -1, (gid_t) gid);		/* INTL: Native. */
+    result = chown(native, (uid_t) -1, (gid_t) gid);	/* INTL: Native. */
     Tcl_DStringFree(&ds);
 
     endgrent();
@@ -1308,14 +1308,14 @@ SetOwnerAttribute(interp, objIndex, fileName, attributePtr)
     }
 
     native = Tcl_UtfToExternalDString(NULL, fileName, -1, &ds);
-    result = chown(native, uid, -1);			/* INTL: Native. */
+    result = chown(native, (uid_t) uid, (gid_t) -1);   /* INTL: Native. */
     Tcl_DStringFree(&ds);
 
     if (result != 0) {
 	Tcl_AppendResult(interp, "could not set owner for file \"", fileName,
 		"\": ", Tcl_PosixError(interp), (char *) NULL);
 	return TCL_ERROR;
-    }    
+    }
     return TCL_OK;
 }
 
