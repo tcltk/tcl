@@ -10,7 +10,7 @@
  *
  * Changes 2002 Copyright (c) 2002 ActiveState Corporation.
  *
- * RCS: @(#) $Id: strftime.c,v 1.11 2003/05/18 19:48:26 kennykb Exp $
+ * RCS: @(#) $Id: strftime.c,v 1.12 2003/08/27 19:06:54 davygrvy Exp $
  */
 
 /*
@@ -47,7 +47,7 @@
  */
 
 #if defined(LIBC_SCCS)
-static char *rcsid = "$Id: strftime.c,v 1.11 2003/05/18 19:48:26 kennykb Exp $";
+static char *rcsid = "$Id: strftime.c,v 1.12 2003/08/27 19:06:54 davygrvy Exp $";
 #endif /* LIBC_SCCS */
 
 #include <time.h>
@@ -189,16 +189,15 @@ _fmt(format, t)
 #ifdef WIN32
 #define BUF_SIZ 256
     TCHAR buf[BUF_SIZ];
-    SYSTEMTIME syst = {
-	t->tm_year + 1900,
-	t->tm_mon + 1,
-	t->tm_wday,
-	t->tm_mday,
-	t->tm_hour,
-	t->tm_min,
-	t->tm_sec,
-	0,
-    };
+    SYSTEMTIME syst;
+    syst.wYear	    = t->tm_year + 1900;
+    syst.wMonth	    = t->tm_mon + 1;
+    syst.wDayOfWeek = t->tm_wday;
+    syst.wDay	    = t->tm_mday;
+    syst.wHour	    = t->tm_hour;
+    syst.wMinute    = t->tm_min;
+    syst.wSecond    = t->tm_sec;
+    syst.wMilliseconds = 0;
 #endif
     for (; *format; ++format) {
 	if (*format == '%') {
