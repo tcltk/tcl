@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: expr-old.test,v 1.12 2001/12/04 15:36:29 dkf Exp $
+# RCS: @(#) $Id: expr-old.test,v 1.13 2001/12/06 10:59:17 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -472,7 +472,7 @@ test expr-old-26.11 {error conditions} {
 } {1 {syntax error in expression "2#": extra tokens at end of expression}}
 test expr-old-26.12 {error conditions} {
     list [catch {expr a.b} msg] $msg
-} {1 {syntax error in expression "a.b": expected a parenthesis enclosing function arguments}}
+} {1 {syntax error in expression "a.b": variable references require preceding $}}
 test expr-old-26.13 {error conditions} {
     list [catch {expr {"a"/"b"}} msg] $msg
 } {1 {can't use non-numeric string as operand of "/"}}
@@ -481,19 +481,19 @@ test expr-old-26.14 {error conditions} {
 } {1 {syntax error in expression "2:3": extra tokens at end of expression}}
 test expr-old-26.15 {error conditions} {
     list [catch {expr a@b} msg] $msg
-} {1 {syntax error in expression "a@b": expected a parenthesis enclosing function arguments}}
+} {1 {syntax error in expression "a@b": variable references require preceding $}}
 test expr-old-26.16 {error conditions} {
     list [catch {expr a[b} msg] $msg
 } {1 {missing close-bracket}}
 test expr-old-26.17 {error conditions} {
     list [catch {expr a`b} msg] $msg
-} {1 {syntax error in expression "a`b": expected a parenthesis enclosing function arguments}}
+} {1 {syntax error in expression "a`b": variable references require preceding $}}
 test expr-old-26.18 {error conditions} {
     list [catch {expr \"a\"\{b} msg] $msg
 } {1 syntax\ error\ in\ expression\ \"\"a\"\{b\":\ extra\ tokens\ at\ end\ of\ expression}
 test expr-old-26.19 {error conditions} {
     list [catch {expr a} msg] $msg
-} {1 {syntax error in expression "a": expected a parenthesis enclosing function arguments}}
+} {1 {syntax error in expression "a": variable references require preceding $}}
 test expr-old-26.20 {error conditions} {
     list [catch expr msg] $msg
 } {1 {wrong # args: should be "expr arg ?arg ...?"}}
@@ -543,10 +543,10 @@ test expr-old-27.10 {cancelled evaluation} {
 } {0 0}
 test expr-old-27.11 {cancelled evaluation} {
     list [catch {expr {0 && foo}} msg] $msg
-} {1 {syntax error in expression "0 && foo": expected a parenthesis enclosing function arguments}}
+} {1 {syntax error in expression "0 && foo": variable references require preceding $}}
 test expr-old-27.12 {cancelled evaluation} {
     list [catch {expr {0 ? 1 : foo}} msg] $msg
-} {1 {syntax error in expression "0 ? 1 : foo": expected a parenthesis enclosing function arguments}}
+} {1 {syntax error in expression "0 ? 1 : foo": variable references require preceding $}}
 
 # Tcl_ExprBool as used in "if" statements
 
@@ -850,7 +850,7 @@ test expr-old-34.1 {errors in math functions} {
 } {1 {unknown math function "func_2"}}
 test expr-old-34.2 {errors in math functions} {
     list [catch {expr func|(1.0)} msg] $msg
-} {1 {syntax error in expression "func|(1.0)": expected a parenthesis enclosing function arguments}}
+} {1 {syntax error in expression "func|(1.0)": variable references require preceding $}}
 test expr-old-34.3 {errors in math functions} {
     list [catch {expr {hypot("a b", 2.0)}} msg] $msg
 } {1 {argument to math function didn't have numeric value}}

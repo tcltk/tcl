@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: parseExpr.test,v 1.6 2001/12/04 15:36:29 dkf Exp $
+# RCS: @(#) $Id: parseExpr.test,v 1.7 2001/12/06 10:59:18 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -43,7 +43,7 @@ test parseExpr-1.3 {Tcl_ParseExpr procedure, error getting initial lexeme} {wide
 } {1 {integer value too large to represent}}
 test parseExpr-1.4 {Tcl_ParseExpr procedure, error in conditional expression} {
     list [catch {testexprparser {foo+} -1} msg] $msg
-} {1 {syntax error in expression "foo+": expected a parenthesis enclosing function arguments}}
+} {1 {syntax error in expression "foo+": variable references require preceding $}}
 test parseExpr-1.5 {Tcl_ParseExpr procedure, lexemes after the expression} {
     list [catch {testexprparser {1+2 345} -1} msg] $msg
 } {1 {syntax error in expression "1+2 345": extra tokens at end of expression}}
@@ -53,7 +53,7 @@ test parseExpr-2.1 {ParseCondExpr procedure, valid test subexpr} {
 } {- {} 0 subexpr {2>3? 1 : 0} 11 operator ? 0 subexpr 2>3 5 operator > 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 subexpr 1 1 text 1 0 subexpr 0 1 text 0 0 {}}
 test parseExpr-2.2 {ParseCondExpr procedure, error in test subexpr} {
     list [catch {testexprparser {0 || foo} -1} msg] $msg
-} {1 {syntax error in expression "0 || foo": expected a parenthesis enclosing function arguments}}
+} {1 {syntax error in expression "0 || foo": variable references require preceding $}}
 test parseExpr-2.3 {ParseCondExpr procedure, next lexeme isn't "?"} {
     testexprparser {1+2} -1
 } {- {} 0 subexpr 1+2 5 operator + 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 {}}
@@ -68,7 +68,7 @@ test parseExpr-2.6 {ParseCondExpr procedure, valid "then" subexpression} {
 } {- {} 0 subexpr {1? 3 : 4} 7 operator ? 0 subexpr 1 1 text 1 0 subexpr 3 1 text 3 0 subexpr 4 1 text 4 0 {}}
 test parseExpr-2.7 {ParseCondExpr procedure, error in "then" subexpression} {
     list [catch {testexprparser {1? fred : martha} -1} msg] $msg
-} {1 {syntax error in expression "1? fred : martha": expected a parenthesis enclosing function arguments}}
+} {1 {syntax error in expression "1? fred : martha": variable references require preceding $}}
 test parseExpr-2.8 {ParseCondExpr procedure, lexeme after "then" subexpr isn't ":"} {
     list [catch {testexprparser {1? 2 martha 3} -1} msg] $msg
 } {1 {syntax error in expression "1? 2 martha 3": missing colon from ternary conditional}}
@@ -77,14 +77,14 @@ test parseExpr-2.9 {ParseCondExpr procedure, valid "else" subexpression} {
 } {- {} 0 subexpr {27||3? 3 : 4&&9} 15 operator ? 0 subexpr 27||3 5 operator || 0 subexpr 27 1 text 27 0 subexpr 3 1 text 3 0 subexpr 3 1 text 3 0 subexpr 4&&9 5 operator && 0 subexpr 4 1 text 4 0 subexpr 9 1 text 9 0 {}}
 test parseExpr-2.10 {ParseCondExpr procedure, error in "else" subexpression} {
     list [catch {testexprparser {1? 2 : martha} -1} msg] $msg
-} {1 {syntax error in expression "1? 2 : martha": expected a parenthesis enclosing function arguments}}
+} {1 {syntax error in expression "1? 2 : martha": variable references require preceding $}}
 
 test parseExpr-3.1 {ParseLorExpr procedure, valid logical and subexpr} {
     testexprparser {1&&2 || 3} -1
 } {- {} 0 subexpr {1&&2 || 3} 9 operator || 0 subexpr 1&&2 5 operator && 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 {}}
 test parseExpr-3.2 {ParseLorExpr procedure, error in logical and subexpr} {
     list [catch {testexprparser {1&&foo || 3} -1} msg] $msg
-} {1 {syntax error in expression "1&&foo || 3": expected a parenthesis enclosing function arguments}}
+} {1 {syntax error in expression "1&&foo || 3": variable references require preceding $}}
 test parseExpr-3.3 {ParseLorExpr procedure, next lexeme isn't "||"} {
     testexprparser {1&&2? 1 : 0} -1
 } {- {} 0 subexpr {1&&2? 1 : 0} 11 operator ? 0 subexpr 1&&2 5 operator && 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 1 1 text 1 0 subexpr 0 1 text 0 0 {}}
@@ -99,14 +99,14 @@ test parseExpr-3.6 {ParseLorExpr procedure, valid RHS subexpression} {
 } {- {} 0 subexpr {1&&2 || 3 || 4} 13 operator || 0 subexpr {1&&2 || 3} 9 operator || 0 subexpr 1&&2 5 operator && 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 subexpr 4 1 text 4 0 {}}
 test parseExpr-3.7 {ParseLorExpr procedure, error in RHS subexpression} {
     list [catch {testexprparser {1&&2 || 3 || martha} -1} msg] $msg
-} {1 {syntax error in expression "1&&2 || 3 || martha": expected a parenthesis enclosing function arguments}}
+} {1 {syntax error in expression "1&&2 || 3 || martha": variable references require preceding $}}
 
 test parseExpr-4.1 {ParseLandExpr procedure, valid LHS "|" subexpr} {
     testexprparser {1|2 && 3} -1
 } {- {} 0 subexpr {1|2 && 3} 9 operator && 0 subexpr 1|2 5 operator | 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 {}}
 test parseExpr-4.2 {ParseLandExpr procedure, error in LHS "|" subexpr} {
     list [catch {testexprparser {1&&foo && 3} -1} msg] $msg
-} {1 {syntax error in expression "1&&foo && 3": expected a parenthesis enclosing function arguments}}
+} {1 {syntax error in expression "1&&foo && 3": variable references require preceding $}}
 test parseExpr-4.3 {ParseLandExpr procedure, next lexeme isn't "&&"} {
     testexprparser {1|2? 1 : 0} -1
 } {- {} 0 subexpr {1|2? 1 : 0} 11 operator ? 0 subexpr 1|2 5 operator | 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 1 1 text 1 0 subexpr 0 1 text 0 0 {}}
@@ -121,14 +121,14 @@ test parseExpr-4.6 {ParseLandExpr procedure, valid RHS subexpression} {
 } {- {} 0 subexpr {1|2 && 3 && 4} 13 operator && 0 subexpr {1|2 && 3} 9 operator && 0 subexpr 1|2 5 operator | 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 subexpr 4 1 text 4 0 {}}
 test parseExpr-4.7 {ParseLandExpr procedure, error in RHS subexpression} {
     list [catch {testexprparser {1|2 && 3 && martha} -1} msg] $msg
-} {1 {syntax error in expression "1|2 && 3 && martha": expected a parenthesis enclosing function arguments}}
+} {1 {syntax error in expression "1|2 && 3 && martha": variable references require preceding $}}
 
 test parseExpr-5.1 {ParseBitOrExpr procedure, valid LHS "^" subexpr} {
     testexprparser {1^2 | 3} -1
 } {- {} 0 subexpr {1^2 | 3} 9 operator | 0 subexpr 1^2 5 operator ^ 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 {}}
 test parseExpr-5.2 {ParseBitOrExpr procedure, error in LHS "^" subexpr} {
     list [catch {testexprparser {1|foo | 3} -1} msg] $msg
-} {1 {syntax error in expression "1|foo | 3": expected a parenthesis enclosing function arguments}}
+} {1 {syntax error in expression "1|foo | 3": variable references require preceding $}}
 test parseExpr-5.3 {ParseBitOrExpr procedure, next lexeme isn't "|"} {
     testexprparser {1^2? 1 : 0} -1
 } {- {} 0 subexpr {1^2? 1 : 0} 11 operator ? 0 subexpr 1^2 5 operator ^ 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 1 1 text 1 0 subexpr 0 1 text 0 0 {}}
@@ -143,14 +143,14 @@ test parseExpr-5.6 {ParseBitOrExpr procedure, valid RHS subexpression} {
 } {- {} 0 subexpr {1^2 | 3 | 4} 13 operator | 0 subexpr {1^2 | 3} 9 operator | 0 subexpr 1^2 5 operator ^ 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 subexpr 4 1 text 4 0 {}}
 test parseExpr-5.7 {ParseBitOrExpr procedure, error in RHS subexpression} {
     list [catch {testexprparser {1^2 | 3 | martha} -1} msg] $msg
-} {1 {syntax error in expression "1^2 | 3 | martha": expected a parenthesis enclosing function arguments}}
+} {1 {syntax error in expression "1^2 | 3 | martha": variable references require preceding $}}
 
 test parseExpr-6.1 {ParseBitXorExpr procedure, valid LHS "&" subexpr} {
     testexprparser {1&2 ^ 3} -1
 } {- {} 0 subexpr {1&2 ^ 3} 9 operator ^ 0 subexpr 1&2 5 operator & 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 {}}
 test parseExpr-6.2 {ParseBitXorExpr procedure, error in LHS "&" subexpr} {
     list [catch {testexprparser {1^foo ^ 3} -1} msg] $msg
-} {1 {syntax error in expression "1^foo ^ 3": expected a parenthesis enclosing function arguments}}
+} {1 {syntax error in expression "1^foo ^ 3": variable references require preceding $}}
 test parseExpr-6.3 {ParseBitXorExpr procedure, next lexeme isn't "^"} {
     testexprparser {1&2? 1 : 0} -1
 } {- {} 0 subexpr {1&2? 1 : 0} 11 operator ? 0 subexpr 1&2 5 operator & 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 1 1 text 1 0 subexpr 0 1 text 0 0 {}}
@@ -165,14 +165,14 @@ test parseExpr-6.6 {ParseBitXorExpr procedure, valid RHS subexpression} {
 } {- {} 0 subexpr {1&2 ^ 3 ^ 4} 13 operator ^ 0 subexpr {1&2 ^ 3} 9 operator ^ 0 subexpr 1&2 5 operator & 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 subexpr 4 1 text 4 0 {}}
 test parseExpr-6.7 {ParseBitXorExpr procedure, error in RHS subexpression} {
     list [catch {testexprparser {1&2 ^ 3 ^ martha} -1} msg] $msg
-} {1 {syntax error in expression "1&2 ^ 3 ^ martha": expected a parenthesis enclosing function arguments}}
+} {1 {syntax error in expression "1&2 ^ 3 ^ martha": variable references require preceding $}}
 
 test parseExpr-7.1 {ParseBitAndExpr procedure, valid LHS equality subexpr} {
     testexprparser {1==2 & 3} -1
 } {- {} 0 subexpr {1==2 & 3} 9 operator & 0 subexpr 1==2 5 operator == 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 {}}
 test parseExpr-7.2 {ParseBitAndExpr procedure, error in LHS equality subexpr} {
     list [catch {testexprparser {1!=foo & 3} -1} msg] $msg
-} {1 {syntax error in expression "1!=foo & 3": expected a parenthesis enclosing function arguments}}
+} {1 {syntax error in expression "1!=foo & 3": variable references require preceding $}}
 test parseExpr-7.3 {ParseBitAndExpr procedure, next lexeme isn't "&"} {
     testexprparser {1==2? 1 : 0} -1
 } {- {} 0 subexpr {1==2? 1 : 0} 11 operator ? 0 subexpr 1==2 5 operator == 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 1 1 text 1 0 subexpr 0 1 text 0 0 {}}
@@ -187,14 +187,14 @@ test parseExpr-7.6 {ParseBitAndExpr procedure, valid RHS subexpression} {
 } {- {} 0 subexpr {1<2 & 3 & 4} 13 operator & 0 subexpr {1<2 & 3} 9 operator & 0 subexpr 1<2 5 operator < 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 subexpr 4 1 text 4 0 {}}
 test parseExpr-7.7 {ParseBitAndExpr procedure, error in RHS subexpression} {
     list [catch {testexprparser {1==2 & 3>2 & martha} -1} msg] $msg
-} {1 {syntax error in expression "1==2 & 3>2 & martha": expected a parenthesis enclosing function arguments}}
+} {1 {syntax error in expression "1==2 & 3>2 & martha": variable references require preceding $}}
 
 test parseExpr-8.1 {ParseEqualityExpr procedure, valid LHS relational subexpr} {
     testexprparser {1<2 == 3} -1
 } {- {} 0 subexpr {1<2 == 3} 9 operator == 0 subexpr 1<2 5 operator < 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 {}}
 test parseExpr-8.2 {ParseEqualityExpr procedure, error in LHS relational subexpr} {
     list [catch {testexprparser {1>=foo == 3} -1} msg] $msg
-} {1 {syntax error in expression "1>=foo == 3": expected a parenthesis enclosing function arguments}}
+} {1 {syntax error in expression "1>=foo == 3": variable references require preceding $}}
 test parseExpr-8.3 {ParseEqualityExpr procedure, next lexeme isn't "==" or "!="} {
     testexprparser {1<2? 1 : 0} -1
 } {- {} 0 subexpr {1<2? 1 : 0} 11 operator ? 0 subexpr 1<2 5 operator < 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 1 1 text 1 0 subexpr 0 1 text 0 0 {}}
@@ -212,14 +212,14 @@ test parseExpr-8.7 {ParseEqualityExpr procedure, valid RHS subexpression} {
 } {- {} 0 subexpr {1<2 == 3 == 4} 13 operator == 0 subexpr {1<2 == 3} 9 operator == 0 subexpr 1<2 5 operator < 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 subexpr 4 1 text 4 0 {}}
 test parseExpr-8.8 {ParseEqualityExpr procedure, error in RHS subexpression} {
     list [catch {testexprparser {1<2 == 3 != martha} -1} msg] $msg
-} {1 {syntax error in expression "1<2 == 3 != martha": expected a parenthesis enclosing function arguments}}
+} {1 {syntax error in expression "1<2 == 3 != martha": variable references require preceding $}}
 
 test parseExpr-9.1 {ParseRelationalExpr procedure, valid LHS shift subexpr} {
     testexprparser {1<<2 < 3} -1
 } {- {} 0 subexpr {1<<2 < 3} 9 operator < 0 subexpr 1<<2 5 operator << 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 {}}
 test parseExpr-9.2 {ParseRelationalExpr procedure, error in LHS shift subexpr} {
     list [catch {testexprparser {1>=foo < 3} -1} msg] $msg
-} {1 {syntax error in expression "1>=foo < 3": expected a parenthesis enclosing function arguments}}
+} {1 {syntax error in expression "1>=foo < 3": variable references require preceding $}}
 test parseExpr-9.3 {ParseRelationalExpr procedure, next lexeme isn't relational op} {
     testexprparser {1<<2? 1 : 0} -1
 } {- {} 0 subexpr {1<<2? 1 : 0} 11 operator ? 0 subexpr 1<<2 5 operator << 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 1 1 text 1 0 subexpr 0 1 text 0 0 {}}
@@ -243,14 +243,14 @@ test parseExpr-9.9 {ParseRelationalExpr procedure, valid RHS subexpression} {
 } {- {} 0 subexpr {1<<2 < 3 < 4} 13 operator < 0 subexpr {1<<2 < 3} 9 operator < 0 subexpr 1<<2 5 operator << 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 subexpr 4 1 text 4 0 {}}
 test parseExpr-9.10 {ParseRelationalExpr procedure, error in RHS subexpression} {
     list [catch {testexprparser {1<<2 < 3 > martha} -1} msg] $msg
-} {1 {syntax error in expression "1<<2 < 3 > martha": expected a parenthesis enclosing function arguments}}
+} {1 {syntax error in expression "1<<2 < 3 > martha": variable references require preceding $}}
 
 test parseExpr-10.1 {ParseShiftExpr procedure, valid LHS add subexpr} {
     testexprparser {1+2 << 3} -1
 } {- {} 0 subexpr {1+2 << 3} 9 operator << 0 subexpr 1+2 5 operator + 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 {}}
 test parseExpr-10.2 {ParseShiftExpr procedure, error in LHS add subexpr} {
     list [catch {testexprparser {1-foo << 3} -1} msg] $msg
-} {1 {syntax error in expression "1-foo << 3": expected a parenthesis enclosing function arguments}}
+} {1 {syntax error in expression "1-foo << 3": variable references require preceding $}}
 test parseExpr-10.3 {ParseShiftExpr procedure, next lexeme isn't "<<" or ">>"} {
     testexprparser {1+2? 1 : 0} -1
 } {- {} 0 subexpr {1+2? 1 : 0} 11 operator ? 0 subexpr 1+2 5 operator + 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 1 1 text 1 0 subexpr 0 1 text 0 0 {}}
@@ -268,14 +268,14 @@ test parseExpr-10.7 {ParseShiftExpr procedure, valid RHS subexpression} {
 } {- {} 0 subexpr {1+2 << 3 << 4} 13 operator << 0 subexpr {1+2 << 3} 9 operator << 0 subexpr 1+2 5 operator + 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 subexpr 4 1 text 4 0 {}}
 test parseExpr-10.8 {ParseShiftExpr procedure, error in RHS subexpression} {
     list [catch {testexprparser {1+2 << 3 >> martha} -1} msg] $msg
-} {1 {syntax error in expression "1+2 << 3 >> martha": expected a parenthesis enclosing function arguments}}
+} {1 {syntax error in expression "1+2 << 3 >> martha": variable references require preceding $}}
 
 test parseExpr-11.1 {ParseAddExpr procedure, valid LHS multiply subexpr} {
     testexprparser {1*2 + 3} -1
 } {- {} 0 subexpr {1*2 + 3} 9 operator + 0 subexpr 1*2 5 operator * 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 {}}
 test parseExpr-11.2 {ParseAddExpr procedure, error in LHS multiply subexpr} {
     list [catch {testexprparser {1/foo + 3} -1} msg] $msg
-} {1 {syntax error in expression "1/foo + 3": expected a parenthesis enclosing function arguments}}
+} {1 {syntax error in expression "1/foo + 3": variable references require preceding $}}
 test parseExpr-11.3 {ParseAddExpr procedure, next lexeme isn't "+" or "-"} {
     testexprparser {1*2? 1 : 0} -1
 } {- {} 0 subexpr {1*2? 1 : 0} 11 operator ? 0 subexpr 1*2 5 operator * 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 1 1 text 1 0 subexpr 0 1 text 0 0 {}}
@@ -293,14 +293,14 @@ test parseExpr-11.7 {ParseAddExpr procedure, valid RHS subexpression} {
 } {- {} 0 subexpr {1*2 + 3 + 4} 13 operator + 0 subexpr {1*2 + 3} 9 operator + 0 subexpr 1*2 5 operator * 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 subexpr 4 1 text 4 0 {}}
 test parseExpr-11.8 {ParseAddExpr procedure, error in RHS subexpression} {
     list [catch {testexprparser {1*2 + 3 - martha} -1} msg] $msg
-} {1 {syntax error in expression "1*2 + 3 - martha": expected a parenthesis enclosing function arguments}}
+} {1 {syntax error in expression "1*2 + 3 - martha": variable references require preceding $}}
 
 test parseExpr-12.1 {ParseAddExpr procedure, valid LHS multiply subexpr} {
     testexprparser {1*2 + 3} -1
 } {- {} 0 subexpr {1*2 + 3} 9 operator + 0 subexpr 1*2 5 operator * 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 {}}
 test parseExpr-12.2 {ParseAddExpr procedure, error in LHS multiply subexpr} {
     list [catch {testexprparser {1/foo + 3} -1} msg] $msg
-} {1 {syntax error in expression "1/foo + 3": expected a parenthesis enclosing function arguments}}
+} {1 {syntax error in expression "1/foo + 3": variable references require preceding $}}
 test parseExpr-12.3 {ParseAddExpr procedure, next lexeme isn't "+" or "-"} {
     testexprparser {1*2? 1 : 0} -1
 } {- {} 0 subexpr {1*2? 1 : 0} 11 operator ? 0 subexpr 1*2 5 operator * 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 1 1 text 1 0 subexpr 0 1 text 0 0 {}}
@@ -318,7 +318,7 @@ test parseExpr-12.7 {ParseAddExpr procedure, valid RHS subexpression} {
 } {- {} 0 subexpr {1*2 + 3 + 4} 13 operator + 0 subexpr {1*2 + 3} 9 operator + 0 subexpr 1*2 5 operator * 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 subexpr 4 1 text 4 0 {}}
 test parseExpr-12.8 {ParseAddExpr procedure, error in RHS subexpression} {
     list [catch {testexprparser {1*2 + 3 - martha} -1} msg] $msg
-} {1 {syntax error in expression "1*2 + 3 - martha": expected a parenthesis enclosing function arguments}}
+} {1 {syntax error in expression "1*2 + 3 - martha": variable references require preceding $}}
 
 test parseExpr-13.1 {ParseMultiplyExpr procedure, valid LHS unary subexpr} {
     testexprparser {+2 * 3} -1
@@ -346,7 +346,7 @@ test parseExpr-13.8 {ParseMultiplyExpr procedure, valid RHS subexpression} {
 } {- {} 0 subexpr {-2 / 3 % 4} 11 operator % 0 subexpr {-2 / 3} 7 operator / 0 subexpr -2 3 operator - 0 subexpr 2 1 text 2 0 subexpr 3 1 text 3 0 subexpr 4 1 text 4 0 {}}
 test parseExpr-13.9 {ParseMultiplyExpr procedure, error in RHS subexpression} {
     list [catch {testexprparser {++2 / 3 * martha} -1} msg] $msg
-} {1 {syntax error in expression "++2 / 3 * martha": expected a parenthesis enclosing function arguments}}
+} {1 {syntax error in expression "++2 / 3 * martha": variable references require preceding $}}
 
 test parseExpr-14.1 {ParseUnaryExpr procedure, first token is unary operator} {
     testexprparser {+2} -1
@@ -371,10 +371,10 @@ test parseExpr-14.7 {ParseUnaryExpr procedure, another unary expr after unary op
 } {- {} 0 subexpr ~!{fred} 5 operator ~ 0 subexpr !{fred} 3 operator ! 0 subexpr {{fred}} 1 text fred 0 {}}
 test parseExpr-14.8 {ParseUnaryExpr procedure, error in unary expr after unary op} {
     list [catch {testexprparser {+-||27} -1} msg] $msg
-} {1 {syntax error in expression "+-||27": unexpected operator}}
+} {1 {syntax error in expression "+-||27": unexpected operator ||}}
 test parseExpr-14.9 {ParseUnaryExpr procedure, error in unary expr after unary op} {
     list [catch {testexprparser {+-||27} -1} msg] $msg
-} {1 {syntax error in expression "+-||27": unexpected operator}}
+} {1 {syntax error in expression "+-||27": unexpected operator ||}}
 test parseExpr-14.10 {ParseUnaryExpr procedure, first token is not unary op} {
     testexprparser {123} -1
 } {- {} 0 subexpr 123 1 text 123 0 {}}
@@ -457,7 +457,7 @@ test parseExpr-15.23 {ParsePrimaryExpr procedure, bad lexeme after function name
 } {1 {integer value too large to represent}}
 test parseExpr-15.24 {ParsePrimaryExpr procedure, lexeme after function name isn't "("} {
     list [catch {testexprparser {foo 27.4 123)} -1} msg] $msg
-} {1 {syntax error in expression "foo 27.4 123)": expected a parenthesis enclosing function arguments}}
+} {1 {syntax error in expression "foo 27.4 123)": variable references require preceding $}}
 test parseExpr-15.25 {ParsePrimaryExpr procedure, bad lexeme after "("} {wideIntegerUnparsed} {
     list [catch {testexprparser {foo(12345678901234567890)} -1} msg] $msg
 } {1 {integer value too large to represent}}
@@ -466,10 +466,10 @@ test parseExpr-15.26 {ParsePrimaryExpr procedure, function call, one arg} {
 } {- {} 0 subexpr foo(27*4) 7 operator foo 0 subexpr 27*4 5 operator * 0 subexpr 27 1 text 27 0 subexpr 4 1 text 4 0 {}}
 test parseExpr-15.27 {ParsePrimaryExpr procedure, error in function arg} {
     list [catch {testexprparser {foo(*1-2)} -1} msg] $msg
-} {1 {syntax error in expression "foo(*1-2)": unexpected operator}}
+} {1 {syntax error in expression "foo(*1-2)": unexpected operator *}}
 test parseExpr-15.28 {ParsePrimaryExpr procedure, error in function arg} {
     list [catch {testexprparser {foo(*1-2)} -1} msg] $msg
-} {1 {syntax error in expression "foo(*1-2)": unexpected operator}}
+} {1 {syntax error in expression "foo(*1-2)": unexpected operator *}}
 test parseExpr-15.29 {ParsePrimaryExpr procedure, function call, comma after arg} {
     testexprparser {foo(27-2, (-2*[foo]))} -1
 } {- {} 0 subexpr {foo(27-2, (-2*[foo]))} 15 operator foo 0 subexpr 27-2 5 operator - 0 subexpr 27 1 text 27 0 subexpr 2 1 text 2 0 subexpr {-2*[foo]} 7 operator * 0 subexpr -2 3 operator - 0 subexpr 2 1 text 2 0 subexpr {[foo]} 1 command {[foo]} 0 {}}
