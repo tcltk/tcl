@@ -819,11 +819,15 @@ an error may result if these years are used.
 \fIISO 8601 point-in-time\fR
 An ISO 8601 point-in-time specification, such as \fBCCyymmddThhmmss\fR,
 where \fBT\fR is the literal T, "\fBCCyymmdd hhmmss\fR", or
-\fBCCyymmddThh:mm:ss\fR.
+\fBCCyymmddThh:mm:ss\fR. Note that only these three formats are accepted.
+The command does \fInot\fR accept the full range of point-in-time
+specifications specified in ISO8601.  Other formats can be recognized by
+giving an explicit \fI-format\fR option to the \fBclock scan\fR command.
 .TP
 \fIrelative time\fR
 A specification relative to the current time.  The format is \fBnumber
-unit\fR. Acceptable units are \fByear\fR, \fBfortnight\fR, \fBmonth\fR, \fBweek\fR, \fBday\fR,
+unit\fR. Acceptable units are \fByear\fR, \fBfortnight\fR, 
+\fBmonth\fR, \fBweek\fR, \fBday\fR,
 \fBhour\fR, \fBminute\fR (or \fBmin\fR), and \fBsecond\fR (or \fBsec\fR).  The
 unit can be specified as a singular or plural, as in \fB3 weeks\fR.
 These modifiers may also be specified:
