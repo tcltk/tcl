@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.60 2002/06/07 10:38:03 dkf Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.61 2002/06/11 12:38:22 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1384,6 +1384,12 @@ TclExecuteByteCode(interp, codePtr)
 	    }
 	    
 	case INST_EVAL_STK:
+	    /*
+	     * Note to maintainers: it is important that INST_EVAL_STK
+	     * pop its argument from the stack before jumping to
+	     * checkForCatch! DO NOT OPTIMISE!
+	     */
+
 	    objPtr = POP_OBJECT();
 	    DECACHE_STACK_INFO();
 	    result = TclCompEvalObj(interp, objPtr);
@@ -4775,25 +4781,28 @@ GetExceptRangeForPc(pc, catchOnly, codePtr)
     int numRanges = codePtr->numExceptRanges;
     register ExceptionRange *rangePtr;
     int pcOffset = (pc - codePtr->codeStart);
-    register int i, level;
+    register int start;
 
     if (numRanges == 0) {
 	return NULL;
     }
-    rangeArrayPtr = codePtr->exceptArrayPtr;
 
-    for (level = codePtr->maxExceptDepth;  level >= 0;  level--) {
-	for (i = 0;  i < numRanges;  i++) {
-	    rangePtr = &(rangeArrayPtr[i]);
-	    if (rangePtr->nestingLevel == level) {
-		int start = rangePtr->codeOffset;
-		int end   = (start + rangePtr->numCodeBytes);
-		if ((start <= pcOffset) && (pcOffset < end)) {
-		    if ((!catchOnly)
-			    || (rangePtr->type == CATCH_EXCEPTION_RANGE)) {
-			return rangePtr;
-		    }
-		}
+    /* 
+     * This exploits peculiarities of our compiler: nested ranges
+     * are always *after* their containing ranges, so that by scanning
+     * backwards we are sure that the first matching range is indeed
+     * the deepest.
+     */
+
+    rangeArrayPtr = codePtr->exceptArrayPtr;
+    rangePtr = rangeArrayPtr + numRanges;
+    while (--rangePtr >= rangeArrayPtr) {
+	start = rangePtr->codeOffset;
+	if ((start <= pcOffset) &&
+	        (pcOffset < (start + rangePtr->numCodeBytes))) {
+	    if ((!catchOnly)
+		    || (rangePtr->type == CATCH_EXCEPTION_RANGE)) {
+		return rangePtr;
 	    }
 	}
     }
