@@ -1,3 +1,36 @@
+1999-0706     <welch@scriptics.com>
+
+	* library/http2.0/http.tcl: Fixed the -timeout option so it
+	handles timeouts that occur during connection attempts to
+	hosts that are down (the only case that really matters!)
+
+1999-0703     <welch@scriptics.com>
+
+	* doc/ChnlStack.3:
+	* generic/tcl.decls:
+	* generic/tclIO.c: Added a new variant of the "Trf patch"
+	from Andreas Kupres that adds new C APIs Tcl_StackChannel,
+	Tcl_UnstackChannel, and Tcl_GetStackedChannel.
+
+1999-0703     <welch@scriptics.com>
+
+	* generic/tclNotify.c:
+	* unix/tclUnixNotfy.c:
+	* unix/tclXtTest.c:
+	* unix/tclXtNotify.c:
+	* win/tclWinNotify.c:
+	* mac/tclMacNotify.c: Added Tcl_SetNotifier and the associated
+	hook points in the notifiers to be able to replace the notifier
+	calls at runtime  The Xt notifier and test program use this hook.
+
+1999-0703     <welch@scriptics.com>
+
+	* generic/tclParse.c: Changed parsing of variable names to
+	allow empty array names.  Now "$(foo)" is a variable reference!
+	Previous you had to use something like $::(foo), which is slower.
+	This change is requested by Jean-Luc Fontaine for his STOOOP
+	package.
+
 1999-0701     <redman@scriptics.com>
 
 	* generic/tclCmdAH.c:
