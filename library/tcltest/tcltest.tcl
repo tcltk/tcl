@@ -16,7 +16,7 @@
 # Contributions from Don Porter, NIST, 2002.  (not subject to US copyright)
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.tcl,v 1.70 2002/07/11 19:02:58 dgp Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.71 2002/07/14 18:29:49 dgp Exp $
 
 package require Tcl 8.3		;# uses [glob -directory]
 namespace eval tcltest {
@@ -626,7 +626,7 @@ namespace eval tcltest {
 	if {!$Option(-limitconstraints)} {return}
 	foreach c [array names testConstraints] {
 	    if {[lsearch -exact $Option(-constraints) $c] == -1} {
-		testConstraint $elt 0
+		testConstraint $c 0
 	    }
 	}
     }
@@ -847,6 +847,7 @@ proc tcltest::mainThread { {new ""} } {
 
 proc tcltest::testConstraint {constraint {value ""}} {
     variable testConstraints
+    variable Option
     DebugPuts 3 "entering testConstraint $constraint $value"
     if {[llength [info level 0]] == 2} {
 	return $testConstraints($constraint)
@@ -855,7 +856,8 @@ proc tcltest::testConstraint {constraint {value ""}} {
     if {[catch {expr {$value && $value}} msg]} {
 	return -code error $msg
     }
-    if {[limitConstraints]} {
+    if {[limitConstraints] 
+	    && [lsearch -exact $Option(-constraints) $constraint] == -1} {
 	set value 0
     }
     set testConstraints($constraint) $value
@@ -3282,7 +3284,7 @@ namespace eval tcltest {
 
     proc LoadTimeCmdLineArgParsingRequired {} {
 	set required false
-	if {[info exists ::argv] && [lsearch -exact $::argv -help]} {
+	if {[info exists ::argv] && [lsearch -exact $::argv -help] != -1} {
 	    # The command line asks for -help, so give it (and exit)
 	    # right now.  ([configure] does not process -help)
 	    set required true
