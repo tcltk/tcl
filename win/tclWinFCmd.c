@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFCmd.c,v 1.14 2001/09/28 11:10:56 vincentdarley Exp $
+ * RCS: @(#) $Id: tclWinFCmd.c,v 1.15 2001/10/22 17:10:00 vincentdarley Exp $
  */
 
 #include "tclWinInt.h"
@@ -446,6 +446,20 @@ DoCopyFile(
 	Tcl_SetErrno(ENOENT);
         return TCL_ERROR;
     }
+    
+    /*
+     * Similarly, if 'nativeSrc' is NULL or empty, the following code
+     * locks up the process on WinNT; bail out.
+     */
+    
+    if (nativeSrc == NULL || nativeSrc[0] == '\0') {
+	Tcl_SetErrno(ENOENT);
+	return TCL_ERROR;
+    }
+    
+    /*
+     * OK, now try the copy.
+     */
     
     __try {
 	if ((*tclWinProcs->copyFileProc)(nativeSrc, nativeDst, 0) != FALSE) {
