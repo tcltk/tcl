@@ -9,11 +9,12 @@
  * Copyright (c) 1993-1994 The Regents of the University of California.
  * Copyright (c) 1994-1997 Sun Microsystems, Inc.
  * Copyright (c) 1998-2000 Ajuba Solutions.
+ * Copyright (c) 2003 by Kevin B. Kenny.  All rights reserved.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.60 2003/02/10 12:50:31 vincentdarley Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.61 2003/02/15 20:24:10 kennykb Exp $
  */
 
 #define TCL_TEST
@@ -110,6 +111,16 @@ static int freeCount;
  * commands.
  */
 static int exitMainLoop = 0;
+
+/*
+ * Event structure used in testing the event queue management procedures.
+ */
+typedef struct TestEvent {
+    Tcl_Event header;		/* Header common to all events */
+    Tcl_Interp* interp;		/* Interpreter that will handle the event */
+    Tcl_Obj* command;		/* Command to evaluate when the event occurs */
+    Tcl_Obj* tag;		/* Tag for this event used to delete it */
+} TestEvent;
 
 /*
  * Forward declarations for procedures defined later in this file:
@@ -218,6 +229,15 @@ static int		TestevalexObjCmd _ANSI_ARGS_((ClientData dummy,
 static int		TestevalobjvObjCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Interp *interp, int objc, 
 			    Tcl_Obj *CONST objv[]));
+static int		TesteventObjCmd _ANSI_ARGS_((ClientData unused,
+						     Tcl_Interp* interp,
+						     int argc,
+						     Tcl_Obj *CONST objv[]));
+static int		TesteventProc _ANSI_ARGS_((Tcl_Event* event,
+						   int flags));
+static int		TesteventDeleteProc _ANSI_ARGS_((
+			    Tcl_Event* event,
+			    ClientData clientData));
 static int		TestexithandlerCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Interp *interp, int argc, CONST char **argv));
 static int		TestexprlongCmd _ANSI_ARGS_((ClientData dummy,
@@ -581,6 +601,8 @@ Tcltest_Init(interp)
 	    (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
     Tcl_CreateObjCommand(interp, "testevalobjv", TestevalobjvObjCmd,
 	    (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
+    Tcl_CreateObjCommand( interp, "testevent", TesteventObjCmd,
+			  (ClientData) 0, (Tcl_CmdDeleteProc*) NULL );
     Tcl_CreateCommand(interp, "testexithandler", TestexithandlerCmd,
             (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
     Tcl_CreateCommand(interp, "testexprlong", TestexprlongCmd,
@@ -1894,6 +1916,202 @@ TestevalobjvObjCmd(dummy, interp, objc, objv)
     }
     return Tcl_EvalObjv(interp, objc-2, objv+2,
 	    (evalGlobal) ? TCL_EVAL_GLOBAL : 0);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TesteventObjCmd --
+ *
+ *	This procedure implements a 'testevent' command.  The command
+ *	is used to test event queue management.
+ *
+ * The command takes two forms:
+ *	- testevent queue name position script
+ *		Queues an event at the given position in the queue, and
+ *		associates a given name with it (the same name may be
+ *		associated with multiple events). When the event comes
+ *		to the head of the queue, executes the given script at
+ *		global level in the current interp. The position may be
+ *		one of 'head', 'tail' or 'mark'.
+ *	- testevent delete name
+ *		Deletes any events associated with the given name from
+ *		the queue.
+ *
+ * Return value:
+ *	Returns a standard Tcl result.
+ *
+ * Side effects:
+ *	Manipulates the event queue as directed.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TesteventObjCmd( ClientData unused,      /* Not used */
+		 Tcl_Interp* interp,     /* Tcl interpreter */
+		 int objc,               /* Parameter count */
+		 Tcl_Obj *CONST objv[] ) /* Parameter vector */
+{
+    
+    static CONST char* subcommands[] = { /* Possible subcommands */
+	"queue",
+	"delete",
+	NULL
+    };
+    int subCmdIndex;		/* Index of the chosen subcommand */
+    static CONST char* positions[] = { /* Possible queue positions */
+	"head",
+	"tail",
+	"mark",
+	NULL
+    };
+    int posIndex;		/* Index of the chosen position */
+    static CONST int posNum[] = { /* Interpretation of the chosen position */
+	TCL_QUEUE_HEAD,
+	TCL_QUEUE_TAIL,
+	TCL_QUEUE_MARK
+    };
+    TestEvent* ev;		/* Event to be queued */
+
+    if ( objc < 2 ) {
+	Tcl_WrongNumArgs( interp, 1, objv, "subcommand ?args?" );
+	return TCL_ERROR;
+    }
+    if ( Tcl_GetIndexFromObj( interp, objv[1], subcommands, "subcommand",
+			      TCL_EXACT, &subCmdIndex ) != TCL_OK ) {
+	return TCL_ERROR;
+    }
+    switch ( subCmdIndex ) {
+    case 0:			/* queue */
+	if ( objc != 5 ) {
+	    Tcl_WrongNumArgs( interp, 2, objv, "name position script" );
+	    return TCL_ERROR;
+	}
+	if ( Tcl_GetIndexFromObj( interp, objv[3], positions,
+				  "position specifier", TCL_EXACT,
+				  &posIndex ) != TCL_OK ) {
+	    return TCL_ERROR;
+	}
+	ev = (TestEvent*) ckalloc( sizeof( TestEvent ) );
+	ev->header.proc = TesteventProc;
+	ev->header.nextPtr = NULL;
+	ev->interp = interp;
+	ev->command = objv[ 4 ];
+	Tcl_IncrRefCount( ev->command );
+	ev->tag = objv[ 2 ];
+	Tcl_IncrRefCount( ev->tag );
+	Tcl_QueueEvent( (Tcl_Event*) ev, posNum[ posIndex ] );
+	break;
+
+    case 1:			/* delete */
+	if ( objc != 3 ) {
+	    Tcl_WrongNumArgs( interp, 2, objv, "name" );
+	    return TCL_ERROR;
+	}
+	Tcl_DeleteEvents( TesteventDeleteProc, objv[ 2 ] );
+	break;
+    }
+
+    return TCL_OK;
+
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TesteventProc --
+ *
+ *	Delivers a test event to the Tcl interpreter as part of event
+ *	queue testing.
+ * 
+ * Results:
+ *	Returns 1 if the event has been serviced, 0 otherwise.
+ *
+ * Side effects:
+ *	Evaluates the event's callback script, so has whatever
+ *	side effects the callback has.  The return value of the
+ *	callback script becomes the return value of this function.
+ *	If the callback script reports an error, it is reported as
+ *	a background error.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TesteventProc( Tcl_Event* event, /* Event to deliver */
+	       int flags )	/* Current flags for Tcl_ServiceEvent */
+{
+    TestEvent * ev = (TestEvent *) event;
+    Tcl_Interp* interp = ev->interp;
+    Tcl_Obj* command = ev->command;
+    int result = Tcl_EvalObjEx( interp, command,
+				TCL_EVAL_GLOBAL | TCL_EVAL_DIRECT );
+    int retval;
+    if ( result != TCL_OK ) {
+	Tcl_AddErrorInfo( interp,
+			  "    (command bound to \"testevent\" callback)" );
+	Tcl_BackgroundError( interp );
+	return 1;		/* Avoid looping on errors */
+    }
+    if ( Tcl_GetBooleanFromObj( interp,
+				Tcl_GetObjResult( interp ),
+				&retval ) != TCL_OK ) {
+	Tcl_AddErrorInfo( interp, 
+			  "    (return value from \"testevent\" callback)" );
+	Tcl_BackgroundError( interp );
+	return 1;
+    }
+    if ( retval ) {
+	Tcl_DecrRefCount( ev->tag );
+	Tcl_DecrRefCount( ev->command );
+    }
+	
+    return retval;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TesteventDeleteProc --
+ *
+ *	Removes some set of events from the queue.
+ *
+ * This procedure is used as part of testing event queue management.
+ *
+ * Results:
+ *	Returns 1 if a given event should be deleted, 0 otherwise.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TesteventDeleteProc( Tcl_Event* event, /* Event to examine */
+		     ClientData clientData ) /* Tcl_Obj containing the name
+					      * of the event(s) to remove */
+{
+    TestEvent* ev;		/* Event to examine */
+    char* evNameStr;
+    Tcl_Obj* targetName;	/* Name of the event(s) to delete */
+    char* targetNameStr;
+
+    if ( event->proc != TesteventProc ) {
+	return 0;
+    }
+    targetName = (Tcl_Obj*) clientData;
+    targetNameStr = (char*) Tcl_GetStringFromObj( targetName, NULL );
+    ev = (TestEvent*) event;
+    evNameStr = Tcl_GetStringFromObj( ev->tag, NULL );
+    if ( strcmp( evNameStr, targetNameStr ) == 0 ) {
+	Tcl_DecrRefCount( ev->tag );
+	Tcl_DecrRefCount( ev->command );
+	return 1;
+    } else {
+	return 0;
+    }
 }
 
 /*
