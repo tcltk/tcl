@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinSock.c,v 1.21 2001/09/20 18:33:37 hobbs Exp $
+ * RCS: @(#) $Id: tclWinSock.c,v 1.22 2001/12/13 18:07:13 andreas_kupries Exp $
  */
 
 #include "tclWinInt.h"
@@ -1946,9 +1946,14 @@ TcpGetOptionProc(instanceData, interp, optionName, dsPtr)
             }
             Tcl_DStringAppendElement(dsPtr,
                     (*winSock.inet_ntoa)(peername.sin_addr));
-            hostEntPtr = (*winSock.gethostbyaddr)(
-                (char *) &(peername.sin_addr), sizeof(peername.sin_addr),
-                AF_INET);
+
+	    if (peername.sin_addr.s_addr == 0) {
+	        hostEntPtr = (struct hostent *) NULL;
+	    } else {
+	        hostEntPtr = (*winSock.gethostbyaddr)(
+                    (char *) &(peername.sin_addr), sizeof(peername.sin_addr),
+		    AF_INET);
+	    }
             if (hostEntPtr != (struct hostent *) NULL) {
                 Tcl_DStringAppendElement(dsPtr, hostEntPtr->h_name);
             } else {
@@ -1992,9 +1997,13 @@ TcpGetOptionProc(instanceData, interp, optionName, dsPtr)
             }
             Tcl_DStringAppendElement(dsPtr,
                     (*winSock.inet_ntoa)(sockname.sin_addr));
-            hostEntPtr = (*winSock.gethostbyaddr)(
-                (char *) &(sockname.sin_addr), sizeof(peername.sin_addr),
-                AF_INET);
+	    if (sockname.sin_addr.s_addr == 0) {
+	        hostEntPtr = (struct hostent *) NULL;
+	    } else {
+	        hostEntPtr = (*winSock.gethostbyaddr)(
+                    (char *) &(sockname.sin_addr), sizeof(peername.sin_addr),
+		    AF_INET);
+	    }
             if (hostEntPtr != (struct hostent *) NULL) {
                 Tcl_DStringAppendElement(dsPtr, hostEntPtr->h_name);
             } else {
