@@ -1,3 +1,10 @@
+2001-05-15  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* doc/console.n: Created.  It seems very odd to me that the
+	console implementation is part of the Tcl distribution and not
+	part of Tk, but given the location of the source, the
+	documentation must obviously match up...
+
 2001-05-14  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
 
 	* generic/tclCmdMZ.c (Tcl_StringObjCmd): 
