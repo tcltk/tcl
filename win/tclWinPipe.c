@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPipe.c,v 1.46 2004/05/10 20:51:11 davygrvy Exp $
+ * RCS: @(#) $Id: tclWinPipe.c,v 1.47 2004/05/10 21:50:37 davygrvy Exp $
  */
 
 #include "tclWinInt.h"
@@ -1576,7 +1576,7 @@ BuildCommandLine(
      */
 
     Tcl_DStringAppend(&ds, Tcl_DStringValue(linePtr), -1);
-    if (Tcl_DStringLength(&ds) > 0) Tcl_DStringAppend(&ds, " ", 1);
+    if (Tcl_DStringLength(linePtr) > 0) Tcl_DStringAppend(&ds, " ", 1);
 
     for (i = 0; i < argc; i++) {
 	if (i == 0) {
