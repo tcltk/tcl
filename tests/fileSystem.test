@@ -296,6 +296,47 @@ if {[tcltest::testConstraint testsetplatform]} {
     testsetplatform $platform
 }
 
+test filesystem-1.34 {file normalisation with '/./'} {
+    set res [file normalize /foo/bar/anc/./.tml]
+    if {[string first "/./" $res] != -1} {
+	set res "normalization of /foo/bar/anc/./.tml is: $res"
+    } else {
+	set res "ok"
+    }
+    set res
+} {ok}
+
+test filesystem-1.35 {file normalisation with '/./'} {
+    set res [file normalize /ffo/bar/anc/./foo/.tml]
+    if {[string first "/./" $res] != -1 || ([regsub -all "foo" $res "" reg] == 2)} {
+	set res "normalization of /ffo/bar/anc/./foo/.tml is: $res"
+    } else {
+	set res "ok"
+    }
+    set res
+} {ok}
+
+test filesystem-1.36 {file normalisation with '/./'} {
+    set res [file normalize /foo/bar/anc/././asdasd/.tml]
+    if {[string first "/./" $res] != -1 || ([regsub -all "asdasd" $res "" reg] == 2) } {
+	set res "normalization of /foo/bar/anc/././asdasd/.tml is: $res"
+    } else {
+	set res "ok"
+    }
+    set res
+} {ok}
+
+test filesystem-1.37 {file normalisation with '/./'} {
+    set fname "/abc/./def/./ghi/./asda/.././.././asd/x/../../../../....."
+    set res [file norm $fname]
+    if {[string first "//" $res] != -1} {
+	set res "normalization of $fname is: $res"
+    } else {
+	set res "ok"
+    }
+    set res
+} {ok}
+
 test filesystem-2.0 {new native path} {unixOnly} {
    foreach f [lsort [glob -nocomplain /usr/bin/c*]] {
        catch {file readlink $f}
