@@ -1,3 +1,12 @@
+2002-06-05  Daniel Steffen  <das@users.sourceforge.net>
+
+	* mac/tclMacResource.c (Tcl_MacConvertTextResource): added utf
+	conversion of text resource contents.
+	* mac/tclMacResource.c (Tcl_MacEvalResource): overlooked 8.4
+	backport of resource name utf conversion.
+	* tests/macFCmd.test (macFCmd-1.2): allow CWIE creator.
+	* tests/ioCmd.test (iocmd-8.15): added mac specific result string.
+
 2002-05-24  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* tests/clock.test: added clock-9.1
