@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.124 2002/05/24 21:19:05 dkf Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.125 2002/06/13 09:40:00 vincentdarley Exp $
  */
 
 #ifndef _TCL
@@ -1641,7 +1641,7 @@ typedef int (Tcl_FSFileAttrsSetProc) _ANSI_ARGS_((Tcl_Interp *interp,
 			    int index, Tcl_Obj *pathPtr,
 			    Tcl_Obj *objPtr));
 typedef Tcl_Obj* (Tcl_FSLinkProc) _ANSI_ARGS_((Tcl_Obj *pathPtr, 
-					       Tcl_Obj *toPtr));
+					       Tcl_Obj *toPtr, int linkType));
 typedef int (Tcl_FSLoadFileProc) _ANSI_ARGS_((Tcl_Interp * interp, 
 			    Tcl_Obj *pathPtr,
 			    CONST char * sym1, CONST char * sym2, 

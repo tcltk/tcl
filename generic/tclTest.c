@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.49 2002/04/23 03:48:33 hobbs Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.50 2002/06/13 09:40:00 vincentdarley Exp $
  */
 
 #define TCL_TEST
@@ -230,6 +230,8 @@ static int		TestexprstringCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Interp *interp, int argc, char **argv));
 static int		TestfileCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]));
+static int		TestfilelinkCmd _ANSI_ARGS_((ClientData dummy,
+			    Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]));
 static int		TestfeventCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Interp *interp, int argc, char **argv));
 static int		TestgetassocdataCmd _ANSI_ARGS_((ClientData dummy,
@@ -368,7 +370,7 @@ static int		TestReportLoadFile _ANSI_ARGS_ ((Tcl_Interp *interp,
 			    ClientData *clientDataPtr,
 			    Tcl_FSUnloadFileProc **unloadProcPtr));
 static Tcl_Obj *	TestReportLink _ANSI_ARGS_ ((Tcl_Obj *path,
-			    Tcl_Obj *to));
+			    Tcl_Obj *to, int linkType));
 static CONST char**	TestReportFileAttrStrings _ANSI_ARGS_ ((
 			    Tcl_Obj *fileName, Tcl_Obj **objPtrRef));
 static int		TestReportFileAttrsGet _ANSI_ARGS_ ((Tcl_Interp *interp,
@@ -525,6 +527,8 @@ Tcltest_Init(interp)
             (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
     Tcl_CreateCommand(interp, "testfevent", TestfeventCmd, (ClientData) 0,
             (Tcl_CmdDeleteProc *) NULL);
+    Tcl_CreateObjCommand(interp, "testfilelink", TestfilelinkCmd, 
+            (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
     Tcl_CreateObjCommand(interp, "testfile", TestfileCmd,
             (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
     Tcl_CreateCommand(interp, "testgetassocdata", TestgetassocdataCmd,
@@ -1963,6 +1967,73 @@ TestexprstringCmd(clientData, interp, argc, argv)
         return TCL_ERROR;
     }
     return Tcl_ExprString(interp, argv[1]);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TestfilelinkCmd --
+ *
+ *	This procedure implements the "testfilelink" command.  It is used
+ *	to test the effects of creating and manipulating filesystem links
+ *	in Tcl.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	May create a link on disk.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TestfilelinkCmd(clientData, interp, objc, objv)
+    ClientData clientData;	/* Not used. */
+    Tcl_Interp *interp;		/* Current interpreter. */
+    int objc;			/* Number of arguments. */
+    Tcl_Obj *CONST objv[];	/* The argument objects. */
+{
+    Tcl_Obj *contents;
+
+    if (objc < 2 || objc > 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "source ?target?");
+	return TCL_ERROR;
+    }
+    
+    if (Tcl_FSConvertToPathType(interp, objv[1]) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    
+    if (objc == 3) {
+	/* Create link from source to target */
+	contents = Tcl_FSLink(objv[1], objv[2], 0);
+	if (contents == NULL) {
+	    Tcl_AppendResult(interp, "could not create link from \"", 
+		    Tcl_GetString(objv[1]), "\" to \"", 
+		    Tcl_GetString(objv[2]), "\": ", 
+		    Tcl_PosixError(interp), (char *) NULL);
+	    return TCL_ERROR;
+	}
+    } else {
+	/* Read link */
+	contents = Tcl_FSLink(objv[1], NULL, 0);
+	if (contents == NULL) {
+	    Tcl_AppendResult(interp, "could not read link \"", 
+		    Tcl_GetString(objv[1]), "\": ", 
+		    Tcl_PosixError(interp), (char *) NULL);
+	    return TCL_ERROR;
+	}
+    }
+    Tcl_SetObjResult(interp, contents);
+    if (objc == 2) {
+	/* 
+	 * If we are creating a link, this will actually just
+	 * be objv[3], and we don't own it
+	 */
+	Tcl_DecrRefCount(contents);
+    }
+    return TCL_OK;
 }
 
 /*
@@ -5760,12 +5831,13 @@ TestReportLoadFile(interp, fileName, sym1, sym2, proc1Ptr, proc2Ptr,
 			  proc1Ptr, proc2Ptr, clientDataPtr, unloadProcPtr);
 }
 static Tcl_Obj *
-TestReportLink(path, to)
+TestReportLink(path, to, linkType)
     Tcl_Obj *path;		/* Path of file to readlink or link */
     Tcl_Obj *to;		/* Path of file to link to, or NULL */
+    int linkType;
 {
-    TestReport("link",path,NULL);
-    return Tcl_FSLink(TestReportGetNativePath(path),NULL);
+    TestReport("link",path,to);
+    return Tcl_FSLink(TestReportGetNativePath(path), to, linkType);
 }
 static int
 TestReportRenameFile(src, dst)

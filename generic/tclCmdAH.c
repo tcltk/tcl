@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.24 2002/04/23 02:54:13 hobbs Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.25 2002/06/13 09:40:00 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -1101,7 +1101,7 @@ Tcl_FileObjCmd(dummy, interp, objc, objv)
 		return TCL_ERROR;
 	    }
 
-	    contents = Tcl_FSLink(objv[2], NULL);
+	    contents = Tcl_FSLink(objv[2], NULL, 0);
 
 	    if (contents == NULL) {
 	    	Tcl_AppendResult(interp, "could not readlink \"", 
