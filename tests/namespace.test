@@ -222,6 +222,23 @@ test namespace-9.6 {Tcl_Import, cmd redefinition ok if allowOverwrite!=0} {
         cmd1 555
     }
 } {cmd1: 555}
+test namespace-9.7 {Tcl_Import, links are preserved if cmd is redefined} {
+    catch {eval namespace delete [namespace children :: test_ns_*]}
+    namespace eval test_ns_export {
+        namespace export cmd1
+        proc cmd1 {args} {return "cmd1: $args"}
+    }
+    namespace eval test_ns_import {
+        namespace import -force ::test_ns_export::*
+    }
+    list [test_ns_import::cmd1 a b c] \
+         [test_ns_export::cmd1 d e f] \
+         [proc test_ns_export::cmd1 {args} {return "new1: $args"}] \
+         [namespace origin test_ns_import::cmd1] \
+         [namespace origin test_ns_export::cmd1] \
+         [test_ns_import::cmd1 g h i] \
+         [test_ns_export::cmd1 j k l]
+} {{cmd1: a b c} {cmd1: d e f} {} ::test_ns_export::cmd1 ::test_ns_export::cmd1 {new1: g h i} {new1: j k l}}
 
 test namespace-10.1 {Tcl_ForgetImport, check for valid namespaces} {
     catch {eval namespace delete [namespace children :: test_ns_*]}
