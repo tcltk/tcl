@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.80 2002/02/15 14:28:49 dkf Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.81 2002/02/22 22:36:09 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -1629,6 +1629,7 @@ extern long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS];
  */
 
 extern char *		tclEmptyStringRep;
+extern char		tclEmptyString;
 
 /*
  *----------------------------------------------------------------
