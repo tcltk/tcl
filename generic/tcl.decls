@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.89 2002/06/13 09:39:59 vincentdarley Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.90 2002/06/21 14:22:28 vincentdarley Exp $
 
 library tcl
 
@@ -1577,7 +1577,7 @@ declare 445 generic {
 	    Tcl_Obj *pathPtr, CONST char *pattern, Tcl_GlobTypeData *types)
 }
 declare 446 generic {
-    Tcl_Obj * Tcl_FSLink(Tcl_Obj *pathPtr, Tcl_Obj *toPtr, int linkType)
+    Tcl_Obj * Tcl_FSLink(Tcl_Obj *pathPtr, Tcl_Obj *toPtr, int linkAction)
 }
 declare 447 generic {
     int Tcl_FSRemoveDirectory(Tcl_Obj *pathPtr,

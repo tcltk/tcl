@@ -1,3 +1,21 @@
+2002-06-21  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* tests/cmdAH.test:          Added TIP#99 implementation
+	* tests/fCmd.test:           of 'file link'.  Supports creation
+	* tests/fileName.test:       of symbolic and hard links in the
+	* tests/fileSystem.test:     native filesystems and in vfs's,
+	* generic/tclTest.c:         when the individual filesystem
+	* generic/tclCmdAH.c:        supports the concept.
+	* generic/tclIOUtil.c:       
+	* generic/tcl.h:
+	* generic/tcl.decls:
+	* doc/FileSystem.3:
+	* doc/file.n:
+	* mac/tclMacFile.c:
+	* unix/tclUnixFile.c:
+	* win/tclWinFile.c: Also enhanced speed of 'file normalize' on
+	Windows.
+
 2002-06-20  Miguel Sofer  <msofer@users.sourceforge.net>
 
 	* generic/tclBasic.c (TclEvalObjvInternal): fix for [Bug 571385]

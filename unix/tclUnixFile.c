@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFile.c,v 1.23 2002/06/13 09:40:01 vincentdarley Exp $
+ * RCS: @(#) $Id: tclUnixFile.c,v 1.24 2002/06/21 14:22:29 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -724,10 +724,10 @@ TclpObjStat(pathPtr, bufPtr)
 #ifdef S_IFLNK
 
 Tcl_Obj* 
-TclpObjLink(pathPtr, toPtr, linkType)
+TclpObjLink(pathPtr, toPtr, linkAction)
     Tcl_Obj *pathPtr;
     Tcl_Obj *toPtr;
-    int linkType;
+    int linkAction;
 {
     extern Tcl_Filesystem nativeFilesystem;
 
@@ -738,12 +738,27 @@ TclpObjLink(pathPtr, toPtr, linkType)
 	if (src == NULL || target == NULL) {
 	    return NULL;
 	}
-	/* We don't recognise these codes */
-	if (linkType < 0 || linkType > 2) return NULL;
-	if (linkType == 2) {
-	    if (link(src, target) != 0) return NULL;
+	if (access(src, F_OK) != -1) {
+	    /* src exists */
+	    errno = EEXIST;
+	    return NULL;
+	}
+	if (access(target, F_OK) == -1) {
+	    /* target doesn't exist */
+	    errno = ENOENT;
+	    return NULL;
+	}
+	/* 
+	 * Check symbolic link flag first, since we prefer to
+	 * create these.
+	 */
+	if (linkAction & TCL_CREATE_SYMBOLIC_LINK) {
+	    if (symlink(target, src) != 0) return NULL;
+	} else if (linkAction & TCL_CREATE_HARD_LINK) {
+	    if (link(target, src) != 0) return NULL;
 	} else {
-	    if (symlink(src, target) != 0) return NULL;
+	    errno = ENODEV;
+	    return NULL;
 	}
 	return toPtr;
     } else {
