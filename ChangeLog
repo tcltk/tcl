@@ -1,3 +1,11 @@
+2004-06-14  Kevin Kenny  <kennykb@acm.org>
+
+	* win/Makefile.in: Corrected compilation flags for tclPkgConfig.c
+	so that it doesn't require Stubs.
+	* generic/tclBasic.c (Tcl_CreateInterp): Removed comment stating
+	that TclInitEmbeddedConfigurationInformation needs Stubs; with the
+	change above, the comment is now erroneous.
+	
 2004-06-11  Don Porter  <dgp@users.sourceforge.net>
 
 	* doc/Encoding.3:	Removed bogus claims about tcl_libPath.
