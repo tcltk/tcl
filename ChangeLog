@@ -1,5 +1,16 @@
 2003-03-06  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* generic/tclIO.c (Tcl_Flush): Compare the
+	nextAdded member of the ChannelBuffer to the
+	nextRemoved member to determine if any output
+	has been buffered. The previous check against
+	the value 0 seems to have just been a coding
+	error. See other methods like Tcl_OutputBuffered
+	for examples where nextAdded is compared to
+	nextRemoved to find the number of bytes buffered.
+
+2003-03-06  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* generic/tclIO.c (Tcl_GetsObj): Check that
 	the eol pointer has not gone past the end
 	of the string when in auto translation
