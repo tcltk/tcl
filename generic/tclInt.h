@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.215 2005/03/10 22:10:38 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.216 2005/03/25 00:35:03 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -1889,6 +1889,7 @@ MODULE_SCOPE void	TclInitNamespaceSubsystem _ANSI_ARGS_((void));
 MODULE_SCOPE void	TclInitNotifier _ANSI_ARGS_((void));
 MODULE_SCOPE void	TclInitObjSubsystem _ANSI_ARGS_((void));
 MODULE_SCOPE void	TclInitSubsystems ();
+MODULE_SCOPE int	TclInterpReady _ANSI_ARGS_((Tcl_Interp *interp));
 MODULE_SCOPE int	TclIsLocalScalar _ANSI_ARGS_((CONST char *src,
 			    int len));
 MODULE_SCOPE int	TclJoinThread _ANSI_ARGS_((Tcl_ThreadId id,
