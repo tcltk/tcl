@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinInit.c,v 1.1.2.7 1999/03/11 06:16:51 welch Exp $
+ * RCS: @(#) $Id: tclWinInit.c,v 1.1.2.8 1999/03/12 23:29:22 surles Exp $
  */
 
 #include "tclWinInt.h"
@@ -88,7 +88,7 @@ static DWORD mainThreadId;
 #include "tclInitScript.h"
 
 static void		AppendEnvironment(Tcl_Obj *listPtr, CONST char *lib);
-static void		AppendPath(Tcl_Obj *listPtr, HMODULE hModule,
+static void		AppendDllPath(Tcl_Obj *listPtr, HMODULE hModule,
 			    CONST char *lib);
 static void		AppendRegistry(Tcl_Obj *listPtr, CONST char *lib);
 static int		ToUtf(CONST WCHAR *wSrc, char *dst);
@@ -165,99 +165,108 @@ TclpInitPlatform()
  */
 
 void
-TclpInitLibraryPath(argv0)
-    CONST char *argv0;		/* Name of executable from argv[0] to main().
-				 * Not used because we can determine the name
-				 * by querying the module handle. */
+TclpInitLibraryPath(path)
+    CONST char *path;		/* Potentially dirty UTF string that is */
+				/* the path to the executable name.     */
 {
 #define LIBRARY_SIZE	    32
     Tcl_Obj *pathPtr, *objPtr;
+    char *str;
+    Tcl_DString ds;
+    int pathc;
+    char **pathv;
     char installLib[LIBRARY_SIZE], developLib[LIBRARY_SIZE];
 
+    Tcl_DStringInit(&ds);
     pathPtr = Tcl_NewObj();
 
     /*
-     * set installLib lib/tcl[info tclversion]
-     *
-     * if {[string match {*[ab]*} [info patchlevel]} {
-     *	   set developLib ../tcl[info patchlevel]/library
-     * } else {
-     *     set developLib ../tcl[info tclversion]/library
-     * }
+     * Initialize the substrings used when locating an executable.  The
+     * installLib variable computes the path as though the executable
+     * is installed.  The developLib computes the path as though the
+     * executable is run from a develpment directory.
      */
-     
+
     sprintf(installLib, "lib/tcl%s", TCL_VERSION);
     sprintf(developLib, "../tcl%s/library",
 	    ((TCL_RELEASE_LEVEL < 2) ? TCL_PATCH_LEVEL : TCL_VERSION));
 
     /*
-     * if {[info exists $env(TCL_LIBRARY)]} {
-     *     lappend dirs $env(TCL_LIBRARY)
-     *     set split [file split $TCL_LIBRARY]
-     *	   set tail [lindex [file split $installLib] end]
-     *     if {[string tolower [lindex $split end]] != $tail} {
-     *         set split [lreplace $split end end $tail]
-     *         lappend dirs [eval file join $split]
-     *     }
-     * }
+     * Look for the library relative to default encoding dir.
+     */
+
+    str = Tcl_GetDefaultEncodingDir();
+    if ((str != NULL) && (str[0] != '\0')) {
+	objPtr = Tcl_NewStringObj(str, -1);
+	Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
+    }
+
+    /*
+     * Look for the library relative to the TCL_LIBRARY env variable.
+     * If the last dirname in the TCL_LIBRARY path does not match the
+     * last dirname in the installLib variable, use the last dir name
+     * of installLib in addition to the orginal TCL_LIBRARY path.
      */
 
     AppendEnvironment(pathPtr, installLib);
 
     /*
-     * if {[info exists $auto_path]} {
-     *     eval lappend dirs $auto_path
-     * }
+     * Look for the library relative to the DLL.  Only use the installLib
+     * because in practice, the DLL is always installed.
      */
 
-    objPtr = TclGetLibraryPath();
-    if (objPtr != NULL) {
-	int objc;
-	Tcl_Obj **objv;
-	int i, length;
-	char *str;
-	char tmp[MAX_PATH * TCL_UTF_MAX];
-	WCHAR wBuf[MAX_PATH];
+    AppendDllPath(pathPtr, TclWinGetTclInstance(), installLib);
+    
+    /*
+     * Look for the library relative to the executable.  Use both the
+     * installLib and developLib because we cannot determine if this
+     * is installed or not.
+     */
 
-	objc = 0;
-	Tcl_ListObjGetElements(NULL, pathPtr, &objc, &objv);
-	for (i = 0; i < objc; i++) {
-	    str = Tcl_GetStringFromObj(objv[i], &length);
-	    length = MultiByteToWideChar(CP_ACP, 0, str, length, wBuf, 
-		    MAX_PATH);
-	    Tcl_SetStringObj(objv[i], tmp, ToUtf(wBuf, tmp));
+    if (path != NULL) {
+	Tcl_SplitPath(path, &pathc, &pathv);
+	if (pathc > 1) {
+	    pathv[pathc - 2] = installLib;
+	    path = Tcl_JoinPath(pathc - 1, pathv, &ds);
+	    objPtr = Tcl_NewStringObj(path, Tcl_DStringLength(&ds));
+	    Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
+	    Tcl_DStringFree(&ds);
 	}
-	Tcl_ListObjAppendList(NULL, pathPtr, objPtr);
+	if (pathc > 2) {
+	    pathv[pathc - 3] = developLib;
+	    path = Tcl_JoinPath(pathc - 2, pathv, &ds);
+	    objPtr = Tcl_NewStringObj(path, Tcl_DStringLength(&ds));
+	    Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
+	    Tcl_DStringFree(&ds);
+	}
+	ckfree((char *) pathv);
     }
 
-    /*
-     * if {[info nameofexecutable] != ""} {
-     *     set prefix [file dirname [file dirname [info nameofexecutable]]]
-     *     lappend dirs $prefix/$installLib
-     *     lappend dirs $prefix/$developLib
-     * }
-     */
-
-    AppendPath(pathPtr, NULL, installLib);
-    AppendPath(pathPtr, NULL, developLib);
-    AppendPath(pathPtr, NULL, NULL);
-     
-    /*
-     * if {[info nameoflibrary] != ""} {
-     *     lappend dirs [file dirname [info nameoflibrary]]/$installLib
-     * }
-     */
-
-    AppendPath(pathPtr, TclWinGetTclInstance(), installLib);
-    AppendPath(pathPtr, TclWinGetTclInstance(), NULL);
-
-    AppendRegistry(pathPtr, installLib);
     TclSetLibraryPath(pathPtr);
 }
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * AppendEnvironment --
+ *
+ *	Append the value of the TCL_LIBRARY environment variable onto the
+ *	path pointer.  If the env variable points to another version of
+ *	tcl (e.g. "tcl7.6") also append the path to this version (e.g.,
+ *	"tcl7.6/../tcl8.1")
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *---------------------------------------------------------------------------
+ */
 
 static void
 AppendEnvironment(
-    Tcl_Obj *listPtr,
+    Tcl_Obj *pathPtr,
     CONST char *lib)
 {
     int pathc;
@@ -268,6 +277,11 @@ AppendEnvironment(
     Tcl_DString ds;
     char **pathv;
 
+    /*
+     * The "L" preceeding the TCL_LIBRARY string is used to tell VC++
+     * that this is a unicode string.
+     */
+    
     if (GetEnvironmentVariableW(L"TCL_LIBRARY", wBuf, MAX_PATH) == 0) {
         buf[0] = '\0';
 	GetEnvironmentVariableA("TCL_LIBRARY", buf, MAX_PATH);
@@ -277,7 +291,7 @@ AppendEnvironment(
 
     if (buf[0] != '\0') {
 	objPtr = Tcl_NewStringObj(buf, -1);
-	Tcl_ListObjAppendElement(NULL, listPtr, objPtr);
+	Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
 
 	TclWinNoBackslash(buf);
 	Tcl_SplitPath(buf, &pathc, &pathv);
@@ -304,14 +318,31 @@ AppendEnvironment(
 	} else {
 	    objPtr = Tcl_NewStringObj(buf, -1);
 	}
-	Tcl_ListObjAppendElement(NULL, listPtr, objPtr);
+	Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
 	ckfree((char *) pathv);
     }
 }
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * AppendDllPath --
+ *
+ *	Append a path onto the path pointer that tries to locate the Tcl
+ *	library relative to the location of the Tcl DLL.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *---------------------------------------------------------------------------
+ */
 
 static void 
-AppendPath(
-    Tcl_Obj *listPtr, 
+AppendDllPath(
+    Tcl_Obj *pathPtr, 
     HMODULE hModule,
     CONST char *lib)
 {
@@ -336,58 +367,24 @@ AppendPath(
 	strcpy(end + 1, lib);
     }
     TclWinNoBackslash(name);
-    Tcl_ListObjAppendElement(NULL, listPtr, Tcl_NewStringObj(name, -1));
+    Tcl_ListObjAppendElement(NULL, pathPtr, Tcl_NewStringObj(name, -1));
 }
-
-static void
-AppendRegistry(
-    Tcl_Obj *listPtr,
-    CONST char *lib)
-{
-    HKEY key;
-    LONG result;
-    WCHAR wBuf[MAX_PATH + 64];
-    char buf[(MAX_PATH + LIBRARY_SIZE) * TCL_UTF_MAX];
-    DWORD len;
-
-    if (TclWinGetPlatformId() == VER_PLATFORM_WIN32s) {
-	key = HKEY_CLASSES_ROOT;
-    } else {
-	key = HKEY_LOCAL_MACHINE;
-    }
-    result = RegOpenKeyExA(key, TCL_REGISTRY_KEY, 0, KEY_QUERY_VALUE, &key);
-    if (result != ERROR_SUCCESS) {
-	return;
-    }
-
-    /*
-     * Can't just call RegQueryValueExW() and then if that fails (on 95)
-     * call RegQueryValueExA() because RegQueryValueExW() always seems to
-     * return ERROR_SUCCESS on Windows 95 even though it doesn't exist and
-     * doesn't do anything.
-     */
-
-    len = MAX_PATH;
-    if (TclWinGetPlatformId() == VER_PLATFORM_WIN32_NT) {
-	MultiByteToWideChar(CP_ACP, 0, "", -1, wBuf, MAX_PATH);
-        result = RegQueryValueExW(key, wBuf, NULL, NULL, (LPBYTE) wBuf, &len);
-	if (result == ERROR_SUCCESS) {
-	    len = ToUtf(wBuf, buf);
-	}
-    } else {
-	result = RegQueryValueExA(key, "", NULL, NULL, (LPBYTE) buf, &len);
-    }
-    if (result == ERROR_SUCCESS) {
-	if (buf[len - 1] != '\\') {
-	    buf[len] = '\\';
-	    len++;
-	}
-	strcpy(buf + len, lib);
-	TclWinNoBackslash(buf);
-	Tcl_ListObjAppendElement(NULL, listPtr, Tcl_NewStringObj(buf, -1));
-    }
-    RegCloseKey(key);
-}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * ToUtf --
+ *
+ *	Convert a char string to a UTF string.  
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *---------------------------------------------------------------------------
+ */
 
 static int
 ToUtf(
@@ -602,6 +599,12 @@ Tcl_Init(interp)
     Tcl_Interp *interp;		/* Interpreter to initialize. */
 {
     Tcl_Obj *pathPtr;
+
+    if (tclPreInitScript != NULL) {
+	if (Tcl_Eval(interp, tclPreInitScript) == TCL_ERROR) {
+	    return (TCL_ERROR);
+	};
+    }
 
     pathPtr = TclGetLibraryPath();
     if (pathPtr == NULL) {

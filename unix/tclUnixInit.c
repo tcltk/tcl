@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixInit.c,v 1.1.2.7 1999/03/11 06:16:50 welch Exp $
+ * RCS: @(#) $Id: tclUnixInit.c,v 1.1.2.8 1999/03/12 23:29:20 surles Exp $
  */
 
 #include "tclInt.h"
@@ -178,9 +178,9 @@ TclpInitPlatform()
  */
 
 void
-TclpInitLibraryPath(argv0)
-CONST char *argv0;		/* Name of executable from argv[0] to
-				 * main(). */
+TclpInitLibraryPath(path)
+CONST char *path;		/* Path to the executable in native 
+				 * multi-byte encoding. */
 {
 #define LIBRARY_SIZE	    32
     Tcl_Obj *pathPtr, *objPtr;
@@ -194,13 +194,10 @@ CONST char *argv0;		/* Name of executable from argv[0] to
     pathPtr = Tcl_NewObj();
 
     /*
-     * set installLib lib/tcl[info tclversion]
-     *
-     * if {[string match {*[ab]*} [info patchlevel]} {
-     *	   set developLib tcl[info patchlevel]/library
-     * } else {
-     *     set developLib tcl[info tclversion]/library
-     * }
+     * Initialize the substrings used when locating an executable.  The
+     * installLib variable computes the path as though the executable
+     * is installed.  The developLib computes the path as though the
+     * executable is run from a develpment directory.
      */
      
     sprintf(installLib, "lib/tcl%s", TCL_VERSION);
@@ -208,15 +205,20 @@ CONST char *argv0;		/* Name of executable from argv[0] to
 	    ((TCL_RELEASE_LEVEL < 2) ? TCL_PATCH_LEVEL : TCL_VERSION));
 
     /*
-     * if {[info exists $env(TCL_LIBRARY)]} {
-     *     lappend dirs $env(TCL_LIBRARY)
-     *     set split [file split $TCL_LIBRARY]
-     *	   set tail [lindex [file split $installLib] end]
-     *     if {[string tolower [lindex $split end]] != $tail} {
-     *         set split [lreplace $split end end $tail]
-     *         lappend dirs [eval file join $split]
-     *     }
-     * }
+     * Look for the library relative to default encoding dir.
+     */
+
+    str = Tcl_GetDefaultEncodingDir();
+    if ((str != NULL) && (str[0] != '\0')) {
+	objPtr = Tcl_NewStringObj(str, -1);
+	Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
+    }
+
+    /*
+     * Look for the library relative to the TCL_LIBRARY env variable.
+     * If the last dirname in the TCL_LIBRARY path does not match the
+     * last dirname in the installLib variable, use the last dir name
+     * of installLib in addition to the orginal TCL_LIBRARY path.
      */
 
     str = getenv("TCL_LIBRARY");			/* INTL: Native. */
@@ -229,7 +231,7 @@ CONST char *argv0;		/* Name of executable from argv[0] to
 	Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
 
 	Tcl_SplitPath(str, &pathc, &pathv);
-	if ((pathc > 0) && (strcasecmp(installLib + 4, pathv[pathc - 1]) != 0)) {
+	if ((pathc > 0) && (strcasecmp(installLib + 4, pathv[pathc-1]) != 0)) {
 	    /*
 	     * If TCL_LIBRARY is set but refers to a different tcl
 	     * installation than the current version, try fiddling with the
@@ -248,56 +250,30 @@ CONST char *argv0;		/* Name of executable from argv[0] to
     }
 
     /*
-     * if {[info exists $auto_path]} {
-     *     eval lappend dirs $auto_path
-     * }
-     */
-
-    objPtr = TclGetLibraryPath();
-    if (objPtr != NULL) {
-	Tcl_ListObjAppendList(NULL, pathPtr, objPtr);
-    }
-
-    /*
-     * if {[info nameofexecutable] != ""} {
-     *     set dir [file dirname [file dirname [info nameofexecutable]]]
-     *     lappend dirs [file join $dir $installLib]
-     *     lappend dirs [file join [file dirname $dir] $developLib]
-     * }
+     * Look for the library relative to the executable.  Use both the
+     * installLib and developLib because we cannot determine if this
+     * is installed or not.
      */
      
-    Tcl_FindExecutable(argv0);
-    str = tclExecutableName;
-    if (str != NULL) {
-	Tcl_SplitPath(str, &pathc, &pathv);
+    if (path != NULL) {
+	Tcl_SplitPath(path, &pathc, &pathv);
 	if (pathc > 1) {
 	    pathv[pathc - 2] = installLib;
-	    str = Tcl_JoinPath(pathc - 1, pathv, &ds);
-	    objPtr = Tcl_NewStringObj(str, Tcl_DStringLength(&ds));
+	    path = Tcl_JoinPath(pathc - 1, pathv, &ds);
+	    objPtr = Tcl_NewStringObj(path, Tcl_DStringLength(&ds));
 	    Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
 	    Tcl_DStringFree(&ds);
 	}
 	if (pathc > 2) {
 	    pathv[pathc - 3] = developLib;
-	    str = Tcl_JoinPath(pathc - 2, pathv, &ds);
-	    objPtr = Tcl_NewStringObj(str, Tcl_DStringLength(&ds));
+	    path = Tcl_JoinPath(pathc - 2, pathv, &ds);
+	    objPtr = Tcl_NewStringObj(path, Tcl_DStringLength(&ds));
 	    Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
 	    Tcl_DStringFree(&ds);
 	}
 	ckfree((char *) pathv);
     }
 
-    /*
-     * if {$tcl_library != ""} {
-     *     lappend dirs $tcl_library
-     * }
-     */
-
-    str = defaultLibraryDir;
-    if (str[0] != '\0') {
-	objPtr = Tcl_NewStringObj(str, -1);
-	Tcl_ListObjAppendElement(NULL, pathPtr, objPtr);
-    }
     TclSetLibraryPath(pathPtr);
 }
 
@@ -527,6 +503,12 @@ Tcl_Init(interp)
 {
     Tcl_Obj *pathPtr;
 
+    if (tclPreInitScript != NULL) {
+	if (Tcl_Eval(interp, tclPreInitScript) == TCL_ERROR) {
+	    return (TCL_ERROR);
+	};
+    }
+    
     pathPtr = TclGetLibraryPath();
     if (pathPtr == NULL) {
 	pathPtr = Tcl_NewObj();

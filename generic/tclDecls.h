@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.3.2.4 1999/03/11 01:50:28 stanton Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.3.2.5 1999/03/12 23:29:12 surles Exp $
  */
 
 #ifndef _TCLDECLS
@@ -1043,6 +1043,10 @@ EXTERN int		Tcl_WriteObj _ANSI_ARGS_((Tcl_Channel chan,
 				Tcl_Obj * objPtr));
 /* 340 */
 EXTERN char *		Tcl_GetString _ANSI_ARGS_((Tcl_Obj * objPtr));
+/* 341 */
+EXTERN char *		Tcl_GetDefaultEncodingDir _ANSI_ARGS_((void));
+/* 342 */
+EXTERN void		Tcl_SetDefaultEncodingDir _ANSI_ARGS_((char * path));
 
 typedef struct TclStubHooks {
     struct TclPlatStubs *tclPlatStubs;
@@ -1419,6 +1423,8 @@ typedef struct TclStubs {
     int (*tcl_WriteChars) _ANSI_ARGS_((Tcl_Channel chan, CONST char * src, int srcLen)); /* 338 */
     int (*tcl_WriteObj) _ANSI_ARGS_((Tcl_Channel chan, Tcl_Obj * objPtr)); /* 339 */
     char * (*tcl_GetString) _ANSI_ARGS_((Tcl_Obj * objPtr)); /* 340 */
+    char * (*tcl_GetDefaultEncodingDir) _ANSI_ARGS_((void)); /* 341 */
+    void (*tcl_SetDefaultEncodingDir) _ANSI_ARGS_((char * path)); /* 342 */
 } TclStubs;
 
 extern TclStubs *tclStubsPtr;
@@ -2777,6 +2783,14 @@ extern TclStubs *tclStubsPtr;
 #ifndef Tcl_GetString
 #define Tcl_GetString(objPtr) \
 	(tclStubsPtr->tcl_GetString)(objPtr) /* 340 */
+#endif
+#ifndef Tcl_GetDefaultEncodingDir
+#define Tcl_GetDefaultEncodingDir() \
+	(tclStubsPtr->tcl_GetDefaultEncodingDir)() /* 341 */
+#endif
+#ifndef Tcl_SetDefaultEncodingDir
+#define Tcl_SetDefaultEncodingDir(path) \
+	(tclStubsPtr->tcl_SetDefaultEncodingDir)(path) /* 342 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.1.2.3 1998/10/06 00:42:17 stanton Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.1.2.4 1999/03/12 23:29:21 surles Exp $
  */
 
 #include "tclWinInt.h"
@@ -32,39 +32,42 @@ typedef NET_API_STATUS NET_API_FUNCTION NETGETDCNAMEPROC
 
 
 /*
- *----------------------------------------------------------------------
+ *---------------------------------------------------------------------------
  *
- * Tcl_FindExecutable --
+ * TclpFindExecutable --
  *
  *	This procedure computes the absolute path name of the current
  *	application, given its argv[0] value.
  *
  * Results:
- *	None.
+ *	A dirty UTF string that is the path to the executable.  At this
+ *	point we may not know the system encoding.  Convert the native
+ *	string value to UTF using the default encoding.  The assumption
+ *	is that we will still be able to parse the path given the path
+ *	name contains ASCII string and '/' chars do not conflict with
+ *	other UTF chars.
  *
  * Side effects:
- *	The variable tclExecutableName gets filled in with the file
+ *	The variable tclNativeExecutableName gets filled in with the file
  *	name for the application, if we figured it out.  If we couldn't
- *	figure it out, Tcl_FindExecutable is set to NULL.
+ *	figure it out, tclNativeExecutableName is set to NULL.
  *
- *----------------------------------------------------------------------
+ *---------------------------------------------------------------------------
  */
 
-void
-Tcl_FindExecutable(argv0)
-    CONST char *argv0;		/* The value of the application's argv[0]. */
+char *
+TclpFindExecutable(argv0)
+    CONST char *argv0;		/* The value of the application's argv[0]
+				 * (native). */
 {
     Tcl_DString ds;
     WCHAR wName[MAX_PATH];
 
-    TclInitSubsystems(argv0);
-
     if (argv0 == NULL) {
-	return;
+	return NULL;
     }
-    if (tclExecutableName != NULL) {
-	ckfree((char *) tclExecutableName);
-	tclExecutableName = NULL;
+    if (tclNativeExecutableName != NULL) {
+	return tclNativeExecutableName;
     }
 
     /*
@@ -75,10 +78,12 @@ Tcl_FindExecutable(argv0)
     (*tclWinProcs->getModuleFileNameProc)(NULL, wName, MAX_PATH);
     Tcl_WinTCharToUtf((TCHAR *) wName, -1, &ds);
 
-    tclExecutableName = ckalloc((unsigned) (Tcl_DStringLength(&ds) + 1));
-    strcpy(tclExecutableName, Tcl_DStringValue(&ds));
-    TclWinNoBackslash(tclExecutableName);
+    tclNativeExecutableName = ckalloc((unsigned) (Tcl_DStringLength(&ds) + 1));
+    strcpy(tclNativeExecutableName, Tcl_DStringValue(&ds));
     Tcl_DStringFree(&ds);
+
+    TclWinNoBackslash(tclNativeExecutableName);
+    return tclNativeExecutableName;
 }
 
 /*

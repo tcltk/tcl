@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.3.2.4 1999/03/11 01:50:26 stanton Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.3.2.5 1999/03/12 23:29:11 surles Exp $
 
 library tcl
 
@@ -1160,6 +1160,12 @@ declare 339 generic {
 }
 declare 340 generic {
     char * Tcl_GetString(Tcl_Obj *objPtr)
+}
+declare 341 generic {
+    char * Tcl_GetDefaultEncodingDir(void)
+}
+declare 342 generic {
+    void Tcl_SetDefaultEncodingDir(char *path)
 }
 
 ##############################################################################

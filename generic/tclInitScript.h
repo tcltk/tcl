@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInitScript.h,v 1.1.2.2 1998/10/03 01:56:41 stanton Exp $
+ * RCS: @(#) $Id: tclInitScript.h,v 1.1.2.3 1999/03/12 23:29:14 surles Exp $
  */
 
 /*
@@ -45,3 +45,38 @@ static char initScript[] = "if {[info proc tclInit]==\"\"} {\n\
 }\n\
 tclInit";
 
+
+/*
+ * A pointer to a string that holds an initialization script that if non-NULL
+ * is evaluated in Tcl_Init() prior to the the built-in initialization script
+ * above.  This variable can be modified by the procedure below.
+ */
+ 
+static char *          tclPreInitScript = NULL;
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclSetPreInitScript --
+ *
+ *	This routine is used to change the value of the internal
+ *	variable, tclPreInitScript.
+ *
+ * Results:
+ *	Returns the current value of tclPreInitScript.
+ *
+ * Side effects:
+ *	Changes the way Tcl_Init() routine behaves.
+ *
+ *----------------------------------------------------------------------
+ */
+
+char *
+TclSetPreInitScript (string)
+    char *string;		/* Pointer to a script. */
+{
+    char *prevString = tclPreInitScript;
+    tclPreInitScript = string;
+    return(prevString);
+}

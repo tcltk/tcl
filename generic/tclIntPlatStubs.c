@@ -7,7 +7,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclIntPlatStubs.c,v 1.3.2.2 1999/03/11 01:50:30 stanton Exp $
+ * RCS: @(#) $Id: tclIntPlatStubs.c,v 1.3.2.3 1999/03/12 23:29:16 surles Exp $
  */
 
 #include "tclInt.h"

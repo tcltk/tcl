@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEvent.c,v 1.1.2.6 1998/12/12 01:36:56 lfb Exp $
+ * RCS: @(#) $Id: tclEvent.c,v 1.1.2.7 1999/03/12 23:29:14 surles Exp $
  */
 
 #include "tclInt.h"
@@ -87,6 +87,7 @@ TCL_DECLARE_MUTEX(exitMutex)
 
 static int inFinalize = 0;
 static int subsystemsInitialized = 0;
+static int encodingsInitialized  = 0;
 
 static Tcl_Obj *tclLibraryPath = NULL;
 
@@ -696,15 +697,10 @@ TclInitSubsystems(argv0)
 #endif
 
 	    TclpInitPlatform();
-    
-	    TclInitObjSubsystem();
+    	    TclInitObjSubsystem();
 	    TclInitIOSubsystem();
 	    TclInitEncodingSubsystem();
-    
-	    TclpInitLibraryPath(argv0);
-	    TclpSetInitialEncodings();
-    
-	    TclInitNamespaceSubsystem();
+    	    TclInitNamespaceSubsystem();
 	}
 	TclpInitUnlock();
     }
@@ -719,6 +715,55 @@ TclInitSubsystems(argv0)
 	(void) TCL_TSD_INIT(&dataKey);
 	TclInitNotifier();
      }
+}
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * TclFindEncodings --
+ *
+ *	Find and load the encoding file for this operating system.
+ *	Before this is called, Tcl makes assumptions about the
+ *	native string representation, but the true encoding is not
+ *	assured.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Varied, see the respective initialization routines.
+ *
+ *-------------------------------------------------------------------------
+ */
+
+void
+TclFindEncodings(argv0)
+    CONST char *argv0;		/* Name of executable from argv[0] to main()
+				 * in native multi-byte encoding. */
+{
+    char *native;
+
+    if (encodingsInitialized == 0) {
+	/* 
+	 * Double check inside the mutex.  There may be calls
+	 * back into this routine from some of the procedures below.
+	 */
+
+	TclpInitLock();
+	if (encodingsInitialized == 0) {
+	    /*
+	     * Have to set this bit here to avoid deadlock with the
+	     * routines below us that call into TclInitSubsystems.
+	     */
+
+	    encodingsInitialized = 1;
+
+	    native = TclpFindExecutable(argv0);
+	    TclpInitLibraryPath(native);
+	    TclpSetInitialEncodings();
+	}
+	TclpInitUnlock();
+    }
 }
 
 /*
@@ -744,10 +789,10 @@ Tcl_Finalize()
 {
     ExitHandler *exitPtr;
 
-
     TclpInitLock();
     if (subsystemsInitialized != 0) {
 	subsystemsInitialized = 0;
+	encodingsInitialized  = 0;
 
 	/*
 	 * Invoke exit handlers first.
@@ -800,6 +845,15 @@ Tcl_Finalize()
 	    ckfree(tclExecutableName);
 	    tclExecutableName = NULL;
 	}
+	if (tclNativeExecutableName != NULL) {
+	    ckfree(tclNativeExecutableName);
+	    tclNativeExecutableName = NULL;
+	}
+	if (tclDefaultEncodingDir != NULL) {
+	    ckfree(tclDefaultEncodingDir);
+	    tclDefaultEncodingDir = NULL;
+	}
+	
 	Tcl_SetPanicProc(NULL);
 
 	/*

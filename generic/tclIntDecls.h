@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.3.2.2 1999/03/11 01:50:30 stanton Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.3.2.3 1999/03/12 23:29:15 surles Exp $
  */
 
 #ifndef _TCLINTDECLS

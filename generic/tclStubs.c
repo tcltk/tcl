@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubs.c,v 1.3.2.4 1999/03/11 01:50:31 stanton Exp $
+ * RCS: @(#) $Id: tclStubs.c,v 1.3.2.5 1999/03/12 23:29:18 surles Exp $
  */
 
 #include "tcl.h"
@@ -3230,6 +3230,21 @@ Tcl_GetString(objPtr)
     Tcl_Obj * objPtr;
 {
     return (tclStubsPtr->tcl_GetString)(objPtr);
+}
+
+/* Slot 341 */
+char *
+Tcl_GetDefaultEncodingDir()
+{
+    return (tclStubsPtr->tcl_GetDefaultEncodingDir)();
+}
+
+/* Slot 342 */
+void
+Tcl_SetDefaultEncodingDir(path)
+    char * path;
+{
+    (tclStubsPtr->tcl_SetDefaultEncodingDir)(path);
 }
 
 

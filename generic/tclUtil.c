@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.1.2.7 1999/01/28 20:25:00 stanton Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.1.2.8 1999/03/12 23:29:19 surles Exp $
  */
 
 #include "tclInt.h"
@@ -22,8 +22,9 @@
  * know.  The value of the variable is set by the procedure
  * Tcl_FindExecutable.  The storage space is dynamically allocated.
  */
- 
+
 char *tclExecutableName = NULL;
+char *tclNativeExecutableName = NULL;
 
 /*
  * The following values are used in the flags returned by Tcl_ScanElement

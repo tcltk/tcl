@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixTest.c,v 1.1.2.3 1998/11/11 04:08:38 stanton Exp $
+ * RCS: @(#) $Id: tclUnixTest.c,v 1.1.2.4 1999/03/12 23:29:21 surles Exp $
  */
 
 #include "tclInt.h"
@@ -73,6 +73,10 @@ static int		TestfindexecutableCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Interp *interp, int argc, char **argv));
 static int		TestgetopenfileCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Interp *interp, int argc, char **argv));
+static int		TestgetdefencdirCmd _ANSI_ARGS_((ClientData dummy,
+			    Tcl_Interp *interp, int argc, char **argv));
+static int		TestsetdefencdirCmd _ANSI_ARGS_((ClientData dummy,
+			    Tcl_Interp *interp, int argc, char **argv));
 int			TclplatformtestInit _ANSI_ARGS_((Tcl_Interp *interp));
 static int		TestalarmCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Interp *interp, int argc, char **argv));
@@ -108,6 +112,10 @@ TclplatformtestInit(interp)
     Tcl_CreateCommand(interp, "testfindexecutable", TestfindexecutableCmd,
             (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
     Tcl_CreateCommand(interp, "testgetopenfile", TestgetopenfileCmd,
+            (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
+    Tcl_CreateCommand(interp, "testgetdefenc", TestgetdefencdirCmd,
+            (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
+    Tcl_CreateCommand(interp, "testsetdefenc", TestsetdefencdirCmd,
             (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
     Tcl_CreateCommand(interp, "testalarm", TestalarmCmd,
             (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
@@ -438,20 +446,29 @@ TestfindexecutableCmd(clientData, interp, argc, argv)
     char **argv;			/* Argument strings. */
 {
     char *oldName;
+    char *oldNativeName;
 
     if (argc != 2) {
 	Tcl_AppendResult(interp, "wrong # arguments: should be \"", argv[0],
 		" argv0\"", (char *) NULL);
 	return TCL_ERROR;
     }
-    oldName = tclExecutableName;
-    tclExecutableName = NULL;
+
+    oldName       = tclExecutableName;
+    oldNativeName = tclNativeExecutableName;
+
+    tclExecutableName       = NULL;
+    tclNativeExecutableName = NULL;
+
     Tcl_FindExecutable(argv[1]);
     if (tclExecutableName != NULL) {
 	Tcl_SetResult(interp, tclExecutableName, TCL_VOLATILE);
 	ckfree(tclExecutableName);
     }
-    tclExecutableName = oldName;
+
+    tclExecutableName       = oldName;
+    tclNativeExecutableName = oldNativeName;
+
     return TCL_OK;
 }
 
@@ -496,6 +513,87 @@ TestgetopenfileCmd(clientData, interp, argc, argv)
         Tcl_AppendResult(interp,
                 "Tcl_GetOpenFile succeeded but FILE * NULL!", (char *) NULL);
         return TCL_ERROR;
+    }
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TestsetdefencdirCmd --
+ *
+ *	This procedure implements the "testsetdefenc" command. It is
+ *	used to set the value of tclDefaultEncodingDir.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TestsetdefencdirCmd(clientData, interp, argc, argv)
+    ClientData clientData;		/* Not used. */
+    Tcl_Interp *interp;			/* Current interpreter. */
+    int argc;				/* Number of arguments. */
+    char **argv;			/* Argument strings. */
+{
+    if (argc != 2) {
+        Tcl_AppendResult(interp,
+                "wrong # args: should be \"", argv[0],
+                " defaultDir\"",
+                (char *) NULL);
+        return TCL_ERROR;
+    }
+
+    if (tclDefaultEncodingDir != NULL) {
+	ckfree(tclDefaultEncodingDir);
+	tclDefaultEncodingDir = NULL;
+    }
+    if (*argv[1] != '\0') {
+	tclDefaultEncodingDir = (char *)
+	    ckalloc((unsigned) strlen(argv[1]) + 1);
+	strcpy(tclDefaultEncodingDir, argv[1]);
+    }
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TestgetdefencdirCmd --
+ *
+ *	This procedure implements the "testgetdefenc" command. It is
+ *	used to get the value of tclDefaultEncodingDir.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TestgetdefencdirCmd(clientData, interp, argc, argv)
+    ClientData clientData;		/* Not used. */
+    Tcl_Interp *interp;			/* Current interpreter. */
+    int argc;				/* Number of arguments. */
+    char **argv;			/* Argument strings. */
+{
+    if (argc != 1) {
+        Tcl_AppendResult(interp,
+                "wrong # args: should be \"", argv[0],
+                (char *) NULL);
+        return TCL_ERROR;
+    }
+
+    if (tclDefaultEncodingDir != NULL) {
+        Tcl_AppendResult(interp, tclDefaultEncodingDir, (char *) NULL);
     }
     return TCL_OK;
 }

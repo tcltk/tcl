@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.1.2.13 1999/03/11 01:50:29 stanton Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.1.2.14 1999/03/12 23:29:14 surles Exp $
  */
 
 #ifndef _TCLINT
@@ -1693,6 +1693,8 @@ typedef struct TclpTime_t_ *TclpTime_t;
 extern Tcl_Time			tclBlockTime;
 extern int			tclBlockTimeSet;
 extern char *			tclExecutableName;
+extern char *			tclNativeExecutableName;
+extern char *			tclDefaultEncodingDir;
 extern Tcl_ChannelType		tclFileChannelType;
 extern char *			tclMemDumpFileName;
 extern TclPlatformType		tclPlatform;
@@ -1798,6 +1800,7 @@ EXTERN void		TclFinalizeMutex _ANSI_ARGS_((Tcl_Mutex *mutex));
 EXTERN void		TclFinalizeNotifier _ANSI_ARGS_((void));
 EXTERN void		TclFinalizeSynchronization _ANSI_ARGS_((void));
 EXTERN void		TclFinalizeThreadData _ANSI_ARGS_((void));
+EXTERN void		TclFindEncodings _ANSI_ARGS_((CONST char *argv0));
 EXTERN Proc *		TclFindProc _ANSI_ARGS_((Interp *iPtr,
 			    char *procName));
 EXTERN int		TclFormatInt _ANSI_ARGS_((char *buffer, long n));
@@ -1923,6 +1926,8 @@ EXTERN void		TclpFinalizeThreadData _ANSI_ARGS_((
 			    Tcl_ThreadDataKey *keyPtr));
 EXTERN void		TclpFinalizeThreadDataKey _ANSI_ARGS_((
 			    Tcl_ThreadDataKey *keyPtr));
+EXTERN char *		TclpFindExecutable _ANSI_ARGS_((
+			    CONST char *argv0));
 EXTERN void		TclpFree _ANSI_ARGS_((char *ptr));
 EXTERN unsigned long	TclpGetClicks _ANSI_ARGS_((void));
 EXTERN char *		TclpGetCwd _ANSI_ARGS_((Tcl_Interp *interp,

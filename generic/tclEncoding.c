@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEncoding.c,v 1.1.2.6 1998/12/12 01:36:55 lfb Exp $
+ * RCS: @(#) $Id: tclEncoding.c,v 1.1.2.7 1999/03/12 23:29:13 surles Exp $
  */
 
 #include "tclInt.h"
@@ -134,6 +134,14 @@ typedef struct EscapeEncodingData {
 #define ENCODING_DOUBLEBYTE	1
 #define ENCODING_MULTIBYTE	2
 #define ENCODING_ESCAPE		3
+
+/*
+ * Initialize the default encoding directory.  If this variable contains
+ * a non NULL value, it will be the first path used to locate the
+ * system encoding files.
+ */
+
+char *tclDefaultEncodingDir = NULL;
 
 /*
  * Hash table that keeps track of all loaded Encodings.  Keys are
@@ -315,6 +323,45 @@ TclFinalizeEncodingSubsystem()
     }
     Tcl_DeleteHashTable(&encodingTable);
     Tcl_MutexUnlock(&encodingMutex);
+}
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * Tcl_GetDefaultEncodingDir --
+ *
+ *
+ * Results:
+ *
+ * Side effects:
+ *
+ *-------------------------------------------------------------------------
+ */
+
+char *
+Tcl_GetDefaultEncodingDir(void)
+{
+    return tclDefaultEncodingDir;
+}
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * Tcl_SetDefaultEncodingDir --
+ *
+ *
+ * Results:
+ *
+ * Side effects:
+ *
+ *-------------------------------------------------------------------------
+ */
+
+void
+Tcl_SetDefaultEncodingDir(path)
+    char *path;
+{
+    tclDefaultEncodingDir = path;
 }
 
 /*
@@ -1021,6 +1068,76 @@ Tcl_UtfToExternal(interp, encoding, src, srcLen, flags, statePtr, dst,
     dst[*dstWrotePtr] = '\0';
     
     return result;
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * Tcl_FindExecutable --
+ *
+ *	This procedure computes the absolute path name of the current
+ *	application, given its argv[0] value.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The variable tclExecutableName gets filled in with the file
+ *	name for the application, if we figured it out.  If we couldn't
+ *	figure it out, tclExecutableName is set to NULL.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+void
+Tcl_FindExecutable(argv0)
+    CONST char *argv0;		/* The value of the application's argv[0]
+				 * (native). */
+{
+    CONST char *name;
+    Tcl_DString buffer, nameString;
+
+    TclInitSubsystems(argv0);
+
+    if (argv0 == NULL) {
+	goto done;
+    }
+    if (tclExecutableName != NULL) {
+	ckfree(tclExecutableName);
+	tclExecutableName = NULL;
+    }
+    if ((name = TclpFindExecutable(argv0)) == NULL) {
+	goto done;
+    }
+
+    /*
+     * The value returned from TclpNameOfExecutable is a UTF string that
+     * is possibly dirty depending on when it was initialized.  To assure
+     * that the UTF string is a properly encoded native string for this
+     * system, convert the UTF string to the default native encoding
+     * before the default encoding is initialized.  Then, convert it back
+     * to UTF after the system encoding is loaded.
+     */
+    
+    Tcl_UtfToExternalDString(NULL, name, -1, &buffer);
+    TclFindEncodings(argv0);
+
+    /*
+     * Now it is OK to convert the native string back to UTF and set
+     * the value of the tclExecutableName.
+     */
+    
+    Tcl_ExternalToUtfDString(NULL, Tcl_DStringValue(&buffer), -1, &nameString);
+    tclExecutableName = (char *)
+	ckalloc((unsigned) (Tcl_DStringLength(&nameString) + 1));
+    strcpy(tclExecutableName, Tcl_DStringValue(&nameString));
+
+    Tcl_DStringFree(&buffer);
+    Tcl_DStringFree(&nameString);
+    return;
+	
+    done:
+    TclFindEncodings(argv0);
 }
 
 /*
