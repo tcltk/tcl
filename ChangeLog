@@ -1,3 +1,12 @@
+2004-05-07  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* generic/tclFileName.c: 
+	* generic/tclIOUtil.c: 
+	* generic/tclFileSystem.h:
+	* tests/fileSystem.test: fix for [Bug 943995], in which vfs-
+	registered root volumes were not handled correctly as glob
+	patterns in all circumstances.
+
 2004-05-06  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclInt.h:
