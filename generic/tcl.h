@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.84 2000/12/07 22:20:31 hobbs Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.85 2000/12/08 04:22:43 ericm Exp $
  */
 
 #ifndef _TCL
@@ -1355,7 +1355,7 @@ typedef int	(Tcl_DriverHandlerProc) _ANSI_ARGS_((
 #   define ckalloc(x) Tcl_DbCkalloc(x, __FILE__, __LINE__)
 #   define ckfree(x)  Tcl_DbCkfree(x, __FILE__, __LINE__)
 #   define ckrealloc(x,y) Tcl_DbCkrealloc((x), (y),__FILE__, __LINE__)
-#   define attemptckalloc(x) Tcl_AttempDbCkalloc(x, __FILE__, __LINE__)
+#   define attemptckalloc(x) Tcl_AttemptDbCkalloc(x, __FILE__, __LINE__)
 #   define attemptckrealloc(x,y) Tcl_AttemptDbCkrealloc((x), (y), __FILE__, __LINE__)
 #else /* !TCL_MEM_DEBUG */
 
