@@ -1,3 +1,8 @@
+2004-10-26  Kevin Kenny <kennykb@acm.org>
+	
+	* tests/format.test (format-19.1): Additional regression test for
+	                                   Bug 868489.
+
 2004-10-27  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* doc/*.n: Many small general documentation fixes.
