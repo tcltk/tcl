@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.31 2001/09/17 12:29:05 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.32 2001/09/19 11:59:58 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -639,15 +639,7 @@ TclExecuteByteCode(interp, codePtr)
 	    Tcl_SetObjResult(interp, valuePtr);
 	    TclDecrRefCount(valuePtr);
 	    if (stackTop != initStackTop) {
-		/*
-		 * if extra items in the stack, clean up the stack before return
-		 */
-		if (stackTop > initStackTop) goto abnormalReturn;
-		fprintf(stderr, "\nTclExecuteByteCode: done instruction at pc %u: stack top %d < entry stack top %d\n",
-			(unsigned int)(pc - codePtr->codeStart),
-			(unsigned int) stackTop,
-			(unsigned int) initStackTop);
-		panic("TclExecuteByteCode execution failure: end stack top < start stack top");
+		goto abnormalReturn;
 	    }
 	    TRACE_WITH_OBJ(("=> return code=%d, result=", result),
 		    iPtr->objResultPtr);
@@ -3458,7 +3450,7 @@ TclExecuteByteCode(interp, codePtr)
 
     /*
      * Abnormal return code. Restore the stack to state it had when starting
-     * to execute the ByteCode.
+     * to execute the ByteCode. Panic if the stack is below the initial level.
      */
 
     abnormalReturn:
@@ -3466,7 +3458,14 @@ TclExecuteByteCode(interp, codePtr)
 	valuePtr = POP_OBJECT();
 	Tcl_DecrRefCount(valuePtr);
     }
-
+    if (stackTop < initStackTop) {
+	fprintf(stderr, "\nTclExecuteByteCode: abnormal return at pc %u: stack top %d < entry stack top %d\n",
+		(unsigned int)(pc - codePtr->codeStart),
+		(unsigned int) stackTop,
+		(unsigned int) initStackTop);
+	panic("TclExecuteByteCode execution failure: end stack top < start stack top");
+    }
+	
     /*
      * Free the catch stack array if malloc'ed storage was used.
      */
