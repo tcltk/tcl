@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.84 2004/03/03 22:49:16 hobbs Exp $
+RCS: @(#) $Id: changes,v 1.85 2004/03/03 23:26:33 hobbs Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -6017,6 +6017,10 @@ in this changeset (new minor version) rather than bug fixes:
  * [TIP #121] new Tcl_SetExitProc C API to control application shutdown
 
  * [TIP #123] expr ** exponentiation operator
+
+ * [TIP #124] 'clock clicks -milliseconds' now returns a wide integer and a
+   new 'clock clicks -microseconds' returns a wide integer, representing
+   the number of microseconds, both since the Posix epoch
 
  * [TIP #127] added 'lsearch -index' option
 
