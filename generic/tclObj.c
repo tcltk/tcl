@@ -12,13 +12,23 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.72.2.5 2005/03/02 21:25:23 kennykb Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.72.2.6 2005/03/02 23:10:44 kennykb Exp $
  */
 
 #include "tclInt.h"
 #include "tommath.h"
 #include "tclCompile.h"
 #include <float.h>
+
+/*
+ * Define test for NaN
+ */
+
+#ifdef _isnan
+#define IS_NAN(f) _isnan((f))
+#else
+#define IS_NAN(f) ((f) != (f))
+#endif
 
 /*
  * Table of all object types.
@@ -1678,7 +1688,7 @@ Tcl_GetDoubleFromObj(interp, objPtr, dblPtr)
 	    *dblPtr = objPtr->internalRep.doubleValue;
 	}
     }
-    if ( result == TCL_OK && _isnan( *dblPtr ) ) {
+    if ( result == TCL_OK && IS_NAN( *dblPtr ) ) {
 	if ( interp != NULL ) {
 	    Tcl_SetObjResult
 		( interp,

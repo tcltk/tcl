@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.167.2.2 2005/02/02 15:53:21 kennykb Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.167.2.3 2005/03/02 23:10:41 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -20,6 +20,7 @@
 #ifndef TCL_NO_MATH
 #   include <math.h>
 #endif
+#include <float.h>
 
 /*
  * The stuff below is a bit of a hack so that this file can be used
@@ -136,8 +137,16 @@ long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
  * by comparing against the largest floating-point value.
  */
 
-#define IS_NAN(v) ((v) != (v))
-#define IS_INF(v) (((v) > DBL_MAX) || ((v) < -DBL_MAX))
+#ifdef _isnan
+#define IS_NAN(f) (_isnan((f)))
+#else
+#define IS_NAN(f) ((f) != (f))
+#endif
+#ifdef _finite
+#define IS_INF(f) ( ! (_finite((f))))
+#else
+#define IS_INF(f) ( (f) > DBL_MAX || (f) < -DBL_MAX )
+#endif
 
 /*
  * The new macro for ending an instruction; note that a

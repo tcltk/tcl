@@ -11,12 +11,32 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.51.2.3 2005/03/02 21:25:25 kennykb Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.51.2.4 2005/03/02 23:10:45 kennykb Exp $
  */
 
 #include "tclInt.h"
 #include <float.h>
 #include <math.h>
+
+/*
+ * Define test for NaN
+ */
+
+#ifdef _isnan
+#define IS_NAN(f) (_isnan((f)))
+#else
+#define IS_NAN(f) ((f) != (f))
+#endif
+
+/*
+ * Define test for Inf
+ */
+
+#ifdef _finite
+#define IS_INF(f) ( ! (_finite((f))))
+#else
+#define IS_INF(f) ( (f) > DBL_MAX || (f) < -DBL_MAX )
+#endif
 
 /*
  * The absolute pathname of the executable in which this Tcl library
@@ -1935,7 +1955,7 @@ Tcl_PrintDouble(interp, value, dst)
 
 	/* Handle NaN */
 
-	if ( _isnan( value ) ) {
+	if ( IS_NAN( value ) ) {
 	    strcpy( dst, "NaN" );
 	    return;
 	}
@@ -1958,7 +1978,7 @@ Tcl_PrintDouble(interp, value, dst)
 
 	/* Handle infinities */
 
-	if ( ! _finite( value ) ) {
+	if ( IS_INF( value ) ) {
 	    strcpy( dst, "Inf" );
 	    return;
 	}

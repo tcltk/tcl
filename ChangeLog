@@ -2,6 +2,8 @@
 
 	[kennykb-numerics-branch] Merged with HEAD as of 2005-02-23.
 	
+	* generic/tclExecute.c:
+		Broadened test for NaN to work on Windows.
 	* generic/tclInt.h:		  
 	* generic/tclStrToD.c (Tcl_DoubleDigits):
 	* generic/tclUtil.c (Tcl_PrintDouble, TclPrecTraceProc):
