@@ -1579,8 +1579,6 @@ fi
 if test -r http.n; then
     rm -f http.n.*
     $ZIP http.n
-    if test "${CASEINSENSITIVEFS:-}" != "1"; then rm -f Http.n Http.n.* ; fi
-    if test "${CASEINSENSITIVEFS:-}" != "1"; then ln $S http.n$Z Http.n$Z ; fi
 fi
 if test -r if.n; then
     rm -f if.n.*
