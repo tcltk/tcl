@@ -1,3 +1,8 @@
+2003-03-07  Donal K. Fellows  <fellowsd@cs.man.ac.uk>
+
+	* generic/tclCmdAH.c (Tcl_FileObjCmd): Fix the setting of a file's
+	mtime and atime on 64-bit platforms.  [Bug #698146]
+
 2003-03-06  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* tests/io.test: Doh! Undo accidental commenting
