@@ -14,8 +14,9 @@
 			isa = PBXShellScriptBuildPhase;
 			neededFileNames = (
 			);
+			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# install to ${INSTALL_ROOT} with optional stripping\ncd ${TEMP_DIR}/..\nif test \"${INSTALL_STRIP}\" = \"YES\"; then\nexport INSTALL_PROGRAM='${INSTALL} ${INSTALL_STRIP_PROGRAM}'\nexport INSTALL_LIBRARY='${INSTALL} ${INSTALL_STRIP_LIBRARY}'\nelse\nexport INSTALL_PROGRAM='${INSTALL}'\nexport INSTALL_LIBRARY='${INSTALL}'\nfi\ngnumake install-binaries install-libraries TCL_LIBRARY=\"@TCL_IN_FRAMEWORK@\" INSTALL_ROOT=${INSTALL_ROOT} SCRIPT_INSTALL_DIR=${INSTALL_ROOT}${LIBDIR}/Resources/Scripts INSTALL_PROGRAM=\"${INSTALL_PROGRAM}\" INSTALL_LIBRARY=\"${INSTALL_LIBRARY}\"";
+			shellScript = "# install to ${INSTALL_ROOT} with optional stripping\ncd ${TEMP_DIR}/..\nif test \"${INSTALL_STRIP}\" = \"YES\"; then\nexport INSTALL_PROGRAM='${INSTALL} ${INSTALL_STRIP_PROGRAM}'\nexport INSTALL_LIBRARY='${INSTALL} ${INSTALL_STRIP_LIBRARY}'\nelse\nexport INSTALL_PROGRAM='${INSTALL}'\nexport INSTALL_LIBRARY='${INSTALL}'\nfi\ngnumake install-binaries install-libraries TCL_LIBRARY=\"@TCL_IN_FRAMEWORK@\" INSTALL_ROOT=\"${INSTALL_ROOT}\" SCRIPT_INSTALL_DIR=\"${INSTALL_ROOT}${LIBDIR}/Resources/Scripts\" INSTALL_PROGRAM=\"${INSTALL_PROGRAM}\" INSTALL_LIBRARY=\"${INSTALL_LIBRARY}\"";
 		};
 		00530A0E0173CC960ACA28DC = {
 			buildActionMask = 12;
@@ -26,8 +27,9 @@
 			isa = PBXShellScriptBuildPhase;
 			neededFileNames = (
 			);
+			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# fixup Framework structure\ncd ${INSTALL_ROOT}${LIBDIR}\nln -fs Versions/Current/Headers ../..\nmv -f tclConfig.sh Resources\nif test \"${INSTALL_STRIP}\" = \"NO\"; then\n\t# assume this is a Development build, keep copy of debug library\n\t# so that Deployment build can be installed alongside subsequently\n\tcp -f ${PRODUCT_NAME} ${PRODUCT_NAME}_debug\nfi";
+			shellScript = "# fixup Framework structure\ncd \"${INSTALL_ROOT}${LIBDIR}\"\nln -fs Versions/Current/Headers ../..\nmv -f tclConfig.sh Resources\nif [ \"${BUILD_STYLE}\" = \"Development\" ]; then\n\t# keep copy of debug library around, so that\n\t# Deployment build can be installed on top\n\t# of Development build without overwriting\n\t# the debuglibrary\n\tcp -fp \"${PRODUCT_NAME}\" \"${PRODUCT_NAME}_debug\"\nfi";
 		};
 		00E2F845016E82EB0ACA28DC = {
 			buildStyles = (
@@ -39,11 +41,9 @@
 			productRefGroup = 00E2F84A016E8A830ACA28DC;
 			projectDirPath = "";
 			targets = (
-				F50DC359017027D801DC9062,
-				F548F8DC0313D1EA016F146B,
+				00E2F84E016E92110ACA28DC,
 				00E2F84B016E8A830ACA28DC,
 				00E2F84C016E8B780ACA28DC,
-				00E2F84E016E92110ACA28DC,
 			);
 		};
 		00E2F846016E82EB0ACA28DC = {
@@ -64,6 +64,7 @@
 			buildSettings = {
 				EXTRA_CONFIGURE_FLAGS = "--enable-symbols";
 				INSTALL_STRIP = NO;
+				TEMP_DIR = "${OBJROOT}/Development.build/$(PROJECT_NAME).build/$(TARGET_NAME).build";
 			};
 			isa = PBXBuildStyle;
 			name = Development;
@@ -73,6 +74,7 @@
 			);
 			buildSettings = {
 				INSTALL_STRIP = YES;
+				TEMP_DIR = "${OBJROOT}/Deployment.build/$(PROJECT_NAME).build/$(TARGET_NAME).build";
 			};
 			isa = PBXBuildStyle;
 			name = Deployment;
@@ -80,21 +82,23 @@
 		00E2F84A016E8A830ACA28DC = {
 			children = (
 				00E2F84D016E92110ACA28DC,
+				F53ACC5C031D9D11016F146B,
+				F53ACC73031DA405016F146B,
 			);
 			isa = PBXGroup;
 			name = Products;
 			refType = 4;
 		};
 		00E2F84B016E8A830ACA28DC = {
-			buildArgumentsString = "-c \"${SRCROOT}/../unix/configure --prefix=/usr --mandir=/usr/share/man --libdir=${LIBDIR} --includedir=${LIBDIR}/Headers --enable-threads --enable-framework ${EXTRA_CONFIGURE_FLAGS};\\\nmkdir -p Tcl.framework; ln -fs ../Tcl Tcl.framework/Tcl\"";
+			buildArgumentsString = "-c \"if [ \\\"${ACTION}\\\" != \\\"clean\\\" ]; then if [ -z \\\"`find Makefile -newer \\\"${SRCROOT}/../unix/configure\\\"`\\\" ]; then \\\"${SRCROOT}/../unix/configure\\\" --prefix=/usr --mandir=/usr/share/man --libdir=\\\"${LIBDIR}\\\" --includedir=\\\"${LIBDIR}/Headers\\\" --enable-threads --enable-framework ${EXTRA_CONFIGURE_FLAGS}; mkdir -p Tcl.framework; ln -fs ../Tcl Tcl.framework/Tcl; fi; else rm -f Makefile; fi\"";
 			buildPhases = (
 			);
 			buildSettings = {
 				EXTRA_CONFIGURE_FLAGS = "";
 				FRAMEWORK_VERSION = 8.4;
 				INSTALL_PATH = /Library/Frameworks;
-				LIBDIR = "/Library/Frameworks/Tcl.framework/Versions/${FRAMEWORK_VERSION}";
-				PRODUCT_NAME = Configure;
+				LIBDIR = "${INSTALL_PATH}/${PRODUCT_NAME}.framework/Versions/${FRAMEWORK_VERSION}";
+				PRODUCT_NAME = Tcl;
 			};
 			buildToolPath = /bin/sh;
 			buildWorkingDirectory = "${TEMP_DIR}/..";
@@ -109,19 +113,17 @@
 			shouldUseHeadermap = 0;
 		};
 		00E2F84C016E8B780ACA28DC = {
-			buildArgumentsString = "TCL_LIBRARY=\"@TCL_IN_FRAMEWORK@\" ${EXTRA_MAKE_FLAGS} TCL_PACKAGE_PATH=\"~/Library/Tcl /Library/Tcl /Network/Library/Tcl /System/Library/Tcl\"";
+			buildArgumentsString = "-c \"if [ \\\"${ACTION}\\\" != \\\"clean\\\" ]; then make tclsh tcltest TCL_LIBRARY=\\\"@TCL_IN_FRAMEWORK@\\\" ${EXTRA_MAKE_FLAGS} TCL_PACKAGE_PATH=\\\"~/Library/Tcl /Library/Tcl /Network/Library/Tcl /System/Library/Tcl\\\"; else make clean; fi\"";
 			buildPhases = (
 			);
 			buildSettings = {
 				EXTRA_MAKE_FLAGS = "";
-				FRAMEWORK_VERSION = 8.4;
-				INSTALL_PATH = /Library/Frameworks;
-				LIBDIR = "/Library/Frameworks/Tcl.framework/Versions/${FRAMEWORK_VERSION}";
 				PRODUCT_NAME = Tcl;
 			};
-			buildToolPath = /usr/bin/gnumake;
+			buildToolPath = /bin/sh;
 			buildWorkingDirectory = "${TEMP_DIR}/..";
 			dependencies = (
+				F5877EB5031F7997016F146B,
 			);
 			isa = PBXLegacyTarget;
 			name = Make;
@@ -138,6 +140,7 @@
 		};
 		00E2F84E016E92110ACA28DC = {
 			buildPhases = (
+				F5877FB6031F97AF016F146B,
 				F50DC36A01703B7301DC9062,
 				F50DC367017033D701DC9062,
 				F50DC3680170344801DC9062,
@@ -145,6 +148,7 @@
 				F5BE9BBF02FB5974016F146B,
 				00530A0D0173C8270ACA28DC,
 				00530A0E0173CC960ACA28DC,
+				F5877FBB031FA90A016F146B,
 				F59AE5E3017AC67A01DC9062,
 			);
 			buildSettings = {
@@ -152,20 +156,21 @@
 				EXTRA_MAKE_INSTALL_FLAGS = "";
 				FRAMEWORK_VERSION = 8.4;
 				INSTALL_PATH = /Library/Frameworks;
-				LIBDIR = "/Library/Frameworks/Tcl.framework/Versions/${FRAMEWORK_VERSION}";
+				LIBDIR = "${INSTALL_PATH}/${PRODUCT_NAME}.${WRAPPER_EXTENSION}/Versions/${FRAMEWORK_VERSION}";
 				PRODUCT_NAME = Tcl;
 				WRAPPER_EXTENSION = framework;
 			};
 			dependencies = (
+				F5877EB6031F79A4016F146B,
 			);
 			isa = PBXFrameworkTarget;
-			name = TclLibrary;
+			name = Tcl;
 			productInstallPath = /Library/Frameworks;
 			productName = TclLibrary;
 			productReference = 00E2F84D016E92110ACA28DC;
 			productSettingsXML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
-<!DOCTYPE plist SYSTEM \"file://localhost/System/Library/DTDs/PropertyList.dtd\">
-<plist version=\"0.9\">
+<!DOCTYPE plist PUBLIC \"-//Apple Computer//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">
+<plist version=\"1.0\">
 <dict>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>English</string>
@@ -199,6 +204,7 @@
 			files = (
 			);
 			isa = PBXHeadersBuildPhase;
+			runOnlyForDeploymentPostprocessing = 0;
 		};
 		00E2F854016E922C0ACA28DC = {
 			children = (
@@ -389,84 +395,72 @@
 //F52
 //F53
 //F54
-		F50DC359017027D801DC9062 = {
-			buildPhases = (
-			);
-			buildSettings = {
-				OTHER_CFLAGS = "";
-				OTHER_LDFLAGS = "";
-				OTHER_REZFLAGS = "";
-				PRODUCT_NAME = "Tcl From Scratch";
-				SECTORDER_FLAGS = "";
-				WARNING_CFLAGS = "-Wmost -Wno-four-char-constants -Wno-unknown-pragmas";
-			};
-			dependencies = (
-				F50DC35A017027D801DC9062,
-				F50DC35B017027D801DC9062,
-				F50DC35C017027D801DC9062,
-			);
-			isa = PBXAggregateTarget;
-			name = "Tcl From Scratch";
-			productName = "Tcl From Scratch";
-			shouldUseHeadermap = 0;
-		};
-		F50DC35A017027D801DC9062 = {
-			isa = PBXTargetDependency;
-			target = 00E2F84B016E8A830ACA28DC;
-		};
-		F50DC35B017027D801DC9062 = {
-			isa = PBXTargetDependency;
-			target = 00E2F84C016E8B780ACA28DC;
-		};
-		F50DC35C017027D801DC9062 = {
-			isa = PBXTargetDependency;
-			target = 00E2F84E016E92110ACA28DC;
-		};
 		F50DC367017033D701DC9062 = {
 			buildActionMask = 2147483647;
 			files = (
 			);
 			isa = PBXFrameworksBuildPhase;
+			runOnlyForDeploymentPostprocessing = 0;
 		};
 		F50DC3680170344801DC9062 = {
 			buildActionMask = 2147483647;
 			files = (
 			);
 			isa = PBXResourcesBuildPhase;
+			runOnlyForDeploymentPostprocessing = 0;
 		};
 		F50DC36A01703B7301DC9062 = {
 			buildActionMask = 2147483647;
 			files = (
 			);
 			isa = PBXSourcesBuildPhase;
+			runOnlyForDeploymentPostprocessing = 0;
 		};
-		F548F8DC0313D1EA016F146B = {
-			buildPhases = (
-			);
-			buildSettings = {
-				OTHER_CFLAGS = "";
-				OTHER_LDFLAGS = "";
-				OTHER_REZFLAGS = "";
-				PRODUCT_NAME = "Tcl Build";
-				SECTORDER_FLAGS = "";
-				WARNING_CFLAGS = "-Wmost -Wno-four-char-constants -Wno-unknown-pragmas";
-			};
-			dependencies = (
-				F548F8DD0313D1F0016F146B,
-				F548F8DE0313D1F2016F146B,
-			);
-			isa = PBXAggregateTarget;
-			name = "Tcl Build";
-			productName = "Tcl Build";
-			shouldUseHeadermap = 0;
+		F53ACC5C031D9D11016F146B = {
+			isa = PBXExecutableFileReference;
+			name = tclsh8.4;
+			path = ../../build/tclsh8.4;
+			refType = 2;
 		};
-		F548F8DD0313D1F0016F146B = {
+		F53ACC73031DA405016F146B = {
+			isa = PBXExecutableFileReference;
+			name = tcltest;
+			path = ../../build/tcltest;
+			refType = 2;
+		};
+		F5877EB5031F7997016F146B = {
+			isa = PBXTargetDependency;
+			target = 00E2F84B016E8A830ACA28DC;
+		};
+		F5877EB6031F79A4016F146B = {
 			isa = PBXTargetDependency;
 			target = 00E2F84C016E8B780ACA28DC;
 		};
-		F548F8DE0313D1F2016F146B = {
-			isa = PBXTargetDependency;
-			target = 00E2F84E016E92110ACA28DC;
+		F5877FB6031F97AF016F146B = {
+			buildActionMask = 8;
+			files = (
+			);
+			generatedFileNames = (
+			);
+			isa = PBXShellScriptBuildPhase;
+			neededFileNames = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+			shellPath = /bin/sh;
+			shellScript = "# ensure we can overwrite a previous install\nif [ -d \"${INSTALL_ROOT}${INSTALL_PATH}/${PRODUCT_NAME}.${WRAPPER_EXTENSION}\" ]; then\n    chmod -RH u+w \"${INSTALL_ROOT}${INSTALL_PATH}/${PRODUCT_NAME}.${WRAPPER_EXTENSION}\"\nfi";
+		};
+		F5877FBB031FA90A016F146B = {
+			buildActionMask = 8;
+			files = (
+			);
+			generatedFileNames = (
+			);
+			isa = PBXShellScriptBuildPhase;
+			neededFileNames = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+			shellPath = /bin/sh;
+			shellScript = "# redo prebinding\nif [ ! -d \"${INSTALL_ROOT}/usr/lib\" ]; then ln -fs /usr/lib \"${INSTALL_ROOT}/usr/\"; RM_USRLIB=1; fi\nif [ ! -d \"${INSTALL_ROOT}/System\" ]; then ln -fs /System \"${INSTALL_ROOT}/\"; RM_SYSTEM=1; fi\nredo_prebinding -r \"${INSTALL_ROOT}\" \"${INSTALL_ROOT}/usr/bin/tclsh${FRAMEWORK_VERSION}\"\nif [ -n \"${RM_USRLIB:-}\" ]; then rm -f \"${INSTALL_ROOT}/usr/lib\"; fi\nif [ -n \"${RM_SYSTEM:-}\" ]; then rm -r ${INSTALL_ROOT}/System; fi";
 		};
 		F59AE5E3017AC67A01DC9062 = {
 			buildActionMask = 8;
@@ -477,8 +471,9 @@
 			isa = PBXShellScriptBuildPhase;
 			neededFileNames = (
 			);
+			runOnlyForDeploymentPostprocessing = 1;
 			shellPath = /bin/sh;
-			shellScript = "# build html documentation\ncd ${TEMP_DIR}/..\nmake html DISTDIR=${INSTALL_ROOT}${LIBDIR}/Resources/English.lproj/Documentation/Reference\ncd ${INSTALL_ROOT}${LIBDIR}/Resources/English.lproj/Documentation/Reference\nln -fs contents.htm html/index.html\nrm -f  ${PRODUCT_NAME}; ln -fs html ${PRODUCT_NAME}";
+			shellScript = "# build html documentation\nif [ \"${BUILD_STYLE}\" = \"Deployment\" ]; then\n    cd \"${TEMP_DIR}/..\"\n    make html DISTDIR=\"${INSTALL_ROOT}${LIBDIR}/Resources/English.lproj/Documentation/Reference\"\n    cd \"${INSTALL_ROOT}${LIBDIR}/Resources/English.lproj/Documentation/Reference\"\n    ln -fs contents.htm html/index.html\n    rm -f \"${PRODUCT_NAME}\"; ln -fs html \"${PRODUCT_NAME}\"\nfi";
 		};
 		F5A1836F018242A501DC9062 = {
 			isa = PBXFileReference;
@@ -494,8 +489,9 @@
 			isa = PBXShellScriptBuildPhase;
 			neededFileNames = (
 			);
+			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# symolic link hackery to enable 'make install INSTALL_ROOT=${TEMP_DIR}'\n# to build Tcl.framework and tclsh in ${SYMROOT}\ncd ${TEMP_DIR}\nmkdir -p Library; rm -f Library/Frameworks; ln -fs ${SYMROOT} Library/Frameworks\nmkdir -p usr; rm -f usr/bin; ln -fs ${SYMROOT} usr/bin";
+			shellScript = "# symolic link hackery to trick\n# 'make install INSTALL_ROOT=${TEMP_DIR}'\n# into building Tcl.framework and tclsh in ${SYMROOT}\ncd \"${TEMP_DIR}\"\nmkdir -p Library\nmkdir -p usr\nrm -f Library/Frameworks; ln -fs \"${SYMROOT}\" Library/Frameworks\nrm -f usr/bin; ln -fs \"${SYMROOT}\" usr/bin\nln -fs \"${TEMP_DIR}/../tcltest\" \"${SYMROOT}\"";
 		};
 		F5C88655017D604601DC9062 = {
 			children = (

@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.83.6.7 2002/08/30 15:33:55 das Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.83.6.8 2002/08/30 18:11:34 das Exp $
 
 VERSION 		= @TCL_VERSION@
 MAJOR_VERSION		= @TCL_MAJOR_VERSION@
@@ -500,26 +500,19 @@ tcltest-real:
 
 test: tcltest
 	@LD_LIBRARY_PATH_VAR@=`pwd`:${@LD_LIBRARY_PATH_VAR@}; export @LD_LIBRARY_PATH_VAR@; \
-	LIBPATH=`pwd`:${LIBPATH}; export LIBPATH; \
-	SHLIB_PATH=`pwd`:${SHLIB_PATH}; export SHLIB_PATH; \
 	TCL_LIBRARY="${TCL_BUILDTIME_LIBRARY}"; export TCL_LIBRARY; \
 	./tcltest $(TOP_DIR)/tests/all.tcl $(TESTFLAGS) $(TCLTESTARGS)
 
 # Useful target to launch a built tcltest with the proper path,...
 runtest: tcltest
 	@LD_LIBRARY_PATH_VAR@=`pwd`:${@LD_LIBRARY_PATH_VAR@}; export @LD_LIBRARY_PATH_VAR@; \
-	LIBPATH=`pwd`:${LIBPATH}; export LIBPATH; \
-	SHLIB_PATH=`pwd`:${SHLIB_PATH}; export SHLIB_PATH; \
 	TCL_LIBRARY="${TCL_BUILDTIME_LIBRARY}"; export TCL_LIBRARY; \
 	./tcltest
 
 # Useful target for running the test suite with an unwritable current
 # directory...
 ro-test: tcltest
-	LD_LIBRARY_PATH=`pwd`:${LD_LIBRARY_PATH}; export LD_LIBRARY_PATH; \
-	DYLD_LIBRARY_PATH=`pwd`:${DYLD_LIBRARY_PATH}; export DYLD_LIBRARY_PATH; \
-	LIBPATH=`pwd`:${LIBPATH}; export LIBPATH; \
-	SHLIB_PATH=`pwd`:${SHLIB_PATH}; export SHLIB_PATH; \
+	@LD_LIBRARY_PATH_VAR@=`pwd`:${@LD_LIBRARY_PATH_VAR@}; export @LD_LIBRARY_PATH_VAR@; \
 	TCL_LIBRARY="${TCL_BUILDTIME_LIBRARY}"; export TCL_LIBRARY; \
 	echo 'exec chmod -w .;package require tcltest;tcltest::temporaryDirectory /tmp;source ../tests/all.tcl;exec chmod +w .' | ./tcltest
 
@@ -527,16 +520,12 @@ ro-test: tcltest
 # via `make shell SCRIPT=/tmp/foo.tcl`
 shell: tclsh
 	@@LD_LIBRARY_PATH_VAR@=`pwd`:${@LD_LIBRARY_PATH_VAR@}; export @LD_LIBRARY_PATH_VAR@; \
-	LIBPATH=`pwd`:${LIBPATH}; export LIBPATH; \
-	SHLIB_PATH=`pwd`:${SHLIB_PATH}; export SHLIB_PATH; \
 	TCL_LIBRARY="${TCL_BUILDTIME_LIBRARY}"; export TCL_LIBRARY; \
 	./tclsh $(SCRIPT)
 
 # This target can be used to run tclsh inside either gdb or insight
 gdb: tclsh
 	@echo "set env @LD_LIBRARY_PATH_VAR@=`pwd`:${@LD_LIBRARY_PATH_VAR@}" > gdb.run
-	@echo "set env LIBPATH=`pwd`:${LIBPATH}" >> gdb.run
-	@echo "set env SHLIB_PATH=`pwd`:${SHLIB_PATH}" >> gdb.run
 	@echo "set env TCL_LIBRARY=${TCL_BUILDTIME_LIBRARY}" >> gdb.run
 	$(GDB) ./tclsh --command=gdb.run
 	rm gdb.run
@@ -544,8 +533,6 @@ gdb: tclsh
 # This target can be used to run tclsh inside ddd
 ddd: tclsh
 	@echo "set env @LD_LIBRARY_PATH_VAR@=`pwd`:${@LD_LIBRARY_PATH_VAR@}" > gdb.run
-	@echo "set env LIBPATH=`pwd`:${LIBPATH}" >> gdb.run
-	@echo "set env SHLIB_PATH=`pwd`:${SHLIB_PATH}" >> gdb.run
 	@echo "set env TCL_LIBRARY=${TCL_BUILDTIME_LIBRARY}" >> gdb.run
 	$(DDD) -command=gdb.run ./tclsh
 	rm gdb.run

@@ -7,7 +7,7 @@
  * Copyright (c) 1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclUnixInit.c,v 1.24.8.6 2002/08/21 12:23:52 das Exp $
+ * RCS: @(#) $Id: tclUnixInit.c,v 1.24.8.7 2002/08/30 18:11:36 das Exp $
  */
 
 #if defined(HAVE_CFBUNDLE)
@@ -983,7 +983,7 @@ TclpCheckStackSpace()
  *
  *----------------------------------------------------------------------
  */
-int Tcl_MacOSXGetLibraryPath(Tcl_Interp *interp, int maxPathLen, char *tclLibPath)
+static int Tcl_MacOSXGetLibraryPath(Tcl_Interp *interp, int maxPathLen, char *tclLibPath)
 {
     int foundInFramework = TCL_ERROR;
 #ifdef HAVE_CFBUNDLE
