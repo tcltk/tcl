@@ -1,3 +1,9 @@
+2002-09-10  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* unix/README: Add note about building extensions
+	with the same compiler Tcl was built with.
+	[Tk Bug 592096]
+
 2002-09-10  Daniel Steffen  <das@users.sourceforge.net>
 
 	* macosx/Tcl.pbproj/project.pbxproj: disabled building html
