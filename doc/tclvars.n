@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: tclvars.n,v 1.6 1999/08/09 16:30:35 hobbs Exp $
+'\" RCS: @(#) $Id: tclvars.n,v 1.7 2000/01/21 02:25:06 hobbs Exp $
 '\" 
 .so man.macros
 .TH tclvars n 8.0 Tcl "Tcl Built-In Commands"
@@ -368,6 +368,22 @@ tracking down suspected problems with the bytecode compiler
 and interpreter.
 It is also occasionally useful when converting
 code to use Tcl8.0.
+.TP
+\fBtcl_wordchars\fR
+The value of this variable is a regular expression that can be set to
+control what are considered ``word'' characters, for instances like
+selecting a word by double-clicking in text in Tk.  It is platform
+dependent.  On Windows, it defaults to \fB\\S\fR, meaning anything
+but a Unicode space character.  Otherwise it defaults to \fB\\w\fR,
+which is any Unicode word character (number, letter, or underscore).
+.TP
+\fBtcl_nonwordchars\fR
+The value of this variable is a regular expression that can be set to
+control what are considered ``non-word'' characters, for instances like
+selecting a word by double-clicking in text in Tk.  It is platform
+dependent.  On Windows, it defaults to \fB\\s\fR, meaning any Unicode space
+character.  Otherwise it defaults to \fB\\W\fR, which is anything but a
+Unicode word character (number, letter, or underscore).
 .TP
 \fBtcl_version\fR
 When an interpreter is created Tcl initializes this variable to
