@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinNotify.c,v 1.5.10.3 2002/02/25 23:36:49 hobbs Exp $
+ * RCS: @(#) $Id: tclWinNotify.c,v 1.5.10.4 2002/10/15 20:15:52 hobbs Exp $
  */
 
 #include "tclWinInt.h"
@@ -153,20 +153,18 @@ Tcl_FinalizeNotifier(clientData)
      *
      * Fixes Bug #217982 reported by Hugh Vu and Gene Leache.
      */
-    if (tsdPtr == NULL) {
-	return;
-    }
+    if (tsdPtr != NULL) {
+        DeleteCriticalSection(&tsdPtr->crit);
+        CloseHandle(tsdPtr->event);
 
-    DeleteCriticalSection(&tsdPtr->crit);
-    CloseHandle(tsdPtr->event);
+        /*
+         * Clean up the timer and messaging window for this thread.
+         */
 
-    /*
-     * Clean up the timer and messaging window for this thread.
-     */
-
-    if (tsdPtr->hwnd) {
-	KillTimer(tsdPtr->hwnd, INTERVAL_TIMER);
-	DestroyWindow(tsdPtr->hwnd);
+        if (tsdPtr->hwnd) {
+	    KillTimer(tsdPtr->hwnd, INTERVAL_TIMER);
+            DestroyWindow(tsdPtr->hwnd);
+        }
     }
 
     /*
@@ -175,8 +173,7 @@ Tcl_FinalizeNotifier(clientData)
      */
 
     Tcl_MutexLock(&notifierMutex);
-    notifierCount--;
-    if (notifierCount == 0) {
+    if (notifierCount && !(--notifierCount)) {
 	UnregisterClassA("TclNotifier", TclWinGetTclInstance());
     }
     Tcl_MutexUnlock(&notifierMutex);
