@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: RegExp.3,v 1.8 2000/07/24 00:03:02 jenglish Exp $
+'\" RCS: @(#) $Id: RegExp.3,v 1.9 2001/10/14 16:21:45 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_RegExpMatch 3 8.1 Tcl "Tcl Library Procedures"
@@ -166,7 +166,7 @@ of characters that matched the entire pattern;  otherwise,
 information is returned about the range of characters that matched the
 \fIindex\fR'th parenthesized subexpression within the pattern.
 If there is no range corresponding to \fIindex\fR then NULL
-is stored in \fI*firstPtr\fR and \fI*lastPtr\fR.
+is stored in \fI*startPtr\fR and \fI*endPtr\fR.
 .PP
 .VS 8.1
 \fBTcl_GetRegExpFromObj\fR, \fBTcl_RegExpExecObj\fR, and
