@@ -1,5 +1,9 @@
 2004-11-12  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
+	* unix/tcl.m4, unix/tclUnixPort.h: Check for pthread_attr_get_np
+	in <pthread.h> before forcing the use of <pthread_np.h> to make
+	things work on NetBSD 2.0.  [Bug 1064882]
+
 	* doc/binary.n, doc/upvar.n: More minor fixes.
 
 2004-11-12  Daniel Steffen  <das@users.sourceforge.net>
