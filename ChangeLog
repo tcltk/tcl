@@ -1,3 +1,14 @@
+2002-11-18  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclUtil.c (SetEndOffsetFromAny): handle integer offset
+	after the "end-" prefix.
+
+	* generic/get.test:
+	* generic/string.test:
+	* generic/tclObj.c (SetIntFromAny, SetWideIntFromAny): 
+	* generic/tclGet.c (TclGetLong, Tcl_GetInt): simplify sign
+	handling before calling strtoul(l). [Bug #634856]
+
 2002-11-18  David Gravereaux  <davygrvy@pobox.com>
 
 	* win/tclWinThrd.c (Tcl_CreateThread/TclpThreadExit): Fixed

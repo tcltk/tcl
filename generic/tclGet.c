@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclGet.c,v 1.7 2001/09/25 16:23:56 dgp Exp $
+ * RCS: @(#) $Id: tclGet.c,v 1.8 2002/11/19 02:34:49 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -46,7 +46,7 @@ Tcl_GetInt(interp, string, intPtr)
     int *intPtr;		/* Place to store converted result. */
 {
     char *end;
-    CONST char *p;
+    CONST char *p = string;
     long i;
 
     /*
@@ -56,7 +56,14 @@ Tcl_GetInt(interp, string, intPtr)
      */
 
     errno = 0;
-    for (p = string; isspace(UCHAR(*p)); p++) {	/* INTL: ISO space. */
+#ifdef TCL_STRTOUL_SIGN_CHECK
+    /*
+     * This special sign check actually causes bad numbers to be allowed
+     * when strtoul.  I can't find a strtoul that doesn't validly handle
+     * signed characters, and the C standard implies that this is all
+     * unnecessary. [Bug #634856]
+     */
+    for ( ; isspace(UCHAR(*p)); p++) {	/* INTL: ISO space. */
 	/* Empty loop body. */
     }
     if (*p == '-') {
@@ -65,9 +72,10 @@ Tcl_GetInt(interp, string, intPtr)
     } else if (*p == '+') {
 	p++;
 	i = strtoul(p, &end, 0); /* INTL: Tcl source. */
-    } else {
+    } else
+#else
 	i = strtoul(p, &end, 0); /* INTL: Tcl source. */
-    }
+#endif
     if (end == p) {
 	badInteger:
         if (interp != (Tcl_Interp *) NULL) {
@@ -135,7 +143,7 @@ TclGetLong(interp, string, longPtr)
     long *longPtr;		/* Place to store converted long result. */
 {
     char *end;
-    CONST char *p;
+    CONST char *p = string;
     long i;
 
     /*
@@ -144,7 +152,8 @@ TclGetLong(interp, string, longPtr)
      */
 
     errno = 0;
-    for (p = string; isspace(UCHAR(*p)); p++) {	/* INTL: ISO space. */
+#ifdef TCL_STRTOUL_SIGN_CHECK
+    for ( ; isspace(UCHAR(*p)); p++) {	/* INTL: ISO space. */
 	/* Empty loop body. */
     }
     if (*p == '-') {
@@ -153,9 +162,10 @@ TclGetLong(interp, string, longPtr)
     } else if (*p == '+') {
 	p++;
 	i = strtoul(p, &end, 0); /* INTL: Tcl source. */
-    } else {
+    } else
+#else
 	i = strtoul(p, &end, 0); /* INTL: Tcl source. */
-    }
+#endif
     if (end == p) {
 	badInteger:
         if (interp != (Tcl_Interp *) NULL) {

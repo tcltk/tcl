@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.35 2002/11/12 02:26:40 hobbs Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.36 2002/11/19 02:34:50 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -2406,14 +2406,15 @@ SetEndOffsetFromAny(interp, objPtr)
 
     if (length <= 3) {
 	offset = 0;
-    } else if (bytes[3] == '-') {
+    } else if ((length > 4) && (bytes[3] == '-')) {
 	/*
-	 * This is our limited string expression evaluator
+	 * This is our limited string expression evaluator.  Pass everything
+	 * after "end-" to Tcl_GetInt, then reverse for offset.
 	 */
-	if (Tcl_GetInt(interp, bytes+3, &offset) != TCL_OK) {
+	if (Tcl_GetInt(interp, bytes+4, &offset) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-
+	offset = -offset;
     } else {
 	/*
 	 * Conversion failed.  Report the error.
