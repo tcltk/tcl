@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.63.2.3 2001/04/03 22:54:38 hobbs Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.63.2.4 2001/04/03 23:00:17 hobbs Exp $
 
 VERSION 		= @TCL_VERSION@
 
@@ -476,7 +476,7 @@ topDirName:
 gendate:
 	yacc -l $(GENERIC_DIR)/tclGetDate.y
 	sed -e 's/yy/TclDate/g' -e '/^#include <values.h>/d' \
-	    -e 's?SCCSID?RCS: @(#) $$Id: Makefile.in,v 1.63.2.3 2001/04/03 22:54:38 hobbs Exp $$?' \
+	    -e 's?SCCSID?RCS: @(#) $$Id: Makefile.in,v 1.63.2.4 2001/04/03 23:00:17 hobbs Exp $$?' \
 	    -e '/#ifdef __STDC__/,/#endif/d' -e '/TclDateerrlab:/d' \
 	    -e '/TclDatenewstate:/d' -e '/#pragma/d' \
 	    -e '/#include <inttypes.h>/d' -e 's/const /CONST /g' \
@@ -1096,6 +1096,7 @@ rpm: all /bin/rpm
 mklinks:
 	$(TCL_EXE) $(UNIX_DIR)/mkLinks.tcl \
 		$(UNIX_DIR)/../doc/*.[13n] > $(UNIX_DIR)/mkLinks
+	chmod +x $(UNIX_DIR)/mkLinks
 
 #
 # Target to create a proper Tcl distribution from information in the
@@ -1120,11 +1121,10 @@ dist: $(UNIX_DIR)/configure mklinks
 		$(UNIX_DIR)/tcl.m4 $(UNIX_DIR)/aclocal.m4 \
 		$(UNIX_DIR)/tclConfig.sh.in $(UNIX_DIR)/install-sh \
 		$(UNIX_DIR)/README $(UNIX_DIR)/ldAix $(UNIX_DIR)/tcl.spec \
-		$(UNIX_DIR)/mkLinks
+		$(UNIX_DIR)/mkLinks \
 		$(DISTDIR)/unix
 	chmod 775 $(DISTDIR)/unix/configure $(DISTDIR)/unix/configure.in
 	chmod 775 $(DISTDIR)/unix/ldAix
-	chmod +x $(DISTDIR)/unix/mkLinks
 	chmod +x $(DISTDIR)/unix/install-sh
 	mkdir $(DISTDIR)/generic
 	cp -p $(GENERIC_DIR)/*.c $(GENERIC_DIR)/*.h $(DISTDIR)/generic
