@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFile.c,v 1.26 2002/07/19 12:31:10 dkf Exp $
+ * RCS: @(#) $Id: tclUnixFile.c,v 1.27 2002/07/20 01:01:41 vincentdarley Exp $
  */
 
 #include "tclInt.h"
@@ -687,7 +687,7 @@ TclpReadlink(path, linkPtr)
     Tcl_ExternalToUtfDString(NULL, link, length, linkPtr);
     return Tcl_DStringValue(linkPtr);
 #else
-	return NULL;
+    return NULL;
 #endif
 }
 
@@ -765,7 +765,8 @@ TclpObjLink(pathPtr, toPtr, linkAction)
 	char link[MAXPATHLEN];
 	int length;
 	char *native;
-
+	Tcl_DString ds;
+	
 	if (Tcl_FSGetTranslatedPath(NULL, pathPtr) == NULL) {
 	    return NULL;
 	}
@@ -782,7 +783,10 @@ TclpObjLink(pathPtr, toPtr, linkAction)
 	strncpy(native, link, (unsigned)length);
 	native[length] = '\0';
 	
-	linkPtr = Tcl_FSNewNativePath(&tclNativeFilesystem, native);
+	Tcl_ExternalToUtfDString(NULL, native, length, &ds);
+	linkPtr = Tcl_NewStringObj(Tcl_DStringValue(&ds), 
+				   Tcl_DStringLength(&ds));
+	Tcl_DStringFree(&ds);
 	if (linkPtr != NULL) {
 	    Tcl_IncrRefCount(linkPtr);
 	}
