@@ -1,3 +1,9 @@
+2004-12-07  Don Porter  <dgp@users.sourceforge.net>
+
+	* tests/unixInit.test (2.1-4):	Added constraints so that when a
+	value of TCL_LIBRARY is required for process initialization, we skip
+	the tests that mess with that value.
+
 2004-12-07  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	*** 8.5a2 TAGGED FOR RELEASE ***
