@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDictObj.c,v 1.19 2004/10/02 17:00:39 dkf Exp $
+ * RCS: @(#) $Id: tclDictObj.c,v 1.20 2004/10/02 17:12:34 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2683,7 +2683,6 @@ DictFilterCmd(interp, objc, objv)
 	    Tcl_DictObjNext(&search, &keyObj, &valueObj, &done);
 	}
 
-    normalResult:
 	/*
 	 * Stop holding a reference to these objects.
 	 */
