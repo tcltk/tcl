@@ -1,3 +1,8 @@
+2004-11-02  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclExecute.c (TclExecuteByteCode): Improved version of
+	the NaN fix from Miguel Sofer. [Bug 761471]
+
 2004-11-02  Kevin Kenny  <kennykb@acm.org>
 
 	* library/tzdata/America/Cuiaba: Change to DST rules for
