@@ -12,7 +12,7 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
 #
-# RCS: @(#) $Id: http.test,v 1.5 1999/04/24 01:46:53 stanton Exp $
+# RCS: @(#) $Id: http.test,v 1.6 1999/05/06 18:45:41 stanton Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     source [file join [pwd] [file dirname [info script]] defs.tcl]
@@ -35,6 +35,7 @@ if {[catch {package require http 2.0}]} {
 
 set port 8010
 set bindata "This is binary data\x0d\x0amore\x0dmore\x0amore\x00null"
+catch {unset data}
 
 # Ensure httpd file exists
 
