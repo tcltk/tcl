@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.158 2004/10/18 21:15:38 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.159 2004/10/22 13:48:56 dkf Exp $
  */
 
 #ifdef STDC_HEADERS
@@ -758,7 +758,7 @@ Tcl_ExprObj(interp, objPtr, resultPtrPtr)
                 }
 	        codePtr->compileEpoch = iPtr->compileEpoch;
             } else {
-                (*tclByteCodeType.freeIntRepProc)(objPtr);
+		objPtr->typePtr->freeIntRepProc(objPtr);
                 objPtr->typePtr = (Tcl_ObjType *) NULL;
             }
 	}
@@ -971,7 +971,7 @@ TclCompEvalObj(interp, objPtr)
 		/*
 		 * This byteCode is invalid: free it and recompile
 		 */
-                tclByteCodeType.freeIntRepProc(objPtr);
+		objPtr->typePtr->freeIntRepProc(objPtr);
 		goto recompileObj;
 	    }
 	}

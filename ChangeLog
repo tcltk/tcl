@@ -1,3 +1,9 @@
+2004-10-22  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclExecute.c (TclCompEvalObj, Tcl_ExprObj): 
+	* generic/tclProc.c (TclProcCompileProc): Always call object
+	freeIntRepProc's in the same way.
+
 2004-10-22  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclVar.c: fixed bug in commit of 2004-07-23, which was
