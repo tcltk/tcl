@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: strtod.c,v 1.4 2001/11/23 01:26:34 das Exp $
+ * RCS: @(#) $Id: strtod.c,v 1.5 2002/02/25 10:36:32 dkf Exp $
  */
 
 #include "tcl.h"
@@ -110,7 +110,7 @@ strtod(string, endPtr)
      */
 
     p = string;
-    while (isspace(*p)) {
+    while (isspace(UCHAR(*p))) {
 	p += 1;
     }
     if (*p == '-') {
@@ -208,11 +208,11 @@ strtod(string, endPtr)
 	    }
 	    expSign = FALSE;
 	}
-	if (!isdigit(*p)) {
+	if (!isdigit(UCHAR(*p))) {
 	    p = pExp;
 	    goto done;
 	}
-	while (isdigit(*p)) {
+	while (isdigit(UCHAR(*p))) {
 	    exp = exp * 10 + (*p - '0');
 	    p += 1;
 	}
