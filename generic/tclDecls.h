@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.21 1999/07/02 21:59:19 redman Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.22 1999/07/16 21:56:38 redman Exp $
  */
 
 #ifndef _TCLDECLS
@@ -1205,6 +1205,9 @@ EXTERN void		Tcl_AppendUnicodeToObj _ANSI_ARGS_((
 /* 385 */
 EXTERN int		Tcl_RegExpMatchObj _ANSI_ARGS_((Tcl_Interp * interp, 
 				Tcl_Obj * stringObj, Tcl_Obj * patternObj));
+/* 386 */
+EXTERN void		Tcl_SetNotifier _ANSI_ARGS_((
+				Tcl_NotifierProcs * notifierProcPtr));
 
 typedef struct TclStubHooks {
     struct TclPlatStubs *tclPlatStubs;
@@ -1658,6 +1661,7 @@ typedef struct TclStubs {
     Tcl_Obj * (*tcl_GetRange) _ANSI_ARGS_((Tcl_Obj * objPtr, int first, int last)); /* 383 */
     void (*tcl_AppendUnicodeToObj) _ANSI_ARGS_((register Tcl_Obj * objPtr, Tcl_UniChar * unicode, int length)); /* 384 */
     int (*tcl_RegExpMatchObj) _ANSI_ARGS_((Tcl_Interp * interp, Tcl_Obj * stringObj, Tcl_Obj * patternObj)); /* 385 */
+    void (*tcl_SetNotifier) _ANSI_ARGS_((Tcl_NotifierProcs * notifierProcPtr)); /* 386 */
 } TclStubs;
 
 #ifdef __cplusplus
@@ -3246,6 +3250,10 @@ extern TclStubs *tclStubsPtr;
 #ifndef Tcl_RegExpMatchObj
 #define Tcl_RegExpMatchObj \
 	(tclStubsPtr->tcl_RegExpMatchObj) /* 385 */
+#endif
+#ifndef Tcl_SetNotifier
+#define Tcl_SetNotifier \
+	(tclStubsPtr->tcl_SetNotifier) /* 386 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */

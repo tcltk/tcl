@@ -1,5 +1,10 @@
 1999-07-16    <redman@scriptics.com>
 
+	* generic/tcl.decls:
+	* generic/tclDecls.h:
+	* generic/tclStubInit.c:  Add Tcl_SetNotifier to stub table.
+	[Bug: 2364]
+	
 	* unix/aclocal.m4:
 	* unix/tcl.m4:  Add check for Alpha/Linux to correct the IEEE
 	floating flag to the compiler, should be -mieee.  Patch from Don
