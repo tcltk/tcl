@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacPort.h,v 1.8 1999/04/16 00:47:21 stanton Exp $
+ * RCS: @(#) $Id: tclMacPort.h,v 1.9 1999/05/11 07:12:45 jingham Exp $
  */
 
 
@@ -225,7 +225,6 @@ extern char **environ;
  
 #define TclpAsyncMark(async)
 #define TclpGetPid(pid)	    	((unsigned long) (pid))
-#define TclpGetUserHome(n, b)	(NULL)
 #define TclSetSystemEnv(a,b)
 #define tzset()
 
@@ -234,7 +233,11 @@ extern char **environ;
  * functions "stat" and "access".  The various compilier vendors
  * don't implement this function well nor consistantly.
  */
-#define lstat(path, bufPtr) TclStat(path, bufPtr)
+/* int TclpStat(const char *path, struct stat *bufPtr); */
+int TclpLstat(const char *path, struct stat *bufPtr);
+
+char *TclpFindExecutable(const char *argv0);
+int TclpFindVariable(CONST char *name, int *lengthPtr);
 
 #define fopen(path, mode) TclMacFOpenHack(path, mode)
 #define readlink(fileName, buffer, size) TclMacReadlink(fileName, buffer, size)
@@ -246,8 +249,8 @@ extern char **environ;
  * Prototypes needed for compatability
  */
 
-EXTERN int	strncasecmp _ANSI_ARGS_((CONST char *s1,
-			    CONST char *s2, size_t n));
+/* EXTERN int	strncasecmp _ANSI_ARGS_((CONST char *s1,
+			    CONST char *s2, size_t n)); */
 
 /*
  * These definitions force putenv & company to use the version
@@ -258,7 +261,7 @@ EXTERN int	strncasecmp _ANSI_ARGS_((CONST char *s1,
 #   define putenv	Tcl_PutEnv
 #   define setenv	TclSetEnv
 void	TclSetEnv(CONST char *name, CONST char *value);
-int	Tcl_PutEnv(CONST char *string);
+/* int	Tcl_PutEnv(CONST char *string); */
 void	TclUnsetEnv(CONST char *name);
 #endif
 
@@ -279,5 +282,11 @@ typedef int TclpMutex;
 #define	TclpMutexLock(a)
 #define	TclpMutexUnlock(a)
 #endif /* TCL_THREADS */
+
+typedef pascal void (*ExitToShellProcPtr)(void);
+#include "tclMac.h"
+#include "tclMacInt.h"
+/* #include "tclPlatDecls.h"
+   #include "tclIntPlatDecls.h" */
 
 #endif /* _MACPORT */

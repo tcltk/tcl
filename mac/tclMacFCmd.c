@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacFCmd.c,v 1.4 1999/04/16 00:47:20 stanton Exp $
+ * RCS: @(#) $Id: tclMacFCmd.c,v 1.5 1999/05/11 07:12:00 jingham Exp $
  */
 
 #include "tclInt.h"
@@ -72,8 +72,8 @@ CONST TclFileAttrProcs tclpFileAttrProcs[] = {
 static pascal Boolean 	CopyErrHandler _ANSI_ARGS_((OSErr error, 
 			    short failedOperation,
 			    short srcVRefNum, long srcDirID,
-			    StringPtr srcName, short dstVRefNum,
-			    long dstDirID,StringPtr dstName));
+			    ConstStr255Param srcName, short dstVRefNum,
+			    long dstDirID,ConstStr255Param dstName));
 static int		DoCopyDirectory _ANSI_ARGS_((CONST char *src,
 			    CONST char *dst, Tcl_DString *errorPtr));
 static int		DoCopyFile _ANSI_ARGS_((CONST char *src, 
@@ -821,10 +821,10 @@ CopyErrHandler(
     short failedOperation,	/* operation that caused the error */
     short srcVRefNum,		/* volume ref number of source */
     long srcDirID,		/* directory id of source */
-    StringPtr srcName,		/* name of source */
+    ConstStr255Param srcName,	/* name of source */
     short dstVRefNum,		/* volume ref number of dst */
     long dstDirID,		/* directory id of dst */
-    StringPtr dstName)		/* name of dst directory */
+    ConstStr255Param dstName)	/* name of dst directory */
 {
     return true;
 }

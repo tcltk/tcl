@@ -14,11 +14,11 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacAlloc.c,v 1.3 1998/09/14 18:40:04 stanton Exp $
+ * RCS: @(#) $Id: tclMacAlloc.c,v 1.4 1999/05/11 07:11:51 jingham Exp $
  */
 
-#include "tclMacInt.h"
 #include "tclInt.h"
+#include "tclMacInt.h"
 #include <Memory.h>
 #include <stdlib.h>
 #include <string.h>

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacInt.h,v 1.4 1999/04/16 00:47:20 stanton Exp $
+ * RCS: @(#) $Id: tclMacInt.h,v 1.5 1999/05/11 07:12:19 jingham Exp $
  */
 
 #ifndef _TCLMACINT
@@ -44,7 +44,6 @@
 /*
  * Typedefs used by Macintosh parts of Tcl.
  */
-typedef pascal void (*ExitToShellProcPtr)(void);
 
 /*
  * Prototypes of Mac only internal functions.
@@ -53,6 +52,8 @@ typedef pascal void (*ExitToShellProcPtr)(void);
 EXTERN char *	TclMacGetFontEncoding _ANSI_ARGS_((int fontId));
 EXTERN int	TclMacHaveThreads(void);
 
+#include "tclPort.h"
+#include "tclPlatDecls.h"
 #include "tclIntPlatDecls.h"
     
 #pragma export reset

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacFile.c,v 1.6 1999/04/16 00:47:20 stanton Exp $
+ * RCS: @(#) $Id: tclMacFile.c,v 1.7 1999/05/11 07:12:09 jingham Exp $
  */
 
 /*
@@ -42,7 +42,7 @@ TCL_DECLARE_MUTEX(gmtMutex)
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_FindExecutable --
+ * TclpFindExecutable --
  *
  *	This procedure computes the absolute path name of the current
  *	application, given its argv[0] value.  However, this
@@ -60,8 +60,8 @@ TCL_DECLARE_MUTEX(gmtMutex)
  *----------------------------------------------------------------------
  */
 
-void
-Tcl_FindExecutable(
+char *
+TclpFindExecutable(
     CONST char *argv0)		/* The value of the application's argv[0]. */
 {
     ProcessSerialNumber psn;
@@ -96,6 +96,7 @@ Tcl_FindExecutable(
     	    (Tcl_DStringLength(&ds) + 1));
     strcpy(tclExecutableName, Tcl_DStringValue(&ds));
     Tcl_DStringFree(&ds);
+    return tclExecutableName;
 }
 
 /*
@@ -576,6 +577,34 @@ TclpReadlink(
 /*
  *----------------------------------------------------------------------
  *
+ * TclpLstat --
+ *
+ *	This function replaces the library version of lstat().
+ *
+ * Results:
+ *	See stat() documentation.
+ *
+ * Side effects:
+ *	See stat() documentation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclpLstat(
+    CONST char *path,		/* Path of file to stat (in UTF-8). */
+    struct stat *bufPtr)	/* Filled with results of stat call. */
+{
+    /*
+     * FIXME: Emulate TclpLstat
+     */
+     
+    return TclpStat(path, bufPtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TclpStat --
  *
  *	This function replaces the library version of stat().
@@ -777,6 +806,36 @@ TclMacFOpenHack(
 }
 
 /*
+ *---------------------------------------------------------------------------
+ *
+ * TclpGetUserHome --
+ *
+ *	This function takes the specified user name and finds their
+ *	home directory.
+ *
+ * Results:
+ *	The result is a pointer to a string specifying the user's home
+ *	directory, or NULL if the user's home directory could not be
+ *	determined.  Storage for the result string is allocated in
+ *	bufferPtr; the caller must call Tcl_DStringFree() when the result
+ *	is no longer needed.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+char *
+TclpGetUserHome(name, bufferPtr)
+    CONST char *name;		/* User name for desired home directory. */
+    Tcl_DString *bufferPtr;	/* Uninitialized or free DString filled
+				 * with name of user's home directory. */
+{
+    return NULL;
+}
+
+/*
  *----------------------------------------------------------------------
  *
  * TclMacOSErrorToPosixError --
@@ -829,4 +888,31 @@ TclMacOSErrorToPosixError(
 	default:
 	    return EINVAL;
     }
+}
+int
+TclMacChmod(
+    char *path, 
+    int mode)
+{
+    HParamBlockRec hpb;
+    OSErr err;
+    
+    c2pstr(path);
+    hpb.fileParam.ioNamePtr = (unsigned char *) path;
+    hpb.fileParam.ioVRefNum = 0;
+    hpb.fileParam.ioDirID = 0;
+    
+    if (mode & 0200) {
+        err = PBHRstFLockSync(&hpb);
+    } else {
+        err = PBHSetFLockSync(&hpb);
+    }
+    p2cstr((unsigned char *) path);
+    
+    if (err != noErr) {
+        errno = TclMacOSErrorToPosixError(err);
+        return -1;
+    }
+    
+    return 0;
 }

@@ -12,7 +12,7 @@
  * See the file "License Terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacOSA.c,v 1.3 1999/04/16 00:47:20 stanton Exp $
+ * RCS: @(#) $Id: tclMacOSA.c,v 1.4 1999/05/11 07:12:36 jingham Exp $
  */
 
 #define MAC_TCL
@@ -205,6 +205,14 @@ Tclapplescript_Init(
     Size nameLen;
     long appleScriptFlags;
 	
+    /* 
+     * Perform the required stubs magic...
+     */
+     	
+    if (!Tcl_InitStubs(interp, "8.0", 0)) {
+	return TCL_ERROR;
+    }
+
     /* 
      * Here We Will Get The Available Osa Languages, Since They Can Only Be 
      * Registered At Startup...  If You Dynamically Load Components, This
