@@ -1,3 +1,16 @@
+1999-04-20    <redman@scriptics.com>
+
+	* win/tclWinSerial.c: Fixed bug causing characters to be randomly
+	dropped when calling ClearCommError() [Bug: 1784]
+	
+1999-04-19    <redman@scriptics.com>
+
+	* win/tclWinFCmd.c: Add check for "file attributes -longname" when
+	path given is empty. [Bug: 708]
+
+	* win/stub16.c: Check result code from 16bit applications. Patch
+	provided by Mark Mitchell <mark@codesourcery.com>. [Bug: 1760]
+	
 1999-04-15    <stanton@scriptics.com>
 
 	* Merged 8.1 back into the main trunk
