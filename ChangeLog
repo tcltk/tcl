@@ -1,3 +1,13 @@
+2001-09-06  Don Porter  <dgp@users.sourceforge.net>
+
+	* doc/http.n:
+	* library/http/*.tcl:
+	* tools/tcl.wse.in:
+	* tools/tclmin.wse:
+	* unix/Makefile.in:
+	* win/{Mm}akefile.*:  Updated http package to version 2.4,
+	reflecting the new features just added.
+
 2001-09-06  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* doc/http.n: noted -binary, charset and coding state keys.
