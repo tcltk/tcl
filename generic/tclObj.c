@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.59 2004/05/06 04:41:53 msofer Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.60 2004/06/17 21:39:03 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2639,7 +2639,7 @@ Tcl_DbIncrRefCount(objPtr, file, line)
         hPtr = Tcl_FindHashEntry(tablePtr, (char *) objPtr);
         if (!hPtr) {
             Tcl_Panic("%s%s",
-                    "Trying to incr ref count of",
+                    "Trying to incr ref count of ",
                     "Tcl_Obj allocated in another thread");
         }
     }
