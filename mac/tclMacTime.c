@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacTime.c,v 1.3.14.1 2001/10/17 19:29:25 das Exp $
+ * RCS: @(#) $Id: tclMacTime.c,v 1.3.14.2 2002/04/08 08:59:16 das Exp $
  */
 
 #include "tclInt.h"
@@ -388,6 +388,9 @@ TclpGetTZName(int dst)
     register TABLE *tp;
 	long zonevalue=-TclpGetGMTOffset();
 		
+    if (gmt_isdst)
+        zonevalue += HOUR(1);
+
 	if(gmt_lastGetDateUseGMT) /* hack: if last TclpGetDate was called */
 		zonevalue=0;          /* with useGMT==1 then we're using GMT  */
 

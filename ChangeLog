@@ -1,3 +1,15 @@
+2002-04-08  Daniel Steffen  <das@users.sourceforge.net>
+
+	* mac/tclMacOSA.c:
+	* mac/tclMacResource.c: added missing Tcl_UtfToExternalDString
+	conversions of resource file names.
+	* mac/tclMacSock.c (TcpGetOptionProc): fixed bug introduced
+	by Andreas on 02-25; changed strcmp's to strncmp's so that
+	option comparison behaves like on other platforms.
+	* mac/tcltkMacBuildSupport.sea.hqx (CW Pro6 changes): added
+	support to allow Tk to hookup C library stderr/stdout to TkConsole.
+	* mac/tclMacTime.c (TclpGetTZName): fix for daylight savings TZName bug
+
 2002-03-29  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* tests/trace.test (trace-18.2):
