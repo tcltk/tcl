@@ -9,7 +9,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclIntPlatDecls.h,v 1.17 2002/04/19 14:18:38 das Exp $
+ * RCS: @(#) $Id: tclIntPlatDecls.h,v 1.18 2002/08/06 01:49:27 das Exp $
  */
 
 #ifndef _TCLINTPLATDECLS
@@ -59,6 +59,14 @@ EXTERN int		TclUnixWaitForFile _ANSI_ARGS_((int fd, int mask,
 /* 9 */
 EXTERN TclFile		TclpCreateTempFile _ANSI_ARGS_((
 				CONST char * contents));
+/* 10 */
+EXTERN Tcl_DirEntry *	TclpReaddir _ANSI_ARGS_((DIR * dir));
+/* 11 */
+EXTERN struct tm *	TclpLocaltime _ANSI_ARGS_((time_t * clock));
+/* 12 */
+EXTERN struct tm *	TclpGmtime _ANSI_ARGS_((time_t * clock));
+/* 13 */
+EXTERN char *		TclpInetNtoa _ANSI_ARGS_((struct in_addr addr));
 #endif /* UNIX */
 #ifdef __WIN32__
 /* 0 */
@@ -218,6 +226,10 @@ typedef struct TclIntPlatStubs {
     TclFile (*tclpOpenFile) _ANSI_ARGS_((CONST char * fname, int mode)); /* 7 */
     int (*tclUnixWaitForFile) _ANSI_ARGS_((int fd, int mask, int timeout)); /* 8 */
     TclFile (*tclpCreateTempFile) _ANSI_ARGS_((CONST char * contents)); /* 9 */
+    Tcl_DirEntry * (*tclpReaddir) _ANSI_ARGS_((DIR * dir)); /* 10 */
+    struct tm * (*tclpLocaltime) _ANSI_ARGS_((time_t * clock)); /* 11 */
+    struct tm * (*tclpGmtime) _ANSI_ARGS_((time_t * clock)); /* 12 */
+    char * (*tclpInetNtoa) _ANSI_ARGS_((struct in_addr addr)); /* 13 */
 #endif /* UNIX */
 #ifdef __WIN32__
     void (*tclWinConvertError) _ANSI_ARGS_((DWORD errCode)); /* 0 */
@@ -331,6 +343,22 @@ extern TclIntPlatStubs *tclIntPlatStubsPtr;
 #ifndef TclpCreateTempFile
 #define TclpCreateTempFile \
 	(tclIntPlatStubsPtr->tclpCreateTempFile) /* 9 */
+#endif
+#ifndef TclpReaddir
+#define TclpReaddir \
+	(tclIntPlatStubsPtr->tclpReaddir) /* 10 */
+#endif
+#ifndef TclpLocaltime
+#define TclpLocaltime \
+	(tclIntPlatStubsPtr->tclpLocaltime) /* 11 */
+#endif
+#ifndef TclpGmtime
+#define TclpGmtime \
+	(tclIntPlatStubsPtr->tclpGmtime) /* 12 */
+#endif
+#ifndef TclpInetNtoa
+#define TclpInetNtoa \
+	(tclIntPlatStubsPtr->tclpInetNtoa) /* 13 */
 #endif
 #endif /* UNIX */
 #ifdef __WIN32__
