@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDate.c,v 1.6 1999/09/21 04:20:40 hobbs Exp $
+ * RCS: @(#) $Id: tclDate.c,v 1.7 1999/12/08 03:49:51 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -143,7 +143,7 @@ extern "C" {
 #endif
 #ifndef TclDateerror
 #if defined(__cplusplus)
-	void TclDateerror(const char *);
+	void TclDateerror(CONST char *);
 #endif
 #endif
 #ifndef TclDatelex
@@ -810,14 +810,14 @@ TclGetDate(p, now, zone, timePtr)
     *timePtr = Start;
     return 0;
 }
-static const TclDatetabelem TclDateexca[] ={
+static CONST TclDatetabelem TclDateexca[] ={
 -1, 1,
 	0, -1,
 	-2, 0,
 	};
 # define YYNPROD 41
 # define YYLAST 227
-static const TclDatetabelem TclDateact[]={
+static CONST TclDatetabelem TclDateact[]={
 
     14,    11,    23,    28,    17,    12,    19,    18,    16,     9,
     10,    13,    42,    21,    46,    45,    44,    48,    41,    37,
@@ -842,39 +842,39 @@ static const TclDatetabelem TclDateact[]={
      0,     0,     0,     0,     0,     0,     0,     0,     0,     0,
      0,     0,     0,    22,     0,     0,    20,    25,    24,    27,
     26,    42,     0,     0,     0,     0,    40 };
-static const TclDatetabelem TclDatepact[]={
+static CONST TclDatetabelem TclDatepact[]={
 
 -10000000,  -258,-10000000,-10000000,-10000000,-10000000,-10000000,-10000000,-10000000,   -45,
   -267,-10000000,  -244,-10000000,   -14,  -231,  -240,-10000000,-10000000,-10000000,
 -10000000,  -246,-10000000,  -247,  -248,-10000000,-10000000,-10000000,-10000000,   -15,
 -10000000,-10000000,-10000000,-10000000,-10000000,   -40,   -20,-10000000,  -251,-10000000,
 -10000000,  -252,-10000000,  -253,-10000000,  -249,-10000000,-10000000,-10000000 };
-static const TclDatetabelem TclDatepgo[]={
+static CONST TclDatetabelem TclDatepgo[]={
 
      0,    28,    39,    38,    37,    36,    35,    34,    33,    32,
     31 };
-static const TclDatetabelem TclDater1[]={
+static CONST TclDatetabelem TclDater1[]={
 
      0,     2,     2,     3,     3,     3,     3,     3,     3,     4,
      4,     4,     4,     4,     5,     5,     5,     7,     7,     7,
      6,     6,     6,     6,     6,     6,     6,     8,     8,    10,
     10,    10,    10,    10,    10,    10,    10,    10,     9,     1,
      1 };
-static const TclDatetabelem TclDater2[]={
+static CONST TclDatetabelem TclDater2[]={
 
      0,     0,     4,     3,     3,     3,     3,     3,     2,     5,
      9,     9,    13,    13,     5,     3,     3,     3,     5,     5,
      7,    11,     5,     9,     5,     3,     7,     5,     2,     5,
      5,     3,     5,     5,     3,     5,     5,     3,     3,     1,
      3 };
-static const TclDatetabelem TclDatechk[]={
+static CONST TclDatetabelem TclDatechk[]={
 
 -10000000,    -2,    -3,    -4,    -5,    -6,    -7,    -8,    -9,   267,
    268,   259,   263,   269,   258,   -10,   266,   262,   265,   264,
    261,    58,   258,    47,   263,   262,   265,   264,   270,   267,
     44,   257,   262,   265,   264,   267,   267,   267,    44,    -1,
    266,    58,   261,    47,   267,   267,   267,    -1,   266 };
-static const TclDatetabelem TclDatedef[]={
+static CONST TclDatetabelem TclDatedef[]={
 
      1,    -2,     2,     3,     4,     5,     6,     7,     8,    38,
     15,    16,     0,    25,    17,    28,     0,    31,    34,    37,
@@ -1301,7 +1301,7 @@ int TclDateparse()
 			** look through exception table
 			*/
 			{
-				register const int *TclDatexi = TclDateexca;
+				register CONST int *TclDatexi = TclDateexca;
 
 				while ( ( *TclDatexi != -1 ) ||
 					( TclDatexi[1] != TclDate_state ) )

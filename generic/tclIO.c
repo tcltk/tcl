@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.17 1999/12/01 02:45:02 hobbs Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.18 1999/12/08 03:49:52 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -2321,16 +2321,18 @@ FlushChannel(interp, chanPtr, calledFromAsyncFlush)
              */
 
             if ((errorCode == EWOULDBLOCK) || (errorCode == EAGAIN)) {
-		if (chanPtr->flags & CHANNEL_NONBLOCKING) {
-		    if (!(chanPtr->flags & BG_FLUSH_SCHEDULED)) {
-			chanPtr->flags |= BG_FLUSH_SCHEDULED;
-			UpdateInterest(chanPtr);
-                    }
-                    errorCode = 0;
-                    break;
-		} else {
-		    panic("Blocking channel driver did not block on output");
-                }
+		/*
+		 * This used to check for CHANNEL_NONBLOCKING, and panic
+		 * if the channel was blocking.  However, it appears
+		 * that setting stdin to -blocking 0 has some effect
+		 * on the stdout when it's a tty channel
+		 */
+		if (!(chanPtr->flags & BG_FLUSH_SCHEDULED)) {
+		    chanPtr->flags |= BG_FLUSH_SCHEDULED;
+		    UpdateInterest(chanPtr);
+		}
+		errorCode = 0;
+		break;
             }
 
             /*
