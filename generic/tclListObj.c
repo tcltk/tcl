@@ -5,11 +5,12 @@
  *	type.
  *
  * Copyright (c) 1995-1997 Sun Microsystems, Inc.
+ * Copyright (c) 1998 by Scriptics Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclListObj.c,v 1.2 1998/09/14 18:40:00 stanton Exp $
+ * RCS: @(#) $Id: tclListObj.c,v 1.3 1998/10/13 20:30:23 rjohnson Exp $
  */
 
 #include "tclInt.h"
@@ -260,6 +261,8 @@ Tcl_SetListObj(objPtr, objc, objv)
 	
 	objPtr->internalRep.otherValuePtr = (VOID *) listRepPtr;
 	objPtr->typePtr = &tclListType;
+    } else {
+	objPtr->bytes = tclEmptyStringRep;
     }
 }
 

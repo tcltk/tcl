@@ -7,11 +7,12 @@
  * Copyright (c) 1987-1994 The Regents of the University of California.
  * Copyright (c) 1994-1997 Sun Microsystems, Inc.
  * Copyright (c) 1993-1996 Lucent Technologies.
+ * Copyright (c) 1998 by Scriptics Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.27 1998/10/13 19:03:53 escoffon Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.28 1998/10/13 20:30:22 rjohnson Exp $
  */
 
 #ifndef _TCL

@@ -9,11 +9,12 @@
  * Copyright (c) 1987-1993 The Regents of the University of California.
  * Copyright (c) 1993-1997 Lucent Technologies.
  * Copyright (c) 1994-1997 Sun Microsystems, Inc.
+ * Copyright (c) 1998 by Scriptics Corporation.
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.9 1998/10/13 20:05:39 rjohnson Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.10 1998/10/13 20:30:22 rjohnson Exp $
  */
 
 #include "tclInt.h"

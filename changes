@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.25 1998/10/13 20:05:38 rjohnson Exp $
+RCS: @(#) $Id: changes,v 1.26 1998/10/13 20:30:21 rjohnson Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -3630,6 +3630,9 @@ for providing this fix. (RJ)
 
 10/13/98 (bug fix) The "lsort -dictionary" command did not properly
 handle some numbers starting with 0.  Thanks to Richard Hipp
-<drh@acm.org> for the creating the patch and Viktor Dukhovni
-<Viktor-Dukhovni@deshaw.com> for submitting the it to Scriptics. (RJ)
+<drh@acm.org> for submitting the fix to Scriptics. (RJ)
 
+10/13/98 (bug fix) The function Tcl_SetListObj was creating an invalid
+Tcl_Obj if the list had zero elements (despite what the comments said
+it would do).  Thanks to Sebastian Wangnick for reporting the
+problem. (RJ)
