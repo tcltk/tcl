@@ -23,9 +23,14 @@ fi
 cd $1
 echo foo > xyzzyTestingAVeryLongFileName.foo
 x=`echo xyzzyTe*`
+echo foo > xyzzyTestingaverylongfilename.foo
+y=`echo xyzzyTestingav*`
 rm xyzzyTe*
 if test "$x" != "xyzzyTestingAVeryLongFileName.foo"; then
     exit
+fi
+if test "$y" != "xyzzyTestingaverylongfilename.foo"; then
+    CASEINSENSITIVEFS=1
 fi
 
 if test -r Access.3; then
@@ -1164,9 +1169,11 @@ if test -r WrongNumArgs.3; then
     rm -f Tcl_WrongNumArgs.3
     ln WrongNumArgs.3 Tcl_WrongNumArgs.3
 fi
+if test "${CASEINSENSITIVEFS:-}" != "1"; then
 if test -r http.n; then
     rm -f Http.n
     ln http.n Http.n
+fi
 fi
 if test -r library.n; then
     rm -f auto_execok.n

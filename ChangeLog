@@ -1,5 +1,16 @@
 2001-11-23  Daniel Steffen <das@users.sourceforge.net>
 
+	*unix/Makefile.in:
+	*unix/configure.in:
+	*unix/install-sh:
+	*unix/mkLinks:
+	*unix/mkLinks.tcl:
+	*unix/tclLoadDyld.c:
+	*unix/tclMtherr.c: Mac OSX support: build system, dynamic code loading
+	and support for case-insensitive filesystems in mkLinks (patch #435258)
+
+2001-11-23  Daniel Steffen <das@users.sourceforge.net>
+
 	**  upport to 8.4 of mac code changes for 8.3.3 & various new
 	**  changes for 8.4, some already backported to 8.3.4 (patch #435658)
 
