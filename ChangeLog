@@ -1,3 +1,14 @@
+2001-10-15  Andreas Kupries  <andreas_kupries@users.sourceforge.net> 
+
+	* generic/tclInt.decls (TclExpandCodeArray,TclGetInstructionTable):
+	  Added to internal stubs table. Tclcompiler (Tclpro project)
+	  needs them if used as loadable package under Windows. Changed
+	  signatures. We don't want to describe compiler internal
+	  structures in "tclInt.h".
+
+	* generic/tclCompile.h: S.a. Removed function declarations.
+	* generic/tclCompile.c: S.a. Adapted to changed signatures.
+
 2001-10-15  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclFileName.c: minor code cleanup
