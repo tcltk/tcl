@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: msgcat.test,v 1.2 1999/04/16 00:47:31 stanton Exp $
+# RCS: @(#) $Id: msgcat.test,v 1.3 1999/04/19 20:23:41 hershey Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     source [file join [pwd] [file dirname [info script]] defs.tcl]
@@ -34,15 +34,23 @@ if {[catch {package require msgcat 1.0}]} {
 
 set oldlocale [::msgcat::mclocale]
 
+# some tests fail in tne environment variable LANG exists and is not C
+
+if {[info exists env(LANG)] && ($env(LANG) != "C")} {
+    set ::tcltest::testConfig(LANGisC) 0
+} else {
+    set ::tcltest::testConfig(LANGisC) 1
+}
+
 #
 # Test the various permutations of mclocale
 # and mcpreferences.
 #
 
-test msgcat-1.1 {::msgcat::mclocale default} {
+test msgcat-1.1 {::msgcat::mclocale default} {LANGisC} {
     ::msgcat::mclocale
 } {c}
-test msgcat-1.2 {::msgcat::mcpreferences, single element} {
+test msgcat-1.2 {::msgcat::mcpreferences, single element} {LANGisC} {
     ::msgcat::mcpreferences
 } {c}
 test msgcat-1.3 {::msgcat::mclocale, single element} {
@@ -304,15 +312,3 @@ file delete msgdir
 
 ::tcltest::cleanupTests
 return
-
-
-
-
-
-
-
-
-
-
-
-
