@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.43 1999/07/30 22:26:23 wart Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.44 1999/08/11 20:51:54 redman Exp $
 
 VERSION 		= @TCL_VERSION@
 
@@ -1046,6 +1046,7 @@ dist: $(UNIX_DIR)/configure
 	cp $(UNIX_DIR)/Makefile.in $(DISTDIR)/unix
 	chmod 664 $(DISTDIR)/unix/Makefile.in
 	cp $(UNIX_DIR)/configure $(UNIX_DIR)/configure.in \
+		$(UNIX_DIR)/aclocal.m4 \
 		$(UNIX_DIR)/tclConfig.sh.in $(UNIX_DIR)/install-sh \
 		$(UNIX_DIR)/porting.notes $(UNIX_DIR)/porting.old \
 		$(UNIX_DIR)/README $(UNIX_DIR)/ldAix \
