@@ -1,4 +1,4 @@
-/* config.h.in.  Generated from configure.in by autoheader.  */
+/* tclConfig.h.in.  Generated from configure.in by autoheader.  */
 
 /* Is pthread_attr_get_np() declared in <pthread.h>? */
 #undef ATTRGETNP_NOT_DECLARED
