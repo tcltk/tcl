@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: namespace.n,v 1.8 2002/06/03 17:04:47 msofer Exp $
+'\" RCS: @(#) $Id: namespace.n,v 1.9 2003/01/21 20:06:11 jenglish Exp $
 '\" 
 .so man.macros
 .TH namespace n 8.0 Tcl "Tcl Built-In Commands"
@@ -46,7 +46,7 @@ is prepended onto the the pattern.
 Captures the current namespace context for later execution
 of the script \fIscript\fR.
 It returns a new script in which \fIscript\fR has been wrapped
-in a \fBnamespace code\fR command.
+in a \fBnamespace inscope\fR command.
 The new script has two important properties.
 First, it can be evaluated in any namespace and will cause
 \fIscript\fR to be evaluated in the current namespace
@@ -172,23 +172,22 @@ at the time when the \fBnamespace import\fR command is executed.
 If another command is defined and exported in this namespace later on,
 it will not be imported.
 .TP
-\fBnamespace inscope\fR \fInamespace arg\fR ?\fIarg ...\fR?
-Executes a script in the context of a particular namespace.
+\fBnamespace inscope\fR \fInamespace\fR \fIscript\fR ?\fIarg ...\fR?
+Executes a script in the context of the specified \fInamespace\fR.
 This command is not expected to be used directly by programmers;
 calls to it are generated implicitly when applications
 use \fBnamespace code\fR commands to create callback scripts
 that the applications then register with, e.g., Tk widgets.
 The \fBnamespace inscope\fR command is much like the \fBnamespace eval\fR
-command except that it has \fBlappend\fR semantics
-and the namespace must already exist.
-It treats the first argument as a list,
-and appends any arguments after the first
-onto the end as proper list elements.
-\fBnamespace inscope ::foo a x y z\fR
+command except that the \fInamespace\fR must already exist,
+and \fBnamespace inscope\fR appends additional \fIarg\fRs
+as proper list elements.
+.br
+\fBnamespace inscope ::foo $script $x $y $z\fR
 is equivalent to
-\fBnamespace eval ::foo [concat a [list x y z]]\fR
-This \fBlappend\fR semantics is important because many callback scripts
-are actually prefixes.
+\fBnamespace eval ::foo [concat $script [list $x $y $z]]\fR
+thus additional arguments will not undergo a second round of substitution,
+as is the case with \fBnamespace eval\fR.
 .TP
 \fBnamespace origin \fIcommand\fR
 Returns the fully-qualified name of the original command
