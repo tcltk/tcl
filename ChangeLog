@@ -1,3 +1,14 @@
+2005-03-24  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCompile.h:	Move the TclInterpReady() declaration from
+	* generic/tclInt.h:	tclCompile.h to tclInt.h.  Should have
+	been done as part of the 1115904 bug fix on 2005-03-18.
+
+	* generic/tclThreadTest.c:	Stop providing the phony package
+	"Thread 1.0" when the [::testthread] command is defined.  It's
+	never used by anything, and conflicts with loading the real
+	"Thread" package.
+
 2005-03-18  Don Porter  <dgp@users.sourceforge.net>
 
         * generic/tclCompCmds.c (TclCompileIncrCmd):    Corrected checks
