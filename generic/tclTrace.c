@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTrace.c,v 1.5 2003/10/02 18:08:31 dgp Exp $
+ * RCS: @(#) $Id: tclTrace.c,v 1.6 2003/10/03 20:42:06 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -506,7 +506,8 @@ TclTraceExecutionObjCmd(interp, optionIndex, objc, objv)
 		tcmdPtr->length = length;
 		tcmdPtr->refCount = 1;
 		flags |= TCL_TRACE_DELETE;
-		if (flags & (TRACE_EXEC_ENTER_STEP | TRACE_EXEC_LEAVE_STEP)) {
+		if (flags & (TCL_TRACE_ENTER_DURING_EXEC |
+			     TCL_TRACE_LEAVE_DURING_EXEC)) {
 		    flags |= (TCL_TRACE_ENTER_EXEC | TCL_TRACE_LEAVE_EXEC);
 		}
 		strcpy(tcmdPtr->command, command);
@@ -548,8 +549,8 @@ TclTraceExecutionObjCmd(interp, optionIndex, objc, objv)
 			    && (strncmp(command, tcmdPtr->command,
 				    (size_t) length) == 0)) {
 			flags |= TCL_TRACE_DELETE;
-			if (flags & (TRACE_EXEC_ENTER_STEP | 
-				     TRACE_EXEC_LEAVE_STEP)) {
+			if (flags & (TCL_TRACE_ENTER_DURING_EXEC | 
+				     TCL_TRACE_LEAVE_DURING_EXEC)) {
 			    flags |= (TCL_TRACE_ENTER_EXEC | 
 				      TCL_TRACE_LEAVE_EXEC);
 			}
@@ -1351,6 +1352,8 @@ TraceCommandProc(clientData, interp, oldName, newName, flags)
      * because command deletes are unconditional, so the trace must go away.
      */
     if (flags & (TCL_TRACE_DESTROYED | TCL_TRACE_DELETE)) {
+	int untraceFlags = tcmdPtr->flags;
+
 	if (tcmdPtr->stepTrace != NULL) {
 	    Tcl_DeleteTrace(interp, tcmdPtr->stepTrace);
 	    tcmdPtr->stepTrace = NULL;
@@ -1362,10 +1365,28 @@ TraceCommandProc(clientData, interp, oldName, newName, flags)
 	    /* Postpone deletion, until exec trace returns */
 	    tcmdPtr->flags = 0;
 	}
-	/* 
-	 * Decrement the refCount since the command which held our
-	 * reference (ever since we were created) has just gone away
+	/*
+	 * We need to construct the same flags for Tcl_UntraceCommand
+	 * as were passed to Tcl_TraceCommand.  Reproduce the processing
+	 * of [trace add execution/command].  Be careful to keep this
+	 * code in sync with that.
 	 */
+	if (untraceFlags & TCL_TRACE_ANY_EXEC) {
+	    untraceFlags |= TCL_TRACE_DELETE;
+	    if (untraceFlags & (TCL_TRACE_ENTER_DURING_EXEC 
+		    | TCL_TRACE_LEAVE_DURING_EXEC)) {
+		untraceFlags |= (TCL_TRACE_ENTER_EXEC | TCL_TRACE_LEAVE_EXEC);
+	    }
+	} else if (untraceFlags & TCL_TRACE_RENAME) {
+	    untraceFlags |= TCL_TRACE_DELETE;
+	}
+	/*
+	 * Remove the trace since TCL_TRACE_DESTROYED tells us to, or the
+	 * command we're tracing has just gone away.  Then decrement the
+	 * clientData refCount that was set up by trace creation.
+	 */
+	Tcl_UntraceCommand(interp, oldName, untraceFlags,
+		TraceCommandProc, clientData);
 	tcmdPtr->refCount--;
     }
     if ((--tcmdPtr->refCount) <= 0) {
