@@ -13,7 +13,7 @@
 # Copyright (c) 2000 by Ajuba Solutions
 # All rights reserved.
 # 
-# RCS: @(#) $Id: tcltest.tcl,v 1.28 2000/10/24 22:30:32 jenn Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.29 2000/10/28 00:00:00 jenn Exp $
 
 # create the "tcltest" namespace for all testing variables and procedures
 
@@ -2978,9 +2978,6 @@ proc tcltest::runAllTests { {shell ""} } {
 	    incr tcltest::numTestFiles
 	    uplevel [list source $file]
 	} else {
-	    # Change to the tests directory so the value of the following
-	    # variable is set correctly when we spawn the child test processes
-	    cd $tcltest::testsDirectory
 	    set cmd [concat [list | $shell $file] [split $argv]]
 	    if {[catch {
 		incr tcltest::numTestFiles
