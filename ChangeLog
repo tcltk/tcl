@@ -1,3 +1,9 @@
+2002-07-17  Miguel Sofer  <msofer@users.sourceforge.net>
+
+	* generic/tclVar.c (TclPtrIncrVar): missing CONST in declarations,
+	inconsistent with tclInt.h. Thanks to Vince Darley for reporting,
+	boo to gcc for not complaining.
+	
 2002-07-17  Vince Darley  <vincentdarley@users.sourceforge.net>
 
 	* generic/tclInt.h:
