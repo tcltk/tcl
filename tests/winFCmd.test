@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: winFCmd.test,v 1.20.4.4 2004/05/17 18:42:25 dgp Exp $
+# RCS: @(#) $Id: winFCmd.test,v 1.20.4.5 2004/05/27 14:29:23 dgp Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -58,26 +58,14 @@ if {[string equal $tcl_platform(platform) "windows"]} {
     tcltest::testConstraint winOlderThan2000 0
 }
 
-set ::tcltest::testConstraints(cdrom) 0
-set ::tcltest::testConstraints(exdev) 0
-
 # find a CD-ROM so we can test read-only filesystems.
 
 set cdrom {}
-set nodrive x:
-foreach p {d e f g h i j k l m n o p q r s t u v w x y z} {
-    set name ${p}:/dummy~~.fil
-    if [catch {set fd [open $name w]}] {
-	set err [lindex $errorCode 1]
-        if {$cdrom == "" && $err == "EACCES"} {
-	    set cdrom ${p}:
-	}
-	if {$err == "ENOENT"} {
-	    set nodrive ${p}:
-	}
-    } else {
-        close $fd
-	file delete $name
+if { [info commands ::testvolumetype] ne {} } {
+    foreach p {d e f g h i j k l m n o p q r s t u v w x y z} {
+        if { ! [catch { testvolumetype ${p}: } result] && $result eq {CDFS} } {
+            set cdrom ${p}:
+        }
     }
 }
 
@@ -99,25 +87,31 @@ proc findfile {dir} {
 }
 
 if {$cdrom != ""} {
-    set ::tcltest::testConstraints(cdrom) 1
+    testConstraint cdrom 1
     set cdfile [findfile $cdrom]
+} else {
+    testConstraint cdrom 0
 }
 
 if {[file exists c:/] && [file exists d:/]} {
     catch {file delete d:/tf1}
     if {[catch {close [open d:/tf1 w]}] == 0} {
 	file delete d:/tf1
-	set ::tcltest::testConstraints(exdev) 1
+	testConstraint exdev 1
+    } else {
+	testConstraint exdev 0
     }
+} else {
+    testConstraint exdev 0
 }
 
 file delete -force -- td1
 set foo [catch {open td1 w} testfile]
 if {$foo} {
-    set ::tcltest::testConstraints(longFileNames) 0
+    testConstraint longFileNames 0
 } else {
     close $testfile
-    set ::tcltest::testConstraints(longFileNames) 1
+    testConstraint longFileNames 1
     file delete -force -- td1
 }
 

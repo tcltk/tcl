@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.42.4.5 2004/05/04 17:44:20 dgp Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.42.4.6 2004/05/27 14:29:25 dgp Exp $
  */
 
 #include "tclInt.h"	/* Internal definitions for Tcl. */
@@ -274,10 +274,14 @@ static int		TtyCloseProc _ANSI_ARGS_((ClientData instanceData,
 			    Tcl_Interp *interp));
 static void		TtyGetAttributes _ANSI_ARGS_((int fd,
 			    TtyAttrs *ttyPtr));
+static int		TtyGetBaud _ANSI_ARGS_((unsigned long speed));
 static int		TtyGetOptionProc _ANSI_ARGS_((ClientData instanceData,
 			    Tcl_Interp *interp, CONST char *optionName,
 			    Tcl_DString *dsPtr));
+static unsigned long	TtyGetSpeed _ANSI_ARGS_((int baud));
 static FileState *	TtyInit _ANSI_ARGS_((int fd, int initialize));
+static void		TtyModemStatusStr _ANSI_ARGS_((int status,
+			    Tcl_DString *dsPtr));
 #if BAD_TIP35_FLUSH
 static int		TtyOutputProc _ANSI_ARGS_((ClientData instanceData,
 			    CONST char *buf, int toWrite, int *errorCode));

@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: io.test,v 1.45.2.5 2004/05/04 17:44:19 dgp Exp $
+# RCS: @(#) $Id: io.test,v 1.45.2.6 2004/05/27 14:29:19 dgp Exp $
 
 if {[catch {package require tcltest 2}]} {
     puts stderr "Skipping tests in [info script].  tcltest 2 required."
@@ -2675,7 +2675,7 @@ test io-29.33 {Tcl_Flush, implicit flush on exit} {exec} {
     set r
 } "hello\nbye\nstrange\n"
 test io-29.34 {Tcl_Close, async flush on close, using sockets} {socket tempNotMac fileevent} {
-    set c 0
+    variable c 0
     variable x running
     set l abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz
     proc writelots {s l} {
@@ -5766,7 +5766,7 @@ test io-48.4 {lf write, testing readability, ^Z termination, auto read mode} {fi
     file delete $path(test1)
     set f [open $path(test1) w]
     fconfigure $f -translation lf
-    set c [format "abc\ndef\n%c" 26]
+    variable c [format "abc\ndef\n%c" 26]
     puts -nonewline $f $c
     close $f
     proc consume {f} {
@@ -7103,6 +7103,7 @@ set datafile [file join $::tcltest::testsDirectory eofchar.data]
 test io-61.1 {Reset eof state after changing the eof char} {
     set f [open $datafile r]
     fconfigure $f -eofchar =
+    set res {}
     lappend res [read $f; tell $f]
     fconfigure $f -eofchar {}
     lappend res [read $f 1]

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.22.2.4 2004/05/17 18:42:23 dgp Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.22.2.5 2004/05/27 14:29:14 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -149,13 +149,14 @@ typedef struct InterpInfo {
  * Limit callbacks handled by scripts are modelled as structures which
  * are stored in hashes indexed by a two-word key.  Note that the type
  * of the 'type' field in the key is not int; this is to make sure
- * that things work properly on 64-bit architectures.
+ * that things are likely to work properly on 64-bit architectures.
  */
 
 struct ScriptLimitCallback {
     Tcl_Interp *interp;
     Tcl_Obj *scriptObj;
     int type;
+    Tcl_HashEntry *entryPtr;
 };
 
 struct ScriptLimitCallbackKey {
@@ -2634,12 +2635,13 @@ Tcl_LimitCheck(interp)
 	RunLimitHandlers(iPtr->limit.cmdHandlers, interp);
 	if (iPtr->limit.cmdCount >= iPtr->cmdCount) {
 	    iPtr->limit.exceeded &= ~TCL_LIMIT_COMMANDS;
-	} else {
+	} else if (iPtr->limit.exceeded & TCL_LIMIT_COMMANDS) {
 	    Tcl_ResetResult(interp);
 	    Tcl_AppendResult(interp, "command count limit exceeded", NULL);
 	    Tcl_Release(interp);
 	    return TCL_ERROR;
 	}
+	Tcl_Release(interp);
     }
 
     if ((iPtr->limit.active & TCL_LIMIT_TIME) &&
@@ -2654,16 +2656,17 @@ Tcl_LimitCheck(interp)
 	    iPtr->limit.exceeded |= TCL_LIMIT_TIME;
 	    Tcl_Preserve(interp);
 	    RunLimitHandlers(iPtr->limit.timeHandlers, interp);
-	    if (iPtr->limit.time.sec < now.sec ||
+	    if (iPtr->limit.time.sec >= now.sec ||
 		    (iPtr->limit.time.sec == now.sec &&
-		    iPtr->limit.time.usec < now.usec)) {
+		    iPtr->limit.time.usec >= now.usec)) {
 		iPtr->limit.exceeded &= ~TCL_LIMIT_TIME;
-	    } else {
+	    } else if (iPtr->limit.exceeded & TCL_LIMIT_TIME) {
 		Tcl_ResetResult(interp);
 		Tcl_AppendResult(interp, "time limit exceeded", NULL);
 		Tcl_Release(interp);
 		return TCL_ERROR;
 	    }
+	    Tcl_Release(interp);
 	}
     }
 
@@ -2792,6 +2795,7 @@ Tcl_LimitRemoveHandler(interp, type, handlerProc, clientData)
 	break;
     default:
 	Tcl_Panic("unknown type of resource limit");
+	return;
     }
 
     for (; handlerPtr!=NULL ; handlerPtr=handlerPtr->nextPtr) {
@@ -2846,6 +2850,80 @@ Tcl_LimitRemoveHandler(interp, type, handlerProc, clientData)
     }
 }
 
+void
+TclLimitRemoveAllHandlers(interp)
+    Tcl_Interp *interp;
+{
+    Interp *iPtr = (Interp *) interp;
+    LimitHandler *handlerPtr, *nextHandlerPtr;
+
+    /*
+     * Delete all command-limit handlers.
+     */
+
+    for (handlerPtr=iPtr->limit.cmdHandlers, iPtr->limit.cmdHandlers=NULL;
+	    handlerPtr!=NULL; handlerPtr=nextHandlerPtr) {
+	nextHandlerPtr = handlerPtr->nextPtr;
+
+	/*
+	 * Do not delete here if it has already been marked for deletion.
+	 */
+
+	if (handlerPtr->flags & LIMIT_HANDLER_DELETED) {
+	    continue;
+	}
+	handlerPtr->flags |= LIMIT_HANDLER_DELETED;
+	handlerPtr->prevPtr = NULL;
+	handlerPtr->nextPtr = NULL;
+
+	/*
+	 * If nothing is currently executing the handler, delete its
+	 * client data and the overall handler structure now.
+	 * Otherwise it will all go away when the handler returns.
+	 */
+
+	if (!(handlerPtr->flags & LIMIT_HANDLER_ACTIVE)) {
+	    if (handlerPtr->deleteProc != NULL) {
+		(handlerPtr->deleteProc)(handlerPtr->clientData);
+	    }
+	    ckfree((char *) handlerPtr);
+	}
+    }
+
+    /*
+     * Delete all time-limit handlers.
+     */
+
+    for (handlerPtr=iPtr->limit.timeHandlers, iPtr->limit.timeHandlers=NULL;
+	    handlerPtr!=NULL; handlerPtr=nextHandlerPtr) {
+	nextHandlerPtr = handlerPtr->nextPtr;
+
+	/*
+	 * Do not delete here if it has already been marked for deletion.
+	 */
+
+	if (handlerPtr->flags & LIMIT_HANDLER_DELETED) {
+	    continue;
+	}
+	handlerPtr->flags |= LIMIT_HANDLER_DELETED;
+	handlerPtr->prevPtr = NULL;
+	handlerPtr->nextPtr = NULL;
+
+	/*
+	 * If nothing is currently executing the handler, delete its
+	 * client data and the overall handler structure now.
+	 * Otherwise it will all go away when the handler returns.
+	 */
+
+	if (!(handlerPtr->flags & LIMIT_HANDLER_ACTIVE)) {
+	    if (handlerPtr->deleteProc != NULL) {
+		(handlerPtr->deleteProc)(handlerPtr->clientData);
+	    }
+	    ckfree((char *) handlerPtr);
+	}
+    }
+}
+
 int
 Tcl_LimitTypeEnabled(interp, type)
     Tcl_Interp *interp;
@@ -2884,6 +2962,7 @@ Tcl_LimitTypeReset(interp, type)
     Interp *iPtr = (Interp *) interp;
 
     iPtr->limit.active &= ~type;
+    iPtr->limit.exceeded &= ~type;
 }
 
 void
@@ -2977,6 +3056,7 @@ DeleteScriptLimitCallback(clientData)
 	    (struct ScriptLimitCallback *) clientData;
 
     Tcl_DecrRefCount(limitCBPtr->scriptObj);
+    Tcl_DeleteHashEntry(limitCBPtr->entryPtr);
     ckfree((char *) limitCBPtr);
 }
 
@@ -3034,17 +3114,9 @@ SetLimitCallback(interp, type, targetInterp, scriptObj)
 	if (hashPtr != NULL) {
 	    Tcl_LimitRemoveHandler(targetInterp, type, CallScriptLimitCallback,
 		    Tcl_GetHashValue(hashPtr));
-	    Tcl_DeleteHashEntry(hashPtr);
 	}
 	return;
     }
-
-    limitCBPtr = (struct ScriptLimitCallback *)
-	    ckalloc(sizeof(struct ScriptLimitCallback));
-    limitCBPtr->interp = interp;
-    limitCBPtr->scriptObj = scriptObj;
-    limitCBPtr->type = type;
-    Tcl_IncrRefCount(scriptObj);
 
     hashPtr = Tcl_CreateHashEntry(&iPtr->limit.callbacks, (char *) &key,
 	    &isNew);
@@ -3052,6 +3124,15 @@ SetLimitCallback(interp, type, targetInterp, scriptObj)
 	Tcl_LimitRemoveHandler(targetInterp, type, CallScriptLimitCallback,
 		Tcl_GetHashValue(hashPtr));
     }
+
+    limitCBPtr = (struct ScriptLimitCallback *)
+	    ckalloc(sizeof(struct ScriptLimitCallback));
+    limitCBPtr->interp = interp;
+    limitCBPtr->scriptObj = scriptObj;
+    limitCBPtr->entryPtr = hashPtr;
+    limitCBPtr->type = type;
+    Tcl_IncrRefCount(scriptObj);
+
     Tcl_LimitAddHandler(targetInterp, type, CallScriptLimitCallback,
 	    (ClientData) limitCBPtr, DeleteScriptLimitCallback);
     Tcl_SetHashValue(hashPtr, (ClientData) limitCBPtr);
@@ -3098,7 +3179,7 @@ TclInitLimitSupport(interp)
     iPtr->limit.timeHandlers = NULL;
     iPtr->limit.timeGranularity = 10;
     Tcl_InitHashTable(&iPtr->limit.callbacks,
-	    sizeof(struct ScriptLimitCallbackKey)/sizeof(ClientData));
+	    sizeof(struct ScriptLimitCallbackKey)/sizeof(int));
 }
 
 static void

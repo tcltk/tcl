@@ -7,7 +7,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: lsort.n,v 1.13.2.1 2003/10/16 02:28:01 dgp Exp $
+'\" RCS: @(#) $Id: lsort.n,v 1.13.2.2 2004/05/27 14:29:08 dgp Exp $
 '\" 
 .so man.macros
 .TH lsort n 8.3 Tcl "Tcl Built-In Commands"
@@ -109,7 +109,6 @@ determined relative to the comparison used in the sort.  Thus if
 \fI-index 0\fR is used, \fB{1 a}\fR and \fB{1 b}\fR would be
 considered duplicates and only the second element, \fB{1 b}\fR, would
 be retained.
-
 .SH "NOTES"
 .PP
 The options to \fBlsort\fR only control what sort of comparison is
@@ -120,23 +119,19 @@ sorted has fewer than two elements.
 The \fBlsort\fR command is reentrant, meaning it is safe to use as
 part of the implementation of a command used in the \fB\-command\fR
 option.
-
 .SH "EXAMPLES"
-
 .PP
 Sorting a list using ASCII sorting:
 .CS
 % lsort {a10 B2 b1 a1 a2}
 B2 a1 a10 a2 b1
 .CE
-
 .PP
 Sorting a list using Dictionary sorting:
 .CS
 % lsort -dictionary {a10 B2 b1 a1 a2}
 a1 a2 a10 b1 B2
 .CE
-
 .PP
 Sorting lists of integers:
 .CS
@@ -145,7 +140,6 @@ Sorting lists of integers:
 % lsort -integer {1 2 0x5 7 0 4 -1}
 -1 0 1 2 4 0x5 7
 .CE
-
 .PP
 Sorting lists of floating-point numbers:
 .CS
@@ -154,7 +148,6 @@ Sorting lists of floating-point numbers:
 % lsort -real {.5 0.07e1 0.4 6e-1}
 0.4 .5 6e-1 0.07e1
 .CE
-
 .PP
 Sorting using indices:
 .CS
@@ -166,14 +159,12 @@ Sorting using indices:
 % lsort -index 1 {{a 5} { c 3} {b 4} {e 1} {d 2}}
 {e 1} {d 2} { c 3} {b 4} {a 5}
 .CE
-
 .PP
 Stripping duplicate values using sorting:
 .CS
 % lsort -unique {a b c a b c a b c}
 a b c
 .CE
-
 .PP
 More complex sorting using a comparison function:
 .CS

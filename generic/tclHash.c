@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclHash.c,v 1.12.4.4 2004/04/09 20:58:14 dgp Exp $
+ * RCS: @(#) $Id: tclHash.c,v 1.12.4.5 2004/05/27 14:29:11 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -986,11 +986,14 @@ AllocStringEntry(tablePtr, keyPtr)
 static int
 CompareStringKeys(keyPtr, hPtr)
     VOID *keyPtr;		/* New key to compare. */
-    Tcl_HashEntry *hPtr;		/* Existing key to compare. */
+    Tcl_HashEntry *hPtr;	/* Existing key to compare. */
 {
     register CONST char *p1 = (CONST char *) keyPtr;
     register CONST char *p2 = (CONST char *) hPtr->key.string;
 
+#ifdef TCL_COMPARE_HASHES_WITH_STRCMP
+    return !strcmp(p1, p2);
+#else
     for (;; p1++, p2++) {
 	if (*p1 != *p2) {
 	    break;
@@ -1000,6 +1003,7 @@ CompareStringKeys(keyPtr, hPtr)
 	}
     }
     return 0;
+#endif /* TCL_COMPARE_HASHES_WITH_STRCMP */
 }
 
 /*

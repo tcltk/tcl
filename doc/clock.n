@@ -10,7 +10,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: clock.n,v 1.12.2.3 2004/03/26 22:28:24 dgp Exp $
+'\" RCS: @(#) $Id: clock.n,v 1.12.2.4 2004/05/27 14:29:08 dgp Exp $
 '\" 
 .so man.macros
 .TH clock n 8.4 Tcl "Tcl Built-In Commands"
@@ -29,16 +29,14 @@ or manipulate strings or values that represent some notion of
 time.  The \fIoption\fR argument determines what action is carried
 out by the command.  The legal \fIoptions\fR (which may be
 abbreviated) are:
-.VS 8.3
 .TP
 \fBclock clicks\fR ?\fI\-option\fR?
 If no \fIoption\fR argument is supplied, returns a high-resolution 
 time value as a system-dependent integer value.  The unit of the value
 is system-dependent but should be the highest resolution clock available
 on the system such as a CPU cycle counter. 
-.VE 8.3
-.VS 8.5
 .TP
+.VS 8.5
 If the \fIoption\fR argument is \fB\-milliseconds\fR, then the value is
 guaranteed to be an approximate count of milliseconds returned as
 a wide integer; the rule should
@@ -80,7 +78,6 @@ Full weekday name (Monday, Tuesday, etc.).
 Abbreviated month name (Jan, Feb, etc.).
 .IP \fB%B\fR
 Full month name.
-.VS 8.4
 .IP \fB%c\fR
 Locale specific date and time.  The format for date and time
 in the default "C" locale on Unix is "%a %b %d %H:%M:%S %Y".
@@ -88,44 +85,40 @@ On Windows, this value is the locale specific long date and time, as
 specified in the Regional Options control panel settings.
 .IP \fB%C\fR
 First two digits of the four-digit year (19 or 20).
-.VE 8.4
 .IP \fB%d\fR
 Day of month (01 - 31).
-.VS 8.4
 '\" Since the inclusion of compat/strftime.c, %D, %e, %h should work on all
 '\" platforms.
 .IP \fB%D\fR
 Date as %m/%d/%y.
 .IP \fB%e\fR
 Day of month (1 - 31), no leading zeros.
+.IP \fB%g\fR
+The ISO8601 year number corresponding to the ISO8601 week (%V), expressed
+as a two-digit year-of-the-century, with leading zero if necessary.
+.IP \fB%G\fR
+The ISO8601 year number corresponding to the ISO8601 week (%V), expressed
+as a four-digit number.
 .IP \fB%h\fR
 Abbreviated month name.
-.VE 8.4
 .IP \fB%H\fR
 Hour in 24-hour format (00 - 23).
-.VS 8.4
 .IP \fB%I\fR
 Hour in 12-hour format (01 - 12).
-.VE 8.4
 .IP \fB%j\fR
 Day of year (001 - 366).
-.VS 8.4
 .IP \fB%k\fR
 Hour in 24-hour format, without leading zeros (0 - 23).
 .IP \fB%l\fR
 Hour in 12-hour format, without leading zeros (1 - 12).
-.VE 8.4
 .IP \fB%m\fR
 Month number (01 - 12).
 .IP \fB%M\fR
 Minute (00 - 59).
-.VS 8.4
 .IP \fB%n\fR
 Insert a newline.
-.VE 8.4
 .IP \fB%p\fR
 AM/PM indicator.
-.VS 8.4
 .IP \fB%r\fR
 Time in a locale-specific "meridian" format.  The "meridian"
 format in the default "C" locale is "%I:%M:%S %p".
@@ -133,29 +126,23 @@ format in the default "C" locale is "%I:%M:%S %p".
 Time as %H:%M.
 .IP \fB%s\fR
 Count of seconds since the epoch, expressed as a decimal integer.
-.VE 8.4
 .IP \fB%S\fR
 Seconds (00 - 59).
-.VS 8.4
 .IP \fB%t\fR
 Insert a tab.
 .IP \fB%T\fR
 Time as %H:%M:%S.
 .IP \fB%u\fR
 Weekday number (Monday = 1, Sunday = 7).
-.VE 8.4
 .IP \fB%U\fR
 Week of year (00 - 52), Sunday is the first day of the week.
-.VS 8.4
 .IP \fB%V\fR
 Week of year according to ISO-8601 rules.  Week 1 of a given
 year is the week containing 4 January.
 .IP \fB%w\fR
 Weekday number (Sunday = 0, Saturday = 6).
-.VE 8.4
 .IP \fB%W\fR
 Week of year (00 - 52), Monday is the first day of the week.
-.VS 8.4
 .IP \fB%x\fR
 Locale specific date format.  The format for a date in the default "C"
 locale for Unix is "%m/%d/%y".
@@ -166,7 +153,6 @@ Locale specific 24-hour time format.  The format for a
 24-hour time in the default "C" locale for Unix is "%H:%M:%S".
 On Windows, this value is the locale specific time format, as
 specified in the Regional Options control panel settings.
-.VE 8.4
 .IP \fB%y\fR
 Year without century (00 - 99).
 .IP \fB%Y\fR
@@ -174,7 +160,6 @@ Year with century (e.g. 1990)
 .IP \fB%Z\fR
 Time zone name.
 .RE
-.VS 8.4
 .sp
 '\" All the field descriptors should be portable now that
 '\" compat/strftime.c is in place, with the possible exception
@@ -200,7 +185,6 @@ Time zone name.
 '\"Time as %H:%M:%S.
 '\".RE
 '\".sp
-.VE 8.4
 .RS
 If the \fB\-format\fR argument is not specified, the format string 
 \fB"%a %b %d %H:%M:%S %Z %Y"\fR is used.  If the \fB\-gmt\fR argument
@@ -242,11 +226,9 @@ acceptable formats are \fImm/dd\fR?\fI/yy\fR?, \fImonthname dd\fR
 ?, \fIyy\fR?, \fIdd monthname \fR?\fIyy\fR?, \fIday, dd monthname
 yy\fR, \fI?CC?yymmdd\fR, \fI?CC?yy-mm-dd\fR, \fIdd-monthname-?CC?yy\fR.
 The default year is the current year.  If the year is less
-.VS
 than 100, we treat the years 00-68 as 2000-2068 and the years 69-99
 as 1969-1999.  Not all platforms can represent the years 38-70, so
 an error may result if these years are used.
-.VE
 .TP
 \fIISO 8601 point-in-time\fR
 An ISO 8601 point-in-time specification, such as \fICCyymmddThhmmss\fR, where
@@ -293,6 +275,15 @@ Return the current date and time as a system-dependent integer value.  The
 unit of the value is seconds, allowing it to be used for relative time
 calculations.  The value is usually defined as total elapsed time from
 an ``epoch''.  You shouldn't assume the value of the epoch.
+.SH EXAMPLE
+Print out the current date and time, first using the default format
+and then using an ISO 8601 format:
+.CS
+set now [clock seconds]
+set isoFmt "%Y-%m-%dT%H:%M:%SZ"
+puts "DEFAULT: [clock format $now]"
+puts "ISO8601: [clock format $now -format $isoFmt -gmt 1]"
+.CE
 
 .SH "SEE ALSO"
 date(1), time(n)

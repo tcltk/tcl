@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: binary.test,v 1.11.4.4 2004/05/17 18:42:24 dgp Exp $
+# RCS: @(#) $Id: binary.test,v 1.11.4.5 2004/05/27 14:29:17 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -513,7 +513,7 @@ test binary-14.10 {Tcl_BinaryObjCmd: format} bigEndian {
 test binary-14.11 {Tcl_BinaryObjCmd: format} littleEndian {
     binary format d2 {1.6 3.4 5.6}
 } \x9a\x99\x99\x99\x99\x99\xf9\x3f\x33\x33\x33\x33\x33\x33\x0b\x40
-test binary-14.12 {Tcl_BinaryObjCmd: float overflow} bigEndian {
+test binary-14.12 {Tcl_BinaryObjCmd: float overflow} {nonPortable bigEndian} {
     binary format d NaN
 } \x7f\xff\xff\xff\xff\xff\xff\xff
 test binary-14.14 {Tcl_BinaryObjCmd: format} {
@@ -1572,7 +1572,7 @@ test binary-48.18 {Tcl_BinaryObjCmd: format} bigEndian {
     set a {0x50 0x51}
     binary format t1 $a
 } \x00P
-test binary-48.18 {Tcl_BinaryObjCmd: format} littleEndian {
+test binary-48.19 {Tcl_BinaryObjCmd: format} littleEndian {
     set a {0x50 0x51}
     binary format t1 $a
 } P\x00
@@ -1692,11 +1692,11 @@ test binary-51.10 {Tcl_BinaryObjCmd: format} {} {
 test binary-51.11 {Tcl_BinaryObjCmd: format} {} {
     binary format q2 {1.6 3.4 5.6}
 } \x9a\x99\x99\x99\x99\x99\xf9\x3f\x33\x33\x33\x33\x33\x33\x0b\x40
-test binary-51.12 {Tcl_BinaryObjCmd: float overflow} bigEndian {
-    binary format d NaN
+test binary-51.12 {Tcl_BinaryObjCmd: float overflow} {nonPortable bigEndian} {
+    binary format Q NaN
 } \x7f\xff\xff\xff\xff\xff\xff\xff
 test binary-51.13 {Tcl_BinaryObjCmd: float overflow} {nonPortable macOnly} {
-    binary format d NaN
+    binary format Q NaN
 } \x7f\xf8\x02\xa0\x00\x00\x00\x00
 test binary-51.14 {Tcl_BinaryObjCmd: format} {
     list [catch {binary format q2 {1.6}} msg] $msg

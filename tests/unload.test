@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: unload.test,v 1.1.2.2 2004/03/26 22:28:29 dgp Exp $
+# RCS: @(#) $Id: unload.test,v 1.1.2.3 2004/05/27 14:29:22 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -109,6 +109,7 @@ child eval {
 }
 test unload-3.1 {basic loading of non-unloadable package in a safe interpreter, with package name conversion} \
 	[list $dll $loaded] {
+    catch {rename pkgb_sub {}}
     load [file join $testDir pkgb$ext] pKgB child
     list [child eval pkgb_sub 44 13] [catch {child eval pkgb_unsafe} msg] $msg \
          [catch {pkgb_sub 12 10} msg2] $msg2
@@ -213,5 +214,7 @@ test unload-4.6 {basic unloading of unloadable package from a safe interpreter, 
 } {{. {} {}} {} {} {. . .}}
 
 # cleanup
+interp delete child
+interp delete child-trusted
 ::tcltest::cleanupTests
 return

@@ -11,33 +11,28 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: dstring.test,v 1.5.26.1 2003/08/07 21:36:04 dgp Exp $
+# RCS: @(#) $Id: dstring.test,v 1.5.26.2 2004/05/27 14:29:17 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
     namespace import -force ::tcltest::*
 }
 
-if {[info commands testdstring] == {}} {
-    puts "This application hasn't been compiled with the \"testdstring\""
-    puts "command, so I can't test Tcl_DStringAppend et al."
-    ::tcltest::cleanupTests
-    return
-}
+testConstraint testdstring [llength [info commands testdstring]]
 
-test dstring-1.1 {appending and retrieving} {
+test dstring-1.1 {appending and retrieving} testdstring {
     testdstring free
     testdstring append "abc" -1
     list [testdstring get] [testdstring length]
 } {abc 3}
-test dstring-1.2 {appending and retrieving} {
+test dstring-1.2 {appending and retrieving} testdstring {
     testdstring free
     testdstring append "abc" -1
     testdstring append " xyzzy" 3
     testdstring append " 12345" -1
     list [testdstring get] [testdstring length]
 } {{abc xy 12345} 12}
-test dstring-1.3 {appending and retrieving} {
+test dstring-1.3 {appending and retrieving} testdstring {
     testdstring free
     foreach l {a b c d e f g h i j k l m n o p} {
 	testdstring append $l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l\n -1
@@ -61,27 +56,27 @@ ooooooooooooooooooooo
 ppppppppppppppppppppp
 } 352}
 
-test dstring-2.1 {appending list elements} {
+test dstring-2.1 {appending list elements} testdstring {
     testdstring free
     testdstring element "abc"
     testdstring element "d e f"
     list [testdstring get] [testdstring length]
 } {{abc {d e f}} 11}
-test dstring-2.2 {appending list elements} {
+test dstring-2.2 {appending list elements} testdstring {
     testdstring free
     testdstring element "x"
     testdstring element "\{"
     testdstring element "ab\}"
     testdstring get
 } {x \{ ab\}}
-test dstring-2.3 {appending list elements} {
+test dstring-2.3 {appending list elements} testdstring {
     testdstring free
     foreach l {a b c d e f g h i j k l m n o p} {
 	testdstring element $l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l
     }
     testdstring get
 } {aaaaaaaaaaaaaaaaaaaaa bbbbbbbbbbbbbbbbbbbbb ccccccccccccccccccccc ddddddddddddddddddddd eeeeeeeeeeeeeeeeeeeee fffffffffffffffffffff ggggggggggggggggggggg hhhhhhhhhhhhhhhhhhhhh iiiiiiiiiiiiiiiiiiiii jjjjjjjjjjjjjjjjjjjjj kkkkkkkkkkkkkkkkkkkkk lllllllllllllllllllll mmmmmmmmmmmmmmmmmmmmm nnnnnnnnnnnnnnnnnnnnn ooooooooooooooooooooo ppppppppppppppppppppp}
-test dstring-2.4 {appending list elements} {
+test dstring-2.4 {appending list elements} testdstring {
     testdstring free
     testdstring append "a\{" -1
     testdstring element abc
@@ -89,54 +84,54 @@ test dstring-2.4 {appending list elements} {
     testdstring element xyzzy
     testdstring get
 } "a{ abc	{xyzzy"
-test dstring-2.5 {appending list elements} {
+test dstring-2.5 {appending list elements} testdstring {
     testdstring free
     testdstring append " \{" -1
     testdstring element abc
     testdstring get
 } " {abc"
-test dstring-2.6 {appending list elements} {
+test dstring-2.6 {appending list elements} testdstring {
     testdstring free
     testdstring append " " -1
     testdstring element abc
     testdstring get
 } { abc}
-test dstring-2.7 {appending list elements} {
+test dstring-2.7 {appending list elements} testdstring {
     testdstring free
     testdstring append "\\ " -1
     testdstring element abc
     testdstring get
 } "\\  abc"
-test dstring-2.8 {appending list elements} {
+test dstring-2.8 {appending list elements} testdstring {
     testdstring free
     testdstring append "x " -1
     testdstring element abc
     testdstring get
 } {x abc}
-test dstring-2.9 {appending list elements} {
+test dstring-2.9 {appending list elements} testdstring {
     testdstring free
     testdstring element #
     testdstring get
 } {{#}}
-test dstring-2.10 {appending list elements} {
+test dstring-2.10 {appending list elements} testdstring {
     testdstring free
     testdstring append " " -1
     testdstring element #
     testdstring get
 } { {#}}
-test dstring-2.11 {appending list elements} {
+test dstring-2.11 {appending list elements} testdstring {
     testdstring free
     testdstring append \t -1
     testdstring element #
     testdstring get
 } \t{#}
-test dstring-2.12 {appending list elements} {
+test dstring-2.12 {appending list elements} testdstring {
     testdstring free
     testdstring append x -1
     testdstring element #
     testdstring get
 } {x #}
-test dstring-2.13 {appending list elements} {
+test dstring-2.13 {appending list elements} testdstring {
     # This test shows lack of sophistication in Tcl_DStringAppendElement's
     # decision about whether #-quoting can be disabled.
     testdstring free
@@ -145,7 +140,7 @@ test dstring-2.13 {appending list elements} {
     testdstring get
 } {x {#}}
 
-test dstring-3.1 {nested sublists} {
+test dstring-3.1 {nested sublists} testdstring {
     testdstring free
     testdstring start
     testdstring element foo
@@ -154,7 +149,7 @@ test dstring-3.1 {nested sublists} {
     testdstring element another
     testdstring get
 } {{foo bar} another}
-test dstring-3.2 {nested sublists} {
+test dstring-3.2 {nested sublists} testdstring {
     testdstring free
     testdstring start
     testdstring start
@@ -165,7 +160,7 @@ test dstring-3.2 {nested sublists} {
     testdstring element ghi
     testdstring get
 } {{{abc def}} ghi}
-test dstring-3.3 {nested sublists} {
+test dstring-3.3 {nested sublists} testdstring {
     testdstring free
     testdstring start
     testdstring start
@@ -179,7 +174,7 @@ test dstring-3.3 {nested sublists} {
     testdstring element foo4
     testdstring get
 } {{{{foo foo2}} foo3} foo4}
-test dstring-3.4 {nested sublists} {
+test dstring-3.4 {nested sublists} testdstring {
     testdstring free
     testdstring element before
     testdstring start
@@ -189,7 +184,7 @@ test dstring-3.4 {nested sublists} {
     testdstring element last
     testdstring get
 } {before {during more} last}
-test dstring-3.5 {nested sublists} {
+test dstring-3.5 {nested sublists} testdstring {
     testdstring free
     testdstring element "\{"
     testdstring start
@@ -198,7 +193,7 @@ test dstring-3.5 {nested sublists} {
     testdstring end
     testdstring get
 } {\{ {first second}}
-test dstring-3.6 {appending list elements} {
+test dstring-3.6 {appending list elements} testdstring {
     testdstring free
     testdstring append x -1
     testdstring start
@@ -206,7 +201,7 @@ test dstring-3.6 {appending list elements} {
     testdstring end
     testdstring get
 } {x {{#}}}
-test dstring-3.7 {appending list elements} {
+test dstring-3.7 {appending list elements} testdstring {
     testdstring free
     testdstring append x -1
     testdstring start
@@ -215,7 +210,7 @@ test dstring-3.7 {appending list elements} {
     testdstring end
     testdstring get
 } {x { {#}}}
-test dstring-3.8 {appending list elements} {
+test dstring-3.8 {appending list elements} testdstring {
     testdstring free
     testdstring append x -1
     testdstring start
@@ -224,7 +219,7 @@ test dstring-3.8 {appending list elements} {
     testdstring end
     testdstring get
 } "x {\t{#}}"
-test dstring-3.9 {appending list elements} {
+test dstring-3.9 {appending list elements} testdstring {
     testdstring free
     testdstring append x -1
     testdstring start
@@ -233,7 +228,7 @@ test dstring-3.9 {appending list elements} {
     testdstring end
     testdstring get
 } {x {x #}}
-test dstring-3.10 {appending list elements} {
+test dstring-3.10 {appending list elements} testdstring {
     # This test shows lack of sophistication in Tcl_DStringAppendElement's
     # decision about whether #-quoting can be disabled.
     testdstring free
@@ -245,25 +240,25 @@ test dstring-3.10 {appending list elements} {
     testdstring get
 } {x {x {#}}}
 
-test dstring-4.1 {truncation} {
+test dstring-4.1 {truncation} testdstring {
     testdstring free
     testdstring append "abcdefg" -1
     testdstring trunc 3
     list [testdstring get] [testdstring length]
 } {abc 3}
-test dstring-4.2 {truncation} {
+test dstring-4.2 {truncation} testdstring {
     testdstring free
     testdstring append "xyzzy" -1
     testdstring trunc 0
     list [testdstring get] [testdstring length]
 } {{} 0}
 
-test dstring-5.1 {copying to result} {
+test dstring-5.1 {copying to result} testdstring {
     testdstring free
     testdstring append xyz -1
     testdstring result
 } xyz
-test dstring-5.2 {copying to result} {
+test dstring-5.2 {copying to result} testdstring {
     testdstring free
     catch {unset a}
     foreach l {a b c d e f g h i j k l m n o p} {
@@ -290,18 +285,18 @@ ooooooooooooooooooooo
 ppppppppppppppppppppp
 } abc}
 
-test dstring-6.1 {Tcl_DStringGetResult} {
+test dstring-6.1 {Tcl_DStringGetResult} testdstring {
     testdstring free
     list [testdstring gresult staticsmall] [testdstring get]
 } {{} short}
-test dstring-6.2 {Tcl_DStringGetResult} {
+test dstring-6.2 {Tcl_DStringGetResult} testdstring {
     testdstring free
     foreach l {a b c d e f g h i j k l m n o p} {
 	testdstring append $l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l\n -1
     }
     list [testdstring gresult staticsmall] [testdstring get]
 } {{} short}
-test dstring-6.3 {Tcl_DStringGetResult} {
+test dstring-6.3 {Tcl_DStringGetResult} testdstring {
     set result {}
     lappend result [testdstring gresult staticlarge]
     testdstring append x 1
@@ -314,13 +309,13 @@ fifth0 fifth1 fifth2 fifth3 fifth4 fifth5 fifth6 fifth7 fifth8 fifth9
 sixth0 sixth1 sixth2 sixth3 sixth4 sixth5 sixth6 sixth7 sixth8 sixth9
 seventh0 seventh1 seventh2 seventh3 seventh4 seventh5 seventh6 seventh7 seventh8 seventh9
 x}}
-test dstring-6.4 {Tcl_DStringGetResult} {
+test dstring-6.4 {Tcl_DStringGetResult} testdstring {
     set result {}
     lappend result [testdstring gresult free]
     testdstring append y 1
     lappend result [testdstring get]
 } {{} {This is a malloc-ed stringy}}
-test dstring-6.5 {Tcl_DStringGetResult} {
+test dstring-6.5 {Tcl_DStringGetResult} testdstring {
     set result {}
     lappend result [testdstring gresult special]
     testdstring append z 1
@@ -331,15 +326,3 @@ test dstring-6.5 {Tcl_DStringGetResult} {
 testdstring free
 ::tcltest::cleanupTests
 return
-
-
-
-
-
-
-
-
-
-
-
-

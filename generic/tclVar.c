@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.73.2.5 2004/05/04 17:44:18 dgp Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.73.2.6 2004/05/27 14:29:15 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -69,8 +69,6 @@ int		TclObjUnsetVar2 _ANSI_ARGS_((Tcl_Interp *interp,
 static Tcl_FreeInternalRepProc FreeLocalVarName;
 static Tcl_DupInternalRepProc DupLocalVarName;
 static Tcl_UpdateStringProc UpdateLocalVarName;
-static Tcl_FreeInternalRepProc FreeNsVarName;
-static Tcl_DupInternalRepProc DupNsVarName;
 static Tcl_FreeInternalRepProc FreeParsedVarName;
 static Tcl_DupInternalRepProc DupParsedVarName;
 static Tcl_UpdateStringProc UpdateParsedVarName;
@@ -101,10 +99,24 @@ Tcl_ObjType tclLocalVarNameType = {
     FreeLocalVarName, DupLocalVarName, UpdateLocalVarName, NULL
 };
 
+/*
+ * Caching of namespace variables disabled: no simple way was found to
+ * avoid interfering with the resolver's idea of variable existence.
+ * A cached varName may keep a variable's name in the namespace's hash
+ * table, which is the resolver's criterion for existence (see test
+ * namespace-17.10).
+ */	
+#define ENABLE_NS_VARNAME_CACHING 0
+
+#if ENABLE_NS_VARNAME_CACHING
+static Tcl_FreeInternalRepProc FreeNsVarName;
+static Tcl_DupInternalRepProc DupNsVarName;
+
 Tcl_ObjType tclNsVarNameType = {
     "namespaceVarName",
     FreeNsVarName, DupNsVarName, NULL, NULL
 };
+#endif
 
 Tcl_ObjType tclParsedVarNameType = {
     "parsedVarName",
@@ -398,13 +410,18 @@ TclObjLookupVar(interp, part1Ptr, part2, flags, msg, createPart1, createPart2,
 	if (useLocal && (procPtr == varFramePtr->procPtr)) {
 	    /*
 	     * part1Ptr points to an indexed local variable of the
-	     * correct procedure: use the cached value.
+	     * correct procedure: use the cached value if the names
+	     * coincide.
 	     */
 	    
 	    varPtr = &(varFramePtr->compiledLocals[localIndex]);
-	    goto donePart1;
+	    if ((varPtr->name != NULL)
+		    && (strcmp(part1, varPtr->name) == 0)) {
+		goto donePart1;
+	    }
 	}
 	goto doneParsing;
+#if ENABLE_NS_VARNAME_CACHING
     } else if (typePtr == &tclNsVarNameType) {
 	Namespace *cachedNsPtr;
 	int useGlobal, useReference;
@@ -440,6 +457,7 @@ TclObjLookupVar(interp, part1Ptr, part2, flags, msg, createPart1, createPart2,
 	    goto donePart1;
 	}
 	goto doneParsing;
+#endif
     }
 
     doParse:
@@ -538,18 +556,11 @@ TclObjLookupVar(interp, part1Ptr, part2, flags, msg, createPart1, createPart2,
 	procPtr->refCount++;
 	part1Ptr->internalRep.twoPtrValue.ptr1 = (VOID *) procPtr;
 	part1Ptr->internalRep.twoPtrValue.ptr2 = (VOID *) index;
-#if 0
-    /*
-     * TEMPORARYLY DISABLED tclNsVarNameType
-     *
-     * This is a stop-gap fix for [Bug 735335]; it may not address the 
-     * real issue (which I haven't pinned down yet), but it avoids the 
-     * segfault in the test case.
-     * This optimisation will hopefully be turned back on soon.
-     *      Miguel Sofer, 2003-05-12
-     */
-
+#if ENABLE_NS_VARNAME_CACHING
     } else if (index > -3) {
+	/*
+	 * A cacheable namespace or global variable.
+	 */
 	Namespace *nsPtr;
     
 	nsPtr = ((index == -1)? iPtr->globalNsPtr : varFramePtr->nsPtr);
@@ -763,15 +774,18 @@ TclLookupSimpleVar(interp, varName, flags, create, errMsgPtr, indexPtr)
 	    }
 	} 
 
-	/*
+        /*
 	 * Don't pass TCL_LEAVE_ERR_MSG, we may yet create the variable,
 	 * or otherwise generate our own error!
 	 */
+
 	var = Tcl_FindNamespaceVar(interp, varName, (Tcl_Namespace *) cxtNsPtr,
 		flags & ~TCL_LEAVE_ERR_MSG);
+
 	if (var != (Tcl_Var) NULL) {
             varPtr = (Var *) var;
         }
+
 	if (varPtr == NULL) {
 	    if (create) {   /* var wasn't found so create it  */
 		TclGetNamespaceForQualName(interp, varName, cxtNsPtr,
@@ -789,7 +803,7 @@ TclLookupSimpleVar(interp, varName, flags, create, errMsgPtr, indexPtr)
 		Tcl_SetHashValue(hPtr, varPtr);
 		varPtr->hPtr = hPtr;
 		varPtr->nsPtr = varNsPtr;
-		if ((lookGlobal)  || (varNsPtr == NULL)) {
+		if (lookGlobal) {
 		    /*
 		     * The variable was created starting from the global
 		     * namespace: a global reference is returned even if 
@@ -2154,7 +2168,7 @@ TclObjUnsetVar2(interp, part1Ptr, part2, flags)
     if (varPtr == NULL) {
 	return TCL_ERROR;
     }
- 
+    
     result = (TclIsVarUndefined(varPtr)? TCL_ERROR : TCL_OK);
 
     if ((arrayPtr != NULL) && (arrayPtr->searchPtr != NULL)) {
@@ -2182,6 +2196,16 @@ TclObjUnsetVar2(interp, part1Ptr, part2, flags)
     varPtr->searchPtr = NULL;
 
     /*
+     * Keep the variable alive until we're done with it. We used to
+     * increase/decrease the refCount for each operation, making it
+     * hard to find [Bug 735335] - caused by unsetting the variable
+     * whose value was the variable's name.
+     */
+    
+    varPtr->refCount++;
+
+
+    /*
      * Call trace procedures for the variable being deleted. Then delete
      * its traces. Be sure to abort any other traces for the variable
      * that are still pending. Special tricks:
@@ -2193,7 +2217,6 @@ TclObjUnsetVar2(interp, part1Ptr, part2, flags)
 
     if ((dummyVar.tracePtr != NULL)
 	    || ((arrayPtr != NULL) && (arrayPtr->tracePtr != NULL))) {
-	varPtr->refCount++;
 	dummyVar.flags &= ~VAR_TRACE_ACTIVE;
 	TclCallVarTraces(iPtr, arrayPtr, &dummyVar, part1, part2,
 		(flags & (TCL_GLOBAL_ONLY|TCL_NAMESPACE_ONLY))
@@ -2209,7 +2232,6 @@ TclObjUnsetVar2(interp, part1Ptr, part2, flags)
 		activePtr->nextTracePtr = NULL;
 	    }
 	}
-	varPtr->refCount--;
     }
 
     /*
@@ -2233,12 +2255,10 @@ TclObjUnsetVar2(interp, part1Ptr, part2, flags)
 	 * array are being deleted when the array still exists, but since the
 	 * array is about to be removed anyway, that shouldn't really matter.
 	 */
-	varPtr->refCount++;
 	DeleteArray(iPtr, part1, dummyVarPtr,
 		(flags & (TCL_GLOBAL_ONLY|TCL_NAMESPACE_ONLY)) 
 		| TCL_TRACE_UNSETS);
 	/* Decr ref count */
-	varPtr->refCount--;
     }
     if (TclIsVarScalar(dummyVarPtr)
 	    && (dummyVarPtr->value.objPtr != NULL)) {
@@ -2267,12 +2287,26 @@ TclObjUnsetVar2(interp, part1Ptr, part2, flags)
 	}
     }
 
+#if ENABLE_NS_VARNAME_CACHING
+    /*
+     * Try to avoid keeping the Var struct allocated due to a tclNsVarNameType 
+     * keeping a reference. This removes some additional exteriorisations of
+     * [Bug 736729], but may be a good thing independently of the bug.
+     */
+
+    if (part1Ptr->typePtr == &tclNsVarNameType) {
+	part1Ptr->typePtr->freeIntRepProc(part1Ptr);
+	part1Ptr->typePtr = NULL;
+    }
+#endif
+    
     /*
      * Finally, if the variable is truly not in use then free up its Var
      * structure and remove it from its hash table, if any. The ref count of
      * its value object, if any, was decremented above.
      */
 
+    varPtr->refCount--;
     TclCleanupVar(varPtr, arrayPtr);
     return result;
 }
@@ -4603,6 +4637,7 @@ UpdateLocalVarName(objPtr)
     objPtr->length = 0;
 }
 
+#if ENABLE_NS_VARNAME_CACHING
 /* 
  * nsVarName -
  *
@@ -4617,16 +4652,9 @@ FreeNsVarName(objPtr)
     Tcl_Obj *objPtr;
 {
     register Var *varPtr = (Var *) objPtr->internalRep.twoPtrValue.ptr2;
-
+    
     varPtr->refCount--;
-    if (TclIsVarUndefined(varPtr) && (varPtr->refCount <= 0)) {
-	if (TclIsVarLink(varPtr)) {
-	    Var *linkPtr = varPtr->value.linkPtr;
-	    linkPtr->refCount--;
-	    if (TclIsVarUndefined(linkPtr) && (linkPtr->refCount <= 0)) {
-		TclCleanupVar(linkPtr, (Var *) NULL);
-	    }
-	}
+    if (TclIsVarUndefined(varPtr) && (varPtr->refCount == 0)) {
 	TclCleanupVar(varPtr, NULL);
     }
 }
@@ -4644,6 +4672,7 @@ DupNsVarName(srcPtr, dupPtr)
     varPtr->refCount++;
     dupPtr->typePtr = &tclNsVarNameType;
 }
+#endif
 
 /* 
  * parsedVarName -

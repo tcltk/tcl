@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPathObj.c,v 1.3.2.8 2004/05/04 17:44:18 dgp Exp $
+ * RCS: @(#) $Id: tclPathObj.c,v 1.3.2.9 2004/05/27 14:29:14 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -494,6 +494,26 @@ TclPathPart(interp, pathPtr, portion)
 	if (PATHFLAGS(pathPtr) != 0) {
 	    switch (portion) {
 		case TCL_PATH_DIRNAME: {
+		    /* 
+		     * Check if the joined-on bit has any directory
+		     * delimiters in it.  If so, the 'dirname' would
+		     * be a joining of the main part with the dirname
+		     * of the joined-on bit.  We could handle that
+		     * special case here, but we don't, and instead
+		     * just use the standardPath code.
+		     */
+		    CONST char *rest = Tcl_GetString(fsPathPtr->normPathPtr);
+		    if (strchr(rest, '/') != NULL) {
+			goto standardPath;
+		    }
+		    if ((tclPlatform == TCL_PLATFORM_WINDOWS) 
+		      && (strchr(rest, '\\') != NULL)) {
+			goto standardPath;
+		    }
+		    /* 
+		     * The joined-on path is simple, so we can just
+		     * return here.
+		     */
 		    Tcl_IncrRefCount(fsPathPtr->cwdPtr);
 		    return fsPathPtr->cwdPtr;
 		}
@@ -662,8 +682,13 @@ GetExtension(pathPtr)
  *
  *      This function takes the given Tcl_Obj, which should be a valid
  *      list, and returns the path object given by considering the
- *      first 'elements' elements as valid path segments.  If elements < 0,
- *      we use the entire list.
+ *      first 'elements' elements as valid path segments (each path
+ *      segment may be a complete path, a partial path or just a single
+ *      possible directory or file name).   If any path segment is
+ *      actually an absolute path, then all prior path segments are 
+ *      discarded.
+ *      
+ *      If elements < 0, we use the entire list that was given.
  *      
  *      It is possible that the returned object is actually an element
  *      of the given list, so the caller should be careful to store a

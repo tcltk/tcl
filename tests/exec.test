@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: exec.test,v 1.16.4.2 2004/03/04 17:26:18 dgp Exp $
+# RCS: @(#) $Id: exec.test,v 1.16.4.3 2004/05/27 14:29:17 dgp Exp $
 
 package require tcltest 2
 namespace import -force ::tcltest::*
@@ -19,7 +19,7 @@ namespace import -force ::tcltest::*
 # All tests require the "exec" command.
 # Skip them if exec is not defined.
 testConstraint exec [llength [info commands exec]]
-catch {unset path}
+unset -nocomplain path
 set path(echo) [makeFile {
     puts -nonewline [lindex $argv 0]
     foreach str [lrange $argv 1 end] {
@@ -217,8 +217,8 @@ test exec-4.5 {redirecting output and stderr to file} {exec} {
 
 # I/O redirection: input from file.
 
-if { [set ::tcltest::testConstraints(exec)] } {
-exec [interpreter] $path(echo) "Just a few thoughts" > $path(gorp.file)
+if {[testConstraint exec]} {
+    exec [interpreter] $path(echo) "Just a few thoughts" > $path(gorp.file)
 }
 test exec-5.1 {redirecting input from file} {exec} {
     exec [interpreter] $path(cat) < $path(gorp.file)
@@ -428,8 +428,8 @@ test exec-11.5 {commands in background} {exec} {
 # Make sure that background commands are properly reaped when
 # they eventually die.
 
-if { [set ::tcltest::testConstraints(exec)] } {
-exec [interpreter] $path(sleep) 3
+if {[testConstraint exec]} {
+    exec [interpreter] $path(sleep) 3
 }
 test exec-12.1 {reaping background processes} \
 	{exec unixOnly nonPortable} {
@@ -601,6 +601,7 @@ test exec-18.1 { exec cat deals with weird file names} {exec tempNotWin} {
 foreach file {script gorp.file gorp.file2 echo cat wc sh sleep exit err} {
     removeFile $file
 }
+unset -nocomplain path
 
 ::tcltest::cleanupTests
 return

@@ -11,19 +11,14 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: async.test,v 1.5.26.2 2004/02/07 05:48:02 dgp Exp $
+# RCS: @(#) $Id: async.test,v 1.5.26.3 2004/05/27 14:29:17 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
     namespace import -force ::tcltest::*
 }
 
-if {[info commands testasync] == {}} {
-    puts "This application hasn't been compiled with the \"testasync\""
-    puts "command, so I can't test Tcl_AsyncCreate et al."
-    ::tcltest::cleanupTests
-    return
-}
+testConstraint testasync [llength [info commands testasync]]
 
 tcltest::testConstraint threaded [expr {
     [info exists ::tcl_platform(threaded)] && $::tcl_platform(threaded)
@@ -53,43 +48,45 @@ proc \# {result code} {
     return "comment quoting"
 }
 
-set handler1 [testasync create async1]
-set handler2 [testasync create async2]
-set handler3 [testasync create async3]
-set handler4 [testasync create #]
-test async-1.1 {basic async handlers} {
+if {[testConstraint testasync]} {
+    set handler1 [testasync create async1]
+    set handler2 [testasync create async2]
+    set handler3 [testasync create async3]
+    set handler4 [testasync create \#]
+}
+test async-1.1 {basic async handlers} testasync {
     set aresult xxx
     set acode yyy
     list [catch {testasync mark $handler1 "original" 0} msg] $msg \
 	   $acode $aresult
 } {0 {new result} 0 original}
-test async-1.2 {basic async handlers} {
+test async-1.2 {basic async handlers} testasync {
     set aresult xxx
     set acode yyy
     list [catch {testasync mark $handler1 "original" 1} msg] $msg \
 	   $acode $aresult
 } {0 {new result} 1 original}
-test async-1.3 {basic async handlers} {
+test async-1.3 {basic async handlers} testasync {
     set aresult xxx
     set acode yyy
     list [catch {testasync mark $handler2 "old" 0} msg] $msg \
 	   $acode $aresult
 } {1 xyzzy 0 old}
-test async-1.4 {basic async handlers} {
+test async-1.4 {basic async handlers} testasync {
     set aresult xxx
     set acode yyy
     list [catch {testasync mark $handler2 "old" 3} msg] $msg \
 	   $acode $aresult
 } {1 xyzzy 3 old}
-test async-1.5 {basic async handlers} {
+test async-1.5 {basic async handlers} testasync {
     set aresult xxx
     list [catch {testasync mark $handler3 "foobar" 0} msg] $msg $aresult
 } {0 foobar {test pattern}}
-test async-1.6 {basic async handlers} {
+test async-1.6 {basic async handlers} testasync {
     set aresult xxx
     list [catch {testasync mark $handler3 "foobar" 1} msg] $msg $aresult
 } {1 foobar {test pattern}}
-test async-1.7 {basic async handlers} {
+test async-1.7 {basic async handlers} testasync {
     set aresult xxx
     set acode yyy
     list [catch {testasync mark $handler4 "original" 0} msg] $msg \
@@ -101,13 +98,11 @@ proc mult1 {result code} {
     lappend x mult1
     return -code 7 mult1
 }
-set hm1 [testasync create mult1]
 proc mult2 {result code} {
     global x
     lappend x mult2
     return -code 9 mult2
 }
-set hm2 [testasync create mult2]
 proc mult3 {result code} {
     global x hm1 hm2
     lappend x [catch {testasync mark $hm2 serial2 0}]
@@ -115,9 +110,12 @@ proc mult3 {result code} {
     lappend x mult3
     return -code 11 mult3
 }
-set hm3 [testasync create mult3]
-
-test async-2.1 {multiple handlers} {
+if {[testConstraint testasync]} {
+    set hm1 [testasync create mult1]
+    set hm2 [testasync create mult2]
+    set hm3 [testasync create mult3]
+}
+test async-2.1 {multiple handlers} testasync {
     set x {}
     list [catch {testasync mark $hm3 "foobar" 5} msg] $msg $x
 } {9 mult2 {0 0 mult3 mult1 mult2}}
@@ -138,14 +136,16 @@ proc del2 {result code} {
     lappend x del2
     return -code 3 del2
 }
-testasync delete $handler1
-testasync delete $hm2
-testasync delete $hm3
-set hm2 [testasync create del1]
-set hm3 [testasync create mult2]
-set hm4 [testasync create del2]
+if {[testConstraint testasync]} {
+    testasync delete $handler1
+    testasync delete $hm2
+    testasync delete $hm3
+    set hm2 [testasync create del1]
+    set hm3 [testasync create mult2]
+    set hm4 [testasync create del2]
+}
 
-test async-3.1 {deleting handlers} {
+test async-3.1 {deleting handlers} testasync {
     set x {}
     list [catch {testasync mark $hm2 "foobar" 5} msg] $msg $x
 } {3 del2 {0 0 0 del1 del2}}
@@ -183,7 +183,7 @@ proc hang3 {handle} [concat {
 }]
 
 test async-4.1 {async interrupting bytecode sequence} -constraints {
-    threaded
+    testasync threaded
 } -setup {
     set hm [testasync create async3]
 } -body {
@@ -192,7 +192,7 @@ test async-4.1 {async interrupting bytecode sequence} -constraints {
     testasync delete $hm
 }
 test async-4.2 {async interrupting straight bytecode sequence} -constraints {
-    threaded
+    testasync threaded
 } -setup {
     set hm [testasync create async3]
 } -body {
@@ -201,7 +201,7 @@ test async-4.2 {async interrupting straight bytecode sequence} -constraints {
     testasync delete $hm
 }
 test async-4.3 {async interrupting loop-less bytecode sequence} -constraints {
-    threaded
+    testasync threaded
 } -setup {
     set hm [testasync create async3]
 } -body {
@@ -211,7 +211,9 @@ test async-4.3 {async interrupting loop-less bytecode sequence} -constraints {
 }
 
 # cleanup
-testasync delete
+if {[testConstraint testasync]} {
+    testasync delete
+}
 ::tcltest::cleanupTests
 return
 

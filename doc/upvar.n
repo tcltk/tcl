@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: upvar.n,v 1.5.20.1 2004/05/04 17:44:16 dgp Exp $
+'\" RCS: @(#) $Id: upvar.n,v 1.5.20.2 2004/05/27 14:29:08 dgp Exp $
 '\" 
 .so man.macros
 .TH upvar n "" Tcl "Tcl Built-In Commands"
@@ -75,8 +75,7 @@ upvar variable.  There is no way to unset an upvar variable except
 by exiting the procedure in which it is defined.  However, it is
 possible to retarget an upvar variable by executing another \fBupvar\fR
 command.
-
-.SH Traces and upvar
+.SH "TRACES AND UPVAR"
 .PP
 Upvar interacts with traces in a straightforward but possibly
 unexpected manner.  If a variable trace is defined on \fIotherVar\fR, that
@@ -104,6 +103,15 @@ is accessed (but traces on the particular element will still be
 invoked).  In particular, if the array is \fBenv\fR, then changes
 made to \fImyVar\fR will not be passed to subprocesses correctly.
 .VE
+.SH EXAMPLE
+A \fBdecr\fR command that works like \fBincr\fR except it subtracts
+the value from the variable instead of adding it:
+.CS
+proc decr {varName {decrement 1}} {
+    upvar 1 $varName var
+    incr var [expr {-$decrement}]
+}
+.CE
 
 .SH "SEE ALSO"
 global(n), namespace(n), uplevel(n), variable(n)

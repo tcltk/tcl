@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: uplevel.test,v 1.7 2002/08/08 18:19:37 msofer Exp $
+# RCS: @(#) $Id: uplevel.test,v 1.7.4.1 2004/05/27 14:29:22 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -130,15 +130,3 @@ test uplevel-6.1 {uplevel and shadowed cmds} {
 # cleanup
 ::tcltest::cleanupTests
 return
-
-
-
-
-
-
-
-
-
-
-
-

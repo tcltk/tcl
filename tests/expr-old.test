@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: expr-old.test,v 1.17 2003/03/27 13:48:58 dkf Exp $
+# RCS: @(#) $Id: expr-old.test,v 1.17.2.1 2004/05/27 14:29:17 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -21,11 +21,9 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 }
 
 if {([catch {expr T1()} msg] == 1) && ($msg == {unknown math function "T1"})} {
-    set gotT1 0
-    puts "This application hasn't been compiled with the \"T1\" and"
-    puts "\"T2\" math functions, so I'll skip some of the expr tests."
+    testConstraint testmathfunctions 0
 } else {
-    set gotT1 1
+    testConstraint testmathfunctions 1
 }
 
 # First, test all of the integer operators individually.
@@ -732,11 +730,11 @@ test expr-old-32.24 {math functions in expressions} {
 # The following test is different for 32-bit versus 64-bit architectures.
 
 if {0x80000000 > 0} {
-    test expr-old-32.25 {math functions in expressions} {nonPortable} {
+    test expr-old-32.25a {math functions in expressions} {nonPortable} {
 	list [catch {expr abs(0x8000000000000000)} msg] $msg
     } {1 {integer value too large to represent}}
 } else {
-    test expr-old-32.25 {math functions in expressions} {nonPortable} {
+    test expr-old-32.25b {math functions in expressions} {nonPortable} {
 	list [catch {expr abs(0x80000000)} msg] $msg
     } {1 {integer value too large to represent}}
 }
@@ -792,14 +790,12 @@ test expr-old-32.41 {math functions in expressions} {
 test expr-old-32.42 {math functions in expressions} {
     list [catch {expr hypot(5*.8,3)} msg] $msg
 } {0 5.0}
-if $gotT1 {
-    test expr-old-32.43 {math functions in expressions} {
-	expr 2*T1()
-    } 246
-    test expr-old-32.44 {math functions in expressions} {
-	expr T2()*3
-    } 1035
-}
+test expr-old-32.43 {math functions in expressions} testmathfunctions {
+    expr 2*T1()
+} 246
+test expr-old-32.44 {math functions in expressions} testmathfunctions {
+    expr T2()*3
+} 1035
 test expr-old-32.45 {math functions in expressions} {
     expr (0 <= rand()) && (rand() < 1)
 } {1}
@@ -893,11 +889,9 @@ test expr-old-34.15 {errors in math functions} {
 test expr-old-34.16 {errors in math functions} {
     list [catch {expr round(-1.0e30)} msg] $msg $errorCode
 } {1 {integer value too large to represent} {ARITH IOVERFLOW {integer value too large to represent}}}
-if $gotT1 {
-    test expr-old-34.17 {errors in math functions} {
-	list [catch {expr T1(4)} msg] $msg
-    } {1 {too many arguments for math function}}
-}
+test expr-old-34.17 {errors in math functions} testmathfunctions {
+    list [catch {expr T1(4)} msg] $msg
+} {1 {too many arguments for math function}}
 
 test expr-old-36.1 {ExprLooksLikeInt procedure} -body {
     expr 0289
@@ -963,24 +957,17 @@ test expr-old-36.16 {ExprLooksLikeInt procedure} {
     list [catch {expr {$x+1}} msg] $msg
 } {1 {can't use integer value too large to represent as operand of "+"}}
 
-if {[info commands testexprlong] == {}} {
-    puts "This application hasn't been compiled with the \"testexprlong\""
-    puts "command, so I can't test Tcl_ExprLong etc."
-} else {
-test expr-old-37.1 {Check that Tcl_ExprLong doesn't modify interpreter result if no error} {
+testConstraint testexprlong   [llength [info commands testexprlong]]
+testConstraint testexprstring [llength [info commands testexprstring]]
+
+test expr-old-37.1 {Check that Tcl_ExprLong doesn't modify interpreter result if no error} testexprlong {
     testexprlong
 } {This is a result: 5}
-}
 
-if {[info commands testexprstring] == {}} {
-    puts "This application hasn't been compiled with the \"testexprstring\""
-    puts "command, so I can't test Tcl_ExprString etc."
-} else {
-test expr-old-38.1 {Verify Tcl_ExprString's basic operation} {
+test expr-old-38.1 {Verify Tcl_ExprString's basic operation} testexprstring {
     list [testexprstring "1+4"] [testexprstring "2*3+4.2"] \
-        [catch {testexprstring "1+"} msg] $msg
+	    [catch {testexprstring "1+"} msg] $msg
 } {5 10.2 1 {syntax error in expression "1+": premature end of expression}}
-}
 
 # Special test for Pentium arithmetic bug of 1994:
 

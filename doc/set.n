@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: set.n,v 1.3.20.1 2004/05/04 17:44:16 dgp Exp $
+'\" RCS: @(#) $Id: set.n,v 1.3.20.2 2004/05/27 14:29:08 dgp Exp $
 '\" 
 .so man.macros
 .TH set n "" Tcl "Tcl Built-In Commands"
@@ -28,21 +28,19 @@ close parenthesis, then it refers to an array element:  the characters
 before the first open parenthesis are the name of the array,
 and the characters between the parentheses are the index within the array.
 Otherwise \fIvarName\fR refers to a scalar variable.
-Normally, \fIvarName\fR is unqualified
-(does not include the names of any containing namespaces),
-and the variable of that name in the current namespace is read or written.
-If \fIvarName\fR includes namespace qualifiers
-(in the array name if it refers to an array element),
-the variable in the specified namespace is read or written.
 .PP
-If no procedure is active,
-then \fIvarName\fR refers to a namespace variable
-(global variable if the current namespace is the global namespace).
-If a procedure is active, then \fIvarName\fR refers to a parameter
-or local variable of the procedure unless the \fBglobal\fR command
-was invoked to declare \fIvarName\fR to be global,
-or unless a \fBvariable\fR command
-was invoked to declare \fIvarName\fR to be a namespace variable.
+If \fIvarName\fR includes namespace qualifiers
+(in the array name if it refers to an array element), or if \fIvarName\fR
+is unqualified (does not include the names of any containing namespaces)
+but no procedure is active, 
+\fIvarName\fR refers to a namespace variable
+resolved according to the rules described under \fBNAME RESOLUTION\fR in
+the \fBnamespace\fR manual page.
+.PP
+If a procedure is active and \fIvarName\fR is unqualified, then
+\fIvarName\fR refers to a parameter or local variable of the procedure,
+unless \fIvarName\fR was declared to resolve differently through one of the 
+\fBglobal\fR, \fBvariable\fR or \fBupvar\fR commands.
 .SH EXAMPLES
 Store a random number in the variable \fIr\fR:
 .CS
@@ -71,7 +69,7 @@ set out [set $vbl]
 .CE
 
 .SH "SEE ALSO"
-expr(n), proc(n), trace(n), unset(n)
+expr(n), global(n), namespace(n), proc(n), trace(n), unset(n), upvar(n), variable(n)
 
 .SH KEYWORDS
 read, write, variable

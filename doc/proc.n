@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: proc.n,v 1.3 2000/09/07 14:27:50 poenitz Exp $
+'\" RCS: @(#) $Id: proc.n,v 1.3.20.1 2004/05/27 14:29:08 dgp Exp $
 '\" 
 .so man.macros
 .TH proc n "" Tcl "Tcl Built-In Commands"
@@ -69,6 +69,26 @@ invoked, the procedure's return value is the value specified in a
 executed in the procedure's body.
 If an error occurs while executing the procedure
 body, then the procedure-as-a-whole will return that same error.
+.SH EXAMPLES
+This is a procedure that accepts arbitrarily many arguments and prints
+them out, one by one.
+.CS
+proc printArguments args {
+    foreach arg $args {
+        puts $arg
+    }
+}
+.CE
+
+This procedure is a bit like the \fBincr\fR command, except it
+multiplies the contents of the named variable by the value, which
+defaults to \fB2\fR:
+.CS
+proc mult {varName {multiplier 2}} {
+    upvar 1 $varName var
+    set var [expr {$var * $multiplier}]
+}
+.CE
 
 .SH "SEE ALSO"
 info(n), unknown(n)

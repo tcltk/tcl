@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: append.n,v 1.4 2003/02/10 13:32:22 dkf Exp $
+'\" RCS: @(#) $Id: append.n,v 1.4.4.1 2004/05/27 14:29:07 dgp Exp $
 '\" 
 .so man.macros
 .TH append n "" Tcl "Tcl Built-In Commands"
@@ -29,6 +29,16 @@ This command provides an efficient way to build up long
 variables incrementally.
 For example, ``\fBappend a $b\fR'' is much more efficient than
 ``\fBset a $a$b\fR'' if \fB$a\fR is long.
+.SH EXAMPLE
+Building a string of comma-separated numbers piecemeal using a loop.
+.CS
+set var 0
+for {set i 1} {$i<=10} {incr i} {
+   append var "," $i
+}
+puts $var
+# Prints 0,1,2,3,4,5,6,7,8,9,10
+.CE
 
 .SH "SEE ALSO"
 concat(n), lappend(n)

@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and
 # redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: http.tcl,v 1.44.2.2 2003/10/16 02:28:02 dgp Exp $
+# RCS: @(#) $Id: http.tcl,v 1.44.2.3 2004/05/27 14:29:15 dgp Exp $
 
 # Rough version history:
 # 1.0	Old http_get interface
@@ -25,7 +25,7 @@
 package require Tcl 8.2
 # keep this in sync with pkgIndex.tcl
 # and with the install directories in Makefiles
-package provide http 2.4.4
+package provide http 2.5.0
 
 namespace eval http {
     variable http
@@ -34,6 +34,7 @@ namespace eval http {
 	-proxyhost {}
 	-proxyport {}
 	-proxyfilter http::ProxyRequired
+	-urlencoding utf-8
     }
     set http(-useragent) "Tcl http client package [package provide http]"
 
@@ -66,7 +67,7 @@ namespace eval http {
 
 # http::register --
 #
-#     See documentation for details.
+#     See documentaion for details.
 #
 # Arguments:
 #     proto           URL protocol prefix, e.g. https
@@ -101,7 +102,7 @@ proc http::unregister {proto} {
 
 # http::config --
 #
-#	See documentation for details.
+#	See documentaion for details.
 #
 # Arguments:
 #	args		Options parsed by the procedure.
@@ -180,7 +181,7 @@ proc http::Finish { token {errormsg ""} {skipCB 0}} {
 
 # http::reset --
 #
-#	See documentation for details.
+#	See documentaion for details.
 #
 # Arguments:
 #	token	Connection token.
@@ -238,7 +239,7 @@ proc http::geturl { url args } {
 	-binary		false
 	-blocksize 	8192
 	-queryblocksize 8192
-	-validate 	false
+	-validate 	0
 	-headers 	{}
 	-timeout 	0
 	-type           application/x-www-form-urlencoded
@@ -262,7 +263,7 @@ proc http::geturl { url args } {
 	-queryblocksize integer
 	-validate	boolean
 	-timeout	integer
-    }	
+    }
     set state(charset)	$defaultCharset
     set options {-binary -blocksize -channel -command -handler -headers \
 	    -progress -query -queryblocksize -querychannel -queryprogress\
@@ -272,7 +273,7 @@ proc http::geturl { url args } {
     set pat ^-([join $options |])$
     foreach {flag value} $args {
 	if {[regexp $pat $flag]} {
-	    # Validate numbers and booleans
+	    # Validate numbers
 	    if {[info exists type($flag)] && \
 		    ![string is $type($flag) -strict $value]} {
 		unset $token
@@ -460,7 +461,7 @@ proc http::geturl { url args } {
 	# (among Solaris, Linux, and NT)  behave the same, and none 
 	# behave all that well in any case.  Servers should always read thier
 	# POST data if they expect the client to read their response.
-		
+
 	if {$isQuery || $isQueryChannel} {
 	    puts $s "Content-Type: $state(-type)"
 	    if {!$contDone} {
@@ -485,7 +486,7 @@ proc http::geturl { url args } {
 		# Something went wrong, so throw the exception, and the
 		# enclosing catch will do cleanup.
 		return -code error [lindex $state(error) 0]
-	    }		
+	    }
 	}
     } err]} {
 	# The socket probably was never connected,
@@ -494,7 +495,7 @@ proc http::geturl { url args } {
 	# Clean up after events and such, but DON'T call the command callback
 	# (if available) because we're going to throw an exception from here
 	# instead.
-	
+
 	# if state(status) is error, it means someone's already called Finish
 	# to do the above-described clean up.
 	if {[string equal $state(status) "error"]} {
@@ -609,16 +610,13 @@ proc http::Write {token} {
     variable $token
     upvar 0 $token state
     set s $state(sock)
-    
+
     # Output a block.  Tcl will buffer this if the socket blocks
-    
     set done 0
     if {[catch {
-	
 	# Catch I/O errors on dead sockets
 
 	if {[info exists state(-query)]} {
-	    
 	    # Chop up large query strings so queryprogress callback
 	    # can give smooth feedback
 
@@ -631,7 +629,6 @@ proc http::Write {token} {
 		set done 1
 	    }
 	} else {
-	    
 	    # Copy blocks from the query channel
 
 	    set outStr [read $state(-querychannel) $state(-queryblocksize)]
@@ -831,7 +828,7 @@ proc http::Eof {token} {
 
 # http::wait --
 #
-#	See documentation for details.
+#	See documentaion for details.
 #
 # Arguments:
 #	token	Connection token.
@@ -853,7 +850,7 @@ proc http::wait {token} {
 
 # http::formatQuery --
 #
-#	See documentation for details.
+#	See documentaion for details.
 #	Call http::formatQuery with an even number of arguments, where 
 #	the first is a name, the second is a value, the third is another 
 #	name, and so on.
@@ -889,6 +886,7 @@ proc http::formatQuery {args} {
 #       The encoded string
 
 proc http::mapReply {string} {
+    variable http
     variable formMap
     variable alphanumeric
 
@@ -898,6 +896,9 @@ proc http::mapReply {string} {
     # 3 Escape constructs that are "special" to the tcl parser
     # 4 "subst" the result, doing all the array substitutions
 
+    if {$http(-urlencoding) ne ""} {
+	set string [encoding convertto $http(-urlencoding) $string]
+    }
     regsub -all \[^$alphanumeric\] $string {$formMap(&)} string
     regsub -all {[][{})\\]\)} $string {\\&} string
     return [subst -nocommand $string]

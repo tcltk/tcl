@@ -12,7 +12,7 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
 #
-# RCS: @(#) $Id: http.test,v 1.33.4.3 2004/02/07 05:48:02 dgp Exp $
+# RCS: @(#) $Id: http.test,v 1.33.4.4 2004/05/27 14:29:18 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -47,7 +47,6 @@ catch {unset data}
 
 # Ensure httpd file exists
 
-set origFile [file join $::tcltest::testsDirectory httpd]
 set origFile [file join [pwd] [file dirname [info script]] httpd]
 set httpdFile [file join [temporaryDirectory] httpd_[pid]]
 if {![file exists $httpdFile]} {
@@ -86,7 +85,7 @@ if {[info commands testthread] == "testthread" && [file exists $httpdFile]} {
 
 test http-1.1 {http::config} {
     http::config
-} [list -accept */* -proxyfilter http::ProxyRequired -proxyhost {} -proxyport {} -useragent "Tcl http client package $version"]
+} [list -accept */* -proxyfilter http::ProxyRequired -proxyhost {} -proxyport {} -urlencoding utf-8 -useragent "Tcl http client package $version"]
 
 test http-1.2 {http::config} {
     http::config -proxyfilter
@@ -98,15 +97,25 @@ test http-1.3 {http::config} {
 
 test http-1.4 {http::config} {
     set savedconf [http::config]
-    http::config -proxyhost nowhere.come -proxyport 8080 -proxyfilter myFilter -useragent "Tcl Test Suite"
+    http::config -proxyhost nowhere.come -proxyport 8080 \
+	-proxyfilter myFilter -useragent "Tcl Test Suite" \
+	-urlencoding iso8859-1
     set x [http::config]
     http::config {expand}$savedconf
     set x
-} {-accept */* -proxyfilter myFilter -proxyhost nowhere.come -proxyport 8080 -useragent {Tcl Test Suite}}
+} {-accept */* -proxyfilter myFilter -proxyhost nowhere.come -proxyport 8080 -urlencoding iso8859-1 -useragent {Tcl Test Suite}}
 
 test http-1.5 {http::config} {
     list [catch {http::config -proxyhost {} -junk 8080} msg] $msg
-} {1 {Unknown option -junk, must be: -accept, -proxyfilter, -proxyhost, -proxyport, -useragent}}
+} {1 {Unknown option -junk, must be: -accept, -proxyfilter, -proxyhost, -proxyport, -urlencoding, -useragent}}
+
+test http-1.6 {http::config} {
+    set enc [list [http::config -urlencoding]]
+    http::config -urlencoding iso8859-1
+    lappend enc [http::config -urlencoding]
+    http::config -urlencoding [lindex $enc 0]
+    set enc
+} {utf-8 iso8859-1}
 
 
 test http-2.1 {http::reset} {
@@ -466,13 +475,23 @@ test http-5.1 {http::formatQuery} {
     http::formatQuery name1 value1 name2 "value two"
 } {name1=value1&name2=value+two}
 
-test http-5.2 {http::formatQuery} {
-    http::formatQuery name1 ~bwelch name2 \xa1\xa2\xa2
-} {name1=%7ebwelch&name2=%a1%a2%a2}
+# test http-5.2 obsoleted by 5.4 and 5.5 with http 2.5
 
 test http-5.3 {http::formatQuery} {
     http::formatQuery lines "line1\nline2\nline3"
 } {lines=line1%0d%0aline2%0d%0aline3}
+
+test http-5.4 {http::formatQuery} {
+    http::formatQuery name1 ~bwelch name2 \xa1\xa2\xa2
+} {name1=%7ebwelch&name2=%c2%a1%c2%a2%c2%a2}
+
+test http-5.5 {http::formatQuery} {
+    set enc [http::config -urlencoding]
+    http::config -urlencoding iso8859-1
+    set res [http::formatQuery name1 ~bwelch name2 \xa1\xa2\xa2]
+    http::config -urlencoding $enc
+    set res
+} {name1=%7ebwelch&name2=%a1%a2%a2}
 
 test http-6.1 {http::ProxyRequired} {
     http::config -proxyhost [info hostname] -proxyport $port
@@ -489,6 +508,31 @@ test http-6.1 {http::ProxyRequired} {
 test http-7.1 {http::mapReply} {
     http::mapReply "abc\$\[\]\"\\()\}\{"
 } {abc%24%5b%5d%22%5c%28%29%7d%7b}
+
+test http-7.2 {http::mapReply} {
+    # RFC 2718 specifies that we pass urlencoding on utf-8 chars by default,
+    # so make sure this gets converted to utf-8 then urlencoded.
+    http::mapReply "\u2208"
+} {%e2%88%88}
+
+test http-7.3 {http::formatQuery} {
+    set enc [http::config -urlencoding]
+    # this would be reverting to http <=2.4 behavior
+    http::config -urlencoding ""
+    set res [list [catch {http::mapReply "\u2208"} msg] $msg]
+    http::config -urlencoding $enc
+    set res
+} [list 1 "can't read \"formMap(\u2208)\": no such element in array"]
+
+test http-7.4 {http::formatQuery} {
+    set enc [http::config -urlencoding]
+    # this would be reverting to http <=2.4 behavior w/o errors
+    # (unknown chars become '?')
+    http::config -urlencoding "iso8859-1"
+    set res [http::mapReply "\u2208"]
+    http::config -urlencoding $enc
+    set res
+} {%3f}
 
 # cleanup
 catch {unset url}
@@ -507,4 +551,5 @@ if {[info exists removeHttpd]} {
     removeFile $httpdFile
 }
 
+rename bgerror {}
 ::tcltest::cleanupTests

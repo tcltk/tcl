@@ -1,4 +1,305 @@
+2004-05-27  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclHash.c (CompareStringKeys): Added #ifdef to allow
+	people to instruct this function to use strcmp(). [FRQ 951168]
+
+	* generic/tclVar.c: Moved declarations into #if guards so they
+	only happen when required.
+	* unix/tclUnixPort.h: Guard declaration of strtod() so it is only
+	enabled when we don't have a declaration in stdlib.h
+	* unix/tclUnixThrd.c (Tcl_CreateThread):	Added declarations
+	* unix/tclUnixTest.c (AlarmHandler):		and casts so that
+	* unix/tclUnixChan.c (TtyModemStatusStr):	all functions are
+	* generic/tclScan.c (Tcl_ScanObjCmd):		defined before use
+	* generic/tclDictObj.c (InvalidateDictChain):	and no cross-type
+	* generic/tclCmdMZ.c (Tcl_StringObjCmd):	uses are performed.
+
+	The overall effect is to make building with gcc with the
+	additional flags -Wstrict-prototypes -Wmissing-prototypes produce
+	no increase in the total number of warnings (except for main(),
+	which is undeclared for traditional reasons.)
+
+2004-05-26  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* unix/Makefile.in:  Rework configure ordering to TCL_LINK_LIBS,
+	* unix/tcl.m4:       ENABLE_SHARED, CONFIG_CFLAGS, & ENABLE_SYMBOLS
+	* unix/configure:    before TCL_EARLY_FLAGS and TCL_64BIT_FLAGS
+	* unix/configure.in: (about 400 lines earlier) in configure.in.
+	This forces CFLAGS configuration to be done before many tests,
+	which is needed for 64-bit builds and may affect other builds.
+	Also make CONFIG_CFLAGS append to CFLAGS directly instead of using
+	EXTRA_CFLAGS, and have LDFLAGS append to any existing value.
+	[Bug #874058]
+	* unix/dltest/Makefile.in: change EXTRA_CFLAGS to DEFS
+
+2004-05-26  Don Porter  <dgp@users.sourceforge.net>
+
+	* library/tcltest/tcltest.tcl:	Correction to debug prints and testing
+	* library/tcltest/pkgIndex.tcl:	if TCLTEST_OPTIONS value.  Corrected
+	* tests/tcltest.test:		double increment of numTestFiles in
+	-singleproc 1 configurations.  Updated tcltest-19.1 to tcltest 2.1
+	behavior.  Corrected tcltest-25.3 to not falsely report a failure
+	in tcltest.test.  Bumped to tcltest 2.2.6.  [Bugs 960560, 960926]
+
+2004-05-25  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* doc/http.n (http::config): add -urlencoding option (default utf-8)
+	* library/http/http.tcl:     that specifies encoding conversion of
+	* library/http/pkgIndex.tcl: args for http::formatQuery.  Previously
+	* tests/http.test:           undefined, RFC 2718 says it should be
+	utf-8. 'http::config -urlencoding {}' returns previous behavior,
+	which will throw errors processing non-latin-1 chars.
+	Bumped http package to 2.5.0.
+
+2004-05-25  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclInterp.c (DeleteScriptLimitCallback): Move all
+	deletion of script callback hash table entries to happen here so
+	the entries are correctly removed at the right time.  [Bug 960410]
+
+2004-05-25  Miguel Sofer <msofer@users.sf.net>
+
+	* docs/global.n: added details for qualified variable names 
+	[Bug 959831]
+
+2004-05-25  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclNamesp.c (Tcl_FindNamespaceVar):
+	* tests/namespace.test (namespace-17.10-12): reverted commit of
+	2004-05-23 and removed the tests, as it interferes with the
+	varname resolver and there are apps that break (AlphaTk). A fix
+	will have to wait for Tcl9.
+
+	* generic/tclVar.c: Caching of namespace variables disabled: no
+	simple way was found to avoid interfering with the resolver's idea
+	of variable existence. A cached varName may keep a variable's name
+	in the namespace's hash table, which is the resolver's criterion
+	for existence.
+
+	* tests/namespace.c (namespace-17.10): testing for interference
+	between varname caching and name resolver.
+
+2004-05-25  Kevin Kenny  <kennykb@acm.org>
+
+	* tests/winFCmd.test: Correct test for the presence of a CD-ROM so
+	                      that it doesn't misdetect some other sort
+	                      of filesystem with a write-protected root as
+	                      being a CD-ROM drive. [Bug 918267]
+	
+2004-05-25  Don Porter  <dgp@users.sourceforge.net>
+
+	* tests/winPipe.test:	Protect against path being set 
+	* tests/unixInit.test:	Unset path when done.
+	* tests/unload.test (unload-3.1): Verify [pkgb_sub] does not exist.
+	Delete interps when done.
+	* tests/stringComp.test:	stop re-use of string.test test names
+	* tests/regexpComp.test:	stop re-use of regexp.test test names
+	* tests/namespace.test (namespace-46.3): Verify [p] does not exist.
+	* tests/http.test:	Clear away the custom [bgerror] when done.
+	* tests/io.test:	Take care to use namespace variables.
+	* tests/autoMkindex.test (autoMkindex-5.2): Use variable "result"
+	that gets cleaned up.
+	* tests/exec.test:	Clean up the "path" array.
+	* tests/interp.test (interp-9.3): Initialize res, so prior values
+	cannot make the test fail.
+	* tests/execute.test (execute-8.1):  Updated to remove the trace
+	set on ::errorInfo .  When left in place, that trace can cause
+	later tests to fail.
+
+2004-05-25  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclBasic.c: Removed references to Tcl_RenameCommand from
+	* generic/tcl.h:      comments. [Bug 848440, second part]
+
+	* tests/fCmd.test: Rewrote tests that failed consistently on NFS
+	so they either succeed (through slightly more liberal matching of
+	the results) or are constrained to not run. [Bug 931312]
+
+	* doc/bgerror.n: Use idiomatic open flags for working with log
+	files.  [Bug 959602]
+
+2004-05-24  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclExecute.c (VerifyExprObjType): use GET_WIDE_OR_INT to
+	properly have tclIntType used for smaller values.  This corrects
+	TclX bug 896727 and any other 3rd party extension that created
+	math functions but was not yet WIDE_INT aware in them.
+
+2004-05-24  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclInterp.c (TclInitLimitSupport): Made limits work on
+	platforms where sizeof(void*)!=sizeof(int). [Bug 959193]
+
+2004-05-24 Miguel Sofer <msofer@users.sf.net>
+
+	* doc/set.n: accurate description of name resolution process,
+	referring to namespace.n for details [Bug 959180]
+
+2004-05-23  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclNamesp.c (Tcl_FindNamespaceVar): [Bug 959052] fixed,
+	insuring that no "zombie" variables are found.
+	* generic/tclVar.c (TclLookupSimpleVar): comments re [Bug 736729] 
+	(predecessor of [Bug 959052]) removed.
+	* tests/namespace.test: added tests 17.10-12 
+	
+	The patch modifies non-documented behaviour, and passes every test
+	in the testsuite. However, scripts relying on the old behaviour
+	may break.
+	Note that the only behaviour change concerns the creative writing
+	of unset variables. More precisely, which variable will be created
+	when neither a namespace variable nor a global variable by that
+	name exists, as defined by [info vars]. The new behaviour is that
+	the namespace resolution process deems a variable to exist exactly
+	when [info vars] finds it - ie, either it has value, or else it
+	was "fixed" by a call to [variable].
+	Note: this patch was removed on 2002-05-25. 
+
+2004-05-22  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclVar.c (TclObjLookupVar, TclObjUnsetVar2): fix for new
+	(in tcl8.4) exteriorisations of [Bug 736729] due to the use of
+	tclNsVarNameType obj types. Reenabling the use of this objType
+	("VAR ref absolute" benchmark down to 66 ms, from 230). 
+	Added comments in TclLookupSimpleVar explaining my current
+	understanding of [Bug 736729].
+
+2004-05-22  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclVar.c: fix for [Bug 735335]. The use of
+	tclNsVarNameType objs is still disabled, pending resolution of
+	[Bug 736729].
+
+2004-05-21  Miguel Sofer <msofer@users.sf.net>
+
+	* tests/namespace.test (namespace-41.3): removed the {knownBug}
+	constraint: [Bug 231259] is closed since nov 2001, and the fix of 
+	[Bug 729692] (INST_START_CMD) makes the test succeed.
+
+2004-05-21  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclExecute.c (TclExecuteByteCode): Move a few
+	declarations a short distance so pre-C99 compilers can cope.  Also
+	fix so TCL_COMPILE_DEBUG path compiles...
+
+2004-05-21  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclExecute.c (TclExecuteByteCode): reorganised TEBC
+	automatic variables, defining them in tight blocks instead of at
+	the function level. This has three purposes:
+	- it simplifies the analysis of individual instructions
+	- it is preliminary work to the non-recursive engine
+	- it allows a better register allocation by the optimiser; under
+	gcc3.3, this results in up to 10% runtime in some tests
+
+2004-05-20  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclInterp.c (TclLimitRemoveAllHandlers): 
+	* generic/tclBasic.c (DeleteInterpProc):	   
+	* tests/interp.test (interp-34.7):		   
+	Ensure that all limit callbacks are deleted when their interpreters
+	are deleted. [Bug 956083]
+
+2004-05-19  Kevin B. Kenny  <kennykb@acm.org>
+
+	* win/tclWinFile.c (TclpMatchInDirectory): fix for an issue
+	where there was a sneak path from Tcl_DStringFree to
+	SetErrorCode(0). The result was that the error code could
+	be reset between a call to FindFirstFileEx and the check
+	of its status return, leading to a bizarre error return of
+	{POSIX unknown {No error}}.  (Found in unplanned test -
+	no incident logged at SourceForge.)
+	
+2004-05-19  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* tests/interp.test (interp-34.3): Rewrite this test to see if a
+	time limit can catch a tight bytecode loop, a maximally aggressive
+	denial-of-service attack.
+	* generic/tclInterp.c (Tcl_LimitCheck): Fix the sense of checks to
+	see whether a time limit has been extended.
+
+	* tests/*.test: Many minor fixes, including ensuring that every
+	test is run (so constraints control whether the test is doing
+	anything) and making sure that constraints are always set using
+	the API instead of poking around inside tcltest's internal
+	datastructures.  Also got rid of all trailing whitespace lines
+	from the test suite!
+
+2004-05-19  Andreas Kupries  <andreask@activestate.com>
+
+	* tclIO.c: Fixed [SF Tcl Bug 943274]. This is the same problem as
+	* tclIO.h: [SF Tcl Bug 462317], see ChangeLog entry
+	           2001-09-26. The fix done at that time is incomplete. It
+	           is possible to get around it if the actual read
+	           operation is defered and not executed in the event
+	           handler itself. Instead of tracking if we are in an
+	           read caused by a synthesized fileevent we now track if
+	           the OS has delivered a true event = actual data and
+	           bypass the driver if a read finds that there is no
+	           actual data waiting. The flag is cleared by a short or
+	           full read.
+
+2004-05-17  Vince Darley  <vincentdarley@users.sourceforge.net>
+
+	* generic/tclPathObj.c: fix to (Bug 956063) in 'file dirname'.
+	* tests/cmdAH.test: added test for this bug.
+
+	* doc/FileSystem.3: better documentation of refCount requirements 
+	of some FS functions (Bug 956126)
+
+2004-05-19  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclTest.c (TestgetintCmd): Made the tests in get.test check
+	* tests/get.test:		     Tcl_GetInt() since the core now
+					     avoids that function.
+
+2004-05-18  Kevin B. Kenny  <kennykb@acm.org>
+
+	* compat/strftime.c (_fmt, ISO8601Week):
+	* doc/clock.n:
+	* tests/clock.test: Major rework to the handling of ISO8601
+	week numbers.  Now passes all the %G and %V test cases on
+	Windows, Linux and Solaris [Bugs #500285, #500389, and #852944]
+	
+2004-05-18  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* doc/append.n, doc/upvar.n: Added example.
+
+2004-05-18  David Gravereaux <davygrvy@pobox.com>
+
+	* win/makefile.vc: now generates a tclConfig.sh from Pat Thoyts
+	[Patch 909911]
+
+2004-05-18  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* doc/lsearch.n: Improve clarity (based on [Patch 955361] by Peter
+	Spjuth)
+
+	* tools/man2help2.tcl (macro,SHmacro): Added support for
+	subsection (.SS) header macros.
+
+	* doc/interp.n: Added user documentation for the TIP#143 resource
+	limits and some examples.
+
+	* generic/tclInterp.c (Tcl_LimitCheck, Tcl_LimitTypeReset): Reset
+	the limit-exceeded flag when removing a limit.
+
+2004-05-18  Miguel Sofer <msofer@users.sf.net>
+
+	* generic/tclExecute.c (TclExecuteByteCode): added comments to
+	classify the variables according to their use in TEBC.
+
 2004-05-17  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* doc/global.n, doc/uplevel.n: Added an example.
+
+	* tests/info.test (info-3.1): Corrected test result back to what
+	it used to be in Tcl 7.* now that command counts are being
+	correctly kept.
+
+	* generic/tclExecute.c (TEBC:INST_START_CMD): Make sure that the
+	command-count is always advanced.  Allows TIP#143 limits to tell
+	that work is being done.
 
 	* doc/list.n: Updated example to fit with the unified format.
 	* doc/seek.n: Added some examples.

@@ -10,7 +10,7 @@
  *
  * Changes 2002 Copyright (c) 2002 ActiveState Corporation.
  *
- * RCS: @(#) $Id: strftime.c,v 1.11.2.2 2004/04/09 20:58:08 dgp Exp $
+ * RCS: @(#) $Id: strftime.c,v 1.11.2.3 2004/05/27 14:29:07 dgp Exp $
  */
 
 /*
@@ -47,7 +47,7 @@
  */
 
 #if defined(LIBC_SCCS)
-static char *rcsid = "$Id: strftime.c,v 1.11.2.2 2004/04/09 20:58:08 dgp Exp $";
+static char *rcsid = "$Id: strftime.c,v 1.11.2.3 2004/05/27 14:29:07 dgp Exp $";
 #endif /* LIBC_SCCS */
 
 #include <time.h>
@@ -118,6 +118,7 @@ static int		_conv _ANSI_ARGS_((int n, int digits, int pad));
 static int		_secs _ANSI_ARGS_((CONST struct tm *t));
 static size_t		_fmt _ANSI_ARGS_((CONST char *format,
 			    const struct tm *t));
+static int ISO8601Week _ANSI_ARGS_((CONST struct tm* t, int *year ));
 
 /*
  *----------------------------------------------------------------------
@@ -254,6 +255,24 @@ _fmt(format, t)
 		    if (!_conv(t->tm_mday, 2, ' '))
 			return(0);
 		    continue;
+	        case 'g':
+		    {
+			int year;
+			ISO8601Week( t, &year );
+			if ( !_conv( year%100, 2, '0' ) ) {
+			    return( 0 );
+			}
+			continue;
+		    }
+	        case 'G':
+		    {
+			int year;
+			ISO8601Week( t, &year );
+			if ( !_conv( year, 4, '0' ) ) {
+			    return( 0 );
+			}
+			continue;
+		    }
 		case 'H':
 		    if (!_conv(t->tm_hour, 2, '0'))
 			return(0);
@@ -326,25 +345,7 @@ _fmt(format, t)
 		    continue;
 		case 'V':
 		{
-				/* ISO 8601 Week Of Year:
-				   If the week (Monday - Sunday) containing
-				   January 1 has four or more days in the new 
-				   year, then it is week 1; otherwise it is 
-				   week 53 of the previous year and the next
-				   week is week one. */
-				 
-		    int week = MON_WEEK(t);
-
-		    int days = (((t)->tm_yday + 7 - \
-			    ((t)->tm_wday ? (t)->tm_wday - 1 : 6)) % 7);
-
-
-		    if (days >= 4) {
-			week++;
-		    } else if (week == 0) {
-			week = 53;
-		    }
-
+		    int week = ISO8601Week( t, NULL );
 		    if (!_conv(week, 2, '0'))
 			return(0);
 		    continue;
@@ -473,4 +474,59 @@ _add(str)
 	if (!(*pt = *str++))
 	    return(1);
     }
+}
+
+static int
+ISO8601Week( t, year )
+    CONST struct tm* t;
+    int* year;
+{
+    /* Find the day-of-year of the Thursday in
+     * the week in question. */
+    
+    int ydayThursday;
+    int week;
+    if ( t->tm_wday == 0 ) {
+	ydayThursday = t->tm_yday - 3;
+    } else {
+	ydayThursday = t->tm_yday - t->tm_wday + 4;
+    }
+    
+    if ( ydayThursday < 0 ) {
+	
+	/* This is the last week of the previous year. */
+	if ( IsLeapYear(( t->tm_year + TM_YEAR_BASE - 1 )) ) {
+	    ydayThursday += 366;
+	} else {
+	    ydayThursday += 365;
+	}
+	week = ydayThursday / 7 + 1;
+	if ( year != NULL ) {
+	    *year = t->tm_year + 1899;
+	}
+	
+    } else if ( ( IsLeapYear(( t -> tm_year + TM_YEAR_BASE ))
+		  && ydayThursday >= 366 )
+		|| ( !IsLeapYear(( t -> tm_year
+				   + TM_YEAR_BASE ))
+		     && ydayThursday >= 365 ) ) {
+	
+	/* This is week 1 of the following year */
+	
+	week = 1;
+	if ( year != NULL ) {
+	    *year = t->tm_year + 1901;
+	}
+	
+    } else {
+	
+	week = ydayThursday / 7 + 1;
+	if ( year != NULL ) {
+	    *year = t->tm_year + 1900;
+	}
+	
+    }
+
+    return week;
+    
 }

@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: httpold.test,v 1.11 2002/10/03 13:34:32 dkf Exp $
+# RCS: @(#) $Id: httpold.test,v 1.11.4.1 2004/05/27 14:29:18 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -293,15 +293,3 @@ catch {unset data}
 close $listen
 ::tcltest::cleanupTests
 return
-
-
-
-
-
-
-
-
-
-
-
-

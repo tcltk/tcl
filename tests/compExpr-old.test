@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: compExpr-old.test,v 1.7.6.2 2003/10/16 02:28:03 dgp Exp $
+# RCS: @(#) $Id: compExpr-old.test,v 1.7.6.3 2004/05/27 14:29:17 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -20,11 +20,9 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 }
 
 if {([catch {expr T1()} msg] == 1) && ($msg == {unknown math function "T1"})} {
-    set gotT1 0
-    puts "This application hasn't been compiled with the \"T1\" and"
-    puts "\"T2\" math functions, so I'll skip some of the expr tests."
+    testConstraint testmathfunctions 0
 } else {
-    set gotT1 1
+    testConstraint testmathfunctions 1
 }
 
 # procedures used below
@@ -598,24 +596,21 @@ test compExpr-old-15.6 {CompileMathFuncCall: missing ')'} {
 } {syntax error in expression "sin(1": missing close parenthesis at end of function call
     while executing
 "expr sin(1"}
-if $gotT1 {
-    test compExpr-old-15.7 {CompileMathFuncCall: call registered math function} {
-	expr 2*T1()
-    } 246
-    test compExpr-old-15.8 {CompileMathFuncCall: call registered math function} {
-	expr T2()*3
-    } 1035
-
-    test compExpr-old-15.9 {CompileMathFuncCall: call registered math function} {
-	expr T3(21, 37)
-    } 37
-    test compExpr-old-15.10 {CompileMathFuncCall: call registered math function} {
-	expr T3(21.2, 37)
-    } 37.0
-    test compExpr-old-15.11 {CompileMathFuncCall: call registered math function} {
-	expr T3(-21.2, -17.5)
-    } -17.5
-}
+test compExpr-old-15.7 {CompileMathFuncCall: call registered math function} testmathfunctions {
+    expr 2*T1()
+} 246
+test compExpr-old-15.8 {CompileMathFuncCall: call registered math function} testmathfunctions {
+    expr T2()*3
+} 1035
+test compExpr-old-15.9 {CompileMathFuncCall: call registered math function} testmathfunctions {
+    expr T3(21, 37)
+} 37
+test compExpr-old-15.10 {CompileMathFuncCall: call registered math function} testmathfunctions {
+    expr T3(21.2, 37)
+} 37.0
+test compExpr-old-15.11 {CompileMathFuncCall: call registered math function} testmathfunctions {
+    expr T3(-21.2, -17.5)
+} -17.5
 
 test compExpr-old-16.1 {GetToken: checks whether integer token starting with "0x" (e.g., "0x$") is invalid} {
     catch {unset a}

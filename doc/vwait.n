@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: vwait.n,v 1.4 2000/09/07 14:27:52 poenitz Exp $
+'\" RCS: @(#) $Id: vwait.n,v 1.4.20.1 2004/05/27 14:29:08 dgp Exp $
 '\" 
 .so man.macros
 .TH vwait n 8.0 Tcl "Tcl Built-In Commands"
@@ -35,6 +35,44 @@ if an event handler sets \fIvarName\fR and then itself calls
 for a long time.  During this time the top-level \fBvwait\fR is
 blocked waiting for the event handler to complete, so it cannot
 return either.
+.SH EXAMPLES
+Run the event-loop continually until some event calls \fBexit\fR.
+(You can use any variable not mentioned elsewhere, but the name
+\fIforever\fR reminds you at a glance of the intent.)
+.CS
+vwait forever
+.CE
+
+Wait five seconds for a connection to a server socket, otherwise
+close the socket and continue running the script:
+.CS
+# Initialise the state
+after 5000 set state timeout
+set server [socket -server accept 12345]
+proc accept {args} {
+   global state connectionInfo
+   set state accepted
+   set connectionInfo $args
+}
+
+# Wait for something to happen
+vwait state
+
+# Clean up events that could have happened
+close $server
+after cancel set state timeout
+
+# Do something based on how the vwait finished...
+switch $state {
+   timeout {
+      puts "no connection on port 12345"
+   }
+   accepted {
+      puts "connection: $connectionInfo"
+      puts [lindex $connectionInfo 0] "Hello there!"
+   }
+}
+.CE
 
 .SH "SEE ALSO"
 global(n)

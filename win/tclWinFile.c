@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.50.2.7 2004/05/17 18:42:25 dgp Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.50.2.8 2004/05/27 14:29:48 dgp Exp $
  */
 
 //#define _WIN32_WINNT  0x0500
@@ -860,10 +860,10 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 			FindExInfoStandard, &data, 
 			FindExSearchLimitToDirectories, NULL, 0);
 	}
-	Tcl_DStringFree(&ds);
 
 	if (handle == INVALID_HANDLE_VALUE) {
 	    DWORD err = GetLastError();
+	    Tcl_DStringFree(&ds);
 	    if (err == ERROR_FILE_NOT_FOUND) {
 	        /* 
 	         * We used our 'pattern' above, and matched nothing
@@ -881,6 +881,7 @@ TclpMatchInDirectory(interp, resultPtr, pathPtr, pattern, types)
 	    Tcl_DStringFree(&dsOrig);
 	    return TCL_ERROR;
 	}
+	Tcl_DStringFree(&ds);
 
 	/* 
 	 * We may use this later, so we must restore it to its

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: cmdAH.test,v 1.33.2.6 2004/05/17 18:42:24 dgp Exp $
+# RCS: @(#) $Id: cmdAH.test,v 1.33.2.7 2004/05/27 14:29:17 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -367,6 +367,18 @@ test cmdAH-8.45 {Tcl_FileObjCmd: dirname} testsetplatform {
     set env(HOME) $temp
     set result
 } {0 /homewontexist}
+test cmdAH-8.46 {Tcl_FileObjCmd: dirname} {
+    set f [file normalize [info nameof]]
+    file exists $f
+    set res1 [file dirname [file join $f foo/bar]]
+    set res2 [file dirname "${f}/foo/bar"]
+    if {$res1 eq $res2} {
+	set res "ok"
+    } else {
+        set res "file dirname problem, $res1, $res2 not equal"
+    }
+    set res
+} {ok}
 
 # tail
 

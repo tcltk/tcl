@@ -11,25 +11,19 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: pid.test,v 1.8.4.2 2004/03/04 17:26:20 dgp Exp $
+# RCS: @(#) $Id: pid.test,v 1.8.4.3 2004/05/27 14:29:20 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
     namespace import -force ::tcltest::*
 }
 
-# If pid is not defined just return with no error
-# Some platforms may not have the pid command implemented
-if {[info commands pid] == ""} {
-    puts "pid is not implemented for this machine"
-    ::tcltest::cleanupTests
-    return
-}
+testConstraint pidDefined [llength [info commands pid]]
 
-test pid-1.1 {pid command} {
+test pid-1.1 {pid command} pidDefined {
     regexp {(^[0-9]+$)|(^0x[0-9a-fA-F]+$)} [pid]
 } 1
-test pid-1.2 {pid command} -constraints {unixOrPc unixExecs} -setup {
+test pid-1.2 {pid command} -constraints {unixOrPc unixExecs pidDefined} -setup {
     set path(test1) [makeFile {} test1]
     file delete $path(test1)
 } -body {
@@ -42,7 +36,7 @@ test pid-1.2 {pid command} -constraints {unixOrPc unixExecs} -setup {
 } -cleanup {
     removeFile test1
 } -result {2 1 1 0}
-test pid-1.3 {pid command} -setup {
+test pid-1.3 {pid command} -constraints pidDefined -setup {
     set path(test1) [makeFile {} test1]
     file delete $path(test1)
 } -body {
@@ -53,25 +47,13 @@ test pid-1.3 {pid command} -setup {
 } -cleanup {
     removeFile test1
 } -result {}
-test pid-1.4 {pid command} {
+test pid-1.4 {pid command} pidDefined {
     list [catch {pid a b} msg] $msg
 } {1 {wrong # args: should be "pid ?channelId?"}}
-test pid-1.5 {pid command} {
+test pid-1.5 {pid command} pidDefined {
     list [catch {pid gorp} msg] $msg
 } {1 {can not find channel named "gorp"}}
 
 # cleanup
 ::tcltest::cleanupTests
 return
-
-
-
-
-
-
-
-
-
-
-
-

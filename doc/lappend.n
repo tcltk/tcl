@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: lappend.n,v 1.6.6.1 2004/05/04 17:44:16 dgp Exp $
+'\" RCS: @(#) $Id: lappend.n,v 1.6.6.2 2004/05/27 14:29:08 dgp Exp $
 '\" 
 .so man.macros
 .TH lappend n "" Tcl "Tcl Built-In Commands"
@@ -31,10 +31,8 @@ This command provides a relatively efficient way to build up
 large lists.  For example, ``\fBlappend a $b\fR'' is much
 more efficient than ``\fBset a [concat $a [list $b]]\fR'' when
 \fB$a\fR is long.
-
 .SH EXAMPLE
 Using \fBlappend\fR to build up a list of numbers.
-
 .CS
 % set var 1
 1

@@ -89,15 +89,3 @@ test result-4.5 {Tcl_SetObjErrorCode - five args} {testsaveresult} {
 # cleanup
 ::tcltest::cleanupTests
 return
-
-
-
-
-
-
-
-
-
-
-
-

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: winFile.test,v 1.10.2.1 2004/02/07 05:48:03 dgp Exp $
+# RCS: @(#) $Id: winFile.test,v 1.10.2.2 2004/05/27 14:29:23 dgp Exp $
 
 if {[catch {package require tcltest 2.0.2}]} {
     puts stderr "Skipping tests in [info script]. tcltest 2.0.2 required."
@@ -65,7 +65,6 @@ test winFile-2.1 {TclpMatchFiles: case sensitivity} {pcOnly} {
     removeFile GlobCapS
     set result
 } {GlobCapS GlobCapS}
-
 test winFile-2.2 {TclpMatchFiles: case sensitivity} {pcOnly} {
     makeFile {} globlower
     set result [list [glob -nocomplain globl*] [glob -nocomplain gLOBl*]]
@@ -173,7 +172,6 @@ test winFile-4.0 {
     cacls $fname /E /P $user:N
     test_access $fname 0 0
 } -result {}
-
 test winFile-4.1 {
     Enhanced NTFS user/group permissions: test readable only
 } -constraints {
@@ -185,7 +183,6 @@ test winFile-4.1 {
     cacls $fname /E /G $user:R
     test_access $fname 1 0
 } -result {}
-
 test winFile-4.2 {
     Enhanced NTFS user/group permissions: test writable only
 } -constraints {
@@ -198,7 +195,6 @@ test winFile-4.2 {
     cacls $fname /E /G $user:W
     test_access $fname 0 1
 } -result {}
-
 test winFile-4.3 {
     Enhanced NTFS user/group permissions: test read+write
 } -constraints {
@@ -212,7 +208,6 @@ test winFile-4.3 {
     cacls $fname /E /G $user:W
     test_access $fname 1 1
 } -result {}
-
 test winFile-4.4 {
     Enhanced NTFS user/group permissions: test full access
 } -constraints {
@@ -231,15 +226,3 @@ file delete $fname
 # cleanup
 ::tcltest::cleanupTests
 return
-
-
-
-
-
-
-
-
-
-
-
-

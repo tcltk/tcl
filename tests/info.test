@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: info.test,v 1.25 2003/03/27 13:19:15 dkf Exp $
+# RCS: @(#) $Id: info.test,v 1.25.2.1 2004/05/27 14:29:18 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -103,10 +103,6 @@ test info-2.6 {info body option, returning list bodies} {
 	    [foo; string bytelength [info body foo]]
 } {9 9}
 
-# "info cmdcount" is no longer accurate for compiled commands!
-# The expected result for info-3.1 used to be "3" and is now "1"
-# since the "set"s have been compiled away.  info-3.2 was corrected
-# in 8.3 because the eval'ed body won't be compiled.
 proc testinfocmdcount {} {
     set x [info cmdcount]
     set y 12345
@@ -115,7 +111,7 @@ proc testinfocmdcount {} {
 }
 test info-3.1 {info cmdcount compiled} {
     testinfocmdcount
-} 1
+} 3
 test info-3.2 {info cmdcount evaled} {
     set x [info cmdcount]
     set y 12345
@@ -495,8 +491,7 @@ test info-15.7 {info procs option with a global shadowing proc} {
 # This regression test is currently commented out because it requires
 # that the implementation of "info procs" looks into the global namespace,
 # which it does not (in contrast to "info commands")
-if {0} {
-test info-15.8 {info procs option with a global shadowing proc} {
+test info-15.8 {info procs option with a global shadowing proc} knownBug {
     catch {namespace delete test_ns_info2}
     proc string_cmd { arg } {
         puts cmd
@@ -513,7 +508,6 @@ test info-15.8 {info procs option with a global shadowing proc} {
         lsort [info procs string*]
     }
 } [lsort [list string_cmd string_cmd2]]
-}
 
 test info-16.1 {info script option} {
     list [catch {info script x x} msg] $msg

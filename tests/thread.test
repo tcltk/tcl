@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: thread.test,v 1.10 2000/05/02 22:02:36 kupries Exp $
+# RCS: @(#) $Id: thread.test,v 1.10.20.1 2004/05/27 14:29:22 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -19,11 +19,9 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 
 # Some tests require the testthread command
 
-set ::tcltest::testConstraints(testthread) \
-	[expr {[info commands testthread] != {}}]
+testConstraint testthread [expr {[info commands testthread] != {}}]
 
-if {$::tcltest::testConstraints(testthread)} {
-
+if {[testConstraint testthread]} {
     testthread errorproc ThreadError
 
     proc ThreadError {id info} {

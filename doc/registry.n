@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: registry.n,v 1.8.4.1 2004/03/04 17:26:14 dgp Exp $
+'\" RCS: @(#) $Id: registry.n,v 1.8.4.2 2004/05/27 14:29:08 dgp Exp $
 '\" 
 .so man.macros
 .TH registry n 1.1 registry "Tcl Bundled Packages"
@@ -179,9 +179,24 @@ In addition to the symbolically named types listed above, unknown
 types are identified using a 32-bit integer that corresponds to the
 type code returned by the system interfaces.  In this case, the data
 is represented exactly in Tcl, including any embedded nulls.
-
 .SH "PORTABILITY ISSUES"
 The registry command is only available on Windows.
+.SH EXAMPLE
+Print out how double-clicking on a Tcl script file will invoke a Tcl
+interpreter:
+.CS
+package require registry
+set ext .tcl
+
+# Read the type name
+set type [registry get HKEY_CLASSES_ROOT\e\e$ext {}]
+# Work out where to look for the command
+set path HKEY_CLASSES_ROOT\e\e$type\e\eShell\e\eOpen\e\ecommand
+# Read the command!
+set command [registry get $path {}]
+
+puts "$ext opens with $command"
+.CE
 
 .SH KEYWORDS
 registry

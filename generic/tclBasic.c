@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.12 2004/05/17 18:42:20 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.13 2004/05/27 14:29:09 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -982,6 +982,15 @@ DeleteInterpProc(interp)
     }
 
     TclHandleFree(iPtr->handle);
+
+    /*
+     * Shut down all limit handler callback scripts that call back
+     * into this interpreter.  Then eliminate all limit handlers for
+     * this interpreter.
+     */
+
+    TclDecommissionLimitCallbacks(interp);
+    TclLimitRemoveAllHandlers(interp);
 
     /*
      * Dismantle everything in the global namespace except for the
@@ -2118,7 +2127,7 @@ TclRenameCommand(interp, oldName, newName)
  *
  *	Modifies various information about a Tcl command. Note that
  *	this procedure will not change a command's namespace; use
- *	Tcl_RenameCommand to do that. Also, the isNativeObjectProc
+ *	TclRenameCommand to do that. Also, the isNativeObjectProc
  *	member of *infoPtr is ignored.
  *
  * Results:
@@ -2157,7 +2166,7 @@ Tcl_SetCommandInfo(interp, cmdName, infoPtr)
  *
  *	Modifies various information about a Tcl command. Note that
  *	this procedure will not change a command's namespace; use
- *	Tcl_RenameCommand to do that. Also, the isNativeObjectProc
+ *	TclRenameCommand to do that. Also, the isNativeObjectProc
  *	member of *infoPtr is ignored.
  *
  * Results:

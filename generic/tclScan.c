@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclScan.c,v 1.12.4.1 2004/04/09 20:58:16 dgp Exp $
+ * RCS: @(#) $Id: tclScan.c,v 1.12.4.2 2004/05/27 14:29:14 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -575,9 +575,9 @@ Tcl_ScanObjCmd(dummy, interp, objc, objv)
     int base = 0;
     int underflow = 0;
     size_t width;
-    long (*fn)() = NULL;
+    long (*fn) _ANSI_ARGS_((char*,void*,int)) = NULL;
 #ifndef TCL_WIDE_INT_IS_LONG
-    Tcl_WideInt (*lfn)() = NULL;
+    Tcl_WideInt (*lfn) _ANSI_ARGS_((char*,void*,int)) = NULL;
     Tcl_WideInt wideValue;
 #endif
     Tcl_UniChar ch, sch;
@@ -727,42 +727,42 @@ Tcl_ScanObjCmd(dummy, interp, objc, objv)
 	    case 'd':
 		op = 'i';
 		base = 10;
-		fn = (long (*)())strtol;
+		fn = (long (*) _ANSI_ARGS_((char*,void*,int)))strtol;
 #ifndef TCL_WIDE_INT_IS_LONG
-		lfn = (Tcl_WideInt (*)())strtoll;
+		lfn = (Tcl_WideInt (*)_ANSI_ARGS_((char*,void*,int)))strtoll;
 #endif
 		break;
 	    case 'i':
 		op = 'i';
 		base = 0;
-		fn = (long (*)())strtol;
+		fn = (long (*)_ANSI_ARGS_((char*,void*,int)))strtol;
 #ifndef TCL_WIDE_INT_IS_LONG
-		lfn = (Tcl_WideInt (*)())strtoll;
+		lfn = (Tcl_WideInt (*)_ANSI_ARGS_((char*,void*,int)))strtoll;
 #endif
 		break;
 	    case 'o':
 		op = 'i';
 		base = 8;
-		fn = (long (*)())strtoul;
+		fn = (long (*)_ANSI_ARGS_((char*,void*,int)))strtoul;
 #ifndef TCL_WIDE_INT_IS_LONG
-		lfn = (Tcl_WideInt (*)())strtoull;
+		lfn = (Tcl_WideInt (*)_ANSI_ARGS_((char*,void*,int)))strtoull;
 #endif
 		break;
 	    case 'x':
 		op = 'i';
 		base = 16;
-		fn = (long (*)())strtoul;
+		fn = (long (*)_ANSI_ARGS_((char*,void*,int)))strtoul;
 #ifndef TCL_WIDE_INT_IS_LONG
-		lfn = (Tcl_WideInt (*)())strtoull;
+		lfn = (Tcl_WideInt (*)_ANSI_ARGS_((char*,void*,int)))strtoull;
 #endif
 		break;
 	    case 'u':
 		op = 'i';
 		base = 10;
 		flags |= SCAN_UNSIGNED;
-		fn = (long (*)())strtoul;
+		fn = (long (*)_ANSI_ARGS_((char*,void*,int)))strtoul;
 #ifndef TCL_WIDE_INT_IS_LONG
-		lfn = (Tcl_WideInt (*)())strtoull;
+		lfn = (Tcl_WideInt (*)_ANSI_ARGS_((char*,void*,int)))strtoull;
 #endif
 		break;
 

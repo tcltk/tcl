@@ -126,9 +126,9 @@ Tcl_CreateThread(idPtr, proc, clientData, stackSize, flags)
 
 
     if (pthread_create((pthread_t *)idPtr, &attr,
-	    (void * (*)())proc, (void *)clientData) &&
+	    (void * (*)(void *))proc, (void *)clientData) &&
 	    pthread_create((pthread_t *)idPtr, NULL,
-		    (void * (*)())proc, (void *)clientData)) {
+		    (void * (*)(void *))proc, (void *)clientData)) {
 	result = TCL_ERROR;
     } else {
 	result = TCL_OK;

@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: fconfigure.n,v 1.8.2.1 2004/03/26 22:28:25 dgp Exp $
+'\" RCS: @(#) $Id: fconfigure.n,v 1.8.2.2 2004/05/27 14:29:08 dgp Exp $
 '\"
 .so man.macros
 .TH fconfigure n 8.3 Tcl "Tcl Built-In Commands"
@@ -191,7 +191,6 @@ during either input or output.  This mode is typically used on UNIX
 platforms.
 .RE
 .PP
-
 .SH "STANDARD CHANNELS"
 .PP
 The Tcl standard channels (\fBstdin\fR, \fBstdout\fR, and \fBstderr\fR)
@@ -201,6 +200,66 @@ will also support any special option according to their current type.
 If, for example, a Tcl application is started by the \fBinet\fR
 super-server common on Unix system its Tcl standard channels will be
 sockets and thus support the socket options.
+.SH EXAMPLES
+Instruct Tcl to always send output to \fBstdout\fR immediately,
+whether or not it is to a terminal:
+.CS
+fconfigure stdout -buffering none
+.CE
+
+Open a socket and read lines from it without ever blocking the
+processing of other events:
+.CS
+set s [socket some.where.com 12345]
+fconfigure $s -blocking 0
+fileevent $s readable "readMe $s"
+proc readMe chan {
+   if {[gets $chan line] < 0} {
+      if {[eof $chan]} {
+         close $chan
+         return
+      }
+      # Could not read a complete line this time; Tcl's
+      # internal buffering will hold the partial line for us
+      # until some more data is available over the socket.
+   } else {
+      puts stdout $line
+   }
+}
+.CE
+
+Read a PPM-format image from a file:
+.CS
+# Open the file and put it into Unix ASCII mode
+set f [open teapot.ppm]
+fconfigure $f \-encoding ascii \-translation lf
+
+# Get the header
+if {[gets $f] ne "P6"} {
+   error "not a raw\-bits PPM"
+}
+
+# Read lines until we have got non-comment lines
+# that supply us with three decimal values.
+set words {}
+while {[llength $words] < 3} {
+   gets $f line
+   if {[string match "#*" $line]} continue
+   lappend words {expand}[join [scan $line %d%d%d]]
+}
+
+# Those words supply the size of the image and its
+# overall depth per channel.
+lassign $words xSize ySize depth
+
+# Now switch to binary mode to pull in the data,
+# one byte per channel (red,gree,blue) per pixel.
+fconfigure $f \-translation binary
+set numDataBytes [expr {3 * $xSize * $ySize}]
+set data [read $f $numDataBytes]
+
+close $f
+.CE
 
 .SH "SEE ALSO"
 close(n), flush(n), gets(n), open(n), puts(n), read(n), socket(n),

@@ -6,7 +6,7 @@
 # Copyright (c) 2000 by Ajuba Solutions
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.test,v 1.37.4.3 2004/05/17 18:42:24 dgp Exp $
+# RCS: @(#) $Id: tcltest.test,v 1.37.4.4 2004/05/27 14:29:22 dgp Exp $
 
 # Note that there are several places where the value of 
 # tcltest::currentFailure is stored/reset in the -setup/-cleanup
@@ -1082,38 +1082,36 @@ removeDirectory dirtestdir2.1 $dtd
 removeDirectory dirtestdir
 
 # TCLTEST_OPTIONS
-test tcltest-19.1 {TCLTEST_OPTIONS default} {
-    -constraints {unixOrPc singleTestInterp}
-    -setup {
+test tcltest-19.1 {TCLTEST_OPTIONS default} -setup {
 	if {[info exists ::env(TCLTEST_OPTIONS)]} {
 	    set oldoptions $::env(TCLTEST_OPTIONS)
-	    unset ::env(TCLTEST_OPTIONS)
 	} else {
 	    set oldoptions none
 	}
 	# set this to { } instead of just {} to get around quirk in
 	# Windows env handling that removes empty elements from env array.
 	set ::env(TCLTEST_OPTIONS) { }
-	set olddebug [debug]
-	debug 2
-    }
-    -cleanup {
+	interp create slave1
+	slave1 eval [list set argv {-debug 2}]
+	slave1 alias puts puts
+	interp create slave2
+	slave2 alias puts puts
+    } -cleanup {
+	interp delete slave2
+	interp delete slave1
 	if {$oldoptions == "none"} {
 	    unset ::env(TCLTEST_OPTIONS) 
 	} else {
 	    set ::env(TCLTEST_OPTIONS) $oldoptions
 	}
-	debug $olddebug
-    }
-    -body {
-	::tcltest::ProcessCmdLineArgs
+    } -body {
+	slave1 eval [package ifneeded tcltest [package provide tcltest]]
+	slave1 eval tcltest::debug
 	set ::env(TCLTEST_OPTIONS) "-debug 3"
-	::tcltest::ProcessCmdLineArgs
-    }
-    -result {^$}
-    -match regexp
-    -output {tcltest::debug\s+= 2.*tcltest::debug\s+= 3}
-}
+	slave2 eval [package ifneeded tcltest [package provide tcltest]]
+	slave2 eval tcltest::debug
+    } -result {^3$} -match regexp -output\
+{tcltest::debug\s+= 2.*tcltest::debug\s+= 3}
 
 # Begin testing of tcltest procs ...
 
@@ -1727,13 +1725,18 @@ test tcltest-25.2 {
 
 test tcltest-25.3 {
 	reported return code (Bug 611922)
+} -setup {
+	set fail $::tcltest::currentFailure
+	set v [verbose]
 } -body {
-	# Buggy tcltest will generate result of 2
+	verbose {}
 	test tcltest-25.3.0 {} -body {
 	    error foo
 	}
+} -cleanup {
+	set ::tcltest::currentFailure $fail
+	verbose $v
 } -match glob -output {*generated error; Return code was: 1*}
-
 
 cleanupTests
 }
