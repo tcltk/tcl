@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.20.2.3.2.3 2000/07/12 01:41:23 hobbs Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.20.2.3.2.4 2000/07/14 04:16:12 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -8755,8 +8755,8 @@ StackSetBlockMode(chanPtr, mode)
 		Tcl_SetErrno(result);
 		return result;
 	    }
-	    chanPtr = chanPtr->downChanPtr;
 	}
+	chanPtr = chanPtr->downChanPtr;
     }
     return 0;
 }
@@ -8907,7 +8907,7 @@ Tcl_GetChannelNamesEx(interp, pattern)
  * I HAVE NO OBLIGATION TO PROVIDE MAINTENANCE, SUPPORT, UPDATES,
  * ENHANCEMENTS, OR MODIFICATIONS.
  *
- * CVS: $Id: tclIO.c,v 1.20.2.3.2.3 2000/07/12 01:41:23 hobbs Exp $
+ * CVS: $Id: tclIO.c,v 1.20.2.3.2.4 2000/07/14 04:16:12 hobbs Exp $
  */
 
 /*
@@ -9435,15 +9435,18 @@ TransformSeekProc (instanceData, offset, mode, errorCodePtr)
     int*       errorCodePtr;	/* Location of error flag. */
 {
     int result;
-    TransformChannelData* dataPtr = (TransformChannelData*) instanceData;
+    TransformChannelData* dataPtr	= (TransformChannelData*) instanceData;
+    Tcl_Channel           parent        = Tcl_GetStackedChannel(dataPtr->self);
+    Tcl_ChannelType*      parentType	= Tcl_GetChannelType(parent);
+    Tcl_DriverSeekProc*   parentSeekProc = Tcl_ChannelSeekProc(parentType);
 
     if ((offset == 0) && (mode == SEEK_CUR)) {
         /* This is no seek but a request to tell the caller the current
 	 * location. Simply pass the request down.
 	 */
 
-	result = Tcl_Seek (Tcl_GetStackedChannel(dataPtr->self), offset, mode);
-	*errorCodePtr = (result == -1) ? Tcl_GetErrno () : 0;
+	result = (*parentSeekProc) (Tcl_GetChannelInstanceData(parent),
+		offset, mode, errorCodePtr);
 	return result;
     }
 
@@ -9465,8 +9468,8 @@ TransformSeekProc (instanceData, offset, mode, errorCodePtr)
 	dataPtr->readIsFlushed = 0;
     }
 
-    result = Tcl_Seek (Tcl_GetStackedChannel(dataPtr->self), offset, mode);
-    *errorCodePtr = (result == -1) ? Tcl_GetErrno () : 0;
+    result = (*parentSeekProc) (Tcl_GetChannelInstanceData(parent),
+	    offset, mode, errorCodePtr);
     return result;
 }
 
