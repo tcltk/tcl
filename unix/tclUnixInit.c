@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixInit.c,v 1.1.2.8 1999/03/12 23:29:20 surles Exp $
+ * RCS: @(#) $Id: tclUnixInit.c,v 1.1.2.9 1999/03/13 03:09:34 surles Exp $
  */
 
 #include "tclInt.h"
@@ -185,7 +185,7 @@ CONST char *path;		/* Path to the executable in native
 #define LIBRARY_SIZE	    32
     Tcl_Obj *pathPtr, *objPtr;
     char *str;
-    Tcl_DString ds;
+    Tcl_DString buffer, ds;
     int pathc;
     char **pathv;
     char installLib[LIBRARY_SIZE], developLib[LIBRARY_SIZE];
@@ -222,6 +222,9 @@ CONST char *path;		/* Path to the executable in native
      */
 
     str = getenv("TCL_LIBRARY");			/* INTL: Native. */
+    Tcl_ExternalToUtfDString(NULL, str, -1, &buffer);
+    str = Tcl_DStringValue(&buffer);
+
     if ((str != NULL) && (str[0] != '\0')) {
 	/*
 	 * If TCL_LIBRARY is set, search there.
@@ -274,7 +277,8 @@ CONST char *path;		/* Path to the executable in native
 	ckfree((char *) pathv);
     }
 
-    TclSetLibraryPath(pathPtr);
+    TclSetLibraryPath(pathPtr);    
+    Tcl_DStringFree(&buffer);
 }
 
 /*
