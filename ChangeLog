@@ -1,4 +1,18 @@
-1999-11-01  Jeff Hobbs  <hobbs@scriptics.com>
+1999-11-02  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* tagged 8.2.2 final
+
+1999-10-30  Jeff Hobbs  <hobbs@scriptics.com>
+
+	* unix/configure.in:
+	* win/configure.in:
+	* README:
+	* mac/README:
+	* win/README.binary:
+	* tools/tcl.wse.in: made demos\twind.tcl install in correct place
+	* generic/tcl.h: updated to patchlevel 2
+
+	All of the following are backported from 8.3 alpha
 
 	* generic/regc_color.c:
 	* generic/regc_cvec.c:
@@ -15,16 +29,7 @@
 	* tests/reg.test: updated to Henry Spencer's new regexp engine
 	(mid-Sept 99).  Should greatly reduce stack space reqs.
 
-1999-10-30  Jeff Hobbs  <hobbs@scriptics.com>
-
 	* library/init.tcl: removed [info nameof]/../bin from auto_path
-	* unix/configure.in:
-	* win/configure.in:
-	* README:
-	* mac/README:
-	* win/README.binary:
-	* tools/tcl.wse.in: made demos\twind.tcl install in correct place
-	* generic/tcl.h: updated to patchlevel 2
 
 	* library/http2.1/http.tcl: protected gets with catch [Bug: 2665]
 	Fixed a bug in the handling of
