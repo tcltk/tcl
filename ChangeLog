@@ -1,3 +1,7 @@
+2005-03-07  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/string.n: Minor typo. [Bug 1158247]
+
 2005-03-07  Miguel Sofer <msofer@users.sf.net>
 
 	* generic/tclExecute.c: new peephole optimisation for INST_PUSH1;
@@ -11,11 +15,11 @@
 
 2005-02-24  Don Porter  <dgp@users.sourceforge.net>
 
-        * library/tcltest/tcltest.tcl:  Better use of [glob -types] to avoid
-        * tests/tcltest.test:   failed attempts to [source] a directory, and
-        similar matters.  Thanks to "mpettigr".  [Bug 1119798]
+	* library/tcltest/tcltest.tcl:  Better use of [glob -types] to avoid
+	* tests/tcltest.test:   failed attempts to [source] a directory, and
+	similar matters.  Thanks to "mpettigr".  [Bug 1119798]
 
-        * library/tcltest/pkgIndex.tcl: Bump to tcltest 2.2.8
+	* library/tcltest/pkgIndex.tcl: Bump to tcltest 2.2.8
 	* unix/Makefile.in:
 	* win/Makefile.in:
 
