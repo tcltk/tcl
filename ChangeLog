@@ -1,3 +1,8 @@
+2001-08-06  Andreas Kupries <andreas_kupries@users.sourceforge.net>
+
+	* generic/tclIOCmd.c (Tcl_GetsObjCmd): Applied patch from SF item
+	  [442665] to fix the bug reported by it.
+
 2001-08-06  Don Porter <dgp@users.sourceforge.net>
 
 	* doc/tclsh.1:  Added note that the tclsh program is frequently
