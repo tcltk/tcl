@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.66 2002/06/14 19:31:48 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.67 2002/06/14 20:11:11 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -2272,13 +2272,30 @@ TclExecuteByteCode(interp, codePtr)
 		    }
 		}
 
-		PUSH_OBJECT(Tcl_NewIntObj(iResult));
 		TRACE(("%.20s %.20s => %d\n",
 			O2S(valuePtr), O2S(value2Ptr), iResult));
-		TclDecrRefCount(valuePtr);
 		TclDecrRefCount(value2Ptr);
+		TclDecrRefCount(valuePtr);
+
+		/*
+		 * Peep-hole optimisation: if you're about to jump, do jump
+		 * from here.
+		 */
+
+		pc++;
+		switch (*pc) {
+		    case INST_JUMP_FALSE1:
+			iResult = !iResult;
+		    case INST_JUMP_TRUE1:
+			ADJUST_PC(iResult? TclGetInt1AtPtr(pc+1) : 2);
+		    case INST_JUMP_FALSE4:
+			iResult = !iResult;
+		    case INST_JUMP_TRUE4:
+			ADJUST_PC(iResult? TclGetInt4AtPtr(pc+1) : 5);
+		}
+		PUSH_OBJECT(Tcl_NewIntObj(iResult));
+		continue;		
 	    }
-	    ADJUST_PC(1);
 
 	case INST_STR_CMP:
 	    {
@@ -2685,22 +2702,31 @@ TclExecuteByteCode(interp, codePtr)
 		    }
 		}
 
-		/*
-		 * Reuse the valuePtr object already on stack if possible.
-		 */
 		foundResult:
 		TRACE(("%.20s %.20s => %ld\n",
 		       O2S(valuePtr), O2S(value2Ptr), iResult));
-		if (Tcl_IsShared(valuePtr)) {
-		    PUSH_OBJECT(Tcl_NewLongObj(iResult));
-		    TclDecrRefCount(valuePtr);
-		} else {	/* reuse the valuePtr object */
-		    Tcl_SetLongObj(valuePtr, iResult);
-		    ++stackTop; /* valuePtr now on stk top has right r.c. */
-		}
 		TclDecrRefCount(value2Ptr);
+		TclDecrRefCount(valuePtr);
+
+		/*
+		 * Peep-hole optimisation: if you're about to jump, do jump
+		 * from here.
+		 */
+
+		pc++;
+		switch (*pc) {
+		    case INST_JUMP_FALSE1:
+			iResult = !iResult;
+		    case INST_JUMP_TRUE1:
+			ADJUST_PC(iResult? TclGetInt1AtPtr(pc+1) : 2);
+		    case INST_JUMP_FALSE4:
+			iResult = !iResult;
+		    case INST_JUMP_TRUE4:
+			ADJUST_PC(iResult? TclGetInt4AtPtr(pc+1) : 5);
+		}
+		PUSH_OBJECT(Tcl_NewLongObj(iResult));
+		continue;		
 	    }
-	    ADJUST_PC(1);
 
 	case INST_MOD:
 	case INST_LSHIFT:
@@ -3807,9 +3833,9 @@ TclExecuteByteCode(interp, codePtr)
 
 		pc += 5;
 		if (*pc == INST_JUMP_FALSE1) {
-		    ADJUST_PC(continueLoop? 2 : TclGetUInt1AtPtr(pc+1));
+		    ADJUST_PC(continueLoop? 2 : TclGetInt1AtPtr(pc+1));
 		} else {
-		    ADJUST_PC(continueLoop? 5 : TclGetUInt4AtPtr(pc+1));
+		    ADJUST_PC(continueLoop? 5 : TclGetInt4AtPtr(pc+1));
 		}
 	    }
 
