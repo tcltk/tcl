@@ -12,7 +12,7 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 # 
-# RCS: @(#) $Id: tcltest.tcl,v 1.9.4.4 1999/10/30 11:07:05 hobbs Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.9.4.5 1999/12/14 21:36:43 jenn Exp $
 
 package provide tcltest 1.0
 
@@ -458,13 +458,15 @@ proc ::tcltest::initConstraints {} {
 
     set ::tcltest::testConstraints(root) 0
     set ::tcltest::testConstraints(notRoot) 1
-    set user {}
     if {[string equal $tcl_platform(platform) "unix"]} {
-	catch {set user [exec whoami]}
+	set user {}
+	set id {}
+	catch {regexp {^uid=(\d+)\((\w+)\)} [exec id] dummy id user}
 	if {[string equal $user ""]} {
-	    catch {regexp {^[^(]*\(([^)]*)\)} [exec id] dummy user}
+	    catch {set user [exec whoami]}
 	}
-	if {([string equal $user "root"]) || ([string equal $user ""])} {
+	if {([string equal $user "root"]) || ([string equal $user ""]) \
+	    || ($id == 0)} {
 	    set ::tcltest::testConstraints(root) 1
 	    set ::tcltest::testConstraints(notRoot) 0
 	}

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fCmd.test,v 1.6 1999/07/01 17:36:18 jenn Exp $
+# RCS: @(#) $Id: fCmd.test,v 1.6.4.1 1999/12/14 21:36:44 jenn Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -359,7 +359,7 @@ test fCmd-5.4 {TclFileDeleteCmd: multiple files} {notRoot} {
     file delete tf1 td1 tf2
     lappend x [file exist tf1] [file exist tf2] [file exist tf3]
 } {1 1 1 0 0 0}
-test fCmd-5.5 {TclFileDeleteCmd: stop at first error} {notRoot unixOrPc} {
+test fCmd-5.5 {TclFileDeleteCmd: stop at first error} {notRoot unixOrPc knownBug} {
     cleanup
     createfile tf1
     createfile tf2
@@ -488,7 +488,7 @@ test fCmd-6.16 {CopyRenameOneFile: TclpCopyRenameOneFile fails} {notRoot} {
     list [catch {file rename -force td2 td1} msg] $msg
 } [subst {1 {error renaming "td2" to "[file join td1 td2]": file already exists}}]
 
-test fCmd-6.17 {CopyRenameOneFile: errno == EINVAL} {notRoot} {
+test fCmd-6.17 {CopyRenameOneFile: errno == EINVAL} {notRoot knownBug} {
     cleanup
     list [catch {file rename -force $root tf1} msg] $msg
 } [subst {1 {error renaming "$root" to "tf1": trying to rename a volume or move a directory into itself}}]
@@ -648,7 +648,7 @@ test fCmd-7.5 {FileForceOption: multiple times through loop} {notRoot} {
 } {1 {no files matched glob patterns "-- -force"}}
 
 test fCmd-8.1 {FileBasename: basename of ~user: argc == 1 && *path == ~} \
-	{unixOnly notRoot} {
+	{unixOnly notRoot knownBug} {
     file mkdir td1
     file attr td1 -perm 040000
     set result [list [catch {file rename ~$user td1} msg] $msg]
