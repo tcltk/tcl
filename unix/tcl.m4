@@ -506,6 +506,48 @@ AC_DEFUN(SC_ENABLE_LANGINFO, [
 ])
 
 #--------------------------------------------------------------------
+# SC_CONFIG_MANPAGES
+#	
+#	Decide whether to use symlinks for linking the manpages and
+#	whether to compress the manpages after installation.
+#
+# Arguments:
+#	none
+#
+# Results:
+#
+#	Adds the following arguments to configure:
+#		--enable-man-symlinks
+#		--enable-man-compression=PROG
+#
+#	Defines the following variable:
+#
+#	MKLINKS_FLAGS -		The apropriate flags for mkLinks
+#				according to the user's selection.
+#
+#--------------------------------------------------------------------
+AC_DEFUN(SC_CONFIG_MANPAGES, [
+
+	AC_MSG_CHECKING([whether to use symlinks for manpages])
+	AC_ARG_ENABLE(man-symlinks,
+		[  --enable-man-symlinks   use symlinks for the manpages],
+		test "$enableval" != "no" && MKLINKS_FLAGS="$MKLINKS_FLAGS --symlinks",
+		enableval="no")
+	AC_MSG_RESULT([$enableval])
+
+	AC_MSG_CHECKING([compression for manpages])
+	AC_ARG_ENABLE(man-compression,
+		[  --enable-man-compression=PROG
+                          compress the manpages with PROG],
+		test "$enableval" = "yes" && echo && AC_MSG_ERROR([missing argument to --enable-man-compression])
+		test "$enableval" != "no" && MKLINKS_FLAGS="$MKLINKS_FLAGS --compress $enableval",
+		enableval="no")
+	AC_MSG_RESULT([$enableval])
+
+	AC_SUBST(MKLINKS_FLAGS)
+])
+
+#--------------------------------------------------------------------
 # SC_CONFIG_CFLAGS
 #
 #	Try to determine the proper flags to pass to the compiler
