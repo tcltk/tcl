@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclRegexp.c,v 1.3 1999/05/13 01:50:32 stanton Exp $
+ * RCS: @(#) $Id: tclRegexp.c,v 1.4 1999/05/14 02:04:05 stanton Exp $
  */
 
 #include "tclInt.h"
@@ -65,7 +65,7 @@
  * regular expressions.
  */
 
-#define NUM_REGEXPS 5
+#define NUM_REGEXPS 30
 
 typedef struct ThreadSpecificData {
     int initialized;		/* Set to 1 when the module is initialized. */
@@ -141,7 +141,7 @@ Tcl_RegExpCompile(interp, string)
     char *string;		/* String for which to produce
 				 * compiled regular expression. */
 {
-    return (Tcl_RegExp) CompileRegexp(interp, string, strlen(string),
+    return (Tcl_RegExp) CompileRegexp(interp, string, (int) strlen(string),
 	    REG_ADVANCED);
 }
 
