@@ -14,7 +14,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: execute.test,v 1.12 2003/02/19 14:33:42 msofer Exp $
+# RCS: @(#) $Id: execute.test,v 1.13 2003/02/25 16:18:54 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -714,6 +714,9 @@ test execute-7.34 {Wide int handling} {longIs32bit} {
 } 1099511627776
 
 # cleanup
+if {[info commands testobj] != {}} {
+   testobj freeallvars
+}
 catch {eval namespace delete [namespace children :: test_ns_*]}
 catch {rename foo ""}
 catch {rename p ""}
