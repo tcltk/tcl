@@ -368,13 +368,11 @@ EXTERN size_t		TclStrftime _ANSI_ARGS_((char *s, size_t maxsize,
  * well or consistantly.
  */
 
-#define stat(path, buf)		TclWinStat(path, buf)
-#define lstat			stat
-#define access(path, mode)	TclWinAccess(path, mode)
+#define lstat		TclStat
 
-EXTERN int		TclWinStat _ANSI_ARGS_((CONST char *path, 
+EXTERN int		TclpStat _ANSI_ARGS_((CONST char *path, 
 			    struct stat *buf));
-EXTERN int		TclWinAccess _ANSI_ARGS_((CONST char *path, 
+EXTERN int		TclpAccess _ANSI_ARGS_((CONST char *path, 
 			    int mode));
 
 #define TclpReleaseFile(file)	ckfree((char *) file)
