@@ -1,3 +1,9 @@
+2004-12-01  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* tests/winDde.test: Rewritten to use tcltest2 features more
+	thoroughly (reducing the [catch] count!) and fix the problem with
+	winDde-6.1 being out of synch with the implementation.
+
 2004-11-30  Don Porter  <dgp@users.sourceforge.net>
 
 	* library/init.tcl ([unknown]):	Restored the save/restore of
