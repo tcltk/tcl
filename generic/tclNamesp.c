@@ -21,7 +21,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.52 2004/09/10 18:19:15 dgp Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.53 2004/09/13 10:49:19 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -156,6 +156,8 @@ typedef struct EnsembleCmdRep {
     int epoch;			/* Used to confirm when the data in this
 				 * really structure matches up with the
 				 * ensemble. */
+    Tcl_Command token;		/* Reference to the comamnd for which this
+				 * structure is a cache of the resolution. */
     char *fullSubcmdName;	/* The full (local) name of the subcommand,
 				 * allocated with ckalloc(). */
     Tcl_Obj *realPrefixObj;	/* Object containing the prefix words of the
@@ -4863,7 +4865,8 @@ NsEnsembleImplementationCmd(clientData, interp, objc, objv)
 	    EnsembleCmdRep *ensembleCmd = (EnsembleCmdRep *)
 		    objv[1]->internalRep.otherValuePtr;
 	    if (ensembleCmd->nsPtr == ensemblePtr->nsPtr &&
-		ensembleCmd->epoch == ensemblePtr->epoch) {
+		ensembleCmd->epoch == ensemblePtr->epoch &&
+		ensembleCmd->token == ensemblePtr->token) {
 		prefixObj = ensembleCmd->realPrefixObj;
 		Tcl_IncrRefCount(prefixObj);
 		goto runResultingSubcommand;
@@ -5160,6 +5163,7 @@ MakeCachedEnsembleCommand(objPtr, ensemblePtr, subcommandName, prefixObjPtr)
      */
     ensembleCmd->nsPtr = ensemblePtr->nsPtr;
     ensembleCmd->epoch = ensemblePtr->epoch;
+    ensembleCmd->token = ensemblePtr->token;
     ensemblePtr->nsPtr->refCount++;
     ensembleCmd->realPrefixObj = prefixObjPtr;
     length = strlen(subcommandName)+1;
@@ -5582,6 +5586,7 @@ DupEnsembleCmdRep(objPtr, copyPtr)
     copyPtr->internalRep.otherValuePtr = (VOID *) ensembleCopy;
     ensembleCopy->nsPtr = ensembleCmd->nsPtr;
     ensembleCopy->epoch = ensembleCmd->epoch;
+    ensembleCopy->token = ensembleCmd->token;
     ensembleCopy->nsPtr->refCount++;
     ensembleCopy->realPrefixObj = ensembleCmd->realPrefixObj;
     Tcl_IncrRefCount(ensembleCopy->realPrefixObj);
