@@ -1,10 +1,11 @@
 '\"
 '\" Copyright (c) 1995-1996 Sun Microsystems, Inc.
+'\" Copyright (c) 2004 Donal K. Fellows
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: interp.n,v 1.10 2004/02/28 15:45:53 vincentdarley Exp $
+'\" RCS: @(#) $Id: interp.n,v 1.11 2004/05/18 10:52:57 dkf Exp $
 '\" 
 .so man.macros
 .TH interp n 7.6 Tcl "Tcl Built-In Commands"
@@ -34,7 +35,11 @@ a command in a slave interpreter which, when invoked, causes a
 command to be invoked in its master interpreter or in another slave
 interpreter.  The only other connections between interpreters are
 through environment variables (the \fBenv\fR variable), which are
-normally shared among all interpreters in the application. Note that the
+normally shared among all interpreters in the application,
+.VS 8.5
+and by resource limit exceeded callbacks.
+.VE
+Note that the
 name space for files (such as the names returned by the \fBopen\fR command)
 is no longer shared between interpreters. Explicit commands are provided to
 share files and to transfer references to open files from one interpreter
@@ -47,7 +52,6 @@ scripts without fear of them damaging other interpreters or the
 application's environment. For example, all IO channel creation
 commands and subprocess creation commands are made inaccessible to safe
 interpreters.
-.VS
 See SAFE INTERPRETERS below for more information on
 what features are present in a safe interpreter.
 The dangerous functionality is not removed from the safe interpreter;
@@ -57,7 +61,6 @@ HIDDEN COMMANDS, below.
 The alias mechanism can be used for protected communication (analogous to a
 kernel call) between a slave interpreter and its master. See ALIAS
 INVOCATION, below, for more details on how the alias mechanism works.
-.VE
 .PP
 A qualified interpreter name is a proper Tcl lists containing a subset of its
 ancestors in the interpreter hierarchy, terminated by the string naming the
@@ -74,11 +77,8 @@ it is impossible to refer to a master (ancestor) interpreter by name in a
 slave interpreter except through aliases. Also, there is no global name by
 which one can refer to the first interpreter created in an application.
 Both restrictions are motivated by safety concerns.
-
-.VS
 .SH "THE INTERP COMMAND"
 .PP
-.VE
 The \fBinterp\fR command is used to create, delete, and manipulate
 slave interpreters, and to share or transfer
 channels between interpreters.  It can have any of several forms, depending
@@ -169,7 +169,6 @@ invoking interpreter.
 Returns  \fB1\fR if a slave interpreter by the specified \fIpath\fR
 exists in this master, \fB0\fR otherwise. If \fIpath\fR is omitted, the
 invoking interpreter is used.
-.VS "" BR
 .TP
 \fBinterp expose \fIpath\fR \fIhiddenName\fR ?\fIexposedCmdName\fR?
 Makes the hidden command \fIhiddenName\fR exposed, eventually bringing
@@ -209,12 +208,21 @@ global level in the target interpreter; otherwise it is invoked at the
 current call frame and can access local variables in that and outer call
 frames.
 Hidden commands are explained in more detail in HIDDEN COMMANDS, below.
-.VE
+.TP
+\fBinterp\fR \fBlimit\fR \fIpath\fR \fIlimitType\fR ?\fIoption\fR? ?\fIvalue\fR \fI...\fR?
+.VS 8.5
+Sets up, manipulates and queries the configuration of the resource
+limit \fIlimitType\fR for the interpreter denoted by \fIpath\fR.  If
+no \fIoption\fR is specified, return the current configuration of the
+limit.  If \fIoption\fR is the sole argument, return the value of that
+option.  Otherwise, a list of \fIoption\fR/\fIvalue\fR argument pairs
+must supplied. See RESOURCE LIMITS below for a more detailed
+explanation of what limits and options are supported.
+.VE 8.5
 .TP
 \fBinterp issafe\fR ?\fIpath\fR?
 Returns \fB1\fR if the interpreter identified by the specified \fIpath\fR
 is safe, \fB0\fR otherwise.
-.VS "" BR
 .TP
 \fBinterp marktrusted\fR \fIpath\fR
 Marks the interpreter identified by \fIpath\fR as trusted. Does
@@ -222,7 +230,6 @@ not expose the hidden commands. This command can only be invoked from a
 trusted interpreter.
 The command has no effect if the interpreter identified by \fIpath\fR is
 already trusted.
-.VE
 .TP
 \fBinterp\fR \fBrecursionlimit\fR \fIpath\fR ?\fInewlimit\fR?
 Returns the maximum allowable nesting depth for the interpreter
@@ -269,7 +276,6 @@ The target command does not have to be defined at the time of this invocation.
 Causes the IO channel identified by \fIchannelId\fR to become available in
 the interpreter identified by \fIdestPath\fR and unavailable in the
 interpreter identified by \fIsrcPath\fR.
-
 .SH "SLAVE COMMAND"
 .PP
 For each slave interpreter created with the \fBinterp\fR command, a
@@ -319,7 +325,6 @@ the resulting string as a Tcl script in \fIslave\fR.
 The result of this evaluation (including error information
 such as the \fBerrorInfo\fR and \fBerrorCode\fR variables, if an
 error occurs) is returned to the invoking interpreter.
-.VS "" BR
 .TP
 \fIslave \fBexpose \fIhiddenName \fR?\fIexposedCmdName\fR?
 This command exposes the hidden command \fIhiddenName\fR, eventually bringing
@@ -356,18 +361,26 @@ level in the slave; otherwise it is invoked at the current call frame and
 can access local variables in that or outer call frames.
 For more details on hidden commands, see HIDDEN
 COMMANDS, below.
-.VE
 .TP
 \fIslave \fBissafe\fR
 Returns  \fB1\fR if the slave interpreter is safe, \fB0\fR otherwise.
-.VS "" BR
+.TP
+\fIslave \fBlimit\fR \fIlimitType\fR ?\fIoption\fR? ?\fIvalue\fR \fI...\fR?
+.VS 8.5
+Sets up, manipulates and queries the configuration of the resource
+limit \fIlimitType\fR for the slave interpreter.  If no \fIoption\fR
+is specified, return the current configuration of the limit.  If
+\fIoption\fR is the sole argument, return the value of that option.
+Otherwise, a list of \fIoption\fR/\fIvalue\fR argument pairs must
+supplied. See RESOURCE LIMITS below for a more detailed explanation of
+what limits and options are supported.
+.VE 8.5
 .TP
 \fIslave \fBmarktrusted\fR
 Marks the slave interpreter as trusted. Can only be invoked by a
 trusted interpreter. This command does not expose any hidden
 commands in the slave interpreter. The command has no effect if the slave
 is already trusted.
-.VE
 .TP
 \fIslave\fR \fBrecursionlimit\fR ?\fInewlimit\fR?
 Returns the maximum allowable nesting depth for the \fIslave\fR interpreter.
@@ -427,7 +440,6 @@ time	trace	unset	update
 uplevel	upvar	variable	vwait
 while\fR
 .DE
-.VS ""  BR
 The following commands are hidden by \fBinterp create\fR when it
 creates a safe interpreter:
 .DS
@@ -469,7 +481,6 @@ command.  This is most easily accomplished by creating the safe interpreter
 with Tcl's \fBSafe\-Tcl\fR mechanism.  \fBSafe\-Tcl\fR provides safe
 versions of \fBsource\fR, \fBload\fR, and other Tcl commands needed
 to support autoloading of commands and the loading of packages.
-.VE
 .PP
 In addition, the \fBenv\fR variable is not present in a safe interpreter,
 so it cannot share environment variables with other interpreters. The
@@ -487,7 +498,6 @@ management of extensions for safety see the manual entries for
 .PP
 A safe interpreter may not alter the recursion limit of any interpreter,
 including itself.
-
 .SH "ALIAS INVOCATION"
 .PP
 The alias mechanism has been carefully designed so that it can
@@ -528,8 +538,6 @@ evaluated or substituted, since this would provide an escape
 mechanism whereby the slave interpreter could execute arbitrary
 code in the master.  This in turn would compromise the security
 of the system.
-
-.VS
 .SH "HIDDEN COMMANDS"
 .PP
 Safe interpreters greatly restrict the functionality available to Tcl
@@ -597,11 +605,109 @@ Commands to be hidden by \fBinterp hide\fR are looked up in the global
 namespace even if the current namespace is not the global one. This
 prevents slaves from fooling a master interpreter into hiding the wrong
 command, by making the current namespace be different from the global one.
-.VE
-.SH CREDITS
+.SH "RESOURCE LIMITS"
+.VS 8.5
 .PP
+Every interpreter has two kinds of resource limits that may be imposed
+by any master interpreter upon its slaves.  Command limits (of type
+\fBcommand\fR) restrict the total number of Tcl commands that may be
+executed by an interpreter (as can be inspected via the \fBinfo
+cmdcount\fR command), and time limits (of type \fBtime\fR) place a
+limit by which execution within the interpreter must complete.
+.PP
+When a limit is exceeded for an interpreter, first any handler
+callbacks defined by master interpreters are called.  If those
+callbacks increase or remove the limit, execution within the
+(previously) limited interpreter continues.  If the limit is still in
+force, an error is generated at that point and normal processing of
+errors within the interpreter (by the \fBcatch\fR command) is
+disabled, so the error propagates outwards (building a stack-trace as
+it goes) to the point where the limited interpreter was invoked
+(e.g. by \fBinterp eval\fR) where it becomes the responsibility of the
+calling code to catch and handle.
+.PP
+Every limit has a number of options associated with it, some of which
+are common across all kinds of limits, and others of which are
+particular to the kind of limit.
+.TP
+\fB\-command\fR
+This option (common for all limit types) specifies (if non-empty) a
+Tcl script to be executed in the global namespace of the interpreter
+reading and writing the option when the particular limit in the
+limited interpreter is exceeded.  The callback may modify the limit on
+the interpreter if it wishes the limited interpreter to continue
+executing.  If the callback generates an error, it is reported through
+the background error mechansism (see \fBbgerror\fR).  Note that the
+callbacks defined by one interpreter are completely isolated from the
+callbacks defined by another, and that the order in which those
+callbacks are called is undefined.
+.TP
+\fB\-granularity\fR
+This option (common for all limit types) specifies how frequently (out
+of the points when the Tcl interpreter is in a consistent state where
+limit checking is possible) that the limit is actually checked.  This
+allows the tuning of how frequently a limit is checked, and hence how
+often the limit-checking overhead (which may be substantial in the
+case of time limits) is incurred.
+.TP
+\fB\-milliseconds\fR
+This option specifies the number of milliseconds after the moment
+defined in the \fB\-seconds\fR option that the time limit will fire.
+It should only ever be specified in conjunction with the
+\fB\-seconds\fR option (whether it was set previously or is being set
+this invokation.)
+.TP
+\fB\-seconds\fR
+This option specifies the number of seconds after the epoch (see
+\fBclock seconds\fR) that the time limit for the interpreter will be
+triggered. The limit will be triggered at the start of the second
+unless specified at a sub-second level using the \fB\-milliseconds\fR
+option.  This option may be the empty string, which indicates that a
+time limit is not set for the interpreter.
+.TP
+\fB\-value\fR
+This option specifies the number of commands that the interpreter may
+execute before triggering the command limit.  This option may be the
+empty string, which indicates that a command limit is not set for the
+interpreter.
+.VE 8.5
+.SH CREDITS
 This mechanism is based on the Safe-Tcl prototype implemented
 by Nathaniel Borenstein and Marshall Rose.
+.SH EXAMPLES
+Creating and using an alias for a command in the current interpreter:
+.CS
+interp alias {} getIndex {} lsearch {alpha beta gamma delta}
+set idx [getIndex delta]
+.CE
+
+.VS 8.5
+Executing an arbitrary command in a safe interpreter where every
+invokation of \fBlappend\fR is logged:
+.CS
+set i [interp create -safe]
+$i hide lappend
+$i alias lappend loggedLappend $i
+proc loggedLappend {i args} {
+   puts "logged invokation of lappend $args"
+   $i invokehidden lappend {expand}$args
+}
+$i eval $someUntrustedScript
+.CE
+
+Setting a resource limit on an interpreter so that an infinite loop
+terminates.
+.CS
+set i [interp create]
+$i limit command -value 1000
+$i eval {
+   set x 0
+   while {1} {
+      puts "Counting up... [incr x]"
+   }
+}
+.CE
+.VE 8.5
 
 .SH "SEE ALSO"
 load(n), safe(n), Tcl_CreateSlave(3)
