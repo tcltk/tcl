@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.1.2.25 1999/04/03 01:46:10 welch Exp $
+RCS: @(#) $Id: changes,v 1.1.2.26 1999/04/06 01:25:58 welch Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -4196,6 +4196,31 @@ global variables.
 (hirschl)
 *** POTENTIAL INCOMPATIBILITY ***
 
+--------------- Released 8.1b2, March 16, 1999 ----------------------
+
+3/18/99 (bug fix) Fixed missing/incorrect characters in shift-jis table
+(stanton)
+
+3/18/99 (feature change) The glob command ignores the
+FS_CASE_IS_PRESERVED bit on file systesm and always returns
+exactly what it gets from the system. (stanton)
+*** POTENTIAL INCOMPATIBILITY ***
+
+3/19/99 (new feature) Added support for --enable-64bit.  For now,
+this is only supported on Solaris 7 64bit (SunOS 5.7) using the Sun
+compiler (redman).
+
+3/23/99 (bug fix) Fixed fileevents and gets on Windows consoles
+so that non-blocking channels do not block on partial input lines.
+(redman)
+
+3/23/99 (bug fix) Added a new Tcl_ServiceModeHook interface.
+This is used on Windows to avoid the various problems that people
+have been seeing where the system hangs when tclsh is running
+outside of the event loop. As part of this, renamed
+TclpAlertNotifier back to Tcl_AlertNotifier since it is public.
+(stanton)
+
 3/23/99 (feature change) Test suite now uses "tcltest" namespace to
 define the test procedure and other auxiliary procedures as well as
 global variables.  The previously chosen "test" namespace was thought
@@ -4203,11 +4228,52 @@ to be too generic and likely to create conflits.
 (hirschl)
 *** POTENTIAL INCOMPATIBILITY ***
 
+3/24/99 (bug fix) Make sockets thread safe on Windows.
+(redman)
+
+3/24/99 (bug fix) Fix cases where expr would incorrect return
+a floating point value instead of an integer. (stanton)
+
+3/25/99 (bug fix) Added ASCII to big5 and gb2312 encodings.
+(stanton)
+
+3/25/99 (feature change) Changed so aliases are invoked at current
+scope in the target interpreter instead of at the global scope.  This
+was an incompatibility introduced in 8.1 that is being removed.
+(stanton)
+*** POTENTIAL INCOMPATIBILITY with previous beta releases ***
+
 3/26/99 (feature change) --nameble-shared is now the default and build
 Tcl as a shared library; specify --disable-shared to build a static Tcl
 library and shell.
 *** POTENTIAL INCOMPATIBILITY ***
 
+3/29/99 (bug fix)  Removed the stub functions and changed the stub
+macros to just use the name without params. Pass &tclStubs into the
+interp (don't use tclStubsPtr because of collisions with the stubs on
+Solaris). (redman)
+
+4/1/99 (bug fix) Fixed the Ultrix multiple symbol definition problem.
+Now, even Tcl includes a copy of the Tcl stub library. (redman)
+
+4/1/99 (bug fix) Internationalized the registry package.
+
 4/1/99 (bug fix) Changed the implemenation of Tcl_ConditionWait and
 Tcl_ConditionNotify on Windows.  The new algorithm eliminates a race
 condition and was suggested by Jim Davidson. (welch)
+
+4/2/99 (new apis)  Made various Unicode utility functions public.
+Tcl_UtfToUniCharDString, Tcl_UniCharToUtfDString, Tcl_UniCharLen,
+Tcl_UniCharNcmp, Tcl_UniCharIsAlnum, Tcl_UniCharIsAlpha,
+Tcl_UniCharIsDigit, Tcl_UniCharIsLower, Tcl_UniCharIsSpace,
+Tcl_UniCharIsUpper, Tcl_UniCharIsWordChar, Tcl_WinUtfToTChar,
+Tcl_WinTCharToUtf (stanton)
+
+4/2/99 (feature change) Add new DDE package and removed the Tk
+send command from the Windows version.  Changed DDE-based send
+code into "dde eval" command.  The DDE package can be loaded
+into tclsh, not just wish.  Windows only. (redman)
+
+4/5/99 (bug fix) Changed safe-tcl so that the encoding command
+is an alias that masks out the "encoding system" subcommand.
+(redman)
