@@ -2,7 +2,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 AC_INIT(../generic/tcl.h)
-# RCS: @(#) $Id: configure.in,v 1.38 1999/06/02 02:03:25 stanton Exp $
+# RCS: @(#) $Id: configure.in,v 1.39 1999/06/02 20:53:29 stanton Exp $
 
 TCL_VERSION=8.1
 TCL_MAJOR_VERSION=8
@@ -774,7 +774,7 @@ case $system in
 	SHLIB_LD="$fullSrcDir/ldAix /bin/ld -bhalt:4 -bM:SRE -bE:lib.exp -H512 -T512"
 	SHLIB_LD_LIBS='${LIBS}'
 	SHLIB_SUFFIX=".so"
-	DL_OBJS="tclLoadDl.o
+	DL_OBJS="tclLoadDl.o"
 	LIBOBJS="$LIBOBJS tclLoadAix.o"
 	DL_LIBS="-lld"
 	LD_FLAGS=""
