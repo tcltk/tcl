@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.174 2005/04/01 15:17:21 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.175 2005/04/01 16:18:55 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -521,6 +521,11 @@ TclCreateExecEnv(interp)
     eePtr->tosPtr = stackPtr - 1;
     eePtr->endPtr = stackPtr + (TCL_STACK_INITIAL_SIZE - 2);
 
+    TclNewIntObj(eePtr->constants[0], 0);
+    Tcl_IncrRefCount(eePtr->constants[0]);
+    TclNewIntObj(eePtr->constants[1], 1);
+    Tcl_IncrRefCount(eePtr->constants[1]);
+
     Tcl_MutexLock(&execMutex);
     if (!execInitialized) {
 	TclInitAuxDataTypeTable();
@@ -559,6 +564,8 @@ TclDeleteExecEnv(eePtr)
     } else {
 	Tcl_Panic("ERROR: freeing an execEnv whose stack is still in use.\n");
     }
+    TclDecrRefCount(eePtr->constants[0]);
+    TclDecrRefCount(eePtr->constants[1]);
     ckfree((char *) eePtr);
 }
 
@@ -3093,7 +3100,7 @@ TclExecuteByteCode(interp, codePtr)
 		NEXT_INST_F((iResult? TclGetInt4AtPtr(pc+1) : 5), 2, 0);
 	}
 #endif
-	TclNewIntObj(objResultPtr, iResult);
+	objResultPtr = eePtr->constants[iResult];
 	NEXT_INST_F(0, 2, 1);
     }
 
@@ -3288,7 +3295,7 @@ TclExecuteByteCode(interp, codePtr)
 
 	TRACE(("%.20s %.20s => %d\n", O2S(valuePtr), O2S(value2Ptr), match));
 	if (Tcl_IsShared(value2Ptr)) {
-	    TclNewIntObj(objResultPtr, match);
+	    objResultPtr = eePtr->constants[match];
 	    NEXT_INST_F(2, 2, 1);
 	} else {	/* reuse the valuePtr object */
 	    TclSetIntObj(value2Ptr, match);
@@ -3572,7 +3579,7 @@ TclExecuteByteCode(interp, codePtr)
 		NEXT_INST_F((iResult? TclGetInt4AtPtr(pc+1) : 5), 2, 0);
 	}
 #endif
-	TclNewIntObj(objResultPtr, iResult);
+	objResultPtr = eePtr->constants[iResult];
 	NEXT_INST_F(0, 2, 1);
     }
 
