@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.82 2004/02/20 18:38:59 dgp Exp $
+RCS: @(#) $Id: changes,v 1.83 2004/03/01 19:27:07 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -5952,4 +5952,14 @@ various odd regexp "can't happen" bugs.
 
 2004-02-17 (new default) tcltest::configure -verbose {body error}
 
---- Released 8.4.6, February 27, 2004 --- See ChangeLog for details ---
+2004-02-19 (bug fix) init.tcl search path with unusual --libdir (samson)
+
+2004-02-25 (bug fix)[554068] stopped broken [exec] quoting of { (gravereaux)
+
+2004-02-25 (bug fix)[888777] plugged memory leak with long host names (cassoff)
+
+2004-03-01 (bug fix)[462580] corrected level interpretation of Tcl_CreateTrace
+
+2004-03-01 (platform support)[218561] Allow 64-bit configure on IRIX64-6.5*
+
+--- Released 8.4.6, March 1, 2004 --- See ChangeLog for details ---
