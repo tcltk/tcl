@@ -1,3 +1,8 @@
+2004-12-09  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* doc/Async.3: Reword for better grammar, better nroff and get the
+	flag name right. (Reported by David Welton.)
+
 2004-12-06  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	*** 8.4.9 TAGGED FOR RELEASE ***
