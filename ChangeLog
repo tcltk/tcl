@@ -1,3 +1,9 @@
+2002-09-29  David Gravereaux <davygrvy@pobox.com>
+
+	* win/makefile.vc: Added missing tclThreadAlloc.c to the build
+	rules and defines USE_THREAD_ALLOC when TCL_THREADS is defined
+	to get the new behavior by default.
+
 2002-09-27  Don Porter  <dgp@users.sourceforge.net>
 
 	* README:		Bumped to version 8.4.1 to avoid confusion
