@@ -69,6 +69,16 @@ test compile-2.4 {TclCompileDollarVar: global scalar name with ::s} {
     list [p] $::a(1) [expr {[lsearch -exact [info globals] a] != 0}]
 } {1 1 1}
 
+test compile-3.2 {TclCompileCatchCmd: non-local variables} {
+    set ::foo 1
+    proc catch-test {} {
+	catch {set x 3} ::foo
+    }
+    catch-test
+    set ::foo
+} 3
+
+
 test compile-1.16 {TclCompileForCmd: command substituted test expression} {
     set i 0
     set j 0
