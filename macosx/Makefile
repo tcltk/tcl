@@ -3,7 +3,7 @@
 # Makefile to build Tcl on Mac OS X packaged as a Framework
 #	uses standard unix build system in tcl/unix
 #
-# RCS: @(#) $Id: Makefile,v 1.5.2.2 2003/07/18 01:06:16 das Exp $
+# RCS: @(#) $Id: Makefile,v 1.5.2.3 2003/07/19 01:35:01 das Exp $
 #
 ########################################################################################################
 
@@ -23,6 +23,10 @@ EXTRA_MAKE_ARGS		?=
 INSTALL_PATH		?= /Library/Frameworks
 PREFIX			?= /usr
 BINDIR			?= ${PREFIX}/bin
+MANDIR			?= ${PREFIX}/man
+
+# set to non-empty value to install manpages in addition to html help:
+INSTALL_MANPAGES ?= 
 
 TCL_PACKAGE_PATH	?= "~/Library/Tcl /Library/Tcl /Network/Library/Tcl /System/Library/Tcl \
 			    ~/Library/Frameworks /Library/Frameworks /Network/Library/Frameworks \
@@ -116,8 +120,9 @@ ${PROJECT}: install-${PROJECT}
 
 ${OBJ_DIR}/Makefile: ${UNIX_DIR}/Makefile.in ${UNIX_DIR}/configure
 	mkdir -p ${OBJ_DIR} && cd ${OBJ_DIR} && ${UNIX_DIR}/configure \
-	--prefix=${PREFIX} --bindir=${BINDIR} --libdir=${LIBDIR} --includedir=${INCLUDEDIR} \
-	--enable-threads --enable-framework ${CONFIGURE_ARGS} ${EXTRA_CONFIGURE_ARGS}
+	--prefix=${PREFIX} --bindir=${BINDIR} --libdir=${LIBDIR} \
+	--includedir=${INCLUDEDIR} --mandir=${MANDIR} --enable-threads \
+	--enable-framework ${CONFIGURE_ARGS} ${EXTRA_CONFIGURE_ARGS}
 	cd ${OBJ_DIR} && mkdir -p ${PRODUCT_NAME}.framework && \
 	ln -fs ../${PRODUCT_NAME} ${PRODUCT_NAME}.framework/${PRODUCT_NAME}
 
@@ -132,10 +137,10 @@ build-${PROJECT}: ${OBJ_DIR}/Makefile
 	ln -fs ${OBJ_DIR}/tcltest ${SYMROOT}
 
 clean-${PROJECT}:
-	${MAKE} -C ${OBJ_DIR} clean
+	${MAKE} -C ${OBJ_DIR} clean ${EXTRA_MAKE_ARGS}
 
 distclean-${PROJECT}:
-	${MAKE} -C ${OBJ_DIR} distclean
+	${MAKE} -C ${OBJ_DIR} distclean ${EXTRA_MAKE_ARGS}
 	rm -rf ${OBJ_DIR} ${PRODUCT_NAME}.framework tclsh${PRODUCT_VERSION} tcltest
 	
 install-${PROJECT}: build-${PROJECT}
@@ -173,9 +178,13 @@ else
 	mkdir -p ${INSTALL_ROOT}/usr/bin && \
 	ln -fs ${TCLSH} ${INSTALL_ROOT}/${BINDIR}/tclsh
 ifeq (${BUILD_STYLE},Deployment)
+ifneq (${INSTALL_MANPAGES},)
+# install manpages
+	${MAKE} -C ${OBJ_DIR} install-doc ${MAKE_ARGS_V} ${MAKE_ARGS} ${EXTRA_MAKE_ARGS}
+endif
 # build html documentation
 	export DYLD_FRAMEWORK_PATH=${SYMROOT} && \
-	${MAKE} -C ${OBJ_DIR} html-tcl \
+	${MAKE} -C ${OBJ_DIR} html-tcl ${MAKE_ARGS_V} ${MAKE_ARGS} ${EXTRA_MAKE_ARGS} \
 	DISTDIR=${INSTALL_ROOT}${DOCDIR} TCL_EXE=${TCL_EXE} && \
 	cd ${INSTALL_ROOT}${DOCDIR} && ln -fs contents.htm html/${PRODUCT_NAME}TOC.html && \
 	rm -fr "${PRODUCT_NAME}" && mv -f html "${PRODUCT_NAME}"
