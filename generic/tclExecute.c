@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.156 2004/10/08 15:39:53 dkf Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.157 2004/10/15 04:01:29 dgp Exp $
  */
 
 #ifdef STDC_HEADERS
@@ -527,12 +527,6 @@ TclCreateExecEnv(interp)
     eePtr->tosPtr = stackPtr - 1;
     eePtr->endPtr = stackPtr + (TCL_STACK_INITIAL_SIZE - 2);
 
-    eePtr->errorInfo = Tcl_NewStringObj("::errorInfo", -1);
-    Tcl_IncrRefCount(eePtr->errorInfo);
-
-    eePtr->errorCode = Tcl_NewStringObj("::errorCode", -1);
-    Tcl_IncrRefCount(eePtr->errorCode);
-
     Tcl_MutexLock(&execMutex);
     if (!execInitialized) {
 	TclInitAuxDataTypeTable();
@@ -571,8 +565,6 @@ TclDeleteExecEnv(eePtr)
     } else {
 	Tcl_Panic("ERROR: freeing an execEnv whose stack is still in use.\n");
     }
-    TclDecrRefCount(eePtr->errorInfo);
-    TclDecrRefCount(eePtr->errorCode);
     ckfree((char *) eePtr);
 }
 
@@ -5142,15 +5134,16 @@ ValidatePcAndStackTop(codePtr, pc, stackTop, stackLowerBound, checkStack)
  *
  * IllegalExprOperandType --
  *
- *	Used by TclExecuteByteCode to add an error message to errorInfo
- *	when an illegal operand type is detected by an expression
- *	instruction. The argument opndPtr holds the operand object in error.
+ *	Used by TclExecuteByteCode to append an error message to
+ *	the interp result when an illegal operand type is detected by an
+ *	expression instruction. The argument opndPtr holds the operand
+ *	object in error.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	An error message is appended to errorInfo.
+ *	An error message is appended to the interp result.
  *
  *----------------------------------------------------------------------
  */

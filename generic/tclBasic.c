@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.125 2004/10/06 00:24:16 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.126 2004/10/15 04:01:27 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -241,7 +241,12 @@ Tcl_CreateInterp()
     Tcl_IncrRefCount(iPtr->defaultReturnOpts);
     iPtr->returnOpts = iPtr->defaultReturnOpts;
     Tcl_IncrRefCount(iPtr->returnOpts);
+    iPtr->errorInfo = NULL;
+    iPtr->eiVar = Tcl_NewStringObj("errorInfo", -1);
+    Tcl_IncrRefCount(iPtr->eiVar);
     iPtr->errorCode = NULL;
+    iPtr->ecVar = Tcl_NewStringObj("errorCode", -1);
+    Tcl_IncrRefCount(iPtr->ecVar);
 
     iPtr->appendResult = NULL;
     iPtr->appendAvl = 0;
@@ -894,10 +899,6 @@ DeleteInterpProc(interp)
     TclLimitRemoveAllHandlers(interp);
 
     /*
-     * Dismantle everything in the global namespace except for the
-     * "errorInfo" and "errorCode" variables. These remain until the
-     * namespace is actually destroyed, in case any errors occur.
-     *   
      * Dismantle the namespace here, before we clear the assocData. If any
      * background errors occur here, they will be deleted below.
      *
@@ -982,9 +983,15 @@ DeleteInterpProc(interp)
     interp->result = NULL;
     Tcl_DecrRefCount(iPtr->objResultPtr);
     iPtr->objResultPtr = NULL;
+    Tcl_DecrRefCount(iPtr->ecVar);
     if (iPtr->errorCode) {
 	Tcl_DecrRefCount(iPtr->errorCode);
 	iPtr->errorCode = NULL;
+    }
+    Tcl_DecrRefCount(iPtr->eiVar);
+    if (iPtr->errorInfo) {
+	Tcl_DecrRefCount(iPtr->errorInfo);
+	iPtr->errorInfo = NULL;
     }
     Tcl_DecrRefCount(iPtr->returnOpts);
     Tcl_DecrRefCount(iPtr->defaultReturnOpts);
@@ -3057,10 +3064,13 @@ TclEvalObjvInternal(interp, objc, objv, command, length, flags)
      * Call 'leave' command traces
      */
     if (!(cmdPtr->flags & CMD_IS_DELETED)) {
-	int saveErrFlags = iPtr->flags
-		& (ERR_IN_PROGRESS | ERR_ALREADY_LOGGED);
+	int saveErrFlags = iPtr->flags & ERR_ALREADY_LOGGED;
 	Tcl_Obj *saveOptions = iPtr->returnOpts;
+	Tcl_Obj *saveErrInfo = iPtr->errorInfo;
 	Tcl_Obj *saveErrCode = iPtr->errorCode;
+	if (saveErrInfo) {
+	    Tcl_IncrRefCount(saveErrInfo);
+	}
 	if (saveErrCode) {
 	    Tcl_IncrRefCount(saveErrCode);
 	}
@@ -3082,8 +3092,17 @@ TclEvalObjvInternal(interp, objc, objv, command, length, flags)
 		Tcl_DecrRefCount(iPtr->errorCode);
 	    }
 	    iPtr->errorCode = saveErrCode;
-	} else if (saveErrCode) {
-	    Tcl_DecrRefCount(saveErrCode);
+	    if (iPtr->errorInfo) {
+		Tcl_DecrRefCount(iPtr->errorInfo);
+	    }
+	    iPtr->errorInfo = saveErrInfo;
+	} else {
+	    if (saveErrCode) {
+		Tcl_DecrRefCount(saveErrCode);
+	    }
+	    if (saveErrInfo) {
+		Tcl_DecrRefCount(saveErrInfo);
+	    }
 	}
 	Tcl_DecrRefCount(saveOptions);
     }
@@ -3227,7 +3246,7 @@ Tcl_EvalObjv(interp, objc, objv, flags)
  * Tcl_LogCommandInfo --
  *
  *	This procedure is invoked after an error occurs in an interpreter.
- *	It adds information to the "errorInfo" variable to describe the
+ *	It adds information to iPtr->errorInfo field to describe the
  *	command that was being executed when the error occurred.
  *
  * Results:
@@ -3235,10 +3254,7 @@ Tcl_EvalObjv(interp, objc, objv, flags)
  *
  * Side effects:
  *	Information about the command is added to errorInfo and the
- *	line number stored internally in the interpreter is set.  If this
- *	is the first call to this procedure or Tcl_AddObjErrorInfo since
- *	an error occurred, then old information in errorInfo is
- *	deleted.
+ *	line number stored internally in the interpreter is set.  
  *
  *----------------------------------------------------------------------
  */
@@ -3277,7 +3293,7 @@ Tcl_LogCommandInfo(interp, script, command, length)
 	}
     }
 
-    if (!(iPtr->flags & ERR_IN_PROGRESS)) {
+    if (iPtr->errorInfo == NULL) {
 	message = Tcl_NewStringObj("\n    while executing\n\"", -1);
     } else {
 	message = Tcl_NewStringObj("\n    invoked from within\n\"", -1);
@@ -3602,12 +3618,7 @@ Tcl_EvalEx(interp, script, numBytes, flags)
     return TCL_OK;
 
     error:
-    /*
-     * Generate various pieces of error information, such as the line
-     * number where the error occurred and information to add to the
-     * errorInfo variable.  Then free resources that had been allocated
-     * to the command.
-     */
+    /* Generate and log various pieces of error information. */
 
     if ((code == TCL_ERROR) && !(iPtr->flags & ERR_ALREADY_LOGGED)) { 
 	commandLength = parse.commandSize;
@@ -3625,6 +3636,8 @@ Tcl_EvalEx(interp, script, numBytes, flags)
     }
     iPtr->flags &= ~ERR_ALREADY_LOGGED;
     
+    /* Then free resources that had been allocated to the command. */
+
     for (i = 0; i < objectsUsed; i++) {
 	Tcl_DecrRefCount(objv[i]);
     }
@@ -4359,16 +4372,14 @@ Tcl_ExprString(interp, string)
  *
  * TclAppendObjToErrorInfo --
  *
- *	Add a Tcl_Obj value to the "errorInfo" variable that describes the
+ *	Add a Tcl_Obj value to the errorInfo field that describes the
  *	current error.
  *
  * Results:
  *	None.
  *
  * Side effects:
- * 	The value of the Tcl_obj is added to the "errorInfo" variable.
- *	If Tcl_Eval has been called since the current value of errorInfo
- *	was set, errorInfo is cleared before adding the new message.
+ * 	The value of the Tcl_obj is appended to the errorInfo field.
  *	If we are just starting to log an error, errorInfo is initialized
  *	from the error message in the interpreter's result.
  *
@@ -4391,16 +4402,14 @@ TclAppendObjToErrorInfo(interp, objPtr)
  *
  * Tcl_AddErrorInfo --
  *
- *	Add information to the "errorInfo" variable that describes the
+ *	Add information to the errorInfo field that describes the
  *	current error.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	The contents of message are added to the "errorInfo" variable.
- *	If Tcl_Eval has been called since the current value of errorInfo
- *	was set, errorInfo is cleared before adding the new message.
+ *	The contents of message are appended to the errorInfo field.
  *	If we are just starting to log an error, errorInfo is initialized
  *	from the error message in the interpreter's result.
  *
@@ -4421,7 +4430,7 @@ Tcl_AddErrorInfo(interp, message)
  *
  * Tcl_AddObjErrorInfo --
  *
- *	Add information to the "errorInfo" variable that describes the
+ *	Add information to the errorInfo field that describes the
  *	current error. This routine differs from Tcl_AddErrorInfo by
  *	taking a byte pointer and length.
  *
@@ -4429,10 +4438,8 @@ Tcl_AddErrorInfo(interp, message)
  *	None.
  *
  * Side effects:
- *	"length" bytes from "message" are added to the "errorInfo" variable.
+ *	"length" bytes from "message" are appended to the errorInfo field.
  *	If "length" is negative, use bytes up to the first NULL byte.
- *	If Tcl_EvalObj has been called since the current value of errorInfo
- *	was set, errorInfo is cleared before adding the new message.
  *	If we are just starting to log an error, errorInfo is initialized
  *	from the error message in the interpreter's result.
  *
@@ -4457,16 +4464,20 @@ Tcl_AddObjErrorInfo(interp, message, length)
      * from the error message in the interpreter's result.
      */
 
-    if (!(iPtr->flags & ERR_IN_PROGRESS)) { /* just starting to log error */
-	iPtr->flags |= ERR_IN_PROGRESS;
-
-	if (iPtr->result[0] == 0) {
-	    Tcl_ObjSetVar2(interp, iPtr->execEnvPtr->errorInfo, NULL, 
-	            iPtr->objResultPtr, TCL_GLOBAL_ONLY);
-	} else {		/* use the string result */
-	    Tcl_ObjSetVar2(interp, iPtr->execEnvPtr->errorInfo, NULL, 
-	            Tcl_NewStringObj(interp->result, -1), TCL_GLOBAL_ONLY);
+    if (iPtr->errorInfo == NULL) { /* just starting to log error */
+	if (iPtr->result[0] != 0) {
+	    /*
+	     * The interp's string result is set, apparently by some
+	     * extension making a deprecated direct write to it.
+	     * That extension may expect interp->result to continue
+	     * to be set, so we'll take special pains to avoid clearing
+	     * it, until we drop support for interp->result completely.
+	     */
+	    iPtr->errorInfo = Tcl_NewStringObj(interp->result, -1);
+	} else {
+	    iPtr->errorInfo = iPtr->objResultPtr;
 	}
+	Tcl_IncrRefCount(iPtr->errorInfo);
     }
 
     /*
@@ -4474,11 +4485,12 @@ Tcl_AddObjErrorInfo(interp, message, length)
      */
 
     if (length != 0) {
-	messagePtr = Tcl_NewStringObj(message, length);
-	Tcl_IncrRefCount(messagePtr);
-	Tcl_ObjSetVar2(interp, iPtr->execEnvPtr->errorInfo, NULL, 
-	        messagePtr, (TCL_GLOBAL_ONLY | TCL_APPEND_VALUE));
-	Tcl_DecrRefCount(messagePtr); /* free msg object appended above */
+	if (Tcl_IsShared(iPtr->errorInfo)) {
+	    Tcl_DecrRefCount(iPtr->errorInfo);
+	    iPtr->errorInfo = Tcl_DuplicateObj(iPtr->errorInfo);
+	    Tcl_IncrRefCount(iPtr->errorInfo);
+	}
+	Tcl_AppendToObj(iPtr->errorInfo, message, length);
     }
 }
 

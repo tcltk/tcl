@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTrace.c,v 1.15 2004/10/06 15:59:25 dgp Exp $
+ * RCS: @(#) $Id: tclTrace.c,v 1.16 2004/10/15 04:01:33 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2413,8 +2413,8 @@ TclVarTraceExists(interp, varName)
  *      Returns TCL_OK to indicate normal operation.  Returns TCL_ERROR
  *      if invocation of a trace procedure indicated an error.  When
  *      TCL_ERROR is returned and leaveErrMsg is true, then the
- *      ::errorInfo variable of iPtr has information about the error
- *      appended to it.
+ *      errorInfo field of iPtr has information about the error
+ *      placed in it.
  *
  * Side effects:
  *	Almost anything can happen, depending on trace; this procedure
@@ -2450,10 +2450,13 @@ TclCallVarTraces(iPtr, arrayPtr, varPtr, part1, part2, flags, leaveErrMsg)
     int copiedName;
     int code = TCL_OK;
     int disposeFlags = 0;
-    int saveErrFlags = iPtr->flags
-	    & (ERR_IN_PROGRESS | ERR_ALREADY_LOGGED);
+    int saveErrFlags = iPtr->flags & ERR_ALREADY_LOGGED;
+    Tcl_Obj *saveErrInfo = iPtr->errorInfo;
     Tcl_Obj *saveErrCode = iPtr->errorCode;
 
+    if (saveErrInfo) {
+	Tcl_IncrRefCount(saveErrInfo);
+    }
     if (saveErrCode) {
 	Tcl_IncrRefCount(saveErrCode);
     }
@@ -2581,12 +2584,21 @@ TclCallVarTraces(iPtr, arrayPtr, varPtr, part1, part2, flags, leaveErrMsg)
     done:
     if (code == TCL_OK) {
 	iPtr->flags |= saveErrFlags;
+	if (iPtr->errorInfo) {
+	    Tcl_DecrRefCount(iPtr->errorInfo);
+	}
+	iPtr->errorInfo = saveErrInfo;
 	if (iPtr->errorCode) {
 	    Tcl_DecrRefCount(iPtr->errorCode);
 	}
 	iPtr->errorCode = saveErrCode;
-    } else if (saveErrCode) {
-	Tcl_DecrRefCount(saveErrCode);
+    } else {
+	if (saveErrInfo) {
+	    Tcl_DecrRefCount(saveErrInfo);
+	}
+	if (saveErrCode) {
+	    Tcl_DecrRefCount(saveErrCode);
+	}
     }
     if (code == TCL_ERROR) {
 	if (leaveErrMsg) {
