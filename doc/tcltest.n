@@ -8,7 +8,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: tcltest.n,v 1.33 2002/09/06 01:05:38 dgp Exp $
+'\" RCS: @(#) $Id: tcltest.n,v 1.34 2002/09/06 17:43:00 dgp Exp $
 '\" 
 .so man.macros
 .TH "tcltest" n 2.1 tcltest "Tcl Bundled Packages"
@@ -870,105 +870,139 @@ for writing, and the resulting channel will be set as the value
 of [\fBerrorChannel\fR].
 .SH "CREATING TEST SUITES WITH TCLTEST"
 .PP
-This section intentionally, temporarily left blank.
-'\" .SH "CONTENTS OF A TEST FILE"
-'\" Test files should begin by loading the \fBtcltest\fR package:
-'\" .CS
-'\" package require tcltest
-'\" namespace import -force tcltest::*
-'\" .CE
-'\" Test files should end by cleaning up after themselves and calling
-'\" \fBtcltest::cleanupTests\fR.  The \fBtcltest::cleanupTests\fR
-'\" procedure prints statistics about the number of tests that passed,
-'\" skipped, and failed, and removes all files that were created using the
-'\" \fBtcltest::makeFile\fR and \fBtcltest::makeDirectory\fR procedures.
-'\" .CS
-'\" # Remove files created by these tests
-'\" # Change to original working directory
-'\" # Unset global arrays
-'\" tcltest::cleanupTests
-'\" return
-'\" .CE
-'\" When naming test files, file names should end with a .test extension.
-'\" The names of test files that contain regression (or glass-box) tests
-'\" should correspond to the Tcl or C code file that they are testing.
-'\" For example, the test file for the C file "tclCmdAH.c" is "cmdAH.test".  
-'\" 
-'\" .SH "HOW TO CUSTOMIZE THE TEST HARNESS"
-'\" To create your own custom test harness, create a .tcl file that contains your
-'\" namespace.  Within this file, require package \fBtcltest\fR.  Commands
-'\" that can be redefined to customize the test harness include:
-'\" .TP
-'\" \fBtcltest::cleanupTestsHook\fR
-'\" do additional cleanup 
-'\" .PP
-'\" To add additional cleanup code to your harness
-'\" you can define your own \fBtcltest::cleanupTestsHook\fR.  For example:
-'\" .CS
-'\" proc tcltest::cleanupTestsHook {} {
-'\"     # Add your cleanup code here
-'\" }
-'\" .CE
-'\" 
-'\" .SH EXAMPLES
-'\" .IP [1] 
-'\" A simple test file (foo.test)
-'\" .CS
-'\" package require tcltest
-'\" namespace import -force ::tcltest::*
-'\" 
-'\" test foo-1.1 {save 1 in variable name foo} -body {set foo 1} -result 1
-'\" 
-'\" tcltest::cleanupTests
-'\" return
-'\" .CE
-'\" .IP [2] 
-'\" A simple all.tcl
-'\" .CS
-'\" package require tcltest
-'\" namespace import -force ::tcltest::*
-'\" 
-'\" tcltest::testsDirectory [file dir [info script]]
-'\" tcltest::runAllTests
-'\" 
-'\" return
-'\" .CE
-'\" .IP [3] 
-'\" Running a single test
-'\" .CS
-'\" tclsh foo.test
-'\" .CE
-'\" .IP [4] 
-'\" Running multiple tests
-'\" .CS
-'\" tclsh all.tcl -file 'foo*.test' -notfile 'foo2.test'
-'\" .CE
-'\" .IP [5] 
-'\" A test that uses the \fBunix\fR constraint and should only be
-'\" run on Unix
-'\" .CS
-'\" test getAttribute-1.1 {testing file permissions} {
-'\"     -constraints {unix}
-'\"     -body {
-'\"         lindex [file attributes foo.tcl] 5
-'\"     }
-'\"     -result {00644}
-'\" }
-'\" .CE
-'\" .IP [6] 
-'\" A test containing an constraint expression that evaluates to true (a case where the test would be run) if it is being run on unix and if threads are not being tested
-'\" .CS
-'\" test testOnUnixWithoutThreads-1.1 {
-'\"     this test runs only on unix and only if we're not testing
-'\"     threads
-'\" } {
-'\"     -constraints {unix && !testthread}
-'\"     -body {
-'\"         # some script goes here
-'\"     }
-'\" }
-'\" .CE
-'\" 
+The fundamental element of a test suite is the individual [\fBtest\fR]
+command.  We begin with several examples.
+.IP [1]
+Test of a script that returns normally.
+.CS
+test example-1.0 {normal return} {
+    format %s value
+} value
+.CE
+.IP [2]
+Test of a script that requires context setup and cleanup.  Note the
+bracing and indenting style that avoids any need for line continuation.
+.CS
+test example-1.1 {test file existence} -setup {
+    set file [makeFile {} test]
+} -body {
+    file exists $file
+} -cleanup {
+    removeFile test
+} -result 1
+.CE
+.IP [3]
+Test of a script that raises an error.
+.CS
+test example-1.2 {error return} -body {
+    error message
+} -returnCodes error -result message
+.CE
+.IP [4]
+Test with a constraint.
+.CS
+test example-1.3 {user owns created files} -constraints {
+    unix
+} -setup {
+    set file [makeFile {} test]
+} -body {
+    file attributes $file -owner
+} -cleanup {
+    removeFile test
+} -result $::tcl_platform(user)
+.CE
+At the next higher layer of organization, several [\fBtest\fR] commands
+are gathered together into a single test file.  Test files should have
+names with the \fB.test\fR extension, because that is the default pattern
+used by [\fBrunAllTests\fR] to find test files.  It is a good rule of
+thumb to have one test file for each source code file of your project.
+It is good practice to edit the test file and the source code file
+together, keeping tests synchronized with code changes.
+.PP 
+Most of the code in the test file should be the [\fBtest\fR] commands.
+Use constraints to skip tests, rather than condition running
+of [\fBtest\fB].  That is, do this:
+.IP [5]
+.CS
+testConstraint X [expr $myRequirement]
+test goodConditionalTest {} X {
+    # body
+} result
+.CE
+and do not do this:
+.IP [6]
+.CS
+if $myRequirement {
+    test badConditionalTest {} {
+	#body
+    } result
+}
+.CE
+Use the \fB-setup\fR and \fB-cleanup\fR options to establish and release
+all context requirements of the test body.  Do not make tests depend on
+prior tests in the file.  Those prior tests might be skipped.  If several
+consecutive tests require the same context, the appropriate setup
+and cleanup scripts may be stored in variable for passing to each tests
+\fB-setup\fR and \fB-cleanup\fB options.  This is a better solution than
+performing setup outside of [\fBtest\fR] commands, because the setup will
+only be done if necessary, and any errors during setup will be reported,
+and not cause the test suite to abort.
+.PP
+A test file should be able to be combined with other test files and not
+interfere with them, even when [\fBconfigure -singleproc 1\fR] causes
+all files to be evaluated in a common interpreter.  A simple way to
+achieve this is to have your tests define all their commands and variables
+in a namespace that is deleted when the test file evaluation is complete.
+A good namespace to use is a child namespace \fBtest\fR of the namespace
+of the module you are testing.
+.PP
+A test file should also be able to be evaluated directly as a script,
+not depending on being called by a master [\fBrunAllTests\fR].  This
+means that each test file should process command line arguments to give
+the tester all the configuration control that \fBtcltest\fR provides.
+.PP
+After all [\fBtest\fR]s in a test file, the command [\fBcleanupTests\fR]
+should be called.
+.IP [7]
+Here is a sketch of a sample test file illustrating those points:
+.CS
+package require tcltest 2.2
+eval tcltest::configure $argv
+package require example
+namespace eval ::example::test {
+    namespace import ::tcltest::*
+    testConstraint X [expr {...}]
+    variable SETUP {#common setup code}
+    variable CLEANUP {#common cleanup code}
+    test example-1 {} -setup $SETUP {
+	# First test
+    } -cleanup $CLEANUP -result {...}
+    test example-2 {} -constraints X -setup $SETUP {
+	# Second test; constrained
+    } -cleanup $CLEANUP -result {...}
+    test example-3 {} {
+	# Third test; no context required
+    } {...}
+    cleanupTests
+}
+namespace delete ::example::test
+.CE
+The next level of organization is a full test suite, made up of several
+test files.  One script is used to control the entire suite.  The
+basic function of this script is to call [\fBrunAllTests\fR] after
+doing any necessary setup.  This script is usually named \fBall.tcl\fR
+because that's the default name used by [\fBrunAllTests\fR] when combining
+multiple test suites into one testing run.
+.IP [8]
+Here is a sketch of a sample test suite master file:
+.CS
+package require Tcl 8.4
+package require tcltest 2.2
+package require example
+tcltest::configure -testdir [file dir [file normalize [info script]]]
+eval tcltest::configure $argv
+tcltest::runAllTests
+.CE
 .SH COMPATIBILITY
 .PP
 A number of commands and variables in the \fB::tcltest\fR namespace
