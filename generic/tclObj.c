@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.42.2.3 2003/05/12 19:29:50 dgp Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.42.2.4 2003/05/23 21:29:11 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -156,6 +156,13 @@ Tcl_HashKeyType tclObjHashKeyType = {
  * type cache the Command pointer that results from looking up command names
  * in the command hashtable. Such objects appear as the zeroth ("command
  * name") argument in a Tcl command.
+ *
+ * NOTE: the ResolvedCmdName that gets cached is stored in the
+ * twoPtrValue.ptr1 field, and the twoPtrValue.ptr2 field is unused.
+ * You might think you could use the simpler otherValuePtr field to
+ * store the single ResolvedCmdName pointer, but DO NOT DO THIS.  It
+ * seems that some extensions use the second internal pointer field
+ * of the twoPtrValue field for their own purposes.
  */
 
 static Tcl_ObjType tclCmdNameType = {
@@ -2883,7 +2890,7 @@ Tcl_GetCommandFromObj(interp, objPtr)
             return (Tcl_Command) NULL;
         }
     }
-    resPtr = (ResolvedCmdName *) objPtr->internalRep.otherValuePtr;
+    resPtr = (ResolvedCmdName *) objPtr->internalRep.twoPtrValue.ptr1;
 
     /*
      * Get the current namespace.
@@ -2922,7 +2929,7 @@ Tcl_GetCommandFromObj(interp, objPtr)
 	    iPtr->varFramePtr = savedFramePtr;
             return (Tcl_Command) NULL;
         }
-        resPtr = (ResolvedCmdName *) objPtr->internalRep.otherValuePtr;
+        resPtr = (ResolvedCmdName *) objPtr->internalRep.twoPtrValue.ptr1;
         if (resPtr != NULL) {
             cmdPtr = resPtr->cmdPtr;
         }
@@ -2991,7 +2998,8 @@ TclSetCmdNameObj(interp, objPtr, cmdPtr)
     if ((oldTypePtr != NULL) && (oldTypePtr->freeIntRepProc != NULL)) {
 	oldTypePtr->freeIntRepProc(objPtr);
     }
-    objPtr->internalRep.otherValuePtr = (VOID *) resPtr;
+    objPtr->internalRep.twoPtrValue.ptr1 = (VOID *) resPtr;
+    objPtr->internalRep.twoPtrValue.ptr2 = NULL;
     objPtr->typePtr = &tclCmdNameType;
 }
 
@@ -3022,7 +3030,7 @@ FreeCmdNameInternalRep(objPtr)
 				 * representation to free. */
 {
     register ResolvedCmdName *resPtr =
-	(ResolvedCmdName *) objPtr->internalRep.otherValuePtr;
+	(ResolvedCmdName *) objPtr->internalRep.twoPtrValue.ptr1;
 
     if (resPtr != NULL) {
 	/*
@@ -3071,9 +3079,10 @@ DupCmdNameInternalRep(srcPtr, copyPtr)
     register Tcl_Obj *copyPtr;	/* Object with internal rep to set. */
 {
     register ResolvedCmdName *resPtr =
-        (ResolvedCmdName *) srcPtr->internalRep.otherValuePtr;
+        (ResolvedCmdName *) srcPtr->internalRep.twoPtrValue.ptr1;
 
-    copyPtr->internalRep.otherValuePtr = (VOID *) resPtr;
+    copyPtr->internalRep.twoPtrValue.ptr1 = (VOID *) resPtr;
+    copyPtr->internalRep.twoPtrValue.ptr2 = NULL;
     if (resPtr != NULL) {
         resPtr->refCount++;
     }
@@ -3168,7 +3177,8 @@ SetCmdNameFromAny(interp, objPtr)
 	objPtr->typePtr->freeIntRepProc(objPtr);
     }
     
-    objPtr->internalRep.otherValuePtr = (VOID *) resPtr;
+    objPtr->internalRep.twoPtrValue.ptr1 = (VOID *) resPtr;
+    objPtr->internalRep.twoPtrValue.ptr2 = NULL;
     objPtr->typePtr = &tclCmdNameType;
     return TCL_OK;
 }
