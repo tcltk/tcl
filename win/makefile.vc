@@ -12,7 +12,7 @@
 # Copyright (c) 2001-2002 David Gravereaux.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.86 2002/03/28 02:42:51 davygrvy Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.87 2002/03/28 21:45:36 davygrvy Exp $
 #------------------------------------------------------------------------------
 
 !if "$(MSVCDIR)" == ""
@@ -303,6 +303,7 @@ TCLSTUBOBJS = $(TMP_DIR)\tclStubLib.obj
 
 ### The following paths CANNOT have spaces in them.
 COMPATDIR	= $(ROOT)\compat
+DOCDIR		= $(ROOT)\doc
 GENERICDIR	= $(ROOT)\generic
 TOOLSDIR	= $(ROOT)\tools
 WINDIR		= $(ROOT)\win
@@ -488,8 +489,8 @@ genstubs:
 !if !exist($(TCLSH))
 	@echo Build tclsh first!
 !else
-	$(TCLSH) $(TOOLSDIR)\genStubs.tcl $(GENERICDIR) \
-		$(GENERICDIR)\tcl.decls $(GENERICDIR)\tclInt.decls
+	$(TCLSH) $(TOOLSDIR:\=/)\genStubs.tcl $(GENERICDIR:\=/) \
+		$(GENERICDIR:\=/)/tcl.decls $(GENERICDIR:\=/)/tclInt.decls
 !endif
 
 
@@ -501,8 +502,7 @@ depend:
 !if !exist($(TCLSH))
 	@echo Build tclsh first!
 !else
-	echo $(TCL_INCLUDES)
-	$(TCLSH) $(TOOLSDIR)\mkdepend.tcl -vc32 -out:"$(OUT_DIR)\depend.mk" \
+	$(TCLSH) $(TOOLSDIR:\=/)/mkdepend.tcl -vc32 -out:"$(OUT_DIR)\depend.mk" \
 		-passthru:"-DBUILD_tcl $(TCL_INCLUDES:"="")" $(GENERICDIR) \
 		$(COMPATDIR) $(WINDIR) @<<
 $(TCLOBJS)
@@ -522,6 +522,8 @@ HELPRTF		= $(DOCTMP_DIR)\$(PROJECT).rtf
 MAN2HELP	= $(DOCTMP_DIR)\man2help.tcl
 MAN2HELP2	= $(DOCTMP_DIR)\man2help2.tcl
 INDEX		= $(DOCTMP_DIR)\index.tcl
+BMP		= $(DOCTMP_DIR)\feather.bmp
+BMP_NOPATH	= feather.bmp
 MAN2TCL		= $(DOCTMP_DIR)\man2tcl.exe
 
 winhelp: docsetup $(HELPFILE)
@@ -529,16 +531,17 @@ winhelp: docsetup $(HELPFILE)
 docsetup:
 	@if not exist $(DOCTMP_DIR)\nul mkdir $(DOCTMP_DIR)
 
-$(MAN2HELP) $(MAN2HELP2) $(INDEX): $(TOOLSDIR)\$$(@F)
+$(MAN2HELP) $(MAN2HELP2) $(INDEX) $(BMP): $(TOOLSDIR)\$$(@F)
 	copy $(TOOLSDIR)\$(@F) $(@D)
 
-$(HELPFILE): $(HELPRTF)
+$(HELPFILE): $(HELPRTF) $(BMP)
 	cd $(DOCTMP_DIR)
 	start /wait hcrtf.exe -x <<$(PROJECT).hpj
 [OPTIONS]
 COMPRESS=12 Hall Zeck
 LCID=0x409 0x0 0x0 ; English (United States)
 TITLE=Tcl/Tk Reference Manual
+BMROOT=.
 CNT=$(@B).cnt
 HLP=$(@B).hlp
 
@@ -546,23 +549,24 @@ HLP=$(@B).hlp
 $(PROJECT).rtf
 
 [WINDOWS]
-main="Tcl/Tk Reference Manual",,0
+main="Tcl/Tk Reference Manual",,27648,(r15263976),(r65535)
 
 [CONFIG]
 BrowseButtons()
-CreateButton(1, "Main Web Site", ExecFile("http://www.tcl.tk"))
-CreateButton(2, "Sourceforge", ExecFile("http://sf.net/projects/tcl"))
+CreateButton(1, "Web", ExecFile("http://www.tcl.tk"))
+CreateButton(2, "SF", ExecFile("http://sf.net/projects/tcl"))
 CreateButton(3, "Wiki", ExecFile("http://wiki.tcl.tk"))
+CreateButton(4, "FAQ", ExecFile("http://www.purl.org/NET/Tcl-FAQ/"))
 <<
 	cd $(MAKEDIR)
 	copy "$(DOCTMP_DIR)\$(@B).hlp" "$(OUT_DIR)"
 	copy "$(DOCTMP_DIR)\$(@B).cnt" "$(OUT_DIR)"
 
-$(MAN2TCL):
-	$(cc32) -nologo -G4 -ML -O2 $(TOOLSDIR)\man2tcl.c -link -out:$@
+$(MAN2TCL): $(TOOLSDIR)\$$(@B).c
+	$(cc32) -nologo -G4 -ML -O2 -Fo$(@D)\ $(TOOLSDIR)\$(@B).c -link -out:$@
 
-$(HELPRTF): $(TCLSH) $(MAN2TCL) $(MAN2HELP) $(MAN2HELP2) $(INDEX)
-	$(TCLSH) $(MAN2HELP) $(PROJECT) $(VERSION) $(ROOT)/doc
+$(HELPRTF): $(MAN2TCL) $(MAN2HELP) $(MAN2HELP2) $(INDEX)
+	$(TCLSH) $(MAN2HELP:\=/) -bitmap $(BMP_NOPATH) $(PROJECT) $(VERSION) $(DOCDIR:\=/)
 
 install-docs:
 !if exist($(HELPFILE))

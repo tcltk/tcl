@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: man2help2.tcl,v 1.7 2001/11/10 02:34:57 hobbs Exp $
+# RCS: @(#) $Id: man2help2.tcl,v 1.8 2002/03/28 21:45:24 davygrvy Exp $
 # 
 
 # Global variables used by these scripts:
@@ -826,7 +826,7 @@ proc TPmacro {argList} {
 # argList -		List of arguments to the .TH macro.
 
 proc THmacro {argList} {
-    global file curPkg curSect curID id_keywords state curVer
+    global file curPkg curSect curID id_keywords state curVer bitmap
 
     if {[llength $argList] != 5} {
 	set args [join $argList " "]
@@ -864,6 +864,10 @@ proc THmacro {argList} {
     tab
     text $curSect
     font R
+    if {[info exist bitmap]} {
+	# a right justified bitmap
+	puts $file "\\\{bmrt $bitmap\\\}"
+    }
     puts $file "\\fs20"
     set state(breakPending) -1
 }
