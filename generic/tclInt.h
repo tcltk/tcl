@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.42.2.2 2001/09/01 23:06:28 davygrvy Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.42.2.3 2001/10/19 23:47:57 hobbs Exp $
  */
 
 #ifndef _TCLINT
@@ -2089,6 +2089,37 @@ EXTERN int	TclCompileWhileCmd _ANSI_ARGS_((Tcl_Interp *interp,
 	if ((objPtr)->refCount < -1) \
 	    panic("Reference count for %lx was negative: %s line %d", \
 		  (objPtr), __FILE__, __LINE__); \
+	if (((objPtr)->bytes != NULL) \
+		&& ((objPtr)->bytes != tclEmptyStringRep)) { \
+	    ckfree((char *) (objPtr)->bytes); \
+	} \
+	if (((objPtr)->typePtr != NULL) \
+		&& ((objPtr)->typePtr->freeIntRepProc != NULL)) { \
+	    (objPtr)->typePtr->freeIntRepProc(objPtr); \
+	} \
+	ckfree((char *) (objPtr)); \
+	TclIncrObjsFreed(); \
+    }
+
+#elif defined(PURIFY)
+
+/*
+ * The PURIFY mode is like the regular mode, but instead of doing block
+ * Tcl_Obj allocation and keeping a freed list for efficiency, it always
+ * allocates and frees a single Tcl_Obj so that tools like Purify can
+ * better track memory leaks
+ */
+
+#  define TclNewObj(objPtr) \
+    (objPtr) = (Tcl_Obj *) Tcl_Ckalloc(sizeof(Tcl_Obj)); \
+    (objPtr)->refCount = 0; \
+    (objPtr)->bytes    = tclEmptyStringRep; \
+    (objPtr)->length   = 0; \
+    (objPtr)->typePtr  = NULL; \
+    TclIncrObjsAllocated();
+
+#  define TclDecrRefCount(objPtr) \
+    if (--(objPtr)->refCount <= 0) { \
 	if (((objPtr)->bytes != NULL) \
 		&& ((objPtr)->bytes != tclEmptyStringRep)) { \
 	    ckfree((char *) (objPtr)->bytes); \

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.12.2.4 2001/10/09 20:42:54 msofer Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.12.2.5 2001/10/19 23:47:57 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -400,12 +400,15 @@ Tcl_NewObj()
      */
 
     Tcl_MutexLock(&tclObjMutex);
+#ifdef PURIFY
+    objPtr = (Tcl_Obj *) Tcl_Ckalloc(sizeof(Tcl_Obj));
+#else
     if (tclFreeObjList == NULL) {
 	TclAllocateFreeObjects();
     }
     objPtr = tclFreeObjList;
     tclFreeObjList = (Tcl_Obj *) tclFreeObjList->internalRep.otherValuePtr;
-    
+#endif    
     objPtr->refCount = 0;
     objPtr->bytes    = tclEmptyStringRep;
     objPtr->length   = 0;
@@ -582,7 +585,7 @@ TclFreeObj(objPtr)
      */
 
     Tcl_MutexLock(&tclObjMutex);
-#ifdef TCL_MEM_DEBUG
+#if defined(TCL_MEM_DEBUG) || defined(PURIFY)
     ckfree((char *) objPtr);
 #else
     objPtr->internalRep.otherValuePtr = (VOID *) tclFreeObjList;
